@@ -1,0 +1,29 @@
+TESTS = \
+
+include tests/libjlm/Makefile.sub
+
+TEST_SOURCES = tests/test-runner.cpp tests/test-registry.cpp $(patsubst %, tests/%.cpp, $(TESTS))
+
+tests/test-runner: LDFLAGS+=-L. -Wl,-whole-archive -ljlm -ljive -Wl,-no-whole-archive
+tests/test-runner: %: $(patsubst %.cpp, %.la, $(TEST_SOURCES)) libjlm.a
+	$(CXX) -o $@ $(filter %.la, $^) $(LDFLAGS)
+
+$(patsubst %, tests/%.la, $(TESTS)): CPPFLAGS += -Itests
+
+TESTLOG = true
+
+check: tests/test-runner
+	rm -rf check.log
+	@FAILED_TESTS="" ; \
+	for TEST in $(TESTS); do \
+		$(TESTLOG) -n "$$TEST: " ; if tests/test-runner $$TEST >>check.log 2>&1 ; then $(TESTLOG) pass ; else $(TESTLOG) FAIL ; FAILED_TESTS="$$FAILED_TESTS $$TEST" ; fi ; \
+	done ; \
+	if [ "x$$FAILED_TESTS" != x ] ; then echo "Failed tests:$$FAILED_TESTS" ; else echo "All tests passed" ; fi ; \
+
+valgrind-check: tests/test-runner
+	rm -rf check.log
+	@FAILED_TESTS="" ; \
+	for TEST in $(TESTS); do \
+		$(TESTLOG) -n "$$TEST: " ; if valgrind --leak-check=full --error-exitcode=1 tests/test-runner $$TEST >>check.log 2>&1 ; then $(TESTLOG) pass ; else $(TESTLOG) FAIL ; FAILED_TESTS="$$UNEXPECTED_FAILED_TESTS $$TEST" ; fi ; \
+	done ; \
+	if [ "x$$FAILED_TESTS" != x ] ; then echo "Failed tests:$$FAILED_TESTS" ; else echo "All tests passed" ; fi ; \

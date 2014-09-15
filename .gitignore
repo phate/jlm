@@ -1,0 +1,6 @@
+*.la
+*.a
+*.o
+check.log
+jlm
+tests/test-runner
