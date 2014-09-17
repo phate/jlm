@@ -1,0 +1,19 @@
+/*
+ * Copyright 2014 Nico Reißmann <nico.reissmann@gmail.com>
+ * See COPYING for terms of redistribution.
+ */
+
+#ifndef JLM_COMMON_HPP
+#define JLM_COMMON_HPP
+
+#include <assert.h>
+
+#define JLM_ASSERT(x) assert(x)
+
+#ifdef JLM_DEBUG
+#	define JLM_DEBUG_ASSERT(x) assert(x)
+#else
+#	define JLM_DEBUG_ASSERT(x) (void)(x)
+#endif
+
+#endif

@@ -63,7 +63,8 @@ run_unit_test(const char * name)
 		assert(0);
 	}
 
-	jive::frontend::clg clg = create_clg(*module);
+	jive::frontend::clg clg;
+	convert_module(*module, clg);
 
 	return unit_test_map[std::string(name)]->verify(clg);
 }

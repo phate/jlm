@@ -1,2 +1,6 @@
 TESTS += \
-	libjlm/test-linear
+	libjlm/test-linear \
+	libjlm/test-ifthen \
+	libjlm/test-switch0 \
+	libjlm/test-switch1 \
+	libjlm/test-unreachable \

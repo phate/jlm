@@ -11,9 +11,14 @@
 
 static const char * program =
 "\
-	int linear() \
+	int switch0(int a) \
 	{ \
-		return 7; \
+		switch(a) { \
+			case 0: break; \
+			case 1: break; \
+			default:; \
+		} \
+		return 0; \
 	} \
 ";
 
@@ -22,15 +27,16 @@ verify(jive::frontend::clg & clg)
 {
 	assert(clg.nnodes() == 1);
 
-	jive::frontend::clg_node * node = clg.lookup_function("linear");
+	jive::frontend::clg_node * node = clg.lookup_function("switch0");
 	assert(node != nullptr);
 
 	jive::frontend::cfg & cfg = node->cfg();
+//	jive_cfg_view(cfg);
 
-	assert(cfg.nnodes() == 3);
-	assert(cfg.is_linear());
+	assert(cfg.nnodes() == 7);
+	assert(cfg.is_structured());
 
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-linear", program, verify);
+JLM_UNIT_TEST_REGISTER("libjlm/test-switch0", program, verify);

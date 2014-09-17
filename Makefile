@@ -9,6 +9,7 @@ LDFLAGS += $(shell $(LLVMCONFIG) --libs) $(shell $(LLVMCONFIG) --ldflags) -L/hom
 
 LIBJLM_SRC = \
 	src/jlm.cpp \
+	src/instruction.cpp \
 
 JLM_SRC = \
 	src/main.cpp \

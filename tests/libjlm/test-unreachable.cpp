@@ -11,26 +11,30 @@
 
 static const char * program =
 "\
-	int linear() \
+	#include <stdlib.h>\n \
+	\
+	int unreachable(int a) \
 	{ \
-		return 7; \
+		abort(); \
+		return 0; \
 	} \
 ";
 
 static int
 verify(jive::frontend::clg & clg)
 {
-	assert(clg.nnodes() == 1);
+	assert(clg.nnodes() == 2);
 
-	jive::frontend::clg_node * node = clg.lookup_function("linear");
+	jive::frontend::clg_node * node = clg.lookup_function("unreachable");
 	assert(node != nullptr);
 
 	jive::frontend::cfg & cfg = node->cfg();
+	jive_cfg_view(cfg);
 
-	assert(cfg.nnodes() == 3);
-	assert(cfg.is_linear());
+	assert(cfg.nnodes() == 4);
+	assert(cfg.is_valid());
 
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-linear", program, verify);
+JLM_UNIT_TEST_REGISTER("libjlm/test-unreachable", program, verify);
