@@ -29,7 +29,7 @@ verify(jive::frontend::clg & clg)
 	assert(node != nullptr);
 
 	jive::frontend::cfg & cfg = node->cfg();
-	jive_cfg_view(cfg);
+//	jive_cfg_view(cfg);
 
 	assert(cfg.nnodes() == 4);
 	assert(cfg.is_valid());

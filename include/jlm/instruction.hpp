@@ -8,7 +8,16 @@
 
 #include <jlm/jlm.hpp>
 
+namespace jive {
+namespace frontend {
+	class output;
+}
+}
+
 namespace jlm  {
+
+jive::frontend::output *
+convert_value(const llvm::Value * v, jive::frontend::basic_block * bb, value_map & vmap);
 
 void
 convert_instruction(const llvm::Instruction & i, jive::frontend::basic_block * bb,

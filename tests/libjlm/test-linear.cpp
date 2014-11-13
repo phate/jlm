@@ -13,7 +13,7 @@ static const char * program =
 "\
 	int linear() \
 	{ \
-		return 7; \
+		return 6+8; \
 	} \
 ";
 
@@ -26,6 +26,7 @@ verify(jive::frontend::clg & clg)
 	assert(node != nullptr);
 
 	jive::frontend::cfg & cfg = node->cfg();
+	jive_cfg_view(cfg);
 
 	assert(cfg.nnodes() == 3);
 	assert(cfg.is_linear());

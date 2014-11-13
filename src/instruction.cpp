@@ -4,6 +4,7 @@
  */
 
 #include <jlm/common.hpp>
+#include <jlm/constant.hpp>
 #include <jlm/jlm.hpp>
 
 #include <jive/frontend/basic_block.h>
@@ -13,6 +14,17 @@
 #include <typeindex>
 
 namespace jlm {
+
+jive::frontend::output *
+convert_value(const llvm::Value * v, jive::frontend::basic_block * bb, value_map & vmap)
+{
+	if (auto c = dynamic_cast<const llvm::Constant*>(v))
+		return convert_constant(*c, bb);
+
+	JLM_DEBUG_ASSERT(0);
+	//FIXME: shut up compiler
+	return nullptr;
+}
 
 
 static void
@@ -25,6 +37,8 @@ convert_return_instruction(const llvm::Instruction & i, jive::frontend::basic_bl
 	JLM_DEBUG_ASSERT(instruction->getNumSuccessors() == 0);
 	JLM_DEBUG_ASSERT(bb->noutedges() == 0);
 	bb->add_outedge(bb->cfg()->exit(), 0);
+
+	convert_value(instruction->getReturnValue(), bb, vmap);
 }
 
 static void
