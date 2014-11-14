@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/binops.hpp>
 #include <jlm/common.hpp>
 #include <jlm/constant.hpp>
 #include <jlm/jlm.hpp>
@@ -27,30 +28,6 @@ convert_value(const llvm::Value * v, jive::frontend::basic_block * bb, value_map
 
 	JLM_DEBUG_ASSERT(vmap.find(v) != vmap.end());
 	return vmap[v];
-}
-
-/* integer binary operators */
-
-typedef std::map<llvm::Instruction::BinaryOps,
-	jive::frontend::output *(*)(jive::frontend::basic_block *, size_t, const jive::frontend::output*,
-		const jive::frontend::output*)> int_binary_operators_map;
-
-static int_binary_operators_map ibomap({
-		{llvm::Instruction::Add, jive::frontend::bitsum_tac}
-	,	{llvm::Instruction::And, jive::frontend::bitand_tac}
-});
-
-static inline const jive::frontend::output *
-convert_int_binary_operator(const llvm::BinaryOperator & i, jive::frontend::basic_block * bb,
-	value_map & vmap)
-{
-	JLM_DEBUG_ASSERT(i.getType()->getTypeID() == llvm::Type::IntegerTyID);
-
-	const llvm::IntegerType * type = static_cast<const llvm::IntegerType*>(i.getType());
-
-	const jive::frontend::output * op1 = convert_value(i.getOperand(0), bb, vmap);
-	const jive::frontend::output * op2 = convert_value(i.getOperand(1), bb, vmap);
-	return ibomap[i.getOpcode()](bb, type->getBitWidth(), op1, op2);
 }
 
 /* instructions */
@@ -121,17 +98,17 @@ convert_binary_operator(const llvm::Instruction & i, jive::frontend::basic_block
 	const llvm::BinaryOperator * instruction = static_cast<const llvm::BinaryOperator*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
 
-	const jive::frontend::output * result = nullptr;
-	switch (instruction->getType()->getTypeID()) {
-		case llvm::Type::IntegerTyID:
-			result = convert_int_binary_operator(*instruction, bb, vmap);
-			break;
-		default:
-			JLM_DEBUG_ASSERT(0);
-	}
+	convert_binary_operator(*instruction, bb, vmap);
+}
 
-	JLM_DEBUG_ASSERT(result);
-	vmap[instruction] = result;
+static void
+convert_comparison_instruction(const llvm::Instruction & i, jive::frontend::basic_block * bb,
+	const basic_block_map & bbmap, value_map & vmap)
+{
+	const llvm::CmpInst * instruction = static_cast<const llvm::CmpInst*>(&i);
+	JLM_DEBUG_ASSERT(instruction != nullptr);
+
+	convert_comparison_instruction(*instruction, bb, vmap);
 }
 
 typedef std::unordered_map<std::type_index, void(*)(const llvm::Instruction&,
@@ -143,6 +120,7 @@ static instruction_map imap({
 	, {std::type_index(typeid(llvm::SwitchInst)), convert_switch_instruction}
 	, {std::type_index(typeid(llvm::UnreachableInst)), convert_unreachable_instruction}
 	, {std::type_index(typeid(llvm::BinaryOperator)), convert_binary_operator}
+	, {std::type_index(typeid(llvm::CmpInst)), convert_comparison_instruction}
 });
 
 void

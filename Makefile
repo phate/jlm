@@ -8,6 +8,7 @@ CXXFLAGS += -Wall -Werror --std=c++0x -Wfatal-errors -g -D__STDC_LIMIT_MACROS -D
 LDFLAGS += $(shell $(LLVMCONFIG) --libs) $(shell $(LLVMCONFIG) --ldflags) -L/home/reissman/Documents/jive
 
 LIBJLM_SRC = \
+	src/binops.cpp \
 	src/constant.cpp \
 	src/jlm.cpp \
 	src/instruction.cpp \

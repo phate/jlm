@@ -13,7 +13,7 @@ static const char * program =
 "\
 	int linear(int a) \
 	{ \
-		return a+a; \
+		return 6+7; \
 	} \
 ";
 
