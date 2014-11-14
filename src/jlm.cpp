@@ -6,10 +6,12 @@
 #include <jlm/common.hpp>
 #include <jlm/instruction.hpp>
 #include <jlm/jlm.hpp>
+#include <jlm/type.hpp>
 
 #include <jive/frontend/basic_block.h>
 #include <jive/frontend/cfg.h>
 #include <jive/frontend/cfg_node.h>
+#include <jive/vsdg/basetype.h>
 
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/Function.h>
@@ -38,9 +40,12 @@ convert_function(const llvm::Function & function, jive::frontend::cfg & cfg)
 	if (function.isDeclaration())
 		return;
 
-	basic_block_map bbmap;
 	value_map vmap;
+	llvm::Function::ArgumentListType::const_iterator jt = function.getArgumentList().begin();
+	for (; jt != function.getArgumentList().end(); jt++)
+		cfg.append_argument(jt->getName().str(), *convert_type(*jt->getType()));
 
+	basic_block_map bbmap;
 	llvm::Function::BasicBlockListType::const_iterator it = function.getBasicBlockList().begin();
 	for (; it != function.getBasicBlockList().end(); it++)
 			bbmap[&(*it)] = cfg.create_basic_block();

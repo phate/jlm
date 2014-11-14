@@ -11,6 +11,7 @@ LIBJLM_SRC = \
 	src/constant.cpp \
 	src/jlm.cpp \
 	src/instruction.cpp \
+	src/type.cpp \
 
 JLM_SRC = \
 	src/main.cpp \
