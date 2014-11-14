@@ -42,8 +42,9 @@ convert_function(const llvm::Function & function, jive::frontend::cfg & cfg)
 
 	value_map vmap;
 	llvm::Function::ArgumentListType::const_iterator jt = function.getArgumentList().begin();
-	for (; jt != function.getArgumentList().end(); jt++)
-		cfg.append_argument(jt->getName().str(), *convert_type(*jt->getType()));
+	for (; jt != function.getArgumentList().end(); jt++) {
+		vmap[&(*jt)] = cfg.append_argument(jt->getName().str(), *convert_type(*jt->getType()));
+	}
 
 	basic_block_map bbmap;
 	llvm::Function::BasicBlockListType::const_iterator it = function.getBasicBlockList().begin();

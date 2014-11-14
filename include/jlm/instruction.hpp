@@ -16,7 +16,7 @@ namespace frontend {
 
 namespace jlm  {
 
-jive::frontend::output *
+const jive::frontend::output *
 convert_value(const llvm::Value * v, jive::frontend::basic_block * bb, value_map & vmap);
 
 void
