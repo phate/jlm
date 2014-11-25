@@ -2,5 +2,5 @@
 *.a
 *.o
 check.log
-./jlm
+/jlm
 tests/test-runner
