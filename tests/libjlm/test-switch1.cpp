@@ -9,18 +9,6 @@
 
 #include <assert.h>
 
-static const char * program =
-"\
-	int switch1(int a) \
-	{ \
-		switch(a) { \
-			case 0: break; \
-			case 1: break; \
-		} \
-		return 0; \
-	} \
-";
-
 static int
 verify(jive::frontend::clg & clg)
 {
@@ -38,4 +26,4 @@ verify(jive::frontend::clg & clg)
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-switch1", program, verify);
+JLM_UNIT_TEST_REGISTER("libjlm/test-switch1", verify);

@@ -9,17 +9,6 @@
 
 #include <assert.h>
 
-static const char * program =
-"\
-	#include <stdlib.h>\n \
-	\
-	int unreachable(int a) \
-	{ \
-		abort(); \
-		return 0; \
-	} \
-";
-
 static int
 verify(jive::frontend::clg & clg)
 {
@@ -37,4 +26,4 @@ verify(jive::frontend::clg & clg)
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-unreachable", program, verify);
+JLM_UNIT_TEST_REGISTER("libjlm/test-unreachable", verify);

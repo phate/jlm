@@ -15,17 +15,17 @@ namespace frontend {
 namespace jlm {
 
 void
-register_unit_test(const char * name, const char * module, int (*verify)(jive::frontend::clg & clg));
+register_unit_test(const char * name, int (*verify)(jive::frontend::clg & clg));
 
 int
 run_unit_test(const char * name);
 
 }
 
-#define JLM_UNIT_TEST_REGISTER(name, module, verification) \
+#define JLM_UNIT_TEST_REGISTER(name, verification) \
 	static void __attribute__((constructor)) register_##verification(void) \
 	{ \
-		jlm::register_unit_test(name, module, verification); \
+		jlm::register_unit_test(name, verification); \
 	} \
 
 #endif

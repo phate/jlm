@@ -9,14 +9,6 @@
 
 #include <assert.h>
 
-static const char * program =
-"\
-	int max(int a, int b) \
-	{ \
-		return a > b ? a : b; \
-	} \
-";
-
 static int
 verify(jive::frontend::clg & clg)
 {
@@ -34,4 +26,4 @@ verify(jive::frontend::clg & clg)
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-ifthen", program, verify);
+JLM_UNIT_TEST_REGISTER("libjlm/test-ifthen", verify);

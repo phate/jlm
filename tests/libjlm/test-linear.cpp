@@ -9,14 +9,6 @@
 
 #include <assert.h>
 
-static const char * program =
-"\
-	int linear(int a) \
-	{ \
-		return 6+7; \
-	} \
-";
-
 static int
 verify(jive::frontend::clg & clg)
 {
@@ -26,7 +18,7 @@ verify(jive::frontend::clg & clg)
 	assert(node != nullptr);
 
 	jive::frontend::cfg & cfg = node->cfg();
-	jive_cfg_view(cfg);
+//	jive_cfg_view(cfg);
 
 	assert(cfg.nnodes() == 3);
 	assert(cfg.is_linear());
@@ -34,4 +26,4 @@ verify(jive::frontend::clg & clg)
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-linear", program, verify);
+JLM_UNIT_TEST_REGISTER("libjlm/test-linear", verify);
