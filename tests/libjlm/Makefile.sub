@@ -1,1 +1,2 @@
+include tests/libjlm/instructions/Makefile.sub
 include tests/libjlm/structure/Makefile.sub
