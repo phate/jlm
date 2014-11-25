@@ -12,18 +12,18 @@
 static int
 verify(jive::frontend::clg & clg)
 {
-	assert(clg.nnodes() == 2);
+	assert(clg.nnodes() == 1);
 
-	jive::frontend::clg_node * node = clg.lookup_function("unreachable");
+	jive::frontend::clg_node * node = clg.lookup_function("linear");
 	assert(node != nullptr);
 
 	jive::frontend::cfg & cfg = node->cfg();
 //	jive_cfg_view(cfg);
 
-	assert(cfg.nnodes() == 4);
-	assert(cfg.is_valid());
+	assert(cfg.nnodes() == 3);
+	assert(cfg.is_linear());
 
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-unreachable", verify);
+JLM_UNIT_TEST_REGISTER("libjlm/structure/test-linear", verify);

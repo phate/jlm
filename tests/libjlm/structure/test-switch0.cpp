@@ -26,4 +26,4 @@ verify(jive::frontend::clg & clg)
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-switch0", verify);
+JLM_UNIT_TEST_REGISTER("libjlm/structure/test-switch0", verify);

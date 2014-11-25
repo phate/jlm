@@ -26,4 +26,4 @@ verify(jive::frontend::clg & clg)
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-ifthen", verify);
+JLM_UNIT_TEST_REGISTER("libjlm/structure/test-ifthen", verify);
