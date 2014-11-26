@@ -93,11 +93,11 @@ const jive::frontend::output *
 convert_int_comparison_instruction(const llvm::ICmpInst & i, jive::frontend::basic_block * bb,
 	value_map & vmap)
 {
-	JLM_DEBUG_ASSERT(i.getType()->getTypeID() == llvm::Type::IntegerTyID);
-	const llvm::IntegerType * type = static_cast<const llvm::IntegerType*>(i.getType());
-
 	const jive::frontend::output * op1 = convert_value(i.getOperand(0), bb, vmap);
 	const jive::frontend::output * op2 = convert_value(i.getOperand(1), bb, vmap);
+
+	const llvm::IntegerType * type = static_cast<const llvm::IntegerType*>(i.getOperand(0)->getType());
+
 	return int_cmp_ops_map[i.getPredicate()](bb, type->getBitWidth(), op1, op2);
 }
 
