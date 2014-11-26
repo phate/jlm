@@ -120,7 +120,7 @@ static instruction_map imap({
 	, {std::type_index(typeid(llvm::SwitchInst)), convert_switch_instruction}
 	, {std::type_index(typeid(llvm::UnreachableInst)), convert_unreachable_instruction}
 	, {std::type_index(typeid(llvm::BinaryOperator)), convert_binary_operator}
-	, {std::type_index(typeid(llvm::CmpInst)), convert_comparison_instruction}
+	, {std::type_index(typeid(llvm::ICmpInst)), convert_comparison_instruction}
 });
 
 void
