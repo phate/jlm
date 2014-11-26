@@ -77,16 +77,16 @@ typedef std::map<llvm::CmpInst::Predicate,
 		const jive::frontend::output*, const jive::frontend::output*)> int_comparison_operators_map;
 
 static int_comparison_operators_map int_cmp_ops_map({
-		{llvm::CmpInst::ICMP_SLT,	jive::frontend::biteq_tac}
-	,	{llvm::CmpInst::ICMP_ULT,	jive::frontend::biteq_tac}
-	,	{llvm::CmpInst::ICMP_SLE,	jive::frontend::biteq_tac}
-	,	{llvm::CmpInst::ICMP_ULE,	jive::frontend::biteq_tac}
+		{llvm::CmpInst::ICMP_SLT,	jive::frontend::bitslt_tac}
+	,	{llvm::CmpInst::ICMP_ULT,	jive::frontend::bitult_tac}
+	,	{llvm::CmpInst::ICMP_SLE,	jive::frontend::bitsle_tac}
+	,	{llvm::CmpInst::ICMP_ULE,	jive::frontend::bitule_tac}
 	,	{llvm::CmpInst::ICMP_EQ,	jive::frontend::biteq_tac}
-	,	{llvm::CmpInst::ICMP_NE,	jive::frontend::biteq_tac}
-	,	{llvm::CmpInst::ICMP_SGE,	jive::frontend::biteq_tac}
-	,	{llvm::CmpInst::ICMP_UGE,	jive::frontend::biteq_tac}
-	,	{llvm::CmpInst::ICMP_SGT,	jive::frontend::biteq_tac}
-	,	{llvm::CmpInst::ICMP_UGT,	jive::frontend::biteq_tac}
+	,	{llvm::CmpInst::ICMP_NE,	jive::frontend::bitne_tac}
+	,	{llvm::CmpInst::ICMP_SGE,	jive::frontend::bitsge_tac}
+	,	{llvm::CmpInst::ICMP_UGE,	jive::frontend::bituge_tac}
+	,	{llvm::CmpInst::ICMP_SGT,	jive::frontend::bitsgt_tac}
+	,	{llvm::CmpInst::ICMP_UGT,	jive::frontend::bitugt_tac}
 });
 
 const jive::frontend::output *
