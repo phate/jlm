@@ -1,2 +1,2 @@
 TESTS += \
-	libjlm/instructions/test-bitarithmetic \
+	libjlm/instructions/test-bitops \

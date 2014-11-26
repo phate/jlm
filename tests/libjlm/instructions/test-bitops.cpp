@@ -9,6 +9,7 @@
 #include <jive/frontend/clg.h>
 #include <jive/frontend/tac/tac.h>
 #include <jive/types/bitstring/arithmetic.h>
+#include <jive/types/bitstring/comparison.h>
 #include <jive/types/bitstring/type.h>
 
 #include <assert.h>
@@ -51,6 +52,17 @@ MAKE_OP_VERIFIER(or, or_op);
 MAKE_OP_VERIFIER(xor, xor_op);
 MAKE_OP_VERIFIER(mul, mul_op);
 
+MAKE_OP_VERIFIER(slt, slt_op);
+MAKE_OP_VERIFIER(ult, ult_op);
+MAKE_OP_VERIFIER(sle, sle_op);
+MAKE_OP_VERIFIER(ule, ule_op);
+MAKE_OP_VERIFIER(eq, eq_op);
+MAKE_OP_VERIFIER(ne, ne_op);
+MAKE_OP_VERIFIER(sgt, sgt_op);
+MAKE_OP_VERIFIER(ugt, ugt_op);
+MAKE_OP_VERIFIER(sge, sge_op);
+MAKE_OP_VERIFIER(uge, uge_op);
+
 static int
 verify(jive::frontend::clg & clg)
 {
@@ -68,7 +80,18 @@ verify(jive::frontend::clg & clg)
 	verify_xor_op(clg);
 	verify_mul_op(clg);
 
+	verify_slt_op(clg);
+	verify_ult_op(clg);
+	verify_sle_op(clg);
+	verify_ule_op(clg);
+	verify_eq_op(clg);
+	verify_ne_op(clg);
+	verify_sgt_op(clg);
+	verify_ugt_op(clg);
+	verify_sge_op(clg);
+	verify_uge_op(clg);
+
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/instructions/test-bitarithmetic", verify);
+JLM_UNIT_TEST_REGISTER("libjlm/instructions/test-bitops", verify);
