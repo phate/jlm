@@ -7,8 +7,10 @@
 #include <jlm/common.hpp>
 #include <jlm/constant.hpp>
 #include <jlm/jlm.hpp>
+#include <jlm/type.hpp>
 
 #include <jive/frontend/basic_block.h>
+#include <jive/frontend/tac/address.h>
 #include <jive/frontend/tac/bitstring.h>
 
 #include <llvm/IR/Instructions.h>
@@ -111,6 +113,21 @@ convert_comparison_instruction(const llvm::Instruction & i, jive::frontend::basi
 	convert_comparison_instruction(*instruction, bb, vmap, state);
 }
 
+static void
+convert_load_instruction(const llvm::Instruction & i, jive::frontend::basic_block * bb,
+	const basic_block_map & bbmap, value_map & vmap, const jive::frontend::output ** state)
+{
+	const llvm::LoadInst * instruction = static_cast<const llvm::LoadInst*>(&i);
+	JLM_DEBUG_ASSERT(instruction != nullptr);
+
+	/* FIXME: handle volatile correctly */
+
+	const jive::frontend::output * address = convert_value(instruction->getPointerOperand(), bb, vmap);
+	const jive::frontend::output * result = addrload_tac(bb, address, *state,
+		*dynamic_cast<jive::value::type*>(convert_type(*instruction->getType()).get()));
+	vmap[instruction] = result;
+}
+
 typedef std::unordered_map<std::type_index, void(*)(const llvm::Instruction&,
 	jive::frontend::basic_block*, const basic_block_map&, value_map&,
 	const jive::frontend::output ** state)> instruction_map;
@@ -122,6 +139,7 @@ static instruction_map imap({
 	, {std::type_index(typeid(llvm::UnreachableInst)), convert_unreachable_instruction}
 	, {std::type_index(typeid(llvm::BinaryOperator)), convert_binary_operator}
 	, {std::type_index(typeid(llvm::ICmpInst)), convert_comparison_instruction}
+	, {std::type_index(typeid(llvm::LoadInst)), convert_load_instruction}
 });
 
 void

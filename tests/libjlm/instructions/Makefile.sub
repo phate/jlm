@@ -1,2 +1,3 @@
 TESTS += \
 	libjlm/instructions/test-bitops \
+	libjlm/instructions/test-load \
