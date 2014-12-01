@@ -128,6 +128,19 @@ convert_load_instruction(const llvm::Instruction & i, jive::frontend::basic_bloc
 	vmap[instruction] = result;
 }
 
+static void
+convert_store_instruction(const llvm::Instruction & i, jive::frontend::basic_block * bb,
+	const basic_block_map & bbmap, value_map & vmap, const jive::frontend::output ** state)
+{
+	const llvm::StoreInst * instruction = static_cast<const llvm::StoreInst*>(&i);
+	JLM_DEBUG_ASSERT(instruction != nullptr);
+
+	const jive::frontend::output * address = convert_value(instruction->getPointerOperand(), bb, vmap);
+	const jive::frontend::output * value = convert_value(instruction->getValueOperand(), bb, vmap);
+	const jive::frontend::output * result = addrstore_tac(bb, address, value, *state);
+	*state = result;
+}
+
 typedef std::unordered_map<std::type_index, void(*)(const llvm::Instruction&,
 	jive::frontend::basic_block*, const basic_block_map&, value_map&,
 	const jive::frontend::output ** state)> instruction_map;
@@ -140,6 +153,7 @@ static instruction_map imap({
 	, {std::type_index(typeid(llvm::BinaryOperator)), convert_binary_operator}
 	, {std::type_index(typeid(llvm::ICmpInst)), convert_comparison_instruction}
 	, {std::type_index(typeid(llvm::LoadInst)), convert_load_instruction}
+	, {std::type_index(typeid(llvm::StoreInst)), convert_store_instruction}
 });
 
 void
