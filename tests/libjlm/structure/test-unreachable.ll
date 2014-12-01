@@ -4,15 +4,11 @@ target triple = "x86_64-unknown-linux-gnu"
 
 define i32 @unreachable(i32 %a) nounwind uwtable {
 entry:
-  %retval = alloca i32, align 4
-  %a.addr = alloca i32, align 4
-  store i32 %a, i32* %a.addr, align 4
   call void @abort() noreturn nounwind
   unreachable
 
 return:                                           ; No predecessors!
-  %0 = load i32* %retval
-  ret i32 %0
+  ret i32 %a
 }
 
 declare void @abort() noreturn nounwind
