@@ -4,7 +4,5 @@ target triple = "x86_64-unknown-linux-gnu"
 
 define i32 @linear(i32 %a) nounwind uwtable {
 entry:
-  %a.addr = alloca i32, align 4
-  store i32 %a, i32* %a.addr, align 4
   ret i32 13
 }
