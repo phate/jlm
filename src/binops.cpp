@@ -52,7 +52,7 @@ convert_int_binary_operator(const llvm::BinaryOperator & i, jive::frontend::basi
 
 void
 convert_binary_operator(const llvm::BinaryOperator & i, jive::frontend::basic_block * bb,
-	value_map & vmap)
+	value_map & vmap, const jive::frontend::output ** state)
 {
 	const llvm::BinaryOperator * instruction = static_cast<const llvm::BinaryOperator*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
@@ -91,7 +91,7 @@ static int_comparison_operators_map int_cmp_ops_map({
 
 const jive::frontend::output *
 convert_int_comparison_instruction(const llvm::ICmpInst & i, jive::frontend::basic_block * bb,
-	value_map & vmap)
+	value_map & vmap, const jive::frontend::output ** state)
 {
 	const jive::frontend::output * op1 = convert_value(i.getOperand(0), bb, vmap);
 	const jive::frontend::output * op2 = convert_value(i.getOperand(1), bb, vmap);
@@ -103,12 +103,13 @@ convert_int_comparison_instruction(const llvm::ICmpInst & i, jive::frontend::bas
 
 void
 convert_comparison_instruction(const llvm::CmpInst & i, jive::frontend::basic_block * bb,
-	value_map & vmap)
+	value_map & vmap, const jive::frontend::output ** state)
 {
 	const jive::frontend::output * result = nullptr;
 	switch(i.getType()->getTypeID()) {
 		case llvm::Type::IntegerTyID:
-			result = convert_int_comparison_instruction(*static_cast<const llvm::ICmpInst*>(&i), bb, vmap);
+			result = convert_int_comparison_instruction(*static_cast<const llvm::ICmpInst*>(&i), bb,
+				vmap, state);
 			break;
 		default:
 			JLM_DEBUG_ASSERT(0);

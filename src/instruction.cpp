@@ -34,7 +34,7 @@ convert_value(const llvm::Value * v, jive::frontend::basic_block * bb, value_map
 
 static void
 convert_return_instruction(const llvm::Instruction & i, jive::frontend::basic_block * bb,
-	const basic_block_map & bbmap, value_map & vmap)
+	const basic_block_map & bbmap, value_map & vmap, const jive::frontend::output ** state)
 {
 	const llvm::ReturnInst * instruction = static_cast<const llvm::ReturnInst*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
@@ -48,7 +48,7 @@ convert_return_instruction(const llvm::Instruction & i, jive::frontend::basic_bl
 
 static void
 convert_branch_instruction(const llvm::Instruction & i, jive::frontend::basic_block * bb,
-	const basic_block_map & bbmap, value_map & vmap)
+	const basic_block_map & bbmap, value_map & vmap, const jive::frontend::output ** state)
 {
 	const llvm::BranchInst * instruction = static_cast<const llvm::BranchInst*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
@@ -62,7 +62,7 @@ convert_branch_instruction(const llvm::Instruction & i, jive::frontend::basic_bl
 
 static void
 convert_switch_instruction(const llvm::Instruction & i, jive::frontend::basic_block * bb,
-	const basic_block_map & bbmap, value_map & vmap)
+	const basic_block_map & bbmap, value_map & vmap, const jive::frontend::output ** state)
 {
 	const llvm::SwitchInst * instruction = static_cast<const llvm::SwitchInst*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
@@ -76,7 +76,7 @@ convert_switch_instruction(const llvm::Instruction & i, jive::frontend::basic_bl
 
 static void
 convert_unreachable_instruction(const llvm::Instruction & i, jive::frontend::basic_block * bb,
-	const basic_block_map & bbmap, value_map & vmap)
+	const basic_block_map & bbmap, value_map & vmap, const jive::frontend::output ** state)
 {
 	const llvm::UnreachableInst * instruction = static_cast<const llvm::UnreachableInst*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
@@ -93,26 +93,27 @@ convert_unreachable_instruction(const llvm::Instruction & i, jive::frontend::bas
 
 static void
 convert_binary_operator(const llvm::Instruction & i, jive::frontend::basic_block * bb,
-	const basic_block_map & bbmap, value_map & vmap)
+	const basic_block_map & bbmap, value_map & vmap, const jive::frontend::output ** state)
 {
 	const llvm::BinaryOperator * instruction = static_cast<const llvm::BinaryOperator*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
 
-	convert_binary_operator(*instruction, bb, vmap);
+	convert_binary_operator(*instruction, bb, vmap, state);
 }
 
 static void
 convert_comparison_instruction(const llvm::Instruction & i, jive::frontend::basic_block * bb,
-	const basic_block_map & bbmap, value_map & vmap)
+	const basic_block_map & bbmap, value_map & vmap, const jive::frontend::output ** state)
 {
 	const llvm::CmpInst * instruction = static_cast<const llvm::CmpInst*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
 
-	convert_comparison_instruction(*instruction, bb, vmap);
+	convert_comparison_instruction(*instruction, bb, vmap, state);
 }
 
 typedef std::unordered_map<std::type_index, void(*)(const llvm::Instruction&,
-	jive::frontend::basic_block*, const basic_block_map&, value_map&)> instruction_map;
+	jive::frontend::basic_block*, const basic_block_map&, value_map&,
+	const jive::frontend::output ** state)> instruction_map;
 
 static instruction_map imap({
 		{std::type_index(typeid(llvm::ReturnInst)), convert_return_instruction}
@@ -125,13 +126,13 @@ static instruction_map imap({
 
 void
 convert_instruction(const llvm::Instruction & i, jive::frontend::basic_block * bb,
-	const basic_block_map & bbmap, value_map & vmap)
+	const basic_block_map & bbmap, value_map & vmap, const jive::frontend::output ** state)
 {
 	/* FIXME: add an JLM_DEBUG_ASSERT here if an instruction is not present */
 	if (imap.find(std::type_index(typeid(i))) == imap.end())
 		return;
 
-	imap[std::type_index(typeid(i))](i, bb, bbmap, vmap);
+	imap[std::type_index(typeid(i))](i, bb, bbmap, vmap, state);
 }
 
 }

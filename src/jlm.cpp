@@ -8,6 +8,7 @@
 #include <jlm/jlm.hpp>
 #include <jlm/type.hpp>
 
+#include <jive/arch/memorytype.h>
 #include <jive/frontend/basic_block.h>
 #include <jive/frontend/cfg.h>
 #include <jive/frontend/cfg_node.h>
@@ -25,11 +26,11 @@ typedef std::unordered_map<const llvm::Function*, jive::frontend::clg_node*> fun
 
 static void
 convert_basic_block(const llvm::BasicBlock & basic_block, const basic_block_map & bbmap,
-	value_map & vmap)
+	value_map & vmap, const jive::frontend::output ** state)
 {
 	llvm::BasicBlock::const_iterator it;
 	for (it = basic_block.begin(); it != basic_block.end(); it++)
-		convert_instruction(*it, bbmap.find(&basic_block)->second, bbmap, vmap);
+		convert_instruction(*it, bbmap.find(&basic_block)->second, bbmap, vmap, state);
 }
 
 static void
@@ -39,6 +40,9 @@ convert_function(const llvm::Function & function, jive::frontend::cfg & cfg)
 
 	if (function.isDeclaration())
 		return;
+
+	jive::mem::type memtype;
+	const jive::frontend::output * state = cfg.append_argument("_s_", memtype);
 
 	value_map vmap;
 	llvm::Function::ArgumentListType::const_iterator jt = function.getArgumentList().begin();
@@ -55,7 +59,7 @@ convert_function(const llvm::Function & function, jive::frontend::cfg & cfg)
 
 	it = function.getBasicBlockList().begin();
 	for (; it != function.getBasicBlockList().end(); it++)
-		convert_basic_block(*it, bbmap, vmap);
+		convert_basic_block(*it, bbmap, vmap, &state);
 }
 
 void
