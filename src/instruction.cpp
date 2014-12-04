@@ -12,6 +12,7 @@
 #include <jive/frontend/basic_block.h>
 #include <jive/frontend/tac/address.h>
 #include <jive/frontend/tac/bitstring.h>
+#include <jive/frontend/tac/phi.h>
 
 #include <llvm/IR/Instructions.h>
 
@@ -153,6 +154,21 @@ convert_store_instruction(const llvm::Instruction & i, jive::frontend::basic_blo
 	*state = result;
 }
 
+static void
+convert_phi_instruction(const llvm::Instruction & i, jive::frontend::basic_block * bb,
+	const basic_block_map & bbmap, value_map & vmap, const jive::frontend::output ** state)
+{
+	const llvm::PHINode * instruction = static_cast<const llvm::PHINode*>(&i);
+	JLM_DEBUG_ASSERT(instruction != nullptr);
+
+	std::vector<const jive::frontend::output *> ops;
+	for (size_t n = 0; n < instruction->getNumIncomingValues(); n++)
+		ops.push_back(convert_value(instruction->getIncomingValue(n), bb, vmap));
+
+	const jive::frontend::output * result = phi_tac(bb, ops);
+	vmap[instruction] = result;
+}
+
 typedef std::unordered_map<std::type_index, void(*)(const llvm::Instruction&,
 	jive::frontend::basic_block*, const basic_block_map&, value_map&,
 	const jive::frontend::output ** state)> instruction_map;
@@ -166,6 +182,7 @@ static instruction_map imap({
 	, {std::type_index(typeid(llvm::ICmpInst)), convert_comparison_instruction}
 	, {std::type_index(typeid(llvm::LoadInst)), convert_load_instruction}
 	, {std::type_index(typeid(llvm::StoreInst)), convert_store_instruction}
+	, {std::type_index(typeid(llvm::PHINode)), convert_phi_instruction}
 });
 
 void

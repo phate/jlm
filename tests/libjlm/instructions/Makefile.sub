@@ -1,4 +1,5 @@
 TESTS += \
 	libjlm/instructions/test-bitops \
 	libjlm/instructions/test-load \
+	libjlm/instructions/test-phi \
 	libjlm/instructions/test-store \
