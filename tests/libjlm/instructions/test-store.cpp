@@ -10,6 +10,7 @@
 #include <jive/arch/store.h>
 #include <jive/frontend/basic_block.h>
 #include <jive/frontend/clg.h>
+#include <jive/frontend/tac/operators.h>
 #include <jive/frontend/tac/tac.h>
 #include <jive/types/bitstring/type.h>
 
@@ -40,7 +41,7 @@ verify(jive::frontend::clg & clg)
 	state_type.emplace_back(std::unique_ptr<jive::state::type>(new jive::mem::type()));
 	jive::store_op op(addrtype, state_type, datatype);
 	assert(tacs[0]->operation() == op);
-	assert(tacs[1]->inputs()[2]->origin() == tacs[0]->outputs()[0]);
+	assert(tacs[1]->operation() == jive::frontend::assignment_op(jive::mem::type()));
 
 	return 0;
 }

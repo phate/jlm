@@ -26,7 +26,7 @@ typedef std::unordered_map<const llvm::Function*, jive::frontend::clg_node*> fun
 
 static void
 convert_basic_block(const llvm::BasicBlock & basic_block, const basic_block_map & bbmap,
-	value_map & vmap, const jive::frontend::output ** state)
+	value_map & vmap, const jive::frontend::output * state)
 {
 	llvm::BasicBlock::const_iterator it;
 	for (it = basic_block.begin(); it != basic_block.end(); it++)
@@ -59,7 +59,7 @@ convert_function(const llvm::Function & function, jive::frontend::cfg & cfg)
 
 	it = function.getBasicBlockList().begin();
 	for (; it != function.getBasicBlockList().end(); it++)
-		convert_basic_block(*it, bbmap, vmap, &state);
+		convert_basic_block(*it, bbmap, vmap, state);
 }
 
 void
