@@ -56,9 +56,21 @@ convert_branch_instruction(const llvm::Instruction & i, jive::frontend::basic_bl
 	JLM_DEBUG_ASSERT(instruction != nullptr);
 
 	JLM_DEBUG_ASSERT(bb->noutedges() == 0);
-	for (unsigned n = 0; n < instruction->getNumSuccessors(); n++) {
-		JLM_DEBUG_ASSERT(bbmap.find(instruction->getSuccessor(n)) != bbmap.end());
-		bb->add_outedge(bbmap.find(instruction->getSuccessor(n))->second, n);
+	if (instruction->isConditional()) {
+		JLM_DEBUG_ASSERT(instruction->getNumSuccessors() == 2);
+
+		/* taken */
+		JLM_DEBUG_ASSERT(bbmap.find(instruction->getSuccessor(0)) != bbmap.end());
+		bb->add_outedge(bbmap.find(instruction->getSuccessor(0))->second, 1);
+
+		/* nottaken */
+		JLM_DEBUG_ASSERT(bbmap.find(instruction->getSuccessor(1)) != bbmap.end());
+		bb->add_outedge(bbmap.find(instruction->getSuccessor(1))->second, 0);
+	} else {
+		JLM_DEBUG_ASSERT(instruction->isUnconditional());
+		JLM_DEBUG_ASSERT(instruction->getNumSuccessors() == 1);
+		JLM_DEBUG_ASSERT(bbmap.find(instruction->getSuccessor(0)) != bbmap.end());
+		bb->add_outedge(bbmap.find(instruction->getSuccessor(0))->second, 0);
 	}
 }
 
