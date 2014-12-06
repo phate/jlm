@@ -186,6 +186,18 @@ convert_getelementptr_instruction(const llvm::Instruction & i, jive::frontend::b
 	vmap[instruction] = base;
 }
 
+static void
+convert_trunc_instruction(const llvm::Instruction & i, jive::frontend::basic_block * bb,
+	const basic_block_map & bbmap, value_map & vmap, const jive::frontend::output * state)
+{
+	const llvm::TruncInst * instruction = static_cast<const llvm::TruncInst*>(&i);
+	JLM_DEBUG_ASSERT(instruction != nullptr);
+
+	const llvm::IntegerType * dst_type = static_cast<const llvm::IntegerType*>(i.getType());
+	const jive::frontend::output * operand = convert_value(instruction->getOperand(0), bb, vmap);
+	vmap[instruction] = bitslice_tac(bb, operand, 0, dst_type->getBitWidth());
+}
+
 typedef std::unordered_map<std::type_index, void(*)(const llvm::Instruction&,
 	jive::frontend::basic_block*, const basic_block_map&, value_map&,
 	const jive::frontend::output * state)> instruction_map;
@@ -201,6 +213,7 @@ static instruction_map imap({
 	, {std::type_index(typeid(llvm::StoreInst)), convert_store_instruction}
 	, {std::type_index(typeid(llvm::PHINode)), convert_phi_instruction}
 	, {std::type_index(typeid(llvm::GetElementPtrInst)), convert_getelementptr_instruction}
+	, {std::type_index(typeid(llvm::TruncInst)), convert_trunc_instruction}
 });
 
 void

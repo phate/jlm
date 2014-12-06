@@ -4,3 +4,4 @@ TESTS += \
 	libjlm/instructions/test-load \
 	libjlm/instructions/test-phi \
 	libjlm/instructions/test-store \
+	libjlm/instructions/test-trunc \
