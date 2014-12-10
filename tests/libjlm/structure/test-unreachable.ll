@@ -4,7 +4,6 @@ target triple = "x86_64-unknown-linux-gnu"
 
 define i32 @unreachable(i32 %a) nounwind uwtable {
 entry:
-  call void @abort() noreturn nounwind
   unreachable
 
 return:                                           ; No predecessors!
