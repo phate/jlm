@@ -42,11 +42,28 @@ convert_int_constant(const llvm::Constant & c, jive::frontend::basic_block * bb)
 	return bitconstant_tac(bb, v);
 }
 
+static const jive::frontend::output *
+convert_undefvalue_instruction(const llvm::Constant & c, jive::frontend::basic_block * bb)
+{
+	const llvm::UndefValue * constant = static_cast<const llvm::UndefValue*>(&c);
+	JLM_DEBUG_ASSERT(constant != nullptr);
+
+	if (constant->getType()->getTypeID() == llvm::Type::IntegerTyID) {
+		const llvm::IntegerType * type = static_cast<const llvm::IntegerType*>(constant->getType());
+		jive::bits::value_repr v(type->getBitWidth(), 'X');
+		return bitconstant_tac(bb, v);
+	}
+
+	JLM_DEBUG_ASSERT(0);
+	return nullptr;
+}
+
 typedef std::unordered_map<std::type_index, const jive::frontend::output*(*)(const llvm::Constant &,
 	jive::frontend::basic_block*)> constant_map;
 
 static constant_map cmap({
 		{std::type_index(typeid(llvm::ConstantInt)), convert_int_constant}
+	, {std::type_index(typeid(llvm::UndefValue)), convert_undefvalue_instruction}
 });
 
 const jive::frontend::output *
