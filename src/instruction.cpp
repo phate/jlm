@@ -11,11 +11,13 @@
 
 #include <jive/frontend/basic_block.h>
 #include <jive/frontend/tac/address.h>
+#include <jive/frontend/tac/apply.h>
 #include <jive/frontend/tac/assignment.h>
 #include <jive/frontend/tac/bitstring.h>
 #include <jive/frontend/tac/phi.h>
 
 #include <llvm/IR/Instructions.h>
+#include <llvm/IR/Function.h>
 
 #include <typeindex>
 
@@ -198,6 +200,36 @@ convert_trunc_instruction(const llvm::Instruction & i, jive::frontend::basic_blo
 	vmap[instruction] = bitslice_tac(bb, operand, 0, dst_type->getBitWidth());
 }
 
+static void
+convert_call_instruction(const llvm::Instruction & i, jive::frontend::basic_block * bb,
+	const basic_block_map & bbmap, value_map & vmap, const jive::frontend::output * state)
+{
+	const llvm::CallInst * instruction = static_cast<const llvm::CallInst*>(&i);
+	JLM_DEBUG_ASSERT(instruction != nullptr);
+
+	llvm::Function * f = instruction->getCalledFunction();
+
+	jive::frontend::clg_node * caller = bb->cfg()->clg_node;
+	jive::frontend::clg_node * callee = caller->clg().lookup_function(f->getName());
+	JLM_DEBUG_ASSERT(callee != nullptr);
+	jive_clg_node_add_call(*caller, *callee);
+
+	std::vector<const jive::frontend::output*> arguments;
+	arguments.push_back(state);
+	for (size_t n = 0; n < instruction->getNumArgOperands(); n++)
+		arguments.push_back(convert_value(instruction->getArgOperand(n), bb, vmap));
+
+	jive::fct::type type = dynamic_cast<jive::fct::type&>(*convert_type(*f->getFunctionType()).get());
+
+	std::vector<const jive::frontend::output*> results;
+	results = apply_tac(bb, f->getName(), type, arguments);
+	JLM_DEBUG_ASSERT(results.size() > 0 && results.size() <= 2);
+
+	assignment_tac(bb, state, results[0]);
+	if (results.size() == 2)
+		vmap[instruction] = results[1];
+}
+
 typedef std::unordered_map<std::type_index, void(*)(const llvm::Instruction&,
 	jive::frontend::basic_block*, const basic_block_map&, value_map&,
 	const jive::frontend::output * state)> instruction_map;
@@ -214,6 +246,7 @@ static instruction_map imap({
 	, {std::type_index(typeid(llvm::PHINode)), convert_phi_instruction}
 	, {std::type_index(typeid(llvm::GetElementPtrInst)), convert_getelementptr_instruction}
 	, {std::type_index(typeid(llvm::TruncInst)), convert_trunc_instruction}
+	, {std::type_index(typeid(llvm::CallInst)), convert_call_instruction}
 });
 
 void
