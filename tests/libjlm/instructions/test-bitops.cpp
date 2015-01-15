@@ -21,13 +21,13 @@ verify_##NAME##_op(jive::frontend::clg & clg) \
 	jive::frontend::clg_node * node = clg.lookup_function("test_" #NAME); \
 	assert(node != nullptr); \
 \
-	jive::frontend::cfg & cfg = node->cfg(); \
+	jive::frontend::cfg * cfg = node->cfg(); \
 \
-	assert(cfg.nnodes() == 3); \
-	assert(cfg.is_linear()); \
+	assert(cfg->nnodes() == 3); \
+	assert(cfg->is_linear()); \
 \
 	jive::frontend::basic_block * bb = dynamic_cast<jive::frontend::basic_block*>( \
-		cfg.enter()->outedges()[0]->sink()); \
+		cfg->enter()->outedges()[0]->sink()); \
 	assert(bb != nullptr); \
 \
 	std::vector<const jive::frontend::tac*> tacs = bb->tacs(); \

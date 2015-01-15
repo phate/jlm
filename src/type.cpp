@@ -43,14 +43,14 @@ convert_function_type(const llvm::Type & t)
 	JLM_DEBUG_ASSERT(type != nullptr);
 
 	std::vector<std::unique_ptr<jive::base::type>> argument_types;
-	argument_types.push_back(std::unique_ptr<jive::base::type>(new jive::mem::type()));
 	for (size_t n = 0; n < type->getNumParams(); n++)
 		argument_types.push_back(convert_type(*type->getParamType(n)));
+	argument_types.push_back(std::unique_ptr<jive::base::type>(new jive::mem::type()));
 
 	std::vector<std::unique_ptr<jive::base::type>> result_types;
-	result_types.push_back(std::unique_ptr<jive::base::type>(new jive::mem::type()));
 	if (type->getReturnType()->getTypeID() != llvm::Type::VoidTyID)
 		result_types.push_back(convert_type(*type->getReturnType()));
+	result_types.push_back(std::unique_ptr<jive::base::type>(new jive::mem::type()));
 
 	return std::unique_ptr<jive::base::type>(new jive::fct::type(argument_types, result_types));
 }

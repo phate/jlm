@@ -23,27 +23,27 @@ verify(jive::frontend::clg & clg)
 	jive::frontend::clg_node * caller = clg.lookup_function("caller");
 	assert(caller != nullptr);
 
-	assert(caller->calls.size() == 2);
+	assert(caller->calls().size() == 2);
 
-	jive::frontend::cfg & cfg = caller->cfg();
+	jive::frontend::cfg * cfg = caller->cfg();
 //	jive_cfg_view(cfg);
 
-	assert(cfg.nnodes() == 3);
-	assert(cfg.is_linear());
+	assert(cfg->nnodes() == 3);
+	assert(cfg->is_linear());
 
 	jive::frontend::basic_block * bb = dynamic_cast<jive::frontend::basic_block*>(
-		cfg.enter()->outedges()[0]->sink());
+		cfg->enter()->outedges()[0]->sink());
 	assert(bb != nullptr);
 
 	std::vector<const jive::frontend::tac*> tacs = bb->tacs();
 	assert(tacs.size() != 0);
 
 	std::vector<std::unique_ptr<jive::base::type>> argument_types;
-	argument_types.push_back(std::unique_ptr<jive::base::type>(new jive::mem::type()));
 	argument_types.push_back(std::unique_ptr<jive::base::type>(new jive::bits::type(32)));
+	argument_types.push_back(std::unique_ptr<jive::base::type>(new jive::mem::type()));
 	std::vector<std::unique_ptr<jive::base::type>> result_types;
-	result_types.push_back(std::unique_ptr<jive::base::type>(new jive::mem::type()));
 	result_types.push_back(std::unique_ptr<jive::base::type>(new jive::bits::type(32)));
+	result_types.push_back(std::unique_ptr<jive::base::type>(new jive::mem::type()));
 	jive::fct::type fcttype(argument_types, result_types);
 	jive::frontend::apply_op op("callee1", fcttype);
 	assert(tacs[0]->operation() == op);

@@ -34,32 +34,38 @@ convert_basic_block(const llvm::BasicBlock & basic_block, const basic_block_map 
 }
 
 static void
-convert_function(const llvm::Function & function, jive::frontend::cfg & cfg)
+convert_function(const llvm::Function & function, jive::frontend::clg_node * clg_node)
 {
-	JLM_DEBUG_ASSERT(cfg.nnodes() == 2);
-
 	if (function.isDeclaration())
 		return;
 
-	jive::mem::type memtype;
-	const jive::frontend::output * state = cfg.append_argument("_s_", memtype);
+	std::vector<std::string> names;
+	llvm::Function::ArgumentListType::const_iterator jt = function.getArgumentList().begin();
+	for (; jt != function.getArgumentList().end(); jt++)
+		names.push_back(jt->getName().str());
+	names.push_back("_s_");
+
+	std::vector<const jive::frontend::output*> arguments = clg_node->cfg_begin(names);
+	jive::frontend::cfg * cfg = clg_node->cfg();
 
 	value_map vmap;
-	llvm::Function::ArgumentListType::const_iterator jt = function.getArgumentList().begin();
-	for (; jt != function.getArgumentList().end(); jt++) {
-		vmap[&(*jt)] = cfg.append_argument(jt->getName().str(), *convert_type(*jt->getType()));
-	}
+	jt = function.getArgumentList().begin();
+	for (size_t n = 0; jt != function.getArgumentList().end(); jt++, n++)
+		vmap[&(*jt)] = arguments[n];
 
 	basic_block_map bbmap;
 	llvm::Function::BasicBlockListType::const_iterator it = function.getBasicBlockList().begin();
 	for (; it != function.getBasicBlockList().end(); it++)
-			bbmap[&(*it)] = cfg.create_basic_block();
+			bbmap[&(*it)] = cfg->create_basic_block();
 
-	cfg.exit()->divert_inedges(bbmap[&function.getEntryBlock()]);
+	cfg->exit()->divert_inedges(bbmap[&function.getEntryBlock()]);
 
 	it = function.getBasicBlockList().begin();
 	for (; it != function.getBasicBlockList().end(); it++)
-		convert_basic_block(*it, bbmap, vmap, state);
+		convert_basic_block(*it, bbmap, vmap, arguments.back());
+
+	//FIXME: add results
+	clg_node->cfg_end(std::vector<const jive::frontend::output*>());
 }
 
 void
@@ -72,12 +78,14 @@ convert_module(const llvm::Module & module, jive::frontend::clg & clg)
 	llvm::Module::FunctionListType::const_iterator it = module.getFunctionList().begin();
 	for (; it != module.getFunctionList().end(); it++) {
 		const llvm::Function & f = *it;
-		f_map[&f] = clg.add_function(f.getName().str().c_str());
+		jive::fct::type fcttype(dynamic_cast<const jive::fct::type&>(
+			*convert_type(*f.getFunctionType())));
+		f_map[&f] = clg.add_function(f.getName().str().c_str(), fcttype);
 	}
 
 	it = module.getFunctionList().begin();
 	for (; it != module.getFunctionList().end(); it++)
-		convert_function(*it, f_map[&(*it)]->cfg());
+		convert_function(*it, f_map[&(*it)]);
 }
 
 }

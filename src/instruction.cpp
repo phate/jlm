@@ -212,12 +212,12 @@ convert_call_instruction(const llvm::Instruction & i, jive::frontend::basic_bloc
 	jive::frontend::clg_node * caller = bb->cfg()->clg_node;
 	jive::frontend::clg_node * callee = caller->clg().lookup_function(f->getName());
 	JLM_DEBUG_ASSERT(callee != nullptr);
-	jive_clg_node_add_call(*caller, *callee);
+	caller->add_call(callee);
 
 	std::vector<const jive::frontend::output*> arguments;
-	arguments.push_back(state);
 	for (size_t n = 0; n < instruction->getNumArgOperands(); n++)
 		arguments.push_back(convert_value(instruction->getArgOperand(n), bb, vmap));
+	arguments.push_back(state);
 
 	jive::fct::type type = dynamic_cast<jive::fct::type&>(*convert_type(*f->getFunctionType()).get());
 
@@ -225,9 +225,11 @@ convert_call_instruction(const llvm::Instruction & i, jive::frontend::basic_bloc
 	results = apply_tac(bb, f->getName(), type, arguments);
 	JLM_DEBUG_ASSERT(results.size() > 0 && results.size() <= 2);
 
-	assignment_tac(bb, state, results[0]);
-	if (results.size() == 2)
-		vmap[instruction] = results[1];
+	if (results.size() == 2) {
+		vmap[instruction] = results[0];
+		assignment_tac(bb, state, results[1]);
+	}	else
+		assignment_tac(bb, state, results[0]);
 }
 
 typedef std::unordered_map<std::type_index, void(*)(const llvm::Instruction&,

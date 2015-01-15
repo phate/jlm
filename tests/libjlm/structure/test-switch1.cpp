@@ -17,11 +17,11 @@ verify(jive::frontend::clg & clg)
 	jive::frontend::clg_node * node = clg.lookup_function("switch1");
 	assert(node != nullptr);
 
-	jive::frontend::cfg & cfg = node->cfg();
+	jive::frontend::cfg * cfg = node->cfg();
 //	jive_cfg_view(cfg);
 
-	assert(cfg.nnodes() == 6);
-	assert(cfg.is_structured());
+	assert(cfg->nnodes() == 6);
+	assert(cfg->is_structured());
 
 	return 0;
 }

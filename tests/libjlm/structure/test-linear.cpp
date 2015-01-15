@@ -17,11 +17,11 @@ verify(jive::frontend::clg & clg)
 	jive::frontend::clg_node * node = clg.lookup_function("linear");
 	assert(node != nullptr);
 
-	jive::frontend::cfg & cfg = node->cfg();
+	jive::frontend::cfg * cfg = node->cfg();
 //	jive_cfg_view(cfg);
 
-	assert(cfg.nnodes() == 3);
-	assert(cfg.is_linear());
+	assert(cfg->nnodes() == 3);
+	assert(cfg->is_linear());
 
 	return 0;
 }

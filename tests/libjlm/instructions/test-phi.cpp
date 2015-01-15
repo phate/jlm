@@ -19,14 +19,14 @@ verify(jive::frontend::clg & clg)
 	jive::frontend::clg_node * node = clg.lookup_function("test_phi");
 	assert(node != nullptr);
 
-	jive::frontend::cfg & cfg = node->cfg();
+	jive::frontend::cfg * cfg = node->cfg();
 //	jive_cfg_view(cfg);
 
-	assert(cfg.nnodes() == 5);
-	assert(cfg.is_reducible());
+	assert(cfg->nnodes() == 5);
+	assert(cfg->is_reducible());
 
 	jive::frontend::basic_block * bb = dynamic_cast<jive::frontend::basic_block*>(
-		cfg.enter()->outedges()[0]->sink()->outedges()[0]->sink());
+		cfg->enter()->outedges()[0]->sink()->outedges()[0]->sink());
 	assert(bb != nullptr);
 
 	std::vector<const jive::frontend::tac*> tacs = bb->tacs();
