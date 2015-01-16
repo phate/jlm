@@ -20,7 +20,7 @@ verify(jive::frontend::clg & clg)
 	assert(node != nullptr);
 
 	jive::frontend::cfg * cfg = node->cfg();
-//	jive_cfg_view(cfg);
+//	jive_cfg_view(*cfg);
 
 	assert(cfg->nnodes() == 3);
 	assert(cfg->is_linear());
@@ -30,9 +30,9 @@ verify(jive::frontend::clg & clg)
 	assert(bb != nullptr);
 
 	std::vector<const jive::frontend::tac*> tacs = bb->tacs();
-	assert(tacs.size() == 10);
+	assert(tacs.size() == 13);
 
-	for (size_t n = 0; n < 5; n += 2) {
+	for (size_t n = 1; n < 5; n += 2) {
 		const jive::frontend::tac * constant = tacs[n];
 		const jive::frontend::tac * subscrpt = tacs[n+1];
 		assert(dynamic_cast<const jive::bits::constant_op*>(&constant->operation()));

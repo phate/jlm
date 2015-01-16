@@ -46,7 +46,7 @@ verify(jive::frontend::clg & clg)
 	result_types.push_back(std::unique_ptr<jive::base::type>(new jive::mem::type()));
 	jive::fct::type fcttype(argument_types, result_types);
 	jive::frontend::apply_op op("callee1", fcttype);
-	assert(tacs[0]->operation() == op);
+	assert(tacs[1]->operation() == op);
 
 	return 0;
 }

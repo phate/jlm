@@ -18,12 +18,16 @@ namespace frontend {
 namespace llvm {
 	class APInt;
 	class Constant;
+	class Type;
 }
 
 namespace jlm {
 
 jive::bits::value_repr
 convert_apint(const llvm::APInt & value);
+
+const jive::frontend::output *
+create_undef_value(const llvm::Type & type, jive::frontend::basic_block * bb);
 
 const jive::frontend::output *
 convert_constant(const llvm::Constant & constant, jive::frontend::basic_block * bb);

@@ -5,8 +5,8 @@ target triple = "x86_64-unknown-linux-gnu"
 %struct.ST = type { i32, double, %struct.RT }
 %struct.RT = type { i8, [10 x [20 x i32]], i8 }
 
-define i32* @test_getelementptr(%struct.ST* %s) nounwind uwtable readnone optsize {
+define i32 @test_getelementptr(%struct.ST* %s) nounwind uwtable readnone optsize {
 entry:
   %arrayidx2 = getelementptr inbounds %struct.ST* %s, i64 1, i32 2, i32 1, i64 5, i64 13
-  ret i32* %arrayidx2
+  ret i32 0
 }

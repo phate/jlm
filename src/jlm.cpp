@@ -4,6 +4,7 @@
  */
 
 #include <jlm/common.hpp>
+#include <jlm/constant.hpp>
 #include <jlm/instruction.hpp>
 #include <jlm/jlm.hpp>
 #include <jlm/type.hpp>
@@ -26,11 +27,11 @@ typedef std::unordered_map<const llvm::Function*, jive::frontend::clg_node*> fun
 
 static void
 convert_basic_block(const llvm::BasicBlock & basic_block, const basic_block_map & bbmap,
-	value_map & vmap, const jive::frontend::output * state)
+	value_map & vmap, const jive::frontend::output * state, const jive::frontend::output * result)
 {
 	llvm::BasicBlock::const_iterator it;
 	for (it = basic_block.begin(); it != basic_block.end(); it++)
-		convert_instruction(*it, bbmap.find(&basic_block)->second, bbmap, vmap, state);
+		convert_instruction(*it, bbmap.find(&basic_block)->second, bbmap, vmap, state, result);
 }
 
 static void
@@ -46,6 +47,7 @@ convert_function(const llvm::Function & function, jive::frontend::clg_node * clg
 	names.push_back("_s_");
 
 	std::vector<const jive::frontend::output*> arguments = clg_node->cfg_begin(names);
+	const jive::frontend::output * state = arguments.back();
 	jive::frontend::cfg * cfg = clg_node->cfg();
 
 	value_map vmap;
@@ -58,14 +60,23 @@ convert_function(const llvm::Function & function, jive::frontend::clg_node * clg
 	for (; it != function.getBasicBlockList().end(); it++)
 			bbmap[&(*it)] = cfg->create_basic_block();
 
-	cfg->exit()->divert_inedges(bbmap[&function.getEntryBlock()]);
+	jive::frontend::basic_block * entry_block = bbmap[&function.getEntryBlock()];
+	cfg->exit()->divert_inedges(entry_block);
+
+	const jive::frontend::output * result = nullptr;
+	if (function.getReturnType()->getTypeID() != llvm::Type::VoidTyID)
+		result = create_undef_value(*function.getReturnType(), entry_block);
 
 	it = function.getBasicBlockList().begin();
 	for (; it != function.getBasicBlockList().end(); it++)
-		convert_basic_block(*it, bbmap, vmap, arguments.back());
+		convert_basic_block(*it, bbmap, vmap, state, result);
 
-	//FIXME: add results
-	clg_node->cfg_end(std::vector<const jive::frontend::output*>());
+	std::vector<const jive::frontend::output*> results;
+	if (function.getReturnType()->getTypeID() != llvm::Type::VoidTyID)
+		results.push_back(result);
+	results.push_back(state);
+
+	clg_node->cfg_end(results);
 }
 
 void

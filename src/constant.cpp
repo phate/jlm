@@ -32,6 +32,19 @@ convert_apint(const llvm::APInt & value)
 	return vr;
 }
 
+const jive::frontend::output *
+create_undef_value(const llvm::Type & type, jive::frontend::basic_block * bb)
+{
+	if (type.getTypeID() == llvm::Type::IntegerTyID) {
+		const llvm::IntegerType * t = static_cast<const llvm::IntegerType*>(&type);
+		jive::bits::value_repr v(t->getBitWidth(), 'X');
+		return bitconstant_tac(bb, v);
+	}
+
+	JLM_DEBUG_ASSERT(0);
+	return nullptr;
+}
+
 static const jive::frontend::output *
 convert_int_constant(const llvm::Constant & c, jive::frontend::basic_block * bb)
 {
@@ -48,14 +61,7 @@ convert_undefvalue_instruction(const llvm::Constant & c, jive::frontend::basic_b
 	const llvm::UndefValue * constant = static_cast<const llvm::UndefValue*>(&c);
 	JLM_DEBUG_ASSERT(constant != nullptr);
 
-	if (constant->getType()->getTypeID() == llvm::Type::IntegerTyID) {
-		const llvm::IntegerType * type = static_cast<const llvm::IntegerType*>(constant->getType());
-		jive::bits::value_repr v(type->getBitWidth(), 'X');
-		return bitconstant_tac(bb, v);
-	}
-
-	JLM_DEBUG_ASSERT(0);
-	return nullptr;
+	return create_undef_value(*constant->getType(), bb);
 }
 
 typedef std::unordered_map<std::type_index, const jive::frontend::output*(*)(const llvm::Constant &,

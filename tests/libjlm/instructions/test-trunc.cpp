@@ -34,7 +34,7 @@ verify(jive::frontend::clg & clg)
 
 	jive::bits::type bits64(64);
 	jive::bits::slice_op op(bits64, 0, 32);
-	assert(tacs[0]->operation() == op);
+	assert(tacs[1]->operation() == op);
 
 	return 0;
 }

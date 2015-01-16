@@ -20,8 +20,13 @@ const jive::frontend::output *
 convert_value(const llvm::Value * v, jive::frontend::basic_block * bb, value_map & vmap);
 
 void
-convert_instruction(const llvm::Instruction & i, jive::frontend::basic_block * bb,
-	const basic_block_map & bbmap, value_map & vmap, const jive::frontend::output * state);
+convert_instruction(
+	const llvm::Instruction & i,
+	jive::frontend::basic_block * bb,
+	const basic_block_map & bbmap,
+	value_map & vmap,
+	const jive::frontend::output * state,
+	const jive::frontend::output * result);
 
 }
 
