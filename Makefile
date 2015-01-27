@@ -8,6 +8,13 @@ CXXFLAGS += -Wall -Werror --std=c++0x -Wfatal-errors -g -D__STDC_LIMIT_MACROS -D
 LDFLAGS += $(shell $(LLVMCONFIG) --libs) $(shell $(LLVMCONFIG) --ldflags) -L/home/reissman/Documents/jive
 
 LIBJLM_SRC = \
+	src/frontend/basic_block.cpp \
+	src/frontend/cfg.cpp \
+	src/frontend/cfg_node.cpp \
+	src/frontend/clg.cpp \
+	src/frontend/construction.cpp \
+	src/frontend/tac/operators.cpp \
+	src/frontend/tac/tac.cpp \
 	src/binops.cpp \
 	src/constant.cpp \
 	src/jlm.cpp \

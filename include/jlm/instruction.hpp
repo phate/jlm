@@ -8,7 +8,7 @@
 
 #include <jlm/jlm.hpp>
 
-namespace jive {
+namespace jlm {
 namespace frontend {
 	class output;
 }
@@ -16,17 +16,17 @@ namespace frontend {
 
 namespace jlm  {
 
-const jive::frontend::output *
-convert_value(const llvm::Value * v, jive::frontend::basic_block * bb, value_map & vmap);
+const jlm::frontend::output *
+convert_value(const llvm::Value * v, jlm::frontend::basic_block * bb, value_map & vmap);
 
 void
 convert_instruction(
 	const llvm::Instruction & i,
-	jive::frontend::basic_block * bb,
+	jlm::frontend::basic_block * bb,
 	const basic_block_map & bbmap,
 	value_map & vmap,
-	const jive::frontend::output * state,
-	const jive::frontend::output * result);
+	const jlm::frontend::output * state,
+	const jlm::frontend::output * result);
 
 }
 

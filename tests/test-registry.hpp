@@ -6,16 +6,13 @@
 #ifndef JLM_TEST_REGISTRY_HPP
 #define JLM_TEST_REGISTRY_HPP
 
-namespace jive {
+namespace jlm {
 namespace frontend {
 	class clg;
 }
-}
-
-namespace jlm {
 
 void
-register_unit_test(const char * name, int (*verify)(jive::frontend::clg & clg));
+register_unit_test(const char * name, int (*verify)(jlm::frontend::clg & clg));
 
 int
 run_unit_test(const char * name);

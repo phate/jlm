@@ -6,7 +6,7 @@
 #include <jlm/common.hpp>
 #include <jlm/constant.hpp>
 
-#include <jive/frontend/tac/bitstring.h>
+#include <jlm/frontend/tac/bitstring.hpp>
 
 //FIXME: to be removed, once we have a proper value representation
 #include <jive/types/bitstring/value-representation.h>
@@ -32,8 +32,8 @@ convert_apint(const llvm::APInt & value)
 	return vr;
 }
 
-const jive::frontend::output *
-create_undef_value(const llvm::Type & type, jive::frontend::basic_block * bb)
+const jlm::frontend::output *
+create_undef_value(const llvm::Type & type, jlm::frontend::basic_block * bb)
 {
 	if (type.getTypeID() == llvm::Type::IntegerTyID) {
 		const llvm::IntegerType * t = static_cast<const llvm::IntegerType*>(&type);
@@ -45,8 +45,8 @@ create_undef_value(const llvm::Type & type, jive::frontend::basic_block * bb)
 	return nullptr;
 }
 
-static const jive::frontend::output *
-convert_int_constant(const llvm::Constant & c, jive::frontend::basic_block * bb)
+static const jlm::frontend::output *
+convert_int_constant(const llvm::Constant & c, jlm::frontend::basic_block * bb)
 {
 	const llvm::ConstantInt * constant = static_cast<const llvm::ConstantInt*>(&c);
 	JLM_DEBUG_ASSERT(constant != nullptr);
@@ -55,8 +55,8 @@ convert_int_constant(const llvm::Constant & c, jive::frontend::basic_block * bb)
 	return bitconstant_tac(bb, v);
 }
 
-static const jive::frontend::output *
-convert_undefvalue_instruction(const llvm::Constant & c, jive::frontend::basic_block * bb)
+static const jlm::frontend::output *
+convert_undefvalue_instruction(const llvm::Constant & c, jlm::frontend::basic_block * bb)
 {
 	const llvm::UndefValue * constant = static_cast<const llvm::UndefValue*>(&c);
 	JLM_DEBUG_ASSERT(constant != nullptr);
@@ -64,16 +64,16 @@ convert_undefvalue_instruction(const llvm::Constant & c, jive::frontend::basic_b
 	return create_undef_value(*constant->getType(), bb);
 }
 
-typedef std::unordered_map<std::type_index, const jive::frontend::output*(*)(const llvm::Constant &,
-	jive::frontend::basic_block*)> constant_map;
+typedef std::unordered_map<std::type_index, const jlm::frontend::output*(*)(const llvm::Constant &,
+	jlm::frontend::basic_block*)> constant_map;
 
 static constant_map cmap({
 		{std::type_index(typeid(llvm::ConstantInt)), convert_int_constant}
 	, {std::type_index(typeid(llvm::UndefValue)), convert_undefvalue_instruction}
 });
 
-const jive::frontend::output *
-convert_constant(const llvm::Constant & c, jive::frontend::basic_block * bb)
+const jlm::frontend::output *
+convert_constant(const llvm::Constant & c, jlm::frontend::basic_block * bb)
 {
 	JLM_DEBUG_ASSERT(cmap.find(std::type_index(typeid(c))) != cmap.end());
 	return cmap[std::type_index(typeid(c))](c, bb);

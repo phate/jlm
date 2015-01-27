@@ -5,19 +5,19 @@
 
 #include "test-registry.hpp"
 
-#include <jive/frontend/clg.h>
+#include <jlm/frontend/clg.hpp>
 
 #include <assert.h>
 
 static int
-verify(jive::frontend::clg & clg)
+verify(jlm::frontend::clg & clg)
 {
 	assert(clg.nnodes() == 1);
 
-	jive::frontend::clg_node * node = clg.lookup_function("switch0");
+	jlm::frontend::clg_node * node = clg.lookup_function("switch0");
 	assert(node != nullptr);
 
-	jive::frontend::cfg * cfg = node->cfg();
+	jlm::frontend::cfg * cfg = node->cfg();
 //	jive_cfg_view(cfg);
 
 	assert(cfg->nnodes() == 7);

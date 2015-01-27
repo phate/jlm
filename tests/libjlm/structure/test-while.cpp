@@ -5,28 +5,28 @@
 
 #include "test-registry.hpp"
 
-#include <jive/frontend/clg.h>
+#include <jlm/frontend/clg.hpp>
 
 #include <assert.h>
 
 static int
-verify(jive::frontend::clg & clg)
+verify(jlm::frontend::clg & clg)
 {
 	assert(clg.nnodes() == 1);
 
-	jive::frontend::clg_node * node = clg.lookup_function("test_while");
+	jlm::frontend::clg_node * node = clg.lookup_function("test_while");
 	assert(node != nullptr);
 
-	jive::frontend::cfg * cfg = node->cfg();
+	jlm::frontend::cfg * cfg = node->cfg();
 //	jive_cfg_view(cfg);
 
 	assert(cfg->nnodes() == 5);
 	assert(cfg->is_reducible());
 
-	jive::frontend::cfg_node * while_body = cfg->enter()->outedges()[0]->sink()->outedges()[0]->sink();
+	jlm::frontend::cfg_node * while_body = cfg->enter()->outedges()[0]->sink()->outedges()[0]->sink();
 	assert(while_body->outedges().size() == 2);
 
-	jive::frontend::cfg_node * taken_successor;
+	jlm::frontend::cfg_node * taken_successor;
 	if (while_body->outedges()[0]->index() == 1)
 		taken_successor = while_body->outedges()[0]->sink();
 	else {

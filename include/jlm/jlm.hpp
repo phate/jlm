@@ -6,7 +6,7 @@
 #ifndef JLM_JLM_HPP
 #define JLM_JLM_HPP
 
-#include <jive/frontend/clg.h>
+#include <jlm/frontend/clg.hpp>
 
 #include <unordered_map>
 
@@ -28,12 +28,12 @@ namespace llvm {
 
 namespace jlm {
 
-typedef std::unordered_map<const llvm::BasicBlock*, jive::frontend::basic_block*> basic_block_map;
+typedef std::unordered_map<const llvm::BasicBlock*, jlm::frontend::basic_block*> basic_block_map;
 
-typedef std::unordered_map<const llvm::Value*, const jive::frontend::output*> value_map;
+typedef std::unordered_map<const llvm::Value*, const jlm::frontend::output*> value_map;
 
 void
-convert_module(const llvm::Module & module, jive::frontend::clg & clg);
+convert_module(const llvm::Module & module, jlm::frontend::clg & clg);
 
 }
 

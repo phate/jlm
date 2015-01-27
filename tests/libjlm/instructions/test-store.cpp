@@ -5,34 +5,35 @@
 
 #include "test-registry.hpp"
 
+#include <jlm/frontend/basic_block.hpp>
+#include <jlm/frontend/clg.hpp>
+#include <jlm/frontend/tac/operators.hpp>
+#include <jlm/frontend/tac/tac.hpp>
+
 #include <jive/arch/addresstype.h>
 #include <jive/arch/memorytype.h>
 #include <jive/arch/store.h>
-#include <jive/frontend/basic_block.h>
-#include <jive/frontend/clg.h>
-#include <jive/frontend/tac/operators.h>
-#include <jive/frontend/tac/tac.h>
 #include <jive/types/bitstring/type.h>
 
 #include <assert.h>
 
 static int
-verify(jive::frontend::clg & clg)
+verify(jlm::frontend::clg & clg)
 {
-	jive::frontend::clg_node * node = clg.lookup_function("test_store");
+	jlm::frontend::clg_node * node = clg.lookup_function("test_store");
 	assert(node != nullptr);
 
-	jive::frontend::cfg * cfg = node->cfg();
+	jlm::frontend::cfg * cfg = node->cfg();
 //	jive_cfg_view(cfg);
 
 	assert(cfg->nnodes() == 3);
 	assert(cfg->is_linear());
 
-	jive::frontend::basic_block * bb = dynamic_cast<jive::frontend::basic_block*>(
+	jlm::frontend::basic_block * bb = dynamic_cast<jlm::frontend::basic_block*>(
 		cfg->enter()->outedges()[0]->sink());
 	assert(bb != nullptr);
 
-	std::vector<const jive::frontend::tac*> tacs = bb->tacs();
+	std::vector<const jlm::frontend::tac*> tacs = bb->tacs();
 	assert(tacs.size() >= 2);
 
 	jive::addr::type addrtype;
@@ -41,7 +42,7 @@ verify(jive::frontend::clg & clg)
 	state_type.emplace_back(std::unique_ptr<jive::state::type>(new jive::mem::type()));
 	jive::store_op op(addrtype, state_type, datatype);
 	assert(tacs[0]->operation() == op);
-	assert(tacs[1]->operation() == jive::frontend::assignment_op(jive::mem::type()));
+	assert(tacs[1]->operation() == jlm::frontend::assignment_op(jive::mem::type()));
 
 	return 0;
 }

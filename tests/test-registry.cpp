@@ -5,7 +5,7 @@
 
 #include "test-registry.hpp"
 
-#include <jive/frontend/clg.h>
+#include <jlm/frontend/clg.hpp>
 
 #include <jlm/jlm.hpp>
 
@@ -23,14 +23,14 @@ namespace jlm {
 
 class unit_test {
 public:
-	unit_test(int(*v)(jive::frontend::clg & clg)) : verify(v) {}
-	int (*verify)(jive::frontend::clg & clg);
+	unit_test(int(*v)(jlm::frontend::clg & clg)) : verify(v) {}
+	int (*verify)(jlm::frontend::clg & clg);
 };
 
 static std::unordered_map<std::string, std::unique_ptr<unit_test>> unit_test_map;
 
 void
-register_unit_test(const char * name, int (*verify)(jive::frontend::clg & clg))
+register_unit_test(const char * name, int (*verify)(jlm::frontend::clg & clg))
 {
 	assert(unit_test_map.find(name) == unit_test_map.end());
 
@@ -54,7 +54,7 @@ run_unit_test(const char * name)
 		assert(0);
 	}
 
-	jive::frontend::clg clg;
+	jlm::frontend::clg clg;
 	convert_module(*module, clg);
 
 	return unit_test_map[name]->verify(clg);

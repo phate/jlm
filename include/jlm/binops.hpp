@@ -17,16 +17,16 @@ namespace llvm {
 namespace jlm {
 
 void
-convert_binary_operator(const llvm::BinaryOperator & i, jive::frontend::basic_block * bb,
-	value_map & vmap, const jive::frontend::output * state);
+convert_binary_operator(const llvm::BinaryOperator & i, jlm::frontend::basic_block * bb,
+	value_map & vmap, const jlm::frontend::output * state);
 
 void
-convert_comparison_instruction(const llvm::CmpInst & i, jive::frontend::basic_block * bb,
-	value_map & vmap, const jive::frontend::output * state);
+convert_comparison_instruction(const llvm::CmpInst & i, jlm::frontend::basic_block * bb,
+	value_map & vmap, const jlm::frontend::output * state);
 
-const jive::frontend::output *
-convert_int_comparison_instruction(const llvm::ICmpInst & i, jive::frontend::basic_block * bb,
-	value_map & vmap, const jive::frontend::output * state);
+const jlm::frontend::output *
+convert_int_comparison_instruction(const llvm::ICmpInst & i, jlm::frontend::basic_block * bb,
+	value_map & vmap, const jlm::frontend::output * state);
 
 }
 

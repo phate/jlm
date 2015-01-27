@@ -5,30 +5,31 @@
 
 #include "test-registry.hpp"
 
-#include <jive/frontend/basic_block.h>
-#include <jive/frontend/clg.h>
-#include <jive/frontend/tac/tac.h>
+#include <jlm/frontend/basic_block.hpp>
+#include <jlm/frontend/clg.hpp>
+#include <jlm/frontend/tac/tac.hpp>
+
 #include <jive/types/bitstring/constant.h>
 
 #include <assert.h>
 
 static int
-verify(jive::frontend::clg & clg)
+verify(jlm::frontend::clg & clg)
 {
-	jive::frontend::clg_node * node = clg.lookup_function("test_undefvalue");
+	jlm::frontend::clg_node * node = clg.lookup_function("test_undefvalue");
 	assert(node != nullptr);
 
-	jive::frontend::cfg * cfg = node->cfg();
+	jlm::frontend::cfg * cfg = node->cfg();
 //	jive_cfg_view(cfg);
 
 	assert(cfg->nnodes() == 3);
 	assert(cfg->is_linear());
 
-	jive::frontend::basic_block * bb = dynamic_cast<jive::frontend::basic_block*>(
+	jlm::frontend::basic_block * bb = dynamic_cast<jlm::frontend::basic_block*>(
 		cfg->enter()->outedges()[0]->sink());
 	assert(bb != nullptr);
 
-	std::vector<const jive::frontend::tac*> tacs = bb->tacs();
+	std::vector<const jlm::frontend::tac*> tacs = bb->tacs();
 	assert(tacs.size() != 0);
 
 	jive::bits::value_repr v(32, 'X');

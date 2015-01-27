@@ -1,0 +1,143 @@
+/*
+ * Copyright 2014 Nico Reißmann <nico.reissmann@gmail.com>
+ * See COPYING for terms of redistribution.
+ */
+
+#ifndef JLM_FRONTEND_TAC_TAC_H
+#define JLM_FRONTEND_TAC_TAC_H
+
+#include <jlm/frontend/basic_block.hpp>
+
+#include <jive/vsdg/operators/base.h>
+
+#include <memory>
+#include <vector>
+
+namespace jive {
+
+namespace base {
+	class type;
+}
+}
+
+namespace jlm {
+namespace frontend {
+
+class input;
+class output;
+
+class tac final {
+public:
+	~tac() noexcept;
+
+	tac(const cfg_node * owner, const jive::operation & operation,
+		const std::vector<const output*> & operands);
+
+	tac(const jlm::frontend::tac & tac) = delete;
+
+	tac &
+	operator=(const tac &) = delete;
+
+	inline const cfg_node *
+	owner() const noexcept
+	{
+		return owner_;
+	}
+
+	inline const jive::operation &
+	operation() const noexcept
+	{
+		return *operation_;
+	}
+
+	inline std::vector<const input*>
+	inputs() const noexcept
+	{
+		return inputs_;
+	}
+
+	inline std::vector<const output*>
+	outputs() const noexcept
+	{
+		return outputs_;
+	}
+
+	virtual std::string
+	debug_string() const;
+
+private:
+	const cfg_node * owner_;
+	std::vector<const input*> inputs_;
+	std::vector<const output*> outputs_;
+	std::unique_ptr<jive::operation> operation_;
+};
+
+class input final {
+public:
+	input(const input &) = delete;
+
+	input &
+	operator=(const input &) = delete;
+
+	inline const jive::base::type &
+	type() const noexcept
+	{
+		return tac_->operation().argument_type(index_);
+	}
+
+	inline size_t
+	index() const noexcept
+	{
+		return index_;
+	}
+
+	inline const output *
+	origin() const noexcept
+	{
+		return origin_;
+	}
+
+private:
+	const jlm::frontend::tac * tac_;
+	size_t index_;
+	const output * origin_;
+
+	input(const jlm::frontend::tac * tac, size_t index, const output * origin);
+
+	friend jlm::frontend::tac::tac(const cfg_node * owner,
+		const jive::operation & operation, const std::vector<const output*> & operands);
+};
+
+class output final {
+public:
+	output(const output &) = delete;
+
+	output &
+	operator=(const output &) = delete;
+
+	inline const jive::base::type &
+	type() const noexcept
+	{
+		return tac_->operation().result_type(index_);
+	}
+
+	inline size_t
+	index() const noexcept
+	{
+		return index_;
+	}
+
+private:
+	const jlm::frontend::tac * tac_;
+	size_t index_;
+
+	output (const jlm::frontend::tac * tac, size_t index);
+
+	friend jlm::frontend::tac::tac(const cfg_node * owner,
+		const jive::operation & operation, const std::vector<const output*> & operands);
+};
+
+}
+}
+
+#endif

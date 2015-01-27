@@ -5,37 +5,38 @@
 
 #include "test-registry.hpp"
 
+#include <jlm/frontend/basic_block.hpp>
+#include <jlm/frontend/clg.hpp>
+#include <jlm/frontend/tac/apply.hpp>
+#include <jlm/frontend/tac/tac.hpp>
+
 #include <jive/arch/memorytype.h>
-#include <jive/frontend/basic_block.h>
-#include <jive/frontend/clg.h>
-#include <jive/frontend/tac/apply.h>
-#include <jive/frontend/tac/tac.h>
 #include <jive/types/bitstring/type.h>
 #include <jive/types/function/fcttype.h>
 
 #include <assert.h>
 
 static int
-verify(jive::frontend::clg & clg)
+verify(jlm::frontend::clg & clg)
 {
 //	jive_clg_view(clg);
 
-	jive::frontend::clg_node * caller = clg.lookup_function("caller");
+	jlm::frontend::clg_node * caller = clg.lookup_function("caller");
 	assert(caller != nullptr);
 
 	assert(caller->calls().size() == 2);
 
-	jive::frontend::cfg * cfg = caller->cfg();
+	jlm::frontend::cfg * cfg = caller->cfg();
 //	jive_cfg_view(cfg);
 
 	assert(cfg->nnodes() == 3);
 	assert(cfg->is_linear());
 
-	jive::frontend::basic_block * bb = dynamic_cast<jive::frontend::basic_block*>(
+	jlm::frontend::basic_block * bb = dynamic_cast<jlm::frontend::basic_block*>(
 		cfg->enter()->outedges()[0]->sink());
 	assert(bb != nullptr);
 
-	std::vector<const jive::frontend::tac*> tacs = bb->tacs();
+	std::vector<const jlm::frontend::tac*> tacs = bb->tacs();
 	assert(tacs.size() != 0);
 
 	std::vector<std::unique_ptr<jive::base::type>> argument_types;
@@ -45,7 +46,7 @@ verify(jive::frontend::clg & clg)
 	result_types.push_back(std::unique_ptr<jive::base::type>(new jive::bits::type(32)));
 	result_types.push_back(std::unique_ptr<jive::base::type>(new jive::mem::type()));
 	jive::fct::type fcttype(argument_types, result_types);
-	jive::frontend::apply_op op("callee1", fcttype);
+	jlm::frontend::apply_op op("callee1", fcttype);
 	assert(tacs[1]->operation() == op);
 
 	return 0;
