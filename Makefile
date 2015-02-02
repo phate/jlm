@@ -46,6 +46,6 @@ include tests/Makefile.sub
 	ranlib $@
 
 clean:
-	find . -name *.o -o -name *.la -o -name *.a | xargs rm -rf
+	find . -name "*.o" -o -name "*.la" -o -name "*.a" | xargs rm -rf
 	rm -rf tests/test-runner
 	rm -rf jlm
