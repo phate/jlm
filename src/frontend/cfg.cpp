@@ -112,6 +112,15 @@ cfg::enter_node::argument_type(size_t index) const
 	return op.type();
 }
 
+const output *
+cfg::enter_node::argument(size_t index) const
+{
+	JLM_DEBUG_ASSERT(index < arguments_.size());
+	JLM_DEBUG_ASSERT(arguments_[index]->outputs().size() == 1);
+
+	return arguments_[index]->outputs()[0];
+}
+
 /* exit node */
 
 cfg::exit_node::~exit_node() noexcept {}

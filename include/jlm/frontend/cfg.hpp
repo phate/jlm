@@ -6,6 +6,7 @@
 #ifndef JLM_FRONTEND_CFG_H
 #define JLM_FRONTEND_CFG_H
 
+#include <jlm/common.hpp>
 #include <jlm/frontend/cfg_node.hpp>
 
 namespace jive {
@@ -86,10 +87,22 @@ public:
 		return enter_->argument_type(index);
 	}
 
+	inline const output *
+	argument(size_t index) const
+	{
+		return enter_->argument(index);
+	}
+
 	inline void
 	append_result(const output * result)
 	{
 		exit_->append_result(result);
+	}
+
+	inline const output *
+	result(size_t index) const
+	{
+		return exit_->result(index);
 	}
 
 private:
@@ -110,6 +123,9 @@ private:
 		const jive::base::type &
 		argument_type(size_t index) const;
 
+		const output *
+		argument(size_t index) const;
+
 	private:
 		std::vector<std::unique_ptr<tac>> arguments_;
 	};
@@ -126,6 +142,13 @@ private:
 		append_result(const output * result)
 		{
 			results_.push_back(result);
+		}
+
+		inline const output *
+		result(size_t index) const
+		{
+			JLM_DEBUG_ASSERT(index < results_.size());
+			return results_[index];
 		}
 
 	private:
