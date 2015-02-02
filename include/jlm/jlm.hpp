@@ -10,14 +10,6 @@
 
 #include <unordered_map>
 
-namespace jive {
-namespace frontend {
-	class basic_block;
-	class clg_node;
-	class tac_output;
-}
-}
-
 namespace llvm {
 	class BasicBlock;
 	class Function;
