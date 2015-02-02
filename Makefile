@@ -28,7 +28,7 @@ all: libjlm.a jlm check
 
 libjlm.a: $(patsubst %.cpp, %.la, $(LIBJLM_SRC))
 
-jlm: LDFLAGS+=-L.
+jlm: LDFLAGS+=-L. -ljlm -ljive
 jlm: $(patsubst %.cpp, %.o, $(JLM_SRC)) libjlm.a
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 
