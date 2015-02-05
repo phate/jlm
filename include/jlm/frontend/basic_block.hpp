@@ -28,7 +28,11 @@ public:
 	const tac *
 	append(const jive::operation & operation, const std::vector<const output*> & operands);
 
-	inline std::vector<const tac*>
+	const tac *
+	append(const jive::operation & operation, const std::vector<const output*> & operands,
+		const std::vector<const jlm::frontend::variable*> & variables);
+
+	std::vector<const tac*>
 	tacs() const noexcept
 	{
 		return tacs_;

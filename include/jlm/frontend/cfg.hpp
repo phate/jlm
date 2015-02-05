@@ -8,6 +8,7 @@
 
 #include <jlm/common.hpp>
 #include <jlm/frontend/cfg_node.hpp>
+#include <jlm/frontend/variable.hpp>
 
 namespace jive {
 	class buffer;
@@ -62,6 +63,12 @@ public:
 	inline jlm::frontend::clg_node * function() const noexcept { return clg_node_; }
 
 	basic_block * create_basic_block();
+
+	const jlm::frontend::variable *
+	create_variable(const jive::base::type & type);
+
+	const jlm::frontend::variable *
+	create_variable(const jive::base::type & type, const std::string & name);
 
 	inline size_t
 	nnodes() const noexcept
@@ -163,6 +170,7 @@ private:
 	cfg::exit_node * exit_;
 	jlm::frontend::clg_node * clg_node_;
 	std::unordered_set<std::unique_ptr<cfg_node>> nodes_;
+	std::unordered_set<std::unique_ptr<variable>> variables_;
 };
 
 }

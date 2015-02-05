@@ -30,8 +30,15 @@ class tac final {
 public:
 	~tac() noexcept;
 
+	/*
+		FIXME: to be removed
+	*/
 	tac(const cfg_node * owner, const jive::operation & operation,
 		const std::vector<const output*> & operands);
+
+	tac(const cfg_node * owner, const jive::operation & operation,
+		const std::vector<const output*> & operands,
+		const std::vector<const jlm::frontend::variable*> & variables);
 
 	tac(const jlm::frontend::tac & tac) = delete;
 
@@ -97,6 +104,9 @@ public:
 		return origin_;
 	}
 
+	inline const jlm::frontend::variable *
+	variable() const noexcept;
+
 private:
 	const jlm::frontend::tac * tac_;
 	size_t index_;
@@ -106,6 +116,10 @@ private:
 
 	friend jlm::frontend::tac::tac(const cfg_node * owner,
 		const jive::operation & operation, const std::vector<const output*> & operands);
+
+	friend jlm::frontend::tac::tac(const cfg_node * owner,
+		const jive::operation & operation, const std::vector<const output*> & operands,
+		const std::vector<const jlm::frontend::variable*> & variables);
 };
 
 class output final {
@@ -127,15 +141,32 @@ public:
 		return index_;
 	}
 
+	inline const jlm::frontend::variable *
+	variable() const noexcept
+	{
+		return variable_;
+	}
+
 private:
 	const jlm::frontend::tac * tac_;
 	size_t index_;
+	const jlm::frontend::variable * variable_;
 
-	output (const jlm::frontend::tac * tac, size_t index);
+	output (const jlm::frontend::tac * tac, size_t index, const jlm::frontend::variable * variable);
 
 	friend jlm::frontend::tac::tac(const cfg_node * owner,
 		const jive::operation & operation, const std::vector<const output*> & operands);
+
+	friend jlm::frontend::tac::tac(const cfg_node * owner,
+		const jive::operation & operation, const std::vector<const output*> & operands,
+		const std::vector<const jlm::frontend::variable*> & variables);
 };
+
+inline const jlm::frontend::variable *
+input::variable() const noexcept
+{
+	return origin()->variable();
+}
 
 }
 }

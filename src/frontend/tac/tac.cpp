@@ -28,10 +28,18 @@ input::input(const jlm::frontend::tac * tac, size_t index, const output * origin
 	}
 }
 
-output::output(const jlm::frontend::tac * tac, size_t index)
+output::output(const jlm::frontend::tac * tac, size_t index,
+	const jlm::frontend::variable * variable)
 	: tac_(tac)
 	, index_(index)
-{}
+	, variable_(variable)
+{
+	/*
+		FIXME: throw type error
+	*/
+	if (variable_->type() != type())
+		throw std::logic_error("Invalid variable!");
+}
 
 tac::~tac() noexcept
 {
@@ -55,7 +63,28 @@ tac::tac(const cfg_node * owner,
 		inputs_.push_back(new input(this, n, operands[n]));
 
 	for (size_t n = 0; n < operation.nresults(); n++)
-		outputs_.push_back(new output(this, n));
+		outputs_.push_back(new output(this, n,
+			owner->cfg()->create_variable(operation.result_type(n))));
+}
+
+tac::tac(const cfg_node * owner,
+	const jive::operation & operation,
+	const std::vector<const output*> & operands,
+	const std::vector<const jlm::frontend::variable*> & variables)
+	: owner_(owner)
+	, operation_(std::move(operation.copy()))
+{
+	if (operands.size() != operation.narguments())
+		throw std::logic_error("Invalid number of operands.");
+
+	if (variables.size() != operation.nresults())
+		throw std::logic_error("Invalid number of variables.");
+
+	for (size_t n = 0; n < operation.narguments(); n++)
+		inputs_.push_back(new input(this, n, operands[n]));
+
+	for (size_t n = 0; n < operation.nresults(); n++)
+		outputs_.push_back(new output(this, n, variables[n]));
 }
 
 std::string
@@ -65,16 +94,16 @@ tac::debug_string() const
 
 	JIVE_DEBUG_ASSERT(outputs_.size() != 0);
 	for (size_t n = 0; n < outputs_.size()-1; n++)
-		sstrm << outputs_[n] << ", ";
-	sstrm << outputs_[outputs_.size()-1] << " = ";
+		sstrm << outputs_[n]->variable()->debug_string() << ", ";
+	sstrm << outputs_[outputs_.size()-1]->variable()->debug_string() << " = ";
 
 	sstrm << operation_->debug_string();
 
 	if (inputs_.size() != 0) {
 		sstrm << " ";
 		for (size_t n = 0; n < inputs_.size()-1; n++)
-			sstrm << inputs_[n]->origin() << ", ";
-		sstrm << inputs_[inputs_.size()-1]->origin();
+			sstrm << inputs_[n]->origin()->variable()->debug_string() << ", ";
+		sstrm << inputs_[inputs_.size()-1]->origin()->variable()->debug_string();
 	}
 
 	return sstrm.str();

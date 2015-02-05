@@ -84,7 +84,7 @@ cfg::enter_node::debug_string() const
 	sstrm << this << " (ENTER)\\n";
 	for (size_t n = 0; n < arguments_.size(); n++) {
 		jlm::frontend::tac * tac = arguments_[n].get();
-		sstrm << tac->debug_string() << " (" << tac->outputs()[0]->type().debug_string() << ")\\n";
+		sstrm << tac->debug_string() << std::endl;
 	}
 
 	return sstrm.str();
@@ -93,16 +93,16 @@ cfg::enter_node::debug_string() const
 const output *
 cfg::enter_node::append_argument(const std::string & name, const jive::base::type & type)
 {
-	argument_op op(name, type);
-	arguments_.emplace_back(std::unique_ptr<jlm::frontend::tac>(new tac(this, op, {})));
+	argument_op op(type);
+	const jlm::frontend::variable * v = cfg()->create_variable(type, name);
+	arguments_.emplace_back(std::unique_ptr<jlm::frontend::tac>(new tac(this, op, {}, {v})));
 	return arguments_[arguments_.size()-1]->outputs()[0];
 }
 
 const std::string &
 cfg::enter_node::argument_name(size_t index) const
 {
-	argument_op op = dynamic_cast<const argument_op&>(arguments_[index]->operation());
-	return op.name();
+	return arguments_[index]->outputs()[index]->variable()->name();
 }
 
 const jive::base::type &
@@ -137,7 +137,7 @@ cfg::exit_node::debug_string() const
 	sstrm << this << " (EXIT)\\n";
 	for (size_t n = 0; n < results_.size(); n++) {
 		const jlm::frontend::output * result = results_[n];
-		sstrm << result << " (" << result->type().debug_string() << ")\\n";
+		sstrm << result->variable()->debug_string() << " (" << result->type().debug_string() << ")\\n";
 	}
 
 	return sstrm.str();
@@ -216,6 +216,26 @@ cfg::create_basic_block()
 	nodes_.insert(std::move(bb));
 	bb.release();
 	return tmp;
+}
+
+const jlm::frontend::variable *
+cfg::create_variable(const jive::base::type & type)
+{
+	std::unique_ptr<variable> variable(new jlm::frontend::variable(type));
+	jlm::frontend::variable * v = variable.get();
+	variables_.insert(std::move(variable));
+	variable.release();
+	return v;
+}
+
+const jlm::frontend::variable *
+cfg::create_variable(const jive::base::type & type, const std::string & name)
+{
+	std::unique_ptr<variable> variable(new jlm::frontend::variable(type, name));
+	jlm::frontend::variable * v = variable.get();
+	variables_.insert(std::move(variable));
+	variable.release();
+	return v;
 }
 
 std::vector<std::unordered_set<cfg_node*>>

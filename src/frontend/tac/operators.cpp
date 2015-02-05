@@ -24,7 +24,7 @@ argument_op::result_type(size_t index) const noexcept
 std::string
 argument_op::debug_string() const
 {
-	return name_;
+	return type_->debug_string();
 }
 
 std::unique_ptr<jive::operation>
@@ -37,7 +37,7 @@ bool
 argument_op::operator==(const operation & other) const noexcept
 {
 	const argument_op * op = dynamic_cast<const argument_op*>(&other);
-	return op && op->name_ == name_ && op->type_ == type_;
+	return op && op->type_ == type_;
 }
 
 /* phi operator */
@@ -103,7 +103,7 @@ assignment_op::operator==(const operation & other) const noexcept
 size_t
 assignment_op::narguments() const noexcept
 {
-	return 2;
+	return 1;
 }
 
 const jive::base::type &

@@ -6,6 +6,7 @@
 #include <jlm/frontend/basic_block.hpp>
 #include <jlm/frontend/cfg.hpp>
 #include <jlm/frontend/tac/tac.hpp>
+#include <jlm/frontend/variable.hpp>
 
 #include <sstream>
 
@@ -38,6 +39,17 @@ const tac *
 basic_block::append(const jive::operation & operation, const std::vector<const output*> & operands)
 {
 	jlm::frontend::tac * tac = new jlm::frontend::tac(this, operation, operands);
+	tacs_.push_back(tac);
+	return tac;
+}
+
+const tac *
+basic_block::append(
+	const jive::operation & operation,
+	const std::vector<const output*> & operands,
+	const std::vector<const jlm::frontend::variable*> & variables)
+{
+	jlm::frontend::tac * tac = new jlm::frontend::tac(this, operation, operands, variables);
 	tacs_.push_back(tac);
 	return tac;
 }

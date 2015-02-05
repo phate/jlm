@@ -56,7 +56,7 @@ convert_return_instruction(
 
 	if (instruction->getReturnValue()) {
 		const jlm::frontend::output * value = convert_value(instruction->getReturnValue(), bb, vmap);
-		assignment_tac(bb, result, value);
+		assignment_tac(bb, result->variable(), value);
 	}
 }
 
@@ -197,7 +197,7 @@ convert_store_instruction(
 	const jlm::frontend::output * address = convert_value(instruction->getPointerOperand(), bb, vmap);
 	const jlm::frontend::output * value = convert_value(instruction->getValueOperand(), bb, vmap);
 	const jlm::frontend::output * result_state = addrstore_tac(bb, address, value, state);
-	assignment_tac(bb, state, result_state);
+	assignment_tac(bb, state->variable(), result_state);
 }
 
 static void
@@ -289,9 +289,9 @@ convert_call_instruction(
 
 	if (results.size() == 2) {
 		vmap[instruction] = results[0];
-		assignment_tac(bb, state, results[1]);
+		assignment_tac(bb, state->variable(), results[1]);
 	}	else
-		assignment_tac(bb, state, results[0]);
+		assignment_tac(bb, state->variable(), results[0]);
 }
 
 typedef std::unordered_map<std::type_index, void(*)(const llvm::Instruction&,

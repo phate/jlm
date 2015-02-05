@@ -21,15 +21,13 @@ public:
 	~argument_op() noexcept;
 
 	inline
-	argument_op(const std::string & name, const jive::base::type & type) noexcept
-		: name_(name)
-		, type_(type.copy())
+	argument_op(const jive::base::type & type) noexcept
+		: type_(type.copy())
 	{}
 
 	inline
 	argument_op(const argument_op & other)
-	: name_(other.name_)
-	, type_(other.type_->copy())
+		: type_(other.type_->copy())
 	{}
 
 	inline
@@ -47,12 +45,6 @@ public:
 	virtual bool
 	operator==(const operation & other) const noexcept override;
 
-	const std::string &
-	name() const noexcept
-	{
-		return name_;
-	}
-
 	const jive::base::type &
 	type() const noexcept
 	{
@@ -60,7 +52,6 @@ public:
 	}
 
 private:
-	const std::string name_;
 	std::unique_ptr<jive::base::type> type_;
 };
 
