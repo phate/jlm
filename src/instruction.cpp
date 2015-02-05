@@ -45,7 +45,7 @@ convert_return_instruction(
 	const basic_block_map & bbmap,
 	value_map & vmap,
 	const jlm::frontend::output * state,
-	const jlm::frontend::output * result)
+	const jlm::frontend::variable * result)
 {
 	const llvm::ReturnInst * instruction = static_cast<const llvm::ReturnInst*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
@@ -56,7 +56,7 @@ convert_return_instruction(
 
 	if (instruction->getReturnValue()) {
 		const jlm::frontend::output * value = convert_value(instruction->getReturnValue(), bb, vmap);
-		assignment_tac(bb, result->variable(), value);
+		assignment_tac(bb, result, value);
 	}
 }
 
@@ -67,7 +67,7 @@ convert_branch_instruction(
 	const basic_block_map & bbmap,
 	value_map & vmap,
 	const jlm::frontend::output * state,
-	const jlm::frontend::output * result)
+	const jlm::frontend::variable * result)
 {
 	const llvm::BranchInst * instruction = static_cast<const llvm::BranchInst*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
@@ -98,7 +98,7 @@ convert_switch_instruction(
 	const basic_block_map & bbmap,
 	value_map & vmap,
 	const jlm::frontend::output * state,
-	const jlm::frontend::output * result)
+	const jlm::frontend::variable * result)
 {
 	const llvm::SwitchInst * instruction = static_cast<const llvm::SwitchInst*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
@@ -117,7 +117,7 @@ convert_unreachable_instruction(
 	const basic_block_map & bbmap,
 	value_map & vmap,
 	const jlm::frontend::output * state,
-	const jlm::frontend::output * result)
+	const jlm::frontend::variable * result)
 {
 	const llvm::UnreachableInst * instruction = static_cast<const llvm::UnreachableInst*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
@@ -139,7 +139,7 @@ convert_binary_operator(
 	const basic_block_map & bbmap,
 	value_map & vmap,
 	const jlm::frontend::output * state,
-	const jlm::frontend::output * result)
+	const jlm::frontend::variable * result)
 {
 	const llvm::BinaryOperator * instruction = static_cast<const llvm::BinaryOperator*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
@@ -154,7 +154,7 @@ convert_comparison_instruction(
 	const basic_block_map & bbmap,
 	value_map & vmap,
 	const jlm::frontend::output * state,
-	const jlm::frontend::output * result)
+	const jlm::frontend::variable * result)
 {
 	const llvm::CmpInst * instruction = static_cast<const llvm::CmpInst*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
@@ -169,7 +169,7 @@ convert_load_instruction(
 	const basic_block_map & bbmap,
 	value_map & vmap,
 	const jlm::frontend::output * state,
-	const jlm::frontend::output * result)
+	const jlm::frontend::variable * result)
 {
 	const llvm::LoadInst * instruction = static_cast<const llvm::LoadInst*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
@@ -189,7 +189,7 @@ convert_store_instruction(
 	const basic_block_map & bbmap,
 	value_map & vmap,
 	const jlm::frontend::output * state,
-	const jlm::frontend::output * result)
+	const jlm::frontend::variable * result)
 {
 	const llvm::StoreInst * instruction = static_cast<const llvm::StoreInst*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
@@ -207,7 +207,7 @@ convert_phi_instruction(
 	const basic_block_map & bbmap,
 	value_map & vmap,
 	const jlm::frontend::output * state,
-	const jlm::frontend::output * result)
+	const jlm::frontend::variable * result)
 {
 	const llvm::PHINode * instruction = static_cast<const llvm::PHINode*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
@@ -226,7 +226,7 @@ convert_getelementptr_instruction(
 	const basic_block_map & bbmap,
 	value_map & vmap,
 	const jlm::frontend::output * state,
-	const jlm::frontend::output * result)
+	const jlm::frontend::variable * result)
 {
 	const llvm::GetElementPtrInst * instruction = static_cast<const llvm::GetElementPtrInst*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
@@ -247,7 +247,7 @@ convert_trunc_instruction(
 	const basic_block_map & bbmap,
 	value_map & vmap,
 	const jlm::frontend::output * state,
-	const jlm::frontend::output * result)
+	const jlm::frontend::variable * result)
 {
 	const llvm::TruncInst * instruction = static_cast<const llvm::TruncInst*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
@@ -264,7 +264,7 @@ convert_call_instruction(
 	const basic_block_map & bbmap,
 	value_map & vmap,
 	const jlm::frontend::output * state,
-	const jlm::frontend::output * result)
+	const jlm::frontend::variable * result)
 {
 	const llvm::CallInst * instruction = static_cast<const llvm::CallInst*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
@@ -296,7 +296,7 @@ convert_call_instruction(
 
 typedef std::unordered_map<std::type_index, void(*)(const llvm::Instruction&,
 	jlm::frontend::basic_block*, const basic_block_map&, value_map&,
-	const jlm::frontend::output * state, const jlm::frontend::output * result)> instruction_map;
+	const jlm::frontend::output * state, const jlm::frontend::variable * result)> instruction_map;
 
 static instruction_map imap({
 		{std::type_index(typeid(llvm::ReturnInst)), convert_return_instruction}
@@ -320,7 +320,7 @@ convert_instruction(
 	const basic_block_map & bbmap,
 	value_map & vmap,
 	const jlm::frontend::output * state,
-	const jlm::frontend::output * result)
+	const jlm::frontend::variable * result)
 {
 	/* FIXME: add an JLM_DEBUG_ASSERT here if an instruction is not present */
 	if (imap.find(std::type_index(typeid(i))) == imap.end())

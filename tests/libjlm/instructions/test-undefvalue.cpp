@@ -34,7 +34,7 @@ verify(jlm::frontend::clg & clg)
 
 	jive::bits::value_repr v(32, 'X');
 	jive::bits::constant_op op(v);
-	assert((*(std::next(tacs.begin())))->operation() == op);
+	assert((*(std::next(std::next(tacs.begin()))))->operation() == op);
 
 	return 0;
 }

@@ -121,7 +121,7 @@ clg_node::cfg_begin(const std::vector<std::string> & names)
 }
 
 void
-clg_node::cfg_end(const std::vector<const output*> & results)
+clg_node::cfg_end(const std::vector<const variable*> & results)
 {
 	JIVE_DEBUG_ASSERT(cfg_.get() != nullptr);
 

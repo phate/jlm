@@ -136,8 +136,8 @@ cfg::exit_node::debug_string() const
 
 	sstrm << this << " (EXIT)\\n";
 	for (size_t n = 0; n < results_.size(); n++) {
-		const jlm::frontend::output * result = results_[n];
-		sstrm << result->variable()->debug_string() << " (" << result->type().debug_string() << ")\\n";
+		const jlm::frontend::variable * result = results_[n];
+		sstrm << result->debug_string() << " (" << result->type().debug_string() << ")\\n";
 	}
 
 	return sstrm.str();

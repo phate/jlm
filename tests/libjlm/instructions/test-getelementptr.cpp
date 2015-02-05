@@ -31,7 +31,7 @@ verify(jlm::frontend::clg & clg)
 	assert(bb != nullptr);
 
 	const std::list<const jlm::frontend::tac*> & tacs = bb->tacs();
-	assert(tacs.size() == 13);
+	assert(tacs.size() == 14);
 
 /*
 	FIXME: insert checks again

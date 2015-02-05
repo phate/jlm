@@ -35,7 +35,7 @@ verify(jlm::frontend::clg & clg)
 
 	jive::bits::type bits64(64);
 	jive::bits::slice_op op(bits64, 0, 32);
-	assert((*(std::next(tacs.begin())))->operation() == op);
+	assert((*(std::next(std::next(tacs.begin()))))->operation() == op);
 
 	return 0;
 }

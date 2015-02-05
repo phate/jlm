@@ -40,7 +40,7 @@ verify(jlm::frontend::clg & clg)
 	std::vector<std::unique_ptr<jive::state::type>> state_type;
 	state_type.emplace_back(std::unique_ptr<jive::state::type>(new jive::mem::type()));
 	jive::load_op op(addrtype, state_type, datatype);
-	assert((*(std::next(tacs.begin())))->operation() == op);
+	assert((*(std::next(std::next(tacs.begin()))))->operation() == op);
 
 	return 0;
 }

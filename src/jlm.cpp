@@ -11,6 +11,7 @@
 #include <jlm/frontend/basic_block.hpp>
 #include <jlm/frontend/cfg.hpp>
 #include <jlm/frontend/cfg_node.hpp>
+#include <jlm/frontend/tac/assignment.hpp>
 
 #include <jive/arch/memorytype.h>
 #include <jive/vsdg/basetype.h>
@@ -27,7 +28,7 @@ typedef std::unordered_map<const llvm::Function*, jlm::frontend::clg_node*> func
 
 static void
 convert_basic_block(const llvm::BasicBlock & basic_block, const basic_block_map & bbmap,
-	value_map & vmap, const jlm::frontend::output * state, const jlm::frontend::output * result)
+	value_map & vmap, const jlm::frontend::output * state, const jlm::frontend::variable * result)
 {
 	llvm::BasicBlock::const_iterator it;
 	for (it = basic_block.begin(); it != basic_block.end(); it++)
@@ -63,18 +64,21 @@ convert_function(const llvm::Function & function, jlm::frontend::clg_node * clg_
 	jlm::frontend::basic_block * entry_block = bbmap[&function.getEntryBlock()];
 	cfg->exit()->divert_inedges(entry_block);
 
-	const jlm::frontend::output * result = nullptr;
-	if (function.getReturnType()->getTypeID() != llvm::Type::VoidTyID)
-		result = create_undef_value(*function.getReturnType(), entry_block);
+	const jlm::frontend::variable * result = nullptr;
+	if (function.getReturnType()->getTypeID() != llvm::Type::VoidTyID) {
+		result = cfg->create_variable(*convert_type(*function.getReturnType()), "_r_");
+		const jlm::frontend::output * udef = create_undef_value(*function.getReturnType(), entry_block);
+		assignment_tac(entry_block, result, udef);
+	}
 
 	it = function.getBasicBlockList().begin();
 	for (; it != function.getBasicBlockList().end(); it++)
 		convert_basic_block(*it, bbmap, vmap, state, result);
 
-	std::vector<const jlm::frontend::output*> results;
+	std::vector<const jlm::frontend::variable*> results;
 	if (function.getReturnType()->getTypeID() != llvm::Type::VoidTyID)
 		results.push_back(result);
-	results.push_back(state);
+	results.push_back(state->variable());
 
 	clg_node->cfg_end(results);
 }

@@ -36,7 +36,7 @@ verify_##NAME##_op(jlm::frontend::clg & clg) \
 \
 	jive::bits::type type(64); \
 	jive::bits::OP op(type); \
-	assert((*std::next(tacs.begin()))->operation() == op); \
+	assert((*std::next(std::next(tacs.begin())))->operation() == op); \
 } \
 
 MAKE_OP_VERIFIER(add, add_op);

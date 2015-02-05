@@ -26,7 +26,7 @@ convert_instruction(
 	const basic_block_map & bbmap,
 	value_map & vmap,
 	const jlm::frontend::output * state,
-	const jlm::frontend::output * result);
+	const jlm::frontend::variable * result);
 
 }
 

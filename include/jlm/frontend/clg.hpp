@@ -131,7 +131,7 @@ public:
 	cfg_begin(const std::vector<std::string> & names);
 
 	void
-	cfg_end(const std::vector<const output*> & results);
+	cfg_end(const std::vector<const variable*> & results);
 
 private:
 	std::string name_;

@@ -101,12 +101,12 @@ public:
 	}
 
 	inline void
-	append_result(const output * result)
+	append_result(const variable * result)
 	{
 		exit_->append_result(result);
 	}
 
-	inline const output *
+	inline const variable *
 	result(size_t index) const
 	{
 		return exit_->result(index);
@@ -146,12 +146,12 @@ private:
 		virtual std::string debug_string() const override;
 
 		inline void
-		append_result(const output * result)
+		append_result(const variable * result)
 		{
 			results_.push_back(result);
 		}
 
-		inline const output *
+		inline const variable *
 		result(size_t index) const
 		{
 			JLM_DEBUG_ASSERT(index < results_.size());
@@ -159,7 +159,7 @@ private:
 		}
 
 	private:
-		std::vector<const output*> results_;
+		std::vector<const variable*> results_;
 	};
 
 	void remove_node(cfg_node * node);
