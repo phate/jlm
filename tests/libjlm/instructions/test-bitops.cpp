@@ -31,12 +31,12 @@ verify_##NAME##_op(jlm::frontend::clg & clg) \
 		cfg->enter()->outedges()[0]->sink()); \
 	assert(bb != nullptr); \
 \
-	std::vector<const jlm::frontend::tac*> tacs = bb->tacs(); \
+	const std::list<const jlm::frontend::tac*> & tacs = bb->tacs(); \
 	assert(tacs.size() != 0); \
 \
 	jive::bits::type type(64); \
 	jive::bits::OP op(type); \
-	assert(tacs[1]->operation() == op); \
+	assert((*std::next(tacs.begin()))->operation() == op); \
 } \
 
 MAKE_OP_VERIFIER(add, add_op);

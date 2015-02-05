@@ -30,12 +30,12 @@ verify(jlm::frontend::clg & clg)
 		cfg->enter()->outedges()[0]->sink()->outedges()[0]->sink());
 	assert(bb != nullptr);
 
-	std::vector<const jlm::frontend::tac*> tacs = bb->tacs();
+	const std::list<const jlm::frontend::tac*> & tacs = bb->tacs();
 	assert(tacs.size() != 0);
 
 	jive::bits::type bits32(32);
 	jlm::frontend::phi_op op(2, bits32);
-	assert(tacs[0]->operation() == op);
+	assert((*tacs.begin())->operation() == op);
 
 	return 0;
 }

@@ -32,7 +32,16 @@ public:
 	append(const jive::operation & operation, const std::vector<const output*> & operands,
 		const std::vector<const jlm::frontend::variable*> & variables);
 
-	std::vector<const tac*>
+	/*
+		FIXME: add accessor functions
+	*/
+	inline std::list<const tac*> &
+	tacs() noexcept
+	{
+		return tacs_;
+	}
+
+	inline const std::list<const tac*> &
 	tacs() const noexcept
 	{
 		return tacs_;
@@ -41,7 +50,7 @@ public:
 private:
 	basic_block(jlm::frontend::cfg & cfg) noexcept;
 
-	std::vector<const tac*> tacs_;
+	std::list<const tac*> tacs_;
 
 	friend basic_block * cfg::create_basic_block();
 };

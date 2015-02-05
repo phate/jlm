@@ -29,12 +29,12 @@ verify(jlm::frontend::clg & clg)
 		cfg->enter()->outedges()[0]->sink());
 	assert(bb != nullptr);
 
-	std::vector<const jlm::frontend::tac*> tacs = bb->tacs();
+	const std::list<const jlm::frontend::tac*> & tacs = bb->tacs();
 	assert(tacs.size() != 0);
 
 	jive::bits::value_repr v(32, 'X');
 	jive::bits::constant_op op(v);
-	assert(tacs[0]->operation() == op);
+	assert((*(std::next(tacs.begin())))->operation() == op);
 
 	return 0;
 }

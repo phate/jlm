@@ -36,7 +36,7 @@ verify(jlm::frontend::clg & clg)
 		cfg->enter()->outedges()[0]->sink());
 	assert(bb != nullptr);
 
-	std::vector<const jlm::frontend::tac*> tacs = bb->tacs();
+	const std::list<const jlm::frontend::tac*> & tacs = bb->tacs();
 	assert(tacs.size() != 0);
 
 	std::vector<std::unique_ptr<jive::base::type>> argument_types;
@@ -47,7 +47,7 @@ verify(jlm::frontend::clg & clg)
 	result_types.push_back(std::unique_ptr<jive::base::type>(new jive::mem::type()));
 	jive::fct::type fcttype(argument_types, result_types);
 	jlm::frontend::apply_op op("callee1", fcttype);
-	assert(tacs[1]->operation() == op);
+	assert((*std::next(tacs.begin()))->operation() == op);
 
 	return 0;
 }

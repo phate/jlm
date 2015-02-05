@@ -32,7 +32,7 @@ verify(jlm::frontend::clg & clg)
 		cfg->enter()->outedges()[0]->sink());
 	assert(bb != nullptr);
 
-	std::vector<const jlm::frontend::tac*> tacs = bb->tacs();
+	const std::list<const jlm::frontend::tac*> & tacs = bb->tacs();
 	assert(tacs.size() != 0);
 
 	jive::addr::type addrtype;
@@ -40,7 +40,7 @@ verify(jlm::frontend::clg & clg)
 	std::vector<std::unique_ptr<jive::state::type>> state_type;
 	state_type.emplace_back(std::unique_ptr<jive::state::type>(new jive::mem::type()));
 	jive::load_op op(addrtype, state_type, datatype);
-	assert(tacs[1]->operation() == op);
+	assert((*(std::next(tacs.begin())))->operation() == op);
 
 	return 0;
 }
