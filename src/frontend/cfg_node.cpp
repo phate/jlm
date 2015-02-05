@@ -5,6 +5,7 @@
  */
 
 #include <jlm/common.hpp>
+#include <jlm/frontend/basic_block.hpp>
 #include <jlm/frontend/cfg.hpp>
 #include <jlm/frontend/cfg_node.hpp>
 #include <jlm/frontend/clg.hpp>
@@ -22,6 +23,34 @@ cfg_edge::cfg_edge(cfg_node * source, cfg_node * sink, size_t index) noexcept
 	, index_(index)
 {}
 
+void
+cfg_edge::divert(cfg_node * new_sink)
+{
+	if (sink_ == new_sink)
+		return;
+
+	sink_->inedges_.remove(this);
+	sink_ = new_sink;
+	new_sink->inedges_.push_back(this);
+}
+
+cfg_node *
+cfg_edge::split()
+{
+	cfg_node * bb = static_cast<jlm::frontend::cfg_node*>(source_->cfg()->create_basic_block());
+	auto i = sink_->inedges_.erase(std::find(sink_->inedges_.begin(), sink_->inedges_.end(), this));
+
+	std::unique_ptr<cfg_edge> edge(new jlm::frontend::cfg_edge(bb, sink_, 0));
+	cfg_edge * e = edge.get();
+	bb->outedges_.insert(std::move(edge));
+	sink_->inedges_.insert(i, e);
+
+	sink_ = bb;
+	bb->inedges_.push_back(this);
+
+	return bb;
+}
+
 cfg_node::~cfg_node() {}
 
 cfg_edge *
@@ -30,7 +59,7 @@ cfg_node::add_outedge(cfg_node * successor, size_t index)
 	std::unique_ptr<cfg_edge> edge(new cfg_edge(this, successor, index));
 	cfg_edge * e = edge.get();
 	outedges_.insert(std::move(edge));
-	successor->inedges_.insert(e);
+	successor->inedges_.push_back(e);
 	edge.release();
 	return e;
 }
@@ -42,7 +71,7 @@ cfg_node::remove_outedge(cfg_edge * edge)
 	std::unordered_set<std::unique_ptr<cfg_edge>>::const_iterator it = outedges_.find(e);
 	if (it != outedges_.end()) {
 		JIVE_DEBUG_ASSERT(edge->source() == this);
-		edge->sink()->inedges_.erase(edge);
+		edge->sink()->inedges_.remove(edge);
 		outedges_.erase(it);
 	}
 	e.release();
@@ -79,13 +108,8 @@ cfg_node::outedges() const
 void
 cfg_node::divert_inedges(cfg_node * new_successor)
 {
-	std::unordered_set<cfg_edge*>::const_iterator it;
-	for (it = inedges_.begin(); it != inedges_.end(); it++) {
-		JIVE_DEBUG_ASSERT((*it)->sink() == this);
-		(*it)->divert(new_successor);
-		new_successor->inedges_.insert(*it);
-	}
-	inedges_.clear();
+	while (inedges_.size())
+		inedges_.front()->divert(new_successor);
 }
 
 void
@@ -104,17 +128,10 @@ cfg_node::ninedges() const noexcept
 	return inedges_.size();
 }
 
-std::vector<cfg_edge*>
+std::list<cfg_edge*>
 cfg_node::inedges() const
 {
-	std::vector<cfg_edge*> edges;
-	std::unordered_set<cfg_edge*>::const_iterator it;
-	for ( it = inedges_.begin(); it != inedges_.end(); it++) {
-		JIVE_DEBUG_ASSERT((*it)->sink() == this);
-		edges.push_back(*it);
-	}
-
-	return edges;
+	return inedges_;
 }
 
 bool
@@ -129,10 +146,9 @@ cfg_node::single_predecessor() const noexcept
 	if (ninedges() == 0)
 		return false;
 
-	std::unordered_set<cfg_edge*>::const_iterator it;
-	for (it = inedges_.begin(); it != inedges_.end(); it++) {
-		JIVE_DEBUG_ASSERT((*it)->sink() == this);
-		if ((*it)->source() != (*inedges_.begin())->source())
+	for (auto i = inedges_.begin(); i != inedges_.end(); i++) {
+		JLM_DEBUG_ASSERT((*i)->sink() == this);
+		if ((*i)->source() != (*inedges_.begin())->source())
 			return false;
 	}
 

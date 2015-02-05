@@ -362,8 +362,8 @@ cfg::is_structured() const
 			for (auto edge : edges) {
 				cfg_node * succ = edge->sink();
 				if (succ != tail
-				&& ((succ->ninedges() != 1 || succ->inedges()[0]->source() != node)
-					|| (succ->noutedges() != 1 || succ->outedges()[0]->sink() != tail))) {
+				&& ((succ->ninedges() != 1 || succ->inedges().front()->source() != node)
+					|| (succ->noutedges() != 1 || succ->outedges().front()->sink() != tail))) {
 					is_branch = false; break;
 				}
 			}
@@ -421,7 +421,7 @@ cfg::is_reducible() const
 
 		/* T2 */
 		if (node->single_predecessor()) {
-			cfg_node * predecessor = node->inedges()[0]->source();
+			cfg_node * predecessor = node->inedges().front()->source();
 			std::vector<cfg_edge*> edges = node->outedges();
 			for (size_t e = 0; e < edges.size(); e++) {
 				predecessor->add_outedge(edges[e]->sink(), 0);

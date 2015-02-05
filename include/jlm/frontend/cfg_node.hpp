@@ -6,6 +6,7 @@
 #ifndef JLM_FRONTEND_CFG_NODE_H
 #define JLM_FRONTEND_CFG_NODE_H
 
+#include <list>
 #include <memory>
 #include <string>
 #include <unordered_set>
@@ -24,7 +25,11 @@ public:
 
 	cfg_edge(cfg_node * source, cfg_node * sink, size_t index) noexcept;
 
-	inline void divert(cfg_node * new_sink) noexcept { sink_ = new_sink; }
+	void
+	divert(cfg_node * new_sink);
+
+	cfg_node *
+	split();
 
 	inline cfg_node * source() const noexcept { return source_; }
 	inline cfg_node * sink() const noexcept { return sink_; }
@@ -66,7 +71,7 @@ public:
 
 	size_t ninedges() const noexcept;
 
-	std::vector<cfg_edge*> inedges() const;
+	std::list<cfg_edge*> inedges() const;
 
 	bool no_predecessor() const noexcept;
 
@@ -82,8 +87,10 @@ public:
 
 private:
 	std::unordered_set<std::unique_ptr<cfg_edge>> outedges_;
-	std::unordered_set<cfg_edge*> inedges_;
+	std::list<cfg_edge*> inedges_;
 	jlm::frontend::cfg * cfg_;
+
+	friend cfg_edge;
 };
 
 }
