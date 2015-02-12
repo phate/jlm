@@ -22,6 +22,7 @@ LIBJLM_SRC = \
 	src/construction/type.cpp \
 	\
 	src/destruction/destruction.cpp \
+	src/destruction/restructuring.cpp \
 
 
 JLM_SRC = \
