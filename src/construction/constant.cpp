@@ -4,7 +4,7 @@
  */
 
 #include <jlm/common.hpp>
-#include <jlm/constant.hpp>
+#include <jlm/construction/constant.hpp>
 
 #include <jlm/IR/tac/bitstring.hpp>
 

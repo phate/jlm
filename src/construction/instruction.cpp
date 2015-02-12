@@ -3,11 +3,11 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/binops.hpp>
 #include <jlm/common.hpp>
-#include <jlm/constant.hpp>
-#include <jlm/jlm.hpp>
-#include <jlm/type.hpp>
+#include <jlm/construction/binops.hpp>
+#include <jlm/construction/constant.hpp>
+#include <jlm/construction/jlm.hpp>
+#include <jlm/construction/type.hpp>
 
 #include <jlm/IR/basic_block.hpp>
 #include <jlm/IR/tac/address.hpp>

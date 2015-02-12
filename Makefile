@@ -15,11 +15,12 @@ LIBJLM_SRC = \
 	src/IR/construction.cpp \
 	src/IR/tac/operators.cpp \
 	src/IR/tac/tac.cpp \
-	src/binops.cpp \
-	src/constant.cpp \
-	src/jlm.cpp \
-	src/instruction.cpp \
-	src/type.cpp \
+	\
+	src/construction/binops.cpp \
+	src/construction/constant.cpp \
+	src/construction/jlm.cpp \
+	src/construction/instruction.cpp \
+	src/construction/type.cpp \
 
 JLM_SRC = \
 	src/main.cpp \

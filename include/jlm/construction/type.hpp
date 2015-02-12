@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_TYPE_HPP
-#define JLM_TYPE_HPP
+#ifndef JLM_CONSTRUCTION_TYPE_HPP
+#define JLM_CONSTRUCTION_TYPE_HPP
 
 #include <memory>
 

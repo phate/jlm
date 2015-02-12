@@ -1,10 +1,10 @@
 /*
- * Copyright 2014 Nico Reißmann <nico.reissmann@gmail.com>
+ * Copyright 2014 2015 Nico Reißmann <nico.reissmann@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_CONSTANT_HPP
-#define JLM_CONSTANT_HPP
+#ifndef JLM_CONSTRUCTION_CONSTANT_HPP
+#define JLM_CONSTRUCTION_CONSTANT_HPP
 
 #include <jive/types/bitstring/value-representation.h>
 

@@ -7,7 +7,7 @@
 
 #include <jlm/IR/clg.hpp>
 
-#include <jlm/jlm.hpp>
+#include <jlm/construction/jlm.hpp>
 
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>

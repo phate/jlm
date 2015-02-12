@@ -1,12 +1,12 @@
 /*
- * Copyright 2014 Nico Reißmann <nico.reissmann@gmail.com>
+ * Copyright 2014 2015 Nico Reißmann <nico.reissmann@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_INSTRUCTION_HPP
-#define JLM_INSTRUCTION_HPP
+#ifndef JLM_CONSTRUCTION_INSTRUCTION_HPP
+#define JLM_CONSTRUCTION_INSTRUCTION_HPP
 
-#include <jlm/jlm.hpp>
+#include <jlm/construction/jlm.hpp>
 
 namespace jlm {
 namespace frontend {

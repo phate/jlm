@@ -4,7 +4,7 @@
  */
 
 #include <jlm/common.hpp>
-#include <jlm/type.hpp>
+#include <jlm/construction/type.hpp>
 
 #include <jive/arch/addresstype.h>
 #include <jive/arch/memorytype.h>

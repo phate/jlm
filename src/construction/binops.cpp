@@ -3,9 +3,9 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/binops.hpp>
 #include <jlm/common.hpp>
-#include <jlm/instruction.hpp>
+#include <jlm/construction/binops.hpp>
+#include <jlm/construction/instruction.hpp>
 
 #include <jlm/IR/tac/bitstring.hpp>
 

@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_JLM_HPP
-#define JLM_JLM_HPP
+#ifndef JLM_CONSTRUCTION_JLM_HPP
+#define JLM_CONSTRUCTION_JLM_HPP
 
 #include <jlm/IR/clg.hpp>
 

@@ -3,9 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/construction/jlm.hpp>
+
 #include <jlm/IR/clg.hpp>
 #include <jlm/IR/construction.hpp>
-#include <jlm/jlm.hpp>
 
 #include <jive/vsdg/graph.h>
 #include <jive/view.h>
