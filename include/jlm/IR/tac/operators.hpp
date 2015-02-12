@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_FRONTEND_TAC_OPERATORS_H
-#define JLM_FRONTEND_TAC_OPERATORS_H
+#ifndef JLM_IR_TAC_OPERATORS_H
+#define JLM_IR_TAC_OPERATORS_H
 
 #include <jive/types/function/fcttype.h>
 #include <jive/vsdg/basetype.h>

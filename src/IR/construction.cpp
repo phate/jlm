@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/frontend/clg.hpp>
-#include <jlm/frontend/construction.hpp>
+#include <jlm/IR/clg.hpp>
+#include <jlm/IR/construction.hpp>
 
 #include <jive/types/function/fctlambda.h>
 #include <jive/vsdg/basetype.h>

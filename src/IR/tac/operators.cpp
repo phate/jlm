@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/frontend/tac/operators.hpp>
+#include <jlm/IR/tac/operators.hpp>
 
 #include <iostream>
 

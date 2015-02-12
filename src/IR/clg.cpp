@@ -3,9 +3,9 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/frontend/cfg.hpp>
-#include <jlm/frontend/clg.hpp>
-#include <jlm/frontend/tac/tac.hpp>
+#include <jlm/IR/cfg.hpp>
+#include <jlm/IR/clg.hpp>
+#include <jlm/IR/tac/tac.hpp>
 #include <jive/util/buffer.h>
 
 #include <stdio.h>

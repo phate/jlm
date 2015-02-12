@@ -5,10 +5,10 @@
 
 #include "test-registry.hpp"
 
-#include <jlm/frontend/basic_block.hpp>
-#include <jlm/frontend/clg.hpp>
-#include <jlm/frontend/tac/operators.hpp>
-#include <jlm/frontend/tac/tac.hpp>
+#include <jlm/IR/basic_block.hpp>
+#include <jlm/IR/clg.hpp>
+#include <jlm/IR/tac/operators.hpp>
+#include <jlm/IR/tac/tac.hpp>
 
 #include <jive/types/bitstring/type.h>
 

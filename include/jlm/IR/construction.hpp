@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_FRONTEND_CONSTRUCTION_H
-#define JLM_FRONTEND_CONSTRUCTION_H
+#ifndef JLM_IR_CONSTRUCTION_H
+#define JLM_IR_CONSTRUCTION_H
 
 namespace jlm {
 namespace frontend {

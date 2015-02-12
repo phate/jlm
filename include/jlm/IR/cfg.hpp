@@ -3,12 +3,12 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_FRONTEND_CFG_H
-#define JLM_FRONTEND_CFG_H
+#ifndef JLM_IR_CFG_H
+#define JLM_IR_CFG_H
 
 #include <jlm/common.hpp>
-#include <jlm/frontend/cfg_node.hpp>
-#include <jlm/frontend/variable.hpp>
+#include <jlm/IR/cfg_node.hpp>
+#include <jlm/IR/variable.hpp>
 
 namespace jive {
 	class buffer;

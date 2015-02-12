@@ -9,12 +9,12 @@
 #include <jlm/jlm.hpp>
 #include <jlm/type.hpp>
 
-#include <jlm/frontend/basic_block.hpp>
-#include <jlm/frontend/tac/address.hpp>
-#include <jlm/frontend/tac/apply.hpp>
-#include <jlm/frontend/tac/assignment.hpp>
-#include <jlm/frontend/tac/bitstring.hpp>
-#include <jlm/frontend/tac/phi.hpp>
+#include <jlm/IR/basic_block.hpp>
+#include <jlm/IR/tac/address.hpp>
+#include <jlm/IR/tac/apply.hpp>
+#include <jlm/IR/tac/assignment.hpp>
+#include <jlm/IR/tac/bitstring.hpp>
+#include <jlm/IR/tac/phi.hpp>
 
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/Function.h>

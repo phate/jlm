@@ -1,12 +1,12 @@
 /*
- * Copyright 2014 Nico Reißmann <nico.reissmann@gmail.com>
+ * Copyright 2014 2015 Nico Reißmann <nico.reissmann@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_FRONTEND_TAC_TAC_H
-#define JLM_FRONTEND_TAC_TAC_H
+#ifndef JLM_IR_TAC_TAC_H
+#define JLM_IR_TAC_TAC_H
 
-#include <jlm/frontend/basic_block.hpp>
+#include <jlm/IR/basic_block.hpp>
 
 #include <jive/vsdg/operators/base.h>
 

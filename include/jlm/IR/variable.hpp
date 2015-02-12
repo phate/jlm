@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_FRONTEND_VARIABLE_HPP
-#define JLM_FRONTEND_VARIABLE_HPP
+#ifndef JLM_IR_VARIABLE_HPP
+#define JLM_IR_VARIABLE_HPP
 
 #include <jive/vsdg/basetype.h>
 

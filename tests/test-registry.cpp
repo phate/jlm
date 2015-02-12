@@ -1,11 +1,11 @@
 /*
- * Copyright 2014 Nico Reißmann <nico.reissmann@gmail.com>
+ * Copyright 2014 2015 Nico Reißmann <nico.reissmann@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
 #include "test-registry.hpp"
 
-#include <jlm/frontend/clg.hpp>
+#include <jlm/IR/clg.hpp>
 
 #include <jlm/jlm.hpp>
 

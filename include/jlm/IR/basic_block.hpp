@@ -1,13 +1,13 @@
 /*
- * Copyright 2013 2014 Nico Reißmann <nico.reissmann@gmail.com>
+ * Copyright 2013 2014 2015 Nico Reißmann <nico.reissmann@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_FRONTEND_BASIC_BLOCK_H
-#define JLM_FRONTEND_BASIC_BLOCK_H
+#ifndef JLM_IR_BASIC_BLOCK_H
+#define JLM_IR_BASIC_BLOCK_H
 
-#include <jlm/frontend/cfg.hpp>
-#include <jlm/frontend/cfg_node.hpp>
+#include <jlm/IR/cfg.hpp>
+#include <jlm/IR/cfg_node.hpp>
 
 namespace jive {
 	class operation;

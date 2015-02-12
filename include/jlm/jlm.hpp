@@ -6,7 +6,7 @@
 #ifndef JLM_JLM_HPP
 #define JLM_JLM_HPP
 
-#include <jlm/frontend/clg.hpp>
+#include <jlm/IR/clg.hpp>
 
 #include <unordered_map>
 

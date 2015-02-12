@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_FRONTEND_CFG_NODE_H
-#define JLM_FRONTEND_CFG_NODE_H
+#ifndef JLM_IR_CFG_NODE_H
+#define JLM_IR_CFG_NODE_H
 
 #include <list>
 #include <memory>

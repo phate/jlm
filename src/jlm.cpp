@@ -8,10 +8,10 @@
 #include <jlm/instruction.hpp>
 #include <jlm/jlm.hpp>
 #include <jlm/type.hpp>
-#include <jlm/frontend/basic_block.hpp>
-#include <jlm/frontend/cfg.hpp>
-#include <jlm/frontend/cfg_node.hpp>
-#include <jlm/frontend/tac/assignment.hpp>
+#include <jlm/IR/basic_block.hpp>
+#include <jlm/IR/cfg.hpp>
+#include <jlm/IR/cfg_node.hpp>
+#include <jlm/IR/tac/assignment.hpp>
 
 #include <jive/arch/memorytype.h>
 #include <jive/vsdg/basetype.h>

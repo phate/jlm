@@ -3,11 +3,11 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_FRONTEND_TAC_PHI_H
-#define JLM_FRONTEND_TAC_PHI_H
+#ifndef JLM_IR_TAC_PHI_H
+#define JLM_IR_TAC_PHI_H
 
-#include <jlm/frontend/tac/operators.hpp>
-#include <jlm/frontend/tac/tac.hpp>
+#include <jlm/IR/tac/operators.hpp>
+#include <jlm/IR/tac/tac.hpp>
 
 namespace jlm {
 namespace frontend {

@@ -7,7 +7,7 @@
 #include <jlm/common.hpp>
 #include <jlm/instruction.hpp>
 
-#include <jlm/frontend/tac/bitstring.hpp>
+#include <jlm/IR/tac/bitstring.hpp>
 
 #include <llvm/IR/InstrTypes.h>
 #include <llvm/IR/Instructions.h>

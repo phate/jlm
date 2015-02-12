@@ -3,6 +3,13 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/IR/clg.hpp>
+#include <jlm/IR/construction.hpp>
+#include <jlm/jlm.hpp>
+
+#include <jive/vsdg/graph.h>
+#include <jive/view.h>
+
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IRReader/IRReader.h>
 #include <llvm/Support/raw_ostream.h>
@@ -26,6 +33,17 @@ int main (int argc, char ** argv)
 		err.print(argv[0], llvm::errs());
 		return 1;
 	}
+
+	setlocale(LC_ALL, "");
+
+	jlm::frontend::clg clg;
+	jlm::convert_module(*module, clg);
+
+	struct jive_graph * graph = construct_rvsdg(clg);
+
+	jive_view(graph, stdout);
+
+	jive_graph_destroy(graph);
 
 	return 0;
 }

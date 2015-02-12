@@ -5,7 +5,7 @@
 
 #include "test-registry.hpp"
 
-#include <jlm/frontend/clg.hpp>
+#include <jlm/IR/clg.hpp>
 
 #include <assert.h>
 

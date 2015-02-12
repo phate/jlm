@@ -3,10 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_FRONTEND_CLG_H
-#define JLM_FRONTEND_CLG_H
+#ifndef JLM_IR_CLG_H
+#define JLM_IR_CLG_H
 
-#include <jlm/frontend/cfg.hpp>
+#include <jlm/IR/cfg.hpp>
 
 #include <jive/types/function/fcttype.h>
 
