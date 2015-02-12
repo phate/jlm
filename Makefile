@@ -12,7 +12,6 @@ LIBJLM_SRC = \
 	src/IR/cfg.cpp \
 	src/IR/cfg_node.cpp \
 	src/IR/clg.cpp \
-	src/IR/construction.cpp \
 	src/IR/tac/operators.cpp \
 	src/IR/tac/tac.cpp \
 	\
@@ -21,6 +20,9 @@ LIBJLM_SRC = \
 	src/construction/jlm.cpp \
 	src/construction/instruction.cpp \
 	src/construction/type.cpp \
+	\
+	src/destruction/destruction.cpp \
+
 
 JLM_SRC = \
 	src/main.cpp \

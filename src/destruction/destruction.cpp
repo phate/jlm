@@ -3,18 +3,17 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/destruction/destruction.hpp>
 #include <jlm/IR/clg.hpp>
-#include <jlm/IR/construction.hpp>
 
 #include <jive/types/function/fctlambda.h>
 #include <jive/vsdg/basetype.h>
 #include <jive/vsdg/graph.h>
 
 namespace jlm {
-namespace frontend {
 
 static jive::output * 
-construct_lambda(jive_graph * graph, const jlm::frontend::clg_node * clg_node)
+construct_lambda(struct jive_graph * graph, const jlm::frontend::clg_node * clg_node)
 {
 	const jive::fct::type & fcttype = clg_node->type();
 
@@ -42,7 +41,7 @@ construct_lambda(jive_graph * graph, const jlm::frontend::clg_node * clg_node)
 
 
 static void
-handle_scc(jive_graph * graph, std::unordered_set<const clg_node*> & scc)
+handle_scc(struct jive_graph * graph, std::unordered_set<const jlm::frontend::clg_node*> & scc)
 {
 	if (scc.size() == 1 && !(*scc.begin())->is_selfrecursive()) {
 		construct_lambda(graph, *scc.begin());
@@ -55,14 +54,13 @@ handle_scc(jive_graph * graph, std::unordered_set<const clg_node*> & scc)
 struct jive_graph *
 construct_rvsdg(const jlm::frontend::clg & clg)
 {
-	jive_graph * graph = jive_graph_create();	
+	struct ::jive_graph * graph = jive_graph_create();	
 
-	std::vector<std::unordered_set<const clg_node*>> sccs = clg.find_sccs();
+	std::vector<std::unordered_set<const jlm::frontend::clg_node*>> sccs = clg.find_sccs();
 	for (auto scc : sccs)
 		handle_scc(graph, scc);
 
 	return graph;
 }
 
-}
 }

@@ -5,8 +5,8 @@
 
 #include <jlm/construction/jlm.hpp>
 
+#include <jlm/destruction/destruction.hpp>
 #include <jlm/IR/clg.hpp>
-#include <jlm/IR/construction.hpp>
 
 #include <jive/vsdg/graph.h>
 #include <jive/view.h>
@@ -40,7 +40,7 @@ int main (int argc, char ** argv)
 	jlm::frontend::clg clg;
 	jlm::convert_module(*module, clg);
 
-	struct jive_graph * graph = construct_rvsdg(clg);
+	struct jive_graph * graph = jlm::construct_rvsdg(clg);
 
 	jive_view(graph, stdout);
 
