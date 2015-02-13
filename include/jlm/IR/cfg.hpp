@@ -57,6 +57,9 @@ public:
 
 	void prune();
 
+	void
+	destruct_ssa();
+
 	inline jlm::frontend::cfg::enter_node * enter() const noexcept { return enter_; }
 	inline jlm::frontend::cfg::exit_node * exit() const noexcept { return exit_; }
 

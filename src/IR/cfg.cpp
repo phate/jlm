@@ -9,6 +9,7 @@
 #include <jlm/IR/cfg.hpp>
 #include <jlm/IR/cfg_node.hpp>
 #include <jlm/IR/clg.hpp>
+#include <jlm/IR/tac/assignment.hpp>
 #include <jlm/IR/tac/operators.hpp>
 #include <jlm/IR/tac/tac.hpp>
 #include <jive/util/buffer.h>
@@ -559,6 +560,56 @@ cfg::prune()
 	}
 
 	JLM_DEBUG_ASSERT(is_closed());
+}
+
+void
+cfg::destruct_ssa()
+{
+	/* find all blocks containing phis */
+	std::unordered_set<basic_block*> phi_blocks;
+	for (auto it = nodes_.begin(); it != nodes_.end(); it++) {
+		cfg_node * node = it->get();
+		if (!dynamic_cast<basic_block*>(node))
+			continue;
+
+		basic_block * bb = static_cast<basic_block*>(node);
+		if (!bb->tacs().empty() && dynamic_cast<const phi_op*>(&bb->tacs().front()->operation()))
+			phi_blocks.insert(bb);
+	}
+
+	/* eliminate phis */
+	for (auto phi_block : phi_blocks) {
+		basic_block * ass_block = create_basic_block();
+		phi_block->divert_inedges(ass_block);
+		ass_block->add_outedge(phi_block, 0);
+
+		std::list<const tac*> & tacs = phi_block->tacs();
+		for (auto tac : tacs) {
+			if (!dynamic_cast<const phi_op*>(&tac->operation()))
+				break;
+
+			const phi_op * phi = static_cast<const phi_op*>(&tac->operation());
+			const variable * v = create_variable(phi->type());
+
+			size_t n = 0;
+			//FIXME: we have no way of doing variable1 = variable2 by not specifying an output
+			const output * value = nullptr;
+			std::list<cfg_edge*> edges = ass_block->inedges();
+			for (auto it = edges.begin(); it != edges.end(); it++, n++) {
+				basic_block * edge_block = static_cast<basic_block*>((*it)->split());
+
+				value = assignment_tac(edge_block, v, tac->inputs()[n]->origin());
+			}
+			assignment_tac(ass_block, tac->outputs()[0]->variable(), value);
+		}
+
+		/* remove phi TACs */
+		while (!tacs.empty()) {
+			if (!dynamic_cast<const phi_op*>(&tacs.front()->operation()))
+				break;
+			tacs.pop_front();
+		}
+	}
 }
 
 }
