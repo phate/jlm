@@ -6,13 +6,16 @@
 #ifndef JLM_DESTRUCTION_RESTRUCTURING_HPP
 #define JLM_DESTRUCTION_RESTRUCTURING_HPP
 
+#include <unordered_set>
+
 namespace jlm {
 
 namespace frontend {
 	class cfg;
+	class cfg_edge;
 }
 
-void
+std::unordered_set<jlm::frontend::cfg_edge*>
 restructure(jlm::frontend::cfg * cfg);
 
 }

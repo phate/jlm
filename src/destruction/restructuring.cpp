@@ -262,7 +262,7 @@ restructure_branches(jlm::frontend::cfg_node * start, jlm::frontend::cfg_node * 
 	restructure_branches(vt, end);
 }
 
-void
+std::unordered_set<jlm::frontend::cfg_edge*>
 restructure(jlm::frontend::cfg * cfg)
 {
 	JIVE_DEBUG_ASSERT(cfg->is_closed());
@@ -275,8 +275,11 @@ restructure(jlm::frontend::cfg * cfg)
 	restructure_branches(cfg->enter(), cfg->exit());
 
 	/* insert back edges */
+	std::unordered_set<jlm::frontend::cfg_edge*> edges;
 	for (auto edge : back_edges)
-		edge.source()->add_outedge(edge.sink(), edge.index());
+		edges.insert(edge.source()->add_outedge(edge.sink(), edge.index()));
+
+	return edges;
 }
 
 }
