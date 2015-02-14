@@ -85,6 +85,12 @@ public:
 		return enter_->append_argument(name, type);
 	}
 
+	inline size_t
+	narguments() const noexcept
+	{
+		return enter_->narguments();
+	}
+
 	inline const std::string &
 	argument_name(size_t index) const
 	{
@@ -109,6 +115,12 @@ public:
 		exit_->append_result(result);
 	}
 
+	inline size_t
+	nresults() const noexcept
+	{
+		return exit_->nresults();
+	}
+
 	inline const variable *
 	result(size_t index) const
 	{
@@ -126,6 +138,12 @@ private:
 
 		const output *
 		append_argument(const std::string & name, const jive::base::type & type);
+
+		size_t
+		narguments() const noexcept
+		{
+			return arguments_.size();
+		}
 
 		const std::string &
 		argument_name(size_t index) const;
@@ -152,6 +170,12 @@ private:
 		append_result(const variable * result)
 		{
 			results_.push_back(result);
+		}
+
+		inline size_t
+		nresults() const noexcept
+		{
+			return results_.size();
 		}
 
 		inline const variable *

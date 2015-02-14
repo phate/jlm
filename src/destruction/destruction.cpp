@@ -4,39 +4,113 @@
  */
 
 #include <jlm/destruction/destruction.hpp>
+#include <jlm/destruction/restructuring.hpp>
+
+#include <jlm/IR/basic_block.hpp>
 #include <jlm/IR/clg.hpp>
+#include <jlm/IR/tac/assignment.hpp>
+#include <jlm/IR/tac/tac.hpp>
 
 #include <jive/types/function/fctlambda.h>
 #include <jive/vsdg/basetype.h>
 #include <jive/vsdg/graph.h>
 
+typedef std::unordered_map<const jlm::frontend::variable*, jive::output*> variable_map;
+typedef std::unordered_map<const jlm::frontend::cfg_node*, variable_map> node_map;
+
 namespace jlm {
 
-static jive::output * 
-construct_lambda(struct jive_graph * graph, const jlm::frontend::clg_node * clg_node)
+static void
+convert_basic_block(
+	const jlm::frontend::basic_block * bb,
+	struct jive_graph * graph,
+	node_map & nmap)
 {
-	const jive::fct::type & fcttype = clg_node->type();
+	JLM_DEBUG_ASSERT(bb->ninedges() == 1);
+	variable_map vmap = nmap[bb->inedges().front()->source()];
 
-	std::vector<const jive::base::type*> argument_types;
-	std::vector<const char *> argument_names;
-	for (size_t n = 0; n < fcttype.narguments(); n++) {
-		argument_types.push_back(fcttype.argument_type(n));
-		argument_names.push_back("arg");
+	std::list<const jlm::frontend::tac*> tacs = bb->tacs();
+	for (auto tac : tacs) {
+		if (dynamic_cast<const jlm::frontend::assignment_op*>(&tac->operation())) {
+			vmap[tac->outputs()[0]->variable()] = vmap[tac->inputs()[0]->variable()];
+			continue;
+		}
+
+		std::vector<jive::output*> operands;
+		for (size_t n = 0; n < tac->inputs().size(); n++) {
+			JLM_DEBUG_ASSERT(vmap.find(tac->inputs()[n]->variable()));
+			operands.push_back(vmap[tac->inputs()[n]->variable()]);
+		}
+
+		std::vector<jive::output *> results;
+		results = jive_node_create_normalized(graph, tac->operation(), operands);
+
+		for (size_t n = 0; n < tac->outputs().size(); n++)
+			vmap[tac->outputs()[n]->variable()] = results[n];
 	}
 
-	struct jive_lambda * lambda = jive_lambda_begin(graph, fcttype.narguments(),
+	nmap[bb] = vmap;
+	for (auto e : bb->outedges()) {
+		if (auto bb = dynamic_cast<jlm::frontend::basic_block *>(e->sink()))
+			convert_basic_block(bb, graph, nmap);
+	}
+}
+
+static jive::output * 
+convert_cfg(
+	jlm::frontend::cfg * cfg,
+	struct jive_graph * graph)
+{
+	jive_cfg_view(*cfg);
+	cfg->destruct_ssa();
+	jive_cfg_view(*cfg);
+	restructure(cfg);
+	jive_cfg_view(*cfg);
+
+
+	std::vector<const jlm::frontend::variable*> variables;
+	std::vector<const char*> argument_names;
+	std::vector<const jive::base::type*> argument_types;
+	for (size_t n = 0; n < cfg->narguments(); n++) {
+		variables.push_back(cfg->argument(n)->variable());
+		argument_names.push_back(cfg->argument(n)->variable()->name().c_str());
+		argument_types.push_back(&cfg->argument(n)->variable()->type());
+	}
+
+	struct jive_lambda * lambda = jive_lambda_begin(graph, variables.size(),
 		&argument_types[0], &argument_names[0]);
 
-	JIVE_DEBUG_ASSERT(lambda->narguments == fcttype.nreturns());
+	variable_map vmap;
+	JLM_DEBUG_ASSERT(variables.size() == lambda->narguments);
+	for (size_t n = 0; n < variables.size(); n++)
+		vmap[variables[n]] = lambda->arguments[n];
 
-	std::vector<const jive::base::type*> result_types;
+	node_map nmap;
+	nmap[cfg->enter()] = vmap;
+	JLM_DEBUG_ASSERT(cfg->enter()->noutedges() == 1);
+	const jlm::frontend::basic_block * bb;
+	bb = static_cast<const jlm::frontend::basic_block*>(cfg->enter()->outedges()[0]->sink());
+	convert_basic_block(bb, graph, nmap);
+
+	JLM_DEBUG_ASSERT(cfg->exit()->ninedges() == 1);
+	jlm::frontend::cfg_node * predecessor = cfg->exit()->inedges().front()->source();
+
 	std::vector<jive::output*> results;
-	for (size_t n = 0; n < fcttype.nreturns(); n++) {
-		result_types.push_back(fcttype.return_type(n));
-		results.push_back(lambda->arguments[n]);
+	std::vector<const jive::base::type*> result_types;
+	for (size_t n = 0; n< cfg->nresults(); n++) {
+		results.push_back(nmap[predecessor][cfg->result(n)]);
+		result_types.push_back(&cfg->result(n)->type());
 	}
 
-	return jive_lambda_end(lambda, fcttype.nreturns(), &result_types[0], &results[0]);
+	return jive_lambda_end(lambda, cfg->nresults(), &result_types[0], &results[0]);
+}
+
+static jive::output *
+construct_lambda(struct jive_graph * graph, const jlm::frontend::clg_node * clg_node)
+{
+	//FIXME: check whether cfg_node has a CFG
+
+	return convert_cfg(clg_node->cfg(), graph);
 }
 
 
