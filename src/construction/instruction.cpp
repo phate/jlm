@@ -15,6 +15,7 @@
 #include <jlm/IR/tac/assignment.hpp>
 #include <jlm/IR/tac/bitstring.hpp>
 #include <jlm/IR/tac/phi.hpp>
+#include <jlm/IR/tac/match.hpp>
 
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/Function.h>
@@ -75,6 +76,9 @@ convert_branch_instruction(
 	JLM_DEBUG_ASSERT(bb->noutedges() == 0);
 	if (instruction->isConditional()) {
 		JLM_DEBUG_ASSERT(instruction->getNumSuccessors() == 2);
+
+		const jlm::frontend::output * condition = convert_value(instruction->getCondition(), bb, vmap);
+		match_tac(bb, condition, {0});
 
 		/* taken */
 		JLM_DEBUG_ASSERT(bbmap.find(instruction->getSuccessor(0)) != bbmap.end());
