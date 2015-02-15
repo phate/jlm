@@ -11,24 +11,105 @@
 #include <jlm/IR/tac/assignment.hpp>
 #include <jlm/IR/tac/tac.hpp>
 
+#include <jive/types/bitstring/constant.h>
+#include <jive/types/bitstring/type.h>
 #include <jive/types/function/fctlambda.h>
 #include <jive/vsdg/basetype.h>
+#include <jive/vsdg/gamma.h>
 #include <jive/vsdg/graph.h>
+
+#include <stack>
 
 typedef std::unordered_map<const jlm::frontend::variable*, jive::output*> variable_map;
 typedef std::unordered_map<const jlm::frontend::cfg_node*, variable_map> node_map;
+typedef std::unordered_map<const jlm::frontend::cfg_edge*, std::stack<jive::output*>> predicate_map;
 
 namespace jlm {
+
+static jive::output *
+create_undefined_value(const jive::base::type & type, struct jive_graph * graph)
+{
+	if (auto t = dynamic_cast<const jive::bits::type*>(&type))
+		return jive_bitconstant_undefined(graph, t->nbits());
+
+	JLM_DEBUG_ASSERT(0);
+	return nullptr;
+}
+
+static bool
+is_join(const jlm::frontend::basic_block * bb)
+{
+	return bb->ninedges() > 1;
+}
+
+static bool
+visit_join(const jlm::frontend::basic_block * bb, predicate_map & pmap)
+{
+	JLM_DEBUG_ASSERT(is_join(bb));
+
+	for (auto edge : bb->inedges()) {
+		if (pmap.find(edge) == pmap.end())
+			return false;
+	}
+
+	return true;
+}
 
 static void
 convert_basic_block(
 	const jlm::frontend::basic_block * bb,
 	struct jive_graph * graph,
-	node_map & nmap)
+	node_map & nmap,
+	predicate_map & pmap)
 {
-	JLM_DEBUG_ASSERT(bb->ninedges() == 1);
-	variable_map vmap = nmap[bb->inedges().front()->source()];
+	/* only visit a join if all incoming edges have already been visited */
+	if (is_join(bb) && !visit_join(bb, pmap))
+		return;
 
+	variable_map vmap;
+	std::stack<jive::output*> pstack;
+
+	/* handle incoming edges */
+	if (bb->ninedges() == 1) {
+		vmap = nmap[bb->inedges().front()->source()];
+		pstack = pmap[bb->inedges().front()];
+	} else if (is_join(bb)) {
+		pstack = pmap[bb->inedges().front()];
+		JLM_DEBUG_ASSERT(pstack.size() != 0);
+		jive::output * predicate = pstack.top();
+		pstack.pop();
+
+		for (auto edge : bb->inedges())
+			JLM_DEBUG_ASSERT(predicate == pmap[edge].top());
+
+		for (auto edge : bb->inedges())
+			vmap.insert(nmap[edge->source()].begin(), nmap[edge->source()].end());
+
+		std::vector<const jive::base::type*> types;
+		for (auto vpair : vmap)
+			types.push_back(&vpair.first->type());
+
+		std::vector<std::vector<jive::output*>> alternatives;
+		for (auto edge : bb->inedges()) {
+			std::vector<jive::output*> values;
+			for (auto vpair : vmap) {
+				const jlm::frontend::variable * variable = vpair.first;
+				if (nmap[edge->source()].find(variable) != nmap[edge->source()].end())
+					values.push_back(nmap[edge->source()][variable]);
+				else
+					values.push_back(create_undefined_value(variable->type(), graph));
+			}
+			alternatives.push_back(values);
+		}
+
+		size_t n = 0;
+		std::vector<jive::output*> results = jive_gamma(predicate, types, alternatives);
+		JLM_DEBUG_ASSERT(results.size() == vmap.size());
+		for (auto variable : vmap)
+			vmap[variable.first] = results[n++];
+	}
+
+	/* handle TACs */
 	std::list<const jlm::frontend::tac*> tacs = bb->tacs();
 	for (auto tac : tacs) {
 		if (dynamic_cast<const jlm::frontend::assignment_op*>(&tac->operation())) {
@@ -49,10 +130,15 @@ convert_basic_block(
 			vmap[tac->outputs()[n]->variable()] = results[n];
 	}
 
+	/* handle outgoing edges */
+	if (bb->is_branch())
+		pstack.push(vmap[bb->tacs().back()->outputs()[0]->variable()]);
+
 	nmap[bb] = vmap;
 	for (auto e : bb->outedges()) {
+		pmap[e] = pstack;
 		if (auto bb = dynamic_cast<jlm::frontend::basic_block *>(e->sink()))
-			convert_basic_block(bb, graph, nmap);
+			convert_basic_block(bb, graph, nmap, pmap);
 	}
 }
 
@@ -90,7 +176,11 @@ convert_cfg(
 	JLM_DEBUG_ASSERT(cfg->enter()->noutedges() == 1);
 	const jlm::frontend::basic_block * bb;
 	bb = static_cast<const jlm::frontend::basic_block*>(cfg->enter()->outedges()[0]->sink());
-	convert_basic_block(bb, graph, nmap);
+
+	predicate_map pmap;
+	pmap[cfg->enter()->outedges()[0]] = std::stack<jive::output*>();
+
+	convert_basic_block(bb, graph, nmap, pmap);
 
 	JLM_DEBUG_ASSERT(cfg->exit()->ninedges() == 1);
 	jlm::frontend::cfg_node * predecessor = cfg->exit()->inedges().front()->source();
