@@ -12,22 +12,6 @@
 namespace jlm {
 namespace frontend {
 
-input::input(const jlm::frontend::tac * tac, size_t index, const output * origin)
-	: tac_(tac)
-	, index_(index)
-	, origin_(origin)
-{
-	//FIXME: use jive_raise_type_error once it does not need jive_context any more
-	if (origin->type() != type()) {
-		std::string msg("Type mismatch: required '");
-		msg.append(type().debug_string().c_str());
-		msg.append("' got '");
-		msg.append(origin->type().debug_string().c_str());
-		msg.append("'");
-		throw std::logic_error(msg);
-	}
-}
-
 output::output(const jlm::frontend::tac * tac, size_t index,
 	const jlm::frontend::variable * variable)
 	: tac_(tac)

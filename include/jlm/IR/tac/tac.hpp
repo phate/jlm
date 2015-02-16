@@ -23,7 +23,6 @@ namespace base {
 namespace jlm {
 namespace frontend {
 
-class input;
 class output;
 class variable;
 
@@ -81,47 +80,6 @@ private:
 	std::unique_ptr<jive::operation> operation_;
 };
 
-class input final {
-public:
-	input(const input &) = delete;
-
-	input &
-	operator=(const input &) = delete;
-
-	inline const jive::base::type &
-	type() const noexcept
-	{
-		return tac_->operation().argument_type(index_);
-	}
-
-	inline size_t
-	index() const noexcept
-	{
-		return index_;
-	}
-
-	inline const output *
-	origin() const noexcept
-	{
-		return origin_;
-	}
-
-	inline const jlm::frontend::variable *
-	variable() const noexcept;
-
-private:
-	const jlm::frontend::tac * tac_;
-	size_t index_;
-	const output * origin_;
-
-	input(const jlm::frontend::tac * tac, size_t index, const output * origin);
-
-	friend jlm::frontend::tac::tac(const cfg_node * owner,
-		const jive::operation & operation,
-		const std::vector<const jlm::frontend::variable*> & operands,
-		const std::vector<const jlm::frontend::variable*> & variables);
-};
-
 class output final {
 public:
 	output(const output &) = delete;
@@ -159,12 +117,6 @@ private:
 		const std::vector<const jlm::frontend::variable*> & operands,
 		const std::vector<const jlm::frontend::variable*> & variables);
 };
-
-inline const jlm::frontend::variable *
-input::variable() const noexcept
-{
-	return origin()->variable();
-}
 
 }
 }
