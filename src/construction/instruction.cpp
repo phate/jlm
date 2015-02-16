@@ -78,7 +78,7 @@ convert_branch_instruction(
 		JLM_DEBUG_ASSERT(instruction->getNumSuccessors() == 2);
 
 		const jlm::frontend::output * condition = convert_value(instruction->getCondition(), bb, vmap);
-		match_tac(bb, condition, {0});
+		match_tac(bb, condition->variable(), {0});
 
 		/* taken */
 		JLM_DEBUG_ASSERT(bbmap.find(instruction->getSuccessor(0)) != bbmap.end());
@@ -181,7 +181,7 @@ convert_load_instruction(
 	/* FIXME: handle volatile correctly */
 
 	const jlm::frontend::output * address = convert_value(instruction->getPointerOperand(), bb, vmap);
-	const jlm::frontend::output * value = addrload_tac(bb, address, state,
+	const jlm::frontend::output * value = addrload_tac(bb, address->variable(), state->variable(),
 		*dynamic_cast<jive::value::type*>(convert_type(*instruction->getType()).get()));
 	vmap[instruction] = value;
 }
@@ -200,7 +200,8 @@ convert_store_instruction(
 
 	const jlm::frontend::output * address = convert_value(instruction->getPointerOperand(), bb, vmap);
 	const jlm::frontend::output * value = convert_value(instruction->getValueOperand(), bb, vmap);
-	const jlm::frontend::output * result_state = addrstore_tac(bb, address, value, state);
+	const jlm::frontend::output * result_state = addrstore_tac(bb, address->variable(),
+		value->variable(), state->variable());
 	assignment_tac(bb, state->variable(), result_state->variable());
 }
 
@@ -216,9 +217,9 @@ convert_phi_instruction(
 	const llvm::PHINode * instruction = static_cast<const llvm::PHINode*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
 
-	std::vector<const jlm::frontend::output *> ops;
+	std::vector<const jlm::frontend::variable *> ops;
 	for (size_t n = 0; n < instruction->getNumIncomingValues(); n++)
-		ops.push_back(convert_value(instruction->getIncomingValue(n), bb, vmap));
+		ops.push_back(convert_value(instruction->getIncomingValue(n), bb, vmap)->variable());
 
 	vmap[instruction] = phi_tac(bb, ops);
 }
@@ -238,7 +239,7 @@ convert_getelementptr_instruction(
 	const jlm::frontend::output * base = convert_value(instruction->getPointerOperand(), bb, vmap);
 	for (auto idx = instruction->idx_begin(); idx != instruction->idx_end(); idx++) {
 		const jlm::frontend::output * offset = convert_value(idx->get(), bb, vmap);
-		base = addrarraysubscript_tac(bb, base, offset);
+		base = addrarraysubscript_tac(bb, base->variable(), offset->variable());
 	}
 
 	vmap[instruction] = base;
@@ -258,7 +259,7 @@ convert_trunc_instruction(
 
 	const llvm::IntegerType * dst_type = static_cast<const llvm::IntegerType*>(i.getType());
 	const jlm::frontend::output * operand = convert_value(instruction->getOperand(0), bb, vmap);
-	vmap[instruction] = bitslice_tac(bb, operand, 0, dst_type->getBitWidth());
+	vmap[instruction] = bitslice_tac(bb, operand->variable(), 0, dst_type->getBitWidth());
 }
 
 static void
@@ -280,10 +281,10 @@ convert_call_instruction(
 	JLM_DEBUG_ASSERT(callee != nullptr);
 	caller->add_call(callee);
 
-	std::vector<const jlm::frontend::output*> arguments;
+	std::vector<const jlm::frontend::variable*> arguments;
 	for (size_t n = 0; n < instruction->getNumArgOperands(); n++)
-		arguments.push_back(convert_value(instruction->getArgOperand(n), bb, vmap));
-	arguments.push_back(state);
+		arguments.push_back(convert_value(instruction->getArgOperand(n), bb, vmap)->variable());
+	arguments.push_back(state->variable());
 
 	jive::fct::type type = dynamic_cast<jive::fct::type&>(*convert_type(*f->getFunctionType()).get());
 

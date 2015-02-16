@@ -15,10 +15,15 @@ namespace frontend {
 JIVE_EXPORTED_INLINE std::vector<const jlm::frontend::output*>
 apply_tac(jlm::frontend::basic_block * basic_block, const std::string & name,
 	const jive::fct::type & function_type,
-	const std::vector<const jlm::frontend::output*> & operands)
+	const std::vector<const jlm::frontend::variable*> & operands)
 {
 	jlm::frontend::apply_op op(name, function_type);
-	return basic_block->append(op, operands)->outputs();
+
+	std::vector<const variable*> results;
+	for (size_t n = 0; n < function_type.nreturns(); n++)
+		results.push_back(basic_block->cfg()->create_variable(*function_type.return_type(n)));
+
+	return basic_block->append(op, operands, results)->outputs();
 }
 
 }
