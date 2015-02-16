@@ -68,7 +68,7 @@ convert_function(const llvm::Function & function, jlm::frontend::clg_node * clg_
 	if (function.getReturnType()->getTypeID() != llvm::Type::VoidTyID) {
 		result = cfg->create_variable(*convert_type(*function.getReturnType()), "_r_");
 		const jlm::frontend::output * udef = create_undef_value(*function.getReturnType(), entry_block);
-		assignment_tac(entry_block, result, udef);
+		assignment_tac(entry_block, result, udef->variable());
 	}
 
 	it = function.getBasicBlockList().begin();

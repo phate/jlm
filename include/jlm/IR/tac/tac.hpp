@@ -25,6 +25,7 @@ namespace frontend {
 
 class input;
 class output;
+class variable;
 
 class tac final {
 public:
@@ -37,8 +38,8 @@ public:
 		const std::vector<const output*> & operands);
 
 	tac(const cfg_node * owner, const jive::operation & operation,
-		const std::vector<const output*> & operands,
-		const std::vector<const jlm::frontend::variable*> & variables);
+		const std::vector<const variable*> & operands,
+		const std::vector<const variable*> & results);
 
 	tac(const jlm::frontend::tac & tac) = delete;
 
@@ -57,10 +58,17 @@ public:
 		return *operation_;
 	}
 
-	inline std::vector<const input*>
-	inputs() const noexcept
+	inline size_t
+	ninputs() const noexcept
 	{
-		return inputs_;
+		return inputs_.size();
+	}
+
+	inline const variable *
+	input(size_t index) const noexcept
+	{
+		JLM_DEBUG_ASSERT(index < inputs_.size());
+		return inputs_[index];
 	}
 
 	inline std::vector<const output*>
@@ -74,7 +82,7 @@ public:
 
 private:
 	const cfg_node * owner_;
-	std::vector<const input*> inputs_;
+	std::vector<const variable*> inputs_;
 	std::vector<const output*> outputs_;
 	std::unique_ptr<jive::operation> operation_;
 };
@@ -118,7 +126,8 @@ private:
 		const jive::operation & operation, const std::vector<const output*> & operands);
 
 	friend jlm::frontend::tac::tac(const cfg_node * owner,
-		const jive::operation & operation, const std::vector<const output*> & operands,
+		const jive::operation & operation,
+		const std::vector<const jlm::frontend::variable*> & operands,
 		const std::vector<const jlm::frontend::variable*> & variables);
 };
 
@@ -158,7 +167,8 @@ private:
 		const jive::operation & operation, const std::vector<const output*> & operands);
 
 	friend jlm::frontend::tac::tac(const cfg_node * owner,
-		const jive::operation & operation, const std::vector<const output*> & operands,
+		const jive::operation & operation,
+		const std::vector<const jlm::frontend::variable*> & operands,
 		const std::vector<const jlm::frontend::variable*> & variables);
 };
 

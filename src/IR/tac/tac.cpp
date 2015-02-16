@@ -43,9 +43,6 @@ output::output(const jlm::frontend::tac * tac, size_t index,
 
 tac::~tac() noexcept
 {
-	for (auto input : inputs_)
-		delete input;
-
 	for (auto output : outputs_)
 		delete output;
 }
@@ -60,7 +57,7 @@ tac::tac(const cfg_node * owner,
 		throw std::logic_error("Invalid number of operands.");
 
 	for (size_t n = 0; n < operation.narguments(); n++)
-		inputs_.push_back(new input(this, n, operands[n]));
+		inputs_.push_back(operands[n]->variable());
 
 	for (size_t n = 0; n < operation.nresults(); n++)
 		outputs_.push_back(new output(this, n,
@@ -69,22 +66,28 @@ tac::tac(const cfg_node * owner,
 
 tac::tac(const cfg_node * owner,
 	const jive::operation & operation,
-	const std::vector<const output*> & operands,
-	const std::vector<const jlm::frontend::variable*> & variables)
+	const std::vector<const variable*> & operands,
+	const std::vector<const variable*> & results)
 	: owner_(owner)
 	, operation_(std::move(operation.copy()))
 {
+	/*
+		FIXME: throw proper exceptions
+	*/
 	if (operands.size() != operation.narguments())
 		throw std::logic_error("Invalid number of operands.");
 
-	if (variables.size() != operation.nresults())
+	if (results.size() != operation.nresults())
 		throw std::logic_error("Invalid number of variables.");
 
-	for (size_t n = 0; n < operation.narguments(); n++)
-		inputs_.push_back(new input(this, n, operands[n]));
+	for (size_t n = 0; n < operands.size(); n++) {
+		if (operands[n]->type() != operation.argument_type(n))
+			throw std::logic_error("Invalid type.");
+		inputs_.push_back(operands[n]);
+	}
 
 	for (size_t n = 0; n < operation.nresults(); n++)
-		outputs_.push_back(new output(this, n, variables[n]));
+		outputs_.push_back(new output(this, n, results[n]));
 }
 
 std::string
@@ -102,8 +105,8 @@ tac::debug_string() const
 	if (inputs_.size() != 0) {
 		sstrm << " ";
 		for (size_t n = 0; n < inputs_.size()-1; n++)
-			sstrm << inputs_[n]->origin()->variable()->debug_string() << ", ";
-		sstrm << inputs_[inputs_.size()-1]->origin()->variable()->debug_string();
+			sstrm << inputs_[n]->debug_string() << ", ";
+		sstrm << inputs_[inputs_.size()-1]->debug_string();
 	}
 
 	return sstrm.str();

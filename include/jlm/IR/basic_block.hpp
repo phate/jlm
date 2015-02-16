@@ -29,8 +29,8 @@ public:
 	append(const jive::operation & operation, const std::vector<const output*> & operands);
 
 	const tac *
-	append(const jive::operation & operation, const std::vector<const output*> & operands,
-		const std::vector<const jlm::frontend::variable*> & variables);
+	append(const jive::operation & operation, const std::vector<const variable*> & operands,
+		const std::vector<const variable*> & results);
 
 	/*
 		FIXME: add accessor functions

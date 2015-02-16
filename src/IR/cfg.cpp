@@ -592,15 +592,14 @@ cfg::destruct_ssa()
 			const variable * v = create_variable(phi->type());
 
 			size_t n = 0;
-			//FIXME: we have no way of doing variable1 = variable2 by not specifying an output
 			const output * value = nullptr;
 			std::list<cfg_edge*> edges = ass_block->inedges();
 			for (auto it = edges.begin(); it != edges.end(); it++, n++) {
 				basic_block * edge_block = static_cast<basic_block*>((*it)->split());
 
-				value = assignment_tac(edge_block, v, tac->inputs()[n]->origin());
+				value = assignment_tac(edge_block, v, tac->input(n));
 			}
-			assignment_tac(ass_block, tac->outputs()[0]->variable(), value);
+			assignment_tac(ass_block, tac->outputs()[0]->variable(), value->variable());
 		}
 
 		/* remove phi TACs */

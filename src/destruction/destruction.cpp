@@ -171,14 +171,14 @@ convert_basic_block(
 	std::list<const jlm::frontend::tac*> tacs = bb->tacs();
 	for (auto tac : tacs) {
 		if (dynamic_cast<const jlm::frontend::assignment_op*>(&tac->operation())) {
-			vmap[tac->outputs()[0]->variable()] = vmap[tac->inputs()[0]->variable()];
+			vmap[tac->outputs()[0]->variable()] = vmap[tac->input(0)];
 			continue;
 		}
 
 		std::vector<jive::output*> operands;
-		for (size_t n = 0; n < tac->inputs().size(); n++) {
-			JLM_DEBUG_ASSERT(vmap.find(tac->inputs()[n]->variable()));
-			operands.push_back(vmap[tac->inputs()[n]->variable()]);
+		for (size_t n = 0; n < tac->ninputs(); n++) {
+			JLM_DEBUG_ASSERT(vmap.find(tac->input(n)));
+			operands.push_back(vmap[tac->input(n)]);
 		}
 
 		std::vector<jive::output *> results;

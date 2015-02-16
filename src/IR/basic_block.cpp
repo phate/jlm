@@ -46,10 +46,10 @@ basic_block::append(const jive::operation & operation, const std::vector<const o
 const tac *
 basic_block::append(
 	const jive::operation & operation,
-	const std::vector<const output*> & operands,
-	const std::vector<const jlm::frontend::variable*> & variables)
+	const std::vector<const variable*> & operands,
+	const std::vector<const variable*> & results)
 {
-	jlm::frontend::tac * tac = new jlm::frontend::tac(this, operation, operands, variables);
+	jlm::frontend::tac * tac = new jlm::frontend::tac(this, operation, operands, results);
 	tacs_.push_back(tac);
 	return tac;
 }
