@@ -31,12 +31,6 @@ class tac final {
 public:
 	~tac() noexcept;
 
-	/*
-		FIXME: to be removed
-	*/
-	tac(const cfg_node * owner, const jive::operation & operation,
-		const std::vector<const output*> & operands);
-
 	tac(const cfg_node * owner, const jive::operation & operation,
 		const std::vector<const variable*> & operands,
 		const std::vector<const variable*> & results);
@@ -123,9 +117,6 @@ private:
 	input(const jlm::frontend::tac * tac, size_t index, const output * origin);
 
 	friend jlm::frontend::tac::tac(const cfg_node * owner,
-		const jive::operation & operation, const std::vector<const output*> & operands);
-
-	friend jlm::frontend::tac::tac(const cfg_node * owner,
 		const jive::operation & operation,
 		const std::vector<const jlm::frontend::variable*> & operands,
 		const std::vector<const jlm::frontend::variable*> & variables);
@@ -162,9 +153,6 @@ private:
 	const jlm::frontend::variable * variable_;
 
 	output (const jlm::frontend::tac * tac, size_t index, const jlm::frontend::variable * variable);
-
-	friend jlm::frontend::tac::tac(const cfg_node * owner,
-		const jive::operation & operation, const std::vector<const output*> & operands);
 
 	friend jlm::frontend::tac::tac(const cfg_node * owner,
 		const jive::operation & operation,

@@ -49,23 +49,6 @@ tac::~tac() noexcept
 
 tac::tac(const cfg_node * owner,
 	const jive::operation & operation,
-	const std::vector<const output*> & operands)
-	: owner_(owner)
-	, operation_(std::move(operation.copy()))
-{
-	if (operands.size() != operation.narguments())
-		throw std::logic_error("Invalid number of operands.");
-
-	for (size_t n = 0; n < operation.narguments(); n++)
-		inputs_.push_back(operands[n]->variable());
-
-	for (size_t n = 0; n < operation.nresults(); n++)
-		outputs_.push_back(new output(this, n,
-			owner->cfg()->create_variable(operation.result_type(n))));
-}
-
-tac::tac(const cfg_node * owner,
-	const jive::operation & operation,
 	const std::vector<const variable*> & operands,
 	const std::vector<const variable*> & results)
 	: owner_(owner)
