@@ -242,7 +242,7 @@ cfg::create_variable(const jive::base::type & type, const std::string & name)
 std::vector<std::unordered_set<cfg_node*>>
 cfg::find_sccs() const
 {
-	JIVE_DEBUG_ASSERT(is_closed());
+	JLM_DEBUG_ASSERT(is_closed());
 
 	std::vector<std::unordered_set<cfg_node*>> sccs;
 
@@ -258,7 +258,7 @@ cfg::find_sccs() const
 bool
 cfg::is_closed() const noexcept
 {
-	JIVE_DEBUG_ASSERT(is_valid());
+	JLM_DEBUG_ASSERT(is_valid());
 
 	std::unordered_set<std::unique_ptr<cfg_node>>::const_iterator it;
 	for (it = nodes_.begin(); it != nodes_.end(); it++) {
@@ -276,7 +276,7 @@ cfg::is_closed() const noexcept
 bool
 cfg::is_linear() const noexcept
 {
-	JIVE_DEBUG_ASSERT(is_closed());
+	JLM_DEBUG_ASSERT(is_closed());
 
 	std::unordered_set<std::unique_ptr<cfg_node>>::const_iterator it;
 	for (it = nodes_.begin(); it != nodes_.end(); it++) {
@@ -301,7 +301,7 @@ cfg::is_acyclic() const
 bool
 cfg::is_structured() const
 {
-	JIVE_DEBUG_ASSERT(is_closed());
+	JLM_DEBUG_ASSERT(is_closed());
 
 	cfg c(*this);
 	std::unordered_set<std::unique_ptr<cfg_node>>::const_iterator it = c.nodes_.begin();
@@ -309,7 +309,7 @@ cfg::is_structured() const
 		cfg_node * node = (*it).get();
 
 		if (c.nodes_.size() == 2) {
-			JIVE_DEBUG_ASSERT(c.is_closed());
+			JLM_DEBUG_ASSERT(c.is_closed());
 			return true;
 		}
 
@@ -332,7 +332,7 @@ cfg::is_structured() const
 
 		/* linear */
 		if (node->single_successor() && node->outedges()[0]->sink()->single_predecessor()) {
-			JIVE_DEBUG_ASSERT(node->noutedges() == 1 && node->outedges()[0]->sink()->ninedges() == 1);
+			JLM_DEBUG_ASSERT(node->noutedges() == 1 && node->outedges()[0]->sink()->ninedges() == 1);
 			node->divert_inedges(node->outedges()[0]->sink());
 			c.remove_node(node);
 			it = c.nodes_.begin(); continue;
@@ -341,7 +341,7 @@ cfg::is_structured() const
 		/* branch */
 		if (node->is_branch()) {
 			/* find tail node */
-			JIVE_DEBUG_ASSERT(node->noutedges() > 1);
+			JLM_DEBUG_ASSERT(node->noutedges() > 1);
 			std::vector<cfg_edge*> edges = node->outedges();
 			cfg_node * succ1 = edges[0]->sink();
 			cfg_node * succ2 = edges[1]->sink();
@@ -391,7 +391,7 @@ cfg::is_structured() const
 bool
 cfg::is_reducible() const
 {
-	JIVE_DEBUG_ASSERT(is_closed());
+	JLM_DEBUG_ASSERT(is_closed());
 
 	cfg c(*this);
 	std::unordered_set<std::unique_ptr<cfg_node>>::const_iterator it = c.nodes_.begin();
@@ -399,7 +399,7 @@ cfg::is_reducible() const
 		cfg_node * node = (*it).get();
 
 		if (c.nodes_.size() == 2) {
-			JIVE_DEBUG_ASSERT(c.is_closed());
+			JLM_DEBUG_ASSERT(c.is_closed());
 			return true;
 		}
 
@@ -521,7 +521,7 @@ cfg::remove_node(cfg_node * node)
 
 	std::unique_ptr<cfg_node> tmp(node);
 	std::unordered_set<std::unique_ptr<cfg_node>>::const_iterator it = nodes_.find(tmp);
-	JIVE_DEBUG_ASSERT(it != nodes_.end());
+	JLM_DEBUG_ASSERT(it != nodes_.end());
 	nodes_.erase(it);
 	tmp.release();
 }
@@ -529,7 +529,7 @@ cfg::remove_node(cfg_node * node)
 void
 cfg::prune()
 {
-	JIVE_DEBUG_ASSERT(is_valid());
+	JLM_DEBUG_ASSERT(is_valid());
 
 	/* find all nodes that are dominated by the entry node */
 	std::unordered_set<cfg_node*> to_visit({enter_});
@@ -537,7 +537,7 @@ cfg::prune()
 	while (!to_visit.empty()) {
 		cfg_node * node = *to_visit.begin();
 		to_visit.erase(to_visit.begin());
-		JIVE_DEBUG_ASSERT(visited.find(node) == visited.end());
+		JLM_DEBUG_ASSERT(visited.find(node) == visited.end());
 		visited.insert(node);
 		std::vector<cfg_edge*> edges = node->outedges();
 		for (auto edge : edges) {

@@ -210,7 +210,7 @@ handle_scc(struct jive_graph * graph, std::unordered_set<const jlm::frontend::cl
 	if (scc.size() == 1 && !(*scc.begin())->is_selfrecursive()) {
 		construct_lambda(graph, *scc.begin());
 	} else {
-		JIVE_DEBUG_ASSERT(0);
+		JLM_DEBUG_ASSERT(0);
 		/* create phi */
 	}
 }

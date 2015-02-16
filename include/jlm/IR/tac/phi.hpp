@@ -16,7 +16,7 @@ JIVE_EXPORTED_INLINE const jlm::frontend::output *
 phi_tac(jlm::frontend::basic_block * basic_block,
 	const std::vector<const jlm::frontend::output*> & ops)
 {
-	JIVE_DEBUG_ASSERT(!ops.empty());
+	JLM_DEBUG_ASSERT(!ops.empty());
 
 	jlm::frontend::phi_op op(ops.size(), ops[0]->type());
 	const jlm::frontend::tac * tac = basic_block->append(op, ops);

@@ -123,7 +123,7 @@ clg_node::cfg_begin(const std::vector<std::string> & names)
 void
 clg_node::cfg_end(const std::vector<const variable*> & results)
 {
-	JIVE_DEBUG_ASSERT(cfg_.get() != nullptr);
+	JLM_DEBUG_ASSERT(cfg_.get() != nullptr);
 
 	if (results.size() != type_->nreturns())
 		throw jive::compiler_error("Invalid number of results.");

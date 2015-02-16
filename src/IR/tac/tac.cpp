@@ -92,7 +92,7 @@ tac::debug_string() const
 {
 	std::stringstream sstrm;
 
-	JIVE_DEBUG_ASSERT(outputs_.size() != 0);
+	JLM_DEBUG_ASSERT(outputs_.size() != 0);
 	for (size_t n = 0; n < outputs_.size()-1; n++)
 		sstrm << outputs_[n]->variable()->debug_string() << ", ";
 	sstrm << outputs_[outputs_.size()-1]->variable()->debug_string() << " = ";

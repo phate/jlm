@@ -70,7 +70,7 @@ cfg_node::remove_outedge(cfg_edge * edge)
 	std::unique_ptr<cfg_edge> e(edge);
 	std::unordered_set<std::unique_ptr<cfg_edge>>::const_iterator it = outedges_.find(e);
 	if (it != outedges_.end()) {
-		JIVE_DEBUG_ASSERT(edge->source() == this);
+		JLM_DEBUG_ASSERT(edge->source() == this);
 		edge->sink()->inedges_.remove(edge);
 		outedges_.erase(it);
 	}
@@ -81,7 +81,7 @@ void
 cfg_node::remove_outedges()
 {
 	while (outedges_.size() != 0) {
-		JIVE_DEBUG_ASSERT(outedges_.begin()->get()->source() == this);
+		JLM_DEBUG_ASSERT(outedges_.begin()->get()->source() == this);
 		remove_outedge(outedges_.begin()->get());
 	}
 }
@@ -98,7 +98,7 @@ cfg_node::outedges() const
 	std::vector<cfg_edge*> edges;
 	std::unordered_set<std::unique_ptr<cfg_edge>>::const_iterator it;
 	for ( it = outedges_.begin(); it != outedges_.end(); it++) {
-		JIVE_DEBUG_ASSERT(it->get()->source() == this);
+		JLM_DEBUG_ASSERT(it->get()->source() == this);
 		edges.push_back(it->get());
 	}
 
@@ -117,7 +117,7 @@ cfg_node::remove_inedges()
 {
 	while (inedges_.size() != 0) {
 		cfg_edge * edge = *inedges_.begin();
-		JIVE_DEBUG_ASSERT(edge->sink() == this);
+		JLM_DEBUG_ASSERT(edge->sink() == this);
 		edge->source()->remove_outedge(edge);
 	}
 }
@@ -169,7 +169,7 @@ cfg_node::single_successor() const noexcept
 
 	std::unordered_set<std::unique_ptr<cfg_edge>>::const_iterator it;
 	for (it = outedges_.begin(); it != outedges_.end(); it++) {
-		JIVE_DEBUG_ASSERT(it->get()->source() == this);
+		JLM_DEBUG_ASSERT(it->get()->source() == this);
 		if ((*it)->sink() != (*outedges_.begin())->sink())
 			return false;
 	}

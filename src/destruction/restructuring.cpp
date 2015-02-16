@@ -198,12 +198,12 @@ restructure_branches(jlm::frontend::cfg_node * start, jlm::frontend::cfg_node * 
 			}
 		}
 	}
-	JIVE_DEBUG_ASSERT(!cpoints.empty());
+	JLM_DEBUG_ASSERT(!cpoints.empty());
 
 	/* Nothing needs to be restructured for just one continuation point */
 	if (cpoints.size() == 1) {
 		jlm::frontend::cfg_node * cpoint = cpoints.begin()->first;
-		JIVE_DEBUG_ASSERT(branch_out_edges.size() == af.size());
+		JLM_DEBUG_ASSERT(branch_out_edges.size() == af.size());
 		for (size_t n = 0; n < af.size(); n++) {
 			/* empty branch subgraph, nothing needs to be done */
 			if (af[n]->sink() == cpoint)
@@ -234,7 +234,7 @@ restructure_branches(jlm::frontend::cfg_node * start, jlm::frontend::cfg_node * 
 	for (it = cpoints.begin(); it != cpoints.end(); it++)
 		vt->add_outedge(it->first, it->second);
 
-	JIVE_DEBUG_ASSERT(branch_out_edges.size() == af.size());
+	JLM_DEBUG_ASSERT(branch_out_edges.size() == af.size());
 	for (size_t n = 0; n < af.size(); n++) {
 		/* one branch out edge for this branch subgraph, only add auxiliary assignment */
 		if (branch_out_edges[n].size() == 1) {
@@ -265,12 +265,12 @@ restructure_branches(jlm::frontend::cfg_node * start, jlm::frontend::cfg_node * 
 std::unordered_set<jlm::frontend::cfg_edge*>
 restructure(jlm::frontend::cfg * cfg)
 {
-	JIVE_DEBUG_ASSERT(cfg->is_closed());
+	JLM_DEBUG_ASSERT(cfg->is_closed());
 
 	std::vector<jlm::frontend::cfg_edge> back_edges;
 	restructure_loops(cfg->enter(), cfg->exit(), back_edges);
 
-	JIVE_DEBUG_ASSERT(cfg->is_acyclic());
+	JLM_DEBUG_ASSERT(cfg->is_acyclic());
 
 	restructure_branches(cfg->enter(), cfg->exit());
 
