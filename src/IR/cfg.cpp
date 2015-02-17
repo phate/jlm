@@ -83,8 +83,10 @@ cfg::enter_node::debug_string() const
 	std::stringstream sstrm;
 
 	sstrm << this << " (ENTER)\\n";
-	for (size_t n = 0; n < arguments_.size(); n++)
-		sstrm << arguments_[n]->debug_string() << std::endl;
+	for (size_t n = 0; n < arguments_.size(); n++) {
+		const variable * argument = arguments_[n];
+		sstrm << argument->debug_string() << " (" << argument->type().debug_string() << ")\\n";
+	}
 
 	return sstrm.str();
 }
