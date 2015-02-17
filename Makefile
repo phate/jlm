@@ -4,7 +4,7 @@
 LLVMCONFIG = llvm-config-3.3
 
 CPPFLAGS += -Iinclude -I/home/reissman/Documents/jive/include -I/usr/include/llvm-3.3
-CXXFLAGS += -Wall -Werror --std=c++0x -Wfatal-errors -g -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS
+CXXFLAGS += -Wall -Werror --std=c++0x -Wfatal-errors -g -DJLM_DEBUG -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS
 LDFLAGS += $(shell $(LLVMCONFIG) --libs) $(shell $(LLVMCONFIG) --ldflags) -L/home/reissman/Documents/jive
 
 LIBJLM_SRC = \
