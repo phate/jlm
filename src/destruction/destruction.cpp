@@ -177,7 +177,7 @@ convert_basic_block(
 
 		std::vector<jive::output*> operands;
 		for (size_t n = 0; n < tac->ninputs(); n++) {
-			JLM_DEBUG_ASSERT(vmap.find(tac->input(n)));
+			JLM_DEBUG_ASSERT(vmap.find(tac->input(n)) != vmap.end());
 			operands.push_back(vmap[tac->input(n)]);
 		}
 
