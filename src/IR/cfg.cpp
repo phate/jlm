@@ -573,8 +573,6 @@ cfg::destruct_ssa()
 	/* eliminate phis */
 	for (auto phi_block : phi_blocks) {
 		basic_block * ass_block = create_basic_block();
-		phi_block->divert_inedges(ass_block);
-		ass_block->add_outedge(phi_block, 0);
 
 		std::list<const tac*> & tacs = phi_block->tacs();
 		for (auto tac : tacs) {
@@ -586,14 +584,18 @@ cfg::destruct_ssa()
 
 			size_t n = 0;
 			const variable * value = nullptr;
-			std::list<cfg_edge*> edges = ass_block->inedges();
+			std::list<cfg_edge*> edges = phi_block->inedges();
 			for (auto it = edges.begin(); it != edges.end(); it++, n++) {
 				basic_block * edge_block = static_cast<basic_block*>((*it)->split());
 
 				value = assignment_tac(edge_block, v, tac->input(n));
 			}
 			assignment_tac(ass_block, tac->output(0), value);
+			jive_cfg_view(*this);
 		}
+
+		phi_block->divert_inedges(ass_block);
+		ass_block->add_outedge(phi_block, 0);
 
 		/* remove phi TACs */
 		while (!tacs.empty()) {
