@@ -105,13 +105,13 @@ clg::find_sccs() const
 
 /* clg node */
 
-std::vector<const output*>
+std::vector<const variable*>
 clg_node::cfg_begin(const std::vector<std::string> & names)
 {
 	if (names.size() != type_->narguments())
 		throw jive::compiler_error("Invalid number of argument names.");
 
-	std::vector<const output*> arguments;
+	std::vector<const variable*> arguments;
 
 	cfg_.reset(new jlm::frontend::cfg(*this));
 	for (size_t n = 0; n < names.size(); n++)

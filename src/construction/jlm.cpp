@@ -47,14 +47,14 @@ convert_function(const llvm::Function & function, jlm::frontend::clg_node * clg_
 		names.push_back(jt->getName().str());
 	names.push_back("_s_");
 
-	std::vector<const jlm::frontend::output*> arguments = clg_node->cfg_begin(names);
-	const jlm::frontend::output * state = arguments.back();
+	std::vector<const jlm::frontend::variable*> arguments = clg_node->cfg_begin(names);
+	const jlm::frontend::variable * state = arguments.back();
 	jlm::frontend::cfg * cfg = clg_node->cfg();
 
 	value_map vmap;
 	jt = function.getArgumentList().begin();
 	for (size_t n = 0; jt != function.getArgumentList().end(); jt++, n++)
-		vmap[&(*jt)] = arguments[n]->variable();
+		vmap[&(*jt)] = arguments[n];
 
 	basic_block_map bbmap;
 	llvm::Function::BasicBlockListType::const_iterator it = function.getBasicBlockList().begin();
@@ -73,12 +73,12 @@ convert_function(const llvm::Function & function, jlm::frontend::clg_node * clg_
 
 	it = function.getBasicBlockList().begin();
 	for (; it != function.getBasicBlockList().end(); it++)
-		convert_basic_block(*it, bbmap, vmap, state->variable(), result);
+		convert_basic_block(*it, bbmap, vmap, state, result);
 
 	std::vector<const jlm::frontend::variable*> results;
 	if (function.getReturnType()->getTypeID() != llvm::Type::VoidTyID)
 		results.push_back(result);
-	results.push_back(state->variable());
+	results.push_back(state);
 
 	clg_node->cfg_end(results);
 }

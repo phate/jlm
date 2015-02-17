@@ -232,9 +232,9 @@ convert_cfg(
 	std::vector<const char*> argument_names;
 	std::vector<const jive::base::type*> argument_types;
 	for (size_t n = 0; n < cfg->narguments(); n++) {
-		variables.push_back(cfg->argument(n)->variable());
-		argument_names.push_back(cfg->argument(n)->variable()->name().c_str());
-		argument_types.push_back(&cfg->argument(n)->variable()->type());
+		variables.push_back(cfg->argument(n));
+		argument_names.push_back(cfg->argument(n)->name().c_str());
+		argument_types.push_back(&cfg->argument(n)->type());
 	}
 
 	struct jive_lambda * lambda = jive_lambda_begin(graph, variables.size(),

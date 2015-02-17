@@ -79,7 +79,7 @@ public:
 		return nodes_.size();
 	}
 
-	inline const output *
+	inline const variable *
 	append_argument(const std::string & name, const jive::base::type & type)
 	{
 		return enter_->append_argument(name, type);
@@ -103,7 +103,7 @@ public:
 		return enter_->argument_type(index);
 	}
 
-	inline const output *
+	inline const variable *
 	argument(size_t index) const
 	{
 		return enter_->argument(index);
@@ -136,8 +136,12 @@ private:
 
 		virtual std::string debug_string() const override;
 
-		const output *
-		append_argument(const std::string & name, const jive::base::type & type);
+		inline const variable *
+		append_argument(const std::string & name, const jive::base::type & type)
+		{
+			arguments_.push_back(cfg()->create_variable(type, name));
+			return arguments_[arguments_.size()-1];
+		}
 
 		size_t
 		narguments() const noexcept
@@ -151,11 +155,11 @@ private:
 		const jive::base::type &
 		argument_type(size_t index) const;
 
-		const output *
+		const variable *
 		argument(size_t index) const;
 
 	private:
-		std::vector<std::unique_ptr<tac>> arguments_;
+		std::vector<const variable*> arguments_;
 	};
 
 	class exit_node final : public cfg_node {

@@ -127,7 +127,7 @@ public:
 		return false;
 	}
 
-	std::vector<const output*>
+	std::vector<const variable*>
 	cfg_begin(const std::vector<std::string> & names);
 
 	void

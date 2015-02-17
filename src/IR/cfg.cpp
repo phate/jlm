@@ -83,43 +83,34 @@ cfg::enter_node::debug_string() const
 	std::stringstream sstrm;
 
 	sstrm << this << " (ENTER)\\n";
-	for (size_t n = 0; n < arguments_.size(); n++) {
-		jlm::frontend::tac * tac = arguments_[n].get();
-		sstrm << tac->debug_string() << std::endl;
-	}
+	for (size_t n = 0; n < arguments_.size(); n++)
+		sstrm << arguments_[n]->debug_string() << std::endl;
 
 	return sstrm.str();
-}
-
-const output *
-cfg::enter_node::append_argument(const std::string & name, const jive::base::type & type)
-{
-	argument_op op(type);
-	const jlm::frontend::variable * v = cfg()->create_variable(type, name);
-	arguments_.emplace_back(std::unique_ptr<jlm::frontend::tac>(new tac(this, op, {}, {v})));
-	return arguments_[arguments_.size()-1]->outputs()[0];
 }
 
 const std::string &
 cfg::enter_node::argument_name(size_t index) const
 {
-	return arguments_[index]->outputs()[index]->variable()->name();
+	JLM_DEBUG_ASSERT(index < arguments_.size());
+
+	return arguments_[index]->name();
 }
 
 const jive::base::type &
 cfg::enter_node::argument_type(size_t index) const
 {
-	argument_op op = dynamic_cast<const argument_op&>(arguments_[index]->operation());
-	return op.type();
+	JLM_DEBUG_ASSERT(index < arguments_.size());
+
+	return arguments_[index]->type();
 }
 
-const output *
+const variable *
 cfg::enter_node::argument(size_t index) const
 {
 	JLM_DEBUG_ASSERT(index < arguments_.size());
-	JLM_DEBUG_ASSERT(arguments_[index]->outputs().size() == 1);
 
-	return arguments_[index]->outputs()[0];
+	return arguments_[index];
 }
 
 /* exit node */
