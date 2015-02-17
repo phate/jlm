@@ -11,18 +11,10 @@
 #include <unordered_map>
 
 namespace llvm {
-	class BasicBlock;
-	class Function;
-	class Instruction;
 	class Module;
-	class Value;
 }
 
 namespace jlm {
-
-typedef std::unordered_map<const llvm::BasicBlock*, jlm::frontend::basic_block*> basic_block_map;
-
-typedef std::unordered_map<const llvm::Value*, const jlm::frontend::variable*> value_map;
 
 void
 convert_module(const llvm::Module & module, jlm::frontend::clg & clg);

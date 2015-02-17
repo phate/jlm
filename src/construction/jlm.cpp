@@ -5,6 +5,7 @@
 
 #include <jlm/common.hpp>
 #include <jlm/construction/constant.hpp>
+#include <jlm/construction/context.hpp>
 #include <jlm/construction/instruction.hpp>
 #include <jlm/construction/jlm.hpp>
 #include <jlm/construction/type.hpp>
@@ -27,12 +28,10 @@ namespace jlm
 typedef std::unordered_map<const llvm::Function*, jlm::frontend::clg_node*> function_map;
 
 static void
-convert_basic_block(const llvm::BasicBlock & basic_block, const basic_block_map & bbmap,
-	value_map & vmap, const jlm::frontend::variable * state, const jlm::frontend::variable * result)
+convert_basic_block(const llvm::BasicBlock & basic_block, context & ctx)
 {
-	llvm::BasicBlock::const_iterator it;
-	for (it = basic_block.begin(); it != basic_block.end(); it++)
-		convert_instruction(*it, bbmap.find(&basic_block)->second, bbmap, vmap, state, result);
+	for (auto it = basic_block.begin(); it != basic_block.end(); it++)
+		convert_instruction(*it, ctx.lookup_basic_block(&basic_block), ctx);
 }
 
 static void
@@ -51,10 +50,6 @@ convert_function(const llvm::Function & function, jlm::frontend::clg_node * clg_
 	const jlm::frontend::variable * state = arguments.back();
 	jlm::frontend::cfg * cfg = clg_node->cfg();
 
-	value_map vmap;
-	jt = function.getArgumentList().begin();
-	for (size_t n = 0; jt != function.getArgumentList().end(); jt++, n++)
-		vmap[&(*jt)] = arguments[n];
 
 	basic_block_map bbmap;
 	llvm::Function::BasicBlockListType::const_iterator it = function.getBasicBlockList().begin();
@@ -71,9 +66,14 @@ convert_function(const llvm::Function & function, jlm::frontend::clg_node * clg_
 		assignment_tac(entry_block, result, udef);
 	}
 
+	context ctx(bbmap, state, result);
+	jt = function.getArgumentList().begin();
+	for (size_t n = 0; jt != function.getArgumentList().end(); jt++, n++)
+		ctx.insert_value(&(*jt), arguments[n]);
+
 	it = function.getBasicBlockList().begin();
 	for (; it != function.getBasicBlockList().end(); it++)
-		convert_basic_block(*it, bbmap, vmap, state, result);
+		convert_basic_block(*it, ctx);
 
 	std::vector<const jlm::frontend::variable*> results;
 	if (function.getReturnType()->getTypeID() != llvm::Type::VoidTyID)

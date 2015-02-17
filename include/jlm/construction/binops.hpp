@@ -6,8 +6,6 @@
 #ifndef JLM_CONSTRUCTION_BINOPS_HPP
 #define JLM_CONSTRUCTION_BINOPS_HPP
 
-#include <jlm/construction/jlm.hpp>
-
 namespace llvm {
 	class BinaryOperator;
 	class CmpInst;
@@ -15,18 +13,24 @@ namespace llvm {
 }
 
 namespace jlm {
+namespace frontend {
+	class basic_block;
+	class variable;
+}
+
+class context;
 
 void
 convert_binary_operator(const llvm::BinaryOperator & i, jlm::frontend::basic_block * bb,
-	value_map & vmap, const jlm::frontend::variable * state);
+	jlm::context & ctx);
 
 void
 convert_comparison_instruction(const llvm::CmpInst & i, jlm::frontend::basic_block * bb,
-	value_map & vmap, const jlm::frontend::variable * state);
+	jlm::context & ctx);
 
 const jlm::frontend::variable *
 convert_int_comparison_instruction(const llvm::ICmpInst & i, jlm::frontend::basic_block * bb,
-	value_map & vmap, const jlm::frontend::variable * state);
+	jlm::context & ctx);
 
 }
 

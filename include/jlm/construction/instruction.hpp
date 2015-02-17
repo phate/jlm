@@ -6,27 +6,26 @@
 #ifndef JLM_CONSTRUCTION_INSTRUCTION_HPP
 #define JLM_CONSTRUCTION_INSTRUCTION_HPP
 
-#include <jlm/construction/jlm.hpp>
-
-namespace jlm {
-namespace frontend {
-	class output;
-}
+namespace llvm {
+	class Instruction;
+	class Value;
 }
 
 namespace jlm  {
+namespace frontend {
+	class basic_block;
+}
+
+class context;
 
 const jlm::frontend::variable *
-convert_value(const llvm::Value * v, jlm::frontend::basic_block * bb, value_map & vmap);
+convert_value(const llvm::Value * v, jlm::frontend::basic_block * bb, jlm::context & ctx);
 
 void
 convert_instruction(
 	const llvm::Instruction & i,
 	jlm::frontend::basic_block * bb,
-	const basic_block_map & bbmap,
-	value_map & vmap,
-	const jlm::frontend::variable * state,
-	const jlm::frontend::variable * result);
+	jlm::context & ctx);
 
 }
 

@@ -6,6 +6,7 @@
 #include <jlm/common.hpp>
 #include <jlm/construction/binops.hpp>
 #include <jlm/construction/constant.hpp>
+#include <jlm/construction/context.hpp>
 #include <jlm/construction/jlm.hpp>
 #include <jlm/construction/type.hpp>
 
@@ -25,16 +26,15 @@
 namespace jlm {
 
 const jlm::frontend::variable *
-convert_value(const llvm::Value * v, jlm::frontend::basic_block * bb, value_map & vmap)
+convert_value(const llvm::Value * v, jlm::frontend::basic_block * bb, jlm::context & ctx)
 {
-	if (auto c = dynamic_cast<const llvm::Constant*>(v)) {
-		const jlm::frontend::variable * result = convert_constant(*c, bb);
-		JLM_DEBUG_ASSERT(vmap.find(v) == vmap.end());
-		vmap[v] = result;
-	}
+	if (auto c = dynamic_cast<const llvm::Constant*>(v))
+		ctx.insert_value(v, convert_constant(*c, bb));
 
-	JLM_DEBUG_ASSERT(vmap.find(v) != vmap.end());
-	return vmap[v];
+	if (!ctx.has_value(v))
+		ctx.insert_value(v, bb->cfg()->create_variable(*convert_type(*v->getType())));
+
+	return ctx.lookup_value(v);
 }
 
 /* instructions */
@@ -43,10 +43,7 @@ static void
 convert_return_instruction(
 	const llvm::Instruction & i,
 	jlm::frontend::basic_block * bb,
-	const basic_block_map & bbmap,
-	value_map & vmap,
-	const jlm::frontend::variable * state,
-	const jlm::frontend::variable * result)
+	jlm::context & ctx)
 {
 	const llvm::ReturnInst * instruction = static_cast<const llvm::ReturnInst*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
@@ -56,8 +53,8 @@ convert_return_instruction(
 	bb->add_outedge(bb->cfg()->exit(), 0);
 
 	if (instruction->getReturnValue()) {
-		const jlm::frontend::variable * value = convert_value(instruction->getReturnValue(), bb, vmap);
-		assignment_tac(bb, result, value);
+		const jlm::frontend::variable * value = convert_value(instruction->getReturnValue(), bb, ctx);
+		assignment_tac(bb, ctx.result(), value);
 	}
 }
 
@@ -65,10 +62,7 @@ static void
 convert_branch_instruction(
 	const llvm::Instruction & i,
 	jlm::frontend::basic_block * bb,
-	const basic_block_map & bbmap,
-	value_map & vmap,
-	const jlm::frontend::variable * state,
-	const jlm::frontend::variable * result)
+	jlm::context & ctx)
 {
 	const llvm::BranchInst * instruction = static_cast<const llvm::BranchInst*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
@@ -77,21 +71,21 @@ convert_branch_instruction(
 	if (instruction->isConditional()) {
 		JLM_DEBUG_ASSERT(instruction->getNumSuccessors() == 2);
 
-		const jlm::frontend::variable * condition = convert_value(instruction->getCondition(), bb, vmap);
+		const jlm::frontend::variable * condition = convert_value(instruction->getCondition(), bb, ctx);
 		match_tac(bb, condition, {0});
 
 		/* taken */
-		JLM_DEBUG_ASSERT(bbmap.find(instruction->getSuccessor(0)) != bbmap.end());
-		bb->add_outedge(bbmap.find(instruction->getSuccessor(0))->second, 1);
+		JLM_DEBUG_ASSERT(ctx.has_basic_block(instruction->getSuccessor(0)));
+		bb->add_outedge(ctx.lookup_basic_block(instruction->getSuccessor(0)), 1);
 
 		/* nottaken */
-		JLM_DEBUG_ASSERT(bbmap.find(instruction->getSuccessor(1)) != bbmap.end());
-		bb->add_outedge(bbmap.find(instruction->getSuccessor(1))->second, 0);
+		JLM_DEBUG_ASSERT(ctx.has_basic_block(instruction->getSuccessor(1)));
+		bb->add_outedge(ctx.lookup_basic_block(instruction->getSuccessor(1)), 0);
 	} else {
 		JLM_DEBUG_ASSERT(instruction->isUnconditional());
 		JLM_DEBUG_ASSERT(instruction->getNumSuccessors() == 1);
-		JLM_DEBUG_ASSERT(bbmap.find(instruction->getSuccessor(0)) != bbmap.end());
-		bb->add_outedge(bbmap.find(instruction->getSuccessor(0))->second, 0);
+		JLM_DEBUG_ASSERT(ctx.has_basic_block(instruction->getSuccessor(0)));
+		bb->add_outedge(ctx.lookup_basic_block(instruction->getSuccessor(0)), 0);
 	}
 }
 
@@ -99,18 +93,15 @@ static void
 convert_switch_instruction(
 	const llvm::Instruction & i,
 	jlm::frontend::basic_block * bb,
-	const basic_block_map & bbmap,
-	value_map & vmap,
-	const jlm::frontend::variable * state,
-	const jlm::frontend::variable * result)
+	jlm::context & ctx)
 {
 	const llvm::SwitchInst * instruction = static_cast<const llvm::SwitchInst*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
 
 	JLM_DEBUG_ASSERT(bb->noutedges() == 0);
 	for (unsigned n = 0; n < instruction->getNumSuccessors(); n++) {
-		JLM_DEBUG_ASSERT(bbmap.find(instruction->getSuccessor(n)) != bbmap.end());
-		bb->add_outedge(bbmap.find(instruction->getSuccessor(n))->second, n);
+		JLM_DEBUG_ASSERT(ctx.has_basic_block(instruction->getSuccessor(n)));
+		bb->add_outedge(ctx.lookup_basic_block(instruction->getSuccessor(n)), n);
 	}
 }
 
@@ -118,10 +109,7 @@ static void
 convert_unreachable_instruction(
 	const llvm::Instruction & i,
 	jlm::frontend::basic_block * bb,
-	const basic_block_map & bbmap,
-	value_map & vmap,
-	const jlm::frontend::variable * state,
-	const jlm::frontend::variable * result)
+	jlm::context & ctx)
 {
 	const llvm::UnreachableInst * instruction = static_cast<const llvm::UnreachableInst*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
@@ -140,135 +128,111 @@ static void
 convert_binary_operator(
 	const llvm::Instruction & i,
 	jlm::frontend::basic_block * bb,
-	const basic_block_map & bbmap,
-	value_map & vmap,
-	const jlm::frontend::variable * state,
-	const jlm::frontend::variable * result)
+	jlm::context & ctx)
 {
 	const llvm::BinaryOperator * instruction = static_cast<const llvm::BinaryOperator*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
 
-	convert_binary_operator(*instruction, bb, vmap, state);
+	convert_binary_operator(*instruction, bb, ctx);
 }
 
 static void
 convert_comparison_instruction(
 	const llvm::Instruction & i,
 	jlm::frontend::basic_block * bb,
-	const basic_block_map & bbmap,
-	value_map & vmap,
-	const jlm::frontend::variable * state,
-	const jlm::frontend::variable * result)
+	jlm::context & ctx)
 {
 	const llvm::CmpInst * instruction = static_cast<const llvm::CmpInst*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
 
-	convert_comparison_instruction(*instruction, bb, vmap, state);
+	convert_comparison_instruction(*instruction, bb, ctx);
 }
 
 static void
 convert_load_instruction(
 	const llvm::Instruction & i,
 	jlm::frontend::basic_block * bb,
-	const basic_block_map & bbmap,
-	value_map & vmap,
-	const jlm::frontend::variable * state,
-	const jlm::frontend::variable * result)
+	jlm::context & ctx)
 {
 	const llvm::LoadInst * instruction = static_cast<const llvm::LoadInst*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
 
 	/* FIXME: handle volatile correctly */
 
-	const frontend::variable * address = convert_value(instruction->getPointerOperand(), bb, vmap);
-	const frontend::variable * value = addrload_tac(bb, address, state,
+	const frontend::variable * address = convert_value(instruction->getPointerOperand(), bb, ctx);
+	const frontend::variable * value = addrload_tac(bb, address, ctx.state(),
 		*dynamic_cast<jive::value::type*>(convert_type(*instruction->getType()).get()));
-	vmap[instruction] = value;
+	ctx.insert_value(instruction, value);
 }
 
 static void
 convert_store_instruction(
 	const llvm::Instruction & i,
 	jlm::frontend::basic_block * bb,
-	const basic_block_map & bbmap,
-	value_map & vmap,
-	const jlm::frontend::variable * state,
-	const jlm::frontend::variable * result)
+	jlm::context & ctx)
 {
 	const llvm::StoreInst * instruction = static_cast<const llvm::StoreInst*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
 
-	const frontend::variable * address = convert_value(instruction->getPointerOperand(), bb, vmap);
-	const frontend::variable * value = convert_value(instruction->getValueOperand(), bb, vmap);
-	const frontend::variable * result_state = addrstore_tac(bb, address, value, state);
-	assignment_tac(bb, state, result_state);
+	const frontend::variable * address = convert_value(instruction->getPointerOperand(), bb, ctx);
+	const frontend::variable * value = convert_value(instruction->getValueOperand(), bb, ctx);
+	const frontend::variable * result_state = addrstore_tac(bb, address, value, ctx.state());
+	assignment_tac(bb, ctx.state(), result_state);
 }
 
 static void
 convert_phi_instruction(
 	const llvm::Instruction & i,
 	jlm::frontend::basic_block * bb,
-	const basic_block_map & bbmap,
-	value_map & vmap,
-	const jlm::frontend::variable * state,
-	const jlm::frontend::variable * result)
+	jlm::context & ctx)
 {
 	const llvm::PHINode * instruction = static_cast<const llvm::PHINode*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
 
 	std::vector<const jlm::frontend::variable *> ops;
 	for (size_t n = 0; n < instruction->getNumIncomingValues(); n++)
-		ops.push_back(convert_value(instruction->getIncomingValue(n), bb, vmap));
+		ops.push_back(convert_value(instruction->getIncomingValue(n), bb, ctx));
 
-	vmap[instruction] = phi_tac(bb, ops);
+	ctx.insert_value(instruction, phi_tac(bb, ops));
 }
 
 static void
 convert_getelementptr_instruction(
 	const llvm::Instruction & i,
 	jlm::frontend::basic_block * bb,
-	const basic_block_map & bbmap,
-	value_map & vmap,
-	const jlm::frontend::variable * state,
-	const jlm::frontend::variable * result)
+	jlm::context & ctx)
 {
 	const llvm::GetElementPtrInst * instruction = static_cast<const llvm::GetElementPtrInst*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
 
-	const jlm::frontend::variable * base = convert_value(instruction->getPointerOperand(), bb, vmap);
+	const jlm::frontend::variable * base = convert_value(instruction->getPointerOperand(), bb, ctx);
 	for (auto idx = instruction->idx_begin(); idx != instruction->idx_end(); idx++) {
-		const jlm::frontend::variable * offset = convert_value(idx->get(), bb, vmap);
+		const jlm::frontend::variable * offset = convert_value(idx->get(), bb, ctx);
 		base = addrarraysubscript_tac(bb, base, offset);
 	}
 
-	vmap[instruction] = base;
+	ctx.insert_value(instruction, base);
 }
 
 static void
 convert_trunc_instruction(
 	const llvm::Instruction & i,
 	jlm::frontend::basic_block * bb,
-	const basic_block_map & bbmap,
-	value_map & vmap,
-	const jlm::frontend::variable * state,
-	const jlm::frontend::variable * result)
+	jlm::context & ctx)
 {
 	const llvm::TruncInst * instruction = static_cast<const llvm::TruncInst*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
 
 	const llvm::IntegerType * dst_type = static_cast<const llvm::IntegerType*>(i.getType());
-	const jlm::frontend::variable * operand = convert_value(instruction->getOperand(0), bb, vmap);
-	vmap[instruction] = bitslice_tac(bb, operand, 0, dst_type->getBitWidth());
+	const jlm::frontend::variable * operand = convert_value(instruction->getOperand(0), bb, ctx);
+	ctx.insert_value(instruction, bitslice_tac(bb, operand, 0, dst_type->getBitWidth()));
 }
 
 static void
 convert_call_instruction(
 	const llvm::Instruction & i,
 	jlm::frontend::basic_block * bb,
-	const basic_block_map & bbmap,
-	value_map & vmap,
-	const jlm::frontend::variable * state,
-	const jlm::frontend::variable * result)
+	jlm::context & ctx)
 {
 	const llvm::CallInst * instruction = static_cast<const llvm::CallInst*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
@@ -282,8 +246,8 @@ convert_call_instruction(
 
 	std::vector<const jlm::frontend::variable*> arguments;
 	for (size_t n = 0; n < instruction->getNumArgOperands(); n++)
-		arguments.push_back(convert_value(instruction->getArgOperand(n), bb, vmap));
-	arguments.push_back(state);
+		arguments.push_back(convert_value(instruction->getArgOperand(n), bb, ctx));
+	arguments.push_back(ctx.state());
 
 	jive::fct::type type = dynamic_cast<jive::fct::type&>(*convert_type(*f->getFunctionType()).get());
 
@@ -292,15 +256,16 @@ convert_call_instruction(
 	JLM_DEBUG_ASSERT(results.size() > 0 && results.size() <= 2);
 
 	if (results.size() == 2) {
-		vmap[instruction] = results[0];
-		assignment_tac(bb, state, results[1]);
+		ctx.insert_value(instruction, results[0]);
+		assignment_tac(bb, ctx.state(), results[1]);
 	}	else
-		assignment_tac(bb, state, results[0]);
+		assignment_tac(bb, ctx.state(), results[0]);
 }
 
-typedef std::unordered_map<std::type_index, void(*)(const llvm::Instruction&,
-	jlm::frontend::basic_block*, const basic_block_map&, value_map&,
-	const jlm::frontend::variable * state, const jlm::frontend::variable * result)> instruction_map;
+typedef std::unordered_map<
+		std::type_index,
+		void(*)(const llvm::Instruction&, jlm::frontend::basic_block*, jlm::context&)
+	> instruction_map;
 
 static instruction_map imap({
 		{std::type_index(typeid(llvm::ReturnInst)), convert_return_instruction}
@@ -321,16 +286,13 @@ void
 convert_instruction(
 	const llvm::Instruction & i,
 	jlm::frontend::basic_block * bb,
-	const basic_block_map & bbmap,
-	value_map & vmap,
-	const jlm::frontend::variable * state,
-	const jlm::frontend::variable * result)
+	jlm::context & ctx)
 {
 	/* FIXME: add an JLM_DEBUG_ASSERT here if an instruction is not present */
 	if (imap.find(std::type_index(typeid(i))) == imap.end())
 		return;
 
-	imap[std::type_index(typeid(i))](i, bb, bbmap, vmap, state, result);
+	imap[std::type_index(typeid(i))](i, bb, ctx);
 }
 
 }

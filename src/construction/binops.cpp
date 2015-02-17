@@ -5,6 +5,7 @@
 
 #include <jlm/common.hpp>
 #include <jlm/construction/binops.hpp>
+#include <jlm/construction/context.hpp>
 #include <jlm/construction/instruction.hpp>
 
 #include <jlm/IR/tac/bitstring.hpp>
@@ -40,19 +41,19 @@ static int_arithmetic_operators_map int_arthm_ops_map({
 
 static inline const jlm::frontend::variable *
 convert_int_binary_operator(const llvm::BinaryOperator & i, jlm::frontend::basic_block * bb,
-	value_map & vmap)
+	jlm::context & ctx)
 {
 	JLM_DEBUG_ASSERT(i.getType()->getTypeID() == llvm::Type::IntegerTyID);
 	const llvm::IntegerType * type = static_cast<const llvm::IntegerType*>(i.getType());
 
-	const jlm::frontend::variable * op1 = convert_value(i.getOperand(0), bb, vmap);
-	const jlm::frontend::variable * op2 = convert_value(i.getOperand(1), bb, vmap);
+	const jlm::frontend::variable * op1 = convert_value(i.getOperand(0), bb, ctx);
+	const jlm::frontend::variable * op2 = convert_value(i.getOperand(1), bb, ctx);
 	return int_arthm_ops_map[i.getOpcode()](bb, type->getBitWidth(), op1, op2);
 }
 
 void
 convert_binary_operator(const llvm::BinaryOperator & i, jlm::frontend::basic_block * bb,
-	value_map & vmap, const jlm::frontend::variable * state)
+	jlm::context & ctx)
 {
 	const llvm::BinaryOperator * instruction = static_cast<const llvm::BinaryOperator*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
@@ -60,14 +61,14 @@ convert_binary_operator(const llvm::BinaryOperator & i, jlm::frontend::basic_blo
 	const jlm::frontend::variable * result = nullptr;
 	switch (instruction->getType()->getTypeID()) {
 		case llvm::Type::IntegerTyID:
-			result = convert_int_binary_operator(*instruction, bb, vmap);
+			result = convert_int_binary_operator(*instruction, bb, ctx);
 			break;
 		default:
 			JLM_DEBUG_ASSERT(0);
 	}
 
 	JLM_DEBUG_ASSERT(result);
-	vmap[instruction] = result;
+	ctx.insert_value(instruction, result);
 }
 
 /* integer comparison instructions */
@@ -91,10 +92,10 @@ static int_comparison_operators_map int_cmp_ops_map({
 
 const jlm::frontend::variable *
 convert_int_comparison_instruction(const llvm::ICmpInst & i, jlm::frontend::basic_block * bb,
-	value_map & vmap, const jlm::frontend::variable * state)
+	jlm::context & ctx)
 {
-	const jlm::frontend::variable * op1 = convert_value(i.getOperand(0), bb, vmap);
-	const jlm::frontend::variable * op2 = convert_value(i.getOperand(1), bb, vmap);
+	const jlm::frontend::variable * op1 = convert_value(i.getOperand(0), bb, ctx);
+	const jlm::frontend::variable * op2 = convert_value(i.getOperand(1), bb, ctx);
 
 	const llvm::IntegerType * type = static_cast<const llvm::IntegerType*>(i.getOperand(0)->getType());
 
@@ -103,20 +104,19 @@ convert_int_comparison_instruction(const llvm::ICmpInst & i, jlm::frontend::basi
 
 void
 convert_comparison_instruction(const llvm::CmpInst & i, jlm::frontend::basic_block * bb,
-	value_map & vmap, const jlm::frontend::variable * state)
+	jlm::context & ctx)
 {
 	const jlm::frontend::variable * result = nullptr;
 	switch(i.getType()->getTypeID()) {
 		case llvm::Type::IntegerTyID:
-			result = convert_int_comparison_instruction(*static_cast<const llvm::ICmpInst*>(&i), bb,
-				vmap, state);
+			result = convert_int_comparison_instruction(*static_cast<const llvm::ICmpInst*>(&i), bb, ctx);
 			break;
 		default:
 			JLM_DEBUG_ASSERT(0);
 	}
 
 	JLM_DEBUG_ASSERT(result);
-	vmap[&i] = result;
+	ctx.insert_value(&i, result);
 }
 
 }
