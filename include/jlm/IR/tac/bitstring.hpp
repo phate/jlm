@@ -18,15 +18,15 @@
 namespace jlm {
 namespace frontend {
 
-JIVE_EXPORTED_INLINE const output *
+JIVE_EXPORTED_INLINE const variable *
 bitconstant_tac(jlm::frontend::basic_block * basic_block, jive::bits::value_repr & v)
 {
 	jive::bits::constant_op op(v);
 	const jlm::frontend::tac * tac = basic_block->append(op, {});
-	return tac->outputs()[0];
+	return tac->outputs()[0]->variable();
 }
 
-JIVE_EXPORTED_INLINE const output *
+JIVE_EXPORTED_INLINE const variable *
 bitconcat_tac(jlm::frontend::basic_block * basic_block,
 	const std::vector<const jlm::frontend::variable*> & ops)
 {
@@ -37,21 +37,21 @@ bitconcat_tac(jlm::frontend::basic_block * basic_block,
 	jive::bits::concat_op op(types);
 	const variable * result = basic_block->cfg()->create_variable(op.result_type(0));
 	const jlm::frontend::tac * tac = basic_block->append(op, ops, {result});
-	return tac->outputs()[0];
+	return tac->outputs()[0]->variable();
 }
 
-JIVE_EXPORTED_INLINE const output *
+JIVE_EXPORTED_INLINE const variable *
 bitslice_tac(jlm::frontend::basic_block * basic_block, const jlm::frontend::variable* operand,
 	size_t low, size_t high)
 {
 	jive::bits::slice_op op(dynamic_cast<const jive::bits::type&>(operand->type()), low, high);
 	const variable * result = basic_block->cfg()->create_variable(op.result_type(0));
 	const jlm::frontend::tac * tac = basic_block->append(op, {operand}, {result});
-	return tac->outputs()[0];
+	return tac->outputs()[0]->variable();
 }
 
 #define MAKE_BINOP_TAC(NAME, OP) \
-JIVE_EXPORTED_INLINE const output * \
+JIVE_EXPORTED_INLINE const variable * \
 bit##NAME##_tac(jlm::frontend::basic_block * basic_block, size_t nbits, \
 	const jlm::frontend::variable * op1, const jlm::frontend::variable * op2) \
 { \
@@ -59,7 +59,7 @@ bit##NAME##_tac(jlm::frontend::basic_block * basic_block, size_t nbits, \
 	jive::bits::OP  op(type); \
 	const variable * result = basic_block->cfg()->create_variable(op.result_type(0)); \
 	const jlm::frontend::tac * tac = basic_block->append(op, {op1, op2}, {result}); \
-	return tac->outputs()[0]; \
+	return tac->outputs()[0]->variable(); \
 } \
 
 MAKE_BINOP_TAC(add, add_op);
@@ -90,7 +90,7 @@ MAKE_BINOP_TAC(sgt, sgt_op);
 MAKE_BINOP_TAC(ugt, ugt_op);
 
 #define MAKE_UNOP_TAC(NAME, OP) \
-JIVE_EXPORTED_INLINE const jlm::frontend::output * \
+JIVE_EXPORTED_INLINE const jlm::frontend::variable * \
 bit##NAME##_tac(jlm::frontend::basic_block * basic_block, size_t nbits, \
 	const jlm::frontend::variable * op1) \
 { \
@@ -98,7 +98,7 @@ bit##NAME##_tac(jlm::frontend::basic_block * basic_block, size_t nbits, \
 	jive::bits::OP  op(type); \
 	const variable * result = basic_block->cfg()->create_variable(op.result_type(0)); \
 	const jlm::frontend::tac * tac = basic_block->append(op, {op1}, {result}); \
-	return tac->outputs()[0]; \
+	return tac->outputs()[0]->variable(); \
 } \
 
 MAKE_UNOP_TAC(neg, neg_op);

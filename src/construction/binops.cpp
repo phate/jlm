@@ -19,7 +19,7 @@ namespace jlm {
 /* integer arithmetic instructions */
 
 typedef std::map<llvm::Instruction::BinaryOps,
-	const jlm::frontend::output *(*)(jlm::frontend::basic_block *, size_t,
+	const jlm::frontend::variable *(*)(jlm::frontend::basic_block *, size_t,
 		const jlm::frontend::variable*, const jlm::frontend::variable*)> int_arithmetic_operators_map;
 
 static int_arithmetic_operators_map int_arthm_ops_map({
@@ -38,27 +38,26 @@ static int_arithmetic_operators_map int_arthm_ops_map({
 	, {llvm::Instruction::Mul,	jlm::frontend::bitmul_tac}
 });
 
-static inline const jlm::frontend::output *
+static inline const jlm::frontend::variable *
 convert_int_binary_operator(const llvm::BinaryOperator & i, jlm::frontend::basic_block * bb,
 	value_map & vmap)
 {
 	JLM_DEBUG_ASSERT(i.getType()->getTypeID() == llvm::Type::IntegerTyID);
 	const llvm::IntegerType * type = static_cast<const llvm::IntegerType*>(i.getType());
 
-	const jlm::frontend::output * op1 = convert_value(i.getOperand(0), bb, vmap);
-	const jlm::frontend::output * op2 = convert_value(i.getOperand(1), bb, vmap);
-	return int_arthm_ops_map[i.getOpcode()](bb, type->getBitWidth(),
-		op1->variable(), op2->variable());
+	const jlm::frontend::variable * op1 = convert_value(i.getOperand(0), bb, vmap);
+	const jlm::frontend::variable * op2 = convert_value(i.getOperand(1), bb, vmap);
+	return int_arthm_ops_map[i.getOpcode()](bb, type->getBitWidth(), op1, op2);
 }
 
 void
 convert_binary_operator(const llvm::BinaryOperator & i, jlm::frontend::basic_block * bb,
-	value_map & vmap, const jlm::frontend::output * state)
+	value_map & vmap, const jlm::frontend::variable * state)
 {
 	const llvm::BinaryOperator * instruction = static_cast<const llvm::BinaryOperator*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
 
-	const jlm::frontend::output * result = nullptr;
+	const jlm::frontend::variable * result = nullptr;
 	switch (instruction->getType()->getTypeID()) {
 		case llvm::Type::IntegerTyID:
 			result = convert_int_binary_operator(*instruction, bb, vmap);
@@ -74,7 +73,7 @@ convert_binary_operator(const llvm::BinaryOperator & i, jlm::frontend::basic_blo
 /* integer comparison instructions */
 
 typedef std::map<llvm::CmpInst::Predicate,
-	const jlm::frontend::output *(*)(jlm::frontend::basic_block *, size_t,
+	const jlm::frontend::variable *(*)(jlm::frontend::basic_block *, size_t,
 		const jlm::frontend::variable*, const jlm::frontend::variable*)> int_comparison_operators_map;
 
 static int_comparison_operators_map int_cmp_ops_map({
@@ -90,24 +89,23 @@ static int_comparison_operators_map int_cmp_ops_map({
 	,	{llvm::CmpInst::ICMP_UGT,	jlm::frontend::bitugt_tac}
 });
 
-const jlm::frontend::output *
+const jlm::frontend::variable *
 convert_int_comparison_instruction(const llvm::ICmpInst & i, jlm::frontend::basic_block * bb,
-	value_map & vmap, const jlm::frontend::output * state)
+	value_map & vmap, const jlm::frontend::variable * state)
 {
-	const jlm::frontend::output * op1 = convert_value(i.getOperand(0), bb, vmap);
-	const jlm::frontend::output * op2 = convert_value(i.getOperand(1), bb, vmap);
+	const jlm::frontend::variable * op1 = convert_value(i.getOperand(0), bb, vmap);
+	const jlm::frontend::variable * op2 = convert_value(i.getOperand(1), bb, vmap);
 
 	const llvm::IntegerType * type = static_cast<const llvm::IntegerType*>(i.getOperand(0)->getType());
 
-	return int_cmp_ops_map[i.getPredicate()](bb, type->getBitWidth(),
-		op1->variable(), op2->variable());
+	return int_cmp_ops_map[i.getPredicate()](bb, type->getBitWidth(), op1, op2);
 }
 
 void
 convert_comparison_instruction(const llvm::CmpInst & i, jlm::frontend::basic_block * bb,
-	value_map & vmap, const jlm::frontend::output * state)
+	value_map & vmap, const jlm::frontend::variable * state)
 {
-	const jlm::frontend::output * result = nullptr;
+	const jlm::frontend::variable * result = nullptr;
 	switch(i.getType()->getTypeID()) {
 		case llvm::Type::IntegerTyID:
 			result = convert_int_comparison_instruction(*static_cast<const llvm::ICmpInst*>(&i), bb,

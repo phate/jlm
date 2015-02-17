@@ -28,7 +28,7 @@ typedef std::unordered_map<const llvm::Function*, jlm::frontend::clg_node*> func
 
 static void
 convert_basic_block(const llvm::BasicBlock & basic_block, const basic_block_map & bbmap,
-	value_map & vmap, const jlm::frontend::output * state, const jlm::frontend::variable * result)
+	value_map & vmap, const jlm::frontend::variable * state, const jlm::frontend::variable * result)
 {
 	llvm::BasicBlock::const_iterator it;
 	for (it = basic_block.begin(); it != basic_block.end(); it++)
@@ -54,7 +54,7 @@ convert_function(const llvm::Function & function, jlm::frontend::clg_node * clg_
 	value_map vmap;
 	jt = function.getArgumentList().begin();
 	for (size_t n = 0; jt != function.getArgumentList().end(); jt++, n++)
-		vmap[&(*jt)] = arguments[n];
+		vmap[&(*jt)] = arguments[n]->variable();
 
 	basic_block_map bbmap;
 	llvm::Function::BasicBlockListType::const_iterator it = function.getBasicBlockList().begin();
@@ -67,13 +67,13 @@ convert_function(const llvm::Function & function, jlm::frontend::clg_node * clg_
 	const jlm::frontend::variable * result = nullptr;
 	if (function.getReturnType()->getTypeID() != llvm::Type::VoidTyID) {
 		result = cfg->create_variable(*convert_type(*function.getReturnType()), "_r_");
-		const jlm::frontend::output * udef = create_undef_value(*function.getReturnType(), entry_block);
-		assignment_tac(entry_block, result, udef->variable());
+		const frontend::variable * udef = create_undef_value(*function.getReturnType(), entry_block);
+		assignment_tac(entry_block, result, udef);
 	}
 
 	it = function.getBasicBlockList().begin();
 	for (; it != function.getBasicBlockList().end(); it++)
-		convert_basic_block(*it, bbmap, vmap, state, result);
+		convert_basic_block(*it, bbmap, vmap, state->variable(), result);
 
 	std::vector<const jlm::frontend::variable*> results;
 	if (function.getReturnType()->getTypeID() != llvm::Type::VoidTyID)

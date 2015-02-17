@@ -18,7 +18,7 @@
 namespace jlm {
 namespace frontend {
 
-JIVE_EXPORTED_INLINE const jlm::frontend::output *
+JIVE_EXPORTED_INLINE const jlm::frontend::variable *
 addrload_tac(
 	jlm::frontend::basic_block * basic_block,
 	const jlm::frontend::variable * address,
@@ -31,10 +31,10 @@ addrload_tac(
 	jive::load_op op(addrtype, state_type, data_type);
 	const variable * result = basic_block->cfg()->create_variable(op.result_type(0));
 	const jlm::frontend::tac * tac = basic_block->append(op, {address, state}, {result});
-	return tac->outputs()[0];
+	return tac->outputs()[0]->variable();
 }
 
-JIVE_EXPORTED_INLINE const jlm::frontend::output *
+JIVE_EXPORTED_INLINE const jlm::frontend::variable *
 addrstore_tac(
 	jlm::frontend::basic_block * basic_block,
 	const jlm::frontend::variable * address,
@@ -47,10 +47,10 @@ addrstore_tac(
 	jive::store_op op(addrtype, state_type, dynamic_cast<const jive::value::type&>(value->type()));
 	const variable * result = basic_block->cfg()->create_variable(*state_type[0]);
 	const jlm::frontend::tac * tac = basic_block->append(op, {address, value, state}, {result});
-	return tac->outputs()[0];
+	return tac->outputs()[0]->variable();
 }
 
-JIVE_EXPORTED_INLINE const jlm::frontend::output *
+JIVE_EXPORTED_INLINE const jlm::frontend::variable *
 addrarraysubscript_tac(
 	jlm::frontend::basic_block * basic_block,
 	const jlm::frontend::variable * base,
@@ -61,7 +61,7 @@ addrarraysubscript_tac(
 	jive::address::arraysubscript_op op(base_type, offset_type);
 	const variable * result = basic_block->cfg()->create_variable(op.result_type(0));
 	const jlm::frontend::tac * tac = basic_block->append(op, {base, offset}, {result});
-	return tac->outputs()[0];
+	return tac->outputs()[0]->variable();
 }
 
 }

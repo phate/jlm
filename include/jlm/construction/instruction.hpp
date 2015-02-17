@@ -16,7 +16,7 @@ namespace frontend {
 
 namespace jlm  {
 
-const jlm::frontend::output *
+const jlm::frontend::variable *
 convert_value(const llvm::Value * v, jlm::frontend::basic_block * bb, value_map & vmap);
 
 void
@@ -25,7 +25,7 @@ convert_instruction(
 	jlm::frontend::basic_block * bb,
 	const basic_block_map & bbmap,
 	value_map & vmap,
-	const jlm::frontend::output * state,
+	const jlm::frontend::variable * state,
 	const jlm::frontend::variable * result);
 
 }

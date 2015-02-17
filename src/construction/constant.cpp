@@ -32,7 +32,7 @@ convert_apint(const llvm::APInt & value)
 	return vr;
 }
 
-const jlm::frontend::output *
+const jlm::frontend::variable *
 create_undef_value(const llvm::Type & type, jlm::frontend::basic_block * bb)
 {
 	if (type.getTypeID() == llvm::Type::IntegerTyID) {
@@ -45,7 +45,7 @@ create_undef_value(const llvm::Type & type, jlm::frontend::basic_block * bb)
 	return nullptr;
 }
 
-static const jlm::frontend::output *
+static const jlm::frontend::variable *
 convert_int_constant(const llvm::Constant & c, jlm::frontend::basic_block * bb)
 {
 	const llvm::ConstantInt * constant = static_cast<const llvm::ConstantInt*>(&c);
@@ -55,7 +55,7 @@ convert_int_constant(const llvm::Constant & c, jlm::frontend::basic_block * bb)
 	return bitconstant_tac(bb, v);
 }
 
-static const jlm::frontend::output *
+static const jlm::frontend::variable *
 convert_undefvalue_instruction(const llvm::Constant & c, jlm::frontend::basic_block * bb)
 {
 	const llvm::UndefValue * constant = static_cast<const llvm::UndefValue*>(&c);
@@ -64,15 +64,17 @@ convert_undefvalue_instruction(const llvm::Constant & c, jlm::frontend::basic_bl
 	return create_undef_value(*constant->getType(), bb);
 }
 
-typedef std::unordered_map<std::type_index, const jlm::frontend::output*(*)(const llvm::Constant &,
-	jlm::frontend::basic_block*)> constant_map;
+typedef std::unordered_map<
+	std::type_index,
+	const jlm::frontend::variable*(*)(const llvm::Constant &, jlm::frontend::basic_block*)
+	> constant_map;
 
 static constant_map cmap({
 		{std::type_index(typeid(llvm::ConstantInt)), convert_int_constant}
 	, {std::type_index(typeid(llvm::UndefValue)), convert_undefvalue_instruction}
 });
 
-const jlm::frontend::output *
+const jlm::frontend::variable *
 convert_constant(const llvm::Constant & c, jlm::frontend::basic_block * bb)
 {
 	JLM_DEBUG_ASSERT(cmap.find(std::type_index(typeid(c))) != cmap.end());

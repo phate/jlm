@@ -11,7 +11,7 @@
 namespace jlm {
 namespace frontend {
 	class basic_block;
-	class output;
+	class variable;
 }
 }
 
@@ -26,10 +26,10 @@ namespace jlm {
 jive::bits::value_repr
 convert_apint(const llvm::APInt & value);
 
-const jlm::frontend::output *
+const jlm::frontend::variable *
 create_undef_value(const llvm::Type & type, jlm::frontend::basic_block * bb);
 
-const jlm::frontend::output *
+const jlm::frontend::variable *
 convert_constant(const llvm::Constant & constant, jlm::frontend::basic_block * bb);
 
 }

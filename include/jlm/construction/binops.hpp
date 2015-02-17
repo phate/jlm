@@ -18,15 +18,15 @@ namespace jlm {
 
 void
 convert_binary_operator(const llvm::BinaryOperator & i, jlm::frontend::basic_block * bb,
-	value_map & vmap, const jlm::frontend::output * state);
+	value_map & vmap, const jlm::frontend::variable * state);
 
 void
 convert_comparison_instruction(const llvm::CmpInst & i, jlm::frontend::basic_block * bb,
-	value_map & vmap, const jlm::frontend::output * state);
+	value_map & vmap, const jlm::frontend::variable * state);
 
-const jlm::frontend::output *
+const jlm::frontend::variable *
 convert_int_comparison_instruction(const llvm::ICmpInst & i, jlm::frontend::basic_block * bb,
-	value_map & vmap, const jlm::frontend::output * state);
+	value_map & vmap, const jlm::frontend::variable * state);
 
 }
 
