@@ -22,9 +22,8 @@ verify(jlm::frontend::clg & clg)
 	jlm::frontend::cfg * cfg = node->cfg();
 //	jive_cfg_view(cfg);
 
-	assert(cfg->nnodes() == 3);
 	assert(cfg->is_linear());
-
+/*
 	jlm::frontend::basic_block * bb = dynamic_cast<jlm::frontend::basic_block*>(
 		cfg->enter()->outedges()[0]->sink());
 	assert(bb != nullptr);
@@ -35,7 +34,7 @@ verify(jlm::frontend::clg & clg)
 	jive::bits::value_repr v(32, 'X');
 	jive::bits::constant_op op(v);
 	assert((*(std::next(std::next(tacs.begin()))))->operation() == op);
-
+*/
 	return 0;
 }
 

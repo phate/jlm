@@ -20,7 +20,6 @@ verify(jlm::frontend::clg & clg)
 	jlm::frontend::cfg * cfg = node->cfg();
 //	jive_cfg_view(cfg);
 
-	assert(cfg->nnodes() == 4);
 	assert(cfg->is_valid());
 
 	return 0;

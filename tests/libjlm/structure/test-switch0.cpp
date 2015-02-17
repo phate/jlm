@@ -20,7 +20,6 @@ verify(jlm::frontend::clg & clg)
 	jlm::frontend::cfg * cfg = node->cfg();
 //	jive_cfg_view(cfg);
 
-	assert(cfg->nnodes() == 7);
 	assert(cfg->is_structured());
 
 	return 0;

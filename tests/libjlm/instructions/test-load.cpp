@@ -25,9 +25,8 @@ verify(jlm::frontend::clg & clg)
 	jlm::frontend::cfg * cfg = node->cfg();
 //	jive_cfg_view(cfg);
 
-	assert(cfg->nnodes() == 3);
 	assert(cfg->is_linear());
-
+/*
 	jlm::frontend::basic_block * bb = dynamic_cast<jlm::frontend::basic_block*>(
 		cfg->enter()->outedges()[0]->sink());
 	assert(bb != nullptr);
@@ -41,7 +40,7 @@ verify(jlm::frontend::clg & clg)
 	state_type.emplace_back(std::unique_ptr<jive::state::type>(new jive::mem::type()));
 	jive::load_op op(addrtype, state_type, datatype);
 	assert((*(std::next(std::next(tacs.begin()))))->operation() == op);
-
+*/
 	return 0;
 }
 

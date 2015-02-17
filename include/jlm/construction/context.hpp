@@ -28,12 +28,20 @@ public:
 	inline
 	context(
 		const basic_block_map & bbmap,
+		frontend::basic_block * entry_block,
 		const frontend::variable * state,
 		const frontend::variable * result)
 	: bbmap_(bbmap)
+	, entry_block_(entry_block)
 	, state_(state)
 	, result_(result)
 	{}
+
+	inline frontend::basic_block *
+	entry_block() const noexcept
+	{
+		return entry_block_;
+	}
 
 	inline const frontend::variable *
 	result() const noexcept
@@ -81,6 +89,7 @@ public:
 
 private:
 	const basic_block_map & bbmap_;
+	frontend::basic_block * entry_block_;
 	const frontend::variable * state_;
 	const frontend::variable * result_;
 	std::unordered_map<const llvm::Value *, const frontend::variable*> vmap_;

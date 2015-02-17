@@ -56,17 +56,17 @@ convert_function(const llvm::Function & function, jlm::frontend::clg_node * clg_
 	for (; it != function.getBasicBlockList().end(); it++)
 			bbmap[&(*it)] = cfg->create_basic_block();
 
-	jlm::frontend::basic_block * entry_block = bbmap[&function.getEntryBlock()];
-	cfg->exit()->divert_inedges(entry_block);
-
 	const jlm::frontend::variable * result = nullptr;
+	frontend::basic_block * entry_block = cfg->create_basic_block();
 	if (function.getReturnType()->getTypeID() != llvm::Type::VoidTyID) {
 		result = cfg->create_variable(*convert_type(*function.getReturnType()), "_r_");
 		const frontend::variable * udef = create_undef_value(*function.getReturnType(), entry_block);
 		assignment_tac(entry_block, result, udef);
 	}
+	cfg->exit()->divert_inedges(entry_block);
+	entry_block->add_outedge(bbmap[&function.getEntryBlock()], 0);
 
-	context ctx(bbmap, state, result);
+	context ctx(bbmap, entry_block, state, result);
 	jt = function.getArgumentList().begin();
 	for (size_t n = 0; jt != function.getArgumentList().end(); jt++, n++)
 		ctx.insert_value(&(*jt), arguments[n]);
