@@ -13,48 +13,6 @@
 namespace jlm {
 namespace frontend {
 
-/* argument operator */
-
-class argument_op final : public jive::base::nullary_op {
-public:
-	virtual
-	~argument_op() noexcept;
-
-	inline
-	argument_op(const jive::base::type & type) noexcept
-		: type_(type.copy())
-	{}
-
-	inline
-	argument_op(const argument_op & other)
-		: type_(other.type_->copy())
-	{}
-
-	inline
-	argument_op(argument_op && other) = default;
-
-	virtual const jive::base::type &
-	result_type(size_t index) const noexcept override;
-
-	virtual std::string
-	debug_string() const override;
-
-	virtual std::unique_ptr<jive::operation>
-	copy() const override;
-
-	virtual bool
-	operator==(const operation & other) const noexcept override;
-
-	const jive::base::type &
-	type() const noexcept
-	{
-		return *type_;
-	}
-
-private:
-	std::unique_ptr<jive::base::type> type_;
-};
-
 /* phi operator */
 
 class phi_op final : public jive::operation {

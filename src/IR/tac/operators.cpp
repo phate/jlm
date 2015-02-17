@@ -10,36 +10,6 @@
 namespace jlm {
 namespace frontend {
 
-/* argument operator */
-
-argument_op::~argument_op() noexcept
-{}
-
-const jive::base::type &
-argument_op::result_type(size_t index) const noexcept
-{
-	return *type_;
-}
-
-std::string
-argument_op::debug_string() const
-{
-	return type_->debug_string();
-}
-
-std::unique_ptr<jive::operation>
-argument_op::copy() const
-{
-	return std::unique_ptr<jive::operation>(new argument_op(*this));
-}
-
-bool
-argument_op::operator==(const operation & other) const noexcept
-{
-	const argument_op * op = dynamic_cast<const argument_op*>(&other);
-	return op && op->type_ == type_;
-}
-
 /* phi operator */
 
 phi_op::~phi_op() noexcept
