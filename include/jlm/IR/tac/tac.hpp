@@ -23,12 +23,13 @@ namespace base {
 namespace jlm {
 namespace frontend {
 
-class output;
 class variable;
 
 class tac final {
 public:
-	~tac() noexcept;
+	inline
+	~tac() noexcept
+	{}
 
 	tac(const cfg_node * owner, const jive::operation & operation,
 		const std::vector<const variable*> & operands,
@@ -64,10 +65,17 @@ public:
 		return inputs_[index];
 	}
 
-	inline std::vector<const output*>
-	outputs() const noexcept
+	inline size_t
+	noutputs() const noexcept
 	{
-		return outputs_;
+		return outputs_.size();
+	}
+
+	inline const variable *
+	output(size_t index) const noexcept
+	{
+		JLM_DEBUG_ASSERT(index < outputs_.size());
+		return outputs_[index];
 	}
 
 	virtual std::string
@@ -76,46 +84,8 @@ public:
 private:
 	const cfg_node * owner_;
 	std::vector<const variable*> inputs_;
-	std::vector<const output*> outputs_;
+	std::vector<const variable*> outputs_;
 	std::unique_ptr<jive::operation> operation_;
-};
-
-class output final {
-public:
-	output(const output &) = delete;
-
-	output &
-	operator=(const output &) = delete;
-
-	inline const jive::base::type &
-	type() const noexcept
-	{
-		return tac_->operation().result_type(index_);
-	}
-
-	inline size_t
-	index() const noexcept
-	{
-		return index_;
-	}
-
-	inline const jlm::frontend::variable *
-	variable() const noexcept
-	{
-		return variable_;
-	}
-
-private:
-	const jlm::frontend::tac * tac_;
-	size_t index_;
-	const jlm::frontend::variable * variable_;
-
-	output (const jlm::frontend::tac * tac, size_t index, const jlm::frontend::variable * variable);
-
-	friend jlm::frontend::tac::tac(const cfg_node * owner,
-		const jive::operation & operation,
-		const std::vector<const jlm::frontend::variable*> & operands,
-		const std::vector<const jlm::frontend::variable*> & variables);
 };
 
 }

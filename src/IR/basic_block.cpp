@@ -36,17 +36,15 @@ basic_block::debug_string() const
 }
 
 const tac *
-basic_block::append(const jive::operation & operation, const std::vector<const output*> & operands)
+basic_block::append(
+	const jive::operation & operation,
+	const std::vector<const variable*> & operands)
 {
-	std::vector<const variable*> variables;
-	for (auto operand : operands)
-		variables.push_back(operand->variable());
-
 	std::vector<const variable*> results;
 	for (size_t n = 0; n < operation.nresults(); n++)
 		results.push_back(cfg()->create_variable(operation.result_type(n)));
 
-	jlm::frontend::tac * tac = new jlm::frontend::tac(this, operation, variables, results);
+	jlm::frontend::tac * tac = new jlm::frontend::tac(this, operation, operands, results);
 	tacs_.push_back(tac);
 	return tac;
 }

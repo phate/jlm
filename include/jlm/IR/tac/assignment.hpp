@@ -12,13 +12,13 @@
 namespace jlm {
 namespace frontend {
 
-JIVE_EXPORTED_INLINE const jlm::frontend::output *
+JIVE_EXPORTED_INLINE const jlm::frontend::variable *
 assignment_tac(jlm::frontend::basic_block * basic_block, const jlm::frontend::variable * lhs,
 	const jlm::frontend::variable * rhs)
 {
 	jlm::frontend::assignment_op op(lhs->type());
 	const jlm::frontend::tac * tac = basic_block->append(op, {rhs}, {lhs});
-	return tac->outputs()[0];
+	return tac->output(0);
 }
 
 }

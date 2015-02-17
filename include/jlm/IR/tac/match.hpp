@@ -11,7 +11,7 @@
 namespace jlm {
 namespace frontend {
 
-JIVE_EXPORTED_INLINE const jlm::frontend::output *
+JIVE_EXPORTED_INLINE const jlm::frontend::variable *
 match_tac(jlm::frontend::basic_block * basic_block, const jlm::frontend::variable * operand,
 	const std::vector<size_t> & constants)
 {
@@ -23,7 +23,7 @@ match_tac(jlm::frontend::basic_block * basic_block, const jlm::frontend::variabl
 	const jlm::frontend::tac * tac = basic_block->append(op, {operand}, {result});
 
 	JLM_DEBUG_ASSERT(op.narguments() == 1);
-	return tac->outputs()[0];
+	return tac->output(0);
 }
 
 }

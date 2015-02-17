@@ -12,25 +12,6 @@
 namespace jlm {
 namespace frontend {
 
-output::output(const jlm::frontend::tac * tac, size_t index,
-	const jlm::frontend::variable * variable)
-	: tac_(tac)
-	, index_(index)
-	, variable_(variable)
-{
-	/*
-		FIXME: throw type error
-	*/
-	if (variable_->type() != type())
-		throw std::logic_error("Invalid variable!");
-}
-
-tac::~tac() noexcept
-{
-	for (auto output : outputs_)
-		delete output;
-}
-
 tac::tac(const cfg_node * owner,
 	const jive::operation & operation,
 	const std::vector<const variable*> & operands,
@@ -53,8 +34,11 @@ tac::tac(const cfg_node * owner,
 		inputs_.push_back(operands[n]);
 	}
 
-	for (size_t n = 0; n < operation.nresults(); n++)
-		outputs_.push_back(new output(this, n, results[n]));
+	for (size_t n = 0; n < results.size(); n++) {
+		if (results[n]->type() != operation.result_type(n))
+			throw std::logic_error("Invalid type.");
+		outputs_.push_back(results[n]);
+	}
 }
 
 std::string
@@ -64,8 +48,8 @@ tac::debug_string() const
 
 	JLM_DEBUG_ASSERT(outputs_.size() != 0);
 	for (size_t n = 0; n < outputs_.size()-1; n++)
-		sstrm << outputs_[n]->variable()->debug_string() << ", ";
-	sstrm << outputs_[outputs_.size()-1]->variable()->debug_string() << " = ";
+		sstrm << outputs_[n]->debug_string() << ", ";
+	sstrm << outputs_[outputs_.size()-1]->debug_string() << " = ";
 
 	sstrm << operation_->debug_string();
 

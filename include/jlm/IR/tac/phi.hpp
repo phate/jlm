@@ -21,7 +21,7 @@ phi_tac(jlm::frontend::basic_block * basic_block,
 	jlm::frontend::phi_op op(ops.size(), ops[0]->type());
 	const variable * result = basic_block->cfg()->create_variable(op.result_type(0));
 	const jlm::frontend::tac * tac = basic_block->append(op, ops, {result});
-	return tac->outputs()[0]->variable();
+	return tac->output(0);
 }
 
 }

@@ -171,7 +171,7 @@ convert_basic_block(
 	std::list<const jlm::frontend::tac*> tacs = bb->tacs();
 	for (auto tac : tacs) {
 		if (dynamic_cast<const jlm::frontend::assignment_op*>(&tac->operation())) {
-			vmap[tac->outputs()[0]->variable()] = vmap[tac->input(0)];
+			vmap[tac->output(0)] = vmap[tac->input(0)];
 			continue;
 		}
 
@@ -184,8 +184,8 @@ convert_basic_block(
 		std::vector<jive::output *> results;
 		results = jive_node_create_normalized(graph, tac->operation(), operands);
 
-		for (size_t n = 0; n < tac->outputs().size(); n++)
-			vmap[tac->outputs()[n]->variable()] = results[n];
+		for (size_t n = 0; n < tac->noutputs(); n++)
+			vmap[tac->output(n)] = results[n];
 	}
 
 	/* handle outgoing edges */
@@ -195,13 +195,13 @@ convert_basic_block(
 			jive_theta_loopvar_leave(theta, lvpair.second.gate, vmap[lvpair.first]);
 			tmp.push_back(lvpair.second);
 		}
-		jive::output * predicate = vmap[bb->tacs().back()->outputs()[0]->variable()];
+		jive::output * predicate = vmap[bb->tacs().back()->output(0)];
 		jive_theta_end(theta, predicate, tmp.size(), &tmp[0]);
 		size_t n = 0;
 		for (auto it = loopvars.begin(); it != loopvars.end(); it++)
 			vmap[it->first] = tmp[n++].value;
 	} else if (bb->is_branch()) {
-		pstack.push(vmap[bb->tacs().back()->outputs()[0]->variable()]);
+		pstack.push(vmap[bb->tacs().back()->output(0)]);
 	} else
 		JLM_DEBUG_ASSERT(bb->outedges().size() == 1);
 

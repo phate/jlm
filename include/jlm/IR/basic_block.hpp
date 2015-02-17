@@ -26,7 +26,7 @@ public:
 	virtual std::string debug_string() const override;
 
 	const tac *
-	append(const jive::operation & operation, const std::vector<const output*> & operands);
+	append(const jive::operation & operation, const std::vector<const variable*> & operands);
 
 	const tac *
 	append(const jive::operation & operation, const std::vector<const variable*> & operands,

@@ -23,7 +23,7 @@ apply_tac(jlm::frontend::basic_block * basic_block, const std::string & name,
 	for (size_t n = 0; n < function_type.nreturns(); n++)
 		results.push_back(basic_block->cfg()->create_variable(*function_type.return_type(n)));
 
-	basic_block->append(op, operands, results)->outputs();
+	basic_block->append(op, operands, results);
 	return results;
 }
 
