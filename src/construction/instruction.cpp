@@ -29,7 +29,7 @@ const jlm::frontend::variable *
 convert_value(const llvm::Value * v, jlm::frontend::basic_block * bb, jlm::context & ctx)
 {
 	if (auto c = dynamic_cast<const llvm::Constant*>(v))
-		ctx.insert_value(v, convert_constant(*c, bb));
+		ctx.insert_value(v, convert_constant(*c, ctx.entry_block()));
 
 	if (!ctx.has_value(v))
 		ctx.insert_value(v, bb->cfg()->create_variable(*convert_type(*v->getType())));
