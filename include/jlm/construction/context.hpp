@@ -19,7 +19,60 @@ namespace frontend {
 	class variable;
 }
 
-typedef std::unordered_map<const llvm::BasicBlock*, jlm::frontend::basic_block*> basic_block_map;
+class basic_block_map final {
+public:
+
+	inline bool
+	has_basic_block(const llvm::BasicBlock * bb) const noexcept
+	{
+		return llvm2jlm_.find(bb) != llvm2jlm_.end();
+	}
+
+	inline bool
+	has_basic_block(const frontend::basic_block * bb) const noexcept
+	{
+		return jlm2llvm_.find(bb) != jlm2llvm_.end();
+	}
+
+	inline frontend::basic_block *
+	lookup_basic_block(const llvm::BasicBlock * bb) const noexcept
+	{
+		JLM_DEBUG_ASSERT(has_basic_block(bb));
+		return llvm2jlm_.find(bb)->second;
+	}
+
+	inline const llvm::BasicBlock *
+	lookup_basic_block(const frontend::basic_block * bb) const noexcept
+	{
+		JLM_DEBUG_ASSERT(has_basic_block(bb));
+		return jlm2llvm_.find(bb)->second;
+	}
+
+	inline void
+	insert_basic_block(const llvm::BasicBlock * bb1, frontend::basic_block * bb2)
+	{
+		JLM_DEBUG_ASSERT(!has_basic_block(bb1));
+		JLM_DEBUG_ASSERT(!has_basic_block(bb2));
+		llvm2jlm_[bb1] = bb2;
+		jlm2llvm_[bb2] = bb1;
+	}
+
+	frontend::basic_block *
+	operator[](const llvm::BasicBlock * bb) const
+	{
+		return lookup_basic_block(bb);
+	}
+
+	const llvm::BasicBlock *
+	operator[](const frontend::basic_block * bb) const
+	{
+		return lookup_basic_block(bb);
+	}
+
+private:
+	std::unordered_map<const llvm::BasicBlock*, frontend::basic_block*> llvm2jlm_;
+	std::unordered_map<const frontend::basic_block*, const llvm::BasicBlock*> jlm2llvm_;
+};
 
 typedef std::unordered_map<const llvm::Value*, const jlm::frontend::variable*> value_map;
 
@@ -58,14 +111,25 @@ public:
 	inline bool
 	has_basic_block(const llvm::BasicBlock * bb) const noexcept
 	{
-		return bbmap_.find(bb) != bbmap_.end();
+		return bbmap_.has_basic_block(bb);
+	}
+
+	inline bool
+	has_basic_block(const frontend::basic_block * bb) const noexcept
+	{
+		return bbmap_.has_basic_block(bb);
 	}
 
 	inline frontend::basic_block *
 	lookup_basic_block(const llvm::BasicBlock * bb) const noexcept
 	{
-		JLM_DEBUG_ASSERT(has_basic_block(bb));
-		return bbmap_.find(bb)->second;
+		return bbmap_.lookup_basic_block(bb);
+	}
+
+	inline const llvm::BasicBlock *
+	lookup_basic_block(const frontend::basic_block * bb) const noexcept
+	{
+		return bbmap_.lookup_basic_block(bb);
 	}
 
 	inline const bool

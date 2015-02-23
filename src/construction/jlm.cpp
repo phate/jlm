@@ -39,7 +39,7 @@ create_cfg_structure(
 	/* create all basic_blocks */
 	auto it = function.getBasicBlockList().begin();
 	for (; it != function.getBasicBlockList().end(); it++)
-			bbmap[&(*it)] = cfg->create_basic_block();
+			bbmap.insert_basic_block(&(*it), cfg->create_basic_block());
 
 	entry_block->add_outedge(bbmap[&function.getEntryBlock()], 0);
 
