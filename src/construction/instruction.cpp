@@ -48,10 +48,6 @@ convert_return_instruction(
 	const llvm::ReturnInst * instruction = static_cast<const llvm::ReturnInst*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
 
-	JLM_DEBUG_ASSERT(instruction->getNumSuccessors() == 0);
-	JLM_DEBUG_ASSERT(bb->noutedges() == 0);
-	bb->add_outedge(bb->cfg()->exit(), 0);
-
 	if (instruction->getReturnValue()) {
 		const jlm::frontend::variable * value = convert_value(instruction->getReturnValue(), bb, ctx);
 		assignment_tac(bb, ctx.result(), value);
@@ -67,25 +63,9 @@ convert_branch_instruction(
 	const llvm::BranchInst * instruction = static_cast<const llvm::BranchInst*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
 
-	JLM_DEBUG_ASSERT(bb->noutedges() == 0);
 	if (instruction->isConditional()) {
-		JLM_DEBUG_ASSERT(instruction->getNumSuccessors() == 2);
-
 		const jlm::frontend::variable * condition = convert_value(instruction->getCondition(), bb, ctx);
 		match_tac(bb, condition, {0});
-
-		/* taken */
-		JLM_DEBUG_ASSERT(ctx.has_basic_block(instruction->getSuccessor(0)));
-		bb->add_outedge(ctx.lookup_basic_block(instruction->getSuccessor(0)), 1);
-
-		/* nottaken */
-		JLM_DEBUG_ASSERT(ctx.has_basic_block(instruction->getSuccessor(1)));
-		bb->add_outedge(ctx.lookup_basic_block(instruction->getSuccessor(1)), 0);
-	} else {
-		JLM_DEBUG_ASSERT(instruction->isUnconditional());
-		JLM_DEBUG_ASSERT(instruction->getNumSuccessors() == 1);
-		JLM_DEBUG_ASSERT(ctx.has_basic_block(instruction->getSuccessor(0)));
-		bb->add_outedge(ctx.lookup_basic_block(instruction->getSuccessor(0)), 0);
 	}
 }
 
@@ -97,12 +77,6 @@ convert_switch_instruction(
 {
 	const llvm::SwitchInst * instruction = static_cast<const llvm::SwitchInst*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
-
-	JLM_DEBUG_ASSERT(bb->noutedges() == 0);
-	for (unsigned n = 0; n < instruction->getNumSuccessors(); n++) {
-		JLM_DEBUG_ASSERT(ctx.has_basic_block(instruction->getSuccessor(n)));
-		bb->add_outedge(ctx.lookup_basic_block(instruction->getSuccessor(n)), n);
-	}
 }
 
 static void
@@ -113,15 +87,6 @@ convert_unreachable_instruction(
 {
 	const llvm::UnreachableInst * instruction = static_cast<const llvm::UnreachableInst*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
-
-	JLM_DEBUG_ASSERT(instruction->getNumSuccessors() == 0);
-	JLM_DEBUG_ASSERT(bb->noutedges() == 0);
-
-	/* FIXME: this leads to problems:
-			- functions don't have a proper return value anymore -> cannot be converted to RVSDG
-		, but works for now. We need a proper concept for not returning functions etc.
-	*/
-	bb->add_outedge(bb->cfg()->exit(), 0);
 }
 
 static void

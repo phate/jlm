@@ -27,6 +27,43 @@ namespace jlm
 
 typedef std::unordered_map<const llvm::Function*, jlm::frontend::clg_node*> function_map;
 
+static frontend::cfg_node *
+create_cfg_structure(
+	const llvm::Function & function,
+	frontend::cfg * cfg,
+	basic_block_map & bbmap)
+{
+	frontend::basic_block * entry_block = cfg->create_basic_block();
+	cfg->exit()->divert_inedges(entry_block);
+
+	/* create all basic_blocks */
+	auto it = function.getBasicBlockList().begin();
+	for (; it != function.getBasicBlockList().end(); it++)
+			bbmap[&(*it)] = cfg->create_basic_block();
+
+	entry_block->add_outedge(bbmap[&function.getEntryBlock()], 0);
+
+	/* create CFG structure */
+	it = function.getBasicBlockList().begin();
+	for (; it != function.getBasicBlockList().end(); it++) {
+		if (dynamic_cast<const llvm::ReturnInst*>(it->getTerminator())) {
+			bbmap[&(*it)]->add_outedge(cfg->exit(), 0);
+			continue;
+		}
+
+		if (dynamic_cast<const llvm::UnreachableInst*>(it->getTerminator())) {
+			bbmap[&(*it)]->add_outedge(cfg->exit(), 0);
+			continue;
+		}
+
+		const llvm::TerminatorInst * instr = it->getTerminator();
+		for (size_t n = 0; n < instr->getNumSuccessors(); n++)
+			bbmap[&(*it)]->add_outedge(bbmap[instr->getSuccessor(n)], n);
+	}
+
+	return entry_block;
+}
+
 static void
 convert_basic_block(const llvm::BasicBlock & basic_block, context & ctx)
 {
@@ -50,28 +87,23 @@ convert_function(const llvm::Function & function, jlm::frontend::clg_node * clg_
 	const jlm::frontend::variable * state = arguments.back();
 	jlm::frontend::cfg * cfg = clg_node->cfg();
 
-
 	basic_block_map bbmap;
-	llvm::Function::BasicBlockListType::const_iterator it = function.getBasicBlockList().begin();
-	for (; it != function.getBasicBlockList().end(); it++)
-			bbmap[&(*it)] = cfg->create_basic_block();
+	frontend::basic_block * entry_block;
+	entry_block = static_cast<frontend::basic_block*>(create_cfg_structure(function, cfg, bbmap));
 
 	const jlm::frontend::variable * result = nullptr;
-	frontend::basic_block * entry_block = cfg->create_basic_block();
 	if (function.getReturnType()->getTypeID() != llvm::Type::VoidTyID) {
 		result = cfg->create_variable(*convert_type(*function.getReturnType()), "_r_");
 		const frontend::variable * udef = create_undef_value(*function.getReturnType(), entry_block);
 		assignment_tac(entry_block, result, udef);
 	}
-	cfg->exit()->divert_inedges(entry_block);
-	entry_block->add_outedge(bbmap[&function.getEntryBlock()], 0);
 
 	context ctx(bbmap, entry_block, state, result);
 	jt = function.getArgumentList().begin();
 	for (size_t n = 0; jt != function.getArgumentList().end(); jt++, n++)
 		ctx.insert_value(&(*jt), arguments[n]);
 
-	it = function.getBasicBlockList().begin();
+	auto it = function.getBasicBlockList().begin();
 	for (; it != function.getBasicBlockList().end(); it++)
 		convert_basic_block(*it, ctx);
 
