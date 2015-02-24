@@ -18,6 +18,8 @@
 #include <jlm/IR/tac/phi.hpp>
 #include <jlm/IR/tac/match.hpp>
 
+#include <jive/vsdg/controltype.h>
+
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/Function.h>
 
@@ -125,8 +127,9 @@ convert_load_instruction(
 	/* FIXME: handle volatile correctly */
 
 	const frontend::variable * address = convert_value(instruction->getPointerOperand(), bb, ctx);
-	const frontend::variable * value = addrload_tac(bb, address, ctx.state(),
-		*dynamic_cast<jive::value::type*>(convert_type(*instruction->getType()).get()));
+	const frontend::variable * value = convert_value(&i, bb, ctx);
+	addrload_tac(bb, address, ctx.state(),
+		*dynamic_cast<jive::value::type*>(convert_type(*instruction->getType()).get()), value);
 	ctx.insert_value(instruction, value);
 }
 
@@ -141,8 +144,7 @@ convert_store_instruction(
 
 	const frontend::variable * address = convert_value(instruction->getPointerOperand(), bb, ctx);
 	const frontend::variable * value = convert_value(instruction->getValueOperand(), bb, ctx);
-	const frontend::variable * result_state = addrstore_tac(bb, address, value, ctx.state());
-	assignment_tac(bb, ctx.state(), result_state);
+	addrstore_tac(bb, address, value, ctx.state(), ctx.state());
 }
 
 static void
@@ -162,7 +164,7 @@ convert_phi_instruction(
 		operands.push_back(v);
 	}
 
-	ctx.insert_value(phi, phi_tac(bb, operands));
+	ctx.insert_value(phi, phi_tac(bb, operands, convert_value(phi, bb, ctx)));
 }
 
 static void
@@ -177,7 +179,7 @@ convert_getelementptr_instruction(
 	const jlm::frontend::variable * base = convert_value(instruction->getPointerOperand(), bb, ctx);
 	for (auto idx = instruction->idx_begin(); idx != instruction->idx_end(); idx++) {
 		const jlm::frontend::variable * offset = convert_value(idx->get(), bb, ctx);
-		base = addrarraysubscript_tac(bb, base, offset);
+		base = addrarraysubscript_tac(bb, base, offset, convert_value(&i, bb, ctx));
 	}
 
 	ctx.insert_value(instruction, base);
@@ -194,7 +196,8 @@ convert_trunc_instruction(
 
 	const llvm::IntegerType * dst_type = static_cast<const llvm::IntegerType*>(i.getType());
 	const jlm::frontend::variable * operand = convert_value(instruction->getOperand(0), bb, ctx);
-	ctx.insert_value(instruction, bitslice_tac(bb, operand, 0, dst_type->getBitWidth()));
+	ctx.insert_value(instruction, bitslice_tac(bb, operand, 0, dst_type->getBitWidth(),
+		convert_value(&i, bb, ctx)));
 }
 
 static void
@@ -221,7 +224,11 @@ convert_call_instruction(
 	jive::fct::type type = dynamic_cast<jive::fct::type&>(*convert_type(*f->getFunctionType()).get());
 
 	std::vector<const jlm::frontend::variable*> results;
-	results = apply_tac(bb, f->getName(), type, arguments);
+	if (type.nreturns() == 2)
+		results.push_back(convert_value(&i, bb, ctx));
+	results.push_back(ctx.state());
+
+	apply_tac(bb, f->getName(), type, arguments, {results});
 	JLM_DEBUG_ASSERT(results.size() > 0 && results.size() <= 2);
 
 	if (results.size() == 2) {

@@ -33,12 +33,16 @@ convert_apint(const llvm::APInt & value)
 }
 
 const jlm::frontend::variable *
-create_undef_value(const llvm::Type & type, jlm::frontend::basic_block * bb)
+create_undef_value(
+	const llvm::Type & type,
+	jlm::frontend::basic_block * bb)
 {
 	if (type.getTypeID() == llvm::Type::IntegerTyID) {
 		const llvm::IntegerType * t = static_cast<const llvm::IntegerType*>(&type);
 		jive::bits::value_repr v(t->getBitWidth(), 'X');
-		return bitconstant_tac(bb, v);
+		const jlm::frontend::variable * result;
+		result = bb->cfg()->create_variable(jive::bits::type(v.nbits()));
+		return bitconstant_tac(bb, v, result);
 	}
 
 	JLM_DEBUG_ASSERT(0);
@@ -46,17 +50,22 @@ create_undef_value(const llvm::Type & type, jlm::frontend::basic_block * bb)
 }
 
 static const jlm::frontend::variable *
-convert_int_constant(const llvm::Constant & c, jlm::frontend::basic_block * bb)
+convert_int_constant(
+	const llvm::Constant & c,
+	jlm::frontend::basic_block * bb)
 {
 	const llvm::ConstantInt * constant = static_cast<const llvm::ConstantInt*>(&c);
 	JLM_DEBUG_ASSERT(constant != nullptr);
 
 	jive::bits::value_repr v = convert_apint(constant->getValue());
-	return bitconstant_tac(bb, v);
+	const jlm::frontend::variable * result = bb->cfg()->create_variable(jive::bits::type(v.nbits()));
+	return bitconstant_tac(bb, v, result);
 }
 
 static const jlm::frontend::variable *
-convert_undefvalue_instruction(const llvm::Constant & c, jlm::frontend::basic_block * bb)
+convert_undefvalue_instruction(
+	const llvm::Constant & c,
+	jlm::frontend::basic_block * bb)
 {
 	const llvm::UndefValue * constant = static_cast<const llvm::UndefValue*>(&c);
 	JLM_DEBUG_ASSERT(constant != nullptr);
