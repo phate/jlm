@@ -19,7 +19,7 @@ namespace jlm {
 namespace frontend {
 
 JIVE_EXPORTED_INLINE const variable *
-bitconstant_tac(jlm::frontend::basic_block * basic_block, jive::bits::value_repr & v)
+bitconstant_tac(jlm::frontend::basic_block * basic_block, const jive::bits::value_repr & v)
 {
 	jive::bits::constant_op op(v);
 	const jlm::frontend::tac * tac = basic_block->append(op, {});
