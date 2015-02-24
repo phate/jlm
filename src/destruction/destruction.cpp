@@ -15,15 +15,30 @@
 #include <jive/types/bitstring/type.h>
 #include <jive/types/function/fctlambda.h>
 #include <jive/vsdg/basetype.h>
+#include <jive/vsdg/control.h>
 #include <jive/vsdg/gamma.h>
 #include <jive/vsdg/graph.h>
 #include <jive/vsdg/theta.h>
 
+//to be removed
+#include <jive/view.h>
+
 #include <stack>
+
+namespace jlm {
+
+class theta {
+public:
+	jive_theta theta;
+	std::unordered_map<const jlm::frontend::variable*, jive_theta_loopvar> loopvars;
+};
+
+}
 
 typedef std::unordered_map<const jlm::frontend::variable*, jive::output*> variable_map;
 typedef std::unordered_map<const jlm::frontend::cfg_node*, variable_map> node_map;
 typedef std::unordered_map<const jlm::frontend::cfg_edge*, std::stack<jive::output*>> predicate_map;
+typedef std::unordered_map<const jlm::frontend::cfg_edge*, std::stack<jlm::theta>> theta_map;
 
 namespace jlm {
 
@@ -32,6 +47,10 @@ create_undefined_value(const jive::base::type & type, struct jive_graph * graph)
 {
 	if (auto t = dynamic_cast<const jive::bits::type*>(&type))
 		return jive_bitconstant_undefined(graph, t->nbits());
+
+	/* FIXME: temporary solutation */
+	if (dynamic_cast<const jive::ctl::type*>(&type))
+		return jive_control_constant(graph, 2, 0);
 
 	JLM_DEBUG_ASSERT(0);
 	return nullptr;
@@ -96,6 +115,7 @@ convert_basic_block(
 	struct jive_graph * graph,
 	node_map & nmap,
 	predicate_map & pmap,
+	theta_map & tmap,
 	const std::unordered_set<jlm::frontend::cfg_edge*> & back_edges)
 {
 	/* only visit a join if all incoming edges have already been visited */
@@ -104,22 +124,22 @@ convert_basic_block(
 
 	variable_map vmap;
 	std::stack<jive::output*> pstack;
-
-	jive_theta theta;
-	std::unordered_map<const jlm::frontend::variable*,jive_theta_loopvar> loopvars;
+	std::stack<theta> tstack;
 
 	/* handle incoming edges */
 	if (bb->ninedges() == 1) {
 		vmap = nmap[bb->inedges().front()->source()];
 		pstack = pmap[bb->inedges().front()];
+		tstack = tmap[bb->inedges().front()];
 	} else if (is_branch_join(bb, back_edges)) {
 		pstack = pmap[bb->inedges().front()];
+		tstack = tmap[bb->inedges().front()];
+
 		JLM_DEBUG_ASSERT(pstack.size() != 0);
 		jive::output * predicate = pstack.top();
-		pstack.pop();
-
 		for (auto edge : bb->inedges())
 			JLM_DEBUG_ASSERT(predicate == pmap[edge].top());
+		pstack.pop();
 
 		for (auto edge : bb->inedges())
 			vmap.insert(nmap[edge->source()].begin(), nmap[edge->source()].end());
@@ -133,10 +153,15 @@ convert_basic_block(
 			std::vector<jive::output*> values;
 			for (auto vpair : vmap) {
 				const jlm::frontend::variable * variable = vpair.first;
-				if (nmap[edge->source()].find(variable) != nmap[edge->source()].end())
-					values.push_back(nmap[edge->source()][variable]);
-				else
-					values.push_back(create_undefined_value(variable->type(), graph));
+				if (nmap[edge->source()].find(variable) != nmap[edge->source()].end()) {
+					jive::output * value = nmap[edge->source()][variable];
+					JLM_DEBUG_ASSERT(value != nullptr);
+					values.push_back(value);
+				} else {
+					jive::output * undef = create_undefined_value(variable->type(), graph);
+					JLM_DEBUG_ASSERT(undef != nullptr);
+					values.push_back(undef);
+				}
 			}
 			alternatives.push_back(values);
 		}
@@ -147,30 +172,36 @@ convert_basic_block(
 		for (auto variable : vmap)
 			vmap[variable.first] = results[n++];
 	} else if (is_loop_entry(bb, back_edges)) {
-			jlm::frontend::cfg_edge * entry_edge = bb->inedges().front();
-			jlm::frontend::cfg_edge * back_edge = *std::next(bb->inedges().begin());
-			if (back_edges.find(entry_edge) != back_edges.end()) {
-				jlm::frontend::cfg_edge * tmp = entry_edge;
-				entry_edge = back_edge;
-				back_edge = tmp;
-			}
+		jlm::frontend::cfg_edge * entry_edge = bb->inedges().front();
+		jlm::frontend::cfg_edge * back_edge = *std::next(bb->inedges().begin());
+		if (back_edges.find(entry_edge) != back_edges.end()) {
+			jlm::frontend::cfg_edge * tmp = entry_edge;
+			entry_edge = back_edge;
+			back_edge = tmp;
+		}
 
-			vmap.insert(nmap[entry_edge->source()].begin(), nmap[entry_edge->source()].end());
+		tstack = tmap[entry_edge];
+		pstack = pmap[entry_edge];
+		vmap.insert(nmap[entry_edge->source()].begin(), nmap[entry_edge->source()].end());
 
-			theta = jive_theta_begin(graph);
-			for (auto vpair : vmap) {
-				jive_theta_loopvar loopvar = jive_theta_loopvar_enter(theta, vpair.second);
-				vmap[vpair.first] = loopvar.value;
-				loopvars[vpair.first] = loopvar;
-			}
-		} else
-			JLM_DEBUG_ASSERT(0);
+		jlm::theta theta;
+		theta.theta = jive_theta_begin(graph);
+		for (auto vpair : vmap) {
+			jive_theta_loopvar loopvar = jive_theta_loopvar_enter(theta.theta, vpair.second);
+			JLM_DEBUG_ASSERT(loopvar.value);
+			vmap[vpair.first] = loopvar.value;
+			theta.loopvars[vpair.first] = loopvar;
+		}
+		tstack.push(theta);
+	} else
+		JLM_DEBUG_ASSERT(0);
 
 
 	/* handle TACs */
 	std::list<const jlm::frontend::tac*> tacs = bb->tacs();
 	for (auto tac : tacs) {
 		if (dynamic_cast<const jlm::frontend::assignment_op*>(&tac->operation())) {
+			JLM_DEBUG_ASSERT(vmap.find(tac->input(0)) != vmap.end());
 			vmap[tac->output(0)] = vmap[tac->input(0)];
 			continue;
 		}
@@ -184,23 +215,33 @@ convert_basic_block(
 		std::vector<jive::output *> results;
 		results = jive_node_create_normalized(graph, tac->operation(), operands);
 
-		for (size_t n = 0; n < tac->noutputs(); n++)
+		JLM_DEBUG_ASSERT(results.size() == tac->noutputs());
+		for (size_t n = 0; n < tac->noutputs(); n++) {
+			JLM_DEBUG_ASSERT(results[n] != nullptr);
 			vmap[tac->output(n)] = results[n];
+		}
 	}
 
 	/* handle outgoing edges */
 	if (is_loop_exit(bb, back_edges)) {
+		JLM_DEBUG_ASSERT(tstack.size() != 0);
+		jlm::theta theta = tstack.top();
+		tstack.pop();
+
 		std::vector<jive_theta_loopvar> tmp;
-		for (auto lvpair : loopvars) {
-			jive_theta_loopvar_leave(theta, lvpair.second.gate, vmap[lvpair.first]);
+		for (auto lvpair : theta.loopvars) {
+			jive_theta_loopvar_leave(theta.theta, lvpair.second.gate, vmap[lvpair.first]);
 			tmp.push_back(lvpair.second);
 		}
 		jive::output * predicate = vmap[bb->tacs().back()->output(0)];
-		jive_theta_end(theta, predicate, tmp.size(), &tmp[0]);
+		jive_theta_end(theta.theta, predicate, tmp.size(), &tmp[0]);
 		size_t n = 0;
-		for (auto it = loopvars.begin(); it != loopvars.end(); it++)
+		for (auto it = theta.loopvars.begin(); it != theta.loopvars.end(); it++) {
+			JLM_DEBUG_ASSERT(tmp[n].value != nullptr);
 			vmap[it->first] = tmp[n++].value;
+		}
 	} else if (bb->is_branch()) {
+		JLM_DEBUG_ASSERT(vmap[bb->tacs().back()->output(0)]);
 		pstack.push(vmap[bb->tacs().back()->output(0)]);
 	} else
 		JLM_DEBUG_ASSERT(bb->outedges().size() == 1);
@@ -211,8 +252,10 @@ convert_basic_block(
 			continue;
 
 		pmap[e] = pstack;
-		if (auto bb = dynamic_cast<jlm::frontend::basic_block *>(e->sink()))
-			convert_basic_block(bb, graph, nmap, pmap, back_edges);
+		tmap[e] = tstack;
+		if (auto bb = dynamic_cast<jlm::frontend::basic_block *>(e->sink())) {
+			convert_basic_block(bb, graph, nmap, pmap, tmap, back_edges);
+		}
 	}
 }
 
@@ -251,10 +294,12 @@ convert_cfg(
 	const jlm::frontend::basic_block * bb;
 	bb = static_cast<const jlm::frontend::basic_block*>(cfg->enter()->outedges()[0]->sink());
 
+	theta_map tmap;
 	predicate_map pmap;
 	pmap[cfg->enter()->outedges()[0]] = std::stack<jive::output*>();
+	tmap[cfg->enter()->outedges()[0]] = std::stack<jlm::theta>();
 
-	convert_basic_block(bb, graph, nmap, pmap, back_edges);
+	convert_basic_block(bb, graph, nmap, pmap, tmap, back_edges);
 
 	JLM_DEBUG_ASSERT(cfg->exit()->ninedges() == 1);
 	jlm::frontend::cfg_node * predecessor = cfg->exit()->inedges().front()->source();
