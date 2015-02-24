@@ -21,6 +21,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sstream>
 
 /* Tarjan's SCC algorithm */
 
@@ -215,7 +216,9 @@ cfg::create_basic_block()
 const jlm::frontend::variable *
 cfg::create_variable(const jive::base::type & type)
 {
-	std::unique_ptr<variable> variable(new jlm::frontend::variable(type));
+	std::stringstream sstr;
+	sstr << "v" << variables_.size();
+	std::unique_ptr<variable> variable(new jlm::frontend::variable(type, sstr.str()));
 	jlm::frontend::variable * v = variable.get();
 	variables_.insert(std::move(variable));
 	variable.release();
