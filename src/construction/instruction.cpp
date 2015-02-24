@@ -151,14 +151,18 @@ convert_phi_instruction(
 	jlm::frontend::basic_block * bb,
 	jlm::context & ctx)
 {
-	const llvm::PHINode * instruction = static_cast<const llvm::PHINode*>(&i);
-	JLM_DEBUG_ASSERT(instruction != nullptr);
+	const llvm::PHINode * phi = static_cast<const llvm::PHINode*>(&i);
+	JLM_DEBUG_ASSERT(phi != nullptr);
 
-	std::vector<const jlm::frontend::variable *> ops;
-	for (size_t n = 0; n < instruction->getNumIncomingValues(); n++)
-		ops.push_back(convert_value(instruction->getIncomingValue(n), bb, ctx));
+	std::vector<const jlm::frontend::variable*> operands;
+	for (auto edge : bb->inedges()) {
+		const frontend::basic_block * tmp = static_cast<frontend::basic_block*>(edge->source());
+		const llvm::BasicBlock * ib = ctx.lookup_basic_block(tmp);
+		const jlm::frontend::variable * v = convert_value(phi->getIncomingValueForBlock(ib), bb, ctx);
+		operands.push_back(v);
+	}
 
-	ctx.insert_value(instruction, phi_tac(bb, ops));
+	ctx.insert_value(phi, phi_tac(bb, operands));
 }
 
 static void
