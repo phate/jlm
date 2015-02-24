@@ -15,12 +15,6 @@ namespace frontend {
 
 class variable final {
 public:
-
-	inline
-	variable(const jive::base::type & type)
-		: type_(type.copy())
-	{}
-
 	inline
 	variable(const jive::base::type & type, const std::string & name)
 		: name_(name)
