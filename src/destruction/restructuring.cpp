@@ -6,7 +6,13 @@
 #include <jlm/IR/basic_block.hpp>
 #include <jlm/IR/cfg.hpp>
 #include <jlm/IR/cfg_node.hpp>
+#include <jlm/IR/tac/assignment.hpp>
+#include <jlm/IR/tac/bitstring.hpp>
+#include <jlm/IR/tac/match.hpp>
 
+#include <jive/vsdg/controltype.h>
+
+#include <cmath>
 #include <deque>
 #include <unordered_map>
 #include <unordered_set>
@@ -79,23 +85,46 @@ restructure_loops(jlm::frontend::cfg_node * entry, jlm::frontend::cfg_node * exi
 		}
 
 		/* Restructure loop */
-		jlm::frontend::basic_block * new_ve = cfg->create_basic_block();
-		jlm::frontend::basic_block * new_vx = cfg->create_basic_block();
+		size_t nbits = std::max(std::ceil(std::log2(std::max(ve.size(), vx.size()))), 1.0);
+		const frontend::variable * q = cfg->create_variable(jive::bits::type(nbits), "#q#");
+
+		const frontend::variable * r = cfg->create_variable(jive::bits::type(1), "#r#");
 		jlm::frontend::basic_block * vt = cfg->create_basic_block();
+		match_tac(vt, r, {0});
+
+		jlm::frontend::basic_block * new_ve = cfg->create_basic_block();
+		std::vector<size_t> ve_constants;
+		for (size_t n = 0; n < ve.size()-1; n++)
+			ve_constants.push_back(n);
+		match_tac(new_ve, q, ve_constants);
+
+		jlm::frontend::basic_block * new_vx = cfg->create_basic_block();
+		std::vector<size_t> vx_constants;
+		for (size_t n = 0; n < vx.size()-1; n++)
+			vx_constants.push_back(n);
+		match_tac(new_vx, q, vx_constants);
+
 		for (auto edge : ae) {
 			jlm::frontend::basic_block * ass = cfg->create_basic_block();
+			jive::bits::value_repr value(nbits, ve[edge->sink()]);
+			bitconstant_tac(ass, value, q);
 			ass->add_outedge(new_ve, 0);
 			edge->divert(ass);
 		}
 
 		for (auto edge : ar) {
 			jlm::frontend::basic_block * ass = cfg->create_basic_block();
+			bitconstant_tac(ass, jive::bits::value_repr(1, 1UL), r);
+			jive::bits::value_repr value(nbits, ve[edge->sink()]);
+			bitconstant_tac(ass, value, q);
 			ass->add_outedge(vt, 0);
 			edge->divert(ass);
 		}
 
 		for (auto edge : ax) {
 			jlm::frontend::basic_block * ass = cfg->create_basic_block();
+			bitconstant_tac(ass, jive::bits::value_repr(1, 0UL), r);
+			bitconstant_tac(ass, jive::bits::value_repr(nbits, vx[edge->sink()]), q);
 			ass->add_outedge(vt, 0);
 			edge->divert(ass);
 		}
@@ -279,6 +308,7 @@ restructure(jlm::frontend::cfg * cfg)
 	for (auto edge : back_edges)
 		edges.insert(edge.source()->add_outedge(edge.sink(), edge.index()));
 
+	JLM_DEBUG_ASSERT(cfg->is_structured());
 	return edges;
 }
 
