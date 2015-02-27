@@ -15,7 +15,7 @@ namespace frontend {
 	class cfg_edge;
 }
 
-std::unordered_set<jlm::frontend::cfg_edge*>
+std::unordered_set<const jlm::frontend::cfg_edge*>
 restructure(jlm::frontend::cfg * cfg);
 
 }

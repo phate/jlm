@@ -291,7 +291,7 @@ restructure_branches(jlm::frontend::cfg_node * start, jlm::frontend::cfg_node * 
 	restructure_branches(vt, end);
 }
 
-std::unordered_set<jlm::frontend::cfg_edge*>
+std::unordered_set<const jlm::frontend::cfg_edge*>
 restructure(jlm::frontend::cfg * cfg)
 {
 	JLM_DEBUG_ASSERT(cfg->is_closed());
@@ -304,7 +304,7 @@ restructure(jlm::frontend::cfg * cfg)
 	restructure_branches(cfg->enter(), cfg->exit());
 
 	/* insert back edges */
-	std::unordered_set<jlm::frontend::cfg_edge*> edges;
+	std::unordered_set<const jlm::frontend::cfg_edge*> edges;
 	for (auto edge : back_edges)
 		edges.insert(edge.source()->add_outedge(edge.sink(), edge.index()));
 
