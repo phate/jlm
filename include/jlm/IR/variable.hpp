@@ -8,6 +8,7 @@
 
 #include <jive/vsdg/basetype.h>
 
+#include <memory>
 #include <sstream>
 
 namespace jlm {
