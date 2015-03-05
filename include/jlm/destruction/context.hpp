@@ -38,7 +38,6 @@ public:
 	inline void
 	insert_value(const jlm::frontend::variable * v, jive::output * o)
 	{
-		JLM_DEBUG_ASSERT(!has_value(v));
 		map_[v] = o;
 	}
 

@@ -594,7 +594,6 @@ cfg::destruct_ssa()
 				value = assignment_tac(edge_block, v, tac->input(n));
 			}
 			assignment_tac(ass_block, tac->output(0), value);
-			jive_cfg_view(*this);
 		}
 
 		phi_block->divert_inedges(ass_block);

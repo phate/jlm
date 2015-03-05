@@ -21,9 +21,6 @@
 #include <jive/vsdg/graph.h>
 #include <jive/vsdg/operators/match.h>
 
-//to be removed
-#include <jive/view.h>
-
 #include <stack>
 
 namespace jlm {
@@ -115,10 +112,13 @@ handle_branch_join(
 		JLM_DEBUG_ASSERT(predicate == ctx.lookup_predicate_stack(edge).top());
 	pstack.pop();
 
-	/* get theta stack */
+	/* check theta stack */
 	dstrct::theta_stack tstack = ctx.lookup_theta_stack(inedges.front());
-	for (auto edge : inedges)
-		JLM_DEBUG_ASSERT(tstack.top() == ctx.lookup_theta_stack(edge).top());
+	for (auto edge : inedges) {
+		JLM_DEBUG_ASSERT(tstack.size() == ctx.lookup_theta_stack(edge).size());
+		if (!tstack.empty())
+			JLM_DEBUG_ASSERT(tstack.top() == ctx.lookup_theta_stack(edge).top());
+	}
 
 	/* compute all variables needed in the gamma */
 	dstrct::variable_map vmap;
@@ -225,7 +225,7 @@ handle_basic_block(
 {
 	for (auto tac : bb->tacs()) {
 		if (dynamic_cast<const jlm::frontend::assignment_op*>(&tac->operation())) {
-			vmap.replace_value(tac->output(0), vmap.lookup_value(tac->input(0)));
+			vmap.insert_value(tac->output(0), vmap.lookup_value(tac->input(0)));
 			continue;
 		}
 
@@ -253,13 +253,23 @@ handle_loop_exit(
 	jive::output * predicate = vmap.lookup_value(match->output(0));
 
 	dstrct::theta_env * tenv = tstack.poptop();
-	for (auto it = tenv->begin(); it != tenv->end(); it++)
-		tenv->theta()->leave(it->second, vmap.lookup_value(it->first));
+	for (auto it = vmap.begin(); it != vmap.end(); it++) {
+		if (tenv->has_loopvar(it->first)) {
+			jive::loopvar * lv = tenv->lookup_loopvar(it->first);
+			tenv->theta()->leave(lv, it->second);
+		} else {
+			jive::loopvar * lv = tenv->theta()->enter(create_undefined_value(it->first->type(), graph));
+			tenv->insert_loopvar(it->first, lv);
+			tenv->theta()->leave(lv, it->second);
+		}
+	}
 
 	tenv->theta()->end(predicate);
 
-	for (auto it = tenv->begin(); it != tenv->end(); it++)
-		vmap.replace_value(it->first, it->second->fini_value());
+	for (auto it = vmap.begin(); it != vmap.end(); it++) {
+		jive::loopvar * lv = tenv->lookup_loopvar(it->first);
+		vmap.replace_value(it->first, lv->fini_value());
+	}
 }
 
 static void
