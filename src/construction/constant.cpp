@@ -23,11 +23,11 @@ convert_apint(const llvm::APInt & value)
 	std::string str = value.toString(2, value.isNegative());
 	std::reverse(str.begin(), str.end());
 
-	jive::bits::value_repr vr(str);
+	jive::bits::value_repr vr(str.c_str());
 	if (value.isNegative())
-		vr.sext(value.getBitWidth() - str.size());
+		vr = vr.sext(value.getBitWidth() - str.size());
 	else
-		vr.zext(value.getBitWidth() - str.size());
+		vr = vr.zext(value.getBitWidth() - str.size());
 
 	return vr;
 }
