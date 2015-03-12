@@ -175,9 +175,9 @@ handle_loop_entry(
 	/* create new theta environment and update variable map */
 	dstrct::theta_env * tenv = ctx.create_theta_env(graph);
 	for (auto vpair : vmap) {
-		jive::loopvar * lv = tenv->theta()->enter(vpair.second);
+		jive_theta_loopvar lv = jive_theta_loopvar_enter(*tenv->theta(), vpair.second);
 		tenv->insert_loopvar(vpair.first, lv);
-		vmap.replace_value(vpair.first, lv->pre_iter_value());
+		vmap.replace_value(vpair.first, lv.value);
 	}
 	tstack.push(tenv);
 
@@ -253,22 +253,31 @@ handle_loop_exit(
 	jive::output * predicate = vmap.lookup_value(match->output(0));
 
 	dstrct::theta_env * tenv = tstack.poptop();
+	std::vector<jive_theta_loopvar> loopvars;
 	for (auto it = vmap.begin(); it != vmap.end(); it++) {
+		jive_theta_loopvar lv;
 		if (tenv->has_loopvar(it->first)) {
-			jive::loopvar * lv = tenv->lookup_loopvar(it->first);
-			tenv->theta()->leave(lv, it->second);
+			lv = tenv->lookup_loopvar(it->first);
+			jive_theta_loopvar_leave(*tenv->theta(), lv.gate, it->second);
 		} else {
-			jive::loopvar * lv = tenv->theta()->enter(create_undefined_value(it->first->type(), graph));
+			lv = jive_theta_loopvar_enter(*tenv->theta(),
+				create_undefined_value(it->first->type(), graph));
 			tenv->insert_loopvar(it->first, lv);
-			tenv->theta()->leave(lv, it->second);
+			jive_theta_loopvar_leave(*tenv->theta(), lv.gate, it->second);
 		}
+		loopvars.push_back(lv);
 	}
 
-	tenv->theta()->end(predicate);
+	jive_theta_end(*tenv->theta(), predicate, loopvars.size(), &loopvars[0]);
+
+	size_t n = 0;
+	JIVE_DEBUG_ASSERT(loopvars.size() == vmap.size());
+	for (auto it = vmap.begin(); it != vmap.end(); it++, n++)
+		tenv->replace_loopvar(it->first, loopvars[n]);
 
 	for (auto it = vmap.begin(); it != vmap.end(); it++) {
-		jive::loopvar * lv = tenv->lookup_loopvar(it->first);
-		vmap.replace_value(it->first, lv->fini_value());
+		jive_theta_loopvar lv = tenv->lookup_loopvar(it->first);
+		vmap.replace_value(it->first, lv.value);
 	}
 }
 

@@ -127,13 +127,13 @@ class theta_env final {
 public:
 	inline
 	theta_env(struct jive_graph * graph)
-		: theta_(new jive::theta(graph))
+		: theta_(jive_theta_begin(graph))
 	{}
 
-	inline jive::theta *
+	inline jive_theta *
 	theta()
 	{
-		return theta_;
+		return &theta_;
 	}
 
 	inline bool
@@ -142,7 +142,7 @@ public:
 		return loopvars_.find(v) != loopvars_.end();
 	}
 
-	inline jive::loopvar *
+	inline jive_theta_loopvar
 	lookup_loopvar(const jlm::frontend::variable * v)
 	{
 		JLM_DEBUG_ASSERT(has_loopvar(v));
@@ -150,28 +150,35 @@ public:
 	}
 
 	inline void
-	insert_loopvar(const jlm::frontend::variable * v, jive::loopvar * lv)
+	insert_loopvar(const jlm::frontend::variable * v, jive_theta_loopvar lv)
 	{
 		JLM_DEBUG_ASSERT(!has_loopvar(v));
 		loopvars_[v] = lv;
 	}
 
+	inline void
+	replace_loopvar(const frontend::variable * v, jive_theta_loopvar lv)
+	{
+		JLM_DEBUG_ASSERT(has_loopvar(v));
+		loopvars_[v] = lv;
+	}
+
 	/* FIXME: this is a really ugly hack */
-	std::unordered_map<const jlm::frontend::variable*, jive::loopvar*>::iterator
+	std::unordered_map<const jlm::frontend::variable*, jive_theta_loopvar>::iterator
 	begin()
 	{
 		return loopvars_.begin();
 	}
 
-	std::unordered_map<const jlm::frontend::variable*, jive::loopvar*>::iterator
+	std::unordered_map<const jlm::frontend::variable*, jive_theta_loopvar>::iterator
 	end()
 	{
 		return loopvars_.end();
 	}
 
 private:
-	jive::theta * theta_;
-	std::unordered_map<const jlm::frontend::variable *, jive::loopvar*> loopvars_;
+	jive_theta theta_;
+	std::unordered_map<const jlm::frontend::variable *, jive_theta_loopvar> loopvars_;
 };
 
 class theta_stack final {
