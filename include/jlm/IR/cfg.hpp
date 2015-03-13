@@ -60,8 +60,29 @@ public:
 	void
 	destruct_ssa();
 
-	inline jlm::frontend::cfg::enter_node * enter() const noexcept { return enter_; }
-	inline jlm::frontend::cfg::exit_node * exit() const noexcept { return exit_; }
+	inline jlm::frontend::cfg::enter_node *
+	enter() const noexcept
+	{
+		return enter_;
+	}
+
+	inline bool
+	is_enter(const frontend::cfg_node * node) const noexcept
+	{
+		return node == enter_;
+	}
+
+	inline jlm::frontend::cfg::exit_node *
+	exit() const noexcept
+	{
+		return exit_;
+	}
+
+	inline bool
+	is_exit(const frontend::cfg_node * node) const noexcept
+	{
+		return exit_ == node;
+	}
 
 	inline jlm::frontend::clg_node * function() const noexcept { return clg_node_; }
 

@@ -121,21 +121,20 @@ handle_branch_join(
 	}
 
 	/* compute all variables needed in the gamma */
-	dstrct::variable_map vmap;
+	std::unordered_set<const frontend::variable*> variables = ctx.lookup_demand(inedges.front());
 	for (auto edge : inedges)
-		vmap.merge(ctx.lookup_variable_map(edge->source()));
+		JIVE_DEBUG_ASSERT(ctx.lookup_demand(edge) == variables);
 
 	/* compute operand types for gamma */
 	std::vector<const jive::base::type*> types;
-	for (auto vpair : vmap)
-		types.push_back(&vpair.first->type());
+	for (auto variable : variables)
+		types.push_back(&variable->type());
 
 	/* set up gamma operands */
 	std::vector<std::vector<jive::output*>> alternatives;
 	for (auto edge : inedges) {
 		std::vector<jive::output*> values;
-		for (auto vpair : vmap) {
-			const jlm::frontend::variable * variable = vpair.first;
+		for (auto variable : variables) {
 			if (ctx.lookup_variable_map(edge->source()).has_value(variable)) {
 				values.push_back(ctx.lookup_variable_map(edge->source()).lookup_value(variable));
 			} else {
@@ -147,12 +146,13 @@ handle_branch_join(
 
 	/* create gamma */
 	std::vector<jive::output*> results = jive_gamma(predicate, types, alternatives);
-	JLM_DEBUG_ASSERT(results.size() == vmap.size());
+	JLM_DEBUG_ASSERT(results.size() == variables.size());
 
 	/* update variable map */
 	size_t n = 0;
-	for (auto vpair : vmap)
-		vmap.replace_value(vpair.first, results[n++]);
+	dstrct::variable_map vmap;
+	for (auto variable : variables)
+		vmap.insert_value(variable, results[n++]);
 
 	dststate state;
 	state.pstack = pstack;
@@ -174,10 +174,13 @@ handle_loop_entry(
 
 	/* create new theta environment and update variable map */
 	dstrct::theta_env * tenv = ctx.create_theta_env(graph);
-	for (auto vpair : vmap) {
-		jive_theta_loopvar lv = jive_theta_loopvar_enter(*tenv->theta(), vpair.second);
-		tenv->insert_loopvar(vpair.first, lv);
-		vmap.replace_value(vpair.first, lv.value);
+	std::unordered_set<const frontend::variable*> variables = ctx.lookup_demand(entry_edge);
+
+	for (auto variable : variables) {
+		jive::output * value = vmap.lookup_value(variable);
+		jive_theta_loopvar lv = jive_theta_loopvar_enter(*tenv->theta(), value);
+		tenv->insert_loopvar(variable, lv);
+		vmap.replace_value(variable, lv.value);
 	}
 	tstack.push(tenv);
 
@@ -354,6 +357,67 @@ convert_basic_blocks(
 	convert_basic_block(bb, graph, ctx);
 }
 
+static void
+compute_demands(
+	const jlm::frontend::cfg_node * node,
+	dstrct::demand_map & dmap,
+	const std::unordered_set<const jlm::frontend::cfg_edge*> & back_edges)
+{
+	/* check that all output edges are present */
+	for (auto edge : node->outedges()) {
+		if (back_edges.find(edge) != back_edges.end())
+			continue;
+
+		if (!dmap.exists(edge))
+			return;
+	}
+
+	/* compute demand for node */
+	std::unordered_set<const frontend::variable*> demands;
+	for (auto edge : node->outedges()) {
+		if (back_edges.find(edge) != back_edges.end())
+			continue;
+
+		demands.insert(dmap.lookup(edge).begin(), dmap.lookup(edge).end());
+	}
+
+	/* handle TACs */
+	if (node->cfg()->is_exit(node)) {
+		JIVE_DEBUG_ASSERT(demands.empty());
+		for (size_t n = 0; n < node->cfg()->nresults(); n++)
+			demands.insert(node->cfg()->result(n));
+	} else if (node->cfg()->is_enter(node)) {
+		/* nothing needs to be done */
+	} else if (auto bb = dynamic_cast<const frontend::basic_block*>(node)) {
+		for (auto it = bb->tacs().rbegin(); it != bb->tacs().rend(); it++) {
+			const frontend::tac * tac = *it;
+			for (size_t n = 0; n < tac->noutputs(); n++)
+				demands.erase(tac->output(n));
+			for (size_t n = 0; n < tac->ninputs(); n++)
+				demands.insert(tac->input(n));
+		}
+	}	else
+		JIVE_DEBUG_ASSERT(0);
+
+	/* insert demands into demand map and process next node */
+	for (auto edge : node->inedges()) {
+		if (back_edges.find(edge) != back_edges.end())
+			continue;
+		dmap.insert(edge, demands);
+		compute_demands(edge->source(), dmap, back_edges);
+	}
+}
+
+static dstrct::demand_map
+compute_demands(
+	const jlm::frontend::cfg * cfg,
+	const std::unordered_set<const frontend::cfg_edge*> & back_edges)
+{
+	dstrct::demand_map dmap;
+	compute_demands(cfg->exit(), dmap, back_edges);
+	return dmap;
+}
+
 static jive::output * 
 convert_cfg(
 	jlm::frontend::cfg * cfg,
@@ -362,9 +426,12 @@ convert_cfg(
 	jive_cfg_view(*cfg);
 	cfg->destruct_ssa();
 	jive_cfg_view(*cfg);
-	jlm::dstrct::context ctx(restructure(cfg));
+	const std::unordered_set<const frontend::cfg_edge*> back_edges = restructure(cfg);
 	jive_cfg_view(*cfg);
 
+	dstrct::demand_map dmap = compute_demands(cfg, back_edges);
+
+	jlm::dstrct::context ctx(dmap, back_edges);
 
 	std::vector<const jlm::frontend::variable*> variables;
 	std::vector<const char*> argument_names;
