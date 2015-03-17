@@ -5,6 +5,11 @@
 
 #include "test-registry.hpp"
 
+#include <jive/arch/addresstype.h>
+#include <jive/arch/memorytype.h>
+#include <jive/arch/store.h>
+#include <jive/types/bitstring/type.h>
+
 #include <assert.h>
 
 static int
@@ -14,4 +19,4 @@ verify(const jive_graph * graph)
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/structure/test-unreachable", verify);
+JLM_UNIT_TEST_REGISTER("libjlm/test-store", verify)

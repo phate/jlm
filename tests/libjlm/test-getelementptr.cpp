@@ -5,7 +5,8 @@
 
 #include "test-registry.hpp"
 
-#include <jive/types/bitstring/type.h>
+#include <jive/arch/address.h>
+#include <jive/types/bitstring/constant.h>
 
 #include <assert.h>
 
@@ -16,4 +17,4 @@ verify(const jive_graph * graph)
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/instructions/test-phi", verify)
+JLM_UNIT_TEST_REGISTER("libjlm/test-getelementptr", verify);

@@ -14,4 +14,4 @@ verify(const jive_graph * graph)
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/structure/test-switch0", verify);
+JLM_UNIT_TEST_REGISTER("libjlm/test-linear", verify);

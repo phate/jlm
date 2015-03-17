@@ -1,9 +1,11 @@
 /*
- * Copyright 2014 2015 Nico Reißmann <nico.reissmann@gmail.com>
+ * Copyright 2014 Nico Reißmann <nico.reissmann@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
 #include "test-registry.hpp"
+
+#include <jive/types/bitstring/constant.h>
 
 #include <assert.h>
 
@@ -14,4 +16,4 @@ verify(const jive_graph * graph)
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/structure/test-linear", verify);
+JLM_UNIT_TEST_REGISTER("libjlm/test-undefvalue", verify)

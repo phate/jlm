@@ -5,7 +5,10 @@
 
 #include "test-registry.hpp"
 
-#include <jive/types/bitstring/constant.h>
+#include <jive/arch/addresstype.h>
+#include <jive/arch/load.h>
+#include <jive/arch/memorytype.h>
+#include <jive/types/bitstring/type.h>
 
 #include <assert.h>
 
@@ -16,4 +19,4 @@ verify(const jive_graph * graph)
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/instructions/test-undefvalue", verify)
+JLM_UNIT_TEST_REGISTER("libjlm/test-load", verify)

@@ -5,9 +5,7 @@
 
 #include "test-registry.hpp"
 
-#include <jive/arch/addresstype.h>
-#include <jive/arch/load.h>
-#include <jive/arch/memorytype.h>
+#include <jive/types/bitstring/slice.h>
 #include <jive/types/bitstring/type.h>
 
 #include <assert.h>
@@ -19,4 +17,4 @@ verify(const jive_graph * graph)
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/instructions/test-load", verify)
+JLM_UNIT_TEST_REGISTER("libjlm/test-trunc", verify)

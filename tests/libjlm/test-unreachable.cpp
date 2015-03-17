@@ -5,9 +5,6 @@
 
 #include "test-registry.hpp"
 
-#include <jive/arch/address.h>
-#include <jive/types/bitstring/constant.h>
-
 #include <assert.h>
 
 static int
@@ -17,4 +14,4 @@ verify(const jive_graph * graph)
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/instructions/test-getelementptr", verify);
+JLM_UNIT_TEST_REGISTER("libjlm/test-unreachable", verify);

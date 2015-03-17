@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Nico Reißmann <nico.reissmann@gmail.com>
+ * Copyright 2014 2015 Nico Reißmann <nico.reissmann@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
@@ -14,4 +14,4 @@ verify(const jive_graph * graph)
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/structure/test-while", verify);
+JLM_UNIT_TEST_REGISTER("libjlm/test-switch1", verify);

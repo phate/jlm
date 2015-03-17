@@ -1,9 +1,0 @@
-TESTS += \
-	libjlm/instructions/test-bitops \
-	libjlm/instructions/test-call \
-	libjlm/instructions/test-getelementptr \
-	libjlm/instructions/test-load \
-	libjlm/instructions/test-phi \
-	libjlm/instructions/test-store \
-	libjlm/instructions/test-trunc \
-	libjlm/instructions/test-undefvalue \

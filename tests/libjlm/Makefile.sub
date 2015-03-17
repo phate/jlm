@@ -1,2 +1,15 @@
-include tests/libjlm/instructions/Makefile.sub
-include tests/libjlm/structure/Makefile.sub
+TESTS += \
+	libjlm/test-bitops \
+	libjlm/test-call \
+	libjlm/test-getelementptr \
+	libjlm/test-load \
+	libjlm/test-phi \
+	libjlm/test-store \
+	libjlm/test-trunc \
+	libjlm/test-undefvalue \
+	libjlm/test-linear \
+	libjlm/test-ifthen \
+	libjlm/test-switch0 \
+	libjlm/test-switch1 \
+	libjlm/test-unreachable \
+	libjlm/test-while \
