@@ -4,5 +4,5 @@ target triple = "x86_64-unknown-linux-gnu"
 
 define i32 @linear(i32 %a) nounwind uwtable {
 entry:
-  ret i32 13
+  ret i32 %a
 }

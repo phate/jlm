@@ -5,12 +5,26 @@
 
 #include "test-registry.hpp"
 
+#include <jive/evaluator/eval.h>
+#include <jive/evaluator/literal.h>
+
 #include <assert.h>
 
 static int
 verify(const jive_graph * graph)
 {
-	/*FIXME*/
+	using namespace jive::evaluator;
+
+	memliteral state;
+	bitliteral xl(jive::bits::value_repr(32, 13));
+
+	std::unique_ptr<const literal> result;
+	result = std::move(eval(graph, "linear", {&xl, &state})->copy());
+
+	const fctliteral * fctlit = dynamic_cast<const fctliteral*>(result.get());
+  assert(fctlit->nresults() == 2);
+  assert(dynamic_cast<const bitliteral*>(&fctlit->result(0))->value_repr() == 13);
+
 	return 0;
 }
 
