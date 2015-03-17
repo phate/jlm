@@ -80,63 +80,62 @@ entry:
   ret i64 %mul
 }
 
-define i64 @test_slt(i64 %x, i64 %y) nounwind uwtable readnone optsize {
+define i1 @test_slt(i64 %x, i64 %y) nounwind uwtable readnone optsize {
 entry:
   %cmp = icmp slt i64 %x, %y
-  ret i64 0
+  ret i1 %cmp
 }
 
-define i64 @test_sle(i64 %x, i64 %y) nounwind uwtable readnone optsize {
+define i1 @test_sle(i64 %x, i64 %y) nounwind uwtable readnone optsize {
 entry:
   %cmp = icmp sle i64 %x, %y
-  ret i64 0
+  ret i1 %cmp
 }
 
-define i64 @test_sge(i64 %x, i64 %y) nounwind uwtable readnone optsize {
+define i1 @test_sge(i64 %x, i64 %y) nounwind uwtable readnone optsize {
 entry:
   %cmp = icmp sge i64 %x, %y
-  ret i64 0
+  ret i1 %cmp
 }
 
-define i64 @test_sgt(i64 %x, i64 %y) nounwind uwtable readnone optsize {
+define i1 @test_sgt(i64 %x, i64 %y) nounwind uwtable readnone optsize {
 entry:
   %cmp = icmp sgt i64 %x, %y
-  ret i64 0
+  ret i1 %cmp
 }
 
-define i64 @test_ult(i64 %x, i64 %y) nounwind uwtable readnone optsize {
+define i1 @test_ult(i64 %x, i64 %y) nounwind uwtable readnone optsize {
 entry:
   %cmp = icmp ult i64 %x, %y
-  ret i64 0
+  ret i1 %cmp
 }
 
-define i64 @test_ule(i64 %x, i64 %y) nounwind uwtable readnone optsize {
+define i1 @test_ule(i64 %x, i64 %y) nounwind uwtable readnone optsize {
 entry:
   %cmp = icmp ule i64 %x, %y
-  ret i64 0
+  ret i1 %cmp
 }
 
-define i64 @test_uge(i64 %x, i64 %y) nounwind uwtable readnone optsize {
+define i1 @test_uge(i64 %x, i64 %y) nounwind uwtable readnone optsize {
 entry:
   %cmp = icmp uge i64 %x, %y
-  ret i64 0
+  ret i1 %cmp
 }
 
-define i64 @test_ugt(i64 %x, i64 %y) nounwind uwtable readnone optsize {
+define i1 @test_ugt(i64 %x, i64 %y) nounwind uwtable readnone optsize {
 entry:
   %cmp = icmp ugt i64 %x, %y
-  ret i64 0
+  ret i1 %cmp
 }
 
-define i64 @test_eq(i64 %x, i64 %y) nounwind uwtable readnone optsize {
+define i1 @test_eq(i64 %x, i64 %y) nounwind uwtable readnone optsize {
 entry:
   %cmp = icmp eq i64 %x, %y
-  ret i64 0
+  ret i1 %cmp
 }
 
-define i64 @test_ne(i64 %x, i64 %y) nounwind uwtable readnone optsize {
+define i1 @test_ne(i64 %x, i64 %y) nounwind uwtable readnone optsize {
 entry:
   %cmp = icmp ne i64 %x, %y
-  ret i64 0
+  ret i1 %cmp
 }
-
