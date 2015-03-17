@@ -27,9 +27,7 @@ addrload_tac(
 	const jlm::frontend::variable * result)
 {
 	jive::addr::type addrtype;
-	std::vector<std::unique_ptr<jive::state::type>> state_type;
-	state_type.emplace_back(std::unique_ptr<jive::state::type>(new jive::mem::type()));
-	jive::load_op op(addrtype, state_type, data_type);
+	jive::addrload_op op({jive::mem::type()}, data_type);
 	const jlm::frontend::tac * tac = basic_block->append(op, {address, state}, {result});
 	return tac->output(0);
 }
@@ -43,9 +41,7 @@ addrstore_tac(
 	const jlm::frontend::variable * result)
 {
 	jive::addr::type addrtype;
-	std::vector<std::unique_ptr<jive::state::type>> state_type;
-	state_type.emplace_back(std::unique_ptr<jive::state::type>(new jive::mem::type()));
-	jive::store_op op(addrtype, state_type, dynamic_cast<const jive::value::type&>(value->type()));
+	jive::addrstore_op op({jive::mem::type()}, dynamic_cast<const jive::value::type&>(value->type()));
 	const jlm::frontend::tac * tac = basic_block->append(op, {address, value, state}, {result});
 	return tac->output(0);
 }
