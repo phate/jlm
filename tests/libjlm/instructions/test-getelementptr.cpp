@@ -5,45 +5,15 @@
 
 #include "test-registry.hpp"
 
-#include <jlm/IR/basic_block.hpp>
-#include <jlm/IR/clg.hpp>
-#include <jlm/IR/tac/tac.hpp>
-
 #include <jive/arch/address.h>
 #include <jive/types/bitstring/constant.h>
 
 #include <assert.h>
 
 static int
-verify(jlm::frontend::clg & clg)
+verify(const jive_graph * graph)
 {
-	jlm::frontend::clg_node * node = clg.lookup_function("test_getelementptr");
-	assert(node != nullptr);
-
-	jlm::frontend::cfg * cfg = node->cfg();
-//	jive_cfg_view(*cfg);
-
-	assert(cfg->is_linear());
-/*
-	FIXME: insert checks again
-*/
-
-/*
-
-	jlm::frontend::basic_block * bb = dynamic_cast<jlm::frontend::basic_block*>(
-		cfg->enter()->outedges()[0]->sink());
-	assert(bb != nullptr);
-
-	const std::list<const jlm::frontend::tac*> & tacs = bb->tacs();
-	assert(tacs.size() == 14);
-
-	for (size_t n = 1; n < 5; n += 2) {
-		const jlm::frontend::tac * constant = tacs[n];
-		const jlm::frontend::tac * subscrpt = tacs[n+1];
-		assert(dynamic_cast<const jive::bits::constant_op*>(&constant->operation()));
-		assert(dynamic_cast<const jive::address::arraysubscript_op*>(&subscrpt->operation()));
-	}
-*/
+	/*FIXME*/
 	return 0;
 }
 

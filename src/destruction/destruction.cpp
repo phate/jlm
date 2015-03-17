@@ -423,11 +423,11 @@ convert_cfg(
 	jlm::frontend::cfg * cfg,
 	struct jive_graph * graph)
 {
-	jive_cfg_view(*cfg);
+//	jive_cfg_view(*cfg);
 	cfg->destruct_ssa();
-	jive_cfg_view(*cfg);
+//	jive_cfg_view(*cfg);
 	const std::unordered_set<const frontend::cfg_edge*> back_edges = restructure(cfg);
-	jive_cfg_view(*cfg);
+//	jive_cfg_view(*cfg);
 
 	dstrct::demand_map dmap = compute_demands(cfg, back_edges);
 

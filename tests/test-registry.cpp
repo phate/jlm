@@ -8,6 +8,7 @@
 #include <jlm/IR/clg.hpp>
 
 #include <jlm/construction/jlm.hpp>
+#include <jlm/destruction/destruction.hpp>
 
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
@@ -23,14 +24,14 @@ namespace jlm {
 
 class unit_test {
 public:
-	unit_test(int(*v)(jlm::frontend::clg & clg)) : verify(v) {}
-	int (*verify)(jlm::frontend::clg & clg);
+	unit_test(int(*v)(const jive_graph * graph)) : verify(v) {}
+	int (*verify)(const jive_graph * graph);
 };
 
 static std::unordered_map<std::string, std::unique_ptr<unit_test>> unit_test_map;
 
 void
-register_unit_test(const char * name, int (*verify)(jlm::frontend::clg & clg))
+register_unit_test(const std::string & name, int (*verify)(const jive_graph * graph))
 {
 	assert(unit_test_map.find(name) == unit_test_map.end());
 
@@ -38,7 +39,7 @@ register_unit_test(const char * name, int (*verify)(jlm::frontend::clg & clg))
 }
 
 int
-run_unit_test(const char * name)
+run_unit_test(const std::string & name)
 {
 	assert(unit_test_map.find(name) != unit_test_map.end());
 
@@ -56,8 +57,9 @@ run_unit_test(const char * name)
 
 	jlm::frontend::clg clg;
 	convert_module(*module, clg);
+	struct jive_graph * graph = jlm::construct_rvsdg(clg);
 
-	return unit_test_map[name]->verify(clg);
+	return unit_test_map[name]->verify(graph);
 }
 
 }
