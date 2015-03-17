@@ -39,7 +39,7 @@ create_undef_value(
 {
 	if (type.getTypeID() == llvm::Type::IntegerTyID) {
 		const llvm::IntegerType * t = static_cast<const llvm::IntegerType*>(&type);
-		jive::bits::value_repr v(t->getBitWidth(), 'X');
+		jive::bits::value_repr v = jive::bits::value_repr::repeat(t->getBitWidth(), 'X');
 		const jlm::frontend::variable * result;
 		result = bb->cfg()->create_variable(jive::bits::type(v.nbits()));
 		return bitconstant_tac(bb, v, result);
