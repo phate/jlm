@@ -471,7 +471,10 @@ construct_lambda(struct jive_graph * graph, const jlm::frontend::clg_node * clg_
 {
 	//FIXME: check whether cfg_node has a CFG
 
-	return convert_cfg(clg_node->cfg(), graph);
+	jive::output * f = convert_cfg(clg_node->cfg(), graph);
+	/* FIXME: we export everything right now */
+	jive_graph_export(graph, f, clg_node->name());
+	return f;
 }
 
 
