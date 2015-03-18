@@ -46,17 +46,26 @@ create_cfg_structure(
 	/* create CFG structure */
 	it = function.getBasicBlockList().begin();
 	for (; it != function.getBasicBlockList().end(); it++) {
-		if (dynamic_cast<const llvm::ReturnInst*>(it->getTerminator())) {
-			bbmap[&(*it)]->add_outedge(cfg->exit(), 0);
-			continue;
-		}
-
-		if (dynamic_cast<const llvm::UnreachableInst*>(it->getTerminator())) {
-			bbmap[&(*it)]->add_outedge(cfg->exit(), 0);
-			continue;
-		}
-
 		const llvm::TerminatorInst * instr = it->getTerminator();
+		if (dynamic_cast<const llvm::ReturnInst*>(instr)) {
+			bbmap[&(*it)]->add_outedge(cfg->exit(), 0);
+			continue;
+		}
+
+		if (dynamic_cast<const llvm::UnreachableInst*>(instr)) {
+			bbmap[&(*it)]->add_outedge(cfg->exit(), 0);
+			continue;
+		}
+
+		if (auto branch = dynamic_cast<const llvm::BranchInst*>(instr)) {
+			if (branch->isConditional()) {
+				JLM_DEBUG_ASSERT(branch->getNumSuccessors() == 2);
+				bbmap[&(*it)]->add_outedge(bbmap[branch->getSuccessor(0)], 1);
+				bbmap[&(*it)]->add_outedge(bbmap[branch->getSuccessor(1)], 0);
+				continue;
+			}
+		}
+
 		for (size_t n = 0; n < instr->getNumSuccessors(); n++)
 			bbmap[&(*it)]->add_outedge(bbmap[instr->getSuccessor(n)], n);
 	}
