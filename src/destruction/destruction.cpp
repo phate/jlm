@@ -105,13 +105,6 @@ handle_branch_join(
 	struct jive_graph * graph,
 	jlm::dstrct::context & ctx)
 {
-	/* get predicate and new predicate stack */
-	dstrct::predicate_stack pstack = ctx.lookup_predicate_stack(inedges.front());
-	jive::output * predicate = pstack.top();
-	for (auto edge : inedges)
-		JLM_DEBUG_ASSERT(predicate == ctx.lookup_predicate_stack(edge).top());
-	pstack.pop();
-
 	/* check theta stack */
 	dstrct::theta_stack tstack = ctx.lookup_theta_stack(inedges.front());
 	for (auto edge : inedges) {
@@ -130,9 +123,17 @@ handle_branch_join(
 	for (auto variable : variables)
 		types.push_back(&variable->type());
 
-	/* set up gamma operands */
-	std::vector<std::vector<jive::output*>> alternatives;
+	jive::output * predicate = nullptr;
+	std::vector<std::vector<jive::output*>> alternatives(inedges.size());
 	for (auto edge : inedges) {
+		/* get predicate and index */
+		size_t index = ctx.lookup_predicate_stack(edge).top().second;
+		jive::output * p = ctx.lookup_predicate_stack(edge).top().first;
+		if (!predicate) predicate = p;
+		JIVE_DEBUG_ASSERT(predicate == p);
+		JIVE_DEBUG_ASSERT(index < inedges.size());
+
+		/* set up gamma operands */
 		std::vector<jive::output*> values;
 		for (auto variable : variables) {
 			if (ctx.lookup_variable_map(edge->source()).has_value(variable)) {
@@ -141,8 +142,10 @@ handle_branch_join(
 				values.push_back(create_undefined_value(variable->type(), graph));
 			}
 		}
-		alternatives.push_back(values);
+		alternatives[index] = values;
 	}
+	dstrct::predicate_stack pstack = ctx.lookup_predicate_stack(inedges.front());
+	pstack.pop();
 
 	/* create gamma */
 	std::vector<jive::output*> results = jive_gamma(predicate, types, alternatives);
@@ -293,6 +296,7 @@ handle_basic_block_exit(
 {
 	const std::vector<jlm::frontend::cfg_edge*> & outedges = bb->outedges();
 
+	/* handle loop exit */
 	const jlm::frontend::tac * tac;
 	if (is_loop_exit(outedges, ctx)) {
 		JLM_DEBUG_ASSERT(outedges.size() == 2);
@@ -300,6 +304,13 @@ handle_basic_block_exit(
 		JLM_DEBUG_ASSERT(tac->noutputs() == 1);
 
 		handle_loop_exit(tac, graph, state.vmap, state.tstack);
+
+		for (auto edge : outedges) {
+			if (ctx.is_back_edge(edge))
+				continue;
+
+			ctx.insert_predicate_stack(edge, state.pstack);
+		}
 		return;
 	}
 
@@ -308,9 +319,20 @@ handle_basic_block_exit(
 		tac = static_cast<frontend::basic_block*>(outedges[0]->source())->tacs().back();
 		JLM_DEBUG_ASSERT(dynamic_cast<const jive::match_op*>(&tac->operation()));
 
-		state.pstack.push(state.vmap.lookup_value(tac->output(0)));
+		for (auto edge : outedges) {
+			if (ctx.is_back_edge(edge))
+				continue;
+
+			dstrct::predicate_stack pstack = state.pstack;
+			pstack.push(state.vmap.lookup_value(tac->output(0)), edge->index());
+			ctx.insert_predicate_stack(edge, pstack);
+		}
 		return;
 	}
+
+	/* handle outgoing edge */
+	JIVE_DEBUG_ASSERT(outedges.size() == 1);
+	ctx.insert_predicate_stack(outedges[0], state.pstack);
 }
 
 static void
@@ -332,7 +354,6 @@ convert_basic_block(
 		if (ctx.is_back_edge(e))
 			continue;
 
-		ctx.insert_predicate_stack(e, state.pstack);
 		ctx.insert_theta_stack(e, state.tstack);
 		if (auto bb = dynamic_cast<jlm::frontend::basic_block *>(e->sink())) {
 			convert_basic_block(bb, graph, ctx);

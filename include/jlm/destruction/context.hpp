@@ -117,7 +117,7 @@ public:
 		return size() == 0;
 	}
 
-	inline jive::output *
+	inline std::pair<jive::output*,size_t>
 	top() const noexcept
 	{
 		JLM_DEBUG_ASSERT(!empty());
@@ -125,9 +125,9 @@ public:
 	}
 
 	inline void
-	push(jive::output * o)
+	push(jive::output * o, size_t index)
 	{
-		stack_.push(o);
+		stack_.push(std::make_pair(o, index));
 	}
 
 	inline void
@@ -137,16 +137,16 @@ public:
 			stack_.pop();
 	}
 
-	inline jive::output *
+	inline std::pair<jive::output*,size_t>
 	poptop()
 	{
-		jive::output * o = top();
+		std::pair<jive::output*,size_t> p = top();
 		pop();
-		return o;
+		return p;
 	}
 
 private:
-	std::stack<jive::output*> stack_;
+	std::stack<std::pair<jive::output*, size_t>> stack_;
 };
 
 class theta_env final {
