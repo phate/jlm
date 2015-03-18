@@ -4,7 +4,7 @@ target triple = "x86_64-unknown-linux-gnu"
 
 define i32 @max(i32 %a, i32 %b) nounwind uwtable {
 entry:
-  %cmp = icmp sgt i32 %a, %b
+  %cmp = icmp ugt i32 %a, %b
   br i1 %cmp, label %cond.true, label %cond.false
 
 cond.true:                                        ; preds = %entry
