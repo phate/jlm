@@ -66,6 +66,15 @@ create_cfg_structure(
 			}
 		}
 
+		if (auto swi = dynamic_cast<const llvm::SwitchInst*>(instr)) {
+			for (auto c = swi->case_begin(); c != swi->case_end(); c++) {
+				JLM_DEBUG_ASSERT(c != swi->case_default());
+				bbmap[&(*it)]->add_outedge(bbmap[c.getCaseSuccessor()], c.getCaseIndex());
+			}
+			bbmap[&(*it)]->add_outedge(bbmap[swi->case_default().getCaseSuccessor()], swi->getNumCases());
+			continue;
+		}
+
 		for (size_t n = 0; n < instr->getNumSuccessors(); n++)
 			bbmap[&(*it)]->add_outedge(bbmap[instr->getSuccessor(n)], n);
 	}

@@ -79,6 +79,16 @@ convert_switch_instruction(
 {
 	const llvm::SwitchInst * instruction = static_cast<const llvm::SwitchInst*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
+
+	JLM_DEBUG_ASSERT(bb->outedges().size() == instruction->getNumCases()+1);
+	std::vector<uint64_t> constants(instruction->getNumCases());
+	for (auto it = instruction->case_begin(); it != instruction->case_end(); it++) {
+		JLM_DEBUG_ASSERT(it != instruction->case_default());
+		constants[it.getCaseIndex()] = it.getCaseValue()->getZExtValue();
+	}
+
+	const jlm::frontend::variable * condition = convert_value(instruction->getCondition(), bb, ctx);
+	match_tac(bb, condition, constants);
 }
 
 static void
