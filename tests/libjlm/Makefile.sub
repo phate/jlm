@@ -1,6 +1,7 @@
 TESTS += \
 	libjlm/test-bitops \
 	libjlm/test-call \
+	libjlm/test-dowhile \
 	libjlm/test-getelementptr \
 	libjlm/test-load \
 	libjlm/test-phi \
@@ -12,4 +13,3 @@ TESTS += \
 	libjlm/test-switch0 \
 	libjlm/test-switch1 \
 	libjlm/test-unreachable \
-	libjlm/test-while \
