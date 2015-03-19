@@ -20,7 +20,11 @@ namespace jlm {
 jive::bits::value_repr
 convert_apint(const llvm::APInt & value)
 {
-	std::string str = value.toString(2, value.isNegative());
+	llvm::APInt v;
+	if (value.isNegative())
+		v = -value;
+
+	std::string str = value.toString(2, false);
 	std::reverse(str.begin(), str.end());
 
 	jive::bits::value_repr vr(str.c_str());

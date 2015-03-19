@@ -1,6 +1,7 @@
 TESTS += \
 	libjlm/test-bitops \
 	libjlm/test-call \
+	libjlm/test-constant \
 	libjlm/test-dowhile \
 	libjlm/test-getelementptr \
 	libjlm/test-load \
