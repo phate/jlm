@@ -92,49 +92,67 @@ restructure_loops(jlm::frontend::cfg_node * entry, jlm::frontend::cfg_node * exi
 		jlm::frontend::basic_block * vt = cfg->create_basic_block();
 		match_tac(vt, r, {0});
 
-		jlm::frontend::basic_block * new_ve = cfg->create_basic_block();
-		std::vector<size_t> ve_constants;
-		for (size_t n = 0; n < ve.size()-1; n++)
-			ve_constants.push_back(n);
-		match_tac(new_ve, q, ve_constants);
 
-		jlm::frontend::basic_block * new_vx = cfg->create_basic_block();
-		std::vector<size_t> vx_constants;
-		for (size_t n = 0; n < vx.size()-1; n++)
-			vx_constants.push_back(n);
-		match_tac(new_vx, q, vx_constants);
+		/* handle loop entries */
+		jlm::frontend::basic_block * new_ve;
+		if (ve.size() > 1) {
+			new_ve = cfg->create_basic_block();
 
-		for (auto edge : ae) {
-			jlm::frontend::basic_block * ass = cfg->create_basic_block();
-			jive::bits::value_repr value(nbits, ve[edge->sink()]);
-			bitconstant_tac(ass, value, q);
-			ass->add_outedge(new_ve, 0);
-			edge->divert(ass);
-		}
+			std::vector<size_t> ve_constants;
+			for (size_t n = 0; n < ve.size()-1; n++)
+				ve_constants.push_back(n);
+			match_tac(new_ve, q, ve_constants);
 
-		for (auto edge : ar) {
-			jlm::frontend::basic_block * ass = cfg->create_basic_block();
-			bitconstant_tac(ass, jive::bits::value_repr(1, 1UL), r);
-			jive::bits::value_repr value(nbits, ve[edge->sink()]);
-			bitconstant_tac(ass, value, q);
-			ass->add_outedge(vt, 0);
-			edge->divert(ass);
-		}
+			for (auto edge : ae) {
+				jlm::frontend::basic_block * ass = cfg->create_basic_block();
+				bitconstant_tac(ass, jive::bits::value_repr(nbits, ve[edge->sink()]), q);
+				ass->add_outedge(new_ve, 0);
+				edge->divert(ass);
+			}
+
+			for (auto v : ve)
+				new_ve->add_outedge(v.first, v.second);
+		} else
+			new_ve = static_cast<frontend::basic_block*>(ve.begin()->first);
+
+
+		/* handle loop exists */
+		frontend::basic_block * new_vx;
+		if (vx.size() > 1) {
+			new_vx = cfg->create_basic_block();
+
+			std::vector<size_t> vx_constants;
+			for (size_t n = 0; n < vx.size()-1; n++)
+				vx_constants.push_back(n);
+			match_tac(new_vx, q, vx_constants);
+
+			for (auto v : vx)
+				new_vx->add_outedge(v.first, v.second);
+		} else
+			new_vx = static_cast<frontend::basic_block*>(vx.begin()->first);
 
 		for (auto edge : ax) {
 			jlm::frontend::basic_block * ass = cfg->create_basic_block();
 			bitconstant_tac(ass, jive::bits::value_repr(1, 0UL), r);
-			bitconstant_tac(ass, jive::bits::value_repr(nbits, vx[edge->sink()]), q);
+			if (vx.size() > 1)
+				bitconstant_tac(ass, jive::bits::value_repr(nbits, vx[edge->sink()]), q);
+			ass->add_outedge(vt, 0);
+			edge->divert(ass);
+		}
+
+
+		/* handle loop repetition */
+		for (auto edge : ar) {
+			jlm::frontend::basic_block * ass = cfg->create_basic_block();
+			bitconstant_tac(ass, jive::bits::value_repr(1, 1UL), r);
+			if (ve.size() > 1)
+				bitconstant_tac(ass, jive::bits::value_repr(nbits, ve[edge->sink()]), q);
 			ass->add_outedge(vt, 0);
 			edge->divert(ass);
 		}
 
 		vt->add_outedge(new_vx, 0);
 		back_edges.push_back(jlm::frontend::cfg_edge(vt, new_ve, 1));
-		for (auto v : ve)
-			new_ve->add_outedge(v.first, v.second);
-		for (auto v : vx)
-			new_vx->add_outedge(v.first, v.second);
 
 		restructure_loops(new_ve, vt, back_edges);
 	}
