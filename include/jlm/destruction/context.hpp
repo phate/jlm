@@ -19,32 +19,6 @@
 namespace jlm {
 namespace dstrct {
 
-class demand_map final {
-public:
-	inline bool
-	exists(const jlm::frontend::cfg_edge * e) const noexcept
-	{
-		return map_.find(e) != map_.end();
-	}
-
-	inline const std::unordered_set<const frontend::variable*> &
-	lookup(const jlm::frontend::cfg_edge *e) const noexcept
-	{
-		JIVE_DEBUG_ASSERT(exists(e));
-		return map_.find(e)->second;
-	}
-
-	inline void
-	insert(const jlm::frontend::cfg_edge * e, std::unordered_set<const frontend::variable*> & vset)
-	{
-		JIVE_DEBUG_ASSERT(!exists(e));
-		map_[e] = vset;
-	}
-
-private:
-	std::unordered_map<const frontend::cfg_edge*, std::unordered_set<const frontend::variable*>> map_;
-};
-
 class variable_map final {
 public:
 
@@ -256,23 +230,14 @@ private:
 class context final {
 public:
 	inline
-	context(
-		const demand_map & dmap,
-		const std::unordered_set<const jlm::frontend::cfg_edge*> & back_edges)
-		: dmap_(dmap)
-		, back_edges_(back_edges)
+	context(const std::unordered_set<const jlm::frontend::cfg_edge*> & back_edges)
+		: back_edges_(back_edges)
 	{}
 
 	inline bool
 	is_back_edge(const jlm::frontend::cfg_edge * edge) const noexcept
 	{
 		return back_edges_.find(edge) != back_edges_.end();
-	}
-
-	inline const std::unordered_set<const frontend::cfg_edge*> &
-	back_edges() const noexcept
-	{
-		return back_edges_;
 	}
 
 	inline bool
@@ -345,15 +310,7 @@ public:
 		return env;
 	}
 
-	inline const std::unordered_set<const frontend::variable*> &
-	lookup_demand(const frontend::cfg_edge * edge) const noexcept
-	{
-		JIVE_DEBUG_ASSERT(dmap_.exists(edge));
-		return dmap_.lookup(edge);
-	}
-
 private:
-	demand_map dmap_;
 	std::unordered_set<std::unique_ptr<theta_env>> theta_envs_;
 	std::unordered_set<const jlm::frontend::cfg_edge*> back_edges_;
 	std::unordered_map<const jlm::frontend::cfg_node*, variable_map> vmap_;
