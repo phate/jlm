@@ -38,6 +38,10 @@ create_undefined_value(const jive::base::type & type, struct jive_graph * graph)
 	if (auto t = dynamic_cast<const jive::bits::type*>(&type))
 		return jive_bitconstant_undefined(graph, t->nbits());
 
+	/* FIXME: temporary solutation */
+	if (dynamic_cast<const jive::ctl::type*>(&type))
+		return jive_control_constant(graph, 2, 0);
+
 	JLM_DEBUG_ASSERT(0);
 	return nullptr;
 }
@@ -246,50 +250,41 @@ handle_basic_block(
 
 static void
 handle_loop_exit(
-	const frontend::cfg_edge * exit_edge,
+	const jlm::frontend::tac * match,
 	struct jive_graph * graph,
-	dstrct::context & ctx,
 	dstrct::variable_map & vmap,
 	dstrct::theta_stack & tstack)
 {
-	const frontend::tac * match;
-	match = static_cast<frontend::basic_block*>(exit_edge->source())->tacs().back();
 	JLM_DEBUG_ASSERT(dynamic_cast<const jive::match_op*>(&match->operation()));
 	jive::output * predicate = vmap.lookup_value(match->output(0));
 
-	std::unordered_set<const frontend::variable*> demands = ctx.lookup_demand(exit_edge);
 	dstrct::theta_env * tenv = tstack.poptop();
 	std::vector<jive_theta_loopvar> loopvars;
 	for (auto it = vmap.begin(); it != vmap.end(); it++) {
+		jive_theta_loopvar lv;
 		if (tenv->has_loopvar(it->first)) {
-			jive_theta_loopvar lv = tenv->lookup_loopvar(it->first);
+			lv = tenv->lookup_loopvar(it->first);
 			jive_theta_loopvar_leave(*tenv->theta(), lv.gate, it->second);
-			loopvars.push_back(lv);
-			continue;
-		}
-
-		if (demands.find(it->first) != demands.end()) {
-			JLM_DEBUG_ASSERT(!tenv->has_loopvar(it->first));
-			jive_theta_loopvar lv = jive_theta_loopvar_enter(*tenv->theta(),
+		} else {
+			lv = jive_theta_loopvar_enter(*tenv->theta(),
 				create_undefined_value(it->first->type(), graph));
 			tenv->insert_loopvar(it->first, lv);
 			jive_theta_loopvar_leave(*tenv->theta(), lv.gate, it->second);
-			loopvars.push_back(lv);
 		}
+		loopvars.push_back(lv);
 	}
 
 	jive_theta_end(*tenv->theta(), predicate, loopvars.size(), &loopvars[0]);
 
 	size_t n = 0;
-	for (auto it = vmap.begin(); it != vmap.end(); it++) {
-		if (!tenv->has_loopvar(it->first))
-			continue;
-
+	JIVE_DEBUG_ASSERT(loopvars.size() == vmap.size());
+	for (auto it = vmap.begin(); it != vmap.end(); it++, n++)
 		tenv->replace_loopvar(it->first, loopvars[n]);
-		vmap.replace_value(it->first, loopvars[n].value);
-		n++;
+
+	for (auto it = vmap.begin(); it != vmap.end(); it++) {
+		jive_theta_loopvar lv = tenv->lookup_loopvar(it->first);
+		vmap.replace_value(it->first, lv.value);
 	}
-	JLM_DEBUG_ASSERT(n == loopvars.size());
 }
 
 static void
@@ -305,11 +300,10 @@ handle_basic_block_exit(
 	const jlm::frontend::tac * tac;
 	if (is_loop_exit(outedges, ctx)) {
 		JLM_DEBUG_ASSERT(outedges.size() == 2);
-		frontend::cfg_edge * exit_edge = outedges[0];
-		if (ctx.is_back_edge(exit_edge))
-			exit_edge = outedges[1];
+		tac = static_cast<frontend::basic_block*>(outedges[0]->source())->tacs().back();
+		JLM_DEBUG_ASSERT(tac->noutputs() == 1);
 
-		handle_loop_exit(exit_edge, graph, ctx, state.vmap, state.tstack);
+		handle_loop_exit(tac, graph, state.vmap, state.tstack);
 
 		for (auto edge : outedges) {
 			if (ctx.is_back_edge(edge))
