@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_IR_TAC_MATCH_HPP
-#define JLM_IR_TAC_MATCH_HPP
+#ifndef JLM_IR_MATCH_HPP
+#define JLM_IR_MATCH_HPP
 
 #include <jive/vsdg/operators/match.h>
 

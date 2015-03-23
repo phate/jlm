@@ -5,7 +5,7 @@
 
 #include <jlm/IR/cfg.hpp>
 #include <jlm/IR/clg.hpp>
-#include <jlm/IR/tac/tac.hpp>
+#include <jlm/IR/tac.hpp>
 #include <jive/util/buffer.h>
 
 #include <stdio.h>

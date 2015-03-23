@@ -3,10 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_IR_TAC_ADDRESS_H
-#define JLM_IR_TAC_ADDRESS_H
+#ifndef JLM_IR_ADDRESS_H
+#define JLM_IR_ADDRESS_H
 
-#include <jlm/IR/tac/tac.hpp>
+#include <jlm/IR/tac.hpp>
 
 #include <jive/arch/address.h>
 #include <jive/arch/addresstype.h>

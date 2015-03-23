@@ -7,14 +7,14 @@
 #include <jlm/destruction/destruction.hpp>
 #include <jlm/destruction/restructuring.hpp>
 
+#include <jlm/IR/assignment.hpp>
 #include <jlm/IR/basic_block.hpp>
 #include <jlm/IR/clg.hpp>
-#include <jlm/IR/tac/assignment.hpp>
-#include <jlm/IR/tac/tac.hpp>
+#include <jlm/IR/tac.hpp>
 
 #include <jive/types/bitstring/constant.h>
 #include <jive/types/bitstring/type.h>
-#include <jive/types/function/fctlambda.h>
+#include <jive/types/function.h>
 #include <jive/vsdg/basetype.h>
 #include <jive/vsdg/control.h>
 #include <jive/vsdg/gamma.h>

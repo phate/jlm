@@ -1,12 +1,12 @@
 /*
- * Copyright 2014 Nico Reißmann <nico.reissmann@gmail.com>
+ * Copyright 2014 2015 Nico Reißmann <nico.reissmann@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
 #include <jlm/common.hpp>
 #include <jlm/construction/constant.hpp>
 
-#include <jlm/IR/tac/bitstring.hpp>
+#include <jlm/IR/bitstring.hpp>
 
 //FIXME: to be removed, once we have a proper value representation
 #include <jive/types/bitstring/value-representation.h>

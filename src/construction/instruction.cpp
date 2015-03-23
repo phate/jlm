@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Nico Reißmann <nico.reissmann@gmail.com>
+ * Copyright 2014 2015 Nico Reißmann <nico.reissmann@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
@@ -10,13 +10,13 @@
 #include <jlm/construction/jlm.hpp>
 #include <jlm/construction/type.hpp>
 
+#include <jlm/IR/address.hpp>
+#include <jlm/IR/apply.hpp>
+#include <jlm/IR/assignment.hpp>
 #include <jlm/IR/basic_block.hpp>
-#include <jlm/IR/tac/address.hpp>
-#include <jlm/IR/tac/apply.hpp>
-#include <jlm/IR/tac/assignment.hpp>
-#include <jlm/IR/tac/bitstring.hpp>
-#include <jlm/IR/tac/phi.hpp>
-#include <jlm/IR/tac/match.hpp>
+#include <jlm/IR/bitstring.hpp>
+#include <jlm/IR/phi.hpp>
+#include <jlm/IR/match.hpp>
 
 #include <jive/vsdg/controltype.h>
 

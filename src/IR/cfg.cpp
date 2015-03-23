@@ -5,13 +5,13 @@
  */
 
 #include <jlm/common.hpp>
+#include <jlm/IR/assignment.hpp>
 #include <jlm/IR/basic_block.hpp>
 #include <jlm/IR/cfg.hpp>
 #include <jlm/IR/cfg_node.hpp>
 #include <jlm/IR/clg.hpp>
-#include <jlm/IR/tac/assignment.hpp>
-#include <jlm/IR/tac/operators.hpp>
-#include <jlm/IR/tac/tac.hpp>
+#include <jlm/IR/operators.hpp>
+#include <jlm/IR/tac.hpp>
 #include <jive/util/buffer.h>
 
 #include <algorithm>

@@ -9,10 +9,10 @@
 #include <jlm/construction/instruction.hpp>
 #include <jlm/construction/jlm.hpp>
 #include <jlm/construction/type.hpp>
+#include <jlm/IR/assignment.hpp>
 #include <jlm/IR/basic_block.hpp>
 #include <jlm/IR/cfg.hpp>
 #include <jlm/IR/cfg_node.hpp>
-#include <jlm/IR/tac/assignment.hpp>
 
 #include <jive/arch/memorytype.h>
 #include <jive/vsdg/basetype.h>

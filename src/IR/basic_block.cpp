@@ -5,7 +5,7 @@
 
 #include <jlm/IR/basic_block.hpp>
 #include <jlm/IR/cfg.hpp>
-#include <jlm/IR/tac/tac.hpp>
+#include <jlm/IR/tac.hpp>
 #include <jlm/IR/variable.hpp>
 
 #include <sstream>

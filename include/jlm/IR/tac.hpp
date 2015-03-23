@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_IR_TAC_TAC_H
-#define JLM_IR_TAC_TAC_H
+#ifndef JLM_IR_TAC_H
+#define JLM_IR_TAC_H
 
 #include <jlm/IR/basic_block.hpp>
 

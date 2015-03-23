@@ -1,13 +1,13 @@
 /*
- * Copyright 2014 Nico Reißmann <nico.reissmann@gmail.com>
+ * Copyright 2014 2015 Nico Reißmann <nico.reissmann@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_IR_TAC_PHI_H
-#define JLM_IR_TAC_PHI_H
+#ifndef JLM_IR_PHI_H
+#define JLM_IR_PHI_H
 
-#include <jlm/IR/tac/operators.hpp>
-#include <jlm/IR/tac/tac.hpp>
+#include <jlm/IR/operators.hpp>
+#include <jlm/IR/tac.hpp>
 
 namespace jlm {
 namespace frontend {

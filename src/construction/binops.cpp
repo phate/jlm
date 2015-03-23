@@ -8,7 +8,7 @@
 #include <jlm/construction/context.hpp>
 #include <jlm/construction/instruction.hpp>
 
-#include <jlm/IR/tac/bitstring.hpp>
+#include <jlm/IR/bitstring.hpp>
 
 #include <llvm/IR/InstrTypes.h>
 #include <llvm/IR/Instructions.h>

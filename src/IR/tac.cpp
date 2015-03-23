@@ -1,9 +1,9 @@
 /*
- * Copyright 2014 Nico Reißmann <nico.reissmann@gmail.com>
+ * Copyright 2014 2015 Nico Reißmann <nico.reissmann@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/IR/tac/tac.hpp>
+#include <jlm/IR/tac.hpp>
 
 #include <jive/vsdg/basetype.h>
 
