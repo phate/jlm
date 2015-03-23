@@ -119,9 +119,11 @@ private:
 	due to the call and control flow graph being separate representations: one represents
 	functions and the other the body of a function. Thus, we have no way of handing the
 	function as first operand to the "normal" apply operator. We use in this operator a
-	std::string as function identifier instead, resolving the issue in the RVSDG construction
+	clg_node as function identifier instead, resolving the issue in the RVSDG construction
 	phase.
 */
+
+class clg_node;
 
 class apply_op final : public jive::operation {
 public:
@@ -129,10 +131,8 @@ public:
 	~apply_op() noexcept;
 
 	inline
-	apply_op(const std::string & name,
-		const jive::fct::type & function_type)
-	: name_(name)
-	, function_type_(function_type)
+	apply_op(const clg_node * function)
+	: function_(function)
 	{}
 
 	inline
@@ -163,8 +163,7 @@ public:
 	copy() const override;
 
 private:
-	std::string name_;
-	const jive::fct::type function_type_;
+	const clg_node * function_;
 };
 
 }

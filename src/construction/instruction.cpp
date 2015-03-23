@@ -238,7 +238,7 @@ convert_call_instruction(
 		results.push_back(convert_value(&i, bb, ctx));
 	results.push_back(ctx.state());
 
-	apply_tac(bb, f->getName(), type, arguments, {results});
+	apply_tac(bb, callee, arguments, {results});
 	JLM_DEBUG_ASSERT(results.size() > 0 && results.size() <= 2);
 
 	if (results.size() == 2) {
