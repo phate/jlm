@@ -5,8 +5,6 @@ TESTS += \
 	libjlm/test-dowhile \
 	libjlm/test-getelementptr \
 	libjlm/test-loadstore \
-	libjlm/test-load \
-	libjlm/test-store \
 	libjlm/test-trunc \
 	libjlm/test-undefvalue \
 	libjlm/test-linear \
