@@ -5,8 +5,6 @@
 
 #include <jlm/IR/operators.hpp>
 
-#include <iostream>
-
 namespace jlm {
 namespace frontend {
 
@@ -115,7 +113,6 @@ bool
 apply_op::operator==(const operation & other) const noexcept
 {
 	const apply_op * op = dynamic_cast<const apply_op*>(&other);
-	std::cout << op->name_ << " " << name_ << std::endl;
 	return op && op->name_ == name_ && op->function_type_ == function_type_;
 }
 
