@@ -236,11 +236,30 @@ static void
 handle_basic_block(
 	const jlm::frontend::basic_block * bb,
 	struct jive_region * region,
+	dstrct::context & ctx,
 	dstrct::variable_map & vmap)
 {
 	for (auto tac : bb->tacs()) {
 		if (dynamic_cast<const jlm::frontend::assignment_op*>(&tac->operation())) {
 			vmap.insert_value(tac->output(0), vmap.lookup_value(tac->input(0)));
+			continue;
+		}
+
+		if (auto apply_op = dynamic_cast<const jlm::frontend::apply_op*>(&tac->operation())) {
+			const frontend::clg_node * function = apply_op->function();
+
+			std::vector<jive::output*> operands;
+			operands.push_back(ctx.lookup_function(function));
+			for (size_t n = 0; n < tac->ninputs(); n++)
+				operands.push_back(vmap.lookup_value(tac->input(n)));
+
+			std::vector<jive::output *> results;
+			results = jive_node_create_normalized(region->graph, jive::fct::apply_op(function->type()),
+				operands);
+
+			JLM_DEBUG_ASSERT(results.size() == tac->noutputs());
+			for (size_t n = 0; n < tac->noutputs(); n++)
+				vmap.insert_value(tac->output(n), results[n]);
 			continue;
 		}
 
@@ -357,7 +376,7 @@ convert_basic_block(
 		return;
 
 	dststate state = handle_basic_block_entry(bb, region, ctx, back_edges);
-	handle_basic_block(bb, region, state.vmap);
+	handle_basic_block(bb, region, ctx, state.vmap);
 	handle_basic_block_exit(bb, region, ctx, back_edges, state);
 
 	ctx.insert_variable_map(bb, state.vmap);
@@ -393,7 +412,8 @@ convert_basic_blocks(
 static jive::output * 
 convert_cfg(
 	jlm::frontend::cfg * cfg,
-	struct jive_region * region)
+	struct jive_region * region,
+	dstrct::context & ctx)
 {
 //	jive_cfg_view(*cfg);
 	cfg->destruct_ssa();
@@ -401,7 +421,6 @@ convert_cfg(
 	const std::unordered_set<const frontend::cfg_edge*> back_edges = restructure(cfg);
 //	jive_cfg_view(*cfg);
 
-	jlm::dstrct::context ctx;
 	std::vector<const jlm::frontend::variable*> variables;
 	std::vector<const char*> argument_names;
 	std::vector<const jive::base::type*> argument_types;
@@ -436,25 +455,32 @@ convert_cfg(
 }
 
 static jive::output *
-construct_lambda(struct jive_graph * graph, const jlm::frontend::clg_node * clg_node)
+construct_lambda(
+	const frontend::clg_node * function,
+	struct jive_region * region,
+	dstrct::context & ctx)
 {
 	jive::output * f;
-	if (clg_node->cfg() != nullptr) {
-		f = convert_cfg(clg_node->cfg(), graph->root_region);
+	if (function->cfg() != nullptr) {
+		f = convert_cfg(function->cfg(), region, ctx);
 		/* FIXME: we export everything right now */
-		jive_graph_export(graph, f, clg_node->name());
+		jive_graph_export(region->graph, f, function->name());
 	} else
-		f = jive_symbolicfunction_create(graph, clg_node->name().c_str(), &clg_node->type());
+		f = jive_symbolicfunction_create(region->graph, function->name().c_str(), &function->type());
 
+	ctx.insert_function(function, f);
 	return f;
 }
 
 
 static void
-handle_scc(struct jive_graph * graph, std::unordered_set<const jlm::frontend::clg_node*> & scc)
+handle_scc(
+	std::unordered_set<const jlm::frontend::clg_node*> & scc,
+	struct jive_graph * graph,
+	dstrct::context & ctx)
 {
 	if (scc.size() == 1 && !(*scc.begin())->is_selfrecursive()) {
-		construct_lambda(graph, *scc.begin());
+		construct_lambda(*scc.begin(), graph->root_region, ctx);
 	} else {
 		JLM_DEBUG_ASSERT(0);
 		/* create phi */
@@ -464,11 +490,11 @@ handle_scc(struct jive_graph * graph, std::unordered_set<const jlm::frontend::cl
 struct jive_graph *
 construct_rvsdg(const jlm::frontend::clg & clg)
 {
+	dstrct::context ctx;
 	struct ::jive_graph * graph = jive_graph_create();	
-
 	std::vector<std::unordered_set<const jlm::frontend::clg_node*>> sccs = clg.find_sccs();
 	for (auto scc : sccs)
-		handle_scc(graph, scc);
+		handle_scc(scc, graph, ctx);
 
 	return graph;
 }

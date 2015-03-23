@@ -162,6 +162,12 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
+	inline const clg_node *
+	function() const noexcept
+	{
+		return function_;
+	}
+
 private:
 	const clg_node * function_;
 };
