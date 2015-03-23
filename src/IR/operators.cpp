@@ -7,7 +7,6 @@
 #include <jlm/IR/operators.hpp>
 
 namespace jlm {
-namespace frontend {
 
 /* phi operator */
 
@@ -153,5 +152,4 @@ apply_op::copy() const
 	return std::unique_ptr<jive::operation>(new apply_op(*this));
 }
 
-}
 }

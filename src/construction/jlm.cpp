@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Nico Reißmann <nico.reissmann@gmail.com>
+ * Copyright 2014 2015 Nico Reißmann <nico.reissmann@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
@@ -13,6 +13,7 @@
 #include <jlm/IR/basic_block.hpp>
 #include <jlm/IR/cfg.hpp>
 #include <jlm/IR/cfg_node.hpp>
+#include <jlm/IR/clg.hpp>
 
 #include <jive/arch/memorytype.h>
 #include <jive/vsdg/basetype.h>
@@ -25,15 +26,15 @@
 namespace jlm
 {
 
-typedef std::unordered_map<const llvm::Function*, jlm::frontend::clg_node*> function_map;
+typedef std::unordered_map<const llvm::Function*, jlm::clg_node*> function_map;
 
-static frontend::cfg_node *
+static cfg_node *
 create_cfg_structure(
 	const llvm::Function & function,
-	frontend::cfg * cfg,
+	cfg * cfg,
 	basic_block_map & bbmap)
 {
-	frontend::basic_block * entry_block = cfg->create_basic_block();
+	basic_block * entry_block = cfg->create_basic_block();
 	cfg->exit()->divert_inedges(entry_block);
 
 	/* create all basic_blocks */
@@ -90,7 +91,7 @@ convert_basic_block(const llvm::BasicBlock & basic_block, context & ctx)
 }
 
 static void
-convert_function(const llvm::Function & function, jlm::frontend::clg_node * clg_node)
+convert_function(const llvm::Function & function, jlm::clg_node * clg_node)
 {
 	if (function.isDeclaration())
 		return;
@@ -101,18 +102,18 @@ convert_function(const llvm::Function & function, jlm::frontend::clg_node * clg_
 		names.push_back(jt->getName().str());
 	names.push_back("_s_");
 
-	std::vector<const jlm::frontend::variable*> arguments = clg_node->cfg_begin(names);
-	const jlm::frontend::variable * state = arguments.back();
-	jlm::frontend::cfg * cfg = clg_node->cfg();
+	std::vector<const jlm::variable*> arguments = clg_node->cfg_begin(names);
+	const jlm::variable * state = arguments.back();
+	jlm::cfg * cfg = clg_node->cfg();
 
 	basic_block_map bbmap;
-	frontend::basic_block * entry_block;
-	entry_block = static_cast<frontend::basic_block*>(create_cfg_structure(function, cfg, bbmap));
+	basic_block * entry_block;
+	entry_block = static_cast<basic_block*>(create_cfg_structure(function, cfg, bbmap));
 
-	const jlm::frontend::variable * result = nullptr;
+	const jlm::variable * result = nullptr;
 	if (function.getReturnType()->getTypeID() != llvm::Type::VoidTyID) {
 		result = cfg->create_variable(*convert_type(*function.getReturnType()), "_r_");
-		const frontend::variable * udef = create_undef_value(*function.getReturnType(), entry_block);
+		const variable * udef = create_undef_value(*function.getReturnType(), entry_block);
 		assignment_tac(entry_block, result, udef);
 	}
 
@@ -125,7 +126,7 @@ convert_function(const llvm::Function & function, jlm::frontend::clg_node * clg_
 	for (; it != function.getBasicBlockList().end(); it++)
 		convert_basic_block(*it, ctx);
 
-	std::vector<const jlm::frontend::variable*> results;
+	std::vector<const jlm::variable*> results;
 	if (function.getReturnType()->getTypeID() != llvm::Type::VoidTyID)
 		results.push_back(result);
 	results.push_back(state);
@@ -135,7 +136,7 @@ convert_function(const llvm::Function & function, jlm::frontend::clg_node * clg_
 }
 
 void
-convert_module(const llvm::Module & module, jlm::frontend::clg & clg)
+convert_module(const llvm::Module & module, jlm::clg & clg)
 {
 	JLM_DEBUG_ASSERT(clg.nnodes() == 0);
 

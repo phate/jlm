@@ -18,7 +18,6 @@ namespace jive {
 }
 
 namespace jlm {
-namespace frontend {
 
 class clg_node;
 
@@ -74,7 +73,7 @@ public:
 
 private:
 	inline
-	clg_node(jlm::frontend::clg & clg, const char * name, jive::fct::type & type)
+	clg_node(jlm::clg & clg, const char * name, jive::fct::type & type)
 		: name_(name)
 		, cfg_(nullptr)
 		, clg_(clg)
@@ -82,13 +81,13 @@ private:
 	{}
 
 public:
-	inline jlm::frontend::cfg *
+	inline jlm::cfg *
 	cfg() const noexcept
 	{
 		return cfg_.get();
 	}
 
-	inline jlm::frontend::clg &
+	inline jlm::clg &
 	clg() const noexcept
 	{
 		return clg_;
@@ -135,22 +134,21 @@ public:
 
 private:
 	std::string name_;
-	std::unique_ptr<jlm::frontend::cfg> cfg_;
-	jlm::frontend::clg & clg_;
+	std::unique_ptr<jlm::cfg> cfg_;
+	jlm::clg & clg_;
 	std::unique_ptr<jive::fct::type> type_;
 	std::unordered_set<const clg_node*> calls_;
 
-	friend jlm::frontend::clg_node * jlm::frontend::clg::add_function(const char * name,
+	friend jlm::clg_node * jlm::clg::add_function(const char * name,
 		jive::fct::type & type);
 };
 
 }
-}
 
 void
-jive_clg_convert_dot(const jlm::frontend::clg & self, jive::buffer & buffer);
+jive_clg_convert_dot(const jlm::clg & self, jive::buffer & buffer);
 
 void
-jive_clg_view(const jlm::frontend::clg & self);
+jive_clg_view(const jlm::clg & self);
 
 #endif

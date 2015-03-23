@@ -10,23 +10,20 @@
 #include <jlm/IR/tac.hpp>
 
 namespace jlm {
-namespace frontend {
 
-JIVE_EXPORTED_INLINE const jlm::frontend::variable *
+JIVE_EXPORTED_INLINE const jlm::variable *
 phi_tac(
-	jlm::frontend::basic_block * basic_block,
-	const std::vector<const jlm::frontend::variable*> & ops,
-	const jlm::frontend::variable * result)
+	jlm::basic_block * basic_block,
+	const std::vector<const jlm::variable*> & ops,
+	const jlm::variable * result)
 {
 	JLM_DEBUG_ASSERT(!ops.empty());
 
-	jlm::frontend::phi_op op(ops.size(), ops[0]->type());
-	const jlm::frontend::tac * tac = basic_block->append(op, ops, {result});
+	jlm::phi_op op(ops.size(), ops[0]->type());
+	const jlm::tac * tac = basic_block->append(op, ops, {result});
 	return tac->output(0);
 }
 
 }
-}
 
 #endif
-

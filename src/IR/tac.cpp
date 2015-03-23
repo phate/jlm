@@ -10,7 +10,6 @@
 #include <sstream>
 
 namespace jlm {
-namespace frontend {
 
 tac::tac(const cfg_node * owner,
 	const jive::operation & operation,
@@ -63,5 +62,4 @@ tac::debug_string() const
 	return sstrm.str();
 }
 
-}
 }

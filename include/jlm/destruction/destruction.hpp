@@ -10,12 +10,10 @@ struct jive_graph;
 
 namespace jlm {
 
-namespace frontend {
-	class clg;
-}
+class clg;
 
 struct jive_graph *
-construct_rvsdg(const jlm::frontend::clg & clg);
+construct_rvsdg(const jlm::clg & clg);
 
 }
 

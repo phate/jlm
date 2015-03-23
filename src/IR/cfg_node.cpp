@@ -15,7 +15,6 @@
 #include <algorithm>
 
 namespace jlm {
-namespace frontend {
 
 cfg_edge::cfg_edge(cfg_node * source, cfg_node * sink, size_t index) noexcept
 	: source_(source)
@@ -37,10 +36,10 @@ cfg_edge::divert(cfg_node * new_sink)
 cfg_node *
 cfg_edge::split()
 {
-	cfg_node * bb = static_cast<jlm::frontend::cfg_node*>(source_->cfg()->create_basic_block());
+	cfg_node * bb = static_cast<jlm::cfg_node*>(source_->cfg()->create_basic_block());
 	auto i = sink_->inedges_.erase(std::find(sink_->inedges_.begin(), sink_->inedges_.end(), this));
 
-	std::unique_ptr<cfg_edge> edge(new jlm::frontend::cfg_edge(bb, sink_, 0));
+	std::unique_ptr<cfg_edge> edge(new jlm::cfg_edge(bb, sink_, 0));
 	cfg_edge * e = edge.get();
 	bb->outedges_.insert(std::move(edge));
 	sink_->inedges_.insert(i, e);
@@ -189,5 +188,4 @@ cfg_node::has_selfloop_edge() const noexcept
 	return false;
 }
 
-}
 }

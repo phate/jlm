@@ -16,17 +16,17 @@
 
 static void
 strongconnect(
-	const jlm::frontend::clg_node * node,
-	std::unordered_map<const jlm::frontend::clg_node*, std::pair<size_t,size_t>> & map,
-	std::vector<const jlm::frontend::clg_node*> & node_stack,
+	const jlm::clg_node * node,
+	std::unordered_map<const jlm::clg_node*, std::pair<size_t,size_t>> & map,
+	std::vector<const jlm::clg_node*> & node_stack,
 	size_t & index,
-	std::vector<std::unordered_set<const jlm::frontend::clg_node*>> & sccs)
+	std::vector<std::unordered_set<const jlm::clg_node*>> & sccs)
 {
 	map.emplace(node, std::make_pair(index, index));
 	node_stack.push_back(node);
 	index++;
 
-	const std::unordered_set<const jlm::frontend::clg_node*> calls = node->calls();	
+	const std::unordered_set<const jlm::clg_node*> calls = node->calls();
 	for (auto callee : calls) {
 		if (map.find(callee) == map.end()) {
 			/* successor has not been visited yet; recurse on it */
@@ -39,8 +39,8 @@ strongconnect(
 	}
 
 	if (map[node].second == map[node].first) {
-		std::unordered_set<const jlm::frontend::clg_node*> scc;
-		const jlm::frontend::clg_node * w;
+		std::unordered_set<const jlm::clg_node*> scc;
+		const jlm::clg_node * w;
 		do {
 			w = node_stack.back();
 			node_stack.pop_back();
@@ -52,7 +52,6 @@ strongconnect(
 }
 
 namespace jlm {
-namespace frontend {
 
 /* clg */
 
@@ -113,7 +112,7 @@ clg_node::cfg_begin(const std::vector<std::string> & names)
 
 	std::vector<const variable*> arguments;
 
-	cfg_.reset(new jlm::frontend::cfg(*this));
+	cfg_.reset(new jlm::cfg(*this));
 	for (size_t n = 0; n < names.size(); n++)
 		arguments.push_back(cfg_->append_argument(names[n], *type_->argument_type(n)));
 
@@ -137,15 +136,14 @@ clg_node::cfg_end(const std::vector<const variable*> & results)
 }
 
 }
-}
 
 void
-jive_clg_convert_dot(const jlm::frontend::clg & self, jive::buffer & buffer)
+jive_clg_convert_dot(const jlm::clg & self, jive::buffer & buffer)
 {
 	buffer.append("digraph clg {\n");
 
 	char tmp[96];
-	std::vector<jlm::frontend::clg_node*> nodes = self.nodes();
+	std::vector<jlm::clg_node*> nodes = self.nodes();
 	for (auto node : nodes) {
 		snprintf(tmp, sizeof(tmp), "%zu", (size_t)node);
 		buffer.append(tmp).append("[label = \"");
@@ -162,7 +160,7 @@ jive_clg_convert_dot(const jlm::frontend::clg & self, jive::buffer & buffer)
 }
 
 void
-jive_clg_view(const jlm::frontend::clg & self)
+jive_clg_view(const jlm::clg & self)
 {
 	jive::buffer buffer;
 

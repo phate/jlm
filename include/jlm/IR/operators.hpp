@@ -3,15 +3,14 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_IR_TAC_OPERATORS_H
-#define JLM_IR_TAC_OPERATORS_H
+#ifndef JLM_IR_OPERATORS_H
+#define JLM_IR_OPERATORS_H
 
 #include <jive/types/function/fcttype.h>
 #include <jive/vsdg/basetype.h>
 #include <jive/vsdg/operators/nullary.h>
 
 namespace jlm {
-namespace frontend {
 
 /* phi operator */
 
@@ -172,7 +171,6 @@ private:
 	const clg_node * function_;
 };
 
-}
 }
 
 #endif

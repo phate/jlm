@@ -11,7 +11,6 @@
 #include <sstream>
 
 namespace jlm {
-namespace frontend {
 
 basic_block::~basic_block()
 {
@@ -19,7 +18,7 @@ basic_block::~basic_block()
 		delete tac;
 }
 
-basic_block::basic_block(jlm::frontend::cfg & cfg) noexcept
+basic_block::basic_block(jlm::cfg & cfg) noexcept
 	: cfg_node(cfg)
 {}
 
@@ -44,7 +43,7 @@ basic_block::append(
 	for (size_t n = 0; n < operation.nresults(); n++)
 		results.push_back(cfg()->create_variable(operation.result_type(n)));
 
-	jlm::frontend::tac * tac = new jlm::frontend::tac(this, operation, operands, results);
+	jlm::tac * tac = new jlm::tac(this, operation, operands, results);
 	tacs_.push_back(tac);
 	return tac;
 }
@@ -55,10 +54,9 @@ basic_block::append(
 	const std::vector<const variable*> & operands,
 	const std::vector<const variable*> & results)
 {
-	jlm::frontend::tac * tac = new jlm::frontend::tac(this, operation, operands, results);
+	jlm::tac * tac = new jlm::tac(this, operation, operands, results);
 	tacs_.push_back(tac);
 	return tac;
 }
 
-}
 }

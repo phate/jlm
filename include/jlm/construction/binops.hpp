@@ -13,23 +13,21 @@ namespace llvm {
 }
 
 namespace jlm {
-namespace frontend {
-	class basic_block;
-	class variable;
-}
 
+class basic_block;
 class context;
+class variable;
 
 void
-convert_binary_operator(const llvm::BinaryOperator & i, jlm::frontend::basic_block * bb,
+convert_binary_operator(const llvm::BinaryOperator & i, jlm::basic_block * bb,
 	jlm::context & ctx);
 
 void
-convert_comparison_instruction(const llvm::CmpInst & i, jlm::frontend::basic_block * bb,
+convert_comparison_instruction(const llvm::CmpInst & i, jlm::basic_block * bb,
 	jlm::context & ctx);
 
-const jlm::frontend::variable *
-convert_int_comparison_instruction(const llvm::ICmpInst & i, jlm::frontend::basic_block * bb,
+const jlm::variable *
+convert_int_comparison_instruction(const llvm::ICmpInst & i, jlm::basic_block * bb,
 	jlm::context & ctx);
 
 }

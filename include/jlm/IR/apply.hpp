@@ -10,19 +10,17 @@
 #include <jlm/IR/tac.hpp>
 
 namespace jlm {
-namespace frontend {
 
-JIVE_EXPORTED_INLINE std::vector<const jlm::frontend::variable*>
-apply_tac(jlm::frontend::basic_block * basic_block, const clg_node * function,
-	const std::vector<const jlm::frontend::variable*> & operands,
-	const std::vector<const jlm::frontend::variable*> & results)
+JIVE_EXPORTED_INLINE std::vector<const jlm::variable*>
+apply_tac(jlm::basic_block * basic_block, const clg_node * function,
+	const std::vector<const jlm::variable*> & operands,
+	const std::vector<const jlm::variable*> & results)
 {
-	jlm::frontend::apply_op op(function);
+	jlm::apply_op op(function);
 	basic_block->append(op, operands, results);
 	return results;
 }
 
-}
 }
 
 #endif

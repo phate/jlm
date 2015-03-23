@@ -27,21 +27,21 @@
 
 static void
 strongconnect(
-	jlm::frontend::cfg_node * node,
-	jlm::frontend::cfg_node * exit,
-	std::unordered_map<jlm::frontend::cfg_node*, std::pair<size_t,size_t>> & map,
-	std::vector<jlm::frontend::cfg_node*> & node_stack,
+	jlm::cfg_node * node,
+	jlm::cfg_node * exit,
+	std::unordered_map<jlm::cfg_node*, std::pair<size_t,size_t>> & map,
+	std::vector<jlm::cfg_node*> & node_stack,
 	size_t & index,
-	std::vector<std::unordered_set<jlm::frontend::cfg_node*>> & sccs)
+	std::vector<std::unordered_set<jlm::cfg_node*>> & sccs)
 {
 	map.emplace(node, std::make_pair(index, index));
 	node_stack.push_back(node);
 	index++;
 
 	if (node != exit) {
-		std::vector<jlm::frontend::cfg_edge*> edges = node->outedges();
+		std::vector<jlm::cfg_edge*> edges = node->outedges();
 		for (size_t n = 0; n < edges.size(); n++) {
-			jlm::frontend::cfg_node * successor = edges[n]->sink();
+			jlm::cfg_node * successor = edges[n]->sink();
 			if (map.find(successor) == map.end()) {
 				/* successor has not been visited yet; recurse on it */
 				strongconnect(successor, exit, map, node_stack, index, sccs);
@@ -54,8 +54,8 @@ strongconnect(
 	}
 
 	if (map[node].second == map[node].first) {
-		std::unordered_set<jlm::frontend::cfg_node*> scc;
-		jlm::frontend::cfg_node * w;
+		std::unordered_set<jlm::cfg_node*> scc;
+		jlm::cfg_node * w;
 		do {
 			w = node_stack.back();
 			node_stack.pop_back();
@@ -68,13 +68,12 @@ strongconnect(
 }
 
 namespace jlm {
-namespace frontend {
 
 /* enter node */
 
 cfg::enter_node::~enter_node() noexcept {}
 
-cfg::enter_node::enter_node(jlm::frontend::cfg & cfg) noexcept
+cfg::enter_node::enter_node(jlm::cfg & cfg) noexcept
 	: cfg_node(cfg)
 {}
 
@@ -120,7 +119,7 @@ cfg::enter_node::argument(size_t index) const
 
 cfg::exit_node::~exit_node() noexcept {}
 
-cfg::exit_node::exit_node(jlm::frontend::cfg & cfg) noexcept
+cfg::exit_node::exit_node(jlm::cfg & cfg) noexcept
 	: cfg_node(cfg)
 {}
 
@@ -131,7 +130,7 @@ cfg::exit_node::debug_string() const
 
 	sstrm << this << " (EXIT)\\n";
 	for (size_t n = 0; n < results_.size(); n++) {
-		const jlm::frontend::variable * result = results_[n];
+		const jlm::variable * result = results_[n];
 		sstrm << result->debug_string() << " (" << result->type().debug_string() << ")\\n";
 	}
 
@@ -148,7 +147,7 @@ cfg::cfg()
 	enter_->add_outedge(exit_, 0);
 }
 
-cfg::cfg(jlm::frontend::clg_node & clg_node)
+cfg::cfg(jlm::clg_node & clg_node)
 	: clg_node_(&clg_node)
 {
 	create_enter_node();
@@ -213,23 +212,23 @@ cfg::create_basic_block()
 	return tmp;
 }
 
-const jlm::frontend::variable *
+const jlm::variable *
 cfg::create_variable(const jive::base::type & type)
 {
 	std::stringstream sstr;
 	sstr << "v" << variables_.size();
-	std::unique_ptr<variable> variable(new jlm::frontend::variable(type, sstr.str()));
-	jlm::frontend::variable * v = variable.get();
+	std::unique_ptr<variable> variable(new jlm::variable(type, sstr.str()));
+	jlm::variable * v = variable.get();
 	variables_.insert(std::move(variable));
 	variable.release();
 	return v;
 }
 
-const jlm::frontend::variable *
+const jlm::variable *
 cfg::create_variable(const jive::base::type & type, const std::string & name)
 {
-	std::unique_ptr<variable> variable(new jlm::frontend::variable(type, name));
-	jlm::frontend::variable * v = variable.get();
+	std::unique_ptr<variable> variable(new jlm::variable(type, name));
+	jlm::variable * v = variable.get();
 	variables_.insert(std::move(variable));
 	variable.release();
 	return v;
@@ -609,10 +608,9 @@ cfg::destruct_ssa()
 }
 
 }
-}
 
 void
-jive_cfg_view(const jlm::frontend::cfg & self)
+jive_cfg_view(const jlm::cfg & self)
 {
 	jive::buffer buffer;
 	FILE * file = popen("tee /tmp/cfg.dot | dot -Tps > /tmp/cfg.ps ; gv /tmp/cfg.ps", "w");

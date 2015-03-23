@@ -17,9 +17,8 @@
 #include <unordered_map>
 
 namespace jlm {
-namespace frontend {
-	class clg_node;
-}
+
+class clg_node;
 
 namespace dstrct {
 
@@ -27,26 +26,26 @@ class variable_map final {
 public:
 
 	inline bool
-	has_value(const jlm::frontend::variable * v) const noexcept
+	has_value(const jlm::variable * v) const noexcept
 	{
 		return map_.find(v) != map_.end();
 	}
 
 	inline jive::output *
-	lookup_value(const jlm::frontend::variable * v) const
+	lookup_value(const jlm::variable * v) const
 	{
 		JLM_DEBUG_ASSERT(has_value(v));
 		return map_.find(v)->second;
 	}
 
 	inline void
-	insert_value(const jlm::frontend::variable * v, jive::output * o)
+	insert_value(const jlm::variable * v, jive::output * o)
 	{
 		map_[v] = o;
 	}
 
 	inline void
-	replace_value(const jlm::frontend::variable * v, jive::output * o)
+	replace_value(const jlm::variable * v, jive::output * o)
 	{
 		JLM_DEBUG_ASSERT(has_value(v));
 		map_[v] = o;
@@ -65,20 +64,20 @@ public:
 	}
 
 	//FIXME: this is an ugly solution
-	std::unordered_map<const jlm::frontend::variable*, jive::output*>::iterator
+	std::unordered_map<const jlm::variable*, jive::output*>::iterator
 	begin()
 	{
 		return map_.begin();
 	}
 
-	std::unordered_map<const jlm::frontend::variable*, jive::output*>::iterator
+	std::unordered_map<const jlm::variable*, jive::output*>::iterator
 	end()
 	{
 		return map_.end();
 	}
 
 private:
-	std::unordered_map<const jlm::frontend::variable*, jive::output*> map_;
+	std::unordered_map<const jlm::variable*, jive::output*> map_;
 };
 
 class predicate_stack final {
@@ -141,40 +140,40 @@ public:
 	}
 
 	inline bool
-	has_loopvar(const jlm::frontend::variable * v) const
+	has_loopvar(const jlm::variable * v) const
 	{
 		return loopvars_.find(v) != loopvars_.end();
 	}
 
 	inline jive_theta_loopvar
-	lookup_loopvar(const jlm::frontend::variable * v)
+	lookup_loopvar(const jlm::variable * v)
 	{
 		JLM_DEBUG_ASSERT(has_loopvar(v));
 		return loopvars_.find(v)->second;
 	}
 
 	inline void
-	insert_loopvar(const jlm::frontend::variable * v, jive_theta_loopvar lv)
+	insert_loopvar(const jlm::variable * v, jive_theta_loopvar lv)
 	{
 		JLM_DEBUG_ASSERT(!has_loopvar(v));
 		loopvars_[v] = lv;
 	}
 
 	inline void
-	replace_loopvar(const frontend::variable * v, jive_theta_loopvar lv)
+	replace_loopvar(const variable * v, jive_theta_loopvar lv)
 	{
 		JLM_DEBUG_ASSERT(has_loopvar(v));
 		loopvars_[v] = lv;
 	}
 
 	/* FIXME: this is a really ugly hack */
-	std::unordered_map<const jlm::frontend::variable*, jive_theta_loopvar>::iterator
+	std::unordered_map<const jlm::variable*, jive_theta_loopvar>::iterator
 	begin()
 	{
 		return loopvars_.begin();
 	}
 
-	std::unordered_map<const jlm::frontend::variable*, jive_theta_loopvar>::iterator
+	std::unordered_map<const jlm::variable*, jive_theta_loopvar>::iterator
 	end()
 	{
 		return loopvars_.end();
@@ -182,7 +181,7 @@ public:
 
 private:
 	jive_theta theta_;
-	std::unordered_map<const jlm::frontend::variable *, jive_theta_loopvar> loopvars_;
+	std::unordered_map<const jlm::variable *, jive_theta_loopvar> loopvars_;
 };
 
 class theta_stack final {
@@ -234,60 +233,60 @@ private:
 class context final {
 public:
 	inline bool
-	has_variable_map(const jlm::frontend::cfg_node * node) const noexcept
+	has_variable_map(const jlm::cfg_node * node) const noexcept
 	{
 		return vmap_.find(node) != vmap_.end();
 	}
 
 	inline variable_map &
-	lookup_variable_map(const jlm::frontend::cfg_node * node)
+	lookup_variable_map(const jlm::cfg_node * node)
 	{
 		JLM_DEBUG_ASSERT(has_variable_map(node));
 		return vmap_.find(node)->second;
 	}
 
 	inline void
-	insert_variable_map(const jlm::frontend::cfg_node * node, const variable_map & vmap)
+	insert_variable_map(const jlm::cfg_node * node, const variable_map & vmap)
 	{
 		JLM_DEBUG_ASSERT(!has_variable_map(node));
 		vmap_[node] = vmap;
 	}
 
 	inline bool
-	has_predicate_stack(const jlm::frontend::cfg_edge * edge) const noexcept
+	has_predicate_stack(const jlm::cfg_edge * edge) const noexcept
 	{
 		return pmap_.find(edge) != pmap_.end();
 	}
 
 	inline predicate_stack &
-	lookup_predicate_stack(const jlm::frontend::cfg_edge * edge)
+	lookup_predicate_stack(const jlm::cfg_edge * edge)
 	{
 		JLM_DEBUG_ASSERT(has_predicate_stack(edge));
 		return pmap_.find(edge)->second;
 	}
 
 	inline void
-	insert_predicate_stack(const jlm::frontend::cfg_edge * edge, const predicate_stack & pstack)
+	insert_predicate_stack(const jlm::cfg_edge * edge, const predicate_stack & pstack)
 	{
 		JLM_DEBUG_ASSERT(!has_predicate_stack(edge));
 		pmap_[edge] = pstack;
 	}
 
 	inline bool
-	has_theta_stack(const jlm::frontend::cfg_edge * edge) const noexcept
+	has_theta_stack(const jlm::cfg_edge * edge) const noexcept
 	{
 		return tmap_.find(edge) != tmap_.end();
 	}
 
 	inline theta_stack &
-	lookup_theta_stack(const jlm::frontend::cfg_edge * edge)
+	lookup_theta_stack(const jlm::cfg_edge * edge)
 	{
 		JLM_DEBUG_ASSERT(has_theta_stack(edge));
 		return tmap_.find(edge)->second;
 	}
 
 	inline void
-	insert_theta_stack(const jlm::frontend::cfg_edge * edge, const theta_stack & tstack)
+	insert_theta_stack(const jlm::cfg_edge * edge, const theta_stack & tstack)
 	{
 		JLM_DEBUG_ASSERT(!has_theta_stack(edge));
 		tmap_[edge] = tstack;
@@ -304,27 +303,27 @@ public:
 	}
 
 	inline bool
-	has_function(const frontend::clg_node * function) const noexcept
+	has_function(const clg_node * function) const noexcept
 	{
 		return fmap_.find(function) != fmap_.end();
 	}
 
 	inline jive::output *
-	lookup_function(const frontend::clg_node * function) const noexcept
+	lookup_function(const clg_node * function) const noexcept
 	{
 		JLM_DEBUG_ASSERT(has_function(function));
 		return fmap_.find(function)->second;
 	}
 
 	inline void
-	insert_function(const frontend::clg_node * f, jive::output * r)
+	insert_function(const clg_node * f, jive::output * r)
 	{
 		JIVE_DEBUG_ASSERT(!has_function(f));
 		fmap_[f] = r;
 	}
 
 	inline void
-	replace_function(const frontend::clg_node * f, jive::output * r)
+	replace_function(const clg_node * f, jive::output * r)
 	{
 		JIVE_DEBUG_ASSERT(has_function(f));
 		fmap_[f] = r;
@@ -332,10 +331,10 @@ public:
 
 private:
 	std::unordered_set<std::unique_ptr<theta_env>> theta_envs_;
-	std::unordered_map<const jlm::frontend::clg_node*, jive::output*> fmap_;
-	std::unordered_map<const jlm::frontend::cfg_node*, variable_map> vmap_;
-	std::unordered_map<const jlm::frontend::cfg_edge*, predicate_stack> pmap_;
-	std::unordered_map<const jlm::frontend::cfg_edge*, theta_stack> tmap_;
+	std::unordered_map<const jlm::clg_node*, jive::output*> fmap_;
+	std::unordered_map<const jlm::cfg_node*, variable_map> vmap_;
+	std::unordered_map<const jlm::cfg_edge*, predicate_stack> pmap_;
+	std::unordered_map<const jlm::cfg_edge*, theta_stack> tmap_;
 };
 
 }

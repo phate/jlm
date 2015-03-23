@@ -36,15 +36,15 @@ convert_apint(const llvm::APInt & value)
 	return vr;
 }
 
-const jlm::frontend::variable *
+const jlm::variable *
 create_undef_value(
 	const llvm::Type & type,
-	jlm::frontend::basic_block * bb)
+	jlm::basic_block * bb)
 {
 	if (type.getTypeID() == llvm::Type::IntegerTyID) {
 		const llvm::IntegerType * t = static_cast<const llvm::IntegerType*>(&type);
 		jive::bits::value_repr v = jive::bits::value_repr::repeat(t->getBitWidth(), 'X');
-		const jlm::frontend::variable * result;
+		const jlm::variable * result;
 		result = bb->cfg()->create_variable(jive::bits::type(v.nbits()));
 		return bitconstant_tac(bb, v, result);
 	}
@@ -53,23 +53,23 @@ create_undef_value(
 	return nullptr;
 }
 
-static const jlm::frontend::variable *
+static const jlm::variable *
 convert_int_constant(
 	const llvm::Constant & c,
-	jlm::frontend::basic_block * bb)
+	jlm::basic_block * bb)
 {
 	const llvm::ConstantInt * constant = static_cast<const llvm::ConstantInt*>(&c);
 	JLM_DEBUG_ASSERT(constant != nullptr);
 
 	jive::bits::value_repr v = convert_apint(constant->getValue());
-	const jlm::frontend::variable * result = bb->cfg()->create_variable(jive::bits::type(v.nbits()));
+	const jlm::variable * result = bb->cfg()->create_variable(jive::bits::type(v.nbits()));
 	return bitconstant_tac(bb, v, result);
 }
 
-static const jlm::frontend::variable *
+static const jlm::variable *
 convert_undefvalue_instruction(
 	const llvm::Constant & c,
-	jlm::frontend::basic_block * bb)
+	jlm::basic_block * bb)
 {
 	const llvm::UndefValue * constant = static_cast<const llvm::UndefValue*>(&c);
 	JLM_DEBUG_ASSERT(constant != nullptr);
@@ -79,7 +79,7 @@ convert_undefvalue_instruction(
 
 typedef std::unordered_map<
 	std::type_index,
-	const jlm::frontend::variable*(*)(const llvm::Constant &, jlm::frontend::basic_block*)
+	const jlm::variable*(*)(const llvm::Constant &, jlm::basic_block*)
 	> constant_map;
 
 static constant_map cmap({
@@ -87,8 +87,8 @@ static constant_map cmap({
 	, {std::type_index(typeid(llvm::UndefValue)), convert_undefvalue_instruction}
 });
 
-const jlm::frontend::variable *
-convert_constant(const llvm::Constant & c, jlm::frontend::basic_block * bb)
+const jlm::variable *
+convert_constant(const llvm::Constant & c, jlm::basic_block * bb)
 {
 	JLM_DEBUG_ASSERT(cmap.find(std::type_index(typeid(c))) != cmap.end());
 	return cmap[std::type_index(typeid(c))](c, bb);

@@ -16,51 +16,49 @@
 #include <jive/types/bitstring/type.h>
 
 namespace jlm {
-namespace frontend {
 
-JIVE_EXPORTED_INLINE const jlm::frontend::variable *
+JIVE_EXPORTED_INLINE const jlm::variable *
 addrload_tac(
-	jlm::frontend::basic_block * basic_block,
-	const jlm::frontend::variable * address,
-	const jlm::frontend::variable * state,
+	jlm::basic_block * basic_block,
+	const jlm::variable * address,
+	const jlm::variable * state,
 	const jive::value::type & data_type,
-	const jlm::frontend::variable * result)
+	const jlm::variable * result)
 {
 	jive::addr::type addrtype;
 	jive::addrload_op op({jive::mem::type()}, data_type);
-	const jlm::frontend::tac * tac = basic_block->append(op, {address, state}, {result});
+	const jlm::tac * tac = basic_block->append(op, {address, state}, {result});
 	return tac->output(0);
 }
 
-JIVE_EXPORTED_INLINE const jlm::frontend::variable *
+JIVE_EXPORTED_INLINE const jlm::variable *
 addrstore_tac(
-	jlm::frontend::basic_block * basic_block,
-	const jlm::frontend::variable * address,
-	const jlm::frontend::variable * value,
-	const jlm::frontend::variable * state,
-	const jlm::frontend::variable * result)
+	jlm::basic_block * basic_block,
+	const jlm::variable * address,
+	const jlm::variable * value,
+	const jlm::variable * state,
+	const jlm::variable * result)
 {
 	jive::addr::type addrtype;
 	jive::addrstore_op op({jive::mem::type()}, dynamic_cast<const jive::value::type&>(value->type()));
-	const jlm::frontend::tac * tac = basic_block->append(op, {address, value, state}, {result});
+	const jlm::tac * tac = basic_block->append(op, {address, value, state}, {result});
 	return tac->output(0);
 }
 
-JIVE_EXPORTED_INLINE const jlm::frontend::variable *
+JIVE_EXPORTED_INLINE const jlm::variable *
 addrarraysubscript_tac(
-	jlm::frontend::basic_block * basic_block,
-	const jlm::frontend::variable * base,
-	const jlm::frontend::variable * offset,
-	const jlm::frontend::variable * result)
+	jlm::basic_block * basic_block,
+	const jlm::variable * base,
+	const jlm::variable * offset,
+	const jlm::variable * result)
 {
 	const jive::value::type & base_type = dynamic_cast<const jive::value::type&>(base->type());
 	const jive::bits::type & offset_type = dynamic_cast<const jive::bits::type&>(offset->type());
 	jive::address::arraysubscript_op op(base_type, offset_type);
-	const jlm::frontend::tac * tac = basic_block->append(op, {base, offset}, {result});
+	const jlm::tac * tac = basic_block->append(op, {base, offset}, {result});
 	return tac->output(0);
 }
 
-}
 }
 
 #endif

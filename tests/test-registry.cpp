@@ -55,7 +55,7 @@ run_unit_test(const std::string & name)
 		assert(0);
 	}
 
-	jlm::frontend::clg clg;
+	jlm::clg clg;
 	convert_module(*module, clg);
 	struct jive_graph * graph = jlm::construct_rvsdg(clg);
 

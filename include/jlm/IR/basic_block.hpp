@@ -14,9 +14,7 @@ namespace jive {
 }
 
 namespace jlm {
-namespace frontend {
 
-class output;
 class tac;
 
 class basic_block final : public cfg_node {
@@ -48,14 +46,13 @@ public:
 	}
 
 private:
-	basic_block(jlm::frontend::cfg & cfg) noexcept;
+	basic_block(jlm::cfg & cfg) noexcept;
 
 	std::list<const tac*> tacs_;
 
 	friend basic_block * cfg::create_basic_block();
 };
 
-}
 }
 
 #endif

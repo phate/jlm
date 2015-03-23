@@ -37,7 +37,7 @@ int main (int argc, char ** argv)
 
 	setlocale(LC_ALL, "");
 
-	jlm::frontend::clg clg;
+	jlm::clg clg;
 	jlm::convert_module(*module, clg);
 
 	struct jive_graph * graph = jlm::construct_rvsdg(clg);

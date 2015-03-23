@@ -9,26 +9,24 @@
 #include <jive/vsdg/operators/match.h>
 
 namespace jlm {
-namespace frontend {
 
-JIVE_EXPORTED_INLINE const jlm::frontend::variable *
+JIVE_EXPORTED_INLINE const jlm::variable *
 match_tac(
-	jlm::frontend::basic_block * basic_block,
-	const jlm::frontend::variable * operand,
+	jlm::basic_block * basic_block,
+	const jlm::variable * operand,
 	const std::vector<size_t> & constants)
 {
 	if (!dynamic_cast<const jive::bits::type*>(&operand->type()))
 		throw jive::type_error("bits<N>", operand->type().debug_string());
 
 	jive::match_op op(static_cast<const jive::bits::type&>(operand->type()), constants);
-	const jlm::frontend::variable * result = basic_block->cfg()->create_variable(op.result_type(0));
-	const jlm::frontend::tac * tac = basic_block->append(op, {operand}, {result});
+	const jlm::variable * result = basic_block->cfg()->create_variable(op.result_type(0));
+	const jlm::tac * tac = basic_block->append(op, {operand}, {result});
 
 	JLM_DEBUG_ASSERT(op.narguments() == 1);
 	return tac->output(0);
 }
 
-}
 }
 
 #endif

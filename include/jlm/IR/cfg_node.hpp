@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 2014 Nico Reißmann <nico.reissmann@gmail.com>
+ * Copyright 2013 2014 2015 Nico Reißmann <nico.reissmann@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
@@ -14,7 +14,6 @@
 
 
 namespace jlm {
-namespace frontend {
 
 class cfg;
 class cfg_node;
@@ -48,12 +47,12 @@ public:
 	virtual ~cfg_node();
 
 protected:
-	cfg_node(jlm::frontend::cfg & cfg) : cfg_(&cfg) {}
+	cfg_node(jlm::cfg & cfg) : cfg_(&cfg) {}
 
 public:
 	virtual std::string debug_string() const = 0;
 
-	inline jlm::frontend::cfg * cfg() const noexcept { return cfg_; }
+	inline jlm::cfg * cfg() const noexcept { return cfg_; }
 
 	cfg_edge * add_outedge(cfg_node * successor, size_t index);
 
@@ -65,7 +64,7 @@ public:
 
 	std::vector<cfg_edge*> outedges() const;
 
-	void divert_inedges(jlm::frontend::cfg_node * new_successor);
+	void divert_inedges(jlm::cfg_node * new_successor);
 
 	void remove_inedges();
 
@@ -88,12 +87,11 @@ public:
 private:
 	std::unordered_set<std::unique_ptr<cfg_edge>> outedges_;
 	std::list<cfg_edge*> inedges_;
-	jlm::frontend::cfg * cfg_;
+	jlm::cfg * cfg_;
 
 	friend cfg_edge;
 };
 
-}
 }
 
 #endif

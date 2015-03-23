@@ -12,19 +12,17 @@ namespace llvm {
 }
 
 namespace jlm  {
-namespace frontend {
-	class basic_block;
-}
 
+class basic_block;
 class context;
 
-const jlm::frontend::variable *
-convert_value(const llvm::Value * v, jlm::frontend::basic_block * bb, jlm::context & ctx);
+const jlm::variable *
+convert_value(const llvm::Value * v, jlm::basic_block * bb, jlm::context & ctx);
 
 void
 convert_instruction(
 	const llvm::Instruction & i,
-	jlm::frontend::basic_block * bb,
+	jlm::basic_block * bb,
 	jlm::context & ctx);
 
 }

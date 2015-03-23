@@ -19,11 +19,10 @@ namespace base {
 }
 
 namespace jlm {
-namespace frontend {
-	class clg_node;
-	class basic_block;
-	class output;
-	class tac;
+
+class clg_node;
+class basic_block;
+class tac;
 
 class cfg final {
 	class enter_node;
@@ -60,17 +59,17 @@ public:
 	void
 	destruct_ssa();
 
-	inline jlm::frontend::cfg::enter_node * enter() const noexcept { return enter_; }
-	inline jlm::frontend::cfg::exit_node * exit() const noexcept { return exit_; }
+	inline jlm::cfg::enter_node * enter() const noexcept { return enter_; }
+	inline jlm::cfg::exit_node * exit() const noexcept { return exit_; }
 
-	inline jlm::frontend::clg_node * function() const noexcept { return clg_node_; }
+	inline jlm::clg_node * function() const noexcept { return clg_node_; }
 
 	basic_block * create_basic_block();
 
-	const jlm::frontend::variable *
+	const jlm::variable *
 	create_variable(const jive::base::type & type);
 
-	const jlm::frontend::variable *
+	const jlm::variable *
 	create_variable(const jive::base::type & type, const std::string & name);
 
 	inline size_t
@@ -132,7 +131,7 @@ private:
 	public:
 		virtual ~enter_node() noexcept;
 
-		enter_node(jlm::frontend::cfg & cfg) noexcept;
+		enter_node(jlm::cfg & cfg) noexcept;
 
 		virtual std::string debug_string() const override;
 
@@ -166,7 +165,7 @@ private:
 	public:
 		virtual ~exit_node() noexcept;
 
-		exit_node(jlm::frontend::cfg & cfg) noexcept;
+		exit_node(jlm::cfg & cfg) noexcept;
 
 		virtual std::string debug_string() const override;
 
@@ -199,15 +198,14 @@ private:
 
 	cfg::enter_node * enter_;
 	cfg::exit_node * exit_;
-	jlm::frontend::clg_node * clg_node_;
+	jlm::clg_node * clg_node_;
 	std::unordered_set<std::unique_ptr<cfg_node>> nodes_;
 	std::unordered_set<std::unique_ptr<variable>> variables_;
 };
 
 }
-}
 
 void
-jive_cfg_view(const jlm::frontend::cfg & self);
+jive_cfg_view(const jlm::cfg & self);
 
 #endif

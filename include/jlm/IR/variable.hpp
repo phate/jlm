@@ -12,7 +12,6 @@
 #include <sstream>
 
 namespace jlm {
-namespace frontend {
 
 class variable final {
 public:
@@ -63,7 +62,6 @@ private:
 	std::unique_ptr<jive::base::type> type_;
 };
 
-}
 }
 
 #endif

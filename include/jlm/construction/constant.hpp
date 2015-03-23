@@ -8,13 +8,6 @@
 
 #include <jive/types/bitstring/value-representation.h>
 
-namespace jlm {
-namespace frontend {
-	class basic_block;
-	class variable;
-}
-}
-
 namespace llvm {
 	class APInt;
 	class Constant;
@@ -23,14 +16,17 @@ namespace llvm {
 
 namespace jlm {
 
+class basic_block;
+class variable;
+
 jive::bits::value_repr
 convert_apint(const llvm::APInt & value);
 
-const jlm::frontend::variable *
-create_undef_value(const llvm::Type & type, jlm::frontend::basic_block * bb);
+const jlm::variable *
+create_undef_value(const llvm::Type & type, jlm::basic_block * bb);
 
-const jlm::frontend::variable *
-convert_constant(const llvm::Constant & constant, jlm::frontend::basic_block * bb);
+const jlm::variable *
+convert_constant(const llvm::Constant & constant, jlm::basic_block * bb);
 
 }
 

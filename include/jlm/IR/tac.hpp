@@ -21,7 +21,6 @@ namespace base {
 }
 
 namespace jlm {
-namespace frontend {
 
 class variable;
 
@@ -35,7 +34,7 @@ public:
 		const std::vector<const variable*> & operands,
 		const std::vector<const variable*> & results);
 
-	tac(const jlm::frontend::tac & tac) = delete;
+	tac(const jlm::tac & tac) = delete;
 
 	tac &
 	operator=(const tac &) = delete;
@@ -88,7 +87,6 @@ private:
 	std::unique_ptr<jive::operation> operation_;
 };
 
-}
 }
 
 #endif
