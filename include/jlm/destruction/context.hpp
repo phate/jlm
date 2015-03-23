@@ -233,17 +233,6 @@ private:
 
 class context final {
 public:
-	inline
-	context(const std::unordered_set<const jlm::frontend::cfg_edge*> & back_edges)
-		: back_edges_(back_edges)
-	{}
-
-	inline bool
-	is_back_edge(const jlm::frontend::cfg_edge * edge) const noexcept
-	{
-		return back_edges_.find(edge) != back_edges_.end();
-	}
-
 	inline bool
 	has_variable_map(const jlm::frontend::cfg_node * node) const noexcept
 	{
@@ -343,7 +332,6 @@ public:
 
 private:
 	std::unordered_set<std::unique_ptr<theta_env>> theta_envs_;
-	std::unordered_set<const jlm::frontend::cfg_edge*> back_edges_;
 	std::unordered_map<const jlm::frontend::clg_node*, jive::output*> fmap_;
 	std::unordered_map<const jlm::frontend::cfg_node*, variable_map> vmap_;
 	std::unordered_map<const jlm::frontend::cfg_edge*, predicate_stack> pmap_;

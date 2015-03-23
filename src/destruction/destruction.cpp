@@ -46,16 +46,24 @@ create_undefined_value(const jive::base::type & type, struct jive_graph * graph)
 	return nullptr;
 }
 
+static inline bool
+is_back_edge(
+	frontend::cfg_edge * edge,
+	const std::unordered_set<const frontend::cfg_edge*> & back_edges)
+{
+	return back_edges.find(edge) != back_edges.end();
+}
+
 static bool
 is_branch_join(
 	const std::list<jlm::frontend::cfg_edge*> & inedges,
-	const jlm::dstrct::context & ctx)
+	const std::unordered_set<const frontend::cfg_edge*> & back_edges)
 {
 	if (inedges.size() <= 1)
 		return false;
 
 	for (auto edge : inedges) {
-		if (ctx.is_back_edge(edge))
+		if (is_back_edge(edge, back_edges))
 			return false;
 	}
 
@@ -78,25 +86,25 @@ visit_branch_join(
 static bool
 is_loop_entry(
 	const std::list<jlm::frontend::cfg_edge*> & inedges,
-	const jlm::dstrct::context & ctx)
+	const std::unordered_set<const frontend::cfg_edge*> & back_edges)
 {
 	if (inedges.size() != 2)
 		return false;
 
 	jlm::frontend::cfg_edge * edge1 = inedges.front();
 	jlm::frontend::cfg_edge * edge2 = *std::next(inedges.begin());
-	return ctx.is_back_edge(edge1) || ctx.is_back_edge(edge2);
+	return is_back_edge(edge1, back_edges) || is_back_edge(edge2, back_edges);
 }
 
 static bool
 is_loop_exit(
 	const std::vector<jlm::frontend::cfg_edge*> & outedges,
-	const jlm::dstrct::context & ctx)
+	const std::unordered_set<const frontend::cfg_edge*> & back_edges)
 {
 	if (outedges.size() != 2)
 		return false;
 
-	return ctx.is_back_edge(outedges[0]) || ctx.is_back_edge(outedges[1]);
+	return is_back_edge(outedges[0], back_edges) || is_back_edge(outedges[1], back_edges);
 }
 
 static dststate
@@ -199,19 +207,20 @@ static dststate
 handle_basic_block_entry(
 	const jlm::frontend::basic_block * bb,
 	struct jive_region * region,
-	jlm::dstrct::context & ctx)
+	jlm::dstrct::context & ctx,
+	const std::unordered_set<const frontend::cfg_edge*> & back_edges)
 {
 	const std::list<jlm::frontend::cfg_edge*> & inedges = bb->inedges();
 
-	if (is_loop_entry(inedges, ctx)) {
+	if (is_loop_entry(inedges, back_edges)) {
 		jlm::frontend::cfg_edge * entry_edge = inedges.front();
-		if (ctx.is_back_edge(entry_edge))
+		if (is_back_edge(entry_edge, back_edges))
 			entry_edge = *std::next(inedges.begin());
 
 		return handle_loop_entry(entry_edge, region, ctx);
 	}
 
-	if (is_branch_join(inedges, ctx))
+	if (is_branch_join(inedges, back_edges))
 		return handle_branch_join(inedges, region, ctx);
 
 	JLM_DEBUG_ASSERT(inedges.size() == 1);
@@ -292,13 +301,14 @@ handle_basic_block_exit(
 	const jlm::frontend::basic_block * bb,
 	struct jive_region * region,
 	jlm::dstrct::context & ctx,
+	const std::unordered_set<const frontend::cfg_edge*> & back_edges,
 	dststate & state)
 {
 	const std::vector<jlm::frontend::cfg_edge*> & outedges = bb->outedges();
 
 	/* handle loop exit */
 	const jlm::frontend::tac * tac;
-	if (is_loop_exit(outedges, ctx)) {
+	if (is_loop_exit(outedges, back_edges)) {
 		JLM_DEBUG_ASSERT(outedges.size() == 2);
 		tac = static_cast<frontend::basic_block*>(outedges[0]->source())->tacs().back();
 		JLM_DEBUG_ASSERT(tac->noutputs() == 1);
@@ -306,7 +316,7 @@ handle_basic_block_exit(
 		handle_loop_exit(tac, region, state.vmap, state.tstack);
 
 		for (auto edge : outedges) {
-			if (ctx.is_back_edge(edge))
+			if (is_back_edge(edge, back_edges))
 				continue;
 
 			ctx.insert_predicate_stack(edge, state.pstack);
@@ -320,7 +330,7 @@ handle_basic_block_exit(
 		JLM_DEBUG_ASSERT(dynamic_cast<const jive::match_op*>(&tac->operation()));
 
 		for (auto edge : outedges) {
-			if (ctx.is_back_edge(edge))
+			if (is_back_edge(edge, back_edges))
 				continue;
 
 			dstrct::predicate_stack pstack = state.pstack;
@@ -339,24 +349,25 @@ static void
 convert_basic_block(
 	const jlm::frontend::basic_block * bb,
 	struct jive_region * region,
-	jlm::dstrct::context & ctx)
+	jlm::dstrct::context & ctx,
+	const std::unordered_set<const frontend::cfg_edge*> & back_edges)
 {
 	/* only process basic block if all incoming edges have already been visited */
-	if (is_branch_join(bb->inedges(), ctx) && !visit_branch_join(bb, ctx))
+	if (is_branch_join(bb->inedges(), back_edges) && !visit_branch_join(bb, ctx))
 		return;
 
-	dststate state = handle_basic_block_entry(bb, region, ctx);
+	dststate state = handle_basic_block_entry(bb, region, ctx, back_edges);
 	handle_basic_block(bb, region, state.vmap);
-	handle_basic_block_exit(bb, region, ctx, state);
+	handle_basic_block_exit(bb, region, ctx, back_edges, state);
 
 	ctx.insert_variable_map(bb, state.vmap);
 	for (auto e : bb->outedges()) {
-		if (ctx.is_back_edge(e))
+		if (is_back_edge(e, back_edges))
 			continue;
 
 		ctx.insert_theta_stack(e, state.tstack);
 		if (auto bb = dynamic_cast<jlm::frontend::basic_block *>(e->sink())) {
-			convert_basic_block(bb, region, ctx);
+			convert_basic_block(bb, region, ctx, back_edges);
 		}
 	}
 }
@@ -365,7 +376,8 @@ static void
 convert_basic_blocks(
 	const jlm::frontend::cfg * cfg,
 	struct jive_region * region,
-	jlm::dstrct::context & ctx)
+	jlm::dstrct::context & ctx,
+	const std::unordered_set<const frontend::cfg_edge*> & back_edges)
 {
 	JLM_DEBUG_ASSERT(cfg->enter()->noutedges() == 1);
 	const jlm::frontend::cfg_edge * edge = cfg->enter()->outedges()[0];
@@ -375,7 +387,7 @@ convert_basic_blocks(
 
 	const jlm::frontend::basic_block * bb;
 	bb = static_cast<const jlm::frontend::basic_block*>(edge->sink());
-	convert_basic_block(bb, region, ctx);
+	convert_basic_block(bb, region, ctx, back_edges);
 }
 
 static jive::output * 
@@ -386,10 +398,10 @@ convert_cfg(
 //	jive_cfg_view(*cfg);
 	cfg->destruct_ssa();
 //	jive_cfg_view(*cfg);
-	jlm::dstrct::context ctx(restructure(cfg));
+	const std::unordered_set<const frontend::cfg_edge*> back_edges = restructure(cfg);
 //	jive_cfg_view(*cfg);
 
-
+	jlm::dstrct::context ctx;
 	std::vector<const jlm::frontend::variable*> variables;
 	std::vector<const char*> argument_names;
 	std::vector<const jive::base::type*> argument_types;
@@ -408,7 +420,7 @@ convert_cfg(
 		vmap.insert_value(variables[n], lambda->arguments[n]);
 	ctx.insert_variable_map(cfg->enter(), vmap);
 
-	convert_basic_blocks(cfg, lambda->region, ctx);
+	convert_basic_blocks(cfg, lambda->region, ctx, back_edges);
 
 	JLM_DEBUG_ASSERT(cfg->exit()->ninedges() == 1);
 	jlm::frontend::cfg_node * predecessor = cfg->exit()->inedges().front()->source();
@@ -426,11 +438,14 @@ convert_cfg(
 static jive::output *
 construct_lambda(struct jive_graph * graph, const jlm::frontend::clg_node * clg_node)
 {
-	//FIXME: check whether cfg_node has a CFG
+	jive::output * f;
+	if (clg_node->cfg() != nullptr) {
+		f = convert_cfg(clg_node->cfg(), graph->root_region);
+		/* FIXME: we export everything right now */
+		jive_graph_export(graph, f, clg_node->name());
+	} else
+		f = jive_symbolicfunction_create(graph, clg_node->name().c_str(), &clg_node->type());
 
-	jive::output * f = convert_cfg(clg_node->cfg(), graph->root_region);
-	/* FIXME: we export everything right now */
-	jive_graph_export(graph, f, clg_node->name());
 	return f;
 }
 
