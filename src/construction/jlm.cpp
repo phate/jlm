@@ -131,6 +131,7 @@ convert_function(const llvm::Function & function, jlm::frontend::clg_node * clg_
 	results.push_back(state);
 
 	clg_node->cfg_end(results);
+	clg_node->cfg()->prune();
 }
 
 void
