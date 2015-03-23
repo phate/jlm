@@ -126,8 +126,8 @@ private:
 class theta_env final {
 public:
 	inline
-	theta_env(struct jive_graph * graph)
-		: theta_(jive_theta_begin(graph))
+	theta_env(struct jive_region * region)
+		: theta_(jive_theta_begin(region))
 	{}
 
 	inline jive_theta *
@@ -301,9 +301,9 @@ public:
 	}
 
 	theta_env *
-	create_theta_env(struct jive_graph * graph)
+	create_theta_env(struct jive_region * region)
 	{
-		std::unique_ptr<theta_env> tenv(new theta_env(graph));
+		std::unique_ptr<theta_env> tenv(new theta_env(region));
 		theta_env * env = tenv.get();
 		theta_envs_.insert(std::move(tenv));
 		tenv.release();

@@ -102,7 +102,7 @@ is_loop_exit(
 static dststate
 handle_branch_join(
 	const std::list<jlm::frontend::cfg_edge*> & inedges,
-	struct jive_graph * graph,
+	struct jive_region * region,
 	jlm::dstrct::context & ctx)
 {
 	/* check theta stack */
@@ -140,7 +140,7 @@ handle_branch_join(
 			if (ctx.lookup_variable_map(edge->source()).has_value(variable)) {
 				values.push_back(ctx.lookup_variable_map(edge->source()).lookup_value(variable));
 			} else {
-				values.push_back(create_undefined_value(variable->type(), graph));
+				values.push_back(create_undefined_value(variable->type(), region->graph));
 			}
 		}
 		alternatives[index] = values;
@@ -168,15 +168,18 @@ handle_branch_join(
 static dststate
 handle_loop_entry(
 	const jlm::frontend::cfg_edge * entry_edge,
-	struct jive_graph * graph,
+	struct jive_region * region,
 	jlm::dstrct::context & ctx)
 {
 	dstrct::variable_map vmap = ctx.lookup_variable_map(entry_edge->source());
 	dstrct::theta_stack tstack = ctx.lookup_theta_stack(entry_edge);
 	dstrct::predicate_stack pstack = ctx.lookup_predicate_stack(entry_edge);
 
+	if (!tstack.empty())
+		region = tstack.top()->theta()->region;
+
 	/* create new theta environment and update variable map */
-	dstrct::theta_env * tenv = ctx.create_theta_env(graph);
+	dstrct::theta_env * tenv = ctx.create_theta_env(region);
 	for (auto vpair : vmap) {
 		jive_theta_loopvar lv = jive_theta_loopvar_enter(*tenv->theta(), vpair.second);
 		tenv->insert_loopvar(vpair.first, lv);
@@ -195,7 +198,7 @@ handle_loop_entry(
 static dststate
 handle_basic_block_entry(
 	const jlm::frontend::basic_block * bb,
-	struct jive_graph * graph,
+	struct jive_region * region,
 	jlm::dstrct::context & ctx)
 {
 	const std::list<jlm::frontend::cfg_edge*> & inedges = bb->inedges();
@@ -205,11 +208,11 @@ handle_basic_block_entry(
 		if (ctx.is_back_edge(entry_edge))
 			entry_edge = *std::next(inedges.begin());
 
-		return handle_loop_entry(entry_edge, graph, ctx);
+		return handle_loop_entry(entry_edge, region, ctx);
 	}
 
 	if (is_branch_join(inedges, ctx))
-		return handle_branch_join(inedges, graph, ctx);
+		return handle_branch_join(inedges, region, ctx);
 
 	JLM_DEBUG_ASSERT(inedges.size() == 1);
 
@@ -223,7 +226,7 @@ handle_basic_block_entry(
 static void
 handle_basic_block(
 	const jlm::frontend::basic_block * bb,
-	struct jive_graph * graph,
+	struct jive_region * region,
 	dstrct::variable_map & vmap)
 {
 	for (auto tac : bb->tacs()) {
@@ -237,7 +240,7 @@ handle_basic_block(
 			operands.push_back(vmap.lookup_value(tac->input(n)));
 
 		std::vector<jive::output *> results;
-		results = jive_node_create_normalized(graph, tac->operation(), operands);
+		results = jive_node_create_normalized(region->graph, tac->operation(), operands);
 
 		JLM_DEBUG_ASSERT(results.size() == tac->noutputs());
 		for (size_t n = 0; n < tac->noutputs(); n++)
@@ -248,7 +251,7 @@ handle_basic_block(
 static void
 handle_loop_exit(
 	const jlm::frontend::tac * match,
-	struct jive_graph * graph,
+	struct jive_region * region,
 	dstrct::variable_map & vmap,
 	dstrct::theta_stack & tstack)
 {
@@ -264,7 +267,7 @@ handle_loop_exit(
 			jive_theta_loopvar_leave(*tenv->theta(), lv.gate, it->second);
 		} else {
 			lv = jive_theta_loopvar_enter(*tenv->theta(),
-				create_undefined_value(it->first->type(), graph));
+				create_undefined_value(it->first->type(), region->graph));
 			tenv->insert_loopvar(it->first, lv);
 			jive_theta_loopvar_leave(*tenv->theta(), lv.gate, it->second);
 		}
@@ -287,7 +290,7 @@ handle_loop_exit(
 static void
 handle_basic_block_exit(
 	const jlm::frontend::basic_block * bb,
-	struct jive_graph * graph,
+	struct jive_region * region,
 	jlm::dstrct::context & ctx,
 	dststate & state)
 {
@@ -300,7 +303,7 @@ handle_basic_block_exit(
 		tac = static_cast<frontend::basic_block*>(outedges[0]->source())->tacs().back();
 		JLM_DEBUG_ASSERT(tac->noutputs() == 1);
 
-		handle_loop_exit(tac, graph, state.vmap, state.tstack);
+		handle_loop_exit(tac, region, state.vmap, state.tstack);
 
 		for (auto edge : outedges) {
 			if (ctx.is_back_edge(edge))
@@ -335,16 +338,16 @@ handle_basic_block_exit(
 static void
 convert_basic_block(
 	const jlm::frontend::basic_block * bb,
-	struct jive_graph * graph,
+	struct jive_region * region,
 	jlm::dstrct::context & ctx)
 {
 	/* only process basic block if all incoming edges have already been visited */
 	if (is_branch_join(bb->inedges(), ctx) && !visit_branch_join(bb, ctx))
 		return;
 
-	dststate state = handle_basic_block_entry(bb, graph, ctx);
-	handle_basic_block(bb, graph, state.vmap);
-	handle_basic_block_exit(bb, graph, ctx, state);
+	dststate state = handle_basic_block_entry(bb, region, ctx);
+	handle_basic_block(bb, region, state.vmap);
+	handle_basic_block_exit(bb, region, ctx, state);
 
 	ctx.insert_variable_map(bb, state.vmap);
 	for (auto e : bb->outedges()) {
@@ -353,7 +356,7 @@ convert_basic_block(
 
 		ctx.insert_theta_stack(e, state.tstack);
 		if (auto bb = dynamic_cast<jlm::frontend::basic_block *>(e->sink())) {
-			convert_basic_block(bb, graph, ctx);
+			convert_basic_block(bb, region, ctx);
 		}
 	}
 }
@@ -361,7 +364,7 @@ convert_basic_block(
 static void
 convert_basic_blocks(
 	const jlm::frontend::cfg * cfg,
-	struct jive_graph * graph,
+	struct jive_region * region,
 	jlm::dstrct::context & ctx)
 {
 	JLM_DEBUG_ASSERT(cfg->enter()->noutedges() == 1);
@@ -372,13 +375,13 @@ convert_basic_blocks(
 
 	const jlm::frontend::basic_block * bb;
 	bb = static_cast<const jlm::frontend::basic_block*>(edge->sink());
-	convert_basic_block(bb, graph, ctx);
+	convert_basic_block(bb, region, ctx);
 }
 
 static jive::output * 
 convert_cfg(
 	jlm::frontend::cfg * cfg,
-	struct jive_graph * graph)
+	struct jive_region * region)
 {
 //	jive_cfg_view(*cfg);
 	cfg->destruct_ssa();
@@ -396,7 +399,7 @@ convert_cfg(
 		argument_types.push_back(&cfg->argument(n)->type());
 	}
 
-	struct jive_lambda * lambda = jive_lambda_begin(graph, variables.size(),
+	struct jive_lambda * lambda = jive_lambda_begin(region, variables.size(),
 		&argument_types[0], &argument_names[0]);
 
 	jlm::dstrct::variable_map vmap;
@@ -405,7 +408,7 @@ convert_cfg(
 		vmap.insert_value(variables[n], lambda->arguments[n]);
 	ctx.insert_variable_map(cfg->enter(), vmap);
 
-	convert_basic_blocks(cfg, graph, ctx);
+	convert_basic_blocks(cfg, lambda->region, ctx);
 
 	JLM_DEBUG_ASSERT(cfg->exit()->ninedges() == 1);
 	jlm::frontend::cfg_node * predecessor = cfg->exit()->inedges().front()->source();
@@ -425,7 +428,7 @@ construct_lambda(struct jive_graph * graph, const jlm::frontend::clg_node * clg_
 {
 	//FIXME: check whether cfg_node has a CFG
 
-	jive::output * f = convert_cfg(clg_node->cfg(), graph);
+	jive::output * f = convert_cfg(clg_node->cfg(), graph->root_region);
 	/* FIXME: we export everything right now */
 	jive_graph_export(graph, f, clg_node->name());
 	return f;
