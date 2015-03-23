@@ -17,6 +17,10 @@
 #include <unordered_map>
 
 namespace jlm {
+namespace frontend {
+	class clg_node;
+}
+
 namespace dstrct {
 
 class variable_map final {
@@ -310,9 +314,37 @@ public:
 		return env;
 	}
 
+	inline bool
+	has_function(const frontend::clg_node * function) const noexcept
+	{
+		return fmap_.find(function) != fmap_.end();
+	}
+
+	inline jive::output *
+	lookup_function(const frontend::clg_node * function) const noexcept
+	{
+		JLM_DEBUG_ASSERT(has_function(function));
+		return fmap_.find(function)->second;
+	}
+
+	inline void
+	insert_function(const frontend::clg_node * f, jive::output * r)
+	{
+		JIVE_DEBUG_ASSERT(!has_function(f));
+		fmap_[f] = r;
+	}
+
+	inline void
+	replace_function(const frontend::clg_node * f, jive::output * r)
+	{
+		JIVE_DEBUG_ASSERT(has_function(f));
+		fmap_[f] = r;
+	}
+
 private:
 	std::unordered_set<std::unique_ptr<theta_env>> theta_envs_;
 	std::unordered_set<const jlm::frontend::cfg_edge*> back_edges_;
+	std::unordered_map<const jlm::frontend::clg_node*, jive::output*> fmap_;
 	std::unordered_map<const jlm::frontend::cfg_node*, variable_map> vmap_;
 	std::unordered_map<const jlm::frontend::cfg_edge*, predicate_stack> pmap_;
 	std::unordered_map<const jlm::frontend::cfg_edge*, theta_stack> tmap_;
