@@ -80,6 +80,12 @@ create_cfg_structure(
 			bbmap[&(*it)]->add_outedge(bbmap[instr->getSuccessor(n)], n);
 	}
 
+	if (cfg->exit()->ninedges() > 1) {
+		jlm::basic_block * bb = cfg->create_basic_block();
+		cfg->exit()->divert_inedges(bb);
+		bb->add_outedge(cfg->exit(), 0);
+	}
+
 	return entry_block;
 }
 
