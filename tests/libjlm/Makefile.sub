@@ -3,6 +3,7 @@ TESTS += \
 	libjlm/test-call \
 	libjlm/test-constant \
 	libjlm/test-dowhile \
+	libjlm/test-fibrec \
 	libjlm/test-getelementptr \
 	libjlm/test-loadstore \
 	libjlm/test-trunc \
