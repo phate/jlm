@@ -20,6 +20,7 @@
 #include <jive/vsdg/gamma.h>
 #include <jive/vsdg/graph.h>
 #include <jive/vsdg/operators/match.h>
+#include <jive/vsdg/phi.h>
 
 #include <stack>
 
@@ -460,16 +461,10 @@ construct_lambda(
 	struct jive_region * region,
 	dstrct::context & ctx)
 {
-	jive::output * f;
-	if (function->cfg() != nullptr) {
-		f = convert_cfg(function->cfg(), region, ctx);
-		/* FIXME: we export everything right now */
-		jive_graph_export(region->graph, f, function->name());
-	} else
-		f = jive_symbolicfunction_create(region->graph, function->name().c_str(), &function->type());
+	if (function->cfg() == nullptr)
+		return jive_symbolicfunction_create(region->graph, function->name().c_str(), &function->type());
 
-	ctx.insert_function(function, f);
-	return f;
+	return convert_cfg(function->cfg(), region, ctx);
 }
 
 
@@ -480,10 +475,33 @@ handle_scc(
 	dstrct::context & ctx)
 {
 	if (scc.size() == 1 && !(*scc.begin())->is_selfrecursive()) {
-		construct_lambda(*scc.begin(), graph->root_region, ctx);
+		jive::output * lambda = construct_lambda(*scc.begin(), graph->root_region, ctx);
+		ctx.insert_function(*scc.begin(), lambda);
+		/* FIXME: we export everything right now */
+		jive_graph_export(graph, lambda, (*scc.begin())->name());
 	} else {
-		JLM_DEBUG_ASSERT(0);
-		/* create phi */
+		jive_phi phi = jive_phi_begin(graph->root_region);
+
+		std::vector<jive_phi_fixvar> fixvars;
+		for (auto f : scc) {
+			jive_phi_fixvar fv = jive_phi_fixvar_enter(phi, &f->type());
+			ctx.insert_function(f, fv.value);
+			fixvars.push_back(fv);
+		}
+
+		size_t n = 0;
+		for (auto it = scc.begin(); it != scc.end(); it++, n++) {
+			jive::output * lambda = construct_lambda(*it, phi.region, ctx);
+			jive_phi_fixvar_leave(phi, fixvars[n].gate, lambda);
+		}
+		jive_phi_end(phi, fixvars.size(), &fixvars[0]);
+
+		n = 0;
+		for (auto it = scc.begin(); it != scc.end(); it++, n++) {
+			ctx.replace_function(*it, fixvars[n].value);
+			/* FIXME: we export everything right now */
+			jive_graph_export(graph, fixvars[n].value, (*it)->name());
+		}
 	}
 }
 
