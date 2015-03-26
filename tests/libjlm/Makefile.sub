@@ -12,6 +12,6 @@ TESTS += \
 	libjlm/test-ifthen \
 	libjlm/test-phi \
 	libjlm/test-switch \
-	libjlm/test-switch1 \
+	libjlm/test-switch_fallthrough \
 	libjlm/test-unreachable \
 	libjlm/test-while \
