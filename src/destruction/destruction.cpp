@@ -317,55 +317,6 @@ handle_loop_exit(
 }
 
 static void
-handle_basic_block_exit(
-	const jlm::basic_block * bb,
-	struct jive_region * region,
-	jlm::dstrct::context & ctx,
-	const std::unordered_set<const cfg_edge*> & back_edges,
-	dststate & state)
-{
-	const std::vector<jlm::cfg_edge*> & outedges = bb->outedges();
-
-	/* handle loop exit */
-	const jlm::tac * tac;
-	if (is_loop_exit(outedges, back_edges)) {
-		JLM_DEBUG_ASSERT(outedges.size() == 2);
-		tac = static_cast<basic_block*>(outedges[0]->source())->tacs().back();
-		JLM_DEBUG_ASSERT(tac->noutputs() == 1);
-
-		handle_loop_exit(tac, region, state.vmap, state.tstack);
-
-		for (auto edge : outedges) {
-			if (is_back_edge(edge, back_edges))
-				continue;
-
-			ctx.insert_predicate_stack(edge, state.pstack);
-		}
-		return;
-	}
-
-	/* handle branch split */
-	if (outedges.size() > 1) {
-		tac = static_cast<basic_block*>(outedges[0]->source())->tacs().back();
-		JLM_DEBUG_ASSERT(dynamic_cast<const jive::match_op*>(&tac->operation()));
-
-		for (auto edge : outedges) {
-			if (is_back_edge(edge, back_edges))
-				continue;
-
-			dstrct::predicate_stack pstack = state.pstack;
-			pstack.push(state.vmap.lookup_value(tac->output(0)), edge->index());
-			ctx.insert_predicate_stack(edge, pstack);
-		}
-		return;
-	}
-
-	/* handle outgoing edge */
-	JIVE_DEBUG_ASSERT(outedges.size() == 1);
-	ctx.insert_predicate_stack(outedges[0], state.pstack);
-}
-
-static void
 convert_basic_block(
 	const jlm::basic_block * bb,
 	struct jive_region * region,
@@ -376,19 +327,40 @@ convert_basic_block(
 	if (is_branch_join(bb->inedges(), back_edges) && !visit_branch_join(bb, ctx))
 		return;
 
+
 	dststate state = handle_basic_block_entry(bb, region, ctx, back_edges);
 	handle_basic_block(bb, region, ctx, state.vmap);
-	handle_basic_block_exit(bb, region, ctx, back_edges, state);
 
+
+	const std::vector<jlm::cfg_edge*> & outedges = bb->outedges();
+
+	/* handle loop exit */
+	const jlm::tac * tac;
+	if (is_loop_exit(outedges, back_edges)) {
+		JLM_DEBUG_ASSERT(outedges.size() == 2);
+		tac = static_cast<basic_block*>(outedges[0]->source())->tacs().back();
+		JLM_DEBUG_ASSERT(tac->noutputs() == 1);
+
+		handle_loop_exit(tac, region, state.vmap, state.tstack);
+	}
+
+	/* update context and convert next basic blocks */
 	ctx.insert_variable_map(bb, state.vmap);
-	for (auto e : bb->outedges()) {
-		if (is_back_edge(e, back_edges))
+	for (auto edge : bb->outedges()) {
+		if (is_back_edge(edge, back_edges))
 			continue;
 
-		ctx.insert_theta_stack(e, state.tstack);
-		if (auto bb = dynamic_cast<jlm::basic_block *>(e->sink())) {
-			convert_basic_block(bb, region, ctx, back_edges);
+		dstrct::predicate_stack pstack = state.pstack;
+		if (!is_loop_exit(outedges, back_edges) && outedges.size() > 1) {
+			tac = bb->tacs().back();
+			JLM_DEBUG_ASSERT(dynamic_cast<const jive::match_op*>(&tac->operation()));
+			pstack.push(state.vmap.lookup_value(tac->output(0)), edge->index());
 		}
+
+		ctx.insert_predicate_stack(edge, pstack);
+		ctx.insert_theta_stack(edge, state.tstack);
+		if (auto bb = dynamic_cast<jlm::basic_block *>(edge->sink()))
+			convert_basic_block(bb, region, ctx, back_edges);
 	}
 }
 
