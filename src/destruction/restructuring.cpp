@@ -276,31 +276,39 @@ restructure_branches(jlm::cfg_node * start, jlm::cfg_node * end)
 	}
 
 	/* Insert vt into CFG and add outgoing edges to the continuation points */
+	size_t nbits = std::ceil(std::log2(cpoints.size()));
+	const variable * p = cfg->create_variable(jive::bits::type(nbits), "#p#");
 	jlm::basic_block * vt = cfg->create_basic_block();
-	std::unordered_map<jlm::cfg_node*, size_t>::const_iterator it;
-	for (it = cpoints.begin(); it != cpoints.end(); it++)
+	std::vector<size_t> constants;
+	for (size_t n = 0; n < cpoints.size()-1; n++)
+		constants.push_back(n);
+	match_tac(vt, p, constants);
+	for (auto it = cpoints.begin(); it != cpoints.end(); it++)
 		vt->add_outedge(it->first, it->second);
 
 	JLM_DEBUG_ASSERT(branch_out_edges.size() == af.size());
 	for (size_t n = 0; n < af.size(); n++) {
 		/* one branch out edge for this branch subgraph, only add auxiliary assignment */
 		if (branch_out_edges[n].size() == 1) {
-			jlm::basic_block * bb = cfg->create_basic_block();
-			bb->add_outedge(vt, 0);
-			(*branch_out_edges[n].begin())->divert(bb);
+			cfg_edge * boe = *branch_out_edges[n].begin();
+			jlm::basic_block * ass = cfg->create_basic_block();
+			bitconstant_tac(ass, jive::bits::value_repr(nbits, cpoints[boe->sink()]), p);
+			ass->add_outedge(vt, 0);
+			boe->divert(ass);
 			/* if the branch subgraph is not empty, we need to restructure it */
-			if ((*branch_out_edges[n].begin()) != af[n])
-				restructure_branches(af[n]->sink(), bb);
-				continue;
+			if (boe != af[n])
+				restructure_branches(af[n]->sink(), ass);
+			continue;
 		}
 
 		/* more than one branch out edge */
 		jlm::basic_block * null = cfg->create_basic_block();
 		null->add_outedge(vt, 0);
 		for (auto edge : branch_out_edges[n]) {
-			jlm::basic_block * bb = cfg->create_basic_block();
-			bb->add_outedge(null, 0);
-			edge->divert(bb);
+			jlm::basic_block * ass = cfg->create_basic_block();
+			bitconstant_tac(ass, jive::bits::value_repr(nbits, cpoints[edge->sink()]), p);
+			ass->add_outedge(null, 0);
+			edge->divert(ass);
 		}
 		restructure_branches(af[n]->sink(), null);
 	}
