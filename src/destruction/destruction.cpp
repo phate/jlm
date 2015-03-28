@@ -139,8 +139,8 @@ handle_branch_join(
 		size_t index = ctx.lookup_predicate_stack(edge).top().second;
 		jive::output * p = ctx.lookup_predicate_stack(edge).top().first;
 		if (!predicate) predicate = p;
-		JIVE_DEBUG_ASSERT(predicate == p);
-		JIVE_DEBUG_ASSERT(index < inedges.size());
+		JLM_DEBUG_ASSERT(predicate == p);
+		JLM_DEBUG_ASSERT(index < inedges.size());
 
 		/* set up gamma operands */
 		std::vector<jive::output*> values;
@@ -306,7 +306,7 @@ handle_loop_exit(
 	jive_theta_end(*tenv->theta(), predicate, loopvars.size(), &loopvars[0]);
 
 	size_t n = 0;
-	JIVE_DEBUG_ASSERT(loopvars.size() == vmap.size());
+	JLM_DEBUG_ASSERT(loopvars.size() == vmap.size());
 	for (auto it = vmap.begin(); it != vmap.end(); it++, n++)
 		tenv->replace_loopvar(it->first, loopvars[n]);
 

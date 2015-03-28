@@ -318,14 +318,14 @@ public:
 	inline void
 	insert_function(const clg_node * f, jive::output * r)
 	{
-		JIVE_DEBUG_ASSERT(!has_function(f));
+		JLM_DEBUG_ASSERT(!has_function(f));
 		fmap_[f] = r;
 	}
 
 	inline void
 	replace_function(const clg_node * f, jive::output * r)
 	{
-		JIVE_DEBUG_ASSERT(has_function(f));
+		JLM_DEBUG_ASSERT(has_function(f));
 		fmap_[f] = r;
 	}
 
