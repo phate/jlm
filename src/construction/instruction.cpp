@@ -10,7 +10,6 @@
 #include <jlm/construction/jlm.hpp>
 #include <jlm/construction/type.hpp>
 
-#include <jlm/IR/address.hpp>
 #include <jlm/IR/assignment.hpp>
 #include <jlm/IR/basic_block.hpp>
 #include <jlm/IR/bitstring.hpp>
@@ -18,6 +17,10 @@
 #include <jlm/IR/match.hpp>
 #include <jlm/IR/select.hpp>
 
+#include <jive/arch/address.h>
+#include <jive/arch/load.h>
+#include <jive/arch/memorytype.h>
+#include <jive/arch/store.h>
 #include <jive/vsdg/controltype.h>
 
 #include <llvm/IR/Instructions.h>
@@ -135,10 +138,11 @@ convert_load_instruction(
 
 	/* FIXME: handle volatile correctly */
 
+	const variable * value = ctx.lookup_value(&i);
 	const variable * address = convert_value(instruction->getPointerOperand(), ctx);
-	addrload_tac(bb, address, ctx.state(),
-		*dynamic_cast<jive::value::type*>(convert_type(*instruction->getType()).get()),
-		ctx.lookup_value(&i));
+
+	jive::addrload_op op({jive::mem::type()}, dynamic_cast<const jive::value::type&>(value->type()));
+	bb->append(op, {address, ctx.state()}, {value});
 }
 
 static void
@@ -152,7 +156,9 @@ convert_store_instruction(
 
 	const variable * address = convert_value(instruction->getPointerOperand(), ctx);
 	const variable * value = convert_value(instruction->getValueOperand(), ctx);
-	addrstore_tac(bb, address, value, ctx.state(), ctx.state());
+
+	jive::addrstore_op op({jive::mem::type()}, dynamic_cast<const jive::value::type&>(value->type()));
+	bb->append(op, {address, value, ctx.state()}, {ctx.state()});
 }
 
 static void
@@ -188,7 +194,10 @@ convert_getelementptr_instruction(
 	const jlm::variable * base = convert_value(instruction->getPointerOperand(), ctx);
 	for (auto idx = instruction->idx_begin(); idx != instruction->idx_end(); idx++) {
 		const jlm::variable * offset = convert_value(idx->get(), ctx);
-		base = addrarraysubscript_tac(bb, base, offset, ctx.lookup_value(&i));
+		const jive::value::type & basetype = dynamic_cast<const jive::value::type&>(base->type());
+		const jive::bits::type & offsettype = dynamic_cast<const jive::bits::type&>(offset->type());
+		jive::address::arraysubscript_op op(basetype, offsettype);
+		base = bb->append(op, {base, offset}, {ctx.lookup_value(&i)})->output(0);
 	}
 }
 
