@@ -19,6 +19,7 @@ public:
 	virtual
 	~phi_op() noexcept;
 
+	/* FIXME: check that number of arguments is not zero */
 	inline
 	phi_op(size_t narguments, const jive::base::type & type)
 	: narguments_(narguments)

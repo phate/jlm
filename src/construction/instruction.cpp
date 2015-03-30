@@ -15,7 +15,6 @@
 #include <jlm/IR/basic_block.hpp>
 #include <jlm/IR/bitstring.hpp>
 #include <jlm/IR/clg.hpp>
-#include <jlm/IR/phi.hpp>
 #include <jlm/IR/match.hpp>
 #include <jlm/IR/select.hpp>
 
@@ -173,7 +172,8 @@ convert_phi_instruction(
 		operands.push_back(v);
 	}
 
-	phi_tac(bb, operands, ctx.lookup_value(phi));
+	JLM_DEBUG_ASSERT(operands.size() != 0);
+	bb->append(phi_op(operands.size(), operands[0]->type()), operands, {ctx.lookup_value(phi)});
 }
 
 static void
