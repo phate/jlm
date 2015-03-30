@@ -9,11 +9,11 @@
 #include <jlm/construction/instruction.hpp>
 #include <jlm/construction/jlm.hpp>
 #include <jlm/construction/type.hpp>
-#include <jlm/IR/assignment.hpp>
 #include <jlm/IR/basic_block.hpp>
 #include <jlm/IR/cfg.hpp>
 #include <jlm/IR/cfg_node.hpp>
 #include <jlm/IR/clg.hpp>
+#include <jlm/IR/operators.hpp>
 
 #include <jive/arch/memorytype.h>
 #include <jive/vsdg/basetype.h>
@@ -132,7 +132,7 @@ convert_function(const llvm::Function & function, jlm::clg_node * clg_node)
 	if (function.getReturnType()->getTypeID() != llvm::Type::VoidTyID) {
 		result = cfg->create_variable(*convert_type(*function.getReturnType()), "_r_");
 		const variable * udef = create_undef_value(*function.getReturnType(), entry_block);
-		assignment_tac(entry_block, result, udef);
+		entry_block->append(assignment_op(result->type()), {udef}, {result});
 	}
 
 	context ctx(bbmap, entry_block, state, result);

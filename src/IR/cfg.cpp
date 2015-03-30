@@ -5,7 +5,6 @@
  */
 
 #include <jlm/common.hpp>
-#include <jlm/IR/assignment.hpp>
 #include <jlm/IR/basic_block.hpp>
 #include <jlm/IR/cfg.hpp>
 #include <jlm/IR/cfg_node.hpp>
@@ -590,9 +589,9 @@ cfg::destruct_ssa()
 			for (auto it = edges.begin(); it != edges.end(); it++, n++) {
 				basic_block * edge_block = static_cast<basic_block*>((*it)->split());
 
-				value = assignment_tac(edge_block, v, tac->input(n));
+				value = edge_block->append(assignment_op(v->type()), {tac->input(n)}, {v})->output(0);
 			}
-			assignment_tac(ass_block, tac->output(0), value);
+			ass_block->append(assignment_op(tac->output(0)->type()), {value}, {tac->output(0)});
 		}
 
 		phi_block->divert_inedges(ass_block);

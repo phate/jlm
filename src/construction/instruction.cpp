@@ -10,7 +10,6 @@
 #include <jlm/construction/jlm.hpp>
 #include <jlm/construction/type.hpp>
 
-#include <jlm/IR/assignment.hpp>
 #include <jlm/IR/basic_block.hpp>
 #include <jlm/IR/bitstring.hpp>
 #include <jlm/IR/clg.hpp>
@@ -54,7 +53,7 @@ convert_return_instruction(
 
 	if (instruction->getReturnValue()) {
 		const variable * value = convert_value(instruction->getReturnValue(), ctx);
-		assignment_tac(bb, ctx.result(), value);
+		bb->append(jlm::assignment_op(ctx.result()->type()), {value}, {ctx.result()});
 	}
 }
 
