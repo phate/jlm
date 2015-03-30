@@ -24,13 +24,7 @@ public:
 	inline std::string
 	debug_string() const
 	{
-		if (!name_.empty())
-			return name_;
-
-		std::stringstream sstrm;
-		sstrm << "v" << this;
-
-		return sstrm.str();
+		return name_;
 	}
 
 	inline const std::string &
