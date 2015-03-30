@@ -11,7 +11,6 @@
 #include <jlm/construction/type.hpp>
 
 #include <jlm/IR/address.hpp>
-#include <jlm/IR/apply.hpp>
 #include <jlm/IR/assignment.hpp>
 #include <jlm/IR/basic_block.hpp>
 #include <jlm/IR/bitstring.hpp>
@@ -235,7 +234,7 @@ convert_call_instruction(
 		results.push_back(ctx.lookup_value(&i));
 	results.push_back(ctx.state());
 
-	apply_tac(bb, callee, arguments, {results});
+	bb->append(jlm::apply_op(callee), arguments, results);
 }
 
 static void
