@@ -6,6 +6,8 @@
 #include <jlm/IR/clg.hpp>
 #include <jlm/IR/operators.hpp>
 
+#include <jive/types/bitstring/type.h>
+
 namespace jlm {
 
 /* phi operator */
@@ -150,6 +152,62 @@ std::unique_ptr<jive::operation>
 apply_op::copy() const
 {
 	return std::unique_ptr<jive::operation>(new apply_op(*this));
+}
+
+/* select operator */
+
+select_op::~select_op() noexcept
+{}
+
+bool
+select_op::operator==(const operation & other) const noexcept
+{
+	const select_op * op = dynamic_cast<const select_op*>(&other);
+	return op && *op->type_ == *type_;
+}
+
+size_t
+select_op::narguments() const noexcept
+{
+	return 3;
+}
+
+const jive::base::type &
+select_op::argument_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < narguments());
+
+	if (index == 0) {
+		static const jive::bits::type bit1(1);
+		return bit1;
+	}
+
+	return *type_;
+}
+
+size_t
+select_op::nresults() const noexcept
+{
+	return 1;
+}
+
+const jive::base::type &
+select_op::result_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < nresults());
+	return *type_;
+}
+
+std::string
+select_op::debug_string() const
+{
+	return "SELECT";
+}
+
+std::unique_ptr<jive::operation>
+select_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new select_op(*this));
 }
 
 }

@@ -18,6 +18,7 @@
 #include <jlm/IR/clg.hpp>
 #include <jlm/IR/phi.hpp>
 #include <jlm/IR/match.hpp>
+#include <jlm/IR/select.hpp>
 
 #include <jive/vsdg/controltype.h>
 
@@ -249,6 +250,23 @@ convert_call_instruction(
 		assignment_tac(bb, ctx.state(), results[0]);
 }
 
+static void
+convert_select_instruction(
+	const llvm::Instruction & i,
+	jlm::basic_block * bb,
+	jlm::context & ctx)
+{
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::SelectInst*>(&i));
+	const llvm::SelectInst * instruction = static_cast<const llvm::SelectInst*>(&i);
+
+	const jlm::variable * condition = convert_value(instruction->getCondition(), bb, ctx);
+	const jlm::variable * tv = convert_value(instruction->getTrueValue(), bb, ctx);
+	const jlm::variable * fv = convert_value(instruction->getFalseValue(), bb, ctx);
+	const jlm::variable * result = convert_value(instruction, bb, ctx);
+
+	select_tac(bb, condition, tv, fv, result);
+}
+
 typedef std::unordered_map<
 		std::type_index,
 		void(*)(const llvm::Instruction&, jlm::basic_block*, jlm::context&)
@@ -267,6 +285,7 @@ static instruction_map imap({
 	, {std::type_index(typeid(llvm::GetElementPtrInst)), convert_getelementptr_instruction}
 	, {std::type_index(typeid(llvm::TruncInst)), convert_trunc_instruction}
 	, {std::type_index(typeid(llvm::CallInst)), convert_call_instruction}
+	, {std::type_index(typeid(llvm::SelectInst)), convert_select_instruction}
 });
 
 void

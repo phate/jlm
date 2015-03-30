@@ -171,6 +171,57 @@ private:
 	const clg_node * function_;
 };
 
+/* select operator */
+
+class select_op : public jive::operation {
+public:
+	virtual
+	~select_op() noexcept;
+
+	inline
+	select_op(const jive::base::type & type)
+	: type_(type.copy())
+	{}
+
+	inline
+	select_op(const select_op & other)
+	: type_(other.type_->copy())
+	{}
+
+	inline
+	select_op(select_op && other) = default;
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual size_t
+	narguments() const noexcept override;
+
+	virtual const jive::base::type &
+	argument_type(size_t index) const noexcept override;
+
+	virtual size_t
+	nresults() const noexcept override;
+
+	virtual const jive::base::type &
+	result_type(size_t index) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+	inline const jive::base::type &
+	type() const noexcept
+	{
+		return *type_;
+	}
+
+private:
+	std::unique_ptr<jive::base::type> type_;
+};
+
 }
 
 #endif

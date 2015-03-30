@@ -264,6 +264,17 @@ handle_basic_block(
 			continue;
 		}
 
+		if (auto select_op = dynamic_cast<const jlm::select_op*>(&tac->operation())) {
+			jive::output * predicate = jive::ctl::match(1, {0}, vmap.lookup_value(tac->input(0)));
+
+			jive::output * tv = vmap.lookup_value(tac->input(1));
+			jive::output * fv = vmap.lookup_value(tac->input(2));
+			jive::output * result = jive_gamma(predicate, {&select_op->type()}, {{fv}, {tv}})[0];
+			vmap.insert_value(tac->output(0), result);
+
+			continue;
+		}
+
 		std::vector<jive::output*> operands;
 		for (size_t n = 0; n < tac->ninputs(); n++)
 			operands.push_back(vmap.lookup_value(tac->input(n)));
