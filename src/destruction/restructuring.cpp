@@ -7,9 +7,9 @@
 #include <jlm/IR/bitstring.hpp>
 #include <jlm/IR/cfg.hpp>
 #include <jlm/IR/cfg_node.hpp>
-#include <jlm/IR/match.hpp>
 
 #include <jive/vsdg/controltype.h>
+#include <jive/vsdg/operators/match.h>
 
 #include <cmath>
 #include <deque>
@@ -89,7 +89,7 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit,
 
 		const variable * r = cfg->create_variable(jive::bits::type(1), "#r#");
 		jlm::basic_block * vt = cfg->create_basic_block();
-		match_tac(vt, r, {0});
+		vt->append(jive::match_op(dynamic_cast<const jive::bits::type&>(r->type()), {0}), {r});
 
 
 		/* handle loop entries */
@@ -100,7 +100,8 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit,
 			std::vector<size_t> ve_constants;
 			for (size_t n = 0; n < ve.size()-1; n++)
 				ve_constants.push_back(n);
-			match_tac(new_ve, q, ve_constants);
+			new_ve->append(jive::match_op(dynamic_cast<const jive::bits::type&>(q->type()),
+				ve_constants), {q});
 
 			for (auto edge : ae) {
 				jlm::basic_block * ass = cfg->create_basic_block();
@@ -123,7 +124,8 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit,
 			std::vector<size_t> vx_constants;
 			for (size_t n = 0; n < vx.size()-1; n++)
 				vx_constants.push_back(n);
-			match_tac(new_vx, q, vx_constants);
+			new_vx->append(jive::match_op(dynamic_cast<const jive::bits::type&>(q->type()),
+				vx_constants), {q});
 
 			for (auto v : vx)
 				new_vx->add_outedge(v.first, v.second);
@@ -281,7 +283,7 @@ restructure_branches(jlm::cfg_node * start, jlm::cfg_node * end)
 	std::vector<size_t> constants;
 	for (size_t n = 0; n < cpoints.size()-1; n++)
 		constants.push_back(n);
-	match_tac(vt, p, constants);
+	vt->append(jive::match_op(dynamic_cast<const jive::bits::type&>(p->type()), constants), {p});
 	for (auto it = cpoints.begin(); it != cpoints.end(); it++)
 		vt->add_outedge(it->first, it->second);
 

@@ -13,7 +13,6 @@
 #include <jlm/IR/basic_block.hpp>
 #include <jlm/IR/bitstring.hpp>
 #include <jlm/IR/clg.hpp>
-#include <jlm/IR/match.hpp>
 #include <jlm/IR/operators.hpp>
 
 #include <jive/arch/address.h>
@@ -21,6 +20,7 @@
 #include <jive/arch/memorytype.h>
 #include <jive/arch/store.h>
 #include <jive/vsdg/controltype.h>
+#include <jive/vsdg/operators/match.h>
 
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/Function.h>
@@ -67,8 +67,8 @@ convert_branch_instruction(
 	JLM_DEBUG_ASSERT(instruction != nullptr);
 
 	if (instruction->isConditional()) {
-		const variable * condition = convert_value(instruction->getCondition(), ctx);
-		match_tac(bb, condition, {0});
+		const variable * c = convert_value(instruction->getCondition(), ctx);
+		bb->append(jive::match_op(dynamic_cast<const jive::bits::type&>(c->type()), {0}), {c});
 	}
 }
 
@@ -88,8 +88,8 @@ convert_switch_instruction(
 		constants[it.getCaseIndex()] = it.getCaseValue()->getZExtValue();
 	}
 
-	const jlm::variable * condition = convert_value(instruction->getCondition(), ctx);
-	match_tac(bb, condition, constants);
+	const jlm::variable * c = convert_value(instruction->getCondition(), ctx);
+	bb->append(jive::match_op(dynamic_cast<const jive::bits::type&>(c->type()), constants), {c});
 }
 
 static void
