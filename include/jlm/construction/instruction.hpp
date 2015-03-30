@@ -16,14 +16,16 @@ namespace jlm  {
 class basic_block;
 class context;
 
-const jlm::variable *
-convert_value(const llvm::Value * v, jlm::basic_block * bb, jlm::context & ctx);
+const variable *
+convert_value(
+	const llvm::Value * v,
+	const jlm::context & ctx);
 
 void
 convert_instruction(
 	const llvm::Instruction & i,
-	jlm::basic_block * bb,
-	jlm::context & ctx);
+	basic_block * bb,
+	const context & ctx);
 
 }
 

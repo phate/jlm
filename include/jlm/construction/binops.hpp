@@ -19,16 +19,22 @@ class context;
 class variable;
 
 void
-convert_binary_operator(const llvm::BinaryOperator & i, jlm::basic_block * bb,
-	jlm::context & ctx);
+convert_binary_operator(
+	const llvm::BinaryOperator & i,
+	basic_block * bb,
+	const context & ctx);
 
 void
-convert_comparison_instruction(const llvm::CmpInst & i, jlm::basic_block * bb,
-	jlm::context & ctx);
+convert_comparison_instruction(
+	const llvm::CmpInst & i,
+	basic_block * bb,
+	const context & ctx);
 
-const jlm::variable *
-convert_int_comparison_instruction(const llvm::ICmpInst & i, jlm::basic_block * bb,
-	jlm::context & ctx);
+const variable *
+convert_int_comparison_instruction(
+	const llvm::ICmpInst & i,
+	basic_block * bb,
+	const context & ctx);
 
 }
 

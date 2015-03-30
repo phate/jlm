@@ -45,22 +45,25 @@ static int_arithmetic_operators_map int_arthm_ops_map({
 	, {llvm::Instruction::Mul,	jlm::bitmul_tac}
 });
 
-static inline const jlm::variable *
-convert_int_binary_operator(const llvm::BinaryOperator & i, jlm::basic_block * bb,
-	jlm::context & ctx)
+static inline const variable *
+convert_int_binary_operator(
+	const llvm::BinaryOperator & i,
+	basic_block * bb,
+	const context & ctx)
 {
 	JLM_DEBUG_ASSERT(i.getType()->getTypeID() == llvm::Type::IntegerTyID);
 	const llvm::IntegerType * type = static_cast<const llvm::IntegerType*>(i.getType());
 
-	const jlm::variable * op1 = convert_value(i.getOperand(0), bb, ctx);
-	const jlm::variable * op2 = convert_value(i.getOperand(1), bb, ctx);
-	const jlm::variable * result = convert_value(&i, bb, ctx);
-	return int_arthm_ops_map[i.getOpcode()](bb, type->getBitWidth(), op1, op2, result);
+	const jlm::variable * op1 = convert_value(i.getOperand(0), ctx);
+	const jlm::variable * op2 = convert_value(i.getOperand(1), ctx);
+	return int_arthm_ops_map[i.getOpcode()](bb, type->getBitWidth(), op1, op2, ctx.lookup_value(&i));
 }
 
 void
-convert_binary_operator(const llvm::BinaryOperator & i, jlm::basic_block * bb,
-	jlm::context & ctx)
+convert_binary_operator(
+	const llvm::BinaryOperator & i,
+	basic_block * bb,
+	const context & ctx)
 {
 	const llvm::BinaryOperator * instruction = static_cast<const llvm::BinaryOperator*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
@@ -103,21 +106,24 @@ static int_comparison_operators_map int_cmp_ops_map({
 });
 
 const jlm::variable *
-convert_int_comparison_instruction(const llvm::ICmpInst & i, jlm::basic_block * bb,
-	jlm::context & ctx)
+convert_int_comparison_instruction(
+	const llvm::ICmpInst & i,
+	basic_block * bb,
+	const context & ctx)
 {
-	const jlm::variable * op1 = convert_value(i.getOperand(0), bb, ctx);
-	const jlm::variable * op2 = convert_value(i.getOperand(1), bb, ctx);
-	const jlm::variable * result = convert_value(&i, bb, ctx);
+	const jlm::variable * op1 = convert_value(i.getOperand(0), ctx);
+	const jlm::variable * op2 = convert_value(i.getOperand(1), ctx);
 
 	const llvm::IntegerType * type = static_cast<const llvm::IntegerType*>(i.getOperand(0)->getType());
 
-	return int_cmp_ops_map[i.getPredicate()](bb, type->getBitWidth(), op1, op2, result);
+	return int_cmp_ops_map[i.getPredicate()](bb, type->getBitWidth(), op1, op2, ctx.lookup_value(&i));
 }
 
 void
-convert_comparison_instruction(const llvm::CmpInst & i, jlm::basic_block * bb,
-	jlm::context & ctx)
+convert_comparison_instruction(
+	const llvm::CmpInst & i,
+	basic_block * bb,
+	const context & ctx)
 {
 	const jlm::variable * result = nullptr;
 	switch(i.getType()->getTypeID()) {
