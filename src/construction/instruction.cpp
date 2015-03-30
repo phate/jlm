@@ -32,11 +32,10 @@ namespace jlm {
 const jlm::variable *
 convert_value(const llvm::Value * v, jlm::basic_block * bb, jlm::context & ctx)
 {
-	if (auto c = dynamic_cast<const llvm::Constant*>(v))
+	if (dynamic_cast<const llvm::Constant*>(v) && !ctx.has_value(v)) {
+		auto c = static_cast<const llvm::Constant*>(v);
 		ctx.insert_value(v, convert_constant(*c, ctx.entry_block()));
-
-	if (!ctx.has_value(v))
-		ctx.insert_value(v, bb->cfg()->create_variable(*convert_type(*v->getType())));
+	}
 
 	return ctx.lookup_value(v);
 }
@@ -142,7 +141,6 @@ convert_load_instruction(
 	const variable * value = convert_value(&i, bb, ctx);
 	addrload_tac(bb, address, ctx.state(),
 		*dynamic_cast<jive::value::type*>(convert_type(*instruction->getType()).get()), value);
-	ctx.insert_value(instruction, value);
 }
 
 static void
@@ -176,7 +174,7 @@ convert_phi_instruction(
 		operands.push_back(v);
 	}
 
-	ctx.insert_value(phi, phi_tac(bb, operands, convert_value(phi, bb, ctx)));
+	phi_tac(bb, operands, convert_value(phi, bb, ctx));
 }
 
 static void
@@ -193,8 +191,6 @@ convert_getelementptr_instruction(
 		const jlm::variable * offset = convert_value(idx->get(), bb, ctx);
 		base = addrarraysubscript_tac(bb, base, offset, convert_value(&i, bb, ctx));
 	}
-
-	ctx.insert_value(instruction, base);
 }
 
 static void
@@ -208,8 +204,7 @@ convert_trunc_instruction(
 
 	const llvm::IntegerType * dst_type = static_cast<const llvm::IntegerType*>(i.getType());
 	const jlm::variable * operand = convert_value(instruction->getOperand(0), bb, ctx);
-	ctx.insert_value(instruction, bitslice_tac(bb, operand, 0, dst_type->getBitWidth(),
-		convert_value(&i, bb, ctx)));
+	bitslice_tac(bb, operand, 0, dst_type->getBitWidth(), convert_value(&i, bb, ctx));
 }
 
 static void
@@ -244,7 +239,6 @@ convert_call_instruction(
 	JLM_DEBUG_ASSERT(results.size() > 0 && results.size() <= 2);
 
 	if (results.size() == 2) {
-		ctx.insert_value(instruction, results[0]);
 		assignment_tac(bb, ctx.state(), results[1]);
 	}	else
 		assignment_tac(bb, ctx.state(), results[0]);

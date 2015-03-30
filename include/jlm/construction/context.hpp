@@ -147,6 +147,7 @@ public:
 	inline void
 	insert_value(const llvm::Value * value, const variable * variable)
 	{
+		JLM_DEBUG_ASSERT(!has_value(value));
 		vmap_[value] = variable;
 	}
 

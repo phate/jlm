@@ -75,7 +75,6 @@ convert_binary_operator(const llvm::BinaryOperator & i, jlm::basic_block * bb,
 	}
 
 	JLM_DEBUG_ASSERT(result);
-	ctx.insert_value(instruction, result);
 }
 
 /* integer comparison instructions */
@@ -130,7 +129,6 @@ convert_comparison_instruction(const llvm::CmpInst & i, jlm::basic_block * bb,
 	}
 
 	JLM_DEBUG_ASSERT(result);
-	ctx.insert_value(&i, result);
 }
 
 }

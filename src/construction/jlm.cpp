@@ -90,10 +90,22 @@ create_cfg_structure(
 }
 
 static void
-convert_basic_block(const llvm::BasicBlock & basic_block, context & ctx)
+convert_basic_block(
+	const llvm::BasicBlock & bb,
+	context & ctx)
 {
-	for (auto it = basic_block.begin(); it != basic_block.end(); it++)
-		convert_instruction(*it, ctx.lookup_basic_block(&basic_block), ctx);
+	/* forward declare all instructions, except terminator instructions */
+	for (auto it = bb.begin(); it != bb.end(); it++) {
+		if (dynamic_cast<const llvm::TerminatorInst*>(&(*it)))
+			continue;
+
+		jlm::cfg * cfg = ctx.entry_block()->cfg();
+		if (it->getType()->getTypeID() != llvm::Type::VoidTyID)
+			ctx.insert_value(&(*it), cfg->create_variable(*convert_type(*it->getType())));
+	}
+
+	for (auto it = bb.begin(); it != bb.end(); it++)
+		convert_instruction(*it, ctx.lookup_basic_block(&bb), ctx);
 }
 
 static void
