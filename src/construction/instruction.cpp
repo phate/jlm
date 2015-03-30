@@ -14,7 +14,7 @@
 #include <jlm/IR/bitstring.hpp>
 #include <jlm/IR/clg.hpp>
 #include <jlm/IR/match.hpp>
-#include <jlm/IR/select.hpp>
+#include <jlm/IR/operators.hpp>
 
 #include <jive/arch/address.h>
 #include <jive/arch/load.h>
@@ -257,7 +257,7 @@ convert_select_instruction(
 	const jlm::variable * condition = convert_value(instruction->getCondition(), ctx);
 	const jlm::variable * tv = convert_value(instruction->getTrueValue(), ctx);
 	const jlm::variable * fv = convert_value(instruction->getFalseValue(), ctx);
-	select_tac(bb, condition, tv, fv, ctx.lookup_value(instruction));
+	bb->append(select_op(tv->type()), {condition, tv, fv}, {ctx.lookup_value(&i)});
 }
 
 typedef std::unordered_map<
