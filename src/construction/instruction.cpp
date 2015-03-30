@@ -11,14 +11,15 @@
 #include <jlm/construction/type.hpp>
 
 #include <jlm/IR/basic_block.hpp>
-#include <jlm/IR/bitstring.hpp>
 #include <jlm/IR/clg.hpp>
 #include <jlm/IR/operators.hpp>
+#include <jlm/IR/tac.hpp>
 
 #include <jive/arch/address.h>
 #include <jive/arch/load.h>
 #include <jive/arch/memorytype.h>
 #include <jive/arch/store.h>
+#include <jive/types/bitstring/slice.h>
 #include <jive/vsdg/controltype.h>
 #include <jive/vsdg/operators/match.h>
 
@@ -209,9 +210,10 @@ convert_trunc_instruction(
 	const llvm::TruncInst * instruction = static_cast<const llvm::TruncInst*>(&i);
 	JLM_DEBUG_ASSERT(instruction != nullptr);
 
-	const llvm::IntegerType * dst_type = static_cast<const llvm::IntegerType*>(i.getType());
-	const jlm::variable * operand = convert_value(instruction->getOperand(0), ctx);
-	bitslice_tac(bb, operand, 0, dst_type->getBitWidth(), ctx.lookup_value(&i));
+	const jlm::variable * op = convert_value(instruction->getOperand(0), ctx);
+	size_t high = static_cast<const llvm::IntegerType*>(i.getType())->getBitWidth();
+	bb->append(jive::bits::slice_op(dynamic_cast<const jive::bits::type&>(op->type()), 0, high),
+		{op}, {ctx.lookup_value(&i)});
 }
 
 static void

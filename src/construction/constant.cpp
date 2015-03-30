@@ -5,10 +5,10 @@
 
 #include <jlm/common.hpp>
 #include <jlm/construction/constant.hpp>
+#include <jlm/IR/basic_block.hpp>
+#include <jlm/IR/tac.hpp>
 
-#include <jlm/IR/bitstring.hpp>
-
-//FIXME: to be removed, once we have a proper value representation
+#include <jive/types/bitstring/constant.h>
 #include <jive/types/bitstring/value-representation.h>
 
 #include <llvm/IR/Constants.h>
@@ -42,11 +42,9 @@ create_undef_value(
 	jlm::basic_block * bb)
 {
 	if (type.getTypeID() == llvm::Type::IntegerTyID) {
-		const llvm::IntegerType * t = static_cast<const llvm::IntegerType*>(&type);
-		jive::bits::value_repr v = jive::bits::value_repr::repeat(t->getBitWidth(), 'X');
-		const jlm::variable * result;
-		result = bb->cfg()->create_variable(jive::bits::type(v.nbits()));
-		return bitconstant_tac(bb, v, result);
+		size_t nbits = static_cast<const llvm::IntegerType*>(&type)->getBitWidth();
+		jive::bits::constant_op op(jive::bits::value_repr::repeat(nbits, 'X'));
+		return bb->append(op, {})->output(0);
 	}
 
 	JLM_DEBUG_ASSERT(0);
@@ -62,8 +60,7 @@ convert_int_constant(
 	JLM_DEBUG_ASSERT(constant != nullptr);
 
 	jive::bits::value_repr v = convert_apint(constant->getValue());
-	const jlm::variable * result = bb->cfg()->create_variable(jive::bits::type(v.nbits()));
-	return bitconstant_tac(bb, v, result);
+	return bb->append(jive::bits::constant_op(convert_apint(constant->getValue())), {})->output(0);
 }
 
 static const jlm::variable *

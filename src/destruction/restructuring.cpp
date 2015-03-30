@@ -4,10 +4,10 @@
  */
 
 #include <jlm/IR/basic_block.hpp>
-#include <jlm/IR/bitstring.hpp>
 #include <jlm/IR/cfg.hpp>
 #include <jlm/IR/cfg_node.hpp>
 
+#include <jive/types/bitstring/constant.h>
 #include <jive/vsdg/controltype.h>
 #include <jive/vsdg/operators/match.h>
 
@@ -105,7 +105,8 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit,
 
 			for (auto edge : ae) {
 				jlm::basic_block * ass = cfg->create_basic_block();
-				bitconstant_tac(ass, jive::bits::value_repr(nbits, ve[edge->sink()]), q);
+				jive::bits::constant_op op(jive::bits::value_repr(nbits, ve[edge->sink()]));
+				ass->append(op, {}, {q});
 				ass->add_outedge(new_ve, 0);
 				edge->divert(ass);
 			}
@@ -134,9 +135,11 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit,
 
 		for (auto edge : ax) {
 			jlm::basic_block * ass = cfg->create_basic_block();
-			bitconstant_tac(ass, jive::bits::value_repr(1, 0UL), r);
-			if (vx.size() > 1)
-				bitconstant_tac(ass, jive::bits::value_repr(nbits, vx[edge->sink()]), q);
+			ass->append(jive::bits::constant_op(jive::bits::value_repr(1, 0)), {}, {r});
+			if (vx.size() > 1) {
+				jive::bits::constant_op op(jive::bits::value_repr(nbits, vx[edge->sink()]));
+				ass->append(op, {}, {q});
+			}
 			ass->add_outedge(vt, 0);
 			edge->divert(ass);
 		}
@@ -145,9 +148,11 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit,
 		/* handle loop repetition */
 		for (auto edge : ar) {
 			jlm::basic_block * ass = cfg->create_basic_block();
-			bitconstant_tac(ass, jive::bits::value_repr(1, 1UL), r);
-			if (ve.size() > 1)
-				bitconstant_tac(ass, jive::bits::value_repr(nbits, ve[edge->sink()]), q);
+			ass->append(jive::bits::constant_op(jive::bits::value_repr(1, 1)), {}, {r});
+			if (ve.size() > 1) {
+				jive::bits::constant_op op(jive::bits::value_repr(nbits, ve[edge->sink()]));
+				ass->append(op, {}, {q});
+			}
 			ass->add_outedge(vt, 0);
 			edge->divert(ass);
 		}
@@ -293,7 +298,8 @@ restructure_branches(jlm::cfg_node * start, jlm::cfg_node * end)
 		if (branch_out_edges[n].size() == 1) {
 			cfg_edge * boe = *branch_out_edges[n].begin();
 			jlm::basic_block * ass = cfg->create_basic_block();
-			bitconstant_tac(ass, jive::bits::value_repr(nbits, cpoints[boe->sink()]), p);
+			jive::bits::constant_op op(jive::bits::value_repr(nbits, cpoints[boe->sink()]));
+			ass->append(op, {}, {p});
 			ass->add_outedge(vt, 0);
 			boe->divert(ass);
 			/* if the branch subgraph is not empty, we need to restructure it */
@@ -307,7 +313,8 @@ restructure_branches(jlm::cfg_node * start, jlm::cfg_node * end)
 		null->add_outedge(vt, 0);
 		for (auto edge : branch_out_edges[n]) {
 			jlm::basic_block * ass = cfg->create_basic_block();
-			bitconstant_tac(ass, jive::bits::value_repr(nbits, cpoints[edge->sink()]), p);
+			jive::bits::constant_op op(jive::bits::value_repr(nbits, cpoints[edge->sink()]));
+			ass->append(op, {}, {p});
 			ass->add_outedge(null, 0);
 			edge->divert(ass);
 		}
