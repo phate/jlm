@@ -4,7 +4,6 @@
  */
 
 #include <jlm/common.hpp>
-#include <jlm/construction/binops.hpp>
 #include <jlm/construction/constant.hpp>
 #include <jlm/construction/context.hpp>
 #include <jlm/construction/jlm.hpp>
@@ -19,6 +18,7 @@
 #include <jive/arch/load.h>
 #include <jive/arch/memorytype.h>
 #include <jive/arch/store.h>
+#include <jive/types/bitstring/arithmetic.h>
 #include <jive/types/bitstring/comparison.h>
 #include <jive/types/bitstring/slice.h>
 #include <jive/vsdg/controltype.h>
@@ -103,16 +103,36 @@ convert_unreachable_instruction(
 	/* Nothing needs to be done. */
 }
 
-static void
-convert_binary_operator(
-	const llvm::Instruction * i,
+static inline void
+convert_icmp_instruction(
+	const llvm::Instruction * instruction,
 	basic_block * bb,
 	const context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::BinaryOperator*>(i));
-	const llvm::BinaryOperator * instruction = static_cast<const llvm::BinaryOperator*>(i);
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ICmpInst*>(instruction));
+	const llvm::ICmpInst * i = static_cast<const llvm::ICmpInst*>(instruction);
 
-	convert_binary_operator(instruction, bb, ctx);
+	/* FIXME: this unconditionally casts to integer type, take also care of other types */
+
+	static std::map<
+		const llvm::CmpInst::Predicate,
+		std::unique_ptr<jive::operation>(*)(size_t)> map({
+			{llvm::CmpInst::ICMP_SLT,	[](size_t nbits){jive::bits::slt_op op(nbits); return op.copy();}}
+		,	{llvm::CmpInst::ICMP_ULT,	[](size_t nbits){jive::bits::ult_op op(nbits); return op.copy();}}
+		,	{llvm::CmpInst::ICMP_SLE,	[](size_t nbits){jive::bits::sle_op op(nbits); return op.copy();}}
+		,	{llvm::CmpInst::ICMP_ULE,	[](size_t nbits){jive::bits::ule_op op(nbits); return op.copy();}}
+		,	{llvm::CmpInst::ICMP_EQ,	[](size_t nbits){jive::bits::eq_op op(nbits); return op.copy();}}
+		,	{llvm::CmpInst::ICMP_NE,	[](size_t nbits){jive::bits::ne_op op(nbits); return op.copy();}}
+		,	{llvm::CmpInst::ICMP_SGE,	[](size_t nbits){jive::bits::sge_op op(nbits); return op.copy();}}
+		,	{llvm::CmpInst::ICMP_UGE,	[](size_t nbits){jive::bits::uge_op op(nbits); return op.copy();}}
+		,	{llvm::CmpInst::ICMP_SGT,	[](size_t nbits){jive::bits::sgt_op op(nbits); return op.copy();}}
+		, {llvm::CmpInst::ICMP_UGT,	[](size_t nbits){jive::bits::ugt_op op(nbits); return op.copy();}}
+	});
+
+	const jlm::variable * op1 = convert_value(i->getOperand(0), ctx);
+	const jlm::variable * op2 = convert_value(i->getOperand(1), ctx);
+	size_t nbits = static_cast<const llvm::IntegerType*>(i->getOperand(0)->getType())->getBitWidth();
+	bb->append(*map[i->getPredicate()](nbits), {op1, op2}, {ctx.lookup_value(i)});
 }
 
 static void
@@ -251,35 +271,38 @@ convert_select_instruction(
 }
 
 static inline void
-convert_icmp_instruction(
+convert_binary_operator(
 	const llvm::Instruction * instruction,
 	basic_block * bb,
 	const context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ICmpInst*>(instruction));
-	const llvm::ICmpInst * i = static_cast<const llvm::ICmpInst*>(instruction);
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::BinaryOperator*>(instruction));
+	const llvm::BinaryOperator * i = static_cast<const llvm::BinaryOperator*>(instruction);
 
-	/* FIXME: this unconditionally casts to integer type, take also care of other types */
+	/* FIXME: take care of floating point operations and vector type as well */
 
 	static std::map<
-		const llvm::CmpInst::Predicate,
+		const llvm::Instruction::BinaryOps,
 		std::unique_ptr<jive::operation>(*)(size_t)> map({
-			{llvm::CmpInst::ICMP_SLT,	[](size_t nbits){jive::bits::slt_op op(nbits); return op.copy();}}
-		,	{llvm::CmpInst::ICMP_ULT,	[](size_t nbits){jive::bits::ult_op op(nbits); return op.copy();}}
-		,	{llvm::CmpInst::ICMP_SLE,	[](size_t nbits){jive::bits::sle_op op(nbits); return op.copy();}}
-		,	{llvm::CmpInst::ICMP_ULE,	[](size_t nbits){jive::bits::ule_op op(nbits); return op.copy();}}
-		,	{llvm::CmpInst::ICMP_EQ,	[](size_t nbits){jive::bits::eq_op op(nbits); return op.copy();}}
-		,	{llvm::CmpInst::ICMP_NE,	[](size_t nbits){jive::bits::ne_op op(nbits); return op.copy();}}
-		,	{llvm::CmpInst::ICMP_SGE,	[](size_t nbits){jive::bits::sge_op op(nbits); return op.copy();}}
-		,	{llvm::CmpInst::ICMP_UGE,	[](size_t nbits){jive::bits::uge_op op(nbits); return op.copy();}}
-		,	{llvm::CmpInst::ICMP_SGT,	[](size_t nbits){jive::bits::sgt_op op(nbits); return op.copy();}}
-		, {llvm::CmpInst::ICMP_UGT,	[](size_t nbits){jive::bits::ugt_op op(nbits); return op.copy();}}
+			{llvm::Instruction::Add,	[](size_t nbits){jive::bits::add_op op(nbits); return op.copy();}}
+		,	{llvm::Instruction::And,	[](size_t nbits){jive::bits::and_op op(nbits); return op.copy();}}
+		,	{llvm::Instruction::AShr,	[](size_t nbits){jive::bits::ashr_op op(nbits); return op.copy();}}
+		,	{llvm::Instruction::Sub,	[](size_t nbits){jive::bits::sub_op op(nbits); return op.copy();}}
+		,	{llvm::Instruction::UDiv,	[](size_t nbits){jive::bits::udiv_op op(nbits); return op.copy();}}
+		,	{llvm::Instruction::SDiv,	[](size_t nbits){jive::bits::sdiv_op op(nbits); return op.copy();}}
+		,	{llvm::Instruction::URem,	[](size_t nbits){jive::bits::umod_op op(nbits); return op.copy();}}
+		,	{llvm::Instruction::SRem,	[](size_t nbits){jive::bits::smod_op op(nbits); return op.copy();}}
+		,	{llvm::Instruction::Shl,	[](size_t nbits){jive::bits::shl_op op(nbits); return op.copy();}}
+		,	{llvm::Instruction::LShr,	[](size_t nbits){jive::bits::shr_op op(nbits); return op.copy();}}
+		,	{llvm::Instruction::Or,		[](size_t nbits){jive::bits::or_op op(nbits); return op.copy();}}
+		,	{llvm::Instruction::Xor,	[](size_t nbits){jive::bits::xor_op op(nbits); return op.copy();}}
+		,	{llvm::Instruction::Mul,	[](size_t nbits){jive::bits::mul_op op(nbits); return op.copy();}}
 	});
 
 	const jlm::variable * op1 = convert_value(i->getOperand(0), ctx);
 	const jlm::variable * op2 = convert_value(i->getOperand(1), ctx);
-	size_t nbits = static_cast<const llvm::IntegerType*>(i->getOperand(0)->getType())->getBitWidth();
-	bb->append(*map[i->getPredicate()](nbits), {op1, op2}, {ctx.lookup_value(i)});
+	size_t nbits = static_cast<const llvm::IntegerType*>(i->getType())->getBitWidth();
+	bb->append(*map[i->getOpcode()](nbits), {op1, op2}, {ctx.lookup_value(i)});
 }
 
 typedef std::unordered_map<
