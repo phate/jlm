@@ -19,6 +19,7 @@
 #include <jive/arch/load.h>
 #include <jive/arch/memorytype.h>
 #include <jive/arch/store.h>
+#include <jive/types/bitstring/comparison.h>
 #include <jive/types/bitstring/slice.h>
 #include <jive/vsdg/controltype.h>
 #include <jive/vsdg/operators/match.h>
@@ -112,18 +113,6 @@ convert_binary_operator(
 	const llvm::BinaryOperator * instruction = static_cast<const llvm::BinaryOperator*>(i);
 
 	convert_binary_operator(instruction, bb, ctx);
-}
-
-static void
-convert_comparison_instruction(
-	const llvm::Instruction * i,
-	basic_block * bb,
-	const context & ctx)
-{
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::CmpInst*>(i));
-	const llvm::CmpInst * instruction = static_cast<const llvm::CmpInst*>(i);
-
-	convert_comparison_instruction(instruction, bb, ctx);
 }
 
 static void
@@ -261,6 +250,38 @@ convert_select_instruction(
 	bb->append(select_op(tv->type()), {condition, tv, fv}, {ctx.lookup_value(i)});
 }
 
+static inline void
+convert_icmp_instruction(
+	const llvm::Instruction * instruction,
+	basic_block * bb,
+	const context & ctx)
+{
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ICmpInst*>(instruction));
+	const llvm::ICmpInst * i = static_cast<const llvm::ICmpInst*>(instruction);
+
+	/* FIXME: this unconditionally casts to integer type, take also care of other types */
+
+	static std::map<
+		const llvm::CmpInst::Predicate,
+		std::unique_ptr<jive::operation>(*)(size_t)> map({
+			{llvm::CmpInst::ICMP_SLT,	[](size_t nbits){jive::bits::slt_op op(nbits); return op.copy();}}
+		,	{llvm::CmpInst::ICMP_ULT,	[](size_t nbits){jive::bits::ult_op op(nbits); return op.copy();}}
+		,	{llvm::CmpInst::ICMP_SLE,	[](size_t nbits){jive::bits::sle_op op(nbits); return op.copy();}}
+		,	{llvm::CmpInst::ICMP_ULE,	[](size_t nbits){jive::bits::ule_op op(nbits); return op.copy();}}
+		,	{llvm::CmpInst::ICMP_EQ,	[](size_t nbits){jive::bits::eq_op op(nbits); return op.copy();}}
+		,	{llvm::CmpInst::ICMP_NE,	[](size_t nbits){jive::bits::ne_op op(nbits); return op.copy();}}
+		,	{llvm::CmpInst::ICMP_SGE,	[](size_t nbits){jive::bits::sge_op op(nbits); return op.copy();}}
+		,	{llvm::CmpInst::ICMP_UGE,	[](size_t nbits){jive::bits::uge_op op(nbits); return op.copy();}}
+		,	{llvm::CmpInst::ICMP_SGT,	[](size_t nbits){jive::bits::sgt_op op(nbits); return op.copy();}}
+		, {llvm::CmpInst::ICMP_UGT,	[](size_t nbits){jive::bits::ugt_op op(nbits); return op.copy();}}
+	});
+
+	const jlm::variable * op1 = convert_value(i->getOperand(0), ctx);
+	const jlm::variable * op2 = convert_value(i->getOperand(1), ctx);
+	size_t nbits = static_cast<const llvm::IntegerType*>(i->getOperand(0)->getType())->getBitWidth();
+	bb->append(*map[i->getPredicate()](nbits), {op1, op2}, {ctx.lookup_value(i)});
+}
+
 typedef std::unordered_map<
 		std::type_index,
 		void(*)(const llvm::Instruction*, jlm::basic_block*, const context&)
@@ -272,7 +293,7 @@ static instruction_map imap({
 	, {std::type_index(typeid(llvm::SwitchInst)), convert_switch_instruction}
 	, {std::type_index(typeid(llvm::UnreachableInst)), convert_unreachable_instruction}
 	, {std::type_index(typeid(llvm::BinaryOperator)), convert_binary_operator}
-	, {std::type_index(typeid(llvm::ICmpInst)), convert_comparison_instruction}
+	, {std::type_index(typeid(llvm::ICmpInst)), convert_icmp_instruction}
 	, {std::type_index(typeid(llvm::LoadInst)), convert_load_instruction}
 	, {std::type_index(typeid(llvm::StoreInst)), convert_store_instruction}
 	, {std::type_index(typeid(llvm::PHINode)), convert_phi_instruction}

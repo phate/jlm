@@ -24,18 +24,6 @@ convert_binary_operator(
 	basic_block * bb,
 	const context & ctx);
 
-void
-convert_comparison_instruction(
-	const llvm::CmpInst * i,
-	basic_block * bb,
-	const context & ctx);
-
-const variable *
-convert_int_comparison_instruction(
-	const llvm::ICmpInst * i,
-	basic_block * bb,
-	const context & ctx);
-
 }
 
 #endif

@@ -68,49 +68,4 @@ convert_binary_operator(
 	JLM_DEBUG_ASSERT(result);
 }
 
-const jlm::variable *
-convert_int_comparison_instruction(
-	const llvm::ICmpInst * i,
-	basic_block * bb,
-	const context & ctx)
-{
-	static std::map<
-		const llvm::CmpInst::Predicate,
-		std::unique_ptr<jive::operation>(*)(size_t)> map({
-			{llvm::CmpInst::ICMP_SLT,	[](size_t nbits){jive::bits::slt_op op(nbits); return op.copy();}}
-		,	{llvm::CmpInst::ICMP_ULT,	[](size_t nbits){jive::bits::ult_op op(nbits); return op.copy();}}
-		,	{llvm::CmpInst::ICMP_SLE,	[](size_t nbits){jive::bits::sle_op op(nbits); return op.copy();}}
-		,	{llvm::CmpInst::ICMP_ULE,	[](size_t nbits){jive::bits::ule_op op(nbits); return op.copy();}}
-		,	{llvm::CmpInst::ICMP_EQ,	[](size_t nbits){jive::bits::eq_op op(nbits); return op.copy();}}
-		,	{llvm::CmpInst::ICMP_NE,	[](size_t nbits){jive::bits::ne_op op(nbits); return op.copy();}}
-		,	{llvm::CmpInst::ICMP_SGE,	[](size_t nbits){jive::bits::sge_op op(nbits); return op.copy();}}
-		,	{llvm::CmpInst::ICMP_UGE,	[](size_t nbits){jive::bits::uge_op op(nbits); return op.copy();}}
-		,	{llvm::CmpInst::ICMP_SGT,	[](size_t nbits){jive::bits::sgt_op op(nbits); return op.copy();}}
-		, {llvm::CmpInst::ICMP_UGT,	[](size_t nbits){jive::bits::ugt_op op(nbits); return op.copy();}}
-	});
-
-	const jlm::variable * op1 = convert_value(i->getOperand(0), ctx);
-	const jlm::variable * op2 = convert_value(i->getOperand(1), ctx);
-	size_t nbits = static_cast<const llvm::IntegerType*>(i->getOperand(0)->getType())->getBitWidth();
-	return bb->append(*map[i->getPredicate()](nbits), {op1, op2}, {ctx.lookup_value(i)})->output(0);
-}
-
-void
-convert_comparison_instruction(
-	const llvm::CmpInst * i,
-	basic_block * bb,
-	const context & ctx)
-{
-	const jlm::variable * result = nullptr;
-	switch(i->getType()->getTypeID()) {
-		case llvm::Type::IntegerTyID:
-			result = convert_int_comparison_instruction(static_cast<const llvm::ICmpInst*>(i), bb, ctx);
-			break;
-		default:
-			JLM_DEBUG_ASSERT(0);
-	}
-
-	JLM_DEBUG_ASSERT(result);
-}
-
 }
