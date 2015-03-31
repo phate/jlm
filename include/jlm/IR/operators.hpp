@@ -174,7 +174,7 @@ private:
 
 /* select operator */
 
-class select_op : public jive::operation {
+class select_op final : public jive::operation {
 public:
 	virtual
 	~select_op() noexcept;
