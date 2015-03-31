@@ -23,10 +23,10 @@ jive::bits::value_repr
 convert_apint(const llvm::APInt & value);
 
 const jlm::variable *
-create_undef_value(const llvm::Type & type, jlm::basic_block * bb);
+create_undef_value(const llvm::Type * type, jlm::basic_block * bb);
 
 const jlm::variable *
-convert_constant(const llvm::Constant & constant, jlm::basic_block * bb);
+convert_constant(const llvm::Constant * constant, jlm::basic_block * bb);
 
 }
 

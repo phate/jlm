@@ -23,7 +23,7 @@ convert_value(
 
 void
 convert_instruction(
-	const llvm::Instruction & i,
+	const llvm::Instruction * i,
 	basic_block * bb,
 	const context & ctx);
 

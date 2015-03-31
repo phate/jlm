@@ -20,19 +20,19 @@ class variable;
 
 void
 convert_binary_operator(
-	const llvm::BinaryOperator & i,
+	const llvm::BinaryOperator * i,
 	basic_block * bb,
 	const context & ctx);
 
 void
 convert_comparison_instruction(
-	const llvm::CmpInst & i,
+	const llvm::CmpInst * i,
 	basic_block * bb,
 	const context & ctx);
 
 const variable *
 convert_int_comparison_instruction(
-	const llvm::ICmpInst & i,
+	const llvm::ICmpInst * i,
 	basic_block * bb,
 	const context & ctx);
 

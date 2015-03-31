@@ -101,11 +101,11 @@ convert_basic_block(
 
 		jlm::cfg * cfg = ctx.entry_block()->cfg();
 		if (it->getType()->getTypeID() != llvm::Type::VoidTyID)
-			ctx.insert_value(&(*it), cfg->create_variable(*convert_type(*it->getType())));
+			ctx.insert_value(&(*it), cfg->create_variable(*convert_type(it->getType())));
 	}
 
 	for (auto it = bb.begin(); it != bb.end(); it++)
-		convert_instruction(*it, ctx.lookup_basic_block(&bb), ctx);
+		convert_instruction(&(*it), ctx.lookup_basic_block(&bb), ctx);
 }
 
 static void
@@ -130,8 +130,8 @@ convert_function(const llvm::Function & function, jlm::clg_node * clg_node)
 
 	const jlm::variable * result = nullptr;
 	if (function.getReturnType()->getTypeID() != llvm::Type::VoidTyID) {
-		result = cfg->create_variable(*convert_type(*function.getReturnType()), "_r_");
-		const variable * udef = create_undef_value(*function.getReturnType(), entry_block);
+		result = cfg->create_variable(*convert_type(function.getReturnType()), "_r_");
+		const variable * udef = create_undef_value(function.getReturnType(), entry_block);
 		entry_block->append(assignment_op(result->type()), {udef}, {result});
 	}
 
@@ -164,7 +164,7 @@ convert_module(const llvm::Module & module, jlm::clg & clg)
 	for (; it != module.getFunctionList().end(); it++) {
 		const llvm::Function & f = *it;
 		jive::fct::type fcttype(dynamic_cast<const jive::fct::type&>(
-			*convert_type(*f.getFunctionType())));
+			*convert_type(f.getFunctionType())));
 		f_map[&f] = clg.add_function(f.getName().str().c_str(), fcttype);
 	}
 

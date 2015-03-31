@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Nico Reißmann <nico.reissmann@gmail.com>
+ * Copyright 2014 2015 Nico Reißmann <nico.reissmann@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
@@ -21,7 +21,7 @@ namespace llvm {
 namespace jlm {
 
 std::unique_ptr<jive::base::type>
-convert_type(const llvm::Type & type);
+convert_type(const llvm::Type * type);
 
 }
 

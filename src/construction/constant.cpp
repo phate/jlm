@@ -38,11 +38,11 @@ convert_apint(const llvm::APInt & value)
 
 const jlm::variable *
 create_undef_value(
-	const llvm::Type & type,
+	const llvm::Type * type,
 	jlm::basic_block * bb)
 {
-	if (type.getTypeID() == llvm::Type::IntegerTyID) {
-		size_t nbits = static_cast<const llvm::IntegerType*>(&type)->getBitWidth();
+	if (type->getTypeID() == llvm::Type::IntegerTyID) {
+		size_t nbits = static_cast<const llvm::IntegerType*>(type)->getBitWidth();
 		jive::bits::constant_op op(jive::bits::value_repr::repeat(nbits, 'X'));
 		return bb->append(op, {})->output(0);
 	}
@@ -53,10 +53,10 @@ create_undef_value(
 
 static const jlm::variable *
 convert_int_constant(
-	const llvm::Constant & c,
+	const llvm::Constant * c,
 	jlm::basic_block * bb)
 {
-	const llvm::ConstantInt * constant = static_cast<const llvm::ConstantInt*>(&c);
+	const llvm::ConstantInt * constant = static_cast<const llvm::ConstantInt*>(c);
 	JLM_DEBUG_ASSERT(constant != nullptr);
 
 	jive::bits::value_repr v = convert_apint(constant->getValue());
@@ -65,18 +65,18 @@ convert_int_constant(
 
 static const jlm::variable *
 convert_undefvalue_instruction(
-	const llvm::Constant & c,
+	const llvm::Constant * c,
 	jlm::basic_block * bb)
 {
-	const llvm::UndefValue * constant = static_cast<const llvm::UndefValue*>(&c);
+	const llvm::UndefValue * constant = static_cast<const llvm::UndefValue*>(c);
 	JLM_DEBUG_ASSERT(constant != nullptr);
 
-	return create_undef_value(*constant->getType(), bb);
+	return create_undef_value(constant->getType(), bb);
 }
 
 typedef std::unordered_map<
 	std::type_index,
-	const jlm::variable*(*)(const llvm::Constant &, jlm::basic_block*)
+	const jlm::variable*(*)(const llvm::Constant *, jlm::basic_block*)
 	> constant_map;
 
 static constant_map cmap({
@@ -85,10 +85,10 @@ static constant_map cmap({
 });
 
 const jlm::variable *
-convert_constant(const llvm::Constant & c, jlm::basic_block * bb)
+convert_constant(const llvm::Constant * c, jlm::basic_block * bb)
 {
-	JLM_DEBUG_ASSERT(cmap.find(std::type_index(typeid(c))) != cmap.end());
-	return cmap[std::type_index(typeid(c))](c, bb);
+	JLM_DEBUG_ASSERT(cmap.find(std::type_index(typeid(*c))) != cmap.end());
+	return cmap[std::type_index(typeid(*c))](c, bb);
 }
 
 }
