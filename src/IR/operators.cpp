@@ -6,6 +6,8 @@
 #include <jlm/IR/clg.hpp>
 #include <jlm/IR/operators.hpp>
 
+#include <jive/arch/addresstype.h>
+#include <jive/arch/memorytype.h>
 #include <jive/types/bitstring/type.h>
 
 namespace jlm {
@@ -208,6 +210,59 @@ std::unique_ptr<jive::operation>
 select_op::copy() const
 {
 	return std::unique_ptr<jive::operation>(new select_op(*this));
+}
+
+/* alloca operator */
+
+alloca_op::~alloca_op() noexcept
+{}
+
+bool
+alloca_op::operator==(const operation & other) const noexcept
+{
+	return false;
+}
+
+size_t
+alloca_op::narguments() const noexcept
+{
+	return 1;
+}
+
+const jive::base::type &
+alloca_op::argument_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < narguments());
+	return jive::mem::memtype;
+}
+
+size_t
+alloca_op::nresults() const noexcept
+{
+	return 2;
+}
+
+const jive::base::type &
+alloca_op::result_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < nresults());
+
+	if (index == 0)
+		return jive::addr::addrtype;
+
+	return jive::mem::memtype;
+}
+
+std::string
+alloca_op::debug_string() const
+{
+	return "ALLOCA";
+}
+
+std::unique_ptr<jive::operation>
+alloca_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new alloca_op(*this));
 }
 
 }

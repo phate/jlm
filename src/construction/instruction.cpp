@@ -305,6 +305,21 @@ convert_binary_operator(
 	bb->append(*map[i->getOpcode()](nbits), {op1, op2}, {ctx.lookup_value(i)});
 }
 
+static inline void
+convert_alloca_instruction(
+	const llvm::Instruction * instruction,
+	basic_block * bb,
+	const context & ctx)
+{
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::AllocaInst*>(instruction));
+	const llvm::AllocaInst * i = static_cast<const llvm::AllocaInst*>(instruction);
+
+	/* FIXME: the number of bytes is not correct */
+
+	size_t nbytes = 4;
+	bb->append(alloca_op(nbytes), {ctx.state()}, {ctx.lookup_value(i), ctx.state()});
+}
+
 typedef std::unordered_map<
 		std::type_index,
 		void(*)(const llvm::Instruction*, jlm::basic_block*, const context&)
@@ -324,6 +339,7 @@ static instruction_map imap({
 	, {std::type_index(typeid(llvm::TruncInst)), convert_trunc_instruction}
 	, {std::type_index(typeid(llvm::CallInst)), convert_call_instruction}
 	, {std::type_index(typeid(llvm::SelectInst)), convert_select_instruction}
+	, {std::type_index(typeid(llvm::AllocaInst)), convert_alloca_instruction}
 });
 
 void
