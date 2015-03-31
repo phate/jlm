@@ -21,8 +21,8 @@ namespace jlm {
 static std::unique_ptr<jive::base::type>
 convert_integer_type(const llvm::Type * t)
 {
+	JLM_DEBUG_ASSERT(t->getTypeID() == llvm::Type::IntegerTyID);
 	const llvm::IntegerType * type = static_cast<const llvm::IntegerType*>(t);
-	JLM_DEBUG_ASSERT(type != nullptr);
 
 	return std::unique_ptr<jive::base::type>(new jive::bits::type(type->getBitWidth()));
 }
@@ -30,8 +30,7 @@ convert_integer_type(const llvm::Type * t)
 static std::unique_ptr<jive::base::type>
 convert_pointer_type(const llvm::Type * t)
 {
-	const llvm::PointerType * type = static_cast<const llvm::PointerType*>(t);
-	JLM_DEBUG_ASSERT(type != nullptr);
+	JLM_DEBUG_ASSERT(t->getTypeID() == llvm::Type::PointerTyID);
 
 	return std::unique_ptr<jive::base::type>(new jive::addr::type());
 }
@@ -39,8 +38,8 @@ convert_pointer_type(const llvm::Type * t)
 static std::unique_ptr<jive::base::type>
 convert_function_type(const llvm::Type * t)
 {
+	JLM_DEBUG_ASSERT(t->getTypeID() == llvm::Type::FunctionTyID);
 	const llvm::FunctionType * type = static_cast<const llvm::FunctionType*>(t);
-	JLM_DEBUG_ASSERT(type != nullptr);
 
 	std::vector<std::unique_ptr<jive::base::type>> argument_types;
 	for (size_t n = 0; n < type->getNumParams(); n++)

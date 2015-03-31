@@ -56,8 +56,8 @@ convert_int_constant(
 	const llvm::Constant * c,
 	jlm::basic_block * bb)
 {
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantInt*>(c));
 	const llvm::ConstantInt * constant = static_cast<const llvm::ConstantInt*>(c);
-	JLM_DEBUG_ASSERT(constant != nullptr);
 
 	jive::bits::value_repr v = convert_apint(constant->getValue());
 	return bb->append(jive::bits::constant_op(convert_apint(constant->getValue())), {})->output(0);
@@ -68,8 +68,8 @@ convert_undefvalue_instruction(
 	const llvm::Constant * c,
 	jlm::basic_block * bb)
 {
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::UndefValue*>(c));
 	const llvm::UndefValue * constant = static_cast<const llvm::UndefValue*>(c);
-	JLM_DEBUG_ASSERT(constant != nullptr);
 
 	return create_undef_value(constant->getType(), bb);
 }

@@ -49,8 +49,8 @@ convert_return_instruction(
 	basic_block * bb,
 	const context & ctx)
 {
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ReturnInst*>(i));
 	const llvm::ReturnInst * instruction = static_cast<const llvm::ReturnInst*>(i);
-	JLM_DEBUG_ASSERT(instruction != nullptr);
 
 	if (instruction->getReturnValue()) {
 		const variable * value = convert_value(instruction->getReturnValue(), ctx);
@@ -64,8 +64,8 @@ convert_branch_instruction(
 	basic_block * bb,
 	const context & ctx)
 {
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::BranchInst*>(i));
 	const llvm::BranchInst * instruction = static_cast<const llvm::BranchInst*>(i);
-	JLM_DEBUG_ASSERT(instruction != nullptr);
 
 	if (instruction->isConditional()) {
 		const variable * c = convert_value(instruction->getCondition(), ctx);
@@ -79,8 +79,8 @@ convert_switch_instruction(
 	basic_block * bb,
 	const context & ctx)
 {
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::SwitchInst*>(i));
 	const llvm::SwitchInst * instruction = static_cast<const llvm::SwitchInst*>(i);
-	JLM_DEBUG_ASSERT(instruction != nullptr);
 
 	JLM_DEBUG_ASSERT(bb->outedges().size() == instruction->getNumCases()+1);
 	std::vector<uint64_t> constants(instruction->getNumCases());
@@ -99,8 +99,7 @@ convert_unreachable_instruction(
 	basic_block * bb,
 	const context & ctx)
 {
-	const llvm::UnreachableInst * instruction = static_cast<const llvm::UnreachableInst*>(i);
-	JLM_DEBUG_ASSERT(instruction != nullptr);
+	/* Nothing needs to be done. */
 }
 
 static void
@@ -109,8 +108,8 @@ convert_binary_operator(
 	basic_block * bb,
 	const context & ctx)
 {
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::BinaryOperator*>(i));
 	const llvm::BinaryOperator * instruction = static_cast<const llvm::BinaryOperator*>(i);
-	JLM_DEBUG_ASSERT(instruction != nullptr);
 
 	convert_binary_operator(instruction, bb, ctx);
 }
@@ -121,8 +120,8 @@ convert_comparison_instruction(
 	basic_block * bb,
 	const context & ctx)
 {
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::CmpInst*>(i));
 	const llvm::CmpInst * instruction = static_cast<const llvm::CmpInst*>(i);
-	JLM_DEBUG_ASSERT(instruction != nullptr);
 
 	convert_comparison_instruction(instruction, bb, ctx);
 }
@@ -133,8 +132,8 @@ convert_load_instruction(
 	basic_block * bb,
 	const context & ctx)
 {
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::LoadInst*>(i));
 	const llvm::LoadInst * instruction = static_cast<const llvm::LoadInst*>(i);
-	JLM_DEBUG_ASSERT(instruction != nullptr);
 
 	/* FIXME: handle volatile correctly */
 
@@ -151,8 +150,8 @@ convert_store_instruction(
 	basic_block * bb,
 	const context & ctx)
 {
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::StoreInst*>(i));
 	const llvm::StoreInst * instruction = static_cast<const llvm::StoreInst*>(i);
-	JLM_DEBUG_ASSERT(instruction != nullptr);
 
 	const variable * address = convert_value(instruction->getPointerOperand(), ctx);
 	const variable * value = convert_value(instruction->getValueOperand(), ctx);
@@ -167,8 +166,8 @@ convert_phi_instruction(
 	basic_block * bb,
 	const context & ctx)
 {
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::PHINode*>(i));
 	const llvm::PHINode * phi = static_cast<const llvm::PHINode*>(i);
-	JLM_DEBUG_ASSERT(phi != nullptr);
 
 	std::vector<const jlm::variable*> operands;
 	for (auto edge : bb->inedges()) {
@@ -188,8 +187,8 @@ convert_getelementptr_instruction(
 	basic_block * bb,
 	const context & ctx)
 {
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::GetElementPtrInst*>(i));
 	const llvm::GetElementPtrInst * instruction = static_cast<const llvm::GetElementPtrInst*>(i);
-	JLM_DEBUG_ASSERT(instruction != nullptr);
 
 	const jlm::variable * base = convert_value(instruction->getPointerOperand(), ctx);
 	for (auto idx = instruction->idx_begin(); idx != instruction->idx_end(); idx++) {
@@ -207,8 +206,8 @@ convert_trunc_instruction(
 	basic_block * bb,
 	const context & ctx)
 {
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::TruncInst*>(i));
 	const llvm::TruncInst * instruction = static_cast<const llvm::TruncInst*>(i);
-	JLM_DEBUG_ASSERT(instruction != nullptr);
 
 	const jlm::variable * op = convert_value(instruction->getOperand(0), ctx);
 	size_t high = static_cast<const llvm::IntegerType*>(i->getType())->getBitWidth();
@@ -222,8 +221,8 @@ convert_call_instruction(
 	basic_block * bb,
 	const context & ctx)
 {
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::CallInst*>(i));
 	const llvm::CallInst * instruction = static_cast<const llvm::CallInst*>(i);
-	JLM_DEBUG_ASSERT(instruction != nullptr);
 
 	llvm::Function * f = instruction->getCalledFunction();
 
