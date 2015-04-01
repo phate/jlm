@@ -5,6 +5,8 @@
 
 #include <jlm/common.hpp>
 #include <jlm/construction/constant.hpp>
+#include <jlm/construction/context.hpp>
+#include <jlm/construction/instruction.hpp>
 #include <jlm/IR/basic_block.hpp>
 #include <jlm/IR/tac.hpp>
 
@@ -40,8 +42,10 @@ convert_apint(const llvm::APInt & value)
 const jlm::variable *
 create_undef_value(
 	const llvm::Type * type,
-	jlm::basic_block * bb)
+	const context & ctx)
 {
+	basic_block * bb = ctx.entry_block();
+
 	if (type->isIntegerTy()) {
 		size_t nbits = type->getIntegerBitWidth();
 		jive::bits::constant_op op(jive::bits::value_repr::repeat(nbits, 'X'));
@@ -59,11 +63,12 @@ create_undef_value(
 static const jlm::variable *
 convert_int_constant(
 	const llvm::Constant * c,
-	jlm::basic_block * bb)
+	const context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantInt*>(c));
 	const llvm::ConstantInt * constant = static_cast<const llvm::ConstantInt*>(c);
 
+	basic_block * bb = ctx.entry_block();
 	jive::bits::value_repr v = convert_apint(constant->getValue());
 	return bb->append(jive::bits::constant_op(convert_apint(constant->getValue())), {})->output(0);
 }
@@ -71,29 +76,44 @@ convert_int_constant(
 static const jlm::variable *
 convert_undefvalue_instruction(
 	const llvm::Constant * c,
-	jlm::basic_block * bb)
+	const context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::UndefValue*>(c));
 	const llvm::UndefValue * constant = static_cast<const llvm::UndefValue*>(c);
 
-	return create_undef_value(constant->getType(), bb);
+	return create_undef_value(constant->getType(), ctx);
+}
+
+static const variable *
+convert_constantExpr(
+	const llvm::Constant * constant,
+	const context & ctx)
+{
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantExpr*>(constant));
+	const llvm::ConstantExpr * c = static_cast<const llvm::ConstantExpr*>(constant);
+
+	return convert_instruction(const_cast<llvm::ConstantExpr*>(c)->getAsInstruction(),
+		ctx.entry_block(), ctx);
 }
 
 typedef std::unordered_map<
 	std::type_index,
-	const jlm::variable*(*)(const llvm::Constant *, jlm::basic_block*)
+	const jlm::variable*(*)(const llvm::Constant *, const context & ctx)
 	> constant_map;
 
 static constant_map cmap({
 		{std::type_index(typeid(llvm::ConstantInt)), convert_int_constant}
 	, {std::type_index(typeid(llvm::UndefValue)), convert_undefvalue_instruction}
+	, {std::type_index(typeid(llvm::ConstantExpr)), convert_constantExpr}
 });
 
-const jlm::variable *
-convert_constant(const llvm::Constant * c, jlm::basic_block * bb)
+const variable *
+convert_constant(
+	const llvm::Constant * c,
+	const context & ctx)
 {
 	JLM_DEBUG_ASSERT(cmap.find(std::type_index(typeid(*c))) != cmap.end());
-	return cmap[std::type_index(typeid(*c))](c, bb);
+	return cmap[std::type_index(typeid(*c))](c, ctx);
 }
 
 }

@@ -40,14 +40,14 @@ convert_value(
 	const context & ctx)
 {
 	if (auto c = dynamic_cast<const llvm::Constant*>(v))
-		return convert_constant(c, ctx.entry_block());
+		return convert_constant(c, ctx);
 
 	return ctx.lookup_value(v);
 }
 
 /* instructions */
 
-static void
+static const variable *
 convert_return_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
@@ -60,9 +60,11 @@ convert_return_instruction(
 		const variable * value = convert_value(instruction->getReturnValue(), ctx);
 		bb->append(jlm::assignment_op(ctx.result()->type()), {value}, {ctx.result()});
 	}
+
+	return nullptr;
 }
 
-static void
+static const variable *
 convert_branch_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
@@ -75,9 +77,11 @@ convert_branch_instruction(
 		const variable * c = convert_value(instruction->getCondition(), ctx);
 		bb->append(jive::match_op(dynamic_cast<const jive::bits::type&>(c->type()), {0}), {c});
 	}
+
+	return nullptr;
 }
 
-static void
+static const variable *
 convert_switch_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
@@ -95,18 +99,20 @@ convert_switch_instruction(
 
 	const jlm::variable * c = convert_value(instruction->getCondition(), ctx);
 	bb->append(jive::match_op(dynamic_cast<const jive::bits::type&>(c->type()), constants), {c});
+	return nullptr;
 }
 
-static void
+static const variable *
 convert_unreachable_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
 	const context & ctx)
 {
 	/* Nothing needs to be done. */
+	return nullptr;
 }
 
-static inline void
+static const variable *
 convert_icmp_instruction(
 	const llvm::Instruction * instruction,
 	basic_block * bb,
@@ -132,13 +138,13 @@ convert_icmp_instruction(
 		, {llvm::CmpInst::ICMP_UGT,	[](size_t nbits){jive::bits::ugt_op op(nbits); return op.copy();}}
 	});
 
+	size_t nbits = i->getOperand(0)->getType()->getIntegerBitWidth();
 	const jlm::variable * op1 = convert_value(i->getOperand(0), ctx);
 	const jlm::variable * op2 = convert_value(i->getOperand(1), ctx);
-	size_t nbits = static_cast<const llvm::IntegerType*>(i->getOperand(0)->getType())->getBitWidth();
-	bb->append(*map[i->getPredicate()](nbits), {op1, op2}, {ctx.lookup_value(i)});
+	return bb->append(*map[i->getPredicate()](nbits), {op1, op2}, {ctx.lookup_value(i)})->output(0);
 }
 
-static void
+static const variable *
 convert_fcmp_instruction(
 	const llvm::Instruction * instruction,
 	basic_block * bb,
@@ -183,10 +189,10 @@ convert_fcmp_instruction(
 		operands.push_back(convert_value(i->getOperand(1), ctx));
 	}
 
-	bb->append(*map[i->getPredicate()](), operands, {ctx.lookup_value(i)});
+	return bb->append(*map[i->getPredicate()](), operands, {ctx.lookup_value(i)})->output(0);
 }
 
-static void
+static const variable *
 convert_load_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
@@ -201,10 +207,10 @@ convert_load_instruction(
 	const variable * address = convert_value(instruction->getPointerOperand(), ctx);
 
 	jive::addrload_op op({jive::mem::type()}, dynamic_cast<const jive::value::type&>(value->type()));
-	bb->append(op, {address, ctx.state()}, {value});
+	return bb->append(op, {address, ctx.state()}, {value})->output(0);
 }
 
-static void
+static const variable *
 convert_store_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
@@ -218,9 +224,10 @@ convert_store_instruction(
 
 	jive::addrstore_op op({jive::mem::type()}, dynamic_cast<const jive::value::type&>(value->type()));
 	bb->append(op, {address, value, ctx.state()}, {ctx.state()});
+	return nullptr;
 }
 
-static void
+static const variable *
 convert_phi_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
@@ -238,10 +245,11 @@ convert_phi_instruction(
 	}
 
 	JLM_DEBUG_ASSERT(operands.size() != 0);
-	bb->append(phi_op(operands.size(), operands[0]->type()), operands, {ctx.lookup_value(phi)});
+	phi_op op(operands.size(), operands[0]->type());
+	return bb->append(op, operands, {ctx.lookup_value(phi)})->output(0);
 }
 
-static void
+static const variable *
 convert_getelementptr_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
@@ -258,9 +266,11 @@ convert_getelementptr_instruction(
 		jive::address::arraysubscript_op op(basetype, offsettype);
 		base = bb->append(op, {base, offset}, {ctx.lookup_value(i)})->output(0);
 	}
+
+	return base;
 }
 
-static void
+static const variable *
 convert_trunc_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
@@ -269,13 +279,13 @@ convert_trunc_instruction(
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::TruncInst*>(i));
 	const llvm::TruncInst * instruction = static_cast<const llvm::TruncInst*>(i);
 
-	const jlm::variable * op = convert_value(instruction->getOperand(0), ctx);
-	size_t high = static_cast<const llvm::IntegerType*>(i->getType())->getBitWidth();
-	bb->append(jive::bits::slice_op(dynamic_cast<const jive::bits::type&>(op->type()), 0, high),
-		{op}, {ctx.lookup_value(i)});
+	size_t high = i->getType()->getIntegerBitWidth();
+	const jlm::variable * operand = convert_value(instruction->getOperand(0), ctx);
+	jive::bits::slice_op op(dynamic_cast<const jive::bits::type&>(operand->type()), 0, high);
+	return bb->append(op, {operand}, {ctx.lookup_value(i)})->output(0);
 }
 
-static void
+static const variable *
 convert_call_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
@@ -304,9 +314,10 @@ convert_call_instruction(
 	results.push_back(ctx.state());
 
 	bb->append(jlm::apply_op(callee), arguments, results);
+	return (results.size() == 2) ? results[0] : nullptr;
 }
 
-static void
+static const variable *
 convert_select_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
@@ -318,10 +329,10 @@ convert_select_instruction(
 	const jlm::variable * condition = convert_value(instruction->getCondition(), ctx);
 	const jlm::variable * tv = convert_value(instruction->getTrueValue(), ctx);
 	const jlm::variable * fv = convert_value(instruction->getFalseValue(), ctx);
-	bb->append(select_op(tv->type()), {condition, tv, fv}, {ctx.lookup_value(i)});
+	return bb->append(select_op(tv->type()), {condition, tv, fv}, {ctx.lookup_value(i)})->output(0);
 }
 
-static inline void
+static const variable *
 convert_binary_operator(
 	const llvm::Instruction * instruction,
 	basic_block * bb,
@@ -357,8 +368,7 @@ convert_binary_operator(
 		});
 
 		size_t nbits = i->getType()->getIntegerBitWidth();
-		bb->append(*map[i->getOpcode()](nbits), {op1, op2}, {ctx.lookup_value(i)});
-		return;
+		return bb->append(*map[i->getOpcode()](nbits), {op1, op2}, {ctx.lookup_value(i)})->output(0);
 	}
 
 	if (i->getType()->isFloatingPointTy()) {
@@ -373,14 +383,13 @@ convert_binary_operator(
 
 		/* FIXME: support FRem */
 		JLM_DEBUG_ASSERT(i->getOpcode() != llvm::Instruction::FRem);
-		bb->append(*map[i->getOpcode()](), {op1, op2}, {ctx.lookup_value(i)});
-		return;
+		return bb->append(*map[i->getOpcode()](), {op1, op2}, {ctx.lookup_value(i)})->output(0);
 	}
 
 	JLM_DEBUG_ASSERT(0);
 }
 
-static inline void
+static const variable *
 convert_alloca_instruction(
 	const llvm::Instruction * instruction,
 	basic_block * bb,
@@ -392,12 +401,13 @@ convert_alloca_instruction(
 	/* FIXME: the number of bytes is not correct */
 
 	size_t nbytes = 4;
-	bb->append(alloca_op(nbytes), {ctx.state()}, {ctx.lookup_value(i), ctx.state()});
+	alloca_op op(nbytes);
+	return bb->append(op, {ctx.state()}, {ctx.lookup_value(i), ctx.state()})->output(0);
 }
 
 typedef std::unordered_map<
 		std::type_index,
-		void(*)(const llvm::Instruction*, jlm::basic_block*, const context&)
+		const variable * (*)(const llvm::Instruction*, jlm::basic_block*, const context&)
 	> instruction_map;
 
 static instruction_map imap({
@@ -418,7 +428,7 @@ static instruction_map imap({
 	, {std::type_index(typeid(llvm::AllocaInst)), convert_alloca_instruction}
 });
 
-void
+const variable *
 convert_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
@@ -426,9 +436,9 @@ convert_instruction(
 {
 	/* FIXME: add an JLM_DEBUG_ASSERT here if an instruction is not present */
 	if (imap.find(std::type_index(typeid(*i))) == imap.end())
-		return;
+		return nullptr;
 
-	imap[std::type_index(typeid(*i))](i, bb, ctx);
+	return imap[std::type_index(typeid(*i))](i, bb, ctx);
 }
 
 }

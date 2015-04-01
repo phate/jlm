@@ -16,17 +16,21 @@ namespace llvm {
 
 namespace jlm {
 
-class basic_block;
+class context;
 class variable;
 
 jive::bits::value_repr
 convert_apint(const llvm::APInt & value);
 
-const jlm::variable *
-create_undef_value(const llvm::Type * type, jlm::basic_block * bb);
+const variable *
+create_undef_value(
+	const llvm::Type * type,
+	const context & ctx);
 
-const jlm::variable *
-convert_constant(const llvm::Constant * constant, jlm::basic_block * bb);
+const variable *
+convert_constant(
+	const llvm::Constant * constant,
+	const context & ctx);
 
 }
 

@@ -129,13 +129,15 @@ convert_function(const llvm::Function & function, jlm::clg_node * clg_node)
 	entry_block = static_cast<basic_block*>(create_cfg_structure(function, cfg, bbmap));
 
 	const jlm::variable * result = nullptr;
-	if (function.getReturnType()->getTypeID() != llvm::Type::VoidTyID) {
+	if (!function.getReturnType()->isVoidTy())
 		result = cfg->create_variable(*convert_type(function.getReturnType()), "_r_");
-		const variable * udef = create_undef_value(function.getReturnType(), entry_block);
+
+	context ctx(bbmap, entry_block, state, result);
+	if (!function.getReturnType()->isVoidTy()) {
+		const variable * udef = create_undef_value(function.getReturnType(), ctx);
 		entry_block->append(assignment_op(result->type()), {udef}, {result});
 	}
 
-	context ctx(bbmap, entry_block, state, result);
 	jt = function.getArgumentList().begin();
 	for (size_t n = 0; jt != function.getArgumentList().end(); jt++, n++)
 		ctx.insert_value(&(*jt), arguments[n]);

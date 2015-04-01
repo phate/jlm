@@ -21,7 +21,7 @@ convert_value(
 	const llvm::Value * v,
 	const jlm::context & ctx);
 
-void
+const variable *
 convert_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
