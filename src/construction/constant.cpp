@@ -10,6 +10,7 @@
 
 #include <jive/types/bitstring/constant.h>
 #include <jive/types/bitstring/value-representation.h>
+#include <jive/types/float/fltconstant.h>
 
 #include <llvm/IR/Constants.h>
 
@@ -41,11 +42,15 @@ create_undef_value(
 	const llvm::Type * type,
 	jlm::basic_block * bb)
 {
-	if (type->getTypeID() == llvm::Type::IntegerTyID) {
-		size_t nbits = static_cast<const llvm::IntegerType*>(type)->getBitWidth();
+	if (type->isIntegerTy()) {
+		size_t nbits = type->getIntegerBitWidth();
 		jive::bits::constant_op op(jive::bits::value_repr::repeat(nbits, 'X'));
 		return bb->append(op, {})->output(0);
 	}
+
+	/* FIXME: differentiate between floating point types */
+	if (type->isFloatingPointTy())
+		return bb->append(jive::flt::constant_op(nan("")), {})->output(0);
 
 	JLM_DEBUG_ASSERT(0);
 	return nullptr;

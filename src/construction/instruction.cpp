@@ -22,6 +22,7 @@
 #include <jive/types/bitstring/comparison.h>
 #include <jive/types/bitstring/constant.h>
 #include <jive/types/bitstring/slice.h>
+#include <jive/types/float/arithmetic.h>
 #include <jive/types/float/comparison.h>
 #include <jive/vsdg/controltype.h>
 #include <jive/vsdg/operators/match.h>
@@ -329,30 +330,54 @@ convert_binary_operator(
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::BinaryOperator*>(instruction));
 	const llvm::BinaryOperator * i = static_cast<const llvm::BinaryOperator*>(instruction);
 
-	/* FIXME: take care of floating point operations and vector type as well */
-
-	static std::map<
-		const llvm::Instruction::BinaryOps,
-		std::unique_ptr<jive::operation>(*)(size_t)> map({
-			{llvm::Instruction::Add,	[](size_t nbits){jive::bits::add_op op(nbits); return op.copy();}}
-		,	{llvm::Instruction::And,	[](size_t nbits){jive::bits::and_op op(nbits); return op.copy();}}
-		,	{llvm::Instruction::AShr,	[](size_t nbits){jive::bits::ashr_op op(nbits); return op.copy();}}
-		,	{llvm::Instruction::Sub,	[](size_t nbits){jive::bits::sub_op op(nbits); return op.copy();}}
-		,	{llvm::Instruction::UDiv,	[](size_t nbits){jive::bits::udiv_op op(nbits); return op.copy();}}
-		,	{llvm::Instruction::SDiv,	[](size_t nbits){jive::bits::sdiv_op op(nbits); return op.copy();}}
-		,	{llvm::Instruction::URem,	[](size_t nbits){jive::bits::umod_op op(nbits); return op.copy();}}
-		,	{llvm::Instruction::SRem,	[](size_t nbits){jive::bits::smod_op op(nbits); return op.copy();}}
-		,	{llvm::Instruction::Shl,	[](size_t nbits){jive::bits::shl_op op(nbits); return op.copy();}}
-		,	{llvm::Instruction::LShr,	[](size_t nbits){jive::bits::shr_op op(nbits); return op.copy();}}
-		,	{llvm::Instruction::Or,		[](size_t nbits){jive::bits::or_op op(nbits); return op.copy();}}
-		,	{llvm::Instruction::Xor,	[](size_t nbits){jive::bits::xor_op op(nbits); return op.copy();}}
-		,	{llvm::Instruction::Mul,	[](size_t nbits){jive::bits::mul_op op(nbits); return op.copy();}}
-	});
+	/* FIXME: vector type is not yet supported */
+	if (i->getType()->isVectorTy())
+		JLM_DEBUG_ASSERT(0);
 
 	const jlm::variable * op1 = convert_value(i->getOperand(0), ctx);
 	const jlm::variable * op2 = convert_value(i->getOperand(1), ctx);
-	size_t nbits = static_cast<const llvm::IntegerType*>(i->getType())->getBitWidth();
-	bb->append(*map[i->getOpcode()](nbits), {op1, op2}, {ctx.lookup_value(i)});
+
+	if (i->getType()->isIntegerTy()) {
+		static std::map<
+			const llvm::Instruction::BinaryOps,
+			std::unique_ptr<jive::operation>(*)(size_t)> map({
+				{llvm::Instruction::Add,	[](size_t nbits){jive::bits::add_op o(nbits); return o.copy();}}
+			,	{llvm::Instruction::And,	[](size_t nbits){jive::bits::and_op o(nbits); return o.copy();}}
+			,	{llvm::Instruction::AShr,	[](size_t nbits){jive::bits::ashr_op o(nbits); return o.copy();}}
+			,	{llvm::Instruction::Sub,	[](size_t nbits){jive::bits::sub_op o(nbits); return o.copy();}}
+			,	{llvm::Instruction::UDiv,	[](size_t nbits){jive::bits::udiv_op o(nbits); return o.copy();}}
+			,	{llvm::Instruction::SDiv,	[](size_t nbits){jive::bits::sdiv_op o(nbits); return o.copy();}}
+			,	{llvm::Instruction::URem,	[](size_t nbits){jive::bits::umod_op o(nbits); return o.copy();}}
+			,	{llvm::Instruction::SRem,	[](size_t nbits){jive::bits::smod_op o(nbits); return o.copy();}}
+			,	{llvm::Instruction::Shl,	[](size_t nbits){jive::bits::shl_op o(nbits); return o.copy();}}
+			,	{llvm::Instruction::LShr,	[](size_t nbits){jive::bits::shr_op o(nbits); return o.copy();}}
+			,	{llvm::Instruction::Or,		[](size_t nbits){jive::bits::or_op o(nbits); return o.copy();}}
+			,	{llvm::Instruction::Xor,	[](size_t nbits){jive::bits::xor_op o(nbits); return o.copy();}}
+			,	{llvm::Instruction::Mul,	[](size_t nbits){jive::bits::mul_op o(nbits); return o.copy();}}
+		});
+
+		size_t nbits = i->getType()->getIntegerBitWidth();
+		bb->append(*map[i->getOpcode()](nbits), {op1, op2}, {ctx.lookup_value(i)});
+		return;
+	}
+
+	if (i->getType()->isFloatingPointTy()) {
+		static std::map<
+			const llvm::Instruction::BinaryOps,
+			std::unique_ptr<jive::operation>(*)()> map({
+				{llvm::Instruction::FAdd, [](){jive::flt::add_op op; return op.copy();}}
+			, {llvm::Instruction::FSub, [](){jive::flt::sub_op op; return op.copy();}}
+			, {llvm::Instruction::FMul, [](){jive::flt::mul_op op; return op.copy();}}
+			, {llvm::Instruction::FDiv, [](){jive::flt::div_op op; return op.copy();}}
+		});
+
+		/* FIXME: support FRem */
+		JLM_DEBUG_ASSERT(i->getOpcode() != llvm::Instruction::FRem);
+		bb->append(*map[i->getOpcode()](), {op1, op2}, {ctx.lookup_value(i)});
+		return;
+	}
+
+	JLM_DEBUG_ASSERT(0);
 }
 
 static inline void
