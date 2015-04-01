@@ -20,7 +20,9 @@
 #include <jive/arch/store.h>
 #include <jive/types/bitstring/arithmetic.h>
 #include <jive/types/bitstring/comparison.h>
+#include <jive/types/bitstring/constant.h>
 #include <jive/types/bitstring/slice.h>
+#include <jive/types/float/comparison.h>
 #include <jive/vsdg/controltype.h>
 #include <jive/vsdg/operators/match.h>
 
@@ -133,6 +135,54 @@ convert_icmp_instruction(
 	const jlm::variable * op2 = convert_value(i->getOperand(1), ctx);
 	size_t nbits = static_cast<const llvm::IntegerType*>(i->getOperand(0)->getType())->getBitWidth();
 	bb->append(*map[i->getPredicate()](nbits), {op1, op2}, {ctx.lookup_value(i)});
+}
+
+static void
+convert_fcmp_instruction(
+	const llvm::Instruction * instruction,
+	basic_block * bb,
+	const context & ctx)
+{
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::FCmpInst*>(instruction));
+	const llvm::FCmpInst * i = static_cast<const llvm::FCmpInst*>(instruction);
+
+	/* FIXME: vector type is not yet supported */
+	if (i->getType()->isVectorTy())
+		JLM_DEBUG_ASSERT(0);
+
+	/* FIXME: we currently don't have an operation for FCMP_ORD and FCMP_UNO, just use flt::eq_op */
+
+	static std::map<
+		const llvm::CmpInst::Predicate,
+		std::unique_ptr<jive::operation>(*)()> map({
+			{llvm::CmpInst::FCMP_OEQ, [](){jive::flt::eq_op op; return op.copy();}}
+		,	{llvm::CmpInst::FCMP_OGT, [](){jive::flt::gt_op op; return op.copy();}}
+		,	{llvm::CmpInst::FCMP_OGE, [](){jive::flt::ge_op op; return op.copy();}}
+		,	{llvm::CmpInst::FCMP_OLT, [](){jive::flt::lt_op op; return op.copy();}}
+		,	{llvm::CmpInst::FCMP_OLE, [](){jive::flt::le_op op; return op.copy();}}
+		,	{llvm::CmpInst::FCMP_ONE, [](){jive::flt::ne_op op; return op.copy();}}
+		,	{llvm::CmpInst::FCMP_ORD, [](){jive::flt::eq_op op; return op.copy();}}
+		,	{llvm::CmpInst::FCMP_UNO, [](){jive::flt::eq_op op; return op.copy();}}
+		,	{llvm::CmpInst::FCMP_UEQ, [](){jive::flt::eq_op op; return op.copy();}}
+		,	{llvm::CmpInst::FCMP_UGT, [](){jive::flt::gt_op op; return op.copy();}}
+		,	{llvm::CmpInst::FCMP_UGE, [](){jive::flt::ge_op op; return op.copy();}}
+		,	{llvm::CmpInst::FCMP_ULT, [](){jive::flt::lt_op op; return op.copy();}}
+		,	{llvm::CmpInst::FCMP_ULE, [](){jive::flt::le_op op; return op.copy();}}
+		,	{llvm::CmpInst::FCMP_UNE, [](){jive::flt::ne_op op; return op.copy();}}
+		,	{llvm::CmpInst::FCMP_FALSE,
+				[](){jive::bits::constant_op op(jive::bits::value_repr(1, 0)); return op.copy();}}
+		,	{llvm::CmpInst::FCMP_TRUE,
+				[](){jive::bits::constant_op op(jive::bits::value_repr(1, 1)); return op.copy();}}
+	});
+
+	std::vector<const variable*> operands;
+	if (i->getPredicate() != llvm::CmpInst::FCMP_TRUE
+	&& i->getPredicate() != llvm::CmpInst::FCMP_FALSE) {
+		operands.push_back(convert_value(i->getOperand(0), ctx));
+		operands.push_back(convert_value(i->getOperand(1), ctx));
+	}
+
+	bb->append(*map[i->getPredicate()](), operands, {ctx.lookup_value(i)});
 }
 
 static void
@@ -332,6 +382,7 @@ static instruction_map imap({
 	, {std::type_index(typeid(llvm::UnreachableInst)), convert_unreachable_instruction}
 	, {std::type_index(typeid(llvm::BinaryOperator)), convert_binary_operator}
 	, {std::type_index(typeid(llvm::ICmpInst)), convert_icmp_instruction}
+	, {std::type_index(typeid(llvm::FCmpInst)), convert_fcmp_instruction}
 	, {std::type_index(typeid(llvm::LoadInst)), convert_load_instruction}
 	, {std::type_index(typeid(llvm::StoreInst)), convert_store_instruction}
 	, {std::type_index(typeid(llvm::PHINode)), convert_phi_instruction}

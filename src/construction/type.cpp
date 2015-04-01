@@ -9,6 +9,7 @@
 #include <jive/arch/addresstype.h>
 #include <jive/arch/memorytype.h>
 #include <jive/types/bitstring/type.h>
+#include <jive/types/float/flttype.h>
 #include <jive/types/function/fcttype.h>
 
 #include <llvm/IR/DerivedTypes.h>
@@ -54,6 +55,15 @@ convert_function_type(const llvm::Type * t)
 	return std::unique_ptr<jive::base::type>(new jive::fct::type(argument_types, result_types));
 }
 
+static std::unique_ptr<jive::base::type>
+convert_float_type(const llvm::Type * t)
+{
+	JLM_DEBUG_ASSERT(t->isFloatingPointTy());
+
+	/* FIXME: we map all floating point types to float */
+	return std::unique_ptr<jive::base::type>(new jive::flt::type());
+}
+
 typedef std::map<llvm::Type::TypeID,
 	std::unique_ptr<jive::base::type>(*)(const llvm::Type *)> type_map;
 
@@ -61,6 +71,12 @@ static type_map tmap({
 		{llvm::Type::IntegerTyID, convert_integer_type}
 	, {llvm::Type::PointerTyID, convert_pointer_type}
 	, {llvm::Type::FunctionTyID, convert_function_type}
+	, {llvm::Type::HalfTyID, convert_float_type}
+	, {llvm::Type::FloatTyID, convert_float_type}
+	, {llvm::Type::DoubleTyID, convert_float_type}
+	, {llvm::Type::X86_FP80TyID, convert_float_type}
+	, {llvm::Type::FP128TyID, convert_float_type}
+	, {llvm::Type::PPC_FP128TyID, convert_float_type}
 });
 
 std::unique_ptr<jive::base::type>
