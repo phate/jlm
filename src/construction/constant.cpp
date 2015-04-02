@@ -96,6 +96,18 @@ convert_constantExpr(
 		ctx.entry_block(), ctx);
 }
 
+static const variable *
+convert_constantFP(
+	const llvm::Constant * constant,
+	const context & ctx)
+{
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantFP*>(constant));
+
+	/* FIXME: convert APFloat and take care of all types */
+	basic_block * bb = ctx.entry_block();
+	return bb->append(jive::flt::constant_op(nan("")), {})->output(0);
+}
+
 typedef std::unordered_map<
 	std::type_index,
 	const jlm::variable*(*)(const llvm::Constant *, const context & ctx)
@@ -105,6 +117,7 @@ static constant_map cmap({
 		{std::type_index(typeid(llvm::ConstantInt)), convert_int_constant}
 	, {std::type_index(typeid(llvm::UndefValue)), convert_undefvalue_instruction}
 	, {std::type_index(typeid(llvm::ConstantExpr)), convert_constantExpr}
+	,	{std::type_index(typeid(llvm::ConstantFP)), convert_constantFP}
 });
 
 const variable *

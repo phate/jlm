@@ -3,6 +3,7 @@ TESTS += \
 	libjlm/test-bitops \
 	libjlm/test-call \
 	libjlm/test-constant \
+	libjlm/test-constantFP \
 	libjlm/test-dowhile \
 	libjlm/test-fcmp \
 	libjlm/test-fltops \
