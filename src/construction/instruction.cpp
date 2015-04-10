@@ -75,7 +75,8 @@ convert_branch_instruction(
 
 	if (instruction->isConditional()) {
 		const variable * c = convert_value(instruction->getCondition(), ctx);
-		bb->append(jive::match_op(dynamic_cast<const jive::bits::type&>(c->type()), {0}), {c});
+		size_t nbits = dynamic_cast<const jive::bits::type&>(c->type()).nbits();
+		bb->append(jive::match_op(nbits, {{0, 0}}, 1, 2), {c});
 	}
 
 	return nullptr;
@@ -91,14 +92,15 @@ convert_switch_instruction(
 	const llvm::SwitchInst * instruction = static_cast<const llvm::SwitchInst*>(i);
 
 	JLM_DEBUG_ASSERT(bb->outedges().size() == instruction->getNumCases()+1);
-	std::vector<uint64_t> constants(instruction->getNumCases());
+	std::map<uint64_t, uint64_t> mapping;
 	for (auto it = instruction->case_begin(); it != instruction->case_end(); it++) {
 		JLM_DEBUG_ASSERT(it != instruction->case_default());
-		constants[it.getCaseIndex()] = it.getCaseValue()->getZExtValue();
+		mapping[it.getCaseValue()->getZExtValue()] = it.getCaseIndex();
 	}
 
 	const jlm::variable * c = convert_value(instruction->getCondition(), ctx);
-	bb->append(jive::match_op(dynamic_cast<const jive::bits::type&>(c->type()), constants), {c});
+	size_t nbits = dynamic_cast<const jive::bits::type&>(c->type()).nbits();
+	bb->append(jive::match_op(nbits, mapping, mapping.size(), mapping.size()+1), {c});
 	return nullptr;
 }
 
@@ -206,7 +208,9 @@ convert_load_instruction(
 	const variable * value = ctx.lookup_value(i);
 	const variable * address = convert_value(instruction->getPointerOperand(), ctx);
 
-	jive::addrload_op op({jive::mem::type()}, dynamic_cast<const jive::value::type&>(value->type()));
+	std::vector<std::unique_ptr<jive::state::type>> type;
+	type.emplace_back(std::unique_ptr<jive::state::type>(new jive::mem::type()));
+	jive::load_op op(jive::addr::type(), type, dynamic_cast<const jive::value::type&>(value->type()));
 	return bb->append(op, {address, ctx.state()}, {value})->output(0);
 }
 
@@ -222,7 +226,9 @@ convert_store_instruction(
 	const variable * address = convert_value(instruction->getPointerOperand(), ctx);
 	const variable * value = convert_value(instruction->getValueOperand(), ctx);
 
-	jive::addrstore_op op({jive::mem::type()}, dynamic_cast<const jive::value::type&>(value->type()));
+	std::vector<std::unique_ptr<jive::state::type>> t;
+	t.emplace_back(std::unique_ptr<jive::state::type>(new jive::mem::type()));
+	jive::store_op op(jive::addr::type(), t, dynamic_cast<const jive::value::type&>(value->type()));
 	bb->append(op, {address, value, ctx.state()}, {ctx.state()});
 	return nullptr;
 }

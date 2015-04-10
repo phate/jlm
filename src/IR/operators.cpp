@@ -247,8 +247,10 @@ alloca_op::result_type(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < nresults());
 
-	if (index == 0)
-		return jive::addr::addrtype;
+	if (index == 0) {
+		static const jive::addr::type addrtype;
+		return addrtype;
+	}
 
 	return jive::mem::memtype;
 }

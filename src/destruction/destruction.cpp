@@ -265,7 +265,8 @@ handle_basic_block(
 		}
 
 		if (auto select_op = dynamic_cast<const jlm::select_op*>(&tac->operation())) {
-			jive::output * predicate = jive::ctl::match(1, {0}, vmap.lookup_value(tac->input(0)));
+			jive::output * predicate = jive::ctl::match(1, {{0,0}}, 1, 2,
+				vmap.lookup_value(tac->input(0)));
 
 			jive::output * tv = vmap.lookup_value(tac->input(1));
 			jive::output * fv = vmap.lookup_value(tac->input(2));

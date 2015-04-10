@@ -89,7 +89,7 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit,
 
 		const variable * r = cfg->create_variable(jive::bits::type(1), "#r#");
 		jlm::basic_block * vt = cfg->create_basic_block();
-		vt->append(jive::match_op(dynamic_cast<const jive::bits::type&>(r->type()), {0}), {r});
+		vt->append(jive::match_op(1, {{0, 0}}, 1, 2), {r});
 
 
 		/* handle loop entries */
@@ -97,11 +97,10 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit,
 		if (ve.size() > 1) {
 			new_ve = cfg->create_basic_block();
 
-			std::vector<size_t> ve_constants;
+			std::map<uint64_t, uint64_t> ve_mapping;
 			for (size_t n = 0; n < ve.size()-1; n++)
-				ve_constants.push_back(n);
-			new_ve->append(jive::match_op(dynamic_cast<const jive::bits::type&>(q->type()),
-				ve_constants), {q});
+				ve_mapping[n] = n;
+			new_ve->append(jive::match_op(nbits, ve_mapping, ve.size()-1, ve.size()), {q});
 
 			for (auto edge : ae) {
 				jlm::basic_block * ass = cfg->create_basic_block();
@@ -122,11 +121,10 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit,
 		if (vx.size() > 1) {
 			new_vx = cfg->create_basic_block();
 
-			std::vector<size_t> vx_constants;
+			std::map<uint64_t, uint64_t> vx_mapping;
 			for (size_t n = 0; n < vx.size()-1; n++)
-				vx_constants.push_back(n);
-			new_vx->append(jive::match_op(dynamic_cast<const jive::bits::type&>(q->type()),
-				vx_constants), {q});
+				vx_mapping[n] = n;
+			new_vx->append(jive::match_op(nbits, vx_mapping, vx.size()-1, vx.size()), {q});
 
 			for (auto v : vx)
 				new_vx->add_outedge(v.first, v.second);
@@ -285,10 +283,10 @@ restructure_branches(jlm::cfg_node * start, jlm::cfg_node * end)
 	size_t nbits = std::ceil(std::log2(cpoints.size()));
 	const variable * p = cfg->create_variable(jive::bits::type(nbits), "#p#");
 	jlm::basic_block * vt = cfg->create_basic_block();
-	std::vector<size_t> constants;
+	std::map<uint64_t, uint64_t> mapping;
 	for (size_t n = 0; n < cpoints.size()-1; n++)
-		constants.push_back(n);
-	vt->append(jive::match_op(dynamic_cast<const jive::bits::type&>(p->type()), constants), {p});
+		mapping[n] = n;
+	vt->append(jive::match_op(nbits, mapping, cpoints.size()-1, cpoints.size()), {p});
 	for (auto it = cpoints.begin(); it != cpoints.end(); it++)
 		vt->add_outedge(it->first, it->second);
 
