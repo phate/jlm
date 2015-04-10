@@ -411,37 +411,35 @@ convert_alloca_instruction(
 	return bb->append(op, {ctx.state()}, {ctx.lookup_value(i), ctx.state()})->output(0);
 }
 
-typedef std::unordered_map<
-		std::type_index,
-		const variable * (*)(const llvm::Instruction*, jlm::basic_block*, const context&)
-	> instruction_map;
-
-static instruction_map imap({
-		{std::type_index(typeid(llvm::ReturnInst)), convert_return_instruction}
-	, {std::type_index(typeid(llvm::BranchInst)), convert_branch_instruction}
-	, {std::type_index(typeid(llvm::SwitchInst)), convert_switch_instruction}
-	, {std::type_index(typeid(llvm::UnreachableInst)), convert_unreachable_instruction}
-	, {std::type_index(typeid(llvm::BinaryOperator)), convert_binary_operator}
-	, {std::type_index(typeid(llvm::ICmpInst)), convert_icmp_instruction}
-	, {std::type_index(typeid(llvm::FCmpInst)), convert_fcmp_instruction}
-	, {std::type_index(typeid(llvm::LoadInst)), convert_load_instruction}
-	, {std::type_index(typeid(llvm::StoreInst)), convert_store_instruction}
-	, {std::type_index(typeid(llvm::PHINode)), convert_phi_instruction}
-	, {std::type_index(typeid(llvm::GetElementPtrInst)), convert_getelementptr_instruction}
-	, {std::type_index(typeid(llvm::TruncInst)), convert_trunc_instruction}
-	, {std::type_index(typeid(llvm::CallInst)), convert_call_instruction}
-	, {std::type_index(typeid(llvm::SelectInst)), convert_select_instruction}
-	, {std::type_index(typeid(llvm::AllocaInst)), convert_alloca_instruction}
-});
-
 const variable *
 convert_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
 	const context & ctx)
 {
-	JLM_DEBUG_ASSERT(imap.find(std::type_index(typeid(*i))) != imap.end());
-	return imap[std::type_index(typeid(*i))](i, bb, ctx);
+	static std::unordered_map<
+		std::type_index,
+		const variable * (*)(const llvm::Instruction*, jlm::basic_block*, const context&)
+	> map({
+		{std::type_index(typeid(llvm::ReturnInst)), convert_return_instruction}
+	,	{std::type_index(typeid(llvm::BranchInst)), convert_branch_instruction}
+	,	{std::type_index(typeid(llvm::SwitchInst)), convert_switch_instruction}
+	,	{std::type_index(typeid(llvm::UnreachableInst)), convert_unreachable_instruction}
+	,	{std::type_index(typeid(llvm::BinaryOperator)), convert_binary_operator}
+	,	{std::type_index(typeid(llvm::ICmpInst)), convert_icmp_instruction}
+	,	{std::type_index(typeid(llvm::FCmpInst)), convert_fcmp_instruction}
+	,	{std::type_index(typeid(llvm::LoadInst)), convert_load_instruction}
+	,	{std::type_index(typeid(llvm::StoreInst)), convert_store_instruction}
+	,	{std::type_index(typeid(llvm::PHINode)), convert_phi_instruction}
+	,	{std::type_index(typeid(llvm::GetElementPtrInst)), convert_getelementptr_instruction}
+	,	{std::type_index(typeid(llvm::TruncInst)), convert_trunc_instruction}
+	,	{std::type_index(typeid(llvm::CallInst)), convert_call_instruction}
+	,	{std::type_index(typeid(llvm::SelectInst)), convert_select_instruction}
+	,	{std::type_index(typeid(llvm::AllocaInst)), convert_alloca_instruction}
+	});
+
+	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(*i))) != map.end());
+	return map[std::type_index(typeid(*i))](i, bb, ctx);
 }
 
 }
