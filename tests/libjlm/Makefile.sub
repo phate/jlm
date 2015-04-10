@@ -16,6 +16,7 @@ TESTS += \
 	libjlm/test-ifthen \
 	libjlm/test-phi \
 	libjlm/test-select \
+	libjlm/test-sext \
 	libjlm/test-switch \
 	libjlm/test-switch_fallthrough \
 	libjlm/test-unreachable \

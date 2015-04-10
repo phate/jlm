@@ -431,6 +431,36 @@ convert_zext_instruction(
 	return bb->append(op, {convert_value(operand, ctx), c}, {ctx.lookup_value(i)})->output(0);
 }
 
+static const variable *
+convert_sext_instruction(
+	const llvm::Instruction * i,
+	basic_block * bb,
+	const context & ctx)
+{
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::SExtInst*>(i));
+
+	llvm::Value * operand = i->getOperand(0);
+
+	/* FIXME: support vector type */
+	if (operand->getType()->isVectorTy())
+		JLM_DEBUG_ASSERT(0);
+
+	size_t new_length = i->getType()->getIntegerBitWidth();
+	size_t old_length = operand->getType()->getIntegerBitWidth();
+	jive::bits::slice_op s_op(jive::bits::type(old_length), old_length-1, old_length);
+	const variable * bit = bb->append(s_op, {convert_value(operand, ctx)})->output(0);
+
+	std::vector<const variable*> operands(1, convert_value(operand, ctx));
+	std::vector<jive::bits::type> operand_types(1, jive::bits::type(old_length));
+	for (size_t n = 0; n < new_length - old_length; n++) {
+		operand_types.push_back(jive::bits::type(1));
+		operands.push_back(bit);
+	}
+
+	jive::bits::concat_op op(operand_types);
+	return bb->append(op, operands, {ctx.lookup_value(i)})->output(0);
+}
+
 const variable *
 convert_instruction(
 	const llvm::Instruction * i,
@@ -457,6 +487,7 @@ convert_instruction(
 	,	{std::type_index(typeid(llvm::SelectInst)), convert_select_instruction}
 	,	{std::type_index(typeid(llvm::AllocaInst)), convert_alloca_instruction}
 	,	{std::type_index(typeid(llvm::ZExtInst)), convert_zext_instruction}
+	,	{std::type_index(typeid(llvm::SExtInst)), convert_sext_instruction}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(*i))) != map.end());
