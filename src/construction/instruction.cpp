@@ -440,10 +440,7 @@ convert_instruction(
 	basic_block * bb,
 	const context & ctx)
 {
-	/* FIXME: add an JLM_DEBUG_ASSERT here if an instruction is not present */
-	if (imap.find(std::type_index(typeid(*i))) == imap.end())
-		return nullptr;
-
+	JLM_DEBUG_ASSERT(imap.find(std::type_index(typeid(*i))) != imap.end());
 	return imap[std::type_index(typeid(*i))](i, bb, ctx);
 }
 
