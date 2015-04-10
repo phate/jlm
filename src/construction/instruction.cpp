@@ -18,10 +18,7 @@
 #include <jive/arch/load.h>
 #include <jive/arch/memorytype.h>
 #include <jive/arch/store.h>
-#include <jive/types/bitstring/arithmetic.h>
-#include <jive/types/bitstring/comparison.h>
-#include <jive/types/bitstring/constant.h>
-#include <jive/types/bitstring/slice.h>
+#include <jive/types/bitstring.h>
 #include <jive/types/float/arithmetic.h>
 #include <jive/types/float/comparison.h>
 #include <jive/vsdg/controltype.h>
@@ -411,6 +408,29 @@ convert_alloca_instruction(
 	return bb->append(op, {ctx.state()}, {ctx.lookup_value(i), ctx.state()})->output(0);
 }
 
+static const variable *
+convert_zext_instruction(
+	const llvm::Instruction * i,
+	basic_block * bb,
+	const context & ctx)
+{
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ZExtInst*>(i));
+
+	llvm::Value * operand = i->getOperand(0);
+
+	/* FIXME: support vector type */
+	if (operand->getType()->isVectorTy())
+		JLM_DEBUG_ASSERT(0);
+
+	size_t new_length = i->getType()->getIntegerBitWidth();
+	size_t old_length = operand->getType()->getIntegerBitWidth();
+	jive::bits::constant_op c_op(jive::bits::value_repr(new_length - old_length, 0));
+	const variable * c = bb->append(c_op, {})->output(0);
+
+	jive::bits::concat_op op({jive::bits::type(new_length-old_length), jive::bits::type(old_length)});
+	return bb->append(op, {convert_value(operand, ctx), c}, {ctx.lookup_value(i)})->output(0);
+}
+
 const variable *
 convert_instruction(
 	const llvm::Instruction * i,
@@ -436,6 +456,7 @@ convert_instruction(
 	,	{std::type_index(typeid(llvm::CallInst)), convert_call_instruction}
 	,	{std::type_index(typeid(llvm::SelectInst)), convert_select_instruction}
 	,	{std::type_index(typeid(llvm::AllocaInst)), convert_alloca_instruction}
+	,	{std::type_index(typeid(llvm::ZExtInst)), convert_zext_instruction}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(*i))) != map.end());

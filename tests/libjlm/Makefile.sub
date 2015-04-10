@@ -20,3 +20,4 @@ TESTS += \
 	libjlm/test-switch_fallthrough \
 	libjlm/test-unreachable \
 	libjlm/test-while \
+	libjlm/test-zext \
