@@ -11,6 +11,7 @@ TESTS += \
 	libjlm/test-fpext \
 	libjlm/test-fptrunc \
 	libjlm/test-getelementptr \
+	libjlm/test-inttoptr \
 	libjlm/test-loadstore \
 	libjlm/test-trunc \
 	libjlm/test-undefvalue \

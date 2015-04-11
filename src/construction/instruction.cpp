@@ -15,6 +15,7 @@
 #include <jlm/IR/tac.hpp>
 
 #include <jive/arch/address.h>
+#include <jive/arch/address-transform.h>
 #include <jive/arch/load.h>
 #include <jive/arch/memorytype.h>
 #include <jive/arch/store.h>
@@ -492,6 +493,26 @@ convert_fptrunc_instruction(
 	return bb->append(op, {operand}, {ctx.lookup_value(i)})->output(0);
 }
 
+static const variable *
+convert_inttoptr_instruction(
+	const llvm::Instruction * i,
+	basic_block * bb,
+	const context & ctx)
+{
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::IntToPtrInst*>(i));
+
+	llvm::Value * operand = i->getOperand(0);
+	llvm::Type * type = operand->getType();
+
+	/* FIXME: support vector type */
+	if (type->isVectorTy())
+		JLM_DEBUG_ASSERT(0);
+
+	jive::bitstring_to_address_operation op(type->getIntegerBitWidth(),
+		std::unique_ptr<jive::base::type>(new jive::addr::type()));
+	return bb->append(op, {convert_value(operand, ctx)}, {ctx.lookup_value(i)})->output(0);
+}
+
 const variable *
 convert_instruction(
 	const llvm::Instruction * i,
@@ -521,6 +542,7 @@ convert_instruction(
 	,	{std::type_index(typeid(llvm::SExtInst)), convert_sext_instruction}
 	,	{std::type_index(typeid(llvm::FPExtInst)), convert_fpext_instruction}
 	,	{std::type_index(typeid(llvm::FPTruncInst)), convert_fptrunc_instruction}
+	,	{std::type_index(typeid(llvm::IntToPtrInst)), convert_inttoptr_instruction}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(*i))) != map.end());

@@ -10,6 +10,7 @@
 #include <jlm/IR/basic_block.hpp>
 #include <jlm/IR/tac.hpp>
 
+#include <jive/arch/address.h>
 #include <jive/types/bitstring/constant.h>
 #include <jive/types/bitstring/value-representation.h>
 #include <jive/types/float/fltconstant.h>
@@ -55,6 +56,10 @@ create_undef_value(
 	/* FIXME: differentiate between floating point types */
 	if (type->isFloatingPointTy())
 		return bb->append(jive::flt::constant_op(nan("")), {})->output(0);
+
+	/* FIXME: adjust when we have a real unknown value */
+	if (type->isPointerTy())
+		return bb->append(jive::address::constant_op(jive::address::value_repr(0)), {})->output(0);
 
 	JLM_DEBUG_ASSERT(0);
 	return nullptr;
