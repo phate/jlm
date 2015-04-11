@@ -18,6 +18,7 @@ TESTS += \
 	libjlm/test-linear \
 	libjlm/test-ifthen \
 	libjlm/test-phi \
+	libjlm/test-ptrtoint \
 	libjlm/test-select \
 	libjlm/test-sext \
 	libjlm/test-switch \

@@ -513,6 +513,26 @@ convert_inttoptr_instruction(
 	return bb->append(op, {convert_value(operand, ctx)}, {ctx.lookup_value(i)})->output(0);
 }
 
+static const variable *
+convert_ptrtoint_instruction(
+	const llvm::Instruction * instruction,
+	basic_block * bb,
+	const context & ctx)
+{
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::PtrToIntInst*>(instruction));
+	const llvm::PtrToIntInst * i = static_cast<const llvm::PtrToIntInst*>(instruction);
+
+	/* FIXME: support vector type */
+	if (i->getPointerOperand()->getType()->isVectorTy())
+		JLM_DEBUG_ASSERT(0);
+
+	const variable * operand = convert_value(i->getPointerOperand(), ctx);
+
+	size_t nbits = i->getType()->getIntegerBitWidth();
+	jive::address_to_bitstring_operation op(nbits, jive::addr::type());
+	return bb->append(op, {operand}, {ctx.lookup_value(i)})->output(0);
+}
+
 const variable *
 convert_instruction(
 	const llvm::Instruction * i,
@@ -543,6 +563,7 @@ convert_instruction(
 	,	{std::type_index(typeid(llvm::FPExtInst)), convert_fpext_instruction}
 	,	{std::type_index(typeid(llvm::FPTruncInst)), convert_fptrunc_instruction}
 	,	{std::type_index(typeid(llvm::IntToPtrInst)), convert_inttoptr_instruction}
+	,	{std::type_index(typeid(llvm::PtrToIntInst)), convert_ptrtoint_instruction}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(*i))) != map.end());
