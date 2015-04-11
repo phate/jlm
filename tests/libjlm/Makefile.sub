@@ -21,6 +21,7 @@ TESTS += \
 	libjlm/test-ptrtoint \
 	libjlm/test-select \
 	libjlm/test-sext \
+	libjlm/test-sitofp \
 	libjlm/test-switch \
 	libjlm/test-switch_fallthrough \
 	libjlm/test-uitofp \

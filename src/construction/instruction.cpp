@@ -552,6 +552,25 @@ convert_uitofp_instruction(
 	return bb->append(op, {convert_value(operand, ctx)}, {ctx.lookup_value(i)})->output(0);
 }
 
+static const variable *
+convert_sitofp_instruction(
+	const llvm::Instruction * i,
+	basic_block * bb,
+	const context & ctx)
+{
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::SIToFPInst*>(i));
+
+	llvm::Value * operand = i->getOperand(0);
+	llvm::Type * type = operand->getType();
+
+	/* FIXME: support vector type */
+	if (type->isVectorTy())
+		JLM_DEBUG_ASSERT(0);
+
+	bits2flt_op op(type->getIntegerBitWidth());
+	return bb->append(op, {convert_value(operand, ctx)}, {ctx.lookup_value(i)})->output(0);
+}
+
 const variable *
 convert_instruction(
 	const llvm::Instruction * i,
@@ -584,6 +603,7 @@ convert_instruction(
 	,	{std::type_index(typeid(llvm::IntToPtrInst)), convert_inttoptr_instruction}
 	,	{std::type_index(typeid(llvm::PtrToIntInst)), convert_ptrtoint_instruction}
 	,	{std::type_index(typeid(llvm::UIToFPInst)), convert_uitofp_instruction}
+	,	{std::type_index(typeid(llvm::SIToFPInst)), convert_sitofp_instruction}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(*i))) != map.end());
