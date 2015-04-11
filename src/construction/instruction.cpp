@@ -476,6 +476,22 @@ convert_fpext_instruction(
 	return bb->append(op, {operand}, {ctx.lookup_value(i)})->output(0);
 }
 
+static const variable *
+convert_fptrunc_instruction(
+	const llvm::Instruction * i,
+	basic_block * bb,
+	const context & ctx)
+{
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::FPTruncInst*>(i));
+
+	/* FIXME: use assignment operator as long as we don't support floating point types properly */
+
+	jive::flt::type type;
+	assignment_op op(type);
+	const variable * operand = convert_value(i->getOperand(0), ctx);
+	return bb->append(op, {operand}, {ctx.lookup_value(i)})->output(0);
+}
+
 const variable *
 convert_instruction(
 	const llvm::Instruction * i,
@@ -504,6 +520,7 @@ convert_instruction(
 	,	{std::type_index(typeid(llvm::ZExtInst)), convert_zext_instruction}
 	,	{std::type_index(typeid(llvm::SExtInst)), convert_sext_instruction}
 	,	{std::type_index(typeid(llvm::FPExtInst)), convert_fpext_instruction}
+	,	{std::type_index(typeid(llvm::FPTruncInst)), convert_fptrunc_instruction}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(*i))) != map.end());
