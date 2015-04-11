@@ -8,6 +8,7 @@ TESTS += \
 	libjlm/test-fcmp \
 	libjlm/test-fltops \
 	libjlm/test-fibrec \
+	libjlm/test-fpext \
 	libjlm/test-getelementptr \
 	libjlm/test-loadstore \
 	libjlm/test-trunc \
