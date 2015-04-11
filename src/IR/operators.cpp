@@ -8,7 +8,7 @@
 
 #include <jive/arch/addresstype.h>
 #include <jive/arch/memorytype.h>
-#include <jive/types/bitstring/type.h>
+#include <jive/types/float/flttype.h>
 
 namespace jlm {
 
@@ -265,6 +265,57 @@ std::unique_ptr<jive::operation>
 alloca_op::copy() const
 {
 	return std::unique_ptr<jive::operation>(new alloca_op(*this));
+}
+
+/* bits2flt operator */
+
+bits2flt_op::~bits2flt_op() noexcept
+{}
+
+bool
+bits2flt_op::operator==(const operation & other) const noexcept
+{
+	auto op = dynamic_cast<const bits2flt_op*>(&other);
+	return op && itype_ == op->itype_;
+}
+
+size_t
+bits2flt_op::narguments() const noexcept
+{
+	return 1;
+}
+
+const jive::base::type &
+bits2flt_op::argument_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < narguments());
+	return itype_;
+}
+
+size_t
+bits2flt_op::nresults() const noexcept
+{
+	return 1;
+}
+
+const jive::base::type &
+bits2flt_op::result_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < nresults());
+	static jive::flt::type flttype;
+	return flttype;
+}
+
+std::string
+bits2flt_op::debug_string() const
+{
+	return "BITS2FLT";
+}
+
+std::unique_ptr<jive::operation>
+bits2flt_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new bits2flt_op(*this));
 }
 
 }

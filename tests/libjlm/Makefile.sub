@@ -23,6 +23,7 @@ TESTS += \
 	libjlm/test-sext \
 	libjlm/test-switch \
 	libjlm/test-switch_fallthrough \
+	libjlm/test-uitofp \
 	libjlm/test-unreachable \
 	libjlm/test-while \
 	libjlm/test-zext \
