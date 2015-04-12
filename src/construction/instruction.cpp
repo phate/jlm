@@ -607,6 +607,36 @@ convert_fptosi_instruction(
 	return bb->append(op, {convert_value(operand, ctx)}, {ctx.lookup_value(i)})->output(0);
 }
 
+static const variable *
+convert_bitcast_instruction(
+	const llvm::Instruction * i,
+	basic_block * bb,
+	const context & ctx)
+{
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::BitCastInst*>(i));
+
+	const variable * operand = convert_value(i->getOperand(0), ctx);
+	const variable * result = ctx.lookup_value(i);
+
+	/* FIXME: invoke with the right number of bytes */
+	alloca_op aop(4);
+	const tac * alloc = bb->append(aop, {ctx.state()});
+	const variable * address = alloc->output(0);
+	const variable * state = alloc->output(1);
+
+	std::vector<std::unique_ptr<jive::state::type>> t;
+	t.emplace_back(std::unique_ptr<jive::state::type>(new jive::mem::type()));
+	jive::store_op sop(jive::addr::type(), t,
+		dynamic_cast<const jive::value::type&>(operand->type()));
+	bb->append(sop, {address, operand, state}, {state});
+
+	std::vector<std::unique_ptr<jive::state::type>> type;
+	type.emplace_back(std::unique_ptr<jive::state::type>(new jive::mem::type()));
+	jive::load_op lop(jive::addr::type(), type,
+		dynamic_cast<const jive::value::type&>(result->type()));
+	return bb->append(lop, {address, state}, {result})->output(0);
+}
+
 const variable *
 convert_instruction(
 	const llvm::Instruction * i,
@@ -642,6 +672,7 @@ convert_instruction(
 	,	{std::type_index(typeid(llvm::SIToFPInst)), convert_sitofp_instruction}
 	,	{std::type_index(typeid(llvm::FPToUIInst)), convert_fptoui_instruction}
 	,	{std::type_index(typeid(llvm::FPToSIInst)), convert_fptosi_instruction}
+	,	{std::type_index(typeid(llvm::BitCastInst)), convert_bitcast_instruction}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(*i))) != map.end());

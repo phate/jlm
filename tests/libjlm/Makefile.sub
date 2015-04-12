@@ -1,5 +1,6 @@
 TESTS += \
 	libjlm/test-alloca \
+	libjlm/test-bitcast \
 	libjlm/test-bitops \
 	libjlm/test-call \
 	libjlm/test-constant \
