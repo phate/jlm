@@ -9,6 +9,7 @@ TESTS += \
 	libjlm/test-fltops \
 	libjlm/test-fibrec \
 	libjlm/test-fpext \
+	libjlm/test-fptoui \
 	libjlm/test-fptrunc \
 	libjlm/test-getelementptr \
 	libjlm/test-inttoptr \

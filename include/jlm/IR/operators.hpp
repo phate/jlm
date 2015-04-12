@@ -310,6 +310,49 @@ private:
 	jive::bits::type itype_;
 };
 
+/* flt2bits operator */
+
+class flt2bits_op final : public jive::operation {
+public:
+	virtual
+	~flt2bits_op() noexcept;
+
+	inline
+	flt2bits_op(const jive::bits::type & type)
+		: otype_(type)
+	{}
+
+	inline
+	flt2bits_op(const flt2bits_op & other) = default;
+
+	inline
+	flt2bits_op(flt2bits_op && other) = default;
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual size_t
+	narguments() const noexcept override;
+
+	virtual const jive::base::type &
+	argument_type(size_t index) const noexcept override;
+
+	virtual size_t
+	nresults() const noexcept override;
+
+	virtual const jive::base::type &
+	result_type(size_t index) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+private:
+	jive::bits::type otype_;
+};
+
 }
 
 #endif

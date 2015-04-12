@@ -318,4 +318,55 @@ bits2flt_op::copy() const
 	return std::unique_ptr<jive::operation>(new bits2flt_op(*this));
 }
 
+/* flt2bits operator */
+
+flt2bits_op::~flt2bits_op() noexcept
+{}
+
+bool
+flt2bits_op::operator==(const operation & other) const noexcept
+{
+	auto op = dynamic_cast<const flt2bits_op*>(&other);
+	return op && otype_ == op->otype_;
+}
+
+size_t
+flt2bits_op::narguments() const noexcept
+{
+	return 1;
+}
+
+const jive::base::type &
+flt2bits_op::argument_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < narguments());
+	static jive::flt::type flttype;
+	return flttype;
+}
+
+size_t
+flt2bits_op::nresults() const noexcept
+{
+	return 1;
+}
+
+const jive::base::type &
+flt2bits_op::result_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < nresults());
+	return otype_;
+}
+
+std::string
+flt2bits_op::debug_string() const
+{
+	return "FLT2BITS";
+}
+
+std::unique_ptr<jive::operation>
+flt2bits_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new flt2bits_op(*this));
+}
+
 }
