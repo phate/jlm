@@ -233,7 +233,7 @@ const jive::base::type &
 alloca_op::argument_type(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < narguments());
-	return jive::mem::memtype;
+	return jive::mem::type::instance();
 }
 
 size_t
@@ -252,7 +252,7 @@ alloca_op::result_type(size_t index) const noexcept
 		return addrtype;
 	}
 
-	return jive::mem::memtype;
+	return jive::mem::type::instance();
 }
 
 std::string
