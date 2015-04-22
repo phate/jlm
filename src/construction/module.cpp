@@ -26,7 +26,6 @@
 namespace jlm
 {
 
-typedef std::unordered_map<const llvm::Function*, jlm::clg_node*> function_map;
 
 static cfg_node *
 create_cfg_structure(
@@ -155,24 +154,28 @@ convert_function(const llvm::Function & function, jlm::clg_node * clg_node)
 	clg_node->cfg()->prune();
 }
 
-void
-convert_module(const llvm::Module & module, jlm::clg & clg)
+static void
+convert_functions(const llvm::Module::FunctionListType & list, jlm::clg & clg)
 {
-	JLM_DEBUG_ASSERT(clg.nnodes() == 0);
+	std::unordered_map<const llvm::Function*, jlm::clg_node*> f_map;
 
-	function_map f_map;
-
-	llvm::Module::FunctionListType::const_iterator it = module.getFunctionList().begin();
-	for (; it != module.getFunctionList().end(); it++) {
+	for (auto it = list.begin(); it != list.end(); it++) {
 		const llvm::Function & f = *it;
 		jive::fct::type fcttype(dynamic_cast<const jive::fct::type&>(
 			*convert_type(f.getFunctionType())));
 		f_map[&f] = clg.add_function(f.getName().str().c_str(), fcttype);
 	}
 
-	it = module.getFunctionList().begin();
-	for (; it != module.getFunctionList().end(); it++)
+	for (auto it = list.begin(); it != list.end(); it++)
 		convert_function(*it, f_map[&(*it)]);
+}
+
+void
+convert_module(const llvm::Module & module, jlm::clg & clg)
+{
+	JLM_DEBUG_ASSERT(clg.nnodes() == 0);
+
+	convert_functions(module.getFunctionList(), clg);
 }
 
 }
