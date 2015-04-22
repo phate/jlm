@@ -7,8 +7,12 @@
 #define JLM_IR_MODULE_HPP
 
 #include <jlm/IR/clg.hpp>
+#include <jlm/IR/expression.hpp>
 
 namespace jlm {
+
+class expr;
+class variable;
 
 class module final {
 public:
@@ -26,8 +30,39 @@ public:
 		return clg_;
 	}
 
+	inline const jlm::clg &
+	clg() const noexcept
+	{
+		return clg_;
+	}
+
+	const variable *
+	add_global_variable(const std::string & name, const expr & e);
+
+	inline const expr *
+	lookup_global_variable(const variable * v)
+	{
+		auto it = globals_.find(v);
+		return it != globals_.end() ? it->second.get() : nullptr;
+	}
+
+	/* FIXME: this is ugly */
+	std::unordered_map<const variable*, std::unique_ptr<const expr>>::const_iterator
+	begin() const
+	{
+		return globals_.begin();
+	}
+
+	std::unordered_map<const variable*, std::unique_ptr<const expr>>::const_iterator
+	end() const
+	{
+		return globals_.end();
+	}
+
 private:
 	jlm::clg clg_;
+	std::unordered_set<std::unique_ptr<const variable>> variables_;
+	std::unordered_map<const variable*, std::unique_ptr<const expr>> globals_;
 };
 
 }

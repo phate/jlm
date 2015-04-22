@@ -6,6 +6,8 @@
 #ifndef JLM_IR_EXPRESSION_HPP
 #define JLM_IR_EXPRESSION_HPP
 
+#include <jlm/common.hpp>
+
 #include <jive/vsdg/operators/base.h>
 
 #include <memory>

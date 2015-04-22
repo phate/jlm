@@ -232,6 +232,10 @@ private:
 
 class context final {
 public:
+	inline context(const variable_map & globals)
+		: globals_(globals)
+	{}
+
 	inline bool
 	has_variable_map(const jlm::cfg_node * node) const noexcept
 	{
@@ -329,7 +333,14 @@ public:
 		fmap_[f] = r;
 	}
 
+	inline const variable_map &
+	globals() const noexcept
+	{
+		return globals_;
+	}
+
 private:
+	variable_map globals_;
 	std::unordered_set<std::unique_ptr<theta_env>> theta_envs_;
 	std::unordered_map<const jlm::clg_node*, jive::output*> fmap_;
 	std::unordered_map<const jlm::cfg_node*, variable_map> vmap_;

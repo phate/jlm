@@ -9,9 +9,12 @@
 
 #include <jlm/IR/basic_block.hpp>
 #include <jlm/IR/clg.hpp>
+#include <jlm/IR/module.hpp>
 #include <jlm/IR/operators.hpp>
 #include <jlm/IR/tac.hpp>
 
+#include <jive/arch/dataobject.h>
+#include <jive/arch/memlayout-simple.h>
 #include <jive/types/bitstring/constant.h>
 #include <jive/types/bitstring/type.h>
 #include <jive/types/function.h>
@@ -418,7 +421,7 @@ convert_cfg(
 	struct jive_lambda * lambda = jive_lambda_begin(region, variables.size(),
 		&argument_types[0], &argument_names[0]);
 
-	jlm::dstrct::variable_map vmap;
+	jlm::dstrct::variable_map vmap(ctx.globals());
 	JLM_DEBUG_ASSERT(variables.size() == lambda->narguments);
 	for (size_t n = 0; n < variables.size(); n++)
 		vmap.insert_value(variables[n], lambda->arguments[n]);
@@ -489,12 +492,40 @@ handle_scc(
 	}
 }
 
-struct jive_graph *
-construct_rvsdg(const jlm::clg & clg)
+static jive::output*
+convert_expression(const expr & e, jive_graph * graph)
 {
-	dstrct::context ctx;
+	std::vector<jive::output*> operands;
+	for (size_t n = 0; n < e.noperands(); n++)
+		operands.push_back(convert_expression(e.operand(n), graph));
+
+	return jive_node_create_normalized(graph, e.operation(), operands)[0];
+}
+
+static dstrct::variable_map
+convert_global_variables(const module & m, jive_graph * graph)
+{
+	jlm::dstrct::variable_map vmap;
+	jive_memlayout_mapper_simple mapper;
+	jive_memlayout_mapper_simple_init(&mapper, 32);
+	for (auto it = m.begin(); it != m.end(); it++) {
+		jive::output * data = jive_dataobj(convert_expression(*(it->second), graph), &mapper.base.base);
+		vmap.insert_value(it->first, data);
+	}
+	jive_memlayout_mapper_simple_fini(&mapper);
+
+	return vmap;
+}
+
+struct jive_graph *
+construct_rvsdg(const module & m)
+{
 	struct ::jive_graph * graph = jive_graph_create();	
-	std::vector<std::unordered_set<const jlm::clg_node*>> sccs = clg.find_sccs();
+
+	dstrct::variable_map globals = convert_global_variables(m, graph);
+
+	dstrct::context ctx(globals);
+	std::vector<std::unordered_set<const jlm::clg_node*>> sccs = m.clg().find_sccs();
 	for (auto scc : sccs)
 		handle_scc(scc, graph, ctx);
 

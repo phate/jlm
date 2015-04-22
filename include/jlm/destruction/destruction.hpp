@@ -10,10 +10,10 @@ struct jive_graph;
 
 namespace jlm {
 
-class clg;
+class module;
 
 struct jive_graph *
-construct_rvsdg(const jlm::clg & clg);
+construct_rvsdg(const module & m);
 
 }
 

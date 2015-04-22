@@ -40,7 +40,7 @@ int main (int argc, char ** argv)
 	jlm::module m;
 	jlm::convert_module(*module, m);
 
-	struct jive_graph * graph = jlm::construct_rvsdg(m.clg());
+	struct jive_graph * graph = jlm::construct_rvsdg(m);
 
 	jive_view(graph, stdout);
 

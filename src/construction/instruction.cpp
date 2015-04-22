@@ -35,10 +35,13 @@ convert_value(
 	const llvm::Value * v,
 	const context & ctx)
 {
+	if (ctx.has_value(v))
+		return ctx.lookup_value(v);
+
 	if (auto c = dynamic_cast<const llvm::Constant*>(v))
 		return ctx.entry_block()->append(*convert_constant(c));
 
-	return ctx.lookup_value(v);
+	JLM_DEBUG_ASSERT(0);
 }
 
 /* instructions */

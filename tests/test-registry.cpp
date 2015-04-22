@@ -57,7 +57,7 @@ run_unit_test(const std::string & name)
 
 	jlm::module m;
 	convert_module(*module, m);
-	struct jive_graph * graph = jlm::construct_rvsdg(m.clg());
+	struct jive_graph * graph = jlm::construct_rvsdg(m);
 
 	return unit_test_map[name]->verify(graph);
 }

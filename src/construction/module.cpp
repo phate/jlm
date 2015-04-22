@@ -109,7 +109,10 @@ convert_basic_block(
 }
 
 static void
-convert_function(const llvm::Function & function, jlm::clg_node * clg_node)
+convert_function(
+	const llvm::Function & function,
+	jlm::clg_node * clg_node,
+	context & ctx)
 {
 	if (function.isDeclaration())
 		return;
@@ -132,7 +135,10 @@ convert_function(const llvm::Function & function, jlm::clg_node * clg_node)
 	if (!function.getReturnType()->isVoidTy())
 		result = cfg->create_variable(*convert_type(function.getReturnType()), "_r_");
 
-	context ctx(bbmap, entry_block, state, result);
+	ctx.set_basic_block_map(bbmap);
+	ctx.set_entry_block(entry_block);
+	ctx.set_state(state);
+	ctx.set_result(result);
 	if (!function.getReturnType()->isVoidTy()) {
 		const variable * udef = entry_block->append(*create_undef_value(function.getReturnType()));
 		entry_block->append(assignment_op(result->type()), {udef}, {result});
@@ -156,7 +162,10 @@ convert_function(const llvm::Function & function, jlm::clg_node * clg_node)
 }
 
 static void
-convert_functions(const llvm::Module::FunctionListType & list, jlm::clg & clg)
+convert_functions(
+	const llvm::Module::FunctionListType & list,
+	jlm::clg & clg,
+	context & ctx)
 {
 	for (auto it = list.begin(); it != list.end(); it++) {
 		jive::fct::type fcttype(dynamic_cast<const jive::fct::type&>(
@@ -165,13 +174,28 @@ convert_functions(const llvm::Module::FunctionListType & list, jlm::clg & clg)
 	}
 
 	for (auto it = list.begin(); it != list.end(); it++)
-		convert_function(*it, clg.lookup_function((*it).getName().str()));
+		convert_function(*it, clg.lookup_function((*it).getName().str()), ctx);
+}
+
+static void
+convert_global_variables(
+	const llvm::Module::GlobalListType & list,
+	jlm::module & mod,
+	context & ctx)
+{
+	for (auto it = list.begin(); it != list.end(); it++) {
+		const variable * v;
+		v = mod.add_global_variable(it->getName().str(), *convert_constant(it.getNodePtrUnchecked()));
+		ctx.insert_value(it.getNodePtrUnchecked(), v);
+	}
 }
 
 void
-convert_module(const llvm::Module & module, jlm::module & m)
+convert_module(const llvm::Module & module, jlm::module & mod)
 {
-	convert_functions(module.getFunctionList(), m.clg());
+	context ctx;
+	convert_global_variables(module.getGlobalList(), mod, ctx);
+	convert_functions(module.getFunctionList(), mod.clg(), ctx);
 }
 
 }

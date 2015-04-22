@@ -13,6 +13,7 @@
 #include <jive/types/bitstring/value-representation.h>
 #include <jive/types/float/fltconstant.h>
 
+#include <llvm/IR/GlobalVariable.h>
 #include <llvm/IR/Constants.h>
 
 #include <unordered_map>
@@ -102,6 +103,18 @@ convert_constantFP(const llvm::Constant * constant)
 	return std::shared_ptr<const expr>(new expr(jive::flt::constant_op(nan("")), {}));
 }
 
+static std::shared_ptr<const expr>
+convert_globalVariable(const llvm::Constant * constant)
+{
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::GlobalVariable*>(constant));
+	const llvm::GlobalVariable * c = static_cast<const llvm::GlobalVariable*>(constant);
+
+	if (!c->hasInitializer())
+		return create_undef_value(c->getType());
+
+	return convert_constant(c->getInitializer());
+}
+
 typedef std::unordered_map<
 	std::type_index,
 	std::shared_ptr<const expr> (*)(const llvm::Constant *)
@@ -112,6 +125,7 @@ static constant_map cmap({
 	, {std::type_index(typeid(llvm::UndefValue)), convert_undefvalue_instruction}
 	, {std::type_index(typeid(llvm::ConstantExpr)), convert_constantExpr}
 	,	{std::type_index(typeid(llvm::ConstantFP)), convert_constantFP}
+	, {std::type_index(typeid(llvm::GlobalVariable)), convert_globalVariable}
 });
 
 std::shared_ptr<const expr>

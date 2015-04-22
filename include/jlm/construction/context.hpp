@@ -20,7 +20,6 @@ class variable;
 
 class basic_block_map final {
 public:
-
 	inline bool
 	has_basic_block(const llvm::BasicBlock * bb) const noexcept
 	{
@@ -73,20 +72,13 @@ private:
 	std::unordered_map<const basic_block*, const llvm::BasicBlock*> jlm2llvm_;
 };
 
-typedef std::unordered_map<const llvm::Value*, const jlm::variable*> value_map;
-
 class context final {
 public:
 	inline
-	context(
-		const basic_block_map & bbmap,
-		basic_block * entry_block,
-		const variable * state,
-		const variable * result)
-	: bbmap_(bbmap)
-	, entry_block_(entry_block)
-	, state_(state)
-	, result_(result)
+	context()
+		: entry_block_(nullptr)
+		, state_(nullptr)
+		, result_(nullptr)
 	{}
 
 	inline basic_block *
@@ -95,16 +87,34 @@ public:
 		return entry_block_;
 	}
 
+	inline void
+	set_entry_block(basic_block * entry_block)
+	{
+		entry_block_ = entry_block;
+	}
+
 	inline const variable *
 	result() const noexcept
 	{
 		return result_;
 	}
 
+	inline void
+	set_result(const variable * result)
+	{
+		result_ = result;
+	}
+
 	inline const variable *
 	state() const noexcept
 	{
 		return state_;
+	}
+
+	inline void
+	set_state(const variable * state)
+	{
+		state_ = state;
 	}
 
 	inline bool
@@ -131,6 +141,12 @@ public:
 		return bbmap_.lookup_basic_block(bb);
 	}
 
+	inline void
+	set_basic_block_map(const basic_block_map & bbmap)
+	{
+		bbmap_ = bbmap;
+	}
+
 	inline const bool
 	has_value(const llvm::Value * value) const noexcept
 	{
@@ -152,7 +168,7 @@ public:
 	}
 
 private:
-	const basic_block_map & bbmap_;
+	basic_block_map bbmap_;
 	basic_block * entry_block_;
 	const variable * state_;
 	const variable * result_;

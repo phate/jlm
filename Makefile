@@ -12,6 +12,7 @@ LIBJLM_SRC = \
 	src/IR/cfg.cpp \
 	src/IR/cfg_node.cpp \
 	src/IR/clg.cpp \
+	src/IR/module.cpp \
 	src/IR/operators.cpp \
 	src/IR/tac.cpp \
 	\
