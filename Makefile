@@ -25,7 +25,7 @@ LIBJLM_SRC = \
 
 
 JLM_SRC = \
-	src/main.cpp \
+	src/jlm.cpp \
 
 all: libjlm.a jlm check
 
