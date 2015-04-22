@@ -15,6 +15,7 @@ namespace jive {
 
 namespace jlm {
 
+class expr;
 class tac;
 
 class basic_block final : public cfg_node {
@@ -29,6 +30,12 @@ public:
 	const tac *
 	append(const jive::operation & operation, const std::vector<const variable*> & operands,
 		const std::vector<const variable*> & results);
+
+	const variable *
+	append(const expr & e, const variable * v);
+
+	const variable *
+	append(const expr & e);
 
 	/*
 		FIXME: add accessor functions

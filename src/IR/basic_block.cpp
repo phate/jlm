@@ -5,6 +5,7 @@
 
 #include <jlm/IR/basic_block.hpp>
 #include <jlm/IR/cfg.hpp>
+#include <jlm/IR/expression.hpp>
 #include <jlm/IR/tac.hpp>
 #include <jlm/IR/variable.hpp>
 
@@ -57,6 +58,28 @@ basic_block::append(
 	jlm::tac * tac = new jlm::tac(this, operation, operands, results);
 	tacs_.push_back(tac);
 	return tac;
+}
+
+const variable *
+basic_block::append(const expr & e)
+{
+	return append(e, cfg()->create_variable(e.type()));
+}
+
+const variable *
+basic_block::append(
+	const expr & e,
+	const variable * result)
+{
+	std::vector<const variable *> operands;
+	for (size_t n = 0; n < e.noperands(); n++) {
+		const variable * opv = cfg()->create_variable(e.type());
+		operands.push_back(append(e.operand(n), opv));
+	}
+
+	jlm::tac * tac = new jlm::tac(this, e.operation(), operands, {result});
+	tacs_.push_back(tac);
+	return tac->output(0);
 }
 
 }
