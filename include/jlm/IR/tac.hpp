@@ -77,7 +77,7 @@ public:
 		return outputs_[index];
 	}
 
-	virtual std::string
+	std::string
 	debug_string() const;
 
 private:
