@@ -157,17 +157,14 @@ convert_function(const llvm::Function & function, jlm::clg_node * clg_node)
 static void
 convert_functions(const llvm::Module::FunctionListType & list, jlm::clg & clg)
 {
-	std::unordered_map<const llvm::Function*, jlm::clg_node*> f_map;
-
 	for (auto it = list.begin(); it != list.end(); it++) {
-		const llvm::Function & f = *it;
 		jive::fct::type fcttype(dynamic_cast<const jive::fct::type&>(
-			*convert_type(f.getFunctionType())));
-		f_map[&f] = clg.add_function(f.getName().str().c_str(), fcttype);
+			*convert_type((*it).getFunctionType())));
+		clg.add_function((*it).getName().str().c_str(), fcttype);
 	}
 
 	for (auto it = list.begin(); it != list.end(); it++)
-		convert_function(*it, f_map[&(*it)]);
+		convert_function(*it, clg.lookup_function((*it).getName().str()));
 }
 
 void
