@@ -15,6 +15,7 @@ namespace jlm  {
 
 class basic_block;
 class context;
+class variable;
 
 const variable *
 convert_value(

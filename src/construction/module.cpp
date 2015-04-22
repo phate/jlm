@@ -133,7 +133,7 @@ convert_function(const llvm::Function & function, jlm::clg_node * clg_node)
 
 	context ctx(bbmap, entry_block, state, result);
 	if (!function.getReturnType()->isVoidTy()) {
-		const variable * udef = create_undef_value(function.getReturnType(), ctx);
+		const variable * udef = entry_block->append(*create_undef_value(function.getReturnType()));
 		entry_block->append(assignment_op(result->type()), {udef}, {result});
 	}
 

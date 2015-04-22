@@ -8,6 +8,8 @@
 
 #include <jive/types/bitstring/value-representation.h>
 
+#include <memory>
+
 namespace llvm {
 	class APInt;
 	class Constant;
@@ -17,20 +19,16 @@ namespace llvm {
 namespace jlm {
 
 class context;
-class variable;
+class expr;
 
 jive::bits::value_repr
 convert_apint(const llvm::APInt & value);
 
-const variable *
-create_undef_value(
-	const llvm::Type * type,
-	const context & ctx);
+std::shared_ptr<const expr>
+create_undef_value(const llvm::Type * type);
 
-const variable *
-convert_constant(
-	const llvm::Constant * constant,
-	const context & ctx);
+std::shared_ptr<const expr>
+convert_constant(const llvm::Constant * constant);
 
 }
 

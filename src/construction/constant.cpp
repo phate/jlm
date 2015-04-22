@@ -5,10 +5,8 @@
 
 #include <jlm/common.hpp>
 #include <jlm/construction/constant.hpp>
-#include <jlm/construction/context.hpp>
 #include <jlm/construction/instruction.hpp>
-#include <jlm/IR/basic_block.hpp>
-#include <jlm/IR/tac.hpp>
+#include <jlm/IR/expression.hpp>
 
 #include <jive/arch/address.h>
 #include <jive/types/bitstring/constant.h>
@@ -40,82 +38,73 @@ convert_apint(const llvm::APInt & value)
 	return vr;
 }
 
-const jlm::variable *
-create_undef_value(
-	const llvm::Type * type,
-	const context & ctx)
+std::shared_ptr<const expr>
+create_undef_value(const llvm::Type * type)
 {
-	basic_block * bb = ctx.entry_block();
-
 	if (type->isIntegerTy()) {
 		size_t nbits = type->getIntegerBitWidth();
 		jive::bits::constant_op op(jive::bits::value_repr::repeat(nbits, 'X'));
-		return bb->append(op, {})->output(0);
+		return std::shared_ptr<const expr>(new expr(op, {}));
 	}
 
 	/* FIXME: differentiate between floating point types */
 	if (type->isFloatingPointTy())
-		return bb->append(jive::flt::constant_op(nan("")), {})->output(0);
+		return std::shared_ptr<const expr>(new expr(jive::flt::constant_op(nan("")), {}));
 
 	/* FIXME: adjust when we have a real unknown value */
-	if (type->isPointerTy())
-		return bb->append(jive::address::constant_op(jive::address::value_repr(0)), {})->output(0);
+	if (type->isPointerTy()) {
+		jive::address::constant_op op(jive::address::value_repr(0));
+		return std::shared_ptr<const expr>(new expr(op, {}));
+	}
 
 	JLM_DEBUG_ASSERT(0);
 	return nullptr;
 }
 
-static const jlm::variable *
-convert_int_constant(
-	const llvm::Constant * c,
-	const context & ctx)
+static std::shared_ptr<const expr>
+convert_int_constant(const llvm::Constant * c)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantInt*>(c));
 	const llvm::ConstantInt * constant = static_cast<const llvm::ConstantInt*>(c);
 
-	basic_block * bb = ctx.entry_block();
 	jive::bits::value_repr v = convert_apint(constant->getValue());
-	return bb->append(jive::bits::constant_op(convert_apint(constant->getValue())), {})->output(0);
+	return std::shared_ptr<const expr>(new expr(jive::bits::constant_op(v), {}));
 }
 
-static const jlm::variable *
-convert_undefvalue_instruction(
-	const llvm::Constant * c,
-	const context & ctx)
+static std::shared_ptr<const expr>
+convert_undefvalue_instruction(const llvm::Constant * c)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::UndefValue*>(c));
 	const llvm::UndefValue * constant = static_cast<const llvm::UndefValue*>(c);
 
-	return create_undef_value(constant->getType(), ctx);
+	return create_undef_value(constant->getType());
 }
 
-static const variable *
-convert_constantExpr(
-	const llvm::Constant * constant,
-	const context & ctx)
+static std::shared_ptr<const expr>
+convert_constantExpr(const llvm::Constant * constant)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantExpr*>(constant));
-	const llvm::ConstantExpr * c = static_cast<const llvm::ConstantExpr*>(constant);
+	/* const llvm::ConstantExpr * c = static_cast<const llvm::ConstantExpr*>(constant); */
 
-	return convert_instruction(const_cast<llvm::ConstantExpr*>(c)->getAsInstruction(),
-		ctx.entry_block(), ctx);
+	/* FIXME */
+
+	return nullptr;
+	//convert_instruction(const_cast<llvm::ConstantExpr*>(c)->getAsInstruction(),
+	//	ctx.entry_block(), ctx);
 }
 
-static const variable *
-convert_constantFP(
-	const llvm::Constant * constant,
-	const context & ctx)
+static std::shared_ptr<const expr>
+convert_constantFP(const llvm::Constant * constant)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantFP*>(constant));
 
 	/* FIXME: convert APFloat and take care of all types */
-	basic_block * bb = ctx.entry_block();
-	return bb->append(jive::flt::constant_op(nan("")), {})->output(0);
+	return std::shared_ptr<const expr>(new expr(jive::flt::constant_op(nan("")), {}));
 }
 
 typedef std::unordered_map<
 	std::type_index,
-	const jlm::variable*(*)(const llvm::Constant *, const context & ctx)
+	std::shared_ptr<const expr> (*)(const llvm::Constant *)
 	> constant_map;
 
 static constant_map cmap({
@@ -125,13 +114,11 @@ static constant_map cmap({
 	,	{std::type_index(typeid(llvm::ConstantFP)), convert_constantFP}
 });
 
-const variable *
-convert_constant(
-	const llvm::Constant * c,
-	const context & ctx)
+std::shared_ptr<const expr>
+convert_constant(const llvm::Constant * c)
 {
 	JLM_DEBUG_ASSERT(cmap.find(std::type_index(typeid(*c))) != cmap.end());
-	return cmap[std::type_index(typeid(*c))](c, ctx);
+	return cmap[std::type_index(typeid(*c))](c);
 }
 
 }

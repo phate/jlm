@@ -36,7 +36,7 @@ convert_value(
 	const context & ctx)
 {
 	if (auto c = dynamic_cast<const llvm::Constant*>(v))
-		return convert_constant(c, ctx);
+		return ctx.entry_block()->append(*convert_constant(c));
 
 	return ctx.lookup_value(v);
 }
