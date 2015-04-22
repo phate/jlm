@@ -7,7 +7,7 @@
 #include <jlm/construction/constant.hpp>
 #include <jlm/construction/context.hpp>
 #include <jlm/construction/instruction.hpp>
-#include <jlm/construction/jlm.hpp>
+#include <jlm/construction/module.hpp>
 #include <jlm/construction/type.hpp>
 #include <jlm/IR/basic_block.hpp>
 #include <jlm/IR/cfg.hpp>

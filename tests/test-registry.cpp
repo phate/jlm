@@ -7,7 +7,7 @@
 
 #include <jlm/IR/clg.hpp>
 
-#include <jlm/construction/jlm.hpp>
+#include <jlm/construction/module.hpp>
 #include <jlm/destruction/destruction.hpp>
 
 #include <llvm/IR/LLVMContext.h>

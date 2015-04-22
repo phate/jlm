@@ -16,8 +16,8 @@ LIBJLM_SRC = \
 	src/IR/tac.cpp \
 	\
 	src/construction/constant.cpp \
-	src/construction/jlm.cpp \
 	src/construction/instruction.cpp \
+	src/construction/module.cpp \
 	src/construction/type.cpp \
 	\
 	src/destruction/destruction.cpp \

@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_CONSTRUCTION_JLM_HPP
-#define JLM_CONSTRUCTION_JLM_HPP
+#ifndef JLM_CONSTRUCTION_MODULE_HPP
+#define JLM_CONSTRUCTION_MODULE_HPP
 
 #include <unordered_map>
 

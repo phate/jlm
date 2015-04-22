@@ -6,7 +6,6 @@
 #include <jlm/common.hpp>
 #include <jlm/construction/constant.hpp>
 #include <jlm/construction/context.hpp>
-#include <jlm/construction/jlm.hpp>
 #include <jlm/construction/type.hpp>
 
 #include <jlm/IR/basic_block.hpp>
