@@ -6,7 +6,7 @@
 #include <jlm/construction/module.hpp>
 
 #include <jlm/destruction/destruction.hpp>
-#include <jlm/IR/clg.hpp>
+#include <jlm/IR/module.hpp>
 
 #include <jive/vsdg/graph.h>
 #include <jive/view.h>
@@ -37,10 +37,10 @@ int main (int argc, char ** argv)
 
 	setlocale(LC_ALL, "");
 
-	jlm::clg clg;
-	jlm::convert_module(*module, clg);
+	jlm::module m;
+	jlm::convert_module(*module, m);
 
-	struct jive_graph * graph = jlm::construct_rvsdg(clg);
+	struct jive_graph * graph = jlm::construct_rvsdg(m.clg());
 
 	jive_view(graph, stdout);
 

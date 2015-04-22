@@ -13,6 +13,7 @@
 #include <jlm/IR/cfg.hpp>
 #include <jlm/IR/cfg_node.hpp>
 #include <jlm/IR/clg.hpp>
+#include <jlm/IR/module.hpp>
 #include <jlm/IR/operators.hpp>
 
 #include <jive/arch/memorytype.h>
@@ -168,11 +169,9 @@ convert_functions(const llvm::Module::FunctionListType & list, jlm::clg & clg)
 }
 
 void
-convert_module(const llvm::Module & module, jlm::clg & clg)
+convert_module(const llvm::Module & module, jlm::module & m)
 {
-	JLM_DEBUG_ASSERT(clg.nnodes() == 0);
-
-	convert_functions(module.getFunctionList(), clg);
+	convert_functions(module.getFunctionList(), m.clg());
 }
 
 }

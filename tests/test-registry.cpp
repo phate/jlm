@@ -5,7 +5,7 @@
 
 #include "test-registry.hpp"
 
-#include <jlm/IR/clg.hpp>
+#include <jlm/IR/module.hpp>
 
 #include <jlm/construction/module.hpp>
 #include <jlm/destruction/destruction.hpp>
@@ -55,9 +55,9 @@ run_unit_test(const std::string & name)
 		assert(0);
 	}
 
-	jlm::clg clg;
-	convert_module(*module, clg);
-	struct jive_graph * graph = jlm::construct_rvsdg(clg);
+	jlm::module m;
+	convert_module(*module, m);
+	struct jive_graph * graph = jlm::construct_rvsdg(m.clg());
 
 	return unit_test_map[name]->verify(graph);
 }

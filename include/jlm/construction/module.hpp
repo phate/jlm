@@ -6,18 +6,16 @@
 #ifndef JLM_CONSTRUCTION_MODULE_HPP
 #define JLM_CONSTRUCTION_MODULE_HPP
 
-#include <unordered_map>
-
 namespace llvm {
 	class Module;
 }
 
 namespace jlm {
 
-class clg;
+class module;
 
 void
-convert_module(const llvm::Module & module, jlm::clg & clg);
+convert_module(const llvm::Module & module, jlm::module & clg);
 
 }
 
