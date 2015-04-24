@@ -15,7 +15,7 @@ TESTS += \
 	libjlm/test-fptoui \
 	libjlm/test-fptrunc \
 	libjlm/test-getelementptr \
-	libjlm/test-globalvariable \
+	libjlm/test-globalVariable \
 	libjlm/test-inttoptr \
 	libjlm/test-loadstore \
 	libjlm/test-trunc \
