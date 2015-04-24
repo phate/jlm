@@ -3,8 +3,8 @@ TESTS += \
 	libjlm/test-bitcast \
 	libjlm/test-bitops \
 	libjlm/test-call \
-	libjlm/test-constant \
 	libjlm/test-constantFP \
+	libjlm/test-constantInt \
 	libjlm/test-constantPointerNull \
 	libjlm/test-dowhile \
 	libjlm/test-fcmp \

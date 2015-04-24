@@ -19,7 +19,7 @@ verify(const jive_graph * graph)
 	bitliteral xl(jive::bits::value_repr(32, 13));
 
 	std::unique_ptr<const literal> result;
-	result = std::move(eval(graph, "test_constant", {&xl, &state})->copy());
+	result = std::move(eval(graph, "test_constantInt", {&xl, &state})->copy());
 
 	const fctliteral * fctlit = dynamic_cast<const fctliteral*>(result.get());
 	assert(fctlit->nresults() == 2);
@@ -28,5 +28,4 @@ verify(const jive_graph * graph)
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-constant", verify);
-
+JLM_UNIT_TEST_REGISTER("libjlm/test-constantInt", verify);
