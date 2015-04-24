@@ -3,9 +3,7 @@ TESTS += \
 	libjlm/test-bitcast \
 	libjlm/test-bitops \
 	libjlm/test-call \
-	libjlm/test-constantFP \
-	libjlm/test-constantInt \
-	libjlm/test-constantPointerNull \
+	libjlm/test-constants \
 	libjlm/test-dowhile \
 	libjlm/test-fcmp \
 	libjlm/test-fltops \
@@ -15,7 +13,6 @@ TESTS += \
 	libjlm/test-fptoui \
 	libjlm/test-fptrunc \
 	libjlm/test-getelementptr \
-	libjlm/test-globalVariable \
 	libjlm/test-inttoptr \
 	libjlm/test-loadstore \
 	libjlm/test-trunc \
@@ -29,7 +26,6 @@ TESTS += \
 	libjlm/test-switch \
 	libjlm/test-switch_fallthrough \
 	libjlm/test-uitofp \
-	libjlm/test-undefValue \
 	libjlm/test-unreachable \
 	libjlm/test-while \
 	libjlm/test-zext \
