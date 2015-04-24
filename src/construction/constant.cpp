@@ -115,6 +115,14 @@ convert_globalVariable(const llvm::Constant * constant)
 	return convert_constant(c->getInitializer());
 }
 
+static std::shared_ptr<const expr>
+convert_constantPointerNull(const llvm::Constant * constant)
+{
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantPointerNull*>(constant));
+
+	return std::shared_ptr<const expr>(new expr(jive::address::constant_op(0), {}));
+}
+
 typedef std::unordered_map<
 	std::type_index,
 	std::shared_ptr<const expr> (*)(const llvm::Constant *)
@@ -126,6 +134,7 @@ static constant_map cmap({
 	, {std::type_index(typeid(llvm::ConstantExpr)), convert_constantExpr}
 	,	{std::type_index(typeid(llvm::ConstantFP)), convert_constantFP}
 	, {std::type_index(typeid(llvm::GlobalVariable)), convert_globalVariable}
+	, {std::type_index(typeid(llvm::ConstantPointerNull)), convert_constantPointerNull}
 });
 
 std::shared_ptr<const expr>

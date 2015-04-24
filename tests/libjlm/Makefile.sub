@@ -5,6 +5,7 @@ TESTS += \
 	libjlm/test-call \
 	libjlm/test-constant \
 	libjlm/test-constantFP \
+	libjlm/test-constantPointerNull \
 	libjlm/test-dowhile \
 	libjlm/test-fcmp \
 	libjlm/test-fltops \
