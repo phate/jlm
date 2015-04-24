@@ -19,7 +19,6 @@ TESTS += \
 	libjlm/test-inttoptr \
 	libjlm/test-loadstore \
 	libjlm/test-trunc \
-	libjlm/test-undefvalue \
 	libjlm/test-linear \
 	libjlm/test-ifthen \
 	libjlm/test-phi \
@@ -30,6 +29,7 @@ TESTS += \
 	libjlm/test-switch \
 	libjlm/test-switch_fallthrough \
 	libjlm/test-uitofp \
+	libjlm/test-undefValue \
 	libjlm/test-unreachable \
 	libjlm/test-while \
 	libjlm/test-zext \

@@ -17,7 +17,7 @@ verify(const jive_graph * graph)
 
 	memliteral state;
 	std::unique_ptr<const literal> result;
-	result = std::move(eval(graph, "test_undefvalue", {&state})->copy());
+	result = std::move(eval(graph, "test_undefValue", {&state})->copy());
 
 	const fctliteral * fctlit = dynamic_cast<const fctliteral*>(result.get());
 	assert(fctlit->nresults() == 2);
@@ -27,4 +27,4 @@ verify(const jive_graph * graph)
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-undefvalue", verify)
+JLM_UNIT_TEST_REGISTER("libjlm/test-undefValue", verify)
