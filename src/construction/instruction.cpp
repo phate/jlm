@@ -640,6 +640,46 @@ convert_bitcast_instruction(
 	return bb->append(lop, {address, state}, {result})->output(0);
 }
 
+static const variable *
+convert_insertvalue_instruction(
+	const llvm::Instruction * instruction,
+	basic_block * bb,
+	context & ctx)
+{
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::InsertValueInst*>(instruction));
+	const llvm::InsertValueInst * i = static_cast<const llvm::InsertValueInst*>(instruction);
+
+	/* FIXME: array type */
+	if (i->getType()->isArrayTy())
+		JLM_DEBUG_ASSERT(0);
+
+	std::function<const variable *(llvm::InsertValueInst::idx_iterator, const variable *)> f = [&] (
+		const llvm::InsertValueInst::idx_iterator & idx,
+		const variable * aggregate)
+	{
+		if (idx == i->idx_end())
+			return convert_value(i->getInsertedValueOperand(), ctx);
+
+		/* FIXME: array type */
+		const jive::rcd::type * type = dynamic_cast<const jive::rcd::type*>(&aggregate->type());
+		std::shared_ptr<const jive::rcd::declaration> decl = type->declaration();
+
+		std::vector<const variable*> operands;
+		for (size_t n = 0; n < decl->nelements(); n++) {
+			const jlm::tac * tac = bb->append(jive::rcd::select_operation(*type, n), {aggregate});
+			if (n == *idx)
+				operands.push_back(f(std::next(idx), tac->output(0)));
+			else
+				operands.push_back(tac->output(0));
+		}
+
+		jive::rcd::group_op op(decl);
+		return bb->append(op, operands, {ctx.lookup_value(i)})->output(0);
+	};
+
+	return f(i->idx_begin(), convert_value(i->getAggregateOperand(), ctx));
+}
+
 const variable *
 convert_instruction(
 	const llvm::Instruction * i,
@@ -676,6 +716,7 @@ convert_instruction(
 	,	{std::type_index(typeid(llvm::FPToUIInst)), convert_fptoui_instruction}
 	,	{std::type_index(typeid(llvm::FPToSIInst)), convert_fptosi_instruction}
 	,	{std::type_index(typeid(llvm::BitCastInst)), convert_bitcast_instruction}
+	,	{std::type_index(typeid(llvm::InsertValueInst)), convert_insertvalue_instruction}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(*i))) != map.end());
