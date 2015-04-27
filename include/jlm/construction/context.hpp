@@ -6,6 +6,12 @@
 #ifndef JLM_CONSTRUCTION_CONTEXT_HPP
 #define JLM_CONSTRUCTION_CONTEXT_HPP
 
+#include <jlm/construction/type.hpp>
+
+#include <jive/types/record/rcdtype.h>
+
+#include <llvm/IR/DerivedTypes.h>
+
 #include <unordered_map>
 
 namespace llvm {
@@ -167,12 +173,35 @@ public:
 		vmap_[value] = variable;
 	}
 
+	inline std::shared_ptr<const jive::rcd::declaration> &
+	lookup_declaration(const llvm::StructType * type)
+	{
+		auto it = declarations_.find(type);
+		if (it != declarations_.end())
+			return it->second;
+
+		std::vector<const jive::value::type*> types_;
+		std::vector<std::unique_ptr<jive::base::type>> types;
+		for (size_t n = 0; n < type->getNumElements(); n++) {
+			types.emplace_back(convert_type(type->getElementType(n), *this));
+			types_.push_back(dynamic_cast<const jive::value::type*>((types.back().get())));
+		}
+
+		std::shared_ptr<const jive::rcd::declaration> declaration(new jive::rcd::declaration(types_));
+		declarations_[type] = declaration;
+
+		return declarations_[type];
+	}
+
 private:
 	basic_block_map bbmap_;
 	basic_block * entry_block_;
 	const variable * state_;
 	const variable * result_;
 	std::unordered_map<const llvm::Value *, const variable*> vmap_;
+	std::unordered_map<
+		const llvm::StructType*,
+		std::shared_ptr<const jive::rcd::declaration>> declarations_;
 };
 
 }

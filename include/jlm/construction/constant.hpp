@@ -25,10 +25,10 @@ jive::bits::value_repr
 convert_apint(const llvm::APInt & value);
 
 std::shared_ptr<const expr>
-create_undef_value(const llvm::Type * type);
+create_undef_value(const llvm::Type * type, context & ctx);
 
 std::shared_ptr<const expr>
-convert_constant(const llvm::Constant * constant);
+convert_constant(const llvm::Constant * constant, context & ctx);
 
 }
 

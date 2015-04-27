@@ -4,6 +4,7 @@
  */
 
 #include <jlm/common.hpp>
+#include <jlm/construction/context.hpp>
 #include <jlm/construction/type.hpp>
 
 #include <jive/arch/addresstype.h>
@@ -20,7 +21,7 @@
 namespace jlm {
 
 static std::unique_ptr<jive::base::type>
-convert_integer_type(const llvm::Type * t)
+convert_integer_type(const llvm::Type * t, context & ctx)
 {
 	JLM_DEBUG_ASSERT(t->getTypeID() == llvm::Type::IntegerTyID);
 	const llvm::IntegerType * type = static_cast<const llvm::IntegerType*>(t);
@@ -29,7 +30,7 @@ convert_integer_type(const llvm::Type * t)
 }
 
 static std::unique_ptr<jive::base::type>
-convert_pointer_type(const llvm::Type * t)
+convert_pointer_type(const llvm::Type * t, context & ctx)
 {
 	JLM_DEBUG_ASSERT(t->getTypeID() == llvm::Type::PointerTyID);
 
@@ -37,26 +38,26 @@ convert_pointer_type(const llvm::Type * t)
 }
 
 static std::unique_ptr<jive::base::type>
-convert_function_type(const llvm::Type * t)
+convert_function_type(const llvm::Type * t, context & ctx)
 {
 	JLM_DEBUG_ASSERT(t->getTypeID() == llvm::Type::FunctionTyID);
 	const llvm::FunctionType * type = static_cast<const llvm::FunctionType*>(t);
 
 	std::vector<std::unique_ptr<jive::base::type>> argument_types;
 	for (size_t n = 0; n < type->getNumParams(); n++)
-		argument_types.push_back(convert_type(type->getParamType(n)));
+		argument_types.push_back(convert_type(type->getParamType(n), ctx));
 	argument_types.push_back(std::unique_ptr<jive::base::type>(new jive::mem::type()));
 
 	std::vector<std::unique_ptr<jive::base::type>> result_types;
 	if (type->getReturnType()->getTypeID() != llvm::Type::VoidTyID)
-		result_types.push_back(convert_type(type->getReturnType()));
+		result_types.push_back(convert_type(type->getReturnType(), ctx));
 	result_types.push_back(std::unique_ptr<jive::base::type>(new jive::mem::type()));
 
 	return std::unique_ptr<jive::base::type>(new jive::fct::type(argument_types, result_types));
 }
 
 static std::unique_ptr<jive::base::type>
-convert_float_type(const llvm::Type * t)
+convert_float_type(const llvm::Type * t, context & ctx)
 {
 	JLM_DEBUG_ASSERT(t->isFloatingPointTy());
 
@@ -64,8 +65,19 @@ convert_float_type(const llvm::Type * t)
 	return std::unique_ptr<jive::base::type>(new jive::flt::type());
 }
 
+static std::unique_ptr<jive::base::type>
+convert_struct_type(const llvm::Type * t, context & ctx)
+{
+	JLM_DEBUG_ASSERT(t->isStructTy());
+	const llvm::StructType * type = static_cast<const llvm::StructType*>(t);
+
+	/* FIXME: handle packed structures */
+
+	return std::unique_ptr<jive::base::type>(new jive::rcd::type(ctx.lookup_declaration(type)));
+}
+
 typedef std::map<llvm::Type::TypeID,
-	std::unique_ptr<jive::base::type>(*)(const llvm::Type *)> type_map;
+	std::unique_ptr<jive::base::type>(*)(const llvm::Type *, context & ctx)> type_map;
 
 static type_map tmap({
 		{llvm::Type::IntegerTyID, convert_integer_type}
@@ -77,13 +89,14 @@ static type_map tmap({
 	, {llvm::Type::X86_FP80TyID, convert_float_type}
 	, {llvm::Type::FP128TyID, convert_float_type}
 	, {llvm::Type::PPC_FP128TyID, convert_float_type}
+	, {llvm::Type::StructTyID, convert_struct_type}
 });
 
 std::unique_ptr<jive::base::type>
-convert_type(const llvm::Type * t)
+convert_type(const llvm::Type * t, context & ctx)
 {
 	JLM_DEBUG_ASSERT(tmap.find(t->getTypeID()) != tmap.end());
-	return tmap[t->getTypeID()](t);
+	return tmap[t->getTypeID()](t, ctx);
 }
 
 }

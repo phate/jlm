@@ -20,13 +20,13 @@ class variable;
 const variable *
 convert_value(
 	const llvm::Value * v,
-	const jlm::context & ctx);
+	context & ctx);
 
 const variable *
 convert_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
-	const context & ctx);
+	context & ctx);
 
 }
 

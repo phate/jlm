@@ -20,6 +20,7 @@
 #include <jive/arch/store.h>
 #include <jive/types/bitstring.h>
 #include <jive/types/float.h>
+#include <jive/types/record.h>
 #include <jive/vsdg/controltype.h>
 #include <jive/vsdg/operators/match.h>
 
@@ -33,13 +34,13 @@ namespace jlm {
 const variable *
 convert_value(
 	const llvm::Value * v,
-	const context & ctx)
+	context & ctx)
 {
 	if (ctx.has_value(v))
 		return ctx.lookup_value(v);
 
 	if (auto c = dynamic_cast<const llvm::Constant*>(v))
-		return ctx.entry_block()->append(*convert_constant(c));
+		return ctx.entry_block()->append(*convert_constant(c, ctx));
 
 	JLM_DEBUG_ASSERT(0);
 }
@@ -50,7 +51,7 @@ static const variable *
 convert_return_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
-	const context & ctx)
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ReturnInst*>(i));
 	const llvm::ReturnInst * instruction = static_cast<const llvm::ReturnInst*>(i);
@@ -67,7 +68,7 @@ static const variable *
 convert_branch_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
-	const context & ctx)
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::BranchInst*>(i));
 	const llvm::BranchInst * instruction = static_cast<const llvm::BranchInst*>(i);
@@ -85,7 +86,7 @@ static const variable *
 convert_switch_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
-	const context & ctx)
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::SwitchInst*>(i));
 	const llvm::SwitchInst * instruction = static_cast<const llvm::SwitchInst*>(i);
@@ -107,7 +108,7 @@ static const variable *
 convert_unreachable_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
-	const context & ctx)
+	context & ctx)
 {
 	/* Nothing needs to be done. */
 	return nullptr;
@@ -117,7 +118,7 @@ static const variable *
 convert_icmp_instruction(
 	const llvm::Instruction * instruction,
 	basic_block * bb,
-	const context & ctx)
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ICmpInst*>(instruction));
 	const llvm::ICmpInst * i = static_cast<const llvm::ICmpInst*>(instruction);
@@ -149,7 +150,7 @@ static const variable *
 convert_fcmp_instruction(
 	const llvm::Instruction * instruction,
 	basic_block * bb,
-	const context & ctx)
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::FCmpInst*>(instruction));
 	const llvm::FCmpInst * i = static_cast<const llvm::FCmpInst*>(instruction);
@@ -197,7 +198,7 @@ static const variable *
 convert_load_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
-	const context & ctx)
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::LoadInst*>(i));
 	const llvm::LoadInst * instruction = static_cast<const llvm::LoadInst*>(i);
@@ -217,7 +218,7 @@ static const variable *
 convert_store_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
-	const context & ctx)
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::StoreInst*>(i));
 	const llvm::StoreInst * instruction = static_cast<const llvm::StoreInst*>(i);
@@ -236,7 +237,7 @@ static const variable *
 convert_phi_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
-	const context & ctx)
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::PHINode*>(i));
 	const llvm::PHINode * phi = static_cast<const llvm::PHINode*>(i);
@@ -258,7 +259,7 @@ static const variable *
 convert_getelementptr_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
-	const context & ctx)
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::GetElementPtrInst*>(i));
 	const llvm::GetElementPtrInst * instruction = static_cast<const llvm::GetElementPtrInst*>(i);
@@ -279,7 +280,7 @@ static const variable *
 convert_trunc_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
-	const context & ctx)
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::TruncInst*>(i));
 	const llvm::TruncInst * instruction = static_cast<const llvm::TruncInst*>(i);
@@ -294,7 +295,7 @@ static const variable *
 convert_call_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
-	const context & ctx)
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::CallInst*>(i));
 	const llvm::CallInst * instruction = static_cast<const llvm::CallInst*>(i);
@@ -311,7 +312,7 @@ convert_call_instruction(
 		arguments.push_back(convert_value(instruction->getArgOperand(n), ctx));
 	arguments.push_back(ctx.state());
 
-	jive::fct::type type = dynamic_cast<jive::fct::type&>(*convert_type(f->getFunctionType()));
+	jive::fct::type type = dynamic_cast<jive::fct::type&>(*convert_type(f->getFunctionType(), ctx));
 
 	std::vector<const jlm::variable*> results;
 	if (type.nreturns() == 2)
@@ -326,7 +327,7 @@ static const variable *
 convert_select_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
-	const context & ctx)
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::SelectInst*>(i));
 	const llvm::SelectInst * instruction = static_cast<const llvm::SelectInst*>(i);
@@ -341,7 +342,7 @@ static const variable *
 convert_binary_operator(
 	const llvm::Instruction * instruction,
 	basic_block * bb,
-	const context & ctx)
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::BinaryOperator*>(instruction));
 	const llvm::BinaryOperator * i = static_cast<const llvm::BinaryOperator*>(instruction);
@@ -398,7 +399,7 @@ static const variable *
 convert_alloca_instruction(
 	const llvm::Instruction * instruction,
 	basic_block * bb,
-	const context & ctx)
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::AllocaInst*>(instruction));
 	const llvm::AllocaInst * i = static_cast<const llvm::AllocaInst*>(instruction);
@@ -414,7 +415,7 @@ static const variable *
 convert_zext_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
-	const context & ctx)
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ZExtInst*>(i));
 
@@ -437,7 +438,7 @@ static const variable *
 convert_sext_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
-	const context & ctx)
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::SExtInst*>(i));
 
@@ -467,7 +468,7 @@ static const variable *
 convert_fpext_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
-	const context & ctx)
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::FPExtInst*>(i));
 
@@ -483,7 +484,7 @@ static const variable *
 convert_fptrunc_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
-	const context & ctx)
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::FPTruncInst*>(i));
 
@@ -499,7 +500,7 @@ static const variable *
 convert_inttoptr_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
-	const context & ctx)
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::IntToPtrInst*>(i));
 
@@ -519,7 +520,7 @@ static const variable *
 convert_ptrtoint_instruction(
 	const llvm::Instruction * instruction,
 	basic_block * bb,
-	const context & ctx)
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::PtrToIntInst*>(instruction));
 	const llvm::PtrToIntInst * i = static_cast<const llvm::PtrToIntInst*>(instruction);
@@ -539,7 +540,7 @@ static const variable *
 convert_uitofp_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
-	const context & ctx)
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::UIToFPInst*>(i));
 
@@ -558,7 +559,7 @@ static const variable *
 convert_sitofp_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
-	const context & ctx)
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::SIToFPInst*>(i));
 
@@ -577,7 +578,7 @@ static const variable *
 convert_fptoui_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
-	const context & ctx)
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::FPToUIInst*>(i));
 
@@ -595,7 +596,7 @@ static const variable *
 convert_fptosi_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
-	const context & ctx)
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::FPToSIInst*>(i));
 
@@ -613,7 +614,7 @@ static const variable *
 convert_bitcast_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
-	const context & ctx)
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::BitCastInst*>(i));
 
@@ -643,11 +644,11 @@ const variable *
 convert_instruction(
 	const llvm::Instruction * i,
 	basic_block * bb,
-	const context & ctx)
+	context & ctx)
 {
 	static std::unordered_map<
 		std::type_index,
-		const variable * (*)(const llvm::Instruction*, jlm::basic_block*, const context&)
+		const variable * (*)(const llvm::Instruction*, jlm::basic_block*, context&)
 	> map({
 		{std::type_index(typeid(llvm::ReturnInst)), convert_return_instruction}
 	,	{std::type_index(typeid(llvm::BranchInst)), convert_branch_instruction}

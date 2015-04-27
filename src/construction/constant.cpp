@@ -4,6 +4,7 @@
  */
 
 #include <jlm/common.hpp>
+#include <jlm/construction/context.hpp>
 #include <jlm/construction/constant.hpp>
 #include <jlm/construction/instruction.hpp>
 #include <jlm/IR/expression.hpp>
@@ -12,6 +13,7 @@
 #include <jive/types/bitstring/constant.h>
 #include <jive/types/bitstring/value-representation.h>
 #include <jive/types/float/fltconstant.h>
+#include <jive/types/record/rcdgroup.h>
 
 #include <llvm/IR/GlobalVariable.h>
 #include <llvm/IR/Constants.h>
@@ -40,7 +42,7 @@ convert_apint(const llvm::APInt & value)
 }
 
 std::shared_ptr<const expr>
-create_undef_value(const llvm::Type * type)
+create_undef_value(const llvm::Type * type, context & ctx)
 {
 	if (type->isIntegerTy()) {
 		size_t nbits = type->getIntegerBitWidth();
@@ -58,12 +60,21 @@ create_undef_value(const llvm::Type * type)
 		return std::shared_ptr<const expr>(new expr(op, {}));
 	}
 
+	if (type->isStructTy()){
+		std::vector<std::shared_ptr<const expr>> operands;
+		for (size_t n = 0; n < type->getStructNumElements(); n++)
+			operands.push_back(create_undef_value(type->getStructElementType(n), ctx));
+
+		jive::rcd::group_op op(ctx.lookup_declaration(static_cast<const llvm::StructType*>(type)));
+		return std::shared_ptr<const expr>(new expr(op, operands));
+	}
+
 	JLM_DEBUG_ASSERT(0);
 	return nullptr;
 }
 
 static std::shared_ptr<const expr>
-convert_int_constant(const llvm::Constant * c)
+convert_int_constant(const llvm::Constant * c, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantInt*>(c));
 	const llvm::ConstantInt * constant = static_cast<const llvm::ConstantInt*>(c);
@@ -73,16 +84,16 @@ convert_int_constant(const llvm::Constant * c)
 }
 
 static std::shared_ptr<const expr>
-convert_undefvalue_instruction(const llvm::Constant * c)
+convert_undefvalue_instruction(const llvm::Constant * c, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::UndefValue*>(c));
 	const llvm::UndefValue * constant = static_cast<const llvm::UndefValue*>(c);
 
-	return create_undef_value(constant->getType());
+	return create_undef_value(constant->getType(), ctx);
 }
 
 static std::shared_ptr<const expr>
-convert_constantExpr(const llvm::Constant * constant)
+convert_constantExpr(const llvm::Constant * constant, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantExpr*>(constant));
 	/* const llvm::ConstantExpr * c = static_cast<const llvm::ConstantExpr*>(constant); */
@@ -95,7 +106,7 @@ convert_constantExpr(const llvm::Constant * constant)
 }
 
 static std::shared_ptr<const expr>
-convert_constantFP(const llvm::Constant * constant)
+convert_constantFP(const llvm::Constant * constant, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantFP*>(constant));
 
@@ -104,19 +115,19 @@ convert_constantFP(const llvm::Constant * constant)
 }
 
 static std::shared_ptr<const expr>
-convert_globalVariable(const llvm::Constant * constant)
+convert_globalVariable(const llvm::Constant * constant, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::GlobalVariable*>(constant));
 	const llvm::GlobalVariable * c = static_cast<const llvm::GlobalVariable*>(constant);
 
 	if (!c->hasInitializer())
-		return create_undef_value(c->getType());
+		return create_undef_value(c->getType(), ctx);
 
-	return convert_constant(c->getInitializer());
+	return convert_constant(c->getInitializer(), ctx);
 }
 
 static std::shared_ptr<const expr>
-convert_constantPointerNull(const llvm::Constant * constant)
+convert_constantPointerNull(const llvm::Constant * constant, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantPointerNull*>(constant));
 
@@ -125,7 +136,7 @@ convert_constantPointerNull(const llvm::Constant * constant)
 
 typedef std::unordered_map<
 	std::type_index,
-	std::shared_ptr<const expr> (*)(const llvm::Constant *)
+	std::shared_ptr<const expr> (*)(const llvm::Constant *, context & ctx)
 	> constant_map;
 
 static constant_map cmap({
@@ -138,10 +149,10 @@ static constant_map cmap({
 });
 
 std::shared_ptr<const expr>
-convert_constant(const llvm::Constant * c)
+convert_constant(const llvm::Constant * c, context & ctx)
 {
 	JLM_DEBUG_ASSERT(cmap.find(std::type_index(typeid(*c))) != cmap.end());
-	return cmap[std::type_index(typeid(*c))](c);
+	return cmap[std::type_index(typeid(*c))](c, ctx);
 }
 
 }

@@ -101,7 +101,7 @@ convert_basic_block(
 
 		jlm::cfg * cfg = ctx.entry_block()->cfg();
 		if (it->getType()->getTypeID() != llvm::Type::VoidTyID)
-			ctx.insert_value(&(*it), cfg->create_variable(*convert_type(it->getType())));
+			ctx.insert_value(&(*it), cfg->create_variable(*convert_type(it->getType(), ctx)));
 	}
 
 	for (auto it = bb.begin(); it != bb.end(); it++)
@@ -133,14 +133,14 @@ convert_function(
 
 	const jlm::variable * result = nullptr;
 	if (!function.getReturnType()->isVoidTy())
-		result = cfg->create_variable(*convert_type(function.getReturnType()), "_r_");
+		result = cfg->create_variable(*convert_type(function.getReturnType(), ctx), "_r_");
 
 	ctx.set_basic_block_map(bbmap);
 	ctx.set_entry_block(entry_block);
 	ctx.set_state(state);
 	ctx.set_result(result);
 	if (!function.getReturnType()->isVoidTy()) {
-		const variable * udef = entry_block->append(*create_undef_value(function.getReturnType()));
+		const variable * udef = entry_block->append(*create_undef_value(function.getReturnType(), ctx));
 		entry_block->append(assignment_op(result->type()), {udef}, {result});
 	}
 
@@ -169,7 +169,7 @@ convert_functions(
 {
 	for (auto it = list.begin(); it != list.end(); it++) {
 		jive::fct::type fcttype(dynamic_cast<const jive::fct::type&>(
-			*convert_type((*it).getFunctionType())));
+			*convert_type((*it).getFunctionType(), ctx)));
 		clg.add_function((*it).getName().str().c_str(), fcttype);
 	}
 
@@ -184,8 +184,8 @@ convert_global_variables(
 	context & ctx)
 {
 	for (auto it = list.begin(); it != list.end(); it++) {
-		const variable * v;
-		v = mod.add_global_variable(it->getName().str(), *convert_constant(it.getNodePtrUnchecked()));
+		const variable * v = mod.add_global_variable(it->getName().str(),
+			*convert_constant(it.getNodePtrUnchecked(), ctx));
 		ctx.insert_value(it.getNodePtrUnchecked(), v);
 	}
 }

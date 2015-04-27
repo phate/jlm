@@ -20,8 +20,10 @@ namespace llvm {
 
 namespace jlm {
 
+class context;
+
 std::unique_ptr<jive::base::type>
-convert_type(const llvm::Type * type);
+convert_type(const llvm::Type * type, context & ctx);
 
 }
 
