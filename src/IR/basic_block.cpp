@@ -73,7 +73,7 @@ basic_block::append(
 {
 	std::vector<const variable *> operands;
 	for (size_t n = 0; n < e.noperands(); n++) {
-		const variable * opv = cfg()->create_variable(e.type());
+		const variable * opv = cfg()->create_variable(e.operand(n).type());
 		operands.push_back(append(e.operand(n), opv));
 	}
 
