@@ -211,27 +211,27 @@ std::shared_ptr<const expr>
 convert_constant(const llvm::Constant * c, context & ctx)
 {
 	static std::unordered_map<
-		std::type_index,
+		unsigned,
 		std::shared_ptr<const expr> (*)(const llvm::Constant*, context & ctx)
 	> cmap({
-		{std::type_index(typeid(llvm::ConstantInt)), convert_int_constant}
-	,	{std::type_index(typeid(llvm::UndefValue)), convert_undefvalue_instruction}
-	,	{std::type_index(typeid(llvm::ConstantExpr)), convert_constantExpr}
-	,	{std::type_index(typeid(llvm::ConstantFP)), convert_constantFP}
-	,	{std::type_index(typeid(llvm::GlobalVariable)), convert_globalVariable}
-	,	{std::type_index(typeid(llvm::ConstantPointerNull)), convert_constantPointerNull}
-	,	{std::type_index(typeid(llvm::BlockAddress)), convert_blockAddress}
-	,	{std::type_index(typeid(llvm::ConstantAggregateZero)), convert_constantAggregateZero}
-	,	{std::type_index(typeid(llvm::ConstantArray)), convert_constantArray}
-	,	{std::type_index(typeid(llvm::ConstantDataArray)), convert_constantDataArray}
-	,	{std::type_index(typeid(llvm::ConstantDataVector)), convert_constantDataVector}
-	,	{std::type_index(typeid(llvm::ConstantStruct)), convert_constantStruct}
-	,	{std::type_index(typeid(llvm::ConstantVector)), convert_constantVector}
-	, {std::type_index(typeid(llvm::GlobalAlias)), convert_globalAlias}
+		{llvm::Value::ConstantIntVal, convert_int_constant}
+	,	{llvm::Value::UndefValueVal, convert_undefvalue_instruction}
+	,	{llvm::Value::ConstantExprVal, convert_constantExpr}
+	,	{llvm::Value::ConstantFPVal, convert_constantFP}
+	,	{llvm::Value::GlobalVariableVal, convert_globalVariable}
+	,	{llvm::Value::ConstantPointerNullVal, convert_constantPointerNull}
+	,	{llvm::Value::BlockAddressVal, convert_blockAddress}
+	,	{llvm::Value::ConstantAggregateZeroVal, convert_constantAggregateZero}
+	,	{llvm::Value::ConstantArrayVal, convert_constantArray}
+	,	{llvm::Value::ConstantDataArrayVal, convert_constantDataArray}
+	,	{llvm::Value::ConstantDataVectorVal, convert_constantDataVector}
+	,	{llvm::Value::ConstantStructVal, convert_constantStruct}
+	,	{llvm::Value::ConstantVectorVal, convert_constantVector}
+	,	{llvm::Value::GlobalAliasVal, convert_globalAlias}
 	});
 
-	JLM_DEBUG_ASSERT(cmap.find(std::type_index(typeid(*c))) != cmap.end());
-	return cmap[std::type_index(typeid(*c))](c, ctx);
+	JLM_DEBUG_ASSERT(cmap.find(c->getValueID()) != cmap.end());
+	return cmap[c->getValueID()](c, ctx);
 }
 
 }
