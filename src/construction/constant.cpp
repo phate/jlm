@@ -100,8 +100,8 @@ convert_constantExpr(const llvm::Constant * constant, context & ctx)
 	/* const llvm::ConstantExpr * c = static_cast<const llvm::ConstantExpr*>(constant); */
 
 	/* FIXME */
+	return create_undef_value(constant->getType(), ctx);
 
-	return nullptr;
 	//convert_instruction(const_cast<llvm::ConstantExpr*>(c)->getAsInstruction(),
 	//	ctx.entry_block(), ctx);
 }
