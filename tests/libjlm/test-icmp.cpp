@@ -31,38 +31,32 @@ verify_##NAME##_op(const jive_graph * graph, uint64_t x, uint64_t y, uint64_t z)
   assert(dynamic_cast<const bitliteral*>(&fctlit->result(0))->value_repr() == z); \
 } \
 
-MAKE_OP_VERIFIER(add, add_op);
-MAKE_OP_VERIFIER(and, and_op);
-MAKE_OP_VERIFIER(ashr, ashr_op);
-MAKE_OP_VERIFIER(sub, sub_op);
-MAKE_OP_VERIFIER(udiv, udiv_op);
-MAKE_OP_VERIFIER(sdiv, sdiv_op);
-MAKE_OP_VERIFIER(urem, umod_op);
-MAKE_OP_VERIFIER(srem, smod_op);
-MAKE_OP_VERIFIER(shl, shl_op);
-MAKE_OP_VERIFIER(lshr, shr_op);
-MAKE_OP_VERIFIER(or, or_op);
-MAKE_OP_VERIFIER(xor, xor_op);
-MAKE_OP_VERIFIER(mul, mul_op);
+MAKE_OP_VERIFIER(slt, slt_op);
+MAKE_OP_VERIFIER(ult, ult_op);
+MAKE_OP_VERIFIER(sle, sle_op);
+MAKE_OP_VERIFIER(ule, ule_op);
+MAKE_OP_VERIFIER(eq, eq_op);
+MAKE_OP_VERIFIER(ne, ne_op);
+MAKE_OP_VERIFIER(sgt, sgt_op);
+MAKE_OP_VERIFIER(ugt, ugt_op);
+MAKE_OP_VERIFIER(sge, sge_op);
+MAKE_OP_VERIFIER(uge, uge_op);
 
 static int
 verify(const jive_graph * graph)
 {
-	verify_add_op(graph, 3, 4, 7);
-	verify_and_op(graph, 3, 6, 2);
-	verify_ashr_op(graph, 0x8000000000000001, 1, 0xC000000000000000);
-	verify_sub_op(graph, 5, 3, 2);
-	verify_udiv_op(graph, 16, 4, 4);
-	verify_sdiv_op(graph, -16, 4, -4);
-	verify_urem_op(graph, 16, 5, 1);
-	verify_srem_op(graph, -16, 5, -1);
-	verify_shl_op(graph, 1, 1, 2);
-	verify_lshr_op(graph, 2, 1, 1);
-	verify_or_op(graph, 3, 6, 7);
-	verify_xor_op(graph, 3, 6, 5);
-	verify_mul_op(graph, 3, 4, 12);
+	verify_slt_op(graph, -3, 4, 1);
+	verify_ult_op(graph, 3, 4, 1);
+	verify_sle_op(graph, -3, -3, 1);
+	verify_ule_op(graph, -2, -3, 0);
+	verify_eq_op(graph, 4, 5, 0);
+	verify_ne_op(graph, 4, 5, 1);
+	verify_sgt_op(graph, -4, -5, 1);
+	verify_ugt_op(graph, 4, 5, 0);
+	verify_sge_op(graph, -4, -4, 1);
+	verify_uge_op(graph, 4, 4, 1);
 
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-bitops", verify);
+JLM_UNIT_TEST_REGISTER("libjlm/test-icmp", verify);

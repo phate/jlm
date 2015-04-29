@@ -10,6 +10,7 @@ TESTS += \
 	libjlm/test-fltops \
 	libjlm/test-fibrec \
 	libjlm/test-getelementptr \
+	libjlm/test-icmp \
 	libjlm/test-insertvalue \
 	libjlm/test-loadstore \
 	libjlm/test-linear \
