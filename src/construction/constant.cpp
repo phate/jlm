@@ -148,8 +148,23 @@ static std::shared_ptr<const expr>
 convert_constantAggregateZero(const llvm::Constant * constant, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantAggregateZero*>(constant));
+	const llvm::ConstantAggregateZero * c = static_cast<const llvm::ConstantAggregateZero*>(constant);
 
-	/* FIXME */
+	if (c->getType()->isStructTy()) {
+		const llvm::StructType * type = static_cast<const llvm::StructType*>(c->getType());
+
+		std::vector<std::shared_ptr<const expr>> operands;
+		for (size_t n = 0; n < type->getNumElements(); n++)
+			operands.push_back(convert_constant(c->getElementValue(n), ctx));
+
+		jive::rcd::group_op op(ctx.lookup_declaration(type));
+		return std::shared_ptr<const expr>(new expr(op, operands));
+	}
+
+	/* FIXME: */
+	if (c->getType()->isArrayTy())
+		return std::shared_ptr<const expr>(new expr(jive::address::constant_op(0), {}));
+
 	JLM_DEBUG_ASSERT(0);
 }
 

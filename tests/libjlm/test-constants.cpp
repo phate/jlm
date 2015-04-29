@@ -74,6 +74,14 @@ verify_undefValue(const jive_graph * graph)
 }
 
 static int
+verify_constantAggregateZeroStruct(const jive_graph * graph)
+{
+	/* FIXME: insert checks */
+
+	return 0;
+}
+
+static int
 verify(const jive_graph * graph)
 {
 	verify_constantFP(graph);
@@ -81,6 +89,7 @@ verify(const jive_graph * graph)
 	verify_constantPointerNull(graph);
 	verify_globalVariable(graph);
 	verify_undefValue(graph);
+	verify_constantAggregateZeroStruct(graph);
 
 	return 0;
 }
