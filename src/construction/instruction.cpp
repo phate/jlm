@@ -680,6 +680,31 @@ convert_insertvalue_instruction(
 	return f(i->idx_begin(), convert_value(i->getAggregateOperand(), ctx));
 }
 
+static const variable *
+convert_extractvalue_instruction(
+	const llvm::Instruction * instruction,
+	basic_block * bb,
+	context & ctx)
+{
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ExtractValueInst*>(instruction));
+	const llvm::ExtractValueInst * i = static_cast<const llvm::ExtractValueInst*>(instruction);
+
+	/* FIXME: array type */
+	if (i->getType()->isArrayTy())
+		JLM_DEBUG_ASSERT(0);
+
+	const variable * aggregate = convert_value(i->getAggregateOperand(), ctx);
+
+	for (auto it = i->idx_begin(); it != i->idx_end(); it++) {
+		const jive::rcd::type * type = dynamic_cast<const jive::rcd::type*>(&aggregate->type());
+
+		jive::rcd::select_operation op(*type, *it);
+		aggregate = bb->append(op, {aggregate}, {ctx.lookup_value(i)})->output(0);
+	}
+
+	return aggregate;
+}
+
 const variable *
 convert_instruction(
 	const llvm::Instruction * i,
@@ -717,6 +742,7 @@ convert_instruction(
 	,	{std::type_index(typeid(llvm::FPToSIInst)), convert_fptosi_instruction}
 	,	{std::type_index(typeid(llvm::BitCastInst)), convert_bitcast_instruction}
 	,	{std::type_index(typeid(llvm::InsertValueInst)), convert_insertvalue_instruction}
+	,	{std::type_index(typeid(llvm::ExtractValueInst)), convert_extractvalue_instruction}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(*i))) != map.end());

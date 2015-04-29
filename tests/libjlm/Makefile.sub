@@ -5,6 +5,7 @@ TESTS += \
 	libjlm/test-casts \
 	libjlm/test-constants \
 	libjlm/test-dowhile \
+	libjlm/test-extractvalue \
 	libjlm/test-fcmp \
 	libjlm/test-fltops \
 	libjlm/test-fibrec \
