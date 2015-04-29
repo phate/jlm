@@ -123,7 +123,12 @@ convert_icmp_instruction(
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ICmpInst*>(instruction));
 	const llvm::ICmpInst * i = static_cast<const llvm::ICmpInst*>(instruction);
 
-	/* FIXME: this unconditionally casts to integer type, take also care of other types */
+	const jlm::variable * op1 = convert_value(i->getOperand(0), ctx);
+	const jlm::variable * op2 = convert_value(i->getOperand(1), ctx);
+
+	/* FIXME: */
+	if (i->getOperand(0)->getType()->isVectorTy())
+		JLM_DEBUG_ASSERT(0);
 
 	static std::map<
 		const llvm::CmpInst::Predicate,
@@ -140,9 +145,19 @@ convert_icmp_instruction(
 		, {llvm::CmpInst::ICMP_UGT,	[](size_t nbits){jive::bits::ugt_op op(nbits); return op.copy();}}
 	});
 
-	size_t nbits = i->getOperand(0)->getType()->getIntegerBitWidth();
-	const jlm::variable * op1 = convert_value(i->getOperand(0), ctx);
-	const jlm::variable * op2 = convert_value(i->getOperand(1), ctx);
+	/* FIXME: we don't have any comparison operators for address type yet */
+	size_t nbits;
+	if (i->getOperand(0)->getType()->isPointerTy()) {
+		nbits = 32;
+		jive::address_to_bitstring_operation op(nbits,
+			std::unique_ptr<jive::base::type>(new jive::addr::type()));
+		const variable * new_op1 = bb->cfg()->create_variable(jive::bits::type(nbits));
+		const variable * new_op2 = bb->cfg()->create_variable(jive::bits::type(nbits));
+		op1 = bb->append(op, {op1}, {new_op1})->output(0);
+		op2 = bb->append(op, {op2}, {new_op2})->output(0);
+	} else
+		nbits = i->getOperand(0)->getType()->getIntegerBitWidth();
+
 	return bb->append(*map[i->getPredicate()](nbits), {op1, op2}, {ctx.lookup_value(i)})->output(0);
 }
 
