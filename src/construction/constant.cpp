@@ -15,6 +15,7 @@
 #include <jive/types/float/fltconstant.h>
 #include <jive/types/record/rcdgroup.h>
 
+#include <llvm/IR/GlobalAlias.h>
 #include <llvm/IR/GlobalVariable.h>
 #include <llvm/IR/Constants.h>
 
@@ -134,6 +135,78 @@ convert_constantPointerNull(const llvm::Constant * constant, context & ctx)
 	return std::shared_ptr<const expr>(new expr(jive::address::constant_op(0), {}));
 }
 
+static std::shared_ptr<const expr>
+convert_blockAddress(const llvm::Constant * constant, context & ctx)
+{
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::BlockAddress*>(constant));
+
+	/* FIXME */
+	JLM_DEBUG_ASSERT(0);
+}
+
+static std::shared_ptr<const expr>
+convert_constantAggregateZero(const llvm::Constant * constant, context & ctx)
+{
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantAggregateZero*>(constant));
+
+	/* FIXME */
+	JLM_DEBUG_ASSERT(0);
+}
+
+static std::shared_ptr<const expr>
+convert_constantArray(const llvm::Constant * constant, context & ctx)
+{
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantArray*>(constant));
+
+	/* FIXME */
+	JLM_DEBUG_ASSERT(0);
+}
+
+static std::shared_ptr<const expr>
+convert_constantDataArray(const llvm::Constant * constant, context & ctx)
+{
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantDataArray*>(constant));
+
+	/* FIXME */
+	JLM_DEBUG_ASSERT(0);
+}
+
+static std::shared_ptr<const expr>
+convert_constantDataVector(const llvm::Constant * constant, context & ctx)
+{
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantDataVector*>(constant));
+
+	/* FIXME */
+	JLM_DEBUG_ASSERT(0);
+}
+
+static std::shared_ptr<const expr>
+convert_constantStruct(const llvm::Constant * constant, context & ctx)
+{
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantStruct*>(constant));
+
+	/* FIXME */
+	JLM_DEBUG_ASSERT(0);
+}
+
+static std::shared_ptr<const expr>
+convert_constantVector(const llvm::Constant * constant, context & ctx)
+{
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantVector*>(constant));
+
+	/* FIXME */
+	JLM_DEBUG_ASSERT(0);
+}
+
+static std::shared_ptr<const expr>
+convert_globalAlias(const llvm::Constant * constant, context & ctx)
+{
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::GlobalAlias*>(constant));
+
+	/* FIXME */
+	JLM_DEBUG_ASSERT(0);
+}
+
 typedef std::unordered_map<
 	std::type_index,
 	std::shared_ptr<const expr> (*)(const llvm::Constant *, context & ctx)
@@ -146,7 +219,15 @@ static constant_map cmap({
 	,	{std::type_index(typeid(llvm::ConstantFP)), convert_constantFP}
 	, {std::type_index(typeid(llvm::GlobalVariable)), convert_globalVariable}
 	, {std::type_index(typeid(llvm::ConstantPointerNull)), convert_constantPointerNull}
-});
+	, {std::type_index(typeid(llvm::BlockAddress)), convert_blockAddress}
+	, {std::type_index(typeid(llvm::ConstantAggregateZero)), convert_constantAggregateZero}
+	, {std::type_index(typeid(llvm::ConstantArray)), convert_constantArray}
+	, {std::type_index(typeid(llvm::ConstantDataArray)), convert_constantDataArray}
+	, {std::type_index(typeid(llvm::ConstantDataVector)), convert_constantDataVector}
+	, {std::type_index(typeid(llvm::ConstantStruct)), convert_constantStruct}
+	, {std::type_index(typeid(llvm::ConstantVector)), convert_constantVector}
+	, {std::type_index(typeid(llvm::GlobalAlias)), convert_globalAlias}
+	});
 
 std::shared_ptr<const expr>
 convert_constant(const llvm::Constant * c, context & ctx)
