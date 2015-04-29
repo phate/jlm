@@ -174,7 +174,7 @@ convert_constantArray(const llvm::Constant * constant, context & ctx)
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantArray*>(constant));
 
 	/* FIXME */
-	JLM_DEBUG_ASSERT(0);
+	return std::shared_ptr<const expr>(new expr(jive::address::constant_op(0), {}));
 }
 
 static std::shared_ptr<const expr>
@@ -183,7 +183,7 @@ convert_constantDataArray(const llvm::Constant * constant, context & ctx)
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantDataArray*>(constant));
 
 	/* FIXME */
-	JLM_DEBUG_ASSERT(0);
+	return std::shared_ptr<const expr>(new expr(jive::address::constant_op(0), {}));
 }
 
 static std::shared_ptr<const expr>
