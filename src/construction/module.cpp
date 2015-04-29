@@ -121,6 +121,8 @@ convert_function(
 	llvm::Function::ArgumentListType::const_iterator jt = function.getArgumentList().begin();
 	for (; jt != function.getArgumentList().end(); jt++)
 		names.push_back(jt->getName().str());
+	if (function.isVarArg())
+		names.push_back("_varg_");
 	names.push_back("_s_");
 
 	std::vector<const jlm::variable*> arguments = clg_node->cfg_begin(names);

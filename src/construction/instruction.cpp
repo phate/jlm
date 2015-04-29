@@ -308,8 +308,14 @@ convert_call_instruction(
 	caller->add_call(callee);
 
 	std::vector<const jlm::variable*> arguments;
-	for (size_t n = 0; n < instruction->getNumArgOperands(); n++)
+	for (size_t n = 0; n < f->getFunctionType()->getNumParams(); n++)
 		arguments.push_back(convert_value(instruction->getArgOperand(n), ctx));
+	if (f->isVarArg()) {
+		/* FIXME: sizeof */
+		const variable * alloc = bb->cfg()->create_variable(jive::addr::type::instance());
+		const tac * vararg = bb->append(alloca_op(4), {ctx.state()}, {alloc, ctx.state()});
+		arguments.push_back(vararg->output(0));
+	}
 	arguments.push_back(ctx.state());
 
 	jive::fct::type type = dynamic_cast<jive::fct::type&>(*convert_type(f->getFunctionType(), ctx));

@@ -43,10 +43,18 @@ convert_function_type(const llvm::Type * t, context & ctx)
 	JLM_DEBUG_ASSERT(t->getTypeID() == llvm::Type::FunctionTyID);
 	const llvm::FunctionType * type = static_cast<const llvm::FunctionType*>(t);
 
+	/* arguments */
+
 	std::vector<std::unique_ptr<jive::base::type>> argument_types;
 	for (size_t n = 0; n < type->getNumParams(); n++)
 		argument_types.push_back(convert_type(type->getParamType(n), ctx));
+
+	if (type->isVarArg())
+		argument_types.push_back(std::unique_ptr<jive::base::type>(new jive::addr::type()));
+
 	argument_types.push_back(std::unique_ptr<jive::base::type>(new jive::mem::type()));
+
+	/* results */
 
 	std::vector<std::unique_ptr<jive::base::type>> result_types;
 	if (type->getReturnType()->getTypeID() != llvm::Type::VoidTyID)
