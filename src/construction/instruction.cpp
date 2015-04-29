@@ -451,7 +451,7 @@ convert_zext_instruction(
 	jive::bits::constant_op c_op(jive::bits::value_repr(new_length - old_length, 0));
 	const variable * c = bb->append(c_op, {})->output(0);
 
-	jive::bits::concat_op op({jive::bits::type(new_length-old_length), jive::bits::type(old_length)});
+	jive::bits::concat_op op({jive::bits::type(old_length), jive::bits::type(new_length-old_length)});
 	return bb->append(op, {convert_value(operand, ctx), c}, {ctx.lookup_value(i)})->output(0);
 }
 

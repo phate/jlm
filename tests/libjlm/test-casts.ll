@@ -68,8 +68,8 @@ entry:
   ret float %conv
 }
 
-define i64 @test_zext(i32 %x) nounwind uwtable readnone {
+define i64 @test_zext(i16 %x) nounwind uwtable readnone {
 entry:
-  %conv = zext i32 %x to i64
+  %conv = zext i16 %x to i64
   ret i64 %conv
 }

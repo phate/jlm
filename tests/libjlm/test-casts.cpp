@@ -175,7 +175,7 @@ verify_zext(const jive_graph * graph)
 	using namespace jive::evaluator;
 
 	memliteral state;
-	bitliteral xl(jive::bits::value_repr(32, 13));
+	bitliteral xl(jive::bits::value_repr(16, 13));
 
 	std::unique_ptr<const literal> result;
 	result = std::move(eval(graph, "test_zext", {&xl, &state})->copy());
