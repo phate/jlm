@@ -104,7 +104,7 @@ int main (int argc, char ** argv)
 	if (cmdf.cfg.first) {
 		jlm::clg_node * f = m.clg().lookup_function(cmdf.cfg.second);
 		if (!f) {
-			std::cerr << "Expected LLVM IR file as input\n";
+			std::cerr << "Function not found.\n";
 			exit(1);
 		}
 
