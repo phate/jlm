@@ -148,10 +148,4 @@ private:
 
 }
 
-void
-jive_clg_convert_dot(const jlm::clg & self, jive::buffer & buffer);
-
-void
-jive_clg_view(const jlm::clg & self);
-
 #endif

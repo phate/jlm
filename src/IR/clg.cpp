@@ -152,36 +152,3 @@ clg_node::cfg_end(const std::vector<const variable*> & results)
 }
 
 }
-
-void
-jive_clg_convert_dot(const jlm::clg & self, jive::buffer & buffer)
-{
-	buffer.append("digraph clg {\n");
-
-	char tmp[96];
-	std::vector<jlm::clg_node*> nodes = self.nodes();
-	for (auto node : nodes) {
-		snprintf(tmp, sizeof(tmp), "%zu", (size_t)node);
-		buffer.append(tmp).append("[label = \"");
-		buffer.append(node->name().c_str());
-		buffer.append("\"];\n");
-
-		for (auto c : node->calls()) {
-			snprintf(tmp, sizeof(tmp), "%zu -> %zu;\n", (size_t)node, (size_t)c);
-			buffer.append(tmp);
-		}
-	}
-
-	buffer.append("}\n");
-}
-
-void
-jive_clg_view(const jlm::clg & self)
-{
-	jive::buffer buffer;
-
-	FILE * file = popen("tee /tmp/clg.dot | dot -Tps > /tmp/clg.ps ; gv /tmp/clg.ps", "w");
-	jive_clg_convert_dot(self, buffer);
-	fwrite(buffer.c_str(), buffer.size(), 1, file);
-	pclose(file);
-}
