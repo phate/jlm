@@ -31,4 +31,4 @@ verify(const jive_graph * graph)
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-unreachable", verify);
+JLM_UNIT_TEST_REGISTER("libjlm/test-unreachable", nullptr, verify);

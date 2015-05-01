@@ -15,4 +15,4 @@ verify(const jive_graph * graph)
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-insertvalue", verify);
+JLM_UNIT_TEST_REGISTER("libjlm/test-insertvalue", nullptr, verify);

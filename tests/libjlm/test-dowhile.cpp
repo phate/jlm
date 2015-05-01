@@ -29,4 +29,4 @@ verify(const jive_graph * graph)
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-dowhile", verify);
+JLM_UNIT_TEST_REGISTER("libjlm/test-dowhile", nullptr, verify);

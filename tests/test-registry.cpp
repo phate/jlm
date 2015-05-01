@@ -24,18 +24,29 @@ namespace jlm {
 
 class unit_test {
 public:
-	unit_test(int(*v)(const jive_graph * graph)) : verify(v) {}
-	int (*verify)(const jive_graph * graph);
+	unit_test(
+		int (*vmodule)(const jlm::module & m),
+		int(*vrvsdg)(const jive_graph * graph))
+		: verify_rvsdg(vrvsdg)
+		, verify_module(vmodule)
+	{}
+
+	int (*verify_rvsdg)(const jive_graph * graph);
+	int (*verify_module)(const jlm::module & m);
 };
 
 static std::unordered_map<std::string, std::unique_ptr<unit_test>> unit_test_map;
 
 void
-register_unit_test(const std::string & name, int (*verify)(const jive_graph * graph))
+register_unit_test(
+	const std::string & name,
+	int (*verify_module)(const jlm::module & m),
+	int (*verify_rvsdg)(const jive_graph * graph))
 {
 	assert(unit_test_map.find(name) == unit_test_map.end());
 
-	unit_test_map.insert(std::make_pair(name, std::unique_ptr<unit_test>(new unit_test(verify))));
+	unit_test_map.insert(std::make_pair(name,
+		std::unique_ptr<unit_test>(new unit_test(verify_module, verify_rvsdg))));
 }
 
 int
@@ -57,9 +68,17 @@ run_unit_test(const std::string & name)
 
 	jlm::module m;
 	convert_module(*module, m);
+
+	int result = 0;
+	if (unit_test_map[name]->verify_module)
+		result += unit_test_map[name]->verify_module(m);
+
 	struct jive_graph * graph = jlm::construct_rvsdg(m);
 
-	return unit_test_map[name]->verify(graph);
+	if (unit_test_map[name]->verify_rvsdg)
+		result += unit_test_map[name]->verify_rvsdg(graph);
+
+	return result;
 }
 
 }

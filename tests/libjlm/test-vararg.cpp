@@ -15,4 +15,4 @@ verify(const jive_graph * graph)
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-vararg", verify);
+JLM_UNIT_TEST_REGISTER("libjlm/test-vararg", nullptr, verify);

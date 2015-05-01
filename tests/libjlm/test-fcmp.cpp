@@ -18,4 +18,4 @@ verify(const jive_graph * graph)
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-fcmp", verify);
+JLM_UNIT_TEST_REGISTER("libjlm/test-fcmp", nullptr, verify);
