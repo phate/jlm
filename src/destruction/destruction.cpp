@@ -13,10 +13,13 @@
 #include <jlm/IR/operators.hpp>
 #include <jlm/IR/tac.hpp>
 
+#include <jive/arch/address.h>
+#include <jive/arch/addresstype.h>
 #include <jive/arch/dataobject.h>
 #include <jive/arch/memlayout-simple.h>
 #include <jive/types/bitstring/constant.h>
 #include <jive/types/bitstring/type.h>
+#include <jive/types/float.h>
 #include <jive/types/function.h>
 #include <jive/vsdg/basetype.h>
 #include <jive/vsdg/control.h>
@@ -25,6 +28,7 @@
 #include <jive/vsdg/operators/match.h>
 #include <jive/vsdg/phi.h>
 
+#include <cmath>
 #include <stack>
 
 namespace jlm {
@@ -45,6 +49,14 @@ create_undefined_value(const jive::base::type & type, struct jive_graph * graph)
 	/* FIXME: temporary solutation */
 	if (dynamic_cast<const jive::ctl::type*>(&type))
 		return jive_control_constant(graph, 2, 0);
+
+	/* FIXME */
+	if (dynamic_cast<const jive::addr::type*>(&type))
+		return jive::address::constant(graph, jive::address::value_repr(0));
+
+	/* FIXME */
+	if (dynamic_cast<const jive::flt::type*>(&type))
+		return jive_fltconstant(graph, std::nan(""));
 
 	JLM_DEBUG_ASSERT(0);
 	return nullptr;
