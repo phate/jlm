@@ -102,6 +102,22 @@ clg::find_sccs() const
 	return sccs;
 }
 
+std::string
+clg::to_string() const
+{
+	std::ostringstream osstream;
+	for (auto it = nodes_.begin(); it != nodes_.end(); it++) {
+		if (it->second->calls().empty())
+			osstream << it->first << "\n";
+		else {
+			for (auto call : it->second->calls())
+				osstream << it->first << " -> " << call->name() << "\n";
+		}
+	}
+
+	return osstream.str();
+}
+
 /* clg node */
 
 std::vector<const variable*>

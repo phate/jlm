@@ -57,6 +57,9 @@ public:
 	std::vector<std::unordered_set<const clg_node*>>
 	find_sccs() const;
 
+	std::string
+	to_string() const;
+
 private:
 	std::unordered_map<std::string, std::unique_ptr<clg_node>> nodes_;
 };
