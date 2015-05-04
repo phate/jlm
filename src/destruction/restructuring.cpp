@@ -11,6 +11,7 @@
 #include <jive/vsdg/controltype.h>
 #include <jive/vsdg/operators/match.h>
 
+#include <algorithm>
 #include <cmath>
 #include <deque>
 #include <unordered_map>
@@ -56,13 +57,72 @@ find_entries_and_exits(
 	}
 }
 
+/* Tarjan's SCC algorithm */
+
+static void
+strongconnect(
+	jlm::cfg_node * node,
+	jlm::cfg_node * exit,
+	std::unordered_map<jlm::cfg_node*, std::pair<size_t,size_t>> & map,
+	std::vector<jlm::cfg_node*> & node_stack,
+	size_t & index,
+	std::vector<std::unordered_set<jlm::cfg_node*>> & sccs)
+{
+	map.emplace(node, std::make_pair(index, index));
+	node_stack.push_back(node);
+	index++;
+
+	if (node != exit) {
+		std::vector<jlm::cfg_edge*> edges = node->outedges();
+		for (size_t n = 0; n < edges.size(); n++) {
+			jlm::cfg_node * successor = edges[n]->sink();
+			if (map.find(successor) == map.end()) {
+				/* successor has not been visited yet; recurse on it */
+				strongconnect(successor, exit, map, node_stack, index, sccs);
+				map[node].second = std::min(map[node].second, map[successor].second);
+			} else if (std::find(node_stack.begin(), node_stack.end(), successor) != node_stack.end()) {
+				/* successor is in stack and hence in the current SCC */
+				map[node].second = std::min(map[node].second, map[successor].first);
+			}
+		}
+	}
+
+	if (map[node].second == map[node].first) {
+		std::unordered_set<jlm::cfg_node*> scc;
+		jlm::cfg_node * w;
+		do {
+			w = node_stack.back();
+			node_stack.pop_back();
+			scc.insert(w);
+		} while (w != node);
+
+		if (scc.size() != 1 || (*scc.begin())->has_selfloop_edge())
+			sccs.push_back(scc);
+	}
+}
+
+static std::vector<std::unordered_set<cfg_node*>>
+find_sccs(jlm::cfg_node * enter, jlm::cfg_node * exit)
+{
+	std::vector<std::unordered_set<cfg_node*>> sccs;
+
+	std::unordered_map<cfg_node*, std::pair<size_t,size_t>> map;
+	std::vector<cfg_node*> node_stack;
+	size_t index = 0;
+
+	strongconnect(enter, exit, map, node_stack, index, sccs);
+
+	return sccs;
+}
+
 static void
 restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit,
 	std::vector<jlm::cfg_edge> & back_edges)
 {
 	jlm::cfg * cfg = entry->cfg();
+	JLM_DEBUG_ASSERT(cfg->is_closed());
 
-	std::vector<std::unordered_set<jlm::cfg_node*>> sccs = cfg->find_sccs();
+	std::vector<std::unordered_set<jlm::cfg_node*>> sccs = find_sccs(entry, exit);
 
 	for (auto scc : sccs) {
 		std::unordered_set<jlm::cfg_edge*> ae;

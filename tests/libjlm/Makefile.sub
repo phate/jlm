@@ -16,6 +16,7 @@ TESTS += \
 	libjlm/test-linear \
 	libjlm/test-ifthen \
 	libjlm/test-phi \
+	libjlm/test-restructuring \
 	libjlm/test-select \
 	libjlm/test-switch \
 	libjlm/test-switch_fallthrough \
