@@ -70,9 +70,13 @@ create_cfg_structure(
 		if (auto swi = dynamic_cast<const llvm::SwitchInst*>(instr)) {
 			for (auto c = swi->case_begin(); c != swi->case_end(); c++) {
 				JLM_DEBUG_ASSERT(c != swi->case_default());
-				bbmap[&(*it)]->add_outedge(bbmap[c.getCaseSuccessor()], c.getCaseIndex());
+				basic_block * bb = cfg->create_basic_block();
+				bbmap[&(*it)]->add_outedge(bb, c.getCaseIndex());
+				bb->add_outedge(bbmap[c.getCaseSuccessor()], 0);
 			}
-			bbmap[&(*it)]->add_outedge(bbmap[swi->case_default().getCaseSuccessor()], swi->getNumCases());
+			basic_block * bb = cfg->create_basic_block();
+			bbmap[&(*it)]->add_outedge(bb, swi->getNumCases());
+			bb->add_outedge(bbmap[swi->case_default().getCaseSuccessor()], 0);
 			continue;
 		}
 

@@ -260,7 +260,15 @@ convert_phi_instruction(
 	std::vector<const jlm::variable*> operands;
 	for (auto edge : bb->inedges()) {
 		const basic_block * tmp = static_cast<basic_block*>(edge->source());
-		const llvm::BasicBlock * ib = ctx.lookup_basic_block(tmp);
+		const llvm::BasicBlock * ib = nullptr;
+		if (ctx.has_basic_block(tmp)) {
+			ib = ctx.lookup_basic_block(tmp);
+		} else {
+			JLM_DEBUG_ASSERT(tmp->ninedges() == 1);
+			JLM_DEBUG_ASSERT(tmp->tacs().empty());
+			ib = ctx.lookup_basic_block(static_cast<basic_block*>(tmp->inedges().front()->source()));
+		}
+
 		const jlm::variable * v = convert_value(phi->getIncomingValueForBlock(ib), ctx);
 		operands.push_back(v);
 	}
