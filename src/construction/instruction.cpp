@@ -644,21 +644,20 @@ convert_bitcast_instruction(
 
 	/* FIXME: invoke with the right number of bytes */
 	alloca_op aop(4);
-	const tac * alloc = bb->append(aop, {ctx.state()});
-	const variable * address = alloc->output(0);
-	const variable * state = alloc->output(1);
+	const variable * address = bb->cfg()->create_variable(jive::addr::type::instance());
+	bb->append(aop, {ctx.state()}, {address, ctx.state()});
 
 	std::vector<std::unique_ptr<jive::state::type>> t;
 	t.emplace_back(std::unique_ptr<jive::state::type>(new jive::mem::type()));
 	jive::store_op sop(jive::addr::type(), t,
 		dynamic_cast<const jive::value::type&>(operand->type()));
-	bb->append(sop, {address, operand, state}, {state});
+	bb->append(sop, {address, operand, ctx.state()}, {ctx.state()});
 
 	std::vector<std::unique_ptr<jive::state::type>> type;
 	type.emplace_back(std::unique_ptr<jive::state::type>(new jive::mem::type()));
 	jive::load_op lop(jive::addr::type(), type,
 		dynamic_cast<const jive::value::type&>(result->type()));
-	return bb->append(lop, {address, state}, {result})->output(0);
+	return bb->append(lop, {address, ctx.state()}, {result})->output(0);
 }
 
 static const variable *
