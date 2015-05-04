@@ -306,35 +306,8 @@ public:
 		return env;
 	}
 
-	inline bool
-	has_function(const clg_node * function) const noexcept
-	{
-		return fmap_.find(function) != fmap_.end();
-	}
-
-	inline jive::output *
-	lookup_function(const clg_node * function) const noexcept
-	{
-		JLM_DEBUG_ASSERT(has_function(function));
-		return fmap_.find(function)->second;
-	}
-
-	inline void
-	insert_function(const clg_node * f, jive::output * r)
-	{
-		JLM_DEBUG_ASSERT(!has_function(f));
-		fmap_[f] = r;
-	}
-
-	inline void
-	replace_function(const clg_node * f, jive::output * r)
-	{
-		JLM_DEBUG_ASSERT(has_function(f));
-		fmap_[f] = r;
-	}
-
-	inline const variable_map &
-	globals() const noexcept
+	inline variable_map &
+	globals() noexcept
 	{
 		return globals_;
 	}
@@ -342,7 +315,6 @@ public:
 private:
 	variable_map globals_;
 	std::unordered_set<std::unique_ptr<theta_env>> theta_envs_;
-	std::unordered_map<const jlm::clg_node*, jive::output*> fmap_;
 	std::unordered_map<const jlm::cfg_node*, variable_map> vmap_;
 	std::unordered_map<const jlm::cfg_edge*, predicate_stack> pmap_;
 	std::unordered_map<const jlm::cfg_edge*, theta_stack> tmap_;

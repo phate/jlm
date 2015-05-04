@@ -7,6 +7,7 @@
 #define JLM_IR_CLG_H
 
 #include <jlm/IR/cfg.hpp>
+#include <jlm/IR/variable.hpp>
 
 #include <jive/types/function/fcttype.h>
 
@@ -64,19 +65,17 @@ private:
 
 class output;
 
-class clg_node final {
+class clg_node final : public variable {
 public:
-	inline
-	~clg_node()
-	{}
+	virtual
+	~clg_node() noexcept;
 
 private:
 	inline
 	clg_node(jlm::clg & clg, const char * name, jive::fct::type & type)
-		: name_(name)
+		: variable(type, name)
 		, cfg_(nullptr)
 		, clg_(clg)
-		, type_(type.copy())
 	{}
 
 public:
@@ -92,17 +91,8 @@ public:
 		return clg_;
 	}
 
-	inline const std::string &
-	name() const noexcept
-	{
-		return name_;
-	}
-
-	inline const jive::fct::type &
-	type() const noexcept
-	{
-		return *type_;
-	}
+	virtual const jive::fct::type &
+	type() const noexcept override;
 
 	void
 	add_call(const clg_node * callee)
@@ -125,17 +115,15 @@ public:
 		return false;
 	}
 
-	std::vector<const variable*>
+	std::vector<variable*>
 	cfg_begin(const std::vector<std::string> & names);
 
 	void
-	cfg_end(const std::vector<const variable*> & results);
+	cfg_end(const std::vector<variable*> & results);
 
 private:
-	std::string name_;
 	std::unique_ptr<jlm::cfg> cfg_;
 	jlm::clg & clg_;
-	std::unique_ptr<jive::fct::type> type_;
 	std::unordered_set<const clg_node*> calls_;
 
 	friend jlm::clg_node * jlm::clg::add_function(const char * name,

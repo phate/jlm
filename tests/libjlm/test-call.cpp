@@ -10,6 +10,8 @@
 
 #include <assert.h>
 
+/* FIXME: test indirect call  */
+
 static int
 verify(const jive_graph * graph)
 {

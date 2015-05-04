@@ -211,7 +211,7 @@ cfg::create_basic_block()
 	return tmp;
 }
 
-const jlm::variable *
+jlm::variable *
 cfg::create_variable(const jive::base::type & type)
 {
 	std::stringstream sstr;
@@ -223,7 +223,7 @@ cfg::create_variable(const jive::base::type & type)
 	return v;
 }
 
-const jlm::variable *
+jlm::variable *
 cfg::create_variable(const jive::base::type & type, const std::string & name)
 {
 	std::unique_ptr<variable> variable(new jlm::variable(type, name));

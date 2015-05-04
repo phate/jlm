@@ -323,17 +323,33 @@ convert_call_instruction(
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::CallInst*>(i));
 	const llvm::CallInst * instruction = static_cast<const llvm::CallInst*>(i);
 
-	llvm::Function * f = instruction->getCalledFunction();
+	const llvm::Value * f = instruction->getCalledValue();
+	const llvm::FunctionType * ftype = llvm::cast<const llvm::FunctionType>(
+		llvm::cast<const llvm::PointerType>(f->getType())->getElementType());
+	jive::fct::type type = dynamic_cast<jive::fct::type&>(*convert_type(ftype, ctx));
 
+	const jlm::variable * callee = nullptr;
 	jlm::clg_node * caller = bb->cfg()->function();
-	jlm::clg_node * callee = caller->clg().lookup_function(f->getName());
-	JLM_DEBUG_ASSERT(callee != nullptr);
-	caller->add_call(callee);
+	if (instruction->getCalledFunction()) {
+		/* direct call */
+		callee = convert_value(f, ctx);
+		caller->add_call(static_cast<const jlm::clg_node*>(callee));
+	} else {
+		/* indirect call */
+		/* FIXME */
+		std::vector<std::unique_ptr<jive::state::type>> stype;
+		stype.emplace_back(std::unique_ptr<jive::state::type>(new jive::mem::type()));
+		jive::load_op op(jive::addr::type::instance(), stype, type);
+		const jlm::variable * tmp = bb->cfg()->create_variable(type);
+		callee = bb->append(op, {convert_value(f, ctx), ctx.state()}, {tmp})->output(0);
+	}
 
+	/* handle arguments */
 	std::vector<const jlm::variable*> arguments;
-	for (size_t n = 0; n < f->getFunctionType()->getNumParams(); n++)
+	arguments.push_back(callee);
+	for (size_t n = 0; n < ftype->getNumParams(); n++)
 		arguments.push_back(convert_value(instruction->getArgOperand(n), ctx));
-	if (f->isVarArg()) {
+	if (ftype->isVarArg()) {
 		/* FIXME: sizeof */
 		const variable * alloc = bb->cfg()->create_variable(jive::addr::type::instance());
 		const tac * vararg = bb->append(alloca_op(4), {ctx.state()}, {alloc, ctx.state()});
@@ -341,14 +357,13 @@ convert_call_instruction(
 	}
 	arguments.push_back(ctx.state());
 
-	jive::fct::type type = dynamic_cast<jive::fct::type&>(*convert_type(f->getFunctionType(), ctx));
-
+	/* handle results */
 	std::vector<const jlm::variable*> results;
 	if (type.nreturns() == 2)
 		results.push_back(ctx.lookup_value(i));
 	results.push_back(ctx.state());
 
-	bb->append(jlm::apply_op(callee), arguments, results);
+	bb->append(jive::fct::apply_op(type), arguments, results);
 	return (results.size() == 2) ? results[0] : nullptr;
 }
 

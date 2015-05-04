@@ -15,6 +15,7 @@ LIBJLM_SRC = \
 	src/IR/module.cpp \
 	src/IR/operators.cpp \
 	src/IR/tac.cpp \
+	src/IR/variable.cpp \
 	\
 	src/construction/constant.cpp \
 	src/construction/instruction.cpp \

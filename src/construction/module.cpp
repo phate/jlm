@@ -115,11 +115,12 @@ convert_basic_block(
 static void
 convert_function(
 	const llvm::Function & function,
-	jlm::clg_node * clg_node,
 	context & ctx)
 {
 	if (function.isDeclaration())
 		return;
+
+	jlm::clg_node * clg_node = static_cast<jlm::clg_node*>(ctx.lookup_value(&function));
 
 	std::vector<std::string> names;
 	llvm::Function::ArgumentListType::const_iterator jt = function.getArgumentList().begin();
@@ -129,15 +130,15 @@ convert_function(
 		names.push_back("_varg_");
 	names.push_back("_s_");
 
-	std::vector<const jlm::variable*> arguments = clg_node->cfg_begin(names);
-	const jlm::variable * state = arguments.back();
+	std::vector<jlm::variable*> arguments = clg_node->cfg_begin(names);
+	jlm::variable * state = arguments.back();
 	jlm::cfg * cfg = clg_node->cfg();
 
 	basic_block_map bbmap;
 	basic_block * entry_block;
 	entry_block = static_cast<basic_block*>(create_cfg_structure(function, cfg, bbmap));
 
-	const jlm::variable * result = nullptr;
+	jlm::variable * result = nullptr;
 	if (!function.getReturnType()->isVoidTy())
 		result = cfg->create_variable(*convert_type(function.getReturnType(), ctx), "_r_");
 
@@ -158,7 +159,7 @@ convert_function(
 	for (; it != function.getBasicBlockList().end(); it++)
 		convert_basic_block(*it, ctx);
 
-	std::vector<const jlm::variable*> results;
+	std::vector<jlm::variable*> results;
 	if (function.getReturnType()->getTypeID() != llvm::Type::VoidTyID)
 		results.push_back(result);
 	results.push_back(state);
@@ -176,11 +177,12 @@ convert_functions(
 	for (auto it = list.begin(); it != list.end(); it++) {
 		jive::fct::type fcttype(dynamic_cast<const jive::fct::type&>(
 			*convert_type((*it).getFunctionType(), ctx)));
-		clg.add_function((*it).getName().str().c_str(), fcttype);
+		clg_node * f = clg.add_function((*it).getName().str().c_str(), fcttype);
+		ctx.insert_value(&(*it), f);
 	}
 
 	for (auto it = list.begin(); it != list.end(); it++)
-		convert_function(*it, clg.lookup_function((*it).getName().str()), ctx);
+		convert_function(*it, ctx);
 }
 
 static void
@@ -190,7 +192,7 @@ convert_global_variables(
 	context & ctx)
 {
 	for (auto it = list.begin(); it != list.end(); it++) {
-		const variable * v = mod.add_global_variable(it->getName().str(),
+		variable * v = mod.add_global_variable(it->getName().str(),
 			*convert_constant(it.getNodePtrUnchecked(), ctx));
 		ctx.insert_value(it.getNodePtrUnchecked(), v);
 	}

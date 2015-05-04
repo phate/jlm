@@ -9,7 +9,7 @@
 
 namespace jlm {
 
-const variable *
+variable *
 module::add_global_variable(const std::string & name, const expr & e)
 {
 	std::unique_ptr<variable> variable(new jlm::variable(jive::addr::type::instance(), name));

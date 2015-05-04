@@ -13,8 +13,11 @@
 
 namespace jlm {
 
-class variable final {
+class variable {
 public:
+	virtual
+	~variable() noexcept;
+
 	inline
 	variable(const jive::base::type & type, const std::string & name)
 		: name_(name)
@@ -24,7 +27,7 @@ public:
 	inline std::string
 	debug_string() const
 	{
-		return name_;
+		return name();
 	}
 
 	inline const std::string &
@@ -33,23 +36,8 @@ public:
 		return name_;
 	}
 
-	inline const jive::base::type &
-	type() const noexcept
-	{
-		return *type_;
-	}
-
-	bool
-	operator==(const variable & other) const noexcept
-	{
-		return name_ == other.name_ && *type_ == *other.type_;
-	}
-
-	bool
-	operator!=(const variable & other) const noexcept
-	{
-		return !(*this == other);
-	}
+	virtual const jive::base::type &
+	type() const noexcept;
 
 private:
 	std::string name_;

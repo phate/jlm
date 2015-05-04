@@ -261,24 +261,6 @@ handle_basic_block(
 			continue;
 		}
 
-		if (auto apply_op = dynamic_cast<const jlm::apply_op*>(&tac->operation())) {
-			const clg_node * function = apply_op->function();
-
-			std::vector<jive::output*> operands;
-			operands.push_back(ctx.lookup_function(function));
-			for (size_t n = 0; n < tac->ninputs(); n++)
-				operands.push_back(vmap.lookup_value(tac->input(n)));
-
-			std::vector<jive::output *> results;
-			results = jive_node_create_normalized(region->graph, jive::fct::apply_op(function->type()),
-				operands);
-
-			JLM_DEBUG_ASSERT(results.size() == tac->noutputs());
-			for (size_t n = 0; n < tac->noutputs(); n++)
-				vmap.insert_value(tac->output(n), results[n]);
-			continue;
-		}
-
 		if (auto select_op = dynamic_cast<const jlm::select_op*>(&tac->operation())) {
 			jive::output * predicate = jive::ctl::match(1, {{0,0}}, 1, 2,
 				vmap.lookup_value(tac->input(0)));
@@ -475,7 +457,7 @@ handle_scc(
 {
 	if (scc.size() == 1 && !(*scc.begin())->is_selfrecursive()) {
 		jive::output * lambda = construct_lambda(*scc.begin(), graph->root_region, ctx);
-		ctx.insert_function(*scc.begin(), lambda);
+		ctx.globals().insert_value(*scc.begin(), lambda);
 		/* FIXME: we export everything right now */
 		jive_graph_export(graph, lambda, (*scc.begin())->name());
 	} else {
@@ -484,7 +466,7 @@ handle_scc(
 		std::vector<jive_phi_fixvar> fixvars;
 		for (auto f : scc) {
 			jive_phi_fixvar fv = jive_phi_fixvar_enter(phi, &f->type());
-			ctx.insert_function(f, fv.value);
+			ctx.globals().insert_value(f, fv.value);
 			fixvars.push_back(fv);
 		}
 
@@ -497,7 +479,7 @@ handle_scc(
 
 		n = 0;
 		for (auto it = scc.begin(); it != scc.end(); it++, n++) {
-			ctx.replace_function(*it, fixvars[n].value);
+			ctx.globals().replace_value(*it, fixvars[n].value);
 			/* FIXME: we export everything right now */
 			jive_graph_export(graph, fixvars[n].value, (*it)->name());
 		}

@@ -36,7 +36,7 @@ public:
 		return clg_;
 	}
 
-	const variable *
+	variable *
 	add_global_variable(const std::string & name, const expr & e);
 
 	inline const expr *

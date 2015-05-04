@@ -18,3 +18,9 @@ entry:
 	call void @callee0()
   ret i32 %call1
 }
+
+define i32 @test_indirect_call(i32 %x, i32 (i32)* nocapture %f) nounwind uwtable {
+entry:
+  %call = tail call i32 %f(i32 %x) nounwind
+  ret i32 %call
+}

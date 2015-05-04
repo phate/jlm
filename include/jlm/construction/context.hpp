@@ -159,7 +159,7 @@ public:
 		return vmap_.find(value) != vmap_.end();
 	}
 
-	inline const variable *
+	inline variable *
 	lookup_value(const llvm::Value * value) const noexcept
 	{
 		JLM_DEBUG_ASSERT(has_value(value));
@@ -167,7 +167,7 @@ public:
 	}
 
 	inline void
-	insert_value(const llvm::Value * value, const variable * variable)
+	insert_value(const llvm::Value * value, variable * variable)
 	{
 		JLM_DEBUG_ASSERT(!has_value(value));
 		vmap_[value] = variable;
@@ -198,7 +198,7 @@ private:
 	basic_block * entry_block_;
 	const variable * state_;
 	const variable * result_;
-	std::unordered_map<const llvm::Value *, const variable*> vmap_;
+	std::unordered_map<const llvm::Value *, variable*> vmap_;
 	std::unordered_map<
 		const llvm::StructType*,
 		std::shared_ptr<const jive::rcd::declaration>> declarations_;

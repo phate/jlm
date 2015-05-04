@@ -66,10 +66,10 @@ public:
 
 	basic_block * create_basic_block();
 
-	const jlm::variable *
+	jlm::variable *
 	create_variable(const jive::base::type & type);
 
-	const jlm::variable *
+	jlm::variable *
 	create_variable(const jive::base::type & type, const std::string & name);
 
 	inline size_t
@@ -78,7 +78,7 @@ public:
 		return nodes_.size();
 	}
 
-	inline const variable *
+	inline variable *
 	append_argument(const std::string & name, const jive::base::type & type)
 	{
 		return enter_->append_argument(name, type);
@@ -109,7 +109,7 @@ public:
 	}
 
 	inline void
-	append_result(const variable * result)
+	append_result(variable * result)
 	{
 		exit_->append_result(result);
 	}
@@ -135,7 +135,7 @@ private:
 
 		virtual std::string debug_string() const override;
 
-		inline const variable *
+		inline variable *
 		append_argument(const std::string & name, const jive::base::type & type)
 		{
 			arguments_.push_back(cfg()->create_variable(type, name));
@@ -158,7 +158,7 @@ private:
 		argument(size_t index) const;
 
 	private:
-		std::vector<const variable*> arguments_;
+		std::vector<variable*> arguments_;
 	};
 
 	class exit_node final : public cfg_node {
@@ -170,7 +170,7 @@ private:
 		virtual std::string debug_string() const override;
 
 		inline void
-		append_result(const variable * result)
+		append_result(variable * result)
 		{
 			results_.push_back(result);
 		}
@@ -189,7 +189,7 @@ private:
 		}
 
 	private:
-		std::vector<const variable*> results_;
+		std::vector<variable*> results_;
 	};
 
 	void remove_node(cfg_node * node);
