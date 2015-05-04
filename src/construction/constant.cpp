@@ -15,9 +15,10 @@
 #include <jive/types/float/fltconstant.h>
 #include <jive/types/record/rcdgroup.h>
 
+#include <llvm/IR/Constants.h>
+#include <llvm/IR/Function.h>
 #include <llvm/IR/GlobalAlias.h>
 #include <llvm/IR/GlobalVariable.h>
-#include <llvm/IR/Constants.h>
 
 #include <unordered_map>
 
@@ -222,6 +223,15 @@ convert_globalAlias(const llvm::Constant * constant, context & ctx)
 	JLM_DEBUG_ASSERT(0);
 }
 
+static std::shared_ptr<const expr>
+convert_function(const llvm::Constant * constant, context & ctx)
+{
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::Function*>(constant));
+
+	/* FIXME: */
+	return std::shared_ptr<const expr>(new expr(jive::address::constant_op(0), {}));
+}
+
 std::shared_ptr<const expr>
 convert_constant(const llvm::Constant * c, context & ctx)
 {
@@ -243,6 +253,7 @@ convert_constant(const llvm::Constant * c, context & ctx)
 	,	{llvm::Value::ConstantStructVal, convert_constantStruct}
 	,	{llvm::Value::ConstantVectorVal, convert_constantVector}
 	,	{llvm::Value::GlobalAliasVal, convert_globalAlias}
+	,	{llvm::Value::FunctionVal, convert_function}
 	});
 
 	JLM_DEBUG_ASSERT(cmap.find(c->getValueID()) != cmap.end());
