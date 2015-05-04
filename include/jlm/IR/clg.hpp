@@ -13,10 +13,6 @@
 #include <unordered_map>
 #include <unordered_set>
 
-namespace jive {
-	class buffer;
-}
-
 namespace jlm {
 
 class clg_node;
