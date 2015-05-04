@@ -47,8 +47,8 @@ create_undefined_value(const jive::base::type & type, struct jive_graph * graph)
 		return jive_bitconstant_undefined(graph, t->nbits());
 
 	/* FIXME: temporary solutation */
-	if (dynamic_cast<const jive::ctl::type*>(&type))
-		return jive_control_constant(graph, 2, 0);
+	if (auto t = dynamic_cast<const jive::ctl::type*>(&type))
+		return jive_control_constant(graph, t->nalternatives(), 0);
 
 	/* FIXME */
 	if (dynamic_cast<const jive::addr::type*>(&type))
