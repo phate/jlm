@@ -108,54 +108,6 @@ assignment_op::copy() const
 	return std::unique_ptr<jive::operation>(new assignment_op(*this));
 }
 
-/* apply operator */
-
-apply_op::~apply_op() noexcept
-{}
-
-bool
-apply_op::operator==(const operation & other) const noexcept
-{
-	const apply_op * op = dynamic_cast<const apply_op*>(&other);
-	return op && op->function_ == function_;
-}
-
-size_t
-apply_op::narguments() const noexcept
-{
-	return function_->type().narguments();
-}
-
-const jive::base::type &
-apply_op::argument_type(size_t index) const noexcept
-{
-	return *function_->type().argument_type(index);
-}
-
-size_t
-apply_op::nresults() const noexcept
-{
-	return function_->type().nreturns();
-}
-
-const jive::base::type &
-apply_op::result_type(size_t index) const noexcept
-{
-	return *function_->type().return_type(index);
-}
-
-std::string
-apply_op::debug_string() const
-{
-	return std::string("APPLY ").append(function_->name());
-}
-
-std::unique_ptr<jive::operation>
-apply_op::copy() const
-{
-	return std::unique_ptr<jive::operation>(new apply_op(*this));
-}
-
 /* select operator */
 
 select_op::~select_op() noexcept

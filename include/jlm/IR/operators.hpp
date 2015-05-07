@@ -113,66 +113,6 @@ private:
 	std::unique_ptr<jive::base::type> type_;
 };
 
-/* apply operator */
-
-/*
-	We require an apply operator that does not expect a function as first argument. This is
-	due to the call and control flow graph being separate representations: one represents
-	functions and the other the body of a function. Thus, we have no way of handing the
-	function as first operand to the "normal" apply operator. We use in this operator a
-	clg_node as function identifier instead, resolving the issue in the RVSDG construction
-	phase.
-*/
-
-class clg_node;
-
-class apply_op final : public jive::operation {
-public:
-	virtual
-	~apply_op() noexcept;
-
-	inline
-	apply_op(const clg_node * function)
-	: function_(function)
-	{}
-
-	inline
-	apply_op(const apply_op & other) = default;
-
-	inline
-	apply_op(apply_op && other) = default;
-
-	virtual bool
-	operator==(const operation & other) const noexcept override;
-
-	virtual size_t
-	narguments() const noexcept override;
-
-	virtual const jive::base::type &
-	argument_type(size_t index) const noexcept override;
-
-	virtual size_t
-	nresults() const noexcept override;
-
-	virtual const jive::base::type &
-	result_type(size_t index) const noexcept override;
-
-	virtual std::string
-	debug_string() const override;
-
-	virtual std::unique_ptr<jive::operation>
-	copy() const override;
-
-	inline const clg_node *
-	function() const noexcept
-	{
-		return function_;
-	}
-
-private:
-	const clg_node * function_;
-};
-
 /* select operator */
 
 class select_op final : public jive::operation {
