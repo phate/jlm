@@ -24,11 +24,8 @@ public:
 		, type_(type.copy())
 	{}
 
-	inline std::string
-	debug_string() const
-	{
-		return name();
-	}
+	virtual std::string
+	debug_string() const;
 
 	inline const std::string &
 	name() const noexcept
@@ -42,6 +39,28 @@ public:
 private:
 	std::string name_;
 	std::unique_ptr<jive::base::type> type_;
+};
+
+
+class global_variable : public variable {
+public:
+	virtual
+	~global_variable() noexcept;
+
+	inline
+	global_variable(const jive::base::type & type, const std::string & name, bool exported)
+		: variable(type, name)
+		, exported_(exported)
+	{}
+
+	inline bool
+	exported() const noexcept
+	{
+		return exported_;
+	}
+
+private:
+	bool exported_;
 };
 
 }

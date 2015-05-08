@@ -12,7 +12,7 @@
 namespace jlm {
 
 class expr;
-class variable;
+class global_variable;
 
 class module final {
 public:
@@ -36,24 +36,24 @@ public:
 		return clg_;
 	}
 
-	variable *
-	add_global_variable(const std::string & name, const expr & e);
+	global_variable *
+	add_global_variable(const std::string & name, const expr & e, bool exported);
 
 	inline const expr *
-	lookup_global_variable(const variable * v)
+	lookup_global_variable(const global_variable * v)
 	{
 		auto it = globals_.find(v);
 		return it != globals_.end() ? it->second.get() : nullptr;
 	}
 
 	/* FIXME: this is ugly */
-	std::unordered_map<const variable*, std::unique_ptr<const expr>>::const_iterator
+	std::unordered_map<const global_variable*, std::unique_ptr<const expr>>::const_iterator
 	begin() const
 	{
 		return globals_.begin();
 	}
 
-	std::unordered_map<const variable*, std::unique_ptr<const expr>>::const_iterator
+	std::unordered_map<const global_variable*, std::unique_ptr<const expr>>::const_iterator
 	end() const
 	{
 		return globals_.end();
@@ -62,7 +62,7 @@ public:
 private:
 	jlm::clg clg_;
 	std::unordered_set<std::unique_ptr<const variable>> variables_;
-	std::unordered_map<const variable*, std::unique_ptr<const expr>> globals_;
+	std::unordered_map<const global_variable*, std::unique_ptr<const expr>> globals_;
 };
 
 }

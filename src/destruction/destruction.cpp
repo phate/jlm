@@ -456,10 +456,11 @@ handle_scc(
 	dstrct::context & ctx)
 {
 	if (scc.size() == 1 && !(*scc.begin())->is_selfrecursive()) {
-		jive::output * lambda = construct_lambda(*scc.begin(), graph->root_region, ctx);
-		ctx.globals().insert_value(*scc.begin(), lambda);
-		/* FIXME: we export everything right now */
-		jive_graph_export(graph, lambda, (*scc.begin())->name());
+		const jlm::clg_node * function = *scc.begin();
+		jive::output * lambda = construct_lambda(function, graph->root_region, ctx);
+		ctx.globals().insert_value(function, lambda);
+		if (function->exported())
+			jive_graph_export(graph, lambda, function->name());
 	} else {
 		jive_phi phi = jive_phi_begin(graph->root_region);
 
@@ -480,8 +481,8 @@ handle_scc(
 		n = 0;
 		for (auto it = scc.begin(); it != scc.end(); it++, n++) {
 			ctx.globals().replace_value(*it, fixvars[n].value);
-			/* FIXME: we export everything right now */
-			jive_graph_export(graph, fixvars[n].value, (*it)->name());
+			if ((*it)->exported())
+				jive_graph_export(graph, fixvars[n].value, (*it)->name());
 		}
 	}
 }

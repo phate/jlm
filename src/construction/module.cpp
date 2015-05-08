@@ -177,7 +177,10 @@ convert_functions(
 	for (auto it = list.begin(); it != list.end(); it++) {
 		jive::fct::type fcttype(dynamic_cast<const jive::fct::type&>(
 			*convert_type((*it).getFunctionType(), ctx)));
-		clg_node * f = clg.add_function((*it).getName().str().c_str(), fcttype);
+		clg_node * f = clg.add_function(
+			(*it).getName().str().c_str(),
+			fcttype,
+			it->getLinkage() != llvm::GlobalValue::InternalLinkage);
 		ctx.insert_value(&(*it), f);
 	}
 
@@ -192,8 +195,10 @@ convert_global_variables(
 	context & ctx)
 {
 	for (auto it = list.begin(); it != list.end(); it++) {
-		variable * v = mod.add_global_variable(it->getName().str(),
-			*convert_constant(it.getNodePtrUnchecked(), ctx));
+		variable * v = mod.add_global_variable(
+			it->getName().str(),
+			*convert_constant(it.getNodePtrUnchecked(), ctx),
+			it->getLinkage() != llvm::GlobalValue::InternalLinkage);
 		ctx.insert_value(it.getNodePtrUnchecked(), v);
 	}
 }

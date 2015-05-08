@@ -10,10 +10,20 @@ namespace jlm {
 variable::~variable() noexcept
 {}
 
+std::string
+variable::debug_string() const
+{
+	return name();
+}
+
 const jive::base::type &
 variable::type() const noexcept
 {
 	return *type_;
 }
+
+
+global_variable::~global_variable() noexcept
+{}
 
 }
