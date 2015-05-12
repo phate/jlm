@@ -94,22 +94,26 @@ create_cfg_structure(
 }
 
 static void
-convert_basic_block(
-	const llvm::BasicBlock & bb,
+convert_basic_blocks(
+	const llvm::Function::BasicBlockListType & bbs,
 	context & ctx)
 {
 	/* forward declare all instructions, except terminator instructions */
-	for (auto it = bb.begin(); it != bb.end(); it++) {
-		if (dynamic_cast<const llvm::TerminatorInst*>(&(*it)))
-			continue;
+	for (auto bb = bbs.begin(); bb != bbs.end(); bb++) {
+		for (auto i = bb->begin(); i != bb->end(); i++) {
+			if (dynamic_cast<const llvm::TerminatorInst*>(&(*i)))
+				continue;
 
-		jlm::cfg * cfg = ctx.entry_block()->cfg();
-		if (it->getType()->getTypeID() != llvm::Type::VoidTyID)
-			ctx.insert_value(&(*it), cfg->create_variable(*convert_type(it->getType(), ctx)));
+			jlm::cfg * cfg = ctx.entry_block()->cfg();
+			if (i->getType()->getTypeID() != llvm::Type::VoidTyID)
+				ctx.insert_value(&(*i), cfg->create_variable(*convert_type(i->getType(), ctx)));
+		}
 	}
 
-	for (auto it = bb.begin(); it != bb.end(); it++)
-		convert_instruction(&(*it), ctx.lookup_basic_block(&bb), ctx);
+	for (auto bb = bbs.begin(); bb != bbs.end(); bb++) {
+		for (auto i = bb->begin(); i != bb->end(); i++)
+			convert_instruction(&(*i), ctx.lookup_basic_block(&(*bb)), ctx);
+	}
 }
 
 static void
@@ -155,9 +159,7 @@ convert_function(
 	for (size_t n = 0; jt != function.getArgumentList().end(); jt++, n++)
 		ctx.insert_value(&(*jt), arguments[n]);
 
-	auto it = function.getBasicBlockList().begin();
-	for (; it != function.getBasicBlockList().end(); it++)
-		convert_basic_block(*it, ctx);
+	convert_basic_blocks(function.getBasicBlockList(), ctx);
 
 	std::vector<jlm::variable*> results;
 	if (function.getReturnType()->getTypeID() != llvm::Type::VoidTyID)

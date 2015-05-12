@@ -23,3 +23,5 @@ TESTS += \
 	libjlm/test-unreachable \
 	libjlm/test-while \
 	libjlm/test-vararg \
+
+include tests/libjlm/tests/Makefile.sub
