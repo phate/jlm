@@ -43,6 +43,7 @@ convert_value(
 		return ctx.entry_block()->append(*convert_constant(c, ctx));
 
 	JLM_DEBUG_ASSERT(0);
+	return nullptr;
 }
 
 /* instructions */
@@ -437,6 +438,7 @@ convert_binary_operator(
 	}
 
 	JLM_DEBUG_ASSERT(0);
+	return nullptr;
 }
 
 static const variable *

@@ -143,6 +143,7 @@ convert_blockAddress(const llvm::Constant * constant, context & ctx)
 
 	/* FIXME */
 	JLM_DEBUG_ASSERT(0);
+	return std::shared_ptr<const expr>(nullptr);
 }
 
 static std::shared_ptr<const expr>
@@ -167,6 +168,7 @@ convert_constantAggregateZero(const llvm::Constant * constant, context & ctx)
 		return std::shared_ptr<const expr>(new expr(jive::address::constant_op(0), {}));
 
 	JLM_DEBUG_ASSERT(0);
+	return std::shared_ptr<const expr>(nullptr);
 }
 
 static std::shared_ptr<const expr>
@@ -194,6 +196,7 @@ convert_constantDataVector(const llvm::Constant * constant, context & ctx)
 
 	/* FIXME */
 	JLM_DEBUG_ASSERT(0);
+	return std::shared_ptr<const expr>(nullptr);
 }
 
 static std::shared_ptr<const expr>
@@ -203,6 +206,7 @@ convert_constantStruct(const llvm::Constant * constant, context & ctx)
 
 	/* FIXME */
 	JLM_DEBUG_ASSERT(0);
+	return std::shared_ptr<const expr>(nullptr);
 }
 
 static std::shared_ptr<const expr>
@@ -212,6 +216,7 @@ convert_constantVector(const llvm::Constant * constant, context & ctx)
 
 	/* FIXME */
 	JLM_DEBUG_ASSERT(0);
+	return std::shared_ptr<const expr>(nullptr);
 }
 
 static std::shared_ptr<const expr>
@@ -221,6 +226,7 @@ convert_globalAlias(const llvm::Constant * constant, context & ctx)
 
 	/* FIXME */
 	JLM_DEBUG_ASSERT(0);
+	return std::shared_ptr<const expr>(nullptr);
 }
 
 static std::shared_ptr<const expr>
