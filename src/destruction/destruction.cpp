@@ -274,8 +274,15 @@ handle_basic_block(
 		}
 
 		std::vector<jive::output*> operands;
-		for (size_t n = 0; n < tac->ninputs(); n++)
-			operands.push_back(vmap.lookup_value(tac->input(n)));
+		for (size_t n = 0; n < tac->ninputs(); n++) {
+			jive::output * value = nullptr;
+			if (vmap.has_value(tac->input(n)))
+				value = vmap.lookup_value(tac->input(n));
+			else
+				value = ctx.globals().lookup_value(tac->input(n));
+
+			operands.push_back(value);
+		}
 
 		std::vector<jive::output *> results;
 		results = jive_node_create_normalized(region->graph, tac->operation(), operands);
@@ -415,7 +422,7 @@ convert_cfg(
 	struct jive_lambda * lambda = jive_lambda_begin(region, variables.size(),
 		&argument_types[0], &argument_names[0]);
 
-	jlm::dstrct::variable_map vmap(ctx.globals());
+	jlm::dstrct::variable_map vmap;
 	JLM_DEBUG_ASSERT(variables.size() == lambda->narguments);
 	for (size_t n = 0; n < variables.size(); n++)
 		vmap.insert_value(variables[n], lambda->arguments[n]);
