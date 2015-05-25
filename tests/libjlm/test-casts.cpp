@@ -55,14 +55,12 @@ verify_inttoptr(const jive_graph * graph)
 	/* FIXME: remove when the evaluator understands the address type */
 	setlocale(LC_ALL, "");
 
-	jive_memlayout_mapper_simple mapper;
-	jive_memlayout_mapper_simple_init(&mapper, 64);
-	jive_graph_address_transform(const_cast<jive_graph*>(graph), &mapper.base.base);
-	jive_memlayout_mapper_simple_fini(&mapper);
+	jive::memlayout_mapper_simple mapper(8);
+	jive_graph_address_transform(const_cast<jive_graph*>(graph), &mapper);
 
 	jive_graph_normalize(const_cast<jive_graph*>(graph));
 	jive_graph_prune(const_cast<jive_graph*>(graph));
-	jive_view(const_cast<jive_graph*>(graph), stdout);
+	jive_view(graph, stdout);
 
 	using namespace jive::evaluator;
 
@@ -85,14 +83,12 @@ verify_ptrtoint(const jive_graph * graph)
 	/* FIXME: remove when the evaluator understands the address type */
 	setlocale(LC_ALL, "");
 
-	jive_memlayout_mapper_simple mapper;
-	jive_memlayout_mapper_simple_init(&mapper, 64);
-	jive_graph_address_transform(const_cast<jive_graph*>(graph), &mapper.base.base);
-	jive_memlayout_mapper_simple_fini(&mapper);
+	jive::memlayout_mapper_simple mapper(8);
+	jive_graph_address_transform(const_cast<jive_graph*>(graph), &mapper);
 
 	jive_graph_normalize(const_cast<jive_graph*>(graph));
 	jive_graph_prune(const_cast<jive_graph*>(graph));
-	jive_view(const_cast<jive_graph*>(graph), stdout);
+	jive_view(graph, stdout);
 
 	using namespace jive::evaluator;
 

@@ -508,15 +508,13 @@ static dstrct::variable_map
 convert_global_variables(const module & m, jive_graph * graph)
 {
 	jlm::dstrct::variable_map vmap;
-	jive_memlayout_mapper_simple mapper;
-	jive_memlayout_mapper_simple_init(&mapper, 32);
+	jive::memlayout_mapper_simple mapper(4);
 	for (auto it = m.begin(); it != m.end(); it++) {
-		jive::output * data = jive_dataobj(convert_expression(*(it->second), graph), &mapper.base.base);
+		jive::output * data = jive_dataobj(convert_expression(*(it->second), graph), &mapper);
 		vmap.insert_value(it->first, data);
 		if (it->first->exported())
 			jive_graph_export(graph, data, it->first->name());
 	}
-	jive_memlayout_mapper_simple_fini(&mapper);
 
 	return vmap;
 }
