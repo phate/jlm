@@ -24,6 +24,7 @@
 #include <jive/vsdg/controltype.h>
 #include <jive/vsdg/operators/match.h>
 
+#include <llvm/IR/Constants.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/Function.h>
 

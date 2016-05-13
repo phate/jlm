@@ -60,7 +60,7 @@ run_unit_test(const std::string & name)
 	llvm::LLVMContext & context = llvm::getGlobalContext();
 
 	llvm::SMDiagnostic err;
-	std::unique_ptr<llvm::Module> module(llvm::ParseIRFile(llname.c_str(), err, context));
+	std::unique_ptr<llvm::Module> module(llvm::parseIRFile(llname.c_str(), err, context));
 	if (!module) {
 		err.print(llname.c_str(), llvm::errs());
 		assert(0);

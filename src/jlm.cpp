@@ -85,7 +85,7 @@ int main (int argc, char ** argv)
 	llvm::LLVMContext & context = llvm::getGlobalContext();
 
 	llvm::SMDiagnostic err;
-	llvm::Module * module = llvm::ParseIRFile(file_name, err, context);
+	std::unique_ptr<llvm::Module> module = llvm::parseIRFile(file_name, err, context);
 
 	if (!module) {
 		err.print(argv[0], llvm::errs());
