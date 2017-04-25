@@ -8,7 +8,7 @@
 
 #include <jlm/common.hpp>
 
-#include <jive/vsdg/operators/base.h>
+#include <jive/vsdg/operators/operation.h>
 
 #include <memory>
 #include <vector>

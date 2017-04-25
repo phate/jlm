@@ -112,17 +112,17 @@ int main (int argc, char ** argv)
 			jive_cfg_view(*f->cfg());
 	}
 
-	struct jive_graph * graph = jlm::construct_rvsdg(m);
+	jive::graph * graph = jlm::construct_rvsdg(m);
 
 	if (cmdf.rvsdg) {
-		setlocale(LC_ALL, "");
-		jive_view(graph, stdout);
+		jive::view(graph->root(), stdout);
 	}
 
 	if (cmdf.rtree)
-		jive::view::region_tree(graph->root_region, stdout);
+		jive::region_tree(graph->root(), stdout);
 
-	jive_graph_destroy(graph);
+	/* FIXME: broken */
+	//jive_graph_destroy(graph);
 
 	return 0;
 }

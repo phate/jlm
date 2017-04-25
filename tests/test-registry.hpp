@@ -8,7 +8,9 @@
 
 #include <string>
 
-struct jive_graph;
+namespace jive {
+	class graph;
+}
 
 namespace jlm {
 
@@ -18,7 +20,7 @@ void
 register_unit_test(
 	const std::string & name,
 	int (*verify_module)(const jlm::module & m),
-	int (*verify_rvsdg)(const struct jive_graph * graph));
+	int (*verify_rvsdg)(const jive::graph * graph));
 
 int
 run_unit_test(const std::string & name);

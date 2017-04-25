@@ -9,11 +9,12 @@
 #include <jive/evaluator/literal.h>
 
 #include <jive/view.h>
+#include <jive/vsdg/graph.h>
 
 #include <assert.h>
 
 static int
-verify_constantInt(const jive_graph * graph)
+verify_constantInt(const jive::graph * graph)
 {
 	using namespace jive::evaluator;
 
@@ -31,9 +32,9 @@ verify_constantInt(const jive_graph * graph)
 }
 
 static int
-verify_constantFP(const jive_graph * graph)
+verify_constantFP(const jive::graph * graph)
 {
-	jive_view(const_cast<jive_graph*>(graph), stdout);
+	jive::view(graph->root(), stdout);
 
 	/* FIXME: insert checks for all types */
 
@@ -41,7 +42,7 @@ verify_constantFP(const jive_graph * graph)
 }
 
 static int
-verify_constantPointerNull(const jive_graph * graph)
+verify_constantPointerNull(const jive::graph * graph)
 {
 	/* FIXME: insert checks */
 
@@ -49,7 +50,7 @@ verify_constantPointerNull(const jive_graph * graph)
 }
 
 static int
-verify_globalVariable(const jive_graph * graph)
+verify_globalVariable(const jive::graph * graph)
 {
 	/* FIXME: insert checks */
 
@@ -57,7 +58,7 @@ verify_globalVariable(const jive_graph * graph)
 }
 
 static int
-verify_undefValue(const jive_graph * graph)
+verify_undefValue(const jive::graph * graph)
 {
 	using namespace jive::evaluator;
 
@@ -74,7 +75,7 @@ verify_undefValue(const jive_graph * graph)
 }
 
 static int
-verify_constantAggregateZeroStruct(const jive_graph * graph)
+verify_constantAggregateZeroStruct(const jive::graph * graph)
 {
 	/* FIXME: insert checks */
 
@@ -82,7 +83,7 @@ verify_constantAggregateZeroStruct(const jive_graph * graph)
 }
 
 static int
-verify(const jive_graph * graph)
+verify(const jive::graph * graph)
 {
 	verify_constantFP(graph);
 	verify_constantInt(graph);

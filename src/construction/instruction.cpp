@@ -361,7 +361,7 @@ convert_call_instruction(
 
 	/* handle results */
 	std::vector<const jlm::variable*> results;
-	if (type.nreturns() == 2)
+	if (type.nresults() == 2)
 		results.push_back(ctx.lookup_value(i));
 	results.push_back(ctx.state());
 

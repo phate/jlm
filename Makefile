@@ -1,10 +1,10 @@
 # Copyright 2014 Nico Reißmann <nico.reissmann@gmail.com>
 # See COPYING for terms of redistribution.
 
-LLVMCONFIG = llvm-config-3.6
+LLVMCONFIG = llvm-config-3.7
 
-CPPFLAGS += -Iinclude -I/home/reissman/Documents/jive/include -I/usr/include/llvm-3.6 -I/usr/include/llvm-c-3.6
-CXXFLAGS += -Wall -Werror --std=c++0x -Wfatal-errors -g -DJLM_DEBUG
+CPPFLAGS += -Iinclude -I/home/reissman/Documents/jive/include -I/usr/include/llvm-3.7 -I/usr/include/llvm-c-3.7
+CXXFLAGS += -Wall -Werror --std=c++14 -Wfatal-errors -g -DJLM_DEBUG
 LDFLAGS += $(shell $(LLVMCONFIG) --libs core IRReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -L/home/reissman/Documents/jive
 
 LIBJLM_SRC = \

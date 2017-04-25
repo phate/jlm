@@ -11,7 +11,7 @@
 #include <assert.h>
 
 static int
-verify(const jive_graph * graph)
+verify(const jive::graph * graph)
 {
 	using namespace jive::evaluator;
 

@@ -6,11 +6,12 @@
 #include "test-registry.hpp"
 
 #include <jive/view.h>
+#include <jive/vsdg/graph.h>
 
 static int
-verify(const jive_graph * graph)
+verify(const jive::graph * graph)
 {
-	jive_view(const_cast<jive_graph*>(graph), stdout);
+	jive::view(graph->root(), stdout);
 
 	/* FIXME: insert checks when alloca is properly supported */
 

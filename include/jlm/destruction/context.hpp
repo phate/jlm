@@ -127,16 +127,18 @@ private:
 };
 
 class theta_env final {
+#if 0
 public:
 	inline
 	theta_env(struct jive_region * region)
 		: theta_(jive_theta_begin(region))
 	{}
 
-	inline jive_theta *
+	inline jive::theta *
 	theta()
 	{
-		return &theta_;
+		/* FIXME: this is broken */
+		return nullptr;//&theta_;
 	}
 
 	inline bool
@@ -180,8 +182,10 @@ public:
 	}
 
 private:
-	jive_theta theta_;
+	/* FIXME: this is broken */
+	//jive::theta theta_;
 	std::unordered_map<const jlm::variable *, jive_theta_loopvar> loopvars_;
+#endif
 };
 
 class theta_stack final {
@@ -298,12 +302,13 @@ public:
 
 	theta_env *
 	create_theta_env(struct jive_region * region)
-	{
+	{/*
 		std::unique_ptr<theta_env> tenv(new theta_env(region));
 		theta_env * env = tenv.get();
 		theta_envs_.insert(std::move(tenv));
 		tenv.release();
-		return env;
+*/
+		return nullptr;//env;
 	}
 
 	inline variable_map &

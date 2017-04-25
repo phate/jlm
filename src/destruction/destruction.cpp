@@ -27,12 +27,13 @@
 #include <jive/vsdg/graph.h>
 #include <jive/vsdg/operators/match.h>
 #include <jive/vsdg/phi.h>
+#include <jive/vsdg/region.h>
 
 #include <cmath>
 #include <stack>
 
 namespace jlm {
-
+#if 0
 class dststate {
 public:
 	jlm::dstrct::predicate_stack pstack;
@@ -40,15 +41,15 @@ public:
 	jlm::dstrct::variable_map vmap;
 };
 
-static jive::output *
-create_undefined_value(const jive::base::type & type, struct jive_graph * graph)
+static jive::oport *
+create_undefined_value(const jive::base::type & type, jive::graph * graph)
 {
 	if (auto t = dynamic_cast<const jive::bits::type*>(&type))
-		return jive_bitconstant_undefined(graph, t->nbits());
+		return jive_bitconstant_undefined(graph->root(), t->nbits());
 
 	/* FIXME: temporary solutation */
 	if (auto t = dynamic_cast<const jive::ctl::type*>(&type))
-		return jive_control_constant(graph, t->nalternatives(), 0);
+		return jive_control_constant(graph->root(), t->nalternatives(), 0);
 
 	/* FIXME */
 	if (dynamic_cast<const jive::addr::type*>(&type))
@@ -56,7 +57,7 @@ create_undefined_value(const jive::base::type & type, struct jive_graph * graph)
 
 	/* FIXME */
 	if (dynamic_cast<const jive::flt::type*>(&type))
-		return jive_fltconstant(graph, std::nan(""));
+		return jive_fltconstant(graph->root(), std::nan(""));
 
 	JLM_DEBUG_ASSERT(0);
 	return nullptr;
@@ -126,7 +127,7 @@ is_loop_exit(
 static dststate
 handle_branch_join(
 	const std::list<jlm::cfg_edge*> & inedges,
-	struct jive_region * region,
+	jive::region * region,
 	jlm::dstrct::context & ctx)
 {
 	/* check theta stack */
@@ -148,7 +149,7 @@ handle_branch_join(
 		types.push_back(&vpair.first->type());
 
 	jive::output * predicate = nullptr;
-	std::vector<std::vector<jive::output*>> alternatives(inedges.size());
+	std::vector<std::vector<jive::oport*>> alternatives(inedges.size());
 	for (auto edge : inedges) {
 		/* get predicate and index */
 		size_t index = ctx.lookup_predicate_stack(edge).top().second;
@@ -158,13 +159,13 @@ handle_branch_join(
 		JLM_DEBUG_ASSERT(index < inedges.size());
 
 		/* set up gamma operands */
-		std::vector<jive::output*> values;
+		std::vector<jive::oport*> values;
 		for (auto vpair : vmap) {
 			const jlm::variable * variable = vpair.first;
 			if (ctx.lookup_variable_map(edge->source()).has_value(variable)) {
 				values.push_back(ctx.lookup_variable_map(edge->source()).lookup_value(variable));
 			} else {
-				values.push_back(create_undefined_value(variable->type(), region->graph));
+				values.push_back(create_undefined_value(variable->type(), region->graph()));
 			}
 		}
 		alternatives[index] = values;
@@ -173,7 +174,8 @@ handle_branch_join(
 	pstack.pop();
 
 	/* create gamma */
-	std::vector<jive::output*> results = jive_gamma(predicate, types, alternatives);
+	/*FIXME: broken */
+	std::vector<jive::output*> results;// = jive_gamma(predicate, types, alternatives);
 	JLM_DEBUG_ASSERT(results.size() == vmap.size());
 
 	/* update variable map */
@@ -192,25 +194,27 @@ handle_branch_join(
 static dststate
 handle_loop_entry(
 	const jlm::cfg_edge * entry_edge,
-	struct jive_region * region,
+	jive::region * region,
 	jlm::dstrct::context & ctx)
 {
 	dstrct::variable_map vmap = ctx.lookup_variable_map(entry_edge->source());
 	dstrct::theta_stack tstack = ctx.lookup_theta_stack(entry_edge);
 	dstrct::predicate_stack pstack = ctx.lookup_predicate_stack(entry_edge);
-
+#if 0
 	if (!tstack.empty())
-		region = tstack.top()->theta()->region;
+		/* FIXME: broken */
+		region = nullptr;//tstack.top()->theta()->region;
 
 	/* create new theta environment and update variable map */
-	dstrct::theta_env * tenv = ctx.create_theta_env(region);
+	/* FIXME: broken */
+	dstrct::theta_env * tenv = nullptr;//ctx.create_theta_env(region);
 	for (auto vpair : vmap) {
 		jive_theta_loopvar lv = jive_theta_loopvar_enter(*tenv->theta(), vpair.second);
 		tenv->insert_loopvar(vpair.first, lv);
 		vmap.replace_value(vpair.first, lv.value);
 	}
 	tstack.push(tenv);
-
+#endif
 	dststate state;
 	state.pstack = pstack;
 	state.tstack = tstack;
@@ -222,7 +226,7 @@ handle_loop_entry(
 static dststate
 handle_basic_block_entry(
 	const jlm::basic_block * bb,
-	struct jive_region * region,
+	jive::region * region,
 	jlm::dstrct::context & ctx,
 	const std::unordered_set<const cfg_edge*> & back_edges)
 {
@@ -251,7 +255,7 @@ handle_basic_block_entry(
 static void
 handle_basic_block(
 	const jlm::basic_block * bb,
-	struct jive_region * region,
+	jive::region * region,
 	dstrct::context & ctx,
 	dstrct::variable_map & vmap)
 {
@@ -261,13 +265,14 @@ handle_basic_block(
 			continue;
 		}
 
-		if (auto select_op = dynamic_cast<const jlm::select_op*>(&tac->operation())) {
-			jive::output * predicate = jive::ctl::match(1, {{0,0}}, 1, 2,
-				vmap.lookup_value(tac->input(0)));
+		if (dynamic_cast<const jlm::select_op*>(&tac->operation())) {
+			//jive::oport * predicate = jive::ctl::match(1, {{0,0}}, 1, 2,
+			//	vmap.lookup_value(tac->input(0)));
 
-			jive::output * tv = vmap.lookup_value(tac->input(1));
-			jive::output * fv = vmap.lookup_value(tac->input(2));
-			jive::output * result = jive_gamma(predicate, {&select_op->type()}, {{fv}, {tv}})[0];
+			//jive::output * tv = vmap.lookup_value(tac->input(1));
+			//jive::output * fv = vmap.lookup_value(tac->input(2));
+			/* FIXME: broken */
+			jive::output * result = nullptr;//jive_gamma(predicate, {&select_op->type()}, {{fv}, {tv}})[0];
 			vmap.insert_value(tac->output(0), result);
 
 			continue;
@@ -285,7 +290,7 @@ handle_basic_block(
 		}
 
 		std::vector<jive::output *> results;
-		results = jive_node_create_normalized(region->graph, tac->operation(), operands);
+		//results = jive_node_create_normalized(region->graph, tac->operation(), operands);
 
 		JLM_DEBUG_ASSERT(results.size() == tac->noutputs());
 		for (size_t n = 0; n < tac->noutputs(); n++)
@@ -296,13 +301,13 @@ handle_basic_block(
 static void
 handle_loop_exit(
 	const jlm::tac * match,
-	struct jive_region * region,
+	jive::region * region,
 	dstrct::variable_map & vmap,
 	dstrct::theta_stack & tstack)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const jive::match_op*>(&match->operation()));
-	jive::output * predicate = vmap.lookup_value(match->output(0));
-
+//	jive::output * predicate = vmap.lookup_value(match->output(0));
+#if 0
 	dstrct::theta_env * tenv = tstack.poptop();
 	std::vector<jive_theta_loopvar> loopvars;
 	for (auto it = vmap.begin(); it != vmap.end(); it++) {
@@ -330,12 +335,13 @@ handle_loop_exit(
 		jive_theta_loopvar lv = tenv->lookup_loopvar(it->first);
 		vmap.replace_value(it->first, lv.value);
 	}
+#endif
 }
 
 static void
 convert_basic_block(
 	const jlm::basic_block * bb,
-	struct jive_region * region,
+	jive::region * region,
 	jlm::dstrct::context & ctx,
 	const std::unordered_set<const cfg_edge*> & back_edges)
 {
@@ -383,7 +389,7 @@ convert_basic_block(
 static void
 convert_basic_blocks(
 	const jlm::cfg * cfg,
-	struct jive_region * region,
+	jive::region * region,
 	jlm::dstrct::context & ctx,
 	const std::unordered_set<const cfg_edge*> & back_edges)
 {
@@ -401,7 +407,7 @@ convert_basic_blocks(
 static jive::output * 
 convert_cfg(
 	jlm::cfg * cfg,
-	struct jive_region * region,
+	jive::region * region,
 	dstrct::context & ctx)
 {
 //	jive_cfg_view(*cfg);
@@ -409,7 +415,7 @@ convert_cfg(
 //	jive_cfg_view(*cfg);
 	const std::unordered_set<const cfg_edge*> back_edges = restructure(cfg);
 //	jive_cfg_view(*cfg);
-
+#if 0
 	std::vector<const jlm::variable*> variables;
 	std::vector<const char*> argument_names;
 	std::vector<const jive::base::type*> argument_types;
@@ -439,18 +445,19 @@ convert_cfg(
 		results.push_back(ctx.lookup_variable_map(predecessor).lookup_value(cfg->result(n)));
 		result_types.push_back(&cfg->result(n)->type());
 	}
-
-	return jive_lambda_end(lambda, cfg->nresults(), &result_types[0], &results[0]);
+#endif 
+	return nullptr; //jive_lambda_end(lambda, cfg->nresults(), &result_types[0], &results[0]);
 }
 
 static jive::output *
 construct_lambda(
 	const clg_node * function,
-	struct jive_region * region,
+	jive::region * region,
 	dstrct::context & ctx)
 {
 	if (function->cfg() == nullptr)
-		return jive_symbolicfunction_create(region->graph, function->name().c_str(), &function->type());
+		//return jive_symbolicfunction_create(region->graph(),function->name().c_str(), &function->type());
+		return nullptr;
 
 	return convert_cfg(function->cfg(), region, ctx);
 }
@@ -518,10 +525,12 @@ convert_global_variables(const module & m, jive_graph * graph)
 
 	return vmap;
 }
+#endif
 
-struct jive_graph *
+jive::graph *
 construct_rvsdg(const module & m)
 {
+/*
 	struct ::jive_graph * graph = jive_graph_create();	
 
 	dstrct::variable_map globals = convert_global_variables(m, graph);
@@ -530,8 +539,8 @@ construct_rvsdg(const module & m)
 	std::vector<std::unordered_set<const jlm::clg_node*>> sccs = m.clg().find_sccs();
 	for (auto scc : sccs)
 		handle_scc(scc, graph, ctx);
-
-	return graph;
+*/
+	return nullptr;//graph;
 }
 
 }

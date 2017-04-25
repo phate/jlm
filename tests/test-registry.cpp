@@ -26,12 +26,12 @@ class unit_test {
 public:
 	unit_test(
 		int (*vmodule)(const jlm::module & m),
-		int(*vrvsdg)(const jive_graph * graph))
+		int(*vrvsdg)(const jive::graph * graph))
 		: verify_rvsdg(vrvsdg)
 		, verify_module(vmodule)
 	{}
 
-	int (*verify_rvsdg)(const jive_graph * graph);
+	int (*verify_rvsdg)(const jive::graph * graph);
 	int (*verify_module)(const jlm::module & m);
 };
 
@@ -41,7 +41,7 @@ void
 register_unit_test(
 	const std::string & name,
 	int (*verify_module)(const jlm::module & m),
-	int (*verify_rvsdg)(const jive_graph * graph))
+	int (*verify_rvsdg)(const jive::graph * graph))
 {
 	assert(unit_test_map.find(name) == unit_test_map.end());
 
@@ -73,7 +73,7 @@ run_unit_test(const std::string & name)
 	if (unit_test_map[name]->verify_module)
 		result += unit_test_map[name]->verify_module(m);
 
-	struct jive_graph * graph = jlm::construct_rvsdg(m);
+	jive::graph * graph = jlm::construct_rvsdg(m);
 
 	if (unit_test_map[name]->verify_rvsdg)
 		result += unit_test_map[name]->verify_rvsdg(graph);

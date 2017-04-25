@@ -15,7 +15,7 @@
 
 #define MAKE_INTOP_VERIFIER(NAME, OP) \
 static void \
-verify_int##NAME##_op(const jive_graph * graph, uint64_t x, uint64_t y, uint64_t z) \
+verify_int##NAME##_op(const jive::graph * graph, uint64_t x, uint64_t y, uint64_t z) \
 { \
 	using namespace jive::evaluator; \
 \
@@ -44,7 +44,7 @@ MAKE_INTOP_VERIFIER(uge, uge_op);
 
 #define MAKE_PTROP_VERIFIER(NAME, OP) \
 static void \
-verify_ptr##NAME##_op(const jive_graph * graph, uint64_t x, uint64_t y, uint64_t z) \
+verify_ptr##NAME##_op(const jive::graph * graph, uint64_t x, uint64_t y, uint64_t z) \
 { \
 	/* FIXME: add checks */ \
 } \
@@ -61,7 +61,7 @@ MAKE_PTROP_VERIFIER(sge, sge_op);
 MAKE_PTROP_VERIFIER(uge, uge_op);
 
 static int
-verify(const jive_graph * graph)
+verify(const jive::graph * graph)
 {
 	verify_intslt_op(graph, -3, 4, 1);
 	verify_intult_op(graph, 3, 4, 1);

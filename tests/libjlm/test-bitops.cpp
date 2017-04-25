@@ -15,7 +15,7 @@
 
 #define MAKE_OP_VERIFIER(NAME, OP) \
 static void \
-verify_##NAME##_op(const jive_graph * graph, uint64_t x, uint64_t y, uint64_t z) \
+verify_##NAME##_op(const jive::graph * graph, uint64_t x, uint64_t y, uint64_t z) \
 { \
 	using namespace jive::evaluator; \
 \
@@ -46,7 +46,7 @@ MAKE_OP_VERIFIER(xor, xor_op);
 MAKE_OP_VERIFIER(mul, mul_op);
 
 static int
-verify(const jive_graph * graph)
+verify(const jive::graph * graph)
 {
 	verify_add_op(graph, 3, 4, 7);
 	verify_and_op(graph, 3, 6, 2);

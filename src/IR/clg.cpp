@@ -142,7 +142,7 @@ clg_node::cfg_begin(const std::vector<std::string> & names)
 
 	cfg_.reset(new jlm::cfg(*this));
 	for (size_t n = 0; n < names.size(); n++) {
-		arguments.push_back(cfg_->append_argument(names[n], *t->argument_type(n)));
+		arguments.push_back(cfg_->append_argument(names[n], t->argument_type(n)));
 	}
 
 	return arguments;
@@ -155,12 +155,12 @@ clg_node::cfg_end(const std::vector<variable*> & results)
 
 	const jive::fct::type * t = static_cast<const jive::fct::type*>(&type());
 
-	if (results.size() != t->nreturns())
+	if (results.size() != t->nresults())
 		throw jive::compiler_error("Invalid number of results.");
 
 	for (size_t n = 0; n < results.size(); n++) {
-		if (results[n]->type() != *t->return_type(n))
-			throw jive::type_error(t->return_type(n)->debug_string(),
+		if (results[n]->type() != t->result_type(n))
+			throw jive::type_error(t->result_type(n).debug_string(),
 				results[n]->type().debug_string());
 		cfg_->append_result(results[n]);
 	}

@@ -6,13 +6,15 @@
 #ifndef JLM_DESTRUCTION_DESTRUCTION_H
 #define JLM_DESTRUCTION_DESTRUCTION_H
 
-struct jive_graph;
+namespace jive {
+	class graph;
+}
 
 namespace jlm {
 
 class module;
 
-struct jive_graph *
+jive::graph *
 construct_rvsdg(const module & m);
 
 }
