@@ -3,9 +3,9 @@
 
 LLVMCONFIG = llvm-config-3.7
 
-CPPFLAGS += -Iinclude -I/home/reissman/Documents/jive/include -I/usr/include/llvm-3.7 -I/usr/include/llvm-c-3.7
+CPPFLAGS += -Iinclude -Iexternal/jive/include -I/usr/include/llvm-3.7 -I/usr/include/llvm-c-3.7
 CXXFLAGS += -Wall -Werror --std=c++14 -Wfatal-errors -g -DJLM_DEBUG
-LDFLAGS += $(shell $(LLVMCONFIG) --libs core IRReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -L/home/reissman/Documents/jive
+LDFLAGS += $(shell $(LLVMCONFIG) --libs core IRReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -Lexternal/jive/
 
 LIBJLM_SRC = \
 	src/IR/basic_block.cpp \
@@ -51,6 +51,6 @@ include tests/Makefile.sub
 	ranlib $@
 
 clean:
-	find . -name "*.o" -o -name "*.la" -o -name "*.a" | xargs rm -rf
+	find . -name "*.o" -o -name "*.la" -o -name "*.a" -path .external -prune | xargs rm -rf
 	rm -rf tests/test-runner
 	rm -rf jlm
