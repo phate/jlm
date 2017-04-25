@@ -3,7 +3,7 @@
 
 LLVMCONFIG = llvm-config-3.7
 
-CPPFLAGS += -Iinclude -Iexternal/jive/include -I/usr/include/llvm-3.7 -I/usr/include/llvm-c-3.7
+CPPFLAGS += -Iinclude -Iexternal/jive/include -I$(shell $(LLVMCONFIG) --includedir)
 CXXFLAGS += -Wall -Werror --std=c++14 -Wfatal-errors -g -DJLM_DEBUG
 LDFLAGS += $(shell $(LLVMCONFIG) --libs core IRReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -Lexternal/jive/
 
