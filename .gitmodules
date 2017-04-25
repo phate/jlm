@@ -1,0 +1,3 @@
+[submodule "external/jive"]
+	path = external/jive
+	url = https://github.com/phate/jive.git
