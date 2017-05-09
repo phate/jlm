@@ -403,6 +403,7 @@ convert_basic_blocks(
 	bb = static_cast<const jlm::basic_block*>(edge->sink());
 	convert_basic_block(bb, region, ctx, back_edges);
 }
+#endif
 
 static jive::output * 
 convert_cfg(
@@ -449,15 +450,14 @@ convert_cfg(
 	return nullptr; //jive_lambda_end(lambda, cfg->nresults(), &result_types[0], &results[0]);
 }
 
-static jive::output *
+static jive::oport *
 construct_lambda(
 	const clg_node * function,
 	jive::region * region,
 	dstrct::context & ctx)
 {
 	if (function->cfg() == nullptr)
-		//return jive_symbolicfunction_create(region->graph(),function->name().c_str(), &function->type());
-		return nullptr;
+		return region->graph()->import(function->type(), function->name());
 
 	return convert_cfg(function->cfg(), region, ctx);
 }
@@ -465,42 +465,44 @@ construct_lambda(
 
 static void
 handle_scc(
-	std::unordered_set<const jlm::clg_node*> & scc,
-	struct jive_graph * graph,
+	const std::unordered_set<const jlm::clg_node*> & scc,
+	jive::graph * graph,
 	dstrct::context & ctx)
 {
 	if (scc.size() == 1 && !(*scc.begin())->is_selfrecursive()) {
 		const jlm::clg_node * function = *scc.begin();
-		jive::output * lambda = construct_lambda(function, graph->root_region, ctx);
+		auto lambda = construct_lambda(function, graph->root(), ctx);
 		ctx.globals().insert_value(function, lambda);
 		if (function->exported())
-			jive_graph_export(graph, lambda, function->name());
+			graph->export_port(lambda, function->name());
 	} else {
-		jive_phi phi = jive_phi_begin(graph->root_region);
+		jive::phi_builder pb;
+		pb.begin(graph->root());
 
-		std::vector<jive_phi_fixvar> fixvars;
-		for (auto f : scc) {
-			jive_phi_fixvar fv = jive_phi_fixvar_enter(phi, &f->type());
-			ctx.globals().insert_value(f, fv.value);
-			fixvars.push_back(fv);
+		std::vector<std::shared_ptr<jive::recvar>> recvars;
+		for (const auto & f : scc) {
+			auto rv = pb.add_recvar(f->type());
+			ctx.globals().insert_value(f, rv->value());
+			recvars.push_back(rv);
 		}
 
 		size_t n = 0;
 		for (auto it = scc.begin(); it != scc.end(); it++, n++) {
-			jive::output * lambda = construct_lambda(*it, phi.region, ctx);
-			jive_phi_fixvar_leave(phi, fixvars[n].gate, lambda);
+			auto lambda = construct_lambda(*it, pb.region(), ctx);
+			recvars[n]->set_value(lambda);
 		}
-		jive_phi_end(phi, fixvars.size(), &fixvars[0]);
+		pb.end();
 
 		n = 0;
 		for (auto it = scc.begin(); it != scc.end(); it++, n++) {
-			ctx.globals().replace_value(*it, fixvars[n].value);
+			ctx.globals().replace_value(*it, recvars[n]->value());
 			if ((*it)->exported())
-				jive_graph_export(graph, fixvars[n].value, (*it)->name());
+				graph->export_port(recvars[n]->value(), (*it)->name());
 		}
 	}
 }
 
+#if 0
 static jive::output*
 convert_expression(const expr & e, jive_graph * graph)
 {
@@ -533,12 +535,14 @@ construct_rvsdg(const module & m)
 	auto rvsdg = std::make_unique<jive::graph>();
 /*
 	dstrct::variable_map globals = convert_global_variables(m, graph);
+*/
+	dstrct::variable_map globals;
 
 	dstrct::context ctx(globals);
-	std::vector<std::unordered_set<const jlm::clg_node*>> sccs = m.clg().find_sccs();
-	for (auto scc : sccs)
-		handle_scc(scc, graph, ctx);
-*/
+	auto sccs = m.clg().find_sccs();
+	for (const auto & scc : sccs)
+		handle_scc(scc, rvsdg.get(), ctx);
+
 	return std::move(rvsdg);
 }
 
