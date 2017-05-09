@@ -31,7 +31,7 @@ public:
 		return map_.find(v) != map_.end();
 	}
 
-	inline jive::output *
+	inline jive::oport *
 	lookup_value(const jlm::variable * v) const
 	{
 		JLM_DEBUG_ASSERT(has_value(v));
@@ -39,13 +39,13 @@ public:
 	}
 
 	inline void
-	insert_value(const jlm::variable * v, jive::output * o)
+	insert_value(const jlm::variable * v, jive::oport * o)
 	{
 		map_[v] = o;
 	}
 
 	inline void
-	replace_value(const jlm::variable * v, jive::output * o)
+	replace_value(const jlm::variable * v, jive::oport * o)
 	{
 		JLM_DEBUG_ASSERT(has_value(v));
 		map_[v] = o;
@@ -64,20 +64,20 @@ public:
 	}
 
 	//FIXME: this is an ugly solution
-	std::unordered_map<const jlm::variable*, jive::output*>::iterator
+	std::unordered_map<const jlm::variable*, jive::oport*>::iterator
 	begin()
 	{
 		return map_.begin();
 	}
 
-	std::unordered_map<const jlm::variable*, jive::output*>::iterator
+	std::unordered_map<const jlm::variable*, jive::oport*>::iterator
 	end()
 	{
 		return map_.end();
 	}
 
 private:
-	std::unordered_map<const jlm::variable*, jive::output*> map_;
+	std::unordered_map<const jlm::variable*, jive::oport*> map_;
 };
 
 class predicate_stack final {
@@ -94,7 +94,7 @@ public:
 		return size() == 0;
 	}
 
-	inline std::pair<jive::output*,size_t>
+	inline std::pair<jive::oport*,size_t>
 	top() const noexcept
 	{
 		JLM_DEBUG_ASSERT(!empty());
@@ -102,7 +102,7 @@ public:
 	}
 
 	inline void
-	push(jive::output * o, size_t index)
+	push(jive::oport* o, size_t index)
 	{
 		stack_.push(std::make_pair(o, index));
 	}
@@ -114,16 +114,16 @@ public:
 			stack_.pop();
 	}
 
-	inline std::pair<jive::output*,size_t>
+	inline std::pair<jive::oport*,size_t>
 	poptop()
 	{
-		std::pair<jive::output*,size_t> p = top();
+		std::pair<jive::oport*,size_t> p = top();
 		pop();
 		return p;
 	}
 
 private:
-	std::stack<std::pair<jive::output*, size_t>> stack_;
+	std::stack<std::pair<jive::oport*, size_t>> stack_;
 };
 
 class theta_env final {
