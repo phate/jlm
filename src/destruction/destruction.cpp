@@ -527,12 +527,11 @@ convert_global_variables(const module & m, jive_graph * graph)
 }
 #endif
 
-jive::graph *
+std::unique_ptr<jive::graph>
 construct_rvsdg(const module & m)
 {
+	auto rvsdg = std::make_unique<jive::graph>();
 /*
-	struct ::jive_graph * graph = jive_graph_create();	
-
 	dstrct::variable_map globals = convert_global_variables(m, graph);
 
 	dstrct::context ctx(globals);
@@ -540,7 +539,7 @@ construct_rvsdg(const module & m)
 	for (auto scc : sccs)
 		handle_scc(scc, graph, ctx);
 */
-	return nullptr;//graph;
+	return std::move(rvsdg);
 }
 
 }

@@ -5,6 +5,8 @@
 
 #include "test-registry.hpp"
 
+#include <jive/vsdg/graph.h>
+
 #include <jlm/IR/module.hpp>
 
 #include <jlm/construction/module.hpp>
@@ -73,10 +75,10 @@ run_unit_test(const std::string & name)
 	if (unit_test_map[name]->verify_module)
 		result += unit_test_map[name]->verify_module(m);
 
-	jive::graph * graph = jlm::construct_rvsdg(m);
+	auto rvsdg = jlm::construct_rvsdg(m);
 
 	if (unit_test_map[name]->verify_rvsdg)
-		result += unit_test_map[name]->verify_rvsdg(graph);
+		result += unit_test_map[name]->verify_rvsdg(rvsdg.get());
 
 	return result;
 }
