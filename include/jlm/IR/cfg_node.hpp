@@ -15,6 +15,22 @@
 
 namespace jlm {
 
+class attribute {
+public:
+	virtual
+	~attribute();
+
+	inline constexpr
+	attribute()
+	{}
+
+	virtual std::string
+	debug_string() const noexcept = 0;
+
+	virtual std::unique_ptr<attribute>
+	copy() const = 0;
+};
+
 class cfg;
 class cfg_node;
 

@@ -16,6 +16,13 @@
 
 namespace jlm {
 
+/* attribute */
+
+attribute::~attribute()
+{}
+
+/* edge */
+
 cfg_edge::cfg_edge(cfg_node * source, cfg_node * sink, size_t index) noexcept
 	: source_(source)
 	, sink_(sink)
