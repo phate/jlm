@@ -150,7 +150,7 @@ convert_function(
 	ctx.set_state(state);
 	ctx.set_result(result);
 	if (!function.getReturnType()->isVoidTy()) {
-		auto attr = static_cast<basic_block_attribute*>(&entry_block->attribute());
+		auto attr = static_cast<basic_block*>(&entry_block->attribute());
 		auto udef = attr->append(ctx.cfg(), *create_undef_value(function.getReturnType(), ctx));
 		attr->append(assignment_op(result->type()), {udef}, {result});
 	}

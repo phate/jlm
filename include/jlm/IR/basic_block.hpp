@@ -18,25 +18,25 @@ namespace jlm {
 class expr;
 class tac;
 
-class basic_block_attribute final : public attribute {
+class basic_block final : public attribute {
 public:
 	virtual
-	~basic_block_attribute();
+	~basic_block();
 
 	inline
-	basic_block_attribute()
+	basic_block()
 	: attribute()
 	{}
 
 	inline
-	basic_block_attribute(const basic_block_attribute & other)
+	basic_block(const basic_block & other)
 	: tacs_(other.tacs_)
 	{}
 
-	basic_block_attribute(basic_block_attribute &&) = delete;
+	basic_block(basic_block &&) = delete;
 
-	inline basic_block_attribute &
-	operator=(const basic_block_attribute & other)
+	inline basic_block &
+	operator=(const basic_block & other)
 	{
 		if (this == &other)
 			return *this;
@@ -44,8 +44,8 @@ public:
 		tacs_ = other.tacs_;
 	}
 
-	basic_block_attribute &
-	operator=(basic_block_attribute &&) = delete;
+	basic_block &
+	operator=(basic_block &&) = delete;
 
 	const tac *
 	append(
@@ -93,20 +93,20 @@ private:
 static inline cfg_node *
 create_basic_block_node(jlm::cfg * cfg)
 {
-	basic_block_attribute attr;
+	basic_block attr;
 	return cfg->create_node(attr);
 }
 
-static inline basic_block_attribute *
+static inline basic_block *
 create_basic_block(jlm::cfg * cfg)
 {
-	return static_cast<basic_block_attribute*>(&create_basic_block_node(cfg)->attribute());
+	return static_cast<basic_block*>(&create_basic_block_node(cfg)->attribute());
 }
 
 static inline bool
 is_basic_block(jlm::cfg_node * node) noexcept
 {
-	return dynamic_cast<const basic_block_attribute*>(&node->attribute()) != nullptr;
+	return dynamic_cast<const basic_block*>(&node->attribute()) != nullptr;
 }
 
 }

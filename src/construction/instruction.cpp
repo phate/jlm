@@ -41,7 +41,7 @@ convert_value(
 		return ctx.lookup_value(v);
 
 	if (auto c = dynamic_cast<const llvm::Constant*>(v)) {
-		auto attr = static_cast<basic_block_attribute*>(&ctx.entry_block()->attribute());
+		auto attr = static_cast<basic_block*>(&ctx.entry_block()->attribute());
 		return attr->append(ctx.cfg(), *convert_constant(c, ctx));
 	}
 
@@ -59,7 +59,7 @@ convert_return_instruction(
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ReturnInst*>(i));
 	const llvm::ReturnInst * instruction = static_cast<const llvm::ReturnInst*>(i);
-	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
+	auto attr = static_cast<basic_block*>(&bb->attribute());
 
 	if (instruction->getReturnValue()) {
 		const variable * value = convert_value(instruction->getReturnValue(), ctx);
@@ -77,7 +77,7 @@ convert_branch_instruction(
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::BranchInst*>(i));
 	const llvm::BranchInst * instruction = static_cast<const llvm::BranchInst*>(i);
-	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
+	auto attr = static_cast<basic_block*>(&bb->attribute());
 
 	if (instruction->isConditional()) {
 		const variable * c = convert_value(instruction->getCondition(), ctx);
@@ -96,7 +96,7 @@ convert_switch_instruction(
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::SwitchInst*>(i));
 	const llvm::SwitchInst * instruction = static_cast<const llvm::SwitchInst*>(i);
-	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
+	auto attr = static_cast<basic_block*>(&bb->attribute());
 
 	std::map<uint64_t, uint64_t> mapping;
 	for (auto it = instruction->case_begin(); it != instruction->case_end(); it++) {
@@ -128,7 +128,7 @@ convert_icmp_instruction(
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ICmpInst*>(instruction));
 	const llvm::ICmpInst * i = static_cast<const llvm::ICmpInst*>(instruction);
-	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
+	auto attr = static_cast<basic_block*>(&bb->attribute());
 
 	const jlm::variable * op1 = convert_value(i->getOperand(0), ctx);
 	const jlm::variable * op2 = convert_value(i->getOperand(1), ctx);
@@ -176,7 +176,7 @@ convert_fcmp_instruction(
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::FCmpInst*>(instruction));
 	const llvm::FCmpInst * i = static_cast<const llvm::FCmpInst*>(instruction);
-	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
+	auto attr = static_cast<basic_block*>(&bb->attribute());
 
 	/* FIXME: vector type is not yet supported */
 	if (i->getType()->isVectorTy())
@@ -225,7 +225,7 @@ convert_load_instruction(
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::LoadInst*>(i));
 	const llvm::LoadInst * instruction = static_cast<const llvm::LoadInst*>(i);
-	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
+	auto attr = static_cast<basic_block*>(&bb->attribute());
 
 	/* FIXME: handle volatile correctly */
 
@@ -246,7 +246,7 @@ convert_store_instruction(
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::StoreInst*>(i));
 	const llvm::StoreInst * instruction = static_cast<const llvm::StoreInst*>(i);
-	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
+	auto attr = static_cast<basic_block*>(&bb->attribute());
 
 	const variable * address = convert_value(instruction->getPointerOperand(), ctx);
 	const variable * value = convert_value(instruction->getValueOperand(), ctx);
@@ -266,7 +266,7 @@ convert_phi_instruction(
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::PHINode*>(i));
 	const llvm::PHINode * phi = static_cast<const llvm::PHINode*>(i);
-	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
+	auto attr = static_cast<basic_block*>(&bb->attribute());
 
 	std::vector<const jlm::variable*> operands;
 	for (auto edge : bb->inedges()) {
@@ -296,7 +296,7 @@ convert_getelementptr_instruction(
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::GetElementPtrInst*>(i));
 	const llvm::GetElementPtrInst * instruction = static_cast<const llvm::GetElementPtrInst*>(i);
-	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
+	auto attr = static_cast<basic_block*>(&bb->attribute());
 
 	const jlm::variable * base = convert_value(instruction->getPointerOperand(), ctx);
 	for (auto idx = instruction->idx_begin(); idx != instruction->idx_end(); idx++) {
@@ -318,7 +318,7 @@ convert_trunc_instruction(
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::TruncInst*>(i));
 	const llvm::TruncInst * instruction = static_cast<const llvm::TruncInst*>(i);
-	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
+	auto attr = static_cast<basic_block*>(&bb->attribute());
 
 	size_t high = i->getType()->getIntegerBitWidth();
 	const jlm::variable * operand = convert_value(instruction->getOperand(0), ctx);
@@ -334,7 +334,7 @@ convert_call_instruction(
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::CallInst*>(i));
 	const llvm::CallInst * instruction = static_cast<const llvm::CallInst*>(i);
-	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
+	auto attr = static_cast<basic_block*>(&bb->attribute());
 
 	const llvm::Value * f = instruction->getCalledValue();
 	const llvm::FunctionType * ftype = llvm::cast<const llvm::FunctionType>(
@@ -388,7 +388,7 @@ convert_select_instruction(
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::SelectInst*>(i));
 	const llvm::SelectInst * instruction = static_cast<const llvm::SelectInst*>(i);
-	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
+	auto attr = static_cast<basic_block*>(&bb->attribute());
 
 	const jlm::variable * condition = convert_value(instruction->getCondition(), ctx);
 	const jlm::variable * tv = convert_value(instruction->getTrueValue(), ctx);
@@ -404,7 +404,7 @@ convert_binary_operator(
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::BinaryOperator*>(instruction));
 	const llvm::BinaryOperator * i = static_cast<const llvm::BinaryOperator*>(instruction);
-	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
+	auto attr = static_cast<basic_block*>(&bb->attribute());
 
 	/* FIXME: vector type is not yet supported */
 	if (i->getType()->isVectorTy())
@@ -463,7 +463,7 @@ convert_alloca_instruction(
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::AllocaInst*>(instruction));
 	const llvm::AllocaInst * i = static_cast<const llvm::AllocaInst*>(instruction);
-	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
+	auto attr = static_cast<basic_block*>(&bb->attribute());
 
 	/* FIXME: the number of bytes is not correct */
 
@@ -479,7 +479,7 @@ convert_zext_instruction(
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ZExtInst*>(i));
-	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
+	auto attr = static_cast<basic_block*>(&bb->attribute());
 
 	llvm::Value * operand = i->getOperand(0);
 
@@ -503,7 +503,7 @@ convert_sext_instruction(
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::SExtInst*>(i));
-	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
+	auto attr = static_cast<basic_block*>(&bb->attribute());
 
 	llvm::Value * operand = i->getOperand(0);
 
@@ -534,7 +534,7 @@ convert_fpext_instruction(
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::FPExtInst*>(i));
-	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
+	auto attr = static_cast<basic_block*>(&bb->attribute());
 
 	/* FIXME: use assignment operator as long as we don't support floating point types properly */
 
@@ -551,7 +551,7 @@ convert_fptrunc_instruction(
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::FPTruncInst*>(i));
-	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
+	auto attr = static_cast<basic_block*>(&bb->attribute());
 
 	/* FIXME: use assignment operator as long as we don't support floating point types properly */
 
@@ -568,7 +568,7 @@ convert_inttoptr_instruction(
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::IntToPtrInst*>(i));
-	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
+	auto attr = static_cast<basic_block*>(&bb->attribute());
 
 	llvm::Value * operand = i->getOperand(0);
 	llvm::Type * type = operand->getType();
@@ -590,7 +590,7 @@ convert_ptrtoint_instruction(
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::PtrToIntInst*>(instruction));
 	const llvm::PtrToIntInst * i = static_cast<const llvm::PtrToIntInst*>(instruction);
-	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
+	auto attr = static_cast<basic_block*>(&bb->attribute());
 
 	/* FIXME: support vector type */
 	if (i->getPointerOperand()->getType()->isVectorTy())
@@ -610,7 +610,7 @@ convert_uitofp_instruction(
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::UIToFPInst*>(i));
-	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
+	auto attr = static_cast<basic_block*>(&bb->attribute());
 
 	llvm::Value * operand = i->getOperand(0);
 	llvm::Type * type = operand->getType();
@@ -630,7 +630,7 @@ convert_sitofp_instruction(
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::SIToFPInst*>(i));
-	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
+	auto attr = static_cast<basic_block*>(&bb->attribute());
 
 	llvm::Value * operand = i->getOperand(0);
 	llvm::Type * type = operand->getType();
@@ -650,7 +650,7 @@ convert_fptoui_instruction(
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::FPToUIInst*>(i));
-	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
+	auto attr = static_cast<basic_block*>(&bb->attribute());
 
 	llvm::Value * operand = i->getOperand(0);
 
@@ -669,7 +669,7 @@ convert_fptosi_instruction(
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::FPToSIInst*>(i));
-	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
+	auto attr = static_cast<basic_block*>(&bb->attribute());
 
 	llvm::Value * operand = i->getOperand(0);
 
@@ -688,7 +688,7 @@ convert_bitcast_instruction(
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::BitCastInst*>(i));
-	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
+	auto attr = static_cast<basic_block*>(&bb->attribute());
 
 	const variable * operand = convert_value(i->getOperand(0), ctx);
 	const variable * result = ctx.lookup_value(i);
@@ -719,7 +719,7 @@ convert_insertvalue_instruction(
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::InsertValueInst*>(instruction));
 	const llvm::InsertValueInst * i = static_cast<const llvm::InsertValueInst*>(instruction);
-	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
+	auto attr = static_cast<basic_block*>(&bb->attribute());
 
 	/* FIXME: array type */
 	if (i->getType()->isArrayTy())
@@ -760,7 +760,7 @@ convert_extractvalue_instruction(
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ExtractValueInst*>(instruction));
 	const llvm::ExtractValueInst * i = static_cast<const llvm::ExtractValueInst*>(instruction);
-	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
+	auto attr = static_cast<basic_block*>(&bb->attribute());
 
 	/* FIXME: array type */
 	if (i->getType()->isArrayTy())

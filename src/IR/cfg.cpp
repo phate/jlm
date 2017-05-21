@@ -565,7 +565,7 @@ cfg::destruct_ssa()
 		if (!is_basic_block(node))
 			continue;
 
-		auto attr = static_cast<basic_block_attribute*>(&node->attribute());
+		auto attr = static_cast<basic_block*>(&node->attribute());
 		if (!attr->tacs().empty() && dynamic_cast<const phi_op*>(&attr->tacs().front()->operation()))
 			phi_blocks.insert(node);
 	}
@@ -573,8 +573,8 @@ cfg::destruct_ssa()
 	/* eliminate phis */
 	for (auto phi_block : phi_blocks) {
 		auto ass_block = create_basic_block_node(this);
-		auto ass_attr = static_cast<basic_block_attribute*>(&ass_block->attribute());
-		auto phi_attr = static_cast<basic_block_attribute*>(&phi_block->attribute());
+		auto ass_attr = static_cast<basic_block*>(&ass_block->attribute());
+		auto phi_attr = static_cast<basic_block*>(&phi_block->attribute());
 
 
 		std::list<const tac*> & tacs = phi_attr->tacs();
@@ -590,7 +590,7 @@ cfg::destruct_ssa()
 			std::list<cfg_edge*> edges = phi_block->inedges();
 			for (auto it = edges.begin(); it != edges.end(); it++, n++) {
 				auto edge_block = (*it)->split();
-				auto edge_attr = static_cast<basic_block_attribute*>(&edge_block->attribute());
+				auto edge_attr = static_cast<basic_block*>(&edge_block->attribute());
 
 				value = edge_attr->append(assignment_op(v->type()), {tac->input(n)}, {v})->output(0);
 			}

@@ -15,14 +15,14 @@ namespace jlm {
 
 /* basic block attribute */
 
-basic_block_attribute::~basic_block_attribute()
+basic_block::~basic_block()
 {
 	for (const auto & tac : tacs_)
 		delete tac;
 }
 
 std::string
-basic_block_attribute::debug_string() const noexcept
+basic_block::debug_string() const noexcept
 {
 	std::stringstream sstrm;
 
@@ -34,13 +34,13 @@ basic_block_attribute::debug_string() const noexcept
 }
 
 std::unique_ptr<attribute>
-basic_block_attribute::copy() const
+basic_block::copy() const
 {
-	return std::make_unique<basic_block_attribute>(*this);
+	return std::make_unique<basic_block>(*this);
 }
 
 const tac *
-basic_block_attribute::append(
+basic_block::append(
 	const jive::operation & operation,
 	const std::vector<const variable*> & operands,
 	const std::vector<const variable*> & results)
@@ -51,7 +51,7 @@ basic_block_attribute::append(
 }
 
 const tac *
-basic_block_attribute::append(
+basic_block::append(
 	jlm::cfg * cfg,
 	const jive::operation & operation,
 	const std::vector<const variable*> & operands)
@@ -64,7 +64,7 @@ basic_block_attribute::append(
 }
 
 const variable *
-basic_block_attribute::append(
+basic_block::append(
 	jlm::cfg * cfg,
 	const expr & e,
 	const variable * result)
@@ -81,7 +81,7 @@ basic_block_attribute::append(
 }
 
 const variable *
-basic_block_attribute::append(jlm::cfg * cfg, const expr & e)
+basic_block::append(jlm::cfg * cfg, const expr & e)
 {
 	return append(cfg, e, cfg->create_variable(e.type()));
 }
