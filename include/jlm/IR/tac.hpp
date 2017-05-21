@@ -34,10 +34,25 @@ public:
 		const std::vector<const variable*> & operands,
 		const std::vector<const variable*> & results);
 
-	tac(const jlm::tac & tac) = delete;
+	inline
+	tac(const jlm::tac & other)
+	: inputs_(other.inputs_)
+	, outputs_(other.outputs_)
+	, operation_(std::move(other.operation().copy()))
+	{}
 
 	tac &
-	operator=(const tac &) = delete;
+	operator=(const jlm::tac & other)
+	{
+		if (this == &other)
+			return *this;
+
+		inputs_ = other.inputs_;
+		outputs_ = other.outputs_;
+		operation_ = std::move(other.operation().copy());
+
+		return *this;
+	}
 
 	inline const jive::operation &
 	operation() const noexcept
