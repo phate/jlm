@@ -68,50 +68,28 @@ strongconnect(
 
 namespace jlm {
 
-/* enter node */
+/* entry attribute */
 
-cfg::enter_node::~enter_node() noexcept {}
+static inline jlm::cfg_node *
+create_entry_node(jlm::cfg * cfg)
+{
+	jlm::entry_attribute attr;
+	return cfg->create_node(attr);
+}
 
-cfg::enter_node::enter_node(jlm::cfg & cfg) noexcept
-	: cfg_node(cfg)
+entry_attribute::~entry_attribute()
 {}
 
 std::string
-cfg::enter_node::debug_string() const
+entry_attribute::debug_string() const noexcept
 {
-	std::stringstream sstrm;
-
-	sstrm << this << " (ENTER)\\n";
-	for (size_t n = 0; n < arguments_.size(); n++) {
-		const variable * argument = arguments_[n];
-		sstrm << argument->debug_string() << " (" << argument->type().debug_string() << ")\\n";
-	}
-
-	return sstrm.str();
+	return "ENTRY";
 }
 
-const std::string &
-cfg::enter_node::argument_name(size_t index) const
+std::unique_ptr<attribute>
+entry_attribute::copy() const
 {
-	JLM_DEBUG_ASSERT(index < arguments_.size());
-
-	return arguments_[index]->name();
-}
-
-const jive::base::type &
-cfg::enter_node::argument_type(size_t index) const
-{
-	JLM_DEBUG_ASSERT(index < arguments_.size());
-
-	return arguments_[index]->type();
-}
-
-const variable *
-cfg::enter_node::argument(size_t index) const
-{
-	JLM_DEBUG_ASSERT(index < arguments_.size());
-
-	return arguments_[index];
+	return std::unique_ptr<attribute>(new entry_attribute(*this));
 }
 
 /* exit node */
@@ -141,17 +119,17 @@ cfg::exit_node::debug_string() const
 cfg::cfg()
 	: clg_node_(nullptr)
 {
-	create_enter_node();
+	entry_ = create_entry_node(this);
 	create_exit_node();
-	enter_->add_outedge(exit_, 0);
+	entry_->add_outedge(exit_, 0);
 }
 
 cfg::cfg(jlm::clg_node & clg_node)
 	: clg_node_(&clg_node)
 {
-	create_enter_node();
+	entry_ = create_entry_node(this);
 	create_exit_node();
-	enter_->add_outedge(exit_, 0);
+	entry_->add_outedge(exit_, 0);
 }
 
 cfg::cfg(const cfg & c)
@@ -162,9 +140,9 @@ cfg::cfg(const cfg & c)
 	for (it = c.nodes_.begin(); it != c.nodes_.end(); it++) {
 		cfg_node * copy;
 		cfg_node * node = (*it).get();
-		if (node == c.enter()) {
-			create_enter_node();
-			copy = enter_;
+		if (node == c.entry()) {
+			create_entry_node(this);
+			copy = entry_;
 		} else if (node == c.exit()) {
 			create_exit_node();
 			copy = exit_;
@@ -181,15 +159,6 @@ cfg::cfg(const cfg & c)
 		for (auto edge : edges)
 			copy->add_outedge(node_map[edge->sink()], edge->index());
 	}
-}
-
-void
-cfg::create_enter_node()
-{
-	std::unique_ptr<cfg_node> enter(new enter_node(*this));
-	enter_ = static_cast<enter_node*>(enter.get());
-	nodes_.insert(std::move(enter));
-	enter.release();
 }
 
 void
@@ -243,7 +212,7 @@ cfg::find_sccs() const
 	std::vector<cfg_node*> node_stack;
 	size_t index = 0;
 
-	strongconnect(enter(), exit(), map, node_stack, index, sccs);
+	strongconnect(entry(), exit(), map, node_stack, index, sccs);
 
 	return sccs;
 }
@@ -256,7 +225,7 @@ cfg::is_closed() const noexcept
 	std::unordered_set<std::unique_ptr<cfg_node>>::const_iterator it;
 	for (it = nodes_.begin(); it != nodes_.end(); it++) {
 		cfg_node * node = (*it).get();
-		if (node == enter())
+		if (node == entry())
 			continue;
 
 		if (node->no_predecessor())
@@ -274,7 +243,7 @@ cfg::is_linear() const noexcept
 	std::unordered_set<std::unique_ptr<cfg_node>>::const_iterator it;
 	for (it = nodes_.begin(); it != nodes_.end(); it++) {
 		cfg_node * node = (*it).get();
-		if (node == enter() || node == exit())
+		if (node == entry() || node == exit())
 			continue;
 
 		if (!node->single_successor() || !node->single_predecessor())
@@ -306,7 +275,7 @@ cfg::is_structured() const
 			return true;
 		}
 
-		if (node == c.enter() || node == c.exit()) {
+		if (node == c.entry() || node == c.exit()) {
 			it++; continue;
 		}
 
@@ -396,7 +365,7 @@ cfg::is_reducible() const
 			return true;
 		}
 
-		if (node == c.enter() || node == c.exit()) {
+		if (node == c.entry() || node == c.exit()) {
 			it++; continue;
 		}
 
@@ -442,7 +411,7 @@ cfg::is_valid() const
 			continue;
 		}
 
-		if (node == enter()) {
+		if (node == entry()) {
 			if (!node->no_predecessor())
 				return false;
 			if (!node->single_successor())
@@ -525,7 +494,7 @@ cfg::prune()
 	JLM_DEBUG_ASSERT(is_valid());
 
 	/* find all nodes that are dominated by the entry node */
-	std::unordered_set<cfg_node*> to_visit({enter_});
+	std::unordered_set<cfg_node*> to_visit({entry()});
 	std::unordered_set<cfg_node*> visited;
 	while (!to_visit.empty()) {
 		cfg_node * node = *to_visit.begin();

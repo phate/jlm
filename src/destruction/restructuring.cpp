@@ -398,11 +398,11 @@ restructure(jlm::cfg * cfg)
 	JLM_DEBUG_ASSERT(cfg->is_closed());
 
 	std::vector<jlm::cfg_edge> back_edges;
-	restructure_loops(cfg->enter(), cfg->exit(), back_edges);
+	restructure_loops(cfg->entry(), cfg->exit(), back_edges);
 
 	JLM_DEBUG_ASSERT(cfg->is_acyclic());
 
-	restructure_branches(cfg->enter(), cfg->exit());
+	restructure_branches(cfg->entry(), cfg->exit());
 
 	/* insert back edges */
 	std::unordered_set<const jlm::cfg_edge*> edges;

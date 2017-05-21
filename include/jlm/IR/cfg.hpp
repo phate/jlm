@@ -2,7 +2,6 @@
  * Copyright 2013 2014 2015 Nico Reißmann <nico.reissmann@gmail.com>
  * See COPYING for terms of redistribution.
  */
-
 #ifndef JLM_IR_CFG_H
 #define JLM_IR_CFG_H
 
@@ -24,8 +23,46 @@ class clg_node;
 class basic_block;
 class tac;
 
+class entry_attribute final : public attribute {
+public:
+	virtual
+	~entry_attribute();
+
+	inline
+	entry_attribute()
+	: attribute()
+	{}
+
+	size_t
+	narguments() const noexcept
+	{
+		return arguments_.size();
+	}
+
+	const variable *
+	argument(size_t index) const
+	{
+		JLM_DEBUG_ASSERT(index < narguments());
+		return arguments_[index];
+	}
+
+	inline void
+	append_argument(const variable * v)
+	{
+		return arguments_.push_back(v);
+	}
+
+	virtual std::string
+	debug_string() const noexcept override;
+
+	virtual std::unique_ptr<attribute>
+	copy() const override;
+
+private:
+	std::vector<const variable*> arguments_;
+};
+
 class cfg final {
-	class enter_node;
 	class exit_node;
 public:
 	~cfg() {}
@@ -59,7 +96,12 @@ public:
 	void
 	destruct_ssa();
 
-	inline jlm::cfg::enter_node * enter() const noexcept { return enter_; }
+	inline jlm::cfg_node *
+	entry() const noexcept
+	{
+		return entry_;
+	}
+
 	inline jlm::cfg::exit_node * exit() const noexcept { return exit_; }
 
 	inline jlm::clg_node * function() const noexcept { return clg_node_; }
@@ -82,31 +124,21 @@ public:
 	inline variable *
 	append_argument(const std::string & name, const jive::base::type & type)
 	{
-		return enter_->append_argument(name, type);
+		auto v = create_variable(type, name);
+		static_cast<entry_attribute*>(&entry()->attribute())->append_argument(v);
+		return v;
 	}
 
 	inline size_t
 	narguments() const noexcept
 	{
-		return enter_->narguments();
-	}
-
-	inline const std::string &
-	argument_name(size_t index) const
-	{
-		return enter_->argument_name(index);
-	}
-
-	inline const jive::base::type &
-	argument_type(size_t index) const
-	{
-		return enter_->argument_type(index);
+		return static_cast<entry_attribute*>(&entry()->attribute())->narguments();
 	}
 
 	inline const variable *
 	argument(size_t index) const
 	{
-		return enter_->argument(index);
+		return static_cast<entry_attribute*>(&entry()->attribute())->argument(index);
 	}
 
 	inline void
@@ -128,40 +160,6 @@ public:
 	}
 
 private:
-	class enter_node final : public cfg_node {
-	public:
-		virtual ~enter_node() noexcept;
-
-		enter_node(jlm::cfg & cfg) noexcept;
-
-		virtual std::string debug_string() const override;
-
-		inline variable *
-		append_argument(const std::string & name, const jive::base::type & type)
-		{
-			arguments_.push_back(cfg()->create_variable(type, name));
-			return arguments_[arguments_.size()-1];
-		}
-
-		size_t
-		narguments() const noexcept
-		{
-			return arguments_.size();
-		}
-
-		const std::string &
-		argument_name(size_t index) const;
-
-		const jive::base::type &
-		argument_type(size_t index) const;
-
-		const variable *
-		argument(size_t index) const;
-
-	private:
-		std::vector<variable*> arguments_;
-	};
-
 	class exit_node final : public cfg_node {
 	public:
 		virtual ~exit_node() noexcept;
@@ -194,10 +192,9 @@ private:
 	};
 
 	void remove_node(cfg_node * node);
-	void create_enter_node();
 	void create_exit_node();
 
-	cfg::enter_node * enter_;
+	cfg_node * entry_;
 	cfg::exit_node * exit_;
 	jlm::clg_node * clg_node_;
 	std::unordered_set<std::unique_ptr<cfg_node>> nodes_;
