@@ -62,8 +62,46 @@ private:
 	std::vector<const variable*> arguments_;
 };
 
+class exit_attribute final : public attribute {
+public:
+	virtual
+	~exit_attribute();
+
+	inline
+	exit_attribute()
+	: attribute()
+	{}
+
+	size_t
+	nresults() const noexcept
+	{
+		return results_.size();
+	}
+
+	const variable *
+	result(size_t index) const
+	{
+		JLM_DEBUG_ASSERT(index < nresults());
+		return results_[index];
+	}
+
+	inline void
+	append_result(const variable * result)
+	{
+		results_.push_back(result);
+	}
+
+	virtual std::string
+	debug_string() const noexcept override;
+
+	virtual std::unique_ptr<attribute>
+	copy() const override;
+
+private:
+	std::vector<const variable*> results_;
+};
+
 class cfg final {
-	class exit_node;
 public:
 	~cfg() {}
 
@@ -102,7 +140,11 @@ public:
 		return entry_;
 	}
 
-	inline jlm::cfg::exit_node * exit() const noexcept { return exit_; }
+	inline jlm::cfg_node *
+	exit() const noexcept
+	{
+		return exit_;
+	}
 
 	inline jlm::clg_node * function() const noexcept { return clg_node_; }
 
@@ -144,58 +186,26 @@ public:
 	inline void
 	append_result(variable * result)
 	{
-		exit_->append_result(result);
+		static_cast<exit_attribute*>(&exit()->attribute())->append_result(result);
 	}
 
 	inline size_t
 	nresults() const noexcept
 	{
-		return exit_->nresults();
+		return static_cast<exit_attribute*>(&exit()->attribute())->nresults();
 	}
 
 	inline const variable *
 	result(size_t index) const
 	{
-		return exit_->result(index);
+		return static_cast<exit_attribute*>(&exit()->attribute())->result(index);
 	}
 
 private:
-	class exit_node final : public cfg_node {
-	public:
-		virtual ~exit_node() noexcept;
-
-		exit_node(jlm::cfg & cfg) noexcept;
-
-		virtual std::string debug_string() const override;
-
-		inline void
-		append_result(variable * result)
-		{
-			results_.push_back(result);
-		}
-
-		inline size_t
-		nresults() const noexcept
-		{
-			return results_.size();
-		}
-
-		inline const variable *
-		result(size_t index) const
-		{
-			JLM_DEBUG_ASSERT(index < results_.size());
-			return results_[index];
-		}
-
-	private:
-		std::vector<variable*> results_;
-	};
-
 	void remove_node(cfg_node * node);
-	void create_exit_node();
 
 	cfg_node * entry_;
-	cfg::exit_node * exit_;
+	cfg_node * exit_;
 	jlm::clg_node * clg_node_;
 	std::unordered_set<std::unique_ptr<cfg_node>> nodes_;
 	std::unordered_set<std::unique_ptr<variable>> variables_;

@@ -92,26 +92,28 @@ entry_attribute::copy() const
 	return std::unique_ptr<attribute>(new entry_attribute(*this));
 }
 
-/* exit node */
+/* exit attribute */
 
-cfg::exit_node::~exit_node() noexcept {}
+static inline jlm::cfg_node *
+create_exit_node(jlm::cfg * cfg)
+{
+	jlm::exit_attribute attr;
+	return cfg->create_node(attr);
+}
 
-cfg::exit_node::exit_node(jlm::cfg & cfg) noexcept
-	: cfg_node(cfg)
+exit_attribute::~exit_attribute()
 {}
 
 std::string
-cfg::exit_node::debug_string() const
+exit_attribute::debug_string() const noexcept
 {
-	std::stringstream sstrm;
+	return "EXIT";
+}
 
-	sstrm << this << " (EXIT)\\n";
-	for (size_t n = 0; n < results_.size(); n++) {
-		const jlm::variable * result = results_[n];
-		sstrm << result->debug_string() << " (" << result->type().debug_string() << ")\\n";
-	}
-
-	return sstrm.str();
+std::unique_ptr<attribute>
+exit_attribute::copy() const
+{
+	return std::unique_ptr<attribute>(new exit_attribute(*this));
 }
 
 /* cfg */
@@ -120,7 +122,7 @@ cfg::cfg()
 	: clg_node_(nullptr)
 {
 	entry_ = create_entry_node(this);
-	create_exit_node();
+	exit_ = create_exit_node(this);
 	entry_->add_outedge(exit_, 0);
 }
 
@@ -128,7 +130,7 @@ cfg::cfg(jlm::clg_node & clg_node)
 	: clg_node_(&clg_node)
 {
 	entry_ = create_entry_node(this);
-	create_exit_node();
+	exit_ = create_exit_node(this);
 	entry_->add_outedge(exit_, 0);
 }
 
@@ -144,7 +146,7 @@ cfg::cfg(const cfg & c)
 			create_entry_node(this);
 			copy = entry_;
 		} else if (node == c.exit()) {
-			create_exit_node();
+			create_exit_node(this);
 			copy = exit_;
 		} else
 			copy = create_basic_block_node(this);
@@ -159,15 +161,6 @@ cfg::cfg(const cfg & c)
 		for (auto edge : edges)
 			copy->add_outedge(node_map[edge->sink()], edge->index());
 	}
-}
-
-void
-cfg::create_exit_node()
-{
-	std::unique_ptr<cfg_node> exit(new exit_node(*this));
-	exit_ = static_cast<exit_node*>(exit.get());
-	nodes_.insert(std::move(exit));
-	exit.release();
 }
 
 cfg_node *
