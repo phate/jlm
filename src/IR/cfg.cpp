@@ -169,7 +169,7 @@ cfg::cfg(const cfg & c)
 			create_exit_node();
 			copy = exit_;
 		} else
-			copy = create_basic_block();
+			copy = create_basic_block_node(this);
 
 		node_map[node] = copy;
 	}
@@ -199,16 +199,6 @@ cfg::create_exit_node()
 	exit_ = static_cast<exit_node*>(exit.get());
 	nodes_.insert(std::move(exit));
 	exit.release();
-}
-
-basic_block *
-cfg::create_basic_block()
-{
-	std::unique_ptr<cfg_node> bb(new basic_block(*this));
-	basic_block * tmp = static_cast<basic_block*>(bb.get());
-	nodes_.insert(std::move(bb));
-	bb.release();
-	return tmp;
 }
 
 cfg_node *
@@ -569,22 +559,25 @@ void
 cfg::destruct_ssa()
 {
 	/* find all blocks containing phis */
-	std::unordered_set<basic_block*> phi_blocks;
+	std::unordered_set<cfg_node*> phi_blocks;
 	for (auto it = nodes_.begin(); it != nodes_.end(); it++) {
 		cfg_node * node = it->get();
-		if (!dynamic_cast<basic_block*>(node))
+		if (!is_basic_block(node))
 			continue;
 
-		basic_block * bb = static_cast<basic_block*>(node);
-		if (!bb->tacs().empty() && dynamic_cast<const phi_op*>(&bb->tacs().front()->operation()))
-			phi_blocks.insert(bb);
+		auto attr = static_cast<basic_block_attribute*>(&node->attribute());
+		if (!attr->tacs().empty() && dynamic_cast<const phi_op*>(&attr->tacs().front()->operation()))
+			phi_blocks.insert(node);
 	}
 
 	/* eliminate phis */
 	for (auto phi_block : phi_blocks) {
-		basic_block * ass_block = create_basic_block();
+		auto ass_block = create_basic_block_node(this);
+		auto ass_attr = static_cast<basic_block_attribute*>(&ass_block->attribute());
+		auto phi_attr = static_cast<basic_block_attribute*>(&phi_block->attribute());
 
-		std::list<const tac*> & tacs = phi_block->tacs();
+
+		std::list<const tac*> & tacs = phi_attr->tacs();
 		for (auto tac : tacs) {
 			if (!dynamic_cast<const phi_op*>(&tac->operation()))
 				break;
@@ -596,11 +589,12 @@ cfg::destruct_ssa()
 			const variable * value = nullptr;
 			std::list<cfg_edge*> edges = phi_block->inedges();
 			for (auto it = edges.begin(); it != edges.end(); it++, n++) {
-				basic_block * edge_block = static_cast<basic_block*>((*it)->split());
+				auto edge_block = (*it)->split();
+				auto edge_attr = static_cast<basic_block_attribute*>(&edge_block->attribute());
 
-				value = edge_block->append(assignment_op(v->type()), {tac->input(n)}, {v})->output(0);
+				value = edge_attr->append(assignment_op(v->type()), {tac->input(n)}, {v})->output(0);
 			}
-			ass_block->append(assignment_op(tac->output(0)->type()), {value}, {tac->output(0)});
+			ass_attr->append(assignment_op(tac->output(0)->type()), {value}, {tac->output(0)});
 		}
 
 		phi_block->divert_inedges(ass_block);

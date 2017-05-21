@@ -64,8 +64,6 @@ public:
 
 	inline jlm::clg_node * function() const noexcept { return clg_node_; }
 
-	basic_block * create_basic_block();
-
 	cfg_node *
 	create_node(const attribute & attr);
 

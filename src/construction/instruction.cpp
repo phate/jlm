@@ -40,8 +40,10 @@ convert_value(
 	if (ctx.has_value(v))
 		return ctx.lookup_value(v);
 
-	if (auto c = dynamic_cast<const llvm::Constant*>(v))
-		return ctx.entry_block()->append(*convert_constant(c, ctx));
+	if (auto c = dynamic_cast<const llvm::Constant*>(v)) {
+		auto attr = static_cast<basic_block_attribute*>(&ctx.entry_block()->attribute());
+		return attr->append(ctx.cfg(), *convert_constant(c, ctx));
+	}
 
 	JLM_DEBUG_ASSERT(0);
 	return nullptr;
@@ -52,15 +54,16 @@ convert_value(
 static const variable *
 convert_return_instruction(
 	const llvm::Instruction * i,
-	basic_block * bb,
+	cfg_node * bb,
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ReturnInst*>(i));
 	const llvm::ReturnInst * instruction = static_cast<const llvm::ReturnInst*>(i);
+	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
 
 	if (instruction->getReturnValue()) {
 		const variable * value = convert_value(instruction->getReturnValue(), ctx);
-		bb->append(jlm::assignment_op(ctx.result()->type()), {value}, {ctx.result()});
+		attr->append(jlm::assignment_op(ctx.result()->type()), {value}, {ctx.result()});
 	}
 
 	return nullptr;
@@ -69,16 +72,17 @@ convert_return_instruction(
 static const variable *
 convert_branch_instruction(
 	const llvm::Instruction * i,
-	basic_block * bb,
+	cfg_node * bb,
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::BranchInst*>(i));
 	const llvm::BranchInst * instruction = static_cast<const llvm::BranchInst*>(i);
+	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
 
 	if (instruction->isConditional()) {
 		const variable * c = convert_value(instruction->getCondition(), ctx);
 		size_t nbits = dynamic_cast<const jive::bits::type&>(c->type()).nbits();
-		bb->append(jive::match_op(nbits, {{0, 0}}, 1, 2), {c});
+		attr->append(ctx.cfg(), jive::match_op(nbits, {{0, 0}}, 1, 2), {c});
 	}
 
 	return nullptr;
@@ -87,13 +91,13 @@ convert_branch_instruction(
 static const variable *
 convert_switch_instruction(
 	const llvm::Instruction * i,
-	basic_block * bb,
+	cfg_node * bb,
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::SwitchInst*>(i));
 	const llvm::SwitchInst * instruction = static_cast<const llvm::SwitchInst*>(i);
+	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
 
-	JLM_DEBUG_ASSERT(bb->outedges().size() == instruction->getNumCases()+1);
 	std::map<uint64_t, uint64_t> mapping;
 	for (auto it = instruction->case_begin(); it != instruction->case_end(); it++) {
 		JLM_DEBUG_ASSERT(it != instruction->case_default());
@@ -102,14 +106,14 @@ convert_switch_instruction(
 
 	const jlm::variable * c = convert_value(instruction->getCondition(), ctx);
 	size_t nbits = dynamic_cast<const jive::bits::type&>(c->type()).nbits();
-	bb->append(jive::match_op(nbits, mapping, mapping.size(), mapping.size()+1), {c});
+	attr->append(ctx.cfg(), jive::match_op(nbits, mapping, mapping.size(), mapping.size()+1), {c});
 	return nullptr;
 }
 
 static const variable *
 convert_unreachable_instruction(
 	const llvm::Instruction * i,
-	basic_block * bb,
+	cfg_node * bb,
 	context & ctx)
 {
 	/* Nothing needs to be done. */
@@ -119,11 +123,12 @@ convert_unreachable_instruction(
 static const variable *
 convert_icmp_instruction(
 	const llvm::Instruction * instruction,
-	basic_block * bb,
+	cfg_node * bb,
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ICmpInst*>(instruction));
 	const llvm::ICmpInst * i = static_cast<const llvm::ICmpInst*>(instruction);
+	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
 
 	const jlm::variable * op1 = convert_value(i->getOperand(0), ctx);
 	const jlm::variable * op2 = convert_value(i->getOperand(1), ctx);
@@ -153,24 +158,25 @@ convert_icmp_instruction(
 		nbits = 32;
 		jive::address_to_bitstring_operation op(nbits,
 			std::unique_ptr<jive::base::type>(new jive::addr::type()));
-		const variable * new_op1 = bb->cfg()->create_variable(jive::bits::type(nbits));
-		const variable * new_op2 = bb->cfg()->create_variable(jive::bits::type(nbits));
-		op1 = bb->append(op, {op1}, {new_op1})->output(0);
-		op2 = bb->append(op, {op2}, {new_op2})->output(0);
+		const variable * new_op1 = ctx.cfg()->create_variable(jive::bits::type(nbits));
+		const variable * new_op2 = ctx.cfg()->create_variable(jive::bits::type(nbits));
+		op1 = attr->append(op, {op1}, {new_op1})->output(0);
+		op2 = attr->append(op, {op2}, {new_op2})->output(0);
 	} else
 		nbits = i->getOperand(0)->getType()->getIntegerBitWidth();
 
-	return bb->append(*map[i->getPredicate()](nbits), {op1, op2}, {ctx.lookup_value(i)})->output(0);
+	return attr->append(*map[i->getPredicate()](nbits), {op1, op2}, {ctx.lookup_value(i)})->output(0);
 }
 
 static const variable *
 convert_fcmp_instruction(
 	const llvm::Instruction * instruction,
-	basic_block * bb,
+	cfg_node * bb,
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::FCmpInst*>(instruction));
 	const llvm::FCmpInst * i = static_cast<const llvm::FCmpInst*>(instruction);
+	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
 
 	/* FIXME: vector type is not yet supported */
 	if (i->getType()->isVectorTy())
@@ -208,17 +214,18 @@ convert_fcmp_instruction(
 		operands.push_back(convert_value(i->getOperand(1), ctx));
 	}
 
-	return bb->append(*map[i->getPredicate()](), operands, {ctx.lookup_value(i)})->output(0);
+	return attr->append(*map[i->getPredicate()](), operands, {ctx.lookup_value(i)})->output(0);
 }
 
 static const variable *
 convert_load_instruction(
 	const llvm::Instruction * i,
-	basic_block * bb,
+	cfg_node * bb,
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::LoadInst*>(i));
 	const llvm::LoadInst * instruction = static_cast<const llvm::LoadInst*>(i);
+	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
 
 	/* FIXME: handle volatile correctly */
 
@@ -228,17 +235,18 @@ convert_load_instruction(
 	std::vector<std::unique_ptr<jive::state::type>> type;
 	type.emplace_back(std::unique_ptr<jive::state::type>(new jive::mem::type()));
 	jive::load_op op(jive::addr::type(), type, dynamic_cast<const jive::value::type&>(value->type()));
-	return bb->append(op, {address, ctx.state()}, {value})->output(0);
+	return attr->append(op, {address, ctx.state()}, {value})->output(0);
 }
 
 static const variable *
 convert_store_instruction(
 	const llvm::Instruction * i,
-	basic_block * bb,
+	cfg_node * bb,
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::StoreInst*>(i));
 	const llvm::StoreInst * instruction = static_cast<const llvm::StoreInst*>(i);
+	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
 
 	const variable * address = convert_value(instruction->getPointerOperand(), ctx);
 	const variable * value = convert_value(instruction->getValueOperand(), ctx);
@@ -246,29 +254,29 @@ convert_store_instruction(
 	std::vector<std::unique_ptr<jive::state::type>> t;
 	t.emplace_back(std::unique_ptr<jive::state::type>(new jive::mem::type()));
 	jive::store_op op(jive::addr::type(), t, dynamic_cast<const jive::value::type&>(value->type()));
-	bb->append(op, {address, value, ctx.state()}, {ctx.state()});
+	attr->append(op, {address, value, ctx.state()}, {ctx.state()});
 	return nullptr;
 }
 
 static const variable *
 convert_phi_instruction(
 	const llvm::Instruction * i,
-	basic_block * bb,
+	cfg_node * bb,
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::PHINode*>(i));
 	const llvm::PHINode * phi = static_cast<const llvm::PHINode*>(i);
+	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
 
 	std::vector<const jlm::variable*> operands;
 	for (auto edge : bb->inedges()) {
-		const basic_block * tmp = static_cast<basic_block*>(edge->source());
+		auto tmp = edge->source();
 		const llvm::BasicBlock * ib = nullptr;
 		if (ctx.has_basic_block(tmp)) {
 			ib = ctx.lookup_basic_block(tmp);
 		} else {
 			JLM_DEBUG_ASSERT(tmp->ninedges() == 1);
-			JLM_DEBUG_ASSERT(tmp->tacs().empty());
-			ib = ctx.lookup_basic_block(static_cast<basic_block*>(tmp->inedges().front()->source()));
+			ib = ctx.lookup_basic_block(tmp->inedges().front()->source());
 		}
 
 		const jlm::variable * v = convert_value(phi->getIncomingValueForBlock(ib), ctx);
@@ -277,17 +285,18 @@ convert_phi_instruction(
 
 	JLM_DEBUG_ASSERT(operands.size() != 0);
 	phi_op op(operands.size(), operands[0]->type());
-	return bb->append(op, operands, {ctx.lookup_value(phi)})->output(0);
+	return attr->append(op, operands, {ctx.lookup_value(phi)})->output(0);
 }
 
 static const variable *
 convert_getelementptr_instruction(
 	const llvm::Instruction * i,
-	basic_block * bb,
+	cfg_node * bb,
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::GetElementPtrInst*>(i));
 	const llvm::GetElementPtrInst * instruction = static_cast<const llvm::GetElementPtrInst*>(i);
+	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
 
 	const jlm::variable * base = convert_value(instruction->getPointerOperand(), ctx);
 	for (auto idx = instruction->idx_begin(); idx != instruction->idx_end(); idx++) {
@@ -295,7 +304,7 @@ convert_getelementptr_instruction(
 		const jive::value::type & basetype = dynamic_cast<const jive::value::type&>(base->type());
 		const jive::bits::type & offsettype = dynamic_cast<const jive::bits::type&>(offset->type());
 		jive::address::arraysubscript_op op(basetype, offsettype);
-		base = bb->append(op, {base, offset}, {ctx.lookup_value(i)})->output(0);
+		base = attr->append(op, {base, offset}, {ctx.lookup_value(i)})->output(0);
 	}
 
 	return base;
@@ -304,26 +313,28 @@ convert_getelementptr_instruction(
 static const variable *
 convert_trunc_instruction(
 	const llvm::Instruction * i,
-	basic_block * bb,
+	cfg_node * bb,
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::TruncInst*>(i));
 	const llvm::TruncInst * instruction = static_cast<const llvm::TruncInst*>(i);
+	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
 
 	size_t high = i->getType()->getIntegerBitWidth();
 	const jlm::variable * operand = convert_value(instruction->getOperand(0), ctx);
 	jive::bits::slice_op op(dynamic_cast<const jive::bits::type&>(operand->type()), 0, high);
-	return bb->append(op, {operand}, {ctx.lookup_value(i)})->output(0);
+	return attr->append(op, {operand}, {ctx.lookup_value(i)})->output(0);
 }
 
 static const variable *
 convert_call_instruction(
 	const llvm::Instruction * i,
-	basic_block * bb,
+	cfg_node * bb,
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::CallInst*>(i));
 	const llvm::CallInst * instruction = static_cast<const llvm::CallInst*>(i);
+	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
 
 	const llvm::Value * f = instruction->getCalledValue();
 	const llvm::FunctionType * ftype = llvm::cast<const llvm::FunctionType>(
@@ -343,7 +354,7 @@ convert_call_instruction(
 		stype.emplace_back(std::unique_ptr<jive::state::type>(new jive::mem::type()));
 		jive::load_op op(jive::addr::type::instance(), stype, type);
 		const jlm::variable * tmp = bb->cfg()->create_variable(type);
-		callee = bb->append(op, {convert_value(f, ctx), ctx.state()}, {tmp})->output(0);
+		callee = attr->append(op, {convert_value(f, ctx), ctx.state()}, {tmp})->output(0);
 	}
 
 	/* handle arguments */
@@ -354,7 +365,7 @@ convert_call_instruction(
 	if (ftype->isVarArg()) {
 		/* FIXME: sizeof */
 		const variable * alloc = bb->cfg()->create_variable(jive::addr::type::instance());
-		const tac * vararg = bb->append(alloca_op(4), {ctx.state()}, {alloc, ctx.state()});
+		const tac * vararg = attr->append(alloca_op(4), {ctx.state()}, {alloc, ctx.state()});
 		arguments.push_back(vararg->output(0));
 	}
 	arguments.push_back(ctx.state());
@@ -365,33 +376,35 @@ convert_call_instruction(
 		results.push_back(ctx.lookup_value(i));
 	results.push_back(ctx.state());
 
-	bb->append(jive::fct::apply_op(type), arguments, results);
+	attr->append(jive::fct::apply_op(type), arguments, results);
 	return (results.size() == 2) ? results[0] : nullptr;
 }
 
 static const variable *
 convert_select_instruction(
 	const llvm::Instruction * i,
-	basic_block * bb,
+	cfg_node * bb,
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::SelectInst*>(i));
 	const llvm::SelectInst * instruction = static_cast<const llvm::SelectInst*>(i);
+	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
 
 	const jlm::variable * condition = convert_value(instruction->getCondition(), ctx);
 	const jlm::variable * tv = convert_value(instruction->getTrueValue(), ctx);
 	const jlm::variable * fv = convert_value(instruction->getFalseValue(), ctx);
-	return bb->append(select_op(tv->type()), {condition, tv, fv}, {ctx.lookup_value(i)})->output(0);
+	return attr->append(select_op(tv->type()), {condition, tv, fv}, {ctx.lookup_value(i)})->output(0);
 }
 
 static const variable *
 convert_binary_operator(
 	const llvm::Instruction * instruction,
-	basic_block * bb,
+	cfg_node * bb,
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::BinaryOperator*>(instruction));
 	const llvm::BinaryOperator * i = static_cast<const llvm::BinaryOperator*>(instruction);
+	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
 
 	/* FIXME: vector type is not yet supported */
 	if (i->getType()->isVectorTy())
@@ -420,7 +433,7 @@ convert_binary_operator(
 		});
 
 		size_t nbits = i->getType()->getIntegerBitWidth();
-		return bb->append(*map[i->getOpcode()](nbits), {op1, op2}, {ctx.lookup_value(i)})->output(0);
+		return attr->append(*map[i->getOpcode()](nbits), {op1, op2}, {ctx.lookup_value(i)})->output(0);
 	}
 
 	if (i->getType()->isFloatingPointTy()) {
@@ -435,7 +448,7 @@ convert_binary_operator(
 
 		/* FIXME: support FRem */
 		JLM_DEBUG_ASSERT(i->getOpcode() != llvm::Instruction::FRem);
-		return bb->append(*map[i->getOpcode()](), {op1, op2}, {ctx.lookup_value(i)})->output(0);
+		return attr->append(*map[i->getOpcode()](), {op1, op2}, {ctx.lookup_value(i)})->output(0);
 	}
 
 	JLM_DEBUG_ASSERT(0);
@@ -445,26 +458,28 @@ convert_binary_operator(
 static const variable *
 convert_alloca_instruction(
 	const llvm::Instruction * instruction,
-	basic_block * bb,
+	cfg_node * bb,
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::AllocaInst*>(instruction));
 	const llvm::AllocaInst * i = static_cast<const llvm::AllocaInst*>(instruction);
+	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
 
 	/* FIXME: the number of bytes is not correct */
 
 	size_t nbytes = 4;
 	alloca_op op(nbytes);
-	return bb->append(op, {ctx.state()}, {ctx.lookup_value(i), ctx.state()})->output(0);
+	return attr->append(op, {ctx.state()}, {ctx.lookup_value(i), ctx.state()})->output(0);
 }
 
 static const variable *
 convert_zext_instruction(
 	const llvm::Instruction * i,
-	basic_block * bb,
+	cfg_node * bb,
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ZExtInst*>(i));
+	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
 
 	llvm::Value * operand = i->getOperand(0);
 
@@ -475,19 +490,20 @@ convert_zext_instruction(
 	size_t new_length = i->getType()->getIntegerBitWidth();
 	size_t old_length = operand->getType()->getIntegerBitWidth();
 	jive::bits::constant_op c_op(jive::bits::value_repr(new_length - old_length, 0));
-	const variable * c = bb->append(c_op, {})->output(0);
+	const variable * c = attr->append(ctx.cfg(), c_op, {})->output(0);
 
 	jive::bits::concat_op op({jive::bits::type(old_length), jive::bits::type(new_length-old_length)});
-	return bb->append(op, {convert_value(operand, ctx), c}, {ctx.lookup_value(i)})->output(0);
+	return attr->append(op, {convert_value(operand, ctx), c}, {ctx.lookup_value(i)})->output(0);
 }
 
 static const variable *
 convert_sext_instruction(
 	const llvm::Instruction * i,
-	basic_block * bb,
+	cfg_node * bb,
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::SExtInst*>(i));
+	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
 
 	llvm::Value * operand = i->getOperand(0);
 
@@ -498,7 +514,7 @@ convert_sext_instruction(
 	size_t new_length = i->getType()->getIntegerBitWidth();
 	size_t old_length = operand->getType()->getIntegerBitWidth();
 	jive::bits::slice_op s_op(jive::bits::type(old_length), old_length-1, old_length);
-	const variable * bit = bb->append(s_op, {convert_value(operand, ctx)})->output(0);
+	auto bit = attr->append(ctx.cfg(), s_op, {convert_value(operand, ctx)})->output(0);
 
 	std::vector<const variable*> operands(1, convert_value(operand, ctx));
 	std::vector<jive::bits::type> operand_types(1, jive::bits::type(old_length));
@@ -508,48 +524,51 @@ convert_sext_instruction(
 	}
 
 	jive::bits::concat_op op(operand_types);
-	return bb->append(op, operands, {ctx.lookup_value(i)})->output(0);
+	return attr->append(op, operands, {ctx.lookup_value(i)})->output(0);
 }
 
 static const variable *
 convert_fpext_instruction(
 	const llvm::Instruction * i,
-	basic_block * bb,
+	cfg_node * bb,
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::FPExtInst*>(i));
+	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
 
 	/* FIXME: use assignment operator as long as we don't support floating point types properly */
 
 	jive::flt::type type;
 	assignment_op op(type);
 	const variable * operand = convert_value(i->getOperand(0), ctx);
-	return bb->append(op, {operand}, {ctx.lookup_value(i)})->output(0);
+	return attr->append(op, {operand}, {ctx.lookup_value(i)})->output(0);
 }
 
 static const variable *
 convert_fptrunc_instruction(
 	const llvm::Instruction * i,
-	basic_block * bb,
+	cfg_node * bb,
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::FPTruncInst*>(i));
+	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
 
 	/* FIXME: use assignment operator as long as we don't support floating point types properly */
 
 	jive::flt::type type;
 	assignment_op op(type);
 	const variable * operand = convert_value(i->getOperand(0), ctx);
-	return bb->append(op, {operand}, {ctx.lookup_value(i)})->output(0);
+	return attr->append(op, {operand}, {ctx.lookup_value(i)})->output(0);
 }
 
 static const variable *
 convert_inttoptr_instruction(
 	const llvm::Instruction * i,
-	basic_block * bb,
+	cfg_node * bb,
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::IntToPtrInst*>(i));
+	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
 
 	llvm::Value * operand = i->getOperand(0);
 	llvm::Type * type = operand->getType();
@@ -560,17 +579,18 @@ convert_inttoptr_instruction(
 
 	jive::bitstring_to_address_operation op(type->getIntegerBitWidth(),
 		std::unique_ptr<jive::base::type>(new jive::addr::type()));
-	return bb->append(op, {convert_value(operand, ctx)}, {ctx.lookup_value(i)})->output(0);
+	return attr->append(op, {convert_value(operand, ctx)}, {ctx.lookup_value(i)})->output(0);
 }
 
 static const variable *
 convert_ptrtoint_instruction(
 	const llvm::Instruction * instruction,
-	basic_block * bb,
+	cfg_node * bb,
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::PtrToIntInst*>(instruction));
 	const llvm::PtrToIntInst * i = static_cast<const llvm::PtrToIntInst*>(instruction);
+	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
 
 	/* FIXME: support vector type */
 	if (i->getPointerOperand()->getType()->isVectorTy())
@@ -580,16 +600,17 @@ convert_ptrtoint_instruction(
 
 	size_t nbits = i->getType()->getIntegerBitWidth();
 	jive::address_to_bitstring_operation op(nbits, jive::addr::type());
-	return bb->append(op, {operand}, {ctx.lookup_value(i)})->output(0);
+	return attr->append(op, {operand}, {ctx.lookup_value(i)})->output(0);
 }
 
 static const variable *
 convert_uitofp_instruction(
 	const llvm::Instruction * i,
-	basic_block * bb,
+	cfg_node * bb,
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::UIToFPInst*>(i));
+	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
 
 	llvm::Value * operand = i->getOperand(0);
 	llvm::Type * type = operand->getType();
@@ -599,16 +620,17 @@ convert_uitofp_instruction(
 		JLM_DEBUG_ASSERT(0);
 
 	bits2flt_op op(type->getIntegerBitWidth());
-	return bb->append(op, {convert_value(operand, ctx)}, {ctx.lookup_value(i)})->output(0);
+	return attr->append(op, {convert_value(operand, ctx)}, {ctx.lookup_value(i)})->output(0);
 }
 
 static const variable *
 convert_sitofp_instruction(
 	const llvm::Instruction * i,
-	basic_block * bb,
+	cfg_node * bb,
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::SIToFPInst*>(i));
+	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
 
 	llvm::Value * operand = i->getOperand(0);
 	llvm::Type * type = operand->getType();
@@ -618,16 +640,17 @@ convert_sitofp_instruction(
 		JLM_DEBUG_ASSERT(0);
 
 	bits2flt_op op(type->getIntegerBitWidth());
-	return bb->append(op, {convert_value(operand, ctx)}, {ctx.lookup_value(i)})->output(0);
+	return attr->append(op, {convert_value(operand, ctx)}, {ctx.lookup_value(i)})->output(0);
 }
 
 static const variable *
 convert_fptoui_instruction(
 	const llvm::Instruction * i,
-	basic_block * bb,
+	cfg_node * bb,
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::FPToUIInst*>(i));
+	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
 
 	llvm::Value * operand = i->getOperand(0);
 
@@ -636,16 +659,17 @@ convert_fptoui_instruction(
 		JLM_DEBUG_ASSERT(0);
 
 	flt2bits_op op(i->getType()->getIntegerBitWidth());
-	return bb->append(op, {convert_value(operand, ctx)}, {ctx.lookup_value(i)})->output(0);
+	return attr->append(op, {convert_value(operand, ctx)}, {ctx.lookup_value(i)})->output(0);
 }
 
 static const variable *
 convert_fptosi_instruction(
 	const llvm::Instruction * i,
-	basic_block * bb,
+	cfg_node * bb,
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::FPToSIInst*>(i));
+	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
 
 	llvm::Value * operand = i->getOperand(0);
 
@@ -654,16 +678,17 @@ convert_fptosi_instruction(
 		JLM_DEBUG_ASSERT(0);
 
 	flt2bits_op op(i->getType()->getIntegerBitWidth());
-	return bb->append(op, {convert_value(operand, ctx)}, {ctx.lookup_value(i)})->output(0);
+	return attr->append(op, {convert_value(operand, ctx)}, {ctx.lookup_value(i)})->output(0);
 }
 
 static const variable *
 convert_bitcast_instruction(
 	const llvm::Instruction * i,
-	basic_block * bb,
+	cfg_node * bb,
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::BitCastInst*>(i));
+	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
 
 	const variable * operand = convert_value(i->getOperand(0), ctx);
 	const variable * result = ctx.lookup_value(i);
@@ -671,29 +696,30 @@ convert_bitcast_instruction(
 	/* FIXME: invoke with the right number of bytes */
 	alloca_op aop(4);
 	const variable * address = bb->cfg()->create_variable(jive::addr::type::instance());
-	bb->append(aop, {ctx.state()}, {address, ctx.state()});
+	attr->append(aop, {ctx.state()}, {address, ctx.state()});
 
 	std::vector<std::unique_ptr<jive::state::type>> t;
 	t.emplace_back(std::unique_ptr<jive::state::type>(new jive::mem::type()));
 	jive::store_op sop(jive::addr::type(), t,
 		dynamic_cast<const jive::value::type&>(operand->type()));
-	bb->append(sop, {address, operand, ctx.state()}, {ctx.state()});
+	attr->append(sop, {address, operand, ctx.state()}, {ctx.state()});
 
 	std::vector<std::unique_ptr<jive::state::type>> type;
 	type.emplace_back(std::unique_ptr<jive::state::type>(new jive::mem::type()));
 	jive::load_op lop(jive::addr::type(), type,
 		dynamic_cast<const jive::value::type&>(result->type()));
-	return bb->append(lop, {address, ctx.state()}, {result})->output(0);
+	return attr->append(lop, {address, ctx.state()}, {result})->output(0);
 }
 
 static const variable *
 convert_insertvalue_instruction(
 	const llvm::Instruction * instruction,
-	basic_block * bb,
+	cfg_node * bb,
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::InsertValueInst*>(instruction));
 	const llvm::InsertValueInst * i = static_cast<const llvm::InsertValueInst*>(instruction);
+	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
 
 	/* FIXME: array type */
 	if (i->getType()->isArrayTy())
@@ -712,7 +738,7 @@ convert_insertvalue_instruction(
 
 		std::vector<const variable*> operands;
 		for (size_t n = 0; n < decl->nelements(); n++) {
-			const jlm::tac * tac = bb->append(jive::rcd::select_operation(*type, n), {aggregate});
+			auto tac = attr->append(ctx.cfg(), jive::rcd::select_operation(*type, n), {aggregate});
 			if (n == *idx)
 				operands.push_back(f(std::next(idx), tac->output(0)));
 			else
@@ -720,7 +746,7 @@ convert_insertvalue_instruction(
 		}
 
 		jive::rcd::group_op op(decl);
-		return bb->append(op, operands, {ctx.lookup_value(i)})->output(0);
+		return attr->append(op, operands, {ctx.lookup_value(i)})->output(0);
 	};
 
 	return f(i->idx_begin(), convert_value(i->getAggregateOperand(), ctx));
@@ -729,11 +755,12 @@ convert_insertvalue_instruction(
 static const variable *
 convert_extractvalue_instruction(
 	const llvm::Instruction * instruction,
-	basic_block * bb,
+	cfg_node * bb,
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ExtractValueInst*>(instruction));
 	const llvm::ExtractValueInst * i = static_cast<const llvm::ExtractValueInst*>(instruction);
+	auto attr = static_cast<basic_block_attribute*>(&bb->attribute());
 
 	/* FIXME: array type */
 	if (i->getType()->isArrayTy())
@@ -745,7 +772,7 @@ convert_extractvalue_instruction(
 		const jive::rcd::type * type = dynamic_cast<const jive::rcd::type*>(&aggregate->type());
 
 		jive::rcd::select_operation op(*type, *it);
-		aggregate = bb->append(op, {aggregate}, {ctx.lookup_value(i)})->output(0);
+		aggregate = attr->append(op, {aggregate}, {ctx.lookup_value(i)})->output(0);
 	}
 
 	return aggregate;
@@ -754,12 +781,12 @@ convert_extractvalue_instruction(
 const variable *
 convert_instruction(
 	const llvm::Instruction * i,
-	basic_block * bb,
+	cfg_node * bb,
 	context & ctx)
 {
 	static std::unordered_map<
 		std::type_index,
-		const variable * (*)(const llvm::Instruction*, jlm::basic_block*, context&)
+		const variable * (*)(const llvm::Instruction*, jlm::cfg_node*, context&)
 	> map({
 		{std::type_index(typeid(llvm::ReturnInst)), convert_return_instruction}
 	,	{std::type_index(typeid(llvm::BranchInst)), convert_branch_instruction}

@@ -43,7 +43,8 @@ cfg_edge::divert(cfg_node * new_sink)
 cfg_node *
 cfg_edge::split()
 {
-	cfg_node * bb = static_cast<jlm::cfg_node*>(source_->cfg()->create_basic_block());
+	basic_block_attribute attr;
+	auto bb = source_->cfg()->create_node(attr);
 	auto i = sink_->inedges_.erase(std::find(sink_->inedges_.begin(), sink_->inedges_.end(), this));
 
 	std::unique_ptr<cfg_edge> edge(new jlm::cfg_edge(bb, sink_, 0));

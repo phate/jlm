@@ -13,7 +13,7 @@ namespace llvm {
 
 namespace jlm  {
 
-class basic_block;
+class basic_block_attribute;
 class context;
 class variable;
 
@@ -25,7 +25,7 @@ convert_value(
 const variable *
 convert_instruction(
 	const llvm::Instruction * i,
-	basic_block * bb,
+	cfg_node * bb,
 	context & ctx);
 
 }

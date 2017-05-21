@@ -90,54 +90,24 @@ private:
 	std::list<const tac*> tacs_;
 };
 
-static inline basic_block_attribute &
-create_basic_block(jlm::cfg & cfg)
+static inline cfg_node *
+create_basic_block_node(jlm::cfg * cfg)
 {
 	basic_block_attribute attr;
-	return *static_cast<basic_block_attribute*>(&cfg.create_node(attr)->attribute());
+	return cfg->create_node(attr);
 }
 
-class basic_block final : public cfg_node {
-public:
-	virtual ~basic_block();
+static inline basic_block_attribute *
+create_basic_block(jlm::cfg * cfg)
+{
+	return static_cast<basic_block_attribute*>(&create_basic_block_node(cfg)->attribute());
+}
 
-	virtual std::string debug_string() const override;
-
-	const tac *
-	append(const jive::operation & operation, const std::vector<const variable*> & operands);
-
-	const tac *
-	append(const jive::operation & operation, const std::vector<const variable*> & operands,
-		const std::vector<const variable*> & results);
-
-	const variable *
-	append(const expr & e, const variable * v);
-
-	const variable *
-	append(const expr & e);
-
-	/*
-		FIXME: add accessor functions
-	*/
-	inline std::list<const tac*> &
-	tacs() noexcept
-	{
-		return tacs_;
-	}
-
-	inline const std::list<const tac*> &
-	tacs() const noexcept
-	{
-		return tacs_;
-	}
-
-private:
-	basic_block(jlm::cfg & cfg) noexcept;
-
-	std::list<const tac*> tacs_;
-
-	friend basic_block * cfg::create_basic_block();
-};
+static inline bool
+is_basic_block(jlm::cfg_node * node) noexcept
+{
+	return dynamic_cast<const basic_block_attribute*>(&node->attribute()) != nullptr;
+}
 
 }
 

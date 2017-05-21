@@ -34,13 +34,13 @@ create_cfg_structure(
 	cfg * cfg,
 	basic_block_map & bbmap)
 {
-	basic_block * entry_block = cfg->create_basic_block();
+	auto entry_block = create_basic_block_node(cfg);
 	cfg->exit()->divert_inedges(entry_block);
 
 	/* create all basic_blocks */
 	auto it = function.getBasicBlockList().begin();
 	for (; it != function.getBasicBlockList().end(); it++)
-			bbmap.insert_basic_block(&(*it), cfg->create_basic_block());
+			bbmap.insert_basic_block(&(*it), create_basic_block_node(cfg));
 
 	entry_block->add_outedge(bbmap[&function.getEntryBlock()], 0);
 
@@ -70,11 +70,11 @@ create_cfg_structure(
 		if (auto swi = dynamic_cast<const llvm::SwitchInst*>(instr)) {
 			for (auto c = swi->case_begin(); c != swi->case_end(); c++) {
 				JLM_DEBUG_ASSERT(c != swi->case_default());
-				basic_block * bb = cfg->create_basic_block();
+				auto bb = create_basic_block_node(cfg);
 				bbmap[&(*it)]->add_outedge(bb, c.getCaseIndex());
 				bb->add_outedge(bbmap[c.getCaseSuccessor()], 0);
 			}
-			basic_block * bb = cfg->create_basic_block();
+			auto bb = create_basic_block_node(cfg);
 			bbmap[&(*it)]->add_outedge(bb, swi->getNumCases());
 			bb->add_outedge(bbmap[swi->case_default().getCaseSuccessor()], 0);
 			continue;
@@ -85,7 +85,7 @@ create_cfg_structure(
 	}
 
 	if (cfg->exit()->ninedges() > 1) {
-		jlm::basic_block * bb = cfg->create_basic_block();
+		auto bb = create_basic_block_node(cfg);
 		cfg->exit()->divert_inedges(bb);
 		bb->add_outedge(cfg->exit(), 0);
 	}
@@ -139,8 +139,7 @@ convert_function(
 	jlm::cfg * cfg = clg_node->cfg();
 
 	basic_block_map bbmap;
-	basic_block * entry_block;
-	entry_block = static_cast<basic_block*>(create_cfg_structure(function, cfg, bbmap));
+	auto entry_block = create_cfg_structure(function, cfg, bbmap);
 
 	jlm::variable * result = nullptr;
 	if (!function.getReturnType()->isVoidTy())
@@ -151,8 +150,9 @@ convert_function(
 	ctx.set_state(state);
 	ctx.set_result(result);
 	if (!function.getReturnType()->isVoidTy()) {
-		const variable * udef = entry_block->append(*create_undef_value(function.getReturnType(), ctx));
-		entry_block->append(assignment_op(result->type()), {udef}, {result});
+		auto attr = static_cast<basic_block_attribute*>(&entry_block->attribute());
+		auto udef = attr->append(ctx.cfg(), *create_undef_value(function.getReturnType(), ctx));
+		attr->append(assignment_op(result->type()), {udef}, {result});
 	}
 
 	jt = function.getArgumentList().begin();
