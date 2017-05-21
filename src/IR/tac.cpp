@@ -11,12 +11,11 @@
 
 namespace jlm {
 
-tac::tac(const cfg_node * owner,
+tac::tac(
 	const jive::operation & operation,
 	const std::vector<const variable*> & operands,
 	const std::vector<const variable*> & results)
-	: owner_(owner)
-	, operation_(std::move(operation.copy()))
+	: operation_(std::move(operation.copy()))
 {
 	/*
 		FIXME: throw proper exceptions

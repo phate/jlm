@@ -44,7 +44,7 @@ basic_block::append(
 	for (size_t n = 0; n < operation.nresults(); n++)
 		results.push_back(cfg()->create_variable(operation.result_type(n)));
 
-	jlm::tac * tac = new jlm::tac(this, operation, operands, results);
+	jlm::tac * tac = new jlm::tac(operation, operands, results);
 	tacs_.push_back(tac);
 	return tac;
 }
@@ -55,7 +55,7 @@ basic_block::append(
 	const std::vector<const variable*> & operands,
 	const std::vector<const variable*> & results)
 {
-	jlm::tac * tac = new jlm::tac(this, operation, operands, results);
+	jlm::tac * tac = new jlm::tac(operation, operands, results);
 	tacs_.push_back(tac);
 	return tac;
 }
@@ -77,7 +77,7 @@ basic_block::append(
 		operands.push_back(append(e.operand(n), opv));
 	}
 
-	jlm::tac * tac = new jlm::tac(this, e.operation(), operands, {result});
+	jlm::tac * tac = new jlm::tac(e.operation(), operands, {result});
 	tacs_.push_back(tac);
 	return tac->output(0);
 }

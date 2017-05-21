@@ -30,7 +30,7 @@ public:
 	~tac() noexcept
 	{}
 
-	tac(const cfg_node * owner, const jive::operation & operation,
+	tac(const jive::operation & operation,
 		const std::vector<const variable*> & operands,
 		const std::vector<const variable*> & results);
 
@@ -38,12 +38,6 @@ public:
 
 	tac &
 	operator=(const tac &) = delete;
-
-	inline const cfg_node *
-	owner() const noexcept
-	{
-		return owner_;
-	}
 
 	inline const jive::operation &
 	operation() const noexcept
@@ -81,7 +75,6 @@ public:
 	debug_string() const;
 
 private:
-	const cfg_node * owner_;
 	std::vector<const variable*> inputs_;
 	std::vector<const variable*> outputs_;
 	std::unique_ptr<jive::operation> operation_;
