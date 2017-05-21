@@ -195,4 +195,10 @@ cfg_node::has_selfloop_edge() const noexcept
 	return false;
 }
 
+std::string
+cfg_node::debug_string() const
+{
+	return "node";
+}
+
 }

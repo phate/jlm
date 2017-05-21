@@ -211,6 +211,15 @@ cfg::create_basic_block()
 	return tmp;
 }
 
+cfg_node *
+cfg::create_node(const attribute & attr)
+{
+	auto node = std::make_unique<cfg_node>(*this, attr);
+	auto tmp = node.get();
+	nodes_.insert(std::move(node));
+	return tmp;
+}
+
 jlm::variable *
 cfg::create_variable(const jive::base::type & type)
 {

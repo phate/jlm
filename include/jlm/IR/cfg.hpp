@@ -66,6 +66,9 @@ public:
 
 	basic_block * create_basic_block();
 
+	cfg_node *
+	create_node(const attribute & attr);
+
 	jlm::variable *
 	create_variable(const jive::base::type & type);
 

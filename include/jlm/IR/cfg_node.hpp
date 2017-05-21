@@ -62,11 +62,30 @@ class cfg_node {
 public:
 	virtual ~cfg_node();
 
+	inline
+	cfg_node(jlm::cfg & cfg, const jlm::attribute & attr)
+	: cfg_(&cfg)
+	, attr_(std::move(attr.copy()))
+	{}
+
 protected:
 	cfg_node(jlm::cfg & cfg) : cfg_(&cfg) {}
 
 public:
-	virtual std::string debug_string() const = 0;
+	inline jlm::attribute &
+	attribute() noexcept
+	{
+		return *attr_;
+	}
+
+	inline const jlm::attribute &
+	attribute() const noexcept
+	{
+		return *attr_;
+	}
+
+	virtual std::string
+	debug_string() const;
 
 	inline jlm::cfg * cfg() const noexcept { return cfg_; }
 
@@ -101,9 +120,10 @@ public:
 	bool has_selfloop_edge() const noexcept;
 
 private:
+	jlm::cfg * cfg_;
+	std::unique_ptr<jlm::attribute> attr_;
 	std::unordered_set<std::unique_ptr<cfg_edge>> outedges_;
 	std::list<cfg_edge*> inedges_;
-	jlm::cfg * cfg_;
 
 	friend cfg_edge;
 };
