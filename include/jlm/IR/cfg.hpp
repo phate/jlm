@@ -102,6 +102,106 @@ private:
 };
 
 class cfg final {
+	class iterator final {
+	public:
+		inline
+		iterator(std::unordered_set<std::unique_ptr<cfg_node>>::iterator it)
+		: it_(it)
+		{}
+
+		inline bool
+		operator==(const iterator & other) const noexcept
+		{
+			return it_ == other.it_;
+		}
+
+		inline bool
+		operator!=(const iterator & other) const noexcept
+		{
+			return !(*this == other);
+		}
+
+		inline const iterator &
+		operator++() noexcept
+		{
+			++it_;
+			return *this;
+		}
+
+		inline const iterator
+		operator++(int) noexcept
+		{
+			iterator tmp(it_);
+			it_++;
+			return tmp;
+		}
+
+		inline cfg_node &
+		operator*() noexcept
+		{
+			return *it_->get();
+		}
+
+		inline cfg_node *
+		operator->() noexcept
+		{
+			return it_->get();
+		}
+
+	private:
+		std::unordered_set<std::unique_ptr<cfg_node>>::iterator it_;
+	};
+
+	class const_iterator final {
+	public:
+		inline
+		const_iterator(std::unordered_set<std::unique_ptr<cfg_node>>::const_iterator it)
+		: it_(it)
+		{}
+
+		inline bool
+		operator==(const const_iterator & other) const noexcept
+		{
+			return it_ == other.it_;
+		}
+
+		inline bool
+		operator!=(const const_iterator & other) const noexcept
+		{
+			return !(*this == other);
+		}
+
+		inline const const_iterator &
+		operator++() noexcept
+		{
+			++it_;
+			return *this;
+		}
+
+		inline const const_iterator
+		operator++(int) noexcept
+		{
+			const_iterator tmp(it_);
+			it_++;
+			return tmp;
+		}
+
+		inline const cfg_node &
+		operator*() noexcept
+		{
+			return *it_->get();
+		}
+
+		inline const cfg_node *
+		operator->() noexcept
+		{
+			return it_->get();
+		}
+
+	private:
+		std::unordered_set<std::unique_ptr<cfg_node>>::const_iterator it_;
+	};
+
 public:
 	~cfg() {}
 
@@ -113,6 +213,30 @@ private:
 	cfg(const cfg & c);
 
 public:
+	inline const_iterator
+	begin() const
+	{
+		return const_iterator(nodes_.begin());
+	}
+
+	inline iterator
+	begin()
+	{
+		return iterator(nodes_.begin());
+	}
+
+	inline const_iterator
+	end() const
+	{
+		return const_iterator(nodes_.end());
+	}
+
+	inline iterator
+	end()
+	{
+		return iterator(nodes_.end());
+	}
+
 	std::vector<std::unordered_set<cfg_node*>> find_sccs() const;
 
 	void convert_to_dot(jive::buffer & buffer) const;
