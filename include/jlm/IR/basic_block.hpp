@@ -104,7 +104,7 @@ create_basic_block(jlm::cfg * cfg)
 }
 
 static inline bool
-is_basic_block(jlm::cfg_node * node) noexcept
+is_basic_block(const jlm::cfg_node * node) noexcept
 {
 	return dynamic_cast<const basic_block*>(&node->attribute()) != nullptr;
 }
