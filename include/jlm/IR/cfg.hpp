@@ -255,9 +255,6 @@ public:
 
 	void prune();
 
-	void
-	destruct_ssa();
-
 	inline jlm::cfg_node *
 	entry() const noexcept
 	{

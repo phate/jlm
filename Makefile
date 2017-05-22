@@ -14,6 +14,7 @@ LIBJLM_SRC = \
 	src/IR/clg.cpp \
 	src/IR/module.cpp \
 	src/IR/operators.cpp \
+	src/IR/ssa.cpp \
 	src/IR/tac.cpp \
 	src/IR/variable.cpp \
 	\

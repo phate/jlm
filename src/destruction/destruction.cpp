@@ -11,6 +11,7 @@
 #include <jlm/IR/clg.hpp>
 #include <jlm/IR/module.hpp>
 #include <jlm/IR/operators.hpp>
+#include <jlm/IR/ssa.hpp>
 #include <jlm/IR/tac.hpp>
 
 #include <jive/arch/address.h>
@@ -412,7 +413,7 @@ convert_cfg(
 	dstrct::context & ctx)
 {
 //	jive_cfg_view(*cfg);
-	cfg->destruct_ssa();
+	destruct_ssa(*cfg);
 //	jive_cfg_view(*cfg);
 	const std::unordered_set<const cfg_edge*> back_edges = restructure(cfg);
 //	jive_cfg_view(*cfg);
