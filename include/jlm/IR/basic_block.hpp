@@ -53,12 +53,6 @@ public:
 		const std::vector<const variable*> & operands,
 		const std::vector<const variable*> & results);
 
-	const tac *
-	append(
-		jlm::cfg * cfg,
-		const jive::operation & operation,
-		const std::vector<const variable*> & operands);
-
 	const variable *
 	append(jlm::cfg * cfg, const expr & e, const variable * v);
 

@@ -9,6 +9,8 @@
 #include <jlm/IR/cfg_node.hpp>
 #include <jlm/IR/variable.hpp>
 
+#include <jive/vsdg/operators.h>
+
 namespace jive {
 	class buffer;
 
@@ -331,6 +333,16 @@ private:
 	std::unordered_set<std::unique_ptr<cfg_node>> nodes_;
 	std::unordered_set<std::unique_ptr<variable>> variables_;
 };
+
+static inline std::vector<const jlm::variable*>
+create_variables(jlm::cfg & cfg, const jive::operation & operation)
+{
+	std::vector<const variable*> results;
+	for (size_t n = 0; n < operation.nresults(); n++)
+		results.push_back(cfg.create_variable(operation.result_type(n)));
+
+	return results;
+}
 
 }
 

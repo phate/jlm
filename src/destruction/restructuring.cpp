@@ -150,7 +150,8 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit,
 		const variable * r = cfg->create_variable(jive::bits::type(1), "#r#");
 		auto vt = create_basic_block_node(cfg);
 		auto attr = static_cast<basic_block*>(&vt->attribute());
-		attr->append(cfg, jive::match_op(1, {{0, 0}}, 1, 2), {r});
+		auto op = jive::match_op(1, {{0, 0}}, 1, 2);
+		attr->append(op, {r}, create_variables(*cfg, op));
 
 
 		/* handle loop entries */
@@ -162,7 +163,8 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit,
 			std::map<uint64_t, uint64_t> ve_mapping;
 			for (size_t n = 0; n < ve.size()-1; n++)
 				ve_mapping[n] = n;
-			attr->append(cfg, jive::match_op(nbits, ve_mapping, ve.size()-1, ve.size()), {q});
+			op = jive::match_op(nbits, ve_mapping, ve.size()-1, ve.size());
+			attr->append(op, {q}, create_variables(*cfg, op));
 
 			for (auto edge : ae) {
 				auto ass = create_basic_block_node(cfg);
@@ -188,7 +190,8 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit,
 			std::map<uint64_t, uint64_t> vx_mapping;
 			for (size_t n = 0; n < vx.size()-1; n++)
 				vx_mapping[n] = n;
-			attr->append(cfg, jive::match_op(nbits, vx_mapping, vx.size()-1, vx.size()), {q});
+			op = jive::match_op(nbits, vx_mapping, vx.size()-1, vx.size());
+			attr->append(op, {q}, create_variables(*cfg, op));
 
 			for (auto v : vx)
 				new_vx->add_outedge(v.first, v.second);
@@ -353,7 +356,8 @@ restructure_branches(jlm::cfg_node * start, jlm::cfg_node * end)
 	std::map<uint64_t, uint64_t> mapping;
 	for (size_t n = 0; n < cpoints.size()-1; n++)
 		mapping[n] = n;
-	attr->append(cfg, jive::match_op(nbits, mapping, cpoints.size()-1, cpoints.size()), {p});
+	auto op = jive::match_op(nbits, mapping, cpoints.size()-1, cpoints.size());
+	attr->append(op, {p}, create_variables(*cfg, op));
 	for (auto it = cpoints.begin(); it != cpoints.end(); it++)
 		vt->add_outedge(it->first, it->second);
 

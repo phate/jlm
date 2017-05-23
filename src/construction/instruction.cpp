@@ -82,7 +82,8 @@ convert_branch_instruction(
 	if (instruction->isConditional()) {
 		const variable * c = convert_value(instruction->getCondition(), ctx);
 		size_t nbits = dynamic_cast<const jive::bits::type&>(c->type()).nbits();
-		attr->append(ctx.cfg(), jive::match_op(nbits, {{0, 0}}, 1, 2), {c});
+		auto op = jive::match_op(nbits, {{0, 0}}, 1, 2);
+		attr->append(op, {c}, create_variables(*ctx.cfg(), op));
 	}
 
 	return nullptr;
@@ -106,7 +107,8 @@ convert_switch_instruction(
 
 	const jlm::variable * c = convert_value(instruction->getCondition(), ctx);
 	size_t nbits = dynamic_cast<const jive::bits::type&>(c->type()).nbits();
-	attr->append(ctx.cfg(), jive::match_op(nbits, mapping, mapping.size(), mapping.size()+1), {c});
+	auto op = jive::match_op(nbits, mapping, mapping.size(), mapping.size()+1);
+	attr->append(op, {c}, create_variables(*ctx.cfg(), op));
 	return nullptr;
 }
 
@@ -490,7 +492,7 @@ convert_zext_instruction(
 	size_t new_length = i->getType()->getIntegerBitWidth();
 	size_t old_length = operand->getType()->getIntegerBitWidth();
 	jive::bits::constant_op c_op(jive::bits::value_repr(new_length - old_length, 0));
-	const variable * c = attr->append(ctx.cfg(), c_op, {})->output(0);
+	const variable * c = attr->append(c_op, {}, create_variables(*ctx.cfg(), c_op))->output(0);
 
 	jive::bits::concat_op op({jive::bits::type(old_length), jive::bits::type(new_length-old_length)});
 	return attr->append(op, {convert_value(operand, ctx), c}, {ctx.lookup_value(i)})->output(0);
@@ -514,7 +516,8 @@ convert_sext_instruction(
 	size_t new_length = i->getType()->getIntegerBitWidth();
 	size_t old_length = operand->getType()->getIntegerBitWidth();
 	jive::bits::slice_op s_op(jive::bits::type(old_length), old_length-1, old_length);
-	auto bit = attr->append(ctx.cfg(), s_op, {convert_value(operand, ctx)})->output(0);
+	auto bit = attr->append(s_op, {convert_value(operand, ctx)},
+		create_variables(*ctx.cfg(), s_op))->output(0);
 
 	std::vector<const variable*> operands(1, convert_value(operand, ctx));
 	std::vector<jive::bits::type> operand_types(1, jive::bits::type(old_length));
@@ -738,7 +741,8 @@ convert_insertvalue_instruction(
 
 		std::vector<const variable*> operands;
 		for (size_t n = 0; n < decl->nelements(); n++) {
-			auto tac = attr->append(ctx.cfg(), jive::rcd::select_operation(*type, n), {aggregate});
+			auto op = jive::rcd::select_operation(*type, n);
+			auto tac = attr->append(op, {aggregate}, create_variables(*ctx.cfg(), op));
 			if (n == *idx)
 				operands.push_back(f(std::next(idx), tac->output(0)));
 			else

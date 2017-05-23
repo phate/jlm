@@ -50,19 +50,6 @@ basic_block::append(
 	return tac;
 }
 
-const tac *
-basic_block::append(
-	jlm::cfg * cfg,
-	const jive::operation & operation,
-	const std::vector<const variable*> & operands)
-{
-	std::vector<const variable*> results;
-	for (size_t n = 0; n < operation.nresults(); n++)
-		results.push_back(cfg->create_variable(operation.result_type(n)));
-
-	return append(operation, operands, results);
-}
-
 const variable *
 basic_block::append(
 	jlm::cfg * cfg,
