@@ -77,6 +77,18 @@ public:
 		return ntacs() != 0 ? tacs_.back() : nullptr;
 	}
 
+	inline void
+	drop_first()
+	{
+		tacs_.pop_front();
+	}
+
+	inline void
+	drop_last()
+	{
+		tacs_.pop_back();
+	}
+
 	/*
 		FIXME: add accessor functions
 	*/
