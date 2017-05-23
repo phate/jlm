@@ -65,6 +65,18 @@ public:
 		return tacs_.size();
 	}
 
+	inline const tac *
+	first() const noexcept
+	{
+		return ntacs() != 0 ? tacs_.front() : nullptr;
+	}
+
+	inline const tac *
+	last() const noexcept
+	{
+		return ntacs() != 0 ? tacs_.back() : nullptr;
+	}
+
 	/*
 		FIXME: add accessor functions
 	*/
