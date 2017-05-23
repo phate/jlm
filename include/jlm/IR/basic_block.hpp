@@ -89,21 +89,6 @@ public:
 		tacs_.pop_back();
 	}
 
-	/*
-		FIXME: add accessor functions
-	*/
-	inline std::list<const tac*> &
-	tacs() noexcept
-	{
-		return tacs_;
-	}
-
-	inline const std::list<const tac*> &
-	tacs() const noexcept
-	{
-		return tacs_;
-	}
-
 	virtual std::string
 	debug_string() const noexcept override;
 

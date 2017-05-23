@@ -24,7 +24,7 @@ destruct_ssa(jlm::cfg & cfg)
 			continue;
 
 		auto attr = static_cast<basic_block*>(&node.attribute());
-		if (!attr->tacs().empty() && dynamic_cast<const phi_op*>(&attr->tacs().front()->operation()))
+		if (attr->ntacs() != 0 && dynamic_cast<const phi_op*>(&attr->first()->operation()))
 			phi_blocks.insert(&node);
 	}
 
@@ -34,9 +34,8 @@ destruct_ssa(jlm::cfg & cfg)
 		auto ass_attr = static_cast<basic_block*>(&ass_block->attribute());
 		auto phi_attr = static_cast<basic_block*>(&phi_block->attribute());
 
-
-		std::list<const tac*> & tacs = phi_attr->tacs();
-		for (auto tac : tacs) {
+		while (phi_attr->first()) {
+			auto tac = phi_attr->first();
 			if (!dynamic_cast<const phi_op*>(&tac->operation()))
 				break;
 
@@ -53,17 +52,12 @@ destruct_ssa(jlm::cfg & cfg)
 				value = edge_attr->append(assignment_op(v->type()), {tac->input(n)}, {v})->output(0);
 			}
 			ass_attr->append(assignment_op(tac->output(0)->type()), {value}, {tac->output(0)});
+
+			phi_attr->drop_first();
 		}
 
 		phi_block->divert_inedges(ass_block);
 		ass_block->add_outedge(phi_block, 0);
-
-		/* remove phi TACs */
-		while (!tacs.empty()) {
-			if (!dynamic_cast<const phi_op*>(&tacs.front()->operation()))
-				break;
-			tacs.pop_front();
-		}
 	}
 }
 
