@@ -59,6 +59,12 @@ public:
 	const variable *
 	append(jlm::cfg * cfg, const expr & e);
 
+	inline size_t
+	ntacs() const noexcept
+	{
+		return tacs_.size();
+	}
+
 	/*
 		FIXME: add accessor functions
 	*/
