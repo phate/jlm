@@ -1,4 +1,5 @@
 TESTS += \
+	libjlm/test-aggregation \
 	libjlm/test-alloca \
 	libjlm/test-bitops \
 	libjlm/test-call \

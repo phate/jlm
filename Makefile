@@ -8,6 +8,9 @@ CXXFLAGS += -Wall -Werror --std=c++14 -Wfatal-errors -g -DJLM_DEBUG
 LDFLAGS += $(shell $(LLVMCONFIG) --libs core IRReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -Lexternal/jive/
 
 LIBJLM_SRC = \
+	src/IR/aggregation/aggregation.cpp \
+	src/IR/aggregation/node.cpp \
+	src/IR/aggregation/structure.cpp \
 	src/IR/basic_block.cpp \
 	src/IR/cfg.cpp \
 	src/IR/cfg_node.cpp \
