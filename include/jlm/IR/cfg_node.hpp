@@ -95,6 +95,12 @@ public:
 
 	void remove_outedges();
 
+	inline cfg_edge *
+	outedge(size_t index) const
+	{
+		return outedges()[index];
+	}
+
 	size_t noutedges() const noexcept;
 
 	std::vector<cfg_edge*> outedges() const;
