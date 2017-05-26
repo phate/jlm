@@ -64,6 +64,12 @@ private:
 	std::vector<const variable*> arguments_;
 };
 
+static inline bool
+is_entry_node(const jlm::cfg_node * node)
+{
+	return dynamic_cast<const jlm::entry_attribute*>(&node->attribute()) != nullptr;
+}
+
 class exit_attribute final : public attribute {
 public:
 	virtual
@@ -102,6 +108,12 @@ public:
 private:
 	std::vector<const variable*> results_;
 };
+
+static inline bool
+is_exit_node(const jlm::cfg_node * node)
+{
+	return dynamic_cast<const jlm::exit_attribute*>(&node->attribute()) != nullptr;
+}
 
 class cfg final {
 	class iterator final {
