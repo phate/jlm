@@ -6,7 +6,8 @@
 #ifndef JLM_IR_TAC_H
 #define JLM_IR_TAC_H
 
-#include <jlm/IR/basic_block.hpp>
+#include <jlm/common.hpp>
+#include <jlm/IR/variable.hpp>
 
 #include <jive/vsdg/operators/operation.h>
 

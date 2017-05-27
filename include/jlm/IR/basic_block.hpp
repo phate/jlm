@@ -8,6 +8,7 @@
 
 #include <jlm/IR/cfg.hpp>
 #include <jlm/IR/cfg_node.hpp>
+#include <jlm/IR/tac.hpp>
 
 namespace jive {
 	class operation;
@@ -16,7 +17,6 @@ namespace jive {
 namespace jlm {
 
 class expr;
-class tac;
 
 class basic_block final : public attribute {
 public:
@@ -30,8 +30,11 @@ public:
 
 	inline
 	basic_block(const basic_block & other)
-	: tacs_(other.tacs_)
-	{}
+	: attribute(other)
+	{
+		for (auto & tac : other.tacs_)
+			tacs_.push_back(new jlm::tac(*tac));
+	}
 
 	basic_block(basic_block &&) = delete;
 
@@ -41,7 +44,14 @@ public:
 		if (this == &other)
 			return *this;
 
-		tacs_ = other.tacs_;
+		for (const auto & tac : other.tacs_)
+			delete tac;
+
+		tacs_.clear();
+		for (const auto & tac : other.tacs_)
+			tacs_.push_back(new jlm::tac(*tac));
+
+		return *this;
 	}
 
 	basic_block &
