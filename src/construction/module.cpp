@@ -123,7 +123,8 @@ convert_function(
 	if (function.isDeclaration())
 		return;
 
-	auto clg_node = static_cast<jlm::clg_node*>(ctx.lookup_value(&function).get());
+	auto clg_node = ctx.lookup_function(&function);
+	JLM_DEBUG_ASSERT(clg_node != nullptr);
 
 	std::vector<std::string> names;
 	llvm::Function::ArgumentListType::const_iterator jt = function.getArgumentList().begin();
@@ -175,15 +176,14 @@ convert_functions(
 	jlm::clg & clg,
 	context & ctx)
 {
-	for (auto it = list.begin(); it != list.end(); it++) {
+	for (const auto & f : list) {
 		jive::fct::type fcttype(dynamic_cast<const jive::fct::type&>(
-			*convert_type((*it).getFunctionType(), ctx)));
-		/*clg_node * f = */clg.add_function(
-			(*it).getName().str().c_str(),
+			*convert_type(f.getFunctionType(), ctx)));
+		clg_node * n = clg.add_function(
+			f.getName().str().c_str(),
 			fcttype,
-			it->getLinkage() != llvm::GlobalValue::InternalLinkage);
-		/* FIXME */
-		ctx.insert_value(&(*it), nullptr);
+			f.getLinkage() != llvm::GlobalValue::InternalLinkage);
+		ctx.insert_function(&f, n);
 	}
 
 	for (auto it = list.begin(); it != list.end(); it++)
