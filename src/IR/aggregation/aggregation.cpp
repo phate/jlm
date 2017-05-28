@@ -262,7 +262,7 @@ aggregate(jlm::cfg & cfg)
 			JLM_DEBUG_ASSERT(0);
 	}
 
-	aggregate(cfg.entry(), map);
+	aggregate(cfg.entry_node(), map);
 	JLM_DEBUG_ASSERT(map.size() == 1);
 	return std::move(std::move(map.begin()->second));
 }

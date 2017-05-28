@@ -24,9 +24,9 @@ test_linear_graph()
 	auto bb1 = create_basic_block_node(&cfg);
 	auto bb2 = create_basic_block_node(&cfg);
 
-	cfg.exit()->divert_inedges(bb1);
+	cfg.exit_node()->divert_inedges(bb1);
 	bb1->add_outedge(bb2, 0);
-	bb2->add_outedge(cfg.exit(), 0);
+	bb2->add_outedge(cfg.exit_node(), 0);
 
 	auto arg1 = cfg.append_argument("arg1", vtype);
 	static_cast<jlm::basic_block*>(&bb1->attribute())->append(create_tac(op, {arg1}, {v1}));
@@ -91,12 +91,12 @@ test_branch_graph()
 	auto bb2 = create_basic_block_node(&cfg);
 	auto join = create_basic_block_node(&cfg);
 
-	cfg.exit()->divert_inedges(split);
+	cfg.exit_node()->divert_inedges(split);
 	split->add_outedge(bb1, 0);
 	split->add_outedge(bb2, 1);
 	bb1->add_outedge(join, 0);
 	bb2->add_outedge(join, 0);
-	join->add_outedge(cfg.exit(), 0);
+	join->add_outedge(cfg.exit_node(), 0);
 
 	auto arg1 = cfg.append_argument("arg1", vtype);
 	static_cast<jlm::basic_block*>(&split->attribute())->append(create_tac(unop, {arg1}, {v1}));
@@ -156,8 +156,8 @@ test_loop_graph()
 	auto r = create_variable(vtype, "r");
 	auto bb = create_basic_block_node(&cfg);
 
-	cfg.exit()->divert_inedges(bb);
-	bb->add_outedge(cfg.exit(), 0);
+	cfg.exit_node()->divert_inedges(bb);
+	bb->add_outedge(cfg.exit_node(), 0);
 	bb->add_outedge(bb, 1);
 
 	auto arg = cfg.append_argument("arg", vtype);

@@ -15,8 +15,8 @@ test_linear_reduction()
 {
 	jlm::cfg cfg;
 	auto bb = create_basic_block_node(&cfg);
-	cfg.exit()->divert_inedges(bb);
-	bb->add_outedge(cfg.exit(), 0);
+	cfg.exit_node()->divert_inedges(bb);
+	bb->add_outedge(cfg.exit_node(), 0);
 
 	auto root = jlm::agg::aggregate(cfg);
 	jlm::agg::view(*root, stdout);
@@ -42,8 +42,8 @@ test_loop_reduction()
 {
 	jlm::cfg cfg;
 	auto bb = create_basic_block_node(&cfg);
-	cfg.exit()->divert_inedges(bb);
-	bb->add_outedge(cfg.exit(), 0);
+	cfg.exit_node()->divert_inedges(bb);
+	bb->add_outedge(cfg.exit_node(), 0);
 	bb->add_outedge(bb, 1);
 
 	auto root = jlm::agg::aggregate(cfg);
@@ -77,12 +77,12 @@ test_branch_reduction()
 	auto bb2 = create_basic_block_node(&cfg);
 	auto join = create_basic_block_node(&cfg);
 
-	cfg.exit()->divert_inedges(split);
+	cfg.exit_node()->divert_inedges(split);
 	split->add_outedge(bb1, 0);
 	split->add_outedge(bb2, 1);
 	bb1->add_outedge(join, 0);
 	bb2->add_outedge(join, 0);
-	join->add_outedge(cfg.exit(), 0);
+	join->add_outedge(cfg.exit_node(), 0);
 
 	auto root = jlm::agg::aggregate(cfg);
 	jlm::agg::view(*root, stdout);

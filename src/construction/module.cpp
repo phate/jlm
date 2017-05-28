@@ -35,7 +35,7 @@ create_cfg_structure(
 	basic_block_map & bbmap)
 {
 	auto entry_block = create_basic_block_node(cfg);
-	cfg->exit()->divert_inedges(entry_block);
+	cfg->exit_node()->divert_inedges(entry_block);
 
 	/* create all basic_blocks */
 	auto it = function.getBasicBlockList().begin();
@@ -49,12 +49,12 @@ create_cfg_structure(
 	for (; it != function.getBasicBlockList().end(); it++) {
 		const llvm::TerminatorInst * instr = it->getTerminator();
 		if (dynamic_cast<const llvm::ReturnInst*>(instr)) {
-			bbmap[&(*it)]->add_outedge(cfg->exit(), 0);
+			bbmap[&(*it)]->add_outedge(cfg->exit_node(), 0);
 			continue;
 		}
 
 		if (dynamic_cast<const llvm::UnreachableInst*>(instr)) {
-			bbmap[&(*it)]->add_outedge(cfg->exit(), 0);
+			bbmap[&(*it)]->add_outedge(cfg->exit_node(), 0);
 			continue;
 		}
 
@@ -84,10 +84,10 @@ create_cfg_structure(
 			bbmap[&(*it)]->add_outedge(bbmap[instr->getSuccessor(n)], n);
 	}
 
-	if (cfg->exit()->ninedges() > 1) {
+	if (cfg->exit_node()->ninedges() > 1) {
 		auto bb = create_basic_block_node(cfg);
-		cfg->exit()->divert_inedges(bb);
-		bb->add_outedge(cfg->exit(), 0);
+		cfg->exit_node()->divert_inedges(bb);
+		bb->add_outedge(cfg->exit_node(), 0);
 	}
 
 	return entry_block;

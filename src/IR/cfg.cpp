@@ -132,10 +132,10 @@ cfg::cfg(const cfg & c)
 	for (it = c.nodes_.begin(); it != c.nodes_.end(); it++) {
 		cfg_node * copy;
 		cfg_node * node = (*it).get();
-		if (node == c.entry()) {
+		if (node == c.entry_node()) {
 			create_entry_node(this);
 			copy = entry_;
-		} else if (node == c.exit()) {
+		} else if (node == c.exit_node()) {
 			create_exit_node(this);
 			copy = exit_;
 		} else
@@ -173,7 +173,7 @@ cfg::find_sccs() const
 	std::vector<cfg_node*> node_stack;
 	size_t index = 0;
 
-	strongconnect(entry(), exit(), map, node_stack, index, sccs);
+	strongconnect(entry_node(), exit_node(), map, node_stack, index, sccs);
 
 	return sccs;
 }
@@ -186,7 +186,7 @@ cfg::is_closed() const noexcept
 	std::unordered_set<std::unique_ptr<cfg_node>>::const_iterator it;
 	for (it = nodes_.begin(); it != nodes_.end(); it++) {
 		cfg_node * node = (*it).get();
-		if (node == entry())
+		if (node == entry_node())
 			continue;
 
 		if (node->no_predecessor())
@@ -204,7 +204,7 @@ cfg::is_linear() const noexcept
 	std::unordered_set<std::unique_ptr<cfg_node>>::const_iterator it;
 	for (it = nodes_.begin(); it != nodes_.end(); it++) {
 		cfg_node * node = (*it).get();
-		if (node == entry() || node == exit())
+		if (node == entry_node() || node == exit_node())
 			continue;
 
 		if (!node->single_successor() || !node->single_predecessor())
@@ -236,7 +236,7 @@ cfg::is_structured() const
 			return true;
 		}
 
-		if (node == c.entry() || node == c.exit()) {
+		if (node == c.entry_node() || node == c.exit_node()) {
 			it++; continue;
 		}
 
@@ -326,7 +326,7 @@ cfg::is_reducible() const
 			return true;
 		}
 
-		if (node == c.entry() || node == c.exit()) {
+		if (node == c.entry_node() || node == c.exit_node()) {
 			it++; continue;
 		}
 
@@ -366,13 +366,13 @@ cfg::is_valid() const
 	std::unordered_set<std::unique_ptr<cfg_node>>::const_iterator it;
 	for (it = nodes_.begin(); it != nodes_.end(); it++) {
 		cfg_node * node = (*it).get();
-		if (node == exit()) {
+		if (node == exit_node()) {
 			if (!node->no_successor())
 				return false;
 			continue;
 		}
 
-		if (node == entry()) {
+		if (node == entry_node()) {
 			if (!node->no_predecessor())
 				return false;
 			if (!node->single_successor())
@@ -455,7 +455,7 @@ cfg::prune()
 	JLM_DEBUG_ASSERT(is_valid());
 
 	/* find all nodes that are dominated by the entry node */
-	std::unordered_set<cfg_node*> to_visit({entry()});
+	std::unordered_set<cfg_node*> to_visit({entry_node()});
 	std::unordered_set<cfg_node*> visited;
 	while (!to_visit.empty()) {
 		cfg_node * node = *to_visit.begin();
