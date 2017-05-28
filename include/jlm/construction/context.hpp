@@ -84,8 +84,6 @@ public:
 	inline
 	context()
 		: entry_block_(nullptr)
-		, state_(nullptr)
-		, result_(nullptr)
 	{}
 
 	inline cfg_node *
@@ -100,26 +98,26 @@ public:
 		entry_block_ = entry_block;
 	}
 
-	inline const variable *
+	inline std::shared_ptr<const variable>
 	result() const noexcept
 	{
 		return result_;
 	}
 
 	inline void
-	set_result(const variable * result)
+	set_result(const std::shared_ptr<const variable> & result)
 	{
 		result_ = result;
 	}
 
-	inline const variable *
+	inline std::shared_ptr<const variable>
 	state() const noexcept
 	{
 		return state_;
 	}
 
 	inline void
-	set_state(const variable * state)
+	set_state(const std::shared_ptr<const variable> & state)
 	{
 		state_ = state;
 	}
@@ -160,7 +158,7 @@ public:
 		return vmap_.find(value) != vmap_.end();
 	}
 
-	inline variable *
+	inline std::shared_ptr<variable>
 	lookup_value(const llvm::Value * value) const noexcept
 	{
 		JLM_DEBUG_ASSERT(has_value(value));
@@ -168,7 +166,7 @@ public:
 	}
 
 	inline void
-	insert_value(const llvm::Value * value, variable * variable)
+	insert_value(const llvm::Value * value, const std::shared_ptr<variable> & variable)
 	{
 		JLM_DEBUG_ASSERT(!has_value(value));
 		vmap_[value] = variable;
@@ -203,9 +201,9 @@ public:
 private:
 	basic_block_map bbmap_;
 	cfg_node * entry_block_;
-	const variable * state_;
-	const variable * result_;
-	std::unordered_map<const llvm::Value *, variable*> vmap_;
+	std::shared_ptr<const variable> state_;
+	std::shared_ptr<const variable> result_;
+	std::unordered_map<const llvm::Value *, std::shared_ptr<variable>> vmap_;
 	std::unordered_map<
 		const llvm::StructType*,
 		std::shared_ptr<const jive::rcd::declaration>> declarations_;

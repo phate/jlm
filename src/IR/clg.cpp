@@ -130,7 +130,7 @@ clg_node::type() const noexcept
 	return *static_cast<const jive::fct::type*>(&variable::type());
 }
 
-std::vector<variable*>
+std::vector<std::shared_ptr<variable>>
 clg_node::cfg_begin(const std::vector<std::string> & names)
 {
 	const jive::fct::type * t = static_cast<const jive::fct::type*>(&type());
@@ -138,7 +138,7 @@ clg_node::cfg_begin(const std::vector<std::string> & names)
 	if (names.size() != t->narguments())
 		throw jive::compiler_error("Invalid number of argument names.");
 
-	std::vector<variable*> arguments;
+	std::vector<std::shared_ptr<variable>> arguments;
 
 	cfg_.reset(new jlm::cfg());
 	for (size_t n = 0; n < names.size(); n++) {
@@ -149,7 +149,7 @@ clg_node::cfg_begin(const std::vector<std::string> & names)
 }
 
 void
-clg_node::cfg_end(const std::vector<variable*> & results)
+clg_node::cfg_end(const std::vector<std::shared_ptr<const variable>> & results)
 {
 	JLM_DEBUG_ASSERT(cfg_.get() != nullptr);
 

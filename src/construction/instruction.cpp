@@ -32,7 +32,7 @@
 
 namespace jlm {
 
-const variable *
+std::shared_ptr<const variable>
 convert_value(
 	const llvm::Value * v,
 	context & ctx)
@@ -51,7 +51,7 @@ convert_value(
 
 /* instructions */
 
-static const variable *
+static std::shared_ptr<const variable>
 convert_return_instruction(
 	const llvm::Instruction * i,
 	cfg_node * bb,
@@ -62,14 +62,14 @@ convert_return_instruction(
 	auto attr = static_cast<basic_block*>(&bb->attribute());
 
 	if (instruction->getReturnValue()) {
-		const variable * value = convert_value(instruction->getReturnValue(), ctx);
+		auto value = convert_value(instruction->getReturnValue(), ctx);
 		attr->append(create_assignment(ctx.result()->type(), value, ctx.result()));
 	}
 
 	return nullptr;
 }
 
-static const variable *
+static std::shared_ptr<const variable>
 convert_branch_instruction(
 	const llvm::Instruction * i,
 	cfg_node * bb,
@@ -80,7 +80,7 @@ convert_branch_instruction(
 	auto attr = static_cast<basic_block*>(&bb->attribute());
 
 	if (instruction->isConditional()) {
-		const variable * c = convert_value(instruction->getCondition(), ctx);
+		auto c = convert_value(instruction->getCondition(), ctx);
 		size_t nbits = dynamic_cast<const jive::bits::type&>(c->type()).nbits();
 		auto op = jive::match_op(nbits, {{0, 0}}, 1, 2);
 		attr->append(create_tac(op, {c}, create_variables(*ctx.cfg(), op)));
@@ -89,7 +89,7 @@ convert_branch_instruction(
 	return nullptr;
 }
 
-static const variable *
+static std::shared_ptr<const variable>
 convert_switch_instruction(
 	const llvm::Instruction * i,
 	cfg_node * bb,
@@ -105,14 +105,14 @@ convert_switch_instruction(
 		mapping[it.getCaseValue()->getZExtValue()] = it.getCaseIndex();
 	}
 
-	const jlm::variable * c = convert_value(instruction->getCondition(), ctx);
+	auto c = convert_value(instruction->getCondition(), ctx);
 	size_t nbits = dynamic_cast<const jive::bits::type&>(c->type()).nbits();
 	auto op = jive::match_op(nbits, mapping, mapping.size(), mapping.size()+1);
 	attr->append(create_tac(op, {c}, create_variables(*ctx.cfg(), op)));
 	return nullptr;
 }
 
-static const variable *
+static std::shared_ptr<const variable>
 convert_unreachable_instruction(
 	const llvm::Instruction * i,
 	cfg_node * bb,
@@ -122,7 +122,7 @@ convert_unreachable_instruction(
 	return nullptr;
 }
 
-static const variable *
+static std::shared_ptr<const variable>
 convert_icmp_instruction(
 	const llvm::Instruction * instruction,
 	cfg_node * bb,
@@ -132,8 +132,8 @@ convert_icmp_instruction(
 	const llvm::ICmpInst * i = static_cast<const llvm::ICmpInst*>(instruction);
 	auto attr = static_cast<basic_block*>(&bb->attribute());
 
-	const jlm::variable * op1 = convert_value(i->getOperand(0), ctx);
-	const jlm::variable * op2 = convert_value(i->getOperand(1), ctx);
+	auto op1 = convert_value(i->getOperand(0), ctx);
+	auto op2 = convert_value(i->getOperand(1), ctx);
 
 	/* FIXME: */
 	if (i->getOperand(0)->getType()->isVectorTy())
@@ -160,8 +160,8 @@ convert_icmp_instruction(
 		nbits = 32;
 		jive::address_to_bitstring_operation op(nbits,
 			std::unique_ptr<jive::base::type>(new jive::addr::type()));
-		const variable * new_op1 = ctx.cfg()->create_variable(jive::bits::type(nbits));
-		const variable * new_op2 = ctx.cfg()->create_variable(jive::bits::type(nbits));
+		auto new_op1 = create_variable(jive::bits::type(nbits));
+		auto new_op2 = create_variable(jive::bits::type(nbits));
 		op1 = attr->append(create_tac(op, {op1}, {new_op1}))->output(0);
 		op2 = attr->append(create_tac(op, {op2}, {new_op2}))->output(0);
 	} else
@@ -171,7 +171,7 @@ convert_icmp_instruction(
 	return attr->append(std::move(tac))->output(0);
 }
 
-static const variable *
+static std::shared_ptr<const variable>
 convert_fcmp_instruction(
 	const llvm::Instruction * instruction,
 	cfg_node * bb,
@@ -210,7 +210,7 @@ convert_fcmp_instruction(
 				[](){jive::bits::constant_op op(jive::bits::value_repr(1, 1)); return op.copy();}}
 	});
 
-	std::vector<const variable*> operands;
+	std::vector<std::shared_ptr<const variable>> operands;
 	if (i->getPredicate() != llvm::CmpInst::FCMP_TRUE
 	&& i->getPredicate() != llvm::CmpInst::FCMP_FALSE) {
 		operands.push_back(convert_value(i->getOperand(0), ctx));
@@ -221,7 +221,7 @@ convert_fcmp_instruction(
 	return attr->append(std::move(tac))->output(0);
 }
 
-static const variable *
+static std::shared_ptr<const variable>
 convert_load_instruction(
 	const llvm::Instruction * i,
 	cfg_node * bb,
@@ -233,8 +233,8 @@ convert_load_instruction(
 
 	/* FIXME: handle volatile correctly */
 
-	const variable * value = ctx.lookup_value(i);
-	const variable * address = convert_value(instruction->getPointerOperand(), ctx);
+	auto value = ctx.lookup_value(i);
+	auto address = convert_value(instruction->getPointerOperand(), ctx);
 
 	std::vector<std::unique_ptr<jive::state::type>> type;
 	type.emplace_back(std::unique_ptr<jive::state::type>(new jive::mem::type()));
@@ -242,7 +242,7 @@ convert_load_instruction(
 	return attr->append(create_tac(op, {address, ctx.state()}, {value}))->output(0);
 }
 
-static const variable *
+static std::shared_ptr<const variable>
 convert_store_instruction(
 	const llvm::Instruction * i,
 	cfg_node * bb,
@@ -252,8 +252,8 @@ convert_store_instruction(
 	const llvm::StoreInst * instruction = static_cast<const llvm::StoreInst*>(i);
 	auto attr = static_cast<basic_block*>(&bb->attribute());
 
-	const variable * address = convert_value(instruction->getPointerOperand(), ctx);
-	const variable * value = convert_value(instruction->getValueOperand(), ctx);
+	auto address = convert_value(instruction->getPointerOperand(), ctx);
+	auto value = convert_value(instruction->getValueOperand(), ctx);
 
 	std::vector<std::unique_ptr<jive::state::type>> t;
 	t.emplace_back(std::unique_ptr<jive::state::type>(new jive::mem::type()));
@@ -262,7 +262,7 @@ convert_store_instruction(
 	return nullptr;
 }
 
-static const variable *
+static std::shared_ptr<const variable>
 convert_phi_instruction(
 	const llvm::Instruction * i,
 	cfg_node * bb,
@@ -272,7 +272,7 @@ convert_phi_instruction(
 	const llvm::PHINode * phi = static_cast<const llvm::PHINode*>(i);
 	auto attr = static_cast<basic_block*>(&bb->attribute());
 
-	std::vector<const jlm::variable*> operands;
+	std::vector<std::shared_ptr<const variable>> operands;
 	for (auto edge : bb->inedges()) {
 		auto tmp = edge->source();
 		const llvm::BasicBlock * ib = nullptr;
@@ -283,7 +283,7 @@ convert_phi_instruction(
 			ib = ctx.lookup_basic_block(tmp->inedges().front()->source());
 		}
 
-		const jlm::variable * v = convert_value(phi->getIncomingValueForBlock(ib), ctx);
+		auto v = convert_value(phi->getIncomingValueForBlock(ib), ctx);
 		operands.push_back(v);
 	}
 
@@ -292,7 +292,7 @@ convert_phi_instruction(
 	return attr->append(create_tac(op, operands, {ctx.lookup_value(phi)}))->output(0);
 }
 
-static const variable *
+static std::shared_ptr<const variable>
 convert_getelementptr_instruction(
 	const llvm::Instruction * i,
 	cfg_node * bb,
@@ -302,9 +302,9 @@ convert_getelementptr_instruction(
 	const llvm::GetElementPtrInst * instruction = static_cast<const llvm::GetElementPtrInst*>(i);
 	auto attr = static_cast<basic_block*>(&bb->attribute());
 
-	const jlm::variable * base = convert_value(instruction->getPointerOperand(), ctx);
+	auto base = convert_value(instruction->getPointerOperand(), ctx);
 	for (auto idx = instruction->idx_begin(); idx != instruction->idx_end(); idx++) {
-		const jlm::variable * offset = convert_value(idx->get(), ctx);
+		auto offset = convert_value(idx->get(), ctx);
 		const jive::value::type & basetype = dynamic_cast<const jive::value::type&>(base->type());
 		const jive::bits::type & offsettype = dynamic_cast<const jive::bits::type&>(offset->type());
 		jive::address::arraysubscript_op op(basetype, offsettype);
@@ -314,7 +314,7 @@ convert_getelementptr_instruction(
 	return base;
 }
 
-static const variable *
+static std::shared_ptr<const variable>
 convert_trunc_instruction(
 	const llvm::Instruction * i,
 	cfg_node * bb,
@@ -325,12 +325,12 @@ convert_trunc_instruction(
 	auto attr = static_cast<basic_block*>(&bb->attribute());
 
 	size_t high = i->getType()->getIntegerBitWidth();
-	const jlm::variable * operand = convert_value(instruction->getOperand(0), ctx);
+	auto operand = convert_value(instruction->getOperand(0), ctx);
 	jive::bits::slice_op op(dynamic_cast<const jive::bits::type&>(operand->type()), 0, high);
 	return attr->append(create_tac(op, {operand}, {ctx.lookup_value(i)}))->output(0);
 }
 
-static const variable *
+static std::shared_ptr<const variable>
 convert_call_instruction(
 	const llvm::Instruction * i,
 	cfg_node * bb,
@@ -345,37 +345,37 @@ convert_call_instruction(
 		llvm::cast<const llvm::PointerType>(f->getType())->getElementType());
 	jive::fct::type type = dynamic_cast<jive::fct::type&>(*convert_type(ftype, ctx));
 
-	const jlm::variable * callee = nullptr;
+	std::shared_ptr<const variable> callee = nullptr;
 	jlm::clg_node * caller = nullptr;
 	if (instruction->getCalledFunction()) {
 		/* direct call */
 		callee = convert_value(f, ctx);
-		caller->add_call(static_cast<const jlm::clg_node*>(callee));
+		caller->add_call(nullptr);
 	} else {
 		/* indirect call */
 		/* FIXME */
 		std::vector<std::unique_ptr<jive::state::type>> stype;
 		stype.emplace_back(std::unique_ptr<jive::state::type>(new jive::mem::type()));
 		jive::load_op op(jive::addr::type::instance(), stype, type);
-		const jlm::variable * tmp = bb->cfg()->create_variable(type);
+		auto tmp = create_variable(type);
 		callee = attr->append(create_tac(op, {convert_value(f, ctx), ctx.state()}, {tmp}))->output(0);
 	}
 
 	/* handle arguments */
-	std::vector<const jlm::variable*> arguments;
+	std::vector<std::shared_ptr<const jlm::variable>> arguments;
 	arguments.push_back(callee);
 	for (size_t n = 0; n < ftype->getNumParams(); n++)
 		arguments.push_back(convert_value(instruction->getArgOperand(n), ctx));
 	if (ftype->isVarArg()) {
 		/* FIXME: sizeof */
-		const variable * alloc = bb->cfg()->create_variable(jive::addr::type::instance());
+		auto alloc = create_variable(jive::addr::type::instance());
 		auto vararg = attr->append(create_tac(alloca_op(4), {ctx.state()}, {alloc, ctx.state()}));
 		arguments.push_back(vararg->output(0));
 	}
 	arguments.push_back(ctx.state());
 
 	/* handle results */
-	std::vector<const jlm::variable*> results;
+	std::vector<std::shared_ptr<const jlm::variable>> results;
 	if (type.nresults() == 2)
 		results.push_back(ctx.lookup_value(i));
 	results.push_back(ctx.state());
@@ -384,7 +384,7 @@ convert_call_instruction(
 	return (results.size() == 2) ? results[0] : nullptr;
 }
 
-static const variable *
+static std::shared_ptr<const variable>
 convert_select_instruction(
 	const llvm::Instruction * i,
 	cfg_node * bb,
@@ -394,14 +394,14 @@ convert_select_instruction(
 	const llvm::SelectInst * instruction = static_cast<const llvm::SelectInst*>(i);
 	auto attr = static_cast<basic_block*>(&bb->attribute());
 
-	const jlm::variable * condition = convert_value(instruction->getCondition(), ctx);
-	const jlm::variable * tv = convert_value(instruction->getTrueValue(), ctx);
-	const jlm::variable * fv = convert_value(instruction->getFalseValue(), ctx);
+	auto condition = convert_value(instruction->getCondition(), ctx);
+	auto tv = convert_value(instruction->getTrueValue(), ctx);
+	auto fv = convert_value(instruction->getFalseValue(), ctx);
 	auto tac = create_tac(select_op(tv->type()), {condition, tv, fv}, {ctx.lookup_value(i)});
 	return attr->append(std::move(tac))->output(0);
 }
 
-static const variable *
+static std::shared_ptr<const variable>
 convert_binary_operator(
 	const llvm::Instruction * instruction,
 	cfg_node * bb,
@@ -415,8 +415,8 @@ convert_binary_operator(
 	if (i->getType()->isVectorTy())
 		JLM_DEBUG_ASSERT(0);
 
-	const jlm::variable * op1 = convert_value(i->getOperand(0), ctx);
-	const jlm::variable * op2 = convert_value(i->getOperand(1), ctx);
+	auto op1 = convert_value(i->getOperand(0), ctx);
+	auto op2 = convert_value(i->getOperand(1), ctx);
 
 	if (i->getType()->isIntegerTy()) {
 		static std::map<
@@ -462,7 +462,7 @@ convert_binary_operator(
 	return nullptr;
 }
 
-static const variable *
+static std::shared_ptr<const variable>
 convert_alloca_instruction(
 	const llvm::Instruction * instruction,
 	cfg_node * bb,
@@ -479,7 +479,7 @@ convert_alloca_instruction(
 	return attr->append(std::move(tac))->output(0);
 }
 
-static const variable *
+static std::shared_ptr<const variable>
 convert_zext_instruction(
 	const llvm::Instruction * i,
 	cfg_node * bb,
@@ -504,7 +504,7 @@ convert_zext_instruction(
 	return attr->append(std::move(tac))->output(0);
 }
 
-static const variable *
+static std::shared_ptr<const variable>
 convert_sext_instruction(
 	const llvm::Instruction * i,
 	cfg_node * bb,
@@ -525,7 +525,7 @@ convert_sext_instruction(
 	auto bit = attr->append(create_tac(s_op, {convert_value(operand, ctx)},
 		create_variables(*ctx.cfg(), s_op)))->output(0);
 
-	std::vector<const variable*> operands(1, convert_value(operand, ctx));
+	std::vector<std::shared_ptr<const variable>> operands(1, convert_value(operand, ctx));
 	std::vector<jive::bits::type> operand_types(1, jive::bits::type(old_length));
 	for (size_t n = 0; n < new_length - old_length; n++) {
 		operand_types.push_back(jive::bits::type(1));
@@ -536,7 +536,7 @@ convert_sext_instruction(
 	return attr->append(create_tac(op, operands, {ctx.lookup_value(i)}))->output(0);
 }
 
-static const variable *
+static std::shared_ptr<const variable>
 convert_fpext_instruction(
 	const llvm::Instruction * i,
 	cfg_node * bb,
@@ -549,11 +549,11 @@ convert_fpext_instruction(
 
 	jive::flt::type type;
 	assignment_op op(type);
-	const variable * operand = convert_value(i->getOperand(0), ctx);
+	auto operand = convert_value(i->getOperand(0), ctx);
 	return attr->append(create_tac(op, {operand}, {ctx.lookup_value(i)}))->output(0);
 }
 
-static const variable *
+static std::shared_ptr<const variable>
 convert_fptrunc_instruction(
 	const llvm::Instruction * i,
 	cfg_node * bb,
@@ -566,11 +566,11 @@ convert_fptrunc_instruction(
 
 	jive::flt::type type;
 	assignment_op op(type);
-	const variable * operand = convert_value(i->getOperand(0), ctx);
+	auto operand = convert_value(i->getOperand(0), ctx);
 	return attr->append(create_tac(op, {operand}, {ctx.lookup_value(i)}))->output(0);
 }
 
-static const variable *
+static std::shared_ptr<const variable>
 convert_inttoptr_instruction(
 	const llvm::Instruction * i,
 	cfg_node * bb,
@@ -592,7 +592,7 @@ convert_inttoptr_instruction(
 	return attr->append(std::move(tac))->output(0);
 }
 
-static const variable *
+static std::shared_ptr<const variable>
 convert_ptrtoint_instruction(
 	const llvm::Instruction * instruction,
 	cfg_node * bb,
@@ -606,14 +606,14 @@ convert_ptrtoint_instruction(
 	if (i->getPointerOperand()->getType()->isVectorTy())
 		JLM_DEBUG_ASSERT(0);
 
-	const variable * operand = convert_value(i->getPointerOperand(), ctx);
+	auto operand = convert_value(i->getPointerOperand(), ctx);
 
 	size_t nbits = i->getType()->getIntegerBitWidth();
 	jive::address_to_bitstring_operation op(nbits, jive::addr::type());
 	return attr->append(create_tac(op, {operand}, {ctx.lookup_value(i)}))->output(0);
 }
 
-static const variable *
+static std::shared_ptr<const variable>
 convert_uitofp_instruction(
 	const llvm::Instruction * i,
 	cfg_node * bb,
@@ -634,7 +634,7 @@ convert_uitofp_instruction(
 	return attr->append(std::move(tac))->output(0);
 }
 
-static const variable *
+static std::shared_ptr<const variable>
 convert_sitofp_instruction(
 	const llvm::Instruction * i,
 	cfg_node * bb,
@@ -655,7 +655,7 @@ convert_sitofp_instruction(
 	return attr->append(std::move(tac))->output(0);
 }
 
-static const variable *
+static std::shared_ptr<const variable>
 convert_fptoui_instruction(
 	const llvm::Instruction * i,
 	cfg_node * bb,
@@ -675,7 +675,7 @@ convert_fptoui_instruction(
 	return attr->append(std::move(tac))->output(0);
 }
 
-static const variable *
+static std::shared_ptr<const variable>
 convert_fptosi_instruction(
 	const llvm::Instruction * i,
 	cfg_node * bb,
@@ -695,7 +695,7 @@ convert_fptosi_instruction(
 	return attr->append(std::move(tac))->output(0);
 }
 
-static const variable *
+static std::shared_ptr<const variable>
 convert_bitcast_instruction(
 	const llvm::Instruction * i,
 	cfg_node * bb,
@@ -704,12 +704,12 @@ convert_bitcast_instruction(
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::BitCastInst*>(i));
 	auto attr = static_cast<basic_block*>(&bb->attribute());
 
-	const variable * operand = convert_value(i->getOperand(0), ctx);
-	const variable * result = ctx.lookup_value(i);
+	auto operand = convert_value(i->getOperand(0), ctx);
+	auto result = ctx.lookup_value(i);
 
 	/* FIXME: invoke with the right number of bytes */
 	alloca_op aop(4);
-	const variable * address = bb->cfg()->create_variable(jive::addr::type::instance());
+	auto address = create_variable(jive::addr::type::instance());
 	attr->append(create_tac(aop, {ctx.state()}, {address, ctx.state()}));
 
 	std::vector<std::unique_ptr<jive::state::type>> t;
@@ -725,7 +725,7 @@ convert_bitcast_instruction(
 	return attr->append(create_tac(lop, {address, ctx.state()}, {result}))->output(0);
 }
 
-static const variable *
+static std::shared_ptr<const variable>
 convert_insertvalue_instruction(
 	const llvm::Instruction * instruction,
 	cfg_node * bb,
@@ -739,9 +739,12 @@ convert_insertvalue_instruction(
 	if (i->getType()->isArrayTy())
 		JLM_DEBUG_ASSERT(0);
 
-	std::function<const variable *(llvm::InsertValueInst::idx_iterator, const variable *)> f = [&] (
+	std::function<std::shared_ptr<const variable>(
+			llvm::InsertValueInst::idx_iterator,
+			std::shared_ptr<const variable>)
+	> f = [&] (
 		const llvm::InsertValueInst::idx_iterator & idx,
-		const variable * aggregate)
+		std::shared_ptr<const variable> aggregate)
 	{
 		if (idx == i->idx_end())
 			return convert_value(i->getInsertedValueOperand(), ctx);
@@ -750,7 +753,7 @@ convert_insertvalue_instruction(
 		const jive::rcd::type * type = dynamic_cast<const jive::rcd::type*>(&aggregate->type());
 		std::shared_ptr<const jive::rcd::declaration> decl = type->declaration();
 
-		std::vector<const variable*> operands;
+		std::vector<std::shared_ptr<const variable>> operands;
 		for (size_t n = 0; n < decl->nelements(); n++) {
 			auto op = jive::rcd::select_operation(*type, n);
 			auto tac = attr->append(create_tac(op, {aggregate}, create_variables(*ctx.cfg(), op)));
@@ -767,7 +770,7 @@ convert_insertvalue_instruction(
 	return f(i->idx_begin(), convert_value(i->getAggregateOperand(), ctx));
 }
 
-static const variable *
+static std::shared_ptr<const variable>
 convert_extractvalue_instruction(
 	const llvm::Instruction * instruction,
 	cfg_node * bb,
@@ -781,7 +784,7 @@ convert_extractvalue_instruction(
 	if (i->getType()->isArrayTy())
 		JLM_DEBUG_ASSERT(0);
 
-	const variable * aggregate = convert_value(i->getAggregateOperand(), ctx);
+	auto aggregate = convert_value(i->getAggregateOperand(), ctx);
 
 	for (auto it = i->idx_begin(); it != i->idx_end(); it++) {
 		const jive::rcd::type * type = dynamic_cast<const jive::rcd::type*>(&aggregate->type());
@@ -793,7 +796,7 @@ convert_extractvalue_instruction(
 	return aggregate;
 }
 
-const variable *
+std::shared_ptr<const variable>
 convert_instruction(
 	const llvm::Instruction * i,
 	cfg_node * bb,
@@ -801,7 +804,7 @@ convert_instruction(
 {
 	static std::unordered_map<
 		std::type_index,
-		const variable * (*)(const llvm::Instruction*, jlm::cfg_node*, context&)
+		std::shared_ptr<const variable> (*)(const llvm::Instruction*, jlm::cfg_node*, context&)
 	> map({
 		{std::type_index(typeid(llvm::ReturnInst)), convert_return_instruction}
 	,	{std::type_index(typeid(llvm::BranchInst)), convert_branch_instruction}

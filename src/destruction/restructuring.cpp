@@ -145,9 +145,9 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit,
 
 		/* Restructure loop */
 		size_t nbits = std::max(std::ceil(std::log2(std::max(ve.size(), vx.size()))), 1.0);
-		const variable * q = cfg->create_variable(jive::bits::type(nbits), "#q#");
+		auto q = create_variable(jive::bits::type(nbits), "#q#");
 
-		const variable * r = cfg->create_variable(jive::bits::type(1), "#r#");
+		auto r = create_variable(jive::bits::type(1), "#r#");
 		auto vt = create_basic_block_node(cfg);
 		auto attr = static_cast<basic_block*>(&vt->attribute());
 		auto op = jive::match_op(1, {{0, 0}}, 1, 2);
@@ -350,7 +350,7 @@ restructure_branches(jlm::cfg_node * start, jlm::cfg_node * end)
 
 	/* Insert vt into CFG and add outgoing edges to the continuation points */
 	size_t nbits = std::ceil(std::log2(cpoints.size()));
-	const variable * p = cfg->create_variable(jive::bits::type(nbits), "#p#");
+	auto p = create_variable(jive::bits::type(nbits), "#p#");
 	auto vt = create_basic_block_node(cfg);
 	auto attr = static_cast<basic_block*>(&vt->attribute());
 	std::map<uint64_t, uint64_t> mapping;

@@ -116,7 +116,10 @@ private:
 };
 
 static inline std::unique_ptr<jlm::tac>
-create_assignment(const jive::base::type & type, const variable * arg, const variable * r)
+create_assignment(
+	const jive::base::type & type,
+	const std::shared_ptr<const variable> & arg,
+	const std::shared_ptr<const variable> & r)
 {
 	return create_tac(assignment_op(type), {arg}, {r});
 }

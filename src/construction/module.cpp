@@ -104,9 +104,8 @@ convert_basic_blocks(
 			if (dynamic_cast<const llvm::TerminatorInst*>(&(*i)))
 				continue;
 
-			jlm::cfg * cfg = ctx.entry_block()->cfg();
 			if (i->getType()->getTypeID() != llvm::Type::VoidTyID)
-				ctx.insert_value(&(*i), cfg->create_variable(*convert_type(i->getType(), ctx)));
+				ctx.insert_value(&(*i), create_variable(*convert_type(i->getType(), ctx)));
 		}
 	}
 
@@ -124,7 +123,7 @@ convert_function(
 	if (function.isDeclaration())
 		return;
 
-	jlm::clg_node * clg_node = static_cast<jlm::clg_node*>(ctx.lookup_value(&function));
+	auto clg_node = static_cast<jlm::clg_node*>(ctx.lookup_value(&function).get());
 
 	std::vector<std::string> names;
 	llvm::Function::ArgumentListType::const_iterator jt = function.getArgumentList().begin();
@@ -134,16 +133,16 @@ convert_function(
 		names.push_back("_varg_");
 	names.push_back("_s_");
 
-	std::vector<jlm::variable*> arguments = clg_node->cfg_begin(names);
-	jlm::variable * state = arguments.back();
+	auto arguments = clg_node->cfg_begin(names);
+	auto state = arguments.back();
 	jlm::cfg * cfg = clg_node->cfg();
 
 	basic_block_map bbmap;
 	auto entry_block = create_cfg_structure(function, cfg, bbmap);
 
-	jlm::variable * result = nullptr;
+	std::shared_ptr<const variable> result = nullptr;
 	if (!function.getReturnType()->isVoidTy())
-		result = cfg->create_variable(*convert_type(function.getReturnType(), ctx), "_r_");
+		result = create_variable(*convert_type(function.getReturnType(), ctx), "_r_");
 
 	ctx.set_basic_block_map(bbmap);
 	ctx.set_entry_block(entry_block);
@@ -161,7 +160,7 @@ convert_function(
 
 	convert_basic_blocks(function.getBasicBlockList(), ctx);
 
-	std::vector<jlm::variable*> results;
+	std::vector<std::shared_ptr<const jlm::variable>> results;
 	if (function.getReturnType()->getTypeID() != llvm::Type::VoidTyID)
 		results.push_back(result);
 	results.push_back(state);
@@ -179,11 +178,12 @@ convert_functions(
 	for (auto it = list.begin(); it != list.end(); it++) {
 		jive::fct::type fcttype(dynamic_cast<const jive::fct::type&>(
 			*convert_type((*it).getFunctionType(), ctx)));
-		clg_node * f = clg.add_function(
+		/*clg_node * f = */clg.add_function(
 			(*it).getName().str().c_str(),
 			fcttype,
 			it->getLinkage() != llvm::GlobalValue::InternalLinkage);
-		ctx.insert_value(&(*it), f);
+		/* FIXME */
+		ctx.insert_value(&(*it), nullptr);
 	}
 
 	for (auto it = list.begin(); it != list.end(); it++)
@@ -197,11 +197,13 @@ convert_global_variables(
 	context & ctx)
 {
 	for (auto it = list.begin(); it != list.end(); it++) {
+	/* FIXME
 		variable * v = mod.add_global_variable(
 			it->getName().str(),
 			*convert_constant(it.getNodePtrUnchecked(), ctx),
 			it->getLinkage() != llvm::GlobalValue::InternalLinkage);
 		ctx.insert_value(it.getNodePtrUnchecked(), v);
+	*/
 	}
 }
 

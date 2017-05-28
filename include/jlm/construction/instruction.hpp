@@ -17,12 +17,12 @@ class basic_block_attribute;
 class context;
 class variable;
 
-const variable *
+std::shared_ptr<const variable>
 convert_value(
 	const llvm::Value * v,
 	context & ctx);
 
-const variable *
+std::shared_ptr<const variable>
 convert_instruction(
 	const llvm::Instruction * i,
 	cfg_node * bb,

@@ -77,10 +77,10 @@ public:
 		return tacs_.back();
 	}
 
-	const variable *
-	append(jlm::cfg * cfg, const expr & e, const variable * v);
+	std::shared_ptr<const variable>
+	append(jlm::cfg * cfg, const expr & e, const std::shared_ptr<const variable> & v);
 
-	const variable *
+	std::shared_ptr<const variable>
 	append(jlm::cfg * cfg, const expr & e);
 
 	inline size_t

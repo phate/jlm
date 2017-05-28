@@ -19,7 +19,7 @@ namespace agg {
 
 class node;
 
-typedef std::unordered_set<const jlm::variable*> demand_set;
+typedef std::unordered_set<std::shared_ptr<const jlm::variable>> demand_set;
 typedef std::unordered_map<const agg::node*, demand_set> demand_map;
 
 demand_map

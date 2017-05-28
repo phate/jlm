@@ -115,11 +115,11 @@ public:
 		return false;
 	}
 
-	std::vector<variable*>
+	std::vector<std::shared_ptr<variable>>
 	cfg_begin(const std::vector<std::string> & names);
 
 	void
-	cfg_end(const std::vector<variable*> & results);
+	cfg_end(const std::vector<std::shared_ptr<const variable>> & results);
 
 private:
 	std::unique_ptr<jlm::cfg> cfg_;

@@ -39,15 +39,15 @@ basic_block::copy() const
 	return std::make_unique<basic_block>(*this);
 }
 
-const variable *
+std::shared_ptr<const variable>
 basic_block::append(
 	jlm::cfg * cfg,
 	const expr & e,
-	const variable * result)
+	const std::shared_ptr<const variable> & result)
 {
-	std::vector<const variable *> operands;
+	std::vector<std::shared_ptr<const variable>> operands;
 	for (size_t n = 0; n < e.noperands(); n++) {
-		auto opv = cfg->create_variable(e.operand(n).type());
+		std::shared_ptr<const variable> opv(new variable(e.operand(n).type(), ""));
 		operands.push_back(append(cfg, e.operand(n), opv));
 	}
 
@@ -56,10 +56,11 @@ basic_block::append(
 	return tac->output(0);
 }
 
-const variable *
+std::shared_ptr<const variable>
 basic_block::append(jlm::cfg * cfg, const expr & e)
 {
-	return append(cfg, e, cfg->create_variable(e.type()));
+	std::shared_ptr<const variable> v(new variable(e.type(), ""));
+	return append(cfg, e, v);
 }
 
 }

@@ -13,8 +13,8 @@ namespace jlm {
 
 tac::tac(
 	const jive::operation & operation,
-	const std::vector<const variable*> & operands,
-	const std::vector<const variable*> & results)
+	const std::vector<std::shared_ptr<const variable>> & operands,
+	const std::vector<std::shared_ptr<const variable>> & results)
 	: operation_(std::move(operation.copy()))
 {
 	/*

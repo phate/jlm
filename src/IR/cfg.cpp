@@ -162,28 +162,6 @@ cfg::create_node(const attribute & attr)
 	return tmp;
 }
 
-jlm::variable *
-cfg::create_variable(const jive::base::type & type)
-{
-	std::stringstream sstr;
-	sstr << "v" << variables_.size();
-	std::unique_ptr<variable> variable(new jlm::variable(type, sstr.str()));
-	jlm::variable * v = variable.get();
-	variables_.insert(std::move(variable));
-	variable.release();
-	return v;
-}
-
-jlm::variable *
-cfg::create_variable(const jive::base::type & type, const std::string & name)
-{
-	std::unique_ptr<variable> variable(new jlm::variable(type, name));
-	jlm::variable * v = variable.get();
-	variables_.insert(std::move(variable));
-	variable.release();
-	return v;
-}
-
 std::vector<std::unordered_set<cfg_node*>>
 cfg::find_sccs() const
 {

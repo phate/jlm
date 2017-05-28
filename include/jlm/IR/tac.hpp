@@ -32,8 +32,8 @@ public:
 	{}
 
 	tac(const jive::operation & operation,
-		const std::vector<const variable*> & operands,
-		const std::vector<const variable*> & results);
+		const std::vector<std::shared_ptr<const variable>> & operands,
+		const std::vector<std::shared_ptr<const variable>> & results);
 
 	inline
 	tac(const jlm::tac & other)
@@ -67,7 +67,7 @@ public:
 		return inputs_.size();
 	}
 
-	inline const variable *
+	inline std::shared_ptr<const variable>
 	input(size_t index) const noexcept
 	{
 		JLM_DEBUG_ASSERT(index < inputs_.size());
@@ -80,7 +80,7 @@ public:
 		return outputs_.size();
 	}
 
-	inline const variable *
+	inline std::shared_ptr<const variable>
 	output(size_t index) const noexcept
 	{
 		JLM_DEBUG_ASSERT(index < outputs_.size());
@@ -91,16 +91,16 @@ public:
 	debug_string() const;
 
 private:
-	std::vector<const variable*> inputs_;
-	std::vector<const variable*> outputs_;
+	std::vector<std::shared_ptr<const variable>> inputs_;
+	std::vector<std::shared_ptr<const variable>> outputs_;
 	std::unique_ptr<jive::operation> operation_;
 };
 
 static inline std::unique_ptr<jlm::tac>
 create_tac(
 	const jive::operation & operation,
-	const std::vector<const variable*> & operands,
-	const std::vector<const variable*> & results)
+	const std::vector<std::shared_ptr<const variable>> & operands,
+	const std::vector<std::shared_ptr<const variable>> & results)
 {
 	return std::make_unique<jlm::tac>(operation, operands, results);
 }

@@ -40,10 +40,10 @@ destruct_ssa(jlm::cfg & cfg)
 				break;
 
 			const phi_op * phi = static_cast<const phi_op*>(&tac->operation());
-			const variable * v = cfg.create_variable(phi->type());
+			auto v = create_variable(phi->type());
 
 			size_t n = 0;
-			const variable * value = nullptr;
+			std::shared_ptr<const variable> value;
 			std::list<cfg_edge*> edges = phi_block->inedges();
 			for (auto it = edges.begin(); it != edges.end(); it++, n++) {
 				auto edge_block = (*it)->split();
