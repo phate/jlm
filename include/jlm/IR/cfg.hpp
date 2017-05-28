@@ -248,8 +248,6 @@ public:
 		return iterator(nodes_.end());
 	}
 
-	std::vector<std::unordered_set<cfg_node*>> find_sccs() const;
-
 	void convert_to_dot(jive::buffer & buffer) const;
 
 	bool is_acyclic() const;
@@ -318,6 +316,9 @@ is_valid(const jlm::cfg & cfg);
 
 bool
 is_closed(const jlm::cfg & cfg);
+
+std::vector<std::unordered_set<cfg_node*>>
+find_sccs(const jlm::cfg & cfg);
 
 }
 

@@ -160,26 +160,10 @@ cfg::create_node(const attribute & attr)
 	return tmp;
 }
 
-std::vector<std::unordered_set<cfg_node*>>
-cfg::find_sccs() const
-{
-	JLM_DEBUG_ASSERT(is_closed(*this));
-
-	std::vector<std::unordered_set<cfg_node*>> sccs;
-
-	std::unordered_map<cfg_node*, std::pair<size_t,size_t>> map;
-	std::vector<cfg_node*> node_stack;
-	size_t index = 0;
-
-	strongconnect(entry_node(), exit_node(), map, node_stack, index, sccs);
-
-	return sccs;
-}
-
 bool
 cfg::is_acyclic() const
 {
-	std::vector<std::unordered_set<cfg_node*>> sccs = find_sccs();
+	auto sccs = find_sccs(*this);
 	return sccs.size() == 0;
 }
 
@@ -471,6 +455,20 @@ is_linear(const jlm::cfg & cfg)
 	}
 
 	return true;
+}
+
+std::vector<std::unordered_set<cfg_node*>>
+find_sccs(const jlm::cfg & cfg)
+{
+	JLM_DEBUG_ASSERT(is_closed(cfg));
+
+	size_t index = 0;
+	std::vector<cfg_node*> node_stack;
+	std::vector<std::unordered_set<cfg_node*>> sccs;
+	std::unordered_map<cfg_node*, std::pair<size_t,size_t>> map;
+	strongconnect(cfg.entry_node(), cfg.exit_node(), map, node_stack, index, sccs);
+
+	return sccs;
 }
 
 }
