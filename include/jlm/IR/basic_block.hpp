@@ -19,6 +19,7 @@ namespace jlm {
 class expr;
 
 class basic_block final : public attribute {
+	typedef std::list<const tac*>::const_reverse_iterator const_reverse_iterator;
 public:
 	virtual
 	~basic_block();
@@ -56,6 +57,18 @@ public:
 
 	basic_block &
 	operator=(basic_block &&) = delete;
+
+	inline const_reverse_iterator
+	rbegin() const noexcept
+	{
+		return tacs_.rbegin();
+	}
+
+	inline const_reverse_iterator
+	rend() const noexcept
+	{
+		return tacs_.rend();
+	}
 
 	const tac *
 	append(
