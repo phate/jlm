@@ -140,7 +140,7 @@ clg_node::cfg_begin(const std::vector<std::string> & names)
 
 	std::vector<variable*> arguments;
 
-	cfg_.reset(new jlm::cfg(*this));
+	cfg_.reset(new jlm::cfg());
 	for (size_t n = 0; n < names.size(); n++) {
 		arguments.push_back(cfg_->append_argument(names[n], t->argument_type(n)));
 	}

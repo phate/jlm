@@ -221,8 +221,6 @@ public:
 
 	cfg();
 
-	cfg(clg_node  & clg_node);
-
 private:
 	cfg(const cfg & c);
 
@@ -280,8 +278,6 @@ public:
 	{
 		return exit_;
 	}
-
-	inline jlm::clg_node * function() const noexcept { return clg_node_; }
 
 	cfg_node *
 	create_node(const attribute & attr);
@@ -341,7 +337,6 @@ private:
 
 	cfg_node * entry_;
 	cfg_node * exit_;
-	jlm::clg_node * clg_node_;
 	std::unordered_set<std::unique_ptr<cfg_node>> nodes_;
 	std::unordered_set<std::unique_ptr<variable>> variables_;
 };

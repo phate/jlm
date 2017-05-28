@@ -119,15 +119,6 @@ exit_attribute::copy() const
 /* cfg */
 
 cfg::cfg()
-	: clg_node_(nullptr)
-{
-	entry_ = create_entry_node(this);
-	exit_ = create_exit_node(this);
-	entry_->add_outedge(exit_, 0);
-}
-
-cfg::cfg(jlm::clg_node & clg_node)
-	: clg_node_(&clg_node)
 {
 	entry_ = create_entry_node(this);
 	exit_ = create_exit_node(this);
@@ -135,7 +126,6 @@ cfg::cfg(jlm::clg_node & clg_node)
 }
 
 cfg::cfg(const cfg & c)
-	: clg_node_(nullptr)
 {
 	std::unordered_map<cfg_node*,cfg_node*> node_map;
 	std::unordered_set<std::unique_ptr<cfg_node>>::const_iterator it;

@@ -346,7 +346,7 @@ convert_call_instruction(
 	jive::fct::type type = dynamic_cast<jive::fct::type&>(*convert_type(ftype, ctx));
 
 	const jlm::variable * callee = nullptr;
-	jlm::clg_node * caller = bb->cfg()->function();
+	jlm::clg_node * caller = nullptr;
 	if (instruction->getCalledFunction()) {
 		/* direct call */
 		callee = convert_value(f, ctx);
