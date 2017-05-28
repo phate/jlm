@@ -11,6 +11,8 @@
 #include <jive/vsdg/basetype.h>
 #include <jive/vsdg/operators/nullary.h>
 
+#include <jlm/IR/tac.hpp>
+
 namespace jlm {
 
 /* phi operator */
@@ -112,6 +114,12 @@ public:
 private:
 	std::unique_ptr<jive::base::type> type_;
 };
+
+static inline std::unique_ptr<jlm::tac>
+create_assignment(const jive::base::type & type, const variable * arg, const variable * r)
+{
+	return create_tac(assignment_op(type), {arg}, {r});
+}
 
 /* select operator */
 

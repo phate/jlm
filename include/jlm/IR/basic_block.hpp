@@ -70,11 +70,12 @@ public:
 		return tacs_.rend();
 	}
 
-	const tac *
-	append(
-		const jive::operation & operation,
-		const std::vector<const variable*> & operands,
-		const std::vector<const variable*> & results);
+	inline const tac *
+	append(std::unique_ptr<jlm::tac> tac)
+	{
+		tacs_.push_back(tac.release());
+		return tacs_.back();
+	}
 
 	const variable *
 	append(jlm::cfg * cfg, const expr & e, const variable * v);

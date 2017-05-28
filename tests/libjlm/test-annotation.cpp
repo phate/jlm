@@ -29,8 +29,8 @@ test_linear_graph()
 	bb2->add_outedge(cfg.exit(), 0);
 
 	auto arg1 = cfg.append_argument("arg1", vtype);
-	static_cast<jlm::basic_block*>(&bb1->attribute())->append(op, {arg1}, {v1});
-	static_cast<jlm::basic_block*>(&bb2->attribute())->append(op, {v1}, {v2});
+	static_cast<jlm::basic_block*>(&bb1->attribute())->append(create_tac(op, {arg1}, {v1}));
+	static_cast<jlm::basic_block*>(&bb2->attribute())->append(create_tac(op, {v1}, {v2}));
 	cfg.append_result(v2);
 
 	auto root = jlm::agg::aggregate(cfg);
@@ -99,10 +99,10 @@ test_branch_graph()
 	join->add_outedge(cfg.exit(), 0);
 
 	auto arg1 = cfg.append_argument("arg1", vtype);
-	static_cast<jlm::basic_block*>(&split->attribute())->append(unop, {arg1}, {v1});
-	static_cast<jlm::basic_block*>(&bb1->attribute())->append(unop, {v1}, {v2});
-	static_cast<jlm::basic_block*>(&bb2->attribute())->append(unop, {v1}, {v3});
-	static_cast<jlm::basic_block*>(&join->attribute())->append(binop, {v2, v3}, {v4});
+	static_cast<jlm::basic_block*>(&split->attribute())->append(create_tac(unop, {arg1}, {v1}));
+	static_cast<jlm::basic_block*>(&bb1->attribute())->append(create_tac(unop, {v1}, {v2}));
+	static_cast<jlm::basic_block*>(&bb2->attribute())->append(create_tac(unop, {v1}, {v3}));
+	static_cast<jlm::basic_block*>(&join->attribute())->append(create_tac(binop, {v2, v3}, {v4}));
 	cfg.append_result(v4);
 
 	auto root = jlm::agg::aggregate(cfg);
@@ -161,7 +161,7 @@ test_loop_graph()
 	bb->add_outedge(bb, 1);
 
 	auto arg = cfg.append_argument("arg", vtype);
-	static_cast<jlm::basic_block*>(&bb->attribute())->append(binop, {arg, r}, {r});
+	static_cast<jlm::basic_block*>(&bb->attribute())->append(create_tac(binop, {arg, r}, {r}));
 	cfg.append_result(r);
 
 	auto root = jlm::agg::aggregate(cfg);

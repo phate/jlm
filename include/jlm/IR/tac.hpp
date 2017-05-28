@@ -96,6 +96,15 @@ private:
 	std::unique_ptr<jive::operation> operation_;
 };
 
+static inline std::unique_ptr<jlm::tac>
+create_tac(
+	const jive::operation & operation,
+	const std::vector<const variable*> & operands,
+	const std::vector<const variable*> & results)
+{
+	return std::make_unique<jlm::tac>(operation, operands, results);
+}
+
 }
 
 #endif

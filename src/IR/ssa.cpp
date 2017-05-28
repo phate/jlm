@@ -49,10 +49,10 @@ destruct_ssa(jlm::cfg & cfg)
 				auto edge_block = (*it)->split();
 				auto edge_attr = static_cast<basic_block*>(&edge_block->attribute());
 
-				value = edge_attr->append(assignment_op(v->type()), {tac->input(n)}, {v})->output(0);
+				auto ass = create_assignment(v->type(), tac->input(n), v);
+				value = edge_attr->append(std::move(ass))->output(0);
 			}
-			ass_attr->append(assignment_op(tac->output(0)->type()), {value}, {tac->output(0)});
-
+			ass_attr->append(create_assignment(tac->output(0)->type(), value, tac->output(0)));
 			phi_attr->drop_first();
 		}
 

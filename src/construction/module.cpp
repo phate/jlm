@@ -152,7 +152,7 @@ convert_function(
 	if (!function.getReturnType()->isVoidTy()) {
 		auto attr = static_cast<basic_block*>(&entry_block->attribute());
 		auto udef = attr->append(ctx.cfg(), *create_undef_value(function.getReturnType(), ctx));
-		attr->append(assignment_op(result->type()), {udef}, {result});
+		attr->append(create_assignment(result->type(), {udef}, {result}));
 	}
 
 	jt = function.getArgumentList().begin();

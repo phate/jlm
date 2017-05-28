@@ -39,17 +39,6 @@ basic_block::copy() const
 	return std::make_unique<basic_block>(*this);
 }
 
-const tac *
-basic_block::append(
-	const jive::operation & operation,
-	const std::vector<const variable*> & operands,
-	const std::vector<const variable*> & results)
-{
-	auto tac = new jlm::tac(operation, operands, results);
-	tacs_.push_back(tac);
-	return tac;
-}
-
 const variable *
 basic_block::append(
 	jlm::cfg * cfg,
