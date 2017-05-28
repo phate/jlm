@@ -273,10 +273,22 @@ public:
 		return entry_;
 	}
 
+	inline jlm::entry_attribute &
+	entry() const noexcept
+	{
+		return *static_cast<entry_attribute*>(&entry_node()->attribute());
+	}
+
 	inline jlm::cfg_node *
 	exit_node() const noexcept
 	{
 		return exit_;
+	}
+
+	inline jlm::exit_attribute &
+	exit() const noexcept
+	{
+		return *static_cast<exit_attribute*>(&exit_node()->attribute());
 	}
 
 	cfg_node *
