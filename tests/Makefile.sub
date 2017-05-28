@@ -2,7 +2,11 @@ TESTS = \
 
 include tests/libjlm/Makefile.sub
 
-TEST_SOURCES = tests/test-runner.cpp tests/test-registry.cpp $(patsubst %, tests/%.cpp, $(TESTS))
+TEST_SOURCES = \
+	tests/test-registry.cpp \
+	tests/test-runner.cpp \
+	tests/test-types.cpp \
+	$(patsubst %, tests/%.cpp, $(TESTS))
 
 tests/test-runner: LDFLAGS+=-L. -Wl,-whole-archive -ljlm -ljive -Wl,-no-whole-archive
 tests/test-runner: %: $(patsubst %.cpp, %.la, $(TEST_SOURCES)) libjlm.a
