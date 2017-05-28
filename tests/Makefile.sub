@@ -3,6 +3,7 @@ TESTS = \
 include tests/libjlm/Makefile.sub
 
 TEST_SOURCES = \
+	tests/test-operation.cpp \
 	tests/test-registry.cpp \
 	tests/test-runner.cpp \
 	tests/test-types.cpp \
