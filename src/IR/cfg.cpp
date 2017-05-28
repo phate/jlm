@@ -179,7 +179,7 @@ cfg::find_sccs() const
 bool
 cfg::is_closed() const noexcept
 {
-	JLM_DEBUG_ASSERT(is_valid());
+	JLM_DEBUG_ASSERT(is_valid(*this));
 
 	std::unordered_set<std::unique_ptr<cfg_node>>::const_iterator it;
 	for (it = nodes_.begin(); it != nodes_.end(); it++) {
@@ -358,58 +358,6 @@ cfg::is_reducible() const
 	return false;
 }
 
-bool
-cfg::is_valid() const
-{
-	std::unordered_set<std::unique_ptr<cfg_node>>::const_iterator it;
-	for (it = nodes_.begin(); it != nodes_.end(); it++) {
-		cfg_node * node = (*it).get();
-		if (node == exit_node()) {
-			if (!node->no_successor())
-				return false;
-			continue;
-		}
-
-		if (node == entry_node()) {
-			if (!node->no_predecessor())
-				return false;
-			if (!node->single_successor())
-				return false;
-			if (node->outedges()[0]->index() != 0)
-				return false;
-			continue;
-		}
-
-		if (node->no_successor())
-			return false;
-
-		/*
-			Check whether all indices are 0 and in ascending order (uniqueness of indices)
-		*/
-		std::vector<cfg_edge*> edges = node->outedges();
-		std::sort(edges.begin(), edges.end(),
-			[](const cfg_edge * e1, const cfg_edge * e2)
-			{ return e1->index() < e2->index(); });
-		for (size_t n = 0; n < edges.size(); n++) {
-			if (edges[n]->index() != n)
-				return false;
-		}
-
-		/*
-			Check whether the CFG is actually a graph and not a multigraph
-		*/
-		std::sort(edges.begin(), edges.end(),
-			[](const cfg_edge * e1, const cfg_edge * e2)
-			{ return e1->sink() < e2->sink(); });
-		for (size_t n = 1; n < edges.size(); n++) {
-			if (edges[n-1]->sink() == edges[n]->sink())
-				return false;
-		}
-	}
-
-	return true;
-}
-
 void
 cfg::convert_to_dot(jive::buffer & buffer) const
 {
@@ -450,7 +398,7 @@ cfg::remove_node(cfg_node * node)
 void
 cfg::prune()
 {
-	JLM_DEBUG_ASSERT(is_valid());
+	JLM_DEBUG_ASSERT(is_valid(*this));
 
 	/* find all nodes that are dominated by the entry node */
 	std::unordered_set<cfg_node*> to_visit({entry_node()});
@@ -481,6 +429,52 @@ cfg::prune()
 	}
 
 	JLM_DEBUG_ASSERT(is_closed());
+}
+
+bool
+is_valid(const jlm::cfg & cfg)
+{
+	for (const auto & node : cfg) {
+		if (&node == cfg.exit_node()) {
+			if (!node.no_successor())
+				return false;
+			continue;
+		}
+
+		if (&node == cfg.entry_node()) {
+			if (!node.no_predecessor())
+				return false;
+			if (!node.single_successor())
+				return false;
+			if (node.outedges()[0]->index() != 0)
+				return false;
+			continue;
+		}
+
+		if (node.no_successor())
+			return false;
+
+		/*
+			Check whether all indices are 0 and in ascending order (uniqueness of indices)
+		*/
+		std::vector<cfg_edge*> edges = node.outedges();
+		std::sort(edges.begin(), edges.end(),
+			[](const cfg_edge * e1, const cfg_edge * e2) { return e1->index() < e2->index(); });
+		for (size_t n = 0; n < edges.size(); n++) {
+			if (edges[n]->index() != n)
+				return false;
+		}
+
+		/*
+			Check whether the CFG is actually a graph and not a multigraph
+		*/
+		for (size_t n = 1; n < edges.size(); n++) {
+			if (edges[n-1]->sink() == edges[n]->sink())
+				return false;
+		}
+	}
+
+	return true;
 }
 
 }
