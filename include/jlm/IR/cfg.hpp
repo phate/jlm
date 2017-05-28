@@ -300,44 +300,6 @@ public:
 		return nodes_.size();
 	}
 
-	inline std::shared_ptr<variable>
-	append_argument(const std::string & name, const jive::base::type & type)
-	{
-		std::shared_ptr<variable> v(new variable(type, name));
-		static_cast<entry_attribute*>(&entry_node()->attribute())->append_argument(v);
-		return v;
-	}
-
-	inline size_t
-	narguments() const noexcept
-	{
-		return static_cast<entry_attribute*>(&entry_node()->attribute())->narguments();
-	}
-
-	inline std::shared_ptr<const variable>
-	argument(size_t index) const
-	{
-		return static_cast<entry_attribute*>(&entry_node()->attribute())->argument(index);
-	}
-
-	inline void
-	append_result(const std::shared_ptr<const variable> & result)
-	{
-		static_cast<exit_attribute*>(&exit_node()->attribute())->append_result(result);
-	}
-
-	inline size_t
-	nresults() const noexcept
-	{
-		return static_cast<exit_attribute*>(&exit_node()->attribute())->nresults();
-	}
-
-	inline std::shared_ptr<const variable>
-	result(size_t index) const
-	{
-		return static_cast<exit_attribute*>(&exit_node()->attribute())->result(index);
-	}
-
 private:
 	void remove_node(cfg_node * node);
 

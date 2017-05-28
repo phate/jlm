@@ -142,7 +142,9 @@ clg_node::cfg_begin(const std::vector<std::string> & names)
 
 	cfg_.reset(new jlm::cfg());
 	for (size_t n = 0; n < names.size(); n++) {
-		arguments.push_back(cfg_->append_argument(names[n], t->argument_type(n)));
+		auto v = create_variable(t->argument_type(n), names[n]);
+		cfg_->entry().append_argument(v);
+		arguments.push_back(v);
 	}
 
 	return arguments;
@@ -162,7 +164,7 @@ clg_node::cfg_end(const std::vector<std::shared_ptr<const variable>> & results)
 		if (results[n]->type() != t->result_type(n))
 			throw jive::type_error(t->result_type(n).debug_string(),
 				results[n]->type().debug_string());
-		cfg_->append_result(results[n]);
+		cfg_->exit().append_result(results[n]);
 	}
 }
 

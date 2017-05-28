@@ -19,6 +19,7 @@ test_linear_graph()
 	jlm::valuetype vtype;
 	jlm::test_op op({&vtype}, {&vtype});
 
+	auto arg = create_variable(vtype, "arg");
 	auto v1 = create_variable(vtype);
 	auto v2 = create_variable(vtype);
 	auto bb1 = create_basic_block_node(&cfg);
@@ -28,10 +29,10 @@ test_linear_graph()
 	bb1->add_outedge(bb2, 0);
 	bb2->add_outedge(cfg.exit_node(), 0);
 
-	auto arg1 = cfg.append_argument("arg1", vtype);
-	static_cast<jlm::basic_block*>(&bb1->attribute())->append(create_tac(op, {arg1}, {v1}));
+	cfg.entry().append_argument(arg);
+	static_cast<jlm::basic_block*>(&bb1->attribute())->append(create_tac(op, {arg}, {v1}));
 	static_cast<jlm::basic_block*>(&bb2->attribute())->append(create_tac(op, {v1}, {v2}));
-	cfg.append_result(v2);
+	cfg.exit().append_result(v2);
 
 	auto root = jlm::agg::aggregate(cfg);
 	jlm::agg::view(*root, stdout);
@@ -51,12 +52,12 @@ test_linear_graph()
 	/* linear */
 	assert(dm.find(root->child(1)) != dm.end());
 	ds = dm[root->child(1)];
-	assert(ds.size() == 1 && ds.find(arg1) != ds.end());
+	assert(ds.size() == 1 && ds.find(arg) != ds.end());
 
 	/* bb1 */
 	assert(dm.find(root->child(1)->child(0)) != dm.end());
 	ds = dm[root->child(1)->child(0)];
-	assert(ds.size() == 1 && ds.find(arg1) != ds.end());
+	assert(ds.size() == 1 && ds.find(arg) != ds.end());
 
 	/* linear */
 	assert(dm.find(root->child(1)->child(1)) != dm.end());
@@ -82,6 +83,7 @@ test_branch_graph()
 	jlm::test_op unop({&vtype}, {&vtype});
 	jlm::test_op binop({&vtype, &vtype}, {&vtype});
 
+	auto arg = create_variable(vtype, "arg");
 	auto v1 = create_variable(vtype, "v1");
 	auto v2 = create_variable(vtype, "v2");
 	auto v3 = create_variable(vtype, "v3");
@@ -98,12 +100,12 @@ test_branch_graph()
 	bb2->add_outedge(join, 0);
 	join->add_outedge(cfg.exit_node(), 0);
 
-	auto arg1 = cfg.append_argument("arg1", vtype);
-	static_cast<jlm::basic_block*>(&split->attribute())->append(create_tac(unop, {arg1}, {v1}));
+	cfg.entry().append_argument(arg);
+	static_cast<jlm::basic_block*>(&split->attribute())->append(create_tac(unop, {arg}, {v1}));
 	static_cast<jlm::basic_block*>(&bb1->attribute())->append(create_tac(unop, {v1}, {v2}));
 	static_cast<jlm::basic_block*>(&bb2->attribute())->append(create_tac(unop, {v1}, {v3}));
 	static_cast<jlm::basic_block*>(&join->attribute())->append(create_tac(binop, {v2, v3}, {v4}));
-	cfg.append_result(v4);
+	cfg.exit().append_result(v4);
 
 	auto root = jlm::agg::aggregate(cfg);
 	jlm::agg::view(*root, stdout);
@@ -123,12 +125,12 @@ test_branch_graph()
 	/* linear */
 	assert(dm.find(root->child(1)) != dm.end());
 	ds = dm[root->child(1)];
-	assert(ds.size() == 1 && ds.find(arg1) != ds.end());
+	assert(ds.size() == 1 && ds.find(arg) != ds.end());
 
 	/* branch */
 	assert(dm.find(root->child(1)->child(0)) != dm.end());
 	ds = dm[root->child(1)->child(0)];
-	assert(ds.size() == 1 && ds.find(arg1) != ds.end());
+	assert(ds.size() == 1 && ds.find(arg) != ds.end());
 
 	/* bb2 */
 	assert(dm.find(root->child(1)->child(0)->child(0)) != dm.end());
@@ -153,6 +155,7 @@ test_loop_graph()
 	jlm::valuetype vtype;
 	jlm::test_op binop({&vtype, &vtype}, {&vtype});
 
+	auto arg = create_variable(vtype, "arg");
 	auto r = create_variable(vtype, "r");
 	auto bb = create_basic_block_node(&cfg);
 
@@ -160,9 +163,9 @@ test_loop_graph()
 	bb->add_outedge(cfg.exit_node(), 0);
 	bb->add_outedge(bb, 1);
 
-	auto arg = cfg.append_argument("arg", vtype);
+	cfg.entry().append_argument(arg);
 	static_cast<jlm::basic_block*>(&bb->attribute())->append(create_tac(binop, {arg, r}, {r}));
-	cfg.append_result(r);
+	cfg.exit().append_result(r);
 
 	auto root = jlm::agg::aggregate(cfg);
 	jlm::agg::view(*root, stdout);
