@@ -120,7 +120,7 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit,
 	std::vector<jlm::cfg_edge> & back_edges)
 {
 	jlm::cfg * cfg = entry->cfg();
-	JLM_DEBUG_ASSERT(cfg->is_closed());
+	JLM_DEBUG_ASSERT(is_closed(*cfg));
 
 	std::vector<std::unordered_set<jlm::cfg_node*>> sccs = find_sccs(entry, exit);
 
@@ -399,7 +399,7 @@ restructure_branches(jlm::cfg_node * start, jlm::cfg_node * end)
 std::unordered_set<const jlm::cfg_edge*>
 restructure(jlm::cfg * cfg)
 {
-	JLM_DEBUG_ASSERT(cfg->is_closed());
+	JLM_DEBUG_ASSERT(is_closed(*cfg));
 
 	std::vector<jlm::cfg_edge> back_edges;
 	restructure_loops(cfg->entry_node(), cfg->exit_node(), back_edges);

@@ -252,8 +252,6 @@ public:
 
 	void convert_to_dot(jive::buffer & buffer) const;
 
-	bool is_closed() const noexcept;
-
 	bool is_linear() const noexcept;
 
 	bool is_acyclic() const;
@@ -319,6 +317,9 @@ create_variables(jlm::cfg & cfg, const jive::operation & operation)
 
 bool
 is_valid(const jlm::cfg & cfg);
+
+bool
+is_closed(const jlm::cfg & cfg);
 
 }
 

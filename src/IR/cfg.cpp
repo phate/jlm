@@ -163,7 +163,7 @@ cfg::create_node(const attribute & attr)
 std::vector<std::unordered_set<cfg_node*>>
 cfg::find_sccs() const
 {
-	JLM_DEBUG_ASSERT(is_closed());
+	JLM_DEBUG_ASSERT(is_closed(*this));
 
 	std::vector<std::unordered_set<cfg_node*>> sccs;
 
@@ -177,27 +177,9 @@ cfg::find_sccs() const
 }
 
 bool
-cfg::is_closed() const noexcept
-{
-	JLM_DEBUG_ASSERT(is_valid(*this));
-
-	std::unordered_set<std::unique_ptr<cfg_node>>::const_iterator it;
-	for (it = nodes_.begin(); it != nodes_.end(); it++) {
-		cfg_node * node = (*it).get();
-		if (node == entry_node())
-			continue;
-
-		if (node->no_predecessor())
-			return false;
-	}
-
-	return true;
-}
-
-bool
 cfg::is_linear() const noexcept
 {
-	JLM_DEBUG_ASSERT(is_closed());
+	JLM_DEBUG_ASSERT(is_closed(*this));
 
 	std::unordered_set<std::unique_ptr<cfg_node>>::const_iterator it;
 	for (it = nodes_.begin(); it != nodes_.end(); it++) {
@@ -222,7 +204,7 @@ cfg::is_acyclic() const
 bool
 cfg::is_structured() const
 {
-	JLM_DEBUG_ASSERT(is_closed());
+	JLM_DEBUG_ASSERT(is_closed(*this));
 
 	cfg c(*this);
 	std::unordered_set<std::unique_ptr<cfg_node>>::const_iterator it = c.nodes_.begin();
@@ -230,7 +212,7 @@ cfg::is_structured() const
 		cfg_node * node = (*it).get();
 
 		if (c.nodes_.size() == 2) {
-			JLM_DEBUG_ASSERT(c.is_closed());
+			JLM_DEBUG_ASSERT(is_closed(c));
 			return true;
 		}
 
@@ -312,7 +294,7 @@ cfg::is_structured() const
 bool
 cfg::is_reducible() const
 {
-	JLM_DEBUG_ASSERT(is_closed());
+	JLM_DEBUG_ASSERT(is_closed(*this));
 
 	cfg c(*this);
 	std::unordered_set<std::unique_ptr<cfg_node>>::const_iterator it = c.nodes_.begin();
@@ -320,7 +302,7 @@ cfg::is_reducible() const
 		cfg_node * node = (*it).get();
 
 		if (c.nodes_.size() == 2) {
-			JLM_DEBUG_ASSERT(c.is_closed());
+			JLM_DEBUG_ASSERT(is_closed(c));
 			return true;
 		}
 
@@ -428,7 +410,7 @@ cfg::prune()
 			it++;
 	}
 
-	JLM_DEBUG_ASSERT(is_closed());
+	JLM_DEBUG_ASSERT(is_closed(*this));
 }
 
 bool
@@ -472,6 +454,22 @@ is_valid(const jlm::cfg & cfg)
 			if (edges[n-1]->sink() == edges[n]->sink())
 				return false;
 		}
+	}
+
+	return true;
+}
+
+bool
+is_closed(const jlm::cfg & cfg)
+{
+	JLM_DEBUG_ASSERT(is_valid(cfg));
+
+	for (const auto & node : cfg) {
+		if (&node == cfg.entry_node())
+			continue;
+
+		if (node.no_predecessor())
+			return false;
 	}
 
 	return true;
