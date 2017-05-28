@@ -174,7 +174,7 @@ public:
 	}
 
 	inline node *
-	child(size_t n) noexcept
+	child(size_t n) const noexcept
 	{
 		JLM_DEBUG_ASSERT(n < nchildren());
 		return children_[n].get();
