@@ -252,8 +252,6 @@ public:
 
 	void convert_to_dot(jive::buffer & buffer) const;
 
-	bool is_linear() const noexcept;
-
 	bool is_acyclic() const;
 
 	bool is_structured() const;

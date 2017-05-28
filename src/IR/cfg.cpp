@@ -177,24 +177,6 @@ cfg::find_sccs() const
 }
 
 bool
-cfg::is_linear() const noexcept
-{
-	JLM_DEBUG_ASSERT(is_closed(*this));
-
-	std::unordered_set<std::unique_ptr<cfg_node>>::const_iterator it;
-	for (it = nodes_.begin(); it != nodes_.end(); it++) {
-		cfg_node * node = (*it).get();
-		if (node == entry_node() || node == exit_node())
-			continue;
-
-		if (!node->single_successor() || !node->single_predecessor())
-			return false;
-	}
-
-	return true;
-}
-
-bool
 cfg::is_acyclic() const
 {
 	std::vector<std::unordered_set<cfg_node*>> sccs = find_sccs();
@@ -469,6 +451,22 @@ is_closed(const jlm::cfg & cfg)
 			continue;
 
 		if (node.no_predecessor())
+			return false;
+	}
+
+	return true;
+}
+
+bool
+is_linear(const jlm::cfg & cfg)
+{
+	JLM_DEBUG_ASSERT(is_closed(cfg));
+
+	for (const auto & node : cfg) {
+		if (&node == cfg.entry_node() || &node == cfg.exit_node())
+			continue;
+
+		if (!node.single_successor() || !node.single_predecessor())
 			return false;
 	}
 
