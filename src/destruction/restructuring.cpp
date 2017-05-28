@@ -404,7 +404,7 @@ restructure(jlm::cfg * cfg)
 	std::vector<jlm::cfg_edge> back_edges;
 	restructure_loops(cfg->entry_node(), cfg->exit_node(), back_edges);
 
-	JLM_DEBUG_ASSERT(cfg->is_acyclic());
+	JLM_DEBUG_ASSERT(is_acyclic(*cfg));
 
 	restructure_branches(cfg->entry_node(), cfg->exit_node());
 

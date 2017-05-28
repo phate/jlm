@@ -161,13 +161,6 @@ cfg::create_node(const attribute & attr)
 }
 
 bool
-cfg::is_acyclic() const
-{
-	auto sccs = find_sccs(*this);
-	return sccs.size() == 0;
-}
-
-bool
 cfg::is_structured() const
 {
 	JLM_DEBUG_ASSERT(is_closed(*this));

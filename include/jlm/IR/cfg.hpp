@@ -250,8 +250,6 @@ public:
 
 	void convert_to_dot(jive::buffer & buffer) const;
 
-	bool is_acyclic() const;
-
 	bool is_structured() const;
 
 	bool is_reducible() const;
@@ -319,6 +317,13 @@ is_closed(const jlm::cfg & cfg);
 
 std::vector<std::unordered_set<cfg_node*>>
 find_sccs(const jlm::cfg & cfg);
+
+static inline bool
+is_acyclic(const jlm::cfg & cfg)
+{
+	auto sccs = find_sccs(cfg);
+	return sccs.size() == 0;
+}
 
 }
 
