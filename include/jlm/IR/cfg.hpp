@@ -221,7 +221,6 @@ public:
 
 	cfg();
 
-private:
 	cfg(const cfg & c);
 
 public:

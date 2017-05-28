@@ -125,31 +125,29 @@ cfg::cfg()
 	entry_->add_outedge(exit_, 0);
 }
 
-cfg::cfg(const cfg & c)
+cfg::cfg(const cfg & other)
 {
-	std::unordered_map<cfg_node*,cfg_node*> node_map;
-	std::unordered_set<std::unique_ptr<cfg_node>>::const_iterator it;
-	for (it = c.nodes_.begin(); it != c.nodes_.end(); it++) {
-		cfg_node * copy;
-		cfg_node * node = (*it).get();
-		if (node == c.entry_node()) {
-			create_entry_node(this);
-			copy = entry_;
-		} else if (node == c.exit_node()) {
-			create_exit_node(this);
-			copy = exit_;
-		} else
-			copy = create_basic_block_node(this);
+	/* FIXME: function does not take care of tacs and variables */
 
-		node_map[node] = copy;
+	/* create all nodes */
+	std::unordered_map<const cfg_node*, cfg_node*> node_map;
+	for (const auto & node : other) {
+		if (&node == other.entry_node()) {
+			entry_  = create_entry_node(this);
+			node_map[&node] = entry_;
+		} else if (&node == other.exit_node()) {
+			exit_ = create_exit_node(this);
+			node_map[&node] = exit_;
+		} else {
+			node_map[&node] = create_node(node.attribute());
+		}
 	}
 
-	for (it = c.nodes_.begin(); it != c.nodes_.end(); it++) {
-		cfg_node * node = (*it).get();
-		cfg_node * copy = node_map[node];
-		std::vector<cfg_edge*> edges = node->outedges();
-		for (auto edge : edges)
-			copy->add_outedge(node_map[edge->sink()], edge->index());
+	/* establish control flow */
+	for (const auto & node : other) {
+		for (const auto & e : node.outedges()) {
+			node_map[&node]->add_outedge(node_map[e->sink()], e->index());
+		}
 	}
 }
 
