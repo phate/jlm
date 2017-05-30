@@ -8,6 +8,7 @@
 #include <test-types.hpp>
 
 #include <jlm/IR/aggregation/aggregation.hpp>
+#include <jlm/IR/aggregation/annotation.hpp>
 #include <jlm/IR/aggregation/node.hpp>
 #include <jlm/IR/basic_block.hpp>
 #include <jlm/IR/cfg.hpp>
