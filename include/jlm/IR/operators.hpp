@@ -17,7 +17,7 @@ namespace jlm {
 
 /* phi operator */
 
-class phi_op final : public jive::operation {
+class phi_op final : public jive::simple_op {
 public:
 	virtual
 	~phi_op() noexcept;
@@ -72,7 +72,7 @@ private:
 
 /* assignment operator */
 
-class assignment_op final : public jive::operation {
+class assignment_op final : public jive::simple_op {
 public:
 	virtual
 	~assignment_op() noexcept;
@@ -126,7 +126,7 @@ create_assignment(
 
 /* select operator */
 
-class select_op final : public jive::operation {
+class select_op final : public jive::simple_op {
 public:
 	virtual
 	~select_op() noexcept;
@@ -177,7 +177,7 @@ private:
 
 /* alloca operator */
 
-class alloca_op final : public jive::operation {
+class alloca_op final : public jive::simple_op {
 public:
 	virtual
 	~alloca_op() noexcept;
@@ -220,7 +220,7 @@ private:
 
 /* bits2flt operator */
 
-class bits2flt_op final : public jive::operation {
+class bits2flt_op final : public jive::simple_op {
 public:
 	virtual
 	~bits2flt_op() noexcept;
@@ -263,7 +263,7 @@ private:
 
 /* flt2bits operator */
 
-class flt2bits_op final : public jive::operation {
+class flt2bits_op final : public jive::simple_op {
 public:
 	virtual
 	~flt2bits_op() noexcept;
