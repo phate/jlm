@@ -75,13 +75,17 @@ test_branch_reduction()
 	auto split = create_basic_block_node(&cfg);
 	auto bb1 = create_basic_block_node(&cfg);
 	auto bb2 = create_basic_block_node(&cfg);
+	auto bb3 = create_basic_block_node(&cfg);
+	auto bb4 = create_basic_block_node(&cfg);
 	auto join = create_basic_block_node(&cfg);
 
 	cfg.exit_node()->divert_inedges(split);
 	split->add_outedge(bb1, 0);
-	split->add_outedge(bb2, 1);
-	bb1->add_outedge(join, 0);
+	split->add_outedge(bb3, 1);
+	bb1->add_outedge(bb2, 0);
 	bb2->add_outedge(join, 0);
+	bb3->add_outedge(bb4, 0);
+	bb4->add_outedge(join, 0);
 	join->add_outedge(cfg.exit_node(), 0);
 
 	auto root = jlm::agg::aggregate(cfg);
@@ -89,24 +93,52 @@ test_branch_reduction()
 
 	assert(is_linear_structure(root->structure()));
 	assert(root->nchildren() == 2);
+	{
+		auto entry = root->child(0);
+		assert(is_entry_structure(entry->structure()));
+		assert(entry->nchildren() == 0);
+		{
+			auto linear = root->child(1);
+			assert(is_linear_structure(linear->structure()));
+			assert(linear->nchildren() == 2);
+			{
+				auto branch = linear->child(0);
+				assert(is_branch_structure(branch->structure()));
+				assert(branch->nchildren() == 2);
+				{
+					auto linear = branch->child(0);
+					assert(is_linear_structure(linear->structure()));
+					assert(linear->nchildren() == 2);
+					{
+						auto block = linear->child(0);
+						assert(is_block_structure(block->structure()));
+						assert(block->nchildren() == 0);
 
-	assert(is_entry_structure(root->child(0)->structure()));
-	assert(root->child(0)->nchildren() == 0);
+						block = linear->child(1);
+						assert(is_block_structure(block->structure()));
+						assert(block->nchildren() == 0);
+					}
 
-	assert(is_linear_structure(root->child(1)->structure()));
-	assert(root->child(1)->nchildren() == 2);
+					linear = branch->child(1);
+					assert(is_linear_structure(linear->structure()));
+					assert(linear->nchildren() == 2);
+					{
+						auto block = linear->child(0);
+						assert(is_block_structure(block->structure()));
+						assert(block->nchildren() == 0);
 
-	assert(is_branch_structure(root->child(1)->child(0)->structure()));
-	assert(root->child(1)->child(0)->nchildren() == 2);
+						block = linear->child(1);
+						assert(is_block_structure(block->structure()));
+						assert(block->nchildren() == 0);
+					}
+				}
 
-	assert(is_block_structure(root->child(1)->child(0)->child(0)->structure()));
-	assert(root->child(1)->child(0)->child(0)->nchildren() == 0);
-
-	assert(is_block_structure(root->child(1)->child(0)->child(1)->structure()));
-	assert(root->child(1)->child(0)->child(1)->nchildren() == 0);
-
-	assert(is_exit_structure(root->child(1)->child(1)->structure()));
-	assert(root->child(1)->child(1)->nchildren() == 0);
+				auto exit = linear->child(1);
+				assert(is_exit_structure(exit->structure()));
+				assert(exit->nchildren() == 0);
+			}
+		}
+	}
 }
 
 static int

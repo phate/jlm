@@ -237,6 +237,8 @@ aggregate(
 	}
 
 	if (is_branch_split(node)) {
+		for (size_t n = 0; n < node->noutedges(); n++)
+			aggregate(node->outedge(n)->sink(), map);
 		auto reduction = reduce_branch(node, map);
 		aggregate(reduction, map);
 		return;
