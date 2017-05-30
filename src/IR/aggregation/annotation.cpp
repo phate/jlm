@@ -12,129 +12,128 @@
 namespace jlm {
 namespace agg {
 
-static demand_set
-annotate(const agg::node * node, const demand_set & pds, demand_map & dm);
+static void
+annotate(const agg::node * node, dset & pds, demand_map & dm);
 
-static inline demand_set
-annotate_basic_block(const basic_block & bb, const demand_set & pds)
+static inline std::unique_ptr<demand_set>
+annotate_basic_block(const basic_block & bb, dset & pds)
 {
-	demand_set ds(pds);
+	auto ds = create_demand_set(pds);
 	for (auto it = bb.rbegin(); it != bb.rend(); it++) {
 		for (size_t n = 0; n < (*it)->noutputs(); n++)
-			ds.erase((*it)->output(n));
+			pds.erase((*it)->output(n));
 		for (size_t n = 0; n < (*it)->ninputs(); n++)
-			ds.insert((*it)->input(n));
+			pds.insert((*it)->input(n));
 	}
+	ds->top = pds;
 
 	return ds;
 }
 
-static inline demand_set
-annotate_entry(const agg::node * node, const demand_set & pds, demand_map & dm)
+static inline void
+annotate_entry(const agg::node * node, dset & pds, demand_map & dm)
 {
 	JLM_DEBUG_ASSERT(is_entry_structure(node->structure()));
 	const auto & ea = static_cast<const entry*>(&node->structure())->attribute();
 
-	demand_set ds(pds);
+	auto ds = create_demand_set(pds);
 	for (size_t n = 0; n < ea.narguments(); n++)
-		ds.erase(ea.argument(n));
+		pds.erase(ea.argument(n));
 
+	ds->top = pds;
 	JLM_DEBUG_ASSERT(dm.find(node) == dm.end());
-	dm[node] = ds;
-
-	return ds;
+	dm[node] = std::move(ds);
 }
 
-static inline demand_set
-annotate_exit(const agg::node * node, const demand_set & pds, demand_map & dm)
+static inline void
+annotate_exit(const agg::node * node, dset & pds, demand_map & dm)
 {
 	JLM_DEBUG_ASSERT(is_exit_structure(node->structure()));
 	const auto & xa = static_cast<const exit*>(&node->structure())->attribute();
 
-	demand_set ds(pds);
+	auto ds = create_demand_set(pds);
 	for (size_t n = 0; n < xa.nresults(); n++)
-		ds.insert(xa.result(n));
+		pds.insert(xa.result(n));
 
+	ds->top = pds;
 	JLM_DEBUG_ASSERT(dm.find(node) == dm.end());
-	dm[node] = ds;
-
-	return ds;
+	dm[node] = std::move(ds);
 }
 
-static inline demand_set
-annotate_block(const agg::node * node, const demand_set & pds, demand_map & dm)
+static inline void
+annotate_block(const agg::node * node, dset & pds, demand_map & dm)
 {
 	JLM_DEBUG_ASSERT(is_block_structure(node->structure()));
 	const auto & bb = static_cast<const block*>(&node->structure())->basic_block();
 
-	auto ds = annotate_basic_block(bb, pds);
 	JLM_DEBUG_ASSERT(dm.find(node) == dm.end());
-	dm[node] = ds;
-
-	return ds;
+	dm[node] = annotate_basic_block(bb, pds);
 }
 
-static inline demand_set
-annotate_linear(const agg::node * node, const demand_set & pds, demand_map & dm)
+static inline void
+annotate_linear(const agg::node * node, dset & pds, demand_map & dm)
 {
 	JLM_DEBUG_ASSERT(is_linear_structure(node->structure()));
 
-	demand_set ds(pds);
+	auto ds = create_demand_set(pds);
 	for (ssize_t n = node->nchildren()-1; n >= 0; n--)
-		ds = annotate(node->child(n), ds, dm);
+		annotate(node->child(n), pds, dm);
+	ds->top = pds;
 
 	JLM_DEBUG_ASSERT(dm.find(node) == dm.end());
-	dm[node] = ds;
-
-	return ds;
+	dm[node] = std::move(ds);
 }
 
-static inline demand_set
-annotate_branch(const agg::node * node, const demand_set & pds, demand_map & dm)
+static inline void
+annotate_branch(const agg::node * node, dset & pds, demand_map & dm)
 {
 	JLM_DEBUG_ASSERT(is_branch_structure(node->structure()));
 	const auto & branch = static_cast<const jlm::agg::branch*>(&node->structure());
 
-	demand_set intersect;
-	auto ds = annotate_basic_block(branch->join(), pds);
-	for (ssize_t n = node->nchildren()-1; n >= 0; n--) {
-		auto tmp = annotate(node->child(n), ds, dm);
-		auto tmp2 = std::move(intersect);
-		std::set_intersection(tmp.begin(), tmp.end(), tmp2.begin(), tmp2.end(),
-			std::inserter(intersect, intersect.begin()));
+	auto ds = create_branch_demand_set(pds);
+	annotate_basic_block(branch->join(), pds);
+
+	dset cases_top;
+	ds->cases_bottom = pds;
+	for (size_t n = 0; n < node->nchildren(); n++) {
+		auto tmp = pds;
+		annotate(node->child(n), tmp, dm);
+		cases_top.insert(tmp.begin(), tmp.end());
 	}
-	intersect= annotate_basic_block(branch->split(), intersect);
+	ds->cases_top = pds = cases_top;
+
+	annotate_basic_block(branch->split(), pds);
+	ds->top = pds;
 
 	JLM_DEBUG_ASSERT(dm.find(node) == dm.end());
-	dm[node] = intersect;
-
-	return intersect;
+	dm[node] = std::move(ds);
 }
 
-static inline demand_set
-annotate_loop(const agg::node * node, const demand_set & pds, demand_map & dm)
+static inline void
+annotate_loop(const agg::node * node, dset & pds, demand_map & dm)
 {
 	JLM_DEBUG_ASSERT(is_loop_structure(node->structure()));
 	JLM_DEBUG_ASSERT(node->nchildren() == 1);
 
-	auto ds = annotate(node->child(0), pds, dm);
-	if (ds != pds) {
-		auto tmp = annotate(node->child(0), ds, dm);
-		JLM_DEBUG_ASSERT(tmp == ds);
+	auto ds = create_demand_set(pds);
+	annotate(node->child(0), pds, dm);
+	if (ds->bottom != pds) {
+		ds->top = pds;
+		annotate(node->child(0), pds, dm);
+		JLM_DEBUG_ASSERT(ds->top == pds);
 	}
+	ds->bottom = ds->top;
 
 	JLM_DEBUG_ASSERT(dm.find(node) == dm.end());
-	dm[node] = ds;
-
-	return ds;
+	dm[node] = std::move(ds);
 }
 
-static inline demand_set
-annotate(const agg::node * node, const demand_set & pds, demand_map & dm)
+static inline void
+annotate(const agg::node * node, dset & pds, demand_map & dm)
 {
 	static std::unordered_map<
 		std::type_index,
-		std::function<demand_set(const agg::node*, const demand_set&, demand_map&)>
+		std::function<void(const agg::node*, dset&, demand_map&)>
 	> map({
 	  {std::type_index(typeid(entry)), annotate_entry}
 	, {std::type_index(typeid(exit)), annotate_exit}
@@ -145,8 +144,8 @@ annotate(const agg::node * node, const demand_set & pds, demand_map & dm)
 	});
 
 	auto it = dm.find(node);
-	if (it != dm.end() && it->second == pds)
-		return pds;
+	if (it != dm.end() && it->second->top == pds)
+		return;
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(node->structure()))) != map.end());
 	return map[std::type_index(typeid(node->structure()))](node, pds, dm);
@@ -155,8 +154,9 @@ annotate(const agg::node * node, const demand_set & pds, demand_map & dm)
 demand_map
 annotate(jlm::agg::node & root)
 {
+	dset ds;
 	demand_map dm;
-	annotate(&root, demand_set(), dm);
+	annotate(&root, ds, dm);
 	return dm;
 }
 

@@ -13,6 +13,22 @@
 #include <jlm/IR/basic_block.hpp>
 #include <jlm/IR/cfg.hpp>
 
+static inline bool
+has_variables(
+	const jlm::agg::dset & ds,
+	const std::vector<std::shared_ptr<const jlm::variable>> & variables)
+{
+	if (ds.size() != variables.size())
+		return false;
+
+	for (const auto & v : variables) {
+		if (ds.find(v) == ds.end())
+			return false;
+	}
+
+	return true;
+}
+
 static void
 test_linear_graph()
 {
@@ -42,38 +58,38 @@ test_linear_graph()
 
 	/* linear */
 	assert(dm.find(root.get()) != dm.end());
-	auto ds = dm[root.get()];
-	assert(ds.empty());
+	auto ds = dm[root.get()].get();
+	assert(has_variables(ds->top, {}));
 
 	/* entry */
 	assert(dm.find(root->child(0)) != dm.end());
-	ds = dm[root->child(0)];
-	assert(ds.empty());
+	ds = dm[root->child(0)].get();
+	assert(has_variables(ds->top, {}));
 
 	/* linear */
 	assert(dm.find(root->child(1)) != dm.end());
-	ds = dm[root->child(1)];
-	assert(ds.size() == 1 && ds.find(arg) != ds.end());
+	ds = dm[root->child(1)].get();
+	assert(has_variables(ds->top, {arg}));
 
 	/* bb1 */
 	assert(dm.find(root->child(1)->child(0)) != dm.end());
-	ds = dm[root->child(1)->child(0)];
-	assert(ds.size() == 1 && ds.find(arg) != ds.end());
+	ds = dm[root->child(1)->child(0)].get();
+	assert(has_variables(ds->top, {arg}));
 
 	/* linear */
 	assert(dm.find(root->child(1)->child(1)) != dm.end());
-	ds = dm[root->child(1)->child(1)];
-	assert(ds.size() == 1 && ds.find(v1) != ds.end());
+	ds = dm[root->child(1)->child(1)].get();
+	assert(has_variables(ds->top, {v1}));
 
 	/* bb2 */
 	assert(dm.find(root->child(1)->child(1)->child(0)) != dm.end());
-	ds = dm[root->child(1)->child(1)->child(0)];
-	assert(ds.size() == 1 && ds.find(v1) != ds.end());
+	ds = dm[root->child(1)->child(1)->child(0)].get();
+	assert(has_variables(ds->top, {v1}));
 
 	/* exit */
 	assert(dm.find(root->child(1)->child(1)->child(1)) != dm.end());
-	ds = dm[root->child(1)->child(1)->child(1)];
-	assert(ds.size() == 1 && ds.find(v2) != ds.end());
+	ds = dm[root->child(1)->child(1)->child(1)].get();
+	assert(has_variables(ds->top, {v2}));
 }
 
 static void
@@ -115,38 +131,38 @@ test_branch_graph()
 
 	/* linear */
 	assert(dm.find(root.get()) != dm.end());
-	auto ds = dm[root.get()];
-	assert(ds.empty());
+	auto ds = dm[root.get()].get();
+	assert(has_variables(ds->top, {v2, v3}));
 
 	/* entry */
 	assert(dm.find(root->child(0)) != dm.end());
-	ds = dm[root->child(0)];
-	assert(ds.empty());
+	ds = dm[root->child(0)].get();
+	assert(has_variables(ds->top, {v2, v3}));
 
 	/* linear */
 	assert(dm.find(root->child(1)) != dm.end());
-	ds = dm[root->child(1)];
-	assert(ds.size() == 1 && ds.find(arg) != ds.end());
+	ds = dm[root->child(1)].get();
+	assert(has_variables(ds->top, {arg, v2, v3}));
 
 	/* branch */
 	assert(dm.find(root->child(1)->child(0)) != dm.end());
-	ds = dm[root->child(1)->child(0)];
-	assert(ds.size() == 1 && ds.find(arg) != ds.end());
+	ds = dm[root->child(1)->child(0)].get();
+	assert(has_variables(ds->top, {arg, v2, v3}));
 
 	/* bb2 */
 	assert(dm.find(root->child(1)->child(0)->child(0)) != dm.end());
-	ds = dm[root->child(1)->child(0)->child(0)];
-	assert(ds.size() == 2 && ds.find(v1) != ds.end() && ds.find(v2) != ds.end());
+	ds = dm[root->child(1)->child(0)->child(0)].get();
+	assert(has_variables(ds->top, {v1, v2}));
 
 	/* bb1 */
 	assert(dm.find(root->child(1)->child(0)->child(1)) != dm.end());
-	ds = dm[root->child(1)->child(0)->child(1)];
-	assert(ds.size() == 2 && ds.find(v1) != ds.end() && ds.find(v3) != ds.end());
+	ds = dm[root->child(1)->child(0)->child(1)].get();
+	assert(has_variables(ds->top, {v1, v3}));
 
 	/* exit */
 	assert(dm.find(root->child(1)->child(1)) != dm.end());
-	ds = dm[root->child(1)->child(1)];
-	assert(ds.size() == 1 && ds.find(v4) != ds.end());
+	ds = dm[root->child(1)->child(1)].get();
+	assert(has_variables(ds->top, {v4}));
 }
 
 static void
@@ -175,33 +191,33 @@ test_loop_graph()
 
 	/* linear */
 	assert(dm.find(root.get()) != dm.end());
-	auto ds = dm[root.get()];
-	assert(ds.size() == 1 && ds.find(r) != ds.end());
+	auto ds = dm[root.get()].get();
+	assert(has_variables(ds->top, {r}));
 
 	/* entry */
 	assert(dm.find(root->child(0)) != dm.end());
-	ds = dm[root->child(0)];
-	assert(ds.size() == 1 && ds.find(r) != ds.end());
+	ds = dm[root->child(0)].get();
+	assert(has_variables(ds->top, {r}));
 
 	/* linear */
 	assert(dm.find(root->child(1)) != dm.end());
-	ds = dm[root->child(1)];
-	assert(ds.size() == 2 && ds.find(arg) != ds.end() && ds.find(r) != ds.end());
+	ds = dm[root->child(1)].get();
+	assert(has_variables(ds->top, {arg, r}));
 
 	/* loop */
 	assert(dm.find(root->child(1)->child(0)) != dm.end());
-	ds = dm[root->child(1)->child(0)];
-	assert(ds.size() == 2 && ds.find(arg) != ds.end() && ds.find(r) != ds.end());
+	ds = dm[root->child(1)->child(0)].get();
+	assert(has_variables(ds->top, {arg, r}));
 
 	/* bb2 */
 	assert(dm.find(root->child(1)->child(0)->child(0)) != dm.end());
-	ds = dm[root->child(1)->child(0)->child(0)];
-	assert(ds.size() == 2 && ds.find(arg) != ds.end() && ds.find(r) != ds.end());
+	ds = dm[root->child(1)->child(0)->child(0)].get();
+	assert(has_variables(ds->top, {arg, r}));
 
 	/* exit */
 	assert(dm.find(root->child(1)->child(1)) != dm.end());
-	ds = dm[root->child(1)->child(1)];
-	assert(ds.size() == 1 && ds.find(r) != ds.end());
+	ds = dm[root->child(1)->child(1)].get();
+	assert(has_variables(ds->top, {r}));
 }
 
 static int
