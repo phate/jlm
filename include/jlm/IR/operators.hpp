@@ -124,6 +124,12 @@ create_assignment(
 	return create_tac(assignment_op(type), {arg}, {r});
 }
 
+static inline bool
+is_assignment_op(const jive::operation & op)
+{
+	return dynamic_cast<const assignment_op*>(&op) != nullptr;
+}
+
 /* select operator */
 
 class select_op final : public jive::simple_op {
@@ -174,6 +180,12 @@ public:
 private:
 	std::unique_ptr<jive::base::type> type_;
 };
+
+static inline bool
+is_select_op(const jive::operation & op)
+{
+	return dynamic_cast<const select_op*>(&op) != nullptr;
+}
 
 /* alloca operator */
 

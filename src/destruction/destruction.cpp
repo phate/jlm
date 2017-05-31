@@ -80,24 +80,66 @@ private:
 };
 
 static void
+convert_assignment(const jlm::tac & tac, jive::region * region, scoped_vmap & svmap)
+{
+	JLM_DEBUG_ASSERT(is_assignment_op(tac.operation()));
+	JLM_DEBUG_ASSERT(tac.ninputs() == 1 && tac.noutputs() == 1);
+	svmap.last()[tac.output(0)] = svmap.last()[tac.input(0)];
+}
+
+static void
+convert_select(const jlm::tac & tac, jive::region * region, scoped_vmap & svmap)
+{
+	JLM_DEBUG_ASSERT(is_select_op(tac.operation()));
+	JLM_DEBUG_ASSERT(tac.ninputs() == 3 && tac.noutputs() == 1);
+
+	auto op = jive::match_op(1, {{1, 0}}, 1, 2);
+	auto predicate = jive::create_normalized(region, op, {svmap.last()[tac.input(0)]})[0];
+
+	jive::gamma_builder gb;
+	gb.begin(predicate);
+	auto ev1 = gb.add_entryvar(svmap.last()[tac.input(1)]);
+	auto ev2 = gb.add_entryvar(svmap.last()[tac.input(2)]);
+	auto ex = gb.add_exitvar({ev1->argument(0), ev2->argument(1)});
+	svmap.last()[tac.output(0)] = ex->output();
+	gb.end();
+}
+
+static void
+convert_tac(const jlm::tac & tac, jive::region * region, scoped_vmap & svmap)
+{
+	static std::unordered_map<
+		std::type_index,
+		std::function<void(const jlm::tac&, jive::region*, scoped_vmap&)>
+	> map({
+	  {std::type_index(typeid(assignment_op)), convert_assignment}
+	, {std::type_index(typeid(select_op)), convert_select}
+	});
+
+	if (map.find(std::type_index(typeid(tac.operation()))) != map.end())
+		return map[std::type_index(typeid(tac.operation()))](tac, region, svmap);
+
+	std::vector<jive::oport*> operands;
+	for (size_t n = 0; n < tac.ninputs(); n++) {
+		JLM_DEBUG_ASSERT(svmap.last().find(tac.input(n)) != svmap.last().end());
+		operands.push_back(svmap.last()[tac.input(n)]);
+	}
+
+	auto results = jive::create_normalized(region, tac.operation(), operands);
+
+	JLM_DEBUG_ASSERT(results.size() == tac.noutputs());
+	for (size_t n = 0; n < tac.noutputs(); n++)
+		svmap.last()[tac.output(n)] = results[n];
+}
+
+static void
 convert_basic_block(
 	const basic_block & bb,
 	jive::region * region,
 	scoped_vmap & svmap)
 {
-	for (const auto & tac: bb) {
-		std::vector<jive::oport*> operands;
-		for (size_t n = 0; n < tac->ninputs(); n++) {
-			JLM_DEBUG_ASSERT(svmap.last().find(tac->input(n)) != svmap.last().end());
-			operands.push_back(svmap.last()[tac->input(n)]);
-		}
-
-		auto results = jive::create_normalized(region, tac->operation(), operands);
-
-		JLM_DEBUG_ASSERT(results.size() == tac->noutputs());
-		for (size_t n = 0; n < tac->noutputs(); n++)
-			svmap.last()[tac->output(n)] = results[n];
-	}
+	for (const auto & tac: bb)
+		convert_tac(*tac, region, svmap);
 }
 
 static void
