@@ -43,8 +43,9 @@ convert_value(
 
 	if (auto c = dynamic_cast<const llvm::Constant*>(v)) {
 		auto attr = static_cast<basic_block*>(&ctx.entry_block()->attribute());
-		auto e = convert_constant(c, ctx);
-		return attr->append(ctx.cfg(), *e, create_variable(e->type()));
+		auto tacs = expr2tacs(*convert_constant(c, ctx));
+		attr->append(tacs);
+		return attr->last()->output(0);
 	}
 
 	JLM_DEBUG_ASSERT(0);

@@ -153,8 +153,9 @@ convert_function(
 	if (!function.getReturnType()->isVoidTy()) {
 		auto attr = static_cast<basic_block*>(&entry_block->attribute());
 		auto e = create_undef_value(function.getReturnType(), ctx);
-		auto udef = attr->append(ctx.cfg(), *e, create_variable(e->type()));
-		attr->append(create_assignment(result->type(), {udef}, {result}));
+		auto tacs = expr2tacs(*e);
+		attr->append(tacs);
+		attr->append(create_assignment(result->type(), {attr->last()->output(0)}, {result}));
 	}
 
 	jt = function.getArgumentList().begin();

@@ -8,6 +8,8 @@
 
 #include <jlm/construction/type.hpp>
 #include <jlm/IR/cfg_node.hpp>
+#include <jlm/IR/expression.hpp>
+#include <jlm/IR/tac.hpp>
 
 #include <jive/types/record/rcdtype.h>
 #include <llvm/IR/DerivedTypes.h>
@@ -211,6 +213,31 @@ private:
 		std::shared_ptr<const jive::rcd::declaration>> declarations_;
 };
 
+}
+
+static inline std::vector<std::unique_ptr<jlm::tac>>
+expr2tacs(const jlm::expr & e)
+{
+	std::function<const std::shared_ptr<const jlm::variable>(
+		const jlm::expr &,
+		const std::shared_ptr<const jlm::variable>&,
+		std::vector<std::unique_ptr<jlm::tac>>&)
+	> append = [&](
+		const jlm::expr & e,
+		const std::shared_ptr<const jlm::variable> & result,
+		std::vector<std::unique_ptr<jlm::tac>> & tacs)
+	{
+		std::vector<std::shared_ptr<const jlm::variable>> operands;
+		for (size_t n = 0; n < e.noperands(); n++)
+			operands.push_back(append(e.operand(n), jlm::create_variable(e.operand(n).type()), tacs));
+
+		tacs.emplace_back(create_tac(e.operation(), operands, {result}));
+		return tacs.back()->output(0);
+	};
+
+	std::vector<std::unique_ptr<jlm::tac>> tacs;
+	append(e, jlm::create_variable(e.type()), tacs);
+	return tacs;
 }
 
 #endif

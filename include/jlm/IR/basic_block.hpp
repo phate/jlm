@@ -90,8 +90,12 @@ public:
 		return tacs_.back();
 	}
 
-	std::shared_ptr<const variable>
-	append(jlm::cfg * cfg, const expr & e, const std::shared_ptr<const variable> & v);
+	inline void
+	append(std::vector<std::unique_ptr<jlm::tac>> & tacs)
+	{
+		for (auto & tac : tacs)
+			tacs_.push_back(tac.release());
+	}
 
 	inline size_t
 	ntacs() const noexcept
