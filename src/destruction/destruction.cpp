@@ -305,7 +305,7 @@ convert_loop_node(
 
 	/* convert loop body */
 	JLM_DEBUG_ASSERT(node.nchildren() == 1);
-	convert_node(*node.child(0), dm, region, svmap);
+	convert_node(*node.child(0), dm, tb.region(), svmap);
 
 	/* update loop variables */
 	for (const auto & v : ds->top) {
