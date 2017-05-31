@@ -172,12 +172,6 @@ private:
 	jlm::clg_node * node_;
 };
 
-static inline std::shared_ptr<variable>
-create_function_variable(clg_node * node)
-{
-	return std::shared_ptr<function_variable>(new function_variable(node));
-}
-
 }
 
 #endif

@@ -18,7 +18,7 @@ namespace agg {
 
 class node;
 
-typedef std::unordered_set<std::shared_ptr<const jlm::variable>> dset;
+typedef std::unordered_set<const jlm::variable*> dset;
 
 class demand_set {
 public:

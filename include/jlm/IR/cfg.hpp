@@ -42,7 +42,7 @@ public:
 		return arguments_.size();
 	}
 
-	std::shared_ptr<const variable>
+	const variable *
 	argument(size_t index) const
 	{
 		JLM_DEBUG_ASSERT(index < narguments());
@@ -50,7 +50,7 @@ public:
 	}
 
 	inline void
-	append_argument(const std::shared_ptr<const variable> & v)
+	append_argument(const variable * v)
 	{
 		return arguments_.push_back(v);
 	}
@@ -62,7 +62,7 @@ public:
 	copy() const override;
 
 private:
-	std::vector<std::shared_ptr<const variable>> arguments_;
+	std::vector<const variable*> arguments_;
 };
 
 static inline bool
@@ -87,7 +87,7 @@ public:
 		return results_.size();
 	}
 
-	std::shared_ptr<const variable>
+	const variable *
 	result(size_t index) const
 	{
 		JLM_DEBUG_ASSERT(index < nresults());
@@ -95,9 +95,9 @@ public:
 	}
 
 	inline void
-	append_result(const std::shared_ptr<const variable> & result)
+	append_result(const variable * v)
 	{
-		results_.push_back(result);
+		results_.push_back(v);
 	}
 
 	virtual std::string
@@ -107,7 +107,7 @@ public:
 	copy() const override;
 
 private:
-	std::vector<std::shared_ptr<const variable>> results_;
+	std::vector<const variable*> results_;
 };
 
 static inline bool
@@ -302,16 +302,6 @@ private:
 	jlm::module & module_;
 	std::unordered_set<std::unique_ptr<cfg_node>> nodes_;
 };
-
-static inline std::vector<std::shared_ptr<const jlm::variable>>
-create_variables(jlm::cfg & cfg, const jive::operation & operation)
-{
-	std::vector<std::shared_ptr<const variable>> results;
-	for (size_t n = 0; n < operation.nresults(); n++)
-		results.push_back(create_variable(operation.result_type(n)));
-
-	return results;
-}
 
 bool
 is_valid(const jlm::cfg & cfg);

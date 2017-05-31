@@ -17,7 +17,7 @@
 static inline bool
 has_variables(
 	const jlm::agg::dset & ds,
-	const std::vector<std::shared_ptr<const jlm::variable>> & variables)
+	const std::vector<const jlm::variable*> & variables)
 {
 	if (ds.size() != variables.size())
 		return false;
@@ -39,9 +39,9 @@ test_linear_graph()
 	jlm::valuetype vtype;
 	jlm::test_op op({&vtype}, {&vtype});
 
-	auto arg = create_variable(vtype, "arg");
-	auto v1 = create_variable(vtype);
-	auto v2 = create_variable(vtype);
+	auto arg = module.create_variable(vtype, "arg");
+	auto v1 = module.create_variable(vtype, false);
+	auto v2 = module.create_variable(vtype, false);
 	auto bb1 = create_basic_block_node(&cfg);
 	auto bb2 = create_basic_block_node(&cfg);
 
@@ -105,11 +105,11 @@ test_branch_graph()
 	jlm::test_op unop({&vtype}, {&vtype});
 	jlm::test_op binop({&vtype, &vtype}, {&vtype});
 
-	auto arg = create_variable(vtype, "arg");
-	auto v1 = create_variable(vtype, "v1");
-	auto v2 = create_variable(vtype, "v2");
-	auto v3 = create_variable(vtype, "v3");
-	auto v4 = create_variable(vtype, "v4");
+	auto arg = module.create_variable(vtype, "arg");
+	auto v1 = module.create_variable(vtype, "v1");
+	auto v2 = module.create_variable(vtype, "v2");
+	auto v3 = module.create_variable(vtype, "v3");
+	auto v4 = module.create_variable(vtype, "v4");
 	auto split = create_basic_block_node(&cfg);
 	auto bb1 = create_basic_block_node(&cfg);
 	auto bb2 = create_basic_block_node(&cfg);
@@ -179,8 +179,8 @@ test_loop_graph()
 	jlm::valuetype vtype;
 	jlm::test_op binop({&vtype, &vtype}, {&vtype});
 
-	auto arg = create_variable(vtype, "arg");
-	auto r = create_variable(vtype, "r");
+	auto arg = module.create_variable(vtype, "arg");
+	auto r = module.create_variable(vtype, "r");
 	auto bb = create_basic_block_node(&cfg);
 
 	cfg.exit_node()->divert_inedges(bb);

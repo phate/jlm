@@ -104,8 +104,10 @@ convert_basic_blocks(
 			if (dynamic_cast<const llvm::TerminatorInst*>(&(*i)))
 				continue;
 
-			if (i->getType()->getTypeID() != llvm::Type::VoidTyID)
-				ctx.insert_value(&(*i), create_variable(*convert_type(i->getType(), ctx)));
+			if (i->getType()->getTypeID() != llvm::Type::VoidTyID) {
+				auto v = ctx.module().create_variable(*convert_type(i->getType(), ctx), false);
+				ctx.insert_value(&(*i), v);
+			}
 		}
 	}
 
@@ -118,7 +120,7 @@ convert_basic_blocks(
 std::unique_ptr<jlm::cfg>
 create_cfg(const llvm::Function & f, context & ctx)
 {
-	auto node = static_cast<const function_variable*>(ctx.lookup_value(&f).get())->function();
+	auto node = static_cast<const function_variable*>(ctx.lookup_value(&f))->function();
 
 	std::unique_ptr<jlm::cfg> cfg(new jlm::cfg(ctx.module()));
 
@@ -126,17 +128,18 @@ create_cfg(const llvm::Function & f, context & ctx)
 	size_t n = 0;
 	for (const auto & arg : f.getArgumentList()) {
 		JLM_DEBUG_ASSERT(n < node->type().narguments());
-		auto v = create_variable(node->type().argument_type(n++), arg.getName().str());
+		auto & type = node->type().argument_type(n++);
+		auto v = ctx.module().create_variable(type, arg.getName().str(), false);
 		cfg->entry().append_argument(v);
 		ctx.insert_value(&arg, v);
 	}
 	if (f.isVarArg()) {
 		JLM_DEBUG_ASSERT(n < node->type().narguments());
-		auto v = create_variable(node->type().argument_type(n++), "_varg_");
+		auto v = ctx.module().create_variable(node->type().argument_type(n++), "_varg_", false);
 		cfg->entry().append_argument(v);
 	}
 	JLM_DEBUG_ASSERT(n < node->type().narguments());
-	auto state = create_variable(node->type().argument_type(n++), "_s_");
+	auto state = ctx.module().create_variable(node->type().argument_type(n++), "_s_", false);
 	cfg->entry().append_argument(state);
 	JLM_DEBUG_ASSERT(n == node->type().narguments());
 
@@ -145,12 +148,12 @@ create_cfg(const llvm::Function & f, context & ctx)
 	auto entry_block = create_cfg_structure(f, cfg.get(), bbmap);
 
 	/* add results */
-	std::shared_ptr<const variable> result = nullptr;
+	const variable * result = nullptr;
 	if (!f.getReturnType()->isVoidTy()) {
-		result = create_variable(*convert_type(f.getReturnType(), ctx), "_r_");
+		result = ctx.module().create_variable(*convert_type(f.getReturnType(), ctx), "_r_", false);
 		auto attr = static_cast<basic_block*>(&entry_block->attribute());
 		auto e = create_undef_value(f.getReturnType(), ctx);
-		auto tacs = expr2tacs(*e);
+		auto tacs = expr2tacs(*e, ctx);
 		attr->append(tacs);
 		attr->append(create_assignment(result->type(), {attr->last()->output(0)}, {result}));
 
@@ -180,7 +183,7 @@ convert_function(
 		return;
 
 	auto fv = ctx.lookup_value(&function);
-	auto node = static_cast<const function_variable*>(fv.get())->function();
+	auto node = static_cast<const function_variable*>(fv)->function();
 
 	node->add_cfg(create_cfg(function, ctx));
 }
@@ -198,7 +201,7 @@ convert_functions(
 			f.getName().str().c_str(),
 			fcttype,
 			f.getLinkage() != llvm::GlobalValue::InternalLinkage);
-		ctx.insert_value(&f, create_function_variable(n));
+		ctx.insert_value(&f, ctx.module().create_variable(n));
 	}
 
 	for (auto it = list.begin(); it != list.end(); it++)

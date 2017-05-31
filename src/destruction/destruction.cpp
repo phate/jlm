@@ -38,7 +38,7 @@
 
 namespace jlm {
 
-typedef std::unordered_map<std::shared_ptr<const variable>, jive::oport*> vmap;
+typedef std::unordered_map<const variable*, jive::oport*> vmap;
 
 class scoped_vmap final {
 public:
@@ -225,14 +225,14 @@ convert_branch_node(
 
 	/* add entry variables */
 	auto ds = static_cast<const agg::branch_demand_set*>(dm.at(&node).get());
-	std::unordered_map<std::shared_ptr<const variable>, std::shared_ptr<jive::entryvar>> evmap;
+	std::unordered_map<const variable*, std::shared_ptr<jive::entryvar>> evmap;
 	for (const auto & v : ds->cases_top) {
 		JLM_DEBUG_ASSERT(svmap.last().find(v) != svmap.last().end());
 		evmap[v] = gb.add_entryvar(svmap.last()[v]);
 	}
 
 	/* convert branch cases */
-	std::unordered_map<std::shared_ptr<const variable>, std::vector<jive::oport*>> xvmap;
+	std::unordered_map<const variable*, std::vector<jive::oport*>> xvmap;
 	JLM_DEBUG_ASSERT(gb.nsubregions() == node.nchildren());
 	for (size_t n = 0; n < gb.nsubregions(); n++) {
 		auto & vmap = svmap.push_vmap();
@@ -275,7 +275,7 @@ convert_loop_node(
 
 	/* add loop variables */
 	auto ds = dm.at(&node).get();
-	std::unordered_map<std::shared_ptr<const variable>, std::shared_ptr<jive::loopvar>> lvmap;
+	std::unordered_map<const variable*, std::shared_ptr<jive::loopvar>> lvmap;
 	for (const auto & v : ds->top) {
 		JLM_DEBUG_ASSERT(pvmap.find(v) != pvmap.end());
 		lvmap[v] = tb.add_loopvar(pvmap[v]);

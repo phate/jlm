@@ -6,6 +6,7 @@
 #include <jlm/IR/basic_block.hpp>
 #include <jlm/IR/cfg.hpp>
 #include <jlm/IR/cfg_node.hpp>
+#include <jlm/IR/module.hpp>
 #include <jlm/IR/operators.hpp>
 #include <jlm/IR/ssa.hpp>
 #include <jlm/IR/tac.hpp>
@@ -40,10 +41,10 @@ destruct_ssa(jlm::cfg & cfg)
 				break;
 
 			const phi_op * phi = static_cast<const phi_op*>(&tac->operation());
-			auto v = create_variable(phi->type());
+			auto v = cfg.module().create_variable(phi->type(), false);
 
 			size_t n = 0;
-			std::shared_ptr<const variable> value;
+			const variable * value;
 			std::list<cfg_edge*> edges = phi_block->inedges();
 			for (auto it = edges.begin(); it != edges.end(); it++, n++) {
 				auto edge_block = (*it)->split();

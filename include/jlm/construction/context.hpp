@@ -9,6 +9,7 @@
 #include <jlm/construction/type.hpp>
 #include <jlm/IR/cfg_node.hpp>
 #include <jlm/IR/expression.hpp>
+#include <jlm/IR/module.hpp>
 #include <jlm/IR/tac.hpp>
 
 #include <jive/types/record/rcdtype.h>
@@ -104,26 +105,26 @@ public:
 		entry_block_ = entry_block;
 	}
 
-	inline std::shared_ptr<const variable>
+	inline const variable *
 	result() const noexcept
 	{
 		return result_;
 	}
 
 	inline void
-	set_result(const std::shared_ptr<const variable> & result)
+	set_result(const variable * result)
 	{
 		result_ = result;
 	}
 
-	inline std::shared_ptr<const variable>
+	inline const variable *
 	state() const noexcept
 	{
 		return state_;
 	}
 
 	inline void
-	set_state(const std::shared_ptr<const variable> & state)
+	set_state(const variable * state)
 	{
 		state_ = state;
 	}
@@ -164,7 +165,7 @@ public:
 		return vmap_.find(value) != vmap_.end();
 	}
 
-	inline std::shared_ptr<variable>
+	inline const variable *
 	lookup_value(const llvm::Value * value) const noexcept
 	{
 		JLM_DEBUG_ASSERT(has_value(value));
@@ -172,7 +173,7 @@ public:
 	}
 
 	inline void
-	insert_value(const llvm::Value * value, const std::shared_ptr<variable> & variable)
+	insert_value(const llvm::Value * value, const variable * variable)
 	{
 		JLM_DEBUG_ASSERT(!has_value(value));
 		vmap_[value] = variable;
@@ -214,9 +215,9 @@ private:
 	jlm::module & module_;
 	basic_block_map bbmap_;
 	cfg_node * entry_block_;
-	std::shared_ptr<const variable> state_;
-	std::shared_ptr<const variable> result_;
-	std::unordered_map<const llvm::Value *, std::shared_ptr<variable>> vmap_;
+	const variable * state_;
+	const variable * result_;
+	std::unordered_map<const llvm::Value *, const variable *> vmap_;
 	std::unordered_map<
 		const llvm::StructType*,
 		std::shared_ptr<const jive::rcd::declaration>> declarations_;
@@ -225,27 +226,29 @@ private:
 }
 
 static inline std::vector<std::unique_ptr<jlm::tac>>
-expr2tacs(const jlm::expr & e)
+expr2tacs(const jlm::expr & e, const jlm::context & ctx)
 {
-	std::function<const std::shared_ptr<const jlm::variable>(
+	std::function<const jlm::variable *(
 		const jlm::expr &,
-		const std::shared_ptr<const jlm::variable>&,
+		const jlm::variable *,
 		std::vector<std::unique_ptr<jlm::tac>>&)
 	> append = [&](
 		const jlm::expr & e,
-		const std::shared_ptr<const jlm::variable> & result,
+		const jlm::variable * result,
 		std::vector<std::unique_ptr<jlm::tac>> & tacs)
 	{
-		std::vector<std::shared_ptr<const jlm::variable>> operands;
-		for (size_t n = 0; n < e.noperands(); n++)
-			operands.push_back(append(e.operand(n), jlm::create_variable(e.operand(n).type()), tacs));
+		std::vector<const jlm::variable *> operands;
+		for (size_t n = 0; n < e.noperands(); n++) {
+			auto v = ctx.module().create_variable(e.operand(n).type(), false);
+			operands.push_back(append(e.operand(n), v, tacs));
+		}
 
 		tacs.emplace_back(create_tac(e.operation(), operands, {result}));
 		return tacs.back()->output(0);
 	};
 
 	std::vector<std::unique_ptr<jlm::tac>> tacs;
-	append(e, jlm::create_variable(e.type()), tacs);
+	append(e, ctx.module().create_variable(e.type(), false), tacs);
 	return tacs;
 }
 

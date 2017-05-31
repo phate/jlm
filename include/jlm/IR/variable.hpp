@@ -51,19 +51,6 @@ private:
 	std::unique_ptr<jive::base::type> type_;
 };
 
-static inline std::shared_ptr<variable>
-create_variable(const jive::base::type & type, const std::string & name, bool exported = false)
-{
-	return std::shared_ptr<variable>(new variable(type, name, exported));
-}
-
-static inline std::shared_ptr<variable>
-create_variable(const jive::base::type & type, bool exported = false)
-{
-	static uint64_t counter = 0;
-	return create_variable(type, strfmt("v", counter++), exported);
-}
-
 class global_variable : public variable {
 public:
 	virtual
