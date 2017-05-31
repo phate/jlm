@@ -27,6 +27,7 @@ namespace jlm {
 class cfg;
 class cfg_node;
 class clg_node;
+class module;
 class variable;
 
 class basic_block_map final {
@@ -86,8 +87,9 @@ private:
 class context final {
 public:
 	inline
-	context()
-		: entry_block_(nullptr)
+	context(jlm::module & module)
+		: module_(module)
+		, entry_block_(nullptr)
 	{}
 
 	inline cfg_node *
@@ -202,7 +204,14 @@ public:
 		return entry_block_->cfg();
 	}
 
+	inline jlm::module &
+	module() const noexcept
+	{
+		return module_;
+	}
+
 private:
+	jlm::module & module_;
 	basic_block_map bbmap_;
 	cfg_node * entry_block_;
 	std::shared_ptr<const variable> state_;

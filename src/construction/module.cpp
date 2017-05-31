@@ -215,7 +215,7 @@ convert_module(const llvm::Module & module)
 {
 	std::unique_ptr<jlm::module> m(new jlm::module());
 
-	context ctx;
+	context ctx(*m);
 	convert_global_variables(module.getGlobalList(), *m, ctx);
 	convert_functions(module.getFunctionList(), m->clg(), ctx);
 
