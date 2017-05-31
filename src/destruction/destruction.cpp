@@ -424,6 +424,8 @@ handle_scc(
 	jive::graph * graph,
 	scoped_vmap & svmap)
 {
+	auto & module = svmap.module();
+
 	if (scc.size() == 1 && !(*scc.begin())->is_selfrecursive()) {
 		const jlm::clg_node * function = *scc.begin();
 		auto lambda = construct_lambda(function, graph->root(), svmap);
@@ -432,34 +434,35 @@ handle_scc(
 		if (function->exported())
 			graph->export_port(lambda, function->name());
 	} else {
-		JLM_DEBUG_ASSERT(0);
-	}
-/*
 		jive::phi_builder pb;
 		pb.begin(graph->root());
+		svmap.push_vmap();
 
+		/* FIXME: external dependencies */
 		std::vector<std::shared_ptr<jive::recvar>> recvars;
 		for (const auto & f : scc) {
 			auto rv = pb.add_recvar(f->type());
-			ctx.globals().insert_value(f, rv->value());
+			JLM_DEBUG_ASSERT(!module.variable(f));
+			svmap.last()[module.variable(f)] = rv->value();
 			recvars.push_back(rv);
 		}
 
 		size_t n = 0;
-		for (auto it = scc.begin(); it != scc.end(); it++, n++) {
-			auto lambda = construct_lambda(*it, pb.region(), ctx);
-			recvars[n]->set_value(lambda);
+		for (const auto & f : scc) {
+			auto lambda = construct_lambda(f, pb.region(), svmap);
+			recvars[n++]->set_value(lambda);
 		}
+
+		svmap.pop_vmap();
 		pb.end();
 
-		n = 0;
-		for (auto it = scc.begin(); it != scc.end(); it++, n++) {
-			ctx.globals().replace_value(*it, recvars[n]->value());
-			if ((*it)->exported())
-				graph->export_port(recvars[n]->value(), (*it)->name());
+		for (const auto & f : scc) {
+			auto value = recvars[n++]->value();
+			svmap.last()[module.variable(f)] = value;
+			if (f->exported())
+				graph->export_port(value, f->name());
 		}
 	}
-*/
 }
 
 #if 0
