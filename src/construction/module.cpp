@@ -123,7 +123,8 @@ convert_function(
 	if (function.isDeclaration())
 		return;
 
-	auto clg_node = ctx.lookup_function(&function);
+	auto fv = ctx.lookup_value(&function);
+	auto clg_node = static_cast<const function_variable*>(fv.get())->function();
 	JLM_DEBUG_ASSERT(clg_node != nullptr);
 
 	std::vector<std::string> names;
@@ -183,7 +184,7 @@ convert_functions(
 			f.getName().str().c_str(),
 			fcttype,
 			f.getLinkage() != llvm::GlobalValue::InternalLinkage);
-		ctx.insert_function(&f, n);
+		ctx.insert_value(&f, create_function_variable(n));
 	}
 
 	for (auto it = list.begin(); it != list.end(); it++)

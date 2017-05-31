@@ -194,19 +194,6 @@ public:
 		return declarations_[type];
 	}
 
-	inline jlm::clg_node *
-	lookup_function(const llvm::Function * f) const noexcept
-	{
-		auto it = fmap_.find(f);
-		return it != fmap_.end() ? it->second : nullptr;
-	}
-
-	inline void
-	insert_function(const llvm::Function * f, clg_node * n)
-	{
-		fmap_[f] = n;
-	}
-
 	inline jlm::cfg *
 	cfg() const noexcept
 	{
@@ -218,7 +205,6 @@ private:
 	cfg_node * entry_block_;
 	std::shared_ptr<const variable> state_;
 	std::shared_ptr<const variable> result_;
-	std::unordered_map<const llvm::Function*, jlm::clg_node*> fmap_;
 	std::unordered_map<const llvm::Value *, std::shared_ptr<variable>> vmap_;
 	std::unordered_map<
 		const llvm::StructType*,
