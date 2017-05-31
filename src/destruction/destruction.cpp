@@ -80,7 +80,7 @@ public:
 	push_vmap()
 	{
 		vmaps_.push_back(jlm::vmap());
-		return vmaps_.back();
+		return last();
 	}
 
 	inline void
@@ -291,8 +291,8 @@ convert_loop_node(
 	jive::theta_builder tb;
 	tb.begin(region);
 
-	auto & pvmap = svmap.last();
-	auto & vmap = svmap.push_vmap();
+	jlm::vmap & vmap = svmap.push_vmap();
+	jlm::vmap & pvmap = svmap.vmap(svmap.nvmaps()-2);
 
 	/* add loop variables */
 	auto ds = dm.at(&node).get();
@@ -369,8 +369,8 @@ convert_cfg(
 	auto root = agg::aggregate(*cfg);
 	auto dm = agg::annotate(*root);
 
-	auto & pvmap = svmap.last();
 	svmap.push_vmap();
+	auto & pvmap = svmap.vmap(svmap.nvmaps()-2);
 	auto & vmap = svmap.last();
 
 	jive::lambda_builder lb;
