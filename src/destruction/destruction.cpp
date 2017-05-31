@@ -42,6 +42,11 @@ typedef std::unordered_map<const variable*, jive::oport*> vmap;
 
 class scoped_vmap final {
 public:
+	inline
+	scoped_vmap(const jlm::module & module)
+	: module_(module)
+	{}
+
 	inline size_t
 	nvmaps() const noexcept
 	{
@@ -75,7 +80,14 @@ public:
 		vmaps_.pop_back();
 	}
 
+	const jlm::module &
+	module() const noexcept
+	{
+		return module_;
+	}
+
 private:
+	const jlm::module & module_;
 	std::vector<jlm::vmap> vmaps_;
 };
 
@@ -380,8 +392,6 @@ convert_cfg(
 
 	auto lambda = lb.end(results);
 	svmap.pop_vmap();
-	/* FIXME: insert lambda */
-//	svmap.last().insert(function, lambda->output(0));
 
 	return lambda->output(0);
 }
@@ -408,6 +418,8 @@ handle_scc(
 	if (scc.size() == 1 && !(*scc.begin())->is_selfrecursive()) {
 		const jlm::clg_node * function = *scc.begin();
 		auto lambda = construct_lambda(function, graph->root(), svmap);
+		JLM_DEBUG_ASSERT(svmap.module().variable(function));
+		svmap.last()[svmap.module().variable(function)] = lambda;
 		if (function->exported())
 			graph->export_port(lambda, function->name());
 	} else {
@@ -471,7 +483,7 @@ convert_global_variables(const module & m, jive_graph * graph)
 std::unique_ptr<jive::graph>
 construct_rvsdg(const module & m)
 {
-	scoped_vmap svmap;
+	scoped_vmap svmap(m);
 	auto rvsdg = std::make_unique<jive::graph>();
 
 	svmap.push_vmap();

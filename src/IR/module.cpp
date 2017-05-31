@@ -12,7 +12,7 @@ namespace jlm {
 global_variable *
 module::add_global_variable(const std::string & name, const expr & e, bool exported)
 {
-	std::unique_ptr<variable> variable(new jlm::global_variable(
+	std::unique_ptr<jlm::variable> variable(new jlm::global_variable(
 		jive::addr::type::instance(), name, exported));
 	jlm::global_variable * v = static_cast<global_variable*>(variable.get());
 	variables_.insert(std::move(variable));
