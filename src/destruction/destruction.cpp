@@ -362,10 +362,11 @@ convert_cfg(
 	scoped_vmap & svmap)
 {
 	JLM_DEBUG_ASSERT(svmap.nvmaps() > 0);
+	auto cfg = function->cfg();
 
-	destruct_ssa(*function->cfg());
-	restructure(function->cfg());
-	auto root = agg::aggregate(*function->cfg());
+	destruct_ssa(*cfg);
+	restructure(cfg);
+	auto root = agg::aggregate(*cfg);
 	auto dm = agg::annotate(*root);
 
 	auto & pvmap = svmap.last();
@@ -374,6 +375,10 @@ convert_cfg(
 
 	jive::lambda_builder lb;
 	lb.begin(region, function->type());
+
+	JLM_DEBUG_ASSERT(cfg->entry().narguments() == lb.region()->narguments());
+	for (size_t n = 0; n < cfg->entry().narguments(); n++)
+		vmap[cfg->entry().argument(n)] = lb.region()->argument(n);
 
 	for (const auto & v : dm[root.get()].get()->top) {
 		JLM_DEBUG_ASSERT(pvmap.find(v) != pvmap.end());
