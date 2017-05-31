@@ -21,8 +21,9 @@ public:
 	~variable() noexcept;
 
 	inline
-	variable(const jive::base::type & type, const std::string & name)
-		: name_(name)
+	variable(const jive::base::type & type, const std::string & name, bool exported)
+		: exported_(exported)
+		, name_(name)
 		, type_(type.copy())
 	{}
 
@@ -35,25 +36,32 @@ public:
 		return name_;
 	}
 
+	inline bool
+	exported() const noexcept
+	{
+		return exported_;
+	}
+
 	virtual const jive::base::type &
 	type() const noexcept;
 
 private:
+	bool exported_;
 	std::string name_;
 	std::unique_ptr<jive::base::type> type_;
 };
 
 static inline std::shared_ptr<variable>
-create_variable(const jive::base::type & type, const std::string & name)
+create_variable(const jive::base::type & type, const std::string & name, bool exported = false)
 {
-	return std::shared_ptr<variable>(new variable(type, name));
+	return std::shared_ptr<variable>(new variable(type, name, exported));
 }
 
 static inline std::shared_ptr<variable>
-create_variable(const jive::base::type & type)
+create_variable(const jive::base::type & type, bool exported = false)
 {
 	static uint64_t counter = 0;
-	return create_variable(type, strfmt("v", counter++));
+	return create_variable(type, strfmt("v", counter++), exported);
 }
 
 class global_variable : public variable {
@@ -63,18 +71,8 @@ public:
 
 	inline
 	global_variable(const jive::base::type & type, const std::string & name, bool exported)
-		: variable(type, name)
-		, exported_(exported)
+		: variable(type, name, exported)
 	{}
-
-	inline bool
-	exported() const noexcept
-	{
-		return exported_;
-	}
-
-private:
-	bool exported_;
 };
 
 }

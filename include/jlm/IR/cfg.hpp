@@ -301,10 +301,8 @@ static inline std::vector<std::shared_ptr<const jlm::variable>>
 create_variables(jlm::cfg & cfg, const jive::operation & operation)
 {
 	std::vector<std::shared_ptr<const variable>> results;
-	for (size_t n = 0; n < operation.nresults(); n++) {
-		std::shared_ptr<const jlm::variable> v(new jlm::variable(operation.result_type(n), ""));
-		results.push_back(v);
-	}
+	for (size_t n = 0; n < operation.nresults(); n++)
+		results.push_back(create_variable(operation.result_type(n)));
 
 	return results;
 }
