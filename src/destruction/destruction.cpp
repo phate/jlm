@@ -43,9 +43,18 @@ typedef std::unordered_map<const variable*, jive::oport*> vmap;
 class scoped_vmap final {
 public:
 	inline
+	~scoped_vmap()
+	{
+		pop_vmap();
+		JLM_DEBUG_ASSERT(nvmaps() == 0);
+	}
+
+	inline
 	scoped_vmap(const jlm::module & module)
 	: module_(module)
-	{}
+	{
+		push_vmap();
+	}
 
 	inline size_t
 	nvmaps() const noexcept
@@ -486,17 +495,12 @@ construct_rvsdg(const module & m)
 	scoped_vmap svmap(m);
 	auto rvsdg = std::make_unique<jive::graph>();
 
-	svmap.push_vmap();
-
 /*
 	dstrct::variable_map globals = convert_global_variables(m, graph);
 */
 	auto sccs = m.clg().find_sccs();
 	for (const auto & scc : sccs)
 		handle_scc(scc, rvsdg.get(), svmap);
-
-	svmap.pop_vmap();
-	JLM_DEBUG_ASSERT(svmap.nvmaps() == 0);
 
 	return std::move(rvsdg);
 }
