@@ -8,6 +8,8 @@
 
 #include <jive/vsdg/basetype.h>
 
+#include <jlm/util/strfmt.hpp>
+
 #include <memory>
 #include <sstream>
 
@@ -42,15 +44,16 @@ private:
 };
 
 static inline std::shared_ptr<variable>
-create_variable(const jive::base::type & type)
-{
-	return std::shared_ptr<variable>(new variable(type, ""));
-}
-
-static inline std::shared_ptr<variable>
 create_variable(const jive::base::type & type, const std::string & name)
 {
 	return std::shared_ptr<variable>(new variable(type, name));
+}
+
+static inline std::shared_ptr<variable>
+create_variable(const jive::base::type & type)
+{
+	static uint64_t counter = 0;
+	return create_variable(type, strfmt("v", counter++));
 }
 
 class global_variable : public variable {
