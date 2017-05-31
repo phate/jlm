@@ -93,9 +93,6 @@ public:
 	std::shared_ptr<const variable>
 	append(jlm::cfg * cfg, const expr & e, const std::shared_ptr<const variable> & v);
 
-	std::shared_ptr<const variable>
-	append(jlm::cfg * cfg, const expr & e);
-
 	inline size_t
 	ntacs() const noexcept
 	{

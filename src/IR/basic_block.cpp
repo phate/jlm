@@ -54,10 +54,4 @@ basic_block::append(
 	return tac->output(0);
 }
 
-std::shared_ptr<const variable>
-basic_block::append(jlm::cfg * cfg, const expr & e)
-{
-	return append(cfg, e, create_variable(e.type()));
-}
-
 }

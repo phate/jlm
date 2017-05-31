@@ -10,6 +10,7 @@
 
 #include <jlm/IR/basic_block.hpp>
 #include <jlm/IR/clg.hpp>
+#include <jlm/IR/expression.hpp>
 #include <jlm/IR/operators.hpp>
 #include <jlm/IR/tac.hpp>
 
@@ -42,7 +43,8 @@ convert_value(
 
 	if (auto c = dynamic_cast<const llvm::Constant*>(v)) {
 		auto attr = static_cast<basic_block*>(&ctx.entry_block()->attribute());
-		return attr->append(ctx.cfg(), *convert_constant(c, ctx));
+		auto e = convert_constant(c, ctx);
+		return attr->append(ctx.cfg(), *e, create_variable(e->type()));
 	}
 
 	JLM_DEBUG_ASSERT(0);
