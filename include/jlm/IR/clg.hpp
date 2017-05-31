@@ -74,8 +74,10 @@ private:
 	inline
 	clg_node(jlm::clg & clg, const char * name, jive::fct::type & type, bool exported)
 		: global_variable(type, name, exported)
-		, cfg_(nullptr)
+		, exported_(exported)
 		, clg_(clg)
+		, name_(name)
+		, cfg_(nullptr)
 	{}
 
 public:
@@ -115,6 +117,18 @@ public:
 		return false;
 	}
 
+	inline bool
+	exported() const noexcept
+	{
+		return exported_;
+	}
+
+	inline const std::string &
+	name() const noexcept
+	{
+		return name_;
+	}
+
 	std::vector<std::shared_ptr<variable>>
 	cfg_begin(const std::vector<std::string> & names);
 
@@ -122,13 +136,42 @@ public:
 	cfg_end(const std::vector<std::shared_ptr<const variable>> & results);
 
 private:
-	std::unique_ptr<jlm::cfg> cfg_;
+	bool exported_;
 	jlm::clg & clg_;
+	std::string name_;
+	std::unique_ptr<jlm::cfg> cfg_;
 	std::unordered_set<const clg_node*> calls_;
 
 	friend jlm::clg_node * jlm::clg::add_function(const char * name,
 		jive::fct::type & type, bool exported);
 };
+
+class function_variable final : public variable {
+public:
+	virtual
+	~function_variable();
+
+	inline
+	function_variable(clg_node * node)
+	: variable(node->type(), node->name(), node->exported())
+	, node_(node)
+	{}
+
+	inline jlm::clg_node *
+	function() const noexcept
+	{
+		return node_;
+	}
+
+private:
+	jlm::clg_node * node_;
+};
+
+static inline std::shared_ptr<variable>
+create_function_variable(clg_node * node)
+{
+	return std::shared_ptr<function_variable>(new function_variable(node));
+}
 
 }
 

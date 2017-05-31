@@ -168,4 +168,9 @@ clg_node::cfg_end(const std::vector<std::shared_ptr<const variable>> & results)
 	}
 }
 
+/* function variable */
+
+function_variable::~function_variable()
+{}
+
 }
