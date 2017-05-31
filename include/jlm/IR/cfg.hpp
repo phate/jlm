@@ -221,8 +221,6 @@ public:
 
 	cfg();
 
-	cfg(const cfg & c);
-
 public:
 	inline const_iterator
 	begin() const

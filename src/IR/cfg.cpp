@@ -66,6 +66,34 @@ strongconnect(
 	}
 }
 
+static inline std::unique_ptr<jlm::cfg>
+copy_structural(const jlm::cfg & in)
+{
+	std::unique_ptr<jlm::cfg> out(new jlm::cfg());
+	out->entry_node()->remove_outedge(out->entry_node()->outedge(0));
+
+	/* create all nodes */
+	std::unordered_map<const jlm::cfg_node*, jlm::cfg_node*> node_map;
+	for (const auto & node : in) {
+		if (&node == in.entry_node()) {
+			node_map[&node] = out->entry_node();
+		} else if (&node == in.exit_node()) {
+			node_map[&node] = out->exit_node();
+		} else {
+			node_map[&node] = out->create_node(node.attribute());
+		}
+	}
+
+	/* establish control flow */
+	for (const auto & node : in) {
+		for (const auto & e : node.outedges()) {
+			node_map[&node]->add_outedge(node_map[e->sink()], e->index());
+		}
+	}
+
+	return out;
+}
+
 namespace jlm {
 
 /* entry attribute */
@@ -125,32 +153,6 @@ cfg::cfg()
 	entry_->add_outedge(exit_, 0);
 }
 
-cfg::cfg(const cfg & other)
-{
-	/* FIXME: function does not take care of tacs and variables */
-
-	/* create all nodes */
-	std::unordered_map<const cfg_node*, cfg_node*> node_map;
-	for (const auto & node : other) {
-		if (&node == other.entry_node()) {
-			entry_  = create_entry_node(this);
-			node_map[&node] = entry_;
-		} else if (&node == other.exit_node()) {
-			exit_ = create_exit_node(this);
-			node_map[&node] = exit_;
-		} else {
-			node_map[&node] = create_node(node.attribute());
-		}
-	}
-
-	/* establish control flow */
-	for (const auto & node : other) {
-		for (const auto & e : node.outedges()) {
-			node_map[&node]->add_outedge(node_map[e->sink()], e->index());
-		}
-	}
-}
-
 cfg_node *
 cfg::create_node(const attribute & attr)
 {
@@ -165,17 +167,17 @@ cfg::is_structured() const
 {
 	JLM_DEBUG_ASSERT(is_closed(*this));
 
-	cfg c(*this);
-	std::unordered_set<std::unique_ptr<cfg_node>>::const_iterator it = c.nodes_.begin();
-	while (it != c.nodes_.end()) {
-		cfg_node * node = (*it).get();
+	auto c = copy_structural(*this);
+	auto it = c->nodes_.begin();
+	while (it != c->nodes_.end()) {
+		auto node = (*it).get();
 
-		if (c.nodes_.size() == 2) {
-			JLM_DEBUG_ASSERT(is_closed(c));
+		if (c->nnodes() == 2) {
+			JLM_DEBUG_ASSERT(is_closed(*c));
 			return true;
 		}
 
-		if (node == c.entry_node() || node == c.exit_node()) {
+		if (node == c->entry_node() || node == c->exit_node()) {
 			it++; continue;
 		}
 
@@ -189,15 +191,15 @@ cfg::is_structured() const
 			}
 		}
 		if (is_selfloop) {
-			it = c.nodes_.begin(); continue;
+			it = c->nodes_.begin(); continue;
 		}
 
 		/* linear */
 		if (node->single_successor() && node->outedges()[0]->sink()->single_predecessor()) {
 			JLM_DEBUG_ASSERT(node->noutedges() == 1 && node->outedges()[0]->sink()->ninedges() == 1);
 			node->divert_inedges(node->outedges()[0]->sink());
-			c.remove_node(node);
-			it = c.nodes_.begin(); continue;
+			c->remove_node(node);
+			it = c->nodes_.begin(); continue;
 		}
 
 		/* branch */
@@ -237,11 +239,11 @@ cfg::is_structured() const
 			/* remove branch subgraph */
 			for (auto edge : edges) {
 				if (edge->sink() != tail)
-					c.remove_node(edge->sink());
+					c->remove_node(edge->sink());
 			}
 			node->remove_outedges();
 			node->add_outedge(tail, 0);
-			it = c.nodes_.begin(); continue;
+			it = c->nodes_.begin(); continue;
 		}
 
 		it++;
@@ -255,17 +257,17 @@ cfg::is_reducible() const
 {
 	JLM_DEBUG_ASSERT(is_closed(*this));
 
-	cfg c(*this);
-	std::unordered_set<std::unique_ptr<cfg_node>>::const_iterator it = c.nodes_.begin();
-	while (it != c.nodes_.end()) {
-		cfg_node * node = (*it).get();
+	auto c = copy_structural(*this);
+	auto it = c->nodes_.begin();
+	while (it != c->nodes_.end()) {
+		auto node = (*it).get();
 
-		if (c.nodes_.size() == 2) {
-			JLM_DEBUG_ASSERT(is_closed(c));
+		if (c->nnodes() == 2) {
+			JLM_DEBUG_ASSERT(is_closed(*c));
 			return true;
 		}
 
-		if (node == c.entry_node() || node == c.exit_node()) {
+		if (node == c->entry_node() || node == c->exit_node()) {
 			it++; continue;
 		}
 
@@ -279,7 +281,7 @@ cfg::is_reducible() const
 			}
 		}
 		if (is_selfloop) {
-			it = c.nodes_.begin(); continue;
+			it = c->nodes_.begin(); continue;
 		}
 
 		/* T2 */
@@ -289,8 +291,8 @@ cfg::is_reducible() const
 			for (size_t e = 0; e < edges.size(); e++) {
 				predecessor->add_outedge(edges[e]->sink(), 0);
 			}
-			c.remove_node(node);
-			it = c.nodes_.begin(); continue;
+			c->remove_node(node);
+			it = c->nodes_.begin(); continue;
 		}
 
 		it++;
