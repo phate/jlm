@@ -65,19 +65,20 @@ private:
 
 class output;
 
-class clg_node final : public global_variable {
+class clg_node final {
 public:
-	virtual
-	~clg_node() noexcept;
+	inline
+	~clg_node() noexcept
+	{}
 
 private:
 	inline
 	clg_node(jlm::clg & clg, const char * name, jive::fct::type & type, bool exported)
-		: global_variable(type, name, exported)
-		, exported_(exported)
-		, clg_(clg)
-		, name_(name)
-		, cfg_(nullptr)
+	: exported_(exported)
+	, clg_(clg)
+	, name_(name)
+	, cfg_(nullptr)
+	, type_(std::move(type.copy()))
 	{}
 
 public:
@@ -93,8 +94,11 @@ public:
 		return clg_;
 	}
 
-	virtual const jive::fct::type &
-	type() const noexcept override;
+	const jive::fct::type &
+	type() const noexcept
+	{
+		return *static_cast<const jive::fct::type*>(type_.get());
+	}
 
 	void
 	add_call(const clg_node * callee)
@@ -140,6 +144,7 @@ private:
 	jlm::clg & clg_;
 	std::string name_;
 	std::unique_ptr<jlm::cfg> cfg_;
+	std::unique_ptr<jive::base::type> type_;
 	std::unordered_set<const clg_node*> calls_;
 
 	friend jlm::clg_node * jlm::clg::add_function(const char * name,

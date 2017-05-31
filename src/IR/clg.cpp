@@ -121,15 +121,6 @@ clg::to_string() const
 
 /* clg node */
 
-clg_node::~clg_node() noexcept
-{}
-
-const jive::fct::type &
-clg_node::type() const noexcept
-{
-	return *static_cast<const jive::fct::type*>(&variable::type());
-}
-
 std::vector<std::shared_ptr<variable>>
 clg_node::cfg_begin(const std::vector<std::string> & names)
 {
