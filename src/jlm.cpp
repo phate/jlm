@@ -95,14 +95,13 @@ int main (int argc, char ** argv)
 	if (cmdf.llvm)
 		module->dump();
 
-	jlm::module m;
-	jlm::convert_module(*module, m);
+	auto m = jlm::convert_module(*module);
 
 	if (cmdf.clg)
-		std::cout << m.clg().to_string();
+		std::cout << m->clg().to_string();
 
 	if (cmdf.cfg.first) {
-		jlm::clg_node * f = m.clg().lookup_function(cmdf.cfg.second);
+		jlm::clg_node * f = m->clg().lookup_function(cmdf.cfg.second);
 		if (!f) {
 			std::cerr << "Function not found.\n";
 			exit(1);
@@ -112,7 +111,7 @@ int main (int argc, char ** argv)
 			jive_cfg_view(*f->cfg());
 	}
 
-	auto rvsdg = jlm::construct_rvsdg(m);
+	auto rvsdg = jlm::construct_rvsdg(*m);
 
 	if (cmdf.rvsdg) {
 		jive::view(rvsdg->root(), stdout);

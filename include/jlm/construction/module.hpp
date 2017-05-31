@@ -6,6 +6,8 @@
 #ifndef JLM_CONSTRUCTION_MODULE_HPP
 #define JLM_CONSTRUCTION_MODULE_HPP
 
+#include <memory>
+
 namespace llvm {
 	class Module;
 }
@@ -14,8 +16,8 @@ namespace jlm {
 
 class module;
 
-void
-convert_module(const llvm::Module & module, jlm::module & clg);
+std::unique_ptr<module>
+convert_module(const llvm::Module & module);
 
 }
 

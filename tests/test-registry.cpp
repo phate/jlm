@@ -68,14 +68,13 @@ run_unit_test(const std::string & name)
 		assert(0);
 	}
 
-	jlm::module m;
-	convert_module(*module, m);
+	auto m = convert_module(*module);
 
 	int result = 0;
 	if (unit_test_map[name]->verify_module)
-		result += unit_test_map[name]->verify_module(m);
+		result += unit_test_map[name]->verify_module(*m);
 
-	auto rvsdg = jlm::construct_rvsdg(m);
+	auto rvsdg = jlm::construct_rvsdg(*m);
 
 	if (unit_test_map[name]->verify_rvsdg)
 		result += unit_test_map[name]->verify_rvsdg(rvsdg.get());
