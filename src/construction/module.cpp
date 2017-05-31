@@ -120,7 +120,7 @@ create_cfg(const llvm::Function & f, context & ctx)
 {
 	auto node = static_cast<const function_variable*>(ctx.lookup_value(&f).get())->function();
 
-	std::unique_ptr<jlm::cfg> cfg(new jlm::cfg());
+	std::unique_ptr<jlm::cfg> cfg(new jlm::cfg(ctx.module()));
 
 	/* add arguments */
 	size_t n = 0;

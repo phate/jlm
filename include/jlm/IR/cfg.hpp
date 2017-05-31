@@ -23,6 +23,7 @@ namespace jlm {
 
 class clg_node;
 class basic_block;
+class module;
 class tac;
 
 class entry_attribute final : public attribute {
@@ -219,7 +220,7 @@ class cfg final {
 public:
 	~cfg() {}
 
-	cfg();
+	cfg(jlm::module & module);
 
 public:
 	inline const_iterator
@@ -287,11 +288,18 @@ public:
 		return nodes_.size();
 	}
 
+	inline jlm::module &
+	module() const noexcept
+	{
+		return module_;
+	}
+
 private:
 	void remove_node(cfg_node * node);
 
 	cfg_node * entry_;
 	cfg_node * exit_;
+	jlm::module & module_;
 	std::unordered_set<std::unique_ptr<cfg_node>> nodes_;
 };
 

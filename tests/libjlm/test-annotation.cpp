@@ -12,6 +12,7 @@
 #include <jlm/IR/aggregation/node.hpp>
 #include <jlm/IR/basic_block.hpp>
 #include <jlm/IR/cfg.hpp>
+#include <jlm/IR/module.hpp>
 
 static inline bool
 has_variables(
@@ -32,7 +33,9 @@ has_variables(
 static void
 test_linear_graph()
 {
-	jlm::cfg cfg;
+	jlm::module module;
+
+	jlm::cfg cfg(module);
 	jlm::valuetype vtype;
 	jlm::test_op op({&vtype}, {&vtype});
 
@@ -95,7 +98,9 @@ test_linear_graph()
 static void
 test_branch_graph()
 {
-	jlm::cfg cfg;
+	jlm::module module;
+
+	jlm::cfg cfg(module);
 	jlm::valuetype vtype;
 	jlm::test_op unop({&vtype}, {&vtype});
 	jlm::test_op binop({&vtype, &vtype}, {&vtype});
@@ -168,7 +173,9 @@ test_branch_graph()
 static void
 test_loop_graph()
 {
-	jlm::cfg cfg;
+	jlm::module module;
+
+	jlm::cfg cfg(module);
 	jlm::valuetype vtype;
 	jlm::test_op binop({&vtype, &vtype}, {&vtype});
 

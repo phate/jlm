@@ -9,11 +9,14 @@
 #include <jlm/IR/aggregation/node.hpp>
 #include <jlm/IR/basic_block.hpp>
 #include <jlm/IR/cfg.hpp>
+#include <jlm/IR/module.hpp>
 
 static void
 test_linear_reduction()
 {
-	jlm::cfg cfg;
+	jlm::module module;
+
+	jlm::cfg cfg(module);
 	auto bb = create_basic_block_node(&cfg);
 	cfg.exit_node()->divert_inedges(bb);
 	bb->add_outedge(cfg.exit_node(), 0);
@@ -40,7 +43,9 @@ test_linear_reduction()
 static void
 test_loop_reduction()
 {
-	jlm::cfg cfg;
+	jlm::module module;
+
+	jlm::cfg cfg(module);
 	auto bb = create_basic_block_node(&cfg);
 	cfg.exit_node()->divert_inedges(bb);
 	bb->add_outedge(cfg.exit_node(), 0);
@@ -71,7 +76,9 @@ test_loop_reduction()
 static void
 test_branch_reduction()
 {
-	jlm::cfg cfg;
+	jlm::module module;
+
+	jlm::cfg cfg(module);
 	auto split = create_basic_block_node(&cfg);
 	auto bb1 = create_basic_block_node(&cfg);
 	auto bb2 = create_basic_block_node(&cfg);

@@ -69,7 +69,7 @@ strongconnect(
 static inline std::unique_ptr<jlm::cfg>
 copy_structural(const jlm::cfg & in)
 {
-	std::unique_ptr<jlm::cfg> out(new jlm::cfg());
+	std::unique_ptr<jlm::cfg> out(new jlm::cfg(in.module()));
 	out->entry_node()->remove_outedge(out->entry_node()->outedge(0));
 
 	/* create all nodes */
@@ -146,7 +146,8 @@ exit_attribute::copy() const
 
 /* cfg */
 
-cfg::cfg()
+cfg::cfg(jlm::module & module)
+: module_(module)
 {
 	entry_ = create_entry_node(this);
 	exit_ = create_exit_node(this);
