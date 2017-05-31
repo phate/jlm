@@ -59,6 +59,34 @@ public:
 		return globals_.end();
 	}
 
+	const variable *
+	create_variable(const jive::base::type & type, const std::string & name, bool exported)
+	{
+		auto v = std::make_unique<variable>(type, name, exported);
+		auto pv = v.get();
+		variables_.insert(std::move(v));
+		return pv;
+	}
+
+	const variable *
+	create_variable(const jive::base::type & type, bool exported)
+	{
+		static uint64_t c = 0;
+		auto v = std::make_unique<variable>(type, strfmt("v", c), exported);
+		auto pv = v.get();
+		variables_.insert(std::move(v));
+		return pv;
+	}
+
+	const variable *
+	create_variable(clg_node * node)
+	{
+		auto v = std::unique_ptr<variable>(new function_variable(node));
+		auto pv = v.get();
+		variables_.insert(std::move(v));
+		return pv;
+	}
+
 private:
 	jlm::clg clg_;
 	std::unordered_set<std::unique_ptr<const variable>> variables_;
