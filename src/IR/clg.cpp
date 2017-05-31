@@ -119,46 +119,6 @@ clg::to_string() const
 	return osstream.str();
 }
 
-/* clg node */
-
-std::vector<std::shared_ptr<variable>>
-clg_node::cfg_begin(const std::vector<std::string> & names)
-{
-	const jive::fct::type * t = static_cast<const jive::fct::type*>(&type());
-
-	if (names.size() != t->narguments())
-		throw jive::compiler_error("Invalid number of argument names.");
-
-	std::vector<std::shared_ptr<variable>> arguments;
-
-	cfg_.reset(new jlm::cfg());
-	for (size_t n = 0; n < names.size(); n++) {
-		auto v = create_variable(t->argument_type(n), names[n]);
-		cfg_->entry().append_argument(v);
-		arguments.push_back(v);
-	}
-
-	return arguments;
-}
-
-void
-clg_node::cfg_end(const std::vector<std::shared_ptr<const variable>> & results)
-{
-	JLM_DEBUG_ASSERT(cfg_.get() != nullptr);
-
-	const jive::fct::type * t = static_cast<const jive::fct::type*>(&type());
-
-	if (results.size() != t->nresults())
-		throw jive::compiler_error("Invalid number of results.");
-
-	for (size_t n = 0; n < results.size(); n++) {
-		if (results[n]->type() != t->result_type(n))
-			throw jive::type_error(t->result_type(n).debug_string(),
-				results[n]->type().debug_string());
-		cfg_->exit().append_result(results[n]);
-	}
-}
-
 /* function variable */
 
 function_variable::~function_variable()

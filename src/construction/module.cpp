@@ -115,6 +115,62 @@ convert_basic_blocks(
 	}
 }
 
+std::unique_ptr<jlm::cfg>
+create_cfg(const llvm::Function & f, context & ctx)
+{
+	auto node = static_cast<const function_variable*>(ctx.lookup_value(&f).get())->function();
+
+	std::unique_ptr<jlm::cfg> cfg(new jlm::cfg());
+
+	/* add arguments */
+	size_t n = 0;
+	for (const auto & arg : f.getArgumentList()) {
+		JLM_DEBUG_ASSERT(n < node->type().narguments());
+		auto v = create_variable(node->type().argument_type(n++), arg.getName().str());
+		cfg->entry().append_argument(v);
+		ctx.insert_value(&arg, v);
+	}
+	if (f.isVarArg()) {
+		JLM_DEBUG_ASSERT(n < node->type().narguments());
+		auto v = create_variable(node->type().argument_type(n++), "_varg_");
+		cfg->entry().append_argument(v);
+	}
+	JLM_DEBUG_ASSERT(n < node->type().narguments());
+	auto state = create_variable(node->type().argument_type(n++), "_s_");
+	cfg->entry().append_argument(state);
+	JLM_DEBUG_ASSERT(n == node->type().narguments());
+
+	/* create cfg structure */
+	basic_block_map bbmap;
+	auto entry_block = create_cfg_structure(f, cfg.get(), bbmap);
+
+	/* add results */
+	std::shared_ptr<const variable> result = nullptr;
+	if (!f.getReturnType()->isVoidTy()) {
+		result = create_variable(*convert_type(f.getReturnType(), ctx), "_r_");
+		auto attr = static_cast<basic_block*>(&entry_block->attribute());
+		auto e = create_undef_value(f.getReturnType(), ctx);
+		auto tacs = expr2tacs(*e);
+		attr->append(tacs);
+		attr->append(create_assignment(result->type(), {attr->last()->output(0)}, {result}));
+
+		JLM_DEBUG_ASSERT(node->type().nresults() == 2);
+		JLM_DEBUG_ASSERT(result->type() == node->type().result_type(0));
+		cfg->exit().append_result(result);
+	}
+	cfg->exit().append_result(state);
+
+	/* convert instructions */
+	ctx.set_basic_block_map(bbmap);
+	ctx.set_entry_block(entry_block);
+	ctx.set_state(state);
+	ctx.set_result(result);
+	convert_basic_blocks(f.getBasicBlockList(), ctx);
+
+	cfg->prune();
+	return cfg;
+}
+
 static void
 convert_function(
 	const llvm::Function & function,
@@ -124,53 +180,9 @@ convert_function(
 		return;
 
 	auto fv = ctx.lookup_value(&function);
-	auto clg_node = static_cast<const function_variable*>(fv.get())->function();
-	JLM_DEBUG_ASSERT(clg_node != nullptr);
+	auto node = static_cast<const function_variable*>(fv.get())->function();
 
-	std::vector<std::string> names;
-	llvm::Function::ArgumentListType::const_iterator jt = function.getArgumentList().begin();
-	for (; jt != function.getArgumentList().end(); jt++)
-		names.push_back(jt->getName().str());
-	if (function.isVarArg())
-		names.push_back("_varg_");
-	names.push_back("_s_");
-
-	auto arguments = clg_node->cfg_begin(names);
-	auto state = arguments.back();
-	jlm::cfg * cfg = clg_node->cfg();
-
-	basic_block_map bbmap;
-	auto entry_block = create_cfg_structure(function, cfg, bbmap);
-
-	std::shared_ptr<const variable> result = nullptr;
-	if (!function.getReturnType()->isVoidTy())
-		result = create_variable(*convert_type(function.getReturnType(), ctx), "_r_");
-
-	ctx.set_basic_block_map(bbmap);
-	ctx.set_entry_block(entry_block);
-	ctx.set_state(state);
-	ctx.set_result(result);
-	if (!function.getReturnType()->isVoidTy()) {
-		auto attr = static_cast<basic_block*>(&entry_block->attribute());
-		auto e = create_undef_value(function.getReturnType(), ctx);
-		auto tacs = expr2tacs(*e);
-		attr->append(tacs);
-		attr->append(create_assignment(result->type(), {attr->last()->output(0)}, {result}));
-	}
-
-	jt = function.getArgumentList().begin();
-	for (size_t n = 0; jt != function.getArgumentList().end(); jt++, n++)
-		ctx.insert_value(&(*jt), arguments[n]);
-
-	convert_basic_blocks(function.getBasicBlockList(), ctx);
-
-	std::vector<std::shared_ptr<const jlm::variable>> results;
-	if (function.getReturnType()->getTypeID() != llvm::Type::VoidTyID)
-		results.push_back(result);
-	results.push_back(state);
-
-	clg_node->cfg_end(results);
-	clg_node->cfg()->prune();
+	node->add_cfg(create_cfg(function, ctx));
 }
 
 static void

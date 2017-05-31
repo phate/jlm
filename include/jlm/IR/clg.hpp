@@ -133,11 +133,11 @@ public:
 		return name_;
 	}
 
-	std::vector<std::shared_ptr<variable>>
-	cfg_begin(const std::vector<std::string> & names);
-
-	void
-	cfg_end(const std::vector<std::shared_ptr<const variable>> & results);
+	inline void
+	add_cfg(std::unique_ptr<jlm::cfg> cfg)
+	{
+		cfg_ = std::move(cfg);
+	}
 
 private:
 	bool exported_;
