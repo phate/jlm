@@ -361,11 +361,12 @@ convert_call_instruction(
 	jive::fct::type type = dynamic_cast<jive::fct::type&>(*convert_type(ftype, ctx));
 
 	const variable * callee = nullptr;
-	jlm::clg_node * caller = nullptr;
+	auto vcaller = ctx.lookup_value(i->getParent()->getParent());
+	auto caller = static_cast<const function_variable*>(vcaller)->function();
 	if (instruction->getCalledFunction()) {
 		/* direct call */
 		callee = convert_value(f, ctx);
-		caller->add_call(nullptr);
+		caller->add_call(static_cast<const function_variable*>(callee)->function());
 	} else {
 		/* indirect call */
 		/* FIXME */
