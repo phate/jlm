@@ -9,6 +9,7 @@
 #include <jlm/IR/cfg_node.hpp>
 #include <jlm/IR/tac.hpp>
 
+#include <deque>
 #include <algorithm>
 
 namespace jlm {
@@ -73,6 +74,36 @@ is_reduction_node(const jlm::cfg_node * node)
 
 /* aggregation */
 
+static inline void
+find_loops(
+	const jlm::cfg & cfg,
+	std::unordered_set<const cfg_node*> & entries,
+	std::unordered_set<const cfg_node*> & exits)
+{
+	std::unordered_set<const cfg_node*> visited;
+	std::deque<const cfg_node*> queue({cfg.entry_node()});
+	std::unordered_set<const cfg_node*> to_visit({cfg.entry_node()});
+	while (!queue.empty()) {
+		auto node = queue.front();
+		queue.pop_front();
+		to_visit.erase(node);
+		JLM_DEBUG_ASSERT(visited.find(node) == visited.end());
+		visited.insert(node);
+		for (const auto & e : node->outedges()) {
+			if (visited.find(e->sink()) != visited.end()) {
+				entries.insert(e->sink());
+				exits.insert(node);
+			}
+
+			if (to_visit.find(e->sink()) == to_visit.end()
+			&& visited.find(e->sink()) == visited.end()) {
+				queue.push_back(e->sink());
+				to_visit.insert(e->sink());
+			}
+		}
+	}
+}
+
 static inline bool
 is_loop(const cfg_node * node) noexcept
 {
@@ -82,15 +113,25 @@ is_loop(const cfg_node * node) noexcept
 }
 
 static inline bool
+is_loop_entry(
+	const cfg_node * node,
+	const std::unordered_set<const cfg_node*> & entries) noexcept
+{
+	return entries.find(node) != entries.end();
+}
+
+static inline bool
 is_branch_join(const cfg_node * node) noexcept
 {
 	return node->ninedges() > 1;
 }
 
 static inline bool
-is_branch_split(const cfg_node * node) noexcept
+is_branch_split(
+	const cfg_node * node,
+	const std::unordered_set<const cfg_node*> & exits) noexcept
 {
-	return node->noutedges() > 1;
+	return node->noutedges() > 1 && exits.find(node) == exits.end();
 }
 
 static inline bool
@@ -108,7 +149,9 @@ is_linear_exit(const cfg_node * node) noexcept
 static inline jlm::cfg_node *
 reduce_linear(
 	jlm::cfg_node * entry,
-	std::unordered_map<cfg_node*, std::unique_ptr<agg::node>> & map)
+	std::unordered_map<cfg_node*, std::unique_ptr<agg::node>> & map,
+	std::unordered_set<const cfg_node*> & entries,
+	std::unordered_set<const cfg_node*> & exits)
 {
 	/* sanity checks */
 	JLM_DEBUG_ASSERT(entry->noutedges() == 1);
@@ -129,13 +172,25 @@ reduce_linear(
 	map.erase(entry);
 	map.erase(exit);
 
+	if (entries.find(entry) != entries.end()) {
+		entries.erase(entry);
+		entries.insert(reduction);
+	}
+
+	if (exits.find(exit) != exits.end()) {
+		exits.erase(exit);
+		exits.insert(reduction);
+	}
+
 	return reduction;
 }
 
 static inline jlm::cfg_node *
 reduce_loop(
 	jlm::cfg_node * node,
-	std::unordered_map<cfg_node*, std::unique_ptr<agg::node>> & map)
+	std::unordered_map<cfg_node*, std::unique_ptr<agg::node>> & map,
+	std::unordered_set<const cfg_node*> & entries,
+	std::unordered_set<const cfg_node*> & exits)
 {
 	/* sanity checks */
 	JLM_DEBUG_ASSERT(is_loop(node));
@@ -156,13 +211,21 @@ reduce_loop(
 	map[reduction] = create_loop_node(std::move(map[node]));
 	map.erase(node);
 
+	JLM_DEBUG_ASSERT(entries.find(node) != entries.end());
+	entries.erase(node);
+
+	JLM_DEBUG_ASSERT(exits.find(node) != exits.end());
+	exits.erase(node);
+
 	return reduction;
 }
 
 static inline jlm::cfg_node *
 reduce_branch(
 	jlm::cfg_node * split,
-	std::unordered_map<cfg_node*, std::unique_ptr<agg::node>> & map)
+	std::unordered_map<cfg_node*, std::unique_ptr<agg::node>> & map,
+	std::unordered_set<const cfg_node*> & entries,
+	std::unordered_set<const cfg_node*> & exits)
 {
 	/* sanity checks */
 	JLM_DEBUG_ASSERT(is_basic_block(split));
@@ -200,57 +263,68 @@ reduce_branch(
 	map.erase(split);
 	map.erase(join);
 
+	if (entries.find(split) != entries.end()) {
+		entries.erase(split);
+		entries.insert(reduction);
+	}
+
+	if (exits.find(join) != exits.end()) {
+		exits.erase(join);
+		exits.insert(reduction);
+	}
+
 	return reduction;
 }
 
 static inline void
 aggregate(
 	jlm::cfg_node * node,
-	std::unordered_map<cfg_node*, std::unique_ptr<agg::node>> & map)
+	std::unordered_map<cfg_node*, std::unique_ptr<agg::node>> & map,
+	std::unordered_set<const cfg_node*> & entries,
+	std::unordered_set<const cfg_node*> & exits)
 {
-	if (is_linear_entry(node) && is_loop(node->outedge(0)->sink())) {
-		aggregate(node->outedge(0)->sink(), map);
+	if (is_linear_entry(node) && is_loop_entry(node->outedge(0)->sink(), entries)) {
+		aggregate(node->outedge(0)->sink(), map, entries, exits);
 		JLM_DEBUG_ASSERT(is_reduction_node(node->outedge(0)->sink()));
-		auto reduction = reduce_linear(node, map);
-		aggregate(reduction, map);
+		auto reduction = reduce_linear(node, map, entries, exits);
+		aggregate(reduction, map, entries, exits);
 		return;
 	}
 
-	if (is_linear_entry(node) && is_branch_split(node->outedge(0)->sink())) {
-		aggregate(node->outedge(0)->sink(), map);
+	if (is_linear_entry(node) && is_branch_split(node->outedge(0)->sink(), exits)) {
+		aggregate(node->outedge(0)->sink(), map, entries, exits);
 		JLM_DEBUG_ASSERT(is_reduction_node(node->outedge(0)->sink()));
-		auto reduction = reduce_linear(node, map);
-		aggregate(reduction, map);
+		auto reduction = reduce_linear(node, map, entries, exits);
+		aggregate(reduction, map, entries, exits);
 		return;
 	}
 
-	if (is_linear_entry(node) && is_linear_exit(node->outedge(0)->sink())) {
-		aggregate(node->outedge(0)->sink(), map);
-		reduce_linear(node, map);
+	if (is_branch_split(node, exits)) {
+		for (size_t n = 0; n < node->noutedges(); n++)
+			aggregate(node->outedge(n)->sink(), map, entries, exits);
+		auto reduction = reduce_branch(node, map, entries, exits);
+		aggregate(reduction, map, entries, exits);
 		return;
 	}
 
 	if (is_loop(node)) {
-		auto reduction = reduce_loop(node, map);
-		aggregate(reduction, map);
+		auto reduction = reduce_loop(node, map, entries, exits);
+		aggregate(reduction, map, entries, exits);
 		return;
 	}
 
-	if (is_branch_split(node)) {
-		for (size_t n = 0; n < node->noutedges(); n++)
-			aggregate(node->outedge(n)->sink(), map);
-		auto reduction = reduce_branch(node, map);
-		aggregate(reduction, map);
+	if (is_linear_entry(node) && is_linear_exit(node->outedge(0)->sink())) {
+		auto reduction = reduce_linear(node, map, entries, exits);
+		aggregate(reduction, map, entries, exits);
 		return;
 	}
-
-	if (is_branch_join(node))
-		return;
 }
 
 std::unique_ptr<agg::node>
 aggregate(jlm::cfg & cfg)
 {
+	JLM_DEBUG_ASSERT(cfg.is_structured());
+
 	/* insert all aggregation leaves into the map */
 	std::unordered_map<jlm::cfg_node*, std::unique_ptr<agg::node>> map;
 	for (auto & node : cfg) {
@@ -264,8 +338,15 @@ aggregate(jlm::cfg & cfg)
 			JLM_DEBUG_ASSERT(0);
 	}
 
-	aggregate(cfg.entry_node(), map);
+	std::unordered_set<const cfg_node*> exits;
+	std::unordered_set<const cfg_node*> entries;
+	find_loops(cfg, entries, exits);
+
+	aggregate(cfg.entry_node(), map, entries, exits);
 	JLM_DEBUG_ASSERT(map.size() == 1);
+	JLM_DEBUG_ASSERT(entries.empty());
+	JLM_DEBUG_ASSERT(exits.empty());
+
 	return std::move(std::move(map.begin()->second));
 }
 
