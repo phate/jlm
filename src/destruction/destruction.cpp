@@ -179,10 +179,15 @@ convert_entry_node(
 {
 	JLM_DEBUG_ASSERT(is_entry_structure(node.structure()));
 	auto ea = static_cast<const agg::entry*>(&node.structure())->attribute();
+	auto ds = dm.at(&node).get();
 
-	JLM_DEBUG_ASSERT(ea.narguments() == region->narguments());
-	for (size_t n = 0; n < ea.narguments(); n++)
+	size_t n;
+	JLM_DEBUG_ASSERT(ea.narguments() + ds->top.size() == region->narguments());
+	for (n = 0; n < ea.narguments(); n++)
 		svmap.last()[ea.argument(n)] = region->argument(n);
+
+	for (const auto & v : ds->top)
+		svmap.last()[v] = region->argument(n++);
 }
 
 static void
