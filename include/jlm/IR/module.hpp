@@ -72,7 +72,7 @@ public:
 	create_variable(const jive::base::type & type, bool exported)
 	{
 		static uint64_t c = 0;
-		auto v = std::make_unique<jlm::variable>(type, strfmt("v", c), exported);
+		auto v = std::make_unique<jlm::variable>(type, strfmt("v", c++), exported);
 		auto pv = v.get();
 		variables_.insert(std::move(v));
 		return pv;
