@@ -5,38 +5,39 @@
 
 #include "test-registry.hpp"
 
-#include <jive/evaluator/eval.h>
-#include <jive/evaluator/literal.h>
+#include <jlm/destruction/restructuring.hpp>
+#include <jlm/IR/basic_block.hpp>
+#include <jlm/IR/cfg.hpp>
+#include <jlm/IR/module.hpp>
 
 #include <assert.h>
 
-/*
-
-unsigned int
-test(
-  unsigned int p1,
-  unsigned int p2,
-  unsigned int p3)
+static void
+test_dowhile()
 {
-  unsigned int r = 0;
-  for (unsigned int i = 0; i < p1; i++) {
-    for (unsigned int f = 0; f < p2; f++) {
-      r++;
-    }
-  }
+	jlm::module module;
 
-  for (unsigned int k = 0; k < p3; k++)
-    r++;
+	jlm::cfg cfg(module);
+	auto bb1 = create_basic_block_node(&cfg);
+	auto bb2 = create_basic_block_node(&cfg);
+	auto bb3 = create_basic_block_node(&cfg);
 
-  return r;
+	cfg.exit_node()->divert_inedges(bb1);
+	bb1->add_outedge(bb2, 0);
+	bb2->add_outedge(bb3, 1);
+	bb2->add_outedge(bb2, 0);
+	bb3->add_outedge(cfg.exit_node(), 1);
+	bb3->add_outedge(bb1, 0);
+
+	size_t nnodes = cfg.nnodes();
+	restructure(&cfg);
+	assert(nnodes == cfg.nnodes());
 }
-
-*/
 
 static int
 verify(const jive::graph * graph)
 {
-	/* FIXME: insert checks */
+	test_dowhile();
 
 	return 0;
 }

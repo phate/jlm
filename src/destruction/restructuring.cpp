@@ -131,8 +131,6 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit,
 	std::vector<jlm::cfg_edge> & back_edges)
 {
 	jlm::cfg * cfg = entry->cfg();
-	JLM_DEBUG_ASSERT(is_closed(*cfg));
-
 	std::vector<std::unordered_set<jlm::cfg_node*>> sccs = find_sccs(entry, exit);
 
 	for (auto scc : sccs) {
@@ -414,9 +412,6 @@ restructure(jlm::cfg * cfg)
 
 	std::vector<jlm::cfg_edge> back_edges;
 	restructure_loops(cfg->entry_node(), cfg->exit_node(), back_edges);
-
-	JLM_DEBUG_ASSERT(is_acyclic(*cfg));
-
 	restructure_branches(cfg->entry_node(), cfg->exit_node());
 
 	/* insert back edges */
