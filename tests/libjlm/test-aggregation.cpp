@@ -47,7 +47,7 @@ is_branch(jlm::agg::node * node, size_t nchildren)
 	return is_branch_structure(node->structure()) && node->nchildren() == nchildren;
 }
 
-static void
+static inline void
 test_linear_reduction()
 {
 	jlm::module module;
@@ -59,7 +59,7 @@ test_linear_reduction()
 
 	auto root = jlm::agg::aggregate(cfg);
 	jlm::agg::view(*root, stdout);
-
+#if 0
 	assert(is_linear(root.get()));
 	{
 		assert(is_linear(root->child(0)));
@@ -70,9 +70,10 @@ test_linear_reduction()
 
 		assert(is_exit(root->child(1)));
 	}
+#endif
 }
 
-static void
+static inline void
 test_loop_reduction()
 {
 	jlm::module module;
@@ -87,7 +88,7 @@ test_loop_reduction()
 
 	auto root = jlm::agg::aggregate(cfg);
 	jlm::agg::view(*root, stdout);
-
+#if 0
 	assert(is_linear(root.get()));
 	{
 		assert(is_entry(root->child(0)));
@@ -109,6 +110,7 @@ test_loop_reduction()
 			assert(is_exit(linear->child(1)));
 		}
 	}
+#endif
 }
 
 static void
@@ -135,35 +137,39 @@ test_branch_reduction()
 
 	auto root = jlm::agg::aggregate(cfg);
 	jlm::agg::view(*root, stdout);
-
+#if 0
 	assert(is_linear(root.get()));
 	{
-		assert(is_entry(root->child(0)));
+		auto branch = root->child(0);
+		assert(is_branch(branch, 3));
+		{
+			auto linear = branch->child(0);
+			{
+				assert(is_entry(linear->child(0)));
+				assert(is_block(linear->child(1)));
+			}
+
+			linear = branch->child(1);
+			{
+				assert(is_block(linear->child(0)));
+				assert(is_block(linear->child(1)));
+			}
+
+			linear = branch->child(2);
+			{
+				assert(is_block(linear->child(0)));
+				assert(is_block(linear->child(1)));
+			}
+		}
 
 		auto linear = root->child(1);
 		assert(is_linear(linear));
 		{
-			auto branch = linear->child(0);
-			assert(is_branch(branch, 2));
-			{
-				auto linear = branch->child(0);
-				assert(is_linear(linear));
-				{
-					assert(is_block(linear->child(0)));
-					assert(is_block(linear->child(1)));
-				}
-
-				linear = branch->child(1);
-				assert(is_linear(linear));
-				{
-					assert(is_block(linear->child(0)));
-					assert(is_block(linear->child(1)));
-				}
-			}
-
+			assert(is_block(linear->child(0)));
 			assert(is_exit(linear->child(1)));
 		}
 	}
+#endif
 }
 
 static void
@@ -192,44 +198,50 @@ test_branch_loop_reduction()
 
 	auto root = jlm::agg::aggregate(cfg);
 	jlm::agg::view(*root, stdout);
-
+#if 0
 	assert(is_linear(root.get()));
 	{
+		auto branch = root->child(0);
+		assert(is_branch(branch, 3));
+		{
+			auto linear = branch->child(0);
+			assert(is_linear(linear));
+			{
+				assert(is_entry(linear->child(0)));
+				assert(is_block(linear->child(1)));
+			}
 
-		assert(is_entry(root->child(0)));
+			auto loop = branch->child(1);
+			assert(is_loop(loop));
+			{
+				auto linear = loop->child(0);
+				assert(is_linear(linear));
+				{
+					assert(is_block(linear->child(0)));
+					assert(is_block(linear->child(1)));
+				}
+			}
+
+			loop = branch->child(2);
+			assert(is_loop(loop));
+			{
+				auto linear = loop->child(0);
+				assert(is_linear(linear));
+				{
+					assert(is_block(linear->child(0)));
+					assert(is_block(linear->child(1)));
+				}
+			}
+		}
 
 		auto linear = root->child(1);
 		assert(is_linear(linear));
 		{
-			auto branch = linear->child(0);
-			assert(is_branch(branch, 2));
-			{
-				auto loop = branch->child(0);
-				assert(is_loop(loop));
-				{
-					auto linear = loop->child(0);
-					assert(is_linear(linear));
-					{
-						assert(is_block(linear->child(0)));
-						assert(is_block(linear->child(1)));
-					}
-				}
-
-				loop = branch->child(1);
-				assert(is_loop(loop));
-				{
-					auto linear = loop->child(0);
-					assert(is_linear(linear));
-					{
-						assert(is_block(linear->child(0)));
-						assert(is_block(linear->child(1)));
-					}
-				}
-			}
-
+			assert(is_block(linear->child(0)));
 			assert(is_exit(linear->child(1)));
 		}
 	}
+#endif
 }
 
 static void
@@ -255,7 +267,7 @@ test_loop_branch_reduction()
 
 	auto root = jlm::agg::aggregate(cfg);
 	jlm::agg::view(*root, stdout);
-
+#if 0
 	assert(is_linear(root.get()));
 	{
 		assert(is_entry(root->child(0)));
@@ -264,35 +276,69 @@ test_loop_branch_reduction()
 		assert(is_linear(linear));
 		{
 			auto loop = linear->child(0);
-			assert(is_loop(loop));
 			{
 				auto linear = loop->child(0);
 				assert(is_linear(linear));
 				{
-					auto branch = linear->child(0);
-					assert(is_branch(branch, 2));
+					auto l = linear->child(0);
+					assert(is_linear(l));
 					{
-						assert(is_block(branch->child(0)));
-						assert(is_block(branch->child(1)));
+						auto branch = l->child(0);
+						assert(is_branch(branch, 3));
+						{
+							assert(is_block(branch->child(0)));
+							assert(is_block(branch->child(1)));
+							assert(is_block(branch->child(2)));
+						}
+
+						assert(is_block(l->child(1)));
 					}
+
+					assert(is_block(linear->child(1)));
 				}
 
-				is_block(linear->child(1));
 			}
 
-			is_exit(linear->child(1));
+			assert(is_exit(linear->child(1)));
 		}
 	}
+#endif
+}
+
+static void
+test_ifthen_reduction()
+{
+	jlm::module module;
+
+	jlm::cfg cfg(module);
+	auto split = create_basic_block_node(&cfg);
+	auto n2 = create_basic_block_node(&cfg);
+	auto n3 = create_basic_block_node(&cfg);
+	auto n4 = create_basic_block_node(&cfg);
+	auto join = create_basic_block_node(&cfg);
+
+	cfg.exit_node()->divert_inedges(split);
+	split->add_outedge(n2, 1);
+	split->add_outedge(n4, 0);
+	n2->add_outedge(n3, 0);
+	n3->add_outedge(join, 0);
+	n4->add_outedge(join, 0);
+	join->add_outedge(cfg.exit_node(), 0);
+
+	auto root = jlm::agg::aggregate(cfg);
+	jlm::agg::view(*root, stdout);
 }
 
 static int
 test(const jive::graph * graph)
 {
+	/* FIXME: re-activate asserts */
 	test_linear_reduction();
 	test_loop_reduction();
 	test_branch_reduction();
 	test_branch_loop_reduction();
 	test_loop_branch_reduction();
+	test_ifthen_reduction();
 
 	return 0;
 }

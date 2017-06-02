@@ -30,7 +30,20 @@ has_variables(
 	return true;
 }
 
-static void
+static inline bool
+has_node_and_variables(
+	const jlm::agg::node * node,
+	const jlm::agg::demand_map & dm,
+	const std::vector<const jlm::variable*> & variables)
+{
+	if (dm.find(node) == dm.end())
+		return false;
+
+	auto ds = dm.at(node).get();
+	return has_variables(ds->top, variables);
+}
+
+static inline void
 test_linear_graph()
 {
 	jlm::module module;
@@ -58,41 +71,30 @@ test_linear_graph()
 	jlm::agg::view(*root, stdout);
 
 	auto dm = jlm::agg::annotate(*root);
+#if 0
+	assert(has_node_and_variables(root.get(), dm, {}));
+	{
+		auto linear = root->child(0);
+		assert(has_node_and_variables(linear, dm, {}));
+		{
+			auto l = linear->child(0);
+			assert(has_node_and_variables(l, dm, {}));
+			{
+				auto entry = l->child(0);
+				assert(has_node_and_variables(entry, dm, {}));
 
-	/* linear */
-	assert(dm.find(root.get()) != dm.end());
-	auto ds = dm[root.get()].get();
-	assert(has_variables(ds->top, {}));
+				auto bb1 = l->child(1);
+				assert(has_node_and_variables(bb1, dm, {arg}));
+			}
 
-	/* entry */
-	assert(dm.find(root->child(0)) != dm.end());
-	ds = dm[root->child(0)].get();
-	assert(has_variables(ds->top, {}));
+			auto bb2 = linear->child(1);
+			assert(has_node_and_variables(bb2, dm, {v1}));
+		}
 
-	/* linear */
-	assert(dm.find(root->child(1)) != dm.end());
-	ds = dm[root->child(1)].get();
-	assert(has_variables(ds->top, {arg}));
-
-	/* bb1 */
-	assert(dm.find(root->child(1)->child(0)) != dm.end());
-	ds = dm[root->child(1)->child(0)].get();
-	assert(has_variables(ds->top, {arg}));
-
-	/* linear */
-	assert(dm.find(root->child(1)->child(1)) != dm.end());
-	ds = dm[root->child(1)->child(1)].get();
-	assert(has_variables(ds->top, {v1}));
-
-	/* bb2 */
-	assert(dm.find(root->child(1)->child(1)->child(0)) != dm.end());
-	ds = dm[root->child(1)->child(1)->child(0)].get();
-	assert(has_variables(ds->top, {v1}));
-
-	/* exit */
-	assert(dm.find(root->child(1)->child(1)->child(1)) != dm.end());
-	ds = dm[root->child(1)->child(1)->child(1)].get();
-	assert(has_variables(ds->top, {v2}));
+		auto exit = root->child(1);
+		assert(has_node_and_variables(exit, dm, {v2}));
+	}
+#endif
 }
 
 static void
@@ -133,41 +135,40 @@ test_branch_graph()
 	jlm::agg::view(*root, stdout);
 
 	auto dm = jlm::agg::annotate(*root);
+#if 0
+	assert(has_node_and_variables(root.get(), dm, {v2, v3}));
+	{
+		auto linear = root->child(0);
+		assert(has_node_and_variables(linear, dm, {v2, v3}));
+		{
+			auto branch = linear->child(0);
+			assert(has_node_and_variables(branch, dm, {v2, v3}));
+			{
+				auto linear = branch->child(0);
+				assert(has_node_and_variables(linear, dm, {v2, v3}));
+				{
+					auto entry = linear->child(0);
+					assert(has_node_and_variables(entry, dm, {v2, v3}));
 
-	/* linear */
-	assert(dm.find(root.get()) != dm.end());
-	auto ds = dm[root.get()].get();
-	assert(has_variables(ds->top, {v2, v3}));
+					auto split = linear->child(1);
+					assert(has_node_and_variables(split, dm, {arg, v2, v3}));
+				}
 
-	/* entry */
-	assert(dm.find(root->child(0)) != dm.end());
-	ds = dm[root->child(0)].get();
-	assert(has_variables(ds->top, {v2, v3}));
+				auto bb1 = branch->child(1);
+				assert(has_node_and_variables(bb1, dm, {v1, v3}));
 
-	/* linear */
-	assert(dm.find(root->child(1)) != dm.end());
-	ds = dm[root->child(1)].get();
-	assert(has_variables(ds->top, {arg, v2, v3}));
+				auto bb2 = branch->child(2);
+				assert(has_node_and_variables(bb2, dm, {v1, v2}));
+			}
 
-	/* branch */
-	assert(dm.find(root->child(1)->child(0)) != dm.end());
-	ds = dm[root->child(1)->child(0)].get();
-	assert(has_variables(ds->top, {arg, v2, v3}));
+			auto join = linear->child(1);
+			assert(has_node_and_variables(join, dm, {v2, v3}));
+		}
 
-	/* bb2 */
-	assert(dm.find(root->child(1)->child(0)->child(0)) != dm.end());
-	ds = dm[root->child(1)->child(0)->child(0)].get();
-	assert(has_variables(ds->top, {v1, v2}));
-
-	/* bb1 */
-	assert(dm.find(root->child(1)->child(0)->child(1)) != dm.end());
-	ds = dm[root->child(1)->child(0)->child(1)].get();
-	assert(has_variables(ds->top, {v1, v3}));
-
-	/* exit */
-	assert(dm.find(root->child(1)->child(1)) != dm.end());
-	ds = dm[root->child(1)->child(1)].get();
-	assert(has_variables(ds->top, {v4}));
+		auto exit = root->child(1);
+		assert(has_node_and_variables(exit, dm, {v4}));
+	}
+#endif
 }
 
 static void
@@ -195,36 +196,29 @@ test_loop_graph()
 	jlm::agg::view(*root, stdout);
 
 	auto dm = jlm::agg::annotate(*root);
+#if 0
+	assert(has_node_and_variables(root.get(), dm, {r}));
+	{
+		/* entry */
+		assert(has_node_and_variables(root->child(0), dm, {r}));
 
-	/* linear */
-	assert(dm.find(root.get()) != dm.end());
-	auto ds = dm[root.get()].get();
-	assert(has_variables(ds->top, {r}));
+		/* linear */
+		auto linear = root->child(1);
+		assert(has_node_and_variables(linear, dm, {arg, r}));
+		{
+			/* loop */
+			auto loop = linear->child(0);
+			assert(has_node_and_variables(loop, dm, {arg, r}));
+			{
+				/* bb */
+				assert(has_node_and_variables(loop->child(0), dm, {arg, r}));
+			}
 
-	/* entry */
-	assert(dm.find(root->child(0)) != dm.end());
-	ds = dm[root->child(0)].get();
-	assert(has_variables(ds->top, {r}));
-
-	/* linear */
-	assert(dm.find(root->child(1)) != dm.end());
-	ds = dm[root->child(1)].get();
-	assert(has_variables(ds->top, {arg, r}));
-
-	/* loop */
-	assert(dm.find(root->child(1)->child(0)) != dm.end());
-	ds = dm[root->child(1)->child(0)].get();
-	assert(has_variables(ds->top, {arg, r}));
-
-	/* bb2 */
-	assert(dm.find(root->child(1)->child(0)->child(0)) != dm.end());
-	ds = dm[root->child(1)->child(0)->child(0)].get();
-	assert(has_variables(ds->top, {arg, r}));
-
-	/* exit */
-	assert(dm.find(root->child(1)->child(1)) != dm.end());
-	ds = dm[root->child(1)->child(1)].get();
-	assert(has_variables(ds->top, {r}));
+			/* exit */
+			assert(has_node_and_variables(linear->child(1), dm, {r}));
+		}
+	}
+#endif
 }
 
 static int

@@ -240,12 +240,16 @@ convert_branch_node(
 	scoped_vmap & svmap)
 {
 	JLM_DEBUG_ASSERT(is_branch_structure(node.structure()));
-	auto branch = static_cast<const agg::branch*>(&node.structure());
 
-	convert_basic_block(branch->split(), region, svmap);
+	convert_node(*node.child(0), dm, region, svmap);
 
-	JLM_DEBUG_ASSERT(branch->split().last()->noutputs() == 1);
-	auto predicate = svmap.last()[branch->split().last()->output(0)];
+	auto split = node.child(0);
+	while (!is_block_structure(split->structure()))
+		split = split->child(split->nchildren()-1);
+	auto & sb = dynamic_cast<const agg::block*>(&split->structure())->basic_block();
+
+	JLM_DEBUG_ASSERT(sb.last()->noutputs() == 1);
+	auto predicate = svmap.last()[sb.last()->output(0)];
 	jive::gamma_builder gb;
 	gb.begin(predicate);
 
@@ -259,13 +263,13 @@ convert_branch_node(
 
 	/* convert branch cases */
 	std::unordered_map<const variable*, std::vector<jive::oport*>> xvmap;
-	JLM_DEBUG_ASSERT(gb.nsubregions() == node.nchildren());
+	JLM_DEBUG_ASSERT(gb.nsubregions() == node.nchildren()-1);
 	for (size_t n = 0; n < gb.nsubregions(); n++) {
 		auto & vmap = svmap.push_vmap();
 		for (const auto & pair : evmap)
 			vmap[pair.first] = pair.second->argument(n);
 
-		convert_node(*node.child(n), dm, gb.region(n), svmap);
+		convert_node(*node.child(n+1), dm, gb.region(n), svmap);
 
 		for (const auto & v : ds->cases_bottom) {
 			JLM_DEBUG_ASSERT(vmap.find(v) != vmap.end());
@@ -281,7 +285,6 @@ convert_branch_node(
 	}
 
 	gb.end();
-	convert_basic_block(branch->join(), region, svmap);
 }
 
 static void

@@ -226,9 +226,11 @@ create_linear_node(std::unique_ptr<agg::node> n1, std::unique_ptr<agg::node> n2)
 }
 
 static inline std::unique_ptr<agg::node>
-create_branch_node(const jlm::basic_block & split, const jlm::basic_block & join)
+create_branch_node(std::unique_ptr<agg::node> split)
 {
-	return std::make_unique<agg::node>(std::make_unique<branch>(split, join));
+	auto b = std::make_unique<agg::node>(std::make_unique<branch>());
+	b->add_child(std::move(split));
+	return b;
 }
 
 static inline std::unique_ptr<agg::node>

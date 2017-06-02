@@ -150,29 +150,11 @@ public:
 	~branch();
 
 	inline
-	branch(const jlm::basic_block & split, const jlm::basic_block & join)
-	: split_(split)
-	, join_(join)
+	branch()
 	{}
-
-	inline const jlm::basic_block &
-	split() const noexcept
-	{
-		return split_;
-	}
-
-	inline const jlm::basic_block &
-	join() const noexcept
-	{
-		return join_;
-	}
 
 	virtual std::string
 	debug_string() const override;
-
-private:
-	jlm::basic_block split_;
-	jlm::basic_block join_;
 };
 
 static inline bool

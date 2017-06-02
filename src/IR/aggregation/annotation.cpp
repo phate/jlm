@@ -88,21 +88,19 @@ static inline void
 annotate_branch(const agg::node * node, dset & pds, demand_map & dm)
 {
 	JLM_DEBUG_ASSERT(is_branch_structure(node->structure()));
-	const auto & branch = static_cast<const jlm::agg::branch*>(&node->structure());
 
 	auto ds = create_branch_demand_set(pds);
-	annotate_basic_block(branch->join(), pds);
 
 	dset cases_top;
 	ds->cases_bottom = pds;
-	for (size_t n = 0; n < node->nchildren(); n++) {
+	for (size_t n = 1; n < node->nchildren(); n++) {
 		auto tmp = pds;
 		annotate(node->child(n), tmp, dm);
 		cases_top.insert(tmp.begin(), tmp.end());
 	}
 	ds->cases_top = pds = cases_top;
 
-	annotate_basic_block(branch->split(), pds);
+	annotate(node->child(0), pds, dm);
 	ds->top = pds;
 
 	JLM_DEBUG_ASSERT(dm.find(node) == dm.end());
