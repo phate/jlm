@@ -70,6 +70,13 @@ private:
 	std::unique_ptr<jive::base::type> type_;
 };
 
+static inline std::unique_ptr<jlm::tac>
+create_phi_tac(const std::vector<const variable*> & arguments, const variable * result)
+{
+	phi_op phi(arguments.size(), result->type());
+	return create_tac(phi, arguments, {result});
+}
+
 /* assignment operator */
 
 class assignment_op final : public jive::simple_op {
