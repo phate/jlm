@@ -9,6 +9,8 @@
 #include <jive/vsdg/basetype.h>
 #include <jive/vsdg/operators/operation.h>
 
+#include <jlm/IR/tac.hpp>
+
 namespace jlm {
 
 class test_op final : public jive::operation {
@@ -80,6 +82,22 @@ private:
 	std::vector<std::unique_ptr<jive::base::type>> result_types_;
 	std::vector<std::unique_ptr<jive::base::type>> argument_types_;
 };
+
+static inline std::unique_ptr<jlm::tac>
+create_testop_tac(
+	const std::vector<const variable*> & arguments,
+	const std::vector<const variable*> & results)
+{
+	std::vector<const jive::base::type*> result_types;
+	std::vector<const jive::base::type*> argument_types;
+	for (const auto & arg : arguments)
+		argument_types.push_back(&arg->type());
+	for (const auto & res : results)
+		result_types.push_back(&res->type());
+
+	test_op op(argument_types, result_types);
+	return create_tac(op, arguments, results);
+}
 
 }
 
