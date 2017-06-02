@@ -12,8 +12,6 @@
 #include <jive/vsdg/operators.h>
 
 namespace jive {
-	class buffer;
-
 namespace base {
 	class type;
 }
@@ -247,7 +245,8 @@ public:
 		return iterator(nodes_.end());
 	}
 
-	void convert_to_dot(jive::buffer & buffer) const;
+	std::string
+	convert_to_dot() const;
 
 	bool is_structured() const;
 

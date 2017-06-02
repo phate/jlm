@@ -11,7 +11,6 @@
 #include <jlm/IR/clg.hpp>
 #include <jlm/IR/operators.hpp>
 #include <jlm/IR/tac.hpp>
-#include <jive/util/buffer.h>
 
 #include <algorithm>
 #include <deque>
@@ -302,28 +301,21 @@ cfg::is_reducible() const
 	return false;
 }
 
-void
-cfg::convert_to_dot(jive::buffer & buffer) const
+std::string
+cfg::convert_to_dot() const
 {
-	buffer.append("digraph cfg {\n");
-
-	char tmp[96];
-	std::unordered_set<std::unique_ptr<cfg_node>>::const_iterator it;
-	for (it = nodes_.begin(); it != nodes_.end(); it++) {
-		cfg_node * node = (*it).get();
-		snprintf(tmp, sizeof(tmp), "%zu", (size_t)node);
-		buffer.append(tmp).append("[shape = box, label = \"");
-		buffer.append(node->debug_string().c_str()).append("\"];\n");
-
-		std::vector<cfg_edge*> edges = node->outedges();
-		for (size_t n = 0; n < edges.size(); n++) {
-			snprintf(tmp, sizeof(tmp), "%zu -> %zu[label = \"%zu\"];\n", (size_t)edges[n]->source(),
-				(size_t)edges[n]->sink(), edges[n]->index());
-			buffer.append(tmp);
+	std::string dot("digraph cfg{\n");
+	for (const auto & node : nodes_) {
+		dot += strfmt((intptr_t)node.get());
+		dot += strfmt("[shape = box, label = \"", node->debug_string(), "\"];\n");
+		for (const auto & e : node->outedges()) {
+			dot += strfmt((intptr_t)e->source(), " -> ", (intptr_t)e->sink());
+			dot += strfmt("[label = \"", e->index(), "\"];\n");
 		}
 	}
+	dot += "}\n";
 
-	buffer.append("}\n");
+	return dot;
 }
 
 void
@@ -470,11 +462,10 @@ find_sccs(const jlm::cfg & cfg)
 }
 
 void
-jive_cfg_view(const jlm::cfg & self)
+jive_cfg_view(const jlm::cfg & cfg)
 {
-	jive::buffer buffer;
 	FILE * file = popen("tee /tmp/cfg.dot | dot -Tps > /tmp/cfg.ps ; gv /tmp/cfg.ps", "w");
-	self.convert_to_dot(buffer);
-	fwrite(buffer.c_str(), buffer.size(), 1, file);
+	auto dot = cfg.convert_to_dot();
+	fwrite(dot.c_str(), dot.size(), 1, file);
 	pclose(file);
 }
