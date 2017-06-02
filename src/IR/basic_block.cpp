@@ -24,13 +24,11 @@ basic_block::~basic_block()
 std::string
 basic_block::debug_string() const noexcept
 {
-	std::stringstream sstrm;
+	std::string str;
+	for (const auto & tac : tacs_)
+		str += tac->debug_string() + "\\n";
 
-	sstrm << this << "\\n";
-	for (auto tac : tacs_)
-		sstrm << tac->debug_string() << "\\n";
-
-	return sstrm.str();
+	return str;
 }
 
 std::unique_ptr<attribute>

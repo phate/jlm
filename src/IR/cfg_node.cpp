@@ -198,7 +198,7 @@ cfg_node::has_selfloop_edge() const noexcept
 std::string
 cfg_node::debug_string() const
 {
-	return attribute().debug_string();
+	return strfmt(this, "\\n") + attribute().debug_string();
 }
 
 }
