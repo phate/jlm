@@ -93,6 +93,159 @@ copy_structural(const jlm::cfg & in)
 	return out;
 }
 
+static inline bool
+is_loop(const jlm::cfg_node * node) noexcept
+{
+	return node->ninedges() == 2
+	    && node->noutedges() == 2
+	    && node->has_selfloop_edge();
+}
+
+static inline bool
+is_linear(const jlm::cfg_node * node) noexcept
+{
+	if (node->noutedges() != 1)
+		return false;
+
+	if (node->outedge(0)->sink()->ninedges() != 1)
+		return false;
+
+	return true;
+}
+
+static inline jlm::cfg_node *
+find_join(const jlm::cfg_node * split) noexcept
+{
+	JLM_DEBUG_ASSERT(split->noutedges() > 1);
+	auto s1 = split->outedge(0)->sink();
+	auto s2 = split->outedge(1)->sink();
+
+	jlm::cfg_node * join = nullptr;
+	if (s1->noutedges() == 1 && s1->outedge(0)->sink() == s2)
+		join = s2;
+	else if (s2->noutedges() == 1 && s2->outedge(0)->sink() == s1)
+		join = s1;
+	else if (s1->noutedges() == 1 && s2->noutedges() == 1
+	     && (s1->outedge(0)->sink() == s2->outedge(0)->sink()))
+		join = s1->outedge(0)->sink();
+
+	return join;
+}
+
+static inline bool
+is_branch(const jlm::cfg_node * split) noexcept
+{
+	if (split->noutedges() < 2)
+		return false;
+
+	auto join = find_join(split);
+	if (join == nullptr || join->ninedges() != split->noutedges())
+		return false;
+
+	for (const auto & e : split->outedges()) {
+		if (e->sink() == join)
+			continue;
+
+		auto node = e->sink();
+		if (node->ninedges() != 1)
+			return false;
+		if (node->noutedges() != 1 || node->outedge(0)->sink() != join)
+			return false;
+	}
+
+	return true;
+}
+
+static inline void
+reduce_loop(
+	jlm::cfg_node * node,
+	std::unordered_set<jlm::cfg_node*> & to_visit)
+{
+	JLM_DEBUG_ASSERT(is_loop(node));
+	auto cfg = node->cfg();
+
+	auto reduction = create_basic_block_node(cfg);
+	for (auto & e : node->outedges()) {
+		if (e->is_selfloop()) {
+			node->remove_outedge(e);
+			break;
+		}
+	}
+
+	reduction->add_outedge(node->outedge(0)->sink(), 0);
+	node->remove_outedges();
+	node->divert_inedges(reduction);
+
+	to_visit.erase(node);
+	to_visit.insert(reduction);
+}
+
+static inline void
+reduce_linear(
+	jlm::cfg_node * entry,
+	std::unordered_set<jlm::cfg_node*> & to_visit)
+{
+	JLM_DEBUG_ASSERT(is_linear(entry));
+	auto exit = entry->outedge(0)->sink();
+	auto cfg = entry->cfg();
+
+	auto reduction = create_basic_block_node(cfg);
+	entry->divert_inedges(reduction);
+	for (const auto & e : exit->outedges())
+		reduction->add_outedge(e->sink(), e->index());
+	exit->remove_outedges();
+
+	to_visit.erase(entry);
+	to_visit.erase(exit);
+	to_visit.insert(reduction);
+}
+
+static inline void
+reduce_branch(
+	jlm::cfg_node * split,
+	std::unordered_set<jlm::cfg_node*> & to_visit)
+{
+	JLM_DEBUG_ASSERT(is_branch(split));
+	auto join = find_join(split);
+	auto cfg = split->cfg();
+
+	auto reduction = create_basic_block_node(cfg);
+	split->divert_inedges(reduction);
+	reduction->add_outedge(join, 0);
+	for (const auto & e : split->outedges()) {
+		if (e->sink() != join) {
+			e->sink()->remove_outedges();
+			to_visit.erase(e->sink());
+		}
+	}
+
+	to_visit.erase(split);
+	to_visit.insert(reduction);
+}
+
+static inline bool
+reduce_structured(
+	jlm::cfg_node * node,
+	std::unordered_set<jlm::cfg_node*> & to_visit)
+{
+	if (is_loop(node)) {
+		reduce_loop(node, to_visit);
+		return true;
+	}
+
+	if (is_branch(node)) {
+		reduce_branch(node, to_visit);
+		return true;
+	}
+
+	if (is_linear(node)) {
+		reduce_linear(node, to_visit);
+		return true;
+	}
+
+	return false;
+}
+
 namespace jlm {
 
 /* entry attribute */
@@ -166,90 +319,19 @@ bool
 cfg::is_structured() const
 {
 	JLM_DEBUG_ASSERT(is_closed(*this));
-
 	auto c = copy_structural(*this);
-	auto it = c->nodes_.begin();
-	while (it != c->nodes_.end()) {
-		auto node = (*it).get();
 
-		if (c->nnodes() == 2) {
-			JLM_DEBUG_ASSERT(is_closed(*c));
-			return true;
-		}
+	std::unordered_set<cfg_node*> to_visit;
+	for (auto & node : *c)
+		to_visit.insert(&node);
 
-		if (node == c->entry_node() || node == c->exit_node()) {
-			it++; continue;
-		}
-
-		/* loop */
-		bool is_selfloop = false;
-		std::vector<cfg_edge*> edges = node->outedges();
-		for (auto edge : edges) {
-			if (edge->is_selfloop())  {
-				node->remove_outedge(edge);
-				is_selfloop = true; break;
-			}
-		}
-		if (is_selfloop) {
-			it = c->nodes_.begin(); continue;
-		}
-
-		/* linear */
-		if (node->single_successor() && node->outedges()[0]->sink()->single_predecessor()) {
-			JLM_DEBUG_ASSERT(node->noutedges() == 1 && node->outedges()[0]->sink()->ninedges() == 1);
-			node->divert_inedges(node->outedges()[0]->sink());
-			c->remove_node(node);
-			it = c->nodes_.begin(); continue;
-		}
-
-		/* branch */
-		if (node->is_branch()) {
-			/* find tail node */
-			JLM_DEBUG_ASSERT(node->noutedges() > 1);
-			std::vector<cfg_edge*> edges = node->outedges();
-			cfg_node * succ1 = edges[0]->sink();
-			cfg_node * succ2 = edges[1]->sink();
-			cfg_node * tail = nullptr;
-			if (succ1->noutedges() == 1 && succ1->outedges()[0]->sink() == succ2)
-				tail = succ2;
-			else if (succ2->noutedges() == 1 && succ2->outedges()[0]->sink() == succ1)
-				tail = succ1;
-			else if (succ1->noutedges() == 1 && succ2->noutedges() == 1
-				&& succ1->outedges()[0]->sink() == succ2->outedges()[0]->sink())
-				tail = succ1->outedges()[0]->sink();
-
-			if (tail == nullptr || tail->ninedges() != node->noutedges()) {
-				it++; continue;
-			}
-
-			/* check whether it corresponds to a branch subgraph */
-			bool is_branch = true;
-			for (auto edge : edges) {
-				cfg_node * succ = edge->sink();
-				if (succ != tail
-				&& ((succ->ninedges() != 1 || succ->inedges().front()->source() != node)
-					|| (succ->noutedges() != 1 || succ->outedges().front()->sink() != tail))) {
-					is_branch = false; break;
-				}
-			}
-			if (!is_branch) {
-				it++; continue;
-			}
-
-			/* remove branch subgraph */
-			for (auto edge : edges) {
-				if (edge->sink() != tail)
-					c->remove_node(edge->sink());
-			}
-			node->remove_outedges();
-			node->add_outedge(tail, 0);
-			it = c->nodes_.begin(); continue;
-		}
-
-		it++;
+	auto it = to_visit.begin();
+	while (it != to_visit.end()) {
+		bool reduced = reduce_structured(*it, to_visit);
+		it = reduced ? to_visit.begin() : std::next(it);
 	}
 
-	return false;
+	return to_visit.size() == 1;
 }
 
 bool
