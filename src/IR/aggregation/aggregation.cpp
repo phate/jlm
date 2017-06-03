@@ -6,6 +6,7 @@
 #include <jlm/IR/aggregation/aggregation.hpp>
 #include <jlm/IR/aggregation/node.hpp>
 #include <jlm/IR/cfg.hpp>
+#include <jlm/IR/cfg-structure.hpp>
 #include <jlm/IR/cfg_node.hpp>
 #include <jlm/IR/tac.hpp>
 

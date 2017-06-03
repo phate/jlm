@@ -298,28 +298,6 @@ private:
 	std::unordered_set<std::unique_ptr<cfg_node>> nodes_;
 };
 
-bool
-is_valid(const jlm::cfg & cfg);
-
-bool
-is_closed(const jlm::cfg & cfg);
-
-std::vector<std::unordered_set<cfg_node*>>
-find_sccs(const jlm::cfg & cfg);
-
-static inline bool
-is_acyclic(const jlm::cfg & cfg)
-{
-	auto sccs = find_sccs(cfg);
-	return sccs.size() == 0;
-}
-
-bool
-is_structured(const jlm::cfg & cfg);
-
-bool
-is_reducible(const jlm::cfg & cfg);
-
 }
 
 void

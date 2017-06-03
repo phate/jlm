@@ -14,6 +14,7 @@ LIBJLM_SRC = \
 	src/IR/aggregation/structure.cpp \
 	src/IR/basic_block.cpp \
 	src/IR/cfg.cpp \
+	src/IR/cfg-structure.cpp \
 	src/IR/cfg_node.cpp \
 	src/IR/clg.cpp \
 	src/IR/module.cpp \
