@@ -200,7 +200,7 @@ aggregate(
 std::unique_ptr<agg::node>
 aggregate(jlm::cfg & cfg)
 {
-	JLM_DEBUG_ASSERT(cfg.is_structured());
+	JLM_DEBUG_ASSERT(is_structured(cfg));
 
 	/* insert all aggregation leaves into the map */
 	std::unordered_set<cfg_node*> to_visit;

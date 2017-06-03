@@ -419,7 +419,7 @@ restructure(jlm::cfg * cfg)
 	for (auto edge : back_edges)
 		edges.insert(edge.source()->add_outedge(edge.sink(), edge.index()));
 
-	JLM_DEBUG_ASSERT(cfg->is_structured());
+	JLM_DEBUG_ASSERT(is_structured(*cfg));
 	return edges;
 }
 

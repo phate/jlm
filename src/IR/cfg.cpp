@@ -385,44 +385,6 @@ cfg::create_node(const attribute & attr)
 	return tmp;
 }
 
-bool
-cfg::is_structured() const
-{
-	JLM_DEBUG_ASSERT(is_closed(*this));
-	auto c = copy_structural(*this);
-
-	std::unordered_set<cfg_node*> to_visit;
-	for (auto & node : *c)
-		to_visit.insert(&node);
-
-	auto it = to_visit.begin();
-	while (it != to_visit.end()) {
-		bool reduced = reduce_structured(*it, to_visit);
-		it = reduced ? to_visit.begin() : std::next(it);
-	}
-
-	return to_visit.size() == 1;
-}
-
-bool
-cfg::is_reducible() const
-{
-	JLM_DEBUG_ASSERT(is_closed(*this));
-	auto c = copy_structural(*this);
-
-	std::unordered_set<cfg_node*> to_visit;
-	for (auto & node : *c)
-		to_visit.insert(&node);
-
-	auto it = to_visit.begin();
-	while (it != to_visit.end()) {
-		bool reduced = reduce_reducible(*it, to_visit);
-		it = reduced ? to_visit.begin() : std::next(it);
-	}
-
-	return to_visit.size() == 1;
-}
-
 std::string
 cfg::convert_to_dot() const
 {
@@ -579,6 +541,44 @@ find_sccs(const jlm::cfg & cfg)
 	strongconnect(cfg.entry_node(), cfg.exit_node(), map, node_stack, index, sccs);
 
 	return sccs;
+}
+
+bool
+is_structured(const jlm::cfg & cfg)
+{
+	JLM_DEBUG_ASSERT(is_closed(cfg));
+	auto c = copy_structural(cfg);
+
+	std::unordered_set<cfg_node*> to_visit;
+	for (auto & node : *c)
+		to_visit.insert(&node);
+
+	auto it = to_visit.begin();
+	while (it != to_visit.end()) {
+		bool reduced = reduce_structured(*it, to_visit);
+		it = reduced ? to_visit.begin() : std::next(it);
+	}
+
+	return to_visit.size() == 1;
+}
+
+bool
+is_reducible(const jlm::cfg & cfg)
+{
+	JLM_DEBUG_ASSERT(is_closed(cfg));
+	auto c = copy_structural(cfg);
+
+	std::unordered_set<cfg_node*> to_visit;
+	for (auto & node : *c)
+		to_visit.insert(&node);
+
+	auto it = to_visit.begin();
+	while (it != to_visit.end()) {
+		bool reduced = reduce_reducible(*it, to_visit);
+		it = reduced ? to_visit.begin() : std::next(it);
+	}
+
+	return to_visit.size() == 1;
 }
 
 }

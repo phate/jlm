@@ -248,10 +248,6 @@ public:
 	std::string
 	convert_to_dot() const;
 
-	bool is_structured() const;
-
-	bool is_reducible() const;
-
 	void prune();
 
 	inline jlm::cfg_node *
@@ -317,6 +313,12 @@ is_acyclic(const jlm::cfg & cfg)
 	auto sccs = find_sccs(cfg);
 	return sccs.size() == 0;
 }
+
+bool
+is_structured(const jlm::cfg & cfg);
+
+bool
+is_reducible(const jlm::cfg & cfg);
 
 }
 
