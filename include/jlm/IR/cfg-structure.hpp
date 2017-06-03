@@ -34,6 +34,9 @@ bool
 is_structured(const jlm::cfg & cfg);
 
 bool
+is_proper_structured(const jlm::cfg & cfg);
+
+bool
 is_reducible(const jlm::cfg & cfg);
 
 }

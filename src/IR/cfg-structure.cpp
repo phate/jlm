@@ -145,6 +145,28 @@ is_branch(const jlm::cfg_node * split) noexcept
 }
 
 static inline bool
+is_proper_branch(const jlm::cfg_node * split) noexcept
+{
+	if (split->noutedges() < 2)
+		return false;
+
+	if (split->outedge(0)->sink()->noutedges() != 1)
+		return false;
+
+	auto join = split->outedge(0)->sink()->outedge(0)->sink();
+	for (const auto & outedge : split->outedges()) {
+		if (outedge->sink()->ninedges() != 1)
+			return false;
+		if (outedge->sink()->noutedges() != 1)
+			return false;
+		if (outedge->sink()->outedge(0)->sink() != join)
+			return false;
+	}
+
+	return true;
+}
+
+static inline bool
 is_T1(const jlm::cfg_node * node) noexcept
 {
 	for (const auto & e : node->outedges()) {
@@ -240,6 +262,25 @@ reduce_branch(
 }
 
 static inline void
+reduce_proper_branch(
+	jlm::cfg_node * split,
+	std::unordered_set<jlm::cfg_node*> & to_visit)
+{
+	JLM_DEBUG_ASSERT(is_proper_branch(split));
+	auto join = split->outedge(0)->sink()->outedge(0)->sink();
+
+	auto reduction = create_basic_block_node(split->cfg());
+	split->divert_inedges(reduction);
+	join->remove_inedges();
+	reduction->add_outedge(join, 0);
+	for (const auto & outedge : split->outedges())
+		to_visit.erase(outedge->sink());
+
+	to_visit.erase(split);
+	to_visit.insert(reduction);
+}
+
+static inline void
 reduce_T1(jlm::cfg_node * node)
 {
 	JLM_DEBUG_ASSERT(is_T1(node));
@@ -263,6 +304,29 @@ reduce_T2(
 	p->divert_inedges(node);
 	p->remove_outedges();
 	to_visit.erase(p);
+}
+
+static inline bool
+reduce_proper_structured(
+	jlm::cfg_node * node,
+	std::unordered_set<jlm::cfg_node*> & to_visit)
+{
+	if (is_loop(node)) {
+		reduce_loop(node, to_visit);
+		return true;
+	}
+
+	if (is_proper_branch(node)) {
+		reduce_proper_branch(node, to_visit);
+		return true;
+	}
+
+	if (is_linear(node)) {
+		reduce_linear(node, to_visit);
+		return true;
+	}
+
+	return false;
 }
 
 static inline bool
@@ -400,8 +464,10 @@ find_sccs(const jlm::cfg & cfg)
 	return sccs;
 }
 
-bool
-is_structured(const jlm::cfg & cfg)
+static inline bool
+reduce(
+	const jlm::cfg & cfg,
+	const std::function<bool(jlm::cfg_node*, std::unordered_set<jlm::cfg_node*>&)> & f)
 {
 	JLM_DEBUG_ASSERT(is_closed(cfg));
 	auto c = copy_structural(cfg);
@@ -412,7 +478,7 @@ is_structured(const jlm::cfg & cfg)
 
 	auto it = to_visit.begin();
 	while (it != to_visit.end()) {
-		bool reduced = reduce_structured(*it, to_visit);
+		bool reduced = f(*it, to_visit);
 		it = reduced ? to_visit.begin() : std::next(it);
 	}
 
@@ -420,22 +486,21 @@ is_structured(const jlm::cfg & cfg)
 }
 
 bool
+is_structured(const jlm::cfg & cfg)
+{
+	return reduce(cfg, reduce_structured);
+}
+
+bool
+is_proper_structured(const jlm::cfg & cfg)
+{
+	return reduce(cfg, reduce_proper_structured);
+}
+
+bool
 is_reducible(const jlm::cfg & cfg)
 {
-	JLM_DEBUG_ASSERT(is_closed(cfg));
-	auto c = copy_structural(cfg);
-
-	std::unordered_set<cfg_node*> to_visit;
-	for (auto & node : *c)
-		to_visit.insert(&node);
-
-	auto it = to_visit.begin();
-	while (it != to_visit.end()) {
-		bool reduced = reduce_reducible(*it, to_visit);
-		it = reduced ? to_visit.begin() : std::next(it);
-	}
-
-	return to_visit.size() == 1;
+	return reduce(cfg, reduce_reducible);
 }
 
 }
