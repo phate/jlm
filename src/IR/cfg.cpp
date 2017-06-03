@@ -156,6 +156,32 @@ is_branch(const jlm::cfg_node * split) noexcept
 	return true;
 }
 
+static inline bool
+is_T1(const jlm::cfg_node * node) noexcept
+{
+	for (const auto & e : node->outedges()) {
+		if (e->source() == e->sink())
+			return true;
+	}
+
+	return false;
+}
+
+static inline bool
+is_T2(const jlm::cfg_node * node) noexcept
+{
+	if (node->ninedges() == 0)
+		return false;
+
+	auto source = node->inedges().front()->source();
+	for (const auto & e : node->inedges()) {
+		if (e->source() != source)
+			return false;
+	}
+
+	return true;
+}
+
 static inline void
 reduce_loop(
 	jlm::cfg_node * node,
@@ -223,6 +249,32 @@ reduce_branch(
 	to_visit.insert(reduction);
 }
 
+static inline void
+reduce_T1(jlm::cfg_node * node)
+{
+	JLM_DEBUG_ASSERT(is_T1(node));
+
+	for (auto & e : node->outedges()) {
+		if (e->source() == e->sink()) {
+			node->remove_outedge(e);
+			break;
+		}
+	}
+}
+
+static inline void
+reduce_T2(
+	jlm::cfg_node * node,
+	std::unordered_set<jlm::cfg_node*> & to_visit)
+{
+	JLM_DEBUG_ASSERT(is_T2(node));
+
+	auto p = node->inedges().front()->source();
+	p->divert_inedges(node);
+	p->remove_outedges();
+	to_visit.erase(p);
+}
+
 static inline bool
 reduce_structured(
 	jlm::cfg_node * node,
@@ -240,6 +292,24 @@ reduce_structured(
 
 	if (is_linear(node)) {
 		reduce_linear(node, to_visit);
+		return true;
+	}
+
+	return false;
+}
+
+static inline bool
+reduce_reducible(
+	jlm::cfg_node * node,
+	std::unordered_set<jlm::cfg_node*> & to_visit)
+{
+	if (is_T1(node)) {
+		reduce_T1(node);
+		return true;
+	}
+
+	if (is_T2(node)) {
+		reduce_T2(node, to_visit);
 		return true;
 	}
 
@@ -338,49 +408,19 @@ bool
 cfg::is_reducible() const
 {
 	JLM_DEBUG_ASSERT(is_closed(*this));
-
 	auto c = copy_structural(*this);
-	auto it = c->nodes_.begin();
-	while (it != c->nodes_.end()) {
-		auto node = (*it).get();
 
-		if (c->nnodes() == 2) {
-			JLM_DEBUG_ASSERT(is_closed(*c));
-			return true;
-		}
+	std::unordered_set<cfg_node*> to_visit;
+	for (auto & node : *c)
+		to_visit.insert(&node);
 
-		if (node == c->entry_node() || node == c->exit_node()) {
-			it++; continue;
-		}
-
-		/* T1 */
-		bool is_selfloop = false;
-		std::vector<cfg_edge*> edges = node->outedges();
-		for (auto edge : edges) {
-			if (edge->is_selfloop()) {
-				node->remove_outedge(edge);
-				is_selfloop = true; break;
-			}
-		}
-		if (is_selfloop) {
-			it = c->nodes_.begin(); continue;
-		}
-
-		/* T2 */
-		if (node->single_predecessor()) {
-			cfg_node * predecessor = node->inedges().front()->source();
-			std::vector<cfg_edge*> edges = node->outedges();
-			for (size_t e = 0; e < edges.size(); e++) {
-				predecessor->add_outedge(edges[e]->sink(), 0);
-			}
-			c->remove_node(node);
-			it = c->nodes_.begin(); continue;
-		}
-
-		it++;
+	auto it = to_visit.begin();
+	while (it != to_visit.end()) {
+		bool reduced = reduce_reducible(*it, to_visit);
+		it = reduced ? to_visit.begin() : std::next(it);
 	}
 
-	return false;
+	return to_visit.size() == 1;
 }
 
 std::string
