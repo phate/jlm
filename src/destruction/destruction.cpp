@@ -349,9 +349,10 @@ convert_loop_node(
 	scoped_vmap & svmap)
 {
 	JIVE_DEBUG_ASSERT(is_loop_structure(node.structure()));
+	auto parent = svmap.region();
 
 	jive::theta_builder tb;
-	tb.begin(svmap.region());
+	tb.begin(parent);
 
 	svmap.push_scope(tb.region());
 	auto & vmap = svmap.vmap();
@@ -359,10 +360,18 @@ convert_loop_node(
 
 	/* add loop variables */
 	auto ds = dm.at(&node).get();
+	JLM_DEBUG_ASSERT(ds->top == ds->bottom);
 	std::unordered_map<const variable*, std::shared_ptr<jive::loopvar>> lvmap;
 	for (const auto & v : ds->top) {
-		JLM_DEBUG_ASSERT(pvmap.find(v) != pvmap.end());
-		lvmap[v] = tb.add_loopvar(pvmap[v]);
+		jive::oport * value = nullptr;
+		if (pvmap.find(v) == pvmap.end()) {
+			value = create_undef_value(parent, v->type());
+			JLM_DEBUG_ASSERT(value);
+			pvmap[v] = value;
+		} else {
+			value = pvmap[v];
+		}
+		lvmap[v] = tb.add_loopvar(value);
 		vmap[v] = lvmap[v]->value();
 	}
 
