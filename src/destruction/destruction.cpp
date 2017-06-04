@@ -455,7 +455,7 @@ handle_scc(
 		std::vector<std::shared_ptr<jive::recvar>> recvars;
 		for (const auto & f : scc) {
 			auto rv = pb.add_recvar(f->type());
-			JLM_DEBUG_ASSERT(!module.variable(f));
+			JLM_DEBUG_ASSERT(module.variable(f));
 			svmap.last()[module.variable(f)] = rv->value();
 			recvars.push_back(rv);
 		}
@@ -469,6 +469,7 @@ handle_scc(
 		svmap.pop_vmap();
 		pb.end();
 
+		n = 0;
 		for (const auto & f : scc) {
 			auto value = recvars[n++]->value();
 			svmap.last()[module.variable(f)] = value;
