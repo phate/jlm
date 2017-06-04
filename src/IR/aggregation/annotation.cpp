@@ -65,8 +65,6 @@ annotate_block(const agg::node * node, dset & pds, demand_map & dm)
 {
 	JLM_DEBUG_ASSERT(is_block_structure(node->structure()));
 	const auto & bb = static_cast<const block*>(&node->structure())->basic_block();
-
-	JLM_DEBUG_ASSERT(dm.find(node) == dm.end());
 	dm[node] = annotate_basic_block(bb, pds);
 }
 
@@ -80,7 +78,6 @@ annotate_linear(const agg::node * node, dset & pds, demand_map & dm)
 		annotate(node->child(n), pds, dm);
 	ds->top = pds;
 
-	JLM_DEBUG_ASSERT(dm.find(node) == dm.end());
 	dm[node] = std::move(ds);
 }
 
@@ -103,7 +100,6 @@ annotate_branch(const agg::node * node, dset & pds, demand_map & dm)
 	annotate(node->child(0), pds, dm);
 	ds->top = pds;
 
-	JLM_DEBUG_ASSERT(dm.find(node) == dm.end());
 	dm[node] = std::move(ds);
 }
 
@@ -116,13 +112,12 @@ annotate_loop(const agg::node * node, dset & pds, demand_map & dm)
 	auto ds = create_demand_set(pds);
 	annotate(node->child(0), pds, dm);
 	if (ds->bottom != pds) {
-		ds->top = pds;
+		ds->bottom.insert(pds.begin(), pds.end());
+		pds = ds->bottom;
 		annotate(node->child(0), pds, dm);
-		JLM_DEBUG_ASSERT(ds->top == pds);
 	}
-	ds->bottom = ds->top;
+	ds->top = ds->bottom;
 
-	JLM_DEBUG_ASSERT(dm.find(node) == dm.end());
 	dm[node] = std::move(ds);
 }
 
@@ -142,7 +137,7 @@ annotate(const agg::node * node, dset & pds, demand_map & dm)
 	});
 
 	auto it = dm.find(node);
-	if (it != dm.end() && it->second->top == pds)
+	if (it != dm.end() && it->second->bottom == pds)
 		return;
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(node->structure()))) != map.end());
