@@ -336,8 +336,10 @@ restructure_branches(jlm::cfg_node * start, jlm::cfg_node * end)
 		JLM_DEBUG_ASSERT(branch_out_edges.size() == af.size());
 		for (size_t n = 0; n < af.size(); n++) {
 			/* empty branch subgraph, nothing needs to be done */
-			if (af[n]->sink() == cpoint)
+			if (af[n]->sink() == cpoint) {
+				af[n]->split();
 				continue;
+			}
 
 			/* only one branch out edge leads to the continuation point */
 			if (branch_out_edges[n].size() == 1) {
@@ -420,7 +422,7 @@ restructure(jlm::cfg * cfg)
 	for (auto edge : back_edges)
 		edges.insert(edge.source()->add_outedge(edge.sink(), edge.index()));
 
-	JLM_DEBUG_ASSERT(is_structured(*cfg));
+	JLM_DEBUG_ASSERT(is_proper_structured(*cfg));
 	return edges;
 }
 
