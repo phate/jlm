@@ -36,6 +36,15 @@
 #include <cmath>
 #include <stack>
 
+static inline jive::oport *
+create_undef_value(jive::region * region, const jive::base::type & type)
+{
+	if (auto t = dynamic_cast<const jive::bits::type*>(&type))
+		return jive_bitconstant_undefined(region, t->nbits());
+
+	return nullptr;
+}
+
 namespace jlm {
 
 typedef std::unordered_map<const variable*, jive::oport*> vmap;
@@ -45,48 +54,64 @@ public:
 	inline
 	~scoped_vmap()
 	{
-		pop_vmap();
-		JLM_DEBUG_ASSERT(nvmaps() == 0);
+		pop_scope();
+		JLM_DEBUG_ASSERT(nscopes() == 0);
 	}
 
 	inline
-	scoped_vmap(const jlm::module & module)
+	scoped_vmap(const jlm::module & module, jive::region * region)
 	: module_(module)
 	{
-		push_vmap();
+		push_scope(region);
 	}
 
 	inline size_t
-	nvmaps() const noexcept
+	nscopes() const noexcept
 	{
+		JLM_DEBUG_ASSERT(vmaps_.size() == regions_.size());
 		return vmaps_.size();
 	}
 
 	inline jlm::vmap &
 	vmap(size_t n) noexcept
 	{
-		JLM_DEBUG_ASSERT(n < nvmaps());
+		JLM_DEBUG_ASSERT(n < nscopes());
 		return vmaps_[n];
 	}
 
 	inline jlm::vmap &
-	last() noexcept
+	vmap() noexcept
 	{
-		JLM_DEBUG_ASSERT(nvmaps() > 0);
-		return vmap(nvmaps()-1);
+		JLM_DEBUG_ASSERT(nscopes() > 0);
+		return vmap(nscopes()-1);
 	}
 
-	inline jlm::vmap &
-	push_vmap()
+	inline jive::region *
+	region(size_t n) noexcept
 	{
-		vmaps_.push_back(jlm::vmap());
-		return last();
+		JLM_DEBUG_ASSERT(n < nscopes());
+		return regions_[n];
+	}
+
+	inline jive::region *
+	region() noexcept
+	{
+		JLM_DEBUG_ASSERT(nscopes() > 0);
+		return region(nscopes()-1);
 	}
 
 	inline void
-	pop_vmap()
+	push_scope(jive::region * region)
+	{
+		vmaps_.push_back(jlm::vmap());
+		regions_.push_back(region);
+	}
+
+	inline void
+	pop_scope()
 	{
 		vmaps_.pop_back();
+		regions_.pop_back();
 	}
 
 	const jlm::module &
@@ -98,103 +123,120 @@ public:
 private:
 	const jlm::module & module_;
 	std::vector<jlm::vmap> vmaps_;
+	std::vector<jive::region*> regions_;
 };
 
 static void
-convert_assignment(const jlm::tac & tac, jive::region * region, scoped_vmap & svmap)
+convert_assignment(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
 {
 	JLM_DEBUG_ASSERT(is_assignment_op(tac.operation()));
 	JLM_DEBUG_ASSERT(tac.ninputs() == 1 && tac.noutputs() == 1);
-	svmap.last()[tac.output(0)] = svmap.last()[tac.input(0)];
+	vmap[tac.output(0)] = vmap[tac.input(0)];
 }
 
 static void
-convert_select(const jlm::tac & tac, jive::region * region, scoped_vmap & svmap)
+convert_select(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
 {
 	JLM_DEBUG_ASSERT(is_select_op(tac.operation()));
 	JLM_DEBUG_ASSERT(tac.ninputs() == 3 && tac.noutputs() == 1);
 
 	auto op = jive::match_op(1, {{1, 0}}, 1, 2);
-	auto predicate = jive::create_normalized(region, op, {svmap.last()[tac.input(0)]})[0];
+	auto predicate = jive::create_normalized(region, op, {vmap[tac.input(0)]})[0];
 
 	jive::gamma_builder gb;
 	gb.begin(predicate);
-	auto ev1 = gb.add_entryvar(svmap.last()[tac.input(1)]);
-	auto ev2 = gb.add_entryvar(svmap.last()[tac.input(2)]);
+	auto ev1 = gb.add_entryvar(vmap[tac.input(1)]);
+	auto ev2 = gb.add_entryvar(vmap[tac.input(2)]);
 	auto ex = gb.add_exitvar({ev1->argument(0), ev2->argument(1)});
-	svmap.last()[tac.output(0)] = ex->output();
+	vmap[tac.output(0)] = ex->output();
 	gb.end();
 }
 
 static void
-convert_tac(const jlm::tac & tac, jive::region * region, scoped_vmap & svmap)
+convert_tac(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
 {
 	static std::unordered_map<
 		std::type_index,
-		std::function<void(const jlm::tac&, jive::region*, scoped_vmap&)>
+		std::function<void(const jlm::tac&, jive::region*, jlm::vmap&)>
 	> map({
 	  {std::type_index(typeid(assignment_op)), convert_assignment}
 	, {std::type_index(typeid(select_op)), convert_select}
 	});
 
 	if (map.find(std::type_index(typeid(tac.operation()))) != map.end())
-		return map[std::type_index(typeid(tac.operation()))](tac, region, svmap);
+		return map[std::type_index(typeid(tac.operation()))](tac, region, vmap);
 
 	std::vector<jive::oport*> operands;
 	for (size_t n = 0; n < tac.ninputs(); n++) {
-		JLM_DEBUG_ASSERT(svmap.last().find(tac.input(n)) != svmap.last().end());
-		operands.push_back(svmap.last()[tac.input(n)]);
+		JLM_DEBUG_ASSERT(vmap.find(tac.input(n)) != vmap.end());
+		operands.push_back(vmap[tac.input(n)]);
 	}
 
 	auto results = jive::create_normalized(region, tac.operation(), operands);
 
 	JLM_DEBUG_ASSERT(results.size() == tac.noutputs());
 	for (size_t n = 0; n < tac.noutputs(); n++)
-		svmap.last()[tac.output(n)] = results[n];
+		vmap[tac.output(n)] = results[n];
 }
 
 static void
-convert_basic_block(
-	const basic_block & bb,
-	jive::region * region,
-	scoped_vmap & svmap)
+convert_basic_block(const basic_block & bb, jive::region * region, jlm::vmap & vmap)
 {
 	for (const auto & tac: bb)
-		convert_tac(*tac, region, svmap);
+		convert_tac(*tac, region, vmap);
 }
 
-static void
+static jive::node *
 convert_node(
 	const agg::node & node,
 	const agg::demand_map & dm,
-	jive::region * region,
+	const jlm::clg_node & function,
+	jive::lambda_builder & lb,
 	scoped_vmap & svmap);
 
-static void
+static jive::node *
 convert_entry_node(
 	const agg::node & node,
 	const agg::demand_map & dm,
-	jive::region * region,
+	const jlm::clg_node & function,
+	jive::lambda_builder & lb,
 	scoped_vmap & svmap)
 {
 	JLM_DEBUG_ASSERT(is_entry_structure(node.structure()));
-	auto ea = static_cast<const agg::entry*>(&node.structure())->attribute();
+	auto entry = static_cast<const agg::entry*>(&node.structure())->attribute();
 	auto ds = dm.at(&node).get();
 
-	size_t n;
-	JLM_DEBUG_ASSERT(ea.narguments() + ds->top.size() == region->narguments());
-	for (n = 0; n < ea.narguments(); n++)
-		svmap.last()[ea.argument(n)] = region->argument(n);
+	lb.begin(svmap.region(), function.type());
+	svmap.push_scope(lb.region());
 
-	for (const auto & v : ds->top)
-		svmap.last()[v] = region->argument(n++);
+	auto & pvmap = svmap.vmap(svmap.nscopes()-2);
+	auto & vmap = svmap.vmap();
+
+	/* add arguments */
+	JLM_DEBUG_ASSERT(entry.narguments() == lb.region()->narguments());
+	for (size_t n = 0; n < entry.narguments(); n++)
+		vmap[entry.argument(n)] = lb.region()->argument(n);
+
+	/* add dependencies and undefined values */
+	for (const auto & v : ds->top) {
+		if (pvmap.find(v) != pvmap.end()) {
+			vmap[v] = lb.add_dependency(pvmap[v]);
+		} else {
+			auto value = create_undef_value(lb.region(), v->type());
+			JLM_DEBUG_ASSERT(value);
+			vmap[v] = value;
+		}
+	}
+
+	return nullptr;
 }
 
-static void
+static jive::node *
 convert_exit_node(
 	const agg::node & node,
 	const agg::demand_map & dm,
-	jive::region * region,
+	const jlm::clg_node & function,
+	jive::lambda_builder & lb,
 	scoped_vmap & svmap)
 {
 	JLM_DEBUG_ASSERT(is_exit_structure(node.structure()));
@@ -202,46 +244,56 @@ convert_exit_node(
 
 	std::vector<jive::oport*> results;
 	for (size_t n = 0; n < xa.nresults(); n++) {
-		JLM_DEBUG_ASSERT(svmap.last().find(xa.result(n)) != svmap.last().end());
-		results.push_back(svmap.last()[xa.result(n)]);
+		JLM_DEBUG_ASSERT(svmap.vmap().find(xa.result(n)) != svmap.vmap().end());
+		results.push_back(svmap.vmap()[xa.result(n)]);
 	}
+
+	svmap.pop_scope();
+	return lb.end(results);
 }
 
-static void
+static jive::node *
 convert_block_node(
 	const agg::node & node,
 	const agg::demand_map & dm,
-	jive::region * region,
+	const jlm::clg_node & function,
+	jive::lambda_builder & lb,
 	scoped_vmap & svmap)
 {
 	JLM_DEBUG_ASSERT(is_block_structure(node.structure()));
 	auto bb = static_cast<const agg::block*>(&node.structure())->basic_block();
-	convert_basic_block(bb, region, svmap);
+	convert_basic_block(bb, svmap.region(), svmap.vmap());
+	return nullptr;
 }
 
-static void
+static jive::node *
 convert_linear_node(
 	const agg::node & node,
 	const agg::demand_map & dm,
-	jive::region * region,
+	const jlm::clg_node & function,
+	jive::lambda_builder & lb,
 	scoped_vmap & svmap)
 {
 	JLM_DEBUG_ASSERT(is_linear_structure(node.structure()));
 
+	jive::node * n = nullptr;
 	for (const auto & child : node)
-		convert_node(child, dm, region, svmap);
+		n = convert_node(child, dm, function, lb, svmap);
+
+	return n;
 }
 
-static void
+static jive::node *
 convert_branch_node(
 	const agg::node & node,
 	const agg::demand_map & dm,
-	jive::region * region,
+	const jlm::clg_node & function,
+	jive::lambda_builder & lb,
 	scoped_vmap & svmap)
 {
 	JLM_DEBUG_ASSERT(is_branch_structure(node.structure()));
 
-	convert_node(*node.child(0), dm, region, svmap);
+	convert_node(*node.child(0), dm, function, lb, svmap);
 
 	auto split = node.child(0);
 	while (!is_block_structure(split->structure()))
@@ -249,7 +301,7 @@ convert_branch_node(
 	auto & sb = dynamic_cast<const agg::block*>(&split->structure())->basic_block();
 
 	JLM_DEBUG_ASSERT(sb.last()->noutputs() == 1);
-	auto predicate = svmap.last()[sb.last()->output(0)];
+	auto predicate = svmap.vmap()[sb.last()->output(0)];
 	jive::gamma_builder gb;
 	gb.begin(predicate);
 
@@ -257,50 +309,53 @@ convert_branch_node(
 	auto ds = static_cast<const agg::branch_demand_set*>(dm.at(&node).get());
 	std::unordered_map<const variable*, std::shared_ptr<jive::entryvar>> evmap;
 	for (const auto & v : ds->cases_top) {
-		JLM_DEBUG_ASSERT(svmap.last().find(v) != svmap.last().end());
-		evmap[v] = gb.add_entryvar(svmap.last()[v]);
+		JLM_DEBUG_ASSERT(svmap.vmap().find(v) != svmap.vmap().end());
+		evmap[v] = gb.add_entryvar(svmap.vmap()[v]);
 	}
 
 	/* convert branch cases */
 	std::unordered_map<const variable*, std::vector<jive::oport*>> xvmap;
 	JLM_DEBUG_ASSERT(gb.nsubregions() == node.nchildren()-1);
 	for (size_t n = 0; n < gb.nsubregions(); n++) {
-		auto & vmap = svmap.push_vmap();
+		svmap.push_scope(gb.region(n));
 		for (const auto & pair : evmap)
-			vmap[pair.first] = pair.second->argument(n);
+			svmap.vmap()[pair.first] = pair.second->argument(n);
 
-		convert_node(*node.child(n+1), dm, gb.region(n), svmap);
+		convert_node(*node.child(n+1), dm, function, lb, svmap);
 
 		for (const auto & v : ds->cases_bottom) {
-			JLM_DEBUG_ASSERT(vmap.find(v) != vmap.end());
-			xvmap[v].push_back(vmap[v]);
+			JLM_DEBUG_ASSERT(svmap.vmap().find(v) != svmap.vmap().end());
+			xvmap[v].push_back(svmap.vmap()[v]);
 		}
-		svmap.pop_vmap();
+		svmap.pop_scope();
 	}
 
 	/* add exit variables */
 	for (const auto & v : ds->cases_bottom) {
 		JLM_DEBUG_ASSERT(xvmap.find(v) != xvmap.end());
-		svmap.last()[v] = gb.add_exitvar(xvmap[v])->output();
+		svmap.vmap()[v] = gb.add_exitvar(xvmap[v])->output();
 	}
 
 	gb.end();
+	return nullptr;
 }
 
-static void
+static jive::node *
 convert_loop_node(
 	const agg::node & node,
 	const agg::demand_map & dm,
-	jive::region * region,
+	const jlm::clg_node & function,
+	jive::lambda_builder & lb,
 	scoped_vmap & svmap)
 {
 	JIVE_DEBUG_ASSERT(is_loop_structure(node.structure()));
 
 	jive::theta_builder tb;
-	tb.begin(region);
+	tb.begin(svmap.region());
 
-	jlm::vmap & vmap = svmap.push_vmap();
-	jlm::vmap & pvmap = svmap.vmap(svmap.nvmaps()-2);
+	svmap.push_scope(tb.region());
+	auto & vmap = svmap.vmap();
+	auto & pvmap = svmap.vmap(svmap.nscopes()-2);
 
 	/* add loop variables */
 	auto ds = dm.at(&node).get();
@@ -313,7 +368,7 @@ convert_loop_node(
 
 	/* convert loop body */
 	JLM_DEBUG_ASSERT(node.nchildren() == 1);
-	convert_node(*node.child(0), dm, tb.region(), svmap);
+	convert_node(*node.child(0), dm, function, lb, svmap);
 
 	/* update loop variables */
 	for (const auto & v : ds->top) {
@@ -323,33 +378,42 @@ convert_loop_node(
 	}
 
 	/* find predicate */
-	auto lb = node.child(0);
-	while (lb->nchildren() != 0)
-		lb = lb->child(lb->nchildren()-1);
-	JLM_DEBUG_ASSERT(is_block_structure(lb->structure()));
-	auto bb = static_cast<const agg::block*>(&lb->structure())->basic_block();
+	auto lblock = node.child(0);
+	while (lblock->nchildren() != 0)
+		lblock = lblock->child(lblock->nchildren()-1);
+	JLM_DEBUG_ASSERT(is_block_structure(lblock->structure()));
+	auto bb = static_cast<const agg::block*>(&lblock->structure())->basic_block();
 	auto predicate = bb.last()->output(0);
 
 	/* update variable map */
 	JLM_DEBUG_ASSERT(vmap.find(predicate) != vmap.end());
 	tb.end(vmap[predicate]);
-	svmap.pop_vmap();
+	svmap.pop_scope();
 	for (const auto & v : ds->bottom) {
 		JLM_DEBUG_ASSERT(pvmap.find(v) != pvmap.end());
 		pvmap[v] = lvmap[v]->value();
 	}
+
+	return nullptr;
 }
 
-static void
+static jive::node *
 convert_node(
 	const agg::node & node,
 	const agg::demand_map & dm,
-	jive::region * region,
+	const jlm::clg_node & function,
+	jive::lambda_builder & lb,
 	scoped_vmap & svmap)
 {
 	static std::unordered_map<
 		std::type_index,
-		std::function<void(const agg::node&, const agg::demand_map&, jive::region*, scoped_vmap&)>
+		std::function<jive::node*(
+			const agg::node&,
+			const agg::demand_map&,
+			const jlm::clg_node&,
+			jive::lambda_builder&,
+			scoped_vmap&)
+		>
 	> map ({
 	  {std::type_index(typeid(agg::entry)), convert_entry_node}
 	, {std::type_index(typeid(agg::exit)), convert_exit_node}
@@ -360,72 +424,35 @@ convert_node(
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(node.structure()))) != map.end());
-	return map[std::type_index(typeid(node.structure()))](node, dm, region, svmap);
+	return map[std::type_index(typeid(node.structure()))](node, dm, function, lb, svmap);
 }
 
 static jive::oport *
 convert_cfg(
-	const jlm::clg_node * function,
+	const jlm::clg_node & function,
 	jive::region * region,
 	scoped_vmap & svmap)
 {
-	JLM_DEBUG_ASSERT(svmap.nvmaps() > 0);
-	auto cfg = function->cfg();
+	auto cfg = function.cfg();
 
 	destruct_ssa(*cfg);
 	restructure(cfg);
 	auto root = agg::aggregate(*cfg);
 	auto dm = agg::annotate(*root);
 
-	svmap.push_vmap();
-	auto & pvmap = svmap.vmap(svmap.nvmaps()-2);
-	auto & vmap = svmap.last();
-
 	jive::lambda_builder lb;
-	lb.begin(region, function->type());
-
-	JLM_DEBUG_ASSERT(cfg->entry().narguments() == lb.region()->narguments());
-	for (size_t n = 0; n < cfg->entry().narguments(); n++)
-		vmap[cfg->entry().argument(n)] = lb.region()->argument(n);
-
-	for (const auto & v : dm[root.get()].get()->top) {
-		JLM_DEBUG_ASSERT(pvmap.find(v) != pvmap.end());
-		vmap[v] = lb.add_dependency(pvmap[v]);
-	}
-
-	convert_node(*root, dm, lb.region(), svmap);
-
-	/* FIXME: finding the exit node can be simplified once we have agg::node reductions */
-	auto exit = root.get();
-	while (!is_exit_structure(exit->structure())) {
-		if (exit->nchildren() != 0)
-			exit = exit->child(exit->nchildren()-1);
-		else
-			exit = nullptr;
-	}
-	JLM_DEBUG_ASSERT(exit != nullptr);
-	auto xa = static_cast<const agg::exit*>(&exit->structure())->attribute();
-
-	std::vector<jive::oport*> results;
-	for (size_t n = 0; n < xa.nresults(); n++) {
-		JLM_DEBUG_ASSERT(svmap.last().find(xa.result(n)) != svmap.last().end());
-		results.push_back(svmap.last()[xa.result(n)]);
-	}
-
-	auto lambda = lb.end(results);
-	svmap.pop_vmap();
-
+	auto lambda = convert_node(*root, dm, function, lb, svmap);
 	return lambda->output(0);
 }
 
 static jive::oport *
 construct_lambda(
-	const clg_node * function,
+	const clg_node & function,
 	jive::region * region,
 	scoped_vmap & svmap)
 {
-	if (function->cfg() == nullptr)
-		return region->graph()->import(function->type(), function->name());
+	if (function.cfg() == nullptr)
+		return region->graph()->import(function.type(), function.name());
 
 	return convert_cfg(function, region, svmap);
 }
@@ -441,38 +468,38 @@ handle_scc(
 
 	if (scc.size() == 1 && !(*scc.begin())->is_selfrecursive()) {
 		const jlm::clg_node * function = *scc.begin();
-		auto lambda = construct_lambda(function, graph->root(), svmap);
+		auto lambda = construct_lambda(*function, graph->root(), svmap);
 		JLM_DEBUG_ASSERT(svmap.module().variable(function));
-		svmap.last()[svmap.module().variable(function)] = lambda;
+		svmap.vmap()[svmap.module().variable(function)] = lambda;
 		if (function->exported())
 			graph->export_port(lambda, function->name());
 	} else {
 		jive::phi_builder pb;
 		pb.begin(graph->root());
-		svmap.push_vmap();
+		svmap.push_scope(pb.region());
 
 		/* FIXME: external dependencies */
 		std::vector<std::shared_ptr<jive::recvar>> recvars;
 		for (const auto & f : scc) {
 			auto rv = pb.add_recvar(f->type());
 			JLM_DEBUG_ASSERT(module.variable(f));
-			svmap.last()[module.variable(f)] = rv->value();
+			svmap.vmap()[module.variable(f)] = rv->value();
 			recvars.push_back(rv);
 		}
 
 		size_t n = 0;
 		for (const auto & f : scc) {
-			auto lambda = construct_lambda(f, pb.region(), svmap);
+			auto lambda = construct_lambda(*f, pb.region(), svmap);
 			recvars[n++]->set_value(lambda);
 		}
 
-		svmap.pop_vmap();
+		svmap.pop_scope();
 		pb.end();
 
 		n = 0;
 		for (const auto & f : scc) {
 			auto value = recvars[n++]->value();
-			svmap.last()[module.variable(f)] = value;
+			svmap.vmap()[module.variable(f)] = value;
 			if (f->exported())
 				graph->export_port(value, f->name());
 		}
@@ -509,8 +536,8 @@ convert_global_variables(const module & m, jive_graph * graph)
 std::unique_ptr<jive::graph>
 construct_rvsdg(const module & m)
 {
-	scoped_vmap svmap(m);
 	auto rvsdg = std::make_unique<jive::graph>();
+	scoped_vmap svmap(m, rvsdg->root());
 
 /*
 	dstrct::variable_map globals = convert_global_variables(m, graph);
