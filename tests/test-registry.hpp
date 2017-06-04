@@ -17,20 +17,17 @@ namespace jlm {
 class module;
 
 void
-register_unit_test(
-	const std::string & name,
-	int (*verify_module)(const jlm::module & m),
-	int (*verify_rvsdg)(const jive::graph * graph));
+register_unit_test(const std::string & name, int(*verify)());
 
 int
 run_unit_test(const std::string & name);
 
 }
 
-#define JLM_UNIT_TEST_REGISTER(name, verify_module, verify_rvsdg) \
+#define JLM_UNIT_TEST_REGISTER(name, verify) \
 	static void __attribute__((constructor)) register_##verification(void) \
 	{ \
-		jlm::register_unit_test(name, verify_module, verify_rvsdg); \
+		jlm::register_unit_test(name, verify); \
 	} \
 
 #endif

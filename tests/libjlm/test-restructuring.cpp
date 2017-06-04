@@ -35,11 +35,11 @@ test_dowhile()
 }
 
 static int
-verify(const jive::graph * graph)
+verify()
 {
 	test_dowhile();
 
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-restructuring", nullptr, verify);
+JLM_UNIT_TEST_REGISTER("libjlm/test-restructuring", verify);

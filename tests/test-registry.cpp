@@ -26,60 +26,27 @@ namespace jlm {
 
 class unit_test {
 public:
-	unit_test(
-		int (*vmodule)(const jlm::module & m),
-		int(*vrvsdg)(const jive::graph * graph))
-		: verify_rvsdg(vrvsdg)
-		, verify_module(vmodule)
+	unit_test(int (*v)())
+	: verify(v)
 	{}
 
-	int (*verify_rvsdg)(const jive::graph * graph);
-	int (*verify_module)(const jlm::module & m);
+	int (*verify)();
 };
 
 static std::unordered_map<std::string, std::unique_ptr<unit_test>> unit_test_map;
 
 void
-register_unit_test(
-	const std::string & name,
-	int (*verify_module)(const jlm::module & m),
-	int (*verify_rvsdg)(const jive::graph * graph))
+register_unit_test(const std::string & name, int (*verify)())
 {
 	assert(unit_test_map.find(name) == unit_test_map.end());
-
-	unit_test_map.insert(std::make_pair(name,
-		std::unique_ptr<unit_test>(new unit_test(verify_module, verify_rvsdg))));
+	unit_test_map.insert(std::make_pair(name,std::make_unique<unit_test>(verify)));
 }
 
 int
 run_unit_test(const std::string & name)
 {
 	assert(unit_test_map.find(name) != unit_test_map.end());
-
-	std::string llname("tests/");
-	llname.append(name).append(".ll");
-
-	llvm::LLVMContext & context = llvm::getGlobalContext();
-
-	llvm::SMDiagnostic err;
-	std::unique_ptr<llvm::Module> module(llvm::parseIRFile(llname.c_str(), err, context));
-	if (!module) {
-		err.print(llname.c_str(), llvm::errs());
-		assert(0);
-	}
-
-	auto m = convert_module(*module);
-
-	int result = 0;
-	if (unit_test_map[name]->verify_module)
-		result += unit_test_map[name]->verify_module(*m);
-
-	auto rvsdg = jlm::construct_rvsdg(*m);
-
-	if (unit_test_map[name]->verify_rvsdg)
-		result += unit_test_map[name]->verify_rvsdg(rvsdg.get());
-
-	return result;
+	return unit_test_map[name]->verify();
 }
 
 }

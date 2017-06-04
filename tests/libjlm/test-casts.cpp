@@ -5,205 +5,256 @@
 
 #include "test-registry.hpp"
 
-#include <jive/arch/address-transform.h>
-#include <jive/arch/memlayout-simple.h>
-#include <jive/evaluator/eval.h>
-#include <jive/evaluator/literal.h>
-
 #include <jive/view.h>
+#include <jive/vsdg/graph.h>
 
-#include <assert.h>
+#include <jlm/construction/module.hpp>
+#include <jlm/destruction/destruction.hpp>
+#include <jlm/IR/module.hpp>
 
-static int
-verify_bitcast(const jive::graph * graph)
+#include <llvm/IR/BasicBlock.h>
+#include <llvm/IR/Function.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/Type.h>
+
+typedef std::function<llvm::Value*(llvm::IRBuilder<>&, llvm::Value*, llvm::Type*)> create_cast_t;
+
+static inline void
+test_cast(
+	llvm::LLVMContext & ctx,
+	const create_cast_t & create_cast,
+	llvm::Type * argtype,
+	llvm::Type * rtype)
 {
-	/* FIXME: insert checks */
-	return 0;
+	using namespace llvm;
+
+	auto ftype = FunctionType::get(rtype, {argtype}, false);
+
+	std::unique_ptr<Module> module(new llvm::Module("module", ctx));
+	auto f = Function::Create(ftype, Function::ExternalLinkage, "f", module.get());
+	auto bb = BasicBlock::Create(ctx, "entry", f, nullptr);
+
+	IRBuilder<> builder(bb);
+	auto v = create_cast(builder, f->arg_begin(), rtype);
+	builder.CreateRet(v);
+	module->dump();
+
+	auto m = jlm::convert_module(*module);
+	auto rvsdg = jlm::construct_rvsdg(*m);
+	jive::view(rvsdg->root(), stdout);
 }
 
 static int
-verify_fpext(const jive::graph * graph)
+verify_bitcast()
 {
-	/* FIXME: insert checks */
-	return 0;
-}
+	using namespace llvm;
 
-static int
-verify_fptosi(const jive::graph * graph)
-{
-	/* FIXME: insert checks */
-	return 0;
-}
+	auto create = [](IRBuilder<> & irb, Value * v, Type *t)
+	{
+		return irb.CreateBitCast(v, t);
+	};
 
-static int
-verify_fptoui(const jive::graph * graph)
-{
-	/* FIXME: insert checks */
-	return 0;
-}
-
-static int
-verify_fptrunc(const jive::graph * graph)
-{
-	/* FIXME: insert checks */
-	return 0;
-}
-
-static int
-verify_inttoptr(const jive::graph * graph)
-{
-	#if 0
-	/* FIXME: remove when the evaluator understands the address type */
-	setlocale(LC_ALL, "");
-
-	jive::memlayout_mapper_simple mapper(8);
-	jive_graph_address_transform(const_cast<jive_graph*>(graph), &mapper);
-
-	jive_graph_normalize(const_cast<jive_graph*>(graph));
-	jive_graph_prune(const_cast<jive_graph*>(graph));
-	jive_view(graph, stdout);
-
-	using namespace jive::evaluator;
-
-	memliteral state;
-	bitliteral xl(jive::bits::value_repr(jive::bits::value_repr(64, 3)));
-
-	std::unique_ptr<const literal> result;
-	result = std::move(eval(graph, "test_inttoptr", {&xl, &state})->copy());
-
-	const fctliteral * fctlit = dynamic_cast<const fctliteral*>(result.get());
-	assert(fctlit->nresults() == 2);
-	assert(dynamic_cast<const bitliteral*>(&fctlit->result(0))->value_repr() == 3);
-#endif
+	LLVMContext ctx;
+	test_cast(ctx, create, Type::getInt32PtrTy(ctx), Type::getInt32PtrTy(ctx));
 
 	return 0;
 }
 
 static int
-verify_ptrtoint(const jive::graph * graph)
+verify_fpext()
 {
-#if 0
-	/* FIXME: remove when the evaluator understands the address type */
-	setlocale(LC_ALL, "");
+	using namespace llvm;
 
-	jive::memlayout_mapper_simple mapper(8);
-	jive_graph_address_transform(const_cast<jive_graph*>(graph), &mapper);
+	auto create = [](IRBuilder<> & irb, Value * v, Type *t)
+	{
+		return irb.CreateFPExt(v, t);
+	};
 
-	jive_graph_normalize(const_cast<jive_graph*>(graph));
-	jive_graph_prune(const_cast<jive_graph*>(graph));
-	jive_view(graph, stdout);
-
-	using namespace jive::evaluator;
-
-	memliteral state;
-	bitliteral xl(jive::bits::value_repr(64, 3));
-
-	std::unique_ptr<const literal> result;
-	result = std::move(eval(graph, "test_ptrtoint", {&xl, &state})->copy());
-
-	const fctliteral * fctlit = dynamic_cast<const fctliteral*>(result.get());
-	assert(fctlit->nresults() == 2);
-	assert(dynamic_cast<const bitliteral*>(&fctlit->result(0))->value_repr() == 3);
-#endif
-	return 0;
-}
-
-static int
-verify_sext(const jive::graph * graph)
-{
-	using namespace jive::evaluator;
-
-	memliteral state;
-	bitliteral xl(jive::bits::value_repr(4, 1));
-
-	std::unique_ptr<const literal> result;
-	result = std::move(eval(graph, "test_sext", {&xl, &state})->copy());
-
-	const fctliteral * fctlit = dynamic_cast<const fctliteral*>(result.get());
-	assert(fctlit->nresults() == 2);
-	assert(dynamic_cast<const bitliteral*>(&fctlit->result(0))->value_repr() == 1);
-	assert(dynamic_cast<const bitliteral*>(&fctlit->result(0))->value_repr().nbits() == 8);
-
-
-	xl = jive::bits::value_repr(4, 0x8);
-	result = std::move(eval(graph, "test_sext", {&xl, &state})->copy());
-
-	fctlit = dynamic_cast<const fctliteral*>(result.get());
-	assert(fctlit->nresults() == 2);
-	assert(dynamic_cast<const bitliteral*>(&fctlit->result(0))->value_repr() == 0xF8);
-	assert(dynamic_cast<const bitliteral*>(&fctlit->result(0))->value_repr().nbits() == 8);
+	LLVMContext ctx;
+	test_cast(ctx, create, Type::getFloatTy(ctx), Type::getDoubleTy(ctx));
 
 	return 0;
 }
 
 static int
-verify_sitofp(const jive::graph * graph)
+verify_fptosi()
 {
-	/* FIXME: insert checks */
-	return 0;
-}
+	using namespace llvm;
 
-static int
-verify_trunc(const jive::graph * graph)
-{
-	using namespace jive::evaluator;
+	auto create = [](IRBuilder<> & irb, Value * v, Type *t)
+	{
+		return irb.CreateFPToSI(v, t);
+	};
 
-	memliteral state;
-	bitliteral xl(jive::bits::value_repr(64, 0xFFFFFFFF0000000F));
-
-	std::unique_ptr<const literal> result;
-	result = std::move(eval(graph, "test_trunc", {&xl, &state})->copy());
-
-	const fctliteral * fctlit = dynamic_cast<const fctliteral*>(result.get());
-	assert(fctlit->nresults() == 2);
-	assert(dynamic_cast<const bitliteral*>(&fctlit->result(0))->value_repr() == 0x0000000F);
+	LLVMContext ctx;
+	test_cast(ctx, create, Type::getFloatTy(ctx), Type::getInt32Ty(ctx));
 
 	return 0;
 }
 
 static int
-verify_uitofp(const jive::graph * graph)
+verify_fptoui()
 {
-	/* FIXME: insert checks */
-	return 0;
-}
+	using namespace llvm;
 
-static int
-verify_zext(const jive::graph * graph)
-{
-	using namespace jive::evaluator;
+	auto create = [](IRBuilder<> & irb, Value * v, Type *t)
+	{
+		return irb.CreateFPToUI(v, t);
+	};
 
-	memliteral state;
-	bitliteral xl(jive::bits::value_repr(16, 13));
-
-	std::unique_ptr<const literal> result;
-	result = std::move(eval(graph, "test_zext", {&xl, &state})->copy());
-
-	const fctliteral * fctlit = dynamic_cast<const fctliteral*>(result.get());
-	assert(fctlit->nresults() == 2);
-	assert(dynamic_cast<const bitliteral*>(&fctlit->result(0))->value_repr() == 13);
-	assert(dynamic_cast<const bitliteral*>(&fctlit->result(0))->value_repr().nbits() == 64);
+	LLVMContext ctx;
+	test_cast(ctx, create, Type::getFloatTy(ctx), Type::getInt32Ty(ctx));
 
 	return 0;
 }
 
 static int
-verify(const jive::graph * graph)
+verify_fptrunc()
 {
-	verify_bitcast(graph);
-	verify_fpext(graph);
-	verify_fptosi(graph);
-	verify_fptoui(graph);
-	verify_fptrunc(graph);
-	verify_inttoptr(graph);
-	verify_ptrtoint(graph);
-	verify_sext(graph);
-	verify_sitofp(graph);
-	verify_trunc(graph);
-	verify_uitofp(graph);
-	verify_zext(graph);
+	using namespace llvm;
+
+	auto create = [](IRBuilder<> & irb, Value * v, Type *t)
+	{
+		return irb.CreateFPTrunc(v, t);
+	};
+
+	LLVMContext ctx;
+	test_cast(ctx, create, Type::getDoubleTy(ctx), Type::getFloatTy(ctx));
 
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-casts", nullptr, verify);
+static int
+verify_inttoptr()
+{
+	using namespace llvm;
+
+	auto create = [](IRBuilder<> & irb, Value * v, Type *t)
+	{
+		return irb.CreateIntToPtr(v, t);
+	};
+
+	LLVMContext ctx;
+	test_cast(ctx, create, Type::getInt64Ty(ctx), Type::getInt64PtrTy(ctx));
+
+	return 0;
+}
+
+static int
+verify_ptrtoint()
+{
+	using namespace llvm;
+
+	auto create = [](IRBuilder<> & irb, Value * v, Type *t)
+	{
+		return irb.CreatePtrToInt(v, t);
+	};
+
+	LLVMContext ctx;
+	test_cast(ctx, create, Type::getInt64PtrTy(ctx), Type::getInt64Ty(ctx));
+
+	return 0;
+}
+
+static int
+verify_sext()
+{
+	using namespace llvm;
+
+	auto create = [](IRBuilder<> & irb, Value * v, Type *t)
+	{
+		return irb.CreateSExt(v, t);
+	};
+
+	LLVMContext ctx;
+	test_cast(ctx, create, Type::getInt32Ty(ctx), Type::getInt64Ty(ctx));
+
+	return 0;
+}
+
+static int
+verify_sitofp()
+{
+	using namespace llvm;
+
+	auto create = [](IRBuilder<> & irb, Value * v, Type *t)
+	{
+		return irb.CreateSIToFP(v, t);
+	};
+
+	LLVMContext ctx;
+	test_cast(ctx, create, Type::getInt32Ty(ctx), Type::getFloatTy(ctx));
+
+	return 0;
+}
+
+static int
+verify_trunc()
+{
+	using namespace llvm;
+
+	auto create = [](IRBuilder<> & irb, Value * v, Type *t)
+	{
+		return irb.CreateTrunc(v, t);
+	};
+
+	LLVMContext ctx;
+	test_cast(ctx, create, Type::getInt64Ty(ctx), Type::getInt32Ty(ctx));
+
+	return 0;
+}
+
+static int
+verify_uitofp()
+{
+	using namespace llvm;
+
+	auto create = [](IRBuilder<> & irb, Value * v, Type *t)
+	{
+		return irb.CreateUIToFP(v, t);
+	};
+
+	LLVMContext ctx;
+	test_cast(ctx, create, Type::getInt32Ty(ctx), Type::getFloatTy(ctx));
+
+	return 0;
+}
+
+static int
+verify_zext()
+{
+	using namespace llvm;
+
+	auto create = [](IRBuilder<> & irb, Value * v, Type *t)
+	{
+		return irb.CreateZExt(v, t);
+	};
+
+	LLVMContext ctx;
+	test_cast(ctx, create, Type::getInt16Ty(ctx), Type::getInt64Ty(ctx));
+
+	return 0;
+}
+
+static int
+verify()
+{
+	verify_bitcast();
+	verify_fpext();
+	verify_fptosi();
+	verify_fptoui();
+	verify_fptrunc();
+	verify_inttoptr();
+	verify_ptrtoint();
+	verify_sext();
+	verify_sitofp();
+	verify_trunc();
+	verify_uitofp();
+	verify_zext();
+
+	return 0;
+}
+
+JLM_UNIT_TEST_REGISTER("libjlm/test-casts", verify);

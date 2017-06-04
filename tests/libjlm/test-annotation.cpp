@@ -222,7 +222,7 @@ test_loop_graph()
 }
 
 static int
-test(const jive::graph * graph)
+test()
 {
 	/* FIXME: avoid aggregation function and build aggregated tree directly */
 	test_linear_graph();
@@ -232,4 +232,4 @@ test(const jive::graph * graph)
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-annotation", nullptr, test);
+JLM_UNIT_TEST_REGISTER("libjlm/test-annotation", test);

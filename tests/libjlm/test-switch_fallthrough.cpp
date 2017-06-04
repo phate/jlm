@@ -5,44 +5,69 @@
 
 #include "test-registry.hpp"
 
-#include <jive/evaluator/eval.h>
-#include <jive/evaluator/literal.h>
+#include <jive/view.h>
+#include <jive/vsdg/graph.h>
 
-#include <assert.h>
+#include <jlm/construction/module.hpp>
+#include <jlm/destruction/destruction.hpp>
+#include <jlm/IR/module.hpp>
+
+#include <llvm/IR/BasicBlock.h>
+#include <llvm/IR/Function.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/Type.h>
 
 static int
-verify(const jive::graph * graph)
+verify()
 {
-	using namespace jive::evaluator;
+	using namespace llvm;
 
-	/* test_switch_fallthrough(2) */
-	memliteral state;
-	bitliteral xl(jive::bits::value_repr(32, 2));
+	LLVMContext ctx;
+	Module module("module", ctx);
+	auto ftype = FunctionType::get(Type::getInt32Ty(ctx), {Type::getInt32Ty(ctx)}, false);
+	auto f = Function::Create(ftype, Function::ExternalLinkage, "f", &module);
 
-	std::unique_ptr<const literal> result;
-	result = std::move(eval(graph, "test_switch_fallthrough", {&xl, &state})->copy());
+	auto prolog = BasicBlock::Create(ctx, "prolog", f, nullptr);
+	auto bb = BasicBlock::Create(ctx, "bb", f, nullptr);
+	auto def = BasicBlock::Create(ctx, "default", f, nullptr);
+	auto epilog = BasicBlock::Create(ctx, "epilog", f, nullptr);
 
-	const fctliteral * fctlit = dynamic_cast<const fctliteral*>(result.get());
-	assert(fctlit->nresults() == 2);
-	assert(dynamic_cast<const bitliteral*>(&fctlit->result(0))->value_repr() == 2);
+	/* prolog */
+	IRBuilder<> irb1(prolog);
+	auto swi = irb1.CreateSwitch(f->arg_begin(), def);
+	swi->addCase(ConstantInt::get(Type::getInt32Ty(ctx), 2), epilog);
+	swi->addCase(ConstantInt::get(Type::getInt32Ty(ctx), 3), bb);
 
-	/* test_switch_fallthrough(3) */
-	xl = jive::bits::value_repr(32, 3);
-	result = std::move(eval(graph, "test_switch_fallthrough", {&xl, &state})->copy());
+	/* bb */
+	IRBuilder<> irb2(bb);
+	irb2.CreateBr(def);
 
-	fctlit = dynamic_cast<const fctliteral*>(result.get());
-	assert(fctlit->nresults() == 2);
-	assert(dynamic_cast<const bitliteral*>(&fctlit->result(0))->value_repr() == 7);
+	/* default */
+	IRBuilder<> irb3(def);
+	auto phi = irb3.CreatePHI(Type::getInt32Ty(ctx), 2);
+	phi->addIncoming(ConstantInt::get(Type::getInt32Ty(ctx), 4), prolog);
+	phi->addIncoming(ConstantInt::get(Type::getInt32Ty(ctx), 7), bb);
+	irb3.CreateBr(epilog);
 
-	/* test_switch_fallthrough(10) */
-	xl = jive::bits::value_repr(32, 10);
-	result = std::move(eval(graph, "test_switch_fallthrough", {&xl, &state})->copy());
+	/* epilog */
+	IRBuilder<> irb4(epilog);
+	phi = irb4.CreatePHI(Type::getInt32Ty(ctx), 3);
+	phi->addIncoming(phi, def);
+	phi->addIncoming(ConstantInt::get(Type::getInt32Ty(ctx), 2), prolog);
+	irb4.CreateRet(phi);
 
-	fctlit = dynamic_cast<const fctliteral*>(result.get());
-	assert(fctlit->nresults() == 2);
-	assert(dynamic_cast<const bitliteral*>(&fctlit->result(0))->value_repr() == 4);
+	module.dump();
+
+	using namespace jlm;
+
+	auto m = convert_module(module);
+	auto rvsdg = construct_rvsdg(*m);
+
+	jive::view(rvsdg->root(), stdout);
 
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-switch_fallthrough", nullptr, verify);
+JLM_UNIT_TEST_REGISTER("libjlm/test-switch_fallthrough", verify);

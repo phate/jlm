@@ -5,44 +5,96 @@
 
 #include "test-registry.hpp"
 
-#include <jive/evaluator/eval.h>
-#include <jive/evaluator/literal.h>
-
 #include <jive/view.h>
 #include <jive/vsdg/graph.h>
 
+#include <jlm/construction/module.hpp>
+#include <jlm/destruction/destruction.hpp>
+#include <jlm/IR/module.hpp>
+
+#include <llvm/IR/BasicBlock.h>
+#include <llvm/IR/Function.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/Type.h>
+
 #include <assert.h>
 
-static int
-verify_constantInt(const jive::graph * graph)
+static inline void
+verify_constantInt()
 {
-	using namespace jive::evaluator;
+	using namespace llvm;
 
-	memliteral state;
-	bitliteral xl(jive::bits::value_repr(32, 13));
+	LLVMContext ctx;
+	Module module("module", ctx);
+	auto ftype = FunctionType::get(Type::getInt32Ty(ctx), false);
+	auto f = Function::Create(ftype, Function::ExternalLinkage, "", &module);
+	auto bb = BasicBlock::Create(ctx, "f", f, nullptr);
 
-	std::unique_ptr<const literal> result;
-	result = std::move(eval(graph, "test_constantInt", {&xl, &state})->copy());
+	IRBuilder<> builder(bb);
+	builder.CreateRet(ConstantInt::get(Type::getInt32Ty(ctx), 32));
 
-	const fctliteral * fctlit = dynamic_cast<const fctliteral*>(result.get());
-	assert(fctlit->nresults() == 2);
-	assert(dynamic_cast<const bitliteral*>(&fctlit->result(0))->value_repr() == 12);
+	module.dump();
 
-	return 0;
+	using namespace jlm;
+
+	auto m = convert_module(module);
+	auto rvsdg = construct_rvsdg(*m);
+
+	jive::view(rvsdg->root(), stdout);
 }
 
-static int
-verify_constantFP(const jive::graph * graph)
+static inline int
+verify_constantFP()
 {
-	jive::view(graph->root(), stdout);
-
 	/* FIXME: insert checks for all types */
 
 	return 0;
 }
 
-static int
-verify_constantPointerNull(const jive::graph * graph)
+static inline int
+verify_constantPointerNull()
+{
+	/* FIXME: insert checks */
+
+	return 0;
+}
+
+static inline int
+verify_globalVariable()
+{
+	/* FIXME: insert checks */
+
+	return 0;
+}
+
+static inline void
+verify_undefValue()
+{
+	using namespace llvm;
+
+	LLVMContext ctx;
+	Module module("module", ctx);
+	auto ftype = FunctionType::get(Type::getInt32Ty(ctx), false);
+	auto f = Function::Create(ftype, Function::ExternalLinkage, "", &module);
+	auto bb = BasicBlock::Create(ctx, "f", f, nullptr);
+
+	IRBuilder<> builder(bb);
+	builder.CreateRet(UndefValue::get(Type::getInt32Ty(ctx)));
+
+	module.dump();
+
+	using namespace jlm;
+
+	auto m = convert_module(module);
+	auto rvsdg = construct_rvsdg(*m);
+
+	jive::view(rvsdg->root(), stdout);
+}
+
+static inline int
+verify_constantAggregateZeroStruct()
 {
 	/* FIXME: insert checks */
 
@@ -50,49 +102,16 @@ verify_constantPointerNull(const jive::graph * graph)
 }
 
 static int
-verify_globalVariable(const jive::graph * graph)
+verify()
 {
-	/* FIXME: insert checks */
+	verify_constantFP();
+	verify_constantInt();
+	verify_constantPointerNull();
+	verify_globalVariable();
+	verify_undefValue();
+	verify_constantAggregateZeroStruct();
 
 	return 0;
 }
 
-static int
-verify_undefValue(const jive::graph * graph)
-{
-	using namespace jive::evaluator;
-
-	memliteral state;
-	std::unique_ptr<const literal> result;
-	result = std::move(eval(graph, "test_undefValue", {&state})->copy());
-
-	const fctliteral * fctlit = dynamic_cast<const fctliteral*>(result.get());
-	assert(fctlit->nresults() == 2);
-	assert(dynamic_cast<const bitliteral*>(
-		&fctlit->result(0))->value_repr() == jive::bits::value_repr::repeat(32, 'X'));
-
-	return 0;
-}
-
-static int
-verify_constantAggregateZeroStruct(const jive::graph * graph)
-{
-	/* FIXME: insert checks */
-
-	return 0;
-}
-
-static int
-verify(const jive::graph * graph)
-{
-	verify_constantFP(graph);
-	verify_constantInt(graph);
-	verify_constantPointerNull(graph);
-	verify_globalVariable(graph);
-	verify_undefValue(graph);
-	verify_constantAggregateZeroStruct(graph);
-
-	return 0;
-}
-
-JLM_UNIT_TEST_REGISTER("libjlm/test-constants", nullptr, verify);
+JLM_UNIT_TEST_REGISTER("libjlm/test-constants", verify);

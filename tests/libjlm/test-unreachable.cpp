@@ -5,30 +5,52 @@
 
 #include "test-registry.hpp"
 
-#include <jive/evaluator/eval.h>
-#include <jive/evaluator/literal.h>
+#include <jive/view.h>
+#include <jive/vsdg/graph.h>
 
-#include <assert.h>
+#include <jlm/construction/module.hpp>
+#include <jlm/destruction/destruction.hpp>
+#include <jlm/IR/module.hpp>
+
+#include <llvm/IR/BasicBlock.h>
+#include <llvm/IR/Function.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/Type.h>
 
 static int
-verify(const jive::graph * graph)
+verify()
 {
-	using namespace jive::evaluator;
+	using namespace llvm;
 
-	memliteral state;
-	bitliteral xl(jive::bits::value_repr(32, 13));
+	LLVMContext ctx;
+	Module module("module", ctx);
+	auto ftype = FunctionType::get(Type::getVoidTy(ctx), false);
+	auto f = Function::Create(ftype, Function::ExternalLinkage, "main", &module);
+	auto bb1 = BasicBlock::Create(ctx, "bb1", f, nullptr);
+	auto bb2 = BasicBlock::Create(ctx, "bb2", f, nullptr);
 
-	bool exception_caught = false;
-	try {
-		std::unique_ptr<const literal> result;
-		result = std::move(eval(graph, "unreachable", {&xl, &state})->copy());
-	} catch (jive::compiler_error e) {
-		exception_caught = true;
+	{
+		IRBuilder<> builder(bb1);
+		builder.CreateUnreachable();
 	}
 
-	assert(exception_caught);
+	{
+		IRBuilder<> builder(bb2);
+		builder.CreateRetVoid();
+	}
+
+	module.dump();
+
+	using namespace jlm;
+
+	auto m = convert_module(module);
+	auto rvsdg = construct_rvsdg(*m);
+
+	jive::view(rvsdg->root(), stdout);
 
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-unreachable", nullptr, verify);
+JLM_UNIT_TEST_REGISTER("libjlm/test-unreachable", verify);

@@ -10,82 +10,83 @@
 #include <jive/types/bitstring/arithmetic.h>
 #include <jive/types/bitstring/comparison.h>
 #include <jive/types/bitstring/type.h>
+#include <jive/view.h>
+#include <jive/vsdg/graph.h>
+
+#include <jlm/construction/module.hpp>
+#include <jlm/destruction/destruction.hpp>
+#include <jlm/IR/module.hpp>
+
+#include <llvm/IR/BasicBlock.h>
+#include <llvm/IR/Function.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/Type.h>
 
 #include <assert.h>
 
-#define MAKE_INTOP_VERIFIER(NAME, OP) \
-static void \
-verify_int##NAME##_op(const jive::graph * graph, uint64_t x, uint64_t y, uint64_t z) \
-{ \
-	using namespace jive::evaluator; \
-\
-	memliteral state; \
-	bitliteral xl(jive::bits::value_repr(64, x)); \
-	bitliteral yl(jive::bits::value_repr(64, y)); \
-\
-	std::unique_ptr<const literal> result; \
-	result = std::move(eval(graph, "test_int" #NAME, {&xl, &yl, &state})->copy()); \
-\
-	const fctliteral * fctlit = dynamic_cast<const fctliteral*>(result.get()); \
-  assert(fctlit->nresults() == 2); \
-  assert(dynamic_cast<const bitliteral*>(&fctlit->result(0))->value_repr() == z); \
-} \
+typedef std::function<llvm::Value*(llvm::IRBuilder<>&, llvm::Value*, llvm::Value*)> create_binop_t;
 
-MAKE_INTOP_VERIFIER(slt, slt_op);
-MAKE_INTOP_VERIFIER(ult, ult_op);
-MAKE_INTOP_VERIFIER(sle, sle_op);
-MAKE_INTOP_VERIFIER(ule, ule_op);
-MAKE_INTOP_VERIFIER(eq, eq_op);
-MAKE_INTOP_VERIFIER(ne, ne_op);
-MAKE_INTOP_VERIFIER(sgt, sgt_op);
-MAKE_INTOP_VERIFIER(ugt, ugt_op);
-MAKE_INTOP_VERIFIER(sge, sge_op);
-MAKE_INTOP_VERIFIER(uge, uge_op);
+static inline void
+verify_icmp(const jive::graph * rvsdg, uint64_t lhs, uint64_t rhs, uint64_t r)
+{
+	using namespace jive::evaluator;
 
-#define MAKE_PTROP_VERIFIER(NAME, OP) \
-static void \
-verify_ptr##NAME##_op(const jive::graph * graph, uint64_t x, uint64_t y, uint64_t z) \
-{ \
-	/* FIXME: add checks */ \
-} \
+	memliteral state;
+	bitliteral xl(jive::bits::value_repr(64, lhs));
+	bitliteral yl(jive::bits::value_repr(64, rhs));
 
-MAKE_PTROP_VERIFIER(slt, slt_op);
-MAKE_PTROP_VERIFIER(ult, ult_op);
-MAKE_PTROP_VERIFIER(sle, sle_op);
-MAKE_PTROP_VERIFIER(ule, ule_op);
-MAKE_PTROP_VERIFIER(eq, eq_op);
-MAKE_PTROP_VERIFIER(ne, ne_op);
-MAKE_PTROP_VERIFIER(sgt, sgt_op);
-MAKE_PTROP_VERIFIER(ugt, ugt_op);
-MAKE_PTROP_VERIFIER(sge, sge_op);
-MAKE_PTROP_VERIFIER(uge, uge_op);
+	auto result = eval(rvsdg, "f", {&xl, &yl, &state})->copy();
+
+	auto fctlit = dynamic_cast<const fctliteral*>(result.get());
+	assert(fctlit->nresults() == 2);
+	assert(dynamic_cast<const bitliteral*>(&fctlit->result(0))->value_repr() == r);
+}
+
+static inline void
+test_icmp(const llvm::CmpInst::Predicate & p, uint64_t lhs, uint64_t rhs, uint64_t r)
+{
+	using namespace llvm;
+
+	LLVMContext ctx;
+	auto int1 = Type::getInt1Ty(ctx);
+	auto int64 = Type::getInt64Ty(ctx);
+	auto ftype = FunctionType::get(int1, {int64, int64}, false);
+
+	std::unique_ptr<Module> module(new llvm::Module("module", ctx));
+	auto f = Function::Create(ftype, Function::ExternalLinkage, "f", module.get());
+	auto bb = BasicBlock::Create(ctx, "entry", f, nullptr);
+
+	IRBuilder<> builder(bb);
+	auto v = builder.CreateICmp(p, f->arg_begin(), std::next(f->arg_begin()));
+	builder.CreateRet(v);
+	module->dump();
+
+	auto m = jlm::convert_module(*module);
+	auto rvsdg = jlm::construct_rvsdg(*m);
+	jive::view(rvsdg->root(), stdout);
+
+	verify_icmp(rvsdg.get(), lhs, rhs, r);
+}
 
 static int
-verify(const jive::graph * graph)
+verify()
 {
-	verify_intslt_op(graph, -3, 4, 1);
-	verify_intult_op(graph, 3, 4, 1);
-	verify_intsle_op(graph, -3, -3, 1);
-	verify_intule_op(graph, -2, -3, 0);
-	verify_inteq_op(graph, 4, 5, 0);
-	verify_intne_op(graph, 4, 5, 1);
-	verify_intsgt_op(graph, -4, -5, 1);
-	verify_intugt_op(graph, 4, 5, 0);
-	verify_intsge_op(graph, -4, -4, 1);
-	verify_intuge_op(graph, 4, 4, 1);
+	using namespace llvm;
 
-	verify_ptrslt_op(graph, -3, 4, 1);
-	verify_ptrult_op(graph, 3, 4, 1);
-	verify_ptrsle_op(graph, -3, -3, 1);
-	verify_ptrule_op(graph, -2, -3, 0);
-	verify_ptreq_op(graph, 4, 5, 0);
-	verify_ptrne_op(graph, 4, 5, 1);
-	verify_ptrsgt_op(graph, -4, -5, 1);
-	verify_ptrugt_op(graph, 4, 5, 0);
-	verify_ptrsge_op(graph, -4, -4, 1);
-	verify_ptruge_op(graph, 4, 4, 1);
+	test_icmp(CmpInst::ICMP_SLT, -3, 4, 1);
+	test_icmp(CmpInst::ICMP_ULT, 3, 4, 1);
+	test_icmp(CmpInst::ICMP_SLE, -3, -3, 1);
+	test_icmp(CmpInst::ICMP_ULE, -2, -3, 0);
+	test_icmp(CmpInst::ICMP_EQ, 4, 5, 0);
+	test_icmp(CmpInst::ICMP_NE, 4, 5, 1);
+	test_icmp(CmpInst::ICMP_SGT, -4, -5, 1);
+	test_icmp(CmpInst::ICMP_UGT, 4, 5, 0);
+	test_icmp(CmpInst::ICMP_SGE, -4, -4, 1);
+	test_icmp(CmpInst::ICMP_UGE, 4, 4, 1);
 
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-icmp", nullptr, verify);
+JLM_UNIT_TEST_REGISTER("libjlm/test-icmp", verify);

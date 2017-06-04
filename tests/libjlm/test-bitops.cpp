@@ -10,59 +10,226 @@
 #include <jive/types/bitstring/arithmetic.h>
 #include <jive/types/bitstring/comparison.h>
 #include <jive/types/bitstring/type.h>
+#include <jive/view.h>
+#include <jive/vsdg/graph.h>
+
+#include <jlm/construction/module.hpp>
+#include <jlm/destruction/destruction.hpp>
+#include <jlm/IR/module.hpp>
+
+#include <llvm/IR/BasicBlock.h>
+#include <llvm/IR/Function.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/Type.h>
 
 #include <assert.h>
 
-#define MAKE_OP_VERIFIER(NAME, OP) \
-static void \
-verify_##NAME##_op(const jive::graph * graph, uint64_t x, uint64_t y, uint64_t z) \
-{ \
-	using namespace jive::evaluator; \
-\
-	memliteral state; \
-	bitliteral xl(jive::bits::value_repr(64, x)); \
-	bitliteral yl(jive::bits::value_repr(64, y)); \
-\
-	std::unique_ptr<const literal> result; \
-	result = std::move(eval(graph, "test_" #NAME, {&xl, &yl, &state})->copy()); \
-\
-	const fctliteral * fctlit = dynamic_cast<const fctliteral*>(result.get()); \
-  assert(fctlit->nresults() == 2); \
-  assert(dynamic_cast<const bitliteral*>(&fctlit->result(0))->value_repr() == z); \
-} \
+typedef std::function<llvm::Value*(llvm::IRBuilder<>&, llvm::Value*, llvm::Value*)> create_binop_t;
 
-MAKE_OP_VERIFIER(add, add_op);
-MAKE_OP_VERIFIER(and, and_op);
-MAKE_OP_VERIFIER(ashr, ashr_op);
-MAKE_OP_VERIFIER(sub, sub_op);
-MAKE_OP_VERIFIER(udiv, udiv_op);
-MAKE_OP_VERIFIER(sdiv, sdiv_op);
-MAKE_OP_VERIFIER(urem, umod_op);
-MAKE_OP_VERIFIER(srem, smod_op);
-MAKE_OP_VERIFIER(shl, shl_op);
-MAKE_OP_VERIFIER(lshr, shr_op);
-MAKE_OP_VERIFIER(or, or_op);
-MAKE_OP_VERIFIER(xor, xor_op);
-MAKE_OP_VERIFIER(mul, mul_op);
+static inline void
+verify_binop(const jive::graph * rvsdg, uint64_t lhs, uint64_t rhs, uint64_t r)
+{
+	using namespace jive::evaluator;
+
+	memliteral state;
+	bitliteral xl(jive::bits::value_repr(64, lhs));
+	bitliteral yl(jive::bits::value_repr(64, rhs));
+
+	auto result = eval(rvsdg, "f", {&xl, &yl, &state})->copy();
+
+	auto fctlit = dynamic_cast<const fctliteral*>(result.get());
+	assert(fctlit->nresults() == 2);
+	assert(dynamic_cast<const bitliteral*>(&fctlit->result(0))->value_repr() == r);
+}
+
+static inline void
+test_binop(const create_binop_t & create_binop, uint64_t lhs, uint64_t rhs, uint64_t r)
+{
+	using namespace llvm;
+
+	LLVMContext ctx;
+	auto int64 = Type::getInt64Ty(ctx);
+	auto ftype = FunctionType::get(int64, {int64, int64}, false);
+
+	std::unique_ptr<Module> module(new llvm::Module("module", ctx));
+	auto f = Function::Create(ftype, Function::ExternalLinkage, "f", module.get());
+	auto bb = BasicBlock::Create(ctx, "entry", f, nullptr);
+
+	IRBuilder<> builder(bb);
+	auto v = create_binop(builder, f->arg_begin(), std::next(f->arg_begin()));
+	builder.CreateRet(v);
+	module->dump();
+
+	auto m = jlm::convert_module(*module);
+	auto rvsdg = jlm::construct_rvsdg(*m);
+	jive::view(rvsdg->root(), stdout);
+
+	verify_binop(rvsdg.get(), lhs, rhs, r);
+}
+
+static inline void
+test_add()
+{
+	auto create = [](llvm::IRBuilder<> & irb, llvm::Value * lhs, llvm::Value * rhs)
+	{
+		return irb.CreateAdd(lhs, rhs);
+	};
+
+	test_binop(create, 3, 4, 7);
+}
+
+static inline void
+test_and()
+{
+	auto create = [](llvm::IRBuilder<> & irb, llvm::Value * lhs, llvm::Value * rhs)
+	{
+		return irb.CreateAnd(lhs, rhs);
+	};
+
+	test_binop(create, 3, 6, 2);
+}
+
+static inline void
+test_ashr()
+{
+	auto create = [](llvm::IRBuilder<> & irb, llvm::Value * lhs, llvm::Value * rhs)
+	{
+		return irb.CreateAShr(lhs, rhs);
+	};
+
+	test_binop(create, 0x8000000000000001, 1, 0xC000000000000000);
+}
+
+static inline void
+test_sub()
+{
+	auto create = [](llvm::IRBuilder<> & irb, llvm::Value * lhs, llvm::Value * rhs)
+	{
+		return irb.CreateSub(lhs, rhs);
+	};
+
+	test_binop(create, 5, 3, 2);
+}
+
+static inline void
+test_udiv()
+{
+	auto create = [](llvm::IRBuilder<> & irb, llvm::Value * lhs, llvm::Value * rhs)
+	{
+		return irb.CreateUDiv(lhs, rhs);
+	};
+
+	test_binop(create, 16, 4, 4);
+}
+
+static inline void
+test_sdiv()
+{
+	auto create = [](llvm::IRBuilder<> & irb, llvm::Value * lhs, llvm::Value * rhs)
+	{
+		return irb.CreateSDiv(lhs, rhs);
+	};
+
+	test_binop(create, -16, 4, -4);
+}
+
+static inline void
+test_urem()
+{
+	auto create = [](llvm::IRBuilder<> & irb, llvm::Value * lhs, llvm::Value * rhs)
+	{
+		return irb.CreateURem(lhs, rhs);
+	};
+
+	test_binop(create, 16, 5, 1);
+}
+
+static inline void
+test_srem()
+{
+	auto create = [](llvm::IRBuilder<> & irb, llvm::Value * lhs, llvm::Value * rhs)
+	{
+		return irb.CreateSRem(lhs, rhs);
+	};
+
+	test_binop(create, -16, 5, -1);
+}
+
+static inline void
+test_shl()
+{
+	auto create = [](llvm::IRBuilder<> & irb, llvm::Value * lhs, llvm::Value * rhs)
+	{
+		return irb.CreateShl(lhs, rhs);
+	};
+
+	test_binop(create, 1, 1, 2);
+}
+
+static inline void
+test_lshr()
+{
+	auto create = [](llvm::IRBuilder<> & irb, llvm::Value * lhs, llvm::Value * rhs)
+	{
+		return irb.CreateLShr(lhs, rhs);
+	};
+
+	test_binop(create, 2, 1, 1);
+}
+
+static inline void
+test_or()
+{
+	auto create = [](llvm::IRBuilder<> & irb, llvm::Value * lhs, llvm::Value * rhs)
+	{
+		return irb.CreateOr(lhs, rhs);
+	};
+
+	test_binop(create, 3, 6, 7);
+}
+
+static inline void
+test_xor()
+{
+	auto create = [](llvm::IRBuilder<> & irb, llvm::Value * lhs, llvm::Value * rhs)
+	{
+		return irb.CreateXor(lhs, rhs);
+	};
+
+	test_binop(create, 3, 6, 5);
+}
+
+static inline void
+test_mul()
+{
+	auto create = [](llvm::IRBuilder<> & irb, llvm::Value * lhs, llvm::Value * rhs)
+	{
+		return irb.CreateMul(lhs, rhs);
+	};
+
+	test_binop(create, 3, 4, 12);
+}
 
 static int
-verify(const jive::graph * graph)
+verify()
 {
-	verify_add_op(graph, 3, 4, 7);
-	verify_and_op(graph, 3, 6, 2);
-	verify_ashr_op(graph, 0x8000000000000001, 1, 0xC000000000000000);
-	verify_sub_op(graph, 5, 3, 2);
-	verify_udiv_op(graph, 16, 4, 4);
-	verify_sdiv_op(graph, -16, 4, -4);
-	verify_urem_op(graph, 16, 5, 1);
-	verify_srem_op(graph, -16, 5, -1);
-	verify_shl_op(graph, 1, 1, 2);
-	verify_lshr_op(graph, 2, 1, 1);
-	verify_or_op(graph, 3, 6, 7);
-	verify_xor_op(graph, 3, 6, 5);
-	verify_mul_op(graph, 3, 4, 12);
+	test_add();
+	test_and();
+	test_ashr();
+	test_sub();
+	test_udiv();
+	test_sdiv();
+	test_urem();
+	test_srem();
+	test_shl();
+	test_lshr();
+	test_or();
+	test_xor();
+	test_mul();
 
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-bitops", nullptr, verify);
+JLM_UNIT_TEST_REGISTER("libjlm/test-bitops", verify);

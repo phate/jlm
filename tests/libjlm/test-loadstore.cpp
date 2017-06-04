@@ -5,41 +5,46 @@
 
 #include "test-registry.hpp"
 
-#include <jive/arch/address-transform.h>
-#include <jive/arch/memlayout-simple.h>
-#include <jive/evaluator/eval.h>
-#include <jive/evaluator/literal.h>
-
 #include <jive/view.h>
+#include <jive/vsdg/graph.h>
 
-#include <assert.h>
+#include <jlm/construction/module.hpp>
+#include <jlm/destruction/destruction.hpp>
+#include <jlm/IR/module.hpp>
+
+#include <llvm/IR/BasicBlock.h>
+#include <llvm/IR/Function.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/Type.h>
 
 static int
-verify(const jive::graph * graph)
+verify()
 {
-#if 0
-	/* FIXME: remove when the evaluator understands the address type */
-	setlocale(LC_ALL, "");
+	using namespace llvm;
 
-	jive::memlayout_mapper_simple mapper(8);
-	jive_graph_address_transform(const_cast<jive_graph*>(graph), &mapper);
+	LLVMContext ctx;
+	Module module("module", ctx);
+	auto ftype = FunctionType::get(Type::getVoidTy(ctx), {Type::getInt32PtrTy(ctx)}, false);
+	auto f = Function::Create(ftype, Function::ExternalLinkage, "", &module);
+	auto bb = BasicBlock::Create(ctx, "f", f, nullptr);
 
-	jive_graph_normalize(const_cast<jive_graph*>(graph));
-	jive_graph_prune(const_cast<jive_graph*>(graph));
-	jive_view(graph, stdout);
+	IRBuilder<> builder(bb);
+	auto v = builder.CreateLoad(f->arg_begin());
+	builder.CreateStore(v, f->arg_begin());
+	builder.CreateRetVoid();
 
-	using namespace jive::evaluator;
+	module.dump();
 
-	uint64_t x = 3;
-	memliteral state;
-	bitliteral xl(jive::bits::value_repr(64, (uint64_t)&x));
+	using namespace jlm;
 
-	std::unique_ptr<const literal> result;
-	result = std::move(eval(graph, "test_loadstore", {&xl, &state})->copy());
+	auto m = convert_module(module);
+	auto rvsdg = construct_rvsdg(*m);
 
-	assert(x == 5);
-#endif
+	jive::view(rvsdg->root(), stdout);
+
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-loadstore", nullptr, verify);
+JLM_UNIT_TEST_REGISTER("libjlm/test-loadstore", verify);

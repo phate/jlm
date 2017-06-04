@@ -12,16 +12,10 @@
 #include <assert.h>
 
 int
-verify(const jive::graph * graph)
+verify()
 {
-#if 0
-	for (jive_node * node : jive::topdown_traverser(const_cast<jive_graph*>(graph))) {
-		if (dynamic_cast<const jive::fct::apply_op*>(&node->operation())) {
-			assert(node->producer(0)->region == graph->root_region);
-		}
-	}
-#endif
+	/* FIXME: insert checks */
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/tests/test-call_in_loop", nullptr, verify);
+JLM_UNIT_TEST_REGISTER("libjlm/tests/test-call_in_loop", verify);

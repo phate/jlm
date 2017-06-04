@@ -8,11 +8,11 @@
 #include <assert.h>
 
 static int
-verify(const jive::graph * graph)
+verify()
 {
 	/* FIXME: insert checks */
 
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-extractvalue", nullptr, verify);
+JLM_UNIT_TEST_REGISTER("libjlm/test-extractvalue", verify);

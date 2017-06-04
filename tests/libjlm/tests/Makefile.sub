@@ -1,3 +1,2 @@
 TESTS += \
 	libjlm/tests/test-call_in_loop \
-	libjlm/tests/test-phi \

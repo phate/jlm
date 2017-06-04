@@ -8,16 +8,93 @@
 #include <jive/view.h>
 #include <jive/vsdg/graph.h>
 
-#include <assert.h>
+#include <jlm/construction/module.hpp>
+#include <jlm/destruction/destruction.hpp>
+#include <jlm/IR/module.hpp>
+
+#include <llvm/IR/BasicBlock.h>
+#include <llvm/IR/Function.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/Type.h>
+
+typedef std::function<llvm::Value*(llvm::IRBuilder<>&, llvm::Value*, llvm::Value*)> create_binop_t;
+
+static inline void
+test_binop(const create_binop_t & create_binop)
+{
+	using namespace llvm;
+
+	LLVMContext ctx;
+	auto flttype = Type::getFloatTy(ctx);
+	auto ftype = FunctionType::get(flttype, {flttype, flttype}, false);
+
+	std::unique_ptr<Module> module(new llvm::Module("module", ctx));
+	auto f = Function::Create(ftype, Function::ExternalLinkage, "f", module.get());
+	auto bb = BasicBlock::Create(ctx, "entry", f, nullptr);
+
+	IRBuilder<> builder(bb);
+	auto v = create_binop(builder, f->arg_begin(), std::next(f->arg_begin()));
+	builder.CreateRet(v);
+	module->dump();
+
+	auto m = jlm::convert_module(*module);
+	auto rvsdg = jlm::construct_rvsdg(*m);
+	jive::view(rvsdg->root(), stdout);
+}
+
+static inline void
+test_add()
+{
+	auto create = [](llvm::IRBuilder<> & irb, llvm::Value * lhs, llvm::Value * rhs)
+	{
+		return irb.CreateFAdd(lhs, rhs);
+	};
+
+	test_binop(create);
+}
+
+static inline void
+test_sub()
+{
+	auto create = [](llvm::IRBuilder<> & irb, llvm::Value * lhs, llvm::Value * rhs)
+	{
+		return irb.CreateFSub(lhs, rhs);
+	};
+
+	test_binop(create);
+}
+static inline void
+test_mul()
+{
+	auto create = [](llvm::IRBuilder<> & irb, llvm::Value * lhs, llvm::Value * rhs)
+	{
+		return irb.CreateFMul(lhs, rhs);
+	};
+
+	test_binop(create);
+}
+static inline void
+test_div()
+{
+	auto create = [](llvm::IRBuilder<> & irb, llvm::Value * lhs, llvm::Value * rhs)
+	{
+		return irb.CreateFDiv(lhs, rhs);
+	};
+
+	test_binop(create);
+}
 
 static int
-verify(const jive::graph * graph)
+verify()
 {
-	jive::view(graph->root(), stdout);
+	test_add();
+	test_sub();
+	test_mul();
+	test_div();
 
-	/* FIXME: add missing frem operations*/
-	/* FIXME: add checks and tests for all types in the test-fltops.ll */
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-fltops", nullptr, verify);
+JLM_UNIT_TEST_REGISTER("libjlm/test-fltops", verify);

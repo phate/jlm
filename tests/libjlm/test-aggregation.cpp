@@ -330,7 +330,7 @@ test_ifthen_reduction()
 }
 
 static int
-test(const jive::graph * graph)
+test()
 {
 	/* FIXME: re-activate asserts */
 	test_linear_reduction();
@@ -343,4 +343,4 @@ test(const jive::graph * graph)
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-aggregation", nullptr, test);
+JLM_UNIT_TEST_REGISTER("libjlm/test-aggregation", test);
