@@ -76,7 +76,7 @@ public:
 	vmap(size_t n) noexcept
 	{
 		JLM_DEBUG_ASSERT(n < nscopes());
-		return vmaps_[n];
+		return *vmaps_[n];
 	}
 
 	inline jlm::vmap &
@@ -103,7 +103,7 @@ public:
 	inline void
 	push_scope(jive::region * region)
 	{
-		vmaps_.push_back(jlm::vmap());
+		vmaps_.push_back(std::make_unique<jlm::vmap>());
 		regions_.push_back(region);
 	}
 
@@ -122,7 +122,7 @@ public:
 
 private:
 	const jlm::module & module_;
-	std::vector<jlm::vmap> vmaps_;
+	std::vector<std::unique_ptr<jlm::vmap>> vmaps_;
 	std::vector<jive::region*> regions_;
 };
 
