@@ -31,7 +31,7 @@ public:
 	{}
 
 	clg_node *
-	add_function(const char * name, jive::fct::type & type, bool exported);
+	add_function(const char * name, const jive::fct::type & type, bool exported);
 
 	clg_node *
 	lookup_function(const std::string & name) const;
@@ -73,7 +73,7 @@ public:
 
 private:
 	inline
-	clg_node(jlm::clg & clg, const char * name, jive::fct::type & type, bool exported)
+	clg_node(jlm::clg & clg, const char * name, const jive::fct::type & type, bool exported)
 	: exported_(exported)
 	, clg_(clg)
 	, name_(name)
@@ -148,7 +148,7 @@ private:
 	std::unordered_set<const clg_node*> calls_;
 
 	friend jlm::clg_node * jlm::clg::add_function(const char * name,
-		jive::fct::type & type, bool exported);
+		const jive::fct::type & type, bool exported);
 };
 
 class function_variable final : public variable {
