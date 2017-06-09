@@ -153,6 +153,12 @@ convert_select(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
 }
 
 static void
+convert_branch(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
+{
+	JLM_DEBUG_ASSERT(is_branch_op(tac.operation()));
+}
+
+static void
 convert_tac(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
 {
 	static std::unordered_map<
@@ -161,6 +167,7 @@ convert_tac(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
 	> map({
 	  {std::type_index(typeid(assignment_op)), convert_assignment}
 	, {std::type_index(typeid(select_op)), convert_select}
+	, {std::type_index(typeid(branch_op)), convert_branch}
 	});
 
 	if (map.find(std::type_index(typeid(tac.operation()))) != map.end())
@@ -300,8 +307,8 @@ convert_branch_node(
 		split = split->child(split->nchildren()-1);
 	auto & sb = dynamic_cast<const agg::block*>(&split->structure())->basic_block();
 
-	JLM_DEBUG_ASSERT(sb.last()->noutputs() == 1);
-	auto predicate = svmap.vmap()[sb.last()->output(0)];
+	JLM_DEBUG_ASSERT(is_branch_op(sb.last()->operation()));
+	auto predicate = svmap.vmap()[sb.last()->input(0)];
 	jive::gamma_builder gb;
 	gb.begin(predicate);
 
@@ -392,7 +399,8 @@ convert_loop_node(
 		lblock = lblock->child(lblock->nchildren()-1);
 	JLM_DEBUG_ASSERT(is_block_structure(lblock->structure()));
 	auto bb = static_cast<const agg::block*>(&lblock->structure())->basic_block();
-	auto predicate = bb.last()->output(0);
+	JLM_DEBUG_ASSERT(is_branch_op(bb.last()->operation()));
+	auto predicate = bb.last()->input(0);
 
 	/* update variable map */
 	JLM_DEBUG_ASSERT(vmap.find(predicate) != vmap.end());

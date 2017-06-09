@@ -321,4 +321,53 @@ flt2bits_op::copy() const
 	return std::unique_ptr<jive::operation>(new flt2bits_op(*this));
 }
 
+/* branch operator */
+
+branch_op::~branch_op() noexcept
+{}
+
+bool
+branch_op::operator==(const operation & other) const noexcept
+{
+	auto op = dynamic_cast<const branch_op*>(&other);
+	return op && type_ == op->type_;
+}
+
+size_t
+branch_op::narguments() const noexcept
+{
+	return 1;
+}
+
+const jive::base::type &
+branch_op::argument_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < narguments());
+	return type_;
+}
+
+size_t
+branch_op::nresults() const noexcept
+{
+	return 0;
+}
+
+const jive::base::type &
+branch_op::result_type(size_t index) const noexcept
+{
+	JLM_ASSERT(0 && "Branch operator has no return types.");
+}
+
+std::string
+branch_op::debug_string() const
+{
+	return "BRANCH";
+}
+
+std::unique_ptr<jive::operation>
+branch_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new branch_op(*this));
+}
+
 }

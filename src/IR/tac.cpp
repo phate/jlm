@@ -44,10 +44,11 @@ tac::debug_string() const
 {
 	std::stringstream sstrm;
 
-	JLM_DEBUG_ASSERT(outputs_.size() != 0);
-	for (size_t n = 0; n < outputs_.size()-1; n++)
-		sstrm << outputs_[n]->debug_string() << ", ";
-	sstrm << outputs_[outputs_.size()-1]->debug_string() << " = ";
+	if (outputs_.size() != 0) {
+		for (size_t n = 0; n < outputs_.size()-1; n++)
+			sstrm << outputs_[n]->debug_string() << ", ";
+		sstrm << outputs_[outputs_.size()-1]->debug_string() << " = ";
+	}
 
 	sstrm << operation_->debug_string();
 

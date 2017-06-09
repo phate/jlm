@@ -8,6 +8,7 @@
 #include <jlm/IR/cfg-structure.hpp>
 #include <jlm/IR/cfg_node.hpp>
 #include <jlm/IR/module.hpp>
+#include <jlm/IR/operators.hpp>
 
 #include <jive/types/bitstring/constant.h>
 #include <jive/vsdg/controltype.h>
@@ -162,6 +163,7 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit,
 		auto attr = static_cast<basic_block*>(&vt->attribute());
 		auto op = jive::match_op(1, {{0, 0}}, 1, 2);
 		attr->append(create_tac(op, {r}, create_result_variables(cfg->module(), op)));
+		attr->append(create_branch_tac(2, attr->last()->output(0)));
 
 
 		/* handle loop entries */
@@ -175,6 +177,7 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit,
 				ve_mapping[n] = n;
 			op = jive::match_op(nbits, ve_mapping, ve.size()-1, ve.size());
 			attr->append(create_tac(op, {q}, create_result_variables(cfg->module(), op)));
+			attr->append(create_branch_tac(ve.size(), attr->last()->output(0)));
 
 			for (auto edge : ae) {
 				auto ass = create_basic_block_node(cfg);
@@ -202,6 +205,7 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit,
 				vx_mapping[n] = n;
 			op = jive::match_op(nbits, vx_mapping, vx.size()-1, vx.size());
 			attr->append(create_tac(op, {q}, create_result_variables(cfg->module(), op)));
+			attr->append(create_branch_tac(vx.size(), attr->last()->output(0)));
 
 			for (auto v : vx)
 				new_vx->add_outedge(v.first, v.second);
@@ -370,6 +374,7 @@ restructure_branches(jlm::cfg_node * start, jlm::cfg_node * end)
 		mapping[n] = n;
 	auto op = jive::match_op(nbits, mapping, cpoints.size()-1, cpoints.size());
 	attr->append(create_tac(op, {p}, create_result_variables(cfg->module(), op)));
+	attr->append(create_branch_tac(cpoints.size(), attr->last()->output(0)));
 	for (auto it = cpoints.begin(); it != cpoints.end(); it++)
 		vt->add_outedge(it->first, it->second);
 

@@ -9,6 +9,7 @@
 #include <jive/types/bitstring/type.h>
 #include <jive/types/function/fcttype.h>
 #include <jive/vsdg/basetype.h>
+#include <jive/vsdg/controltype.h>
 #include <jive/vsdg/operators/nullary.h>
 
 #include <jlm/IR/tac.hpp>
@@ -322,6 +323,63 @@ public:
 private:
 	jive::bits::type otype_;
 };
+
+/* branch operator */
+
+class branch_op final : public jive::simple_op {
+public:
+	virtual
+	~branch_op() noexcept;
+
+	inline
+	branch_op(const jive::ctl::type & type)
+	: type_(type)
+	{}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual size_t
+	narguments() const noexcept override;
+
+	virtual const jive::base::type &
+	argument_type(size_t index) const noexcept override;
+
+	virtual size_t
+	nresults() const noexcept override;
+
+	virtual const jive::base::type &
+	result_type(size_t index) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+	inline size_t
+	nalternatives() const noexcept
+	{
+		return type_.nalternatives();
+	}
+
+private:
+	jive::ctl::type type_;
+};
+
+static inline bool
+is_branch_op(const jive::operation & op)
+{
+	return dynamic_cast<const jlm::branch_op*>(&op) != nullptr;
+}
+
+static inline std::unique_ptr<jlm::tac>
+create_branch_tac(size_t nalternatives, const variable * operand)
+{
+	jive::ctl::type type(nalternatives);
+	branch_op op(type);
+	return create_tac(op, {operand}, {});
+}
 
 }
 

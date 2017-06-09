@@ -99,6 +99,7 @@ convert_branch_instruction(
 		size_t nbits = dynamic_cast<const jive::bits::type&>(c->type()).nbits();
 		auto op = jive::match_op(nbits, {{0, 0}}, 1, 2);
 		attr->append(create_tac(op, {c}, create_result_variables(ctx.module(), op)));
+		attr->append(create_branch_tac(2,  attr->last()->output(0)));
 	}
 
 	return nullptr;
@@ -124,6 +125,7 @@ convert_switch_instruction(
 	size_t nbits = dynamic_cast<const jive::bits::type&>(c->type()).nbits();
 	auto op = jive::match_op(nbits, mapping, mapping.size(), mapping.size()+1);
 	attr->append(create_tac(op, {c}, create_result_variables(ctx.module(), op)));
+	attr->append(create_branch_tac(mapping.size()+1, attr->last()->output(0)));
 	return nullptr;
 }
 
