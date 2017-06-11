@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_CONSTRUCTION_INSTRUCTION_HPP
-#define JLM_CONSTRUCTION_INSTRUCTION_HPP
+#ifndef JLM_LLVM2JLM_INSTRUCTION_HPP
+#define JLM_LLVM2JLM_INSTRUCTION_HPP
 
 namespace llvm {
 	class Instruction;

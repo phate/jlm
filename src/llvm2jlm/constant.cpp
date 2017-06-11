@@ -4,10 +4,10 @@
  */
 
 #include <jlm/common.hpp>
-#include <jlm/construction/context.hpp>
-#include <jlm/construction/constant.hpp>
-#include <jlm/construction/instruction.hpp>
 #include <jlm/IR/expression.hpp>
+#include <jlm/llvm2jlm/context.hpp>
+#include <jlm/llvm2jlm/constant.hpp>
+#include <jlm/llvm2jlm/instruction.hpp>
 
 #include <jive/arch/address.h>
 #include <jive/types/bitstring/constant.h>

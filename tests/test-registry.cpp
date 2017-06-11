@@ -5,19 +5,6 @@
 
 #include "test-registry.hpp"
 
-#include <jive/vsdg/graph.h>
-
-#include <jlm/IR/module.hpp>
-
-#include <jlm/construction/module.hpp>
-#include <jlm/destruction/destruction.hpp>
-
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/Module.h>
-#include <llvm/IRReader/IRReader.h>
-#include <llvm/Support/raw_ostream.h>
-#include <llvm/Support/SourceMgr.h>
-
 #include <assert.h>
 #include <memory>
 #include <unordered_map>

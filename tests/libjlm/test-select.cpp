@@ -10,9 +10,9 @@
 #include <jive/view.h>
 #include <jive/vsdg/graph.h>
 
-#include <jlm/construction/module.hpp>
 #include <jlm/destruction/destruction.hpp>
 #include <jlm/IR/module.hpp>
+#include <jlm/llvm2jlm/module.hpp>
 
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/Function.h>

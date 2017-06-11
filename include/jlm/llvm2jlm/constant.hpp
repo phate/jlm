@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_CONSTRUCTION_CONSTANT_HPP
-#define JLM_CONSTRUCTION_CONSTANT_HPP
+#ifndef JLM_LLVM2JLM_CONSTANT_HPP
+#define JLM_LLVM2JLM_CONSTANT_HPP
 
 #include <jive/types/bitstring/value-representation.h>
 

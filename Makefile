@@ -23,17 +23,17 @@ LIBJLM_SRC = \
 	src/IR/tac.cpp \
 	src/IR/variable.cpp \
 	\
-	src/construction/constant.cpp \
-	src/construction/instruction.cpp \
-	src/construction/module.cpp \
-	src/construction/type.cpp \
-	\
 	src/destruction/destruction.cpp \
 	src/destruction/restructuring.cpp \
 	\
 	src/jlm2llvm/instruction.cpp \
 	src/jlm2llvm/jlm2llvm.cpp \
 	src/jlm2llvm/type.cpp \
+	\
+	src/llvm2jlm/constant.cpp \
+	src/llvm2jlm/instruction.cpp \
+	src/llvm2jlm/module.cpp \
+	src/llvm2jlm/type.cpp \
 	\
 	src/rvsdg2jlm/rvsdg2jlm.cpp \
 

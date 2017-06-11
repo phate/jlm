@@ -4,8 +4,8 @@
  */
 
 #include <jlm/common.hpp>
-#include <jlm/construction/context.hpp>
-#include <jlm/construction/type.hpp>
+#include <jlm/llvm2jlm/context.hpp>
+#include <jlm/llvm2jlm/type.hpp>
 
 #include <jive/arch/addresstype.h>
 #include <jive/arch/memorytype.h>

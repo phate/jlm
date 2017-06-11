@@ -4,10 +4,10 @@
  */
 
 #include <jlm/common.hpp>
-#include <jlm/construction/constant.hpp>
-#include <jlm/construction/context.hpp>
-#include <jlm/construction/instruction.hpp>
-#include <jlm/construction/type.hpp>
+#include <jlm/llvm2jlm/constant.hpp>
+#include <jlm/llvm2jlm/context.hpp>
+#include <jlm/llvm2jlm/instruction.hpp>
+#include <jlm/llvm2jlm/type.hpp>
 
 #include <jlm/IR/basic_block.hpp>
 #include <jlm/IR/clg.hpp>
