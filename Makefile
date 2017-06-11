@@ -21,6 +21,7 @@ LIBJLM_SRC = \
 	src/ir/operators.cpp \
 	src/ir/ssa.cpp \
 	src/ir/tac.cpp \
+	src/ir/types.cpp \
 	src/ir/variable.cpp \
 	\
 	src/jlm2llvm/instruction.cpp \
