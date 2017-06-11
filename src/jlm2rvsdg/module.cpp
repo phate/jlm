@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/destruction/destruction.hpp>
-#include <jlm/destruction/restructuring.hpp>
+#include <jlm/jlm2rvsdg/module.hpp>
+#include <jlm/jlm2rvsdg/restructuring.hpp>
 
 #include <jlm/IR/aggregation/aggregation.hpp>
 #include <jlm/IR/aggregation/annotation.hpp>

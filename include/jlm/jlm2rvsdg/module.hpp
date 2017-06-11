@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_DESTRUCTION_DESTRUCTION_H
-#define JLM_DESTRUCTION_DESTRUCTION_H
+#ifndef JLM_JLM2RVSDG_MODULE_H
+#define JLM_JLM2RVSDG_MODULE_H
 
 #include <memory>
 

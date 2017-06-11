@@ -3,10 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm2jlm/module.hpp>
-#include <jlm/destruction/destruction.hpp>
 #include <jlm/IR/module.hpp>
+#include <jlm/llvm2jlm/module.hpp>
 #include <jlm/jlm2llvm/jlm2llvm.hpp>
+#include <jlm/jlm2rvsdg/module.hpp>
 #include <jlm/rvsdg2jlm/rvsdg2jlm.hpp>
 
 #include <jive/vsdg/graph.h>

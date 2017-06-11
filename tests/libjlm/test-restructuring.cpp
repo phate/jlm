@@ -5,10 +5,10 @@
 
 #include "test-registry.hpp"
 
-#include <jlm/destruction/restructuring.hpp>
 #include <jlm/IR/basic_block.hpp>
 #include <jlm/IR/cfg.hpp>
 #include <jlm/IR/module.hpp>
+#include <jlm/jlm2rvsdg/restructuring.hpp>
 
 #include <assert.h>
 

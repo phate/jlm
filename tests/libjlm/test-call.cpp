@@ -8,7 +8,7 @@
 #include <jive/view.h>
 #include <jive/vsdg/graph.h>
 
-#include <jlm/destruction/destruction.hpp>
+#include <jlm/jlm2rvsdg/module.hpp>
 #include <jlm/IR/module.hpp>
 #include <jlm/llvm2jlm/module.hpp>
 
