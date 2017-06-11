@@ -61,8 +61,8 @@ clg::add_function(const char * name, const jive::fct::type & type, bool exported
 {
 	std::unique_ptr<clg_node> function(new clg_node(*this, name, type, exported));
 	clg_node * f = function.get();
+	JLM_DEBUG_ASSERT(nodes_.find(std::string(name)) == nodes_.end());
 	nodes_.insert(std::make_pair(std::string(name), std::move(function)));
-	function.release();
 	return f;
 }
 
