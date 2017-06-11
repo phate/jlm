@@ -172,6 +172,12 @@ private:
 	jlm::clg_node * node_;
 };
 
+static inline bool
+is_function_variable(const jlm::variable * v)
+{
+	return dynamic_cast<const jlm::function_variable*>(v) != nullptr;
+}
+
 }
 
 #endif
