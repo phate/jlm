@@ -30,7 +30,8 @@ LIBJLM_SRC = \
 	\
 	src/destruction/destruction.cpp \
 	src/destruction/restructuring.cpp \
-
+	\
+	src/rvsdg2jlm/rvsdg2jlm.cpp \
 
 JLM_SRC = \
 	src/jlm.cpp \
