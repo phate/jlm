@@ -31,6 +31,10 @@ LIBJLM_SRC = \
 	src/destruction/destruction.cpp \
 	src/destruction/restructuring.cpp \
 	\
+	src/jlm2llvm/instruction.cpp \
+	src/jlm2llvm/jlm2llvm.cpp \
+	src/jlm2llvm/type.cpp \
+	\
 	src/rvsdg2jlm/rvsdg2jlm.cpp \
 
 JLM_SRC = \
