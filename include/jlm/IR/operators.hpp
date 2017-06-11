@@ -71,6 +71,12 @@ private:
 	std::unique_ptr<jive::base::type> type_;
 };
 
+static inline bool
+is_phi_op(const jive::operation & op)
+{
+	return dynamic_cast<const jlm::phi_op*>(&op) != nullptr;
+}
+
 static inline std::unique_ptr<jlm::tac>
 create_phi_tac(const std::vector<const variable*> & arguments, const variable * result)
 {
