@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/IR/aggregation/node.hpp>
+#include <jlm/ir/aggregation/node.hpp>
 
 #include <string>
 

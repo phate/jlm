@@ -4,7 +4,7 @@
  */
 
 #include <jlm/common.hpp>
-#include <jlm/IR/expression.hpp>
+#include <jlm/ir/expression.hpp>
 #include <jlm/llvm2jlm/context.hpp>
 #include <jlm/llvm2jlm/constant.hpp>
 #include <jlm/llvm2jlm/instruction.hpp>

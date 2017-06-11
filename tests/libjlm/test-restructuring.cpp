@@ -5,9 +5,9 @@
 
 #include "test-registry.hpp"
 
-#include <jlm/IR/basic_block.hpp>
-#include <jlm/IR/cfg.hpp>
-#include <jlm/IR/module.hpp>
+#include <jlm/ir/basic_block.hpp>
+#include <jlm/ir/cfg.hpp>
+#include <jlm/ir/module.hpp>
 #include <jlm/jlm2rvsdg/restructuring.hpp>
 
 #include <assert.h>

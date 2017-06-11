@@ -3,12 +3,12 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/IR/aggregation/aggregation.hpp>
-#include <jlm/IR/aggregation/node.hpp>
-#include <jlm/IR/cfg.hpp>
-#include <jlm/IR/cfg-structure.hpp>
-#include <jlm/IR/cfg_node.hpp>
-#include <jlm/IR/tac.hpp>
+#include <jlm/ir/aggregation/aggregation.hpp>
+#include <jlm/ir/aggregation/node.hpp>
+#include <jlm/ir/cfg.hpp>
+#include <jlm/ir/cfg-structure.hpp>
+#include <jlm/ir/cfg_node.hpp>
+#include <jlm/ir/tac.hpp>
 
 #include <deque>
 #include <algorithm>

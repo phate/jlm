@@ -4,17 +4,17 @@
  */
 
 #include <jlm/common.hpp>
+#include <jlm/ir/basic_block.hpp>
+#include <jlm/ir/cfg.hpp>
+#include <jlm/ir/cfg_node.hpp>
+#include <jlm/ir/clg.hpp>
+#include <jlm/ir/module.hpp>
+#include <jlm/ir/operators.hpp>
 #include <jlm/llvm2jlm/constant.hpp>
 #include <jlm/llvm2jlm/context.hpp>
 #include <jlm/llvm2jlm/instruction.hpp>
 #include <jlm/llvm2jlm/module.hpp>
 #include <jlm/llvm2jlm/type.hpp>
-#include <jlm/IR/basic_block.hpp>
-#include <jlm/IR/cfg.hpp>
-#include <jlm/IR/cfg_node.hpp>
-#include <jlm/IR/clg.hpp>
-#include <jlm/IR/module.hpp>
-#include <jlm/IR/operators.hpp>
 
 #include <jive/arch/memorytype.h>
 #include <jive/vsdg/basetype.h>

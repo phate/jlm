@@ -5,23 +5,23 @@ LLVMCONFIG = llvm-config-3.7
 
 CPPFLAGS += -Iinclude -Iexternal/jive/include -I$(shell $(LLVMCONFIG) --includedir)
 CXXFLAGS += -Wall -Werror --std=c++14 -Wfatal-errors -g -DJLM_DEBUG
-LDFLAGS += $(shell $(LLVMCONFIG) --libs core IRReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -Lexternal/jive/
+LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -Lexternal/jive/
 
 LIBJLM_SRC = \
-	src/IR/aggregation/aggregation.cpp \
-	src/IR/aggregation/annotation.cpp \
-	src/IR/aggregation/node.cpp \
-	src/IR/aggregation/structure.cpp \
-	src/IR/basic_block.cpp \
-	src/IR/cfg.cpp \
-	src/IR/cfg-structure.cpp \
-	src/IR/cfg_node.cpp \
-	src/IR/clg.cpp \
-	src/IR/module.cpp \
-	src/IR/operators.cpp \
-	src/IR/ssa.cpp \
-	src/IR/tac.cpp \
-	src/IR/variable.cpp \
+	src/ir/aggregation/aggregation.cpp \
+	src/ir/aggregation/annotation.cpp \
+	src/ir/aggregation/node.cpp \
+	src/ir/aggregation/structure.cpp \
+	src/ir/basic_block.cpp \
+	src/ir/cfg.cpp \
+	src/ir/cfg-structure.cpp \
+	src/ir/cfg_node.cpp \
+	src/ir/clg.cpp \
+	src/ir/module.cpp \
+	src/ir/operators.cpp \
+	src/ir/ssa.cpp \
+	src/ir/tac.cpp \
+	src/ir/variable.cpp \
 	\
 	src/jlm2llvm/instruction.cpp \
 	src/jlm2llvm/jlm2llvm.cpp \

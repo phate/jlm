@@ -9,11 +9,11 @@
 #include <jlm/llvm2jlm/instruction.hpp>
 #include <jlm/llvm2jlm/type.hpp>
 
-#include <jlm/IR/basic_block.hpp>
-#include <jlm/IR/clg.hpp>
-#include <jlm/IR/expression.hpp>
-#include <jlm/IR/operators.hpp>
-#include <jlm/IR/tac.hpp>
+#include <jlm/ir/basic_block.hpp>
+#include <jlm/ir/clg.hpp>
+#include <jlm/ir/expression.hpp>
+#include <jlm/ir/operators.hpp>
+#include <jlm/ir/tac.hpp>
 
 #include <jive/arch/address.h>
 #include <jive/arch/address-transform.h>

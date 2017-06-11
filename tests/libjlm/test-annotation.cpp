@@ -7,12 +7,12 @@
 #include <test-registry.hpp>
 #include <test-types.hpp>
 
-#include <jlm/IR/aggregation/aggregation.hpp>
-#include <jlm/IR/aggregation/annotation.hpp>
-#include <jlm/IR/aggregation/node.hpp>
-#include <jlm/IR/basic_block.hpp>
-#include <jlm/IR/cfg.hpp>
-#include <jlm/IR/module.hpp>
+#include <jlm/ir/aggregation/aggregation.hpp>
+#include <jlm/ir/aggregation/annotation.hpp>
+#include <jlm/ir/aggregation/node.hpp>
+#include <jlm/ir/basic_block.hpp>
+#include <jlm/ir/cfg.hpp>
+#include <jlm/ir/module.hpp>
 
 static inline bool
 has_variables(

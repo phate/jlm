@@ -5,10 +5,10 @@
  */
 
 #include <jlm/common.hpp>
-#include <jlm/IR/basic_block.hpp>
-#include <jlm/IR/cfg.hpp>
-#include <jlm/IR/cfg_node.hpp>
-#include <jlm/IR/clg.hpp>
+#include <jlm/ir/basic_block.hpp>
+#include <jlm/ir/cfg.hpp>
+#include <jlm/ir/cfg_node.hpp>
+#include <jlm/ir/clg.hpp>
 
 #include <string.h>
 

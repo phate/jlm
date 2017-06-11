@@ -7,12 +7,9 @@
 #include <jive/types/function.h>
 #include <jive/vsdg/operators/match.h>
 
-/* FIXME: remove */
-#include <jlm/IR/cfg.hpp>
-
-#include <jlm/IR/cfg_node.hpp>
-#include <jlm/IR/operators.hpp>
-#include <jlm/IR/tac.hpp>
+#include <jlm/ir/cfg_node.hpp>
+#include <jlm/ir/operators.hpp>
+#include <jlm/ir/tac.hpp>
 
 #include <jlm/jlm2llvm/context.hpp>
 #include <jlm/jlm2llvm/instruction.hpp>

@@ -3,9 +3,9 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/IR/aggregation/annotation.hpp>
-#include <jlm/IR/aggregation/node.hpp>
-#include <jlm/IR/basic_block.hpp>
+#include <jlm/ir/aggregation/annotation.hpp>
+#include <jlm/ir/aggregation/node.hpp>
+#include <jlm/ir/basic_block.hpp>
 
 #include <algorithm>
 

@@ -11,7 +11,7 @@
 #include <jive/vsdg/graph.h>
 
 #include <jlm/jlm2rvsdg/module.hpp>
-#include <jlm/IR/module.hpp>
+#include <jlm/ir/module.hpp>
 #include <jlm/llvm2jlm/module.hpp>
 
 #include <llvm/IR/BasicBlock.h>

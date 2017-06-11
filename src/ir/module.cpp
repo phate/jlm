@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/IR/module.hpp>
+#include <jlm/ir/module.hpp>
 
 #include <jive/arch/addresstype.h>
 

@@ -12,7 +12,7 @@
 #include <jive/vsdg/controltype.h>
 #include <jive/vsdg/operators/nullary.h>
 
-#include <jlm/IR/tac.hpp>
+#include <jlm/ir/tac.hpp>
 
 namespace jlm {
 

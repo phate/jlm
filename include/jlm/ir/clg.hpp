@@ -6,8 +6,8 @@
 #ifndef JLM_IR_CLG_H
 #define JLM_IR_CLG_H
 
-#include <jlm/IR/cfg.hpp>
-#include <jlm/IR/variable.hpp>
+#include <jlm/ir/cfg.hpp>
+#include <jlm/ir/variable.hpp>
 
 #include <jive/types/function/fcttype.h>
 

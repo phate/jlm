@@ -6,9 +6,9 @@
 #ifndef JLM_IR_BASIC_BLOCK_H
 #define JLM_IR_BASIC_BLOCK_H
 
-#include <jlm/IR/cfg.hpp>
-#include <jlm/IR/cfg_node.hpp>
-#include <jlm/IR/tac.hpp>
+#include <jlm/ir/cfg.hpp>
+#include <jlm/ir/cfg_node.hpp>
+#include <jlm/ir/tac.hpp>
 
 namespace jive {
 	class operation;

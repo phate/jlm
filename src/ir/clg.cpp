@@ -3,9 +3,9 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/IR/cfg.hpp>
-#include <jlm/IR/clg.hpp>
-#include <jlm/IR/tac.hpp>
+#include <jlm/ir/cfg.hpp>
+#include <jlm/ir/clg.hpp>
+#include <jlm/ir/tac.hpp>
 
 #include <jive/common.h>
 

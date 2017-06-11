@@ -6,8 +6,8 @@
 #ifndef JLM_IR_MODULE_HPP
 #define JLM_IR_MODULE_HPP
 
-#include <jlm/IR/clg.hpp>
-#include <jlm/IR/expression.hpp>
+#include <jlm/ir/clg.hpp>
+#include <jlm/ir/expression.hpp>
 
 namespace jlm {
 

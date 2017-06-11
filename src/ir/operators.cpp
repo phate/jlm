@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/IR/clg.hpp>
-#include <jlm/IR/operators.hpp>
+#include <jlm/ir/clg.hpp>
+#include <jlm/ir/operators.hpp>
 
 #include <jive/arch/addresstype.h>
 #include <jive/arch/memorytype.h>

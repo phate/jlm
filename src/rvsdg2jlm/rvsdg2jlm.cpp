@@ -11,10 +11,10 @@
 #include <jive/vsdg/traverser.h>
 
 #include <jlm/common.hpp>
-#include <jlm/IR/basic_block.hpp>
-#include <jlm/IR/module.hpp>
-#include <jlm/IR/operators.hpp>
-#include <jlm/IR/tac.hpp>
+#include <jlm/ir/basic_block.hpp>
+#include <jlm/ir/module.hpp>
+#include <jlm/ir/operators.hpp>
+#include <jlm/ir/tac.hpp>
 #include <jlm/rvsdg2jlm/context.hpp>
 #include <jlm/rvsdg2jlm/rvsdg2jlm.hpp>
 

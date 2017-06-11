@@ -6,10 +6,10 @@
 #ifndef JLM_LLVM2JLM_CONTEXT_HPP
 #define JLM_LLVM2JLM_CONTEXT_HPP
 
-#include <jlm/IR/cfg_node.hpp>
-#include <jlm/IR/expression.hpp>
-#include <jlm/IR/module.hpp>
-#include <jlm/IR/tac.hpp>
+#include <jlm/ir/cfg_node.hpp>
+#include <jlm/ir/expression.hpp>
+#include <jlm/ir/module.hpp>
+#include <jlm/ir/tac.hpp>
 #include <jlm/llvm2jlm/type.hpp>
 
 #include <jive/types/record/rcdtype.h>

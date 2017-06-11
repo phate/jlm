@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/IR/module.hpp>
+#include <jlm/ir/module.hpp>
 #include <jlm/llvm2jlm/module.hpp>
 #include <jlm/jlm2llvm/jlm2llvm.hpp>
 #include <jlm/jlm2rvsdg/module.hpp>

@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/IR/tac.hpp>
+#include <jlm/ir/tac.hpp>
 
 #include <jive/vsdg/basetype.h>
 

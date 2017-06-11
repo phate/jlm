@@ -9,7 +9,7 @@
 #include <jive/vsdg/basetype.h>
 #include <jive/vsdg/operators/operation.h>
 
-#include <jlm/IR/tac.hpp>
+#include <jlm/ir/tac.hpp>
 
 namespace jlm {
 
