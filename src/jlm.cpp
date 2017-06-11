@@ -4,9 +4,10 @@
  */
 
 #include <jlm/construction/module.hpp>
-
 #include <jlm/destruction/destruction.hpp>
 #include <jlm/IR/module.hpp>
+#include <jlm/jlm2llvm/jlm2llvm.hpp>
+#include <jlm/rvsdg2jlm/rvsdg2jlm.hpp>
 
 #include <jive/vsdg/graph.h>
 #include <jive/view.h>
@@ -92,9 +93,6 @@ int main (int argc, char ** argv)
 		exit(1);
 	}
 
-	if (cmdf.llvm)
-		module->dump();
-
 	auto m = jlm::convert_module(*module);
 
 	if (cmdf.clg)
@@ -119,6 +117,12 @@ int main (int argc, char ** argv)
 
 	if (cmdf.rtree)
 		jive::region_tree(rvsdg->root(), stdout);
+
+	m = jlm::rvsdg2jlm::rvsdg2jlm(*rvsdg);
+	module = jlm::jlm2llvm::convert(*m, context);
+
+	if (cmdf.llvm)
+		module->dump();
 
 	return 0;
 }
