@@ -16,6 +16,8 @@
 #include <jlm/construction/module.hpp>
 #include <jlm/destruction/destruction.hpp>
 #include <jlm/IR/module.hpp>
+#include <jlm/jlm2llvm/jlm2llvm.hpp>
+#include <jlm/rvsdg2jlm/rvsdg2jlm.hpp>
 
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/Function.h>
@@ -67,6 +69,10 @@ test_binop(const create_binop_t & create_binop, uint64_t lhs, uint64_t rhs, uint
 	jive::view(rvsdg->root(), stdout);
 
 	verify_binop(rvsdg.get(), lhs, rhs, r);
+
+	m = jlm::rvsdg2jlm::rvsdg2jlm(*rvsdg);
+	module = jlm::jlm2llvm::convert(*m, ctx);
+	module->dump();
 }
 
 static inline void
