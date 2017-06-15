@@ -370,4 +370,314 @@ branch_op::copy() const
 	return std::unique_ptr<jive::operation>(new branch_op(*this));
 }
 
+/* ptr_constant_null operator */
+
+ptr_constant_null_op::~ptr_constant_null_op() noexcept
+{}
+
+bool
+ptr_constant_null_op::operator==(const operation & other) const noexcept
+{
+	auto op = dynamic_cast<const ptr_constant_null_op*>(&other);
+	return op && op->ptype_ == ptype_;
+}
+
+size_t
+ptr_constant_null_op::narguments() const noexcept
+{
+	return 0;
+}
+
+const jive::base::type &
+ptr_constant_null_op::argument_type(size_t index) const noexcept
+{
+	JLM_ASSERT(0);
+}
+
+size_t
+ptr_constant_null_op::nresults() const noexcept
+{
+	return 1;
+}
+
+const jive::base::type &
+ptr_constant_null_op::result_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < nresults());
+	return ptype_;
+}
+
+std::string
+ptr_constant_null_op::debug_string() const
+{
+	return "NULLPTR";
+}
+
+std::unique_ptr<jive::operation>
+ptr_constant_null_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new ptr_constant_null_op(*this));
+}
+
+/* load operator */
+
+load_op::~load_op() noexcept
+{}
+
+bool
+load_op::operator==(const operation & other) const noexcept
+{
+	auto op = dynamic_cast<const load_op*>(&other);
+	return op && op->nstates_ == nstates_ && op->ptype_ == ptype_;
+}
+
+size_t
+load_op::narguments() const noexcept
+{
+	return 1 + nstates();
+}
+
+const jive::base::type &
+load_op::argument_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < narguments());
+	if (index == 0)
+		return ptype_;
+
+	return jive::mem::type::instance();
+}
+
+size_t
+load_op::nresults() const noexcept
+{
+	return 1;
+}
+
+const jive::base::type &
+load_op::result_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < nresults());
+	return pointee_type();
+}
+
+std::string
+load_op::debug_string() const
+{
+	return "LOAD";
+}
+
+std::unique_ptr<jive::operation>
+load_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new load_op(*this));
+}
+
+/* store operator */
+
+store_op::~store_op() noexcept
+{}
+
+bool
+store_op::operator==(const operation & other) const noexcept
+{
+	auto op = dynamic_cast<const store_op*>(&other);
+	return op && op->nstates_ == nstates_ && op->ptype_ == ptype_;
+}
+
+size_t
+store_op::narguments() const noexcept
+{
+	return 2 + nstates();
+}
+
+const jive::base::type &
+store_op::argument_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < narguments());
+	if (index == 0)
+		return ptype_;
+
+	if (index == 1)
+		return value_type();
+
+	return jive::mem::type::instance();
+}
+
+size_t
+store_op::nresults() const noexcept
+{
+	return nstates();
+}
+
+const jive::base::type &
+store_op::result_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < nresults());
+	return jive::mem::type::instance();
+}
+
+std::string
+store_op::debug_string() const
+{
+	return "STORE";
+}
+
+std::unique_ptr<jive::operation>
+store_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new store_op(*this));
+}
+
+/* bits2ptr operator */
+
+bits2ptr_op::~bits2ptr_op()
+{}
+
+bool
+bits2ptr_op::operator==(const operation & other) const noexcept
+{
+	auto op = dynamic_cast<const jlm::bits2ptr_op*>(&other);
+	return op && op->btype_ == btype_ && op->ptype_ == ptype_;
+}
+
+size_t
+bits2ptr_op::narguments() const noexcept
+{
+	return 1;
+}
+
+const jive::base::type &
+bits2ptr_op::argument_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < narguments());
+	return btype_;
+}
+
+size_t
+bits2ptr_op::nresults() const noexcept
+{
+	return 1;
+}
+
+const jive::base::type &
+bits2ptr_op::result_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < nresults());
+	return ptype_;
+}
+
+std::string
+bits2ptr_op::debug_string() const
+{
+	return "BITS2PTR";
+}
+
+std::unique_ptr<jive::operation>
+bits2ptr_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new jlm::bits2ptr_op(*this));
+}
+
+/* ptr2bits operator */
+
+ptr2bits_op::~ptr2bits_op()
+{}
+
+bool
+ptr2bits_op::operator==(const operation & other) const noexcept
+{
+	auto op = dynamic_cast<const jlm::ptr2bits_op*>(&other);
+	return op && op->btype_ == btype_ && op->ptype_ == ptype_;
+}
+
+size_t
+ptr2bits_op::narguments() const noexcept
+{
+	return 1;
+}
+
+const jive::base::type &
+ptr2bits_op::argument_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < narguments());
+	return ptype_;
+}
+
+size_t
+ptr2bits_op::nresults() const noexcept
+{
+	return 1;
+}
+
+const jive::base::type &
+ptr2bits_op::result_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < nresults());
+	return btype_;
+}
+
+std::string
+ptr2bits_op::debug_string() const
+{
+	return "PTR2BITS";
+}
+
+std::unique_ptr<jive::operation>
+ptr2bits_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new jlm::ptr2bits_op(*this));
+}
+
+/* ptroffset operator */
+
+ptroffset_op::~ptroffset_op()
+{}
+
+bool
+ptroffset_op::operator==(const operation & other) const noexcept
+{
+	auto op = dynamic_cast<const jlm::ptroffset_op*>(&other);
+	return op && op->ptype_ == ptype_ && op->btype_ == btype_ && op->rtype_ == rtype_;
+}
+
+size_t
+ptroffset_op::narguments() const noexcept
+{
+	return 2;
+}
+
+const jive::base::type &
+ptroffset_op::argument_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < narguments());
+	if (index == 0)
+		return ptype_;
+
+	return btype_;
+}
+
+size_t
+ptroffset_op::nresults() const noexcept
+{
+	return 1;
+}
+
+const jive::base::type &
+ptroffset_op::result_type(size_t index) const noexcept
+{
+	return rtype_;
+}
+
+std::string
+ptroffset_op::debug_string() const
+{
+	return "PTROFFSET";
+}
+
+std::unique_ptr<jive::operation>
+ptroffset_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new ptroffset_op(*this));
+}
+
 }

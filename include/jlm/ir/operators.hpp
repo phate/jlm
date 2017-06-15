@@ -13,6 +13,7 @@
 #include <jive/vsdg/operators/nullary.h>
 
 #include <jlm/ir/tac.hpp>
+#include <jlm/ir/types.hpp>
 
 namespace jlm {
 
@@ -385,6 +386,411 @@ create_branch_tac(size_t nalternatives, const variable * operand)
 	jive::ctl::type type(nalternatives);
 	branch_op op(type);
 	return create_tac(op, {operand}, {});
+}
+
+/* ptr constant */
+
+class ptr_constant_null_op final : public jive::simple_op {
+public:
+	virtual
+	~ptr_constant_null_op() noexcept;
+
+	inline
+	ptr_constant_null_op(const jlm::ptrtype & ptype)
+	: simple_op()
+	, ptype_(ptype)
+	{}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual size_t
+	narguments() const noexcept override;
+
+	virtual const jive::base::type &
+	argument_type(size_t index) const noexcept override;
+
+	virtual size_t
+	nresults() const noexcept override;
+
+	virtual const jive::base::type &
+	result_type(size_t index) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+	inline const jive::value::type &
+	pointee_type() const noexcept
+	{
+		return ptype_.pointee_type();
+	}
+
+private:
+	jlm::ptrtype ptype_;
+};
+
+static inline bool
+is_ptr_constant_null_op(const jive::operation & op)
+{
+	return dynamic_cast<const jlm::ptr_constant_null_op*>(&op) != nullptr;
+}
+
+static inline std::unique_ptr<jlm::tac>
+create_ptr_constant_null_tac(const jive::base::type & ptype, const variable * result)
+{
+	auto pt = dynamic_cast<const jlm::ptrtype*>(&ptype);
+	if (!pt) throw std::logic_error("Expected pointer type.");
+
+	jlm::ptr_constant_null_op op(*pt);
+	return create_tac(op, {}, {result});
+}
+
+/* load operator */
+
+class load_op final : public jive::simple_op {
+public:
+	virtual
+	~load_op() noexcept;
+
+	inline
+	load_op(const jlm::ptrtype & ptype, size_t nstates)
+	: simple_op()
+	, nstates_(nstates)
+	, ptype_(ptype)
+	{}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual size_t
+	narguments() const noexcept override;
+
+	virtual const jive::base::type &
+	argument_type(size_t index) const noexcept override;
+
+	virtual size_t
+	nresults() const noexcept override;
+
+	virtual const jive::base::type &
+	result_type(size_t index) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+	inline const jive::value::type &
+	pointee_type() const noexcept
+	{
+		return ptype_.pointee_type();
+	}
+
+	inline size_t
+	nstates() const noexcept
+	{
+		return nstates_;
+	}
+
+private:
+	size_t nstates_;
+	jlm::ptrtype ptype_;
+};
+
+static inline bool
+is_load_op(const jive::operation & op) noexcept
+{
+	return dynamic_cast<const jlm::load_op*>(&op) != nullptr;
+}
+
+static inline std::unique_ptr<jlm::tac>
+create_load_tac(const variable * address, const variable * state, const variable * result)
+{
+	auto pt = dynamic_cast<const jlm::ptrtype*>(&address->type());
+	if (!pt) throw std::logic_error("Expected pointer type.");
+
+	jlm::load_op op(*pt, 1);
+	return create_tac(op, {address, state}, {result});
+}
+
+/* store operator */
+
+class store_op final : public jive::simple_op {
+public:
+	virtual
+	~store_op() noexcept;
+
+	inline
+	store_op(const jlm::ptrtype & ptype, size_t nstates)
+	: simple_op()
+	, nstates_(nstates)
+	, ptype_(ptype)
+	{}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual size_t
+	narguments() const noexcept override;
+
+	virtual const jive::base::type &
+	argument_type(size_t index) const noexcept override;
+
+	virtual size_t
+	nresults() const noexcept override;
+
+	virtual const jive::base::type &
+	result_type(size_t index) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+	inline const jive::value::type &
+	value_type() const noexcept
+	{
+		return ptype_.pointee_type();
+	}
+
+	inline size_t
+	nstates() const noexcept
+	{
+		return nstates_;
+	}
+
+private:
+	size_t nstates_;
+	jlm::ptrtype ptype_;
+};
+
+static inline bool
+is_store_op(const jive::operation & op) noexcept
+{
+	return dynamic_cast<const jlm::store_op*>(&op) != nullptr;
+}
+
+static inline std::unique_ptr<jlm::tac>
+create_store_tac(const variable * address, const variable * value, const variable * state)
+{
+	auto at = dynamic_cast<const jlm::ptrtype*>(&address->type());
+	if (!at) throw std::logic_error("Expected pointer type.");
+
+	jlm::store_op op(*at, 1);
+	return create_tac(op, {address, value, state}, {state});
+}
+
+/* bits2ptr operator */
+
+class bits2ptr_op final : public jive::simple_op {
+public:
+	virtual
+	~bits2ptr_op() noexcept;
+
+	inline
+	bits2ptr_op(const jive::bits::type & btype, const jlm::ptrtype & ptype)
+	: simple_op()
+	, ptype_(ptype)
+	, btype_(btype)
+	{}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual size_t
+	narguments() const noexcept override;
+
+	virtual const jive::base::type &
+	argument_type(size_t index) const noexcept override;
+
+	virtual size_t
+	nresults() const noexcept override;
+
+	virtual const jive::base::type &
+	result_type(size_t index) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+	inline size_t
+	nbits() const noexcept
+	{
+		return btype_.nbits();
+	}
+
+	inline const jive::value::type &
+	pointee_type() const noexcept
+	{
+		return ptype_.pointee_type();
+	}
+
+private:
+	jlm::ptrtype ptype_;
+	jive::bits::type btype_;
+};
+
+static inline bool
+is_bits2ptr(const jive::operation & op) noexcept
+{
+	return dynamic_cast<const jlm::bits2ptr_op*>(&op) != nullptr;
+}
+
+static inline std::unique_ptr<jlm::tac>
+create_bits2ptr_tac(const variable * argument, const variable * result)
+{
+	auto at = dynamic_cast<const jive::bits::type*>(&argument->type());
+	if (!at) throw std::logic_error("Expected bitstring type.");
+
+	auto pt = dynamic_cast<const jlm::ptrtype*>(&result->type());
+	if (!pt) throw std::logic_error("Expected pointer type.");
+
+	jlm::bits2ptr_op op(*at, *pt);
+	return create_tac(op, {argument}, {result});
+}
+
+/* ptr2bits operator */
+
+class ptr2bits_op final : public jive::simple_op {
+public:
+	virtual
+	~ptr2bits_op() noexcept;
+
+	inline
+	ptr2bits_op(const jlm::ptrtype & ptype, const jive::bits::type & btype)
+	: simple_op()
+	, ptype_(ptype)
+	, btype_(btype)
+	{}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual size_t
+	narguments() const noexcept override;
+
+	virtual const jive::base::type &
+	argument_type(size_t index) const noexcept override;
+
+	virtual size_t
+	nresults() const noexcept override;
+
+	virtual const jive::base::type &
+	result_type(size_t index) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+	inline size_t
+	nbits() const noexcept
+	{
+		return btype_.nbits();
+	}
+
+	inline const jive::value::type &
+	pointee_type() const noexcept
+	{
+		return ptype_.pointee_type();
+	}
+
+private:
+	jlm::ptrtype ptype_;
+	jive::bits::type btype_;
+};
+
+static inline bool
+is_ptr2bits(const jive::operation & op) noexcept
+{
+	return dynamic_cast<const jlm::ptr2bits_op*>(&op) != nullptr;
+}
+
+static inline std::unique_ptr<jlm::tac>
+create_ptr2bits_tac(const variable * argument, const variable * result)
+{
+	auto pt = dynamic_cast<const jlm::ptrtype*>(&argument->type());
+	if (!pt) throw std::logic_error("Expected pointer type.");
+
+	auto bt = dynamic_cast<const jive::bits::type*>(&result->type());
+	if (!bt) throw std::logic_error("Expected bitstring type.");
+
+	jlm::ptr2bits_op op(*pt, *bt);
+	return create_tac(op, {argument}, {result});
+}
+
+/* ptroffset operator */
+
+class ptroffset_op final : public jive::simple_op {
+public:
+	virtual
+	~ptroffset_op();
+
+	inline
+	ptroffset_op(
+		const jlm::ptrtype & ptype,
+		const jive::bits::type & btype,
+		const jlm::ptrtype & rtype)
+	: jive::simple_op()
+	, ptype_(ptype)
+	, rtype_(rtype)
+	, btype_(btype)
+	{}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual size_t
+	narguments() const noexcept override;
+
+	virtual const jive::base::type &
+	argument_type(size_t index) const noexcept override;
+
+	virtual size_t
+	nresults() const noexcept override;
+
+	virtual const jive::base::type &
+	result_type(size_t index) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+private:
+	jlm::ptrtype ptype_;
+	jlm::ptrtype rtype_;
+	jive::bits::type btype_;
+};
+
+static inline bool
+is_ptroffset(const jive::operation & op)
+{
+	return dynamic_cast<const jlm::ptroffset_op*>(&op) != nullptr;
+}
+
+static inline std::unique_ptr<jlm::tac>
+create_ptroffset_tac(const variable * address, const variable * offset, const variable * result)
+{
+	auto at = dynamic_cast<const jlm::ptrtype*>(&address->type());
+	if (!at) throw std::logic_error("Expected pointer type.");
+
+	auto bt = dynamic_cast<const jive::bits::type*>(&offset->type());
+	if (!bt) throw std::logic_error("Expected bitstring type.");
+
+	auto rt = dynamic_cast<const jlm::ptrtype*>(&result->type());
+	if (!rt) throw std::logic_error("Expected pointer type.");
+
+	jlm::ptroffset_op op(*at, *bt, *rt);
+	return create_tac(op, {address, offset}, {result});
 }
 
 }
