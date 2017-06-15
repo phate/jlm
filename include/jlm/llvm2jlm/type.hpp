@@ -22,7 +22,7 @@ namespace jlm {
 
 class context;
 
-std::unique_ptr<jive::base::type>
+std::unique_ptr<jive::value::type>
 convert_type(const llvm::Type * type, context & ctx);
 
 }
