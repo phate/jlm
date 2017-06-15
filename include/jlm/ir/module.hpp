@@ -14,7 +14,7 @@ namespace jlm {
 class module final {
 	typedef std::unordered_map<
 		const jlm::variable*,
-		std::shared_ptr<const expr>
+		std::unique_ptr<const expr>
 	>::const_iterator const_iterator;
 public:
 	inline
@@ -38,9 +38,9 @@ public:
 	}
 
 	inline void
-	add_global_variable(const jlm::variable * v, std::shared_ptr<const expr> e)
+	add_global_variable(const jlm::variable * v, std::unique_ptr<const expr> e)
 	{
-		globals_[v] = e;
+		globals_[v] = std::move(e);
 	}
 
 	inline const expr *
@@ -104,7 +104,7 @@ private:
 	jlm::clg clg_;
 	std::unordered_set<std::unique_ptr<const jlm::variable>> variables_;
 	std::unordered_map<const clg_node*, const jlm::variable*> functions_;
-	std::unordered_map<const jlm::variable*, std::shared_ptr<const jlm::expr>> globals_;
+	std::unordered_map<const jlm::variable*, std::unique_ptr<const jlm::expr>> globals_;
 };
 
 }

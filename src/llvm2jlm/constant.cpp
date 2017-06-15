@@ -44,50 +44,50 @@ convert_apint(const llvm::APInt & value)
 	return vr;
 }
 
-std::shared_ptr<const expr>
+std::unique_ptr<const expr>
 create_undef_value(const llvm::Type * type, context & ctx)
 {
 	if (type->isIntegerTy()) {
 		size_t nbits = type->getIntegerBitWidth();
 		jive::bits::constant_op op(jive::bits::value_repr::repeat(nbits, 'X'));
-		return std::shared_ptr<const expr>(new expr(op, {}));
+		return std::unique_ptr<const expr>(new expr(op, {}));
 	}
 
 	/* FIXME: differentiate between floating point types */
 	if (type->isFloatingPointTy())
-		return std::shared_ptr<const expr>(new expr(jive::flt::constant_op(nan("")), {}));
+		return std::unique_ptr<const expr>(new expr(jive::flt::constant_op(nan("")), {}));
 
 	/* FIXME: adjust when we have a real unknown value */
 	if (type->isPointerTy()) {
 		auto t = convert_type(type, ctx);
 		jlm::ptr_constant_null_op op(*static_cast<const jlm::ptrtype*>(t.get()));
-		return std::shared_ptr<const expr>(new expr(op, {}));
+		return std::unique_ptr<const expr>(new expr(op, {}));
 	}
 
 	if (type->isStructTy()){
-		std::vector<std::shared_ptr<const expr>> operands;
+		std::vector<std::unique_ptr<const expr>> operands;
 		for (size_t n = 0; n < type->getStructNumElements(); n++)
 			operands.push_back(create_undef_value(type->getStructElementType(n), ctx));
 
 		jive::rcd::group_op op(ctx.lookup_declaration(static_cast<const llvm::StructType*>(type)));
-		return std::shared_ptr<const expr>(new expr(op, operands));
+		return std::unique_ptr<const expr>(new expr(op, std::move(operands)));
 	}
 
 	JLM_DEBUG_ASSERT(0);
 	return nullptr;
 }
 
-static std::shared_ptr<const expr>
+static std::unique_ptr<const expr>
 convert_int_constant(const llvm::Constant * c, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantInt*>(c));
 	const llvm::ConstantInt * constant = static_cast<const llvm::ConstantInt*>(c);
 
 	jive::bits::value_repr v = convert_apint(constant->getValue());
-	return std::shared_ptr<const expr>(new expr(jive::bits::constant_op(v), {}));
+	return std::unique_ptr<const expr>(new expr(jive::bits::constant_op(v), {}));
 }
 
-static std::shared_ptr<const expr>
+static std::unique_ptr<const expr>
 convert_undefvalue_instruction(const llvm::Constant * c, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::UndefValue*>(c));
@@ -96,7 +96,7 @@ convert_undefvalue_instruction(const llvm::Constant * c, context & ctx)
 	return create_undef_value(constant->getType(), ctx);
 }
 
-static std::shared_ptr<const expr>
+static std::unique_ptr<const expr>
 convert_constantExpr(const llvm::Constant * constant, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantExpr*>(constant));
@@ -109,16 +109,16 @@ convert_constantExpr(const llvm::Constant * constant, context & ctx)
 	//	ctx.entry_block(), ctx);
 }
 
-static std::shared_ptr<const expr>
+static std::unique_ptr<const expr>
 convert_constantFP(const llvm::Constant * constant, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantFP*>(constant));
 
 	/* FIXME: convert APFloat and take care of all types */
-	return std::shared_ptr<const expr>(new expr(jive::flt::constant_op(nan("")), {}));
+	return std::unique_ptr<const expr>(new expr(jive::flt::constant_op(nan("")), {}));
 }
 
-static std::shared_ptr<const expr>
+static std::unique_ptr<const expr>
 convert_globalVariable(const llvm::Constant * constant, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::GlobalVariable*>(constant));
@@ -130,7 +130,7 @@ convert_globalVariable(const llvm::Constant * constant, context & ctx)
 	return convert_constant(c->getInitializer(), ctx);
 }
 
-static std::shared_ptr<const expr>
+static std::unique_ptr<const expr>
 convert_constantPointerNull(const llvm::Constant * constant, context & ctx)
 {
 	JLM_DEBUG_ASSERT(llvm::dyn_cast<const llvm::ConstantPointerNull>(constant));
@@ -138,20 +138,20 @@ convert_constantPointerNull(const llvm::Constant * constant, context & ctx)
 
 	auto t = convert_type(c.getType(), ctx);
 	jlm::ptr_constant_null_op op(*static_cast<const jlm::ptrtype*>(t.get()));
-	return std::shared_ptr<const expr>(new expr(op, {}));
+	return std::unique_ptr<const expr>(new expr(op, {}));
 }
 
-static std::shared_ptr<const expr>
+static std::unique_ptr<const expr>
 convert_blockAddress(const llvm::Constant * constant, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::BlockAddress*>(constant));
 
 	/* FIXME */
 	JLM_DEBUG_ASSERT(0);
-	return std::shared_ptr<const expr>(nullptr);
+	return std::unique_ptr<const expr>(nullptr);
 }
 
-static std::shared_ptr<const expr>
+static std::unique_ptr<const expr>
 convert_constantAggregateZero(const llvm::Constant * constant, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantAggregateZero*>(constant));
@@ -160,95 +160,95 @@ convert_constantAggregateZero(const llvm::Constant * constant, context & ctx)
 	if (c->getType()->isStructTy()) {
 		const llvm::StructType * type = static_cast<const llvm::StructType*>(c->getType());
 
-		std::vector<std::shared_ptr<const expr>> operands;
+		std::vector<std::unique_ptr<const expr>> operands;
 		for (size_t n = 0; n < type->getNumElements(); n++)
 			operands.push_back(convert_constant(c->getElementValue(n), ctx));
 
 		jive::rcd::group_op op(ctx.lookup_declaration(type));
-		return std::shared_ptr<const expr>(new expr(op, operands));
+		return std::unique_ptr<const expr>(new expr(op, std::move(operands)));
 	}
 
 	/* FIXME: */
 	if (c->getType()->isArrayTy())
-		return std::shared_ptr<const expr>(new expr(jive::address::constant_op(0), {}));
+		return std::unique_ptr<const expr>(new expr(jive::address::constant_op(0), {}));
 
 	JLM_DEBUG_ASSERT(0);
-	return std::shared_ptr<const expr>(nullptr);
+	return std::unique_ptr<const expr>(nullptr);
 }
 
-static std::shared_ptr<const expr>
+static std::unique_ptr<const expr>
 convert_constantArray(const llvm::Constant * constant, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantArray*>(constant));
 
 	/* FIXME */
-	return std::shared_ptr<const expr>(new expr(jive::address::constant_op(0), {}));
+	return std::unique_ptr<const expr>(new expr(jive::address::constant_op(0), {}));
 }
 
-static std::shared_ptr<const expr>
+static std::unique_ptr<const expr>
 convert_constantDataArray(const llvm::Constant * constant, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantDataArray*>(constant));
 
 	/* FIXME */
-	return std::shared_ptr<const expr>(new expr(jive::address::constant_op(0), {}));
+	return std::unique_ptr<const expr>(new expr(jive::address::constant_op(0), {}));
 }
 
-static std::shared_ptr<const expr>
+static std::unique_ptr<const expr>
 convert_constantDataVector(const llvm::Constant * constant, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantDataVector*>(constant));
 
 	/* FIXME */
 	JLM_DEBUG_ASSERT(0);
-	return std::shared_ptr<const expr>(nullptr);
+	return std::unique_ptr<const expr>(nullptr);
 }
 
-static std::shared_ptr<const expr>
+static std::unique_ptr<const expr>
 convert_constantStruct(const llvm::Constant * constant, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantStruct*>(constant));
 
 	/* FIXME */
 	JLM_DEBUG_ASSERT(0);
-	return std::shared_ptr<const expr>(nullptr);
+	return std::unique_ptr<const expr>(nullptr);
 }
 
-static std::shared_ptr<const expr>
+static std::unique_ptr<const expr>
 convert_constantVector(const llvm::Constant * constant, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantVector*>(constant));
 
 	/* FIXME */
 	JLM_DEBUG_ASSERT(0);
-	return std::shared_ptr<const expr>(nullptr);
+	return std::unique_ptr<const expr>(nullptr);
 }
 
-static std::shared_ptr<const expr>
+static std::unique_ptr<const expr>
 convert_globalAlias(const llvm::Constant * constant, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::GlobalAlias*>(constant));
 
 	/* FIXME */
 	JLM_DEBUG_ASSERT(0);
-	return std::shared_ptr<const expr>(nullptr);
+	return std::unique_ptr<const expr>(nullptr);
 }
 
-static std::shared_ptr<const expr>
+static std::unique_ptr<const expr>
 convert_function(const llvm::Constant * constant, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::Function*>(constant));
 
 	/* FIXME: */
-	return std::shared_ptr<const expr>(new expr(jive::address::constant_op(0), {}));
+	return std::unique_ptr<const expr>(new expr(jive::address::constant_op(0), {}));
 }
 
-std::shared_ptr<const expr>
+std::unique_ptr<const expr>
 convert_constant(const llvm::Constant * c, context & ctx)
 {
 	static std::unordered_map<
 		unsigned,
-		std::shared_ptr<const expr> (*)(const llvm::Constant*, context & ctx)
+		std::unique_ptr<const expr> (*)(const llvm::Constant*, context & ctx)
 	> cmap({
 		{llvm::Value::ConstantIntVal, convert_int_constant}
 	,	{llvm::Value::UndefValueVal, convert_undefvalue_instruction}

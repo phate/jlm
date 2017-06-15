@@ -22,27 +22,34 @@ public:
 	{}
 
 	inline
-	expr(const jive::operation & operation,
-		const std::vector<std::shared_ptr<const expr>> & operands)
+	expr(
+		const jive::operation & operation,
+		std::vector<std::unique_ptr<const expr>> operands)
 		: operation_(std::move(operation.copy()))
-		, operands_(operands)
+		, operands_(std::move(operands))
 	{
 		/* FIXME: check number of results of operation */
 	}
 
+	expr(const expr &) = delete;
+
 	inline
-	expr(const expr & other)
-		: operation_(std::move(other.operation_->copy()))
-		, operands_(other.operands_)
+	expr(expr && other)
+	: operation_(std::move(other.operation_))
+	, operands_(std::move(other.operands_))
 	{}
 
-	inline expr &
-	operator=(const expr & other)
-	{
-		operation_ = std::move(other.operation_->copy());
-		operands_ = other.operands_;
+	expr &
+	operator=(const expr &) = delete;
 
-		return *this;
+	inline expr &
+	operator=(expr && other)
+	{
+		if (this == &other)
+			return *this;
+
+		operation_ = std::move(other.operation_);
+		operands_ = std::move(other.operands_);
 	}
 
 	inline const jive::operation &
@@ -79,7 +86,7 @@ public:
 
 private:
 	std::unique_ptr<jive::operation> operation_;
-	std::vector<std::shared_ptr<const expr>> operands_;
+	std::vector<std::unique_ptr<const expr>> operands_;
 };
 
 }
