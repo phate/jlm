@@ -5,6 +5,7 @@
 
 #include <jlm/common.hpp>
 #include <jlm/ir/expression.hpp>
+#include <jlm/ir/operators.hpp>
 #include <jlm/llvm2jlm/context.hpp>
 #include <jlm/llvm2jlm/constant.hpp>
 #include <jlm/llvm2jlm/instruction.hpp>
@@ -58,7 +59,8 @@ create_undef_value(const llvm::Type * type, context & ctx)
 
 	/* FIXME: adjust when we have a real unknown value */
 	if (type->isPointerTy()) {
-		jive::address::constant_op op(jive::address::value_repr(0));
+		auto t = convert_type(type, ctx);
+		jlm::ptr_constant_null_op op(*static_cast<const jlm::ptrtype*>(t.get()));
 		return std::shared_ptr<const expr>(new expr(op, {}));
 	}
 
@@ -131,9 +133,12 @@ convert_globalVariable(const llvm::Constant * constant, context & ctx)
 static std::shared_ptr<const expr>
 convert_constantPointerNull(const llvm::Constant * constant, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantPointerNull*>(constant));
+	JLM_DEBUG_ASSERT(llvm::dyn_cast<const llvm::ConstantPointerNull>(constant));
+	auto & c = *llvm::cast<const llvm::ConstantPointerNull>(constant);
 
-	return std::shared_ptr<const expr>(new expr(jive::address::constant_op(0), {}));
+	auto t = convert_type(c.getType(), ctx);
+	jlm::ptr_constant_null_op op(*static_cast<const jlm::ptrtype*>(t.get()));
+	return std::shared_ptr<const expr>(new expr(op, {}));
 }
 
 static std::shared_ptr<const expr>

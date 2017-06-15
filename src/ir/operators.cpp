@@ -172,19 +172,23 @@ alloca_op::~alloca_op() noexcept
 bool
 alloca_op::operator==(const operation & other) const noexcept
 {
-	return false;
+	auto op = dynamic_cast<const jlm::alloca_op*>(&other);
+	return op && op->atype_ == atype_ && op->btype_ == btype_;
 }
 
 size_t
 alloca_op::narguments() const noexcept
 {
-	return 1;
+	return 2;
 }
 
 const jive::base::type &
 alloca_op::argument_type(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < narguments());
+	if (index == 0)
+		return btype_;
+
 	return jive::mem::type::instance();
 }
 
@@ -198,11 +202,8 @@ const jive::base::type &
 alloca_op::result_type(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < nresults());
-
-	if (index == 0) {
-		static const jive::addr::type addrtype;
-		return addrtype;
-	}
+	if (index == 0)
+		return atype_;
 
 	return jive::mem::type::instance();
 }

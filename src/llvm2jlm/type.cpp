@@ -4,6 +4,7 @@
  */
 
 #include <jlm/common.hpp>
+#include <jlm/ir/types.hpp>
 #include <jlm/llvm2jlm/context.hpp>
 #include <jlm/llvm2jlm/type.hpp>
 
@@ -33,8 +34,9 @@ static std::unique_ptr<jive::base::type>
 convert_pointer_type(const llvm::Type * t, context & ctx)
 {
 	JLM_DEBUG_ASSERT(t->getTypeID() == llvm::Type::PointerTyID);
+	const auto & type = llvm::cast<llvm::PointerType>(t);
 
-	return std::unique_ptr<jive::base::type>(new jive::addr::type());
+	return create_ptrtype(*convert_type(type->getElementType(), ctx));
 }
 
 static std::unique_ptr<jive::base::type>

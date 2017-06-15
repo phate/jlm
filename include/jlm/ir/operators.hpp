@@ -210,15 +210,11 @@ public:
 	~alloca_op() noexcept;
 
 	inline
-	alloca_op(size_t nbytes)
-		: nbytes_(nbytes)
+	alloca_op(const jlm::ptrtype & atype, const jive::bits::type & btype)
+	: simple_op()
+	, atype_(atype)
+	, btype_(btype)
 	{}
-
-	inline
-	alloca_op(const alloca_op & other) = default;
-
-	inline
-	alloca_op(alloca_op && other) = default;
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
@@ -241,9 +237,45 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
+	inline const jive::bits::type &
+	size_type() const noexcept
+	{
+		return btype_;
+	}
+
+	inline const jive::value::type &
+	value_type() const noexcept
+	{
+		return atype_.pointee_type();
+	}
+
 private:
-	size_t nbytes_;
+	jlm::ptrtype atype_;
+	jive::bits::type btype_;
 };
+
+static inline bool
+is_alloca_op(const jive::operation & op) noexcept
+{
+	return dynamic_cast<const jlm::alloca_op*>(&op) != nullptr;
+}
+
+static inline std::unique_ptr<jlm::tac>
+create_alloca_tac(
+	const jive::base::type & vtype,
+	const variable * size,
+	const variable * state,
+	const variable * result)
+{
+	auto vt = dynamic_cast<const jive::value::type*>(&vtype);
+	if (!vt) throw std::logic_error("Expected value type.");
+
+	auto bt = dynamic_cast<const jive::bits::type*>(&size->type());
+	if (!bt) throw std::logic_error("Expected bits type.");
+
+	jlm::alloca_op op(jlm::ptrtype(*vt), *bt);
+	return create_tac(op, {size, state}, {result, state});
+}
 
 /* bits2flt operator */
 
