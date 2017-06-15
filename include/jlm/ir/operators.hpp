@@ -804,7 +804,7 @@ private:
 };
 
 static inline bool
-is_ptroffset(const jive::operation & op)
+is_ptroffset_op(const jive::operation & op)
 {
 	return dynamic_cast<const jlm::ptroffset_op*>(&op) != nullptr;
 }
