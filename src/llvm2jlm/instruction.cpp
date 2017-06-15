@@ -54,18 +54,18 @@ append_tac(jlm::cfg_node * node, std::unique_ptr<jlm::tac> tac)
 namespace jlm {
 
 const variable *
-convert_value(
-	const llvm::Value * v,
-	context & ctx)
+convert_value(const llvm::Value * v, const llvm::BasicBlock * bb, context & ctx)
 {
 	if (ctx.has_value(v))
 		return ctx.lookup_value(v);
 
-	if (auto c = dynamic_cast<const llvm::Constant*>(v)) {
-		auto attr = static_cast<basic_block*>(&ctx.entry_block()->attribute());
+	auto node = ctx.lookup_basic_block(bb);
+	if (auto c = llvm::dyn_cast<const llvm::Constant>(v)) {
+		const variable * r = nullptr;
 		auto tacs = expr2tacs(*convert_constant(c, ctx), ctx);
-		attr->append(tacs);
-		return attr->last()->output(0);
+		for (size_t n = 0; n < tacs.size(); n++)
+			r = append_tac(node, std::move(tacs[n]))->output(0);
+		return r;
 	}
 
 	JLM_DEBUG_ASSERT(0);
@@ -85,7 +85,7 @@ convert_return_instruction(
 	auto attr = static_cast<basic_block*>(&bb->attribute());
 
 	if (instruction->getReturnValue()) {
-		auto value = convert_value(instruction->getReturnValue(), ctx);
+		auto value = convert_value(instruction->getReturnValue(), i->getParent(), ctx);
 		attr->append(create_assignment(ctx.result()->type(), value, ctx.result()));
 	}
 
@@ -103,7 +103,7 @@ convert_branch_instruction(
 	auto attr = static_cast<basic_block*>(&bb->attribute());
 
 	if (instruction->isConditional()) {
-		auto c = convert_value(instruction->getCondition(), ctx);
+		auto c = convert_value(instruction->getCondition(), i->getParent(), ctx);
 		size_t nbits = dynamic_cast<const jive::bits::type&>(c->type()).nbits();
 		auto op = jive::match_op(nbits, {{0, 0}}, 1, 2);
 		attr->append(create_tac(op, {c}, create_result_variables(ctx.module(), op)));
@@ -129,7 +129,7 @@ convert_switch_instruction(
 		mapping[it.getCaseValue()->getZExtValue()] = it.getCaseIndex();
 	}
 
-	auto c = convert_value(instruction->getCondition(), ctx);
+	auto c = convert_value(instruction->getCondition(), i->getParent(), ctx);
 	size_t nbits = dynamic_cast<const jive::bits::type&>(c->type()).nbits();
 	auto op = jive::match_op(nbits, mapping, mapping.size(), mapping.size()+1);
 	attr->append(create_tac(op, {c}, create_result_variables(ctx.module(), op)));
@@ -157,8 +157,8 @@ convert_icmp_instruction(
 	const llvm::ICmpInst * i = static_cast<const llvm::ICmpInst*>(instruction);
 	auto attr = static_cast<basic_block*>(&bb->attribute());
 
-	auto op1 = convert_value(i->getOperand(0), ctx);
-	auto op2 = convert_value(i->getOperand(1), ctx);
+	auto op1 = convert_value(i->getOperand(0), i->getParent(), ctx);
+	auto op2 = convert_value(i->getOperand(1), i->getParent(), ctx);
 
 	/* FIXME: */
 	if (i->getOperand(0)->getType()->isVectorTy())
@@ -238,8 +238,8 @@ convert_fcmp_instruction(
 	std::vector<const variable*> operands;
 	if (i->getPredicate() != llvm::CmpInst::FCMP_TRUE
 	&& i->getPredicate() != llvm::CmpInst::FCMP_FALSE) {
-		operands.push_back(convert_value(i->getOperand(0), ctx));
-		operands.push_back(convert_value(i->getOperand(1), ctx));
+		operands.push_back(convert_value(i->getOperand(0), i->getParent(), ctx));
+		operands.push_back(convert_value(i->getOperand(1), i->getParent(), ctx));
 	}
 
 	auto tac = create_tac(*map[i->getPredicate()](), operands, {ctx.lookup_value(i)});
@@ -255,7 +255,7 @@ convert_load_instruction(const llvm::Instruction * i, cfg_node * bb, context & c
 	/* FIXME: volatile and alignment */
 
 	auto value = ctx.lookup_value(i);
-	auto address = convert_value(instruction->getPointerOperand(), ctx);
+	auto address = convert_value(instruction->getPointerOperand(), i->getParent(), ctx);
 
 	return append_tac(bb, create_load_tac(address, ctx.state(), value))->output(0);
 }
@@ -268,8 +268,8 @@ convert_store_instruction(const llvm::Instruction * i, cfg_node * bb, context & 
 
 	/* FIXME: volatile and alignement */
 
-	auto address = convert_value(instruction->getPointerOperand(), ctx);
-	auto value = convert_value(instruction->getValueOperand(), ctx);
+	auto address = convert_value(instruction->getPointerOperand(), i->getParent(), ctx);
+	auto value = convert_value(instruction->getValueOperand(), i->getParent(), ctx);
 
 	append_tac(bb, create_store_tac(address, value, ctx.state()));
 	return nullptr;
@@ -296,7 +296,7 @@ convert_phi_instruction(
 			ib = ctx.lookup_basic_block(tmp->inedges().front()->source());
 		}
 
-		auto v = convert_value(phi->getIncomingValueForBlock(ib), ctx);
+		auto v = convert_value(phi->getIncomingValueForBlock(ib), i->getParent(), ctx);
 		operands.push_back(v);
 	}
 
@@ -312,13 +312,13 @@ convert_getelementptr_instruction(const llvm::Instruction * inst, cfg_node * bb,
 	auto i = llvm::cast<const llvm::GetElementPtrInst>(inst);
 	auto & m = ctx.module();
 
-	auto base = convert_value(i->getPointerOperand(), ctx);
+	auto base = convert_value(i->getPointerOperand(), i->getParent(), ctx);
 
 	std::vector<llvm::Value*> idxs;
 	const variable * address = base;
 	for (auto it = i->idx_begin(); it != i->idx_end(); it++) {
 		idxs.push_back(*it);
-		auto offset = convert_value(*it, ctx);
+		auto offset = convert_value(*it, i->getParent(), ctx);
 		auto t = i->getGEPReturnType(i->getOperand(0), idxs);
 		auto r = m.create_variable(*convert_type(t, ctx), false);
 		address = append_tac(bb, create_ptroffset_tac(address, offset, r))->output(0);
@@ -338,7 +338,7 @@ convert_trunc_instruction(
 	auto attr = static_cast<basic_block*>(&bb->attribute());
 
 	size_t high = i->getType()->getIntegerBitWidth();
-	auto operand = convert_value(instruction->getOperand(0), ctx);
+	auto operand = convert_value(instruction->getOperand(0), i->getParent(), ctx);
 	jive::bits::slice_op op(dynamic_cast<const jive::bits::type&>(operand->type()), 0, high);
 	return attr->append(create_tac(op, {operand}, {ctx.lookup_value(i)}))->output(0);
 }
@@ -363,12 +363,12 @@ convert_call_instruction(
 	auto caller = static_cast<const function_variable*>(vcaller)->function();
 	if (instruction->getCalledFunction()) {
 		/* direct call */
-		callee = convert_value(f, ctx);
+		callee = convert_value(f, i->getParent(), ctx);
 		caller->add_call(static_cast<const function_variable*>(callee)->function());
 	} else {
 		/* indirect call */
 		/* FIXME */
-		auto a = convert_value(f, ctx);
+		auto a = convert_value(f, i->getParent(), ctx);
 		auto r = ctx.module().create_variable(type, false);
 		callee = append_tac(bb, create_load_tac(a, ctx.state(), r))->output(0);
 	}
@@ -377,7 +377,7 @@ convert_call_instruction(
 	std::vector<const jlm::variable *> arguments;
 	arguments.push_back(callee);
 	for (size_t n = 0; n < ftype->getNumParams(); n++)
-		arguments.push_back(convert_value(instruction->getArgOperand(n), ctx));
+		arguments.push_back(convert_value(instruction->getArgOperand(n), i->getParent(), ctx));
 	if (ftype->isVarArg()) {
 		/* FIXME: sizeof */
 		//auto alloc = ctx.module().create_variable(jive::addr::type::instance(), false);
@@ -406,9 +406,9 @@ convert_select_instruction(
 	const llvm::SelectInst * instruction = static_cast<const llvm::SelectInst*>(i);
 	auto attr = static_cast<basic_block*>(&bb->attribute());
 
-	auto condition = convert_value(instruction->getCondition(), ctx);
-	auto tv = convert_value(instruction->getTrueValue(), ctx);
-	auto fv = convert_value(instruction->getFalseValue(), ctx);
+	auto condition = convert_value(instruction->getCondition(), i->getParent(), ctx);
+	auto tv = convert_value(instruction->getTrueValue(), i->getParent(), ctx);
+	auto fv = convert_value(instruction->getFalseValue(), i->getParent(), ctx);
 	auto tac = create_tac(select_op(tv->type()), {condition, tv, fv}, {ctx.lookup_value(i)});
 	return attr->append(std::move(tac))->output(0);
 }
@@ -427,8 +427,8 @@ convert_binary_operator(
 	if (i->getType()->isVectorTy())
 		JLM_DEBUG_ASSERT(0);
 
-	auto op1 = convert_value(i->getOperand(0), ctx);
-	auto op2 = convert_value(i->getOperand(1), ctx);
+	auto op1 = convert_value(i->getOperand(0), i->getParent(), ctx);
+	auto op2 = convert_value(i->getOperand(1), i->getParent(), ctx);
 
 	if (i->getType()->isIntegerTy()) {
 		static std::map<
@@ -483,7 +483,7 @@ convert_alloca_instruction(const llvm::Instruction * instruction, cfg_node * bb,
 	/* FIXME: alignment */
 
 	auto result = ctx.lookup_value(i);
-	auto size = convert_value(i->getArraySize(), ctx);
+	auto size = convert_value(i->getArraySize(), i->getParent(), ctx);
 	auto vtype = convert_type(i->getAllocatedType(), ctx);
 	return append_tac(bb, create_alloca_tac(*vtype, size, ctx.state(), result))->output(0);
 }
@@ -510,7 +510,8 @@ convert_zext_instruction(
 	auto c = attr->append(create_tac(c_op, {}, vs))->output(0);
 
 	jive::bits::concat_op op({jive::bits::type(old_length), jive::bits::type(new_length-old_length)});
-	auto tac = create_tac(op, {convert_value(operand, ctx), c}, {ctx.lookup_value(i)});
+	auto v = convert_value(operand, i->getParent(), ctx);
+	auto tac = create_tac(op, {v, c}, {ctx.lookup_value(i)});
 	return attr->append(std::move(tac))->output(0);
 }
 
@@ -533,9 +534,10 @@ convert_sext_instruction(
 	size_t old_length = operand->getType()->getIntegerBitWidth();
 	jive::bits::slice_op s_op(jive::bits::type(old_length), old_length-1, old_length);
 	auto vs = create_result_variables(ctx.module(), s_op);
-	auto bit = attr->append(create_tac(s_op, {convert_value(operand, ctx)}, vs))->output(0);
+	auto v = convert_value(operand, i->getParent(), ctx);
+	auto bit = attr->append(create_tac(s_op, {v}, vs))->output(0);
 
-	std::vector<const variable*> operands(1, convert_value(operand, ctx));
+	std::vector<const variable*> operands(1, convert_value(operand, i->getParent(), ctx));
 	std::vector<jive::bits::type> operand_types(1, jive::bits::type(old_length));
 	for (size_t n = 0; n < new_length - old_length; n++) {
 		operand_types.push_back(jive::bits::type(1));
@@ -559,7 +561,7 @@ convert_fpext_instruction(
 
 	jive::flt::type type;
 	assignment_op op(type);
-	auto operand = convert_value(i->getOperand(0), ctx);
+	auto operand = convert_value(i->getOperand(0), i->getParent(), ctx);
 	return attr->append(create_tac(op, {operand}, {ctx.lookup_value(i)}))->output(0);
 }
 
@@ -576,7 +578,7 @@ convert_fptrunc_instruction(
 
 	jive::flt::type type;
 	assignment_op op(type);
-	auto operand = convert_value(i->getOperand(0), ctx);
+	auto operand = convert_value(i->getOperand(0), i->getParent(), ctx);
 	return attr->append(create_tac(op, {operand}, {ctx.lookup_value(i)}))->output(0);
 }
 
@@ -585,7 +587,7 @@ convert_inttoptr_instruction(const llvm::Instruction * i, cfg_node * bb, context
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::IntToPtrInst*>(i));
 
-	auto argument = convert_value(i->getOperand(0), ctx);
+	auto argument = convert_value(i->getOperand(0), i->getParent(), ctx);
 	return append_tac(bb, create_bits2ptr_tac(argument, ctx.lookup_value(i)))->output(0);
 }
 
@@ -594,7 +596,7 @@ convert_ptrtoint_instruction(const llvm::Instruction * i, cfg_node * bb, context
 {
 	JLM_DEBUG_ASSERT(llvm::dyn_cast<const llvm::PtrToIntInst>(i));
 
-	auto argument = convert_value(i->getOperand(0), ctx);
+	auto argument = convert_value(i->getOperand(0), i->getParent(), ctx);
 	return append_tac(bb, create_ptr2bits_tac(argument, ctx.lookup_value(i)))->output(0);
 }
 
@@ -615,7 +617,7 @@ convert_uitofp_instruction(
 		JLM_DEBUG_ASSERT(0);
 
 	bits2flt_op op(type->getIntegerBitWidth());
-	auto tac = create_tac(op, {convert_value(operand, ctx)}, {ctx.lookup_value(i)});
+	auto tac = create_tac(op, {convert_value(operand, i->getParent(), ctx)}, {ctx.lookup_value(i)});
 	return attr->append(std::move(tac))->output(0);
 }
 
@@ -636,7 +638,7 @@ convert_sitofp_instruction(
 		JLM_DEBUG_ASSERT(0);
 
 	bits2flt_op op(type->getIntegerBitWidth());
-	auto tac = create_tac(op, {convert_value(operand, ctx)}, {ctx.lookup_value(i)});
+	auto tac = create_tac(op, {convert_value(operand, i->getParent(), ctx)}, {ctx.lookup_value(i)});
 	return attr->append(std::move(tac))->output(0);
 }
 
@@ -656,7 +658,7 @@ convert_fptoui_instruction(
 		JLM_DEBUG_ASSERT(0);
 
 	flt2bits_op op(i->getType()->getIntegerBitWidth());
-	auto tac = create_tac(op, {convert_value(operand, ctx)}, {ctx.lookup_value(i)});
+	auto tac = create_tac(op, {convert_value(operand, i->getParent(), ctx)}, {ctx.lookup_value(i)});
 	return attr->append(std::move(tac))->output(0);
 }
 
@@ -676,7 +678,7 @@ convert_fptosi_instruction(
 		JLM_DEBUG_ASSERT(0);
 
 	flt2bits_op op(i->getType()->getIntegerBitWidth());
-	auto tac = create_tac(op, {convert_value(operand, ctx)}, {ctx.lookup_value(i)});
+	auto tac = create_tac(op, {convert_value(operand, i->getParent(), ctx)}, {ctx.lookup_value(i)});
 	return attr->append(std::move(tac))->output(0);
 }
 
@@ -689,7 +691,7 @@ convert_bitcast_instruction(const llvm::Instruction * instruction, cfg_node * bb
 
 	/* FIXME: avoid usage of memory to do cast */
 
-	auto o = convert_value(i.getOperand(0), ctx);
+	auto o = convert_value(i.getOperand(0), i.getParent(), ctx);
 
 	jive::bits::type bits32(32);
 	auto ptype = create_ptrtype(*convert_type(i.getSrcTy(), ctx));
@@ -724,7 +726,7 @@ convert_insertvalue_instruction(
 		const variable * aggregate)
 	{
 		if (idx == i->idx_end())
-			return convert_value(i->getInsertedValueOperand(), ctx);
+			return convert_value(i->getInsertedValueOperand(), i->getParent(), ctx);
 
 		/* FIXME: array type */
 		const jive::rcd::type * type = dynamic_cast<const jive::rcd::type*>(&aggregate->type());
@@ -745,7 +747,7 @@ convert_insertvalue_instruction(
 		return attr->append(create_tac(op, operands, {ctx.lookup_value(i)}))->output(0);
 	};
 
-	return f(i->idx_begin(), convert_value(i->getAggregateOperand(), ctx));
+	return f(i->idx_begin(), convert_value(i->getAggregateOperand(), i->getParent(), ctx));
 }
 
 static const variable *
@@ -762,7 +764,7 @@ convert_extractvalue_instruction(
 	if (i->getType()->isArrayTy())
 		JLM_DEBUG_ASSERT(0);
 
-	auto aggregate = convert_value(i->getAggregateOperand(), ctx);
+	auto aggregate = convert_value(i->getAggregateOperand(), i->getParent(), ctx);
 
 	for (auto it = i->idx_begin(); it != i->idx_end(); it++) {
 		const jive::rcd::type * type = dynamic_cast<const jive::rcd::type*>(&aggregate->type());

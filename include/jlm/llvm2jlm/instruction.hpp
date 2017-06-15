@@ -18,9 +18,7 @@ class context;
 class variable;
 
 const variable *
-convert_value(
-	const llvm::Value * v,
-	context & ctx);
+convert_value(const llvm::Value * v, const llvm::BasicBlock * bb, context & ctx);
 
 const variable *
 convert_instruction(
