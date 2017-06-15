@@ -208,19 +208,16 @@ convert_functions(
 }
 
 static void
-convert_global_variables(
-	const llvm::Module::GlobalListType & list,
-	jlm::module & mod,
-	context & ctx)
+convert_global_variables(const llvm::Module::GlobalListType & vs, context & ctx)
 {
-	for (auto it = list.begin(); it != list.end(); it++) {
-	/* FIXME
-		variable * v = mod.add_global_variable(
-			it->getName().str(),
-			*convert_constant(it.getNodePtrUnchecked(), ctx),
-			it->getLinkage() != llvm::GlobalValue::InternalLinkage);
-		ctx.insert_value(it.getNodePtrUnchecked(), v);
-	*/
+	auto & m = ctx.module();
+
+	for (const auto & gv : vs) {
+		auto name = gv.getName().str();
+		auto exported = gv.getLinkage() != llvm::GlobalValue::InternalLinkage;
+		auto variable = m.create_variable(*convert_type(gv.getType(), ctx), name, exported);
+		m.add_global_variable(variable, convert_constant(&gv, ctx));
+		ctx.insert_value(&gv, variable);
 	}
 }
 
@@ -230,7 +227,7 @@ convert_module(const llvm::Module & module)
 	std::unique_ptr<jlm::module> m(new jlm::module());
 
 	context ctx(*m);
-	convert_global_variables(module.getGlobalList(), *m, ctx);
+	convert_global_variables(module.getGlobalList(), ctx);
 	convert_functions(module.getFunctionList(), m->clg(), ctx);
 
 	return m;
