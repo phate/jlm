@@ -9,8 +9,10 @@
 #include <jive/vsdg/graph.h>
 
 #include <jlm/ir/module.hpp>
+#include <jlm/jlm2llvm/jlm2llvm.hpp>
 #include <jlm/jlm2rvsdg/module.hpp>
 #include <jlm/llvm2jlm/module.hpp>
+#include <jlm/rvsdg2jlm/rvsdg2jlm.hpp>
 
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/Function.h>
@@ -25,23 +27,26 @@ verify()
 	using namespace llvm;
 
 	LLVMContext ctx;
-	Module module("module", ctx);
+	std::unique_ptr<Module> module(new Module("module", ctx));
 	auto ftype = FunctionType::get(Type::getVoidTy(ctx), {Type::getInt32PtrTy(ctx)}, false);
-	auto f = Function::Create(ftype, Function::ExternalLinkage, "", &module);
+	auto f = Function::Create(ftype, Function::ExternalLinkage, "", module.get());
 	auto bb = BasicBlock::Create(ctx, "f", f, nullptr);
 
 	IRBuilder<> builder(bb);
 	builder.CreateGEP(f->arg_begin(), {ConstantInt::get(Type::getInt32Ty(ctx), 1)});
 	builder.CreateRetVoid();
 
-	module.dump();
+	module->dump();
 
 	using namespace jlm;
 
-	auto m = convert_module(module);
+	auto m = convert_module(*module);
 	auto rvsdg = construct_rvsdg(*m);
-
 	jive::view(rvsdg->root(), stdout);
+
+	m = rvsdg2jlm::rvsdg2jlm(*rvsdg);
+	module = jlm2llvm::convert(*m, ctx);
+	module->dump();
 
 	return 0;
 }

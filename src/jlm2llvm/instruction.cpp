@@ -287,6 +287,18 @@ convert_store(const jlm::tac & tac, const jlm::cfg_node * node, context & ctx)
 	return builder.CreateStore(ctx.value(tac.input(1)), ctx.value(tac.input(0)));
 }
 
+static inline llvm::Instruction *
+convert_ptroffset(const jlm::tac & tac, const jlm::cfg_node * node, context & ctx)
+{
+	JLM_DEBUG_ASSERT(is_ptroffset_op(tac.operation()));
+
+	llvm::IRBuilder<> builder(ctx.basic_block(node));
+	auto gep = builder.CreateGEP(ctx.value(tac.input(0)), ctx.value(tac.input(1)));
+
+	ctx.insert(tac.output(0), gep);
+	return llvm::cast<llvm::Instruction>(gep);
+}
+
 llvm::Instruction *
 convert_instruction(const jlm::tac & tac, const jlm::cfg_node * node, context & ctx)
 {
@@ -327,6 +339,7 @@ convert_instruction(const jlm::tac & tac, const jlm::cfg_node * node, context & 
 	, {std::type_index(typeid(jlm::phi_op)), jlm::jlm2llvm::convert_phi}
 	, {std::type_index(typeid(jlm::load_op)), jlm::jlm2llvm::convert_load}
 	, {std::type_index(typeid(jlm::store_op)), jlm::jlm2llvm::convert_store}
+	, {std::type_index(typeid(jlm::ptroffset_op)), jlm::jlm2llvm::convert_ptroffset}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(tac.operation()))) != map.end());
