@@ -165,7 +165,6 @@ create_cfg(const llvm::Function & f, context & ctx)
 
 	/* convert instructions */
 	ctx.set_basic_block_map(bbmap);
-	ctx.set_entry_block(entry_block);
 	ctx.set_state(state);
 	ctx.set_result(result);
 	convert_basic_blocks(f.getBasicBlockList(), ctx);

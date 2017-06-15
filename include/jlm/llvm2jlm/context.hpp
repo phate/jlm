@@ -90,20 +90,7 @@ public:
 	inline
 	context(jlm::module & module)
 		: module_(module)
-		, entry_block_(nullptr)
 	{}
-
-	inline cfg_node *
-	entry_block() const noexcept
-	{
-		return entry_block_;
-	}
-
-	inline void
-	set_entry_block(cfg_node * entry_block)
-	{
-		entry_block_ = entry_block;
-	}
 
 	inline const variable *
 	result() const noexcept
@@ -199,12 +186,6 @@ public:
 		return declarations_[type];
 	}
 
-	inline jlm::cfg *
-	cfg() const noexcept
-	{
-		return entry_block_->cfg();
-	}
-
 	inline jlm::module &
 	module() const noexcept
 	{
@@ -214,7 +195,6 @@ public:
 private:
 	jlm::module & module_;
 	basic_block_map bbmap_;
-	cfg_node * entry_block_;
 	const variable * state_;
 	const variable * result_;
 	std::unordered_map<const llvm::Value *, const variable *> vmap_;
