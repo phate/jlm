@@ -38,6 +38,15 @@ convert_function_type(const jive::base::type & type, llvm::LLVMContext & ctx)
 	return FunctionType::get(rt, ats, false);
 }
 
+static inline llvm::Type *
+convert_pointer_type(const jive::base::type & type, llvm::LLVMContext & ctx)
+{
+	JLM_DEBUG_ASSERT(is_ptrtype(type));
+	auto & t = *static_cast<const jlm::ptrtype*>(&type);
+
+	return llvm::PointerType::get(convert_type(t.pointee_type(), ctx), 0);
+}
+
 llvm::Type *
 convert_type(const jive::base::type & type, llvm::LLVMContext & ctx)
 {
@@ -47,6 +56,7 @@ convert_type(const jive::base::type & type, llvm::LLVMContext & ctx)
 	> map({
 	  {std::type_index(typeid(jive::bits::type)), convert_integer_type}
 	, {std::type_index(typeid(jive::fct::type)), convert_function_type}
+	, {std::type_index(typeid(jlm::ptrtype)), convert_pointer_type}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(type))) != map.end());

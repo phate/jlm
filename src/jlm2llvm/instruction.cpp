@@ -266,6 +266,27 @@ convert_phi(const jlm::tac & tac, const jlm::cfg_node * node, context & ctx)
 	return phi;
 }
 
+static inline llvm::Instruction *
+convert_load(const jlm::tac & tac, const jlm::cfg_node * node, context & ctx)
+{
+	JLM_DEBUG_ASSERT(is_load_op(tac.operation()));
+
+	llvm::IRBuilder<> builder(ctx.basic_block(node));
+	auto load = builder.CreateLoad(ctx.value(tac.input(0)));
+
+	ctx.insert(tac.output(0), load);
+	return load;
+}
+
+static inline llvm::Instruction *
+convert_store(const jlm::tac & tac, const jlm::cfg_node * node, context & ctx)
+{
+	JLM_DEBUG_ASSERT(is_store_op(tac.operation()));
+
+	llvm::IRBuilder<> builder(ctx.basic_block(node));
+	return builder.CreateStore(ctx.value(tac.input(1)), ctx.value(tac.input(0)));
+}
+
 llvm::Instruction *
 convert_instruction(const jlm::tac & tac, const jlm::cfg_node * node, context & ctx)
 {
@@ -304,6 +325,8 @@ convert_instruction(const jlm::tac & tac, const jlm::cfg_node * node, context & 
 	, {std::type_index(typeid(jlm::assignment_op)), jlm::jlm2llvm::convert_assignment}
 	, {std::type_index(typeid(jlm::branch_op)), jlm::jlm2llvm::convert_branch}
 	, {std::type_index(typeid(jlm::phi_op)), jlm::jlm2llvm::convert_phi}
+	, {std::type_index(typeid(jlm::load_op)), jlm::jlm2llvm::convert_load}
+	, {std::type_index(typeid(jlm::store_op)), jlm::jlm2llvm::convert_store}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(tac.operation()))) != map.end());

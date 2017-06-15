@@ -10,6 +10,7 @@
 #include <jive/types/function/fcttype.h>
 
 #include <jlm/common.hpp>
+#include <jlm/ir/types.hpp>
 
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Type.h>
@@ -40,6 +41,14 @@ convert_type(const jive::fct::type & type, llvm::LLVMContext & ctx)
 	auto t = convert_type(*static_cast<const jive::base::type*>(&type), ctx);
 	JLM_DEBUG_ASSERT(t->getTypeID() == llvm::Type::FunctionTyID);
 	return llvm::cast<llvm::FunctionType>(t);
+}
+
+static inline llvm::PointerType *
+convert_type(const jlm::ptrtype & type, llvm::LLVMContext & ctx)
+{
+	auto t = convert_type(*static_cast<const jive::base::type*>(&type), ctx);
+	JLM_DEBUG_ASSERT(t->getTypeID() == llvm::Type::PointerTyID);
+	return llvm::cast<llvm::PointerType>(t);
 }
 
 }}
