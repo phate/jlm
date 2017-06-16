@@ -199,12 +199,35 @@ convert_callgraph(const jlm::clg & clg, context & ctx)
 		convert_function(*node, ctx);
 }
 
+static inline void
+convert_globals(context & ctx)
+{
+	using namespace llvm;
+
+	auto & jm = ctx.jlm_module();
+	auto & lm = ctx.llvm_module();
+
+	for (const auto & gv : jm) {
+		auto variable = gv.first;
+		auto value = convert_expression(*gv.second, ctx);
+
+		auto type = convert_type(variable->type(), lm.getContext());
+		auto linkage = GlobalValue::InternalLinkage;
+		if (variable->exported()) linkage = GlobalValue::ExternalLinkage;
+
+		/* FIXME: isConstant parameter is not always true */
+		auto addr = new GlobalVariable(lm, type, true, linkage, value, variable->name());
+		ctx.insert(variable, addr);
+	}
+}
+
 std::unique_ptr<llvm::Module>
 convert(const jlm::module & jm, llvm::LLVMContext & lctx)
 {
 	std::unique_ptr<llvm::Module> lm(new llvm::Module("module", lctx));
 
 	context ctx(jm, *lm);
+	convert_globals(ctx);
 	convert_callgraph(jm.clg(), ctx);
 
 	return lm;

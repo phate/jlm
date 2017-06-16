@@ -8,6 +8,7 @@
 #include <jive/vsdg/operators/match.h>
 
 #include <jlm/ir/cfg_node.hpp>
+#include <jlm/ir/expression.hpp>
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/tac.hpp>
 
@@ -280,7 +281,7 @@ convert_ptroffset(
 llvm::Value *
 convert_operation(
 	const jive::operation & op,
-	llvm::BasicBlock * bb,
+	llvm::IRBuilder<> & builder,
 	const std::vector<llvm::Value*> & arguments)
 {
 	using namespace std::placeholders;
@@ -348,7 +349,6 @@ convert_operation(
 	, {std::type_index(typeid(jlm::ptroffset_op)), jlm::jlm2llvm::convert_ptroffset}
 	});
 
-	IRBuilder<> builder(bb);
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
 	return map[std::type_index(typeid(op))](op, builder, arguments);
 }
@@ -363,8 +363,20 @@ convert_instruction(const jlm::tac & tac, const jlm::cfg_node * node, context & 
 			arguments.push_back(ctx.value(input));
 	}
 
-	auto r = convert_operation(tac.operation(), ctx.basic_block(node), arguments);
+	llvm::IRBuilder<> builder(ctx.basic_block(node));
+	auto r = convert_operation(tac.operation(), builder, arguments);
 	if (r != nullptr) ctx.insert(tac.output(0), r);
+}
+
+llvm::Constant *
+convert_expression(const jlm::expr & e, context & ctx)
+{
+	std::vector<llvm::Value*> operands;
+	for (size_t n = 0; n < e.noperands(); n++)
+		operands.push_back(convert_expression(e.operand(n), ctx));
+
+	llvm::IRBuilder<> builder(ctx.llvm_module().getContext());
+	return llvm::dyn_cast<llvm::Constant>(convert_operation(e.operation(), builder, operands));
 }
 
 }}

@@ -10,6 +10,7 @@ TESTS += \
 	libjlm/test-fcmp \
 	libjlm/test-fltops \
 	libjlm/test-getelementptr \
+	libjlm/test-global_variables \
 	libjlm/test-icmp \
 	libjlm/test-insertvalue \
 	libjlm/test-loadstore \
