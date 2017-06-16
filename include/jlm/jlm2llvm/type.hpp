@@ -51,6 +51,14 @@ convert_type(const jlm::ptrtype & type, llvm::LLVMContext & ctx)
 	return llvm::cast<llvm::PointerType>(t);
 }
 
+static inline llvm::ArrayType *
+convert_type(const jlm::arraytype & type, llvm::LLVMContext & ctx)
+{
+	auto t = convert_type(*static_cast<const jive::base::type*>(&type), ctx);
+	JLM_DEBUG_ASSERT(t->getTypeID() == llvm::Type::ArrayTyID);
+	return llvm::cast<llvm::ArrayType>(t);
+}
+
 }}
 
 #endif

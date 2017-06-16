@@ -47,6 +47,15 @@ convert_pointer_type(const jive::base::type & type, llvm::LLVMContext & ctx)
 	return llvm::PointerType::get(convert_type(t.pointee_type(), ctx), 0);
 }
 
+static inline llvm::Type *
+convert_array_type(const jive::base::type & type, llvm::LLVMContext & ctx)
+{
+	JLM_DEBUG_ASSERT(is_arraytype(type));
+	auto & t = *static_cast<const jlm::arraytype*>(&type);
+
+	return llvm::ArrayType::get(convert_type(t.element_type(), ctx), t.nelements());
+}
+
 llvm::Type *
 convert_type(const jive::base::type & type, llvm::LLVMContext & ctx)
 {
@@ -57,6 +66,7 @@ convert_type(const jive::base::type & type, llvm::LLVMContext & ctx)
 	  {std::type_index(typeid(jive::bits::type)), convert_integer_type}
 	, {std::type_index(typeid(jive::fct::type)), convert_function_type}
 	, {std::type_index(typeid(jlm::ptrtype)), convert_pointer_type}
+	, {std::type_index(typeid(jlm::arraytype)), convert_array_type}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(type))) != map.end());
