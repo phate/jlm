@@ -681,4 +681,54 @@ ptroffset_op::copy() const
 	return std::unique_ptr<jive::operation>(new ptroffset_op(*this));
 }
 
+/* data array constant operator */
+
+data_array_constant_op::~data_array_constant_op()
+{}
+
+bool
+data_array_constant_op::operator==(const operation & other) const noexcept
+{
+	auto op = dynamic_cast<const data_array_constant_op*>(&other);
+	return op && op->type() == type() && op->size() == size();
+}
+
+size_t
+data_array_constant_op::narguments() const noexcept
+{
+	return size();
+}
+
+const jive::base::type &
+data_array_constant_op::argument_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < narguments());
+	return type();
+}
+
+size_t
+data_array_constant_op::nresults() const noexcept
+{
+	return 1;
+}
+
+const jive::base::type &
+data_array_constant_op::result_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < nresults());
+	return type_;
+}
+
+std::string
+data_array_constant_op::debug_string() const
+{
+	return "ARRAYCONSTANT";
+}
+
+std::unique_ptr<jive::operation>
+data_array_constant_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new data_array_constant_op(*this));
+}
+
 }

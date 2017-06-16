@@ -825,6 +825,80 @@ create_ptroffset_tac(const variable * address, const variable * offset, const va
 	return create_tac(op, {address, offset}, {result});
 }
 
+/* data array constant operator */
+
+class data_array_constant_op final : public jive::simple_op {
+public:
+	virtual
+	~data_array_constant_op();
+
+	inline
+	data_array_constant_op(const jive::value::type & type, size_t size)
+	: jive::simple_op()
+	, type_(type, size)
+	{
+		if (size == 0)
+			throw std::logic_error("Size equals zero.");
+	}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual size_t
+	narguments() const noexcept override;
+
+	virtual const jive::base::type &
+	argument_type(size_t index) const noexcept override;
+
+	virtual size_t
+	nresults() const noexcept override;
+
+	virtual const jive::base::type &
+	result_type(size_t index) const noexcept override;
+
+	std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+	inline size_t
+	size() const noexcept
+	{
+		return type_.nelements();
+	}
+
+	inline const jive::value::type &
+	type() const noexcept
+	{
+		return type_.element_type();
+	}
+
+private:
+	jlm::arraytype type_;
+};
+
+static inline bool
+is_data_array_constant_op(const jive::operation & op)
+{
+	return dynamic_cast<const data_array_constant_op*>(&op) != nullptr;
+}
+
+static inline std::unique_ptr<jlm::tac>
+create_data_array_constant_tac(
+	const std::vector<const variable*> & elements,
+	const variable * result)
+{
+	if (elements.size() == 0)
+		throw std::logic_error("Expected at least one element.");
+
+	auto vt = dynamic_cast<const jive::value::type*>(&elements[0]->type());
+	if (!vt) throw std::logic_error("Expected value type.");
+
+	data_array_constant_op op(*vt, elements.size());
+	return create_tac(op, elements, {result});
+}
+
 }
 
 #endif
