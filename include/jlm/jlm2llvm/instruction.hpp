@@ -20,7 +20,7 @@ namespace jlm2llvm {
 
 class context;
 
-llvm::Instruction *
+void
 convert_instruction(const jlm::tac & tac, const jlm::cfg_node * node, context & ctx);
 
 }}
