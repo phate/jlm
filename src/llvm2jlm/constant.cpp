@@ -188,10 +188,15 @@ convert_constantArray(const llvm::Constant * constant, context & ctx)
 static std::unique_ptr<const expr>
 convert_constantDataArray(const llvm::Constant * constant, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantDataArray*>(constant));
+	JLM_DEBUG_ASSERT(llvm::dyn_cast<llvm::ConstantDataArray>(constant));
+	const auto & c = *llvm::cast<const llvm::ConstantDataArray>(constant);
 
-	/* FIXME */
-	return std::unique_ptr<const expr>(new expr(jive::address::constant_op(0), {}));
+	std::vector<std::unique_ptr<const expr>> operands;
+	for (size_t n = 0; n < c.getNumElements(); n++)
+		operands.push_back(std::move(convert_constant(c.getElementAsConstant(n), ctx)));
+
+	jlm::data_array_constant_op op(*convert_type(c.getElementType(), ctx), c.getNumElements());
+	return std::make_unique<const expr>(op, std::move(operands));
 }
 
 static std::unique_ptr<const expr>
