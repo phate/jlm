@@ -11,6 +11,7 @@
 #include <jlm/ir/aggregation/node.hpp>
 #include <jlm/ir/basic_block.hpp>
 #include <jlm/ir/clg.hpp>
+#include <jlm/ir/data.hpp>
 #include <jlm/ir/module.hpp>
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/ssa.hpp>
@@ -523,32 +524,34 @@ handle_scc(
 	}
 }
 
-#if 0
-static jive::output*
-convert_expression(const expr & e, jive_graph * graph)
+static inline jive::oport *
+convert_expression(const expr & e, jive::region * region)
 {
-	std::vector<jive::output*> operands;
+	std::vector<jive::oport*> operands;
 	for (size_t n = 0; n < e.noperands(); n++)
-		operands.push_back(convert_expression(e.operand(n), graph));
+		operands.push_back(convert_expression(e.operand(n), region));
 
-	return jive_node_create_normalized(graph, e.operation(), operands)[0];
+	return jive::create_normalized(region, e.operation(), operands)[0];
 }
 
-static dstrct::variable_map
-convert_global_variables(const module & m, jive_graph * graph)
+static inline void
+convert_globals(jive::graph * rvsdg, scoped_vmap & svmap)
 {
-	jlm::dstrct::variable_map vmap;
-	jive::memlayout_mapper_simple mapper(4);
-	for (auto it = m.begin(); it != m.end(); it++) {
-		jive::output * data = jive_dataobj(convert_expression(*(it->second), graph), &mapper);
-		vmap.insert_value(it->first, data);
-		if (it->first->exported())
-			jive_graph_export(graph, data, it->first->name());
-	}
+	auto & m = svmap.module();
 
-	return vmap;
+	for (const auto & gv : m) {
+		auto variable = gv.first;
+		auto & expression = *gv.second;
+
+		jlm::data_builder db;
+		auto region = db.begin(rvsdg->root());
+		auto data = db.end(convert_expression(expression, region));
+
+		svmap.vmap()[variable] = data;
+		if (variable->exported())
+			rvsdg->export_port(data, gv.first->name());
+	}
 }
-#endif
 
 std::unique_ptr<jive::graph>
 construct_rvsdg(const module & m)
@@ -556,9 +559,9 @@ construct_rvsdg(const module & m)
 	auto rvsdg = std::make_unique<jive::graph>();
 	scoped_vmap svmap(m, rvsdg->root());
 
-/*
-	dstrct::variable_map globals = convert_global_variables(m, graph);
-*/
+	convert_globals(rvsdg.get(), svmap);
+
+	/* convert functions */
 	auto sccs = m.clg().find_sccs();
 	for (const auto & scc : sccs)
 		handle_scc(scc, rvsdg.get(), svmap);
