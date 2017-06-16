@@ -87,11 +87,22 @@ convert_struct_type(const llvm::Type * t, context & ctx)
 	return std::unique_ptr<jive::value::type>(new jive::rcd::type(ctx.lookup_declaration(type)));
 }
 
-typedef std::map<llvm::Type::TypeID,
-	std::unique_ptr<jive::value::type>(*)(const llvm::Type *, context & ctx)> type_map;
+static std::unique_ptr<jive::value::type>
+convert_array_type(const llvm::Type * t, context & ctx)
+{
+	JLM_DEBUG_ASSERT(t->isArrayTy());
+	auto etype = convert_type(t->getArrayElementType(), ctx);
+	return std::unique_ptr<jive::value::type>(new jlm::arraytype(*etype, t->getArrayNumElements()));
+}
 
-static type_map tmap({
-		{llvm::Type::IntegerTyID, convert_integer_type}
+std::unique_ptr<jive::value::type>
+convert_type(const llvm::Type * t, context & ctx)
+{
+	static std::unordered_map<
+	  llvm::Type::TypeID
+	, std::function<std::unique_ptr<jive::value::type>(const llvm::Type *, context &)>
+	> map({
+	  {llvm::Type::IntegerTyID, convert_integer_type}
 	, {llvm::Type::PointerTyID, convert_pointer_type}
 	, {llvm::Type::FunctionTyID, convert_function_type}
 	, {llvm::Type::HalfTyID, convert_float_type}
@@ -101,13 +112,11 @@ static type_map tmap({
 	, {llvm::Type::FP128TyID, convert_float_type}
 	, {llvm::Type::PPC_FP128TyID, convert_float_type}
 	, {llvm::Type::StructTyID, convert_struct_type}
-});
+	, {llvm::Type::ArrayTyID, convert_array_type}
+	});
 
-std::unique_ptr<jive::value::type>
-convert_type(const llvm::Type * t, context & ctx)
-{
-	JLM_DEBUG_ASSERT(tmap.find(t->getTypeID()) != tmap.end());
-	return tmap[t->getTypeID()](t, ctx);
+	JLM_DEBUG_ASSERT(map.find(t->getTypeID()) != map.end());
+	return map[t->getTypeID()](t, ctx);
 }
 
 }
