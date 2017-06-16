@@ -278,6 +278,30 @@ convert_ptroffset(
 	return builder.CreateGEP(args[0], args[1]);
 }
 
+static inline llvm::Value *
+convert_data_array_constant(
+	const jive::operation & op,
+	llvm::IRBuilder<> & builder,
+	const std::vector<llvm::Value*> & args)
+{
+	JLM_DEBUG_ASSERT(is_data_array_constant_op(op));
+	auto & cop = *static_cast<const data_array_constant_op*>(&op);
+
+	/* FIXME: support other types */
+	auto bt = dynamic_cast<const jive::bits::type*>(&cop.type());
+	JLM_DEBUG_ASSERT(dynamic_cast<const jive::bits::type*>(&cop.type()));
+	JLM_DEBUG_ASSERT(bt->nbits() == 8);
+
+	std::vector<uint8_t> data;
+	for (size_t n = 0; n < args.size(); n++) {
+		auto c = llvm::dyn_cast<const llvm::ConstantInt>(args[n]);
+		JLM_DEBUG_ASSERT(c);
+		data.push_back(c->getZExtValue());
+	}
+
+	return llvm::ConstantDataArray::get(builder.getContext(), data);
+}
+
 llvm::Value *
 convert_operation(
 	const jive::operation & op,
@@ -347,6 +371,7 @@ convert_operation(
 	, {std::type_index(typeid(jlm::load_op)), jlm::jlm2llvm::convert_load}
 	, {std::type_index(typeid(jlm::store_op)), jlm::jlm2llvm::convert_store}
 	, {std::type_index(typeid(jlm::ptroffset_op)), jlm::jlm2llvm::convert_ptroffset}
+	, {std::type_index(typeid(jlm::data_array_constant_op)), convert_data_array_constant}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(op))) != map.end());

@@ -28,10 +28,15 @@ test()
 	LLVMContext ctx;
 	std::unique_ptr<Module> module(new llvm::Module("module", ctx));
 
-	auto i32 = Type::getInt32Ty(ctx);
 	auto el = GlobalValue::ExternalLinkage;
 
+	auto i32 = Type::getInt32Ty(ctx);
 	new GlobalVariable(*module, i32, true, el, ConstantInt::get(i32, 42), "gv1");
+
+	auto i8 = Type::getInt8Ty(ctx);
+	auto at = ArrayType::get(i8, 7);
+	auto str = ConstantDataArray::getString(ctx, "x != y", true);
+	new GlobalVariable(*module, at, true, el, str, "str");
 
 	module->dump();
 
