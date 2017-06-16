@@ -12,6 +12,7 @@
 
 #include <jlm/common.hpp>
 #include <jlm/ir/basic_block.hpp>
+#include <jlm/ir/data.hpp>
 #include <jlm/ir/module.hpp>
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/tac.hpp>
@@ -21,23 +22,30 @@
 namespace jlm {
 namespace rvsdg2jlm {
 
-static inline bool
-is_exported(const jive::node & node)
+static inline const jive::oport *
+root_port(const jive::oport * port)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::fct::lambda_op*>(&node.operation()));
-	auto root = node.graph()->root();
+	auto root = port->region()->graph()->root();
+	if (port->region() == root)
+		return port;
 
-	jive::oport * lambda = nullptr;
-	if (node.region() == root)
-		lambda = node.output(0);
-	else if (dynamic_cast<const jive::phi_op*>(&node.region()->node()->operation())) {
-		JLM_DEBUG_ASSERT(node.output(0)->nusers() == 1);
-		auto user = *node.output(0)->begin();
-		lambda = node.region()->node()->output(user->index());
-	}
+	auto node = port->node();
+	JLM_DEBUG_ASSERT(node && dynamic_cast<const jive::fct::lambda_op*>(&node->operation()));
+	JLM_DEBUG_ASSERT(node->output(0)->nusers() == 1);
+	auto user = *node->output(0)->begin();
+	node = port->region()->node();
+	JLM_DEBUG_ASSERT(node && dynamic_cast<const jive::phi_op*>(&node->operation()));
+	port = node->output(user->index());
 
-	JLM_DEBUG_ASSERT(lambda != nullptr && lambda->region() == root);
-	for (const auto & user : *lambda) {
+	JLM_DEBUG_ASSERT(port->region() == root);
+	return port;
+}
+
+static inline bool
+is_exported(const jive::oport * port)
+{
+	port = root_port(port);
+	for (const auto & user : *port) {
 		if (dynamic_cast<const jive::result*>(user))
 			return true;
 	}
@@ -46,22 +54,10 @@ is_exported(const jive::node & node)
 }
 
 static inline std::string
-name(const jive::node & node)
+get_name(const jive::oport * port)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::fct::lambda_op*>(&node.operation()));
-	auto root = node.graph()->root();
-
-	jive::oport * lambda = nullptr;
-	if (node.region() == root)
-		lambda = node.output(0);
-	else if (dynamic_cast<const jive::phi_op*>(&node.region()->node()->operation())) {
-		JLM_DEBUG_ASSERT(node.output(0)->nusers() == 1);
-		auto user = *node.output(0)->begin();
-		lambda = node.region()->node()->output(user->index());
-	}
-
-	JLM_DEBUG_ASSERT(lambda != nullptr && lambda->region() == root);
-	for (const auto & user : *lambda) {
+	port = root_port(port);
+	for (const auto & user : *port) {
 		if (auto result = dynamic_cast<const jive::result*>(user)) {
 			JLM_DEBUG_ASSERT(result->gate());
 			return result->gate()->name();
@@ -84,6 +80,17 @@ static inline const jlm::tac *
 create_assignment_lpbb(const jlm::variable * argument, const jlm::variable * result, context & ctx)
 {
 	return append_tac(ctx.lpbb(), create_assignment(argument->type(), argument, result));
+}
+
+static inline std::unique_ptr<const expr>
+convert_port(const jive::oport * port)
+{
+	auto node = port->node();
+	std::vector<std::unique_ptr<const expr>> operands;
+	for (size_t n = 0; n < node->ninputs(); n++)
+		operands.push_back(convert_port(node->input(n)->origin()));
+
+	return std::make_unique<const jlm::expr>(node->operation(), std::move(operands));
 }
 
 static void
@@ -261,7 +268,9 @@ convert_lambda_node(const jive::node & node, context & ctx)
 
 	const auto & ftype = *static_cast<const jive::fct::type*>(&node.output(0)->type());
 	/* FIXME: create/get names for lambdas */
-	auto f = clg.add_function(name(node).c_str(), ftype, is_exported(node));
+	auto name = get_name(node.output(0));
+	auto exported = is_exported(node.output(0));
+	auto f = clg.add_function(name.c_str(), ftype, exported);
 	auto v = module.create_variable(f);
 
 	f->add_cfg(create_cfg(node, ctx));
@@ -285,8 +294,10 @@ convert_phi_node(const jive::node & node, context & ctx)
 		auto lambda = result->origin()->node();
 		JLM_DEBUG_ASSERT(dynamic_cast<const jive::fct::lambda_op*>(&lambda->operation()));
 
-		const auto & ftype = *static_cast<const jive::fct::type*>(&result->type());
-		auto f = clg.add_function(name(*lambda).c_str(), ftype, is_exported(*lambda));
+		auto name = get_name(lambda->output(0));
+		auto exported = is_exported(lambda->output(0));
+		auto & ftype = *static_cast<const jive::fct::type*>(&result->type());
+		auto f = clg.add_function(name.c_str(), ftype, exported);
 		ctx.insert(subregion->argument(n), module.create_variable(f));
 	}
 
@@ -305,9 +316,28 @@ convert_phi_node(const jive::node & node, context & ctx)
 }
 
 static inline void
+convert_data_node(const jive::node & node, context & ctx)
+{
+	JLM_DEBUG_ASSERT(is_data_op(node.operation()));
+	auto subregion = static_cast<const jive::structural_node*>(&node)->subregion(0);
+	auto & module = ctx.module();
+
+	JLM_DEBUG_ASSERT(subregion->nresults() == 1);
+	auto result = subregion->result(0);
+
+	auto name = get_name(result->output());
+	auto exported = is_exported(result->output());
+	auto expression = convert_port(result->origin());
+
+	auto v = module.create_variable(result->type(), name, exported);
+	module.add_global_variable(v, std::move(expression));
+	ctx.insert(result->output(), v);
+}
+
+static inline void
 convert_node(const jive::node & node, context & ctx)
 {
-	std::unordered_map<
+	static std::unordered_map<
 	  std::type_index
 	, std::function<void(const jive::node & node, context & ctx)
 	>> map({
@@ -315,6 +345,7 @@ convert_node(const jive::node & node, context & ctx)
 	, {std::type_index(typeid(jive::gamma_op)), convert_gamma_node}
 	, {std::type_index(typeid(jive::theta_op)), convert_theta_node}
 	, {std::type_index(typeid(jive::phi_op)), convert_phi_node}
+	, {std::type_index(typeid(jlm::data_op)), convert_data_node}
 	});
 
 	if (dynamic_cast<const jive::simple_op*>(&node.operation())) {
