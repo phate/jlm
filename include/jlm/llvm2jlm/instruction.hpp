@@ -17,14 +17,8 @@ class basic_block_attribute;
 class context;
 class variable;
 
-const variable *
-convert_value(const llvm::Value * v, const llvm::BasicBlock * bb, context & ctx);
-
-const variable *
-convert_instruction(
-	const llvm::Instruction * i,
-	cfg_node * bb,
-	context & ctx);
+std::vector<std::unique_ptr<jlm::tac>>
+convert_instruction(const llvm::Instruction * i, context & ctx);
 
 }
 

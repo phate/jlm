@@ -111,9 +111,13 @@ convert_basic_blocks(
 		}
 	}
 
-	for (auto bb = bbs.begin(); bb != bbs.end(); bb++) {
-		for (auto i = bb->begin(); i != bb->end(); i++)
-			convert_instruction(&(*i), ctx.lookup_basic_block(&(*bb)), ctx);
+	for (const auto & bb : bbs) {
+		for (const auto & instruction : bb) {
+			auto node = ctx.lookup_basic_block(&bb);
+			auto tacs = convert_instruction(&instruction, ctx);
+			JLM_DEBUG_ASSERT(is_basic_block(node));
+			static_cast<jlm::basic_block*>(&node->attribute())->append(tacs);
+		}
 	}
 }
 
