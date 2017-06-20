@@ -17,7 +17,7 @@ namespace jlm {
 class module;
 
 std::unique_ptr<module>
-convert_module(const llvm::Module & module);
+convert_module(llvm::Module & module);
 
 }
 

@@ -26,7 +26,7 @@
 namespace jlm {
 
 const variable *
-convert_constant(const llvm::Constant*, std::vector<std::unique_ptr<jlm::tac>>&, context&);
+convert_constant(llvm::Constant*, std::vector<std::unique_ptr<jlm::tac>>&, context&);
 
 static inline std::unique_ptr<const expr>
 tacs2expr(const std::vector<std::unique_ptr<jlm::tac>> & tacs)
@@ -124,7 +124,7 @@ create_undef_value(const llvm::Type * type, context & ctx)
 
 static const variable *
 convert_int_constant(
-	const llvm::Constant * c,
+	llvm::Constant * c,
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx)
 {
@@ -139,7 +139,7 @@ convert_int_constant(
 
 static const variable *
 convert_undefvalue_instruction(
-	const llvm::Constant * c,
+	llvm::Constant * c,
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx)
 {
@@ -149,19 +149,25 @@ convert_undefvalue_instruction(
 
 static const variable *
 convert_constantExpr(
-	const llvm::Constant * constant,
+	llvm::Constant * constant,
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantExpr*>(constant));
+	auto c = llvm::cast<llvm::ConstantExpr>(constant);
 
-	JLM_DEBUG_ASSERT(0);
-	return nullptr;
+	/* FIXME: getAsInstruction is none const, forcing all llvm parameters to be none const */
+	auto tmp = convert_instruction(c->getAsInstruction(), ctx);
+	for (size_t n = 0; n < tmp.size(); n++)
+		tacs.push_back(std::move(tmp[n])); 
+
+	JLM_DEBUG_ASSERT(tacs.back()->noutputs() == 1);
+	return tacs.back()->output(0);
 }
 
 static const variable *
 convert_constantFP(
-	const llvm::Constant * constant,
+	llvm::Constant * constant,
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx)
 {
@@ -174,12 +180,12 @@ convert_constantFP(
 
 static const variable *
 convert_globalVariable(
-	const llvm::Constant * constant,
+	llvm::Constant * constant,
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::GlobalVariable*>(constant));
-	const llvm::GlobalVariable * c = static_cast<const llvm::GlobalVariable*>(constant);
+	auto c = static_cast<llvm::GlobalVariable*>(constant);
 
 	if (!c->hasInitializer())
 		return create_undef_value(c->getType(), tacs, ctx);
@@ -189,7 +195,7 @@ convert_globalVariable(
 
 static const variable *
 convert_constantPointerNull(
-	const llvm::Constant * constant,
+	llvm::Constant * constant,
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx)
 {
@@ -204,7 +210,7 @@ convert_constantPointerNull(
 
 static const variable *
 convert_blockAddress(
-	const llvm::Constant * constant,
+	llvm::Constant * constant,
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx)
 {
@@ -217,7 +223,7 @@ convert_blockAddress(
 
 static const variable *
 convert_constantAggregateZero(
-	const llvm::Constant * constant,
+	llvm::Constant * constant,
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx)
 {
@@ -244,7 +250,7 @@ convert_constantAggregateZero(
 
 static const variable *
 convert_constantArray(
-	const llvm::Constant * constant,
+	llvm::Constant * constant,
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx)
 {
@@ -257,7 +263,7 @@ convert_constantArray(
 
 static const variable *
 convert_constantDataArray(
-	const llvm::Constant * constant,
+	llvm::Constant * constant,
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx)
 {
@@ -275,7 +281,7 @@ convert_constantDataArray(
 
 static const variable *
 convert_constantDataVector(
-	const llvm::Constant * constant,
+	llvm::Constant * constant,
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx)
 {
@@ -288,7 +294,7 @@ convert_constantDataVector(
 
 static const variable *
 convert_constantStruct(
-	const llvm::Constant * constant,
+	llvm::Constant * constant,
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx)
 {
@@ -301,7 +307,7 @@ convert_constantStruct(
 
 static const variable *
 convert_constantVector(
-	const llvm::Constant * constant,
+	llvm::Constant * constant,
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx)
 {
@@ -314,7 +320,7 @@ convert_constantVector(
 
 static inline const variable *
 convert_globalAlias(
-	const llvm::Constant * constant,
+	llvm::Constant * constant,
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx)
 {
@@ -327,7 +333,7 @@ convert_globalAlias(
 
 static inline const variable *
 convert_function(
-	const llvm::Constant * constant,
+	llvm::Constant * constant,
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx)
 {
@@ -339,14 +345,14 @@ convert_function(
 
 const variable *
 convert_constant(
-	const llvm::Constant * c,
+	llvm::Constant * c,
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx)
 {
 	static std::unordered_map<
 		unsigned,
 		const variable*(*)(
-			const llvm::Constant*,
+			llvm::Constant*,
 			std::vector<std::unique_ptr<jlm::tac>>&,
 			context & ctx)
 	> cmap({
@@ -372,7 +378,7 @@ convert_constant(
 }
 
 std::vector<std::unique_ptr<jlm::tac>>
-convert_constant(const llvm::Constant * c, context & ctx)
+convert_constant(llvm::Constant * c, context & ctx)
 {
 	std::vector<std::unique_ptr<jlm::tac>> tacs;
 	convert_constant(c, tacs, ctx);
@@ -380,7 +386,7 @@ convert_constant(const llvm::Constant * c, context & ctx)
 }
 
 std::unique_ptr<const expr>
-convert_constant_expression(const llvm::Constant * c, context & ctx)
+convert_constant_expression(llvm::Constant * c, context & ctx)
 {
 	auto tacs = convert_constant(c, ctx);
 	return tacs2expr(tacs);

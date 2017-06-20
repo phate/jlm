@@ -18,7 +18,7 @@ class context;
 class variable;
 
 std::vector<std::unique_ptr<jlm::tac>>
-convert_instruction(const llvm::Instruction * i, context & ctx);
+convert_instruction(llvm::Instruction * i, context & ctx);
 
 }
 

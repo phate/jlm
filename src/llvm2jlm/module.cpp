@@ -95,7 +95,7 @@ create_cfg_structure(
 
 static void
 convert_basic_blocks(
-	const llvm::Function::BasicBlockListType & bbs,
+	llvm::Function::BasicBlockListType & bbs,
 	context & ctx)
 {
 	/* forward declare all instructions, except terminator instructions */
@@ -111,8 +111,8 @@ convert_basic_blocks(
 		}
 	}
 
-	for (const auto & bb : bbs) {
-		for (const auto & instruction : bb) {
+	for (auto & bb : bbs) {
+		for (auto & instruction : bb) {
 			auto node = ctx.lookup_basic_block(&bb);
 			auto tacs = convert_instruction(&instruction, ctx);
 			JLM_DEBUG_ASSERT(is_basic_block(node));
@@ -122,7 +122,7 @@ convert_basic_blocks(
 }
 
 std::unique_ptr<jlm::cfg>
-create_cfg(const llvm::Function & f, context & ctx)
+create_cfg(llvm::Function & f, context & ctx)
 {
 	auto node = static_cast<const function_variable*>(ctx.lookup_value(&f))->function();
 
@@ -177,9 +177,7 @@ create_cfg(const llvm::Function & f, context & ctx)
 }
 
 static void
-convert_function(
-	const llvm::Function & function,
-	context & ctx)
+convert_function(llvm::Function & function, context & ctx)
 {
 	if (function.isDeclaration())
 		return;
@@ -192,7 +190,7 @@ convert_function(
 
 static void
 convert_functions(
-	const llvm::Module::FunctionListType & list,
+	llvm::Module::FunctionListType & list,
 	jlm::clg & clg,
 	context & ctx)
 {
@@ -211,11 +209,11 @@ convert_functions(
 }
 
 static void
-convert_global_variables(const llvm::Module::GlobalListType & vs, context & ctx)
+convert_global_variables(llvm::Module::GlobalListType & vs, context & ctx)
 {
 	auto & m = ctx.module();
 
-	for (const auto & gv : vs) {
+	for (auto & gv : vs) {
 		auto name = gv.getName().str();
 		auto exported = gv.getLinkage() != llvm::GlobalValue::InternalLinkage;
 		auto variable = m.create_variable(*convert_type(gv.getType(), ctx), name, exported);
@@ -225,7 +223,7 @@ convert_global_variables(const llvm::Module::GlobalListType & vs, context & ctx)
 }
 
 std::unique_ptr<module>
-convert_module(const llvm::Module & module)
+convert_module(llvm::Module & module)
 {
 	std::unique_ptr<jlm::module> m(new jlm::module());
 

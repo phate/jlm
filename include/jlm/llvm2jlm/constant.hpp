@@ -36,16 +36,16 @@ convert_undef_value(
 	context & ctx);
 
 std::vector<std::unique_ptr<jlm::tac>>
-convert_constant(const llvm::Constant * constant, context & ctx);
+convert_constant(llvm::Constant * constant, context & ctx);
 
 const variable *
 convert_constant(
-	const llvm::Constant * constant,
+	llvm::Constant * constant,
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx);
 
 std::unique_ptr<const expr>
-convert_constant_expression(const llvm::Constant * constant, context & ctx);
+convert_constant_expression(llvm::Constant * constant, context & ctx);
 
 }
 

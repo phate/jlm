@@ -47,12 +47,12 @@ namespace jlm {
 typedef std::vector<std::unique_ptr<jlm::tac>> tacsvector_t;
 
 static inline const variable *
-convert_value(const llvm::Value * v, tacsvector_t & tacs, context & ctx)
+convert_value(llvm::Value * v, tacsvector_t & tacs, context & ctx)
 {
 	if (ctx.has_value(v))
 		return ctx.lookup_value(v);
 
-	if (auto c = llvm::dyn_cast<const llvm::Constant>(v))
+	if (auto c = llvm::dyn_cast<llvm::Constant>(v))
 		return convert_constant(c, tacs, ctx);
 
 	JLM_DEBUG_ASSERT(0);
@@ -62,7 +62,7 @@ convert_value(const llvm::Value * v, tacsvector_t & tacs, context & ctx)
 /* instructions */
 
 static inline tacsvector_t
-convert_return_instruction(const llvm::Instruction * i, context & ctx)
+convert_return_instruction(llvm::Instruction * i, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ReturnInst*>(i));
 	const llvm::ReturnInst * instruction = static_cast<const llvm::ReturnInst*>(i);
@@ -77,7 +77,7 @@ convert_return_instruction(const llvm::Instruction * i, context & ctx)
 }
 
 static inline tacsvector_t
-convert_branch_instruction(const llvm::Instruction * i, context & ctx)
+convert_branch_instruction(llvm::Instruction * i, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::BranchInst*>(i));
 	const llvm::BranchInst * instruction = static_cast<const llvm::BranchInst*>(i);
@@ -95,7 +95,7 @@ convert_branch_instruction(const llvm::Instruction * i, context & ctx)
 }
 
 static inline tacsvector_t
-convert_switch_instruction(const llvm::Instruction * i, context & ctx)
+convert_switch_instruction(llvm::Instruction * i, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::SwitchInst*>(i));
 	const llvm::SwitchInst * instruction = static_cast<const llvm::SwitchInst*>(i);
@@ -117,14 +117,14 @@ convert_switch_instruction(const llvm::Instruction * i, context & ctx)
 }
 
 static inline tacsvector_t
-convert_unreachable_instruction(const llvm::Instruction * i, context & ctx)
+convert_unreachable_instruction(llvm::Instruction * i, context & ctx)
 {
 	/* Nothing needs to be done. */
 	return {};
 }
 
 static inline tacsvector_t
-convert_icmp_instruction(const llvm::Instruction * instruction, context & ctx)
+convert_icmp_instruction(llvm::Instruction * instruction, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ICmpInst*>(instruction));
 	const llvm::ICmpInst * i = static_cast<const llvm::ICmpInst*>(instruction);
@@ -173,7 +173,7 @@ convert_icmp_instruction(const llvm::Instruction * instruction, context & ctx)
 }
 
 static inline tacsvector_t
-convert_fcmp_instruction(const llvm::Instruction * instruction, context & ctx)
+convert_fcmp_instruction(llvm::Instruction * instruction, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::FCmpInst*>(instruction));
 	const llvm::FCmpInst * i = static_cast<const llvm::FCmpInst*>(instruction);
@@ -221,10 +221,10 @@ convert_fcmp_instruction(const llvm::Instruction * instruction, context & ctx)
 }
 
 static inline tacsvector_t
-convert_load_instruction(const llvm::Instruction * i, context & ctx)
+convert_load_instruction(llvm::Instruction * i, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::LoadInst*>(i));
-	auto instruction = static_cast<const llvm::LoadInst*>(i);
+	auto instruction = static_cast<llvm::LoadInst*>(i);
 
 	/* FIXME: volatile and alignment */
 
@@ -237,10 +237,10 @@ convert_load_instruction(const llvm::Instruction * i, context & ctx)
 }
 
 static inline tacsvector_t
-convert_store_instruction(const llvm::Instruction * i, context & ctx)
+convert_store_instruction(llvm::Instruction * i, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::StoreInst*>(i));
-	auto instruction = static_cast<const llvm::StoreInst*>(i);
+	auto instruction = static_cast<llvm::StoreInst*>(i);
 
 	/* FIXME: volatile and alignement */
 	tacsvector_t tacs;
@@ -252,7 +252,7 @@ convert_store_instruction(const llvm::Instruction * i, context & ctx)
 }
 
 static inline tacsvector_t
-convert_phi_instruction(const llvm::Instruction * i, context & ctx)
+convert_phi_instruction(llvm::Instruction * i, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::PHINode*>(i));
 	const llvm::PHINode * phi = static_cast<const llvm::PHINode*>(i);
@@ -280,10 +280,10 @@ convert_phi_instruction(const llvm::Instruction * i, context & ctx)
 }
 
 static inline tacsvector_t
-convert_getelementptr_instruction(const llvm::Instruction * inst, context & ctx)
+convert_getelementptr_instruction(llvm::Instruction * inst, context & ctx)
 {
 	JLM_DEBUG_ASSERT(llvm::dyn_cast<const llvm::GetElementPtrInst>(inst));
-	auto i = llvm::cast<const llvm::GetElementPtrInst>(inst);
+	auto i = llvm::cast<llvm::GetElementPtrInst>(inst);
 	auto & m = ctx.module();
 
 	tacsvector_t tacs;
@@ -303,7 +303,7 @@ convert_getelementptr_instruction(const llvm::Instruction * inst, context & ctx)
 }
 
 static inline tacsvector_t
-convert_trunc_instruction(const llvm::Instruction * i, context & ctx)
+convert_trunc_instruction(llvm::Instruction * i, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::TruncInst*>(i));
 	const llvm::TruncInst * instruction = static_cast<const llvm::TruncInst*>(i);
@@ -318,12 +318,12 @@ convert_trunc_instruction(const llvm::Instruction * i, context & ctx)
 }
 
 static inline tacsvector_t
-convert_call_instruction(const llvm::Instruction * i, context & ctx)
+convert_call_instruction(llvm::Instruction * i, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::CallInst*>(i));
-	const llvm::CallInst * instruction = static_cast<const llvm::CallInst*>(i);
+	auto instruction = static_cast<llvm::CallInst*>(i);
 
-	const llvm::Value * f = instruction->getCalledValue();
+	auto f = instruction->getCalledValue();
 	const llvm::FunctionType * ftype = llvm::cast<const llvm::FunctionType>(
 		llvm::cast<const llvm::PointerType>(f->getType())->getElementType());
 	jive::fct::type type = dynamic_cast<jive::fct::type&>(*convert_type(ftype, ctx));
@@ -369,10 +369,10 @@ convert_call_instruction(const llvm::Instruction * i, context & ctx)
 }
 
 static inline tacsvector_t
-convert_select_instruction(const llvm::Instruction * i, context & ctx)
+convert_select_instruction(llvm::Instruction * i, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::SelectInst*>(i));
-	const llvm::SelectInst * instruction = static_cast<const llvm::SelectInst*>(i);
+	auto instruction = static_cast<llvm::SelectInst*>(i);
 
 	tacsvector_t tacs;
 	auto condition = convert_value(instruction->getCondition(), tacs, ctx);
@@ -384,7 +384,7 @@ convert_select_instruction(const llvm::Instruction * i, context & ctx)
 }
 
 static inline tacsvector_t
-convert_binary_operator(const llvm::Instruction * instruction, context & ctx)
+convert_binary_operator(llvm::Instruction * instruction, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::BinaryOperator*>(instruction));
 	const llvm::BinaryOperator * i = static_cast<const llvm::BinaryOperator*>(instruction);
@@ -441,10 +441,10 @@ convert_binary_operator(const llvm::Instruction * instruction, context & ctx)
 }
 
 static inline tacsvector_t
-convert_alloca_instruction(const llvm::Instruction * instruction, context & ctx)
+convert_alloca_instruction(llvm::Instruction * instruction, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::AllocaInst*>(instruction));
-	auto i = static_cast<const llvm::AllocaInst*>(instruction);
+	auto i = static_cast<llvm::AllocaInst*>(instruction);
 
 	/* FIXME: alignment */
 	tacsvector_t tacs;
@@ -457,7 +457,7 @@ convert_alloca_instruction(const llvm::Instruction * instruction, context & ctx)
 }
 
 static inline tacsvector_t
-convert_zext_instruction(const llvm::Instruction * i, context & ctx)
+convert_zext_instruction(llvm::Instruction * i, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ZExtInst*>(i));
 
@@ -482,7 +482,7 @@ convert_zext_instruction(const llvm::Instruction * i, context & ctx)
 }
 
 static inline tacsvector_t
-convert_sext_instruction(const llvm::Instruction * i, context & ctx)
+convert_sext_instruction(llvm::Instruction * i, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::SExtInst*>(i));
 
@@ -514,7 +514,7 @@ convert_sext_instruction(const llvm::Instruction * i, context & ctx)
 }
 
 static inline tacsvector_t
-convert_fpext_instruction(const llvm::Instruction * i, context & ctx)
+convert_fpext_instruction(llvm::Instruction * i, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::FPExtInst*>(i));
 
@@ -529,7 +529,7 @@ convert_fpext_instruction(const llvm::Instruction * i, context & ctx)
 }
 
 static inline tacsvector_t
-convert_fptrunc_instruction(const llvm::Instruction * i, context & ctx)
+convert_fptrunc_instruction(llvm::Instruction * i, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::FPTruncInst*>(i));
 
@@ -544,7 +544,7 @@ convert_fptrunc_instruction(const llvm::Instruction * i, context & ctx)
 }
 
 static inline tacsvector_t
-convert_inttoptr_instruction(const llvm::Instruction * i, context & ctx)
+convert_inttoptr_instruction(llvm::Instruction * i, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::IntToPtrInst*>(i));
 
@@ -556,7 +556,7 @@ convert_inttoptr_instruction(const llvm::Instruction * i, context & ctx)
 }
 
 static inline tacsvector_t
-convert_ptrtoint_instruction(const llvm::Instruction * i, context & ctx)
+convert_ptrtoint_instruction(llvm::Instruction * i, context & ctx)
 {
 	JLM_DEBUG_ASSERT(llvm::dyn_cast<const llvm::PtrToIntInst>(i));
 
@@ -568,7 +568,7 @@ convert_ptrtoint_instruction(const llvm::Instruction * i, context & ctx)
 }
 
 static inline tacsvector_t
-convert_uitofp_instruction(const llvm::Instruction * i, context & ctx)
+convert_uitofp_instruction(llvm::Instruction * i, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::UIToFPInst*>(i));
 
@@ -587,7 +587,7 @@ convert_uitofp_instruction(const llvm::Instruction * i, context & ctx)
 }
 
 static inline tacsvector_t
-convert_sitofp_instruction(const llvm::Instruction * i, context & ctx)
+convert_sitofp_instruction(llvm::Instruction * i, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::SIToFPInst*>(i));
 
@@ -606,7 +606,7 @@ convert_sitofp_instruction(const llvm::Instruction * i, context & ctx)
 }
 
 static inline tacsvector_t
-convert_fptoui_instruction(const llvm::Instruction * i, context & ctx)
+convert_fptoui_instruction(llvm::Instruction * i, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::FPToUIInst*>(i));
 
@@ -624,7 +624,7 @@ convert_fptoui_instruction(const llvm::Instruction * i, context & ctx)
 }
 
 static inline tacsvector_t
-convert_fptosi_instruction(const llvm::Instruction * i, context & ctx)
+convert_fptosi_instruction(llvm::Instruction * i, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::FPToSIInst*>(i));
 
@@ -642,7 +642,7 @@ convert_fptosi_instruction(const llvm::Instruction * i, context & ctx)
 }
 
 static inline tacsvector_t
-convert_bitcast_instruction(const llvm::Instruction * instruction, context & ctx)
+convert_bitcast_instruction(llvm::Instruction * instruction, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::BitCastInst*>(instruction));
 	auto & i = *llvm::cast<const llvm::BitCastInst>(instruction);
@@ -668,10 +668,10 @@ convert_bitcast_instruction(const llvm::Instruction * instruction, context & ctx
 }
 
 static inline tacsvector_t
-convert_insertvalue_instruction(const llvm::Instruction * instruction, context & ctx)
+convert_insertvalue_instruction(llvm::Instruction * instruction, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::InsertValueInst*>(instruction));
-	const llvm::InsertValueInst * i = static_cast<const llvm::InsertValueInst*>(instruction);
+	auto i = static_cast<llvm::InsertValueInst*>(instruction);
 
 	/* FIXME: array type */
 	if (i->getType()->isArrayTy())
@@ -711,10 +711,10 @@ convert_insertvalue_instruction(const llvm::Instruction * instruction, context &
 }
 
 static inline tacsvector_t
-convert_extractvalue_instruction(const llvm::Instruction * instruction, context & ctx)
+convert_extractvalue_instruction(llvm::Instruction * instruction, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ExtractValueInst*>(instruction));
-	const llvm::ExtractValueInst * i = static_cast<const llvm::ExtractValueInst*>(instruction);
+	auto i = static_cast<llvm::ExtractValueInst*>(instruction);
 
 	/* FIXME: array type */
 	if (i->getType()->isArrayTy())
@@ -735,11 +735,11 @@ convert_extractvalue_instruction(const llvm::Instruction * instruction, context 
 }
 
 std::vector<std::unique_ptr<jlm::tac>>
-convert_instruction(const llvm::Instruction * i, context & ctx)
+convert_instruction(llvm::Instruction * i, context & ctx)
 {
 	static std::unordered_map<
 		std::type_index,
-		tacsvector_t(*)(const llvm::Instruction*, context&)
+		tacsvector_t(*)(llvm::Instruction*, context&)
 	> map({
 		{std::type_index(typeid(llvm::ReturnInst)), convert_return_instruction}
 	,	{std::type_index(typeid(llvm::BranchInst)), convert_branch_instruction}
