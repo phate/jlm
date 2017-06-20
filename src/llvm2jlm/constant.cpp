@@ -25,6 +25,31 @@
 
 namespace jlm {
 
+const variable *
+convert_constant(const llvm::Constant*, std::vector<std::unique_ptr<jlm::tac>>&, context&);
+
+static inline std::unique_ptr<const expr>
+tacs2expr(const std::vector<std::unique_ptr<jlm::tac>> & tacs)
+{
+	JLM_DEBUG_ASSERT(tacs.size() > 0 && tacs.back()->noutputs() == 1);
+
+	std::unordered_map<const variable*, std::unique_ptr<const expr>> map;
+	for (const auto & tac : tacs) {
+		std::vector<std::unique_ptr<const expr>> operands;
+		for (size_t n = 0; n < tac->ninputs(); n++) {
+			auto v = tac->input(n);
+			JLM_DEBUG_ASSERT(map.find(v) != map.end());
+			operands.push_back(std::move(map[v]));
+		}
+
+		JLM_DEBUG_ASSERT(tac->noutputs() == 1);
+		map[tac->output(0)] = std::make_unique<const expr>(tac->operation(), std::move(operands));
+	}
+
+	JLM_DEBUG_ASSERT(tacs.back()->noutputs() == 1);
+	return std::unique_ptr<const expr>(map[tacs.back()->output(0)].release());
+}
+
 jive::bits::value_repr
 convert_apint(const llvm::APInt & value)
 {
@@ -44,115 +69,157 @@ convert_apint(const llvm::APInt & value)
 	return vr;
 }
 
-std::unique_ptr<const expr>
-create_undef_value(const llvm::Type * type, context & ctx)
+const variable *
+create_undef_value(
+	const llvm::Type * type,
+	std::vector<std::unique_ptr<jlm::tac>> & tacs,
+	context & ctx)
 {
 	if (type->isIntegerTy()) {
 		size_t nbits = type->getIntegerBitWidth();
 		jive::bits::constant_op op(jive::bits::value_repr::repeat(nbits, 'X'));
-		return std::unique_ptr<const expr>(new expr(op, {}));
+		auto r = ctx.module().create_variable(op.result_type(0), false);
+		tacs.push_back(create_tac(op, {}, {r}));
+		return r;
 	}
 
-	/* FIXME: differentiate between floating point types */
-	if (type->isFloatingPointTy())
-		return std::unique_ptr<const expr>(new expr(jive::flt::constant_op(nan("")), {}));
+	/* FIXME: use proper undef floating point type; differentiate according to width */
+	if (type->isFloatingPointTy()) {
+		jive::flt::constant_op op(nan(""));
+		auto r = ctx.module().create_variable(op.result_type(0), false);
+		tacs.push_back(create_tac(op, {}, {r}));
+		return r;
+	}
 
 	/* FIXME: adjust when we have a real unknown value */
 	if (type->isPointerTy()) {
 		auto t = convert_type(type, ctx);
-		jlm::ptr_constant_null_op op(*static_cast<const jlm::ptrtype*>(t.get()));
-		return std::unique_ptr<const expr>(new expr(op, {}));
+		auto r = ctx.module().create_variable(*t, false);
+		tacs.push_back(create_ptr_constant_null_tac(*t, r));
+		return r;
 	}
 
 	if (type->isStructTy()){
-		std::vector<std::unique_ptr<const expr>> operands;
+		std::vector<const variable*> operands;
 		for (size_t n = 0; n < type->getStructNumElements(); n++)
-			operands.push_back(create_undef_value(type->getStructElementType(n), ctx));
+			operands.push_back(create_undef_value(type->getStructElementType(n), tacs, ctx));
 
 		jive::rcd::group_op op(ctx.lookup_declaration(static_cast<const llvm::StructType*>(type)));
-		return std::unique_ptr<const expr>(new expr(op, std::move(operands)));
+		auto r = ctx.module().create_variable(op.result_type(0), false);
+		tacs.push_back(create_tac(op, operands, {r}));
+		return r;
 	}
 
 	JLM_DEBUG_ASSERT(0);
 	return nullptr;
 }
 
-static std::unique_ptr<const expr>
-convert_int_constant(const llvm::Constant * c, context & ctx)
+std::vector<std::unique_ptr<jlm::tac>>
+create_undef_value(const llvm::Type * type, context & ctx)
+{
+	std::vector<std::unique_ptr<jlm::tac>> tacs;
+	create_undef_value(type, tacs, ctx);
+	return tacs;
+}
+
+static const variable *
+convert_int_constant(
+	const llvm::Constant * c,
+	std::vector<std::unique_ptr<jlm::tac>> & tacs,
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantInt*>(c));
 	const llvm::ConstantInt * constant = static_cast<const llvm::ConstantInt*>(c);
 
 	jive::bits::value_repr v = convert_apint(constant->getValue());
-	return std::unique_ptr<const expr>(new expr(jive::bits::constant_op(v), {}));
+	auto r = ctx.module().create_variable(*convert_type(c->getType(), ctx), false);
+	tacs.push_back(create_tac(jive::bits::constant_op(v), {}, {r}));
+	return r;
 }
 
-static std::unique_ptr<const expr>
-convert_undefvalue_instruction(const llvm::Constant * c, context & ctx)
+static const variable *
+convert_undefvalue_instruction(
+	const llvm::Constant * c,
+	std::vector<std::unique_ptr<jlm::tac>> & tacs,
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::UndefValue*>(c));
-	const llvm::UndefValue * constant = static_cast<const llvm::UndefValue*>(c);
-
-	return create_undef_value(constant->getType(), ctx);
+	return create_undef_value(c->getType(), tacs, ctx);
 }
 
-static std::unique_ptr<const expr>
-convert_constantExpr(const llvm::Constant * constant, context & ctx)
+static const variable *
+convert_constantExpr(
+	const llvm::Constant * constant,
+	std::vector<std::unique_ptr<jlm::tac>> & tacs,
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantExpr*>(constant));
-	/* const llvm::ConstantExpr * c = static_cast<const llvm::ConstantExpr*>(constant); */
 
-	/* FIXME */
-	return create_undef_value(constant->getType(), ctx);
-
-	//convert_instruction(const_cast<llvm::ConstantExpr*>(c)->getAsInstruction(),
-	//	ctx.entry_block(), ctx);
+	JLM_DEBUG_ASSERT(0);
+	return nullptr;
 }
 
-static std::unique_ptr<const expr>
-convert_constantFP(const llvm::Constant * constant, context & ctx)
+static const variable *
+convert_constantFP(
+	const llvm::Constant * constant,
+	std::vector<std::unique_ptr<jlm::tac>> & tacs,
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantFP*>(constant));
 
 	/* FIXME: convert APFloat and take care of all types */
-	return std::unique_ptr<const expr>(new expr(jive::flt::constant_op(nan("")), {}));
+	JLM_DEBUG_ASSERT(0);
+	return nullptr;
 }
 
-static std::unique_ptr<const expr>
-convert_globalVariable(const llvm::Constant * constant, context & ctx)
+static const variable *
+convert_globalVariable(
+	const llvm::Constant * constant,
+	std::vector<std::unique_ptr<jlm::tac>> & tacs,
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::GlobalVariable*>(constant));
 	const llvm::GlobalVariable * c = static_cast<const llvm::GlobalVariable*>(constant);
 
 	if (!c->hasInitializer())
-		return create_undef_value(c->getType(), ctx);
+		return create_undef_value(c->getType(), tacs, ctx);
 
-	return convert_constant(c->getInitializer(), ctx);
+	return convert_constant(c->getInitializer(), tacs, ctx);
 }
 
-static std::unique_ptr<const expr>
-convert_constantPointerNull(const llvm::Constant * constant, context & ctx)
+static const variable *
+convert_constantPointerNull(
+	const llvm::Constant * constant,
+	std::vector<std::unique_ptr<jlm::tac>> & tacs,
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(llvm::dyn_cast<const llvm::ConstantPointerNull>(constant));
 	auto & c = *llvm::cast<const llvm::ConstantPointerNull>(constant);
 
 	auto t = convert_type(c.getType(), ctx);
-	jlm::ptr_constant_null_op op(*static_cast<const jlm::ptrtype*>(t.get()));
-	return std::unique_ptr<const expr>(new expr(op, {}));
+	auto r = ctx.module().create_variable(*t, false);
+	tacs.push_back(create_ptr_constant_null_tac(*t,r));
+	return r;
 }
 
-static std::unique_ptr<const expr>
-convert_blockAddress(const llvm::Constant * constant, context & ctx)
+static const variable *
+convert_blockAddress(
+	const llvm::Constant * constant,
+	std::vector<std::unique_ptr<jlm::tac>> & tacs,
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::BlockAddress*>(constant));
 
 	/* FIXME */
 	JLM_DEBUG_ASSERT(0);
-	return std::unique_ptr<const expr>(nullptr);
+	return nullptr;
 }
 
-static std::unique_ptr<const expr>
-convert_constantAggregateZero(const llvm::Constant * constant, context & ctx)
+static const variable *
+convert_constantAggregateZero(
+	const llvm::Constant * constant,
+	std::vector<std::unique_ptr<jlm::tac>> & tacs,
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantAggregateZero*>(constant));
 	const llvm::ConstantAggregateZero * c = static_cast<const llvm::ConstantAggregateZero*>(constant);
@@ -160,100 +227,128 @@ convert_constantAggregateZero(const llvm::Constant * constant, context & ctx)
 	if (c->getType()->isStructTy()) {
 		const llvm::StructType * type = static_cast<const llvm::StructType*>(c->getType());
 
-		std::vector<std::unique_ptr<const expr>> operands;
+		std::vector<const variable*> operands;
 		for (size_t n = 0; n < type->getNumElements(); n++)
-			operands.push_back(convert_constant(c->getElementValue(n), ctx));
+			operands.push_back(convert_constant(c->getElementValue(n), tacs, ctx));
 
 		jive::rcd::group_op op(ctx.lookup_declaration(type));
-		return std::unique_ptr<const expr>(new expr(op, std::move(operands)));
+		auto r = ctx.module().create_variable(op.result_type(0), false);
+		tacs.push_back(create_tac(op, operands, {r}));
+		return r;
 	}
 
 	/* FIXME: */
-	if (c->getType()->isArrayTy())
-		return std::unique_ptr<const expr>(new expr(jive::address::constant_op(0), {}));
-
 	JLM_DEBUG_ASSERT(0);
-	return std::unique_ptr<const expr>(nullptr);
+	return nullptr;
 }
 
-static std::unique_ptr<const expr>
-convert_constantArray(const llvm::Constant * constant, context & ctx)
+static const variable *
+convert_constantArray(
+	const llvm::Constant * constant,
+	std::vector<std::unique_ptr<jlm::tac>> & tacs,
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantArray*>(constant));
 
 	/* FIXME */
-	return std::unique_ptr<const expr>(new expr(jive::address::constant_op(0), {}));
+	JLM_DEBUG_ASSERT(0);
+	return nullptr;
 }
 
-static std::unique_ptr<const expr>
-convert_constantDataArray(const llvm::Constant * constant, context & ctx)
+static const variable *
+convert_constantDataArray(
+	const llvm::Constant * constant,
+	std::vector<std::unique_ptr<jlm::tac>> & tacs,
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(llvm::dyn_cast<llvm::ConstantDataArray>(constant));
 	const auto & c = *llvm::cast<const llvm::ConstantDataArray>(constant);
 
-	std::vector<std::unique_ptr<const expr>> operands;
+	std::vector<const variable*> elements;
 	for (size_t n = 0; n < c.getNumElements(); n++)
-		operands.push_back(std::move(convert_constant(c.getElementAsConstant(n), ctx)));
+		elements.push_back(convert_constant(c.getElementAsConstant(n), tacs, ctx));
 
-	jlm::data_array_constant_op op(*convert_type(c.getElementType(), ctx), c.getNumElements());
-	return std::make_unique<const expr>(op, std::move(operands));
+	auto r = ctx.module().create_variable(*convert_type(c.getType(), ctx), false);
+	tacs.push_back(create_data_array_constant_tac(elements, r));
+	return r;
 }
 
-static std::unique_ptr<const expr>
-convert_constantDataVector(const llvm::Constant * constant, context & ctx)
+static const variable *
+convert_constantDataVector(
+	const llvm::Constant * constant,
+	std::vector<std::unique_ptr<jlm::tac>> & tacs,
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantDataVector*>(constant));
 
 	/* FIXME */
 	JLM_DEBUG_ASSERT(0);
-	return std::unique_ptr<const expr>(nullptr);
+	return nullptr;
 }
 
-static std::unique_ptr<const expr>
-convert_constantStruct(const llvm::Constant * constant, context & ctx)
+static const variable *
+convert_constantStruct(
+	const llvm::Constant * constant,
+	std::vector<std::unique_ptr<jlm::tac>> & tacs,
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantStruct*>(constant));
 
 	/* FIXME */
 	JLM_DEBUG_ASSERT(0);
-	return std::unique_ptr<const expr>(nullptr);
+	return nullptr;
 }
 
-static std::unique_ptr<const expr>
-convert_constantVector(const llvm::Constant * constant, context & ctx)
+static const variable *
+convert_constantVector(
+	const llvm::Constant * constant,
+	std::vector<std::unique_ptr<jlm::tac>> & tacs,
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantVector*>(constant));
 
 	/* FIXME */
 	JLM_DEBUG_ASSERT(0);
-	return std::unique_ptr<const expr>(nullptr);
+	return nullptr;
 }
 
-static std::unique_ptr<const expr>
-convert_globalAlias(const llvm::Constant * constant, context & ctx)
+static inline const variable *
+convert_globalAlias(
+	const llvm::Constant * constant,
+	std::vector<std::unique_ptr<jlm::tac>> & tacs,
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::GlobalAlias*>(constant));
 
 	/* FIXME */
 	JLM_DEBUG_ASSERT(0);
-	return std::unique_ptr<const expr>(nullptr);
+	return nullptr;
 }
 
-static std::unique_ptr<const expr>
-convert_function(const llvm::Constant * constant, context & ctx)
+static inline const variable *
+convert_function(
+	const llvm::Constant * constant,
+	std::vector<std::unique_ptr<jlm::tac>> & tacs,
+	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::Function*>(constant));
 
 	/* FIXME: */
-	return std::unique_ptr<const expr>(new expr(jive::address::constant_op(0), {}));
+	return nullptr;
 }
 
-std::unique_ptr<const expr>
-convert_constant(const llvm::Constant * c, context & ctx)
+const variable *
+convert_constant(
+	const llvm::Constant * c,
+	std::vector<std::unique_ptr<jlm::tac>> & tacs,
+	context & ctx)
 {
 	static std::unordered_map<
 		unsigned,
-		std::unique_ptr<const expr> (*)(const llvm::Constant*, context & ctx)
+		const variable*(*)(
+			const llvm::Constant*,
+			std::vector<std::unique_ptr<jlm::tac>>&,
+			context & ctx)
 	> cmap({
 		{llvm::Value::ConstantIntVal, convert_int_constant}
 	,	{llvm::Value::UndefValueVal, convert_undefvalue_instruction}
@@ -273,7 +368,22 @@ convert_constant(const llvm::Constant * c, context & ctx)
 	});
 
 	JLM_DEBUG_ASSERT(cmap.find(c->getValueID()) != cmap.end());
-	return cmap[c->getValueID()](c, ctx);
+	return cmap[c->getValueID()](c, tacs, ctx);
+}
+
+std::vector<std::unique_ptr<jlm::tac>>
+convert_constant(const llvm::Constant * c, context & ctx)
+{
+	std::vector<std::unique_ptr<jlm::tac>> tacs;
+	convert_constant(c, tacs, ctx);
+	return tacs;
+}
+
+std::unique_ptr<const expr>
+convert_constant_expression(const llvm::Constant * c, context & ctx)
+{
+	auto tacs = convert_constant(c, ctx);
+	return tacs2expr(tacs);
 }
 
 }

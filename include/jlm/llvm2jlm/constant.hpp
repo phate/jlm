@@ -20,15 +20,32 @@ namespace jlm {
 
 class context;
 class expr;
+class tac;
+class variable;
 
 jive::bits::value_repr
 convert_apint(const llvm::APInt & value);
 
-std::unique_ptr<const expr>
+std::vector<std::unique_ptr<jlm::tac>>
 create_undef_value(const llvm::Type * type, context & ctx);
 
-std::unique_ptr<const expr>
+const variable *
+convert_undef_value(
+	const llvm::Type * type,
+	std::vector<std::unique_ptr<jlm::tac>> & tacs,
+	context & ctx);
+
+std::vector<std::unique_ptr<jlm::tac>>
 convert_constant(const llvm::Constant * constant, context & ctx);
+
+const variable *
+convert_constant(
+	const llvm::Constant * constant,
+	std::vector<std::unique_ptr<jlm::tac>> & tacs,
+	context & ctx);
+
+std::unique_ptr<const expr>
+convert_constant_expression(const llvm::Constant * constant, context & ctx);
 
 }
 

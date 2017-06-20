@@ -52,15 +52,8 @@ convert_value(const llvm::Value * v, tacsvector_t & tacs, context & ctx)
 	if (ctx.has_value(v))
 		return ctx.lookup_value(v);
 
-	if (auto c = llvm::dyn_cast<const llvm::Constant>(v)) {
-		const variable * r = nullptr;
-		auto ts = expr2tacs(*convert_constant(c, ctx), ctx);
-		for (size_t n = 0; n < ts.size(); n++) {
-			tacs.push_back(std::move(ts[n]));
-			r = tacs.back()->output(0);
-		}
-		return r;
-	}
+	if (auto c = llvm::dyn_cast<const llvm::Constant>(v))
+		return convert_constant(c, tacs, ctx);
 
 	JLM_DEBUG_ASSERT(0);
 	return nullptr;

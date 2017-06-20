@@ -156,8 +156,7 @@ create_cfg(const llvm::Function & f, context & ctx)
 	if (!f.getReturnType()->isVoidTy()) {
 		result = ctx.module().create_variable(*convert_type(f.getReturnType(), ctx), "_r_", false);
 		auto attr = static_cast<basic_block*>(&entry_block->attribute());
-		auto e = create_undef_value(f.getReturnType(), ctx);
-		auto tacs = expr2tacs(*e, ctx);
+		auto tacs = create_undef_value(f.getReturnType(), ctx);
 		attr->append(tacs);
 		attr->append(create_assignment(result->type(), {attr->last()->output(0)}, {result}));
 
@@ -220,7 +219,7 @@ convert_global_variables(const llvm::Module::GlobalListType & vs, context & ctx)
 		auto name = gv.getName().str();
 		auto exported = gv.getLinkage() != llvm::GlobalValue::InternalLinkage;
 		auto variable = m.create_variable(*convert_type(gv.getType(), ctx), name, exported);
-		m.add_global_variable(variable, convert_constant(&gv, ctx));
+		m.add_global_variable(variable, convert_constant_expression(&gv, ctx));
 		ctx.insert_value(&gv, variable);
 	}
 }
