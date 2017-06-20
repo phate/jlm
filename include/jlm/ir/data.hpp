@@ -10,6 +10,8 @@
 #include <jive/vsdg/region.h>
 #include <jive/vsdg/structural_node.h>
 
+#include <jlm/ir/types.hpp>
+
 namespace jlm {
 
 /* data operator */
@@ -73,7 +75,7 @@ public:
 		if (!node_)
 			return nullptr;
 
-		auto output = node_->add_output(&data->type());
+		auto output = node_->add_output(create_ptrtype(data->type()).get());
 		region()->add_result(data, output, data->type());
 		return output;
 	}
