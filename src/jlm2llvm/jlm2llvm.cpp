@@ -211,7 +211,9 @@ convert_globals(context & ctx)
 		auto variable = gv.first;
 		auto value = convert_expression(*gv.second, ctx);
 
-		auto type = convert_type(variable->type(), lm.getContext());
+		JLM_DEBUG_ASSERT(is_ptrtype(variable->type()));
+		auto pt = static_cast<const jlm::ptrtype*>(&variable->type());
+		auto type = convert_type(pt->pointee_type(), lm.getContext());
 		auto linkage = GlobalValue::InternalLinkage;
 		if (variable->exported()) linkage = GlobalValue::ExternalLinkage;
 
