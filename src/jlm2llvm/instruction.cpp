@@ -275,8 +275,12 @@ convert_ptroffset(
 	llvm::IRBuilder<> & builder,
 	const std::vector<llvm::Value*> & args)
 {
-	JLM_DEBUG_ASSERT(is_ptroffset_op(op) && args.size() == 2);
-	return builder.CreateGEP(args[0], args[1]);
+	JLM_DEBUG_ASSERT(is_ptroffset_op(op) && args.size() >= 2);
+	auto & pop = *static_cast<const ptroffset_op*>(&op);
+
+	auto t = convert_type(pop.pointee_type(), builder.getContext());
+	std::vector<llvm::Value*> indices(std::next(args.begin()), args.end());
+	return builder.CreateGEP(t, args[0], indices);
 }
 
 static inline llvm::Value *

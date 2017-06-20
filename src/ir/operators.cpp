@@ -638,13 +638,13 @@ bool
 ptroffset_op::operator==(const operation & other) const noexcept
 {
 	auto op = dynamic_cast<const jlm::ptroffset_op*>(&other);
-	return op && op->ptype_ == ptype_ && op->btype_ == btype_ && op->rtype_ == rtype_;
+	return op && op->ptype_ == ptype_ && op->btypes_ == btypes_ && op->rtype_ == rtype_;
 }
 
 size_t
 ptroffset_op::narguments() const noexcept
 {
-	return 2;
+	return 1 + nindices();
 }
 
 const jive::base::type &
@@ -654,7 +654,7 @@ ptroffset_op::argument_type(size_t index) const noexcept
 	if (index == 0)
 		return ptype_;
 
-	return btype_;
+	return btypes_[index-1];
 }
 
 size_t

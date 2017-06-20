@@ -768,12 +768,12 @@ public:
 	inline
 	ptroffset_op(
 		const jlm::ptrtype & ptype,
-		const jive::bits::type & btype,
+		const std::vector<jive::bits::type> & btypes,
 		const jlm::ptrtype & rtype)
 	: jive::simple_op()
 	, ptype_(ptype)
 	, rtype_(rtype)
-	, btype_(btype)
+	, btypes_(btypes)
 	{}
 
 	virtual bool
@@ -797,10 +797,22 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
+	inline size_t
+	nindices() const noexcept
+	{
+		return btypes_.size();
+	}
+
+	const jive::base::type &
+	pointee_type() const noexcept
+	{
+		return ptype_.pointee_type();
+	}
+
 private:
 	jlm::ptrtype ptype_;
 	jlm::ptrtype rtype_;
-	jive::bits::type btype_;
+	std::vector<jive::bits::type> btypes_;
 };
 
 static inline bool
@@ -810,19 +822,27 @@ is_ptroffset_op(const jive::operation & op)
 }
 
 static inline std::unique_ptr<jlm::tac>
-create_ptroffset_tac(const variable * address, const variable * offset, const variable * result)
+create_ptroffset_tac(
+	const variable * address,
+	const std::vector<const variable*> offsets, const variable * result)
 {
 	auto at = dynamic_cast<const jlm::ptrtype*>(&address->type());
 	if (!at) throw std::logic_error("Expected pointer type.");
 
-	auto bt = dynamic_cast<const jive::bits::type*>(&offset->type());
-	if (!bt) throw std::logic_error("Expected bitstring type.");
+	std::vector<jive::bits::type> bts;
+	for (const auto & v : offsets) {
+		auto bt = dynamic_cast<const jive::bits::type*>(&v->type());
+		if (!bt) throw std::logic_error("Expected bitstring type.");
+		bts.push_back(*bt);
+	}
 
 	auto rt = dynamic_cast<const jlm::ptrtype*>(&result->type());
 	if (!rt) throw std::logic_error("Expected pointer type.");
 
-	jlm::ptroffset_op op(*at, *bt, *rt);
-	return create_tac(op, {address, offset}, {result});
+	jlm::ptroffset_op op(*at, bts, *rt);
+	std::vector<const variable*> operands(1, address);
+	operands.insert(operands.end(), offsets.begin(), offsets.end());
+	return create_tac(op, operands, {result});
 }
 
 /* data array constant operator */

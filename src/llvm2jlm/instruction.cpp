@@ -287,18 +287,13 @@ convert_getelementptr_instruction(llvm::Instruction * inst, context & ctx)
 	auto & m = ctx.module();
 
 	tacsvector_t tacs;
+	std::vector<const variable*> indices;
 	auto base = convert_value(i->getPointerOperand(), tacs, ctx);
+	for (auto it = i->idx_begin(); it != i->idx_end(); it++)
+		indices.push_back(convert_value(*it, tacs, ctx));
 
-	std::vector<llvm::Value*> idxs;
-	const variable * address = base;
-	for (auto it = i->idx_begin(); it != i->idx_end(); it++) {
-		idxs.push_back(*it);
-		auto offset = convert_value(*it, tacs, ctx);
-		auto t = i->getGEPReturnType(i->getOperand(0), idxs);
-		auto r = m.create_variable(*convert_type(t, ctx), false);
-		tacs.push_back(create_ptroffset_tac(address, offset, r));
-	}
-
+	auto r = m.create_variable(*convert_type(i->getType(), ctx), false);
+	tacs.push_back(create_ptroffset_tac(base, indices, r));
 	return tacs;
 }
 
