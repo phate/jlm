@@ -207,7 +207,8 @@ convert_apply(
 	const std::vector<llvm::Value*> & args)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const jive::fct::apply_op*>(&op));
-	std::vector<llvm::Value*> arguments({std::next(args.begin()), std::prev(args.end())});
+	std::vector<llvm::Value*> arguments({std::next(args.begin()), args.end()});
+	JLM_DEBUG_ASSERT(arguments.size() == op.narguments()-2);
 	return builder.CreateCall(args[0], arguments);
 }
 
