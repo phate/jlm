@@ -329,7 +329,7 @@ convert_data_node(const jive::node & node, context & ctx)
 	auto exported = is_exported(result->output());
 	auto expression = convert_port(result->origin());
 
-	auto v = module.create_variable(result->type(), name, exported);
+	auto v = module.create_variable(result->output()->type(), name, exported);
 	module.add_global_variable(v, std::move(expression));
 	ctx.insert(result->output(), v);
 }
