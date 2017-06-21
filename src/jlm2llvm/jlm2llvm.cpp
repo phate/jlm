@@ -51,6 +51,9 @@ function_linkage(const jlm::clg_node & f, const jlm::module & module)
 {
 	JLM_DEBUG_ASSERT(module.variable(&f));
 
+	if (!f.cfg())
+		return llvm::GlobalValue::ExternalLinkage;
+
 	if (module.variable(&f)->exported())
 		return llvm::GlobalValue::ExternalLinkage;
 
