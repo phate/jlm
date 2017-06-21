@@ -1,6 +1,7 @@
 *.la
 *.a
 *.o
-check.log
+utests.log
+ctests.log
 /jlm
 tests/test-runner
