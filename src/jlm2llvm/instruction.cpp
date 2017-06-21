@@ -270,6 +270,19 @@ convert_store(
 }
 
 static inline llvm::Value *
+convert_alloca(
+	const jive::operation & op,
+	llvm::IRBuilder<> & builder,
+	const std::vector<llvm::Value*> & args)
+{
+	JLM_DEBUG_ASSERT(is_alloca_op(op) && args.size() == 1);
+	auto & aop = *static_cast<const jlm::alloca_op*>(&op);
+
+	auto t = convert_type(aop.value_type(), builder.getContext());
+	return builder.CreateAlloca(t, args[0]);
+}
+
+static inline llvm::Value *
 convert_ptroffset(
 	const jive::operation & op,
 	llvm::IRBuilder<> & builder,
@@ -375,6 +388,7 @@ convert_operation(
 	, {std::type_index(typeid(jlm::phi_op)), jlm::jlm2llvm::convert_phi}
 	, {std::type_index(typeid(jlm::load_op)), jlm::jlm2llvm::convert_load}
 	, {std::type_index(typeid(jlm::store_op)), jlm::jlm2llvm::convert_store}
+	, {std::type_index(typeid(jlm::alloca_op)), jlm::jlm2llvm::convert_alloca}
 	, {std::type_index(typeid(jlm::ptroffset_op)), jlm::jlm2llvm::convert_ptroffset}
 	, {std::type_index(typeid(jlm::data_array_constant_op)), convert_data_array_constant}
 	});
