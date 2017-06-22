@@ -62,56 +62,72 @@ convert_value(llvm::Value * v, tacsvector_t & tacs, context & ctx)
 /* instructions */
 
 static inline tacsvector_t
-convert_return_instruction(llvm::Instruction * i, context & ctx)
+convert_return_instruction(llvm::Instruction * instruction, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ReturnInst*>(i));
-	const llvm::ReturnInst * instruction = static_cast<const llvm::ReturnInst*>(i);
+	JLM_DEBUG_ASSERT(instruction->getOpcode() == llvm::Instruction::Ret);
+	auto i = llvm::cast<llvm::ReturnInst>(instruction);
+
+	auto bb = ctx.lookup_basic_block(i->getParent());
+	bb->add_outedge(bb->cfg()->exit_node());
+	if (!i->getReturnValue())
+		return {};
 
 	tacsvector_t tacs;
-	if (instruction->getReturnValue()) {
-		auto value = convert_value(instruction->getReturnValue(), tacs, ctx);
-		tacs.push_back(create_assignment(ctx.result()->type(), value, ctx.result()));
-	}
+	auto value = convert_value(i->getReturnValue(), tacs, ctx);
+	tacs.push_back(create_assignment(ctx.result()->type(), value, ctx.result()));
 
 	return tacs;
 }
 
 static inline tacsvector_t
-convert_branch_instruction(llvm::Instruction * i, context & ctx)
+convert_branch_instruction(llvm::Instruction * instruction, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::BranchInst*>(i));
-	const llvm::BranchInst * instruction = static_cast<const llvm::BranchInst*>(i);
+	JLM_DEBUG_ASSERT(instruction->getOpcode() == llvm::Instruction::Br);
+	auto i = llvm::cast<llvm::BranchInst>(instruction);
+	auto bb = ctx.lookup_basic_block(i->getParent());
 
-	tacsvector_t tacs;
-	if (instruction->isConditional()) {
-		auto c = convert_value(instruction->getCondition(), tacs, ctx);
-		size_t nbits = dynamic_cast<const jive::bits::type&>(c->type()).nbits();
-		auto op = jive::match_op(nbits, {{0, 0}}, 1, 2);
-		tacs.push_back(create_tac(op, {c}, create_result_variables(ctx.module(), op)));
-		tacs.push_back(create_branch_tac(2,  tacs.back()->output(0)));
-	}
-
-	return tacs;
-}
-
-static inline tacsvector_t
-convert_switch_instruction(llvm::Instruction * i, context & ctx)
-{
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::SwitchInst*>(i));
-	const llvm::SwitchInst * instruction = static_cast<const llvm::SwitchInst*>(i);
-
-	std::map<uint64_t, uint64_t> mapping;
-	for (auto it = instruction->case_begin(); it != instruction->case_end(); it++) {
-		JLM_DEBUG_ASSERT(it != instruction->case_default());
-		mapping[it.getCaseValue()->getZExtValue()] = it.getCaseIndex();
+	if (i->isUnconditional()) {
+		bb->add_outedge(ctx.lookup_basic_block(i->getSuccessor(0)));
+		return {};
 	}
 
 	tacsvector_t tacs;
-	auto c = convert_value(instruction->getCondition(), tacs, ctx);
-	size_t nbits = dynamic_cast<const jive::bits::type&>(c->type()).nbits();
-	auto op = jive::match_op(nbits, mapping, mapping.size(), mapping.size()+1);
+	bb->add_outedge(ctx.lookup_basic_block(i->getSuccessor(0))); /* true */
+	bb->add_outedge(ctx.lookup_basic_block(i->getSuccessor(1))); /* false */
+
+	auto c = convert_value(i->getCondition(), tacs, ctx);
+	auto nbits = i->getCondition()->getType()->getIntegerBitWidth();
+	auto op = jive::match_op(nbits, {{0, 0}}, 1, 2);
 	tacs.push_back(create_tac(op, {c}, create_result_variables(ctx.module(), op)));
-	tacs.push_back((create_branch_tac(mapping.size()+1, tacs.back()->output(0))));
+	tacs.push_back(create_branch_tac(2,  tacs.back()->output(0)));
+
+	return tacs;
+}
+
+static inline tacsvector_t
+convert_switch_instruction(llvm::Instruction * instruction, context & ctx)
+{
+	JLM_DEBUG_ASSERT(instruction->getOpcode() == llvm::Instruction::Switch);
+	auto i = llvm::cast<llvm::SwitchInst>(instruction);
+	auto bb = ctx.lookup_basic_block(i->getParent());
+
+	size_t n = 0;
+	std::map<uint64_t, uint64_t> mapping;
+	for (auto it = i->case_begin(); it != i->case_end(); it++) {
+		JLM_DEBUG_ASSERT(it != i->case_default());
+		mapping[it.getCaseValue()->getZExtValue()] = n++;
+		bb->add_outedge(ctx.lookup_basic_block(it.getCaseSuccessor()));
+	}
+
+	bb->add_outedge(ctx.lookup_basic_block(i->case_default().getCaseSuccessor()));
+	JLM_DEBUG_ASSERT(i->getNumSuccessors() == n+1);
+
+	tacsvector_t tacs;
+	auto c = convert_value(i->getCondition(), tacs, ctx);
+	auto nbits = i->getCondition()->getType()->getIntegerBitWidth();
+	auto op = jive::match_op(nbits, mapping, n, n+1);
+	tacs.push_back(create_tac(op, {c}, create_result_variables(ctx.module(), op)));
+	tacs.push_back((create_branch_tac(n+1, tacs.back()->output(0))));
 
 	return tacs;
 }
@@ -119,7 +135,9 @@ convert_switch_instruction(llvm::Instruction * i, context & ctx)
 static inline tacsvector_t
 convert_unreachable_instruction(llvm::Instruction * i, context & ctx)
 {
-	/* Nothing needs to be done. */
+	JLM_DEBUG_ASSERT(i->getOpcode() == llvm::Instruction::Unreachable);
+	auto bb = ctx.lookup_basic_block(i->getParent());
+	bb->add_outedge(bb->cfg()->exit_node());
 	return {};
 }
 

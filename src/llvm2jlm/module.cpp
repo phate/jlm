@@ -27,74 +27,6 @@
 namespace jlm
 {
 
-
-static cfg_node *
-create_cfg_structure(
-	const llvm::Function & function,
-	cfg * cfg,
-	basic_block_map & bbmap)
-{
-	auto entry_block = create_basic_block_node(cfg);
-	cfg->exit_node()->divert_inedges(entry_block);
-
-	/* create all basic_blocks */
-	auto it = function.getBasicBlockList().begin();
-	for (; it != function.getBasicBlockList().end(); it++)
-			bbmap.insert_basic_block(&(*it), create_basic_block_node(cfg));
-
-	entry_block->add_outedge(bbmap[&function.getEntryBlock()]);
-
-	/* create CFG structure */
-	it = function.getBasicBlockList().begin();
-	for (; it != function.getBasicBlockList().end(); it++) {
-		const llvm::TerminatorInst * instr = it->getTerminator();
-		if (dynamic_cast<const llvm::ReturnInst*>(instr)) {
-			bbmap[&(*it)]->add_outedge(cfg->exit_node());
-			continue;
-		}
-
-		if (dynamic_cast<const llvm::UnreachableInst*>(instr)) {
-			bbmap[&(*it)]->add_outedge(cfg->exit_node());
-			continue;
-		}
-
-		if (auto branch = dynamic_cast<const llvm::BranchInst*>(instr)) {
-			if (branch->isConditional()) {
-				JLM_DEBUG_ASSERT(branch->getNumSuccessors() == 2);
-				bbmap[&(*it)]->add_outedge(bbmap[branch->getSuccessor(1)]);
-				bbmap[&(*it)]->add_outedge(bbmap[branch->getSuccessor(0)]);
-				continue;
-			}
-		}
-
-		if (auto swi = dynamic_cast<const llvm::SwitchInst*>(instr)) {
-			for (auto c = swi->case_begin(); c != swi->case_end(); c++) {
-				JLM_DEBUG_ASSERT(c != swi->case_default());
-				auto bb = create_basic_block_node(cfg);
-				auto e = bbmap[&(*it)]->add_outedge(bb);
-				JLM_DEBUG_ASSERT(e->index() == c.getCaseIndex());
-				bb->add_outedge(bbmap[c.getCaseSuccessor()]);
-			}
-			auto bb = create_basic_block_node(cfg);
-			auto e = bbmap[&(*it)]->add_outedge(bb);
-			JLM_DEBUG_ASSERT(e->index() == swi->getNumCases());
-			bb->add_outedge(bbmap[swi->case_default().getCaseSuccessor()]);
-			continue;
-		}
-
-		for (size_t n = 0; n < instr->getNumSuccessors(); n++)
-			bbmap[&(*it)]->add_outedge(bbmap[instr->getSuccessor(n)]);
-	}
-
-	if (cfg->exit_node()->ninedges() > 1) {
-		auto bb = create_basic_block_node(cfg);
-		cfg->exit_node()->divert_inedges(bb);
-		bb->add_outedge(cfg->exit_node());
-	}
-
-	return entry_block;
-}
-
 static void
 convert_basic_blocks(
 	llvm::Function::BasicBlockListType & bbs,
@@ -127,6 +59,7 @@ std::unique_ptr<jlm::cfg>
 create_cfg(llvm::Function & f, context & ctx)
 {
 	auto node = static_cast<const function_variable*>(ctx.lookup_value(&f))->function();
+	auto & m = ctx.module();
 
 	std::unique_ptr<jlm::cfg> cfg(new jlm::cfg(ctx.module()));
 
@@ -141,22 +74,28 @@ create_cfg(llvm::Function & f, context & ctx)
 	}
 	if (f.isVarArg()) {
 		JLM_DEBUG_ASSERT(n < node->type().narguments());
-		auto v = ctx.module().create_variable(node->type().argument_type(n++), "_varg_", false);
+		auto v = m.create_variable(node->type().argument_type(n++), "_varg_", false);
 		cfg->entry().append_argument(v);
 	}
 	JLM_DEBUG_ASSERT(n < node->type().narguments());
-	auto state = ctx.module().create_variable(node->type().argument_type(n++), "_s_", false);
+	auto state = m.create_variable(node->type().argument_type(n++), "_s_", false);
 	cfg->entry().append_argument(state);
 	JLM_DEBUG_ASSERT(n == node->type().narguments());
 
-	/* create cfg structure */
+	/* create all basic blocks */
 	basic_block_map bbmap;
-	auto entry_block = create_cfg_structure(f, cfg.get(), bbmap);
+	for (const auto & bb : f.getBasicBlockList())
+			bbmap.insert_basic_block(&bb, create_basic_block_node(cfg.get()));
+
+	/* create entry block */
+	auto entry_block = create_basic_block_node(cfg.get());
+	cfg->exit_node()->divert_inedges(entry_block);
+	entry_block->add_outedge(bbmap[&f.getEntryBlock()]);
 
 	/* add results */
 	const variable * result = nullptr;
 	if (!f.getReturnType()->isVoidTy()) {
-		result = ctx.module().create_variable(*convert_type(f.getReturnType(), ctx), "_r_", false);
+		result = m.create_variable(*convert_type(f.getReturnType(), ctx), "_r_", false);
 		auto attr = static_cast<basic_block*>(&entry_block->attribute());
 		auto tacs = create_undef_value(f.getReturnType(), ctx);
 		attr->append(tacs);
@@ -173,6 +112,13 @@ create_cfg(llvm::Function & f, context & ctx)
 	ctx.set_state(state);
 	ctx.set_result(result);
 	convert_basic_blocks(f.getBasicBlockList(), ctx);
+
+	/* ensure that exit node has only one incoming edge */
+	if (cfg->exit_node()->ninedges() > 1) {
+		auto bb = create_basic_block_node(cfg.get());
+		cfg->exit_node()->divert_inedges(bb);
+		bb->add_outedge(cfg->exit_node());
+	}
 
 	cfg->prune();
 	return cfg;
