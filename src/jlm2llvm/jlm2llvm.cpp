@@ -101,8 +101,8 @@ create_terminator_instruction(const jlm::cfg_node * node, context & ctx)
 		const auto & branch = attr.last();
 		JLM_DEBUG_ASSERT(branch && dynamic_cast<const jlm::branch_op*>(&branch->operation()));
 		auto condition = ctx.value(branch->input(0));
-		auto bbtrue = ctx.basic_block(node->outedge(1)->sink());
-		auto bbfalse = ctx.basic_block(node->outedge(0)->sink());
+		auto bbtrue = ctx.basic_block(node->outedge(0)->sink());
+		auto bbfalse = ctx.basic_block(node->outedge(1)->sink());
 		builder.CreateCondBr(condition, bbtrue, bbfalse);
 		return;
 	}

@@ -97,7 +97,7 @@ convert_branch_instruction(llvm::Instruction * instruction, context & ctx)
 
 	auto c = convert_value(i->getCondition(), tacs, ctx);
 	auto nbits = i->getCondition()->getType()->getIntegerBitWidth();
-	auto op = jive::match_op(nbits, {{0, 0}}, 1, 2);
+	auto op = jive::match_op(nbits, {{1, 0}}, 1, 2);
 	tacs.push_back(create_tac(op, {c}, create_result_variables(ctx.module(), op)));
 	tacs.push_back(create_branch_tac(2,  tacs.back()->output(0)));
 
