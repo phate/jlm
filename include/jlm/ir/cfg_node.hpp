@@ -59,6 +59,57 @@ private:
 };
 
 class cfg_node final {
+	class const_outedge_iterator final {
+	public:
+		inline
+		const_outedge_iterator(
+			const std::unordered_set<std::unique_ptr<cfg_edge>>::const_iterator & it)
+		: it_(it)
+		{}
+
+		inline const const_outedge_iterator &
+		operator++() noexcept
+		{
+			++it_;
+			return *this;
+		}
+
+		inline const_outedge_iterator
+		operator++(int) noexcept
+		{
+			auto tmp = *this;
+			++*this;
+			return tmp;
+		}
+
+		inline bool
+		operator==(const const_outedge_iterator & other) const noexcept
+		{
+			return it_ == other.it_;
+		}
+
+		inline bool
+		operator!=(const const_outedge_iterator & other) const noexcept
+		{
+			return !(other == *this);
+		}
+
+		inline cfg_edge *
+		operator->() const noexcept
+		{
+			return edge();
+		}
+
+		inline cfg_edge *
+		edge() const noexcept
+		{
+			return it_->get();
+		}
+
+	private:
+		std::unordered_set<std::unique_ptr<cfg_edge>>::const_iterator it_;
+	};
+
 public:
 	inline
 	cfg_node(jlm::cfg & cfg, const jlm::attribute & attr)
@@ -102,6 +153,18 @@ public:
 	size_t noutedges() const noexcept;
 
 	std::vector<cfg_edge*> outedges() const;
+
+	inline const_outedge_iterator
+	begin_outedges() const
+	{
+		return const_outedge_iterator(outedges_.begin());
+	}
+
+	inline const_outedge_iterator
+	end_outedges() const
+	{
+		return const_outedge_iterator(outedges_.end());
+	}
 
 	void divert_inedges(jlm::cfg_node * new_successor);
 
