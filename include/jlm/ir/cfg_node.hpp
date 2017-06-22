@@ -60,8 +60,6 @@ private:
 
 class cfg_node final {
 public:
-	virtual ~cfg_node();
-
 	inline
 	cfg_node(jlm::cfg & cfg, const jlm::attribute & attr)
 	: cfg_(&cfg)

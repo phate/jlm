@@ -57,8 +57,6 @@ cfg_edge::split()
 	return bb;
 }
 
-cfg_node::~cfg_node() {}
-
 cfg_edge *
 cfg_node::add_outedge(cfg_node * successor, size_t index)
 {
