@@ -52,27 +52,6 @@ cfg_edge::split()
 
 /* node */
 
-void
-cfg_node::remove_outedge(cfg_edge * edge)
-{
-	JLM_DEBUG_ASSERT(edge->source() == this);
-
-	auto index = edge->index();
-	edge->sink()->inedges_.remove(edge);
-	for (size_t n = index+1; n < noutedges(); n++) {
-		outedges_[n-1] = std::move(outedges_[n]);
-		outedges_[n-1]->index_ = outedges_[n-1]->index_-1;
-	}
-	outedges_.resize(noutedges()-1);
-}
-
-void
-cfg_node::remove_outedges()
-{
-	while (noutedges() != 0)
-		remove_outedge(outedges_[noutedges()-1].get());
-}
-
 size_t
 cfg_node::noutedges() const noexcept
 {
@@ -92,7 +71,7 @@ cfg_node::remove_inedges()
 	while (inedges_.size() != 0) {
 		cfg_edge * edge = *inedges_.begin();
 		JLM_DEBUG_ASSERT(edge->sink() == this);
-		edge->source()->remove_outedge(edge);
+		edge->source()->remove_outedge(edge->index());
 	}
 }
 

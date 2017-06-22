@@ -146,7 +146,7 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit,
 		{
 			jlm::cfg_edge * r = *ar.begin();
 			back_edges.push_back(jlm::cfg_edge(r->source(), r->sink(), r->index()));
-			r->source()->remove_outedge(r);
+			r->source()->remove_outedge(r->index());
 			restructure_loops((*ae.begin())->sink(), (*ax.begin())->source(), back_edges);
 			continue;
 		}

@@ -104,7 +104,7 @@ reduce_loop(
 	auto reduction = create_basic_block_node(node->cfg());
 	for (auto it = node->begin_outedges(); it != node->end_outedges(); it++) {
 		if (it->is_selfloop()) {
-			node->remove_outedge(it.edge());
+			node->remove_outedge(it->index());
 			break;
 		}
 	}

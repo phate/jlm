@@ -149,9 +149,26 @@ public:
 		return outedges_.back().get();
 	}
 
-	void remove_outedge(cfg_edge * edge);
+	inline void
+	remove_outedge(size_t n)
+	{
+		JLM_DEBUG_ASSERT(n < noutedges());
+		auto edge = outedges_[n].get();
 
-	void remove_outedges();
+		edge->sink()->inedges_.remove(edge);
+		for (size_t i = n+1; i < noutedges(); i++) {
+			outedges_[i-1] = std::move(outedges_[i]);
+			outedges_[i-1]->index_ = outedges_[i-1]->index_-1;
+		}
+		outedges_.resize(noutedges()-1);
+	}
+
+	inline void
+	remove_outedges()
+	{
+		while (noutedges() != 0)
+			remove_outedge(noutedges()-1);
+	}
 
 	inline cfg_edge *
 	outedge(size_t n) const

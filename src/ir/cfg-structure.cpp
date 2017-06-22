@@ -56,7 +56,7 @@ static inline std::unique_ptr<jlm::cfg>
 copy_structural(const jlm::cfg & in)
 {
 	std::unique_ptr<jlm::cfg> out(new jlm::cfg(in.module()));
-	out->entry_node()->remove_outedge(out->entry_node()->outedge(0));
+	out->entry_node()->remove_outedge(0);
 
 	/* create all nodes */
 	std::unordered_map<const jlm::cfg_node*, jlm::cfg_node*> node_map;
@@ -201,7 +201,7 @@ reduce_loop(
 	auto reduction = create_basic_block_node(cfg);
 	for (auto it = node->begin_outedges(); it != node->end_outedges(); it++) {
 		if (it->is_selfloop()) {
-			node->remove_outedge(it.edge());
+			node->remove_outedge(it->index());
 			break;
 		}
 	}
@@ -248,7 +248,7 @@ reduce_branch(
 	reduction->add_outedge(join);
 	for (auto it = split->begin_outedges(); it != split->end_outedges(); it++) {
 		if (it->sink() == join) {
-			split->remove_outedge(it.edge());
+			split->remove_outedge(it->index());
 		} else {
 			it->sink()->remove_outedges();
 			to_visit.erase(it->sink());
@@ -285,7 +285,7 @@ reduce_T1(jlm::cfg_node * node)
 
 	for (auto it = node->begin_outedges(); it != node->end_outedges(); it++) {
 		if (it->source() == it->sink()) {
-			node->remove_outedge(it.edge());
+			node->remove_outedge(it->index());
 			break;
 		}
 	}
