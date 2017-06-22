@@ -51,21 +51,19 @@ find_entries_and_exits(
 			}
 		}
 
-		std::vector<jlm::cfg_edge*> outedges = node->outedges();
-		for (auto edge : outedges) {
-			if (scc.find(edge->sink()) == scc.end()) {
-				ax.insert(edge);
-				if (vx.find(edge->sink()) == vx.end())
-					vx.insert(std::make_pair(edge->sink(), vx.size()));
+		for (auto it = node->begin_outedges(); it != node->end_outedges(); it++) {
+			if (scc.find(it->sink()) == scc.end()) {
+				ax.insert(it.edge());
+				if (vx.find(it->sink()) == vx.end())
+					vx.insert(std::make_pair(it->sink(), vx.size()));
 			}
 		}
 	}
 
 	for (auto node : scc) {
-		std::vector<jlm::cfg_edge*> outedges = node->outedges();
-		for (auto edge : outedges) {
-			if (ve.find(edge->sink()) != ve.end())
-				ar.insert(edge);
+		for (auto it = node->begin_outedges(); it != node->end_outedges(); it++) {
+			if (ve.find(it->sink()) != ve.end())
+				ar.insert(it.edge());
 		}
 	}
 }
@@ -86,9 +84,8 @@ strongconnect(
 	index++;
 
 	if (node != exit) {
-		std::vector<jlm::cfg_edge*> edges = node->outedges();
-		for (size_t n = 0; n < edges.size(); n++) {
-			jlm::cfg_node * successor = edges[n]->sink();
+		for (auto it = node->begin_outedges(); it != node->end_outedges(); it++) {
+			jlm::cfg_node * successor = it->sink();
 			if (map.find(successor) == map.end()) {
 				/* successor has not been visited yet; recurse on it */
 				strongconnect(successor, exit, map, node_stack, index, sccs);
@@ -252,7 +249,7 @@ find_head_branch(const jlm::cfg_node * start, const jlm::cfg_node * end)
 		if (start->is_branch() || start == end)
 			break;
 
-		start = start->outedges()[0]->sink();
+		start = start->outedge(0)->sink();
 	} while (1);
 
 	return start;
@@ -281,10 +278,9 @@ find_dominator_graph(const jlm::cfg_edge * edge)
 
 		if (accept) {
 			nodes.insert(node);
-			std::vector<jlm::cfg_edge*> outedges = node->outedges();
-			for (auto e : outedges) {
-				edges.insert(e);
-				to_visit.push_back(e->sink());
+			for (auto it = node->begin_outedges(); it != node->end_outedges(); it++) {
+				edges.insert(it.edge());
+				to_visit.push_back(it->sink());
 			}
 		}
 	}
@@ -304,7 +300,10 @@ restructure_branches(jlm::cfg_node * start, jlm::cfg_node * end)
 	/* Compute the branch graphs and insert their nodes into sets. */
 	std::unordered_set<jlm::cfg_node*> all_branch_nodes;
 	std::vector<std::unordered_set<jlm::cfg_node*>> branch_nodes;
-	std::vector<jlm::cfg_edge*> af = head_branch->outedges();
+	std::vector<jlm::cfg_edge*> af;
+	for (auto it = head_branch->begin_outedges(); it != head_branch->end_outedges(); it++)
+		af.push_back(it.edge());
+
 	for (size_t n = 0; n < af.size(); n++) {
 		std::unordered_set<jlm::cfg_node*> branch = find_dominator_graph(af[n]);
 		branch_nodes.push_back(std::unordered_set<jlm::cfg_node*>(branch.begin(),
@@ -322,11 +321,10 @@ restructure_branches(jlm::cfg_node * start, jlm::cfg_node * end)
 			cpoints.insert(std::make_pair(af[n]->sink(), cpoints.size()));
 		} else {
 			for (auto node : branch_nodes[n]) {
-				std::vector<jlm::cfg_edge*> outedges = node->outedges();
-				for (auto edge : outedges) {
-					if (all_branch_nodes.find(edge->sink()) == all_branch_nodes.end()) {
-						branch_out_edges[n].insert(edge);
-						cpoints.insert(std::make_pair(edge->sink(), cpoints.size()));
+				for (auto it = node->begin_outedges(); it != node->end_outedges(); it++) {
+					if (all_branch_nodes.find(it->sink()) == all_branch_nodes.end()) {
+						branch_out_edges[n].insert(it.edge());
+						cpoints.insert(std::make_pair(it->sink(), cpoints.size()));
 					}
 				}
 			}

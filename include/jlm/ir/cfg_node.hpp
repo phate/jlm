@@ -6,6 +6,8 @@
 #ifndef JLM_IR_CFG_NODE_H
 #define JLM_IR_CFG_NODE_H
 
+#include <jlm/common.hpp>
+
 #include <list>
 #include <memory>
 #include <string>
@@ -147,12 +149,13 @@ public:
 	inline cfg_edge *
 	outedge(size_t index) const
 	{
-		return outedges()[index];
+		JLM_DEBUG_ASSERT(index < noutedges());
+		auto it = outedges_.begin();
+		std::advance(it, index);
+		return it->get();
 	}
 
 	size_t noutedges() const noexcept;
-
-	std::vector<cfg_edge*> outedges() const;
 
 	inline const_outedge_iterator
 	begin_outedges() const

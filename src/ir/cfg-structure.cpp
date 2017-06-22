@@ -25,9 +25,8 @@ strongconnect(
 	index++;
 
 	if (node != exit) {
-		std::vector<jlm::cfg_edge*> edges = node->outedges();
-		for (size_t n = 0; n < edges.size(); n++) {
-			jlm::cfg_node * successor = edges[n]->sink();
+		for (auto it = node->begin_outedges(); it != node->end_outedges(); it++) {
+			auto successor = it->sink();
 			if (map.find(successor) == map.end()) {
 				/* successor has not been visited yet; recurse on it */
 				strongconnect(successor, exit, map, node_stack, index, sccs);
@@ -73,9 +72,8 @@ copy_structural(const jlm::cfg & in)
 
 	/* establish control flow */
 	for (const auto & node : in) {
-		for (const auto & e : node.outedges()) {
-			node_map[&node]->add_outedge(node_map[e->sink()], e->index());
-		}
+		for (auto it = node.begin_outedges(); it != node.end_outedges(); it++)
+			node_map[&node]->add_outedge(node_map[it->sink()], it->index());
 	}
 
 	return out;
@@ -130,11 +128,11 @@ is_branch(const jlm::cfg_node * split) noexcept
 	if (join == nullptr || join->ninedges() != split->noutedges())
 		return false;
 
-	for (const auto & e : split->outedges()) {
-		if (e->sink() == join)
+	for (auto it = split->begin_outedges(); it != split->end_outedges(); it++) {
+		if (it->sink() == join)
 			continue;
 
-		auto node = e->sink();
+		auto node = it->sink();
 		if (node->ninedges() != 1)
 			return false;
 		if (node->noutedges() != 1 || node->outedge(0)->sink() != join)
@@ -154,12 +152,12 @@ is_proper_branch(const jlm::cfg_node * split) noexcept
 		return false;
 
 	auto join = split->outedge(0)->sink()->outedge(0)->sink();
-	for (const auto & outedge : split->outedges()) {
-		if (outedge->sink()->ninedges() != 1)
+	for (auto it = split->begin_outedges(); it != split->end_outedges(); it++) {
+		if (it->sink()->ninedges() != 1)
 			return false;
-		if (outedge->sink()->noutedges() != 1)
+		if (it->sink()->noutedges() != 1)
 			return false;
-		if (outedge->sink()->outedge(0)->sink() != join)
+		if (it->sink()->outedge(0)->sink() != join)
 			return false;
 	}
 
@@ -169,8 +167,8 @@ is_proper_branch(const jlm::cfg_node * split) noexcept
 static inline bool
 is_T1(const jlm::cfg_node * node) noexcept
 {
-	for (const auto & e : node->outedges()) {
-		if (e->source() == e->sink())
+	for (auto it = node->begin_outedges(); it != node->end_outedges(); it++) {
+		if (it->source() == it->sink())
 			return true;
 	}
 
@@ -201,9 +199,9 @@ reduce_loop(
 	auto cfg = node->cfg();
 
 	auto reduction = create_basic_block_node(cfg);
-	for (auto & e : node->outedges()) {
-		if (e->is_selfloop()) {
-			node->remove_outedge(e);
+	for (auto it = node->begin_outedges(); it != node->end_outedges(); it++) {
+		if (it->is_selfloop()) {
+			node->remove_outedge(it.edge());
 			break;
 		}
 	}
@@ -227,8 +225,8 @@ reduce_linear(
 
 	auto reduction = create_basic_block_node(cfg);
 	entry->divert_inedges(reduction);
-	for (const auto & e : exit->outedges())
-		reduction->add_outedge(e->sink(), e->index());
+	for (auto it = exit->begin_outedges(); it != exit->end_outedges(); it++)
+		reduction->add_outedge(it->sink(), it->index());
 	exit->remove_outedges();
 
 	to_visit.erase(entry);
@@ -248,12 +246,12 @@ reduce_branch(
 	auto reduction = create_basic_block_node(cfg);
 	split->divert_inedges(reduction);
 	reduction->add_outedge(join, 0);
-	for (const auto & e : split->outedges()) {
-		if (e->sink() == join) {
-			split->remove_outedge(e);
+	for (auto it = split->begin_outedges(); it != split->end_outedges(); it++) {
+		if (it->sink() == join) {
+			split->remove_outedge(it.edge());
 		} else {
-			e->sink()->remove_outedges();
-			to_visit.erase(e->sink());
+			it->sink()->remove_outedges();
+			to_visit.erase(it->sink());
 		}
 	}
 
@@ -273,8 +271,8 @@ reduce_proper_branch(
 	split->divert_inedges(reduction);
 	join->remove_inedges();
 	reduction->add_outedge(join, 0);
-	for (const auto & outedge : split->outedges())
-		to_visit.erase(outedge->sink());
+	for (auto it = split->begin_outedges(); it != split->end_outedges(); it++)
+		to_visit.erase(it->sink());
 
 	to_visit.erase(split);
 	to_visit.insert(reduction);
@@ -285,9 +283,9 @@ reduce_T1(jlm::cfg_node * node)
 {
 	JLM_DEBUG_ASSERT(is_T1(node));
 
-	for (auto & e : node->outedges()) {
-		if (e->source() == e->sink()) {
-			node->remove_outedge(e);
+	for (auto it = node->begin_outedges(); it != node->end_outedges(); it++) {
+		if (it->source() == it->sink()) {
+			node->remove_outedge(it.edge());
 			break;
 		}
 	}
@@ -387,7 +385,7 @@ is_valid(const jlm::cfg & cfg)
 				return false;
 			if (!node.single_successor())
 				return false;
-			if (node.outedges()[0]->index() != 0)
+			if (node.outedge(0)->index() != 0)
 				return false;
 			continue;
 		}
@@ -398,7 +396,9 @@ is_valid(const jlm::cfg & cfg)
 		/*
 			Check whether all indices are 0 and in ascending order (uniqueness of indices)
 		*/
-		std::vector<cfg_edge*> edges = node.outedges();
+		std::vector<cfg_edge*> edges;
+		for (auto it = node.begin_outedges(); it != node.end_outedges(); it++)
+			edges.push_back(it.edge());
 		std::sort(edges.begin(), edges.end(),
 			[](const cfg_edge * e1, const cfg_edge * e2) { return e1->index() < e2->index(); });
 		for (size_t n = 0; n < edges.size(); n++) {

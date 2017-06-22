@@ -34,11 +34,11 @@ breadth_first_traversal(const jlm::cfg & cfg)
 		auto node = next.front();
 		next.pop_front();
 
-		for (auto & outedge : node->outedges()) {
-			if (visited.find(outedge->sink()) == visited.end()) {
-				visited.insert(outedge->sink());
-				next.push_back(outedge->sink());
-				nodes.push_back(outedge->sink());
+		for (auto it = node->begin_outedges(); it != node->end_outedges(); it++) {
+			if (visited.find(it->sink()) == visited.end()) {
+				visited.insert(it->sink());
+				next.push_back(it->sink());
+				nodes.push_back(it->sink());
 			}
 		}
 	}

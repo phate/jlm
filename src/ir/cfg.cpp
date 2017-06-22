@@ -98,9 +98,9 @@ cfg::convert_to_dot() const
 	for (const auto & node : nodes_) {
 		dot += strfmt((intptr_t)node.get());
 		dot += strfmt("[shape = box, label = \"", node->debug_string(), "\"];\n");
-		for (const auto & e : node->outedges()) {
-			dot += strfmt((intptr_t)e->source(), " -> ", (intptr_t)e->sink());
-			dot += strfmt("[label = \"", e->index(), "\"];\n");
+		for (auto it = node->begin_outedges(); it != node->end_outedges(); it++) {
+			dot += strfmt((intptr_t)it->source(), " -> ", (intptr_t)it->sink());
+			dot += strfmt("[label = \"", it->index(), "\"];\n");
 		}
 	}
 	dot += "}\n";
@@ -134,11 +134,10 @@ cfg::prune()
 		to_visit.erase(to_visit.begin());
 		JLM_DEBUG_ASSERT(visited.find(node) == visited.end());
 		visited.insert(node);
-		std::vector<cfg_edge*> edges = node->outedges();
-		for (auto edge : edges) {
-			if (visited.find(edge->sink()) == visited.end()
-			&& to_visit.find(edge->sink()) == to_visit.end())
-				to_visit.insert(edge->sink());
+		for (auto it = node->begin_outedges(); it != node->end_outedges(); it++) {
+			if (visited.find(it->sink()) == visited.end()
+			&& to_visit.find(it->sink()) == to_visit.end())
+				to_visit.insert(it->sink());
 		}
 	}
 

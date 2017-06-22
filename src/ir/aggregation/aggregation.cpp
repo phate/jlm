@@ -34,12 +34,12 @@ is_branch(const cfg_node * split) noexcept
 		return false;
 
 	auto join = split->outedge(0)->sink()->outedge(0)->sink();
-	for (const auto & outedge : split->outedges()) {
-		if (outedge->sink()->ninedges() != 1)
+	for (auto it = split->begin_outedges(); it != split->end_outedges(); it++) {
+		if (it->sink()->ninedges() != 1)
 			return false;
-		if (outedge->sink()->noutedges() != 1)
+		if (it->sink()->noutedges() != 1)
 			return false;
-		if (outedge->sink()->outedge(0)->sink() != join)
+		if (it->sink()->outedge(0)->sink() != join)
 			return false;
 	}
 
@@ -76,8 +76,8 @@ reduce_linear(
 	/* perform reduction */
 	auto reduction = create_basic_block_node(entry->cfg());
 	entry->divert_inedges(reduction);
-	for (const auto & outedge : exit->outedges())
-		reduction->add_outedge(outedge->sink(), outedge->index());
+	for (auto it = exit->begin_outedges(); it != exit->end_outedges(); it++)
+		reduction->add_outedge(it->sink(), it->index());
 	exit->remove_outedges();
 
 	map[reduction] = create_linear_node(std::move(map[entry]), std::move(map[exit]));
@@ -102,9 +102,9 @@ reduce_loop(
 
 	/* perform reduction */
 	auto reduction = create_basic_block_node(node->cfg());
-	for (auto & outedge : node->outedges()) {
-		if (outedge->is_selfloop()) {
-			node->remove_outedge(outedge);
+	for (auto it = node->begin_outedges(); it != node->end_outedges(); it++) {
+		if (it->is_selfloop()) {
+			node->remove_outedge(it.edge());
 			break;
 		}
 	}
@@ -132,11 +132,11 @@ reduce_branch(
 	JLM_DEBUG_ASSERT(map.find(split) != map.end());
 
 	auto join = split->outedge(0)->sink()->outedge(0)->sink();
-	for (const auto & outedge : split->outedges()) {
-		JLM_DEBUG_ASSERT(outedge->sink()->ninedges() == 1);
-		JLM_DEBUG_ASSERT(map.find(outedge->sink()) != map.end());
-		JLM_DEBUG_ASSERT(outedge->sink()->noutedges() == 1);
-		JLM_DEBUG_ASSERT(outedge->sink()->outedge(0)->sink() == join);
+	for (auto it = split->begin_outedges(); it != split->end_outedges(); it++) {
+		JLM_DEBUG_ASSERT(it->sink()->ninedges() == 1);
+		JLM_DEBUG_ASSERT(map.find(it->sink()) != map.end());
+		JLM_DEBUG_ASSERT(it->sink()->noutedges() == 1);
+		JLM_DEBUG_ASSERT(it->sink()->outedge(0)->sink() == join);
 	}
 
 	/* perform reduction */
@@ -146,10 +146,10 @@ reduce_branch(
 	reduction->add_outedge(join, 0);
 
 	auto branch = create_branch_node(std::move(map[split]));
-	for (const auto & outedge : split->outedges()) {
-		branch->add_child(std::move(map[outedge->sink()]));
-		map.erase(outedge->sink());
-		to_visit.erase(outedge->sink());
+	for (auto it = split->begin_outedges(); it != split->end_outedges(); it++) {
+		branch->add_child(std::move(map[it->sink()]));
+		map.erase(it->sink());
+		to_visit.erase(it->sink());
 	}
 
 	map[reduction] = std::move(branch);

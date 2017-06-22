@@ -96,19 +96,6 @@ cfg_node::noutedges() const noexcept
 	return outedges_.size();
 }
 
-std::vector<cfg_edge*>
-cfg_node::outedges() const
-{
-	std::vector<cfg_edge*> edges;
-	std::unordered_set<std::unique_ptr<cfg_edge>>::const_iterator it;
-	for ( it = outedges_.begin(); it != outedges_.end(); it++) {
-		JLM_DEBUG_ASSERT(it->get()->source() == this);
-		edges.push_back(it->get());
-	}
-
-	return edges;
-}
-
 void
 cfg_node::divert_inedges(cfg_node * new_successor)
 {
@@ -184,9 +171,8 @@ cfg_node::single_successor() const noexcept
 bool
 cfg_node::has_selfloop_edge() const noexcept
 {
-	std::vector<cfg_edge*> edges = outedges();
-	for (auto edge : edges) {
-		if (edge->is_selfloop())
+	for (auto it = begin_outedges(); it != end_outedges(); it++) {
+		if (it->is_selfloop())
 			return true;
 	}
 
