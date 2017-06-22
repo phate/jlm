@@ -58,7 +58,7 @@ private:
 	size_t index_;
 };
 
-class cfg_node {
+class cfg_node final {
 public:
 	virtual ~cfg_node();
 
