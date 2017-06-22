@@ -43,51 +43,40 @@ cfg_edge::divert(cfg_node * new_sink)
 cfg_node *
 cfg_edge::split()
 {
+	auto sink = sink_;
 	auto bb = create_basic_block_node(source_->cfg());
-	auto i = sink_->inedges_.erase(std::find(sink_->inedges_.begin(), sink_->inedges_.end(), this));
-
-	std::unique_ptr<cfg_edge> edge(new jlm::cfg_edge(bb, sink_, 0));
-	cfg_edge * e = edge.get();
-	bb->outedges_.insert(std::move(edge));
-	sink_->inedges_.insert(i, e);
-
-	sink_ = bb;
-	bb->inedges_.push_back(this);
-
+	divert(bb);
+	bb->add_outedge(sink, 0);
 	return bb;
 }
 
 cfg_edge *
-cfg_node::add_outedge(cfg_node * successor, size_t index)
+cfg_node::add_outedge(cfg_node * sink, size_t index)
 {
-	std::unique_ptr<cfg_edge> edge(new cfg_edge(this, successor, index));
-	cfg_edge * e = edge.get();
-	outedges_.insert(std::move(edge));
-	successor->inedges_.push_back(e);
-	edge.release();
-	return e;
+	outedges_.push_back(std::make_unique<cfg_edge>(this, sink, noutedges()));
+	sink->inedges_.push_back(outedges_.back().get());
+	return outedges_.back().get();
 }
 
 void
 cfg_node::remove_outedge(cfg_edge * edge)
 {
-	std::unique_ptr<cfg_edge> e(edge);
-	std::unordered_set<std::unique_ptr<cfg_edge>>::const_iterator it = outedges_.find(e);
-	if (it != outedges_.end()) {
-		JLM_DEBUG_ASSERT(edge->source() == this);
-		edge->sink()->inedges_.remove(edge);
-		outedges_.erase(it);
+	JLM_DEBUG_ASSERT(edge->source() == this);
+
+	auto index = edge->index();
+	edge->sink()->inedges_.remove(edge);
+	for (size_t n = index+1; n < noutedges(); n++) {
+		outedges_[n-1] = std::move(outedges_[n]);
+		outedges_[n-1]->index_ = outedges_[n-1]->index_-1;
 	}
-	e.release();
+	outedges_.resize(noutedges()-1);
 }
 
 void
 cfg_node::remove_outedges()
 {
-	while (outedges_.size() != 0) {
-		JLM_DEBUG_ASSERT(outedges_.begin()->get()->source() == this);
-		remove_outedge(outedges_.begin()->get());
-	}
+	while (noutedges() != 0)
+		remove_outedge(outedges_[noutedges()-1].get());
 }
 
 size_t
@@ -158,10 +147,9 @@ cfg_node::single_successor() const noexcept
 	if (noutedges() == 0)
 		return false;
 
-	std::unordered_set<std::unique_ptr<cfg_edge>>::const_iterator it;
-	for (it = outedges_.begin(); it != outedges_.end(); it++) {
-		JLM_DEBUG_ASSERT(it->get()->source() == this);
-		if ((*it)->sink() != (*outedges_.begin())->sink())
+	for (auto it = begin_outedges(); it != end_outedges(); it++) {
+		JLM_DEBUG_ASSERT(it->source() == this);
+		if (it->sink() != begin_outedges()->sink())
 			return false;
 	}
 

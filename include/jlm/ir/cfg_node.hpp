@@ -58,14 +58,15 @@ private:
 	cfg_node * source_;
 	cfg_node * sink_;
 	size_t index_;
+
+	friend cfg_node;
 };
 
 class cfg_node final {
 	class const_outedge_iterator final {
 	public:
 		inline
-		const_outedge_iterator(
-			const std::unordered_set<std::unique_ptr<cfg_edge>>::const_iterator & it)
+		const_outedge_iterator(const std::vector<std::unique_ptr<cfg_edge>>::const_iterator & it)
 		: it_(it)
 		{}
 
@@ -109,7 +110,7 @@ class cfg_node final {
 		}
 
 	private:
-		std::unordered_set<std::unique_ptr<cfg_edge>>::const_iterator it_;
+		std::vector<std::unique_ptr<cfg_edge>>::const_iterator it_;
 	};
 
 public:
@@ -192,7 +193,7 @@ public:
 private:
 	jlm::cfg * cfg_;
 	std::unique_ptr<jlm::attribute> attr_;
-	std::unordered_set<std::unique_ptr<cfg_edge>> outedges_;
+	std::vector<std::unique_ptr<cfg_edge>> outedges_;
 	std::list<cfg_edge*> inedges_;
 
 	friend cfg_edge;
