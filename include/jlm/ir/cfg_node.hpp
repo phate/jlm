@@ -154,12 +154,10 @@ public:
 	void remove_outedges();
 
 	inline cfg_edge *
-	outedge(size_t index) const
+	outedge(size_t n) const
 	{
-		JLM_DEBUG_ASSERT(index < noutedges());
-		auto it = outedges_.begin();
-		std::advance(it, index);
-		return it->get();
+		JLM_DEBUG_ASSERT(n < noutedges());
+		return outedges_[n].get();
 	}
 
 	size_t noutedges() const noexcept;
