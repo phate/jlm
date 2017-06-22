@@ -141,7 +141,13 @@ public:
 
 	inline jlm::cfg * cfg() const noexcept { return cfg_; }
 
-	cfg_edge * add_outedge(cfg_node * successor, size_t index);
+	cfg_edge *
+	add_outedge(cfg_node * sink)
+	{
+		outedges_.push_back(std::make_unique<cfg_edge>(this, sink, noutedges()));
+		sink->inedges_.push_back(outedges_.back().get());
+		return outedges_.back().get();
+	}
 
 	void remove_outedge(cfg_edge * edge);
 

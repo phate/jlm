@@ -77,7 +77,7 @@ reduce_linear(
 	auto reduction = create_basic_block_node(entry->cfg());
 	entry->divert_inedges(reduction);
 	for (auto it = exit->begin_outedges(); it != exit->end_outedges(); it++)
-		reduction->add_outedge(it->sink(), it->index());
+		reduction->add_outedge(it->sink());
 	exit->remove_outedges();
 
 	map[reduction] = create_linear_node(std::move(map[entry]), std::move(map[exit]));
@@ -108,7 +108,7 @@ reduce_loop(
 			break;
 		}
 	}
-	reduction->add_outedge(node->outedge(0)->sink(), 0);
+	reduction->add_outedge(node->outedge(0)->sink());
 	node->remove_outedges();
 	node->divert_inedges(reduction);
 
@@ -143,7 +143,7 @@ reduce_branch(
 	auto reduction = create_basic_block_node(split->cfg());
 	split->divert_inedges(reduction);
 	join->remove_inedges();
-	reduction->add_outedge(join, 0);
+	reduction->add_outedge(join);
 
 	auto branch = create_branch_node(std::move(map[split]));
 	for (auto it = split->begin_outedges(); it != split->end_outedges(); it++) {

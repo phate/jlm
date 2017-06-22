@@ -46,17 +46,11 @@ cfg_edge::split()
 	auto sink = sink_;
 	auto bb = create_basic_block_node(source_->cfg());
 	divert(bb);
-	bb->add_outedge(sink, 0);
+	bb->add_outedge(sink);
 	return bb;
 }
 
-cfg_edge *
-cfg_node::add_outedge(cfg_node * sink, size_t index)
-{
-	outedges_.push_back(std::make_unique<cfg_edge>(this, sink, noutedges()));
-	sink->inedges_.push_back(outedges_.back().get());
-	return outedges_.back().get();
-}
+/* node */
 
 void
 cfg_node::remove_outedge(cfg_edge * edge)

@@ -100,14 +100,14 @@ static inline void
 convert_region(jive::region & region, context & ctx)
 {
 	auto entry = create_basic_block_node(ctx.cfg());
-	ctx.lpbb()->add_outedge(entry, 0);
+	ctx.lpbb()->add_outedge(entry);
 	ctx.set_lpbb(entry);
 
 	for (const auto & node : jive::topdown_traverser(&region))
 		convert_node(*node, ctx);
 
 	auto exit = create_basic_block_node(ctx.cfg());
-	ctx.lpbb()->add_outedge(exit, 0);
+	ctx.lpbb()->add_outedge(exit);
 	ctx.set_lpbb(exit);
 }
 
@@ -145,7 +145,7 @@ create_cfg(const jive::node & node, context & ctx)
 	for (size_t n = 0; n < region->nresults(); n++)
 		cfg->exit().append_result(ctx.variable(region->result(n)->origin()));
 
-	ctx.lpbb()->add_outedge(cfg->exit_node(),  0);
+	ctx.lpbb()->add_outedge(cfg->exit_node());
 	ctx.set_lpbb(nullptr);
 	ctx.set_cfg(nullptr);
 
@@ -184,7 +184,7 @@ convert_gamma_node(const jive::node & node, context & ctx)
 	auto entry = create_basic_block_node(cfg);
 	auto exit = create_basic_block_node(cfg);
 	append_tac(entry, create_branch_tac(nalternatives, ctx.variable(predicate)));
-	ctx.lpbb()->add_outedge(entry, 0);
+	ctx.lpbb()->add_outedge(entry);
 
 	/* convert gamma regions */
 	for (size_t n = 0; n < snode.nsubregions(); n++) {
@@ -198,11 +198,11 @@ convert_gamma_node(const jive::node & node, context & ctx)
 
 		/* convert subregion */
 		auto region_entry = create_basic_block_node(cfg);
-		entry->add_outedge(region_entry, n);
+		entry->add_outedge(region_entry);
 		ctx.set_lpbb(region_entry);
 		convert_region(*subregion, ctx);
 
-		ctx.lpbb()->add_outedge(exit, 0);
+		ctx.lpbb()->add_outedge(exit);
 	}
 
 	/* add phi instructions */
@@ -228,7 +228,7 @@ convert_theta_node(const jive::node & node, context & ctx)
 	auto predicate = subregion->result(0)->origin();
 
 	auto entry = create_basic_block_node(ctx.cfg());
-	ctx.lpbb()->add_outedge(entry, 0);
+	ctx.lpbb()->add_outedge(entry);
 	ctx.set_lpbb(entry);
 
 	/* create loop variables and add arguments to context */
@@ -254,8 +254,8 @@ convert_theta_node(const jive::node & node, context & ctx)
 
 	append_tac(ctx.lpbb(), create_branch_tac(2, ctx.variable(predicate)));
 	auto exit = create_basic_block_node(ctx.cfg());
-	ctx.lpbb()->add_outedge(exit, 0);
-	ctx.lpbb()->add_outedge(entry, 1);
+	ctx.lpbb()->add_outedge(exit);
+	ctx.lpbb()->add_outedge(entry);
 	ctx.set_lpbb(exit);
 }
 

@@ -73,7 +73,7 @@ copy_structural(const jlm::cfg & in)
 	/* establish control flow */
 	for (const auto & node : in) {
 		for (auto it = node.begin_outedges(); it != node.end_outedges(); it++)
-			node_map[&node]->add_outedge(node_map[it->sink()], it->index());
+			node_map[&node]->add_outedge(node_map[it->sink()]);
 	}
 
 	return out;
@@ -206,7 +206,7 @@ reduce_loop(
 		}
 	}
 
-	reduction->add_outedge(node->outedge(0)->sink(), 0);
+	reduction->add_outedge(node->outedge(0)->sink());
 	node->remove_outedges();
 	node->divert_inedges(reduction);
 
@@ -226,7 +226,7 @@ reduce_linear(
 	auto reduction = create_basic_block_node(cfg);
 	entry->divert_inedges(reduction);
 	for (auto it = exit->begin_outedges(); it != exit->end_outedges(); it++)
-		reduction->add_outedge(it->sink(), it->index());
+		reduction->add_outedge(it->sink());
 	exit->remove_outedges();
 
 	to_visit.erase(entry);
@@ -245,7 +245,7 @@ reduce_branch(
 
 	auto reduction = create_basic_block_node(cfg);
 	split->divert_inedges(reduction);
-	reduction->add_outedge(join, 0);
+	reduction->add_outedge(join);
 	for (auto it = split->begin_outedges(); it != split->end_outedges(); it++) {
 		if (it->sink() == join) {
 			split->remove_outedge(it.edge());
@@ -270,7 +270,7 @@ reduce_proper_branch(
 	auto reduction = create_basic_block_node(split->cfg());
 	split->divert_inedges(reduction);
 	join->remove_inedges();
-	reduction->add_outedge(join, 0);
+	reduction->add_outedge(join);
 	for (auto it = split->begin_outedges(); it != split->end_outedges(); it++)
 		to_visit.erase(it->sink());
 

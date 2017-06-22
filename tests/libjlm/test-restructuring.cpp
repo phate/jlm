@@ -23,11 +23,11 @@ test_dowhile()
 	auto bb3 = create_basic_block_node(&cfg);
 
 	cfg.exit_node()->divert_inedges(bb1);
-	bb1->add_outedge(bb2, 0);
-	bb2->add_outedge(bb3, 1);
-	bb2->add_outedge(bb2, 0);
-	bb3->add_outedge(cfg.exit_node(), 1);
-	bb3->add_outedge(bb1, 0);
+	bb1->add_outedge(bb2);
+	bb2->add_outedge(bb2);
+	bb2->add_outedge(bb3);
+	bb3->add_outedge(bb1);
+	bb3->add_outedge(cfg.exit_node());
 
 	size_t nnodes = cfg.nnodes();
 	restructure(&cfg);

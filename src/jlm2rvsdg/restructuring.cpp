@@ -181,12 +181,14 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit,
 				attr = static_cast<basic_block*>(&ass->attribute());
 				jive::bits::constant_op op(jive::bits::value_repr(nbits, ve[edge->sink()]));
 				attr->append(create_tac(op, {}, {q}));
-				ass->add_outedge(new_ve, 0);
+				ass->add_outedge(new_ve);
 				edge->divert(ass);
 			}
 
-			for (auto v : ve)
-				new_ve->add_outedge(v.first, v.second);
+			for (auto v : ve) {
+				auto e = new_ve->add_outedge(v.first);
+				JLM_DEBUG_ASSERT(e->index() == v.second);
+			}
 		} else
 			new_ve = ve.begin()->first;
 
@@ -204,8 +206,10 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit,
 			attr->append(create_tac(op, {q}, create_result_variables(cfg->module(), op)));
 			attr->append(create_branch_tac(vx.size(), attr->last()->output(0)));
 
-			for (auto v : vx)
-				new_vx->add_outedge(v.first, v.second);
+			for (auto v : vx) {
+				auto e = new_vx->add_outedge(v.first);
+				JLM_DEBUG_ASSERT(e->index() == v.second);
+			}
 		} else
 			new_vx = vx.begin()->first;
 
@@ -217,7 +221,7 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit,
 				jive::bits::constant_op op(jive::bits::value_repr(nbits, vx[edge->sink()]));
 				attr->append(create_tac(op, {}, {q}));
 			}
-			ass->add_outedge(vt, 0);
+			ass->add_outedge(vt);
 			edge->divert(ass);
 		}
 
@@ -231,11 +235,11 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit,
 				jive::bits::constant_op op(jive::bits::value_repr(nbits, ve[edge->sink()]));
 				attr->append(create_tac(op, {}, {q}));
 			}
-			ass->add_outedge(vt, 0);
+			ass->add_outedge(vt);
 			edge->divert(ass);
 		}
 
-		vt->add_outedge(new_vx, 0);
+		vt->add_outedge(new_vx);
 		back_edges.push_back(jlm::cfg_edge(vt, new_ve, 1));
 
 		restructure_loops(new_ve, vt, back_edges);
@@ -351,7 +355,7 @@ restructure_branches(jlm::cfg_node * start, jlm::cfg_node * end)
 
 			/* more than one branch out edge leads to the continuation point */
 			auto null = create_basic_block_node(cfg);
-			null->add_outedge(cpoints.begin()->first, 0);
+			null->add_outedge(cpoints.begin()->first);
 			for (auto edge : branch_out_edges[n])
 				edge->divert(null);
 			restructure_branches(af[n]->sink(), null);
@@ -374,7 +378,7 @@ restructure_branches(jlm::cfg_node * start, jlm::cfg_node * end)
 	attr->append(create_tac(op, {p}, create_result_variables(cfg->module(), op)));
 	attr->append(create_branch_tac(cpoints.size(), attr->last()->output(0)));
 	for (auto it = cpoints.begin(); it != cpoints.end(); it++)
-		vt->add_outedge(it->first, it->second);
+		vt->add_outedge(it->first);
 
 	JLM_DEBUG_ASSERT(branch_out_edges.size() == af.size());
 	for (size_t n = 0; n < af.size(); n++) {
@@ -385,7 +389,7 @@ restructure_branches(jlm::cfg_node * start, jlm::cfg_node * end)
 			attr = static_cast<basic_block*>(&ass->attribute());
 			jive::bits::constant_op op(jive::bits::value_repr(nbits, cpoints[boe->sink()]));
 			attr->append(create_tac(op, {}, {p}));
-			ass->add_outedge(vt, 0);
+			ass->add_outedge(vt);
 			boe->divert(ass);
 			/* if the branch subgraph is not empty, we need to restructure it */
 			if (boe != af[n])
@@ -395,13 +399,13 @@ restructure_branches(jlm::cfg_node * start, jlm::cfg_node * end)
 
 		/* more than one branch out edge */
 		auto null = create_basic_block_node(cfg);
-		null->add_outedge(vt, 0);
+		null->add_outedge(vt);
 		for (auto edge : branch_out_edges[n]) {
 			auto ass = create_basic_block_node(cfg);
 			attr = static_cast<basic_block*>(&ass->attribute());
 			jive::bits::constant_op op(jive::bits::value_repr(nbits, cpoints[edge->sink()]));
 			attr->append(create_tac(op, {}, {p}));
-			ass->add_outedge(null, 0);
+			ass->add_outedge(null);
 			edge->divert(ass);
 		}
 		restructure_branches(af[n]->sink(), null);
@@ -423,7 +427,7 @@ restructure(jlm::cfg * cfg)
 	/* insert back edges */
 	std::unordered_set<const jlm::cfg_edge*> edges;
 	for (auto edge : back_edges)
-		edges.insert(edge.source()->add_outedge(edge.sink(), edge.index()));
+		edges.insert(edge.source()->add_outedge(edge.sink()));
 
 	JLM_DEBUG_ASSERT(is_proper_structured(*cfg));
 	return edges;

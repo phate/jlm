@@ -42,27 +42,27 @@ create_cfg_structure(
 	for (; it != function.getBasicBlockList().end(); it++)
 			bbmap.insert_basic_block(&(*it), create_basic_block_node(cfg));
 
-	entry_block->add_outedge(bbmap[&function.getEntryBlock()], 0);
+	entry_block->add_outedge(bbmap[&function.getEntryBlock()]);
 
 	/* create CFG structure */
 	it = function.getBasicBlockList().begin();
 	for (; it != function.getBasicBlockList().end(); it++) {
 		const llvm::TerminatorInst * instr = it->getTerminator();
 		if (dynamic_cast<const llvm::ReturnInst*>(instr)) {
-			bbmap[&(*it)]->add_outedge(cfg->exit_node(), 0);
+			bbmap[&(*it)]->add_outedge(cfg->exit_node());
 			continue;
 		}
 
 		if (dynamic_cast<const llvm::UnreachableInst*>(instr)) {
-			bbmap[&(*it)]->add_outedge(cfg->exit_node(), 0);
+			bbmap[&(*it)]->add_outedge(cfg->exit_node());
 			continue;
 		}
 
 		if (auto branch = dynamic_cast<const llvm::BranchInst*>(instr)) {
 			if (branch->isConditional()) {
 				JLM_DEBUG_ASSERT(branch->getNumSuccessors() == 2);
-				bbmap[&(*it)]->add_outedge(bbmap[branch->getSuccessor(0)], 1);
-				bbmap[&(*it)]->add_outedge(bbmap[branch->getSuccessor(1)], 0);
+				bbmap[&(*it)]->add_outedge(bbmap[branch->getSuccessor(1)]);
+				bbmap[&(*it)]->add_outedge(bbmap[branch->getSuccessor(0)]);
 				continue;
 			}
 		}
@@ -71,23 +71,25 @@ create_cfg_structure(
 			for (auto c = swi->case_begin(); c != swi->case_end(); c++) {
 				JLM_DEBUG_ASSERT(c != swi->case_default());
 				auto bb = create_basic_block_node(cfg);
-				bbmap[&(*it)]->add_outedge(bb, c.getCaseIndex());
-				bb->add_outedge(bbmap[c.getCaseSuccessor()], 0);
+				auto e = bbmap[&(*it)]->add_outedge(bb);
+				JLM_DEBUG_ASSERT(e->index() == c.getCaseIndex());
+				bb->add_outedge(bbmap[c.getCaseSuccessor()]);
 			}
 			auto bb = create_basic_block_node(cfg);
-			bbmap[&(*it)]->add_outedge(bb, swi->getNumCases());
-			bb->add_outedge(bbmap[swi->case_default().getCaseSuccessor()], 0);
+			auto e = bbmap[&(*it)]->add_outedge(bb);
+			JLM_DEBUG_ASSERT(e->index() == swi->getNumCases());
+			bb->add_outedge(bbmap[swi->case_default().getCaseSuccessor()]);
 			continue;
 		}
 
 		for (size_t n = 0; n < instr->getNumSuccessors(); n++)
-			bbmap[&(*it)]->add_outedge(bbmap[instr->getSuccessor(n)], n);
+			bbmap[&(*it)]->add_outedge(bbmap[instr->getSuccessor(n)]);
 	}
 
 	if (cfg->exit_node()->ninedges() > 1) {
 		auto bb = create_basic_block_node(cfg);
 		cfg->exit_node()->divert_inedges(bb);
-		bb->add_outedge(cfg->exit_node(), 0);
+		bb->add_outedge(cfg->exit_node());
 	}
 
 	return entry_block;

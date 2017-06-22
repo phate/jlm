@@ -55,7 +55,7 @@ test_linear_reduction()
 	jlm::cfg cfg(module);
 	auto bb = create_basic_block_node(&cfg);
 	cfg.exit_node()->divert_inedges(bb);
-	bb->add_outedge(cfg.exit_node(), 0);
+	bb->add_outedge(cfg.exit_node());
 
 	auto root = jlm::agg::aggregate(cfg);
 	jlm::agg::view(*root, stdout);
@@ -82,9 +82,9 @@ test_loop_reduction()
 	auto bb1 = create_basic_block_node(&cfg);
 	auto bb2 = create_basic_block_node(&cfg);
 	cfg.exit_node()->divert_inedges(bb1);
-	bb1->add_outedge(bb2, 0);
-	bb2->add_outedge(cfg.exit_node(), 0);
-	bb2->add_outedge(bb1, 1);
+	bb1->add_outedge(bb2);
+	bb2->add_outedge(cfg.exit_node());
+	bb2->add_outedge(bb1);
 
 	auto root = jlm::agg::aggregate(cfg);
 	jlm::agg::view(*root, stdout);
@@ -127,13 +127,13 @@ test_branch_reduction()
 	auto join = create_basic_block_node(&cfg);
 
 	cfg.exit_node()->divert_inedges(split);
-	split->add_outedge(bb1, 0);
-	split->add_outedge(bb3, 1);
-	bb1->add_outedge(bb2, 0);
-	bb2->add_outedge(join, 0);
-	bb3->add_outedge(bb4, 0);
-	bb4->add_outedge(join, 0);
-	join->add_outedge(cfg.exit_node(), 0);
+	split->add_outedge(bb1);
+	split->add_outedge(bb3);
+	bb1->add_outedge(bb2);
+	bb2->add_outedge(join);
+	bb3->add_outedge(bb4);
+	bb4->add_outedge(join);
+	join->add_outedge(cfg.exit_node());
 
 	auto root = jlm::agg::aggregate(cfg);
 	jlm::agg::view(*root, stdout);
@@ -186,15 +186,15 @@ test_branch_loop_reduction()
 	auto join = create_basic_block_node(&cfg);
 
 	cfg.exit_node()->divert_inedges(split);
-	split->add_outedge(bb1, 0);
-	split->add_outedge(bb3, 1);
-	bb1->add_outedge(bb2, 0);
-	bb2->add_outedge(join, 0);
-	bb2->add_outedge(bb1, 1);
-	bb3->add_outedge(bb4, 0);
-	bb4->add_outedge(join, 0);
-	bb4->add_outedge(bb3, 1);
-	join->add_outedge(cfg.exit_node(), 0);
+	split->add_outedge(bb1);
+	split->add_outedge(bb3);
+	bb1->add_outedge(bb2);
+	bb2->add_outedge(join);
+	bb2->add_outedge(bb1);
+	bb3->add_outedge(bb4);
+	bb4->add_outedge(join);
+	bb4->add_outedge(bb3);
+	join->add_outedge(cfg.exit_node());
 
 	auto root = jlm::agg::aggregate(cfg);
 	jlm::agg::view(*root, stdout);
@@ -257,13 +257,13 @@ test_loop_branch_reduction()
 	auto bb3 = create_basic_block_node(&cfg);
 
 	cfg.exit_node()->divert_inedges(split);
-	split->add_outedge(bb1, 0);
-	split->add_outedge(bb2, 1);
-	bb1->add_outedge(join, 0);
-	bb2->add_outedge(join, 0);
-	join->add_outedge(bb3, 0);
-	bb3->add_outedge(cfg.exit_node(), 0);
-	bb3->add_outedge(split, 1);
+	split->add_outedge(bb1);
+	split->add_outedge(bb2);
+	bb1->add_outedge(join);
+	bb2->add_outedge(join);
+	join->add_outedge(bb3);
+	bb3->add_outedge(cfg.exit_node());
+	bb3->add_outedge(split);
 
 	auto root = jlm::agg::aggregate(cfg);
 	jlm::agg::view(*root, stdout);
@@ -318,12 +318,12 @@ test_ifthen_reduction()
 	auto join = create_basic_block_node(&cfg);
 
 	cfg.exit_node()->divert_inedges(split);
-	split->add_outedge(n2, 1);
-	split->add_outedge(n4, 0);
-	n2->add_outedge(n3, 0);
-	n3->add_outedge(join, 0);
-	n4->add_outedge(join, 0);
-	join->add_outedge(cfg.exit_node(), 0);
+	split->add_outedge(n4);
+	split->add_outedge(n2);
+	n2->add_outedge(n3);
+	n3->add_outedge(join);
+	n4->add_outedge(join);
+	join->add_outedge(cfg.exit_node());
 
 	auto root = jlm::agg::aggregate(cfg);
 	jlm::agg::view(*root, stdout);

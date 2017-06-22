@@ -79,7 +79,7 @@ cfg::cfg(jlm::module & module)
 {
 	entry_ = create_entry_node(this);
 	exit_ = create_exit_node(this);
-	entry_->add_outedge(exit_, 0);
+	entry_->add_outedge(exit_);
 }
 
 cfg_node *

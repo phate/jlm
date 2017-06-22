@@ -58,7 +58,7 @@ destruct_ssa(jlm::cfg & cfg)
 		}
 
 		phi_block->divert_inedges(ass_block);
-		ass_block->add_outedge(phi_block, 0);
+		ass_block->add_outedge(phi_block);
 	}
 }
 
