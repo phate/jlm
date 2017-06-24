@@ -63,6 +63,8 @@ private:
 };
 
 class cfg_node final {
+	typedef std::list<cfg_edge*>::const_iterator const_inedge_iterator;
+
 	class const_outedge_iterator final {
 	public:
 		inline
@@ -187,13 +189,23 @@ public:
 		return const_outedge_iterator(outedges_.end());
 	}
 
+	inline const_inedge_iterator
+	begin_inedges() const
+	{
+		return inedges_.begin();
+	}
+
+	inline const_inedge_iterator
+	end_inedges() const
+	{
+		return inedges_.end();
+	}
+
 	void divert_inedges(jlm::cfg_node * new_successor);
 
 	void remove_inedges();
 
 	size_t ninedges() const noexcept;
-
-	std::list<cfg_edge*> inedges() const;
 
 	bool no_predecessor() const noexcept;
 

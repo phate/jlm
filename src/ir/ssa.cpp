@@ -47,9 +47,9 @@ destruct_ssa(jlm::cfg & cfg)
 			auto v = cfg.module().create_variable(phi->type(), false);
 
 			std::unordered_map<cfg_node*, cfg_edge*> edges;
-			for (const auto & inedge : phi_block->inedges()) {
-				JLM_DEBUG_ASSERT(edges.find(inedge->source()) == edges.end());
-				edges[inedge->source()] = inedge;
+			for (auto it = phi_block->begin_inedges(); it != phi_block->end_inedges(); it++) {
+				JLM_DEBUG_ASSERT(edges.find((*it)->source()) == edges.end());
+				edges[(*it)->source()] = *it;
 			}
 
 			const variable * value;

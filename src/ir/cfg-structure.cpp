@@ -181,9 +181,9 @@ is_T2(const jlm::cfg_node * node) noexcept
 	if (node->ninedges() == 0)
 		return false;
 
-	auto source = node->inedges().front()->source();
-	for (const auto & e : node->inedges()) {
-		if (e->source() != source)
+	auto source = (*node->begin_inedges())->source();
+	for (auto it = node->begin_inedges(); it != node->end_inedges(); it++) {
+		if ((*it)->source() != source)
 			return false;
 	}
 
@@ -298,7 +298,7 @@ reduce_T2(
 {
 	JLM_DEBUG_ASSERT(is_T2(node));
 
-	auto p = node->inedges().front()->source();
+	auto p = (*node->begin_inedges())->source();
 	p->divert_inedges(node);
 	p->remove_outedges();
 	to_visit.erase(p);

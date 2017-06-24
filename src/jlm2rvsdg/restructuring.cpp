@@ -42,10 +42,9 @@ find_entries_and_exits(
 	std::unordered_set<jlm::cfg_edge*> & ar)
 {
 	for (auto node : scc) {
-		std::list<jlm::cfg_edge*> inedges = node->inedges();
-		for (auto edge : inedges) {
-			if (scc.find(edge->source()) == scc.end()) {
-				ae.insert(edge);
+		for (auto it = node->begin_inedges(); it != node->end_inedges(); it++) {
+			if (scc.find((*it)->source()) == scc.end()) {
+				ae.insert(*it);
 				if (ve.find(node) == ve.end())
 					ve.insert(std::make_pair(node, ve.size()));
 			}
@@ -272,9 +271,8 @@ find_dominator_graph(const jlm::cfg_edge * edge)
 			continue;
 
 		bool accept = true;
-		std::list<jlm::cfg_edge*> inedges = node->inedges();
-		for (auto e : inedges) {
-			if (edges.find(e) == edges.end()) {
+		for (auto it = node->begin_inedges(); it != node->end_inedges(); it++) {
+			if (edges.find(*it) == edges.end()) {
 				accept = false;
 				break;
 			}

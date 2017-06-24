@@ -81,12 +81,6 @@ cfg_node::ninedges() const noexcept
 	return inedges_.size();
 }
 
-std::list<cfg_edge*>
-cfg_node::inedges() const
-{
-	return inedges_;
-}
-
 bool
 cfg_node::no_predecessor() const noexcept
 {
