@@ -21,13 +21,13 @@ bool
 phi_op::operator==(const operation & other) const noexcept
 {
 	const phi_op * op = dynamic_cast<const phi_op*>(&other);
-	return op && op->narguments_ == narguments_ && *op->type_ == *type_;
+	return op && op->nodes_ == nodes_ && *op->type_ == *type_;
 }
 
 size_t
 phi_op::narguments() const noexcept
 {
-	return narguments_;
+	return nodes_.size();
 }
 
 const jive::base::type &

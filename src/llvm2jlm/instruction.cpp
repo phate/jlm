@@ -270,29 +270,20 @@ convert_store_instruction(llvm::Instruction * i, context & ctx)
 }
 
 static inline tacsvector_t
-convert_phi_instruction(llvm::Instruction * i, context & ctx)
+convert_phi_instruction(llvm::Instruction * instruction, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::PHINode*>(i));
-	const llvm::PHINode * phi = static_cast<const llvm::PHINode*>(i);
+	JLM_DEBUG_ASSERT(instruction->getOpcode() == llvm::Instruction::PHI);
+	auto i = llvm::cast<llvm::PHINode>(instruction);
 
 	tacsvector_t tacs;
-	std::vector<const variable*> operands;
-	for (auto edge : ctx.lookup_basic_block(i->getParent())->inedges()) {
-		auto tmp = edge->source();
-		const llvm::BasicBlock * ib = nullptr;
-		if (ctx.has_basic_block(tmp)) {
-			ib = ctx.lookup_basic_block(tmp);
-		} else {
-			JLM_DEBUG_ASSERT(tmp->ninedges() == 1);
-			ib = ctx.lookup_basic_block(tmp->inedges().front()->source());
-		}
-
-		operands.push_back(convert_value(phi->getIncomingValueForBlock(ib), tacs, ctx));
+	std::vector<std::pair<const variable*, cfg_node*>> arguments;
+	for (auto it = i->block_begin(); it != i->block_end(); it++) {
+		auto bb = ctx.lookup_basic_block(*it);
+		auto v = convert_value(i->getIncomingValueForBlock(*it), tacs, ctx);
+		arguments.push_back(std::make_pair(v, bb));
 	}
 
-	JLM_DEBUG_ASSERT(operands.size() != 0);
-	phi_op op(operands.size(), operands[0]->type());
-	tacs.push_back(create_tac(op, operands, {ctx.lookup_value(phi)}));
+	tacs.push_back(create_phi_tac(arguments, {ctx.lookup_value(i)}));
 
 	return tacs;
 }

@@ -5,6 +5,7 @@
 
 #include <jlm/ir/basic_block.hpp>
 #include <jlm/ir/cfg.hpp>
+#include <jlm/ir/cfg-structure.hpp>
 #include <jlm/ir/cfg_node.hpp>
 #include <jlm/ir/module.hpp>
 #include <jlm/ir/operators.hpp>
@@ -18,6 +19,8 @@ namespace jlm {
 void
 destruct_ssa(jlm::cfg & cfg)
 {
+	JLM_DEBUG_ASSERT(is_valid(cfg));
+
 	/* find all blocks containing phis */
 	std::unordered_set<cfg_node*> phi_blocks;
 	for (auto & node : cfg) {
@@ -40,19 +43,22 @@ destruct_ssa(jlm::cfg & cfg)
 			if (!dynamic_cast<const phi_op*>(&tac->operation()))
 				break;
 
-			const phi_op * phi = static_cast<const phi_op*>(&tac->operation());
+			auto phi = static_cast<const phi_op*>(&tac->operation());
 			auto v = cfg.module().create_variable(phi->type(), false);
 
-			size_t n = 0;
-			const variable * value;
-			std::list<cfg_edge*> edges = phi_block->inedges();
-			for (auto it = edges.begin(); it != edges.end(); it++, n++) {
-				auto edge_block = (*it)->split();
-				auto edge_attr = static_cast<basic_block*>(&edge_block->attribute());
-
-				auto ass = create_assignment(v->type(), tac->input(n), v);
-				value = edge_attr->append(std::move(ass))->output(0);
+			std::unordered_map<cfg_node*, cfg_edge*> edges;
+			for (const auto & inedge : phi_block->inedges()) {
+				JLM_DEBUG_ASSERT(edges.find(inedge->source()) == edges.end());
+				edges[inedge->source()] = inedge;
 			}
+
+			const variable * value;
+			for (size_t n = 0; n < tac->ninputs(); n++) {
+				JLM_DEBUG_ASSERT(edges.find(phi->node(n)) != edges.end());
+				auto bb = static_cast<basic_block*>(&edges[phi->node(n)]->split()->attribute());
+				value = bb->append(create_assignment(v->type(), tac->input(n), v))->output(0);
+			}
+
 			ass_attr->append(create_assignment(tac->output(0)->type(), value, tac->output(0)));
 			phi_attr->drop_first();
 		}

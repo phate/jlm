@@ -17,6 +17,8 @@
 
 namespace jlm {
 
+class cfg_node;
+
 /* phi operator */
 
 class phi_op final : public jive::simple_op {
@@ -24,21 +26,32 @@ public:
 	virtual
 	~phi_op() noexcept;
 
-	/* FIXME: check that number of arguments is not zero */
 	inline
-	phi_op(size_t narguments, const jive::base::type & type)
-	: narguments_(narguments)
+	phi_op(const std::vector<jlm::cfg_node*> & nodes, const jive::base::type & type)
+	: nodes_(nodes)
 	, type_(type.copy())
-	{}
+	{
+		if (nodes.size() < 2)
+			throw std::logic_error("Expected at least two arguments.");
+	}
 
 	inline
 	phi_op(const phi_op & other)
-	: narguments_(other.narguments_)
+	: nodes_(other.nodes_)
 	, type_(other.type_->copy())
 	{}
 
 	inline
-	phi_op(phi_op && other) = default;
+	phi_op(phi_op && other)
+	: nodes_(other.nodes_)
+	, type_(std::move(other.type_))
+	{}
+
+	phi_op &
+	operator=(const phi_op &) = delete;
+
+	phi_op &
+	operator=(phi_op &&) = delete;
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
@@ -67,8 +80,15 @@ public:
 		return *type_;
 	}
 
+	inline cfg_node *
+	node(size_t n) const noexcept
+	{
+		JLM_DEBUG_ASSERT(n < narguments());
+		return nodes_[n];
+	}
+
 private:
-	size_t narguments_;
+	std::vector<cfg_node*> nodes_;
 	std::unique_ptr<jive::base::type> type_;
 };
 
@@ -79,10 +99,19 @@ is_phi_op(const jive::operation & op)
 }
 
 static inline std::unique_ptr<jlm::tac>
-create_phi_tac(const std::vector<const variable*> & arguments, const variable * result)
+create_phi_tac(
+	const std::vector<std::pair<const variable*, cfg_node*>> & arguments,
+	const variable * result)
 {
-	phi_op phi(arguments.size(), result->type());
-	return create_tac(phi, arguments, {result});
+	std::vector<cfg_node*> nodes;
+	std::vector<const variable*> variables;
+	for (const auto & p : arguments) {
+		nodes.push_back(p.second);
+		variables.push_back(p.first);
+	}
+
+	phi_op phi(nodes, result->type());
+	return create_tac(phi, variables, {result});
 }
 
 /* assignment operator */

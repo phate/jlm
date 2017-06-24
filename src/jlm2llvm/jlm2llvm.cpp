@@ -164,11 +164,10 @@ convert_cfg(const jlm::cfg & cfg, llvm::Function & f, context & ctx)
 				continue;
 
 			JLM_DEBUG_ASSERT(node->ninedges() == tac->ninputs());
+			auto & op = *static_cast<const jlm::phi_op*>(&tac->operation());
 			auto phi = llvm::dyn_cast<llvm::PHINode>(ctx.value(tac->output(0)));
-			for (size_t n = 0; n < tac->ninputs(); n++) {
-				auto bb = ctx.basic_block((*std::next(node->inedges().begin(), n))->source());
-				phi->addIncoming(ctx.value(tac->input(n)), bb);
-			}
+			for (size_t n = 0; n < tac->ninputs(); n++)
+				phi->addIncoming(ctx.value(tac->input(n)), ctx.basic_block(op.node(n)));
 		}
 	}
 }

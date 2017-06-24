@@ -181,6 +181,7 @@ convert_gamma_node(const jive::node & node, context & ctx)
 	auto & module = ctx.module();
 	auto cfg = ctx.cfg();
 
+	std::vector<cfg_node*> phi_nodes;
 	auto entry = create_basic_block_node(cfg);
 	auto exit = create_basic_block_node(cfg);
 	append_tac(entry, create_branch_tac(nalternatives, ctx.variable(predicate)));
@@ -202,15 +203,18 @@ convert_gamma_node(const jive::node & node, context & ctx)
 		ctx.set_lpbb(region_entry);
 		convert_region(*subregion, ctx);
 
+		phi_nodes.push_back(ctx.lpbb());
 		ctx.lpbb()->add_outedge(exit);
 	}
 
 	/* add phi instructions */
 	for (size_t n = 0; n < snode.noutputs(); n++) {
 		auto output = snode.output(n);
-		std::vector<const variable*> arguments;
-		for (size_t i = 0; i < snode.nsubregions(); i++)
-			arguments.push_back(ctx.variable(snode.subregion(i)->result(n)->origin()));
+		std::vector<std::pair<const variable*, cfg_node*>> arguments;
+		for (size_t i = 0; i < snode.nsubregions(); i++) {
+			auto v = ctx.variable(snode.subregion(i)->result(n)->origin());
+			arguments.push_back(std::make_pair(v, phi_nodes[i]));
+		}
 
 		auto v = module.create_variable(output->type(), false);
 		append_tac(exit, create_phi_tac(arguments, v));
@@ -227,6 +231,7 @@ convert_theta_node(const jive::node & node, context & ctx)
 	auto subregion = static_cast<const jive::structural_node*>(&node)->subregion(0);
 	auto predicate = subregion->result(0)->origin();
 
+	auto pre_entry = ctx.lpbb();
 	auto entry = create_basic_block_node(ctx.cfg());
 	ctx.lpbb()->add_outedge(entry);
 	ctx.set_lpbb(entry);
@@ -249,7 +254,7 @@ convert_theta_node(const jive::node & node, context & ctx)
 
 		auto v1 = ctx.variable(node.input(n-1)->origin());
 		auto v2 = ctx.variable(result->origin());
-		append_tac(entry, create_phi_tac({v1, v2}, lvs[n-1]));
+		append_tac(entry, create_phi_tac({{v1, pre_entry}, {v2, ctx.lpbb()}}, lvs[n-1]));
 	}
 
 	append_tac(ctx.lpbb(), create_branch_tac(2, ctx.variable(predicate)));
