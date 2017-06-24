@@ -35,9 +35,9 @@ cfg_edge::divert(cfg_node * new_sink)
 	if (sink_ == new_sink)
 		return;
 
-	sink_->inedges_.remove(this);
+	sink_->inedges_.erase(this);
 	sink_ = new_sink;
-	new_sink->inedges_.push_back(this);
+	new_sink->inedges_.insert(this);
 }
 
 cfg_node *
@@ -56,13 +56,6 @@ size_t
 cfg_node::noutedges() const noexcept
 {
 	return outedges_.size();
-}
-
-void
-cfg_node::divert_inedges(cfg_node * new_successor)
-{
-	while (inedges_.size())
-		inedges_.front()->divert(new_successor);
 }
 
 void

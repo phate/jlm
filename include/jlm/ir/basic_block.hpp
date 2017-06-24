@@ -10,6 +10,8 @@
 #include <jlm/ir/cfg_node.hpp>
 #include <jlm/ir/tac.hpp>
 
+#include <list>
+
 namespace jive {
 	class operation;
 }

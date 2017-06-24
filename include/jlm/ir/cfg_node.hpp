@@ -8,7 +8,6 @@
 
 #include <jlm/common.hpp>
 
-#include <list>
 #include <memory>
 #include <string>
 #include <unordered_set>
@@ -63,7 +62,7 @@ private:
 };
 
 class cfg_node final {
-	typedef std::list<cfg_edge*>::const_iterator const_inedge_iterator;
+	typedef std::unordered_set<cfg_edge*>::const_iterator const_inedge_iterator;
 
 	class const_outedge_iterator final {
 	public:
@@ -143,7 +142,7 @@ public:
 	add_outedge(cfg_node * sink)
 	{
 		outedges_.push_back(std::make_unique<cfg_edge>(this, sink, noutedges()));
-		sink->inedges_.push_back(outedges_.back().get());
+		sink->inedges_.insert(outedges_.back().get());
 		return outedges_.back().get();
 	}
 
@@ -153,7 +152,7 @@ public:
 		JLM_DEBUG_ASSERT(n < noutedges());
 		auto edge = outedges_[n].get();
 
-		edge->sink()->inedges_.remove(edge);
+		edge->sink()->inedges_.erase(edge);
 		for (size_t i = n+1; i < noutedges(); i++) {
 			outedges_[i-1] = std::move(outedges_[i]);
 			outedges_[i-1]->index_ = outedges_[i-1]->index_-1;
@@ -201,7 +200,12 @@ public:
 		return inedges_.end();
 	}
 
-	void divert_inedges(jlm::cfg_node * new_successor);
+	inline void
+	divert_inedges(jlm::cfg_node * new_successor)
+	{
+		while (ninedges())
+			(*begin_inedges())->divert(new_successor);
+	}
 
 	void remove_inedges();
 
@@ -223,7 +227,7 @@ private:
 	jlm::cfg * cfg_;
 	std::unique_ptr<jlm::attribute> attr_;
 	std::vector<std::unique_ptr<cfg_edge>> outedges_;
-	std::list<cfg_edge*> inedges_;
+	std::unordered_set<cfg_edge*> inedges_;
 
 	friend cfg_edge;
 };
