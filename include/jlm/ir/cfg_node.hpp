@@ -120,10 +120,6 @@ public:
 	, attr_(std::move(attr.copy()))
 	{}
 
-protected:
-	cfg_node(jlm::cfg & cfg) : cfg_(&cfg) {}
-
-public:
 	inline jlm::attribute &
 	attribute() noexcept
 	{
