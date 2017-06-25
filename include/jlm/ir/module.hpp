@@ -43,13 +43,6 @@ public:
 		globals_[v] = std::move(e);
 	}
 
-	inline const expr *
-	lookup_global_variable(const global_variable * v)
-	{
-		auto it = globals_.find(v);
-		return it != globals_.end() ? it->second.get() : nullptr;
-	}
-
 	const_iterator
 	begin() const
 	{
