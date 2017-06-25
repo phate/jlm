@@ -149,16 +149,22 @@ class cfg final {
 			return tmp;
 		}
 
+		inline cfg_node *
+		node() const noexcept
+		{
+			return it_->get();
+		}
+
 		inline cfg_node &
-		operator*() noexcept
+		operator*() const noexcept
 		{
 			return *it_->get();
 		}
 
 		inline cfg_node *
-		operator->() noexcept
+		operator->() const noexcept
 		{
-			return it_->get();
+			return node();
 		}
 
 	private:
@@ -277,6 +283,9 @@ public:
 	cfg_node *
 	create_node(const attribute & attr);
 
+	cfg::iterator
+	remove_node(cfg::iterator & it);
+
 	inline size_t
 	nnodes() const noexcept
 	{
@@ -290,8 +299,6 @@ public:
 	}
 
 private:
-	void remove_node(cfg_node * node);
-
 	cfg_node * entry_;
 	cfg_node * exit_;
 	jlm::module & module_;

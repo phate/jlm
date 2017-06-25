@@ -108,17 +108,21 @@ cfg::convert_to_dot() const
 	return dot;
 }
 
-void
-cfg::remove_node(cfg_node * node)
+cfg::iterator
+cfg::remove_node(cfg::iterator & it)
 {
-	node->remove_inedges();
-	node->remove_outedges();
+	if (it->cfg() != this)
+		throw std::logic_error("Node does not belong to this CFG.");
 
-	std::unique_ptr<cfg_node> tmp(node);
-	std::unordered_set<std::unique_ptr<cfg_node>>::const_iterator it = nodes_.find(tmp);
-	JLM_DEBUG_ASSERT(it != nodes_.end());
-	nodes_.erase(it);
+	if (it->ninedges())
+		throw std::logic_error("Cannot remove node. It has still incoming edges.");
+
+	it->remove_outedges();
+	std::unique_ptr<jlm::cfg_node> tmp(it.node());
+	auto rit = iterator(std::next(nodes_.find(tmp)));
+	nodes_.erase(tmp);
 	tmp.release();
+	return rit;
 }
 
 void
