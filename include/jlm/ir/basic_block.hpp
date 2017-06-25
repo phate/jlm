@@ -99,6 +99,27 @@ public:
 			tacs_.push_back(tac.release());
 	}
 
+	inline const tac *
+	append_first(std::unique_ptr<jlm::tac> tac)
+	{
+		tacs_.push_front(tac.release());
+		return tacs_.front();
+	}
+
+	inline void
+	append_first(std::vector<std::unique_ptr<jlm::tac>> & tacs)
+	{
+		for (auto & tac : tacs)
+			tacs_.push_front(tac.release());
+	}
+
+	inline void
+	append_first(basic_block & bb)
+	{
+		tacs_.insert(tacs_.begin(), bb.begin(), bb.end());
+		bb.tacs_.clear();
+	}
+
 	inline size_t
 	ntacs() const noexcept
 	{
@@ -173,6 +194,32 @@ append_last(jlm::cfg_node * node, std::vector<std::unique_ptr<jlm::tac>> & tacs)
 	JLM_DEBUG_ASSERT(is_basic_block(node));
 	auto & bb = *static_cast<jlm::basic_block*>(&node->attribute());
 	bb.append_last(tacs);
+}
+
+static inline const jlm::tac *
+append_first(jlm::cfg_node * node, std::unique_ptr<jlm::tac> tac)
+{
+	JLM_DEBUG_ASSERT(is_basic_block(node));
+	auto & bb = *static_cast<jlm::basic_block*>(&node->attribute());
+	bb.append_first(std::move(tac));
+	return bb.first();
+}
+
+static inline void
+append_first(jlm::cfg_node * node, std::vector<std::unique_ptr<jlm::tac>> & tacs)
+{
+	JLM_DEBUG_ASSERT(is_basic_block(node));
+	auto & bb = *static_cast<jlm::basic_block*>(&node->attribute());
+	bb.append_first(tacs);
+}
+
+static inline void
+append_first(jlm::cfg_node * node, jlm::cfg_node * source)
+{
+	JLM_DEBUG_ASSERT(is_basic_block(node) && is_basic_block(source));
+	auto & bb = *static_cast<jlm::basic_block*>(&node->attribute());
+	auto & s = *static_cast<jlm::basic_block*>(&source->attribute());
+	bb.append_first(s);
 }
 
 }
