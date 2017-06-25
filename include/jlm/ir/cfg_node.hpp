@@ -114,13 +114,13 @@ class cfg_node final {
 		std::vector<std::unique_ptr<cfg_edge>>::const_iterator it_;
 	};
 
-public:
 	inline
 	cfg_node(jlm::cfg & cfg, const jlm::attribute & attr)
 	: cfg_(&cfg)
 	, attr_(std::move(attr.copy()))
 	{}
 
+public:
 	inline jlm::attribute &
 	attribute() noexcept
 	{
@@ -222,6 +222,9 @@ public:
 	inline bool is_branch() const noexcept { return noutedges() > 1; }
 
 	bool has_selfloop_edge() const noexcept;
+
+	static cfg_node *
+	create(jlm::cfg & cfg, const jlm::attribute & attr);
 
 private:
 	jlm::cfg * cfg_;

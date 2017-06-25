@@ -278,8 +278,11 @@ public:
 		return *static_cast<exit_attribute*>(&exit_node()->attribute());
 	}
 
-	cfg_node *
-	create_node(const attribute & attr);
+	inline void
+	add_node(std::unique_ptr<jlm::cfg_node> node)
+	{
+		nodes_.insert(std::move(node));
+	}
 
 	cfg::iterator
 	remove_node(cfg::iterator & it);

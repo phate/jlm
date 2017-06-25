@@ -164,7 +164,7 @@ static inline cfg_node *
 create_basic_block_node(jlm::cfg * cfg)
 {
 	basic_block attr;
-	return cfg->create_node(attr);
+	return cfg_node::create(*cfg, attr);
 }
 
 static inline basic_block *

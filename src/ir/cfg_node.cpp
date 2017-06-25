@@ -133,4 +133,13 @@ cfg_node::debug_string() const
 	return strfmt(this, "\\n") + attribute().debug_string();
 }
 
+cfg_node *
+cfg_node::create(jlm::cfg & cfg, const jlm::attribute & attribute)
+{
+	std::unique_ptr<jlm::cfg_node> node(new cfg_node(cfg, attribute));
+	auto tmp = node.get();
+	cfg.add_node(std::move(node));
+	return tmp;
+}
+
 }

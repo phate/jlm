@@ -30,7 +30,7 @@ static inline jlm::cfg_node *
 create_entry_node(jlm::cfg * cfg)
 {
 	jlm::entry_attribute attr;
-	return cfg->create_node(attr);
+	return cfg_node::create(*cfg, attr);
 }
 
 entry_attribute::~entry_attribute()
@@ -54,7 +54,7 @@ static inline jlm::cfg_node *
 create_exit_node(jlm::cfg * cfg)
 {
 	jlm::exit_attribute attr;
-	return cfg->create_node(attr);
+	return cfg_node::create(*cfg, attr);
 }
 
 exit_attribute::~exit_attribute()
@@ -80,15 +80,6 @@ cfg::cfg(jlm::module & module)
 	entry_ = create_entry_node(this);
 	exit_ = create_exit_node(this);
 	entry_->add_outedge(exit_);
-}
-
-cfg_node *
-cfg::create_node(const attribute & attr)
-{
-	auto node = std::make_unique<cfg_node>(*this, attr);
-	auto tmp = node.get();
-	nodes_.insert(std::move(node));
-	return tmp;
 }
 
 std::string

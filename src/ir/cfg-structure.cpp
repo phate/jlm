@@ -66,7 +66,7 @@ copy_structural(const jlm::cfg & in)
 		} else if (&node == in.exit_node()) {
 			node_map[&node] = out->exit_node();
 		} else {
-			node_map[&node] = out->create_node(node.attribute());
+			node_map[&node] = jlm::cfg_node::create(*out, node.attribute());
 		}
 	}
 
