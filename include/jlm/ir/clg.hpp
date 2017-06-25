@@ -30,8 +30,8 @@ public:
 	clg() noexcept
 	{}
 
-	clg_node *
-	add_function(const char * name, const jive::fct::type & type, bool exported);
+	void
+	add_function(std::unique_ptr<jlm::clg_node> node);
 
 	clg_node *
 	lookup_function(const std::string & name) const;
@@ -73,7 +73,7 @@ public:
 
 private:
 	inline
-	clg_node(jlm::clg & clg, const char * name, const jive::fct::type & type, bool exported)
+	clg_node(jlm::clg & clg, const std::string & name, const jive::fct::type & type, bool exported)
 	: exported_(exported)
 	, clg_(clg)
 	, name_(name)
@@ -139,6 +139,15 @@ public:
 		cfg_ = std::move(cfg);
 	}
 
+	static inline clg_node *
+	create(jlm::clg & clg, const std::string & name, const jive::fct::type & type, bool exported)
+	{
+		std::unique_ptr<jlm::clg_node> node(new clg_node(clg, name, type, exported));
+		auto tmp = node.get();
+		clg.add_function(std::move(node));
+		return tmp;
+	}
+
 private:
 	bool exported_;
 	jlm::clg & clg_;
@@ -146,9 +155,6 @@ private:
 	std::unique_ptr<jlm::cfg> cfg_;
 	std::unique_ptr<jive::base::type> type_;
 	std::unordered_set<const clg_node*> calls_;
-
-	friend jlm::clg_node * jlm::clg::add_function(const char * name,
-		const jive::fct::type & type, bool exported);
 };
 
 class function_variable final : public variable {

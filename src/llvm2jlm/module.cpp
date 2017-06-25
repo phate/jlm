@@ -144,8 +144,9 @@ convert_functions(
 	for (const auto & f : list) {
 		jive::fct::type fcttype(dynamic_cast<const jive::fct::type&>(
 			*convert_type(f.getFunctionType(), ctx)));
-		clg_node * n = clg.add_function(
-			f.getName().str().c_str(),
+		auto n = clg_node::create(
+			clg,
+			f.getName().str(),
 			fcttype,
 			f.getLinkage() != llvm::GlobalValue::InternalLinkage);
 		ctx.insert_value(&f, ctx.module().create_variable(n));

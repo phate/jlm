@@ -266,7 +266,7 @@ convert_lambda_node(const jive::node & node, context & ctx)
 	/* FIXME: create/get names for lambdas */
 	auto name = get_name(node.output(0));
 	auto exported = is_exported(node.output(0));
-	auto f = clg.add_function(name.c_str(), ftype, exported);
+	auto f = clg_node::create(clg, name, ftype, exported);
 	auto v = module.create_variable(f);
 
 	f->add_cfg(create_cfg(node, ctx));
@@ -293,7 +293,7 @@ convert_phi_node(const jive::node & node, context & ctx)
 		auto name = get_name(lambda->output(0));
 		auto exported = is_exported(lambda->output(0));
 		auto & ftype = *static_cast<const jive::fct::type*>(&result->type());
-		auto f = clg.add_function(name.c_str(), ftype, exported);
+		auto f = clg_node::create(clg, name, ftype, exported);
 		ctx.insert(subregion->argument(n), module.create_variable(f));
 	}
 
@@ -363,7 +363,7 @@ rvsdg2jlm(const jive::graph & graph)
 	for (size_t n = 0; n < graph.root()->narguments(); n++) {
 		auto argument = graph.root()->argument(n);
 		if (auto ftype = dynamic_cast<const jive::fct::type*>(&argument->type())) {
-			auto f = clg.add_function(argument->gate()->name().c_str(), *ftype, false);
+			auto f = clg_node::create(clg, argument->gate()->name(), *ftype, false);
 			auto v = module->create_variable(f);
 			ctx.insert(argument, v);
 		} else {

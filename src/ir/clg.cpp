@@ -56,14 +56,11 @@ namespace jlm {
 
 /* clg */
 
-clg_node *
-clg::add_function(const char * name, const jive::fct::type & type, bool exported)
+void
+clg::add_function(std::unique_ptr<jlm::clg_node> node)
 {
-	std::unique_ptr<clg_node> function(new clg_node(*this, name, type, exported));
-	clg_node * f = function.get();
-	JLM_DEBUG_ASSERT(nodes_.find(std::string(name)) == nodes_.end());
-	nodes_.insert(std::make_pair(std::string(name), std::move(function)));
-	return f;
+	JLM_DEBUG_ASSERT(nodes_.find(node->name()) == nodes_.end());
+	nodes_[node->name()] = std::move(node);
 }
 
 clg_node *
