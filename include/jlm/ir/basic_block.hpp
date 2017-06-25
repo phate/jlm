@@ -158,6 +158,23 @@ is_basic_block(const jlm::cfg_node * node) noexcept
 	return dynamic_cast<const basic_block*>(&node->attribute()) != nullptr;
 }
 
+static inline const jlm::tac *
+append_last(jlm::cfg_node * node, std::unique_ptr<jlm::tac> tac)
+{
+	JLM_DEBUG_ASSERT(is_basic_block(node));
+	auto & bb = *static_cast<jlm::basic_block*>(&node->attribute());
+	bb.append_last(std::move(tac));
+	return bb.last();
+}
+
+static inline void
+append_last(jlm::cfg_node * node, std::vector<std::unique_ptr<jlm::tac>> & tacs)
+{
+	JLM_DEBUG_ASSERT(is_basic_block(node));
+	auto & bb = *static_cast<jlm::basic_block*>(&node->attribute());
+	bb.append_last(tacs);
+}
+
 }
 
 #endif

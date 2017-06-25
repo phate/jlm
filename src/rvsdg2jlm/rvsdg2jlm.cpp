@@ -68,18 +68,9 @@ get_name(const jive::oport * port)
 }
 
 static inline const jlm::tac *
-append_tac(jlm::cfg_node * node, std::unique_ptr<jlm::tac> tac)
-{
-	JLM_DEBUG_ASSERT(is_basic_block(node));
-	auto & bb = *static_cast<jlm::basic_block*>(&node->attribute());
-	bb.append_last(std::move(tac));
-	return bb.last();
-}
-
-static inline const jlm::tac *
 create_assignment_lpbb(const jlm::variable * argument, const jlm::variable * result, context & ctx)
 {
-	return append_tac(ctx.lpbb(), create_assignment(argument->type(), argument, result));
+	return append_last(ctx.lpbb(), create_assignment(argument->type(), argument, result));
 }
 
 static inline std::unique_ptr<const expr>
@@ -168,7 +159,7 @@ convert_simple_node(const jive::node & node, context & ctx)
 		results.push_back(v);
 	}
 
-	append_tac(ctx.lpbb(), create_tac(node.operation(), operands, results));
+	append_last(ctx.lpbb(), create_tac(node.operation(), operands, results));
 }
 
 static inline void
@@ -184,7 +175,7 @@ convert_gamma_node(const jive::node & node, context & ctx)
 	std::vector<cfg_node*> phi_nodes;
 	auto entry = create_basic_block_node(cfg);
 	auto exit = create_basic_block_node(cfg);
-	append_tac(entry, create_branch_tac(nalternatives, ctx.variable(predicate)));
+	append_last(entry, create_branch_tac(nalternatives, ctx.variable(predicate)));
 	ctx.lpbb()->add_outedge(entry);
 
 	/* convert gamma regions */
@@ -217,7 +208,7 @@ convert_gamma_node(const jive::node & node, context & ctx)
 		}
 
 		auto v = module.create_variable(output->type(), false);
-		append_tac(exit, create_phi_tac(arguments, v));
+		append_last(exit, create_phi_tac(arguments, v));
 		ctx.insert(output, v);
 	}
 
@@ -254,10 +245,10 @@ convert_theta_node(const jive::node & node, context & ctx)
 
 		auto v1 = ctx.variable(node.input(n-1)->origin());
 		auto v2 = ctx.variable(result->origin());
-		append_tac(entry, create_phi_tac({{v1, pre_entry}, {v2, ctx.lpbb()}}, lvs[n-1]));
+		append_last(entry, create_phi_tac({{v1, pre_entry}, {v2, ctx.lpbb()}}, lvs[n-1]));
 	}
 
-	append_tac(ctx.lpbb(), create_branch_tac(2, ctx.variable(predicate)));
+	append_last(ctx.lpbb(), create_branch_tac(2, ctx.variable(predicate)));
 	auto exit = create_basic_block_node(ctx.cfg());
 	ctx.lpbb()->add_outedge(exit);
 	ctx.lpbb()->add_outedge(entry);
