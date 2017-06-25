@@ -20,6 +20,9 @@ is_valid(const jlm::cfg & cfg);
 bool
 is_closed(const jlm::cfg & cfg);
 
+bool
+is_linear(const jlm::cfg & cfg);
+
 std::vector<std::unordered_set<jlm::cfg_node*>>
 find_sccs(const jlm::cfg & cfg);
 
