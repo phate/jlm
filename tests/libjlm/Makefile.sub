@@ -5,6 +5,7 @@ TESTS += \
 	libjlm/test-bitops \
 	libjlm/test-call \
 	libjlm/test-casts \
+	libjlm/test-cfg-structure \
 	libjlm/test-constants \
 	libjlm/test-extractvalue \
 	libjlm/test-fcmp \

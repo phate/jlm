@@ -88,7 +88,7 @@ is_loop(const jlm::cfg_node * node) noexcept
 }
 
 static inline bool
-is_linear(const jlm::cfg_node * node) noexcept
+is_linear_reduction(const jlm::cfg_node * node) noexcept
 {
 	if (node->noutedges() != 1)
 		return false;
@@ -219,7 +219,7 @@ reduce_linear(
 	jlm::cfg_node * entry,
 	std::unordered_set<jlm::cfg_node*> & to_visit)
 {
-	JLM_DEBUG_ASSERT(is_linear(entry));
+	JLM_DEBUG_ASSERT(is_linear_reduction(entry));
 	auto exit = entry->outedge(0)->sink();
 	auto cfg = entry->cfg();
 
@@ -319,7 +319,7 @@ reduce_proper_structured(
 		return true;
 	}
 
-	if (is_linear(node)) {
+	if (is_linear_reduction(node)) {
 		reduce_linear(node, to_visit);
 		return true;
 	}
@@ -342,7 +342,7 @@ reduce_structured(
 		return true;
 	}
 
-	if (is_linear(node)) {
+	if (is_linear_reduction(node)) {
 		reduce_linear(node, to_visit);
 		return true;
 	}
@@ -501,6 +501,23 @@ bool
 is_reducible(const jlm::cfg & cfg)
 {
 	return reduce(cfg, reduce_reducible);
+}
+
+void
+straighten(jlm::cfg & cfg)
+{
+	auto it = cfg.begin();
+	while (it != cfg.end()) {
+		if (is_linear_reduction(it.node())
+		&& is_basic_block(it.node())
+		&& is_basic_block(it->outedge(0)->sink())) {
+			append_first(it->outedge(0)->sink(), it.node());
+			it->divert_inedges(it->outedge(0)->sink());
+			it = cfg.remove_node(it);
+		} else {
+			it++;
+		}
+	}
 }
 
 }
