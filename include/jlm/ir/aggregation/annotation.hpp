@@ -22,6 +22,9 @@ typedef std::unordered_set<const jlm::variable*> dset;
 
 class demand_set {
 public:
+	virtual
+	~demand_set();
+
 	dset top;
 	dset bottom;
 };
@@ -36,6 +39,9 @@ create_demand_set(const dset & b)
 
 class branch_demand_set final : public demand_set {
 public:
+	virtual
+	~branch_demand_set();
+
 	dset cases_top;
 	dset cases_bottom;
 };

@@ -12,6 +12,12 @@
 namespace jlm {
 namespace agg {
 
+demand_set::~demand_set()
+{}
+
+branch_demand_set::~branch_demand_set()
+{}
+
 static void
 annotate(const agg::node * node, dset & pds, demand_map & dm);
 
