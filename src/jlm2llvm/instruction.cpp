@@ -400,11 +400,17 @@ convert_operation(
 void
 convert_instruction(const jlm::tac & tac, const jlm::cfg_node * node, context & ctx)
 {
+	/*
+		Collect all operation arguments except for phi operations,
+		since their arguments might not be defined yet, i.e. loops,
+		and are patched later.
+	*/
 	std::vector<llvm::Value*> arguments;
-	for (size_t n = 0; n < tac.ninputs(); n++) {
-		auto input = tac.input(n);
-		if (!dynamic_cast<const jive::state::type*>(&input->type()))
-			arguments.push_back(ctx.value(input));
+	if (!is_phi_op(tac.operation())) {
+		for (size_t n = 0; n < tac.ninputs(); n++) {
+			if (!dynamic_cast<const jive::state::type*>(&tac.input(n)->type()))
+				arguments.push_back(ctx.value(tac.input(n)));
+		}
 	}
 
 	llvm::IRBuilder<> builder(ctx.basic_block(node));
