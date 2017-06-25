@@ -111,10 +111,11 @@ create_terminator_instruction(const jlm::cfg_node * node, context & ctx)
 }
 
 static inline void
-convert_cfg(const jlm::cfg & cfg, llvm::Function & f, context & ctx)
+convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 {
 	JLM_DEBUG_ASSERT(is_closed(cfg));
 
+	straighten(cfg);
 	auto nodes = breadth_first_traversal(cfg);
 
 	/* create basic blocks */
