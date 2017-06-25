@@ -22,8 +22,4 @@ variable::type() const noexcept
 	return *type_;
 }
 
-
-global_variable::~global_variable() noexcept
-{}
-
 }
