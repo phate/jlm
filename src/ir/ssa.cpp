@@ -56,10 +56,10 @@ destruct_ssa(jlm::cfg & cfg)
 			for (size_t n = 0; n < tac->ninputs(); n++) {
 				JLM_DEBUG_ASSERT(edges.find(phi->node(n)) != edges.end());
 				auto bb = static_cast<basic_block*>(&edges[phi->node(n)]->split()->attribute());
-				value = bb->append(create_assignment(v->type(), tac->input(n), v))->output(0);
+				value = bb->append_last(create_assignment(v->type(), tac->input(n), v))->output(0);
 			}
 
-			ass_attr->append(create_assignment(tac->output(0)->type(), value, tac->output(0)));
+			ass_attr->append_last(create_assignment(tac->output(0)->type(), value, tac->output(0)));
 			phi_attr->drop_first();
 		}
 

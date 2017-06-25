@@ -72,7 +72,7 @@ append_tac(jlm::cfg_node * node, std::unique_ptr<jlm::tac> tac)
 {
 	JLM_DEBUG_ASSERT(is_basic_block(node));
 	auto & bb = *static_cast<jlm::basic_block*>(&node->attribute());
-	bb.append(std::move(tac));
+	bb.append_last(std::move(tac));
 	return bb.last();
 }
 

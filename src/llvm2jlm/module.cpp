@@ -50,7 +50,7 @@ convert_basic_blocks(
 			auto node = ctx.lookup_basic_block(&bb);
 			auto tacs = convert_instruction(&instruction, ctx);
 			JLM_DEBUG_ASSERT(is_basic_block(node));
-			static_cast<jlm::basic_block*>(&node->attribute())->append(tacs);
+			static_cast<jlm::basic_block*>(&node->attribute())->append_last(tacs);
 		}
 	}
 }
@@ -98,8 +98,8 @@ create_cfg(llvm::Function & f, context & ctx)
 		result = m.create_variable(*convert_type(f.getReturnType(), ctx), "_r_", false);
 		auto attr = static_cast<basic_block*>(&entry_block->attribute());
 		auto tacs = create_undef_value(f.getReturnType(), ctx);
-		attr->append(tacs);
-		attr->append(create_assignment(result->type(), {attr->last()->output(0)}, {result}));
+		attr->append_last(tacs);
+		attr->append_last(create_assignment(result->type(), {attr->last()->output(0)}, {result}));
 
 		JLM_DEBUG_ASSERT(node->type().nresults() == 2);
 		JLM_DEBUG_ASSERT(result->type() == node->type().result_type(0));

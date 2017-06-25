@@ -86,14 +86,14 @@ public:
 	}
 
 	inline const tac *
-	append(std::unique_ptr<jlm::tac> tac)
+	append_last(std::unique_ptr<jlm::tac> tac)
 	{
 		tacs_.push_back(tac.release());
 		return tacs_.back();
 	}
 
 	inline void
-	append(std::vector<std::unique_ptr<jlm::tac>> & tacs)
+	append_last(std::vector<std::unique_ptr<jlm::tac>> & tacs)
 	{
 		for (auto & tac : tacs)
 			tacs_.push_back(tac.release());

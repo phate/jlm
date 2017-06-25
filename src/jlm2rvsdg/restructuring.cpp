@@ -158,8 +158,8 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit,
 		auto vt = create_basic_block_node(cfg);
 		auto attr = static_cast<basic_block*>(&vt->attribute());
 		auto op = jive::match_op(1, {{0, 0}}, 1, 2);
-		attr->append(create_tac(op, {r}, create_result_variables(cfg->module(), op)));
-		attr->append(create_branch_tac(2, attr->last()->output(0)));
+		attr->append_last(create_tac(op, {r}, create_result_variables(cfg->module(), op)));
+		attr->append_last(create_branch_tac(2, attr->last()->output(0)));
 
 
 		/* handle loop entries */
@@ -172,14 +172,14 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit,
 			for (size_t n = 0; n < ve.size()-1; n++)
 				ve_mapping[n] = n;
 			op = jive::match_op(nbits, ve_mapping, ve.size()-1, ve.size());
-			attr->append(create_tac(op, {q}, create_result_variables(cfg->module(), op)));
-			attr->append(create_branch_tac(ve.size(), attr->last()->output(0)));
+			attr->append_last(create_tac(op, {q}, create_result_variables(cfg->module(), op)));
+			attr->append_last(create_branch_tac(ve.size(), attr->last()->output(0)));
 
 			for (auto edge : ae) {
 				auto ass = create_basic_block_node(cfg);
 				attr = static_cast<basic_block*>(&ass->attribute());
 				jive::bits::constant_op op(jive::bits::value_repr(nbits, ve[edge->sink()]));
-				attr->append(create_tac(op, {}, {q}));
+				attr->append_last(create_tac(op, {}, {q}));
 				ass->add_outedge(new_ve);
 				edge->divert(ass);
 			}
@@ -202,8 +202,8 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit,
 			for (size_t n = 0; n < vx.size()-1; n++)
 				vx_mapping[n] = n;
 			op = jive::match_op(nbits, vx_mapping, vx.size()-1, vx.size());
-			attr->append(create_tac(op, {q}, create_result_variables(cfg->module(), op)));
-			attr->append(create_branch_tac(vx.size(), attr->last()->output(0)));
+			attr->append_last(create_tac(op, {q}, create_result_variables(cfg->module(), op)));
+			attr->append_last(create_branch_tac(vx.size(), attr->last()->output(0)));
 
 			for (auto v : vx) {
 				auto e = new_vx->add_outedge(v.first);
@@ -215,10 +215,10 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit,
 		for (auto edge : ax) {
 			auto ass = create_basic_block_node(cfg);
 			attr = static_cast<basic_block*>(&ass->attribute());
-			attr->append(create_tac(jive::bits::constant_op(jive::bits::value_repr(1, 0)), {}, {r}));
+			attr->append_last(create_tac(jive::bits::constant_op(jive::bits::value_repr(1,0)), {}, {r}));
 			if (vx.size() > 1) {
 				jive::bits::constant_op op(jive::bits::value_repr(nbits, vx[edge->sink()]));
-				attr->append(create_tac(op, {}, {q}));
+				attr->append_last(create_tac(op, {}, {q}));
 			}
 			ass->add_outedge(vt);
 			edge->divert(ass);
@@ -229,10 +229,10 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit,
 		for (auto edge : ar) {
 			auto ass = create_basic_block_node(cfg);
 			attr = static_cast<basic_block*>(&ass->attribute());
-			attr->append(create_tac(jive::bits::constant_op(jive::bits::value_repr(1, 1)), {}, {r}));
+			attr->append_last(create_tac(jive::bits::constant_op(jive::bits::value_repr(1,1)), {}, {r}));
 			if (ve.size() > 1) {
 				jive::bits::constant_op op(jive::bits::value_repr(nbits, ve[edge->sink()]));
-				attr->append(create_tac(op, {}, {q}));
+				attr->append_last(create_tac(op, {}, {q}));
 			}
 			ass->add_outedge(vt);
 			edge->divert(ass);
@@ -373,8 +373,8 @@ restructure_branches(jlm::cfg_node * start, jlm::cfg_node * end)
 	for (size_t n = 0; n < cpoints.size()-1; n++)
 		mapping[n] = n;
 	auto op = jive::match_op(nbits, mapping, cpoints.size()-1, cpoints.size());
-	attr->append(create_tac(op, {p}, create_result_variables(cfg->module(), op)));
-	attr->append(create_branch_tac(cpoints.size(), attr->last()->output(0)));
+	attr->append_last(create_tac(op, {p}, create_result_variables(cfg->module(), op)));
+	attr->append_last(create_branch_tac(cpoints.size(), attr->last()->output(0)));
 	for (auto it = cpoints.begin(); it != cpoints.end(); it++)
 		vt->add_outedge(it->first);
 
@@ -386,7 +386,7 @@ restructure_branches(jlm::cfg_node * start, jlm::cfg_node * end)
 			auto ass = create_basic_block_node(cfg);
 			attr = static_cast<basic_block*>(&ass->attribute());
 			jive::bits::constant_op op(jive::bits::value_repr(nbits, cpoints[boe->sink()]));
-			attr->append(create_tac(op, {}, {p}));
+			attr->append_last(create_tac(op, {}, {p}));
 			ass->add_outedge(vt);
 			boe->divert(ass);
 			/* if the branch subgraph is not empty, we need to restructure it */
@@ -402,7 +402,7 @@ restructure_branches(jlm::cfg_node * start, jlm::cfg_node * end)
 			auto ass = create_basic_block_node(cfg);
 			attr = static_cast<basic_block*>(&ass->attribute());
 			jive::bits::constant_op op(jive::bits::value_repr(nbits, cpoints[edge->sink()]));
-			attr->append(create_tac(op, {}, {p}));
+			attr->append_last(create_tac(op, {}, {p}));
 			ass->add_outedge(null);
 			edge->divert(ass);
 		}
