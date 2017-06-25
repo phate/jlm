@@ -125,41 +125,6 @@ cfg::remove_node(cfg::iterator & it)
 	return rit;
 }
 
-void
-cfg::prune()
-{
-	JLM_DEBUG_ASSERT(is_valid(*this));
-
-	/* find all nodes that are dominated by the entry node */
-	std::unordered_set<cfg_node*> to_visit({entry_node()});
-	std::unordered_set<cfg_node*> visited;
-	while (!to_visit.empty()) {
-		cfg_node * node = *to_visit.begin();
-		to_visit.erase(to_visit.begin());
-		JLM_DEBUG_ASSERT(visited.find(node) == visited.end());
-		visited.insert(node);
-		for (auto it = node->begin_outedges(); it != node->end_outedges(); it++) {
-			if (visited.find(it->sink()) == visited.end()
-			&& to_visit.find(it->sink()) == to_visit.end())
-				to_visit.insert(it->sink());
-		}
-	}
-
-	/* remove all nodes not dominated by the entry node */
-	std::unordered_set<std::unique_ptr<cfg_node>>::iterator it = nodes_.begin();
-	while (it != nodes_.end()) {
-		if (visited.find((*it).get()) == visited.end()) {
-			cfg_node * node = (*it).get();
-			node->remove_inedges();
-			node->remove_outedges();
-			it = nodes_.erase(it);
-		} else
-			it++;
-	}
-
-	JLM_DEBUG_ASSERT(is_closed(*this));
-}
-
 }
 
 void

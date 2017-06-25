@@ -254,8 +254,6 @@ public:
 	std::string
 	convert_to_dot() const;
 
-	void prune();
-
 	inline jlm::cfg_node *
 	entry_node() const noexcept
 	{

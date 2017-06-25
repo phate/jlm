@@ -6,6 +6,7 @@
 #include <jlm/common.hpp>
 #include <jlm/ir/basic_block.hpp>
 #include <jlm/ir/cfg.hpp>
+#include <jlm/ir/cfg-structure.hpp>
 #include <jlm/ir/cfg_node.hpp>
 #include <jlm/ir/clg.hpp>
 #include <jlm/ir/module.hpp>
@@ -118,7 +119,7 @@ create_cfg(llvm::Function & f, context & ctx)
 		bb->add_outedge(cfg->exit_node());
 	}
 
-	cfg->prune();
+	prune(*cfg);
 	return cfg;
 }
 

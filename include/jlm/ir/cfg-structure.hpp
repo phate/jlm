@@ -45,6 +45,9 @@ is_reducible(const jlm::cfg & cfg);
 void
 straighten(jlm::cfg & cfg);
 
+void
+prune(jlm::cfg & cfg);
+
 }
 
 #endif

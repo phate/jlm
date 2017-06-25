@@ -520,4 +520,38 @@ straighten(jlm::cfg & cfg)
 	}
 }
 
+void
+prune(jlm::cfg & cfg)
+{
+	JLM_DEBUG_ASSERT(is_valid(cfg));
+
+	/* find all nodes that are dominated by the entry node */
+	std::unordered_set<cfg_node*> visited;
+	std::unordered_set<cfg_node*> to_visit({cfg.entry_node()});
+	while (!to_visit.empty()) {
+		auto node = *to_visit.begin();
+		to_visit.erase(to_visit.begin());
+		JLM_DEBUG_ASSERT(visited.find(node) == visited.end());
+		visited.insert(node);
+		for (auto it = node->begin_outedges(); it != node->end_outedges(); it++) {
+			if (visited.find(it->sink()) == visited.end()
+			&& to_visit.find(it->sink()) == to_visit.end())
+				to_visit.insert(it->sink());
+		}
+	}
+
+	/* remove all nodes not dominated by the entry node */
+	auto it = cfg.begin();
+	while (it != cfg.end()) {
+		if (visited.find(it.node()) == visited.end()) {
+			it->remove_inedges();
+			it = cfg.remove_node(it);
+		} else {
+			it++;
+		}
+	}
+
+	JLM_DEBUG_ASSERT(is_closed(cfg));
+}
+
 }
