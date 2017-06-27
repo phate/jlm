@@ -21,6 +21,64 @@ class clg_node;
 /* clg */
 
 class clg final {
+	class const_iterator {
+	public:
+		inline
+		const_iterator(const std::unordered_map<
+			std::string,
+			std::unique_ptr<clg_node>>::const_iterator & it)
+		: it_(it)
+		{}
+
+		inline bool
+		operator==(const const_iterator & other) const noexcept
+		{
+			return it_ == other.it_;
+		}
+
+		inline bool
+		operator!=(const const_iterator & other) const noexcept
+		{
+			return !(*this == other);
+		}
+
+		inline const const_iterator &
+		operator++() noexcept
+		{
+			++it_;
+			return *this;
+		}
+
+		inline const const_iterator
+		operator++(int) noexcept
+		{
+			const_iterator tmp(it_);
+			it_++;
+			return tmp;
+		}
+
+		inline const clg_node *
+		node() const noexcept
+		{
+			return it_->second.get();
+		}
+
+		inline const clg_node &
+		operator*() const noexcept
+		{
+			return *node();
+		}
+
+		inline const clg_node *
+		operator->() const noexcept
+		{
+			return node();
+		}
+
+	private:
+		std::unordered_map<std::string, std::unique_ptr<clg_node>>::const_iterator it_;
+	};
+
 public:
 	inline
 	~clg()
@@ -29,6 +87,18 @@ public:
 	inline
 	clg() noexcept
 	{}
+
+	inline const_iterator
+	begin() const noexcept
+	{
+		return const_iterator(nodes_.begin());
+	}
+
+	inline const_iterator
+	end() const noexcept
+	{
+		return const_iterator(nodes_.end());
+	}
 
 	void
 	add_function(std::unique_ptr<jlm::clg_node> node);
