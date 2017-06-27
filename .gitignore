@@ -3,5 +3,6 @@
 *.o
 utests.log
 ctests.log
+check.log
 /jlm
 tests/test-runner
