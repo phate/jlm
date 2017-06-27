@@ -160,6 +160,12 @@ private:
 	std::list<const tac*> tacs_;
 };
 
+static inline bool
+is_basic_block(const jlm::attribute & attribute) noexcept
+{
+	return dynamic_cast<const jlm::basic_block*>(&attribute) != nullptr;
+}
+
 static inline cfg_node *
 create_basic_block_node(jlm::cfg * cfg)
 {
@@ -173,16 +179,10 @@ create_basic_block(jlm::cfg * cfg)
 	return static_cast<basic_block*>(&create_basic_block_node(cfg)->attribute());
 }
 
-static inline bool
-is_basic_block(const jlm::cfg_node * node) noexcept
-{
-	return dynamic_cast<const basic_block*>(&node->attribute()) != nullptr;
-}
-
 static inline const jlm::tac *
 append_last(jlm::cfg_node * node, std::unique_ptr<jlm::tac> tac)
 {
-	JLM_DEBUG_ASSERT(is_basic_block(node));
+	JLM_DEBUG_ASSERT(is_basic_block(node->attribute()));
 	auto & bb = *static_cast<jlm::basic_block*>(&node->attribute());
 	bb.append_last(std::move(tac));
 	return bb.last();
@@ -191,7 +191,7 @@ append_last(jlm::cfg_node * node, std::unique_ptr<jlm::tac> tac)
 static inline void
 append_last(jlm::cfg_node * node, std::vector<std::unique_ptr<jlm::tac>> & tacs)
 {
-	JLM_DEBUG_ASSERT(is_basic_block(node));
+	JLM_DEBUG_ASSERT(is_basic_block(node->attribute()));
 	auto & bb = *static_cast<jlm::basic_block*>(&node->attribute());
 	bb.append_last(tacs);
 }
@@ -199,7 +199,7 @@ append_last(jlm::cfg_node * node, std::vector<std::unique_ptr<jlm::tac>> & tacs)
 static inline const jlm::tac *
 append_first(jlm::cfg_node * node, std::unique_ptr<jlm::tac> tac)
 {
-	JLM_DEBUG_ASSERT(is_basic_block(node));
+	JLM_DEBUG_ASSERT(is_basic_block(node->attribute()));
 	auto & bb = *static_cast<jlm::basic_block*>(&node->attribute());
 	bb.append_first(std::move(tac));
 	return bb.first();
@@ -208,7 +208,7 @@ append_first(jlm::cfg_node * node, std::unique_ptr<jlm::tac> tac)
 static inline void
 append_first(jlm::cfg_node * node, std::vector<std::unique_ptr<jlm::tac>> & tacs)
 {
-	JLM_DEBUG_ASSERT(is_basic_block(node));
+	JLM_DEBUG_ASSERT(is_basic_block(node->attribute()));
 	auto & bb = *static_cast<jlm::basic_block*>(&node->attribute());
 	bb.append_first(tacs);
 }
@@ -216,7 +216,7 @@ append_first(jlm::cfg_node * node, std::vector<std::unique_ptr<jlm::tac>> & tacs
 static inline void
 append_first(jlm::cfg_node * node, jlm::cfg_node * source)
 {
-	JLM_DEBUG_ASSERT(is_basic_block(node) && is_basic_block(source));
+	JLM_DEBUG_ASSERT(is_basic_block(node->attribute()) && is_basic_block(source->attribute()));
 	auto & bb = *static_cast<jlm::basic_block*>(&node->attribute());
 	auto & s = *static_cast<jlm::basic_block*>(&source->attribute());
 	bb.append_first(s);

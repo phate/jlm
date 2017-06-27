@@ -509,8 +509,8 @@ straighten(jlm::cfg & cfg)
 	auto it = cfg.begin();
 	while (it != cfg.end()) {
 		if (is_linear_reduction(it.node())
-		&& is_basic_block(it.node())
-		&& is_basic_block(it->outedge(0)->sink())) {
+		&& is_basic_block(it.node()->attribute())
+		&& is_basic_block(it->outedge(0)->sink()->attribute())) {
 			append_first(it->outedge(0)->sink(), it.node());
 			it->divert_inedges(it->outedge(0)->sink());
 			it = cfg.remove_node(it);

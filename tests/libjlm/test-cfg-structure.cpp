@@ -41,7 +41,7 @@ test_straightening()
 	assert(cfg.nnodes() == 3);
 	auto node = cfg.entry_node()->outedge(0)->sink();
 
-	assert(is_basic_block(node));
+	assert(is_basic_block(node->attribute()));
 	auto bb = static_cast<const jlm::basic_block*>(&node->attribute());
 	assert(bb->ntacs() == 3);
 	assert(bb->last() == bb3_last);

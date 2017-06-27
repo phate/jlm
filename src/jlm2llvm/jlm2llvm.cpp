@@ -66,7 +66,7 @@ namespace jlm2llvm {
 static inline void
 create_terminator_instruction(const jlm::cfg_node * node, context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_basic_block(node));
+	JLM_DEBUG_ASSERT(is_basic_block(node->attribute()));
 	auto & attr = *static_cast<const jlm::basic_block*>(&node->attribute());
 	auto & cfg = *node->cfg();
 
@@ -137,7 +137,7 @@ convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 		if (node == cfg.entry_node() || node == cfg.exit_node())
 			continue;
 
-		JLM_DEBUG_ASSERT(is_basic_block(node));
+		JLM_DEBUG_ASSERT(is_basic_block(node->attribute()));
 		auto & bb = *static_cast<const jlm::basic_block*>(&node->attribute());
 		for (const auto & tac : bb)
 			convert_instruction(*tac, node, ctx);
@@ -156,7 +156,7 @@ convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 		if (node == cfg.entry_node() || node == cfg.exit_node())
 			continue;
 
-		JLM_DEBUG_ASSERT(is_basic_block(node));
+		JLM_DEBUG_ASSERT(is_basic_block(node->attribute()));
 		auto & bb = *static_cast<const jlm::basic_block*>(&node->attribute());
 		for (const auto & tac : bb) {
 			if (!is_phi_op(tac->operation()))
