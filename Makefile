@@ -23,6 +23,7 @@ LIBJLM_SRC = \
 	src/ir/tac.cpp \
 	src/ir/types.cpp \
 	src/ir/variable.cpp \
+	src/ir/view.cpp \
 	\
 	src/jlm2llvm/instruction.cpp \
 	src/jlm2llvm/jlm2llvm.cpp \
