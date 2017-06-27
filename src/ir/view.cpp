@@ -14,6 +14,8 @@
 
 namespace jlm {
 
+/* string converters */
+
 /* FIXME: replace with traverser */
 static inline std::vector<jlm::cfg_node*>
 breadth_first_traversal(const jlm::cfg & cfg)
@@ -218,6 +220,118 @@ to_str(const jlm::module & module)
 	str += to_str(module.clg());
 
 	return str;
+}
+
+/* dot converters */
+
+static inline std::string
+emit_entry(const jlm::attribute & attribute)
+{
+	JLM_DEBUG_ASSERT(is_entry(attribute));
+	auto & entry = *static_cast<const jlm::entry_attribute*>(&attribute);
+
+	std::string str;
+	for (size_t n = 0; n < entry.narguments(); n++) {
+		auto argument = entry.argument(n);
+		str += "<" + argument->type().debug_string() + "> " + argument->name() + "\\n";
+	}
+
+	return str;
+}
+
+static inline std::string
+emit_exit(const jlm::attribute & attribute)
+{
+	JLM_DEBUG_ASSERT(is_exit(attribute));
+	auto & exit = *static_cast<const jlm::exit_attribute*>(&attribute);
+
+	std::string str;
+	for (size_t n = 0; n < exit.nresults(); n++) {
+		auto result = exit.result(n);
+		str += "<" + result->type().debug_string() + "> " + result->name() + "\\n";
+	}
+
+	return str;
+}
+
+static inline std::string
+to_dot(const jlm::tac & tac)
+{
+	std::string str;
+	if (tac.noutputs() != 0) {
+		for (size_t n = 0; n < tac.noutputs()-1; n++)
+			str +=  tac.output(n)->debug_string() + ", ";
+		str += tac.output(tac.noutputs()-1)->debug_string() + " = ";
+	}
+
+	str += tac.operation().debug_string();
+
+	if (tac.ninputs() != 0) {
+		str += " ";
+		for (size_t n = 0; n < tac.ninputs()-1; n++)
+			str += tac.input(n)->debug_string() + ", ";
+		str += tac.input(tac.ninputs()-1)->debug_string();
+	}
+
+	return str;
+}
+
+static inline std::string
+emit_basic_block(const jlm::attribute & attribute)
+{
+	JLM_DEBUG_ASSERT(is_basic_block(attribute));
+	auto & bb = *static_cast<const jlm::basic_block*>(&attribute);
+
+	std::string str;
+	for (const auto & tac : bb)
+		str += emit_tac(*tac) + "\\n";
+
+	return str;
+}
+
+static inline std::string
+emit_header(const jlm::cfg_node & node)
+{
+	if (is_entry(node.attribute()))
+		return "ENTRY";
+
+	if (is_exit(node.attribute()))
+		return "EXIT";
+
+	return strfmt(&node);
+}
+
+static inline std::string
+emit_node(const jlm::cfg_node & node)
+{
+	static
+	std::unordered_map<std::type_index, std::string(*)(const jlm::attribute &)> map({
+	  {std::type_index(typeid(jlm::entry_attribute)), emit_entry}
+	, {std::type_index(typeid(jlm::exit_attribute)), emit_exit}
+	, {std::type_index(typeid(jlm::basic_block)), emit_basic_block}
+	});
+
+	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(node.attribute()))) != map.end());
+	std::string body = map[std::type_index(typeid(node.attribute()))](node.attribute());
+
+	return emit_header(node) + "\\n" + body;
+}
+
+std::string
+to_dot(const jlm::cfg & cfg)
+{
+	std::string dot("digraph cfg {\n");
+	for (const auto & node : cfg) {
+		dot += strfmt((intptr_t)&node);
+		dot += strfmt("[shape = box, label = \"", emit_node(node), "\"];\n");
+		for (auto it = node.begin_outedges(); it != node.end_outedges(); it++) {
+			dot += strfmt((intptr_t)it->source(), " -> ", (intptr_t)it->sink());
+			dot += strfmt("[label = \"", it->index(), "\"];\n");
+		}
+	}
+	dot += "}\n";
+
+	return dot;
 }
 
 }

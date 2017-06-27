@@ -17,15 +17,25 @@ std::string
 to_str(const jlm::cfg & cfg);
 
 std::string
+to_dot(const jlm::cfg & cfg);
+
+std::string
 to_str(const jlm::clg & clg);
 
 std::string
 to_str(const jlm::module & module);
 
 static inline void
-view(const jlm::cfg & cfg, FILE * out)
+view_ascii(const jlm::cfg & cfg, FILE * out)
 {
 	fputs(to_str(cfg).c_str(), out);
+	fflush(out);
+}
+
+static inline void
+view_dot(const jlm::cfg & cfg, FILE * out)
+{
+	fputs(to_dot(cfg).c_str(), out);
 	fflush(out);
 }
 
