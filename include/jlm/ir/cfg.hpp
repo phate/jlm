@@ -64,6 +64,12 @@ private:
 };
 
 static inline bool
+is_entry(const jlm::attribute & attribute) noexcept
+{
+	return dynamic_cast<const jlm::entry_attribute*>(&attribute) != nullptr;
+}
+
+static inline bool
 is_entry_node(const jlm::cfg_node * node)
 {
 	return dynamic_cast<const jlm::entry_attribute*>(&node->attribute()) != nullptr;
