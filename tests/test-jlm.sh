@@ -15,7 +15,7 @@ llc_out="${file}-jlm.o"
 gcc_out="${file}-jlm"
 
 clang-3.7 -O0 -S -emit-llvm $1 -o ${clang_out}
-${root}/../jlm -llvm ${clang_out} 2> ${jlm_out}
+${root}/../jlm --j2l ${clang_out} 2> ${jlm_out}
 llc-3.7 -O0 -filetype=obj -o ${llc_out} ${jlm_out}
 clang-3.7 -O0 ${llc_out} -o ${gcc_out}
 bash -c "${gcc_out}"

@@ -4,6 +4,7 @@
  */
 
 #include <jlm/ir/module.hpp>
+#include <jlm/ir/view.hpp>
 #include <jlm/llvm2jlm/module.hpp>
 #include <jlm/jlm2llvm/jlm2llvm.hpp>
 #include <jlm/jlm2rvsdg/module.hpp>
@@ -24,53 +25,46 @@ class cmdflags {
 public:
 	inline
 	cmdflags()
-		: cfg(std::make_pair(false, ""))
-		, clg(false)
-		, llvm(false)
-		, rtree(false)
-		, rvsdg(false)
+		: l2j(false)
+		, j2r(false)
+		, r2j(false)
+		, j2l(false)
 	{}
 
-	std::pair<bool, std::string> cfg;
-	bool clg;
-	bool llvm;
-	bool rtree;
-	bool rvsdg;
+	bool l2j;
+	bool j2r;
+	bool r2j;
+	bool j2l;
 };
 
 std::string
 parse_cmdflags(int argc, char ** argv, cmdflags & cmdf)
 {
 	if (argc < 2) {
-		std::cerr << "Expected LLVM IR file as input\n";
+		std::cerr << "Expected LLVM IR file as input.\n";
 		exit(1);
 	}
 
 	for (int n = 1; n < argc-1; n++) {
 		std::string flag(argv[n]);
 
-		if (flag == "-llvm") {
-			cmdf.llvm = true;
+		if (flag == "--l2j") {
+			cmdf.l2j = true;
 			continue;
 		}
 
-		if (flag == "-clg") {
-			cmdf.clg = true;
+		if (flag == "--j2r") {
+			cmdf.j2r = true;
 			continue;
 		}
 
-		if (flag == "-rvsdg") {
-			cmdf.rvsdg = true;
+		if (flag == "--r2j") {
+			cmdf.r2j = true;
 			continue;
 		}
 
-		if (flag == "-rtree") {
-			cmdf.rtree = true;
-			continue;
-		}
-
-		if (flag == "-cfg") {
-			cmdf.cfg = std::make_pair(true, std::string(argv[++n]));
+		if (flag == "--j2l") {
+			cmdf.j2l = true;
 			continue;
 		}
 	}
@@ -78,51 +72,31 @@ parse_cmdflags(int argc, char ** argv, cmdflags & cmdf)
 	return std::string(argv[argc-1]);
 }
 
-int main (int argc, char ** argv)
+int
+main (int argc, char ** argv)
 {
-	cmdflags cmdf;
-	std::string file_name = parse_cmdflags(argc, argv, cmdf);
-
-	llvm::LLVMContext & context = llvm::getGlobalContext();
+	cmdflags flags;
+	auto file_name = parse_cmdflags(argc, argv, flags);
 
 	llvm::SMDiagnostic err;
-	std::unique_ptr<llvm::Module> module = llvm::parseIRFile(file_name, err, context);
+	auto lm = llvm::parseIRFile(file_name, err, llvm::getGlobalContext());
 
-	if (!module) {
+	if (!lm) {
 		err.print(argv[0], llvm::errs());
 		exit(1);
 	}
 
-	auto m = jlm::convert_module(*module);
+	auto jm = jlm::convert_module(*lm);
+	if (flags.l2j) jlm::view(*jm, stdout);
 
-	if (cmdf.clg)
-		std::cout << m->clg().to_string();
+	auto rvsdg = jlm::construct_rvsdg(*jm);
+	if (flags.j2r) jive::view(rvsdg->root(), stdout);
 
-	if (cmdf.cfg.first) {
-		jlm::clg_node * f = m->clg().lookup_function(cmdf.cfg.second);
-		if (!f) {
-			std::cerr << "Function not found.\n";
-			exit(1);
-		}
+	jm = jlm::rvsdg2jlm::rvsdg2jlm(*rvsdg);
+	if (flags.r2j) jlm::view(*jm, stdout);
 
-		if (f->cfg())
-			jive_cfg_view(*f->cfg());
-	}
-
-	auto rvsdg = jlm::construct_rvsdg(*m);
-
-	if (cmdf.rvsdg) {
-		jive::view(rvsdg->root(), stdout);
-	}
-
-	if (cmdf.rtree)
-		jive::region_tree(rvsdg->root(), stdout);
-
-	m = jlm::rvsdg2jlm::rvsdg2jlm(*rvsdg);
-	module = jlm::jlm2llvm::convert(*m, context);
-
-	if (cmdf.llvm)
-		module->dump();
+	lm = jlm::jlm2llvm::convert(*jm, llvm::getGlobalContext());
+	if (flags.j2l) lm->dump();
 
 	return 0;
 }
