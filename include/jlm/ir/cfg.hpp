@@ -115,6 +115,12 @@ private:
 };
 
 static inline bool
+is_exit(const jlm::attribute & attribute) noexcept
+{
+	return dynamic_cast<const jlm::exit_attribute*>(&attribute) != nullptr;
+}
+
+static inline bool
 is_exit_node(const jlm::cfg_node * node)
 {
 	return dynamic_cast<const jlm::exit_attribute*>(&node->attribute()) != nullptr;
