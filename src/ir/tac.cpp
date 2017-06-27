@@ -39,27 +39,4 @@ tac::tac(
 	}
 }
 
-std::string
-tac::debug_string() const
-{
-	std::stringstream sstrm;
-
-	if (outputs_.size() != 0) {
-		for (size_t n = 0; n < outputs_.size()-1; n++)
-			sstrm << outputs_[n]->debug_string() << ", ";
-		sstrm << outputs_[outputs_.size()-1]->debug_string() << " = ";
-	}
-
-	sstrm << operation_->debug_string();
-
-	if (inputs_.size() != 0) {
-		sstrm << " ";
-		for (size_t n = 0; n < inputs_.size()-1; n++)
-			sstrm << inputs_[n]->debug_string() << ", ";
-		sstrm << inputs_[inputs_.size()-1]->debug_string();
-	}
-
-	return sstrm.str();
-}
-
 }

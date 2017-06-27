@@ -21,16 +21,6 @@ basic_block::~basic_block()
 		delete tac;
 }
 
-std::string
-basic_block::debug_string() const noexcept
-{
-	std::string str;
-	for (const auto & tac : tacs_)
-		str += tac->debug_string() + "\\n";
-
-	return str;
-}
-
 std::unique_ptr<attribute>
 basic_block::copy() const
 {

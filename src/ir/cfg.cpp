@@ -36,12 +36,6 @@ create_entry_node(jlm::cfg * cfg)
 entry_attribute::~entry_attribute()
 {}
 
-std::string
-entry_attribute::debug_string() const noexcept
-{
-	return "ENTRY";
-}
-
 std::unique_ptr<attribute>
 entry_attribute::copy() const
 {
@@ -60,12 +54,6 @@ create_exit_node(jlm::cfg * cfg)
 exit_attribute::~exit_attribute()
 {}
 
-std::string
-exit_attribute::debug_string() const noexcept
-{
-	return "EXIT";
-}
-
 std::unique_ptr<attribute>
 exit_attribute::copy() const
 {
@@ -80,23 +68,6 @@ cfg::cfg(jlm::module & module)
 	entry_ = create_entry_node(this);
 	exit_ = create_exit_node(this);
 	entry_->add_outedge(exit_);
-}
-
-std::string
-cfg::convert_to_dot() const
-{
-	std::string dot("digraph cfg{\n");
-	for (const auto & node : nodes_) {
-		dot += strfmt((intptr_t)node.get());
-		dot += strfmt("[shape = box, label = \"", node->debug_string(), "\"];\n");
-		for (auto it = node->begin_outedges(); it != node->end_outedges(); it++) {
-			dot += strfmt((intptr_t)it->source(), " -> ", (intptr_t)it->sink());
-			dot += strfmt("[label = \"", it->index(), "\"];\n");
-		}
-	}
-	dot += "}\n";
-
-	return dot;
 }
 
 cfg::iterator
@@ -116,13 +87,4 @@ cfg::remove_node(cfg::iterator & it)
 	return rit;
 }
 
-}
-
-void
-jive_cfg_view(const jlm::cfg & cfg)
-{
-	FILE * file = popen("tee /tmp/cfg.dot | dot -Tps > /tmp/cfg.ps ; gv /tmp/cfg.ps", "w");
-	auto dot = cfg.convert_to_dot();
-	fwrite(dot.c_str(), dot.size(), 1, file);
-	pclose(file);
 }

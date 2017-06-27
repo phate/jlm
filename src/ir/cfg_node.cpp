@@ -127,12 +127,6 @@ cfg_node::has_selfloop_edge() const noexcept
 	return false;
 }
 
-std::string
-cfg_node::debug_string() const
-{
-	return strfmt(this, "\\n") + attribute().debug_string();
-}
-
 cfg_node *
 cfg_node::create(jlm::cfg & cfg, const jlm::attribute & attribute)
 {

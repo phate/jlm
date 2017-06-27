@@ -87,9 +87,6 @@ public:
 		return outputs_[index];
 	}
 
-	std::string
-	debug_string() const;
-
 private:
 	std::vector<const variable*> inputs_;
 	std::vector<const variable*> outputs_;

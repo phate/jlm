@@ -150,9 +150,6 @@ public:
 		tacs_.pop_back();
 	}
 
-	virtual std::string
-	debug_string() const noexcept override;
-
 	virtual std::unique_ptr<attribute>
 	copy() const override;
 

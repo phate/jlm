@@ -53,9 +53,6 @@ public:
 		return arguments_.push_back(v);
 	}
 
-	virtual std::string
-	debug_string() const noexcept override;
-
 	virtual std::unique_ptr<attribute>
 	copy() const override;
 
@@ -103,9 +100,6 @@ public:
 	{
 		results_.push_back(v);
 	}
-
-	virtual std::string
-	debug_string() const noexcept override;
 
 	virtual std::unique_ptr<attribute>
 	copy() const override;
@@ -263,9 +257,6 @@ public:
 		return iterator(nodes_.end());
 	}
 
-	std::string
-	convert_to_dot() const;
-
 	inline jlm::cfg_node *
 	entry_node() const noexcept
 	{
@@ -319,8 +310,5 @@ private:
 };
 
 }
-
-void
-jive_cfg_view(const jlm::cfg & self);
 
 #endif

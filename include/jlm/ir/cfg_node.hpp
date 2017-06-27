@@ -25,9 +25,6 @@ public:
 	attribute()
 	{}
 
-	virtual std::string
-	debug_string() const noexcept = 0;
-
 	virtual std::unique_ptr<attribute>
 	copy() const = 0;
 };
@@ -132,9 +129,6 @@ public:
 	{
 		return *attr_;
 	}
-
-	virtual std::string
-	debug_string() const;
 
 	inline jlm::cfg * cfg() const noexcept { return cfg_; }
 
