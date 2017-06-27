@@ -29,12 +29,18 @@ public:
 		, j2r(false)
 		, r2j(false)
 		, j2l(false)
+		, l2jdot(false)
+		, r2jdot(false)
 	{}
 
 	bool l2j;
 	bool j2r;
 	bool r2j;
 	bool j2l;
+	bool l2jdot;
+	bool r2jdot;
+	std::string l2jdot_function;
+	std::string r2jdot_function;
 };
 
 std::string
@@ -67,9 +73,48 @@ parse_cmdflags(int argc, char ** argv, cmdflags & cmdf)
 			cmdf.j2l = true;
 			continue;
 		}
+
+		if (flag == "--l2jdot") {
+			cmdf.l2jdot = true;
+			if (n+1 == argc-1) {
+				std::cerr << "Expected LLVM IR file as input.\n";
+				exit(1);
+			}
+
+			cmdf.l2jdot_function = std::string(argv[++n]);
+			continue;
+		}
+
+		if (flag == "--r2jdot") {
+			cmdf.r2jdot = true;
+			if (n+1 == argc-1) {
+				std::cerr << "Expected LLVM IR file as input.\n";
+				exit(1);
+			}
+
+			cmdf.r2jdot_function = std::string(argv[++n]);
+			continue;
+		}
 	}
 
 	return std::string(argv[argc-1]);
+}
+
+static inline const jlm::cfg *
+find_cfg(const jlm::clg & clg, const std::string & name)
+{
+	auto f = clg.lookup_function(name);
+	if (!f) {
+		std::cerr << "Function " << name << " not found.\n";
+		exit(1);
+	}
+
+	if (!f->cfg()) {
+		std::cerr << "Function " << name << " has no CFG.\n";
+		exit(1);
+	}
+
+	return f->cfg();
 }
 
 int
@@ -88,12 +133,14 @@ main (int argc, char ** argv)
 
 	auto jm = jlm::convert_module(*lm);
 	if (flags.l2j) jlm::view(*jm, stdout);
+	if (flags.l2jdot) jlm::view_dot(*find_cfg(jm->clg(), flags.l2jdot_function), stdout);
 
 	auto rvsdg = jlm::construct_rvsdg(*jm);
 	if (flags.j2r) jive::view(rvsdg->root(), stdout);
 
 	jm = jlm::rvsdg2jlm::rvsdg2jlm(*rvsdg);
 	if (flags.r2j) jlm::view(*jm, stdout);
+	if (flags.r2jdot) jlm::view_dot(*find_cfg(jm->clg(), flags.r2jdot_function), stdout);
 
 	lm = jlm::jlm2llvm::convert(*jm, llvm::getGlobalContext());
 	if (flags.j2l) lm->dump();
