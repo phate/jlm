@@ -72,13 +72,13 @@ is_entry_node(const jlm::cfg_node * node)
 	return dynamic_cast<const jlm::entry*>(&node->attribute()) != nullptr;
 }
 
-class exit_attribute final : public attribute {
+class exit final : public attribute {
 public:
 	virtual
-	~exit_attribute();
+	~exit();
 
 	inline
-	exit_attribute()
+	exit()
 	: attribute()
 	{}
 
@@ -111,13 +111,13 @@ private:
 static inline bool
 is_exit(const jlm::attribute & attribute) noexcept
 {
-	return dynamic_cast<const jlm::exit_attribute*>(&attribute) != nullptr;
+	return dynamic_cast<const jlm::exit*>(&attribute) != nullptr;
 }
 
 static inline bool
 is_exit_node(const jlm::cfg_node * node)
 {
-	return dynamic_cast<const jlm::exit_attribute*>(&node->attribute()) != nullptr;
+	return dynamic_cast<const jlm::exit*>(&node->attribute()) != nullptr;
 }
 
 class cfg final {
@@ -275,10 +275,10 @@ public:
 		return exit_;
 	}
 
-	inline jlm::exit_attribute &
+	inline jlm::exit &
 	exit() const noexcept
 	{
-		return *static_cast<exit_attribute*>(&exit_node()->attribute());
+		return *static_cast<jlm::exit*>(&exit_node()->attribute());
 	}
 
 	inline void

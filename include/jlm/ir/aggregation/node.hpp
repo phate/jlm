@@ -205,7 +205,7 @@ create_entry_node(const jlm::entry & attribute)
 }
 
 static inline std::unique_ptr<agg::node>
-create_exit_node(const jlm::exit_attribute & attribute)
+create_exit_node(const jlm::exit & attribute)
 {
 	return std::make_unique<agg::node>(std::make_unique<exit>(attribute));
 }

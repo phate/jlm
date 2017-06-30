@@ -47,17 +47,17 @@ entry::copy() const
 static inline jlm::cfg_node *
 create_exit_node(jlm::cfg * cfg)
 {
-	jlm::exit_attribute attr;
+	jlm::exit attr;
 	return cfg_node::create(*cfg, attr);
 }
 
-exit_attribute::~exit_attribute()
+exit::~exit()
 {}
 
 std::unique_ptr<attribute>
-exit_attribute::copy() const
+exit::copy() const
 {
-	return std::unique_ptr<attribute>(new exit_attribute(*this));
+	return std::unique_ptr<attribute>(new exit(*this));
 }
 
 /* cfg */

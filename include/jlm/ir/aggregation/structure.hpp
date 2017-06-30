@@ -67,11 +67,11 @@ public:
 	~exit();
 
 	inline
-	exit(const jlm::exit_attribute & attribute)
+	exit(const jlm::exit & attribute)
 	: attribute_(attribute)
 	{}
 
-	inline const jlm::exit_attribute &
+	inline const jlm::exit &
 	attribute() const noexcept
 	{
 		return attribute_;
@@ -81,7 +81,7 @@ public:
 	debug_string() const override;
 
 private:
-	jlm::exit_attribute attribute_;
+	jlm::exit attribute_;
 };
 
 static inline bool
