@@ -59,7 +59,7 @@ static inline std::string
 emit_entry(const jlm::cfg_node * node)
 {
 	JLM_DEBUG_ASSERT(is_entry(node->attribute()));
-	auto & entry = *static_cast<const jlm::entry_attribute*>(&node->attribute());
+	auto & entry = *static_cast<const jlm::entry*>(&node->attribute());
 
 	std::string str;
 	for (size_t n = 0; n < entry.narguments(); n++)
@@ -155,7 +155,7 @@ to_str(const jlm::cfg & cfg)
 {
 	static
 	std::unordered_map<std::type_index, std::string(*)(const cfg_node*)> map({
-	  {std::type_index(typeid(entry_attribute)), emit_entry}
+	  {std::type_index(typeid(entry)), emit_entry}
 	, {std::type_index(typeid(exit_attribute)), emit_exit}
 	, {std::type_index(typeid(basic_block)), emit_basic_block}
 	});
@@ -228,7 +228,7 @@ static inline std::string
 emit_entry(const jlm::attribute & attribute)
 {
 	JLM_DEBUG_ASSERT(is_entry(attribute));
-	auto & entry = *static_cast<const jlm::entry_attribute*>(&attribute);
+	auto & entry = *static_cast<const jlm::entry*>(&attribute);
 
 	std::string str;
 	for (size_t n = 0; n < entry.narguments(); n++) {
@@ -306,7 +306,7 @@ emit_node(const jlm::cfg_node & node)
 {
 	static
 	std::unordered_map<std::type_index, std::string(*)(const jlm::attribute &)> map({
-	  {std::type_index(typeid(jlm::entry_attribute)), emit_entry}
+	  {std::type_index(typeid(jlm::entry)), emit_entry}
 	, {std::type_index(typeid(jlm::exit_attribute)), emit_exit}
 	, {std::type_index(typeid(jlm::basic_block)), emit_basic_block}
 	});

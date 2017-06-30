@@ -24,13 +24,13 @@ class basic_block;
 class module;
 class tac;
 
-class entry_attribute final : public attribute {
+class entry final : public attribute {
 public:
 	virtual
-	~entry_attribute();
+	~entry();
 
 	inline
-	entry_attribute()
+	entry()
 	: attribute()
 	{}
 
@@ -63,13 +63,13 @@ private:
 static inline bool
 is_entry(const jlm::attribute & attribute) noexcept
 {
-	return dynamic_cast<const jlm::entry_attribute*>(&attribute) != nullptr;
+	return dynamic_cast<const jlm::entry*>(&attribute) != nullptr;
 }
 
 static inline bool
 is_entry_node(const jlm::cfg_node * node)
 {
-	return dynamic_cast<const jlm::entry_attribute*>(&node->attribute()) != nullptr;
+	return dynamic_cast<const jlm::entry*>(&node->attribute()) != nullptr;
 }
 
 class exit_attribute final : public attribute {
@@ -263,10 +263,10 @@ public:
 		return entry_;
 	}
 
-	inline jlm::entry_attribute &
+	inline jlm::entry &
 	entry() const noexcept
 	{
-		return *static_cast<entry_attribute*>(&entry_node()->attribute());
+		return *static_cast<jlm::entry*>(&entry_node()->attribute());
 	}
 
 	inline jlm::cfg_node *

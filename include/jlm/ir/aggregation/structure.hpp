@@ -36,11 +36,11 @@ public:
 	~entry();
 
 	inline
-	entry(const jlm::entry_attribute & attribute)
+	entry(const jlm::entry & attribute)
 	: attribute_(attribute)
 	{}
 
-	inline const jlm::entry_attribute &
+	inline const jlm::entry &
 	attribute() const noexcept
 	{
 		return attribute_;
@@ -50,7 +50,7 @@ public:
 	debug_string() const override;
 
 private:
-	jlm::entry_attribute attribute_;
+	jlm::entry attribute_;
 };
 
 static inline bool

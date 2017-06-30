@@ -210,7 +210,7 @@ aggregate(jlm::cfg & cfg)
 		if (is_basic_block(node.attribute()))
 			map[&node] = create_block_node(*static_cast<const basic_block*>(&node.attribute()));
 		else if (is_entry_node(&node))
-			map[&node] = create_entry_node(*static_cast<const entry_attribute*>(&node.attribute()));
+			map[&node] = create_entry_node(*static_cast<const jlm::entry*>(&node.attribute()));
 		else if (is_exit_node(&node))
 			map[&node] = create_exit_node(*static_cast<const exit_attribute*>(&node.attribute()));
 		else

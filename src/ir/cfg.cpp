@@ -29,17 +29,17 @@ namespace jlm {
 static inline jlm::cfg_node *
 create_entry_node(jlm::cfg * cfg)
 {
-	jlm::entry_attribute attr;
+	jlm::entry attr;
 	return cfg_node::create(*cfg, attr);
 }
 
-entry_attribute::~entry_attribute()
+entry::~entry()
 {}
 
 std::unique_ptr<attribute>
-entry_attribute::copy() const
+entry::copy() const
 {
-	return std::unique_ptr<attribute>(new entry_attribute(*this));
+	return std::unique_ptr<attribute>(new entry(*this));
 }
 
 /* exit attribute */

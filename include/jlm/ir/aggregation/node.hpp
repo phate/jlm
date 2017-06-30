@@ -199,7 +199,7 @@ private:
 };
 
 static inline std::unique_ptr<agg::node>
-create_entry_node(const jlm::entry_attribute & attribute)
+create_entry_node(const jlm::entry & attribute)
 {
 	return std::make_unique<agg::node>(std::make_unique<entry>(attribute));
 }
