@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jive/arch/memorytype.h>
 #include <jive/vsdg/operators/match.h>
 
 #include <jlm/ir/basic_block.hpp>
@@ -161,7 +162,7 @@ convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 		for (const auto & tac : bb) {
 			if (!is_phi_op(tac->operation()))
 				continue;
-			if (dynamic_cast<const jive::state::type*>(&tac->output(0)->type()))
+			if (dynamic_cast<const jive::mem::type*>(&tac->output(0)->type()))
 				continue;
 
 			JLM_DEBUG_ASSERT(node->ninedges() == tac->ninputs());

@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jive/arch/memorytype.h>
 #include <jive/types/bitstring.h>
 #include <jive/types/function.h>
 #include <jive/vsdg/control.h>
@@ -256,7 +257,7 @@ convert_phi(
 	JLM_DEBUG_ASSERT(is_phi_op(op));
 	auto & pop = *static_cast<const jlm::phi_op*>(&op);
 
-	if (dynamic_cast<const jive::state::type*>(&pop.type()))
+	if (dynamic_cast<const jive::mem::type*>(&pop.type()))
 		return nullptr;
 
 	auto t = convert_type(pop.type(), builder.getContext());
