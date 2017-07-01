@@ -13,7 +13,13 @@ namespace jlm {
 class cfg;
 class cfg_edge;
 
-std::unordered_set<const jlm::cfg_edge*>
+void
+restructure_loops(jlm::cfg * cfg);
+
+void
+restructure_branches(jlm::cfg * cfg);
+
+void
 restructure(jlm::cfg * cfg);
 
 }

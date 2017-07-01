@@ -10,9 +10,8 @@
 #include <jlm/ir/module.hpp>
 #include <jlm/ir/operators.hpp>
 
-#include <jive/types/bitstring/constant.h>
+#include <jive/vsdg/control.h>
 #include <jive/vsdg/controltype.h>
-#include <jive/vsdg/operators/match.h>
 
 #include <algorithm>
 #include <cmath>
@@ -20,51 +19,210 @@
 #include <unordered_map>
 #include <unordered_set>
 
-static inline std::vector<const jlm::variable*>
-create_result_variables(jlm::module & m, const jive::operation & op)
-{
-	std::vector<const jlm::variable*> variables;
-	for (size_t n = 0; n < op.nresults(); n++)
-		variables.push_back(m.create_variable(op.result_type(n), false));
-
-	return variables;
-}
-
 namespace jlm {
 
-static void
-find_entries_and_exits(
-	const std::unordered_set<jlm::cfg_node*> & scc,
-	std::unordered_set<jlm::cfg_edge*> & ae,
-	std::unordered_map<jlm::cfg_node*, size_t> & ve,
-	std::unordered_set<jlm::cfg_edge*> & ax,
-	std::unordered_map<jlm::cfg_node*, size_t> & vx,
-	std::unordered_set<jlm::cfg_edge*> & ar)
+struct scc_structure {
+	typedef std::unordered_set<jlm::cfg_node*>::const_iterator const_node_iterator;
+	typedef std::unordered_set<jlm::cfg_edge*>::const_iterator const_edge_iterator;
+
+	inline
+	scc_structure(
+		const std::unordered_set<jlm::cfg_node*> & enodes,
+		const std::unordered_set<jlm::cfg_node*> & xnodes,
+		const std::unordered_set<jlm::cfg_edge*> & eedges,
+		const std::unordered_set<jlm::cfg_edge*> & redges,
+		const std::unordered_set<jlm::cfg_edge*> & xedges)
+	: enodes_(enodes)
+	, xnodes_(xnodes)
+	, eedges_(eedges)
+	, redges_(redges)
+	, xedges_(xedges)
+	{}
+
+	inline size_t
+	nenodes() const noexcept
+	{
+		return enodes_.size();
+	}
+
+	inline size_t
+	nxnodes() const noexcept
+	{
+		return xnodes_.size();
+	}
+
+	inline size_t
+	needges() const noexcept
+	{
+		return eedges_.size();
+	}
+
+	inline size_t
+	nredges() const noexcept
+	{
+		return redges_.size();
+	}
+
+	inline size_t
+	nxedges() const noexcept
+	{
+		return xedges_.size();
+	}
+
+	inline const_node_iterator
+	begin_enodes() const
+	{
+		return enodes_.begin();
+	}
+
+	inline const_node_iterator
+	end_enodes() const
+	{
+		return enodes_.end();
+	}
+
+	inline const_node_iterator
+	begin_xnodes() const
+	{
+		return xnodes_.begin();
+	}
+
+	inline const_node_iterator
+	end_xnodes() const
+	{
+		return xnodes_.end();
+	}
+
+	inline const_edge_iterator
+	begin_eedges() const
+	{
+		return eedges_.begin();
+	}
+
+	inline const_edge_iterator
+	end_eedges() const
+	{
+		return eedges_.end();
+	}
+
+	inline const_edge_iterator
+	begin_redges() const
+	{
+		return redges_.begin();
+	}
+
+	inline const_edge_iterator
+	end_redges() const
+	{
+		return redges_.end();
+	}
+
+	inline const_edge_iterator
+	begin_xedges() const
+	{
+		return xedges_.begin();
+	}
+
+	inline const_edge_iterator
+	end_xedges() const
+	{
+		return xedges_.end();
+	}
+
+	std::unordered_set<jlm::cfg_node*> enodes_;
+	std::unordered_set<jlm::cfg_node*> xnodes_;
+	std::unordered_set<jlm::cfg_edge*> eedges_;
+	std::unordered_set<jlm::cfg_edge*> redges_;
+	std::unordered_set<jlm::cfg_edge*> xedges_;
+};
+
+static inline bool
+is_tcloop(const scc_structure & s)
 {
+	return s.nenodes() == 1 && s.nredges() == 1 && s.nxedges() == 1
+			&& (*s.begin_redges())->source() == (*s.begin_xedges())->source();
+}
+
+static inline scc_structure
+extract_tcloop(jlm::cfg_node * ne, jlm::cfg_node * nx)
+{
+	JLM_DEBUG_ASSERT(nx->noutedges() == 2);
+
+	auto er = nx->outedge(0);
+	auto ex = nx->outedge(1);
+	if (er->sink() != ne) {
+		er = nx->outedge(1);
+		ex = nx->outedge(0);
+	}
+	JLM_DEBUG_ASSERT(er->sink() == ne);
+
+	std::unordered_set<jlm::cfg_edge*> eedges;
+	for (auto it = ne->begin_inedges(); it != ne->end_inedges(); it++) {
+		if ((*it)->source() != nx)
+			eedges.insert(*it);
+	}
+
+	auto bb = create_basic_block_node(ne->cfg());
+	ne->divert_inedges(ex->sink());
+	er->divert(ne);
+	ex->divert(bb);
+
+	return scc_structure({ne}, {bb}, eedges, {er}, {ex});
+}
+
+static inline void
+reinsert_tcloop(const scc_structure & s)
+{
+	JLM_DEBUG_ASSERT(s.nenodes() == 1 && s.nxnodes() == 1);
+	JLM_DEBUG_ASSERT(s.needges() > 0 && s.nredges() == 1 && s.nxedges() == 1);
+	auto ne = *s.begin_enodes();
+	auto nx = *s.begin_xnodes();
+	auto node = (*s.begin_eedges())->sink();
+
+	for (auto it = s.begin_eedges(); it != s.end_eedges(); it++)
+		(*it)->divert(ne);
+
+	JLM_DEBUG_ASSERT(nx->ninedges() == 1);
+	JLM_DEBUG_ASSERT(nx->noutedges() == 0);
+	nx->divert_inedges(node);
+	node->cfg()->remove_node(nx);
+}
+
+static scc_structure
+find_scc_structure(const std::unordered_set<jlm::cfg_node*> & scc)
+{
+	std::unordered_set<jlm::cfg_edge*> eedges;
+	std::unordered_set<jlm::cfg_edge*> redges;
+	std::unordered_set<jlm::cfg_edge*> xedges;
+	std::unordered_set<jlm::cfg_node*> enodes;
+	std::unordered_set<jlm::cfg_node*> xnodes;
+
 	for (auto node : scc) {
 		for (auto it = node->begin_inedges(); it != node->end_inedges(); it++) {
 			if (scc.find((*it)->source()) == scc.end()) {
-				ae.insert(*it);
-				if (ve.find(node) == ve.end())
-					ve.insert(std::make_pair(node, ve.size()));
+				eedges.insert(*it);
+				if (enodes.find(node) == enodes.end())
+					enodes.insert(node);
 			}
 		}
 
 		for (auto it = node->begin_outedges(); it != node->end_outedges(); it++) {
 			if (scc.find(it->sink()) == scc.end()) {
-				ax.insert(it.edge());
-				if (vx.find(it->sink()) == vx.end())
-					vx.insert(std::make_pair(it->sink(), vx.size()));
+				xedges.insert(it.edge());
+				if (xnodes.find(it->sink()) == xnodes.end())
+					xnodes.insert(it->sink());
 			}
 		}
 	}
 
 	for (auto node : scc) {
 		for (auto it = node->begin_outedges(); it != node->end_outedges(); it++) {
-			if (ve.find(it->sink()) != ve.end())
-				ar.insert(it.edge());
+			if (enodes.find(it->sink()) != enodes.end())
+				redges.insert(it.edge());
 		}
 	}
+
+	return scc_structure(enodes, xnodes, eedges, redges, xedges);
 }
 
 /* Tarjan's SCC algorithm */
@@ -124,129 +282,134 @@ find_sccs(jlm::cfg_node * enter, jlm::cfg_node * exit)
 	return sccs;
 }
 
-static void
-restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit,
-	std::vector<jlm::cfg_edge> & back_edges)
+static inline void
+append_branch(jlm::cfg_node * node, const variable * operand)
 {
-	jlm::cfg * cfg = entry->cfg();
-	std::vector<std::unordered_set<jlm::cfg_node*>> sccs = find_sccs(entry, exit);
+	JLM_DEBUG_ASSERT(dynamic_cast<const jive::ctl::type*>(&operand->type()));
+	auto nalternatives = static_cast<const jive::ctl::type*>(&operand->type())->nalternatives();
 
-	for (auto scc : sccs) {
-		std::unordered_set<jlm::cfg_edge*> ae;
-		std::unordered_map<jlm::cfg_node*, size_t> ve;
-		std::unordered_set<jlm::cfg_edge*> ax;
-		std::unordered_map<jlm::cfg_node*, size_t> vx;
-		std::unordered_set<jlm::cfg_edge*> ar;
-		find_entries_and_exits(scc, ae, ve, ax, vx, ar);
+	append_last(node, create_branch_tac(nalternatives, operand));
+}
 
-		/* The loop already has the required structure, nothing needs to be inserted */
-		if (ae.size() == 1 && ar.size() == 1 && ax.size() == 1
-			&& (*ar.begin())->source() == (*ax.begin())->source())
-		{
-			jlm::cfg_edge * r = *ar.begin();
-			back_edges.push_back(jlm::cfg_edge(r->source(), r->sink(), r->index()));
-			r->source()->remove_outedge(r->index());
-			restructure_loops((*ae.begin())->sink(), (*ax.begin())->source(), back_edges);
-			continue;
-		}
+static inline void
+append_constant(jlm::cfg_node * node, const variable * result, size_t value)
+{
+	JLM_DEBUG_ASSERT(dynamic_cast<const jive::ctl::type*>(&result->type()));
+	auto nalternatives = static_cast<const jive::ctl::type*>(&result->type())->nalternatives();
 
-		/* Restructure loop */
-		size_t nbits = std::max(std::ceil(std::log2(std::max(ve.size(), vx.size()))), 1.0);
-		auto q = cfg->module().create_variable(jive::bits::type(nbits), "#q#");
+	jive::ctl::constant_op op(jive::ctl::value_repr(value, nalternatives));
+	append_last(node, create_tac(op, {}, {result}));
+}
 
-		auto r = cfg->module().create_variable(jive::bits::type(1), "#r#", false);
-		auto vt = create_basic_block_node(cfg);
-		auto attr = static_cast<basic_block*>(&vt->attribute());
-		auto op = jive::match_op(1, {{0, 0}}, 1, 2);
-		append_last(vt, create_tac(op, {r}, create_result_variables(cfg->module(), op)));
-		append_last(vt, create_branch_tac(2, attr->last()->output(0)));
+static inline void
+restructure_loop_entry(const scc_structure & s, jlm::cfg_node * new_ne, const variable * q)
+{
+	size_t n = 0;
+	std::unordered_map<jlm::cfg_node*, size_t> indices;
+	for (auto it = s.begin_enodes(); it != s.end_enodes(); it++, n++) {
+		new_ne->add_outedge(*it);
+		indices[*it] = n;
+	}
 
+	if (q) append_branch(new_ne, q);
 
-		/* handle loop entries */
-		cfg_node * new_ve;
-		if (ve.size() > 1) {
-			new_ve = create_basic_block_node(cfg);
-			attr = static_cast<basic_block*>(&new_ve->attribute());
-
-			std::map<uint64_t, uint64_t> ve_mapping;
-			for (size_t n = 0; n < ve.size()-1; n++)
-				ve_mapping[n] = n;
-			op = jive::match_op(nbits, ve_mapping, ve.size()-1, ve.size());
-			append_last(new_ve, create_tac(op, {q}, create_result_variables(cfg->module(), op)));
-			append_last(new_ve, create_branch_tac(ve.size(), attr->last()->output(0)));
-
-			for (auto edge : ae) {
-				auto ass = create_basic_block_node(cfg);
-				attr = static_cast<basic_block*>(&ass->attribute());
-				jive::bits::constant_op op(jive::bits::value_repr(nbits, ve[edge->sink()]));
-				append_last(ass, create_tac(op, {}, {q}));
-				ass->add_outedge(new_ve);
-				edge->divert(ass);
-			}
-
-			for (auto v : ve) {
-				auto e = new_ve->add_outedge(v.first);
-				JLM_DEBUG_ASSERT(e->index() == v.second);
-			}
-		} else
-			new_ve = ve.begin()->first;
-
-
-		/* handle loop exists */
-		cfg_node * new_vx;
-		if (vx.size() > 1) {
-			new_vx = create_basic_block_node(cfg);
-			attr = static_cast<basic_block*>(&new_vx->attribute());
-
-			std::map<uint64_t, uint64_t> vx_mapping;
-			for (size_t n = 0; n < vx.size()-1; n++)
-				vx_mapping[n] = n;
-			op = jive::match_op(nbits, vx_mapping, vx.size()-1, vx.size());
-			append_last(new_vx, create_tac(op, {q}, create_result_variables(cfg->module(), op)));
-			append_last(new_vx, create_branch_tac(vx.size(), attr->last()->output(0)));
-
-			for (auto v : vx) {
-				auto e = new_vx->add_outedge(v.first);
-				JLM_DEBUG_ASSERT(e->index() == v.second);
-			}
-		} else
-			new_vx = vx.begin()->first;
-
-		for (auto edge : ax) {
-			auto ass = create_basic_block_node(cfg);
-			attr = static_cast<basic_block*>(&ass->attribute());
-			append_last(ass, create_tac(jive::bits::constant_op(jive::bits::value_repr(1,0)), {}, {r}));
-			if (vx.size() > 1) {
-				jive::bits::constant_op op(jive::bits::value_repr(nbits, vx[edge->sink()]));
-				append_last(ass, create_tac(op, {}, {q}));
-			}
-			ass->add_outedge(vt);
-			edge->divert(ass);
-		}
-
-
-		/* handle loop repetition */
-		for (auto edge : ar) {
-			auto ass = create_basic_block_node(cfg);
-			attr = static_cast<basic_block*>(&ass->attribute());
-			append_last(ass, create_tac(jive::bits::constant_op(jive::bits::value_repr(1,1)), {}, {r}));
-			if (ve.size() > 1) {
-				jive::bits::constant_op op(jive::bits::value_repr(nbits, ve[edge->sink()]));
-				append_last(ass, create_tac(op, {}, {q}));
-			}
-			ass->add_outedge(vt);
-			edge->divert(ass);
-		}
-
-		vt->add_outedge(new_vx);
-		back_edges.push_back(jlm::cfg_edge(vt, new_ve, 1));
-
-		restructure_loops(new_ve, vt, back_edges);
+	for (auto it = s.begin_eedges(); it != s.end_eedges(); it++) {
+		auto os = (*it)->sink();
+		(*it)->divert(new_ne);
+		if (q) append_constant((*it)->split(), q, indices[os]);
 	}
 }
 
-static const jlm::cfg_node *
-find_head_branch(const jlm::cfg_node * start, const jlm::cfg_node * end)
+static inline void
+restructure_loop_exit(
+	const scc_structure & s,
+	jlm::cfg_node * new_nr,
+	jlm::cfg_node * new_nx,
+	const variable * q,
+	const variable * r)
+{
+	size_t n = 0;
+	std::unordered_map<jlm::cfg_node*, size_t> indices;
+	for (auto it = s.begin_xnodes(); it != s.end_xnodes(); it++, n++) {
+		new_nx->add_outedge(*it);
+		indices[*it] = n;
+	}
+
+	if (q) append_branch(new_nx, q);
+
+	for (auto it = s.begin_xedges(); it != s.end_xedges(); it++) {
+		auto os = (*it)->sink();
+		(*it)->divert(new_nr);
+		auto bb = (*it)->split();
+		if (q) append_constant(bb, q, indices[os]);
+		append_constant(bb, r, 0);
+	}
+}
+
+static inline void
+restructure_loop_repetition(
+	const scc_structure & s,
+	jlm::cfg_node * new_nr,
+	jlm::cfg_node * new_nx,
+	const variable * q,
+	const variable * r)
+{
+	size_t n = 0;
+	std::unordered_map<jlm::cfg_node*, size_t> indices;
+	for (auto it = s.begin_enodes(); it != s.end_enodes(); it++, n++)
+		indices[*it] = n;
+
+	for (auto it = s.begin_redges(); it != s.end_redges(); it++) {
+		auto os = (*it)->sink();
+		(*it)->divert(new_nr);
+		auto bb = (*it)->split();
+		if (q) append_constant(bb, q, indices[os]);
+		append_constant(bb, r, 1);
+	}
+}
+
+static void
+restructure(jlm::cfg_node*, jlm::cfg_node*, std::vector<scc_structure>&);
+
+static void
+restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit, std::vector<scc_structure> & loops)
+{
+	if (entry == exit)
+		return;
+
+	auto cfg = entry->cfg();
+	auto & module = cfg->module();
+
+	auto sccs = find_sccs(entry, exit);
+	for (auto scc : sccs) {
+		auto s = find_scc_structure(scc);
+
+		if (is_tcloop(s)) {
+			loops.push_back(extract_tcloop(*s.begin_enodes(), (*s.begin_xedges())->source()));
+			continue;
+		}
+
+		jive::ctl::type t(std::max(s.nenodes(), s.nxnodes()));
+		auto r = module.create_variable(jive::ctl::type(2), "#r#", false);
+		auto q = t.nalternatives() > 1 ? module.create_variable(t, "#q#", false) : nullptr;
+		auto new_ne = create_basic_block_node(cfg);
+		auto new_nr = create_basic_block_node(cfg);
+		auto new_nx = create_basic_block_node(cfg);
+		new_nr->add_outedge(new_nx);
+		new_nr->add_outedge(new_ne);
+		append_branch(new_nr, r);
+
+		restructure_loop_entry(s, new_ne, q);
+		restructure_loop_exit(s, new_nr, new_nx, q, r);
+		restructure_loop_repetition(s, new_nr, new_nr, q, r);
+
+		restructure(new_ne, new_nr, loops);
+		loops.push_back(extract_tcloop(new_ne, new_nr));
+	}
+}
+
+static jlm::cfg_node *
+find_head_branch(jlm::cfg_node * start, jlm::cfg_node * end)
 {
 	do {
 		if (start->is_branch() || start == end)
@@ -290,145 +453,155 @@ find_dominator_graph(const jlm::cfg_edge * edge)
 	return nodes;
 }
 
-static void
-restructure_branches(jlm::cfg_node * start, jlm::cfg_node * end)
+struct continuation {
+	std::unordered_set<jlm::cfg_node*> points;
+	std::unordered_map<jlm::cfg_edge*, std::unordered_set<jlm::cfg_edge*>> edges;
+};
+
+static inline continuation
+compute_continuation(jlm::cfg_node * hb)
 {
-	jlm::cfg * cfg = start->cfg();
+	JLM_DEBUG_ASSERT(hb->noutedges() > 1);
 
-	const jlm::cfg_node * head_branch = find_head_branch(start, end);
-	if (head_branch == end)
-		return;
+	std::unordered_map<jlm::cfg_edge*, std::unordered_set<jlm::cfg_node*>> dgraphs;
+	for (auto it = hb->begin_outedges(); it != hb->end_outedges(); it++)
+		dgraphs[it.edge()] = find_dominator_graph(it.edge());
 
-	/* Compute the branch graphs and insert their nodes into sets. */
-	std::unordered_set<jlm::cfg_node*> all_branch_nodes;
-	std::vector<std::unordered_set<jlm::cfg_node*>> branch_nodes;
-	std::vector<jlm::cfg_edge*> af;
-	for (auto it = head_branch->begin_outedges(); it != head_branch->end_outedges(); it++)
-		af.push_back(it.edge());
+	continuation c;
+	for (auto it = hb->begin_outedges(); it != hb->end_outedges(); it++) {
+		auto & dgraph = dgraphs[it.edge()];
+		if (dgraph.empty()) {
+			c.edges[it.edge()].insert(it.edge());
+			c.points.insert(it.edge()->sink());
+			continue;
+		}
 
-	for (size_t n = 0; n < af.size(); n++) {
-		std::unordered_set<jlm::cfg_node*> branch = find_dominator_graph(af[n]);
-		branch_nodes.push_back(std::unordered_set<jlm::cfg_node*>(branch.begin(),
-			branch.end()));
-		all_branch_nodes.insert(branch.begin(), branch.end());
-	}
-
-	/* Compute continuation points and the branch out edges. */
-	std::unordered_map<jlm::cfg_node*, size_t> cpoints;
-	std::vector<std::unordered_set<jlm::cfg_edge*>> branch_out_edges;
-	for (size_t n = 0; n < branch_nodes.size(); n++) {
-		branch_out_edges.push_back(std::unordered_set<jlm::cfg_edge*>());
-		if (branch_nodes[n].empty()) {
-			branch_out_edges[n].insert(af[n]);
-			cpoints.insert(std::make_pair(af[n]->sink(), cpoints.size()));
-		} else {
-			for (auto node : branch_nodes[n]) {
-				for (auto it = node->begin_outedges(); it != node->end_outedges(); it++) {
-					if (all_branch_nodes.find(it->sink()) == all_branch_nodes.end()) {
-						branch_out_edges[n].insert(it.edge());
-						cpoints.insert(std::make_pair(it->sink(), cpoints.size()));
-					}
+		for (const auto & node : dgraph) {
+			for (auto it2 = node->begin_outedges(); it2 != node->end_outedges(); it2++) {
+				if (dgraph.find(it2->sink()) == dgraph.end()) {
+					c.edges[it.edge()].insert(it2.edge());
+					c.points.insert(it2->sink());
 				}
 			}
 		}
 	}
-	JLM_DEBUG_ASSERT(!cpoints.empty());
 
-	/* Nothing needs to be restructured for just one continuation point */
-	if (cpoints.size() == 1) {
-		jlm::cfg_node * cpoint = cpoints.begin()->first;
-		JLM_DEBUG_ASSERT(branch_out_edges.size() == af.size());
-		for (size_t n = 0; n < af.size(); n++) {
-			/* empty branch subgraph, nothing needs to be done */
-			if (af[n]->sink() == cpoint) {
-				af[n]->split();
+	return c;
+}
+
+static inline void
+restructure_branches(jlm::cfg_node * entry, jlm::cfg_node * exit)
+{
+	auto cfg = entry->cfg();
+	auto & module = cfg->module();
+
+	auto hb = find_head_branch(entry, exit);
+	if (hb == exit) return;
+
+	auto c = compute_continuation(hb);
+	JLM_DEBUG_ASSERT(!c.points.empty());
+
+	if (c.points.size() == 1) {
+		auto cpoint = *c.points.begin();
+		for (auto it = hb->begin_outedges(); it != hb->end_outedges(); it++) {
+			auto cedges = c.edges[it.edge()];
+
+			/* empty branch subgraph */
+			if (it->sink() == cpoint) {
+				it->split();
 				continue;
 			}
 
-			/* only one branch out edge leads to the continuation point */
-			if (branch_out_edges[n].size() == 1) {
-				restructure_branches(af[n]->sink(), (*branch_out_edges[n].begin())->source());
+			/* only one continuation edge */
+			if (cedges.size() == 1) {
+				auto e = *cedges.begin();
+				JLM_DEBUG_ASSERT(e != it.edge());
+				restructure_branches(it->sink(), e->source());
 				continue;
 			}
 
-			/* more than one branch out edge leads to the continuation point */
+			/* more than one continuation edge */
 			auto null = create_basic_block_node(cfg);
-			null->add_outedge(cpoints.begin()->first);
-			for (auto edge : branch_out_edges[n])
-				edge->divert(null);
-			restructure_branches(af[n]->sink(), null);
+			null->add_outedge(cpoint);
+			for (const auto & e : cedges)
+				e->divert(null);
+			restructure_branches(it->sink(), null);
 		}
 
 		/* restructure tail subgraph */
-		restructure_branches(cpoint, end);
+		restructure_branches(cpoint, exit);
 		return;
 	}
 
-	/* Insert vt into CFG and add outgoing edges to the continuation points */
-	size_t nbits = std::ceil(std::log2(cpoints.size()));
-	auto p = cfg->module().create_variable(jive::bits::type(nbits), "#p#", false);
-	auto vt = create_basic_block_node(cfg);
-	auto attr = static_cast<basic_block*>(&vt->attribute());
-	std::map<uint64_t, uint64_t> mapping;
-	for (size_t n = 0; n < cpoints.size()-1; n++)
-		mapping[n] = n;
-	auto op = jive::match_op(nbits, mapping, cpoints.size()-1, cpoints.size());
-	append_last(vt, create_tac(op, {p}, create_result_variables(cfg->module(), op)));
-	append_last(vt, create_branch_tac(cpoints.size(), attr->last()->output(0)));
-	for (auto it = cpoints.begin(); it != cpoints.end(); it++)
-		vt->add_outedge(it->first);
+	/* insert new continuation point */
+	auto p = module.create_variable(jive::ctl::type(c.points.size()), "#p#", false);
+	auto cn = create_basic_block_node(cfg);
+	append_branch(cn, p);
+	std::unordered_map<cfg_node*, size_t> indices;
+	for (const auto & cp : c.points) {
+		cn->add_outedge(cp);
+		indices.insert({cp, indices.size()});
+	}
 
-	JLM_DEBUG_ASSERT(branch_out_edges.size() == af.size());
-	for (size_t n = 0; n < af.size(); n++) {
-		/* one branch out edge for this branch subgraph, only add auxiliary assignment */
-		if (branch_out_edges[n].size() == 1) {
-			cfg_edge * boe = *branch_out_edges[n].begin();
-			auto ass = create_basic_block_node(cfg);
-			attr = static_cast<basic_block*>(&ass->attribute());
-			jive::bits::constant_op op(jive::bits::value_repr(nbits, cpoints[boe->sink()]));
-			append_last(ass, create_tac(op, {}, {p}));
-			ass->add_outedge(vt);
-			boe->divert(ass);
-			/* if the branch subgraph is not empty, we need to restructure it */
-			if (boe != af[n])
-				restructure_branches(af[n]->sink(), ass);
-			continue;
-		}
+	/* restructure branch subgraphs */
+	for (auto it = hb->begin_outedges(); it != hb->end_outedges(); it++) {
+		auto cedges = c.edges[it.edge()];
 
-		/* more than one branch out edge */
 		auto null = create_basic_block_node(cfg);
-		null->add_outedge(vt);
-		for (auto edge : branch_out_edges[n]) {
-			auto ass = create_basic_block_node(cfg);
-			attr = static_cast<basic_block*>(&ass->attribute());
-			jive::bits::constant_op op(jive::bits::value_repr(nbits, cpoints[edge->sink()]));
-			append_last(ass, create_tac(op, {}, {p}));
-			ass->add_outedge(null);
-			edge->divert(ass);
+		null->add_outedge(cn);
+		for (const auto & e : cedges) {
+			auto bb = create_basic_block_node(cfg);
+			append_constant(bb, p, indices[e->sink()]);
+			bb->add_outedge(null);
+			e->divert(bb);
 		}
-		restructure_branches(af[n]->sink(), null);
+
+		restructure_branches(it->sink(), null);
 	}
 
 	/* restructure tail subgraph */
-	restructure_branches(vt, end);
+	restructure_branches(cn, exit);
 }
 
-std::unordered_set<const jlm::cfg_edge*>
+void
+restructure_loops(jlm::cfg * cfg)
+{
+	JLM_DEBUG_ASSERT(is_closed(*cfg));
+
+	std::vector<scc_structure> loops;
+	restructure_loops(cfg->entry_node(), cfg->exit_node(), loops);
+
+	for (const auto & l : loops)
+		reinsert_tcloop(l);
+}
+
+void
+restructure_branches(jlm::cfg * cfg)
+{
+	JLM_DEBUG_ASSERT(is_acyclic(*cfg));
+	restructure_branches(cfg->entry_node(), cfg->exit_node());
+	JLM_DEBUG_ASSERT(is_proper_structured(*cfg));
+}
+
+static inline void
+restructure(jlm::cfg_node * entry, jlm::cfg_node * exit, std::vector<scc_structure> & tcloops)
+{
+	restructure_loops(entry, exit, tcloops);
+	restructure_branches(entry, exit);
+}
+
+void
 restructure(jlm::cfg * cfg)
 {
 	JLM_DEBUG_ASSERT(is_closed(*cfg));
 
-	std::vector<jlm::cfg_edge> back_edges;
-	restructure_loops(cfg->entry_node(), cfg->exit_node(), back_edges);
-	restructure_branches(cfg->entry_node(), cfg->exit_node());
+	std::vector<scc_structure> tcloops;
+	restructure(cfg->entry_node(), cfg->exit_node(), tcloops);
 
-	/* insert back edges */
-	std::unordered_set<const jlm::cfg_edge*> edges;
-	for (auto edge : back_edges)
-		edges.insert(edge.source()->add_outedge(edge.sink()));
+	for (const auto & l : tcloops)
+		reinsert_tcloop(l);
 
 	JLM_DEBUG_ASSERT(is_proper_structured(*cfg));
-	return edges;
 }
 
 }
