@@ -51,7 +51,15 @@ phi_op::result_type(size_t index) const noexcept
 std::string
 phi_op::debug_string() const
 {
-	return "PHI";
+	std::string str("[");
+	for (size_t n = 0; n < narguments(); n++) {
+		str += strfmt(node(n));
+		if (n != narguments()-1)
+			str += ", ";
+	}
+	str += "]";
+
+	return "PHI" + str;
 }
 
 std::unique_ptr<jive::operation>
