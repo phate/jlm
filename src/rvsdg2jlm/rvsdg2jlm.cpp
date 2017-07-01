@@ -12,6 +12,7 @@
 
 #include <jlm/common.hpp>
 #include <jlm/ir/basic_block.hpp>
+#include <jlm/ir/cfg-structure.hpp>
 #include <jlm/ir/data.hpp>
 #include <jlm/ir/module.hpp>
 #include <jlm/ir/operators.hpp>
@@ -140,6 +141,7 @@ create_cfg(const jive::node & node, context & ctx)
 	ctx.set_lpbb(nullptr);
 	ctx.set_cfg(nullptr);
 
+	straighten(*cfg);
 	return cfg;
 }
 
