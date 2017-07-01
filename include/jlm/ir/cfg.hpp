@@ -287,6 +287,15 @@ public:
 		nodes_.insert(std::move(node));
 	}
 
+	inline cfg::iterator
+	find_node(jlm::cfg_node * n)
+	{
+		std::unique_ptr<cfg_node> up(n);
+		auto it = nodes_.find(up);
+		up.release();
+		return iterator(it);
+	}
+
 	cfg::iterator
 	remove_node(cfg::iterator & it);
 
