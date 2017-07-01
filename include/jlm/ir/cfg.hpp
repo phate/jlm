@@ -299,6 +299,16 @@ public:
 	cfg::iterator
 	remove_node(cfg::iterator & it);
 
+	inline cfg::iterator
+	remove_node(jlm::cfg_node * n)
+	{
+		auto it = find_node(n);
+		if (it == end())
+			throw std::logic_error("Node does not belong to this CFG.");
+
+		return remove_node(it);
+	}
+
 	inline size_t
 	nnodes() const noexcept
 	{
