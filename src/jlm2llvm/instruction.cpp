@@ -5,6 +5,7 @@
 
 #include <jive/types/bitstring.h>
 #include <jive/types/function.h>
+#include <jive/vsdg/control.h>
 #include <jive/vsdg/operators/match.h>
 
 #include <jlm/ir/cfg_node.hpp>
@@ -201,6 +202,20 @@ convert_bitconstant(
 }
 
 static inline llvm::Value *
+convert_ctlconstant(
+	const jive::operation & op,
+	llvm::IRBuilder<> & builder,
+	const std::vector<llvm::Value*> & args)
+{
+	JLM_DEBUG_ASSERT(dynamic_cast<const jive::ctl::constant_op*>(&op));
+	auto & cop = *static_cast<const jive::ctl::constant_op*>(&op);
+	JLM_DEBUG_ASSERT(cop.value().nalternatives() == 2);
+
+	auto type = llvm::IntegerType::get(builder.getContext(), 1);
+	return llvm::ConstantInt::get(type, cop.value().alternative() == 0);
+}
+
+static inline llvm::Value *
 convert_apply(
 	const jive::operation & op,
 	llvm::IRBuilder<> & builder,
@@ -381,6 +396,7 @@ convert_operation(
 	, {std::type_index(typeid(jive::bits::slt_op)), convert_slt}
 	, {std::type_index(typeid(jive::bits::sle_op)), convert_sle}
 	, {std::type_index(typeid(jive::bits::constant_op)), jlm::jlm2llvm::convert_bitconstant}
+	, {std::type_index(typeid(jive::ctl::constant_op)), convert_ctlconstant}
 	, {std::type_index(typeid(jive::match_op)), jlm::jlm2llvm::convert_match}
 	, {std::type_index(typeid(jive::fct::apply_op)), jlm::jlm2llvm::convert_apply}
 	, {std::type_index(typeid(jlm::assignment_op)), jlm::jlm2llvm::convert_assignment}
