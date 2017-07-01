@@ -119,6 +119,7 @@ create_cfg(llvm::Function & f, context & ctx)
 		bb->add_outedge(cfg->exit_node());
 	}
 
+	straighten(*cfg);
 	prune(*cfg);
 	return cfg;
 }
