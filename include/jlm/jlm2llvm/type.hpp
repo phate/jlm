@@ -8,6 +8,7 @@
 
 #include <jive/types/bitstring/type.h>
 #include <jive/types/function/fcttype.h>
+#include <jive/vsdg/controltype.h>
 
 #include <jlm/common.hpp>
 #include <jlm/ir/types.hpp>
@@ -57,6 +58,14 @@ convert_type(const jlm::arraytype & type, llvm::LLVMContext & ctx)
 	auto t = convert_type(*static_cast<const jive::base::type*>(&type), ctx);
 	JLM_DEBUG_ASSERT(t->getTypeID() == llvm::Type::ArrayTyID);
 	return llvm::cast<llvm::ArrayType>(t);
+}
+
+static inline llvm::IntegerType *
+convert_type(const jive::ctl::type & type, llvm::LLVMContext & ctx)
+{
+	auto t = convert_type(*static_cast<const jive::base::type*>(&type), ctx);
+	JLM_DEBUG_ASSERT(t->getTypeID() == llvm::Type::IntegerTyID);
+	return llvm::cast<llvm::IntegerType>(t);
 }
 
 }}
