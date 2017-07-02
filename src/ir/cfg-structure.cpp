@@ -500,6 +500,23 @@ straighten(jlm::cfg & cfg)
 }
 
 void
+purge(jlm::cfg & cfg)
+{
+	auto it = cfg.begin();
+	while (it != cfg.end()) {
+		auto bb = dynamic_cast<const jlm::basic_block*>(&it.node()->attribute());
+
+		if (bb && bb->ntacs() == 0) {
+			JLM_DEBUG_ASSERT(it.node()->noutedges() == 1);
+			it.node()->divert_inedges(it.node()->outedge(0)->sink());
+			it = cfg.remove_node(it);
+		} else {
+			it++;
+		}
+	}
+}
+
+void
 prune(jlm::cfg & cfg)
 {
 	JLM_DEBUG_ASSERT(is_valid(cfg));

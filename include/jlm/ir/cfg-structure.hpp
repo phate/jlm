@@ -46,6 +46,9 @@ void
 straighten(jlm::cfg & cfg);
 
 void
+purge(jlm::cfg & cfg);
+
+void
 prune(jlm::cfg & cfg);
 
 }
