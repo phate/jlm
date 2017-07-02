@@ -21,9 +21,10 @@ namespace jlm {
 class expr;
 
 class basic_block final : public attribute {
+public:
 	typedef std::list<const tac*>::const_iterator const_iterator;
 	typedef std::list<const tac*>::const_reverse_iterator const_reverse_iterator;
-public:
+
 	virtual
 	~basic_block();
 
@@ -83,6 +84,19 @@ public:
 	rend() const noexcept
 	{
 		return tacs_.rend();
+	}
+
+	inline const tac *
+	insert(const const_iterator & it, std::unique_ptr<jlm::tac> tac)
+	{
+		return *tacs_.insert(it, tac.release());
+	}
+
+	inline void
+	insert(const const_iterator & it, std::vector<std::unique_ptr<jlm::tac>> & tacs)
+	{
+		for (auto & tac : tacs)
+			tacs_.insert(it, tac.release());
 	}
 
 	inline const tac *
@@ -174,6 +188,28 @@ static inline basic_block *
 create_basic_block(jlm::cfg * cfg)
 {
 	return static_cast<basic_block*>(&create_basic_block_node(cfg)->attribute());
+}
+
+static inline const jlm::tac *
+insert(
+	jlm::cfg_node * node,
+	const basic_block::const_iterator & it,
+	std::unique_ptr<jlm::tac> tac)
+{
+	JLM_DEBUG_ASSERT(is_basic_block(node->attribute()));
+	auto & bb = *static_cast<jlm::basic_block*>(&node->attribute());
+	return bb.insert(it, std::move(tac));
+}
+
+static inline void
+insert(
+	jlm::cfg_node * node,
+	const basic_block::const_iterator & it,
+	std::vector<std::unique_ptr<jlm::tac>> & tacs)
+{
+	JLM_DEBUG_ASSERT(is_basic_block(node->attribute()));
+	auto & bb = *static_cast<jlm::basic_block*>(&node->attribute());
+	return bb.insert(it, tacs);
 }
 
 static inline const jlm::tac *
