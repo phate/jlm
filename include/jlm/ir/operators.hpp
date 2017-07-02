@@ -1022,6 +1022,80 @@ create_ptrcmp_tac(
 	return create_tac(op, {op1, op2}, {result});
 }
 
+/* zext operator */
+
+class zext_op final : public jive::simple_op {
+public:
+	virtual
+	~zext_op() noexcept;
+
+	inline
+	zext_op(size_t nsrcbits, size_t ndstbits)
+	: jive::simple_op()
+	, srctype_(nsrcbits)
+	, dsttype_(ndstbits)
+	{
+		if (ndstbits < nsrcbits)
+			throw std::logic_error("# destination bits must be greater than # source bits.");
+	}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual size_t
+	narguments() const noexcept override;
+
+	virtual const jive::base::type &
+	argument_type(size_t index) const noexcept override;
+
+	virtual size_t
+	nresults() const noexcept override;
+
+	virtual const jive::base::type &
+	result_type(size_t index) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+	inline size_t
+	nsrcbits() const noexcept
+	{
+		return srctype_.nbits();
+	}
+
+	inline size_t
+	ndstbits() const noexcept
+	{
+		return dsttype_.nbits();
+	}
+
+private:
+	jive::bits::type srctype_;
+	jive::bits::type dsttype_;
+};
+
+static inline bool
+is_zext_op(const jive::operation & op)
+{
+	return dynamic_cast<const jlm::zext_op*>(&op) != nullptr;
+}
+
+static inline std::unique_ptr<jlm::tac>
+create_zext_tac(const variable * operand, const variable * result)
+{
+	auto st = dynamic_cast<const jive::bits::type*>(&operand->type());
+	if (!st) throw std::logic_error("Expected bitstring type.");
+
+	auto dt = dynamic_cast<const jive::bits::type*>(&result->type());
+	if (!dt) throw std::logic_error("Expected bitstring type.");
+
+	jlm::zext_op op(st->nbits(), dt->nbits());
+	return create_tac(op, {operand}, {result});
+}
+
 }
 
 #endif

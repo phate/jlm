@@ -797,4 +797,54 @@ ptrcmp_op::copy() const
 	return std::unique_ptr<jive::operation>(new ptrcmp_op(*this));
 }
 
+/* zext operator */
+
+zext_op::~zext_op()
+{}
+
+bool
+zext_op::operator==(const operation & other) const noexcept
+{
+	auto op = dynamic_cast<const jlm::zext_op*>(&other);
+	return op && op->nsrcbits() == nsrcbits() && op->ndstbits() == ndstbits();
+}
+
+size_t
+zext_op::narguments() const noexcept
+{
+	return 1;
+}
+
+const jive::base::type &
+zext_op::argument_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < narguments());
+	return srctype_;
+}
+
+size_t
+zext_op::nresults() const noexcept
+{
+	return 1;
+}
+
+const jive::base::type &
+zext_op::result_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < nresults());
+	return dsttype_;
+}
+
+std::string
+zext_op::debug_string() const
+{
+	return "ZEXT";
+}
+
+std::unique_ptr<jive::operation>
+zext_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new zext_op(*this));
+}
+
 }
