@@ -356,6 +356,16 @@ convert_ptrcmp(
 	return map[pop.cmp()](builder, args[0], args[1]);
 }
 
+static inline llvm::Value *
+convert_zext(
+	const jive::operation & op,
+	llvm::IRBuilder<> & builder,
+	const std::vector<llvm::Value*> & args)
+{
+	JLM_DEBUG_ASSERT(is_zext_op(op));
+	return builder.CreateZExt(args[0], convert_type(op.result_type(0), builder.getContext()));
+}
+
 llvm::Value *
 convert_operation(
 	const jive::operation & op,
@@ -429,6 +439,7 @@ convert_operation(
 	, {std::type_index(typeid(jlm::ptroffset_op)), jlm::jlm2llvm::convert_ptroffset}
 	, {std::type_index(typeid(jlm::data_array_constant_op)), convert_data_array_constant}
 	, {std::type_index(typeid(jlm::ptrcmp_op)), convert_ptrcmp}
+	, {std::type_index(typeid(jlm::zext_op)), convert_zext}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
