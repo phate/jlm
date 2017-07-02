@@ -739,4 +739,62 @@ data_array_constant_op::copy() const
 	return std::unique_ptr<jive::operation>(new data_array_constant_op(*this));
 }
 
+/* pointer compare operator */
+
+ptrcmp_op::~ptrcmp_op()
+{}
+
+bool
+ptrcmp_op::operator==(const operation & other) const noexcept
+{
+	auto op = dynamic_cast<const jlm::ptrcmp_op*>(&other);
+	return op && op->ptype_ == ptype_ && op->cmp_ == cmp_;
+}
+
+size_t
+ptrcmp_op::narguments() const noexcept
+{
+	return 2;
+}
+
+const jive::base::type &
+ptrcmp_op::argument_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < narguments());
+	return ptype_;
+}
+
+size_t
+ptrcmp_op::nresults() const noexcept
+{
+	return 1;
+}
+
+const jive::base::type &
+ptrcmp_op::result_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < nresults());
+
+	static jive::bits::type bits1(1);
+	return bits1;
+}
+
+std::string
+ptrcmp_op::debug_string() const
+{
+	static std::unordered_map<jlm::cmp, std::string> map({
+		{cmp::eq, "eq"}, {cmp::ne, "ne"}, {cmp::gt, "gt"}
+	, {cmp::ge, "ge"}, {cmp::lt, "lt"}, {cmp::le, "le"}
+	});
+
+	JLM_DEBUG_ASSERT(map.find(cmp()) != map.end());
+	return "PTRCMP " + map[cmp()];
+}
+
+std::unique_ptr<jive::operation>
+ptrcmp_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new ptrcmp_op(*this));
+}
+
 }

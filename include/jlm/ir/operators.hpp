@@ -948,6 +948,80 @@ create_data_array_constant_tac(
 	return create_tac(op, elements, {result});
 }
 
+/* pointer compare operator */
+
+enum class cmp {eq, ne, gt, ge, lt, le};
+
+class ptrcmp_op final : public jive::simple_op {
+public:
+	virtual
+	~ptrcmp_op() noexcept;
+
+	inline
+	ptrcmp_op(const jlm::ptrtype & ptype, const jlm::cmp & cmp)
+	: jive::simple_op()
+	, cmp_(cmp)
+	, ptype_(ptype)
+	{}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual size_t
+	narguments() const noexcept override;
+
+	virtual const jive::base::type &
+	argument_type(size_t index) const noexcept override;
+
+	virtual size_t
+	nresults() const noexcept override;
+
+	virtual const jive::base::type &
+	result_type(size_t index) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+	inline jlm::cmp
+	cmp() const noexcept
+	{
+		return cmp_;
+	}
+
+	const jive::base::type &
+	pointee_type() const noexcept
+	{
+		return ptype_.pointee_type();
+	}
+
+private:
+	jlm::cmp cmp_;
+	jlm::ptrtype ptype_;
+};
+
+static inline bool
+is_ptrcmp_op(const jive::operation & op)
+{
+	return dynamic_cast<const jlm::ptrcmp_op*>(&op) != nullptr;
+}
+
+static inline std::unique_ptr<jlm::tac>
+create_ptrcmp_tac(
+	const jlm::cmp & cmp,
+	const variable * op1,
+	const variable * op2,
+	const variable * result)
+{
+	auto pt = dynamic_cast<const jlm::ptrtype*>(&op1->type());
+	if (!pt) throw std::logic_error("Expected pointer type.");
+
+	jlm::ptrcmp_op op(*pt, cmp);
+	return create_tac(op, {op1, op2}, {result});
+}
+
 }
 
 #endif
