@@ -476,27 +476,16 @@ convert_alloca_instruction(llvm::Instruction * instruction, context & ctx)
 }
 
 static inline tacsvector_t
-convert_zext_instruction(llvm::Instruction * i, context & ctx)
+convert_zext_instruction(llvm::Instruction * instruction, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ZExtInst*>(i));
-
-	llvm::Value * operand = i->getOperand(0);
-
-	/* FIXME: support vector type */
-	if (operand->getType()->isVectorTy())
-		JLM_DEBUG_ASSERT(0);
+	JLM_DEBUG_ASSERT(instruction->getOpcode() == llvm::Instruction::ZExt);
+	auto i = llvm::cast<llvm::ZExtInst>(instruction);
+	JLM_DEBUG_ASSERT(!i->getSrcTy()->isVectorTy());
 
 	tacsvector_t tacs;
-	size_t new_length = i->getType()->getIntegerBitWidth();
-	size_t old_length = operand->getType()->getIntegerBitWidth();
-	jive::bits::constant_op c_op(jive::bits::value_repr(new_length - old_length, 0));
-	auto vs = create_result_variables(ctx.module(), c_op);
-	tacs.push_back(create_tac(c_op, {}, vs));
-	auto c = tacs.back()->output(0);
+	auto operand = ctx.lookup_value(i->getOperand(0));
+	tacs.push_back(create_zext_tac(operand, ctx.lookup_value(i)));
 
-	jive::bits::concat_op op({jive::bits::type(old_length), jive::bits::type(new_length-old_length)});
-	auto v = convert_value(operand, tacs, ctx);
-	tacs.push_back(create_tac(op, {v, c}, {ctx.lookup_value(i)}));
 	return tacs;
 }
 
