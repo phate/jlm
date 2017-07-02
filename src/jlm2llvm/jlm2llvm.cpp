@@ -64,11 +64,29 @@ function_linkage(const jlm::clg_node & f, const jlm::module & module)
 namespace jlm {
 namespace jlm2llvm {
 
+static inline const jlm::tac *
+find_match_tac(const jlm::basic_block & bb)
+{
+	auto it = bb.rbegin();
+	const jlm::tac * tac = nullptr;
+	while (it != bb.rend()) {
+		if (*it && dynamic_cast<const jive::match_op*>(&(*it)->operation())) {
+			tac = *it;
+			break;
+		}
+
+		it = std::next(it);
+	}
+
+	return tac;
+}
+
 static inline void
 create_terminator_instruction(const jlm::cfg_node * node, context & ctx)
 {
 	JLM_DEBUG_ASSERT(is_basic_block(node->attribute()));
-	auto & attr = *static_cast<const jlm::basic_block*>(&node->attribute());
+	auto & bb = *static_cast<const jlm::basic_block*>(&node->attribute());
+	auto & lctx = ctx.llvm_module().getContext();
 	auto & cfg = *node->cfg();
 
 	llvm::IRBuilder<> builder(ctx.basic_block(node));
@@ -99,7 +117,7 @@ create_terminator_instruction(const jlm::cfg_node * node, context & ctx)
 		JLM_DEBUG_ASSERT(node->outedge(0)->sink() != cfg.exit_node());
 		JLM_DEBUG_ASSERT(node->outedge(1)->sink() != cfg.exit_node());
 
-		const auto & branch = attr.last();
+		const auto & branch = bb.last();
 		JLM_DEBUG_ASSERT(branch && dynamic_cast<const jlm::branch_op*>(&branch->operation()));
 		auto condition = ctx.value(branch->input(0));
 		auto bbtrue = ctx.basic_block(node->outedge(0)->sink());
@@ -108,7 +126,21 @@ create_terminator_instruction(const jlm::cfg_node * node, context & ctx)
 		return;
 	}
 
-	JLM_DEBUG_ASSERT(0);
+	/* switch */
+	const auto & branch = bb.last();
+	JLM_DEBUG_ASSERT(branch && is_branch_op(branch->operation()));
+	auto condition = ctx.value(branch->input(0));
+	auto match = find_match_tac(bb);
+	JLM_DEBUG_ASSERT(match && match->output(0) == branch->input(0));
+	auto mop = static_cast<const jive::match_op*>(&match->operation());
+
+	auto defbb = ctx.basic_block(node->outedge(mop->default_alternative())->sink());
+	auto sw = builder.CreateSwitch(condition, defbb);
+	for (const auto & alt : *mop) {
+		auto & type = *static_cast<const jive::bits::type*>(&mop->argument_type(0));
+		auto value = llvm::ConstantInt::get(convert_type(type, lctx), alt.first);
+		sw->addCase(value, ctx.basic_block(node->outedge(alt.second)->sink()));
+	}
 }
 
 static inline void
