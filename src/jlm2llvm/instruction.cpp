@@ -336,6 +336,26 @@ convert_data_array_constant(
 	return llvm::ConstantDataArray::get(builder.getContext(), data);
 }
 
+static inline llvm::Value *
+convert_ptrcmp(
+	const jive::operation & op,
+	llvm::IRBuilder<> & builder,
+	const std::vector<llvm::Value*> & args)
+{
+	JLM_DEBUG_ASSERT(is_ptrcmp_op(op));
+	auto & pop = *static_cast<const ptrcmp_op*>(&op);
+
+	static std::unordered_map<
+		jlm::cmp, llvm::Value*(*)(llvm::IRBuilder<>&, llvm::Value*, llvm::Value*)
+	> map({
+	  {cmp::le, create_cmpule}, {cmp::lt, create_cmpult}, {cmp::eq, create_cmpeq}
+	, {cmp::ne, create_cmpne}, {cmp::ge, create_cmpuge}, {cmp::gt, create_cmpugt}
+	});
+
+	JLM_DEBUG_ASSERT(map.find(pop.cmp()) != map.end());
+	return map[pop.cmp()](builder, args[0], args[1]);
+}
+
 llvm::Value *
 convert_operation(
 	const jive::operation & op,
@@ -408,6 +428,7 @@ convert_operation(
 	, {std::type_index(typeid(jlm::alloca_op)), jlm::jlm2llvm::convert_alloca}
 	, {std::type_index(typeid(jlm::ptroffset_op)), jlm::jlm2llvm::convert_ptroffset}
 	, {std::type_index(typeid(jlm::data_array_constant_op)), convert_data_array_constant}
+	, {std::type_index(typeid(jlm::ptrcmp_op)), convert_ptrcmp}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
