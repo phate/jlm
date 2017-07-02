@@ -10,6 +10,7 @@
 
 namespace jlm {
 
+class cfg;
 class clg;
 class module;
 
