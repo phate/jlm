@@ -392,27 +392,6 @@ is_valid(const jlm::cfg & cfg)
 
 		if (node.no_successor())
 			return false;
-
-		/*
-			Check whether all indices are 0 and in ascending order (uniqueness of indices)
-		*/
-		std::vector<cfg_edge*> edges;
-		for (auto it = node.begin_outedges(); it != node.end_outedges(); it++)
-			edges.push_back(it.edge());
-		std::sort(edges.begin(), edges.end(),
-			[](const cfg_edge * e1, const cfg_edge * e2) { return e1->index() < e2->index(); });
-		for (size_t n = 0; n < edges.size(); n++) {
-			if (edges[n]->index() != n)
-				return false;
-		}
-
-		/*
-			Check whether the CFG is actually a graph and not a multigraph
-		*/
-		for (size_t n = 1; n < edges.size(); n++) {
-			if (edges[n-1]->sink() == edges[n]->sink())
-				return false;
-		}
 	}
 
 	return true;
