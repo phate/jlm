@@ -161,18 +161,12 @@ convert_unreachable_instruction(llvm::Instruction * i, context & ctx)
 static inline tacsvector_t
 convert_icmp_instruction(llvm::Instruction * instruction, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ICmpInst*>(instruction));
-	const llvm::ICmpInst * i = static_cast<const llvm::ICmpInst*>(instruction);
+	JLM_DEBUG_ASSERT(instruction->getOpcode() == llvm::Instruction::ICmp);
+	auto i = llvm::cast<const llvm::ICmpInst>(instruction);
+	auto t = i->getOperand(0)->getType();
+	JLM_DEBUG_ASSERT(!t->isVectorTy());
 
-	tacsvector_t tacs;
-	auto op1 = convert_value(i->getOperand(0), tacs, ctx);
-	auto op2 = convert_value(i->getOperand(1), tacs, ctx);
-
-	/* FIXME: */
-	if (i->getOperand(0)->getType()->isVectorTy())
-		JLM_DEBUG_ASSERT(0);
-
-	static std::map<
+	static std::unordered_map<
 		const llvm::CmpInst::Predicate,
 		std::unique_ptr<jive::operation>(*)(size_t)> map({
 			{llvm::CmpInst::ICMP_SLT,	[](size_t nbits){jive::bits::slt_op op(nbits); return op.copy();}}
@@ -187,22 +181,24 @@ convert_icmp_instruction(llvm::Instruction * instruction, context & ctx)
 		, {llvm::CmpInst::ICMP_UGT,	[](size_t nbits){jive::bits::ugt_op op(nbits); return op.copy();}}
 	});
 
-	/* FIXME: we don't have any comparison operators for address type yet */
-	size_t nbits;
-	if (i->getOperand(0)->getType()->isPointerTy()) {
-		nbits = 32;
-		jive::address_to_bitstring_operation op(nbits,
-			std::unique_ptr<jive::base::type>(new jive::addr::type()));
-		auto new_op1 = ctx.module().create_variable(jive::bits::type(nbits), false);
-		auto new_op2 = ctx.module().create_variable(jive::bits::type(nbits), false);
-		tacs.push_back((create_tac(op, {op1}, {new_op1})));
-		op1 = tacs.back()->output(0);
-		tacs.push_back((create_tac(op, {op2}, {new_op2})));
-		op2 = tacs.back()->output(0);
-	} else
-		nbits = i->getOperand(0)->getType()->getIntegerBitWidth();
+	static std::unordered_map<const llvm::CmpInst::Predicate, jlm::cmp> ptrmap({
+	  {llvm::CmpInst::ICMP_ULT,	cmp::lt}, {llvm::CmpInst::ICMP_ULE,	cmp::le}
+	,	{llvm::CmpInst::ICMP_EQ,	cmp::eq}, {llvm::CmpInst::ICMP_NE,	cmp::ne}
+	,	{llvm::CmpInst::ICMP_UGE,	cmp::ge}, {llvm::CmpInst::ICMP_UGT,	cmp::gt}
+	});
 
-	tacs.push_back(create_tac(*map[i->getPredicate()](nbits), {op1, op2}, {ctx.lookup_value(i)}));
+	tacsvector_t tacs;
+	auto p = i->getPredicate();
+	auto op1 = convert_value(i->getOperand(0), tacs, ctx);
+	auto op2 = convert_value(i->getOperand(1), tacs, ctx);
+
+	if (t->isIntegerTy()) {
+		size_t nbits = t->getIntegerBitWidth();
+		tacs.push_back(create_tac(*map[p](nbits), {op1, op2}, {ctx.lookup_value(i)}));
+	} else {
+		JLM_DEBUG_ASSERT(t->isPointerTy() && map.find(p) != map.end());
+		tacs.push_back(create_ptrcmp_tac(ptrmap[p], op1, op2, ctx.lookup_value(i)));
+	}
 
 	return tacs;
 }
