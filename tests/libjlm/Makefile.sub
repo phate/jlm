@@ -15,6 +15,7 @@ TESTS += \
 	libjlm/test-icmp \
 	libjlm/test-insertvalue \
 	libjlm/test-loadstore \
+	libjlm/test-phi \
 	libjlm/test-restructuring \
 	libjlm/test-select \
 	libjlm/test-switch \

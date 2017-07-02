@@ -32,6 +32,8 @@
 
 #include <typeindex>
 
+typedef std::vector<std::unique_ptr<jlm::tac>> tacsvector_t;
+
 static inline std::vector<const jlm::variable*>
 create_result_variables(jlm::module & m, const jive::operation & op)
 {
@@ -42,9 +44,24 @@ create_result_variables(jlm::module & m, const jive::operation & op)
 	return variables;
 }
 
-namespace jlm {
+static inline void
+insert_before_branch(jlm::cfg_node * node, tacsvector_t & tacs)
+{
+	JLM_DEBUG_ASSERT(is_basic_block(node->attribute()));
+	auto & bb = *static_cast<jlm::basic_block*>(&node->attribute());
 
-typedef std::vector<std::unique_ptr<jlm::tac>> tacsvector_t;
+	auto it = bb.rbegin();
+	while (it != bb.rend()) {
+		if (*it && !jlm::is_branch_op((*it)->operation()))
+			break;
+
+		it = std::next(it);
+	}
+
+	bb.insert(it.base(), tacs);
+}
+
+namespace jlm {
 
 static inline const variable *
 convert_value(llvm::Value * v, tacsvector_t & tacs, context & ctx)
@@ -275,14 +292,16 @@ convert_phi_instruction(llvm::Instruction * instruction, context & ctx)
 	JLM_DEBUG_ASSERT(instruction->getOpcode() == llvm::Instruction::PHI);
 	auto i = llvm::cast<llvm::PHINode>(instruction);
 
-	tacsvector_t tacs;
 	std::vector<std::pair<const variable*, cfg_node*>> arguments;
 	for (auto it = i->block_begin(); it != i->block_end(); it++) {
+		tacsvector_t tacs;
 		auto bb = ctx.lookup_basic_block(*it);
 		auto v = convert_value(i->getIncomingValueForBlock(*it), tacs, ctx);
+		insert_before_branch(bb, tacs);
 		arguments.push_back(std::make_pair(v, bb));
 	}
 
+	tacsvector_t tacs;
 	tacs.push_back(create_phi_tac(arguments, {ctx.lookup_value(i)}));
 
 	return tacs;
