@@ -12,7 +12,7 @@ namespace jlm {
 
 /* pointer type */
 
-class ptrtype : public jive::value::type {
+class ptrtype final : public jive::value::type {
 public:
 	virtual
 	~ptrtype();
