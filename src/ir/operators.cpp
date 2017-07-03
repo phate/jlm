@@ -896,4 +896,63 @@ fpconstant_op::copy() const
 	return std::unique_ptr<jive::operation>(new fpconstant_op(*this));
 }
 
+/* floating point comparison operator */
+
+fpcmp_op::~fpcmp_op()
+{}
+
+bool
+fpcmp_op::operator==(const operation & other) const noexcept
+{
+	auto op = dynamic_cast<const jlm::fpcmp_op*>(&other);
+	return op && op->cmp() == cmp() && op->size() == size();
+}
+
+size_t
+fpcmp_op::narguments() const noexcept
+{
+	return 2;
+}
+
+const jive::base::type &
+fpcmp_op::argument_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < narguments());
+	return type_;
+}
+
+size_t
+fpcmp_op::nresults() const noexcept
+{
+	return 1;
+}
+
+const jive::base::type &
+fpcmp_op::result_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < nresults());
+	static jive::bits::type bits1(1);
+	return bits1;
+}
+
+std::string
+fpcmp_op::debug_string() const
+{
+	static std::unordered_map<fpcmp, std::string> map({
+	  {fpcmp::oeq, "oeq"}, {fpcmp::ogt, "ogt"}, {fpcmp::oge, "oge"}, {fpcmp::olt, "olt"}
+	, {fpcmp::ole, "ole"}, {fpcmp::one, "one"}, {fpcmp::ord, "ord"}, {fpcmp::ueq, "ueq"}
+	, {fpcmp::ugt, "ugt"}, {fpcmp::uge, "uge"}, {fpcmp::ult, "ult"}, {fpcmp::ule, "ule"}
+	, {fpcmp::une, "une"}, {fpcmp::uno, "uno"}
+	});
+
+	JLM_DEBUG_ASSERT(map.find(cmp()) != map.end());
+	return "FPCMP " + map[cmp()];
+}
+
+std::unique_ptr<jive::operation>
+fpcmp_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new jlm::fpcmp_op(*this));
+}
+
 }

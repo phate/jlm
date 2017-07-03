@@ -1164,6 +1164,80 @@ create_fpconstant_tac(double constant, const variable * result)
 	return create_tac(op, {}, {result});
 }
 
+/* floating point comparison operator */
+
+enum class fpcmp {oeq, ogt, oge, olt, ole, one, ord, ueq, ugt, uge, ult, ule, une, uno};
+
+class fpcmp_op final : public jive::simple_op {
+public:
+	virtual
+	~fpcmp_op() noexcept;
+
+	inline
+	fpcmp_op(const jlm::fpcmp & cmp, const jlm::fpsize & size)
+	: jive::simple_op()
+	, cmp_(cmp)
+	, type_(size)
+	{}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual size_t
+	narguments() const noexcept override;
+
+	virtual const jive::base::type &
+	argument_type(size_t index) const noexcept override;;
+
+	virtual size_t
+	nresults() const noexcept override;
+
+	virtual const jive::base::type &
+	result_type(size_t index) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+	inline const jlm::fpcmp &
+	cmp() const noexcept
+	{
+		return cmp_;
+	}
+
+	inline const jlm::fpsize &
+	size() const noexcept
+	{
+		return type_.size();
+	}
+
+private:
+	jlm::fpcmp cmp_;
+	jlm::fptype type_;
+};
+
+static inline bool
+is_fpcmp_op(const jive::operation & op)
+{
+	return dynamic_cast<const jlm::fpcmp_op*>(&op) != nullptr;
+}
+
+static inline std::unique_ptr<jlm::tac>
+create_fpcmp_tac(
+	const jlm::fpcmp & cmp,
+	const variable * op1,
+	const variable * op2,
+	const variable * result)
+{
+	auto ft = dynamic_cast<const jlm::fptype*>(&op1->type());
+	if (!ft) throw std::logic_error("Expected floating point type.");
+
+	jlm::fpcmp_op op(cmp, ft->size());
+	return create_tac(op, {op1, op2}, {result});
+}
+
 }
 
 #endif
