@@ -206,48 +206,37 @@ convert_icmp_instruction(llvm::Instruction * instruction, context & ctx)
 static inline tacsvector_t
 convert_fcmp_instruction(llvm::Instruction * instruction, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::FCmpInst*>(instruction));
-	const llvm::FCmpInst * i = static_cast<const llvm::FCmpInst*>(instruction);
+	JLM_DEBUG_ASSERT(instruction->getOpcode() == llvm::Instruction::FCmp);
+	auto i = llvm::cast<const llvm::FCmpInst>(instruction);
+	JLM_DEBUG_ASSERT(!i->getOperand(0)->getType()->isVectorTy());
 
-	/* FIXME: vector type is not yet supported */
 	tacsvector_t tacs;
-	if (i->getType()->isVectorTy())
-		JLM_DEBUG_ASSERT(0);
-
-	/* FIXME: we currently don't have an operation for FCMP_ORD and FCMP_UNO, just use flt::eq_op */
-
-	static std::map<
-		const llvm::CmpInst::Predicate,
-		std::unique_ptr<jive::operation>(*)()> map({
-			{llvm::CmpInst::FCMP_OEQ, [](){jive::flt::eq_op op; return op.copy();}}
-		,	{llvm::CmpInst::FCMP_OGT, [](){jive::flt::gt_op op; return op.copy();}}
-		,	{llvm::CmpInst::FCMP_OGE, [](){jive::flt::ge_op op; return op.copy();}}
-		,	{llvm::CmpInst::FCMP_OLT, [](){jive::flt::lt_op op; return op.copy();}}
-		,	{llvm::CmpInst::FCMP_OLE, [](){jive::flt::le_op op; return op.copy();}}
-		,	{llvm::CmpInst::FCMP_ONE, [](){jive::flt::ne_op op; return op.copy();}}
-		,	{llvm::CmpInst::FCMP_ORD, [](){jive::flt::eq_op op; return op.copy();}}
-		,	{llvm::CmpInst::FCMP_UNO, [](){jive::flt::eq_op op; return op.copy();}}
-		,	{llvm::CmpInst::FCMP_UEQ, [](){jive::flt::eq_op op; return op.copy();}}
-		,	{llvm::CmpInst::FCMP_UGT, [](){jive::flt::gt_op op; return op.copy();}}
-		,	{llvm::CmpInst::FCMP_UGE, [](){jive::flt::ge_op op; return op.copy();}}
-		,	{llvm::CmpInst::FCMP_ULT, [](){jive::flt::lt_op op; return op.copy();}}
-		,	{llvm::CmpInst::FCMP_ULE, [](){jive::flt::le_op op; return op.copy();}}
-		,	{llvm::CmpInst::FCMP_UNE, [](){jive::flt::ne_op op; return op.copy();}}
-		,	{llvm::CmpInst::FCMP_FALSE,
-				[](){jive::bits::constant_op op(jive::bits::value_repr(1, 0)); return op.copy();}}
-		,	{llvm::CmpInst::FCMP_TRUE,
-				[](){jive::bits::constant_op op(jive::bits::value_repr(1, 1)); return op.copy();}}
-	});
-
-	std::vector<const variable*> operands;
-	if (i->getPredicate() != llvm::CmpInst::FCMP_TRUE
-	&& i->getPredicate() != llvm::CmpInst::FCMP_FALSE) {
-		operands.push_back(convert_value(i->getOperand(0), tacs, ctx));
-		operands.push_back(convert_value(i->getOperand(1), tacs, ctx));
+	if (i->getPredicate() == llvm::CmpInst::FCMP_TRUE) {
+		jive::bits::constant_op op(jive::bits::value_repr(1, 1));
+		tacs.push_back(create_tac(op, {}, {ctx.lookup_value(i)}));
+		return tacs;
 	}
 
-	tacs.push_back(create_tac(*map[i->getPredicate()](), operands, {ctx.lookup_value(i)}));
+	if (i->getPredicate() == llvm::CmpInst::FCMP_FALSE) {
+		jive::bits::constant_op op(jive::bits::value_repr(1, 0));
+		tacs.push_back(create_tac(op, {}, {ctx.lookup_value(i)}));
+		return tacs;
+	}
 
+	static std::unordered_map<llvm::CmpInst::Predicate, jlm::fpcmp> map({
+		{llvm::CmpInst::FCMP_OEQ, fpcmp::oeq},	{llvm::CmpInst::FCMP_OGT, fpcmp::ogt}
+	,	{llvm::CmpInst::FCMP_OGE, fpcmp::oge},	{llvm::CmpInst::FCMP_OLT, fpcmp::olt}
+	,	{llvm::CmpInst::FCMP_OLE, fpcmp::ole},	{llvm::CmpInst::FCMP_ONE, fpcmp::one}
+	,	{llvm::CmpInst::FCMP_ORD, fpcmp::ord},	{llvm::CmpInst::FCMP_UNO, fpcmp::uno}
+	,	{llvm::CmpInst::FCMP_UEQ, fpcmp::ueq},	{llvm::CmpInst::FCMP_UGT, fpcmp::ugt}
+	,	{llvm::CmpInst::FCMP_UGE, fpcmp::uge},	{llvm::CmpInst::FCMP_ULT, fpcmp::ult}
+	,	{llvm::CmpInst::FCMP_ULE, fpcmp::ule},	{llvm::CmpInst::FCMP_UNE, fpcmp::une}
+	});
+
+	JLM_DEBUG_ASSERT(map.find(i->getPredicate()) != map.end());
+	auto op1 = convert_value(i->getOperand(0), tacs, ctx);
+	auto op2 = convert_value(i->getOperand(1), tacs, ctx);
+	tacs.push_back(create_fpcmp_tac(map[i->getPredicate()], op1, op2, ctx.lookup_value(i)));
 	return tacs;
 }
 
