@@ -69,6 +69,16 @@ convert_apint(const llvm::APInt & value)
 	return vr;
 }
 
+double
+convert_apfloat(const llvm::APFloat & value)
+{
+	if (&value.getSemantics() == &llvm::APFloat::IEEEsingle)
+		return value.convertToFloat();
+
+	JLM_DEBUG_ASSERT(&value.getSemantics() == &llvm::APFloat::IEEEdouble);
+	return value.convertToDouble();
+}
+
 const variable *
 create_undef_value(
 	const llvm::Type * type,
@@ -171,11 +181,12 @@ convert_constantFP(
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantFP*>(constant));
+	JLM_DEBUG_ASSERT(constant->getValueID() == llvm::Value::ConstantFPVal);
+	auto c = llvm::cast<llvm::ConstantFP>(constant);
 
-	/* FIXME: convert APFloat and take care of all types */
-	JLM_DEBUG_ASSERT(0);
-	return nullptr;
+	auto r = ctx.module().create_variable(*convert_type(c->getType(), ctx), false);
+	tacs.push_back(create_fpconstant_tac(convert_apfloat(c->getValueAPF()), r));
+	return r;
 }
 
 static const variable *

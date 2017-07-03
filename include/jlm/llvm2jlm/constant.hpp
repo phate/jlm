@@ -11,6 +11,7 @@
 #include <memory>
 
 namespace llvm {
+	class APFloat;
 	class APInt;
 	class Constant;
 	class Type;
@@ -25,6 +26,9 @@ class variable;
 
 jive::bits::value_repr
 convert_apint(const llvm::APInt & value);
+
+double
+convert_apfloat(const llvm::APFloat & value);
 
 std::vector<std::unique_ptr<jlm::tac>>
 create_undef_value(const llvm::Type * type, context & ctx);
