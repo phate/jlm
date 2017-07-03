@@ -379,6 +379,29 @@ convert_zext(
 	return builder.CreateZExt(args[0], convert_type(op.result_type(0), builder.getContext()));
 }
 
+static inline llvm::Value *
+convert_fpcmp(
+	const jive::operation & op,
+	llvm::IRBuilder<> & builder,
+	const std::vector<llvm::Value*> & args)
+{
+	JLM_DEBUG_ASSERT(is_fpcmp_op(op));
+	auto & fpcmp = *static_cast<const jlm::fpcmp_op*>(&op);
+
+	static std::unordered_map<jlm::fpcmp, llvm::CmpInst::Predicate> map({
+	  {fpcmp::oeq, llvm::CmpInst::FCMP_OEQ}, {fpcmp::ogt, llvm::CmpInst::FCMP_OGT}
+	, {fpcmp::oge, llvm::CmpInst::FCMP_OGE}, {fpcmp::olt, llvm::CmpInst::FCMP_OLT}
+	, {fpcmp::ole, llvm::CmpInst::FCMP_OLE}, {fpcmp::one, llvm::CmpInst::FCMP_ONE}
+	, {fpcmp::ord, llvm::CmpInst::FCMP_ORD}, {fpcmp::uno, llvm::CmpInst::FCMP_UNO}
+	, {fpcmp::ueq, llvm::CmpInst::FCMP_UEQ}, {fpcmp::ugt, llvm::CmpInst::FCMP_UGT}
+	, {fpcmp::uge, llvm::CmpInst::FCMP_UGE}, {fpcmp::ult, llvm::CmpInst::FCMP_ULT}
+	, {fpcmp::ule, llvm::CmpInst::FCMP_ULE}, {fpcmp::une, llvm::CmpInst::FCMP_UNE}
+	});
+
+	JLM_DEBUG_ASSERT(map.find(fpcmp.cmp()) != map.end());
+	return builder.CreateFCmp(map[fpcmp.cmp()], args[0], args[1]);
+}
+
 llvm::Value *
 convert_operation(
 	const jive::operation & op,
@@ -454,6 +477,7 @@ convert_operation(
 	, {std::type_index(typeid(jlm::data_array_constant_op)), convert_data_array_constant}
 	, {std::type_index(typeid(jlm::ptrcmp_op)), convert_ptrcmp}
 	, {std::type_index(typeid(jlm::zext_op)), convert_zext}
+	, {std::type_index(typeid(jlm::fpcmp_op)), convert_fpcmp}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
