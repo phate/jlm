@@ -66,6 +66,22 @@ convert_ctl_type(const jive::base::type & type, llvm::LLVMContext & ctx)
 	return llvm::Type::getInt1Ty(ctx);
 }
 
+static inline llvm::Type *
+convert_fp_type(const jive::base::type & type, llvm::LLVMContext & ctx)
+{
+	JLM_DEBUG_ASSERT(dynamic_cast<const jlm::fptype*>(&type));
+	auto & t = *static_cast<const jlm::fptype*>(&type);
+
+	static std::unordered_map<fpsize, llvm::Type*(*)(llvm::LLVMContext&)> map({
+	  {fpsize::half, [](llvm::LLVMContext & ctx){ return llvm::Type::getHalfTy(ctx); }}
+	, {fpsize::flt, [](llvm::LLVMContext & ctx){ return llvm::Type::getFloatTy(ctx); }}
+	, {fpsize::dbl, [](llvm::LLVMContext & ctx){ return llvm::Type::getDoubleTy(ctx); }}
+	});
+
+	JLM_DEBUG_ASSERT(map.find(t.size()) != map.end());
+	return map[t.size()](ctx);
+}
+
 llvm::Type *
 convert_type(const jive::base::type & type, llvm::LLVMContext & ctx)
 {
@@ -78,6 +94,7 @@ convert_type(const jive::base::type & type, llvm::LLVMContext & ctx)
 	, {std::type_index(typeid(jlm::ptrtype)), convert_pointer_type}
 	, {std::type_index(typeid(jlm::arraytype)), convert_array_type}
 	, {std::type_index(typeid(jive::ctl::type)), convert_ctl_type}
+	, {std::type_index(typeid(jlm::fptype)), convert_fp_type}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(type))) != map.end());

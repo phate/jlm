@@ -68,6 +68,14 @@ convert_type(const jive::ctl::type & type, llvm::LLVMContext & ctx)
 	return llvm::cast<llvm::IntegerType>(t);
 }
 
+static inline llvm::Type *
+convert_type(const jlm::fptype & type, llvm::LLVMContext & ctx)
+{
+	auto t = convert_type(*static_cast<const jive::base::type*>(&type), ctx);
+	JLM_DEBUG_ASSERT(t->isHalfTy() || t->isFloatTy() || t->isDoubleTy());
+	return t;
+}
+
 }}
 
 #endif
