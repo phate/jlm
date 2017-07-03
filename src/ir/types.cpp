@@ -3,8 +3,11 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/common.hpp>
 #include <jlm/ir/types.hpp>
 #include <jlm/util/strfmt.hpp>
+
+#include <unordered_map>
 
 namespace jlm {
 
@@ -54,6 +57,37 @@ std::unique_ptr<jive::base::type>
 arraytype::copy() const
 {
 	return std::unique_ptr<jive::base::type>(new arraytype(*this));
+}
+
+/* floating point type */
+
+fptype::~fptype()
+{}
+
+std::string
+fptype::debug_string() const
+{
+	static std::unordered_map<fpsize, std::string> map({
+	  {fpsize::half, "half"}
+	, {fpsize::flt, "float"}
+	, {fpsize::dbl, "double"}
+	});
+
+	JLM_DEBUG_ASSERT(map.find(size()) != map.end());
+	return map[size()];
+}
+
+bool
+fptype::operator==(const jive::base::type & other) const noexcept
+{
+	auto type = dynamic_cast<const jlm::fptype*>(&other);
+	return type && type->size() == size();
+}
+
+std::unique_ptr<jive::base::type>
+fptype::copy() const
+{
+	return std::unique_ptr<jive::base::type>(new fptype(*this));
 }
 
 }

@@ -153,6 +153,40 @@ create_arraytype(const jive::base::type & type, size_t nelements)
 	return std::unique_ptr<jive::base::type>(new arraytype(*vt, nelements));
 }
 
+/* floating point type */
+
+enum class fpsize {half, flt, dbl};
+
+class fptype final : public jive::value::type {
+public:
+	virtual
+	~fptype();
+
+	inline
+	fptype(const fpsize & size)
+	: jive::value::type()
+	, size_(size)
+	{}
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual bool
+	operator==(const jive::base::type & other) const noexcept override;
+
+	virtual std::unique_ptr<jive::base::type>
+	copy() const override;
+
+	inline const jlm::fpsize &
+	size() const noexcept
+	{
+		return size_;
+	}
+
+private:
+	jlm::fpsize size_;
+};
+
 }
 
 #endif
