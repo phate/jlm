@@ -847,4 +847,53 @@ zext_op::copy() const
 	return std::unique_ptr<jive::operation>(new zext_op(*this));
 }
 
+/* floating point constant operator */
+
+fpconstant_op::~fpconstant_op()
+{}
+
+bool
+fpconstant_op::operator==(const operation & other) const noexcept
+{
+	auto op = dynamic_cast<const jlm::fpconstant_op*>(&other);
+	return op && op->constant() == constant();
+}
+
+size_t
+fpconstant_op::narguments() const noexcept
+{
+	return 0;
+}
+
+const jive::base::type &
+fpconstant_op::argument_type(size_t) const noexcept
+{
+	JLM_ASSERT(0);
+}
+
+size_t
+fpconstant_op::nresults() const noexcept
+{
+	return 1;
+}
+
+const jive::base::type &
+fpconstant_op::result_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < nresults());
+	return type_;
+}
+
+std::string
+fpconstant_op::debug_string() const
+{
+	return strfmt(constant());
+}
+
+std::unique_ptr<jive::operation>
+fpconstant_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new fpconstant_op(*this));
+}
+
 }

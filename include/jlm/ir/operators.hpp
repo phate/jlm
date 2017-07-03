@@ -1096,6 +1096,74 @@ create_zext_tac(const variable * operand, const variable * result)
 	return create_tac(op, {operand}, {result});
 }
 
+/* floating point constant operator */
+
+class fpconstant_op final : public jive::simple_op {
+public:
+	virtual
+	~fpconstant_op();
+
+	inline
+	fpconstant_op(const jlm::fpsize & size, double constant)
+	: jive::simple_op()
+	, constant_(constant)
+	, type_(size)
+	{}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual size_t
+	narguments() const noexcept override;
+
+	virtual const jive::base::type &
+	argument_type(size_t index) const noexcept override;
+
+	virtual size_t
+	nresults() const noexcept override;
+
+	virtual const jive::base::type &
+	result_type(size_t index) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+	inline double
+	constant() const noexcept
+	{
+		return constant_;
+	}
+
+	inline const fpsize &
+	size() const noexcept
+	{
+		return type_.size();
+	}
+
+private:
+	double constant_;
+	jlm::fptype type_;
+};
+
+static inline bool
+is_fpconstant_op(const jive::operation & op)
+{
+	return dynamic_cast<const jlm::fpconstant_op*>(&op) != nullptr;
+}
+
+static inline std::unique_ptr<jlm::tac>
+create_fpconstant_tac(double constant, const variable * result)
+{
+	auto ft = dynamic_cast<const jlm::fptype*>(&result->type());
+	if (!ft) throw std::logic_error("Expected floating point type.");
+
+	jlm::fpconstant_op op(ft->size(), constant);
+	return create_tac(op, {}, {result});
+}
+
 }
 
 #endif
