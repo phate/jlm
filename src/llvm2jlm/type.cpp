@@ -67,13 +67,19 @@ convert_function_type(const llvm::Type * t, context & ctx)
 	return std::unique_ptr<jive::value::type>(new jive::fct::type(argument_types, result_types));
 }
 
-static std::unique_ptr<jive::value::type>
-convert_float_type(const llvm::Type * t, context & ctx)
+static inline std::unique_ptr<jive::value::type>
+convert_fp_type(const llvm::Type * t, context & ctx)
 {
-	JLM_DEBUG_ASSERT(t->isFloatingPointTy());
+	JLM_DEBUG_ASSERT(t->isHalfTy() || t->isFloatTy() || t->isDoubleTy());
 
-	/* FIXME: we map all floating point types to float */
-	return std::unique_ptr<jive::value::type>(new jive::flt::type());
+	static std::unordered_map<llvm::Type::TypeID, jlm::fpsize> map({
+	  {llvm::Type::HalfTyID, fpsize::half}
+	, {llvm::Type::FloatTyID, fpsize::flt}
+	, {llvm::Type::DoubleTyID, fpsize::dbl}
+	});
+
+	JLM_DEBUG_ASSERT(map.find(t->getTypeID()) != map.end());
+	return std::unique_ptr<jive::value::type>(new jlm::fptype(map[t->getTypeID()]));
 }
 
 static std::unique_ptr<jive::value::type>
@@ -105,12 +111,9 @@ convert_type(const llvm::Type * t, context & ctx)
 	  {llvm::Type::IntegerTyID, convert_integer_type}
 	, {llvm::Type::PointerTyID, convert_pointer_type}
 	, {llvm::Type::FunctionTyID, convert_function_type}
-	, {llvm::Type::HalfTyID, convert_float_type}
-	, {llvm::Type::FloatTyID, convert_float_type}
-	, {llvm::Type::DoubleTyID, convert_float_type}
-	, {llvm::Type::X86_FP80TyID, convert_float_type}
-	, {llvm::Type::FP128TyID, convert_float_type}
-	, {llvm::Type::PPC_FP128TyID, convert_float_type}
+	, {llvm::Type::HalfTyID, convert_fp_type}
+	, {llvm::Type::FloatTyID, convert_fp_type}
+	, {llvm::Type::DoubleTyID, convert_fp_type}
 	, {llvm::Type::StructTyID, convert_struct_type}
 	, {llvm::Type::ArrayTyID, convert_array_type}
 	});
