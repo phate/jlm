@@ -955,4 +955,53 @@ fpcmp_op::copy() const
 	return std::unique_ptr<jive::operation>(new jlm::fpcmp_op(*this));
 }
 
+/* undef constant operator */
+
+undef_constant_op::~undef_constant_op()
+{}
+
+bool
+undef_constant_op::operator==(const operation & other) const noexcept
+{
+	auto op = dynamic_cast<const jlm::undef_constant_op*>(&other);
+	return op && op->type() == type();
+}
+
+size_t
+undef_constant_op::narguments() const noexcept
+{
+	return 0;
+}
+
+const jive::base::type &
+undef_constant_op::argument_type(size_t index) const noexcept
+{
+	JLM_ASSERT(0);
+}
+
+size_t
+undef_constant_op::nresults() const noexcept
+{
+	return 1;
+}
+
+const jive::base::type &
+undef_constant_op::result_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < nresults());
+	return *type_;
+}
+
+std::string
+undef_constant_op::debug_string() const
+{
+	return "undef";
+}
+
+std::unique_ptr<jive::operation>
+undef_constant_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new jlm::undef_constant_op(*this));
+}
+
 }

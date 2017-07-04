@@ -1238,6 +1238,84 @@ create_fpcmp_tac(
 	return create_tac(op, {op1, op2}, {result});
 }
 
+/* undef constant operator */
+
+class undef_constant_op final : public jive::simple_op {
+public:
+	virtual
+	~undef_constant_op() noexcept;
+
+	inline
+	undef_constant_op(const jive::value::type & type)
+	: jive::simple_op()
+	, type_(type.copy())
+	{}
+
+	inline
+	undef_constant_op(const jlm::undef_constant_op & other)
+	: jive::simple_op(other)
+	, type_(other.type().copy())
+	{}
+
+	inline
+	undef_constant_op(jlm::undef_constant_op && other)
+	: jive::simple_op(other)
+	, type_(std::move(other.type_))
+	{}
+
+	undef_constant_op &
+	operator=(const undef_constant_op &) = delete;
+
+	undef_constant_op &
+	operator=(undef_constant_op &&) = delete;
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual size_t
+	narguments() const noexcept override;
+
+	virtual const jive::base::type &
+	argument_type(size_t index) const noexcept override;
+
+	virtual size_t
+	nresults() const noexcept override;
+
+	virtual const jive::base::type &
+	result_type(size_t index) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+	inline const jive::value::type &
+	type() const noexcept
+	{
+		return *static_cast<const jive::value::type*>(type_.get());
+	}
+
+private:
+	std::unique_ptr<jive::base::type> type_;
+};
+
+static inline bool
+is_undef_constant_op(const jive::operation & op)
+{
+	return dynamic_cast<const jlm::undef_constant_op*>(&op) != nullptr;
+}
+
+static inline std::unique_ptr<jlm::tac>
+create_undef_constant_tac(const variable * result)
+{
+	auto vt = dynamic_cast<const jive::value::type*>(&result->type());
+	if (!vt) throw std::logic_error("Expected value type.");
+
+	jlm::undef_constant_op op(*vt);
+	return create_tac(op, {}, {result});
+}
+
 }
 
 #endif
