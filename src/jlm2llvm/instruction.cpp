@@ -25,147 +25,6 @@ namespace jlm {
 namespace jlm2llvm {
 
 static inline llvm::Value *
-create_add(llvm::IRBuilder<> & builder, llvm::Value * lhs, llvm::Value * rhs)
-{
-	/* FIXME: nuw and nsw flags */
-	return builder.CreateAdd(lhs, rhs);
-}
-
-static inline llvm::Value *
-create_and(llvm::IRBuilder<> & builder, llvm::Value * lhs, llvm::Value * rhs)
-{
-	return builder.CreateAnd(lhs, rhs);
-}
-
-static inline llvm::Value *
-create_ashr(llvm::IRBuilder<> & builder, llvm::Value * lhs, llvm::Value * rhs)
-{
-	return builder.CreateAShr(lhs, rhs);
-}
-
-static inline llvm::Value *
-create_sub(llvm::IRBuilder<> & builder, llvm::Value * lhs, llvm::Value * rhs)
-{
-	/* FIXME: nuw and nsw flags */
-	return builder.CreateSub(lhs, rhs);
-}
-
-static inline llvm::Value *
-create_udiv(llvm::IRBuilder<> & builder, llvm::Value * lhs, llvm::Value * rhs)
-{
-	return builder.CreateUDiv(lhs, rhs);
-}
-
-static inline llvm::Value *
-create_sdiv(llvm::IRBuilder<> & builder, llvm::Value * lhs, llvm::Value * rhs)
-{
-	return builder.CreateSDiv(lhs, rhs);
-}
-
-static inline llvm::Value *
-create_urem(llvm::IRBuilder<> & builder, llvm::Value * lhs, llvm::Value * rhs)
-{
-	return builder.CreateURem(lhs, rhs);
-}
-
-static inline llvm::Value *
-create_srem(llvm::IRBuilder<> & builder, llvm::Value * lhs, llvm::Value * rhs)
-{
-	return builder.CreateSRem(lhs, rhs);
-}
-
-static inline llvm::Value *
-create_shl(llvm::IRBuilder<> & builder, llvm::Value * lhs, llvm::Value * rhs)
-{
-	return builder.CreateShl(lhs, rhs);
-}
-
-static inline llvm::Value *
-create_shr(llvm::IRBuilder<> & builder, llvm::Value * lhs, llvm::Value * rhs)
-{
-	return builder.CreateLShr(lhs, rhs);
-}
-
-static inline llvm::Value *
-create_or(llvm::IRBuilder<> & builder, llvm::Value * lhs, llvm::Value * rhs)
-{
-	return builder.CreateOr(lhs, rhs);
-}
-
-static inline llvm::Value *
-create_xor(llvm::IRBuilder<> & builder, llvm::Value * lhs, llvm::Value * rhs)
-{
-	return builder.CreateXor(lhs, rhs);
-}
-
-static inline llvm::Value *
-create_mul(llvm::IRBuilder<> & builder, llvm::Value * lhs, llvm::Value * rhs)
-{
-	/* FIXME: nuw and nsw flags */
-	return builder.CreateMul(lhs, rhs);
-}
-
-static inline llvm::Value *
-create_cmpeq(llvm::IRBuilder<> & builder, llvm::Value * lhs, llvm::Value * rhs)
-{
-	return builder.CreateICmpEQ(lhs, rhs);
-}
-
-static inline llvm::Value *
-create_cmpne(llvm::IRBuilder<> & builder, llvm::Value * lhs, llvm::Value * rhs)
-{
-	return builder.CreateICmpNE(lhs, rhs);
-}
-
-static inline llvm::Value *
-create_cmpugt(llvm::IRBuilder<> & builder, llvm::Value * lhs, llvm::Value * rhs)
-{
-	return builder.CreateICmpUGT(lhs, rhs);
-}
-
-static inline llvm::Value *
-create_cmpuge(llvm::IRBuilder<> & builder, llvm::Value * lhs, llvm::Value * rhs)
-{
-	return builder.CreateICmpUGE(lhs, rhs);
-}
-
-static inline llvm::Value *
-create_cmpult(llvm::IRBuilder<> & builder, llvm::Value * lhs, llvm::Value * rhs)
-{
-	return builder.CreateICmpULT(lhs, rhs);
-}
-
-static inline llvm::Value *
-create_cmpule(llvm::IRBuilder<> & builder, llvm::Value * lhs, llvm::Value * rhs)
-{
-	return builder.CreateICmpULE(lhs, rhs);
-}
-
-static inline llvm::Value *
-create_cmpsgt(llvm::IRBuilder<> & builder, llvm::Value * lhs, llvm::Value * rhs)
-{
-	return builder.CreateICmpSGT(lhs, rhs);
-}
-
-static inline llvm::Value *
-create_cmpsge(llvm::IRBuilder<> & builder, llvm::Value * lhs, llvm::Value * rhs)
-{
-	return builder.CreateICmpSGE(lhs, rhs);
-}
-
-static inline llvm::Value *
-create_cmpslt(llvm::IRBuilder<> & builder, llvm::Value * lhs, llvm::Value * rhs)
-{
-	return builder.CreateICmpSLT(lhs, rhs);
-}
-
-static inline llvm::Value *
-create_cmpsle(llvm::IRBuilder<> & builder, llvm::Value * lhs, llvm::Value * rhs)
-{
-	return builder.CreateICmpSLE(lhs, rhs);
-}
-
-static inline llvm::Value *
 convert_assignment(
 	const jive::operation & op,
 	llvm::IRBuilder<> & builder,
@@ -184,6 +43,59 @@ convert_binary(
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const jive::base::binary_op*>(&op) && args.size() == 2);
 	return create(builder, args[0], args[1]);
+}
+
+static inline llvm::Value *
+convert_bitsbinary(
+	const jive::operation & op,
+	llvm::IRBuilder<> & builder,
+	const std::vector<llvm::Value*> & args)
+{
+	JLM_DEBUG_ASSERT(dynamic_cast<const jive::bits::binary_op*>(&op));
+
+	static std::unordered_map<std::type_index, llvm::Instruction::BinaryOps> map({
+	  {std::type_index(typeid(jive::bits::add_op)), llvm::Instruction::Add}
+	, {std::type_index(typeid(jive::bits::and_op)), llvm::Instruction::And}
+	, {std::type_index(typeid(jive::bits::ashr_op)), llvm::Instruction::AShr}
+	, {std::type_index(typeid(jive::bits::sub_op)), llvm::Instruction::Sub}
+	, {std::type_index(typeid(jive::bits::udiv_op)), llvm::Instruction::UDiv}
+	, {std::type_index(typeid(jive::bits::sdiv_op)), llvm::Instruction::SDiv}
+	, {std::type_index(typeid(jive::bits::umod_op)), llvm::Instruction::URem}
+	, {std::type_index(typeid(jive::bits::smod_op)), llvm::Instruction::SRem}
+	, {std::type_index(typeid(jive::bits::shl_op)), llvm::Instruction::Shl}
+	, {std::type_index(typeid(jive::bits::shr_op)), llvm::Instruction::LShr}
+	, {std::type_index(typeid(jive::bits::or_op)), llvm::Instruction::Or}
+	, {std::type_index(typeid(jive::bits::xor_op)), llvm::Instruction::Xor}
+	, {std::type_index(typeid(jive::bits::mul_op)), llvm::Instruction::Mul}
+	});
+
+	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
+	return builder.CreateBinOp(map[std::type_index(typeid(op))], args[0], args[1]);
+}
+
+static inline llvm::Value *
+convert_bitscompare(
+	const jive::operation & op,
+	llvm::IRBuilder<> & builder,
+	const std::vector<llvm::Value*> & args)
+{
+	JLM_DEBUG_ASSERT(dynamic_cast<const jive::bits::compare_op*>(&op));
+
+	static std::unordered_map<std::type_index, llvm::CmpInst::Predicate> map({
+	  {std::type_index(typeid(jive::bits::eq_op)), llvm::CmpInst::ICMP_EQ}
+	, {std::type_index(typeid(jive::bits::ne_op)), llvm::CmpInst::ICMP_NE}
+	, {std::type_index(typeid(jive::bits::ugt_op)), llvm::CmpInst::ICMP_UGT}
+	, {std::type_index(typeid(jive::bits::uge_op)), llvm::CmpInst::ICMP_UGE}
+	, {std::type_index(typeid(jive::bits::ult_op)), llvm::CmpInst::ICMP_ULT}
+	, {std::type_index(typeid(jive::bits::ule_op)), llvm::CmpInst::ICMP_ULE}
+	, {std::type_index(typeid(jive::bits::sgt_op)), llvm::CmpInst::ICMP_SGT}
+	, {std::type_index(typeid(jive::bits::sge_op)), llvm::CmpInst::ICMP_SGE}
+	, {std::type_index(typeid(jive::bits::slt_op)), llvm::CmpInst::ICMP_SLT}
+	, {std::type_index(typeid(jive::bits::sle_op)), llvm::CmpInst::ICMP_SLE}
+	});
+
+	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
+	return builder.CreateICmp(map[std::type_index(typeid(op))], args[0], args[1]);
 }
 
 static inline llvm::Value *
@@ -368,15 +280,14 @@ convert_ptrcmp(
 	JLM_DEBUG_ASSERT(is_ptrcmp_op(op));
 	auto & pop = *static_cast<const ptrcmp_op*>(&op);
 
-	static std::unordered_map<
-		jlm::cmp, llvm::Value*(*)(llvm::IRBuilder<>&, llvm::Value*, llvm::Value*)
-	> map({
-	  {cmp::le, create_cmpule}, {cmp::lt, create_cmpult}, {cmp::eq, create_cmpeq}
-	, {cmp::ne, create_cmpne}, {cmp::ge, create_cmpuge}, {cmp::gt, create_cmpugt}
+	static std::unordered_map<jlm::cmp, llvm::CmpInst::Predicate> map({
+	  {cmp::le, llvm::CmpInst::ICMP_ULE}, {cmp::lt, llvm::CmpInst::ICMP_ULT}
+	, {cmp::eq, llvm::CmpInst::ICMP_EQ}, {cmp::ne, llvm::CmpInst::ICMP_NE}
+	, {cmp::ge, llvm::CmpInst::ICMP_UGE}, {cmp::gt, llvm::CmpInst::ICMP_UGT}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(pop.cmp()) != map.end());
-	return map[pop.cmp()](builder, args[0], args[1]);
+	return builder.CreateICmp(map[pop.cmp()], args[0], args[1]);
 }
 
 static inline llvm::Value *
@@ -447,73 +358,29 @@ convert_operation(
 	llvm::IRBuilder<> & builder,
 	const std::vector<llvm::Value*> & arguments)
 {
-	using namespace std::placeholders;
-	static auto convert_add		= std::bind(convert_binary, _1, _2, _3, create_add);
-	static auto convert_and 	= std::bind(convert_binary, _1, _2, _3, create_and);
-	static auto convert_ashr	= std::bind(convert_binary, _1, _2, _3, create_ashr);
-	static auto convert_sub		= std::bind(convert_binary, _1, _2, _3, create_sub);
-	static auto convert_udiv	= std::bind(convert_binary, _1, _2, _3, create_udiv);
-	static auto convert_sdiv	= std::bind(convert_binary, _1, _2, _3, create_sdiv);
-	static auto convert_umod	= std::bind(convert_binary, _1, _2, _3, create_urem);
-	static auto convert_smod	= std::bind(convert_binary, _1, _2, _3, create_srem);
-	static auto convert_shl		= std::bind(convert_binary, _1, _2, _3, create_shl);
-	static auto convert_shr		= std::bind(convert_binary, _1, _2, _3, create_shr);
-	static auto convert_or		= std::bind(convert_binary, _1, _2, _3, create_or);
-	static auto convert_xor		= std::bind(convert_binary, _1, _2, _3, create_xor);
-	static auto convert_mul		= std::bind(convert_binary, _1, _2, _3, create_mul);
-	static auto convert_eq		= std::bind(convert_binary, _1, _2, _3, create_cmpeq);
-	static auto convert_ne		= std::bind(convert_binary, _1, _2, _3, create_cmpne);
-	static auto convert_ugt		= std::bind(convert_binary, _1, _2, _3, create_cmpugt);
-	static auto convert_uge		= std::bind(convert_binary, _1, _2, _3, create_cmpuge);
-	static auto convert_ult		= std::bind(convert_binary, _1, _2, _3, create_cmpult);
-	static auto convert_ule		= std::bind(convert_binary, _1, _2, _3, create_cmpule);
-	static auto convert_sgt		= std::bind(convert_binary, _1, _2, _3, create_cmpsgt);
-	static auto convert_sge		= std::bind(convert_binary, _1, _2, _3, create_cmpsge);
-	static auto convert_slt		= std::bind(convert_binary, _1, _2, _3, create_cmpslt);
-	static auto convert_sle		= std::bind(convert_binary, _1, _2, _3, create_cmpsle);
+	if (dynamic_cast<const jive::bits::binary_op*>(&op))
+		return convert_bitsbinary(op, builder, arguments);
 
-	using namespace llvm;
+	if (dynamic_cast<const jive::bits::compare_op*>(&op))
+		return convert_bitscompare(op, builder, arguments);
 
 	static std::unordered_map<
 		std::type_index
-	, std::function<Value*(const jive::operation & op, IRBuilder<>&, const std::vector<Value*>&)>
+	, llvm::Value*(*)(const jive::operation &, llvm::IRBuilder<>&, const std::vector<llvm::Value*>&)
 	> map({
-	  {std::type_index(typeid(jive::bits::add_op)), convert_add}
-	, {std::type_index(typeid(jive::bits::and_op)), convert_and}
-	, {std::type_index(typeid(jive::bits::ashr_op)), convert_ashr}
-	, {std::type_index(typeid(jive::bits::sub_op)), convert_sub}
-	, {std::type_index(typeid(jive::bits::udiv_op)), convert_udiv}
-	, {std::type_index(typeid(jive::bits::sdiv_op)), convert_sdiv}
-	, {std::type_index(typeid(jive::bits::umod_op)), convert_umod}
-	, {std::type_index(typeid(jive::bits::smod_op)), convert_smod}
-	, {std::type_index(typeid(jive::bits::shl_op)), convert_shl}
-	, {std::type_index(typeid(jive::bits::shr_op)), convert_shr}
-	, {std::type_index(typeid(jive::bits::or_op)), convert_or}
-	, {std::type_index(typeid(jive::bits::xor_op)), convert_xor}
-	, {std::type_index(typeid(jive::bits::mul_op)), convert_mul}
-	, {std::type_index(typeid(jive::bits::eq_op)), convert_eq}
-	, {std::type_index(typeid(jive::bits::ne_op)), convert_ne}
-	, {std::type_index(typeid(jive::bits::ugt_op)), convert_ugt}
-	, {std::type_index(typeid(jive::bits::uge_op)), convert_uge}
-	, {std::type_index(typeid(jive::bits::ult_op)), convert_ult}
-	, {std::type_index(typeid(jive::bits::ule_op)), convert_ule}
-	, {std::type_index(typeid(jive::bits::sgt_op)), convert_sgt}
-	, {std::type_index(typeid(jive::bits::sge_op)), convert_sge}
-	, {std::type_index(typeid(jive::bits::slt_op)), convert_slt}
-	, {std::type_index(typeid(jive::bits::sle_op)), convert_sle}
-	, {std::type_index(typeid(jive::bits::constant_op)), jlm::jlm2llvm::convert_bitconstant}
+	  {std::type_index(typeid(jive::bits::constant_op)), convert_bitconstant}
 	, {std::type_index(typeid(jive::ctl::constant_op)), convert_ctlconstant}
 	, {std::type_index(typeid(jlm::fpconstant_op)), convert_fpconstant}
 	, {std::type_index(typeid(jlm::undef_constant_op)), convert_undef}
-	, {std::type_index(typeid(jive::match_op)), jlm::jlm2llvm::convert_match}
-	, {std::type_index(typeid(jive::fct::apply_op)), jlm::jlm2llvm::convert_apply}
-	, {std::type_index(typeid(jlm::assignment_op)), jlm::jlm2llvm::convert_assignment}
-	, {std::type_index(typeid(jlm::branch_op)), jlm::jlm2llvm::convert_branch}
-	, {std::type_index(typeid(jlm::phi_op)), jlm::jlm2llvm::convert_phi}
-	, {std::type_index(typeid(jlm::load_op)), jlm::jlm2llvm::convert_load}
-	, {std::type_index(typeid(jlm::store_op)), jlm::jlm2llvm::convert_store}
-	, {std::type_index(typeid(jlm::alloca_op)), jlm::jlm2llvm::convert_alloca}
-	, {std::type_index(typeid(jlm::ptroffset_op)), jlm::jlm2llvm::convert_ptroffset}
+	, {std::type_index(typeid(jive::match_op)), convert_match}
+	, {std::type_index(typeid(jive::fct::apply_op)), convert_apply}
+	, {std::type_index(typeid(jlm::assignment_op)), convert_assignment}
+	, {std::type_index(typeid(jlm::branch_op)), convert_branch}
+	, {std::type_index(typeid(jlm::phi_op)), convert_phi}
+	, {std::type_index(typeid(jlm::load_op)), convert_load}
+	, {std::type_index(typeid(jlm::store_op)), convert_store}
+	, {std::type_index(typeid(jlm::alloca_op)), convert_alloca}
+	, {std::type_index(typeid(jlm::ptroffset_op)), convert_ptroffset}
 	, {std::type_index(typeid(jlm::data_array_constant_op)), convert_data_array_constant}
 	, {std::type_index(typeid(jlm::ptrcmp_op)), convert_ptrcmp}
 	, {std::type_index(typeid(jlm::zext_op)), convert_zext}
