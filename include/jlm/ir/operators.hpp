@@ -1316,6 +1316,80 @@ create_undef_constant_tac(const variable * result)
 	return create_tac(op, {}, {result});
 }
 
+/* floating point arithmetic operator */
+
+enum class fpop {add, sub, mul, div, mod};
+
+class fpbin_op final : public jive::simple_op {
+public:
+	virtual
+	~fpbin_op() noexcept;
+
+	inline
+	fpbin_op(const jlm::fpop & op, const jlm::fpsize & size)
+	: jive::simple_op()
+	, op_(op)
+	, type_(size)
+	{}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual size_t
+	narguments() const noexcept override;
+
+	virtual const jive::base::type &
+	argument_type(size_t index) const noexcept override;
+
+	virtual size_t
+	nresults() const noexcept override;
+
+	virtual const jive::base::type &
+	result_type(size_t index) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+	inline const jlm::fpop &
+	fpop() const noexcept
+	{
+		return op_;
+	}
+
+	inline const jlm::fpsize &
+	size() const noexcept
+	{
+		return type_.size();
+	}
+
+private:
+	jlm::fpop op_;
+	jlm::fptype type_;
+};
+
+static inline bool
+is_fpbin_op(const jive::operation & op)
+{
+	return dynamic_cast<const jlm::fpbin_op*>(&op) != nullptr;
+}
+
+static inline std::unique_ptr<jlm::tac>
+create_fpbin_tac(
+	const jlm::fpop & fpop,
+	const variable * op1,
+	const variable * op2,
+	const variable * result)
+{
+	auto ft = dynamic_cast<const jlm::fptype*>(&op1->type());
+	if (!ft) throw std::logic_error("Expected floating point type.");
+
+	jlm::fpbin_op op(fpop, ft->size());
+	return create_tac(op, {op1, op2}, {result});
+}
+
 }
 
 #endif

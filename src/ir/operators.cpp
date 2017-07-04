@@ -1004,4 +1004,60 @@ undef_constant_op::copy() const
 	return std::unique_ptr<jive::operation>(new jlm::undef_constant_op(*this));
 }
 
+/* floating point arithmetic operator */
+
+fpbin_op::~fpbin_op()
+{}
+
+bool
+fpbin_op::operator==(const operation & other) const noexcept
+{
+	auto op = dynamic_cast<const jlm::fpbin_op*>(&other);
+	return op && op->fpop() == fpop() && op->size() == size();
+}
+
+size_t
+fpbin_op::narguments() const noexcept
+{
+	return 2;
+}
+
+const jive::base::type &
+fpbin_op::argument_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < narguments());
+	return type_;
+}
+
+size_t
+fpbin_op::nresults() const noexcept
+{
+	return 1;
+}
+
+const jive::base::type &
+fpbin_op::result_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < nresults());
+	return type_;
+}
+
+std::string
+fpbin_op::debug_string() const
+{
+	static std::unordered_map<jlm::fpop, std::string> map({
+		{fpop::add, "add"}, {fpop::sub, "sub"}, {fpop::mul, "mul"}
+	, {fpop::div, "div"}, {fpop::mod, "mod"}
+	});
+
+	JLM_DEBUG_ASSERT(map.find(fpop()) != map.end());
+	return "FPOP " + map[fpop()];
+}
+
+std::unique_ptr<jive::operation>
+fpbin_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new jlm::fpbin_op(*this));
+}
+
 }
