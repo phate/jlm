@@ -85,43 +85,10 @@ create_undef_value(
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx)
 {
-	if (type->isIntegerTy()) {
-		size_t nbits = type->getIntegerBitWidth();
-		jive::bits::constant_op op(jive::bits::value_repr::repeat(nbits, 'X'));
-		auto r = ctx.module().create_variable(op.result_type(0), false);
-		tacs.push_back(create_tac(op, {}, {r}));
-		return r;
-	}
-
-	/* FIXME: use proper undef floating point type; differentiate according to width */
-	if (type->isFloatingPointTy()) {
-		jive::flt::constant_op op(nan(""));
-		auto r = ctx.module().create_variable(op.result_type(0), false);
-		tacs.push_back(create_tac(op, {}, {r}));
-		return r;
-	}
-
-	/* FIXME: adjust when we have a real unknown value */
-	if (type->isPointerTy()) {
-		auto t = convert_type(type, ctx);
-		auto r = ctx.module().create_variable(*t, false);
-		tacs.push_back(create_ptr_constant_null_tac(*t, r));
-		return r;
-	}
-
-	if (type->isStructTy()){
-		std::vector<const variable*> operands;
-		for (size_t n = 0; n < type->getStructNumElements(); n++)
-			operands.push_back(create_undef_value(type->getStructElementType(n), tacs, ctx));
-
-		jive::rcd::group_op op(ctx.lookup_declaration(static_cast<const llvm::StructType*>(type)));
-		auto r = ctx.module().create_variable(op.result_type(0), false);
-		tacs.push_back(create_tac(op, operands, {r}));
-		return r;
-	}
-
-	JLM_DEBUG_ASSERT(0);
-	return nullptr;
+	auto t = convert_type(type, ctx);
+	auto r = ctx.module().create_variable(*t, false);
+	tacs.push_back(create_undef_constant_tac(r));
+	return r;
 }
 
 std::vector<std::unique_ptr<jlm::tac>>

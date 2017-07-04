@@ -230,6 +230,16 @@ convert_fpconstant(
 }
 
 static inline llvm::Value *
+convert_undef(
+	const jive::operation & op,
+	llvm::IRBuilder<> & builder,
+	const std::vector<llvm::Value*> & args)
+{
+	JLM_DEBUG_ASSERT(is_undef_constant_op(op));
+	return llvm::UndefValue::get(convert_type(op.result_type(0), builder.getContext()));
+}
+
+static inline llvm::Value *
 convert_apply(
 	const jive::operation & op,
 	llvm::IRBuilder<> & builder,
@@ -465,6 +475,7 @@ convert_operation(
 	, {std::type_index(typeid(jive::bits::constant_op)), jlm::jlm2llvm::convert_bitconstant}
 	, {std::type_index(typeid(jive::ctl::constant_op)), convert_ctlconstant}
 	, {std::type_index(typeid(jlm::fpconstant_op)), convert_fpconstant}
+	, {std::type_index(typeid(jlm::undef_constant_op)), convert_undef}
 	, {std::type_index(typeid(jive::match_op)), jlm::jlm2llvm::convert_match}
 	, {std::type_index(typeid(jive::fct::apply_op)), jlm::jlm2llvm::convert_apply}
 	, {std::type_index(typeid(jlm::assignment_op)), jlm::jlm2llvm::convert_assignment}
