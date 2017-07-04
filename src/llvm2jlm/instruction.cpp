@@ -501,17 +501,16 @@ convert_sext_instruction(llvm::Instruction * i, context & ctx)
 }
 
 static inline tacsvector_t
-convert_fpext_instruction(llvm::Instruction * i, context & ctx)
+convert_fpext_instruction(llvm::Instruction * instruction, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::FPExtInst*>(i));
-
-	/* FIXME: use assignment operator as long as we don't support floating point types properly */
+	JLM_DEBUG_ASSERT(instruction->getOpcode() == llvm::Instruction::FPExt);
+	auto i = llvm::cast<llvm::FPExtInst>(instruction);
+	JLM_DEBUG_ASSERT(!i->getSrcTy()->isVectorTy());
 
 	tacsvector_t tacs;
-	jive::flt::type type;
-	assignment_op op(type);
 	auto operand = convert_value(i->getOperand(0), tacs, ctx);
-	tacs.push_back(create_tac(op, {operand}, {ctx.lookup_value(i)}));
+	tacs.push_back(create_fpext_tac(operand, ctx.lookup_value(i)));
+
 	return tacs;
 }
 
