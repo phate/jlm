@@ -431,6 +431,16 @@ convert_fpbin(
 	return builder.CreateBinOp(map[fpbin.fpop()], args[0], args[1]);
 }
 
+static inline llvm::Value *
+convert_fpext(
+	const jive::operation & op,
+	llvm::IRBuilder<> & builder,
+	const std::vector<llvm::Value*> & args)
+{
+	JLM_DEBUG_ASSERT(is_fpext_op(op));
+	return builder.CreateFPExt(args[0], convert_type(op.result_type(0), builder.getContext()));
+}
+
 llvm::Value *
 convert_operation(
 	const jive::operation & op,
@@ -509,6 +519,7 @@ convert_operation(
 	, {std::type_index(typeid(jlm::zext_op)), convert_zext}
 	, {std::type_index(typeid(jlm::fpcmp_op)), convert_fpcmp}
 	, {std::type_index(typeid(jlm::fpbin_op)), convert_fpbin}
+	, {std::type_index(typeid(jlm::fpext_op)), convert_fpext}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
