@@ -412,6 +412,25 @@ convert_fpcmp(
 	return builder.CreateFCmp(map[fpcmp.cmp()], args[0], args[1]);
 }
 
+static inline llvm::Value *
+convert_fpbin(
+	const jive::operation & op,
+	llvm::IRBuilder<> & builder,
+	const std::vector<llvm::Value*> & args)
+{
+	JLM_DEBUG_ASSERT(is_fpbin_op(op));
+	auto & fpbin = *static_cast<const jlm::fpbin_op*>(&op);
+
+	static std::unordered_map<jlm::fpop, llvm::Instruction::BinaryOps> map({
+	  {fpop::add, llvm::Instruction::FAdd}, {fpop::sub, llvm::Instruction::FSub}
+	, {fpop::mul, llvm::Instruction::FMul}, {fpop::div, llvm::Instruction::FDiv}
+	, {fpop::mod, llvm::Instruction::FRem}
+	});
+
+	JLM_DEBUG_ASSERT(map.find(fpbin.fpop()) != map.end());
+	return builder.CreateBinOp(map[fpbin.fpop()], args[0], args[1]);
+}
+
 llvm::Value *
 convert_operation(
 	const jive::operation & op,
@@ -489,6 +508,7 @@ convert_operation(
 	, {std::type_index(typeid(jlm::ptrcmp_op)), convert_ptrcmp}
 	, {std::type_index(typeid(jlm::zext_op)), convert_zext}
 	, {std::type_index(typeid(jlm::fpcmp_op)), convert_fpcmp}
+	, {std::type_index(typeid(jlm::fpbin_op)), convert_fpbin}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
