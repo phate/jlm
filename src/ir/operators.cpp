@@ -1060,4 +1060,54 @@ fpbin_op::copy() const
 	return std::unique_ptr<jive::operation>(new jlm::fpbin_op(*this));
 }
 
+/* fpext operator */
+
+fpext_op::~fpext_op()
+{}
+
+bool
+fpext_op::operator==(const operation & other) const noexcept
+{
+	auto op = dynamic_cast<const jlm::fpext_op*>(&other);
+	return op && op->srcsize() == srcsize() && op->dstsize() == dstsize();
+}
+
+size_t
+fpext_op::narguments() const noexcept
+{
+	return 1;
+}
+
+const jive::base::type &
+fpext_op::argument_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < narguments());
+	return srctype_;
+}
+
+size_t
+fpext_op::nresults() const noexcept
+{
+	return 1;
+}
+
+const jive::base::type &
+fpext_op::result_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < nresults());
+	return dsttype_;
+}
+
+std::string
+fpext_op::debug_string() const
+{
+	return "fpext";
+}
+
+std::unique_ptr<jive::operation>
+fpext_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new jlm::fpext_op(*this));
+}
+
 }

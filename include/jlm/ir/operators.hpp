@@ -1390,6 +1390,80 @@ create_fpbin_tac(
 	return create_tac(op, {op1, op2}, {result});
 }
 
+/* fpext operator */
+
+class fpext_op final : public jive::simple_op {
+public:
+	virtual
+	~fpext_op() noexcept;
+
+	inline
+	fpext_op(const jlm::fpsize & srcsize, const jlm::fpsize & dstsize)
+	: jive::simple_op()
+	, srctype_(srcsize)
+	, dsttype_(dstsize)
+	{
+		if (srcsize == fpsize::flt && dstsize == fpsize::half)
+			throw std::logic_error("Destination type size must be bigger than source type size.");
+	}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual size_t
+	narguments() const noexcept override;
+
+	virtual const jive::base::type &
+	argument_type(size_t index) const noexcept override;
+
+	virtual size_t
+	nresults() const noexcept override;
+
+	virtual const jive::base::type &
+	result_type(size_t index) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+	inline const jlm::fpsize &
+	srcsize() const noexcept
+	{
+		return srctype_.size();
+	}
+
+	inline const jlm::fpsize &
+	dstsize() const noexcept
+	{
+		return dsttype_.size();
+	}
+
+private:
+	jlm::fptype srctype_;
+	jlm::fptype dsttype_;
+};
+
+static inline bool
+is_fpext_op(const jive::operation & op)
+{
+	return dynamic_cast<const jlm::fpext_op*>(&op) != nullptr;
+}
+
+static inline std::unique_ptr<jlm::tac>
+create_fpext_tac(const variable * operand, const variable * result)
+{
+	auto st = dynamic_cast<const jlm::fptype*>(&operand->type());
+	if (!st) throw std::logic_error("Expected floating point type.");
+
+	auto dt = dynamic_cast<const jlm::fptype*>(&result->type());
+	if (!dt) throw std::logic_error("Expected floating point type.");
+
+	jlm::fpext_op op(st->size(), dt->size());
+	return create_tac(op, {operand}, {result});
+}
+
 }
 
 #endif
