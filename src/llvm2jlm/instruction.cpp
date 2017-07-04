@@ -462,7 +462,7 @@ convert_zext_instruction(llvm::Instruction * instruction, context & ctx)
 	JLM_DEBUG_ASSERT(!i->getSrcTy()->isVectorTy());
 
 	tacsvector_t tacs;
-	auto operand = ctx.lookup_value(i->getOperand(0));
+	auto operand = convert_value(i->getOperand(0), tacs, ctx);
 	tacs.push_back(create_zext_tac(operand, ctx.lookup_value(i)));
 
 	return tacs;
