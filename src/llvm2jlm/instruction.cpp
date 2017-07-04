@@ -394,19 +394,16 @@ convert_select_instruction(llvm::Instruction * i, context & ctx)
 static inline tacsvector_t
 convert_binary_operator(llvm::Instruction * instruction, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::BinaryOperator*>(instruction));
-	const llvm::BinaryOperator * i = static_cast<const llvm::BinaryOperator*>(instruction);
+	JLM_DEBUG_ASSERT(llvm::dyn_cast<const llvm::BinaryOperator>(instruction));
+	auto i = llvm::cast<const llvm::BinaryOperator>(instruction);
+	JLM_DEBUG_ASSERT(!i->getType()->isVectorTy());
 
-	/* FIXME: vector type is not yet supported */
 	tacsvector_t tacs;
-	if (i->getType()->isVectorTy())
-		JLM_DEBUG_ASSERT(0);
-
 	auto op1 = convert_value(i->getOperand(0), tacs, ctx);
 	auto op2 = convert_value(i->getOperand(1), tacs, ctx);
 
 	if (i->getType()->isIntegerTy()) {
-		static std::map<
+		static std::unordered_map<
 			const llvm::Instruction::BinaryOps,
 			std::unique_ptr<jive::operation>(*)(size_t)> map({
 				{llvm::Instruction::Add,	[](size_t nbits){jive::bits::add_op o(nbits); return o.copy();}}
@@ -425,27 +422,20 @@ convert_binary_operator(llvm::Instruction * instruction, context & ctx)
 		});
 
 		size_t nbits = i->getType()->getIntegerBitWidth();
+		JLM_DEBUG_ASSERT(map.find(i->getOpcode()) != map.end());
 		tacs.push_back(create_tac(*map[i->getOpcode()](nbits), {op1, op2}, {ctx.lookup_value(i)}));
 		return tacs;
 	}
 
-	if (i->getType()->isFloatingPointTy()) {
-		static std::map<
-			const llvm::Instruction::BinaryOps,
-			std::unique_ptr<jive::operation>(*)()> map({
-				{llvm::Instruction::FAdd, [](){jive::flt::add_op op; return op.copy();}}
-			, {llvm::Instruction::FSub, [](){jive::flt::sub_op op; return op.copy();}}
-			, {llvm::Instruction::FMul, [](){jive::flt::mul_op op; return op.copy();}}
-			, {llvm::Instruction::FDiv, [](){jive::flt::div_op op; return op.copy();}}
-		});
+	static std::unordered_map<const llvm::Instruction::BinaryOps, jlm::fpop> map({
+	  {llvm::Instruction::FAdd, fpop::add}, {llvm::Instruction::FSub, fpop::sub}
+	, {llvm::Instruction::FMul, fpop::mul}, {llvm::Instruction::FDiv, fpop::div}
+	, {llvm::Instruction::FRem, fpop::mod}
+	});
 
-		/* FIXME: support FRem */
-		JLM_DEBUG_ASSERT(i->getOpcode() != llvm::Instruction::FRem);
-		tacs.push_back(create_tac(*map[i->getOpcode()](), {op1, op2}, {ctx.lookup_value(i)}));
-		return tacs;
-	}
-
-	JLM_DEBUG_ASSERT(0);
+	JLM_DEBUG_ASSERT(map.find(i->getOpcode()) != map.end());
+	tacs.push_back(create_fpbin_tac(map[i->getOpcode()], op1, op2, ctx.lookup_value(i)));
+	return tacs;
 }
 
 static inline tacsvector_t
