@@ -31,15 +31,6 @@ double
 convert_apfloat(const llvm::APFloat & value);
 
 std::vector<std::unique_ptr<jlm::tac>>
-create_undef_value(const llvm::Type * type, context & ctx);
-
-const variable *
-convert_undef_value(
-	const llvm::Type * type,
-	std::vector<std::unique_ptr<jlm::tac>> & tacs,
-	context & ctx);
-
-std::vector<std::unique_ptr<jlm::tac>>
 convert_constant(llvm::Constant * constant, context & ctx);
 
 const variable *

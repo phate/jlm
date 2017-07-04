@@ -95,10 +95,7 @@ create_cfg(llvm::Function & f, context & ctx)
 	const variable * result = nullptr;
 	if (!f.getReturnType()->isVoidTy()) {
 		result = m.create_variable(*convert_type(f.getReturnType(), ctx), "_r_", false);
-		auto tacs = create_undef_value(f.getReturnType(), ctx);
-		append_last(entry_block, tacs);
-		auto attr = static_cast<basic_block*>(&entry_block->attribute());
-		append_last(entry_block, create_assignment(result->type(),{attr->last()->output(0)},{result}));
+		append_last(entry_block, create_undef_constant_tac(result));
 
 		JLM_DEBUG_ASSERT(node->type().nresults() == 2);
 		JLM_DEBUG_ASSERT(result->type() == node->type().result_type(0));

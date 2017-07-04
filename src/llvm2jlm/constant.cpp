@@ -79,26 +79,6 @@ convert_apfloat(const llvm::APFloat & value)
 	return value.convertToDouble();
 }
 
-const variable *
-create_undef_value(
-	const llvm::Type * type,
-	std::vector<std::unique_ptr<jlm::tac>> & tacs,
-	context & ctx)
-{
-	auto t = convert_type(type, ctx);
-	auto r = ctx.module().create_variable(*t, false);
-	tacs.push_back(create_undef_constant_tac(r));
-	return r;
-}
-
-std::vector<std::unique_ptr<jlm::tac>>
-create_undef_value(const llvm::Type * type, context & ctx)
-{
-	std::vector<std::unique_ptr<jlm::tac>> tacs;
-	create_undef_value(type, tacs, ctx);
-	return tacs;
-}
-
 static const variable *
 convert_int_constant(
 	llvm::Constant * c,
@@ -114,14 +94,18 @@ convert_int_constant(
 	return r;
 }
 
-static const variable *
-convert_undefvalue_instruction(
+static inline const variable *
+convert_undefvalue(
 	llvm::Constant * c,
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::UndefValue*>(c));
-	return create_undef_value(c->getType(), tacs, ctx);
+	JLM_DEBUG_ASSERT(c->getValueID() == llvm::Value::UndefValueVal);
+
+	auto t = convert_type(c->getType(), ctx);
+	auto r = ctx.module().create_variable(*t, false);
+	tacs.push_back(create_undef_constant_tac(r));
+	return r;
 }
 
 static const variable *
@@ -165,8 +149,12 @@ convert_globalVariable(
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::GlobalVariable*>(constant));
 	auto c = static_cast<llvm::GlobalVariable*>(constant);
 
-	if (!c->hasInitializer())
-		return create_undef_value(c->getType(), tacs, ctx);
+	if (!c->hasInitializer()) {
+		auto t = convert_type(c->getType(), ctx);
+		auto r = ctx.module().create_variable(*t, false);
+		tacs.push_back(create_undef_constant_tac(r));
+		return r;
+	}
 
 	return convert_constant(c->getInitializer(), tacs, ctx);
 }
@@ -335,7 +323,7 @@ convert_constant(
 			context & ctx)
 	> cmap({
 		{llvm::Value::ConstantIntVal, convert_int_constant}
-	,	{llvm::Value::UndefValueVal, convert_undefvalue_instruction}
+	,	{llvm::Value::UndefValueVal, convert_undefvalue}
 	,	{llvm::Value::ConstantExprVal, convert_constantExpr}
 	,	{llvm::Value::ConstantFPVal, convert_constantFP}
 	,	{llvm::Value::GlobalVariableVal, convert_globalVariable}
