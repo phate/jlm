@@ -35,17 +35,6 @@ convert_assignment(
 }
 
 static inline llvm::Value *
-convert_binary(
-	const jive::operation & op,
-	llvm::IRBuilder<> & builder,
-	const std::vector<llvm::Value*> & args,
-	const std::function<llvm::Value*(llvm::IRBuilder<>&, llvm::Value*, llvm::Value*)> & create)
-{
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::base::binary_op*>(&op) && args.size() == 2);
-	return create(builder, args[0], args[1]);
-}
-
-static inline llvm::Value *
 convert_bitsbinary(
 	const jive::operation & op,
 	llvm::IRBuilder<> & builder,
