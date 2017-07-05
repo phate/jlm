@@ -1464,6 +1464,83 @@ create_fpext_tac(const variable * operand, const variable * result)
 	return create_tac(op, {operand}, {result});
 }
 
+/* valist operator */
+
+class valist_op final : public jive::simple_op {
+public:
+	virtual
+	~valist_op() noexcept;
+
+	inline
+	valist_op(std::vector<std::unique_ptr<jive::base::type>> arguments)
+	: jive::simple_op()
+	, arguments_(std::move(arguments))
+	{}
+
+	inline
+	valist_op(const valist_op & other)
+	: jive::simple_op(other)
+	{
+		for (const auto & argument : other.arguments_)
+			arguments_.push_back(argument->copy());
+	}
+
+	inline
+	valist_op(valist_op && other)
+	: jive::simple_op(other)
+	, arguments_(std::move(other.arguments_))
+	{}
+
+	valist_op &
+	operator=(const valist_op &) = delete;
+
+	valist_op &
+	operator=(valist_op &&) = delete;
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual size_t
+	narguments() const noexcept override;
+
+	virtual const jive::base::type &
+	argument_type(size_t index) const noexcept override;
+
+	virtual size_t
+	nresults() const noexcept override;
+
+	virtual const jive::base::type &
+	result_type(size_t index) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+private:
+	std::vector<std::unique_ptr<jive::base::type>> arguments_;
+};
+
+static inline bool
+is_valist_op(const jive::operation & op)
+{
+	return dynamic_cast<const jlm::valist_op*>(&op) != nullptr;
+}
+
+static inline std::unique_ptr<jlm::tac>
+create_valist_tac(
+	const std::vector<const variable*> & arguments,
+	const variable * result)
+{
+	std::vector<std::unique_ptr<jive::base::type>> operands;
+	for (const auto & argument : arguments)
+		operands.push_back(argument->type().copy());
+
+	jlm::valist_op op(std::move(operands));
+	return create_tac(op, arguments, {result});
+}
+
 }
 
 #endif

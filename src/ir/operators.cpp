@@ -1110,4 +1110,55 @@ fpext_op::copy() const
 	return std::unique_ptr<jive::operation>(new jlm::fpext_op(*this));
 }
 
+/* valist operator */
+
+valist_op::~valist_op()
+{}
+
+bool
+valist_op::operator==(const operation & other) const noexcept
+{
+	auto op = dynamic_cast<const jlm::valist_op*>(&other);
+	return op && op->arguments_ == arguments_;
+}
+
+size_t
+valist_op::narguments() const noexcept
+{
+	return arguments_.size();
+}
+
+const jive::base::type &
+valist_op::argument_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < narguments());
+	return *arguments_[index];
+}
+
+size_t
+valist_op::nresults() const noexcept
+{
+	return 1;
+}
+
+const jive::base::type &
+valist_op::result_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < nresults());
+	static varargtype vatype;
+	return vatype;
+}
+
+std::string
+valist_op::debug_string() const
+{
+	return "valist";
+}
+
+std::unique_ptr<jive::operation>
+valist_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new jlm::valist_op(*this));
+}
+
 }
