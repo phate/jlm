@@ -187,6 +187,40 @@ private:
 	jlm::fpsize size_;
 };
 
+/* vararg type */
+
+class varargtype final : public jive::value::type {
+public:
+	virtual
+	~varargtype();
+
+	inline constexpr
+	varargtype()
+	: jive::value::type()
+	{}
+
+	virtual bool
+	operator==(const jive::base::type & other) const noexcept override;
+
+	virtual std::unique_ptr<jive::base::type>
+	copy() const override;
+
+	virtual std::string
+	debug_string() const override;
+};
+
+static inline bool
+is_varargtype(const jive::base::type & type)
+{
+	return dynamic_cast<const jlm::varargtype*>(&type) != nullptr;
+}
+
+static inline std::unique_ptr<jive::base::type>
+create_varargtype()
+{
+	return std::unique_ptr<jive::base::type>(new varargtype());
+}
+
 }
 
 #endif

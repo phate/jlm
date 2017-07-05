@@ -90,4 +90,27 @@ fptype::copy() const
 	return std::unique_ptr<jive::base::type>(new fptype(*this));
 }
 
+/* vararg type */
+
+varargtype::~varargtype()
+{}
+
+bool
+varargtype::operator==(const jive::base::type & other) const noexcept
+{
+	return dynamic_cast<const jlm::varargtype*>(&other) != nullptr;
+}
+
+std::string
+varargtype::debug_string() const
+{
+	return "vararg";
+}
+
+std::unique_ptr<jive::base::type>
+varargtype::copy() const
+{
+	return std::unique_ptr<jive::base::type>(new jlm::varargtype(*this));
+}
+
 }
