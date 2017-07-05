@@ -326,53 +326,48 @@ convert_trunc_instruction(llvm::Instruction * i, context & ctx)
 }
 
 static inline tacsvector_t
-convert_call_instruction(llvm::Instruction * i, context & ctx)
+convert_call_instruction(llvm::Instruction * instruction, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::CallInst*>(i));
-	auto instruction = static_cast<llvm::CallInst*>(i);
+	JLM_DEBUG_ASSERT(instruction->getOpcode() == llvm::Instruction::Call);
+	auto i = llvm::cast<llvm::CallInst>(instruction);
+	/* FIXME: support indirect calls */
+	JLM_DEBUG_ASSERT(i->getCalledFunction());
 
-	auto f = instruction->getCalledValue();
-	const llvm::FunctionType * ftype = llvm::cast<const llvm::FunctionType>(
-		llvm::cast<const llvm::PointerType>(f->getType())->getElementType());
-	jive::fct::type type = dynamic_cast<jive::fct::type&>(*convert_type(ftype, ctx));
+	auto f = i->getCalledValue();
+	JLM_DEBUG_ASSERT(f->getType()->isPointerTy());
+	JLM_DEBUG_ASSERT(f->getType()->getContainedType(0)->isFunctionTy());
+	auto ftype = llvm::cast<const llvm::FunctionType>(f->getType()->getContainedType(0));
+	auto type = convert_type(ftype, ctx);
 
 	tacsvector_t tacs;
-	const variable * callee = nullptr;
-	auto vcaller = ctx.lookup_value(i->getParent()->getParent());
-	auto caller = static_cast<const function_variable*>(vcaller)->function();
-	if (instruction->getCalledFunction()) {
-		/* direct call */
-		callee = convert_value(f, tacs, ctx);
-		caller->add_call(static_cast<const function_variable*>(callee)->function());
-	} else {
-		/* indirect call */
-		/* FIXME */
-		auto a = convert_value(f, tacs, ctx);
-		auto r = ctx.module().create_variable(type, false);
-		tacs.push_back(create_load_tac(a, ctx.state(), r));
-		callee = tacs.back()->output(0);
-	}
+	auto v = ctx.lookup_value(i->getParent()->getParent());
+	auto caller = static_cast<const function_variable*>(v)->function();
+	auto callee = convert_value(f, tacs, ctx);
+	caller->add_call(static_cast<const function_variable*>(callee)->function());
 
-	/* handle arguments */
-	std::vector<const jlm::variable *> arguments;
-	arguments.push_back(callee);
+	/* arguments */
+	std::vector<const jlm::variable*> vargs;
+	std::vector<const jlm::variable*> arguments;
+	arguments.push_back(convert_value(f, tacs, ctx));
 	for (size_t n = 0; n < ftype->getNumParams(); n++)
-		arguments.push_back(convert_value(instruction->getArgOperand(n), tacs, ctx));
+		arguments.push_back(convert_value(i->getArgOperand(n), tacs, ctx));
+	for (size_t n = ftype->getNumParams(); n < i->getNumOperands()-1; n++)
+		vargs.push_back(convert_value(i->getArgOperand(n), tacs, ctx));
+
 	if (ftype->isVarArg()) {
-		/* FIXME: sizeof */
-		//auto alloc = ctx.module().create_variable(jive::addr::type::instance(), false);
-		//auto vararg = attr->append(create_tac(alloca_op(4), {ctx.state()}, {alloc, ctx.state()}));
-		//arguments.push_back(vararg->output(0));
+		auto r = ctx.module().create_variable(*create_varargtype(), false);
+		tacs.push_back(create_valist_tac(vargs, r));
+		arguments.push_back(r);
 	}
 	arguments.push_back(ctx.state());
 
-	/* handle results */
+	/* results */
 	std::vector<const jlm::variable*> results;
-	if (type.nresults() == 2)
+	if (!ftype->getReturnType()->isVoidTy())
 		results.push_back(ctx.lookup_value(i));
 	results.push_back(ctx.state());
 
-	tacs.push_back(create_tac(jive::fct::apply_op(type), arguments, results));
+	tacs.push_back(create_tac(jive::fct::apply_op(*type), arguments, results));
 	return tacs;
 }
 
