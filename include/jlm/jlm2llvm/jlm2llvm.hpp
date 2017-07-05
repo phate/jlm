@@ -19,9 +19,12 @@ namespace jlm {
 namespace jlm2llvm {
 
 class module;
-
+/*
+	FIXME: jlm::module should be const, but we still need to create variables to translate
+	       expressions.
+*/
 std::unique_ptr<llvm::Module>
-convert(const jlm::module & module, llvm::LLVMContext & ctx);
+convert(jlm::module & module, llvm::LLVMContext & ctx);
 
 }}
 

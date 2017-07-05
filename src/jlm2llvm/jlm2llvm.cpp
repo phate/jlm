@@ -260,7 +260,7 @@ convert_globals(context & ctx)
 }
 
 std::unique_ptr<llvm::Module>
-convert(const jlm::module & jm, llvm::LLVMContext & lctx)
+convert(jlm::module & jm, llvm::LLVMContext & lctx)
 {
 	std::unique_ptr<llvm::Module> lm(new llvm::Module("module", lctx));
 

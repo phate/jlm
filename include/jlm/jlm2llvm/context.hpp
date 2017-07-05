@@ -26,7 +26,7 @@ class context final {
 
 public:
 	inline
-	context(const jlm::module & jm, llvm::Module & lm)
+	context(jlm::module & jm, llvm::Module & lm)
 	: lm_(lm)
 	, jm_(jm)
 	{}
@@ -41,7 +41,11 @@ public:
 	context &
 	operator=(context&&) = delete;
 
-	inline const jlm::module &
+	/*
+		FIXME: It should be a const reference, but we still have to create variables to translate
+		       expressions.
+	*/
+	inline jlm::module &
 	jlm_module() const noexcept
 	{
 		return jm_;
@@ -95,7 +99,7 @@ public:
 
 private:
 	llvm::Module & lm_;
-	const jlm::module & jm_;
+	jlm::module & jm_;
 	std::unordered_map<const jlm::variable*, llvm::Value*> variables_;
 	std::unordered_map<const jlm::cfg_node*, llvm::BasicBlock*> nodes_;
 };
