@@ -48,7 +48,8 @@ convert_basic_blocks(
 
 	for (auto & bb : bbs) {
 		for (auto & instruction : bb) {
-			auto tacs = convert_instruction(&instruction, ctx);
+			std::vector<std::unique_ptr<jlm::tac>> tacs;
+			convert_instruction(&instruction, tacs, ctx);
 			append_last(ctx.lookup_basic_block(&bb), tacs);
 		}
 	}

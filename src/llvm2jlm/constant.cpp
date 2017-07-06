@@ -118,12 +118,7 @@ convert_constantExpr(
 	auto c = llvm::cast<llvm::ConstantExpr>(constant);
 
 	/* FIXME: getAsInstruction is none const, forcing all llvm parameters to be none const */
-	auto tmp = convert_instruction(c->getAsInstruction(), ctx);
-	for (size_t n = 0; n < tmp.size(); n++)
-		tacs.push_back(std::move(tmp[n])); 
-
-	JLM_DEBUG_ASSERT(tacs.back()->noutputs() == 1);
-	return tacs.back()->output(0);
+	return convert_instruction(c->getAsInstruction(), tacs, ctx);
 }
 
 static const variable *

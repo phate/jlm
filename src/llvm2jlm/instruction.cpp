@@ -78,8 +78,8 @@ convert_value(llvm::Value * v, tacsvector_t & tacs, context & ctx)
 
 /* instructions */
 
-static inline tacsvector_t
-convert_return_instruction(llvm::Instruction * instruction, context & ctx)
+static inline const variable *
+convert_return_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, context & ctx)
 {
 	JLM_DEBUG_ASSERT(instruction->getOpcode() == llvm::Instruction::Ret);
 	auto i = llvm::cast<llvm::ReturnInst>(instruction);
@@ -89,15 +89,14 @@ convert_return_instruction(llvm::Instruction * instruction, context & ctx)
 	if (!i->getReturnValue())
 		return {};
 
-	tacsvector_t tacs;
 	auto value = convert_value(i->getReturnValue(), tacs, ctx);
 	tacs.push_back(create_assignment(ctx.result()->type(), value, ctx.result()));
 
-	return tacs;
+	return ctx.result();
 }
 
-static inline tacsvector_t
-convert_branch_instruction(llvm::Instruction * instruction, context & ctx)
+static inline const variable *
+convert_branch_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, context & ctx)
 {
 	JLM_DEBUG_ASSERT(instruction->getOpcode() == llvm::Instruction::Br);
 	auto i = llvm::cast<llvm::BranchInst>(instruction);
@@ -108,7 +107,6 @@ convert_branch_instruction(llvm::Instruction * instruction, context & ctx)
 		return {};
 	}
 
-	tacsvector_t tacs;
 	bb->add_outedge(ctx.lookup_basic_block(i->getSuccessor(0))); /* true */
 	bb->add_outedge(ctx.lookup_basic_block(i->getSuccessor(1))); /* false */
 
@@ -118,11 +116,11 @@ convert_branch_instruction(llvm::Instruction * instruction, context & ctx)
 	tacs.push_back(create_tac(op, {c}, create_result_variables(ctx.module(), op)));
 	tacs.push_back(create_branch_tac(2,  tacs.back()->output(0)));
 
-	return tacs;
+	return nullptr;
 }
 
-static inline tacsvector_t
-convert_switch_instruction(llvm::Instruction * instruction, context & ctx)
+static inline const variable *
+convert_switch_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, context & ctx)
 {
 	JLM_DEBUG_ASSERT(instruction->getOpcode() == llvm::Instruction::Switch);
 	auto i = llvm::cast<llvm::SwitchInst>(instruction);
@@ -139,27 +137,26 @@ convert_switch_instruction(llvm::Instruction * instruction, context & ctx)
 	bb->add_outedge(ctx.lookup_basic_block(i->case_default().getCaseSuccessor()));
 	JLM_DEBUG_ASSERT(i->getNumSuccessors() == n+1);
 
-	tacsvector_t tacs;
 	auto c = convert_value(i->getCondition(), tacs, ctx);
 	auto nbits = i->getCondition()->getType()->getIntegerBitWidth();
 	auto op = jive::match_op(nbits, mapping, n, n+1);
 	tacs.push_back(create_tac(op, {c}, create_result_variables(ctx.module(), op)));
 	tacs.push_back((create_branch_tac(n+1, tacs.back()->output(0))));
 
-	return tacs;
+	return nullptr;
 }
 
-static inline tacsvector_t
-convert_unreachable_instruction(llvm::Instruction * i, context & ctx)
+static inline const variable *
+convert_unreachable_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
 {
 	JLM_DEBUG_ASSERT(i->getOpcode() == llvm::Instruction::Unreachable);
 	auto bb = ctx.lookup_basic_block(i->getParent());
 	bb->add_outedge(bb->cfg()->exit_node());
-	return {};
+	return nullptr;
 }
 
-static inline tacsvector_t
-convert_icmp_instruction(llvm::Instruction * instruction, context & ctx)
+static inline const variable *
+convert_icmp_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, context & ctx)
 {
 	JLM_DEBUG_ASSERT(instruction->getOpcode() == llvm::Instruction::ICmp);
 	auto i = llvm::cast<const llvm::ICmpInst>(instruction);
@@ -187,7 +184,6 @@ convert_icmp_instruction(llvm::Instruction * instruction, context & ctx)
 	,	{llvm::CmpInst::ICMP_UGE,	cmp::ge}, {llvm::CmpInst::ICMP_UGT,	cmp::gt}
 	});
 
-	tacsvector_t tacs;
 	auto p = i->getPredicate();
 	auto op1 = convert_value(i->getOperand(0), tacs, ctx);
 	auto op2 = convert_value(i->getOperand(1), tacs, ctx);
@@ -200,27 +196,26 @@ convert_icmp_instruction(llvm::Instruction * instruction, context & ctx)
 		tacs.push_back(create_ptrcmp_tac(ptrmap[p], op1, op2, ctx.lookup_value(i)));
 	}
 
-	return tacs;
+	return tacs.back()->output(0);
 }
 
-static inline tacsvector_t
-convert_fcmp_instruction(llvm::Instruction * instruction, context & ctx)
+static inline const variable *
+convert_fcmp_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, context & ctx)
 {
 	JLM_DEBUG_ASSERT(instruction->getOpcode() == llvm::Instruction::FCmp);
 	auto i = llvm::cast<const llvm::FCmpInst>(instruction);
 	JLM_DEBUG_ASSERT(!i->getOperand(0)->getType()->isVectorTy());
 
-	tacsvector_t tacs;
 	if (i->getPredicate() == llvm::CmpInst::FCMP_TRUE) {
 		jive::bits::constant_op op(jive::bits::value_repr(1, 1));
 		tacs.push_back(create_tac(op, {}, {ctx.lookup_value(i)}));
-		return tacs;
+		return tacs.back()->output(0);
 	}
 
 	if (i->getPredicate() == llvm::CmpInst::FCMP_FALSE) {
 		jive::bits::constant_op op(jive::bits::value_repr(1, 0));
 		tacs.push_back(create_tac(op, {}, {ctx.lookup_value(i)}));
-		return tacs;
+		return tacs.back()->output(0);
 	}
 
 	static std::unordered_map<llvm::CmpInst::Predicate, jlm::fpcmp> map({
@@ -237,42 +232,40 @@ convert_fcmp_instruction(llvm::Instruction * instruction, context & ctx)
 	auto op1 = convert_value(i->getOperand(0), tacs, ctx);
 	auto op2 = convert_value(i->getOperand(1), tacs, ctx);
 	tacs.push_back(create_fpcmp_tac(map[i->getPredicate()], op1, op2, ctx.lookup_value(i)));
-	return tacs;
+	return tacs.back()->output(0);
 }
 
-static inline tacsvector_t
-convert_load_instruction(llvm::Instruction * i, context & ctx)
+static inline const variable *
+convert_load_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::LoadInst*>(i));
 	auto instruction = static_cast<llvm::LoadInst*>(i);
 
 	/* FIXME: volatile and alignment */
 
-	tacsvector_t tacs;
 	auto value = ctx.lookup_value(i);
 	auto address = convert_value(instruction->getPointerOperand(), tacs, ctx);
 	tacs.push_back(create_load_tac(address, ctx.state(), value));
 
-	return tacs;
+	return tacs.back()->output(0);
 }
 
-static inline tacsvector_t
-convert_store_instruction(llvm::Instruction * i, context & ctx)
+static inline const variable *
+convert_store_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::StoreInst*>(i));
 	auto instruction = static_cast<llvm::StoreInst*>(i);
 
 	/* FIXME: volatile and alignement */
-	tacsvector_t tacs;
 	auto address = convert_value(instruction->getPointerOperand(), tacs, ctx);
 	auto value = convert_value(instruction->getValueOperand(), tacs, ctx);
 	tacs.push_back(create_store_tac(address, value, ctx.state()));
 
-	return tacs;
+	return nullptr;
 }
 
-static inline tacsvector_t
-convert_phi_instruction(llvm::Instruction * instruction, context & ctx)
+static inline const variable *
+convert_phi_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, context & ctx)
 {
 	JLM_DEBUG_ASSERT(instruction->getOpcode() == llvm::Instruction::PHI);
 	auto i = llvm::cast<llvm::PHINode>(instruction);
@@ -286,20 +279,18 @@ convert_phi_instruction(llvm::Instruction * instruction, context & ctx)
 		arguments.push_back(std::make_pair(v, bb));
 	}
 
-	tacsvector_t tacs;
 	tacs.push_back(create_phi_tac(arguments, {ctx.lookup_value(i)}));
 
-	return tacs;
+	return tacs.back()->output(0);
 }
 
-static inline tacsvector_t
-convert_getelementptr_instruction(llvm::Instruction * inst, context & ctx)
+static inline const variable *
+convert_getelementptr_instruction(llvm::Instruction * inst, tacsvector_t & tacs, context & ctx)
 {
 	JLM_DEBUG_ASSERT(llvm::dyn_cast<const llvm::GetElementPtrInst>(inst));
 	auto i = llvm::cast<llvm::GetElementPtrInst>(inst);
 	auto & m = ctx.module();
 
-	tacsvector_t tacs;
 	std::vector<const variable*> indices;
 	auto base = convert_value(i->getPointerOperand(), tacs, ctx);
 	for (auto it = i->idx_begin(); it != i->idx_end(); it++)
@@ -307,26 +298,25 @@ convert_getelementptr_instruction(llvm::Instruction * inst, context & ctx)
 
 	auto r = m.create_variable(*convert_type(i->getType(), ctx), false);
 	tacs.push_back(create_ptroffset_tac(base, indices, r));
-	return tacs;
+	return tacs.back()->output(0);
 }
 
-static inline tacsvector_t
-convert_trunc_instruction(llvm::Instruction * i, context & ctx)
+static inline const variable *
+convert_trunc_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::TruncInst*>(i));
 	const llvm::TruncInst * instruction = static_cast<const llvm::TruncInst*>(i);
 
-	tacsvector_t tacs;
 	size_t high = i->getType()->getIntegerBitWidth();
 	auto operand = convert_value(instruction->getOperand(0), tacs, ctx);
 	jive::bits::slice_op op(dynamic_cast<const jive::bits::type&>(operand->type()), 0, high);
 	tacs.push_back(create_tac(op, {operand}, {ctx.lookup_value(i)}));
 
-	return tacs;
+	return tacs.back()->output(0);
 }
 
-static inline tacsvector_t
-convert_call_instruction(llvm::Instruction * instruction, context & ctx)
+static inline const variable *
+convert_call_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, context & ctx)
 {
 	JLM_DEBUG_ASSERT(instruction->getOpcode() == llvm::Instruction::Call);
 	auto i = llvm::cast<llvm::CallInst>(instruction);
@@ -339,7 +329,6 @@ convert_call_instruction(llvm::Instruction * instruction, context & ctx)
 	auto ftype = llvm::cast<const llvm::FunctionType>(f->getType()->getContainedType(0));
 	auto type = convert_type(ftype, ctx);
 
-	tacsvector_t tacs;
 	auto v = ctx.lookup_value(i->getParent()->getParent());
 	auto caller = static_cast<const function_variable*>(v)->function();
 	auto callee = convert_value(f, tacs, ctx);
@@ -368,32 +357,30 @@ convert_call_instruction(llvm::Instruction * instruction, context & ctx)
 	results.push_back(ctx.state());
 
 	tacs.push_back(create_tac(jive::fct::apply_op(*type), arguments, results));
-	return tacs;
+	return tacs.back()->output(0);
 }
 
-static inline tacsvector_t
-convert_select_instruction(llvm::Instruction * i, context & ctx)
+static inline const variable *
+convert_select_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::SelectInst*>(i));
 	auto instruction = static_cast<llvm::SelectInst*>(i);
 
-	tacsvector_t tacs;
 	auto condition = convert_value(instruction->getCondition(), tacs, ctx);
 	auto tv = convert_value(instruction->getTrueValue(), tacs, ctx);
 	auto fv = convert_value(instruction->getFalseValue(), tacs, ctx);
 	tacs.push_back(create_tac(select_op(tv->type()), {condition, tv, fv}, {ctx.lookup_value(i)}));
 
-	return tacs;
+	return tacs.back()->output(0);
 }
 
-static inline tacsvector_t
-convert_binary_operator(llvm::Instruction * instruction, context & ctx)
+static inline const variable *
+convert_binary_operator(llvm::Instruction * instruction, tacsvector_t & tacs, context & ctx)
 {
 	JLM_DEBUG_ASSERT(llvm::dyn_cast<const llvm::BinaryOperator>(instruction));
 	auto i = llvm::cast<const llvm::BinaryOperator>(instruction);
 	JLM_DEBUG_ASSERT(!i->getType()->isVectorTy());
 
-	tacsvector_t tacs;
 	auto op1 = convert_value(i->getOperand(0), tacs, ctx);
 	auto op2 = convert_value(i->getOperand(1), tacs, ctx);
 
@@ -419,7 +406,7 @@ convert_binary_operator(llvm::Instruction * instruction, context & ctx)
 		size_t nbits = i->getType()->getIntegerBitWidth();
 		JLM_DEBUG_ASSERT(map.find(i->getOpcode()) != map.end());
 		tacs.push_back(create_tac(*map[i->getOpcode()](nbits), {op1, op2}, {ctx.lookup_value(i)}));
-		return tacs;
+		return tacs.back()->output(0);
 	}
 
 	static std::unordered_map<const llvm::Instruction::BinaryOps, jlm::fpop> map({
@@ -430,41 +417,39 @@ convert_binary_operator(llvm::Instruction * instruction, context & ctx)
 
 	JLM_DEBUG_ASSERT(map.find(i->getOpcode()) != map.end());
 	tacs.push_back(create_fpbin_tac(map[i->getOpcode()], op1, op2, ctx.lookup_value(i)));
-	return tacs;
+	return tacs.back()->output(0);
 }
 
-static inline tacsvector_t
-convert_alloca_instruction(llvm::Instruction * instruction, context & ctx)
+static inline const variable *
+convert_alloca_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::AllocaInst*>(instruction));
 	auto i = static_cast<llvm::AllocaInst*>(instruction);
 
 	/* FIXME: alignment */
-	tacsvector_t tacs;
 	auto result = ctx.lookup_value(i);
 	auto size = convert_value(i->getArraySize(), tacs, ctx);
 	auto vtype = convert_type(i->getAllocatedType(), ctx);
 	tacs.push_back(create_alloca_tac(*vtype, size, ctx.state(), result));
 
-	return tacs;
+	return tacs.back()->output(0);
 }
 
-static inline tacsvector_t
-convert_zext_instruction(llvm::Instruction * instruction, context & ctx)
+static inline const variable *
+convert_zext_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, context & ctx)
 {
 	JLM_DEBUG_ASSERT(instruction->getOpcode() == llvm::Instruction::ZExt);
 	auto i = llvm::cast<llvm::ZExtInst>(instruction);
 	JLM_DEBUG_ASSERT(!i->getSrcTy()->isVectorTy());
 
-	tacsvector_t tacs;
 	auto operand = convert_value(i->getOperand(0), tacs, ctx);
 	tacs.push_back(create_zext_tac(operand, ctx.lookup_value(i)));
 
-	return tacs;
+	return tacs.back()->output(0);
 }
 
-static inline tacsvector_t
-convert_sext_instruction(llvm::Instruction * i, context & ctx)
+static inline const variable *
+convert_sext_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::SExtInst*>(i));
 
@@ -474,7 +459,6 @@ convert_sext_instruction(llvm::Instruction * i, context & ctx)
 	if (operand->getType()->isVectorTy())
 		JLM_DEBUG_ASSERT(0);
 
-	tacsvector_t tacs;
 	size_t new_length = i->getType()->getIntegerBitWidth();
 	size_t old_length = operand->getType()->getIntegerBitWidth();
 	jive::bits::slice_op s_op(jive::bits::type(old_length), old_length-1, old_length);
@@ -492,64 +476,58 @@ convert_sext_instruction(llvm::Instruction * i, context & ctx)
 
 	jive::bits::concat_op op(operand_types);
 	tacs.push_back(create_tac(op, operands, {ctx.lookup_value(i)}));
-	return tacs;
+	return tacs.back()->output(0);
 }
 
-static inline tacsvector_t
-convert_fpext_instruction(llvm::Instruction * instruction, context & ctx)
+static inline const variable *
+convert_fpext_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, context & ctx)
 {
 	JLM_DEBUG_ASSERT(instruction->getOpcode() == llvm::Instruction::FPExt);
 	auto i = llvm::cast<llvm::FPExtInst>(instruction);
 	JLM_DEBUG_ASSERT(!i->getSrcTy()->isVectorTy());
 
-	tacsvector_t tacs;
 	auto operand = convert_value(i->getOperand(0), tacs, ctx);
 	tacs.push_back(create_fpext_tac(operand, ctx.lookup_value(i)));
 
-	return tacs;
+	return tacs.back()->output(0);
 }
 
-static inline tacsvector_t
-convert_fptrunc_instruction(llvm::Instruction * i, context & ctx)
+static inline const variable *
+convert_fptrunc_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::FPTruncInst*>(i));
 
 	/* FIXME: use assignment operator as long as we don't support floating point types properly */
 
-	tacsvector_t tacs;
 	jive::flt::type type;
 	assignment_op op(type);
 	auto operand = convert_value(i->getOperand(0), tacs, ctx);
 	tacs.push_back(create_tac(op, {operand}, {ctx.lookup_value(i)}));
-	return tacs;
+	return tacs.back()->output(0);
 }
 
-static inline tacsvector_t
-convert_inttoptr_instruction(llvm::Instruction * i, context & ctx)
+static inline const variable *
+convert_inttoptr_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::IntToPtrInst*>(i));
 
-	tacsvector_t tacs;
 	auto argument = convert_value(i->getOperand(0), tacs, ctx);
 	tacs.push_back(create_bits2ptr_tac(argument, ctx.lookup_value(i)));
-
-	return tacs;
+	return tacs.back()->output(0);
 }
 
-static inline tacsvector_t
-convert_ptrtoint_instruction(llvm::Instruction * i, context & ctx)
+static inline const variable *
+convert_ptrtoint_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
 {
 	JLM_DEBUG_ASSERT(llvm::dyn_cast<const llvm::PtrToIntInst>(i));
 
-	tacsvector_t tacs;
 	auto argument = convert_value(i->getOperand(0), tacs, ctx);
 	tacs.push_back(create_ptr2bits_tac(argument, ctx.lookup_value(i)));
-
-	return tacs;
+	return tacs.back()->output(0);
 }
 
-static inline tacsvector_t
-convert_uitofp_instruction(llvm::Instruction * i, context & ctx)
+static inline const variable *
+convert_uitofp_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::UIToFPInst*>(i));
 
@@ -560,15 +538,13 @@ convert_uitofp_instruction(llvm::Instruction * i, context & ctx)
 	if (type->isVectorTy())
 		JLM_DEBUG_ASSERT(0);
 
-	tacsvector_t tacs;
 	bits2flt_op op(type->getIntegerBitWidth());
 	tacs.push_back(create_tac(op, {convert_value(operand, tacs, ctx)}, {ctx.lookup_value(i)}));
-
-	return tacs;
+	return tacs.back()->output(0);
 }
 
-static inline tacsvector_t
-convert_sitofp_instruction(llvm::Instruction * i, context & ctx)
+static inline const variable *
+convert_sitofp_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::SIToFPInst*>(i));
 
@@ -579,15 +555,13 @@ convert_sitofp_instruction(llvm::Instruction * i, context & ctx)
 	if (type->isVectorTy())
 		JLM_DEBUG_ASSERT(0);
 
-	tacsvector_t tacs;
 	bits2flt_op op(type->getIntegerBitWidth());
 	tacs.push_back(create_tac(op, {convert_value(operand, tacs, ctx)}, {ctx.lookup_value(i)}));
-
-	return tacs;
+	return tacs.back()->output(0);
 }
 
-static inline tacsvector_t
-convert_fptoui_instruction(llvm::Instruction * i, context & ctx)
+static inline const variable *
+convert_fptoui_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::FPToUIInst*>(i));
 
@@ -597,15 +571,13 @@ convert_fptoui_instruction(llvm::Instruction * i, context & ctx)
 	if (operand->getType()->isVectorTy())
 		JLM_DEBUG_ASSERT(0);
 
-	tacsvector_t tacs;
 	flt2bits_op op(i->getType()->getIntegerBitWidth());
 	tacs.push_back(create_tac(op, {convert_value(operand, tacs, ctx)}, {ctx.lookup_value(i)}));
-
-	return tacs;
+	return tacs.back()->output(0);
 }
 
-static inline tacsvector_t
-convert_fptosi_instruction(llvm::Instruction * i, context & ctx)
+static inline const variable *
+convert_fptosi_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::FPToSIInst*>(i));
 
@@ -615,15 +587,14 @@ convert_fptosi_instruction(llvm::Instruction * i, context & ctx)
 	if (operand->getType()->isVectorTy())
 		JLM_DEBUG_ASSERT(0);
 
-	tacsvector_t tacs;
 	flt2bits_op op(i->getType()->getIntegerBitWidth());
 	tacs.push_back(create_tac(op, {convert_value(operand, tacs, ctx)}, {ctx.lookup_value(i)}));
 
-	return tacs;
+	return tacs.back()->output(0);
 }
 
-static inline tacsvector_t
-convert_bitcast_instruction(llvm::Instruction * instruction, context & ctx)
+static inline const variable *
+convert_bitcast_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::BitCastInst*>(instruction));
 	auto & i = *llvm::cast<const llvm::BitCastInst>(instruction);
@@ -631,7 +602,6 @@ convert_bitcast_instruction(llvm::Instruction * instruction, context & ctx)
 
 	/* FIXME: avoid usage of memory to do cast */
 
-	tacsvector_t tacs;
 	auto o = convert_value(i.getOperand(0), tacs, ctx);
 
 	jive::bits::type bits32(32);
@@ -645,20 +615,19 @@ convert_bitcast_instruction(llvm::Instruction * instruction, context & ctx)
 	tacs.push_back(create_store_tac(a, o, ctx.state()));
 	tacs.push_back(create_load_tac(a, ctx.state(), ctx.lookup_value(&i)));
 
-	return tacs;
+	return tacs.back()->output(0);
 }
 
-static inline tacsvector_t
-convert_insertvalue_instruction(llvm::Instruction * instruction, context & ctx)
+static inline const variable *
+convert_insertvalue_instruction(llvm::Instruction * inst, tacsvector_t & tacs, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::InsertValueInst*>(instruction));
-	auto i = static_cast<llvm::InsertValueInst*>(instruction);
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::InsertValueInst*>(inst));
+	auto i = static_cast<llvm::InsertValueInst*>(inst);
 
 	/* FIXME: array type */
 	if (i->getType()->isArrayTy())
 		JLM_DEBUG_ASSERT(0);
 
-	tacsvector_t tacs;
 	std::function<const variable*(llvm::InsertValueInst::idx_iterator, const variable*)> f = [&] (
 		const llvm::InsertValueInst::idx_iterator & idx,
 		const variable * aggregate)
@@ -688,20 +657,19 @@ convert_insertvalue_instruction(llvm::Instruction * instruction, context & ctx)
 
 	f(i->idx_begin(), convert_value(i->getAggregateOperand(), tacs, ctx));
 
-	return tacs;
+	return tacs.back()->output(0);
 }
 
-static inline tacsvector_t
-convert_extractvalue_instruction(llvm::Instruction * instruction, context & ctx)
+static inline const variable *
+convert_extractvalue_instruction(llvm::Instruction * inst, tacsvector_t & tacs, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ExtractValueInst*>(instruction));
-	auto i = static_cast<llvm::ExtractValueInst*>(instruction);
+	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ExtractValueInst*>(inst));
+	auto i = static_cast<llvm::ExtractValueInst*>(inst);
 
 	/* FIXME: array type */
 	if (i->getType()->isArrayTy())
 		JLM_DEBUG_ASSERT(0);
 
-	tacsvector_t tacs;
 	auto aggregate = convert_value(i->getAggregateOperand(), tacs, ctx);
 
 	for (auto it = i->idx_begin(); it != i->idx_end(); it++) {
@@ -712,15 +680,18 @@ convert_extractvalue_instruction(llvm::Instruction * instruction, context & ctx)
 		aggregate = tacs.back()->output(0);
 	}
 
-	return tacs;
+	return tacs.back()->output(0);
 }
 
-std::vector<std::unique_ptr<jlm::tac>>
-convert_instruction(llvm::Instruction * i, context & ctx)
+const variable *
+convert_instruction(
+	llvm::Instruction * i,
+	std::vector<std::unique_ptr<jlm::tac>> & tacs,
+	context & ctx)
 {
 	static std::unordered_map<
 		std::type_index,
-		tacsvector_t(*)(llvm::Instruction*, context&)
+		const variable*(*)(llvm::Instruction*, std::vector<std::unique_ptr<jlm::tac>>&, context&)
 	> map({
 		{std::type_index(typeid(llvm::ReturnInst)), convert_return_instruction}
 	,	{std::type_index(typeid(llvm::BranchInst)), convert_branch_instruction}
@@ -753,7 +724,7 @@ convert_instruction(llvm::Instruction * i, context & ctx)
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(*i))) != map.end());
-	return map[std::type_index(typeid(*i))](i, ctx);
+	return map[std::type_index(typeid(*i))](i, tacs, ctx);
 }
 
 }

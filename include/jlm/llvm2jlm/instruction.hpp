@@ -17,8 +17,11 @@ class basic_block_attribute;
 class context;
 class variable;
 
-std::vector<std::unique_ptr<jlm::tac>>
-convert_instruction(llvm::Instruction * i, context & ctx);
+const variable *
+convert_instruction(
+	llvm::Instruction * i,
+	std::vector<std::unique_ptr<jlm::tac>> & tacs,
+	context & ctx);
 
 }
 
