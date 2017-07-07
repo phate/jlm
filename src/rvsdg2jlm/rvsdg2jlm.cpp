@@ -154,14 +154,19 @@ convert_simple_node(const jive::node & node, context & ctx)
 	for (size_t n = 0; n < node.ninputs(); n++)
 		operands.push_back(ctx.variable(node.input(n)->origin()));
 
+	std::vector<tacvariable*> tvs;
 	std::vector<const variable*> results;
 	for (size_t n = 0; n < node.noutputs(); n++) {
-		auto v = ctx.module().create_variable(node.output(n)->type(), false);
+		auto v = ctx.module().create_tacvariable(node.output(n)->type());
 		ctx.insert(node.output(n), v);
 		results.push_back(v);
+		tvs.push_back(v);
 	}
 
 	append_last(ctx.lpbb(), create_tac(node.operation(), operands, results));
+	/* FIXME: remove again once tacvariables owner's are tacs */
+	for (const auto & tv : tvs)
+		tv->set_tac(static_cast<const basic_block*>(&ctx.lpbb()->attribute())->last());
 }
 
 static inline void
