@@ -8,6 +8,7 @@
 
 #include <jlm/ir/clg.hpp>
 #include <jlm/ir/expression.hpp>
+#include <jlm/ir/tac.hpp>
 
 namespace jlm {
 
@@ -53,6 +54,20 @@ public:
 	end() const
 	{
 		return globals_.end();
+	}
+
+	/*
+		FIXME: tacs are supposed to be the owners of tacvariable. This is going to be removed
+		       again.
+	*/
+	inline jlm::tacvariable *
+	create_tacvariable(const jive::base::type & type)
+	{
+		static uint64_t c = 0;
+		auto v = jlm::create_tacvariable(type, strfmt("tv", c++));
+		auto pv = v.get();
+		variables_.insert(std::move(v));
+		return static_cast<tacvariable*>(pv);
 	}
 
 	const jlm::variable *
