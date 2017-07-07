@@ -128,9 +128,9 @@ cfg_node::has_selfloop_edge() const noexcept
 }
 
 cfg_node *
-cfg_node::create(jlm::cfg & cfg, const jlm::attribute & attribute)
+cfg_node::create(jlm::cfg & cfg, std::unique_ptr<jlm::attribute> attribute)
 {
-	std::unique_ptr<jlm::cfg_node> node(new cfg_node(cfg, attribute));
+	std::unique_ptr<jlm::cfg_node> node(new cfg_node(cfg, std::move(attribute)));
 	auto tmp = node.get();
 	cfg.add_node(std::move(node));
 	return tmp;

@@ -164,9 +164,6 @@ public:
 		tacs_.pop_back();
 	}
 
-	virtual std::unique_ptr<attribute>
-	copy() const override;
-
 private:
 	std::list<const tac*> tacs_;
 };
@@ -180,8 +177,7 @@ is_basic_block(const jlm::attribute & attribute) noexcept
 static inline cfg_node *
 create_basic_block_node(jlm::cfg * cfg)
 {
-	basic_block attr;
-	return cfg_node::create(*cfg, attr);
+	return cfg_node::create(*cfg, std::make_unique<basic_block>());
 }
 
 static inline basic_block *

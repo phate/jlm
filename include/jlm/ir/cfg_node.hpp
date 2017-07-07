@@ -21,12 +21,10 @@ public:
 	virtual
 	~attribute();
 
+protected:
 	inline constexpr
 	attribute()
 	{}
-
-	virtual std::unique_ptr<attribute>
-	copy() const = 0;
 };
 
 class cfg;
@@ -112,9 +110,9 @@ class cfg_node final {
 	};
 
 	inline
-	cfg_node(jlm::cfg & cfg, const jlm::attribute & attr)
+	cfg_node(jlm::cfg & cfg, std::unique_ptr<jlm::attribute> attr)
 	: cfg_(&cfg)
-	, attr_(std::move(attr.copy()))
+	, attr_(std::move(attr))
 	{}
 
 public:
@@ -218,7 +216,7 @@ public:
 	bool has_selfloop_edge() const noexcept;
 
 	static cfg_node *
-	create(jlm::cfg & cfg, const jlm::attribute & attr);
+	create(jlm::cfg & cfg, std::unique_ptr<jlm::attribute> attr);
 
 private:
 	jlm::cfg * cfg_;

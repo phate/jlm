@@ -53,9 +53,6 @@ public:
 		return arguments_.push_back(v);
 	}
 
-	virtual std::unique_ptr<attribute>
-	copy() const override;
-
 private:
 	std::vector<const variable*> arguments_;
 };
@@ -100,9 +97,6 @@ public:
 	{
 		results_.push_back(v);
 	}
-
-	virtual std::unique_ptr<attribute>
-	copy() const override;
 
 private:
 	std::vector<const variable*> results_;

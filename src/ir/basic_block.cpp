@@ -21,10 +21,4 @@ basic_block::~basic_block()
 		delete tac;
 }
 
-std::unique_ptr<attribute>
-basic_block::copy() const
-{
-	return std::make_unique<basic_block>(*this);
-}
-
 }

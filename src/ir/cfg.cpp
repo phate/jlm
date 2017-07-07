@@ -29,36 +29,22 @@ namespace jlm {
 static inline jlm::cfg_node *
 create_entry_node(jlm::cfg * cfg)
 {
-	jlm::entry attr;
-	return cfg_node::create(*cfg, attr);
+	return cfg_node::create(*cfg, std::make_unique<jlm::entry>());
 }
 
 entry::~entry()
 {}
-
-std::unique_ptr<attribute>
-entry::copy() const
-{
-	return std::unique_ptr<attribute>(new entry(*this));
-}
 
 /* exit attribute */
 
 static inline jlm::cfg_node *
 create_exit_node(jlm::cfg * cfg)
 {
-	jlm::exit attr;
-	return cfg_node::create(*cfg, attr);
+	return cfg_node::create(*cfg, std::make_unique<jlm::exit>());
 }
 
 exit::~exit()
 {}
-
-std::unique_ptr<attribute>
-exit::copy() const
-{
-	return std::unique_ptr<attribute>(new exit(*this));
-}
 
 /* cfg */
 
