@@ -344,9 +344,8 @@ convert_call_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 		vargs.push_back(convert_value(i->getArgOperand(n), tacs, ctx));
 
 	if (ftype->isVarArg()) {
-		auto r = ctx.module().create_variable(*create_varargtype(), false);
-		tacs.push_back(create_valist_tac(vargs, r));
-		arguments.push_back(r);
+		tacs.push_back(create_valist_tac(vargs, ctx.module()));
+		arguments.push_back(tacs.back()->output(0));
 	}
 	arguments.push_back(ctx.state());
 

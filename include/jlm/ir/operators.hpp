@@ -12,6 +12,7 @@
 #include <jive/vsdg/controltype.h>
 #include <jive/vsdg/operators/nullary.h>
 
+#include <jlm/ir/module.hpp>
 #include <jlm/ir/tac.hpp>
 #include <jlm/ir/types.hpp>
 
@@ -1531,14 +1532,20 @@ is_valist_op(const jive::operation & op)
 static inline std::unique_ptr<jlm::tac>
 create_valist_tac(
 	const std::vector<const variable*> & arguments,
-	const variable * result)
+	jlm::module & m)
 {
 	std::vector<std::unique_ptr<jive::base::type>> operands;
 	for (const auto & argument : arguments)
 		operands.push_back(argument->type().copy());
 
+	varargtype t;
+	auto result = m.create_tacvariable(t);
+
 	jlm::valist_op op(std::move(operands));
-	return create_tac(op, arguments, {result});
+	auto tac = create_tac(op, arguments, {result});
+	result->set_tac(tac.get());
+
+	return tac;
 }
 
 }
