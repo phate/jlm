@@ -270,7 +270,7 @@ convert_block_node(
 	scoped_vmap & svmap)
 {
 	JLM_DEBUG_ASSERT(is_block_structure(node.structure()));
-	auto bb = static_cast<const agg::block*>(&node.structure())->basic_block();
+	auto & bb = static_cast<const agg::block*>(&node.structure())->basic_block();
 	convert_basic_block(bb, svmap.region(), svmap.vmap());
 	return nullptr;
 }
@@ -400,7 +400,7 @@ convert_loop_node(
 	while (lblock->nchildren() != 0)
 		lblock = lblock->child(lblock->nchildren()-1);
 	JLM_DEBUG_ASSERT(is_block_structure(lblock->structure()));
-	auto bb = static_cast<const agg::block*>(&lblock->structure())->basic_block();
+	auto & bb = static_cast<const agg::block*>(&lblock->structure())->basic_block();
 	JLM_DEBUG_ASSERT(is_branch_op(bb.last()->operation()));
 	auto predicate = bb.last()->input(0);
 

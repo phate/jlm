@@ -33,18 +33,18 @@ public:
 	: attribute()
 	{}
 
-	inline
-	basic_block(const basic_block & other)
+	basic_block(const basic_block&) = delete;
+
+	basic_block(basic_block && other)
 	: attribute(other)
-	{
-		for (auto & tac : other.tacs_)
-			tacs_.push_back(new jlm::tac(*tac));
-	}
+	, tacs_(std::move(other.tacs_))
+	{}
 
-	basic_block(basic_block &&) = delete;
+	basic_block &
+	operator=(const basic_block &) = delete;
 
-	inline basic_block &
-	operator=(const basic_block & other)
+	basic_block &
+	operator=(basic_block && other)
 	{
 		if (this == &other)
 			return *this;
@@ -53,14 +53,10 @@ public:
 			delete tac;
 
 		tacs_.clear();
-		for (const auto & tac : other.tacs_)
-			tacs_.push_back(new jlm::tac(*tac));
+		tacs_ = std::move(other.tacs_);
 
 		return *this;
 	}
-
-	basic_block &
-	operator=(basic_block &&) = delete;
 
 	inline const_iterator
 	begin() const noexcept

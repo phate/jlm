@@ -211,9 +211,9 @@ create_exit_node(const jlm::exit & attribute)
 }
 
 static inline std::unique_ptr<agg::node>
-create_block_node(const jlm::basic_block & bb)
+create_block_node(jlm::basic_block && bb)
 {
-	return std::make_unique<agg::node>(std::make_unique<block>(bb));
+	return std::make_unique<agg::node>(std::make_unique<block>(std::move(bb)));
 }
 
 static inline std::unique_ptr<agg::node>

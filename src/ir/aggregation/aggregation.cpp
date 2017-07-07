@@ -208,7 +208,7 @@ aggregate(jlm::cfg & cfg)
 	std::unordered_map<jlm::cfg_node*, std::unique_ptr<agg::node>> map;
 	for (auto & node : cfg) {
 		if (is_basic_block(node.attribute()))
-			map[&node] = create_block_node(*static_cast<const basic_block*>(&node.attribute()));
+			map[&node] = create_block_node(std::move(*static_cast<basic_block*>(&node.attribute())));
 		else if (is_entry_node(&node))
 			map[&node] = create_entry_node(*static_cast<const jlm::entry*>(&node.attribute()));
 		else if (is_exit_node(&node))

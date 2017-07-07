@@ -98,8 +98,8 @@ public:
 	~block();
 
 	inline
-	block(const jlm::basic_block & bb)
-	: bb_(bb)
+	block(jlm::basic_block && bb)
+	: bb_(std::move(bb))
 	{}
 
 	inline const jlm::basic_block &
