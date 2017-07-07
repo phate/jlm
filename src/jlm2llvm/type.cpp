@@ -28,14 +28,20 @@ convert_function_type(const jive::base::type & type, llvm::LLVMContext & ctx)
 
 	using namespace llvm;
 
+	bool isvararg = false;
 	std::vector<Type*> ats;
-	for (size_t n = 0; n < t.narguments()-1; n++)
+	for (size_t n = 0; n < t.narguments()-1; n++) {
+		if (is_varargtype(t.argument_type(n))) {
+			isvararg = true;
+			continue;
+		}
 		ats.push_back(convert_type(t.argument_type(n), ctx));
+	}
 
 	JLM_DEBUG_ASSERT(t.nresults() == 1 || t.nresults() == 2);
 	auto rt = t.nresults() == 1 ? llvm::Type::getVoidTy(ctx) : convert_type(t.result_type(0), ctx);
 
-	return FunctionType::get(rt, ats, false);
+	return FunctionType::get(rt, ats, isvararg);
 }
 
 static inline llvm::Type *

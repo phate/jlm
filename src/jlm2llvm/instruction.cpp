@@ -160,11 +160,23 @@ convert_apply(
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const jive::fct::apply_op*>(&op));
+	JLM_DEBUG_ASSERT(dynamic_cast<const jive::mem::type*>(&args[args.size()-1]->type()));
 
 	auto function = ctx.value(args[0]);
 	std::vector<llvm::Value*> operands;
-	for (size_t n = 1; n < args.size()-1; n++)
-		operands.push_back(ctx.value(args[n]));
+	for (size_t n = 1; n < args.size()-1; n++) {
+		auto argument = args[n];
+		if (is_varargtype(argument->type())) {
+			JLM_DEBUG_ASSERT(is_tacvariable(argument));
+			auto valist = dynamic_cast<const jlm::tacvariable*>(argument)->tac();
+			JLM_DEBUG_ASSERT(is_valist_op(valist->operation()));
+			for (size_t n = 0; n < valist->ninputs(); n++)
+				operands.push_back(ctx.value(valist->input(n)));
+			continue;
+		}
+
+		operands.push_back(ctx.value(argument));
+	}
 
 	return builder.CreateCall(function, operands);
 }
@@ -384,6 +396,17 @@ convert_fpext(
 	return builder.CreateFPExt(ctx.value(args[0]), type);
 }
 
+static inline llvm::Value *
+convert_valist(
+	const jive::operation & op,
+	const std::vector<const variable*> & args,
+	llvm::IRBuilder<> & builder,
+	context & ctx)
+{
+	JLM_DEBUG_ASSERT(is_valist_op(op));
+	return nullptr;
+}
+
 llvm::Value *
 convert_operation(
 	const jive::operation & op,
@@ -424,6 +447,7 @@ convert_operation(
 	, {std::type_index(typeid(jlm::fpcmp_op)), convert_fpcmp}
 	, {std::type_index(typeid(jlm::fpbin_op)), convert_fpbin}
 	, {std::type_index(typeid(jlm::fpext_op)), convert_fpext}
+	, {std::type_index(typeid(jlm::valist_op)), convert_valist}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
