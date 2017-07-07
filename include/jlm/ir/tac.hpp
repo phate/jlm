@@ -23,7 +23,58 @@ namespace base {
 
 namespace jlm {
 
-class variable;
+class tac;
+
+/* tacvariable */
+
+class tacvariable final : public variable {
+public:
+	virtual
+	~tacvariable() noexcept;
+
+	inline
+	tacvariable(
+		const jive::base::type & type,
+		const std::string & name)
+	: variable (type, name, false)
+	, tac_(nullptr)
+	{}
+
+	inline const jlm::tac *
+	tac() const noexcept
+	{
+		return tac_;
+	}
+
+	/*
+		FIXME: ensure tac is set in the constructor
+	*/
+
+	inline void
+	set_tac(const jlm::tac * tac) noexcept
+	{
+		tac_ = tac;
+	}
+
+private:
+	const jlm::tac * tac_;
+};
+
+static inline bool
+is_tacvariable(const jlm::variable * v)
+{
+	return dynamic_cast<const jlm::tacvariable*>(v) != nullptr;
+}
+
+static inline std::unique_ptr<variable>
+create_tacvariable(
+	const jive::base::type & type,
+	const std::string & name)
+{
+	return std::unique_ptr<variable>(new tacvariable(type, name));
+}
+
+/* tac */
 
 class tac final {
 public:

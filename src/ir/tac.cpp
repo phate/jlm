@@ -11,6 +11,13 @@
 
 namespace jlm {
 
+/* tacvariable */
+
+tacvariable::~tacvariable()
+{}
+
+/* tac */
+
 tac::tac(
 	const jive::operation & operation,
 	const std::vector<const variable *> & operands,
