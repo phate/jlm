@@ -40,7 +40,7 @@ public:
 	, tac_(nullptr)
 	{}
 
-	inline const jlm::tac *
+	inline jlm::tac *
 	tac() const noexcept
 	{
 		return tac_;
@@ -51,13 +51,13 @@ public:
 	*/
 
 	inline void
-	set_tac(const jlm::tac * tac) noexcept
+	set_tac(jlm::tac * tac) noexcept
 	{
 		tac_ = tac;
 	}
 
 private:
-	const jlm::tac * tac_;
+	jlm::tac * tac_;
 };
 
 static inline bool
