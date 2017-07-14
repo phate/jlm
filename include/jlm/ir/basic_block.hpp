@@ -22,8 +22,8 @@ class expr;
 
 class basic_block final : public attribute {
 public:
-	typedef std::list<const tac*>::const_iterator const_iterator;
-	typedef std::list<const tac*>::const_reverse_iterator const_reverse_iterator;
+	typedef std::list<tac*>::const_iterator const_iterator;
+	typedef std::list<tac*>::const_reverse_iterator const_reverse_iterator;
 
 	virtual
 	~basic_block();
@@ -82,7 +82,7 @@ public:
 		return tacs_.rend();
 	}
 
-	inline const tac *
+	inline tac *
 	insert(const const_iterator & it, std::unique_ptr<jlm::tac> tac)
 	{
 		return *tacs_.insert(it, tac.release());
@@ -95,7 +95,7 @@ public:
 			tacs_.insert(it, tac.release());
 	}
 
-	inline const tac *
+	inline tac *
 	append_last(std::unique_ptr<jlm::tac> tac)
 	{
 		tacs_.push_back(tac.release());
@@ -109,7 +109,7 @@ public:
 			tacs_.push_back(tac.release());
 	}
 
-	inline const tac *
+	inline tac *
 	append_first(std::unique_ptr<jlm::tac> tac)
 	{
 		tacs_.push_front(tac.release());
@@ -136,13 +136,13 @@ public:
 		return tacs_.size();
 	}
 
-	inline const tac *
+	inline tac *
 	first() const noexcept
 	{
 		return ntacs() != 0 ? tacs_.front() : nullptr;
 	}
 
-	inline const tac *
+	inline tac *
 	last() const noexcept
 	{
 		return ntacs() != 0 ? tacs_.back() : nullptr;
@@ -161,7 +161,7 @@ public:
 	}
 
 private:
-	std::list<const tac*> tacs_;
+	std::list<tac*> tacs_;
 };
 
 static inline bool
@@ -182,7 +182,7 @@ create_basic_block(jlm::cfg * cfg)
 	return static_cast<basic_block*>(&create_basic_block_node(cfg)->attribute());
 }
 
-static inline const jlm::tac *
+static inline jlm::tac *
 insert(
 	jlm::cfg_node * node,
 	const basic_block::const_iterator & it,
@@ -204,7 +204,7 @@ insert(
 	return bb.insert(it, tacs);
 }
 
-static inline const jlm::tac *
+static inline jlm::tac *
 append_last(jlm::cfg_node * node, std::unique_ptr<jlm::tac> tac)
 {
 	JLM_DEBUG_ASSERT(is_basic_block(node->attribute()));
@@ -221,7 +221,7 @@ append_last(jlm::cfg_node * node, std::vector<std::unique_ptr<jlm::tac>> & tacs)
 	bb.append_last(tacs);
 }
 
-static inline const jlm::tac *
+static inline jlm::tac *
 append_first(jlm::cfg_node * node, std::unique_ptr<jlm::tac> tac)
 {
 	JLM_DEBUG_ASSERT(is_basic_block(node->attribute()));
