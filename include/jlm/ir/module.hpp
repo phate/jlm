@@ -110,7 +110,7 @@ public:
 
 private:
 	jlm::clg clg_;
-	std::unordered_set<std::unique_ptr<const jlm::variable>> variables_;
+	std::unordered_set<std::unique_ptr<jlm::variable>> variables_;
 	std::unordered_map<const clg_node*, const jlm::variable*> functions_;
 	std::unordered_map<const jlm::variable*, std::unique_ptr<const jlm::expr>> globals_;
 };
