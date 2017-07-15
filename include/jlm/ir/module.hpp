@@ -70,7 +70,7 @@ public:
 		return static_cast<tacvariable*>(pv);
 	}
 
-	const jlm::variable *
+	inline jlm::variable *
 	create_variable(const jive::base::type & type, const std::string & name, bool exported)
 	{
 		auto v = std::make_unique<jlm::variable>(type, name, exported);
@@ -79,7 +79,7 @@ public:
 		return pv;
 	}
 
-	const jlm::variable *
+	inline jlm::variable *
 	create_variable(const jive::base::type & type, bool exported)
 	{
 		static uint64_t c = 0;
@@ -89,7 +89,7 @@ public:
 		return pv;
 	}
 
-	const jlm::variable *
+	inline jlm::variable *
 	create_variable(clg_node * node)
 	{
 		JLM_DEBUG_ASSERT(!variable(node));
