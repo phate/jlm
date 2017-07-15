@@ -132,8 +132,7 @@ static void
 convert_assignment(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
 {
 	JLM_DEBUG_ASSERT(is_assignment_op(tac.operation()));
-	JLM_DEBUG_ASSERT(tac.ninputs() == 1 && tac.noutputs() == 1);
-	vmap[tac.output(0)] = vmap[tac.input(0)];
+	vmap[tac.input(0)] = vmap[tac.input(1)];
 }
 
 static void

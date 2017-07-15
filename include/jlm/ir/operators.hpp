@@ -166,7 +166,7 @@ create_assignment(
 	const variable * arg,
 	const variable * r)
 {
-	return create_tac(assignment_op(type), {arg}, {r});
+	return create_tac(assignment_op(type), {r, arg}, {});
 }
 
 static inline bool

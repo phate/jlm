@@ -55,7 +55,7 @@ destruct_ssa(jlm::cfg & cfg)
 			for (size_t n = 0; n < tac->ninputs(); n++) {
 				JLM_DEBUG_ASSERT(edges.find(phi->node(n)) != edges.end());
 				auto bb = edges[phi->node(n)]->split();
-				value = append_last(bb, create_assignment(v->type(), tac->input(n), v))->output(0);
+				value = append_last(bb, create_assignment(v->type(), tac->input(n), v))->input(0);
 			}
 
 			append_last(ass_block, create_assignment(tac->output(0)->type(), value, tac->output(0)));

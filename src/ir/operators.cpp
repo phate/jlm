@@ -76,32 +76,33 @@ assignment_op::~assignment_op() noexcept
 bool
 assignment_op::operator==(const operation & other) const noexcept
 {
-	const assignment_op * op = dynamic_cast<const assignment_op*>(&other);
+	auto op = dynamic_cast<const assignment_op*>(&other);
 	return op && *op->type_ == *type_;
 }
 
 size_t
 assignment_op::narguments() const noexcept
 {
-	return 1;
+	return 2;
 }
 
 const jive::base::type &
 assignment_op::argument_type(size_t index) const noexcept
 {
+	JLM_DEBUG_ASSERT(index < narguments());
 	return *type_;
 }
 
 size_t
 assignment_op::nresults() const noexcept
 {
-	return 1;
+	return 0;
 }
 
 const jive::base::type &
 assignment_op::result_type(size_t index) const noexcept
 {
-	return *type_;
+	JLM_ASSERT(0);
 }
 
 std::string
