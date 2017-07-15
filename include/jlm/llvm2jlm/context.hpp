@@ -92,26 +92,26 @@ public:
 		: module_(module)
 	{}
 
-	inline const variable *
+	inline jlm::variable *
 	result() const noexcept
 	{
 		return result_;
 	}
 
 	inline void
-	set_result(const variable * result)
+	set_result(jlm::variable * result)
 	{
 		result_ = result;
 	}
 
-	inline const variable *
+	inline jlm::variable *
 	state() const noexcept
 	{
 		return state_;
 	}
 
 	inline void
-	set_state(const variable * state)
+	set_state(jlm::variable * state)
 	{
 		state_ = state;
 	}
@@ -195,8 +195,8 @@ public:
 private:
 	jlm::module & module_;
 	basic_block_map bbmap_;
-	const variable * state_;
-	const variable * result_;
+	jlm::variable * state_;
+	jlm::variable * result_;
 	std::unordered_map<const llvm::Value*, jlm::variable*> vmap_;
 	std::unordered_map<
 		const llvm::StructType*,

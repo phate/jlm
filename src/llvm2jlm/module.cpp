@@ -93,7 +93,7 @@ create_cfg(llvm::Function & f, context & ctx)
 	entry_block->add_outedge(bbmap[&f.getEntryBlock()]);
 
 	/* add results */
-	const variable * result = nullptr;
+	jlm::variable * result = nullptr;
 	if (!f.getReturnType()->isVoidTy()) {
 		result = m.create_variable(*convert_type(f.getReturnType(), ctx), "_r_", false);
 		append_last(entry_block, create_undef_constant_tac(result));
