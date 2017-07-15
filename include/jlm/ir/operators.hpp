@@ -102,7 +102,7 @@ is_phi_op(const jive::operation & op)
 static inline std::unique_ptr<jlm::tac>
 create_phi_tac(
 	const std::vector<std::pair<const variable*, cfg_node*>> & arguments,
-	const variable * result)
+	jlm::variable * result)
 {
 	std::vector<cfg_node*> nodes;
 	std::vector<const variable*> variables;
@@ -294,8 +294,8 @@ static inline std::unique_ptr<jlm::tac>
 create_alloca_tac(
 	const jive::base::type & vtype,
 	const variable * size,
-	const variable * state,
-	const variable * result)
+	jlm::variable * state,
+	jlm::variable * result)
 {
 	auto vt = dynamic_cast<const jive::value::type*>(&vtype);
 	if (!vt) throw std::logic_error("Expected value type.");
@@ -501,7 +501,7 @@ is_ptr_constant_null_op(const jive::operation & op)
 }
 
 static inline std::unique_ptr<jlm::tac>
-create_ptr_constant_null_tac(const jive::base::type & ptype, const variable * result)
+create_ptr_constant_null_tac(const jive::base::type & ptype, jlm::variable * result)
 {
 	auto pt = dynamic_cast<const jlm::ptrtype*>(&ptype);
 	if (!pt) throw std::logic_error("Expected pointer type.");
@@ -569,7 +569,7 @@ is_load_op(const jive::operation & op) noexcept
 }
 
 static inline std::unique_ptr<jlm::tac>
-create_load_tac(const variable * address, const variable * state, const variable * result)
+create_load_tac(const variable * address, const variable * state, jlm::variable * result)
 {
 	auto pt = dynamic_cast<const jlm::ptrtype*>(&address->type());
 	if (!pt) throw std::logic_error("Expected pointer type.");
@@ -637,7 +637,7 @@ is_store_op(const jive::operation & op) noexcept
 }
 
 static inline std::unique_ptr<jlm::tac>
-create_store_tac(const variable * address, const variable * value, const variable * state)
+create_store_tac(const variable * address, const variable * value, jlm::variable * state)
 {
 	auto at = dynamic_cast<const jlm::ptrtype*>(&address->type());
 	if (!at) throw std::logic_error("Expected pointer type.");
@@ -705,7 +705,7 @@ is_bits2ptr(const jive::operation & op) noexcept
 }
 
 static inline std::unique_ptr<jlm::tac>
-create_bits2ptr_tac(const variable * argument, const variable * result)
+create_bits2ptr_tac(const variable * argument, jlm::variable * result)
 {
 	auto at = dynamic_cast<const jive::bits::type*>(&argument->type());
 	if (!at) throw std::logic_error("Expected bitstring type.");
@@ -776,7 +776,7 @@ is_ptr2bits(const jive::operation & op) noexcept
 }
 
 static inline std::unique_ptr<jlm::tac>
-create_ptr2bits_tac(const variable * argument, const variable * result)
+create_ptr2bits_tac(const variable * argument, jlm::variable * result)
 {
 	auto pt = dynamic_cast<const jlm::ptrtype*>(&argument->type());
 	if (!pt) throw std::logic_error("Expected pointer type.");
@@ -854,7 +854,8 @@ is_ptroffset_op(const jive::operation & op)
 static inline std::unique_ptr<jlm::tac>
 create_ptroffset_tac(
 	const variable * address,
-	const std::vector<const variable*> offsets, const variable * result)
+	const std::vector<const variable*> offsets,
+	jlm::variable * result)
 {
 	auto at = dynamic_cast<const jlm::ptrtype*>(&address->type());
 	if (!at) throw std::logic_error("Expected pointer type.");
@@ -937,7 +938,7 @@ is_data_array_constant_op(const jive::operation & op)
 static inline std::unique_ptr<jlm::tac>
 create_data_array_constant_tac(
 	const std::vector<const variable*> & elements,
-	const variable * result)
+	jlm::variable * result)
 {
 	if (elements.size() == 0)
 		throw std::logic_error("Expected at least one element.");
@@ -1014,7 +1015,7 @@ create_ptrcmp_tac(
 	const jlm::cmp & cmp,
 	const variable * op1,
 	const variable * op2,
-	const variable * result)
+	jlm::variable * result)
 {
 	auto pt = dynamic_cast<const jlm::ptrtype*>(&op1->type());
 	if (!pt) throw std::logic_error("Expected pointer type.");
@@ -1085,7 +1086,7 @@ is_zext_op(const jive::operation & op)
 }
 
 static inline std::unique_ptr<jlm::tac>
-create_zext_tac(const variable * operand, const variable * result)
+create_zext_tac(const variable * operand, jlm::variable * result)
 {
 	auto st = dynamic_cast<const jive::bits::type*>(&operand->type());
 	if (!st) throw std::logic_error("Expected bitstring type.");
@@ -1156,7 +1157,7 @@ is_fpconstant_op(const jive::operation & op)
 }
 
 static inline std::unique_ptr<jlm::tac>
-create_fpconstant_tac(double constant, const variable * result)
+create_fpconstant_tac(double constant, jlm::variable * result)
 {
 	auto ft = dynamic_cast<const jlm::fptype*>(&result->type());
 	if (!ft) throw std::logic_error("Expected floating point type.");
@@ -1230,7 +1231,7 @@ create_fpcmp_tac(
 	const jlm::fpcmp & cmp,
 	const variable * op1,
 	const variable * op2,
-	const variable * result)
+	jlm::variable * result)
 {
 	auto ft = dynamic_cast<const jlm::fptype*>(&op1->type());
 	if (!ft) throw std::logic_error("Expected floating point type.");
@@ -1308,7 +1309,7 @@ is_undef_constant_op(const jive::operation & op)
 }
 
 static inline std::unique_ptr<jlm::tac>
-create_undef_constant_tac(const variable * result)
+create_undef_constant_tac(jlm::variable * result)
 {
 	auto vt = dynamic_cast<const jive::value::type*>(&result->type());
 	if (!vt) throw std::logic_error("Expected value type.");
@@ -1382,7 +1383,7 @@ create_fpbin_tac(
 	const jlm::fpop & fpop,
 	const variable * op1,
 	const variable * op2,
-	const variable * result)
+	jlm::variable * result)
 {
 	auto ft = dynamic_cast<const jlm::fptype*>(&op1->type());
 	if (!ft) throw std::logic_error("Expected floating point type.");
@@ -1453,7 +1454,7 @@ is_fpext_op(const jive::operation & op)
 }
 
 static inline std::unique_ptr<jlm::tac>
-create_fpext_tac(const variable * operand, const variable * result)
+create_fpext_tac(const variable * operand, jlm::variable * result)
 {
 	auto st = dynamic_cast<const jlm::fptype*>(&operand->type());
 	if (!st) throw std::logic_error("Expected floating point type.");

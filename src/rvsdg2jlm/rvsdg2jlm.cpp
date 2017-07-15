@@ -235,7 +235,7 @@ convert_theta_node(const jive::node & node, context & ctx)
 	ctx.set_lpbb(entry);
 
 	/* create loop variables and add arguments to context */
-	std::vector<const variable*> lvs;
+	std::vector<jlm::variable*> lvs;
 	for (size_t n = 0; n < subregion->narguments(); n++) {
 		auto argument = subregion->argument(n);
 		auto lv = ctx.module().create_variable(argument->type(), false);
