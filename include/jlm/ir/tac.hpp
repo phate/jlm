@@ -53,6 +53,7 @@ public:
 	inline void
 	set_tac(jlm::tac * tac) noexcept
 	{
+		JLM_DEBUG_ASSERT(tac_ == nullptr);
 		tac_ = tac;
 	}
 
