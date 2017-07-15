@@ -42,8 +42,11 @@ public:
 		return exported_;
 	}
 
-	virtual const jive::base::type &
-	type() const noexcept;
+	inline const jive::base::type &
+	type() const noexcept
+	{
+		return *type_;
+	}
 
 private:
 	bool exported_;

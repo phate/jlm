@@ -16,10 +16,4 @@ variable::debug_string() const
 	return name();
 }
 
-const jive::base::type &
-variable::type() const noexcept
-{
-	return *type_;
-}
-
 }
