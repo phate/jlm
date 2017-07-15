@@ -94,7 +94,7 @@ public:
 	{
 		JLM_DEBUG_ASSERT(!variable(node));
 
-		auto v = std::unique_ptr<jlm::variable>(new function_variable(node));
+		auto v = std::unique_ptr<jlm::variable>(new fctvariable(node));
 		auto pv = v.get();
 		functions_[node] = pv;
 		variables_.insert(std::move(v));

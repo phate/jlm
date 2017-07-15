@@ -118,7 +118,7 @@ clg::to_string() const
 
 /* function variable */
 
-function_variable::~function_variable()
+fctvariable::~fctvariable()
 {}
 
 }

@@ -330,9 +330,9 @@ convert_call_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 	auto type = convert_type(ftype, ctx);
 
 	auto v = ctx.lookup_value(i->getParent()->getParent());
-	auto caller = static_cast<const function_variable*>(v)->function();
+	auto caller = static_cast<const fctvariable*>(v)->function();
 	auto callee = convert_value(f, tacs, ctx);
-	caller->add_call(static_cast<const function_variable*>(callee)->function());
+	caller->add_call(static_cast<const fctvariable*>(callee)->function());
 
 	/* arguments */
 	std::vector<const jlm::variable*> vargs;

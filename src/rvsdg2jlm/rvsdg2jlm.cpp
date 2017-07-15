@@ -307,7 +307,7 @@ convert_phi_node(const jive::node & node, context & ctx)
 	/* convert function bodies */
 	for (size_t n = 0; n < subregion->nresults(); n++) {
 		auto lambda = subregion->result(n)->origin()->node();
-		auto v = static_cast<const jlm::function_variable*>(ctx.variable(subregion->argument(n)));
+		auto v = static_cast<const jlm::fctvariable*>(ctx.variable(subregion->argument(n)));
 		v->function()->add_cfg(create_cfg(*lambda, ctx));
 		ctx.insert(lambda->output(0), v);
 	}

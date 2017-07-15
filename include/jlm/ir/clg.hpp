@@ -227,13 +227,13 @@ private:
 	std::unordered_set<const clg_node*> calls_;
 };
 
-class function_variable final : public variable {
+class fctvariable final : public variable {
 public:
 	virtual
-	~function_variable();
+	~fctvariable();
 
 	inline
-	function_variable(clg_node * node)
+	fctvariable(clg_node * node)
 	: variable(node->type(), node->name(), node->exported())
 	, node_(node)
 	{}
@@ -249,9 +249,9 @@ private:
 };
 
 static inline bool
-is_function_variable(const jlm::variable * v)
+is_fctvariable(const jlm::variable * v)
 {
-	return dynamic_cast<const jlm::function_variable*>(v) != nullptr;
+	return dynamic_cast<const jlm::fctvariable*>(v) != nullptr;
 }
 
 }

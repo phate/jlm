@@ -58,7 +58,7 @@ convert_basic_blocks(
 std::unique_ptr<jlm::cfg>
 create_cfg(llvm::Function & f, context & ctx)
 {
-	auto node = static_cast<const function_variable*>(ctx.lookup_value(&f))->function();
+	auto node = static_cast<const fctvariable*>(ctx.lookup_value(&f))->function();
 	auto & m = ctx.module();
 
 	std::unique_ptr<jlm::cfg> cfg(new jlm::cfg(ctx.module()));
@@ -129,7 +129,7 @@ convert_function(llvm::Function & function, context & ctx)
 		return;
 
 	auto fv = ctx.lookup_value(&function);
-	auto node = static_cast<const function_variable*>(fv)->function();
+	auto node = static_cast<const fctvariable*>(fv)->function();
 
 	node->add_cfg(create_cfg(function, ctx));
 }
