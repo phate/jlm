@@ -208,15 +208,22 @@ convert_gamma_node(const jive::node & node, context & ctx)
 	/* add phi instructions */
 	for (size_t n = 0; n < snode.noutputs(); n++) {
 		auto output = snode.output(n);
+		std::unordered_set<const variable*> variables;
 		std::vector<std::pair<const variable*, cfg_node*>> arguments;
 		for (size_t i = 0; i < snode.nsubregions(); i++) {
 			auto v = ctx.variable(snode.subregion(i)->result(n)->origin());
 			arguments.push_back(std::make_pair(v, phi_nodes[i]));
+			variables.insert(v);
 		}
 
-		auto v = module.create_variable(output->type(), false);
-		append_last(exit, create_phi_tac(arguments, v));
-		ctx.insert(output, v);
+		if (variables.size() != 1) {
+			auto v = module.create_variable(output->type(), false);
+			append_last(exit, create_phi_tac(arguments, v));
+			ctx.insert(output, v);
+		} else {
+			/* all phi operands are the same */
+			ctx.insert(output, *variables.begin());
+		}
 	}
 
 	ctx.set_lpbb(exit);
