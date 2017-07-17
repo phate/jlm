@@ -41,10 +41,8 @@
 static inline jive::oport *
 create_undef_value(jive::region * region, const jive::base::type & type)
 {
-	if (auto t = dynamic_cast<const jive::bits::type*>(&type))
-		return jive_bitconstant_undefined(region, t->nbits());
-
-	return nullptr;
+	jlm::undef_constant_op op(*static_cast<const jive::value::type*>(&type));
+	return jive::create_normalized(region, op, {})[0];
 }
 
 namespace jlm {
