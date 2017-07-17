@@ -1162,4 +1162,54 @@ valist_op::copy() const
 	return std::unique_ptr<jive::operation>(new jlm::valist_op(*this));
 }
 
+/* bitcast operator */
+
+bitcast_op::~bitcast_op()
+{}
+
+bool
+bitcast_op::operator==(const operation & other) const noexcept
+{
+	auto op = dynamic_cast<const bitcast_op*>(&other);
+	return op && *op->srctype_ == *srctype_ && *op->dsttype_ == *dsttype_;
+}
+
+size_t
+bitcast_op::narguments() const noexcept
+{
+	return 1;
+}
+
+const jive::base::type &
+bitcast_op::argument_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < narguments());
+	return *srctype_;
+}
+
+size_t
+bitcast_op::nresults() const noexcept
+{
+	return 1;
+}
+
+const jive::base::type &
+bitcast_op::result_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < nresults());
+	return *dsttype_;
+}
+
+std::string
+bitcast_op::debug_string() const
+{
+	return strfmt("BITCAST[", srctype_->debug_string(), " -> ", dsttype_->debug_string(), "]");
+}
+
+std::unique_ptr<jive::operation>
+bitcast_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new bitcast_op(*this));
+}
+
 }

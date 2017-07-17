@@ -1549,6 +1549,80 @@ create_valist_tac(
 	return tac;
 }
 
+/* bitcast operator */
+
+class bitcast_op final : public jive::simple_op {
+public:
+	virtual
+	~bitcast_op();
+
+	inline
+	bitcast_op(const jive::value::type & srctype, const jive::value::type & dsttype)
+	: jive::simple_op()
+	, srctype_(srctype.copy())
+	, dsttype_(dsttype.copy())
+	{}
+
+	inline
+	bitcast_op(const bitcast_op & other)
+	: jive::simple_op(other)
+	, srctype_(other.srctype_->copy())
+	, dsttype_(other.dsttype_->copy())
+	{}
+
+	bitcast_op(jive::operation &&) = delete;
+
+	bitcast_op &
+	operator=(const jive::operation &) = delete;
+
+	bitcast_op &
+	operator=(jive::operation &&) = delete;
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual size_t
+	narguments() const noexcept override;
+
+	virtual const jive::base::type &
+	argument_type(size_t index) const noexcept override;
+
+	virtual size_t
+	nresults() const noexcept override;
+
+	virtual const jive::base::type &
+	result_type(size_t index) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+private:
+	std::unique_ptr<jive::base::type> srctype_;
+	std::unique_ptr<jive::base::type> dsttype_;
+};
+
+static inline bool
+is_bitcast_op(const jive::operation & op)
+{
+	return dynamic_cast<const bitcast_op*>(&op) != nullptr;
+}
+
+static inline std::unique_ptr<jlm::tac>
+create_bitcast_tac(const variable * argument, variable * result)
+{
+	auto at = dynamic_cast<const jive::value::type*>(&argument->type());
+	if (!at) throw std::logic_error("Expected value type.");
+
+	auto rt = dynamic_cast<const jive::value::type*>(&result->type());
+	if (!rt) throw std::logic_error("Expected value type.");
+
+	bitcast_op op(*at, *rt);
+	return create_tac(op, {argument}, {result});
+}
+
 }
 
 #endif
