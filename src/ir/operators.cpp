@@ -1153,7 +1153,7 @@ valist_op::result_type(size_t index) const noexcept
 std::string
 valist_op::debug_string() const
 {
-	return "valist";
+	return "VALIST";
 }
 
 std::unique_ptr<jive::operation>
