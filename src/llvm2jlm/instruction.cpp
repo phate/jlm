@@ -593,27 +593,20 @@ convert_fptosi_instruction(llvm::Instruction * i, tacsvector_t & tacs, context &
 }
 
 static inline const variable *
-convert_bitcast_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, context & ctx)
+convert_bitcast_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::BitCastInst*>(instruction));
-	auto & i = *llvm::cast<const llvm::BitCastInst>(instruction);
+	JLM_DEBUG_ASSERT(i->getOpcode() == llvm::Instruction::BitCast);
 	auto & m = ctx.module();
 
-	/* FIXME: avoid usage of memory to do cast */
+	auto operand = convert_value(i->getOperand(0), tacs, ctx);
 
-	auto o = convert_value(i.getOperand(0), tacs, ctx);
+	jlm::variable * result = nullptr;
+	if (ctx.has_value(i))
+		result = ctx.lookup_value(i);
+	else
+		result = m.create_variable(*convert_type(i->getType(), ctx), false);
 
-	jive::bits::type bits32(32);
-	auto ptype = create_ptrtype(*convert_type(i.getSrcTy(), ctx));
-
-	auto c = m.create_variable(bits32, false);
-	tacs.push_back(create_tac(jive::bits::uint_constant_op(32, 1), {}, {c}));
-
-	auto a = m.create_variable(*ptype, false);
-	tacs.push_back(create_alloca_tac(o->type(), c, ctx.state(), a));
-	tacs.push_back(create_store_tac(a, o, ctx.state()));
-	tacs.push_back(create_load_tac(a, ctx.state(), ctx.lookup_value(&i)));
-
+	tacs.push_back(create_bitcast_tac(operand, result));
 	return tacs.back()->output(0);
 }
 

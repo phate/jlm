@@ -407,6 +407,19 @@ convert_valist(
 	return nullptr;
 }
 
+static inline llvm::Value *
+convert_bitcast(
+	const jive::operation & op,
+	const std::vector<const variable*> & args,
+	llvm::IRBuilder<> & builder,
+	context & ctx)
+{
+	JLM_DEBUG_ASSERT(is_bitcast_op(op));
+
+	auto type = convert_type(op.result_type(0), builder.getContext());
+	return builder.CreateBitCast(ctx.value(args[0]), type);
+}
+
 llvm::Value *
 convert_operation(
 	const jive::operation & op,
@@ -448,6 +461,7 @@ convert_operation(
 	, {std::type_index(typeid(jlm::fpbin_op)), convert_fpbin}
 	, {std::type_index(typeid(jlm::fpext_op)), convert_fpext}
 	, {std::type_index(typeid(jlm::valist_op)), convert_valist}
+	, {std::type_index(typeid(jlm::bitcast_op)), convert_bitcast}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(op))) != map.end());

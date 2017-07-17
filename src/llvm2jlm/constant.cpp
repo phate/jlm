@@ -117,6 +117,14 @@ convert_constantExpr(
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantExpr*>(constant));
 	auto c = llvm::cast<llvm::ConstantExpr>(constant);
 
+	/*
+		FIXME: convert_instruction currently assumes that a instruction's result variable
+					 is already added to the context. This is not the case for constants and we
+					 therefore need to do some poilerplate checking in convert_instruction to
+					 see whether a variable was already declared or we need to create a new
+					 variable.
+	*/
+
 	/* FIXME: getAsInstruction is none const, forcing all llvm parameters to be none const */
 	return convert_instruction(c->getAsInstruction(), tacs, ctx);
 }
