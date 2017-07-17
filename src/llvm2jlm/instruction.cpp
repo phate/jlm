@@ -296,8 +296,13 @@ convert_getelementptr_instruction(llvm::Instruction * inst, tacsvector_t & tacs,
 	for (auto it = i->idx_begin(); it != i->idx_end(); it++)
 		indices.push_back(convert_value(*it, tacs, ctx));
 
-	auto r = m.create_variable(*convert_type(i->getType(), ctx), false);
-	tacs.push_back(create_ptroffset_tac(base, indices, r));
+	jlm::variable * result = nullptr;
+	if (ctx.has_value(i))
+		result = ctx.lookup_value(i);
+	else
+		result = m.create_variable(*convert_type(i->getType(), ctx), false);
+
+	tacs.push_back(create_ptroffset_tac(base, indices, result));
 	return tacs.back()->output(0);
 }
 
