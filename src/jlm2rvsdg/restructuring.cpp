@@ -282,6 +282,28 @@ find_sccs(jlm::cfg_node * enter, jlm::cfg_node * exit)
 	return sccs;
 }
 
+static inline const variable *
+create_pvariable(const jive::ctl::type & type, jlm::module & m)
+{
+	static size_t c = 0;
+	return m.create_variable(type, strfmt("#p", c++, "#"), false);
+}
+
+static inline const variable *
+create_qvariable(const jive::ctl::type & type, jlm::module & m)
+{
+	static size_t c = 0;
+	return m.create_variable(type, strfmt("#q", c++, "#"), false);
+}
+
+static inline const variable *
+create_rvariable(jlm::module & m)
+{
+	static size_t c = 0;
+	jive::ctl::type type(2);
+	return m.create_variable(type, strfmt("#r", c++, "#"), false);
+}
+
 static inline void
 append_branch(jlm::cfg_node * node, const variable * operand)
 {
@@ -389,9 +411,9 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit, std::vector<scc_s
 			continue;
 		}
 
+		auto r = create_rvariable(module);
 		jive::ctl::type t(std::max(s.nenodes(), s.nxnodes()));
-		auto r = module.create_variable(jive::ctl::type(2), "#r#", false);
-		auto q = t.nalternatives() > 1 ? module.create_variable(t, "#q#", false) : nullptr;
+		auto q = t.nalternatives() > 1 ? create_qvariable(t, module) : nullptr;
 		auto new_ne = create_basic_block_node(cfg);
 		auto new_nr = create_basic_block_node(cfg);
 		auto new_nx = create_basic_block_node(cfg);
@@ -534,7 +556,7 @@ restructure_branches(jlm::cfg_node * entry, jlm::cfg_node * exit)
 	}
 
 	/* insert new continuation point */
-	auto p = module.create_variable(jive::ctl::type(c.points.size()), "#p#", false);
+	auto p = create_pvariable(jive::ctl::type(c.points.size()), module);
 	auto cn = create_basic_block_node(cfg);
 	append_branch(cn, p);
 	std::unordered_map<cfg_node*, size_t> indices;
