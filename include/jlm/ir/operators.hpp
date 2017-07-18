@@ -8,6 +8,7 @@
 
 #include <jive/types/bitstring/type.h>
 #include <jive/types/function/fcttype.h>
+#include <jive/types/record/rcdtype.h>
 #include <jive/vsdg/basetype.h>
 #include <jive/vsdg/controltype.h>
 #include <jive/vsdg/operators/nullary.h>
@@ -1621,6 +1622,68 @@ create_bitcast_tac(const variable * argument, variable * result)
 
 	bitcast_op op(*at, *rt);
 	return create_tac(op, {argument}, {result});
+}
+
+/* struct constant operator */
+
+class struct_constant_op final : public jive::simple_op {
+public:
+	virtual
+	~struct_constant_op();
+
+	inline
+	struct_constant_op(const jive::rcd::type & type)
+	: jive::simple_op()
+	, type_(type)
+	{}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual size_t
+	narguments() const noexcept override;
+
+	virtual const jive::base::type &
+	argument_type(size_t index) const noexcept override;
+
+	virtual size_t
+	nresults() const noexcept override;
+
+	virtual const jive::base::type &
+	result_type(size_t index) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+	inline const jive::rcd::type &
+	type() const noexcept
+	{
+		return type_;
+	}
+
+private:
+	jive::rcd::type type_;
+};
+
+static inline bool
+is_struct_constant_op(const jive::operation & op)
+{
+	return dynamic_cast<const struct_constant_op*>(&op) != nullptr;
+}
+
+static inline std::unique_ptr<jlm::tac>
+create_struct_constant_tac(
+	const std::vector<const variable*> & elements,
+	jlm::variable * result)
+{
+	auto rt = dynamic_cast<const jive::rcd::type*>(&result->type());
+	if (!rt) throw std::logic_error("Expected record type.");
+
+	struct_constant_op op(*rt);
+	return create_tac(op, elements, {result});
 }
 
 }

@@ -1212,4 +1212,54 @@ bitcast_op::copy() const
 	return std::unique_ptr<jive::operation>(new bitcast_op(*this));
 }
 
+/* struct constant operator */
+
+struct_constant_op::~struct_constant_op()
+{}
+
+bool
+struct_constant_op::operator==(const operation & other) const noexcept
+{
+	auto op = dynamic_cast<const struct_constant_op*>(&other);
+	return op && op->type_ == type_;
+}
+
+size_t
+struct_constant_op::narguments() const noexcept
+{
+	return type_.declaration()->nelements();
+}
+
+const jive::base::type &
+struct_constant_op::argument_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < narguments());
+	return type_.declaration()->element(index);
+}
+
+size_t
+struct_constant_op::nresults() const noexcept
+{
+	return 1;
+}
+
+const jive::base::type &
+struct_constant_op::result_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < nresults());
+	return type_;
+}
+
+std::string
+struct_constant_op::debug_string() const
+{
+	return "STRUCTCONSTANT";
+}
+
+std::unique_ptr<jive::operation>
+struct_constant_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new struct_constant_op(*this));
+}
+
 }
