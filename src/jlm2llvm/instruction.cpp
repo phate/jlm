@@ -420,6 +420,24 @@ convert_bitcast(
 	return builder.CreateBitCast(ctx.value(args[0]), type);
 }
 
+static inline llvm::Value *
+convert_struct_constant(
+	const jive::operation & op,
+	const std::vector<const variable*> & args,
+	llvm::IRBuilder<> & builder,
+	context & ctx)
+{
+	JLM_DEBUG_ASSERT(is_struct_constant_op(op));
+	auto & cop = *static_cast<const jlm::struct_constant_op*>(&op);
+
+	std::vector<llvm::Constant*> operands;
+	for (const auto & arg : args)
+		operands.push_back(llvm::cast<llvm::Constant>(ctx.value(arg)));
+
+	auto t = convert_type(cop.type(), builder.getContext());
+	return llvm::ConstantStruct::get(t, operands);
+}
+
 llvm::Value *
 convert_operation(
 	const jive::operation & op,
@@ -462,6 +480,7 @@ convert_operation(
 	, {std::type_index(typeid(jlm::fpext_op)), convert_fpext}
 	, {std::type_index(typeid(jlm::valist_op)), convert_valist}
 	, {std::type_index(typeid(jlm::bitcast_op)), convert_bitcast}
+	, {std::type_index(typeid(jlm::struct_constant_op)), convert_struct_constant}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(op))) != map.end());

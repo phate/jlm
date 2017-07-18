@@ -8,6 +8,7 @@
 
 #include <jive/types/bitstring/type.h>
 #include <jive/types/function/fcttype.h>
+#include <jive/types/record/rcdtype.h>
 #include <jive/vsdg/controltype.h>
 
 #include <jlm/common.hpp>
@@ -74,6 +75,14 @@ convert_type(const jlm::fptype & type, llvm::LLVMContext & ctx)
 	auto t = convert_type(*static_cast<const jive::base::type*>(&type), ctx);
 	JLM_DEBUG_ASSERT(t->isHalfTy() || t->isFloatTy() || t->isDoubleTy());
 	return t;
+}
+
+static inline llvm::StructType *
+convert_type(const jive::rcd::type & type, llvm::LLVMContext & ctx)
+{
+	auto t = convert_type(*static_cast<const jive::base::type*>(&type), ctx);
+	JLM_DEBUG_ASSERT(t->isStructTy());
+	return llvm::cast<llvm::StructType>(t);
 }
 
 }}

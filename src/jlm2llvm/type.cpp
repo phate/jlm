@@ -88,6 +88,19 @@ convert_fp_type(const jive::base::type & type, llvm::LLVMContext & ctx)
 	return map[t.size()](ctx);
 }
 
+static inline llvm::Type *
+convert_rcd_type(const jive::base::type & type, llvm::LLVMContext & ctx)
+{
+	JLM_DEBUG_ASSERT(dynamic_cast<const jive::rcd::type*>(&type));
+	auto & t = *static_cast<const jive::rcd::type*>(&type);
+
+	std::vector<llvm::Type*> elements;
+	for (size_t n = 0; n < t.declaration()->nelements(); n++)
+		elements.push_back(convert_type(t.declaration()->element(n), ctx));
+
+	return  llvm::StructType::get(ctx, elements);
+}
+
 llvm::Type *
 convert_type(const jive::base::type & type, llvm::LLVMContext & ctx)
 {
@@ -101,6 +114,7 @@ convert_type(const jive::base::type & type, llvm::LLVMContext & ctx)
 	, {std::type_index(typeid(jlm::arraytype)), convert_array_type}
 	, {std::type_index(typeid(jive::ctl::type)), convert_ctl_type}
 	, {std::type_index(typeid(jlm::fptype)), convert_fp_type}
+	, {std::type_index(typeid(jive::rcd::type)), convert_rcd_type}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(type))) != map.end());
