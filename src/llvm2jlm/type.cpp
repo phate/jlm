@@ -77,13 +77,14 @@ convert_fp_type(const llvm::Type * t, context & ctx)
 	return std::unique_ptr<jive::value::type>(new jlm::fptype(map[t->getTypeID()]));
 }
 
-static std::unique_ptr<jive::value::type>
+static inline std::unique_ptr<jive::value::type>
 convert_struct_type(const llvm::Type * t, context & ctx)
 {
 	JLM_DEBUG_ASSERT(t->isStructTy());
-	const llvm::StructType * type = static_cast<const llvm::StructType*>(t);
+	auto type = static_cast<const llvm::StructType*>(t);
 
 	/* FIXME: handle packed structures */
+	JLM_DEBUG_ASSERT(!type->isPacked());
 
 	return std::unique_ptr<jive::value::type>(new jive::rcd::type(ctx.lookup_declaration(type)));
 }

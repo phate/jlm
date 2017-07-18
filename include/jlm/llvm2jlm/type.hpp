@@ -6,6 +6,8 @@
 #ifndef JLM_LLVM2JLM_TYPE_HPP
 #define JLM_LLVM2JLM_TYPE_HPP
 
+#include <jive/types/record/rcdtype.h>
+
 #include <jlm/ir/types.hpp>
 
 #include <llvm/IR/DerivedTypes.h>
@@ -45,6 +47,14 @@ convert_type(const llvm::FunctionType * type, context & ctx)
 	auto t = convert_type(llvm::cast<llvm::Type>(type), ctx);
 	JLM_DEBUG_ASSERT(dynamic_cast<const jive::fct::type*>(t.get()));
 	return std::unique_ptr<jive::fct::type>(static_cast<jive::fct::type*>(t.release()));
+}
+
+static inline std::unique_ptr<jive::rcd::type>
+convert_type(const llvm::StructType * type, context & ctx)
+{
+	auto t = convert_type(llvm::cast<llvm::Type>(type), ctx);
+	JLM_DEBUG_ASSERT(dynamic_cast<const jive::rcd::type*>(t.get()));
+	return std::unique_ptr<jive::rcd::type>(static_cast<jive::rcd::type*>(t.release()));
 }
 
 }
