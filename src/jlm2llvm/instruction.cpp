@@ -451,6 +451,19 @@ convert_trunc(
 	return builder.CreateTrunc(ctx.value(args[0]), type);
 }
 
+static inline llvm::Value *
+convert_sext(
+	const jive::operation & op,
+	const std::vector<const variable*> & args,
+	llvm::IRBuilder<> & builder,
+	context & ctx)
+{
+	JLM_DEBUG_ASSERT(is_sext_op(op));
+
+	auto type = convert_type(op.result_type(0), builder.getContext());
+	return builder.CreateSExt(ctx.value(args[0]), type);
+}
+
 llvm::Value *
 convert_operation(
 	const jive::operation & op,
@@ -495,6 +508,7 @@ convert_operation(
 	, {std::type_index(typeid(jlm::bitcast_op)), convert_bitcast}
 	, {std::type_index(typeid(jlm::struct_constant_op)), convert_struct_constant}
 	, {std::type_index(typeid(jlm::trunc_op)), convert_trunc}
+	, {std::type_index(typeid(jlm::sext_op)), convert_sext}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
