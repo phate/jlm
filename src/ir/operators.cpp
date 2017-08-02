@@ -1262,4 +1262,54 @@ struct_constant_op::copy() const
 	return std::unique_ptr<jive::operation>(new struct_constant_op(*this));
 }
 
+/* trunc operator */
+
+trunc_op::~trunc_op()
+{}
+
+bool
+trunc_op::operator==(const operation & other) const noexcept
+{
+	auto op = dynamic_cast<const trunc_op*>(&other);
+	return op && op->otype_ == otype_ && op->rtype_ == rtype_;
+}
+
+size_t
+trunc_op::narguments() const noexcept
+{
+	return 1;
+}
+
+const jive::base::type &
+trunc_op::argument_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < narguments());
+	return otype_;
+}
+
+size_t
+trunc_op::nresults() const noexcept
+{
+	return 1;
+}
+
+const jive::base::type &
+trunc_op::result_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < nresults());
+	return rtype_;
+}
+
+std::string
+trunc_op::debug_string() const
+{
+	return "TRUNC";
+}
+
+std::unique_ptr<jive::operation>
+trunc_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new trunc_op(*this));
+}
+
 }
