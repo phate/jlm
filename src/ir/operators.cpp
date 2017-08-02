@@ -1312,4 +1312,54 @@ trunc_op::copy() const
 	return std::unique_ptr<jive::operation>(new trunc_op(*this));
 }
 
+/* sext operator */
+
+sext_op::~sext_op()
+{}
+
+bool
+sext_op::operator==(const operation & other) const noexcept
+{
+	auto op = dynamic_cast<const sext_op*>(&other);
+	return op && op->otype_ == otype_ && op->rtype_ == rtype_;
+}
+
+size_t
+sext_op::narguments() const noexcept
+{
+	return 1;
+}
+
+const jive::base::type &
+sext_op::argument_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < narguments());
+	return otype_;
+}
+
+size_t
+sext_op::nresults() const noexcept
+{
+	return 1;
+}
+
+const jive::base::type &
+sext_op::result_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < nresults());
+	return rtype_;
+}
+
+std::string
+sext_op::debug_string() const
+{
+	return "SEXT";
+}
+
+std::unique_ptr<jive::operation>
+sext_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new sext_op(*this));
+}
+
 }

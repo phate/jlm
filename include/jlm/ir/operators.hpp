@@ -1748,6 +1748,68 @@ create_trunc_tac(const variable * operand, jlm::variable * result)
 	return create_tac(op, {operand}, {result});
 }
 
+/* sext operator */
+
+class sext_op final : public jive::simple_op {
+public:
+	virtual
+	~sext_op();
+
+	inline
+	sext_op(const jive::bits::type & otype, const jive::bits::type & rtype)
+	: jive::simple_op()
+	, otype_(otype)
+	, rtype_(rtype)
+	{
+		if (otype.nbits() >= rtype.nbits())
+			throw std::logic_error("Expected operand's #bits to be smaller than results's #bits.");
+	}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual size_t
+	narguments() const noexcept override;
+
+	virtual const jive::base::type &
+	argument_type(size_t index) const noexcept override;
+
+	virtual size_t
+	nresults() const noexcept override;
+
+	virtual const jive::base::type &
+	result_type(size_t index) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+private:
+	jive::bits::type otype_;
+	jive::bits::type rtype_;
+};
+
+static inline bool
+is_sext_op(const jive::operation & op)
+{
+	return dynamic_cast<const sext_op*>(&op) != nullptr;
+}
+
+static inline std::unique_ptr<jlm::tac>
+create_sext_tac(const variable * operand, jlm::variable * result)
+{
+	auto ot = dynamic_cast<const jive::bits::type*>(&operand->type());
+	if (!ot) throw std::logic_error("Expected bits type.");
+
+	auto rt = dynamic_cast<const jive::bits::type*>(&result->type());
+	if (!rt) throw std::logic_error("Expected bits type.");
+
+	sext_op op(*ot, *rt);
+	return create_tac(op, {operand}, {result});
+}
+
 }
 
 #endif
