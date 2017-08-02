@@ -309,14 +309,10 @@ convert_getelementptr_instruction(llvm::Instruction * inst, tacsvector_t & tacs,
 static inline const variable *
 convert_trunc_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::TruncInst*>(i));
-	const llvm::TruncInst * instruction = static_cast<const llvm::TruncInst*>(i);
+	JLM_DEBUG_ASSERT(i->getOpcode() == llvm::Instruction::Trunc);
 
-	size_t high = i->getType()->getIntegerBitWidth();
-	auto operand = convert_value(instruction->getOperand(0), tacs, ctx);
-	jive::bits::slice_op op(dynamic_cast<const jive::bits::type&>(operand->type()), 0, high);
-	tacs.push_back(create_tac(op, {operand}, {ctx.lookup_value(i)}));
-
+	auto operand = convert_value(i->getOperand(0), tacs, ctx);
+	tacs.push_back(create_trunc_tac(operand, ctx.lookup_value(i)));
 	return tacs.back()->output(0);
 }
 
