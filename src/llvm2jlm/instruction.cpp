@@ -451,31 +451,10 @@ convert_zext_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 static inline const variable *
 convert_sext_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::SExtInst*>(i));
+	JLM_DEBUG_ASSERT(i->getOpcode() == llvm::Instruction::SExt);
 
-	llvm::Value * operand = i->getOperand(0);
-
-	/* FIXME: support vector type */
-	if (operand->getType()->isVectorTy())
-		JLM_DEBUG_ASSERT(0);
-
-	size_t new_length = i->getType()->getIntegerBitWidth();
-	size_t old_length = operand->getType()->getIntegerBitWidth();
-	jive::bits::slice_op s_op(jive::bits::type(old_length), old_length-1, old_length);
-	auto vs = create_result_variables(ctx.module(), s_op);
-	auto v = convert_value(operand, tacs, ctx);
-	tacs.push_back(create_tac(s_op, {v}, vs));
-	auto bit = tacs.back()->output(0);
-
-	std::vector<const variable*> operands(1, convert_value(operand, tacs, ctx));
-	std::vector<jive::bits::type> operand_types(1, jive::bits::type(old_length));
-	for (size_t n = 0; n < new_length - old_length; n++) {
-		operand_types.push_back(jive::bits::type(1));
-		operands.push_back(bit);
-	}
-
-	jive::bits::concat_op op(operand_types);
-	tacs.push_back(create_tac(op, operands, {ctx.lookup_value(i)}));
+	auto operand = convert_value(i->getOperand(0), tacs, ctx);
+	tacs.push_back(create_sext_tac(operand, ctx.lookup_value(i)));
 	return tacs.back()->output(0);
 }
 
