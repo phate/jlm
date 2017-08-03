@@ -30,6 +30,7 @@
 #include <jive/vsdg/control.h>
 #include <jive/vsdg/gamma.h>
 #include <jive/vsdg/graph.h>
+#include <jive/vsdg/operators/binary-normal-form.h>
 #include <jive/vsdg/operators/match.h>
 #include <jive/vsdg/phi.h>
 #include <jive/vsdg/region.h>
@@ -558,8 +559,13 @@ std::unique_ptr<jive::graph>
 construct_rvsdg(const module & m)
 {
 	auto rvsdg = std::make_unique<jive::graph>();
-	scoped_vmap svmap(m, rvsdg->root());
 
+	/* FIXME: we currently cannot handle flattened_binary_op in jlm2llvm pass */
+	auto nf = static_cast<jive::binary_normal_form*>(
+		rvsdg->node_normal_form(typeid(jive::base::binary_op)));
+	nf->set_flatten(false);
+
+	scoped_vmap svmap(m, rvsdg->root());
 	convert_globals(rvsdg.get(), svmap);
 
 	/* convert functions */
