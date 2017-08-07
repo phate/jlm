@@ -29,6 +29,7 @@ public:
 		, j2r(false)
 		, r2j(false)
 		, j2l(false)
+		, j2rx(false)
 		, l2jdot(false)
 		, r2jdot(false)
 	{}
@@ -37,6 +38,7 @@ public:
 	bool j2r;
 	bool r2j;
 	bool j2l;
+	bool j2rx;
 	bool l2jdot;
 	bool r2jdot;
 	std::string l2jdot_function;
@@ -61,6 +63,11 @@ parse_cmdflags(int argc, char ** argv, cmdflags & cmdf)
 
 		if (flag == "--j2r") {
 			cmdf.j2r = true;
+			continue;
+		}
+
+		if (flag == "--j2rx") {
+			cmdf.j2rx = true;
 			continue;
 		}
 
@@ -137,6 +144,7 @@ main (int argc, char ** argv)
 
 	auto rvsdg = jlm::construct_rvsdg(*jm);
 	if (flags.j2r) jive::view(rvsdg->root(), stdout);
+	if (flags.j2rx) jive::view_xml(rvsdg->root(), stdout);
 
 	jm = jlm::rvsdg2jlm::rvsdg2jlm(*rvsdg);
 	if (flags.r2j) jlm::view(*jm, stdout);
