@@ -69,8 +69,8 @@ public:
 		return region();
 	}
 
-	inline jive::oport *
-	end(jive::oport * data)
+	inline jive::output *
+	end(jive::output * data)
 	{
 		if (!node_)
 			return nullptr;

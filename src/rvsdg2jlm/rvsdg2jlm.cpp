@@ -23,8 +23,8 @@
 namespace jlm {
 namespace rvsdg2jlm {
 
-static inline const jive::oport *
-root_port(const jive::oport * port)
+static inline const jive::output *
+root_port(const jive::output * port)
 {
 	auto root = port->region()->graph()->root();
 	if (port->region() == root)
@@ -43,7 +43,7 @@ root_port(const jive::oport * port)
 }
 
 static inline bool
-is_exported(const jive::oport * port)
+is_exported(const jive::output * port)
 {
 	port = root_port(port);
 	for (const auto & user : *port) {
@@ -55,7 +55,7 @@ is_exported(const jive::oport * port)
 }
 
 static inline std::string
-get_name(const jive::oport * port)
+get_name(const jive::output * port)
 {
 	port = root_port(port);
 	for (const auto & user : *port) {
@@ -75,7 +75,7 @@ create_assignment_lpbb(const jlm::variable * argument, const jlm::variable * res
 }
 
 static inline std::unique_ptr<const expr>
-convert_port(const jive::oport * port)
+convert_port(const jive::output * port)
 {
 	auto node = port->node();
 	std::vector<std::unique_ptr<const expr>> operands;

@@ -39,7 +39,7 @@
 #include <cmath>
 #include <stack>
 
-static inline jive::oport *
+static inline jive::output *
 create_undef_value(jive::region * region, const jive::base::type & type)
 {
 	jlm::undef_constant_op op(*static_cast<const jive::value::type*>(&type));
@@ -48,7 +48,7 @@ create_undef_value(jive::region * region, const jive::base::type & type)
 
 namespace jlm {
 
-typedef std::unordered_map<const variable*, jive::oport*> vmap;
+typedef std::unordered_map<const variable*, jive::output*> vmap;
 
 class scoped_vmap final {
 public:
@@ -173,7 +173,7 @@ convert_tac(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
 	if (map.find(std::type_index(typeid(tac.operation()))) != map.end())
 		return map[std::type_index(typeid(tac.operation()))](tac, region, vmap);
 
-	std::vector<jive::oport*> operands;
+	std::vector<jive::output*> operands;
 	for (size_t n = 0; n < tac.ninputs(); n++) {
 		JLM_DEBUG_ASSERT(vmap.find(tac.input(n)) != vmap.end());
 		operands.push_back(vmap[tac.input(n)]);
@@ -249,7 +249,7 @@ convert_exit_node(
 	JLM_DEBUG_ASSERT(is_exit_structure(node.structure()));
 	auto xa = static_cast<const agg::exit*>(&node.structure())->attribute();
 
-	std::vector<jive::oport*> results;
+	std::vector<jive::output*> results;
 	for (size_t n = 0; n < xa.nresults(); n++) {
 		JLM_DEBUG_ASSERT(svmap.vmap().find(xa.result(n)) != svmap.vmap().end());
 		results.push_back(svmap.vmap()[xa.result(n)]);
@@ -321,7 +321,7 @@ convert_branch_node(
 	}
 
 	/* convert branch cases */
-	std::unordered_map<const variable*, std::vector<jive::oport*>> xvmap;
+	std::unordered_map<const variable*, std::vector<jive::output*>> xvmap;
 	JLM_DEBUG_ASSERT(gb.nsubregions() == node.nchildren()-1);
 	for (size_t n = 0; n < gb.nsubregions(); n++) {
 		svmap.push_scope(gb.region(n));
@@ -370,7 +370,7 @@ convert_loop_node(
 	JLM_DEBUG_ASSERT(ds->top == ds->bottom);
 	std::unordered_map<const variable*, std::shared_ptr<jive::loopvar>> lvmap;
 	for (const auto & v : ds->top) {
-		jive::oport * value = nullptr;
+		jive::output * value = nullptr;
 		if (pvmap.find(v) == pvmap.end()) {
 			value = create_undef_value(parent, v->type());
 			JLM_DEBUG_ASSERT(value);
@@ -444,7 +444,7 @@ convert_node(
 	return map[std::type_index(typeid(node.structure()))](node, dm, function, lb, svmap);
 }
 
-static jive::oport *
+static jive::output *
 convert_cfg(
 	const jlm::clg_node & function,
 	jive::region * region,
@@ -465,7 +465,7 @@ convert_cfg(
 	return lambda->output(0);
 }
 
-static jive::oport *
+static jive::output *
 construct_lambda(
 	const clg_node & function,
 	jive::region * region,
@@ -526,10 +526,10 @@ handle_scc(
 	}
 }
 
-static inline jive::oport *
+static inline jive::output *
 convert_expression(const expr & e, jive::region * region)
 {
-	std::vector<jive::oport*> operands;
+	std::vector<jive::output*> operands;
 	for (size_t n = 0; n < e.noperands(); n++)
 		operands.push_back(convert_expression(e.operand(n), region));
 

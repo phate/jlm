@@ -37,13 +37,13 @@ public:
 	}
 
 	inline void
-	insert(const jive::oport * port, const jlm::variable * v)
+	insert(const jive::output * port, const jlm::variable * v)
 	{
 		ports_[port] = v;
 	}
 
 	inline const jlm::variable *
-	variable(const jive::oport * port)
+	variable(const jive::output * port)
 	{
 		auto it = ports_.find(port);
 		JLM_DEBUG_ASSERT(it != ports_.end());
@@ -78,7 +78,7 @@ private:
 	jlm::cfg * cfg_;
 	jlm::module & module_;
 	jlm::cfg_node * lpbb_;
-	std::unordered_map<const jive::oport*, const jlm::variable*> ports_;
+	std::unordered_map<const jive::output*, const jlm::variable*> ports_;
 };
 
 }}
