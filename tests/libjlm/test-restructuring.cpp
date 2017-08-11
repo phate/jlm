@@ -17,7 +17,7 @@
 static inline void
 test_acyclic_structured()
 {
-	jlm::module module("");
+	jlm::module module("", "");
 
 	jlm::cfg cfg(module);
 	auto bb1 = create_basic_block_node(&cfg);
@@ -45,7 +45,7 @@ test_acyclic_structured()
 static inline void
 test_acyclic_unstructured()
 {
-	jlm::module module("");
+	jlm::module module("", "");
 
 	jlm::cfg cfg(module);
 	auto bb1 = create_basic_block_node(&cfg);
@@ -73,7 +73,7 @@ test_acyclic_unstructured()
 static inline void
 test_dowhile()
 {
-	jlm::module module("");
+	jlm::module module("", "");
 
 	jlm::cfg cfg(module);
 	auto bb1 = create_basic_block_node(&cfg);
@@ -102,7 +102,7 @@ test_dowhile()
 static inline void
 test_while()
 {
-	jlm::module module("");
+	jlm::module module("", "");
 
 	jlm::cfg cfg(module);
 	auto bb1 = create_basic_block_node(&cfg);
@@ -126,7 +126,7 @@ test_while()
 static inline void
 test_irreducible()
 {
-	jlm::module module("");
+	jlm::module module("", "");
 
 	jlm::cfg cfg(module);
 	auto bb1 = create_basic_block_node(&cfg);

@@ -264,6 +264,7 @@ convert(jlm::module & jm, llvm::LLVMContext & lctx)
 {
 	std::unique_ptr<llvm::Module> lm(new llvm::Module("module", lctx));
 	lm->setTargetTriple(jm.target_triple());
+	lm->setDataLayout(jm.data_layout());
 
 	context ctx(jm, *lm);
 	convert_globals(ctx);

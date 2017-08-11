@@ -23,8 +23,11 @@ public:
 	{}
 
 	inline
-	module(const std::string & target_triple) noexcept
-	: target_triple_(target_triple)
+	module(
+		const std::string & target_triple,
+		const std::string & data_layout) noexcept
+	: data_layout_(data_layout)
+	, target_triple_(target_triple)
 	{}
 
 	inline jlm::clg &
@@ -115,8 +118,15 @@ public:
 		return target_triple_;
 	}
 
+	inline const std::string &
+	data_layout() const noexcept
+	{
+		return data_layout_;
+	}
+
 private:
 	jlm::clg clg_;
+	std::string data_layout_;
 	std::string target_triple_;
 	std::unordered_set<std::unique_ptr<jlm::variable>> variables_;
 	std::unordered_map<const clg_node*, const jlm::variable*> functions_;

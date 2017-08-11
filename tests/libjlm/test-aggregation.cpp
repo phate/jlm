@@ -50,7 +50,7 @@ is_branch(jlm::agg::node * node, size_t nchildren)
 static inline void
 test_linear_reduction()
 {
-	jlm::module module("");
+	jlm::module module("", "");
 
 	jlm::cfg cfg(module);
 	auto bb = create_basic_block_node(&cfg);
@@ -76,7 +76,7 @@ test_linear_reduction()
 static inline void
 test_loop_reduction()
 {
-	jlm::module module("");
+	jlm::module module("", "");
 
 	jlm::cfg cfg(module);
 	auto bb1 = create_basic_block_node(&cfg);
@@ -116,7 +116,7 @@ test_loop_reduction()
 static void
 test_branch_reduction()
 {
-	jlm::module module("");
+	jlm::module module("", "");
 
 	jlm::cfg cfg(module);
 	auto split = create_basic_block_node(&cfg);
@@ -175,7 +175,7 @@ test_branch_reduction()
 static void
 test_branch_loop_reduction()
 {
-	jlm::module module("");
+	jlm::module module("", "");
 
 	jlm::cfg cfg(module);
 	auto split = create_basic_block_node(&cfg);
@@ -247,7 +247,7 @@ test_branch_loop_reduction()
 static void
 test_loop_branch_reduction()
 {
-	jlm::module module("");
+	jlm::module module("", "");
 
 	jlm::cfg cfg(module);
 	auto split = create_basic_block_node(&cfg);
@@ -308,7 +308,7 @@ test_loop_branch_reduction()
 static void
 test_ifthen_reduction()
 {
-	jlm::module module("");
+	jlm::module module("", "");
 
 	jlm::cfg cfg(module);
 	auto split = create_basic_block_node(&cfg);
