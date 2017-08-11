@@ -3,7 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/jlm2llvm/context.hpp>
 #include <jlm/jlm2llvm/type.hpp>
+
+#include <llvm/IR/Module.h>
 
 #include <typeindex>
 #include <unordered_map>
@@ -12,19 +15,20 @@ namespace jlm {
 namespace jlm2llvm {
 
 static inline llvm::Type *
-convert_integer_type(const jive::base::type & type, llvm::LLVMContext & ctx)
+convert_integer_type(const jive::base::type & type, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const jive::bits::type*>(&type));
 	auto & t = *static_cast<const jive::bits::type*>(&type);
 
-	return llvm::Type::getIntNTy(ctx, t.nbits());
+	return llvm::Type::getIntNTy(ctx.llvm_module().getContext(), t.nbits());
 }
 
 static inline llvm::Type *
-convert_function_type(const jive::base::type & type, llvm::LLVMContext & ctx)
+convert_function_type(const jive::base::type & type, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const jive::fct::type*>(&type));
 	auto & t = *static_cast<const jive::fct::type*>(&type);
+	auto & lctx = ctx.llvm_module().getContext();
 
 	using namespace llvm;
 
@@ -39,13 +43,13 @@ convert_function_type(const jive::base::type & type, llvm::LLVMContext & ctx)
 	}
 
 	JLM_DEBUG_ASSERT(t.nresults() == 1 || t.nresults() == 2);
-	auto rt = t.nresults() == 1 ? llvm::Type::getVoidTy(ctx) : convert_type(t.result_type(0), ctx);
+	auto rt = t.nresults() == 1 ? llvm::Type::getVoidTy(lctx) : convert_type(t.result_type(0), ctx);
 
 	return FunctionType::get(rt, ats, isvararg);
 }
 
 static inline llvm::Type *
-convert_pointer_type(const jive::base::type & type, llvm::LLVMContext & ctx)
+convert_pointer_type(const jive::base::type & type, context & ctx)
 {
 	JLM_DEBUG_ASSERT(is_ptrtype(type));
 	auto & t = *static_cast<const jlm::ptrtype*>(&type);
@@ -54,7 +58,7 @@ convert_pointer_type(const jive::base::type & type, llvm::LLVMContext & ctx)
 }
 
 static inline llvm::Type *
-convert_array_type(const jive::base::type & type, llvm::LLVMContext & ctx)
+convert_array_type(const jive::base::type & type, context & ctx)
 {
 	JLM_DEBUG_ASSERT(is_arraytype(type));
 	auto & t = *static_cast<const jlm::arraytype*>(&type);
@@ -63,17 +67,17 @@ convert_array_type(const jive::base::type & type, llvm::LLVMContext & ctx)
 }
 
 static inline llvm::Type *
-convert_ctl_type(const jive::base::type & type, llvm::LLVMContext & ctx)
+convert_ctl_type(const jive::base::type & type, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const jive::ctl::type*>(&type));
 	auto & t = *static_cast<const jive::ctl::type*>(&type);
 	JLM_DEBUG_ASSERT(t.nalternatives() == 2);
 
-	return llvm::Type::getInt1Ty(ctx);
+	return llvm::Type::getInt1Ty(ctx.llvm_module().getContext());
 }
 
 static inline llvm::Type *
-convert_fp_type(const jive::base::type & type, llvm::LLVMContext & ctx)
+convert_fp_type(const jive::base::type & type, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const jlm::fptype*>(&type));
 	auto & t = *static_cast<const jlm::fptype*>(&type);
@@ -85,11 +89,11 @@ convert_fp_type(const jive::base::type & type, llvm::LLVMContext & ctx)
 	});
 
 	JLM_DEBUG_ASSERT(map.find(t.size()) != map.end());
-	return map[t.size()](ctx);
+	return map[t.size()](ctx.llvm_module().getContext());
 }
 
 static inline llvm::Type *
-convert_rcd_type(const jive::base::type & type, llvm::LLVMContext & ctx)
+convert_rcd_type(const jive::base::type & type, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const jive::rcd::type*>(&type));
 	auto & t = *static_cast<const jive::rcd::type*>(&type);
@@ -98,15 +102,15 @@ convert_rcd_type(const jive::base::type & type, llvm::LLVMContext & ctx)
 	for (size_t n = 0; n < t.declaration()->nelements(); n++)
 		elements.push_back(convert_type(t.declaration()->element(n), ctx));
 
-	return  llvm::StructType::get(ctx, elements);
+	return  llvm::StructType::get(ctx.llvm_module().getContext(), elements);
 }
 
 llvm::Type *
-convert_type(const jive::base::type & type, llvm::LLVMContext & ctx)
+convert_type(const jive::base::type & type, context & ctx)
 {
 	static std::unordered_map<
 		std::type_index
-	, std::function<llvm::Type*(const jive::base::type&, llvm::LLVMContext&)>
+	, std::function<llvm::Type*(const jive::base::type&, context&)>
 	> map({
 	  {std::type_index(typeid(jive::bits::type)), convert_integer_type}
 	, {std::type_index(typeid(jive::fct::type)), convert_function_type}

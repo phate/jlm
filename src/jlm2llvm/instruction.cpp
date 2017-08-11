@@ -137,7 +137,7 @@ convert_fpconstant(
 	JLM_DEBUG_ASSERT(is_fpconstant_op(op));
 	auto & cop = *static_cast<const jlm::fpconstant_op*>(&op);
 
-	auto type = convert_type(cop.result_type(0), builder.getContext());
+	auto type = convert_type(cop.result_type(0), ctx);
 	return llvm::ConstantFP::get(type, cop.constant());
 }
 
@@ -149,7 +149,7 @@ convert_undef(
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(is_undef_constant_op(op));
-	return llvm::UndefValue::get(convert_type(op.result_type(0), builder.getContext()));
+	return llvm::UndefValue::get(convert_type(op.result_type(0), ctx));
 }
 
 static inline llvm::Value *
@@ -216,7 +216,7 @@ convert_phi(
 	if (dynamic_cast<const jive::mem::type*>(&pop.type()))
 		return nullptr;
 
-	auto t = convert_type(pop.type(), builder.getContext());
+	auto t = convert_type(pop.type(), ctx);
 	return builder.CreatePHI(t, op.narguments());
 }
 
@@ -253,7 +253,7 @@ convert_alloca(
 	JLM_DEBUG_ASSERT(is_alloca_op(op) && args.size() == 2);
 	auto & aop = *static_cast<const jlm::alloca_op*>(&op);
 
-	auto t = convert_type(aop.value_type(), builder.getContext());
+	auto t = convert_type(aop.value_type(), ctx);
 	return builder.CreateAlloca(t, ctx.value(args[0]));
 }
 
@@ -268,7 +268,7 @@ convert_ptroffset(
 	auto & pop = *static_cast<const ptroffset_op*>(&op);
 
 	std::vector<llvm::Value*> indices;
-	auto t = convert_type(pop.pointee_type(), builder.getContext());
+	auto t = convert_type(pop.pointee_type(), ctx);
 	for (size_t n = 1; n < args.size(); n++)
 		indices.push_back(ctx.value(args[n]));
 
@@ -331,7 +331,7 @@ convert_zext(
 {
 	JLM_DEBUG_ASSERT(is_zext_op(op));
 
-	auto type = convert_type(op.result_type(0), builder.getContext());
+	auto type = convert_type(op.result_type(0), ctx);
 	return builder.CreateZExt(ctx.value(args[0]), type);
 }
 
@@ -392,7 +392,7 @@ convert_fpext(
 {
 	JLM_DEBUG_ASSERT(is_fpext_op(op));
 
-	auto type = convert_type(op.result_type(0), builder.getContext());
+	auto type = convert_type(op.result_type(0), ctx);
 	return builder.CreateFPExt(ctx.value(args[0]), type);
 }
 
@@ -416,7 +416,7 @@ convert_bitcast(
 {
 	JLM_DEBUG_ASSERT(is_bitcast_op(op));
 
-	auto type = convert_type(op.result_type(0), builder.getContext());
+	auto type = convert_type(op.result_type(0), ctx);
 	return builder.CreateBitCast(ctx.value(args[0]), type);
 }
 
@@ -434,7 +434,7 @@ convert_struct_constant(
 	for (const auto & arg : args)
 		operands.push_back(llvm::cast<llvm::Constant>(ctx.value(arg)));
 
-	auto t = convert_type(cop.type(), builder.getContext());
+	auto t = convert_type(cop.type(), ctx);
 	return llvm::ConstantStruct::get(t, operands);
 }
 
@@ -447,7 +447,7 @@ convert_trunc(
 {
 	JLM_DEBUG_ASSERT(is_trunc_op(op));
 
-	auto type = convert_type(op.result_type(0), builder.getContext());
+	auto type = convert_type(op.result_type(0), ctx);
 	return builder.CreateTrunc(ctx.value(args[0]), type);
 }
 
@@ -460,7 +460,7 @@ convert_sext(
 {
 	JLM_DEBUG_ASSERT(is_sext_op(op));
 
-	auto type = convert_type(op.result_type(0), builder.getContext());
+	auto type = convert_type(op.result_type(0), ctx);
 	return builder.CreateSExt(ctx.value(args[0]), type);
 }
 

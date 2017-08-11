@@ -26,11 +26,13 @@ class FunctionType;
 namespace jlm {
 namespace jlm2llvm {
 
+class context;
+
 llvm::Type *
-convert_type(const jive::base::type & type, llvm::LLVMContext & ctx);
+convert_type(const jive::base::type & type, context & ctx);
 
 static inline llvm::IntegerType *
-convert_type(const jive::bits::type & type, llvm::LLVMContext & ctx)
+convert_type(const jive::bits::type & type, context & ctx)
 {
 	auto t = convert_type(*static_cast<const jive::base::type*>(&type), ctx);
 	JLM_DEBUG_ASSERT(t->getTypeID() == llvm::Type::IntegerTyID);
@@ -38,7 +40,7 @@ convert_type(const jive::bits::type & type, llvm::LLVMContext & ctx)
 }
 
 static inline llvm::FunctionType *
-convert_type(const jive::fct::type & type, llvm::LLVMContext & ctx)
+convert_type(const jive::fct::type & type, context & ctx)
 {
 	auto t = convert_type(*static_cast<const jive::base::type*>(&type), ctx);
 	JLM_DEBUG_ASSERT(t->getTypeID() == llvm::Type::FunctionTyID);
@@ -46,7 +48,7 @@ convert_type(const jive::fct::type & type, llvm::LLVMContext & ctx)
 }
 
 static inline llvm::PointerType *
-convert_type(const jlm::ptrtype & type, llvm::LLVMContext & ctx)
+convert_type(const jlm::ptrtype & type, context & ctx)
 {
 	auto t = convert_type(*static_cast<const jive::base::type*>(&type), ctx);
 	JLM_DEBUG_ASSERT(t->getTypeID() == llvm::Type::PointerTyID);
@@ -54,7 +56,7 @@ convert_type(const jlm::ptrtype & type, llvm::LLVMContext & ctx)
 }
 
 static inline llvm::ArrayType *
-convert_type(const jlm::arraytype & type, llvm::LLVMContext & ctx)
+convert_type(const jlm::arraytype & type, context & ctx)
 {
 	auto t = convert_type(*static_cast<const jive::base::type*>(&type), ctx);
 	JLM_DEBUG_ASSERT(t->getTypeID() == llvm::Type::ArrayTyID);
@@ -62,7 +64,7 @@ convert_type(const jlm::arraytype & type, llvm::LLVMContext & ctx)
 }
 
 static inline llvm::IntegerType *
-convert_type(const jive::ctl::type & type, llvm::LLVMContext & ctx)
+convert_type(const jive::ctl::type & type, context & ctx)
 {
 	auto t = convert_type(*static_cast<const jive::base::type*>(&type), ctx);
 	JLM_DEBUG_ASSERT(t->getTypeID() == llvm::Type::IntegerTyID);
@@ -70,7 +72,7 @@ convert_type(const jive::ctl::type & type, llvm::LLVMContext & ctx)
 }
 
 static inline llvm::Type *
-convert_type(const jlm::fptype & type, llvm::LLVMContext & ctx)
+convert_type(const jlm::fptype & type, context & ctx)
 {
 	auto t = convert_type(*static_cast<const jive::base::type*>(&type), ctx);
 	JLM_DEBUG_ASSERT(t->isHalfTy() || t->isFloatTy() || t->isDoubleTy());
@@ -78,7 +80,7 @@ convert_type(const jlm::fptype & type, llvm::LLVMContext & ctx)
 }
 
 static inline llvm::StructType *
-convert_type(const jive::rcd::type & type, llvm::LLVMContext & ctx)
+convert_type(const jive::rcd::type & type, context & ctx)
 {
 	auto t = convert_type(*static_cast<const jive::base::type*>(&type), ctx);
 	JLM_DEBUG_ASSERT(t->isStructTy());

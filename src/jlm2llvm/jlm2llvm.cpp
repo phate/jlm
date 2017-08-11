@@ -86,7 +86,6 @@ create_terminator_instruction(const jlm::cfg_node * node, context & ctx)
 {
 	JLM_DEBUG_ASSERT(is_basic_block(node->attribute()));
 	auto & bb = *static_cast<const jlm::basic_block*>(&node->attribute());
-	auto & lctx = ctx.llvm_module().getContext();
 	auto & cfg = *node->cfg();
 
 	llvm::IRBuilder<> builder(ctx.basic_block(node));
@@ -138,7 +137,7 @@ create_terminator_instruction(const jlm::cfg_node * node, context & ctx)
 	auto sw = builder.CreateSwitch(condition, defbb);
 	for (const auto & alt : *mop) {
 		auto & type = *static_cast<const jive::bits::type*>(&mop->argument_type(0));
-		auto value = llvm::ConstantInt::get(convert_type(type, lctx), alt.first);
+		auto value = llvm::ConstantInt::get(convert_type(type, ctx), alt.first);
 		sw->addCase(value, ctx.basic_block(node->outedge(alt.second)->sink()));
 	}
 }
@@ -225,7 +224,7 @@ convert_callgraph(const jlm::clg & clg, context & ctx)
 
 	/* forward declare all functions */
 	for (const auto & node : jm.clg().nodes()) {
-		auto ftype = convert_type(node->type(), lm.getContext());
+		auto ftype = convert_type(node->type(), ctx);
 		auto f = llvm::Function::Create(ftype, function_linkage(*node, jm), node->name(), &lm);
 		ctx.insert(jm.variable(node), f);
 	}
@@ -249,7 +248,7 @@ convert_globals(context & ctx)
 
 		JLM_DEBUG_ASSERT(is_ptrtype(variable->type()));
 		auto pt = static_cast<const jlm::ptrtype*>(&variable->type());
-		auto type = convert_type(pt->pointee_type(), lm.getContext());
+		auto type = convert_type(pt->pointee_type(), ctx);
 		auto linkage = GlobalValue::InternalLinkage;
 		if (variable->exported()) linkage = GlobalValue::ExternalLinkage;
 
