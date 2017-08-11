@@ -6,6 +6,10 @@
 #ifndef JLM_JLM2LLVM_CONTEXT_HPP
 #define JLM_JLM2LLVM_CONTEXT_HPP
 
+#include <jlm/common.hpp>
+
+#include <unordered_map>
+
 namespace llvm {
 
 class BasicBlock;
@@ -18,6 +22,7 @@ namespace jlm {
 
 class cfg_node;
 class module;
+class variable;
 
 namespace jlm2llvm {
 
