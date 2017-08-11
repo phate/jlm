@@ -173,15 +173,10 @@ public:
 		if (it != declarations_.end())
 			return it->second;
 
-		std::vector<const jive::value::type*> types_;
-		std::vector<std::unique_ptr<jive::base::type>> types;
-		for (size_t n = 0; n < type->getNumElements(); n++) {
-			types.emplace_back(convert_type(type->getElementType(n), *this));
-			types_.push_back(dynamic_cast<const jive::value::type*>((types.back().get())));
-		}
-
-		std::shared_ptr<const jive::rcd::declaration> declaration(new jive::rcd::declaration(types_));
+		std::shared_ptr<jive::rcd::declaration> declaration(new jive::rcd::declaration());
 		declarations_[type] = declaration;
+		for (size_t n = 0; n < type->getNumElements(); n++)
+			declaration->append(*convert_type(type->getElementType(n), *this));
 
 		return declarations_[type];
 	}
