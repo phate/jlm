@@ -8,12 +8,19 @@
 
 #include <jlm/common.hpp>
 
+#include <memory>
 #include <unordered_map>
+
+namespace jive {
+namespace rcd {
+	class declaration;
+}}
 
 namespace llvm {
 
 class BasicBlock;
 class Module;
+class StructType;
 class Value;
 
 }
@@ -102,11 +109,31 @@ public:
 		return it->second;
 	}
 
+	inline llvm::StructType *
+	structtype(const std::shared_ptr<const jive::rcd::declaration> & declaration)
+	{
+		auto it = structtypes_.find(declaration);
+		return it != structtypes_.end() ? it->second : nullptr;
+	}
+
+	inline void
+	add_structtype(
+		const std::shared_ptr<const jive::rcd::declaration> & declaration,
+		llvm::StructType * type)
+	{
+		JLM_DEBUG_ASSERT(structtypes_.find(declaration) == structtypes_.end());
+		structtypes_[declaration] = type;
+	}
+
 private:
 	llvm::Module & lm_;
 	jlm::module & jm_;
 	std::unordered_map<const jlm::variable*, llvm::Value*> variables_;
 	std::unordered_map<const jlm::cfg_node*, llvm::BasicBlock*> nodes_;
+	std::unordered_map<
+		std::shared_ptr<const jive::rcd::declaration>,
+		llvm::StructType*
+	> structtypes_;
 };
 
 }}

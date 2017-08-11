@@ -5,6 +5,11 @@ struct point {
 	unsigned int y;
 };
 
+struct list {
+	struct list * first;
+	struct list * last;
+};
+
 struct point
 add_points(struct point * p1, struct point * p2)
 {
@@ -12,6 +17,12 @@ add_points(struct point * p1, struct point * p2)
 	p.x = p1->x + p2->x;
 	p.y = p1->y + p2->y;
 	return p;
+}
+
+struct list *
+foo(const struct list * l)
+{
+	return l->first;
 }
 
 int

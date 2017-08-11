@@ -98,11 +98,18 @@ convert_rcd_type(const jive::base::type & type, context & ctx)
 	JLM_DEBUG_ASSERT(dynamic_cast<const jive::rcd::type*>(&type));
 	auto & t = *static_cast<const jive::rcd::type*>(&type);
 
+	auto st = ctx.structtype(t.declaration());
+	if (st) return st;
+
+	st = llvm::StructType::create(ctx.llvm_module().getContext());
+	ctx.add_structtype(t.declaration(), st);
+
 	std::vector<llvm::Type*> elements;
 	for (size_t n = 0; n < t.declaration()->nelements(); n++)
 		elements.push_back(convert_type(t.declaration()->element(n), ctx));
+	st->setBody(elements);
 
-	return  llvm::StructType::get(ctx.llvm_module().getContext(), elements);
+	return st;
 }
 
 llvm::Type *
