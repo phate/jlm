@@ -9,6 +9,7 @@
 #include <jive/vsdg/graph.h>
 
 #include <jlm/ir/module.hpp>
+#include <jlm/ir/rvsdg.hpp>
 #include <jlm/jlm2rvsdg/module.hpp>
 #include <jlm/llvm2jlm/module.hpp>
 
@@ -63,7 +64,7 @@ verify()
 	auto m = convert_module(module);
 	auto rvsdg = construct_rvsdg(*m);
 
-	jive::view(rvsdg->root(), stdout);
+	jive::view(rvsdg->graph()->root(), stdout);
 
 	return 0;
 }

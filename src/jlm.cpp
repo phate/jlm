@@ -4,6 +4,7 @@
  */
 
 #include <jlm/ir/module.hpp>
+#include <jlm/ir/rvsdg.hpp>
 #include <jlm/ir/view.hpp>
 #include <jlm/llvm2jlm/module.hpp>
 #include <jlm/jlm2llvm/jlm2llvm.hpp>
@@ -143,8 +144,8 @@ main (int argc, char ** argv)
 	if (flags.l2jdot) jlm::view_dot(*find_cfg(jm->clg(), flags.l2jdot_function), stdout);
 
 	auto rvsdg = jlm::construct_rvsdg(*jm);
-	if (flags.j2r) jive::view(rvsdg->root(), stdout);
-	if (flags.j2rx) jive::view_xml(rvsdg->root(), stdout);
+	if (flags.j2r) jive::view(rvsdg->graph()->root(), stdout);
+	if (flags.j2rx) jive::view_xml(rvsdg->graph()->root(), stdout);
 
 	jm = jlm::rvsdg2jlm::rvsdg2jlm(*rvsdg);
 	if (flags.r2j) jlm::view(*jm, stdout);

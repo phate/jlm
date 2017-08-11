@@ -8,8 +8,9 @@
 #include <jive/view.h>
 #include <jive/vsdg/graph.h>
 
-#include <jlm/jlm2rvsdg/module.hpp>
 #include <jlm/ir/module.hpp>
+#include <jlm/ir/rvsdg.hpp>
+#include <jlm/jlm2rvsdg/module.hpp>
 #include <jlm/llvm2jlm/module.hpp>
 
 #include <llvm/IR/BasicBlock.h>
@@ -41,7 +42,7 @@ test_binop(const create_binop_t & create_binop)
 
 	auto m = jlm::convert_module(*module);
 	auto rvsdg = jlm::construct_rvsdg(*m);
-	jive::view(rvsdg->root(), stdout);
+	jive::view(rvsdg->graph()->root(), stdout);
 }
 
 static inline void

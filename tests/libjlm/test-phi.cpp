@@ -9,6 +9,7 @@
 #include <jive/vsdg/graph.h>
 
 #include <jlm/ir/module.hpp>
+#include <jlm/ir/rvsdg.hpp>
 #include <jlm/ir/view.hpp>
 #include <jlm/jlm2llvm/jlm2llvm.hpp>
 #include <jlm/jlm2rvsdg/module.hpp>
@@ -73,7 +74,7 @@ verify()
 	jlm::view(*jm, stdout);
 
 	auto rvsdg = jlm::construct_rvsdg(*jm);
-	jive::view(rvsdg->root(), stdout);
+	jive::view(rvsdg->graph()->root(), stdout);
 
 	jm = jlm::rvsdg2jlm::rvsdg2jlm(*rvsdg);
 	jlm::view(*jm, stdout);

@@ -13,8 +13,9 @@
 #include <jive/view.h>
 #include <jive/vsdg/graph.h>
 
-#include <jlm/jlm2rvsdg/module.hpp>
 #include <jlm/ir/module.hpp>
+#include <jlm/ir/rvsdg.hpp>
+#include <jlm/jlm2rvsdg/module.hpp>
 #include <jlm/llvm2jlm/module.hpp>
 
 #include <llvm/IR/BasicBlock.h>
@@ -65,9 +66,9 @@ test_icmp(const llvm::CmpInst::Predicate & p, uint64_t lhs, uint64_t rhs, uint64
 
 	auto m = jlm::convert_module(*module);
 	auto rvsdg = jlm::construct_rvsdg(*m);
-	jive::view(rvsdg->root(), stdout);
+	jive::view(rvsdg->graph()->root(), stdout);
 
-	verify_icmp(rvsdg.get(), lhs, rhs, r);
+	verify_icmp(rvsdg->graph(), lhs, rhs, r);
 }
 
 static int

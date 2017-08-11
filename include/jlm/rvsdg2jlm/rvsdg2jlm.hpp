@@ -17,11 +17,12 @@ class graph;
 namespace jlm {
 
 class module;
+class rvsdg;
 
 namespace rvsdg2jlm {
 
 std::unique_ptr<jlm::module>
-rvsdg2jlm(const jive::graph & graph);
+rvsdg2jlm(const jlm::rvsdg & rvsdg);
 
 }}
 

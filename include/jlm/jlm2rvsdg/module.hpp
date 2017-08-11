@@ -15,8 +15,9 @@ namespace jive {
 namespace jlm {
 
 class module;
+class rvsdg;
 
-std::unique_ptr<jive::graph>
+std::unique_ptr<jlm::rvsdg>
 construct_rvsdg(const module & m);
 
 }

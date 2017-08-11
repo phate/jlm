@@ -16,6 +16,7 @@
 #include <jlm/ir/data.hpp>
 #include <jlm/ir/module.hpp>
 #include <jlm/ir/operators.hpp>
+#include <jlm/ir/rvsdg.hpp>
 #include <jlm/ir/tac.hpp>
 #include <jlm/rvsdg2jlm/context.hpp>
 #include <jlm/rvsdg2jlm/rvsdg2jlm.hpp>
@@ -368,14 +369,15 @@ convert_node(const jive::node & node, context & ctx)
 }
 
 std::unique_ptr<jlm::module>
-rvsdg2jlm(const jive::graph & graph)
+rvsdg2jlm(const jlm::rvsdg & rvsdg)
 {
 	std::unique_ptr<jlm::module> module(new jlm::module());
+	auto graph = rvsdg.graph();
 	auto & clg = module->clg();
 
 	context ctx(*module);
-	for (size_t n = 0; n < graph.root()->narguments(); n++) {
-		auto argument = graph.root()->argument(n);
+	for (size_t n = 0; n < graph->root()->narguments(); n++) {
+		auto argument = graph->root()->argument(n);
 		if (auto ftype = dynamic_cast<const jive::fct::type*>(&argument->type())) {
 			auto f = clg_node::create(clg, argument->gate()->name(), *ftype, false);
 			auto v = module->create_variable(f);
@@ -385,7 +387,7 @@ rvsdg2jlm(const jive::graph & graph)
 		}
 	}
 
-	for (const auto & node : jive::topdown_traverser(graph.root()))
+	for (const auto & node : jive::topdown_traverser(graph->root()))
 		convert_node(*node, ctx);
 
 	return module;

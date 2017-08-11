@@ -10,8 +10,9 @@
 #include <jive/view.h>
 #include <jive/vsdg/graph.h>
 
-#include <jlm/jlm2rvsdg/module.hpp>
 #include <jlm/ir/module.hpp>
+#include <jlm/ir/rvsdg.hpp>
+#include <jlm/jlm2rvsdg/module.hpp>
 #include <jlm/llvm2jlm/module.hpp>
 
 #include <llvm/IR/BasicBlock.h>
@@ -47,7 +48,7 @@ verify()
 	auto m = convert_module(module);
 	auto rvsdg = construct_rvsdg(*m);
 
-	jive::view(rvsdg->root(), stdout);
+	jive::view(rvsdg->graph()->root(), stdout);
 
 	using namespace jive::evaluator;
 
@@ -55,14 +56,14 @@ verify()
 	bitliteral xl(jive::bits::value_repr(32, 13));
 	bitliteral yl(jive::bits::value_repr(32, 14));
 
-	auto result = eval(rvsdg.get(), "max", {&xl, &yl, &state})->copy();
+	auto result = eval(rvsdg->graph(), "max", {&xl, &yl, &state})->copy();
 
 	const fctliteral * fctlit = dynamic_cast<const fctliteral*>(result.get());
 	assert(fctlit->nresults() == 2);
 	assert(dynamic_cast<const bitliteral*>(&fctlit->result(0))->value_repr() == 14);
 
 	/* exchange arguments */
-	result = eval(rvsdg.get(), "max", {&yl, &xl, &state})->copy();
+	result = eval(rvsdg->graph(), "max", {&yl, &xl, &state})->copy();
 
 	fctlit = dynamic_cast<const fctliteral*>(result.get());
 	assert(fctlit->nresults() == 2);

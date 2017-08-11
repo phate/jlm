@@ -14,6 +14,7 @@
 #include <jive/vsdg/graph.h>
 
 #include <jlm/ir/module.hpp>
+#include <jlm/ir/rvsdg.hpp>
 #include <jlm/jlm2llvm/jlm2llvm.hpp>
 #include <jlm/jlm2rvsdg/module.hpp>
 #include <jlm/llvm2jlm/module.hpp>
@@ -66,9 +67,9 @@ test_binop(const create_binop_t & create_binop, uint64_t lhs, uint64_t rhs, uint
 
 	auto m = jlm::convert_module(*module);
 	auto rvsdg = jlm::construct_rvsdg(*m);
-	jive::view(rvsdg->root(), stdout);
+	jive::view(rvsdg->graph()->root(), stdout);
 
-	verify_binop(rvsdg.get(), lhs, rhs, r);
+	verify_binop(rvsdg->graph(), lhs, rhs, r);
 
 	m = jlm::rvsdg2jlm::rvsdg2jlm(*rvsdg);
 	module = jlm::jlm2llvm::convert(*m, ctx);

@@ -15,6 +15,7 @@
 #include <jlm/ir/data.hpp>
 #include <jlm/ir/module.hpp>
 #include <jlm/ir/operators.hpp>
+#include <jlm/ir/rvsdg.hpp>
 #include <jlm/ir/ssa.hpp>
 #include <jlm/ir/tac.hpp>
 
@@ -29,7 +30,6 @@
 #include <jive/vsdg/basetype.h>
 #include <jive/vsdg/control.h>
 #include <jive/vsdg/gamma.h>
-#include <jive/vsdg/graph.h>
 #include <jive/vsdg/operators/binary-normal-form.h>
 #include <jive/vsdg/operators/match.h>
 #include <jive/vsdg/phi.h>
@@ -555,23 +555,24 @@ convert_globals(jive::graph * rvsdg, scoped_vmap & svmap)
 	}
 }
 
-std::unique_ptr<jive::graph>
+std::unique_ptr<jlm::rvsdg>
 construct_rvsdg(const module & m)
 {
-	auto rvsdg = std::make_unique<jive::graph>();
+	auto rvsdg = std::make_unique<jlm::rvsdg>();
+	auto graph = rvsdg->graph();
 
 	/* FIXME: we currently cannot handle flattened_binary_op in jlm2llvm pass */
 	auto nf = static_cast<jive::binary_normal_form*>(
-		rvsdg->node_normal_form(typeid(jive::base::binary_op)));
+		graph->node_normal_form(typeid(jive::base::binary_op)));
 	nf->set_flatten(false);
 
-	scoped_vmap svmap(m, rvsdg->root());
-	convert_globals(rvsdg.get(), svmap);
+	scoped_vmap svmap(m, graph->root());
+	convert_globals(graph, svmap);
 
 	/* convert functions */
 	auto sccs = m.clg().find_sccs();
 	for (const auto & scc : sccs)
-		handle_scc(scc, rvsdg.get(), svmap);
+		handle_scc(scc, graph, svmap);
 
 	return std::move(rvsdg);
 }
