@@ -558,7 +558,7 @@ convert_globals(jive::graph * rvsdg, scoped_vmap & svmap)
 std::unique_ptr<jlm::rvsdg>
 construct_rvsdg(const module & m)
 {
-	auto rvsdg = std::make_unique<jlm::rvsdg>();
+	auto rvsdg = std::make_unique<jlm::rvsdg>(m.target_triple());
 	auto graph = rvsdg->graph();
 
 	/* FIXME: we currently cannot handle flattened_binary_op in jlm2llvm pass */

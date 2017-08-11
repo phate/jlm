@@ -23,7 +23,8 @@ public:
 	{}
 
 	inline
-	module() noexcept
+	module(const std::string & target_triple) noexcept
+	: target_triple_(target_triple)
 	{}
 
 	inline jlm::clg &
@@ -108,8 +109,15 @@ public:
 		return it != functions_.end() ? it->second : nullptr;
 	}
 
+	inline const std::string &
+	target_triple() const noexcept
+	{
+		return target_triple_;
+	}
+
 private:
 	jlm::clg clg_;
+	std::string target_triple_;
 	std::unordered_set<std::unique_ptr<jlm::variable>> variables_;
 	std::unordered_map<const clg_node*, const jlm::variable*> functions_;
 	std::unordered_map<const jlm::variable*, std::unique_ptr<const jlm::expr>> globals_;

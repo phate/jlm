@@ -13,7 +13,8 @@ namespace jlm {
 class rvsdg final {
 public:
 	inline
-	rvsdg()
+	rvsdg(const std::string & target_triple)
+	: target_triple_(target_triple)
 	{}
 
 	rvsdg(const rvsdg &) = delete;
@@ -38,8 +39,15 @@ public:
 		return &graph_;
 	}
 
+	inline const std::string &
+	target_triple() const noexcept
+	{
+		return target_triple_;
+	}
+
 private:
 	jive::graph graph_;
+	std::string target_triple_;
 };
 
 }

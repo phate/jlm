@@ -46,7 +46,7 @@ has_node_and_variables(
 static inline void
 test_linear_graph()
 {
-	jlm::module module;
+	jlm::module module("");
 
 	jlm::cfg cfg(module);
 	jlm::valuetype vtype;
@@ -100,7 +100,7 @@ test_linear_graph()
 static void
 test_branch_graph()
 {
-	jlm::module module;
+	jlm::module module("");
 
 	jlm::cfg cfg(module);
 	jlm::valuetype vtype;
@@ -174,7 +174,7 @@ test_branch_graph()
 static void
 test_loop_graph()
 {
-	jlm::module module;
+	jlm::module module("");
 
 	jlm::cfg cfg(module);
 	jlm::valuetype vtype;

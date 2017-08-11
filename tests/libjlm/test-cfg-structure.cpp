@@ -18,7 +18,7 @@ static void
 test_straightening()
 {
 	jlm::valuetype vt;
-	jlm::module module;
+	jlm::module module("");
 	auto v = module.create_variable(vt, "v", false);
 
 	jlm::cfg cfg(module);

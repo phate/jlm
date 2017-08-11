@@ -172,7 +172,7 @@ convert_global_variables(llvm::Module::GlobalListType & vs, context & ctx)
 std::unique_ptr<module>
 convert_module(llvm::Module & module)
 {
-	std::unique_ptr<jlm::module> m(new jlm::module());
+	std::unique_ptr<jlm::module> m(new jlm::module(module.getTargetTriple()));
 
 	context ctx(*m);
 	convert_global_variables(module.getGlobalList(), ctx);

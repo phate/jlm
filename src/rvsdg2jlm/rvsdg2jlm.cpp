@@ -371,7 +371,7 @@ convert_node(const jive::node & node, context & ctx)
 std::unique_ptr<jlm::module>
 rvsdg2jlm(const jlm::rvsdg & rvsdg)
 {
-	std::unique_ptr<jlm::module> module(new jlm::module());
+	std::unique_ptr<jlm::module> module(new jlm::module(rvsdg.target_triple()));
 	auto graph = rvsdg.graph();
 	auto & clg = module->clg();
 
