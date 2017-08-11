@@ -525,17 +525,11 @@ convert_uitofp_instruction(llvm::Instruction * i, tacsvector_t & tacs, context &
 static inline const variable *
 convert_sitofp_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::SIToFPInst*>(i));
+	JLM_DEBUG_ASSERT(i->getOpcode() == llvm::Instruction::SIToFP);
+	JLM_DEBUG_ASSERT(!i->getOperand(0)->getType()->isVectorTy());
 
-	llvm::Value * operand = i->getOperand(0);
-	llvm::Type * type = operand->getType();
-
-	/* FIXME: support vector type */
-	if (type->isVectorTy())
-		JLM_DEBUG_ASSERT(0);
-
-	bits2flt_op op(type->getIntegerBitWidth());
-	tacs.push_back(create_tac(op, {convert_value(operand, tacs, ctx)}, {ctx.lookup_value(i)}));
+	auto operand = convert_value(i->getOperand(0), tacs, ctx);
+	tacs.push_back(create_sitofp_tac(operand, ctx.lookup_value(i)));
 	return tacs.back()->output(0);
 }
 
