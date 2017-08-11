@@ -1362,4 +1362,54 @@ sext_op::copy() const
 	return std::unique_ptr<jive::operation>(new sext_op(*this));
 }
 
+/* sitofp operator */
+
+sitofp_op::~sitofp_op()
+{}
+
+bool
+sitofp_op::operator==(const operation & other) const noexcept
+{
+	auto op = dynamic_cast<const sitofp_op*>(&other);
+	return op && op->srctype_ == srctype_ && op->dsttype_ == dsttype_;
+}
+
+size_t
+sitofp_op::narguments() const noexcept
+{
+	return 1;
+}
+
+const jive::base::type &
+sitofp_op::argument_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < narguments());
+	return srctype_;
+}
+
+size_t
+sitofp_op::nresults() const noexcept
+{
+	return 1;
+}
+
+const jive::base::type &
+sitofp_op::result_type(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < nresults());
+	return dsttype_;
+}
+
+std::string
+sitofp_op::debug_string() const
+{
+	return "SITOFP";
+}
+
+std::unique_ptr<jive::operation>
+sitofp_op::copy() const
+{
+	return std::make_unique<sitofp_op>(*this);
+}
+
 }
