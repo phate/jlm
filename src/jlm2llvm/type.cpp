@@ -93,15 +93,16 @@ convert_fp_type(const jive::base::type & type, context & ctx)
 }
 
 static inline llvm::Type *
-convert_rcd_type(const jive::base::type & type, context & ctx)
+convert_struct_type(const jive::base::type & type, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::rcd::type*>(&type));
-	auto & t = *static_cast<const jive::rcd::type*>(&type);
+	JLM_DEBUG_ASSERT(dynamic_cast<const structtype*>(&type));
+	auto & t = *static_cast<const structtype*>(&type);
 
 	auto st = ctx.structtype(t.declaration());
 	if (st) return st;
 
-	st = llvm::StructType::create(ctx.llvm_module().getContext());
+	st = llvm::StructType::create(ctx.llvm_module().getContext(), {}, "", t.packed());
+	if (t.has_name()) st->setName(t.name());
 	ctx.add_structtype(t.declaration(), st);
 
 	std::vector<llvm::Type*> elements;
@@ -125,7 +126,7 @@ convert_type(const jive::base::type & type, context & ctx)
 	, {std::type_index(typeid(jlm::arraytype)), convert_array_type}
 	, {std::type_index(typeid(jive::ctl::type)), convert_ctl_type}
 	, {std::type_index(typeid(jlm::fptype)), convert_fp_type}
-	, {std::type_index(typeid(jive::rcd::type)), convert_rcd_type}
+	, {std::type_index(typeid(structtype)), convert_struct_type}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(type))) != map.end());

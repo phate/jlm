@@ -80,7 +80,7 @@ convert_type(const jlm::fptype & type, context & ctx)
 }
 
 static inline llvm::StructType *
-convert_type(const jive::rcd::type & type, context & ctx)
+convert_type(const structtype & type, context & ctx)
 {
 	auto t = convert_type(*static_cast<const jive::base::type*>(&type), ctx);
 	JLM_DEBUG_ASSERT(t->isStructTy());

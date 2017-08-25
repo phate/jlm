@@ -1593,7 +1593,7 @@ public:
 	~struct_constant_op();
 
 	inline
-	struct_constant_op(const jive::rcd::type & type)
+	struct_constant_op(const structtype & type)
 	: jive::simple_op()
 	, result_(type)
 	{
@@ -1622,10 +1622,10 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
-	inline const jive::rcd::type &
+	inline const structtype &
 	type() const noexcept
 	{
-		return *static_cast<const jive::rcd::type*>(&result_.type());
+		return *static_cast<const structtype*>(&result_.type());
 	}
 
 private:
@@ -1644,8 +1644,8 @@ create_struct_constant_tac(
 	const std::vector<const variable*> & elements,
 	jlm::variable * result)
 {
-	auto rt = dynamic_cast<const jive::rcd::type*>(&result->type());
-	if (!rt) throw std::logic_error("Expected record type.");
+	auto rt = dynamic_cast<const structtype*>(&result->type());
+	if (!rt) throw std::logic_error("Expected struct type.");
 
 	struct_constant_op op(*rt);
 	return create_tac(op, elements, {result});
