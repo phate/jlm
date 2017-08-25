@@ -6,7 +6,10 @@
 #ifndef JLM_IR_TYPES_HPP
 #define JLM_IR_TYPES_HPP
 
+#include <jive/types/record/rcdtype.h>
 #include <jive/vsdg/basetype.h>
+
+#include <vector>
 
 namespace jlm {
 
@@ -220,6 +223,82 @@ create_varargtype()
 {
 	return std::unique_ptr<jive::base::type>(new varargtype());
 }
+
+/* struct type */
+
+class structtype final : public jive::value::type {
+public:
+	virtual
+	~structtype();
+
+	inline
+	structtype(
+		bool packed,
+		const std::shared_ptr<const jive::rcd::declaration> & declaration)
+	: jive::value::type()
+	, packed_(packed)
+	, declaration_(declaration)
+	{}
+
+	inline
+	structtype(
+		const std::string & name,
+		bool packed,
+		const std::shared_ptr<const jive::rcd::declaration> & declaration)
+	: jive::value::type()
+	, packed_(packed)
+	, name_(name)
+	, declaration_(declaration)
+	{}
+
+	structtype(const structtype &) = default;
+
+	structtype(structtype &&) = delete;
+
+	structtype &
+	operator=(const structtype &) = delete;
+
+	structtype &
+	operator=(structtype &&) = delete;
+
+	inline bool
+	has_name() const noexcept
+	{
+		return !name_.empty();
+	}
+
+	inline const std::string &
+	name() const noexcept
+	{
+		return name_;
+	}
+
+	inline bool
+	packed() const noexcept
+	{
+		return packed_;
+	}
+
+	inline const std::shared_ptr<const jive::rcd::declaration>
+	declaration() const noexcept
+	{
+		return declaration_;
+	}
+
+	virtual bool
+	operator==(const jive::base::type & other) const noexcept override;
+
+	virtual std::unique_ptr<jive::base::type>
+	copy() const override;
+
+	virtual std::string
+	debug_string() const override;
+
+private:
+	bool packed_;
+	std::string name_;
+	std::shared_ptr<const jive::rcd::declaration> declaration_;
+};
 
 }
 
