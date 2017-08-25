@@ -28,10 +28,9 @@
 #include <jive/types/float.h>
 #include <jive/types/function.h>
 #include <jive/vsdg/basetype.h>
+#include <jive/vsdg/binary-normal-form.h>
 #include <jive/vsdg/control.h>
 #include <jive/vsdg/gamma.h>
-#include <jive/vsdg/operators/binary-normal-form.h>
-#include <jive/vsdg/operators/match.h>
 #include <jive/vsdg/phi.h>
 #include <jive/vsdg/region.h>
 #include <jive/vsdg/theta.h>
@@ -140,7 +139,7 @@ convert_select(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
 	JLM_DEBUG_ASSERT(is_select_op(tac.operation()));
 	JLM_DEBUG_ASSERT(tac.ninputs() == 3 && tac.noutputs() == 1);
 
-	auto op = jive::match_op(1, {{1, 0}}, 1, 2);
+	auto op = jive::ctl::match_op(1, {{1, 0}}, 1, 2);
 	auto predicate = jive::create_normalized(region, op, {vmap[tac.input(0)]})[0];
 
 	jive::gamma_builder gb;

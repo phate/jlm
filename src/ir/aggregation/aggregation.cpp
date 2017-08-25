@@ -10,8 +10,9 @@
 #include <jlm/ir/cfg_node.hpp>
 #include <jlm/ir/tac.hpp>
 
-#include <deque>
 #include <algorithm>
+#include <deque>
+#include <unordered_map>
 
 namespace jlm {
 namespace agg {

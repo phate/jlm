@@ -6,8 +6,8 @@
 #ifndef JLM_IR_DATA_HPP
 #define JLM_IR_DATA_HPP
 
-#include <jive/vsdg/operators/structural.h>
 #include <jive/vsdg/region.h>
+#include <jive/vsdg/structural.h>
 #include <jive/vsdg/structural_node.h>
 
 #include <jlm/ir/types.hpp>
@@ -75,7 +75,7 @@ public:
 		if (!node_)
 			return nullptr;
 
-		auto output = node_->add_output(create_ptrtype(data->type()).get());
+		auto output = node_->add_output({std::move(create_ptrtype(data->type()))});
 		region()->add_result(data, output, data->type());
 		return output;
 	}

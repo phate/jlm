@@ -7,7 +7,6 @@
 #include <jive/types/bitstring.h>
 #include <jive/types/function.h>
 #include <jive/vsdg/control.h>
-#include <jive/vsdg/operators/match.h>
 
 #include <jlm/ir/cfg_node.hpp>
 #include <jlm/ir/expression.hpp>
@@ -137,7 +136,7 @@ convert_fpconstant(
 	JLM_DEBUG_ASSERT(is_fpconstant_op(op));
 	auto & cop = *static_cast<const jlm::fpconstant_op*>(&op);
 
-	auto type = convert_type(cop.result_type(0), ctx);
+	auto type = convert_type(cop.result(0).type(), ctx);
 	return llvm::ConstantFP::get(type, cop.constant());
 }
 
@@ -149,7 +148,7 @@ convert_undef(
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(is_undef_constant_op(op));
-	return llvm::UndefValue::get(convert_type(op.result_type(0), ctx));
+	return llvm::UndefValue::get(convert_type(op.result(0).type(), ctx));
 }
 
 static inline llvm::Value *
@@ -188,7 +187,7 @@ convert_match(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::match_op*>(&op));
+	JLM_DEBUG_ASSERT(dynamic_cast<const jive::ctl::match_op*>(&op));
 	return ctx.value(args[0]);
 }
 
@@ -331,7 +330,7 @@ convert_zext(
 {
 	JLM_DEBUG_ASSERT(is_zext_op(op));
 
-	auto type = convert_type(op.result_type(0), ctx);
+	auto type = convert_type(op.result(0).type(), ctx);
 	return builder.CreateZExt(ctx.value(args[0]), type);
 }
 
@@ -392,7 +391,7 @@ convert_fpext(
 {
 	JLM_DEBUG_ASSERT(is_fpext_op(op));
 
-	auto type = convert_type(op.result_type(0), ctx);
+	auto type = convert_type(op.result(0).type(), ctx);
 	return builder.CreateFPExt(ctx.value(args[0]), type);
 }
 
@@ -416,7 +415,7 @@ convert_bitcast(
 {
 	JLM_DEBUG_ASSERT(is_bitcast_op(op));
 
-	auto type = convert_type(op.result_type(0), ctx);
+	auto type = convert_type(op.result(0).type(), ctx);
 	return builder.CreateBitCast(ctx.value(args[0]), type);
 }
 
@@ -447,7 +446,7 @@ convert_trunc(
 {
 	JLM_DEBUG_ASSERT(is_trunc_op(op));
 
-	auto type = convert_type(op.result_type(0), ctx);
+	auto type = convert_type(op.result(0).type(), ctx);
 	return builder.CreateTrunc(ctx.value(args[0]), type);
 }
 
@@ -460,7 +459,7 @@ convert_sext(
 {
 	JLM_DEBUG_ASSERT(is_sext_op(op));
 
-	auto type = convert_type(op.result_type(0), ctx);
+	auto type = convert_type(op.result(0).type(), ctx);
 	return builder.CreateSExt(ctx.value(args[0]), type);
 }
 
@@ -473,7 +472,7 @@ convert_sitofp(
 {
 	JLM_DEBUG_ASSERT(is_sitofp_op(op));
 
-	auto type = convert_type(op.result_type(0), ctx);
+	auto type = convert_type(op.result(0).type(), ctx);
 	return builder.CreateSIToFP(ctx.value(args[0]), type);
 }
 
@@ -502,7 +501,7 @@ convert_operation(
 	, {std::type_index(typeid(jive::ctl::constant_op)), convert_ctlconstant}
 	, {std::type_index(typeid(jlm::fpconstant_op)), convert_fpconstant}
 	, {std::type_index(typeid(jlm::undef_constant_op)), convert_undef}
-	, {std::type_index(typeid(jive::match_op)), convert_match}
+	, {std::type_index(typeid(jive::ctl::match_op)), convert_match}
 	, {std::type_index(typeid(jive::fct::apply_op)), convert_apply}
 	, {std::type_index(typeid(jlm::assignment_op)), convert_assignment}
 	, {std::type_index(typeid(jlm::branch_op)), convert_branch}

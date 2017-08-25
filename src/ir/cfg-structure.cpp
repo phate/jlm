@@ -8,6 +8,7 @@
 #include <jlm/ir/cfg-structure.hpp>
 
 #include <algorithm>
+#include <unordered_map>
 
 /* Tarjan's SCC algorithm */
 

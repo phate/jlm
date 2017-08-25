@@ -7,7 +7,7 @@
 #define TESTS_TEST_OPERATION_HPP
 
 #include <jive/vsdg/basetype.h>
-#include <jive/vsdg/operators/operation.h>
+#include <jive/vsdg/operation.h>
 
 #include <jlm/ir/tac.hpp>
 
@@ -25,37 +25,12 @@ public:
 	: operation()
 	{
 		for (const auto & type : argument_types)
-			argument_types_.emplace_back(type->copy());
+			arguments_.push_back(std::move(type->copy()));
 		for (const auto & type : result_types)
-			result_types_.emplace_back(type->copy());
+			results_.push_back(std::move(type->copy()));
 	}
 
-	inline
-	test_op(const test_op & other)
-	: operation()
-	{
-		for (const auto & type : other.argument_types_)
-			argument_types_.emplace_back(type->copy());
-		for (const auto & type : other.result_types_)
-			result_types_.emplace_back(type->copy());
-	}
-
-	inline test_op &
-	operator=(const test_op & other)
-	{
-		if (this == &other)
-			return *this;
-
-		argument_types_.clear();
-		for (const auto & type : other.argument_types_)
-			argument_types_.emplace_back(type->copy());
-
-		result_types_.clear();
-		for (const auto & type : other.result_types_)
-			result_types_.emplace_back(type->copy());
-
-		return *this;
-	}
+	test_op(const test_op &) = default;
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
@@ -63,14 +38,14 @@ public:
 	virtual size_t
 	narguments() const noexcept override;
 
-	virtual const jive::base::type &
-	argument_type(size_t index) const noexcept override;
+	virtual const jive::port &
+	argument(size_t index) const noexcept override;
 
 	virtual size_t
 	nresults() const noexcept override;
 
-	virtual const jive::base::type &
-	result_type(size_t index) const noexcept override;
+	virtual const jive::port &
+	result(size_t index) const noexcept override;
 
 	virtual std::string
 	debug_string() const override;
@@ -79,8 +54,8 @@ public:
 	copy() const override;
 
 private:
-	std::vector<std::unique_ptr<jive::base::type>> result_types_;
-	std::vector<std::unique_ptr<jive::base::type>> argument_types_;
+	std::vector<jive::port> results_;
+	std::vector<jive::port> arguments_;
 };
 
 static inline std::unique_ptr<jlm::tac>

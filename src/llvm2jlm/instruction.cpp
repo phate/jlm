@@ -23,8 +23,8 @@
 #include <jive/types/bitstring.h>
 #include <jive/types/float.h>
 #include <jive/types/record.h>
+#include <jive/vsdg/control.h>
 #include <jive/vsdg/controltype.h>
-#include <jive/vsdg/operators/match.h>
 
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/Instructions.h>
@@ -39,7 +39,7 @@ create_result_variables(jlm::module & m, const jive::operation & op)
 {
 	std::vector<const jlm::variable*> variables;
 	for (size_t n = 0; n < op.nresults(); n++)
-		variables.push_back(m.create_variable(op.result_type(n), false));
+		variables.push_back(m.create_variable(op.result(n).type(), false));
 
 	return variables;
 }
@@ -112,7 +112,7 @@ convert_branch_instruction(llvm::Instruction * instruction, tacsvector_t & tacs,
 
 	auto c = convert_value(i->getCondition(), tacs, ctx);
 	auto nbits = i->getCondition()->getType()->getIntegerBitWidth();
-	auto op = jive::match_op(nbits, {{1, 0}}, 1, 2);
+	auto op = jive::ctl::match_op(nbits, {{1, 0}}, 1, 2);
 	tacs.push_back(create_tac(op, {c}, create_result_variables(ctx.module(), op)));
 	tacs.push_back(create_branch_tac(2,  tacs.back()->output(0)));
 
@@ -127,7 +127,7 @@ convert_switch_instruction(llvm::Instruction * instruction, tacsvector_t & tacs,
 	auto bb = ctx.lookup_basic_block(i->getParent());
 
 	size_t n = 0;
-	std::map<uint64_t, uint64_t> mapping;
+	std::unordered_map<uint64_t, uint64_t> mapping;
 	for (auto it = i->case_begin(); it != i->case_end(); it++) {
 		JLM_DEBUG_ASSERT(it != i->case_default());
 		mapping[it.getCaseValue()->getZExtValue()] = n++;
@@ -139,7 +139,7 @@ convert_switch_instruction(llvm::Instruction * instruction, tacsvector_t & tacs,
 
 	auto c = convert_value(i->getCondition(), tacs, ctx);
 	auto nbits = i->getCondition()->getType()->getIntegerBitWidth();
-	auto op = jive::match_op(nbits, mapping, n, n+1);
+	auto op = jive::ctl::match_op(nbits, mapping, n, n+1);
 	tacs.push_back(create_tac(op, {c}, create_result_variables(ctx.module(), op)));
 	tacs.push_back((create_branch_tac(n+1, tacs.back()->output(0))));
 

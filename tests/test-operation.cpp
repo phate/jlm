@@ -20,12 +20,12 @@ test_op::operator==(const operation & o) const noexcept
 		return false;
 
 	for (size_t n = 0; n < narguments(); n++) {
-		if (argument_type(n) != other->argument_type(n))
+		if (argument(n) != other->argument(n))
 			return false;
 	}
 
 	for (size_t n = 0; n < nresults(); n++) {
-		if (result_type(n) != other->result_type(n))
+		if (result(n) != other->result(n))
 			return false;
 	}
 
@@ -35,25 +35,27 @@ test_op::operator==(const operation & o) const noexcept
 size_t
 test_op::narguments() const noexcept
 {
-	return argument_types_.size();
+	return arguments_.size();
 }
 
-const jive::base::type &
-test_op::argument_type(size_t n) const noexcept
+const jive::port &
+test_op::argument(size_t n) const noexcept
 {
-	return *argument_types_[n];
+	JLM_DEBUG_ASSERT(n < narguments());
+	return arguments_[n];
 }
 
 size_t
 test_op::nresults() const noexcept
 {
-	return result_types_.size();
+	return results_.size();
 }
 
-const jive::base::type &
-test_op::result_type(size_t n) const noexcept
+const jive::port &
+test_op::result(size_t n) const noexcept
 {
-	return *result_types_[n];
+	JLM_DEBUG_ASSERT(n < nresults());
+	return results_[n];
 }
 
 std::string

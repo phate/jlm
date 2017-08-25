@@ -9,7 +9,7 @@
 #include <jlm/common.hpp>
 #include <jlm/ir/variable.hpp>
 
-#include <jive/vsdg/operators/operation.h>
+#include <jive/vsdg/operation.h>
 
 #include <memory>
 #include <vector>

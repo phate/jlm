@@ -20,8 +20,8 @@ phi_op::~phi_op() noexcept
 bool
 phi_op::operator==(const operation & other) const noexcept
 {
-	const phi_op * op = dynamic_cast<const phi_op*>(&other);
-	return op && op->nodes_ == nodes_ && *op->type_ == *type_;
+	auto op = dynamic_cast<const phi_op*>(&other);
+	return op && op->nodes_ == nodes_ && op->port_ == port_;
 }
 
 size_t
@@ -30,10 +30,11 @@ phi_op::narguments() const noexcept
 	return nodes_.size();
 }
 
-const jive::base::type &
-phi_op::argument_type(size_t index) const noexcept
+const jive::port &
+phi_op::argument(size_t index) const noexcept
 {
-	return *type_;
+	JLM_DEBUG_ASSERT(index < narguments());
+	return port_;
 }
 
 size_t
@@ -42,10 +43,11 @@ phi_op::nresults() const noexcept
 	return 1;
 }
 
-const jive::base::type &
-phi_op::result_type(size_t index) const noexcept
+const jive::port &
+phi_op::result(size_t index) const noexcept
 {
-	return *type_;
+	JLM_DEBUG_ASSERT(index < nresults());
+	return port_;
 }
 
 std::string
@@ -77,7 +79,7 @@ bool
 assignment_op::operator==(const operation & other) const noexcept
 {
 	auto op = dynamic_cast<const assignment_op*>(&other);
-	return op && *op->type_ == *type_;
+	return op && op->port_ == port_;
 }
 
 size_t
@@ -86,11 +88,11 @@ assignment_op::narguments() const noexcept
 	return 2;
 }
 
-const jive::base::type &
-assignment_op::argument_type(size_t index) const noexcept
+const jive::port &
+assignment_op::argument(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < narguments());
-	return *type_;
+	return port_;
 }
 
 size_t
@@ -99,8 +101,8 @@ assignment_op::nresults() const noexcept
 	return 0;
 }
 
-const jive::base::type &
-assignment_op::result_type(size_t index) const noexcept
+const jive::port &
+assignment_op::result(size_t index) const noexcept
 {
 	JLM_ASSERT(0);
 }
@@ -125,8 +127,8 @@ select_op::~select_op() noexcept
 bool
 select_op::operator==(const operation & other) const noexcept
 {
-	const select_op * op = dynamic_cast<const select_op*>(&other);
-	return op && *op->type_ == *type_;
+	auto op = dynamic_cast<const select_op*>(&other);
+	return op && op->port_ == port_;
 }
 
 size_t
@@ -135,17 +137,17 @@ select_op::narguments() const noexcept
 	return 3;
 }
 
-const jive::base::type &
-select_op::argument_type(size_t index) const noexcept
+const jive::port &
+select_op::argument(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < narguments());
 
 	if (index == 0) {
-		static const jive::bits::type bit1(1);
-		return bit1;
+		static const jive::port p(jive::bits::type(1));
+		return p;
 	}
 
-	return *type_;
+	return port_;
 }
 
 size_t
@@ -154,11 +156,11 @@ select_op::nresults() const noexcept
 	return 1;
 }
 
-const jive::base::type &
-select_op::result_type(size_t index) const noexcept
+const jive::port &
+select_op::result(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < nresults());
-	return *type_;
+	return port_;
 }
 
 std::string
@@ -182,7 +184,7 @@ bool
 alloca_op::operator==(const operation & other) const noexcept
 {
 	auto op = dynamic_cast<const jlm::alloca_op*>(&other);
-	return op && op->atype_ == atype_ && op->btype_ == btype_;
+	return op && op->aport_ == aport_ && op->bport_ == bport_;
 }
 
 size_t
@@ -191,14 +193,15 @@ alloca_op::narguments() const noexcept
 	return 2;
 }
 
-const jive::base::type &
-alloca_op::argument_type(size_t index) const noexcept
+const jive::port &
+alloca_op::argument(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < narguments());
 	if (index == 0)
-		return btype_;
+		return bport_;
 
-	return jive::mem::type::instance();
+	static const jive::port p(jive::mem::type::instance());
+	return p;
 }
 
 size_t
@@ -207,14 +210,15 @@ alloca_op::nresults() const noexcept
 	return 2;
 }
 
-const jive::base::type &
-alloca_op::result_type(size_t index) const noexcept
+const jive::port &
+alloca_op::result(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < nresults());
 	if (index == 0)
-		return atype_;
+		return aport_;
 
-	return jive::mem::type::instance();
+	static const jive::port p(jive::mem::type::instance());
+	return p;
 }
 
 std::string
@@ -238,7 +242,7 @@ bool
 bits2flt_op::operator==(const operation & other) const noexcept
 {
 	auto op = dynamic_cast<const bits2flt_op*>(&other);
-	return op && itype_ == op->itype_;
+	return op && port_ == op->port_;
 }
 
 size_t
@@ -247,11 +251,11 @@ bits2flt_op::narguments() const noexcept
 	return 1;
 }
 
-const jive::base::type &
-bits2flt_op::argument_type(size_t index) const noexcept
+const jive::port &
+bits2flt_op::argument(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < narguments());
-	return itype_;
+	return port_;
 }
 
 size_t
@@ -260,12 +264,13 @@ bits2flt_op::nresults() const noexcept
 	return 1;
 }
 
-const jive::base::type &
-bits2flt_op::result_type(size_t index) const noexcept
+const jive::port &
+bits2flt_op::result(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < nresults());
-	static jive::flt::type flttype;
-	return flttype;
+	static const jive::flt::type t;
+	static const jive::port p(t);
+	return p;
 }
 
 std::string
@@ -289,7 +294,7 @@ bool
 flt2bits_op::operator==(const operation & other) const noexcept
 {
 	auto op = dynamic_cast<const flt2bits_op*>(&other);
-	return op && otype_ == op->otype_;
+	return op && port_ == op->port_;
 }
 
 size_t
@@ -298,12 +303,13 @@ flt2bits_op::narguments() const noexcept
 	return 1;
 }
 
-const jive::base::type &
-flt2bits_op::argument_type(size_t index) const noexcept
+const jive::port &
+flt2bits_op::argument(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < narguments());
-	static jive::flt::type flttype;
-	return flttype;
+	static const jive::flt::type flttype;
+	static const jive::port p(flttype);
+	return p;
 }
 
 size_t
@@ -312,11 +318,11 @@ flt2bits_op::nresults() const noexcept
 	return 1;
 }
 
-const jive::base::type &
-flt2bits_op::result_type(size_t index) const noexcept
+const jive::port &
+flt2bits_op::result(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < nresults());
-	return otype_;
+	return port_;
 }
 
 std::string
@@ -340,7 +346,7 @@ bool
 branch_op::operator==(const operation & other) const noexcept
 {
 	auto op = dynamic_cast<const branch_op*>(&other);
-	return op && type_ == op->type_;
+	return op && port_ == op->port_;
 }
 
 size_t
@@ -349,11 +355,11 @@ branch_op::narguments() const noexcept
 	return 1;
 }
 
-const jive::base::type &
-branch_op::argument_type(size_t index) const noexcept
+const jive::port &
+branch_op::argument(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < narguments());
-	return type_;
+	return port_;
 }
 
 size_t
@@ -362,10 +368,10 @@ branch_op::nresults() const noexcept
 	return 0;
 }
 
-const jive::base::type &
-branch_op::result_type(size_t index) const noexcept
+const jive::port &
+branch_op::result(size_t index) const noexcept
 {
-	JLM_ASSERT(0 && "Branch operator has no return types.");
+	JLM_ASSERT(0 && "Branch operator has no return port.");
 }
 
 std::string
@@ -389,7 +395,7 @@ bool
 ptr_constant_null_op::operator==(const operation & other) const noexcept
 {
 	auto op = dynamic_cast<const ptr_constant_null_op*>(&other);
-	return op && op->ptype_ == ptype_;
+	return op && op->port_ == port_;
 }
 
 size_t
@@ -398,8 +404,8 @@ ptr_constant_null_op::narguments() const noexcept
 	return 0;
 }
 
-const jive::base::type &
-ptr_constant_null_op::argument_type(size_t index) const noexcept
+const jive::port &
+ptr_constant_null_op::argument(size_t index) const noexcept
 {
 	JLM_ASSERT(0);
 }
@@ -410,11 +416,11 @@ ptr_constant_null_op::nresults() const noexcept
 	return 1;
 }
 
-const jive::base::type &
-ptr_constant_null_op::result_type(size_t index) const noexcept
+const jive::port &
+ptr_constant_null_op::result(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < nresults());
-	return ptype_;
+	return port_;
 }
 
 std::string
@@ -438,7 +444,10 @@ bool
 load_op::operator==(const operation & other) const noexcept
 {
 	auto op = dynamic_cast<const load_op*>(&other);
-	return op && op->nstates_ == nstates_ && op->ptype_ == ptype_;
+	return op
+	    && op->nstates_ == nstates_
+	    && op->aport_ == aport_
+	    && op->vport_ == vport_;
 }
 
 size_t
@@ -447,14 +456,15 @@ load_op::narguments() const noexcept
 	return 1 + nstates();
 }
 
-const jive::base::type &
-load_op::argument_type(size_t index) const noexcept
+const jive::port &
+load_op::argument(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < narguments());
 	if (index == 0)
-		return ptype_;
+		return aport_;
 
-	return jive::mem::type::instance();
+	static const jive::port p(jive::mem::type::instance());
+	return p;
 }
 
 size_t
@@ -463,11 +473,11 @@ load_op::nresults() const noexcept
 	return 1;
 }
 
-const jive::base::type &
-load_op::result_type(size_t index) const noexcept
+const jive::port &
+load_op::result(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < nresults());
-	return pointee_type();
+	return vport_;
 }
 
 std::string
@@ -491,7 +501,10 @@ bool
 store_op::operator==(const operation & other) const noexcept
 {
 	auto op = dynamic_cast<const store_op*>(&other);
-	return op && op->nstates_ == nstates_ && op->ptype_ == ptype_;
+	return op
+	    && op->nstates_ == nstates_
+	    && op->aport_ == aport_
+	    && op->vport_ == vport_;
 }
 
 size_t
@@ -500,17 +513,18 @@ store_op::narguments() const noexcept
 	return 2 + nstates();
 }
 
-const jive::base::type &
-store_op::argument_type(size_t index) const noexcept
+const jive::port &
+store_op::argument(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < narguments());
 	if (index == 0)
-		return ptype_;
+		return aport_;
 
 	if (index == 1)
-		return value_type();
+		return vport_;
 
-	return jive::mem::type::instance();
+	static const jive::port p(jive::mem::type::instance());
+	return p;
 }
 
 size_t
@@ -519,11 +533,12 @@ store_op::nresults() const noexcept
 	return nstates();
 }
 
-const jive::base::type &
-store_op::result_type(size_t index) const noexcept
+const jive::port &
+store_op::result(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < nresults());
-	return jive::mem::type::instance();
+	static const jive::port p(jive::mem::type::instance());
+	return p;
 }
 
 std::string
@@ -547,7 +562,7 @@ bool
 bits2ptr_op::operator==(const operation & other) const noexcept
 {
 	auto op = dynamic_cast<const jlm::bits2ptr_op*>(&other);
-	return op && op->btype_ == btype_ && op->ptype_ == ptype_;
+	return op && op->bport_ == bport_ && op->pport_ == pport_;
 }
 
 size_t
@@ -556,11 +571,11 @@ bits2ptr_op::narguments() const noexcept
 	return 1;
 }
 
-const jive::base::type &
-bits2ptr_op::argument_type(size_t index) const noexcept
+const jive::port &
+bits2ptr_op::argument(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < narguments());
-	return btype_;
+	return bport_;
 }
 
 size_t
@@ -569,11 +584,11 @@ bits2ptr_op::nresults() const noexcept
 	return 1;
 }
 
-const jive::base::type &
-bits2ptr_op::result_type(size_t index) const noexcept
+const jive::port &
+bits2ptr_op::result(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < nresults());
-	return ptype_;
+	return pport_;
 }
 
 std::string
@@ -597,7 +612,7 @@ bool
 ptr2bits_op::operator==(const operation & other) const noexcept
 {
 	auto op = dynamic_cast<const jlm::ptr2bits_op*>(&other);
-	return op && op->btype_ == btype_ && op->ptype_ == ptype_;
+	return op && op->bport_ == bport_ && op->pport_ == pport_;
 }
 
 size_t
@@ -606,11 +621,11 @@ ptr2bits_op::narguments() const noexcept
 	return 1;
 }
 
-const jive::base::type &
-ptr2bits_op::argument_type(size_t index) const noexcept
+const jive::port &
+ptr2bits_op::argument(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < narguments());
-	return ptype_;
+	return pport_;
 }
 
 size_t
@@ -619,11 +634,11 @@ ptr2bits_op::nresults() const noexcept
 	return 1;
 }
 
-const jive::base::type &
-ptr2bits_op::result_type(size_t index) const noexcept
+const jive::port &
+ptr2bits_op::result(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < nresults());
-	return btype_;
+	return bport_;
 }
 
 std::string
@@ -647,7 +662,10 @@ bool
 ptroffset_op::operator==(const operation & other) const noexcept
 {
 	auto op = dynamic_cast<const jlm::ptroffset_op*>(&other);
-	return op && op->ptype_ == ptype_ && op->btypes_ == btypes_ && op->rtype_ == rtype_;
+	return op
+	    && op->pport_ == pport_
+	    && op->rport_ == rport_
+	    && op->bports_ == bports_;
 }
 
 size_t
@@ -656,14 +674,14 @@ ptroffset_op::narguments() const noexcept
 	return 1 + nindices();
 }
 
-const jive::base::type &
-ptroffset_op::argument_type(size_t index) const noexcept
+const jive::port &
+ptroffset_op::argument(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < narguments());
 	if (index == 0)
-		return ptype_;
+		return pport_;
 
-	return btypes_[index-1];
+	return bports_[index-1];
 }
 
 size_t
@@ -672,10 +690,10 @@ ptroffset_op::nresults() const noexcept
 	return 1;
 }
 
-const jive::base::type &
-ptroffset_op::result_type(size_t index) const noexcept
+const jive::port &
+ptroffset_op::result(size_t index) const noexcept
 {
-	return rtype_;
+	return rport_;
 }
 
 std::string
@@ -699,7 +717,7 @@ bool
 data_array_constant_op::operator==(const operation & other) const noexcept
 {
 	auto op = dynamic_cast<const data_array_constant_op*>(&other);
-	return op && op->type() == type() && op->size() == size();
+	return op && op->aport_ == aport_ && op->eport_ == eport_;
 }
 
 size_t
@@ -708,11 +726,11 @@ data_array_constant_op::narguments() const noexcept
 	return size();
 }
 
-const jive::base::type &
-data_array_constant_op::argument_type(size_t index) const noexcept
+const jive::port &
+data_array_constant_op::argument(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < narguments());
-	return type();
+	return eport_;
 }
 
 size_t
@@ -721,11 +739,11 @@ data_array_constant_op::nresults() const noexcept
 	return 1;
 }
 
-const jive::base::type &
-data_array_constant_op::result_type(size_t index) const noexcept
+const jive::port &
+data_array_constant_op::result(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < nresults());
-	return type_;
+	return aport_;
 }
 
 std::string
@@ -749,7 +767,7 @@ bool
 ptrcmp_op::operator==(const operation & other) const noexcept
 {
 	auto op = dynamic_cast<const jlm::ptrcmp_op*>(&other);
-	return op && op->ptype_ == ptype_ && op->cmp_ == cmp_;
+	return op && op->port_ == port_ && op->cmp_ == cmp_;
 }
 
 size_t
@@ -758,11 +776,11 @@ ptrcmp_op::narguments() const noexcept
 	return 2;
 }
 
-const jive::base::type &
-ptrcmp_op::argument_type(size_t index) const noexcept
+const jive::port &
+ptrcmp_op::argument(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < narguments());
-	return ptype_;
+	return port_;
 }
 
 size_t
@@ -771,13 +789,13 @@ ptrcmp_op::nresults() const noexcept
 	return 1;
 }
 
-const jive::base::type &
-ptrcmp_op::result_type(size_t index) const noexcept
+const jive::port &
+ptrcmp_op::result(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < nresults());
 
-	static jive::bits::type bits1(1);
-	return bits1;
+	static const jive::port p(jive::bits::type(1));
+	return p;
 }
 
 std::string
@@ -807,7 +825,7 @@ bool
 zext_op::operator==(const operation & other) const noexcept
 {
 	auto op = dynamic_cast<const jlm::zext_op*>(&other);
-	return op && op->nsrcbits() == nsrcbits() && op->ndstbits() == ndstbits();
+	return op && op->srcport_ == srcport_ && op->dstport_ == dstport_;
 }
 
 size_t
@@ -816,11 +834,11 @@ zext_op::narguments() const noexcept
 	return 1;
 }
 
-const jive::base::type &
-zext_op::argument_type(size_t index) const noexcept
+const jive::port &
+zext_op::argument(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < narguments());
-	return srctype_;
+	return srcport_;
 }
 
 size_t
@@ -829,11 +847,11 @@ zext_op::nresults() const noexcept
 	return 1;
 }
 
-const jive::base::type &
-zext_op::result_type(size_t index) const noexcept
+const jive::port &
+zext_op::result(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < nresults());
-	return dsttype_;
+	return dstport_;
 }
 
 std::string
@@ -866,8 +884,8 @@ fpconstant_op::narguments() const noexcept
 	return 0;
 }
 
-const jive::base::type &
-fpconstant_op::argument_type(size_t) const noexcept
+const jive::port &
+fpconstant_op::argument(size_t) const noexcept
 {
 	JLM_ASSERT(0);
 }
@@ -878,11 +896,11 @@ fpconstant_op::nresults() const noexcept
 	return 1;
 }
 
-const jive::base::type &
-fpconstant_op::result_type(size_t index) const noexcept
+const jive::port &
+fpconstant_op::result(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < nresults());
-	return type_;
+	return port_;
 }
 
 std::string
@@ -906,7 +924,7 @@ bool
 fpcmp_op::operator==(const operation & other) const noexcept
 {
 	auto op = dynamic_cast<const jlm::fpcmp_op*>(&other);
-	return op && op->cmp() == cmp() && op->size() == size();
+	return op && op->cmp_ == cmp_ && op->port_ == port_;
 }
 
 size_t
@@ -915,11 +933,11 @@ fpcmp_op::narguments() const noexcept
 	return 2;
 }
 
-const jive::base::type &
-fpcmp_op::argument_type(size_t index) const noexcept
+const jive::port &
+fpcmp_op::argument(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < narguments());
-	return type_;
+	return port_;
 }
 
 size_t
@@ -928,12 +946,12 @@ fpcmp_op::nresults() const noexcept
 	return 1;
 }
 
-const jive::base::type &
-fpcmp_op::result_type(size_t index) const noexcept
+const jive::port &
+fpcmp_op::result(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < nresults());
-	static jive::bits::type bits1(1);
-	return bits1;
+	static const jive::port p(jive::bits::type(1));
+	return p;
 }
 
 std::string
@@ -965,7 +983,7 @@ bool
 undef_constant_op::operator==(const operation & other) const noexcept
 {
 	auto op = dynamic_cast<const jlm::undef_constant_op*>(&other);
-	return op && op->type() == type();
+	return op && op->port_ == port_;
 }
 
 size_t
@@ -974,8 +992,8 @@ undef_constant_op::narguments() const noexcept
 	return 0;
 }
 
-const jive::base::type &
-undef_constant_op::argument_type(size_t index) const noexcept
+const jive::port &
+undef_constant_op::argument(size_t index) const noexcept
 {
 	JLM_ASSERT(0);
 }
@@ -986,11 +1004,11 @@ undef_constant_op::nresults() const noexcept
 	return 1;
 }
 
-const jive::base::type &
-undef_constant_op::result_type(size_t index) const noexcept
+const jive::port &
+undef_constant_op::result(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < nresults());
-	return *type_;
+	return port_;
 }
 
 std::string
@@ -1023,11 +1041,11 @@ fpbin_op::narguments() const noexcept
 	return 2;
 }
 
-const jive::base::type &
-fpbin_op::argument_type(size_t index) const noexcept
+const jive::port &
+fpbin_op::argument(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < narguments());
-	return type_;
+	return port_;
 }
 
 size_t
@@ -1036,11 +1054,11 @@ fpbin_op::nresults() const noexcept
 	return 1;
 }
 
-const jive::base::type &
-fpbin_op::result_type(size_t index) const noexcept
+const jive::port &
+fpbin_op::result(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < nresults());
-	return type_;
+	return port_;
 }
 
 std::string
@@ -1079,11 +1097,11 @@ fpext_op::narguments() const noexcept
 	return 1;
 }
 
-const jive::base::type &
-fpext_op::argument_type(size_t index) const noexcept
+const jive::port &
+fpext_op::argument(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < narguments());
-	return srctype_;
+	return srcport_;
 }
 
 size_t
@@ -1092,11 +1110,11 @@ fpext_op::nresults() const noexcept
 	return 1;
 }
 
-const jive::base::type &
-fpext_op::result_type(size_t index) const noexcept
+const jive::port &
+fpext_op::result(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < nresults());
-	return dsttype_;
+	return dstport_;
 }
 
 std::string
@@ -1120,20 +1138,20 @@ bool
 valist_op::operator==(const operation & other) const noexcept
 {
 	auto op = dynamic_cast<const jlm::valist_op*>(&other);
-	return op && op->arguments_ == arguments_;
+	return op && op->ports_ == ports_;
 }
 
 size_t
 valist_op::narguments() const noexcept
 {
-	return arguments_.size();
+	return ports_.size();
 }
 
-const jive::base::type &
-valist_op::argument_type(size_t index) const noexcept
+const jive::port &
+valist_op::argument(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < narguments());
-	return *arguments_[index];
+	return ports_[index];
 }
 
 size_t
@@ -1142,12 +1160,13 @@ valist_op::nresults() const noexcept
 	return 1;
 }
 
-const jive::base::type &
-valist_op::result_type(size_t index) const noexcept
+const jive::port &
+valist_op::result(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < nresults());
-	static varargtype vatype;
-	return vatype;
+	static const varargtype vatype;
+	static const jive::port p(vatype);
+	return p;
 }
 
 std::string
@@ -1171,7 +1190,7 @@ bool
 bitcast_op::operator==(const operation & other) const noexcept
 {
 	auto op = dynamic_cast<const bitcast_op*>(&other);
-	return op && *op->srctype_ == *srctype_ && *op->dsttype_ == *dsttype_;
+	return op && op->srcport_ == srcport_ && op->dstport_ == dstport_;
 }
 
 size_t
@@ -1180,11 +1199,11 @@ bitcast_op::narguments() const noexcept
 	return 1;
 }
 
-const jive::base::type &
-bitcast_op::argument_type(size_t index) const noexcept
+const jive::port &
+bitcast_op::argument(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < narguments());
-	return *srctype_;
+	return srcport_;
 }
 
 size_t
@@ -1193,17 +1212,18 @@ bitcast_op::nresults() const noexcept
 	return 1;
 }
 
-const jive::base::type &
-bitcast_op::result_type(size_t index) const noexcept
+const jive::port &
+bitcast_op::result(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < nresults());
-	return *dsttype_;
+	return dstport_;
 }
 
 std::string
 bitcast_op::debug_string() const
 {
-	return strfmt("BITCAST[", srctype_->debug_string(), " -> ", dsttype_->debug_string(), "]");
+	return strfmt("BITCAST[", srcport_.type().debug_string(),
+		" -> ", dstport_.type().debug_string(), "]");
 }
 
 std::unique_ptr<jive::operation>
@@ -1221,20 +1241,20 @@ bool
 struct_constant_op::operator==(const operation & other) const noexcept
 {
 	auto op = dynamic_cast<const struct_constant_op*>(&other);
-	return op && op->type_ == type_;
+	return op && op->result_ == result_ && op->arguments_ == arguments_;
 }
 
 size_t
 struct_constant_op::narguments() const noexcept
 {
-	return type_.declaration()->nelements();
+	return type().declaration()->nelements();
 }
 
-const jive::base::type &
-struct_constant_op::argument_type(size_t index) const noexcept
+const jive::port &
+struct_constant_op::argument(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < narguments());
-	return type_.declaration()->element(index);
+	return arguments_[index];
 }
 
 size_t
@@ -1243,11 +1263,11 @@ struct_constant_op::nresults() const noexcept
 	return 1;
 }
 
-const jive::base::type &
-struct_constant_op::result_type(size_t index) const noexcept
+const jive::port &
+struct_constant_op::result(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < nresults());
-	return type_;
+	return result_;
 }
 
 std::string
@@ -1271,7 +1291,7 @@ bool
 trunc_op::operator==(const operation & other) const noexcept
 {
 	auto op = dynamic_cast<const trunc_op*>(&other);
-	return op && op->otype_ == otype_ && op->rtype_ == rtype_;
+	return op && op->oport_ == oport_ && op->rport_ == rport_;
 }
 
 size_t
@@ -1280,11 +1300,11 @@ trunc_op::narguments() const noexcept
 	return 1;
 }
 
-const jive::base::type &
-trunc_op::argument_type(size_t index) const noexcept
+const jive::port &
+trunc_op::argument(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < narguments());
-	return otype_;
+	return oport_;
 }
 
 size_t
@@ -1293,11 +1313,11 @@ trunc_op::nresults() const noexcept
 	return 1;
 }
 
-const jive::base::type &
-trunc_op::result_type(size_t index) const noexcept
+const jive::port &
+trunc_op::result(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < nresults());
-	return rtype_;
+	return rport_;
 }
 
 std::string
@@ -1321,7 +1341,7 @@ bool
 sext_op::operator==(const operation & other) const noexcept
 {
 	auto op = dynamic_cast<const sext_op*>(&other);
-	return op && op->otype_ == otype_ && op->rtype_ == rtype_;
+	return op && op->oport_ == oport_ && op->rport_ == rport_;
 }
 
 size_t
@@ -1330,11 +1350,11 @@ sext_op::narguments() const noexcept
 	return 1;
 }
 
-const jive::base::type &
-sext_op::argument_type(size_t index) const noexcept
+const jive::port &
+sext_op::argument(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < narguments());
-	return otype_;
+	return oport_;
 }
 
 size_t
@@ -1343,11 +1363,11 @@ sext_op::nresults() const noexcept
 	return 1;
 }
 
-const jive::base::type &
-sext_op::result_type(size_t index) const noexcept
+const jive::port &
+sext_op::result(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < nresults());
-	return rtype_;
+	return rport_;
 }
 
 std::string
@@ -1371,7 +1391,7 @@ bool
 sitofp_op::operator==(const operation & other) const noexcept
 {
 	auto op = dynamic_cast<const sitofp_op*>(&other);
-	return op && op->srctype_ == srctype_ && op->dsttype_ == dsttype_;
+	return op && op->srcport_ == srcport_ && op->dstport_ == dstport_;
 }
 
 size_t
@@ -1380,11 +1400,11 @@ sitofp_op::narguments() const noexcept
 	return 1;
 }
 
-const jive::base::type &
-sitofp_op::argument_type(size_t index) const noexcept
+const jive::port &
+sitofp_op::argument(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < narguments());
-	return srctype_;
+	return srcport_;
 }
 
 size_t
@@ -1393,11 +1413,11 @@ sitofp_op::nresults() const noexcept
 	return 1;
 }
 
-const jive::base::type &
-sitofp_op::result_type(size_t index) const noexcept
+const jive::port &
+sitofp_op::result(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < nresults());
-	return dsttype_;
+	return dstport_;
 }
 
 std::string

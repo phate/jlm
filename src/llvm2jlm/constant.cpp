@@ -207,7 +207,7 @@ convert_constantAggregateZero(
 			operands.push_back(convert_constant(c->getElementValue(n), tacs, ctx));
 
 		jive::rcd::group_op op(ctx.lookup_declaration(type));
-		auto r = ctx.module().create_variable(op.result_type(0), false);
+		auto r = ctx.module().create_variable(op.result(0).type(), false);
 		tacs.push_back(create_tac(op, operands, {r}));
 		return r;
 	}

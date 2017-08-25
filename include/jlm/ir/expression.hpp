@@ -8,7 +8,7 @@
 
 #include <jlm/common.hpp>
 
-#include <jive/vsdg/operators/operation.h>
+#include <jive/vsdg/operation.h>
 
 #include <memory>
 #include <vector>
@@ -74,7 +74,7 @@ public:
 	const jive::base::type &
 	type() const noexcept
 	{
-		return operation_->result_type(0);
+		return operation_->result(0).type();
 	}
 
 	inline std::string
