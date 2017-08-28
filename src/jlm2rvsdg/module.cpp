@@ -541,14 +541,14 @@ convert_globals(jive::graph * rvsdg, scoped_vmap & svmap)
 	auto & m = svmap.module();
 
 	for (const auto & gv : m) {
+		jive::output * data;
 		if (gv->initialization() == nullptr) {
-			rvsdg->import(gv->type(), gv->name());
-			continue;
+			data = rvsdg->import(gv->type(), gv->name());
+		} else {
+			jlm::data_builder db;
+			auto region = db.begin(rvsdg->root(), gv->linkage());
+			data = db.end(convert_expression(*gv->initialization(), region));
 		}
-
-		jlm::data_builder db;
-		auto region = db.begin(rvsdg->root(), gv->linkage());
-		auto data = db.end(convert_expression(*gv->initialization(), region));
 
 		svmap.vmap()[gv] = data;
 		if (gv->exported())
