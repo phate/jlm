@@ -47,20 +47,6 @@ breadth_first_traversal(const jlm::cfg & cfg)
 	return nodes;
 }
 
-static inline llvm::GlobalValue::LinkageTypes
-function_linkage(const jlm::clg_node & f, const jlm::module & module)
-{
-	JLM_DEBUG_ASSERT(module.variable(&f));
-
-	if (!f.cfg())
-		return llvm::GlobalValue::ExternalLinkage;
-
-	if (module.variable(&f)->exported())
-		return llvm::GlobalValue::ExternalLinkage;
-
-	return llvm::GlobalValue::InternalLinkage;
-}
-
 namespace jlm {
 namespace jlm2llvm {
 
@@ -216,6 +202,27 @@ convert_function(const jlm::clg_node & node, context & ctx)
 	convert_cfg(*node.cfg(), *f, ctx);
 }
 
+static const llvm::GlobalValue::LinkageTypes &
+convert_linkage(const jlm::linkage & linkage)
+{
+	static std::unordered_map<jlm::linkage, llvm::GlobalValue::LinkageTypes> map({
+	  {jlm::linkage::external_linkage, llvm::GlobalValue::ExternalLinkage}
+	, {jlm::linkage::available_externally_linkage, llvm::GlobalValue::AvailableExternallyLinkage}
+	, {jlm::linkage::link_once_any_linkage, llvm::GlobalValue::LinkOnceAnyLinkage}
+	, {jlm::linkage::link_once_odr_linkage, llvm::GlobalValue::LinkOnceODRLinkage}
+	, {jlm::linkage::weak_any_linkage, llvm::GlobalValue::WeakAnyLinkage}
+	, {jlm::linkage::weak_odr_linkage, llvm::GlobalValue::WeakODRLinkage}
+	, {jlm::linkage::appending_linkage, llvm::GlobalValue::AppendingLinkage}
+	, {jlm::linkage::internal_linkage, llvm::GlobalValue::InternalLinkage}
+	, {jlm::linkage::private_linkage, llvm::GlobalValue::PrivateLinkage}
+	, {jlm::linkage::external_weak_linkage, llvm::GlobalValue::ExternalWeakLinkage}
+	, {jlm::linkage::common_linkage, llvm::GlobalValue::CommonLinkage}
+	});
+
+	JLM_DEBUG_ASSERT(map.find(linkage) != map.end());
+	return map[linkage];
+}
+
 static inline void
 convert_callgraph(const jlm::clg & clg, context & ctx)
 {
@@ -224,8 +231,12 @@ convert_callgraph(const jlm::clg & clg, context & ctx)
 
 	/* forward declare all functions */
 	for (const auto & node : jm.clg().nodes()) {
+		JLM_DEBUG_ASSERT(is_fctvariable(jm.variable(node)));
+		auto v = static_cast<const jlm::fctvariable*>(jm.variable(node));
+
 		auto ftype = convert_type(node->type(), ctx);
-		auto f = llvm::Function::Create(ftype, function_linkage(*node, jm), node->name(), &lm);
+		auto linkage = convert_linkage(v->linkage());
+		auto f = llvm::Function::Create(ftype, linkage, node->name(), &lm);
 		ctx.insert(jm.variable(node), f);
 	}
 

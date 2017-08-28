@@ -134,6 +134,27 @@ convert_function(llvm::Function & function, context & ctx)
 	node->add_cfg(create_cfg(function, ctx));
 }
 
+static const jlm::linkage &
+convert_linkage(const llvm::GlobalValue::LinkageTypes & linkage)
+{
+	static std::unordered_map<llvm::GlobalValue::LinkageTypes, jlm::linkage> map({
+	  {llvm::GlobalValue::ExternalLinkage, jlm::linkage::external_linkage}
+	, {llvm::GlobalValue::AvailableExternallyLinkage, jlm::linkage::available_externally_linkage}
+	, {llvm::GlobalValue::LinkOnceAnyLinkage, jlm::linkage::link_once_any_linkage}
+	, {llvm::GlobalValue::LinkOnceODRLinkage, jlm::linkage::link_once_odr_linkage}
+	, {llvm::GlobalValue::WeakAnyLinkage, jlm::linkage::weak_any_linkage}
+	, {llvm::GlobalValue::WeakODRLinkage, jlm::linkage::weak_odr_linkage}
+	, {llvm::GlobalValue::AppendingLinkage, jlm::linkage::appending_linkage}
+	, {llvm::GlobalValue::InternalLinkage, jlm::linkage::internal_linkage}
+	, {llvm::GlobalValue::PrivateLinkage, jlm::linkage::private_linkage}
+	, {llvm::GlobalValue::ExternalWeakLinkage, jlm::linkage::external_weak_linkage}
+	, {llvm::GlobalValue::CommonLinkage, jlm::linkage::common_linkage}
+	});
+
+	JIVE_DEBUG_ASSERT(map.find(linkage) != map.end());
+	return map[linkage];
+}
+
 static void
 convert_functions(
 	llvm::Module::FunctionListType & list,
@@ -148,7 +169,7 @@ convert_functions(
 			f.getName().str(),
 			fcttype,
 			f.getLinkage() != llvm::GlobalValue::InternalLinkage);
-		ctx.insert_value(&f, ctx.module().create_variable(n));
+		ctx.insert_value(&f, ctx.module().create_variable(n, convert_linkage(f.getLinkage())));
 	}
 
 	for (auto it = list.begin(); it != list.end(); it++)

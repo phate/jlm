@@ -94,11 +94,11 @@ public:
 	}
 
 	inline jlm::variable *
-	create_variable(clg_node * node)
+	create_variable(clg_node * node, const jlm::linkage & linkage)
 	{
 		JLM_DEBUG_ASSERT(!variable(node));
 
-		auto v = std::unique_ptr<jlm::variable>(new fctvariable(node));
+		auto v = std::unique_ptr<jlm::variable>(new fctvariable(node, linkage));
 		auto pv = v.get();
 		functions_[node] = pv;
 		variables_.insert(std::move(v));

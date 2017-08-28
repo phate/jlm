@@ -227,14 +227,14 @@ private:
 	std::unordered_set<const clg_node*> calls_;
 };
 
-class fctvariable final : public variable {
+class fctvariable final : public gblvariable {
 public:
 	virtual
 	~fctvariable();
 
 	inline
-	fctvariable(clg_node * node)
-	: variable(node->type(), node->name(), node->exported())
+	fctvariable(clg_node * node, const jlm::linkage & linkage)
+	: gblvariable(node->type(), node->name(), linkage)
 	, node_(node)
 	{}
 
