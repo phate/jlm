@@ -15,6 +15,8 @@
 
 namespace jlm {
 
+/* variable */
+
 class variable {
 public:
 	virtual
@@ -52,6 +54,39 @@ private:
 	bool exported_;
 	std::string name_;
 	std::unique_ptr<jive::base::type> type_;
+};
+
+/* top level variable */
+
+enum class linkage {
+	external_linkage, available_externally_linkage, link_once_any_linkage,
+	link_once_odr_linkage, weak_any_linkage, weak_odr_linkage,
+	appending_linkage, internal_linkage, private_linkage,
+	external_weak_linkage, common_linkage
+};
+
+class gblvariable : public variable {
+public:
+	virtual
+	~gblvariable();
+
+	inline
+	gblvariable(
+		const jive::base::type & type,
+		const std::string & name,
+		const jlm::linkage & linkage)
+	: variable(type, name, linkage != linkage::internal_linkage)
+	, linkage_(linkage)
+	{}
+
+	inline const jlm::linkage &
+	linkage() const noexcept
+	{
+		return linkage_;
+	}
+
+private:
+	jlm::linkage linkage_;
 };
 
 }

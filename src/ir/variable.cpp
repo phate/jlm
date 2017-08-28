@@ -7,6 +7,8 @@
 
 namespace jlm {
 
+/* variable */
+
 variable::~variable() noexcept
 {}
 
@@ -15,5 +17,10 @@ variable::debug_string() const
 {
 	return name();
 }
+
+/* top level variable */
+
+gblvariable::~gblvariable()
+{}
 
 }
