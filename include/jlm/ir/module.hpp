@@ -12,6 +12,63 @@
 
 namespace jlm {
 
+/* global value */
+
+class gblvalue final : public gblvariable {
+public:
+	virtual
+	~gblvalue();
+
+	inline
+	gblvalue(
+		const jive::base::type & type,
+		const std::string & name,
+		const jlm::linkage & linkage)
+	: gblvariable(type, name, linkage)
+	{}
+
+	inline
+	gblvalue(
+		const jive::base::type & type,
+		const std::string & name,
+		const jlm::linkage & linkage,
+		std::unique_ptr<const expr> initialization)
+	: gblvariable(type, name, linkage)
+	, initialization_(std::move(initialization))
+	{}
+
+	gblvalue(const gblvalue &) = delete;
+
+	gblvalue(gblvalue &&) = delete;
+
+	gblvalue &
+	operator=(const gblvalue &) = delete;
+
+	gblvalue &
+	operator=(gblvalue &&) = delete;
+
+	inline const expr *
+	initialization() const noexcept
+	{
+		return initialization_.get();
+	}
+
+private:
+	std::unique_ptr<const expr> initialization_;
+};
+
+static inline std::unique_ptr<jlm::gblvalue>
+create_gblvalue(
+	const jive::base::type & type,
+	const std::string & name,
+	const jlm::linkage & linkage,
+	std::unique_ptr<const expr> initialization)
+{
+	return std::make_unique<jlm::gblvalue>(type, name, linkage, std::move(initialization));
+}
+
+/* module */
+
 class module final {
 	typedef std::unordered_map<
 		const jlm::variable*,
