@@ -262,9 +262,9 @@ convert_globals(context & ctx)
 		auto pt = static_cast<const jlm::ptrtype*>(&gv->type());
 		auto type = convert_type(pt->pointee_type(), ctx);
 
-		/* FIXME: isConstant parameter is not always true */
 		auto linkage = convert_linkage(gv->linkage());
-		auto addr = new GlobalVariable(lm, type, true, linkage, init, gv->name());
+		auto constant = gv->initialization() != nullptr;
+		auto addr = new GlobalVariable(lm, type, constant, linkage, init, gv->name());
 		ctx.insert(gv, addr);
 	}
 }
