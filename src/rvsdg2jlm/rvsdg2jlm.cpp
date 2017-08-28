@@ -339,11 +339,13 @@ convert_data_node(const jive::node & node, context & ctx)
 	auto result = subregion->result(0);
 
 	auto name = get_name(result->output());
-	auto exported = is_exported(result->output());
+	const auto & type = result->output()->type();
 	auto expression = convert_port(result->origin());
+	auto linkage = jlm::linkage::internal_linkage;
+	if (is_exported(result->output()))
+		linkage = jlm::linkage::external_linkage;
 
-	auto v = module.create_variable(result->output()->type(), name, exported);
-	module.add_global_variable(v, std::move(expression));
+	auto v = module.create_global_value(type, name, linkage, std::move(expression));
 	ctx.insert(result->output(), v);
 }
 
@@ -387,8 +389,9 @@ rvsdg2jlm(const jlm::rvsdg & rvsdg)
 			auto v = module->create_variable(f, jlm::linkage::external_linkage);
 			ctx.insert(argument, v);
 		} else {
-			auto v = module->create_variable(argument->type(), argument->gate()->name(), false);
-			module->add_global_variable(v, nullptr);
+			const auto & type = argument->type();
+			const auto & name = argument->gate()->name();
+			auto v = module->create_global_value(type, name, jlm::linkage::external_linkage, nullptr);
 			ctx.insert(argument, v);
 		}
 	}

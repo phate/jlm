@@ -70,10 +70,8 @@ create_gblvalue(
 /* module */
 
 class module final {
-	typedef std::unordered_map<
-		const jlm::variable*,
-		std::unique_ptr<const expr>
-	>::const_iterator const_iterator;
+	typedef std::unordered_set<const jlm::gblvalue*>::const_iterator const_iterator;
+
 public:
 	inline
 	~module()
@@ -99,12 +97,6 @@ public:
 		return clg_;
 	}
 
-	inline void
-	add_global_variable(const jlm::variable * v, std::unique_ptr<const expr> e)
-	{
-		globals_[v] = std::move(e);
-	}
-
 	const_iterator
 	begin() const
 	{
@@ -115,6 +107,20 @@ public:
 	end() const
 	{
 		return globals_.end();
+	}
+
+	inline jlm::gblvalue *
+	create_global_value(
+		const jive::base::type & type,
+		const std::string & name,
+		const jlm::linkage & linkage,
+		std::unique_ptr<const expr> initialization)
+	{
+		auto v = jlm::create_gblvalue(type, name, linkage, std::move(initialization));
+		auto pv = v.get();
+		globals_.insert(pv);
+		variables_.insert(std::move(v));
+		return pv;
 	}
 
 	/*
@@ -185,9 +191,9 @@ private:
 	jlm::clg clg_;
 	std::string data_layout_;
 	std::string target_triple_;
+	std::unordered_set<const jlm::gblvalue*> globals_;
 	std::unordered_set<std::unique_ptr<jlm::variable>> variables_;
 	std::unordered_map<const clg_node*, const jlm::variable*> functions_;
-	std::unordered_map<const jlm::variable*, std::unique_ptr<const jlm::expr>> globals_;
 };
 
 }

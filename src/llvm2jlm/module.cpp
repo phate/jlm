@@ -182,14 +182,14 @@ convert_global_variables(llvm::Module::GlobalListType & vs, context & ctx)
 	auto & m = ctx.module();
 
 	for (auto & gv : vs) {
-		auto name = gv.getName().str();
-		auto exported = gv.getLinkage() != llvm::GlobalValue::InternalLinkage;
-		auto variable = m.create_variable(*convert_type(gv.getType(), ctx), name, exported);
 		std::unique_ptr<const expr> init;
-		if (gv.hasInitializer())
-			init = convert_constant_expression(&gv, ctx);
-		m.add_global_variable(variable, std::move(init));
-		ctx.insert_value(&gv, variable);
+		if (gv.hasInitializer()) init = convert_constant_expression(&gv, ctx);
+
+		auto name = gv.getName().str();
+		auto type = convert_type(gv.getType(), ctx);
+		auto linkage = convert_linkage(gv.getLinkage());
+		auto v = m.create_global_value(*type, name, linkage, std::move(init));
+		ctx.insert_value(&gv, v);
 	}
 }
 
