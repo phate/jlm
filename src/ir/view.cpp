@@ -50,9 +50,13 @@ emit_expression(const jlm::expr & e)
 }
 
 static inline std::string
-emit_global(const jlm::variable * v, const jlm::expr & e)
+emit_global(const jlm::variable * v, const jlm::expr * e)
 {
-	return v->debug_string() + " = " + emit_expression(e);
+	std::string str = v->debug_string();
+	if (e != nullptr)
+		str += " = " + emit_expression(*e);
+
+	return str;
 }
 
 static inline std::string
@@ -215,7 +219,7 @@ to_str(const jlm::module & module)
 {
 	std::string str;
 	for (const auto & gv : module)
-		str += emit_global(gv.first, *gv.second) + "\n\n";
+		str += emit_global(gv.first, gv.second.get()) + "\n\n";
 
 	str += to_str(module.clg());
 

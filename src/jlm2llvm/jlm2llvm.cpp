@@ -244,16 +244,20 @@ convert_globals(context & ctx)
 
 	for (const auto & gv : jm) {
 		auto variable = gv.first;
-		auto value = convert_expression(*gv.second, ctx);
+		auto linkage = GlobalValue::ExternalLinkage;
+		llvm::Constant * init = nullptr;
+		if (gv.second != nullptr) {
+			linkage = GlobalValue::InternalLinkage;
+			init = convert_expression(*gv.second, ctx);
+		}
 
 		JLM_DEBUG_ASSERT(is_ptrtype(variable->type()));
 		auto pt = static_cast<const jlm::ptrtype*>(&variable->type());
 		auto type = convert_type(pt->pointee_type(), ctx);
-		auto linkage = GlobalValue::InternalLinkage;
 		if (variable->exported()) linkage = GlobalValue::ExternalLinkage;
 
 		/* FIXME: isConstant parameter is not always true */
-		auto addr = new GlobalVariable(lm, type, true, linkage, value, variable->name());
+		auto addr = new GlobalVariable(lm, type, true, linkage, init, variable->name());
 		ctx.insert(variable, addr);
 	}
 }

@@ -385,7 +385,9 @@ rvsdg2jlm(const jlm::rvsdg & rvsdg)
 			auto v = module->create_variable(f);
 			ctx.insert(argument, v);
 		} else {
-			JLM_DEBUG_ASSERT(0);
+			auto v = module->create_variable(argument->type(), argument->gate()->name(), false);
+			module->add_global_variable(v, nullptr);
+			ctx.insert(argument, v);
 		}
 	}
 

@@ -542,15 +542,20 @@ convert_globals(jive::graph * rvsdg, scoped_vmap & svmap)
 
 	for (const auto & gv : m) {
 		auto variable = gv.first;
-		auto & expression = *gv.second;
+		const auto & init = gv.second;
+
+		if (init == nullptr) {
+			rvsdg->import(variable->type(), variable->name());
+			continue;
+		}
 
 		jlm::data_builder db;
 		auto region = db.begin(rvsdg->root());
-		auto data = db.end(convert_expression(expression, region));
+		auto data = db.end(convert_expression(*init, region));
 
 		svmap.vmap()[variable] = data;
 		if (variable->exported())
-			rvsdg->export_port(data, gv.first->name());
+			rvsdg->export_port(data, variable->name());
 	}
 }
 
