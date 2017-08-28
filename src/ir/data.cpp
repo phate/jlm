@@ -24,7 +24,8 @@ data_op::copy() const
 bool
 data_op::operator==(const operation & other) const noexcept
 {
-	return is_data_op(other);
+	auto op = dynamic_cast<const data_op*>(&other);
+	return op && op->linkage_ == linkage_;
 }
 
 }

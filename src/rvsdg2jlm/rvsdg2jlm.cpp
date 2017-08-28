@@ -333,6 +333,7 @@ convert_data_node(const jive::node & node, context & ctx)
 {
 	JLM_DEBUG_ASSERT(is_data_op(node.operation()));
 	auto subregion = static_cast<const jive::structural_node*>(&node)->subregion(0);
+	const auto & op = *static_cast<const jlm::data_op*>(&node.operation());
 	auto & module = ctx.module();
 
 	JLM_DEBUG_ASSERT(subregion->nresults() == 1);
@@ -341,11 +342,8 @@ convert_data_node(const jive::node & node, context & ctx)
 	auto name = get_name(result->output());
 	const auto & type = result->output()->type();
 	auto expression = convert_port(result->origin());
-	auto linkage = jlm::linkage::internal_linkage;
-	if (is_exported(result->output()))
-		linkage = jlm::linkage::external_linkage;
 
-	auto v = module.create_global_value(type, name, linkage, std::move(expression));
+	auto v = module.create_global_value(type, name, op.linkage(), std::move(expression));
 	ctx.insert(result->output(), v);
 }
 

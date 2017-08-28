@@ -11,6 +11,7 @@
 #include <jive/vsdg/structural_node.h>
 
 #include <jlm/ir/types.hpp>
+#include <jlm/ir/variable.hpp>
 
 namespace jlm {
 
@@ -18,6 +19,11 @@ namespace jlm {
 
 class data_op final : public jive::structural_op {
 public:
+	inline constexpr
+	data_op(const jlm::linkage & linkage)
+	: linkage_(linkage)
+	{}
+
 	virtual std::string
 	debug_string() const override;
 
@@ -26,6 +32,15 @@ public:
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
+
+	const jlm::linkage &
+	linkage() const noexcept
+	{
+		return linkage_;
+	}
+
+private:
+	jlm::linkage linkage_;
 };
 
 static inline bool
@@ -60,12 +75,12 @@ public:
 	}
 
 	inline jive::region *
-	begin(jive::region * parent)
+	begin(jive::region * parent, const jlm::linkage & linkage)
 	{
 		if (node_)
 			return region();
 
-		node_ = parent->add_structural_node(jlm::data_op(), 1);
+		node_ = parent->add_structural_node(jlm::data_op(linkage), 1);
 		return region();
 	}
 
