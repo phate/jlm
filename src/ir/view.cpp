@@ -326,8 +326,12 @@ to_dot(const jlm::cfg & cfg)
 {
 	std::string dot("digraph cfg {\n");
 	for (const auto & node : cfg) {
+		dot += "{ ";
+		if (&node == cfg.entry_node()) dot += "rank = source; ";
+		if (&node == cfg.exit_node()) dot += "rank = sink; ";
+
 		dot += strfmt((intptr_t)&node);
-		dot += strfmt("[shape = box, label = \"", emit_node(node), "\"];\n");
+		dot += strfmt("[shape = box, label = \"", emit_node(node), "\"]; }\n");
 		for (auto it = node.begin_outedges(); it != node.end_outedges(); it++) {
 			dot += strfmt((intptr_t)it->source(), " -> ", (intptr_t)it->sink());
 			dot += strfmt("[label = \"", it->index(), "\"];\n");
