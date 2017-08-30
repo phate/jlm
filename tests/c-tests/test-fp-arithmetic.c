@@ -10,7 +10,7 @@ double test_dblsub(double x, double y){ return x - y; }
 double test_dblmul(double x, double y){ return x * y; }
 double test_dbldiv(double x, double y){ return x / y; }
 
-void
+static void
 test_fltarithmetic()
 {
 	float x = 15.0;
@@ -22,7 +22,7 @@ test_fltarithmetic()
 	assert(test_fltdiv(x, y) == 5.0);
 }
 
-void
+static void
 test_dblarithmetic()
 {
 	double x = 15.0;

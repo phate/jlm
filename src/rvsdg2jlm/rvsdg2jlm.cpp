@@ -66,7 +66,8 @@ get_name(const jive::output * port)
 		}
 	}
 
-	return "";
+	static size_t c = 0;
+	return strfmt("f", c++);
 }
 
 static inline const jlm::tac *
