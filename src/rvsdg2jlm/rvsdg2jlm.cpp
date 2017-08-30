@@ -21,6 +21,8 @@
 #include <jlm/rvsdg2jlm/context.hpp>
 #include <jlm/rvsdg2jlm/rvsdg2jlm.hpp>
 
+#include <deque>
+
 namespace jlm {
 namespace rvsdg2jlm {
 
@@ -244,12 +246,16 @@ convert_theta_node(const jive::node & node, context & ctx)
 	ctx.set_lpbb(entry);
 
 	/* create loop variables and add arguments to context */
-	std::vector<jlm::variable*> lvs;
+	std::deque<jlm::variable*> lvs;
 	for (size_t n = 0; n < subregion->narguments(); n++) {
 		auto argument = subregion->argument(n);
-		auto lv = ctx.module().create_variable(argument->type(), false);
+		auto lv = ctx.variable(node.input(n)->origin());
+		if (!is_gblvariable(lv)) {
+			auto v = ctx.module().create_variable(argument->type(), false);
+			lvs.push_back(v);
+			lv = v;
+		}
 		ctx.insert(argument, lv);
-		lvs.push_back(lv);
 	}
 
 	convert_region(*subregion, ctx);
@@ -257,12 +263,19 @@ convert_theta_node(const jive::node & node, context & ctx)
 	/* add results to context and phi instructions */
 	for (size_t n = 1; n < subregion->nresults(); n++) {
 		auto result = subregion->result(n);
-		ctx.insert(result->output(), lvs[n-1]);
 
 		auto v1 = ctx.variable(node.input(n-1)->origin());
+		if (is_gblvariable(v1)) {
+			ctx.insert(result->output(), v1);
+			continue;
+		}
+
 		auto v2 = ctx.variable(result->origin());
-		append_last(entry, create_phi_tac({{v1, pre_entry}, {v2, ctx.lpbb()}}, lvs[n-1]));
+		auto lv = lvs.front();
+		lvs.pop_front();
+		append_last(entry, create_phi_tac({{v1, pre_entry}, {v2, ctx.lpbb()}}, lv));
 	}
+	JLM_DEBUG_ASSERT(lvs.empty());
 
 	append_last(ctx.lpbb(), create_branch_tac(2, ctx.variable(predicate)));
 	auto exit = create_basic_block_node(ctx.cfg());
