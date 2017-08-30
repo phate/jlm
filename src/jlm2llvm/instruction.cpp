@@ -476,6 +476,19 @@ convert_sitofp(
 	return builder.CreateSIToFP(ctx.value(args[0]), type);
 }
 
+static inline llvm::Value *
+convert_ptr_constant_null(
+	const jive::operation & op,
+	const std::vector<const variable*> & args,
+	llvm::IRBuilder<> & builder,
+	context & ctx)
+{
+	JLM_DEBUG_ASSERT(is_ptr_constant_null_op(op));
+
+	auto type = static_cast<const jlm::ptrtype*>(&op.result(0).type());
+	return llvm::ConstantPointerNull::get(convert_type(*type, ctx));
+}
+
 llvm::Value *
 convert_operation(
 	const jive::operation & op,
@@ -522,6 +535,7 @@ convert_operation(
 	, {std::type_index(typeid(jlm::trunc_op)), convert_trunc}
 	, {std::type_index(typeid(jlm::sext_op)), convert_sext}
 	, {std::type_index(typeid(jlm::sitofp_op)), convert_sitofp}
+	, {std::type_index(typeid(jlm::ptr_constant_null_op)), convert_ptr_constant_null}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
