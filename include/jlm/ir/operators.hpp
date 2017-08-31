@@ -582,11 +582,15 @@ public:
 	~store_op() noexcept;
 
 	inline
-	store_op(const jlm::ptrtype & ptype, size_t nstates)
+	store_op(
+		const jlm::ptrtype & ptype,
+		size_t nstates,
+		size_t alignment)
 	: simple_op()
 	, nstates_(nstates)
 	, aport_(ptype)
 	, vport_(ptype.pointee_type())
+	, alignment_(alignment)
 	{}
 
 	virtual bool
@@ -622,10 +626,17 @@ public:
 		return nstates_;
 	}
 
+	inline size_t
+	alignment() const noexcept
+	{
+		return alignment_;
+	}
+
 private:
 	size_t nstates_;
 	jive::port aport_;
 	jive::port vport_;
+	size_t alignment_;
 };
 
 static inline bool
@@ -640,7 +651,7 @@ create_store_tac(const variable * address, const variable * value, jlm::variable
 	auto at = dynamic_cast<const jlm::ptrtype*>(&address->type());
 	if (!at) throw std::logic_error("Expected pointer type.");
 
-	jlm::store_op op(*at, 1);
+	jlm::store_op op(*at, 1, 0);
 	return create_tac(op, {address, value, state}, {state});
 }
 
