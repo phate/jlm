@@ -447,7 +447,8 @@ load_op::operator==(const operation & other) const noexcept
 	return op
 	    && op->nstates_ == nstates_
 	    && op->aport_ == aport_
-	    && op->vport_ == vport_;
+	    && op->vport_ == vport_
+	    && op->alignment_ == alignment_;
 }
 
 size_t

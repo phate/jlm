@@ -497,11 +497,15 @@ public:
 	~load_op() noexcept;
 
 	inline
-	load_op(const jlm::ptrtype & ptype, size_t nstates)
+	load_op(
+		const jlm::ptrtype & ptype,
+		size_t nstates,
+		size_t alignment)
 	: simple_op()
 	, nstates_(nstates)
 	, aport_(ptype)
 	, vport_(ptype.pointee_type())
+	, alignment_(alignment)
 	{}
 
 	virtual bool
@@ -537,10 +541,17 @@ public:
 		return nstates_;
 	}
 
+	inline size_t
+	alignment() const noexcept
+	{
+		return alignment_;
+	}
+
 private:
 	size_t nstates_;
 	jive::port aport_;
 	jive::port vport_;
+	size_t alignment_;
 };
 
 static inline bool
@@ -555,7 +566,7 @@ create_load_tac(const variable * address, const variable * state, jlm::variable 
 	auto pt = dynamic_cast<const jlm::ptrtype*>(&address->type());
 	if (!pt) throw std::logic_error("Expected pointer type.");
 
-	jlm::load_op op(*pt, 1);
+	jlm::load_op op(*pt, 1, 0);
 	return create_tac(op, {address, state}, {result});
 }
 
