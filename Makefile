@@ -43,12 +43,19 @@ LIBJLM_SRC = \
 JLMVIEWER_SRC = \
 	src/jlm-viewer.cpp \
 
-all: libjlm.a jlm-viewer check
+JLMOPT_SRC = \
+	src/jlm-opt.cpp \
+
+all: libjlm.a jlm-viewer jlm-opt check
 
 libjlm.a: $(patsubst %.cpp, %.la, $(LIBJLM_SRC))
 
 jlm-viewer: LDFLAGS+=-L. -ljlm -ljive
 jlm-viewer: $(patsubst %.cpp, %.o, $(JLMVIEWER_SRC)) libjlm.a
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
+
+jlm-opt: LDFLAGS+=-L. -ljlm -ljive
+jlm-opt: $(patsubst %.cpp, %.o, $(JLMOPT_SRC)) libjlm.a
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 
 include tests/Makefile.sub
@@ -67,4 +74,5 @@ include tests/Makefile.sub
 clean:
 	find . -name "*.o" -o -name "*.la" -o -name "*.a" | grep -v external | xargs rm -rf
 	rm -rf tests/test-runner
+	rm -rf jlm-opt
 	rm -rf jlm-viewer
