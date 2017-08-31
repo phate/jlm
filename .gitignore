@@ -4,5 +4,5 @@
 utests.log
 ctests.log
 check.log
-/jlm
+/jlm-viewer
 tests/test-runner
