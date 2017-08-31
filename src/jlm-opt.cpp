@@ -13,6 +13,7 @@
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IRReader/IRReader.h>
+#include <llvm/Support/raw_os_ostream.h>
 #include <llvm/Support/SourceMgr.h>
 
 #include <iostream>
@@ -40,7 +41,8 @@ main(int argc, char ** argv)
 	jm = jlm::rvsdg2jlm::rvsdg2jlm(*rvsdg);
 	lm = jlm::jlm2llvm::convert(*jm, llvm::getGlobalContext());
 
-	lm->dump();
+	llvm::raw_os_ostream os(std::cout);
+	lm->print(os, nullptr);
 
 	return 0;
 }
