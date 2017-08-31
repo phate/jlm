@@ -223,10 +223,14 @@ public:
 	~alloca_op() noexcept;
 
 	inline
-	alloca_op(const jlm::ptrtype & atype, const jive::bits::type & btype)
+	alloca_op(
+		const jlm::ptrtype & atype,
+		const jive::bits::type & btype,
+		size_t alignment)
 	: simple_op()
 	, aport_(atype)
 	, bport_(btype)
+	, alignment_(alignment)
 	{}
 
 	virtual bool
@@ -262,9 +266,16 @@ public:
 		return static_cast<const jlm::ptrtype*>(&aport_.type())->pointee_type();
 	}
 
+	inline size_t
+	alignment() const noexcept
+	{
+		return alignment_;
+	}
+
 private:
 	jive::port aport_;
 	jive::port bport_;
+	size_t alignment_;
 };
 
 static inline bool
@@ -286,7 +297,7 @@ create_alloca_tac(
 	auto bt = dynamic_cast<const jive::bits::type*>(&size->type());
 	if (!bt) throw std::logic_error("Expected bits type.");
 
-	jlm::alloca_op op(jlm::ptrtype(*vt), *bt);
+	jlm::alloca_op op(jlm::ptrtype(*vt), *bt, 0);
 	return create_tac(op, {size, state}, {result, state});
 }
 

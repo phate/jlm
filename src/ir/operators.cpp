@@ -184,7 +184,10 @@ bool
 alloca_op::operator==(const operation & other) const noexcept
 {
 	auto op = dynamic_cast<const jlm::alloca_op*>(&other);
-	return op && op->aport_ == aport_ && op->bport_ == bport_;
+	return op
+	    && op->aport_ == aport_
+	    && op->bport_ == bport_
+	    && op->alignment_ == alignment_;
 }
 
 size_t
