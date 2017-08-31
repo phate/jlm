@@ -426,11 +426,10 @@ convert_alloca_instruction(llvm::Instruction * instruction, tacsvector_t & tacs,
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::AllocaInst*>(instruction));
 	auto i = static_cast<llvm::AllocaInst*>(instruction);
 
-	/* FIXME: alignment */
 	auto result = ctx.lookup_value(i);
 	auto size = convert_value(i->getArraySize(), tacs, ctx);
 	auto vtype = convert_type(i->getAllocatedType(), ctx);
-	tacs.push_back(create_alloca_tac(*vtype, size, ctx.state(), result));
+	tacs.push_back(create_alloca_tac(*vtype, size, i->getAlignment(), ctx.state(), result));
 
 	return tacs.back()->output(0);
 }

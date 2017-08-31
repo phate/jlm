@@ -288,6 +288,7 @@ static inline std::unique_ptr<jlm::tac>
 create_alloca_tac(
 	const jive::base::type & vtype,
 	const variable * size,
+	size_t alignment,
 	jlm::variable * state,
 	jlm::variable * result)
 {
@@ -297,7 +298,7 @@ create_alloca_tac(
 	auto bt = dynamic_cast<const jive::bits::type*>(&size->type());
 	if (!bt) throw std::logic_error("Expected bits type.");
 
-	jlm::alloca_op op(jlm::ptrtype(*vt), *bt, 0);
+	jlm::alloca_op op(jlm::ptrtype(*vt), *bt, alignment);
 	return create_tac(op, {size, state}, {result, state});
 }
 

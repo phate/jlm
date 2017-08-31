@@ -260,7 +260,9 @@ convert_alloca(
 	auto & aop = *static_cast<const jlm::alloca_op*>(&op);
 
 	auto t = convert_type(aop.value_type(), ctx);
-	return builder.CreateAlloca(t, ctx.value(args[0]));
+	auto i = builder.CreateAlloca(t, ctx.value(args[0]));
+	i->setAlignment(aop.alignment());
+	return i;
 }
 
 static inline llvm::Value *
