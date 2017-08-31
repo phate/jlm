@@ -227,7 +227,11 @@ convert_load(
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(is_load_op(op));
-	return builder.CreateLoad(ctx.value(args[0]));
+	auto load = static_cast<const load_op*>(&op);
+
+	auto i = builder.CreateLoad(ctx.value(args[0]));
+	i->setAlignment(load->alignment());
+	return i;
 }
 
 static inline llvm::Value *

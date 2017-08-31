@@ -561,12 +561,16 @@ is_load_op(const jive::operation & op) noexcept
 }
 
 static inline std::unique_ptr<jlm::tac>
-create_load_tac(const variable * address, const variable * state, jlm::variable * result)
+create_load_tac(
+	const variable * address,
+	const variable * state,
+	size_t alignment,
+	jlm::variable * result)
 {
 	auto pt = dynamic_cast<const jlm::ptrtype*>(&address->type());
 	if (!pt) throw std::logic_error("Expected pointer type.");
 
-	jlm::load_op op(*pt, 1, 0);
+	jlm::load_op op(*pt, 1, alignment);
 	return create_tac(op, {address, state}, {result});
 }
 
