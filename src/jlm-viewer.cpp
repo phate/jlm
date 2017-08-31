@@ -46,11 +46,26 @@ public:
 	std::string r2jdot_function;
 };
 
+static void
+print_usage(const std::string & app)
+{
+	std::cerr << "Usage: " << app << " [OPTIONS] FILE\n";
+	std::cerr << "OPTIONS:\n";
+	std::cerr << "--l2j: Print program after LLVM to JLM pass.\n";
+	std::cerr << "--j2r: Print program after JLM to RVSDG pass.\n";
+	std::cerr << "--r2j: Print program after RVSDG to JLM pass.\n";
+	std::cerr << "--j2l: Print program after JLM to LLVM pass.\n";
+	std::cerr << "--j2rx: Print program as XML after JLM to RVSDG pass.\n";
+	std::cerr << "--l2jdot f: Print function f as graphviz after LLVM to JLM pass.\n";
+	std::cerr << "--r2jdot f: Print function f as graphviz after RVSDG to JLM pass.\n";
+}
+
 std::string
 parse_cmdflags(int argc, char ** argv, cmdflags & cmdf)
 {
 	if (argc < 2) {
 		std::cerr << "Expected LLVM IR file as input.\n";
+		print_usage(argv[0]);
 		exit(1);
 	}
 
