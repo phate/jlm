@@ -646,12 +646,16 @@ is_store_op(const jive::operation & op) noexcept
 }
 
 static inline std::unique_ptr<jlm::tac>
-create_store_tac(const variable * address, const variable * value, jlm::variable * state)
+create_store_tac(
+	const variable * address,
+	const variable * value,
+	size_t alignment,
+	jlm::variable * state)
 {
 	auto at = dynamic_cast<const jlm::ptrtype*>(&address->type());
 	if (!at) throw std::logic_error("Expected pointer type.");
 
-	jlm::store_op op(*at, 1, 0);
+	jlm::store_op op(*at, 1, alignment);
 	return create_tac(op, {address, value, state}, {state});
 }
 

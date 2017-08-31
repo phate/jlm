@@ -259,7 +259,7 @@ convert_store_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & 
 	/* FIXME: volatile and alignement */
 	auto address = convert_value(instruction->getPointerOperand(), tacs, ctx);
 	auto value = convert_value(instruction->getValueOperand(), tacs, ctx);
-	tacs.push_back(create_store_tac(address, value, ctx.state()));
+	tacs.push_back(create_store_tac(address, value, instruction->getAlignment(), ctx.state()));
 
 	return nullptr;
 }

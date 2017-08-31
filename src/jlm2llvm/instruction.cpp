@@ -242,7 +242,10 @@ convert_store(
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(is_store_op(op) && args.size() >= 2);
-	builder.CreateStore(ctx.value(args[1]), ctx.value(args[0]));
+	auto store = static_cast<const store_op*>(&op);
+
+	auto i = builder.CreateStore(ctx.value(args[1]), ctx.value(args[0]));
+	i->setAlignment(store->alignment());
 	return nullptr;
 }
 
