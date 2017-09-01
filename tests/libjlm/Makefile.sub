@@ -1,27 +1,6 @@
 TESTS += \
 	libjlm/test-aggregation \
 	libjlm/test-annotation \
-	libjlm/test-alloca \
-	libjlm/test-bitops \
-	libjlm/test-call \
-	libjlm/test-casts \
 	libjlm/test-cfg-structure \
-	libjlm/test-constants \
-	libjlm/test-extractvalue \
-	libjlm/test-fcmp \
-	libjlm/test-fltops \
-	libjlm/test-getelementptr \
-	libjlm/test-global_variables \
-	libjlm/test-icmp \
-	libjlm/test-insertvalue \
-	libjlm/test-loadstore \
-	libjlm/test-phi \
 	libjlm/test-restructuring \
-	libjlm/test-select \
 	libjlm/test-ssa-destruction \
-	libjlm/test-switch \
-	libjlm/test-switch_fallthrough \
-	libjlm/test-unreachable \
-	libjlm/test-vararg \
-
-include tests/libjlm/tests/Makefile.sub

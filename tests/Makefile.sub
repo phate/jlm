@@ -9,7 +9,7 @@ TEST_SOURCES = \
 	tests/test-types.cpp \
 	$(patsubst %, tests/%.cpp, $(TESTS))
 
-tests/test-runner: LDFLAGS+=-L. -Wl,-whole-archive -ljlm -ljive -Wl,-no-whole-archive
+tests/test-runner: LDFLAGS+=-L. -ljlm -ljive
 tests/test-runner: %: $(patsubst %.cpp, %.la, $(TEST_SOURCES)) libjlm.a
 	$(CXX) -o $@ $(filter %.la, $^) $(LDFLAGS)
 
