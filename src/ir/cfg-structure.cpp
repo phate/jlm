@@ -6,6 +6,7 @@
 #include <jlm/ir/basic_block.hpp>
 #include <jlm/ir/cfg.hpp>
 #include <jlm/ir/cfg-structure.hpp>
+#include <jlm/ir/operators.hpp>
 
 #include <algorithm>
 #include <unordered_map>
@@ -394,6 +395,17 @@ is_valid(const jlm::cfg & cfg)
 
 		if (node.no_successor())
 			return false;
+
+		/* ensure all phi nodes are at the beginning of a basic block */
+		JLM_DEBUG_ASSERT(is_basic_block(node.attribute()));
+		const auto & bb = *static_cast<const basic_block*>(&node.attribute());
+		for (auto it = bb.begin(); it != bb.end(); it++) {
+			if (!is_phi_op((*it)->operation()))
+				continue;
+
+			if (*it != bb.first() && !is_phi_op((*std::prev(it))->operation()))
+				return false;
+		}
 	}
 
 	return true;
