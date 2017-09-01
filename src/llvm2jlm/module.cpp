@@ -50,7 +50,10 @@ convert_basic_blocks(
 		for (auto & instruction : bb) {
 			std::vector<std::unique_ptr<jlm::tac>> tacs;
 			convert_instruction(&instruction, tacs, ctx);
-			append_last(ctx.lookup_basic_block(&bb), tacs);
+			if (instruction.getOpcode() == llvm::Instruction::PHI)
+				append_first(ctx.lookup_basic_block(&bb), tacs);
+			else
+				append_last(ctx.lookup_basic_block(&bb), tacs);
 		}
 	}
 }
