@@ -279,8 +279,8 @@ convert_theta_node(const jive::node & node, context & ctx)
 
 	append_last(ctx.lpbb(), create_branch_tac(2, ctx.variable(predicate)));
 	auto exit = create_basic_block_node(ctx.cfg());
-	ctx.lpbb()->add_outedge(exit);
 	ctx.lpbb()->add_outedge(entry);
+	ctx.lpbb()->add_outedge(exit);
 	ctx.set_lpbb(exit);
 }
 
