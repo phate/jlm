@@ -562,10 +562,13 @@ construct_rvsdg(const module & m)
 	auto rvsdg = std::make_unique<jlm::rvsdg>(m.target_triple(), m.data_layout());
 	auto graph = rvsdg->graph();
 
+	auto nf = graph->node_normal_form(typeid(jive::operation));
+	nf->set_mutable(false);
+
 	/* FIXME: we currently cannot handle flattened_binary_op in jlm2llvm pass */
-	auto nf = static_cast<jive::binary_normal_form*>(
+	auto bnf = static_cast<jive::binary_normal_form*>(
 		graph->node_normal_form(typeid(jive::base::binary_op)));
-	nf->set_flatten(false);
+	bnf->set_flatten(false);
 
 	scoped_vmap svmap(m, graph->root());
 	convert_globals(graph, svmap);
