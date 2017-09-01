@@ -23,8 +23,10 @@ public:
 	gblvalue(
 		const jive::base::type & type,
 		const std::string & name,
-		const jlm::linkage & linkage)
+		const jlm::linkage & linkage,
+		bool constant)
 	: gblvariable(type, name, linkage)
+	, constant_(constant)
 	{}
 
 	inline
@@ -32,8 +34,10 @@ public:
 		const jive::base::type & type,
 		const std::string & name,
 		const jlm::linkage & linkage,
+		bool constant,
 		std::unique_ptr<const expr> initialization)
 	: gblvariable(type, name, linkage)
+	, constant_(constant)
 	, initialization_(std::move(initialization))
 	{}
 
@@ -53,7 +57,14 @@ public:
 		return initialization_.get();
 	}
 
+	inline bool
+	constant() const noexcept
+	{
+		return constant_;
+	}
+
 private:
+	bool constant_;
 	std::unique_ptr<const expr> initialization_;
 };
 
@@ -64,7 +75,7 @@ create_gblvalue(
 	const jlm::linkage & linkage,
 	std::unique_ptr<const expr> initialization)
 {
-	return std::make_unique<jlm::gblvalue>(type, name, linkage, std::move(initialization));
+	return std::make_unique<jlm::gblvalue>(type, name, linkage, false, std::move(initialization));
 }
 
 /* module */
