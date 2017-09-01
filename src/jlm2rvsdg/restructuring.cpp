@@ -407,6 +407,7 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit, std::vector<scc_s
 		auto s = find_scc_structure(scc);
 
 		if (is_tcloop(s)) {
+			restructure(*s.begin_enodes(), (*s.begin_xedges())->source(), loops);
 			loops.push_back(extract_tcloop(*s.begin_enodes(), (*s.begin_xedges())->source()));
 			continue;
 		}
