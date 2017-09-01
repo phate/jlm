@@ -25,7 +25,7 @@ bool
 data_op::operator==(const operation & other) const noexcept
 {
 	auto op = dynamic_cast<const data_op*>(&other);
-	return op && op->linkage_ == linkage_;
+	return op && op->linkage_ == linkage_ && op->constant_ == constant_;
 }
 
 }

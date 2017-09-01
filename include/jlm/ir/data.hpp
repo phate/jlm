@@ -20,8 +20,9 @@ namespace jlm {
 class data_op final : public jive::structural_op {
 public:
 	inline constexpr
-	data_op(const jlm::linkage & linkage)
-	: linkage_(linkage)
+	data_op(const jlm::linkage & linkage, bool constant)
+	: constant_(constant)
+	, linkage_(linkage)
 	{}
 
 	virtual std::string
@@ -39,7 +40,14 @@ public:
 		return linkage_;
 	}
 
+	inline bool
+	constant() const noexcept
+	{
+		return constant_;
+	}
+
 private:
+	bool constant_;
 	jlm::linkage linkage_;
 };
 
@@ -80,7 +88,7 @@ public:
 		if (node_)
 			return region();
 
-		node_ = parent->add_structural_node(jlm::data_op(linkage), 1);
+		node_ = parent->add_structural_node(jlm::data_op(linkage, false), 1);
 		return region();
 	}
 
