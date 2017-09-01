@@ -146,6 +146,7 @@ create_cfg(const jive::node & node, context & ctx)
 	ctx.set_cfg(nullptr);
 
 	straighten(*cfg);
+	JLM_DEBUG_ASSERT(is_closed(*cfg));
 	return cfg;
 }
 
