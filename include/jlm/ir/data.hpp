@@ -83,12 +83,15 @@ public:
 	}
 
 	inline jive::region *
-	begin(jive::region * parent, const jlm::linkage & linkage)
+	begin(
+		jive::region * parent,
+		const jlm::linkage & linkage,
+		bool constant)
 	{
 		if (node_)
 			return region();
 
-		node_ = parent->add_structural_node(jlm::data_op(linkage, false), 1);
+		node_ = parent->add_structural_node(jlm::data_op(linkage, constant), 1);
 		return region();
 	}
 

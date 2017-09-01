@@ -186,9 +186,10 @@ convert_global_variables(llvm::Module::GlobalListType & vs, context & ctx)
 		if (gv.hasInitializer()) init = convert_constant_expression(&gv, ctx);
 
 		auto name = gv.getName().str();
+		auto constant = gv.isConstant();
 		auto type = convert_type(gv.getType(), ctx);
 		auto linkage = convert_linkage(gv.getLinkage());
-		auto v = m.create_global_value(*type, name, linkage, std::move(init));
+		auto v = m.create_global_value(*type, name, linkage, constant, std::move(init));
 		ctx.insert_value(&gv, v);
 	}
 }

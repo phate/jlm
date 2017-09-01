@@ -546,7 +546,7 @@ convert_globals(jive::graph * rvsdg, scoped_vmap & svmap)
 			data = rvsdg->import(gv->type(), gv->name());
 		} else {
 			jlm::data_builder db;
-			auto region = db.begin(rvsdg->root(), gv->linkage());
+			auto region = db.begin(rvsdg->root(), gv->linkage(), gv->constant());
 			data = db.end(convert_expression(*gv->initialization(), region));
 		}
 

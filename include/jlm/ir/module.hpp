@@ -73,9 +73,10 @@ create_gblvalue(
 	const jive::base::type & type,
 	const std::string & name,
 	const jlm::linkage & linkage,
+	bool constant,
 	std::unique_ptr<const expr> initialization)
 {
-	return std::make_unique<jlm::gblvalue>(type, name, linkage, false, std::move(initialization));
+	return std::make_unique<jlm::gblvalue>(type, name, linkage, constant, std::move(initialization));
 }
 
 /* module */
@@ -125,9 +126,10 @@ public:
 		const jive::base::type & type,
 		const std::string & name,
 		const jlm::linkage & linkage,
+		bool constant,
 		std::unique_ptr<const expr> initialization)
 	{
-		auto v = jlm::create_gblvalue(type, name, linkage, std::move(initialization));
+		auto v = jlm::create_gblvalue(type, name, linkage, constant, std::move(initialization));
 		auto pv = v.get();
 		globals_.insert(pv);
 		variables_.insert(std::move(v));

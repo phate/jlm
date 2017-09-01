@@ -357,7 +357,9 @@ convert_data_node(const jive::node & node, context & ctx)
 	const auto & type = result->output()->type();
 	auto expression = convert_port(result->origin());
 
-	auto v = module.create_global_value(type, name, op.linkage(), std::move(expression));
+	auto linkage = op.linkage();
+	auto constant = op.constant();
+	auto v = module.create_global_value(type, name, linkage, constant, std::move(expression));
 	ctx.insert(result->output(), v);
 }
 
@@ -403,7 +405,8 @@ rvsdg2jlm(const jlm::rvsdg & rvsdg)
 		} else {
 			const auto & type = argument->type();
 			const auto & name = argument->gate()->name();
-			auto v = module->create_global_value(type, name, jlm::linkage::external_linkage, nullptr);
+			auto v = module->create_global_value(type, name, jlm::linkage::external_linkage, false,
+				nullptr);
 			ctx.insert(argument, v);
 		}
 	}
