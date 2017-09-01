@@ -37,6 +37,13 @@ destruct_ssa(jlm::cfg & cfg)
 		auto ass_block = create_basic_block_node(&cfg);
 		auto phi_attr = static_cast<basic_block*>(&phi_block->attribute());
 
+		/* collect inedges of phi block */
+		std::unordered_map<cfg_node*, cfg_edge*> edges;
+		for (auto it = phi_block->begin_inedges(); it != phi_block->end_inedges(); it++) {
+			JLM_DEBUG_ASSERT(edges.find((*it)->source()) == edges.end());
+			edges[(*it)->source()] = *it;
+		}
+
 		while (phi_attr->first()) {
 			auto tac = phi_attr->first();
 			if (!dynamic_cast<const phi_op*>(&tac->operation()))
@@ -44,12 +51,6 @@ destruct_ssa(jlm::cfg & cfg)
 
 			auto phi = static_cast<const phi_op*>(&tac->operation());
 			auto v = cfg.module().create_variable(phi->type(), false);
-
-			std::unordered_map<cfg_node*, cfg_edge*> edges;
-			for (auto it = phi_block->begin_inedges(); it != phi_block->end_inedges(); it++) {
-				JLM_DEBUG_ASSERT(edges.find((*it)->source()) == edges.end());
-				edges[(*it)->source()] = *it;
-			}
 
 			const variable * value;
 			for (size_t n = 0; n < tac->ninputs(); n++) {

@@ -18,6 +18,7 @@ TESTS += \
 	libjlm/test-phi \
 	libjlm/test-restructuring \
 	libjlm/test-select \
+	libjlm/test-ssa-destruction \
 	libjlm/test-switch \
 	libjlm/test-switch_fallthrough \
 	libjlm/test-unreachable \
