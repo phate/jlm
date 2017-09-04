@@ -63,8 +63,8 @@ get_name(const jive::output * port)
 	port = root_port(port);
 	for (const auto & user : *port) {
 		if (auto result = dynamic_cast<const jive::result*>(user)) {
-			JLM_DEBUG_ASSERT(result->gate());
-			return result->gate()->name();
+			JLM_DEBUG_ASSERT(result->port().gate());
+			return result->port().gate()->name();
 		}
 	}
 
@@ -400,12 +400,12 @@ rvsdg2jlm(const jlm::rvsdg & rvsdg)
 	for (size_t n = 0; n < graph->root()->narguments(); n++) {
 		auto argument = graph->root()->argument(n);
 		if (auto ftype = dynamic_cast<const jive::fct::type*>(&argument->type())) {
-			auto f = clg_node::create(clg, argument->gate()->name(), *ftype, false);
+			auto f = clg_node::create(clg, argument->port().gate()->name(), *ftype, false);
 			auto v = module->create_variable(f, jlm::linkage::external_linkage);
 			ctx.insert(argument, v);
 		} else {
 			const auto & type = argument->type();
-			const auto & name = argument->gate()->name();
+			const auto & name = argument->port().gate()->name();
 			auto v = module->create_global_value(type, name, jlm::linkage::external_linkage, false,
 				nullptr);
 			ctx.insert(argument, v);

@@ -7,7 +7,6 @@
 #define JLM_IR_DATA_HPP
 
 #include <jive/vsdg/region.h>
-#include <jive/vsdg/structural.h>
 #include <jive/vsdg/structural_node.h>
 
 #include <jlm/ir/types.hpp>

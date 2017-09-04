@@ -9,9 +9,9 @@
 #include <jive/types/bitstring/type.h>
 #include <jive/types/function/fcttype.h>
 #include <jive/types/record/rcdtype.h>
-#include <jive/vsdg/basetype.h>
 #include <jive/vsdg/controltype.h>
 #include <jive/vsdg/nullary.h>
+#include <jive/vsdg/type.h>
 
 #include <jlm/ir/module.hpp>
 #include <jlm/ir/tac.hpp>

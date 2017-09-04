@@ -7,7 +7,7 @@
 #define JLM_IR_TYPES_HPP
 
 #include <jive/types/record/rcdtype.h>
-#include <jive/vsdg/basetype.h>
+#include <jive/vsdg/type.h>
 
 #include <vector>
 

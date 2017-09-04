@@ -6,7 +6,7 @@
 #ifndef TEST_TEST_TYPES_HPP
 #define TEST_TEST_TYPES_HPP
 
-#include <jive/vsdg/basetype.h>
+#include <jive/vsdg/type.h>
 
 namespace jlm {
 

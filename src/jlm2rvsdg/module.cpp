@@ -27,13 +27,13 @@
 #include <jive/types/bitstring/type.h>
 #include <jive/types/float.h>
 #include <jive/types/function.h>
-#include <jive/vsdg/basetype.h>
 #include <jive/vsdg/binary-normal-form.h>
 #include <jive/vsdg/control.h>
 #include <jive/vsdg/gamma.h>
 #include <jive/vsdg/phi.h>
 #include <jive/vsdg/region.h>
 #include <jive/vsdg/theta.h>
+#include <jive/vsdg/type.h>
 
 #include <cmath>
 #include <stack>
@@ -178,7 +178,8 @@ convert_tac(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
 		operands.push_back(vmap[tac.input(n)]);
 	}
 
-	auto results = jive::create_normalized(region, tac.operation(), operands);
+	auto results = jive::create_normalized(region, static_cast<const jive::simple_op&>(
+		tac.operation()), operands);
 
 	JLM_DEBUG_ASSERT(results.size() == tac.noutputs());
 	for (size_t n = 0; n < tac.noutputs(); n++)
@@ -532,7 +533,8 @@ convert_expression(const expr & e, jive::region * region)
 	for (size_t n = 0; n < e.noperands(); n++)
 		operands.push_back(convert_expression(e.operand(n), region));
 
-	return jive::create_normalized(region, e.operation(), operands)[0];
+	return jive::create_normalized(region, static_cast<const jive::simple_op&>(e.operation()),
+		operands)[0];
 }
 
 static inline void

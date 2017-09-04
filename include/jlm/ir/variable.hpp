@@ -6,7 +6,7 @@
 #ifndef JLM_IR_VARIABLE_HPP
 #define JLM_IR_VARIABLE_HPP
 
-#include <jive/vsdg/basetype.h>
+#include <jive/vsdg/type.h>
 
 #include <jlm/util/strfmt.hpp>
 

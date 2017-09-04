@@ -18,7 +18,7 @@
 #include <jlm/llvm2jlm/type.hpp>
 
 #include <jive/arch/memorytype.h>
-#include <jive/vsdg/basetype.h>
+#include <jive/vsdg/type.h>
 
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/Function.h>

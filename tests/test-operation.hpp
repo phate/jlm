@@ -6,8 +6,8 @@
 #ifndef TESTS_TEST_OPERATION_HPP
 #define TESTS_TEST_OPERATION_HPP
 
-#include <jive/vsdg/basetype.h>
 #include <jive/vsdg/operation.h>
+#include <jive/vsdg/type.h>
 
 #include <jlm/ir/tac.hpp>
 
