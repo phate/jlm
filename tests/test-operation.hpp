@@ -13,7 +13,7 @@
 
 namespace jlm {
 
-class test_op final : public jive::operation {
+class test_op final : public jive::simple_op {
 public:
 	virtual
 	~test_op() noexcept;
@@ -22,7 +22,7 @@ public:
 	test_op(
 		const std::vector<const jive::base::type*> & argument_types,
 		const std::vector<const jive::base::type*> & result_types)
-	: operation()
+	: simple_op()
 	{
 		for (const auto & type : argument_types)
 			arguments_.push_back(std::move(type->copy()));
