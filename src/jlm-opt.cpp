@@ -69,6 +69,10 @@ main(int argc, char ** argv)
 
 	llvm::SMDiagnostic d;
 	auto lm = llvm::parseIRFile(file, d, llvm::getGlobalContext());
+	if (!lm) {
+		d.print(argv[0], llvm::errs());
+		exit(1);
+	}
 
 	auto jm = jlm::convert_module(*lm);
 	auto rvsdg = jlm::construct_rvsdg(*jm);
