@@ -39,6 +39,8 @@ LIBJLM_SRC = \
 	src/llvm2jlm/type.cpp \
 	\
 	src/rvsdg2jlm/rvsdg2jlm.cpp \
+	\
+	src/opt/dne.cpp \
 
 JLMVIEWER_SRC = \
 	src/jlm-viewer.cpp \
