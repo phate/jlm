@@ -41,6 +41,7 @@ LIBJLM_SRC = \
 	src/rvsdg2jlm/rvsdg2jlm.cpp \
 	\
 	src/opt/dne.cpp \
+	src/opt/inlining.cpp \
 
 JLMVIEWER_SRC = \
 	src/jlm-viewer.cpp \
