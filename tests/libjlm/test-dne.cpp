@@ -56,15 +56,15 @@ test_gamma()
 
 	auto gamma = gb.end();
 
-	graph.export_port(gamma->output(0), "z");
+	graph.export_port(gamma->node()->output(0), "z");
 
 //	jive::view(graph.root(), stdout);
 	jlm::dne(graph);
 //	jive::view(graph.root(), stdout);
 
-	assert(gamma->noutputs() == 1);
-	assert(gamma->subregion(1)->nodes.size() == 0);
-	assert(gamma->ninputs() == 2);
+	assert(gamma->node()->noutputs() == 1);
+	assert(gamma->node()->subregion(1)->nodes.size() == 0);
+	assert(gamma->node()->ninputs() == 2);
 	assert(graph.root()->narguments() == 2);
 }
 
@@ -88,24 +88,23 @@ test_theta()
 	auto lv2 = tb.add_loopvar(y);
 	auto lv3 = tb.add_loopvar(z);
 
-	auto tmp = lv1->value();
-	lv1->set_value(lv2->value());
-	lv2->set_value(tmp);
+	lv1->result()->divert_origin(lv2->argument());
+	lv2->result()->divert_origin(lv1->argument());
 
-	auto t = tb.region()->add_simple_node(op, {lv3->value()})->output(0);
-	lv3->set_value(t);
+	auto t = tb.subregion()->add_simple_node(op, {lv3->argument()})->output(0);
+	lv3->result()->divert_origin(t);
 
-	auto c = tb.region()->add_simple_node(cop, {})->output(0);
+	auto c = tb.subregion()->add_simple_node(cop, {})->output(0);
 	auto theta = tb.end(c);
 
-	graph.export_port(theta->output(0), "a");
+	graph.export_port(theta->node()->output(0), "a");
 
 //	jive::view(graph.root(), stdout);
 	jlm::dne(graph);
 //	jive::view(graph.root(), stdout);
 
-	assert(theta->noutputs() == 2);
-	assert(theta->subregion(0)->nodes.size() == 1);
+	assert(theta->node()->noutputs() == 2);
+	assert(theta->subregion()->nodes.size() == 1);
 	assert(graph.root()->narguments() == 2);
 }
 
@@ -119,20 +118,20 @@ test_lambda()
 	auto x = graph.import(vt, "x");
 
 	jive::lambda_builder lb;
-	lb.begin(graph.root(), {{&vt}, {&vt}});
+	auto arguments = lb.begin(graph.root(), {{&vt}, {&vt}});
 
 	auto d = lb.add_dependency(x);
-	lb.region()->add_simple_node(op, {lb.region()->argument(0), d});
+	lb.subregion()->add_simple_node(op, {arguments[0], d});
 
-	auto lambda = lb.end({lb.region()->argument(0)});
+	auto lambda = lb.end({arguments[0]});
 
-	graph.export_port(lambda->output(0), "f");
+	graph.export_port(lambda->node()->output(0), "f");
 
 //	jive::view(graph.root(), stdout);
 	jlm::dne(graph);
 //	jive::view(graph.root(), stdout);
 
-	assert(lambda->subregion(0)->nodes.size() == 0);
+	assert(lambda->subregion()->nodes.size() == 0);
 	assert(graph.root()->narguments() == 0);
 }
 
@@ -155,18 +154,18 @@ test_phi()
 	auto dy = pb.add_dependency(y);
 
 	jive::lambda_builder lb;
-	lb.begin(pb.region(), ft);
+	auto arguments = lb.begin(pb.region(), ft);
 	lb.add_dependency(rv1->value());
 	lb.add_dependency(dx);
-	auto f1 = lb.end({lb.region()->argument(0)});
+	auto f1 = lb.end({arguments[0]});
 
-	lb.begin(pb.region(), ft);
+	arguments = lb.begin(pb.region(), ft);
 	lb.add_dependency(rv2->value());
 	lb.add_dependency(dy);
-	auto f2 = lb.end({lb.region()->argument(0)});
+	auto f2 = lb.end({arguments[0]});
 
-	rv1->set_value(f1->output(0));
-	rv2->set_value(f2->output(0));
+	rv1->set_value(f1->node()->output(0));
+	rv2->set_value(f2->node()->output(0));
 	auto phi = pb.end();
 
 	graph.export_port(phi->output(0), "f1");

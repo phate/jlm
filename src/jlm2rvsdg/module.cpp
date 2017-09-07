@@ -213,23 +213,23 @@ convert_entry_node(
 	auto entry = static_cast<const agg::entry*>(&node.structure())->attribute();
 	auto ds = dm.at(&node).get();
 
-	lb.begin(svmap.region(), function.type());
-	svmap.push_scope(lb.region());
+	auto arguments = lb.begin(svmap.region(), function.type());
+	svmap.push_scope(lb.subregion());
 
 	auto & pvmap = svmap.vmap(svmap.nscopes()-2);
 	auto & vmap = svmap.vmap();
 
 	/* add arguments */
-	JLM_DEBUG_ASSERT(entry.narguments() == lb.region()->narguments());
+	JLM_DEBUG_ASSERT(entry.narguments() == arguments.size());
 	for (size_t n = 0; n < entry.narguments(); n++)
-		vmap[entry.argument(n)] = lb.region()->argument(n);
+		vmap[entry.argument(n)] = arguments[n];
 
 	/* add dependencies and undefined values */
 	for (const auto & v : ds->top) {
 		if (pvmap.find(v) != pvmap.end()) {
 			vmap[v] = lb.add_dependency(pvmap[v]);
 		} else {
-			auto value = create_undef_value(lb.region(), v->type());
+			auto value = create_undef_value(lb.subregion(), v->type());
 			JLM_DEBUG_ASSERT(value);
 			vmap[v] = value;
 		}
@@ -256,7 +256,7 @@ convert_exit_node(
 	}
 
 	svmap.pop_scope();
-	return lb.end(results);
+	return lb.end(results)->node();
 }
 
 static jive::node *
@@ -361,7 +361,7 @@ convert_loop_node(
 	jive::theta_builder tb;
 	tb.begin(parent);
 
-	svmap.push_scope(tb.region());
+	svmap.push_scope(tb.subregion());
 	auto & vmap = svmap.vmap();
 	auto & pvmap = svmap.vmap(svmap.nscopes()-2);
 
@@ -379,7 +379,7 @@ convert_loop_node(
 			value = pvmap[v];
 		}
 		lvmap[v] = tb.add_loopvar(value);
-		vmap[v] = lvmap[v]->value();
+		vmap[v] = lvmap[v]->argument();
 	}
 
 	/* convert loop body */
@@ -390,7 +390,7 @@ convert_loop_node(
 	for (const auto & v : ds->top) {
 		JLM_DEBUG_ASSERT(vmap.find(v) != vmap.end());
 		JLM_DEBUG_ASSERT(lvmap.find(v) != lvmap.end());
-		lvmap[v]->set_value(vmap[v]);
+		lvmap[v]->result()->divert_origin(vmap[v]);
 	}
 
 	/* find predicate */
@@ -408,7 +408,7 @@ convert_loop_node(
 	svmap.pop_scope();
 	for (const auto & v : ds->bottom) {
 		JLM_DEBUG_ASSERT(pvmap.find(v) != pvmap.end());
-		pvmap[v] = lvmap[v]->value();
+		pvmap[v] = lvmap[v]->output();
 	}
 
 	return nullptr;
