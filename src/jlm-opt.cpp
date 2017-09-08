@@ -10,6 +10,7 @@
 #include <jlm/llvm2jlm/module.hpp>
 #include <jlm/opt/dne.hpp>
 #include <jlm/opt/inlining.hpp>
+#include <jlm/opt/invariance.hpp>
 #include <jlm/rvsdg2jlm/rvsdg2jlm.hpp>
 
 #include <llvm/IR/LLVMContext.h>
@@ -20,7 +21,7 @@
 
 #include <iostream>
 
-enum class opt {dne, iln};
+enum class opt {dne, iln, inv};
 
 static void
 print_usage(const std::string & app)
@@ -29,6 +30,7 @@ print_usage(const std::string & app)
 	std::cerr << "OPTIONS:\n";
 	std::cerr << "--dne: Perform dead node elimination.\n";
 	std::cerr << "--iln: Perform function inlining.\n";
+	std::cerr << "--inv: Perform invariant value redirection.\n";
 }
 
 static std::string
@@ -52,6 +54,11 @@ parse_cmdflags(int argc, char ** argv, std::vector<opt> & passes)
 			passes.push_back(opt::iln);
 			continue;
 		}
+
+		if (flag == "--inv") {
+			passes.push_back(opt::inv);
+			continue;
+		}
 	}
 
 	return std::string(argv[argc-1]);
@@ -68,6 +75,11 @@ perform_optimizations(jive::graph * graph, const std::vector<opt> & opts)
 
 		if (opt == opt::iln) {
 			jlm::inlining(*graph);
+			continue;
+		}
+
+		if (opt == opt::inv) {
+			jlm::invariance(*graph);
 			continue;
 		}
 	}
