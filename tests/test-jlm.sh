@@ -18,7 +18,7 @@ rm -f ${clang_out}
 clang-3.7 -Wall -Werror -O0 -S -emit-llvm $1 -o ${clang_out}
 
 rm -f ${jlm_out}
-${root}/../jlm-opt ${clang_out} > ${jlm_out}
+${root}/../jlm-opt --llvm ${clang_out} > ${jlm_out}
 
 rm -f ${llc_out}
 llc-3.7 -O0 -filetype=obj -o ${llc_out} ${jlm_out}

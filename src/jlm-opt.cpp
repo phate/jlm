@@ -3,6 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jive/view.h>
+
 #include <jlm/ir/module.hpp>
 #include <jlm/ir/rvsdg.hpp>
 #include <jlm/jlm2rvsdg/module.hpp>
@@ -23,6 +25,18 @@
 
 enum class opt {dne, iln, inv};
 
+struct cmdflags {
+	inline
+	cmdflags()
+	: xml(false)
+	, llvm(false)
+	{}
+
+	bool xml;
+	bool llvm;
+	std::vector<opt> passes;
+};
+
 static void
 print_usage(const std::string & app)
 {
@@ -31,10 +45,12 @@ print_usage(const std::string & app)
 	std::cerr << "--dne: Perform dead node elimination.\n";
 	std::cerr << "--iln: Perform function inlining.\n";
 	std::cerr << "--inv: Perform invariant value redirection.\n";
+	std::cerr << "--llvm: Output LLVM IR.\n";
+	std::cerr << "--xml: Output RVSDG as XML.\n";
 }
 
 static std::string
-parse_cmdflags(int argc, char ** argv, std::vector<opt> & passes)
+parse_cmdflags(int argc, char ** argv, cmdflags & flags)
 {
 	if (argc < 2) {
 		std::cerr << "Expected LLVM IR file as input.\n";
@@ -42,23 +58,24 @@ parse_cmdflags(int argc, char ** argv, std::vector<opt> & passes)
 		exit(1);
 	}
 
+	static std::unordered_map<std::string, void(*)(cmdflags&)> map({
+	  {"--dne", [](cmdflags & flags){ flags.passes.push_back(opt::dne); }}
+	, {"--iln", [](cmdflags & flags){ flags.passes.push_back(opt::iln); }}
+	, {"--inv", [](cmdflags & flags){ flags.passes.push_back(opt::inv); }}
+	, {"--llvm", [](cmdflags & flags){ flags.llvm = true; }}
+	, {"--xml", [](cmdflags & flags){ flags.xml = true; }}
+	});
+
 	for (int n = 1; n < argc-1; n++) {
 		std::string flag(argv[n]);
-
-		if (flag == "--dne") {
-			passes.push_back(opt::dne);
+		if (map.find(flag) != map.end()) {
+			map[flag](flags);
 			continue;
 		}
 
-		if (flag == "--iln") {
-			passes.push_back(opt::iln);
-			continue;
-		}
-
-		if (flag == "--inv") {
-			passes.push_back(opt::inv);
-			continue;
-		}
+		std::cerr << "Unknown command line flag: " << flag << "\n";
+		print_usage(argv[0]);
+		exit(1);
 	}
 
 	return std::string(argv[argc-1]);
@@ -88,8 +105,8 @@ perform_optimizations(jive::graph * graph, const std::vector<opt> & opts)
 int
 main(int argc, char ** argv)
 {
-	std::vector<opt> optimizations;
-	auto file = parse_cmdflags(argc, argv, optimizations);
+	cmdflags flags;
+	auto file = parse_cmdflags(argc, argv, flags);
 
 	llvm::SMDiagnostic d;
 	auto lm = llvm::parseIRFile(file, d, llvm::getGlobalContext());
@@ -101,13 +118,18 @@ main(int argc, char ** argv)
 	auto jm = jlm::convert_module(*lm);
 	auto rvsdg = jlm::construct_rvsdg(*jm);
 
-	perform_optimizations(rvsdg->graph(), optimizations);
+	perform_optimizations(rvsdg->graph(), flags.passes);
 
-	jm = jlm::rvsdg2jlm::rvsdg2jlm(*rvsdg);
-	lm = jlm::jlm2llvm::convert(*jm, llvm::getGlobalContext());
+	if (flags.llvm) {
+		jm = jlm::rvsdg2jlm::rvsdg2jlm(*rvsdg);
+		lm = jlm::jlm2llvm::convert(*jm, llvm::getGlobalContext());
 
-	llvm::raw_os_ostream os(std::cout);
-	lm->print(os, nullptr);
+		llvm::raw_os_ostream os(std::cout);
+		lm->print(os, nullptr);
+	}
+
+	if (flags.xml)
+		jive::view_xml(rvsdg->graph()->root(), stdout);
 
 	return 0;
 }
