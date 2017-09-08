@@ -4,5 +4,6 @@ TESTS += \
 	libjlm/test-cfg-structure \
 	libjlm/test-dne \
 	libjlm/test-inlining \
+	libjlm/test-invariance \
 	libjlm/test-restructuring \
 	libjlm/test-ssa-destruction \
