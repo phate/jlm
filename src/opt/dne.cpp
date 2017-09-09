@@ -347,19 +347,20 @@ sweep_gamma(jive::structural_node * node, const dnectx & ctx)
 	for (size_t r = 0; r < node->nsubregions(); r++)
 		sweep(node->subregion(r), ctx);
 
-	/* remove arguments */
-	for (size_t r = 0; r < node->nsubregions(); r++) {
-		auto subregion = node->subregion(r);
-		for (ssize_t n = subregion->narguments()-1; n >= 0; n--) {
-			if (subregion->argument(n)->nusers() == 0)
-				subregion->remove_argument(n);
+	/* remove arguments and inputs */
+	for (ssize_t n = node->ninputs()-1; n >=  1; n--) {
+		auto input = node->input(n);
+		jive::argument * argument;
+		JIVE_LIST_ITERATE(input->arguments, argument, input_argument_list) {
+			if (argument->nusers() != 0)
+				break;
 		}
-	}
 
-	/* remove inputs */
-	for (ssize_t n = node->ninputs()-1; n >= 1; n--) {
-		if (node->input(n)->arguments.first == nullptr)
+		if (argument == nullptr) {
+			for (size_t r = 0; r < node->nsubregions(); r++)
+				node->subregion(r)->remove_argument(n-1);
 			node->remove_input(n);
+		}
 	}
 }
 

@@ -48,23 +48,27 @@ test_gamma()
 	gb.begin(c);
 	auto ev1 = gb.add_entryvar(x);
 	auto ev2 = gb.add_entryvar(y);
+	auto ev3 = gb.add_entryvar(x);
 
 	auto t = gb.region(1)->add_simple_node(op, {ev2->argument(1)})->output(0);
 
 	auto xv1 = gb.add_exitvar({ev1->argument(0), ev1->argument(1)});
 	auto xv2 = gb.add_exitvar({ev2->argument(0), t});
+	auto xv3 = gb.add_exitvar({ev3->argument(0), ev1->argument(1)});
 
 	auto gamma = gb.end();
 
 	graph.export_port(gamma->node()->output(0), "z");
+	graph.export_port(gamma->node()->output(2), "w");
 
 //	jive::view(graph.root(), stdout);
 	jlm::dne(graph);
 //	jive::view(graph.root(), stdout);
 
-	assert(gamma->node()->noutputs() == 1);
+	assert(gamma->node()->noutputs() == 2);
 	assert(gamma->node()->subregion(1)->nodes.size() == 0);
-	assert(gamma->node()->ninputs() == 2);
+	assert(gamma->node()->subregion(1)->narguments() == 2);
+	assert(gamma->node()->ninputs() == 3);
 	assert(graph.root()->narguments() == 2);
 }
 
