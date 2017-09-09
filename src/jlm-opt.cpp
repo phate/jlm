@@ -13,6 +13,7 @@
 #include <jlm/opt/dne.hpp>
 #include <jlm/opt/inlining.hpp>
 #include <jlm/opt/invariance.hpp>
+#include <jlm/opt/push.hpp>
 #include <jlm/rvsdg2jlm/rvsdg2jlm.hpp>
 
 #include <llvm/IR/LLVMContext.h>
@@ -23,7 +24,7 @@
 
 #include <iostream>
 
-enum class opt {dne, iln, inv};
+enum class opt {dne, iln, inv, psh};
 
 struct cmdflags {
 	inline
@@ -45,6 +46,7 @@ print_usage(const std::string & app)
 	std::cerr << "--dne: Perform dead node elimination.\n";
 	std::cerr << "--iln: Perform function inlining.\n";
 	std::cerr << "--inv: Perform invariant value redirection.\n";
+	std::cerr << "--psh: Perform node push out.\n";
 	std::cerr << "--llvm: Output LLVM IR.\n";
 	std::cerr << "--xml: Output RVSDG as XML.\n";
 }
@@ -62,6 +64,7 @@ parse_cmdflags(int argc, char ** argv, cmdflags & flags)
 	  {"--dne", [](cmdflags & flags){ flags.passes.push_back(opt::dne); }}
 	, {"--iln", [](cmdflags & flags){ flags.passes.push_back(opt::iln); }}
 	, {"--inv", [](cmdflags & flags){ flags.passes.push_back(opt::inv); }}
+	, {"--psh", [](cmdflags & flags){ flags.passes.push_back(opt::psh); }}
 	, {"--llvm", [](cmdflags & flags){ flags.llvm = true; }}
 	, {"--xml", [](cmdflags & flags){ flags.xml = true; }}
 	});
@@ -84,21 +87,20 @@ parse_cmdflags(int argc, char ** argv, cmdflags & flags)
 static void
 perform_optimizations(jive::graph * graph, const std::vector<opt> & opts)
 {
+	static std::unordered_map<opt, void(*)(jive::graph&)> map({
+	  {opt::dne, [](jive::graph & graph){ jlm::dne(graph); }}
+	, {opt::iln, [](jive::graph & graph){ jlm::inlining(graph); }}
+	, {opt::inv, [](jive::graph & graph){ jlm::invariance(graph); }}
+	, {opt::psh, [](jive::graph & graph){ jlm::push(graph); }}
+	});
+
 	for (const auto & opt : opts) {
-		if (opt == opt::dne) {
-			jlm::dne(*graph);
+		if (map.find(opt) != map.end()) {
+			map[opt](*graph);
 			continue;
 		}
 
-		if (opt == opt::iln) {
-			jlm::inlining(*graph);
-			continue;
-		}
-
-		if (opt == opt::inv) {
-			jlm::invariance(*graph);
-			continue;
-		}
+		JLM_ASSERT(0);
 	}
 }
 
