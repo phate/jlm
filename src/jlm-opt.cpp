@@ -10,6 +10,7 @@
 #include <jlm/jlm2rvsdg/module.hpp>
 #include <jlm/jlm2llvm/jlm2llvm.hpp>
 #include <jlm/llvm2jlm/module.hpp>
+#include <jlm/opt/cne.hpp>
 #include <jlm/opt/dne.hpp>
 #include <jlm/opt/inlining.hpp>
 #include <jlm/opt/invariance.hpp>
@@ -24,7 +25,7 @@
 
 #include <iostream>
 
-enum class opt {dne, iln, inv, psh};
+enum class opt {cne, dne, iln, inv, psh};
 
 struct cmdflags {
 	inline
@@ -43,6 +44,7 @@ print_usage(const std::string & app)
 {
 	std::cerr << "Usage: " << app << " [OPTIONS] FILE\n";
 	std::cerr << "OPTIONS:\n";
+	std::cerr << "--cne: Perform common node elimination.\n";
 	std::cerr << "--dne: Perform dead node elimination.\n";
 	std::cerr << "--iln: Perform function inlining.\n";
 	std::cerr << "--inv: Perform invariant value redirection.\n";
@@ -61,7 +63,8 @@ parse_cmdflags(int argc, char ** argv, cmdflags & flags)
 	}
 
 	static std::unordered_map<std::string, void(*)(cmdflags&)> map({
-	  {"--dne", [](cmdflags & flags){ flags.passes.push_back(opt::dne); }}
+	  {"--cne", [](cmdflags & flags){ flags.passes.push_back(opt::cne); }}
+	, {"--dne", [](cmdflags & flags){ flags.passes.push_back(opt::dne); }}
 	, {"--iln", [](cmdflags & flags){ flags.passes.push_back(opt::iln); }}
 	, {"--inv", [](cmdflags & flags){ flags.passes.push_back(opt::inv); }}
 	, {"--psh", [](cmdflags & flags){ flags.passes.push_back(opt::psh); }}
@@ -88,7 +91,8 @@ static void
 perform_optimizations(jive::graph * graph, const std::vector<opt> & opts)
 {
 	static std::unordered_map<opt, void(*)(jive::graph&)> map({
-	  {opt::dne, [](jive::graph & graph){ jlm::dne(graph); }}
+	  {opt::cne, [](jive::graph & graph){ jlm::cne(graph); }}
+	, {opt::dne, [](jive::graph & graph){ jlm::dne(graph); }}
 	, {opt::iln, [](jive::graph & graph){ jlm::inlining(graph); }}
 	, {opt::inv, [](jive::graph & graph){ jlm::invariance(graph); }}
 	, {opt::psh, [](jive::graph & graph){ jlm::push(graph); }}
