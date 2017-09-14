@@ -2,6 +2,7 @@ TESTS += \
 	libjlm/test-aggregation \
 	libjlm/test-annotation \
 	libjlm/test-cfg-structure \
+	libjlm/test-cne \
 	libjlm/test-dne \
 	libjlm/test-inlining \
 	libjlm/test-invariance \

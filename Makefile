@@ -40,6 +40,7 @@ LIBJLM_SRC = \
 	\
 	src/rvsdg2jlm/rvsdg2jlm.cpp \
 	\
+	src/opt/cne.cpp \
 	src/opt/dne.cpp \
 	src/opt/inlining.cpp \
 	src/opt/invariance.cpp \
