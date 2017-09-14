@@ -317,6 +317,8 @@ sweep_theta(jive::structural_node * node, const dnectx & ctx)
 			node->remove_input(n);
 		}
 	}
+
+	JLM_DEBUG_ASSERT(node->ninputs() == node->noutputs());
 }
 
 static void
