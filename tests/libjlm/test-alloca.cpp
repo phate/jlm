@@ -32,13 +32,13 @@ test_alloca_alloca_reduction()
 	graph.export_port(outputs[0], "address");
 	auto exs = graph.export_port(outputs[1], "state");
 
-	jive::view(graph.root(), stdout);
+//	jive::view(graph.root(), stdout);
 
 	anf->set_mutable(true);
 	anf->set_alloca_alloca_reducible(true);
 	graph.normalize();
 
-	jive::view(graph.root(), stdout);
+//	jive::view(graph.root(), stdout);
 
 	auto mux = exs->origin()->node();
 	assert(dynamic_cast<const jive::state::mux_op*>(&mux->operation()));
@@ -50,10 +50,54 @@ test_alloca_alloca_reduction()
 	assert(alloca1->input(1)->origin() == alloca2->input(1)->origin());
 }
 
+static inline void
+test_alloca_mux_reduction()
+{
+	jive::mem::type mt;
+	jive::bits::type bt(32);
+
+	jive::graph graph;
+	auto nf = graph.node_normal_form(typeid(jlm::alloca_op));
+	auto anf = static_cast<jlm::alloca_normal_form*>(nf);
+	anf->set_mutable(false);
+	anf->set_alloca_mux_reducible(false);
+
+	auto size = graph.import(bt, "size");
+	auto state = graph.import(mt, "state");
+
+	auto alloc1 = jlm::create_alloca(bt, size, state, 4);
+	auto alloc2 = jlm::create_alloca(bt, size, state, 4);
+
+	auto s = jive::create_state_merge(mt, {alloc1[1], alloc2[1]});
+
+	auto alloc3 = jlm::create_alloca(bt, size, s, 4);
+
+	graph.export_port(alloc3[0], "address");
+	auto exs = graph.export_port(alloc3[1], "state");
+
+	jive::view(graph.root(), stdout);
+
+	anf->set_mutable(true);
+	anf->set_alloca_mux_reducible(true);
+	graph.normalize();
+	graph.prune();
+
+	jive::view(graph.root(), stdout);
+
+	auto mux = exs->origin()->node();
+	assert(dynamic_cast<const jive::state::mux_op*>(&mux->operation()));
+	auto n1 = mux->input(0)->origin()->node();
+	auto n2 = mux->input(1)->origin()->node();
+	assert(jlm::is_alloca_op(n1->operation()) || jlm::is_alloca_op(n2->operation()));
+	assert(dynamic_cast<const jive::state::mux_op*>(&n1->operation())
+		|| dynamic_cast<const jive::state::mux_op*>(&n2->operation()));
+}
+
 static int
 test()
 {
 	test_alloca_alloca_reduction();
+	test_alloca_mux_reduction();
 
 	return 0;
 }

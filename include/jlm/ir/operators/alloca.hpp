@@ -142,7 +142,16 @@ public:
 		const std::vector<jive::output*> & arguments) const override;
 
 	virtual void
+	set_alloca_mux_reducible(bool enable);
+
+	virtual void
 	set_alloca_alloca_reducible(bool enable);
+
+	inline bool
+	get_alloca_mux_reducible() const noexcept
+	{
+		return enable_alloca_mux_;
+	}
 
 	inline bool
 	get_alloca_alloca_reducible() const noexcept
@@ -151,6 +160,7 @@ public:
 	}
 
 private:
+	bool enable_alloca_mux_;
 	bool enable_alloca_alloca_;
 };
 
