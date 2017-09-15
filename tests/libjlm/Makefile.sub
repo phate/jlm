@@ -1,5 +1,6 @@
 TESTS += \
 	libjlm/test-aggregation \
+	libjlm/test-alloca \
 	libjlm/test-annotation \
 	libjlm/test-cfg-structure \
 	libjlm/test-cne \

@@ -8,12 +8,15 @@
 
 #include <jive/arch/memorytype.h>
 #include <jive/types/bitstring/type.h>
+#include <jive/vsdg/simple-normal-form.h>
 #include <jive/vsdg/simple_node.h>
 
 #include <jlm/ir/tac.hpp>
 #include <jlm/ir/types.hpp>
 
 namespace jlm {
+
+/* alloca operator */
 
 class alloca_op final : public jive::simple_op {
 public:
@@ -99,6 +102,57 @@ create_alloca_tac(
 	jlm::alloca_op op(jlm::ptrtype(*vt), *bt, alignment);
 	return create_tac(op, {size, state}, {result, state});
 }
+
+static inline std::vector<jive::output*>
+create_alloca(
+	const jive::base::type & type,
+	jive::output * size,
+	jive::output * state,
+	size_t alignment)
+{
+	auto vt = dynamic_cast<const jive::value::type*>(&type);
+	if (!vt) throw std::logic_error("Expected value type.");
+
+	auto bt = dynamic_cast<const jive::bits::type*>(&size->type());
+	if (!bt) throw std::logic_error("Expected bits type.");
+
+	jlm::alloca_op op(jlm::ptrtype(*vt), *bt, alignment);
+	return jive::create_normalized(size->region(), op, {size, state});
+}
+
+/* alloca normal form */
+
+class alloca_normal_form final : public jive::simple_normal_form {
+public:
+	virtual
+	~alloca_normal_form() noexcept;
+
+	alloca_normal_form(
+		const std::type_info & opclass,
+		jive::node_normal_form * parent,
+		jive::graph * graph) noexcept;
+
+	virtual bool
+	normalize_node(jive::node * node) const override;
+
+	virtual std::vector<jive::output*>
+	normalized_create(
+		jive::region * region,
+		const jive::simple_op & op,
+		const std::vector<jive::output*> & arguments) const override;
+
+	virtual void
+	set_alloca_alloca_reducible(bool enable);
+
+	inline bool
+	get_alloca_alloca_reducible() const noexcept
+	{
+		return enable_alloca_alloca_;
+	}
+
+private:
+	bool enable_alloca_alloca_;
+};
 
 }
 
