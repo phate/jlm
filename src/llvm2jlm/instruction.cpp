@@ -12,7 +12,7 @@
 #include <jlm/ir/basic_block.hpp>
 #include <jlm/ir/clg.hpp>
 #include <jlm/ir/expression.hpp>
-#include <jlm/ir/operators/operators.hpp>
+#include <jlm/ir/operators.hpp>
 #include <jlm/ir/tac.hpp>
 
 #include <jive/arch/address.h>
