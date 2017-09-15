@@ -13,11 +13,8 @@ alloca_op::~alloca_op() noexcept
 bool
 alloca_op::operator==(const operation & other) const noexcept
 {
-	auto op = dynamic_cast<const jlm::alloca_op*>(&other);
-	return op
-	    && op->aport_ == aport_
-	    && op->bport_ == bport_
-	    && op->alignment_ == alignment_;
+	/* Avoid CNE for alloca operators */
+	return false;
 }
 
 size_t
