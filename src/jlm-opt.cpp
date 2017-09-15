@@ -6,6 +6,7 @@
 #include <jive/view.h>
 
 #include <jlm/ir/module.hpp>
+#include <jlm/ir/operators.hpp>
 #include <jlm/ir/rvsdg.hpp>
 #include <jlm/jlm2rvsdg/module.hpp>
 #include <jlm/jlm2llvm/jlm2llvm.hpp>
@@ -25,7 +26,7 @@
 
 #include <iostream>
 
-enum class opt {cne, dne, iln, inv, psh};
+enum class opt {cne, dne, iln, inv, psh, red};
 
 struct cmdflags {
 	inline
@@ -49,6 +50,7 @@ print_usage(const std::string & app)
 	std::cerr << "--iln: Perform function inlining.\n";
 	std::cerr << "--inv: Perform invariant value redirection.\n";
 	std::cerr << "--psh: Perform node push out.\n";
+	std::cerr << "--red: Perform node reductions.\n";
 	std::cerr << "--llvm: Output LLVM IR.\n";
 	std::cerr << "--xml: Output RVSDG as XML.\n";
 }
@@ -68,6 +70,7 @@ parse_cmdflags(int argc, char ** argv, cmdflags & flags)
 	, {"--iln", [](cmdflags & flags){ flags.passes.push_back(opt::iln); }}
 	, {"--inv", [](cmdflags & flags){ flags.passes.push_back(opt::inv); }}
 	, {"--psh", [](cmdflags & flags){ flags.passes.push_back(opt::psh); }}
+	, {"--red", [](cmdflags & flags){ flags.passes.push_back(opt::red); }}
 	, {"--llvm", [](cmdflags & flags){ flags.llvm = true; }}
 	, {"--xml", [](cmdflags & flags){ flags.xml = true; }}
 	});
@@ -88,6 +91,18 @@ parse_cmdflags(int argc, char ** argv, cmdflags & flags)
 }
 
 static void
+perform_reductions(jive::graph & graph)
+{
+	auto nf = graph.node_normal_form(typeid(jlm::alloca_op));
+	auto allocanf = static_cast<jlm::alloca_normal_form*>(nf);
+	allocanf->set_mutable(true);
+	allocanf->set_alloca_alloca_reducible(true);
+	allocanf->set_alloca_mux_reducible(true);
+
+	graph.normalize();
+}
+
+static void
 perform_optimizations(jive::graph * graph, const std::vector<opt> & opts)
 {
 	static std::unordered_map<opt, void(*)(jive::graph&)> map({
@@ -96,6 +111,7 @@ perform_optimizations(jive::graph * graph, const std::vector<opt> & opts)
 	, {opt::iln, [](jive::graph & graph){ jlm::inlining(graph); }}
 	, {opt::inv, [](jive::graph & graph){ jlm::invariance(graph); }}
 	, {opt::psh, [](jive::graph & graph){ jlm::push(graph); }}
+	, {opt::red, perform_reductions}
 	});
 
 	for (const auto & opt : opts) {
