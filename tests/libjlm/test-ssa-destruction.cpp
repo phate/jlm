@@ -10,7 +10,7 @@
 #include <jlm/ir/basic_block.hpp>
 #include <jlm/ir/cfg.hpp>
 #include <jlm/ir/module.hpp>
-#include <jlm/ir/operators.hpp>
+#include <jlm/ir/operators/operators.hpp>
 #include <jlm/ir/ssa.hpp>
 #include <jlm/ir/view.hpp>
 

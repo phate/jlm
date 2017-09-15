@@ -11,7 +11,7 @@
 #include <jlm/ir/cfg-structure.hpp>
 #include <jlm/ir/cfg_node.hpp>
 #include <jlm/ir/module.hpp>
-#include <jlm/ir/operators.hpp>
+#include <jlm/ir/operators/operators.hpp>
 
 #include <jlm/jlm2llvm/context.hpp>
 #include <jlm/jlm2llvm/instruction.hpp>

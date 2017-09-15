@@ -8,7 +8,7 @@
 #include <jlm/ir/cfg-structure.hpp>
 #include <jlm/ir/cfg_node.hpp>
 #include <jlm/ir/module.hpp>
-#include <jlm/ir/operators.hpp>
+#include <jlm/ir/operators/operators.hpp>
 #include <jlm/ir/ssa.hpp>
 #include <jlm/ir/tac.hpp>
 

@@ -10,7 +10,7 @@
 #include <jlm/ir/cfg-structure.hpp>
 #include <jlm/ir/cfg_node.hpp>
 #include <jlm/ir/clg.hpp>
-#include <jlm/ir/operators.hpp>
+#include <jlm/ir/operators/operators.hpp>
 #include <jlm/ir/tac.hpp>
 
 #include <algorithm>

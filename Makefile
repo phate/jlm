@@ -19,7 +19,7 @@ LIBJLM_SRC = \
 	src/ir/clg.cpp \
 	src/ir/data.cpp \
 	src/ir/module.cpp \
-	src/ir/operators.cpp \
+	src/ir/operators/operators.cpp \
 	src/ir/ssa.cpp \
 	src/ir/tac.cpp \
 	src/ir/types.cpp \

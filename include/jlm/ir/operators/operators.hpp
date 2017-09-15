@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_IR_OPERATORS_H
-#define JLM_IR_OPERATORS_H
+#ifndef JLM_IR_OPERATORS_OPERATORS_H
+#define JLM_IR_OPERATORS_OPERATORS_H
 
 #include <jive/types/bitstring/type.h>
 #include <jive/types/function/fcttype.h>

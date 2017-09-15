@@ -6,7 +6,7 @@
 #include <jlm/ir/basic_block.hpp>
 #include <jlm/ir/cfg.hpp>
 #include <jlm/ir/cfg-structure.hpp>
-#include <jlm/ir/operators.hpp>
+#include <jlm/ir/operators/operators.hpp>
 
 #include <algorithm>
 #include <unordered_map>

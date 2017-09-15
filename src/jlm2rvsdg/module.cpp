@@ -14,7 +14,7 @@
 #include <jlm/ir/clg.hpp>
 #include <jlm/ir/data.hpp>
 #include <jlm/ir/module.hpp>
-#include <jlm/ir/operators.hpp>
+#include <jlm/ir/operators/operators.hpp>
 #include <jlm/ir/rvsdg.hpp>
 #include <jlm/ir/ssa.hpp>
 #include <jlm/ir/tac.hpp>
