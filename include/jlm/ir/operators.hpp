@@ -8,5 +8,6 @@
 
 #include <jlm/ir/operators/alloca.hpp>
 #include <jlm/ir/operators/operators.hpp>
+#include <jlm/ir/operators/store.hpp>
 
 #endif
