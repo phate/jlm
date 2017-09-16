@@ -10,3 +10,4 @@ TESTS += \
 	libjlm/test-push \
 	libjlm/test-restructuring \
 	libjlm/test-ssa-destruction \
+	libjlm/test-store \
