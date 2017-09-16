@@ -7,6 +7,7 @@
 #define JLM_IR_OPERATORS_STORE_HPP
 
 #include <jive/arch/memorytype.h>
+#include <jive/vsdg/simple-normal-form.h>
 #include <jive/vsdg/simple_node.h>
 
 #include <jlm/ir/tac.hpp>
@@ -98,6 +99,28 @@ create_store_tac(
 	jlm::store_op op(*at, 1, alignment);
 	return create_tac(op, {address, value, state}, {state});
 }
+
+/* store normal form */
+
+class store_normal_form final : public jive::simple_normal_form {
+public:
+	virtual
+	~store_normal_form() noexcept;
+
+	store_normal_form(
+		const std::type_info & opclass,
+		jive::node_normal_form * parent,
+		jive::graph * graph) noexcept;
+
+	virtual bool
+	normalize_node(jive::node * node) const override;
+
+	virtual std::vector<jive::output*>
+	normalized_create(
+		jive::region * region,
+		const jive::simple_op & op,
+		const std::vector<jive::output*> & operands) const override;
+};
 
 }
 
