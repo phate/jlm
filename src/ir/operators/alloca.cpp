@@ -4,6 +4,7 @@
  */
 
 #include <jive/vsdg/graph.h>
+#include <jive/vsdg/statemux.h>
 
 #include <jlm/ir/operators/alloca.hpp>
 

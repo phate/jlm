@@ -8,6 +8,7 @@
 
 #include <jive/view.h>
 #include <jive/vsdg/graph.h>
+#include <jive/vsdg/statemux.h>
 
 #include <jlm/ir/operators/alloca.hpp>
 
@@ -41,7 +42,7 @@ test_alloca_alloca_reduction()
 //	jive::view(graph.root(), stdout);
 
 	auto mux = exs->origin()->node();
-	assert(dynamic_cast<const jive::state::mux_op*>(&mux->operation()));
+	assert(dynamic_cast<const jive::mux_op*>(&mux->operation()));
 	auto alloca1 = mux->input(0)->origin()->node();
 	auto alloca2 = mux->input(1)->origin()->node();
 	assert(dynamic_cast<const jlm::alloca_op*>(&alloca1->operation()));
@@ -85,12 +86,12 @@ test_alloca_mux_reduction()
 	jive::view(graph.root(), stdout);
 
 	auto mux = exs->origin()->node();
-	assert(dynamic_cast<const jive::state::mux_op*>(&mux->operation()));
+	assert(dynamic_cast<const jive::mux_op*>(&mux->operation()));
 	auto n1 = mux->input(0)->origin()->node();
 	auto n2 = mux->input(1)->origin()->node();
 	assert(jlm::is_alloca_op(n1->operation()) || jlm::is_alloca_op(n2->operation()));
-	assert(dynamic_cast<const jive::state::mux_op*>(&n1->operation())
-		|| dynamic_cast<const jive::state::mux_op*>(&n2->operation()));
+	assert(dynamic_cast<const jive::mux_op*>(&n1->operation())
+		|| dynamic_cast<const jive::mux_op*>(&n2->operation()));
 }
 
 static int
