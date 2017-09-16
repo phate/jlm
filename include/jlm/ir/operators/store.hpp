@@ -100,6 +100,23 @@ create_store_tac(
 	return create_tac(op, {address, value, state}, {state});
 }
 
+static inline std::vector<jive::output*>
+create_store(
+	jive::output * address,
+	jive::output * value,
+	const std::vector<jive::output*> & states,
+	size_t alignment)
+{
+	auto at = dynamic_cast<const jlm::ptrtype*>(&address->type());
+	if (!at) throw std::logic_error("Expected pointer type.");
+
+	std::vector<jive::output*> operands({address, value});
+	operands.insert(operands.end(), states.begin(), states.end());
+
+	jlm::store_op op(*at, states.size(), alignment);
+	return jive::create_normalized(address->region(), op, operands);
+}
+
 /* store normal form */
 
 class store_normal_form final : public jive::simple_normal_form {
