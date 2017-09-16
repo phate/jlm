@@ -4,6 +4,7 @@
  */
 
 #include <jive/view.h>
+#include <jive/vsdg/statemux.h>
 
 #include <jlm/ir/module.hpp>
 #include <jlm/ir/operators.hpp>
@@ -93,11 +94,23 @@ parse_cmdflags(int argc, char ** argv, cmdflags & flags)
 static void
 perform_reductions(jive::graph & graph)
 {
-	auto nf = graph.node_normal_form(typeid(jlm::alloca_op));
-	auto allocanf = static_cast<jlm::alloca_normal_form*>(nf);
-	allocanf->set_mutable(true);
-	allocanf->set_alloca_alloca_reducible(true);
-	allocanf->set_alloca_mux_reducible(true);
+	/* alloca operation */
+	{
+		auto nf = graph.node_normal_form(typeid(jlm::alloca_op));
+		auto allocanf = static_cast<jlm::alloca_normal_form*>(nf);
+		allocanf->set_mutable(true);
+		allocanf->set_alloca_alloca_reducible(true);
+		allocanf->set_alloca_mux_reducible(true);
+	}
+
+	/* mux operation */
+	{
+		auto nf = graph.node_normal_form(typeid(jive::mux_op));
+		auto mnf = static_cast<jive::mux_normal_form*>(nf);
+		mnf->set_mutable(true);
+		mnf->set_mux_mux_reducible(true);
+		mnf->set_multiple_origin_reducible(true);
+	}
 
 	graph.normalize();
 }
