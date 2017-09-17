@@ -184,6 +184,7 @@ store_normal_form::normalize_node(jive::node * node) const
 
 	if (get_store_mux_reducible() && is_store_mux_reducible(operands)) {
 		replace(node, perform_store_mux_reduction(*op, operands));
+		node->region()->remove_node(node);
 		return false;
 	}
 
