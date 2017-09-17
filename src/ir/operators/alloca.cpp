@@ -71,16 +71,18 @@ alloca_op::copy() const
 /* alloca normal form */
 
 static bool
-is_alloca_alloca_reducible(const jive::output * state)
+is_alloca_alloca_reducible(const std::vector<jive::output*> & operands)
 {
-	return state->node()
-	    && is_alloca_op(state->node()->operation())
-	    && state->nusers() == 1;
+	return operands[1]->node()
+	    && is_alloca_op(operands[1]->node()->operation())
+	    && operands[1]->nusers() == 1;
 }
 
 static bool
-is_alloca_mux_reducible(const jive::output * state)
+is_alloca_mux_reducible(const std::vector<jive::output*> & operands)
 {
+	auto state = operands[1];
+
 	auto muxnode = state->node();
 	if (!muxnode)
 		return false;
@@ -106,33 +108,29 @@ is_alloca_mux_reducible(const jive::output * state)
 static std::vector<jive::output*>
 perform_alloca_alloca_reduction(
 	const jlm::alloca_op & op,
-	jive::output * size,
-	jive::output * state)
+	const std::vector<jive::output*> & operands)
 {
-	JLM_DEBUG_ASSERT(is_alloca_op(state->node()->operation()));
-	auto origin = state->node()->input(1)->origin();
-	auto type = static_cast<const jive::state::type*>(&origin->type());
+	JLM_DEBUG_ASSERT(is_alloca_op(operands[1]->node()->operation()));
+	auto origin = operands[1]->node()->input(1)->origin();
 
-	auto ops = jive::create_normalized(size->region(), op, {size, origin});
-	state = jive::create_state_merge(*type, {state, ops[1]});
+	auto alloca = jive::create_normalized(operands[0]->region(), op, {operands[0], origin});
+	auto state = jive::create_state_merge(origin->type(), {operands[1], alloca[1]});
 
-	return {ops[0], state};
+	return {alloca[0], state};
 }
 
 static std::vector<jive::output*>
 perform_alloca_mux_reduction(
 	const jlm::alloca_op & op,
-	jive::output * size,
-	jive::output * state)
+	const std::vector<jive::output*> & operands)
 {
-	auto muxnode = state->node();
-	auto allocanode = muxnode->input(0)->origin()->node();
-	auto type = static_cast<const jive::state::type*>(&state->type());
+	auto muxnode = operands[1]->node();
+	auto origin = muxnode->input(0)->origin()->node()->input(1)->origin();
 
-	auto ops = jive::create_normalized(size->region(), op, {size, allocanode->input(1)->origin()});
-	state = jive::create_state_merge(*type, {state, ops[1]});
+	auto alloca = jive::create_normalized(operands[0]->region(), op, {operands[0], origin});
+	auto state = jive::create_state_merge(origin->type(), {operands[1], alloca[1]});
 
-	return {ops[0], state};
+	return {alloca[0], state};
 }
 
 alloca_normal_form::~alloca_normal_form()
@@ -157,23 +155,20 @@ alloca_normal_form::normalize_node(jive::node * node) const
 {
 	JLM_DEBUG_ASSERT(is_alloca_op(node->operation()));
 	auto op = static_cast<const jlm::alloca_op*>(&node->operation());
+	auto operands = jive::operands(node);
 
 	if (!get_mutable())
 		return true;
 
-	auto size = node->input(0)->origin();
-	auto state = node->input(1)->origin();
-	if (get_alloca_alloca_reducible() && is_alloca_alloca_reducible(state)) {
-		auto outputs = perform_alloca_alloca_reduction(*op, size, state);
-		node->output(0)->replace(outputs[0]);
-		node->output(1)->replace(outputs[1]);
+	if (get_alloca_alloca_reducible() && is_alloca_alloca_reducible(operands)) {
+		replace(node, perform_alloca_alloca_reduction(*op, operands));
+		node->region()->remove_node(node);
 		return false;
 	}
 
-	if (get_alloca_mux_reducible() && is_alloca_mux_reducible(state)) {
-		auto outputs = perform_alloca_mux_reduction(*op, size, state);
-		node->output(0)->replace(outputs[0]);
-		node->output(1)->replace(outputs[1]);
+	if (get_alloca_mux_reducible() && is_alloca_mux_reducible(operands)) {
+		replace(node, perform_alloca_mux_reduction(*op, operands));
+		node->region()->remove_node(node);
 		return false;
 	}
 
@@ -184,21 +179,19 @@ std::vector<jive::output*>
 alloca_normal_form::normalized_create(
 	jive::region * region,
 	const jive::simple_op & op,
-	const std::vector<jive::output*> & ops) const
+	const std::vector<jive::output*> & operands) const
 {
-	JLM_DEBUG_ASSERT(ops.size() == 2);
 	JLM_DEBUG_ASSERT(is_alloca_op(op));
 	auto aop = static_cast<const jlm::alloca_op*>(&op);
 
 	if (!get_mutable())
-		return simple_normal_form::normalized_create(region, op, ops);
+		return simple_normal_form::normalized_create(region, op, operands);
 
-	std::vector<jive::output*> operands = ops;
-	if (get_alloca_alloca_reducible() && is_alloca_alloca_reducible(operands[1]))
-		operands = perform_alloca_alloca_reduction(*aop, operands[0], operands[1]);
+	if (get_alloca_alloca_reducible() && is_alloca_alloca_reducible(operands))
+		return perform_alloca_alloca_reduction(*aop, operands);
 
-	if (get_alloca_mux_reducible() && is_alloca_alloca_reducible(operands[1]))
-		operands = perform_alloca_mux_reduction(*aop, operands[0], operands[1]);
+	if (get_alloca_mux_reducible() && is_alloca_alloca_reducible(operands))
+		return perform_alloca_mux_reduction(*aop, operands);
 
 	return simple_normal_form::normalized_create(region, op, operands);
 }
