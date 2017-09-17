@@ -142,12 +142,21 @@ public:
 	set_store_mux_reducible(bool enable);
 
 	virtual void
+	set_store_alloca_reducible(bool enable);
+
+	virtual void
 	set_multiple_origin_reducible(bool enable);
 
 	inline bool
 	get_store_mux_reducible() const noexcept
 	{
 		return enable_store_mux_;
+	}
+
+	inline bool
+	get_store_alloca_reducible() const noexcept
+	{
+		return enable_store_alloca_;
 	}
 
 	inline bool
@@ -158,6 +167,7 @@ public:
 
 private:
 	bool enable_store_mux_;
+	bool enable_store_alloca_;
 	bool enable_multiple_origin_;
 };
 

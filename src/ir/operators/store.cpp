@@ -6,6 +6,7 @@
 #include <jive/vsdg/graph.h>
 #include <jive/vsdg/statemux.h>
 
+#include <jlm/ir/operators/alloca.hpp>
 #include <jlm/ir/operators/store.hpp>
 
 namespace jlm {
@@ -93,6 +94,26 @@ is_store_mux_reducible(const std::vector<jive::output*> & operands)
 }
 
 static bool
+is_store_alloca_reducible(const std::vector<jive::output*> & operands)
+{
+	if (operands.size() == 3)
+		return false;
+
+	auto alloca = operands[0]->node();
+	if (!is_alloca_op(alloca->operation()))
+		return false;
+
+	std::unordered_set<jive::output*> states(std::next(std::next(operands.begin())), operands.end());
+	if (states.find(alloca->output(1)) == states.end())
+		return false;
+
+	if (alloca->output(1)->nusers() != 1)
+		return false;
+
+	return true;
+}
+
+static bool
 is_multiple_origin_reducible(const std::vector<jive::output*> & operands)
 {
 	std::unordered_set<jive::output*> states(std::next(std::next(operands.begin())), operands.end());
@@ -107,6 +128,22 @@ perform_store_mux_reduction(
 	auto muxnode = operands[2]->node();
 	auto states = create_store(operands[0], operands[1], jive::operands(muxnode), op.alignment());
 	return jive::create_state_mux(muxnode->input(0)->type(), states, op.nstates());
+}
+
+static std::vector<jive::output*>
+perform_store_alloca_reduction(
+	const jlm::store_op & op,
+	const std::vector<jive::output*> & operands)
+{
+	auto value = operands[1];
+	auto address = operands[0];
+	auto alloca_state = address->node()->output(1);
+	std::unordered_set<jive::output*> states(std::next(std::next(operands.begin())), operands.end());
+
+	auto outputs = create_store(address, value, {alloca_state}, op.alignment());
+	states.erase(alloca_state);
+	states.insert(outputs[0]);
+	return {states.begin(), states.end()};
 }
 
 static std::vector<jive::output*>
@@ -150,6 +187,12 @@ store_normal_form::normalize_node(jive::node * node) const
 		return false;
 	}
 
+	if (get_store_alloca_reducible() && is_store_alloca_reducible(operands)) {
+		replace(node, perform_store_alloca_reduction(*op, operands));
+		node->region()->remove_node(node);
+		return false;
+	}
+
 	if (get_multiple_origin_reducible() && is_multiple_origin_reducible(operands)) {
 		replace(node, perform_multiple_origin_reduction(*op, operands));
 		node->region()->remove_node(node);
@@ -175,6 +218,9 @@ store_normal_form::normalized_create(
 	if (get_store_mux_reducible() && is_store_mux_reducible(operands))
 		return perform_store_mux_reduction(*sop, operands);
 
+	if (get_store_alloca_reducible() && is_store_alloca_reducible(operands))
+		return perform_store_alloca_reduction(*sop, operands);
+
 	if (get_multiple_origin_reducible() && is_multiple_origin_reducible(operands))
 		return perform_multiple_origin_reduction(*sop, operands);
 
@@ -190,6 +236,19 @@ store_normal_form::set_store_mux_reducible(bool enable)
 	children_set<store_normal_form, &store_normal_form::set_store_mux_reducible>(enable);
 
 	enable_store_mux_ = enable;
+	if (get_mutable() && enable)
+		graph()->mark_denormalized();
+}
+
+void
+store_normal_form::set_store_alloca_reducible(bool enable)
+{
+	if (get_store_alloca_reducible() == enable)
+		return;
+
+	children_set<store_normal_form, &store_normal_form::set_store_alloca_reducible>(enable);
+
+	enable_store_alloca_ = enable;
 	if (get_mutable() && enable)
 		graph()->mark_denormalized();
 }

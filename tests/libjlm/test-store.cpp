@@ -7,10 +7,12 @@
 #include <test-types.hpp>
 
 #include <jive/arch/memorytype.h>
+#include <jive/types/bitstring/type.h>
 #include <jive/view.h>
 #include <jive/vsdg/graph.h>
 #include <jive/vsdg/statemux.h>
 
+#include <jlm/ir/operators/alloca.hpp>
 #include <jlm/ir/operators/store.hpp>
 #include <jlm/ir/types.hpp>
 
@@ -76,23 +78,67 @@ test_multiple_origin_reduction()
 
 	auto ex = graph.export_port(states[0], "s");
 
-	jive::view(graph.root(), stdout);
+//	jive::view(graph.root(), stdout);
 
 	snf->set_mutable(true);
 	snf->set_multiple_origin_reducible(true);
 	graph.normalize();
 	graph.prune();
 
-	jive::view(graph.root(), stdout);
+//	jive::view(graph.root(), stdout);
 
 	auto node = ex->origin()->node();
 	assert(jlm::is_store_op(node->operation()) && node->ninputs() == 3);
+}
+
+static inline void
+test_store_alloca_reduction()
+{
+	jlm::valuetype vt;
+	jive::mem::type mt;
+	jive::bits::type bt(32);
+
+	jive::graph graph;
+	auto nf = graph.node_normal_form(typeid(jlm::store_op));
+	auto snf = static_cast<jlm::store_normal_form*>(nf);
+	snf->set_mutable(false);
+	snf->set_store_alloca_reducible(false);
+
+	auto size = graph.import(bt, "size");
+	auto value = graph.import(vt, "value");
+	auto s = graph.import(mt, "s");
+
+	auto alloca1 = jlm::create_alloca(vt, size, s, 4);
+	auto alloca2 = jlm::create_alloca(vt, size, s, 4);
+	auto states1 = jlm::create_store(alloca1[0], value, {alloca1[1], alloca2[1], s}, 4);
+	auto states2 = jlm::create_store(alloca2[0], value, states1, 4);
+
+	graph.export_port(states2[0], "s1");
+	graph.export_port(states2[1], "s2");
+	graph.export_port(states2[2], "s3");
+
+	jive::view(graph.root(), stdout);
+
+	snf->set_mutable(true);
+	snf->set_store_alloca_reducible(true);
+	graph.normalize();
+	graph.prune();
+
+	jive::view(graph.root(), stdout);
+
+	bool has_import = false;
+	for (size_t n = 0; n < graph.root()->nresults(); n++) {
+		if (graph.root()->result(n)->origin() == s)
+			has_import = true;
+	}
+	assert(has_import);
 }
 
 static int
 test()
 {
 	test_store_mux_reduction();
+	test_store_alloca_reduction();
 	test_multiple_origin_reduction();
 
 	return 0;
