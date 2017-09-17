@@ -92,6 +92,13 @@ is_store_mux_reducible(const std::vector<jive::output*> & operands)
 	return true;
 }
 
+static bool
+is_multiple_origin_reducible(const std::vector<jive::output*> & operands)
+{
+	std::unordered_set<jive::output*> states(std::next(std::next(operands.begin())), operands.end());
+	return states.size() != operands.size()-2;
+}
+
 static std::vector<jive::output*>
 perform_store_mux_reduction(
 	const jlm::store_op & op,
@@ -100,6 +107,16 @@ perform_store_mux_reduction(
 	auto muxnode = operands[2]->node();
 	auto states = create_store(operands[0], operands[1], jive::operands(muxnode), op.alignment());
 	return jive::create_state_mux(muxnode->input(0)->type(), states, op.nstates());
+}
+
+static std::vector<jive::output*>
+perform_multiple_origin_reduction(
+	const jlm::store_op & op,
+	const std::vector<jive::output*> & operands)
+{
+	std::unordered_set<jive::output*> states(std::next(std::next(operands.begin())), operands.end());
+	return jlm::create_store(operands[0], operands[1], {states.begin(), states.end()},
+		op.alignment());
 }
 
 store_normal_form::~store_normal_form()
@@ -112,8 +129,10 @@ store_normal_form::store_normal_form(
 : simple_normal_form(opclass, parent, graph)
 , enable_store_mux_(false)
 {
-	if (auto p = dynamic_cast<const store_normal_form*>(parent))
+	if (auto p = dynamic_cast<const store_normal_form*>(parent)) {
+		enable_multiple_origin_ = p->enable_multiple_origin_;
 		enable_store_mux_ = p->enable_store_mux_;
+	}
 }
 
 bool
@@ -128,6 +147,12 @@ store_normal_form::normalize_node(jive::node * node) const
 
 	if (get_store_mux_reducible() && is_store_mux_reducible(operands)) {
 		replace(node, perform_store_mux_reduction(*op, operands));
+		return false;
+	}
+
+	if (get_multiple_origin_reducible() && is_multiple_origin_reducible(operands)) {
+		replace(node, perform_multiple_origin_reduction(*op, operands));
+		node->region()->remove_node(node);
 		return false;
 	}
 
@@ -150,6 +175,9 @@ store_normal_form::normalized_create(
 	if (get_store_mux_reducible() && is_store_mux_reducible(operands))
 		return perform_store_mux_reduction(*sop, operands);
 
+	if (get_multiple_origin_reducible() && is_multiple_origin_reducible(operands))
+		return perform_multiple_origin_reduction(*sop, operands);
+
 	return simple_normal_form::normalized_create(region, op, operands);
 }
 
@@ -162,6 +190,19 @@ store_normal_form::set_store_mux_reducible(bool enable)
 	children_set<store_normal_form, &store_normal_form::set_store_mux_reducible>(enable);
 
 	enable_store_mux_ = enable;
+	if (get_mutable() && enable)
+		graph()->mark_denormalized();
+}
+
+void
+store_normal_form::set_multiple_origin_reducible(bool enable)
+{
+	if (get_multiple_origin_reducible() == enable)
+		return;
+
+	children_set<store_normal_form, &store_normal_form::set_multiple_origin_reducible>(enable);
+
+	enable_multiple_origin_ = enable;
 	if (get_mutable() && enable)
 		graph()->mark_denormalized();
 }

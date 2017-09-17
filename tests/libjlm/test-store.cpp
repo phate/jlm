@@ -38,14 +38,14 @@ test_store_mux_reduction()
 
 	auto ex = graph.export_port(state[0], "s");
 
-	jive::view(graph.root(), stdout);
+//	jive::view(graph.root(), stdout);
 
 	snf->set_mutable(true);
 	snf->set_store_mux_reducible(true);
 	graph.normalize();
 	graph.prune();
 
-	jive::view(graph.root(), stdout);
+//	jive::view(graph.root(), stdout);
 
 	auto muxnode= ex->origin()->node();
 	assert(is_mux_op(muxnode->operation()));
@@ -55,10 +55,45 @@ test_store_mux_reduction()
 	assert(jlm::is_store_op(muxnode->input(2)->origin()->node()->operation()));
 }
 
+static inline void
+test_multiple_origin_reduction()
+{
+	jlm::valuetype vt;
+	jlm::ptrtype pt(vt);
+	jive::mem::type mt;
+
+	jive::graph graph;
+	auto nf = graph.node_normal_form(typeid(jlm::store_op));
+	auto snf = static_cast<jlm::store_normal_form*>(nf);
+	snf->set_mutable(false);
+	snf->set_multiple_origin_reducible(false);
+
+	auto a = graph.import(pt, "a");
+	auto v = graph.import(vt, "v");
+	auto s = graph.import(mt, "s");
+
+	auto states = jlm::create_store(a, v, {s, s, s, s}, 4);
+
+	auto ex = graph.export_port(states[0], "s");
+
+	jive::view(graph.root(), stdout);
+
+	snf->set_mutable(true);
+	snf->set_multiple_origin_reducible(true);
+	graph.normalize();
+	graph.prune();
+
+	jive::view(graph.root(), stdout);
+
+	auto node = ex->origin()->node();
+	assert(jlm::is_store_op(node->operation()) && node->ninputs() == 3);
+}
+
 static int
 test()
 {
 	test_store_mux_reduction();
+	test_multiple_origin_reduction();
 
 	return 0;
 }
