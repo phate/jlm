@@ -48,10 +48,7 @@ test_store_mux_reduction()
 	jive::view(graph.root(), stdout);
 
 	auto muxnode= ex->origin()->node();
-	assert(dynamic_cast<const jive::mux_op*>(&muxnode->operation()));
-	assert(muxnode->ninputs() == 1);
-	muxnode = muxnode->input(0)->origin()->node();
-	assert(dynamic_cast<const jive::mux_op*>(&muxnode->operation()));
+	assert(is_mux_op(muxnode->operation()));
 	assert(muxnode->ninputs() == 3);
 	assert(jlm::is_store_op(muxnode->input(0)->origin()->node()->operation()));
 	assert(jlm::is_store_op(muxnode->input(1)->origin()->node()->operation()));

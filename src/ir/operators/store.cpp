@@ -80,7 +80,7 @@ is_store_mux_reducible(const std::vector<jive::output*> & operands)
 	JLM_DEBUG_ASSERT(operands.size() > 2);
 
 	auto muxnode = operands[2]->node();
-	if (!muxnode || !dynamic_cast<const jive::mux_op*>(&muxnode->operation()))
+	if (!muxnode || !is_mux_op(muxnode->operation()))
 		return false;
 
 	for (size_t n = 2; n < operands.size(); n++) {
@@ -95,16 +95,11 @@ is_store_mux_reducible(const std::vector<jive::output*> & operands)
 static std::vector<jive::output*>
 perform_store_mux_reduction(
 	const jlm::store_op & op,
-	const std::vector<jive::output*> & old_operands)
+	const std::vector<jive::output*> & operands)
 {
-	auto muxnode = old_operands[2]->node();
-	auto type = static_cast<const jive::state::type*>(&muxnode->input(0)->type());
-	auto address = old_operands[0];
-	auto value = old_operands[1];
-
-	auto states = create_store(address, value, muxnode->operands(), op.alignment());
-	auto state	= jive::create_state_merge(*type, states);
-	return jive::create_state_split(*type, state, op.nstates());
+	auto muxnode = operands[2]->node();
+	auto states = create_store(operands[0], operands[1], jive::operands(muxnode), op.alignment());
+	return jive::create_state_mux(muxnode->input(0)->type(), states, op.nstates());
 }
 
 store_normal_form::~store_normal_form()
@@ -126,15 +121,13 @@ store_normal_form::normalize_node(jive::node * node) const
 {
 	JLM_DEBUG_ASSERT(is_store_op(node->operation()));
 	auto op = static_cast<const jlm::store_op*>(&node->operation());
-	auto operands = node->operands();
+	auto operands = jive::operands(node);
 
 	if (!get_mutable())
 		return true;
 
 	if (get_store_mux_reducible() && is_store_mux_reducible(operands)) {
-		auto outputs = perform_store_mux_reduction(*op, operands);
-		for (size_t n = 0; n < node->noutputs(); n++)
-			node->output(n)->replace(outputs[n]);
+		replace(node, perform_store_mux_reduction(*op, operands));
 		return false;
 	}
 
