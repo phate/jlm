@@ -118,6 +118,8 @@ perform_reductions(jive::graph & graph)
 		auto mnf = static_cast<jlm::store_normal_form*>(nf);
 		mnf->set_mutable(true);
 		mnf->set_store_mux_reducible(true);
+		mnf->set_store_alloca_reducible(true);
+		mnf->set_multiple_origin_reducible(true);
 	}
 
 	graph.normalize();
