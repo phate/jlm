@@ -8,6 +8,7 @@
 
 #include <jive/arch/memorytype.h>
 #include <jive/types/bitstring/type.h>
+#include <jive/vsdg/graph.h>
 #include <jive/vsdg/simple-normal-form.h>
 #include <jive/vsdg/simple_node.h>
 
@@ -15,6 +16,50 @@
 #include <jlm/ir/types.hpp>
 
 namespace jlm {
+
+/* alloca normal form */
+
+class alloca_normal_form final : public jive::simple_normal_form {
+public:
+	virtual
+	~alloca_normal_form() noexcept;
+
+	alloca_normal_form(
+		const std::type_info & opclass,
+		jive::node_normal_form * parent,
+		jive::graph * graph) noexcept;
+
+	virtual bool
+	normalize_node(jive::node * node) const override;
+
+	virtual std::vector<jive::output*>
+	normalized_create(
+		jive::region * region,
+		const jive::simple_op & op,
+		const std::vector<jive::output*> & arguments) const override;
+
+	virtual void
+	set_alloca_mux_reducible(bool enable);
+
+	virtual void
+	set_alloca_alloca_reducible(bool enable);
+
+	inline bool
+	get_alloca_mux_reducible() const noexcept
+	{
+		return enable_alloca_mux_;
+	}
+
+	inline bool
+	get_alloca_alloca_reducible() const noexcept
+	{
+		return enable_alloca_alloca_;
+	}
+
+private:
+	bool enable_alloca_mux_;
+	bool enable_alloca_alloca_;
+};
 
 /* alloca operator */
 
@@ -73,6 +118,12 @@ public:
 		return alignment_;
 	}
 
+	static jlm::alloca_normal_form *
+	normal_form(jive::graph * graph) noexcept
+	{
+		return static_cast<jlm::alloca_normal_form*>(graph->node_normal_form(typeid(alloca_op)));
+	}
+
 private:
 	jive::port aport_;
 	jive::port bport_;
@@ -119,50 +170,6 @@ create_alloca(
 	jlm::alloca_op op(jlm::ptrtype(*vt), *bt, alignment);
 	return jive::create_normalized(size->region(), op, {size, state});
 }
-
-/* alloca normal form */
-
-class alloca_normal_form final : public jive::simple_normal_form {
-public:
-	virtual
-	~alloca_normal_form() noexcept;
-
-	alloca_normal_form(
-		const std::type_info & opclass,
-		jive::node_normal_form * parent,
-		jive::graph * graph) noexcept;
-
-	virtual bool
-	normalize_node(jive::node * node) const override;
-
-	virtual std::vector<jive::output*>
-	normalized_create(
-		jive::region * region,
-		const jive::simple_op & op,
-		const std::vector<jive::output*> & arguments) const override;
-
-	virtual void
-	set_alloca_mux_reducible(bool enable);
-
-	virtual void
-	set_alloca_alloca_reducible(bool enable);
-
-	inline bool
-	get_alloca_mux_reducible() const noexcept
-	{
-		return enable_alloca_mux_;
-	}
-
-	inline bool
-	get_alloca_alloca_reducible() const noexcept
-	{
-		return enable_alloca_alloca_;
-	}
-
-private:
-	bool enable_alloca_mux_;
-	bool enable_alloca_alloca_;
-};
 
 }
 
