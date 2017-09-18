@@ -15,6 +15,60 @@
 
 namespace jlm {
 
+/* store normal form */
+
+class store_normal_form final : public jive::simple_normal_form {
+public:
+	virtual
+	~store_normal_form() noexcept;
+
+	store_normal_form(
+		const std::type_info & opclass,
+		jive::node_normal_form * parent,
+		jive::graph * graph) noexcept;
+
+	virtual bool
+	normalize_node(jive::node * node) const override;
+
+	virtual std::vector<jive::output*>
+	normalized_create(
+		jive::region * region,
+		const jive::simple_op & op,
+		const std::vector<jive::output*> & operands) const override;
+
+	virtual void
+	set_store_mux_reducible(bool enable);
+
+	virtual void
+	set_store_alloca_reducible(bool enable);
+
+	virtual void
+	set_multiple_origin_reducible(bool enable);
+
+	inline bool
+	get_store_mux_reducible() const noexcept
+	{
+		return enable_store_mux_;
+	}
+
+	inline bool
+	get_store_alloca_reducible() const noexcept
+	{
+		return enable_store_alloca_;
+	}
+
+	inline bool
+	get_multiple_origin_reducible() const noexcept
+	{
+		return enable_multiple_origin_;
+	}
+
+private:
+	bool enable_store_mux_;
+	bool enable_store_alloca_;
+	bool enable_multiple_origin_;
+};
+
 /* store operator */
 
 class store_op final : public jive::simple_op {
@@ -73,6 +127,12 @@ public:
 		return alignment_;
 	}
 
+	static jlm::store_normal_form *
+	normal_form(jive::graph * graph) noexcept
+	{
+		return static_cast<jlm::store_normal_form*>(graph->node_normal_form(typeid(store_op)));
+	}
+
 private:
 	size_t nstates_;
 	jive::port aport_;
@@ -116,60 +176,6 @@ create_store(
 	jlm::store_op op(*at, states.size(), alignment);
 	return jive::create_normalized(address->region(), op, operands);
 }
-
-/* store normal form */
-
-class store_normal_form final : public jive::simple_normal_form {
-public:
-	virtual
-	~store_normal_form() noexcept;
-
-	store_normal_form(
-		const std::type_info & opclass,
-		jive::node_normal_form * parent,
-		jive::graph * graph) noexcept;
-
-	virtual bool
-	normalize_node(jive::node * node) const override;
-
-	virtual std::vector<jive::output*>
-	normalized_create(
-		jive::region * region,
-		const jive::simple_op & op,
-		const std::vector<jive::output*> & operands) const override;
-
-	virtual void
-	set_store_mux_reducible(bool enable);
-
-	virtual void
-	set_store_alloca_reducible(bool enable);
-
-	virtual void
-	set_multiple_origin_reducible(bool enable);
-
-	inline bool
-	get_store_mux_reducible() const noexcept
-	{
-		return enable_store_mux_;
-	}
-
-	inline bool
-	get_store_alloca_reducible() const noexcept
-	{
-		return enable_store_alloca_;
-	}
-
-	inline bool
-	get_multiple_origin_reducible() const noexcept
-	{
-		return enable_multiple_origin_;
-	}
-
-private:
-	bool enable_store_mux_;
-	bool enable_store_alloca_;
-	bool enable_multiple_origin_;
-};
 
 }
 
