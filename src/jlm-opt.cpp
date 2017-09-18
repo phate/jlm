@@ -4,6 +4,7 @@
  */
 
 #include <jive/view.h>
+#include <jive/vsdg/gamma.h>
 #include <jive/vsdg/statemux.h>
 
 #include <jlm/ir/module.hpp>
@@ -120,6 +121,13 @@ perform_reductions(jive::graph & graph)
 		mnf->set_store_mux_reducible(true);
 		mnf->set_store_alloca_reducible(true);
 		mnf->set_multiple_origin_reducible(true);
+	}
+
+	/* gamma operation */
+	{
+		auto nf = jive::gamma_op::normal_form(&graph);
+		nf->set_mutable(true);
+		nf->set_control_constant_reduction(true);
 	}
 
 	graph.normalize();
