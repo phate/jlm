@@ -195,8 +195,22 @@ store_normal_form::normalize_node(jive::node * node) const
 	}
 
 	if (get_multiple_origin_reducible() && is_multiple_origin_reducible(operands)) {
-		replace(node, perform_multiple_origin_reduction(*op, operands));
-		node->region()->remove_node(node);
+		auto outputs = perform_multiple_origin_reduction(*op, operands);
+		auto new_node = outputs[0]->node();
+
+		std::unordered_map<jive::output*, jive::output*> origin2output;
+		for (size_t n = 0; n < outputs.size(); n++) {
+			auto origin = new_node->input(n+2)->origin();
+			JLM_DEBUG_ASSERT(origin2output.find(origin) == origin2output.end());
+			origin2output[origin] = outputs[n];
+		}
+
+		for (size_t n = 2; n < node->ninputs(); n++) {
+			auto origin = node->input(n)->origin();
+			JLM_DEBUG_ASSERT(origin2output.find(origin) != origin2output.end());
+			node->output(n-2)->replace(origin2output[origin]);
+		}
+		remove(node);
 		return false;
 	}
 
