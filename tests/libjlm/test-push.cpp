@@ -34,9 +34,9 @@ test_gamma()
 	auto evx = gb.add_entryvar(x);
 	auto evs = gb.add_entryvar(s);
 
-	auto null = gb.region(0)->add_simple_node(nop, {})->output(0);
-	auto bin = gb.region(0)->add_simple_node(binop, {null, evx->argument(0)})->output(0);
-	auto state = gb.region(0)->add_simple_node(sop, {bin, evs->argument(0)})->output(0);
+	auto null = gb.subregion(0)->add_simple_node(nop, {})->output(0);
+	auto bin = gb.subregion(0)->add_simple_node(binop, {null, evx->argument(0)})->output(0);
+	auto state = gb.subregion(0)->add_simple_node(sop, {bin, evs->argument(0)})->output(0);
 
 	auto xvs = gb.add_exitvar({state, evs->argument(1)});
 	auto gamma = gb.end();

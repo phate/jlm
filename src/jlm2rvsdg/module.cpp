@@ -324,7 +324,7 @@ convert_branch_node(
 	std::unordered_map<const variable*, std::vector<jive::output*>> xvmap;
 	JLM_DEBUG_ASSERT(gb.nsubregions() == node.nchildren()-1);
 	for (size_t n = 0; n < gb.nsubregions(); n++) {
-		svmap.push_scope(gb.region(n));
+		svmap.push_scope(gb.subregion(n));
 		for (const auto & pair : evmap)
 			svmap.vmap()[pair.first] = pair.second->argument(n);
 

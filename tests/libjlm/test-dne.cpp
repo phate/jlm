@@ -50,7 +50,7 @@ test_gamma()
 	auto ev2 = gb.add_entryvar(y);
 	auto ev3 = gb.add_entryvar(x);
 
-	auto t = gb.region(1)->add_simple_node(op, {ev2->argument(1)})->output(0);
+	auto t = gb.subregion(1)->add_simple_node(op, {ev2->argument(1)})->output(0);
 
 	auto xv1 = gb.add_exitvar({ev1->argument(0), ev1->argument(1)});
 	auto xv2 = gb.add_exitvar({ev2->argument(0), t});

@@ -86,9 +86,9 @@ test_gamma()
 	auto ev2 = gb.add_entryvar(u2);
 	auto ev3 = gb.add_entryvar(y);
 
-	auto n1 = gb.region(0)->add_simple_node(nop, {})->output(0);
-	auto n2 = gb.region(0)->add_simple_node(nop, {})->output(0);
-	auto n3 = gb.region(0)->add_simple_node(nop, {})->output(0);
+	auto n1 = gb.subregion(0)->add_simple_node(nop, {})->output(0);
+	auto n2 = gb.subregion(0)->add_simple_node(nop, {})->output(0);
+	auto n3 = gb.subregion(0)->add_simple_node(nop, {})->output(0);
 
 	auto xv1 = gb.add_exitvar({ev1->argument(0), ev2->argument(1)});
 	auto xv2 = gb.add_exitvar({ev2->argument(0), ev2->argument(1)});
