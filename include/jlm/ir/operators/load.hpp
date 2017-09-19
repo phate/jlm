@@ -35,6 +35,21 @@ public:
 		jive::region * region,
 		const jive::simple_op & op,
 		const std::vector<jive::output*> & operands) const override;
+
+	inline void
+	set_load_mux_reducible(bool enable) noexcept
+	{
+		enable_load_mux_ = enable;
+	}
+
+	inline bool
+	get_load_mux_reducible() const noexcept
+	{
+		return enable_load_mux_;
+	}
+
+private:
+	bool enable_load_mux_;
 };
 
 /* load operator */
