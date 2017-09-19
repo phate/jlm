@@ -123,6 +123,17 @@ perform_reductions(jive::graph & graph)
 		mnf->set_multiple_origin_reducible(true);
 	}
 
+	/* load operation */
+	{
+		auto nf = jlm::load_op::normal_form(&graph);
+		nf->set_mutable(true);
+		nf->set_load_mux_reducible(true);
+		nf->set_load_alloca_reducible(true);
+		nf->set_multiple_origin_reducible(true);
+		nf->set_load_store_state_reducible(true);
+		nf->set_load_store_alloca_reducible(true);
+	}
+
 	/* gamma operation */
 	{
 		auto nf = jive::gamma_op::normal_form(&graph);
