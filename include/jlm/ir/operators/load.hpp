@@ -128,6 +128,22 @@ create_load_tac(
 	return create_tac(op, {address, state}, {result});
 }
 
+static inline jive::output *
+create_load(
+	jive::output * address,
+	const std::vector<jive::output*> & states,
+	size_t alignment)
+{
+	auto pt = dynamic_cast<const jlm::ptrtype*>(&address->type());
+	if (!pt) throw std::logic_error("Expected pointer type.");
+
+	std::vector<jive::output*> operands({address});
+	operands.insert(operands.end(), states.begin(), states.end());
+
+	jlm::load_op op(*pt, states.size(), alignment);
+	return jive::create_normalized(address->region(), op, operands)[0];
+}
+
 }
 
 #endif
