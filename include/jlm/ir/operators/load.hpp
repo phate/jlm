@@ -72,10 +72,23 @@ public:
 		return enable_multiple_origin_;
 	}
 
+	inline void
+	set_load_store_state_reducible(bool enable) noexcept
+	{
+		enable_load_store_state_ = enable;
+	}
+
+	inline bool
+	get_load_store_state_reducible() const noexcept
+	{
+		return enable_load_store_state_;
+	}
+
 private:
 	bool enable_load_mux_;
 	bool enable_load_alloca_;
 	bool enable_multiple_origin_;
+	bool enable_load_store_state_;
 };
 
 /* load operator */

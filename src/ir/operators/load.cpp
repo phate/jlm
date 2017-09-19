@@ -111,6 +111,37 @@ is_load_alloca_reducible(const std::vector<jive::output*> & operands)
 	return new_states;
 }
 
+static std::vector<jive::output*>
+is_load_store_state_reducible(const std::vector<jive::output*> operands)
+{
+	auto address = operands[0];
+
+	if (operands.size() == 2)
+		return {operands[1]};
+
+	auto allocanode = address->node();
+	if (!allocanode || !is_alloca_op(allocanode->operation()))
+		return {std::next(operands.begin()), operands.end()};
+
+	std::vector<jive::output*> new_states;
+	for (size_t n = 1; n < operands.size(); n++) {
+		JLM_DEBUG_ASSERT(dynamic_cast<const jive::mem::type*>(&operands[n]->type()));
+		auto node = operands[n]->node();
+		if (node && is_store_op(node->operation())) {
+			auto addressnode = node->input(0)->origin()->node();
+			if (addressnode && is_alloca_op(addressnode->operation()) && addressnode != allocanode)
+				continue;
+		}
+
+		new_states.push_back(operands[n]);
+	}
+
+	if (new_states.empty())
+		return {std::next(operands.begin()), operands.end()};
+
+	return new_states;
+}
+
 static bool
 is_multiple_origin_reducible(const std::vector<jive::output*> & operands)
 {
@@ -129,6 +160,16 @@ perform_load_mux_reduction(
 
 static std::vector<jive::output*>
 perform_load_alloca_reduction(
+	const jlm::load_op & op,
+	const std::vector<jive::output*> & operands,
+	const std::vector<jive::output*> & new_states)
+{
+	JLM_DEBUG_ASSERT(!new_states.empty());
+	return {create_load(operands[0], new_states, op.alignment())};
+}
+
+static std::vector<jive::output*>
+perform_load_store_state_reduction(
 	const jlm::load_op & op,
 	const std::vector<jive::output*> & operands,
 	const std::vector<jive::output*> & new_states)
@@ -157,6 +198,7 @@ load_normal_form::load_normal_form(
 , enable_load_mux_(false)
 , enable_load_alloca_(false)
 , enable_multiple_origin_(false)
+, enable_load_store_state_(false)
 {}
 
 bool
@@ -178,6 +220,13 @@ load_normal_form::normalize_node(jive::node * node) const
 	auto new_states = is_load_alloca_reducible(operands);
 	if (get_load_alloca_reducible() && new_states.size() != operands.size()-1) {
 		replace(node, perform_load_alloca_reduction(*op, operands, new_states));
+		remove(node);
+		return false;
+	}
+
+	new_states = is_load_store_state_reducible(operands);
+	if (get_load_store_state_reducible() && new_states.size() != operands.size()-1) {
+		replace(node, perform_load_store_state_reduction(*op, operands, new_states));
 		remove(node);
 		return false;
 	}
@@ -209,6 +258,10 @@ load_normal_form::normalized_create(
 	auto new_states = is_load_alloca_reducible(operands);
 	if (get_load_alloca_reducible() && new_states.size() != operands.size()-1)
 		return perform_load_alloca_reduction(*lop, operands, new_states);
+
+	new_states = is_load_store_state_reducible(operands);
+	if (get_load_store_state_reducible() && new_states.size() != operands.size()-1)
+		return perform_load_store_state_reduction(*lop, operands, new_states);
 
 	if (get_multiple_origin_reducible() && is_multiple_origin_reducible(operands))
 		return perform_multiple_origin_reduction(*lop, operands);

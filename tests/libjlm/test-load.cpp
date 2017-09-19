@@ -107,11 +107,47 @@ test_multiple_origin_reduction()
 
 	auto ex = graph.export_port(load, "l");
 
-	jive::view(graph.root(), stdout);
+//	jive::view(graph.root(), stdout);
 
 	nf->set_mutable(true);
 	nf->set_multiple_origin_reducible(true);
 	graph.normalize();
+
+//	jive::view(graph.root(), stdout);
+
+	auto node = ex->origin()->node();
+	assert(node && jlm::is_load_op(node->operation()));
+	assert(node->ninputs() == 2);
+}
+
+static inline void
+test_load_store_state_reduction()
+{
+	jive::mem::type mt;
+	jive::bits::type bt(32);
+
+	jive::graph graph;
+	auto nf = jlm::load_op::normal_form(&graph);
+	nf->set_mutable(false);
+	nf->set_load_store_state_reducible(false);
+
+	auto size = graph.import(bt, "v");
+	auto state = graph.import(mt, "s");
+
+	auto alloca1 = jlm::create_alloca(bt, size, state, 4);
+	auto alloca2 = jlm::create_alloca(bt, size, state, 4);
+	auto store1 = jlm::create_store(alloca1[0], size, {alloca1[1]}, 4);
+	auto store2 = jlm::create_store(alloca2[0], size, {alloca2[1]}, 4);
+	auto value = jlm::create_load(alloca1[0], {store1[0], store2[0]}, 4);
+
+	auto ex = graph.export_port(value, "l");
+
+	jive::view(graph.root(), stdout);
+
+	nf->set_mutable(true);
+	nf->set_load_store_state_reducible(true);
+	graph.normalize();
+	graph.prune();
 
 	jive::view(graph.root(), stdout);
 
@@ -126,6 +162,7 @@ test()
 	test_load_mux_reduction();
 	test_load_alloca_reduction();
 	test_multiple_origin_reduction();
+	test_load_store_state_reduction();
 
 	return 0;
 }
