@@ -100,7 +100,7 @@ is_store_alloca_reducible(const std::vector<jive::output*> & operands)
 		return false;
 
 	auto alloca = operands[0]->node();
-	if (!is_alloca_op(alloca->operation()))
+	if (!alloca || !is_alloca_op(alloca->operation()))
 		return false;
 
 	std::unordered_set<jive::output*> states(std::next(std::next(operands.begin())), operands.end());
