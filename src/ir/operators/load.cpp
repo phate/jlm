@@ -111,6 +111,41 @@ is_load_alloca_reducible(const std::vector<jive::output*> & operands)
 	return new_states;
 }
 
+static bool
+is_load_store_alloca_reducible(const std::vector<jive::output*> & operands)
+{
+	if (operands.size() != 2)
+		return false;
+
+	auto address = operands[0];
+	auto state = operands[1];
+
+	auto alloca = address->node();
+	if (!alloca || !is_alloca_op(alloca->operation()))
+		return false;
+
+	auto store = state->node();
+	if (!store || !is_store_op(store->operation()))
+		return false;
+
+	if (store->input(0)->origin() != alloca->output(0))
+		return false;
+
+	if (store->ninputs() != 3)
+		return false;
+
+	if (store->input(2)->origin() != alloca->output(1))
+		return false;
+
+	if (alloca->output(1)->nusers() != 1)
+		return false;
+
+	if (address->nusers() != 2)
+		return false;
+
+	return true;
+}
+
 static std::vector<jive::output*>
 is_load_store_state_reducible(const std::vector<jive::output*> operands)
 {
@@ -147,6 +182,14 @@ is_multiple_origin_reducible(const std::vector<jive::output*> & operands)
 {
 	std::unordered_set<jive::output*> states(std::next(operands.begin()), operands.end());
 	return states.size() != operands.size()-1;
+}
+
+static std::vector<jive::output*>
+perform_load_store_alloca_reduction(
+	const jlm::load_op & op,
+	const std::vector<jive::output*> & operands)
+{
+	return {operands[1]->node()->input(1)->origin()};
 }
 
 static std::vector<jive::output*>
@@ -199,6 +242,7 @@ load_normal_form::load_normal_form(
 , enable_load_alloca_(false)
 , enable_multiple_origin_(false)
 , enable_load_store_state_(false)
+, enable_load_store_alloca_(false)
 {}
 
 bool
@@ -237,6 +281,12 @@ load_normal_form::normalize_node(jive::node * node) const
 		return false;
 	}
 
+	if (get_load_store_alloca_reducible() && is_load_store_alloca_reducible(operands)) {
+		replace(node, perform_load_store_alloca_reduction(*op, operands));
+		remove(node);
+		return false;
+	}
+
 	return simple_normal_form::normalize_node(node);
 }
 
@@ -265,6 +315,9 @@ load_normal_form::normalized_create(
 
 	if (get_multiple_origin_reducible() && is_multiple_origin_reducible(operands))
 		return perform_multiple_origin_reduction(*lop, operands);
+
+	if (get_load_store_alloca_reducible() && is_load_store_alloca_reducible(operands))
+		return perform_load_store_alloca_reduction(*lop, operands);
 
 	return simple_normal_form::normalized_create(region, op, operands);
 }
