@@ -377,64 +377,6 @@ ptr_constant_null_op::copy() const
 	return std::unique_ptr<jive::operation>(new ptr_constant_null_op(*this));
 }
 
-/* load operator */
-
-load_op::~load_op() noexcept
-{}
-
-bool
-load_op::operator==(const operation & other) const noexcept
-{
-	auto op = dynamic_cast<const load_op*>(&other);
-	return op
-	    && op->nstates_ == nstates_
-	    && op->aport_ == aport_
-	    && op->vport_ == vport_
-	    && op->alignment_ == alignment_;
-}
-
-size_t
-load_op::narguments() const noexcept
-{
-	return 1 + nstates();
-}
-
-const jive::port &
-load_op::argument(size_t index) const noexcept
-{
-	JLM_DEBUG_ASSERT(index < narguments());
-	if (index == 0)
-		return aport_;
-
-	static const jive::port p(jive::mem::type::instance());
-	return p;
-}
-
-size_t
-load_op::nresults() const noexcept
-{
-	return 1;
-}
-
-const jive::port &
-load_op::result(size_t index) const noexcept
-{
-	JLM_DEBUG_ASSERT(index < nresults());
-	return vport_;
-}
-
-std::string
-load_op::debug_string() const
-{
-	return "LOAD";
-}
-
-std::unique_ptr<jive::operation>
-load_op::copy() const
-{
-	return std::unique_ptr<jive::operation>(new load_op(*this));
-}
-
 /* bits2ptr operator */
 
 bits2ptr_op::~bits2ptr_op()
