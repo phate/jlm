@@ -48,8 +48,21 @@ public:
 		return enable_load_mux_;
 	}
 
+	inline void
+	set_load_alloca_reducible(bool enable) noexcept
+	{
+		enable_load_alloca_ = enable;
+	}
+
+	inline bool
+	get_load_alloca_reducible() const noexcept
+	{
+		return enable_load_alloca_;
+	}
+
 private:
 	bool enable_load_mux_;
+	bool enable_load_alloca_;
 };
 
 /* load operator */
