@@ -73,14 +73,14 @@ test_load_alloca_reduction()
 
 	auto ex = graph.export_port(value, "l");
 
-	jive::view(graph.root(), stdout);
+//	jive::view(graph.root(), stdout);
 
 	nf->set_mutable(true);
 	nf->set_load_alloca_reducible(true);
 	graph.normalize();
 	graph.prune();
 
-	jive::view(graph.root(), stdout);
+//	jive::view(graph.root(), stdout);
 
 	auto node = ex->origin()->node();
 	assert(node && jlm::is_load_op(node->operation()));
@@ -88,11 +88,44 @@ test_load_alloca_reduction()
 	assert(node->input(1)->origin() == alloca1[1]);
 }
 
+static inline void
+test_multiple_origin_reduction()
+{
+	jlm::valuetype vt;
+	jlm::ptrtype pt(vt);
+	jive::mem::type mt;
+
+	jive::graph graph;
+	auto nf = jlm::load_op::normal_form(&graph);
+	nf->set_mutable(false);
+	nf->set_multiple_origin_reducible(false);
+
+	auto a = graph.import(pt, "a");
+	auto s = graph.import(mt, "s");
+
+	auto load = jlm::create_load(a, {s, s, s, s}, 4);
+
+	auto ex = graph.export_port(load, "l");
+
+	jive::view(graph.root(), stdout);
+
+	nf->set_mutable(true);
+	nf->set_multiple_origin_reducible(true);
+	graph.normalize();
+
+	jive::view(graph.root(), stdout);
+
+	auto node = ex->origin()->node();
+	assert(node && jlm::is_load_op(node->operation()));
+	assert(node->ninputs() == 2);
+}
+
 static int
 test()
 {
 	test_load_mux_reduction();
 	test_load_alloca_reduction();
+	test_multiple_origin_reduction();
 
 	return 0;
 }

@@ -60,9 +60,22 @@ public:
 		return enable_load_alloca_;
 	}
 
+	inline void
+	set_multiple_origin_reducible(bool enable) noexcept
+	{
+		enable_multiple_origin_ = enable;
+	}
+
+	inline bool
+	get_multiple_origin_reducible() const noexcept
+	{
+		return enable_multiple_origin_;
+	}
+
 private:
 	bool enable_load_mux_;
 	bool enable_load_alloca_;
+	bool enable_multiple_origin_;
 };
 
 /* load operator */

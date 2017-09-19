@@ -111,6 +111,13 @@ is_load_alloca_reducible(const std::vector<jive::output*> & operands)
 	return new_states;
 }
 
+static bool
+is_multiple_origin_reducible(const std::vector<jive::output*> & operands)
+{
+	std::unordered_set<jive::output*> states(std::next(operands.begin()), operands.end());
+	return states.size() != operands.size()-1;
+}
+
 static std::vector<jive::output*>
 perform_load_mux_reduction(
 	const jlm::load_op & op,
@@ -130,6 +137,15 @@ perform_load_alloca_reduction(
 	return {create_load(operands[0], new_states, op.alignment())};
 }
 
+static std::vector<jive::output*>
+perform_multiple_origin_reduction(
+	const jlm::load_op & op,
+	const std::vector<jive::output*> & operands)
+{
+	std::unordered_set<jive::output*> states(std::next(operands.begin()), operands.end());
+	return {create_load(operands[0], {states.begin(), states.end()}, op.alignment())};
+}
+
 load_normal_form::~load_normal_form()
 {}
 
@@ -140,6 +156,7 @@ load_normal_form::load_normal_form(
 : simple_normal_form(opclass, parent, graph)
 , enable_load_mux_(false)
 , enable_load_alloca_(false)
+, enable_multiple_origin_(false)
 {}
 
 bool
@@ -165,6 +182,12 @@ load_normal_form::normalize_node(jive::node * node) const
 		return false;
 	}
 
+	if (get_multiple_origin_reducible() && is_multiple_origin_reducible(operands)) {
+		replace(node, perform_multiple_origin_reduction(*op, operands));
+		remove(node);
+		return false;
+	}
+
 	return simple_normal_form::normalize_node(node);
 }
 
@@ -186,6 +209,9 @@ load_normal_form::normalized_create(
 	auto new_states = is_load_alloca_reducible(operands);
 	if (get_load_alloca_reducible() && new_states.size() != operands.size()-1)
 		return perform_load_alloca_reduction(*lop, operands, new_states);
+
+	if (get_multiple_origin_reducible() && is_multiple_origin_reducible(operands))
+		return perform_multiple_origin_reduction(*lop, operands);
 
 	return simple_normal_form::normalized_create(region, op, operands);
 }
