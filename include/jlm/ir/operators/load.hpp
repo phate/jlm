@@ -6,12 +6,36 @@
 #ifndef JLM_IR_OPERATORS_LOAD_HPP
 #define JLM_IR_OPERATORS_LOAD_HPP
 
+#include <jive/vsdg/graph.h>
+#include <jive/vsdg/simple-normal-form.h>
 #include <jive/vsdg/simple_node.h>
 
 #include <jlm/ir/tac.hpp>
 #include <jlm/ir/types.hpp>
 
 namespace jlm {
+
+/* load normal form */
+
+class load_normal_form final : public jive::simple_normal_form {
+public:
+	virtual
+	~load_normal_form() noexcept;
+
+	load_normal_form(
+		const std::type_info & opclass,
+		jive::node_normal_form * parent,
+		jive::graph * graph) noexcept;
+
+	virtual bool
+	normalize_node(jive::node * node) const override;
+
+	virtual std::vector<jive::output*>
+	normalized_create(
+		jive::region * region,
+		const jive::simple_op & op,
+		const std::vector<jive::output*> & operands) const override;
+};
 
 /* load operator */
 
@@ -69,6 +93,12 @@ public:
 	alignment() const noexcept
 	{
 		return alignment_;
+	}
+
+	static jlm::load_normal_form *
+	normal_form(jive::graph * graph) noexcept
+	{
+		return static_cast<jlm::load_normal_form*>(graph->node_normal_form(typeid(load_op)));
 	}
 
 private:

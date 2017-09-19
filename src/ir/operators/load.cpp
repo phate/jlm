@@ -67,4 +67,52 @@ load_op::copy() const
 	return std::unique_ptr<jive::operation>(new load_op(*this));
 }
 
+/* load normal form */
+
+load_normal_form::~load_normal_form()
+{}
+
+load_normal_form::load_normal_form(
+	const std::type_info & opclass,
+	jive::node_normal_form * parent,
+	jive::graph * graph) noexcept
+: simple_normal_form(opclass, parent, graph)
+{}
+
+bool
+load_normal_form::normalize_node(jive::node * node) const
+{
+	JLM_DEBUG_ASSERT(is_load_op(node->operation()));
+	return simple_normal_form::normalize_node(node);
+}
+
+std::vector<jive::output*>
+load_normal_form::normalized_create(
+	jive::region * region,
+	const jive::simple_op & op,
+	const std::vector<jive::output*> & operands) const
+{
+	JLM_DEBUG_ASSERT(is_load_op(op));
+	return simple_normal_form::normalized_create(region, op, operands);
+}
+
+}
+
+namespace {
+
+static jive::node_normal_form *
+create_load_normal_form(
+	const std::type_info & opclass,
+	jive::node_normal_form * parent,
+	jive::graph * graph)
+{
+	return new jlm::load_normal_form(opclass, parent, graph);
+}
+
+static void __attribute__((constructor))
+register_normal_form()
+{
+	jive::node_normal_form::register_factory(typeid(jlm::load_op), create_load_normal_form);
+}
+
 }
