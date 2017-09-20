@@ -91,23 +91,26 @@ test_theta()
 	auto lv1 = tb.add_loopvar(x);
 	auto lv2 = tb.add_loopvar(y);
 	auto lv3 = tb.add_loopvar(z);
+	auto lv4 = tb.add_loopvar(y);
 
 	lv1->result()->divert_origin(lv2->argument());
 	lv2->result()->divert_origin(lv1->argument());
 
 	auto t = tb.subregion()->add_simple_node(op, {lv3->argument()})->output(0);
 	lv3->result()->divert_origin(t);
+	lv4->result()->divert_origin(lv2->argument());
 
 	auto c = tb.subregion()->add_simple_node(cop, {})->output(0);
 	auto theta = tb.end(c);
 
 	graph.export_port(theta->node()->output(0), "a");
+	graph.export_port(theta->node()->output(3), "b");
 
 //	jive::view(graph.root(), stdout);
 	jlm::dne(graph);
 //	jive::view(graph.root(), stdout);
 
-	assert(theta->node()->noutputs() == 2);
+	assert(theta->node()->noutputs() == 3);
 	assert(theta->subregion()->nodes.size() == 1);
 	assert(graph.root()->narguments() == 2);
 }

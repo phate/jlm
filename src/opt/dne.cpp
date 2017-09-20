@@ -41,6 +41,9 @@ public:
 	inline bool
 	is_dead(const jive::output * output) const noexcept
 	{
+		if (output->nusers() == 0)
+			return true;
+
 		for (const auto & user : *output) {
 			if (!is_dead(user))
 				return false;
@@ -289,32 +292,30 @@ sweep_lambda(jive::structural_node * node, const dnectx & ctx)
 static void
 sweep_theta(jive::structural_node * node, const dnectx & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::theta_op*>(&node->operation()));
-	auto subregion = node->subregion(0);
+	JLM_DEBUG_ASSERT(is_theta_op(node->operation()));
 
-	/* remove outputs and results */
-	for (ssize_t n = subregion->nresults()-1; n >= 1; n--) {
-		auto result = subregion->result(n);
-		if (ctx.is_dead(result)
-		&& ctx.is_dead(node->input(n-1))) {
-			subregion->remove_result(n);
-			node->remove_output(n-1);
-		}
+	if (!node->has_users()) {
+		remove(node);
+		return;
 	}
 
-	if (node->noutputs() == 0) {
-		node->region()->remove_node(node);
-		return;
+	/* remove results */
+	auto subregion = node->subregion(0);
+	for (ssize_t n = subregion->nresults()-1; n >= 1; n--) {
+		auto result = subregion->result(n);
+		if (ctx.is_dead(result->output()) && ctx.is_dead(node->input(n-1)))
+			subregion->remove_result(n);
 	}
 
 	sweep(subregion, ctx);
 
-	/* remove inputs and arguments */
+	/* remove outputs, inputs, and arguments */
 	for (ssize_t n = subregion->narguments()-1; n >= 0; n--) {
 		auto argument = subregion->argument(n);
-		if (argument->nusers() == 0) {
+		if (ctx.is_dead(node->output(n)) && ctx.is_dead(argument->input())) {
 			subregion->remove_argument(n);
 			node->remove_input(n);
+			node->remove_output(n);
 		}
 	}
 
