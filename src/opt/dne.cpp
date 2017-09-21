@@ -257,8 +257,9 @@ sweep_phi(jive::structural_node * node, const dnectx & ctx)
 	for (ssize_t n = subregion->narguments()-1; n >= 0; n--) {
 		auto argument = subregion->argument(n);
 		if (argument->nusers() == 0 && argument->input()) {
+				size_t index = argument->input()->index();
 				subregion->remove_argument(n);
-				node->remove_input(argument->input()->index());
+				node->remove_input(index);
 		}
 	}
 }
@@ -269,8 +270,8 @@ sweep_lambda(jive::structural_node * node, const dnectx & ctx)
 	JLM_DEBUG_ASSERT(dynamic_cast<const jive::fct::lambda_op*>(&node->operation()));
 	auto subregion = node->subregion(0);
 
-	if (node->output(0)->nusers() == 0) {
-		node->region()->remove_node(node);
+	if (!node->has_users()) {
+		remove(node);
 		return;
 	}
 
@@ -283,8 +284,9 @@ sweep_lambda(jive::structural_node * node, const dnectx & ctx)
 			continue;
 
 		if (argument->nusers() == 0) {
+			size_t index = argument->input()->index();
 			subregion->remove_argument(n);
-			node->remove_input(argument->input()->index());
+			node->remove_input(index);
 		}
 	}
 }
