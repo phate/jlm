@@ -47,6 +47,7 @@ LIBJLM_SRC = \
 	src/opt/dne.cpp \
 	src/opt/inlining.cpp \
 	src/opt/invariance.cpp \
+	src/opt/inversion.cpp \
 	src/opt/push.cpp \
 
 JLMVIEWER_SRC = \
