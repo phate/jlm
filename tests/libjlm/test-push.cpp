@@ -90,7 +90,7 @@ test_theta()
 	jlm::push(graph);
 	jive::view(graph.root(), stdout);
 
-	assert(graph.root()->nodes.size() == 4);
+	assert(graph.root()->nodes.size() == 3);
 }
 
 static int
