@@ -165,6 +165,8 @@ store_normal_form::store_normal_form(
 	jive::graph * graph) noexcept
 : simple_normal_form(opclass, parent, graph)
 , enable_store_mux_(false)
+, enable_store_alloca_(false)
+, enable_multiple_origin_(false)
 {
 	if (auto p = dynamic_cast<const store_normal_form*>(parent)) {
 		enable_multiple_origin_ = p->enable_multiple_origin_;
