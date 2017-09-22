@@ -28,23 +28,23 @@ verify()
 
 	/* f1 */
 	jive::lambda_builder lb;
-	auto arguments = lb.begin(graph.root(), ft1);
+	auto arguments = lb.begin_lambda(graph.root(), ft1);
 	lb.add_dependency(i);
 	auto t = lb.subregion()->add_simple_node(op, arguments);
-	auto f1 = lb.end({t->output(0)});
+	auto f1 = lb.end_lambda({t->output(0)});
 
 	/* f2 */
-	arguments = lb.begin(graph.root(), ft2);
+	arguments = lb.begin_lambda(graph.root(), ft2);
 	auto d = lb.add_dependency(f1->node()->output(0));
 
 	jive::gamma_builder gb;
-	gb.begin(arguments[0]);
+	gb.begin_gamma(arguments[0]);
 	auto ev1 = gb.add_entryvar(arguments[1]);
 	auto ev2 = gb.add_entryvar(d);
 	auto apply = jive::fct::create_apply(ev2->argument(0), {ev1->argument(0)})[0];
 	auto xv1 = gb.add_exitvar({apply, ev1->argument(1)});
-	gb.end();
-	auto f2 = lb.end({xv1->output()});
+	gb.end_gamma();
+	auto f2 = lb.end_lambda({xv1->output()});
 
 	graph.export_port(f2->node()->output(0), "f2");
 

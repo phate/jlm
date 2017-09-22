@@ -116,14 +116,14 @@ invert_theta(jive::structural_node * tnode)
 	copy_condition_nodes(tnode->region(), smap, cnodes);
 
 	jive::gamma_builder gb;
-	gb.begin(smap.lookup(ogamma.predicate()->origin()));
+	gb.begin_gamma(smap.lookup(ogamma.predicate()->origin()));
 
 	jive::substitution_map rmap[gb.nsubregions()];
 	for (size_t r = 0; r < gb.nsubregions(); r++) {
 		auto nsubregion = gb.subregion(r);
 
 		jive::theta_builder tb;
-		tb.begin(nsubregion);
+		tb.begin_theta(nsubregion);
 
 		/* add all loop variables to new gamma and theta */
 		for (const auto & olv : otheta) {
@@ -144,7 +144,7 @@ invert_theta(jive::structural_node * tnode)
 		auto predicate = rmap[r].lookup(ogamma.predicate()->origin());
 		osubregion->copy(tb.subregion(), rmap[r], false, false);
 
-		auto ntheta = tb.end(predicate);
+		auto ntheta = tb.end_theta(predicate);
 
 		/* redirect new loop variable results to right origin */
 		JLM_DEBUG_ASSERT(otheta.nloopvars() == ntheta->nloopvars());
@@ -168,7 +168,7 @@ invert_theta(jive::structural_node * tnode)
 		smap.insert(olv.output(), ex->output());
 	}
 
-	auto ngamma = gb.end();
+	auto ngamma = gb.end_gamma();
 
 	/* replace outputs */
 	for (const auto & olv : otheta)

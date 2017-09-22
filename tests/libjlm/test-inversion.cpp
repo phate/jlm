@@ -29,7 +29,7 @@ verify()
 	auto z = graph.import(vt, "z");
 
 	jive::theta_builder tb;
-	tb.begin(graph.root());
+	tb.begin_theta(graph.root());
 
 	auto lvx = tb.add_loopvar(x);
 	auto lvy = tb.add_loopvar(y);
@@ -39,7 +39,7 @@ verify()
 	auto predicate = jive::ctl::match(1, {{1, 0}}, 1, 2, a->output(0));
 
 	jive::gamma_builder gb;
-	gb.begin(predicate);
+	gb.begin_gamma(predicate);
 
 	auto evx = gb.add_entryvar(lvx->argument());
 	auto evy = gb.add_entryvar(lvy->argument());
@@ -48,11 +48,11 @@ verify()
 	auto c = gb.subregion(1)->add_simple_node(bop2, {evx->argument(1), evy->argument(1)});
 
 	auto xvy = gb.add_exitvar({b->output(0), c->output(0)});
-	gb.end();
+	gb.end_gamma();
 
 	lvy->result()->divert_origin(xvy->output());
 
-	auto theta = tb.end(predicate);
+	auto theta = tb.end_theta(predicate);
 
 	auto ex1 = graph.export_port(theta->node()->output(0), "x");
 	auto ex2 = graph.export_port(theta->node()->output(1), "y");

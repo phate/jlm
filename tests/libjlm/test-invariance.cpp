@@ -26,22 +26,22 @@ test_gamma()
 	auto y = graph.import(vt, "y");
 
 	jive::gamma_builder gb1;
-	gb1.begin(c);
+	gb1.begin_gamma(c);
 	auto ev1 = gb1.add_entryvar(c);
 	auto ev2 = gb1.add_entryvar(x);
 	auto ev3 = gb1.add_entryvar(y);
 
 	jive::gamma_builder gb2;
-	gb2.begin(ev1->argument(0));
+	gb2.begin_gamma(ev1->argument(0));
 	auto ev4 = gb2.add_entryvar(ev2->argument(0));
 	auto ev5 = gb2.add_entryvar(ev3->argument(0));
 	auto xv4 = gb2.add_exitvar({ev4->argument(0), ev4->argument(1)});
 	auto xv5 = gb2.add_exitvar({ev5->argument(0), ev5->argument(1)});
-	auto gamma2 = gb2.end();
+	auto gamma2 = gb2.end_gamma();
 
 	auto xv2 = gb1.add_exitvar({gamma2->node()->output(0), ev2->argument(1)});
 	auto xv3 = gb1.add_exitvar({gamma2->node()->output(1), ev3->argument(1)});
-	auto gamma1 = gb1.end();
+	auto gamma1 = gb1.end_gamma();
 
 	graph.export_port(gamma1->node()->output(0), "x");
 	graph.export_port(gamma1->node()->output(1), "y");
@@ -65,17 +65,17 @@ test_theta()
 	auto x = graph.import(vt, "x");
 
 	jive::theta_builder tb1;
-	tb1.begin(graph.root());
+	tb1.begin_theta(graph.root());
 	auto lv1 = tb1.add_loopvar(c);
 	auto lv2 = tb1.add_loopvar(x);
 
 	jive::theta_builder tb2;
-	tb2.begin(tb1.subregion());
+	tb2.begin_theta(tb1.subregion());
 	auto lv3 = tb2.add_loopvar(lv1->argument());
 	auto lv4 = tb2.add_loopvar(lv2->argument());
-	tb2.end(lv3->argument());
+	tb2.end_theta(lv3->argument());
 
-	tb1.end(lv1->argument());
+	tb1.end_theta(lv1->argument());
 
 	graph.export_port(lv1->output(), "c");
 	graph.export_port(lv2->output(), "x");

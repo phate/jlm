@@ -80,7 +80,7 @@ test_gamma()
 	auto u2 = graph.root()->add_simple_node(uop, {x})->output(0);
 
 	jive::gamma_builder gb;
-	gb.begin(c);
+	gb.begin_gamma(c);
 
 	auto ev1 = gb.add_entryvar(u1);
 	auto ev2 = gb.add_entryvar(u2);
@@ -97,7 +97,7 @@ test_gamma()
 	auto xv5 = gb.add_exitvar({n2, ev3->argument(1)});
 	auto xv6 = gb.add_exitvar({n3, ev3->argument(1)});
 
-	auto gamma = gb.end();
+	auto gamma = gb.end_gamma();
 
 	graph.export_port(gamma->node()->output(0), "x1");
 	graph.export_port(gamma->node()->output(1), "x2");
@@ -133,7 +133,7 @@ test_theta()
 	auto x = graph.import(vt, "x");
 
 	jive::theta_builder tb;
-	auto region = tb.begin(graph.root());
+	auto region = tb.begin_theta(graph.root());
 
 	auto lv1 = tb.add_loopvar(c);
 	auto lv2 = tb.add_loopvar(x);
@@ -148,7 +148,7 @@ test_theta()
 	lv3->result()->divert_origin(u2);
 	lv4->result()->divert_origin(b1);
 
-	auto theta = tb.end(lv1->argument());
+	auto theta = tb.end_theta(lv1->argument());
 
 	graph.export_port(theta->node()->output(1), "lv2");
 	graph.export_port(theta->node()->output(2), "lv3");
@@ -177,14 +177,14 @@ test_lambda()
 	auto x = graph.import(vt, "x");
 
 	jive::lambda_builder lb;
-	auto region = lb.begin(graph.root(), ft);
+	auto region = lb.begin_lambda(graph.root(), ft);
 
 	auto d1 = lb.add_dependency(x);
 	auto d2 = lb.add_dependency(x);
 
 	auto b1 = lb.subregion()->add_simple_node(bop, {d1, d2})->output(0);
 
-	auto lambda = lb.end({b1});
+	auto lambda = lb.end_lambda({b1});
 
 	graph.export_port(lambda->node()->output(0), "f");
 
@@ -208,7 +208,7 @@ test_phi()
 	auto x = graph.import(vt, "x");
 
 	jive::phi_builder pb;
-	auto region = pb.begin(graph.root());
+	auto region = pb.begin_phi(graph.root());
 
 	auto d1 = pb.add_dependency(x);
 	auto d2 = pb.add_dependency(x);
@@ -217,18 +217,18 @@ test_phi()
 	auto r2 = pb.add_recvar(ft);
 
 	jive::lambda_builder lb;
-	lb.begin(region, ft);
+	lb.begin_lambda(region, ft);
 	d1 = lb.add_dependency(d1);
-	auto f1 = lb.end({d1});
+	auto f1 = lb.end_lambda({d1});
 
-	lb.begin(region, ft);
+	lb.begin_lambda(region, ft);
 	d2 = lb.add_dependency(d2);
-	auto f2 = lb.end({d2});
+	auto f2 = lb.end_lambda({d2});
 
 	r1->set_value(f1->node()->output(0));
 	r2->set_value(f2->node()->output(0));
 
-	auto phi = pb.end();
+	auto phi = pb.end_phi();
 
 	graph.export_port(phi->output(0), "f1");
 	graph.export_port(phi->output(1), "f2");

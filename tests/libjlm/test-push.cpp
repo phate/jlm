@@ -30,7 +30,7 @@ test_gamma()
 	auto s = graph.import(st, "s");
 
 	jive::gamma_builder gb;
-	gb.begin(c);
+	gb.begin_gamma(c);
 	auto evx = gb.add_entryvar(x);
 	auto evs = gb.add_entryvar(s);
 
@@ -39,7 +39,7 @@ test_gamma()
 	auto state = gb.subregion(0)->add_simple_node(sop, {bin, evs->argument(0)})->output(0);
 
 	auto xvs = gb.add_exitvar({state, evs->argument(1)});
-	auto gamma = gb.end();
+	auto gamma = gb.end_gamma();
 
 	graph.export_port(gamma->node()->output(0), "x");
 
@@ -67,7 +67,7 @@ test_theta()
 	auto s = graph.import(st, "s");
 
 	jive::theta_builder tb;
-	tb.begin(graph.root());
+	tb.begin_theta(graph.root());
 
 	auto lv1 = tb.add_loopvar(c);
 	auto lv2 = tb.add_loopvar(x);
@@ -82,7 +82,7 @@ test_theta()
 	lv2->result()->divert_origin(o3);
 	lv4->result()->divert_origin(o4);
 
-	auto theta = tb.end(lv1->argument());
+	auto theta = tb.end_theta(lv1->argument());
 
 	graph.export_port(theta->node()->output(0), "c");
 

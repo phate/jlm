@@ -143,12 +143,12 @@ convert_select(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
 	auto predicate = jive::create_normalized(region, op, {vmap[tac.input(0)]})[0];
 
 	jive::gamma_builder gb;
-	gb.begin(predicate);
+	gb.begin_gamma(predicate);
 	auto ev1 = gb.add_entryvar(vmap[tac.input(1)]);
 	auto ev2 = gb.add_entryvar(vmap[tac.input(2)]);
 	auto ex = gb.add_exitvar({ev1->argument(0), ev2->argument(1)});
 	vmap[tac.output(0)] = ex->output();
-	gb.end();
+	gb.end_gamma();
 }
 
 static void
@@ -213,7 +213,7 @@ convert_entry_node(
 	auto entry = static_cast<const agg::entry*>(&node.structure())->attribute();
 	auto ds = dm.at(&node).get();
 
-	auto arguments = lb.begin(svmap.region(), function.type());
+	auto arguments = lb.begin_lambda(svmap.region(), function.type());
 	svmap.push_scope(lb.subregion());
 
 	auto & pvmap = svmap.vmap(svmap.nscopes()-2);
@@ -256,7 +256,7 @@ convert_exit_node(
 	}
 
 	svmap.pop_scope();
-	return lb.end(results)->node();
+	return lb.end_lambda(results)->node();
 }
 
 static jive::node *
@@ -310,7 +310,7 @@ convert_branch_node(
 	JLM_DEBUG_ASSERT(is_branch_op(sb.last()->operation()));
 	auto predicate = svmap.vmap()[sb.last()->input(0)];
 	jive::gamma_builder gb;
-	gb.begin(predicate);
+	gb.begin_gamma(predicate);
 
 	/* add entry variables */
 	auto ds = static_cast<const agg::branch_demand_set*>(dm.at(&node).get());
@@ -343,7 +343,7 @@ convert_branch_node(
 		svmap.vmap()[v] = gb.add_exitvar(xvmap[v])->output();
 	}
 
-	gb.end();
+	gb.end_gamma();
 	return nullptr;
 }
 
@@ -359,7 +359,7 @@ convert_loop_node(
 	auto parent = svmap.region();
 
 	jive::theta_builder tb;
-	tb.begin(parent);
+	tb.begin_theta(parent);
 
 	svmap.push_scope(tb.subregion());
 	auto & vmap = svmap.vmap();
@@ -404,7 +404,7 @@ convert_loop_node(
 
 	/* update variable map */
 	JLM_DEBUG_ASSERT(vmap.find(predicate) != vmap.end());
-	tb.end(vmap[predicate]);
+	tb.end_theta(vmap[predicate]);
 	svmap.pop_scope();
 	for (const auto & v : ds->bottom) {
 		JLM_DEBUG_ASSERT(pvmap.find(v) != pvmap.end());
@@ -495,7 +495,7 @@ handle_scc(
 			graph->export_port(lambda, function->name());
 	} else {
 		jive::phi_builder pb;
-		pb.begin(graph->root());
+		pb.begin_phi(graph->root());
 		svmap.push_scope(pb.region());
 
 		/* FIXME: external dependencies */
@@ -514,7 +514,7 @@ handle_scc(
 		}
 
 		svmap.pop_scope();
-		pb.end();
+		pb.end_phi();
 
 		n = 0;
 		for (const auto & f : scc) {
