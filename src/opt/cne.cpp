@@ -80,7 +80,20 @@ public:
 		return outputs_[output];
 	}
 
+	inline void
+	set_processed(congruence_set * set)
+	{
+		processed_.insert(set);
+	}
+
+	inline bool
+	processed(congruence_set * set) const noexcept
+	{
+		return processed_.find(set) != processed_.end();
+	}
+
 private:
+	std::unordered_set<congruence_set*> processed_;
 	std::unordered_set<std::unique_ptr<congruence_set>> sets_;
 	std::unordered_map<const jive::output*, congruence_set*> outputs_;
 };
@@ -272,12 +285,14 @@ mark(jive::region * region, cnectx & ctx)
 static void
 divert_users(jive::output * output, cnectx & ctx)
 {
-	if (output->nusers() == 0)
+	auto set = ctx.set(output);
+	if (ctx.processed(set))
 		return;
 
-	auto set = ctx.set(output);
 	for (auto & other : *set)
 		other->replace(output);
+
+	ctx.set_processed(set);
 }
 
 static void
@@ -300,10 +315,13 @@ divert(jive::region*, cnectx&);
 static void
 divert_gamma(jive::structural_node * node, cnectx & ctx)
 {
-	JLM_DEBUG_ASSERT(is_gamma_op(node->operation()));
+	JLM_DEBUG_ASSERT(is_gamma_node(node));
 
-	for (size_t r = 0; r < node->nsubregions(); r++)
-		divert_arguments(node->subregion(r), ctx);
+	jive::gamma gamma(node);
+	for (auto ev = gamma.begin_entryvar(); ev != gamma.end_entryvar(); ev++) {
+		for (size_t n = 0; n < ev->narguments(); n++)
+			divert_users(ev->argument(n), ctx);
+	}
 
 	for (size_t r = 0; r < node->nsubregions(); r++)
 		divert(node->subregion(r), ctx);
@@ -314,22 +332,13 @@ divert_gamma(jive::structural_node * node, cnectx & ctx)
 static void
 divert_theta(jive::structural_node * node, cnectx & ctx)
 {
-	JLM_DEBUG_ASSERT(jive::is_theta_op(node->operation()));
+	JLM_DEBUG_ASSERT(is_theta_node(node));
 	auto subregion = node->subregion(0);
 
-	for (size_t n = 0; n < subregion->narguments(); n++) {
-		auto argument = subregion->argument(n);
-		if (argument->nusers() == 0)
-			continue;
-
-		auto set = ctx.set(argument);
-		for (auto & other : *set)
-			other->replace(argument);
-
-		auto output = node->output(n);
-		set = ctx.set(output);
-		for (auto & other : *set)
-			other->replace(output);
+	jive::theta theta(node);
+	for (const auto & lv : theta) {
+		divert_users(lv.argument(), ctx);
+		divert_users(lv.output(), ctx);
 	}
 
 	divert(subregion, ctx);

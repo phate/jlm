@@ -75,6 +75,7 @@ test_gamma()
 	auto c = graph.import(ct, "c");
 	auto x = graph.import(vt, "x");
 	auto y = graph.import(vt, "y");
+	auto z = graph.import(vt, "z");
 
 	auto u1 = graph.root()->add_simple_node(uop, {x})->output(0);
 	auto u2 = graph.root()->add_simple_node(uop, {x})->output(0);
@@ -85,6 +86,8 @@ test_gamma()
 	auto ev1 = gb.add_entryvar(u1);
 	auto ev2 = gb.add_entryvar(u2);
 	auto ev3 = gb.add_entryvar(y);
+	auto ev4 = gb.add_entryvar(z);
+	auto ev5 = gb.add_entryvar(z);
 
 	auto n1 = gb.subregion(0)->add_simple_node(nop, {})->output(0);
 	auto n2 = gb.subregion(0)->add_simple_node(nop, {})->output(0);
@@ -96,6 +99,7 @@ test_gamma()
 	auto xv4 = gb.add_exitvar({n1, ev3->argument(1)});
 	auto xv5 = gb.add_exitvar({n2, ev3->argument(1)});
 	auto xv6 = gb.add_exitvar({n3, ev3->argument(1)});
+	auto xv7 = gb.add_exitvar({ev5->argument(0), ev4->argument(1)});
 
 	auto gamma = gb.end_gamma();
 
@@ -103,9 +107,9 @@ test_gamma()
 	graph.export_port(gamma->node()->output(1), "x2");
 	graph.export_port(gamma->node()->output(2), "y");
 
-	jive::view(graph.root(), stdout);
+//	jive::view(graph.root(), stdout);
 	jlm::cne(graph);
-	jive::view(graph.root(), stdout);
+//	jive::view(graph.root(), stdout);
 
 	auto subregion0 = gamma->node()->subregion(0);
 	auto subregion1 = gamma->node()->subregion(1);
@@ -115,6 +119,10 @@ test_gamma()
 	assert(subregion0->result(3)->origin() == subregion0->result(5)->origin());
 	assert(subregion1->result(0)->origin() == subregion1->result(1)->origin());
 	assert(graph.root()->result(0)->origin() == graph.root()->result(1)->origin());
+
+	auto argument0 = dynamic_cast<const jive::argument*>(subregion0->result(6)->origin());
+	auto argument1 = dynamic_cast<const jive::argument*>(subregion1->result(6)->origin());
+	assert(argument0->input() == argument1->input());
 }
 
 static inline void
