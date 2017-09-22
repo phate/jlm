@@ -162,15 +162,12 @@ is_theta_invariant(
 	const jive::node * node,
 	const std::unordered_set<jive::argument*> & invariants)
 {
-	JLM_DEBUG_ASSERT(is_theta_op(node->region()->node()->operation()));
+	JLM_DEBUG_ASSERT(is_theta_node(node->region()->node()));
 	JLM_DEBUG_ASSERT(node->depth() == 0);
 
 	for (size_t n = 0; n < node->ninputs(); n++) {
 		JLM_DEBUG_ASSERT(dynamic_cast<const jive::argument*>(node->input(n)->origin()));
 		auto argument = static_cast<jive::argument*>(node->input(n)->origin());
-		if (dynamic_cast<const jive::state::type*>(&argument->type()))
-			continue;
-
 		if (invariants.find(argument) == invariants.end())
 			return false;
 	}
@@ -181,12 +178,12 @@ is_theta_invariant(
 static void
 theta_push(jive::structural_node * strnode)
 {
-	JLM_DEBUG_ASSERT(is_theta_op(strnode->operation()));
-	auto region = strnode->subregion(0);
+	JLM_DEBUG_ASSERT(is_theta_node(strnode));
+	auto subregion = strnode->subregion(0);
 
 	/* push out all nullary nodes */
 	jive::node * node;
-	JIVE_LIST_ITERATE(region->top_nodes, node, region_top_node_list)
+	JIVE_LIST_ITERATE(subregion->top_nodes, node, region_top_node_list)
 		copy_from_theta(node);
 
 	/* collect loop invariant arguments */
