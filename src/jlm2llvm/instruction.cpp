@@ -7,6 +7,7 @@
 #include <jive/types/bitstring.h>
 #include <jive/types/function.h>
 #include <jive/vsdg/control.h>
+#include <jive/vsdg/statemux.h>
 
 #include <jlm/ir/cfg_node.hpp>
 #include <jlm/ir/expression.hpp>
@@ -498,6 +499,17 @@ convert_ptr_constant_null(
 	return llvm::ConstantPointerNull::get(convert_type(*type, ctx));
 }
 
+static inline llvm::Value *
+convert_mux(
+	const jive::operation & op,
+	const std::vector<const variable*> & args,
+	llvm::IRBuilder<> & builder,
+	context & ctx)
+{
+	JLM_DEBUG_ASSERT(jive::is_mux_op(op));
+	return nullptr;
+}
+
 llvm::Value *
 convert_operation(
 	const jive::operation & op,
@@ -545,6 +557,7 @@ convert_operation(
 	, {std::type_index(typeid(jlm::sext_op)), convert_sext}
 	, {std::type_index(typeid(jlm::sitofp_op)), convert_sitofp}
 	, {std::type_index(typeid(jlm::ptr_constant_null_op)), convert_ptr_constant_null}
+	, {std::type_index(typeid(jive::mux_op)), convert_mux}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
