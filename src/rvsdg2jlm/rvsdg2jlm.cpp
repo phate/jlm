@@ -275,6 +275,7 @@ convert_theta_node(const jive::node & node, context & ctx)
 		auto lv = lvs.front();
 		lvs.pop_front();
 		append_last(entry, create_phi_tac({{v1, pre_entry}, {v2, ctx.lpbb()}}, lv));
+		ctx.insert(result->output(), v2);
 	}
 	JLM_DEBUG_ASSERT(lvs.empty());
 
