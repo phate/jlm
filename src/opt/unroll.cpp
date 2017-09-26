@@ -216,9 +216,9 @@ unroll(jive::theta & theta, size_t factor)
 			smap.insert(olv.argument(), olv.input()->origin());
 		copy_nodes(theta.node()->region(), smap, cnodes);
 
-		auto uf = jive_bitconstant_unsigned(theta.node()->region(), info.nbits, factor);
+		auto uf = jive::create_bitconstant(theta.node()->region(), info.nbits, factor);
 		auto sub = jive::bits::create_sub(info.nbits, smap.lookup(info.max), smap.lookup(info.min));
-		auto cmp = jive_bituge(info.nbits, sub, uf);
+		auto cmp = jive::bits::create_uge(info.nbits, sub, uf);
 		auto pred = jive::ctl::match(1, {{1, 0}}, 1, 2, cmp);
 
 		jive::gamma_builder gb;
@@ -248,9 +248,9 @@ unroll(jive::theta & theta, size_t factor)
 			smap.insert(olv.argument(), smap.lookup(olv.output()));
 		copy_nodes(theta.node()->region(), smap, cnodes);
 
-		auto zero = jive_bitconstant_unsigned(theta.node()->region(), info.nbits, 0);
+		auto zero = jive::create_bitconstant(theta.node()->region(), info.nbits, 0);
 		auto sub = jive::bits::create_sub(info.nbits, smap.lookup(info.max), smap.lookup(info.min));
-		auto cmp = jive_bitne(info.nbits, sub, zero);
+		auto cmp = jive::bits::create_ne(info.nbits, sub, zero);
 		auto pred = jive::ctl::match(1, {{1, 0}}, 1, 2, cmp);
 
 		jive::gamma_builder gb;

@@ -37,7 +37,7 @@ test1()
 
 	auto n1 = tb.subregion()->add_simple_node(op, {lv1->argument()});
 	auto n2 = tb.subregion()->add_simple_node(op, {lv2->argument()});
-	auto cmp = jive_bituge(32, n1->output(0), n2->output(0));
+	auto cmp = jive::bits::create_uge(32, n1->output(0), n2->output(0));
 	auto match = jive::ctl::match(1, {{1, 0}}, 1, 2, cmp);
 
 	lv1->result()->divert_origin(n1->output(0));
