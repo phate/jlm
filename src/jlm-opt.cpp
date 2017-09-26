@@ -148,6 +148,7 @@ perform_reductions(jive::graph & graph)
 	{
 		auto nf = jive::gamma_op::normal_form(&graph);
 		nf->set_mutable(true);
+		nf->set_predicate_reduction(true);
 		nf->set_control_constant_reduction(true);
 	}
 
