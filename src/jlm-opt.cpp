@@ -4,6 +4,8 @@
  */
 
 #include <jive/view.h>
+#include <jive/vsdg/binary.h>
+#include <jive/vsdg/binary-normal-form.h>
 #include <jive/vsdg/gamma.h>
 #include <jive/vsdg/statemux.h>
 
@@ -145,6 +147,14 @@ perform_reductions(jive::graph & graph)
 		auto nf = jive::gamma_op::normal_form(&graph);
 		nf->set_mutable(true);
 		nf->set_control_constant_reduction(true);
+	}
+
+	/* binary operation */
+	{
+		auto nf = graph.node_normal_form(typeid(jive::base::binary_op));
+		auto bnf = static_cast<jive::binary_normal_form*>(nf);
+		bnf->set_mutable(true);
+		bnf->set_reducible(true);
 	}
 
 	graph.normalize();
