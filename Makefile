@@ -49,6 +49,7 @@ LIBJLM_SRC = \
 	src/opt/invariance.cpp \
 	src/opt/inversion.cpp \
 	src/opt/push.cpp \
+	src/opt/unroll.cpp \
 
 JLMVIEWER_SRC = \
 	src/jlm-viewer.cpp \

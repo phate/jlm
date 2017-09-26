@@ -13,3 +13,4 @@ TESTS += \
 	libjlm/test-restructuring \
 	libjlm/test-ssa-destruction \
 	libjlm/test-store \
+	libjlm/test-unroll \
