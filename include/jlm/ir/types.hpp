@@ -192,14 +192,14 @@ private:
 
 /* vararg type */
 
-class varargtype final : public jive::value::type {
+class varargtype final : public jive::state::type {
 public:
 	virtual
 	~varargtype();
 
 	inline constexpr
 	varargtype()
-	: jive::value::type()
+	: jive::state::type()
 	{}
 
 	virtual bool
