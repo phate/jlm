@@ -19,6 +19,7 @@
 #include <jlm/opt/invariance.hpp>
 #include <jlm/opt/inversion.hpp>
 #include <jlm/opt/push.hpp>
+#include <jlm/opt/unroll.hpp>
 #include <jlm/rvsdg2jlm/rvsdg2jlm.hpp>
 
 #include <llvm/IR/LLVMContext.h>
@@ -29,7 +30,7 @@
 
 #include <iostream>
 
-enum class opt {cne, dne, iln, inv, psh, red, ivt};
+enum class opt {cne, dne, iln, inv, psh, red, ivt, url};
 
 struct cmdflags {
 	inline
@@ -55,6 +56,7 @@ print_usage(const std::string & app)
 	std::cerr << "--psh: Perform node push out.\n";
 	std::cerr << "--red: Perform node reductions.\n";
 	std::cerr << "--ivt: Perform theta-gamma inversion.\n";
+	std::cerr << "--url: Perform loop unrolling.\n";
 	std::cerr << "--llvm: Output LLVM IR.\n";
 	std::cerr << "--xml: Output RVSDG as XML.\n";
 }
@@ -76,6 +78,7 @@ parse_cmdflags(int argc, char ** argv, cmdflags & flags)
 	, {"--psh", [](cmdflags & flags){ flags.passes.push_back(opt::psh); }}
 	, {"--red", [](cmdflags & flags){ flags.passes.push_back(opt::red); }}
 	, {"--ivt", [](cmdflags & flags){ flags.passes.push_back(opt::ivt); }}
+	, {"--url", [](cmdflags & flags){ flags.passes.push_back(opt::url); }}
 	, {"--llvm", [](cmdflags & flags){ flags.llvm = true; }}
 	, {"--xml", [](cmdflags & flags){ flags.xml = true; }}
 	});
@@ -157,6 +160,7 @@ perform_optimizations(jive::graph * graph, const std::vector<opt> & opts)
 	, {opt::inv, [](jive::graph & graph){ jlm::invariance(graph); }}
 	, {opt::psh, [](jive::graph & graph){ jlm::push(graph); }}
 	, {opt::ivt, [](jive::graph & graph){ jlm::invert(graph); }}
+	, {opt::url, [](jive::graph & graph){ jlm::unroll(graph, 8); }}
 	, {opt::red, perform_reductions}
 	});
 
