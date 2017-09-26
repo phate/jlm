@@ -123,8 +123,12 @@ gamma_push(jive::structural_node * gamma)
 
 		/* push out all nullary nodes */
 		jive::node * node;
-		JIVE_LIST_ITERATE(region->top_nodes, node, region_top_node_list)
+		JIVE_LIST_ITERATE(region->top_nodes, node, region_top_node_list) {
+			if (has_side_effects(node))
+				continue;
+
 			copy_from_gamma(node, r);
+		}
 
 		/* initialize worklist */
 		worklist wl;
@@ -183,8 +187,12 @@ theta_push(jive::structural_node * strnode)
 
 	/* push out all nullary nodes */
 	jive::node * node;
-	JIVE_LIST_ITERATE(subregion->top_nodes, node, region_top_node_list)
+	JIVE_LIST_ITERATE(subregion->top_nodes, node, region_top_node_list) {
+		if (has_side_effects(node))
+			continue;
+
 		copy_from_theta(node);
+	}
 
 	/* collect loop invariant arguments */
 	jive::theta theta(strnode);
