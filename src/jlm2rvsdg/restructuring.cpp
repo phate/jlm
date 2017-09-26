@@ -364,7 +364,7 @@ restructure_loop_exit(
 		(*it)->divert(new_nr);
 		auto bb = (*it)->split();
 		if (q) append_constant(bb, q, indices[os]);
-		append_constant(bb, r, 1);
+		append_constant(bb, r, 0);
 	}
 }
 
@@ -386,7 +386,7 @@ restructure_loop_repetition(
 		(*it)->divert(new_nr);
 		auto bb = (*it)->split();
 		if (q) append_constant(bb, q, indices[os]);
-		append_constant(bb, r, 0);
+		append_constant(bb, r, 1);
 	}
 }
 

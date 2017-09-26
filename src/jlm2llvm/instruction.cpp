@@ -124,7 +124,7 @@ convert_ctlconstant(
 	JLM_DEBUG_ASSERT(cop.value().nalternatives() == 2);
 
 	auto type = llvm::IntegerType::get(builder.getContext(), 1);
-	return llvm::ConstantInt::get(type, cop.value().alternative() == 0);
+	return llvm::ConstantInt::get(type, cop.value().alternative());
 }
 
 static inline llvm::Value *

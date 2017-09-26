@@ -139,13 +139,13 @@ convert_select(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
 	JLM_DEBUG_ASSERT(is_select_op(tac.operation()));
 	JLM_DEBUG_ASSERT(tac.ninputs() == 3 && tac.noutputs() == 1);
 
-	auto op = jive::ctl::match_op(1, {{1, 0}}, 1, 2);
+	auto op = jive::ctl::match_op(1, {{1, 1}}, 0, 2);
 	auto predicate = jive::create_normalized(region, op, {vmap[tac.input(0)]})[0];
 
 	jive::gamma_builder gb;
 	gb.begin_gamma(predicate);
-	auto ev1 = gb.add_entryvar(vmap[tac.input(1)]);
-	auto ev2 = gb.add_entryvar(vmap[tac.input(2)]);
+	auto ev1 = gb.add_entryvar(vmap[tac.input(2)]);
+	auto ev2 = gb.add_entryvar(vmap[tac.input(1)]);
 	auto ex = gb.add_exitvar({ev1->argument(0), ev2->argument(1)});
 	vmap[tac.output(0)] = ex->output();
 	gb.end_gamma();
