@@ -799,14 +799,14 @@ create_ptrcmp_tac(
 
 /* zext operator */
 
-class zext_op final : public jive::simple_op {
+class zext_op final : public jive::base::unary_op {
 public:
 	virtual
 	~zext_op() noexcept;
 
 	inline
 	zext_op(size_t nsrcbits, size_t ndstbits)
-	: jive::simple_op()
+	: jive::base::unary_op()
 	, srcport_(jive::bits::type(nsrcbits))
 	, dstport_(jive::bits::type(ndstbits))
 	{
@@ -834,6 +834,14 @@ public:
 
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
+
+	virtual jive_unop_reduction_path_t
+	can_reduce_operand(const jive::output * operand) const noexcept override;
+
+	virtual jive::output *
+	reduce_operand(
+		jive_unop_reduction_path_t path,
+		jive::output * operand) const override;
 
 	inline size_t
 	nsrcbits() const noexcept
