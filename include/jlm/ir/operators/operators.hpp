@@ -12,6 +12,7 @@
 #include <jive/vsdg/controltype.h>
 #include <jive/vsdg/nullary.h>
 #include <jive/vsdg/type.h>
+#include <jive/vsdg/unary.h>
 
 #include <jlm/ir/module.hpp>
 #include <jlm/ir/tac.hpp>
@@ -1500,14 +1501,14 @@ create_trunc_tac(const variable * operand, jlm::variable * result)
 
 /* sext operator */
 
-class sext_op final : public jive::simple_op {
+class sext_op final : public jive::base::unary_op {
 public:
 	virtual
 	~sext_op();
 
 	inline
 	sext_op(const jive::bits::type & otype, const jive::bits::type & rtype)
-	: jive::simple_op()
+	: jive::base::unary_op()
 	, oport_(otype)
 	, rport_(rtype)
 	{
@@ -1535,6 +1536,14 @@ public:
 
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
+
+	virtual jive_unop_reduction_path_t
+	can_reduce_operand(const jive::output * operand) const noexcept override;
+
+	virtual jive::output *
+	reduce_operand(
+		jive_unop_reduction_path_t path,
+		jive::output * operand) const override;
 
 	inline size_t
 	nsrcbits() const noexcept

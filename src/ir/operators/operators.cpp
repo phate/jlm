@@ -8,6 +8,7 @@
 
 #include <jive/arch/addresstype.h>
 #include <jive/arch/memorytype.h>
+#include <jive/types/bitstring/constant.h>
 #include <jive/types/float/flttype.h>
 
 namespace jlm {
@@ -1205,6 +1206,29 @@ sext_op::copy() const
 {
 	return std::unique_ptr<jive::operation>(new sext_op(*this));
 }
+
+jive_unop_reduction_path_t
+sext_op::can_reduce_operand(const jive::output * operand) const noexcept
+{
+	if (jive::is_bitconstant_node(producer(operand)))
+		return jive_unop_reduction_constant;
+
+	return jive_unop_reduction_none;
+}
+
+jive::output *
+sext_op::reduce_operand(
+	jive_unop_reduction_path_t path,
+	jive::output * operand) const
+{
+	if (path == jive_unop_reduction_constant) {
+		auto c = static_cast<const jive::bits::constant_op*>(&producer(operand)->operation());
+		return create_bitconstant(operand->node()->region(), c->value().sext(ndstbits()-nsrcbits()));
+	}
+
+	return nullptr;
+}
+
 
 /* sitofp operator */
 
