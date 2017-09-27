@@ -151,12 +151,14 @@ public:
 	inline void
 	drop_first()
 	{
+		delete tacs_.front();
 		tacs_.pop_front();
 	}
 
 	inline void
 	drop_last()
 	{
+		delete tacs_.back();
 		tacs_.pop_back();
 	}
 
