@@ -137,7 +137,7 @@ mark_theta(const jive::structural_node * node, dnectx & ctx)
 static void
 mark_gamma(const jive::structural_node * node, dnectx & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::gamma_op*>(&node->operation()));
+	JLM_DEBUG_ASSERT(is_gamma_node(node));
 
 	/* mark exit variables */
 	for (size_t n = 0; n < node->noutputs(); n++) {
@@ -213,9 +213,10 @@ static void
 sweep_data(jive::structural_node * node, const dnectx & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const data_op*>(&node->operation()));
+	JLM_DEBUG_ASSERT(node->noutputs() == 1);
 
-	if (node->output(0)->nusers() == 0) {
-		node->region()->remove_node(node);
+	if (!node->has_users()) {
+		remove(node);
 		return;
 	}
 
@@ -305,7 +306,7 @@ sweep_theta(jive::structural_node * node, const dnectx & ctx)
 	auto subregion = node->subregion(0);
 	for (ssize_t n = subregion->nresults()-1; n >= 1; n--) {
 		auto result = subregion->result(n);
-		if (ctx.is_dead(result->output()) && ctx.is_dead(node->input(n-1)))
+		if (result->output()->nusers() == 0 && ctx.is_dead(node->input(n-1)))
 			subregion->remove_result(n);
 	}
 
@@ -314,7 +315,8 @@ sweep_theta(jive::structural_node * node, const dnectx & ctx)
 	/* remove outputs, inputs, and arguments */
 	for (ssize_t n = subregion->narguments()-1; n >= 0; n--) {
 		auto argument = subregion->argument(n);
-		if (ctx.is_dead(node->output(n)) && ctx.is_dead(argument->input())) {
+		if (node->output(n)->nusers() == 0 && argument->nusers() == 0) {
+			JLM_DEBUG_ASSERT(node->output(n)->results.first == nullptr);
 			subregion->remove_argument(n);
 			node->remove_input(n);
 			node->remove_output(n);
@@ -327,26 +329,22 @@ sweep_theta(jive::structural_node * node, const dnectx & ctx)
 static void
 sweep_gamma(jive::structural_node * node, const dnectx & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::gamma_op*>(&node->operation()));
+	JLM_DEBUG_ASSERT(is_gamma_node(node));
 
-	/* remove results */
-	for (size_t r = 0; r < node->nsubregions(); r++) {
-		auto subregion = node->subregion(r);
-		for (ssize_t n = subregion->nresults()-1; n >= 0; n--) {
-			if (subregion->result(n)->output()->nusers() == 0)
-				subregion->remove_result(n);
-		}
-	}
-
-	/* remove outputs */
-	for (ssize_t n = node->noutputs()-1; n >= 0; n--) {
-		if (node->output(n)->nusers() == 0)
-			node->remove_output(n);
-	}
-
-	if (node->noutputs() == 0) {
-		node->region()->remove_node(node);
+	if (!node->has_users()) {
+		remove(node);
 		return;
+	}
+
+	/* remove outputs and results */
+	for (ssize_t n = node->noutputs()-1; n >= 0; n--) {
+		if (node->output(n)->nusers() != 0)
+			continue;
+
+		for (size_t r = 0; r < node->nsubregions(); r++)
+			node->subregion(r)->remove_result(n);
+
+		node->remove_output(n);
 	}
 
 	for (size_t r = 0; r < node->nsubregions(); r++)
@@ -391,12 +389,8 @@ sweep(jive::structural_node * node, const dnectx & ctx)
 static void
 sweep(jive::simple_node * node, const dnectx & ctx)
 {
-	for (size_t n = 0; n < node->noutputs(); n++) {
-		if (node->output(n)->nusers() != 0)
-			return;
-	}
-
-	node->region()->remove_node(node);
+	if (!node->has_users())
+		remove(node);
 }
 
 static void
