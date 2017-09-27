@@ -681,7 +681,7 @@ zext_op::result(size_t index) const noexcept
 std::string
 zext_op::debug_string() const
 {
-	return "ZEXT";
+	return strfmt("ZEXT[", nsrcbits(), " -> ", ndstbits(), "]");
 }
 
 std::unique_ptr<jive::operation>
@@ -730,7 +730,7 @@ fpconstant_op::result(size_t index) const noexcept
 std::string
 fpconstant_op::debug_string() const
 {
-	return strfmt(constant());
+	return strfmt("FP(", constant(), ")");
 }
 
 std::unique_ptr<jive::operation>
@@ -1197,7 +1197,7 @@ sext_op::result(size_t index) const noexcept
 std::string
 sext_op::debug_string() const
 {
-	return "SEXT";
+	return strfmt("SEXT[", nsrcbits(), " -> ", ndstbits(), "]");
 }
 
 std::unique_ptr<jive::operation>

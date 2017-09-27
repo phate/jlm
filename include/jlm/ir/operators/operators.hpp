@@ -1536,6 +1536,18 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
+	inline size_t
+	nsrcbits() const noexcept
+	{
+		return static_cast<const jive::bits::type*>(&oport_.type())->nbits();
+	}
+
+	inline size_t
+	ndstbits() const noexcept
+	{
+		return static_cast<const jive::bits::type*>(&rport_.type())->nbits();
+	}
+
 private:
 	jive::port oport_;
 	jive::port rport_;
