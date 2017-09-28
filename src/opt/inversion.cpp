@@ -14,11 +14,8 @@
 namespace jlm {
 
 static jive::structural_node *
-is_applicable(jive::structural_node * node)
+is_applicable(const jive::theta & theta)
 {
-	JLM_DEBUG_ASSERT(is_theta_node(node));
-	jive::theta theta(node);
-
 	auto matchnode = theta.predicate()->origin()->node();
 	if (!jive::is_opnode<jive::ctl::match_op>(matchnode))
 		return nullptr;
@@ -92,28 +89,19 @@ copy_condition_nodes(
 }
 
 static void
-invert(jive::region * region);
-
-static void
-invert_theta(jive::structural_node * tnode)
+invert(jive::theta & otheta)
 {
-	JLM_DEBUG_ASSERT(is_theta_node(tnode));
-	jive::theta otheta(tnode);
-
-	auto gnode = is_applicable(tnode);
-	if (!gnode) {
-		invert(tnode->subregion(0));
-		return;
-	}
+	auto gnode = is_applicable(otheta);
+	if (!gnode) return;
 
 	jive::gamma ogamma(gnode);
 
 	/* copy condition nodes for new gamma node */
 	jive::substitution_map smap;
-	auto cnodes = collect_condition_nodes(tnode, gnode);
+	auto cnodes = collect_condition_nodes(otheta.node(), gnode);
 	for (const auto & olv : otheta)
 		smap.insert(olv.argument(), olv.input()->origin());
-	copy_condition_nodes(tnode->region(), smap, cnodes);
+	copy_condition_nodes(otheta.node()->region(), smap, cnodes);
 
 	jive::gamma_builder gb;
 	gb.begin_gamma(smap.lookup(ogamma.predicate()->origin()));
@@ -179,29 +167,21 @@ invert_theta(jive::structural_node * tnode)
 	/* replace outputs */
 	for (const auto & olv : otheta)
 		olv.output()->replace(smap.lookup(olv.output()));
-
-	for (size_t n = 0; n < ngamma->nsubregions(); n++)
-		invert(ngamma->subregion(n));
-}
-
-static void
-invert(jive::structural_node * node)
-{
-	if (is_theta_node(node)) {
-		invert_theta(node);
-		return;
-	}
-
-	for (size_t n = 0; n < node->nsubregions(); n++)
-		invert(node->subregion(n));
 }
 
 static void
 invert(jive::region * region)
 {
 	for (auto & node : jive::topdown_traverser(region)) {
-		if (auto structnode = dynamic_cast<jive::structural_node*>(node))
-			invert(structnode);
+		if (auto structnode = dynamic_cast<jive::structural_node*>(node)) {
+			for (size_t r = 0; r < structnode->nsubregions(); r++)
+				invert(structnode->subregion(r));
+
+			if (is_theta_node(structnode)) {
+				jive::theta theta(structnode);
+				invert(theta);
+			}
+		}
 	}
 }
 
