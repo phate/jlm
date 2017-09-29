@@ -74,9 +74,18 @@ mark_phi(const jive::structural_node * node, dnectx & ctx)
 	auto subregion = node->subregion(0);
 
 	/* mark functions */
+	size_t nmarks = 0;
 	for (size_t n = 0; n < subregion->nresults(); n++) {
-		if (ctx.is_dead(subregion->result(n)->output()))
+		if (ctx.is_dead(subregion->result(n)->output())) {
 			ctx.mark(subregion->result(n));
+			nmarks++;
+		}
+	}
+
+	/* mark node if all outputs are dead */
+	if (nmarks == node->noutputs()) {
+		ctx.mark(node);
+		return;
 	}
 
 	mark(subregion, ctx);
@@ -95,7 +104,14 @@ static void
 mark_lambda(const jive::structural_node * node, dnectx & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const jive::fct::lambda_op*>(&node->operation()));
+	JLM_DEBUG_ASSERT(node->noutputs() == 1);
 	auto subregion = node->subregion(0);
+
+	/* mark node if output is dead */
+	if (ctx.is_dead(node->output(0))) {
+		ctx.mark(node);
+		return;
+	}
 
 	mark(subregion, ctx);
 
@@ -117,9 +133,18 @@ mark_theta(const jive::structural_node * node, dnectx & ctx)
 	auto subregion = node->subregion(0);
 
 	/* mark loops exits */
+	size_t nmarks = 0;
 	for (size_t n = 0; n < node->noutputs(); n++) {
-		if (ctx.is_dead(node->output(n)))
+		if (ctx.is_dead(node->output(n))) {
 			ctx.mark(subregion->result(n+1));
+			nmarks++;
+		}
+	}
+
+	/* mark node if all outputs are dead */
+	if (nmarks == node->noutputs()) {
+		ctx.mark(node);
+		return;
 	}
 
 	mark(subregion, ctx);
@@ -137,11 +162,19 @@ mark_gamma(const jive::structural_node * node, dnectx & ctx)
 	JLM_DEBUG_ASSERT(is_gamma_node(node));
 
 	/* mark exit variables */
+	size_t nmarks = 0;
 	for (size_t n = 0; n < node->noutputs(); n++) {
 		if (ctx.is_dead(node->output(n))) {
 			for (size_t r = 0; r < node->nsubregions(); r++)
 				ctx.mark(node->subregion(r)->result(n));
+			nmarks++;
 		}
+	}
+
+	/* mark node if all outputs are dead */
+	if (nmarks == node->noutputs()) {
+		ctx.mark(node);
+		return;
 	}
 
 	for (size_t n = 0; n < node->nsubregions(); n++)
