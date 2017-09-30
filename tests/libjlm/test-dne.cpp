@@ -159,6 +159,44 @@ test_nested_theta()
 }
 
 static inline void
+test_evolving_theta()
+{
+	jlm::valuetype vt;
+	jive::ctl::type ct(2);
+	jlm::test_op bop({&vt, &vt}, {&vt});
+
+	jive::graph graph;
+	auto c = graph.import(ct, "c");
+	auto x1 = graph.import(vt, "x1");
+	auto x2 = graph.import(vt, "x2");
+	auto x3 = graph.import(vt, "x3");
+	auto x4 = graph.import(vt, "x4");
+
+	jive::theta_builder tb;
+	tb.begin_theta(graph.root());
+
+	auto lv0 = tb.add_loopvar(c);
+	auto lv1 = tb.add_loopvar(x1);
+	auto lv2 = tb.add_loopvar(x2);
+	auto lv3 = tb.add_loopvar(x3);
+	auto lv4 = tb.add_loopvar(x4);
+
+	lv1->result()->divert_origin(lv2->argument());
+	lv2->result()->divert_origin(lv3->argument());
+	lv3->result()->divert_origin(lv4->argument());
+
+	auto theta = tb.end_theta(lv0->argument());
+
+	graph.export_port(lv1->output(), "x1");
+
+//	jive::view(graph, stdout);
+	jlm::dne(graph);
+//	jive::view(graph, stdout);
+
+	assert(theta->node()->noutputs() == 5);
+}
+
+static inline void
 test_lambda()
 {
 	jlm::valuetype vt;
@@ -232,6 +270,7 @@ verify()
 	test_gamma();
 	test_theta();
 	test_nested_theta();
+	test_evolving_theta();
 	test_lambda();
 	test_phi();
 

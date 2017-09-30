@@ -20,9 +20,16 @@ namespace jlm {
 class dnectx {
 public:
 	inline void
+	mark(const jive::output * output)
+	{
+		outputs_.insert(output);
+	}
+
+	inline void
 	mark(const jive::input * input)
 	{
 		inputs_.insert(input);
+		mark(input->origin());
 	}
 
 	inline void
@@ -33,24 +40,31 @@ public:
 	}
 
 	inline bool
-	is_dead(const jive::input * input) const noexcept
+	is_alive(const jive::input * input) const noexcept
 	{
 		return inputs_.find(input) != inputs_.end();
 	}
 
 	inline bool
-	is_dead(const jive::output * output) const noexcept
+	is_alive(const jive::output * output) const noexcept
 	{
-		for (const auto & user : *output) {
-			if (!is_dead(user))
-				return false;
+		return outputs_.find(output) != outputs_.end();
+	}
+
+	inline bool
+	is_alive(const jive::node * node) const noexcept
+	{
+		for (size_t n = 0; n < node->noutputs(); n++) {
+			if (is_alive(node->output(n)))
+				return true;
 		}
 
-		return true;
+		return false;
 	}
 
 private:
 	std::unordered_set<const jive::input*> inputs_;
+	std::unordered_set<const jive::output*> outputs_;
 };
 
 /* mark phase */
@@ -63,7 +77,7 @@ mark_data(const jive::structural_node * node, dnectx & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const data_op*>(&node->operation()));
 
-	if (ctx.is_dead(node->output(0)))
+	if (ctx.is_alive(node->output(0)))
 		ctx.mark(node);
 }
 
@@ -74,19 +88,15 @@ mark_phi(const jive::structural_node * node, dnectx & ctx)
 	auto subregion = node->subregion(0);
 
 	/* mark functions */
-	size_t nmarks = 0;
+	bool used = false;
 	for (size_t n = 0; n < subregion->nresults(); n++) {
-		if (ctx.is_dead(subregion->result(n)->output())) {
+		if (ctx.is_alive(subregion->result(n)->output())) {
 			ctx.mark(subregion->result(n));
-			nmarks++;
+			used = true;
 		}
 	}
-
-	/* mark node if all outputs are dead */
-	if (nmarks == node->noutputs()) {
-		ctx.mark(node);
+	if (!used)
 		return;
-	}
 
 	mark(subregion, ctx);
 
@@ -95,7 +105,7 @@ mark_phi(const jive::structural_node * node, dnectx & ctx)
 		if (subregion->argument(n)->input() == nullptr)
 			continue;
 
-		if (ctx.is_dead(subregion->argument(n)))
+		if (ctx.is_alive(subregion->argument(n)))
 			ctx.mark(subregion->argument(n)->input());
 	}
 }
@@ -107,11 +117,12 @@ mark_lambda(const jive::structural_node * node, dnectx & ctx)
 	JLM_DEBUG_ASSERT(node->noutputs() == 1);
 	auto subregion = node->subregion(0);
 
-	/* mark node if output is dead */
-	if (ctx.is_dead(node->output(0))) {
-		ctx.mark(node);
+	if (!ctx.is_alive(node->output(0)))
 		return;
-	}
+
+	/* mark results */
+	for (size_t n = 0; n < subregion->nresults(); n++)
+		ctx.mark(subregion->result(n));
 
 	mark(subregion, ctx);
 
@@ -121,7 +132,7 @@ mark_lambda(const jive::structural_node * node, dnectx & ctx)
 		if (argument->input() == nullptr)
 			continue;
 
-		if (ctx.is_dead(argument))
+		if (ctx.is_alive(argument))
 			ctx.mark(argument->input());
 	}
 }
@@ -132,28 +143,33 @@ mark_theta(const jive::structural_node * node, dnectx & ctx)
 	JLM_DEBUG_ASSERT(is_theta_node(node));
 	auto subregion = node->subregion(0);
 
-	/* mark loops exits */
-	size_t nmarks = 0;
+	/* mark loops exits and entries */
+	bool used = false;
 	for (size_t n = 0; n < node->noutputs(); n++) {
-		if (ctx.is_dead(node->output(n))) {
+		if (ctx.is_alive(node->output(n))) {
 			ctx.mark(subregion->result(n+1));
-			nmarks++;
+			ctx.mark(node->input(n));
+			used = true;
 		}
 	}
-
-	/* mark node if all outputs are dead */
-	if (nmarks == node->noutputs()) {
-		ctx.mark(node);
+	if (!used)
 		return;
-	}
 
+	ctx.mark(subregion->result(0));
 	mark(subregion, ctx);
 
-	/* mark loop entries */
+	/* check whether we need to remark */
+	bool remark = false;
 	for (size_t n = 0; n < subregion->narguments(); n++) {
-		if (ctx.is_dead(subregion->argument(n)) && ctx.is_dead(node->output(n)))
-			ctx.mark(subregion->argument(n)->input());
+		if (ctx.is_alive(subregion->argument(n)) && !ctx.is_alive(node->input(n))) {
+			JLM_DEBUG_ASSERT(!ctx.is_alive(subregion->result(n+1)));
+			ctx.mark(node->input(n));
+			ctx.mark(node->output(n));
+			remark = true;
+		}
 	}
+	if (remark)
+		mark_theta(node, ctx);
 }
 
 static void
@@ -162,33 +178,31 @@ mark_gamma(const jive::structural_node * node, dnectx & ctx)
 	JLM_DEBUG_ASSERT(is_gamma_node(node));
 
 	/* mark exit variables */
-	size_t nmarks = 0;
+	bool used = false;
 	for (size_t n = 0; n < node->noutputs(); n++) {
-		if (ctx.is_dead(node->output(n))) {
+		if (ctx.is_alive(node->output(n))) {
 			for (size_t r = 0; r < node->nsubregions(); r++)
 				ctx.mark(node->subregion(r)->result(n));
-			nmarks++;
+			used = true;
 		}
 	}
-
-	/* mark node if all outputs are dead */
-	if (nmarks == node->noutputs()) {
-		ctx.mark(node);
+	if (!used)
 		return;
-	}
 
 	for (size_t n = 0; n < node->nsubregions(); n++)
 		mark(node->subregion(n), ctx);
 
-	/* mark entry variables */
+	/* mark predicate and entry variables */
+	ctx.mark(node->input(0));
 	for (size_t n = 1; n < node->ninputs(); n++) {
-		size_t r;
-		for (r = 0; r < node->nsubregions(); r++) {
-			if (!ctx.is_dead(node->subregion(r)->argument(n-1)))
+		bool alive = false;
+		for (size_t r = 0; r < node->nsubregions(); r++) {
+			if (ctx.is_alive(node->subregion(r)->argument(n-1))) {
+				alive = true;
 				break;
+			}
 		}
-
-		if (r == node->nsubregions())
+		if (alive)
 			ctx.mark(node->input(n));
 	}
 }
@@ -215,12 +229,8 @@ mark(const jive::structural_node * node, dnectx & ctx)
 static void
 mark(const jive::simple_node * node, dnectx & ctx)
 {
-	for (size_t n = 0; n < node->noutputs(); n++) {
-		if (!ctx.is_dead(node->output(n)))
-			return;
-	}
-
-	ctx.mark(node);
+	if (ctx.is_alive(node))
+		ctx.mark(node);
 }
 
 static void
@@ -245,12 +255,10 @@ sweep_data(jive::structural_node * node, const dnectx & ctx)
 	JLM_DEBUG_ASSERT(dynamic_cast<const data_op*>(&node->operation()));
 	JLM_DEBUG_ASSERT(node->noutputs() == 1);
 
-	if (!node->has_users()) {
+	if (!ctx.is_alive(node)) {
 		remove(node);
 		return;
 	}
-
-	sweep(node->subregion(0), ctx);
 }
 
 static void
@@ -259,38 +267,30 @@ sweep_phi(jive::structural_node * node, const dnectx & ctx)
 	JLM_DEBUG_ASSERT(dynamic_cast<const jive::phi_op*>(&node->operation()));
 	auto subregion = node->subregion(0);
 
+	if (!ctx.is_alive(node)) {
+		remove(node);
+		return;
+	}
+
 	/* remove outputs and results */
-	std::vector<jive::argument*> dead_arguments;
 	for (ssize_t n = subregion->nresults()-1; n >= 1; n--) {
 		auto result = subregion->result(n);
-		if (ctx.is_dead(result)
-		&& ctx.is_dead(subregion->argument(result->index()))) {
-			dead_arguments.push_back(subregion->argument(result->index()));
+		if (!ctx.is_alive(result->output())
+		&& !ctx.is_alive(subregion->argument(result->index()))) {
 			subregion->remove_result(n);
 			node->remove_output(n);
 		}
 	}
 
-	if (node->noutputs() == 0) {
-		node->region()->remove_node(node);
-		return;
-	}
-
 	sweep(subregion, ctx);
 
-	/* remove dead function arguments */
-	for (const auto & argument : dead_arguments) {
-		JLM_DEBUG_ASSERT(argument->input() == nullptr);
-		subregion->remove_argument(argument->index());
-	}
-
-	/* remove dead dependencies */
+	/* remove dead arguments and dependencies */
 	for (ssize_t n = subregion->narguments()-1; n >= 0; n--) {
 		auto argument = subregion->argument(n);
-		if (argument->nusers() == 0 && argument->input()) {
-				size_t index = argument->input()->index();
-				subregion->remove_argument(n);
-				node->remove_input(index);
+		auto input = argument->input();
+		if (!ctx.is_alive(argument)) {
+			subregion->remove_argument(n);
+			if (input) node->remove_input(input->index());
 		}
 	}
 }
@@ -301,7 +301,7 @@ sweep_lambda(jive::structural_node * node, const dnectx & ctx)
 	JLM_DEBUG_ASSERT(dynamic_cast<const jive::fct::lambda_op*>(&node->operation()));
 	auto subregion = node->subregion(0);
 
-	if (!node->has_users()) {
+	if (!ctx.is_alive(node)) {
 		remove(node);
 		return;
 	}
@@ -314,7 +314,7 @@ sweep_lambda(jive::structural_node * node, const dnectx & ctx)
 		if (argument->input() == nullptr)
 			continue;
 
-		if (argument->nusers() == 0) {
+		if (!ctx.is_alive(argument)) {
 			size_t index = argument->input()->index();
 			subregion->remove_argument(n);
 			node->remove_input(index);
@@ -328,15 +328,14 @@ sweep_theta(jive::structural_node * node, const dnectx & ctx)
 	JLM_DEBUG_ASSERT(is_theta_node(node));
 	auto subregion = node->subregion(0);
 
-	if (!node->has_users()) {
+	if (!ctx.is_alive(node)) {
 		remove(node);
 		return;
 	}
 
 	/* remove results */
 	for (ssize_t n = subregion->nresults()-1; n >= 1; n--) {
-		auto result = subregion->result(n);
-		if (result->output()->nusers() == 0 && ctx.is_dead(node->input(n-1)))
+		if (!ctx.is_alive(node->input(n-1)) && !ctx.is_alive(node->output(n-1)))
 			subregion->remove_result(n);
 	}
 
@@ -344,8 +343,7 @@ sweep_theta(jive::structural_node * node, const dnectx & ctx)
 
 	/* remove outputs, inputs, and arguments */
 	for (ssize_t n = subregion->narguments()-1; n >= 0; n--) {
-		auto argument = subregion->argument(n);
-		if (node->output(n)->nusers() == 0 && argument->nusers() == 0) {
+		if (!ctx.is_alive(node->input(n)) && !ctx.is_alive(node->output(n))) {
 			JLM_DEBUG_ASSERT(node->output(n)->results.first == nullptr);
 			subregion->remove_argument(n);
 			node->remove_input(n);
@@ -362,19 +360,18 @@ sweep_gamma(jive::structural_node * node, const dnectx & ctx)
 {
 	JLM_DEBUG_ASSERT(is_gamma_node(node));
 
-	if (!node->has_users()) {
+	if (!ctx.is_alive(node)) {
 		remove(node);
 		return;
 	}
 
 	/* remove outputs and results */
 	for (ssize_t n = node->noutputs()-1; n >= 0; n--) {
-		if (node->output(n)->nusers() != 0)
+		if (ctx.is_alive(node->output(n)))
 			continue;
 
 		for (size_t r = 0; r < node->nsubregions(); r++)
 			node->subregion(r)->remove_result(n);
-
 		node->remove_output(n);
 	}
 
@@ -384,12 +381,12 @@ sweep_gamma(jive::structural_node * node, const dnectx & ctx)
 	/* remove arguments and inputs */
 	for (ssize_t n = node->ninputs()-1; n >=  1; n--) {
 		auto input = node->input(n);
+
 		jive::argument * argument;
 		JIVE_LIST_ITERATE(input->arguments, argument, input_argument_list) {
-			if (argument->nusers() != 0)
+			if (ctx.is_alive(argument))
 				break;
 		}
-
 		if (argument == nullptr) {
 			for (size_t r = 0; r < node->nsubregions(); r++)
 				node->subregion(r)->remove_argument(n-1);
@@ -420,7 +417,7 @@ sweep(jive::structural_node * node, const dnectx & ctx)
 static void
 sweep(jive::simple_node * node, const dnectx & ctx)
 {
-	if (!node->has_users())
+	if (!ctx.is_alive(node))
 		remove(node);
 }
 
@@ -442,14 +439,15 @@ dne(jive::graph & graph)
 	auto root = graph.root();
 
 	dnectx ctx;
+	for (size_t n = 0; n < root->nresults(); n++)
+		ctx.mark(root->result(n));
+
 	mark(root, ctx);
 	sweep(root, ctx);
 
 	for (ssize_t n = root->narguments()-1; n >= 0; n--) {
-		auto argument = root->argument(n);
-		if (argument->nusers() == 0) {
+		if (!ctx.is_alive(root->argument(n)))
 			root->remove_argument(n);
-		}
 	}
 }
 
