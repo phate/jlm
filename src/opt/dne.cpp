@@ -29,14 +29,6 @@ public:
 	mark(const jive::input * input)
 	{
 		inputs_.insert(input);
-		mark(input->origin());
-	}
-
-	inline void
-	mark(const jive::node * node)
-	{
-		for (size_t n = 0; n < node->ninputs(); n++)
-			mark(node->input(n));
 	}
 
 	inline bool
@@ -67,181 +59,160 @@ private:
 	std::unordered_set<const jive::output*> outputs_;
 };
 
+static bool
+is_import(const jive::output * output)
+{
+	auto argument = dynamic_cast<const jive::argument*>(output);
+	return argument && !argument->region()->node();
+}
+
+static bool
+is_gamma_argument(const jive::output * output)
+{
+	auto argument = dynamic_cast<const jive::argument*>(output);
+	return argument && is_gamma_node(argument->region()->node());
+}
+
+static bool
+is_theta_argument(const jive::output * output)
+{
+	auto argument = dynamic_cast<const jive::argument*>(output);
+	return argument && is_theta_node(argument->region()->node());
+}
+
+static bool
+is_theta_result(const jive::input * input)
+{
+	auto result = dynamic_cast<const jive::result*>(input);
+	return result && is_theta_node(result->region()->node());
+}
+
+static bool
+is_lambda_output(const jive::output * output)
+{
+	return output->node()
+	    && dynamic_cast<const jive::fct::lambda_op*>(&output->node()->operation());
+}
+
+static bool
+is_lambda_argument(const jive::output * output)
+{
+	auto argument = dynamic_cast<const jive::argument*>(output);
+	return argument
+	    && argument->region()->node()
+	    && dynamic_cast<const jive::fct::lambda_op*>(&argument->region()->node()->operation());
+}
+
+static bool
+is_phi_output(const jive::output * output)
+{
+	return output->node()
+	    && dynamic_cast<const jive::phi_op*>(&output->node()->operation());
+}
+
+static bool
+is_phi_argument(const jive::output * output)
+{
+	auto argument = dynamic_cast<const jive::argument*>(output);
+	return argument
+	    && argument->region()->node()
+	    && dynamic_cast<const jive::phi_op*>(&argument->region()->node()->operation());
+}
+
 /* mark phase */
 
 static void
-mark(jive::region*, dnectx&);
+mark(const jive::input*, dnectx&);
 
 static void
-mark_data(const jive::structural_node * node, dnectx & ctx)
-{
-	JLM_DEBUG_ASSERT(dynamic_cast<const data_op*>(&node->operation()));
-
-	if (ctx.is_alive(node->output(0)))
-		ctx.mark(node);
-}
+mark(const jive::output*, dnectx&);
 
 static void
-mark_phi(const jive::structural_node * node, dnectx & ctx)
+mark(const jive::output * output, dnectx & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::phi_op*>(&node->operation()));
-	auto subregion = node->subregion(0);
-
-	/* mark functions */
-	bool used = false;
-	for (size_t n = 0; n < subregion->nresults(); n++) {
-		if (ctx.is_alive(subregion->result(n)->output())) {
-			ctx.mark(subregion->result(n));
-			used = true;
-		}
-	}
-	if (!used)
+	if (ctx.is_alive(output))
 		return;
 
-	mark(subregion, ctx);
+	ctx.mark(output);
 
-	/* mark dependencies */
-	for (size_t n = 0; n < subregion->narguments(); n++) {
-		if (subregion->argument(n)->input() == nullptr)
-			continue;
-
-		if (ctx.is_alive(subregion->argument(n)))
-			ctx.mark(subregion->argument(n)->input());
-	}
-}
-
-static void
-mark_lambda(const jive::structural_node * node, dnectx & ctx)
-{
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::fct::lambda_op*>(&node->operation()));
-	JLM_DEBUG_ASSERT(node->noutputs() == 1);
-	auto subregion = node->subregion(0);
-
-	if (!ctx.is_alive(node->output(0)))
+	if (is_import(output))
 		return;
 
-	/* mark results */
-	for (size_t n = 0; n < subregion->nresults(); n++)
-		ctx.mark(subregion->result(n));
-
-	mark(subregion, ctx);
-
-	/* mark context variables as dead */
-	for (size_t n = 0; n < subregion->narguments(); n++) {
-		auto argument = subregion->argument(n);
-		if (argument->input() == nullptr)
-			continue;
-
-		if (ctx.is_alive(argument))
-			ctx.mark(argument->input());
+	if (is_gamma_node(output->node())) {
+		jive::result * result;
+		auto soutput = static_cast<const jive::structural_output*>(output);
+		JIVE_LIST_ITERATE(soutput->results, result, output_result_list)
+			mark(result, ctx);
+		return;
 	}
+
+	if (is_gamma_argument(output)) {
+		auto argument = static_cast<const jive::argument*>(output);
+		mark(argument->input(), ctx);
+		return;
+	}
+
+	if (is_theta_node(output->node())) {
+		auto soutput = static_cast<const jive::structural_output*>(output);
+		mark(soutput->results.first, ctx);
+		mark(output->node()->input(output->index()), ctx);
+		return;
+	}
+
+	if (is_theta_argument(output)) {
+		auto argument = static_cast<const jive::argument*>(output);
+		auto theta = output->region()->node();
+		mark(theta->output(argument->input()->index()), ctx);
+		mark(argument->input(), ctx);
+		return;
+	}
+
+	if (is_lambda_output(output)) {
+		auto node = static_cast<const jive::structural_node*>(output->node());
+		for (size_t n = 0; n < node->subregion(0)->nresults(); n++)
+			mark(node->subregion(0)->result(n), ctx);
+		return;
+	}
+
+	if (is_lambda_argument(output)) {
+		auto argument = static_cast<const jive::argument*>(output);
+		if (argument->input())
+			mark(argument->input(), ctx);
+		return;
+	}
+
+	if (is_phi_output(output)) {
+		auto soutput = static_cast<const jive::structural_output*>(output);
+		mark(soutput->results.first, ctx);
+		return;
+	}
+
+	if (is_phi_argument(output)) {
+		auto argument = static_cast<const jive::argument*>(output);
+		if (argument->input()) mark(argument->input(), ctx);
+		else mark(argument->region()->result(argument->index()), ctx);
+		return;
+	}
+
+	for (size_t n = 0; n < output->node()->ninputs(); n++)
+		mark(output->node()->input(n), ctx);
 }
 
 static void
-mark_theta(const jive::structural_node * node, dnectx & ctx)
+mark(const jive::input * input, dnectx & ctx)
 {
-	JLM_DEBUG_ASSERT(is_theta_node(node));
-	auto subregion = node->subregion(0);
-
-	/* mark loops exits and entries */
-	bool used = false;
-	for (size_t n = 0; n < node->noutputs(); n++) {
-		if (ctx.is_alive(node->output(n))) {
-			ctx.mark(subregion->result(n+1));
-			ctx.mark(node->input(n));
-			used = true;
-		}
-	}
-	if (!used)
+	if (ctx.is_alive(input))
 		return;
 
-	ctx.mark(subregion->result(0));
-	mark(subregion, ctx);
+	ctx.mark(input);
 
-	/* check whether we need to remark */
-	bool remark = false;
-	for (size_t n = 0; n < subregion->narguments(); n++) {
-		if (ctx.is_alive(subregion->argument(n)) && !ctx.is_alive(node->input(n))) {
-			JLM_DEBUG_ASSERT(!ctx.is_alive(subregion->result(n+1)));
-			ctx.mark(node->input(n));
-			ctx.mark(node->output(n));
-			remark = true;
-		}
-	}
-	if (remark)
-		mark_theta(node, ctx);
-}
+	if (is_gamma_node(input->node()))
+		mark(input->node()->input(0), ctx);
 
-static void
-mark_gamma(const jive::structural_node * node, dnectx & ctx)
-{
-	JLM_DEBUG_ASSERT(is_gamma_node(node));
+	if (is_theta_result(input))
+		mark(input->region()->result(0), ctx);
 
-	/* mark exit variables */
-	bool used = false;
-	for (size_t n = 0; n < node->noutputs(); n++) {
-		if (ctx.is_alive(node->output(n))) {
-			for (size_t r = 0; r < node->nsubregions(); r++)
-				ctx.mark(node->subregion(r)->result(n));
-			used = true;
-		}
-	}
-	if (!used)
-		return;
-
-	for (size_t n = 0; n < node->nsubregions(); n++)
-		mark(node->subregion(n), ctx);
-
-	/* mark predicate and entry variables */
-	ctx.mark(node->input(0));
-	for (size_t n = 1; n < node->ninputs(); n++) {
-		bool alive = false;
-		for (size_t r = 0; r < node->nsubregions(); r++) {
-			if (ctx.is_alive(node->subregion(r)->argument(n-1))) {
-				alive = true;
-				break;
-			}
-		}
-		if (alive)
-			ctx.mark(node->input(n));
-	}
-}
-
-static void
-mark(const jive::structural_node * node, dnectx & ctx)
-{
-	static std::unordered_map<
-		std::type_index
-	, void(*)(const jive::structural_node*, dnectx&)
-	> map({
-	  {std::type_index(typeid(jive::gamma_op)), mark_gamma}
-	, {std::type_index(typeid(jive::theta_op)), mark_theta}
-	, {std::type_index(typeid(jive::fct::lambda_op)), mark_lambda}
-	, {std::type_index(typeid(jive::phi_op)), mark_phi}
-	, {std::type_index(typeid(jlm::data_op)), mark_data}
-	});
-
-	std::type_index index(typeid(node->operation()));
-	JLM_DEBUG_ASSERT(map.find(index) != map.end());
-	map[index](node, ctx);
-}
-
-static void
-mark(const jive::simple_node * node, dnectx & ctx)
-{
-	if (ctx.is_alive(node))
-		ctx.mark(node);
-}
-
-static void
-mark(jive::region * region, dnectx & ctx)
-{
-	for (const auto & node : jive::bottomup_traverser(region)) {
-		if (auto simple = dynamic_cast<const jive::simple_node*>(node))
-			mark(simple, ctx);
-		else
-			mark(static_cast<const jive::structural_node*>(node), ctx);
-	}
+	mark(input->origin(), ctx);
 }
 
 /* sweep phase */
@@ -440,9 +411,8 @@ dne(jive::graph & graph)
 
 	dnectx ctx;
 	for (size_t n = 0; n < root->nresults(); n++)
-		ctx.mark(root->result(n));
+		mark(root->result(n), ctx);
 
-	mark(root, ctx);
 	sweep(root, ctx);
 
 	for (ssize_t n = root->narguments()-1; n >= 0; n--) {

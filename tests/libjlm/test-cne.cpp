@@ -167,8 +167,203 @@ test_theta()
 //	jive::view(graph.root(), stdout);
 
 	assert(u1->node()->input(0)->origin() == u2->node()->input(0)->origin());
+	assert(b1->node()->input(0)->origin() == u1->node()->input(0)->origin());
+	assert(b1->node()->input(1)->origin() == region->argument(3));
 	assert(region->result(2)->origin() == region->result(3)->origin());
 	assert(graph.root()->result(0)->origin() == graph.root()->result(1)->origin());
+}
+
+static inline void
+test_theta2()
+{
+	jlm::valuetype vt;
+	jive::ctl::type ct(2);
+	jlm::test_op uop({&vt}, {&vt});
+	jlm::test_op bop({&vt, &vt}, {&vt});
+
+	jive::graph graph;
+	auto nf = graph.node_normal_form(typeid(jive::operation));
+	nf->set_mutable(false);
+
+	auto c = graph.import(ct, "c");
+	auto x = graph.import(vt, "x");
+
+	jive::theta_builder tb;
+	auto region = tb.begin_theta(graph.root());
+
+	auto lv1 = tb.add_loopvar(c);
+	auto lv2 = tb.add_loopvar(x);
+	auto lv3 = tb.add_loopvar(x);
+
+	auto u1 = region->add_simple_node(uop, {lv2->argument()});
+	auto u2 = region->add_simple_node(uop, {lv3->argument()});
+	auto b1 = region->add_simple_node(bop, {u2->output(0), u2->output(0)});
+
+	lv2->result()->divert_origin(u1->output(0));
+	lv3->result()->divert_origin(b1->output(0));
+
+	auto theta = tb.end_theta(lv1->argument());
+
+	graph.export_port(theta->node()->output(1), "lv2");
+	graph.export_port(theta->node()->output(2), "lv3");
+
+//	jive::view(graph, stdout);
+	jlm::cne(graph);
+//	jive::view(graph, stdout);
+
+	assert(lv2->result()->origin() == u1->output(0));
+	assert(lv2->argument()->nusers() != 0 && lv3->argument()->nusers() != 0);
+}
+
+static inline void
+test_theta3()
+{
+	jlm::valuetype vt;
+	jive::ctl::type ct(2);
+	jlm::test_op uop({&vt}, {&vt});
+	jlm::test_op bop({&vt, &vt}, {&vt});
+
+	jive::graph graph;
+	auto nf = graph.node_normal_form(typeid(jive::operation));
+	nf->set_mutable(false);
+
+	auto c = graph.import(ct, "c");
+	auto x = graph.import(vt, "x");
+
+	jive::theta_builder tb1;
+	auto r1 = tb1.begin_theta(graph.root());
+
+	auto lv1 = tb1.add_loopvar(c);
+	auto lv2 = tb1.add_loopvar(x);
+	auto lv3 = tb1.add_loopvar(x);
+	auto lv4 = tb1.add_loopvar(x);
+
+	jive::theta_builder tb2;
+	auto r2 = tb2.begin_theta(r1);
+	auto p = tb2.add_loopvar(lv1->argument());
+	tb2.add_loopvar(lv2->argument());
+	tb2.add_loopvar(lv3->argument());
+	tb2.add_loopvar(lv4->argument());
+	auto theta2 = tb2.end_theta(p->argument());
+
+	auto u1 = r1->add_simple_node(uop, {theta2->node()->output(1)});
+	auto b1 = r1->add_simple_node(bop, {theta2->node()->output(2), theta2->node()->output(2)});
+	auto u2 = r1->add_simple_node(uop, {theta2->node()->output(3)});
+
+	lv2->result()->divert_origin(u1->output(0));
+	lv3->result()->divert_origin(b1->output(0));
+	lv4->result()->divert_origin(u1->output(0));
+
+	auto theta1 = tb1.end_theta(lv1->argument());
+
+	graph.export_port(theta1->node()->output(1), "lv2");
+	graph.export_port(theta1->node()->output(2), "lv3");
+	graph.export_port(theta1->node()->output(3), "lv4");
+
+//	jive::view(graph, stdout);
+	jlm::cne(graph);
+//	jive::view(graph, stdout);
+
+	assert(r1->result(2)->origin() == r1->result(4)->origin());
+	assert(u1->input(0)->origin() == u2->input(0)->origin());
+	assert(r2->result(2)->origin() == r2->result(4)->origin());
+	assert(theta2->node()->input(1)->origin() == theta2->node()->input(3)->origin());
+	assert(r1->result(3)->origin() != r1->result(4)->origin());
+	assert(r2->result(3)->origin() != r2->result(4)->origin());
+}
+
+static inline void
+test_theta4()
+{
+	jlm::valuetype vt;
+	jive::ctl::type ct(2);
+	jlm::test_op uop({&vt}, {&vt});
+	jlm::test_op bop({&vt, &vt}, {&vt});
+
+	jive::graph graph;
+	auto nf = graph.node_normal_form(typeid(jive::operation));
+	nf->set_mutable(false);
+
+	auto c = graph.import(ct, "c");
+	auto x = graph.import(vt, "x");
+	auto y = graph.import(vt, "y");
+
+	jive::theta_builder tb;
+	auto region = tb.begin_theta(graph.root());
+
+	auto lv1 = tb.add_loopvar(c);
+	auto lv2 = tb.add_loopvar(x);
+	auto lv3 = tb.add_loopvar(x);
+	auto lv4 = tb.add_loopvar(y);
+	auto lv5 = tb.add_loopvar(y);
+	auto lv6 = tb.add_loopvar(x);
+	auto lv7 = tb.add_loopvar(x);
+
+	auto u1 = region->add_simple_node(uop, {lv2->argument()});
+	auto b1 = region->add_simple_node(bop, {lv3->argument(), lv3->argument()});
+
+	lv2->result()->divert_origin(lv4->argument());
+	lv3->result()->divert_origin(lv5->argument());
+	lv4->result()->divert_origin(u1->output(0));
+	lv5->result()->divert_origin(b1->output(0));
+
+	auto theta = tb.end_theta(lv1->argument());
+
+	auto ex1 = graph.export_port(theta->node()->output(1), "lv2");
+	auto ex2 = graph.export_port(theta->node()->output(2), "lv3");
+	graph.export_port(theta->node()->output(3), "lv4");
+	graph.export_port(theta->node()->output(4), "lv5");
+
+//	jive::view(graph, stdout);
+	jlm::cne(graph);
+//	jive::view(graph, stdout);
+
+	assert(ex1->origin() != ex2->origin());
+	assert(lv2->argument()->nusers() != 0 && lv3->argument()->nusers() != 0);
+	assert(lv6->result()->origin() == lv7->result()->origin());
+}
+
+static inline void
+test_theta5()
+{
+	jlm::valuetype vt;
+	jive::ctl::type ct(2);
+
+	jive::graph graph;
+	auto nf = graph.node_normal_form(typeid(jive::operation));
+	nf->set_mutable(false);
+
+	auto c = graph.import(ct, "c");
+	auto x = graph.import(vt, "x");
+	auto y = graph.import(vt, "y");
+
+	jive::theta_builder tb;
+	auto region = tb.begin_theta(graph.root());
+
+	auto lv0 = tb.add_loopvar(c);
+	auto lv1 = tb.add_loopvar(x);
+	auto lv2 = tb.add_loopvar(x);
+	auto lv3 = tb.add_loopvar(y);
+	auto lv4 = tb.add_loopvar(y);
+
+	lv1->result()->divert_origin(lv3->argument());
+	lv2->result()->divert_origin(lv4->argument());
+
+	auto theta = tb.end_theta(lv0->argument());
+
+	auto ex1 = graph.export_port(theta->node()->output(1), "lv1");
+	auto ex2 = graph.export_port(theta->node()->output(2), "lv2");
+	auto ex3 = graph.export_port(theta->node()->output(3), "lv3");
+	auto ex4 = graph.export_port(theta->node()->output(4), "lv4");
+
+//	jive::view(graph, stdout);
+	jlm::cne(graph);
+//	jive::view(graph, stdout);
+
+	assert(ex1->origin() == ex2->origin());
+	assert(ex3->origin() == ex4->origin());
+	assert(region->result(4)->origin() == region->result(5)->origin());
+	assert(region->result(2)->origin() == region->result(3)->origin());
 }
 
 static inline void
@@ -254,6 +449,10 @@ verify()
 	test_simple();
 	test_gamma();
 	test_theta();
+	test_theta2();
+	test_theta3();
+	test_theta4();
+	test_theta5();
 	test_lambda();
 	test_phi();
 
