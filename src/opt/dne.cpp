@@ -138,29 +138,28 @@ mark(const jive::output * output, dnectx & ctx)
 	if (is_import(output))
 		return;
 
+	auto argument = static_cast<const jive::argument*>(output);
+	auto soutput = static_cast<const jive::structural_output*>(output);
 	if (is_gamma_node(output->node())) {
+		mark(output->node()->input(0), ctx);
 		jive::result * result;
-		auto soutput = static_cast<const jive::structural_output*>(output);
 		JIVE_LIST_ITERATE(soutput->results, result, output_result_list)
 			mark(result, ctx);
 		return;
 	}
 
 	if (is_gamma_argument(output)) {
-		auto argument = static_cast<const jive::argument*>(output);
 		mark(argument->input(), ctx);
 		return;
 	}
 
 	if (is_theta_node(output->node())) {
-		auto soutput = static_cast<const jive::structural_output*>(output);
 		mark(soutput->results.first, ctx);
 		mark(output->node()->input(output->index()), ctx);
 		return;
 	}
 
 	if (is_theta_argument(output)) {
-		auto argument = static_cast<const jive::argument*>(output);
 		auto theta = output->region()->node();
 		mark(theta->output(argument->input()->index()), ctx);
 		mark(argument->input(), ctx);
@@ -168,27 +167,23 @@ mark(const jive::output * output, dnectx & ctx)
 	}
 
 	if (is_lambda_output(output)) {
-		auto node = static_cast<const jive::structural_node*>(output->node());
-		for (size_t n = 0; n < node->subregion(0)->nresults(); n++)
-			mark(node->subregion(0)->result(n), ctx);
+		for (size_t n = 0; n < soutput->node()->subregion(0)->nresults(); n++)
+			mark(soutput->node()->subregion(0)->result(n), ctx);
 		return;
 	}
 
 	if (is_lambda_argument(output)) {
-		auto argument = static_cast<const jive::argument*>(output);
 		if (argument->input())
 			mark(argument->input(), ctx);
 		return;
 	}
 
 	if (is_phi_output(output)) {
-		auto soutput = static_cast<const jive::structural_output*>(output);
 		mark(soutput->results.first, ctx);
 		return;
 	}
 
 	if (is_phi_argument(output)) {
-		auto argument = static_cast<const jive::argument*>(output);
 		if (argument->input()) mark(argument->input(), ctx);
 		else mark(argument->region()->result(argument->index()), ctx);
 		return;

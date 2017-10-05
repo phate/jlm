@@ -73,6 +73,37 @@ test_gamma()
 }
 
 static inline void
+test_gamma2()
+{
+	jlm::valuetype vt;
+	jive::ctl::type ct(2);
+	jlm::test_op nop({}, {&vt});
+
+	jive::graph graph;
+	auto c = graph.import(ct, "c");
+	auto x = graph.import(vt, "x");
+
+	jive::gamma_builder gb;
+	gb.begin_gamma(c);
+	gb.add_entryvar(x);
+
+	auto n1 = gb.subregion(0)->add_simple_node(nop, {})->output(0);
+	auto n2 = gb.subregion(1)->add_simple_node(nop, {})->output(0);
+
+	auto xv = gb.add_exitvar({n1, n2});
+
+	auto gamma = gb.end_gamma();
+
+	graph.export_port(gamma->node()->output(0), "x");
+
+//	jive::view(graph, stdout);
+	jlm::dne(graph);
+//	jive::view(graph, stdout);
+
+	assert(graph.root()->narguments() == 1);
+}
+
+static inline void
 test_theta()
 {
 	jlm::valuetype vt;
@@ -268,6 +299,7 @@ verify()
 {
 	test_root();
 	test_gamma();
+	test_gamma2();
 	test_theta();
 	test_nested_theta();
 	test_evolving_theta();
