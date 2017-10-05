@@ -500,6 +500,21 @@ convert_ptr_constant_null(
 }
 
 static inline llvm::Value *
+convert_select(
+	const jive::operation & op,
+	const std::vector<const variable*> & operands,
+	llvm::IRBuilder<> & builder,
+	context & ctx)
+{
+	JLM_DEBUG_ASSERT(is_select_op(op));
+
+	auto c = ctx.value(operands[0]);
+	auto t = ctx.value(operands[1]);
+	auto f = ctx.value(operands[2]);
+	return builder.CreateSelect(c, t, f);
+}
+
+static inline llvm::Value *
 convert_mux(
 	const jive::operation & op,
 	const std::vector<const variable*> & args,
@@ -557,6 +572,7 @@ convert_operation(
 	, {std::type_index(typeid(jlm::sext_op)), convert_sext}
 	, {std::type_index(typeid(jlm::sitofp_op)), convert_sitofp}
 	, {std::type_index(typeid(jlm::ptr_constant_null_op)), convert_ptr_constant_null}
+	, {std::type_index(typeid(jlm::select_op)), convert_select}
 	, {std::type_index(typeid(jive::mux_op)), convert_mux}
 	});
 
