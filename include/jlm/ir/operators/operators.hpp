@@ -216,6 +216,17 @@ is_select_op(const jive::operation & op)
 	return dynamic_cast<const select_op*>(&op) != nullptr;
 }
 
+static inline std::unique_ptr<jlm::tac>
+create_select_tac(
+	const jlm::variable * p,
+	const jlm::variable * t,
+	const jlm::variable * f,
+	jlm::variable * result)
+{
+	select_op op(t->type());
+	return create_tac(op, {p, t, f}, {result});
+}
+
 /* bits2flt operator */
 
 class bits2flt_op final : public jive::simple_op {
