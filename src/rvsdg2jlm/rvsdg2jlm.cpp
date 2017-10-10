@@ -177,20 +177,50 @@ convert_simple_node(const jive::node & node, context & ctx)
 static inline void
 convert_gamma_node(const jive::node & node, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::gamma_op*>(&node.operation()));
+	JLM_DEBUG_ASSERT(is_gamma_node(&node));
 	auto nalternatives = static_cast<const jive::gamma_op*>(&node.operation())->nalternatives();
 	auto & snode = *static_cast<const jive::structural_node*>(&node);
 	auto predicate = node.input(0)->origin();
+	auto matchop = dynamic_cast<const jive::ctl::match_op*>(&predicate->node()->operation());
 	auto & module = ctx.module();
 	auto cfg = ctx.cfg();
 
-	std::vector<cfg_node*> phi_nodes;
 	auto entry = create_basic_block_node(cfg);
 	auto exit = create_basic_block_node(cfg);
-	append_last(entry, create_branch_tac(nalternatives, ctx.variable(predicate)));
 	ctx.lpbb()->add_outedge(entry);
 
+	/* both regions are empty, create only select instructions */
+	if (snode.nsubregions() == 2
+	&& snode.subregion(0)->nnodes() == 0
+	&& snode.subregion(1)->nnodes() == 0) {
+		for (size_t n = 0; n < snode.noutputs(); n++) {
+			auto output = snode.output(n);
+
+			auto a0 = static_cast<const jive::argument*>(snode.subregion(0)->result(n)->origin());
+			auto a1 = static_cast<const jive::argument*>(snode.subregion(1)->result(n)->origin());
+			auto o0 = a0->input()->origin();
+			auto o1 = a1->input()->origin();
+
+			/* both operands are the same, no select is necessary */
+			if (o0 == o1) continue;
+
+			auto d = matchop->default_alternative();
+			auto v = module.create_variable(output->type(), false);
+			auto c = ctx.variable(predicate->node()->input(0)->origin());
+			auto t = d == 0 ? ctx.variable(o1) : ctx.variable(o0);
+			auto f = d == 0 ? ctx.variable(o0) : ctx.variable(o1);
+			append_first(exit, create_select_tac(c, t, f, v));
+			ctx.insert(output, v);
+		}
+
+		entry->add_outedge(exit);
+		ctx.set_lpbb(exit);
+		return;
+	}
+
 	/* convert gamma regions */
+	std::vector<cfg_node*> phi_nodes;
+	append_last(entry, create_branch_tac(nalternatives, ctx.variable(predicate)));
 	for (size_t n = 0; n < snode.nsubregions(); n++) {
 		auto subregion = snode.subregion(n);
 
@@ -213,22 +243,41 @@ convert_gamma_node(const jive::node & node, context & ctx)
 	/* add phi instructions */
 	for (size_t n = 0; n < snode.noutputs(); n++) {
 		auto output = snode.output(n);
-		std::unordered_set<const variable*> variables;
+
+		bool invariant = true;
+		bool select = (snode.nsubregions() == 2) && matchop;
 		std::vector<std::pair<const variable*, cfg_node*>> arguments;
-		for (size_t i = 0; i < snode.nsubregions(); i++) {
-			auto v = ctx.variable(snode.subregion(i)->result(n)->origin());
-			arguments.push_back(std::make_pair(v, phi_nodes[i]));
-			variables.insert(v);
+		for (size_t r = 0; r < snode.nsubregions(); r++) {
+			auto origin = snode.subregion(r)->result(n)->origin();
+
+			auto v = ctx.variable(origin);
+			arguments.push_back(std::make_pair(v, phi_nodes[r]));
+			invariant &= (v == ctx.variable(snode.subregion(0)->result(n)->origin()));
+			select &= (origin->node() == nullptr && origin->region()->node() == &node);
 		}
 
-		if (variables.size() != 1) {
-			auto v = module.create_variable(output->type(), false);
-			append_last(exit, create_phi_tac(arguments, v));
-			ctx.insert(output, v);
-		} else {
-			/* all phi operands are the same */
-			ctx.insert(output, *variables.begin());
+		if (invariant) {
+			/* all operands are the same */
+			ctx.insert(output, arguments[0].first);
+			continue;
 		}
+
+		if (select) {
+			/* use select instead of phi */
+			auto d = matchop->default_alternative();
+			auto v = module.create_variable(output->type(), false);
+			auto c = ctx.variable(predicate->node()->input(0)->origin());
+			auto t = d == 0 ? arguments[1].first : arguments[0].first;
+			auto f = d == 0 ? arguments[0].first : arguments[1].first;
+			append_first(entry, create_select_tac(c, t, f, v));
+			ctx.insert(output, v);
+			continue;
+		}
+
+		/* create phi instruction */
+		auto v = module.create_variable(output->type(), false);
+		append_last(exit, create_phi_tac(arguments, v));
+		ctx.insert(output, v);
 	}
 
 	ctx.set_lpbb(exit);
