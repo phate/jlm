@@ -181,6 +181,17 @@ convert_apply(
 	return builder.CreateCall(function, operands);
 }
 
+static inline bool
+is_identity_mapping(const jive::ctl::match_op & op)
+{
+	for (const auto & pair : op) {
+		if (pair.first != pair.second)
+			return false;
+	}
+
+	return true;
+}
+
 static inline llvm::Value *
 convert_match(
 	const jive::operation & op,
@@ -188,7 +199,21 @@ convert_match(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::ctl::match_op*>(&op));
+	JLM_DEBUG_ASSERT(is_match_op(op));
+	auto mop = static_cast<const jive::ctl::match_op*>(&op);
+
+	if (is_identity_mapping(*mop))
+		return ctx.value(args[0]);
+
+	if (mop->nalternatives() == 2) {
+		JLM_DEBUG_ASSERT(mop->nbits() == 1);
+		auto i2 = llvm::IntegerType::get(builder.getContext(), 2);
+		auto t = llvm::ConstantInt::getFalse(i2);
+		auto f = llvm::ConstantInt::getTrue(i2);
+		return builder.CreateSelect(ctx.value(args[0]), t, f);
+	}
+
+	/* FIXME: This is not working if the match is not directly connected to a gamma node. */
 	return ctx.value(args[0]);
 }
 
