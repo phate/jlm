@@ -9,6 +9,7 @@ TESTS += \
 	libjlm/test-invariance \
 	libjlm/test-inversion \
 	libjlm/test-load \
+	libjlm/test-pull \
 	libjlm/test-push \
 	libjlm/test-restructuring \
 	libjlm/test-ssa-destruction \

@@ -48,6 +48,7 @@ LIBJLM_SRC = \
 	src/opt/inlining.cpp \
 	src/opt/invariance.cpp \
 	src/opt/inversion.cpp \
+	src/opt/pull.cpp \
 	src/opt/push.cpp \
 	src/opt/unroll.cpp \
 
