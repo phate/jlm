@@ -5,6 +5,7 @@
 
 #include <jlm/common.hpp>
 #include <jlm/opt/inversion.hpp>
+#include <jlm/opt/pull.hpp>
 
 #include <jive/vsdg/gamma.h>
 #include <jive/vsdg/substitution.h>
@@ -33,25 +34,23 @@ is_applicable(const jive::theta & theta)
 
 		gnode = dynamic_cast<jive::structural_node*>(user->node());
 	}
-	JLM_DEBUG_ASSERT(gnode);
-
-	for (const auto & lv : theta) {
-		if (lv.result()->origin() == lv.argument())
-			continue;
-
-		if (lv.result()->origin()->node() == gnode)
-			continue;
-
-		return nullptr;
-	}
-
-	jive::gamma gamma(gnode);
-	for (auto ev = gamma.begin_entryvar(); ev != gamma.end_entryvar(); ev++) {
-		if (!dynamic_cast<const jive::argument*>(ev->input()->origin()))
-			return nullptr;
-	}
 
 	return gnode;
+}
+
+static void
+pullin(jive::gamma & gamma, jive::theta & theta)
+{
+	pullin_bottom(gamma);
+	for (const auto & lv : theta)	{
+		if (lv.result()->origin()->node() != gamma.node()) {
+			auto ev = gamma.add_entryvar(lv.result()->origin());
+			JLM_DEBUG_ASSERT(ev->narguments() == 2);
+			auto xv = gamma.add_exitvar({ev->argument(0), ev->argument(1)});
+			lv.result()->divert_origin(xv->output());
+		}
+	}
+	pullin_top(gamma);
 }
 
 static std::vector<std::vector<jive::node*>>
@@ -88,6 +87,18 @@ copy_condition_nodes(
 	}
 }
 
+static jive::argument *
+to_argument(jive::output * output)
+{
+	return dynamic_cast<jive::argument*>(output);
+}
+
+static jive::structural_output *
+to_structural_output(jive::output * output)
+{
+	return dynamic_cast<jive::structural_output*>(output);
+}
+
 static void
 invert(jive::theta & otheta)
 {
@@ -95,6 +106,7 @@ invert(jive::theta & otheta)
 	if (!gnode) return;
 
 	jive::gamma ogamma(gnode);
+	pullin(ogamma, otheta);
 
 	/* copy condition nodes for new gamma node */
 	jive::substitution_map smap;
@@ -109,30 +121,27 @@ invert(jive::theta & otheta)
 	/* handle subregion 0 */
 	jive::substitution_map r0map;
 	{
-		/* adjust loop variables to subregion */
-		for (const auto & olv : otheta) {
-			auto ev = gb.add_entryvar(olv.input()->origin());
-			r0map.insert(olv.argument(), ev->argument(0));
-		}
-
-		/* insert arguments of old gamma subregion to subregion */
-		auto osubregion = ogamma.subregion(0);
-		for (size_t n = 0; n < osubregion->narguments(); n++) {
-			auto argument = osubregion->argument(n);
-			r0map.insert(argument, r0map.lookup(argument->input()->origin()));
-		}
-
-		/* copy old gamma subregion into new gamma subregion */
-		osubregion->copy(gb.subregion(0), r0map, false, false);
-
-		/* redirect old loop variable results to right origin */
-		for (const auto & olv : otheta) {
-			auto origin = olv.result()->origin();
-			if (origin->node() == ogamma.node()) {
-				auto output = static_cast<jive::structural_output*>(origin);
-				auto substitute = r0map.lookup(osubregion->result(output->index())->origin());
-				r0map.insert(olv.result()->origin(), substitute);
+		/* setup substitution map for exit region copying */
+		auto osubregion0 = ogamma.subregion(0);
+		for (auto oev = ogamma.begin_entryvar(); oev != ogamma.end_entryvar(); oev++) {
+			if (auto argument = to_argument(oev->input()->origin())) {
+				auto nev = gb.add_entryvar(argument->input()->origin());
+				r0map.insert(oev->argument(0), nev->argument(0));
+			} else {
+				auto substitute = smap.lookup(oev->input()->origin());
+				auto nev = gb.add_entryvar(substitute);
+				r0map.insert(oev->argument(0), nev->argument(0));
 			}
+		}
+
+		/* copy exit region */
+		osubregion0->copy(gb.subregion(0), r0map, false, false);
+
+		/* update substitution map for insertion of exit variables */
+		for (const auto & olv : otheta) {
+			auto output = to_structural_output(olv.result()->origin());
+			auto substitute = r0map.lookup(osubregion0->result(output->index())->origin());
+			r0map.insert(olv.result()->origin(), substitute);
 		}
 	}
 
@@ -142,44 +151,70 @@ invert(jive::theta & otheta)
 		jive::theta_builder tb;
 		tb.begin_theta(gb.subregion(1));
 
-		/* add all loop variables to new gamma and theta */
+		/* add loop variables to new theta node and setup substitution map */
+		auto osubregion0 = ogamma.subregion(0);
+		auto osubregion1 = ogamma.subregion(1);
+		std::unordered_map<jive::input*, jive::loopvar> nlvs;
 		for (const auto & olv : otheta) {
 			auto ev = gb.add_entryvar(olv.input()->origin());
 			auto nlv = tb.add_loopvar(ev->argument(1));
 			r1map.insert(olv.argument(), nlv->argument());
+			nlvs[olv.input()] = *nlv;
 		}
-
-		/* insert arguments of old gamma subregion into substitution map */
-		auto osubregion = ogamma.subregion(1);
-		for (size_t n = 0; n < osubregion->narguments(); n++) {
-			auto argument = osubregion->argument(n);
-			r1map.insert(argument, r1map.lookup(argument->input()->origin()));
-		}
-
-		/* copy old gamma subregion into new theta subregion */
-		osubregion->copy(tb.subregion(), r1map, false, false);
-
-		/* redirect new loop variable results to right origin */
-		for (auto olv = otheta.begin(), nlv = tb.begin(); olv != otheta.end(); olv++, nlv++) {
-			auto origin = olv->result()->origin();
-			if (origin->node() == ogamma.node()) {
-				auto output = static_cast<jive::structural_output*>(origin);
-				auto substitute = r1map.lookup(osubregion->result(output->index())->origin());
-				nlv->result()->divert_origin(substitute);
+		for (auto oev = ogamma.begin_entryvar(); oev != ogamma.end_entryvar(); oev++) {
+			if (auto argument = to_argument(oev->input()->origin())) {
+				r1map.insert(oev->argument(1), nlvs[argument->input()].argument());
+			} else {
+				auto ev = gb.add_entryvar(smap.lookup(oev->input()->origin()));
+				auto nlv = tb.add_loopvar(ev->argument(1));
+				r1map.insert(oev->argument(1), nlv->argument());
+				nlvs[oev->input()] = *nlv;
 			}
 		}
 
-		/* copy condition nodes into new theta subregion */
-		for (auto olv = otheta.begin(), nlv = tb.begin(); olv != otheta.end(); olv++, nlv++)
-			r1map.insert(olv->argument(), nlv->result()->origin());
+		/* copy repetition region  */
+		osubregion1->copy(tb.subregion(), r1map, false, false);
+
+		/* adjust values in substitution map for condition node copying */
+		for (const auto & olv : otheta) {
+			auto output = to_structural_output(olv.result()->origin());
+			auto substitute = r1map.lookup(osubregion1->result(output->index())->origin());
+			r1map.insert(olv.argument(), substitute);
+		}
+
+		/* copy condition nodes */
 		copy_condition_nodes(tb.subregion(), r1map, cnodes);
 		auto predicate = r1map.lookup(ogamma.predicate()->origin());
 
-		/* adjust old loop variables in substitution map */
-		for (auto olv = otheta.begin(), nlv = tb.begin(); olv != otheta.end(); olv++, nlv++)
-			r1map.insert(olv->result()->origin(), nlv->output());
+		/* redirect results of loop variables and adjust substitution map for exit region copying */
+		for (const auto & olv : otheta) {
+			auto output = to_structural_output(olv.result()->origin());
+			auto substitute = r1map.lookup(osubregion1->result(output->index())->origin());
+			nlvs[olv.input()].result()->divert_origin(substitute);
+			r1map.insert(olv.result()->origin(), nlvs[olv.input()].output());
+		}
+		for (auto oev = ogamma.begin_entryvar(); oev != ogamma.end_entryvar(); oev++) {
+			if (auto argument = to_argument(oev->input()->origin())) {
+				r1map.insert(oev->argument(0), nlvs[argument->input()].output());
+			} else {
+				auto substitute = r1map.lookup(oev->input()->origin());
+				nlvs[oev->input()].result()->divert_origin(substitute);
+				r1map.insert(oev->argument(0), nlvs[oev->input()].output());
+			}
+		}
 
-		auto ntheta = tb.end_theta(predicate);
+		tb.end_theta(predicate);
+
+		/* copy exit region */
+		osubregion0->copy(gb.subregion(1), r1map, false, false);
+
+		/* adjust values in substitution map for exit variable creation */
+		for (const auto & olv : otheta) {
+			auto output = to_structural_output(olv.result()->origin());
+			auto substitute = r1map.lookup(osubregion0->result(output->index())->origin());
+			r1map.insert(olv.result()->origin(), substitute);
+		}
+
 	}
 
 	/* add exit variables to new gamma */
