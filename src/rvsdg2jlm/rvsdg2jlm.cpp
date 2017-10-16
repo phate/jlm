@@ -283,48 +283,63 @@ convert_gamma_node(const jive::node & node, context & ctx)
 	ctx.set_lpbb(exit);
 }
 
+static inline bool
+phi_needed(const jive::input * i)
+{
+	JLM_DEBUG_ASSERT(is_theta_node(i->node()));
+	auto theta = static_cast<const jive::structural_node*>(i->node());
+	auto input = static_cast<const jive::structural_input*>(i);
+	auto output = theta->output(input->index());
+
+	if (output->results.first->origin() == input->arguments.first)
+		return false;
+
+	if (input->arguments.first->nusers() == 0)
+		return false;
+
+	return true;
+}
+
 static inline void
 convert_theta_node(const jive::node & node, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::theta_op*>(&node.operation()));
+	JLM_DEBUG_ASSERT(is_theta_node(&node));
 	auto subregion = static_cast<const jive::structural_node*>(&node)->subregion(0);
 	auto predicate = subregion->result(0)->origin();
 
 	auto pre_entry = ctx.lpbb();
 	auto entry = create_basic_block_node(ctx.cfg());
-	ctx.lpbb()->add_outedge(entry);
+	pre_entry->add_outedge(entry);
 	ctx.set_lpbb(entry);
 
 	/* create loop variables and add arguments to context */
 	std::deque<jlm::variable*> lvs;
 	for (size_t n = 0; n < subregion->narguments(); n++) {
 		auto argument = subregion->argument(n);
-		auto lv = ctx.variable(node.input(n)->origin());
-		if (!is_gblvariable(lv)) {
-			auto v = ctx.module().create_variable(argument->type(), false);
-			lvs.push_back(v);
-			lv = v;
+		auto v = ctx.variable(argument->input()->origin());
+		if (phi_needed(argument->input())) {
+			lvs.push_back(ctx.module().create_variable(argument->type(), false));
+			v = lvs.back();
 		}
-		ctx.insert(argument, lv);
+		ctx.insert(argument, v);
 	}
 
 	convert_region(*subregion, ctx);
 
-	/* add results to context and phi instructions */
+	/* add phi instructions and results to context */
 	for (size_t n = 1; n < subregion->nresults(); n++) {
 		auto result = subregion->result(n);
-
-		auto v1 = ctx.variable(node.input(n-1)->origin());
-		if (is_gblvariable(v1)) {
-			ctx.insert(result->output(), v1);
+		auto ve = ctx.variable(node.input(n-1)->origin());
+		if (!phi_needed(node.input(n-1))) {
+			ctx.insert(result->output(), ve);
 			continue;
 		}
 
-		auto v2 = ctx.variable(result->origin());
-		auto lv = lvs.front();
+		auto vr = ctx.variable(result->origin());
+		auto v = lvs.front();
 		lvs.pop_front();
-		append_last(entry, create_phi_tac({{v1, pre_entry}, {v2, ctx.lpbb()}}, lv));
-		ctx.insert(result->output(), v2);
+		append_last(entry, create_phi_tac({{ve, pre_entry}, {vr, ctx.lpbb()}}, v));
+		ctx.insert(result->output(), vr);
 	}
 	JLM_DEBUG_ASSERT(lvs.empty());
 
