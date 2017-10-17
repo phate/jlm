@@ -14,6 +14,11 @@
 #include <jive/vsdg/theta.h>
 #include <jive/vsdg/traverser.h>
 
+#ifdef CNETIME
+#include <chrono>
+#include <iostream>
+#endif
+
 namespace jlm {
 
 typedef std::unordered_set<jive::output*> congruence_set;
@@ -517,9 +522,22 @@ cne(jive::graph & graph)
 {
 	auto root = graph.root();
 
+	#ifdef CNETIME
+		auto nnodes = jive::nnodes(root);
+		auto start = std::chrono::high_resolution_clock::now();
+	#endif
+
 	cnectx ctx;
 	mark(root, ctx);
 	divert(root, ctx);
+
+	#ifdef CNETIME
+		auto end = std::chrono::high_resolution_clock::now();
+		std::cout << "CNETIME: "
+		          << nnodes
+		          << " " << std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count()
+		          << "\n";
+	#endif
 }
 
 }

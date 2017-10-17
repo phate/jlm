@@ -12,6 +12,11 @@
 #include <jive/vsdg/theta.h>
 #include <jive/vsdg/traverser.h>
 
+#ifdef IVTTIME
+#include <chrono>
+#include <iostream>
+#endif
+
 namespace jlm {
 
 static jive::structural_node *
@@ -252,7 +257,21 @@ void
 invert(jive::graph & graph)
 {
 	auto root = graph.root();
+
+	#ifdef IVTTIME
+		auto nnodes = jive::nnodes(root);
+		auto start = std::chrono::high_resolution_clock::now();
+	#endif
+
 	invert(root);
+
+	#ifdef IVTTIME
+		auto end = std::chrono::high_resolution_clock::now();
+		std::cout << "IVTTIME: "
+		          << nnodes
+		          << " " << std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count()
+		          << "\n";
+	#endif
 }
 
 }

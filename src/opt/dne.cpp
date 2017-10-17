@@ -15,6 +15,11 @@
 #include <jive/vsdg/theta.h>
 #include <jive/vsdg/traverser.h>
 
+#ifdef DNETIME
+#include <chrono>
+#include <iostream>
+#endif
+
 namespace jlm {
 
 class dnectx {
@@ -404,6 +409,11 @@ dne(jive::graph & graph)
 {
 	auto root = graph.root();
 
+	#ifdef DNETIME
+		auto nnodes = jive::nnodes(root);
+		auto start = std::chrono::high_resolution_clock::now();
+	#endif
+
 	dnectx ctx;
 	for (size_t n = 0; n < root->nresults(); n++)
 		mark(root->result(n), ctx);
@@ -414,6 +424,14 @@ dne(jive::graph & graph)
 		if (!ctx.is_alive(root->argument(n)))
 			root->remove_argument(n);
 	}
+
+	#ifdef DNETIME
+		auto end = std::chrono::high_resolution_clock::now();
+		std::cout << "DNETIME: "
+		          << nnodes
+		          << " " << std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count()
+		          << "\n";
+	#endif
 }
 
 }

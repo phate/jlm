@@ -12,6 +12,11 @@
 
 #include <deque>
 
+#ifdef PSHTIME
+#include <chrono>
+#include <iostream>
+#endif
+
 namespace jlm {
 
 class worklist {
@@ -255,7 +260,22 @@ push(jive::region * region)
 void
 push(jive::graph & graph)
 {
-	push(graph.root());
+	auto root = graph.root();
+
+	#ifdef PSHTIME
+		auto nnodes = jive::nnodes(root);
+		auto start = std::chrono::high_resolution_clock::now();
+	#endif
+
+	push(root);
+
+	#ifdef PSHTIME
+		auto end = std::chrono::high_resolution_clock::now();
+		std::cout << "PSHTIME: "
+		          << nnodes
+		          << " " << std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count()
+		          << "\n";
+	#endif
 }
 
 }

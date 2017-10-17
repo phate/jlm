@@ -13,6 +13,11 @@
 #include <jive/vsdg/theta.h>
 #include <jive/vsdg/traverser.h>
 
+#ifdef ILNTIME
+#include <chrono>
+#include <iostream>
+#endif
+
 namespace jlm {
 
 static bool
@@ -156,6 +161,11 @@ inlining(jive::graph & graph)
 {
 	auto root = graph.root();
 
+	#ifdef ILNTIME
+		auto nnodes = jive::nnodes(root);
+		auto start = std::chrono::high_resolution_clock::now();
+	#endif
+
 	for (auto node : jive::topdown_traverser(root)) {
 		if (!jive::fct::is_lambda_op(node->operation()))
 			continue;
@@ -169,6 +179,14 @@ inlining(jive::graph & graph)
 		&& dynamic_cast<const jive::fct::apply_op*>(&consumers[0]->operation()))
 			inline_apply(snode, static_cast<const jive::simple_node*>(consumers[0]));
 	}
+
+	#ifdef ILNTIME
+		auto end = std::chrono::high_resolution_clock::now();
+		std::cout << "ILNTIME: "
+		          << nnodes
+		          << " " << std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count()
+		          << "\n";
+	#endif
 }
 
 }

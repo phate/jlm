@@ -10,6 +10,11 @@
 #include <jive/vsdg/theta.h>
 #include <jive/vsdg/traverser.h>
 
+#ifdef INVTIME
+#include <chrono>
+#include <iostream>
+#endif
+
 namespace jlm {
 
 static void
@@ -82,7 +87,22 @@ invariance(jive::region * region)
 void
 invariance(jive::graph & graph)
 {
-	invariance(graph.root());
+	auto root = graph.root();
+
+	#ifdef INVTIME
+		auto nnodes = jive::nnodes(root);
+		auto start = std::chrono::high_resolution_clock::now();
+	#endif
+
+	invariance(root);
+
+	#ifdef INVTIME
+		auto end = std::chrono::high_resolution_clock::now();
+		std::cout << "INVTIME: "
+		          << nnodes
+		          << " " << std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count()
+		          << "\n";
+	#endif
 }
 
 }
