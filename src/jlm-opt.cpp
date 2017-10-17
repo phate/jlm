@@ -5,11 +5,9 @@
 
 #include <jive/view.h>
 #include <jive/vsdg/binary.h>
-#include <jive/vsdg/binary-normal-form.h>
 #include <jive/vsdg/gamma.h>
 #include <jive/vsdg/statemux.h>
 #include <jive/vsdg/unary.h>
-#include <jive/vsdg/unary-normal-form.h>
 
 #include <jlm/ir/module.hpp>
 #include <jlm/ir/operators.hpp>
@@ -154,18 +152,16 @@ perform_reductions(jive::graph & graph)
 
 	/* unary operation */
 	{
-		auto nf = graph.node_normal_form(typeid(jive::base::unary_op));
-		auto unf = static_cast<jive::unary_normal_form*>(nf);
-		unf->set_mutable(true);
-		unf->set_reducible(true);
+		auto nf = jive::unary_op::normal_form(&graph);
+		nf->set_mutable(true);
+		nf->set_reducible(true);
 	}
 
 	/* binary operation */
 	{
-		auto nf = graph.node_normal_form(typeid(jive::base::binary_op));
-		auto bnf = static_cast<jive::binary_normal_form*>(nf);
-		bnf->set_mutable(true);
-		bnf->set_reducible(true);
+		auto nf = jive::binary_op::normal_form(&graph);
+		nf->set_mutable(true);
+		nf->set_reducible(true);
 	}
 
 	graph.normalize();

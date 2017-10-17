@@ -27,7 +27,7 @@
 #include <jive/types/bitstring/type.h>
 #include <jive/types/float.h>
 #include <jive/types/function.h>
-#include <jive/vsdg/binary-normal-form.h>
+#include <jive/vsdg/binary.h>
 #include <jive/vsdg/control.h>
 #include <jive/vsdg/gamma.h>
 #include <jive/vsdg/phi.h>
@@ -568,9 +568,7 @@ construct_rvsdg(const module & m)
 	nf->set_mutable(false);
 
 	/* FIXME: we currently cannot handle flattened_binary_op in jlm2llvm pass */
-	auto bnf = static_cast<jive::binary_normal_form*>(
-		graph->node_normal_form(typeid(jive::base::binary_op)));
-	bnf->set_flatten(false);
+	jive::binary_op::normal_form(graph)->set_flatten(false);
 
 	scoped_vmap svmap(m, graph->root());
 	convert_globals(graph, svmap);

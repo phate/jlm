@@ -810,14 +810,14 @@ create_ptrcmp_tac(
 
 /* zext operator */
 
-class zext_op final : public jive::base::unary_op {
+class zext_op final : public jive::unary_op {
 public:
 	virtual
 	~zext_op() noexcept;
 
 	inline
 	zext_op(size_t nsrcbits, size_t ndstbits)
-	: jive::base::unary_op()
+	: jive::unary_op()
 	, srcport_(jive::bits::type(nsrcbits))
 	, dstport_(jive::bits::type(ndstbits))
 	{
@@ -1520,14 +1520,14 @@ create_trunc_tac(const variable * operand, jlm::variable * result)
 
 /* sext operator */
 
-class sext_op final : public jive::base::unary_op {
+class sext_op final : public jive::unary_op {
 public:
 	virtual
 	~sext_op();
 
 	inline
 	sext_op(const jive::bits::type & otype, const jive::bits::type & rtype)
-	: jive::base::unary_op()
+	: jive::unary_op()
 	, oport_(otype)
 	, rport_(rtype)
 	{
