@@ -7,3 +7,4 @@ check.log
 /jlm-opt
 /jlm-viewer
 tests/test-runner
+.Makefile.override

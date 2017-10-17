@@ -4,7 +4,7 @@
 LLVMCONFIG = llvm-config-3.7
 
 CPPFLAGS += -Iinclude -Iexternal/jive/include -I$(shell $(LLVMCONFIG) --includedir)
-CXXFLAGS += -Wall -Werror --std=c++14 -Wfatal-errors -g -DJLM_DEBUG -DJIVE_DEBUG
+CXXFLAGS += -Wall -Werror --std=c++14 -Wfatal-errors
 LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -Lexternal/jive/
 
 LIBJLM_SRC = \
@@ -88,3 +88,7 @@ clean:
 	rm -rf tests/test-runner
 	rm -rf jlm-opt
 	rm -rf jlm-viewer
+
+ifeq ($(shell if [ -e .Makefile.override ] ; then echo yes ; fi),yes)
+include .Makefile.override
+endif
