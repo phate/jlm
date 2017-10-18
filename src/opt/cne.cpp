@@ -6,6 +6,7 @@
 #include <jlm/common.hpp>
 #include <jlm/ir/data.hpp>
 #include <jlm/opt/cne.hpp>
+#include <jlm/util/stats.hpp>
 
 #include <jive/types/function/fctlambda.h>
 #include <jive/vsdg/gamma.h>
@@ -14,9 +15,8 @@
 #include <jive/vsdg/theta.h>
 #include <jive/vsdg/traverser.h>
 
-#ifdef CNETIME
-#include <chrono>
-#include <iostream>
+#if defined(CNEMARKTIME) || defined(CNEDIVERTTIME)
+	#include <iostream>
 #endif
 
 namespace jlm {
@@ -520,24 +520,35 @@ divert(jive::region * region, cnectx & ctx)
 void
 cne(jive::graph & graph)
 {
-	auto root = graph.root();
-
-	#ifdef CNETIME
-		auto nnodes = jive::nnodes(root);
-		auto start = std::chrono::high_resolution_clock::now();
-	#endif
-
 	cnectx ctx;
-	mark(root, ctx);
-	divert(root, ctx);
 
-	#ifdef CNETIME
-		auto end = std::chrono::high_resolution_clock::now();
-		std::cout << "CNETIME: "
-		          << nnodes
-		          << " " << std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count()
-		          << "\n";
-	#endif
+	auto mark_ = [&](jive::graph & graph)
+	{
+		mark(graph.root(), ctx);
+	};
+
+	auto divert_ = [&](jive::graph & graph)
+	{
+		divert(graph.root(), ctx);
+	};
+
+	statscollector mc, dc;
+	mc.run(mark_, graph);
+	dc.run(divert_, graph);
+
+#ifdef CNEMARKTIME
+	std::cout << "CNEMARKTIME: "
+	          << mc.nnodes_before() << " "
+	          << mc.ninputs_before() << " "
+	          << mc.time() << "\n";
+#endif
+
+#ifdef CNEDIVERTTIME
+	std::cout << "CNEDIVERTTIME: "
+	          << dc.nnodes_before() << " "
+	          << dc.ninputs_before() << " "
+	          << dc.time() << "\n";
+#endif
 }
 
 }
