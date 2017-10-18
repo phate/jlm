@@ -6,6 +6,7 @@
 #include <jlm/common.hpp>
 #include <jlm/ir/data.hpp>
 #include <jlm/opt/dne.hpp>
+#include <jlm/util/stats.hpp>
 
 #include <jive/types/function/fctlambda.h>
 #include <jive/vsdg/gamma.h>
@@ -15,9 +16,8 @@
 #include <jive/vsdg/theta.h>
 #include <jive/vsdg/traverser.h>
 
-#ifdef DNETIME
-#include <chrono>
-#include <iostream>
+#if defined(DNEMARKTIME) || defined(DNESWEEPTIME)
+	#include <iostream>
 #endif
 
 namespace jlm {
@@ -407,31 +407,40 @@ sweep(jive::region * region, const dnectx & ctx)
 void
 dne(jive::graph & graph)
 {
-	auto root = graph.root();
-
-	#ifdef DNETIME
-		auto nnodes = jive::nnodes(root);
-		auto start = std::chrono::high_resolution_clock::now();
-	#endif
-
 	dnectx ctx;
-	for (size_t n = 0; n < root->nresults(); n++)
-		mark(root->result(n), ctx);
 
-	sweep(root, ctx);
+	auto mark_ = [&](jive::graph & graph)
+	{
+		for (size_t n = 0; n < graph.root()->nresults(); n++)
+			mark(graph.root()->result(n), ctx);
+	};
 
-	for (ssize_t n = root->narguments()-1; n >= 0; n--) {
-		if (!ctx.is_alive(root->argument(n)))
-			root->remove_argument(n);
-	}
+	auto sweep_ = [&](jive::graph & graph)
+	{
+		sweep(graph.root(), ctx);
+		for (ssize_t n = graph.root()->narguments()-1; n >= 0; n--) {
+			if (!ctx.is_alive(graph.root()->argument(n)))
+				graph.root()->remove_argument(n);
+		}
+	};
 
-	#ifdef DNETIME
-		auto end = std::chrono::high_resolution_clock::now();
-		std::cout << "DNETIME: "
-		          << nnodes
-		          << " " << std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count()
-		          << "\n";
-	#endif
+	statscollector mc, sc;
+	mc.run(mark_, graph);
+	sc.run(sweep_, graph);
+
+#ifdef DNEMARKTIME
+	std::cout << "DNEMARKTIME: "
+	          << mc.nnodes_before() << " "
+	          << mc.ninputs_before() << " "
+	          << mc.time() << "\n";
+#endif
+
+#ifdef DNESWEEPTIME
+	std::cout << "DNESWEEPTIME: "
+	          << sc.nnodes_before() << " "
+	          << sc.ninputs_before() << " "
+	          << sc.time() << "\n";
+#endif
 }
 
 }
