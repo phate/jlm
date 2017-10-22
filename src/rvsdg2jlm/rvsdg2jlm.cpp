@@ -284,12 +284,16 @@ convert_gamma_node(const jive::node & node, context & ctx)
 }
 
 static inline bool
-phi_needed(const jive::input * i)
+phi_needed(const jive::input * i, const jlm::variable * v)
 {
 	JLM_DEBUG_ASSERT(is_theta_node(i->node()));
 	auto theta = static_cast<const jive::structural_node*>(i->node());
 	auto input = static_cast<const jive::structural_input*>(i);
 	auto output = theta->output(input->index());
+
+	/* FIXME: solely decide on the input instead of using the variable */
+	if (is_gblvariable(v))
+		return false;
 
 	if (output->results.first->origin() == input->arguments.first)
 		return false;
@@ -317,7 +321,7 @@ convert_theta_node(const jive::node & node, context & ctx)
 	for (size_t n = 0; n < subregion->narguments(); n++) {
 		auto argument = subregion->argument(n);
 		auto v = ctx.variable(argument->input()->origin());
-		if (phi_needed(argument->input())) {
+		if (phi_needed(argument->input(), v)) {
 			lvs.push_back(ctx.module().create_variable(argument->type(), false));
 			v = lvs.back();
 		}
@@ -330,7 +334,7 @@ convert_theta_node(const jive::node & node, context & ctx)
 	for (size_t n = 1; n < subregion->nresults(); n++) {
 		auto result = subregion->result(n);
 		auto ve = ctx.variable(node.input(n-1)->origin());
-		if (!phi_needed(node.input(n-1))) {
+		if (!phi_needed(node.input(n-1), ve)) {
 			ctx.insert(result->output(), ve);
 			continue;
 		}
