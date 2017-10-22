@@ -335,7 +335,7 @@ convert_theta_node(const jive::node & node, context & ctx)
 		auto result = subregion->result(n);
 		auto ve = ctx.variable(node.input(n-1)->origin());
 		if (!phi_needed(node.input(n-1), ve)) {
-			ctx.insert(result->output(), ve);
+			ctx.insert(result->output(), ctx.variable(result->origin()));
 			continue;
 		}
 
