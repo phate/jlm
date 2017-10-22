@@ -219,7 +219,7 @@ unroll(jive::theta & theta, size_t factor)
 		auto uf = jive::create_bitconstant(theta.node()->region(), info.nbits, factor);
 		auto sub = jive::bits::create_sub(info.nbits, smap.lookup(info.max), smap.lookup(info.min));
 		auto cmp = jive::bits::create_uge(info.nbits, sub, uf);
-		auto pred = jive::ctl::match(1, {{1, 0}}, 1, 2, cmp);
+		auto pred = jive::ctl::match(1, {{1, 1}}, 0, 2, cmp);
 
 		jive::gamma_builder gb;
 		gb.begin_gamma(pred);
@@ -227,11 +227,11 @@ unroll(jive::theta & theta, size_t factor)
 		jive::substitution_map rmap[2];
 		for (const auto & olv : theta) {
 			auto ev = gb.add_entryvar(olv.input()->origin());
-			rmap[0].insert(olv.input()->origin(), ev->argument(0));
-			rmap[1].insert(olv.output(), ev->argument(1));
+			rmap[0].insert(olv.output(), ev->argument(0));
+			rmap[1].insert(olv.input()->origin(), ev->argument(1));
 		}
 
-		auto utheta = create_unrolled_theta(gb.subregion(0), rmap[0], theta, factor);
+		auto utheta = create_unrolled_theta(gb.subregion(1), rmap[1], theta, factor);
 
 		for (const auto & olv : theta) {
 			auto output = olv.output();
@@ -250,8 +250,8 @@ unroll(jive::theta & theta, size_t factor)
 
 		auto zero = jive::create_bitconstant(theta.node()->region(), info.nbits, 0);
 		auto sub = jive::bits::create_sub(info.nbits, smap.lookup(info.max), smap.lookup(info.min));
-		auto cmp = jive::bits::create_ne(info.nbits, sub, zero);
-		auto pred = jive::ctl::match(1, {{1, 0}}, 1, 2, cmp);
+		auto cmp = jive::bits::create_sgt(info.nbits, sub, zero);
+		auto pred = jive::ctl::match(1, {{1, 1}}, 0, 2, cmp);
 
 		jive::gamma_builder gb;
 		gb.begin_gamma(pred);
@@ -259,11 +259,11 @@ unroll(jive::theta & theta, size_t factor)
 		jive::substitution_map rmap[2];
 		for (const auto & olv : theta) {
 			auto ev = gb.add_entryvar(smap.lookup(olv.output()));
-			rmap[0].insert(olv.input()->origin(), ev->argument(0));
-			rmap[1].insert(olv.output(), ev->argument(1));
+			rmap[0].insert(olv.output(), ev->argument(0));
+			rmap[1].insert(olv.input()->origin(), ev->argument(1));
 		}
 
-		theta.node()->copy(gb.subregion(0), rmap[0]);
+		theta.node()->copy(gb.subregion(1), rmap[1]);
 
 		for (const auto & olv : theta) {
 			auto output = olv.output();
