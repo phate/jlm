@@ -177,7 +177,7 @@ perform_optimizations(jive::graph * graph, const std::vector<opt> & opts)
 	, {opt::inv, [](jive::graph & graph){ jlm::invariance(graph); }}
 	, {opt::psh, [](jive::graph & graph){ jlm::push(graph); }}
 	, {opt::ivt, [](jive::graph & graph){ jlm::invert(graph); }}
-	, {opt::url, [](jive::graph & graph){ jlm::unroll(graph, 8); }}
+	, {opt::url, [](jive::graph & graph){ jlm::unroll(graph, 4); }}
 	, {opt::red, perform_reductions}
 	});
 
