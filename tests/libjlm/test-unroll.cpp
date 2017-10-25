@@ -35,13 +35,12 @@ test1()
 	auto lv1 = tb.add_loopvar(x);
 	auto lv2 = tb.add_loopvar(y);
 
-	auto n1 = tb.subregion()->add_simple_node(op, {lv1->argument()});
-	auto n2 = tb.subregion()->add_simple_node(op, {lv2->argument()});
-	auto cmp = jive::bits::create_uge(32, n1->output(0), n2->output(0));
+	auto one = jive::create_bitconstant(tb.subregion(), 32, 1);
+	auto add = jive::bits::create_add(32, lv1->argument(), one);
+	auto cmp = jive::bits::create_ult(32, add, lv2->argument());
 	auto match = jive::ctl::match(1, {{1, 0}}, 1, 2, cmp);
 
-	lv1->result()->divert_origin(n1->output(0));
-	lv2->result()->divert_origin(n2->output(0));
+	lv1->result()->divert_origin(add);
 
 	tb.end_theta(match);
 
