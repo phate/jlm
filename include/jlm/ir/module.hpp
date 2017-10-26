@@ -6,6 +6,7 @@
 #ifndef JLM_IR_MODULE_HPP
 #define JLM_IR_MODULE_HPP
 
+#include <jlm/ir/basic_block.hpp>
 #include <jlm/ir/clg.hpp>
 #include <jlm/ir/expression.hpp>
 #include <jlm/ir/tac.hpp>
@@ -208,6 +209,23 @@ private:
 	std::unordered_set<std::unique_ptr<jlm::variable>> variables_;
 	std::unordered_map<const clg_node*, const jlm::variable*> functions_;
 };
+
+static inline size_t
+ntacs(const jlm::module & module)
+{
+	size_t ntacs = 0;
+	for (const auto & f : module.clg()) {
+		auto cfg = f.cfg();
+		if (!cfg) continue;
+
+		for (const auto & node : *f.cfg()) {
+			if (auto bb = dynamic_cast<const jlm::basic_block*>(&node.attribute()))
+				ntacs += bb->ntacs();
+		}
+	}
+
+	return ntacs;
+}
 
 }
 
