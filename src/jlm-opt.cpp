@@ -30,6 +30,7 @@
 #include <llvm/Support/raw_os_ostream.h>
 #include <llvm/Support/SourceMgr.h>
 
+#include <chrono>
 #include <iostream>
 
 enum class opt {cne, dne, iln, inv, psh, red, ivt, url};
@@ -205,14 +206,33 @@ main(int argc, char ** argv)
 	}
 
 	auto jm = jlm::convert_module(*lm);
+
+	#ifdef RVSDGTIME
+		size_t ntacs = jlm::ntacs(*jm);
+		auto start = std::chrono::high_resolution_clock::now();
+	#endif
+
 	auto rvsdg = jlm::construct_rvsdg(*jm);
+
+	#ifdef RVSDGTIME
+		size_t nnodes = jive::nnodes(rvsdg->graph()->root());
+	#endif
 
 	perform_optimizations(rvsdg->graph(), flags.passes);
 
 	if (flags.llvm) {
 		jm = jlm::rvsdg2jlm::rvsdg2jlm(*rvsdg);
-		lm = jlm::jlm2llvm::convert(*jm, llvm::getGlobalContext());
 
+		#ifdef RVSDGTIME
+			auto end = std::chrono::high_resolution_clock::now();
+			std::cerr << "RVSDGTIME: "
+			          << ntacs << " "
+			          << nnodes << " "
+			          << std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count()
+			          << "\n";
+		#endif
+
+		lm = jlm::jlm2llvm::convert(*jm, llvm::getGlobalContext());
 		llvm::raw_os_ostream os(std::cout);
 		lm->print(os, nullptr);
 	}
