@@ -30,18 +30,6 @@ public:
 		outputs_.insert(output);
 	}
 
-	inline void
-	mark(const jive::input * input)
-	{
-		inputs_.insert(input);
-	}
-
-	inline bool
-	is_alive(const jive::input * input) const noexcept
-	{
-		return inputs_.find(input) != inputs_.end();
-	}
-
 	inline bool
 	is_alive(const jive::output * output) const noexcept
 	{
@@ -60,7 +48,6 @@ public:
 	}
 
 private:
-	std::unordered_set<const jive::input*> inputs_;
 	std::unordered_set<const jive::output*> outputs_;
 };
 
@@ -83,13 +70,6 @@ is_theta_argument(const jive::output * output)
 {
 	auto argument = dynamic_cast<const jive::argument*>(output);
 	return argument && is_theta_node(argument->region()->node());
-}
-
-static bool
-is_theta_result(const jive::input * input)
-{
-	auto result = dynamic_cast<const jive::result*>(input);
-	return result && is_theta_node(result->region()->node());
 }
 
 static bool
@@ -127,9 +107,6 @@ is_phi_argument(const jive::output * output)
 /* mark phase */
 
 static void
-mark(const jive::input*, dnectx&);
-
-static void
 mark(const jive::output*, dnectx&);
 
 static void
@@ -146,73 +123,57 @@ mark(const jive::output * output, dnectx & ctx)
 	auto argument = static_cast<const jive::argument*>(output);
 	auto soutput = static_cast<const jive::structural_output*>(output);
 	if (is_gamma_node(output->node())) {
-		mark(output->node()->input(0), ctx);
+		mark(output->node()->input(0)->origin(), ctx);
 		jive::result * result;
 		JIVE_LIST_ITERATE(soutput->results, result, output_result_list)
-			mark(result, ctx);
+			mark(result->origin(), ctx);
 		return;
 	}
 
 	if (is_gamma_argument(output)) {
-		mark(argument->input(), ctx);
+		mark(argument->input()->origin(), ctx);
 		return;
 	}
 
 	if (is_theta_node(output->node())) {
-		mark(soutput->results.first, ctx);
-		mark(output->node()->input(output->index()), ctx);
+		mark(soutput->node()->subregion(0)->result(0)->origin(), ctx);
+		mark(soutput->results.first->origin(), ctx);
+		mark(output->node()->input(output->index())->origin(), ctx);
 		return;
 	}
 
 	if (is_theta_argument(output)) {
 		auto theta = output->region()->node();
 		mark(theta->output(argument->input()->index()), ctx);
-		mark(argument->input(), ctx);
+		mark(argument->input()->origin(), ctx);
 		return;
 	}
 
 	if (is_lambda_output(output)) {
 		for (size_t n = 0; n < soutput->node()->subregion(0)->nresults(); n++)
-			mark(soutput->node()->subregion(0)->result(n), ctx);
+			mark(soutput->node()->subregion(0)->result(n)->origin(), ctx);
 		return;
 	}
 
 	if (is_lambda_argument(output)) {
 		if (argument->input())
-			mark(argument->input(), ctx);
+			mark(argument->input()->origin(), ctx);
 		return;
 	}
 
 	if (is_phi_output(output)) {
-		mark(soutput->results.first, ctx);
+		mark(soutput->results.first->origin(), ctx);
 		return;
 	}
 
 	if (is_phi_argument(output)) {
-		if (argument->input()) mark(argument->input(), ctx);
-		else mark(argument->region()->result(argument->index()), ctx);
+		if (argument->input()) mark(argument->input()->origin(), ctx);
+		else mark(argument->region()->result(argument->index())->origin(), ctx);
 		return;
 	}
 
 	for (size_t n = 0; n < output->node()->ninputs(); n++)
-		mark(output->node()->input(n), ctx);
-}
-
-static void
-mark(const jive::input * input, dnectx & ctx)
-{
-	if (ctx.is_alive(input))
-		return;
-
-	ctx.mark(input);
-
-	if (is_gamma_node(input->node()))
-		mark(input->node()->input(0), ctx);
-
-	if (is_theta_result(input))
-		mark(input->region()->result(0), ctx);
-
-	mark(input->origin(), ctx);
+		mark(output->node()->input(n)->origin(), ctx);
 }
 
 /* sweep phase */
@@ -306,7 +267,7 @@ sweep_theta(jive::structural_node * node, const dnectx & ctx)
 
 	/* remove results */
 	for (ssize_t n = subregion->nresults()-1; n >= 1; n--) {
-		if (!ctx.is_alive(node->input(n-1)) && !ctx.is_alive(node->output(n-1)))
+		if (!ctx.is_alive(subregion->argument(n-1)) && !ctx.is_alive(node->output(n-1)))
 			subregion->remove_result(n);
 	}
 
@@ -314,7 +275,7 @@ sweep_theta(jive::structural_node * node, const dnectx & ctx)
 
 	/* remove outputs, inputs, and arguments */
 	for (ssize_t n = subregion->narguments()-1; n >= 0; n--) {
-		if (!ctx.is_alive(node->input(n)) && !ctx.is_alive(node->output(n))) {
+		if (!ctx.is_alive(subregion->argument(n)) && !ctx.is_alive(node->output(n))) {
 			JLM_DEBUG_ASSERT(node->output(n)->results.first == nullptr);
 			subregion->remove_argument(n);
 			node->remove_input(n);
@@ -412,7 +373,7 @@ dne(jive::graph & graph)
 	auto mark_ = [&](jive::graph & graph)
 	{
 		for (size_t n = 0; n < graph.root()->nresults(); n++)
-			mark(graph.root()->result(n), ctx);
+			mark(graph.root()->result(n)->origin(), ctx);
 	};
 
 	auto sweep_ = [&](jive::graph & graph)
