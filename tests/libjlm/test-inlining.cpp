@@ -14,6 +14,24 @@
 
 #include <jlm/opt/inlining.hpp>
 
+static bool
+contains_apply_node(const jive::region * region)
+{
+	for (const auto & node : region->nodes) {
+		if (jive::is_opnode<jive::fct::apply_op>(&node))
+			return true;
+
+		if (auto structnode = dynamic_cast<const jive::structural_node*>(&node)) {
+			for (size_t n = 0; n < structnode->nsubregions(); n++) {
+				if (contains_apply_node(structnode->subregion(n)))
+					return true;
+			}
+		}
+	}
+
+	return false;
+}
+
 static int
 verify()
 {
@@ -49,13 +67,10 @@ verify()
 	graph.export_port(f2->node()->output(0), "f2");
 
 	jive::view(graph.root(), stdout);
-
 	jlm::inlining(graph);
-
 	jive::view(graph.root(), stdout);
 
-	assert(apply->nusers() == 0);
-
+	assert(!contains_apply_node(graph.root()));
 	return 0;
 }
 

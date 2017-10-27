@@ -128,7 +128,7 @@ route_dependencies(const jive::structural_node * lambda, const jive::simple_node
 }
 
 static void
-inline_apply(const jive::structural_node * lambda, const jive::simple_node * apply)
+inline_apply(const jive::structural_node * lambda, jive::simple_node * apply)
 {
 	JLM_DEBUG_ASSERT(jive::fct::is_lambda_op(lambda->operation()));
 	JLM_DEBUG_ASSERT(dynamic_cast<const jive::fct::apply_op*>(&apply->operation()));
@@ -154,6 +154,7 @@ inline_apply(const jive::structural_node * lambda, const jive::simple_node * app
 		JLM_DEBUG_ASSERT(smap.lookup(output));
 		apply->output(n)->replace(smap.lookup(output));
 	}
+	remove(apply);
 }
 
 void
@@ -177,7 +178,7 @@ inlining(jive::graph & graph)
 		auto consumers = find_consumers(snode);
 		if (consumers.size() == 1
 		&& dynamic_cast<const jive::fct::apply_op*>(&consumers[0]->operation()))
-			inline_apply(snode, static_cast<const jive::simple_node*>(consumers[0]));
+			inline_apply(snode, static_cast<jive::simple_node*>(consumers[0]));
 	}
 
 	#ifdef ILNTIME
