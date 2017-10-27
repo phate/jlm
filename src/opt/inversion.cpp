@@ -235,6 +235,7 @@ invert(jive::theta & otheta)
 	/* replace outputs */
 	for (const auto & olv : otheta)
 		olv.output()->replace(smap.lookup(olv.output()));
+	remove(otheta.node());
 }
 
 static void
