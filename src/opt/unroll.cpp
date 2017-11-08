@@ -121,6 +121,8 @@ is_applicable(const jive::theta & theta)
 static void
 unroll(jive::theta & theta, size_t factor)
 {
+	JLM_DEBUG_ASSERT(factor >= 2);
+
 	auto ti = is_applicable(theta);
 	if (!ti) return;
 
@@ -151,11 +153,14 @@ unroll(jive::theta & theta, size_t factor)
 		}
 
 		/* unroll loop body */
-		for (size_t n = 0; n < factor; n++) {
+		for (size_t n = 0; n < factor-1; n++) {
 			theta.subregion()->copy(tb.subregion(), rmap[1], false, false);
+			jive::substitution_map tmap;
 			for (const auto & olv : theta)
-				rmap[1].insert(olv.argument(), rmap[1].lookup(olv.result()->origin()));
+				tmap.insert(olv.argument(), rmap[1].lookup(olv.result()->origin()));
+			rmap[1] = tmap;
 		}
+		theta.subregion()->copy(tb.subregion(), rmap[1], false, false);
 
 		for (auto olv = theta.begin(), nlv = tb.begin(); olv != theta.end(); olv++, nlv++) {
 			auto origin = rmap[1].lookup(olv->result()->origin());
@@ -259,11 +264,11 @@ unroll(jive::region * region, size_t factor)
 void
 unroll(jive::graph & rvsdg, size_t factor)
 {
+	if (factor < 2)
+		return;
+
 	/* FIXME: Remove tracing again */
 	jive::binary_op::normal_form(&rvsdg)->set_mutable(false);
-
-	if (factor == 0)
-		return;
 
 	unroll(rvsdg.root(), factor);
 
