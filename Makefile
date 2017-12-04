@@ -22,6 +22,7 @@ LIBJLM_SRC = \
 	src/ir/operators/alloca.cpp \
 	src/ir/operators/load.cpp \
 	src/ir/operators/operators.cpp \
+	src/ir/operators/sext.cpp \
 	src/ir/operators/store.cpp \
 	src/ir/ssa.cpp \
 	src/ir/tac.cpp \

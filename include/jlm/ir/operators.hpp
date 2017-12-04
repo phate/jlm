@@ -9,6 +9,7 @@
 #include <jlm/ir/operators/alloca.hpp>
 #include <jlm/ir/operators/load.hpp>
 #include <jlm/ir/operators/operators.hpp>
+#include <jlm/ir/operators/sext.hpp>
 #include <jlm/ir/operators/store.hpp>
 
 #endif
