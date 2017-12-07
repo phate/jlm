@@ -147,7 +147,7 @@ is_load_store_alloca_reducible(const std::vector<jive::output*> & operands)
 }
 
 static std::vector<jive::output*>
-is_load_store_state_reducible(const std::vector<jive::output*> operands)
+is_load_store_state_reducible(const std::vector<jive::output*> & operands)
 {
 	auto address = operands[0];
 
