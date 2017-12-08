@@ -11,6 +11,7 @@
 #include <jive/types/record/rcdtype.h>
 #include <jive/rvsdg/controltype.h>
 #include <jive/rvsdg/nullary.h>
+#include <jive/rvsdg/simple-node.h>
 #include <jive/rvsdg/type.h>
 #include <jive/rvsdg/unary.h>
 
@@ -1522,6 +1523,16 @@ create_trunc_tac(const variable * operand, jlm::variable * result)
 
 	trunc_op op(*ot, *rt);
 	return create_tac(op, {operand}, {result});
+}
+
+static inline jive::output *
+create_trunc(size_t ndstbits, jive::output * operand)
+{
+	auto ot = dynamic_cast<const jive::bits::type*>(&operand->type());
+	if (!ot) throw std::logic_error("Expected bits type.");
+
+	trunc_op op(*ot, jive::bits::type(ndstbits));
+	return jive::create_normalized(operand->region(), op, {operand})[0];
 }
 
 /* sitofp operator */
