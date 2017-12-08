@@ -80,6 +80,12 @@ is_sext_op(const jive::operation & op)
 	return dynamic_cast<const sext_op*>(&op) != nullptr;
 }
 
+static inline bool
+is_sext_node(const jive::node * node) noexcept
+{
+	return jive::is_opnode<sext_op>(node);
+}
+
 static inline std::unique_ptr<jlm::tac>
 create_sext_tac(const variable * operand, jlm::variable * result)
 {
@@ -91,6 +97,16 @@ create_sext_tac(const variable * operand, jlm::variable * result)
 
 	sext_op op(*ot, *rt);
 	return create_tac(op, {operand}, {result});
+}
+
+static inline jive::output *
+create_sext(size_t ndstbits, jive::output * operand)
+{
+	auto ot = dynamic_cast<const jive::bits::type*>(&operand->type());
+	if (!ot) throw std::logic_error("Expected bits type.");
+
+	sext_op op(*ot, jive::bits::type(ndstbits));
+	return jive::create_normalized(operand->region(), op, {operand})[0];
 }
 
 }

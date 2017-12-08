@@ -7,6 +7,27 @@
 
 namespace jlm {
 
+static bool
+is_bitunary_reducible(const jive::output * operand)
+{
+	return jive::is_opnode<jive::bits::unary_op>(operand->node());
+}
+
+static jive::output *
+perform_bitunary_reduction(const sext_op & op, jive::output * operand)
+{
+	JLM_DEBUG_ASSERT(is_bitunary_reducible(operand));
+	auto unary = operand->node();
+	auto uop = static_cast<const jive::bits::unary_op*>(&unary->operation());
+
+	auto output = create_sext(op.ndstbits(), unary->input(0)->origin());
+	return create_normalized(operand->region(), *uop->create(op.ndstbits()), {output})[0];
+}
+
+/* sext operation */
+
+static const jive_unop_reduction_path_t sext_reduction_bitunary = 128;
+
 sext_op::~sext_op()
 {}
 
@@ -61,6 +82,9 @@ sext_op::can_reduce_operand(const jive::output * operand) const noexcept
 	if (jive::is_bitconstant_node(producer(operand)))
 		return jive_unop_reduction_constant;
 
+	if (is_bitunary_reducible(operand))
+		return sext_reduction_bitunary;
+
 	return jive_unop_reduction_none;
 }
 
@@ -73,6 +97,9 @@ sext_op::reduce_operand(
 		auto c = static_cast<const jive::bits::constant_op*>(&producer(operand)->operation());
 		return create_bitconstant(operand->node()->region(), c->value().sext(ndstbits()-nsrcbits()));
 	}
+
+	if (path == sext_reduction_bitunary)
+		return perform_bitunary_reduction(*this, operand);
 
 	return nullptr;
 }

@@ -12,6 +12,7 @@ TESTS += \
 	libjlm/test-pull \
 	libjlm/test-push \
 	libjlm/test-restructuring \
+	libjlm/test-sext \
 	libjlm/test-ssa-destruction \
 	libjlm/test-store \
 	libjlm/test-unroll \
