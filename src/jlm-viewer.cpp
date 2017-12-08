@@ -11,7 +11,7 @@
 #include <jlm/jlm2rvsdg/module.hpp>
 #include <jlm/rvsdg2jlm/rvsdg2jlm.hpp>
 
-#include <jive/vsdg/graph.h>
+#include <jive/rvsdg/graph.h>
 #include <jive/view.h>
 
 #include <llvm/IR/LLVMContext.h>

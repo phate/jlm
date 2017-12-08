@@ -6,9 +6,9 @@
 #include <test-registry.hpp>
 #include <test-types.hpp>
 
-#include <jive/arch/memorytype.h>
+#include <jive/arch/addresstype.h>
 #include <jive/view.h>
-#include <jive/vsdg/statemux.h>
+#include <jive/rvsdg/statemux.h>
 
 #include <jlm/ir/operators/alloca.hpp>
 #include <jlm/ir/operators/load.hpp>
@@ -19,7 +19,7 @@ test_load_mux_reduction()
 {
 	jlm::valuetype vt;
 	jlm::ptrtype pt(vt);
-	jive::mem::type mt;
+	jive::memtype mt;
 
 	jive::graph graph;
 	auto nf = jlm::load_op::normal_form(&graph);
@@ -56,7 +56,7 @@ test_load_mux_reduction()
 static inline void
 test_load_alloca_reduction()
 {
-	jive::mem::type mt;
+	jive::memtype mt;
 	jive::bits::type bt(32);
 
 	jive::graph graph;
@@ -93,7 +93,7 @@ test_multiple_origin_reduction()
 {
 	jlm::valuetype vt;
 	jlm::ptrtype pt(vt);
-	jive::mem::type mt;
+	jive::memtype mt;
 
 	jive::graph graph;
 	auto nf = jlm::load_op::normal_form(&graph);
@@ -123,7 +123,7 @@ test_multiple_origin_reduction()
 static inline void
 test_load_store_state_reduction()
 {
-	jive::mem::type mt;
+	jive::memtype mt;
 	jive::bits::type bt(32);
 
 	jive::graph graph;
@@ -159,7 +159,7 @@ test_load_store_state_reduction()
 static inline void
 test_load_store_alloca_reduction()
 {
-	jive::mem::type mt;
+	jive::memtype mt;
 	jive::bits::type bt(32);
 
 	jive::graph graph;

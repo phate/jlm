@@ -7,10 +7,10 @@
 #include "test-types.hpp"
 
 #include <jive/view.h>
-#include <jive/vsdg/controltype.h>
-#include <jive/vsdg/gamma.h>
-#include <jive/vsdg/graph.h>
-#include <jive/vsdg/theta.h>
+#include <jive/rvsdg/controltype.h>
+#include <jive/rvsdg/gamma.h>
+#include <jive/rvsdg/graph.h>
+#include <jive/rvsdg/theta.h>
 
 #include <jlm/opt/invariance.hpp>
 
@@ -25,26 +25,22 @@ test_gamma()
 	auto x = graph.import(vt, "x");
 	auto y = graph.import(vt, "y");
 
-	jive::gamma_builder gb1;
-	gb1.begin_gamma(c);
-	auto ev1 = gb1.add_entryvar(c);
-	auto ev2 = gb1.add_entryvar(x);
-	auto ev3 = gb1.add_entryvar(y);
+	auto gamma1 = jive::gamma_node::create(c, 2);
+	auto ev1 = gamma1->add_entryvar(c);
+	auto ev2 = gamma1->add_entryvar(x);
+	auto ev3 = gamma1->add_entryvar(y);
 
-	jive::gamma_builder gb2;
-	gb2.begin_gamma(ev1->argument(0));
-	auto ev4 = gb2.add_entryvar(ev2->argument(0));
-	auto ev5 = gb2.add_entryvar(ev3->argument(0));
-	auto xv4 = gb2.add_exitvar({ev4->argument(0), ev4->argument(1)});
-	auto xv5 = gb2.add_exitvar({ev5->argument(0), ev5->argument(1)});
-	auto gamma2 = gb2.end_gamma();
+	auto gamma2 = jive::gamma_node::create(ev1->argument(0), 2);
+	auto ev4 = gamma2->add_entryvar(ev2->argument(0));
+	auto ev5 = gamma2->add_entryvar(ev3->argument(0));
+	auto xv4 = gamma2->add_exitvar({ev4->argument(0), ev4->argument(1)});
+	auto xv5 = gamma2->add_exitvar({ev5->argument(0), ev5->argument(1)});
 
-	auto xv2 = gb1.add_exitvar({gamma2->node()->output(0), ev2->argument(1)});
-	auto xv3 = gb1.add_exitvar({gamma2->node()->output(1), ev3->argument(1)});
-	auto gamma1 = gb1.end_gamma();
+	auto xv2 = gamma1->add_exitvar({gamma2->output(0), ev2->argument(1)});
+	auto xv3 = gamma1->add_exitvar({gamma2->output(1), ev3->argument(1)});
 
-	graph.export_port(gamma1->node()->output(0), "x");
-	graph.export_port(gamma1->node()->output(1), "y");
+	graph.export_port(gamma1->output(0), "x");
+	graph.export_port(gamma1->output(1), "y");
 
 	jive::view(graph.root(), stdout);
 	jlm::invariance(graph);
@@ -64,18 +60,16 @@ test_theta()
 	auto c = graph.import(ct, "c");
 	auto x = graph.import(vt, "x");
 
-	jive::theta_builder tb1;
-	tb1.begin_theta(graph.root());
-	auto lv1 = tb1.add_loopvar(c);
-	auto lv2 = tb1.add_loopvar(x);
+	auto theta1 = jive::theta_node::create(graph.root());
+	auto lv1 = theta1->add_loopvar(c);
+	auto lv2 = theta1->add_loopvar(x);
 
-	jive::theta_builder tb2;
-	tb2.begin_theta(tb1.subregion());
-	auto lv3 = tb2.add_loopvar(lv1->argument());
-	auto lv4 = tb2.add_loopvar(lv2->argument());
-	tb2.end_theta(lv3->argument());
+	auto theta2 = jive::theta_node::create(theta1->subregion());
+	auto lv3 = theta2->add_loopvar(lv1->argument());
+	auto lv4 = theta2->add_loopvar(lv2->argument());
+	theta2->set_predicate(lv3->argument());
 
-	tb1.end_theta(lv1->argument());
+	theta1->set_predicate(lv1->argument());
 
 	graph.export_port(lv1->output(), "c");
 	graph.export_port(lv2->output(), "x");

@@ -9,12 +9,12 @@
 #include <jlm/util/stats.hpp>
 
 #include <jive/types/function/fctlambda.h>
-#include <jive/vsdg/gamma.h>
-#include <jive/vsdg/phi.h>
-#include <jive/vsdg/simple_node.h>
-#include <jive/vsdg/structural_node.h>
-#include <jive/vsdg/theta.h>
-#include <jive/vsdg/traverser.h>
+#include <jive/rvsdg/gamma.h>
+#include <jive/rvsdg/phi.h>
+#include <jive/rvsdg/simple-node.h>
+#include <jive/rvsdg/structural-node.h>
+#include <jive/rvsdg/theta.h>
+#include <jive/rvsdg/traverser.h>
 
 #if defined(DNEMARKTIME) || defined(DNESWEEPTIME)
 	#include <iostream>

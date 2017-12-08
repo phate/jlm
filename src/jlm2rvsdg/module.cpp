@@ -27,21 +27,21 @@
 #include <jive/types/bitstring/type.h>
 #include <jive/types/float.h>
 #include <jive/types/function.h>
-#include <jive/vsdg/binary.h>
-#include <jive/vsdg/control.h>
-#include <jive/vsdg/gamma.h>
-#include <jive/vsdg/phi.h>
-#include <jive/vsdg/region.h>
-#include <jive/vsdg/theta.h>
-#include <jive/vsdg/type.h>
+#include <jive/rvsdg/binary.h>
+#include <jive/rvsdg/control.h>
+#include <jive/rvsdg/gamma.h>
+#include <jive/rvsdg/phi.h>
+#include <jive/rvsdg/region.h>
+#include <jive/rvsdg/theta.h>
+#include <jive/rvsdg/type.h>
 
 #include <cmath>
 #include <stack>
 
 static inline jive::output *
-create_undef_value(jive::region * region, const jive::base::type & type)
+create_undef_value(jive::region * region, const jive::type & type)
 {
-	jlm::undef_constant_op op(*static_cast<const jive::value::type*>(&type));
+	jlm::undef_constant_op op(*static_cast<const jive::valuetype*>(&type));
 	return jive::create_normalized(region, op, {})[0];
 }
 
@@ -142,13 +142,11 @@ convert_select(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
 	auto op = jive::ctl::match_op(1, {{1, 1}}, 0, 2);
 	auto predicate = jive::create_normalized(region, op, {vmap[tac.input(0)]})[0];
 
-	jive::gamma_builder gb;
-	gb.begin_gamma(predicate);
-	auto ev1 = gb.add_entryvar(vmap[tac.input(2)]);
-	auto ev2 = gb.add_entryvar(vmap[tac.input(1)]);
-	auto ex = gb.add_exitvar({ev1->argument(0), ev2->argument(1)});
+	auto gamma = jive::gamma_node::create(predicate, 2);
+	auto ev1 = gamma->add_entryvar(vmap[tac.input(2)]);
+	auto ev2 = gamma->add_entryvar(vmap[tac.input(1)]);
+	auto ex = gamma->add_exitvar({ev1->argument(0), ev2->argument(1)});
 	vmap[tac.output(0)] = ex->output();
-	gb.end_gamma();
 }
 
 static void
@@ -256,7 +254,7 @@ convert_exit_node(
 	}
 
 	svmap.pop_scope();
-	return lb.end_lambda(results)->node();
+	return lb.end_lambda(results);
 }
 
 static jive::node *
@@ -309,22 +307,21 @@ convert_branch_node(
 
 	JLM_DEBUG_ASSERT(is_branch_op(sb.last()->operation()));
 	auto predicate = svmap.vmap()[sb.last()->input(0)];
-	jive::gamma_builder gb;
-	gb.begin_gamma(predicate);
+	auto gamma = jive::gamma_node::create(predicate, node.nchildren()-1);
 
 	/* add entry variables */
 	auto ds = static_cast<const agg::branch_demand_set*>(dm.at(&node).get());
 	std::unordered_map<const variable*, std::shared_ptr<jive::entryvar>> evmap;
 	for (const auto & v : ds->cases_top) {
 		JLM_DEBUG_ASSERT(svmap.vmap().find(v) != svmap.vmap().end());
-		evmap[v] = gb.add_entryvar(svmap.vmap()[v]);
+		evmap[v] = gamma->add_entryvar(svmap.vmap()[v]);
 	}
 
 	/* convert branch cases */
 	std::unordered_map<const variable*, std::vector<jive::output*>> xvmap;
-	JLM_DEBUG_ASSERT(gb.nsubregions() == node.nchildren()-1);
-	for (size_t n = 0; n < gb.nsubregions(); n++) {
-		svmap.push_scope(gb.subregion(n));
+	JLM_DEBUG_ASSERT(gamma->nsubregions() == node.nchildren()-1);
+	for (size_t n = 0; n < gamma->nsubregions(); n++) {
+		svmap.push_scope(gamma->subregion(n));
 		for (const auto & pair : evmap)
 			svmap.vmap()[pair.first] = pair.second->argument(n);
 
@@ -340,10 +337,9 @@ convert_branch_node(
 	/* add exit variables */
 	for (const auto & v : ds->cases_bottom) {
 		JLM_DEBUG_ASSERT(xvmap.find(v) != xvmap.end());
-		svmap.vmap()[v] = gb.add_exitvar(xvmap[v])->output();
+		svmap.vmap()[v] = gamma->add_exitvar(xvmap[v])->output();
 	}
 
-	gb.end_gamma();
 	return nullptr;
 }
 
@@ -358,10 +354,9 @@ convert_loop_node(
 	JIVE_DEBUG_ASSERT(is_loop_structure(node.structure()));
 	auto parent = svmap.region();
 
-	jive::theta_builder tb;
-	tb.begin_theta(parent);
+	auto theta = jive::theta_node::create(parent);
 
-	svmap.push_scope(tb.subregion());
+	svmap.push_scope(theta->subregion());
 	auto & vmap = svmap.vmap();
 	auto & pvmap = svmap.vmap(svmap.nscopes()-2);
 
@@ -378,7 +373,7 @@ convert_loop_node(
 		} else {
 			value = pvmap[v];
 		}
-		lvmap[v] = tb.add_loopvar(value);
+		lvmap[v] = theta->add_loopvar(value);
 		vmap[v] = lvmap[v]->argument();
 	}
 
@@ -404,7 +399,7 @@ convert_loop_node(
 
 	/* update variable map */
 	JLM_DEBUG_ASSERT(vmap.find(predicate) != vmap.end());
-	tb.end_theta(vmap[predicate]);
+	theta->set_predicate(vmap[predicate]);
 	svmap.pop_scope();
 	for (const auto & v : ds->bottom) {
 		JLM_DEBUG_ASSERT(pvmap.find(v) != pvmap.end());

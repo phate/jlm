@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jive/arch/memorytype.h>
-#include <jive/vsdg/statemux.h>
+#include <jive/arch/addresstype.h>
+#include <jive/rvsdg/statemux.h>
 
 #include <jlm/ir/operators/alloca.hpp>
 #include <jlm/ir/operators/load.hpp>
@@ -41,7 +41,7 @@ load_op::argument(size_t index) const noexcept
 	if (index == 0)
 		return aport_;
 
-	static const jive::port p(jive::mem::type::instance());
+	static const jive::port p(jive::memtype::instance());
 	return p;
 }
 
@@ -80,7 +80,7 @@ is_load_mux_reducible(const std::vector<jive::output*> & operands)
 		return false;
 
 	for (size_t n = 1; n < operands.size(); n++) {
-		JLM_DEBUG_ASSERT(dynamic_cast<const jive::mem::type*>(&operands[n]->type()));
+		JLM_DEBUG_ASSERT(dynamic_cast<const jive::memtype*>(&operands[n]->type()));
 		if (operands[n]->node() && operands[n]->node() != muxnode)
 			return false;
 	}
@@ -99,7 +99,7 @@ is_load_alloca_reducible(const std::vector<jive::output*> & operands)
 
 	std::vector<jive::output*> new_states;
 	for (size_t n = 1; n < operands.size(); n++) {
-		JLM_DEBUG_ASSERT(dynamic_cast<const jive::mem::type*>(&operands[n]->type()));
+		JLM_DEBUG_ASSERT(dynamic_cast<const jive::memtype*>(&operands[n]->type()));
 		auto node = operands[n]->node();
 		if (node && is_alloca_op(node->operation()) && node != allocanode)
 			continue;
@@ -160,7 +160,7 @@ is_load_store_state_reducible(const std::vector<jive::output*> & operands)
 
 	std::vector<jive::output*> new_states;
 	for (size_t n = 1; n < operands.size(); n++) {
-		JLM_DEBUG_ASSERT(dynamic_cast<const jive::mem::type*>(&operands[n]->type()));
+		JLM_DEBUG_ASSERT(dynamic_cast<const jive::memtype*>(&operands[n]->type()));
 		auto node = operands[n]->node();
 		if (node && is_store_op(node->operation())) {
 			auto addressnode = node->input(0)->origin()->node();

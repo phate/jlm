@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jive/vsdg/graph.h>
-#include <jive/vsdg/statemux.h>
+#include <jive/rvsdg/graph.h>
+#include <jive/rvsdg/statemux.h>
 
 #include <jlm/ir/operators/alloca.hpp>
 #include <jlm/ir/operators/store.hpp>
@@ -43,7 +43,7 @@ store_op::argument(size_t index) const noexcept
 	if (index == 1)
 		return vport_;
 
-	static const jive::port p(jive::mem::type::instance());
+	static const jive::port p(jive::memtype::instance());
 	return p;
 }
 
@@ -57,7 +57,7 @@ const jive::port &
 store_op::result(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < nresults());
-	static const jive::port p(jive::mem::type::instance());
+	static const jive::port p(jive::memtype::instance());
 	return p;
 }
 
@@ -85,7 +85,7 @@ is_store_mux_reducible(const std::vector<jive::output*> & operands)
 		return false;
 
 	for (size_t n = 2; n < operands.size(); n++) {
-		JLM_DEBUG_ASSERT(dynamic_cast<const jive::mem::type*>(&operands[n]->type()));
+		JLM_DEBUG_ASSERT(dynamic_cast<const jive::memtype*>(&operands[n]->type()));
 		if (operands[n]->node() && operands[n]->node() != muxnode)
 			return false;
 	}

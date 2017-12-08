@@ -9,11 +9,11 @@
 #include <jlm/util/stats.hpp>
 
 #include <jive/types/function/fctlambda.h>
-#include <jive/vsdg/gamma.h>
-#include <jive/vsdg/phi.h>
-#include <jive/vsdg/simple_node.h>
-#include <jive/vsdg/theta.h>
-#include <jive/vsdg/traverser.h>
+#include <jive/rvsdg/gamma.h>
+#include <jive/rvsdg/phi.h>
+#include <jive/rvsdg/simple-node.h>
+#include <jive/rvsdg/theta.h>
+#include <jive/rvsdg/traverser.h>
 
 #if defined(CNEMARKTIME) || defined(CNEDIVERTTIME)
 	#include <iostream>
@@ -434,9 +434,9 @@ static void
 divert_gamma(jive::structural_node * node, cnectx & ctx)
 {
 	JLM_DEBUG_ASSERT(is_gamma_node(node));
+	auto gamma = static_cast<jive::gamma_node*>(node);
 
-	jive::gamma gamma(node);
-	for (auto ev = gamma.begin_entryvar(); ev != gamma.end_entryvar(); ev++) {
+	for (auto ev = gamma->begin_entryvar(); ev != gamma->end_entryvar(); ev++) {
 		for (size_t n = 0; n < ev->narguments(); n++)
 			divert_users(ev->argument(n), ctx);
 	}
@@ -451,10 +451,10 @@ static void
 divert_theta(jive::structural_node * node, cnectx & ctx)
 {
 	JLM_DEBUG_ASSERT(is_theta_node(node));
+	auto theta = static_cast<jive::theta_node*>(node);
 	auto subregion = node->subregion(0);
 
-	jive::theta theta(node);
-	for (const auto & lv : theta) {
+	for (const auto & lv : *theta) {
 		JLM_DEBUG_ASSERT(ctx.set(lv.argument())->size() == ctx.set(lv.output())->size());
 		divert_users(lv.argument(), ctx);
 		divert_users(lv.output(), ctx);

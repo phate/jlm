@@ -223,7 +223,7 @@ private:
 	jlm::clg & clg_;
 	std::string name_;
 	std::unique_ptr<jlm::cfg> cfg_;
-	std::unique_ptr<jive::base::type> type_;
+	std::unique_ptr<jive::type> type_;
 	std::unordered_set<const clg_node*> calls_;
 };
 

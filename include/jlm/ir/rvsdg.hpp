@@ -6,7 +6,7 @@
 #ifndef JLM_IR_RVSDG_HPP
 #define JLM_IR_RVSDG_HPP
 
-#include <jive/vsdg/graph.h>
+#include <jive/rvsdg/graph.h>
 
 namespace jlm {
 

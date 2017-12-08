@@ -6,9 +6,9 @@
 #include <jlm/common.hpp>
 #include <jlm/opt/push.hpp>
 
-#include <jive/vsdg/gamma.h>
-#include <jive/vsdg/theta.h>
-#include <jive/vsdg/traverser.h>
+#include <jive/rvsdg/gamma.h>
+#include <jive/rvsdg/theta.h>
+#include <jive/rvsdg/traverser.h>
 
 #include <deque>
 
@@ -57,7 +57,7 @@ static bool
 has_side_effects(const jive::node * node)
 {
 	for (size_t n = 0; n < node->noutputs(); n++) {
-		if (dynamic_cast<const jive::state::type*>(&node->output(n)->type()))
+		if (dynamic_cast<const jive::statetype*>(&node->output(n)->type()))
 			return true;
 	}
 
@@ -67,11 +67,11 @@ has_side_effects(const jive::node * node)
 static std::vector<jive::argument*>
 copy_from_gamma(jive::node * node, size_t r)
 {
-	JLM_DEBUG_ASSERT(is_gamma_op(node->region()->node()->operation()));
+	JLM_DEBUG_ASSERT(is_gamma_node(node->region()->node()));
 	JLM_DEBUG_ASSERT(node->depth() == 0);
 
 	auto target = node->region()->node()->region();
-	jive::gamma gamma(node->region()->node());
+	auto gamma = static_cast<jive::gamma_node*>(node->region()->node());
 
 	std::vector<jive::output*> operands;
 	for (size_t n = 0; n < node->ninputs(); n++) {
@@ -83,7 +83,7 @@ copy_from_gamma(jive::node * node, size_t r)
 	std::vector<jive::argument*> arguments;
 	auto copy = node->copy(target, operands);
 	for (size_t n = 0; n < copy->noutputs(); n++) {
-		auto ev = gamma.add_entryvar(copy->output(n));
+		auto ev = gamma->add_entryvar(copy->output(n));
 		node->output(n)->replace(ev->argument(r));
 		arguments.push_back(ev->argument(r));
 	}
@@ -94,11 +94,11 @@ copy_from_gamma(jive::node * node, size_t r)
 static std::vector<jive::argument*>
 copy_from_theta(jive::node * node)
 {
-	JLM_DEBUG_ASSERT(is_theta_op(node->region()->node()->operation()));
+	JLM_DEBUG_ASSERT(is_theta_node(node->region()->node()));
 	JLM_DEBUG_ASSERT(node->depth() == 0);
 
 	auto target = node->region()->node()->region();
-	jive::theta theta(node->region()->node());
+	auto theta = static_cast<jive::theta_node*>(node->region()->node());
 
 	std::vector<jive::output*> operands;
 	for (size_t n = 0; n < node->ninputs(); n++) {
@@ -110,7 +110,7 @@ copy_from_theta(jive::node * node)
 	std::vector<jive::argument*> arguments;
 	auto copy = node->copy(target, operands);
 	for (size_t n = 0; n < copy->noutputs(); n++) {
-		auto lv = theta.add_loopvar(copy->output(n));
+		auto lv = theta->add_loopvar(copy->output(n));
 		node->output(n)->replace(lv->argument());
 		arguments.push_back(lv->argument());
 	}
@@ -185,10 +185,9 @@ is_theta_invariant(
 }
 
 static void
-theta_push(jive::structural_node * strnode)
+theta_push(jive::theta_node * theta)
 {
-	JLM_DEBUG_ASSERT(is_theta_node(strnode));
-	auto subregion = strnode->subregion(0);
+	auto subregion = theta->subregion();
 
 	/* push out all nullary nodes */
 	jive::node * node;
@@ -200,16 +199,15 @@ theta_push(jive::structural_node * strnode)
 	}
 
 	/* collect loop invariant arguments */
-	jive::theta theta(strnode);
 	std::unordered_set<jive::argument*> invariants;
-	for (const auto & lv : theta) {
+	for (const auto & lv : *theta) {
 		if (lv.result()->origin() == lv.argument())
 			invariants.insert(lv.argument());
 	}
 
 	/* initialize worklist */
 	worklist wl;
-	for (const auto & lv : theta) {
+	for (const auto & lv : *theta) {
 		auto argument = lv.argument();
 		for (const auto & user : *argument) {
 			if (user->node() && user->node()->depth() == 0
@@ -252,8 +250,8 @@ push(jive::region * region)
 		if (is_gamma_op(node->operation()))
 			gamma_push(static_cast<jive::structural_node*>(node));
 
-		if (is_theta_op(node->operation()))
-			theta_push(static_cast<jive::structural_node*>(node));
+		if (auto theta = dynamic_cast<jive::theta_node*>(node))
+			theta_push(theta);
 	}
 }
 

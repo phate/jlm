@@ -9,10 +9,10 @@
 #include <jive/types/bitstring/type.h>
 #include <jive/types/function/fcttype.h>
 #include <jive/types/record/rcdtype.h>
-#include <jive/vsdg/controltype.h>
-#include <jive/vsdg/nullary.h>
-#include <jive/vsdg/type.h>
-#include <jive/vsdg/unary.h>
+#include <jive/rvsdg/controltype.h>
+#include <jive/rvsdg/nullary.h>
+#include <jive/rvsdg/type.h>
+#include <jive/rvsdg/unary.h>
 
 #include <jlm/ir/module.hpp>
 #include <jlm/ir/tac.hpp>
@@ -30,7 +30,7 @@ public:
 	~phi_op() noexcept;
 
 	inline
-	phi_op(const std::vector<jlm::cfg_node*> & nodes, const jive::base::type & type)
+	phi_op(const std::vector<jlm::cfg_node*> & nodes, const jive::type & type)
 	: port_(type)
 	, nodes_(nodes)
 	{
@@ -67,7 +67,7 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
-	inline const jive::base::type &
+	inline const jive::type &
 	type() const noexcept
 	{
 		return port_.type();
@@ -115,7 +115,7 @@ public:
 	~assignment_op() noexcept;
 
 	inline
-	assignment_op(const jive::base::type & type)
+	assignment_op(const jive::type & type)
 	: port_(type)
 	{}
 
@@ -150,7 +150,7 @@ private:
 
 static inline std::unique_ptr<jlm::tac>
 create_assignment(
-	const jive::base::type & type,
+	const jive::type & type,
 	const variable * arg,
 	const variable * r)
 {
@@ -171,7 +171,7 @@ public:
 	~select_op() noexcept;
 
 	inline
-	select_op(const jive::base::type & type)
+	select_op(const jive::type & type)
 	: port_(type)
 	{}
 
@@ -200,7 +200,7 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
-	inline const jive::base::type &
+	inline const jive::type &
 	type() const noexcept
 	{
 		return port_.type();
@@ -400,7 +400,7 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
-	inline const jive::value::type &
+	inline const jive::valuetype &
 	pointee_type() const noexcept
 	{
 		return static_cast<const jlm::ptrtype*>(&port_.type())->pointee_type();
@@ -417,7 +417,7 @@ is_ptr_constant_null_op(const jive::operation & op)
 }
 
 static inline std::unique_ptr<jlm::tac>
-create_ptr_constant_null_tac(const jive::base::type & ptype, jlm::variable * result)
+create_ptr_constant_null_tac(const jive::type & ptype, jlm::variable * result)
 {
 	auto pt = dynamic_cast<const jlm::ptrtype*>(&ptype);
 	if (!pt) throw std::logic_error("Expected pointer type.");
@@ -467,7 +467,7 @@ public:
 		return static_cast<const jive::bits::type*>(&bport_.type())->nbits();
 	}
 
-	inline const jive::value::type &
+	inline const jive::valuetype &
 	pointee_type() const noexcept
 	{
 		return static_cast<const jlm::ptrtype*>(&pport_.type())->pointee_type();
@@ -538,7 +538,7 @@ public:
 		return static_cast<const jive::bits::type*>(&bport_.type())->nbits();
 	}
 
-	inline const jive::value::type &
+	inline const jive::valuetype &
 	pointee_type() const noexcept
 	{
 		return static_cast<const jlm::ptrtype*>(&pport_.type())->pointee_type();
@@ -615,7 +615,7 @@ public:
 		return bports_.size();
 	}
 
-	const jive::base::type &
+	const jive::type &
 	pointee_type() const noexcept
 	{
 		return static_cast<const jlm::ptrtype*>(&pport_.type())->pointee_type();
@@ -666,7 +666,7 @@ public:
 	~data_array_constant_op();
 
 	inline
-	data_array_constant_op(const jive::value::type & type, size_t size)
+	data_array_constant_op(const jive::valuetype & type, size_t size)
 	: jive::simple_op()
 	, aport_(jlm::arraytype(type, size))
 	, eport_(type)
@@ -702,10 +702,10 @@ public:
 		return static_cast<const jlm::arraytype*>(&aport_.type())->nelements();
 	}
 
-	inline const jive::value::type &
+	inline const jive::valuetype &
 	type() const noexcept
 	{
-		return *static_cast<const jive::value::type*>(&eport_.type());
+		return *static_cast<const jive::valuetype*>(&eport_.type());
 	}
 
 private:
@@ -727,7 +727,7 @@ create_data_array_constant_tac(
 	if (elements.size() == 0)
 		throw std::logic_error("Expected at least one element.");
 
-	auto vt = dynamic_cast<const jive::value::type*>(&elements[0]->type());
+	auto vt = dynamic_cast<const jive::valuetype*>(&elements[0]->type());
 	if (!vt) throw std::logic_error("Expected value type.");
 
 	data_array_constant_op op(*vt, elements.size());
@@ -777,7 +777,7 @@ public:
 		return cmp_;
 	}
 
-	const jive::base::type &
+	const jive::type &
 	pointee_type() const noexcept
 	{
 		return static_cast<const jlm::ptrtype*>(&port_.type())->pointee_type();
@@ -1040,7 +1040,7 @@ public:
 	~undef_constant_op() noexcept;
 
 	inline
-	undef_constant_op(const jive::value::type & type)
+	undef_constant_op(const jive::valuetype & type)
 	: jive::simple_op()
 	, port_(type)
 	{}
@@ -1074,10 +1074,10 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
-	inline const jive::value::type &
+	inline const jive::valuetype &
 	type() const noexcept
 	{
-		return *static_cast<const jive::value::type*>(&port_.type());
+		return *static_cast<const jive::valuetype*>(&port_.type());
 	}
 
 private:
@@ -1093,7 +1093,7 @@ is_undef_constant_op(const jive::operation & op)
 static inline std::unique_ptr<jlm::tac>
 create_undef_constant_tac(jlm::variable * result)
 {
-	auto vt = dynamic_cast<const jive::value::type*>(&result->type());
+	auto vt = dynamic_cast<const jive::valuetype*>(&result->type());
 	if (!vt) throw std::logic_error("Expected value type.");
 
 	jlm::undef_constant_op op(*vt);
@@ -1256,7 +1256,7 @@ public:
 	~valist_op() noexcept;
 
 	inline
-	valist_op(std::vector<std::unique_ptr<jive::base::type>> types)
+	valist_op(std::vector<std::unique_ptr<jive::type>> types)
 	: jive::simple_op()
 	{
 		for (const auto & type : types)
@@ -1307,7 +1307,7 @@ create_valist_tac(
 	const std::vector<const variable*> & arguments,
 	jlm::module & m)
 {
-	std::vector<std::unique_ptr<jive::base::type>> operands;
+	std::vector<std::unique_ptr<jive::type>> operands;
 	for (const auto & argument : arguments)
 		operands.push_back(argument->type().copy());
 
@@ -1329,7 +1329,7 @@ public:
 	~bitcast_op();
 
 	inline
-	bitcast_op(const jive::value::type & srctype, const jive::value::type & dsttype)
+	bitcast_op(const jive::valuetype & srctype, const jive::valuetype & dsttype)
 	: jive::simple_op()
 	, srcport_(srctype)
 	, dstport_(dsttype)
@@ -1380,10 +1380,10 @@ is_bitcast_op(const jive::operation & op)
 static inline std::unique_ptr<jlm::tac>
 create_bitcast_tac(const variable * argument, variable * result)
 {
-	auto at = dynamic_cast<const jive::value::type*>(&argument->type());
+	auto at = dynamic_cast<const jive::valuetype*>(&argument->type());
 	if (!at) throw std::logic_error("Expected value type.");
 
-	auto rt = dynamic_cast<const jive::value::type*>(&result->type());
+	auto rt = dynamic_cast<const jive::valuetype*>(&result->type());
 	if (!rt) throw std::logic_error("Expected value type.");
 
 	bitcast_op op(*at, *rt);

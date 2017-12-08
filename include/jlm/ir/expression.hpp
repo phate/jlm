@@ -8,7 +8,7 @@
 
 #include <jlm/common.hpp>
 
-#include <jive/vsdg/operation.h>
+#include <jive/rvsdg/operation.h>
 
 #include <memory>
 #include <vector>
@@ -71,7 +71,7 @@ public:
 		return *operands_[index];
 	}
 
-	const jive::base::type &
+	const jive::type &
 	type() const noexcept
 	{
 		return operation_->result(0).type();

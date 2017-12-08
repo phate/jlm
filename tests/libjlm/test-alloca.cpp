@@ -7,15 +7,15 @@
 #include <test-types.hpp>
 
 #include <jive/view.h>
-#include <jive/vsdg/graph.h>
-#include <jive/vsdg/statemux.h>
+#include <jive/rvsdg/graph.h>
+#include <jive/rvsdg/statemux.h>
 
 #include <jlm/ir/operators/alloca.hpp>
 
 static inline void
 test_alloca_alloca_reduction()
 {
-	jive::mem::type mt;
+	jive::memtype mt;
 	jive::bits::type bt(32);
 
 	jive::graph graph;
@@ -54,7 +54,7 @@ test_alloca_alloca_reduction()
 static inline void
 test_alloca_mux_reduction()
 {
-	jive::mem::type mt;
+	jive::memtype mt;
 	jive::bits::type bt(32);
 
 	jive::graph graph;

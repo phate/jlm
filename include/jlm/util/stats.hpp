@@ -6,8 +6,8 @@
 #ifndef JLM_UTIL_STATS_HPP
 #define JLM_UTIL_STATS_HPP
 
-#include <jive/vsdg/graph.h>
-#include <jive/vsdg/region.h>
+#include <jive/rvsdg/graph.h>
+#include <jive/rvsdg/region.h>
 
 #include <chrono>
 

@@ -6,11 +6,11 @@
 #ifndef JLM_IR_OPERATORS_ALLOCA_HPP
 #define JLM_IR_OPERATORS_ALLOCA_HPP
 
-#include <jive/arch/memorytype.h>
+#include <jive/arch/addresstype.h>
 #include <jive/types/bitstring/type.h>
-#include <jive/vsdg/graph.h>
-#include <jive/vsdg/simple-normal-form.h>
-#include <jive/vsdg/simple_node.h>
+#include <jive/rvsdg/graph.h>
+#include <jive/rvsdg/simple-normal-form.h>
+#include <jive/rvsdg/simple-node.h>
 
 #include <jlm/ir/tac.hpp>
 #include <jlm/ir/types.hpp>
@@ -106,7 +106,7 @@ public:
 		return *static_cast<const jive::bits::type*>(&bport_.type());
 	}
 
-	inline const jive::value::type &
+	inline const jive::valuetype &
 	value_type() const noexcept
 	{
 		return static_cast<const jlm::ptrtype*>(&aport_.type())->pointee_type();
@@ -138,13 +138,13 @@ is_alloca_op(const jive::operation & op) noexcept
 
 static inline std::unique_ptr<jlm::tac>
 create_alloca_tac(
-	const jive::base::type & vtype,
+	const jive::type & vtype,
 	const variable * size,
 	size_t alignment,
 	jlm::variable * state,
 	jlm::variable * result)
 {
-	auto vt = dynamic_cast<const jive::value::type*>(&vtype);
+	auto vt = dynamic_cast<const jive::valuetype*>(&vtype);
 	if (!vt) throw std::logic_error("Expected value type.");
 
 	auto bt = dynamic_cast<const jive::bits::type*>(&size->type());
@@ -156,12 +156,12 @@ create_alloca_tac(
 
 static inline std::vector<jive::output*>
 create_alloca(
-	const jive::base::type & type,
+	const jive::type & type,
 	jive::output * size,
 	jive::output * state,
 	size_t alignment)
 {
-	auto vt = dynamic_cast<const jive::value::type*>(&type);
+	auto vt = dynamic_cast<const jive::valuetype*>(&type);
 	if (!vt) throw std::logic_error("Expected value type.");
 
 	auto bt = dynamic_cast<const jive::bits::type*>(&size->type());

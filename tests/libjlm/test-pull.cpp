@@ -8,8 +8,8 @@
 #include "test-types.hpp"
 
 #include <jive/view.h>
-#include <jive/vsdg/gamma.h>
-#include <jive/vsdg/simple_node.h>
+#include <jive/rvsdg/gamma.h>
+#include <jive/rvsdg/simple-node.h>
 
 #include <jlm/opt/pull.hpp>
 
@@ -32,24 +32,21 @@ test_pullin_top()
 	auto n4 = graph.root()->add_simple_node(cop, {c, n1->output(0)});
 	auto n5 = graph.root()->add_simple_node(bop, {n1->output(0), n3->output(0)});
 
-	jive::gamma_builder gb;
-	gb.begin_gamma(n4->output(0));
+	auto gamma = jive::gamma_node::create(n4->output(0), 2);
 
-	gb.add_entryvar(n4->output(0));
-	auto ev = gb.add_entryvar(n5->output(0));
-	auto xv = gb.add_exitvar({ev->argument(0), ev->argument(1)});
+	gamma->add_entryvar(n4->output(0));
+	auto ev = gamma->add_entryvar(n5->output(0));
+	auto xv = gamma->add_exitvar({ev->argument(0), ev->argument(1)});
 
-	auto gamma = gb.end_gamma();
-
-	graph.export_port(gamma->node()->output(0), "x");
+	graph.export_port(gamma->output(0), "x");
 	graph.export_port(n2->output(0), "y");
 
 //	jive::view(graph, stdout);
-	jlm::pullin_top(*gamma);
+	jlm::pullin_top(gamma);
 //	jive::view(graph, stdout);
 
-	assert(gamma->node()->subregion(0)->nnodes() == 2);
-	assert(gamma->node()->subregion(1)->nnodes() == 2);
+	assert(gamma->subregion(0)->nnodes() == 2);
+	assert(gamma->subregion(1)->nnodes() == 2);
 }
 
 static inline void
@@ -63,27 +60,23 @@ test_pullin_bottom()
 	auto c = graph.import(ct, "c");
 	auto x = graph.import(vt, "x");
 
-	jive::gamma_builder gb;
-	gb.begin_gamma(c);
+	auto gamma = jive::gamma_node::create(c, 2);
 
-	auto ev = gb.add_entryvar(x);
-	auto xv = gb.add_exitvar({ev->argument(0), ev->argument(1)});
+	auto ev = gamma->add_entryvar(x);
+	auto xv = gamma->add_exitvar({ev->argument(0), ev->argument(1)});
 
-	auto gamma = gb.end_gamma();
-
-	auto node = gamma->node();
-	auto b1 = graph.root()->add_simple_node(bop, {node->output(0), x});
-	auto b2 = graph.root()->add_simple_node(bop, {node->output(0), b1->output(0)});
+	auto b1 = graph.root()->add_simple_node(bop, {gamma->output(0), x});
+	auto b2 = graph.root()->add_simple_node(bop, {gamma->output(0), b1->output(0)});
 
 	auto xp = graph.export_port(b2->output(0), "x");
 
 //	jive::view(graph, stdout);
-	jlm::pullin_bottom(*gamma);
+	jlm::pullin_bottom(gamma);
 //	jive::view(graph, stdout);
 
-	assert(xp->origin()->node() == node);
-	assert(node->subregion(0)->nnodes() == 2);
-	assert(node->subregion(1)->nnodes() == 2);
+	assert(xp->origin()->node() == gamma);
+	assert(gamma->subregion(0)->nnodes() == 2);
+	assert(gamma->subregion(1)->nnodes() == 2);
 }
 
 static int

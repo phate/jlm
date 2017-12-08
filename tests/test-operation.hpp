@@ -6,8 +6,8 @@
 #ifndef TESTS_TEST_OPERATION_HPP
 #define TESTS_TEST_OPERATION_HPP
 
-#include <jive/vsdg/operation.h>
-#include <jive/vsdg/type.h>
+#include <jive/rvsdg/operation.h>
+#include <jive/rvsdg/type.h>
 
 #include <jlm/ir/tac.hpp>
 
@@ -20,8 +20,8 @@ public:
 
 	inline
 	test_op(
-		const std::vector<const jive::base::type*> & argument_types,
-		const std::vector<const jive::base::type*> & result_types)
+		const std::vector<const jive::type*> & argument_types,
+		const std::vector<const jive::type*> & result_types)
 	: simple_op()
 	{
 		for (const auto & type : argument_types)
@@ -63,8 +63,8 @@ create_testop_tac(
 	const std::vector<const variable*> & arguments,
 	const std::vector<const variable*> & results)
 {
-	std::vector<const jive::base::type*> result_types;
-	std::vector<const jive::base::type*> argument_types;
+	std::vector<const jive::type*> result_types;
+	std::vector<const jive::type*> argument_types;
 	for (const auto & arg : arguments)
 		argument_types.push_back(&arg->type());
 	for (const auto & res : results)

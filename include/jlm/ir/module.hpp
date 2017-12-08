@@ -22,7 +22,7 @@ public:
 
 	inline
 	gblvalue(
-		const jive::base::type & type,
+		const jive::type & type,
 		const std::string & name,
 		const jlm::linkage & linkage,
 		bool constant)
@@ -32,7 +32,7 @@ public:
 
 	inline
 	gblvalue(
-		const jive::base::type & type,
+		const jive::type & type,
 		const std::string & name,
 		const jlm::linkage & linkage,
 		bool constant,
@@ -71,7 +71,7 @@ private:
 
 static inline std::unique_ptr<jlm::gblvalue>
 create_gblvalue(
-	const jive::base::type & type,
+	const jive::type & type,
 	const std::string & name,
 	const jlm::linkage & linkage,
 	bool constant,
@@ -124,7 +124,7 @@ public:
 
 	inline jlm::gblvalue *
 	create_global_value(
-		const jive::base::type & type,
+		const jive::type & type,
 		const std::string & name,
 		const jlm::linkage & linkage,
 		bool constant,
@@ -142,7 +142,7 @@ public:
 		       again.
 	*/
 	inline jlm::tacvariable *
-	create_tacvariable(const jive::base::type & type)
+	create_tacvariable(const jive::type & type)
 	{
 		static uint64_t c = 0;
 		auto v = jlm::create_tacvariable(type, strfmt("tv", c++));
@@ -152,7 +152,7 @@ public:
 	}
 
 	inline jlm::variable *
-	create_variable(const jive::base::type & type, const std::string & name, bool exported)
+	create_variable(const jive::type & type, const std::string & name, bool exported)
 	{
 		auto v = std::make_unique<jlm::variable>(type, name, exported);
 		auto pv = v.get();
@@ -161,7 +161,7 @@ public:
 	}
 
 	inline jlm::variable *
-	create_variable(const jive::base::type & type, bool exported)
+	create_variable(const jive::type & type, bool exported)
 	{
 		static uint64_t c = 0;
 		auto v = std::make_unique<jlm::variable>(type, strfmt("v", c++), exported);

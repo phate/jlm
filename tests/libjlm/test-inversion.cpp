@@ -8,9 +8,9 @@
 #include "test-types.hpp"
 
 #include <jive/view.h>
-#include <jive/vsdg/gamma.h>
-#include <jive/vsdg/simple_node.h>
-#include <jive/vsdg/theta.h>
+#include <jive/rvsdg/gamma.h>
+#include <jive/rvsdg/simple-node.h>
+#include <jive/rvsdg/theta.h>
 
 #include <jlm/opt/inversion.hpp>
 
@@ -28,35 +28,32 @@ test1()
 	auto y = graph.import(vt, "y");
 	auto z = graph.import(vt, "z");
 
-	jive::theta_builder tb;
-	tb.begin_theta(graph.root());
+	auto theta = jive::theta_node::create(graph.root());
 
-	auto lvx = tb.add_loopvar(x);
-	auto lvy = tb.add_loopvar(y);
-	auto lvz = tb.add_loopvar(z);
+	auto lvx = theta->add_loopvar(x);
+	auto lvy = theta->add_loopvar(y);
+	auto lvz = theta->add_loopvar(z);
 
-	auto a = tb.subregion()->add_simple_node(bop1, {lvx->argument(), lvy->argument()});
+	auto a = theta->subregion()->add_simple_node(bop1, {lvx->argument(), lvy->argument()});
 	auto predicate = jive::ctl::match(1, {{1, 0}}, 1, 2, a->output(0));
 
-	jive::gamma_builder gb;
-	gb.begin_gamma(predicate);
+	auto gamma = jive::gamma_node::create(predicate, 2);
 
-	auto evx = gb.add_entryvar(lvx->argument());
-	auto evy = gb.add_entryvar(lvy->argument());
+	auto evx = gamma->add_entryvar(lvx->argument());
+	auto evy = gamma->add_entryvar(lvy->argument());
 
-	auto b = gb.subregion(0)->add_simple_node(bop2, {evx->argument(0), evy->argument(0)});
-	auto c = gb.subregion(1)->add_simple_node(bop2, {evx->argument(1), evy->argument(1)});
+	auto b = gamma->subregion(0)->add_simple_node(bop2, {evx->argument(0), evy->argument(0)});
+	auto c = gamma->subregion(1)->add_simple_node(bop2, {evx->argument(1), evy->argument(1)});
 
-	auto xvy = gb.add_exitvar({b->output(0), c->output(0)});
-	gb.end_gamma();
+	auto xvy = gamma->add_exitvar({b->output(0), c->output(0)});
 
 	lvy->result()->divert_origin(xvy->output());
 
-	auto theta = tb.end_theta(predicate);
+	theta->set_predicate(predicate);
 
-	auto ex1 = graph.export_port(theta->node()->output(0), "x");
-	auto ex2 = graph.export_port(theta->node()->output(1), "y");
-	auto ex3 = graph.export_port(theta->node()->output(2), "z");
+	auto ex1 = graph.export_port(theta->output(0), "x");
+	auto ex2 = graph.export_port(theta->output(1), "y");
+	auto ex3 = graph.export_port(theta->output(2), "z");
 
 //	jive::view(graph.root(), stdout);
 	jlm::invert(graph);
@@ -79,33 +76,29 @@ test2()
 
 	auto x = graph.import(vt, "x");
 
-	jive::theta_builder tb;
-	tb.begin_theta(graph.root());
+	auto theta = jive::theta_node::create(graph.root());
 
-	auto lv1 = tb.add_loopvar(x);
+	auto lv1 = theta->add_loopvar(x);
 
-	auto n1 = tb.subregion()->add_simple_node(cop, {lv1->argument()});
-	auto n2 = tb.subregion()->add_simple_node(uop, {lv1->argument()});
+	auto n1 = theta->subregion()->add_simple_node(cop, {lv1->argument()});
+	auto n2 = theta->subregion()->add_simple_node(uop, {lv1->argument()});
 	auto predicate = jive::ctl::match(1, {{1, 0}}, 1, 2, n1->output(0));
 
-	jive::gamma_builder gb;
-	gb.begin_gamma(predicate);
+	auto gamma = jive::gamma_node::create(predicate, 2);
 
-	auto ev1 = gb.add_entryvar(n1->output(0));
-	auto ev2 = gb.add_entryvar(lv1->argument());
-	auto ev3 = gb.add_entryvar(n2->output(0));
+	auto ev1 = gamma->add_entryvar(n1->output(0));
+	auto ev2 = gamma->add_entryvar(lv1->argument());
+	auto ev3 = gamma->add_entryvar(n2->output(0));
 
-	auto xv1 = gb.add_exitvar({ev1->argument(0), ev1->argument(1)});
-	auto xv2 = gb.add_exitvar({ev2->argument(0), ev2->argument(1)});
-	auto xv3 = gb.add_exitvar({ev3->argument(0), ev3->argument(1)});
+	auto xv1 = gamma->add_exitvar({ev1->argument(0), ev1->argument(1)});
+	auto xv2 = gamma->add_exitvar({ev2->argument(0), ev2->argument(1)});
+	auto xv3 = gamma->add_exitvar({ev3->argument(0), ev3->argument(1)});
 
-	auto gamma = gb.end_gamma();
+	lv1->result()->divert_origin(gamma->output(1));
 
-	lv1->result()->divert_origin(gamma->node()->output(1));
+	theta->set_predicate(predicate);
 
-	auto theta = tb.end_theta(predicate);
-
-	auto ex = graph.export_port(theta->node()->output(0), "x");
+	auto ex = graph.export_port(theta->output(0), "x");
 
 //	jive::view(graph.root(), stdout);
 	jlm::invert(graph);

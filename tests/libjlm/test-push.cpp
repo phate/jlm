@@ -8,9 +8,9 @@
 #include "test-types.hpp"
 
 #include <jive/view.h>
-#include <jive/vsdg/gamma.h>
-#include <jive/vsdg/simple_node.h>
-#include <jive/vsdg/theta.h>
+#include <jive/rvsdg/gamma.h>
+#include <jive/rvsdg/simple-node.h>
+#include <jive/rvsdg/theta.h>
 
 #include <jlm/opt/push.hpp>
 
@@ -29,19 +29,17 @@ test_gamma()
 	auto x = graph.import(vt, "x");
 	auto s = graph.import(st, "s");
 
-	jive::gamma_builder gb;
-	gb.begin_gamma(c);
-	auto evx = gb.add_entryvar(x);
-	auto evs = gb.add_entryvar(s);
+	auto gamma = jive::gamma_node::create(c, 2);
+	auto evx = gamma->add_entryvar(x);
+	auto evs = gamma->add_entryvar(s);
 
-	auto null = gb.subregion(0)->add_simple_node(nop, {})->output(0);
-	auto bin = gb.subregion(0)->add_simple_node(binop, {null, evx->argument(0)})->output(0);
-	auto state = gb.subregion(0)->add_simple_node(sop, {bin, evs->argument(0)})->output(0);
+	auto null = gamma->subregion(0)->add_simple_node(nop, {})->output(0);
+	auto bin = gamma->subregion(0)->add_simple_node(binop, {null, evx->argument(0)})->output(0);
+	auto state = gamma->subregion(0)->add_simple_node(sop, {bin, evs->argument(0)})->output(0);
 
-	auto xvs = gb.add_exitvar({state, evs->argument(1)});
-	auto gamma = gb.end_gamma();
+	auto xvs = gamma->add_exitvar({state, evs->argument(1)});
 
-	graph.export_port(gamma->node()->output(0), "x");
+	graph.export_port(gamma->output(0), "x");
 
 	jive::view(graph.root(), stdout);
 	jlm::push(graph);
@@ -66,25 +64,24 @@ test_theta()
 	auto x = graph.import(vt, "x");
 	auto s = graph.import(st, "s");
 
-	jive::theta_builder tb;
-	tb.begin_theta(graph.root());
+	auto theta = jive::theta_node::create(graph.root());
 
-	auto lv1 = tb.add_loopvar(c);
-	auto lv2 = tb.add_loopvar(x);
-	auto lv3 = tb.add_loopvar(x);
-	auto lv4 = tb.add_loopvar(s);
+	auto lv1 = theta->add_loopvar(c);
+	auto lv2 = theta->add_loopvar(x);
+	auto lv3 = theta->add_loopvar(x);
+	auto lv4 = theta->add_loopvar(s);
 
-	auto o1 = tb.subregion()->add_simple_node(nop, {})->output(0);
-	auto o2 = tb.subregion()->add_simple_node(bop, {o1, lv3->argument()})->output(0);
-	auto o3 = tb.subregion()->add_simple_node(bop, {lv2->argument(), o2})->output(0);
-	auto o4 = tb.subregion()->add_simple_node(sop, {lv3->argument(), lv4->argument()})->output(0);
+	auto o1 = theta->subregion()->add_simple_node(nop, {})->output(0);
+	auto o2 = theta->subregion()->add_simple_node(bop, {o1, lv3->argument()})->output(0);
+	auto o3 = theta->subregion()->add_simple_node(bop, {lv2->argument(), o2})->output(0);
+	auto o4 = theta->subregion()->add_simple_node(sop, {lv3->argument(), lv4->argument()})->output(0);
 
 	lv2->result()->divert_origin(o3);
 	lv4->result()->divert_origin(o4);
 
-	auto theta = tb.end_theta(lv1->argument());
+	theta->set_predicate(lv1->argument());
 
-	graph.export_port(theta->node()->output(0), "c");
+	graph.export_port(theta->output(0), "c");
 
 	jive::view(graph.root(), stdout);
 	jlm::push(graph);

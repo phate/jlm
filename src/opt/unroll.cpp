@@ -3,15 +3,15 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jive/arch/memorytype.h>
+#include <jive/arch/addresstype.h>
 #include <jive/types/bitstring/arithmetic.h>
 #include <jive/types/bitstring/comparison.h>
 #include <jive/types/bitstring/constant.h>
-#include <jive/vsdg/binary.h>
-#include <jive/vsdg/structural_node.h>
-#include <jive/vsdg/substitution.h>
-#include <jive/vsdg/theta.h>
-#include <jive/vsdg/traverser.h>
+#include <jive/rvsdg/binary.h>
+#include <jive/rvsdg/structural-node.h>
+#include <jive/rvsdg/substitution.h>
+#include <jive/rvsdg/theta.h>
+#include <jive/rvsdg/traverser.h>
 
 #include <jlm/common.hpp>
 #include <jlm/opt/unroll.hpp>
@@ -83,12 +83,12 @@ is_invariant(const jive::argument * argument)
 }
 
 static std::unique_ptr<struct unrollinfo>
-is_applicable(const jive::theta & theta)
+is_applicable(const jive::theta_node * theta)
 {
-	if (contains_theta(theta.subregion()))
+	if (contains_theta(theta->subregion()))
 		return nullptr;
 
-	auto matchnode = theta.predicate()->origin()->node();
+	auto matchnode = theta->predicate()->origin()->node();
 	if (!is_match_node(matchnode))
 		return nullptr;
 
@@ -119,7 +119,7 @@ is_applicable(const jive::theta & theta)
 }
 
 static void
-unroll(jive::theta & theta, size_t factor)
+unroll(jive::theta_node * theta, size_t factor)
 {
 	JLM_DEBUG_ASSERT(factor >= 2);
 
@@ -129,8 +129,8 @@ unroll(jive::theta & theta, size_t factor)
 	auto minorigin = ti->min->input()->origin();
 	auto maxorigin = ti->max->input()->origin();
 
-	auto one = jive::create_bitconstant(theta.node()->region(), ti->nbits, 1);
-	auto uf = jive::create_bitconstant(theta.node()->region(), ti->nbits, factor);
+	auto one = jive::create_bitconstant(theta->region(), ti->nbits, 1);
+	auto uf = jive::create_bitconstant(theta->region(), ti->nbits, factor);
 	auto r = jive::bits::create_sub(ti->nbits, maxorigin, minorigin);
 	if (ti->eqop) r = jive::bits::create_add(ti->nbits, r, one);
 	auto cmp = jive::bits::create_sge(ti->nbits, r, uf);
@@ -139,45 +139,43 @@ unroll(jive::theta & theta, size_t factor)
 	/* handle gamma with unrolled loop */
 	jive::substitution_map smap;
 	{
-		jive::gamma_builder gb;
-		jive::theta_builder tb;
-		gb.begin_gamma(pred);
-		tb.begin_theta(gb.subregion(1));
+		auto ngamma = jive::gamma_node::create(pred, 2);
+		auto ntheta = jive::theta_node::create(ngamma->subregion(1));
 
 		jive::substitution_map rmap[2];
-		for (const auto & olv : theta) {
-			auto ev = gb.add_entryvar(olv.input()->origin());
-			auto nlv = tb.add_loopvar(ev->argument(1));
+		for (const auto & olv : *theta) {
+			auto ev = ngamma->add_entryvar(olv.input()->origin());
+			auto nlv = ntheta->add_loopvar(ev->argument(1));
 			rmap[0].insert(olv.output(), ev->argument(0));
 			rmap[1].insert(olv.argument(), nlv->argument());
 		}
 
 		/* unroll loop body */
 		for (size_t n = 0; n < factor-1; n++) {
-			theta.subregion()->copy(tb.subregion(), rmap[1], false, false);
+			theta->subregion()->copy(ntheta->subregion(), rmap[1], false, false);
 			jive::substitution_map tmap;
-			for (const auto & olv : theta)
+			for (const auto & olv : *theta)
 				tmap.insert(olv.argument(), rmap[1].lookup(olv.result()->origin()));
 			rmap[1] = tmap;
 		}
-		theta.subregion()->copy(tb.subregion(), rmap[1], false, false);
+		theta->subregion()->copy(ntheta->subregion(), rmap[1], false, false);
 
-		for (auto olv = theta.begin(), nlv = tb.begin(); olv != theta.end(); olv++, nlv++) {
+		for (auto olv = theta->begin(), nlv = ntheta->begin(); olv != theta->end(); olv++, nlv++) {
 			auto origin = rmap[1].lookup(olv->result()->origin());
 			nlv->result()->divert_origin(origin);
 			rmap[1].insert(olv->output(), nlv->output());
 		}
 
-		auto ntheta = tb.end_theta(rmap[1].lookup(theta.predicate()->origin()));
+		ntheta->set_predicate(rmap[1].lookup(theta->predicate()->origin()));
 
-		for (const auto & olv : theta) {
+		for (const auto & olv : *theta) {
 			auto output = olv.output();
-			auto xv = gb.add_exitvar({rmap[0].lookup(output), rmap[1].lookup(output)});
+			auto xv = ngamma->add_exitvar({rmap[0].lookup(output), rmap[1].lookup(output)});
 			smap.insert(olv.output(), xv->output());
 		}
 
 		/* add new loop condition */
-		auto evr = gb.add_entryvar(r);
+		auto evr = ngamma->add_entryvar(r);
 		auto lvr = ntheta->add_loopvar(evr->argument(1));
 
 		auto uf = jive::create_bitconstant(ntheta->subregion(), ti->nbits, factor);
@@ -188,44 +186,40 @@ unroll(jive::theta & theta, size_t factor)
 		lvr->result()->divert_origin(sub);
 		ntheta->predicate()->divert_origin(pred);
 
-		auto xvr = gb.add_exitvar({evr->argument(0), lvr->output()});
+		auto xvr = ngamma->add_exitvar({evr->argument(0), lvr->output()});
 		r = xvr->output();
-
-		auto gamma = gb.end_gamma();
 	}
 
-	auto zero = jive::create_bitconstant(theta.node()->region(), ti->nbits, 0);
+	auto zero = jive::create_bitconstant(theta->region(), ti->nbits, 0);
 	cmp = jive::bits::create_sgt(ti->nbits, r, zero);
 	pred = jive::ctl::match(1, {{1, 1}}, 0, 2, cmp);
 
 	/* handle gamma for leftover iterations */
 	{
-		jive::gamma_builder gb;
-		jive::theta_builder tb;
-		gb.begin_gamma(pred);
-		tb.begin_theta(gb.subregion(1));
+		auto ngamma = jive::gamma_node::create(pred, 2);
+		auto ntheta = jive::theta_node::create(ngamma->subregion(1));
 
 		jive::substitution_map rmap[2];
-		for (const auto & olv : theta) {
-			auto ev = gb.add_entryvar(smap.lookup(olv.output()));
-			auto nlv = tb.add_loopvar(ev->argument(1));
+		for (const auto & olv : *theta) {
+			auto ev = ngamma->add_entryvar(smap.lookup(olv.output()));
+			auto nlv = ntheta->add_loopvar(ev->argument(1));
 			rmap[0].insert(olv.output(), ev->argument(0));
 			rmap[1].insert(olv.argument(), nlv->argument());
 		}
 
-		theta.subregion()->copy(tb.subregion(), rmap[1], false, false);
+		theta->subregion()->copy(ntheta->subregion(), rmap[1], false, false);
 
-		for (auto olv = theta.begin(), nlv = tb.begin(); olv != theta.end(); olv++, nlv++) {
+		for (auto olv = theta->begin(), nlv = ntheta->begin(); olv != theta->end(); olv++, nlv++) {
 			auto origin = rmap[1].lookup(olv->result()->origin());
 			nlv->result()->divert_origin(origin);
-			auto xv = gb.add_exitvar({rmap[0].lookup(olv->output()), nlv->output()});
+			auto xv = ngamma->add_exitvar({rmap[0].lookup(olv->output()), nlv->output()});
 			smap.insert(olv->output(), xv->output());
 		}
 
-		auto ntheta = tb.end_theta(rmap[1].lookup(theta.predicate()->origin()));
+		ntheta->set_predicate(rmap[1].lookup(theta->predicate()->origin()));
 
 		/* add new loop condition */
-		auto evr = gb.add_entryvar(r);
+		auto evr = ngamma->add_entryvar(r);
 		auto lvr = ntheta->add_loopvar(evr->argument(1));
 
 		auto zero = jive::create_bitconstant(ntheta->subregion(), ti->nbits, 0);
@@ -236,13 +230,11 @@ unroll(jive::theta & theta, size_t factor)
 
 		lvr->result()->divert_origin(sub);
 		ntheta->predicate()->divert_origin(pred);
-
-		auto gamma = gb.end_gamma();
 	}
 
-	for (const auto & olv : theta)
+	for (const auto & olv : *theta)
 		olv.output()->replace(smap.lookup(olv.output()));
-	remove(theta.node());
+	remove(theta);
 }
 
 static void
@@ -253,10 +245,8 @@ unroll(jive::region * region, size_t factor)
 			for (size_t n = 0; n < structnode->nsubregions(); n++)
 				unroll(structnode->subregion(n), factor);
 
-			if (is_theta_node(node)) {
-				jive::theta theta(structnode);
+			if (auto theta = dynamic_cast<jive::theta_node*>(node))
 				unroll(theta, factor);
-			}
 		}
 	}
 }

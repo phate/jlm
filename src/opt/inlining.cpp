@@ -8,10 +8,10 @@
 
 #include <jive/types/function/fctapply.h>
 #include <jive/types/function/fctlambda.h>
-#include <jive/vsdg/gamma.h>
-#include <jive/vsdg/substitution.h>
-#include <jive/vsdg/theta.h>
-#include <jive/vsdg/traverser.h>
+#include <jive/rvsdg/gamma.h>
+#include <jive/rvsdg/substitution.h>
+#include <jive/rvsdg/theta.h>
+#include <jive/rvsdg/traverser.h>
 
 #ifdef ILNTIME
 #include <chrono>
@@ -92,16 +92,13 @@ route_to_region(jive::output * output, jive::region * region)
 
 	output = route_to_region(output, region->node()->region());
 
-	if (is_gamma_op(region->node()->operation())) {
-		jive::gamma gamma(region->node());
-		gamma.add_entryvar(output);
+	if (auto gamma = dynamic_cast<jive::gamma_node*>(region->node())) {
+		gamma->add_entryvar(output);
 		output = region->argument(region->narguments()-1);
-	}	else if (is_theta_op(region->node()->operation())) {
-		jive::theta theta(region->node());
-		output = theta.add_loopvar(output)->argument();
-	} else if (jive::fct::is_lambda_op(region->node()->operation())) {
-		jive::lambda lambda(region->node());
-		output = lambda.add_dependency(output);
+	}	else if (auto theta = dynamic_cast<jive::theta_node*>(region->node())) {
+		output = theta->add_loopvar(output)->argument();
+	} else if (auto lambda = dynamic_cast<jive::lambda_node*>(region->node())) {
+		output = lambda->add_dependency(output);
 	} else {
 		JLM_DEBUG_ASSERT(0);
 	}

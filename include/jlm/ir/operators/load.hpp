@@ -6,9 +6,9 @@
 #ifndef JLM_IR_OPERATORS_LOAD_HPP
 #define JLM_IR_OPERATORS_LOAD_HPP
 
-#include <jive/vsdg/graph.h>
-#include <jive/vsdg/simple-normal-form.h>
-#include <jive/vsdg/simple_node.h>
+#include <jive/rvsdg/graph.h>
+#include <jive/rvsdg/simple-normal-form.h>
+#include <jive/rvsdg/simple-node.h>
 
 #include <jlm/ir/tac.hpp>
 #include <jlm/ir/types.hpp>
@@ -144,10 +144,10 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
-	inline const jive::value::type &
+	inline const jive::valuetype &
 	pointee_type() const noexcept
 	{
-		return *static_cast<const jive::value::type*>(&vport_.type());
+		return *static_cast<const jive::valuetype*>(&vport_.type());
 	}
 
 	inline size_t

@@ -5,7 +5,7 @@
 
 #include <jlm/ir/tac.hpp>
 
-#include <jive/vsdg/type.h>
+#include <jive/rvsdg/type.h>
 
 #include <sstream>
 

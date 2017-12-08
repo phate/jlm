@@ -4,11 +4,11 @@
  */
 
 #include <jive/types/function/fctlambda.h>
-#include <jive/vsdg/gamma.h>
-#include <jive/vsdg/graph.h>
-#include <jive/vsdg/phi.h>
-#include <jive/vsdg/theta.h>
-#include <jive/vsdg/traverser.h>
+#include <jive/rvsdg/gamma.h>
+#include <jive/rvsdg/graph.h>
+#include <jive/rvsdg/phi.h>
+#include <jive/rvsdg/theta.h>
+#include <jive/rvsdg/traverser.h>
 
 #include <jlm/common.hpp>
 #include <jlm/ir/basic_block.hpp>

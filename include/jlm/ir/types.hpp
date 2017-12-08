@@ -7,7 +7,7 @@
 #define JLM_IR_TYPES_HPP
 
 #include <jive/types/record/rcdtype.h>
-#include <jive/vsdg/type.h>
+#include <jive/rvsdg/type.h>
 
 #include <vector>
 
@@ -15,26 +15,26 @@ namespace jlm {
 
 /* pointer type */
 
-class ptrtype final : public jive::value::type {
+class ptrtype final : public jive::valuetype {
 public:
 	virtual
 	~ptrtype();
 
 	inline
-	ptrtype(const jive::value::type & ptype)
-	: jive::value::type()
+	ptrtype(const jive::valuetype & ptype)
+	: jive::valuetype()
 	, ptype_(ptype.copy())
 	{}
 
 	inline
 	ptrtype(const jlm::ptrtype & other)
-	: jive::value::type(other)
+	: jive::valuetype(other)
 	, ptype_(std::move(other.ptype_->copy()))
 	{}
 
 	inline
 	ptrtype(jlm::ptrtype && other)
-	: jive::value::type(other)
+	: jive::valuetype(other)
 	, ptype_(std::move(other.ptype_))
 	{}
 
@@ -48,46 +48,46 @@ public:
 	debug_string() const override;
 
 	virtual bool
-	operator==(const jive::base::type & other) const noexcept override;
+	operator==(const jive::type & other) const noexcept override;
 
-	virtual std::unique_ptr<jive::base::type>
+	virtual std::unique_ptr<jive::type>
 	copy() const override;
 
-	inline const jive::value::type &
+	inline const jive::valuetype &
 	pointee_type() const noexcept
 	{
-		return *static_cast<const jive::value::type*>(ptype_.get());
+		return *static_cast<const jive::valuetype*>(ptype_.get());
 	}
 
 private:
-	std::unique_ptr<jive::base::type> ptype_;
+	std::unique_ptr<jive::type> ptype_;
 };
 
 static inline bool
-is_ptrtype(const jive::base::type & type)
+is_ptrtype(const jive::type & type)
 {
 	return dynamic_cast<const jlm::ptrtype*>(&type) != nullptr;
 }
 
-static inline std::unique_ptr<jive::base::type>
-create_ptrtype(const jive::base::type & vtype)
+static inline std::unique_ptr<jive::type>
+create_ptrtype(const jive::type & vtype)
 {
-	auto vt = dynamic_cast<const jive::value::type*>(&vtype);
+	auto vt = dynamic_cast<const jive::valuetype*>(&vtype);
 	if (!vt) throw std::logic_error("Expected value type.");
 
-	return std::unique_ptr<jive::base::type>(new jlm::ptrtype(*vt));
+	return std::unique_ptr<jive::type>(new jlm::ptrtype(*vt));
 }
 
 /* array type */
 
-class arraytype final : public jive::value::type {
+class arraytype final : public jive::valuetype {
 public:
 	virtual
 	~arraytype();
 
 	inline
-	arraytype(const jive::value::type & type, size_t nelements)
-	: jive::value::type()
+	arraytype(const jive::valuetype & type, size_t nelements)
+	: jive::valuetype()
 	, nelements_(nelements)
 	, type_(type.copy())
 	{
@@ -97,14 +97,14 @@ public:
 
 	inline
 	arraytype(const jlm::arraytype & other)
-	: jive::value::type(other)
+	: jive::valuetype(other)
 	, nelements_(other.nelements_)
 	, type_(std::move(other.type_->copy()))
 	{}
 
 	inline
 	arraytype(jlm::arraytype && other)
-	: jive::value::type(other)
+	: jive::valuetype(other)
 	, nelements_(other.nelements_)
 	, type_(std::move(other.type_))
 	{}
@@ -119,9 +119,9 @@ public:
 	debug_string() const override;
 
 	virtual bool
-	operator==(const jive::base::type & other) const noexcept override;
+	operator==(const jive::type & other) const noexcept override;
 
-	virtual std::unique_ptr<jive::base::type>
+	virtual std::unique_ptr<jive::type>
 	copy() const override;
 
 	inline size_t
@@ -130,44 +130,44 @@ public:
 		return nelements_;
 	}
 
-	inline const jive::value::type &
+	inline const jive::valuetype &
 	element_type() const noexcept
 	{
-		return *static_cast<const jive::value::type*>(type_.get());
+		return *static_cast<const jive::valuetype*>(type_.get());
 	}
 
 private:
 	size_t nelements_;
-	std::unique_ptr<jive::base::type> type_;
+	std::unique_ptr<jive::type> type_;
 };
 
 static inline bool
-is_arraytype(const jive::base::type & type)
+is_arraytype(const jive::type & type)
 {
 	return dynamic_cast<const jlm::arraytype*>(&type) != nullptr;
 }
 
-static inline std::unique_ptr<jive::base::type>
-create_arraytype(const jive::base::type & type, size_t nelements)
+static inline std::unique_ptr<jive::type>
+create_arraytype(const jive::type & type, size_t nelements)
 {
-	auto vt = dynamic_cast<const jive::value::type*>(&type);
+	auto vt = dynamic_cast<const jive::valuetype*>(&type);
 	if (!vt) throw std::logic_error("Expected value type.");
 
-	return std::unique_ptr<jive::base::type>(new arraytype(*vt, nelements));
+	return std::unique_ptr<jive::type>(new arraytype(*vt, nelements));
 }
 
 /* floating point type */
 
 enum class fpsize {half, flt, dbl};
 
-class fptype final : public jive::value::type {
+class fptype final : public jive::valuetype {
 public:
 	virtual
 	~fptype();
 
 	inline
 	fptype(const fpsize & size)
-	: jive::value::type()
+	: jive::valuetype()
 	, size_(size)
 	{}
 
@@ -175,9 +175,9 @@ public:
 	debug_string() const override;
 
 	virtual bool
-	operator==(const jive::base::type & other) const noexcept override;
+	operator==(const jive::type & other) const noexcept override;
 
-	virtual std::unique_ptr<jive::base::type>
+	virtual std::unique_ptr<jive::type>
 	copy() const override;
 
 	inline const jlm::fpsize &
@@ -192,20 +192,20 @@ private:
 
 /* vararg type */
 
-class varargtype final : public jive::state::type {
+class varargtype final : public jive::statetype {
 public:
 	virtual
 	~varargtype();
 
 	inline constexpr
 	varargtype()
-	: jive::state::type()
+	: jive::statetype()
 	{}
 
 	virtual bool
-	operator==(const jive::base::type & other) const noexcept override;
+	operator==(const jive::type & other) const noexcept override;
 
-	virtual std::unique_ptr<jive::base::type>
+	virtual std::unique_ptr<jive::type>
 	copy() const override;
 
 	virtual std::string
@@ -213,20 +213,20 @@ public:
 };
 
 static inline bool
-is_varargtype(const jive::base::type & type)
+is_varargtype(const jive::type & type)
 {
 	return dynamic_cast<const jlm::varargtype*>(&type) != nullptr;
 }
 
-static inline std::unique_ptr<jive::base::type>
+static inline std::unique_ptr<jive::type>
 create_varargtype()
 {
-	return std::unique_ptr<jive::base::type>(new varargtype());
+	return std::unique_ptr<jive::type>(new varargtype());
 }
 
 /* struct type */
 
-class structtype final : public jive::value::type {
+class structtype final : public jive::valuetype {
 public:
 	virtual
 	~structtype();
@@ -235,7 +235,7 @@ public:
 	structtype(
 		bool packed,
 		const std::shared_ptr<const jive::rcd::declaration> & declaration)
-	: jive::value::type()
+	: jive::valuetype()
 	, packed_(packed)
 	, declaration_(declaration)
 	{}
@@ -245,7 +245,7 @@ public:
 		const std::string & name,
 		bool packed,
 		const std::shared_ptr<const jive::rcd::declaration> & declaration)
-	: jive::value::type()
+	: jive::valuetype()
 	, packed_(packed)
 	, name_(name)
 	, declaration_(declaration)
@@ -286,9 +286,9 @@ public:
 	}
 
 	virtual bool
-	operator==(const jive::base::type & other) const noexcept override;
+	operator==(const jive::type & other) const noexcept override;
 
-	virtual std::unique_ptr<jive::base::type>
+	virtual std::unique_ptr<jive::type>
 	copy() const override;
 
 	virtual std::string

@@ -15,7 +15,7 @@ namespace jlm {
 namespace jlm2llvm {
 
 static inline llvm::Type *
-convert_integer_type(const jive::base::type & type, context & ctx)
+convert_integer_type(const jive::type & type, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const jive::bits::type*>(&type));
 	auto & t = *static_cast<const jive::bits::type*>(&type);
@@ -24,7 +24,7 @@ convert_integer_type(const jive::base::type & type, context & ctx)
 }
 
 static inline llvm::Type *
-convert_function_type(const jive::base::type & type, context & ctx)
+convert_function_type(const jive::type & type, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const jive::fct::type*>(&type));
 	auto & t = *static_cast<const jive::fct::type*>(&type);
@@ -49,7 +49,7 @@ convert_function_type(const jive::base::type & type, context & ctx)
 }
 
 static inline llvm::Type *
-convert_pointer_type(const jive::base::type & type, context & ctx)
+convert_pointer_type(const jive::type & type, context & ctx)
 {
 	JLM_DEBUG_ASSERT(is_ptrtype(type));
 	auto & t = *static_cast<const jlm::ptrtype*>(&type);
@@ -58,7 +58,7 @@ convert_pointer_type(const jive::base::type & type, context & ctx)
 }
 
 static inline llvm::Type *
-convert_array_type(const jive::base::type & type, context & ctx)
+convert_array_type(const jive::type & type, context & ctx)
 {
 	JLM_DEBUG_ASSERT(is_arraytype(type));
 	auto & t = *static_cast<const jlm::arraytype*>(&type);
@@ -67,7 +67,7 @@ convert_array_type(const jive::base::type & type, context & ctx)
 }
 
 static inline llvm::Type *
-convert_ctl_type(const jive::base::type & type, context & ctx)
+convert_ctl_type(const jive::type & type, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const jive::ctl::type*>(&type));
 	auto & t = *static_cast<const jive::ctl::type*>(&type);
@@ -77,7 +77,7 @@ convert_ctl_type(const jive::base::type & type, context & ctx)
 }
 
 static inline llvm::Type *
-convert_fp_type(const jive::base::type & type, context & ctx)
+convert_fp_type(const jive::type & type, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const jlm::fptype*>(&type));
 	auto & t = *static_cast<const jlm::fptype*>(&type);
@@ -93,7 +93,7 @@ convert_fp_type(const jive::base::type & type, context & ctx)
 }
 
 static inline llvm::Type *
-convert_struct_type(const jive::base::type & type, context & ctx)
+convert_struct_type(const jive::type & type, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const structtype*>(&type));
 	auto & t = *static_cast<const structtype*>(&type);
@@ -114,11 +114,11 @@ convert_struct_type(const jive::base::type & type, context & ctx)
 }
 
 llvm::Type *
-convert_type(const jive::base::type & type, context & ctx)
+convert_type(const jive::type & type, context & ctx)
 {
 	static std::unordered_map<
 		std::type_index
-	, std::function<llvm::Type*(const jive::base::type&, context&)>
+	, std::function<llvm::Type*(const jive::type&, context&)>
 	> map({
 	  {std::type_index(typeid(jive::bits::type)), convert_integer_type}
 	, {std::type_index(typeid(jive::fct::type)), convert_function_type}

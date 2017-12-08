@@ -6,7 +6,7 @@
 #ifndef JLM_IR_VARIABLE_HPP
 #define JLM_IR_VARIABLE_HPP
 
-#include <jive/vsdg/type.h>
+#include <jive/rvsdg/type.h>
 
 #include <jlm/util/strfmt.hpp>
 
@@ -23,7 +23,7 @@ public:
 	~variable() noexcept;
 
 	inline
-	variable(const jive::base::type & type, const std::string & name, bool exported)
+	variable(const jive::type & type, const std::string & name, bool exported)
 		: exported_(exported)
 		, name_(name)
 		, type_(type.copy())
@@ -44,7 +44,7 @@ public:
 		return exported_;
 	}
 
-	inline const jive::base::type &
+	inline const jive::type &
 	type() const noexcept
 	{
 		return *type_;
@@ -53,7 +53,7 @@ public:
 private:
 	bool exported_;
 	std::string name_;
-	std::unique_ptr<jive::base::type> type_;
+	std::unique_ptr<jive::type> type_;
 };
 
 /* top level variable */
@@ -72,7 +72,7 @@ public:
 
 	inline
 	gblvariable(
-		const jive::base::type & type,
+		const jive::type & type,
 		const std::string & name,
 		const jlm::linkage & linkage)
 	: variable(type, name, linkage != linkage::internal_linkage)

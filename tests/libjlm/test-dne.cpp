@@ -9,11 +9,11 @@
 
 #include <jive/types/function/fctlambda.h>
 #include <jive/view.h>
-#include <jive/vsdg/control.h>
-#include <jive/vsdg/graph.h>
-#include <jive/vsdg/phi.h>
-#include <jive/vsdg/simple_node.h>
-#include <jive/vsdg/theta.h>
+#include <jive/rvsdg/control.h>
+#include <jive/rvsdg/graph.h>
+#include <jive/rvsdg/phi.h>
+#include <jive/rvsdg/simple-node.h>
+#include <jive/rvsdg/theta.h>
 
 #include <jlm/opt/dne.hpp>
 
@@ -44,31 +44,28 @@ test_gamma()
 	auto x = graph.import(vt, "x");
 	auto y = graph.import(vt, "y");
 
-	jive::gamma_builder gb;
-	gb.begin_gamma(c);
-	auto ev1 = gb.add_entryvar(x);
-	auto ev2 = gb.add_entryvar(y);
-	auto ev3 = gb.add_entryvar(x);
+	auto gamma = jive::gamma_node::create(c, 2);
+	auto ev1 = gamma->add_entryvar(x);
+	auto ev2 = gamma->add_entryvar(y);
+	auto ev3 = gamma->add_entryvar(x);
 
-	auto t = gb.subregion(1)->add_simple_node(op, {ev2->argument(1)})->output(0);
+	auto t = gamma->subregion(1)->add_simple_node(op, {ev2->argument(1)})->output(0);
 
-	auto xv1 = gb.add_exitvar({ev1->argument(0), ev1->argument(1)});
-	auto xv2 = gb.add_exitvar({ev2->argument(0), t});
-	auto xv3 = gb.add_exitvar({ev3->argument(0), ev1->argument(1)});
+	auto xv1 = gamma->add_exitvar({ev1->argument(0), ev1->argument(1)});
+	auto xv2 = gamma->add_exitvar({ev2->argument(0), t});
+	auto xv3 = gamma->add_exitvar({ev3->argument(0), ev1->argument(1)});
 
-	auto gamma = gb.end_gamma();
-
-	graph.export_port(gamma->node()->output(0), "z");
-	graph.export_port(gamma->node()->output(2), "w");
+	graph.export_port(gamma->output(0), "z");
+	graph.export_port(gamma->output(2), "w");
 
 //	jive::view(graph.root(), stdout);
 	jlm::dne(graph);
 //	jive::view(graph.root(), stdout);
 
-	assert(gamma->node()->noutputs() == 2);
-	assert(gamma->node()->subregion(1)->nodes.size() == 0);
-	assert(gamma->node()->subregion(1)->narguments() == 2);
-	assert(gamma->node()->ninputs() == 3);
+	assert(gamma->noutputs() == 2);
+	assert(gamma->subregion(1)->nodes.size() == 0);
+	assert(gamma->subregion(1)->narguments() == 2);
+	assert(gamma->ninputs() == 3);
 	assert(graph.root()->narguments() == 2);
 }
 
@@ -83,18 +80,15 @@ test_gamma2()
 	auto c = graph.import(ct, "c");
 	auto x = graph.import(vt, "x");
 
-	jive::gamma_builder gb;
-	gb.begin_gamma(c);
-	gb.add_entryvar(x);
+	auto gamma = jive::gamma_node::create(c, 2);
+	gamma->add_entryvar(x);
 
-	auto n1 = gb.subregion(0)->add_simple_node(nop, {})->output(0);
-	auto n2 = gb.subregion(1)->add_simple_node(nop, {})->output(0);
+	auto n1 = gamma->subregion(0)->add_simple_node(nop, {})->output(0);
+	auto n2 = gamma->subregion(1)->add_simple_node(nop, {})->output(0);
 
-	auto xv = gb.add_exitvar({n1, n2});
+	auto xv = gamma->add_exitvar({n1, n2});
 
-	auto gamma = gb.end_gamma();
-
-	graph.export_port(gamma->node()->output(0), "x");
+	graph.export_port(gamma->output(0), "x");
 
 //	jive::view(graph, stdout);
 	jlm::dne(graph);
@@ -116,32 +110,31 @@ test_theta()
 	auto y = graph.import(vt, "y");
 	auto z = graph.import(vt, "z");
 
-	jive::theta_builder tb;
-	tb.begin_theta(graph.root());
+	auto theta = jive::theta_node::create(graph.root());
 
-	auto lv1 = tb.add_loopvar(x);
-	auto lv2 = tb.add_loopvar(y);
-	auto lv3 = tb.add_loopvar(z);
-	auto lv4 = tb.add_loopvar(y);
+	auto lv1 = theta->add_loopvar(x);
+	auto lv2 = theta->add_loopvar(y);
+	auto lv3 = theta->add_loopvar(z);
+	auto lv4 = theta->add_loopvar(y);
 
 	lv1->result()->divert_origin(lv2->argument());
 	lv2->result()->divert_origin(lv1->argument());
 
-	auto t = tb.subregion()->add_simple_node(op, {lv3->argument()})->output(0);
+	auto t = theta->subregion()->add_simple_node(op, {lv3->argument()})->output(0);
 	lv3->result()->divert_origin(t);
 	lv4->result()->divert_origin(lv2->argument());
 
-	auto c = tb.subregion()->add_simple_node(cop, {})->output(0);
-	auto theta = tb.end_theta(c);
+	auto c = theta->subregion()->add_simple_node(cop, {})->output(0);
+	theta->set_predicate(c);
 
-	graph.export_port(theta->node()->output(0), "a");
-	graph.export_port(theta->node()->output(3), "b");
+	graph.export_port(theta->output(0), "a");
+	graph.export_port(theta->output(3), "b");
 
 //	jive::view(graph.root(), stdout);
 	jlm::dne(graph);
 //	jive::view(graph.root(), stdout);
 
-	assert(theta->node()->noutputs() == 3);
+	assert(theta->noutputs() == 3);
 	assert(theta->subregion()->nodes.size() == 1);
 	assert(graph.root()->narguments() == 2);
 }
@@ -157,36 +150,34 @@ test_nested_theta()
 	auto x = graph.import(vt, "x");
 	auto y = graph.import(vt, "y");
 
-	jive::theta_builder tbo;
-	tbo.begin_theta(graph.root());
+	auto otheta = jive::theta_node::create(graph.root());
 
-	auto lvo1 = tbo.add_loopvar(c);
-	auto lvo2 = tbo.add_loopvar(x);
-	auto lvo3 = tbo.add_loopvar(y);
+	auto lvo1 = otheta->add_loopvar(c);
+	auto lvo2 = otheta->add_loopvar(x);
+	auto lvo3 = otheta->add_loopvar(y);
 
-	jive::theta_builder tbi;
-	tbi.begin_theta(tbo.subregion());
+	auto itheta = jive::theta_node::create(otheta->subregion());
 
-	auto lvi1 = tbi.add_loopvar(lvo1->argument());
-	auto lvi2 = tbi.add_loopvar(lvo2->argument());
-	auto lvi3 = tbi.add_loopvar(lvo3->argument());
+	auto lvi1 = itheta->add_loopvar(lvo1->argument());
+	auto lvi2 = itheta->add_loopvar(lvo2->argument());
+	auto lvi3 = itheta->add_loopvar(lvo3->argument());
 
 	lvi2->result()->divert_origin(lvi3->argument());
 
-	auto itheta = tbi.end_theta(lvi1->argument());
+	itheta->set_predicate(lvi1->argument());
 
-	lvo2->result()->divert_origin(itheta->node()->output(1));
-	lvo3->result()->divert_origin(itheta->node()->output(1));
+	lvo2->result()->divert_origin(itheta->output(1));
+	lvo3->result()->divert_origin(itheta->output(1));
 
-	auto otheta = tbo.end_theta(lvo1->argument());
+	otheta->set_predicate(lvo1->argument());
 
-	graph.export_port(otheta->node()->output(2), "y");
+	graph.export_port(otheta->output(2), "y");
 
 //	jive::view(graph, stdout);
 	jlm::dne(graph);
 //	jive::view(graph, stdout);
 
-	assert(otheta->node()->noutputs() == 3);
+	assert(otheta->noutputs() == 3);
 }
 
 static inline void
@@ -203,20 +194,19 @@ test_evolving_theta()
 	auto x3 = graph.import(vt, "x3");
 	auto x4 = graph.import(vt, "x4");
 
-	jive::theta_builder tb;
-	tb.begin_theta(graph.root());
+	auto theta = jive::theta_node::create(graph.root());
 
-	auto lv0 = tb.add_loopvar(c);
-	auto lv1 = tb.add_loopvar(x1);
-	auto lv2 = tb.add_loopvar(x2);
-	auto lv3 = tb.add_loopvar(x3);
-	auto lv4 = tb.add_loopvar(x4);
+	auto lv0 = theta->add_loopvar(c);
+	auto lv1 = theta->add_loopvar(x1);
+	auto lv2 = theta->add_loopvar(x2);
+	auto lv3 = theta->add_loopvar(x3);
+	auto lv4 = theta->add_loopvar(x4);
 
 	lv1->result()->divert_origin(lv2->argument());
 	lv2->result()->divert_origin(lv3->argument());
 	lv3->result()->divert_origin(lv4->argument());
 
-	auto theta = tb.end_theta(lv0->argument());
+	theta->set_predicate(lv0->argument());
 
 	graph.export_port(lv1->output(), "x1");
 
@@ -224,7 +214,7 @@ test_evolving_theta()
 	jlm::dne(graph);
 //	jive::view(graph, stdout);
 
-	assert(theta->node()->noutputs() == 5);
+	assert(theta->noutputs() == 5);
 }
 
 static inline void
@@ -244,7 +234,7 @@ test_lambda()
 
 	auto lambda = lb.end_lambda({arguments[0]});
 
-	graph.export_port(lambda->node()->output(0), "f");
+	graph.export_port(lambda->output(0), "f");
 
 //	jive::view(graph.root(), stdout);
 	jlm::dne(graph);
@@ -283,8 +273,8 @@ test_phi()
 	lb.add_dependency(dy);
 	auto f2 = lb.end_lambda({arguments[0]});
 
-	rv1->set_value(f1->node()->output(0));
-	rv2->set_value(f2->node()->output(0));
+	rv1->set_value(f1->output(0));
+	rv2->set_value(f2->output(0));
 	auto phi = pb.end_phi();
 
 	graph.export_port(phi->output(0), "f1");

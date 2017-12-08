@@ -4,10 +4,10 @@
  */
 
 #include <jive/view.h>
-#include <jive/vsdg/binary.h>
-#include <jive/vsdg/gamma.h>
-#include <jive/vsdg/statemux.h>
-#include <jive/vsdg/unary.h>
+#include <jive/rvsdg/binary.h>
+#include <jive/rvsdg/gamma.h>
+#include <jive/rvsdg/statemux.h>
+#include <jive/rvsdg/unary.h>
 
 #include <jlm/ir/module.hpp>
 #include <jlm/ir/operators.hpp>

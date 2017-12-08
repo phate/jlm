@@ -23,16 +23,16 @@ ptrtype::debug_string() const
 }
 
 bool
-ptrtype::operator==(const jive::base::type & other) const noexcept
+ptrtype::operator==(const jive::type & other) const noexcept
 {
 	auto type = dynamic_cast<const jlm::ptrtype*>(&other);
 	return type && type->pointee_type() == pointee_type();
 }
 
-std::unique_ptr<jive::base::type>
+std::unique_ptr<jive::type>
 ptrtype::copy() const
 {
-	return std::unique_ptr<jive::base::type>(new ptrtype(*this));
+	return std::unique_ptr<jive::type>(new ptrtype(*this));
 }
 
 /* array type */
@@ -47,16 +47,16 @@ arraytype::debug_string() const
 }
 
 bool
-arraytype::operator==(const jive::base::type & other) const noexcept
+arraytype::operator==(const jive::type & other) const noexcept
 {
 	auto type = dynamic_cast<const jlm::arraytype*>(&other);
 	return type && type->element_type() == element_type() && type->nelements() == nelements();
 }
 
-std::unique_ptr<jive::base::type>
+std::unique_ptr<jive::type>
 arraytype::copy() const
 {
-	return std::unique_ptr<jive::base::type>(new arraytype(*this));
+	return std::unique_ptr<jive::type>(new arraytype(*this));
 }
 
 /* floating point type */
@@ -78,16 +78,16 @@ fptype::debug_string() const
 }
 
 bool
-fptype::operator==(const jive::base::type & other) const noexcept
+fptype::operator==(const jive::type & other) const noexcept
 {
 	auto type = dynamic_cast<const jlm::fptype*>(&other);
 	return type && type->size() == size();
 }
 
-std::unique_ptr<jive::base::type>
+std::unique_ptr<jive::type>
 fptype::copy() const
 {
-	return std::unique_ptr<jive::base::type>(new fptype(*this));
+	return std::unique_ptr<jive::type>(new fptype(*this));
 }
 
 /* vararg type */
@@ -96,7 +96,7 @@ varargtype::~varargtype()
 {}
 
 bool
-varargtype::operator==(const jive::base::type & other) const noexcept
+varargtype::operator==(const jive::type & other) const noexcept
 {
 	return dynamic_cast<const jlm::varargtype*>(&other) != nullptr;
 }
@@ -107,10 +107,10 @@ varargtype::debug_string() const
 	return "vararg";
 }
 
-std::unique_ptr<jive::base::type>
+std::unique_ptr<jive::type>
 varargtype::copy() const
 {
-	return std::unique_ptr<jive::base::type>(new jlm::varargtype(*this));
+	return std::unique_ptr<jive::type>(new jlm::varargtype(*this));
 }
 
 /* struct type */
@@ -119,7 +119,7 @@ structtype::~structtype()
 {}
 
 bool
-structtype::operator==(const jive::base::type & other) const noexcept
+structtype::operator==(const jive::type & other) const noexcept
 {
 	auto type = dynamic_cast<const structtype*>(&other);
 	return type
@@ -134,10 +134,10 @@ structtype::debug_string() const
 	return "struct";
 }
 
-std::unique_ptr<jive::base::type>
+std::unique_ptr<jive::type>
 structtype::copy() const
 {
-	return std::unique_ptr<jive::base::type>(new structtype(*this));
+	return std::unique_ptr<jive::type>(new structtype(*this));
 }
 
 }

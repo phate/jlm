@@ -19,15 +19,15 @@ valuetype::debug_string() const
 }
 
 bool
-valuetype::operator==(const jive::base::type & other) const noexcept
+valuetype::operator==(const jive::type & other) const noexcept
 {
 	return dynamic_cast<const valuetype*>(&other) != nullptr;
 }
 
-std::unique_ptr<jive::base::type>
+std::unique_ptr<jive::type>
 valuetype::copy() const
 {
-	return std::unique_ptr<jive::base::type>(new valuetype(*this));
+	return std::unique_ptr<jive::type>(new valuetype(*this));
 }
 
 /* statetype */
@@ -42,15 +42,15 @@ statetype::debug_string() const
 }
 
 bool
-statetype::operator==(const jive::base::type & other) const noexcept
+statetype::operator==(const jive::type & other) const noexcept
 {
 	return dynamic_cast<const statetype*>(&other) != nullptr;
 }
 
-std::unique_ptr<jive::base::type>
+std::unique_ptr<jive::type>
 statetype::copy() const
 {
-	return std::unique_ptr<jive::base::type>(new statetype(*this));
+	return std::unique_ptr<jive::type>(new statetype(*this));
 }
 
 }

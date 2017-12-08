@@ -6,9 +6,9 @@
 #include <jlm/common.hpp>
 #include <jlm/opt/invariance.hpp>
 
-#include <jive/vsdg/gamma.h>
-#include <jive/vsdg/theta.h>
-#include <jive/vsdg/traverser.h>
+#include <jive/rvsdg/gamma.h>
+#include <jive/rvsdg/theta.h>
+#include <jive/rvsdg/traverser.h>
 
 #ifdef INVTIME
 #include <chrono>
@@ -23,10 +23,10 @@ invariance(jive::region * region);
 static void
 gamma_invariance(jive::structural_node * node)
 {
-	JLM_DEBUG_ASSERT(is_gamma_op(node->operation()));
+	JLM_DEBUG_ASSERT(is_gamma_node(node));
+	auto gamma = static_cast<jive::gamma_node*>(node);
 
-	jive::gamma gamma(node);
-	for (auto it = gamma.begin_exitvar(); it != gamma.end_exitvar(); it++) {
+	for (auto it = gamma->begin_exitvar(); it != gamma->end_exitvar(); it++) {
 		auto argument = dynamic_cast<jive::argument*>(it->result(0)->origin());
 		if (argument == nullptr)
 			continue;
@@ -47,15 +47,15 @@ gamma_invariance(jive::structural_node * node)
 static void
 theta_invariance(jive::structural_node * node)
 {
-	JLM_DEBUG_ASSERT(is_theta_op(node->operation()));
+	JLM_DEBUG_ASSERT(is_theta_node(node));
+	auto theta = static_cast<jive::theta_node*>(node);
 
 	/* FIXME: In order to also redirect state variables,
 		we need to know whether a loop terminates.*/
 
-	jive::theta theta(node);
-	for (auto & lv : theta) {
+	for (auto & lv : *theta) {
 		if (lv.result()->origin() == lv.argument()
-		&& dynamic_cast<const jive::value::type*>(&lv.argument()->type()))
+		&& dynamic_cast<const jive::valuetype*>(&lv.argument()->type()))
 			lv.output()->replace(lv.input()->origin());
 	}
 }

@@ -10,8 +10,8 @@
 #include <jlm/ir/module.hpp>
 #include <jlm/ir/operators/operators.hpp>
 
-#include <jive/vsdg/control.h>
-#include <jive/vsdg/controltype.h>
+#include <jive/rvsdg/control.h>
+#include <jive/rvsdg/controltype.h>
 
 #include <algorithm>
 #include <cmath>

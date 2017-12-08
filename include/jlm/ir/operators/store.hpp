@@ -6,9 +6,9 @@
 #ifndef JLM_IR_OPERATORS_STORE_HPP
 #define JLM_IR_OPERATORS_STORE_HPP
 
-#include <jive/arch/memorytype.h>
-#include <jive/vsdg/simple-normal-form.h>
-#include <jive/vsdg/simple_node.h>
+#include <jive/arch/addresstype.h>
+#include <jive/rvsdg/simple-normal-form.h>
+#include <jive/rvsdg/simple-node.h>
 
 #include <jlm/ir/tac.hpp>
 #include <jlm/ir/types.hpp>
@@ -109,10 +109,10 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
-	inline const jive::value::type &
+	inline const jive::valuetype &
 	value_type() const noexcept
 	{
-		return *static_cast<const jive::value::type*>(&vport_.type());
+		return *static_cast<const jive::valuetype*>(&vport_.type());
 	}
 
 	inline size_t

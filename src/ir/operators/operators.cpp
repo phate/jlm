@@ -7,7 +7,6 @@
 #include <jlm/ir/operators/operators.hpp>
 
 #include <jive/arch/addresstype.h>
-#include <jive/arch/memorytype.h>
 #include <jive/types/bitstring/constant.h>
 #include <jive/types/float/flttype.h>
 

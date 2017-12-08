@@ -3,11 +3,11 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jive/arch/memorytype.h>
+#include <jive/arch/addresstype.h>
 #include <jive/types/bitstring.h>
 #include <jive/types/function.h>
-#include <jive/vsdg/control.h>
-#include <jive/vsdg/statemux.h>
+#include <jive/rvsdg/control.h>
+#include <jive/rvsdg/statemux.h>
 
 #include <jlm/ir/cfg_node.hpp>
 #include <jlm/ir/expression.hpp>
@@ -160,7 +160,7 @@ convert_apply(
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const jive::fct::apply_op*>(&op));
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::mem::type*>(&args[args.size()-1]->type()));
+	JLM_DEBUG_ASSERT(dynamic_cast<const jive::memtype*>(&args[args.size()-1]->type()));
 
 	auto function = ctx.value(args[0]);
 	std::vector<llvm::Value*> operands;
@@ -238,7 +238,7 @@ convert_phi(
 	JLM_DEBUG_ASSERT(is_phi_op(op));
 	auto & pop = *static_cast<const jlm::phi_op*>(&op);
 
-	if (dynamic_cast<const jive::mem::type*>(&pop.type()))
+	if (dynamic_cast<const jive::memtype*>(&pop.type()))
 		return nullptr;
 
 	auto t = convert_type(pop.type(), ctx);

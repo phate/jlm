@@ -7,16 +7,16 @@
 #define JLM_OPT_PULL_HPP
 
 namespace jive {
-	class gamma;
+	class gamma_node;
 }
 
 namespace jlm {
 
 void
-pullin_top(jive::gamma & gamma);
+pullin_top(jive::gamma_node * gamma);
 
 void
-pullin_bottom(jive::gamma & gamma);
+pullin_bottom(jive::gamma_node * gamma);
 
 }
 

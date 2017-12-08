@@ -9,7 +9,7 @@
 #include <jlm/common.hpp>
 #include <jlm/ir/variable.hpp>
 
-#include <jive/vsdg/operation.h>
+#include <jive/rvsdg/operation.h>
 
 #include <memory>
 #include <vector>
@@ -34,7 +34,7 @@ public:
 
 	inline
 	tacvariable(
-		const jive::base::type & type,
+		const jive::type & type,
 		const std::string & name)
 	: variable (type, name, false)
 	, tac_(nullptr)
@@ -69,7 +69,7 @@ is_tacvariable(const jlm::variable * v)
 
 static inline std::unique_ptr<variable>
 create_tacvariable(
-	const jive::base::type & type,
+	const jive::type & type,
 	const std::string & name)
 {
 	return std::unique_ptr<variable>(new tacvariable(type, name));

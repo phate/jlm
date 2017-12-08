@@ -6,47 +6,47 @@
 #ifndef TEST_TEST_TYPES_HPP
 #define TEST_TEST_TYPES_HPP
 
-#include <jive/vsdg/type.h>
+#include <jive/rvsdg/type.h>
 
 namespace jlm {
 
-class valuetype final : public jive::value::type {
+class valuetype final : public jive::valuetype {
 public:
 	virtual
 	~valuetype() noexcept;
 
 	inline constexpr
 	valuetype() noexcept
-	: jive::value::type()
+	: jive::valuetype()
 	{}
 
 	virtual std::string
 	debug_string() const override;
 
 	virtual bool
-	operator==(const jive::base::type & other) const noexcept override;
+	operator==(const jive::type & other) const noexcept override;
 
-	virtual std::unique_ptr<jive::base::type>
+	virtual std::unique_ptr<jive::type>
 	copy() const override;
 };
 
-class statetype final : public jive::state::type {
+class statetype final : public jive::statetype {
 public:
 	virtual
 	~statetype() noexcept;
 
 	inline constexpr
 	statetype() noexcept
-	: jive::state::type()
+	: jive::statetype()
 	{}
 
 	virtual std::string
 	debug_string() const override;
 
 	virtual bool
-	operator==(const jive::base::type & other) const noexcept override;
+	operator==(const jive::type & other) const noexcept override;
 
-	virtual std::unique_ptr<jive::base::type>
+	virtual std::unique_ptr<jive::type>
 	copy() const override;
 };
 

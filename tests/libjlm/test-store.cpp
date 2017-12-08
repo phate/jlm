@@ -6,11 +6,11 @@
 #include <test-registry.hpp>
 #include <test-types.hpp>
 
-#include <jive/arch/memorytype.h>
+#include <jive/arch/addresstype.h>
 #include <jive/types/bitstring/type.h>
 #include <jive/view.h>
-#include <jive/vsdg/graph.h>
-#include <jive/vsdg/statemux.h>
+#include <jive/rvsdg/graph.h>
+#include <jive/rvsdg/statemux.h>
 
 #include <jlm/ir/operators/alloca.hpp>
 #include <jlm/ir/operators/store.hpp>
@@ -21,7 +21,7 @@ test_store_mux_reduction()
 {
 	jlm::valuetype vt;
 	jlm::ptrtype pt(vt);
-	jive::mem::type mt;
+	jive::memtype mt;
 
 	jive::graph graph;
 	auto nf = graph.node_normal_form(typeid(jlm::store_op));
@@ -62,7 +62,7 @@ test_multiple_origin_reduction()
 {
 	jlm::valuetype vt;
 	jlm::ptrtype pt(vt);
-	jive::mem::type mt;
+	jive::memtype mt;
 
 	jive::graph graph;
 	auto nf = graph.node_normal_form(typeid(jlm::store_op));
@@ -95,7 +95,7 @@ static inline void
 test_store_alloca_reduction()
 {
 	jlm::valuetype vt;
-	jive::mem::type mt;
+	jive::memtype mt;
 	jive::bits::type bt(32);
 
 	jive::graph graph;

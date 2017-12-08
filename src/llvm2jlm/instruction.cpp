@@ -18,13 +18,13 @@
 #include <jive/arch/address.h>
 #include <jive/arch/address-transform.h>
 #include <jive/arch/load.h>
-#include <jive/arch/memorytype.h>
+#include <jive/arch/addresstype.h>
 #include <jive/arch/store.h>
 #include <jive/types/bitstring.h>
 #include <jive/types/float.h>
 #include <jive/types/record.h>
-#include <jive/vsdg/control.h>
-#include <jive/vsdg/controltype.h>
+#include <jive/rvsdg/control.h>
+#include <jive/rvsdg/controltype.h>
 
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/Instructions.h>

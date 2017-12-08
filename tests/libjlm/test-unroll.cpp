@@ -13,9 +13,9 @@
 #include <jive/types/bitstring/comparison.h>
 #include <jive/types/function/fctlambda.h>
 #include <jive/view.h>
-#include <jive/vsdg/graph.h>
-#include <jive/vsdg/simple_node.h>
-#include <jive/vsdg/theta.h>
+#include <jive/rvsdg/graph.h>
+#include <jive/rvsdg/simple-node.h>
+#include <jive/rvsdg/theta.h>
 
 #include <jlm/opt/dne.hpp>
 #include <jlm/opt/unroll.hpp>
@@ -30,19 +30,18 @@ test1()
 	auto x = graph.import(bt, "x");
 	auto y = graph.import(bt, "y");
 
-	jive::theta_builder tb;
-	tb.begin_theta(graph.root());
-	auto lv1 = tb.add_loopvar(x);
-	auto lv2 = tb.add_loopvar(y);
+	auto theta = jive::theta_node::create(graph.root());
+	auto lv1 = theta->add_loopvar(x);
+	auto lv2 = theta->add_loopvar(y);
 
-	auto one = jive::create_bitconstant(tb.subregion(), 32, 1);
+	auto one = jive::create_bitconstant(theta->subregion(), 32, 1);
 	auto add = jive::bits::create_add(32, lv1->argument(), one);
 	auto cmp = jive::bits::create_ult(32, add, lv2->argument());
 	auto match = jive::ctl::match(1, {{1, 0}}, 1, 2, cmp);
 
 	lv1->result()->divert_origin(add);
 
-	tb.end_theta(match);
+	theta->set_predicate(match);
 
 	auto ex1 = graph.export_port(lv1->output(), "x");
 

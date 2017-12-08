@@ -30,7 +30,7 @@ namespace jlm {
 
 class context;
 
-std::unique_ptr<jive::value::type>
+std::unique_ptr<jive::valuetype>
 convert_type(const llvm::Type * type, context & ctx);
 
 static inline std::unique_ptr<jlm::arraytype>

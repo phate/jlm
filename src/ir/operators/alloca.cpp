@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jive/vsdg/graph.h>
-#include <jive/vsdg/statemux.h>
+#include <jive/rvsdg/graph.h>
+#include <jive/rvsdg/statemux.h>
 
 #include <jlm/ir/operators/alloca.hpp>
 
@@ -35,7 +35,7 @@ alloca_op::argument(size_t index) const noexcept
 	if (index == 0)
 		return bport_;
 
-	static const jive::port p(jive::mem::type::instance());
+	static const jive::port p(jive::memtype::instance());
 	return p;
 }
 
@@ -52,7 +52,7 @@ alloca_op::result(size_t index) const noexcept
 	if (index == 0)
 		return aport_;
 
-	static const jive::port p(jive::mem::type::instance());
+	static const jive::port p(jive::memtype::instance());
 	return p;
 }
 
