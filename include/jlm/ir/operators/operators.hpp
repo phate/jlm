@@ -1505,6 +1505,12 @@ is_trunc_op(const jive::operation & op)
 	return dynamic_cast<const trunc_op*>(&op) != nullptr;
 }
 
+static inline bool
+is_trunc_node(const jive::node * node) noexcept
+{
+	return jive::is_opnode<trunc_op>(node);
+}
+
 static inline std::unique_ptr<jlm::tac>
 create_trunc_tac(const variable * operand, jlm::variable * result)
 {
