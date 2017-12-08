@@ -8,6 +8,7 @@
 #include <jive/types/bitstring/arithmetic.h>
 #include <jive/view.h>
 
+#include <jlm/ir/operators/operators.hpp>
 #include <jlm/ir/operators/sext.hpp>
 
 static inline void
@@ -54,6 +55,33 @@ test_bitbinary_reduction()
 
 	auto ex = graph.export_port(w, "x");
 
+//	jive::view(graph, stdout);
+
+	nf->set_mutable(true);
+	graph.normalize();
+	graph.prune();
+
+//	jive::view(graph, stdout);
+
+	assert(jive::bits::is_add_node(ex->origin()->node()));
+}
+
+static inline void
+test_inverse_reduction()
+{
+	jive::bits::type bt64(64);
+
+	jive::graph graph;
+	auto nf = jlm::sext_op::normal_form(&graph);
+	nf->set_mutable(false);
+
+	auto x = graph.import(bt64, "x");
+
+	auto y = jlm::create_trunc(32, x);
+	auto z = jlm::create_sext(64, y);
+
+	auto ex = graph.export_port(z, "x");
+
 	jive::view(graph, stdout);
 
 	nf->set_mutable(true);
@@ -62,7 +90,7 @@ test_bitbinary_reduction()
 
 	jive::view(graph, stdout);
 
-	assert(jive::bits::is_add_node(ex->origin()->node()));
+	assert(ex->origin() == x);
 }
 
 static int
@@ -70,6 +98,7 @@ test()
 {
 	test_bitunary_reduction();
 	test_bitbinary_reduction();
+	test_inverse_reduction();
 
 	return 0;
 }

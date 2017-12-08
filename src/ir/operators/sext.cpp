@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/ir/operators/operators.hpp>
 #include <jlm/ir/operators/sext.hpp>
 
 namespace jlm {
@@ -36,6 +37,16 @@ is_bitbinary_reducible(const jive::output * operand)
 	return jive::is_opnode<jive::bits::binary_op>(operand->node());
 }
 
+static bool
+is_inverse_reducible(const sext_op & op, const jive::output * operand)
+{
+	if (!operand->node())
+		return false;
+
+	auto top = dynamic_cast<const jlm::trunc_op*>(&operand->node()->operation());
+	return top && top->nsrcbits() == op.ndstbits();
+}
+
 static jive::output *
 perform_bitunary_reduction(const sext_op & op, jive::output * operand)
 {
@@ -59,6 +70,13 @@ perform_bitbinary_reduction(const sext_op & op, jive::output * operand)
 	auto op2 = create_sext(op.ndstbits(), binary->input(1)->origin());
 
 	return create_normalized(operand->region(), *bop->create(op.ndstbits()), {op1, op2})[0];
+}
+
+static jive::output *
+perform_inverse_reduction(const sext_op & op, jive::output * operand)
+{
+	JLM_DEBUG_ASSERT(is_inverse_reducible(op, operand));
+	return operand->node()->input(0)->origin();
 }
 
 sext_op::~sext_op()
@@ -121,6 +139,9 @@ sext_op::can_reduce_operand(const jive::output * operand) const noexcept
 	if (is_bitbinary_reducible(operand))
 		return sext_reduction_bitbinary;
 
+	if (is_inverse_reducible(*this, operand))
+		return jive_unop_reduction_inverse;
+
 	return jive_unop_reduction_none;
 }
 
@@ -139,6 +160,9 @@ sext_op::reduce_operand(
 
 	if (path == sext_reduction_bitbinary)
 		return perform_bitbinary_reduction(*this, operand);
+
+	if (path == jive_unop_reduction_inverse)
+		return perform_inverse_reduction(*this, operand);
 
 	return nullptr;
 }
