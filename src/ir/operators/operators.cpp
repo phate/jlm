@@ -1169,7 +1169,7 @@ trunc_op::result(size_t index) const noexcept
 std::string
 trunc_op::debug_string() const
 {
-	return "TRUNC";
+	return strfmt("TRUNC[", nsrcbits(), " -> ", ndstbits(), "]");
 }
 
 std::unique_ptr<jive::operation>
