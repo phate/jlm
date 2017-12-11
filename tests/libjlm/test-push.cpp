@@ -7,11 +7,14 @@
 #include "test-registry.hpp"
 #include "test-types.hpp"
 
+#include <jive/arch/addresstype.h>
 #include <jive/view.h>
 #include <jive/rvsdg/gamma.h>
 #include <jive/rvsdg/simple-node.h>
 #include <jive/rvsdg/theta.h>
 
+#include <jlm/ir/operators/store.hpp>
+#include <jlm/ir/types.hpp>
 #include <jlm/opt/push.hpp>
 
 static inline void
@@ -41,9 +44,9 @@ test_gamma()
 
 	graph.export_port(gamma->output(0), "x");
 
-	jive::view(graph.root(), stdout);
+//	jive::view(graph.root(), stdout);
 	jlm::push(graph);
-	jive::view(graph.root(), stdout);
+//	jive::view(graph.root(), stdout);
 
 	assert(graph.root()->nodes.size() == 3);
 }
@@ -83,11 +86,50 @@ test_theta()
 
 	graph.export_port(theta->output(0), "c");
 
-	jive::view(graph.root(), stdout);
+//	jive::view(graph.root(), stdout);
 	jlm::push(graph);
-	jive::view(graph.root(), stdout);
+//	jive::view(graph.root(), stdout);
 
 	assert(graph.root()->nodes.size() == 3);
+}
+
+static inline void
+test_push_theta_bottom()
+{
+	jive::memtype mt;
+	jlm::valuetype vt;
+	jlm::ptrtype pt(vt);
+	jive::ctl::type ct(2);
+
+	jive::graph graph;
+	auto c = graph.import(ct, "c");
+	auto a = graph.import(pt, "a");
+	auto v = graph.import(vt, "v");
+	auto s = graph.import(mt, "s");
+
+	auto theta = jive::theta_node::create(graph.root());
+
+	auto lvc = theta->add_loopvar(c);
+	auto lva = theta->add_loopvar(a);
+	auto lvv = theta->add_loopvar(v);
+	auto lvs = theta->add_loopvar(s);
+
+	auto s1 = jlm::create_store(lva->argument(), lvv->argument(), {lvs->argument()}, 4)[0];
+
+	lvs->result()->divert_origin(s1);
+	theta->set_predicate(lvc->argument());
+
+	auto ex = graph.export_port(lvs->output(), "s");
+
+	jive::view(graph, stdout);
+	jlm::push_bottom(theta);
+	jive::view(graph, stdout);
+
+	auto storenode = ex->origin()->node();
+	assert(jlm::is_store_node(storenode));
+	assert(storenode->input(0)->origin() == a);
+	assert(jive::is_theta_node(storenode->input(1)->origin()->node()));
+	assert(jive::is_theta_node(storenode->input(2)->origin()->node()));
 }
 
 static int
@@ -95,6 +137,7 @@ verify()
 {
 	test_gamma();
 	test_theta();
+	test_push_theta_bottom();
 
 	return 0;
 }

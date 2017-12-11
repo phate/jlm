@@ -7,10 +7,26 @@
 #define JLM_OPT_PUSH_HPP
 
 namespace jive {
-	class graph;
+
+class gamma_node;
+class graph;
+class theta_node;
+
 }
 
 namespace jlm {
+
+void
+push_top(jive::theta_node * theta);
+
+void
+push_bottom(jive::theta_node * theta);
+
+void
+push(jive::theta_node * theta);
+
+void
+push(jive::gamma_node * gamma);
 
 void
 push(jive::graph & rvsdg);
