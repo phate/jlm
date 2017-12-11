@@ -19,7 +19,7 @@ bool
 alloca_op::operator==(const operation & other) const noexcept
 {
 	/* Avoid CNE for alloca operators */
-	return false;
+	return this == &other;
 }
 
 size_t

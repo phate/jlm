@@ -8,18 +8,6 @@
 
 namespace jlm {
 
-/* setxt normal form */
-
-sext_normal_form::~sext_normal_form()
-{}
-
-sext_normal_form::sext_normal_form(
-	const std::type_info & opclass,
-	jive::node_normal_form * parent,
-	jive::graph * graph) noexcept
-: unary_normal_form(opclass, parent, graph)
-{}
-
 /* sext operation */
 
 static const jive_unop_reduction_path_t sext_reduction_bitunary = 128;
@@ -165,25 +153,6 @@ sext_op::reduce_operand(
 		return perform_inverse_reduction(*this, operand);
 
 	return nullptr;
-}
-
-}
-
-namespace {
-
-static jive::node_normal_form *
-create_sext_normal_form(
-	const std::type_info & opclass,
-	jive::node_normal_form * parent,
-	jive::graph * graph)
-{
-	return new jlm::sext_normal_form(opclass, parent, graph);
-}
-
-static void __attribute__((constructor))
-register_normal_form()
-{
-	jive::node_normal_form::register_factory(typeid(jlm::sext_op), create_sext_normal_form);
 }
 
 }

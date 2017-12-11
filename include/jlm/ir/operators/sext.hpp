@@ -13,19 +13,6 @@
 
 namespace jlm {
 
-/* sext normal form */
-
-class sext_normal_form final : public jive::unary_normal_form {
-public:
-	virtual
-	~sext_normal_form() noexcept;
-
-	sext_normal_form(
-		const std::type_info & opclass,
-		jive::node_normal_form * parent,
-		jive::graph * graph) noexcept;
-};
-
 /* sext operator */
 
 class sext_op final : public jive::unary_op {
@@ -82,12 +69,6 @@ public:
 	ndstbits() const noexcept
 	{
 		return static_cast<const jive::bits::type*>(&rport_.type())->nbits();
-	}
-
-	static jlm::sext_normal_form *
-	normal_form(jive::graph * graph) noexcept
-	{
-		return static_cast<jlm::sext_normal_form*>(graph->node_normal_form(typeid(sext_op)));
 	}
 
 private:
