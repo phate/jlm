@@ -124,12 +124,12 @@ perform_reductions(jive::graph & graph)
 
 	/* store operation */
 	{
-		auto nf = graph.node_normal_form(typeid(jlm::store_op));
-		auto mnf = static_cast<jlm::store_normal_form*>(nf);
-		mnf->set_mutable(true);
-		mnf->set_store_mux_reducible(true);
-		mnf->set_store_alloca_reducible(true);
-		mnf->set_multiple_origin_reducible(true);
+		auto nf = jlm::store_op::normal_form(&graph);
+		nf->set_mutable(true);
+		nf->set_store_mux_reducible(true);
+		nf->set_store_store_reducible(true);
+		nf->set_store_alloca_reducible(true);
+		nf->set_multiple_origin_reducible(true);
 	}
 
 	/* load operation */

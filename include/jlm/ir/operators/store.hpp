@@ -7,6 +7,7 @@
 #define JLM_IR_OPERATORS_STORE_HPP
 
 #include <jive/arch/addresstype.h>
+#include <jive/rvsdg/graph.h>
 #include <jive/rvsdg/simple-normal-form.h>
 #include <jive/rvsdg/simple-node.h>
 
@@ -40,6 +41,9 @@ public:
 	set_store_mux_reducible(bool enable);
 
 	virtual void
+	set_store_store_reducible(bool enable);
+
+	virtual void
 	set_store_alloca_reducible(bool enable);
 
 	virtual void
@@ -49,6 +53,12 @@ public:
 	get_store_mux_reducible() const noexcept
 	{
 		return enable_store_mux_;
+	}
+
+	inline bool
+	get_store_store_reducible() const noexcept
+	{
+		return enable_store_store_;
 	}
 
 	inline bool
@@ -65,6 +75,7 @@ public:
 
 private:
 	bool enable_store_mux_;
+	bool enable_store_store_;
 	bool enable_store_alloca_;
 	bool enable_multiple_origin_;
 };

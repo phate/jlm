@@ -94,6 +94,34 @@ is_store_mux_reducible(const std::vector<jive::output*> & operands)
 }
 
 static bool
+is_store_store_reducible(
+	const store_op & op,
+	const std::vector<jive::output*> & operands)
+{
+	JLM_DEBUG_ASSERT(operands.size() > 2);
+
+	auto storenode = operands[2]->node();
+	if (!is_store_node(storenode))
+		return false;
+
+	if (op.nstates() != storenode->noutputs())
+		return false;
+
+	/* check for same address */
+	if (operands[0] != storenode->input(0)->origin())
+		return false;
+
+	for (size_t n = 2; n < operands.size(); n++) {
+		if (operands[n]->node() != storenode || operands[n]->nusers() != 1)
+			return false;
+	}
+
+	auto other = static_cast<const store_op*>(&storenode->operation());
+	JLM_DEBUG_ASSERT(op.alignment() == other->alignment());
+	return true;
+}
+
+static bool
 is_store_alloca_reducible(const std::vector<jive::output*> & operands)
 {
 	if (operands.size() == 3)
@@ -131,6 +159,19 @@ perform_store_mux_reduction(
 }
 
 static std::vector<jive::output*>
+perform_store_store_reduction(
+	const jlm::store_op & op,
+	const std::vector<jive::output*> & operands)
+{
+	JLM_DEBUG_ASSERT(is_store_store_reducible(op, operands));
+	auto storenode = operands[2]->node();
+
+	auto storeops = jive::operands(storenode);
+	std::vector<jive::output*> states(std::next(std::next(storeops.begin())), storeops.end());
+	return jlm::create_store(operands[0], operands[1], states, op.alignment());
+}
+
+static std::vector<jive::output*>
 perform_store_alloca_reduction(
 	const jlm::store_op & op,
 	const std::vector<jive::output*> & operands)
@@ -165,11 +206,13 @@ store_normal_form::store_normal_form(
 	jive::graph * graph) noexcept
 : simple_normal_form(opclass, parent, graph)
 , enable_store_mux_(false)
+, enable_store_store_(false)
 , enable_store_alloca_(false)
 , enable_multiple_origin_(false)
 {
 	if (auto p = dynamic_cast<const store_normal_form*>(parent)) {
 		enable_multiple_origin_ = p->enable_multiple_origin_;
+		enable_store_store_ = p->enable_store_store_;
 		enable_store_mux_ = p->enable_store_mux_;
 	}
 }
@@ -187,6 +230,12 @@ store_normal_form::normalize_node(jive::node * node) const
 	if (get_store_mux_reducible() && is_store_mux_reducible(operands)) {
 		replace(node, perform_store_mux_reduction(*op, operands));
 		node->region()->remove_node(node);
+		return false;
+	}
+
+	if (get_store_store_reducible() && is_store_store_reducible(*op, operands)) {
+		replace(node, perform_store_store_reduction(*op, operands));
+		remove(node);
 		return false;
 	}
 
@@ -253,6 +302,19 @@ store_normal_form::set_store_mux_reducible(bool enable)
 	children_set<store_normal_form, &store_normal_form::set_store_mux_reducible>(enable);
 
 	enable_store_mux_ = enable;
+	if (get_mutable() && enable)
+		graph()->mark_denormalized();
+}
+
+void
+store_normal_form::set_store_store_reducible(bool enable)
+{
+	if (get_store_store_reducible() == enable)
+		return;
+
+	children_set<store_normal_form, &store_normal_form::set_store_store_reducible>(enable);
+
+	enable_store_store_ = enable;
 	if (get_mutable() && enable)
 		graph()->mark_denormalized();
 }

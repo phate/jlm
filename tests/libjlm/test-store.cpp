@@ -117,14 +117,14 @@ test_store_alloca_reduction()
 	graph.export_port(states2[1], "s2");
 	graph.export_port(states2[2], "s3");
 
-	jive::view(graph.root(), stdout);
+//	jive::view(graph.root(), stdout);
 
 	snf->set_mutable(true);
 	snf->set_store_alloca_reducible(true);
 	graph.normalize();
 	graph.prune();
 
-	jive::view(graph.root(), stdout);
+//	jive::view(graph.root(), stdout);
 
 	bool has_import = false;
 	for (size_t n = 0; n < graph.root()->nresults(); n++) {
@@ -134,12 +134,46 @@ test_store_alloca_reduction()
 	assert(has_import);
 }
 
+static inline void
+test_store_store_reduction()
+{
+	using namespace jlm;
+
+	valuetype vt;
+	jlm::ptrtype pt(vt);
+	jive::memtype mt;
+
+	jive::graph graph;
+	auto a = graph.import(pt, "address");
+	auto v1 = graph.import(vt, "value");
+	auto v2 = graph.import(vt, "value");
+	auto s = graph.import(mt, "state");
+
+	auto s1 = jlm::create_store(a, v1, {s}, 4)[0];
+	auto s2 = jlm::create_store(a, v2, {s1}, 4)[0];
+
+	auto ex = graph.export_port(s2, "state");
+
+	jive::view(graph.root(), stdout);
+
+	auto nf = store_op::normal_form(&graph);
+	nf->set_store_store_reducible(true);
+	graph.normalize();
+	graph.prune();
+
+	jive::view(graph.root(), stdout);
+
+	assert(graph.root()->nnodes() == 1);
+	assert(ex->origin()->node()->input(1)->origin() == v2);
+}
+
 static int
 test()
 {
 	test_store_mux_reduction();
 	test_store_alloca_reduction();
 	test_multiple_origin_reduction();
+	test_store_store_reduction();
 
 	return 0;
 }
