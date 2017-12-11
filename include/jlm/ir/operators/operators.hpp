@@ -1081,6 +1081,16 @@ public:
 		return *static_cast<const jive::valuetype*>(&port_.type());
 	}
 
+	static inline jive::output *
+	create(jive::region * region, const jive::type & type)
+	{
+		auto vt = dynamic_cast<const jive::valuetype*>(&type);
+		if (!vt) throw std::logic_error("Expected value type.");
+
+		jlm::undef_constant_op op(*vt);
+		return jive::create_normalized(region, op, {})[0];
+	}
+
 private:
 	jive::port port_;
 };
