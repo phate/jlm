@@ -177,13 +177,41 @@ test_load_store_alloca_reduction()
 	graph.export_port(load, "l");
 	graph.export_port(store[0], "s");
 
-	jive::view(graph.root(), stdout);
+//	jive::view(graph.root(), stdout);
 
 	nf->set_mutable(true);
 	nf->set_load_store_alloca_reducible(true);
 	graph.normalize();
 
+//	jive::view(graph.root(), stdout);
+}
+
+static inline void
+test_load_store_reduction()
+{
+	using namespace jlm;
+
+	valuetype vt;
+	ptrtype pt(vt);
+	jive::memtype mt;
+
+	jive::graph graph;
+	auto nf = load_op::normal_form(&graph);
+	nf->set_load_store_reducible(true);
+
+	auto a = graph.import(pt, "address");
+	auto v = graph.import(vt, "value");
+	auto s = graph.import(mt, "state");
+
+	auto s1 = jlm::create_store(a, v, {s}, 4)[0];
+	auto v1 = jlm::create_load(a, {s1}, 4);
+
+	auto v2 = graph.export_port(v1, "value");
+
 	jive::view(graph.root(), stdout);
+
+	assert(graph.root()->nnodes() == 1);
+	assert(v2->origin() == v);
 }
 
 static int
@@ -194,6 +222,7 @@ test()
 	test_multiple_origin_reduction();
 	test_load_store_state_reduction();
 	test_load_store_alloca_reduction();
+	test_load_store_reduction();
 
 	return 0;
 }

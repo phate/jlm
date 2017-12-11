@@ -184,6 +184,45 @@ is_multiple_origin_reducible(const std::vector<jive::output*> & operands)
 	return states.size() != operands.size()-1;
 }
 
+static bool
+is_load_store_reducible(
+	const load_op & op,
+	const std::vector<jive::output*> & operands)
+{
+	JLM_DEBUG_ASSERT(operands.size() > 1);
+
+	auto storenode = operands[1]->node();
+	if (!is_store_node(storenode))
+		return false;
+
+	auto sop = static_cast<const store_op*>(&storenode->operation());
+	if (sop->nstates() != op.nstates())
+		return false;
+
+	/* check for same address */
+	if (operands[0] != storenode->input(0)->origin())
+		return false;
+
+	for (size_t n = 1; n < operands.size(); n++) {
+		if (operands[n]->node() != storenode)
+			return false;
+	}
+
+	JLM_DEBUG_ASSERT(op.alignment() == sop->alignment());
+	return true;
+}
+
+static std::vector<jive::output*>
+perform_load_store_reduction(
+	const jlm::load_op & op,
+	const std::vector<jive::output*> & operands)
+{
+	JLM_DEBUG_ASSERT(is_load_store_reducible(op, operands));
+	auto storenode = operands[1]->node();
+
+	return {storenode->input(1)->origin()};
+}
+
 static std::vector<jive::output*>
 perform_load_store_alloca_reduction(
 	const jlm::load_op & op,
@@ -239,6 +278,7 @@ load_normal_form::load_normal_form(
 	jive::graph * graph) noexcept
 : simple_normal_form(opclass, parent, graph)
 , enable_load_mux_(false)
+, enable_load_store_(false)
 , enable_load_alloca_(false)
 , enable_multiple_origin_(false)
 , enable_load_store_state_(false)
@@ -257,6 +297,12 @@ load_normal_form::normalize_node(jive::node * node) const
 
 	if (get_load_mux_reducible() && is_load_mux_reducible(operands)) {
 		replace(node, perform_load_mux_reduction(*op, operands));
+		remove(node);
+		return false;
+	}
+
+	if (get_load_store_reducible() && is_load_store_reducible(*op, operands)) {
+		replace(node, perform_load_store_reduction(*op, operands));
 		remove(node);
 		return false;
 	}
@@ -304,6 +350,9 @@ load_normal_form::normalized_create(
 
 	if (get_load_mux_reducible() && is_load_mux_reducible(operands))
 		return perform_load_mux_reduction(*lop, operands);
+
+	if (get_load_store_reducible() && is_load_store_reducible(*lop, operands))
+		return perform_load_store_reduction(*lop, operands);
 
 	auto new_states = is_load_alloca_reducible(operands);
 	if (get_load_alloca_reducible() && new_states.size() != operands.size()-1)
