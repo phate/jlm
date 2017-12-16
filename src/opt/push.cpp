@@ -251,9 +251,15 @@ is_movable_store(jive::node * node)
 	JLM_DEBUG_ASSERT(is_theta_node(node->region()->node()));
 	JLM_DEBUG_ASSERT(is_store_node(node));
 
-	auto argument = dynamic_cast<jive::argument*>(node->input(0)->origin());
-	if (!argument || !is_invariant(argument) || argument->nusers() != 2)
+	auto address = dynamic_cast<jive::argument*>(node->input(0)->origin());
+	if (!address || !is_invariant(address) || address->nusers() != 2)
 		return false;
+
+	for (size_t n = 2; n < node->ninputs(); n++) {
+		auto argument = dynamic_cast<jive::argument*>(node->input(n)->origin());
+		if (!argument || argument->nusers() > 1)
+			return false;
+	}
 
 	for (size_t n = 0; n < node->noutputs(); n++) {
 		auto output = node->output(n);
