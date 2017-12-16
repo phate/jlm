@@ -194,6 +194,12 @@ is_load_op(const jive::operation & op) noexcept
 	return dynamic_cast<const jlm::load_op*>(&op) != nullptr;
 }
 
+static inline bool
+is_load_node(const jive::node * node) noexcept
+{
+	return jive::is_opnode<load_op>(node);
+}
+
 static inline std::unique_ptr<jlm::tac>
 create_load_tac(
 	const variable * address,
