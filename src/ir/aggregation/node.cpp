@@ -5,6 +5,7 @@
 
 #include <jlm/ir/aggregation/node.hpp>
 
+#include <functional>
 #include <string>
 
 namespace jlm {

@@ -8,6 +8,7 @@
 #include <jlm/ir/basic_block.hpp>
 
 #include <algorithm>
+#include <functional>
 #include <typeindex>
 
 namespace jlm {
