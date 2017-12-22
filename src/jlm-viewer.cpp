@@ -146,8 +146,9 @@ main (int argc, char ** argv)
 	cmdflags flags;
 	auto file_name = parse_cmdflags(argc, argv, flags);
 
+	llvm::LLVMContext ctx;
 	llvm::SMDiagnostic err;
-	auto lm = llvm::parseIRFile(file_name, err, llvm::getGlobalContext());
+	auto lm = llvm::parseIRFile(file_name, err, ctx);
 
 	if (!lm) {
 		err.print(argv[0], llvm::errs());
@@ -166,7 +167,7 @@ main (int argc, char ** argv)
 	if (flags.r2j) jlm::view(*jm, stdout);
 	if (flags.r2jdot) jlm::view_dot(*find_cfg(jm->clg(), flags.r2jdot_function), stdout);
 
-	lm = jlm::jlm2llvm::convert(*jm, llvm::getGlobalContext());
+	lm = jlm::jlm2llvm::convert(*jm, ctx);
 	if (flags.j2l) lm->dump();
 
 	return 0;

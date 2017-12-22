@@ -200,7 +200,8 @@ main(int argc, char ** argv)
 	auto file = parse_cmdflags(argc, argv, flags);
 
 	llvm::SMDiagnostic d;
-	auto lm = llvm::parseIRFile(file, d, llvm::getGlobalContext());
+	llvm::LLVMContext ctx;
+	auto lm = llvm::parseIRFile(file, d, ctx);
 	if (!lm) {
 		d.print(argv[0], llvm::errs());
 		exit(1);
@@ -233,7 +234,7 @@ main(int argc, char ** argv)
 			          << "\n";
 		#endif
 
-		lm = jlm::jlm2llvm::convert(*jm, llvm::getGlobalContext());
+		lm = jlm::jlm2llvm::convert(*jm, ctx);
 		llvm::raw_os_ostream os(std::cout);
 		lm->print(os, nullptr);
 	}

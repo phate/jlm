@@ -1,7 +1,7 @@
 # Copyright 2014 Nico Reißmann <nico.reissmann@gmail.com>
 # See COPYING for terms of redistribution.
 
-LLVMCONFIG = llvm-config-3.7
+LLVMCONFIG = llvm-config
 
 CPPFLAGS += -Iinclude -Iexternal/jive/include -I$(shell $(LLVMCONFIG) --includedir)
 CXXFLAGS += -Wall --std=c++14 -Wfatal-errors
