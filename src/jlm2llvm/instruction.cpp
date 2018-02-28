@@ -456,6 +456,19 @@ convert_fp2ui(
 	return builder.CreateFPToUI(ctx.value(args[0]), type);
 }
 
+static llvm::Value *
+convert_fp2si(
+	const jive::operation & op,
+	const std::vector<const variable*> & args,
+	llvm::IRBuilder<> & builder,
+	context & ctx)
+{
+	JLM_DEBUG_ASSERT(is_fp2si_op(op));
+
+	auto type = convert_type(op.result(0).type(), ctx);
+	return builder.CreateFPToSI(ctx.value(args[0]), type);
+}
+
 static inline llvm::Value *
 convert_valist(
 	const jive::operation & op,
@@ -618,6 +631,7 @@ convert_operation(
 	, {std::type_index(typeid(jlm::fpext_op)), convert_fpext}
 	, {typeid(fptrunc_op), convert_fptrunc}
 	, {typeid(fp2ui_op), convert_fp2ui}
+	, {typeid(fp2si_op), convert_fp2si}
 	, {std::type_index(typeid(jlm::valist_op)), convert_valist}
 	, {std::type_index(typeid(jlm::bitcast_op)), convert_bitcast}
 	, {std::type_index(typeid(jlm::struct_constant_op)), convert_struct_constant}

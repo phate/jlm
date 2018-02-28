@@ -545,17 +545,12 @@ convert_fptoui_instruction(llvm::Instruction * i, tacsvector_t & tacs, context &
 static inline const variable *
 convert_fptosi_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
 {
-	/* FIXME: support vector type */
-#if 0
-	if (operand->getType()->isVectorTy())
-		JLM_DEBUG_ASSERT(0);
+	JLM_DEBUG_ASSERT(i->getOpcode() == llvm::Instruction::FPToSI);
+	JLM_DEBUG_ASSERT(!i->getOperand(0)->getType()->isVectorTy());
 
-	flt2bits_op op(i->getType()->getIntegerBitWidth());
-	tacs.push_back(create_tac(op, {convert_value(operand, tacs, ctx)}, {ctx.lookup_value(i)}));
-
+	auto operand = convert_value(i->getOperand(0), tacs, ctx);
+	tacs.push_back(create_fp2si_tac(operand, ctx.lookup_value(i)));
 	return tacs.back()->output(0);
-#endif
-	JLM_ASSERT(0);
 }
 
 static inline const variable *

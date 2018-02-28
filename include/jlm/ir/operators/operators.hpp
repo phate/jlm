@@ -327,6 +327,64 @@ create_fp2ui_tac(const variable * operand, jlm::variable * result)
 	return create_tac(op, {operand}, {result});
 }
 
+/* fp2si operator */
+
+class fp2si_op final : public jive::simple_op {
+public:
+	virtual
+	~fp2si_op() noexcept;
+
+	inline
+	fp2si_op(const fpsize & size, const jive::bits::type & type)
+	: srcport_(fptype(size))
+	, dstport_(type)
+	{}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual size_t
+	narguments() const noexcept override;
+
+	virtual const jive::port &
+	argument(size_t index) const noexcept override;
+
+	virtual size_t
+	nresults() const noexcept override;
+
+	virtual const jive::port &
+	result(size_t index) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+private:
+	jive::port srcport_;
+	jive::port dstport_;
+};
+
+static inline bool
+is_fp2si_op(const jive::operation & op)
+{
+	return dynamic_cast<const fp2si_op*>(&op) != nullptr;
+}
+
+static inline std::unique_ptr<jlm::tac>
+create_fp2si_tac(const variable * operand, jlm::variable * result)
+{
+	auto st = dynamic_cast<const fptype*>(&operand->type());
+	if (!st) throw std::logic_error("Expected floating point type.");
+
+	auto dt = dynamic_cast<const jive::bits::type*>(&result->type());
+	if (!dt) throw std::logic_error("Expected bitstring type.");
+
+	fp2si_op op(st->size(), *dt);
+	return create_tac(op, {operand}, {result});
+}
+
 /* branch operator */
 
 class branch_op final : public jive::simple_op {

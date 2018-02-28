@@ -279,6 +279,58 @@ fp2ui_op::copy() const
 	return std::unique_ptr<jive::operation>(new fp2ui_op(*this));
 }
 
+/* fp2si operator */
+
+fp2si_op::~fp2si_op() noexcept
+{}
+
+bool
+fp2si_op::operator==(const operation & other) const noexcept
+{
+	auto op = dynamic_cast<const fp2si_op*>(&other);
+	return op
+	    && op->srcport_ == srcport_
+	    && op->dstport_ == dstport_;
+}
+
+size_t
+fp2si_op::narguments() const noexcept
+{
+	return 1;
+}
+
+const jive::port &
+fp2si_op::argument(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < narguments());
+	return srcport_;
+}
+
+size_t
+fp2si_op::nresults() const noexcept
+{
+	return 1;
+}
+
+const jive::port &
+fp2si_op::result(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < nresults());
+	return dstport_;
+}
+
+std::string
+fp2si_op::debug_string() const
+{
+	return "FP2UI";
+}
+
+std::unique_ptr<jive::operation>
+fp2si_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new fp2si_op(*this));
+}
+
 /* branch operator */
 
 branch_op::~branch_op() noexcept
