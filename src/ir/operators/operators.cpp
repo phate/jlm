@@ -975,6 +975,56 @@ fpext_op::copy() const
 	return std::unique_ptr<jive::operation>(new jlm::fpext_op(*this));
 }
 
+/* fptrunc operator */
+
+fptrunc_op::~fptrunc_op()
+{}
+
+bool
+fptrunc_op::operator==(const operation & other) const noexcept
+{
+	auto op = dynamic_cast<const fptrunc_op*>(&other);
+	return op && op->srcsize() == srcsize() && op->dstsize() == dstsize();
+}
+
+size_t
+fptrunc_op::narguments() const noexcept
+{
+	return 1;
+}
+
+const jive::port &
+fptrunc_op::argument(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < narguments());
+	return srcport_;
+}
+
+size_t
+fptrunc_op::nresults() const noexcept
+{
+	return 1;
+}
+
+const jive::port &
+fptrunc_op::result(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < nresults());
+	return dstport_;
+}
+
+std::string
+fptrunc_op::debug_string() const
+{
+	return "fptrunc";
+}
+
+std::unique_ptr<jive::operation>
+fptrunc_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new fptrunc_op(*this));
+}
+
 /* valist operator */
 
 valist_op::~valist_op()

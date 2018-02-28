@@ -1259,6 +1259,82 @@ create_fpext_tac(const variable * operand, jlm::variable * result)
 	return create_tac(op, {operand}, {result});
 }
 
+/* fptrunc operator */
+
+class fptrunc_op final : public jive::simple_op {
+public:
+	virtual
+	~fptrunc_op() noexcept;
+
+	inline
+	fptrunc_op(const fpsize & srcsize, const fpsize & dstsize)
+	: jive::simple_op()
+	, srcport_(fptype(srcsize))
+	, dstport_(fptype(dstsize))
+	{
+		if (srcsize == fpsize::half
+		|| (srcsize == fpsize::flt && dstsize != fpsize::half)
+		|| (srcsize == fpsize::dbl && dstsize == fpsize::dbl))
+			throw std::logic_error("Destination tpye size must be smaller than source size type.");
+	}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual size_t
+	narguments() const noexcept override;
+
+	virtual const jive::port &
+	argument(size_t index) const noexcept override;
+
+	virtual size_t
+	nresults() const noexcept override;
+
+	virtual const jive::port &
+	result(size_t index) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+	inline const fpsize &
+	srcsize() const noexcept
+	{
+		return static_cast<const fptype*>(&srcport_.type())->size();
+	}
+
+	inline const fpsize &
+	dstsize() const noexcept
+	{
+		return static_cast<const fptype*>(&dstport_.type())->size();
+	}
+
+private:
+	jive::port srcport_;
+	jive::port dstport_;
+};
+
+static inline bool
+is_fptrunc_op(const jive::operation & op)
+{
+	return dynamic_cast<const fptrunc_op*>(&op) != nullptr;
+}
+
+static inline std::unique_ptr<jlm::tac>
+create_fptrunc_tac(const variable * operand, jlm::variable * result)
+{
+	auto st = dynamic_cast<const fptype*>(&operand->type());
+	if (!st) throw std::logic_error("Expected floating point type.");
+
+	auto dt = dynamic_cast<const fptype*>(&result->type());
+	if (!dt) throw std::logic_error("Expected floating point type.");
+
+	fptrunc_op op(st->size(), dt->size());
+	return create_tac(op, {operand}, {result});
+}
+
 /* valist operator */
 
 class valist_op final : public jive::simple_op {

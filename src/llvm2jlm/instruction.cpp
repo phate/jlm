@@ -471,16 +471,15 @@ convert_fpext_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, 
 }
 
 static inline const variable *
-convert_fptrunc_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
+convert_fptrunc_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::FPTruncInst*>(i));
+	JLM_DEBUG_ASSERT(instruction->getOpcode() == llvm::Instruction::FPTrunc);
+	auto i = llvm::cast<llvm::FPTruncInst>(instruction);
+	JLM_DEBUG_ASSERT(!i->getSrcTy()->isVectorTy());
 
-	/* FIXME: use assignment operator as long as we don't support floating point types properly */
-
-	jive::flt::type type;
-	assignment_op op(type);
 	auto operand = convert_value(i->getOperand(0), tacs, ctx);
-	tacs.push_back(create_tac(op, {operand}, {ctx.lookup_value(i)}));
+	tacs.push_back(create_fptrunc_tac(operand, ctx.lookup_value(i)));
+
 	return tacs.back()->output(0);
 }
 
