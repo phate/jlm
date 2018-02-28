@@ -227,56 +227,56 @@ bits2flt_op::copy() const
 	return std::unique_ptr<jive::operation>(new bits2flt_op(*this));
 }
 
-/* flt2bits operator */
+/* fp2ui operator */
 
-flt2bits_op::~flt2bits_op() noexcept
+fp2ui_op::~fp2ui_op() noexcept
 {}
 
 bool
-flt2bits_op::operator==(const operation & other) const noexcept
+fp2ui_op::operator==(const operation & other) const noexcept
 {
-	auto op = dynamic_cast<const flt2bits_op*>(&other);
-	return op && port_ == op->port_;
+	auto op = dynamic_cast<const fp2ui_op*>(&other);
+	return op
+	    && op->srcport_ == srcport_
+	    && op->dstport_ == dstport_;
 }
 
 size_t
-flt2bits_op::narguments() const noexcept
+fp2ui_op::narguments() const noexcept
 {
 	return 1;
 }
 
 const jive::port &
-flt2bits_op::argument(size_t index) const noexcept
+fp2ui_op::argument(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < narguments());
-	static const jive::flt::type flttype;
-	static const jive::port p(flttype);
-	return p;
+	return srcport_;
 }
 
 size_t
-flt2bits_op::nresults() const noexcept
+fp2ui_op::nresults() const noexcept
 {
 	return 1;
 }
 
 const jive::port &
-flt2bits_op::result(size_t index) const noexcept
+fp2ui_op::result(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < nresults());
-	return port_;
+	return dstport_;
 }
 
 std::string
-flt2bits_op::debug_string() const
+fp2ui_op::debug_string() const
 {
-	return "FLT2BITS";
+	return "FP2UI";
 }
 
 std::unique_ptr<jive::operation>
-flt2bits_op::copy() const
+fp2ui_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new flt2bits_op(*this));
+	return std::unique_ptr<jive::operation>(new fp2ui_op(*this));
 }
 
 /* branch operator */
