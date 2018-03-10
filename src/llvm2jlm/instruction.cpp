@@ -338,7 +338,6 @@ convert_call_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 	/* arguments */
 	std::vector<const jlm::variable*> vargs;
 	std::vector<const jlm::variable*> arguments;
-	arguments.push_back(convert_value(f, tacs, ctx));
 	for (size_t n = 0; n < ftype->getNumParams(); n++)
 		arguments.push_back(convert_value(i->getArgOperand(n), tacs, ctx));
 	for (size_t n = ftype->getNumParams(); n < i->getNumOperands()-1; n++)
@@ -356,7 +355,8 @@ convert_call_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 		results.push_back(ctx.lookup_value(i));
 	results.push_back(ctx.state());
 
-	tacs.push_back(create_tac(jive::fct::apply_op(*type), arguments, results));
+	auto fctvar = convert_value(f, tacs, ctx);
+	tacs.push_back(create_call_tac(fctvar, arguments, results));
 	return tacs.back()->output(0);
 }
 

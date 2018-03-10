@@ -5,7 +5,6 @@
 
 #include <jive/arch/addresstype.h>
 #include <jive/types/bitstring.h>
-#include <jive/types/function.h>
 #include <jive/rvsdg/control.h>
 #include <jive/rvsdg/statemux.h>
 
@@ -153,13 +152,13 @@ convert_undef(
 }
 
 static inline llvm::Value *
-convert_apply(
+convert_call(
 	const jive::operation & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::fct::apply_op*>(&op));
+	JLM_DEBUG_ASSERT(is_call_op(op));
 	JLM_DEBUG_ASSERT(dynamic_cast<const jive::memtype*>(&args[args.size()-1]->type()));
 
 	auto function = ctx.value(args[0]);
@@ -615,7 +614,7 @@ convert_operation(
 	, {std::type_index(typeid(jlm::fpconstant_op)), convert_fpconstant}
 	, {std::type_index(typeid(jlm::undef_constant_op)), convert_undef}
 	, {std::type_index(typeid(jive::ctl::match_op)), convert_match}
-	, {std::type_index(typeid(jive::fct::apply_op)), convert_apply}
+	, {typeid(call_op), convert_call}
 	, {std::type_index(typeid(jlm::assignment_op)), convert_assignment}
 	, {std::type_index(typeid(jlm::branch_op)), convert_branch}
 	, {std::type_index(typeid(jlm::phi_op)), convert_phi}
