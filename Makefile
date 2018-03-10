@@ -18,6 +18,7 @@ LIBJLM_SRC = \
 	src/ir/cfg_node.cpp \
 	src/ir/clg.cpp \
 	src/ir/data.cpp \
+	src/ir/lambda.cpp \
 	src/ir/module.cpp \
 	src/ir/operators/alloca.cpp \
 	src/ir/operators/load.cpp \
