@@ -7,6 +7,7 @@
 #define JLM_IR_CLG_H
 
 #include <jlm/ir/cfg.hpp>
+#include <jlm/ir/types.hpp>
 #include <jlm/ir/variable.hpp>
 
 #include <jive/types/function/fcttype.h>
@@ -144,11 +145,11 @@ public:
 private:
 	inline
 	clg_node(jlm::clg & clg, const std::string & name, const jive::fct::type & type, bool exported)
-	: exported_(exported)
+	: type_(type)
+	, exported_(exported)
 	, clg_(clg)
 	, name_(name)
 	, cfg_(nullptr)
-	, type_(std::move(type.copy()))
 	{}
 
 public:
@@ -164,10 +165,16 @@ public:
 		return clg_;
 	}
 
-	const jive::fct::type &
+	const ptrtype &
 	type() const noexcept
 	{
-		return *static_cast<const jive::fct::type*>(type_.get());
+		return type_;
+	}
+
+	const jive::fct::type &
+	fcttype() const noexcept
+	{
+		return *static_cast<const jive::fct::type*>(&type().pointee_type());
 	}
 
 	void
@@ -219,11 +226,11 @@ public:
 	}
 
 private:
+	ptrtype type_;
 	bool exported_;
 	jlm::clg & clg_;
 	std::string name_;
 	std::unique_ptr<jlm::cfg> cfg_;
-	std::unique_ptr<jive::type> type_;
 	std::unordered_set<const clg_node*> calls_;
 };
 

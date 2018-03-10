@@ -26,6 +26,16 @@
 namespace jlm {
 namespace rvsdg2jlm {
 
+static const jive::fct::type *
+is_function_import(const jive::argument * argument)
+{
+	JLM_DEBUG_ASSERT(argument->region()->graph()->root() == argument->region());
+	auto at = dynamic_cast<const ptrtype*>(&argument->type());
+	JLM_DEBUG_ASSERT(at != nullptr);
+
+	return dynamic_cast<const jive::fct::type*>(&at->pointee_type());
+}
+
 static inline const jive::output *
 root_port(const jive::output * port)
 {
@@ -469,7 +479,7 @@ rvsdg2jlm(const jlm::rvsdg & rvsdg)
 	context ctx(*module);
 	for (size_t n = 0; n < graph->root()->narguments(); n++) {
 		auto argument = graph->root()->argument(n);
-		if (auto ftype = dynamic_cast<const jive::fct::type*>(&argument->type())) {
+		if (auto ftype = is_function_import(argument)) {
 			auto f = clg_node::create(clg, argument->port().gate()->name(), *ftype, false);
 			auto v = module->create_variable(f, jlm::linkage::external_linkage);
 			ctx.insert(argument, v);

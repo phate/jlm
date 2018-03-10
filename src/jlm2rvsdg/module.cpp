@@ -212,7 +212,7 @@ convert_entry_node(
 	auto entry = static_cast<const agg::entry*>(&node.structure())->attribute();
 	auto ds = dm.at(&node).get();
 
-	auto arguments = lb.begin_lambda(svmap.region(), function.type());
+	auto arguments = lb.begin_lambda(svmap.region(), function.fcttype());
 	svmap.push_scope(lb.subregion());
 
 	auto & pvmap = svmap.vmap(svmap.nscopes()-2);

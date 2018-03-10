@@ -180,20 +180,22 @@ to_str(const jlm::cfg & cfg)
 static inline std::string
 emit_clg_node(const jlm::clg_node & node)
 {
+	const auto & fcttype = node.fcttype();
+
 	/* convert result types */
 	std::string results("<");
-	for(size_t n = 0; n < node.type().nresults(); n++) {
-		results += node.type().result_type(n).debug_string();
-		if (n != node.type().nresults()-1)
+	for(size_t n = 0; n < fcttype.nresults(); n++) {
+		results += fcttype.result_type(n).debug_string();
+		if (n != fcttype.nresults()-1)
 			results += ", ";
 	}
 	results += ">";
 
 	/* convert operand types */
 	std::string operands("<");
-	for (size_t n = 0; n < node.type().narguments(); n++) {
-		operands += node.type().argument_type(n).debug_string();
-		if (n != node.type().narguments()-1)
+	for (size_t n = 0; n < fcttype.narguments(); n++) {
+		operands += fcttype.argument_type(n).debug_string();
+		if (n != fcttype.narguments()-1)
 			operands += ", ";
 	}
 	operands += ">";

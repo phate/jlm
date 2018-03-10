@@ -234,9 +234,9 @@ convert_callgraph(const jlm::clg & clg, context & ctx)
 		JLM_DEBUG_ASSERT(is_fctvariable(jm.variable(node)));
 		auto v = static_cast<const jlm::fctvariable*>(jm.variable(node));
 
-		auto ftype = convert_type(node->type(), ctx);
+		auto type = convert_type(node->fcttype(), ctx);
 		auto linkage = convert_linkage(v->linkage());
-		auto f = llvm::Function::Create(ftype, linkage, node->name(), &lm);
+		auto f = llvm::Function::Create(type, linkage, node->name(), &lm);
 		ctx.insert(jm.variable(node), f);
 	}
 

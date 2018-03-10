@@ -10,6 +10,8 @@
 #include <jive/rvsdg/structural-node.h>
 #include <jive/types/function/fcttype.h>
 
+#include <jlm/ir/types.hpp>
+
 namespace jlm {
 
 /* lambda operation */
@@ -226,7 +228,7 @@ public:
 
 		for (size_t n = 0; n < results.size(); n++)
 			lambda_->subregion()->add_result(results[n], nullptr, fcttype.result_type(n));
-		lambda_->add_output(fcttype);
+		lambda_->add_output(ptrtype(fcttype));
 
 		auto lambda = lambda_;
 		lambda_ = nullptr;

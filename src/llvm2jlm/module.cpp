@@ -69,21 +69,21 @@ create_cfg(llvm::Function & f, context & ctx)
 	/* add arguments */
 	size_t n = 0;
 	for (const auto & arg : f.getArgumentList()) {
-		JLM_DEBUG_ASSERT(n < node->type().narguments());
-		auto & type = node->type().argument_type(n++);
+		JLM_DEBUG_ASSERT(n < node->fcttype().narguments());
+		auto & type = node->fcttype().argument_type(n++);
 		auto v = ctx.module().create_variable(type, arg.getName().str(), false);
 		cfg->entry().append_argument(v);
 		ctx.insert_value(&arg, v);
 	}
 	if (f.isVarArg()) {
-		JLM_DEBUG_ASSERT(n < node->type().narguments());
-		auto v = m.create_variable(node->type().argument_type(n++), "_varg_", false);
+		JLM_DEBUG_ASSERT(n < node->fcttype().narguments());
+		auto v = m.create_variable(node->fcttype().argument_type(n++), "_varg_", false);
 		cfg->entry().append_argument(v);
 	}
-	JLM_DEBUG_ASSERT(n < node->type().narguments());
-	auto state = m.create_variable(node->type().argument_type(n++), "_s_", false);
+	JLM_DEBUG_ASSERT(n < node->fcttype().narguments());
+	auto state = m.create_variable(node->fcttype().argument_type(n++), "_s_", false);
 	cfg->entry().append_argument(state);
-	JLM_DEBUG_ASSERT(n == node->type().narguments());
+	JLM_DEBUG_ASSERT(n == node->fcttype().narguments());
 
 	/* create all basic blocks */
 	basic_block_map bbmap;
@@ -101,8 +101,8 @@ create_cfg(llvm::Function & f, context & ctx)
 		result = m.create_variable(*convert_type(f.getReturnType(), ctx), "_r_", false);
 		append_last(entry_block, create_undef_constant_tac(result));
 
-		JLM_DEBUG_ASSERT(node->type().nresults() == 2);
-		JLM_DEBUG_ASSERT(result->type() == node->type().result_type(0));
+		JLM_DEBUG_ASSERT(node->fcttype().nresults() == 2);
+		JLM_DEBUG_ASSERT(result->type() == node->fcttype().result_type(0));
 		cfg->exit().append_result(result);
 	}
 	cfg->exit().append_result(state);

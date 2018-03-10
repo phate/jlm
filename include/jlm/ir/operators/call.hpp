@@ -10,6 +10,7 @@
 #include <jive/types/function/fcttype.h>
 
 #include <jlm/ir/tac.hpp>
+#include <jlm/ir/types.hpp>
 
 namespace jlm {
 
@@ -24,7 +25,7 @@ public:
 	call_op(const jive::fct::type & fcttype)
 	: simple_op()
 	{
-		arguments_.push_back(fcttype);
+		arguments_.push_back(ptrtype(fcttype));
 		for (size_t n = 0; n < fcttype.narguments(); n++)
 			arguments_.push_back(fcttype.argument_type(n));
 		for (size_t n = 0; n < fcttype.nresults(); n++)
@@ -52,7 +53,8 @@ public:
 	inline const jive::fct::type &
 	fcttype() const noexcept
 	{
-		return *static_cast<const jive::fct::type*>(&argument(0).type());
+		auto at = static_cast<const ptrtype*>(&argument(0).type());
+		return *static_cast<const jive::fct::type*>(&at->pointee_type());
 	}
 
 	virtual std::unique_ptr<jive::operation>
@@ -61,7 +63,10 @@ public:
 	static inline std::vector<jive::output*>
 	create(jive::output * function, const std::vector<jive::output*> & arguments)
 	{
-		auto ft = dynamic_cast<const jive::fct::type*>(&function->type());
+		auto at = dynamic_cast<const ptrtype*>(&function->type());
+		if (!at) throw std::logic_error("Expected pointer type.");
+
+		auto ft = dynamic_cast<const jive::fct::type*>(&at->pointee_type());
 		if (!ft) throw std::logic_error("Expected function type.");
 
 		call_op op(*ft);
@@ -93,7 +98,10 @@ create_call_tac(
 	const std::vector<const variable*> & arguments,
 	const std::vector<const variable*> & results)
 {
-	auto ft = dynamic_cast<const jive::fct::type*>(&function->type());
+	auto at = dynamic_cast<const ptrtype*>(&function->type());
+	if (!at) throw std::logic_error("Expected pointer type.");
+
+	auto ft = dynamic_cast<const jive::fct::type*>(&at->pointee_type());
 	if (!ft) throw std::logic_error("Expected function type.");
 
 	call_op op(*ft);
