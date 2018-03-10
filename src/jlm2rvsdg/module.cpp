@@ -13,6 +13,7 @@
 #include <jlm/ir/cfg-structure.hpp>
 #include <jlm/ir/clg.hpp>
 #include <jlm/ir/data.hpp>
+#include <jlm/ir/lambda.hpp>
 #include <jlm/ir/module.hpp>
 #include <jlm/ir/operators/operators.hpp>
 #include <jlm/ir/rvsdg.hpp>
@@ -196,7 +197,7 @@ convert_node(
 	const agg::node & node,
 	const agg::demand_map & dm,
 	const jlm::clg_node & function,
-	jive::lambda_builder & lb,
+	lambda_builder & lb,
 	scoped_vmap & svmap);
 
 static jive::node *
@@ -204,7 +205,7 @@ convert_entry_node(
 	const agg::node & node,
 	const agg::demand_map & dm,
 	const jlm::clg_node & function,
-	jive::lambda_builder & lb,
+	lambda_builder & lb,
 	scoped_vmap & svmap)
 {
 	JLM_DEBUG_ASSERT(is_entry_structure(node.structure()));
@@ -241,7 +242,7 @@ convert_exit_node(
 	const agg::node & node,
 	const agg::demand_map & dm,
 	const jlm::clg_node & function,
-	jive::lambda_builder & lb,
+	lambda_builder & lb,
 	scoped_vmap & svmap)
 {
 	JLM_DEBUG_ASSERT(is_exit_structure(node.structure()));
@@ -262,7 +263,7 @@ convert_block_node(
 	const agg::node & node,
 	const agg::demand_map & dm,
 	const jlm::clg_node & function,
-	jive::lambda_builder & lb,
+	lambda_builder & lb,
 	scoped_vmap & svmap)
 {
 	JLM_DEBUG_ASSERT(is_block_structure(node.structure()));
@@ -276,7 +277,7 @@ convert_linear_node(
 	const agg::node & node,
 	const agg::demand_map & dm,
 	const jlm::clg_node & function,
-	jive::lambda_builder & lb,
+	lambda_builder & lb,
 	scoped_vmap & svmap)
 {
 	JLM_DEBUG_ASSERT(is_linear_structure(node.structure()));
@@ -293,7 +294,7 @@ convert_branch_node(
 	const agg::node & node,
 	const agg::demand_map & dm,
 	const jlm::clg_node & function,
-	jive::lambda_builder & lb,
+	lambda_builder & lb,
 	scoped_vmap & svmap)
 {
 	JLM_DEBUG_ASSERT(is_branch_structure(node.structure()));
@@ -348,7 +349,7 @@ convert_loop_node(
 	const agg::node & node,
 	const agg::demand_map & dm,
 	const jlm::clg_node & function,
-	jive::lambda_builder & lb,
+	lambda_builder & lb,
 	scoped_vmap & svmap)
 {
 	JIVE_DEBUG_ASSERT(is_loop_structure(node.structure()));
@@ -414,7 +415,7 @@ convert_node(
 	const agg::node & node,
 	const agg::demand_map & dm,
 	const jlm::clg_node & function,
-	jive::lambda_builder & lb,
+	lambda_builder & lb,
 	scoped_vmap & svmap)
 {
 	static std::unordered_map<
@@ -423,7 +424,7 @@ convert_node(
 			const agg::node&,
 			const agg::demand_map&,
 			const jlm::clg_node&,
-			jive::lambda_builder&,
+			lambda_builder&,
 			scoped_vmap&)
 		>
 	> map ({
@@ -455,7 +456,7 @@ convert_cfg(
 	auto root = agg::aggregate(*cfg);
 	auto dm = agg::annotate(*root);
 
-	jive::lambda_builder lb;
+	lambda_builder lb;
 	auto lambda = convert_node(*root, dm, function, lb, svmap);
 	return lambda->output(0);
 }

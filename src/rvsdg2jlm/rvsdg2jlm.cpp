@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jive/types/function/fctlambda.h>
 #include <jive/rvsdg/gamma.h>
 #include <jive/rvsdg/graph.h>
 #include <jive/rvsdg/phi.h>
@@ -14,6 +13,7 @@
 #include <jlm/ir/basic_block.hpp>
 #include <jlm/ir/cfg-structure.hpp>
 #include <jlm/ir/data.hpp>
+#include <jlm/ir/lambda.hpp>
 #include <jlm/ir/module.hpp>
 #include <jlm/ir/operators/operators.hpp>
 #include <jlm/ir/rvsdg.hpp>
@@ -34,7 +34,7 @@ root_port(const jive::output * port)
 		return port;
 
 	auto node = port->node();
-	JLM_DEBUG_ASSERT(node && dynamic_cast<const jive::fct::lambda_op*>(&node->operation()));
+	JLM_DEBUG_ASSERT(is_lambda_node(node));
 	JLM_DEBUG_ASSERT(node->output(0)->nusers() == 1);
 	auto user = *node->output(0)->begin();
 	node = port->region()->node();
@@ -110,7 +110,7 @@ convert_region(jive::region & region, context & ctx)
 static inline std::unique_ptr<jlm::cfg>
 create_cfg(const jive::node & node, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::fct::lambda_op*>(&node.operation()));
+	JLM_DEBUG_ASSERT(is_lambda_node(&node));
 	auto region = static_cast<const jive::structural_node*>(&node)->subregion(0);
 	auto & module = ctx.module();
 
@@ -357,11 +357,12 @@ convert_theta_node(const jive::node & node, context & ctx)
 static inline void
 convert_lambda_node(const jive::node & node, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::fct::lambda_op*>(&node.operation()));
+	JLM_DEBUG_ASSERT(is_lambda_node(&node));
+	auto lambda = static_cast<const lambda_node*>(&node);
 	auto & module = ctx.module();
 	auto & clg = module.clg();
 
-	const auto & ftype = *static_cast<const jive::fct::type*>(&node.output(0)->type());
+	const auto & ftype = lambda->fcttype();
 	/* FIXME: create/get names for lambdas */
 	auto name = get_name(node.output(0));
 	auto exported = is_exported(node.output(0));
@@ -388,7 +389,7 @@ convert_phi_node(const jive::node & node, context & ctx)
 	for (size_t n = 0; n < subregion->nresults(); n++) {
 		auto result = subregion->result(n);
 		auto lambda = result->origin()->node();
-		JLM_DEBUG_ASSERT(dynamic_cast<const jive::fct::lambda_op*>(&lambda->operation()));
+		JLM_DEBUG_ASSERT(is_lambda_node(lambda));
 
 		auto name = get_name(lambda->output(0));
 		auto exported = is_exported(lambda->output(0));
@@ -440,7 +441,7 @@ convert_node(const jive::node & node, context & ctx)
 	  std::type_index
 	, std::function<void(const jive::node & node, context & ctx)
 	>> map({
-	  {std::type_index(typeid(jive::fct::lambda_op)), convert_lambda_node}
+	  {typeid(lambda_op), convert_lambda_node}
 	, {std::type_index(typeid(jive::gamma_op)), convert_gamma_node}
 	, {std::type_index(typeid(jive::theta_op)), convert_theta_node}
 	, {std::type_index(typeid(jive::phi_op)), convert_phi_node}
