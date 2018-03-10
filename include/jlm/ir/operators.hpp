@@ -7,6 +7,7 @@
 #define JLM_IR_OPERATORS_HPP
 
 #include <jlm/ir/operators/alloca.hpp>
+#include <jlm/ir/operators/call.hpp>
 #include <jlm/ir/operators/load.hpp>
 #include <jlm/ir/operators/operators.hpp>
 #include <jlm/ir/operators/sext.hpp>

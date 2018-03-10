@@ -21,6 +21,7 @@ LIBJLM_SRC = \
 	src/ir/lambda.cpp \
 	src/ir/module.cpp \
 	src/ir/operators/alloca.cpp \
+	src/ir/operators/call.cpp \
 	src/ir/operators/load.cpp \
 	src/ir/operators/operators.cpp \
 	src/ir/operators/sext.cpp \
