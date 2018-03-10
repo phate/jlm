@@ -24,6 +24,9 @@ std::string
 to_str(const jlm::clg & clg);
 
 std::string
+to_dot(const jlm::clg & clg);
+
+std::string
 to_str(const jlm::module & module);
 
 static inline void
@@ -41,9 +44,16 @@ view_dot(const jlm::cfg & cfg, FILE * out)
 }
 
 static inline void
-view(const jlm::clg & clg, FILE * out)
+view_ascii(const jlm::clg & clg, FILE * out)
 {
 	fputs(to_str(clg).c_str(), out);
+	fflush(out);
+}
+
+static inline void
+view_dot(const jlm::clg & clg, FILE * out)
+{
+	fputs(to_dot(clg).c_str(), out);
 	fflush(out);
 }
 

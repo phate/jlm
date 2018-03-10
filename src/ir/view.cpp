@@ -344,4 +344,20 @@ to_dot(const jlm::cfg & cfg)
 	return dot;
 }
 
+std::string
+to_dot(const jlm::clg & clg)
+{
+	std::string dot("digraph clg {\n");
+	for (const auto & node : clg) {
+		dot += strfmt((intptr_t)&node);
+		dot += strfmt("[label = \"", node.name(), "\"];\n");
+
+		for (const auto & call : node.calls())
+			dot += strfmt((intptr_t)&node, " -> ", (intptr_t)call, ";\n");
+	}
+	dot += "}\n";
+
+	return dot;
+}
+
 }
