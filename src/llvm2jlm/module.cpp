@@ -161,14 +161,13 @@ convert_linkage(const llvm::GlobalValue::LinkageTypes & linkage)
 static void
 convert_functions(
 	llvm::Module::FunctionListType & list,
-	jlm::callgraph & clg,
 	context & ctx)
 {
 	for (const auto & f : list) {
 		jive::fct::type fcttype(dynamic_cast<const jive::fct::type&>(
 			*convert_type(f.getFunctionType(), ctx)));
 		auto n = callgraph_node::create(
-			clg,
+			ctx.module().callgraph(),
 			f.getName().str(),
 			fcttype,
 			f.getLinkage() != llvm::GlobalValue::InternalLinkage);
@@ -206,7 +205,7 @@ convert_module(llvm::Module & module)
 
 	context ctx(*m);
 	convert_global_variables(module.getGlobalList(), ctx);
-	convert_functions(module.getFunctionList(), m->callgraph(), ctx);
+	convert_functions(module.getFunctionList(), ctx);
 
 	return m;
 }
