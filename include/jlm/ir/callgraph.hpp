@@ -203,12 +203,6 @@ public:
 		return calls_.end();
 	}
 
-	const std::unordered_set<const callgraph_node*> &
-	calls() const
-	{
-		return calls_;
-	}
-
 	bool
 	is_selfrecursive() const noexcept
 	{

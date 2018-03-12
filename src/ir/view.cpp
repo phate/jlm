@@ -352,7 +352,7 @@ to_dot(const jlm::callgraph & clg)
 		dot += strfmt((intptr_t)&node);
 		dot += strfmt("[label = \"", node.name(), "\"];\n");
 
-		for (const auto & call : node.calls())
+		for (const auto & call : node)
 			dot += strfmt((intptr_t)&node, " -> ", (intptr_t)call, ";\n");
 	}
 	dot += "}\n";

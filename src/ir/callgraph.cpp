@@ -27,8 +27,7 @@ strongconnect(
 	node_stack.push_back(node);
 	index++;
 
-	const auto & calls = node->calls();
-	for (auto callee : calls) {
+	for (auto callee : *node) {
 		if (map.find(callee) == map.end()) {
 			/* successor has not been visited yet; recurse on it */
 			strongconnect(callee, map, node_stack, index, sccs);
