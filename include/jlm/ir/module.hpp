@@ -98,13 +98,13 @@ public:
 	, target_triple_(target_triple)
 	{}
 
-	inline jlm::clg &
+	inline jlm::callgraph &
 	clg() noexcept
 	{
 		return clg_;
 	}
 
-	inline const jlm::clg &
+	inline const jlm::callgraph &
 	clg() const noexcept
 	{
 		return clg_;
@@ -202,7 +202,7 @@ public:
 	}
 
 private:
-	jlm::clg clg_;
+	jlm::callgraph clg_;
 	std::string data_layout_;
 	std::string target_triple_;
 	std::unordered_set<const jlm::gblvalue*> globals_;

@@ -54,17 +54,17 @@ strongconnect(
 
 namespace jlm {
 
-/* clg */
+/* callgraph */
 
 void
-clg::add_function(std::unique_ptr<jlm::clg_node> node)
+callgraph::add_function(std::unique_ptr<jlm::clg_node> node)
 {
 	JLM_DEBUG_ASSERT(nodes_.find(node->name()) == nodes_.end());
 	nodes_[node->name()] = std::move(node);
 }
 
 clg_node *
-clg::lookup_function(const std::string & name) const
+callgraph::lookup_function(const std::string & name) const
 {
 	if (nodes_.find(name) != nodes_.end())
 		return nodes_.find(name)->second.get();
@@ -73,7 +73,7 @@ clg::lookup_function(const std::string & name) const
 }
 
 std::vector<clg_node*>
-clg::nodes() const
+callgraph::nodes() const
 {
 	std::vector<clg_node*> v;
 	for (auto i = nodes_.begin(); i != nodes_.end(); i++)
@@ -83,7 +83,7 @@ clg::nodes() const
 }
 
 std::vector<std::unordered_set<const clg_node*>>
-clg::find_sccs() const
+callgraph::find_sccs() const
 {
 	std::vector<std::unordered_set<const clg_node*>> sccs;
 
@@ -101,7 +101,7 @@ clg::find_sccs() const
 }
 
 std::string
-clg::to_string() const
+callgraph::to_string() const
 {
 	std::ostringstream osstream;
 	for (auto it = nodes_.begin(); it != nodes_.end(); it++) {

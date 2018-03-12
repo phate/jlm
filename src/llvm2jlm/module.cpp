@@ -161,7 +161,7 @@ convert_linkage(const llvm::GlobalValue::LinkageTypes & linkage)
 static void
 convert_functions(
 	llvm::Module::FunctionListType & list,
-	jlm::clg & clg,
+	jlm::callgraph & clg,
 	context & ctx)
 {
 	for (const auto & f : list) {

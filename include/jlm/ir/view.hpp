@@ -10,8 +10,8 @@
 
 namespace jlm {
 
+class callgraph;
 class cfg;
-class clg;
 class module;
 
 std::string
@@ -21,10 +21,10 @@ std::string
 to_dot(const jlm::cfg & cfg);
 
 std::string
-to_str(const jlm::clg & clg);
+to_str(const jlm::callgraph & clg);
 
 std::string
-to_dot(const jlm::clg & clg);
+to_dot(const jlm::callgraph & clg);
 
 std::string
 to_str(const jlm::module & module);
@@ -44,14 +44,14 @@ view_dot(const jlm::cfg & cfg, FILE * out)
 }
 
 static inline void
-view_ascii(const jlm::clg & clg, FILE * out)
+view_ascii(const jlm::callgraph & clg, FILE * out)
 {
 	fputs(to_str(clg).c_str(), out);
 	fflush(out);
 }
 
 static inline void
-view_dot(const jlm::clg & clg, FILE * out)
+view_dot(const jlm::callgraph & clg, FILE * out)
 {
 	fputs(to_dot(clg).c_str(), out);
 	fflush(out);

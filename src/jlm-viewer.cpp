@@ -124,7 +124,9 @@ parse_cmdflags(int argc, char ** argv, cmdflags & cmdf)
 }
 
 static inline const jlm::cfg *
-find_cfg(const jlm::clg & clg, const std::string & name)
+find_cfg(
+	const jlm::callgraph & clg,
+	const std::string & name)
 {
 	auto f = clg.lookup_function(name);
 	if (!f) {

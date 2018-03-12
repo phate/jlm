@@ -19,9 +19,9 @@ namespace jlm {
 
 class clg_node;
 
-/* clg */
+/* callgraph */
 
-class clg final {
+class callgraph final {
 	class const_iterator {
 	public:
 		inline
@@ -82,11 +82,11 @@ class clg final {
 
 public:
 	inline
-	~clg()
+	~callgraph()
 	{}
 
 	inline
-	clg() noexcept
+	callgraph() noexcept
 	{}
 
 	inline const_iterator
@@ -144,11 +144,15 @@ public:
 
 private:
 	inline
-	clg_node(jlm::clg & clg, const std::string & name, const jive::fct::type & type, bool exported)
+	clg_node(
+		jlm::callgraph & clg,
+		const std::string & name,
+		const jive::fct::type & type,
+		bool exported)
 	: type_(type)
 	, exported_(exported)
-	, clg_(clg)
 	, name_(name)
+	, clg_(clg)
 	, cfg_(nullptr)
 	{}
 
@@ -159,7 +163,7 @@ public:
 		return cfg_.get();
 	}
 
-	inline jlm::clg &
+	inline jlm::callgraph &
 	clg() const noexcept
 	{
 		return clg_;
@@ -217,7 +221,11 @@ public:
 	}
 
 	static inline clg_node *
-	create(jlm::clg & clg, const std::string & name, const jive::fct::type & type, bool exported)
+	create(
+		jlm::callgraph & clg,
+		const std::string & name,
+		const jive::fct::type & type,
+		bool exported)
 	{
 		std::unique_ptr<jlm::clg_node> node(new clg_node(clg, name, type, exported));
 		auto tmp = node.get();
@@ -228,8 +236,8 @@ public:
 private:
 	ptrtype type_;
 	bool exported_;
-	jlm::clg & clg_;
 	std::string name_;
+	jlm::callgraph & clg_;
 	std::unique_ptr<jlm::cfg> cfg_;
 	std::unordered_set<const clg_node*> calls_;
 };

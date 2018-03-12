@@ -224,7 +224,7 @@ convert_linkage(const jlm::linkage & linkage)
 }
 
 static inline void
-convert_callgraph(const jlm::clg & clg, context & ctx)
+convert_callgraph(const jlm::callgraph & clg, context & ctx)
 {
 	auto & jm = ctx.jlm_module();
 	auto & lm = ctx.llvm_module();

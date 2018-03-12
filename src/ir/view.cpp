@@ -207,7 +207,7 @@ emit_clg_node(const jlm::clg_node & node)
 }
 
 std::string
-to_str(const jlm::clg & clg)
+to_str(const jlm::callgraph & clg)
 {
 	std::string str;
 	for (const auto & node : clg)
@@ -345,7 +345,7 @@ to_dot(const jlm::cfg & cfg)
 }
 
 std::string
-to_dot(const jlm::clg & clg)
+to_dot(const jlm::callgraph & clg)
 {
 	std::string dot("digraph clg {\n");
 	for (const auto & node : clg) {
