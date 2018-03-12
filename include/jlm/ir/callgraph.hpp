@@ -188,11 +188,24 @@ public:
 	void
 	add_call(const callgraph_node * callee)
 	{
+		dependencies_.insert(callee);
 		calls_.insert(callee);
+	}
+
+	void
+	add_dependency(const callgraph_node * dep)
+	{
+		dependencies_.insert(dep);
 	}
 
 	inline const_iterator
 	begin() const
+	{
+		return dependencies_.begin();
+	}
+
+	inline const_iterator
+	begin_calls() const
 	{
 		return calls_.begin();
 	}
@@ -200,13 +213,19 @@ public:
 	inline const_iterator
 	end() const
 	{
+		return dependencies_.end();
+	}
+
+	inline const_iterator
+	end_calls() const
+	{
 		return calls_.end();
 	}
 
 	bool
 	is_selfrecursive() const noexcept
 	{
-		if (calls_.find(this) != calls_.end())
+		if (dependencies_.find(this) != dependencies_.end())
 			return true;
 
 		return false;
@@ -250,6 +269,7 @@ private:
 	jlm::callgraph & clg_;
 	std::unique_ptr<jlm::cfg> cfg_;
 	std::unordered_set<const callgraph_node*> calls_;
+	std::unordered_set<const callgraph_node*> dependencies_;
 };
 
 class fctvariable final : public gblvariable {
