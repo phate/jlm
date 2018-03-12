@@ -192,7 +192,7 @@ convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 }
 
 static inline void
-convert_function(const jlm::clg_node & node, context & ctx)
+convert_function(const jlm::callgraph_node & node, context & ctx)
 {
 	if (!node.cfg())
 		return;

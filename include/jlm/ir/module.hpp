@@ -171,7 +171,7 @@ public:
 	}
 
 	inline jlm::variable *
-	create_variable(clg_node * node, const jlm::linkage & linkage)
+	create_variable(callgraph_node * node, const jlm::linkage & linkage)
 	{
 		JLM_DEBUG_ASSERT(!variable(node));
 
@@ -183,7 +183,7 @@ public:
 	}
 
 	const jlm::variable *
-	variable(const clg_node * node) const noexcept
+	variable(const callgraph_node * node) const noexcept
 	{
 		auto it = functions_.find(node);
 		return it != functions_.end() ? it->second : nullptr;
@@ -207,7 +207,7 @@ private:
 	std::string target_triple_;
 	std::unordered_set<const jlm::gblvalue*> globals_;
 	std::unordered_set<std::unique_ptr<jlm::variable>> variables_;
-	std::unordered_map<const clg_node*, const jlm::variable*> functions_;
+	std::unordered_map<const callgraph_node*, const jlm::variable*> functions_;
 };
 
 static inline size_t

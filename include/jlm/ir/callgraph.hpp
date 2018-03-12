@@ -17,7 +17,7 @@
 
 namespace jlm {
 
-class clg_node;
+class callgraph_node;
 
 /* callgraph */
 
@@ -27,7 +27,7 @@ class callgraph final {
 		inline
 		const_iterator(const std::unordered_map<
 			std::string,
-			std::unique_ptr<clg_node>>::const_iterator & it)
+			std::unique_ptr<callgraph_node>>::const_iterator & it)
 		: it_(it)
 		{}
 
@@ -58,26 +58,29 @@ class callgraph final {
 			return tmp;
 		}
 
-		inline const clg_node *
+		inline const callgraph_node *
 		node() const noexcept
 		{
 			return it_->second.get();
 		}
 
-		inline const clg_node &
+		inline const callgraph_node &
 		operator*() const noexcept
 		{
 			return *node();
 		}
 
-		inline const clg_node *
+		inline const callgraph_node *
 		operator->() const noexcept
 		{
 			return node();
 		}
 
 	private:
-		std::unordered_map<std::string, std::unique_ptr<clg_node>>::const_iterator it_;
+		std::unordered_map<
+			std::string,
+			std::unique_ptr<callgraph_node>
+		>::const_iterator it_;
 	};
 
 public:
@@ -102,18 +105,18 @@ public:
 	}
 
 	void
-	add_function(std::unique_ptr<jlm::clg_node> node);
+	add_function(std::unique_ptr<callgraph_node> node);
 
-	clg_node *
+	callgraph_node *
 	lookup_function(const std::string & name) const;
 
-	inline clg_node *
+	inline callgraph_node *
 	lookup_function(const char * name) const
 	{
 		return lookup_function(std::string(name));
 	}
 
-	std::vector<clg_node*>
+	std::vector<callgraph_node*>
 	nodes() const;
 
 	inline size_t
@@ -122,26 +125,29 @@ public:
 		return nodes_.size();
 	}
 
-	std::vector<std::unordered_set<const clg_node*>>
+	std::vector<std::unordered_set<const callgraph_node*>>
 	find_sccs() const;
 
 private:
-	std::unordered_map<std::string, std::unique_ptr<clg_node>> nodes_;
+	std::unordered_map<
+		std::string,
+		std::unique_ptr<callgraph_node>
+	> nodes_;
 };
 
 /* clg node */
 
 class output;
 
-class clg_node final {
+class callgraph_node final {
 public:
 	inline
-	~clg_node() noexcept
+	~callgraph_node() noexcept
 	{}
 
 private:
 	inline
-	clg_node(
+	callgraph_node(
 		jlm::callgraph & clg,
 		const std::string & name,
 		const jive::fct::type & type,
@@ -179,12 +185,12 @@ public:
 	}
 
 	void
-	add_call(const clg_node * callee)
+	add_call(const callgraph_node * callee)
 	{
 		calls_.insert(callee);
 	}
 
-	const std::unordered_set<const clg_node*> &
+	const std::unordered_set<const callgraph_node*> &
 	calls() const
 	{
 		return calls_;
@@ -217,14 +223,14 @@ public:
 		cfg_ = std::move(cfg);
 	}
 
-	static inline clg_node *
+	static inline callgraph_node *
 	create(
 		jlm::callgraph & clg,
 		const std::string & name,
 		const jive::fct::type & type,
 		bool exported)
 	{
-		std::unique_ptr<jlm::clg_node> node(new clg_node(clg, name, type, exported));
+		std::unique_ptr<callgraph_node> node(new callgraph_node(clg, name, type, exported));
 		auto tmp = node.get();
 		clg.add_function(std::move(node));
 		return tmp;
@@ -236,7 +242,7 @@ private:
 	std::string name_;
 	jlm::callgraph & clg_;
 	std::unique_ptr<jlm::cfg> cfg_;
-	std::unordered_set<const clg_node*> calls_;
+	std::unordered_set<const callgraph_node*> calls_;
 };
 
 class fctvariable final : public gblvariable {
@@ -245,19 +251,19 @@ public:
 	~fctvariable();
 
 	inline
-	fctvariable(clg_node * node, const jlm::linkage & linkage)
+	fctvariable(callgraph_node * node, const jlm::linkage & linkage)
 	: gblvariable(node->type(), node->name(), linkage)
 	, node_(node)
 	{}
 
-	inline jlm::clg_node *
+	inline callgraph_node *
 	function() const noexcept
 	{
 		return node_;
 	}
 
 private:
-	jlm::clg_node * node_;
+	callgraph_node * node_;
 };
 
 static inline bool

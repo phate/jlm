@@ -178,7 +178,7 @@ to_str(const jlm::cfg & cfg)
 }
 
 static inline std::string
-emit_clg_node(const jlm::clg_node & node)
+emit_clg_node(const jlm::callgraph_node & node)
 {
 	const auto & fcttype = node.fcttype();
 
