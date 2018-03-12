@@ -230,7 +230,7 @@ convert_callgraph(const jlm::callgraph & clg, context & ctx)
 	auto & lm = ctx.llvm_module();
 
 	/* forward declare all functions */
-	for (const auto & node : jm.clg().nodes()) {
+	for (const auto & node : jm.callgraph().nodes()) {
 		JLM_DEBUG_ASSERT(is_fctvariable(jm.variable(node)));
 		auto v = static_cast<const jlm::fctvariable*>(jm.variable(node));
 
@@ -241,7 +241,7 @@ convert_callgraph(const jlm::callgraph & clg, context & ctx)
 	}
 
 	/* convert all functions */
-	for (const auto & node : jm.clg().nodes())
+	for (const auto & node : jm.callgraph().nodes())
 		convert_function(*node, ctx);
 }
 
@@ -277,7 +277,7 @@ convert(jlm::module & jm, llvm::LLVMContext & lctx)
 
 	context ctx(jm, *lm);
 	convert_globals(ctx);
-	convert_callgraph(jm.clg(), ctx);
+	convert_callgraph(jm.callgraph(), ctx);
 
 	return lm;
 }

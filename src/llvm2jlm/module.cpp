@@ -206,7 +206,7 @@ convert_module(llvm::Module & module)
 
 	context ctx(*m);
 	convert_global_variables(module.getGlobalList(), ctx);
-	convert_functions(module.getFunctionList(), m->clg(), ctx);
+	convert_functions(module.getFunctionList(), m->callgraph(), ctx);
 
 	return m;
 }

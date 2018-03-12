@@ -370,7 +370,7 @@ convert_lambda_node(const jive::node & node, context & ctx)
 	JLM_DEBUG_ASSERT(is_lambda_node(&node));
 	auto lambda = static_cast<const lambda_node*>(&node);
 	auto & module = ctx.module();
-	auto & clg = module.clg();
+	auto & clg = module.callgraph();
 
 	const auto & ftype = lambda->fcttype();
 	/* FIXME: create/get names for lambdas */
@@ -390,7 +390,7 @@ convert_phi_node(const jive::node & node, context & ctx)
 	JLM_DEBUG_ASSERT(dynamic_cast<const jive::phi_op*>(&node.operation()));
 	auto subregion = static_cast<const jive::structural_node*>(&node)->subregion(0);
 	auto & module = ctx.module();
-	auto & clg = module.clg();
+	auto & clg = module.callgraph();
 
 	/* FIXME: handle phi node dependencies */
 	JLM_DEBUG_ASSERT(subregion->narguments() == subregion->nresults());
@@ -474,7 +474,7 @@ rvsdg2jlm(const jlm::rvsdg & rvsdg)
 	auto & tt = rvsdg.target_triple();
 	std::unique_ptr<jlm::module> module(new jlm::module(tt, dl));
 	auto graph = rvsdg.graph();
-	auto & clg = module->clg();
+	auto & clg = module->callgraph();
 
 	context ctx(*module);
 	for (size_t n = 0; n < graph->root()->narguments(); n++) {

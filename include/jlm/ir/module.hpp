@@ -99,13 +99,13 @@ public:
 	{}
 
 	inline jlm::callgraph &
-	clg() noexcept
+	callgraph() noexcept
 	{
 		return clg_;
 	}
 
 	inline const jlm::callgraph &
-	clg() const noexcept
+	callgraph() const noexcept
 	{
 		return clg_;
 	}
@@ -214,7 +214,7 @@ static inline size_t
 ntacs(const jlm::module & module)
 {
 	size_t ntacs = 0;
-	for (const auto & f : module.clg()) {
+	for (const auto & f : module.callgraph()) {
 		auto cfg = f.cfg();
 		if (!cfg) continue;
 

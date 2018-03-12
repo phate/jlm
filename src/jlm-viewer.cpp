@@ -159,7 +159,7 @@ main (int argc, char ** argv)
 
 	auto jm = jlm::convert_module(*lm);
 	if (flags.l2j) jlm::view(*jm, stdout);
-	if (flags.l2jdot) jlm::view_dot(*find_cfg(jm->clg(), flags.l2jdot_function), stdout);
+	if (flags.l2jdot) jlm::view_dot(*find_cfg(jm->callgraph(), flags.l2jdot_function), stdout);
 
 	auto rvsdg = jlm::construct_rvsdg(*jm);
 	if (flags.j2r) jive::view(rvsdg->graph()->root(), stdout);
@@ -167,7 +167,7 @@ main (int argc, char ** argv)
 
 	jm = jlm::rvsdg2jlm::rvsdg2jlm(*rvsdg);
 	if (flags.r2j) jlm::view(*jm, stdout);
-	if (flags.r2jdot) jlm::view_dot(*find_cfg(jm->clg(), flags.r2jdot_function), stdout);
+	if (flags.r2jdot) jlm::view_dot(*find_cfg(jm->callgraph(), flags.r2jdot_function), stdout);
 
 	lm = jlm::jlm2llvm::convert(*jm, ctx);
 	if (flags.j2l) lm->dump();

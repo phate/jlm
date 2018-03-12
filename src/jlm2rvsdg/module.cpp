@@ -570,7 +570,7 @@ construct_rvsdg(const module & m)
 	convert_globals(graph, svmap);
 
 	/* convert functions */
-	auto sccs = m.clg().find_sccs();
+	auto sccs = m.callgraph().find_sccs();
 	for (const auto & scc : sccs)
 		handle_scc(scc, graph, svmap);
 

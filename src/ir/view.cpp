@@ -223,7 +223,7 @@ to_str(const jlm::module & module)
 	for (const auto & gv : module)
 		str += emit_global(gv) + "\n\n";
 
-	str += to_str(module.clg());
+	str += to_str(module.callgraph());
 
 	return str;
 }
