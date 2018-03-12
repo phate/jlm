@@ -140,6 +140,7 @@ private:
 class output;
 
 class callgraph_node final {
+	typedef std::unordered_set<const callgraph_node*>::const_iterator const_iterator;
 public:
 	inline
 	~callgraph_node() noexcept
@@ -188,6 +189,18 @@ public:
 	add_call(const callgraph_node * callee)
 	{
 		calls_.insert(callee);
+	}
+
+	inline const_iterator
+	begin() const
+	{
+		return calls_.begin();
+	}
+
+	inline const_iterator
+	end() const
+	{
+		return calls_.end();
 	}
 
 	const std::unordered_set<const callgraph_node*> &
