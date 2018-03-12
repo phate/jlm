@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/ir/clg.hpp>
+#include <jlm/ir/callgraph.hpp>
 #include <jlm/ir/operators/operators.hpp>
 
 #include <jive/arch/addresstype.h>

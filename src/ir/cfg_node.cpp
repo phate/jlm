@@ -6,9 +6,9 @@
 
 #include <jlm/common.hpp>
 #include <jlm/ir/basic_block.hpp>
+#include <jlm/ir/callgraph.hpp>
 #include <jlm/ir/cfg.hpp>
 #include <jlm/ir/cfg_node.hpp>
-#include <jlm/ir/clg.hpp>
 
 #include <string.h>
 

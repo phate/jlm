@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_IR_CLG_H
-#define JLM_IR_CLG_H
+#ifndef JLM_IR_CALLGRAPH_H
+#define JLM_IR_CALLGRAPH_H
 
 #include <jlm/ir/cfg.hpp>
 #include <jlm/ir/types.hpp>

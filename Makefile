@@ -13,10 +13,10 @@ LIBJLM_SRC = \
 	src/ir/aggregation/node.cpp \
 	src/ir/aggregation/structure.cpp \
 	src/ir/basic_block.cpp \
+	src/ir/callgraph.cpp \
 	src/ir/cfg.cpp \
 	src/ir/cfg-structure.cpp \
 	src/ir/cfg_node.cpp \
-	src/ir/clg.cpp \
 	src/ir/data.cpp \
 	src/ir/lambda.cpp \
 	src/ir/module.cpp \
