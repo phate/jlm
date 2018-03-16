@@ -34,6 +34,7 @@ public:
 		, l2jdot(false)
 		, l2j_clg_dot(false)
 		, r2jdot(false)
+		, r2j_clg_dot(false)
 	{}
 
 	bool l2j;
@@ -44,6 +45,7 @@ public:
 	bool l2jdot;
 	bool l2j_clg_dot;
 	bool r2jdot;
+	bool r2j_clg_dot;
 	std::string l2jdot_function;
 	std::string r2jdot_function;
 };
@@ -61,6 +63,7 @@ print_usage(const std::string & app)
 	std::cerr << "--l2jdot f: Print function f as graphviz after LLVM to JLM pass.\n";
 	std::cerr << "--l2j-clg-dot: Print call graph after LLVM to JLM pass.\n";
 	std::cerr << "--r2jdot f: Print function f as graphviz after RVSDG to JLM pass.\n";
+	std::cerr << "--r2j-clg-dot: Print call graph after RVSDG to JLM pass.\n";
 }
 
 std::string
@@ -126,6 +129,11 @@ parse_cmdflags(int argc, char ** argv, cmdflags & cmdf)
 			cmdf.r2jdot_function = std::string(argv[++n]);
 			continue;
 		}
+
+		if (flag == "--r2j-clg-dot") {
+			cmdf.r2j_clg_dot = true;
+			continue;
+		}
 	}
 
 	return std::string(argv[argc-1]);
@@ -179,8 +187,12 @@ main (int argc, char ** argv)
 	if (flags.j2rx) jive::view_xml(rvsdg->graph()->root(), stdout);
 
 	jm = jlm::rvsdg2jlm::rvsdg2jlm(*rvsdg);
-	if (flags.r2j) jlm::view(*jm, stdout);
-	if (flags.r2jdot) jlm::view_dot(*find_cfg(jm->callgraph(), flags.r2jdot_function), stdout);
+	if (flags.r2j)
+		jlm::view(*jm, stdout);
+	if (flags.r2jdot)
+		jlm::view_dot(*find_cfg(jm->callgraph(), flags.r2jdot_function), stdout);
+	if (flags.r2j_clg_dot)
+		jlm::view_dot(jm->callgraph(), stdout);
 
 	lm = jlm::jlm2llvm::convert(*jm, ctx);
 	if (flags.j2l) lm->dump();
