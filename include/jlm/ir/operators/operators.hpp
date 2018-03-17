@@ -1767,6 +1767,82 @@ create_sitofp_tac(const variable * operand, jlm::variable * result)
 	return create_tac(op, {operand}, {result});
 }
 
+/* constant array operator */
+
+class constant_array_op final : public jive::simple_op {
+public:
+	virtual
+	~constant_array_op() noexcept;
+
+	inline
+	constant_array_op(const jive::valuetype & type, size_t size)
+	: jive::simple_op()
+	, aport_(arraytype(type, size))
+	, eport_(type)
+	{
+		if (size == 0)
+			throw std::logic_error("Size equals zero.\n");
+	}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual size_t
+	narguments() const noexcept override;
+
+	virtual const jive::port &
+	argument(size_t index) const noexcept override;
+
+	virtual size_t
+	nresults() const noexcept override;
+
+	virtual const jive::port &
+	result(size_t index) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+	inline size_t
+	size() const noexcept
+	{
+		return static_cast<const arraytype*>(&aport_.type())->nelements();
+	}
+
+	inline const jive::valuetype &
+	type() const noexcept
+	{
+		return *static_cast<const jive::valuetype*>(&eport_.type());
+	}
+
+private:
+	jive::port aport_;
+	jive::port eport_;
+};
+
+static inline bool
+is_constant_array_op(const jive::operation & op)
+{
+	return dynamic_cast<const constant_array_op*>(&op) != nullptr;
+}
+
+static inline std::unique_ptr<jlm::tac>
+create_constant_array_tac(
+	const std::vector<const variable*> & elements,
+	jlm::variable * result)
+{
+	if (elements.size() == 0)
+		throw std::logic_error("Expected at least one element.\n");
+
+	auto vt = dynamic_cast<const jive::valuetype*>(&elements[0]->type());
+	if (!vt) throw std::logic_error("Expected value type.\n");
+
+	constant_array_op op(*vt, elements.size());
+	return create_tac(op, elements, {result});
+}
+
 }
 
 #endif

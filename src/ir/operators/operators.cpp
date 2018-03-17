@@ -1331,4 +1331,54 @@ sitofp_op::copy() const
 	return std::make_unique<sitofp_op>(*this);
 }
 
+/* constant array operator */
+
+constant_array_op::~constant_array_op()
+{}
+
+bool
+constant_array_op::operator==(const operation & other) const noexcept
+{
+	auto op = dynamic_cast<const constant_array_op*>(&other);
+	return op && op->aport_ == aport_ && op->eport_ == eport_;
+}
+
+size_t
+constant_array_op::narguments() const noexcept
+{
+	return size();
+}
+
+const jive::port &
+constant_array_op::argument(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < narguments());
+	return eport_;
+}
+
+size_t
+constant_array_op::nresults() const noexcept
+{
+	return 1;
+}
+
+const jive::port &
+constant_array_op::result(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < nresults());
+	return aport_;
+}
+
+std::string
+constant_array_op::debug_string() const
+{
+	return "CONSTANTARRAY";
+}
+
+std::unique_ptr<jive::operation>
+constant_array_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new constant_array_op(*this));
+}
+
 }
