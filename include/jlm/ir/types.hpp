@@ -6,6 +6,7 @@
 #ifndef JLM_IR_TYPES_HPP
 #define JLM_IR_TYPES_HPP
 
+#include <jive/types/function/fcttype.h>
 #include <jive/types/record/rcdtype.h>
 #include <jive/rvsdg/type.h>
 
@@ -299,6 +300,16 @@ private:
 	std::string name_;
 	std::shared_ptr<const jive::rcd::declaration> declaration_;
 };
+
+/* function type */
+
+/* FIXME: this belongs into jive */
+
+static inline bool
+is_fcttype(const jive::type & type)
+{
+	return dynamic_cast<const jive::fct::type*>(&type) != nullptr;
+}
 
 }
 
