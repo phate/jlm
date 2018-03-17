@@ -144,6 +144,8 @@ create_tac(
 	return std::make_unique<jlm::tac>(operation, operands, results);
 }
 
+typedef std::vector<std::unique_ptr<jlm::tac>> tacsvector_t;
+
 }
 
 #endif

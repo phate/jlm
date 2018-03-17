@@ -32,8 +32,6 @@
 
 #include <typeindex>
 
-typedef std::vector<std::unique_ptr<jlm::tac>> tacsvector_t;
-
 static inline std::vector<const jlm::variable*>
 create_result_variables(jlm::module & m, const jive::operation & op)
 {
@@ -45,7 +43,7 @@ create_result_variables(jlm::module & m, const jive::operation & op)
 }
 
 static inline void
-insert_before_branch(jlm::cfg_node * node, tacsvector_t & tacs)
+insert_before_branch(jlm::cfg_node * node, jlm::tacsvector_t & tacs)
 {
 	JLM_DEBUG_ASSERT(is_basic_block(node->attribute()));
 	auto & bb = *static_cast<jlm::basic_block*>(&node->attribute());
