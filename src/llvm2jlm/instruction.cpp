@@ -66,6 +66,12 @@ namespace jlm {
 static inline const variable *
 convert_value(llvm::Value * v, tacsvector_t & tacs, context & ctx)
 {
+	auto caller = ctx.function();
+	if (caller && ctx.has_value(v)) {
+		if (auto callee = dynamic_cast<const fctvariable*>(ctx.lookup_value(v)))
+			caller->function()->add_call(callee->function());
+	}
+
 	if (ctx.has_value(v))
 		return ctx.lookup_value(v);
 
@@ -325,15 +331,12 @@ convert_call_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 	JLM_DEBUG_ASSERT(i->getCalledFunction());
 
 	auto f = i->getCalledValue();
+	/* FIXME: currently needed to insert edge in call graph */
+	convert_value(f, tacs, ctx);
 	JLM_DEBUG_ASSERT(f->getType()->isPointerTy());
 	JLM_DEBUG_ASSERT(f->getType()->getContainedType(0)->isFunctionTy());
 	auto ftype = llvm::cast<const llvm::FunctionType>(f->getType()->getContainedType(0));
 	auto type = convert_type(ftype, ctx);
-
-	auto v = ctx.lookup_value(i->getParent()->getParent());
-	auto caller = static_cast<const fctvariable*>(v)->function();
-	auto callee = convert_value(f, tacs, ctx);
-	caller->add_call(static_cast<const fctvariable*>(callee)->function());
 
 	/* arguments */
 	std::vector<const jlm::variable*> vargs;
