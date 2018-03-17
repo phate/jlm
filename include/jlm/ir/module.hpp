@@ -58,6 +58,13 @@ public:
 		return initialization_.get();
 	}
 
+	inline void
+	set_initialization(std::unique_ptr<const expr> init) noexcept
+	{
+		/* FIXME: type check */
+		initialization_ = std::move(init);
+	}
+
 	inline bool
 	constant() const noexcept
 	{
