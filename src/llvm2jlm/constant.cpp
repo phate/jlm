@@ -233,15 +233,23 @@ convert_constantAggregateZero(
 
 static const variable *
 convert_constantArray(
-	llvm::Constant * constant,
+	llvm::Constant * c,
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantArray*>(constant));
+	JLM_DEBUG_ASSERT(c->getValueID() == llvm::Value::ConstantArrayVal);
 
-	/* FIXME */
-	JLM_DEBUG_ASSERT(0);
-	return nullptr;
+	std::vector<const variable*> elements;
+	for (size_t n = 0; n < c->getNumOperands(); n++) {
+		auto operand = c->getOperand(n);
+		JLM_DEBUG_ASSERT(llvm::dyn_cast<const llvm::Constant>(operand));
+		auto constant = llvm::cast<llvm::Constant>(operand);
+		elements.push_back(convert_constant(constant, tacs, ctx));
+	}
+
+	auto r = ctx.module().create_variable(*convert_type(c->getType(), ctx), false);
+	tacs.push_back(create_constant_array_tac(elements, r));
+	return r;
 }
 
 static const variable *
