@@ -90,6 +90,7 @@ public:
 	inline
 	context(jlm::module & module)
 		: module_(module)
+		, function_(nullptr)
 	{}
 
 	inline jlm::variable *
@@ -187,11 +188,24 @@ public:
 		return module_;
 	}
 
+	inline void
+	set_function(const fctvariable * f) noexcept
+	{
+		function_ = f;
+	}
+
+	inline const fctvariable *
+	function() const noexcept
+	{
+		return function_;
+	}
+
 private:
 	jlm::module & module_;
 	basic_block_map bbmap_;
 	jlm::variable * state_;
 	jlm::variable * result_;
+	const fctvariable * function_;
 	std::unordered_map<const llvm::Value*, jlm::variable*> vmap_;
 	std::unordered_map<
 		const llvm::StructType*,
