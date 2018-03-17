@@ -327,8 +327,6 @@ convert_call_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 {
 	JLM_DEBUG_ASSERT(instruction->getOpcode() == llvm::Instruction::Call);
 	auto i = llvm::cast<llvm::CallInst>(instruction);
-	/* FIXME: support indirect calls */
-	JLM_DEBUG_ASSERT(i->getCalledFunction());
 
 	auto f = i->getCalledValue();
 	/* FIXME: currently needed to insert edge in call graph */
