@@ -200,7 +200,9 @@ convert_global_variables(llvm::Module::GlobalListType & vs, context & ctx)
 	for (auto & gv : vs) {
 		if (gv.hasInitializer()) {
 			auto v = static_cast<gblvalue*>(ctx.lookup_value(&gv));
+			ctx.set_node(v->node());
 			v->node()->set_initialization(std::move(convert_constant(&gv, ctx)));
+			ctx.set_node(nullptr);
 		}
 	}
 }
