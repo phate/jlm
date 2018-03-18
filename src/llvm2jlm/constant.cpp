@@ -312,6 +312,7 @@ convert_function(
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::Function*>(constant));
 
 	/* FIXME: */
+	JLM_DEBUG_ASSERT(0);
 	return nullptr;
 }
 
