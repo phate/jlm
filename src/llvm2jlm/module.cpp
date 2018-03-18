@@ -133,9 +133,9 @@ convert_function(llvm::Function & function, context & ctx)
 
 	auto fv = static_cast<const fctvariable*>(ctx.lookup_value(&function));
 
-	ctx.set_function(fv);
+	ctx.set_node(fv->function());
 	fv->function()->add_cfg(create_cfg(function, ctx));
-	ctx.set_function(nullptr);
+	ctx.set_node(nullptr);
 }
 
 static const jlm::linkage &

@@ -89,7 +89,7 @@ public:
 	inline
 	context(jlm::module & module)
 		: module_(module)
-		, function_(nullptr)
+		, node_(nullptr)
 	{}
 
 	inline jlm::variable *
@@ -188,23 +188,23 @@ public:
 	}
 
 	inline void
-	set_function(const fctvariable * f) noexcept
+	set_node(callgraph_node * node) noexcept
 	{
-		function_ = f;
+		node_ = node;
 	}
 
-	inline const fctvariable *
-	function() const noexcept
+	inline callgraph_node *
+	node() const noexcept
 	{
-		return function_;
+		return node_;
 	}
 
 private:
 	jlm::module & module_;
 	basic_block_map bbmap_;
 	jlm::variable * state_;
+	callgraph_node * node_;
 	jlm::variable * result_;
-	const fctvariable * function_;
 	std::unordered_map<const llvm::Value*, jlm::variable*> vmap_;
 	std::unordered_map<
 		const llvm::StructType*,
