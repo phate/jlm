@@ -333,6 +333,27 @@ convert_data_array_constant(
 }
 
 static inline llvm::Value *
+convert_constant_array(
+	const jive::operation & op,
+	const std::vector<const variable*> & args,
+	llvm::IRBuilder<> & builder,
+	context & ctx)
+{
+	JLM_DEBUG_ASSERT(is_constant_array_op(op));
+
+	std::vector<llvm::Constant*> data;
+	for (size_t n = 0; n < args.size(); n++) {
+		auto c = llvm::dyn_cast<llvm::Constant>(ctx.value(args[n]));
+		JLM_DEBUG_ASSERT(c);
+		data.push_back(c);
+	}
+
+	auto at = dynamic_cast<const arraytype*>(&op.result(0).type());
+	auto type = convert_type(*at, ctx);
+	return llvm::ConstantArray::get(type, data);
+}
+
+static inline llvm::Value *
 convert_ptrcmp(
 	const jive::operation & op,
 	const std::vector<const variable*> & args,
@@ -639,6 +660,7 @@ convert_operation(
 	, {std::type_index(typeid(jlm::ptr_constant_null_op)), convert_ptr_constant_null}
 	, {std::type_index(typeid(jlm::select_op)), convert_select}
 	, {std::type_index(typeid(jive::mux_op)), convert_mux}
+	, {typeid(jlm::constant_array_op), convert_constant_array}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
