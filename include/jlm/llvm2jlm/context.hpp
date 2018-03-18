@@ -7,7 +7,6 @@
 #define JLM_LLVM2JLM_CONTEXT_HPP
 
 #include <jlm/ir/cfg_node.hpp>
-#include <jlm/ir/expression.hpp>
 #include <jlm/ir/module.hpp>
 #include <jlm/ir/tac.hpp>
 #include <jlm/llvm2jlm/type.hpp>
@@ -212,33 +211,6 @@ private:
 		std::shared_ptr<const jive::rcd::declaration>> declarations_;
 };
 
-}
-
-static inline std::vector<std::unique_ptr<jlm::tac>>
-expr2tacs(const jlm::expr & e, const jlm::context & ctx)
-{
-	std::function<const jlm::variable *(
-		const jlm::expr &,
-		const jlm::variable *,
-		std::vector<std::unique_ptr<jlm::tac>>&)
-	> append = [&](
-		const jlm::expr & e,
-		const jlm::variable * result,
-		std::vector<std::unique_ptr<jlm::tac>> & tacs)
-	{
-		std::vector<const jlm::variable *> operands;
-		for (size_t n = 0; n < e.noperands(); n++) {
-			auto v = ctx.module().create_variable(e.operand(n).type(), false);
-			operands.push_back(append(e.operand(n), v, tacs));
-		}
-
-		tacs.emplace_back(create_tac(e.operation(), operands, {result}));
-		return tacs.back()->output(0);
-	};
-
-	std::vector<std::unique_ptr<jlm::tac>> tacs;
-	append(e, ctx.module().create_variable(e.type(), false), tacs);
-	return tacs;
 }
 
 #endif

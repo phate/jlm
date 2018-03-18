@@ -9,7 +9,6 @@
 #include <jive/rvsdg/statemux.h>
 
 #include <jlm/ir/cfg_node.hpp>
-#include <jlm/ir/expression.hpp>
 #include <jlm/ir/module.hpp>
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/tac.hpp>
@@ -656,53 +655,6 @@ convert_instruction(const jlm::tac & tac, const jlm::cfg_node * node, context & 
 	llvm::IRBuilder<> builder(ctx.basic_block(node));
 	auto r = convert_operation(tac.operation(), operands, builder, ctx);
 	if (r != nullptr) ctx.insert(tac.output(0), r);
-}
-
-static inline std::vector<std::unique_ptr<jlm::tac>>
-expr2tacs(const jlm::expr & e, const context & ctx)
-{
-	std::function<const jlm::variable *(
-		const jlm::expr &,
-		const jlm::variable *,
-		std::vector<std::unique_ptr<jlm::tac>>&)
-	> append = [&](
-		const jlm::expr & e,
-		const jlm::variable * result,
-		std::vector<std::unique_ptr<jlm::tac>> & tacs)
-	{
-		std::vector<const jlm::variable *> operands;
-		for (size_t n = 0; n < e.noperands(); n++) {
-			auto v = ctx.jlm_module().create_variable(e.operand(n).type(), false);
-			operands.push_back(append(e.operand(n), v, tacs));
-		}
-
-		tacs.emplace_back(create_tac(e.operation(), operands, {result}));
-		return tacs.back()->output(0);
-	};
-
-	std::vector<std::unique_ptr<jlm::tac>> tacs;
-	append(e, ctx.jlm_module().create_variable(e.type(), false), tacs);
-	return tacs;
-}
-
-llvm::Constant *
-convert_expression(const jlm::expr & e, context & ctx)
-{
-	auto tacs = expr2tacs(e, ctx);
-
-	llvm::Value * r = nullptr;
-	llvm::IRBuilder<> builder(ctx.llvm_module().getContext());
-	for (const auto & tac : tacs) {
-		std::vector<const variable*> operands;
-		for (size_t n = 0; n < tac->ninputs(); n++)
-			operands.push_back(tac->input(n));
-
-		JLM_DEBUG_ASSERT(tac->noutputs() == 1);
-		r = convert_operation(tac->operation(), operands, builder, ctx);
-		ctx.insert(tac->output(0), r);
-	}
-
-	return llvm::dyn_cast<llvm::Constant>(r);
 }
 
 llvm::Constant *

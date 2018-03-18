@@ -5,7 +5,6 @@
 
 #include <jlm/ir/basic_block.hpp>
 #include <jlm/ir/cfg.hpp>
-#include <jlm/ir/expression.hpp>
 #include <jlm/ir/tac.hpp>
 #include <jlm/ir/variable.hpp>
 

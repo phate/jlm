@@ -14,7 +14,6 @@ class Constant;
 
 namespace jlm {
 
-class expr;
 class tac;
 
 namespace jlm2llvm {
@@ -23,9 +22,6 @@ class context;
 
 void
 convert_instruction(const jlm::tac & tac, const jlm::cfg_node * node, context & ctx);
-
-llvm::Constant *
-convert_expression(const jlm::expr & e, context & ctx);
 
 llvm::Constant *
 convert_tacs(const tacsvector_t & tacs, context & ctx);

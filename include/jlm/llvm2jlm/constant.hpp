@@ -39,9 +39,6 @@ convert_constant(
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx);
 
-std::unique_ptr<const expr>
-convert_constant_expression(llvm::Constant * constant, context & ctx);
-
 }
 
 #endif

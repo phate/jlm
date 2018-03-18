@@ -522,17 +522,6 @@ handle_scc(
 	}
 }
 
-static inline jive::output *
-convert_expression(const expr & e, jive::region * region)
-{
-	std::vector<jive::output*> operands;
-	for (size_t n = 0; n < e.noperands(); n++)
-		operands.push_back(convert_expression(e.operand(n), region));
-
-	return jive::create_normalized(region, static_cast<const jive::simple_op&>(e.operation()),
-		operands)[0];
-}
-
 static jive::output *
 convert_tacs(const tacsvector_t & tacs, jive::region * region, scoped_vmap & svmap)
 {

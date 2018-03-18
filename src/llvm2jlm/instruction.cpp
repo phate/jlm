@@ -11,7 +11,6 @@
 
 #include <jlm/ir/basic_block.hpp>
 #include <jlm/ir/callgraph.hpp>
-#include <jlm/ir/expression.hpp>
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/tac.hpp>
 

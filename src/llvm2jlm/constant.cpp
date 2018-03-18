@@ -4,7 +4,6 @@
  */
 
 #include <jlm/common.hpp>
-#include <jlm/ir/expression.hpp>
 #include <jlm/ir/operators/operators.hpp>
 #include <jlm/llvm2jlm/context.hpp>
 #include <jlm/llvm2jlm/constant.hpp>
@@ -27,28 +26,6 @@ namespace jlm {
 
 const variable *
 convert_constant(llvm::Constant*, std::vector<std::unique_ptr<jlm::tac>>&, context&);
-
-static inline std::unique_ptr<const expr>
-tacs2expr(const std::vector<std::unique_ptr<jlm::tac>> & tacs)
-{
-	JLM_DEBUG_ASSERT(tacs.size() > 0 && tacs.back()->noutputs() == 1);
-
-	std::unordered_map<const variable*, std::unique_ptr<const expr>> map;
-	for (const auto & tac : tacs) {
-		std::vector<std::unique_ptr<const expr>> operands;
-		for (size_t n = 0; n < tac->ninputs(); n++) {
-			auto v = tac->input(n);
-			JLM_DEBUG_ASSERT(map.find(v) != map.end());
-			operands.push_back(std::move(map[v]));
-		}
-
-		JLM_DEBUG_ASSERT(tac->noutputs() == 1);
-		map[tac->output(0)] = std::make_unique<const expr>(tac->operation(), std::move(operands));
-	}
-
-	JLM_DEBUG_ASSERT(tacs.back()->noutputs() == 1);
-	return std::unique_ptr<const expr>(map[tacs.back()->output(0)].release());
-}
 
 jive::bits::value_repr
 convert_apint(const llvm::APInt & value)
@@ -378,13 +355,6 @@ convert_constant(llvm::Constant * c, context & ctx)
 	std::vector<std::unique_ptr<jlm::tac>> tacs;
 	convert_constant(c, tacs, ctx);
 	return tacs;
-}
-
-std::unique_ptr<const expr>
-convert_constant_expression(llvm::Constant * c, context & ctx)
-{
-	auto tacs = convert_constant(c, ctx);
-	return tacs2expr(tacs);
 }
 
 }

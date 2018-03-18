@@ -88,17 +88,6 @@ create_assignment_lpbb(const jlm::variable * argument, const jlm::variable * res
 	return append_last(ctx.lpbb(), create_assignment(argument->type(), argument, result));
 }
 
-static inline std::unique_ptr<const expr>
-convert_port(const jive::output * port)
-{
-	auto node = port->node();
-	std::vector<std::unique_ptr<const expr>> operands;
-	for (size_t n = 0; n < node->ninputs(); n++)
-		operands.push_back(convert_port(node->input(n)->origin()));
-
-	return std::make_unique<const jlm::expr>(node->operation(), std::move(operands));
-}
-
 static const variable *
 convert_port(
 	const jive::output * port,
