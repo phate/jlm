@@ -56,6 +56,110 @@ is_data_op(const jive::operation & op) noexcept
 	return dynamic_cast<const jlm::data_op*>(&op) != nullptr;
 }
 
+/* data node */
+
+class data_builder;
+
+class rvsdg_data_node final : public jive::structural_node {
+	friend data_builder;
+public:
+	virtual
+	~rvsdg_data_node();
+
+private:
+	inline
+	rvsdg_data_node(
+		jive::region * parent,
+		const data_op & op)
+	: jive::structural_node(op, parent, 1)
+	{}
+
+	static rvsdg_data_node *
+	create(
+		jive::region * parent,
+		const jlm::linkage & linkage,
+		bool constant)
+	{
+		data_op op(linkage, constant);
+		return new rvsdg_data_node(parent, op);
+	}
+
+	class iterator final {
+	public:
+		inline constexpr
+		iterator(jive::input * input) noexcept
+		: input_(input)
+		{}
+
+		inline const iterator &
+		operator++() noexcept
+		{
+			auto node = input_->node();
+			auto index = input_->index();
+			input_ = (index == node->ninputs()-1) ? nullptr : node->input(index+1);
+			return *this;
+		}
+
+		inline const iterator
+		operator++(int) noexcept
+		{
+			iterator it(*this);
+			++(*this);
+			return it;
+		}
+
+		inline bool
+		operator==(const iterator & other) const noexcept
+		{
+			return input_ == other.input_;
+		}
+
+		inline bool
+		operator!=(const iterator & other) const noexcept
+		{
+			return !(*this == other);
+		}
+
+		inline jive::input *
+		operator*() noexcept
+		{
+			return input_;
+		}
+
+	private:
+		jive::input * input_;
+	};
+
+public:
+	inline jive::region *
+	subregion() const noexcept
+	{
+		return jive::structural_node::subregion(0);
+	}
+
+	inline rvsdg_data_node::iterator
+	begin() const
+	{
+		return iterator(subregion()->argument(0)->input());
+	}
+
+	inline rvsdg_data_node::iterator
+	end() const
+	{
+		return iterator(nullptr);
+	}
+
+	inline jive::argument *
+	add_dependency(jive::output * origin)
+	{
+		auto input = add_input(origin->type(), origin);
+		return subregion()->add_argument(input, origin->type());
+	}
+
+	virtual rvsdg_data_node *
+	copy(jive::region * region, jive::substitution_map & smap) const override;
+};
+
 /* data builder */
 
 class data_builder final {
@@ -78,7 +182,7 @@ public:
 	inline jive::region *
 	region() const noexcept
 	{
-		return node_ ? node_->subregion(0) : nullptr;
+		return node_ ? node_->subregion() : nullptr;
 	}
 
 	inline jive::region *
@@ -90,8 +194,14 @@ public:
 		if (node_)
 			return region();
 
-		node_ = parent->add_structural_node(jlm::data_op(linkage, constant), 1);
+		node_ = rvsdg_data_node::create(parent, linkage, constant);
 		return region();
+	}
+
+	inline jive::output *
+	add_dependency(jive::output * origin)
+	{
+		return node_ ? node_->add_dependency(origin) : nullptr;
 	}
 
 	inline jive::output *
@@ -106,7 +216,7 @@ public:
 	}
 
 private:
-	jive::structural_node * node_;
+	rvsdg_data_node * node_;
 };
 
 }
