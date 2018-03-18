@@ -498,6 +498,7 @@ convert_data_node(
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const data_node*>(node));
 	auto n = static_cast<const data_node*>(node);
+	auto & m = svmap.module();
 	auto graph = region->graph();
 
 	jive::output * data = nullptr;
@@ -506,7 +507,19 @@ convert_data_node(
 	} else {
 		jlm::data_builder db;
 		auto r = db.begin(graph->root(), n->linkage(), n->constant());
+		auto & pv = svmap.vmap();
+		svmap.push_scope(r);
+
+		/* add dependencies */
+		for (const auto & dp : *node) {
+			auto v = m.variable(dp);
+			JLM_DEBUG_ASSERT(pv.find(v) != pv.end());
+			auto argument = db.add_dependency(pv[v]);
+			svmap.vmap()[v] = argument;
+		}
+
 		data = db.end(convert_tacs(n->initialization(), r, svmap));
+		svmap.pop_scope();
 	}
 
 	return data;
