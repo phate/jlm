@@ -126,4 +126,21 @@ function_node::type() const noexcept
 fctvariable::~fctvariable()
 {}
 
+/* data node */
+
+data_node::~data_node()
+{}
+
+const std::string &
+data_node::name() const noexcept
+{
+	return name_;
+}
+
+const jive::type &
+data_node::type() const noexcept
+{
+	return *type_;
+}
+
 }

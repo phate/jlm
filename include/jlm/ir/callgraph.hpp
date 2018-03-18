@@ -7,6 +7,7 @@
 #define JLM_IR_CALLGRAPH_H
 
 #include <jlm/ir/cfg.hpp>
+#include <jlm/ir/tac.hpp>
 #include <jlm/ir/types.hpp>
 #include <jlm/ir/variable.hpp>
 
@@ -291,6 +292,82 @@ is_fctvariable(const jlm::variable * v)
 {
 	return dynamic_cast<const jlm::fctvariable*>(v) != nullptr;
 }
+
+/* data node */
+
+class data_node final : public callgraph_node {
+public:
+	virtual
+	~data_node() noexcept;
+
+private:
+	inline
+	data_node(
+		jlm::callgraph & clg,
+		const std::string & name,
+		const jive::type & type,
+		const jlm::linkage & linkage,
+		bool constant)
+	: callgraph_node(clg)
+	, constant_(constant)
+	, name_(name)
+	, linkage_(linkage)
+	, type_(std::move(type.copy()))
+	{}
+
+public:
+	virtual const jive::type &
+	type() const noexcept override;
+
+	const std::string &
+	name() const noexcept override;
+
+	inline bool
+	constant() const noexcept
+	{
+		return constant_;
+	}
+
+	inline const tacsvector_t &
+	initialization() const noexcept
+	{
+		return init_;
+	}
+
+	inline void
+	set_initialization(tacsvector_t init)
+	{
+		/* FIXME: type check */
+		init_ = std::move(init);
+	}
+
+	inline const jlm::linkage &
+	linkage() const noexcept
+	{
+		return linkage_;
+	}
+
+	static inline data_node *
+	create(
+		jlm::callgraph & clg,
+		const std::string & name,
+		const jive::type & type,
+		const jlm::linkage & linkage,
+		bool constant)
+	{
+		std::unique_ptr<data_node> node(new data_node(clg, name, type, linkage, constant));
+		auto ptr = node.get();
+		clg.add_function(std::move(node));
+		return ptr;
+	}
+
+private:
+	bool constant_;
+	std::string name_;
+	tacsvector_t init_;
+	jlm::linkage linkage_;
+	std::unique_ptr<jive::type> type_;
+};
 
 }
 

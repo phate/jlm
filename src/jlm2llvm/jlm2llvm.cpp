@@ -223,48 +223,43 @@ convert_linkage(const jlm::linkage & linkage)
 	return map[linkage];
 }
 
-static inline void
+static void
 convert_callgraph(const jlm::callgraph & clg, context & ctx)
 {
 	auto & jm = ctx.jlm_module();
 	auto & lm = ctx.llvm_module();
 
-	/* forward declare all functions */
-	for (const auto & node : jm.callgraph().nodes()) {
-		JLM_DEBUG_ASSERT(is_fctvariable(jm.variable(node)));
-		auto v = static_cast<const jlm::fctvariable*>(jm.variable(node));
+	/* forward declare all nodes */
+	for (const auto & node : jm.callgraph()) {
+		auto v = jm.variable(&node);
 
-		auto type = convert_type(dynamic_cast<function_node*>(node)->fcttype(), ctx);
-		auto linkage = convert_linkage(v->linkage());
-		auto f = llvm::Function::Create(type, linkage, node->name(), &lm);
-		ctx.insert(jm.variable(node), f);
+		if (auto n = dynamic_cast<const data_node*>(&node)) {
+			JLM_DEBUG_ASSERT(is_ptrtype(n->type()));
+			auto pt = static_cast<const jlm::ptrtype*>(&n->type());
+			auto type = convert_type(pt->pointee_type(), ctx);
+
+			auto linkage = convert_linkage(n->linkage());
+			auto gv = new llvm::GlobalVariable(lm, type, n->constant(), linkage, nullptr, n->name());
+			ctx.insert(v, gv);
+		} else if (auto n = dynamic_cast<const function_node*>(&node)) {
+			auto type = convert_type(n->fcttype(), ctx);
+			auto linkage = convert_linkage(dynamic_cast<const fctvariable*>(v)->linkage());
+			auto f = llvm::Function::Create(type, linkage, n->name(), &lm);
+			ctx.insert(v, f);
+		} else
+			JLM_ASSERT(0);
 	}
 
-	/* convert all functions */
-	for (const auto & node : jm.callgraph().nodes())
-		convert_function(*dynamic_cast<function_node*>(node), ctx);
-}
-
-static inline void
-convert_globals(context & ctx)
-{
-	using namespace llvm;
-
-	auto & jm = ctx.jlm_module();
-	auto & lm = ctx.llvm_module();
-
-	for (const auto & gv : jm) {
-		llvm::Constant * init = nullptr;
-		if (!gv->initialization().empty())
-			init = convert_tacs(gv->initialization(), ctx);
-
-		JLM_DEBUG_ASSERT(is_ptrtype(gv->type()));
-		auto pt = static_cast<const jlm::ptrtype*>(&gv->type());
-		auto type = convert_type(pt->pointee_type(), ctx);
-
-		auto linkage = convert_linkage(gv->linkage());
-		auto addr = new GlobalVariable(lm, type, gv->constant(), linkage, init, gv->name());
-		ctx.insert(gv, addr);
+	/* convert all nodes */
+	for (const auto & node : jm.callgraph()) {
+		if (auto n = dynamic_cast<const data_node*>(&node)) {
+			auto & tacs = n->initialization();
+			auto init = tacs.empty() ? nullptr : convert_tacs(tacs, ctx);
+			llvm::dyn_cast<llvm::GlobalVariable>(ctx.value(jm.variable(n)))->setInitializer(init);
+		} else if (auto n = dynamic_cast<const function_node*>(&node)) {
+			convert_function(*n, ctx);
+		} else
+			JLM_ASSERT(0);
 	}
 }
 
@@ -276,7 +271,6 @@ convert(jlm::module & jm, llvm::LLVMContext & lctx)
 	lm->setDataLayout(jm.data_layout());
 
 	context ctx(jm, *lm);
-	convert_globals(ctx);
 	convert_callgraph(jm.callgraph(), ctx);
 
 	return lm;

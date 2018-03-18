@@ -190,7 +190,9 @@ convert_global_variables(llvm::Module::GlobalListType & vs, context & ctx)
 		auto constant = gv.isConstant();
 		auto type = convert_type(gv.getType(), ctx);
 		auto linkage = convert_linkage(gv.getLinkage());
-		auto v = m.create_global_value(*type, name, linkage, constant, {});
+
+		auto node = data_node::create(m.callgraph(), name, *type, linkage, constant);
+		auto v = m.create_global_value(node);
 		ctx.insert_value(&gv, v);
 	}
 
@@ -198,7 +200,7 @@ convert_global_variables(llvm::Module::GlobalListType & vs, context & ctx)
 	for (auto & gv : vs) {
 		if (gv.hasInitializer()) {
 			auto v = static_cast<gblvalue*>(ctx.lookup_value(&gv));
-			v->set_initialization(std::move(convert_constant(&gv, ctx)));
+			v->node()->set_initialization(std::move(convert_constant(&gv, ctx)));
 		}
 	}
 }

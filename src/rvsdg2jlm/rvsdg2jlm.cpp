@@ -450,7 +450,9 @@ convert_data_node(const jive::node & node, context & ctx)
 
 	auto linkage = op.linkage();
 	auto constant = op.constant();
-	auto v = module.create_global_value(type, name, linkage, constant, std::move(tacs));
+	auto dnode = data_node::create(module.callgraph(), name, type, linkage, constant);
+	dnode->set_initialization(std::move(tacs));
+	auto v = module.create_global_value(dnode);
 	ctx.insert(result->output(), v);
 }
 
@@ -496,8 +498,8 @@ rvsdg2jlm(const jlm::rvsdg & rvsdg)
 		} else {
 			const auto & type = argument->type();
 			const auto & name = argument->port().gate()->name();
-			auto v = module->create_global_value(type, name, jlm::linkage::external_linkage, false,
-				{});
+			auto dnode = data_node::create(clg, name, type, jlm::linkage::external_linkage, false);
+			auto v = module->create_global_value(dnode);
 			ctx.insert(argument, v);
 		}
 	}

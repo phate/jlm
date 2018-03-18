@@ -56,8 +56,8 @@ static inline std::string
 emit_global(const jlm::gblvalue * v)
 {
 	std::string str = v->debug_string();
-	if (!v->initialization().empty())
-		str += " = " + emit_tacs(v->initialization());
+	if (!v->node()->initialization().empty())
+		str += " = " + emit_tacs(v->node()->initialization());
 
 	return str;
 }
@@ -180,10 +180,11 @@ to_str(const jlm::cfg & cfg)
 	return str;
 }
 
-static inline std::string
-emit_clg_node(const jlm::callgraph_node & clg_node)
+static std::string
+emit_function_node(const jlm::callgraph_node & clg_node)
 {
-	auto & node = *dynamic_cast<const function_node*>(&clg_node);
+	JLM_DEBUG_ASSERT(dynamic_cast<const function_node*>(&clg_node));
+	auto & node = *static_cast<const function_node*>(&clg_node);
 
 	const auto & fcttype = node.fcttype();
 
@@ -211,12 +212,35 @@ emit_clg_node(const jlm::callgraph_node & clg_node)
 	return exported + results + " " + node.name() + " " + operands + "\n{\n" + cfg + "}\n";
 }
 
+static std::string
+emit_data_node(const jlm::callgraph_node & clg_node)
+{
+	JLM_DEBUG_ASSERT(dynamic_cast<const data_node*>(&clg_node));
+	auto & node = *static_cast<const data_node*>(&clg_node);
+
+	std::string str = node.name();
+	if (!node.initialization().empty())
+		str += " = " + emit_tacs(node.initialization());
+
+	return str;
+}
+
 std::string
 to_str(const jlm::callgraph & clg)
 {
+	static std::unordered_map<
+		std::type_index,
+		std::function<std::string(const jlm::callgraph_node&)>
+	> map({
+		{typeid(function_node), emit_function_node}
+	, {typeid(data_node), emit_data_node}
+	});
+
 	std::string str;
-	for (const auto & node : clg)
-		str += emit_clg_node(node) + "\n";
+	for (const auto & node : clg) {
+		JLM_DEBUG_ASSERT(map.find(typeid(node)) != map.end());
+		str += map[typeid(node)](node) + "\n";
+	}
 
 	return str;
 }

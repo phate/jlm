@@ -463,64 +463,17 @@ convert_cfg(
 
 static jive::output *
 construct_lambda(
-	const function_node & function,
+	const callgraph_node * node,
 	jive::region * region,
 	scoped_vmap & svmap)
 {
+	JLM_DEBUG_ASSERT(dynamic_cast<const function_node*>(node));
+	auto & function = *static_cast<const function_node*>(node);
+
 	if (function.cfg() == nullptr)
 		return region->graph()->import(function.type(), function.name());
 
 	return convert_cfg(function, region, svmap);
-}
-
-
-static void
-handle_scc(
-	const std::unordered_set<const jlm::callgraph_node*> & scc,
-	jive::graph * graph,
-	scoped_vmap & svmap)
-{
-	auto & module = svmap.module();
-
-	if (scc.size() == 1 && !(*scc.begin())->is_selfrecursive()) {
-		auto & function = *scc.begin();
-		auto & fnode = *dynamic_cast<const function_node*>(function);
-		auto lambda = construct_lambda(fnode, graph->root(), svmap);
-		JLM_DEBUG_ASSERT(svmap.module().variable(function));
-		svmap.vmap()[svmap.module().variable(function)] = lambda;
-		if (fnode.exported())
-			graph->export_port(lambda, function->name());
-	} else {
-		jive::phi_builder pb;
-		pb.begin_phi(graph->root());
-		svmap.push_scope(pb.region());
-
-		/* FIXME: external dependencies */
-		std::vector<std::shared_ptr<jive::recvar>> recvars;
-		for (const auto & f : scc) {
-			auto rv = pb.add_recvar(f->type());
-			JLM_DEBUG_ASSERT(module.variable(f));
-			svmap.vmap()[module.variable(f)] = rv->value();
-			recvars.push_back(rv);
-		}
-
-		size_t n = 0;
-		for (const auto & f : scc) {
-			auto lambda = construct_lambda(*dynamic_cast<const function_node*>(f), pb.region(), svmap);
-			recvars[n++]->set_value(lambda);
-		}
-
-		svmap.pop_scope();
-		pb.end_phi();
-
-		n = 0;
-		for (const auto & f : scc) {
-			auto value = recvars[n++]->value();
-			svmap.vmap()[module.variable(f)] = value;
-			if (dynamic_cast<const function_node*>(f)->exported())
-				graph->export_port(value, f->name());
-		}
-	}
 }
 
 static jive::output *
@@ -537,24 +490,85 @@ convert_tacs(const tacsvector_t & tacs, jive::region * region, scoped_vmap & svm
 	return vmap[tac->output(0)];
 }
 
-static inline void
-convert_globals(jive::graph * rvsdg, scoped_vmap & svmap)
+static jive::output *
+convert_data_node(
+	const jlm::callgraph_node * node,
+	jive::region * region,
+	scoped_vmap & svmap)
+{
+	JLM_DEBUG_ASSERT(dynamic_cast<const data_node*>(node));
+	auto n = static_cast<const data_node*>(node);
+	auto graph = region->graph();
+
+	jive::output * data = nullptr;
+	if (n->initialization().empty()) {
+		data = graph->import(n->type(), n->name());
+	} else {
+		jlm::data_builder db;
+		auto r = db.begin(graph->root(), n->linkage(), n->constant());
+		data = db.end(convert_tacs(n->initialization(), r, svmap));
+	}
+
+	return data;
+}
+
+static void
+handle_scc(
+	const std::unordered_set<const jlm::callgraph_node*> & scc,
+	jive::graph * graph,
+	scoped_vmap & svmap)
 {
 	auto & m = svmap.module();
 
-	for (const auto & gv : m) {
-		jive::output * data;
-		if (gv->initialization().empty()) {
-			data = rvsdg->import(gv->type(), gv->name());
-		} else {
-			jlm::data_builder db;
-			auto region = db.begin(rvsdg->root(), gv->linkage(), gv->constant());
-			data = db.end(convert_tacs(gv->initialization(), region, svmap));
+	static std::unordered_map<
+		std::type_index,
+		std::function<jive::output*(const callgraph_node*, jive::region*, scoped_vmap&)>
+	> map({
+	  {typeid(data_node), convert_data_node}
+	, {typeid(function_node), construct_lambda}
+	});
+
+	if (scc.size() == 1 && !(*scc.begin())->is_selfrecursive()) {
+		auto & node = *scc.begin();
+		JLM_DEBUG_ASSERT(map.find(typeid(*node)) != map.end());
+		auto output = map[typeid(*node)](node, graph->root(), svmap);
+
+		auto v = m.variable(node);
+		JLM_DEBUG_ASSERT(v);
+		svmap.vmap()[v] = output;
+		if (v->exported())
+			graph->export_port(output, v->name());
+	} else {
+		jive::phi_builder pb;
+		pb.begin_phi(graph->root());
+		svmap.push_scope(pb.region());
+
+		/* FIXME: external dependencies */
+		std::vector<std::shared_ptr<jive::recvar>> recvars;
+		for (const auto & node : scc) {
+			auto rv = pb.add_recvar(node->type());
+			JLM_DEBUG_ASSERT(m.variable(node));
+			svmap.vmap()[m.variable(node)] = rv->value();
+			recvars.push_back(rv);
 		}
 
-		svmap.vmap()[gv] = data;
-		if (gv->exported())
-			rvsdg->export_port(data, gv->name());
+		size_t n = 0;
+		for (const auto & node : scc) {
+			auto output = map[typeid(*node)](node, pb.region(), svmap);
+			recvars[n++]->set_value(output);
+		}
+
+		svmap.pop_scope();
+		pb.end_phi();
+
+		n = 0;
+		for (const auto & node : scc) {
+			auto v = m.variable(node);
+			auto value = recvars[n++]->value();
+			svmap.vmap()[v] = value;
+			if (v->exported())
+				graph->export_port(value, v->name());
+		}
 	}
 }
 
@@ -571,9 +585,8 @@ construct_rvsdg(const module & m)
 	jive::binary_op::normal_form(graph)->set_flatten(false);
 
 	scoped_vmap svmap(m, graph->root());
-	convert_globals(graph, svmap);
 
-	/* convert functions */
+	/* convert callgraph nodes */
 	auto sccs = m.callgraph().find_sccs();
 	for (const auto & scc : sccs)
 		handle_scc(scc, graph, svmap);

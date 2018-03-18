@@ -67,6 +67,9 @@ convert_value(llvm::Value * v, tacsvector_t & tacs, context & ctx)
 	if (caller && ctx.has_value(v)) {
 		if (auto callee = dynamic_cast<const fctvariable*>(ctx.lookup_value(v)))
 			caller->function()->add_dependency(callee->function());
+
+		if (auto data = dynamic_cast<const gblvalue*>(ctx.lookup_value(v)))
+			caller->function()->add_dependency(data->node());
 	}
 
 	if (ctx.has_value(v))

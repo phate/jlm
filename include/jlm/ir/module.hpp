@@ -20,25 +20,9 @@ public:
 	~gblvalue();
 
 	inline
-	gblvalue(
-		const jive::type & type,
-		const std::string & name,
-		const jlm::linkage & linkage,
-		bool constant)
-	: gblvariable(type, name, linkage)
-	, constant_(constant)
-	{}
-
-	inline
-	gblvalue(
-		const jive::type & type,
-		const std::string & name,
-		const jlm::linkage & linkage,
-		bool constant,
-		tacsvector_t initialization)
-	: gblvariable(type, name, linkage)
-	, constant_(constant)
-	, initialization_(std::move(initialization))
+	gblvalue(data_node * node)
+	: gblvariable(node->type(), node->name(), node->linkage())
+	, node_(node)
 	{}
 
 	gblvalue(const gblvalue &) = delete;
@@ -51,39 +35,20 @@ public:
 	gblvalue &
 	operator=(gblvalue &&) = delete;
 
-	inline const tacsvector_t &
-	initialization() const noexcept
+	inline data_node *
+	node() const noexcept
 	{
-		return initialization_;
-	}
-
-	inline void
-	set_initialization(tacsvector_t init) noexcept
-	{
-		/* FIXME: type check */
-		initialization_ = std::move(init);
-	}
-
-	inline bool
-	constant() const noexcept
-	{
-		return constant_;
+		return node_;
 	}
 
 private:
-	bool constant_;
-	tacsvector_t initialization_;
+	data_node * node_;
 };
 
 static inline std::unique_ptr<jlm::gblvalue>
-create_gblvalue(
-	const jive::type & type,
-	const std::string & name,
-	const jlm::linkage & linkage,
-	bool constant,
-	tacsvector_t initialization)
+create_gblvalue(data_node * node)
 {
-	return std::make_unique<jlm::gblvalue>(type, name, linkage, constant, std::move(initialization));
+	return std::make_unique<jlm::gblvalue>(node);
 }
 
 /* module */
@@ -129,18 +94,14 @@ public:
 	}
 
 	inline jlm::gblvalue *
-	create_global_value(
-		const jive::type & type,
-		const std::string & name,
-		const jlm::linkage & linkage,
-		bool constant,
-		tacsvector_t initialization)
+	create_global_value(data_node * node)
 	{
-		auto v = jlm::create_gblvalue(type, name, linkage, constant, std::move(initialization));
-		auto pv = v.get();
-		globals_.insert(pv);
+		auto v = jlm::create_gblvalue(node);
+		auto ptr = v.get();
+		globals_.insert(ptr);
+		functions_[node] = ptr;
 		variables_.insert(std::move(v));
-		return pv;
+		return ptr;
 	}
 
 	/*
