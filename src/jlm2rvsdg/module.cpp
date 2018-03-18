@@ -196,7 +196,7 @@ static jive::node *
 convert_node(
 	const agg::node & node,
 	const agg::demand_map & dm,
-	const jlm::callgraph_node & function,
+	const jlm::function_node & function,
 	lambda_builder & lb,
 	scoped_vmap & svmap);
 
@@ -204,7 +204,7 @@ static jive::node *
 convert_entry_node(
 	const agg::node & node,
 	const agg::demand_map & dm,
-	const jlm::callgraph_node & function,
+	const jlm::function_node & function,
 	lambda_builder & lb,
 	scoped_vmap & svmap)
 {
@@ -241,7 +241,7 @@ static jive::node *
 convert_exit_node(
 	const agg::node & node,
 	const agg::demand_map & dm,
-	const jlm::callgraph_node & function,
+	const jlm::function_node & function,
 	lambda_builder & lb,
 	scoped_vmap & svmap)
 {
@@ -262,7 +262,7 @@ static jive::node *
 convert_block_node(
 	const agg::node & node,
 	const agg::demand_map & dm,
-	const jlm::callgraph_node & function,
+	const jlm::function_node & function,
 	lambda_builder & lb,
 	scoped_vmap & svmap)
 {
@@ -276,7 +276,7 @@ static jive::node *
 convert_linear_node(
 	const agg::node & node,
 	const agg::demand_map & dm,
-	const jlm::callgraph_node & function,
+	const jlm::function_node & function,
 	lambda_builder & lb,
 	scoped_vmap & svmap)
 {
@@ -293,7 +293,7 @@ static jive::node *
 convert_branch_node(
 	const agg::node & node,
 	const agg::demand_map & dm,
-	const jlm::callgraph_node & function,
+	const jlm::function_node & function,
 	lambda_builder & lb,
 	scoped_vmap & svmap)
 {
@@ -348,7 +348,7 @@ static jive::node *
 convert_loop_node(
 	const agg::node & node,
 	const agg::demand_map & dm,
-	const jlm::callgraph_node & function,
+	const jlm::function_node & function,
 	lambda_builder & lb,
 	scoped_vmap & svmap)
 {
@@ -414,7 +414,7 @@ static jive::node *
 convert_node(
 	const agg::node & node,
 	const agg::demand_map & dm,
-	const jlm::callgraph_node & function,
+	const jlm::function_node & function,
 	lambda_builder & lb,
 	scoped_vmap & svmap)
 {
@@ -423,7 +423,7 @@ convert_node(
 		std::function<jive::node*(
 			const agg::node&,
 			const agg::demand_map&,
-			const jlm::callgraph_node&,
+			const jlm::function_node&,
 			lambda_builder&,
 			scoped_vmap&)
 		>
@@ -442,7 +442,7 @@ convert_node(
 
 static jive::output *
 convert_cfg(
-	const jlm::callgraph_node & function,
+	const jlm::function_node & function,
 	jive::region * region,
 	scoped_vmap & svmap)
 {
@@ -463,7 +463,7 @@ convert_cfg(
 
 static jive::output *
 construct_lambda(
-	const callgraph_node & function,
+	const function_node & function,
 	jive::region * region,
 	scoped_vmap & svmap)
 {
@@ -484,10 +484,11 @@ handle_scc(
 
 	if (scc.size() == 1 && !(*scc.begin())->is_selfrecursive()) {
 		auto & function = *scc.begin();
-		auto lambda = construct_lambda(*function, graph->root(), svmap);
+		auto & fnode = *dynamic_cast<const function_node*>(function);
+		auto lambda = construct_lambda(fnode, graph->root(), svmap);
 		JLM_DEBUG_ASSERT(svmap.module().variable(function));
 		svmap.vmap()[svmap.module().variable(function)] = lambda;
-		if (function->exported())
+		if (fnode.exported())
 			graph->export_port(lambda, function->name());
 	} else {
 		jive::phi_builder pb;
@@ -505,7 +506,7 @@ handle_scc(
 
 		size_t n = 0;
 		for (const auto & f : scc) {
-			auto lambda = construct_lambda(*f, pb.region(), svmap);
+			auto lambda = construct_lambda(*dynamic_cast<const function_node*>(f), pb.region(), svmap);
 			recvars[n++]->set_value(lambda);
 		}
 
@@ -516,7 +517,7 @@ handle_scc(
 		for (const auto & f : scc) {
 			auto value = recvars[n++]->value();
 			svmap.vmap()[module.variable(f)] = value;
-			if (f->exported())
+			if (dynamic_cast<const function_node*>(f)->exported())
 				graph->export_port(value, f->name());
 		}
 	}

@@ -177,7 +177,7 @@ public:
 	}
 
 	inline jlm::variable *
-	create_variable(callgraph_node * node, const jlm::linkage & linkage)
+	create_variable(function_node * node, const jlm::linkage & linkage)
 	{
 		JLM_DEBUG_ASSERT(!variable(node));
 
@@ -220,11 +220,14 @@ static inline size_t
 ntacs(const jlm::module & module)
 {
 	size_t ntacs = 0;
-	for (const auto & f : module.callgraph()) {
-		auto cfg = f.cfg();
+	for (const auto & n : module.callgraph()) {
+		auto f = dynamic_cast<const function_node*>(&n);
+		if (!f) continue;
+
+		auto cfg = f->cfg();
 		if (!cfg) continue;
 
-		for (const auto & node : *f.cfg()) {
+		for (const auto & node : *f->cfg()) {
 			if (auto bb = dynamic_cast<const jlm::basic_block*>(&node.attribute()))
 				ntacs += bb->ntacs();
 		}

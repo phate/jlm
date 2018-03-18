@@ -139,50 +139,23 @@ private:
 
 class output;
 
-class callgraph_node final {
+class callgraph_node {
 	typedef std::unordered_set<const callgraph_node*>::const_iterator const_iterator;
 public:
-	inline
-	~callgraph_node() noexcept
-	{}
+	virtual
+	~callgraph_node() noexcept;
 
-private:
+protected:
 	inline
-	callgraph_node(
-		jlm::callgraph & clg,
-		const std::string & name,
-		const jive::fct::type & type,
-		bool exported)
-	: type_(type)
-	, exported_(exported)
-	, name_(name)
-	, clg_(clg)
-	, cfg_(nullptr)
+	callgraph_node(jlm::callgraph & clg)
+	: clg_(clg)
 	{}
 
 public:
-	inline jlm::cfg *
-	cfg() const noexcept
-	{
-		return cfg_.get();
-	}
-
 	inline jlm::callgraph &
 	clg() const noexcept
 	{
 		return clg_;
-	}
-
-	const ptrtype &
-	type() const noexcept
-	{
-		return type_;
-	}
-
-	const jive::fct::type &
-	fcttype() const noexcept
-	{
-		return *static_cast<const jive::fct::type*>(&type().pointee_type());
 	}
 
 	void
@@ -212,17 +185,59 @@ public:
 		return false;
 	}
 
+	virtual const std::string &
+	name() const noexcept = 0;
+
+	virtual const jive::type &
+	type() const noexcept = 0;
+
+private:
+	jlm::callgraph & clg_;
+	std::unordered_set<const callgraph_node*> dependencies_;
+};
+
+class function_node final : public callgraph_node {
+public:
+	virtual
+	~function_node() noexcept;
+
+private:
+	inline
+	function_node(
+		jlm::callgraph & clg,
+		const std::string & name,
+		const jive::fct::type & type,
+		bool exported)
+	: callgraph_node(clg)
+	, type_(type)
+	, exported_(exported)
+	, name_(name)
+	{}
+
+public:
+	inline jlm::cfg *
+	cfg() const noexcept
+	{
+		return cfg_.get();
+	}
+
+	virtual const jive::type &
+	type() const noexcept override;
+
+	const jive::fct::type &
+	fcttype() const noexcept
+	{
+		return *static_cast<const jive::fct::type*>(&type_.pointee_type());
+	}
+
 	inline bool
 	exported() const noexcept
 	{
 		return exported_;
 	}
 
-	inline const std::string &
-	name() const noexcept
-	{
-		return name_;
-	}
+	const std::string &
+	name() const noexcept override;
 
 	inline void
 	add_cfg(std::unique_ptr<jlm::cfg> cfg)
@@ -230,14 +245,14 @@ public:
 		cfg_ = std::move(cfg);
 	}
 
-	static inline callgraph_node *
+	static inline function_node *
 	create(
 		jlm::callgraph & clg,
 		const std::string & name,
 		const jive::fct::type & type,
 		bool exported)
 	{
-		std::unique_ptr<callgraph_node> node(new callgraph_node(clg, name, type, exported));
+		std::unique_ptr<function_node> node(new function_node(clg, name, type, exported));
 		auto tmp = node.get();
 		clg.add_function(std::move(node));
 		return tmp;
@@ -247,9 +262,7 @@ private:
 	ptrtype type_;
 	bool exported_;
 	std::string name_;
-	jlm::callgraph & clg_;
 	std::unique_ptr<jlm::cfg> cfg_;
-	std::unordered_set<const callgraph_node*> dependencies_;
 };
 
 class fctvariable final : public gblvariable {
@@ -258,19 +271,19 @@ public:
 	~fctvariable();
 
 	inline
-	fctvariable(callgraph_node * node, const jlm::linkage & linkage)
+	fctvariable(function_node * node, const jlm::linkage & linkage)
 	: gblvariable(node->type(), node->name(), linkage)
 	, node_(node)
 	{}
 
-	inline callgraph_node *
+	inline function_node *
 	function() const noexcept
 	{
 		return node_;
 	}
 
 private:
-	callgraph_node * node_;
+	function_node * node_;
 };
 
 static inline bool

@@ -384,7 +384,7 @@ convert_lambda_node(const jive::node & node, context & ctx)
 	/* FIXME: create/get names for lambdas */
 	auto name = get_name(node.output(0));
 	auto exported = is_exported(node.output(0));
-	auto f = callgraph_node::create(clg, name, ftype, exported);
+	auto f = function_node::create(clg, name, ftype, exported);
 	auto linkage = exported ? jlm::linkage::external_linkage : jlm::linkage::internal_linkage;
 	auto v = module.create_variable(f, linkage);
 
@@ -412,7 +412,7 @@ convert_phi_node(const jive::node & node, context & ctx)
 		auto name = get_name(lambda->output(0));
 		auto exported = is_exported(lambda->output(0));
 		auto & ftype = *static_cast<const jive::fct::type*>(&result->type());
-		auto f = callgraph_node::create(clg, name, ftype, exported);
+		auto f = function_node::create(clg, name, ftype, exported);
 		auto linkage = exported ? jlm::linkage::external_linkage : jlm::linkage::internal_linkage;
 		ctx.insert(subregion->argument(n), module.create_variable(f, linkage));
 	}
@@ -490,7 +490,7 @@ rvsdg2jlm(const jlm::rvsdg & rvsdg)
 	for (size_t n = 0; n < graph->root()->narguments(); n++) {
 		auto argument = graph->root()->argument(n);
 		if (auto ftype = is_function_import(argument)) {
-			auto f = callgraph_node::create(clg, argument->port().gate()->name(), *ftype, false);
+			auto f = function_node::create(clg, argument->port().gate()->name(), *ftype, false);
 			auto v = module->create_variable(f, jlm::linkage::external_linkage);
 			ctx.insert(argument, v);
 		} else {

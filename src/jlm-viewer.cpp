@@ -144,7 +144,13 @@ find_cfg(
 	const jlm::callgraph & clg,
 	const std::string & name)
 {
-	auto f = clg.lookup_function(name);
+	auto node = clg.lookup_function(name);
+	if (!node) {
+		std::cerr << "Function " << name << " not found.\n";
+		exit(1);
+	}
+
+	auto f = dynamic_cast<const jlm::function_node*>(node);
 	if (!f) {
 		std::cerr << "Function " << name << " not found.\n";
 		exit(1);

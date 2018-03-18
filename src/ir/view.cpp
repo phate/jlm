@@ -181,8 +181,10 @@ to_str(const jlm::cfg & cfg)
 }
 
 static inline std::string
-emit_clg_node(const jlm::callgraph_node & node)
+emit_clg_node(const jlm::callgraph_node & clg_node)
 {
+	auto & node = *dynamic_cast<const function_node*>(&clg_node);
+
 	const auto & fcttype = node.fcttype();
 
 	/* convert result types */

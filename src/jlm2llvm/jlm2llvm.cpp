@@ -192,7 +192,7 @@ convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 }
 
 static inline void
-convert_function(const jlm::callgraph_node & node, context & ctx)
+convert_function(const jlm::function_node & node, context & ctx)
 {
 	if (!node.cfg())
 		return;
@@ -234,7 +234,7 @@ convert_callgraph(const jlm::callgraph & clg, context & ctx)
 		JLM_DEBUG_ASSERT(is_fctvariable(jm.variable(node)));
 		auto v = static_cast<const jlm::fctvariable*>(jm.variable(node));
 
-		auto type = convert_type(node->fcttype(), ctx);
+		auto type = convert_type(dynamic_cast<function_node*>(node)->fcttype(), ctx);
 		auto linkage = convert_linkage(v->linkage());
 		auto f = llvm::Function::Create(type, linkage, node->name(), &lm);
 		ctx.insert(jm.variable(node), f);
@@ -242,7 +242,7 @@ convert_callgraph(const jlm::callgraph & clg, context & ctx)
 
 	/* convert all functions */
 	for (const auto & node : jm.callgraph().nodes())
-		convert_function(*node, ctx);
+		convert_function(*dynamic_cast<function_node*>(node), ctx);
 }
 
 static inline void

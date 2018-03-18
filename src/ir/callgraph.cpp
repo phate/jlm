@@ -99,6 +99,28 @@ callgraph::find_sccs() const
 	return sccs;
 }
 
+/* callgraph node */
+
+callgraph_node::~callgraph_node()
+{}
+
+/* function node */
+
+function_node::~function_node()
+{}
+
+const std::string &
+function_node::name() const noexcept
+{
+	return name_;
+}
+
+const jive::type &
+function_node::type() const noexcept
+{
+	return type_;
+}
+
 /* function variable */
 
 fctvariable::~fctvariable()

@@ -167,7 +167,7 @@ convert_functions(
 	for (const auto & f : list) {
 		jive::fct::type fcttype(dynamic_cast<const jive::fct::type&>(
 			*convert_type(f.getFunctionType(), ctx)));
-		auto n = callgraph_node::create(
+		auto n = function_node::create(
 			ctx.module().callgraph(),
 			f.getName().str(),
 			fcttype,
