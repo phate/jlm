@@ -96,6 +96,13 @@ convert_port(
 {
 	auto node = port->node();
 
+	if (!node) {
+		JLM_DEBUG_ASSERT(dynamic_cast<const jive::argument*>(port));
+		auto argument = static_cast<const jive::argument*>(port);
+		return ctx.variable(argument->input()->origin());
+	}
+
+
 	std::vector<const variable*> operands;
 	for (size_t n = 0; n < node->ninputs(); n++)
 		operands.push_back(convert_port(node->input(n)->origin(), tacs, ctx));
