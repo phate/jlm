@@ -27,9 +27,6 @@ class variable;
 jive::bits::value_repr
 convert_apint(const llvm::APInt & value);
 
-double
-convert_apfloat(const llvm::APFloat & value);
-
 std::vector<std::unique_ptr<jlm::tac>>
 convert_constant(llvm::Constant * constant, context & ctx);
 

@@ -46,18 +46,6 @@ convert_apint(const llvm::APInt & value)
 	return vr;
 }
 
-double
-convert_apfloat(const llvm::APFloat & value)
-{
-	using namespace llvm;
-
-	if (APFloatBase::getSizeInBits(value.getSemantics()) == 32)
-		return value.convertToFloat();
-
-	JLM_DEBUG_ASSERT(APFloatBase::getSizeInBits(value.getSemantics()) == 64);
-	return value.convertToDouble();
-}
-
 static const variable *
 convert_int_constant(
 	llvm::Constant * c,
