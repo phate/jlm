@@ -86,6 +86,7 @@ convert_fp_type(const jive::type & type, context & ctx)
 	  {fpsize::half, [](llvm::LLVMContext & ctx){ return llvm::Type::getHalfTy(ctx); }}
 	, {fpsize::flt, [](llvm::LLVMContext & ctx){ return llvm::Type::getFloatTy(ctx); }}
 	, {fpsize::dbl, [](llvm::LLVMContext & ctx){ return llvm::Type::getDoubleTy(ctx); }}
+	, {fpsize::x86fp80, [](llvm::LLVMContext & ctx){ return llvm::Type::getX86_FP80Ty(ctx); }}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(t.size()) != map.end());

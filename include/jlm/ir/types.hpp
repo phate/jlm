@@ -159,7 +159,7 @@ create_arraytype(const jive::type & type, size_t nelements)
 
 /* floating point type */
 
-enum class fpsize {half, flt, dbl};
+enum class fpsize {half, flt, dbl, x86fp80};
 
 class fptype final : public jive::valuetype {
 public:

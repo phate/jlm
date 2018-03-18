@@ -71,6 +71,7 @@ fptype::debug_string() const
 	  {fpsize::half, "half"}
 	, {fpsize::flt, "float"}
 	, {fpsize::dbl, "double"}
+	, {fpsize::x86fp80, "x86fp80"}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(size()) != map.end());

@@ -64,12 +64,11 @@ convert_function_type(const llvm::Type * t, context & ctx)
 static inline std::unique_ptr<jive::valuetype>
 convert_fp_type(const llvm::Type * t, context & ctx)
 {
-	JLM_DEBUG_ASSERT(t->isHalfTy() || t->isFloatTy() || t->isDoubleTy());
-
 	static std::unordered_map<llvm::Type::TypeID, jlm::fpsize> map({
 	  {llvm::Type::HalfTyID, fpsize::half}
 	, {llvm::Type::FloatTyID, fpsize::flt}
 	, {llvm::Type::DoubleTyID, fpsize::dbl}
+	, {llvm::Type::X86_FP80TyID, fpsize::x86fp80}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(t->getTypeID()) != map.end());
@@ -111,6 +110,7 @@ convert_type(const llvm::Type * t, context & ctx)
 	, {llvm::Type::HalfTyID, convert_fp_type}
 	, {llvm::Type::FloatTyID, convert_fp_type}
 	, {llvm::Type::DoubleTyID, convert_fp_type}
+	, {llvm::Type::X86_FP80TyID, convert_fp_type}
 	, {llvm::Type::StructTyID, convert_struct_type}
 	, {llvm::Type::ArrayTyID, convert_array_type}
 	});
