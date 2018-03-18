@@ -118,7 +118,7 @@ convert_constantFP(
 	auto c = llvm::cast<llvm::ConstantFP>(constant);
 
 	auto r = ctx.module().create_variable(*convert_type(c->getType(), ctx), false);
-	tacs.push_back(create_fpconstant_tac(convert_apfloat(c->getValueAPF()), r));
+	tacs.push_back(create_fpconstant_tac(c->getValueAPF(), r));
 	return r;
 }
 

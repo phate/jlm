@@ -9,7 +9,7 @@ TEST_SOURCES = \
 	tests/test-types.cpp \
 	$(patsubst %, tests/%.cpp, $(TESTS))
 
-tests/test-runner: LDFLAGS+=-L. -ljlm -ljive
+tests/test-runner: LDFLAGS=-L. -Lexternal/jive -ljlm $(shell $(LLVMCONFIG) --ldflags --libs) -ljive
 tests/test-runner: %: $(patsubst %.cpp, %.la, $(TEST_SOURCES)) libjlm.a
 	$(CXX) -o $@ $(filter %.la, $^) $(LDFLAGS)
 

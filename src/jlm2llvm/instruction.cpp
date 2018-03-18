@@ -135,8 +135,7 @@ convert_fpconstant(
 	JLM_DEBUG_ASSERT(is_fpconstant_op(op));
 	auto & cop = *static_cast<const jlm::fpconstant_op*>(&op);
 
-	auto type = convert_type(cop.result(0).type(), ctx);
-	return llvm::ConstantFP::get(type, cop.constant());
+	return llvm::ConstantFP::get(builder.getContext(), cop.constant());
 }
 
 static inline llvm::Value *

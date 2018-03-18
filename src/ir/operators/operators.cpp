@@ -10,6 +10,9 @@
 #include <jive/types/bitstring/constant.h>
 #include <jive/types/float/flttype.h>
 
+#include <llvm/ADT/SmallVector.h>
+#include <llvm/Support/raw_ostream.h>
+
 namespace jlm {
 
 /* phi operator */
@@ -773,7 +776,7 @@ bool
 fpconstant_op::operator==(const operation & other) const noexcept
 {
 	auto op = dynamic_cast<const jlm::fpconstant_op*>(&other);
-	return op && op->constant() == constant();
+	return op && op->constant().compare(constant()) == llvm::APFloatBase::cmpEqual;
 }
 
 size_t
@@ -804,7 +807,15 @@ fpconstant_op::result(size_t index) const noexcept
 std::string
 fpconstant_op::debug_string() const
 {
-	return strfmt("FP(", constant(), ")");
+	llvm::SmallVector<char, 32> v;
+	constant().toString(v, 32, 0);
+
+	std::string s("FP(");
+	for (const auto & c : v)
+		s += c;
+	s += ")";
+
+	return s;
 }
 
 std::unique_ptr<jive::operation>

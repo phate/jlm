@@ -19,6 +19,8 @@
 #include <jlm/ir/tac.hpp>
 #include <jlm/ir/types.hpp>
 
+#include <llvm/ADT/APFloat.h>
+
 namespace jlm {
 
 class cfg_node;
@@ -974,7 +976,7 @@ public:
 	~fpconstant_op();
 
 	inline
-	fpconstant_op(const jlm::fpsize & size, double constant)
+	fpconstant_op(const jlm::fpsize & size, const llvm::APFloat & constant)
 	: jive::simple_op()
 	, constant_(constant)
 	, port_(jlm::fptype(size))
@@ -1001,7 +1003,7 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
-	inline double
+	inline const llvm::APFloat &
 	constant() const noexcept
 	{
 		return constant_;
@@ -1014,7 +1016,9 @@ public:
 	}
 
 private:
-	double constant_;
+	/* FIXME: I would not like to use the APFloat here,
+	   but I don't have a replacement right now. */
+	llvm::APFloat constant_;
 	jive::port port_;
 };
 
@@ -1025,7 +1029,7 @@ is_fpconstant_op(const jive::operation & op)
 }
 
 static inline std::unique_ptr<jlm::tac>
-create_fpconstant_tac(double constant, jlm::variable * result)
+create_fpconstant_tac(const llvm::APFloat & constant, jlm::variable * result)
 {
 	auto ft = dynamic_cast<const jlm::fptype*>(&result->type());
 	if (!ft) throw std::logic_error("Expected floating point type.");
