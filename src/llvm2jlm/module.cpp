@@ -184,16 +184,22 @@ convert_global_variables(llvm::Module::GlobalListType & vs, context & ctx)
 {
 	auto & m = ctx.module();
 
+	/* forward declare all global values */
 	for (auto & gv : vs) {
-		tacsvector_t init;
-		if (gv.hasInitializer()) init = convert_constant(&gv, ctx);
-
 		auto name = gv.getName().str();
 		auto constant = gv.isConstant();
 		auto type = convert_type(gv.getType(), ctx);
 		auto linkage = convert_linkage(gv.getLinkage());
-		auto v = m.create_global_value(*type, name, linkage, constant, std::move(init));
+		auto v = m.create_global_value(*type, name, linkage, constant, {});
 		ctx.insert_value(&gv, v);
+	}
+
+	/* handle initialization */
+	for (auto & gv : vs) {
+		if (gv.hasInitializer()) {
+			auto v = static_cast<gblvalue*>(ctx.lookup_value(&gv));
+			v->set_initialization(std::move(convert_constant(&gv, ctx)));
+		}
 	}
 }
 
