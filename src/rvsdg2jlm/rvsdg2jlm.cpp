@@ -99,6 +99,25 @@ convert_port(const jive::output * port)
 	return std::make_unique<const jlm::expr>(node->operation(), std::move(operands));
 }
 
+static const variable *
+convert_port(
+	const jive::output * port,
+	tacsvector_t & tacs,
+	context & ctx)
+{
+	auto node = port->node();
+
+	std::vector<const variable*> operands;
+	for (size_t n = 0; n < node->ninputs(); n++)
+		operands.push_back(convert_port(node->input(n)->origin(), tacs, ctx));
+
+	JLM_DEBUG_ASSERT(node->noutputs() == 1);
+	auto result = ctx.module().create_tacvariable(node->output(0)->type());
+
+	tacs.push_back(create_tac(node->operation(), operands, {result}));
+	return result;
+}
+
 static void
 convert_node(const jive::node & node, context & ctx);
 
@@ -436,11 +455,13 @@ convert_data_node(const jive::node & node, context & ctx)
 
 	auto name = get_name(result->output());
 	const auto & type = result->output()->type();
-	auto expression = convert_port(result->origin());
+
+	tacsvector_t tacs;
+	convert_port(result->origin(), tacs, ctx);
 
 	auto linkage = op.linkage();
 	auto constant = op.constant();
-	auto v = module.create_global_value(type, name, linkage, constant, std::move(expression));
+	auto v = module.create_global_value(type, name, linkage, constant, std::move(tacs));
 	ctx.insert(result->output(), v);
 }
 
@@ -487,7 +508,7 @@ rvsdg2jlm(const jlm::rvsdg & rvsdg)
 			const auto & type = argument->type();
 			const auto & name = argument->port().gate()->name();
 			auto v = module->create_global_value(type, name, jlm::linkage::external_linkage, false,
-				nullptr);
+				{});
 			ctx.insert(argument, v);
 		}
 	}

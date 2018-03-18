@@ -255,8 +255,8 @@ convert_globals(context & ctx)
 
 	for (const auto & gv : jm) {
 		llvm::Constant * init = nullptr;
-		if (gv->initialization() != nullptr)
-			init = convert_expression(*gv->initialization(), ctx);
+		if (!gv->initialization().empty())
+			init = convert_tacs(gv->initialization(), ctx);
 
 		JLM_DEBUG_ASSERT(is_ptrtype(gv->type()));
 		auto pt = static_cast<const jlm::ptrtype*>(&gv->type());

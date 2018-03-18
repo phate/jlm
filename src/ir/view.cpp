@@ -39,22 +39,25 @@ breadth_first_traversal(const jlm::cfg & cfg)
 	return nodes;
 }
 
-static inline std::string
-emit_expression(const jlm::expr & e)
-{
-	std::string operands;
-	for (size_t n = 0; n < e.noperands(); n++)
-		operands += emit_expression(e.operand(n));
+static std::string
+emit_tac(const jlm::tac &);
 
-	return "(" + e.operation().debug_string() + (operands.empty() ? "" : " ") + operands + ")";
+static std::string
+emit_tacs(const tacsvector_t & tacs)
+{
+	std::string str;
+	for (const auto & tac : tacs)
+		str += emit_tac(*tac) + ", ";
+
+	return "[" + str + "]";
 }
 
 static inline std::string
 emit_global(const jlm::gblvalue * v)
 {
 	std::string str = v->debug_string();
-	if (v->initialization() != nullptr)
-		str += " = " + emit_expression(*v->initialization());
+	if (!v->initialization().empty())
+		str += " = " + emit_tacs(v->initialization());
 
 	return str;
 }

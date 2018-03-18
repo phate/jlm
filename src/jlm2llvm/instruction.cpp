@@ -705,4 +705,22 @@ convert_expression(const jlm::expr & e, context & ctx)
 	return llvm::dyn_cast<llvm::Constant>(r);
 }
 
+llvm::Constant *
+convert_tacs(const tacsvector_t & tacs, context & ctx)
+{
+	llvm::Value * r = nullptr;
+	llvm::IRBuilder<> builder(ctx.llvm_module().getContext());
+	for (const auto & tac : tacs) {
+		std::vector<const variable*> operands;
+		for (size_t n = 0; n < tac->ninputs(); n++)
+			operands.push_back(tac->input(n));
+
+		JLM_DEBUG_ASSERT(tac->noutputs() == 1);
+		r = convert_operation(tac->operation(), operands, builder, ctx);
+		ctx.insert(tac->output(0), r);
+	}
+
+	return llvm::dyn_cast<llvm::Constant>(r);
+}
+
 }}

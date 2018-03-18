@@ -36,7 +36,7 @@ public:
 		const std::string & name,
 		const jlm::linkage & linkage,
 		bool constant,
-		std::unique_ptr<const expr> initialization)
+		tacsvector_t initialization)
 	: gblvariable(type, name, linkage)
 	, constant_(constant)
 	, initialization_(std::move(initialization))
@@ -52,14 +52,14 @@ public:
 	gblvalue &
 	operator=(gblvalue &&) = delete;
 
-	inline const expr *
+	inline const tacsvector_t &
 	initialization() const noexcept
 	{
-		return initialization_.get();
+		return initialization_;
 	}
 
 	inline void
-	set_initialization(std::unique_ptr<const expr> init) noexcept
+	set_initialization(tacsvector_t init) noexcept
 	{
 		/* FIXME: type check */
 		initialization_ = std::move(init);
@@ -73,7 +73,7 @@ public:
 
 private:
 	bool constant_;
-	std::unique_ptr<const expr> initialization_;
+	tacsvector_t initialization_;
 };
 
 static inline std::unique_ptr<jlm::gblvalue>
@@ -82,7 +82,7 @@ create_gblvalue(
 	const std::string & name,
 	const jlm::linkage & linkage,
 	bool constant,
-	std::unique_ptr<const expr> initialization)
+	tacsvector_t initialization)
 {
 	return std::make_unique<jlm::gblvalue>(type, name, linkage, constant, std::move(initialization));
 }
@@ -135,7 +135,7 @@ public:
 		const std::string & name,
 		const jlm::linkage & linkage,
 		bool constant,
-		std::unique_ptr<const expr> initialization)
+		tacsvector_t initialization)
 	{
 		auto v = jlm::create_gblvalue(type, name, linkage, constant, std::move(initialization));
 		auto pv = v.get();

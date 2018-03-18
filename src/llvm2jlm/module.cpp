@@ -185,8 +185,8 @@ convert_global_variables(llvm::Module::GlobalListType & vs, context & ctx)
 	auto & m = ctx.module();
 
 	for (auto & gv : vs) {
-		std::unique_ptr<const expr> init;
-		if (gv.hasInitializer()) init = convert_constant_expression(&gv, ctx);
+		tacsvector_t init;
+		if (gv.hasInitializer()) init = convert_constant(&gv, ctx);
 
 		auto name = gv.getName().str();
 		auto constant = gv.isConstant();

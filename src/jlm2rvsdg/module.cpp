@@ -533,6 +533,20 @@ convert_expression(const expr & e, jive::region * region)
 		operands)[0];
 }
 
+static jive::output *
+convert_tacs(const tacsvector_t & tacs, jive::region * region, scoped_vmap & svmap)
+{
+	JLM_DEBUG_ASSERT(!tacs.empty());
+
+	auto & vmap = svmap.vmap();
+	for (const auto & tac : tacs)
+		convert_tac(*tac, region, vmap);
+
+	auto & tac = tacs.back();
+	JLM_DEBUG_ASSERT(tac->noutputs() == 1);
+	return vmap[tac->output(0)];
+}
+
 static inline void
 convert_globals(jive::graph * rvsdg, scoped_vmap & svmap)
 {
@@ -540,12 +554,12 @@ convert_globals(jive::graph * rvsdg, scoped_vmap & svmap)
 
 	for (const auto & gv : m) {
 		jive::output * data;
-		if (gv->initialization() == nullptr) {
+		if (gv->initialization().empty()) {
 			data = rvsdg->import(gv->type(), gv->name());
 		} else {
 			jlm::data_builder db;
 			auto region = db.begin(rvsdg->root(), gv->linkage(), gv->constant());
-			data = db.end(convert_expression(*gv->initialization(), region));
+			data = db.end(convert_tacs(gv->initialization(), region, svmap));
 		}
 
 		svmap.vmap()[gv] = data;
