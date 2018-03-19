@@ -39,6 +39,7 @@ public:
 	inline void
 	insert(const jive::output * port, const jlm::variable * v)
 	{
+		JLM_DEBUG_ASSERT(ports_.find(port) == ports_.end());
 		ports_[port] = v;
 	}
 

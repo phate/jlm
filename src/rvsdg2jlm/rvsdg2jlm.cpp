@@ -227,7 +227,10 @@ convert_gamma_node(const jive::node & node, context & ctx)
 			auto o1 = a1->input()->origin();
 
 			/* both operands are the same, no select is necessary */
-			if (o0 == o1) continue;
+			if (o0 == o1) {
+				ctx.insert(output, ctx.variable(o0));
+				continue;
+			}
 
 			auto d = matchop->default_alternative();
 			auto v = module.create_variable(output->type(), false);
