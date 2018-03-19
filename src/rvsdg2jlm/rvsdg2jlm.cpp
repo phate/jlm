@@ -416,13 +416,12 @@ convert_phi_node(const jive::node & node, context & ctx)
 	/* forward declare all functions */
 	for (size_t n = 0; n < subregion->nresults(); n++) {
 		auto result = subregion->result(n);
-		auto lambda = result->origin()->node();
-		JLM_DEBUG_ASSERT(is_lambda_node(lambda));
+		JLM_DEBUG_ASSERT(is_lambda_node(result->origin()->node()));
+		auto lambda = static_cast<const lambda_node*>(result->origin()->node());
 
 		auto name = get_name(lambda->output(0));
 		auto exported = is_exported(lambda->output(0));
-		auto & ftype = *static_cast<const jive::fct::type*>(&result->type());
-		auto f = function_node::create(clg, name, ftype, exported);
+		auto f = function_node::create(clg, name, lambda->fcttype(), exported);
 		auto linkage = exported ? jlm::linkage::external_linkage : jlm::linkage::internal_linkage;
 		ctx.insert(subregion->argument(n), module.create_variable(f, linkage));
 	}
