@@ -1847,6 +1847,64 @@ create_constant_array_tac(
 	return create_tac(op, elements, {result});
 }
 
+/* constant aggregate zero */
+
+class constant_aggregate_zero_op final : public jive::simple_op {
+public:
+	virtual
+	~constant_aggregate_zero_op();
+
+	inline
+	constant_aggregate_zero_op(
+		const jive::type & type)
+	: jive::simple_op()
+	, dstport_(type)
+	{
+		/* FIXME: add support for vector type */
+		auto st = dynamic_cast<const structtype*>(&type);
+		auto at = dynamic_cast<const arraytype*>(&type);
+		if (!st && !at)
+			throw std::logic_error("Expected array or struct type.\n");
+	}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual size_t
+	narguments() const noexcept override;
+
+	virtual const jive::port &
+	argument(size_t index) const noexcept override;
+
+	virtual size_t
+	nresults() const noexcept override;
+
+	virtual const jive::port &
+	result(size_t index) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+private:
+	jive::port dstport_;
+};
+
+static inline bool
+is_constant_aggregate_zero_op(const jive::operation & op)
+{
+	return dynamic_cast<const constant_aggregate_zero_op*>(&op) != nullptr;
+}
+
+static inline std::unique_ptr<jlm::tac>
+create_constant_aggregate_zero_tac(jlm::variable * result)
+{
+	constant_aggregate_zero_op op(result->type());
+	return create_tac(op, {}, {result});
+}
+
 }
 
 #endif

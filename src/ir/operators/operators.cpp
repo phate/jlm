@@ -1392,4 +1392,53 @@ constant_array_op::copy() const
 	return std::unique_ptr<jive::operation>(new constant_array_op(*this));
 }
 
+/* constant aggregate zero operator */
+
+constant_aggregate_zero_op::~constant_aggregate_zero_op()
+{}
+
+bool
+constant_aggregate_zero_op::operator==(const operation & other) const noexcept
+{
+	auto op = dynamic_cast<const constant_aggregate_zero_op*>(&other);
+	return op && op->dstport_ == dstport_;
+}
+
+size_t
+constant_aggregate_zero_op::narguments() const noexcept
+{
+	return 0;
+}
+
+const jive::port &
+constant_aggregate_zero_op::argument(size_t index) const noexcept
+{
+	JLM_ASSERT(0);
+}
+
+size_t
+constant_aggregate_zero_op::nresults() const noexcept
+{
+	return 1;
+}
+
+const jive::port &
+constant_aggregate_zero_op::result(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < nresults());
+	return dstport_;
+}
+
+std::string
+constant_aggregate_zero_op::debug_string() const
+{
+	return "CONSTANT_AGGREGATE_ZERO";
+}
+
+std::unique_ptr<jive::operation>
+constant_aggregate_zero_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new constant_aggregate_zero_op(*this));
+}
+
 }

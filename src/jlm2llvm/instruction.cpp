@@ -352,6 +352,18 @@ convert_constant_array(
 	return llvm::ConstantArray::get(type, data);
 }
 
+static llvm::Value *
+convert_constant_aggregate_zero(
+	const jive::operation & op,
+	const std::vector<const variable*> & args,
+	llvm::IRBuilder<> & builder,
+	context & ctx)
+{
+	JLM_DEBUG_ASSERT(is_constant_aggregate_zero_op(op));
+	auto type = convert_type(op.result(0).type(), ctx);
+	return llvm::ConstantAggregateZero::get(type);
+}
+
 static inline llvm::Value *
 convert_ptrcmp(
 	const jive::operation & op,
@@ -660,6 +672,7 @@ convert_operation(
 	, {std::type_index(typeid(jlm::select_op)), convert_select}
 	, {std::type_index(typeid(jive::mux_op)), convert_mux}
 	, {typeid(jlm::constant_array_op), convert_constant_array}
+	, {typeid(constant_aggregate_zero_op), convert_constant_aggregate_zero}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(op))) != map.end());

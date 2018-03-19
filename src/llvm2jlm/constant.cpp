@@ -159,41 +159,15 @@ convert_blockAddress(
 
 static const variable *
 convert_constantAggregateZero(
-	llvm::Constant * constant,
+	llvm::Constant * c,
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantAggregateZero*>(constant));
-	auto c = static_cast<const llvm::ConstantAggregateZero*>(constant);
+	JLM_DEBUG_ASSERT(c->getValueID() == llvm::Value::ConstantAggregateZeroVal);
 
-	if (c->getType()->isStructTy()) {
-		const llvm::StructType * type = static_cast<const llvm::StructType*>(c->getType());
-
-		std::vector<const variable*> operands;
-		for (size_t n = 0; n < type->getNumElements(); n++)
-			operands.push_back(convert_constant(c->getElementValue(n), tacs, ctx));
-
-		jive::rcd::group_op op(ctx.lookup_declaration(type));
-		auto r = ctx.module().create_variable(op.result(0).type(), false);
-		tacs.push_back(create_tac(op, operands, {r}));
-		return r;
-	}
-
-	if (c->getType()->isArrayTy()) {
-		auto type = static_cast<const llvm::ArrayType*>(c->getType());
-
-		std::vector<const variable*> operands;
-		for (size_t n = 0; n < type->getNumElements(); n++)
-			operands.push_back(convert_constant(c->getElementValue(n), tacs, ctx));
-
-		auto r = ctx.module().create_variable(*convert_type(c->getType(), ctx), false);
-		tacs.push_back(create_data_array_constant_tac(operands, {r}));
-		return r;
-	}
-
-	/* FIXME: */
-	JLM_DEBUG_ASSERT(0);
-	return nullptr;
+	auto r = ctx.module().create_variable(*convert_type(c->getType(), ctx), false);
+	tacs.push_back(create_constant_aggregate_zero_tac({r}));
+	return r;
 }
 
 static const variable *
