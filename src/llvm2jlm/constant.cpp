@@ -293,15 +293,12 @@ convert_globalAlias(
 
 static inline const variable *
 convert_function(
-	llvm::Constant * constant,
-	std::vector<std::unique_ptr<jlm::tac>> & tacs,
+	llvm::Constant * c,
+	tacsvector_t & tacs,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::Function*>(constant));
-
-	/* FIXME: */
-	JLM_DEBUG_ASSERT(0);
-	return nullptr;
+	JLM_DEBUG_ASSERT(c->getValueID() == llvm::Value::FunctionVal);
+	return convert_value(c, tacs, ctx);
 }
 
 const variable *
