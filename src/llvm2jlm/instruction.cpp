@@ -60,7 +60,7 @@ insert_before_branch(jlm::cfg_node * node, jlm::tacsvector_t & tacs)
 
 namespace jlm {
 
-static inline const variable *
+const variable *
 convert_value(llvm::Value * v, tacsvector_t & tacs, context & ctx)
 {
 	auto node = ctx.node();

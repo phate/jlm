@@ -18,6 +18,12 @@ class context;
 class variable;
 
 const variable *
+convert_value(
+	llvm::Value * v,
+	tacsvector_t & tacs,
+	context & ctx);
+
+const variable *
 convert_instruction(
 	llvm::Instruction * i,
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
