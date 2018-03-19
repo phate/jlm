@@ -160,44 +160,40 @@ convert_linkage(const llvm::GlobalValue::LinkageTypes & linkage)
 }
 
 static void
-convert_functions(
-	llvm::Module::FunctionListType & list,
-	context & ctx)
+declare_globals(llvm::Module & lm, context & ctx)
 {
-	for (const auto & f : list) {
-		jive::fct::type fcttype(dynamic_cast<const jive::fct::type&>(
-			*convert_type(f.getFunctionType(), ctx)));
-		auto n = function_node::create(
-			ctx.module().callgraph(),
-			f.getName().str(),
-			fcttype,
-			f.getLinkage() != llvm::GlobalValue::InternalLinkage);
-		ctx.insert_value(&f, ctx.module().create_variable(n, convert_linkage(f.getLinkage())));
-	}
+	auto & jm = ctx.module();
 
-	for (auto it = list.begin(); it != list.end(); it++)
-		convert_function(*it, ctx);
-}
-
-static void
-convert_global_variables(llvm::Module::GlobalListType & vs, context & ctx)
-{
-	auto & m = ctx.module();
-
-	/* forward declare all global values */
-	for (auto & gv : vs) {
+	/* forward declare global variables */
+	for (auto & gv : lm.getGlobalList()) {
 		auto name = gv.getName().str();
 		auto constant = gv.isConstant();
 		auto type = convert_type(gv.getType(), ctx);
 		auto linkage = convert_linkage(gv.getLinkage());
 
-		auto node = data_node::create(m.callgraph(), name, *type, linkage, constant);
-		auto v = m.create_global_value(node);
+		auto node = data_node::create(jm.callgraph(), name, *type, linkage, constant);
+		auto v = jm.create_global_value(node);
 		ctx.insert_value(&gv, v);
 	}
 
-	/* handle initialization */
-	for (auto & gv : vs) {
+	/* forward declare functions */
+	for (const auto & f : lm.getFunctionList()) {
+		jive::fct::type fcttype(dynamic_cast<const jive::fct::type&>(
+			*convert_type(f.getFunctionType(), ctx)));
+		auto n = function_node::create(
+			jm.callgraph(),
+			f.getName().str(),
+			fcttype,
+			f.getLinkage() != llvm::GlobalValue::InternalLinkage);
+		ctx.insert_value(&f, ctx.module().create_variable(n, convert_linkage(f.getLinkage())));
+	}
+}
+
+static void
+convert_globals(llvm::Module & lm, context & ctx)
+{
+	/* convert global variables */
+	for (auto & gv : lm.getGlobalList()) {
 		if (gv.hasInitializer()) {
 			auto v = static_cast<gblvalue*>(ctx.lookup_value(&gv));
 			ctx.set_node(v->node());
@@ -205,6 +201,10 @@ convert_global_variables(llvm::Module::GlobalListType & vs, context & ctx)
 			ctx.set_node(nullptr);
 		}
 	}
+
+	/* convert functions */
+	for (auto & f : lm.getFunctionList())
+		convert_function(f, ctx);
 }
 
 std::unique_ptr<module>
@@ -215,8 +215,8 @@ convert_module(llvm::Module & module)
 	std::unique_ptr<jlm::module> m(new jlm::module(tt, dl));
 
 	context ctx(*m);
-	convert_global_variables(module.getGlobalList(), ctx);
-	convert_functions(module.getFunctionList(), ctx);
+	declare_globals(module, ctx);
+	convert_globals(module, ctx);
 
 	return m;
 }
