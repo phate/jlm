@@ -306,6 +306,38 @@ convert_ptroffset(
 	return builder.CreateGEP(t, ctx.value(args[0]), indices);
 }
 
+template<typename T> static std::vector<T>
+get_bitdata(
+	const data_array_constant_op & op,
+	const std::vector<const variable*> & args,
+	context & ctx)
+{
+	std::vector<T> data;
+	for (size_t n = 0; n < args.size(); n++) {
+		auto c = llvm::dyn_cast<const llvm::ConstantInt>(ctx.value(args[n]));
+		JLM_DEBUG_ASSERT(c);
+		data.push_back(c->getZExtValue());
+	}
+
+	return data;
+}
+
+template<typename T> static std::vector<T>
+get_fpdata(
+	const data_array_constant_op & op,
+	const std::vector<const variable*> & args,
+	context & ctx)
+{
+	std::vector<T> data;
+	for (size_t n = 0; n < args.size(); n++) {
+		auto c = llvm::dyn_cast<const llvm::ConstantFP>(ctx.value(args[n]));
+		JLM_DEBUG_ASSERT(c);
+		data.push_back(c->getValueAPF().bitcastToAPInt().getZExtValue());
+	}
+
+	return data;
+}
+
 static inline llvm::Value *
 convert_data_array_constant(
 	const jive::operation & op,
@@ -316,19 +348,38 @@ convert_data_array_constant(
 	JLM_DEBUG_ASSERT(is_data_array_constant_op(op));
 	auto & cop = *static_cast<const data_array_constant_op*>(&op);
 
-	/* FIXME: support other types */
-	auto bt = dynamic_cast<const jive::bits::type*>(&cop.type());
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::bits::type*>(&cop.type()));
-	JLM_DEBUG_ASSERT(bt->nbits() == 8);
-
-	std::vector<uint8_t> data;
-	for (size_t n = 0; n < args.size(); n++) {
-		auto c = llvm::dyn_cast<const llvm::ConstantInt>(ctx.value(args[n]));
-		JLM_DEBUG_ASSERT(c);
-		data.push_back(c->getZExtValue());
+	if (auto bt = dynamic_cast<const jive::bits::type*>(&cop.type())) {
+		if (bt->nbits() == 8) {
+			auto data = get_bitdata<uint8_t>(cop, args, ctx);
+			return llvm::ConstantDataArray::get(builder.getContext(), data);
+		} else if (bt->nbits() == 16) {
+			auto data = get_bitdata<uint16_t>(cop, args, ctx);
+			return llvm::ConstantDataArray::get(builder.getContext(), data);
+		} else if (bt->nbits() == 32) {
+			auto data = get_bitdata<uint32_t>(cop, args, ctx);
+			return llvm::ConstantDataArray::get(builder.getContext(), data);
+		} else if (bt->nbits() == 64) {
+			auto data = get_bitdata<uint64_t>(cop, args, ctx);
+			return llvm::ConstantDataArray::get(builder.getContext(), data);
+		} else
+			JLM_ASSERT(0);
 	}
 
-	return llvm::ConstantDataArray::get(builder.getContext(), data);
+	if (auto ft = dynamic_cast<const fptype*>(&cop.type())) {
+		if (ft->size() == fpsize::half) {
+			auto data = get_fpdata<uint16_t>(cop, args, ctx);
+			return llvm::ConstantDataArray::getFP(builder.getContext(), data);
+		} else if (ft->size() == fpsize::flt) {
+			auto data = get_fpdata<uint32_t>(cop, args, ctx);
+			return llvm::ConstantDataArray::getFP(builder.getContext(), data);
+		} else if (ft->size() == fpsize::dbl) {
+			auto data = get_fpdata<uint64_t>(cop, args, ctx);
+			return llvm::ConstantDataArray::getFP(builder.getContext(), data);
+		} else
+			JLM_ASSERT(0);
+	}
+
+	JLM_ASSERT(0);
 }
 
 static inline llvm::Value *
