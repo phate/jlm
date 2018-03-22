@@ -241,12 +241,6 @@ create_loop_node(std::unique_ptr<agg::node> body)
 	return ln;
 }
 
-std::string
-to_str(const node & n);
-
-void
-view(const node & n, FILE * out);
-
 }}
 
 #endif

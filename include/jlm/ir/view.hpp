@@ -9,6 +9,9 @@
 #include <string>
 
 namespace jlm {
+namespace agg {
+	class node;
+}
 
 class callgraph;
 class cfg;
@@ -28,6 +31,12 @@ to_dot(const jlm::callgraph & clg);
 
 std::string
 to_str(const jlm::module & module);
+
+std::string
+to_str(const agg::node & n);
+
+void
+view(const agg::node & n, FILE * out);
 
 static inline void
 view_ascii(const jlm::cfg & cfg, FILE * out)

@@ -10,6 +10,7 @@
 #include <jlm/ir/basic_block.hpp>
 #include <jlm/ir/cfg.hpp>
 #include <jlm/ir/module.hpp>
+#include <jlm/ir/view.hpp>
 
 static inline bool
 is_entry(jlm::agg::node * node)
@@ -58,7 +59,7 @@ test_linear_reduction()
 	bb->add_outedge(cfg.exit_node());
 
 	auto root = jlm::agg::aggregate(cfg);
-	jlm::agg::view(*root, stdout);
+	jlm::view(*root, stdout);
 #if 0
 	assert(is_linear(root.get()));
 	{
@@ -87,7 +88,7 @@ test_loop_reduction()
 	bb2->add_outedge(bb1);
 
 	auto root = jlm::agg::aggregate(cfg);
-	jlm::agg::view(*root, stdout);
+	jlm::view(*root, stdout);
 #if 0
 	assert(is_linear(root.get()));
 	{
@@ -136,7 +137,7 @@ test_branch_reduction()
 	join->add_outedge(cfg.exit_node());
 
 	auto root = jlm::agg::aggregate(cfg);
-	jlm::agg::view(*root, stdout);
+	jlm::view(*root, stdout);
 #if 0
 	assert(is_linear(root.get()));
 	{
@@ -197,7 +198,7 @@ test_branch_loop_reduction()
 	join->add_outedge(cfg.exit_node());
 
 	auto root = jlm::agg::aggregate(cfg);
-	jlm::agg::view(*root, stdout);
+	jlm::view(*root, stdout);
 #if 0
 	assert(is_linear(root.get()));
 	{
@@ -266,7 +267,7 @@ test_loop_branch_reduction()
 	bb3->add_outedge(split);
 
 	auto root = jlm::agg::aggregate(cfg);
-	jlm::agg::view(*root, stdout);
+	jlm::view(*root, stdout);
 #if 0
 	assert(is_linear(root.get()));
 	{
@@ -326,7 +327,7 @@ test_ifthen_reduction()
 	join->add_outedge(cfg.exit_node());
 
 	auto root = jlm::agg::aggregate(cfg);
-	jlm::agg::view(*root, stdout);
+	jlm::view(*root, stdout);
 }
 
 static int

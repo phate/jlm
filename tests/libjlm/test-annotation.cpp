@@ -13,6 +13,7 @@
 #include <jlm/ir/basic_block.hpp>
 #include <jlm/ir/cfg.hpp>
 #include <jlm/ir/module.hpp>
+#include <jlm/ir/view.hpp>
 
 static inline bool
 has_variables(
@@ -68,7 +69,7 @@ test_linear_graph()
 	cfg.exit().append_result(v2);
 
 	auto root = jlm::agg::aggregate(cfg);
-	jlm::agg::view(*root, stdout);
+	jlm::view(*root, stdout);
 
 	auto dm = jlm::agg::annotate(*root);
 #if 0
@@ -132,7 +133,7 @@ test_branch_graph()
 	cfg.exit().append_result(v4);
 
 	auto root = jlm::agg::aggregate(cfg);
-	jlm::agg::view(*root, stdout);
+	jlm::view(*root, stdout);
 
 	auto dm = jlm::agg::annotate(*root);
 #if 0
@@ -193,7 +194,7 @@ test_loop_graph()
 	cfg.exit().append_result(r);
 
 	auto root = jlm::agg::aggregate(cfg);
-	jlm::agg::view(*root, stdout);
+	jlm::view(*root, stdout);
 
 	auto dm = jlm::agg::annotate(*root);
 #if 0

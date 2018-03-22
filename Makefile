@@ -10,7 +10,6 @@ LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --l
 LIBJLM_SRC = \
 	src/ir/aggregation/aggregation.cpp \
 	src/ir/aggregation/annotation.cpp \
-	src/ir/aggregation/node.cpp \
 	src/ir/aggregation/structure.cpp \
 	src/ir/basic_block.cpp \
 	src/ir/callgraph.cpp \

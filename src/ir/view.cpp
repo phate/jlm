@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/ir/aggregation/node.hpp>
 #include <jlm/ir/basic_block.hpp>
 #include <jlm/ir/cfg.hpp>
 #include <jlm/ir/module.hpp>
@@ -387,6 +388,34 @@ to_dot(const jlm::callgraph & clg)
 	dot += "}\n";
 
 	return dot;
+}
+
+/* aggregation node */
+
+std::string
+to_str(const agg::node & n)
+{
+  std::function<std::string(const agg::node&, size_t)> f = [&] (
+    const agg::node & n,
+    size_t depth
+  ) {
+    std::string subtree(depth, '-');
+    subtree += n.structure().debug_string() + "\n";
+
+    for (const auto & child : n)
+      subtree += f(child, depth+1);
+
+    return subtree;
+  };
+
+  return f(n, 0);
+}
+
+void
+view(const agg::node & n, FILE * out)
+{
+	fputs(to_str(n).c_str(), out);
+	fflush(out);
 }
 
 }
