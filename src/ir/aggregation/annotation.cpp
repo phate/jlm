@@ -157,8 +157,10 @@ annotate(const agg::node * node, dset & pds, demand_map & dm)
 	});
 
 	auto it = dm.find(node);
-	if (it != dm.end() && it->second->bottom == pds)
+	if (it != dm.end() && it->second->bottom == pds) {
+		pds = it->second->top;
 		return;
+	}
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(node->structure()))) != map.end());
 	return map[std::type_index(typeid(node->structure()))](node, pds, dm);
