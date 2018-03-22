@@ -392,15 +392,38 @@ to_dot(const jlm::callgraph & clg)
 
 /* aggregation node */
 
+static std::string
+emit_dset(const agg::dset & ds)
+{
+	std::string s("{");
+	for (auto it = ds.begin(); it != ds.end(); it++) {
+		s += (*it)->name();
+		if (std::next(it) != ds.end())
+			s += ", ";
+	}
+	s += "}";
+
+	return s;
+}
+
+static std::string
+emit_demand_set(const agg::demand_set & ds)
+{
+	return emit_dset(ds.bottom) + " -> " + emit_dset(ds.top);
+}
+
 std::string
-to_str(const agg::node & n)
+to_str(const agg::node & n, const agg::demand_map & dm)
 {
   std::function<std::string(const agg::node&, size_t)> f = [&] (
     const agg::node & n,
     size_t depth
   ) {
     std::string subtree(depth, '-');
-    subtree += n.structure().debug_string() + "\n";
+    subtree += n.structure().debug_string();
+
+		auto it = dm.find(&n);
+		subtree += (it != dm.end() ? " " + emit_demand_set(*it->second) : "") + "\n";
 
     for (const auto & child : n)
       subtree += f(child, depth+1);
@@ -412,9 +435,9 @@ to_str(const agg::node & n)
 }
 
 void
-view(const agg::node & n, FILE * out)
+view(const agg::node & n, const agg::demand_map & dm, FILE * out)
 {
-	fputs(to_str(n).c_str(), out);
+	fputs(to_str(n, dm).c_str(), out);
 	fflush(out);
 }
 
