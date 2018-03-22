@@ -13,6 +13,7 @@
 #include <jlm/ir/basic_block.hpp>
 #include <jlm/ir/cfg.hpp>
 #include <jlm/ir/module.hpp>
+#include <jlm/ir/operators/operators.hpp>
 #include <jlm/ir/view.hpp>
 
 static inline bool
@@ -223,12 +224,42 @@ test_loop_graph()
 }
 
 static int
+test_assignment()
+{
+	jlm::module module("", "");
+
+	jlm::cfg cfg(module);
+	jlm::valuetype vtype;
+
+	auto arg = module.create_variable(vtype, "arg", false);
+	auto r = module.create_variable(vtype, "result", false);
+
+	auto bb = create_basic_block_node(&cfg);
+
+	cfg.exit_node()->divert_inedges(bb);
+	bb->add_outedge(cfg.exit_node());
+
+	cfg.entry().append_argument(arg);
+	append_last(bb, jlm::create_assignment(vtype, arg, r));
+	cfg.exit().append_result(r);
+
+	auto root = jlm::agg::aggregate(cfg);
+	auto dm = jlm::agg::annotate(*root);
+	jlm::view(*root, dm, stdout);
+
+	assert(dm[root.get()]->top.empty());
+
+	return 0;
+}
+
+static int
 test()
 {
 	/* FIXME: avoid aggregation function and build aggregated tree directly */
 	test_linear_graph();
 	test_branch_graph();
 	test_loop_graph();
+	test_assignment();
 
 	return 0;
 }

@@ -6,6 +6,7 @@
 #include <jlm/ir/aggregation/annotation.hpp>
 #include <jlm/ir/aggregation/node.hpp>
 #include <jlm/ir/basic_block.hpp>
+#include <jlm/ir/operators/operators.hpp>
 
 #include <algorithm>
 #include <functional>
@@ -28,10 +29,21 @@ annotate_basic_block(const basic_block & bb, dset & pds)
 {
 	auto ds = create_demand_set(pds);
 	for (auto it = bb.rbegin(); it != bb.rend(); it++) {
-		for (size_t n = 0; n < (*it)->noutputs(); n++)
-			pds.erase((*it)->output(n));
-		for (size_t n = 0; n < (*it)->ninputs(); n++)
-			pds.insert((*it)->input(n));
+		auto & tac = *it;
+		if (is_assignment_op(tac->operation())) {
+			/*
+					We need special treatment for assignment operation, since the variable
+					they assign the value to is modeled as an argument of the tac.
+			*/
+			JLM_DEBUG_ASSERT(tac->ninputs() == 2 && tac->noutputs() == 0);
+			pds.erase(tac->input(0));
+			pds.insert(tac->input(1));
+		} else {
+			for (size_t n = 0; n < tac->noutputs(); n++)
+				pds.erase(tac->output(n));
+			for (size_t n = 0; n < tac->ninputs(); n++)
+				pds.insert(tac->input(n));
+		}
 	}
 	ds->top = pds;
 
