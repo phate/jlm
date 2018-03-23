@@ -116,15 +116,25 @@ create_terminator_instruction(const jlm::cfg_node * node, context & ctx)
 	JLM_DEBUG_ASSERT(branch && is_branch_op(branch->operation()));
 	auto condition = ctx.value(branch->input(0));
 	auto match = find_match_tac(bb);
-	JLM_DEBUG_ASSERT(match && match->output(0) == branch->input(0));
-	auto mop = static_cast<const jive::ctl::match_op*>(&match->operation());
 
-	auto defbb = ctx.basic_block(node->outedge(mop->default_alternative())->sink());
-	auto sw = builder.CreateSwitch(condition, defbb);
-	for (const auto & alt : *mop) {
-		auto & type = *static_cast<const jive::bits::type*>(&mop->argument(0).type());
-		auto value = llvm::ConstantInt::get(convert_type(type, ctx), alt.first);
-		sw->addCase(value, ctx.basic_block(node->outedge(alt.second)->sink()));
+	if (match) {
+		JLM_DEBUG_ASSERT(match->output(0) == branch->input(0));
+		auto mop = static_cast<const jive::ctl::match_op*>(&match->operation());
+
+		auto defbb = ctx.basic_block(node->outedge(mop->default_alternative())->sink());
+		auto sw = builder.CreateSwitch(condition, defbb);
+		for (const auto & alt : *mop) {
+			auto & type = *static_cast<const jive::bits::type*>(&mop->argument(0).type());
+			auto value = llvm::ConstantInt::get(convert_type(type, ctx), alt.first);
+			sw->addCase(value, ctx.basic_block(node->outedge(alt.second)->sink()));
+		}
+	} else {
+		auto defbb = ctx.basic_block(node->outedge(node->noutedges()-1)->sink());
+		auto sw = builder.CreateSwitch(condition, defbb);
+		for (size_t n = 0; n < node->noutedges()-1; n++) {
+			auto value = llvm::ConstantInt::get(llvm::Type::getInt32Ty(builder.getContext()), n);
+			sw->addCase(value, ctx.basic_block(node->outedge(n)->sink()));
+		}
 	}
 }
 

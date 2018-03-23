@@ -71,9 +71,11 @@ convert_ctl_type(const jive::type & type, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const jive::ctl::type*>(&type));
 	auto & t = *static_cast<const jive::ctl::type*>(&type);
-	JLM_DEBUG_ASSERT(t.nalternatives() == 2);
 
-	return llvm::Type::getInt1Ty(ctx.llvm_module().getContext());
+	if (t.nalternatives() == 2)
+		return llvm::Type::getInt1Ty(ctx.llvm_module().getContext());
+
+	return llvm::Type::getInt32Ty(ctx.llvm_module().getContext());
 }
 
 static inline llvm::Type *

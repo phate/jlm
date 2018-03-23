@@ -119,9 +119,9 @@ convert_ctlconstant(
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const jive::ctl::constant_op*>(&op));
 	auto & cop = *static_cast<const jive::ctl::constant_op*>(&op);
-	JLM_DEBUG_ASSERT(cop.value().nalternatives() == 2);
 
-	auto type = llvm::IntegerType::get(builder.getContext(), 1);
+	size_t nbits = cop.value().nalternatives() == 2 ? 1 : 32;
+	auto type = llvm::IntegerType::get(builder.getContext(), nbits);
 	return llvm::ConstantInt::get(type, cop.value().alternative());
 }
 
