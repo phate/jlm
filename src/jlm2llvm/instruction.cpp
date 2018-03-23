@@ -670,6 +670,19 @@ convert_mux(
 	return nullptr;
 }
 
+static inline llvm::Value *
+convert_ptr2bits(
+	const jive::operation & op,
+	const std::vector<const variable*> & args,
+	llvm::IRBuilder<> & builder,
+	context & ctx)
+{
+	JLM_DEBUG_ASSERT(is_ptr2bits(op));
+
+	auto type = convert_type(op.result(0).type(), ctx);
+	return builder.CreatePtrToInt(ctx.value(args[0]), type);
+}
+
 llvm::Value *
 convert_operation(
 	const jive::operation & op,
@@ -724,6 +737,7 @@ convert_operation(
 	, {std::type_index(typeid(jive::mux_op)), convert_mux}
 	, {typeid(jlm::constant_array_op), convert_constant_array}
 	, {typeid(constant_aggregate_zero_op), convert_constant_aggregate_zero}
+	, {typeid(ptr2bits_op), convert_ptr2bits}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
