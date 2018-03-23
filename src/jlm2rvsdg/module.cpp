@@ -556,28 +556,43 @@ handle_scc(
 		pb.begin_phi(graph->root());
 		svmap.push_scope(pb.region());
 
-		/* FIXME: external dependencies */
-		std::vector<std::shared_ptr<jive::recvar>> recvars;
+		auto & pvmap = svmap.vmap(svmap.nscopes()-2);
+		auto & vmap = svmap.vmap();
+
+		/* add recursion variables */
+		std::unordered_map<const variable*, std::shared_ptr<jive::recvar>> recvars;
 		for (const auto & node : scc) {
 			auto rv = pb.add_recvar(node->type());
-			JLM_DEBUG_ASSERT(m.variable(node));
-			svmap.vmap()[m.variable(node)] = rv->value();
-			recvars.push_back(rv);
+			auto v = m.variable(node);
+			JLM_DEBUG_ASSERT(v);
+			vmap[v] = rv->value();
+			JLM_DEBUG_ASSERT(recvars.find(v) == recvars.end());
+			recvars[v] = rv;
 		}
 
-		size_t n = 0;
+		/* add dependencies */
+		for (const auto & node : scc) {
+			for (const auto & dep : *node) {
+				auto v = m.variable(dep);
+				JLM_DEBUG_ASSERT(v);
+				if (recvars.find(v) == recvars.end())
+					vmap[v] = pb.add_dependency(pvmap[v]);
+			}
+		}
+
+		/* convert SCC nodes */
 		for (const auto & node : scc) {
 			auto output = map[typeid(*node)](node, pb.region(), svmap);
-			recvars[n++]->set_value(output);
+			recvars[m.variable(node)]->set_value(output);
 		}
 
 		svmap.pop_scope();
 		pb.end_phi();
 
-		n = 0;
+		/* add phi outputs */
 		for (const auto & node : scc) {
 			auto v = m.variable(node);
-			auto value = recvars[n++]->value();
+			auto value = recvars[v]->value();
 			svmap.vmap()[v] = value;
 			if (v->exported())
 				graph->export_port(value, v->name());

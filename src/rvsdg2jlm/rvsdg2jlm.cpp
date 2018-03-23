@@ -406,12 +406,16 @@ static inline void
 convert_phi_node(const jive::node & node, context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const jive::phi_op*>(&node.operation()));
-	auto subregion = static_cast<const jive::structural_node*>(&node)->subregion(0);
+	auto snode = static_cast<const jive::structural_node*>(&node);
+	auto subregion = snode->subregion(0);
 	auto & module = ctx.module();
 	auto & clg = module.callgraph();
 
-	/* FIXME: handle phi node dependencies */
-	JLM_DEBUG_ASSERT(subregion->narguments() == subregion->nresults());
+	/* add dependencies to context */
+	for (size_t n = 0; n < snode->ninputs(); n++) {
+		auto v = ctx.variable(snode->input(n)->origin());
+		ctx.insert(snode->input(n)->arguments.first, v);
+	}
 
 	/* forward declare all functions */
 	for (size_t n = 0; n < subregion->nresults(); n++) {
