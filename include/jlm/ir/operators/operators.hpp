@@ -1712,6 +1712,65 @@ create_trunc(size_t ndstbits, jive::output * operand)
 	return jive::create_normalized(operand->region(), op, {operand})[0];
 }
 
+/* uitofp operator */
+
+class uitofp_op final : public jive::simple_op {
+public:
+	virtual
+	~uitofp_op();
+
+	inline
+	uitofp_op(const jive::bits::type & srctype, const jlm::fptype & dsttype)
+	: jive::simple_op()
+	, dstport_(dsttype)
+	, srcport_(srctype)
+	{}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual size_t
+	narguments() const noexcept override;
+
+	virtual const jive::port &
+	argument(size_t index) const noexcept override;
+
+	virtual size_t
+	nresults() const noexcept override;
+
+	virtual const jive::port &
+	result(size_t index) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+private:
+	jive::port dstport_;
+	jive::port srcport_;
+};
+
+static inline bool
+is_uitofp_op(const jive::operation & op)
+{
+	return dynamic_cast<const uitofp_op*>(&op) != nullptr;
+}
+
+static inline std::unique_ptr<jlm::tac>
+create_uitofp_tac(const variable * operand, jlm::variable * result)
+{
+	auto st = dynamic_cast<const jive::bits::type*>(&operand->type());
+	if (!st) throw std::logic_error("Expected bits type.");
+
+	auto rt = dynamic_cast<const jlm::fptype*>(&result->type());
+	if (!rt) throw std::logic_error("Expected floating point type.");
+
+	uitofp_op op(*st, *rt);
+	return create_tac(op, {operand}, {result});
+}
+
 /* sitofp operator */
 
 class sitofp_op final : public jive::simple_op {

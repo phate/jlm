@@ -1292,6 +1292,56 @@ trunc_op::copy() const
 }
 
 
+/* uitofp operator */
+
+uitofp_op::~uitofp_op()
+{}
+
+bool
+uitofp_op::operator==(const operation & other) const noexcept
+{
+	auto op = dynamic_cast<const uitofp_op*>(&other);
+	return op && op->srcport_ == srcport_ && op->dstport_ == dstport_;
+}
+
+size_t
+uitofp_op::narguments() const noexcept
+{
+	return 1;
+}
+
+const jive::port &
+uitofp_op::argument(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < narguments());
+	return srcport_;
+}
+
+size_t
+uitofp_op::nresults() const noexcept
+{
+	return 1;
+}
+
+const jive::port &
+uitofp_op::result(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < nresults());
+	return dstport_;
+}
+
+std::string
+uitofp_op::debug_string() const
+{
+	return "UITOFP";
+}
+
+std::unique_ptr<jive::operation>
+uitofp_op::copy() const
+{
+	return std::make_unique<uitofp_op>(*this);
+}
+
 /* sitofp operator */
 
 sitofp_op::~sitofp_op()
