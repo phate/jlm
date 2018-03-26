@@ -5,10 +5,10 @@
 
 #include <jlm/common.hpp>
 #include <jlm/ir/data.hpp>
+#include <jlm/ir/lambda.hpp>
 #include <jlm/opt/dne.hpp>
 #include <jlm/util/stats.hpp>
 
-#include <jive/types/function/fctlambda.h>
 #include <jive/rvsdg/gamma.h>
 #include <jive/rvsdg/phi.h>
 #include <jive/rvsdg/simple-node.h>
@@ -76,7 +76,7 @@ static bool
 is_lambda_output(const jive::output * output)
 {
 	return output->node()
-	    && dynamic_cast<const jive::fct::lambda_op*>(&output->node()->operation());
+	    && dynamic_cast<const lambda_op*>(&output->node()->operation());
 }
 
 static bool
@@ -85,7 +85,7 @@ is_lambda_argument(const jive::output * output)
 	auto argument = dynamic_cast<const jive::argument*>(output);
 	return argument
 	    && argument->region()->node()
-	    && dynamic_cast<const jive::fct::lambda_op*>(&argument->region()->node()->operation());
+	    && dynamic_cast<const lambda_op*>(&argument->region()->node()->operation());
 }
 
 static bool
@@ -230,7 +230,7 @@ sweep_phi(jive::structural_node * node, const dnectx & ctx)
 static void
 sweep_lambda(jive::structural_node * node, const dnectx & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::fct::lambda_op*>(&node->operation()));
+	JLM_DEBUG_ASSERT(dynamic_cast<const lambda_op*>(&node->operation()));
 	auto subregion = node->subregion(0);
 
 	if (!ctx.is_alive(node)) {
@@ -336,7 +336,7 @@ sweep(jive::structural_node * node, const dnectx & ctx)
 	> map({
 	  {std::type_index(typeid(jive::gamma_op)), sweep_gamma}
 	, {std::type_index(typeid(jive::theta_op)), sweep_theta}
-	, {std::type_index(typeid(jive::fct::lambda_op)), sweep_lambda}
+	, {std::type_index(typeid(jlm::lambda_op)), sweep_lambda}
 	, {std::type_index(typeid(jive::phi_op)), sweep_phi}
 	, {std::type_index(typeid(jlm::data_op)), sweep_data}
 	});

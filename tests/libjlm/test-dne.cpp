@@ -7,7 +7,6 @@
 #include "test-registry.hpp"
 #include "test-types.hpp"
 
-#include <jive/types/function/fctlambda.h>
 #include <jive/view.h>
 #include <jive/rvsdg/control.h>
 #include <jive/rvsdg/graph.h>
@@ -15,6 +14,7 @@
 #include <jive/rvsdg/simple-node.h>
 #include <jive/rvsdg/theta.h>
 
+#include <jlm/ir/lambda.hpp>
 #include <jlm/opt/dne.hpp>
 
 static inline void
@@ -226,7 +226,7 @@ test_lambda()
 	jive::graph graph;
 	auto x = graph.import(vt, "x");
 
-	jive::lambda_builder lb;
+	jlm::lambda_builder lb;
 	auto arguments = lb.begin_lambda(graph.root(), {{&vt}, {&vt}});
 
 	auto d = lb.add_dependency(x);
@@ -262,7 +262,7 @@ test_phi()
 	auto dx = pb.add_dependency(x);
 	auto dy = pb.add_dependency(y);
 
-	jive::lambda_builder lb;
+	jlm::lambda_builder lb;
 	auto arguments = lb.begin_lambda(pb.region(), ft);
 	lb.add_dependency(rv1->value());
 	lb.add_dependency(dx);
