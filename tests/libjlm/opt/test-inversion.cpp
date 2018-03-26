@@ -116,4 +116,4 @@ verify()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-inversion", verify);
+JLM_UNIT_TEST_REGISTER("libjlm/opt/test-inversion", verify);

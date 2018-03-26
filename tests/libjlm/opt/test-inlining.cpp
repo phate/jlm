@@ -73,4 +73,4 @@ verify()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-inlining", verify);
+JLM_UNIT_TEST_REGISTER("libjlm/opt/test-inlining", verify);

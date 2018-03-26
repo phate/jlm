@@ -142,4 +142,4 @@ verify()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-push", verify);
+JLM_UNIT_TEST_REGISTER("libjlm/opt/test-push", verify);

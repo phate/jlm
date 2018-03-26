@@ -299,4 +299,4 @@ verify()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-dne", verify);
+JLM_UNIT_TEST_REGISTER("libjlm/opt/test-dne", verify);

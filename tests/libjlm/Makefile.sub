@@ -1,18 +1,12 @@
+include tests/libjlm/opt/Makefile.sub
+
 TESTS += \
 	libjlm/test-aggregation \
 	libjlm/test-alloca \
 	libjlm/test-annotation \
 	libjlm/test-cfg-structure \
-	libjlm/test-cne \
-	libjlm/test-dne \
-	libjlm/test-inlining \
-	libjlm/test-invariance \
-	libjlm/test-inversion \
 	libjlm/test-load \
-	libjlm/test-pull \
-	libjlm/test-push \
 	libjlm/test-restructuring \
 	libjlm/test-sext \
 	libjlm/test-ssa-destruction \
 	libjlm/test-store \
-	libjlm/test-unroll \

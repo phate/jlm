@@ -1,0 +1,9 @@
+TESTS += \
+	libjlm/opt/test-cne \
+	libjlm/opt/test-dne \
+	libjlm/opt/test-inlining \
+	libjlm/opt/test-invariance \
+	libjlm/opt/test-inversion \
+	libjlm/opt/test-pull \
+	libjlm/opt/test-push \
+	libjlm/opt/test-unroll \
