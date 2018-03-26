@@ -7,23 +7,24 @@
 #include "test-registry.hpp"
 #include "test-types.hpp"
 
-#include <jive/types/function/fctapply.h>
-#include <jive/types/function/fctlambda.h>
 #include <jive/view.h>
 #include <jive/rvsdg/control.h>
 
+#include <jlm/ir/lambda.hpp>
+#include <jlm/ir/operators/call.hpp>
 #include <jlm/opt/inlining.hpp>
 
+/* FIXME: replace with contains function from jive */
 static bool
-contains_apply_node(const jive::region * region)
+contains_call_node(const jive::region * region)
 {
 	for (const auto & node : region->nodes) {
-		if (jive::is_opnode<jive::fct::apply_op>(&node))
+		if (jive::is_opnode<jlm::call_op>(&node))
 			return true;
 
 		if (auto structnode = dynamic_cast<const jive::structural_node*>(&node)) {
 			for (size_t n = 0; n < structnode->nsubregions(); n++) {
-				if (contains_apply_node(structnode->subregion(n)))
+				if (contains_call_node(structnode->subregion(n)))
 					return true;
 			}
 		}
@@ -45,7 +46,7 @@ verify()
 	auto i = graph.import(vt, "i");
 
 	/* f1 */
-	jive::lambda_builder lb;
+	jlm::lambda_builder lb;
 	auto arguments = lb.begin_lambda(graph.root(), ft1);
 	lb.add_dependency(i);
 	auto t = lb.subregion()->add_simple_node(op, {arguments[0]});
@@ -58,7 +59,7 @@ verify()
 	auto gamma = jive::gamma_node::create(arguments[0], 2);
 	auto ev1 = gamma->add_entryvar(arguments[1]);
 	auto ev2 = gamma->add_entryvar(d);
-	auto apply = jive::fct::create_apply(ev2->argument(0), {ev1->argument(0)})[0];
+	auto apply = jlm::create_call(ev2->argument(0), {ev1->argument(0)})[0];
 	auto xv1 = gamma->add_exitvar({apply, ev1->argument(1)});
 	auto f2 = lb.end_lambda({xv1->output()});
 
@@ -68,7 +69,7 @@ verify()
 	jlm::inlining(graph);
 	jive::view(graph.root(), stdout);
 
-	assert(!contains_apply_node(graph.root()));
+	assert(!contains_call_node(graph.root()));
 	return 0;
 }
 
