@@ -5,10 +5,10 @@
 
 #include <jlm/common.hpp>
 #include <jlm/ir/data.hpp>
+#include <jlm/ir/lambda.hpp>
 #include <jlm/opt/cne.hpp>
 #include <jlm/util/stats.hpp>
 
-#include <jive/types/function/fctlambda.h>
 #include <jive/rvsdg/gamma.h>
 #include <jive/rvsdg/phi.h>
 #include <jive/rvsdg/simple-node.h>
@@ -298,7 +298,7 @@ mark_theta(const jive::structural_node * node, cnectx & ctx)
 static void
 mark_lambda(const jive::structural_node * node, cnectx & ctx)
 {
-	JLM_DEBUG_ASSERT(jive::fct::is_lambda_op(node->operation()));
+	JLM_DEBUG_ASSERT(is_lambda_op(node->operation()));
 
 	/* mark dependencies */
 	for (size_t i1 = 0; i1 < node->ninputs(); i1++) {
@@ -346,7 +346,7 @@ mark(const jive::structural_node * node, cnectx & ctx)
 	> map({
 	  {std::type_index(typeid(jive::gamma_op)), mark_gamma}
 	, {std::type_index(typeid(jive::theta_op)), mark_theta}
-	, {std::type_index(typeid(jive::fct::lambda_op)), mark_lambda}
+	, {std::type_index(typeid(lambda_op)), mark_lambda}
 	, {std::type_index(typeid(jive::phi_op)), mark_phi}
 	, {std::type_index(typeid(data_op)), mark_data}
 	});
@@ -466,7 +466,7 @@ divert_theta(jive::structural_node * node, cnectx & ctx)
 static void
 divert_lambda(jive::structural_node * node, cnectx & ctx)
 {
-	JLM_DEBUG_ASSERT(jive::fct::is_lambda_op(node->operation()));
+	JLM_DEBUG_ASSERT(is_lambda_op(node->operation()));
 
 	divert_arguments(node->subregion(0), ctx);
 	divert(node->subregion(0), ctx);
@@ -496,7 +496,7 @@ divert(jive::structural_node * node, cnectx & ctx)
 	> map({
 	  {std::type_index(typeid(jive::gamma_op)), divert_gamma}
 	, {std::type_index(typeid(jive::theta_op)), divert_theta}
-	, {std::type_index(typeid(jive::fct::lambda_op)), divert_lambda}
+	, {std::type_index(typeid(lambda_op)), divert_lambda}
 	, {std::type_index(typeid(jive::phi_op)), divert_phi}
 	, {std::type_index(typeid(data_op)), divert_data}
 	});
