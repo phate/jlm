@@ -110,6 +110,23 @@ create_call_tac(
 	return create_tac(op, operands, results);
 }
 
+static inline std::vector<jive::output*>
+create_call(
+	jive::output * function,
+	const std::vector<jive::output*> & arguments)
+{
+	auto at = dynamic_cast<const ptrtype*>(&function->type());
+	if (!at) throw std::logic_error("Expected pointer type.");
+
+	auto ft = dynamic_cast<const jive::fct::type*>(&at->pointee_type());
+	if (!ft) throw std::logic_error("Expected function type.");
+
+	call_op op(*ft);
+	std::vector<jive::output*> operands({function});
+	operands.insert(operands.end(), arguments.begin(), arguments.end());
+	return jive::create_normalized(function->region(), op, operands);
+}
+
 }
 
 #endif
