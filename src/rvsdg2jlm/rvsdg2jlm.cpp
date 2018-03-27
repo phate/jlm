@@ -273,14 +273,20 @@ convert_gamma_node(const jive::node & node, context & ctx)
 			ctx.insert(argument, ctx.variable(argument->input()->origin()));
 		}
 
-		/* convert subregion */
-		auto region_entry = create_basic_block_node(cfg);
-		entry->add_outedge(region_entry);
-		ctx.set_lpbb(region_entry);
-		convert_region(*subregion, ctx);
+		if (subregion->nnodes() == 0) {
+			/* subregin is empty */
+			phi_nodes.push_back(entry);
+			entry->add_outedge(exit);
+		} else {
+			/* convert subregion */
+			auto region_entry = create_basic_block_node(cfg);
+			entry->add_outedge(region_entry);
+			ctx.set_lpbb(region_entry);
+			convert_region(*subregion, ctx);
 
-		phi_nodes.push_back(ctx.lpbb());
-		ctx.lpbb()->add_outedge(exit);
+			phi_nodes.push_back(ctx.lpbb());
+			ctx.lpbb()->add_outedge(exit);
+		}
 	}
 
 	/* add phi instructions */

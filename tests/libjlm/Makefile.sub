@@ -1,4 +1,5 @@
 include tests/libjlm/opt/Makefile.sub
+include tests/libjlm/r2j/Makefile.sub
 
 TESTS += \
 	libjlm/test-aggregation \

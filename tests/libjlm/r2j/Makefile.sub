@@ -1,0 +1,2 @@
+TESTS += \
+	libjlm/r2j/test-partial-gamma \
