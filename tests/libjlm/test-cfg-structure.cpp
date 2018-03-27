@@ -11,6 +11,7 @@
 #include <jlm/ir/cfg.hpp>
 #include <jlm/ir/cfg-structure.hpp>
 #include <jlm/ir/module.hpp>
+#include <jlm/ir/view.hpp>
 
 #include <assert.h>
 
@@ -47,10 +48,31 @@ test_straightening()
 	assert(bb->last() == bb3_last);
 }
 
+static void
+test_is_structured()
+{
+	jlm::module module("", "");
+
+	jlm::cfg cfg(module);
+	auto split = create_basic_block_node(&cfg);
+	auto bb = create_basic_block_node(&cfg);
+	auto join = create_basic_block_node(&cfg);
+
+	cfg.exit_node()->divert_inedges(split);
+	split->add_outedge(join);
+	split->add_outedge(bb);
+	bb->add_outedge(join);
+	join->add_outedge(cfg.exit_node());
+
+	jlm::view_ascii(cfg, stdout);
+	assert(is_structured(cfg));
+}
+
 static int
 verify()
 {
 	test_straightening();
+	test_is_structured();
 
 	return 0;
 }

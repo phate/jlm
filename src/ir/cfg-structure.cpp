@@ -250,13 +250,12 @@ reduce_branch(
 	split->divert_inedges(reduction);
 	reduction->add_outedge(join);
 	for (auto it = split->begin_outedges(); it != split->end_outedges(); it++) {
-		if (it->sink() == join) {
-			split->remove_outedge(it->index());
-		} else {
+		if (it->sink() != join) {
 			it->sink()->remove_outedges();
 			to_visit.erase(it->sink());
 		}
 	}
+	split->remove_outedges();
 
 	to_visit.erase(split);
 	to_visit.insert(reduction);
