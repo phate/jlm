@@ -7,6 +7,7 @@
 #define TESTS_TEST_OPERATION_HPP
 
 #include <jive/rvsdg/operation.h>
+#include <jive/rvsdg/simple-node.h>
 #include <jive/rvsdg/type.h>
 
 #include <jlm/ir/tac.hpp>
@@ -72,6 +73,20 @@ create_testop_tac(
 
 	test_op op(argument_types, result_types);
 	return create_tac(op, arguments, results);
+}
+
+static inline std::vector<jive::output*>
+create_testop(
+	jive::region * region,
+	const std::vector<jive::output*> & operands,
+	const std::vector<const jive::type*> & result_types)
+{
+	std::vector<const jive::type*> operand_types;
+	for (const auto & operand : operands)
+		operand_types.push_back(&operand->type());
+
+	test_op op(operand_types, result_types);
+	return jive::create_normalized(region, op, {operands});
 }
 
 }
