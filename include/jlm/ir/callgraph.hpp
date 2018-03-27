@@ -93,6 +93,16 @@ public:
 	callgraph() noexcept
 	{}
 
+	callgraph(const callgraph &) = delete;
+
+	callgraph(callgraph &&) = delete;
+
+	callgraph &
+	operator=(const callgraph &) = delete;
+
+	callgraph &
+	operator=(callgraph &&) = delete;
+
 	inline const_iterator
 	begin() const noexcept
 	{
