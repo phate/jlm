@@ -199,58 +199,73 @@ convert_simple_node(const jive::node & node, context & ctx)
 		tv->set_tac(static_cast<const basic_block*>(&ctx.lpbb()->attribute())->last());
 }
 
+static void
+convert_empty_gamma_node(const jive::gamma_node * gamma, context & ctx)
+{
+	JLM_DEBUG_ASSERT(gamma->nsubregions() == 2);
+	JLM_DEBUG_ASSERT(gamma->subregion(0)->nnodes() == 0 && gamma->subregion(1)->nnodes() == 0);
+
+	/* both regions are empty, create only select instructions */
+
+	auto predicate = gamma->predicate()->origin();
+	auto matchop = dynamic_cast<const jive::ctl::match_op*>(&predicate->node()->operation());
+	auto & module = ctx.module();
+	auto cfg = ctx.cfg();
+
+	auto bb = create_basic_block_node(cfg);
+	ctx.lpbb()->add_outedge(bb);
+
+	for (size_t n = 0; n < gamma->noutputs(); n++) {
+		auto output = gamma->output(n);
+
+		auto a0 = static_cast<const jive::argument*>(gamma->subregion(0)->result(n)->origin());
+		auto a1 = static_cast<const jive::argument*>(gamma->subregion(1)->result(n)->origin());
+		auto o0 = a0->input()->origin();
+		auto o1 = a1->input()->origin();
+
+		/* both operands are the same, no select is necessary */
+		if (o0 == o1) {
+			ctx.insert(output, ctx.variable(o0));
+			continue;
+		}
+
+		auto d = matchop->default_alternative();
+		auto v = module.create_variable(output->type(), false);
+		auto c = ctx.variable(predicate->node()->input(0)->origin());
+		auto t = d == 0 ? ctx.variable(o1) : ctx.variable(o0);
+		auto f = d == 0 ? ctx.variable(o0) : ctx.variable(o1);
+		append_first(bb, create_select_tac(c, t, f, v));
+		ctx.insert(output, v);
+	}
+
+	ctx.set_lpbb(bb);
+}
+
 static inline void
 convert_gamma_node(const jive::node & node, context & ctx)
 {
 	JLM_DEBUG_ASSERT(is_gamma_node(&node));
-	auto nalternatives = static_cast<const jive::gamma_op*>(&node.operation())->nalternatives();
-	auto & snode = *static_cast<const jive::structural_node*>(&node);
-	auto predicate = node.input(0)->origin();
+	auto gamma = static_cast<const jive::gamma_node*>(&node);
+	auto nalternatives = gamma->nsubregions();
+	auto predicate = gamma->predicate()->origin();
 	auto matchop = dynamic_cast<const jive::ctl::match_op*>(&predicate->node()->operation());
 	auto & module = ctx.module();
 	auto cfg = ctx.cfg();
+
+	if (gamma->nsubregions() == 2
+	&& gamma->subregion(0)->nnodes() == 0
+	&& gamma->subregion(1)->nnodes() == 0)
+		return convert_empty_gamma_node(gamma, ctx);
 
 	auto entry = create_basic_block_node(cfg);
 	auto exit = create_basic_block_node(cfg);
 	ctx.lpbb()->add_outedge(entry);
 
-	/* both regions are empty, create only select instructions */
-	if (snode.nsubregions() == 2
-	&& snode.subregion(0)->nnodes() == 0
-	&& snode.subregion(1)->nnodes() == 0) {
-		for (size_t n = 0; n < snode.noutputs(); n++) {
-			auto output = snode.output(n);
-
-			auto a0 = static_cast<const jive::argument*>(snode.subregion(0)->result(n)->origin());
-			auto a1 = static_cast<const jive::argument*>(snode.subregion(1)->result(n)->origin());
-			auto o0 = a0->input()->origin();
-			auto o1 = a1->input()->origin();
-
-			/* both operands are the same, no select is necessary */
-			if (o0 == o1) {
-				ctx.insert(output, ctx.variable(o0));
-				continue;
-			}
-
-			auto d = matchop->default_alternative();
-			auto v = module.create_variable(output->type(), false);
-			auto c = ctx.variable(predicate->node()->input(0)->origin());
-			auto t = d == 0 ? ctx.variable(o1) : ctx.variable(o0);
-			auto f = d == 0 ? ctx.variable(o0) : ctx.variable(o1);
-			append_first(exit, create_select_tac(c, t, f, v));
-			ctx.insert(output, v);
-		}
-
-		entry->add_outedge(exit);
-		ctx.set_lpbb(exit);
-		return;
-	}
-
 	/* convert gamma regions */
 	std::vector<cfg_node*> phi_nodes;
 	append_last(entry, create_branch_tac(nalternatives, ctx.variable(predicate)));
-	for (size_t n = 0; n < snode.nsubregions(); n++) {
-		auto subregion = snode.subregion(n);
+	for (size_t n = 0; n < gamma->nsubregions(); n++) {
+		auto subregion = gamma->subregion(n);
 
 		/* add arguments to context */
 		for (size_t i = 0; i < subregion->narguments(); i++) {
@@ -269,18 +284,18 @@ convert_gamma_node(const jive::node & node, context & ctx)
 	}
 
 	/* add phi instructions */
-	for (size_t n = 0; n < snode.noutputs(); n++) {
-		auto output = snode.output(n);
+	for (size_t n = 0; n < gamma->noutputs(); n++) {
+		auto output = gamma->output(n);
 
 		bool invariant = true;
-		bool select = (snode.nsubregions() == 2) && matchop;
+		bool select = (gamma->nsubregions() == 2) && matchop;
 		std::vector<std::pair<const variable*, cfg_node*>> arguments;
-		for (size_t r = 0; r < snode.nsubregions(); r++) {
-			auto origin = snode.subregion(r)->result(n)->origin();
+		for (size_t r = 0; r < gamma->nsubregions(); r++) {
+			auto origin = gamma->subregion(r)->result(n)->origin();
 
 			auto v = ctx.variable(origin);
 			arguments.push_back(std::make_pair(v, phi_nodes[r]));
-			invariant &= (v == ctx.variable(snode.subregion(0)->result(n)->origin()));
+			invariant &= (v == ctx.variable(gamma->subregion(0)->result(n)->origin()));
 			select &= (origin->node() == nullptr && origin->region()->node() == &node);
 		}
 
