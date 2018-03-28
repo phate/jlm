@@ -289,14 +289,14 @@ convert_alloca(
 }
 
 static inline llvm::Value *
-convert_ptroffset(
+convert_getelementptr(
 	const jive::operation & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_ptroffset_op(op) && args.size() >= 2);
-	auto & pop = *static_cast<const ptroffset_op*>(&op);
+	JLM_DEBUG_ASSERT(is_getelementptr_op(op) && args.size() >= 2);
+	auto & pop = *static_cast<const getelementptr_op*>(&op);
 
 	std::vector<llvm::Value*> indices;
 	auto t = convert_type(pop.pointee_type(), ctx);
@@ -729,7 +729,7 @@ convert_operation(
 	, {std::type_index(typeid(jlm::load_op)), convert_load}
 	, {std::type_index(typeid(jlm::store_op)), convert_store}
 	, {std::type_index(typeid(jlm::alloca_op)), convert_alloca}
-	, {std::type_index(typeid(jlm::ptroffset_op)), convert_ptroffset}
+	, {typeid(jlm::getelementptr_op), convert_getelementptr}
 	, {std::type_index(typeid(jlm::data_array_constant_op)), convert_data_array_constant}
 	, {std::type_index(typeid(jlm::ptrcmp_op)), convert_ptrcmp}
 	, {std::type_index(typeid(jlm::zext_op)), convert_zext}

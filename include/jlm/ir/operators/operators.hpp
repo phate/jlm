@@ -646,15 +646,15 @@ create_ptr2bits_tac(const variable * argument, jlm::variable * result)
 	return create_tac(op, {argument}, {result});
 }
 
-/* ptroffset operator */
+/* getelementptr operator */
 
-class ptroffset_op final : public jive::simple_op {
+class getelementptr_op final : public jive::simple_op {
 public:
 	virtual
-	~ptroffset_op();
+	~getelementptr_op();
 
 	inline
-	ptroffset_op(
+	getelementptr_op(
 		const jlm::ptrtype & ptype,
 		const std::vector<jive::bits::type> & btypes,
 		const jlm::ptrtype & rtype)
@@ -706,13 +706,13 @@ private:
 };
 
 static inline bool
-is_ptroffset_op(const jive::operation & op)
+is_getelementptr_op(const jive::operation & op)
 {
-	return dynamic_cast<const jlm::ptroffset_op*>(&op) != nullptr;
+	return dynamic_cast<const jlm::getelementptr_op*>(&op) != nullptr;
 }
 
 static inline std::unique_ptr<jlm::tac>
-create_ptroffset_tac(
+create_getelementptr_tac(
 	const variable * address,
 	const std::vector<const variable*> offsets,
 	jlm::variable * result)
@@ -730,7 +730,7 @@ create_ptroffset_tac(
 	auto rt = dynamic_cast<const jlm::ptrtype*>(&result->type());
 	if (!rt) throw std::logic_error("Expected pointer type.");
 
-	jlm::ptroffset_op op(*at, bts, *rt);
+	jlm::getelementptr_op op(*at, bts, *rt);
 	std::vector<const variable*> operands(1, address);
 	operands.insert(operands.end(), offsets.begin(), offsets.end());
 	return create_tac(op, operands, {result});

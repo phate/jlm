@@ -532,15 +532,15 @@ ptr2bits_op::copy() const
 	return std::unique_ptr<jive::operation>(new jlm::ptr2bits_op(*this));
 }
 
-/* ptroffset operator */
+/* getelementptr operator */
 
-ptroffset_op::~ptroffset_op()
+getelementptr_op::~getelementptr_op()
 {}
 
 bool
-ptroffset_op::operator==(const operation & other) const noexcept
+getelementptr_op::operator==(const operation & other) const noexcept
 {
-	auto op = dynamic_cast<const jlm::ptroffset_op*>(&other);
+	auto op = dynamic_cast<const jlm::getelementptr_op*>(&other);
 	return op
 	    && op->pport_ == pport_
 	    && op->rport_ == rport_
@@ -548,13 +548,13 @@ ptroffset_op::operator==(const operation & other) const noexcept
 }
 
 size_t
-ptroffset_op::narguments() const noexcept
+getelementptr_op::narguments() const noexcept
 {
 	return 1 + nindices();
 }
 
 const jive::port &
-ptroffset_op::argument(size_t index) const noexcept
+getelementptr_op::argument(size_t index) const noexcept
 {
 	JLM_DEBUG_ASSERT(index < narguments());
 	if (index == 0)
@@ -564,27 +564,27 @@ ptroffset_op::argument(size_t index) const noexcept
 }
 
 size_t
-ptroffset_op::nresults() const noexcept
+getelementptr_op::nresults() const noexcept
 {
 	return 1;
 }
 
 const jive::port &
-ptroffset_op::result(size_t index) const noexcept
+getelementptr_op::result(size_t index) const noexcept
 {
 	return rport_;
 }
 
 std::string
-ptroffset_op::debug_string() const
+getelementptr_op::debug_string() const
 {
 	return "PTROFFSET";
 }
 
 std::unique_ptr<jive::operation>
-ptroffset_op::copy() const
+getelementptr_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new ptroffset_op(*this));
+	return std::unique_ptr<jive::operation>(new getelementptr_op(*this));
 }
 
 /* data array constant operator */
