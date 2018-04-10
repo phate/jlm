@@ -696,6 +696,17 @@ convert_ptr2bits(
 	return builder.CreatePtrToInt(ctx.value(args[0]), type);
 }
 
+static inline llvm::Value *
+convert_ctl2bits(
+	const jive::operation & op,
+	const std::vector<const variable*> & args,
+	llvm::IRBuilder<> & builder,
+	context & ctx)
+{
+	JLM_DEBUG_ASSERT(is_ctl2bits_op(op));
+	return ctx.value(args[0]);
+}
+
 llvm::Value *
 convert_operation(
 	const jive::operation & op,
@@ -752,6 +763,7 @@ convert_operation(
 	, {typeid(jlm::constant_array_op), convert_constant_array}
 	, {typeid(constant_aggregate_zero_op), convert_constant_aggregate_zero}
 	, {typeid(ptr2bits_op), convert_ptr2bits}
+	, {typeid(ctl2bits_op), convert_ctl2bits}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
