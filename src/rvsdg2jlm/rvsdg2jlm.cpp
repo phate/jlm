@@ -208,7 +208,6 @@ convert_empty_gamma_node(const jive::gamma_node * gamma, context & ctx)
 	/* both regions are empty, create only select instructions */
 
 	auto predicate = gamma->predicate()->origin();
-	auto matchop = dynamic_cast<const jive::ctl::match_op*>(&predicate->node()->operation());
 	auto & module = ctx.module();
 	auto cfg = ctx.cfg();
 
@@ -229,12 +228,20 @@ convert_empty_gamma_node(const jive::gamma_node * gamma, context & ctx)
 			continue;
 		}
 
-		auto d = matchop->default_alternative();
 		auto v = module.create_variable(output->type(), false);
-		auto c = ctx.variable(predicate->node()->input(0)->origin());
-		auto t = d == 0 ? ctx.variable(o1) : ctx.variable(o0);
-		auto f = d == 0 ? ctx.variable(o0) : ctx.variable(o1);
-		append_first(bb, create_select_tac(c, t, f, v));
+		if (is_match_node(predicate->node())) {
+			auto matchop = static_cast<const jive::ctl::match_op*>(&predicate->node()->operation());
+			auto d = matchop->default_alternative();
+			auto c = ctx.variable(predicate->node()->input(0)->origin());
+			auto t = d == 0 ? ctx.variable(o1) : ctx.variable(o0);
+			auto f = d == 0 ? ctx.variable(o0) : ctx.variable(o1);
+			append_last(bb, create_select_tac(c, t, f, v));
+		} else {
+			auto c = module.create_variable(jive::bits::type(1), false);
+			append_last(bb, create_ctl2bits_tac(ctx.variable(predicate), c));
+			append_last(bb, create_select_tac(c, ctx.variable(o1), ctx.variable(o0), v));
+		}
+
 		ctx.insert(output, v);
 	}
 
@@ -248,7 +255,6 @@ convert_gamma_node(const jive::node & node, context & ctx)
 	auto gamma = static_cast<const jive::gamma_node*>(&node);
 	auto nalternatives = gamma->nsubregions();
 	auto predicate = gamma->predicate()->origin();
-	auto matchop = dynamic_cast<const jive::ctl::match_op*>(&predicate->node()->operation());
 	auto & module = ctx.module();
 	auto cfg = ctx.cfg();
 
@@ -257,6 +263,7 @@ convert_gamma_node(const jive::node & node, context & ctx)
 	&& gamma->subregion(1)->nnodes() == 0)
 		return convert_empty_gamma_node(gamma, ctx);
 
+	auto matchop = dynamic_cast<const jive::ctl::match_op*>(&predicate->node()->operation());
 	auto entry = create_basic_block_node(cfg);
 	auto exit = create_basic_block_node(cfg);
 	ctx.lpbb()->add_outedge(entry);

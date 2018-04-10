@@ -1,2 +1,3 @@
 TESTS += \
+	libjlm/r2j/test-empty-gamma \
 	libjlm/r2j/test-partial-gamma \
