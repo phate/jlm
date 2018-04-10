@@ -387,6 +387,64 @@ create_fp2si_tac(const variable * operand, jlm::variable * result)
 	return create_tac(op, {operand}, {result});
 }
 
+/* ctl2bits operator */
+
+class ctl2bits_op final : public jive::simple_op {
+public:
+	virtual
+	~ctl2bits_op() noexcept;
+
+	inline
+	ctl2bits_op(const jive::ctl::type & srctype, const jive::bits::type & dsttype)
+	: srcport_(srctype)
+	, dstport_(dsttype)
+	{}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual size_t
+	narguments() const noexcept override;
+
+	virtual const jive::port &
+	argument(size_t index) const noexcept override;
+
+	virtual size_t
+	nresults() const noexcept override;
+
+	virtual const jive::port &
+	result(size_t index) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+private:
+	jive::port srcport_;
+	jive::port dstport_;
+};
+
+static inline bool
+is_ctl2bits_op(const jive::operation & op)
+{
+	return dynamic_cast<const ctl2bits_op*>(&op) != nullptr;
+}
+
+static inline std::unique_ptr<jlm::tac>
+create_ctl2bits_tac(const variable * operand, jlm::variable * result)
+{
+	auto st = dynamic_cast<const jive::ctl::type*>(&operand->type());
+	if (!st) throw std::logic_error("Expected control type.");
+
+	auto dt = dynamic_cast<const jive::bits::type*>(&result->type());
+	if (!dt) throw std::logic_error("Expected bitstring type.");
+
+	ctl2bits_op op(*st, *dt);
+	return create_tac(op, {operand}, {result});
+}
+
 /* branch operator */
 
 class branch_op final : public jive::simple_op {

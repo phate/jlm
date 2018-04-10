@@ -334,6 +334,58 @@ fp2si_op::copy() const
 	return std::unique_ptr<jive::operation>(new fp2si_op(*this));
 }
 
+/* ctl2bits operator */
+
+ctl2bits_op::~ctl2bits_op() noexcept
+{}
+
+bool
+ctl2bits_op::operator==(const operation & other) const noexcept
+{
+	auto op = dynamic_cast<const ctl2bits_op*>(&other);
+	return op
+	    && op->srcport_ == srcport_
+	    && op->dstport_ == dstport_;
+}
+
+size_t
+ctl2bits_op::narguments() const noexcept
+{
+	return 1;
+}
+
+const jive::port &
+ctl2bits_op::argument(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < narguments());
+	return srcport_;
+}
+
+size_t
+ctl2bits_op::nresults() const noexcept
+{
+	return 1;
+}
+
+const jive::port &
+ctl2bits_op::result(size_t index) const noexcept
+{
+	JLM_DEBUG_ASSERT(index < nresults());
+	return dstport_;
+}
+
+std::string
+ctl2bits_op::debug_string() const
+{
+	return "CTL2BITS";
+}
+
+std::unique_ptr<jive::operation>
+ctl2bits_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new ctl2bits_op(*this));
+}
+
 /* branch operator */
 
 branch_op::~branch_op() noexcept
