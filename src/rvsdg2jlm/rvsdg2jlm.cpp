@@ -353,10 +353,10 @@ phi_needed(const jive::input * i, const jlm::variable * v)
 	if (is_gblvariable(v))
 		return false;
 
-	if (output->results.first->origin() == input->arguments.first)
+	if (output->results.first()->origin() == input->arguments.first())
 		return false;
 
-	if (input->arguments.first->nusers() == 0)
+	if (input->arguments.first()->nusers() == 0)
 		return false;
 
 	return true;
@@ -444,7 +444,7 @@ convert_phi_node(const jive::node & node, context & ctx)
 	/* add dependencies to context */
 	for (size_t n = 0; n < snode->ninputs(); n++) {
 		auto v = ctx.variable(snode->input(n)->origin());
-		ctx.insert(snode->input(n)->arguments.first, v);
+		ctx.insert(snode->input(n)->arguments.first(), v);
 	}
 
 	/* forward declare all functions */

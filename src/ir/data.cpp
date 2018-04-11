@@ -47,7 +47,7 @@ rvsdg_data_node::copy(jive::region * region, jive::substitution_map & smap) cons
 	jive::substitution_map rmap;
 	for (const auto & od : *this) {
 		auto nd = db.add_dependency(smap.lookup(od->origin()));
-		rmap.insert(dynamic_cast<jive::structural_input*>(od)->arguments.first, nd);
+		rmap.insert(dynamic_cast<jive::structural_input*>(od)->arguments.first(), nd);
 	}
 
 	/* copy subregion */

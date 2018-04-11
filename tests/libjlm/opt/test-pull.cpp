@@ -36,7 +36,7 @@ test_pullin_top()
 
 	gamma->add_entryvar(n4->output(0));
 	auto ev = gamma->add_entryvar(n5->output(0));
-	auto xv = gamma->add_exitvar({ev->argument(0), ev->argument(1)});
+	gamma->add_exitvar({ev->argument(0), ev->argument(1)});
 
 	graph.add_export(gamma->output(0), "x");
 	graph.add_export(n2->output(0), "y");
@@ -63,7 +63,7 @@ test_pullin_bottom()
 	auto gamma = jive::gamma_node::create(c, 2);
 
 	auto ev = gamma->add_entryvar(x);
-	auto xv = gamma->add_exitvar({ev->argument(0), ev->argument(1)});
+	gamma->add_exitvar({ev->argument(0), ev->argument(1)});
 
 	auto b1 = graph.root()->add_simple_node(bop, {gamma->output(0), x});
 	auto b2 = graph.root()->add_simple_node(bop, {gamma->output(0), b1->output(0)});

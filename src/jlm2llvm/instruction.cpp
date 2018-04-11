@@ -664,7 +664,7 @@ convert_select(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_select_op(op));
+	JLM_DEBUG_ASSERT(jlm::is_select_op(op));
 
 	auto c = ctx.value(operands[0]);
 	auto t = ctx.value(operands[1]);

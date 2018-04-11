@@ -56,10 +56,9 @@ find_consumers(const jive::structural_node * node)
 				continue;
 			}
 
-			auto sinput = dynamic_cast<const jive::structural_input*>(user);
-			jive::argument * argument;
-			JIVE_LIST_ITERATE(sinput->arguments, argument, input_argument_list)
-				worklist.insert(argument);
+			auto sinput = dynamic_cast<jive::structural_input*>(user);
+			for (auto & argument : sinput->arguments)
+				worklist.insert(&argument);
 		}
 	}
 
@@ -139,7 +138,7 @@ inline_apply(const jive::structural_node * lambda, jive::simple_node * apply)
 		smap.insert(argument, apply->input(n)->origin());
 	}
 	for (size_t n = 0; n < lambda->ninputs(); n++) {
-		auto argument = lambda->input(n)->arguments.first;
+		auto argument = lambda->input(n)->arguments.first();
 		JLM_DEBUG_ASSERT(argument != nullptr);
 		smap.insert(argument, deps[n]);
 	}

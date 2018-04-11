@@ -60,11 +60,7 @@ is_theta_invariant(const jive::output * output)
 	if (!argument)
 		return false;
 
-	JLM_DEBUG_ASSERT(is_theta_node(argument->region()->node()));
-	auto node = argument->input()->node();
-	auto result = node->output(argument->input()->index())->results.first;
-
-	return argument == result->origin();
+	return is_invariant(static_cast<const jive::theta_input*>(argument->input()));
 }
 
 static jive::argument *
@@ -93,10 +89,8 @@ is_idv(jive::input * input)
 	auto argument = dynamic_cast<jive::argument*>(input->origin());
 	if (!argument) return false;
 
-	auto theta = argument->input()->node();
-	JLM_DEBUG_ASSERT(jive::is_theta_node(theta));
-	auto result = theta->output(argument->input()->index())->results.first;
-	return result->origin()->node() == node;
+	auto tinput = static_cast<const jive::theta_input*>(argument->input());
+	return tinput->result()->origin()->node() == node;
 }
 
 std::unique_ptr<jive::bits::value_repr>
@@ -385,7 +379,7 @@ unroll_unknown_theta(const unrollinfo & ui, size_t factor)
 
 		for (const auto & olv : *otheta) {
 			auto xv = ngamma->add_exitvar({rmap[0].lookup(olv), rmap[1].lookup(olv)});
-			smap.insert(olv, xv->output());
+			smap.insert(olv, xv);
 		}
 	}
 
@@ -410,7 +404,7 @@ unroll_unknown_theta(const unrollinfo & ui, size_t factor)
 			auto origin = rmap[1].lookup((*olv)->result()->origin());
 			(*nlv)->result()->divert_origin(origin);
 			auto xv = ngamma->add_exitvar({rmap[0].lookup(*olv), *nlv});
-			smap.insert(*olv, xv->output());
+			smap.insert(*olv, xv);
 		}
 	}
 

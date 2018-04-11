@@ -13,7 +13,6 @@
 #include <jive/types/bitstring/constant.h>
 #include <jive/types/bitstring/value-representation.h>
 #include <jive/types/float/fltconstant.h>
-#include <jive/types/record/rcdgroup.h>
 
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/Function.h>

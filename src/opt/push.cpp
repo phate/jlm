@@ -127,12 +127,9 @@ push(jive::gamma_node * gamma)
 		auto region = gamma->subregion(r);
 
 		/* push out all nullary nodes */
-		jive::node * node;
-		JIVE_LIST_ITERATE(region->top_nodes, node, region_top_node_list) {
-			if (has_side_effects(node))
-				continue;
-
-			copy_from_gamma(node, r);
+		for (auto & node : region->top_nodes) {
+			if (!has_side_effects(&node))
+				copy_from_gamma(&node, r);
 		}
 
 		/* initialize worklist */
@@ -190,12 +187,9 @@ push_top(jive::theta_node * theta)
 	auto subregion = theta->subregion();
 
 	/* push out all nullary nodes */
-	jive::node * node;
-	JIVE_LIST_ITERATE(subregion->top_nodes, node, region_top_node_list) {
-		if (has_side_effects(node))
-			continue;
-
-		copy_from_theta(node);
+	for (auto & node : subregion->top_nodes) {
+		if (!has_side_effects(&node))
+			copy_from_theta(&node);
 	}
 
 	/* collect loop invariant arguments */

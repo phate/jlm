@@ -55,7 +55,7 @@ pullin_top(jive::gamma_node * gamma)
 	/* FIXME: This is inefficient. We can do better. */
 	auto ev = gamma->begin_entryvar();
 	while (ev != gamma->end_entryvar()) {
-		auto node = ev->input()->origin()->node();
+		auto node = ev->origin()->node();
 		if (node && gamma->predicate()->origin()->node() != node && single_successor(node)) {
 			pullin_node(gamma, node);
 
@@ -82,8 +82,9 @@ pullin_bottom(jive::gamma_node * gamma)
 {
 	/* collect immediate successors of the gamma node */
 	std::unordered_set<jive::node*> workset;
-	for (auto xv = gamma->begin_exitvar(); xv != gamma->end_exitvar(); xv++) {
-		for (const auto & user : *xv->output()) {
+	for (size_t n = 0; n < gamma->noutputs(); n++) {
+		auto output = gamma->output(n);
+		for (const auto & user : *output) {
 			if (user->node() && user->node()->depth() == gamma->depth()+1)
 				workset.insert(user->node());
 		}
@@ -122,7 +123,7 @@ pullin_bottom(jive::gamma_node * gamma)
 					workset.insert(user->node());
 
 			auto xv = gamma->add_exitvar(outputs[n]);
-			output->replace(xv->output());
+			output->replace(xv);
 		}
 	}
 }

@@ -33,11 +33,11 @@ test_gamma()
 	auto gamma2 = jive::gamma_node::create(ev1->argument(0), 2);
 	auto ev4 = gamma2->add_entryvar(ev2->argument(0));
 	auto ev5 = gamma2->add_entryvar(ev3->argument(0));
-	auto xv4 = gamma2->add_exitvar({ev4->argument(0), ev4->argument(1)});
-	auto xv5 = gamma2->add_exitvar({ev5->argument(0), ev5->argument(1)});
+	gamma2->add_exitvar({ev4->argument(0), ev4->argument(1)});
+	gamma2->add_exitvar({ev5->argument(0), ev5->argument(1)});
 
-	auto xv2 = gamma1->add_exitvar({gamma2->output(0), ev2->argument(1)});
-	auto xv3 = gamma1->add_exitvar({gamma2->output(1), ev3->argument(1)});
+	gamma1->add_exitvar({gamma2->output(0), ev2->argument(1)});
+	gamma1->add_exitvar({gamma2->output(1), ev3->argument(1)});
 
 	graph.add_export(gamma1->output(0), "x");
 	graph.add_export(gamma1->output(1), "y");

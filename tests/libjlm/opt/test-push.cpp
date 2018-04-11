@@ -40,7 +40,7 @@ test_gamma()
 	auto bin = gamma->subregion(0)->add_simple_node(binop, {null, evx->argument(0)})->output(0);
 	auto state = gamma->subregion(0)->add_simple_node(sop, {bin, evs->argument(0)})->output(0);
 
-	auto xvs = gamma->add_exitvar({state, evs->argument(1)});
+	gamma->add_exitvar({state, evs->argument(1)});
 
 	graph.add_export(gamma->output(0), "x");
 

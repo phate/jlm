@@ -17,6 +17,24 @@
 
 namespace jlm {
 
+static bool
+is_invariant(const jive::gamma_output * output)
+{
+	auto argument = dynamic_cast<const jive::argument*>(output->result(0)->origin());
+	if (!argument)
+		return false;
+
+	size_t n;
+	auto origin = argument->input()->origin();
+	for (n = 1; n < output->nresults(); n++) {
+		auto argument = dynamic_cast<const jive::argument*>(output->result(n)->origin());
+		if (argument == nullptr || argument->input()->origin() != origin)
+			break;
+	}
+
+	return n == output->nresults();
+}
+
 static void
 invariance(jive::region * region);
 
@@ -26,21 +44,12 @@ gamma_invariance(jive::structural_node * node)
 	JLM_DEBUG_ASSERT(is_gamma_node(node));
 	auto gamma = static_cast<jive::gamma_node*>(node);
 
-	for (auto it = gamma->begin_exitvar(); it != gamma->end_exitvar(); it++) {
-		auto argument = dynamic_cast<jive::argument*>(it->result(0)->origin());
-		if (argument == nullptr)
-			continue;
-
-		size_t n;
-		auto input = argument->input();
-		for (n = 1; n < it->nresults(); n++) {
-			auto argument = dynamic_cast<jive::argument*>(it->result(n)->origin());
-			if (argument == nullptr || argument->input() != input)
-				break;
+	for (size_t n = 0; n < gamma->noutputs(); n++) {
+		auto output = static_cast<jive::gamma_output*>(gamma->output(n));
+		if (is_invariant(output)) {
+			auto no = static_cast<jive::argument*>(output->result(0)->origin())->input()->origin();
+			output->replace(no);
 		}
-
-		if (n == it->nresults())
-			it->output()->replace(input->origin());
 	}
 }
 

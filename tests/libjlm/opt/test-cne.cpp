@@ -92,13 +92,13 @@ test_gamma()
 	auto n2 = gamma->subregion(0)->add_simple_node(nop, {})->output(0);
 	auto n3 = gamma->subregion(0)->add_simple_node(nop, {})->output(0);
 
-	auto xv1 = gamma->add_exitvar({ev1->argument(0), ev2->argument(1)});
-	auto xv2 = gamma->add_exitvar({ev2->argument(0), ev2->argument(1)});
-	auto xv3 = gamma->add_exitvar({ev3->argument(0), ev3->argument(1)});
-	auto xv4 = gamma->add_exitvar({n1, ev3->argument(1)});
-	auto xv5 = gamma->add_exitvar({n2, ev3->argument(1)});
-	auto xv6 = gamma->add_exitvar({n3, ev3->argument(1)});
-	auto xv7 = gamma->add_exitvar({ev5->argument(0), ev4->argument(1)});
+	gamma->add_exitvar({ev1->argument(0), ev2->argument(1)});
+	gamma->add_exitvar({ev2->argument(0), ev2->argument(1)});
+	gamma->add_exitvar({ev3->argument(0), ev3->argument(1)});
+	gamma->add_exitvar({n1, ev3->argument(1)});
+	gamma->add_exitvar({n2, ev3->argument(1)});
+	gamma->add_exitvar({n3, ev3->argument(1)});
+	gamma->add_exitvar({ev5->argument(0), ev4->argument(1)});
 
 	graph.add_export(gamma->output(0), "x1");
 	graph.add_export(gamma->output(1), "x2");

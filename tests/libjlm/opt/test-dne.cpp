@@ -51,9 +51,9 @@ test_gamma()
 
 	auto t = gamma->subregion(1)->add_simple_node(op, {ev2->argument(1)})->output(0);
 
-	auto xv1 = gamma->add_exitvar({ev1->argument(0), ev1->argument(1)});
-	auto xv2 = gamma->add_exitvar({ev2->argument(0), t});
-	auto xv3 = gamma->add_exitvar({ev3->argument(0), ev1->argument(1)});
+	gamma->add_exitvar({ev1->argument(0), ev1->argument(1)});
+	gamma->add_exitvar({ev2->argument(0), t});
+	gamma->add_exitvar({ev3->argument(0), ev1->argument(1)});
 
 	graph.add_export(gamma->output(0), "z");
 	graph.add_export(gamma->output(2), "w");
@@ -86,7 +86,7 @@ test_gamma2()
 	auto n1 = gamma->subregion(0)->add_simple_node(nop, {})->output(0);
 	auto n2 = gamma->subregion(1)->add_simple_node(nop, {})->output(0);
 
-	auto xv = gamma->add_exitvar({n1, n2});
+	gamma->add_exitvar({n1, n2});
 
 	graph.add_export(gamma->output(0), "x");
 

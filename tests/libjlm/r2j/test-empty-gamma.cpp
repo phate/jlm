@@ -40,7 +40,7 @@ test_with_match()
 	auto ev2 = gamma->add_entryvar(arguments[2]);
 	auto ex = gamma->add_exitvar({ev1->argument(0), ev2->argument(1)});
 
-	auto lambda = lb.end_lambda({ex->output()});
+	auto lambda = lb.end_lambda({ex});
 	rvsdg.graph()->add_export(lambda->output(0), "");
 
 
@@ -82,7 +82,7 @@ test_without_match()
 	auto ev2 = gamma->add_entryvar(arguments[2]);
 	auto ex = gamma->add_exitvar({ev1->argument(0), ev2->argument(1)});
 
-	auto lambda = lb.end_lambda({ex->output()});
+	auto lambda = lb.end_lambda({ex});
 	rvsdg.graph()->add_export(lambda->output(0), "");
 
 

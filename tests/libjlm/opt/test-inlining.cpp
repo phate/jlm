@@ -61,7 +61,7 @@ verify()
 	auto ev2 = gamma->add_entryvar(d);
 	auto apply = jlm::create_call(ev2->argument(0), {ev1->argument(0)})[0];
 	auto xv1 = gamma->add_exitvar({apply, ev1->argument(1)});
-	auto f2 = lb.end_lambda({xv1->output()});
+	auto f2 = lb.end_lambda({xv1});
 
 	graph.add_export(f2->output(0), "f2");
 

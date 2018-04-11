@@ -7,7 +7,7 @@
 #define JLM_IR_TYPES_HPP
 
 #include <jive/types/function/fcttype.h>
-#include <jive/types/record/rcdtype.h>
+#include <jive/types/record.h>
 #include <jive/rvsdg/type.h>
 
 #include <vector>
@@ -235,7 +235,7 @@ public:
 	inline
 	structtype(
 		bool packed,
-		const std::shared_ptr<const jive::rcd::declaration> & declaration)
+		const std::shared_ptr<const jive::rcddeclaration> & declaration)
 	: jive::valuetype()
 	, packed_(packed)
 	, declaration_(declaration)
@@ -245,7 +245,7 @@ public:
 	structtype(
 		const std::string & name,
 		bool packed,
-		const std::shared_ptr<const jive::rcd::declaration> & declaration)
+		const std::shared_ptr<const jive::rcddeclaration> & declaration)
 	: jive::valuetype()
 	, packed_(packed)
 	, name_(name)
@@ -280,7 +280,7 @@ public:
 		return packed_;
 	}
 
-	inline const std::shared_ptr<const jive::rcd::declaration>
+	inline const std::shared_ptr<const jive::rcddeclaration>
 	declaration() const noexcept
 	{
 		return declaration_;
@@ -298,7 +298,7 @@ public:
 private:
 	bool packed_;
 	std::string name_;
-	std::shared_ptr<const jive::rcd::declaration> declaration_;
+	std::shared_ptr<const jive::rcddeclaration> declaration_;
 };
 
 /* function type */

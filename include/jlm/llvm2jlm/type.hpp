@@ -6,7 +6,7 @@
 #ifndef JLM_LLVM2JLM_TYPE_HPP
 #define JLM_LLVM2JLM_TYPE_HPP
 
-#include <jive/types/record/rcdtype.h>
+#include <jive/types/record.h>
 
 #include <jlm/ir/types.hpp>
 

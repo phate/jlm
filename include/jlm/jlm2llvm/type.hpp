@@ -8,7 +8,7 @@
 
 #include <jive/types/bitstring/type.h>
 #include <jive/types/function/fcttype.h>
-#include <jive/types/record/rcdtype.h>
+#include <jive/types/record.h>
 #include <jive/rvsdg/controltype.h>
 
 #include <jlm/common.hpp>

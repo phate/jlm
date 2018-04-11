@@ -47,7 +47,7 @@ test1()
 
 	auto xvy = gamma->add_exitvar({b->output(0), c->output(0)});
 
-	lvy->result()->divert_origin(xvy->output());
+	lvy->result()->divert_origin(xvy);
 
 	theta->set_predicate(predicate);
 
@@ -90,9 +90,9 @@ test2()
 	auto ev2 = gamma->add_entryvar(lv1->argument());
 	auto ev3 = gamma->add_entryvar(n2->output(0));
 
-	auto xv1 = gamma->add_exitvar({ev1->argument(0), ev1->argument(1)});
-	auto xv2 = gamma->add_exitvar({ev2->argument(0), ev2->argument(1)});
-	auto xv3 = gamma->add_exitvar({ev3->argument(0), ev3->argument(1)});
+	gamma->add_exitvar({ev1->argument(0), ev1->argument(1)});
+	gamma->add_exitvar({ev2->argument(0), ev2->argument(1)});
+	gamma->add_exitvar({ev3->argument(0), ev3->argument(1)});
 
 	lv1->result()->divert_origin(gamma->output(1));
 

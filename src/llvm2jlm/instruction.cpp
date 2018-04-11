@@ -575,66 +575,15 @@ convert_bitcast_instruction(llvm::Instruction * i, tacsvector_t & tacs, context 
 static inline const variable *
 convert_insertvalue_instruction(llvm::Instruction * inst, tacsvector_t & tacs, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::InsertValueInst*>(inst));
-	auto i = static_cast<llvm::InsertValueInst*>(inst);
-
-	/* FIXME: array type */
-	if (i->getType()->isArrayTy())
-		JLM_DEBUG_ASSERT(0);
-
-	std::function<const variable*(llvm::InsertValueInst::idx_iterator, const variable*)> f = [&] (
-		const llvm::InsertValueInst::idx_iterator & idx,
-		const variable * aggregate)
-	{
-		if (idx == i->idx_end())
-			return convert_value(i->getInsertedValueOperand(), tacs, ctx);
-
-		/* FIXME: array type */
-		const jive::rcd::type * type = dynamic_cast<const jive::rcd::type*>(&aggregate->type());
-		std::shared_ptr<const jive::rcd::declaration> decl = type->declaration();
-
-		std::vector<const variable*> operands;
-		for (size_t n = 0; n < decl->nelements(); n++) {
-			auto op = jive::rcd::select_operation(*type, n);
-			auto vs = create_result_variables(ctx.module(), op);
-			tacs.push_back(create_tac(op, {aggregate}, vs));
-			if (n == *idx)
-				operands.push_back(f(std::next(idx), tacs.back()->output(0)));
-			else
-				operands.push_back(tacs.back()->output(0));
-		}
-
-		jive::rcd::group_op op(decl);
-		tacs.push_back(create_tac(op, operands, {ctx.lookup_value(i)}));
-		return tacs.back()->output(0);
-	};
-
-	f(i->idx_begin(), convert_value(i->getAggregateOperand(), tacs, ctx));
-
-	return tacs.back()->output(0);
+	/* FIXME: add support */
+	JLM_ASSERT(0);
 }
 
 static inline const variable *
 convert_extractvalue_instruction(llvm::Instruction * inst, tacsvector_t & tacs, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ExtractValueInst*>(inst));
-	auto i = static_cast<llvm::ExtractValueInst*>(inst);
-
-	/* FIXME: array type */
-	if (i->getType()->isArrayTy())
-		JLM_DEBUG_ASSERT(0);
-
-	auto aggregate = convert_value(i->getAggregateOperand(), tacs, ctx);
-
-	for (auto it = i->idx_begin(); it != i->idx_end(); it++) {
-		const jive::rcd::type * type = dynamic_cast<const jive::rcd::type*>(&aggregate->type());
-
-		jive::rcd::select_operation op(*type, *it);
-		tacs.push_back(create_tac(op, {aggregate}, {ctx.lookup_value(i)}));
-		aggregate = tacs.back()->output(0);
-	}
-
-	return tacs.back()->output(0);
+	/* FIXME: add support */
+	JLM_ASSERT(0);
 }
 
 const variable *

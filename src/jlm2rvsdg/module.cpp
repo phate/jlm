@@ -137,7 +137,7 @@ convert_assignment(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap
 static void
 convert_select(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
 {
-	JLM_DEBUG_ASSERT(is_select_op(tac.operation()));
+	JLM_DEBUG_ASSERT(jlm::is_select_op(tac.operation()));
 	JLM_DEBUG_ASSERT(tac.ninputs() == 3 && tac.noutputs() == 1);
 
 	auto op = jive::ctl::match_op(1, {{1, 1}}, 0, 2);
@@ -147,7 +147,7 @@ convert_select(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
 	auto ev1 = gamma->add_entryvar(vmap[tac.input(2)]);
 	auto ev2 = gamma->add_entryvar(vmap[tac.input(1)]);
 	auto ex = gamma->add_exitvar({ev1->argument(0), ev2->argument(1)});
-	vmap[tac.output(0)] = ex->output();
+	vmap[tac.output(0)] = ex;
 }
 
 static void
@@ -312,7 +312,7 @@ convert_branch_node(
 
 	/* add entry variables */
 	auto ds = static_cast<const agg::branch_demand_set*>(dm.at(&node).get());
-	std::unordered_map<const variable*, std::shared_ptr<jive::entryvar>> evmap;
+	std::unordered_map<const variable*, jive::gamma_input*> evmap;
 	for (const auto & v : ds->cases_top) {
 		JLM_DEBUG_ASSERT(svmap.vmap().find(v) != svmap.vmap().end());
 		evmap[v] = gamma->add_entryvar(svmap.vmap()[v]);
@@ -338,7 +338,7 @@ convert_branch_node(
 	/* add exit variables */
 	for (const auto & v : ds->cases_bottom) {
 		JLM_DEBUG_ASSERT(xvmap.find(v) != xvmap.end());
-		svmap.vmap()[v] = gamma->add_exitvar(xvmap[v])->output();
+		svmap.vmap()[v] = gamma->add_exitvar(xvmap[v]);
 	}
 
 	return nullptr;

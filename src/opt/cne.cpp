@@ -178,21 +178,19 @@ congruent(
 
 	if (is_theta_node(o1->node()) && is_theta_node(o2->node()) && o1->node() == o2->node()) {
 		vs.insert(o1, o2);
-		auto r1 = so1->results.first;
-		auto r2 = so2->results.first;
+		auto r1 = so1->results.first();
+		auto r2 = so2->results.first();
 		return congruent(r1->origin(), r2->origin(), vs, ctx);
 	}
 
-	if (is_gamma_node(o1->node()) && is_gamma_node(o2->node()) && o1->node() == o2->node()) {
-		auto r1 = so1->results.first, r2 = so2->results.first;
-		while (r1 != nullptr) {
+	if (is_gamma_node(o1->node()) && o1->node() == o2->node()) {
+		auto r1 = so1->results.begin();
+		auto r2 = so2->results.begin();
+		for (; r1 != so1->results.end(); r1++, r2++) {
 			JLM_DEBUG_ASSERT(r1->region() == r2->region());
 			if (!congruent(r1->origin(), r2->origin(), vs, ctx))
 				return false;
-			r1 = r1->output_result_list.next;
-			r2 = r2->output_result_list.next;
 		}
-		JLM_DEBUG_ASSERT(r2 == nullptr);
 		return true;
 	}
 
@@ -227,21 +225,20 @@ congruent(jive::output * o1, jive::output * o2, cnectx & ctx)
 
 static void
 mark_arguments(
-	const jive::structural_input * i1,
-	const jive::structural_input * i2,
+	jive::structural_input * i1,
+	jive::structural_input * i2,
 	cnectx & ctx)
 {
 	JLM_DEBUG_ASSERT(i1->node() && i1->node() == i2->node());
+	JLM_DEBUG_ASSERT(i1->arguments.size() == i2->arguments.size());
 
-	auto a1 = i1->arguments.first;
-	auto a2 = i2->arguments.first;
-	while (a1 != nullptr) {
-		if (congruent(a1, a2, ctx))
-			ctx.mark(a1, a2);
-		a1 = a1->input_argument_list.next;
-		a2 = a2->input_argument_list.next;
+	auto a1 = i1->arguments.begin();
+	auto a2 = i2->arguments.begin();
+	for (; a1 != i1->arguments.end(); a1++, a2++) {
+		JLM_DEBUG_ASSERT(a1->region() == a2->region());
+		if (congruent(a1.ptr(), a2.ptr(), ctx))
+			ctx.mark(a1.ptr(), a2.ptr());
 	}
-	JLM_DEBUG_ASSERT(a2 == nullptr);
 }
 
 static void
@@ -274,21 +271,17 @@ static void
 mark_theta(const jive::structural_node * node, cnectx & ctx)
 {
 	JLM_DEBUG_ASSERT(is_theta_node(node));
+	auto theta = static_cast<const jive::theta_node*>(node);
 
 	/* mark loop variables */
-	for (size_t i1 = 0; i1 < node->ninputs(); i1++) {
-		for (size_t i2 = i1+1; i2 < node->ninputs(); i2++) {
-			auto a1 = node->input(i1)->arguments.first;
-			auto a2 = node->input(i2)->arguments.first;
-			while (a1 != nullptr) {
-				if (congruent(a1, a2, ctx)) {
-					ctx.mark(a1, a2);
-					ctx.mark(node->output(i1), node->output(i2));
-				}
-				a1 = a1->input_argument_list.next;
-				a2 = a2->input_argument_list.next;
+	for (size_t i1 = 0; i1 < theta->ninputs(); i1++) {
+		for (size_t i2 = i1+1; i2 < theta->ninputs(); i2++) {
+			auto input1 = theta->input(i1);
+			auto input2 = theta->input(i2);
+			if (congruent(input1->argument(), input2->argument(), ctx)) {
+				ctx.mark(input1->argument(), input2->argument());
+				ctx.mark(input1->output(), input2->output());
 			}
-			JLM_DEBUG_ASSERT(a2 == nullptr);
 		}
 	}
 
@@ -306,7 +299,7 @@ mark_lambda(const jive::structural_node * node, cnectx & ctx)
 			auto input1 = node->input(i1);
 			auto input2 = node->input(i2);
 			if (ctx.congruent(input1, input2))
-				ctx.mark(input1->arguments.first, input2->arguments.first);
+				ctx.mark(input1->arguments.first(), input2->arguments.first());
 		}
 	}
 
@@ -324,7 +317,7 @@ mark_phi(const jive::structural_node * node, cnectx & ctx)
 			auto input1 = node->input(i1);
 			auto input2 = node->input(i2);
 			if (ctx.congruent(input1, input2))
-				ctx.mark(input1->arguments.first, input2->arguments.first);
+				ctx.mark(input1->arguments.first(), input2->arguments.first());
 		}
 	}
 
@@ -360,10 +353,9 @@ static void
 mark(const jive::simple_node * node, cnectx & ctx)
 {
 	if (node->ninputs() == 0) {
-		jive::node * other;
-		JIVE_LIST_ITERATE(node->region()->top_nodes, other, region_top_node_list) {
-			if (other != node && node->operation() == other->operation()) {
-				ctx.mark(node, other);
+		for (const auto & other : node->region()->top_nodes) {
+			if (&other != node && node->operation() == other.operation()) {
+				ctx.mark(node, &other);
 				break;
 			}
 		}

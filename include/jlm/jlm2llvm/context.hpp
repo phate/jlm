@@ -8,6 +8,8 @@
 
 #include <jlm/common.hpp>
 
+#include <jive/types/record.h>
+
 #include <memory>
 #include <unordered_map>
 
@@ -110,7 +112,7 @@ public:
 	}
 
 	inline llvm::StructType *
-	structtype(const std::shared_ptr<const jive::rcd::declaration> & declaration)
+	structtype(const std::shared_ptr<const jive::rcddeclaration> & declaration)
 	{
 		auto it = structtypes_.find(declaration);
 		return it != structtypes_.end() ? it->second : nullptr;
@@ -118,7 +120,7 @@ public:
 
 	inline void
 	add_structtype(
-		const std::shared_ptr<const jive::rcd::declaration> & declaration,
+		const std::shared_ptr<const jive::rcddeclaration> & declaration,
 		llvm::StructType * type)
 	{
 		JLM_DEBUG_ASSERT(structtypes_.find(declaration) == structtypes_.end());
@@ -131,7 +133,7 @@ private:
 	std::unordered_map<const jlm::variable*, llvm::Value*> variables_;
 	std::unordered_map<const jlm::cfg_node*, llvm::BasicBlock*> nodes_;
 	std::unordered_map<
-		std::shared_ptr<const jive::rcd::declaration>,
+		std::shared_ptr<const jive::rcddeclaration>,
 		llvm::StructType*
 	> structtypes_;
 };

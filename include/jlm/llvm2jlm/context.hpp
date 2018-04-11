@@ -11,7 +11,7 @@
 #include <jlm/ir/tac.hpp>
 #include <jlm/llvm2jlm/type.hpp>
 
-#include <jive/types/record/rcdtype.h>
+#include <jive/types/record.h>
 #include <llvm/IR/DerivedTypes.h>
 
 #include <unordered_map>
@@ -166,14 +166,14 @@ public:
 		vmap_[value] = variable;
 	}
 
-	inline std::shared_ptr<const jive::rcd::declaration> &
+	inline std::shared_ptr<const jive::rcddeclaration> &
 	lookup_declaration(const llvm::StructType * type)
 	{
 		auto it = declarations_.find(type);
 		if (it != declarations_.end())
 			return it->second;
 
-		std::shared_ptr<jive::rcd::declaration> declaration(new jive::rcd::declaration());
+		std::shared_ptr<jive::rcddeclaration> declaration(new jive::rcddeclaration());
 		declarations_[type] = declaration;
 		for (size_t n = 0; n < type->getNumElements(); n++)
 			declaration->append(*convert_type(type->getElementType(n), *this));
@@ -208,7 +208,7 @@ private:
 	std::unordered_map<const llvm::Value*, jlm::variable*> vmap_;
 	std::unordered_map<
 		const llvm::StructType*,
-		std::shared_ptr<const jive::rcd::declaration>> declarations_;
+		std::shared_ptr<const jive::rcddeclaration>> declarations_;
 };
 
 }

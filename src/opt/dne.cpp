@@ -123,10 +123,10 @@ mark(const jive::output * output, dnectx & ctx)
 	auto argument = static_cast<const jive::argument*>(output);
 	auto soutput = static_cast<const jive::structural_output*>(output);
 	if (is_gamma_node(output->node())) {
-		mark(output->node()->input(0)->origin(), ctx);
-		jive::result * result;
-		JIVE_LIST_ITERATE(soutput->results, result, output_result_list)
-			mark(result->origin(), ctx);
+		auto gamma = static_cast<const jive::gamma_node*>(output->node());
+		mark(gamma->predicate()->origin(), ctx);
+		for (const auto & result : soutput->results)
+			mark(result.origin(), ctx);
 		return;
 	}
 
@@ -135,10 +135,11 @@ mark(const jive::output * output, dnectx & ctx)
 		return;
 	}
 
-	if (is_theta_node(output->node())) {
-		mark(soutput->node()->subregion(0)->result(0)->origin(), ctx);
-		mark(soutput->results.first->origin(), ctx);
-		mark(output->node()->input(output->index())->origin(), ctx);
+	if (dynamic_cast<const jive::theta_output*>(output)) {
+		auto lv = static_cast<const jive::theta_output*>(output);
+		mark(lv->node()->predicate()->origin(), ctx);
+		mark(lv->result()->origin(), ctx);
+		mark(lv->input()->origin(), ctx);
 		return;
 	}
 
@@ -162,7 +163,7 @@ mark(const jive::output * output, dnectx & ctx)
 	}
 
 	if (is_phi_output(output)) {
-		mark(soutput->results.first->origin(), ctx);
+		mark(soutput->results.first()->origin(), ctx);
 		return;
 	}
 
@@ -276,7 +277,7 @@ sweep_theta(jive::structural_node * node, const dnectx & ctx)
 	/* remove outputs, inputs, and arguments */
 	for (ssize_t n = subregion->narguments()-1; n >= 0; n--) {
 		if (!ctx.is_alive(subregion->argument(n)) && !ctx.is_alive(node->output(n))) {
-			JLM_DEBUG_ASSERT(node->output(n)->results.first == nullptr);
+			JLM_DEBUG_ASSERT(node->output(n)->results.first() == nullptr);
 			subregion->remove_argument(n);
 			node->remove_input(n);
 			node->remove_output(n);
@@ -314,12 +315,14 @@ sweep_gamma(jive::structural_node * node, const dnectx & ctx)
 	for (ssize_t n = node->ninputs()-1; n >=  1; n--) {
 		auto input = node->input(n);
 
-		jive::argument * argument;
-		JIVE_LIST_ITERATE(input->arguments, argument, input_argument_list) {
-			if (ctx.is_alive(argument))
+		bool alive = false;
+		for (const auto & argument : input->arguments) {
+			if (ctx.is_alive(&argument)) {
+				alive = true;
 				break;
+			}
 		}
-		if (argument == nullptr) {
+		if (!alive) {
 			for (size_t r = 0; r < node->nsubregions(); r++)
 				node->subregion(r)->remove_argument(n-1);
 			node->remove_input(n);
@@ -362,7 +365,7 @@ sweep(jive::region * region, const dnectx & ctx)
 		else
 			sweep(static_cast<jive::structural_node*>(node), ctx);
 	}
-	JLM_DEBUG_ASSERT(region->bottom_nodes.first == nullptr);
+	JLM_DEBUG_ASSERT(region->bottom_nodes.empty());
 }
 
 void

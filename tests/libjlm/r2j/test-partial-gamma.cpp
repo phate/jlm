@@ -37,7 +37,7 @@ test()
 	auto output = jlm::create_testop(gamma->subregion(1), {ev->argument(1)}, {&vt})[0];
 	auto ex = gamma->add_exitvar({ev->argument(0), output});
 
-	auto lambda = lb.end_lambda({ex->output()});
+	auto lambda = lb.end_lambda({ex});
 
 	rvsdg.graph()->add_export(lambda->output(0), "");
 

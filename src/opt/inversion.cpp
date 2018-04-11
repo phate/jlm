@@ -52,7 +52,7 @@ pullin(jive::gamma_node * gamma, jive::theta_node * theta)
 			auto ev = gamma->add_entryvar(lv->result()->origin());
 			JLM_DEBUG_ASSERT(ev->narguments() == 2);
 			auto xv = gamma->add_exitvar({ev->argument(0), ev->argument(1)});
-			lv->result()->divert_origin(xv->output());
+			lv->result()->divert_origin(xv);
 		}
 	}
 	pullin_top(gamma);
@@ -128,11 +128,11 @@ invert(jive::theta_node * otheta)
 		/* setup substitution map for exit region copying */
 		auto osubregion0 = ogamma->subregion(0);
 		for (auto oev = ogamma->begin_entryvar(); oev != ogamma->end_entryvar(); oev++) {
-			if (auto argument = to_argument(oev->input()->origin())) {
+			if (auto argument = to_argument(oev->origin())) {
 				auto nev = ngamma->add_entryvar(argument->input()->origin());
 				r0map.insert(oev->argument(0), nev->argument(0));
 			} else {
-				auto substitute = smap.lookup(oev->input()->origin());
+				auto substitute = smap.lookup(oev->origin());
 				auto nev = ngamma->add_entryvar(substitute);
 				r0map.insert(oev->argument(0), nev->argument(0));
 			}
@@ -164,14 +164,15 @@ invert(jive::theta_node * otheta)
 			r1map.insert(olv->argument(), nlv->argument());
 			nlvs[olv->input()] = nlv;
 		}
-		for (auto oev = ogamma->begin_entryvar(); oev != ogamma->end_entryvar(); oev++) {
-			if (auto argument = to_argument(oev->input()->origin())) {
+		for (size_t n = 1; n < ogamma->ninputs(); n++) {
+			auto oev = static_cast<jive::gamma_input*>(ogamma->input(n));
+			if (auto argument = to_argument(oev->origin())) {
 				r1map.insert(oev->argument(1), nlvs[argument->input()]->argument());
 			} else {
-				auto ev = ngamma->add_entryvar(smap.lookup(oev->input()->origin()));
+				auto ev = ngamma->add_entryvar(smap.lookup(oev->origin()));
 				auto nlv = ntheta->add_loopvar(ev->argument(1));
 				r1map.insert(oev->argument(1), nlv->argument());
-				nlvs[oev->input()] = nlv;
+				nlvs[oev] = nlv;
 			}
 		}
 
@@ -196,13 +197,14 @@ invert(jive::theta_node * otheta)
 			nlvs[olv->input()]->result()->divert_origin(substitute);
 			r1map.insert(olv->result()->origin(), nlvs[olv->input()]);
 		}
-		for (auto oev = ogamma->begin_entryvar(); oev != ogamma->end_entryvar(); oev++) {
-			if (auto argument = to_argument(oev->input()->origin())) {
+		for (size_t n = 1; n < ogamma->ninputs(); n++) {
+			auto oev = static_cast<jive::gamma_input*>(ogamma->input(n));
+			if (auto argument = to_argument(oev->origin())) {
 				r1map.insert(oev->argument(0), nlvs[argument->input()]);
 			} else {
-				auto substitute = r1map.lookup(oev->input()->origin());
-				nlvs[oev->input()]->result()->divert_origin(substitute);
-				r1map.insert(oev->argument(0), nlvs[oev->input()]);
+				auto substitute = r1map.lookup(oev->origin());
+				nlvs[oev]->result()->divert_origin(substitute);
+				r1map.insert(oev->argument(0), nlvs[oev]);
 			}
 		}
 
@@ -225,7 +227,7 @@ invert(jive::theta_node * otheta)
 		auto o0 = r0map.lookup(olv->result()->origin());
 		auto o1 = r1map.lookup(olv->result()->origin());
 		auto ex = ngamma->add_exitvar({o0, o1});
-		smap.insert(olv, ex->output());
+		smap.insert(olv, ex);
 	}
 
 	/* replace outputs */
