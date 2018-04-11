@@ -39,7 +39,7 @@ test()
 
 	auto lambda = lb.end_lambda({ex->output()});
 
-	rvsdg.graph()->export_port(lambda->output(0), "");
+	rvsdg.graph()->add_export(lambda->output(0), "");
 
 	jive::view(*rvsdg.graph(), stdout);
 

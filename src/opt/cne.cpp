@@ -455,9 +455,9 @@ divert_theta(jive::structural_node * node, cnectx & ctx)
 	auto subregion = node->subregion(0);
 
 	for (const auto & lv : *theta) {
-		JLM_DEBUG_ASSERT(ctx.set(lv.argument())->size() == ctx.set(lv.output())->size());
-		divert_users(lv.argument(), ctx);
-		divert_users(lv.output(), ctx);
+		JLM_DEBUG_ASSERT(ctx.set(lv->argument())->size() == ctx.set(lv)->size());
+		divert_users(lv->argument(), ctx);
+		divert_users(lv, ctx);
 	}
 
 	divert(subregion, ctx);

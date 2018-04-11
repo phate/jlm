@@ -19,7 +19,7 @@ tacvariable::~tacvariable()
 /* tac */
 
 tac::tac(
-	const jive::operation & operation,
+	const jive::simple_op & operation,
 	const std::vector<const variable *> & operands,
 	const std::vector<const variable *> & results)
 	: operation_(std::move(operation.copy()))

@@ -53,10 +53,10 @@ theta_invariance(jive::structural_node * node)
 	/* FIXME: In order to also redirect state variables,
 		we need to know whether a loop terminates.*/
 
-	for (auto & lv : *theta) {
-		if (lv.result()->origin() == lv.argument()
-		&& dynamic_cast<const jive::valuetype*>(&lv.argument()->type()))
-			lv.output()->replace(lv.input()->origin());
+	for (const auto & lv : *theta) {
+		if (jive::is_invariant(lv)
+		&& dynamic_cast<const jive::valuetype*>(&lv->argument()->type()))
+			lv->replace(lv->input()->origin());
 	}
 }
 

@@ -83,7 +83,7 @@ public:
 	~tac() noexcept
 	{}
 
-	tac(const jive::operation & operation,
+	tac(const jive::simple_op & operation,
 		const std::vector<const variable*> & operands,
 		const std::vector<const variable*> & results);
 
@@ -97,10 +97,10 @@ public:
 	tac &
 	operator=(jlm::tac &&) = delete;
 
-	inline const jive::operation &
+	inline const jive::simple_op &
 	operation() const noexcept
 	{
-		return *operation_;
+		return *static_cast<const jive::simple_op*>(operation_.get());
 	}
 
 	inline size_t
@@ -137,7 +137,7 @@ private:
 
 static inline std::unique_ptr<jlm::tac>
 create_tac(
-	const jive::operation & operation,
+	const jive::simple_op & operation,
 	const std::vector<const variable *> & operands,
 	const std::vector<const variable *> & results)
 {

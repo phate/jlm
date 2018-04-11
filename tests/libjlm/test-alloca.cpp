@@ -24,14 +24,14 @@ test_alloca_alloca_reduction()
 	anf->set_mutable(false);
 	anf->set_alloca_alloca_reducible(false);
 
-	auto size = graph.import(bt, "size");
-	auto state = graph.import(mt, "state");
+	auto size = graph.add_import(bt, "size");
+	auto state = graph.add_import(mt, "state");
 
 	auto outputs = jlm::create_alloca(bt, size, state, 4);
 	outputs = jlm::create_alloca(bt, size, outputs[1], 4);
 
-	graph.export_port(outputs[0], "address");
-	auto exs = graph.export_port(outputs[1], "state");
+	graph.add_export(outputs[0], "address");
+	auto exs = graph.add_export(outputs[1], "state");
 
 //	jive::view(graph.root(), stdout);
 
@@ -63,8 +63,8 @@ test_alloca_mux_reduction()
 	anf->set_mutable(false);
 	anf->set_alloca_mux_reducible(false);
 
-	auto size = graph.import(bt, "size");
-	auto state = graph.import(mt, "state");
+	auto size = graph.add_import(bt, "size");
+	auto state = graph.add_import(mt, "state");
 
 	auto alloc1 = jlm::create_alloca(bt, size, state, 4);
 	auto alloc2 = jlm::create_alloca(bt, size, state, 4);
@@ -73,8 +73,8 @@ test_alloca_mux_reduction()
 
 	auto alloc3 = jlm::create_alloca(bt, size, s, 4);
 
-	graph.export_port(alloc3[0], "address");
-	auto exs = graph.export_port(alloc3[1], "state");
+	graph.add_export(alloc3[0], "address");
+	auto exs = graph.add_export(alloc3[1], "state");
 
 	jive::view(graph.root(), stdout);
 

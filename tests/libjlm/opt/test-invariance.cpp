@@ -21,9 +21,9 @@ test_gamma()
 	jive::ctl::type ct(2);
 
 	jive::graph graph;
-	auto c = graph.import(ct, "c");
-	auto x = graph.import(vt, "x");
-	auto y = graph.import(vt, "y");
+	auto c = graph.add_import(ct, "c");
+	auto x = graph.add_import(vt, "x");
+	auto y = graph.add_import(vt, "y");
 
 	auto gamma1 = jive::gamma_node::create(c, 2);
 	auto ev1 = gamma1->add_entryvar(c);
@@ -39,8 +39,8 @@ test_gamma()
 	auto xv2 = gamma1->add_exitvar({gamma2->output(0), ev2->argument(1)});
 	auto xv3 = gamma1->add_exitvar({gamma2->output(1), ev3->argument(1)});
 
-	graph.export_port(gamma1->output(0), "x");
-	graph.export_port(gamma1->output(1), "y");
+	graph.add_export(gamma1->output(0), "x");
+	graph.add_export(gamma1->output(1), "y");
 
 	jive::view(graph.root(), stdout);
 	jlm::invariance(graph);
@@ -57,8 +57,8 @@ test_theta()
 	jive::ctl::type ct(2);
 
 	jive::graph graph;
-	auto c = graph.import(ct, "c");
-	auto x = graph.import(vt, "x");
+	auto c = graph.add_import(ct, "c");
+	auto x = graph.add_import(vt, "x");
 
 	auto theta1 = jive::theta_node::create(graph.root());
 	auto lv1 = theta1->add_loopvar(c);
@@ -66,19 +66,19 @@ test_theta()
 
 	auto theta2 = jive::theta_node::create(theta1->subregion());
 	auto lv3 = theta2->add_loopvar(lv1->argument());
-	auto lv4 = theta2->add_loopvar(lv2->argument());
+	theta2->add_loopvar(lv2->argument());
 	theta2->set_predicate(lv3->argument());
 
 	theta1->set_predicate(lv1->argument());
 
-	graph.export_port(lv1->output(), "c");
-	graph.export_port(lv2->output(), "x");
+	graph.add_export(lv1, "c");
+	graph.add_export(lv2, "x");
 
 	jive::view(graph.root(), stdout);
 	jlm::invariance(graph);
 	jive::view(graph.root(), stdout);
 
-	assert(graph.root()->result(0)->origin() == lv1->output());
+	assert(graph.root()->result(0)->origin() == lv1);
 	assert(graph.root()->result(1)->origin() == graph.root()->argument(1));
 }
 

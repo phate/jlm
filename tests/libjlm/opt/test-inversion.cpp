@@ -24,15 +24,15 @@ test1()
 
 	jive::graph graph;
 
-	auto x = graph.import(vt, "x");
-	auto y = graph.import(vt, "y");
-	auto z = graph.import(vt, "z");
+	auto x = graph.add_import(vt, "x");
+	auto y = graph.add_import(vt, "y");
+	auto z = graph.add_import(vt, "z");
 
 	auto theta = jive::theta_node::create(graph.root());
 
 	auto lvx = theta->add_loopvar(x);
 	auto lvy = theta->add_loopvar(y);
-	auto lvz = theta->add_loopvar(z);
+	theta->add_loopvar(z);
 
 	auto a = theta->subregion()->add_simple_node(bop1, {lvx->argument(), lvy->argument()});
 	auto predicate = jive::ctl::match(1, {{1, 0}}, 1, 2, a->output(0));
@@ -51,9 +51,9 @@ test1()
 
 	theta->set_predicate(predicate);
 
-	auto ex1 = graph.export_port(theta->output(0), "x");
-	auto ex2 = graph.export_port(theta->output(1), "y");
-	auto ex3 = graph.export_port(theta->output(2), "z");
+	auto ex1 = graph.add_export(theta->output(0), "x");
+	auto ex2 = graph.add_export(theta->output(1), "y");
+	auto ex3 = graph.add_export(theta->output(2), "z");
 
 //	jive::view(graph.root(), stdout);
 	jlm::invert(graph);
@@ -74,7 +74,7 @@ test2()
 
 	jive::graph graph;
 
-	auto x = graph.import(vt, "x");
+	auto x = graph.add_import(vt, "x");
 
 	auto theta = jive::theta_node::create(graph.root());
 
@@ -98,7 +98,7 @@ test2()
 
 	theta->set_predicate(predicate);
 
-	auto ex = graph.export_port(theta->output(0), "x");
+	auto ex = graph.add_export(theta->output(0), "x");
 
 //	jive::view(graph.root(), stdout);
 	jlm::invert(graph);

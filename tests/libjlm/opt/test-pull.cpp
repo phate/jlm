@@ -23,8 +23,8 @@ test_pullin_top()
 	jlm::test_op cop({&ct, &vt}, {&ct});
 
 	jive::graph graph;
-	auto c = graph.import(ct, "c");
-	auto x = graph.import(vt, "x");
+	auto c = graph.add_import(ct, "c");
+	auto x = graph.add_import(vt, "x");
 
 	auto n1 = graph.root()->add_simple_node(uop, {x});
 	auto n2 = graph.root()->add_simple_node(uop, {x});
@@ -38,8 +38,8 @@ test_pullin_top()
 	auto ev = gamma->add_entryvar(n5->output(0));
 	auto xv = gamma->add_exitvar({ev->argument(0), ev->argument(1)});
 
-	graph.export_port(gamma->output(0), "x");
-	graph.export_port(n2->output(0), "y");
+	graph.add_export(gamma->output(0), "x");
+	graph.add_export(n2->output(0), "y");
 
 //	jive::view(graph, stdout);
 	jlm::pullin_top(gamma);
@@ -57,8 +57,8 @@ test_pullin_bottom()
 	jlm::test_op bop({&vt, &vt}, {&vt});
 
 	jive::graph graph;
-	auto c = graph.import(ct, "c");
-	auto x = graph.import(vt, "x");
+	auto c = graph.add_import(ct, "c");
+	auto x = graph.add_import(vt, "x");
 
 	auto gamma = jive::gamma_node::create(c, 2);
 
@@ -68,7 +68,7 @@ test_pullin_bottom()
 	auto b1 = graph.root()->add_simple_node(bop, {gamma->output(0), x});
 	auto b2 = graph.root()->add_simple_node(bop, {gamma->output(0), b1->output(0)});
 
-	auto xp = graph.export_port(b2->output(0), "x");
+	auto xp = graph.add_export(b2->output(0), "x");
 
 //	jive::view(graph, stdout);
 	jlm::pullin_bottom(gamma);

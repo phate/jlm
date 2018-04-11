@@ -21,9 +21,9 @@ static inline void
 test_root()
 {
 	jive::graph graph;
-	graph.import(jlm::valuetype(), "x");
-	auto y = graph.import(jlm::valuetype(), "y");
-	graph.export_port(y, "z");
+	graph.add_import(jlm::valuetype(), "x");
+	auto y = graph.add_import(jlm::valuetype(), "y");
+	graph.add_export(y, "z");
 
 //	jive::view(graph.root(), stdout);
 	jlm::dne(graph);
@@ -40,9 +40,9 @@ test_gamma()
 	jlm::test_op op({&vt}, {&vt});
 
 	jive::graph graph;
-	auto c = graph.import(ct, "c");
-	auto x = graph.import(vt, "x");
-	auto y = graph.import(vt, "y");
+	auto c = graph.add_import(ct, "c");
+	auto x = graph.add_import(vt, "x");
+	auto y = graph.add_import(vt, "y");
 
 	auto gamma = jive::gamma_node::create(c, 2);
 	auto ev1 = gamma->add_entryvar(x);
@@ -55,8 +55,8 @@ test_gamma()
 	auto xv2 = gamma->add_exitvar({ev2->argument(0), t});
 	auto xv3 = gamma->add_exitvar({ev3->argument(0), ev1->argument(1)});
 
-	graph.export_port(gamma->output(0), "z");
-	graph.export_port(gamma->output(2), "w");
+	graph.add_export(gamma->output(0), "z");
+	graph.add_export(gamma->output(2), "w");
 
 //	jive::view(graph.root(), stdout);
 	jlm::dne(graph);
@@ -77,8 +77,8 @@ test_gamma2()
 	jlm::test_op nop({}, {&vt});
 
 	jive::graph graph;
-	auto c = graph.import(ct, "c");
-	auto x = graph.import(vt, "x");
+	auto c = graph.add_import(ct, "c");
+	auto x = graph.add_import(vt, "x");
 
 	auto gamma = jive::gamma_node::create(c, 2);
 	gamma->add_entryvar(x);
@@ -88,7 +88,7 @@ test_gamma2()
 
 	auto xv = gamma->add_exitvar({n1, n2});
 
-	graph.export_port(gamma->output(0), "x");
+	graph.add_export(gamma->output(0), "x");
 
 //	jive::view(graph, stdout);
 	jlm::dne(graph);
@@ -106,9 +106,9 @@ test_theta()
 	jlm::test_op op({&vt}, {&vt});
 
 	jive::graph graph;
-	auto x = graph.import(vt, "x");
-	auto y = graph.import(vt, "y");
-	auto z = graph.import(vt, "z");
+	auto x = graph.add_import(vt, "x");
+	auto y = graph.add_import(vt, "y");
+	auto z = graph.add_import(vt, "z");
 
 	auto theta = jive::theta_node::create(graph.root());
 
@@ -127,8 +127,8 @@ test_theta()
 	auto c = theta->subregion()->add_simple_node(cop, {})->output(0);
 	theta->set_predicate(c);
 
-	graph.export_port(theta->output(0), "a");
-	graph.export_port(theta->output(3), "b");
+	graph.add_export(theta->output(0), "a");
+	graph.add_export(theta->output(3), "b");
 
 //	jive::view(graph.root(), stdout);
 	jlm::dne(graph);
@@ -146,9 +146,9 @@ test_nested_theta()
 	jive::ctl::type ct(2);
 
 	jive::graph graph;
-	auto c = graph.import(ct, "c");
-	auto x = graph.import(vt, "x");
-	auto y = graph.import(vt, "y");
+	auto c = graph.add_import(ct, "c");
+	auto x = graph.add_import(vt, "x");
+	auto y = graph.add_import(vt, "y");
 
 	auto otheta = jive::theta_node::create(graph.root());
 
@@ -171,7 +171,7 @@ test_nested_theta()
 
 	otheta->set_predicate(lvo1->argument());
 
-	graph.export_port(otheta->output(2), "y");
+	graph.add_export(otheta->output(2), "y");
 
 //	jive::view(graph, stdout);
 	jlm::dne(graph);
@@ -188,11 +188,11 @@ test_evolving_theta()
 	jlm::test_op bop({&vt, &vt}, {&vt});
 
 	jive::graph graph;
-	auto c = graph.import(ct, "c");
-	auto x1 = graph.import(vt, "x1");
-	auto x2 = graph.import(vt, "x2");
-	auto x3 = graph.import(vt, "x3");
-	auto x4 = graph.import(vt, "x4");
+	auto c = graph.add_import(ct, "c");
+	auto x1 = graph.add_import(vt, "x1");
+	auto x2 = graph.add_import(vt, "x2");
+	auto x3 = graph.add_import(vt, "x3");
+	auto x4 = graph.add_import(vt, "x4");
 
 	auto theta = jive::theta_node::create(graph.root());
 
@@ -208,7 +208,7 @@ test_evolving_theta()
 
 	theta->set_predicate(lv0->argument());
 
-	graph.export_port(lv1->output(), "x1");
+	graph.add_export(lv1, "x1");
 
 //	jive::view(graph, stdout);
 	jlm::dne(graph);
@@ -224,7 +224,7 @@ test_lambda()
 	jlm::test_op op({&vt, &vt}, {&vt});
 
 	jive::graph graph;
-	auto x = graph.import(vt, "x");
+	auto x = graph.add_import(vt, "x");
 
 	jlm::lambda_builder lb;
 	auto arguments = lb.begin_lambda(graph.root(), {{&vt}, {&vt}});
@@ -234,7 +234,7 @@ test_lambda()
 
 	auto lambda = lb.end_lambda({arguments[0]});
 
-	graph.export_port(lambda->output(0), "f");
+	graph.add_export(lambda->output(0), "f");
 
 //	jive::view(graph.root(), stdout);
 	jlm::dne(graph);
@@ -251,8 +251,8 @@ test_phi()
 	jive::fct::type ft({&vt}, {&vt});
 
 	jive::graph graph;
-	auto x = graph.import(vt, "x");
-	auto y = graph.import(vt, "y");
+	auto x = graph.add_import(vt, "x");
+	auto y = graph.add_import(vt, "y");
 
 	jive::phi_builder pb;
 	pb.begin_phi(graph.root());
@@ -277,7 +277,7 @@ test_phi()
 	rv2->set_value(f2->output(0));
 	auto phi = pb.end_phi();
 
-	graph.export_port(phi->output(0), "f1");
+	graph.add_export(phi->output(0), "f1");
 
 //	jive::view(graph.root(), stdout);
 	jlm::dne(graph);

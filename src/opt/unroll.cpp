@@ -182,7 +182,7 @@ unroll_body(
 		theta->subregion()->copy(target, smap, false, false);
 		jive::substitution_map tmap;
 		for (const auto & olv : *theta)
-			tmap.insert(olv.argument(), smap.lookup(olv.result()->origin()));
+			tmap.insert(olv->argument(), smap.lookup(olv->result()->origin()));
 		smap = tmap;
 	}
 	theta->subregion()->copy(target, smap, false, false);
@@ -205,12 +205,12 @@ unroll_known_theta(const unrollinfo & ui, size_t factor)
 		*/
 		jive::substitution_map smap;
 		for (const auto & olv : *otheta)
-			smap.insert(olv.argument(), olv.input()->origin());
+			smap.insert(olv->argument(), olv->input()->origin());
 
 		unroll_body(otheta, otheta->region(), smap, niterations->to_uint());
 
 		for (const auto & olv : *otheta)
-			olv.output()->replace(smap.lookup(olv.result()->origin()));
+			olv->replace(smap.lookup(olv->result()->origin()));
 		return remove(otheta);
 	}
 
@@ -222,17 +222,17 @@ unroll_known_theta(const unrollinfo & ui, size_t factor)
 	jive::substitution_map smap;
 	auto ntheta = jive::theta_node::create(otheta->region());
 	for (const auto & olv : *otheta) {
-		auto nlv = ntheta->add_loopvar(olv.input()->origin());
-		smap.insert(olv.argument(), nlv->argument());
+		auto nlv = ntheta->add_loopvar(olv->input()->origin());
+		smap.insert(olv->argument(), nlv->argument());
 	}
 
 	unroll_body(otheta, ntheta->subregion(), smap, factor);
 	ntheta->set_predicate(smap.lookup(otheta->predicate()->origin()));
 
 	for (auto olv = otheta->begin(), nlv = ntheta->begin(); olv != otheta->end(); olv++, nlv++) {
-		auto origin = smap.lookup(olv->result()->origin());
-		nlv->result()->divert_origin(origin);
-		smap.insert(olv->output(), nlv->output());
+		auto origin = smap.lookup((*olv)->result()->origin());
+		(*nlv)->result()->divert_origin(origin);
+		smap.insert(*olv, *nlv);
 	}
 
 	auto remainder = niterations->umod({nbits, (int64_t)factor});
@@ -242,7 +242,7 @@ unroll_known_theta(const unrollinfo & ui, size_t factor)
 			to the outputs of the new theta node, as there are no residual iterations.
 		*/
 		for (const auto & olv : *otheta)
-			olv.output()->replace(smap.lookup(olv.output()));
+			olv->replace(smap.lookup(olv));
 		return remove(otheta);
 	}
 
@@ -270,12 +270,12 @@ unroll_known_theta(const unrollinfo & ui, size_t factor)
 		*/
 		jive::substitution_map rmap;
 		for (const auto & olv : *otheta)
-			rmap.insert(olv.argument(), smap.lookup(olv.output()));
+			rmap.insert(olv->argument(), smap.lookup(olv));
 
 		otheta->subregion()->copy(ntheta->region(), rmap, false, false);
 
 		for (const auto & olv : *otheta)
-			olv.output()->replace(rmap.lookup(olv.result()->origin()));
+			olv->replace(rmap.lookup(olv->result()->origin()));
 
 		return remove(otheta);
 	}
@@ -286,7 +286,7 @@ unroll_known_theta(const unrollinfo & ui, size_t factor)
 		theta.
 	*/
 	for (const auto & olv : *otheta)
-		olv.input()->divert_origin(smap.lookup(olv.output()));
+		olv->input()->divert_origin(smap.lookup(olv));
 }
 
 static jive::output *
@@ -367,10 +367,10 @@ unroll_unknown_theta(const unrollinfo & ui, size_t factor)
 
 		jive::substitution_map rmap[2];
 		for (const auto & olv : *otheta) {
-			auto ev = ngamma->add_entryvar(olv.input()->origin());
+			auto ev = ngamma->add_entryvar(olv->input()->origin());
 			auto nlv = ntheta->add_loopvar(ev->argument(1));
-			rmap[0].insert(olv.output(), ev->argument(0));
-			rmap[1].insert(olv.argument(), nlv->argument());
+			rmap[0].insert(olv, ev->argument(0));
+			rmap[1].insert(olv->argument(), nlv->argument());
 		}
 
 		unroll_body(otheta, ntheta->subregion(), rmap[1], factor);
@@ -378,15 +378,14 @@ unroll_unknown_theta(const unrollinfo & ui, size_t factor)
 		ntheta->set_predicate(pred);
 
 		for (auto olv = otheta->begin(), nlv = ntheta->begin(); olv != otheta->end(); olv++, nlv++) {
-			auto origin = rmap[1].lookup(olv->result()->origin());
-			nlv->result()->divert_origin(origin);
-			rmap[1].insert(olv->output(), nlv->output());
+			auto origin = rmap[1].lookup((*olv)->result()->origin());
+			(*nlv)->result()->divert_origin(origin);
+			rmap[1].insert(*olv, *nlv);
 		}
 
 		for (const auto & olv : *otheta) {
-			auto output = olv.output();
-			auto xv = ngamma->add_exitvar({rmap[0].lookup(output), rmap[1].lookup(output)});
-			smap.insert(olv.output(), xv->output());
+			auto xv = ngamma->add_exitvar({rmap[0].lookup(olv), rmap[1].lookup(olv)});
+			smap.insert(olv, xv->output());
 		}
 	}
 
@@ -398,25 +397,25 @@ unroll_unknown_theta(const unrollinfo & ui, size_t factor)
 
 		jive::substitution_map rmap[2];
 		for (const auto & olv : *otheta) {
-			auto ev = ngamma->add_entryvar(smap.lookup(olv.output()));
+			auto ev = ngamma->add_entryvar(smap.lookup(olv));
 			auto nlv = ntheta->add_loopvar(ev->argument(1));
-			rmap[0].insert(olv.output(), ev->argument(0));
-			rmap[1].insert(olv.argument(), nlv->argument());
+			rmap[0].insert(olv, ev->argument(0));
+			rmap[1].insert(olv->argument(), nlv->argument());
 		}
 
 		otheta->subregion()->copy(ntheta->subregion(), rmap[1], false, false);
 		ntheta->set_predicate(rmap[1].lookup(otheta->predicate()->origin()));
 
 		for (auto olv = otheta->begin(), nlv = ntheta->begin(); olv != otheta->end(); olv++, nlv++) {
-			auto origin = rmap[1].lookup(olv->result()->origin());
-			nlv->result()->divert_origin(origin);
-			auto xv = ngamma->add_exitvar({rmap[0].lookup(olv->output()), nlv->output()});
-			smap.insert(olv->output(), xv->output());
+			auto origin = rmap[1].lookup((*olv)->result()->origin());
+			(*nlv)->result()->divert_origin(origin);
+			auto xv = ngamma->add_exitvar({rmap[0].lookup(*olv), *nlv});
+			smap.insert(*olv, xv->output());
 		}
 	}
 
 	for (const auto & olv : *otheta)
-		olv.output()->replace(smap.lookup(olv.output()));
+		olv->replace(smap.lookup(olv));
 	remove(otheta);
 }
 

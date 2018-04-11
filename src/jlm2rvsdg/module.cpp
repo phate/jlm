@@ -364,7 +364,7 @@ convert_loop_node(
 	/* add loop variables */
 	auto ds = dm.at(&node).get();
 	JLM_DEBUG_ASSERT(ds->top == ds->bottom);
-	std::unordered_map<const variable*, std::shared_ptr<jive::loopvar>> lvmap;
+	std::unordered_map<const variable*, jive::theta_output*> lvmap;
 	for (const auto & v : ds->top) {
 		jive::output * value = nullptr;
 		if (pvmap.find(v) == pvmap.end()) {
@@ -404,7 +404,7 @@ convert_loop_node(
 	svmap.pop_scope();
 	for (const auto & v : ds->bottom) {
 		JLM_DEBUG_ASSERT(pvmap.find(v) != pvmap.end());
-		pvmap[v] = lvmap[v]->output();
+		pvmap[v] = lvmap[v];
 	}
 
 	return nullptr;
@@ -471,7 +471,7 @@ construct_lambda(
 	auto & function = *static_cast<const function_node*>(node);
 
 	if (function.cfg() == nullptr)
-		return region->graph()->import(function.type(), function.name());
+		return region->graph()->add_import(function.type(), function.name());
 
 	return convert_cfg(function, region, svmap);
 }
@@ -503,7 +503,7 @@ convert_data_node(
 
 	jive::output * data = nullptr;
 	if (n->initialization().empty()) {
-		data = graph->import(n->type(), n->name());
+		data = graph->add_import(n->type(), n->name());
 	} else {
 		jlm::data_builder db;
 		auto r = db.begin(graph->root(), n->linkage(), n->constant());
@@ -550,7 +550,7 @@ handle_scc(
 		JLM_DEBUG_ASSERT(v);
 		svmap.vmap()[v] = output;
 		if (v->exported())
-			graph->export_port(output, v->name());
+			graph->add_export(output, v->name());
 	} else {
 		jive::phi_builder pb;
 		pb.begin_phi(graph->root());
@@ -595,7 +595,7 @@ handle_scc(
 			auto value = recvars[v]->value();
 			svmap.vmap()[v] = value;
 			if (v->exported())
-				graph->export_port(value, v->name());
+				graph->add_export(value, v->name());
 		}
 	}
 }

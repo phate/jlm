@@ -32,7 +32,7 @@
 #include <typeindex>
 
 static inline std::vector<const jlm::variable*>
-create_result_variables(jlm::module & m, const jive::operation & op)
+create_result_variables(jlm::module & m, const jive::simple_op & op)
 {
 	std::vector<const jlm::variable*> variables;
 	for (size_t n = 0; n < op.nresults(); n++)
@@ -196,7 +196,10 @@ convert_icmp_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 
 	if (t->isIntegerTy()) {
 		size_t nbits = t->getIntegerBitWidth();
-		tacs.push_back(create_tac(*map[p](nbits), {op1, op2}, {ctx.lookup_value(i)}));
+		/* FIXME: This is inefficient. We return a unique ptr and then take copy it. */
+		auto op = map[p](nbits);
+		tacs.push_back(create_tac(*static_cast<const jive::simple_op*>(op.get()),
+			{op1, op2}, {ctx.lookup_value(i)}));
 	} else {
 		JLM_DEBUG_ASSERT(t->isPointerTy() && map.find(p) != map.end());
 		tacs.push_back(create_ptrcmp_tac(ptrmap[p], op1, op2, ctx.lookup_value(i)));
@@ -406,7 +409,10 @@ convert_binary_operator(llvm::Instruction * instruction, tacsvector_t & tacs, co
 
 		size_t nbits = i->getType()->getIntegerBitWidth();
 		JLM_DEBUG_ASSERT(map.find(i->getOpcode()) != map.end());
-		tacs.push_back(create_tac(*map[i->getOpcode()](nbits), {op1, op2}, {ctx.lookup_value(i)}));
+		/* FIXME: This is inefficient. We produce a unique ptr and then copy it. */
+		auto op = map[i->getOpcode()](nbits);
+		tacs.push_back(create_tac(*static_cast<const jive::simple_op*>(op.get()),
+			{op1, op2}, {ctx.lookup_value(i)}));
 		return tacs.back()->output(0);
 	}
 

@@ -25,7 +25,7 @@ namespace jlm2llvm {
 
 static inline llvm::Value *
 convert_assignment(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -36,7 +36,7 @@ convert_assignment(
 
 static inline llvm::Value *
 convert_bitsbinary(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -67,7 +67,7 @@ convert_bitsbinary(
 
 static inline llvm::Value *
 convert_bitscompare(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -95,7 +95,7 @@ convert_bitscompare(
 
 static inline llvm::Value *
 convert_bitconstant(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> &,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -112,7 +112,7 @@ convert_bitconstant(
 
 static inline llvm::Value *
 convert_ctlconstant(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> &,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -127,7 +127,7 @@ convert_ctlconstant(
 
 static inline llvm::Value *
 convert_fpconstant(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> &,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -140,7 +140,7 @@ convert_fpconstant(
 
 static inline llvm::Value *
 convert_undef(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> &,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -151,7 +151,7 @@ convert_undef(
 
 static inline llvm::Value *
 convert_call(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -191,7 +191,7 @@ is_identity_mapping(const jive::ctl::match_op & op)
 
 static inline llvm::Value *
 convert_match(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -216,7 +216,7 @@ convert_match(
 
 static inline llvm::Value *
 convert_branch(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> &,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -227,7 +227,7 @@ convert_branch(
 
 static inline llvm::Value *
 convert_phi(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> &,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -244,7 +244,7 @@ convert_phi(
 
 static inline llvm::Value *
 convert_load(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -259,7 +259,7 @@ convert_load(
 
 static inline llvm::Value *
 convert_store(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -274,7 +274,7 @@ convert_store(
 
 static inline llvm::Value *
 convert_alloca(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -290,7 +290,7 @@ convert_alloca(
 
 static inline llvm::Value *
 convert_getelementptr(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -340,7 +340,7 @@ get_fpdata(
 
 static inline llvm::Value *
 convert_data_array_constant(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -384,7 +384,7 @@ convert_data_array_constant(
 
 static inline llvm::Value *
 convert_constant_array(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -405,7 +405,7 @@ convert_constant_array(
 
 static llvm::Value *
 convert_constant_aggregate_zero(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -417,7 +417,7 @@ convert_constant_aggregate_zero(
 
 static inline llvm::Value *
 convert_ptrcmp(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -439,7 +439,7 @@ convert_ptrcmp(
 
 static inline llvm::Value *
 convert_zext(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -452,7 +452,7 @@ convert_zext(
 
 static inline llvm::Value *
 convert_fpcmp(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -478,7 +478,7 @@ convert_fpcmp(
 
 static inline llvm::Value *
 convert_fpbin(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -500,7 +500,7 @@ convert_fpbin(
 
 static inline llvm::Value *
 convert_fpext(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -513,7 +513,7 @@ convert_fpext(
 
 static inline llvm::Value *
 convert_fptrunc(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -526,7 +526,7 @@ convert_fptrunc(
 
 static inline llvm::Value *
 convert_fp2ui(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -539,7 +539,7 @@ convert_fp2ui(
 
 static llvm::Value *
 convert_fp2si(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -552,7 +552,7 @@ convert_fp2si(
 
 static inline llvm::Value *
 convert_valist(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -563,7 +563,7 @@ convert_valist(
 
 static inline llvm::Value *
 convert_bitcast(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -576,7 +576,7 @@ convert_bitcast(
 
 static inline llvm::Value *
 convert_struct_constant(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -594,7 +594,7 @@ convert_struct_constant(
 
 static inline llvm::Value *
 convert_trunc(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -607,7 +607,7 @@ convert_trunc(
 
 static inline llvm::Value *
 convert_sext(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -620,7 +620,7 @@ convert_sext(
 
 static inline llvm::Value *
 convert_sitofp(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -633,7 +633,7 @@ convert_sitofp(
 
 static llvm::Value *
 convert_uitofp(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -646,7 +646,7 @@ convert_uitofp(
 
 static inline llvm::Value *
 convert_ptr_constant_null(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -659,7 +659,7 @@ convert_ptr_constant_null(
 
 static inline llvm::Value *
 convert_select(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> & operands,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -674,7 +674,7 @@ convert_select(
 
 static inline llvm::Value *
 convert_mux(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -685,7 +685,7 @@ convert_mux(
 
 static inline llvm::Value *
 convert_ptr2bits(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -698,7 +698,7 @@ convert_ptr2bits(
 
 static inline llvm::Value *
 convert_ctl2bits(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -709,7 +709,7 @@ convert_ctl2bits(
 
 llvm::Value *
 convert_operation(
-	const jive::operation & op,
+	const jive::simple_op & op,
 	const std::vector<const variable*> & arguments,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -723,7 +723,7 @@ convert_operation(
 	static std::unordered_map<
 		std::type_index
 	, llvm::Value*(*)(
-			const jive::operation &,
+			const jive::simple_op &,
 			const std::vector<const variable*> &,
 			llvm::IRBuilder<> &,
 			context & ctx)

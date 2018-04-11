@@ -73,7 +73,7 @@ test_unrollinfo()
 
 	{
 		jive::graph graph;
-		auto x = graph.import(bt32, "x");
+		auto x = graph.add_import(bt32, "x");
 		auto theta = create_theta(slt, add, x, x, x);
 		auto ui = jlm::unrollinfo::create(theta);
 
@@ -230,8 +230,8 @@ test_unknown_boundaries()
 	jlm::test_op op({&bt}, {&bt});
 
 	jive::graph graph;
-	auto x = graph.import(bt, "x");
-	auto y = graph.import(bt, "y");
+	auto x = graph.add_import(bt, "x");
+	auto y = graph.add_import(bt, "y");
 
 	auto theta = jive::theta_node::create(graph.root());
 	auto lv1 = theta->add_loopvar(x);
@@ -246,7 +246,7 @@ test_unknown_boundaries()
 
 	theta->set_predicate(match);
 
-	auto ex1 = graph.export_port(lv1->output(), "x");
+	auto ex1 = graph.add_export(lv1, "x");
 
 	jive::view(graph, stdout);
 	jlm::unroll(graph, 2);

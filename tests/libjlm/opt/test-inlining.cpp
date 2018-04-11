@@ -43,7 +43,7 @@ verify()
 	jlm::test_op op({&vt}, {&vt});
 
 	jive::graph graph;
-	auto i = graph.import(vt, "i");
+	auto i = graph.add_import(vt, "i");
 
 	/* f1 */
 	jlm::lambda_builder lb;
@@ -63,7 +63,7 @@ verify()
 	auto xv1 = gamma->add_exitvar({apply, ev1->argument(1)});
 	auto f2 = lb.end_lambda({xv1->output()});
 
-	graph.export_port(f2->output(0), "f2");
+	graph.add_export(f2->output(0), "f2");
 
 	jive::view(graph.root(), stdout);
 	jlm::inlining(graph);

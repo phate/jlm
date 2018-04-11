@@ -201,14 +201,14 @@ push_top(jive::theta_node * theta)
 	/* collect loop invariant arguments */
 	std::unordered_set<jive::argument*> invariants;
 	for (const auto & lv : *theta) {
-		if (lv.result()->origin() == lv.argument())
-			invariants.insert(lv.argument());
+		if (lv->result()->origin() == lv->argument())
+			invariants.insert(lv->argument());
 	}
 
 	/* initialize worklist */
 	worklist wl;
 	for (const auto & lv : *theta) {
-		auto argument = lv.argument();
+		auto argument = lv->argument();
 		for (const auto & user : *argument) {
 			if (user->node() && user->node()->depth() == 0
 			&& is_theta_invariant(user->node(), invariants))
@@ -288,7 +288,7 @@ pushout_store(jive::node * storenode)
 	lv->result()->divert_origin(ovalue);
 
 	/* collect store operands and remove old store */
-	auto value = lv->output();
+	auto value = lv;
 	std::vector<jive::output*> states;
 	auto address = oaddress->input()->origin();
 	for (size_t n = 0; n < storenode->noutputs(); n++) {
@@ -317,7 +317,7 @@ void
 push_bottom(jive::theta_node * theta)
 {
 	for (const auto & lv : *theta) {
-		auto storenode = lv.result()->origin()->node();
+		auto storenode = lv->result()->origin()->node();
 		if (is_store_node(storenode) && is_movable_store(storenode)) {
 			pushout_store(storenode);
 			break;

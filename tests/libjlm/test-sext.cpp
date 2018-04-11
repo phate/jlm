@@ -20,12 +20,12 @@ test_bitunary_reduction()
 	auto nf = jlm::sext_op::normal_form(&graph);
 	nf->set_mutable(false);
 
-	auto x = graph.import(bt32, "x");
+	auto x = graph.add_import(bt32, "x");
 
 	auto y = jive::bits::create_not(32, x);
 	auto z = jlm::create_sext(64, y);
 
-	auto ex = graph.export_port(z, "x");
+	auto ex = graph.add_export(z, "x");
 
 	//jive::view(graph, stdout);
 
@@ -47,13 +47,13 @@ test_bitbinary_reduction()
 	auto nf = jlm::sext_op::normal_form(&graph);
 	nf->set_mutable(false);
 
-	auto x = graph.import(bt32, "x");
-	auto y = graph.import(bt32, "y");
+	auto x = graph.add_import(bt32, "x");
+	auto y = graph.add_import(bt32, "y");
 
 	auto z = jive::bits::create_add(32, x, y);
 	auto w = jlm::create_sext(64, z);
 
-	auto ex = graph.export_port(w, "x");
+	auto ex = graph.add_export(w, "x");
 
 //	jive::view(graph, stdout);
 
@@ -75,12 +75,12 @@ test_inverse_reduction()
 	auto nf = jlm::sext_op::normal_form(&graph);
 	nf->set_mutable(false);
 
-	auto x = graph.import(bt64, "x");
+	auto x = graph.add_import(bt64, "x");
 
 	auto y = jlm::create_trunc(32, x);
 	auto z = jlm::create_sext(64, y);
 
-	auto ex = graph.export_port(z, "x");
+	auto ex = graph.add_export(z, "x");
 
 	jive::view(graph, stdout);
 
