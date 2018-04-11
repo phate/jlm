@@ -284,11 +284,10 @@ pushout_store(jive::node * storenode)
 	auto ovalue = storenode->input(1)->origin();
 
 	/* insert new value for store */
-	auto lv = theta->add_loopvar(undef_constant_op::create(theta->region(), ovalue->type()));
-	lv->result()->divert_origin(ovalue);
+	auto nvalue = theta->add_loopvar(undef_constant_op::create(theta->region(), ovalue->type()));
+	nvalue->result()->divert_origin(ovalue);
 
-	/* collect store operands and remove old store */
-	auto value = lv;
+	/* collect store operands */
 	std::vector<jive::output*> states;
 	auto address = oaddress->input()->origin();
 	for (size_t n = 0; n < storenode->noutputs(); n++) {
@@ -297,10 +296,9 @@ pushout_store(jive::node * storenode)
 		result->divert_origin(storenode->input(n+2)->origin());
 		states.push_back(result->output());
 	}
-	remove(storenode);
 
 	/* create new store and redirect theta output users */
-	auto nstates = jlm::create_store(address, value, states, storeop->alignment());
+	auto nstates = jlm::create_store(address, nvalue, states, storeop->alignment());
 	for (size_t n = 0; n < states.size(); n++) {
 		std::unordered_set<jive::input*> users;
 		for (const auto & user : *states[n]) {
@@ -311,6 +309,8 @@ pushout_store(jive::node * storenode)
 		for (const auto & user : users)
 			user->divert_origin(nstates[n]);
 	}
+
+	remove(storenode);
 }
 
 void
