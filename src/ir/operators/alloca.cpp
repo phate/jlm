@@ -22,40 +22,6 @@ alloca_op::operator==(const operation & other) const noexcept
 	return this == &other;
 }
 
-size_t
-alloca_op::narguments() const noexcept
-{
-	return 2;
-}
-
-const jive::port &
-alloca_op::argument(size_t index) const noexcept
-{
-	JLM_DEBUG_ASSERT(index < narguments());
-	if (index == 0)
-		return bport_;
-
-	static const jive::port p(jive::memtype::instance());
-	return p;
-}
-
-size_t
-alloca_op::nresults() const noexcept
-{
-	return 2;
-}
-
-const jive::port &
-alloca_op::result(size_t index) const noexcept
-{
-	JLM_DEBUG_ASSERT(index < nresults());
-	if (index == 0)
-		return aport_;
-
-	static const jive::port p(jive::memtype::instance());
-	return p;
-}
-
 std::string
 alloca_op::debug_string() const
 {
@@ -111,9 +77,10 @@ perform_alloca_alloca_reduction(
 	const std::vector<jive::output*> & operands)
 {
 	JLM_DEBUG_ASSERT(is_alloca_op(operands[1]->node()->operation()));
+	auto region = operands[0]->region();
 	auto origin = operands[1]->node()->input(1)->origin();
 
-	auto alloca = jive::create_normalized(operands[0]->region(), op, {operands[0], origin});
+	auto alloca = jive::simple_node::create_normalized(region, op, {operands[0], origin});
 	auto state = jive::create_state_merge(origin->type(), {operands[1], alloca[1]});
 
 	return {alloca[0], state};
@@ -125,9 +92,10 @@ perform_alloca_mux_reduction(
 	const std::vector<jive::output*> & operands)
 {
 	auto muxnode = operands[1]->node();
+	auto region = operands[0]->region();
 	auto origin = muxnode->input(0)->origin()->node()->input(1)->origin();
 
-	auto alloca = jive::create_normalized(operands[0]->region(), op, {operands[0], origin});
+	auto alloca = jive::simple_node::create_normalized(region, op, {operands[0], origin});
 	auto state = jive::create_state_merge(origin->type(), {operands[1], alloca[1]});
 
 	return {alloca[0], state};
@@ -161,13 +129,13 @@ alloca_normal_form::normalize_node(jive::node * node) const
 		return true;
 
 	if (get_alloca_alloca_reducible() && is_alloca_alloca_reducible(operands)) {
-		replace(node, perform_alloca_alloca_reduction(*op, operands));
+		divert_users(node, perform_alloca_alloca_reduction(*op, operands));
 		node->region()->remove_node(node);
 		return false;
 	}
 
 	if (get_alloca_mux_reducible() && is_alloca_mux_reducible(operands)) {
-		replace(node, perform_alloca_mux_reduction(*op, operands));
+		divert_users(node, perform_alloca_mux_reduction(*op, operands));
 		node->region()->remove_node(node);
 		return false;
 	}

@@ -86,7 +86,7 @@ copy_from_gamma(jive::node * node, size_t r)
 	auto copy = node->copy(target, operands);
 	for (size_t n = 0; n < copy->noutputs(); n++) {
 		auto ev = gamma->add_entryvar(copy->output(n));
-		node->output(n)->replace(ev->argument(r));
+		node->output(n)->divert_users(ev->argument(r));
 		arguments.push_back(ev->argument(r));
 	}
 
@@ -113,7 +113,7 @@ copy_from_theta(jive::node * node)
 	auto copy = node->copy(target, operands);
 	for (size_t n = 0; n < copy->noutputs(); n++) {
 		auto lv = theta->add_loopvar(copy->output(n));
-		node->output(n)->replace(lv->argument());
+		node->output(n)->divert_users(lv->argument());
 		arguments.push_back(lv->argument());
 	}
 
@@ -279,7 +279,7 @@ pushout_store(jive::node * storenode)
 
 	/* insert new value for store */
 	auto nvalue = theta->add_loopvar(undef_constant_op::create(theta->region(), ovalue->type()));
-	nvalue->result()->divert_origin(ovalue);
+	nvalue->result()->divert_to(ovalue);
 
 	/* collect store operands */
 	std::vector<jive::output*> states;
@@ -287,7 +287,7 @@ pushout_store(jive::node * storenode)
 	for (size_t n = 0; n < storenode->noutputs(); n++) {
 		JLM_DEBUG_ASSERT(storenode->output(n)->nusers() == 1);
 		auto result = static_cast<jive::result*>(*storenode->output(n)->begin());
-		result->divert_origin(storenode->input(n+2)->origin());
+		result->divert_to(storenode->input(n+2)->origin());
 		states.push_back(result->output());
 	}
 
@@ -301,7 +301,7 @@ pushout_store(jive::node * storenode)
 		}
 
 		for (const auto & user : users)
-			user->divert_origin(nstates[n]);
+			user->divert_to(nstates[n]);
 	}
 
 	remove(storenode);

@@ -26,7 +26,7 @@ convert_integer_type(const llvm::Type * t, context & ctx)
 	JLM_DEBUG_ASSERT(t->getTypeID() == llvm::Type::IntegerTyID);
 	const llvm::IntegerType * type = static_cast<const llvm::IntegerType*>(t);
 
-	return std::unique_ptr<jive::valuetype>(new jive::bits::type(type->getBitWidth()));
+	return std::unique_ptr<jive::valuetype>(new jive::bittype(type->getBitWidth()));
 }
 
 static std::unique_ptr<jive::valuetype>
@@ -82,11 +82,11 @@ convert_struct_type(const llvm::Type * t, context & ctx)
 	auto type = static_cast<const llvm::StructType*>(t);
 
 	auto packed = type->isPacked();
-	auto decl = ctx.lookup_declaration(type);
+	auto dcl = ctx.lookup_declaration(type);
 	if (type->hasName())
-		return std::unique_ptr<jive::valuetype>(new structtype(type->getName(), packed, decl));
+		return std::unique_ptr<jive::valuetype>(new structtype(type->getName(), packed, dcl));
 
-	return std::unique_ptr<jive::valuetype>(new structtype(packed, decl));
+	return std::unique_ptr<jive::valuetype>(new structtype(packed, dcl));
 }
 
 static std::unique_ptr<jive::valuetype>

@@ -7,7 +7,7 @@
 #include "test-types.hpp"
 
 #include <jive/view.h>
-#include <jive/rvsdg/controltype.h>
+#include <jive/rvsdg/control.h>
 #include <jive/rvsdg/gamma.h>
 #include <jive/rvsdg/graph.h>
 #include <jive/rvsdg/theta.h>
@@ -18,7 +18,7 @@ static inline void
 test_gamma()
 {
 	jlm::valuetype vt;
-	jive::ctl::type ct(2);
+	jive::ctltype ct(2);
 
 	jive::graph graph;
 	auto c = graph.add_import(ct, "c");
@@ -54,7 +54,7 @@ static inline void
 test_theta()
 {
 	jlm::valuetype vt;
-	jive::ctl::type ct(2);
+	jive::ctltype ct(2);
 
 	jive::graph graph;
 	auto c = graph.add_import(ct, "c");

@@ -20,45 +20,11 @@ bool
 store_op::operator==(const operation & other) const noexcept
 {
 	auto op = dynamic_cast<const store_op*>(&other);
-	return op
-	    && op->nstates_ == nstates_
-	    && op->aport_ == aport_
-	    && op->vport_ == vport_
-	    && op->alignment_ == alignment_;
-}
+	if (!op || op->narguments() != narguments())
+		return false;
 
-size_t
-store_op::narguments() const noexcept
-{
-	return 2 + nstates();
-}
-
-const jive::port &
-store_op::argument(size_t index) const noexcept
-{
-	JLM_DEBUG_ASSERT(index < narguments());
-	if (index == 0)
-		return aport_;
-
-	if (index == 1)
-		return vport_;
-
-	static const jive::port p(jive::memtype::instance());
-	return p;
-}
-
-size_t
-store_op::nresults() const noexcept
-{
-	return nstates();
-}
-
-const jive::port &
-store_op::result(size_t index) const noexcept
-{
-	JLM_DEBUG_ASSERT(index < nresults());
-	static const jive::port p(jive::memtype::instance());
-	return p;
+	return op->argument(0) == argument(0)
+	    && op->alignment() == alignment();
 }
 
 std::string
@@ -228,19 +194,19 @@ store_normal_form::normalize_node(jive::node * node) const
 		return true;
 
 	if (get_store_mux_reducible() && is_store_mux_reducible(operands)) {
-		replace(node, perform_store_mux_reduction(*op, operands));
+		divert_users(node, perform_store_mux_reduction(*op, operands));
 		node->region()->remove_node(node);
 		return false;
 	}
 
 	if (get_store_store_reducible() && is_store_store_reducible(*op, operands)) {
-		replace(node, perform_store_store_reduction(*op, operands));
+		divert_users(node, perform_store_store_reduction(*op, operands));
 		remove(node);
 		return false;
 	}
 
 	if (get_store_alloca_reducible() && is_store_alloca_reducible(operands)) {
-		replace(node, perform_store_alloca_reduction(*op, operands));
+		divert_users(node, perform_store_alloca_reduction(*op, operands));
 		node->region()->remove_node(node);
 		return false;
 	}
@@ -259,7 +225,7 @@ store_normal_form::normalize_node(jive::node * node) const
 		for (size_t n = 2; n < node->ninputs(); n++) {
 			auto origin = node->input(n)->origin();
 			JLM_DEBUG_ASSERT(origin2output.find(origin) != origin2output.end());
-			node->output(n-2)->replace(origin2output[origin]);
+			node->output(n-2)->divert_users(origin2output[origin]);
 		}
 		remove(node);
 		return false;

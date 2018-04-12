@@ -13,6 +13,7 @@
 #include <jive/types/bitstring/comparison.h>
 #include <jive/types/function/fctlambda.h>
 #include <jive/view.h>
+#include <jive/rvsdg/gamma.h>
 #include <jive/rvsdg/graph.h>
 #include <jive/rvsdg/simple-node.h>
 #include <jive/rvsdg/theta.h>
@@ -34,24 +35,27 @@ nthetas(jive::region * region)
 
 static jive::theta_node *
 create_theta(
-	const jive::bits::compare_op & cmpop,
-	const jive::bits::binary_op & armop,
+	const jive::bitcompare_op & cop,
+	const jive::bitbinary_op & aop,
 	jive::output * init,
 	jive::output * step,
 	jive::output * end)
 {
+	using namespace jive;
+
 	auto graph = init->region()->graph();
 
-	auto theta = jive::theta_node::create(graph->root());
+	auto theta = theta_node::create(graph->root());
+	auto subregion = theta->subregion();
 	auto idv = theta->add_loopvar(init);
 	auto lvs = theta->add_loopvar(step);
 	auto lve = theta->add_loopvar(end);
 
-	auto arm = create_normalized(theta->subregion(), armop, {idv->argument(), lvs->argument()})[0];
-	auto cmp = create_normalized(theta->subregion(), cmpop, {arm, lve->argument()})[0];
-	auto match = jive::ctl::match(1, {{1, 1}}, 0, 2, cmp);
+	auto arm = simple_node::create_normalized(subregion, aop, {idv->argument(), lvs->argument()})[0];
+	auto cmp = simple_node::create_normalized(subregion, cop, {arm, lve->argument()})[0];
+	auto match = jive::match(1, {{1, 1}}, 0, 2, cmp);
 
-	idv->result()->divert_origin(arm);
+	idv->result()->divert_to(arm);
 	theta->set_predicate(match);
 
 	return theta;
@@ -60,16 +64,16 @@ create_theta(
 static inline void
 test_unrollinfo()
 {
-	jive::bits::type bt32(32);
-	jive::bits::slt_op slt(bt32);
-	jive::bits::ult_op ult(bt32);
-	jive::bits::ule_op ule(bt32);
-	jive::bits::ugt_op ugt(bt32);
-	jive::bits::sge_op sge(bt32);
-	jive::bits::eq_op eq(bt32);
+	jive::bittype bt32(32);
+	jive::bitslt_op slt(bt32);
+	jive::bitult_op ult(bt32);
+	jive::bitule_op ule(bt32);
+	jive::bitugt_op ugt(bt32);
+	jive::bitsge_op sge(bt32);
+	jive::biteq_op eq(bt32);
 
-	jive::bits::add_op add(32);
-	jive::bits::sub_op sub(32);
+	jive::bitadd_op add(32);
+	jive::bitsub_op sub(32);
 
 	{
 		jive::graph graph;
@@ -135,10 +139,10 @@ test_unrollinfo()
 static inline void
 test_known_boundaries()
 {
-	jive::bits::ult_op ult(32);
-	jive::bits::sgt_op sgt(32);
-	jive::bits::add_op add(32);
-	jive::bits::sub_op sub(32);
+	jive::bitult_op ult(32);
+	jive::bitsgt_op sgt(32);
+	jive::bitadd_op add(32);
+	jive::bitsub_op sub(32);
 
 	{
 		jive::graph graph;
@@ -226,7 +230,7 @@ test_known_boundaries()
 static inline void
 test_unknown_boundaries()
 {
-	jive::bits::type bt(32);
+	jive::bittype bt(32);
 	jlm::test_op op({&bt}, {&bt});
 
 	jive::graph graph;
@@ -238,11 +242,11 @@ test_unknown_boundaries()
 	auto lv2 = theta->add_loopvar(y);
 
 	auto one = jive::create_bitconstant(theta->subregion(), 32, 1);
-	auto add = jive::bits::create_add(32, lv1->argument(), one);
-	auto cmp = jive::bits::create_ult(32, add, lv2->argument());
-	auto match = jive::ctl::match(1, {{1, 0}}, 1, 2, cmp);
+	auto add = jive::bitadd_op::create(32, lv1->argument(), one);
+	auto cmp = jive::bitult_op::create(32, add, lv2->argument());
+	auto match = jive::match(1, {{1, 0}}, 1, 2, cmp);
 
-	lv1->result()->divert_origin(add);
+	lv1->result()->divert_to(add);
 
 	theta->set_predicate(match);
 

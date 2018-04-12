@@ -166,17 +166,20 @@ public:
 		vmap_[value] = variable;
 	}
 
-	inline std::shared_ptr<const jive::rcddeclaration> &
+	inline const jive::rcddeclaration *
 	lookup_declaration(const llvm::StructType * type)
 	{
+		/* FIXME: We currently need a graph to create a rcddeclaration. */
+		static jive::graph graph;
+
 		auto it = declarations_.find(type);
 		if (it != declarations_.end())
 			return it->second;
 
-		std::shared_ptr<jive::rcddeclaration> declaration(new jive::rcddeclaration());
-		declarations_[type] = declaration;
+		auto dcl = jive::rcddeclaration::create(&graph);
+		declarations_[type] = dcl;
 		for (size_t n = 0; n < type->getNumElements(); n++)
-			declaration->append(*convert_type(type->getElementType(n), *this));
+			dcl->append(*convert_type(type->getElementType(n), *this));
 
 		return declarations_[type];
 	}
@@ -208,7 +211,7 @@ private:
 	std::unordered_map<const llvm::Value*, jlm::variable*> vmap_;
 	std::unordered_map<
 		const llvm::StructType*,
-		std::shared_ptr<const jive::rcddeclaration>> declarations_;
+		const jive::rcddeclaration*> declarations_;
 };
 
 }

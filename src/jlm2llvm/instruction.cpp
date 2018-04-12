@@ -41,22 +41,22 @@ convert_bitsbinary(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::bits::binary_op*>(&op));
+	JLM_DEBUG_ASSERT(dynamic_cast<const jive::bitbinary_op*>(&op));
 
 	static std::unordered_map<std::type_index, llvm::Instruction::BinaryOps> map({
-	  {std::type_index(typeid(jive::bits::add_op)), llvm::Instruction::Add}
-	, {std::type_index(typeid(jive::bits::and_op)), llvm::Instruction::And}
-	, {std::type_index(typeid(jive::bits::ashr_op)), llvm::Instruction::AShr}
-	, {std::type_index(typeid(jive::bits::sub_op)), llvm::Instruction::Sub}
-	, {std::type_index(typeid(jive::bits::udiv_op)), llvm::Instruction::UDiv}
-	, {std::type_index(typeid(jive::bits::sdiv_op)), llvm::Instruction::SDiv}
-	, {std::type_index(typeid(jive::bits::umod_op)), llvm::Instruction::URem}
-	, {std::type_index(typeid(jive::bits::smod_op)), llvm::Instruction::SRem}
-	, {std::type_index(typeid(jive::bits::shl_op)), llvm::Instruction::Shl}
-	, {std::type_index(typeid(jive::bits::shr_op)), llvm::Instruction::LShr}
-	, {std::type_index(typeid(jive::bits::or_op)), llvm::Instruction::Or}
-	, {std::type_index(typeid(jive::bits::xor_op)), llvm::Instruction::Xor}
-	, {std::type_index(typeid(jive::bits::mul_op)), llvm::Instruction::Mul}
+	  {typeid(jive::bitadd_op), llvm::Instruction::Add}
+	, {typeid(jive::bitand_op), llvm::Instruction::And}
+	, {typeid(jive::bitashr_op), llvm::Instruction::AShr}
+	, {typeid(jive::bitsub_op), llvm::Instruction::Sub}
+	, {typeid(jive::bitudiv_op), llvm::Instruction::UDiv}
+	, {typeid(jive::bitsdiv_op), llvm::Instruction::SDiv}
+	, {typeid(jive::bitumod_op), llvm::Instruction::URem}
+	, {typeid(jive::bitsmod_op), llvm::Instruction::SRem}
+	, {typeid(jive::bitshl_op), llvm::Instruction::Shl}
+	, {typeid(jive::bitshr_op), llvm::Instruction::LShr}
+	, {typeid(jive::bitor_op), llvm::Instruction::Or}
+	, {typeid(jive::bitxor_op), llvm::Instruction::Xor}
+	, {typeid(jive::bitmul_op), llvm::Instruction::Mul}
 	});
 
 	auto op1 = ctx.value(args[0]);
@@ -72,19 +72,19 @@ convert_bitscompare(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::bits::compare_op*>(&op));
+	JLM_DEBUG_ASSERT(dynamic_cast<const jive::bitcompare_op*>(&op));
 
 	static std::unordered_map<std::type_index, llvm::CmpInst::Predicate> map({
-	  {std::type_index(typeid(jive::bits::eq_op)), llvm::CmpInst::ICMP_EQ}
-	, {std::type_index(typeid(jive::bits::ne_op)), llvm::CmpInst::ICMP_NE}
-	, {std::type_index(typeid(jive::bits::ugt_op)), llvm::CmpInst::ICMP_UGT}
-	, {std::type_index(typeid(jive::bits::uge_op)), llvm::CmpInst::ICMP_UGE}
-	, {std::type_index(typeid(jive::bits::ult_op)), llvm::CmpInst::ICMP_ULT}
-	, {std::type_index(typeid(jive::bits::ule_op)), llvm::CmpInst::ICMP_ULE}
-	, {std::type_index(typeid(jive::bits::sgt_op)), llvm::CmpInst::ICMP_SGT}
-	, {std::type_index(typeid(jive::bits::sge_op)), llvm::CmpInst::ICMP_SGE}
-	, {std::type_index(typeid(jive::bits::slt_op)), llvm::CmpInst::ICMP_SLT}
-	, {std::type_index(typeid(jive::bits::sle_op)), llvm::CmpInst::ICMP_SLE}
+	  {typeid(jive::biteq_op), llvm::CmpInst::ICMP_EQ}
+	, {typeid(jive::bitne_op), llvm::CmpInst::ICMP_NE}
+	, {typeid(jive::bitugt_op), llvm::CmpInst::ICMP_UGT}
+	, {typeid(jive::bituge_op), llvm::CmpInst::ICMP_UGE}
+	, {typeid(jive::bitult_op), llvm::CmpInst::ICMP_ULT}
+	, {typeid(jive::bitule_op), llvm::CmpInst::ICMP_ULE}
+	, {typeid(jive::bitsgt_op), llvm::CmpInst::ICMP_SGT}
+	, {typeid(jive::bitsge_op), llvm::CmpInst::ICMP_SGE}
+	, {typeid(jive::bitslt_op), llvm::CmpInst::ICMP_SLT}
+	, {typeid(jive::bitsle_op), llvm::CmpInst::ICMP_SLE}
 	});
 
 	auto op1 = ctx.value(args[0]);
@@ -100,8 +100,8 @@ convert_bitconstant(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::bits::constant_op*>(&op));
-	auto & cop = *static_cast<const jive::bits::constant_op*>(&op);
+	JLM_DEBUG_ASSERT(dynamic_cast<const jive::bitconstant_op*>(&op));
+	auto & cop = *static_cast<const jive::bitconstant_op*>(&op);
 	auto type = llvm::IntegerType::get(builder.getContext(), cop.value().nbits());
 
 	if (cop.value().is_defined())
@@ -117,8 +117,8 @@ convert_ctlconstant(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::ctl::constant_op*>(&op));
-	auto & cop = *static_cast<const jive::ctl::constant_op*>(&op);
+	JLM_DEBUG_ASSERT(is_ctlconstant_op(op));
+	auto & cop = *static_cast<const jive::ctlconstant_op*>(&op);
 
 	size_t nbits = cop.value().nalternatives() == 2 ? 1 : 32;
 	auto type = llvm::IntegerType::get(builder.getContext(), nbits);
@@ -179,7 +179,7 @@ convert_call(
 }
 
 static inline bool
-is_identity_mapping(const jive::ctl::match_op & op)
+is_identity_mapping(const jive::match_op & op)
 {
 	for (const auto & pair : op) {
 		if (pair.first != pair.second)
@@ -197,7 +197,7 @@ convert_match(
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(is_match_op(op));
-	auto mop = static_cast<const jive::ctl::match_op*>(&op);
+	auto mop = static_cast<const jive::match_op*>(&op);
 
 	if (is_identity_mapping(*mop))
 		return ctx.value(args[0]);
@@ -348,7 +348,7 @@ convert_data_array_constant(
 	JLM_DEBUG_ASSERT(is_data_array_constant_op(op));
 	auto & cop = *static_cast<const data_array_constant_op*>(&op);
 
-	if (auto bt = dynamic_cast<const jive::bits::type*>(&cop.type())) {
+	if (auto bt = dynamic_cast<const jive::bittype*>(&cop.type())) {
 		if (bt->nbits() == 8) {
 			auto data = get_bitdata<uint8_t>(cop, args, ctx);
 			return llvm::ConstantDataArray::get(builder.getContext(), data);
@@ -714,10 +714,10 @@ convert_operation(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	if (dynamic_cast<const jive::bits::binary_op*>(&op))
+	if (dynamic_cast<const jive::bitbinary_op*>(&op))
 		return convert_bitsbinary(op, arguments, builder, ctx);
 
-	if (dynamic_cast<const jive::bits::compare_op*>(&op))
+	if (dynamic_cast<const jive::bitcompare_op*>(&op))
 		return convert_bitscompare(op, arguments, builder, ctx);
 
 	static std::unordered_map<
@@ -728,11 +728,11 @@ convert_operation(
 			llvm::IRBuilder<> &,
 			context & ctx)
 	> map({
-	  {std::type_index(typeid(jive::bits::constant_op)), convert_bitconstant}
-	, {std::type_index(typeid(jive::ctl::constant_op)), convert_ctlconstant}
+	  {typeid(jive::bitconstant_op), convert_bitconstant}
+	, {typeid(jive::ctlconstant_op), convert_ctlconstant}
 	, {std::type_index(typeid(jlm::fpconstant_op)), convert_fpconstant}
 	, {std::type_index(typeid(jlm::undef_constant_op)), convert_undef}
-	, {std::type_index(typeid(jive::ctl::match_op)), convert_match}
+	, {typeid(jive::match_op), convert_match}
 	, {typeid(call_op), convert_call}
 	, {std::type_index(typeid(jlm::assignment_op)), convert_assignment}
 	, {std::type_index(typeid(jlm::branch_op)), convert_branch}

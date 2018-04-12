@@ -96,7 +96,7 @@ test_store_alloca_reduction()
 {
 	jlm::valuetype vt;
 	jive::memtype mt;
-	jive::bits::type bt(32);
+	jive::bittype bt(32);
 
 	jive::graph graph;
 	auto nf = graph.node_normal_form(typeid(jlm::store_op));

@@ -43,7 +43,7 @@ pullin_node(jive::gamma_node * gamma, jive::node * node)
 				JLM_DEBUG_ASSERT(dynamic_cast<jive::structural_input*>(user));
 				auto sinput = static_cast<jive::structural_input*>(user);
 				auto argument = gamma->subregion(r)->argument(sinput->index()-1);
-				argument->replace(copy->output(o));
+				argument->divert_users(copy->output(o));
 			}
 		}
 	}
@@ -123,7 +123,7 @@ pullin_bottom(jive::gamma_node * gamma)
 					workset.insert(user->node());
 
 			auto xv = gamma->add_exitvar(outputs[n]);
-			output->replace(xv);
+			output->divert_users(xv);
 		}
 	}
 }

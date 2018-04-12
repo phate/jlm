@@ -9,7 +9,7 @@
 #include <jive/types/bitstring/type.h>
 #include <jive/types/function/fcttype.h>
 #include <jive/types/record.h>
-#include <jive/rvsdg/controltype.h>
+#include <jive/rvsdg/control.h>
 
 #include <jlm/common.hpp>
 #include <jlm/ir/types.hpp>
@@ -32,7 +32,7 @@ llvm::Type *
 convert_type(const jive::type & type, context & ctx);
 
 static inline llvm::IntegerType *
-convert_type(const jive::bits::type & type, context & ctx)
+convert_type(const jive::bittype & type, context & ctx)
 {
 	auto t = convert_type(*static_cast<const jive::type*>(&type), ctx);
 	JLM_DEBUG_ASSERT(t->getTypeID() == llvm::Type::IntegerTyID);
@@ -64,7 +64,7 @@ convert_type(const jlm::arraytype & type, context & ctx)
 }
 
 static inline llvm::IntegerType *
-convert_type(const jive::ctl::type & type, context & ctx)
+convert_type(const jive::ctltype & type, context & ctx)
 {
 	auto t = convert_type(*static_cast<const jive::type*>(&type), ctx);
 	JLM_DEBUG_ASSERT(t->getTypeID() == llvm::Type::IntegerTyID);

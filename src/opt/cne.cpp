@@ -139,12 +139,6 @@ is_gamma_argument(const jive::output * output)
 	return argument && is_gamma_node(argument->region()->node());
 }
 
-static bool
-is_simple_node(const jive::node * node)
-{
-	return jive::is_opnode<jive::simple_op>(node);
-}
-
 /* mark phase */
 
 static bool
@@ -199,7 +193,7 @@ congruent(
 		return congruent(a1->input()->origin(), a2->input()->origin(), vs, ctx);
 	}
 
-	if (is_simple_node(o1->node()) && is_simple_node(o2->node())
+	if (jive::is_simple_node(o1->node()) && jive::is_simple_node(o2->node())
 	&& o1->node()->operation() == o2->node()->operation()
 	&& o1->node()->ninputs() == o2->node()->ninputs()
 	&& o1->index() == o2->index()) {
@@ -401,7 +395,7 @@ divert_users(jive::output * output, cnectx & ctx)
 {
 	auto set = ctx.set(output);
 	for (auto & other : *set)
-		other->replace(output);
+		other->divert_users(output);
 	set->clear();
 }
 

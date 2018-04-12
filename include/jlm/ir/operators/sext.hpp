@@ -21,10 +21,8 @@ public:
 	~sext_op();
 
 	inline
-	sext_op(const jive::bits::type & otype, const jive::bits::type & rtype)
-	: jive::unary_op()
-	, oport_(otype)
-	, rport_(rtype)
+	sext_op(const jive::bittype & otype, const jive::bittype & rtype)
+	: unary_op({otype}, {rtype})
 	{
 		if (otype.nbits() >= rtype.nbits())
 			throw std::logic_error("Expected operand's #bits to be smaller than results's #bits.");
@@ -32,18 +30,6 @@ public:
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
-
-	virtual size_t
-	narguments() const noexcept override;
-
-	virtual const jive::port &
-	argument(size_t index) const noexcept override;
-
-	virtual size_t
-	nresults() const noexcept override;
-
-	virtual const jive::port &
-	result(size_t index) const noexcept override;
 
 	virtual std::string
 	debug_string() const override;
@@ -62,18 +48,14 @@ public:
 	inline size_t
 	nsrcbits() const noexcept
 	{
-		return static_cast<const jive::bits::type*>(&oport_.type())->nbits();
+		return static_cast<const jive::bittype*>(&argument(0).type())->nbits();
 	}
 
 	inline size_t
 	ndstbits() const noexcept
 	{
-		return static_cast<const jive::bits::type*>(&rport_.type())->nbits();
+		return static_cast<const jive::bittype*>(&result(0).type())->nbits();
 	}
-
-private:
-	jive::port oport_;
-	jive::port rport_;
 };
 
 static inline bool
@@ -91,10 +73,10 @@ is_sext_node(const jive::node * node) noexcept
 static inline std::unique_ptr<jlm::tac>
 create_sext_tac(const variable * operand, jlm::variable * result)
 {
-	auto ot = dynamic_cast<const jive::bits::type*>(&operand->type());
+	auto ot = dynamic_cast<const jive::bittype*>(&operand->type());
 	if (!ot) throw std::logic_error("Expected bits type.");
 
-	auto rt = dynamic_cast<const jive::bits::type*>(&result->type());
+	auto rt = dynamic_cast<const jive::bittype*>(&result->type());
 	if (!rt) throw std::logic_error("Expected bits type.");
 
 	sext_op op(*ot, *rt);
@@ -104,11 +86,11 @@ create_sext_tac(const variable * operand, jlm::variable * result)
 static inline jive::output *
 create_sext(size_t ndstbits, jive::output * operand)
 {
-	auto ot = dynamic_cast<const jive::bits::type*>(&operand->type());
+	auto ot = dynamic_cast<const jive::bittype*>(&operand->type());
 	if (!ot) throw std::logic_error("Expected bits type.");
 
-	sext_op op(*ot, jive::bits::type(ndstbits));
-	return jive::create_normalized(operand->region(), op, {operand})[0];
+	sext_op op(*ot, jive::bittype(ndstbits));
+	return jive::simple_node::create_normalized(operand->region(), op, {operand})[0];
 }
 
 }

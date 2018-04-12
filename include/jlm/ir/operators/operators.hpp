@@ -9,7 +9,7 @@
 #include <jive/types/bitstring/type.h>
 #include <jive/types/function/fcttype.h>
 #include <jive/types/record.h>
-#include <jive/rvsdg/controltype.h>
+#include <jive/rvsdg/control.h>
 #include <jive/rvsdg/nullary.h>
 #include <jive/rvsdg/simple-node.h>
 #include <jive/rvsdg/type.h>
@@ -34,7 +34,7 @@ public:
 
 	inline
 	phi_op(const std::vector<jlm::cfg_node*> & nodes, const jive::type & type)
-	: port_(type)
+	: jive::simple_op(std::vector<jive::port>(nodes.size(), {type}), {type})
 	, nodes_(nodes)
 	{
 		if (nodes.size() < 2)
@@ -52,18 +52,6 @@ public:
 	virtual bool
 	operator==(const operation & other) const noexcept override;
 
-	virtual size_t
-	narguments() const noexcept override;
-
-	virtual const jive::port &
-	argument(size_t index) const noexcept override;
-
-	virtual size_t
-	nresults() const noexcept override;
-
-	virtual const jive::port &
-	result(size_t index) const noexcept override;
-
 	virtual std::string
 	debug_string() const override;
 
@@ -73,7 +61,7 @@ public:
 	inline const jive::type &
 	type() const noexcept
 	{
-		return port_.type();
+		return result(0).type();
 	}
 
 	inline cfg_node *
@@ -84,7 +72,6 @@ public:
 	}
 
 private:
-	jive::port port_;
 	std::vector<cfg_node*> nodes_;
 };
 
@@ -119,7 +106,7 @@ public:
 
 	inline
 	assignment_op(const jive::type & type)
-	: port_(type)
+	: simple_op({type, type}, {})
 	{}
 
 	assignment_op(const assignment_op &) = default;
@@ -129,26 +116,11 @@ public:
 	virtual bool
 	operator==(const operation & other) const noexcept override;
 
-	virtual size_t
-	narguments() const noexcept override;
-
-	virtual const jive::port &
-	argument(size_t index) const noexcept override;
-
-	virtual size_t
-	nresults() const noexcept override;
-
-	virtual const jive::port &
-	result(size_t index) const noexcept override;
-
 	virtual std::string
 	debug_string() const override;
 
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
-
-private:
-	jive::port port_;
 };
 
 static inline std::unique_ptr<jlm::tac>
@@ -175,7 +147,7 @@ public:
 
 	inline
 	select_op(const jive::type & type)
-	: port_(type)
+	: jive::simple_op({jive::bit1, type, type}, {type})
 	{}
 
 	select_op(const select_op &) = default;
@@ -184,18 +156,6 @@ public:
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
-
-	virtual size_t
-	narguments() const noexcept override;
-
-	virtual const jive::port &
-	argument(size_t index) const noexcept override;
-
-	virtual size_t
-	nresults() const noexcept override;
-
-	virtual const jive::port &
-	result(size_t index) const noexcept override;
 
 	virtual std::string
 	debug_string() const override;
@@ -206,11 +166,8 @@ public:
 	inline const jive::type &
 	type() const noexcept
 	{
-		return port_.type();
+		return result(0).type();
 	}
-
-private:
-	jive::port port_;
 };
 
 static inline bool
@@ -230,47 +187,6 @@ create_select_tac(
 	return create_tac(op, {p, t, f}, {result});
 }
 
-/* bits2flt operator */
-
-class bits2flt_op final : public jive::simple_op {
-public:
-	virtual
-	~bits2flt_op() noexcept;
-
-	inline
-	bits2flt_op(const jive::bits::type & type)
-	: port_(type)
-	{}
-
-	bits2flt_op(const bits2flt_op &) = default;
-
-	bits2flt_op(bits2flt_op &&) = default;
-
-	virtual bool
-	operator==(const operation & other) const noexcept override;
-
-	virtual size_t
-	narguments() const noexcept override;
-
-	virtual const jive::port &
-	argument(size_t index) const noexcept override;
-
-	virtual size_t
-	nresults() const noexcept override;
-
-	virtual const jive::port &
-	result(size_t index) const noexcept override;
-
-	virtual std::string
-	debug_string() const override;
-
-	virtual std::unique_ptr<jive::operation>
-	copy() const override;
-
-private:
-	jive::port port_;
-};
-
 /* fp2ui operator */
 
 class fp2ui_op final : public jive::simple_op {
@@ -279,35 +195,18 @@ public:
 	~fp2ui_op() noexcept;
 
 	inline
-	fp2ui_op(const fpsize & size, const jive::bits::type & type)
-	: srcport_(fptype(size))
-	, dstport_(type)
+	fp2ui_op(const fpsize & size, const jive::bittype & type)
+	: jive::simple_op({fptype(size)}, {type})
 	{}
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
-
-	virtual size_t
-	narguments() const noexcept override;
-
-	virtual const jive::port &
-	argument(size_t index) const noexcept override;
-
-	virtual size_t
-	nresults() const noexcept override;
-
-	virtual const jive::port &
-	result(size_t index) const noexcept override;
 
 	virtual std::string
 	debug_string() const override;
 
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
-
-private:
-	jive::port srcport_;
-	jive::port dstport_;
 };
 
 static inline bool
@@ -322,7 +221,7 @@ create_fp2ui_tac(const variable * operand, jlm::variable * result)
 	auto st = dynamic_cast<const fptype*>(&operand->type());
 	if (!st) throw std::logic_error("Expected floating point type.");
 
-	auto dt = dynamic_cast<const jive::bits::type*>(&result->type());
+	auto dt = dynamic_cast<const jive::bittype*>(&result->type());
 	if (!dt) throw std::logic_error("Expected bitstring type.");
 
 	fp2ui_op op(st->size(), *dt);
@@ -337,35 +236,18 @@ public:
 	~fp2si_op() noexcept;
 
 	inline
-	fp2si_op(const fpsize & size, const jive::bits::type & type)
-	: srcport_(fptype(size))
-	, dstport_(type)
+	fp2si_op(const fpsize & size, const jive::bittype & type)
+	: jive::simple_op({fptype(size)}, {type})
 	{}
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
-
-	virtual size_t
-	narguments() const noexcept override;
-
-	virtual const jive::port &
-	argument(size_t index) const noexcept override;
-
-	virtual size_t
-	nresults() const noexcept override;
-
-	virtual const jive::port &
-	result(size_t index) const noexcept override;
 
 	virtual std::string
 	debug_string() const override;
 
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
-
-private:
-	jive::port srcport_;
-	jive::port dstport_;
 };
 
 static inline bool
@@ -380,7 +262,7 @@ create_fp2si_tac(const variable * operand, jlm::variable * result)
 	auto st = dynamic_cast<const fptype*>(&operand->type());
 	if (!st) throw std::logic_error("Expected floating point type.");
 
-	auto dt = dynamic_cast<const jive::bits::type*>(&result->type());
+	auto dt = dynamic_cast<const jive::bittype*>(&result->type());
 	if (!dt) throw std::logic_error("Expected bitstring type.");
 
 	fp2si_op op(st->size(), *dt);
@@ -395,35 +277,18 @@ public:
 	~ctl2bits_op() noexcept;
 
 	inline
-	ctl2bits_op(const jive::ctl::type & srctype, const jive::bits::type & dsttype)
-	: srcport_(srctype)
-	, dstport_(dsttype)
+	ctl2bits_op(const jive::ctltype & srctype, const jive::bittype & dsttype)
+	: jive::simple_op({srctype}, {dsttype})
 	{}
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
-
-	virtual size_t
-	narguments() const noexcept override;
-
-	virtual const jive::port &
-	argument(size_t index) const noexcept override;
-
-	virtual size_t
-	nresults() const noexcept override;
-
-	virtual const jive::port &
-	result(size_t index) const noexcept override;
 
 	virtual std::string
 	debug_string() const override;
 
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
-
-private:
-	jive::port srcport_;
-	jive::port dstport_;
 };
 
 static inline bool
@@ -435,10 +300,10 @@ is_ctl2bits_op(const jive::operation & op)
 static inline std::unique_ptr<jlm::tac>
 create_ctl2bits_tac(const variable * operand, jlm::variable * result)
 {
-	auto st = dynamic_cast<const jive::ctl::type*>(&operand->type());
+	auto st = dynamic_cast<const jive::ctltype*>(&operand->type());
 	if (!st) throw std::logic_error("Expected control type.");
 
-	auto dt = dynamic_cast<const jive::bits::type*>(&result->type());
+	auto dt = dynamic_cast<const jive::bittype*>(&result->type());
 	if (!dt) throw std::logic_error("Expected bitstring type.");
 
 	ctl2bits_op op(*st, *dt);
@@ -453,24 +318,12 @@ public:
 	~branch_op() noexcept;
 
 	inline
-	branch_op(const jive::ctl::type & type)
-	: port_(type)
+	branch_op(const jive::ctltype & type)
+	: jive::simple_op({type}, {})
 	{}
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
-
-	virtual size_t
-	narguments() const noexcept override;
-
-	virtual const jive::port &
-	argument(size_t index) const noexcept override;
-
-	virtual size_t
-	nresults() const noexcept override;
-
-	virtual const jive::port &
-	result(size_t index) const noexcept override;
 
 	virtual std::string
 	debug_string() const override;
@@ -481,11 +334,8 @@ public:
 	inline size_t
 	nalternatives() const noexcept
 	{
-		return static_cast<const jive::ctl::type*>(&port_.type())->nalternatives();
+		return static_cast<const jive::ctltype*>(&argument(0).type())->nalternatives();
 	}
-
-private:
-	jive::port port_;
 };
 
 static inline bool
@@ -497,7 +347,7 @@ is_branch_op(const jive::operation & op)
 static inline std::unique_ptr<jlm::tac>
 create_branch_tac(size_t nalternatives, const variable * operand)
 {
-	jive::ctl::type type(nalternatives);
+	jive::ctltype type(nalternatives);
 	branch_op op(type);
 	return create_tac(op, {operand}, {});
 }
@@ -510,25 +360,12 @@ public:
 	~ptr_constant_null_op() noexcept;
 
 	inline
-	ptr_constant_null_op(const jlm::ptrtype & ptype)
-	: simple_op()
-	, port_(ptype)
+	ptr_constant_null_op(const jlm::ptrtype & type)
+	: simple_op({}, {type})
 	{}
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
-
-	virtual size_t
-	narguments() const noexcept override;
-
-	virtual const jive::port &
-	argument(size_t index) const noexcept override;
-
-	virtual size_t
-	nresults() const noexcept override;
-
-	virtual const jive::port &
-	result(size_t index) const noexcept override;
 
 	virtual std::string
 	debug_string() const override;
@@ -539,11 +376,8 @@ public:
 	inline const jive::valuetype &
 	pointee_type() const noexcept
 	{
-		return static_cast<const jlm::ptrtype*>(&port_.type())->pointee_type();
+		return static_cast<const jlm::ptrtype*>(&result(0).type())->pointee_type();
 	}
-
-private:
-	jive::port port_;
 };
 
 static inline bool
@@ -570,26 +404,12 @@ public:
 	~bits2ptr_op() noexcept;
 
 	inline
-	bits2ptr_op(const jive::bits::type & btype, const jlm::ptrtype & ptype)
-	: simple_op()
-	, pport_(ptype)
-	, bport_(btype)
+	bits2ptr_op(const jive::bittype & btype, const jlm::ptrtype & ptype)
+	: simple_op({btype}, {ptype})
 	{}
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
-
-	virtual size_t
-	narguments() const noexcept override;
-
-	virtual const jive::port &
-	argument(size_t index) const noexcept override;
-
-	virtual size_t
-	nresults() const noexcept override;
-
-	virtual const jive::port &
-	result(size_t index) const noexcept override;
 
 	virtual std::string
 	debug_string() const override;
@@ -600,18 +420,14 @@ public:
 	inline size_t
 	nbits() const noexcept
 	{
-		return static_cast<const jive::bits::type*>(&bport_.type())->nbits();
+		return static_cast<const jive::bittype*>(&argument(0).type())->nbits();
 	}
 
 	inline const jive::valuetype &
 	pointee_type() const noexcept
 	{
-		return static_cast<const jlm::ptrtype*>(&pport_.type())->pointee_type();
+		return static_cast<const jlm::ptrtype*>(&result(0).type())->pointee_type();
 	}
-
-private:
-	jive::port pport_;
-	jive::port bport_;
 };
 
 static inline bool
@@ -623,7 +439,7 @@ is_bits2ptr(const jive::operation & op) noexcept
 static inline std::unique_ptr<jlm::tac>
 create_bits2ptr_tac(const variable * argument, jlm::variable * result)
 {
-	auto at = dynamic_cast<const jive::bits::type*>(&argument->type());
+	auto at = dynamic_cast<const jive::bittype*>(&argument->type());
 	if (!at) throw std::logic_error("Expected bitstring type.");
 
 	auto pt = dynamic_cast<const jlm::ptrtype*>(&result->type());
@@ -641,26 +457,12 @@ public:
 	~ptr2bits_op() noexcept;
 
 	inline
-	ptr2bits_op(const jlm::ptrtype & ptype, const jive::bits::type & btype)
-	: simple_op()
-	, pport_(ptype)
-	, bport_(btype)
+	ptr2bits_op(const jlm::ptrtype & ptype, const jive::bittype & btype)
+	: simple_op({ptype}, {btype})
 	{}
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
-
-	virtual size_t
-	narguments() const noexcept override;
-
-	virtual const jive::port &
-	argument(size_t index) const noexcept override;
-
-	virtual size_t
-	nresults() const noexcept override;
-
-	virtual const jive::port &
-	result(size_t index) const noexcept override;
 
 	virtual std::string
 	debug_string() const override;
@@ -671,18 +473,14 @@ public:
 	inline size_t
 	nbits() const noexcept
 	{
-		return static_cast<const jive::bits::type*>(&bport_.type())->nbits();
+		return static_cast<const jive::bittype*>(&result(0).type())->nbits();
 	}
 
 	inline const jive::valuetype &
 	pointee_type() const noexcept
 	{
-		return static_cast<const jlm::ptrtype*>(&pport_.type())->pointee_type();
+		return static_cast<const jlm::ptrtype*>(&argument(0).type())->pointee_type();
 	}
-
-private:
-	jive::port pport_;
-	jive::port bport_;
 };
 
 static inline bool
@@ -697,7 +495,7 @@ create_ptr2bits_tac(const variable * argument, jlm::variable * result)
 	auto pt = dynamic_cast<const jlm::ptrtype*>(&argument->type());
 	if (!pt) throw std::logic_error("Expected pointer type.");
 
-	auto bt = dynamic_cast<const jive::bits::type*>(&result->type());
+	auto bt = dynamic_cast<const jive::bittype*>(&result->type());
 	if (!bt) throw std::logic_error("Expected bitstring type.");
 
 	jlm::ptr2bits_op op(*pt, *bt);
@@ -713,9 +511,7 @@ public:
 
 	inline
 	data_array_constant_op(const jive::valuetype & type, size_t size)
-	: jive::simple_op()
-	, aport_(jlm::arraytype(type, size))
-	, eport_(type)
+	: simple_op(std::vector<jive::port>(size, type), {jlm::arraytype(type, size)})
 	{
 		if (size == 0)
 			throw std::logic_error("Size equals zero.");
@@ -723,18 +519,6 @@ public:
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
-
-	virtual size_t
-	narguments() const noexcept override;
-
-	virtual const jive::port &
-	argument(size_t index) const noexcept override;
-
-	virtual size_t
-	nresults() const noexcept override;
-
-	virtual const jive::port &
-	result(size_t index) const noexcept override;
 
 	virtual std::string
 	debug_string() const override;
@@ -745,18 +529,14 @@ public:
 	inline size_t
 	size() const noexcept
 	{
-		return static_cast<const jlm::arraytype*>(&aport_.type())->nelements();
+		return static_cast<const arraytype*>(&result(0).type())->nelements();
 	}
 
 	inline const jive::valuetype &
 	type() const noexcept
 	{
-		return *static_cast<const jive::valuetype*>(&eport_.type());
+		return static_cast<const arraytype*>(&result(0).type())->element_type();
 	}
-
-private:
-	jive::port aport_;
-	jive::port eport_;
 };
 
 static inline bool
@@ -791,25 +571,12 @@ public:
 
 	inline
 	ptrcmp_op(const jlm::ptrtype & ptype, const jlm::cmp & cmp)
-	: jive::simple_op()
+	: simple_op({ptype, ptype}, {jive::bit1})
 	, cmp_(cmp)
-	, port_(ptype)
 	{}
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
-
-	virtual size_t
-	narguments() const noexcept override;
-
-	virtual const jive::port &
-	argument(size_t index) const noexcept override;
-
-	virtual size_t
-	nresults() const noexcept override;
-
-	virtual const jive::port &
-	result(size_t index) const noexcept override;
 
 	virtual std::string
 	debug_string() const override;
@@ -826,12 +593,11 @@ public:
 	const jive::type &
 	pointee_type() const noexcept
 	{
-		return static_cast<const jlm::ptrtype*>(&port_.type())->pointee_type();
+		return static_cast<const jlm::ptrtype*>(&argument(0).type())->pointee_type();
 	}
 
 private:
 	jlm::cmp cmp_;
-	jive::port port_;
 };
 
 static inline bool
@@ -863,9 +629,7 @@ public:
 
 	inline
 	zext_op(size_t nsrcbits, size_t ndstbits)
-	: jive::unary_op()
-	, srcport_(jive::bits::type(nsrcbits))
-	, dstport_(jive::bits::type(ndstbits))
+	: unary_op({jive::bittype(nsrcbits)}, {jive::bittype(ndstbits)})
 	{
 		if (ndstbits < nsrcbits)
 			throw std::logic_error("# destination bits must be greater than # source bits.");
@@ -873,18 +637,6 @@ public:
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
-
-	virtual size_t
-	narguments() const noexcept override;
-
-	virtual const jive::port &
-	argument(size_t index) const noexcept override;
-
-	virtual size_t
-	nresults() const noexcept override;
-
-	virtual const jive::port &
-	result(size_t index) const noexcept override;
 
 	virtual std::string
 	debug_string() const override;
@@ -903,18 +655,14 @@ public:
 	inline size_t
 	nsrcbits() const noexcept
 	{
-		return static_cast<const jive::bits::type*>(&srcport_.type())->nbits();
+		return static_cast<const jive::bittype*>(&argument(0).type())->nbits();
 	}
 
 	inline size_t
 	ndstbits() const noexcept
 	{
-		return static_cast<const jive::bits::type*>(&dstport_.type())->nbits();
+		return static_cast<const jive::bittype*>(&result(0).type())->nbits();
 	}
-
-private:
-	jive::port srcport_;
-	jive::port dstport_;
 };
 
 static inline bool
@@ -926,10 +674,10 @@ is_zext_op(const jive::operation & op)
 static inline std::unique_ptr<jlm::tac>
 create_zext_tac(const variable * operand, jlm::variable * result)
 {
-	auto st = dynamic_cast<const jive::bits::type*>(&operand->type());
+	auto st = dynamic_cast<const jive::bittype*>(&operand->type());
 	if (!st) throw std::logic_error("Expected bitstring type.");
 
-	auto dt = dynamic_cast<const jive::bits::type*>(&result->type());
+	auto dt = dynamic_cast<const jive::bittype*>(&result->type());
 	if (!dt) throw std::logic_error("Expected bitstring type.");
 
 	jlm::zext_op op(st->nbits(), dt->nbits());
@@ -945,25 +693,12 @@ public:
 
 	inline
 	fpconstant_op(const jlm::fpsize & size, const llvm::APFloat & constant)
-	: jive::simple_op()
+	: simple_op({}, {fptype(size)})
 	, constant_(constant)
-	, port_(jlm::fptype(size))
 	{}
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
-
-	virtual size_t
-	narguments() const noexcept override;
-
-	virtual const jive::port &
-	argument(size_t index) const noexcept override;
-
-	virtual size_t
-	nresults() const noexcept override;
-
-	virtual const jive::port &
-	result(size_t index) const noexcept override;
 
 	virtual std::string
 	debug_string() const override;
@@ -980,14 +715,13 @@ public:
 	inline const fpsize &
 	size() const noexcept
 	{
-		return static_cast<const jlm::fptype*>(&port_.type())->size();
+		return static_cast<const jlm::fptype*>(&result(0).type())->size();
 	}
 
 private:
 	/* FIXME: I would not like to use the APFloat here,
 	   but I don't have a replacement right now. */
 	llvm::APFloat constant_;
-	jive::port port_;
 };
 
 static inline bool
@@ -1017,25 +751,12 @@ public:
 
 	inline
 	fpcmp_op(const jlm::fpcmp & cmp, const jlm::fpsize & size)
-	: jive::simple_op()
+	: simple_op({fptype(size), fptype(size)}, {jive::bit1})
 	, cmp_(cmp)
-	, port_(jlm::fptype(size))
 	{}
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
-
-	virtual size_t
-	narguments() const noexcept override;
-
-	virtual const jive::port &
-	argument(size_t index) const noexcept override;;
-
-	virtual size_t
-	nresults() const noexcept override;
-
-	virtual const jive::port &
-	result(size_t index) const noexcept override;
 
 	virtual std::string
 	debug_string() const override;
@@ -1052,12 +773,11 @@ public:
 	inline const jlm::fpsize &
 	size() const noexcept
 	{
-		return static_cast<const jlm::fptype*>(&port_.type())->size();
+		return static_cast<const jlm::fptype*>(&argument(0).type())->size();
 	}
 
 private:
 	jlm::fpcmp cmp_;
-	jive::port port_;
 };
 
 static inline bool
@@ -1089,8 +809,7 @@ public:
 
 	inline
 	undef_constant_op(const jive::valuetype & type)
-	: jive::simple_op()
-	, port_(type)
+	: simple_op({}, {type})
 	{}
 
 	undef_constant_op(const undef_constant_op &) = default;
@@ -1104,18 +823,6 @@ public:
 	virtual bool
 	operator==(const operation & other) const noexcept override;
 
-	virtual size_t
-	narguments() const noexcept override;
-
-	virtual const jive::port &
-	argument(size_t index) const noexcept override;
-
-	virtual size_t
-	nresults() const noexcept override;
-
-	virtual const jive::port &
-	result(size_t index) const noexcept override;
-
 	virtual std::string
 	debug_string() const override;
 
@@ -1125,7 +832,7 @@ public:
 	inline const jive::valuetype &
 	type() const noexcept
 	{
-		return *static_cast<const jive::valuetype*>(&port_.type());
+		return *static_cast<const jive::valuetype*>(&result(0).type());
 	}
 
 	static inline jive::output *
@@ -1135,11 +842,8 @@ public:
 		if (!vt) throw std::logic_error("Expected value type.");
 
 		jlm::undef_constant_op op(*vt);
-		return jive::create_normalized(region, op, {})[0];
+		return jive::simple_node::create_normalized(region, op, {})[0];
 	}
-
-private:
-	jive::port port_;
 };
 
 static inline bool
@@ -1169,25 +873,12 @@ public:
 
 	inline
 	fpbin_op(const jlm::fpop & op, const jlm::fpsize & size)
-	: jive::simple_op()
+	: simple_op({fptype(size), fptype(size)}, {fptype(size)})
 	, op_(op)
-	, port_(jlm::fptype(size))
 	{}
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
-
-	virtual size_t
-	narguments() const noexcept override;
-
-	virtual const jive::port &
-	argument(size_t index) const noexcept override;
-
-	virtual size_t
-	nresults() const noexcept override;
-
-	virtual const jive::port &
-	result(size_t index) const noexcept override;
 
 	virtual std::string
 	debug_string() const override;
@@ -1204,12 +895,11 @@ public:
 	inline const jlm::fpsize &
 	size() const noexcept
 	{
-		return static_cast<const jlm::fptype*>(&port_.type())->size();
+		return static_cast<const jlm::fptype*>(&result(0).type())->size();
 	}
 
 private:
 	jlm::fpop op_;
-	jive::port port_;
 };
 
 static inline bool
@@ -1241,9 +931,7 @@ public:
 
 	inline
 	fpext_op(const jlm::fpsize & srcsize, const jlm::fpsize & dstsize)
-	: jive::simple_op()
-	, srcport_(jlm::fptype(srcsize))
-	, dstport_(jlm::fptype(dstsize))
+	: simple_op({fptype(srcsize)}, {fptype(dstsize)})
 	{
 		if (srcsize == fpsize::flt && dstsize == fpsize::half)
 			throw std::logic_error("Destination type size must be bigger than source type size.");
@@ -1251,18 +939,6 @@ public:
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
-
-	virtual size_t
-	narguments() const noexcept override;
-
-	virtual const jive::port &
-	argument(size_t index) const noexcept override;
-
-	virtual size_t
-	nresults() const noexcept override;
-
-	virtual const jive::port &
-	result(size_t index) const noexcept override;
 
 	virtual std::string
 	debug_string() const override;
@@ -1273,18 +949,14 @@ public:
 	inline const jlm::fpsize &
 	srcsize() const noexcept
 	{
-		return static_cast<const jlm::fptype*>(&srcport_.type())->size();
+		return static_cast<const jlm::fptype*>(&argument(0).type())->size();
 	}
 
 	inline const jlm::fpsize &
 	dstsize() const noexcept
 	{
-		return static_cast<const jlm::fptype*>(&dstport_.type())->size();
+		return static_cast<const jlm::fptype*>(&result(0).type())->size();
 	}
-
-private:
-	jive::port srcport_;
-	jive::port dstport_;
 };
 
 static inline bool
@@ -1315,9 +987,7 @@ public:
 
 	inline
 	fptrunc_op(const fpsize & srcsize, const fpsize & dstsize)
-	: jive::simple_op()
-	, srcport_(fptype(srcsize))
-	, dstport_(fptype(dstsize))
+	: simple_op({fptype(srcsize)}, {fptype(dstsize)})
 	{
 		if (srcsize == fpsize::half
 		|| (srcsize == fpsize::flt && dstsize != fpsize::half)
@@ -1328,18 +998,6 @@ public:
 	virtual bool
 	operator==(const operation & other) const noexcept override;
 
-	virtual size_t
-	narguments() const noexcept override;
-
-	virtual const jive::port &
-	argument(size_t index) const noexcept override;
-
-	virtual size_t
-	nresults() const noexcept override;
-
-	virtual const jive::port &
-	result(size_t index) const noexcept override;
-
 	virtual std::string
 	debug_string() const override;
 
@@ -1349,18 +1007,14 @@ public:
 	inline const fpsize &
 	srcsize() const noexcept
 	{
-		return static_cast<const fptype*>(&srcport_.type())->size();
+		return static_cast<const fptype*>(&argument(0).type())->size();
 	}
 
 	inline const fpsize &
 	dstsize() const noexcept
 	{
-		return static_cast<const fptype*>(&dstport_.type())->size();
+		return static_cast<const fptype*>(&result(0).type())->size();
 	}
-
-private:
-	jive::port srcport_;
-	jive::port dstport_;
 };
 
 static inline bool
@@ -1391,11 +1045,8 @@ public:
 
 	inline
 	valist_op(std::vector<std::unique_ptr<jive::type>> types)
-	: jive::simple_op()
-	{
-		for (const auto & type : types)
-			ports_.push_back({type->copy()});
-	}
+	: simple_op(create_srcports(std::move(types)), {varargtype()})
+	{}
 
 	valist_op(const valist_op &) = default;
 
@@ -1408,18 +1059,6 @@ public:
 	virtual bool
 	operator==(const operation & other) const noexcept override;
 
-	virtual size_t
-	narguments() const noexcept override;
-
-	virtual const jive::port &
-	argument(size_t index) const noexcept override;
-
-	virtual size_t
-	nresults() const noexcept override;
-
-	virtual const jive::port &
-	result(size_t index) const noexcept override;
-
 	virtual std::string
 	debug_string() const override;
 
@@ -1427,7 +1066,15 @@ public:
 	copy() const override;
 
 private:
-	std::vector<jive::port> ports_;
+	static inline std::vector<jive::port>
+	create_srcports(std::vector<std::unique_ptr<jive::type>> types)
+	{
+		std::vector<jive::port> ports;
+		for (const auto & type : types)
+			ports.push_back(jive::port(*type));
+
+		return ports;
+	}
 };
 
 static inline bool
@@ -1464,9 +1111,7 @@ public:
 
 	inline
 	bitcast_op(const jive::valuetype & srctype, const jive::valuetype & dsttype)
-	: jive::simple_op()
-	, srcport_(srctype)
-	, dstport_(dsttype)
+	: simple_op({srctype}, {dsttype})
 	{}
 
 	bitcast_op(const bitcast_op &) = default;
@@ -1482,27 +1127,11 @@ public:
 	virtual bool
 	operator==(const operation & other) const noexcept override;
 
-	virtual size_t
-	narguments() const noexcept override;
-
-	virtual const jive::port &
-	argument(size_t index) const noexcept override;
-
-	virtual size_t
-	nresults() const noexcept override;
-
-	virtual const jive::port &
-	result(size_t index) const noexcept override;
-
 	virtual std::string
 	debug_string() const override;
 
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
-
-private:
-	jive::port srcport_;
-	jive::port dstport_;
 };
 
 static inline bool
@@ -1533,27 +1162,11 @@ public:
 
 	inline
 	struct_constant_op(const structtype & type)
-	: jive::simple_op()
-	, result_(type)
-	{
-		for (size_t n = 0; n < type.declaration()->nelements(); n++)
-			arguments_.push_back(type.declaration()->element(n));
-	}
+	: simple_op(create_srcports(type), {type})
+	{}
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
-
-	virtual size_t
-	narguments() const noexcept override;
-
-	virtual const jive::port &
-	argument(size_t index) const noexcept override;
-
-	virtual size_t
-	nresults() const noexcept override;
-
-	virtual const jive::port &
-	result(size_t index) const noexcept override;
 
 	virtual std::string
 	debug_string() const override;
@@ -1564,12 +1177,19 @@ public:
 	inline const structtype &
 	type() const noexcept
 	{
-		return *static_cast<const structtype*>(&result_.type());
+		return *static_cast<const structtype*>(&result(0).type());
 	}
 
 private:
-	jive::port result_;
-	std::vector<jive::port> arguments_;
+	static inline std::vector<jive::port>
+	create_srcports(const structtype & type)
+	{
+		std::vector<jive::port> ports;
+		for (size_t n = 0; n < type.declaration()->nelements(); n++)
+			ports.push_back(type.declaration()->element(n));
+
+		return ports;
+	}
 };
 
 static inline bool
@@ -1598,10 +1218,8 @@ public:
 	~trunc_op();
 
 	inline
-	trunc_op(const jive::bits::type & otype, const jive::bits::type & rtype)
-	: jive::simple_op()
-	, oport_(otype)
-	, rport_(rtype)
+	trunc_op(const jive::bittype & otype, const jive::bittype & rtype)
+	: simple_op({otype}, {rtype})
 	{
 		if (otype.nbits() < rtype.nbits())
 			throw std::logic_error("Expected operand's #bits to be larger than results' #bits.");
@@ -1609,18 +1227,6 @@ public:
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
-
-	virtual size_t
-	narguments() const noexcept override;
-
-	virtual const jive::port &
-	argument(size_t index) const noexcept override;
-
-	virtual size_t
-	nresults() const noexcept override;
-
-	virtual const jive::port &
-	result(size_t index) const noexcept override;
 
 	virtual std::string
 	debug_string() const override;
@@ -1631,18 +1237,14 @@ public:
 	inline size_t
 	nsrcbits() const noexcept
 	{
-		return static_cast<const jive::bits::type*>(&oport_.type())->nbits();
+		return static_cast<const jive::bittype*>(&argument(0).type())->nbits();
 	}
 
 	inline size_t
 	ndstbits() const noexcept
 	{
-		return static_cast<const jive::bits::type*>(&rport_.type())->nbits();
+		return static_cast<const jive::bittype*>(&result(0).type())->nbits();
 	}
-
-private:
-	jive::port oport_;
-	jive::port rport_;
 };
 
 static inline bool
@@ -1660,10 +1262,10 @@ is_trunc_node(const jive::node * node) noexcept
 static inline std::unique_ptr<jlm::tac>
 create_trunc_tac(const variable * operand, jlm::variable * result)
 {
-	auto ot = dynamic_cast<const jive::bits::type*>(&operand->type());
+	auto ot = dynamic_cast<const jive::bittype*>(&operand->type());
 	if (!ot) throw std::logic_error("Expected bits type.");
 
-	auto rt = dynamic_cast<const jive::bits::type*>(&result->type());
+	auto rt = dynamic_cast<const jive::bittype*>(&result->type());
 	if (!rt) throw std::logic_error("Expected bits type.");
 
 	trunc_op op(*ot, *rt);
@@ -1673,11 +1275,11 @@ create_trunc_tac(const variable * operand, jlm::variable * result)
 static inline jive::output *
 create_trunc(size_t ndstbits, jive::output * operand)
 {
-	auto ot = dynamic_cast<const jive::bits::type*>(&operand->type());
+	auto ot = dynamic_cast<const jive::bittype*>(&operand->type());
 	if (!ot) throw std::logic_error("Expected bits type.");
 
-	trunc_op op(*ot, jive::bits::type(ndstbits));
-	return jive::create_normalized(operand->region(), op, {operand})[0];
+	trunc_op op(*ot, jive::bittype(ndstbits));
+	return jive::simple_node::create_normalized(operand->region(), op, {operand})[0];
 }
 
 /* uitofp operator */
@@ -1688,36 +1290,18 @@ public:
 	~uitofp_op();
 
 	inline
-	uitofp_op(const jive::bits::type & srctype, const jlm::fptype & dsttype)
-	: jive::simple_op()
-	, dstport_(dsttype)
-	, srcport_(srctype)
+	uitofp_op(const jive::bittype & srctype, const jlm::fptype & dsttype)
+	: simple_op({srctype}, {dsttype})
 	{}
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
-
-	virtual size_t
-	narguments() const noexcept override;
-
-	virtual const jive::port &
-	argument(size_t index) const noexcept override;
-
-	virtual size_t
-	nresults() const noexcept override;
-
-	virtual const jive::port &
-	result(size_t index) const noexcept override;
 
 	virtual std::string
 	debug_string() const override;
 
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
-
-private:
-	jive::port dstport_;
-	jive::port srcport_;
 };
 
 static inline bool
@@ -1729,7 +1313,7 @@ is_uitofp_op(const jive::operation & op)
 static inline std::unique_ptr<jlm::tac>
 create_uitofp_tac(const variable * operand, jlm::variable * result)
 {
-	auto st = dynamic_cast<const jive::bits::type*>(&operand->type());
+	auto st = dynamic_cast<const jive::bittype*>(&operand->type());
 	if (!st) throw std::logic_error("Expected bits type.");
 
 	auto rt = dynamic_cast<const jlm::fptype*>(&result->type());
@@ -1747,36 +1331,18 @@ public:
 	~sitofp_op();
 
 	inline
-	sitofp_op(const jive::bits::type & srctype, const jlm::fptype & dsttype)
-	: jive::simple_op()
-	, dstport_(dsttype)
-	, srcport_(srctype)
+	sitofp_op(const jive::bittype & srctype, const jlm::fptype & dsttype)
+	: simple_op({srctype}, {dsttype})
 	{}
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
-
-	virtual size_t
-	narguments() const noexcept override;
-
-	virtual const jive::port &
-	argument(size_t index) const noexcept override;
-
-	virtual size_t
-	nresults() const noexcept override;
-
-	virtual const jive::port &
-	result(size_t index) const noexcept override;
 
 	virtual std::string
 	debug_string() const override;
 
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
-
-private:
-	jive::port dstport_;
-	jive::port srcport_;
 };
 
 static inline bool
@@ -1788,7 +1354,7 @@ is_sitofp_op(const jive::operation & op)
 static inline std::unique_ptr<jlm::tac>
 create_sitofp_tac(const variable * operand, jlm::variable * result)
 {
-	auto st = dynamic_cast<const jive::bits::type*>(&operand->type());
+	auto st = dynamic_cast<const jive::bittype*>(&operand->type());
 	if (!st) throw std::logic_error("Expected bits type.");
 
 	auto rt = dynamic_cast<const jlm::fptype*>(&result->type());
@@ -1807,9 +1373,7 @@ public:
 
 	inline
 	constant_array_op(const jive::valuetype & type, size_t size)
-	: jive::simple_op()
-	, aport_(arraytype(type, size))
-	, eport_(type)
+	: jive::simple_op(std::vector<jive::port>(size, type), {arraytype(type, size)})
 	{
 		if (size == 0)
 			throw std::logic_error("Size equals zero.\n");
@@ -1817,18 +1381,6 @@ public:
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
-
-	virtual size_t
-	narguments() const noexcept override;
-
-	virtual const jive::port &
-	argument(size_t index) const noexcept override;
-
-	virtual size_t
-	nresults() const noexcept override;
-
-	virtual const jive::port &
-	result(size_t index) const noexcept override;
 
 	virtual std::string
 	debug_string() const override;
@@ -1839,18 +1391,14 @@ public:
 	inline size_t
 	size() const noexcept
 	{
-		return static_cast<const arraytype*>(&aport_.type())->nelements();
+		return static_cast<const arraytype*>(&result(0).type())->nelements();
 	}
 
 	inline const jive::valuetype &
 	type() const noexcept
 	{
-		return *static_cast<const jive::valuetype*>(&eport_.type());
+		return static_cast<const arraytype*>(&result(0).type())->element_type();
 	}
-
-private:
-	jive::port aport_;
-	jive::port eport_;
 };
 
 static inline bool
@@ -1882,10 +1430,8 @@ public:
 	~constant_aggregate_zero_op();
 
 	inline
-	constant_aggregate_zero_op(
-		const jive::type & type)
-	: jive::simple_op()
-	, dstport_(type)
+	constant_aggregate_zero_op(const jive::type & type)
+	: simple_op({}, {type})
 	{
 		/* FIXME: add support for vector type */
 		auto st = dynamic_cast<const structtype*>(&type);
@@ -1897,26 +1443,11 @@ public:
 	virtual bool
 	operator==(const operation & other) const noexcept override;
 
-	virtual size_t
-	narguments() const noexcept override;
-
-	virtual const jive::port &
-	argument(size_t index) const noexcept override;
-
-	virtual size_t
-	nresults() const noexcept override;
-
-	virtual const jive::port &
-	result(size_t index) const noexcept override;
-
 	virtual std::string
 	debug_string() const override;
 
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
-
-private:
-	jive::port dstport_;
 };
 
 static inline bool

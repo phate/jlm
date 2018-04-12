@@ -112,19 +112,19 @@ public:
 	}
 
 	inline llvm::StructType *
-	structtype(const std::shared_ptr<const jive::rcddeclaration> & declaration)
+	structtype(const jive::rcddeclaration * dcl)
 	{
-		auto it = structtypes_.find(declaration);
+		auto it = structtypes_.find(dcl);
 		return it != structtypes_.end() ? it->second : nullptr;
 	}
 
 	inline void
 	add_structtype(
-		const std::shared_ptr<const jive::rcddeclaration> & declaration,
+		const jive::rcddeclaration * dcl,
 		llvm::StructType * type)
 	{
-		JLM_DEBUG_ASSERT(structtypes_.find(declaration) == structtypes_.end());
-		structtypes_[declaration] = type;
+		JLM_DEBUG_ASSERT(structtypes_.find(dcl) == structtypes_.end());
+		structtypes_[dcl] = type;
 	}
 
 private:
@@ -132,10 +132,7 @@ private:
 	jlm::module & jm_;
 	std::unordered_map<const jlm::variable*, llvm::Value*> variables_;
 	std::unordered_map<const jlm::cfg_node*, llvm::BasicBlock*> nodes_;
-	std::unordered_map<
-		std::shared_ptr<const jive::rcddeclaration>,
-		llvm::StructType*
-	> structtypes_;
+	std::unordered_map<const jive::rcddeclaration*, llvm::StructType*> structtypes_;
 };
 
 }}

@@ -23,7 +23,7 @@ static int
 test()
 {
 	jlm::valuetype vt;
-	jive::bits::type bt1(1);
+	jive::bittype bt1(1);
 	jive::fct::type ft({&bt1, &vt}, {&vt});
 
 	jlm::rvsdg rvsdg("", "");
@@ -31,7 +31,7 @@ test()
 	jlm::lambda_builder lb;
 	auto arguments = lb.begin_lambda(rvsdg.graph()->root(), ft);
 
-	auto match = jive::ctl::match(1, {{0, 0}}, 1, 2, arguments[0]);
+	auto match = jive::match(1, {{0, 0}}, 1, 2, arguments[0]);
 	auto gamma = jive::gamma_node::create(match, 2);
 	auto ev = gamma->add_entryvar(arguments[1]);
 	auto output = jlm::create_testop(gamma->subregion(1), {ev->argument(1)}, {&vt})[0];

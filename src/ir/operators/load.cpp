@@ -21,41 +21,10 @@ bool
 load_op::operator==(const operation & other) const noexcept
 {
 	auto op = dynamic_cast<const load_op*>(&other);
-	return op
-	    && op->nstates_ == nstates_
-	    && op->aport_ == aport_
-	    && op->vport_ == vport_
-	    && op->alignment_ == alignment_;
-}
+	if (!op || op->narguments() != narguments())
+		return false;
 
-size_t
-load_op::narguments() const noexcept
-{
-	return 1 + nstates();
-}
-
-const jive::port &
-load_op::argument(size_t index) const noexcept
-{
-	JLM_DEBUG_ASSERT(index < narguments());
-	if (index == 0)
-		return aport_;
-
-	static const jive::port p(jive::memtype::instance());
-	return p;
-}
-
-size_t
-load_op::nresults() const noexcept
-{
-	return 1;
-}
-
-const jive::port &
-load_op::result(size_t index) const noexcept
-{
-	JLM_DEBUG_ASSERT(index < nresults());
-	return vport_;
+	return op->argument(0) == argument(0) && op->alignment() == alignment();
 }
 
 std::string
@@ -296,39 +265,39 @@ load_normal_form::normalize_node(jive::node * node) const
 		return true;
 
 	if (get_load_mux_reducible() && is_load_mux_reducible(operands)) {
-		replace(node, perform_load_mux_reduction(*op, operands));
+		divert_users(node, perform_load_mux_reduction(*op, operands));
 		remove(node);
 		return false;
 	}
 
 	if (get_load_store_reducible() && is_load_store_reducible(*op, operands)) {
-		replace(node, perform_load_store_reduction(*op, operands));
+		divert_users(node, perform_load_store_reduction(*op, operands));
 		remove(node);
 		return false;
 	}
 
 	auto new_states = is_load_alloca_reducible(operands);
 	if (get_load_alloca_reducible() && new_states.size() != operands.size()-1) {
-		replace(node, perform_load_alloca_reduction(*op, operands, new_states));
+		divert_users(node, perform_load_alloca_reduction(*op, operands, new_states));
 		remove(node);
 		return false;
 	}
 
 	new_states = is_load_store_state_reducible(operands);
 	if (get_load_store_state_reducible() && new_states.size() != operands.size()-1) {
-		replace(node, perform_load_store_state_reduction(*op, operands, new_states));
+		divert_users(node, perform_load_store_state_reduction(*op, operands, new_states));
 		remove(node);
 		return false;
 	}
 
 	if (get_multiple_origin_reducible() && is_multiple_origin_reducible(operands)) {
-		replace(node, perform_multiple_origin_reduction(*op, operands));
+		divert_users(node, perform_multiple_origin_reduction(*op, operands));
 		remove(node);
 		return false;
 	}
 
 	if (get_load_store_alloca_reducible() && is_load_store_alloca_reducible(operands)) {
-		replace(node, perform_load_store_alloca_reduction(*op, operands));
+		divert_users(node, perform_load_store_alloca_reduction(*op, operands));
 		remove(node);
 		return false;
 	}

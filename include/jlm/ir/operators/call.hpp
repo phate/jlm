@@ -23,29 +23,11 @@ public:
 
 	inline
 	call_op(const jive::fct::type & fcttype)
-	: simple_op()
-	{
-		arguments_.push_back(ptrtype(fcttype));
-		for (size_t n = 0; n < fcttype.narguments(); n++)
-			arguments_.push_back(fcttype.argument_type(n));
-		for (size_t n = 0; n < fcttype.nresults(); n++)
-			results_.push_back(fcttype.result_type(n));
-	}
+	: simple_op(create_srcports(fcttype), create_dstports(fcttype))
+	{}
 
 	virtual bool
 	operator==(const operation & other) const noexcept;
-
-	virtual size_t
-	narguments() const noexcept override;
-
-	virtual const jive::port &
-	argument(size_t index) const noexcept override;
-
-	virtual size_t
-	nresults() const noexcept override;
-
-	virtual const jive::port &
-	result(size_t index) const noexcept override;
 
 	virtual std::string
 	debug_string() const override;
@@ -72,12 +54,29 @@ public:
 		call_op op(*ft);
 		std::vector<jive::output*> operands({function});
 		operands.insert(operands.end(), arguments.begin(), arguments.end());
-		return create_normalized(function->region(), op, operands);
+		return jive::simple_node::create_normalized(function->region(), op, operands);
 	}
 
 private:
-	std::vector<jive::port> results_;
-	std::vector<jive::port> arguments_;
+	static inline std::vector<jive::port>
+	create_srcports(const jive::fct::type & fcttype)
+	{
+		std::vector<jive::port> ports(1, {ptrtype(fcttype)});
+		for (size_t n = 0; n < fcttype.narguments(); n++)
+			ports.push_back(fcttype.argument_type(n));
+
+		return ports;
+	}
+
+	static inline std::vector<jive::port>
+	create_dstports(const jive::fct::type & fcttype)
+	{
+		std::vector<jive::port> ports;
+		for (size_t n = 0; n < fcttype.nresults(); n++)
+			ports.push_back(fcttype.result_type(n));
+
+		return ports;
+	}
 };
 
 static inline bool
@@ -124,7 +123,7 @@ create_call(
 	call_op op(*ft);
 	std::vector<jive::output*> operands({function});
 	operands.insert(operands.end(), arguments.begin(), arguments.end());
-	return jive::create_normalized(function->region(), op, operands);
+	return jive::simple_node::create_normalized(function->region(), op, operands);
 }
 
 }

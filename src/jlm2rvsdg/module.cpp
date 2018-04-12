@@ -43,7 +43,7 @@ static inline jive::output *
 create_undef_value(jive::region * region, const jive::type & type)
 {
 	jlm::undef_constant_op op(*static_cast<const jive::valuetype*>(&type));
-	return jive::create_normalized(region, op, {})[0];
+	return jive::simple_node::create_normalized(region, op, {})[0];
 }
 
 namespace jlm {
@@ -140,8 +140,8 @@ convert_select(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
 	JLM_DEBUG_ASSERT(jlm::is_select_op(tac.operation()));
 	JLM_DEBUG_ASSERT(tac.ninputs() == 3 && tac.noutputs() == 1);
 
-	auto op = jive::ctl::match_op(1, {{1, 1}}, 0, 2);
-	auto predicate = jive::create_normalized(region, op, {vmap[tac.input(0)]})[0];
+	auto op = jive::match_op(1, {{1, 1}}, 0, 2);
+	auto predicate = jive::simple_node::create_normalized(region, op, {vmap[tac.input(0)]})[0];
 
 	auto gamma = jive::gamma_node::create(predicate, 2);
 	auto ev1 = gamma->add_entryvar(vmap[tac.input(2)]);
@@ -177,7 +177,7 @@ convert_tac(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
 		operands.push_back(vmap[tac.input(n)]);
 	}
 
-	auto results = jive::create_normalized(region, static_cast<const jive::simple_op&>(
+	auto results = jive::simple_node::create_normalized(region, static_cast<const jive::simple_op&>(
 		tac.operation()), operands);
 
 	JLM_DEBUG_ASSERT(results.size() == tac.noutputs());
@@ -386,7 +386,7 @@ convert_loop_node(
 	for (const auto & v : ds->top) {
 		JLM_DEBUG_ASSERT(vmap.find(v) != vmap.end());
 		JLM_DEBUG_ASSERT(lvmap.find(v) != lvmap.end());
-		lvmap[v]->result()->divert_origin(vmap[v]);
+		lvmap[v]->result()->divert_to(vmap[v]);
 	}
 
 	/* find predicate */

@@ -9,6 +9,7 @@
 
 #include <jive/view.h>
 #include <jive/rvsdg/control.h>
+#include <jive/rvsdg/gamma.h>
 #include <jive/rvsdg/graph.h>
 #include <jive/rvsdg/phi.h>
 #include <jive/rvsdg/simple-node.h>
@@ -21,9 +22,6 @@ static inline void
 test_simple()
 {
 	jlm::valuetype vt;
-	jlm::test_op nop({}, {&vt});
-	jlm::test_op uop({&vt}, {&vt});
-	jlm::test_op bop({&vt, &vt}, {&vt});
 
 	jive::graph graph;
 	auto nf = graph.node_normal_form(typeid(jive::operation));
@@ -33,15 +31,15 @@ test_simple()
 	auto y = graph.add_import(vt, "y");
 	auto z = graph.add_import(vt, "z");
 
-	auto n1 = graph.root()->add_simple_node(nop, {})->output(0);
-	auto n2 = graph.root()->add_simple_node(nop, {})->output(0);
+	auto n1 = jlm::create_testop(graph.root(), {}, {&vt})[0];
+	auto n2 = jlm::create_testop(graph.root(), {}, {&vt})[0];
 
-	auto u1 = graph.root()->add_simple_node(uop, {z})->output(0);
+	auto u1 = jlm::create_testop(graph.root(), {z}, {&vt})[0];
 
-	auto b1 = graph.root()->add_simple_node(bop, {x, y})->output(0);
-	auto b2 = graph.root()->add_simple_node(bop, {x, y})->output(0);
-	auto b3 = graph.root()->add_simple_node(bop, {n1, z})->output(0);
-	auto b4 = graph.root()->add_simple_node(bop, {n2, z})->output(0);
+	auto b1 = jlm::create_testop(graph.root(), {x, y}, {&vt})[0];
+	auto b2 = jlm::create_testop(graph.root(), {x, y}, {&vt})[0];
+	auto b3 = jlm::create_testop(graph.root(), {n1, z}, {&vt})[0];
+	auto b4 = jlm::create_testop(graph.root(), {n2, z}, {&vt})[0];
 
 	graph.add_export(n1, "n1");
 	graph.add_export(n2, "n2");
@@ -64,9 +62,7 @@ static inline void
 test_gamma()
 {
 	jlm::valuetype vt;
-	jive::ctl::type ct(2);
-	jlm::test_op nop({}, {&vt});
-	jlm::test_op uop({&vt}, {&vt});
+	jive::ctltype ct(2);
 
 	jive::graph graph;
 	auto nf = graph.node_normal_form(typeid(jive::operation));
@@ -77,8 +73,8 @@ test_gamma()
 	auto y = graph.add_import(vt, "y");
 	auto z = graph.add_import(vt, "z");
 
-	auto u1 = graph.root()->add_simple_node(uop, {x})->output(0);
-	auto u2 = graph.root()->add_simple_node(uop, {x})->output(0);
+	auto u1 = jlm::create_testop(graph.root(), {x}, {&vt})[0];
+	auto u2 = jlm::create_testop(graph.root(), {x}, {&vt})[0];
 
 	auto gamma = jive::gamma_node::create(c, 2);
 
@@ -88,9 +84,9 @@ test_gamma()
 	auto ev4 = gamma->add_entryvar(z);
 	auto ev5 = gamma->add_entryvar(z);
 
-	auto n1 = gamma->subregion(0)->add_simple_node(nop, {})->output(0);
-	auto n2 = gamma->subregion(0)->add_simple_node(nop, {})->output(0);
-	auto n3 = gamma->subregion(0)->add_simple_node(nop, {})->output(0);
+	auto n1 = jlm::create_testop(gamma->subregion(0), {}, {&vt})[0];
+	auto n2 = jlm::create_testop(gamma->subregion(0), {}, {&vt})[0];
+	auto n3 = jlm::create_testop(gamma->subregion(0), {}, {&vt})[0];
 
 	gamma->add_exitvar({ev1->argument(0), ev2->argument(1)});
 	gamma->add_exitvar({ev2->argument(0), ev2->argument(1)});
@@ -126,9 +122,7 @@ static inline void
 test_theta()
 {
 	jlm::valuetype vt;
-	jive::ctl::type ct(2);
-	jlm::test_op uop({&vt}, {&vt});
-	jlm::test_op bop({&vt, &vt}, {&vt});
+	jive::ctltype ct(2);
 
 	jive::graph graph;
 	auto nf = graph.node_normal_form(typeid(jive::operation));
@@ -145,13 +139,13 @@ test_theta()
 	auto lv3 = theta->add_loopvar(x);
 	auto lv4 = theta->add_loopvar(x);
 
-	auto u1 = region->add_simple_node(uop, {lv2->argument()})->output(0);
-	auto u2 = region->add_simple_node(uop, {lv3->argument()})->output(0);
-	auto b1 = region->add_simple_node(bop, {lv3->argument(), lv4->argument()})->output(0);
+	auto u1 = jlm::create_testop(region, {lv2->argument()}, {&vt})[0];
+	auto u2 = jlm::create_testop(region, {lv3->argument()}, {&vt})[0];
+	auto b1 = jlm::create_testop(region, {lv3->argument(), lv4->argument()}, {&vt})[0];
 
-	lv2->result()->divert_origin(u1);
-	lv3->result()->divert_origin(u2);
-	lv4->result()->divert_origin(b1);
+	lv2->result()->divert_to(u1);
+	lv3->result()->divert_to(u2);
+	lv4->result()->divert_to(b1);
 
 	theta->set_predicate(lv1->argument());
 
@@ -174,9 +168,7 @@ static inline void
 test_theta2()
 {
 	jlm::valuetype vt;
-	jive::ctl::type ct(2);
-	jlm::test_op uop({&vt}, {&vt});
-	jlm::test_op bop({&vt, &vt}, {&vt});
+	jive::ctltype ct(2);
 
 	jive::graph graph;
 	auto nf = graph.node_normal_form(typeid(jive::operation));
@@ -192,12 +184,12 @@ test_theta2()
 	auto lv2 = theta->add_loopvar(x);
 	auto lv3 = theta->add_loopvar(x);
 
-	auto u1 = region->add_simple_node(uop, {lv2->argument()});
-	auto u2 = region->add_simple_node(uop, {lv3->argument()});
-	auto b1 = region->add_simple_node(bop, {u2->output(0), u2->output(0)});
+	auto u1 = jlm::create_testop(region, {lv2->argument()}, {&vt})[0];
+	auto u2 = jlm::create_testop(region, {lv3->argument()}, {&vt})[0];
+	auto b1 = jlm::create_testop(region, {u2, u2}, {&vt})[0];
 
-	lv2->result()->divert_origin(u1->output(0));
-	lv3->result()->divert_origin(b1->output(0));
+	lv2->result()->divert_to(u1);
+	lv3->result()->divert_to(b1);
 
 	theta->set_predicate(lv1->argument());
 
@@ -208,7 +200,7 @@ test_theta2()
 	jlm::cne(graph);
 //	jive::view(graph, stdout);
 
-	assert(lv2->result()->origin() == u1->output(0));
+	assert(lv2->result()->origin() == u1);
 	assert(lv2->argument()->nusers() != 0 && lv3->argument()->nusers() != 0);
 }
 
@@ -216,9 +208,7 @@ static inline void
 test_theta3()
 {
 	jlm::valuetype vt;
-	jive::ctl::type ct(2);
-	jlm::test_op uop({&vt}, {&vt});
-	jlm::test_op bop({&vt, &vt}, {&vt});
+	jive::ctltype ct(2);
 
 	jive::graph graph;
 	auto nf = graph.node_normal_form(typeid(jive::operation));
@@ -243,13 +233,13 @@ test_theta3()
 	theta2->add_loopvar(lv4->argument());
 	theta2->set_predicate(p->argument());
 
-	auto u1 = r1->add_simple_node(uop, {theta2->output(1)});
-	auto b1 = r1->add_simple_node(bop, {theta2->output(2), theta2->output(2)});
-	auto u2 = r1->add_simple_node(uop, {theta2->output(3)});
+	auto u1 = jlm::create_testop(r1, {theta2->output(1)}, {&vt})[0]->node();
+	auto b1 = jlm::create_testop(r1, {theta2->output(2), theta2->output(2)}, {&vt})[0]->node();
+	auto u2 = jlm::create_testop(r1, {theta2->output(3)}, {&vt})[0]->node();
 
-	lv2->result()->divert_origin(u1->output(0));
-	lv3->result()->divert_origin(b1->output(0));
-	lv4->result()->divert_origin(u1->output(0));
+	lv2->result()->divert_to(u1->output(0));
+	lv3->result()->divert_to(b1->output(0));
+	lv4->result()->divert_to(u1->output(0));
 
 	theta1->set_predicate(lv1->argument());
 
@@ -273,9 +263,7 @@ static inline void
 test_theta4()
 {
 	jlm::valuetype vt;
-	jive::ctl::type ct(2);
-	jlm::test_op uop({&vt}, {&vt});
-	jlm::test_op bop({&vt, &vt}, {&vt});
+	jive::ctltype ct(2);
 
 	jive::graph graph;
 	auto nf = graph.node_normal_form(typeid(jive::operation));
@@ -296,13 +284,13 @@ test_theta4()
 	auto lv6 = theta->add_loopvar(x);
 	auto lv7 = theta->add_loopvar(x);
 
-	auto u1 = region->add_simple_node(uop, {lv2->argument()});
-	auto b1 = region->add_simple_node(bop, {lv3->argument(), lv3->argument()});
+	auto u1 = jlm::create_testop(region, {lv2->argument()}, {&vt})[0]->node();
+	auto b1 = jlm::create_testop(region, {lv3->argument(), lv3->argument()}, {&vt})[0]->node();
 
-	lv2->result()->divert_origin(lv4->argument());
-	lv3->result()->divert_origin(lv5->argument());
-	lv4->result()->divert_origin(u1->output(0));
-	lv5->result()->divert_origin(b1->output(0));
+	lv2->result()->divert_to(lv4->argument());
+	lv3->result()->divert_to(lv5->argument());
+	lv4->result()->divert_to(u1->output(0));
+	lv5->result()->divert_to(b1->output(0));
 
 	theta->set_predicate(lv1->argument());
 
@@ -324,7 +312,7 @@ static inline void
 test_theta5()
 {
 	jlm::valuetype vt;
-	jive::ctl::type ct(2);
+	jive::ctltype ct(2);
 
 	jive::graph graph;
 	auto nf = graph.node_normal_form(typeid(jive::operation));
@@ -343,8 +331,8 @@ test_theta5()
 	auto lv3 = theta->add_loopvar(y);
 	auto lv4 = theta->add_loopvar(y);
 
-	lv1->result()->divert_origin(lv3->argument());
-	lv2->result()->divert_origin(lv4->argument());
+	lv1->result()->divert_to(lv3->argument());
+	lv2->result()->divert_to(lv4->argument());
 
 	theta->set_predicate(lv0->argument());
 
@@ -368,7 +356,6 @@ test_lambda()
 {
 	jlm::valuetype vt;
 	jive::fct::type ft({&vt, &vt}, {&vt});
-	jlm::test_op bop({&vt, &vt}, {&vt});
 
 	jive::graph graph;
 	auto nf = graph.node_normal_form(typeid(jive::operation));
@@ -382,7 +369,7 @@ test_lambda()
 	auto d1 = lb.add_dependency(x);
 	auto d2 = lb.add_dependency(x);
 
-	auto b1 = lb.subregion()->add_simple_node(bop, {d1, d2})->output(0);
+	auto b1 = jlm::create_testop(lb.subregion(), {d1, d2}, {&vt})[0];
 
 	auto lambda = lb.end_lambda({b1});
 

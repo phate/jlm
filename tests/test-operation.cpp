@@ -32,32 +32,6 @@ test_op::operator==(const operation & o) const noexcept
 	return true;
 }
 
-size_t
-test_op::narguments() const noexcept
-{
-	return arguments_.size();
-}
-
-const jive::port &
-test_op::argument(size_t n) const noexcept
-{
-	JLM_DEBUG_ASSERT(n < narguments());
-	return arguments_[n];
-}
-
-size_t
-test_op::nresults() const noexcept
-{
-	return results_.size();
-}
-
-const jive::port &
-test_op::result(size_t n) const noexcept
-{
-	JLM_DEBUG_ASSERT(n < nresults());
-	return results_[n];
-}
-
 std::string
 test_op::debug_string() const
 {

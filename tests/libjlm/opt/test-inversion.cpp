@@ -18,9 +18,7 @@ static inline void
 test1()
 {
 	jlm::valuetype vt;
-	jive::bits::type bt(1);
-	jlm::test_op bop1({&vt, &vt}, {&bt});
-	jlm::test_op bop2({&vt, &vt}, {&vt});
+	jive::bittype bt(1);
 
 	jive::graph graph;
 
@@ -34,20 +32,20 @@ test1()
 	auto lvy = theta->add_loopvar(y);
 	theta->add_loopvar(z);
 
-	auto a = theta->subregion()->add_simple_node(bop1, {lvx->argument(), lvy->argument()});
-	auto predicate = jive::ctl::match(1, {{1, 0}}, 1, 2, a->output(0));
+	auto a = jlm::create_testop(theta->subregion(), {lvx->argument(), lvy->argument()}, {&bt})[0];
+	auto predicate = jive::match(1, {{1, 0}}, 1, 2, a);
 
 	auto gamma = jive::gamma_node::create(predicate, 2);
 
 	auto evx = gamma->add_entryvar(lvx->argument());
 	auto evy = gamma->add_entryvar(lvy->argument());
 
-	auto b = gamma->subregion(0)->add_simple_node(bop2, {evx->argument(0), evy->argument(0)});
-	auto c = gamma->subregion(1)->add_simple_node(bop2, {evx->argument(1), evy->argument(1)});
+	auto b = jlm::create_testop(gamma->subregion(0), {evx->argument(0), evy->argument(0)}, {&vt})[0];
+	auto c = jlm::create_testop(gamma->subregion(1), {evx->argument(1), evy->argument(1)}, {&vt})[0];
 
-	auto xvy = gamma->add_exitvar({b->output(0), c->output(0)});
+	auto xvy = gamma->add_exitvar({b, c});
 
-	lvy->result()->divert_origin(xvy);
+	lvy->result()->divert_to(xvy);
 
 	theta->set_predicate(predicate);
 
@@ -68,9 +66,6 @@ static inline void
 test2()
 {
 	jlm::valuetype vt;
-	jive::bits::type bt1(1);
-	jlm::test_op cop({&vt}, {&bt1});
-	jlm::test_op uop({&vt}, {&vt});
 
 	jive::graph graph;
 
@@ -80,21 +75,21 @@ test2()
 
 	auto lv1 = theta->add_loopvar(x);
 
-	auto n1 = theta->subregion()->add_simple_node(cop, {lv1->argument()});
-	auto n2 = theta->subregion()->add_simple_node(uop, {lv1->argument()});
-	auto predicate = jive::ctl::match(1, {{1, 0}}, 1, 2, n1->output(0));
+	auto n1 = jlm::create_testop(theta->subregion(), {lv1->argument()}, {&jive::bit1})[0];
+	auto n2 = jlm::create_testop(theta->subregion(), {lv1->argument()}, {&vt})[0];
+	auto predicate = jive::match(1, {{1, 0}}, 1, 2, n1);
 
 	auto gamma = jive::gamma_node::create(predicate, 2);
 
-	auto ev1 = gamma->add_entryvar(n1->output(0));
+	auto ev1 = gamma->add_entryvar(n1);
 	auto ev2 = gamma->add_entryvar(lv1->argument());
-	auto ev3 = gamma->add_entryvar(n2->output(0));
+	auto ev3 = gamma->add_entryvar(n2);
 
 	gamma->add_exitvar({ev1->argument(0), ev1->argument(1)});
 	gamma->add_exitvar({ev2->argument(0), ev2->argument(1)});
 	gamma->add_exitvar({ev3->argument(0), ev3->argument(1)});
 
-	lv1->result()->divert_origin(gamma->output(1));
+	lv1->result()->divert_to(gamma->output(1));
 
 	theta->set_predicate(predicate);
 

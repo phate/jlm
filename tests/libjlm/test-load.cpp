@@ -57,7 +57,7 @@ static inline void
 test_load_alloca_reduction()
 {
 	jive::memtype mt;
-	jive::bits::type bt(32);
+	jive::bittype bt(32);
 
 	jive::graph graph;
 	auto nf = jlm::load_op::normal_form(&graph);
@@ -124,7 +124,7 @@ static inline void
 test_load_store_state_reduction()
 {
 	jive::memtype mt;
-	jive::bits::type bt(32);
+	jive::bittype bt(32);
 
 	jive::graph graph;
 	auto nf = jlm::load_op::normal_form(&graph);
@@ -160,7 +160,7 @@ static inline void
 test_load_store_alloca_reduction()
 {
 	jive::memtype mt;
-	jive::bits::type bt(32);
+	jive::bittype bt(32);
 
 	jive::graph graph;
 	auto nf = jlm::load_op::normal_form(&graph);

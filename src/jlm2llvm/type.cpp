@@ -17,8 +17,8 @@ namespace jlm2llvm {
 static inline llvm::Type *
 convert_integer_type(const jive::type & type, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::bits::type*>(&type));
-	auto & t = *static_cast<const jive::bits::type*>(&type);
+	JLM_DEBUG_ASSERT(dynamic_cast<const jive::bittype*>(&type));
+	auto & t = *static_cast<const jive::bittype*>(&type);
 
 	return llvm::Type::getIntNTy(ctx.llvm_module().getContext(), t.nbits());
 }
@@ -69,8 +69,8 @@ convert_array_type(const jive::type & type, context & ctx)
 static inline llvm::Type *
 convert_ctl_type(const jive::type & type, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::ctl::type*>(&type));
-	auto & t = *static_cast<const jive::ctl::type*>(&type);
+	JLM_DEBUG_ASSERT(dynamic_cast<const jive::ctltype*>(&type));
+	auto & t = *static_cast<const jive::ctltype*>(&type);
 
 	if (t.nalternatives() == 2)
 		return llvm::Type::getInt1Ty(ctx.llvm_module().getContext());
@@ -123,11 +123,11 @@ convert_type(const jive::type & type, context & ctx)
 		std::type_index
 	, std::function<llvm::Type*(const jive::type&, context&)>
 	> map({
-	  {std::type_index(typeid(jive::bits::type)), convert_integer_type}
+	  {typeid(jive::bittype), convert_integer_type}
 	, {std::type_index(typeid(jive::fct::type)), convert_function_type}
 	, {std::type_index(typeid(jlm::ptrtype)), convert_pointer_type}
 	, {std::type_index(typeid(jlm::arraytype)), convert_array_type}
-	, {std::type_index(typeid(jive::ctl::type)), convert_ctl_type}
+	, {typeid(jive::ctltype), convert_ctl_type}
 	, {std::type_index(typeid(jlm::fptype)), convert_fp_type}
 	, {std::type_index(typeid(structtype)), convert_struct_type}
 	});

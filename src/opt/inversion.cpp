@@ -23,7 +23,7 @@ static jive::gamma_node *
 is_applicable(const jive::theta_node * theta)
 {
 	auto matchnode = theta->predicate()->origin()->node();
-	if (!jive::is_opnode<jive::ctl::match_op>(matchnode))
+	if (!jive::is_opnode<jive::match_op>(matchnode))
 		return nullptr;
 
 	if (matchnode->output(0)->nusers() != 2)
@@ -52,7 +52,7 @@ pullin(jive::gamma_node * gamma, jive::theta_node * theta)
 			auto ev = gamma->add_entryvar(lv->result()->origin());
 			JLM_DEBUG_ASSERT(ev->narguments() == 2);
 			auto xv = gamma->add_exitvar({ev->argument(0), ev->argument(1)});
-			lv->result()->divert_origin(xv);
+			lv->result()->divert_to(xv);
 		}
 	}
 	pullin_top(gamma);
@@ -194,7 +194,7 @@ invert(jive::theta_node * otheta)
 		for (const auto & olv : *otheta) {
 			auto output = to_structural_output(olv->result()->origin());
 			auto substitute = r1map.lookup(osubregion1->result(output->index())->origin());
-			nlvs[olv->input()]->result()->divert_origin(substitute);
+			nlvs[olv->input()]->result()->divert_to(substitute);
 			r1map.insert(olv->result()->origin(), nlvs[olv->input()]);
 		}
 		for (size_t n = 1; n < ogamma->ninputs(); n++) {
@@ -203,7 +203,7 @@ invert(jive::theta_node * otheta)
 				r1map.insert(oev->argument(0), nlvs[argument->input()]);
 			} else {
 				auto substitute = r1map.lookup(oev->origin());
-				nlvs[oev]->result()->divert_origin(substitute);
+				nlvs[oev]->result()->divert_to(substitute);
 				r1map.insert(oev->argument(0), nlvs[oev]);
 			}
 		}
@@ -232,7 +232,7 @@ invert(jive::theta_node * otheta)
 
 	/* replace outputs */
 	for (const auto & olv : *otheta)
-		olv->replace(smap.lookup(olv));
+		olv->divert_users(smap.lookup(olv));
 	remove(otheta);
 }
 

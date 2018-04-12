@@ -48,7 +48,7 @@ gamma_invariance(jive::structural_node * node)
 		auto output = static_cast<jive::gamma_output*>(gamma->output(n));
 		if (is_invariant(output)) {
 			auto no = static_cast<jive::argument*>(output->result(0)->origin())->input()->origin();
-			output->replace(no);
+			output->divert_users(no);
 		}
 	}
 }
@@ -65,7 +65,7 @@ theta_invariance(jive::structural_node * node)
 	for (const auto & lv : *theta) {
 		if (jive::is_invariant(lv)
 		&& dynamic_cast<const jive::valuetype*>(&lv->argument()->type()))
-			lv->replace(lv->input()->origin());
+			lv->divert_users(lv->input()->origin());
 	}
 }
 

@@ -92,27 +92,13 @@ public:
 		const jlm::ptrtype & ptype,
 		size_t nstates,
 		size_t alignment)
-	: simple_op()
-	, nstates_(nstates)
-	, aport_(ptype)
-	, vport_(ptype.pointee_type())
+	: simple_op(create_srcports(ptype, nstates),
+			std::vector<jive::port>(nstates, {jive::memtype::instance()}))
 	, alignment_(alignment)
 	{}
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
-
-	virtual size_t
-	narguments() const noexcept override;
-
-	virtual const jive::port &
-	argument(size_t index) const noexcept override;
-
-	virtual size_t
-	nresults() const noexcept override;
-
-	virtual const jive::port &
-	result(size_t index) const noexcept override;
 
 	virtual std::string
 	debug_string() const override;
@@ -123,13 +109,13 @@ public:
 	inline const jive::valuetype &
 	value_type() const noexcept
 	{
-		return *static_cast<const jive::valuetype*>(&vport_.type());
+		return *static_cast<const jive::valuetype*>(&argument(1).type());
 	}
 
 	inline size_t
 	nstates() const noexcept
 	{
-		return nstates_;
+		return nresults();
 	}
 
 	inline size_t
@@ -145,9 +131,14 @@ public:
 	}
 
 private:
-	size_t nstates_;
-	jive::port aport_;
-	jive::port vport_;
+	static inline std::vector<jive::port>
+	create_srcports(const ptrtype & ptype, size_t nstates)
+	{
+		std::vector<jive::port> ports({ptype, ptype.pointee_type()});
+		std::vector<jive::port> states(nstates, {jive::memtype::instance()});
+		ports.insert(ports.end(), states.begin(), states.end());
+		return ports;
+	}
 	size_t alignment_;
 };
 
@@ -191,7 +182,7 @@ create_store(
 	operands.insert(operands.end(), states.begin(), states.end());
 
 	jlm::store_op op(*at, states.size(), alignment);
-	return jive::create_normalized(address->region(), op, operands);
+	return jive::simple_node::create_normalized(address->region(), op, operands);
 }
 
 }

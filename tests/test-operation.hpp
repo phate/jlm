@@ -21,32 +21,15 @@ public:
 
 	inline
 	test_op(
-		const std::vector<const jive::type*> & argument_types,
-		const std::vector<const jive::type*> & result_types)
-	: simple_op()
-	{
-		for (const auto & type : argument_types)
-			arguments_.push_back(std::move(type->copy()));
-		for (const auto & type : result_types)
-			results_.push_back(std::move(type->copy()));
-	}
+		const std::vector<const jive::type*> & arguments,
+		const std::vector<const jive::type*> & results)
+	: simple_op(create_ports(arguments), create_ports(results))
+	{}
 
 	test_op(const test_op &) = default;
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
-
-	virtual size_t
-	narguments() const noexcept override;
-
-	virtual const jive::port &
-	argument(size_t index) const noexcept override;
-
-	virtual size_t
-	nresults() const noexcept override;
-
-	virtual const jive::port &
-	result(size_t index) const noexcept override;
 
 	virtual std::string
 	debug_string() const override;
@@ -55,8 +38,15 @@ public:
 	copy() const override;
 
 private:
-	std::vector<jive::port> results_;
-	std::vector<jive::port> arguments_;
+	static inline std::vector<jive::port>
+	create_ports(const std::vector<const jive::type*> & types)
+	{
+		std::vector<jive::port> ports;
+		for (const auto & type : types)
+			ports.push_back({*type});
+
+		return ports;
+	}
 };
 
 static inline std::unique_ptr<jlm::tac>
@@ -86,7 +76,7 @@ create_testop(
 		operand_types.push_back(&operand->type());
 
 	test_op op(operand_types, result_types);
-	return jive::create_normalized(region, op, {operands});
+	return jive::simple_node::create_normalized(region, op, {operands});
 }
 
 }

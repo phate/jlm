@@ -16,38 +16,15 @@ bool
 getelementptr_op::operator==(const operation & other) const noexcept
 {
 	auto op = dynamic_cast<const jlm::getelementptr_op*>(&other);
-	return op
-	    && op->pport_ == pport_
-	    && op->rport_ == rport_
-	    && op->bports_ == bports_;
-}
+	if (!op || op->narguments() != narguments())
+		return false;
 
-size_t
-getelementptr_op::narguments() const noexcept
-{
-	return 1 + nindices();
-}
+	for (size_t n = 0; n < narguments(); n++) {
+		if (op->argument(n) != argument(n))
+			return false;
+	}
 
-const jive::port &
-getelementptr_op::argument(size_t index) const noexcept
-{
-	JLM_DEBUG_ASSERT(index < narguments());
-	if (index == 0)
-		return pport_;
-
-	return bports_[index-1];
-}
-
-size_t
-getelementptr_op::nresults() const noexcept
-{
-	return 1;
-}
-
-const jive::port &
-getelementptr_op::result(size_t index) const noexcept
-{
-	return rport_;
+	return op->result(0) == result(0);
 }
 
 std::string

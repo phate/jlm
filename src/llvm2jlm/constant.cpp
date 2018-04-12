@@ -26,7 +26,7 @@ namespace jlm {
 const variable *
 convert_constant(llvm::Constant*, std::vector<std::unique_ptr<jlm::tac>>&, context&);
 
-jive::bits::value_repr
+jive::bitvalue_repr
 convert_apint(const llvm::APInt & value)
 {
 	llvm::APInt v;
@@ -36,7 +36,7 @@ convert_apint(const llvm::APInt & value)
 	std::string str = value.toString(2, false);
 	std::reverse(str.begin(), str.end());
 
-	jive::bits::value_repr vr(str.c_str());
+	jive::bitvalue_repr vr(str.c_str());
 	if (value.isNegative())
 		vr = vr.sext(value.getBitWidth() - str.size());
 	else
@@ -54,9 +54,9 @@ convert_int_constant(
 	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantInt*>(c));
 	const llvm::ConstantInt * constant = static_cast<const llvm::ConstantInt*>(c);
 
-	jive::bits::value_repr v = convert_apint(constant->getValue());
+	jive::bitvalue_repr v = convert_apint(constant->getValue());
 	auto r = ctx.module().create_variable(*convert_type(c->getType(), ctx), false);
-	tacs.push_back(create_tac(jive::bits::constant_op(v), {}, {r}));
+	tacs.push_back(create_tac(jive::bitconstant_op(v), {}, {r}));
 	return r;
 }
 

@@ -24,30 +24,13 @@ public:
 	inline
 	getelementptr_op(
 		const jlm::ptrtype & ptype,
-		const std::vector<jive::bits::type> & btypes,
+		const std::vector<jive::bittype> & btypes,
 		const jlm::ptrtype & rtype)
-	: jive::simple_op()
-	, pport_(ptype)
-	, rport_(rtype)
-	{
-		for (const auto & type : btypes)
-			bports_.push_back(type);
-	}
+	: simple_op(create_srcports(ptype, btypes), {rtype})
+	{}
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
-
-	virtual size_t
-	narguments() const noexcept override;
-
-	virtual const jive::port &
-	argument(size_t index) const noexcept override;
-
-	virtual size_t
-	nresults() const noexcept override;
-
-	virtual const jive::port &
-	result(size_t index) const noexcept override;
 
 	virtual std::string
 	debug_string() const override;
@@ -58,19 +41,25 @@ public:
 	inline size_t
 	nindices() const noexcept
 	{
-		return bports_.size();
+		return narguments()-1;
 	}
 
 	const jive::type &
 	pointee_type() const noexcept
 	{
-		return static_cast<const jlm::ptrtype*>(&pport_.type())->pointee_type();
+		return static_cast<const jlm::ptrtype*>(&argument(0).type())->pointee_type();
 	}
 
 private:
-	jive::port pport_;
-	jive::port rport_;
-	std::vector<jive::port> bports_;
+	static inline std::vector<jive::port>
+	create_srcports(const ptrtype & ptype, const std::vector<jive::bittype> & btypes)
+	{
+		std::vector<jive::port> ports(1, ptype);
+		for (const auto & type : btypes)
+			ports.push_back({type});
+
+		return ports;
+	}
 };
 
 static inline bool
@@ -88,9 +77,9 @@ create_getelementptr_tac(
 	auto at = dynamic_cast<const jlm::ptrtype*>(&address->type());
 	if (!at) throw std::logic_error("Expected pointer type.");
 
-	std::vector<jive::bits::type> bts;
+	std::vector<jive::bittype> bts;
 	for (const auto & v : offsets) {
-		auto bt = dynamic_cast<const jive::bits::type*>(&v->type());
+		auto bt = dynamic_cast<const jive::bittype*>(&v->type());
 		if (!bt) throw std::logic_error("Expected bitstring type.");
 		bts.push_back(*bt);
 	}

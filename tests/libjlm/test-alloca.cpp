@@ -16,7 +16,7 @@ static inline void
 test_alloca_alloca_reduction()
 {
 	jive::memtype mt;
-	jive::bits::type bt(32);
+	jive::bittype bt(32);
 
 	jive::graph graph;
 	auto nf = graph.node_normal_form(typeid(jlm::alloca_op));
@@ -55,7 +55,7 @@ static inline void
 test_alloca_mux_reduction()
 {
 	jive::memtype mt;
-	jive::bits::type bt(32);
+	jive::bittype bt(32);
 
 	jive::graph graph;
 	auto nf = graph.node_normal_form(typeid(jlm::alloca_op));

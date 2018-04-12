@@ -24,7 +24,7 @@ class expr;
 class tac;
 class variable;
 
-jive::bits::value_repr
+jive::bitvalue_repr
 convert_apint(const llvm::APInt & value);
 
 std::vector<std::unique_ptr<jlm::tac>>

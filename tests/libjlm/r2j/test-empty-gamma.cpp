@@ -22,7 +22,7 @@ static void
 test_with_match()
 {
 	jlm::valuetype vt;
-	jive::bits::type bt1(1);
+	jive::bittype bt1(1);
 	jive::fct::type ft({&bt1, &vt, &vt}, {&vt});
 
 	jlm::rvsdg rvsdg("", "");
@@ -34,7 +34,7 @@ test_with_match()
 	jlm::lambda_builder lb;
 	auto arguments = lb.begin_lambda(rvsdg.graph()->root(), ft);
 
-	auto match = jive::ctl::match(1, {{0, 0}}, 1, 2, arguments[0]);
+	auto match = jive::match(1, {{0, 0}}, 1, 2, arguments[0]);
 	auto gamma = jive::gamma_node::create(match, 2);
 	auto ev1 = gamma->add_entryvar(arguments[1]);
 	auto ev2 = gamma->add_entryvar(arguments[2]);
@@ -64,8 +64,8 @@ static void
 test_without_match()
 {
 	jlm::valuetype vt;
-	jive::ctl::type ctl2(2);
-	jive::bits::type bt1(1);
+	jive::ctltype ctl2(2);
+	jive::bittype bt1(1);
 	jive::fct::type ft({&ctl2, &vt, &vt}, {&vt});
 
 	jlm::rvsdg rvsdg("", "");

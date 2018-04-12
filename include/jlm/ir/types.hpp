@@ -235,21 +235,21 @@ public:
 	inline
 	structtype(
 		bool packed,
-		const std::shared_ptr<const jive::rcddeclaration> & declaration)
+		const jive::rcddeclaration * dcl)
 	: jive::valuetype()
 	, packed_(packed)
-	, declaration_(declaration)
+	, declaration_(dcl)
 	{}
 
 	inline
 	structtype(
 		const std::string & name,
 		bool packed,
-		const std::shared_ptr<const jive::rcddeclaration> & declaration)
+		const jive::rcddeclaration * dcl)
 	: jive::valuetype()
 	, packed_(packed)
 	, name_(name)
-	, declaration_(declaration)
+	, declaration_(dcl)
 	{}
 
 	structtype(const structtype &) = default;
@@ -280,7 +280,7 @@ public:
 		return packed_;
 	}
 
-	inline const std::shared_ptr<const jive::rcddeclaration>
+	inline const jive::rcddeclaration *
 	declaration() const noexcept
 	{
 		return declaration_;
@@ -298,7 +298,7 @@ public:
 private:
 	bool packed_;
 	std::string name_;
-	std::shared_ptr<const jive::rcddeclaration> declaration_;
+	const jive::rcddeclaration * declaration_;
 };
 
 /* function type */

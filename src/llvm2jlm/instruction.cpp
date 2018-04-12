@@ -23,7 +23,6 @@
 #include <jive/types/float.h>
 #include <jive/types/record.h>
 #include <jive/rvsdg/control.h>
-#include <jive/rvsdg/controltype.h>
 
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/Instructions.h>
@@ -118,7 +117,7 @@ convert_branch_instruction(llvm::Instruction * instruction, tacsvector_t & tacs,
 
 	auto c = convert_value(i->getCondition(), tacs, ctx);
 	auto nbits = i->getCondition()->getType()->getIntegerBitWidth();
-	auto op = jive::ctl::match_op(nbits, {{1, 1}}, 0, 2);
+	auto op = jive::match_op(nbits, {{1, 1}}, 0, 2);
 	tacs.push_back(create_tac(op, {c}, create_result_variables(ctx.module(), op)));
 	tacs.push_back(create_branch_tac(2,  tacs.back()->output(0)));
 
@@ -145,7 +144,7 @@ convert_switch_instruction(llvm::Instruction * instruction, tacsvector_t & tacs,
 
 	auto c = convert_value(i->getCondition(), tacs, ctx);
 	auto nbits = i->getCondition()->getType()->getIntegerBitWidth();
-	auto op = jive::ctl::match_op(nbits, mapping, n, n+1);
+	auto op = jive::match_op(nbits, mapping, n, n+1);
 	tacs.push_back(create_tac(op, {c}, create_result_variables(ctx.module(), op)));
 	tacs.push_back((create_branch_tac(n+1, tacs.back()->output(0))));
 
@@ -172,16 +171,16 @@ convert_icmp_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 	static std::unordered_map<
 		const llvm::CmpInst::Predicate,
 		std::unique_ptr<jive::operation>(*)(size_t)> map({
-			{llvm::CmpInst::ICMP_SLT,	[](size_t nbits){jive::bits::slt_op op(nbits); return op.copy();}}
-		,	{llvm::CmpInst::ICMP_ULT,	[](size_t nbits){jive::bits::ult_op op(nbits); return op.copy();}}
-		,	{llvm::CmpInst::ICMP_SLE,	[](size_t nbits){jive::bits::sle_op op(nbits); return op.copy();}}
-		,	{llvm::CmpInst::ICMP_ULE,	[](size_t nbits){jive::bits::ule_op op(nbits); return op.copy();}}
-		,	{llvm::CmpInst::ICMP_EQ,	[](size_t nbits){jive::bits::eq_op op(nbits); return op.copy();}}
-		,	{llvm::CmpInst::ICMP_NE,	[](size_t nbits){jive::bits::ne_op op(nbits); return op.copy();}}
-		,	{llvm::CmpInst::ICMP_SGE,	[](size_t nbits){jive::bits::sge_op op(nbits); return op.copy();}}
-		,	{llvm::CmpInst::ICMP_UGE,	[](size_t nbits){jive::bits::uge_op op(nbits); return op.copy();}}
-		,	{llvm::CmpInst::ICMP_SGT,	[](size_t nbits){jive::bits::sgt_op op(nbits); return op.copy();}}
-		, {llvm::CmpInst::ICMP_UGT,	[](size_t nbits){jive::bits::ugt_op op(nbits); return op.copy();}}
+		  {llvm::CmpInst::ICMP_SLT,	[](size_t nbits){jive::bitslt_op op(nbits); return op.copy();}}
+		, {llvm::CmpInst::ICMP_ULT,	[](size_t nbits){jive::bitult_op op(nbits); return op.copy();}}
+		, {llvm::CmpInst::ICMP_SLE,	[](size_t nbits){jive::bitsle_op op(nbits); return op.copy();}}
+		, {llvm::CmpInst::ICMP_ULE,	[](size_t nbits){jive::bitule_op op(nbits); return op.copy();}}
+		, {llvm::CmpInst::ICMP_EQ,	[](size_t nbits){jive::biteq_op op(nbits); return op.copy();}}
+		, {llvm::CmpInst::ICMP_NE,	[](size_t nbits){jive::bitne_op op(nbits); return op.copy();}}
+		, {llvm::CmpInst::ICMP_SGE,	[](size_t nbits){jive::bitsge_op op(nbits); return op.copy();}}
+		, {llvm::CmpInst::ICMP_UGE,	[](size_t nbits){jive::bituge_op op(nbits); return op.copy();}}
+		, {llvm::CmpInst::ICMP_SGT,	[](size_t nbits){jive::bitsgt_op op(nbits); return op.copy();}}
+		, {llvm::CmpInst::ICMP_UGT,	[](size_t nbits){jive::bitugt_op op(nbits); return op.copy();}}
 	});
 
 	static std::unordered_map<const llvm::CmpInst::Predicate, jlm::cmp> ptrmap({
@@ -216,13 +215,13 @@ convert_fcmp_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 	JLM_DEBUG_ASSERT(!i->getOperand(0)->getType()->isVectorTy());
 
 	if (i->getPredicate() == llvm::CmpInst::FCMP_TRUE) {
-		jive::bits::constant_op op(jive::bits::value_repr(1, 1));
+		jive::bitconstant_op op(jive::bitvalue_repr(1, 1));
 		tacs.push_back(create_tac(op, {}, {ctx.lookup_value(i)}));
 		return tacs.back()->output(0);
 	}
 
 	if (i->getPredicate() == llvm::CmpInst::FCMP_FALSE) {
-		jive::bits::constant_op op(jive::bits::value_repr(1, 0));
+		jive::bitconstant_op op(jive::bitvalue_repr(1, 0));
 		tacs.push_back(create_tac(op, {}, {ctx.lookup_value(i)}));
 		return tacs.back()->output(0);
 	}
@@ -392,19 +391,19 @@ convert_binary_operator(llvm::Instruction * instruction, tacsvector_t & tacs, co
 		static std::unordered_map<
 			const llvm::Instruction::BinaryOps,
 			std::unique_ptr<jive::operation>(*)(size_t)> map({
-				{llvm::Instruction::Add,	[](size_t nbits){jive::bits::add_op o(nbits); return o.copy();}}
-			,	{llvm::Instruction::And,	[](size_t nbits){jive::bits::and_op o(nbits); return o.copy();}}
-			,	{llvm::Instruction::AShr,	[](size_t nbits){jive::bits::ashr_op o(nbits); return o.copy();}}
-			,	{llvm::Instruction::Sub,	[](size_t nbits){jive::bits::sub_op o(nbits); return o.copy();}}
-			,	{llvm::Instruction::UDiv,	[](size_t nbits){jive::bits::udiv_op o(nbits); return o.copy();}}
-			,	{llvm::Instruction::SDiv,	[](size_t nbits){jive::bits::sdiv_op o(nbits); return o.copy();}}
-			,	{llvm::Instruction::URem,	[](size_t nbits){jive::bits::umod_op o(nbits); return o.copy();}}
-			,	{llvm::Instruction::SRem,	[](size_t nbits){jive::bits::smod_op o(nbits); return o.copy();}}
-			,	{llvm::Instruction::Shl,	[](size_t nbits){jive::bits::shl_op o(nbits); return o.copy();}}
-			,	{llvm::Instruction::LShr,	[](size_t nbits){jive::bits::shr_op o(nbits); return o.copy();}}
-			,	{llvm::Instruction::Or,		[](size_t nbits){jive::bits::or_op o(nbits); return o.copy();}}
-			,	{llvm::Instruction::Xor,	[](size_t nbits){jive::bits::xor_op o(nbits); return o.copy();}}
-			,	{llvm::Instruction::Mul,	[](size_t nbits){jive::bits::mul_op o(nbits); return o.copy();}}
+				{llvm::Instruction::Add,	[](size_t nbits){jive::bitadd_op o(nbits); return o.copy();}}
+			,	{llvm::Instruction::And,	[](size_t nbits){jive::bitand_op o(nbits); return o.copy();}}
+			,	{llvm::Instruction::AShr,	[](size_t nbits){jive::bitashr_op o(nbits); return o.copy();}}
+			,	{llvm::Instruction::Sub,	[](size_t nbits){jive::bitsub_op o(nbits); return o.copy();}}
+			,	{llvm::Instruction::UDiv,	[](size_t nbits){jive::bitudiv_op o(nbits); return o.copy();}}
+			,	{llvm::Instruction::SDiv,	[](size_t nbits){jive::bitsdiv_op o(nbits); return o.copy();}}
+			,	{llvm::Instruction::URem,	[](size_t nbits){jive::bitumod_op o(nbits); return o.copy();}}
+			,	{llvm::Instruction::SRem,	[](size_t nbits){jive::bitsmod_op o(nbits); return o.copy();}}
+			,	{llvm::Instruction::Shl,	[](size_t nbits){jive::bitshl_op o(nbits); return o.copy();}}
+			,	{llvm::Instruction::LShr,	[](size_t nbits){jive::bitshr_op o(nbits); return o.copy();}}
+			,	{llvm::Instruction::Or,		[](size_t nbits){jive::bitor_op o(nbits); return o.copy();}}
+			,	{llvm::Instruction::Xor,	[](size_t nbits){jive::bitxor_op o(nbits); return o.copy();}}
+			,	{llvm::Instruction::Mul,	[](size_t nbits){jive::bitmul_op o(nbits); return o.copy();}}
 		});
 
 		size_t nbits = i->getType()->getIntegerBitWidth();

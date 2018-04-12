@@ -148,7 +148,7 @@ inline_apply(const jive::structural_node * lambda, jive::simple_node * apply)
 	for (size_t n = 0; n < apply->noutputs(); n++) {
 		auto output = lambda->subregion(0)->result(n)->origin();
 		JLM_DEBUG_ASSERT(smap.lookup(output));
-		apply->output(n)->replace(smap.lookup(output));
+		apply->output(n)->divert_users(smap.lookup(output));
 	}
 	remove(apply);
 }

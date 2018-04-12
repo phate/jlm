@@ -22,10 +22,7 @@ test_gamma()
 {
 	jlm::statetype st;
 	jlm::valuetype vt;
-	jive::ctl::type ct(2);
-	jlm::test_op nop({}, {&vt});
-	jlm::test_op sop({&vt, &st}, {&st});
-	jlm::test_op binop({&vt, &vt}, {&vt});
+	jive::ctltype ct(2);
 
 	jive::graph graph;
 	auto c = graph.add_import(ct, "c");
@@ -36,9 +33,9 @@ test_gamma()
 	auto evx = gamma->add_entryvar(x);
 	auto evs = gamma->add_entryvar(s);
 
-	auto null = gamma->subregion(0)->add_simple_node(nop, {})->output(0);
-	auto bin = gamma->subregion(0)->add_simple_node(binop, {null, evx->argument(0)})->output(0);
-	auto state = gamma->subregion(0)->add_simple_node(sop, {bin, evs->argument(0)})->output(0);
+	auto null = jlm::create_testop(gamma->subregion(0), {}, {&vt})[0];
+	auto bin = jlm::create_testop(gamma->subregion(0), {null, evx->argument(0)}, {&vt})[0];
+	auto state = jlm::create_testop(gamma->subregion(0), {bin, evs->argument(0)}, {&st})[0];
 
 	gamma->add_exitvar({state, evs->argument(1)});
 
@@ -56,7 +53,7 @@ test_theta()
 {
 	jlm::statetype st;
 	jlm::valuetype vt;
-	jive::ctl::type ct(2);
+	jive::ctltype ct(2);
 
 	jlm::test_op nop({}, {&vt});
 	jlm::test_op bop({&vt, &vt}, {&vt});
@@ -74,13 +71,13 @@ test_theta()
 	auto lv3 = theta->add_loopvar(x);
 	auto lv4 = theta->add_loopvar(s);
 
-	auto o1 = theta->subregion()->add_simple_node(nop, {})->output(0);
-	auto o2 = theta->subregion()->add_simple_node(bop, {o1, lv3->argument()})->output(0);
-	auto o3 = theta->subregion()->add_simple_node(bop, {lv2->argument(), o2})->output(0);
-	auto o4 = theta->subregion()->add_simple_node(sop, {lv3->argument(), lv4->argument()})->output(0);
+	auto o1 = jlm::create_testop(theta->subregion(), {}, {&vt})[0];
+	auto o2 = jlm::create_testop(theta->subregion(), {o1, lv3->argument()}, {&vt})[0];
+	auto o3 = jlm::create_testop(theta->subregion(), {lv2->argument(), o2}, {&vt})[0];
+	auto o4 = jlm::create_testop(theta->subregion(), {lv3->argument(), lv4->argument()}, {&st})[0];
 
-	lv2->result()->divert_origin(o3);
-	lv4->result()->divert_origin(o4);
+	lv2->result()->divert_to(o3);
+	lv4->result()->divert_to(o4);
 
 	theta->set_predicate(lv1->argument());
 
@@ -99,7 +96,7 @@ test_push_theta_bottom()
 	jive::memtype mt;
 	jlm::valuetype vt;
 	jlm::ptrtype pt(vt);
-	jive::ctl::type ct(2);
+	jive::ctltype ct(2);
 
 	jive::graph graph;
 	auto c = graph.add_import(ct, "c");
@@ -116,7 +113,7 @@ test_push_theta_bottom()
 
 	auto s1 = jlm::create_store(lva->argument(), lvv->argument(), {lvs->argument()}, 4)[0];
 
-	lvs->result()->divert_origin(s1);
+	lvs->result()->divert_to(s1);
 	theta->set_predicate(lvc->argument());
 
 	auto ex = graph.add_export(lvs, "s");

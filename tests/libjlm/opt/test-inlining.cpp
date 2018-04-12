@@ -9,6 +9,7 @@
 
 #include <jive/view.h>
 #include <jive/rvsdg/control.h>
+#include <jive/rvsdg/gamma.h>
 
 #include <jlm/ir/lambda.hpp>
 #include <jlm/ir/operators/call.hpp>
@@ -37,10 +38,9 @@ static int
 verify()
 {
 	jlm::valuetype vt;
-	jive::ctl::type ct(2);
+	jive::ctltype ct(2);
 	jive::fct::type ft1({&vt}, {&vt});
 	jive::fct::type ft2({&ct, &vt}, {&vt});
-	jlm::test_op op({&vt}, {&vt});
 
 	jive::graph graph;
 	auto i = graph.add_import(vt, "i");
@@ -49,7 +49,7 @@ verify()
 	jlm::lambda_builder lb;
 	auto arguments = lb.begin_lambda(graph.root(), ft1);
 	lb.add_dependency(i);
-	auto t = lb.subregion()->add_simple_node(op, {arguments[0]});
+	auto t = jlm::create_testop(lb.subregion(), {arguments[0]}, {&vt})[0]->node();
 	auto f1 = lb.end_lambda({t->output(0)});
 
 	/* f2 */

@@ -11,7 +11,6 @@
 #include <jlm/ir/operators/operators.hpp>
 
 #include <jive/rvsdg/control.h>
-#include <jive/rvsdg/controltype.h>
 
 #include <algorithm>
 #include <cmath>
@@ -283,14 +282,14 @@ find_sccs(jlm::cfg_node * enter, jlm::cfg_node * exit)
 }
 
 static inline const variable *
-create_pvariable(const jive::ctl::type & type, jlm::module & m)
+create_pvariable(const jive::ctltype & type, jlm::module & m)
 {
 	static size_t c = 0;
 	return m.create_variable(type, strfmt("#p", c++, "#"), false);
 }
 
 static inline const variable *
-create_qvariable(const jive::ctl::type & type, jlm::module & m)
+create_qvariable(const jive::ctltype & type, jlm::module & m)
 {
 	static size_t c = 0;
 	return m.create_variable(type, strfmt("#q", c++, "#"), false);
@@ -300,15 +299,15 @@ static inline const variable *
 create_rvariable(jlm::module & m)
 {
 	static size_t c = 0;
-	jive::ctl::type type(2);
+	jive::ctltype type(2);
 	return m.create_variable(type, strfmt("#r", c++, "#"), false);
 }
 
 static inline void
 append_branch(jlm::cfg_node * node, const variable * operand)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::ctl::type*>(&operand->type()));
-	auto nalternatives = static_cast<const jive::ctl::type*>(&operand->type())->nalternatives();
+	JLM_DEBUG_ASSERT(dynamic_cast<const jive::ctltype*>(&operand->type()));
+	auto nalternatives = static_cast<const jive::ctltype*>(&operand->type())->nalternatives();
 
 	append_last(node, create_branch_tac(nalternatives, operand));
 }
@@ -316,10 +315,10 @@ append_branch(jlm::cfg_node * node, const variable * operand)
 static inline void
 append_constant(jlm::cfg_node * node, const variable * result, size_t value)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::ctl::type*>(&result->type()));
-	auto nalternatives = static_cast<const jive::ctl::type*>(&result->type())->nalternatives();
+	JLM_DEBUG_ASSERT(dynamic_cast<const jive::ctltype*>(&result->type()));
+	auto nalternatives = static_cast<const jive::ctltype*>(&result->type())->nalternatives();
 
-	jive::ctl::constant_op op(jive::ctl::value_repr(value, nalternatives));
+	jive::ctlconstant_op op(jive::ctlvalue_repr(value, nalternatives));
 	append_last(node, create_tac(op, {}, {result}));
 }
 
@@ -413,7 +412,7 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit, std::vector<scc_s
 		}
 
 		auto r = create_rvariable(module);
-		jive::ctl::type t(std::max(s.nenodes(), s.nxnodes()));
+		jive::ctltype t(std::max(s.nenodes(), s.nxnodes()));
 		auto q = t.nalternatives() > 1 ? create_qvariable(t, module) : nullptr;
 		auto new_ne = create_basic_block_node(cfg);
 		auto new_nr = create_basic_block_node(cfg);
@@ -557,7 +556,7 @@ restructure_branches(jlm::cfg_node * entry, jlm::cfg_node * exit)
 	}
 
 	/* insert new continuation point */
-	auto p = create_pvariable(jive::ctl::type(c.points.size()), module);
+	auto p = create_pvariable(jive::ctltype(c.points.size()), module);
 	auto cn = create_basic_block_node(cfg);
 	append_branch(cn, p);
 	std::unordered_map<cfg_node*, size_t> indices;

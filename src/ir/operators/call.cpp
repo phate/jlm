@@ -16,35 +16,20 @@ bool
 call_op::operator==(const operation & other) const noexcept
 {
 	auto op = dynamic_cast<const call_op*>(&other);
-	return op
-	    && op->arguments_ == arguments_
-	    && op->results_ == results_;
-}
+	if (!op || op->narguments() != narguments() || op->nresults() != nresults())
+		return false;
 
-size_t
-call_op::narguments() const noexcept
-{
-	return arguments_.size();
-}
+	for (size_t n = 0; n < narguments(); n++) {
+		if (op->argument(n) != argument(n))
+			return false;
+	}
 
-const jive::port &
-call_op::argument(size_t index) const noexcept
-{
-	JLM_DEBUG_ASSERT(index < narguments());
-	return arguments_[index];
-}
+	for (size_t n = 0; n < nresults(); n++) {
+		if (op->result(n) != result(n))
+			return false;
+	}
 
-size_t
-call_op::nresults() const noexcept
-{
-	return results_.size();
-}
-
-const jive::port &
-call_op::result(size_t index) const noexcept
-{
-	JLM_DEBUG_ASSERT(index < nresults());
-	return results_[index];
+	return true;
 }
 
 std::string

@@ -14,7 +14,7 @@
 static inline void
 test_bitunary_reduction()
 {
-	jive::bits::type bt32(32);
+	jive::bittype bt32(32);
 
 	jive::graph graph;
 	auto nf = jlm::sext_op::normal_form(&graph);
@@ -22,7 +22,7 @@ test_bitunary_reduction()
 
 	auto x = graph.add_import(bt32, "x");
 
-	auto y = jive::bits::create_not(32, x);
+	auto y = jive::bitnot_op::create(32, x);
 	auto z = jlm::create_sext(64, y);
 
 	auto ex = graph.add_export(z, "x");
@@ -35,13 +35,13 @@ test_bitunary_reduction()
 
 	//jive::view(graph, stdout);
 
-	assert(jive::bits::is_not_node(ex->origin()->node()));
+	assert(jive::is_bitnot_node(ex->origin()->node()));
 }
 
 static inline void
 test_bitbinary_reduction()
 {
-	jive::bits::type bt32(32);
+	jive::bittype bt32(32);
 
 	jive::graph graph;
 	auto nf = jlm::sext_op::normal_form(&graph);
@@ -50,7 +50,7 @@ test_bitbinary_reduction()
 	auto x = graph.add_import(bt32, "x");
 	auto y = graph.add_import(bt32, "y");
 
-	auto z = jive::bits::create_add(32, x, y);
+	auto z = jive::bitadd_op::create(32, x, y);
 	auto w = jlm::create_sext(64, z);
 
 	auto ex = graph.add_export(w, "x");
@@ -63,13 +63,13 @@ test_bitbinary_reduction()
 
 //	jive::view(graph, stdout);
 
-	assert(jive::bits::is_add_node(ex->origin()->node()));
+	assert(jive::is_bitadd_node(ex->origin()->node()));
 }
 
 static inline void
 test_inverse_reduction()
 {
-	jive::bits::type bt64(64);
+	jive::bittype bt64(64);
 
 	jive::graph graph;
 	auto nf = jlm::sext_op::normal_form(&graph);
