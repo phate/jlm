@@ -169,18 +169,19 @@ public:
 	inline const jive::rcddeclaration *
 	lookup_declaration(const llvm::StructType * type)
 	{
-		/* FIXME: We currently need a graph to create a rcddeclaration. */
-		static jive::graph graph;
+		/* FIXME: They live as long as jlm is alive. */
+		static std::vector<std::unique_ptr<jive::rcddeclaration>> dcls;
 
 		auto it = declarations_.find(type);
 		if (it != declarations_.end())
 			return it->second;
 
-		auto dcl = jive::rcddeclaration::create(&graph);
-		declarations_[type] = dcl;
+		auto dcl = jive::rcddeclaration::create();
+		declarations_[type] = dcl.get();
 		for (size_t n = 0; n < type->getNumElements(); n++)
 			dcl->append(*convert_type(type->getElementType(n), *this));
 
+		dcls.push_back(std::move(dcl));
 		return declarations_[type];
 	}
 
