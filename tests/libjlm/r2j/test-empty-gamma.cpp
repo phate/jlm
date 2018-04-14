@@ -11,6 +11,7 @@
 #include <jive/types/function/fcttype.h>
 #include <jive/view.h>
 
+#include <jlm/ir/cfg-structure.hpp>
 #include <jlm/ir/lambda.hpp>
 #include <jlm/ir/module.hpp>
 #include <jlm/ir/operators.hpp>
@@ -103,11 +104,51 @@ test_without_match()
 	assert(jlm::is_select_op(bb->last()->operation()));
 }
 
+static void
+test_gamma3()
+{
+	jlm::valuetype vt;
+	jive::fct::type ft({&jive::bit32, &vt, &vt}, {&vt});
+
+	jlm::rvsdg rvsdg("", "");
+	auto nf = rvsdg.graph()->node_normal_form(typeid(jive::operation));
+	nf->set_mutable(false);
+
+	/* setup graph */
+
+	jlm::lambda_builder lb;
+	auto arguments = lb.begin_lambda(rvsdg.graph()->root(), ft);
+
+	auto match = jive::match(32, {{0, 0}, {1, 1}}, 2, 3, arguments[0]);
+
+	auto gamma = jive::gamma_node::create(match, 3);
+	auto ev1 = gamma->add_entryvar(arguments[1]);
+	auto ev2 = gamma->add_entryvar(arguments[2]);
+	auto ex = gamma->add_exitvar({ev1->argument(0), ev1->argument(1), ev2->argument(2)});
+
+	auto lambda = lb.end_lambda({ex});
+	rvsdg.graph()->add_export(lambda->output(0), "");
+
+	jive::view(*rvsdg.graph(), stdout);
+	auto module = jlm::rvsdg2jlm::rvsdg2jlm(rvsdg);
+	jlm::view(*module, stdout);
+
+	/* verify output */
+
+	auto & clg = module->callgraph();
+	assert(clg.nnodes() == 1);
+
+	auto cfg = dynamic_cast<const jlm::function_node&>(*clg.begin()).cfg();
+	assert(is_closed(*cfg));
+}
+
 static int
 test()
 {
 	test_with_match();
 	test_without_match();
+
+	test_gamma3();
 
 	return 0;
 }

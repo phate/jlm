@@ -372,6 +372,38 @@ reduce_reducible(
 
 namespace jlm {
 
+static bool
+check_phis(const basic_block * bb)
+{
+	for (auto it = bb->begin(); it != bb->end(); it++) {
+		auto tac = *it;
+		if (!is<phi_op>(tac))
+			continue;
+
+		/*
+			Ensure that all phi nodes do not have for the same basic block
+			multiple incoming variables.
+		*/
+		auto phi = static_cast<const phi_op*>(&tac->operation());
+		std::unordered_map<cfg_node*, const variable*> map;
+		for (size_t n = 0; n < tac->ninputs(); n++) {
+			auto mit = map.find(phi->node(n));
+			if (mit != map.end() && mit->second != tac->input(n))
+				return false;
+
+			if (mit == map.end())
+				map[phi->node(n)] = tac->input(n);
+		}
+
+		/* ensure all phi nodes are at the beginning of a basic block */
+		if (tac != bb->first() && !is<phi_op>(*std::prev(it)))
+			return false;
+
+	}
+
+	return true;
+}
+
 bool
 is_valid(const jlm::cfg & cfg)
 {
@@ -395,16 +427,10 @@ is_valid(const jlm::cfg & cfg)
 		if (node.no_successor())
 			return false;
 
-		/* ensure all phi nodes are at the beginning of a basic block */
 		JLM_DEBUG_ASSERT(is_basic_block(node.attribute()));
-		const auto & bb = *static_cast<const basic_block*>(&node.attribute());
-		for (auto it = bb.begin(); it != bb.end(); it++) {
-			if (!is_phi_op((*it)->operation()))
-				continue;
-
-			if (*it != bb.first() && !is_phi_op((*std::prev(it))->operation()))
-				return false;
-		}
+		auto bb = static_cast<const basic_block*>(&node.attribute());
+		if (!check_phis(bb))
+			return false;
 	}
 
 	return true;

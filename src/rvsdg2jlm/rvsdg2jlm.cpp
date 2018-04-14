@@ -282,7 +282,7 @@ convert_gamma_node(const jive::node & node, context & ctx)
 			ctx.insert(argument, ctx.variable(argument->input()->origin()));
 		}
 
-		if (subregion->nnodes() == 0) {
+		if (subregion->nnodes() == 0 && nalternatives == 2) {
 			/* subregin is empty */
 			phi_nodes.push_back(entry);
 			entry->add_outedge(exit);
