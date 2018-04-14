@@ -78,11 +78,49 @@ test_pullin_bottom()
 	assert(gamma->subregion(1)->nnodes() == 2);
 }
 
+static void
+test_pull()
+{
+	jlm::valuetype vt;
+
+	jive::graph graph;
+	auto p = graph.add_import(jive::ctl2, "");
+
+	auto croot = jlm::create_testop(graph.root(), {}, {&vt})[0];
+
+	/* outer gamma */
+	auto gamma1 = jive::gamma_node::create(p, 2);
+	auto ev1 = gamma1->add_entryvar(p);
+	auto ev2 = gamma1->add_entryvar(croot);
+
+	auto cg1 = jlm::create_testop(gamma1->subregion(0), {}, {&vt})[0];
+
+	/* inner gamma */
+	auto gamma2 = jive::gamma_node::create(ev1->argument(1), 2);
+	auto ev3 = gamma2->add_entryvar(ev2->argument(1));
+	auto cg2 = jlm::create_testop(gamma2->subregion(0), {}, {&vt})[0];
+	auto un = jlm::create_testop(gamma2->subregion(1), {ev3->argument(1)}, {&vt})[0];
+	auto g2xv = gamma2->add_exitvar({cg2, un});
+
+	auto g1xv = gamma1->add_exitvar({cg1, g2xv});
+
+	graph.add_export(g1xv, "");
+
+	jive::view(graph, stdout);
+	jlm::pull(graph);
+	graph.prune();
+	jive::view(graph, stdout);
+
+	assert(graph.root()->nnodes() == 1);
+}
+
 static int
 verify()
 {
 	test_pullin_top();
 	test_pullin_bottom();
+
+	test_pull();
 
 	return 0;
 }
