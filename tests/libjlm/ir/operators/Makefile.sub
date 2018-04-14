@@ -1,0 +1,2 @@
+TESTS += \
+	libjlm/ir/operators/test-fpconstant \

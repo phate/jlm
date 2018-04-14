@@ -384,7 +384,9 @@ bool
 fpconstant_op::operator==(const operation & other) const noexcept
 {
 	auto op = dynamic_cast<const jlm::fpconstant_op*>(&other);
-	return op && op->constant().compare(constant()) == llvm::APFloatBase::cmpEqual;
+	return op
+	    && op->result(0) == result(0)
+	    && op->constant().compare(constant()) == llvm::APFloatBase::cmpEqual;
 }
 
 std::string
