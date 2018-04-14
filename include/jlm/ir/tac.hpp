@@ -135,6 +135,12 @@ private:
 	std::unique_ptr<jive::operation> operation_;
 };
 
+template <class T> static inline bool
+is(const jlm::tac * tac)
+{
+	return is<T>(tac->operation());
+}
+
 static inline std::unique_ptr<jlm::tac>
 create_tac(
 	const jive::simple_op & operation,
