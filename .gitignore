@@ -5,6 +5,6 @@ utests.log
 ctests.log
 check.log
 /jlm-opt
-/jlm-viewer
+/jlm-print
 tests/test-runner
 .Makefile.override

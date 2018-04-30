@@ -55,18 +55,18 @@ LIBJLM_SRC = \
 	src/opt/push.cpp \
 	src/opt/unroll.cpp \
 
-JLMVIEWER_SRC = \
-	src/jlm-viewer.cpp \
+JLMPRINT_SRC = \
+	src/jlm-print.cpp \
 
 JLMOPT_SRC = \
 	src/jlm-opt.cpp \
 
-all: libjlm.a jlm-viewer jlm-opt check
+all: libjlm.a jlm-print jlm-opt check
 
 libjlm.a: $(patsubst %.cpp, %.la, $(LIBJLM_SRC))
 
-jlm-viewer: LDFLAGS+=-L. -ljlm -ljive
-jlm-viewer: $(patsubst %.cpp, %.o, $(JLMVIEWER_SRC)) libjlm.a
+jlm-print: LDFLAGS+=-L. -ljlm -ljive
+jlm-print: $(patsubst %.cpp, %.o, $(JLMPRINT_SRC)) libjlm.a
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 
 jlm-opt: LDFLAGS+=-L. -ljlm -ljive
@@ -90,7 +90,7 @@ clean:
 	find . -name "*.o" -o -name "*.la" -o -name "*.a" | grep -v external | xargs rm -rf
 	rm -rf tests/test-runner
 	rm -rf jlm-opt
-	rm -rf jlm-viewer
+	rm -rf jlm-print
 
 ifeq ($(shell if [ -e .Makefile.override ] ; then echo yes ; fi),yes)
 include .Makefile.override
