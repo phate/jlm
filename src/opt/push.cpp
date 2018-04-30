@@ -69,7 +69,7 @@ has_side_effects(const jive::node * node)
 static std::vector<jive::argument*>
 copy_from_gamma(jive::node * node, size_t r)
 {
-	JLM_DEBUG_ASSERT(is_gamma_node(node->region()->node()));
+	JLM_DEBUG_ASSERT(jive::is<jive::gamma_op>(node->region()->node()));
 	JLM_DEBUG_ASSERT(node->depth() == 0);
 
 	auto target = node->region()->node()->region();
@@ -96,7 +96,7 @@ copy_from_gamma(jive::node * node, size_t r)
 static std::vector<jive::argument*>
 copy_from_theta(jive::node * node)
 {
-	JLM_DEBUG_ASSERT(is_theta_node(node->region()->node()));
+	JLM_DEBUG_ASSERT(jive::is<jive::theta_op>(node->region()->node()));
 	JLM_DEBUG_ASSERT(node->depth() == 0);
 
 	auto target = node->region()->node()->region();
@@ -168,7 +168,7 @@ is_theta_invariant(
 	const jive::node * node,
 	const std::unordered_set<jive::argument*> & invariants)
 {
-	JLM_DEBUG_ASSERT(is_theta_node(node->region()->node()));
+	JLM_DEBUG_ASSERT(jive::is<jive::theta_op>(node->region()->node()));
 	JLM_DEBUG_ASSERT(node->depth() == 0);
 
 	for (size_t n = 0; n < node->ninputs(); n++) {
@@ -235,15 +235,15 @@ push_top(jive::theta_node * theta)
 static bool
 is_invariant(const jive::argument * argument)
 {
-	JLM_DEBUG_ASSERT(is_theta_node(argument->region()->node()));
+	JLM_DEBUG_ASSERT(jive::is<jive::theta_op>(argument->region()->node()));
 	return argument->region()->result(argument->index()+1)->origin() == argument;
 }
 
 static bool
 is_movable_store(jive::node * node)
 {
-	JLM_DEBUG_ASSERT(is_theta_node(node->region()->node()));
-	JLM_DEBUG_ASSERT(is_store_node(node));
+	JLM_DEBUG_ASSERT(jive::is<jive::theta_op>(node->region()->node()));
+	JLM_DEBUG_ASSERT(jive::is<store_op>(node));
 
 	auto address = dynamic_cast<jive::argument*>(node->input(0)->origin());
 	if (!address || !is_invariant(address) || address->nusers() != 2)
@@ -270,8 +270,8 @@ is_movable_store(jive::node * node)
 static void
 pushout_store(jive::node * storenode)
 {
-	JLM_DEBUG_ASSERT(is_theta_node(storenode->region()->node()));
-	JLM_DEBUG_ASSERT(is_store_node(storenode) && is_movable_store(storenode));
+	JLM_DEBUG_ASSERT(jive::is<jive::theta_op>(storenode->region()->node()));
+	JLM_DEBUG_ASSERT(jive::is<store_op>(storenode) && is_movable_store(storenode));
 	auto theta = static_cast<jive::theta_node*>(storenode->region()->node());
 	auto storeop = static_cast<const jlm::store_op*>(&storenode->operation());
 	auto oaddress = static_cast<jive::argument*>(storenode->input(0)->origin());
@@ -312,7 +312,7 @@ push_bottom(jive::theta_node * theta)
 {
 	for (const auto & lv : *theta) {
 		auto storenode = lv->result()->origin()->node();
-		if (is_store_node(storenode) && is_movable_store(storenode)) {
+		if (jive::is<store_op>(storenode) && is_movable_store(storenode)) {
 			pushout_store(storenode);
 			break;
 		}

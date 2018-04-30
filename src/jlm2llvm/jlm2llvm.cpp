@@ -113,7 +113,7 @@ create_terminator_instruction(const jlm::cfg_node * node, context & ctx)
 
 	/* switch */
 	const auto & branch = bb.last();
-	JLM_DEBUG_ASSERT(branch && is_branch_op(branch->operation()));
+	JLM_DEBUG_ASSERT(branch && is<branch_op>(branch->operation()));
 	auto condition = ctx.value(branch->input(0));
 	auto match = find_match_tac(bb);
 
@@ -187,7 +187,7 @@ convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 		JLM_DEBUG_ASSERT(is_basic_block(node->attribute()));
 		auto & bb = *static_cast<const jlm::basic_block*>(&node->attribute());
 		for (const auto & tac : bb) {
-			if (!is_phi_op(tac->operation()))
+			if (!is<phi_op>(tac->operation()))
 				continue;
 			if (dynamic_cast<const jive::memtype*>(&tac->output(0)->type()))
 				continue;

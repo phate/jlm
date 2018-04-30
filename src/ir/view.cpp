@@ -147,7 +147,7 @@ emit_basic_block(const jlm::cfg_node * node)
 	}
 
 	if (bb.last()) {
-		if (is_branch_op(bb.last()->operation()))
+		if (is<branch_op>(bb.last()->operation()))
 			str += " " + emit_targets(node);
 		else
 			str += "\n\t" + emit_targets(node);

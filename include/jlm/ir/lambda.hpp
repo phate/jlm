@@ -45,18 +45,6 @@ private:
 	jive::fct::type fcttype_;
 };
 
-static inline bool
-is_lambda_op(const jive::operation & op) noexcept
-{
-	return dynamic_cast<const lambda_op*>(&op) != nullptr;
-}
-
-static inline bool
-is_lambda_node(const jive::node * node) noexcept
-{
-	return jive::is_opnode<lambda_op>(node);
-}
-
 /* lambda node */
 
 class lambda_builder;

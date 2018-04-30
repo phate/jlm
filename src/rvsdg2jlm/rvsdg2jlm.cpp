@@ -44,7 +44,7 @@ root_port(const jive::output * port)
 		return port;
 
 	auto node = port->node();
-	JLM_DEBUG_ASSERT(is_lambda_node(node));
+	JLM_DEBUG_ASSERT(is<lambda_op>(node));
 	JLM_DEBUG_ASSERT(node->output(0)->nusers() == 1);
 	auto user = *node->output(0)->begin();
 	node = port->region()->node();
@@ -136,7 +136,7 @@ convert_region(jive::region & region, context & ctx)
 static inline std::unique_ptr<jlm::cfg>
 create_cfg(const jive::node & node, context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_lambda_node(&node));
+	JLM_DEBUG_ASSERT(is<lambda_op>(&node));
 	auto region = static_cast<const jive::structural_node*>(&node)->subregion(0);
 	auto & module = ctx.module();
 
@@ -231,7 +231,7 @@ convert_empty_gamma_node(const jive::gamma_node * gamma, context & ctx)
 		}
 
 		auto v = module.create_variable(output->type(), false);
-		if (is_match_node(predicate->node())) {
+		if (is<jive::match_op>(predicate->node())) {
 			auto matchop = static_cast<const jive::match_op*>(&predicate->node()->operation());
 			auto d = matchop->default_alternative();
 			auto c = ctx.variable(predicate->node()->input(0)->origin());
@@ -253,7 +253,7 @@ convert_empty_gamma_node(const jive::gamma_node * gamma, context & ctx)
 static inline void
 convert_gamma_node(const jive::node & node, context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_gamma_node(&node));
+	JLM_DEBUG_ASSERT(is<jive::gamma_op>(&node));
 	auto gamma = static_cast<const jive::gamma_node*>(&node);
 	auto nalternatives = gamma->nsubregions();
 	auto predicate = gamma->predicate()->origin();
@@ -344,7 +344,7 @@ convert_gamma_node(const jive::node & node, context & ctx)
 static inline bool
 phi_needed(const jive::input * i, const jlm::variable * v)
 {
-	JLM_DEBUG_ASSERT(is_theta_node(i->node()));
+	JLM_DEBUG_ASSERT(is<jive::theta_op>(i->node()));
 	auto theta = static_cast<const jive::structural_node*>(i->node());
 	auto input = static_cast<const jive::structural_input*>(i);
 	auto output = theta->output(input->index());
@@ -365,7 +365,7 @@ phi_needed(const jive::input * i, const jlm::variable * v)
 static inline void
 convert_theta_node(const jive::node & node, context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_theta_node(&node));
+	JLM_DEBUG_ASSERT(is<jive::theta_op>(&node));
 	auto subregion = static_cast<const jive::structural_node*>(&node)->subregion(0);
 	auto predicate = subregion->result(0)->origin();
 
@@ -415,7 +415,7 @@ convert_theta_node(const jive::node & node, context & ctx)
 static inline void
 convert_lambda_node(const jive::node & node, context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_lambda_node(&node));
+	JLM_DEBUG_ASSERT(is<lambda_op>(&node));
 	auto lambda = static_cast<const lambda_node*>(&node);
 	auto & module = ctx.module();
 	auto & clg = module.callgraph();
@@ -450,7 +450,7 @@ convert_phi_node(const jive::node & node, context & ctx)
 	/* forward declare all functions */
 	for (size_t n = 0; n < subregion->nresults(); n++) {
 		auto result = subregion->result(n);
-		JLM_DEBUG_ASSERT(is_lambda_node(result->origin()->node()));
+		JLM_DEBUG_ASSERT(is<lambda_op>(result->origin()->node()));
 		auto lambda = static_cast<const lambda_node*>(result->origin()->node());
 
 		auto name = get_name(lambda->output(0));
@@ -477,7 +477,7 @@ convert_phi_node(const jive::node & node, context & ctx)
 static inline void
 convert_data_node(const jive::node & node, context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_data_op(node.operation()));
+	JLM_DEBUG_ASSERT(jive::is<data_op>(&node));
 	auto subregion = static_cast<const jive::structural_node*>(&node)->subregion(0);
 	const auto & op = *static_cast<const jlm::data_op*>(&node.operation());
 	auto & module = ctx.module();

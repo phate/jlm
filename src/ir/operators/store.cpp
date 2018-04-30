@@ -67,7 +67,7 @@ is_store_store_reducible(
 	JLM_DEBUG_ASSERT(operands.size() > 2);
 
 	auto storenode = operands[2]->node();
-	if (!is_store_node(storenode))
+	if (!is<store_op>(storenode))
 		return false;
 
 	if (op.nstates() != storenode->noutputs())
@@ -186,7 +186,7 @@ store_normal_form::store_normal_form(
 bool
 store_normal_form::normalize_node(jive::node * node) const
 {
-	JLM_DEBUG_ASSERT(is_store_op(node->operation()));
+	JLM_DEBUG_ASSERT(is<store_op>(node->operation()));
 	auto op = static_cast<const jlm::store_op*>(&node->operation());
 	auto operands = jive::operands(node);
 
@@ -240,7 +240,7 @@ store_normal_form::normalized_create(
 	const jive::simple_op & op,
 	const std::vector<jive::output*> & ops) const
 {
-	JLM_DEBUG_ASSERT(is_store_op(op));
+	JLM_DEBUG_ASSERT(is<store_op>(op));
 	auto sop = static_cast<const jlm::store_op*>(&op);
 
 	if (!get_mutable())

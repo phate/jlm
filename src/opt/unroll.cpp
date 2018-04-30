@@ -25,7 +25,7 @@ static bool
 contains_theta(const jive::region * region)
 {
 	for (const auto & node : *region) {
-		if (jive::is_theta_node(&node))
+		if (jive::is<jive::theta_op>(&node))
 			return true;
 
 		if (auto structnode = dynamic_cast<const jive::structural_node*>(&node)) {
@@ -52,9 +52,9 @@ is_eqcmp(const jive::operation & op)
 static bool
 is_theta_invariant(const jive::output * output)
 {
-	JLM_DEBUG_ASSERT(jive::is_theta_node(output->region()->node()));
+	JLM_DEBUG_ASSERT(jive::is<jive::theta_op>(output->region()->node()));
 
-	if (jive::is_bitconstant_node(output->node()))
+	if (jive::is<jive::bitconstant_op>(output->node()))
 		return true;
 
 	auto argument = dynamic_cast<const jive::argument*>(output);
@@ -70,8 +70,8 @@ push_from_theta(jive::output * output)
 	auto argument = dynamic_cast<jive::argument*>(output);
 	if (argument) return argument;
 
-	JLM_DEBUG_ASSERT(jive::is_bitconstant_node(output->node()));
-	JLM_DEBUG_ASSERT(jive::is_theta_node(output->node()->region()->node()));
+	JLM_DEBUG_ASSERT(jive::is<jive::bitconstant_op>(output->node()));
+	JLM_DEBUG_ASSERT(jive::is<jive::theta_op>(output->node()->region()->node()));
 	auto theta = static_cast<jive::theta_node*>(output->node()->region()->node());
 
 	auto node = output->node()->copy(theta->region(), {});
@@ -84,13 +84,15 @@ push_from_theta(jive::output * output)
 static bool
 is_idv(jive::input * input)
 {
+	using namespace jive;
+
 	auto node = input->node();
-	JLM_DEBUG_ASSERT(jive::is_bitadd_node(node) || jive::is_bitsub_node(node));
+	JLM_DEBUG_ASSERT(is<bitadd_op>(node) || is<bitsub_op>(node));
 
-	auto argument = dynamic_cast<jive::argument*>(input->origin());
-	if (!argument) return false;
+	auto a = dynamic_cast<argument*>(input->origin());
+	if (!a) return false;
 
-	auto tinput = static_cast<const jive::theta_input*>(argument->input());
+	auto tinput = static_cast<const theta_input*>(a->input());
 	return tinput->result()->origin()->node() == node;
 }
 
@@ -120,12 +122,14 @@ unrollinfo::niterations() const noexcept
 std::unique_ptr<unrollinfo>
 unrollinfo::create(jive::theta_node * theta)
 {
+	using namespace jive;
+
 	auto matchnode = theta->predicate()->origin()->node();
-	if (!is_match_node(matchnode))
+	if (!is<match_op>(matchnode))
 		return nullptr;
 
 	auto cmpnode = matchnode->input(0)->origin()->node();
-	if (!jive::is_opnode<jive::bitcompare_op>(cmpnode))
+	if (!is<bitcompare_op>(cmpnode))
 		return nullptr;
 
 	auto o0 = cmpnode->input(0)->origin();
@@ -134,7 +138,7 @@ unrollinfo::create(jive::theta_node * theta)
 	if (!end) return nullptr;
 
 	auto armnode = (end == o0 ? o1 : o0)->node();
-	if (!jive::is_bitadd_node(armnode) && !jive::is_bitsub_node(armnode))
+	if (!is<bitadd_op>(armnode) && !is<bitsub_op>(armnode))
 		return nullptr;
 	if (armnode->ninputs() != 2)
 		return nullptr;
@@ -144,7 +148,7 @@ unrollinfo::create(jive::theta_node * theta)
 	if (!is_idv(i0) && !is_idv(i1))
 		return nullptr;
 
-	auto idv = static_cast<jive::argument*>(is_idv(i0) ? i0->origin() : i1->origin());
+	auto idv = static_cast<argument*>(is_idv(i0) ? i0->origin() : i1->origin());
 
 	auto step = idv == i0->origin() ? i1->origin() : i0->origin();
 	if (!is_theta_invariant(step))

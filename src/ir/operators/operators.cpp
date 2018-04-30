@@ -356,7 +356,7 @@ zext_op::copy() const
 jive_unop_reduction_path_t
 zext_op::can_reduce_operand(const jive::output * operand) const noexcept
 {
-	if (jive::is_bitconstant_node(producer(operand)))
+	if (jive::is<jive::bitconstant_op>(producer(operand)))
 		return jive_unop_reduction_constant;
 
 	return jive_unop_reduction_none;

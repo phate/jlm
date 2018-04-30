@@ -57,9 +57,9 @@ test1()
 	jlm::invert(graph);
 //	jive::view(graph.root(), stdout);
 
-	assert(is_gamma_node(ex1->origin()->node()));
-	assert(is_gamma_node(ex2->origin()->node()));
-	assert(is_gamma_node(ex3->origin()->node()));
+	assert(jive::is<jive::gamma_op>(ex1->origin()->node()));
+	assert(jive::is<jive::gamma_op>(ex2->origin()->node()));
+	assert(jive::is<jive::gamma_op>(ex3->origin()->node()));
 }
 
 static inline void
@@ -99,7 +99,7 @@ test2()
 	jlm::invert(graph);
 //	jive::view(graph.root(), stdout);
 
-	assert(is_gamma_node(ex->origin()->node()));
+	assert(jive::is<jive::gamma_op>(ex->origin()->node()));
 }
 
 static int

@@ -128,15 +128,19 @@ private:
 static bool
 is_theta_argument(const jive::output * output)
 {
-	auto argument = dynamic_cast<const jive::argument*>(output);
-	return argument && is_theta_node(argument->region()->node());
+	using namespace jive;
+
+	auto a = dynamic_cast<const argument*>(output);
+	return a && is<theta_op>(a->region()->node());
 }
 
 static bool
 is_gamma_argument(const jive::output * output)
 {
-	auto argument = dynamic_cast<const jive::argument*>(output);
-	return argument && is_gamma_node(argument->region()->node());
+	using namespace jive;
+
+	auto a = dynamic_cast<const argument*>(output);
+	return a && is<gamma_op>(a->region()->node());
 }
 
 /* mark phase */
@@ -170,14 +174,16 @@ congruent(
 		return congruent(output1, output2, vs, ctx);
 	}
 
-	if (is_theta_node(o1->node()) && is_theta_node(o2->node()) && o1->node() == o2->node()) {
+	if (jive::is<jive::theta_op>(o1->node())
+	&& jive::is<jive::theta_op>(o2->node())
+	&& o1->node() == o2->node()) {
 		vs.insert(o1, o2);
 		auto r1 = so1->results.first();
 		auto r2 = so2->results.first();
 		return congruent(r1->origin(), r2->origin(), vs, ctx);
 	}
 
-	if (is_gamma_node(o1->node()) && o1->node() == o2->node()) {
+	if (jive::is<jive::gamma_op>(o1->node()) && o1->node() == o2->node()) {
 		auto r1 = so1->results.begin();
 		auto r2 = so2->results.begin();
 		for (; r1 != so1->results.end(); r1++, r2++) {
@@ -241,7 +247,7 @@ mark(jive::region*, cnectx&);
 static void
 mark_gamma(const jive::structural_node * node, cnectx & ctx)
 {
-	JLM_DEBUG_ASSERT(is_gamma_op(node->operation()));
+	JLM_DEBUG_ASSERT(jive::is<jive::gamma_op>(node->operation()));
 
 	/* mark entry variables */
 	for (size_t i1 = 1; i1 < node->ninputs(); i1++) {
@@ -264,7 +270,7 @@ mark_gamma(const jive::structural_node * node, cnectx & ctx)
 static void
 mark_theta(const jive::structural_node * node, cnectx & ctx)
 {
-	JLM_DEBUG_ASSERT(is_theta_node(node));
+	JLM_DEBUG_ASSERT(jive::is<jive::theta_op>(node));
 	auto theta = static_cast<const jive::theta_node*>(node);
 
 	/* mark loop variables */
@@ -285,7 +291,7 @@ mark_theta(const jive::structural_node * node, cnectx & ctx)
 static void
 mark_lambda(const jive::structural_node * node, cnectx & ctx)
 {
-	JLM_DEBUG_ASSERT(is_lambda_op(node->operation()));
+	JLM_DEBUG_ASSERT(jive::is<lambda_op>(node));
 
 	/* mark dependencies */
 	for (size_t i1 = 0; i1 < node->ninputs(); i1++) {
@@ -321,7 +327,7 @@ mark_phi(const jive::structural_node * node, cnectx & ctx)
 static void
 mark_data(const jive::structural_node * node, cnectx & ctx)
 {
-	JLM_DEBUG_ASSERT(is_data_op(node->operation()));
+	JLM_DEBUG_ASSERT(jive::is<data_op>(node));
 }
 
 static void
@@ -419,7 +425,7 @@ divert(jive::region*, cnectx&);
 static void
 divert_gamma(jive::structural_node * node, cnectx & ctx)
 {
-	JLM_DEBUG_ASSERT(is_gamma_node(node));
+	JLM_DEBUG_ASSERT(jive::is<jive::gamma_op>(node));
 	auto gamma = static_cast<jive::gamma_node*>(node);
 
 	for (auto ev = gamma->begin_entryvar(); ev != gamma->end_entryvar(); ev++) {
@@ -436,7 +442,7 @@ divert_gamma(jive::structural_node * node, cnectx & ctx)
 static void
 divert_theta(jive::structural_node * node, cnectx & ctx)
 {
-	JLM_DEBUG_ASSERT(is_theta_node(node));
+	JLM_DEBUG_ASSERT(jive::is<jive::theta_op>(node));
 	auto theta = static_cast<jive::theta_node*>(node);
 	auto subregion = node->subregion(0);
 
@@ -452,7 +458,7 @@ divert_theta(jive::structural_node * node, cnectx & ctx)
 static void
 divert_lambda(jive::structural_node * node, cnectx & ctx)
 {
-	JLM_DEBUG_ASSERT(is_lambda_op(node->operation()));
+	JLM_DEBUG_ASSERT(jive::is<lambda_op>(node));
 
 	divert_arguments(node->subregion(0), ctx);
 	divert(node->subregion(0), ctx);
@@ -470,7 +476,7 @@ divert_phi(jive::structural_node * node, cnectx & ctx)
 static void
 divert_data(jive::structural_node * node, cnectx & ctx)
 {
-	JLM_DEBUG_ASSERT(is_data_op(node->operation()));
+	JLM_DEBUG_ASSERT(jive::is<data_op>(node));
 }
 
 static void

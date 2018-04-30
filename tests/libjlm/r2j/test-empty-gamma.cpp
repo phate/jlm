@@ -58,7 +58,7 @@ test_with_match()
 	assert(cfg->nnodes() == 3);
 	auto node = cfg->entry_node()->outedge(0)->sink();
 	auto bb = dynamic_cast<const jlm::basic_block*>(&node->attribute());
-	assert(jlm::is_select_op(bb->last()->operation()));
+	assert(jive::is<jlm::select_op>(bb->last()->operation()));
 }
 
 static void
@@ -100,8 +100,8 @@ test_without_match()
 	assert(cfg->nnodes() == 3);
 	auto node = cfg->entry_node()->outedge(0)->sink();
 	auto bb = dynamic_cast<const jlm::basic_block*>(&node->attribute());
-	assert(jlm::is_ctl2bits_op(bb->first()->operation()));
-	assert(jlm::is_select_op(bb->last()->operation()));
+	assert(jive::is<jlm::ctl2bits_op>(bb->first()->operation()));
+	assert(jive::is<jlm::select_op>(bb->last()->operation()));
 }
 
 static void

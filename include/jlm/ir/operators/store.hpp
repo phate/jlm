@@ -142,18 +142,6 @@ private:
 	size_t alignment_;
 };
 
-static inline bool
-is_store_op(const jive::operation & op) noexcept
-{
-	return dynamic_cast<const jlm::store_op*>(&op) != nullptr;
-}
-
-static inline bool
-is_store_node(const jive::node * node) noexcept
-{
-	return jive::is_opnode<jlm::store_op>(node);
-}
-
 static inline std::unique_ptr<jlm::tac>
 create_store_tac(
 	const variable * address,

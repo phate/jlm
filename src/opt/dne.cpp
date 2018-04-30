@@ -61,15 +61,19 @@ is_import(const jive::output * output)
 static bool
 is_gamma_argument(const jive::output * output)
 {
-	auto argument = dynamic_cast<const jive::argument*>(output);
-	return argument && is_gamma_node(argument->region()->node());
+	using namespace jive;
+
+	auto a = dynamic_cast<const argument*>(output);
+	return a && is<gamma_op>(a->region()->node());
 }
 
 static bool
 is_theta_argument(const jive::output * output)
 {
-	auto argument = dynamic_cast<const jive::argument*>(output);
-	return argument && is_theta_node(argument->region()->node());
+	using namespace jive;
+
+	auto a = dynamic_cast<const argument*>(output);
+	return a && is<theta_op>(a->region()->node());
 }
 
 static bool
@@ -122,7 +126,7 @@ mark(const jive::output * output, dnectx & ctx)
 
 	auto argument = static_cast<const jive::argument*>(output);
 	auto soutput = static_cast<const jive::structural_output*>(output);
-	if (is_gamma_node(output->node())) {
+	if (jive::is<jive::gamma_op>(output->node())) {
 		auto gamma = static_cast<const jive::gamma_node*>(output->node());
 		mark(gamma->predicate()->origin(), ctx);
 		for (const auto & result : soutput->results)
@@ -258,7 +262,7 @@ sweep_lambda(jive::structural_node * node, const dnectx & ctx)
 static void
 sweep_theta(jive::structural_node * node, const dnectx & ctx)
 {
-	JLM_DEBUG_ASSERT(is_theta_node(node));
+	JLM_DEBUG_ASSERT(jive::is<jive::theta_op>(node));
 	auto subregion = node->subregion(0);
 
 	if (!ctx.is_alive(node)) {
@@ -291,7 +295,7 @@ sweep_theta(jive::structural_node * node, const dnectx & ctx)
 static void
 sweep_gamma(jive::structural_node * node, const dnectx & ctx)
 {
-	JLM_DEBUG_ASSERT(is_gamma_node(node));
+	JLM_DEBUG_ASSERT(jive::is<jive::gamma_op>(node));
 
 	if (!ctx.is_alive(node)) {
 		remove(node);

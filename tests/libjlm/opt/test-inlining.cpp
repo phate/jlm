@@ -20,7 +20,7 @@ static bool
 contains_call_node(const jive::region * region)
 {
 	for (const auto & node : region->nodes) {
-		if (jive::is_opnode<jlm::call_op>(&node))
+		if (jive::is<jlm::call_op>(&node))
 			return true;
 
 		if (auto structnode = dynamic_cast<const jive::structural_node*>(&node)) {

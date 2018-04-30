@@ -23,7 +23,7 @@ static jive::gamma_node *
 is_applicable(const jive::theta_node * theta)
 {
 	auto matchnode = theta->predicate()->origin()->node();
-	if (!jive::is_opnode<jive::match_op>(matchnode))
+	if (!jive::is<jive::match_op>(matchnode))
 		return nullptr;
 
 	if (matchnode->output(0)->nusers() != 2)
@@ -34,7 +34,7 @@ is_applicable(const jive::theta_node * theta)
 		if (user == theta->predicate())
 			continue;
 
-		if (!is_gamma_node(user->node()))
+		if (!jive::is<jive::gamma_op>(user->node()))
 			return nullptr;
 
 		gnode = dynamic_cast<jive::gamma_node*>(user->node());
@@ -63,8 +63,8 @@ collect_condition_nodes(
 	jive::structural_node * tnode,
 	jive::structural_node * gnode)
 {
-	JLM_DEBUG_ASSERT(is_theta_node(tnode));
-	JLM_DEBUG_ASSERT(is_gamma_node(gnode));
+	JLM_DEBUG_ASSERT(jive::is<jive::theta_op>(tnode));
+	JLM_DEBUG_ASSERT(jive::is<jive::gamma_op>(gnode));
 	JLM_DEBUG_ASSERT(gnode->region()->node() == tnode);
 
 	std::vector<std::vector<jive::node*>> nodes;

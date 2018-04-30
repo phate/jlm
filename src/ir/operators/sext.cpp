@@ -16,13 +16,13 @@ static const jive_unop_reduction_path_t sext_reduction_bitbinary = 129;
 static bool
 is_bitunary_reducible(const jive::output * operand)
 {
-	return jive::is_opnode<jive::bitunary_op>(operand->node());
+	return jive::is<jive::bitunary_op>(operand->node());
 }
 
 static bool
 is_bitbinary_reducible(const jive::output * operand)
 {
-	return jive::is_opnode<jive::bitbinary_op>(operand->node());
+	return jive::is<jive::bitbinary_op>(operand->node());
 }
 
 static bool
@@ -96,7 +96,7 @@ sext_op::copy() const
 jive_unop_reduction_path_t
 sext_op::can_reduce_operand(const jive::output * operand) const noexcept
 {
-	if (jive::is_bitconstant_node(producer(operand)))
+	if (jive::is<jive::bitconstant_op>(producer(operand)))
 		return jive_unop_reduction_constant;
 
 	if (is_bitunary_reducible(operand))

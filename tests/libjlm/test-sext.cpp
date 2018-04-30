@@ -35,7 +35,7 @@ test_bitunary_reduction()
 
 	//jive::view(graph, stdout);
 
-	assert(jive::is_bitnot_node(ex->origin()->node()));
+	assert(jive::is<jive::bitnot_op>(ex->origin()->node()));
 }
 
 static inline void
@@ -63,7 +63,7 @@ test_bitbinary_reduction()
 
 //	jive::view(graph, stdout);
 
-	assert(jive::is_bitadd_node(ex->origin()->node()));
+	assert(jive::is<jive::bitadd_op>(ex->origin()->node()));
 }
 
 static inline void

@@ -79,18 +79,6 @@ private:
 	}
 };
 
-static inline bool
-is_call_op(const jive::operation & op) noexcept
-{
-	return dynamic_cast<const call_op*>(&op) != nullptr;
-}
-
-static inline bool
-is_call_node(const jive::node * node) noexcept
-{
-	return jive::is_opnode<call_op>(node);
-}
-
 static inline std::unique_ptr<tac>
 create_call_tac(
 	const variable * function,

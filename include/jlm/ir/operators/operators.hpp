@@ -75,12 +75,6 @@ private:
 	std::vector<cfg_node*> nodes_;
 };
 
-static inline bool
-is_phi_op(const jive::operation & op)
-{
-	return dynamic_cast<const jlm::phi_op*>(&op) != nullptr;
-}
-
 static inline std::unique_ptr<jlm::tac>
 create_phi_tac(
 	const std::vector<std::pair<const variable*, cfg_node*>> & arguments,
@@ -132,12 +126,6 @@ create_assignment(
 	return create_tac(assignment_op(type), {r, arg}, {});
 }
 
-static inline bool
-is_assignment_op(const jive::operation & op)
-{
-	return dynamic_cast<const assignment_op*>(&op) != nullptr;
-}
-
 /* select operator */
 
 class select_op final : public jive::simple_op {
@@ -169,12 +157,6 @@ public:
 		return result(0).type();
 	}
 };
-
-static inline bool
-is_select_op(const jive::operation & op)
-{
-	return dynamic_cast<const select_op*>(&op) != nullptr;
-}
 
 static inline std::unique_ptr<jlm::tac>
 create_select_tac(
@@ -208,12 +190,6 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 };
-
-static inline bool
-is_fp2ui_op(const jive::operation & op)
-{
-	return dynamic_cast<const fp2ui_op*>(&op) != nullptr;
-}
 
 static inline std::unique_ptr<jlm::tac>
 create_fp2ui_tac(const variable * operand, jlm::variable * result)
@@ -250,12 +226,6 @@ public:
 	copy() const override;
 };
 
-static inline bool
-is_fp2si_op(const jive::operation & op)
-{
-	return dynamic_cast<const fp2si_op*>(&op) != nullptr;
-}
-
 static inline std::unique_ptr<jlm::tac>
 create_fp2si_tac(const variable * operand, jlm::variable * result)
 {
@@ -290,12 +260,6 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 };
-
-static inline bool
-is_ctl2bits_op(const jive::operation & op)
-{
-	return dynamic_cast<const ctl2bits_op*>(&op) != nullptr;
-}
 
 static inline std::unique_ptr<jlm::tac>
 create_ctl2bits_tac(const variable * operand, jlm::variable * result)
@@ -338,12 +302,6 @@ public:
 	}
 };
 
-static inline bool
-is_branch_op(const jive::operation & op)
-{
-	return dynamic_cast<const jlm::branch_op*>(&op) != nullptr;
-}
-
 static inline std::unique_ptr<jlm::tac>
 create_branch_tac(size_t nalternatives, const variable * operand)
 {
@@ -379,12 +337,6 @@ public:
 		return static_cast<const jlm::ptrtype*>(&result(0).type())->pointee_type();
 	}
 };
-
-static inline bool
-is_ptr_constant_null_op(const jive::operation & op)
-{
-	return dynamic_cast<const jlm::ptr_constant_null_op*>(&op) != nullptr;
-}
 
 static inline std::unique_ptr<jlm::tac>
 create_ptr_constant_null_tac(const jive::type & ptype, jlm::variable * result)
@@ -429,12 +381,6 @@ public:
 		return static_cast<const jlm::ptrtype*>(&result(0).type())->pointee_type();
 	}
 };
-
-static inline bool
-is_bits2ptr(const jive::operation & op) noexcept
-{
-	return dynamic_cast<const jlm::bits2ptr_op*>(&op) != nullptr;
-}
 
 static inline std::unique_ptr<jlm::tac>
 create_bits2ptr_tac(const variable * argument, jlm::variable * result)
@@ -482,12 +428,6 @@ public:
 		return static_cast<const jlm::ptrtype*>(&argument(0).type())->pointee_type();
 	}
 };
-
-static inline bool
-is_ptr2bits(const jive::operation & op) noexcept
-{
-	return dynamic_cast<const jlm::ptr2bits_op*>(&op) != nullptr;
-}
 
 static inline std::unique_ptr<jlm::tac>
 create_ptr2bits_tac(const variable * argument, jlm::variable * result)
@@ -538,12 +478,6 @@ public:
 		return static_cast<const arraytype*>(&result(0).type())->element_type();
 	}
 };
-
-static inline bool
-is_data_array_constant_op(const jive::operation & op)
-{
-	return dynamic_cast<const data_array_constant_op*>(&op) != nullptr;
-}
 
 static inline std::unique_ptr<jlm::tac>
 create_data_array_constant_tac(
@@ -599,12 +533,6 @@ public:
 private:
 	jlm::cmp cmp_;
 };
-
-static inline bool
-is_ptrcmp_op(const jive::operation & op)
-{
-	return dynamic_cast<const jlm::ptrcmp_op*>(&op) != nullptr;
-}
 
 static inline std::unique_ptr<jlm::tac>
 create_ptrcmp_tac(
@@ -665,12 +593,6 @@ public:
 	}
 };
 
-static inline bool
-is_zext_op(const jive::operation & op)
-{
-	return dynamic_cast<const jlm::zext_op*>(&op) != nullptr;
-}
-
 static inline std::unique_ptr<jlm::tac>
 create_zext_tac(const variable * operand, jlm::variable * result)
 {
@@ -724,12 +646,6 @@ private:
 	llvm::APFloat constant_;
 };
 
-static inline bool
-is_fpconstant_op(const jive::operation & op)
-{
-	return dynamic_cast<const jlm::fpconstant_op*>(&op) != nullptr;
-}
-
 static inline std::unique_ptr<jlm::tac>
 create_fpconstant_tac(const llvm::APFloat & constant, jlm::variable * result)
 {
@@ -779,12 +695,6 @@ public:
 private:
 	jlm::fpcmp cmp_;
 };
-
-static inline bool
-is_fpcmp_op(const jive::operation & op)
-{
-	return dynamic_cast<const jlm::fpcmp_op*>(&op) != nullptr;
-}
 
 static inline std::unique_ptr<jlm::tac>
 create_fpcmp_tac(
@@ -846,12 +756,6 @@ public:
 	}
 };
 
-static inline bool
-is_undef_constant_op(const jive::operation & op)
-{
-	return dynamic_cast<const jlm::undef_constant_op*>(&op) != nullptr;
-}
-
 static inline std::unique_ptr<jlm::tac>
 create_undef_constant_tac(jlm::variable * result)
 {
@@ -901,12 +805,6 @@ public:
 private:
 	jlm::fpop op_;
 };
-
-static inline bool
-is_fpbin_op(const jive::operation & op)
-{
-	return dynamic_cast<const jlm::fpbin_op*>(&op) != nullptr;
-}
 
 static inline std::unique_ptr<jlm::tac>
 create_fpbin_tac(
@@ -959,12 +857,6 @@ public:
 	}
 };
 
-static inline bool
-is_fpext_op(const jive::operation & op)
-{
-	return dynamic_cast<const jlm::fpext_op*>(&op) != nullptr;
-}
-
 static inline std::unique_ptr<jlm::tac>
 create_fpext_tac(const variable * operand, jlm::variable * result)
 {
@@ -1016,12 +908,6 @@ public:
 		return static_cast<const fptype*>(&result(0).type())->size();
 	}
 };
-
-static inline bool
-is_fptrunc_op(const jive::operation & op)
-{
-	return dynamic_cast<const fptrunc_op*>(&op) != nullptr;
-}
 
 static inline std::unique_ptr<jlm::tac>
 create_fptrunc_tac(const variable * operand, jlm::variable * result)
@@ -1077,12 +963,6 @@ private:
 	}
 };
 
-static inline bool
-is_valist_op(const jive::operation & op)
-{
-	return dynamic_cast<const jlm::valist_op*>(&op) != nullptr;
-}
-
 static inline std::unique_ptr<jlm::tac>
 create_valist_tac(
 	const std::vector<const variable*> & arguments,
@@ -1133,12 +1013,6 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 };
-
-static inline bool
-is_bitcast_op(const jive::operation & op)
-{
-	return dynamic_cast<const bitcast_op*>(&op) != nullptr;
-}
 
 static inline std::unique_ptr<jlm::tac>
 create_bitcast_tac(const variable * argument, variable * result)
@@ -1192,12 +1066,6 @@ private:
 	}
 };
 
-static inline bool
-is_struct_constant_op(const jive::operation & op)
-{
-	return dynamic_cast<const struct_constant_op*>(&op) != nullptr;
-}
-
 static inline std::unique_ptr<jlm::tac>
 create_struct_constant_tac(
 	const std::vector<const variable*> & elements,
@@ -1247,18 +1115,6 @@ public:
 	}
 };
 
-static inline bool
-is_trunc_op(const jive::operation & op)
-{
-	return dynamic_cast<const trunc_op*>(&op) != nullptr;
-}
-
-static inline bool
-is_trunc_node(const jive::node * node) noexcept
-{
-	return jive::is_opnode<trunc_op>(node);
-}
-
 static inline std::unique_ptr<jlm::tac>
 create_trunc_tac(const variable * operand, jlm::variable * result)
 {
@@ -1304,12 +1160,6 @@ public:
 	copy() const override;
 };
 
-static inline bool
-is_uitofp_op(const jive::operation & op)
-{
-	return dynamic_cast<const uitofp_op*>(&op) != nullptr;
-}
-
 static inline std::unique_ptr<jlm::tac>
 create_uitofp_tac(const variable * operand, jlm::variable * result)
 {
@@ -1344,12 +1194,6 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 };
-
-static inline bool
-is_sitofp_op(const jive::operation & op)
-{
-	return dynamic_cast<const sitofp_op*>(&op) != nullptr;
-}
 
 static inline std::unique_ptr<jlm::tac>
 create_sitofp_tac(const variable * operand, jlm::variable * result)
@@ -1401,12 +1245,6 @@ public:
 	}
 };
 
-static inline bool
-is_constant_array_op(const jive::operation & op)
-{
-	return dynamic_cast<const constant_array_op*>(&op) != nullptr;
-}
-
 static inline std::unique_ptr<jlm::tac>
 create_constant_array_tac(
 	const std::vector<const variable*> & elements,
@@ -1449,12 +1287,6 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 };
-
-static inline bool
-is_constant_aggregate_zero_op(const jive::operation & op)
-{
-	return dynamic_cast<const constant_aggregate_zero_op*>(&op) != nullptr;
-}
 
 static inline std::unique_ptr<jlm::tac>
 create_constant_aggregate_zero_tac(jlm::variable * result)

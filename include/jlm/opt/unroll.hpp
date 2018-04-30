@@ -50,7 +50,7 @@ public:
 	theta() const noexcept
 	{
 		auto node = idv()->region()->node();
-		JLM_DEBUG_ASSERT(jive::is_theta_node(node));
+		JLM_DEBUG_ASSERT(jive::is<jive::theta_op>(node));
 		return static_cast<jive::theta_node*>(node);
 	}
 
@@ -150,13 +150,13 @@ public:
 	inline bool
 	is_additive() const noexcept
 	{
-		return jive::is_bitadd_node(armnode());
+		return jive::is<jive::bitadd_op>(armnode());
 	}
 
 	inline bool
 	is_subtractive() const noexcept
 	{
-		return jive::is_bitsub_node(armnode());
+		return jive::is<jive::bitsub_op>(armnode());
 	}
 
 	inline size_t

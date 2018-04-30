@@ -30,7 +30,7 @@ convert_assignment(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_assignment_op(op));
+	JLM_DEBUG_ASSERT(is<assignment_op>(op));
 	return ctx.value(args[0]);
 }
 
@@ -132,7 +132,7 @@ convert_fpconstant(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_fpconstant_op(op));
+	JLM_DEBUG_ASSERT(is<fpconstant_op>(op));
 	auto & cop = *static_cast<const jlm::fpconstant_op*>(&op);
 
 	return llvm::ConstantFP::get(builder.getContext(), cop.constant());
@@ -145,7 +145,7 @@ convert_undef(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_undef_constant_op(op));
+	JLM_DEBUG_ASSERT(is<undef_constant_op>(op));
 	return llvm::UndefValue::get(convert_type(op.result(0).type(), ctx));
 }
 
@@ -156,7 +156,7 @@ convert_call(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_call_op(op));
+	JLM_DEBUG_ASSERT(is<call_op>(op));
 	JLM_DEBUG_ASSERT(dynamic_cast<const jive::memtype*>(&args[args.size()-1]->type()));
 
 	auto function = ctx.value(args[0]);
@@ -166,7 +166,7 @@ convert_call(
 		if (is_varargtype(argument->type())) {
 			JLM_DEBUG_ASSERT(is_tacvariable(argument));
 			auto valist = dynamic_cast<const jlm::tacvariable*>(argument)->tac();
-			JLM_DEBUG_ASSERT(is_valist_op(valist->operation()));
+			JLM_DEBUG_ASSERT(is<valist_op>(valist->operation()));
 			for (size_t n = 0; n < valist->ninputs(); n++)
 				operands.push_back(ctx.value(valist->input(n)));
 			continue;
@@ -196,7 +196,7 @@ convert_match(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_match_op(op));
+	JLM_DEBUG_ASSERT(is<jive::match_op>(op));
 	auto mop = static_cast<const jive::match_op*>(&op);
 
 	if (is_identity_mapping(*mop))
@@ -221,7 +221,7 @@ convert_branch(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_branch_op(op));
+	JLM_DEBUG_ASSERT(is<branch_op>(op));
 	return nullptr;
 }
 
@@ -232,7 +232,7 @@ convert_phi(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_phi_op(op));
+	JLM_DEBUG_ASSERT(is<phi_op>(op));
 	auto & pop = *static_cast<const jlm::phi_op*>(&op);
 
 	if (dynamic_cast<const jive::memtype*>(&pop.type()))
@@ -249,7 +249,7 @@ convert_load(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_load_op(op));
+	JLM_DEBUG_ASSERT(is<load_op>(op));
 	auto load = static_cast<const load_op*>(&op);
 
 	auto i = builder.CreateLoad(ctx.value(args[0]));
@@ -264,7 +264,7 @@ convert_store(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_store_op(op) && args.size() >= 2);
+	JLM_DEBUG_ASSERT(is<store_op>(op) && args.size() >= 2);
 	auto store = static_cast<const store_op*>(&op);
 
 	auto i = builder.CreateStore(ctx.value(args[1]), ctx.value(args[0]));
@@ -279,7 +279,7 @@ convert_alloca(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_alloca_op(op) && args.size() == 2);
+	JLM_DEBUG_ASSERT(is<alloca_op>(op) && args.size() == 2);
 	auto & aop = *static_cast<const jlm::alloca_op*>(&op);
 
 	auto t = convert_type(aop.value_type(), ctx);
@@ -295,7 +295,7 @@ convert_getelementptr(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_getelementptr_op(op) && args.size() >= 2);
+	JLM_DEBUG_ASSERT(is<getelementptr_op>(op) && args.size() >= 2);
 	auto & pop = *static_cast<const getelementptr_op*>(&op);
 
 	std::vector<llvm::Value*> indices;
@@ -345,7 +345,7 @@ convert_data_array_constant(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_data_array_constant_op(op));
+	JLM_DEBUG_ASSERT(is<data_array_constant_op>(op));
 	auto & cop = *static_cast<const data_array_constant_op*>(&op);
 
 	if (auto bt = dynamic_cast<const jive::bittype*>(&cop.type())) {
@@ -389,7 +389,7 @@ convert_constant_array(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_constant_array_op(op));
+	JLM_DEBUG_ASSERT(is<constant_array_op>(op));
 
 	std::vector<llvm::Constant*> data;
 	for (size_t n = 0; n < args.size(); n++) {
@@ -410,7 +410,7 @@ convert_constant_aggregate_zero(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_constant_aggregate_zero_op(op));
+	JLM_DEBUG_ASSERT(is<constant_aggregate_zero_op>(op));
 	auto type = convert_type(op.result(0).type(), ctx);
 	return llvm::ConstantAggregateZero::get(type);
 }
@@ -422,7 +422,7 @@ convert_ptrcmp(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_ptrcmp_op(op));
+	JLM_DEBUG_ASSERT(is<ptrcmp_op>(op));
 	auto & pop = *static_cast<const ptrcmp_op*>(&op);
 
 	static std::unordered_map<jlm::cmp, llvm::CmpInst::Predicate> map({
@@ -444,7 +444,7 @@ convert_zext(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_zext_op(op));
+	JLM_DEBUG_ASSERT(is<zext_op>(op));
 
 	auto type = convert_type(op.result(0).type(), ctx);
 	return builder.CreateZExt(ctx.value(args[0]), type);
@@ -457,7 +457,7 @@ convert_fpcmp(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_fpcmp_op(op));
+	JLM_DEBUG_ASSERT(is<fpcmp_op>(op));
 	auto & fpcmp = *static_cast<const jlm::fpcmp_op*>(&op);
 
 	static std::unordered_map<jlm::fpcmp, llvm::CmpInst::Predicate> map({
@@ -483,7 +483,7 @@ convert_fpbin(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_fpbin_op(op));
+	JLM_DEBUG_ASSERT(is<fpbin_op>(op));
 	auto & fpbin = *static_cast<const jlm::fpbin_op*>(&op);
 
 	static std::unordered_map<jlm::fpop, llvm::Instruction::BinaryOps> map({
@@ -505,7 +505,7 @@ convert_fpext(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_fpext_op(op));
+	JLM_DEBUG_ASSERT(is<fpext_op>(op));
 
 	auto type = convert_type(op.result(0).type(), ctx);
 	return builder.CreateFPExt(ctx.value(args[0]), type);
@@ -518,7 +518,7 @@ convert_fptrunc(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_fptrunc_op(op));
+	JLM_DEBUG_ASSERT(is<fptrunc_op>(op));
 
 	auto type = convert_type(op.result(0).type(), ctx);
 	return builder.CreateFPTrunc(ctx.value(args[0]), type);
@@ -531,7 +531,7 @@ convert_fp2ui(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_fp2ui_op(op));
+	JLM_DEBUG_ASSERT(is<fp2ui_op>(op));
 
 	auto type = convert_type(op.result(0).type(), ctx);
 	return builder.CreateFPToUI(ctx.value(args[0]), type);
@@ -544,7 +544,7 @@ convert_fp2si(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_fp2si_op(op));
+	JLM_DEBUG_ASSERT(is<fp2si_op>(op));
 
 	auto type = convert_type(op.result(0).type(), ctx);
 	return builder.CreateFPToSI(ctx.value(args[0]), type);
@@ -557,7 +557,7 @@ convert_valist(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_valist_op(op));
+	JLM_DEBUG_ASSERT(is<valist_op>(op));
 	return nullptr;
 }
 
@@ -568,7 +568,7 @@ convert_bitcast(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_bitcast_op(op));
+	JLM_DEBUG_ASSERT(is<bitcast_op>(op));
 
 	auto type = convert_type(op.result(0).type(), ctx);
 	return builder.CreateBitCast(ctx.value(args[0]), type);
@@ -581,7 +581,7 @@ convert_struct_constant(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_struct_constant_op(op));
+	JLM_DEBUG_ASSERT(is<struct_constant_op>(op));
 	auto & cop = *static_cast<const jlm::struct_constant_op*>(&op);
 
 	std::vector<llvm::Constant*> operands;
@@ -599,7 +599,7 @@ convert_trunc(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_trunc_op(op));
+	JLM_DEBUG_ASSERT(is<trunc_op>(op));
 
 	auto type = convert_type(op.result(0).type(), ctx);
 	return builder.CreateTrunc(ctx.value(args[0]), type);
@@ -612,7 +612,7 @@ convert_sext(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_sext_op(op));
+	JLM_DEBUG_ASSERT(is<sext_op>(op));
 
 	auto type = convert_type(op.result(0).type(), ctx);
 	return builder.CreateSExt(ctx.value(args[0]), type);
@@ -625,7 +625,7 @@ convert_sitofp(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_sitofp_op(op));
+	JLM_DEBUG_ASSERT(is<sitofp_op>(op));
 
 	auto type = convert_type(op.result(0).type(), ctx);
 	return builder.CreateSIToFP(ctx.value(args[0]), type);
@@ -638,7 +638,7 @@ convert_uitofp(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_uitofp_op(op));
+	JLM_DEBUG_ASSERT(is<uitofp_op>(op));
 
 	auto type = convert_type(op.result(0).type(), ctx);
 	return builder.CreateUIToFP(ctx.value(args[0]), type);
@@ -651,7 +651,7 @@ convert_ptr_constant_null(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_ptr_constant_null_op(op));
+	JLM_DEBUG_ASSERT(is<ptr_constant_null_op>(op));
 
 	auto type = static_cast<const jlm::ptrtype*>(&op.result(0).type());
 	return llvm::ConstantPointerNull::get(convert_type(*type, ctx));
@@ -664,7 +664,7 @@ convert_select(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(jlm::is_select_op(op));
+	JLM_DEBUG_ASSERT(is<select_op>(op));
 
 	auto c = ctx.value(operands[0]);
 	auto t = ctx.value(operands[1]);
@@ -679,7 +679,7 @@ convert_mux(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(jive::is_mux_op(op));
+	JLM_DEBUG_ASSERT(is<jive::mux_op>(op));
 	return nullptr;
 }
 
@@ -690,7 +690,7 @@ convert_ptr2bits(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_ptr2bits(op));
+	JLM_DEBUG_ASSERT(is<ptr2bits_op>(op));
 
 	auto type = convert_type(op.result(0).type(), ctx);
 	return builder.CreatePtrToInt(ctx.value(args[0]), type);
@@ -703,7 +703,7 @@ convert_ctl2bits(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_ctl2bits_op(op));
+	JLM_DEBUG_ASSERT(is<ctl2bits_op>(op));
 	return ctx.value(args[0]);
 }
 

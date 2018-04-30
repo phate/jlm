@@ -58,18 +58,6 @@ public:
 	}
 };
 
-static inline bool
-is_sext_op(const jive::operation & op)
-{
-	return dynamic_cast<const sext_op*>(&op) != nullptr;
-}
-
-static inline bool
-is_sext_node(const jive::node * node) noexcept
-{
-	return jive::is_opnode<sext_op>(node);
-}
-
 static inline std::unique_ptr<jlm::tac>
 create_sext_tac(const variable * operand, jlm::variable * result)
 {

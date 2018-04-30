@@ -50,12 +50,6 @@ private:
 	jlm::linkage linkage_;
 };
 
-static inline bool
-is_data_op(const jive::operation & op) noexcept
-{
-	return dynamic_cast<const jlm::data_op*>(&op) != nullptr;
-}
-
 /* data node */
 
 class data_builder;

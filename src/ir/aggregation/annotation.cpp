@@ -30,7 +30,7 @@ annotate_basic_block(const basic_block & bb, dset & pds)
 	auto ds = create_demand_set(pds);
 	for (auto it = bb.rbegin(); it != bb.rend(); it++) {
 		auto & tac = *it;
-		if (is_assignment_op(tac->operation())) {
+		if (is<assignment_op>(tac->operation())) {
 			/*
 					We need special treatment for assignment operation, since the variable
 					they assign the value to is modeled as an argument of the tac.

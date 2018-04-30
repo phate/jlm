@@ -46,7 +46,7 @@ test_load_mux_reduction()
 //	jive::view(graph.root(), stdout);
 
 	auto load = ex->origin()->node();
-	assert(load && jlm::is_load_op(load->operation()));
+	assert(load && jive::is<jlm::load_op>(load->operation()));
 	assert(load->ninputs() == 4);
 	assert(load->input(1)->origin() == s1);
 	assert(load->input(2)->origin() == s2);
@@ -83,7 +83,7 @@ test_load_alloca_reduction()
 //	jive::view(graph.root(), stdout);
 
 	auto node = ex->origin()->node();
-	assert(node && jlm::is_load_op(node->operation()));
+	assert(node && jive::is<jlm::load_op>(node->operation()));
 	assert(node->ninputs() == 2);
 	assert(node->input(1)->origin() == alloca1[1]);
 }
@@ -116,7 +116,7 @@ test_multiple_origin_reduction()
 //	jive::view(graph.root(), stdout);
 
 	auto node = ex->origin()->node();
-	assert(node && jlm::is_load_op(node->operation()));
+	assert(node && jive::is<jlm::load_op>(node->operation()));
 	assert(node->ninputs() == 2);
 }
 
@@ -152,7 +152,7 @@ test_load_store_state_reduction()
 //	jive::view(graph.root(), stdout);
 
 	auto node = ex->origin()->node();
-	assert(node && jlm::is_load_op(node->operation()));
+	assert(node && jive::is<jlm::load_op>(node->operation()));
 	assert(node->ninputs() == 2);
 }
 

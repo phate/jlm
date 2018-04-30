@@ -130,14 +130,14 @@ private:
 static void
 convert_assignment(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
 {
-	JLM_DEBUG_ASSERT(is_assignment_op(tac.operation()));
+	JLM_DEBUG_ASSERT(is<assignment_op>(tac.operation()));
 	vmap[tac.input(0)] = vmap[tac.input(1)];
 }
 
 static void
 convert_select(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
 {
-	JLM_DEBUG_ASSERT(jlm::is_select_op(tac.operation()));
+	JLM_DEBUG_ASSERT(is<select_op>(tac.operation()));
 	JLM_DEBUG_ASSERT(tac.ninputs() == 3 && tac.noutputs() == 1);
 
 	auto op = jive::match_op(1, {{1, 1}}, 0, 2);
@@ -153,7 +153,7 @@ convert_select(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
 static void
 convert_branch(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
 {
-	JLM_DEBUG_ASSERT(is_branch_op(tac.operation()));
+	JLM_DEBUG_ASSERT(is<branch_op>(tac.operation()));
 }
 
 static void
@@ -306,7 +306,7 @@ convert_branch_node(
 		split = split->child(split->nchildren()-1);
 	auto & sb = dynamic_cast<const agg::block*>(&split->structure())->basic_block();
 
-	JLM_DEBUG_ASSERT(is_branch_op(sb.last()->operation()));
+	JLM_DEBUG_ASSERT(is<branch_op>(sb.last()->operation()));
 	auto predicate = svmap.vmap()[sb.last()->input(0)];
 	auto gamma = jive::gamma_node::create(predicate, node.nchildren()-1);
 
@@ -395,7 +395,7 @@ convert_loop_node(
 		lblock = lblock->child(lblock->nchildren()-1);
 	JLM_DEBUG_ASSERT(is_block_structure(lblock->structure()));
 	auto & bb = static_cast<const agg::block*>(&lblock->structure())->basic_block();
-	JLM_DEBUG_ASSERT(is_branch_op(bb.last()->operation()));
+	JLM_DEBUG_ASSERT(is<branch_op>(bb.last()->operation()));
 	auto predicate = bb.last()->input(0);
 
 	/* update variable map */

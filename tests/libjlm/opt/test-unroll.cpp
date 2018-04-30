@@ -26,7 +26,7 @@ nthetas(jive::region * region)
 {
 	size_t n = 0;
 	for (const auto & node : region->nodes) {
-		if (jive::is_theta_node(&node))
+		if (jive::is<jive::theta_op>(&node))
 			n++;
 	}
 
@@ -257,9 +257,9 @@ test_unknown_boundaries()
 	jive::view(graph, stdout);
 
 	auto node = ex1->origin()->node();
-	assert(jive::is_gamma_node(node));
+	assert(jive::is<jive::gamma_op>(node));
 	node = node->input(1)->origin()->node();
-	assert(jive::is_gamma_node(node));
+	assert(jive::is<jive::gamma_op>(node));
 }
 
 static int

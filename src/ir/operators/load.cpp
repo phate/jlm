@@ -94,7 +94,7 @@ is_load_store_alloca_reducible(const std::vector<jive::output*> & operands)
 		return false;
 
 	auto store = state->node();
-	if (!store || !is_store_op(store->operation()))
+	if (!store || !is<store_op>(store->operation()))
 		return false;
 
 	if (store->input(0)->origin() != alloca->output(0))
@@ -131,7 +131,7 @@ is_load_store_state_reducible(const std::vector<jive::output*> & operands)
 	for (size_t n = 1; n < operands.size(); n++) {
 		JLM_DEBUG_ASSERT(dynamic_cast<const jive::memtype*>(&operands[n]->type()));
 		auto node = operands[n]->node();
-		if (node && is_store_op(node->operation())) {
+		if (node && is<store_op>(node->operation())) {
 			auto addressnode = node->input(0)->origin()->node();
 			if (addressnode && is_alloca_op(addressnode->operation()) && addressnode != allocanode)
 				continue;
@@ -161,7 +161,7 @@ is_load_store_reducible(
 	JLM_DEBUG_ASSERT(operands.size() > 1);
 
 	auto storenode = operands[1]->node();
-	if (!is_store_node(storenode))
+	if (!is<store_op>(storenode))
 		return false;
 
 	auto sop = static_cast<const store_op*>(&storenode->operation());
@@ -257,7 +257,7 @@ load_normal_form::load_normal_form(
 bool
 load_normal_form::normalize_node(jive::node * node) const
 {
-	JLM_DEBUG_ASSERT(is_load_op(node->operation()));
+	JLM_DEBUG_ASSERT(is<load_op>(node->operation()));
 	auto op = static_cast<const jlm::load_op*>(&node->operation());
 	auto operands = jive::operands(node);
 
@@ -311,7 +311,7 @@ load_normal_form::normalized_create(
 	const jive::simple_op & op,
 	const std::vector<jive::output*> & operands) const
 {
-	JLM_DEBUG_ASSERT(is_load_op(op));
+	JLM_DEBUG_ASSERT(is<load_op>(op));
 	auto lop = static_cast<const jlm::load_op*>(&op);
 
 	if (!get_mutable())
