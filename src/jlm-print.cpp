@@ -22,6 +22,8 @@
 
 #include <iostream>
 
+#include <getopt.h>
+
 class cmdflags {
 public:
 	inline
@@ -46,6 +48,7 @@ public:
 	bool l2j_clg_dot;
 	bool r2jdot;
 	bool r2j_clg_dot;
+	std::string file;
 	std::string l2jdot_function;
 	std::string r2jdot_function;
 };
@@ -53,7 +56,7 @@ public:
 static void
 print_usage(const std::string & app)
 {
-	std::cerr << "Usage: " << app << " [OPTIONS] FILE\n";
+	std::cerr << "Usage: " << app << " [OPTIONS]\n";
 	std::cerr << "OPTIONS:\n";
 	std::cerr << "--l2j: Print program after LLVM to JLM pass.\n";
 	std::cerr << "--j2r: Print program after JLM to RVSDG pass.\n";
@@ -64,79 +67,63 @@ print_usage(const std::string & app)
 	std::cerr << "--l2j-clg-dot: Print call graph after LLVM to JLM pass.\n";
 	std::cerr << "--r2jdot f: Print function f as graphviz after RVSDG to JLM pass.\n";
 	std::cerr << "--r2j-clg-dot: Print call graph after RVSDG to JLM pass.\n";
+	std::cerr << "--file name: LLVM IR file.\n";
 }
 
-std::string
-parse_cmdflags(int argc, char ** argv, cmdflags & cmdf)
+static void
+parse_cmdflags(int argc, char ** argv, cmdflags & flags)
 {
-	if (argc < 2) {
-		std::cerr << "Expected LLVM IR file as input.\n";
+	static constexpr size_t l2j = 1;
+	static constexpr size_t j2r = 2;
+	static constexpr size_t r2j = 3;
+	static constexpr size_t j2l = 4;
+	static constexpr size_t j2rx = 5;
+	static constexpr size_t l2jdot = 6;
+	static constexpr size_t l2j_clg_dot = 7;
+	static constexpr size_t r2jdot = 8;
+	static constexpr size_t r2j_clg_dot = 9;
+	static constexpr size_t file = 10;
+
+	static struct option options[] = {
+	  {"l2j", no_argument, NULL, l2j}
+	, {"j2r", no_argument, NULL, j2r}
+	, {"r2j", no_argument, NULL, r2j}
+	, {"j2l", no_argument, NULL, j2l}
+	, {"j2rx", no_argument, NULL, j2rx}
+	, {"l2jdot", required_argument, NULL, l2jdot}
+	, {"l2j-clg-dot", no_argument, NULL, l2j_clg_dot}
+	, {"r2jdot", required_argument, NULL, r2jdot}
+	, {"r2j-clg-dot", no_argument, NULL, r2j_clg_dot}
+	, {"file", required_argument, NULL, file}
+	, {NULL, 0, NULL, 0}
+	};
+
+	int opt;
+	while ((opt = getopt_long_only(argc, argv, "", options, NULL)) != -1) {
+		switch (opt) {
+			case l2j: { flags.l2j = true; break; }
+			case j2r: { flags.j2r = true; break; }
+			case r2j: { flags.r2j = true; break; }
+			case j2l: { flags.j2l = true; break; }
+			case j2rx: { flags.j2rx = true; break; }
+			case l2j_clg_dot: { flags.l2j_clg_dot = true; break; }
+			case r2j_clg_dot: { flags.r2j_clg_dot = true; break; }
+
+			case l2jdot: { flags.l2jdot = true; flags.l2jdot_function = optarg; break; }
+			case r2jdot: { flags.r2jdot = true; flags.r2jdot_function = optarg; break; }
+
+			case file: { flags.file = optarg; break; }
+
+			default:
+				print_usage(argv[0]);
+				exit(EXIT_FAILURE);
+		}
+	}
+
+	if (flags.file.empty()) {
 		print_usage(argv[0]);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
-
-	for (int n = 1; n < argc-1; n++) {
-		std::string flag(argv[n]);
-
-		if (flag == "--l2j") {
-			cmdf.l2j = true;
-			continue;
-		}
-
-		if (flag == "--j2r") {
-			cmdf.j2r = true;
-			continue;
-		}
-
-		if (flag == "--j2rx") {
-			cmdf.j2rx = true;
-			continue;
-		}
-
-		if (flag == "--r2j") {
-			cmdf.r2j = true;
-			continue;
-		}
-
-		if (flag == "--j2l") {
-			cmdf.j2l = true;
-			continue;
-		}
-
-		if (flag == "--l2jdot") {
-			cmdf.l2jdot = true;
-			if (n+1 == argc-1) {
-				std::cerr << "Expected LLVM IR file as input.\n";
-				exit(1);
-			}
-
-			cmdf.l2jdot_function = std::string(argv[++n]);
-			continue;
-		}
-
-		if (flag == "--l2j-clg-dot") {
-			cmdf.l2j_clg_dot = true;
-			continue;
-		}
-
-		if (flag == "--r2jdot") {
-			cmdf.r2jdot = true;
-			if (n+1 == argc-1) {
-				std::cerr << "Expected LLVM IR file as input.\n";
-				exit(1);
-			}
-
-			cmdf.r2jdot_function = std::string(argv[++n]);
-			continue;
-		}
-
-		if (flag == "--r2j-clg-dot") {
-			cmdf.r2j_clg_dot = true;
-			continue;
-		}
-	}
-
-	return std::string(argv[argc-1]);
 }
 
 static inline const jlm::cfg *
@@ -168,11 +155,11 @@ int
 main (int argc, char ** argv)
 {
 	cmdflags flags;
-	auto file_name = parse_cmdflags(argc, argv, flags);
+	parse_cmdflags(argc, argv, flags);
 
 	llvm::LLVMContext ctx;
 	llvm::SMDiagnostic err;
-	auto lm = llvm::parseIRFile(file_name, err, ctx);
+	auto lm = llvm::parseIRFile(flags.file, err, ctx);
 
 	if (!lm) {
 		err.print(argv[0], llvm::errs());
