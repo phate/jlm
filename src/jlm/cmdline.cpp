@@ -43,6 +43,14 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & flags)
 	, cl::value_desc("dir")
 	);
 
+	static cl::list<std::string> libs(
+	  "l"
+	, cl::Prefix
+	, cl::ZeroOrMore
+	, cl::desc("Search the library <lib> when linking.")
+	, cl::value_desc("lib")
+	);
+
 	static cl::opt<std::string> ofilepath(
 	  "o"
 	, cl::init("a.out")
@@ -57,6 +65,7 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & flags)
 
 	cl::ParseCommandLineOptions(argc, argv);
 
+	flags.libs = libs;
 	flags.libpaths = libpaths;
 	flags.ofilepath = ofilepath;
 	flags.ifilepaths = ifilepaths;

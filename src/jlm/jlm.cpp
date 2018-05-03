@@ -92,12 +92,17 @@ create_link_command(const jlm::cmdline_options & options)
 	for (const auto & libpath : options.libpaths)
 		libpaths += "-L" + libpath + " ";
 
+	std::string libs;
+	for (const auto & lib : options.libs)
+		libs += "-l" + lib + " ";
+
 	return strfmt(
 	  "clang "
 	, "-O0 "
 	, ifiles
 	, "-o ", options.ofilepath, " "
 	, libpaths
+	, libs
 	);
 }
 
