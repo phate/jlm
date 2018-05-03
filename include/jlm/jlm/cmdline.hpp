@@ -8,9 +8,9 @@
 
 namespace jlm {
 
-class cmdflags {
+class cmdline_options {
 public:
-	cmdflags()
+	cmdline_options()
 	: only_print_commands(false)
 	, ofilepath("a.out")
 	{}
@@ -23,6 +23,6 @@ public:
 };
 
 void
-parse_cmdline(int argc, char ** argv, cmdflags & flags);
+parse_cmdline(int argc, char ** argv, cmdline_options & options);
 
 }

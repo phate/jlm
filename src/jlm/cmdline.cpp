@@ -10,7 +10,7 @@
 namespace jlm {
 
 void
-parse_cmdline(int argc, char ** argv, jlm::cmdflags & flags)
+parse_cmdline(int argc, char ** argv, jlm::cmdline_options & flags)
 {
 	using namespace llvm;
 

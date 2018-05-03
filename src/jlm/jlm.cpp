@@ -99,16 +99,16 @@ create_link_command(
 }
 
 static std::vector<std::string>
-create_commands(const jlm::cmdflags & flags)
+create_commands(const jlm::cmdline_options & options)
 {
 	std::vector<std::string> commands;
-	for (const auto ifilepath : flags.ifilepaths) {
-		commands.push_back(create_frontend_command(ifilepath, flags.includepaths));
+	for (const auto ifilepath : options.ifilepaths) {
+		commands.push_back(create_frontend_command(ifilepath, options.includepaths));
 		commands.push_back(create_opt_command(ifilepath));
 		commands.push_back(create_cgen_command(ifilepath));
 	}
 
-	commands.push_back(create_link_command(flags.ifilepaths, flags.ofilepath));
+	commands.push_back(create_link_command(options.ifilepaths, options.ofilepath));
 
 	return commands;
 }
@@ -116,12 +116,12 @@ create_commands(const jlm::cmdflags & flags)
 int
 main(int argc, char ** argv)
 {
-	jlm::cmdflags flags;
-	jlm::parse_cmdline(argc, argv, flags);
+	jlm::cmdline_options options;
+	jlm::parse_cmdline(argc, argv, options);
 
-	auto commands = create_commands(flags);
+	auto commands = create_commands(options);
 
-	if (flags.only_print_commands) {
+	if (options.only_print_commands) {
 		for (const auto & cmd : commands)
 			std::cout << cmd << "\n";
 		return 0;
