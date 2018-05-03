@@ -8,52 +8,52 @@ CXXFLAGS += -Wall --std=c++14 -Wfatal-errors
 LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -Lexternal/jive/
 
 LIBJLM_SRC = \
-	src/ir/aggregation/aggregation.cpp \
-	src/ir/aggregation/annotation.cpp \
-	src/ir/aggregation/structure.cpp \
-	src/ir/basic_block.cpp \
-	src/ir/callgraph.cpp \
-	src/ir/cfg.cpp \
-	src/ir/cfg-structure.cpp \
-	src/ir/cfg_node.cpp \
-	src/ir/data.cpp \
-	src/ir/lambda.cpp \
-	src/ir/module.cpp \
-	src/ir/operators/alloca.cpp \
-	src/ir/operators/call.cpp \
-	src/ir/operators/getelementptr.cpp \
-	src/ir/operators/load.cpp \
-	src/ir/operators/operators.cpp \
-	src/ir/operators/sext.cpp \
-	src/ir/operators/store.cpp \
-	src/ir/ssa.cpp \
-	src/ir/tac.cpp \
-	src/ir/types.cpp \
-	src/ir/variable.cpp \
-	src/ir/view.cpp \
+	src/libjlm/ir/aggregation/aggregation.cpp \
+	src/libjlm/ir/aggregation/annotation.cpp \
+	src/libjlm/ir/aggregation/structure.cpp \
+	src/libjlm/ir/basic_block.cpp \
+	src/libjlm/ir/callgraph.cpp \
+	src/libjlm/ir/cfg.cpp \
+	src/libjlm/ir/cfg-structure.cpp \
+	src/libjlm/ir/cfg_node.cpp \
+	src/libjlm/ir/data.cpp \
+	src/libjlm/ir/lambda.cpp \
+	src/libjlm/ir/module.cpp \
+	src/libjlm/ir/operators/alloca.cpp \
+	src/libjlm/ir/operators/call.cpp \
+	src/libjlm/ir/operators/getelementptr.cpp \
+	src/libjlm/ir/operators/load.cpp \
+	src/libjlm/ir/operators/operators.cpp \
+	src/libjlm/ir/operators/sext.cpp \
+	src/libjlm/ir/operators/store.cpp \
+	src/libjlm/ir/ssa.cpp \
+	src/libjlm/ir/tac.cpp \
+	src/libjlm/ir/types.cpp \
+	src/libjlm/ir/variable.cpp \
+	src/libjlm/ir/view.cpp \
 	\
-	src/jlm2llvm/instruction.cpp \
-	src/jlm2llvm/jlm2llvm.cpp \
-	src/jlm2llvm/type.cpp \
+	src/libjlm/jlm2llvm/instruction.cpp \
+	src/libjlm/jlm2llvm/jlm2llvm.cpp \
+	src/libjlm/jlm2llvm/type.cpp \
 	\
-	src/jlm2rvsdg/module.cpp \
-	src/jlm2rvsdg/restructuring.cpp \
+	src/libjlm/jlm2rvsdg/module.cpp \
+	src/libjlm/jlm2rvsdg/restructuring.cpp \
 	\
-	src/llvm2jlm/constant.cpp \
-	src/llvm2jlm/instruction.cpp \
-	src/llvm2jlm/module.cpp \
-	src/llvm2jlm/type.cpp \
+	src/libjlm/llvm2jlm/constant.cpp \
+	src/libjlm/llvm2jlm/instruction.cpp \
+	src/libjlm/llvm2jlm/module.cpp \
+	src/libjlm/llvm2jlm/type.cpp \
 	\
-	src/rvsdg2jlm/rvsdg2jlm.cpp \
+	src/libjlm/rvsdg2jlm/rvsdg2jlm.cpp \
 	\
-	src/opt/cne.cpp \
-	src/opt/dne.cpp \
-	src/opt/inlining.cpp \
-	src/opt/invariance.cpp \
-	src/opt/inversion.cpp \
-	src/opt/pull.cpp \
-	src/opt/push.cpp \
-	src/opt/unroll.cpp \
+	src/libjlm/opt/cne.cpp \
+	src/libjlm/opt/dne.cpp \
+	src/libjlm/opt/inlining.cpp \
+	src/libjlm/opt/invariance.cpp \
+	src/libjlm/opt/inversion.cpp \
+	src/libjlm/opt/pull.cpp \
+	src/libjlm/opt/push.cpp \
+	src/libjlm/opt/unroll.cpp \
 
 JLMPRINT_SRC = \
 	src/jlm-print.cpp \
