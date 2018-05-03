@@ -82,19 +82,22 @@ create_cgen_command(const std::string & ifilepath)
 }
 
 static std::string
-create_link_command(
-	const std::vector<std::string> & ifilepaths,
-	const std::string & ofilepath)
+create_link_command(const jlm::cmdline_options & options)
 {
 	std::string ifiles;
-	for (const auto & ifilepath : ifilepaths)
+	for (const auto & ifilepath : options.ifilepaths)
 		ifiles += "/tmp/" + create_cgen_ofilename(file(ifilepath)) + " ";
+
+	std::string libpaths;
+	for (const auto & libpath : options.libpaths)
+		libpaths += "-L" + libpath + " ";
 
 	return strfmt(
 	  "clang "
 	, "-O0 "
 	, ifiles
-	, "-o ", ofilepath
+	, "-o ", options.ofilepath, " "
+	, libpaths
 	);
 }
 
@@ -108,7 +111,7 @@ create_commands(const jlm::cmdline_options & options)
 		commands.push_back(create_cgen_command(ifilepath));
 	}
 
-	commands.push_back(create_link_command(options.ifilepaths, options.ofilepath));
+	commands.push_back(create_link_command(options));
 
 	return commands;
 }
