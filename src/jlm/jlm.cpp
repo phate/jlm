@@ -3,27 +3,11 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <llvm/Support/CommandLine.h>
-
+#include <jlm/jlm/cmdline.hpp>
 #include <jlm/util/strfmt.hpp>
-
-#include <getopt.h>
 
 #include <iostream>
 #include <vector>
-
-class cmdflags {
-public:
-	cmdflags()
-	: only_print_commands(false)
-	, ofilepath("a.out")
-	{}
-
-	bool only_print_commands;
-
-	std::string ofilepath;
-	std::vector<std::string> ifilepaths;
-};
 
 static std::string
 file(const std::string & filepath)
@@ -108,7 +92,7 @@ create_link_command(
 }
 
 static std::vector<std::string>
-create_commands(const cmdflags & flags)
+create_commands(const jlm::cmdflags & flags)
 {
 	std::vector<std::string> commands;
 	for (const auto ifilepath : flags.ifilepaths) {
@@ -122,48 +106,11 @@ create_commands(const cmdflags & flags)
 	return commands;
 }
 
-static void
-parse_cmdline(int argc, char ** argv, cmdflags & flags)
-{
-	using namespace llvm;
-
-	auto & map = cl::getRegisteredOptions();
-	auto & help_hidden = map["help-hidden"];
-	auto & help = map["help"];
-	map.clear();
-	map["help"] = help;
-	map["help-hidden"] = help_hidden;
-
-	static cl::list<std::string> ifilepaths(
-	  cl::Positional
-	, cl::OneOrMore
-	, cl::desc("<inputs>")
-	);
-
-	static cl::opt<std::string> ofilepath(
-	  "o"
-	, cl::init("a.out")
-	, cl::desc("Write output to <file>.")
-	, cl::value_desc("file")
-	);
-
-	static cl::opt<bool> only_print_commands(
-	  "###"
-	, cl::desc("Print (but do not run) the commands for this compilation.")
-	);
-
-	cl::ParseCommandLineOptions(argc, argv);
-
-	flags.ofilepath = ofilepath;
-	flags.ifilepaths = ifilepaths;
-	flags.only_print_commands = only_print_commands;
-}
-
 int
 main(int argc, char ** argv)
 {
-	cmdflags flags;
-	parse_cmdline(argc, argv, flags);
+	jlm::cmdflags flags;
+	jlm::parse_cmdline(argc, argv, flags);
 
 	auto commands = create_commands(flags);
 

@@ -62,7 +62,8 @@ JLMOPT_SRC = \
 	src/jlm-opt.cpp \
 
 JLM_SRC = \
-	src/jlm/jlm.cpp
+	src/jlm/cmdline.cpp \
+	src/jlm/jlm.cpp \
 
 all: libjlm.a jlm-print jlm-opt jlm check
 
