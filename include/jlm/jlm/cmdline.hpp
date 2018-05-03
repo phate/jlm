@@ -19,6 +19,7 @@ public:
 
 	std::string ofilepath;
 	std::vector<std::string> ifilepaths;
+	std::vector<std::string> includepaths;
 };
 
 void

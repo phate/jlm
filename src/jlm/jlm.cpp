@@ -38,12 +38,19 @@ create_cgen_ofilename(const std::string & ifile)
 }
 
 static std::string
-create_frontend_command(const std::string & ifilepath)
+create_frontend_command(
+	const std::string & ifilepath,
+	const std::vector<std::string> & includepaths)
 {
 	auto f = file(ifilepath);
 
+	std::string incpaths;
+	for (const auto & incpath : includepaths)
+		incpaths += "-I" + incpath + " ";
+
 	return strfmt(
 	  "clang "
+	, incpaths, " "
 	, "-S -emit-llvm "
 	, "-o /tmp/", create_frontend_ofilename(f), " "
 	, ifilepath
@@ -96,7 +103,7 @@ create_commands(const jlm::cmdflags & flags)
 {
 	std::vector<std::string> commands;
 	for (const auto ifilepath : flags.ifilepaths) {
-		commands.push_back(create_frontend_command(ifilepath));
+		commands.push_back(create_frontend_command(ifilepath, flags.includepaths));
 		commands.push_back(create_opt_command(ifilepath));
 		commands.push_back(create_cgen_command(ifilepath));
 	}

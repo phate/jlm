@@ -27,6 +27,14 @@ parse_cmdline(int argc, char ** argv, jlm::cmdflags & flags)
 	, cl::desc("<inputs>")
 	);
 
+	static cl::list<std::string> includepaths(
+	  "I"
+	, cl::Prefix
+	, cl::ZeroOrMore
+	, cl::desc("Add directory <dir> to include search paths.")
+	, cl::value_desc("dir")
+	);
+
 	static cl::opt<std::string> ofilepath(
 	  "o"
 	, cl::init("a.out")
@@ -43,6 +51,7 @@ parse_cmdline(int argc, char ** argv, jlm::cmdflags & flags)
 
 	flags.ofilepath = ofilepath;
 	flags.ifilepaths = ifilepaths;
+	flags.includepaths = includepaths;
 	flags.only_print_commands = only_print_commands;
 }
 
