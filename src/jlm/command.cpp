@@ -74,7 +74,7 @@ prscmd::to_str() const
 	return strfmt(
 	  "clang "
 	, Wwarnings, " "
-	, "-std=", jlm::to_str(std_), " "
+	, std_ != standard::none ? "-std="+jlm::to_str(std_)+" " : ""
 	, Dmacros, " "
 	, Ipaths, " "
 	, "-S -emit-llvm "
