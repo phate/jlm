@@ -96,6 +96,14 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & flags)
 	, cl::value_desc("#")
 	);
 
+	static cl::list<std::string> Dmacros(
+	  "D"
+	, cl::Prefix
+	, cl::ZeroOrMore
+	, cl::desc("Add <macro> to preprocessor macros.")
+	, cl::value_desc("macro")
+	);
+
 	cl::ParseCommandLineOptions(argc, argv);
 
 	/* Process parsed options */
@@ -112,6 +120,7 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & flags)
 	}
 
 	flags.libs = libs;
+	flags.macros = Dmacros;
 	flags.Olvl = olvl->second;
 	flags.libpaths = libpaths;
 	flags.ofilepath = ofilepath;

@@ -31,6 +31,7 @@ public:
 	optlvl Olvl;
 	std::string ofilepath;
 	std::vector<std::string> libs;
+	std::vector<std::string> macros;
 	std::vector<std::string> libpaths;
 	std::vector<std::string> ifilepaths;
 	std::vector<std::string> includepaths;
