@@ -3,6 +3,9 @@
  * See COPYING for terms of redistribution.
  */
 
+#ifndef JLM_JLM_CMDLINE_HPP
+#define JLM_JLM_CMDLINE_HPP
+
 #include <string>
 #include <vector>
 
@@ -37,3 +40,5 @@ void
 parse_cmdline(int argc, char ** argv, cmdline_options & options);
 
 }
+
+#endif
