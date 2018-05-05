@@ -34,10 +34,12 @@ public:
 	prscmd(
 		const std::string & ifile,
 		const std::vector<std::string> & Ipaths,
-		const std::vector<std::string> & Dmacros)
+		const std::vector<std::string> & Dmacros,
+		const std::vector<std::string> & Wwarnings)
 	: ifile_(ifile)
 	, Ipaths_(Ipaths)
 	, Dmacros_(Dmacros)
+	, Wwarnings_(Wwarnings)
 	{}
 
 	virtual std::string
@@ -50,6 +52,7 @@ private:
 	std::string ifile_;
 	std::vector<std::string> Ipaths_;
 	std::vector<std::string> Dmacros_;
+	std::vector<std::string> Wwarnings_;
 };
 
 /* optimization command */

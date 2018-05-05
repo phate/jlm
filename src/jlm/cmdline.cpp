@@ -104,6 +104,14 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & flags)
 	, cl::value_desc("macro")
 	);
 
+	static cl::list<std::string> Wwarnings(
+	  "W"
+	, cl::Prefix
+	, cl::ZeroOrMore
+	, cl::desc("Enable specified warning.")
+	, cl::value_desc("warning")
+	);
+
 	cl::ParseCommandLineOptions(argc, argv);
 
 	/* Process parsed options */
@@ -123,6 +131,7 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & flags)
 	flags.macros = Dmacros;
 	flags.Olvl = olvl->second;
 	flags.libpaths = libpaths;
+	flags.warnings = Wwarnings;
 	flags.ofilepath = ofilepath;
 	flags.ifilepaths = ifilepaths;
 	flags.includepaths = includepaths;

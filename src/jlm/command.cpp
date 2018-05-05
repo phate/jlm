@@ -24,20 +24,20 @@ file(const std::string & filepath)
 /* command generation */
 
 std::vector<std::unique_ptr<command>>
-generate_commands(const jlm::cmdline_options & options)
+generate_commands(const jlm::cmdline_options & opts)
 {
 	std::vector<std::unique_ptr<command>> cmds;
 
-	for (const auto & ifile : options.ifilepaths) {
-		cmds.push_back(std::make_unique<prscmd>(ifile, options.includepaths, options.macros));
+	for (const auto & ifile : opts.ifilepaths) {
+		cmds.push_back(std::make_unique<prscmd>(ifile, opts.includepaths, opts.macros, opts.warnings));
 		cmds.push_back(std::make_unique<optcmd>(ifile));
-		cmds.push_back(std::make_unique<cgencmd>(ifile, options.Olvl));
+		cmds.push_back(std::make_unique<cgencmd>(ifile, opts.Olvl));
 	}
 
-	cmds.push_back(std::make_unique<lnkcmd>(options.ifilepaths, options.ofilepath, options.libpaths,
-		options.libs));
+	cmds.push_back(std::make_unique<lnkcmd>(opts.ifilepaths, opts.ofilepath, opts.libpaths,
+		opts.libs));
 
-	if (options.only_print_commands) {
+	if (opts.only_print_commands) {
 		std::unique_ptr<command> cmd(new printcmd(std::move(cmds)));
 		cmds.push_back(std::move(cmd));
 	}
@@ -66,8 +66,13 @@ prscmd::to_str() const
 	for (const auto & Dmacro : Dmacros_)
 		Dmacros += "-D" + Dmacro + " ";
 
+	std::string Wwarnings;
+	for (const auto & Wwarning : Wwarnings_)
+		Wwarnings += "-W" + Wwarning + " ";
+
 	return strfmt(
 	  "clang "
+	, Wwarnings, " "
 	, Dmacros, " "
 	, Ipaths, " "
 	, "-S -emit-llvm "

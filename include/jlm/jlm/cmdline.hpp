@@ -33,6 +33,7 @@ public:
 	std::vector<std::string> libs;
 	std::vector<std::string> macros;
 	std::vector<std::string> libpaths;
+	std::vector<std::string> warnings;
 	std::vector<std::string> ifilepaths;
 	std::vector<std::string> includepaths;
 };
