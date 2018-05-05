@@ -15,13 +15,6 @@ main(int argc, char ** argv)
 	parse_cmdline(argc, argv, options);
 
 	auto cmds = generate_commands(options);
-
-	if (options.only_print_commands) {
-		for (const auto & cmd : cmds)
-			std::cout << cmd->to_str() << "\n";
-		return 0;
-	}
-
 	for (const auto & cmd : cmds)
 		cmd->execute();
 

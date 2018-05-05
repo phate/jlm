@@ -117,6 +117,35 @@ private:
 	std::vector<std::string> Lpaths_;
 };
 
+/* print command */
+
+class printcmd final : public command {
+public:
+	printcmd(
+		std::vector<std::unique_ptr<command>> cmds)
+	: cmds_(std::move(cmds))
+	{}
+
+	printcmd(const printcmd&) = delete;
+
+	printcmd(printcmd&&) = delete;
+
+	printcmd &
+	operator=(const printcmd&) = delete;
+
+	printcmd &
+	operator=(printcmd&&)	= delete;
+
+	virtual std::string
+	to_str() const override;
+
+	virtual void
+	execute() const override;
+
+private:
+	std::vector<std::unique_ptr<command>> cmds_;
+};
+
 }
 
 #endif

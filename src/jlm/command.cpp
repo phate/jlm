@@ -6,6 +6,7 @@
 #include <jlm/jlm/command.hpp>
 #include <jlm/util/strfmt.hpp>
 
+#include <iostream>
 #include <memory>
 
 namespace jlm {
@@ -35,6 +36,11 @@ generate_commands(const jlm::cmdline_options & options)
 
 	cmds.push_back(std::make_unique<lnkcmd>(options.ifilepaths, options.ofilepath, options.libpaths,
 		options.libs));
+
+	if (options.only_print_commands) {
+		std::unique_ptr<command> cmd(new printcmd(std::move(cmds)));
+		cmds.push_back(std::move(cmd));
+	}
 
 	return cmds;
 }
@@ -159,6 +165,24 @@ lnkcmd::execute() const
 {
 	if (system(to_str().c_str()))
 		exit(EXIT_FAILURE);
+}
+
+/* print command */
+
+std::string
+printcmd::to_str() const
+{
+	std::string str;
+	for (const auto & cmd : cmds_)
+		str += cmd->to_str() + "\n";
+
+	return str;
+}
+
+void
+printcmd::execute() const
+{
+	std::cout << to_str();
 }
 
 }
