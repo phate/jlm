@@ -70,12 +70,15 @@ create_opt_command(const std::string & ifilepath)
 }
 
 static std::string
-create_cgen_command(const std::string & ifilepath)
+create_cgen_command(
+	const std::string & ifilepath,
+	const jlm::cmdline_options & options)
 {
 	auto f = file(ifilepath);
 
 	return strfmt(
 	  "llc "
+	, "-", to_str(options.Olvl), " "
 	, "-filetype=obj "
 	, "-o /tmp/", create_cgen_ofilename(f), " /tmp/", create_opt_ofilename(f)
 	);
@@ -113,7 +116,7 @@ create_commands(const jlm::cmdline_options & options)
 	for (const auto ifilepath : options.ifilepaths) {
 		commands.push_back(create_frontend_command(ifilepath, options.includepaths));
 		commands.push_back(create_opt_command(ifilepath));
-		commands.push_back(create_cgen_command(ifilepath));
+		commands.push_back(create_cgen_command(ifilepath, options));
 	}
 
 	commands.push_back(create_link_command(options));
