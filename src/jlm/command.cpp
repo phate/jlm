@@ -29,7 +29,8 @@ generate_commands(const jlm::cmdline_options & opts)
 	std::vector<std::unique_ptr<command>> cmds;
 
 	for (const auto & ifile : opts.ifilepaths) {
-		cmds.push_back(std::make_unique<prscmd>(ifile, opts.includepaths, opts.macros, opts.warnings));
+		cmds.push_back(std::make_unique<prscmd>(ifile, opts.includepaths, opts.macros,
+			opts.warnings, opts.std));
 		cmds.push_back(std::make_unique<optcmd>(ifile));
 		cmds.push_back(std::make_unique<cgencmd>(ifile, opts.Olvl));
 	}
@@ -73,6 +74,7 @@ prscmd::to_str() const
 	return strfmt(
 	  "clang "
 	, Wwarnings, " "
+	, "-std=", jlm::to_str(std_), " "
 	, Dmacros, " "
 	, Ipaths, " "
 	, "-S -emit-llvm "

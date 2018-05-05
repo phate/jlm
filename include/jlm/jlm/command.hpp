@@ -35,8 +35,10 @@ public:
 		const std::string & ifile,
 		const std::vector<std::string> & Ipaths,
 		const std::vector<std::string> & Dmacros,
-		const std::vector<std::string> & Wwarnings)
-	: ifile_(ifile)
+		const std::vector<std::string> & Wwarnings,
+		const standard & std)
+	: std_(std)
+	, ifile_(ifile)
 	, Ipaths_(Ipaths)
 	, Dmacros_(Dmacros)
 	, Wwarnings_(Wwarnings)
@@ -49,6 +51,7 @@ public:
 	execute() const override;
 
 private:
+	standard std_;
 	std::string ifile_;
 	std::vector<std::string> Ipaths_;
 	std::vector<std::string> Dmacros_;
