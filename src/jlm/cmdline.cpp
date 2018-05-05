@@ -106,6 +106,7 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & flags)
 	  "O"
 	, cl::Prefix
 	, cl::ZeroOrMore
+	, cl::init(':')
 	, cl::desc("Optimization level. [O0, O1, O2, O3]")
 	, cl::value_desc("#")
 	);
@@ -149,22 +150,26 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & flags)
 	, {"c++11", standard::cpp11}, {"c++14", standard::cpp14}
 	});
 
-	auto olvl = Olvlmap.find(optlvl);
-	if (olvl == Olvlmap.end()) {
-		std::cerr << "Unknown optimization level.\n";
-		exit(EXIT_FAILURE);
+	if (optlvl != ':') {
+		auto olvl = Olvlmap.find(optlvl);
+		if (olvl == Olvlmap.end()) {
+			std::cerr << "Unknown optimization level.\n";
+			exit(EXIT_FAILURE);
+		}
+		flags.Olvl = olvl->second;
 	}
 
-	auto stdit = stdmap.find(std);
-	if (stdit == stdmap.end()) {
-		std::cerr << "Unknown language standard.\n";
-		exit(EXIT_FAILURE);
+	if (!std.empty()) {
+		auto stdit = stdmap.find(std);
+		if (stdit == stdmap.end()) {
+			std::cerr << "Unknown language standard.\n";
+			exit(EXIT_FAILURE);
+		}
+		flags.std = stdit->second;
 	}
 
 	flags.libs = libs;
 	flags.macros = Dmacros;
-	flags.std = stdit->second;
-	flags.Olvl = olvl->second;
 	flags.libpaths = libpaths;
 	flags.warnings = Wwarnings;
 	flags.ofilepath = ofilepath;
