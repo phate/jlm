@@ -59,7 +59,7 @@ JLMPRINT_SRC = \
 	src/jlm-print.cpp \
 
 JLMOPT_SRC = \
-	src/jlm-opt.cpp \
+	src/jlm-opt/jlm-opt.cpp \
 
 JLM_SRC = \
 	src/jlm/cmdline.cpp \
