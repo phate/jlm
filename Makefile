@@ -51,6 +51,7 @@ LIBJLM_SRC = \
 	src/libjlm/opt/inlining.cpp \
 	src/libjlm/opt/invariance.cpp \
 	src/libjlm/opt/inversion.cpp \
+	src/libjlm/opt/optimization.cpp \
 	src/libjlm/opt/pull.cpp \
 	src/libjlm/opt/push.cpp \
 	src/libjlm/opt/reduction.cpp \

@@ -11,15 +11,7 @@
 #include <jlm/jlm2rvsdg/module.hpp>
 #include <jlm/jlm2llvm/jlm2llvm.hpp>
 #include <jlm/llvm2jlm/module.hpp>
-#include <jlm/opt/cne.hpp>
-#include <jlm/opt/dne.hpp>
-#include <jlm/opt/inlining.hpp>
-#include <jlm/opt/invariance.hpp>
-#include <jlm/opt/inversion.hpp>
-#include <jlm/opt/pull.hpp>
-#include <jlm/opt/push.hpp>
-#include <jlm/opt/reduction.hpp>
-#include <jlm/opt/unroll.hpp>
+#include <jlm/opt/optimization.hpp>
 #include <jlm/rvsdg2jlm/rvsdg2jlm.hpp>
 
 #include <llvm/IR/LLVMContext.h>
@@ -31,8 +23,6 @@
 #include <chrono>
 #include <iostream>
 
-enum class opt {cne, dne, iln, inv, psh, red, ivt, url, pll};
-
 struct cmdflags {
 	inline
 	cmdflags()
@@ -42,7 +32,7 @@ struct cmdflags {
 
 	bool xml;
 	bool llvm;
-	std::vector<opt> passes;
+	std::vector<jlm::optimization> passes;
 };
 
 static void
@@ -73,15 +63,15 @@ parse_cmdflags(int argc, char ** argv, cmdflags & flags)
 	}
 
 	static std::unordered_map<std::string, void(*)(cmdflags&)> map({
-	  {"--cne", [](cmdflags & flags){ flags.passes.push_back(opt::cne); }}
-	, {"--dne", [](cmdflags & flags){ flags.passes.push_back(opt::dne); }}
-	, {"--iln", [](cmdflags & flags){ flags.passes.push_back(opt::iln); }}
-	, {"--inv", [](cmdflags & flags){ flags.passes.push_back(opt::inv); }}
-	, {"--pll", [](cmdflags & flags){ flags.passes.push_back(opt::pll); }}
-	, {"--psh", [](cmdflags & flags){ flags.passes.push_back(opt::psh); }}
-	, {"--red", [](cmdflags & flags){ flags.passes.push_back(opt::red); }}
-	, {"--ivt", [](cmdflags & flags){ flags.passes.push_back(opt::ivt); }}
-	, {"--url", [](cmdflags & flags){ flags.passes.push_back(opt::url); }}
+	  {"--cne", [](cmdflags & flags){ flags.passes.push_back(jlm::optimization::cne); }}
+	, {"--dne", [](cmdflags & flags){ flags.passes.push_back(jlm::optimization::dne); }}
+	, {"--iln", [](cmdflags & flags){ flags.passes.push_back(jlm::optimization::iln); }}
+	, {"--inv", [](cmdflags & flags){ flags.passes.push_back(jlm::optimization::inv); }}
+	, {"--pll", [](cmdflags & flags){ flags.passes.push_back(jlm::optimization::pll); }}
+	, {"--psh", [](cmdflags & flags){ flags.passes.push_back(jlm::optimization::psh); }}
+	, {"--red", [](cmdflags & flags){ flags.passes.push_back(jlm::optimization::red); }}
+	, {"--ivt", [](cmdflags & flags){ flags.passes.push_back(jlm::optimization::ivt); }}
+	, {"--url", [](cmdflags & flags){ flags.passes.push_back(jlm::optimization::url); }}
 	, {"--llvm", [](cmdflags & flags){ flags.llvm = true; }}
 	, {"--xml", [](cmdflags & flags){ flags.xml = true; }}
 	});
@@ -99,31 +89,6 @@ parse_cmdflags(int argc, char ** argv, cmdflags & flags)
 	}
 
 	return std::string(argv[argc-1]);
-}
-
-static void
-perform_optimizations(jive::graph * graph, const std::vector<opt> & opts)
-{
-	static std::unordered_map<opt, void(*)(jive::graph&)> map({
-	  {opt::cne, [](jive::graph & graph){ jlm::cne(graph); }}
-	, {opt::dne, [](jive::graph & graph){ jlm::dne(graph); }}
-	, {opt::iln, [](jive::graph & graph){ jlm::inlining(graph); }}
-	, {opt::inv, [](jive::graph & graph){ jlm::invariance(graph); }}
-	, {opt::pll, [](jive::graph & graph){ jlm::pull(graph); }}
-	, {opt::psh, [](jive::graph & graph){ jlm::push(graph); }}
-	, {opt::ivt, [](jive::graph & graph){ jlm::invert(graph); }}
-	, {opt::url, [](jive::graph & graph){ jlm::unroll(graph, 4); }}
-	, {opt::red, [](jive::graph & graph){ jlm::reduce(graph); }}
-	});
-
-	for (const auto & opt : opts) {
-		if (map.find(opt) != map.end()) {
-			map[opt](*graph);
-			continue;
-		}
-
-		JLM_ASSERT(0);
-	}
 }
 
 int
@@ -153,7 +118,8 @@ main(int argc, char ** argv)
 		size_t nnodes = jive::nnodes(rvsdg->graph()->root());
 	#endif
 
-	perform_optimizations(rvsdg->graph(), flags.passes);
+	for (const auto & opt : flags.passes)
+		optimize(*rvsdg->graph(), opt);
 
 	if (flags.llvm) {
 		jm = jlm::rvsdg2jlm::rvsdg2jlm(*rvsdg);

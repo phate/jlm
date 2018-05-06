@@ -7,8 +7,12 @@
 #define JLM_OPT_UNROLL_HPP
 
 #include <jive/rvsdg/theta.h>
+#include <jive/types/bitstring.h>
+
+#include <jlm/common.hpp>
 
 namespace jive {
+	class bitvalue_repr;
 	class graph;
 }
 
