@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/ir/data.hpp>
+#include <jlm/ir/operators/data.hpp>
 
 #include <jive/rvsdg/substitution.h>
 
