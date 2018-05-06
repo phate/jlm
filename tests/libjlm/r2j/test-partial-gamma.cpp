@@ -13,8 +13,8 @@
 #include <jive/view.h>
 
 #include <jlm/ir/cfg-structure.hpp>
-#include <jlm/ir/lambda.hpp>
 #include <jlm/ir/module.hpp>
+#include <jlm/ir/operators/lambda.hpp>
 #include <jlm/ir/rvsdg.hpp>
 #include <jlm/ir/view.hpp>
 #include <jlm/rvsdg2jlm/rvsdg2jlm.hpp>

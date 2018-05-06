@@ -12,7 +12,6 @@
 #include <jive/view.h>
 
 #include <jlm/ir/cfg-structure.hpp>
-#include <jlm/ir/lambda.hpp>
 #include <jlm/ir/module.hpp>
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/rvsdg.hpp>

@@ -13,9 +13,8 @@
 #include <jlm/ir/basic_block.hpp>
 #include <jlm/ir/cfg-structure.hpp>
 #include <jlm/ir/data.hpp>
-#include <jlm/ir/lambda.hpp>
 #include <jlm/ir/module.hpp>
-#include <jlm/ir/operators/operators.hpp>
+#include <jlm/ir/operators.hpp>
 #include <jlm/ir/rvsdg.hpp>
 #include <jlm/ir/tac.hpp>
 #include <jlm/rvsdg2jlm/context.hpp>

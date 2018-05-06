@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_IR_LAMBDA_HPP
-#define JLM_IR_LAMBDA_HPP
+#ifndef JLM_IR_OPERATORS_LAMBDA_HPP
+#define JLM_IR_OPERATORS_LAMBDA_HPP
 
 #include <jive/rvsdg/region.h>
 #include <jive/rvsdg/structural-node.h>

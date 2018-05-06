@@ -5,7 +5,7 @@
 
 #include <jlm/common.hpp>
 #include <jlm/ir/data.hpp>
-#include <jlm/ir/lambda.hpp>
+#include <jlm/ir/operators.hpp>
 #include <jlm/opt/dne.hpp>
 #include <jlm/util/stats.hpp>
 

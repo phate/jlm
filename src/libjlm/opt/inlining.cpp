@@ -4,8 +4,7 @@
  */
 
 #include <jlm/common.hpp>
-#include <jlm/ir/lambda.hpp>
-#include <jlm/ir/operators/call.hpp>
+#include <jlm/ir/operators.hpp>
 #include <jlm/opt/inlining.hpp>
 
 #include <jive/rvsdg/gamma.h>

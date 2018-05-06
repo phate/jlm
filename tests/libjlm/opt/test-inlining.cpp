@@ -11,8 +11,7 @@
 #include <jive/rvsdg/control.h>
 #include <jive/rvsdg/gamma.h>
 
-#include <jlm/ir/lambda.hpp>
-#include <jlm/ir/operators/call.hpp>
+#include <jlm/ir/operators.hpp>
 #include <jlm/opt/inlining.hpp>
 
 /* FIXME: replace with contains function from jive */
