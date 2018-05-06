@@ -6,7 +6,7 @@
 #include <jlm/ir/basic-block.hpp>
 #include <jlm/ir/cfg.hpp>
 #include <jlm/ir/cfg-structure.hpp>
-#include <jlm/ir/cfg_node.hpp>
+#include <jlm/ir/cfg-node.hpp>
 #include <jlm/ir/module.hpp>
 #include <jlm/ir/operators/operators.hpp>
 #include <jlm/ir/ssa.hpp>

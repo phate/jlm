@@ -6,7 +6,7 @@
 #define JLM_IR_CFG_H
 
 #include <jlm/common.hpp>
-#include <jlm/ir/cfg_node.hpp>
+#include <jlm/ir/cfg-node.hpp>
 #include <jlm/ir/variable.hpp>
 
 #include <jive/rvsdg/operation.h>
