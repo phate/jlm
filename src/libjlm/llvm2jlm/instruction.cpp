@@ -9,7 +9,7 @@
 #include <jlm/llvm2jlm/instruction.hpp>
 #include <jlm/llvm2jlm/type.hpp>
 
-#include <jlm/ir/basic_block.hpp>
+#include <jlm/ir/basic-block.hpp>
 #include <jlm/ir/ipgraph.hpp>
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/tac.hpp>

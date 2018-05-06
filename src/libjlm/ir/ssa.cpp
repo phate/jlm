@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/ir/basic_block.hpp>
+#include <jlm/ir/basic-block.hpp>
 #include <jlm/ir/cfg.hpp>
 #include <jlm/ir/cfg-structure.hpp>
 #include <jlm/ir/cfg_node.hpp>

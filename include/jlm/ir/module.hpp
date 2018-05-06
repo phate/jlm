@@ -6,7 +6,7 @@
 #ifndef JLM_IR_MODULE_HPP
 #define JLM_IR_MODULE_HPP
 
-#include <jlm/ir/basic_block.hpp>
+#include <jlm/ir/basic-block.hpp>
 #include <jlm/ir/ipgraph.hpp>
 #include <jlm/ir/tac.hpp>
 

@@ -6,7 +6,7 @@
 #include <jive/arch/addresstype.h>
 #include <jive/rvsdg/control.h>
 
-#include <jlm/ir/basic_block.hpp>
+#include <jlm/ir/basic-block.hpp>
 #include <jlm/ir/cfg.hpp>
 #include <jlm/ir/cfg-structure.hpp>
 #include <jlm/ir/cfg_node.hpp>

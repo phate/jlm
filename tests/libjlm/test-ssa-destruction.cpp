@@ -7,7 +7,7 @@
 #include "test-registry.hpp"
 #include "test-types.hpp"
 
-#include <jlm/ir/basic_block.hpp>
+#include <jlm/ir/basic-block.hpp>
 #include <jlm/ir/cfg.hpp>
 #include <jlm/ir/module.hpp>
 #include <jlm/ir/operators/operators.hpp>
