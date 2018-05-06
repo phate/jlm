@@ -10,8 +10,8 @@
 #include <jlm/ir/aggregation/annotation.hpp>
 #include <jlm/ir/aggregation/node.hpp>
 #include <jlm/ir/basic_block.hpp>
-#include <jlm/ir/callgraph.hpp>
 #include <jlm/ir/cfg-structure.hpp>
+#include <jlm/ir/ipgraph.hpp>
 #include <jlm/ir/module.hpp>
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/rvsdg.hpp>
@@ -461,7 +461,7 @@ convert_cfg(
 
 static jive::output *
 construct_lambda(
-	const callgraph_node * node,
+	const ipgraph_node * node,
 	jive::region * region,
 	scoped_vmap & svmap)
 {
@@ -490,7 +490,7 @@ convert_tacs(const tacsvector_t & tacs, jive::region * region, scoped_vmap & svm
 
 static jive::output *
 convert_data_node(
-	const jlm::callgraph_node * node,
+	const jlm::ipgraph_node * node,
 	jive::region * region,
 	scoped_vmap & svmap)
 {
@@ -525,7 +525,7 @@ convert_data_node(
 
 static void
 handle_scc(
-	const std::unordered_set<const jlm::callgraph_node*> & scc,
+	const std::unordered_set<const jlm::ipgraph_node*> & scc,
 	jive::graph * graph,
 	scoped_vmap & svmap)
 {
@@ -533,7 +533,7 @@ handle_scc(
 
 	static std::unordered_map<
 		std::type_index,
-		std::function<jive::output*(const callgraph_node*, jive::region*, scoped_vmap&)>
+		std::function<jive::output*(const ipgraph_node*, jive::region*, scoped_vmap&)>
 	> map({
 	  {typeid(data_node), convert_data_node}
 	, {typeid(function_node), construct_lambda}
@@ -612,8 +612,8 @@ construct_rvsdg(const module & m)
 
 	scoped_vmap svmap(m, graph->root());
 
-	/* convert callgraph nodes */
-	auto sccs = m.callgraph().find_sccs();
+	/* convert ipgraph nodes */
+	auto sccs = m.ipgraph().find_sccs();
 	for (const auto & scc : sccs)
 		handle_scc(scc, graph, svmap);
 

@@ -182,7 +182,7 @@ to_str(const jlm::cfg & cfg)
 }
 
 static std::string
-emit_function_node(const jlm::callgraph_node & clg_node)
+emit_function_node(const jlm::ipgraph_node & clg_node)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const function_node*>(&clg_node));
 	auto & node = *static_cast<const function_node*>(&clg_node);
@@ -214,7 +214,7 @@ emit_function_node(const jlm::callgraph_node & clg_node)
 }
 
 static std::string
-emit_data_node(const jlm::callgraph_node & clg_node)
+emit_data_node(const jlm::ipgraph_node & clg_node)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const data_node*>(&clg_node));
 	auto & node = *static_cast<const data_node*>(&clg_node);
@@ -227,11 +227,11 @@ emit_data_node(const jlm::callgraph_node & clg_node)
 }
 
 std::string
-to_str(const jlm::callgraph & clg)
+to_str(const jlm::ipgraph & clg)
 {
 	static std::unordered_map<
 		std::type_index,
-		std::function<std::string(const jlm::callgraph_node&)>
+		std::function<std::string(const jlm::ipgraph_node&)>
 	> map({
 		{typeid(function_node), emit_function_node}
 	, {typeid(data_node), emit_data_node}
@@ -253,7 +253,7 @@ to_str(const jlm::module & module)
 	for (const auto & gv : module)
 		str += emit_global(gv) + "\n\n";
 
-	str += to_str(module.callgraph());
+	str += to_str(module.ipgraph());
 
 	return str;
 }
@@ -375,7 +375,7 @@ to_dot(const jlm::cfg & cfg)
 }
 
 std::string
-to_dot(const jlm::callgraph & clg)
+to_dot(const jlm::ipgraph & clg)
 {
 	std::string dot("digraph clg {\n");
 	for (const auto & node : clg) {

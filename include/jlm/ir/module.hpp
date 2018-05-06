@@ -7,7 +7,7 @@
 #define JLM_IR_MODULE_HPP
 
 #include <jlm/ir/basic_block.hpp>
-#include <jlm/ir/callgraph.hpp>
+#include <jlm/ir/ipgraph.hpp>
 #include <jlm/ir/tac.hpp>
 
 namespace jlm {
@@ -69,14 +69,14 @@ public:
 	, target_triple_(target_triple)
 	{}
 
-	inline jlm::callgraph &
-	callgraph() noexcept
+	inline jlm::ipgraph &
+	ipgraph() noexcept
 	{
 		return clg_;
 	}
 
-	inline const jlm::callgraph &
-	callgraph() const noexcept
+	inline const jlm::ipgraph &
+	ipgraph() const noexcept
 	{
 		return clg_;
 	}
@@ -150,7 +150,7 @@ public:
 	}
 
 	const jlm::variable *
-	variable(const callgraph_node * node) const noexcept
+	variable(const ipgraph_node * node) const noexcept
 	{
 		auto it = functions_.find(node);
 		return it != functions_.end() ? it->second : nullptr;
@@ -169,19 +169,19 @@ public:
 	}
 
 private:
-	jlm::callgraph clg_;
+	jlm::ipgraph clg_;
 	std::string data_layout_;
 	std::string target_triple_;
 	std::unordered_set<const jlm::gblvalue*> globals_;
 	std::unordered_set<std::unique_ptr<jlm::variable>> variables_;
-	std::unordered_map<const callgraph_node*, const jlm::variable*> functions_;
+	std::unordered_map<const ipgraph_node*, const jlm::variable*> functions_;
 };
 
 static inline size_t
 ntacs(const jlm::module & module)
 {
 	size_t ntacs = 0;
-	for (const auto & n : module.callgraph()) {
+	for (const auto & n : module.ipgraph()) {
 		auto f = dynamic_cast<const function_node*>(&n);
 		if (!f) continue;
 

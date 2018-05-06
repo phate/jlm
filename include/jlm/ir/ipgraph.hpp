@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_IR_CALLGRAPH_H
-#define JLM_IR_CALLGRAPH_H
+#ifndef JLM_IR_IPGRAPH_H
+#define JLM_IR_IPGRAPH_H
 
 #include <jlm/ir/cfg.hpp>
 #include <jlm/ir/tac.hpp>
@@ -18,17 +18,17 @@
 
 namespace jlm {
 
-class callgraph_node;
+class ipgraph_node;
 
-/* callgraph */
+/* inter-procedure graph */
 
-class callgraph final {
+class ipgraph final {
 	class const_iterator {
 	public:
 		inline
 		const_iterator(const std::unordered_map<
 			std::string,
-			std::unique_ptr<callgraph_node>>::const_iterator & it)
+			std::unique_ptr<ipgraph_node>>::const_iterator & it)
 		: it_(it)
 		{}
 
@@ -59,19 +59,19 @@ class callgraph final {
 			return tmp;
 		}
 
-		inline const callgraph_node *
+		inline const ipgraph_node *
 		node() const noexcept
 		{
 			return it_->second.get();
 		}
 
-		inline const callgraph_node &
+		inline const ipgraph_node &
 		operator*() const noexcept
 		{
 			return *node();
 		}
 
-		inline const callgraph_node *
+		inline const ipgraph_node *
 		operator->() const noexcept
 		{
 			return node();
@@ -80,28 +80,28 @@ class callgraph final {
 	private:
 		std::unordered_map<
 			std::string,
-			std::unique_ptr<callgraph_node>
+			std::unique_ptr<ipgraph_node>
 		>::const_iterator it_;
 	};
 
 public:
 	inline
-	~callgraph()
+	~ipgraph()
 	{}
 
 	inline
-	callgraph() noexcept
+	ipgraph() noexcept
 	{}
 
-	callgraph(const callgraph &) = delete;
+	ipgraph(const ipgraph &) = delete;
 
-	callgraph(callgraph &&) = delete;
+	ipgraph(ipgraph &&) = delete;
 
-	callgraph &
-	operator=(const callgraph &) = delete;
+	ipgraph &
+	operator=(const ipgraph &) = delete;
 
-	callgraph &
-	operator=(callgraph &&) = delete;
+	ipgraph &
+	operator=(ipgraph &&) = delete;
 
 	inline const_iterator
 	begin() const noexcept
@@ -116,18 +116,18 @@ public:
 	}
 
 	void
-	add_function(std::unique_ptr<callgraph_node> node);
+	add_function(std::unique_ptr<ipgraph_node> node);
 
-	callgraph_node *
+	ipgraph_node *
 	lookup_function(const std::string & name) const;
 
-	inline callgraph_node *
+	inline ipgraph_node *
 	lookup_function(const char * name) const
 	{
 		return lookup_function(std::string(name));
 	}
 
-	std::vector<callgraph_node*>
+	std::vector<ipgraph_node*>
 	nodes() const;
 
 	inline size_t
@@ -136,13 +136,13 @@ public:
 		return nodes_.size();
 	}
 
-	std::vector<std::unordered_set<const callgraph_node*>>
+	std::vector<std::unordered_set<const ipgraph_node*>>
 	find_sccs() const;
 
 private:
 	std::unordered_map<
 		std::string,
-		std::unique_ptr<callgraph_node>
+		std::unique_ptr<ipgraph_node>
 	> nodes_;
 };
 
@@ -150,27 +150,27 @@ private:
 
 class output;
 
-class callgraph_node {
-	typedef std::unordered_set<const callgraph_node*>::const_iterator const_iterator;
+class ipgraph_node {
+	typedef std::unordered_set<const ipgraph_node*>::const_iterator const_iterator;
 public:
 	virtual
-	~callgraph_node() noexcept;
+	~ipgraph_node() noexcept;
 
 protected:
 	inline
-	callgraph_node(jlm::callgraph & clg)
+	ipgraph_node(jlm::ipgraph & clg)
 	: clg_(clg)
 	{}
 
 public:
-	inline jlm::callgraph &
+	inline jlm::ipgraph &
 	clg() const noexcept
 	{
 		return clg_;
 	}
 
 	void
-	add_dependency(const callgraph_node * dep)
+	add_dependency(const ipgraph_node * dep)
 	{
 		dependencies_.insert(dep);
 	}
@@ -203,11 +203,11 @@ public:
 	type() const noexcept = 0;
 
 private:
-	jlm::callgraph & clg_;
-	std::unordered_set<const callgraph_node*> dependencies_;
+	jlm::ipgraph & clg_;
+	std::unordered_set<const ipgraph_node*> dependencies_;
 };
 
-class function_node final : public callgraph_node {
+class function_node final : public ipgraph_node {
 public:
 	virtual
 	~function_node() noexcept;
@@ -215,11 +215,11 @@ public:
 private:
 	inline
 	function_node(
-		jlm::callgraph & clg,
+		jlm::ipgraph & clg,
 		const std::string & name,
 		const jive::fct::type & type,
 		bool exported)
-	: callgraph_node(clg)
+	: ipgraph_node(clg)
 	, type_(type)
 	, exported_(exported)
 	, name_(name)
@@ -258,7 +258,7 @@ public:
 
 	static inline function_node *
 	create(
-		jlm::callgraph & clg,
+		jlm::ipgraph & clg,
 		const std::string & name,
 		const jive::fct::type & type,
 		bool exported)
@@ -305,7 +305,7 @@ is_fctvariable(const jlm::variable * v)
 
 /* data node */
 
-class data_node final : public callgraph_node {
+class data_node final : public ipgraph_node {
 public:
 	virtual
 	~data_node() noexcept;
@@ -313,12 +313,12 @@ public:
 private:
 	inline
 	data_node(
-		jlm::callgraph & clg,
+		jlm::ipgraph & clg,
 		const std::string & name,
 		const jive::type & type,
 		const jlm::linkage & linkage,
 		bool constant)
-	: callgraph_node(clg)
+	: ipgraph_node(clg)
 	, constant_(constant)
 	, name_(name)
 	, linkage_(linkage)
@@ -359,7 +359,7 @@ public:
 
 	static inline data_node *
 	create(
-		jlm::callgraph & clg,
+		jlm::ipgraph & clg,
 		const std::string & name,
 		const jive::type & type,
 		const jlm::linkage & linkage,

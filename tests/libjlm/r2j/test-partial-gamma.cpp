@@ -44,10 +44,10 @@ test()
 	jive::view(*rvsdg.graph(), stdout);
 
 	auto module = jlm::rvsdg2jlm::rvsdg2jlm(rvsdg);
-	auto & clg = module->callgraph();
-	assert(clg.nnodes() == 1);
+	auto & ipg = module->ipgraph();
+	assert(ipg.nnodes() == 1);
 
-	auto cfg = dynamic_cast<const jlm::function_node&>(*clg.begin()).cfg();
+	auto cfg = dynamic_cast<const jlm::function_node&>(*ipg.begin()).cfg();
 	jlm::view_ascii(*cfg, stdout);
 
 	assert(!is_proper_structured(*cfg));

@@ -50,10 +50,10 @@ test_with_match()
 
 	/* verify output */
 
-	auto & clg = module->callgraph();
-	assert(clg.nnodes() == 1);
+	auto & ipg = module->ipgraph();
+	assert(ipg.nnodes() == 1);
 
-	auto cfg = dynamic_cast<const jlm::function_node&>(*clg.begin()).cfg();
+	auto cfg = dynamic_cast<const jlm::function_node&>(*ipg.begin()).cfg();
 	assert(cfg->nnodes() == 3);
 	auto node = cfg->entry_node()->outedge(0)->sink();
 	auto bb = dynamic_cast<const jlm::basic_block*>(&node->attribute());
@@ -92,10 +92,10 @@ test_without_match()
 
 	/* verify output */
 
-	auto & clg = module->callgraph();
-	assert(clg.nnodes() == 1);
+	auto & ipg = module->ipgraph();
+	assert(ipg.nnodes() == 1);
 
-	auto cfg = dynamic_cast<const jlm::function_node&>(*clg.begin()).cfg();
+	auto cfg = dynamic_cast<const jlm::function_node&>(*ipg.begin()).cfg();
 	assert(cfg->nnodes() == 3);
 	auto node = cfg->entry_node()->outedge(0)->sink();
 	auto bb = dynamic_cast<const jlm::basic_block*>(&node->attribute());
@@ -134,10 +134,10 @@ test_gamma3()
 
 	/* verify output */
 
-	auto & clg = module->callgraph();
-	assert(clg.nnodes() == 1);
+	auto & ipg = module->ipgraph();
+	assert(ipg.nnodes() == 1);
 
-	auto cfg = dynamic_cast<const jlm::function_node&>(*clg.begin()).cfg();
+	auto cfg = dynamic_cast<const jlm::function_node&>(*ipg.begin()).cfg();
 	assert(is_closed(*cfg));
 }
 

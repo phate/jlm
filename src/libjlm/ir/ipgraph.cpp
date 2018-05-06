@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/ir/callgraph.hpp>
+#include <jlm/ir/ipgraph.hpp>
 #include <jlm/ir/cfg.hpp>
 #include <jlm/ir/tac.hpp>
 
@@ -17,11 +17,11 @@
 
 static void
 strongconnect(
-	const jlm::callgraph_node * node,
-	std::unordered_map<const jlm::callgraph_node*, std::pair<size_t,size_t>> & map,
-	std::vector<const jlm::callgraph_node*> & node_stack,
+	const jlm::ipgraph_node * node,
+	std::unordered_map<const jlm::ipgraph_node*, std::pair<size_t,size_t>> & map,
+	std::vector<const jlm::ipgraph_node*> & node_stack,
 	size_t & index,
-	std::vector<std::unordered_set<const jlm::callgraph_node*>> & sccs)
+	std::vector<std::unordered_set<const jlm::ipgraph_node*>> & sccs)
 {
 	map.emplace(node, std::make_pair(index, index));
 	node_stack.push_back(node);
@@ -39,8 +39,8 @@ strongconnect(
 	}
 
 	if (map[node].second == map[node].first) {
-		std::unordered_set<const jlm::callgraph_node*> scc;
-		const jlm::callgraph_node * w;
+		std::unordered_set<const jlm::ipgraph_node*> scc;
+		const jlm::ipgraph_node * w;
 		do {
 			w = node_stack.back();
 			node_stack.pop_back();
@@ -53,17 +53,17 @@ strongconnect(
 
 namespace jlm {
 
-/* callgraph */
+/* ipgraph */
 
 void
-callgraph::add_function(std::unique_ptr<callgraph_node> node)
+ipgraph::add_function(std::unique_ptr<ipgraph_node> node)
 {
 	JLM_DEBUG_ASSERT(nodes_.find(node->name()) == nodes_.end());
 	nodes_[node->name()] = std::move(node);
 }
 
-callgraph_node *
-callgraph::lookup_function(const std::string & name) const
+ipgraph_node *
+ipgraph::lookup_function(const std::string & name) const
 {
 	if (nodes_.find(name) != nodes_.end())
 		return nodes_.find(name)->second.get();
@@ -71,23 +71,23 @@ callgraph::lookup_function(const std::string & name) const
 	return nullptr;
 }
 
-std::vector<callgraph_node*>
-callgraph::nodes() const
+std::vector<ipgraph_node*>
+ipgraph::nodes() const
 {
-	std::vector<callgraph_node*> v;
+	std::vector<ipgraph_node*> v;
 	for (auto i = nodes_.begin(); i != nodes_.end(); i++)
 		v.push_back(i->second.get());
 
 	return v;
 }
 
-std::vector<std::unordered_set<const callgraph_node*>>
-callgraph::find_sccs() const
+std::vector<std::unordered_set<const ipgraph_node*>>
+ipgraph::find_sccs() const
 {
-	std::vector<std::unordered_set<const callgraph_node*>> sccs;
+	std::vector<std::unordered_set<const ipgraph_node*>> sccs;
 
-	std::unordered_map<const callgraph_node*, std::pair<size_t,size_t>> map;
-	std::vector<const callgraph_node*> node_stack;
+	std::unordered_map<const ipgraph_node*, std::pair<size_t,size_t>> map;
+	std::vector<const ipgraph_node*> node_stack;
 	size_t index = 0;
 
 	auto nodes = this->nodes();
@@ -99,9 +99,9 @@ callgraph::find_sccs() const
 	return sccs;
 }
 
-/* callgraph node */
+/* ipgraph node */
 
-callgraph_node::~callgraph_node()
+ipgraph_node::~ipgraph_node()
 {}
 
 /* function node */

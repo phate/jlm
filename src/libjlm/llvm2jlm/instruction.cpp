@@ -10,7 +10,7 @@
 #include <jlm/llvm2jlm/type.hpp>
 
 #include <jlm/ir/basic_block.hpp>
-#include <jlm/ir/callgraph.hpp>
+#include <jlm/ir/ipgraph.hpp>
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/tac.hpp>
 

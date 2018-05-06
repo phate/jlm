@@ -5,10 +5,10 @@
 
 #include <jlm/common.hpp>
 #include <jlm/ir/basic_block.hpp>
-#include <jlm/ir/callgraph.hpp>
 #include <jlm/ir/cfg.hpp>
 #include <jlm/ir/cfg-structure.hpp>
 #include <jlm/ir/cfg_node.hpp>
+#include <jlm/ir/ipgraph.hpp>
 #include <jlm/ir/module.hpp>
 #include <jlm/ir/operators/operators.hpp>
 #include <jlm/llvm2jlm/constant.hpp>
@@ -171,7 +171,7 @@ declare_globals(llvm::Module & lm, context & ctx)
 		auto type = convert_type(gv.getType(), ctx);
 		auto linkage = convert_linkage(gv.getLinkage());
 
-		auto node = data_node::create(jm.callgraph(), name, *type, linkage, constant);
+		auto node = data_node::create(jm.ipgraph(), name, *type, linkage, constant);
 		auto v = jm.create_global_value(node);
 		ctx.insert_value(&gv, v);
 	}
@@ -181,7 +181,7 @@ declare_globals(llvm::Module & lm, context & ctx)
 		jive::fct::type fcttype(dynamic_cast<const jive::fct::type&>(
 			*convert_type(f.getFunctionType(), ctx)));
 		auto n = function_node::create(
-			jm.callgraph(),
+			jm.ipgraph(),
 			f.getName().str(),
 			fcttype,
 			f.getLinkage() != llvm::GlobalValue::InternalLinkage);

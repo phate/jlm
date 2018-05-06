@@ -234,13 +234,13 @@ convert_linkage(const jlm::linkage & linkage)
 }
 
 static void
-convert_callgraph(const jlm::callgraph & clg, context & ctx)
+convert_ipgraph(const jlm::ipgraph & clg, context & ctx)
 {
 	auto & jm = ctx.jlm_module();
 	auto & lm = ctx.llvm_module();
 
 	/* forward declare all nodes */
-	for (const auto & node : jm.callgraph()) {
+	for (const auto & node : jm.ipgraph()) {
 		auto v = jm.variable(&node);
 
 		if (auto n = dynamic_cast<const data_node*>(&node)) {
@@ -261,7 +261,7 @@ convert_callgraph(const jlm::callgraph & clg, context & ctx)
 	}
 
 	/* convert all nodes */
-	for (const auto & node : jm.callgraph()) {
+	for (const auto & node : jm.ipgraph()) {
 		if (auto n = dynamic_cast<const data_node*>(&node)) {
 			auto & tacs = n->initialization();
 			auto init = tacs.empty() ? nullptr : convert_tacs(tacs, ctx);
@@ -281,7 +281,7 @@ convert(jlm::module & jm, llvm::LLVMContext & lctx)
 	lm->setDataLayout(jm.data_layout());
 
 	context ctx(jm, *lm);
-	convert_callgraph(jm.callgraph(), ctx);
+	convert_ipgraph(jm.ipgraph(), ctx);
 
 	return lm;
 }

@@ -416,7 +416,7 @@ convert_lambda_node(const jive::node & node, context & ctx)
 	JLM_DEBUG_ASSERT(is<lambda_op>(&node));
 	auto lambda = static_cast<const lambda_node*>(&node);
 	auto & module = ctx.module();
-	auto & clg = module.callgraph();
+	auto & clg = module.ipgraph();
 
 	const auto & ftype = lambda->fcttype();
 	/* FIXME: create/get names for lambdas */
@@ -437,7 +437,7 @@ convert_phi_node(const jive::node & node, context & ctx)
 	auto snode = static_cast<const jive::structural_node*>(&node);
 	auto subregion = snode->subregion(0);
 	auto & module = ctx.module();
-	auto & clg = module.callgraph();
+	auto & clg = module.ipgraph();
 
 	/* add dependencies to context */
 	for (size_t n = 0; n < snode->ninputs(); n++) {
@@ -491,7 +491,7 @@ convert_delta_node(const jive::node & node, context & ctx)
 
 	auto linkage = op.linkage();
 	auto constant = op.constant();
-	auto dnode = data_node::create(module.callgraph(), name, type, linkage, constant);
+	auto dnode = data_node::create(module.ipgraph(), name, type, linkage, constant);
 	dnode->set_initialization(std::move(tacs));
 	auto v = module.create_global_value(dnode);
 	ctx.insert(result->output(), v);
@@ -527,7 +527,7 @@ rvsdg2jlm(const jlm::rvsdg & rvsdg)
 	auto & tt = rvsdg.target_triple();
 	std::unique_ptr<jlm::module> module(new jlm::module(tt, dl));
 	auto graph = rvsdg.graph();
-	auto & clg = module->callgraph();
+	auto & clg = module->ipgraph();
 
 	context ctx(*module);
 	for (size_t n = 0; n < graph->root()->narguments(); n++) {

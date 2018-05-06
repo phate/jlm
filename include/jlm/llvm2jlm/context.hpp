@@ -192,12 +192,12 @@ public:
 	}
 
 	inline void
-	set_node(callgraph_node * node) noexcept
+	set_node(ipgraph_node * node) noexcept
 	{
 		node_ = node;
 	}
 
-	inline callgraph_node *
+	inline ipgraph_node *
 	node() const noexcept
 	{
 		return node_;
@@ -207,7 +207,7 @@ private:
 	jlm::module & module_;
 	basic_block_map bbmap_;
 	jlm::variable * state_;
-	callgraph_node * node_;
+	ipgraph_node * node_;
 	jlm::variable * result_;
 	std::unordered_map<const llvm::Value*, jlm::variable*> vmap_;
 	std::unordered_map<

@@ -34,9 +34,9 @@ public:
 		, j2l(false)
 		, j2rx(false)
 		, l2jdot(false)
-		, l2j_clg_dot(false)
+		, l2j_ipg_dot(false)
 		, r2jdot(false)
-		, r2j_clg_dot(false)
+		, r2j_ipg_dot(false)
 	{}
 
 	bool l2j;
@@ -45,9 +45,9 @@ public:
 	bool j2l;
 	bool j2rx;
 	bool l2jdot;
-	bool l2j_clg_dot;
+	bool l2j_ipg_dot;
 	bool r2jdot;
-	bool r2j_clg_dot;
+	bool r2j_ipg_dot;
 	std::string file;
 	std::string l2jdot_function;
 	std::string r2jdot_function;
@@ -64,9 +64,9 @@ print_usage(const std::string & app)
 	std::cerr << "--j2l: Print program after JLM to LLVM pass.\n";
 	std::cerr << "--j2rx: Print program as XML after JLM to RVSDG pass.\n";
 	std::cerr << "--l2jdot f: Print function f as graphviz after LLVM to JLM pass.\n";
-	std::cerr << "--l2j-clg-dot: Print call graph after LLVM to JLM pass.\n";
+	std::cerr << "--l2j-ipg-dot: Print inter-procedure graph after LLVM to JLM pass.\n";
 	std::cerr << "--r2jdot f: Print function f as graphviz after RVSDG to JLM pass.\n";
-	std::cerr << "--r2j-clg-dot: Print call graph after RVSDG to JLM pass.\n";
+	std::cerr << "--r2j-ipg-dot: Print inter-procedure graph after RVSDG to JLM pass.\n";
 	std::cerr << "--file name: LLVM IR file.\n";
 }
 
@@ -79,9 +79,9 @@ parse_cmdflags(int argc, char ** argv, cmdflags & flags)
 	static constexpr size_t j2l = 4;
 	static constexpr size_t j2rx = 5;
 	static constexpr size_t l2jdot = 6;
-	static constexpr size_t l2j_clg_dot = 7;
+	static constexpr size_t l2j_ipg_dot = 7;
 	static constexpr size_t r2jdot = 8;
-	static constexpr size_t r2j_clg_dot = 9;
+	static constexpr size_t r2j_ipg_dot = 9;
 	static constexpr size_t file = 10;
 
 	static struct option options[] = {
@@ -91,9 +91,9 @@ parse_cmdflags(int argc, char ** argv, cmdflags & flags)
 	, {"j2l", no_argument, NULL, j2l}
 	, {"j2rx", no_argument, NULL, j2rx}
 	, {"l2jdot", required_argument, NULL, l2jdot}
-	, {"l2j-clg-dot", no_argument, NULL, l2j_clg_dot}
+	, {"l2j-ipg-dot", no_argument, NULL, l2j_ipg_dot}
 	, {"r2jdot", required_argument, NULL, r2jdot}
-	, {"r2j-clg-dot", no_argument, NULL, r2j_clg_dot}
+	, {"r2j-ipg-dot", no_argument, NULL, r2j_ipg_dot}
 	, {"file", required_argument, NULL, file}
 	, {NULL, 0, NULL, 0}
 	};
@@ -106,8 +106,8 @@ parse_cmdflags(int argc, char ** argv, cmdflags & flags)
 			case r2j: { flags.r2j = true; break; }
 			case j2l: { flags.j2l = true; break; }
 			case j2rx: { flags.j2rx = true; break; }
-			case l2j_clg_dot: { flags.l2j_clg_dot = true; break; }
-			case r2j_clg_dot: { flags.r2j_clg_dot = true; break; }
+			case l2j_ipg_dot: { flags.l2j_ipg_dot = true; break; }
+			case r2j_ipg_dot: { flags.r2j_ipg_dot = true; break; }
 
 			case l2jdot: { flags.l2jdot = true; flags.l2jdot_function = optarg; break; }
 			case r2jdot: { flags.r2jdot = true; flags.r2jdot_function = optarg; break; }
@@ -128,10 +128,10 @@ parse_cmdflags(int argc, char ** argv, cmdflags & flags)
 
 static inline const jlm::cfg *
 find_cfg(
-	const jlm::callgraph & clg,
+	const jlm::ipgraph & ipg,
 	const std::string & name)
 {
-	auto node = clg.lookup_function(name);
+	auto node = ipg.lookup_function(name);
 	if (!node) {
 		std::cerr << "Function " << name << " not found.\n";
 		exit(1);
@@ -171,9 +171,9 @@ main (int argc, char ** argv)
 	if (flags.l2j)
 		jlm::view(*jm, stdout);
 	if (flags.l2jdot)
-		jlm::view_dot(*find_cfg(jm->callgraph(), flags.l2jdot_function), stdout);
-	if (flags.l2j_clg_dot)
-		jlm::view_dot(jm->callgraph(), stdout);
+		jlm::view_dot(*find_cfg(jm->ipgraph(), flags.l2jdot_function), stdout);
+	if (flags.l2j_ipg_dot)
+		jlm::view_dot(jm->ipgraph(), stdout);
 
 	auto rvsdg = jlm::construct_rvsdg(*jm);
 	if (flags.j2r) jive::view(rvsdg->graph()->root(), stdout);
@@ -183,9 +183,9 @@ main (int argc, char ** argv)
 	if (flags.r2j)
 		jlm::view(*jm, stdout);
 	if (flags.r2jdot)
-		jlm::view_dot(*find_cfg(jm->callgraph(), flags.r2jdot_function), stdout);
-	if (flags.r2j_clg_dot)
-		jlm::view_dot(jm->callgraph(), stdout);
+		jlm::view_dot(*find_cfg(jm->ipgraph(), flags.r2jdot_function), stdout);
+	if (flags.r2j_ipg_dot)
+		jlm::view_dot(jm->ipgraph(), stdout);
 
 	lm = jlm::jlm2llvm::convert(*jm, ctx);
 	if (flags.j2l) lm->dump();

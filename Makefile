@@ -12,10 +12,10 @@ LIBJLM_SRC = \
 	src/libjlm/ir/aggregation/annotation.cpp \
 	src/libjlm/ir/aggregation/structure.cpp \
 	src/libjlm/ir/basic_block.cpp \
-	src/libjlm/ir/callgraph.cpp \
 	src/libjlm/ir/cfg.cpp \
 	src/libjlm/ir/cfg-structure.cpp \
 	src/libjlm/ir/cfg_node.cpp \
+	src/libjlm/ir/ipgraph.cpp \
 	src/libjlm/ir/module.cpp \
 	src/libjlm/ir/operators/alloca.cpp \
 	src/libjlm/ir/operators/call.cpp \
