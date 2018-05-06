@@ -35,8 +35,10 @@ generate_commands(const jlm::cmdline_options & opts)
 		cmds.push_back(std::make_unique<cgencmd>(ifile, opts.Olvl));
 	}
 
-	cmds.push_back(std::make_unique<lnkcmd>(opts.ifilepaths, opts.ofilepath, opts.libpaths,
-		opts.libs));
+	if (!opts.no_linking) {
+		cmds.push_back(std::make_unique<lnkcmd>(opts.ifilepaths, opts.ofilepath, opts.libpaths,
+			opts.libs));
+	}
 
 	if (opts.only_print_commands) {
 		std::unique_ptr<command> cmd(new printcmd(std::move(cmds)));

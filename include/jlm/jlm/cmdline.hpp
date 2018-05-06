@@ -24,13 +24,15 @@ to_str(const standard & std);
 class cmdline_options {
 public:
 	cmdline_options()
-	: only_print_commands(false)
+	: no_linking(false)
+	, only_print_commands(false)
 	, generate_debug_information(false)
 	, Olvl(optlvl::O0)
 	, std(standard::none)
 	, ofilepath("a.out")
 	{}
 
+	bool no_linking;
 	bool only_print_commands;
 	bool generate_debug_information;
 

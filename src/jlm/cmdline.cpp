@@ -102,6 +102,11 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & flags)
 	, cl::desc("Generate source-level debug information.")
 	);
 
+	static cl::opt<bool> no_linking(
+	  "c"
+	, cl::desc("Only run preprocess, compile, and assemble steps.")
+	);
+
 	static cl::opt<char> optlvl(
 	  "O"
 	, cl::Prefix
@@ -173,6 +178,7 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & flags)
 	flags.libpaths = libpaths;
 	flags.warnings = Wwarnings;
 	flags.ofilepath = ofilepath;
+	flags.no_linking = no_linking;
 	flags.ifilepaths = ifilepaths;
 	flags.includepaths = includepaths;
 	flags.only_print_commands = only_print_commands;
