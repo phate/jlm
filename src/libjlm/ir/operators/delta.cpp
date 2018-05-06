@@ -3,44 +3,44 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/ir/operators/data.hpp>
+#include <jlm/ir/operators/delta.hpp>
 
 #include <jive/rvsdg/substitution.h>
 
 namespace jlm {
 
-/* data operator */
+/* delta operator */
 
 std::string
-data_op::debug_string() const
+delta_op::debug_string() const
 {
-	return "DATA";
+	return "DELTA";
 }
 
 std::unique_ptr<jive::operation>
-data_op::copy() const
+delta_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new data_op(*this));
+	return std::unique_ptr<jive::operation>(new delta_op(*this));
 }
 
 bool
-data_op::operator==(const operation & other) const noexcept
+delta_op::operator==(const operation & other) const noexcept
 {
-	auto op = dynamic_cast<const data_op*>(&other);
+	auto op = dynamic_cast<const delta_op*>(&other);
 	return op && op->linkage_ == linkage_ && op->constant_ == constant_;
 }
 
-/* rvsdg data node */
+/* delta node */
 
-rvsdg_data_node::~rvsdg_data_node()
+delta_node::~delta_node()
 {}
 
-rvsdg_data_node *
-rvsdg_data_node::copy(jive::region * region, jive::substitution_map & smap) const
+delta_node *
+delta_node::copy(jive::region * region, jive::substitution_map & smap) const
 {
-	auto & op = *static_cast<const data_op*>(&operation());
+	auto & op = *static_cast<const delta_op*>(&operation());
 
-	data_builder db;
+	delta_builder db;
 	db.begin(region, op.linkage(), op.constant());
 
 	/* add dependencies */
@@ -56,7 +56,7 @@ rvsdg_data_node::copy(jive::region * region, jive::substitution_map & smap) cons
 	auto result = rmap.lookup(subregion()->result(0)->origin());
 	auto data = db.end(result);
 	smap.insert(output(0), data);
-	return static_cast<rvsdg_data_node*>(data->node());
+	return static_cast<delta_node*>(data->node());
 }
 
 }

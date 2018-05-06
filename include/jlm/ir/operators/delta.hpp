@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_IR_OPERATORS_DATA_HPP
-#define JLM_IR_OPERATORS_DATA_HPP
+#ifndef JLM_IR_OPERATORS_DELTA_HPP
+#define JLM_IR_OPERATORS_DELTA_HPP
 
 #include <jive/rvsdg/region.h>
 #include <jive/rvsdg/structural-node.h>
@@ -14,12 +14,12 @@
 
 namespace jlm {
 
-/* data operator */
+/* delta operator */
 
-class data_op final : public jive::structural_op {
+class delta_op final : public jive::structural_op {
 public:
 	inline constexpr
-	data_op(const jlm::linkage & linkage, bool constant)
+	delta_op(const jlm::linkage & linkage, bool constant)
 	: constant_(constant)
 	, linkage_(linkage)
 	{}
@@ -50,32 +50,32 @@ private:
 	jlm::linkage linkage_;
 };
 
-/* data node */
+/* delta node */
 
-class data_builder;
+class delta_builder;
 
-class rvsdg_data_node final : public jive::structural_node {
-	friend data_builder;
+class delta_node final : public jive::structural_node {
+	friend delta_builder;
 public:
 	virtual
-	~rvsdg_data_node();
+	~delta_node();
 
 private:
 	inline
-	rvsdg_data_node(
+	delta_node(
 		jive::region * parent,
-		const data_op & op)
+		const delta_op & op)
 	: jive::structural_node(op, parent, 1)
 	{}
 
-	static rvsdg_data_node *
+	static delta_node *
 	create(
 		jive::region * parent,
 		const jlm::linkage & linkage,
 		bool constant)
 	{
-		data_op op(linkage, constant);
-		return new rvsdg_data_node(parent, op);
+		delta_op op(linkage, constant);
+		return new delta_node(parent, op);
 	}
 
 	class iterator final {
@@ -131,13 +131,13 @@ public:
 		return jive::structural_node::subregion(0);
 	}
 
-	inline rvsdg_data_node::iterator
+	inline delta_node::iterator
 	begin() const
 	{
 		return iterator(subregion()->argument(0)->input());
 	}
 
-	inline rvsdg_data_node::iterator
+	inline delta_node::iterator
 	end() const
 	{
 		return iterator(nullptr);
@@ -150,28 +150,28 @@ public:
 		return subregion()->add_argument(input, origin->type());
 	}
 
-	virtual rvsdg_data_node *
+	virtual delta_node *
 	copy(jive::region * region, jive::substitution_map & smap) const override;
 };
 
-/* data builder */
+/* delta builder */
 
-class data_builder final {
+class delta_builder final {
 public:
 	inline constexpr
-	data_builder() noexcept
+	delta_builder() noexcept
 	: node_(nullptr)
 	{}
 
-	data_builder(const data_builder &) = delete;
+	delta_builder(const delta_builder &) = delete;
 
-	data_builder(data_builder &&) = delete;
+	delta_builder(delta_builder &&) = delete;
 
-	data_builder &
-	operator=(const data_builder &) = delete;
+	delta_builder &
+	operator=(const delta_builder &) = delete;
 
-	data_builder &
-	operator=(data_builder &&) = delete;
+	delta_builder &
+	operator=(delta_builder &&) = delete;
 
 	inline jive::region *
 	region() const noexcept
@@ -188,7 +188,7 @@ public:
 		if (node_)
 			return region();
 
-		node_ = rvsdg_data_node::create(parent, linkage, constant);
+		node_ = delta_node::create(parent, linkage, constant);
 		return region();
 	}
 
@@ -210,7 +210,7 @@ public:
 	}
 
 private:
-	rvsdg_data_node * node_;
+	delta_node * node_;
 };
 
 }

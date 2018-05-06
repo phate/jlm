@@ -503,7 +503,7 @@ convert_data_node(
 	if (n->initialization().empty()) {
 		data = graph->add_import(n->type(), n->name());
 	} else {
-		jlm::data_builder db;
+		jlm::delta_builder db;
 		auto r = db.begin(graph->root(), n->linkage(), n->constant());
 		auto & pv = svmap.vmap();
 		svmap.push_scope(r);

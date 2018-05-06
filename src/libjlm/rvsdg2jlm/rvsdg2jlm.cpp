@@ -473,11 +473,11 @@ convert_phi_node(const jive::node & node, context & ctx)
 }
 
 static inline void
-convert_data_node(const jive::node & node, context & ctx)
+convert_delta_node(const jive::node & node, context & ctx)
 {
-	JLM_DEBUG_ASSERT(jive::is<data_op>(&node));
+	JLM_DEBUG_ASSERT(jive::is<delta_op>(&node));
 	auto subregion = static_cast<const jive::structural_node*>(&node)->subregion(0);
-	const auto & op = *static_cast<const jlm::data_op*>(&node.operation());
+	const auto & op = *static_cast<const jlm::delta_op*>(&node.operation());
 	auto & module = ctx.module();
 
 	JLM_DEBUG_ASSERT(subregion->nresults() == 1);
@@ -508,7 +508,7 @@ convert_node(const jive::node & node, context & ctx)
 	, {std::type_index(typeid(jive::gamma_op)), convert_gamma_node}
 	, {std::type_index(typeid(jive::theta_op)), convert_theta_node}
 	, {std::type_index(typeid(jive::phi_op)), convert_phi_node}
-	, {std::type_index(typeid(jlm::data_op)), convert_data_node}
+	, {typeid(jlm::delta_op), convert_delta_node}
 	});
 
 	if (dynamic_cast<const jive::simple_op*>(&node.operation())) {
