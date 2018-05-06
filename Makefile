@@ -53,6 +53,7 @@ LIBJLM_SRC = \
 	src/libjlm/opt/inversion.cpp \
 	src/libjlm/opt/pull.cpp \
 	src/libjlm/opt/push.cpp \
+	src/libjlm/opt/reduction.cpp \
 	src/libjlm/opt/unroll.cpp \
 
 JLMPRINT_SRC = \
