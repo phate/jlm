@@ -8,7 +8,6 @@
 
 #include <jive/rvsdg/control.h>
 #include <jive/rvsdg/gamma.h>
-#include <jive/types/function/fcttype.h>
 #include <jive/view.h>
 
 #include <jlm/ir/cfg-structure.hpp>
@@ -23,7 +22,7 @@ test_with_match()
 {
 	jlm::valuetype vt;
 	jive::bittype bt1(1);
-	jive::fct::type ft({&bt1, &vt, &vt}, {&vt});
+	jive::fcttype ft({&bt1, &vt, &vt}, {&vt});
 
 	jlm::rvsdg rvsdg("", "");
 	auto nf = rvsdg.graph()->node_normal_form(typeid(jive::operation));
@@ -66,7 +65,7 @@ test_without_match()
 	jlm::valuetype vt;
 	jive::ctltype ctl2(2);
 	jive::bittype bt1(1);
-	jive::fct::type ft({&ctl2, &vt, &vt}, {&vt});
+	jive::fcttype ft({&ctl2, &vt, &vt}, {&vt});
 
 	jlm::rvsdg rvsdg("", "");
 	auto nf = rvsdg.graph()->node_normal_form(typeid(jive::operation));
@@ -107,7 +106,7 @@ static void
 test_gamma3()
 {
 	jlm::valuetype vt;
-	jive::fct::type ft({&jive::bit32, &vt, &vt}, {&vt});
+	jive::fcttype ft({&jive::bit32, &vt, &vt}, {&vt});
 
 	jlm::rvsdg rvsdg("", "");
 	auto nf = rvsdg.graph()->node_normal_form(typeid(jive::operation));

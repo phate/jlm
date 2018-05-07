@@ -9,7 +9,6 @@
 
 #include <jive/rvsdg/control.h>
 #include <jive/rvsdg/gamma.h>
-#include <jive/types/function/fcttype.h>
 #include <jive/view.h>
 
 #include <jlm/ir/cfg-structure.hpp>
@@ -24,7 +23,7 @@ test()
 {
 	jlm::valuetype vt;
 	jive::bittype bt1(1);
-	jive::fct::type ft({&bt1, &vt}, {&vt});
+	jive::fcttype ft({&bt1, &vt}, {&vt});
 
 	jlm::rvsdg rvsdg("", "");
 

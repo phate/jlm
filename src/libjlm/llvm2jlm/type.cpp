@@ -11,7 +11,7 @@
 #include <jive/arch/addresstype.h>
 #include <jive/types/bitstring/type.h>
 #include <jive/types/float/flttype.h>
-#include <jive/types/function/fcttype.h>
+#include <jive/types/function.h>
 
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Type.h>
@@ -58,7 +58,7 @@ convert_function_type(const llvm::Type * t, context & ctx)
 		result_types.push_back(convert_type(type->getReturnType(), ctx));
 	result_types.push_back(std::unique_ptr<jive::type>(new jive::memtype()));
 
-	return std::unique_ptr<jive::valuetype>(new jive::fct::type(argument_types, result_types));
+	return std::unique_ptr<jive::valuetype>(new jive::fcttype(argument_types, result_types));
 }
 
 static inline std::unique_ptr<jive::valuetype>

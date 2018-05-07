@@ -355,7 +355,7 @@ static inline void
 test_lambda()
 {
 	jlm::valuetype vt;
-	jive::fct::type ft({&vt, &vt}, {&vt});
+	jive::fcttype ft({&vt, &vt}, {&vt});
 
 	jive::graph graph;
 	auto nf = graph.node_normal_form(typeid(jive::operation));
@@ -386,7 +386,7 @@ static inline void
 test_phi()
 {
 	jlm::valuetype vt;
-	jive::fct::type ft({&vt, &vt}, {&vt});
+	jive::fcttype ft({&vt, &vt}, {&vt});
 
 	jive::graph graph;
 	auto nf = graph.node_normal_form(typeid(jive::operation));

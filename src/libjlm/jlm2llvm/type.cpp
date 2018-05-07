@@ -26,8 +26,8 @@ convert_integer_type(const jive::type & type, context & ctx)
 static inline llvm::Type *
 convert_function_type(const jive::type & type, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::fct::type*>(&type));
-	auto & t = *static_cast<const jive::fct::type*>(&type);
+	JLM_DEBUG_ASSERT(dynamic_cast<const jive::fcttype*>(&type));
+	auto & t = *static_cast<const jive::fcttype*>(&type);
 	auto & lctx = ctx.llvm_module().getContext();
 
 	using namespace llvm;
@@ -124,7 +124,7 @@ convert_type(const jive::type & type, context & ctx)
 	, std::function<llvm::Type*(const jive::type&, context&)>
 	> map({
 	  {typeid(jive::bittype), convert_integer_type}
-	, {std::type_index(typeid(jive::fct::type)), convert_function_type}
+	, {typeid(jive::fcttype), convert_function_type}
 	, {std::type_index(typeid(jlm::ptrtype)), convert_pointer_type}
 	, {std::type_index(typeid(jlm::arraytype)), convert_array_type}
 	, {typeid(jive::ctltype), convert_ctl_type}

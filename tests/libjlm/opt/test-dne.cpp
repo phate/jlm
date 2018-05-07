@@ -222,7 +222,7 @@ test_lambda()
 	auto x = graph.add_import(vt, "x");
 
 	jlm::lambda_builder lb;
-	auto arguments = lb.begin_lambda(graph.root(), {{&vt}, {&vt}});
+	auto arguments = lb.begin_lambda(graph.root(), {{{&vt}, {&vt}}});
 
 	auto d = lb.add_dependency(x);
 	jlm::create_testop(lb.subregion(), {arguments[0], d}, {&vt});
@@ -243,7 +243,7 @@ static inline void
 test_phi()
 {
 	jlm::valuetype vt;
-	jive::fct::type ft({&vt}, {&vt});
+	jive::fcttype ft({&vt}, {&vt});
 
 	jive::graph graph;
 	auto x = graph.add_import(vt, "x");

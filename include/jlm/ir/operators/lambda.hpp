@@ -8,7 +8,7 @@
 
 #include <jive/rvsdg/region.h>
 #include <jive/rvsdg/structural-node.h>
-#include <jive/types/function/fcttype.h>
+#include <jive/types/function.h>
 
 #include <jlm/ir/types.hpp>
 
@@ -16,14 +16,14 @@ namespace jlm {
 
 /* lambda operation */
 
-class lambda_op final : public jive::structural_op {
+class lambda_op final : public jive::lambda_op {
 public:
 	virtual
 	~lambda_op();
 
 	inline
-	lambda_op(jive::fct::type fcttype) noexcept
-	: fcttype_(fcttype)
+	lambda_op(jive::fcttype fcttype) noexcept
+	: jive::lambda_op(std::move(fcttype))
 	{}
 
 	virtual bool
@@ -32,17 +32,14 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	inline const jive::fct::type &
+	inline const jive::fcttype &
 	fcttype() const noexcept
 	{
-		return fcttype_;
+		return function_type();
 	}
 
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
-
-private:
-	jive::fct::type fcttype_;
 };
 
 /* lambda node */
@@ -57,14 +54,14 @@ public:
 
 private:
 	inline
-	lambda_node(jive::region * parent, jive::fct::type fcttype)
-	: jive::structural_node(lambda_op(std::move(fcttype)), parent, 1)
+	lambda_node(jive::region * parent, const jlm::lambda_op & op)
+	: jive::structural_node(op, parent, 1)
 	{}
 
 	static lambda_node *
-	create(jive::region * parent, jive::fct::type fcttype)
+	create(jive::region * parent, const jlm::lambda_op & op)
 	{
-		return new lambda_node(parent, std::move(fcttype));
+		return new lambda_node(parent, op);
 	}
 
 	class dependency_iterator final {
@@ -157,7 +154,7 @@ public:
 		return subregion()->add_argument(input, origin->type());
 	}
 
-	inline const jive::fct::type &
+	inline const jive::fcttype &
 	fcttype() const noexcept
 	{
 		return static_cast<const lambda_op*>(&operation())->fcttype();
@@ -177,13 +174,13 @@ public:
 	{}
 
 	inline std::vector<jive::argument*>
-	begin_lambda(jive::region * parent, jive::fct::type type)
+	begin_lambda(jive::region * parent, const jlm::lambda_op & op)
 	{
 		if (lambda_)
 			return lambda_->arguments();
 
 		std::vector<jive::argument*> arguments;
-		lambda_ = lambda_node::create(parent, std::move(type));
+		lambda_ = lambda_node::create(parent, op);
 		for (size_t n = 0; n < lambda_->fcttype().narguments(); n++) {
 			auto & type = lambda_->fcttype().argument_type(n);
 			arguments.push_back(lambda_->subregion()->add_argument(nullptr, type));

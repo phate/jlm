@@ -6,7 +6,7 @@
 #ifndef JLM_IR_TYPES_HPP
 #define JLM_IR_TYPES_HPP
 
-#include <jive/types/function/fcttype.h>
+#include <jive/types/function.h>
 #include <jive/types/record.h>
 #include <jive/rvsdg/type.h>
 
@@ -305,7 +305,7 @@ private:
 static inline bool
 is_fcttype(const jive::type & type)
 {
-	return dynamic_cast<const jive::fct::type*>(&type) != nullptr;
+	return dynamic_cast<const jive::fcttype*>(&type) != nullptr;
 }
 
 }

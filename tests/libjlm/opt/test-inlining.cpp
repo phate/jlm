@@ -38,8 +38,8 @@ verify()
 {
 	jlm::valuetype vt;
 	jive::ctltype ct(2);
-	jive::fct::type ft1({&vt}, {&vt});
-	jive::fct::type ft2({&ct, &vt}, {&vt});
+	jive::fcttype ft1({&vt}, {&vt});
+	jive::fcttype ft2({&ct, &vt}, {&vt});
 
 	jive::graph graph;
 	auto i = graph.add_import(vt, "i");

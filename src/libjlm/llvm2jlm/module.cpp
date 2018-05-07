@@ -178,8 +178,7 @@ declare_globals(llvm::Module & lm, context & ctx)
 
 	/* forward declare functions */
 	for (const auto & f : lm.getFunctionList()) {
-		jive::fct::type fcttype(dynamic_cast<const jive::fct::type&>(
-			*convert_type(f.getFunctionType(), ctx)));
+		jive::fcttype fcttype(*convert_type(f.getFunctionType(), ctx));
 		auto n = function_node::create(
 			jm.ipgraph(),
 			f.getName().str(),

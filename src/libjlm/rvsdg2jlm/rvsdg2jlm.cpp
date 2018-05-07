@@ -24,14 +24,14 @@
 namespace jlm {
 namespace rvsdg2jlm {
 
-static const jive::fct::type *
+static const jive::fcttype *
 is_function_import(const jive::argument * argument)
 {
 	JLM_DEBUG_ASSERT(argument->region()->graph()->root() == argument->region());
 	auto at = dynamic_cast<const ptrtype*>(&argument->type());
 	JLM_DEBUG_ASSERT(at != nullptr);
 
-	return dynamic_cast<const jive::fct::type*>(&at->pointee_type());
+	return dynamic_cast<const jive::fcttype*>(&at->pointee_type());
 }
 
 static inline const jive::output *

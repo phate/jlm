@@ -11,7 +11,7 @@
 #include <jlm/ir/types.hpp>
 #include <jlm/ir/variable.hpp>
 
-#include <jive/types/function/fcttype.h>
+#include <jive/types/function.h>
 
 #include <unordered_map>
 #include <unordered_set>
@@ -217,7 +217,7 @@ private:
 	function_node(
 		jlm::ipgraph & clg,
 		const std::string & name,
-		const jive::fct::type & type,
+		const jive::fcttype & type,
 		bool exported)
 	: ipgraph_node(clg)
 	, type_(type)
@@ -235,10 +235,10 @@ public:
 	virtual const jive::type &
 	type() const noexcept override;
 
-	const jive::fct::type &
+	const jive::fcttype &
 	fcttype() const noexcept
 	{
-		return *static_cast<const jive::fct::type*>(&type_.pointee_type());
+		return *static_cast<const jive::fcttype*>(&type_.pointee_type());
 	}
 
 	inline bool
@@ -260,7 +260,7 @@ public:
 	create(
 		jlm::ipgraph & clg,
 		const std::string & name,
-		const jive::fct::type & type,
+		const jive::fcttype & type,
 		bool exported)
 	{
 		std::unique_ptr<function_node> node(new function_node(clg, name, type, exported));

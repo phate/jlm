@@ -7,7 +7,7 @@
 #define JLM_IR_OPERATORS_OPERATORS_HPP
 
 #include <jive/types/bitstring/type.h>
-#include <jive/types/function/fcttype.h>
+#include <jive/types/function.h>
 #include <jive/types/record.h>
 #include <jive/rvsdg/control.h>
 #include <jive/rvsdg/nullary.h>

@@ -11,7 +11,6 @@
 #include <jive/types/bitstring/arithmetic.h>
 #include <jive/types/bitstring/constant.h>
 #include <jive/types/bitstring/comparison.h>
-#include <jive/types/function/fctlambda.h>
 #include <jive/view.h>
 #include <jive/rvsdg/gamma.h>
 #include <jive/rvsdg/graph.h>

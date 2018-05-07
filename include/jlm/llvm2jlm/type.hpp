@@ -41,12 +41,12 @@ convert_arraytype(const llvm::ArrayType * type, context & ctx)
 	return std::unique_ptr<jlm::arraytype>(static_cast<jlm::arraytype*>(t.release()));
 }
 
-static inline std::unique_ptr<jive::fct::type>
+static inline std::unique_ptr<jive::fcttype>
 convert_type(const llvm::FunctionType * type, context & ctx)
 {
 	auto t = convert_type(llvm::cast<llvm::Type>(type), ctx);
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::fct::type*>(t.get()));
-	return std::unique_ptr<jive::fct::type>(static_cast<jive::fct::type*>(t.release()));
+	JLM_DEBUG_ASSERT(dynamic_cast<const jive::fcttype*>(t.get()));
+	return std::unique_ptr<jive::fcttype>(static_cast<jive::fcttype*>(t.release()));
 }
 
 static inline std::unique_ptr<structtype>
