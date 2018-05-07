@@ -181,6 +181,34 @@ test_acyclic_unstructured_in_dowhile()
 	assert(is_proper_structured(cfg));
 }
 
+static inline void
+test_lor_before_dowhile()
+{
+	jlm::module module("", "");
+
+	jlm::cfg cfg(module);
+	auto bb1 = create_basic_block_node(&cfg);
+	auto bb2 = create_basic_block_node(&cfg);
+	auto bb3 = create_basic_block_node(&cfg);
+	auto bb4 = create_basic_block_node(&cfg);
+
+	cfg.exit_node()->divert_inedges(bb1);
+	bb1->add_outedge(bb2);
+	bb1->add_outedge(bb3);
+	bb2->add_outedge(bb4);
+	bb2->add_outedge(bb3);
+	bb3->add_outedge(bb4);
+	bb4->add_outedge(cfg.exit_node());
+	bb4->add_outedge(bb4);
+
+//	jlm::view_ascii(cfg, stdout);
+
+	restructure(&cfg);
+
+//	jlm::view_ascii(cfg, stdout);
+	assert(is_proper_structured(cfg));
+}
+
 static int
 verify()
 {
@@ -190,6 +218,7 @@ verify()
 	test_while();
 	test_irreducible();
 	test_acyclic_unstructured_in_dowhile();
+	test_lor_before_dowhile();
 
 	return 0;
 }

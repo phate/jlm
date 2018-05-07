@@ -142,10 +142,27 @@ is_tcloop(const scc_structure & s)
 			&& (*s.begin_redges())->source() == (*s.begin_xedges())->source();
 }
 
-static inline scc_structure
+struct tcloop {
+	inline
+	tcloop(
+		jlm::cfg_node * entry,
+		jlm::cfg_node * i,
+		jlm::cfg_node * r)
+	: ne(entry)
+	, insert(i)
+	, replacement(r)
+	{}
+
+	jlm::cfg_node * ne;
+	jlm::cfg_node * insert;
+	jlm::cfg_node * replacement;
+};
+
+static inline tcloop
 extract_tcloop(jlm::cfg_node * ne, jlm::cfg_node * nx)
 {
 	JLM_DEBUG_ASSERT(nx->noutedges() == 2);
+	auto cfg = ne->cfg();
 
 	auto er = nx->outedge(0);
 	auto ex = nx->outedge(1);
@@ -155,36 +172,28 @@ extract_tcloop(jlm::cfg_node * ne, jlm::cfg_node * nx)
 	}
 	JLM_DEBUG_ASSERT(er->sink() == ne);
 
-	std::unordered_set<jlm::cfg_edge*> eedges;
-	for (auto it = ne->begin_inedges(); it != ne->end_inedges(); it++) {
-		if ((*it)->source() != nx)
-			eedges.insert(*it);
-	}
-
-	auto bb = create_basic_block_node(ne->cfg());
-	ne->divert_inedges(ex->sink());
+	auto exsink = create_basic_block_node(cfg);
+	auto replacement = create_basic_block_node(cfg);
+	ne->divert_inedges(replacement);
+	replacement->add_outedge(ex->sink());
+	ex->divert(exsink);
 	er->divert(ne);
-	ex->divert(bb);
 
-	return scc_structure({ne}, {bb}, eedges, {er}, {ex});
+	return tcloop(ne, exsink, replacement);
 }
 
 static inline void
-reinsert_tcloop(const scc_structure & s)
+reinsert_tcloop(const tcloop & l)
 {
-	JLM_DEBUG_ASSERT(s.nenodes() == 1 && s.nxnodes() == 1);
-	JLM_DEBUG_ASSERT(s.needges() > 0 && s.nredges() == 1 && s.nxedges() == 1);
-	auto ne = *s.begin_enodes();
-	auto nx = *s.begin_xnodes();
-	auto node = (*s.begin_eedges())->sink();
+	JLM_DEBUG_ASSERT(l.insert->ninedges() == 1);
+	JLM_DEBUG_ASSERT(l.replacement->noutedges() == 1);
+	auto cfg = l.ne->cfg();
 
-	for (auto it = s.begin_eedges(); it != s.end_eedges(); it++)
-		(*it)->divert(ne);
+	l.replacement->divert_inedges(l.ne);
+	l.insert->divert_inedges(l.replacement->outedge(0)->sink());
 
-	JLM_DEBUG_ASSERT(nx->ninedges() == 1);
-	JLM_DEBUG_ASSERT(nx->noutedges() == 0);
-	nx->divert_inedges(node);
-	node->cfg()->remove_node(nx);
+	cfg->remove_node(l.insert);
+	cfg->remove_node(l.replacement);
 }
 
 static scc_structure
@@ -390,10 +399,10 @@ restructure_loop_repetition(
 }
 
 static void
-restructure(jlm::cfg_node*, jlm::cfg_node*, std::vector<scc_structure>&);
+restructure(jlm::cfg_node*, jlm::cfg_node*, std::vector<tcloop>&);
 
 static void
-restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit, std::vector<scc_structure> & loops)
+restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit, std::vector<tcloop> & loops)
 {
 	if (entry == exit)
 		return;
@@ -590,7 +599,7 @@ restructure_loops(jlm::cfg * cfg)
 {
 	JLM_DEBUG_ASSERT(is_closed(*cfg));
 
-	std::vector<scc_structure> loops;
+	std::vector<tcloop> loops;
 	restructure_loops(cfg->entry_node(), cfg->exit_node(), loops);
 
 	for (const auto & l : loops)
@@ -606,7 +615,7 @@ restructure_branches(jlm::cfg * cfg)
 }
 
 static inline void
-restructure(jlm::cfg_node * entry, jlm::cfg_node * exit, std::vector<scc_structure> & tcloops)
+restructure(jlm::cfg_node * entry, jlm::cfg_node * exit, std::vector<tcloop> & tcloops)
 {
 	restructure_loops(entry, exit, tcloops);
 	restructure_branches(entry, exit);
@@ -617,7 +626,7 @@ restructure(jlm::cfg * cfg)
 {
 	JLM_DEBUG_ASSERT(is_closed(*cfg));
 
-	std::vector<scc_structure> tcloops;
+	std::vector<tcloop> tcloops;
 	restructure(cfg->entry_node(), cfg->exit_node(), tcloops);
 
 	for (const auto & l : tcloops)
