@@ -91,10 +91,7 @@ public:
 	: jive::valuetype()
 	, nelements_(nelements)
 	, type_(type.copy())
-	{
-		if (nelements == 0)
-			throw std::logic_error("Expected at least one element.");
-	}
+	{}
 
 	inline
 	arraytype(const jlm::arraytype & other)
