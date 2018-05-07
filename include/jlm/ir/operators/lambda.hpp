@@ -22,8 +22,11 @@ public:
 	~lambda_op();
 
 	inline
-	lambda_op(jive::fcttype fcttype) noexcept
+	lambda_op(
+		jive::fcttype fcttype,
+		const std::string & name) noexcept
 	: jive::lambda_op(std::move(fcttype))
+	, name_(name)
 	{}
 
 	virtual bool
@@ -38,8 +41,17 @@ public:
 		return function_type();
 	}
 
+	inline const std::string &
+	name() const noexcept
+	{
+		return name_;
+	}
+
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
+
+private:
+	std::string name_;
 };
 
 /* lambda node */
@@ -158,6 +170,12 @@ public:
 	fcttype() const noexcept
 	{
 		return static_cast<const lambda_op*>(&operation())->fcttype();
+	}
+
+	inline const std::string &
+	name() const noexcept
+	{
+		return static_cast<const lambda_op*>(&operation())->name();
 	}
 
 	virtual lambda_node *

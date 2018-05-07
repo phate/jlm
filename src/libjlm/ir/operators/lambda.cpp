@@ -18,7 +18,9 @@ bool
 lambda_op::operator==(const operation & other) const noexcept
 {
 	auto op = dynamic_cast<const lambda_op*>(&other);
-	return op && op->fcttype() == fcttype();
+	return op
+	    && op->fcttype() == fcttype()
+	    && op->name() == name();
 }
 
 std::string
@@ -42,7 +44,7 @@ lambda_node *
 lambda_node::copy(jive::region * region, jive::substitution_map & smap) const
 {
 	lambda_builder lb;
-	auto arguments = lb.begin_lambda(region, fcttype());
+	auto arguments = lb.begin_lambda(region, *static_cast<const lambda_op*>(&operation()));
 
 	/* add dependencies */
 	jive::substitution_map rmap;

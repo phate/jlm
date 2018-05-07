@@ -364,7 +364,7 @@ test_lambda()
 	auto x = graph.add_import(vt, "x");
 
 	jlm::lambda_builder lb;
-	auto region = lb.begin_lambda(graph.root(), ft);
+	auto region = lb.begin_lambda(graph.root(), {ft, "f"});
 
 	auto d1 = lb.add_dependency(x);
 	auto d2 = lb.add_dependency(x);
@@ -404,11 +404,11 @@ test_phi()
 	auto r2 = pb.add_recvar(ft);
 
 	jlm::lambda_builder lb;
-	lb.begin_lambda(region, ft);
+	lb.begin_lambda(region, {ft, "f"});
 	d1 = lb.add_dependency(d1);
 	auto f1 = lb.end_lambda({d1});
 
-	lb.begin_lambda(region, ft);
+	lb.begin_lambda(region, {ft, "g"});
 	d2 = lb.add_dependency(d2);
 	auto f2 = lb.end_lambda({d2});
 

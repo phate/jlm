@@ -222,7 +222,7 @@ test_lambda()
 	auto x = graph.add_import(vt, "x");
 
 	jlm::lambda_builder lb;
-	auto arguments = lb.begin_lambda(graph.root(), {{{&vt}, {&vt}}});
+	auto arguments = lb.begin_lambda(graph.root(), {{{&vt}, {&vt}}, "f"});
 
 	auto d = lb.add_dependency(x);
 	jlm::create_testop(lb.subregion(), {arguments[0], d}, {&vt});
@@ -258,12 +258,12 @@ test_phi()
 	auto dy = pb.add_dependency(y);
 
 	jlm::lambda_builder lb;
-	auto arguments = lb.begin_lambda(pb.region(), ft);
+	auto arguments = lb.begin_lambda(pb.region(), {ft, "f"});
 	lb.add_dependency(rv1->value());
 	lb.add_dependency(dx);
 	auto f1 = lb.end_lambda({arguments[0]});
 
-	arguments = lb.begin_lambda(pb.region(), ft);
+	arguments = lb.begin_lambda(pb.region(), {ft, "g"});
 	lb.add_dependency(rv2->value());
 	lb.add_dependency(dy);
 	auto f2 = lb.end_lambda({arguments[0]});
