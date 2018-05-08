@@ -128,6 +128,12 @@ public:
 	virtual void
 	execute() const override;
 
+	inline const jlm::file &
+	ofile() const noexcept
+	{
+		return ofile_;
+	}
+
 private:
 	jlm::file ofile_;
 	std::vector<std::string> libs_;
