@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_JLM_CMDLINE_HPP
-#define JLM_JLM_CMDLINE_HPP
+#ifndef JLM_JLC_CMDLINE_HPP
+#define JLM_JLC_CMDLINE_HPP
 
 #include <jlm/util/file.hpp>
 

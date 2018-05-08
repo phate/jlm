@@ -24,7 +24,7 @@ check-ctests: jlm-opt
 	rm -rf ctests.log
 	@FAILED_TESTS="" ; \
 	for TEST in `ls tests/c-tests`; do \
-		$(TESTLOG) -n "$$TEST: " ; if tests/test-jlm.sh tests/c-tests/$$TEST >>ctests.log 2>&1 ; then $(TESTLOG) pass ; else $(TESTLOG) FAIL ; FAILED_TESTS="$$FAILED_TESTS $$TEST" ; fi ; \
+		$(TESTLOG) -n "$$TEST: " ; if tests/test-jlc.sh tests/c-tests/$$TEST >>ctests.log 2>&1 ; then $(TESTLOG) pass ; else $(TESTLOG) FAIL ; FAILED_TESTS="$$FAILED_TESTS $$TEST" ; fi ; \
 	done ; \
 	if [ "x$$FAILED_TESTS" != x ] ; then echo "Failed tests:$$FAILED_TESTS" ; else echo "All tests passed" ; fi ; \
 

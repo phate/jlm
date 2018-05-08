@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/jlm/cmdline.hpp>
-#include <jlm/jlm/command.hpp>
+#include <jlm/jlc/cmdline.hpp>
+#include <jlm/jlc/command.hpp>
 
 #include <iostream>
 

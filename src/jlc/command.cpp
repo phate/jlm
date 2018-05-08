@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/jlm/command.hpp>
+#include <jlm/jlc/command.hpp>
 #include <jlm/util/strfmt.hpp>
 
 #include <iostream>

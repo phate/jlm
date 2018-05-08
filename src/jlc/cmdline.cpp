@@ -4,7 +4,7 @@
  */
 
 #include <jlm/common.hpp>
-#include <jlm/jlm/cmdline.hpp>
+#include <jlm/jlc/cmdline.hpp>
 
 #include <llvm/Support/CommandLine.h>
 

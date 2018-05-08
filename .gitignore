@@ -6,6 +6,6 @@ ctests.log
 check.log
 /jlm-opt
 /jlm-print
-/jlm
+/jlc
 tests/test-runner
 .Makefile.override

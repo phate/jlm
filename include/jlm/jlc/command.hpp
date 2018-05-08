@@ -3,10 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_JLM_COMMAND_HPP
-#define JLM_JLM_COMMAND_HPP
+#ifndef JLM_JLC_COMMAND_HPP
+#define JLM_JLC_COMMAND_HPP
 
-#include <jlm/jlm/cmdline.hpp>
+#include <jlm/jlc/cmdline.hpp>
 
 #include <memory>
 #include <string>

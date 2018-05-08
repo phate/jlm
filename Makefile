@@ -63,12 +63,12 @@ JLMPRINT_SRC = \
 JLMOPT_SRC = \
 	src/jlm-opt/jlm-opt.cpp \
 
-JLM_SRC = \
-	src/jlm/cmdline.cpp \
-	src/jlm/command.cpp \
-	src/jlm/jlm.cpp \
+JLC_SRC = \
+	src/jlc/cmdline.cpp \
+	src/jlc/command.cpp \
+	src/jlc/jlc.cpp \
 
-all: libjlm.a jlm-print jlm-opt jlm check
+all: libjlm.a jlm-print jlm-opt jlc check
 
 libjlm.a: $(patsubst %.cpp, %.la, $(LIBJLM_SRC))
 
@@ -80,8 +80,8 @@ jlm-opt: LDFLAGS+=-L. -ljlm -ljive
 jlm-opt: $(patsubst %.cpp, %.o, $(JLMOPT_SRC)) libjlm.a
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 
-jlm: LDFLAGS+=-L. -ljlm -ljive
-jlm: $(patsubst %.cpp, %.o, $(JLM_SRC)) libjlm.a
+jlc: LDFLAGS+=-L. -ljlm -ljive
+jlc: $(patsubst %.cpp, %.o, $(JLC_SRC)) libjlm.a
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 
 include tests/Makefile.sub
@@ -100,7 +100,7 @@ include tests/Makefile.sub
 clean:
 	find . -name "*.o" -o -name "*.la" -o -name "*.a" | grep -v external | xargs rm -rf
 	rm -rf tests/test-runner
-	rm -rf jlm
+	rm -rf jlc
 	rm -rf jlm-opt
 	rm -rf jlm-print
 
