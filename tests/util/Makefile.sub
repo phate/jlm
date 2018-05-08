@@ -1,0 +1,2 @@
+TESTS += \
+	util/test-file \
