@@ -82,9 +82,11 @@ class cgencmd final : public command {
 public:
 	cgencmd(
 		const jlm::file & ifile,
+		const jlm::file & ofile,
 		const optlvl & ol)
 	: ol_(ol)
 	, ifile_(ifile)
+	, ofile_(ofile)
 	{}
 
 	virtual std::string
@@ -93,9 +95,16 @@ public:
 	virtual void
 	execute() const override;
 
+	inline const jlm::file &
+	ofile() const noexcept
+	{
+		return ofile_;
+	}
+
 private:
 	optlvl ol_;
 	jlm::file ifile_;
+	jlm::file ofile_;
 };
 
 /* linker command */

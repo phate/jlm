@@ -11,6 +11,12 @@
 
 namespace jlm {
 
+static jlm::file
+create_cgencmd_ofile(const jlm::file & ifile)
+{
+	return jlm::file(strfmt("/tmp/", ifile.base(), "-llc-out.o"));
+}
+
 /* command generation */
 
 std::vector<std::unique_ptr<command>>
@@ -22,7 +28,9 @@ generate_commands(const jlm::cmdline_options & opts)
 		cmds.push_back(std::make_unique<prscmd>(ifile, opts.includepaths, opts.macros,
 			opts.warnings, opts.std));
 		cmds.push_back(std::make_unique<optcmd>(ifile));
-		cmds.push_back(std::make_unique<cgencmd>(ifile, opts.Olvl));
+
+		auto cgenofile = opts.no_linking ? opts.ofile : create_cgencmd_ofile(ifile);
+		cmds.push_back(std::make_unique<cgencmd>(ifile, cgenofile, opts.Olvl));
 	}
 
 	if (!opts.no_linking) {
@@ -110,22 +118,15 @@ optcmd::execute() const
 
 /* code generator command */
 
-static std::string
-create_cgencmd_ofile(const std::string & ifile)
-{
-	return strfmt("tmp-", ifile, "-llc-out.o");
-}
-
 std::string
 cgencmd::to_str() const
 {
-	auto f = ifile_.base();
-
 	return strfmt(
 	  "llc "
 	, "-", jlm::to_str(ol_), " "
 	, "-filetype=obj "
-	, "-o /tmp/", create_cgencmd_ofile(f), " /tmp/", create_optcmd_ofile(f)
+	, "-o ", ofile_.to_str()
+	, " /tmp/", create_optcmd_ofile(ifile_.base())
 	);
 }
 
@@ -143,7 +144,7 @@ lnkcmd::to_str() const
 {
 	std::string ifiles;
 	for (const auto & ifile : ifiles_)
-		ifiles += "/tmp/" + create_cgencmd_ofile(ifile.base()) + " ";
+		ifiles += create_cgencmd_ofile(ifile).to_str() + " ";
 
 	std::string Lpaths;
 	for (const auto & Lpath : Lpaths_)
