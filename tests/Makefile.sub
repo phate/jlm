@@ -20,7 +20,7 @@ TESTLOG = true
 
 check: check-utests check-ctests
 
-check-ctests: jlm-opt
+check-ctests: jlc
 	rm -rf ctests.log
 	@FAILED_TESTS="" ; \
 	for TEST in `ls tests/c-tests`; do \
