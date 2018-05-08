@@ -78,6 +78,18 @@ public:
 		return file_;
 	}
 
+	inline bool
+	operator==(const jlm::file & other) const noexcept
+	{
+		return file_ == other.file_;
+	}
+
+	inline bool
+	operator==(const std::string & f) const noexcept
+	{
+		return file_ == f;
+	}
+
 private:
 	std::string file_;
 };
