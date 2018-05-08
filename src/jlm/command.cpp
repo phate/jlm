@@ -11,16 +11,6 @@
 
 namespace jlm {
 
-static std::string
-file(const std::string & filepath)
-{
-	auto pos = filepath.find_last_of("/");
-	if (pos == std::string::npos)
-		return filepath;
-
-	return filepath.substr(pos+1, filepath.size()-pos);
-}
-
 /* command generation */
 
 std::vector<std::unique_ptr<command>>
@@ -28,7 +18,7 @@ generate_commands(const jlm::cmdline_options & opts)
 {
 	std::vector<std::unique_ptr<command>> cmds;
 
-	for (const auto & ifile : opts.ifilepaths) {
+	for (const auto & ifile : opts.ifiles) {
 		cmds.push_back(std::make_unique<prscmd>(ifile, opts.includepaths, opts.macros,
 			opts.warnings, opts.std));
 		cmds.push_back(std::make_unique<optcmd>(ifile));
@@ -36,8 +26,7 @@ generate_commands(const jlm::cmdline_options & opts)
 	}
 
 	if (!opts.no_linking) {
-		cmds.push_back(std::make_unique<lnkcmd>(opts.ifilepaths, opts.ofilepath, opts.libpaths,
-			opts.libs));
+		cmds.push_back(std::make_unique<lnkcmd>(opts.ifiles, opts.ofile, opts.libpaths, opts.libs));
 	}
 
 	if (opts.only_print_commands) {
@@ -59,7 +48,7 @@ create_prscmd_ofile(const std::string & ifile)
 std::string
 prscmd::to_str() const
 {
-	auto f = file(ifile_);
+	auto f = ifile_.base();
 
 	std::string Ipaths;
 	for (const auto & Ipath : Ipaths_)
@@ -81,7 +70,7 @@ prscmd::to_str() const
 	, Ipaths, " "
 	, "-S -emit-llvm "
 	, "-o /tmp/", create_prscmd_ofile(f), " "
-	, ifile_
+	, ifile_.to_str()
 	);
 }
 
@@ -103,7 +92,7 @@ create_optcmd_ofile(const std::string & ifile)
 std::string
 optcmd::to_str() const
 {
-	auto f = file(ifile_);
+	auto f = ifile_.base();
 
 	return strfmt(
 	  "jlm-opt "
@@ -130,7 +119,7 @@ create_cgencmd_ofile(const std::string & ifile)
 std::string
 cgencmd::to_str() const
 {
-	auto f = file(ifile_);
+	auto f = ifile_.base();
 
 	return strfmt(
 	  "llc "
@@ -154,7 +143,7 @@ lnkcmd::to_str() const
 {
 	std::string ifiles;
 	for (const auto & ifile : ifiles_)
-		ifiles += "/tmp/" + create_cgencmd_ofile(file(ifile)) + " ";
+		ifiles += "/tmp/" + create_cgencmd_ofile(ifile.base()) + " ";
 
 	std::string Lpaths;
 	for (const auto & Lpath : Lpaths_)
@@ -168,7 +157,7 @@ lnkcmd::to_str() const
 	  "clang "
 	, "-O0 "
 	, ifiles
-	, "-o ", ofile_, " "
+	, "-o ", ofile_.to_str(), " "
 	, Lpaths
 	, libs
 	);

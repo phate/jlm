@@ -32,7 +32,7 @@ generate_commands(const jlm::cmdline_options & options);
 class prscmd final : public command {
 public:
 	prscmd(
-		const std::string & ifile,
+		const jlm::file & ifile,
 		const std::vector<std::string> & Ipaths,
 		const std::vector<std::string> & Dmacros,
 		const std::vector<std::string> & Wwarnings,
@@ -52,7 +52,7 @@ public:
 
 private:
 	standard std_;
-	std::string ifile_;
+	jlm::file ifile_;
 	std::vector<std::string> Ipaths_;
 	std::vector<std::string> Dmacros_;
 	std::vector<std::string> Wwarnings_;
@@ -62,7 +62,7 @@ private:
 
 class optcmd final : public command {
 public:
-	optcmd(const std::string & ifile)
+	optcmd(const jlm::file & ifile)
 	: ifile_(ifile)
 	{}
 
@@ -73,7 +73,7 @@ public:
 	execute() const override;
 
 private:
-	std::string ifile_;
+	jlm::file ifile_;
 };
 
 /* code generator command */
@@ -81,7 +81,7 @@ private:
 class cgencmd final : public command {
 public:
 	cgencmd(
-		const std::string & ifile,
+		const jlm::file & ifile,
 		const optlvl & ol)
 	: ol_(ol)
 	, ifile_(ifile)
@@ -95,7 +95,7 @@ public:
 
 private:
 	optlvl ol_;
-	std::string ifile_;
+	jlm::file ifile_;
 };
 
 /* linker command */
@@ -103,8 +103,8 @@ private:
 class lnkcmd final : public command {
 public:
 	lnkcmd(
-		const std::vector<std::string> & ifiles,
-		const std::string & ofile,
+		const std::vector<jlm::file> & ifiles,
+		const jlm::file & ofile,
 		const std::vector<std::string> & Lpaths,
 		const std::vector<std::string> & libs)
 	: ofile_(ofile)
@@ -120,9 +120,9 @@ public:
 	execute() const override;
 
 private:
-	std::string ofile_;
+	jlm::file ofile_;
 	std::vector<std::string> libs_;
-	std::vector<std::string> ifiles_;
+	std::vector<jlm::file> ifiles_;
 	std::vector<std::string> Lpaths_;
 };
 

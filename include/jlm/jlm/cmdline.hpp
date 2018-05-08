@@ -6,6 +6,8 @@
 #ifndef JLM_JLM_CMDLINE_HPP
 #define JLM_JLM_CMDLINE_HPP
 
+#include <jlm/util/file.hpp>
+
 #include <string>
 #include <vector>
 
@@ -29,7 +31,7 @@ public:
 	, generate_debug_information(false)
 	, Olvl(optlvl::O0)
 	, std(standard::none)
-	, ofilepath("a.out")
+	, ofile("a.out")
 	{}
 
 	bool no_linking;
@@ -38,12 +40,12 @@ public:
 
 	optlvl Olvl;
 	standard std;
-	std::string ofilepath;
+	jlm::file ofile;
 	std::vector<std::string> libs;
 	std::vector<std::string> macros;
 	std::vector<std::string> libpaths;
 	std::vector<std::string> warnings;
-	std::vector<std::string> ifilepaths;
+	std::vector<jlm::file> ifiles;
 	std::vector<std::string> includepaths;
 };
 

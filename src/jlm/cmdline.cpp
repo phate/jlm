@@ -177,9 +177,12 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & flags)
 	flags.macros = Dmacros;
 	flags.libpaths = libpaths;
 	flags.warnings = Wwarnings;
-	flags.ofilepath = ofilepath;
+	flags.ofile = ofilepath;
 	flags.no_linking = no_linking;
-	flags.ifilepaths = ifilepaths;
+
+	for (const auto & ifile : ifilepaths)
+		flags.ifiles.push_back({ifile});
+
 	flags.includepaths = includepaths;
 	flags.only_print_commands = only_print_commands;
 	flags.generate_debug_information = generate_debug_information;
