@@ -6,7 +6,7 @@
 #ifndef JLM_IR_AGGREGATION_NODE_HPP
 #define JLM_IR_AGGREGATION_NODE_HPP
 
-#include <jlm/ir/aggregation/structure.hpp>
+#include <jlm/jlm/ir/aggregation/structure.hpp>
 
 #include <memory>
 #include <vector>

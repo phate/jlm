@@ -3,13 +3,13 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/ir/module.hpp>
-#include <jlm/ir/rvsdg.hpp>
-#include <jlm/ir/view.hpp>
-#include <jlm/llvm2jlm/module.hpp>
-#include <jlm/jlm2llvm/jlm2llvm.hpp>
-#include <jlm/jlm2rvsdg/module.hpp>
-#include <jlm/rvsdg2jlm/rvsdg2jlm.hpp>
+#include <jlm/jlm/ir/module.hpp>
+#include <jlm/jlm/ir/rvsdg.hpp>
+#include <jlm/jlm/ir/view.hpp>
+#include <jlm/jlm/llvm2jlm/module.hpp>
+#include <jlm/jlm/jlm2llvm/jlm2llvm.hpp>
+#include <jlm/jlm/jlm2rvsdg/module.hpp>
+#include <jlm/jlm/rvsdg2jlm/rvsdg2jlm.hpp>
 
 #include <jive/rvsdg/graph.h>
 #include <jive/view.h>

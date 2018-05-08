@@ -3,20 +3,20 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/jlm2rvsdg/module.hpp>
-#include <jlm/jlm2rvsdg/restructuring.hpp>
+#include <jlm/jlm/jlm2rvsdg/module.hpp>
+#include <jlm/jlm/jlm2rvsdg/restructuring.hpp>
 
-#include <jlm/ir/aggregation/aggregation.hpp>
-#include <jlm/ir/aggregation/annotation.hpp>
-#include <jlm/ir/aggregation/node.hpp>
-#include <jlm/ir/basic-block.hpp>
-#include <jlm/ir/cfg-structure.hpp>
-#include <jlm/ir/ipgraph.hpp>
-#include <jlm/ir/module.hpp>
-#include <jlm/ir/operators.hpp>
-#include <jlm/ir/rvsdg.hpp>
-#include <jlm/ir/ssa.hpp>
-#include <jlm/ir/tac.hpp>
+#include <jlm/jlm/ir/aggregation/aggregation.hpp>
+#include <jlm/jlm/ir/aggregation/annotation.hpp>
+#include <jlm/jlm/ir/aggregation/node.hpp>
+#include <jlm/jlm/ir/basic-block.hpp>
+#include <jlm/jlm/ir/cfg-structure.hpp>
+#include <jlm/jlm/ir/ipgraph.hpp>
+#include <jlm/jlm/ir/module.hpp>
+#include <jlm/jlm/ir/operators.hpp>
+#include <jlm/jlm/ir/rvsdg.hpp>
+#include <jlm/jlm/ir/ssa.hpp>
+#include <jlm/jlm/ir/tac.hpp>
 
 #include <jive/arch/address.h>
 #include <jive/arch/addresstype.h>

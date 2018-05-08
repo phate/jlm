@@ -7,14 +7,14 @@
 #include <test-registry.hpp>
 #include <test-types.hpp>
 
-#include <jlm/ir/aggregation/aggregation.hpp>
-#include <jlm/ir/aggregation/annotation.hpp>
-#include <jlm/ir/aggregation/node.hpp>
-#include <jlm/ir/basic-block.hpp>
-#include <jlm/ir/cfg.hpp>
-#include <jlm/ir/module.hpp>
-#include <jlm/ir/operators/operators.hpp>
-#include <jlm/ir/view.hpp>
+#include <jlm/jlm/ir/aggregation/aggregation.hpp>
+#include <jlm/jlm/ir/aggregation/annotation.hpp>
+#include <jlm/jlm/ir/aggregation/node.hpp>
+#include <jlm/jlm/ir/basic-block.hpp>
+#include <jlm/jlm/ir/cfg.hpp>
+#include <jlm/jlm/ir/module.hpp>
+#include <jlm/jlm/ir/operators/operators.hpp>
+#include <jlm/jlm/ir/view.hpp>
 
 static inline bool
 has_variables(

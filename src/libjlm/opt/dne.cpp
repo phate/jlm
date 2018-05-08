@@ -4,8 +4,8 @@
  */
 
 #include <jlm/common.hpp>
-#include <jlm/ir/operators.hpp>
-#include <jlm/opt/dne.hpp>
+#include <jlm/jlm/ir/operators.hpp>
+#include <jlm/jlm/opt/dne.hpp>
 #include <jlm/util/stats.hpp>
 
 #include <jive/rvsdg/gamma.h>

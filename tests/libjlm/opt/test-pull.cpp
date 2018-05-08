@@ -11,7 +11,7 @@
 #include <jive/rvsdg/gamma.h>
 #include <jive/rvsdg/simple-node.h>
 
-#include <jlm/opt/pull.hpp>
+#include <jlm/jlm/opt/pull.hpp>
 
 static inline void
 test_pullin_top()

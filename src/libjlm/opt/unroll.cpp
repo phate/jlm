@@ -15,7 +15,7 @@
 #include <jive/rvsdg/traverser.h>
 
 #include <jlm/common.hpp>
-#include <jlm/opt/unroll.hpp>
+#include <jlm/jlm/opt/unroll.hpp>
 
 namespace jlm {
 

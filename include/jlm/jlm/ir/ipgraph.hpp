@@ -6,10 +6,10 @@
 #ifndef JLM_IR_IPGRAPH_H
 #define JLM_IR_IPGRAPH_H
 
-#include <jlm/ir/cfg.hpp>
-#include <jlm/ir/tac.hpp>
-#include <jlm/ir/types.hpp>
-#include <jlm/ir/variable.hpp>
+#include <jlm/jlm/ir/cfg.hpp>
+#include <jlm/jlm/ir/tac.hpp>
+#include <jlm/jlm/ir/types.hpp>
+#include <jlm/jlm/ir/variable.hpp>
 
 #include <jive/types/function.h>
 

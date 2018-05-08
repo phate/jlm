@@ -3,10 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/ir/basic-block.hpp>
-#include <jlm/ir/cfg.hpp>
-#include <jlm/ir/cfg-structure.hpp>
-#include <jlm/ir/operators/operators.hpp>
+#include <jlm/jlm/ir/basic-block.hpp>
+#include <jlm/jlm/ir/cfg.hpp>
+#include <jlm/jlm/ir/cfg-structure.hpp>
+#include <jlm/jlm/ir/operators/operators.hpp>
 
 #include <algorithm>
 #include <unordered_map>

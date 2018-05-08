@@ -10,7 +10,7 @@
 #include <jive/rvsdg/simple-node.h>
 #include <jive/rvsdg/type.h>
 
-#include <jlm/ir/tac.hpp>
+#include <jlm/jlm/ir/tac.hpp>
 
 namespace jlm {
 

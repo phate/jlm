@@ -8,7 +8,7 @@
 
 #include <jive/types/record.h>
 
-#include <jlm/ir/types.hpp>
+#include <jlm/jlm/ir/types.hpp>
 
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Type.h>

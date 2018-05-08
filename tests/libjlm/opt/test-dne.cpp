@@ -15,8 +15,8 @@
 #include <jive/rvsdg/simple-node.h>
 #include <jive/rvsdg/theta.h>
 
-#include <jlm/ir/operators/lambda.hpp>
-#include <jlm/opt/dne.hpp>
+#include <jlm/jlm/ir/operators/lambda.hpp>
+#include <jlm/jlm/opt/dne.hpp>
 
 static inline void
 test_root()

@@ -4,9 +4,9 @@
  */
 
 #include <jlm/common.hpp>
-#include <jlm/ir/types.hpp>
-#include <jlm/llvm2jlm/context.hpp>
-#include <jlm/llvm2jlm/type.hpp>
+#include <jlm/jlm/ir/types.hpp>
+#include <jlm/jlm/llvm2jlm/context.hpp>
+#include <jlm/jlm/llvm2jlm/type.hpp>
 
 #include <jive/arch/addresstype.h>
 #include <jive/types/bitstring/type.h>

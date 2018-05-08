@@ -3,9 +3,9 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/ir/ipgraph.hpp>
-#include <jlm/ir/cfg.hpp>
-#include <jlm/ir/tac.hpp>
+#include <jlm/jlm/ir/ipgraph.hpp>
+#include <jlm/jlm/ir/cfg.hpp>
+#include <jlm/jlm/ir/tac.hpp>
 
 #include <jive/common.h>
 

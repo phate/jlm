@@ -12,7 +12,7 @@
 #include <jive/rvsdg/graph.h>
 #include <jive/rvsdg/theta.h>
 
-#include <jlm/opt/invariance.hpp>
+#include <jlm/jlm/opt/invariance.hpp>
 
 static inline void
 test_gamma()

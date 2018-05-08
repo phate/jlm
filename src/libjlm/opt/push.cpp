@@ -4,9 +4,9 @@
  */
 
 #include <jlm/common.hpp>
-#include <jlm/ir/operators/operators.hpp>
-#include <jlm/ir/operators/store.hpp>
-#include <jlm/opt/push.hpp>
+#include <jlm/jlm/ir/operators/operators.hpp>
+#include <jlm/jlm/ir/operators/store.hpp>
+#include <jlm/jlm/opt/push.hpp>
 
 #include <jive/rvsdg/gamma.h>
 #include <jive/rvsdg/theta.h>

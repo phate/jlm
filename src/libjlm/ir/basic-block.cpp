@@ -3,10 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/ir/basic-block.hpp>
-#include <jlm/ir/cfg.hpp>
-#include <jlm/ir/tac.hpp>
-#include <jlm/ir/variable.hpp>
+#include <jlm/jlm/ir/basic-block.hpp>
+#include <jlm/jlm/ir/cfg.hpp>
+#include <jlm/jlm/ir/tac.hpp>
+#include <jlm/jlm/ir/variable.hpp>
 
 #include <sstream>
 

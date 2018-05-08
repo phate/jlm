@@ -9,7 +9,7 @@
 #include <jive/types/bitstring.h>
 #include <jive/rvsdg/unary.h>
 
-#include <jlm/ir/tac.hpp>
+#include <jlm/jlm/ir/tac.hpp>
 
 namespace jlm {
 

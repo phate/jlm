@@ -9,8 +9,8 @@
 #include <jive/rvsdg/region.h>
 #include <jive/rvsdg/structural-node.h>
 
-#include <jlm/ir/types.hpp>
-#include <jlm/ir/variable.hpp>
+#include <jlm/jlm/ir/types.hpp>
+#include <jlm/jlm/ir/variable.hpp>
 
 namespace jlm {
 

@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/ir/operators/delta.hpp>
+#include <jlm/jlm/ir/operators/delta.hpp>
 
 #include <jive/rvsdg/substitution.h>
 

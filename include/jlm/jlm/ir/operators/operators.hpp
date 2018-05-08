@@ -15,9 +15,9 @@
 #include <jive/rvsdg/type.h>
 #include <jive/rvsdg/unary.h>
 
-#include <jlm/ir/module.hpp>
-#include <jlm/ir/tac.hpp>
-#include <jlm/ir/types.hpp>
+#include <jlm/jlm/ir/module.hpp>
+#include <jlm/jlm/ir/tac.hpp>
+#include <jlm/jlm/ir/types.hpp>
 
 #include <llvm/ADT/APFloat.h>
 

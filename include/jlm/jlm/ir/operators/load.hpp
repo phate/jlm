@@ -10,8 +10,8 @@
 #include <jive/rvsdg/simple-normal-form.h>
 #include <jive/rvsdg/simple-node.h>
 
-#include <jlm/ir/tac.hpp>
-#include <jlm/ir/types.hpp>
+#include <jlm/jlm/ir/tac.hpp>
+#include <jlm/jlm/ir/types.hpp>
 
 namespace jlm {
 

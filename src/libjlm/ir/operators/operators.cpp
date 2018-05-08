@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/ir/operators/operators.hpp>
+#include <jlm/jlm/ir/operators/operators.hpp>
 
 #include <jive/arch/addresstype.h>
 #include <jive/types/bitstring/constant.h>

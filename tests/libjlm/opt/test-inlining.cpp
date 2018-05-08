@@ -11,8 +11,8 @@
 #include <jive/rvsdg/control.h>
 #include <jive/rvsdg/gamma.h>
 
-#include <jlm/ir/operators.hpp>
-#include <jlm/opt/inlining.hpp>
+#include <jlm/jlm/ir/operators.hpp>
+#include <jlm/jlm/opt/inlining.hpp>
 
 /* FIXME: replace with contains function from jive */
 static bool

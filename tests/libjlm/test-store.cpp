@@ -12,9 +12,9 @@
 #include <jive/rvsdg/graph.h>
 #include <jive/rvsdg/statemux.h>
 
-#include <jlm/ir/operators/alloca.hpp>
-#include <jlm/ir/operators/store.hpp>
-#include <jlm/ir/types.hpp>
+#include <jlm/jlm/ir/operators/alloca.hpp>
+#include <jlm/jlm/ir/operators/store.hpp>
+#include <jlm/jlm/ir/types.hpp>
 
 static inline void
 test_store_mux_reduction()

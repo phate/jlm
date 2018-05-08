@@ -4,15 +4,15 @@
  */
 
 #include <jlm/common.hpp>
-#include <jlm/llvm2jlm/constant.hpp>
-#include <jlm/llvm2jlm/context.hpp>
-#include <jlm/llvm2jlm/instruction.hpp>
-#include <jlm/llvm2jlm/type.hpp>
+#include <jlm/jlm/llvm2jlm/constant.hpp>
+#include <jlm/jlm/llvm2jlm/context.hpp>
+#include <jlm/jlm/llvm2jlm/instruction.hpp>
+#include <jlm/jlm/llvm2jlm/type.hpp>
 
-#include <jlm/ir/basic-block.hpp>
-#include <jlm/ir/ipgraph.hpp>
-#include <jlm/ir/operators.hpp>
-#include <jlm/ir/tac.hpp>
+#include <jlm/jlm/ir/basic-block.hpp>
+#include <jlm/jlm/ir/ipgraph.hpp>
+#include <jlm/jlm/ir/operators.hpp>
+#include <jlm/jlm/ir/tac.hpp>
 
 #include <jive/arch/address.h>
 #include <jive/arch/address-transform.h>

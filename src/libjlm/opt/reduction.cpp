@@ -7,8 +7,8 @@
 #include <jive/rvsdg/gamma.h>
 #include <jive/rvsdg/statemux.h>
 
-#include <jlm/ir/operators.hpp>
-#include <jlm/opt/reduction.hpp>
+#include <jlm/jlm/ir/operators.hpp>
+#include <jlm/jlm/opt/reduction.hpp>
 
 namespace jlm {
 

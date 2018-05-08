@@ -12,7 +12,7 @@
 #include <jive/rvsdg/control.h>
 
 #include <jlm/common.hpp>
-#include <jlm/ir/types.hpp>
+#include <jlm/jlm/ir/types.hpp>
 
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Type.h>

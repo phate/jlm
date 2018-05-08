@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/ir/aggregation/structure.hpp>
+#include <jlm/jlm/ir/aggregation/structure.hpp>
 
 namespace jlm {
 namespace agg {

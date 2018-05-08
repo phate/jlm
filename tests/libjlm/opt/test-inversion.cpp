@@ -12,7 +12,7 @@
 #include <jive/rvsdg/simple-node.h>
 #include <jive/rvsdg/theta.h>
 
-#include <jlm/opt/inversion.hpp>
+#include <jlm/jlm/opt/inversion.hpp>
 
 static inline void
 test1()

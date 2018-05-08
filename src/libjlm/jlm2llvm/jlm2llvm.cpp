@@ -6,17 +6,17 @@
 #include <jive/arch/addresstype.h>
 #include <jive/rvsdg/control.h>
 
-#include <jlm/ir/basic-block.hpp>
-#include <jlm/ir/cfg.hpp>
-#include <jlm/ir/cfg-structure.hpp>
-#include <jlm/ir/cfg-node.hpp>
-#include <jlm/ir/module.hpp>
-#include <jlm/ir/operators/operators.hpp>
+#include <jlm/jlm/ir/basic-block.hpp>
+#include <jlm/jlm/ir/cfg.hpp>
+#include <jlm/jlm/ir/cfg-structure.hpp>
+#include <jlm/jlm/ir/cfg-node.hpp>
+#include <jlm/jlm/ir/module.hpp>
+#include <jlm/jlm/ir/operators/operators.hpp>
 
-#include <jlm/jlm2llvm/context.hpp>
-#include <jlm/jlm2llvm/instruction.hpp>
-#include <jlm/jlm2llvm/jlm2llvm.hpp>
-#include <jlm/jlm2llvm/type.hpp>
+#include <jlm/jlm/jlm2llvm/context.hpp>
+#include <jlm/jlm/jlm2llvm/instruction.hpp>
+#include <jlm/jlm/jlm2llvm/jlm2llvm.hpp>
+#include <jlm/jlm/jlm2llvm/type.hpp>
 
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/IRBuilder.h>

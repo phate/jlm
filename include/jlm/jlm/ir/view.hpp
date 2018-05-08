@@ -7,7 +7,7 @@
 #define JLM_IR_VIEW_HPP
 
 /* FIXME: I would rather like to forward declare demand_map and demand_set */
-#include <jlm/ir/aggregation/annotation.hpp>
+#include <jlm/jlm/ir/aggregation/annotation.hpp>
 
 #include <string>
 

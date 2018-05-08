@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/ir/operators/getelementptr.hpp>
+#include <jlm/jlm/ir/operators/getelementptr.hpp>
 
 namespace jlm {
 

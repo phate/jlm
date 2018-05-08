@@ -4,7 +4,7 @@
  */
 
 #include <jlm/common.hpp>
-#include <jlm/ir/types.hpp>
+#include <jlm/jlm/ir/types.hpp>
 #include <jlm/util/strfmt.hpp>
 
 #include <unordered_map>

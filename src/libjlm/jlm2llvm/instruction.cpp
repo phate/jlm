@@ -8,14 +8,14 @@
 #include <jive/rvsdg/control.h>
 #include <jive/rvsdg/statemux.h>
 
-#include <jlm/ir/cfg-node.hpp>
-#include <jlm/ir/module.hpp>
-#include <jlm/ir/operators.hpp>
-#include <jlm/ir/tac.hpp>
+#include <jlm/jlm/ir/cfg-node.hpp>
+#include <jlm/jlm/ir/module.hpp>
+#include <jlm/jlm/ir/operators.hpp>
+#include <jlm/jlm/ir/tac.hpp>
 
-#include <jlm/jlm2llvm/context.hpp>
-#include <jlm/jlm2llvm/instruction.hpp>
-#include <jlm/jlm2llvm/type.hpp>
+#include <jlm/jlm/jlm2llvm/context.hpp>
+#include <jlm/jlm/jlm2llvm/instruction.hpp>
+#include <jlm/jlm/jlm2llvm/type.hpp>
 
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>

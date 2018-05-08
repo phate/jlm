@@ -10,14 +10,14 @@
 #include <jive/rvsdg/traverser.h>
 
 #include <jlm/common.hpp>
-#include <jlm/ir/basic-block.hpp>
-#include <jlm/ir/cfg-structure.hpp>
-#include <jlm/ir/module.hpp>
-#include <jlm/ir/operators.hpp>
-#include <jlm/ir/rvsdg.hpp>
-#include <jlm/ir/tac.hpp>
-#include <jlm/rvsdg2jlm/context.hpp>
-#include <jlm/rvsdg2jlm/rvsdg2jlm.hpp>
+#include <jlm/jlm/ir/basic-block.hpp>
+#include <jlm/jlm/ir/cfg-structure.hpp>
+#include <jlm/jlm/ir/module.hpp>
+#include <jlm/jlm/ir/operators.hpp>
+#include <jlm/jlm/ir/rvsdg.hpp>
+#include <jlm/jlm/ir/tac.hpp>
+#include <jlm/jlm/rvsdg2jlm/context.hpp>
+#include <jlm/jlm/rvsdg2jlm/rvsdg2jlm.hpp>
 
 #include <deque>
 

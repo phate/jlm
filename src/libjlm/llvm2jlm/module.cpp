@@ -4,18 +4,18 @@
  */
 
 #include <jlm/common.hpp>
-#include <jlm/ir/basic-block.hpp>
-#include <jlm/ir/cfg.hpp>
-#include <jlm/ir/cfg-structure.hpp>
-#include <jlm/ir/cfg-node.hpp>
-#include <jlm/ir/ipgraph.hpp>
-#include <jlm/ir/module.hpp>
-#include <jlm/ir/operators/operators.hpp>
-#include <jlm/llvm2jlm/constant.hpp>
-#include <jlm/llvm2jlm/context.hpp>
-#include <jlm/llvm2jlm/instruction.hpp>
-#include <jlm/llvm2jlm/module.hpp>
-#include <jlm/llvm2jlm/type.hpp>
+#include <jlm/jlm/ir/basic-block.hpp>
+#include <jlm/jlm/ir/cfg.hpp>
+#include <jlm/jlm/ir/cfg-structure.hpp>
+#include <jlm/jlm/ir/cfg-node.hpp>
+#include <jlm/jlm/ir/ipgraph.hpp>
+#include <jlm/jlm/ir/module.hpp>
+#include <jlm/jlm/ir/operators/operators.hpp>
+#include <jlm/jlm/llvm2jlm/constant.hpp>
+#include <jlm/jlm/llvm2jlm/context.hpp>
+#include <jlm/jlm/llvm2jlm/instruction.hpp>
+#include <jlm/jlm/llvm2jlm/module.hpp>
+#include <jlm/jlm/llvm2jlm/type.hpp>
 
 #include <jive/arch/addresstype.h>
 #include <jive/rvsdg/type.h>

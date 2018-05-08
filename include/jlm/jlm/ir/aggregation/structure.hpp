@@ -6,7 +6,7 @@
 #ifndef JLM_IR_AGGREGATION_STRUCTURE_HPP
 #define JLM_IR_AGGREGATION_STRUCTURE_HPP
 
-#include <jlm/ir/basic-block.hpp>
+#include <jlm/jlm/ir/basic-block.hpp>
 
 #include <string>
 

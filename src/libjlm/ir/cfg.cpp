@@ -5,13 +5,13 @@
  */
 
 #include <jlm/common.hpp>
-#include <jlm/ir/basic-block.hpp>
-#include <jlm/ir/cfg.hpp>
-#include <jlm/ir/cfg-structure.hpp>
-#include <jlm/ir/cfg-node.hpp>
-#include <jlm/ir/ipgraph.hpp>
-#include <jlm/ir/operators/operators.hpp>
-#include <jlm/ir/tac.hpp>
+#include <jlm/jlm/ir/basic-block.hpp>
+#include <jlm/jlm/ir/cfg.hpp>
+#include <jlm/jlm/ir/cfg-structure.hpp>
+#include <jlm/jlm/ir/cfg-node.hpp>
+#include <jlm/jlm/ir/ipgraph.hpp>
+#include <jlm/jlm/ir/operators/operators.hpp>
+#include <jlm/jlm/ir/tac.hpp>
 
 #include <algorithm>
 #include <deque>

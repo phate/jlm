@@ -6,9 +6,9 @@
 #ifndef JLM_IR_BASIC_BLOCK_H
 #define JLM_IR_BASIC_BLOCK_H
 
-#include <jlm/ir/cfg.hpp>
-#include <jlm/ir/cfg-node.hpp>
-#include <jlm/ir/tac.hpp>
+#include <jlm/jlm/ir/cfg.hpp>
+#include <jlm/jlm/ir/cfg-node.hpp>
+#include <jlm/jlm/ir/tac.hpp>
 
 #include <list>
 

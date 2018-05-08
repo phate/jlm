@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/ir/operators/lambda.hpp>
+#include <jlm/jlm/ir/operators/lambda.hpp>
 
 #include <jive/rvsdg/substitution.h>
 

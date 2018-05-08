@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/ir/variable.hpp>
+#include <jlm/jlm/ir/variable.hpp>
 
 namespace jlm {
 

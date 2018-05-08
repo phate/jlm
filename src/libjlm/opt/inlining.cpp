@@ -4,8 +4,8 @@
  */
 
 #include <jlm/common.hpp>
-#include <jlm/ir/operators.hpp>
-#include <jlm/opt/inlining.hpp>
+#include <jlm/jlm/ir/operators.hpp>
+#include <jlm/jlm/opt/inlining.hpp>
 
 #include <jive/rvsdg/gamma.h>
 #include <jive/rvsdg/substitution.h>

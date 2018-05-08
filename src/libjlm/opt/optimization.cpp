@@ -3,16 +3,16 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/opt/cne.hpp>
-#include <jlm/opt/dne.hpp>
-#include <jlm/opt/inlining.hpp>
-#include <jlm/opt/invariance.hpp>
-#include <jlm/opt/inversion.hpp>
-#include <jlm/opt/optimization.hpp>
-#include <jlm/opt/pull.hpp>
-#include <jlm/opt/push.hpp>
-#include <jlm/opt/reduction.hpp>
-#include <jlm/opt/unroll.hpp>
+#include <jlm/jlm/opt/cne.hpp>
+#include <jlm/jlm/opt/dne.hpp>
+#include <jlm/jlm/opt/inlining.hpp>
+#include <jlm/jlm/opt/invariance.hpp>
+#include <jlm/jlm/opt/inversion.hpp>
+#include <jlm/jlm/opt/optimization.hpp>
+#include <jlm/jlm/opt/pull.hpp>
+#include <jlm/jlm/opt/push.hpp>
+#include <jlm/jlm/opt/reduction.hpp>
+#include <jlm/jlm/opt/unroll.hpp>
 
 #include <unordered_map>
 

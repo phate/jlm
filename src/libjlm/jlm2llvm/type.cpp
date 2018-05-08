@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/jlm2llvm/context.hpp>
-#include <jlm/jlm2llvm/type.hpp>
+#include <jlm/jlm/jlm2llvm/context.hpp>
+#include <jlm/jlm/jlm2llvm/type.hpp>
 
 #include <llvm/IR/Module.h>
 

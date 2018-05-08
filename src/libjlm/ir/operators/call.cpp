@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/ir/operators/call.hpp>
+#include <jlm/jlm/ir/operators/call.hpp>
 
 namespace jlm {
 

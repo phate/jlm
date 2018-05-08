@@ -7,11 +7,11 @@
 #include "test-registry.hpp"
 #include "test-types.hpp"
 
-#include <jlm/ir/basic-block.hpp>
-#include <jlm/ir/cfg.hpp>
-#include <jlm/ir/cfg-structure.hpp>
-#include <jlm/ir/module.hpp>
-#include <jlm/ir/view.hpp>
+#include <jlm/jlm/ir/basic-block.hpp>
+#include <jlm/jlm/ir/cfg.hpp>
+#include <jlm/jlm/ir/cfg-structure.hpp>
+#include <jlm/jlm/ir/module.hpp>
+#include <jlm/jlm/ir/view.hpp>
 
 #include <assert.h>
 

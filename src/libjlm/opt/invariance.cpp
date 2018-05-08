@@ -4,7 +4,7 @@
  */
 
 #include <jlm/common.hpp>
-#include <jlm/opt/invariance.hpp>
+#include <jlm/jlm/opt/invariance.hpp>
 
 #include <jive/rvsdg/gamma.h>
 #include <jive/rvsdg/theta.h>

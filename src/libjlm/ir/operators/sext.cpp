@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/ir/operators/operators.hpp>
-#include <jlm/ir/operators/sext.hpp>
+#include <jlm/jlm/ir/operators/operators.hpp>
+#include <jlm/jlm/ir/operators/sext.hpp>
 
 namespace jlm {
 

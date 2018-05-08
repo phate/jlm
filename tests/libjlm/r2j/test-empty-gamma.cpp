@@ -10,12 +10,12 @@
 #include <jive/rvsdg/gamma.h>
 #include <jive/view.h>
 
-#include <jlm/ir/cfg-structure.hpp>
-#include <jlm/ir/module.hpp>
-#include <jlm/ir/operators.hpp>
-#include <jlm/ir/rvsdg.hpp>
-#include <jlm/ir/view.hpp>
-#include <jlm/rvsdg2jlm/rvsdg2jlm.hpp>
+#include <jlm/jlm/ir/cfg-structure.hpp>
+#include <jlm/jlm/ir/module.hpp>
+#include <jlm/jlm/ir/operators.hpp>
+#include <jlm/jlm/ir/rvsdg.hpp>
+#include <jlm/jlm/ir/view.hpp>
+#include <jlm/jlm/rvsdg2jlm/rvsdg2jlm.hpp>
 
 static void
 test_with_match()
