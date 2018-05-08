@@ -9,21 +9,8 @@ root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 base=$(basename $1)
 file="/tmp/${base%.*}"
-clang_out="${file}.ll"
-jlm_out="${file}-jlm.ll"
-llc_out="${file}-jlm.o"
-gcc_out="${file}-jlm"
 
-rm -f ${clang_out}
-clang -Wall -Werror -O0 -S -emit-llvm $1 -o ${clang_out}
+PATH=$PATH:${root}/..
 
-rm -f ${jlm_out}
-${root}/../jlm-opt --llvm ${clang_out} > ${jlm_out}
-
-rm -f ${llc_out}
-llc -O0 -filetype=obj -o ${llc_out} ${jlm_out}
-
-rm -f ${gcc_out}
-clang -O0 ${llc_out} -o ${gcc_out}
-
-bash -c "${gcc_out}"
+jlm -Wall -Werror -O0 -o ${file}-jlm $1
+bash -c "${file}-jlm"
