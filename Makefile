@@ -57,6 +57,10 @@ LIBJLM_SRC = \
 	src/libjlm/opt/reduction.cpp \
 	src/libjlm/opt/unroll.cpp \
 
+LIBJLC_SRC = \
+	src/jlc/cmdline.cpp \
+	src/jlc/command.cpp \
+
 JLMPRINT_SRC = \
 	src/jlm-print.cpp \
 
@@ -64,11 +68,11 @@ JLMOPT_SRC = \
 	src/jlm-opt/jlm-opt.cpp \
 
 JLC_SRC = \
-	src/jlc/cmdline.cpp \
-	src/jlc/command.cpp \
 	src/jlc/jlc.cpp \
 
-all: libjlm.a jlm-print jlm-opt jlc check
+all: libjlm.a libjlc.a jlm-print jlm-opt jlc check
+
+libjlc.a: $(patsubst %.cpp, %.la, $(LIBJLC_SRC))
 
 libjlm.a: $(patsubst %.cpp, %.la, $(LIBJLM_SRC))
 
@@ -80,8 +84,8 @@ jlm-opt: LDFLAGS+=-L. -ljlm -ljive
 jlm-opt: $(patsubst %.cpp, %.o, $(JLMOPT_SRC)) libjlm.a
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 
-jlc: LDFLAGS+=-L. -ljlm -ljive
-jlc: $(patsubst %.cpp, %.o, $(JLC_SRC)) libjlm.a
+jlc: LDFLAGS+=-L. -ljlc -ljlm -ljive
+jlc: $(patsubst %.cpp, %.o, $(JLC_SRC)) libjlc.a
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 
 include tests/Makefile.sub
