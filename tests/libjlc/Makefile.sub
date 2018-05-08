@@ -1,0 +1,2 @@
+TESTS += \
+	libjlc/test-cmdline-parsing \
