@@ -12,5 +12,5 @@ file="/tmp/${base%.*}"
 
 PATH=$PATH:${root}/..
 
-jlc -Wall -Werror -O0 -o ${file}-jlm $1
+jlc -Wall -Werror -O0 -o ${file}-jlm $1 || exit 1
 bash -c "${file}-jlm"
