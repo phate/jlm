@@ -50,11 +50,21 @@ test2()
 	assert(options.enable_linker = true);
 }
 
+static void
+test3()
+{
+	jlm::cmdline_options options;
+	parse_cmdline({"jlc", "-O", "foobar.c"}, options);
+
+	assert(options.Olvl == jlm::optlvl::O0);
+}
+
 static int
 test()
 {
 	test1();
 	test2();
+	test3();
 
 	return 0;
 }

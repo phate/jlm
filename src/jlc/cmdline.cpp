@@ -111,11 +111,10 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & flags)
 	, cl::ValueDisallowed
 	, cl::desc("Only run preprocess, compile, and assemble steps."));
 
-	cl::opt<char> optlvl(
+	cl::opt<std::string> optlvl(
 	  "O"
 	, cl::Prefix
-	, cl::ZeroOrMore
-	, cl::init(':')
+	, cl::ValueOptional
 	, cl::desc("Optimization level. [O0, O1, O2, O3]")
 	, cl::value_desc("#"));
 
@@ -143,9 +142,9 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & flags)
 
 	/* Process parsed options */
 
-	static std::unordered_map<char, jlm::optlvl> Olvlmap({
-	  {'0', optlvl::O0}, {'1', optlvl::O1}
-	, {'2', optlvl::O2}, {'3', optlvl::O3}}
+	static std::unordered_map<std::string, jlm::optlvl> Olvlmap({
+	  {"0", optlvl::O0}, {"1", optlvl::O1}
+	, {"2", optlvl::O2}, {"3", optlvl::O3}}
 	);
 
 	static std::unordered_map<std::string, standard> stdmap({
@@ -155,7 +154,7 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & flags)
 	, {"c++11", standard::cpp11}, {"c++14", standard::cpp14}
 	});
 
-	if (optlvl != ':') {
+	if (!optlvl.empty()) {
 		auto olvl = Olvlmap.find(optlvl);
 		if (olvl == Olvlmap.end()) {
 			std::cerr << "Unknown optimization level.\n";
