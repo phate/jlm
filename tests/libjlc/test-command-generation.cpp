@@ -14,7 +14,7 @@ static void
 test1()
 {
 	jlm::cmdline_options clopts;
-	clopts.no_linking = true;
+	clopts.enable_linker = false;
 	clopts.ofile = {"foo.o"};
 	clopts.ifiles.push_back({"foo.c"});
 
@@ -24,10 +24,29 @@ test1()
 	assert(cgen && cgen->ofile() == "foo.o");
 }
 
+static void
+test2()
+{
+	jlm::cmdline_options options;
+	options.enable_parser = false;
+	options.enable_optimizer = false;
+	options.enable_assembler = false;
+	options.enable_linker = true;
+	options.ofile = {"foobar"};
+	options.ifiles.push_back({"foo.o"});
+
+	auto cmds = jlm::generate_commands(options);
+	assert(cmds.size() == 1);
+
+	auto lnk = dynamic_cast<const jlm::lnkcmd*>(cmds.back().get());
+	assert(lnk->ifiles()[0] == "foo.o" && lnk->ofile() == "foobar");
+}
+
 static int
 test()
 {
 	test1();
+	test2();
 
 	return 0;
 }

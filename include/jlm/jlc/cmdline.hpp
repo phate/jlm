@@ -26,17 +26,24 @@ to_str(const standard & std);
 class cmdline_options {
 public:
 	cmdline_options()
-	: no_linking(false)
-	, only_print_commands(false)
+	: only_print_commands(false)
 	, generate_debug_information(false)
+	, enable_parser(true)
+	, enable_optimizer(true)
+	, enable_assembler(true)
+	, enable_linker(true)
 	, Olvl(optlvl::O0)
 	, std(standard::none)
 	, ofile("a.out")
 	{}
 
-	bool no_linking;
 	bool only_print_commands;
 	bool generate_debug_information;
+
+	bool enable_parser;
+	bool enable_optimizer;
+	bool enable_assembler;
+	bool enable_linker;
 
 	optlvl Olvl;
 	standard std;

@@ -134,6 +134,12 @@ public:
 		return ofile_;
 	}
 
+	inline const std::vector<jlm::file> &
+	ifiles() const noexcept
+	{
+		return ifiles_;
+	}
+
 private:
 	jlm::file ofile_;
 	std::vector<std::string> libs_;

@@ -43,6 +43,12 @@ to_str(const standard & std)
 
 /* cmdline parser */
 
+static bool
+is_objfile(const jlm::file & file)
+{
+	return file.complete_suffix() == "o";
+}
+
 void
 parse_cmdline(int argc, char ** argv, jlm::cmdline_options & flags)
 {
@@ -177,10 +183,17 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & flags)
 	flags.libpaths = libpaths;
 	flags.warnings = Wwarnings;
 	flags.ofile = ofilepath;
-	flags.no_linking = no_linking;
+	flags.enable_linker = !no_linking;
 
 	for (const auto & ifile : ifiles)
 		flags.ifiles.push_back({ifile});
+
+	JLM_DEBUG_ASSERT(!flags.ifiles.empty());
+	if (is_objfile(flags.ifiles[0])) {
+		flags.enable_parser = false;
+		flags.enable_optimizer = false;
+		flags.enable_assembler = false;
+	}
 
 	flags.includepaths = includepaths;
 	flags.only_print_commands = print_commands;

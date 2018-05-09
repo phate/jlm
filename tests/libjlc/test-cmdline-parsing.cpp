@@ -10,22 +10,20 @@
 #include <assert.h>
 #include <string.h>
 
-static std::vector<char*>
-create_array(const std::vector<std::string> & strs)
+static void
+parse_cmdline(
+	const std::vector<std::string> & args,
+	jlm::cmdline_options & options)
 {
 	std::vector<char*> array;
-	for (const auto & str : strs) {
-		array.push_back(new char[str.size()+1]);
-		strncpy(array.back(), str.data(), str.size());
-		array.back()[str.size()] = '\0';
+	for (const auto & arg : args) {
+		array.push_back(new char[arg.size()+1]);
+		strncpy(array.back(), arg.data(), arg.size());
+		array.back()[arg.size()] = '\0';
 	}
 
-	return array;
-}
+	jlm::parse_cmdline(array.size(), &array[0], options);
 
-static void
-destroy_array(const std::vector<char*> & array)
-{
 	for (const auto & ptr : array)
 		delete[] ptr;
 }
@@ -33,21 +31,30 @@ destroy_array(const std::vector<char*> & array)
 static void
 test1()
 {
-	auto argv = create_array({"jlm", "-c", "-o", "foo.o", "foo.c"});
-
 	jlm::cmdline_options cloptions;
-	jlm::parse_cmdline(argv.size(), &argv[0], cloptions);
+	parse_cmdline({"jlc", "-c", "-o", "foo.o", "foo.c"}, cloptions);
 
-	assert(cloptions.no_linking);
+	assert(cloptions.enable_linker == false);
 	assert(cloptions.ofile.name() == "foo.o");
+}
 
-	destroy_array(argv);
+static void
+test2()
+{
+	jlm::cmdline_options options;
+	parse_cmdline({"jlc", "-o", "foobar", "/tmp/f1.o"}, options);
+
+	assert(options.enable_parser == false);
+	assert(options.enable_optimizer == false);
+	assert(options.enable_assembler == false);
+	assert(options.enable_linker = true);
 }
 
 static int
 test()
 {
 	test1();
+	test2();
 
 	return 0;
 }

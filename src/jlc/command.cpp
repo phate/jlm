@@ -25,16 +25,26 @@ generate_commands(const jlm::cmdline_options & opts)
 	std::vector<std::unique_ptr<command>> cmds;
 
 	for (const auto & ifile : opts.ifiles) {
-		cmds.push_back(std::make_unique<prscmd>(ifile, opts.includepaths, opts.macros,
-			opts.warnings, opts.std));
-		cmds.push_back(std::make_unique<optcmd>(ifile));
+		if (opts.enable_parser) {
+			cmds.push_back(std::make_unique<prscmd>(ifile, opts.includepaths, opts.macros,
+				opts.warnings, opts.std));
+		}
 
-		auto cgenofile = opts.no_linking ? opts.ofile : create_cgencmd_ofile(ifile);
-		cmds.push_back(std::make_unique<cgencmd>(ifile, cgenofile, opts.Olvl));
+		if (opts.enable_optimizer)
+			cmds.push_back(std::make_unique<optcmd>(ifile));
+
+		if (opts.enable_assembler) {
+			auto cgenofile = !opts.enable_linker ? opts.ofile : create_cgencmd_ofile(ifile);
+			cmds.push_back(std::make_unique<cgencmd>(ifile, cgenofile, opts.Olvl));
+		}
 	}
 
-	if (!opts.no_linking) {
-		cmds.push_back(std::make_unique<lnkcmd>(opts.ifiles, opts.ofile, opts.libpaths, opts.libs));
+	if (opts.enable_linker) {
+		std::vector<jlm::file> ifiles;
+		for (const auto & ifile : opts.ifiles)
+			ifiles.push_back(opts.enable_assembler ? create_cgencmd_ofile(ifile) : ifile);
+
+		cmds.push_back(std::make_unique<lnkcmd>(ifiles, opts.ofile, opts.libpaths, opts.libs));
 	}
 
 	if (opts.only_print_commands) {
@@ -144,7 +154,7 @@ lnkcmd::to_str() const
 {
 	std::string ifiles;
 	for (const auto & ifile : ifiles_)
-		ifiles += create_cgencmd_ofile(ifile).to_str() + " ";
+		ifiles += ifile.to_str() + " ";
 
 	std::string Lpaths;
 	for (const auto & Lpath : Lpaths_)
