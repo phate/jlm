@@ -24,6 +24,23 @@ test_switch(unsigned int x)
 	};
 }
 
+unsigned int
+test_switch2(unsigned int x)
+{
+	unsigned int p = 42;
+
+	switch(x) {
+		case 0:
+			p = 0;
+			break;
+		default:
+			p = 1;
+			break;
+	}
+
+	return p;
+}
+
 int
 main()
 {
@@ -36,5 +53,9 @@ main()
 	assert(test_switch_fallthrough(2) == 4);
 	assert(test_switch_fallthrough(3) == 4);
 	assert(test_switch_fallthrough(11) == 42);
+
+	assert(test_switch2(0) == 0);
+	assert(test_switch2(3) == 1);
+
 	return 0;
 }

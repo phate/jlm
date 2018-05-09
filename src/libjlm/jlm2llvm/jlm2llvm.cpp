@@ -51,11 +51,11 @@ namespace jlm {
 namespace jlm2llvm {
 
 static inline const jlm::tac *
-find_match_tac(const jlm::basic_block & bb)
+find_match_tac(const basic_block * bb)
 {
-	auto it = bb.rbegin();
+	auto it = bb->rbegin();
 	const jlm::tac * tac = nullptr;
-	while (it != bb.rend()) {
+	while (it != bb->rend()) {
 		if (*it && dynamic_cast<const jive::match_op*>(&(*it)->operation())) {
 			tac = *it;
 			break;
@@ -67,53 +67,63 @@ find_match_tac(const jlm::basic_block & bb)
 	return tac;
 }
 
-static inline void
-create_terminator_instruction(const jlm::cfg_node * node, context & ctx)
+static void
+create_return(const cfg_node * node, context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_basic_block(node->attribute()));
-	auto & bb = *static_cast<const jlm::basic_block*>(&node->attribute());
-	auto & cfg = *node->cfg();
+	JLM_DEBUG_ASSERT(node->noutedges() == 1);
+	JLM_DEBUG_ASSERT(node->outedge(0)->sink() == node->cfg()->exit_node());
+	llvm::IRBuilder<> builder(ctx.basic_block(node));
+	auto cfg = node->cfg();
 
+	/* return without result */
+	if (cfg->exit().nresults() == 1) {
+		/* FIXME: This works only as long as we only use one state edge. */
+		builder.CreateRetVoid();
+		return;
+	}
+
+	/* FIXME: This assumes that the value is the first result. */
+	builder.CreateRet(ctx.value(cfg->exit().result(0)));
+}
+
+static void
+create_unconditional_branch(const cfg_node * node, context & ctx)
+{
+	JLM_DEBUG_ASSERT(node->noutedges() == 1);
+	JLM_DEBUG_ASSERT(node->outedge(0)->sink() != node->cfg()->exit_node());
+	llvm::IRBuilder<> builder(ctx.basic_block(node));
+	auto target = node->outedge(0)->sink();
+
+	builder.CreateBr(ctx.basic_block(target));
+}
+
+static void
+create_conditional_branch(const cfg_node * node, context & ctx)
+{
+	JLM_DEBUG_ASSERT(node->noutedges() == 2);
+	JLM_DEBUG_ASSERT(node->outedge(0)->sink() != node->cfg()->exit_node());
+	JLM_DEBUG_ASSERT(node->outedge(1)->sink() != node->cfg()->exit_node());
 	llvm::IRBuilder<> builder(ctx.basic_block(node));
 
-	/* unconditional branch or return statement */
-	if (node->noutedges() == 1) {
-		auto target = node->outedge(0)->sink();
+	auto branch = static_cast<const jlm::basic_block*>(&node->attribute())->last();
+	JLM_DEBUG_ASSERT(branch && is<branch_op>(branch));
+	JLM_DEBUG_ASSERT(ctx.value(branch->input(0))->getType()->isIntegerTy(1));
 
-		/* unconditional branch */
-		if (target != cfg.exit_node()) {
-			builder.CreateBr(ctx.basic_block(target));
-			return;
-		}
+	auto condition = ctx.value(branch->input(0));
+	auto bbfalse = ctx.basic_block(node->outedge(0)->sink());
+	auto bbtrue = ctx.basic_block(node->outedge(1)->sink());
+	builder.CreateCondBr(condition, bbtrue, bbfalse);
+}
 
-		/* return without result */
-		if (cfg.exit().nresults() == 1) {
-			builder.CreateRetVoid();
-			return;
-		}
+static void
+create_switch(const cfg_node * node, context & ctx)
+{
+	JLM_DEBUG_ASSERT(node->noutedges() >= 2);
+	auto bb = static_cast<const jlm::basic_block*>(&node->attribute());
+	llvm::IRBuilder<> builder(ctx.basic_block(node));
 
-		/* return with result */
-		builder.CreateRet(ctx.value(cfg.exit().result(0)));
-		return;
-	}
-
-	/* conditional branch */
-	if (node->noutedges() == 2) {
-		JLM_DEBUG_ASSERT(node->outedge(0)->sink() != cfg.exit_node());
-		JLM_DEBUG_ASSERT(node->outedge(1)->sink() != cfg.exit_node());
-
-		const auto & branch = bb.last();
-		JLM_DEBUG_ASSERT(branch && dynamic_cast<const jlm::branch_op*>(&branch->operation()));
-		auto condition = ctx.value(branch->input(0));
-		auto bbfalse = ctx.basic_block(node->outedge(0)->sink());
-		auto bbtrue = ctx.basic_block(node->outedge(1)->sink());
-		builder.CreateCondBr(condition, bbtrue, bbfalse);
-		return;
-	}
-
-	/* switch */
-	const auto & branch = bb.last();
-	JLM_DEBUG_ASSERT(branch && is<branch_op>(branch->operation()));
+	auto branch = bb->last();
+	JLM_DEBUG_ASSERT(branch && is<branch_op>(branch));
 	auto condition = ctx.value(branch->input(0));
 	auto match = find_match_tac(bb);
 
@@ -136,6 +146,33 @@ create_terminator_instruction(const jlm::cfg_node * node, context & ctx)
 			sw->addCase(value, ctx.basic_block(node->outedge(n)->sink()));
 		}
 	}
+}
+
+static void
+create_terminator_instruction(const jlm::cfg_node * node, context & ctx)
+{
+	JLM_DEBUG_ASSERT(is_basic_block(node->attribute()));
+	auto bb = static_cast<const basic_block*>(&node->attribute());
+	auto cfg = node->cfg();
+
+	/* unconditional branch or return statement */
+	if (node->noutedges() == 1) {
+		auto target = node->outedge(0)->sink();
+		if (target == cfg->exit_node())
+			return create_return(node, ctx);
+
+		return create_unconditional_branch(node, ctx);
+	}
+
+	auto branch = bb->last();
+	JLM_DEBUG_ASSERT(branch && is<branch_op>(branch));
+
+	/* conditional branch */
+	if (ctx.value(branch->input(0))->getType()->isIntegerTy(1))
+		return create_conditional_branch(node, ctx);
+
+	/* switch */
+	create_switch(node, ctx);
 }
 
 static inline void
