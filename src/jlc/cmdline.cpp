@@ -48,98 +48,92 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & flags)
 {
 	using namespace llvm;
 
-	auto & map = cl::getRegisteredOptions();
-	auto & help_hidden = map["help-hidden"];
-	auto & help = map["help"];
-	map.clear();
-	map["help"] = help;
-	map["help-hidden"] = help_hidden;
+	/*
+		FIXME: The command line parser setup is currently redone
+		for every invocation of parse_cmdline. We should be able
+		to do it only once and then reset the parser on every
+		invocation of parse_cmdline.
+	*/
 
-	static cl::list<std::string> ifilepaths(
+	cl::TopLevelSubCommand->reset();
+
+	cl::opt<bool> show_help(
+	  "help"
+	, cl::ValueDisallowed
+	, cl::desc("Display available options."));
+
+	cl::opt<bool> print_commands(
+	  "###"
+	, cl::ValueDisallowed
+	, cl::desc("Print (but do not run) the commands for this compilation."));
+
+	cl::list<std::string> ifiles(
 	  cl::Positional
-	, cl::OneOrMore
-	, cl::desc("<inputs>")
-	);
+	, cl::desc("<inputs>"));
 
-	static cl::list<std::string> includepaths(
+	cl::list<std::string> includepaths(
 	  "I"
 	, cl::Prefix
-	, cl::ZeroOrMore
 	, cl::desc("Add directory <dir> to include search paths.")
-	, cl::value_desc("dir")
-	);
+	, cl::value_desc("dir"));
 
-	static cl::list<std::string> libpaths(
+	cl::list<std::string> libpaths(
 	  "L"
 	, cl::Prefix
-	, cl::ZeroOrMore
 	, cl::desc("Add directory <dir> to library search paths.")
-	, cl::value_desc("dir")
-	);
+	, cl::value_desc("dir"));
 
-	static cl::list<std::string> libs(
+	cl::list<std::string> libs(
 	  "l"
 	, cl::Prefix
-	, cl::ZeroOrMore
 	, cl::desc("Search the library <lib> when linking.")
-	, cl::value_desc("lib")
-	);
+	, cl::value_desc("lib"));
 
-	static cl::opt<std::string> ofilepath(
+	cl::opt<std::string> ofilepath(
 	  "o"
 	, cl::init("a.out")
 	, cl::desc("Write output to <file>.")
-	, cl::value_desc("file")
-	);
+	, cl::value_desc("file"));
 
-	static cl::opt<bool> only_print_commands(
-	  "###"
-	, cl::desc("Print (but do not run) the commands for this compilation.")
-	);
-
-	static cl::opt<bool> generate_debug_information(
+	cl::opt<bool> generate_debug_information(
 	  "g"
-	, cl::desc("Generate source-level debug information.")
-	);
+	, cl::ValueDisallowed
+	, cl::desc("Generate source-level debug information."));
 
-	static cl::opt<bool> no_linking(
+	cl::opt<bool> no_linking(
 	  "c"
-	, cl::desc("Only run preprocess, compile, and assemble steps.")
-	);
+	, cl::ValueDisallowed
+	, cl::desc("Only run preprocess, compile, and assemble steps."));
 
-	static cl::opt<char> optlvl(
+	cl::opt<char> optlvl(
 	  "O"
 	, cl::Prefix
 	, cl::ZeroOrMore
 	, cl::init(':')
 	, cl::desc("Optimization level. [O0, O1, O2, O3]")
-	, cl::value_desc("#")
-	);
+	, cl::value_desc("#"));
 
-	static cl::list<std::string> Dmacros(
+	cl::list<std::string> Dmacros(
 	  "D"
 	, cl::Prefix
-	, cl::ZeroOrMore
 	, cl::desc("Add <macro> to preprocessor macros.")
-	, cl::value_desc("macro")
-	);
+	, cl::value_desc("macro"));
 
-	static cl::list<std::string> Wwarnings(
+	cl::list<std::string> Wwarnings(
 	  "W"
 	, cl::Prefix
-	, cl::ZeroOrMore
 	, cl::desc("Enable specified warning.")
-	, cl::value_desc("warning")
-	);
+	, cl::value_desc("warning"));
 
-	static cl::opt<std::string> std(
+	cl::opt<std::string> std(
 	  "std"
-	, cl::ZeroOrMore
 	, cl::desc("Language standard.")
-	, cl::value_desc("standard")
-	);
+	, cl::value_desc("standard"));
 
 	cl::ParseCommandLineOptions(argc, argv);
+
+	if (show_help)
+		cl::PrintHelpMessage();
 
 	/* Process parsed options */
 
@@ -173,6 +167,11 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & flags)
 		flags.std = stdit->second;
 	}
 
+	if (ifiles.empty()) {
+		std::cerr << "jlc: no input files.\n";
+		exit(EXIT_FAILURE);
+	}
+
 	flags.libs = libs;
 	flags.macros = Dmacros;
 	flags.libpaths = libpaths;
@@ -180,11 +179,11 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & flags)
 	flags.ofile = ofilepath;
 	flags.no_linking = no_linking;
 
-	for (const auto & ifile : ifilepaths)
+	for (const auto & ifile : ifiles)
 		flags.ifiles.push_back({ifile});
 
 	flags.includepaths = includepaths;
-	flags.only_print_commands = only_print_commands;
+	flags.only_print_commands = print_commands;
 	flags.generate_debug_information = generate_debug_information;
 }
 
