@@ -7,6 +7,7 @@
 #define JLM_JLC_COMMAND_HPP
 
 #include <jlm/jlc/cmdline.hpp>
+#include <jlm/jlm/driver/passgraph.hpp>
 
 #include <memory>
 #include <string>
@@ -14,17 +15,7 @@
 
 namespace jlm {
 
-class command {
-public:
-
-	virtual std::string
-	to_str() const = 0;
-
-	virtual void
-	execute() const = 0;
-};
-
-std::vector<std::unique_ptr<command>>
+std::unique_ptr<passgraph>
 generate_commands(const jlm::cmdline_options & options);
 
 /* parser command */
@@ -48,7 +39,20 @@ public:
 	to_str() const override;
 
 	virtual void
-	execute() const override;
+	run() const override;
+
+	static passgraph_node *
+	create(
+		passgraph * pgraph,
+		const jlm::file & ifile,
+		const std::vector<std::string> & Ipaths,
+		const std::vector<std::string> & Dmacros,
+		const std::vector<std::string> & Wwarnings,
+		const standard & std)
+	{
+		std::unique_ptr<prscmd> cmd(new prscmd(ifile, Ipaths, Dmacros, Wwarnings, std));
+		return passgraph_node::create(pgraph, std::move(cmd));
+	}
 
 private:
 	standard std_;
@@ -70,7 +74,15 @@ public:
 	to_str() const override;
 
 	virtual void
-	execute() const override;
+	run() const override;
+
+	static passgraph_node *
+	create(
+		passgraph * pgraph,
+		const jlm::file & ifile)
+	{
+		return passgraph_node::create(pgraph, std::make_unique<optcmd>(ifile));
+	}
 
 private:
 	jlm::file ifile_;
@@ -93,12 +105,22 @@ public:
 	to_str() const override;
 
 	virtual void
-	execute() const override;
+	run() const override;
 
 	inline const jlm::file &
 	ofile() const noexcept
 	{
 		return ofile_;
+	}
+
+	static passgraph_node *
+	create(
+		passgraph * pgraph,
+		const jlm::file & ifile,
+		const jlm::file & ofile,
+		const optlvl & ol)
+	{
+		return passgraph_node::create(pgraph, std::make_unique<cgencmd>(ifile, ofile, ol));
 	}
 
 private:
@@ -126,7 +148,7 @@ public:
 	to_str() const override;
 
 	virtual void
-	execute() const override;
+	run() const override;
 
 	inline const jlm::file &
 	ofile() const noexcept
@@ -138,6 +160,18 @@ public:
 	ifiles() const noexcept
 	{
 		return ifiles_;
+	}
+
+	static passgraph_node *
+	create(
+		passgraph * pgraph,
+		const std::vector<jlm::file> & ifiles,
+		const jlm::file & ofile,
+		const std::vector<std::string> & Lpaths,
+		const std::vector<std::string> & libs)
+	{
+		std::unique_ptr<lnkcmd> cmd(new lnkcmd(ifiles, ofile, Lpaths, libs));
+		return passgraph_node::create(pgraph, std::move(cmd));
 	}
 
 private:
@@ -152,8 +186,8 @@ private:
 class printcmd final : public command {
 public:
 	printcmd(
-		std::vector<std::unique_ptr<command>> cmds)
-	: cmds_(std::move(cmds))
+		std::unique_ptr<passgraph> pgraph)
+	: pgraph_(std::move(pgraph))
 	{}
 
 	printcmd(const printcmd&) = delete;
@@ -170,10 +204,18 @@ public:
 	to_str() const override;
 
 	virtual void
-	execute() const override;
+	run() const override;
+
+	static passgraph_node *
+	create(
+		passgraph * pgraph,
+		std::unique_ptr<passgraph> pg)
+	{
+		return passgraph_node::create(pgraph, std::make_unique<printcmd>(std::move(pg)));
+	}
 
 private:
-	std::vector<std::unique_ptr<command>> cmds_;
+	std::unique_ptr<passgraph> pgraph_;
 };
 
 }

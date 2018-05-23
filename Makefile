@@ -74,7 +74,8 @@ JLC_SRC = \
 
 all: libjlm.a libjlc.a jlm-print jlm-opt jlc check
 
-libjlc.a: $(patsubst %.cpp, %.la, $(LIBJLC_SRC))
+libjlc.a: LDFLAGS+=-L. -ljlm
+libjlc.a: $(patsubst %.cpp, %.la, $(LIBJLC_SRC)) libjlm.a
 
 libjlm.a: $(patsubst %.cpp, %.la, $(LIBJLM_SRC))
 

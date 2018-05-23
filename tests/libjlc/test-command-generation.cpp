@@ -18,10 +18,11 @@ test1()
 	clopts.ofile = {"foo.o"};
 	clopts.ifiles.push_back({"foo.c"});
 
-	auto cmds = jlm::generate_commands(clopts);
+	auto pgraph = jlm::generate_commands(clopts);
 
-	auto cgen = dynamic_cast<const jlm::cgencmd*>(cmds.back().get());
-	assert(cgen && cgen->ofile() == "foo.o");
+	auto node = (*pgraph->exit()->begin_inedges())->source();
+	auto cmd = dynamic_cast<const jlm::cgencmd*>(&node->cmd());
+	assert(cmd && cmd->ofile() == "foo.o");
 }
 
 static void
@@ -35,11 +36,12 @@ test2()
 	options.ofile = {"foobar"};
 	options.ifiles.push_back({"foo.o"});
 
-	auto cmds = jlm::generate_commands(options);
-	assert(cmds.size() == 1);
+	auto pgraph = jlm::generate_commands(options);
+	assert(pgraph->nnodes() == 3);
 
-	auto lnk = dynamic_cast<const jlm::lnkcmd*>(cmds.back().get());
-	assert(lnk->ifiles()[0] == "foo.o" && lnk->ofile() == "foobar");
+	auto node = (*pgraph->exit()->begin_inedges())->source();
+	auto cmd = dynamic_cast<const jlm::lnkcmd*>(&node->cmd());
+	assert(cmd->ifiles()[0] == "foo.o" && cmd->ofile() == "foobar");
 }
 
 static int

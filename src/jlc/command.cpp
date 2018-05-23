@@ -6,6 +6,8 @@
 #include <jlm/jlc/command.hpp>
 #include <jlm/util/strfmt.hpp>
 
+#include <deque>
+#include <functional>
 #include <iostream>
 #include <memory>
 
@@ -19,24 +21,36 @@ create_cgencmd_ofile(const jlm::file & ifile)
 
 /* command generation */
 
-std::vector<std::unique_ptr<command>>
+std::unique_ptr<passgraph>
 generate_commands(const jlm::cmdline_options & opts)
 {
-	std::vector<std::unique_ptr<command>> cmds;
+	std::unique_ptr<passgraph> pgraph(new passgraph());
 
+	std::vector<passgraph_node*> leaves;
 	for (const auto & ifile : opts.ifiles) {
+		passgraph_node * last = pgraph->entry();
+
 		if (opts.enable_parser) {
-			cmds.push_back(std::make_unique<prscmd>(ifile, opts.includepaths, opts.macros,
-				opts.warnings, opts.std));
+			auto prsnode = prscmd::create(pgraph.get(), ifile, opts.includepaths, opts.macros,
+				opts.warnings, opts.std);
+			last->add_edge(prsnode);
+			last = prsnode;
 		}
 
-		if (opts.enable_optimizer)
-			cmds.push_back(std::make_unique<optcmd>(ifile));
+		if (opts.enable_optimizer) {
+			auto optnode = optcmd::create(pgraph.get(), ifile);
+			last->add_edge(optnode);
+			last = optnode;
+		}
 
 		if (opts.enable_assembler) {
-			auto cgenofile = !opts.enable_linker ? opts.ofile : create_cgencmd_ofile(ifile);
-			cmds.push_back(std::make_unique<cgencmd>(ifile, cgenofile, opts.Olvl));
+			auto asmofile = !opts.enable_linker ? opts.ofile : create_cgencmd_ofile(ifile);
+			auto asmnode = cgencmd::create(pgraph.get(), ifile, asmofile, opts.Olvl);
+			last->add_edge(asmnode);
+			last = asmnode;
 		}
+
+		leaves.push_back(last);
 	}
 
 	if (opts.enable_linker) {
@@ -44,15 +58,26 @@ generate_commands(const jlm::cmdline_options & opts)
 		for (const auto & ifile : opts.ifiles)
 			ifiles.push_back(opts.enable_assembler ? create_cgencmd_ofile(ifile) : ifile);
 
-		cmds.push_back(std::make_unique<lnkcmd>(ifiles, opts.ofile, opts.libpaths, opts.libs));
+		auto lnknode = lnkcmd::create(pgraph.get(), ifiles, opts.ofile, opts.libpaths, opts.libs);
+		for (const auto & leave : leaves)
+			leave->add_edge(lnknode);
+
+		leaves.clear();
+		leaves.push_back(lnknode);
 	}
+
+	for (const auto & leave : leaves)
+		leave->add_edge(pgraph->exit());
 
 	if (opts.only_print_commands) {
-		std::unique_ptr<command> cmd(new printcmd(std::move(cmds)));
-		cmds.push_back(std::move(cmd));
+		std::unique_ptr<passgraph> pg(new passgraph());
+		auto printnode = printcmd::create(pg.get(), std::move(pgraph));
+		pg->entry()->add_edge(printnode);
+		printnode->add_edge(pg->exit());
+		pgraph = std::move(pg);
 	}
 
-	return cmds;
+	return pgraph;
 }
 
 /* parser command */
@@ -93,7 +118,7 @@ prscmd::to_str() const
 }
 
 void
-prscmd::execute() const
+prscmd::run() const
 {
 	if (system(to_str().c_str()))
 		exit(EXIT_FAILURE);
@@ -120,7 +145,7 @@ optcmd::to_str() const
 }
 
 void
-optcmd::execute() const
+optcmd::run() const
 {
 	if (system(to_str().c_str()))
 		exit(EXIT_FAILURE);
@@ -141,7 +166,7 @@ cgencmd::to_str() const
 }
 
 void
-cgencmd::execute() const
+cgencmd::run() const
 {
 	if (system(to_str().c_str()))
 		exit(EXIT_FAILURE);
@@ -175,7 +200,7 @@ lnkcmd::to_str() const
 }
 
 void
-lnkcmd::execute() const
+lnkcmd::run() const
 {
 	if (system(to_str().c_str()))
 		exit(EXIT_FAILURE);
@@ -186,17 +211,16 @@ lnkcmd::execute() const
 std::string
 printcmd::to_str() const
 {
-	std::string str;
-	for (const auto & cmd : cmds_)
-		str += cmd->to_str() + "\n";
-
-	return str;
+	return "PRINTCMD";
 }
 
 void
-printcmd::execute() const
+printcmd::run() const
 {
-	std::cout << to_str();
+	for (const auto & node : topsort(pgraph_.get())) {
+		if (node != pgraph_->entry() && node != pgraph_->exit())
+			std::cout << node->cmd().to_str() << "\n";
+	}
 }
 
 }

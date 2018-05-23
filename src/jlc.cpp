@@ -14,9 +14,8 @@ main(int argc, char ** argv)
 	jlm::cmdline_options options;
 	parse_cmdline(argc, argv, options);
 
-	auto cmds = generate_commands(options);
-	for (const auto & cmd : cmds)
-		cmd->execute();
+	auto pgraph = generate_commands(options);
+	pgraph->run();
 
 	return 0;
 }
