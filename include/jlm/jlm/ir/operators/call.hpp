@@ -46,10 +46,10 @@ public:
 	create(jive::output * function, const std::vector<jive::output*> & arguments)
 	{
 		auto at = dynamic_cast<const ptrtype*>(&function->type());
-		if (!at) throw std::logic_error("Expected pointer type.");
+		if (!at) throw jlm::error("expected pointer type.");
 
 		auto ft = dynamic_cast<const jive::fcttype*>(&at->pointee_type());
-		if (!ft) throw std::logic_error("Expected function type.");
+		if (!ft) throw jlm::error("expected function type.");
 
 		call_op op(*ft);
 		std::vector<jive::output*> operands({function});
@@ -86,10 +86,10 @@ create_call_tac(
 	const std::vector<const variable*> & results)
 {
 	auto at = dynamic_cast<const ptrtype*>(&function->type());
-	if (!at) throw std::logic_error("Expected pointer type.");
+	if (!at) throw jlm::error("Expected pointer type.");
 
 	auto ft = dynamic_cast<const jive::fcttype*>(&at->pointee_type());
-	if (!ft) throw std::logic_error("Expected function type.");
+	if (!ft) throw jlm::error("Expected function type.");
 
 	call_op op(*ft);
 	std::vector<const variable*> operands({function});
@@ -103,10 +103,10 @@ create_call(
 	const std::vector<jive::output*> & arguments)
 {
 	auto at = dynamic_cast<const ptrtype*>(&function->type());
-	if (!at) throw std::logic_error("Expected pointer type.");
+	if (!at) throw jlm::error("Expected pointer type.");
 
 	auto ft = dynamic_cast<const jive::fcttype*>(&at->pointee_type());
-	if (!ft) throw std::logic_error("Expected function type.");
+	if (!ft) throw jlm::error("Expected function type.");
 
 	call_op op(*ft);
 	std::vector<jive::output*> operands({function});

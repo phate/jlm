@@ -10,6 +10,8 @@
 #include <jive/types/record.h>
 #include <jive/rvsdg/type.h>
 
+#include <jlm/common.hpp>
+
 #include <vector>
 
 namespace jlm {
@@ -74,7 +76,7 @@ static inline std::unique_ptr<jive::type>
 create_ptrtype(const jive::type & vtype)
 {
 	auto vt = dynamic_cast<const jive::valuetype*>(&vtype);
-	if (!vt) throw std::logic_error("Expected value type.");
+	if (!vt) throw jlm::error("expected value type.");
 
 	return std::unique_ptr<jive::type>(new jlm::ptrtype(*vt));
 }
@@ -149,7 +151,7 @@ static inline std::unique_ptr<jive::type>
 create_arraytype(const jive::type & type, size_t nelements)
 {
 	auto vt = dynamic_cast<const jive::valuetype*>(&type);
-	if (!vt) throw std::logic_error("Expected value type.");
+	if (!vt) throw jlm::error("expected value type.");
 
 	return std::unique_ptr<jive::type>(new arraytype(*vt, nelements));
 }

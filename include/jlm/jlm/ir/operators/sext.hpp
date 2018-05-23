@@ -25,7 +25,7 @@ public:
 	: unary_op({otype}, {rtype})
 	{
 		if (otype.nbits() >= rtype.nbits())
-			throw std::logic_error("Expected operand's #bits to be smaller than results's #bits.");
+			throw jlm::error("expected operand's #bits to be smaller than results's #bits.");
 	}
 
 	virtual bool
@@ -62,10 +62,10 @@ static inline std::unique_ptr<jlm::tac>
 create_sext_tac(const variable * operand, jlm::variable * result)
 {
 	auto ot = dynamic_cast<const jive::bittype*>(&operand->type());
-	if (!ot) throw std::logic_error("Expected bits type.");
+	if (!ot) throw jlm::error("expected bits type.");
 
 	auto rt = dynamic_cast<const jive::bittype*>(&result->type());
-	if (!rt) throw std::logic_error("Expected bits type.");
+	if (!rt) throw jlm::error("expected bits type.");
 
 	sext_op op(*ot, *rt);
 	return create_tac(op, {operand}, {result});
@@ -75,7 +75,7 @@ static inline jive::output *
 create_sext(size_t ndstbits, jive::output * operand)
 {
 	auto ot = dynamic_cast<const jive::bittype*>(&operand->type());
-	if (!ot) throw std::logic_error("Expected bits type.");
+	if (!ot) throw jlm::error("expected bits type.");
 
 	sext_op op(*ot, jive::bittype(ndstbits));
 	return jive::simple_node::create_normalized(operand->region(), op, {operand})[0];

@@ -129,10 +129,10 @@ create_alloca_tac(
 	jlm::variable * result)
 {
 	auto vt = dynamic_cast<const jive::valuetype*>(&vtype);
-	if (!vt) throw std::logic_error("Expected value type.");
+	if (!vt) throw jlm::error("expected value type.");
 
 	auto bt = dynamic_cast<const jive::bittype*>(&size->type());
-	if (!bt) throw std::logic_error("Expected bits type.");
+	if (!bt) throw jlm::error("expected bits type.");
 
 	jlm::alloca_op op(jlm::ptrtype(*vt), *bt, alignment);
 	return create_tac(op, {size, state}, {result, state});
@@ -146,10 +146,10 @@ create_alloca(
 	size_t alignment)
 {
 	auto vt = dynamic_cast<const jive::valuetype*>(&type);
-	if (!vt) throw std::logic_error("Expected value type.");
+	if (!vt) throw jlm::error("expected value type.");
 
 	auto bt = dynamic_cast<const jive::bittype*>(&size->type());
-	if (!bt) throw std::logic_error("Expected bits type.");
+	if (!bt) throw jlm::error("expected bits type.");
 
 	jlm::alloca_op op(jlm::ptrtype(*vt), *bt, alignment);
 	return jive::simple_node::create_normalized(size->region(), op, {size, state});

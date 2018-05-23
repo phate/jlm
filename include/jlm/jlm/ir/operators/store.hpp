@@ -150,7 +150,7 @@ create_store_tac(
 	jlm::variable * state)
 {
 	auto at = dynamic_cast<const jlm::ptrtype*>(&address->type());
-	if (!at) throw std::logic_error("Expected pointer type.");
+	if (!at) throw jlm::error("expected pointer type.");
 
 	jlm::store_op op(*at, 1, alignment);
 	return create_tac(op, {address, value, state}, {state});
@@ -164,7 +164,7 @@ create_store(
 	size_t alignment)
 {
 	auto at = dynamic_cast<const jlm::ptrtype*>(&address->type());
-	if (!at) throw std::logic_error("Expected pointer type.");
+	if (!at) throw jlm::error("expected pointer type.");
 
 	std::vector<jive::output*> operands({address, value});
 	operands.insert(operands.end(), states.begin(), states.end());

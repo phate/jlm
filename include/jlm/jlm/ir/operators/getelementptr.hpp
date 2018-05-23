@@ -75,17 +75,17 @@ create_getelementptr_tac(
 	jlm::variable * result)
 {
 	auto at = dynamic_cast<const jlm::ptrtype*>(&address->type());
-	if (!at) throw std::logic_error("Expected pointer type.");
+	if (!at) throw jlm::error("expected pointer type.");
 
 	std::vector<jive::bittype> bts;
 	for (const auto & v : offsets) {
 		auto bt = dynamic_cast<const jive::bittype*>(&v->type());
-		if (!bt) throw std::logic_error("Expected bitstring type.");
+		if (!bt) throw jlm::error("expected bitstring type.");
 		bts.push_back(*bt);
 	}
 
 	auto rt = dynamic_cast<const jlm::ptrtype*>(&result->type());
-	if (!rt) throw std::logic_error("Expected pointer type.");
+	if (!rt) throw jlm::error("expected pointer type.");
 
 	jlm::getelementptr_op op(*at, bts, *rt);
 	std::vector<const variable*> operands(1, address);

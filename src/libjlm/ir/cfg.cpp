@@ -60,10 +60,10 @@ cfg::iterator
 cfg::remove_node(cfg::iterator & it)
 {
 	if (it->cfg() != this)
-		throw std::logic_error("Node does not belong to this CFG.");
+		throw jlm::error("node does not belong to this CFG.");
 
 	if (it->ninedges())
-		throw std::logic_error("Cannot remove node. It has still incoming edges.");
+		throw jlm::error("cannot remove node. It has still incoming edges.");
 
 	it->remove_outedges();
 	std::unique_ptr<jlm::cfg_node> tmp(it.node());

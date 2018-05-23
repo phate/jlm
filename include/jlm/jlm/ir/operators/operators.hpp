@@ -38,7 +38,7 @@ public:
 	, nodes_(nodes)
 	{
 		if (nodes.size() < 2)
-			throw std::logic_error("Expected at least two arguments.");
+			throw jlm::error("expected at least two arguments.");
 	}
 
 	phi_op(const phi_op &) = default;
@@ -195,10 +195,10 @@ static inline std::unique_ptr<jlm::tac>
 create_fp2ui_tac(const variable * operand, jlm::variable * result)
 {
 	auto st = dynamic_cast<const fptype*>(&operand->type());
-	if (!st) throw std::logic_error("Expected floating point type.");
+	if (!st) throw jlm::error("expected floating point type.");
 
 	auto dt = dynamic_cast<const jive::bittype*>(&result->type());
-	if (!dt) throw std::logic_error("Expected bitstring type.");
+	if (!dt) throw jlm::error("expected bitstring type.");
 
 	fp2ui_op op(st->size(), *dt);
 	return create_tac(op, {operand}, {result});
@@ -230,10 +230,10 @@ static inline std::unique_ptr<jlm::tac>
 create_fp2si_tac(const variable * operand, jlm::variable * result)
 {
 	auto st = dynamic_cast<const fptype*>(&operand->type());
-	if (!st) throw std::logic_error("Expected floating point type.");
+	if (!st) throw jlm::error("expected floating point type.");
 
 	auto dt = dynamic_cast<const jive::bittype*>(&result->type());
-	if (!dt) throw std::logic_error("Expected bitstring type.");
+	if (!dt) throw jlm::error("expected bitstring type.");
 
 	fp2si_op op(st->size(), *dt);
 	return create_tac(op, {operand}, {result});
@@ -265,10 +265,10 @@ static inline std::unique_ptr<jlm::tac>
 create_ctl2bits_tac(const variable * operand, jlm::variable * result)
 {
 	auto st = dynamic_cast<const jive::ctltype*>(&operand->type());
-	if (!st) throw std::logic_error("Expected control type.");
+	if (!st) throw jlm::error("expected control type.");
 
 	auto dt = dynamic_cast<const jive::bittype*>(&result->type());
-	if (!dt) throw std::logic_error("Expected bitstring type.");
+	if (!dt) throw jlm::error("expected bitstring type.");
 
 	ctl2bits_op op(*st, *dt);
 	return create_tac(op, {operand}, {result});
@@ -342,7 +342,7 @@ static inline std::unique_ptr<jlm::tac>
 create_ptr_constant_null_tac(const jive::type & ptype, jlm::variable * result)
 {
 	auto pt = dynamic_cast<const jlm::ptrtype*>(&ptype);
-	if (!pt) throw std::logic_error("Expected pointer type.");
+	if (!pt) throw jlm::error("expected pointer type.");
 
 	jlm::ptr_constant_null_op op(*pt);
 	return create_tac(op, {}, {result});
@@ -386,10 +386,10 @@ static inline std::unique_ptr<jlm::tac>
 create_bits2ptr_tac(const variable * argument, jlm::variable * result)
 {
 	auto at = dynamic_cast<const jive::bittype*>(&argument->type());
-	if (!at) throw std::logic_error("Expected bitstring type.");
+	if (!at) throw jlm::error("expected bitstring type.");
 
 	auto pt = dynamic_cast<const jlm::ptrtype*>(&result->type());
-	if (!pt) throw std::logic_error("Expected pointer type.");
+	if (!pt) throw jlm::error("expected pointer type.");
 
 	jlm::bits2ptr_op op(*at, *pt);
 	return create_tac(op, {argument}, {result});
@@ -433,10 +433,10 @@ static inline std::unique_ptr<jlm::tac>
 create_ptr2bits_tac(const variable * argument, jlm::variable * result)
 {
 	auto pt = dynamic_cast<const jlm::ptrtype*>(&argument->type());
-	if (!pt) throw std::logic_error("Expected pointer type.");
+	if (!pt) throw jlm::error("expected pointer type.");
 
 	auto bt = dynamic_cast<const jive::bittype*>(&result->type());
-	if (!bt) throw std::logic_error("Expected bitstring type.");
+	if (!bt) throw jlm::error("expected bitstring type.");
 
 	jlm::ptr2bits_op op(*pt, *bt);
 	return create_tac(op, {argument}, {result});
@@ -454,7 +454,7 @@ public:
 	: simple_op(std::vector<jive::port>(size, type), {jlm::arraytype(type, size)})
 	{
 		if (size == 0)
-			throw std::logic_error("Size equals zero.");
+			throw jlm::error("size equals zero.");
 	}
 
 	virtual bool
@@ -485,10 +485,10 @@ create_data_array_constant_tac(
 	jlm::variable * result)
 {
 	if (elements.size() == 0)
-		throw std::logic_error("Expected at least one element.");
+		throw jlm::error("expected at least one element.");
 
 	auto vt = dynamic_cast<const jive::valuetype*>(&elements[0]->type());
-	if (!vt) throw std::logic_error("Expected value type.");
+	if (!vt) throw jlm::error("expected value type.");
 
 	data_array_constant_op op(*vt, elements.size());
 	return create_tac(op, elements, {result});
@@ -542,7 +542,7 @@ create_ptrcmp_tac(
 	jlm::variable * result)
 {
 	auto pt = dynamic_cast<const jlm::ptrtype*>(&op1->type());
-	if (!pt) throw std::logic_error("Expected pointer type.");
+	if (!pt) throw jlm::error("expected pointer type.");
 
 	jlm::ptrcmp_op op(*pt, cmp);
 	return create_tac(op, {op1, op2}, {result});
@@ -560,7 +560,7 @@ public:
 	: unary_op({jive::bittype(nsrcbits)}, {jive::bittype(ndstbits)})
 	{
 		if (ndstbits < nsrcbits)
-			throw std::logic_error("# destination bits must be greater than # source bits.");
+			throw jlm::error("# destination bits must be greater than # source bits.");
 	}
 
 	virtual bool
@@ -597,10 +597,10 @@ static inline std::unique_ptr<jlm::tac>
 create_zext_tac(const variable * operand, jlm::variable * result)
 {
 	auto st = dynamic_cast<const jive::bittype*>(&operand->type());
-	if (!st) throw std::logic_error("Expected bitstring type.");
+	if (!st) throw jlm::error("expected bitstring type.");
 
 	auto dt = dynamic_cast<const jive::bittype*>(&result->type());
-	if (!dt) throw std::logic_error("Expected bitstring type.");
+	if (!dt) throw jlm::error("expected bitstring type.");
 
 	jlm::zext_op op(st->nbits(), dt->nbits());
 	return create_tac(op, {operand}, {result});
@@ -650,7 +650,7 @@ static inline std::unique_ptr<jlm::tac>
 create_fpconstant_tac(const llvm::APFloat & constant, jlm::variable * result)
 {
 	auto ft = dynamic_cast<const jlm::fptype*>(&result->type());
-	if (!ft) throw std::logic_error("Expected floating point type.");
+	if (!ft) throw jlm::error("expected floating point type.");
 
 	jlm::fpconstant_op op(ft->size(), constant);
 	return create_tac(op, {}, {result});
@@ -704,7 +704,7 @@ create_fpcmp_tac(
 	jlm::variable * result)
 {
 	auto ft = dynamic_cast<const jlm::fptype*>(&op1->type());
-	if (!ft) throw std::logic_error("Expected floating point type.");
+	if (!ft) throw jlm::error("expected floating point type.");
 
 	jlm::fpcmp_op op(cmp, ft->size());
 	return create_tac(op, {op1, op2}, {result});
@@ -749,7 +749,7 @@ public:
 	create(jive::region * region, const jive::type & type)
 	{
 		auto vt = dynamic_cast<const jive::valuetype*>(&type);
-		if (!vt) throw std::logic_error("Expected value type.");
+		if (!vt) throw jlm::error("expected value type.");
 
 		jlm::undef_constant_op op(*vt);
 		return jive::simple_node::create_normalized(region, op, {})[0];
@@ -760,7 +760,7 @@ static inline std::unique_ptr<jlm::tac>
 create_undef_constant_tac(jlm::variable * result)
 {
 	auto vt = dynamic_cast<const jive::valuetype*>(&result->type());
-	if (!vt) throw std::logic_error("Expected value type.");
+	if (!vt) throw jlm::error("expected value type.");
 
 	jlm::undef_constant_op op(*vt);
 	return create_tac(op, {}, {result});
@@ -814,7 +814,7 @@ create_fpbin_tac(
 	jlm::variable * result)
 {
 	auto ft = dynamic_cast<const jlm::fptype*>(&op1->type());
-	if (!ft) throw std::logic_error("Expected floating point type.");
+	if (!ft) throw jlm::error("expected floating point type.");
 
 	jlm::fpbin_op op(fpop, ft->size());
 	return create_tac(op, {op1, op2}, {result});
@@ -832,7 +832,7 @@ public:
 	: simple_op({fptype(srcsize)}, {fptype(dstsize)})
 	{
 		if (srcsize == fpsize::flt && dstsize == fpsize::half)
-			throw std::logic_error("Destination type size must be bigger than source type size.");
+			throw jlm::error("destination type size must be bigger than source type size.");
 	}
 
 	virtual bool
@@ -861,10 +861,10 @@ static inline std::unique_ptr<jlm::tac>
 create_fpext_tac(const variable * operand, jlm::variable * result)
 {
 	auto st = dynamic_cast<const jlm::fptype*>(&operand->type());
-	if (!st) throw std::logic_error("Expected floating point type.");
+	if (!st) throw jlm::error("expected floating point type.");
 
 	auto dt = dynamic_cast<const jlm::fptype*>(&result->type());
-	if (!dt) throw std::logic_error("Expected floating point type.");
+	if (!dt) throw jlm::error("expected floating point type.");
 
 	jlm::fpext_op op(st->size(), dt->size());
 	return create_tac(op, {operand}, {result});
@@ -884,7 +884,7 @@ public:
 		if (srcsize == fpsize::half
 		|| (srcsize == fpsize::flt && dstsize != fpsize::half)
 		|| (srcsize == fpsize::dbl && dstsize == fpsize::dbl))
-			throw std::logic_error("Destination tpye size must be smaller than source size type.");
+			throw jlm::error("destination tpye size must be smaller than source size type.");
 	}
 
 	virtual bool
@@ -913,10 +913,10 @@ static inline std::unique_ptr<jlm::tac>
 create_fptrunc_tac(const variable * operand, jlm::variable * result)
 {
 	auto st = dynamic_cast<const fptype*>(&operand->type());
-	if (!st) throw std::logic_error("Expected floating point type.");
+	if (!st) throw jlm::error("expected floating point type.");
 
 	auto dt = dynamic_cast<const fptype*>(&result->type());
-	if (!dt) throw std::logic_error("Expected floating point type.");
+	if (!dt) throw jlm::error("expected floating point type.");
 
 	fptrunc_op op(st->size(), dt->size());
 	return create_tac(op, {operand}, {result});
@@ -1018,10 +1018,10 @@ static inline std::unique_ptr<jlm::tac>
 create_bitcast_tac(const variable * argument, variable * result)
 {
 	auto at = dynamic_cast<const jive::valuetype*>(&argument->type());
-	if (!at) throw std::logic_error("Expected value type.");
+	if (!at) throw jlm::error("expected value type.");
 
 	auto rt = dynamic_cast<const jive::valuetype*>(&result->type());
-	if (!rt) throw std::logic_error("Expected value type.");
+	if (!rt) throw jlm::error("expected value type.");
 
 	bitcast_op op(*at, *rt);
 	return create_tac(op, {argument}, {result});
@@ -1072,7 +1072,7 @@ create_struct_constant_tac(
 	jlm::variable * result)
 {
 	auto rt = dynamic_cast<const structtype*>(&result->type());
-	if (!rt) throw std::logic_error("Expected struct type.");
+	if (!rt) throw jlm::error("expected struct type.");
 
 	struct_constant_op op(*rt);
 	return create_tac(op, elements, {result});
@@ -1090,7 +1090,7 @@ public:
 	: simple_op({otype}, {rtype})
 	{
 		if (otype.nbits() < rtype.nbits())
-			throw std::logic_error("Expected operand's #bits to be larger than results' #bits.");
+			throw jlm::error("expected operand's #bits to be larger than results' #bits.");
 	}
 
 	virtual bool
@@ -1119,10 +1119,10 @@ static inline std::unique_ptr<jlm::tac>
 create_trunc_tac(const variable * operand, jlm::variable * result)
 {
 	auto ot = dynamic_cast<const jive::bittype*>(&operand->type());
-	if (!ot) throw std::logic_error("Expected bits type.");
+	if (!ot) throw jlm::error("expected bits type.");
 
 	auto rt = dynamic_cast<const jive::bittype*>(&result->type());
-	if (!rt) throw std::logic_error("Expected bits type.");
+	if (!rt) throw jlm::error("expected bits type.");
 
 	trunc_op op(*ot, *rt);
 	return create_tac(op, {operand}, {result});
@@ -1132,7 +1132,7 @@ static inline jive::output *
 create_trunc(size_t ndstbits, jive::output * operand)
 {
 	auto ot = dynamic_cast<const jive::bittype*>(&operand->type());
-	if (!ot) throw std::logic_error("Expected bits type.");
+	if (!ot) throw jlm::error("expected bits type.");
 
 	trunc_op op(*ot, jive::bittype(ndstbits));
 	return jive::simple_node::create_normalized(operand->region(), op, {operand})[0];
@@ -1164,10 +1164,10 @@ static inline std::unique_ptr<jlm::tac>
 create_uitofp_tac(const variable * operand, jlm::variable * result)
 {
 	auto st = dynamic_cast<const jive::bittype*>(&operand->type());
-	if (!st) throw std::logic_error("Expected bits type.");
+	if (!st) throw jlm::error("expected bits type.");
 
 	auto rt = dynamic_cast<const jlm::fptype*>(&result->type());
-	if (!rt) throw std::logic_error("Expected floating point type.");
+	if (!rt) throw jlm::error("expected floating point type.");
 
 	uitofp_op op(*st, *rt);
 	return create_tac(op, {operand}, {result});
@@ -1199,10 +1199,10 @@ static inline std::unique_ptr<jlm::tac>
 create_sitofp_tac(const variable * operand, jlm::variable * result)
 {
 	auto st = dynamic_cast<const jive::bittype*>(&operand->type());
-	if (!st) throw std::logic_error("Expected bits type.");
+	if (!st) throw jlm::error("expected bits type.");
 
 	auto rt = dynamic_cast<const jlm::fptype*>(&result->type());
-	if (!rt) throw std::logic_error("Expected floating point type.");
+	if (!rt) throw jlm::error("expected floating point type.");
 
 	sitofp_op op(*st, *rt);
 	return create_tac(op, {operand}, {result});
@@ -1220,7 +1220,7 @@ public:
 	: jive::simple_op(std::vector<jive::port>(size, type), {arraytype(type, size)})
 	{
 		if (size == 0)
-			throw std::logic_error("Size equals zero.\n");
+			throw jlm::error("size equals zero.\n");
 	}
 
 	virtual bool
@@ -1251,10 +1251,10 @@ create_constant_array_tac(
 	jlm::variable * result)
 {
 	if (elements.size() == 0)
-		throw std::logic_error("Expected at least one element.\n");
+		throw jlm::error("expected at least one element.\n");
 
 	auto vt = dynamic_cast<const jive::valuetype*>(&elements[0]->type());
-	if (!vt) throw std::logic_error("Expected value type.\n");
+	if (!vt) throw jlm::error("expected value type.\n");
 
 	constant_array_op op(*vt, elements.size());
 	return create_tac(op, elements, {result});
@@ -1275,7 +1275,7 @@ public:
 		auto st = dynamic_cast<const structtype*>(&type);
 		auto at = dynamic_cast<const arraytype*>(&type);
 		if (!st && !at)
-			throw std::logic_error("Expected array or struct type.\n");
+			throw jlm::error("expected array or struct type.\n");
 	}
 
 	virtual bool

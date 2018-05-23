@@ -298,7 +298,7 @@ public:
 	{
 		auto it = find_node(n);
 		if (it == end())
-			throw std::logic_error("Node does not belong to this CFG.");
+			throw jlm::error("node does not belong to this CFG.");
 
 		return remove_node(it);
 	}

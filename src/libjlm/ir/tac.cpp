@@ -24,24 +24,21 @@ tac::tac(
 	const std::vector<const variable *> & results)
 	: operation_(std::move(operation.copy()))
 {
-	/*
-		FIXME: throw proper exceptions
-	*/
 	if (operands.size() != operation.narguments())
-		throw std::logic_error("Invalid number of operands.");
+		throw jlm::error("invalid number of operands.");
 
 	if (results.size() != operation.nresults())
-		throw std::logic_error("Invalid number of variables.");
+		throw jlm::error("invalid number of variables.");
 
 	for (size_t n = 0; n < operands.size(); n++) {
 		if (operands[n]->type() != operation.argument(n).type())
-			throw std::logic_error("Invalid type.");
+			throw jlm::error("invalid type.");
 		inputs_.push_back(operands[n]);
 	}
 
 	for (size_t n = 0; n < results.size(); n++) {
 		if (results[n]->type() != operation.result(n).type())
-			throw std::logic_error("Invalid type.");
+			throw jlm::error("invalid type.");
 		outputs_.push_back(results[n]);
 	}
 }

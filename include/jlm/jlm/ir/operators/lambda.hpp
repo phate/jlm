@@ -227,7 +227,7 @@ public:
 
 		const auto & fcttype = lambda_->fcttype();
 		if (results.size() != fcttype.nresults())
-			throw std::logic_error("Incorrect number of results.");
+			throw jlm::error("incorrect number of results.");
 
 		for (size_t n = 0; n < results.size(); n++)
 			lambda_->subregion()->add_result(results[n], nullptr, fcttype.result_type(n));
