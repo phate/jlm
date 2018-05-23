@@ -8,6 +8,8 @@
 
 #include <assert.h>
 
+#include <stdexcept>
+
 #define JLM_ASSERT(x) assert(x)
 
 #ifdef JLM_DEBUG
@@ -15,5 +17,20 @@
 #else
 #	define JLM_DEBUG_ASSERT(x) (void)(x)
 #endif
+
+namespace jlm {
+
+class error : public std::runtime_error {
+public:
+	virtual
+	~error() noexcept;
+
+	inline
+	error(const std::string & msg)
+	: std::runtime_error(msg)
+	{}
+};
+
+}
 
 #endif
