@@ -8,6 +8,8 @@ CXXFLAGS += -Wall --std=c++14 -Wfatal-errors
 LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -Lexternal/jive/
 
 LIBJLM_SRC = \
+	src/libjlm/driver/passgraph.cpp \
+	\
 	src/libjlm/ir/aggregation/aggregation.cpp \
 	src/libjlm/ir/aggregation/annotation.cpp \
 	src/libjlm/ir/aggregation/structure.cpp \
