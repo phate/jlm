@@ -1335,6 +1335,54 @@ public:
 	}
 };
 
+/* shufflevector operator */
+
+class shufflevector_op final : public jive::simple_op {
+public:
+	virtual
+	~shufflevector_op();
+
+	inline
+	shufflevector_op(
+		const vectortype & v1,
+		const vectortype & v2,
+		const vectortype & mask)
+	: simple_op({v1, v2, mask}, {vectortype(v1.type(), mask.size())})
+	{
+		if (v1 != v2)
+			throw jlm::error("expected the same vector type.");
+
+		auto bt = dynamic_cast<const jive::bittype*>(&mask.type());
+		if (!bt || bt->nbits() != 32)
+			throw jlm::error("expected bit32 type.");
+	}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+	static inline std::unique_ptr<jlm::tac>
+	create(
+		const jlm::variable * v1,
+		const jlm::variable * v2,
+		const jlm::variable * mask,
+		jlm::variable * result)
+	{
+		auto vt1 = dynamic_cast<const vectortype*>(&v1->type());
+		auto vt2 = dynamic_cast<const vectortype*>(&v2->type());
+		auto vt3 = dynamic_cast<const vectortype*>(&mask->type());
+		if (!vt1 || !vt2 || !vt3) throw jlm::error("expected vector type.");
+
+		shufflevector_op op(*vt1, *vt2, *vt3);
+		return create_tac(op, {v1, v2, mask}, {result});
+	}
+};
+
 }
 
 #endif

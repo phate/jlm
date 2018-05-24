@@ -780,4 +780,30 @@ extractelement_op::copy() const
 	return std::unique_ptr<jive::operation>(new extractelement_op(*this));
 }
 
+/* shufflevector operator */
+
+shufflevector_op::~shufflevector_op()
+{}
+
+bool
+shufflevector_op::operator==(const operation & other) const noexcept
+{
+	auto op = dynamic_cast<const shufflevector_op*>(&other);
+	return op
+	    && op->argument(0) == argument(0)
+	    && op->argument(2) == argument(2);
+}
+
+std::string
+shufflevector_op::debug_string() const
+{
+	return "SHUFFLEVECTOR";
+}
+
+std::unique_ptr<jive::operation>
+shufflevector_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new shufflevector_op(*this));
+}
+
 }
