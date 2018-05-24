@@ -1383,6 +1383,41 @@ public:
 	}
 };
 
+/* constantvector operator */
+
+class constantvector_op final : public jive::simple_op {
+public:
+	virtual
+	~constantvector_op();
+
+	inline
+	constantvector_op(
+		const vectortype & vt)
+	: simple_op(std::vector<jive::port>(vt.size(), {vt.type()}), {vt})
+	{}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+	static inline std::unique_ptr<jlm::tac>
+	create(
+		const std::vector<const variable*> & operands,
+		jlm::variable * result)
+	{
+		auto vt = dynamic_cast<const vectortype*>(&result->type());
+		if (!vt) throw jlm::error("expected vector type.");
+
+		constantvector_op op(*vt);
+		return create_tac(op, operands, {result});
+	}
+};
+
 }
 
 #endif

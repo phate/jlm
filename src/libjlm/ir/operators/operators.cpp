@@ -806,4 +806,29 @@ shufflevector_op::copy() const
 	return std::unique_ptr<jive::operation>(new shufflevector_op(*this));
 }
 
+/* constantvector operator */
+
+constantvector_op::~constantvector_op()
+{}
+
+bool
+constantvector_op::operator==(const operation & other) const noexcept
+{
+	auto op = dynamic_cast<const constantvector_op*>(&other);
+	return op
+	    && op->result(0) == result(0);
+}
+
+std::string
+constantvector_op::debug_string() const
+{
+	return "CONSTANTVECTOR";
+}
+
+std::unique_ptr<jive::operation>
+constantvector_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new constantvector_op(*this));
+}
+
 }
