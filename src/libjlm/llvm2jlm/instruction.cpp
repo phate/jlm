@@ -598,6 +598,18 @@ convert_extractelement_instruction(llvm::Instruction * i, tacsvector_t & tacs, c
 	return tacs.back()->output(0);
 }
 
+static inline const variable *
+convert_shufflevector_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
+{
+	JLM_DEBUG_ASSERT(i->getOpcode() == llvm::Instruction::ShuffleVector);
+
+	auto v1 = convert_value(i->getOperand(0), tacs, ctx);
+	auto v2 = convert_value(i->getOperand(1), tacs, ctx);
+	auto mask = convert_value(i->getOperand(2), tacs, ctx);
+	tacs.push_back(shufflevector_op::create(v1, v2, mask, ctx.lookup_value(i)));
+	return tacs.back()->output(0);
+}
+
 const variable *
 convert_instruction(
 	llvm::Instruction * i,
@@ -637,6 +649,7 @@ convert_instruction(
 	,	{std::type_index(typeid(llvm::InsertValueInst)), convert_insertvalue_instruction}
 	,	{std::type_index(typeid(llvm::ExtractValueInst)), convert_extractvalue_instruction}
 	,	{typeid(llvm::ExtractElementInst), convert_extractelement_instruction}
+	,	{typeid(llvm::ShuffleVectorInst), convert_shufflevector_instruction}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(*i))) != map.end());
