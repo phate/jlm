@@ -141,4 +141,30 @@ structtype::copy() const
 	return std::unique_ptr<jive::type>(new structtype(*this));
 }
 
+/* vectortype */
+
+vectortype::~vectortype()
+{}
+
+bool
+vectortype::operator==(const jive::type & other) const noexcept
+{
+	auto type = dynamic_cast<const vectortype*>(&other);
+	return type
+	    && type->size_ == size_
+	    && *type->type_ == *type_;
+}
+
+std::string
+vectortype::debug_string() const
+{
+	return "vector";
+}
+
+std::unique_ptr<jive::type>
+vectortype::copy() const
+{
+	return std::unique_ptr<jive::type>(new vectortype(*this));
+}
+
 }

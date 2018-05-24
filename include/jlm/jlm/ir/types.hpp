@@ -300,6 +300,83 @@ private:
 	const jive::rcddeclaration * declaration_;
 };
 
+/* vector type */
+
+class vectortype final : public jive::valuetype {
+public:
+	virtual
+	~vectortype();
+
+	inline
+	vectortype(
+		const jive::valuetype & type,
+		size_t size)
+	: size_(size)
+	, type_(type.copy())
+	{}
+
+	inline
+	vectortype(const vectortype & other)
+	: valuetype(other)
+	, size_(other.size_)
+	, type_(other.type_->copy())
+	{}
+
+	inline
+	vectortype(vectortype && other)
+	: valuetype(other)
+	, size_(other.size_)
+	, type_(std::move(other.type_))
+	{}
+
+	vectortype &
+	operator=(const vectortype & other)
+	{
+		if (this == &other)
+			return *this;
+
+		size_ = other.size_;
+		type_ = other.type_->copy();
+		return *this;
+	}
+
+	vectortype &
+	operator=(vectortype && other)
+	{
+		if (this == &other)
+			return *this;
+
+		size_ = other.size_;
+		type_ = std::move(other.type_);
+		return *this;
+	}
+
+	inline size_t
+	size() const noexcept
+	{
+		return size_;
+	}
+
+	inline const jive::valuetype &
+	type() const noexcept
+	{
+		return *static_cast<const jive::valuetype*>(type_.get());
+	}
+
+	virtual bool
+	operator==(const jive::type & other) const noexcept override;
+
+	virtual std::unique_ptr<jive::type>
+	copy() const override;
+
+	virtual std::string
+	debug_string() const override;
+
+private:
+	size_t size_;
+	std::unique_ptr<jive::type> type_;
+};
+
 /* function type */
 
 /* FIXME: this belongs into jive */
