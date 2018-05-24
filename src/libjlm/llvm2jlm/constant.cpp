@@ -240,15 +240,19 @@ convert_constantStruct(
 
 static const variable *
 convert_constantVector(
-	llvm::Constant * constant,
+	llvm::Constant * c,
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantVector*>(constant));
+	JLM_DEBUG_ASSERT(c->getValueID() == llvm::Value::ConstantVectorVal);
 
-	/* FIXME */
-	JLM_DEBUG_ASSERT(0);
-	return nullptr;
+	std::vector<const variable*> elements;
+	for (size_t n = 0; n < c->getNumOperands(); n++)
+		elements.push_back(convert_constant(c->getAggregateElement(n), tacs, ctx));
+
+	auto r = ctx.module().create_variable(*convert_type(c->getType(), ctx), false);
+	tacs.push_back(constantvector_op::create(elements, r));
+	return r;
 }
 
 static inline const variable *
