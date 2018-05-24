@@ -1295,6 +1295,46 @@ create_constant_aggregate_zero_tac(jlm::variable * result)
 	return create_tac(op, {}, {result});
 }
 
+/* extractelement operator */
+
+class extractelement_op final : public jive::simple_op {
+public:
+	virtual
+	~extractelement_op();
+
+	inline
+	extractelement_op(
+		const vectortype & vtype,
+		const jive::bittype & btype)
+	: simple_op({vtype, btype}, {vtype.type()})
+	{}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+	static inline std::unique_ptr<jlm::tac>
+	create(
+		const jlm::variable * vector,
+		const jlm::variable * index,
+		jlm::variable * result)
+	{
+		auto vt = dynamic_cast<const vectortype*>(&vector->type());
+		if (!vt) throw jlm::error("expected vector type.");
+
+		auto bt = dynamic_cast<const jive::bittype*>(&index->type());
+		if (!bt) throw jlm::error("expected bit type.");
+
+		extractelement_op op(*vt, *bt);
+		return create_tac(op, {vector, index}, {result});
+	}
+};
+
 }
 
 #endif

@@ -754,4 +754,30 @@ constant_aggregate_zero_op::copy() const
 	return std::unique_ptr<jive::operation>(new constant_aggregate_zero_op(*this));
 }
 
+/* extractelement operator */
+
+extractelement_op::~extractelement_op()
+{}
+
+bool
+extractelement_op::operator==(const operation & other) const noexcept
+{
+	auto op = dynamic_cast<const extractelement_op*>(&other);
+	return op
+	    && op->argument(0) == argument(0)
+	    && op->argument(1) == argument(1);
+}
+
+std::string
+extractelement_op::debug_string() const
+{
+	return "EXTRACTELEMENT";
+}
+
+std::unique_ptr<jive::operation>
+extractelement_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new extractelement_op(*this));
+}
+
 }
