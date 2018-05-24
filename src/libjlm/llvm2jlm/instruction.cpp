@@ -587,6 +587,17 @@ convert_extractvalue_instruction(llvm::Instruction * inst, tacsvector_t & tacs, 
 	JLM_ASSERT(0);
 }
 
+static inline const variable *
+convert_extractelement_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
+{
+	JLM_DEBUG_ASSERT(i->getOpcode() == llvm::Instruction::ExtractElement);
+
+	auto vector = convert_value(i->getOperand(0), tacs, ctx);
+	auto index = convert_value(i->getOperand(1), tacs, ctx);
+	tacs.push_back(extractelement_op::create(vector, index, ctx.lookup_value(i)));
+	return tacs.back()->output(0);
+}
+
 const variable *
 convert_instruction(
 	llvm::Instruction * i,
@@ -625,6 +636,7 @@ convert_instruction(
 	,	{std::type_index(typeid(llvm::BitCastInst)), convert_bitcast_instruction}
 	,	{std::type_index(typeid(llvm::InsertValueInst)), convert_insertvalue_instruction}
 	,	{std::type_index(typeid(llvm::ExtractValueInst)), convert_extractvalue_instruction}
+	,	{typeid(llvm::ExtractElementInst), convert_extractelement_instruction}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(*i))) != map.end());
