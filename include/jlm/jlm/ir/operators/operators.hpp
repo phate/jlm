@@ -1271,11 +1271,11 @@ public:
 	constant_aggregate_zero_op(const jive::type & type)
 	: simple_op({}, {type})
 	{
-		/* FIXME: add support for vector type */
 		auto st = dynamic_cast<const structtype*>(&type);
 		auto at = dynamic_cast<const arraytype*>(&type);
-		if (!st && !at)
-			throw jlm::error("expected array or struct type.\n");
+		auto vt = dynamic_cast<const vectortype*>(&type);
+		if (!st && !at && !vt)
+			throw jlm::error("expected array, struct, or vector type.\n");
 	}
 
 	virtual bool
