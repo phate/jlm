@@ -97,6 +97,14 @@ convert_array_type(const llvm::Type * t, context & ctx)
 	return std::unique_ptr<jive::valuetype>(new jlm::arraytype(*etype, t->getArrayNumElements()));
 }
 
+static std::unique_ptr<jive::valuetype>
+convert_vector_type(const llvm::Type * t, context & ctx)
+{
+	JLM_DEBUG_ASSERT(t->isVectorTy());
+	auto type = convert_type(t->getVectorElementType(), ctx);
+	return std::unique_ptr<jive::valuetype>(new jlm::vectortype(*type, t->getVectorNumElements()));
+}
+
 std::unique_ptr<jive::valuetype>
 convert_type(const llvm::Type * t, context & ctx)
 {
@@ -113,6 +121,7 @@ convert_type(const llvm::Type * t, context & ctx)
 	, {llvm::Type::X86_FP80TyID, convert_fp_type}
 	, {llvm::Type::StructTyID, convert_struct_type}
 	, {llvm::Type::ArrayTyID, convert_array_type}
+	, {llvm::Type::VectorTyID, convert_vector_type}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(t->getTypeID()) != map.end());
