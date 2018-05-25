@@ -1081,14 +1081,14 @@ create_struct_constant_tac(
 
 /* trunc operator */
 
-class trunc_op final : public jive::simple_op {
+class trunc_op final : public jive::unary_op {
 public:
 	virtual
 	~trunc_op();
 
 	inline
 	trunc_op(const jive::bittype & otype, const jive::bittype & rtype)
-	: simple_op({otype}, {rtype})
+	: unary_op(otype, rtype)
 	{
 		if (otype.nbits() < rtype.nbits())
 			throw jlm::error("expected operand's #bits to be larger than results' #bits.");
@@ -1102,6 +1102,14 @@ public:
 
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
+
+	virtual jive_unop_reduction_path_t
+	can_reduce_operand(const jive::output * operand) const noexcept override;
+
+	virtual jive::output *
+	reduce_operand(
+		jive_unop_reduction_path_t path,
+		jive::output * operand) const override;
 
 	inline size_t
 	nsrcbits() const noexcept

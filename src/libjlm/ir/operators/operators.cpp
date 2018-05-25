@@ -653,6 +653,20 @@ trunc_op::copy() const
 	return std::unique_ptr<jive::operation>(new trunc_op(*this));
 }
 
+jive_unop_reduction_path_t
+trunc_op::can_reduce_operand(const jive::output * operand) const noexcept
+{
+	return jive_unop_reduction_none;
+}
+
+jive::output *
+trunc_op::reduce_operand(
+	jive_unop_reduction_path_t path,
+	jive::output * operand) const
+{
+	JLM_ASSERT(0);
+}
+
 
 /* uitofp operator */
 
