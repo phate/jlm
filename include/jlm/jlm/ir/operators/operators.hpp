@@ -172,15 +172,28 @@ create_select_tac(
 
 /* fp2ui operator */
 
-class fp2ui_op final : public jive::simple_op {
+class fp2ui_op final : public jive::unary_op {
 public:
 	virtual
 	~fp2ui_op() noexcept;
 
 	inline
 	fp2ui_op(const fpsize & size, const jive::bittype & type)
-	: jive::simple_op({fptype(size)}, {type})
+	: jive::unary_op(fptype(size), type)
 	{}
+
+	inline
+	fp2ui_op(
+		std::unique_ptr<jive::type> srctype,
+		std::unique_ptr<jive::type> dsttype)
+	: unary_op(*srctype, *dsttype)
+	{
+		auto st = dynamic_cast<const fptype*>(srctype.get());
+		if (!st) throw jlm::error("expected floating point type.");
+
+		auto dt = dynamic_cast<const jive::bittype*>(dsttype.get());
+		if (!dt) throw jlm::error("expected bitstring type.");
+	}
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
@@ -190,6 +203,15 @@ public:
 
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
+
+	jive_unop_reduction_path_t
+	can_reduce_operand(
+		const jive::output * output) const noexcept override;
+
+	jive::output *
+	reduce_operand(
+		jive_unop_reduction_path_t path,
+		jive::output * output) const override;
 };
 
 static inline std::unique_ptr<jlm::tac>
@@ -207,15 +229,28 @@ create_fp2ui_tac(const variable * operand, jlm::variable * result)
 
 /* fp2si operator */
 
-class fp2si_op final : public jive::simple_op {
+class fp2si_op final : public jive::unary_op {
 public:
 	virtual
 	~fp2si_op() noexcept;
 
 	inline
 	fp2si_op(const fpsize & size, const jive::bittype & type)
-	: jive::simple_op({fptype(size)}, {type})
+	: jive::unary_op({fptype(size)}, {type})
 	{}
+
+	inline
+	fp2si_op(
+		std::unique_ptr<jive::type> srctype,
+		std::unique_ptr<jive::type> dsttype)
+	: jive::unary_op({*srctype}, {*dsttype})
+	{
+		auto st = dynamic_cast<const fptype*>(srctype.get());
+		if (!st) throw jlm::error("expected floating point type.");
+
+		auto dt = dynamic_cast<const jive::bittype*>(dsttype.get());
+		if (!dt) throw jlm::error("expected bitstring type.");
+	}
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
@@ -225,6 +260,15 @@ public:
 
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
+
+	jive_unop_reduction_path_t
+	can_reduce_operand(
+		const jive::output * output) const noexcept override;
+
+	jive::output *
+	reduce_operand(
+		jive_unop_reduction_path_t path,
+		jive::output * output) const override;
 };
 
 static inline std::unique_ptr<jlm::tac>
@@ -351,15 +395,28 @@ create_ptr_constant_null_tac(const jive::type & ptype, jlm::variable * result)
 
 /* bits2ptr operator */
 
-class bits2ptr_op final : public jive::simple_op {
+class bits2ptr_op final : public jive::unary_op {
 public:
 	virtual
 	~bits2ptr_op() noexcept;
 
 	inline
 	bits2ptr_op(const jive::bittype & btype, const jlm::ptrtype & ptype)
-	: simple_op({btype}, {ptype})
+	: unary_op(btype, ptype)
 	{}
+
+	inline
+	bits2ptr_op(
+		std::unique_ptr<jive::type> srctype,
+		std::unique_ptr<jive::type> dsttype)
+	: unary_op(*srctype, *dsttype)
+	{
+		auto at = dynamic_cast<const jive::bittype*>(srctype.get());
+		if (!at) throw jlm::error("expected bitstring type.");
+
+		auto pt = dynamic_cast<const jlm::ptrtype*>(dsttype.get());
+		if (!pt) throw jlm::error("expected pointer type.");
+	}
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
@@ -369,6 +426,15 @@ public:
 
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
+
+	jive_unop_reduction_path_t
+	can_reduce_operand(
+		const jive::output * output) const noexcept override;
+
+	jive::output *
+	reduce_operand(
+		jive_unop_reduction_path_t path,
+		jive::output * output) const override;
 
 	inline size_t
 	nbits() const noexcept
@@ -398,15 +464,28 @@ create_bits2ptr_tac(const variable * argument, jlm::variable * result)
 
 /* ptr2bits operator */
 
-class ptr2bits_op final : public jive::simple_op {
+class ptr2bits_op final : public jive::unary_op {
 public:
 	virtual
 	~ptr2bits_op() noexcept;
 
 	inline
 	ptr2bits_op(const jlm::ptrtype & ptype, const jive::bittype & btype)
-	: simple_op({ptype}, {btype})
+	: unary_op(ptype, btype)
 	{}
+
+	inline
+	ptr2bits_op(
+		std::unique_ptr<jive::type> srctype,
+		std::unique_ptr<jive::type> dsttype)
+	: unary_op(*srctype, *dsttype)
+	{
+		auto pt = dynamic_cast<const jlm::ptrtype*>(srctype.get());
+		if (!pt) throw jlm::error("expected pointer type.");
+
+		auto bt = dynamic_cast<const jive::bittype*>(dsttype.get());
+		if (!bt) throw jlm::error("expected bitstring type.");
+	}
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
@@ -416,6 +495,15 @@ public:
 
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
+
+	jive_unop_reduction_path_t
+	can_reduce_operand(
+		const jive::output * output) const noexcept override;
+
+	jive::output *
+	reduce_operand(
+		jive_unop_reduction_path_t path,
+		jive::output * output) const override;
 
 	inline size_t
 	nbits() const noexcept
@@ -572,6 +660,22 @@ public:
 	: unary_op({jive::bittype(nsrcbits)}, {jive::bittype(ndstbits)})
 	{
 		if (ndstbits < nsrcbits)
+			throw jlm::error("# destination bits must be greater than # source bits.");
+	}
+
+	inline
+	zext_op(
+		std::unique_ptr<jive::type> srctype,
+		std::unique_ptr<jive::type> dsttype)
+	: unary_op(*srctype, *dsttype)
+	{
+		auto st = dynamic_cast<const jive::bittype*>(srctype.get());
+		if (!st) throw jlm::error("expected bitstring type.");
+
+		auto dt = dynamic_cast<const jive::bittype*>(dsttype.get());
+		if (!dt) throw jlm::error("expected bitstring type.");
+
+		if (dt->nbits() < st->nbits())
 			throw jlm::error("# destination bits must be greater than # source bits.");
 	}
 
@@ -834,16 +938,32 @@ create_fpbin_tac(
 
 /* fpext operator */
 
-class fpext_op final : public jive::simple_op {
+class fpext_op final : public jive::unary_op {
 public:
 	virtual
 	~fpext_op() noexcept;
 
 	inline
 	fpext_op(const jlm::fpsize & srcsize, const jlm::fpsize & dstsize)
-	: simple_op({fptype(srcsize)}, {fptype(dstsize)})
+	: unary_op(fptype(srcsize), fptype(dstsize))
 	{
 		if (srcsize == fpsize::flt && dstsize == fpsize::half)
+			throw jlm::error("destination type size must be bigger than source type size.");
+	}
+
+	inline
+	fpext_op(
+		std::unique_ptr<jive::type> srctype,
+		std::unique_ptr<jive::type> dsttype)
+	: unary_op(*srctype, *dsttype)
+	{
+		auto st = dynamic_cast<const jlm::fptype*>(srctype.get());
+		if (!st) throw jlm::error("expected floating point type.");
+
+		auto dt = dynamic_cast<const jlm::fptype*>(dsttype.get());
+		if (!dt) throw jlm::error("expected floating point type.");
+
+		if (st->size() == fpsize::flt && dt->size() == fpsize::half)
 			throw jlm::error("destination type size must be bigger than source type size.");
 	}
 
@@ -855,6 +975,15 @@ public:
 
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
+
+	jive_unop_reduction_path_t
+	can_reduce_operand(
+		const jive::output * output) const noexcept override;
+
+	jive::output *
+	reduce_operand(
+		jive_unop_reduction_path_t path,
+		jive::output * output) const override;
 
 	inline const jlm::fpsize &
 	srcsize() const noexcept
@@ -884,18 +1013,36 @@ create_fpext_tac(const variable * operand, jlm::variable * result)
 
 /* fptrunc operator */
 
-class fptrunc_op final : public jive::simple_op {
+class fptrunc_op final : public jive::unary_op {
 public:
 	virtual
 	~fptrunc_op() noexcept;
 
 	inline
 	fptrunc_op(const fpsize & srcsize, const fpsize & dstsize)
-	: simple_op({fptype(srcsize)}, {fptype(dstsize)})
+	: unary_op(fptype(srcsize), fptype(dstsize))
 	{
 		if (srcsize == fpsize::half
 		|| (srcsize == fpsize::flt && dstsize != fpsize::half)
 		|| (srcsize == fpsize::dbl && dstsize == fpsize::dbl))
+			throw jlm::error("destination tpye size must be smaller than source size type.");
+	}
+
+	inline
+	fptrunc_op(
+		std::unique_ptr<jive::type> srctype,
+		std::unique_ptr<jive::type> dsttype)
+	: unary_op(*srctype, *dsttype)
+	{
+		auto st = dynamic_cast<const fptype*>(srctype.get());
+		if (!st) throw jlm::error("expected floating point type.");
+
+		auto dt = dynamic_cast<const fptype*>(dsttype.get());
+		if (!dt) throw jlm::error("expected floating point type.");
+
+		if (st->size() == fpsize::half
+		|| (st->size() == fpsize::flt && dt->size() != fpsize::half)
+		|| (st->size() == fpsize::dbl && dt->size() == fpsize::dbl))
 			throw jlm::error("destination tpye size must be smaller than source size type.");
 	}
 
@@ -907,6 +1054,15 @@ public:
 
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
+
+	jive_unop_reduction_path_t
+	can_reduce_operand(
+		const jive::output * output) const noexcept override;
+
+	jive::output *
+	reduce_operand(
+		jive_unop_reduction_path_t path,
+		jive::output * output) const override;
 
 	inline const fpsize &
 	srcsize() const noexcept
@@ -996,15 +1152,28 @@ create_valist_tac(
 
 /* bitcast operator */
 
-class bitcast_op final : public jive::simple_op {
+class bitcast_op final : public jive::unary_op {
 public:
 	virtual
 	~bitcast_op();
 
 	inline
 	bitcast_op(const jive::valuetype & srctype, const jive::valuetype & dsttype)
-	: simple_op({srctype}, {dsttype})
+	: unary_op(srctype, dsttype)
 	{}
+
+	inline
+	bitcast_op(
+		std::unique_ptr<jive::type> srctype,
+		std::unique_ptr<jive::type> dsttype)
+	: unary_op(*srctype, *dsttype)
+	{
+		auto at = dynamic_cast<const jive::valuetype*>(srctype.get());
+		if (!at) throw jlm::error("expected value type.");
+
+		auto rt = dynamic_cast<const jive::valuetype*>(dsttype.get());
+		if (!rt) throw jlm::error("expected value type.");
+	}
 
 	bitcast_op(const bitcast_op &) = default;
 
@@ -1024,6 +1193,15 @@ public:
 
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
+
+	jive_unop_reduction_path_t
+	can_reduce_operand(
+		const jive::output * output) const noexcept override;
+
+	jive::output *
+	reduce_operand(
+		jive_unop_reduction_path_t path,
+		jive::output * output) const override;
 };
 
 static inline std::unique_ptr<jlm::tac>
@@ -1102,6 +1280,22 @@ public:
 	: unary_op(otype, rtype)
 	{
 		if (otype.nbits() < rtype.nbits())
+			throw jlm::error("expected operand's #bits to be larger than results' #bits.");
+	}
+
+	inline
+	trunc_op(
+		std::unique_ptr<jive::type> optype,
+		std::unique_ptr<jive::type> restype)
+	: unary_op(*optype, *restype)
+	{
+		auto ot = dynamic_cast<const jive::bittype*>(optype.get());
+		if (!ot) throw jlm::error("expected bits type.");
+
+		auto rt = dynamic_cast<const jive::bittype*>(restype.get());
+		if (!rt) throw jlm::error("expected bits type.");
+
+		if (ot->nbits() < rt->nbits())
 			throw jlm::error("expected operand's #bits to be larger than results' #bits.");
 	}
 
@@ -1216,15 +1410,28 @@ create_uitofp_tac(const variable * operand, jlm::variable * result)
 
 /* sitofp operator */
 
-class sitofp_op final : public jive::simple_op {
+class sitofp_op final : public jive::unary_op {
 public:
 	virtual
 	~sitofp_op();
 
 	inline
 	sitofp_op(const jive::bittype & srctype, const jlm::fptype & dsttype)
-	: simple_op({srctype}, {dsttype})
+	: unary_op(srctype, dsttype)
 	{}
+
+	inline
+	sitofp_op(
+		std::unique_ptr<jive::type> srctype,
+		std::unique_ptr<jive::type> dsttype)
+	: unary_op(*srctype, *dsttype)
+	{
+		auto st = dynamic_cast<const jive::bittype*>(srctype.get());
+		if (!st) throw jlm::error("expected bits type.");
+
+		auto rt = dynamic_cast<const jlm::fptype*>(dsttype.get());
+		if (!rt) throw jlm::error("expected floating point type.");
+	}
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
@@ -1234,6 +1441,15 @@ public:
 
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
+
+	jive_unop_reduction_path_t
+	can_reduce_operand(
+		const jive::output * output) const noexcept override;
+
+	jive::output *
+	reduce_operand(
+		jive_unop_reduction_path_t path,
+		jive::output * output) const override;
 };
 
 static inline std::unique_ptr<jlm::tac>

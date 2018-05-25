@@ -28,6 +28,22 @@ public:
 			throw jlm::error("expected operand's #bits to be smaller than results's #bits.");
 	}
 
+	inline
+	sext_op(
+		std::unique_ptr<jive::type> srctype,
+		std::unique_ptr<jive::type> dsttype)
+	: unary_op(*srctype, *dsttype)
+	{
+		auto ot = dynamic_cast<const jive::bittype*>(srctype.get());
+		if (!ot) throw jlm::error("expected bits type.");
+
+		auto rt = dynamic_cast<const jive::bittype*>(dsttype.get());
+		if (!rt) throw jlm::error("expected bits type.");
+
+		if (ot->nbits() >= rt->nbits())
+			throw jlm::error("expected operand's #bits to be smaller than results's #bits.");
+	}
+
 	virtual bool
 	operator==(const operation & other) const noexcept override;
 

@@ -120,6 +120,20 @@ fp2ui_op::copy() const
 	return std::unique_ptr<jive::operation>(new fp2ui_op(*this));
 }
 
+jive_unop_reduction_path_t
+fp2ui_op::can_reduce_operand(const jive::output * operand) const noexcept
+{
+	return jive_unop_reduction_none;
+}
+
+jive::output *
+fp2ui_op::reduce_operand(
+	jive_unop_reduction_path_t path,
+	jive::output * operand) const
+{
+	JLM_ASSERT(0);
+}
+
 /* fp2si operator */
 
 fp2si_op::~fp2si_op() noexcept
@@ -144,6 +158,20 @@ std::unique_ptr<jive::operation>
 fp2si_op::copy() const
 {
 	return std::unique_ptr<jive::operation>(new fp2si_op(*this));
+}
+
+jive_unop_reduction_path_t
+fp2si_op::can_reduce_operand(const jive::output * operand) const noexcept
+{
+	return jive_unop_reduction_none;
+}
+
+jive::output *
+fp2si_op::reduce_operand(
+	jive_unop_reduction_path_t path,
+	jive::output * operand) const
+{
+	JLM_ASSERT(0);
 }
 
 /* ctl2bits operator */
@@ -246,6 +274,20 @@ bits2ptr_op::copy() const
 	return std::unique_ptr<jive::operation>(new jlm::bits2ptr_op(*this));
 }
 
+jive_unop_reduction_path_t
+bits2ptr_op::can_reduce_operand(const jive::output * operand) const noexcept
+{
+	return jive_unop_reduction_none;
+}
+
+jive::output *
+bits2ptr_op::reduce_operand(
+	jive_unop_reduction_path_t path,
+	jive::output * operand) const
+{
+	JLM_ASSERT(0);
+}
+
 /* ptr2bits operator */
 
 ptr2bits_op::~ptr2bits_op()
@@ -270,6 +312,20 @@ std::unique_ptr<jive::operation>
 ptr2bits_op::copy() const
 {
 	return std::unique_ptr<jive::operation>(new jlm::ptr2bits_op(*this));
+}
+
+jive_unop_reduction_path_t
+ptr2bits_op::can_reduce_operand(const jive::output * operand) const noexcept
+{
+	return jive_unop_reduction_none;
+}
+
+jive::output *
+ptr2bits_op::reduce_operand(
+	jive_unop_reduction_path_t path,
+	jive::output * operand) const
+{
+	JLM_ASSERT(0);
 }
 
 /* data array constant operator */
@@ -537,6 +593,20 @@ fpext_op::copy() const
 	return std::unique_ptr<jive::operation>(new jlm::fpext_op(*this));
 }
 
+jive_unop_reduction_path_t
+fpext_op::can_reduce_operand(const jive::output * operand) const noexcept
+{
+	return jive_unop_reduction_none;
+}
+
+jive::output *
+fpext_op::reduce_operand(
+	jive_unop_reduction_path_t path,
+	jive::output * operand) const
+{
+	JLM_ASSERT(0);
+}
+
 /* fptrunc operator */
 
 fptrunc_op::~fptrunc_op()
@@ -559,6 +629,20 @@ std::unique_ptr<jive::operation>
 fptrunc_op::copy() const
 {
 	return std::unique_ptr<jive::operation>(new fptrunc_op(*this));
+}
+
+jive_unop_reduction_path_t
+fptrunc_op::can_reduce_operand(const jive::output * operand) const noexcept
+{
+	return jive_unop_reduction_none;
+}
+
+jive::output *
+fptrunc_op::reduce_operand(
+	jive_unop_reduction_path_t path,
+	jive::output * operand) const
+{
+	JLM_ASSERT(0);
 }
 
 /* valist operator */
@@ -618,6 +702,20 @@ std::unique_ptr<jive::operation>
 bitcast_op::copy() const
 {
 	return std::unique_ptr<jive::operation>(new bitcast_op(*this));
+}
+
+jive_unop_reduction_path_t
+bitcast_op::can_reduce_operand(const jive::output * operand) const noexcept
+{
+	return jive_unop_reduction_none;
+}
+
+jive::output *
+bitcast_op::reduce_operand(
+	jive_unop_reduction_path_t path,
+	jive::output * operand) const
+{
+	JLM_ASSERT(0);
 }
 
 /* struct constant operator */
@@ -750,6 +848,20 @@ std::unique_ptr<jive::operation>
 sitofp_op::copy() const
 {
 	return std::make_unique<sitofp_op>(*this);
+}
+
+jive_unop_reduction_path_t
+sitofp_op::can_reduce_operand(const jive::output * operand) const noexcept
+{
+	return jive_unop_reduction_none;
+}
+
+jive::output *
+sitofp_op::reduce_operand(
+	jive_unop_reduction_path_t path,
+	jive::output * operand) const
+{
+	JLM_ASSERT(0);
 }
 
 /* constant array operator */
