@@ -326,6 +326,23 @@ ptrcmp_op::copy() const
 	return std::unique_ptr<jive::operation>(new ptrcmp_op(*this));
 }
 
+jive_binop_reduction_path_t
+ptrcmp_op::can_reduce_operand_pair(
+	const jive::output * op1,
+	const jive::output * op2) const noexcept
+{
+	return jive_binop_reduction_none;
+}
+
+jive::output *
+ptrcmp_op::reduce_operand_pair(
+	jive_binop_reduction_path_t path,
+	jive::output * op1,
+	jive::output * op2) const
+{
+	JLM_ASSERT(0);
+}
+
 /* zext operator */
 
 zext_op::~zext_op()

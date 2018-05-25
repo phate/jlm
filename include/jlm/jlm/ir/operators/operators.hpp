@@ -499,14 +499,14 @@ create_data_array_constant_tac(
 
 enum class cmp {eq, ne, gt, ge, lt, le};
 
-class ptrcmp_op final : public jive::simple_op {
+class ptrcmp_op final : public jive::binary_op {
 public:
 	virtual
 	~ptrcmp_op() noexcept;
 
 	inline
 	ptrcmp_op(const jlm::ptrtype & ptype, const jlm::cmp & cmp)
-	: simple_op({ptype, ptype}, {jive::bit1})
+	: binary_op({ptype, ptype}, {jive::bit1})
 	, cmp_(cmp)
 	{}
 
@@ -518,6 +518,17 @@ public:
 
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
+
+	virtual jive_binop_reduction_path_t
+	can_reduce_operand_pair(
+		const jive::output * op1,
+		const jive::output * op2) const noexcept override;
+
+	virtual jive::output *
+	reduce_operand_pair(
+		jive_binop_reduction_path_t path,
+		jive::output * op1,
+		jive::output * op2) const override;
 
 	inline jlm::cmp
 	cmp() const noexcept
