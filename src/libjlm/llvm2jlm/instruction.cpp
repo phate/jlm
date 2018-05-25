@@ -317,12 +317,21 @@ convert_getelementptr_instruction(llvm::Instruction * inst, tacsvector_t & tacs,
 }
 
 static inline const variable *
-convert_trunc_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
+convert_trunc_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, context & ctx)
 {
-	JLM_DEBUG_ASSERT(i->getOpcode() == llvm::Instruction::Trunc);
+	JLM_DEBUG_ASSERT(instruction->getOpcode() == llvm::Instruction::Trunc);
+	auto i = llvm::cast<llvm::TruncInst>(instruction);
 
+	auto result = ctx.lookup_value(i);
 	auto operand = convert_value(i->getOperand(0), tacs, ctx);
-	tacs.push_back(create_trunc_tac(operand, ctx.lookup_value(i)));
+	if (i->getType()->isVectorTy()) {
+		auto srcnbits = i->getSrcTy()->getVectorElementType()->getIntegerBitWidth();
+		auto dstnbits = i->getDestTy()->getVectorElementType()->getIntegerBitWidth();
+		tacs.push_back(vectorunary_op::create(trunc_op({srcnbits}, {dstnbits}), operand, result));
+	} else {
+		tacs.push_back(create_trunc_tac(operand, ctx.lookup_value(i)));
+	}
+
 	return tacs.back()->output(0);
 }
 
