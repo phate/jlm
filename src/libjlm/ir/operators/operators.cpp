@@ -858,4 +858,28 @@ insertelement_op::copy() const
 	return std::unique_ptr<jive::operation>(new insertelement_op(*this));
 }
 
+/* vectorunary operator */
+
+vectorunary_op::~vectorunary_op()
+{}
+
+bool
+vectorunary_op::operator==(const jive::operation & other) const noexcept
+{
+	auto op = dynamic_cast<const vectorunary_op*>(&other);
+	return op && op->operation() == operation();
+}
+
+std::string
+vectorunary_op::debug_string() const
+{
+	return strfmt("VEC", operation().debug_string());
+}
+
+std::unique_ptr<jive::operation>
+vectorunary_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new vectorunary_op(*this));
+}
+
 }

@@ -1469,6 +1469,97 @@ public:
 	}
 };
 
+/* vectorunary operator */
+
+class vectorunary_op final : public jive::simple_op {
+public:
+	virtual
+	~vectorunary_op();
+
+	inline
+	vectorunary_op(
+		const jive::unary_op & op,
+		const vectortype & operand,
+		const vectortype & result)
+	: simple_op({operand}, {result})
+	, op_(std::move(op.copy()))
+	{
+		if (operand.type() != op.argument(0).type()) {
+			auto received = operand.type().debug_string();
+			auto expected = op.argument(0).type().debug_string();
+			throw jlm::error(strfmt("expected ", expected, ", got ", received));
+		}
+
+		if (result.type() != op.result(0).type()) {
+			auto received = result.type().debug_string();
+			auto expected = op.result(0).type().debug_string();
+			throw jlm::error(strfmt("expected ", expected, ", got ", received));
+		}
+	}
+
+	inline
+	vectorunary_op(const vectorunary_op & other)
+	: simple_op(other)
+	, op_(std::move(other.op_->copy()))
+	{}
+
+	inline
+	vectorunary_op(vectorunary_op && other)
+	: simple_op(other)
+	, op_(std::move(other.op_))
+	{}
+
+	inline vectorunary_op &
+	operator=(const vectorunary_op & other)
+	{
+		if (this != &other)
+			op_ = std::move(other.op_->copy());
+
+		return *this;
+	}
+
+	inline vectorunary_op &
+	operator=(vectorunary_op && other)
+	{
+		if (this != &other)
+			op_ = std::move(other.op_);
+
+		return *this;
+	}
+
+	inline const jive::unary_op &
+	operation() const noexcept
+	{
+		return *static_cast<const jive::unary_op*>(op_.get());
+	}
+
+	virtual bool
+	operator==(const jive::operation & other) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+	static inline std::unique_ptr<jlm::tac>
+	create(
+		const jive::unary_op & unop,
+		const jlm::variable * operand,
+		jlm::variable * result)
+	{
+		auto vct1 = dynamic_cast<const vectortype*>(&operand->type());
+		auto vct2 = dynamic_cast<const vectortype*>(&result->type());
+		if (!vct1 || !vct2) throw jlm::error("expected vector type.");
+
+		vectorunary_op op(unop, *vct1, *vct2);
+		return create_tac(op, {operand}, {result});
+	}
+
+private:
+	std::unique_ptr<jive::operation> op_;
+};
+
 }
 
 #endif
