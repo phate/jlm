@@ -9,6 +9,7 @@
 #include <jive/types/bitstring/type.h>
 #include <jive/types/function.h>
 #include <jive/types/record.h>
+#include <jive/rvsdg/binary.h>
 #include <jive/rvsdg/control.h>
 #include <jive/rvsdg/nullary.h>
 #include <jive/rvsdg/simple-node.h>
@@ -1554,6 +1555,103 @@ public:
 
 		vectorunary_op op(unop, *vct1, *vct2);
 		return create_tac(op, {operand}, {result});
+	}
+
+private:
+	std::unique_ptr<jive::operation> op_;
+};
+
+/* vectorbinary operator */
+
+class vectorbinary_op final : public jive::simple_op {
+public:
+	virtual
+	~vectorbinary_op();
+
+	inline
+	vectorbinary_op(
+		const jive::binary_op & binop,
+		const vectortype & op1,
+		const vectortype & op2,
+		const vectortype & result)
+	: simple_op({op1, op2}, {result})
+	, op_(std::move(binop.copy()))
+	{
+		if (op1 != op2)
+			throw jlm::error("expected the same vector types.");
+
+		if (op1.type() != binop.argument(0).type()) {
+			auto received = op1.type().debug_string();
+			auto expected = binop.argument(0).type().debug_string();
+			throw jlm::error(strfmt("expected ", expected, ", got ", received));
+		}
+
+		if (result.type() != binop.result(0).type()) {
+			auto received = result.type().debug_string();
+			auto expected = binop.result(0).type().debug_string();
+			throw jlm::error(strfmt("expected ", expected, ", got ", received));
+		}
+	}
+
+	inline
+	vectorbinary_op(const vectorbinary_op & other)
+	: simple_op(other)
+	, op_(std::move(other.op_->copy()))
+	{}
+
+	inline
+	vectorbinary_op(vectorbinary_op && other)
+	: simple_op(other)
+	, op_(std::move(other.op_))
+	{}
+
+	inline vectorbinary_op &
+	operator=(const vectorbinary_op & other)
+	{
+		if (this != &other)
+			op_ = std::move(other.op_->copy());
+
+		return *this;
+	}
+
+	inline vectorbinary_op &
+	operator=(vectorbinary_op && other)
+	{
+		if (this != &other)
+			op_ = std::move(other.op_);
+
+		return *this;
+	}
+
+	inline const jive::binary_op &
+	operation() const noexcept
+	{
+		return *static_cast<const jive::binary_op*>(op_.get());
+	}
+
+	virtual bool
+	operator==(const jive::operation & other) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+	static inline std::unique_ptr<jlm::tac>
+	create(
+		const jive::binary_op & binop,
+		const jlm::variable * op1,
+		const jlm::variable * op2,
+		jlm::variable * result)
+	{
+		auto vct1 = dynamic_cast<const vectortype*>(&op1->type());
+		auto vct2 = dynamic_cast<const vectortype*>(&op2->type());
+		auto vct3 = dynamic_cast<const vectortype*>(&result->type());
+		if (!vct1 || !vct2 || !vct3) throw jlm::error("expected vector type.");
+
+		vectorbinary_op op(binop, *vct1, *vct2, *vct3);
+		return create_tac(op, {op1, op2}, {result});
 	}
 
 private:
