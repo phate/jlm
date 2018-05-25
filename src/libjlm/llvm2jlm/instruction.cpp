@@ -168,7 +168,6 @@ convert_icmp_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 	JLM_DEBUG_ASSERT(instruction->getOpcode() == llvm::Instruction::ICmp);
 	auto i = llvm::cast<const llvm::ICmpInst>(instruction);
 	auto t = i->getOperand(0)->getType();
-	JLM_DEBUG_ASSERT(!t->isVectorTy());
 
 	static std::unordered_map<
 		const llvm::CmpInst::Predicate,
@@ -195,15 +194,24 @@ convert_icmp_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 	auto op1 = convert_value(i->getOperand(0), tacs, ctx);
 	auto op2 = convert_value(i->getOperand(1), tacs, ctx);
 
-	if (t->isIntegerTy()) {
-		size_t nbits = t->getIntegerBitWidth();
+	std::unique_ptr<jive::operation> binop;
+	if (t->isIntegerTy() || (t->isVectorTy() && t->getVectorElementType()->isIntegerTy())) {
+		auto it = t->isVectorTy() ? t->getVectorElementType() : t;
 		/* FIXME: This is inefficient. We return a unique ptr and then take copy it. */
-		auto op = map[p](nbits);
-		tacs.push_back(create_tac(*static_cast<const jive::simple_op*>(op.get()),
-			{op1, op2}, {ctx.lookup_value(i)}));
+		binop = map[p](it->getIntegerBitWidth());
+	} else if (t->isPointerTy() || (t->isVectorTy() && t->getVectorElementType()->isPointerTy())) {
+		auto pt = llvm::cast<llvm::PointerType>(t->isVectorTy() ? t->getVectorElementType() : t);
+		binop = std::make_unique<ptrcmp_op>(*convert_type(pt, ctx), ptrmap[p]);
+	} else
+		JLM_ASSERT(0);
+
+	JLM_DEBUG_ASSERT(is<jive::binary_op>(*binop));
+	if (t->isVectorTy()) {
+		tacs.push_back(vectorbinary_op::create(*static_cast<jive::binary_op*>(binop.get()),
+			op1, op2, ctx.lookup_value(i)));
 	} else {
-		JLM_DEBUG_ASSERT(t->isPointerTy() && map.find(p) != map.end());
-		tacs.push_back(create_ptrcmp_tac(ptrmap[p], op1, op2, ctx.lookup_value(i)));
+		tacs.push_back(create_tac(*static_cast<jive::simple_op*>(binop.get()),
+			{op1, op2}, {ctx.lookup_value(i)}));
 	}
 
 	return tacs.back()->output(0);
