@@ -831,4 +831,31 @@ constantvector_op::copy() const
 	return std::unique_ptr<jive::operation>(new constantvector_op(*this));
 }
 
+/* insertelement operator */
+
+insertelement_op::~insertelement_op()
+{}
+
+bool
+insertelement_op::operator==(const operation & other) const noexcept
+{
+	auto op = dynamic_cast<const insertelement_op*>(&other);
+	return op
+	    && op->argument(0) == argument(0)
+	    && op->argument(1) == argument(1)
+	    && op->argument(2) == argument(2);
+}
+
+std::string
+insertelement_op::debug_string() const
+{
+	return "INSERTELEMENT";
+}
+
+std::unique_ptr<jive::operation>
+insertelement_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new insertelement_op(*this));
+}
+
 }

@@ -1418,6 +1418,57 @@ public:
 	}
 };
 
+/* insertelement operator */
+
+class insertelement_op final : public jive::simple_op {
+public:
+	virtual
+	~insertelement_op();
+
+	inline
+	insertelement_op(
+		const vectortype & vectype,
+		const jive::valuetype & vtype,
+		const jive::bittype & btype)
+	: simple_op({vectype, vtype, btype}, {vectype})
+	{
+		if (vectype.type() != vtype) {
+			auto received = vtype.debug_string();
+			auto expected = vectype.type().debug_string();
+			throw jlm::error(strfmt("expected ", expected, ", got ", received));
+		}
+	}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+	static inline std::unique_ptr<jlm::tac>
+	create(
+		const jlm::variable * vector,
+		const jlm::variable * value,
+		const jlm::variable * index,
+		jlm::variable * result)
+	{
+		auto vct = dynamic_cast<const vectortype*>(&vector->type());
+		if (!vct) throw jlm::error("expected vector type.");
+
+		auto vt = dynamic_cast<const jive::valuetype*>(&value->type());
+		if (!vt) throw jlm::error("expected value type.");
+
+		auto bt = dynamic_cast<const jive::bittype*>(&index->type());
+		if (!bt) throw jlm::error("expected bit type.");
+
+		insertelement_op op(*vct, *vt, *bt);
+		return create_tac(op, {vector, value, index}, {result});
+	}
+};
+
 }
 
 #endif
