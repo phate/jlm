@@ -1160,15 +1160,28 @@ create_trunc(size_t ndstbits, jive::output * operand)
 
 /* uitofp operator */
 
-class uitofp_op final : public jive::simple_op {
+class uitofp_op final : public jive::unary_op {
 public:
 	virtual
 	~uitofp_op();
 
 	inline
 	uitofp_op(const jive::bittype & srctype, const jlm::fptype & dsttype)
-	: simple_op({srctype}, {dsttype})
+	: unary_op(srctype, dsttype)
 	{}
+
+	inline
+	uitofp_op(
+		std::unique_ptr<jive::type> optype,
+		std::unique_ptr<jive::type> restype)
+	: unary_op(*optype, *restype)
+	{
+		auto st = dynamic_cast<const jive::bittype*>(optype.get());
+		if (!st) throw jlm::error("expected bits type.");
+
+		auto rt = dynamic_cast<const jlm::fptype*>(restype.get());
+		if (!rt) throw jlm::error("expected floating point type.");
+	}
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
@@ -1178,6 +1191,14 @@ public:
 
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
+
+	virtual jive_unop_reduction_path_t
+	can_reduce_operand(const jive::output * operand) const noexcept override;
+
+	virtual jive::output *
+	reduce_operand(
+		jive_unop_reduction_path_t path,
+		jive::output * operand) const override;
 };
 
 static inline std::unique_ptr<jlm::tac>

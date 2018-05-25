@@ -711,6 +711,21 @@ uitofp_op::copy() const
 	return std::make_unique<uitofp_op>(*this);
 }
 
+jive_unop_reduction_path_t
+uitofp_op::can_reduce_operand(
+	const jive::output * operand) const noexcept
+{
+	return jive_unop_reduction_none;
+}
+
+jive::output *
+uitofp_op::reduce_operand(
+	jive_unop_reduction_path_t path,
+	jive::output * operand) const
+{
+	JLM_ASSERT(0);
+}
+
 /* sitofp operator */
 
 sitofp_op::~sitofp_op()
