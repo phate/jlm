@@ -382,47 +382,62 @@ convert_binary_operator(llvm::Instruction * instruction, tacsvector_t & tacs, co
 {
 	JLM_DEBUG_ASSERT(llvm::dyn_cast<const llvm::BinaryOperator>(instruction));
 	auto i = llvm::cast<const llvm::BinaryOperator>(instruction);
-	JLM_DEBUG_ASSERT(!i->getType()->isVectorTy());
 
-	auto op1 = convert_value(i->getOperand(0), tacs, ctx);
-	auto op2 = convert_value(i->getOperand(1), tacs, ctx);
+	static std::unordered_map<
+		const llvm::Instruction::BinaryOps,
+		std::unique_ptr<jive::operation>(*)(size_t)> bitmap({
+			{llvm::Instruction::Add,	[](size_t nbits){jive::bitadd_op o(nbits); return o.copy();}}
+		,	{llvm::Instruction::And,	[](size_t nbits){jive::bitand_op o(nbits); return o.copy();}}
+		,	{llvm::Instruction::AShr,	[](size_t nbits){jive::bitashr_op o(nbits); return o.copy();}}
+		,	{llvm::Instruction::Sub,	[](size_t nbits){jive::bitsub_op o(nbits); return o.copy();}}
+		,	{llvm::Instruction::UDiv,	[](size_t nbits){jive::bitudiv_op o(nbits); return o.copy();}}
+		,	{llvm::Instruction::SDiv,	[](size_t nbits){jive::bitsdiv_op o(nbits); return o.copy();}}
+		,	{llvm::Instruction::URem,	[](size_t nbits){jive::bitumod_op o(nbits); return o.copy();}}
+		,	{llvm::Instruction::SRem,	[](size_t nbits){jive::bitsmod_op o(nbits); return o.copy();}}
+		,	{llvm::Instruction::Shl,	[](size_t nbits){jive::bitshl_op o(nbits); return o.copy();}}
+		,	{llvm::Instruction::LShr,	[](size_t nbits){jive::bitshr_op o(nbits); return o.copy();}}
+		,	{llvm::Instruction::Or,		[](size_t nbits){jive::bitor_op o(nbits); return o.copy();}}
+		,	{llvm::Instruction::Xor,	[](size_t nbits){jive::bitxor_op o(nbits); return o.copy();}}
+		,	{llvm::Instruction::Mul,	[](size_t nbits){jive::bitmul_op o(nbits); return o.copy();}}
+	});
 
-	if (i->getType()->isIntegerTy()) {
-		static std::unordered_map<
-			const llvm::Instruction::BinaryOps,
-			std::unique_ptr<jive::operation>(*)(size_t)> map({
-				{llvm::Instruction::Add,	[](size_t nbits){jive::bitadd_op o(nbits); return o.copy();}}
-			,	{llvm::Instruction::And,	[](size_t nbits){jive::bitand_op o(nbits); return o.copy();}}
-			,	{llvm::Instruction::AShr,	[](size_t nbits){jive::bitashr_op o(nbits); return o.copy();}}
-			,	{llvm::Instruction::Sub,	[](size_t nbits){jive::bitsub_op o(nbits); return o.copy();}}
-			,	{llvm::Instruction::UDiv,	[](size_t nbits){jive::bitudiv_op o(nbits); return o.copy();}}
-			,	{llvm::Instruction::SDiv,	[](size_t nbits){jive::bitsdiv_op o(nbits); return o.copy();}}
-			,	{llvm::Instruction::URem,	[](size_t nbits){jive::bitumod_op o(nbits); return o.copy();}}
-			,	{llvm::Instruction::SRem,	[](size_t nbits){jive::bitsmod_op o(nbits); return o.copy();}}
-			,	{llvm::Instruction::Shl,	[](size_t nbits){jive::bitshl_op o(nbits); return o.copy();}}
-			,	{llvm::Instruction::LShr,	[](size_t nbits){jive::bitshr_op o(nbits); return o.copy();}}
-			,	{llvm::Instruction::Or,		[](size_t nbits){jive::bitor_op o(nbits); return o.copy();}}
-			,	{llvm::Instruction::Xor,	[](size_t nbits){jive::bitxor_op o(nbits); return o.copy();}}
-			,	{llvm::Instruction::Mul,	[](size_t nbits){jive::bitmul_op o(nbits); return o.copy();}}
-		});
-
-		size_t nbits = i->getType()->getIntegerBitWidth();
-		JLM_DEBUG_ASSERT(map.find(i->getOpcode()) != map.end());
-		/* FIXME: This is inefficient. We produce a unique ptr and then copy it. */
-		auto op = map[i->getOpcode()](nbits);
-		tacs.push_back(create_tac(*static_cast<const jive::simple_op*>(op.get()),
-			{op1, op2}, {ctx.lookup_value(i)}));
-		return tacs.back()->output(0);
-	}
-
-	static std::unordered_map<const llvm::Instruction::BinaryOps, jlm::fpop> map({
+	static std::unordered_map<const llvm::Instruction::BinaryOps, jlm::fpop> fpmap({
 	  {llvm::Instruction::FAdd, fpop::add}, {llvm::Instruction::FSub, fpop::sub}
 	, {llvm::Instruction::FMul, fpop::mul}, {llvm::Instruction::FDiv, fpop::div}
 	, {llvm::Instruction::FRem, fpop::mod}
 	});
 
-	JLM_DEBUG_ASSERT(map.find(i->getOpcode()) != map.end());
-	tacs.push_back(create_fpbin_tac(map[i->getOpcode()], op1, op2, ctx.lookup_value(i)));
+	static std::unordered_map<const llvm::Type::TypeID, jlm::fpsize> fpsizemap({
+	  {llvm::Type::HalfTyID, fpsize::half}
+	, {llvm::Type::FloatTyID, fpsize::flt}
+	, {llvm::Type::DoubleTyID, fpsize::dbl}
+	, {llvm::Type::X86_FP80TyID, fpsize::x86fp80}
+	});
+
+	std::unique_ptr<jive::operation> operation;
+	auto t = i->getType()->isVectorTy() ? i->getType()->getVectorElementType() : i->getType();
+	if (t->isIntegerTy()) {
+		JLM_DEBUG_ASSERT(bitmap.find(i->getOpcode()) != bitmap.end());
+		operation = bitmap[i->getOpcode()](t->getIntegerBitWidth());
+	} else if (t->isFloatingPointTy()) {
+		JLM_DEBUG_ASSERT(fpmap.find(i->getOpcode()) != fpmap.end());
+		JLM_DEBUG_ASSERT(fpsizemap.find(t->getTypeID()) != fpsizemap.end());
+		operation = std::make_unique<fpbin_op>(fpmap[i->getOpcode()], fpsizemap[t->getTypeID()]);
+	} else
+		JLM_ASSERT(0);
+
+	auto r = ctx.lookup_value(i);
+	auto op1 = convert_value(i->getOperand(0), tacs, ctx);
+	auto op2 = convert_value(i->getOperand(1), tacs, ctx);
+	JLM_DEBUG_ASSERT(is<jive::binary_op>(*operation));
+
+	if (i->getType()->isVectorTy()) {
+		auto & binop = *static_cast<jive::binary_op*>(operation.get());
+		tacs.push_back(vectorbinary_op::create(binop, op1, op2, r));
+	} else {
+		tacs.push_back(create_tac(*static_cast<jive::simple_op*>(operation.get()), {op1, op2}, {r}));
+	}
+
 	return tacs.back()->output(0);
 }
 
