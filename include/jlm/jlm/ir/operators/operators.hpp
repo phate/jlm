@@ -886,14 +886,14 @@ create_undef_constant_tac(jlm::variable * result)
 
 enum class fpop {add, sub, mul, div, mod};
 
-class fpbin_op final : public jive::simple_op {
+class fpbin_op final : public jive::binary_op {
 public:
 	virtual
 	~fpbin_op() noexcept;
 
 	inline
 	fpbin_op(const jlm::fpop & op, const jlm::fpsize & size)
-	: simple_op({fptype(size), fptype(size)}, {fptype(size)})
+	: binary_op({fptype(size), fptype(size)}, {fptype(size)})
 	, op_(op)
 	{}
 
@@ -905,6 +905,17 @@ public:
 
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
+
+	jive_binop_reduction_path_t
+	can_reduce_operand_pair(
+		const jive::output * op1,
+		const jive::output * op2) const noexcept override;
+
+	jive::output *
+	reduce_operand_pair(
+		jive_binop_reduction_path_t path,
+		jive::output * op1,
+		jive::output * op2) const override;
 
 	inline const jlm::fpop &
 	fpop() const noexcept
