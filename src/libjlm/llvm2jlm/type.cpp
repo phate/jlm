@@ -20,6 +20,22 @@
 
 namespace jlm {
 
+jlm::fpsize
+convert_fpsize(const llvm::Type * type)
+{
+	JLM_DEBUG_ASSERT(type->isFloatingPointTy());
+
+	static std::unordered_map<const llvm::Type::TypeID, jlm::fpsize> map({
+	  {llvm::Type::HalfTyID, fpsize::half}
+	, {llvm::Type::FloatTyID, fpsize::flt}
+	, {llvm::Type::DoubleTyID, fpsize::dbl}
+	, {llvm::Type::X86_FP80TyID, fpsize::x86fp80}
+	});
+
+	JLM_DEBUG_ASSERT(map.find(type->getTypeID()) != map.end());
+	return map[type->getTypeID()];
+}
+
 static std::unique_ptr<jive::valuetype>
 convert_integer_type(const llvm::Type * t, context & ctx)
 {

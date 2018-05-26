@@ -515,6 +515,23 @@ fpcmp_op::copy() const
 	return std::unique_ptr<jive::operation>(new jlm::fpcmp_op(*this));
 }
 
+jive_binop_reduction_path_t
+fpcmp_op::can_reduce_operand_pair(
+	const jive::output * op1,
+	const jive::output * op2) const noexcept
+{
+	return jive_binop_reduction_none;
+}
+
+jive::output *
+fpcmp_op::reduce_operand_pair(
+	jive_binop_reduction_path_t path,
+	jive::output * op1,
+	jive::output * op2) const
+{
+	JLM_ASSERT(0);
+}
+
 /* undef constant operator */
 
 undef_constant_op::~undef_constant_op()

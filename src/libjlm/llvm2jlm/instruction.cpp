@@ -217,27 +217,16 @@ convert_icmp_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 	return tacs.back()->output(0);
 }
 
-static inline const variable *
+static const variable *
 convert_fcmp_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, context & ctx)
 {
 	JLM_DEBUG_ASSERT(instruction->getOpcode() == llvm::Instruction::FCmp);
 	auto i = llvm::cast<const llvm::FCmpInst>(instruction);
-	JLM_DEBUG_ASSERT(!i->getOperand(0)->getType()->isVectorTy());
-
-	if (i->getPredicate() == llvm::CmpInst::FCMP_TRUE) {
-		jive::bitconstant_op op(jive::bitvalue_repr(1, 1));
-		tacs.push_back(create_tac(op, {}, {ctx.lookup_value(i)}));
-		return tacs.back()->output(0);
-	}
-
-	if (i->getPredicate() == llvm::CmpInst::FCMP_FALSE) {
-		jive::bitconstant_op op(jive::bitvalue_repr(1, 0));
-		tacs.push_back(create_tac(op, {}, {ctx.lookup_value(i)}));
-		return tacs.back()->output(0);
-	}
+	auto t = i->getOperand(0)->getType();
 
 	static std::unordered_map<llvm::CmpInst::Predicate, jlm::fpcmp> map({
-		{llvm::CmpInst::FCMP_OEQ, fpcmp::oeq},	{llvm::CmpInst::FCMP_OGT, fpcmp::ogt}
+		{llvm::CmpInst::FCMP_TRUE, fpcmp::TRUE}, {llvm::CmpInst::FCMP_FALSE, fpcmp::FALSE}
+	,	{llvm::CmpInst::FCMP_OEQ, fpcmp::oeq},	{llvm::CmpInst::FCMP_OGT, fpcmp::ogt}
 	,	{llvm::CmpInst::FCMP_OGE, fpcmp::oge},	{llvm::CmpInst::FCMP_OLT, fpcmp::olt}
 	,	{llvm::CmpInst::FCMP_OLE, fpcmp::ole},	{llvm::CmpInst::FCMP_ONE, fpcmp::one}
 	,	{llvm::CmpInst::FCMP_ORD, fpcmp::ord},	{llvm::CmpInst::FCMP_UNO, fpcmp::uno}
@@ -246,10 +235,19 @@ convert_fcmp_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 	,	{llvm::CmpInst::FCMP_ULE, fpcmp::ule},	{llvm::CmpInst::FCMP_UNE, fpcmp::une}
 	});
 
-	JLM_DEBUG_ASSERT(map.find(i->getPredicate()) != map.end());
+	auto r = ctx.lookup_value(i);
 	auto op1 = convert_value(i->getOperand(0), tacs, ctx);
 	auto op2 = convert_value(i->getOperand(1), tacs, ctx);
-	tacs.push_back(create_fpcmp_tac(map[i->getPredicate()], op1, op2, ctx.lookup_value(i)));
+
+	JLM_DEBUG_ASSERT(map.find(i->getPredicate()) != map.end());
+	auto fptype = t->isVectorTy() ? t->getVectorElementType() : t;
+	fpcmp_op operation(map[i->getPredicate()], convert_fpsize(fptype));
+
+	if (t->isVectorTy())
+		tacs.push_back(vectorbinary_op::create(operation, op1, op2, r));
+	else
+		tacs.push_back(create_tac(operation, {op1, op2}, {r}));
+
 	return tacs.back()->output(0);
 }
 

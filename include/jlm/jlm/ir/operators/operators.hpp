@@ -774,16 +774,18 @@ create_fpconstant_tac(const llvm::APFloat & constant, jlm::variable * result)
 
 /* floating point comparison operator */
 
-enum class fpcmp {oeq, ogt, oge, olt, ole, one, ord, ueq, ugt, uge, ult, ule, une, uno};
+enum class fpcmp {
+	TRUE, FALSE, oeq, ogt, oge, olt, ole, one, ord, ueq, ugt, uge, ult, ule, une, uno
+};
 
-class fpcmp_op final : public jive::simple_op {
+class fpcmp_op final : public jive::binary_op {
 public:
 	virtual
 	~fpcmp_op() noexcept;
 
 	inline
 	fpcmp_op(const jlm::fpcmp & cmp, const jlm::fpsize & size)
-	: simple_op({fptype(size), fptype(size)}, {jive::bit1})
+	: binary_op({fptype(size), fptype(size)}, {jive::bit1})
 	, cmp_(cmp)
 	{}
 
@@ -795,6 +797,17 @@ public:
 
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
+
+	jive_binop_reduction_path_t
+	can_reduce_operand_pair(
+		const jive::output * op1,
+		const jive::output * op2) const noexcept override;
+
+	jive::output *
+	reduce_operand_pair(
+		jive_binop_reduction_path_t path,
+		jive::output * op1,
+		jive::output * op2) const override;
 
 	inline const jlm::fpcmp &
 	cmp() const noexcept
