@@ -1081,4 +1081,28 @@ vectorbinary_op::copy() const
 	return std::unique_ptr<jive::operation>(new vectorbinary_op(*this));
 }
 
+/* const data vector operator */
+
+constant_data_vector_op::~constant_data_vector_op()
+{}
+
+bool
+constant_data_vector_op::operator==(const jive::operation & other) const noexcept
+{
+	auto op = dynamic_cast<const constant_data_vector_op*>(&other);
+	return op && op->result(0) == result(0);
+}
+
+std::string
+constant_data_vector_op::debug_string() const
+{
+	return "CONSTANTDATAVECTOR";
+}
+
+std::unique_ptr<jive::operation>
+constant_data_vector_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new constant_data_vector_op(*this));
+}
+
 }

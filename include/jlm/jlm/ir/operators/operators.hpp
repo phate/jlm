@@ -1925,6 +1925,58 @@ private:
 	std::unique_ptr<jive::operation> op_;
 };
 
+/* constant data vector operator */
+
+class constant_data_vector_op final : public jive::simple_op {
+public:
+	virtual
+	~constant_data_vector_op() noexcept;
+
+	inline
+	constant_data_vector_op(const jive::valuetype & type, size_t size)
+	: simple_op(std::vector<jive::port>(size, type), {vectortype(type, size)})
+	{
+		if (size == 0)
+			throw jlm::error("size equals zero");
+	}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+	inline size_t
+	size() const noexcept
+	{
+		return static_cast<const vectortype*>(&result(0).type())->size();
+	}
+
+	inline const jive::valuetype &
+	type() const noexcept
+	{
+		return static_cast<const vectortype*>(&result(0).type())->type();
+	}
+
+	static inline std::unique_ptr<jlm::tac>
+	create(
+		const std::vector<const variable*> & elements,
+		jlm::variable * result)
+	{
+		if (elements.size() == 0)
+			throw jlm::error("expected at least one element");
+
+		auto vt = dynamic_cast<const jive::valuetype*>(&elements[0]->type());
+		if (!vt) throw jlm::error("expected value type");
+
+		constant_data_vector_op op(*vt, elements.size());
+		return create_tac(op, elements, {result});
+	}
+};
+
 }
 
 #endif
