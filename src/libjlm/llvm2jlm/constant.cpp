@@ -214,11 +214,16 @@ convert_constantDataVector(
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantDataVector*>(constant));
+	JLM_DEBUG_ASSERT(constant->getValueID() == llvm::Value::ConstantDataVectorVal);
+	auto c = llvm::cast<const llvm::ConstantDataVector>(constant);
 
-	/* FIXME */
-	JLM_DEBUG_ASSERT(0);
-	return nullptr;
+	std::vector<const variable*> elements;
+	for (size_t n = 0; n < c->getNumElements(); n++)
+		elements.push_back(convert_constant(c->getElementAsConstant(n), tacs, ctx));
+
+	auto r = ctx.module().create_variable(*convert_type(c->getType(), ctx), false);
+	tacs.push_back(constant_data_vector_op::create(elements, r));
+	return r;
 }
 
 static const variable *
