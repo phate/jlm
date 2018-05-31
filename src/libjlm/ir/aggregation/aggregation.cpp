@@ -81,7 +81,7 @@ reduce_linear(
 		reduction->add_outedge(it->sink());
 	exit->remove_outedges();
 
-	map[reduction] = create_linear_node(std::move(map[entry]), std::move(map[exit]));
+	map[reduction] = linearaggnode::create(std::move(map[entry]), std::move(map[exit]));
 	map.erase(entry);
 	map.erase(exit);
 	to_visit.erase(entry);
@@ -113,7 +113,7 @@ reduce_loop(
 	node->remove_outedges();
 	node->divert_inedges(reduction);
 
-	map[reduction] = create_loop_node(std::move(map[node]));
+	map[reduction] = loopaggnode::create(std::move(map[node]));
 	map.erase(node);
 	to_visit.erase(node);
 	to_visit.insert(reduction);
@@ -146,7 +146,7 @@ reduce_branch(
 	join->remove_inedges();
 	reduction->add_outedge(join);
 
-	auto branch = create_branch_node(std::move(map[split]));
+	auto branch = branchaggnode::create(std::move(map[split]));
 	for (auto it = split->begin_outedges(); it != split->end_outedges(); it++) {
 		branch->add_child(std::move(map[it->sink()]));
 		map.erase(it->sink());
@@ -209,11 +209,11 @@ aggregate(jlm::cfg & cfg)
 	std::unordered_map<jlm::cfg_node*, std::unique_ptr<agg::aggnode>> map;
 	for (auto & node : cfg) {
 		if (is_basic_block(node.attribute()))
-			map[&node] = create_block_node(std::move(*static_cast<basic_block*>(&node.attribute())));
+			map[&node] = blockaggnode::create(std::move(*static_cast<basic_block*>(&node.attribute())));
 		else if (is_entry_node(&node))
-			map[&node] = create_entry_node(*static_cast<const jlm::entry*>(&node.attribute()));
+			map[&node] = entryaggnode::create(*static_cast<const jlm::entry*>(&node.attribute()));
 		else if (is_exit_node(&node))
-			map[&node] = create_exit_node(*static_cast<const jlm::exit*>(&node.attribute()));
+			map[&node] = exitaggnode::create(*static_cast<const jlm::exit*>(&node.attribute()));
 		else
 			JLM_DEBUG_ASSERT(0);
 		to_visit.insert(&node);

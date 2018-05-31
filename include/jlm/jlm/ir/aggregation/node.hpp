@@ -331,49 +331,6 @@ public:
 	}
 };
 
-static inline std::unique_ptr<agg::aggnode>
-create_entry_node(const jlm::entry & attribute)
-{
-	return std::make_unique<agg::aggnode>(std::make_unique<entry>(attribute));
-}
-
-static inline std::unique_ptr<agg::aggnode>
-create_exit_node(const jlm::exit & attribute)
-{
-	return std::make_unique<agg::aggnode>(std::make_unique<exit>(attribute));
-}
-
-static inline std::unique_ptr<agg::aggnode>
-create_block_node(jlm::basic_block && bb)
-{
-	return std::make_unique<agg::aggnode>(std::make_unique<block>(std::move(bb)));
-}
-
-static inline std::unique_ptr<agg::aggnode>
-create_linear_node(std::unique_ptr<agg::aggnode> n1, std::unique_ptr<agg::aggnode> n2)
-{
-	auto ln = std::make_unique<agg::aggnode>(std::make_unique<linear>());
-	ln->add_child(std::move(n1));
-	ln->add_child(std::move(n2));
-	return ln;
-}
-
-static inline std::unique_ptr<agg::aggnode>
-create_branch_node(std::unique_ptr<agg::aggnode> split)
-{
-	auto b = std::make_unique<agg::aggnode>(std::make_unique<branch>());
-	b->add_child(std::move(split));
-	return b;
-}
-
-static inline std::unique_ptr<agg::aggnode>
-create_loop_node(std::unique_ptr<agg::aggnode> body)
-{
-	auto ln = std::make_unique<agg::aggnode>(std::make_unique<loop>());
-	ln->add_child(std::move(body));
-	return ln;
-}
-
 }}
 
 #endif
