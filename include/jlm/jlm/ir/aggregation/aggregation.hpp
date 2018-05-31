@@ -10,15 +10,12 @@
 
 namespace jlm {
 
+class aggnode;
 class cfg;
 
-namespace agg {
-
-class aggnode;
-
-std::unique_ptr<agg::aggnode>
+std::unique_ptr<aggnode>
 aggregate(jlm::cfg & cfg);
 
-}}
+}
 
 #endif

@@ -13,7 +13,6 @@
 #include <vector>
 
 namespace jlm {
-namespace agg {
 
 class aggnode {
 	class iterator final {
@@ -194,9 +193,9 @@ private:
 };
 
 template <class T> static inline bool
-is(const agg::aggnode * node)
+is(const aggnode * node)
 {
-	static_assert(std::is_base_of<agg::aggnode, T>::value,
+	static_assert(std::is_base_of<aggnode, T>::value,
 		"Template parameter T must be derived from jlm::aggnode");
 
 	return dynamic_cast<const T*>(node) != nullptr;
@@ -223,7 +222,7 @@ public:
 		return attribute_;
 	}
 
-	static inline std::unique_ptr<agg::aggnode>
+	static inline std::unique_ptr<aggnode>
 	create(const jlm::entry & attribute)
 	{
 		return std::make_unique<entryaggnode>(attribute);
@@ -254,7 +253,7 @@ public:
 		return attribute_;
 	}
 
-	static inline std::unique_ptr<agg::aggnode>
+	static inline std::unique_ptr<aggnode>
 	create(const jlm::exit & attribute)
 	{
 		return std::make_unique<exitaggnode>(attribute);
@@ -285,7 +284,7 @@ public:
 		return bb_;
 	}
 
-	static inline std::unique_ptr<agg::aggnode>
+	static inline std::unique_ptr<aggnode>
 	create(jlm::basic_block && bb)
 	{
 		return std::make_unique<blockaggnode>(std::move(bb));
@@ -304,8 +303,8 @@ public:
 
 	inline
 	linearaggnode(
-		std::unique_ptr<agg::aggnode> n1,
-		std::unique_ptr<agg::aggnode> n2)
+		std::unique_ptr<aggnode> n1,
+		std::unique_ptr<aggnode> n2)
 	{
 		add_child(std::move(n1));
 		add_child(std::move(n2));
@@ -314,10 +313,10 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	static inline std::unique_ptr<agg::aggnode>
+	static inline std::unique_ptr<aggnode>
 	create(
-		std::unique_ptr<agg::aggnode> n1,
-		std::unique_ptr<agg::aggnode> n2)
+		std::unique_ptr<aggnode> n1,
+		std::unique_ptr<aggnode> n2)
 	{
 		return std::make_unique<linearaggnode>(std::move(n1), std::move(n2));
 	}
@@ -331,7 +330,7 @@ public:
 	~branchaggnode();
 
 	inline
-	branchaggnode(std::unique_ptr<agg::aggnode> split)
+	branchaggnode(std::unique_ptr<aggnode> split)
 	{
 		add_child(std::move(split));
 	}
@@ -339,8 +338,8 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	static inline std::unique_ptr<agg::aggnode>
-	create(std::unique_ptr<agg::aggnode> split)
+	static inline std::unique_ptr<aggnode>
+	create(std::unique_ptr<aggnode> split)
 	{
 		return std::make_unique<branchaggnode>(std::move(split));
 	}
@@ -354,7 +353,7 @@ public:
 	~loopaggnode();
 
 	inline
-	loopaggnode(std::unique_ptr<agg::aggnode> body)
+	loopaggnode(std::unique_ptr<aggnode> body)
 	{
 		add_child(std::move(body));
 	}
@@ -362,13 +361,13 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	static inline std::unique_ptr<agg::aggnode>
-	create(std::unique_ptr<agg::aggnode> body)
+	static inline std::unique_ptr<aggnode>
+	create(std::unique_ptr<aggnode> body)
 	{
 		return std::make_unique<loopaggnode>(std::move(body));
 	}
 };
 
-}}
+}
 
 #endif

@@ -36,19 +36,19 @@ std::string
 to_str(const jlm::module & module);
 
 std::string
-to_str(const agg::aggnode & n, const agg::demand_map & dm);
+to_str(const aggnode & n, const demand_map & dm);
 
 static inline std::string
-to_str(const agg::aggnode & n)
+to_str(const aggnode & n)
 {
 	return to_str(n, {});
 }
 
 void
-view(const agg::aggnode & n, const agg::demand_map & dm, FILE * out);
+view(const aggnode & n, const demand_map & dm, FILE * out);
 
 static inline void
-view(const agg::aggnode & n, FILE * out)
+view(const aggnode & n, FILE * out)
 {
 	view(n, {}, out);
 }

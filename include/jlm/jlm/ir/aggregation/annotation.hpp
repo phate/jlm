@@ -12,11 +12,8 @@
 
 namespace jlm {
 
-class variable;
-
-namespace agg {
-
 class aggnode;
+class variable;
 
 typedef std::unordered_set<const jlm::variable*> dset;
 
@@ -54,11 +51,11 @@ create_branch_demand_set(const dset & b)
 	return ds;
 }
 
-typedef std::unordered_map<const agg::aggnode*, std::unique_ptr<demand_set>> demand_map;
+typedef std::unordered_map<const aggnode*, std::unique_ptr<demand_set>> demand_map;
 
 demand_map
-annotate(jlm::agg::aggnode & root);
+annotate(jlm::aggnode & root);
 
-}}
+}
 
 #endif

@@ -6,7 +6,6 @@
 #include <jlm/jlm/ir/aggregation/node.hpp>
 
 namespace jlm {
-namespace agg {
 
 /* aggnode class */
 
@@ -79,4 +78,4 @@ loopaggnode::debug_string() const
 	return "loop";
 }
 
-}}
+}

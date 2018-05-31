@@ -18,7 +18,7 @@
 
 static inline bool
 has_variables(
-	const jlm::agg::dset & ds,
+	const jlm::dset & ds,
 	const std::vector<const jlm::variable*> & variables)
 {
 	if (ds.size() != variables.size())
@@ -34,8 +34,8 @@ has_variables(
 
 static inline bool
 has_node_and_variables(
-	const jlm::agg::aggnode * node,
-	const jlm::agg::demand_map & dm,
+	const jlm::aggnode * node,
+	const jlm::demand_map & dm,
 	const std::vector<const jlm::variable*> & variables)
 {
 	if (dm.find(node) == dm.end())
@@ -69,10 +69,10 @@ test_linear_graph()
 	append_last(bb2, create_tac(op, {v1}, {v2}));
 	cfg.exit().append_result(v2);
 
-	auto root = jlm::agg::aggregate(cfg);
+	auto root = jlm::aggregate(cfg);
 	jlm::view(*root, stdout);
 
-	auto dm = jlm::agg::annotate(*root);
+	auto dm = jlm::annotate(*root);
 #if 0
 	assert(has_node_and_variables(root.get(), dm, {}));
 	{
@@ -133,10 +133,10 @@ test_branch_graph()
 	append_last(join, create_tac(binop, {v2,v3}, {v4}));
 	cfg.exit().append_result(v4);
 
-	auto root = jlm::agg::aggregate(cfg);
+	auto root = jlm::aggregate(cfg);
 	jlm::view(*root, stdout);
 
-	auto dm = jlm::agg::annotate(*root);
+	auto dm = jlm::annotate(*root);
 #if 0
 	assert(has_node_and_variables(root.get(), dm, {v2, v3}));
 	{
@@ -194,10 +194,10 @@ test_loop_graph()
 	append_last(bb, create_tac(binop, {arg, r}, {r}));
 	cfg.exit().append_result(r);
 
-	auto root = jlm::agg::aggregate(cfg);
+	auto root = jlm::aggregate(cfg);
 	jlm::view(*root, stdout);
 
-	auto dm = jlm::agg::annotate(*root);
+	auto dm = jlm::annotate(*root);
 #if 0
 	assert(has_node_and_variables(root.get(), dm, {r}));
 	{
@@ -243,8 +243,8 @@ test_assignment()
 	append_last(bb, jlm::create_assignment(vtype, arg, r));
 	cfg.exit().append_result(r);
 
-	auto root = jlm::agg::aggregate(cfg);
-	auto dm = jlm::agg::annotate(*root);
+	auto root = jlm::aggregate(cfg);
+	auto dm = jlm::annotate(*root);
 	jlm::view(*root, dm, stdout);
 
 	assert(dm[root.get()]->top.empty());

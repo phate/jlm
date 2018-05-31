@@ -393,7 +393,7 @@ to_dot(const jlm::ipgraph & clg)
 /* aggregation node */
 
 static std::string
-emit_dset(const agg::dset & ds)
+emit_dset(const dset & ds)
 {
 	std::string s("{");
 	for (auto it = ds.begin(); it != ds.end(); it++) {
@@ -407,16 +407,16 @@ emit_dset(const agg::dset & ds)
 }
 
 static std::string
-emit_demand_set(const agg::demand_set & ds)
+emit_demand_set(const demand_set & ds)
 {
 	return emit_dset(ds.bottom) + " -> " + emit_dset(ds.top);
 }
 
 std::string
-to_str(const agg::aggnode & n, const agg::demand_map & dm)
+to_str(const aggnode & n, const demand_map & dm)
 {
-  std::function<std::string(const agg::aggnode&, size_t)> f = [&] (
-    const agg::aggnode & n,
+  std::function<std::string(const aggnode&, size_t)> f = [&] (
+    const aggnode & n,
     size_t depth
   ) {
     std::string subtree(depth, '-');
@@ -435,7 +435,7 @@ to_str(const agg::aggnode & n, const agg::demand_map & dm)
 }
 
 void
-view(const agg::aggnode & n, const agg::demand_map & dm, FILE * out)
+view(const aggnode & n, const demand_map & dm, FILE * out)
 {
 	fputs(to_str(n, dm).c_str(), out);
 	fflush(out);
