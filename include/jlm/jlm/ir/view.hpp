@@ -6,7 +6,7 @@
 #ifndef JLM_IR_VIEW_HPP
 #define JLM_IR_VIEW_HPP
 
-/* FIXME: I would rather like to forward declare demand_map and demand_set */
+/* FIXME: I would rather like to forward declare demandmap and demand_set */
 #include <jlm/jlm/ir/annotation.hpp>
 
 #include <string>
@@ -36,7 +36,7 @@ std::string
 to_str(const jlm::module & module);
 
 std::string
-to_str(const aggnode & n, const demand_map & dm);
+to_str(const aggnode & n, const demandmap & dm);
 
 static inline std::string
 to_str(const aggnode & n)
@@ -45,7 +45,7 @@ to_str(const aggnode & n)
 }
 
 void
-view(const aggnode & n, const demand_map & dm, FILE * out);
+view(const aggnode & n, const demandmap & dm, FILE * out);
 
 static inline void
 view(const aggnode & n, FILE * out)

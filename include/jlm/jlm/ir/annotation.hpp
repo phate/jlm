@@ -56,9 +56,9 @@ public:
 	variableset cases_top;
 };
 
-typedef std::unordered_map<const aggnode*, std::unique_ptr<demandset>> demand_map;
+typedef std::unordered_map<const aggnode*, std::unique_ptr<demandset>> demandmap;
 
-demand_map
+demandmap
 annotate(jlm::aggnode & root);
 
 }

@@ -34,7 +34,7 @@ has_variables(
 static inline bool
 has_node_and_variables(
 	const jlm::aggnode * node,
-	const jlm::demand_map & dm,
+	const jlm::demandmap & dm,
 	const std::vector<const jlm::variable*> & variables)
 {
 	if (dm.find(node) == dm.end())

@@ -413,7 +413,7 @@ emit_demandset(const demandset & ds)
 }
 
 std::string
-to_str(const aggnode & n, const demand_map & dm)
+to_str(const aggnode & n, const demandmap & dm)
 {
   std::function<std::string(const aggnode&, size_t)> f = [&] (
     const aggnode & n,
@@ -435,7 +435,7 @@ to_str(const aggnode & n, const demand_map & dm)
 }
 
 void
-view(const aggnode & n, const demand_map & dm, FILE * out)
+view(const aggnode & n, const demandmap & dm, FILE * out)
 {
 	fputs(to_str(n, dm).c_str(), out);
 	fflush(out);

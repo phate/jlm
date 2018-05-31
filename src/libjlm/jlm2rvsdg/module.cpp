@@ -192,7 +192,7 @@ convert_basic_block(const basic_block & bb, jive::region * region, jlm::vmap & v
 static jive::node *
 convert_node(
 	const aggnode & node,
-	const demand_map & dm,
+	const demandmap & dm,
 	const jlm::function_node & function,
 	lambda_builder & lb,
 	scoped_vmap & svmap);
@@ -200,7 +200,7 @@ convert_node(
 static jive::node *
 convert_entry_node(
 	const aggnode & node,
-	const demand_map & dm,
+	const demandmap & dm,
 	const jlm::function_node & function,
 	lambda_builder & lb,
 	scoped_vmap & svmap)
@@ -237,7 +237,7 @@ convert_entry_node(
 static jive::node *
 convert_exit_node(
 	const aggnode & node,
-	const demand_map & dm,
+	const demandmap & dm,
 	const jlm::function_node & function,
 	lambda_builder & lb,
 	scoped_vmap & svmap)
@@ -258,7 +258,7 @@ convert_exit_node(
 static jive::node *
 convert_block_node(
 	const aggnode & node,
-	const demand_map & dm,
+	const demandmap & dm,
 	const jlm::function_node & function,
 	lambda_builder & lb,
 	scoped_vmap & svmap)
@@ -272,7 +272,7 @@ convert_block_node(
 static jive::node *
 convert_linear_node(
 	const aggnode & node,
-	const demand_map & dm,
+	const demandmap & dm,
 	const jlm::function_node & function,
 	lambda_builder & lb,
 	scoped_vmap & svmap)
@@ -289,7 +289,7 @@ convert_linear_node(
 static jive::node *
 convert_branch_node(
 	const aggnode & node,
-	const demand_map & dm,
+	const demandmap & dm,
 	const jlm::function_node & function,
 	lambda_builder & lb,
 	scoped_vmap & svmap)
@@ -344,7 +344,7 @@ convert_branch_node(
 static jive::node *
 convert_loop_node(
 	const aggnode & node,
-	const demand_map & dm,
+	const demandmap & dm,
 	const jlm::function_node & function,
 	lambda_builder & lb,
 	scoped_vmap & svmap)
@@ -410,7 +410,7 @@ convert_loop_node(
 static jive::node *
 convert_node(
 	const aggnode & node,
-	const demand_map & dm,
+	const demandmap & dm,
 	const jlm::function_node & function,
 	lambda_builder & lb,
 	scoped_vmap & svmap)
@@ -419,7 +419,7 @@ convert_node(
 		std::type_index,
 		std::function<jive::node*(
 			const aggnode&,
-			const demand_map&,
+			const demandmap&,
 			const jlm::function_node&,
 			lambda_builder&,
 			scoped_vmap&)
