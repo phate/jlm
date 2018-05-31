@@ -14,9 +14,9 @@ class cfg;
 
 namespace agg {
 
-class node;
+class aggnode;
 
-std::unique_ptr<agg::node>
+std::unique_ptr<agg::aggnode>
 aggregate(jlm::cfg & cfg);
 
 }}

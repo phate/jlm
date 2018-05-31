@@ -192,7 +192,7 @@ convert_basic_block(const basic_block & bb, jive::region * region, jlm::vmap & v
 
 static jive::node *
 convert_node(
-	const agg::node & node,
+	const agg::aggnode & node,
 	const agg::demand_map & dm,
 	const jlm::function_node & function,
 	lambda_builder & lb,
@@ -200,7 +200,7 @@ convert_node(
 
 static jive::node *
 convert_entry_node(
-	const agg::node & node,
+	const agg::aggnode & node,
 	const agg::demand_map & dm,
 	const jlm::function_node & function,
 	lambda_builder & lb,
@@ -237,7 +237,7 @@ convert_entry_node(
 
 static jive::node *
 convert_exit_node(
-	const agg::node & node,
+	const agg::aggnode & node,
 	const agg::demand_map & dm,
 	const jlm::function_node & function,
 	lambda_builder & lb,
@@ -258,7 +258,7 @@ convert_exit_node(
 
 static jive::node *
 convert_block_node(
-	const agg::node & node,
+	const agg::aggnode & node,
 	const agg::demand_map & dm,
 	const jlm::function_node & function,
 	lambda_builder & lb,
@@ -272,7 +272,7 @@ convert_block_node(
 
 static jive::node *
 convert_linear_node(
-	const agg::node & node,
+	const agg::aggnode & node,
 	const agg::demand_map & dm,
 	const jlm::function_node & function,
 	lambda_builder & lb,
@@ -289,7 +289,7 @@ convert_linear_node(
 
 static jive::node *
 convert_branch_node(
-	const agg::node & node,
+	const agg::aggnode & node,
 	const agg::demand_map & dm,
 	const jlm::function_node & function,
 	lambda_builder & lb,
@@ -344,7 +344,7 @@ convert_branch_node(
 
 static jive::node *
 convert_loop_node(
-	const agg::node & node,
+	const agg::aggnode & node,
 	const agg::demand_map & dm,
 	const jlm::function_node & function,
 	lambda_builder & lb,
@@ -410,7 +410,7 @@ convert_loop_node(
 
 static jive::node *
 convert_node(
-	const agg::node & node,
+	const agg::aggnode & node,
 	const agg::demand_map & dm,
 	const jlm::function_node & function,
 	lambda_builder & lb,
@@ -419,7 +419,7 @@ convert_node(
 	static std::unordered_map<
 		std::type_index,
 		std::function<jive::node*(
-			const agg::node&,
+			const agg::aggnode&,
 			const agg::demand_map&,
 			const jlm::function_node&,
 			lambda_builder&,

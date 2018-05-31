@@ -13,37 +13,37 @@
 #include <jlm/jlm/ir/view.hpp>
 
 static inline bool
-is_entry(jlm::agg::node * node)
+is_entry(jlm::agg::aggnode * node)
 {
 	return is_entry_structure(node->structure()) && node->nchildren() == 0;
 }
 
 static inline bool
-is_exit(jlm::agg::node * node)
+is_exit(jlm::agg::aggnode * node)
 {
 	return is_exit_structure(node->structure()) && node->nchildren() == 0;
 }
 
 static inline bool
-is_block(jlm::agg::node * node)
+is_block(jlm::agg::aggnode * node)
 {
 	return is_block_structure(node->structure()) && node->nchildren() == 0;
 }
 
 static inline bool
-is_linear(jlm::agg::node * node)
+is_linear(jlm::agg::aggnode * node)
 {
 	return is_linear_structure(node->structure()) && node->nchildren() == 2;
 }
 
 static inline bool
-is_loop(jlm::agg::node * node)
+is_loop(jlm::agg::aggnode * node)
 {
 	return is_loop_structure(node->structure()) && node->nchildren() == 1;
 }
 
 static inline bool
-is_branch(jlm::agg::node * node, size_t nchildren)
+is_branch(jlm::agg::aggnode * node, size_t nchildren)
 {
 	return is_branch_structure(node->structure()) && node->nchildren() == nchildren;
 }

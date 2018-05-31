@@ -14,11 +14,11 @@
 namespace jlm {
 namespace agg {
 
-class node final {
+class aggnode final {
 	class iterator final {
 	public:
 		inline
-		iterator(std::vector<std::unique_ptr<node>>::iterator it)
+		iterator(std::vector<std::unique_ptr<aggnode>>::iterator it)
 		: it_(std::move(it))
 		{}
 
@@ -49,26 +49,26 @@ class node final {
 			return !(*this == other);
 		}
 
-		inline node &
+		inline aggnode &
 		operator*() const noexcept
 		{
 			return *it_->get();
 		}
 
-		inline node *
+		inline aggnode *
 		operator->() const noexcept
 		{
 			return it_->get();
 		}
 
 	private:
-		std::vector<std::unique_ptr<node>>::iterator it_;
+		std::vector<std::unique_ptr<aggnode>>::iterator it_;
 	};
 
 	class const_iterator final {
 	public:
 		inline
-		const_iterator(std::vector<std::unique_ptr<node>>::const_iterator it)
+		const_iterator(std::vector<std::unique_ptr<aggnode>>::const_iterator it)
 		: it_(std::move(it))
 		{}
 
@@ -99,42 +99,42 @@ class node final {
 			return !(*this == other);
 		}
 
-		inline node &
+		inline aggnode &
 		operator*() const noexcept
 		{
 			return *it_->get();
 		}
 
-		inline node *
+		inline aggnode *
 		operator->() const noexcept
 		{
 			return it_->get();
 		}
 
 	private:
-		std::vector<std::unique_ptr<node>>::const_iterator it_;
+		std::vector<std::unique_ptr<aggnode>>::const_iterator it_;
 	};
 
 public:
 	inline
-	~node()
+	~aggnode()
 	{}
 
 	inline
-	node(std::unique_ptr<jlm::agg::structure> structure)
+	aggnode(std::unique_ptr<jlm::agg::structure> structure)
 	: parent_(nullptr)
 	, structure_(std::move(structure))
 	{}
 
-	node(const node & other) = delete;
+	aggnode(const aggnode & other) = delete;
 
-	node(node && other) = delete;
+	aggnode(aggnode && other) = delete;
 
-	node &
-	operator=(const node & other) = delete;
+	aggnode &
+	operator=(const aggnode & other) = delete;
 
-	node &
-	operator=(node && other) = delete;
+	aggnode &
+	operator=(aggnode && other) = delete;
 
 	inline iterator
 	begin() noexcept
@@ -167,20 +167,20 @@ public:
 	}
 
 	inline void
-	add_child(std::unique_ptr<node> child)
+	add_child(std::unique_ptr<aggnode> child)
 	{
 		children_.emplace_back(std::move(child));
 		children_[nchildren()-1]->parent_ = this;
 	}
 
-	inline node *
+	inline aggnode *
 	child(size_t n) const noexcept
 	{
 		JLM_DEBUG_ASSERT(n < nchildren());
 		return children_[n].get();
 	}
 
-	inline node *
+	inline aggnode *
 	parent() noexcept
 	{
 		return parent_;
@@ -193,50 +193,50 @@ public:
 	}
 
 private:
-	node * parent_;
-	std::vector<std::unique_ptr<node>> children_;
+	aggnode * parent_;
+	std::vector<std::unique_ptr<aggnode>> children_;
 	std::unique_ptr<jlm::agg::structure> structure_;
 };
 
-static inline std::unique_ptr<agg::node>
+static inline std::unique_ptr<agg::aggnode>
 create_entry_node(const jlm::entry & attribute)
 {
-	return std::make_unique<agg::node>(std::make_unique<entry>(attribute));
+	return std::make_unique<agg::aggnode>(std::make_unique<entry>(attribute));
 }
 
-static inline std::unique_ptr<agg::node>
+static inline std::unique_ptr<agg::aggnode>
 create_exit_node(const jlm::exit & attribute)
 {
-	return std::make_unique<agg::node>(std::make_unique<exit>(attribute));
+	return std::make_unique<agg::aggnode>(std::make_unique<exit>(attribute));
 }
 
-static inline std::unique_ptr<agg::node>
+static inline std::unique_ptr<agg::aggnode>
 create_block_node(jlm::basic_block && bb)
 {
-	return std::make_unique<agg::node>(std::make_unique<block>(std::move(bb)));
+	return std::make_unique<agg::aggnode>(std::make_unique<block>(std::move(bb)));
 }
 
-static inline std::unique_ptr<agg::node>
-create_linear_node(std::unique_ptr<agg::node> n1, std::unique_ptr<agg::node> n2)
+static inline std::unique_ptr<agg::aggnode>
+create_linear_node(std::unique_ptr<agg::aggnode> n1, std::unique_ptr<agg::aggnode> n2)
 {
-	auto ln = std::make_unique<agg::node>(std::make_unique<linear>());
+	auto ln = std::make_unique<agg::aggnode>(std::make_unique<linear>());
 	ln->add_child(std::move(n1));
 	ln->add_child(std::move(n2));
 	return ln;
 }
 
-static inline std::unique_ptr<agg::node>
-create_branch_node(std::unique_ptr<agg::node> split)
+static inline std::unique_ptr<agg::aggnode>
+create_branch_node(std::unique_ptr<agg::aggnode> split)
 {
-	auto b = std::make_unique<agg::node>(std::make_unique<branch>());
+	auto b = std::make_unique<agg::aggnode>(std::make_unique<branch>());
 	b->add_child(std::move(split));
 	return b;
 }
 
-static inline std::unique_ptr<agg::node>
-create_loop_node(std::unique_ptr<agg::node> body)
+static inline std::unique_ptr<agg::aggnode>
+create_loop_node(std::unique_ptr<agg::aggnode> body)
 {
-	auto ln = std::make_unique<agg::node>(std::make_unique<loop>());
+	auto ln = std::make_unique<agg::aggnode>(std::make_unique<loop>());
 	ln->add_child(std::move(body));
 	return ln;
 }

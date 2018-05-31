@@ -34,7 +34,7 @@ has_variables(
 
 static inline bool
 has_node_and_variables(
-	const jlm::agg::node * node,
+	const jlm::agg::aggnode * node,
 	const jlm::agg::demand_map & dm,
 	const std::vector<const jlm::variable*> & variables)
 {

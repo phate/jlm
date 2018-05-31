@@ -13,7 +13,7 @@
 
 namespace jlm {
 namespace agg {
-	class node;
+	class aggnode;
 }
 
 class cfg;
@@ -36,19 +36,19 @@ std::string
 to_str(const jlm::module & module);
 
 std::string
-to_str(const agg::node & n, const agg::demand_map & dm);
+to_str(const agg::aggnode & n, const agg::demand_map & dm);
 
 static inline std::string
-to_str(const agg::node & n)
+to_str(const agg::aggnode & n)
 {
 	return to_str(n, {});
 }
 
 void
-view(const agg::node & n, const agg::demand_map & dm, FILE * out);
+view(const agg::aggnode & n, const agg::demand_map & dm, FILE * out);
 
 static inline void
-view(const agg::node & n, FILE * out)
+view(const agg::aggnode & n, FILE * out)
 {
 	view(n, {}, out);
 }

@@ -64,7 +64,7 @@ static inline jlm::cfg_node *
 reduce_linear(
 	jlm::cfg_node * entry,
 	std::unordered_set<cfg_node*> & to_visit,
-	std::unordered_map<cfg_node*, std::unique_ptr<agg::node>> & map)
+	std::unordered_map<cfg_node*, std::unique_ptr<agg::aggnode>> & map)
 {
 	/* sanity checks */
 	JLM_DEBUG_ASSERT(entry->noutedges() == 1);
@@ -95,7 +95,7 @@ static inline jlm::cfg_node *
 reduce_loop(
 	jlm::cfg_node * node,
 	std::unordered_set<cfg_node*> & to_visit,
-	std::unordered_map<cfg_node*, std::unique_ptr<agg::node>> & map)
+	std::unordered_map<cfg_node*, std::unique_ptr<agg::aggnode>> & map)
 {
 	/* sanity checks */
 	JLM_DEBUG_ASSERT(is_loop(node));
@@ -125,7 +125,7 @@ static inline jlm::cfg_node *
 reduce_branch(
 	jlm::cfg_node * split,
 	std::unordered_set<cfg_node*> & to_visit,
-	std::unordered_map<cfg_node*, std::unique_ptr<agg::node>> & map)
+	std::unordered_map<cfg_node*, std::unique_ptr<agg::aggnode>> & map)
 {
 	/* sanity checks */
 	JLM_DEBUG_ASSERT(split->noutedges() > 1);
@@ -165,7 +165,7 @@ static inline bool
 reduce(
 	jlm::cfg_node * node,
 	std::unordered_set<cfg_node*> & to_visit,
-	std::unordered_map<cfg_node*, std::unique_ptr<agg::node>> & map)
+	std::unordered_map<cfg_node*, std::unique_ptr<agg::aggnode>> & map)
 {
 	if (is_loop(node)) {
 		reduce_loop(node, to_visit, map);
@@ -188,7 +188,7 @@ reduce(
 static inline void
 aggregate(
 	std::unordered_set<jlm::cfg_node*> & to_visit,
-	std::unordered_map<cfg_node*, std::unique_ptr<agg::node>> & map)
+	std::unordered_map<cfg_node*, std::unique_ptr<agg::aggnode>> & map)
 {
 	auto it = to_visit.begin();
 	while (it != to_visit.end())	{
@@ -199,14 +199,14 @@ aggregate(
 	JLM_DEBUG_ASSERT(to_visit.size() == 1);
 }
 
-std::unique_ptr<agg::node>
+std::unique_ptr<agg::aggnode>
 aggregate(jlm::cfg & cfg)
 {
 	JLM_DEBUG_ASSERT(is_proper_structured(cfg));
 
 	/* insert all aggregation leaves into the map */
 	std::unordered_set<cfg_node*> to_visit;
-	std::unordered_map<jlm::cfg_node*, std::unique_ptr<agg::node>> map;
+	std::unordered_map<jlm::cfg_node*, std::unique_ptr<agg::aggnode>> map;
 	for (auto & node : cfg) {
 		if (is_basic_block(node.attribute()))
 			map[&node] = create_block_node(std::move(*static_cast<basic_block*>(&node.attribute())));

@@ -413,10 +413,10 @@ emit_demand_set(const agg::demand_set & ds)
 }
 
 std::string
-to_str(const agg::node & n, const agg::demand_map & dm)
+to_str(const agg::aggnode & n, const agg::demand_map & dm)
 {
-  std::function<std::string(const agg::node&, size_t)> f = [&] (
-    const agg::node & n,
+  std::function<std::string(const agg::aggnode&, size_t)> f = [&] (
+    const agg::aggnode & n,
     size_t depth
   ) {
     std::string subtree(depth, '-');
@@ -435,7 +435,7 @@ to_str(const agg::node & n, const agg::demand_map & dm)
 }
 
 void
-view(const agg::node & n, const agg::demand_map & dm, FILE * out)
+view(const agg::aggnode & n, const agg::demand_map & dm, FILE * out)
 {
 	fputs(to_str(n, dm).c_str(), out);
 	fflush(out);
