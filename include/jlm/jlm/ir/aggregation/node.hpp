@@ -14,7 +14,7 @@
 namespace jlm {
 namespace agg {
 
-class aggnode final {
+class aggnode {
 	class iterator final {
 	public:
 		inline
@@ -116,9 +116,8 @@ class aggnode final {
 	};
 
 public:
-	inline
-	~aggnode()
-	{}
+	virtual
+	~aggnode();
 
 	inline
 	aggnode(std::unique_ptr<jlm::agg::structure> structure)
@@ -206,6 +205,131 @@ is(const agg::aggnode * node)
 
 	return dynamic_cast<const T*>(node) != nullptr;
 }
+
+/* entry node class */
+
+class entryaggnode final : public aggnode {
+public:
+	virtual
+	~entryaggnode();
+
+	inline
+	entryaggnode(const jlm::entry & attribute)
+	: aggnode(std::make_unique<agg::entry>(attribute))
+	{}
+
+	static inline std::unique_ptr<agg::aggnode>
+	create(const jlm::entry & attribute)
+	{
+		return std::make_unique<entryaggnode>(attribute);
+	}
+};
+
+/* exit node class */
+
+class exitaggnode final : public aggnode {
+public:
+	virtual
+	~exitaggnode();
+
+	inline
+	exitaggnode(const jlm::exit & attribute)
+	: aggnode(std::make_unique<agg::exit>(attribute))
+	{}
+
+	static inline std::unique_ptr<agg::aggnode>
+	create(const jlm::exit & attribute)
+	{
+		return std::make_unique<exitaggnode>(attribute);
+	}
+};
+
+/* basic block node class */
+
+class blockaggnode final : public aggnode {
+public:
+	virtual
+	~blockaggnode();
+
+	inline
+	blockaggnode(jlm::basic_block && bb)
+	: aggnode(std::make_unique<agg::block>(std::move(bb)))
+	{}
+
+	static inline std::unique_ptr<agg::aggnode>
+	create(jlm::basic_block && bb)
+	{
+		return std::make_unique<blockaggnode>(std::move(bb));
+	}
+};
+
+/* linear node class */
+
+class linearaggnode final : public aggnode {
+public:
+	virtual
+	~linearaggnode();
+
+	inline
+	linearaggnode(
+		std::unique_ptr<agg::aggnode> n1,
+		std::unique_ptr<agg::aggnode> n2)
+	: aggnode(std::make_unique<linear>())
+	{
+		add_child(std::move(n1));
+		add_child(std::move(n2));
+	}
+
+	static inline std::unique_ptr<agg::aggnode>
+	create(
+		std::unique_ptr<agg::aggnode> n1,
+		std::unique_ptr<agg::aggnode> n2)
+	{
+		return std::make_unique<linearaggnode>(std::move(n1), std::move(n2));
+	}
+};
+
+/* branch node class */
+
+class branchaggnode final : public aggnode {
+public:
+	virtual
+	~branchaggnode();
+
+	inline
+	branchaggnode(std::unique_ptr<agg::aggnode> split)
+	: aggnode(std::make_unique<agg::branch>())
+	{
+		add_child(std::move(split));
+	}
+
+	static inline std::unique_ptr<agg::aggnode>
+	create(std::unique_ptr<agg::aggnode> split)
+	{
+		return std::make_unique<branchaggnode>(std::move(split));
+	}
+};
+
+/* loop node class */
+
+class loopaggnode final : public aggnode {
+public:
+	virtual
+	~loopaggnode();
+
+	inline
+	loopaggnode(std::unique_ptr<agg::aggnode> body)
+	: aggnode(std::make_unique<agg::loop>())
+	{
+		add_child(std::move(body));
+	}
+
+	static inline std::unique_ptr<agg::aggnode>
+	create(std::unique_ptr<agg::aggnode> body)
+	{
+		return std::make_unique<loopaggnode>(std::move(body));
+	}
+};
 
 static inline std::unique_ptr<agg::aggnode>
 create_entry_node(const jlm::entry & attribute)

@@ -14,6 +14,7 @@ LIBJLM_SRC = \
 	\
 	src/libjlm/ir/aggregation/aggregation.cpp \
 	src/libjlm/ir/aggregation/annotation.cpp \
+	src/libjlm/ir/aggregation/node.cpp \
 	src/libjlm/ir/aggregation/structure.cpp \
 	src/libjlm/ir/basic-block.cpp \
 	src/libjlm/ir/cfg.cpp \
