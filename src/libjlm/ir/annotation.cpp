@@ -17,7 +17,7 @@ namespace jlm {
 demandset::~demandset()
 {}
 
-branch_demand_set::~branch_demand_set()
+branchset::~branchset()
 {}
 
 static void

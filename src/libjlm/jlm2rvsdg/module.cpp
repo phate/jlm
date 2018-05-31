@@ -308,7 +308,7 @@ convert_branch_node(
 	auto gamma = jive::gamma_node::create(predicate, node.nchildren()-1);
 
 	/* add entry variables */
-	auto ds = static_cast<const branch_demand_set*>(dm.at(&node).get());
+	auto ds = static_cast<const branchset*>(dm.at(&node).get());
 	std::unordered_map<const variable*, jive::gamma_input*> evmap;
 	for (const auto & v : ds->cases_top) {
 		JLM_DEBUG_ASSERT(svmap.vmap().find(v) != svmap.vmap().end());

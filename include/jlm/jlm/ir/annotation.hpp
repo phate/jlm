@@ -34,19 +34,19 @@ create_demand_set(const variableset & b)
 	return ds;
 }
 
-class branch_demand_set final : public demandset {
+class branchset final : public demandset {
 public:
 	virtual
-	~branch_demand_set();
+	~branchset();
 
 	variableset cases_top;
 	variableset cases_bottom;
 };
 
-static inline std::unique_ptr<branch_demand_set>
+static inline std::unique_ptr<branchset>
 create_branch_demand_set(const variableset & b)
 {
-	auto ds = std::make_unique<branch_demand_set>();
+	auto ds = std::make_unique<branchset>();
 	ds->bottom = b;
 	return ds;
 }
