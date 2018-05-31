@@ -17,7 +17,7 @@
 
 static inline bool
 has_variables(
-	const jlm::dset & ds,
+	const jlm::variableset & ds,
 	const std::vector<const jlm::variable*> & variables)
 {
 	if (ds.size() != variables.size())

@@ -15,19 +15,19 @@ namespace jlm {
 class aggnode;
 class variable;
 
-typedef std::unordered_set<const jlm::variable*> dset;
+typedef std::unordered_set<const jlm::variable*> variableset;
 
 class demand_set {
 public:
 	virtual
 	~demand_set();
 
-	dset top;
-	dset bottom;
+	variableset top;
+	variableset bottom;
 };
 
 static inline std::unique_ptr<demand_set>
-create_demand_set(const dset & b)
+create_demand_set(const variableset & b)
 {
 	auto ds = std::make_unique<demand_set>();
 	ds->bottom = b;
@@ -39,12 +39,12 @@ public:
 	virtual
 	~branch_demand_set();
 
-	dset cases_top;
-	dset cases_bottom;
+	variableset cases_top;
+	variableset cases_bottom;
 };
 
 static inline std::unique_ptr<branch_demand_set>
-create_branch_demand_set(const dset & b)
+create_branch_demand_set(const variableset & b)
 {
 	auto ds = std::make_unique<branch_demand_set>();
 	ds->bottom = b;

@@ -21,10 +21,10 @@ branch_demand_set::~branch_demand_set()
 {}
 
 static void
-annotate(const aggnode * node, dset & pds, demand_map & dm);
+annotate(const aggnode * node, variableset & pds, demand_map & dm);
 
 static inline std::unique_ptr<demand_set>
-annotate_basic_block(const basic_block & bb, dset & pds)
+annotate_basic_block(const basic_block & bb, variableset & pds)
 {
 	auto ds = create_demand_set(pds);
 	for (auto it = bb.rbegin(); it != bb.rend(); it++) {
@@ -50,7 +50,7 @@ annotate_basic_block(const basic_block & bb, dset & pds)
 }
 
 static inline void
-annotate_entry(const aggnode * node, dset & pds, demand_map & dm)
+annotate_entry(const aggnode * node, variableset & pds, demand_map & dm)
 {
 	JLM_DEBUG_ASSERT(is<entryaggnode>(node));
 	const auto & ea = static_cast<const entryaggnode*>(node)->attribute();
@@ -65,7 +65,7 @@ annotate_entry(const aggnode * node, dset & pds, demand_map & dm)
 }
 
 static inline void
-annotate_exit(const aggnode * node, dset & pds, demand_map & dm)
+annotate_exit(const aggnode * node, variableset & pds, demand_map & dm)
 {
 	JLM_DEBUG_ASSERT(is<exitaggnode>(node));
 	const auto & xa = static_cast<const exitaggnode*>(node)->attribute();
@@ -80,7 +80,7 @@ annotate_exit(const aggnode * node, dset & pds, demand_map & dm)
 }
 
 static inline void
-annotate_block(const aggnode * node, dset & pds, demand_map & dm)
+annotate_block(const aggnode * node, variableset & pds, demand_map & dm)
 {
 	JLM_DEBUG_ASSERT(is<blockaggnode>(node));
 	const auto & bb = static_cast<const blockaggnode*>(node)->basic_block();
@@ -88,7 +88,7 @@ annotate_block(const aggnode * node, dset & pds, demand_map & dm)
 }
 
 static inline void
-annotate_linear(const aggnode * node, dset & pds, demand_map & dm)
+annotate_linear(const aggnode * node, variableset & pds, demand_map & dm)
 {
 	JLM_DEBUG_ASSERT(is<linearaggnode>(node));
 
@@ -101,13 +101,13 @@ annotate_linear(const aggnode * node, dset & pds, demand_map & dm)
 }
 
 static inline void
-annotate_branch(const aggnode * node, dset & pds, demand_map & dm)
+annotate_branch(const aggnode * node, variableset & pds, demand_map & dm)
 {
 	JLM_DEBUG_ASSERT(is<branchaggnode>(node));
 
 	auto ds = create_branch_demand_set(pds);
 
-	dset cases_top;
+	variableset cases_top;
 	ds->cases_bottom = pds;
 	for (size_t n = 1; n < node->nchildren(); n++) {
 		auto tmp = pds;
@@ -123,7 +123,7 @@ annotate_branch(const aggnode * node, dset & pds, demand_map & dm)
 }
 
 static inline void
-annotate_loop(const aggnode * node, dset & pds, demand_map & dm)
+annotate_loop(const aggnode * node, variableset & pds, demand_map & dm)
 {
 	JLM_DEBUG_ASSERT(is<loopaggnode>(node));
 	JLM_DEBUG_ASSERT(node->nchildren() == 1);
@@ -141,11 +141,11 @@ annotate_loop(const aggnode * node, dset & pds, demand_map & dm)
 }
 
 static inline void
-annotate(const aggnode * node, dset & pds, demand_map & dm)
+annotate(const aggnode * node, variableset & pds, demand_map & dm)
 {
 	static std::unordered_map<
 		std::type_index,
-		std::function<void(const aggnode*, dset&, demand_map&)>
+		std::function<void(const aggnode*, variableset&, demand_map&)>
 	> map({
 	  {typeid(entryaggnode), annotate_entry}, {typeid(exitaggnode), annotate_exit}
 	, {typeid(blockaggnode), annotate_block}, {typeid(linearaggnode), annotate_linear}
@@ -165,7 +165,7 @@ annotate(const aggnode * node, dset & pds, demand_map & dm)
 demand_map
 annotate(jlm::aggnode & root)
 {
-	dset ds;
+	variableset ds;
 	demand_map dm;
 	annotate(&root, ds, dm);
 	return dm;

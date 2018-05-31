@@ -393,7 +393,7 @@ to_dot(const jlm::ipgraph & clg)
 /* aggregation node */
 
 static std::string
-emit_dset(const dset & ds)
+emit_variableset(const variableset & ds)
 {
 	std::string s("{");
 	for (auto it = ds.begin(); it != ds.end(); it++) {
@@ -409,7 +409,7 @@ emit_dset(const dset & ds)
 static std::string
 emit_demand_set(const demand_set & ds)
 {
-	return emit_dset(ds.bottom) + " -> " + emit_dset(ds.top);
+	return emit_variableset(ds.bottom) + " -> " + emit_variableset(ds.top);
 }
 
 std::string
