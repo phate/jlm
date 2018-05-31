@@ -17,24 +17,24 @@ class variable;
 
 typedef std::unordered_set<const jlm::variable*> variableset;
 
-class demand_set {
+class demandset {
 public:
 	virtual
-	~demand_set();
+	~demandset();
 
 	variableset top;
 	variableset bottom;
 };
 
-static inline std::unique_ptr<demand_set>
+static inline std::unique_ptr<demandset>
 create_demand_set(const variableset & b)
 {
-	auto ds = std::make_unique<demand_set>();
+	auto ds = std::make_unique<demandset>();
 	ds->bottom = b;
 	return ds;
 }
 
-class branch_demand_set final : public demand_set {
+class branch_demand_set final : public demandset {
 public:
 	virtual
 	~branch_demand_set();
@@ -51,7 +51,7 @@ create_branch_demand_set(const variableset & b)
 	return ds;
 }
 
-typedef std::unordered_map<const aggnode*, std::unique_ptr<demand_set>> demand_map;
+typedef std::unordered_map<const aggnode*, std::unique_ptr<demandset>> demand_map;
 
 demand_map
 annotate(jlm::aggnode & root);

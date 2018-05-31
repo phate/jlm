@@ -407,7 +407,7 @@ emit_variableset(const variableset & ds)
 }
 
 static std::string
-emit_demand_set(const demand_set & ds)
+emit_demandset(const demandset & ds)
 {
 	return emit_variableset(ds.bottom) + " -> " + emit_variableset(ds.top);
 }
@@ -423,7 +423,7 @@ to_str(const aggnode & n, const demand_map & dm)
     subtree += n.debug_string();
 
 		auto it = dm.find(&n);
-		subtree += (it != dm.end() ? " " + emit_demand_set(*it->second) : "") + "\n";
+		subtree += (it != dm.end() ? " " + emit_demandset(*it->second) : "") + "\n";
 
     for (const auto & child : n)
       subtree += f(child, depth+1);

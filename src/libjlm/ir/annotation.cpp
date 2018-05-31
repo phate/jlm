@@ -14,7 +14,7 @@
 
 namespace jlm {
 
-demand_set::~demand_set()
+demandset::~demandset()
 {}
 
 branch_demand_set::~branch_demand_set()
@@ -23,7 +23,7 @@ branch_demand_set::~branch_demand_set()
 static void
 annotate(const aggnode * node, variableset & pds, demand_map & dm);
 
-static inline std::unique_ptr<demand_set>
+static inline std::unique_ptr<demandset>
 annotate_basic_block(const basic_block & bb, variableset & pds)
 {
 	auto ds = create_demand_set(pds);
