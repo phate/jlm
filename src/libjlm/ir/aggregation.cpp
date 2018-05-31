@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/jlm/ir/aggregation/aggregation.hpp>
+#include <jlm/jlm/ir/aggregation.hpp>
 #include <jlm/jlm/ir/cfg.hpp>
 #include <jlm/jlm/ir/cfg-structure.hpp>
 #include <jlm/jlm/ir/cfg-node.hpp>

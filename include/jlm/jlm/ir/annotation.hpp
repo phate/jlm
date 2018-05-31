@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_IR_AGGREGATION_ANNOTATION_HPP
-#define JLM_IR_AGGREGATION_ANNOTATION_HPP
+#ifndef JLM_IR_ANNOTATION_HPP
+#define JLM_IR_ANNOTATION_HPP
 
 #include <memory>
 #include <unordered_map>

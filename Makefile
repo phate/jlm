@@ -12,8 +12,8 @@ LIBJLM_SRC = \
 	\
 	src/libjlm/driver/passgraph.cpp \
 	\
-	src/libjlm/ir/aggregation/aggregation.cpp \
-	src/libjlm/ir/aggregation/annotation.cpp \
+	src/libjlm/ir/aggregation.cpp \
+	src/libjlm/ir/annotation.cpp \
 	src/libjlm/ir/basic-block.cpp \
 	src/libjlm/ir/cfg.cpp \
 	src/libjlm/ir/cfg-structure.cpp \

@@ -6,8 +6,8 @@
 #include <jlm/jlm/jlm2rvsdg/module.hpp>
 #include <jlm/jlm/jlm2rvsdg/restructuring.hpp>
 
-#include <jlm/jlm/ir/aggregation/aggregation.hpp>
-#include <jlm/jlm/ir/aggregation/annotation.hpp>
+#include <jlm/jlm/ir/aggregation.hpp>
+#include <jlm/jlm/ir/annotation.hpp>
 #include <jlm/jlm/ir/basic-block.hpp>
 #include <jlm/jlm/ir/cfg-structure.hpp>
 #include <jlm/jlm/ir/ipgraph.hpp>

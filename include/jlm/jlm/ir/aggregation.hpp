@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_IR_AGGREGATION_AGGREGATION_HPP
-#define JLM_IR_AGGREGATION_AGGREGATION_HPP
+#ifndef JLM_IR_AGGREGATION_HPP
+#define JLM_IR_AGGREGATION_HPP
 
 #include <jlm/jlm/ir/basic-block.hpp>
 

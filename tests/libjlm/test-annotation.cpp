@@ -7,8 +7,8 @@
 #include <test-registry.hpp>
 #include <test-types.hpp>
 
-#include <jlm/jlm/ir/aggregation/aggregation.hpp>
-#include <jlm/jlm/ir/aggregation/annotation.hpp>
+#include <jlm/jlm/ir/aggregation.hpp>
+#include <jlm/jlm/ir/annotation.hpp>
 #include <jlm/jlm/ir/basic-block.hpp>
 #include <jlm/jlm/ir/cfg.hpp>
 #include <jlm/jlm/ir/module.hpp>
