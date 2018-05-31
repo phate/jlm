@@ -12,9 +12,6 @@
 #include <string>
 
 namespace jlm {
-namespace agg {
-	class aggnode;
-}
 
 class cfg;
 class ipgraph;
