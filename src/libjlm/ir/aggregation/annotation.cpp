@@ -53,8 +53,8 @@ annotate_basic_block(const basic_block & bb, dset & pds)
 static inline void
 annotate_entry(const agg::aggnode * node, dset & pds, demand_map & dm)
 {
-	JLM_DEBUG_ASSERT(is_entry_structure(node->structure()));
-	const auto & ea = static_cast<const entry*>(&node->structure())->attribute();
+	JLM_DEBUG_ASSERT(is<entryaggnode>(node));
+	const auto & ea = static_cast<const entryaggnode*>(node)->attribute();
 
 	auto ds = create_demand_set(pds);
 	for (size_t n = 0; n < ea.narguments(); n++)
@@ -68,8 +68,8 @@ annotate_entry(const agg::aggnode * node, dset & pds, demand_map & dm)
 static inline void
 annotate_exit(const agg::aggnode * node, dset & pds, demand_map & dm)
 {
-	JLM_DEBUG_ASSERT(is_exit_structure(node->structure()));
-	const auto & xa = static_cast<const exit*>(&node->structure())->attribute();
+	JLM_DEBUG_ASSERT(is<exitaggnode>(node));
+	const auto & xa = static_cast<const exitaggnode*>(node)->attribute();
 
 	auto ds = create_demand_set(pds);
 	for (size_t n = 0; n < xa.nresults(); n++)
@@ -83,15 +83,15 @@ annotate_exit(const agg::aggnode * node, dset & pds, demand_map & dm)
 static inline void
 annotate_block(const agg::aggnode * node, dset & pds, demand_map & dm)
 {
-	JLM_DEBUG_ASSERT(is_block_structure(node->structure()));
-	const auto & bb = static_cast<const block*>(&node->structure())->basic_block();
+	JLM_DEBUG_ASSERT(is<blockaggnode>(node));
+	const auto & bb = static_cast<const blockaggnode*>(node)->basic_block();
 	dm[node] = annotate_basic_block(bb, pds);
 }
 
 static inline void
 annotate_linear(const agg::aggnode * node, dset & pds, demand_map & dm)
 {
-	JLM_DEBUG_ASSERT(is_linear_structure(node->structure()));
+	JLM_DEBUG_ASSERT(is<linearaggnode>(node));
 
 	auto ds = create_demand_set(pds);
 	for (ssize_t n = node->nchildren()-1; n >= 0; n--)
@@ -104,7 +104,7 @@ annotate_linear(const agg::aggnode * node, dset & pds, demand_map & dm)
 static inline void
 annotate_branch(const agg::aggnode * node, dset & pds, demand_map & dm)
 {
-	JLM_DEBUG_ASSERT(is_branch_structure(node->structure()));
+	JLM_DEBUG_ASSERT(is<branchaggnode>(node));
 
 	auto ds = create_branch_demand_set(pds);
 
@@ -126,7 +126,7 @@ annotate_branch(const agg::aggnode * node, dset & pds, demand_map & dm)
 static inline void
 annotate_loop(const agg::aggnode * node, dset & pds, demand_map & dm)
 {
-	JLM_DEBUG_ASSERT(is_loop_structure(node->structure()));
+	JLM_DEBUG_ASSERT(is<loopaggnode>(node));
 	JLM_DEBUG_ASSERT(node->nchildren() == 1);
 
 	auto ds = create_demand_set(pds);
@@ -148,12 +148,9 @@ annotate(const agg::aggnode * node, dset & pds, demand_map & dm)
 		std::type_index,
 		std::function<void(const agg::aggnode*, dset&, demand_map&)>
 	> map({
-	  {std::type_index(typeid(entry)), annotate_entry}
-	, {std::type_index(typeid(exit)), annotate_exit}
-	, {std::type_index(typeid(block)), annotate_block}
-	, {std::type_index(typeid(linear)), annotate_linear}
-	, {std::type_index(typeid(branch)), annotate_branch}
-	, {std::type_index(typeid(loop)), annotate_loop}
+	  {typeid(entryaggnode), annotate_entry}, {typeid(exitaggnode), annotate_exit}
+	, {typeid(blockaggnode), annotate_block}, {typeid(linearaggnode), annotate_linear}
+	, {typeid(branchaggnode), annotate_branch}, {typeid(loopaggnode), annotate_loop}
 	});
 
 	auto it = dm.find(node);
@@ -162,8 +159,8 @@ annotate(const agg::aggnode * node, dset & pds, demand_map & dm)
 		return;
 	}
 
-	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(node->structure()))) != map.end());
-	return map[std::type_index(typeid(node->structure()))](node, pds, dm);
+	JLM_DEBUG_ASSERT(map.find(typeid(*node)) != map.end());
+	return map[typeid(*node)](node, pds, dm);
 }
 
 demand_map

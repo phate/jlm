@@ -420,7 +420,7 @@ to_str(const agg::aggnode & n, const agg::demand_map & dm)
     size_t depth
   ) {
     std::string subtree(depth, '-');
-    subtree += n.structure().debug_string();
+    subtree += n.debug_string();
 
 		auto it = dm.find(&n);
 		subtree += (it != dm.end() ? " " + emit_demand_set(*it->second) : "") + "\n";

@@ -206,8 +206,8 @@ convert_entry_node(
 	lambda_builder & lb,
 	scoped_vmap & svmap)
 {
-	JLM_DEBUG_ASSERT(is_entry_structure(node.structure()));
-	auto entry = static_cast<const agg::entry*>(&node.structure())->attribute();
+	JLM_DEBUG_ASSERT(is<agg::entryaggnode>(&node));
+	auto & entry = static_cast<const agg::entryaggnode*>(&node)->attribute();
 	auto ds = dm.at(&node).get();
 
 	auto arguments = lb.begin_lambda(svmap.region(), {function.fcttype(), function.name()});
@@ -243,8 +243,8 @@ convert_exit_node(
 	lambda_builder & lb,
 	scoped_vmap & svmap)
 {
-	JLM_DEBUG_ASSERT(is_exit_structure(node.structure()));
-	auto xa = static_cast<const agg::exit*>(&node.structure())->attribute();
+	JLM_DEBUG_ASSERT(is<agg::exitaggnode>(&node));
+	auto & xa = static_cast<const agg::exitaggnode*>(&node)->attribute();
 
 	std::vector<jive::output*> results;
 	for (size_t n = 0; n < xa.nresults(); n++) {
@@ -264,8 +264,8 @@ convert_block_node(
 	lambda_builder & lb,
 	scoped_vmap & svmap)
 {
-	JLM_DEBUG_ASSERT(is_block_structure(node.structure()));
-	auto & bb = static_cast<const agg::block*>(&node.structure())->basic_block();
+	JLM_DEBUG_ASSERT(is<agg::blockaggnode>(&node));
+	auto & bb = static_cast<const agg::blockaggnode*>(&node)->basic_block();
 	convert_basic_block(bb, svmap.region(), svmap.vmap());
 	return nullptr;
 }
@@ -278,7 +278,7 @@ convert_linear_node(
 	lambda_builder & lb,
 	scoped_vmap & svmap)
 {
-	JLM_DEBUG_ASSERT(is_linear_structure(node.structure()));
+	JLM_DEBUG_ASSERT(is<agg::linearaggnode>(&node));
 
 	jive::node * n = nullptr;
 	for (const auto & child : node)
@@ -295,14 +295,14 @@ convert_branch_node(
 	lambda_builder & lb,
 	scoped_vmap & svmap)
 {
-	JLM_DEBUG_ASSERT(is_branch_structure(node.structure()));
+	JLM_DEBUG_ASSERT(is<agg::branchaggnode>(&node));
 
 	convert_node(*node.child(0), dm, function, lb, svmap);
 
 	auto split = node.child(0);
-	while (!is_block_structure(split->structure()))
+	while (!is<agg::blockaggnode>(split))
 		split = split->child(split->nchildren()-1);
-	auto & sb = dynamic_cast<const agg::block*>(&split->structure())->basic_block();
+	auto & sb = dynamic_cast<const agg::blockaggnode*>(split)->basic_block();
 
 	JLM_DEBUG_ASSERT(is<branch_op>(sb.last()->operation()));
 	auto predicate = svmap.vmap()[sb.last()->input(0)];
@@ -350,7 +350,7 @@ convert_loop_node(
 	lambda_builder & lb,
 	scoped_vmap & svmap)
 {
-	JIVE_DEBUG_ASSERT(is_loop_structure(node.structure()));
+	JIVE_DEBUG_ASSERT(is<agg::loopaggnode>(&node));
 	auto parent = svmap.region();
 
 	auto theta = jive::theta_node::create(parent);
@@ -391,8 +391,8 @@ convert_loop_node(
 	auto lblock = node.child(0);
 	while (lblock->nchildren() != 0)
 		lblock = lblock->child(lblock->nchildren()-1);
-	JLM_DEBUG_ASSERT(is_block_structure(lblock->structure()));
-	auto & bb = static_cast<const agg::block*>(&lblock->structure())->basic_block();
+	JLM_DEBUG_ASSERT(is<agg::blockaggnode>(lblock));
+	auto & bb = static_cast<const agg::blockaggnode*>(lblock)->basic_block();
 	JLM_DEBUG_ASSERT(is<branch_op>(bb.last()->operation()));
 	auto predicate = bb.last()->input(0);
 
@@ -426,16 +426,16 @@ convert_node(
 			scoped_vmap&)
 		>
 	> map ({
-	  {std::type_index(typeid(agg::entry)), convert_entry_node}
-	, {std::type_index(typeid(agg::exit)), convert_exit_node}
-	, {std::type_index(typeid(agg::block)), convert_block_node}
-	, {std::type_index(typeid(agg::linear)), convert_linear_node}
-	, {std::type_index(typeid(agg::branch)), convert_branch_node}
-	, {std::type_index(typeid(agg::loop)), convert_loop_node}
+	  {typeid(agg::entryaggnode), convert_entry_node}
+	, {typeid(agg::exitaggnode), convert_exit_node}
+	, {typeid(agg::blockaggnode), convert_block_node}
+	, {typeid(agg::linearaggnode), convert_linear_node}
+	, {typeid(agg::branchaggnode), convert_branch_node}
+	, {typeid(agg::loopaggnode), convert_loop_node}
 	});
 
-	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(node.structure()))) != map.end());
-	return map[std::type_index(typeid(node.structure()))](node, dm, function, lb, svmap);
+	JLM_DEBUG_ASSERT(map.find(typeid(node)) != map.end());
+	return map[typeid(node)](node, dm, function, lb, svmap);
 }
 
 static jive::output *

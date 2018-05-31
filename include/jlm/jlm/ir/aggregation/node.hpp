@@ -6,7 +6,8 @@
 #ifndef JLM_IR_AGGREGATION_NODE_HPP
 #define JLM_IR_AGGREGATION_NODE_HPP
 
-#include <jlm/jlm/ir/aggregation/structure.hpp>
+#include <jlm/common.hpp>
+#include <jlm/jlm/ir/basic-block.hpp>
 
 #include <memory>
 #include <vector>
@@ -120,9 +121,8 @@ public:
 	~aggnode();
 
 	inline
-	aggnode(std::unique_ptr<jlm::agg::structure> structure)
+	aggnode()
 	: parent_(nullptr)
-	, structure_(std::move(structure))
 	{}
 
 	aggnode(const aggnode & other) = delete;
@@ -185,19 +185,12 @@ public:
 		return parent_;
 	}
 
-	inline const jlm::agg::structure &
-	structure() const noexcept
-	{
-		return *structure_;
-	}
-
 	virtual std::string
 	debug_string() const = 0;
 
 private:
 	aggnode * parent_;
 	std::vector<std::unique_ptr<aggnode>> children_;
-	std::unique_ptr<jlm::agg::structure> structure_;
 };
 
 template <class T> static inline bool
@@ -218,17 +211,26 @@ public:
 
 	inline
 	entryaggnode(const jlm::entry & attribute)
-	: aggnode(std::make_unique<agg::entry>(attribute))
+	: attribute_(attribute)
 	{}
 
 	virtual std::string
 	debug_string() const override;
+
+	inline const jlm::entry &
+	attribute() const noexcept
+	{
+		return attribute_;
+	}
 
 	static inline std::unique_ptr<agg::aggnode>
 	create(const jlm::entry & attribute)
 	{
 		return std::make_unique<entryaggnode>(attribute);
 	}
+
+private:
+	jlm::entry attribute_;
 };
 
 /* exit node class */
@@ -240,17 +242,26 @@ public:
 
 	inline
 	exitaggnode(const jlm::exit & attribute)
-	: aggnode(std::make_unique<agg::exit>(attribute))
+	: attribute_(attribute)
 	{}
 
 	virtual std::string
 	debug_string() const override;
+
+	inline const jlm::exit &
+	attribute() const noexcept
+	{
+		return attribute_;
+	}
 
 	static inline std::unique_ptr<agg::aggnode>
 	create(const jlm::exit & attribute)
 	{
 		return std::make_unique<exitaggnode>(attribute);
 	}
+
+private:
+	jlm::exit attribute_;
 };
 
 /* basic block node class */
@@ -262,17 +273,26 @@ public:
 
 	inline
 	blockaggnode(jlm::basic_block && bb)
-	: aggnode(std::make_unique<agg::block>(std::move(bb)))
+	: bb_(std::move(bb))
 	{}
 
 	virtual std::string
 	debug_string() const override;
+
+	inline const jlm::basic_block &
+	basic_block() const noexcept
+	{
+		return bb_;
+	}
 
 	static inline std::unique_ptr<agg::aggnode>
 	create(jlm::basic_block && bb)
 	{
 		return std::make_unique<blockaggnode>(std::move(bb));
 	}
+
+private:
+	jlm::basic_block bb_;
 };
 
 /* linear node class */
@@ -286,7 +306,6 @@ public:
 	linearaggnode(
 		std::unique_ptr<agg::aggnode> n1,
 		std::unique_ptr<agg::aggnode> n2)
-	: aggnode(std::make_unique<linear>())
 	{
 		add_child(std::move(n1));
 		add_child(std::move(n2));
@@ -313,7 +332,6 @@ public:
 
 	inline
 	branchaggnode(std::unique_ptr<agg::aggnode> split)
-	: aggnode(std::make_unique<agg::branch>())
 	{
 		add_child(std::move(split));
 	}
@@ -337,7 +355,6 @@ public:
 
 	inline
 	loopaggnode(std::unique_ptr<agg::aggnode> body)
-	: aggnode(std::make_unique<agg::loop>())
 	{
 		add_child(std::move(body));
 	}

@@ -15,37 +15,37 @@
 static inline bool
 is_entry(jlm::agg::aggnode * node)
 {
-	return is_entry_structure(node->structure()) && node->nchildren() == 0;
+	return jlm::agg::is<jlm::agg::entryaggnode>(node) && node->nchildren() == 0;
 }
 
 static inline bool
 is_exit(jlm::agg::aggnode * node)
 {
-	return is_exit_structure(node->structure()) && node->nchildren() == 0;
+	return jlm::agg::is<jlm::agg::exitaggnode>(node) && node->nchildren() == 0;
 }
 
 static inline bool
 is_block(jlm::agg::aggnode * node)
 {
-	return is_block_structure(node->structure()) && node->nchildren() == 0;
+	return jlm::agg::is<jlm::agg::blockaggnode>(node) && node->nchildren() == 0;
 }
 
 static inline bool
 is_linear(jlm::agg::aggnode * node)
 {
-	return is_linear_structure(node->structure()) && node->nchildren() == 2;
+	return jlm::agg::is<jlm::agg::linearaggnode>(node) && node->nchildren() == 2;
 }
 
 static inline bool
 is_loop(jlm::agg::aggnode * node)
 {
-	return is_loop_structure(node->structure()) && node->nchildren() == 1;
+	return jlm::agg::is<jlm::agg::loopaggnode>(node) && node->nchildren() == 1;
 }
 
 static inline bool
 is_branch(jlm::agg::aggnode * node, size_t nchildren)
 {
-	return is_branch_structure(node->structure()) && node->nchildren() == nchildren;
+	return jlm::agg::is<jlm::agg::branchaggnode>(node) && node->nchildren() == nchildren;
 }
 
 static inline void
