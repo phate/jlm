@@ -6,7 +6,6 @@
 #include "test-registry.hpp"
 
 #include <jlm/jlm/ir/aggregation/aggregation.hpp>
-#include <jlm/jlm/ir/aggregation/node.hpp>
 #include <jlm/jlm/ir/basic-block.hpp>
 #include <jlm/jlm/ir/cfg.hpp>
 #include <jlm/jlm/ir/module.hpp>
