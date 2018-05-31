@@ -325,7 +325,7 @@ convert_branch_node(
 
 		convert_node(*node.child(n+1), dm, function, lb, svmap);
 
-		for (const auto & v : ds->cases_bottom) {
+		for (const auto & v : ds->bottom) {
 			JLM_DEBUG_ASSERT(svmap.vmap().find(v) != svmap.vmap().end());
 			xvmap[v].push_back(svmap.vmap()[v]);
 		}
@@ -333,7 +333,7 @@ convert_branch_node(
 	}
 
 	/* add exit variables */
-	for (const auto & v : ds->cases_bottom) {
+	for (const auto & v : ds->bottom) {
 		JLM_DEBUG_ASSERT(xvmap.find(v) != xvmap.end());
 		svmap.vmap()[v] = gamma->add_exitvar(xvmap[v]);
 	}

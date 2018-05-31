@@ -108,7 +108,6 @@ annotate_branch(const aggnode * node, variableset & pds, demand_map & dm)
 	auto ds = branchset::create(pds);
 
 	variableset cases_top;
-	ds->cases_bottom = pds;
 	for (size_t n = 1; n < node->nchildren(); n++) {
 		auto tmp = pds;
 		annotate(node->child(n), tmp, dm);

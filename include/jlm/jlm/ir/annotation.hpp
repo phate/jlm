@@ -54,7 +54,6 @@ public:
 	}
 
 	variableset cases_top;
-	variableset cases_bottom;
 };
 
 typedef std::unordered_map<const aggnode*, std::unique_ptr<demandset>> demand_map;
