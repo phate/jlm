@@ -26,7 +26,7 @@ annotate(const aggnode * node, variableset & pds, demand_map & dm);
 static inline std::unique_ptr<demandset>
 annotate_basic_block(const basic_block & bb, variableset & pds)
 {
-	auto ds = create_demand_set(pds);
+	auto ds = demandset::create(pds);
 	for (auto it = bb.rbegin(); it != bb.rend(); it++) {
 		auto & tac = *it;
 		if (is<assignment_op>(tac->operation())) {
@@ -55,7 +55,7 @@ annotate_entry(const aggnode * node, variableset & pds, demand_map & dm)
 	JLM_DEBUG_ASSERT(is<entryaggnode>(node));
 	const auto & ea = static_cast<const entryaggnode*>(node)->attribute();
 
-	auto ds = create_demand_set(pds);
+	auto ds = demandset::create(pds);
 	for (size_t n = 0; n < ea.narguments(); n++)
 		pds.erase(ea.argument(n));
 
@@ -70,7 +70,7 @@ annotate_exit(const aggnode * node, variableset & pds, demand_map & dm)
 	JLM_DEBUG_ASSERT(is<exitaggnode>(node));
 	const auto & xa = static_cast<const exitaggnode*>(node)->attribute();
 
-	auto ds = create_demand_set(pds);
+	auto ds = demandset::create(pds);
 	for (size_t n = 0; n < xa.nresults(); n++)
 		pds.insert(xa.result(n));
 
@@ -92,7 +92,7 @@ annotate_linear(const aggnode * node, variableset & pds, demand_map & dm)
 {
 	JLM_DEBUG_ASSERT(is<linearaggnode>(node));
 
-	auto ds = create_demand_set(pds);
+	auto ds = demandset::create(pds);
 	for (ssize_t n = node->nchildren()-1; n >= 0; n--)
 		annotate(node->child(n), pds, dm);
 	ds->top = pds;
@@ -105,7 +105,7 @@ annotate_branch(const aggnode * node, variableset & pds, demand_map & dm)
 {
 	JLM_DEBUG_ASSERT(is<branchaggnode>(node));
 
-	auto ds = create_branch_demand_set(pds);
+	auto ds = branchset::create(pds);
 
 	variableset cases_top;
 	ds->cases_bottom = pds;
@@ -128,7 +128,7 @@ annotate_loop(const aggnode * node, variableset & pds, demand_map & dm)
 	JLM_DEBUG_ASSERT(is<loopaggnode>(node));
 	JLM_DEBUG_ASSERT(node->nchildren() == 1);
 
-	auto ds = create_demand_set(pds);
+	auto ds = demandset::create(pds);
 	annotate(node->child(0), pds, dm);
 	if (ds->bottom != pds) {
 		ds->bottom.insert(pds.begin(), pds.end());

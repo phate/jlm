@@ -22,34 +22,40 @@ public:
 	virtual
 	~demandset();
 
+	inline
+	demandset(const variableset & b)
+	: bottom(b)
+	{}
+
+	static inline std::unique_ptr<demandset>
+	create(const variableset & bottom)
+	{
+		return std::make_unique<demandset>(bottom);
+	}
+
 	variableset top;
 	variableset bottom;
 };
-
-static inline std::unique_ptr<demandset>
-create_demand_set(const variableset & b)
-{
-	auto ds = std::make_unique<demandset>();
-	ds->bottom = b;
-	return ds;
-}
 
 class branchset final : public demandset {
 public:
 	virtual
 	~branchset();
 
+	inline
+	branchset(const variableset & bottom)
+	: demandset(bottom)
+	{}
+
+	static inline std::unique_ptr<branchset>
+	create(const variableset & bottom)
+	{
+		return std::make_unique<branchset>(bottom);
+	}
+
 	variableset cases_top;
 	variableset cases_bottom;
 };
-
-static inline std::unique_ptr<branchset>
-create_branch_demand_set(const variableset & b)
-{
-	auto ds = std::make_unique<branchset>();
-	ds->bottom = b;
-	return ds;
-}
 
 typedef std::unordered_map<const aggnode*, std::unique_ptr<demandset>> demand_map;
 
