@@ -191,6 +191,9 @@ public:
 		return *structure_;
 	}
 
+	virtual std::string
+	debug_string() const = 0;
+
 private:
 	aggnode * parent_;
 	std::vector<std::unique_ptr<aggnode>> children_;
@@ -218,6 +221,9 @@ public:
 	: aggnode(std::make_unique<agg::entry>(attribute))
 	{}
 
+	virtual std::string
+	debug_string() const override;
+
 	static inline std::unique_ptr<agg::aggnode>
 	create(const jlm::entry & attribute)
 	{
@@ -237,6 +243,9 @@ public:
 	: aggnode(std::make_unique<agg::exit>(attribute))
 	{}
 
+	virtual std::string
+	debug_string() const override;
+
 	static inline std::unique_ptr<agg::aggnode>
 	create(const jlm::exit & attribute)
 	{
@@ -255,6 +264,9 @@ public:
 	blockaggnode(jlm::basic_block && bb)
 	: aggnode(std::make_unique<agg::block>(std::move(bb)))
 	{}
+
+	virtual std::string
+	debug_string() const override;
 
 	static inline std::unique_ptr<agg::aggnode>
 	create(jlm::basic_block && bb)
@@ -280,6 +292,9 @@ public:
 		add_child(std::move(n2));
 	}
 
+	virtual std::string
+	debug_string() const override;
+
 	static inline std::unique_ptr<agg::aggnode>
 	create(
 		std::unique_ptr<agg::aggnode> n1,
@@ -303,6 +318,9 @@ public:
 		add_child(std::move(split));
 	}
 
+	virtual std::string
+	debug_string() const override;
+
 	static inline std::unique_ptr<agg::aggnode>
 	create(std::unique_ptr<agg::aggnode> split)
 	{
@@ -323,6 +341,9 @@ public:
 	{
 		add_child(std::move(body));
 	}
+
+	virtual std::string
+	debug_string() const override;
 
 	static inline std::unique_ptr<agg::aggnode>
 	create(std::unique_ptr<agg::aggnode> body)
