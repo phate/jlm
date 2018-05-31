@@ -198,6 +198,15 @@ private:
 	std::unique_ptr<jlm::agg::structure> structure_;
 };
 
+template <class T> static inline bool
+is(const agg::aggnode * node)
+{
+	static_assert(std::is_base_of<agg::aggnode, T>::value,
+		"Template parameter T must be derived from jlm::aggnode");
+
+	return dynamic_cast<const T*>(node) != nullptr;
+}
+
 static inline std::unique_ptr<agg::aggnode>
 create_entry_node(const jlm::entry & attribute)
 {
