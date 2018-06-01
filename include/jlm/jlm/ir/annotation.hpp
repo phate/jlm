@@ -23,18 +23,20 @@ public:
 	~demandset();
 
 	inline
-	demandset(const variableset & b)
-	: bottom(b)
+	demandset()
 	{}
 
 	static inline std::unique_ptr<demandset>
-	create(const variableset & bottom)
+	create()
 	{
-		return std::make_unique<demandset>(bottom);
+		return std::make_unique<demandset>();
 	}
 
 	variableset top;
 	variableset bottom;
+
+	variableset reads;
+	variableset writes;
 };
 
 class branchset final : public demandset {
@@ -43,17 +45,19 @@ public:
 	~branchset();
 
 	inline
-	branchset(const variableset & bottom)
-	: demandset(bottom)
+	branchset()
+	: demandset()
 	{}
 
 	static inline std::unique_ptr<branchset>
-	create(const variableset & bottom)
+	create()
 	{
-		return std::make_unique<branchset>(bottom);
+		return std::make_unique<branchset>();
 	}
 
 	variableset cases_top;
+	variableset cases_reads;
+	variableset cases_writes;
 };
 
 typedef std::unordered_map<const aggnode*, std::unique_ptr<demandset>> demandmap;

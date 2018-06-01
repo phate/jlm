@@ -20,13 +20,52 @@ demandset::~demandset()
 branchset::~branchset()
 {}
 
-static void
-annotate(const aggnode * node, variableset & pds, demandmap & dm);
-
-static inline std::unique_ptr<demandset>
-annotate_basic_block(const basic_block & bb, variableset & pds)
+static variableset
+intersect(const variableset & vs1, const variableset & vs2)
 {
-	auto ds = demandset::create(pds);
+	variableset intersect;
+	for (const auto & v : vs1) {
+		if (vs2.find(v) != vs2.end())
+			intersect.insert(v);
+	}
+	return intersect;
+}
+
+/* read-write annotation */
+
+static void
+annotaterw(const aggnode * node, demandmap & dm);
+
+static void
+annotaterw(const entryaggnode * node, demandmap & dm)
+{
+	auto & ea = node->attribute();
+
+	auto ds = demandset::create();
+	for (size_t n = 0; n < ea.narguments(); n++)
+		ds->writes.insert(ea.argument(n));
+
+	dm[node] = std::move(ds);
+}
+
+static void
+annotaterw(const exitaggnode * node, demandmap & dm)
+{
+	auto & xa = node->attribute();
+
+	auto ds = demandset::create();
+	for (size_t n = 0; n < xa.nresults(); n++)
+		ds->reads.insert(xa.result(n));
+
+	dm[node] = std::move(ds);
+}
+
+static void
+annotaterw(const blockaggnode * node, demandmap & dm)
+{
+	auto & bb = node->basic_block();
+
+	auto ds = demandset::create();
 	for (auto it = bb.rbegin(); it != bb.rend(); it++) {
 		auto & tac = *it;
 		if (is<assignment_op>(tac->operation())) {
@@ -35,127 +74,249 @@ annotate_basic_block(const basic_block & bb, variableset & pds)
 					they assign the value to is modeled as an argument of the tac.
 			*/
 			JLM_DEBUG_ASSERT(tac->ninputs() == 2 && tac->noutputs() == 0);
-			pds.erase(tac->input(0));
-			pds.insert(tac->input(1));
+			ds->reads.erase(tac->input(0));
+			ds->writes.insert(tac->input(0));
+			ds->reads.insert(tac->input(1));
 		} else {
-			for (size_t n = 0; n < tac->noutputs(); n++)
-				pds.erase(tac->output(n));
+			for (size_t n = 0; n < tac->noutputs(); n++) {
+				ds->reads.erase(tac->output(n));
+				ds->writes.insert(tac->output(n));
+			}
 			for (size_t n = 0; n < tac->ninputs(); n++)
-				pds.insert(tac->input(n));
+				ds->reads.insert(tac->input(n));
 		}
 	}
-	ds->top = pds;
-
-	return ds;
-}
-
-static inline void
-annotate_entry(const aggnode * node, variableset & pds, demandmap & dm)
-{
-	JLM_DEBUG_ASSERT(is<entryaggnode>(node));
-	const auto & ea = static_cast<const entryaggnode*>(node)->attribute();
-
-	auto ds = demandset::create(pds);
-	for (size_t n = 0; n < ea.narguments(); n++)
-		pds.erase(ea.argument(n));
-
-	ds->top = pds;
-	JLM_DEBUG_ASSERT(dm.find(node) == dm.end());
-	dm[node] = std::move(ds);
-}
-
-static inline void
-annotate_exit(const aggnode * node, variableset & pds, demandmap & dm)
-{
-	JLM_DEBUG_ASSERT(is<exitaggnode>(node));
-	const auto & xa = static_cast<const exitaggnode*>(node)->attribute();
-
-	auto ds = demandset::create(pds);
-	for (size_t n = 0; n < xa.nresults(); n++)
-		pds.insert(xa.result(n));
-
-	ds->top = pds;
-	JLM_DEBUG_ASSERT(dm.find(node) == dm.end());
-	dm[node] = std::move(ds);
-}
-
-static inline void
-annotate_block(const aggnode * node, variableset & pds, demandmap & dm)
-{
-	JLM_DEBUG_ASSERT(is<blockaggnode>(node));
-	const auto & bb = static_cast<const blockaggnode*>(node)->basic_block();
-	dm[node] = annotate_basic_block(bb, pds);
-}
-
-static inline void
-annotate_linear(const aggnode * node, variableset & pds, demandmap & dm)
-{
-	JLM_DEBUG_ASSERT(is<linearaggnode>(node));
-
-	auto ds = demandset::create(pds);
-	for (ssize_t n = node->nchildren()-1; n >= 0; n--)
-		annotate(node->child(n), pds, dm);
-	ds->top = pds;
 
 	dm[node] = std::move(ds);
 }
 
-static inline void
-annotate_branch(const aggnode * node, variableset & pds, demandmap & dm)
+static void
+annotaterw(const linearaggnode * node, demandmap & dm)
 {
-	JLM_DEBUG_ASSERT(is<branchaggnode>(node));
+	/* annotate children */
+	for (size_t n = 0; n < node->nchildren(); n++)
+		annotaterw(node->child(n), dm);
 
-	auto ds = branchset::create(pds);
-
-	variableset cases_top;
-	for (size_t n = 1; n < node->nchildren(); n++) {
-		auto tmp = pds;
-		annotate(node->child(n), tmp, dm);
-		cases_top.insert(tmp.begin(), tmp.end());
+	/* compute reads and writes */
+	auto ds = demandset::create();
+	for (ssize_t n = node->nchildren()-1; n >= 0; n--) {
+		auto & cs = *dm[node->child(n)];
+		for (const auto & v : cs.writes)
+			ds->reads.erase(v);
+		ds->reads.insert(cs.reads.begin(), cs.reads.end());
+		ds->writes.insert(cs.writes.begin(), cs.writes.end());
 	}
-	ds->cases_top = pds = cases_top;
-
-	annotate(node->child(0), pds, dm);
-	ds->top = pds;
 
 	dm[node] = std::move(ds);
 }
 
-static inline void
-annotate_loop(const aggnode * node, variableset & pds, demandmap & dm)
+static void
+annotaterw(const branchaggnode * node, demandmap & dm)
 {
-	JLM_DEBUG_ASSERT(is<loopaggnode>(node));
-	JLM_DEBUG_ASSERT(node->nchildren() == 1);
+	/* annotate children */
+	for (size_t n = 0; n < node->nchildren(); n++)
+		annotaterw(node->child(n), dm);
 
-	auto ds = demandset::create(pds);
-	annotate(node->child(0), pds, dm);
-	if (ds->bottom != pds) {
-		ds->bottom.insert(pds.begin(), pds.end());
-		pds = ds->bottom;
-		annotate(node->child(0), pds, dm);
+	/* compute reads and writes */
+	auto ds = branchset::create();
+	ds->cases_reads = dm[node->child(1)]->reads;
+	ds->cases_writes = dm[node->child(1)]->writes;
+	for (size_t n = 2; n < node->nchildren(); n++) {
+		auto & cs = *dm[node->child(n)];
+		ds->cases_writes = intersect(ds->cases_writes, cs.writes);
+		ds->cases_reads.insert(cs.reads.begin(), cs.reads.end());
 	}
-	ds->top = ds->bottom;
+
+	ds->reads = ds->cases_reads;
+	ds->writes = ds->cases_writes;
+	auto & cs = *dm[node->child(0)];
+	for (const auto & v : cs.writes)
+		ds->reads.erase(v);
+	ds->reads.insert(cs.reads.begin(), cs.reads.end());
+	ds->writes.insert(cs.writes.begin(), cs.writes.end());
 
 	dm[node] = std::move(ds);
 }
 
-static inline void
-annotate(const aggnode * node, variableset & pds, demandmap & dm)
+static void
+annotaterw(const loopaggnode * node, demandmap & dm)
+{
+	auto body = node->child(0);
+	annotaterw(body, dm);
+
+	auto ds = demandset::create();
+	ds->reads = dm[body]->reads;
+	ds->writes = dm[body]->writes;
+
+	dm[node] = std::move(ds);
+}
+
+template<class T> static void
+annotaterw(const aggnode * node, demandmap & dm)
+{
+	JLM_DEBUG_ASSERT(is<T>(node));
+	annotaterw(static_cast<const T*>(node), dm);
+};
+
+static void
+annotaterw(const aggnode * node, demandmap & dm)
 {
 	static std::unordered_map<
 		std::type_index,
-		std::function<void(const aggnode*, variableset&, demandmap&)>
+		void(*)(const aggnode*, demandmap&)
 	> map({
-	  {typeid(entryaggnode), annotate_entry}, {typeid(exitaggnode), annotate_exit}
-	, {typeid(blockaggnode), annotate_block}, {typeid(linearaggnode), annotate_linear}
-	, {typeid(branchaggnode), annotate_branch}, {typeid(loopaggnode), annotate_loop}
+	  {typeid(entryaggnode), annotaterw<entryaggnode>}
+	, {typeid(exitaggnode), annotaterw<exitaggnode>}
+	, {typeid(blockaggnode), annotaterw<blockaggnode>}
+	, {typeid(linearaggnode), annotaterw<linearaggnode>}
+	, {typeid(branchaggnode), annotaterw<branchaggnode>}
+	, {typeid(loopaggnode), annotaterw<loopaggnode>}
 	});
 
-	auto it = dm.find(node);
-	if (it != dm.end() && it->second->bottom == pds) {
-		pds = it->second->top;
-		return;
+	JLM_DEBUG_ASSERT(map.find(typeid(*node)) != map.end());
+	return map[typeid(*node)](node, dm);
+}
+
+/* demandset annotation */
+
+static void
+annotateds(const aggnode*, variableset&, demandmap&);
+
+static void
+annotateds(
+	const entryaggnode * node,
+	variableset & pds,
+	demandmap & dm)
+{
+	auto & ds = dm[node];
+	ds->bottom = pds;
+
+	for (const auto & v : ds->writes)
+		pds.erase(v);
+
+	ds->top = pds;
+}
+
+static void
+annotateds(
+	const exitaggnode * node,
+	variableset & pds,
+	demandmap & dm)
+{
+	auto & ds = dm[node];
+	ds->bottom = pds;
+
+	for (const auto & v : ds->reads)
+		pds.insert(v);
+
+	ds->top = pds;
+}
+
+static void
+annotateds(
+	const blockaggnode * node,
+	variableset & pds,
+	demandmap & dm)
+{
+	auto & ds = dm[node];
+	ds->bottom = pds;
+
+	for (const auto & v : ds->writes)
+		pds.erase(v);
+	pds.insert(ds->reads.begin(), ds->reads.end());
+
+	ds->top = pds;
+}
+
+static void
+annotateds(
+	const linearaggnode * node,
+	variableset & pds,
+	demandmap & dm)
+{
+	auto & ds = dm[node];
+	ds->bottom = pds;
+
+	for (ssize_t n = node->nchildren()-1; n >= 0; n--)
+		annotateds(node->child(n), pds, dm);
+
+	for (const auto & v : ds->writes)
+		pds.erase(v);
+	pds.insert(ds->reads.begin(), ds->reads.end());
+
+	ds->top = pds;
+}
+
+static void
+annotateds(
+	const branchaggnode * node,
+	variableset & pds,
+	demandmap & dm)
+{
+	auto ds = static_cast<branchset*>(dm[node].get());
+	ds->bottom = pds;
+
+	for (size_t n = 0; n < node->nchildren(); n++) {
+		auto tmp = pds;
+		annotateds(node->child(n), tmp, dm);
 	}
+
+	for (const auto & v : ds->cases_writes)
+		pds.erase(v);
+	pds.insert(ds->cases_reads.begin(), ds->cases_reads.end());
+	ds->cases_top = pds;
+
+	annotateds(node->child(0), pds, dm);
+
+	ds->top = pds;
+}
+
+static void
+annotateds(
+	const loopaggnode * node,
+	variableset & pds,
+	demandmap & dm)
+{
+	auto & ds = dm[node];
+
+	variableset loop = ds->reads;
+	for (const auto & v : ds->writes) {
+		if (pds.find(v) != pds.end())
+			loop.insert(v);
+	}
+	ds->bottom = ds->top = loop;
+
+	annotateds(node->child(0), loop, dm);
+	pds.insert(ds->reads.begin(), ds->reads.end());
+}
+
+template<class T> static void
+annotateds(
+	const aggnode * node,
+	variableset & pds,
+	demandmap & dm)
+{
+	JLM_DEBUG_ASSERT(is<T>(node));
+	annotateds(static_cast<const T*>(node), pds, dm);
+}
+
+static void
+annotateds(
+	const aggnode * node,
+	variableset & pds,
+	demandmap & dm)
+{
+	static std::unordered_map<
+		std::type_index,
+		void(*)(const aggnode*, variableset&, demandmap&)
+	> map({
+	  {typeid(entryaggnode), annotateds<entryaggnode>}
+	, {typeid(exitaggnode), annotateds<exitaggnode>}
+	, {typeid(blockaggnode), annotateds<blockaggnode>}
+	, {typeid(linearaggnode), annotateds<linearaggnode>}
+	, {typeid(branchaggnode), annotateds<branchaggnode>}
+	, {typeid(loopaggnode), annotateds<loopaggnode>}
+	});
 
 	JLM_DEBUG_ASSERT(map.find(typeid(*node)) != map.end());
 	return map[typeid(*node)](node, pds, dm);
@@ -166,7 +327,8 @@ annotate(const aggnode & root)
 {
 	demandmap dm;
 	variableset ds;
-	annotate(&root, ds, dm);
+	annotaterw(&root, dm);
+	annotateds(&root, ds, dm);
 	return dm;
 }
 

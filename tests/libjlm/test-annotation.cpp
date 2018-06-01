@@ -10,13 +10,12 @@
 #include <jlm/jlm/ir/aggregation.hpp>
 #include <jlm/jlm/ir/annotation.hpp>
 #include <jlm/jlm/ir/basic-block.hpp>
-#include <jlm/jlm/ir/cfg.hpp>
 #include <jlm/jlm/ir/module.hpp>
 #include <jlm/jlm/ir/operators/operators.hpp>
 #include <jlm/jlm/ir/view.hpp>
 
-static inline bool
-has_variables(
+static bool
+contains(
 	const jlm::variableset & ds,
 	const std::vector<const jlm::variable*> & variables)
 {
@@ -31,233 +30,222 @@ has_variables(
 	return true;
 }
 
-static inline bool
-has_node_and_variables(
-	const jlm::aggnode * node,
+static bool
+contains(
 	const jlm::demandmap & dm,
-	const std::vector<const jlm::variable*> & variables)
+	const jlm::aggnode * node,
+	const std::vector<const jlm::variable*> & bottom,
+	const std::vector<const jlm::variable*> & top,
+	const std::vector<const jlm::variable*> & reads,
+	const std::vector<const jlm::variable*> & writes)
 {
 	if (dm.find(node) == dm.end())
 		return false;
 
 	auto ds = dm.at(node).get();
-	return has_variables(ds->top, variables);
-}
-
-static inline void
-test_linear_graph()
-{
-	jlm::module module("", "");
-
-	jlm::cfg cfg(module);
-	jlm::valuetype vtype;
-	jlm::test_op op({&vtype}, {&vtype});
-
-	auto arg = module.create_variable(vtype, "arg");
-	auto v1 = module.create_variable(vtype, false);
-	auto v2 = module.create_variable(vtype, false);
-	auto bb1 = create_basic_block_node(&cfg);
-	auto bb2 = create_basic_block_node(&cfg);
-
-	cfg.exit_node()->divert_inedges(bb1);
-	bb1->add_outedge(bb2);
-	bb2->add_outedge(cfg.exit_node());
-
-	cfg.entry().append_argument(arg);
-	append_last(bb1, create_tac(op, {arg}, {v1}));
-	append_last(bb2, create_tac(op, {v1}, {v2}));
-	cfg.exit().append_result(v2);
-
-	auto root = jlm::aggregate(cfg);
-	jlm::view(*root, stdout);
-
-	auto dm = jlm::annotate(*root);
-#if 0
-	assert(has_node_and_variables(root.get(), dm, {}));
-	{
-		auto linear = root->child(0);
-		assert(has_node_and_variables(linear, dm, {}));
-		{
-			auto l = linear->child(0);
-			assert(has_node_and_variables(l, dm, {}));
-			{
-				auto entry = l->child(0);
-				assert(has_node_and_variables(entry, dm, {}));
-
-				auto bb1 = l->child(1);
-				assert(has_node_and_variables(bb1, dm, {arg}));
-			}
-
-			auto bb2 = linear->child(1);
-			assert(has_node_and_variables(bb2, dm, {v1}));
-		}
-
-		auto exit = root->child(1);
-		assert(has_node_and_variables(exit, dm, {v2}));
-	}
-#endif
+	return contains(ds->bottom, bottom)
+	    && contains(ds->top, top)
+	    && contains(ds->reads, reads)
+	    && contains(ds->writes, writes);
 }
 
 static void
-test_branch_graph()
+test_block()
 {
+	using namespace jlm;
+
+	valuetype vt;
+	test_op op({&vt}, {&vt});
+
 	jlm::module module("", "");
+	auto v0 = module.create_variable(vt, "v0", false);
+	auto v1 = module.create_variable(vt, "v1", false);
+	auto v2 = module.create_variable(vt, "v2", false);
 
-	jlm::cfg cfg(module);
-	jlm::valuetype vtype;
-	jlm::test_op unop({&vtype}, {&vtype});
-	jlm::test_op binop({&vtype, &vtype}, {&vtype});
+	basic_block bb;
+	bb.append_last(create_tac(op, {v0}, {v1}));
+	bb.append_last(create_tac(op, {v1}, {v2}));
 
-	auto arg = module.create_variable(vtype, "arg");
-	auto v1 = module.create_variable(vtype, "v1");
-	auto v2 = module.create_variable(vtype, "v2");
-	auto v3 = module.create_variable(vtype, "v3");
-	auto v4 = module.create_variable(vtype, "v4");
-	auto split = create_basic_block_node(&cfg);
-	auto bb1 = create_basic_block_node(&cfg);
-	auto bb2 = create_basic_block_node(&cfg);
-	auto join = create_basic_block_node(&cfg);
+	auto root = blockaggnode::create(std::move(bb));
 
-	cfg.exit_node()->divert_inedges(split);
-	split->add_outedge(bb1);
-	split->add_outedge(bb2);
-	bb1->add_outedge(join);
-	bb2->add_outedge(join);
-	join->add_outedge(cfg.exit_node());
+	auto dm = annotate(*root);
+	view(*root, dm, stdout);
 
-	cfg.entry().append_argument(arg);
-	append_last(split, create_tac(unop, {arg}, {v1}));
-	append_last(bb1, create_tac(unop, {v1}, {v2}));
-	append_last(bb2, create_tac(unop, {v1}, {v3}));
-	append_last(join, create_tac(binop, {v2,v3}, {v4}));
-	cfg.exit().append_result(v4);
-
-	auto root = jlm::aggregate(cfg);
-	jlm::view(*root, stdout);
-
-	auto dm = jlm::annotate(*root);
-#if 0
-	assert(has_node_and_variables(root.get(), dm, {v2, v3}));
-	{
-		auto linear = root->child(0);
-		assert(has_node_and_variables(linear, dm, {v2, v3}));
-		{
-			auto branch = linear->child(0);
-			assert(has_node_and_variables(branch, dm, {v2, v3}));
-			{
-				auto linear = branch->child(0);
-				assert(has_node_and_variables(linear, dm, {v2, v3}));
-				{
-					auto entry = linear->child(0);
-					assert(has_node_and_variables(entry, dm, {v2, v3}));
-
-					auto split = linear->child(1);
-					assert(has_node_and_variables(split, dm, {arg, v2, v3}));
-				}
-
-				auto bb1 = branch->child(1);
-				assert(has_node_and_variables(bb1, dm, {v1, v3}));
-
-				auto bb2 = branch->child(2);
-				assert(has_node_and_variables(bb2, dm, {v1, v2}));
-			}
-
-			auto join = linear->child(1);
-			assert(has_node_and_variables(join, dm, {v2, v3}));
-		}
-
-		auto exit = root->child(1);
-		assert(has_node_and_variables(exit, dm, {v4}));
-	}
-#endif
+	assert(contains(dm, root.get(), {}, {v0}, {v0}, {v1, v2}));
 }
 
 static void
-test_loop_graph()
+test_linear()
 {
+	using namespace jlm;
+
+	valuetype vt;
+	test_op op({&vt}, {&vt});
+
 	jlm::module module("", "");
+	auto arg = module.create_variable(vt, "arg", false);
+	auto v1 = module.create_variable(vt, "v1", false);
+	auto v2 = module.create_variable(vt, "v2", false);
 
-	jlm::cfg cfg(module);
-	jlm::valuetype vtype;
-	jlm::test_op binop({&vtype, &vtype}, {&vtype});
+	/*
+		Setup simple linear CFG: Entry -> B1 -> B2 -> Exit
+	*/
+	entry ea({arg});
+	jlm::exit xa({v2});
 
-	auto arg = module.create_variable(vtype, "arg");
-	auto r = module.create_variable(vtype, "r");
-	auto bb = create_basic_block_node(&cfg);
+	basic_block bb1, bb2;
+	bb1.append_last(create_tac(op, {arg}, {v1}));
+	bb2.append_last(create_tac(op, {v1}, {v2}));
 
-	cfg.exit_node()->divert_inedges(bb);
-	bb->add_outedge(cfg.exit_node());
-	bb->add_outedge(bb);
+	auto en = entryaggnode::create(ea);
+	auto b1 = blockaggnode::create(std::move(bb1));
+	auto b2 = blockaggnode::create(std::move(bb2));
+	auto xn = exitaggnode::create(xa);
+	auto enptr = en.get(), b1ptr = b1.get(), b2ptr = b2.get(), xnptr = xn.get();
 
-	cfg.entry().append_argument(arg);
-	append_last(bb, create_tac(binop, {arg, r}, {r}));
-	cfg.exit().append_result(r);
+	auto l1 = linearaggnode::create(std::move(en), std::move(b1));
+	auto l2 = linearaggnode::create(std::move(b2), std::move(xn));
+	auto l1ptr = l1.get(), l2ptr = l2.get();
 
-	auto root = jlm::aggregate(cfg);
-	jlm::view(*root, stdout);
+	auto root = linearaggnode::create(std::move(l1), std::move(l2));
 
-	auto dm = jlm::annotate(*root);
-#if 0
-	assert(has_node_and_variables(root.get(), dm, {r}));
-	{
-		/* entry */
-		assert(has_node_and_variables(root->child(0), dm, {r}));
+	/*
+		Create and verify demand map
+	*/
+	auto dm = annotate(*root);
+	view(*root, dm, stdout);
 
-		/* linear */
-		auto linear = root->child(1);
-		assert(has_node_and_variables(linear, dm, {arg, r}));
-		{
-			/* loop */
-			auto loop = linear->child(0);
-			assert(has_node_and_variables(loop, dm, {arg, r}));
-			{
-				/* bb */
-				assert(has_node_and_variables(loop->child(0), dm, {arg, r}));
-			}
+	assert(contains(dm, xnptr, {}, {v2}, {v2}, {}));
+	assert(contains(dm, b2ptr, {v2}, {v1}, {v1}, {v2}));
+	assert(contains(dm, l2ptr, {}, {v1}, {v1}, {v2}));
 
-			/* exit */
-			assert(has_node_and_variables(linear->child(1), dm, {r}));
-		}
-	}
-#endif
+	assert(contains(dm, b1ptr, {v1}, {arg}, {arg}, {v1}));
+	assert(contains(dm, enptr, {arg}, {}, {}, {arg}));
+	assert(contains(dm, l1ptr, {v1}, {}, {}, {v1, arg}));
+
+	assert(contains(dm, root.get(), {}, {}, {}, {v1, arg, v2}));
 }
 
-static int
+static void
+test_branch()
+{
+	using namespace jlm;
+
+	valuetype vt;
+	test_op op({&vt}, {&vt});
+
+	jlm::module module("", "");
+	auto arg = module.create_variable(vt, "arg", false);
+	auto v1 = module.create_variable(vt, "v1", false);
+	auto v2 = module.create_variable(vt, "v2", false);
+	auto v3 = module.create_variable(vt, "v3", false);
+	auto v4 = module.create_variable(vt, "v4", false);
+
+	/*
+		Setup conditional CFG with nodes bbs, b1, b2, and edges bbs -> b1 and bbs -> b2.
+	*/
+	basic_block bbs, bb1, bb2;
+	bbs.append_last(create_tac(op, {arg}, {v1}));
+	bb1.append_last(create_tac(op, {v2}, {v3}));
+	bb2.append_last(create_tac(op, {v1}, {v2}));
+	bb2.append_last(create_tac(op, {v1}, {v3}));
+	bb2.append_last(create_tac(op, {v3}, {v4}));
+
+	auto bs = blockaggnode::create(std::move(bbs));
+	auto b1 = blockaggnode::create(std::move(bb1));
+	auto b2 = blockaggnode::create(std::move(bb2));
+	auto bsptr = bs.get(), b1ptr = b1.get(), b2ptr = b2.get();
+
+	auto root = branchaggnode::create(std::move(bs));
+	root->add_child(std::move(b1));
+	root->add_child(std::move(b2));
+
+	/*
+		Create and verify demand map
+	*/
+	auto dm = annotate(*root);
+	view(*root, dm, stdout);
+
+	assert(contains(dm, b1ptr, {}, {v2}, {v2}, {v3}));
+	assert(contains(dm, b2ptr, {}, {v1}, {v1}, {v2, v4, v3}));
+	assert(contains(dm, bsptr, {v1, v2}, {v2, arg}, {arg}, {v1}));
+	assert(contains(dm, root.get(), {}, {arg, v2}, {arg, v2}, {v1, v3}));
+}
+
+static void
+test_loop()
+{
+	using namespace jlm;
+
+	valuetype vt;
+	test_op op({&vt}, {&vt});
+
+	jlm::module module("", "");
+	auto v1 = module.create_variable(vt, "v1", false);
+	auto v2 = module.create_variable(vt, "v2", false);
+	auto v3 = module.create_variable(vt, "v3", false);
+	auto v4 = module.create_variable(vt, "v4", false);
+
+	jlm::exit xa({v3, v4});
+
+	basic_block bb;
+	bb.append_last(create_tac(op, {v1}, {v2}));
+	bb.append_last(create_tac(op, {v2}, {v3}));
+
+	auto xn = exitaggnode::create(xa);
+	auto b = blockaggnode::create(std::move(bb));
+	auto xnptr = xn.get(), bptr = b.get();
+
+	auto ln = loopaggnode::create(std::move(b));
+	auto lnptr = ln.get();
+
+	auto root = linearaggnode::create(std::move(ln), std::move(xn));
+
+	/*
+		Create and verify demand map
+	*/
+	auto dm = annotate(*root);
+	view(*root, dm, stdout);
+
+	assert(contains(dm, xnptr, {}, {v3, v4}, {v3, v4}, {}));
+	assert(contains(dm, bptr, {v1, v3}, {v1}, {v1}, {v2, v3}));
+	assert(contains(dm, lnptr, {v1, v3}, {v1, v3}, {v1}, {v2, v3}));
+	assert(contains(dm , root.get(), {}, {v1, v4}, {v1, v4}, {v2, v3}));
+}
+
+static void
 test_assignment()
 {
+	using namespace jlm;
+
+	valuetype vt;
+	test_op op({&vt}, {&vt});
+
 	jlm::module module("", "");
+	auto v1 = module.create_variable(vt, "v1", false);
+	auto v2 = module.create_variable(vt, "v2", false);
 
-	jlm::cfg cfg(module);
-	jlm::valuetype vtype;
+	basic_block bb;
+	bb.append_last(create_tac(op, {v1}, {v2}));
 
-	auto arg = module.create_variable(vtype, "arg", false);
-	auto r = module.create_variable(vtype, "result", false);
+	auto root = blockaggnode::create(std::move(bb));
 
-	auto bb = create_basic_block_node(&cfg);
+	/*
+		Create and verify demand map
+	*/
+	auto dm = annotate(*root);
+	view(*root, dm, stdout);
 
-	cfg.exit_node()->divert_inedges(bb);
-	bb->add_outedge(cfg.exit_node());
-
-	cfg.entry().append_argument(arg);
-	append_last(bb, jlm::create_assignment(vtype, arg, r));
-	cfg.exit().append_result(r);
-
-	auto root = jlm::aggregate(cfg);
-	auto dm = jlm::annotate(*root);
-	jlm::view(*root, dm, stdout);
-
-	assert(dm[root.get()]->top.empty());
-
-	return 0;
+	assert(contains(dm, root.get(), {}, {v1}, {v1}, {v2}));
 }
 
 static int
 test()
 {
-	/* FIXME: avoid aggregation function and build aggregated tree directly */
-	test_linear_graph();
-	test_branch_graph();
-	test_loop_graph();
+	test_block();
+	test_linear();
+	test_branch();
+	test_loop();
 	test_assignment();
 
 	return 0;
