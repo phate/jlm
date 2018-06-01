@@ -162,7 +162,7 @@ annotate(const aggnode * node, variableset & pds, demandmap & dm)
 }
 
 demandmap
-annotate(jlm::aggnode & root)
+annotate(const aggnode & root)
 {
 	demandmap dm;
 	variableset ds;

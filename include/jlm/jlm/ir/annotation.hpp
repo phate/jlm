@@ -59,7 +59,7 @@ public:
 typedef std::unordered_map<const aggnode*, std::unique_ptr<demandset>> demandmap;
 
 demandmap
-annotate(jlm::aggnode & root);
+annotate(const jlm::aggnode & root);
 
 }
 
