@@ -184,6 +184,12 @@ public:
 		return parent_;
 	}
 
+	inline const aggnode *
+	parent() const noexcept
+	{
+		return parent_;
+	}
+
 	virtual std::string
 	debug_string() const = 0;
 
