@@ -39,27 +39,6 @@ public:
 	variableset writes;
 };
 
-class branchset final : public demandset {
-public:
-	virtual
-	~branchset();
-
-	inline
-	branchset()
-	: demandset()
-	{}
-
-	static inline std::unique_ptr<branchset>
-	create()
-	{
-		return std::make_unique<branchset>();
-	}
-
-	variableset cases_top;
-	variableset cases_reads;
-	variableset cases_writes;
-};
-
 typedef std::unordered_map<const aggnode*, std::unique_ptr<demandset>> demandmap;
 
 demandmap

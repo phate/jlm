@@ -17,9 +17,6 @@ namespace jlm {
 demandset::~demandset()
 {}
 
-branchset::~branchset()
-{}
-
 static variableset
 intersect(const variableset & vs1, const variableset & vs2)
 {
@@ -118,7 +115,7 @@ annotaterw(const branchaggnode * node, demandmap & dm)
 		annotaterw(node->child(n), dm);
 
 	/* compute reads and writes */
-	auto ds = branchset::create();
+	auto ds = demandset::create();
 	ds->reads = dm[node->child(0)]->reads;
 	ds->writes = dm[node->child(0)]->writes;
 	for (size_t n = 1; n < node->nchildren(); n++) {
@@ -245,7 +242,7 @@ annotateds(
 	variableset & pds,
 	demandmap & dm)
 {
-	auto ds = static_cast<branchset*>(dm[node].get());
+	auto & ds = dm[node];
 	ds->bottom = pds;
 
 	for (size_t n = 0; n < node->nchildren(); n++) {
