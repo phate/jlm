@@ -34,6 +34,13 @@ public:
 	: attribute()
 	{}
 
+	inline
+	entry(const std::vector<const variable*> & arguments)
+	{
+		for (const auto & v : arguments)
+			append_argument(v);
+	}
+
 	size_t
 	narguments() const noexcept
 	{
@@ -78,6 +85,13 @@ public:
 	exit()
 	: attribute()
 	{}
+
+	inline
+	exit(const std::vector<const variable*> & results)
+	{
+		for (const auto & v : results)
+			append_result(v);
+	}
 
 	size_t
 	nresults() const noexcept
