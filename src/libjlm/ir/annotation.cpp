@@ -90,11 +90,6 @@ annotaterw(const blockaggnode * node, demandmap & dm)
 static void
 annotaterw(const linearaggnode * node, demandmap & dm)
 {
-	/* annotate children */
-	for (size_t n = 0; n < node->nchildren(); n++)
-		annotaterw(node->child(n), dm);
-
-	/* compute reads and writes */
 	auto ds = demandset::create();
 	for (ssize_t n = node->nchildren()-1; n >= 0; n--) {
 		auto & cs = *dm[node->child(n)];
@@ -110,11 +105,6 @@ annotaterw(const linearaggnode * node, demandmap & dm)
 static void
 annotaterw(const branchaggnode * node, demandmap & dm)
 {
-	/* annotate children */
-	for (size_t n = 0; n < node->nchildren(); n++)
-		annotaterw(node->child(n), dm);
-
-	/* compute reads and writes */
 	auto ds = demandset::create();
 	ds->reads = dm[node->child(0)]->reads;
 	ds->writes = dm[node->child(0)]->writes;
@@ -130,13 +120,9 @@ annotaterw(const branchaggnode * node, demandmap & dm)
 static void
 annotaterw(const loopaggnode * node, demandmap & dm)
 {
-	auto body = node->child(0);
-	annotaterw(body, dm);
-
 	auto ds = demandset::create();
-	ds->reads = dm[body]->reads;
-	ds->writes = dm[body]->writes;
-
+	ds->reads = dm[node->child(0)]->reads;
+	ds->writes = dm[node->child(0)]->writes;
 	dm[node] = std::move(ds);
 }
 
@@ -161,6 +147,9 @@ annotaterw(const aggnode * node, demandmap & dm)
 	, {typeid(branchaggnode), annotaterw<branchaggnode>}
 	, {typeid(loopaggnode), annotaterw<loopaggnode>}
 	});
+
+	for (size_t n = 0; n < node->nchildren(); n++)
+		annotaterw(node->child(n), dm);
 
 	JLM_DEBUG_ASSERT(map.find(typeid(*node)) != map.end());
 	return map[typeid(*node)](node, dm);
