@@ -217,14 +217,15 @@ reduce_branch(
 	join->remove_inedges();
 	reduction->add_outedge(join);
 
-	auto branch = branchaggnode::create(std::move(map[split]));
+	auto branch = branchaggnode::create();
 	for (auto it = split->begin_outedges(); it != split->end_outedges(); it++) {
 		branch->add_child(std::move(map[it->sink()]));
 		map.erase(it->sink());
 		to_visit.erase(it->sink());
 	}
+	auto linear = linearaggnode::create(std::move(map[split]), std::move(branch));
 
-	map[reduction] = std::move(branch);
+	map[reduction] = std::move(linear);
 	map.erase(split);
 	to_visit.erase(split);
 	to_visit.insert(reduction);

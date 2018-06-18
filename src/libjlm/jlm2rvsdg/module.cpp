@@ -295,35 +295,35 @@ convert_branch_node(
 	scoped_vmap & svmap)
 {
 	JLM_DEBUG_ASSERT(is<branchaggnode>(&node));
+	JLM_DEBUG_ASSERT(is<linearaggnode>(node.parent()));
+	JLM_DEBUG_ASSERT(node.parent()->nchildren() == 2 && node.parent()->child(1) == &node);
 
-	convert_node(*node.child(0), dm, function, lb, svmap);
-
-	auto split = node.child(0);
+	auto split = node.parent()->child(0);
 	while (!is<blockaggnode>(split))
 		split = split->child(split->nchildren()-1);
 	auto & sb = dynamic_cast<const blockaggnode*>(split)->basic_block();
 
 	JLM_DEBUG_ASSERT(is<branch_op>(sb.last()->operation()));
 	auto predicate = svmap.vmap()[sb.last()->input(0)];
-	auto gamma = jive::gamma_node::create(predicate, node.nchildren()-1);
+	auto gamma = jive::gamma_node::create(predicate, node.nchildren());
 
 	/* add entry variables */
 	auto ds = static_cast<const branchset*>(dm.at(&node).get());
 	std::unordered_map<const variable*, jive::gamma_input*> evmap;
-	for (const auto & v : ds->cases_top) {
+	for (const auto & v : ds->top) {
 		JLM_DEBUG_ASSERT(svmap.vmap().find(v) != svmap.vmap().end());
 		evmap[v] = gamma->add_entryvar(svmap.vmap()[v]);
 	}
 
 	/* convert branch cases */
 	std::unordered_map<const variable*, std::vector<jive::output*>> xvmap;
-	JLM_DEBUG_ASSERT(gamma->nsubregions() == node.nchildren()-1);
+	JLM_DEBUG_ASSERT(gamma->nsubregions() == node.nchildren());
 	for (size_t n = 0; n < gamma->nsubregions(); n++) {
 		svmap.push_scope(gamma->subregion(n));
 		for (const auto & pair : evmap)
 			svmap.vmap()[pair.first] = pair.second->argument(n);
 
-		convert_node(*node.child(n+1), dm, function, lb, svmap);
+		convert_node(*node.child(n), dm, function, lb, svmap);
 
 		for (const auto & v : ds->bottom) {
 			JLM_DEBUG_ASSERT(svmap.vmap().find(v) != svmap.vmap().end());

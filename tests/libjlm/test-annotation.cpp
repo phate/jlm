@@ -156,9 +156,12 @@ test_branch()
 	auto b2 = blockaggnode::create(std::move(bb2));
 	auto bsptr = bs.get(), b1ptr = b1.get(), b2ptr = b2.get();
 
-	auto root = branchaggnode::create(std::move(bs));
-	root->add_child(std::move(b1));
-	root->add_child(std::move(b2));
+	auto branch = branchaggnode::create();
+	branch->add_child(std::move(b1));
+	branch->add_child(std::move(b2));
+	auto branchptr = branch.get();
+
+	auto root = linearaggnode::create(std::move(bs), std::move(branch));
 
 	/*
 		Create and verify demand map
@@ -168,6 +171,7 @@ test_branch()
 
 	assert(contains(dm, b1ptr, {}, {v2}, {v2}, {v3}));
 	assert(contains(dm, b2ptr, {}, {v1}, {v1}, {v2, v4, v3}));
+	assert(contains(dm, branchptr, {}, {v1, v2}, {v1, v2}, {v3}));
 	assert(contains(dm, bsptr, {v1, v2}, {v2, arg}, {arg}, {v1}));
 	assert(contains(dm, root.get(), {}, {arg, v2}, {arg, v2}, {v1, v3}));
 }

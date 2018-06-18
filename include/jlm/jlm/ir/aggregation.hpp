@@ -336,18 +336,16 @@ public:
 	~branchaggnode();
 
 	inline
-	branchaggnode(std::unique_ptr<aggnode> split)
-	{
-		add_child(std::move(split));
-	}
+	branchaggnode()
+	{}
 
 	virtual std::string
 	debug_string() const override;
 
 	static inline std::unique_ptr<aggnode>
-	create(std::unique_ptr<aggnode> split)
+	create()
 	{
-		return std::make_unique<branchaggnode>(std::move(split));
+		return std::make_unique<branchaggnode>();
 	}
 };
 

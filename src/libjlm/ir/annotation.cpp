@@ -119,21 +119,13 @@ annotaterw(const branchaggnode * node, demandmap & dm)
 
 	/* compute reads and writes */
 	auto ds = branchset::create();
-	ds->cases_reads = dm[node->child(1)]->reads;
-	ds->cases_writes = dm[node->child(1)]->writes;
-	for (size_t n = 2; n < node->nchildren(); n++) {
+	ds->reads = dm[node->child(0)]->reads;
+	ds->writes = dm[node->child(0)]->writes;
+	for (size_t n = 1; n < node->nchildren(); n++) {
 		auto & cs = *dm[node->child(n)];
-		ds->cases_writes = intersect(ds->cases_writes, cs.writes);
-		ds->cases_reads.insert(cs.reads.begin(), cs.reads.end());
+		ds->writes = intersect(ds->writes, cs.writes);
+		ds->reads.insert(cs.reads.begin(), cs.reads.end());
 	}
-
-	ds->reads = ds->cases_reads;
-	ds->writes = ds->cases_writes;
-	auto & cs = *dm[node->child(0)];
-	for (const auto & v : cs.writes)
-		ds->reads.erase(v);
-	ds->reads.insert(cs.reads.begin(), cs.reads.end());
-	ds->writes.insert(cs.writes.begin(), cs.writes.end());
 
 	dm[node] = std::move(ds);
 }
@@ -261,12 +253,9 @@ annotateds(
 		annotateds(node->child(n), tmp, dm);
 	}
 
-	for (const auto & v : ds->cases_writes)
+	for (const auto & v : ds->writes)
 		pds.erase(v);
-	pds.insert(ds->cases_reads.begin(), ds->cases_reads.end());
-	ds->cases_top = pds;
-
-	annotateds(node->child(0), pds, dm);
+	pds.insert(ds->reads.begin(), ds->reads.end());
 
 	ds->top = pds;
 }
