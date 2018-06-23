@@ -116,6 +116,14 @@ convert_struct_type(const jive::type & type, context & ctx)
 	return st;
 }
 
+static llvm::Type *
+convert_vector_type(const jive::type & type, context & ctx)
+{
+	JLM_DEBUG_ASSERT(dynamic_cast<const vectortype*>(&type));
+	auto & t = *static_cast<const vectortype*>(&type);
+	return llvm::VectorType::get(convert_type(t.type(), ctx), t.size());
+}
+
 llvm::Type *
 convert_type(const jive::type & type, context & ctx)
 {
@@ -130,6 +138,7 @@ convert_type(const jive::type & type, context & ctx)
 	, {typeid(jive::ctltype), convert_ctl_type}
 	, {std::type_index(typeid(jlm::fptype)), convert_fp_type}
 	, {std::type_index(typeid(structtype)), convert_struct_type}
+	, {typeid(vectortype), convert_vector_type}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(type))) != map.end());

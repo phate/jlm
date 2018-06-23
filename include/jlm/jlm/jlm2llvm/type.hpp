@@ -87,6 +87,14 @@ convert_type(const structtype & type, context & ctx)
 	return llvm::cast<llvm::StructType>(t);
 }
 
+static inline llvm::VectorType *
+convert_type(const vectortype & type, context & ctx)
+{
+	auto t = convert_type(*static_cast<const jive::type*>(&type), ctx);
+	JLM_DEBUG_ASSERT(t->isVectorTy());
+	return llvm::cast<llvm::VectorType>(t);
+}
+
 }}
 
 #endif
