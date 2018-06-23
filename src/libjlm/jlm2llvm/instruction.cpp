@@ -707,6 +707,22 @@ convert_ctl2bits(
 	return ctx.value(args[0]);
 }
 
+static llvm::Value *
+convert_constantvector(
+	const jive::simple_op & op,
+	const std::vector<const variable*> & operands,
+	llvm::IRBuilder<> & builder,
+	context & ctx)
+{
+	JLM_DEBUG_ASSERT(is<constantvector_op>(op));
+
+	std::vector<llvm::Constant*> ops;
+	for (const auto & operand: operands)
+		ops.push_back(llvm::cast<llvm::Constant>(ctx.value(operand)));
+
+	return llvm::ConstantVector::get(ops);
+}
+
 llvm::Value *
 convert_operation(
 	const jive::simple_op & op,
@@ -764,6 +780,7 @@ convert_operation(
 	, {typeid(constant_aggregate_zero_op), convert_constant_aggregate_zero}
 	, {typeid(ptr2bits_op), convert_ptr2bits}
 	, {typeid(ctl2bits_op), convert_ctl2bits}
+	, {typeid(constantvector_op), convert_constantvector}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
