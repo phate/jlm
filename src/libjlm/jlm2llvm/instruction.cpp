@@ -765,6 +765,17 @@ convert_constantdatavector(
 	JLM_ASSERT(0);
 }
 
+static llvm::Value *
+convert_extractelement(
+	const jive::simple_op & op,
+	const std::vector<const variable*> & args,
+	llvm::IRBuilder<> & builder,
+	context & ctx)
+{
+	JLM_DEBUG_ASSERT(is<extractelement_op>(op));
+	return builder.CreateExtractElement(ctx.value(args[0]), ctx.value(args[1]));
+}
+
 llvm::Value *
 convert_operation(
 	const jive::simple_op & op,
@@ -824,6 +835,7 @@ convert_operation(
 	, {typeid(ctl2bits_op), convert_ctl2bits}
 	, {typeid(constantvector_op), convert_constantvector}
 	, {typeid(constant_data_vector_op), convert_constantdatavector}
+	, {typeid(extractelement_op), convert_extractelement}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
