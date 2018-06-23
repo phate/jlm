@@ -308,7 +308,6 @@ convert_getelementptr(
 
 template<typename T> static std::vector<T>
 get_bitdata(
-	const data_array_constant_op & op,
 	const std::vector<const variable*> & args,
 	context & ctx)
 {
@@ -324,7 +323,6 @@ get_bitdata(
 
 template<typename T> static std::vector<T>
 get_fpdata(
-	const data_array_constant_op & op,
 	const std::vector<const variable*> & args,
 	context & ctx)
 {
@@ -350,16 +348,16 @@ convert_data_array_constant(
 
 	if (auto bt = dynamic_cast<const jive::bittype*>(&cop.type())) {
 		if (bt->nbits() == 8) {
-			auto data = get_bitdata<uint8_t>(cop, args, ctx);
+			auto data = get_bitdata<uint8_t>(args, ctx);
 			return llvm::ConstantDataArray::get(builder.getContext(), data);
 		} else if (bt->nbits() == 16) {
-			auto data = get_bitdata<uint16_t>(cop, args, ctx);
+			auto data = get_bitdata<uint16_t>(args, ctx);
 			return llvm::ConstantDataArray::get(builder.getContext(), data);
 		} else if (bt->nbits() == 32) {
-			auto data = get_bitdata<uint32_t>(cop, args, ctx);
+			auto data = get_bitdata<uint32_t>(args, ctx);
 			return llvm::ConstantDataArray::get(builder.getContext(), data);
 		} else if (bt->nbits() == 64) {
-			auto data = get_bitdata<uint64_t>(cop, args, ctx);
+			auto data = get_bitdata<uint64_t>(args, ctx);
 			return llvm::ConstantDataArray::get(builder.getContext(), data);
 		} else
 			JLM_ASSERT(0);
@@ -367,13 +365,13 @@ convert_data_array_constant(
 
 	if (auto ft = dynamic_cast<const fptype*>(&cop.type())) {
 		if (ft->size() == fpsize::half) {
-			auto data = get_fpdata<uint16_t>(cop, args, ctx);
+			auto data = get_fpdata<uint16_t>(args, ctx);
 			return llvm::ConstantDataArray::getFP(builder.getContext(), data);
 		} else if (ft->size() == fpsize::flt) {
-			auto data = get_fpdata<uint32_t>(cop, args, ctx);
+			auto data = get_fpdata<uint32_t>(args, ctx);
 			return llvm::ConstantDataArray::getFP(builder.getContext(), data);
 		} else if (ft->size() == fpsize::dbl) {
-			auto data = get_fpdata<uint64_t>(cop, args, ctx);
+			auto data = get_fpdata<uint64_t>(args, ctx);
 			return llvm::ConstantDataArray::getFP(builder.getContext(), data);
 		} else
 			JLM_ASSERT(0);
@@ -723,6 +721,50 @@ convert_constantvector(
 	return llvm::ConstantVector::get(ops);
 }
 
+static llvm::Value *
+convert_constantdatavector(
+	const jive::simple_op & op,
+	const std::vector<const variable*> & operands,
+	llvm::IRBuilder<> & builder,
+	context & ctx)
+{
+	JLM_DEBUG_ASSERT(is<constant_data_vector_op>(op));
+	auto & cop = *static_cast<const constant_data_vector_op*>(&op);
+
+	if (auto bt = dynamic_cast<const jive::bittype*>(&cop.type())) {
+		if (bt->nbits() == 8) {
+			auto data = get_bitdata<uint8_t>(operands, ctx);
+			return llvm::ConstantDataVector::get(builder.getContext(), data);
+		} else if (bt->nbits() == 16) {
+			auto data = get_bitdata<uint16_t>(operands, ctx);
+			return llvm::ConstantDataVector::get(builder.getContext(), data);
+		} else if (bt->nbits() == 32) {
+			auto data = get_bitdata<uint32_t>(operands, ctx);
+			return llvm::ConstantDataVector::get(builder.getContext(), data);
+		} else if (bt->nbits() == 64) {
+			auto data = get_bitdata<uint64_t>(operands, ctx);
+			return llvm::ConstantDataVector::get(builder.getContext(), data);
+		} else
+			JLM_ASSERT(0);
+	}
+
+	if (auto ft = dynamic_cast<const fptype*>(&cop.type())) {
+		if (ft->size() == fpsize::half) {
+			auto data = get_fpdata<uint16_t>(operands, ctx);
+			return llvm::ConstantDataVector::getFP(builder.getContext(), data);
+		} else if (ft->size() == fpsize::flt) {
+			auto data = get_fpdata<uint32_t>(operands, ctx);
+			return llvm::ConstantDataVector::getFP(builder.getContext(), data);
+		} else if (ft->size() == fpsize::dbl) {
+			auto data = get_fpdata<uint64_t>(operands, ctx);
+			return llvm::ConstantDataVector::getFP(builder.getContext(), data);
+		} else
+		JLM_ASSERT(0);
+	}
+
+	JLM_ASSERT(0);
+}
+
 llvm::Value *
 convert_operation(
 	const jive::simple_op & op,
@@ -781,6 +823,7 @@ convert_operation(
 	, {typeid(ptr2bits_op), convert_ptr2bits}
 	, {typeid(ctl2bits_op), convert_ctl2bits}
 	, {typeid(constantvector_op), convert_constantvector}
+	, {typeid(constant_data_vector_op), convert_constantdatavector}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
