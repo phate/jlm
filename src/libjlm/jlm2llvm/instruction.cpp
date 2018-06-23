@@ -825,6 +825,18 @@ convert_vectorunary(
 	return convert_operation(vop->operation(), operands, builder, ctx);
 }
 
+static llvm::Value *
+convert_vectorbinary(
+	const jive::simple_op & op,
+	const std::vector<const variable*> & operands,
+	llvm::IRBuilder<> & builder,
+	context & ctx)
+{
+	JLM_DEBUG_ASSERT(is<vectorbinary_op>(op));
+	auto vop = static_cast<const vectorbinary_op*>(&op);
+	return convert_operation(vop->operation(), operands, builder, ctx);
+}
+
 llvm::Value *
 convert_operation(
 	const jive::simple_op & op,
@@ -888,6 +900,7 @@ convert_operation(
 	, {typeid(shufflevector_op), convert_shufflevector}
 	, {typeid(insertelement_op), convert_insertelement}
 	, {typeid(vectorunary_op), convert_vectorunary}
+	, {typeid(vectorbinary_op), convert_vectorbinary}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
