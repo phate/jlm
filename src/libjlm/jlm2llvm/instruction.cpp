@@ -776,6 +776,21 @@ convert_extractelement(
 	return builder.CreateExtractElement(ctx.value(args[0]), ctx.value(args[1]));
 }
 
+static llvm::Value *
+convert_shufflevector(
+	const jive::simple_op & op,
+	const std::vector<const variable*> & operands,
+	llvm::IRBuilder<> & builder,
+	context & ctx)
+{
+	JLM_DEBUG_ASSERT(is<shufflevector_op>(op));
+
+	auto v1 = ctx.value(operands[0]);
+	auto v2 = ctx.value(operands[1]);
+	auto mask = ctx.value(operands[2]);
+	return builder.CreateShuffleVector(v1, v2, mask);
+}
+
 llvm::Value *
 convert_operation(
 	const jive::simple_op & op,
@@ -836,6 +851,7 @@ convert_operation(
 	, {typeid(constantvector_op), convert_constantvector}
 	, {typeid(constant_data_vector_op), convert_constantdatavector}
 	, {typeid(extractelement_op), convert_extractelement}
+	, {typeid(shufflevector_op), convert_shufflevector}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
