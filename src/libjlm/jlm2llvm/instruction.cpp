@@ -23,6 +23,13 @@
 namespace jlm {
 namespace jlm2llvm {
 
+llvm::Value *
+convert_operation(
+	const jive::simple_op & op,
+	const std::vector<const variable*> & arguments,
+	llvm::IRBuilder<> & builder,
+	context & ctx);
+
 static inline llvm::Value *
 convert_assignment(
 	const jive::simple_op & op,
@@ -806,6 +813,18 @@ convert_insertelement(
 	return builder.CreateInsertElement(vector, value, index);
 }
 
+static llvm::Value *
+convert_vectorunary(
+	const jive::simple_op & op,
+	const std::vector<const variable*> & operands,
+	llvm::IRBuilder<> & builder,
+	context & ctx)
+{
+	JLM_DEBUG_ASSERT(is<vectorunary_op>(op));
+	auto vop = static_cast<const vectorunary_op*>(&op);
+	return convert_operation(vop->operation(), operands, builder, ctx);
+}
+
 llvm::Value *
 convert_operation(
 	const jive::simple_op & op,
@@ -868,6 +887,7 @@ convert_operation(
 	, {typeid(extractelement_op), convert_extractelement}
 	, {typeid(shufflevector_op), convert_shufflevector}
 	, {typeid(insertelement_op), convert_insertelement}
+	, {typeid(vectorunary_op), convert_vectorunary}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
