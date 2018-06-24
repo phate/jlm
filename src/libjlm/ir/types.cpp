@@ -158,7 +158,7 @@ vectortype::operator==(const jive::type & other) const noexcept
 std::string
 vectortype::debug_string() const
 {
-	return "vector";
+	return strfmt("vector[", type().debug_string(), ":", size(), "]");
 }
 
 std::unique_ptr<jive::type>
