@@ -473,6 +473,7 @@ convert_fpcmp(
 	, {fpcmp::ueq, llvm::CmpInst::FCMP_UEQ}, {fpcmp::ugt, llvm::CmpInst::FCMP_UGT}
 	, {fpcmp::uge, llvm::CmpInst::FCMP_UGE}, {fpcmp::ult, llvm::CmpInst::FCMP_ULT}
 	, {fpcmp::ule, llvm::CmpInst::FCMP_ULE}, {fpcmp::une, llvm::CmpInst::FCMP_UNE}
+	, {fpcmp::TRUE, llvm::CmpInst::FCMP_TRUE}, {fpcmp::FALSE, llvm::CmpInst::FCMP_FALSE}
 	});
 
 	auto op1 = ctx.value(args[0]);
