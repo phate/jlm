@@ -8,6 +8,20 @@ f(unsigned n)
 		f(n-1);
 }
 
+unsigned y(unsigned);
+
+unsigned
+x(unsigned n)
+{
+	return y(n);
+}
+
+unsigned
+y(unsigned n)
+{
+	return x(n);
+}
+
 int
 main()
 {

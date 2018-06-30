@@ -466,7 +466,7 @@ convert_phi_node(const jive::node & node, context & ctx)
 	/* add functions to context */
 	JLM_DEBUG_ASSERT(node.noutputs() == subregion->nresults());
 	for (size_t n = 0; n < node.noutputs(); n++)
-		ctx.insert(node.output(0), ctx.variable(subregion->result(n)->origin()));
+		ctx.insert(node.output(n), ctx.variable(subregion->result(n)->origin()));
 }
 
 static inline void
