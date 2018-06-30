@@ -443,19 +443,6 @@ convert_ptrcmp(
 }
 
 static inline llvm::Value *
-convert_zext(
-	const jive::simple_op & op,
-	const std::vector<const variable*> & args,
-	llvm::IRBuilder<> & builder,
-	context & ctx)
-{
-	JLM_DEBUG_ASSERT(is<zext_op>(op));
-
-	auto type = convert_type(op.result(0).type(), ctx);
-	return builder.CreateZExt(ctx.value(args[0]), type);
-}
-
-static inline llvm::Value *
 convert_fpcmp(
 	const jive::simple_op & op,
 	const std::vector<const variable*> & args,
@@ -505,58 +492,6 @@ convert_fpbin(
 }
 
 static inline llvm::Value *
-convert_fpext(
-	const jive::simple_op & op,
-	const std::vector<const variable*> & args,
-	llvm::IRBuilder<> & builder,
-	context & ctx)
-{
-	JLM_DEBUG_ASSERT(is<fpext_op>(op));
-
-	auto type = convert_type(op.result(0).type(), ctx);
-	return builder.CreateFPExt(ctx.value(args[0]), type);
-}
-
-static inline llvm::Value *
-convert_fptrunc(
-	const jive::simple_op & op,
-	const std::vector<const variable*> & args,
-	llvm::IRBuilder<> & builder,
-	context & ctx)
-{
-	JLM_DEBUG_ASSERT(is<fptrunc_op>(op));
-
-	auto type = convert_type(op.result(0).type(), ctx);
-	return builder.CreateFPTrunc(ctx.value(args[0]), type);
-}
-
-static inline llvm::Value *
-convert_fp2ui(
-	const jive::simple_op & op,
-	const std::vector<const variable*> & args,
-	llvm::IRBuilder<> & builder,
-	context & ctx)
-{
-	JLM_DEBUG_ASSERT(is<fp2ui_op>(op));
-
-	auto type = convert_type(op.result(0).type(), ctx);
-	return builder.CreateFPToUI(ctx.value(args[0]), type);
-}
-
-static llvm::Value *
-convert_fp2si(
-	const jive::simple_op & op,
-	const std::vector<const variable*> & args,
-	llvm::IRBuilder<> & builder,
-	context & ctx)
-{
-	JLM_DEBUG_ASSERT(is<fp2si_op>(op));
-
-	auto type = convert_type(op.result(0).type(), ctx);
-	return builder.CreateFPToSI(ctx.value(args[0]), type);
-}
-
-static inline llvm::Value *
 convert_valist(
 	const jive::simple_op & op,
 	const std::vector<const variable*> & args,
@@ -565,19 +500,6 @@ convert_valist(
 {
 	JLM_DEBUG_ASSERT(is<valist_op>(op));
 	return nullptr;
-}
-
-static inline llvm::Value *
-convert_bitcast(
-	const jive::simple_op & op,
-	const std::vector<const variable*> & args,
-	llvm::IRBuilder<> & builder,
-	context & ctx)
-{
-	JLM_DEBUG_ASSERT(is<bitcast_op>(op));
-
-	auto type = convert_type(op.result(0).type(), ctx);
-	return builder.CreateBitCast(ctx.value(args[0]), type);
 }
 
 static inline llvm::Value *
@@ -596,58 +518,6 @@ convert_struct_constant(
 
 	auto t = convert_type(cop.type(), ctx);
 	return llvm::ConstantStruct::get(t, operands);
-}
-
-static inline llvm::Value *
-convert_trunc(
-	const jive::simple_op & op,
-	const std::vector<const variable*> & args,
-	llvm::IRBuilder<> & builder,
-	context & ctx)
-{
-	JLM_DEBUG_ASSERT(is<trunc_op>(op));
-
-	auto type = convert_type(op.result(0).type(), ctx);
-	return builder.CreateTrunc(ctx.value(args[0]), type);
-}
-
-static inline llvm::Value *
-convert_sext(
-	const jive::simple_op & op,
-	const std::vector<const variable*> & args,
-	llvm::IRBuilder<> & builder,
-	context & ctx)
-{
-	JLM_DEBUG_ASSERT(is<sext_op>(op));
-
-	auto type = convert_type(op.result(0).type(), ctx);
-	return builder.CreateSExt(ctx.value(args[0]), type);
-}
-
-static inline llvm::Value *
-convert_sitofp(
-	const jive::simple_op & op,
-	const std::vector<const variable*> & args,
-	llvm::IRBuilder<> & builder,
-	context & ctx)
-{
-	JLM_DEBUG_ASSERT(is<sitofp_op>(op));
-
-	auto type = convert_type(op.result(0).type(), ctx);
-	return builder.CreateSIToFP(ctx.value(args[0]), type);
-}
-
-static llvm::Value *
-convert_uitofp(
-	const jive::simple_op & op,
-	const std::vector<const variable*> & args,
-	llvm::IRBuilder<> & builder,
-	context & ctx)
-{
-	JLM_DEBUG_ASSERT(is<uitofp_op>(op));
-
-	auto type = convert_type(op.result(0).type(), ctx);
-	return builder.CreateUIToFP(ctx.value(args[0]), type);
 }
 
 static inline llvm::Value *
@@ -687,19 +557,6 @@ convert_mux(
 {
 	JLM_DEBUG_ASSERT(is<jive::mux_op>(op));
 	return nullptr;
-}
-
-static inline llvm::Value *
-convert_ptr2bits(
-	const jive::simple_op & op,
-	const std::vector<const variable*> & args,
-	llvm::IRBuilder<> & builder,
-	context & ctx)
-{
-	JLM_DEBUG_ASSERT(is<ptr2bits_op>(op));
-
-	auto type = convert_type(op.result(0).type(), ctx);
-	return builder.CreatePtrToInt(ctx.value(args[0]), type);
 }
 
 static inline llvm::Value *
@@ -838,6 +695,26 @@ convert_vectorbinary(
 	return convert_operation(vop->operation(), operands, builder, ctx);
 }
 
+template<llvm::Instruction::CastOps OPCODE> static llvm::Value *
+convert_cast(
+	const jive::simple_op & op,
+	const std::vector<const variable*> & operands,
+	llvm::IRBuilder<> & builder,
+	context & ctx)
+{
+	JLM_DEBUG_ASSERT(llvm::Instruction::isCast(OPCODE));
+	auto & dsttype = *static_cast<const jive::valuetype*>(&op.result(0).type());
+	auto operand = operands[0];
+
+	if (auto vtype = dynamic_cast<const vectortype*>(&operand->type())) {
+		auto type = convert_type(vectortype(dsttype, vtype->size()), ctx);
+		return builder.CreateCast(OPCODE, ctx.value(operand), type);
+	}
+
+	auto type = convert_type(dsttype, ctx);
+	return builder.CreateCast(OPCODE, ctx.value(operand), type);
+}
+
 llvm::Value *
 convert_operation(
 	const jive::simple_op & op,
@@ -874,26 +751,15 @@ convert_operation(
 	, {typeid(jlm::getelementptr_op), convert_getelementptr}
 	, {std::type_index(typeid(jlm::data_array_constant_op)), convert_data_array_constant}
 	, {std::type_index(typeid(jlm::ptrcmp_op)), convert_ptrcmp}
-	, {std::type_index(typeid(jlm::zext_op)), convert_zext}
 	, {std::type_index(typeid(jlm::fpcmp_op)), convert_fpcmp}
 	, {std::type_index(typeid(jlm::fpbin_op)), convert_fpbin}
-	, {std::type_index(typeid(jlm::fpext_op)), convert_fpext}
-	, {typeid(fptrunc_op), convert_fptrunc}
-	, {typeid(fp2ui_op), convert_fp2ui}
-	, {typeid(fp2si_op), convert_fp2si}
 	, {std::type_index(typeid(jlm::valist_op)), convert_valist}
-	, {std::type_index(typeid(jlm::bitcast_op)), convert_bitcast}
 	, {std::type_index(typeid(jlm::struct_constant_op)), convert_struct_constant}
-	, {std::type_index(typeid(jlm::trunc_op)), convert_trunc}
-	, {std::type_index(typeid(jlm::sext_op)), convert_sext}
-	, {std::type_index(typeid(jlm::sitofp_op)), convert_sitofp}
-	, {typeid(jlm::uitofp_op), convert_uitofp}
 	, {std::type_index(typeid(jlm::ptr_constant_null_op)), convert_ptr_constant_null}
 	, {std::type_index(typeid(jlm::select_op)), convert_select}
 	, {std::type_index(typeid(jive::mux_op)), convert_mux}
 	, {typeid(jlm::constant_array_op), convert_constant_array}
 	, {typeid(constant_aggregate_zero_op), convert_constant_aggregate_zero}
-	, {typeid(ptr2bits_op), convert_ptr2bits}
 	, {typeid(ctl2bits_op), convert_ctl2bits}
 	, {typeid(constantvector_op), convert_constantvector}
 	, {typeid(constant_data_vector_op), convert_constantdatavector}
@@ -902,6 +768,21 @@ convert_operation(
 	, {typeid(insertelement_op), convert_insertelement}
 	, {typeid(vectorunary_op), convert_vectorunary}
 	, {typeid(vectorbinary_op), convert_vectorbinary}
+
+	/* LLVM Cast Instructions */
+	/* FIXME: AddrSpaceCast instruction is not supported */
+	, {typeid(bitcast_op), convert_cast<llvm::Instruction::BitCast>}
+	, {typeid(fpext_op), convert_cast<llvm::Instruction::FPExt>}
+	, {typeid(fp2si_op), convert_cast<llvm::Instruction::FPToSI>}
+	, {typeid(fp2ui_op), convert_cast<llvm::Instruction::FPToUI>}
+	, {typeid(fptrunc_op), convert_cast<llvm::Instruction::FPTrunc>}
+	/* FIXME: IntToPtr instruction is not supported */
+	, {typeid(ptr2bits_op), convert_cast<llvm::Instruction::PtrToInt>}
+	, {typeid(sext_op), convert_cast<llvm::Instruction::SExt>}
+	, {typeid(sitofp_op), convert_cast<llvm::Instruction::SIToFP>}
+	, {typeid(trunc_op), convert_cast<llvm::Instruction::Trunc>}
+	, {typeid(uitofp_op), convert_cast<llvm::Instruction::UIToFP>}
+	, {typeid(zext_op), convert_cast<llvm::Instruction::ZExt>}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
