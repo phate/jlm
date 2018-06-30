@@ -25,6 +25,12 @@ ptr2int(void * p)
 	return (intptr_t)p;
 }
 
+void *
+int2ptr(intptr_t p)
+{
+	return (void*)p;
+}
+
 int64_t
 sext(int32_t x)
 {
