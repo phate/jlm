@@ -715,6 +715,28 @@ convert_cast(
 	return builder.CreateCast(OPCODE, ctx.value(operand), type);
 }
 
+static llvm::Value *
+convert(
+	const extractvalue_op & op,
+	const std::vector<const variable*> & operands,
+	llvm::IRBuilder<> & builder,
+	context & ctx)
+{
+	std::vector<unsigned> indices(op.begin(), op.end());
+	return builder.CreateExtractValue(ctx.value(operands[0]), indices);
+}
+
+template<class OP> static llvm::Value *
+convert(
+	const jive::simple_op & op,
+	const std::vector<const variable*> & operands,
+	llvm::IRBuilder<> & builder,
+	context & ctx)
+{
+	JLM_DEBUG_ASSERT(is<OP>(op));
+	return convert(*static_cast<const OP*>(&op), operands, builder, ctx);
+}
+
 llvm::Value *
 convert_operation(
 	const jive::simple_op & op,
@@ -768,6 +790,7 @@ convert_operation(
 	, {typeid(insertelement_op), convert_insertelement}
 	, {typeid(vectorunary_op), convert_vectorunary}
 	, {typeid(vectorbinary_op), convert_vectorbinary}
+	, {typeid(extractvalue_op), convert<extractvalue_op>}
 
 	/* LLVM Cast Instructions */
 	/* FIXME: AddrSpaceCast instruction is not supported */

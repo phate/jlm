@@ -461,10 +461,15 @@ convert_insertvalue_instruction(llvm::Instruction * inst, tacsvector_t & tacs, c
 }
 
 static inline const variable *
-convert_extractvalue_instruction(llvm::Instruction * inst, tacsvector_t & tacs, context & ctx)
+convert_extractvalue(llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
 {
-	/* FIXME: add support */
-	JLM_ASSERT(0);
+	JLM_DEBUG_ASSERT(i->getOpcode() == llvm::Instruction::ExtractValue);
+	auto ev = llvm::dyn_cast<llvm::ExtractValueInst>(i);
+
+	auto result = ctx.lookup_value(ev);
+	auto aggregate = convert_value(ev->getOperand(0), tacs, ctx);
+	tacs.push_back(extractvalue_op::create(aggregate, ev->getIndices(), result));
+	return tacs.back()->output(0);
 }
 
 static inline const variable *
@@ -583,7 +588,7 @@ convert_instruction(
 	,	{std::type_index(typeid(llvm::SelectInst)), convert_select_instruction}
 	,	{std::type_index(typeid(llvm::AllocaInst)), convert_alloca_instruction}
 	,	{std::type_index(typeid(llvm::InsertValueInst)), convert_insertvalue_instruction}
-	,	{std::type_index(typeid(llvm::ExtractValueInst)), convert_extractvalue_instruction}
+	,	{typeid(llvm::ExtractValueInst), convert_extractvalue}
 	,	{typeid(llvm::ExtractElementInst), convert_extractelement_instruction}
 	,	{typeid(llvm::ShuffleVectorInst), convert_shufflevector_instruction}
 	,	{typeid(llvm::InsertElementInst), convert_insertelement_instruction}
