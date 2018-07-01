@@ -1,0 +1,2 @@
+TESTS += \
+	libjlm/j2r/test-recursive-data

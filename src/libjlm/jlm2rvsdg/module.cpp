@@ -493,14 +493,13 @@ convert_data_node(
 	JLM_DEBUG_ASSERT(dynamic_cast<const data_node*>(node));
 	auto n = static_cast<const data_node*>(node);
 	auto & m = svmap.module();
-	auto graph = region->graph();
 
 	jive::output * data = nullptr;
 	if (n->initialization().empty()) {
-		data = graph->add_import(n->type(), n->name());
+		data = region->graph()->add_import(n->type(), n->name());
 	} else {
 		jlm::delta_builder db;
-		auto r = db.begin(graph->root(), n->linkage(), n->constant());
+		auto r = db.begin(region, n->linkage(), n->constant());
 		auto & pv = svmap.vmap();
 		svmap.push_scope(r);
 
