@@ -1990,6 +1990,84 @@ public:
 	}
 };
 
+/* extractvalue operator */
+
+class extractvalue_op final : public jive::simple_op {
+	typedef std::vector<unsigned>::const_iterator const_iterator;
+public:
+	virtual
+	~extractvalue_op() noexcept;
+
+	inline
+	extractvalue_op(
+		const jive::type & aggtype,
+		const std::vector<unsigned> & indices)
+	: simple_op({aggtype}, {dsttype(aggtype, indices)})
+	, indices_(indices)
+	{
+		if (indices.empty())
+			throw jlm::error("expected at least one index.");
+	}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+	const_iterator
+	begin() const
+	{
+		return indices_.begin();
+	}
+
+	const_iterator
+	end() const
+	{
+		return indices_.end();
+	}
+
+	static inline std::unique_ptr<jlm::tac>
+	create(
+		const jlm::variable * aggregate,
+		const std::vector<unsigned> & indices,
+		jlm::variable * result)
+	{
+		extractvalue_op op(aggregate->type(), indices);
+		return create_tac(op, {aggregate}, {result});
+	}
+
+private:
+	static inline jive::port
+	dsttype(
+		const jive::type & aggtype,
+		const std::vector<unsigned> & indices)
+	{
+		const jive::type * type = &aggtype;
+		for (const auto & index : indices) {
+			if (auto st = dynamic_cast<const structtype*>(type)) {
+				if (index >= st->declaration()->nelements())
+					throw jlm::error("extractvalue index out of bound.");
+
+				type = &st->declaration()->element(index);
+			} else if (auto at = dynamic_cast<const arraytype*>(type)) {
+				if (index >= at->nelements())
+					throw jlm::error("extractvalue index out of bound.");
+
+				type = &at->element_type();
+			} else
+				throw jlm::error("expected struct or array type.");
+		}
+
+		return {*type};
+	}
+
+	std::vector<unsigned> indices_;
+};
+
 }
 
 #endif
