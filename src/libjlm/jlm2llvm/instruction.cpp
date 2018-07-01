@@ -209,8 +209,7 @@ convert_match(
 	if (is_identity_mapping(*mop))
 		return ctx.value(args[0]);
 
-	if (mop->nalternatives() == 2) {
-		JLM_DEBUG_ASSERT(mop->nbits() == 1);
+	if (mop->nalternatives() == 2 && mop->nbits() == 1) {
 		auto i2 = llvm::IntegerType::get(builder.getContext(), 2);
 		auto t = llvm::ConstantInt::getFalse(i2);
 		auto f = llvm::ConstantInt::getTrue(i2);
