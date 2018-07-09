@@ -8,6 +8,7 @@
 
 #include <jive/rvsdg/type.h>
 
+#include <jlm/jlm/ir/linkage.hpp>
 #include <jlm/util/strfmt.hpp>
 
 #include <memory>
@@ -57,13 +58,6 @@ private:
 };
 
 /* top level variable */
-
-enum class linkage {
-	external_linkage, available_externally_linkage, link_once_any_linkage,
-	link_once_odr_linkage, weak_any_linkage, weak_odr_linkage,
-	appending_linkage, internal_linkage, private_linkage,
-	external_weak_linkage, common_linkage
-};
 
 class gblvariable : public variable {
 public:
