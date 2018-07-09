@@ -40,7 +40,7 @@ convert_basic_blocks(
 				continue;
 
 			if (i->getType()->getTypeID() != llvm::Type::VoidTyID) {
-				auto v = ctx.module().create_variable(*convert_type(i->getType(), ctx), false);
+				auto v = ctx.module().create_variable(*convert_type(i->getType(), ctx));
 				ctx.insert_value(&(*i), v);
 			}
 		}
@@ -71,17 +71,17 @@ create_cfg(llvm::Function & f, context & ctx)
 	for (const auto & arg : f.getArgumentList()) {
 		JLM_DEBUG_ASSERT(n < node->fcttype().narguments());
 		auto & type = node->fcttype().argument_type(n++);
-		auto v = ctx.module().create_variable(type, arg.getName().str(), false);
+		auto v = ctx.module().create_variable(type, arg.getName().str());
 		cfg->entry().append_argument(v);
 		ctx.insert_value(&arg, v);
 	}
 	if (f.isVarArg()) {
 		JLM_DEBUG_ASSERT(n < node->fcttype().narguments());
-		auto v = m.create_variable(node->fcttype().argument_type(n++), "_varg_", false);
+		auto v = m.create_variable(node->fcttype().argument_type(n++), "_varg_");
 		cfg->entry().append_argument(v);
 	}
 	JLM_DEBUG_ASSERT(n < node->fcttype().narguments());
-	auto state = m.create_variable(node->fcttype().argument_type(n++), "_s_", false);
+	auto state = m.create_variable(node->fcttype().argument_type(n++), "_s_");
 	cfg->entry().append_argument(state);
 	JLM_DEBUG_ASSERT(n == node->fcttype().narguments());
 
@@ -98,7 +98,7 @@ create_cfg(llvm::Function & f, context & ctx)
 	/* add results */
 	jlm::variable * result = nullptr;
 	if (!f.getReturnType()->isVoidTy()) {
-		result = m.create_variable(*convert_type(f.getReturnType(), ctx), "_r_", false);
+		result = m.create_variable(*convert_type(f.getReturnType(), ctx), "_r_");
 		append_last(entry_block, create_undef_constant_tac(result));
 
 		JLM_DEBUG_ASSERT(node->fcttype().nresults() == 2);

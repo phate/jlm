@@ -20,7 +20,7 @@ test_straightening()
 {
 	jlm::valuetype vt;
 	jlm::module module("", "");
-	auto v = module.create_variable(vt, "v", false);
+	auto v = module.create_variable(vt, "v");
 
 	jlm::cfg cfg(module);
 	auto bb1 = create_basic_block_node(&cfg);

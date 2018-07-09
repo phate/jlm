@@ -543,7 +543,7 @@ handle_scc(
 		auto v = m.variable(node);
 		JLM_DEBUG_ASSERT(v);
 		svmap.vmap()[v] = output;
-		if (v->exported())
+		if (is_externally_visible(node->linkage()))
 			graph->add_export(output, v->name());
 	} else {
 		jive::phi_builder pb;
@@ -588,7 +588,7 @@ handle_scc(
 			auto v = m.variable(node);
 			auto value = recvars[v]->value();
 			svmap.vmap()[v] = value;
-			if (v->exported())
+			if (is_externally_visible(node->linkage()))
 				graph->add_export(value, v->name());
 		}
 	}

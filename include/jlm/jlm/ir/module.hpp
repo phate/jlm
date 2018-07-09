@@ -119,19 +119,19 @@ public:
 	}
 
 	inline jlm::variable *
-	create_variable(const jive::type & type, const std::string & name, bool exported)
+	create_variable(const jive::type & type, const std::string & name)
 	{
-		auto v = std::make_unique<jlm::variable>(type, name, exported);
+		auto v = std::make_unique<jlm::variable>(type, name);
 		auto pv = v.get();
 		variables_.insert(std::move(v));
 		return pv;
 	}
 
 	inline jlm::variable *
-	create_variable(const jive::type & type, bool exported)
+	create_variable(const jive::type & type)
 	{
 		static uint64_t c = 0;
-		auto v = std::make_unique<jlm::variable>(type, strfmt("v", c++), exported);
+		auto v = std::make_unique<jlm::variable>(type, strfmt("v", c++));
 		auto pv = v.get();
 		variables_.insert(std::move(v));
 		return pv;

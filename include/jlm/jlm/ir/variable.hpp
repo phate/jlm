@@ -24,10 +24,9 @@ public:
 	~variable() noexcept;
 
 	inline
-	variable(const jive::type & type, const std::string & name, bool exported)
-		: exported_(exported)
-		, name_(name)
-		, type_(type.copy())
+	variable(const jive::type & type, const std::string & name)
+	: name_(name)
+	, type_(type.copy())
 	{}
 
 	virtual std::string
@@ -39,12 +38,6 @@ public:
 		return name_;
 	}
 
-	inline bool
-	exported() const noexcept
-	{
-		return exported_;
-	}
-
 	inline const jive::type &
 	type() const noexcept
 	{
@@ -52,7 +45,6 @@ public:
 	}
 
 private:
-	bool exported_;
 	std::string name_;
 	std::unique_ptr<jive::type> type_;
 };
@@ -69,7 +61,7 @@ public:
 		const jive::type & type,
 		const std::string & name,
 		const jlm::linkage & linkage)
-	: variable(type, name, linkage != linkage::internal_linkage)
+	: variable(type, name)
 	, linkage_(linkage)
 	{}
 

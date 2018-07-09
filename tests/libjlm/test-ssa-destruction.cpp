@@ -20,13 +20,13 @@ test_two_phis()
 	jlm::valuetype vt;
 	jlm::module module("", "");
 
-	auto v1 = module.create_variable(vt, "vbl1", false);
-	auto v2 = module.create_variable(vt, "vbl2", false);
-	auto v3 = module.create_variable(vt, "vbl3", false);
-	auto v4 = module.create_variable(vt, "vbl4", false);
+	auto v1 = module.create_variable(vt, "vbl1");
+	auto v2 = module.create_variable(vt, "vbl2");
+	auto v3 = module.create_variable(vt, "vbl3");
+	auto v4 = module.create_variable(vt, "vbl4");
 
-	auto r1 = module.create_variable(vt, "r1", false);
-	auto r2 = module.create_variable(vt, "r2", false);
+	auto r1 = module.create_variable(vt, "r1");
+	auto r2 = module.create_variable(vt, "r2");
 
 	jlm::cfg cfg(module);
 	auto bb1 = create_basic_block_node(&cfg);

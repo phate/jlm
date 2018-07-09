@@ -294,14 +294,14 @@ static inline const variable *
 create_pvariable(const jive::ctltype & type, jlm::module & m)
 {
 	static size_t c = 0;
-	return m.create_variable(type, strfmt("#p", c++, "#"), false);
+	return m.create_variable(type, strfmt("#p", c++, "#"));
 }
 
 static inline const variable *
 create_qvariable(const jive::ctltype & type, jlm::module & m)
 {
 	static size_t c = 0;
-	return m.create_variable(type, strfmt("#q", c++, "#"), false);
+	return m.create_variable(type, strfmt("#q", c++, "#"));
 }
 
 static inline const variable *
@@ -309,7 +309,7 @@ create_rvariable(jlm::module & m)
 {
 	static size_t c = 0;
 	jive::ctltype type(2);
-	return m.create_variable(type, strfmt("#r", c++, "#"), false);
+	return m.create_variable(type, strfmt("#r", c++, "#"));
 }
 
 static inline void

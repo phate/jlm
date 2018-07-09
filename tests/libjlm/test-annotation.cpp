@@ -58,9 +58,9 @@ test_block()
 	test_op op({&vt}, {&vt});
 
 	jlm::module module("", "");
-	auto v0 = module.create_variable(vt, "v0", false);
-	auto v1 = module.create_variable(vt, "v1", false);
-	auto v2 = module.create_variable(vt, "v2", false);
+	auto v0 = module.create_variable(vt, "v0");
+	auto v1 = module.create_variable(vt, "v1");
+	auto v2 = module.create_variable(vt, "v2");
 
 	basic_block bb;
 	bb.append_last(create_tac(op, {v0}, {v1}));
@@ -83,9 +83,9 @@ test_linear()
 	test_op op({&vt}, {&vt});
 
 	jlm::module module("", "");
-	auto arg = module.create_variable(vt, "arg", false);
-	auto v1 = module.create_variable(vt, "v1", false);
-	auto v2 = module.create_variable(vt, "v2", false);
+	auto arg = module.create_variable(vt, "arg");
+	auto v1 = module.create_variable(vt, "v1");
+	auto v2 = module.create_variable(vt, "v2");
 
 	/*
 		Setup simple linear CFG: Entry -> B1 -> B2 -> Exit
@@ -135,11 +135,11 @@ test_branch()
 	test_op op({&vt}, {&vt});
 
 	jlm::module module("", "");
-	auto arg = module.create_variable(vt, "arg", false);
-	auto v1 = module.create_variable(vt, "v1", false);
-	auto v2 = module.create_variable(vt, "v2", false);
-	auto v3 = module.create_variable(vt, "v3", false);
-	auto v4 = module.create_variable(vt, "v4", false);
+	auto arg = module.create_variable(vt, "arg");
+	auto v1 = module.create_variable(vt, "v1");
+	auto v2 = module.create_variable(vt, "v2");
+	auto v3 = module.create_variable(vt, "v3");
+	auto v4 = module.create_variable(vt, "v4");
 
 	/*
 		Setup conditional CFG with nodes bbs, b1, b2, and edges bbs -> b1 and bbs -> b2.
@@ -185,10 +185,10 @@ test_loop()
 	test_op op({&vt}, {&vt});
 
 	jlm::module module("", "");
-	auto v1 = module.create_variable(vt, "v1", false);
-	auto v2 = module.create_variable(vt, "v2", false);
-	auto v3 = module.create_variable(vt, "v3", false);
-	auto v4 = module.create_variable(vt, "v4", false);
+	auto v1 = module.create_variable(vt, "v1");
+	auto v2 = module.create_variable(vt, "v2");
+	auto v3 = module.create_variable(vt, "v3");
+	auto v4 = module.create_variable(vt, "v4");
 
 	jlm::exit xa({v3, v4});
 
@@ -226,8 +226,8 @@ test_assignment()
 	test_op op({&vt}, {&vt});
 
 	jlm::module module("", "");
-	auto v1 = module.create_variable(vt, "v1", false);
-	auto v2 = module.create_variable(vt, "v2", false);
+	auto v1 = module.create_variable(vt, "v1");
+	auto v2 = module.create_variable(vt, "v2");
 
 	basic_block bb;
 	bb.append_last(create_tac(op, {v1}, {v2}));

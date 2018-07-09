@@ -35,7 +35,7 @@ create_result_variables(jlm::module & m, const jive::simple_op & op)
 {
 	std::vector<const jlm::variable*> variables;
 	for (size_t n = 0; n < op.nresults(); n++)
-		variables.push_back(m.create_variable(op.result(n).type(), false));
+		variables.push_back(m.create_variable(op.result(n).type()));
 
 	return variables;
 }
@@ -316,7 +316,7 @@ convert_getelementptr_instruction(llvm::Instruction * inst, tacsvector_t & tacs,
 	if (ctx.has_value(i))
 		result = ctx.lookup_value(i);
 	else
-		result = m.create_variable(*convert_type(i->getType(), ctx), false);
+		result = m.create_variable(*convert_type(i->getType(), ctx));
 
 	tacs.push_back(create_getelementptr_tac(base, indices, result));
 	return tacs.back()->output(0);
@@ -542,7 +542,7 @@ convert_cast_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & c
 	if (ctx.has_value(i))
 		r = ctx.lookup_value(i);
 	else
-		r = ctx.module().create_variable(*convert_type(i->getType(), ctx), false);
+		r = ctx.module().create_variable(*convert_type(i->getType(), ctx));
 
 	auto op = convert_value(i->getOperand(0), tacs, ctx);
 	auto srctype = convert_type(st->isVectorTy() ? st->getVectorElementType() : st, ctx);

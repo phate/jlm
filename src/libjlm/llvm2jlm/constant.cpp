@@ -55,7 +55,7 @@ convert_int_constant(
 	const llvm::ConstantInt * constant = static_cast<const llvm::ConstantInt*>(c);
 
 	jive::bitvalue_repr v = convert_apint(constant->getValue());
-	auto r = ctx.module().create_variable(*convert_type(c->getType(), ctx), false);
+	auto r = ctx.module().create_variable(*convert_type(c->getType(), ctx));
 	tacs.push_back(create_tac(jive::bitconstant_op(v), {}, {r}));
 	return r;
 }
@@ -69,7 +69,7 @@ convert_undefvalue(
 	JLM_DEBUG_ASSERT(c->getValueID() == llvm::Value::UndefValueVal);
 
 	auto t = convert_type(c->getType(), ctx);
-	auto r = ctx.module().create_variable(*t, false);
+	auto r = ctx.module().create_variable(*t);
 	tacs.push_back(create_undef_constant_tac(r));
 	return r;
 }
@@ -104,7 +104,7 @@ convert_constantFP(
 	JLM_DEBUG_ASSERT(constant->getValueID() == llvm::Value::ConstantFPVal);
 	auto c = llvm::cast<llvm::ConstantFP>(constant);
 
-	auto r = ctx.module().create_variable(*convert_type(c->getType(), ctx), false);
+	auto r = ctx.module().create_variable(*convert_type(c->getType(), ctx));
 	tacs.push_back(create_fpconstant_tac(c->getValueAPF(), r));
 	return r;
 }
@@ -120,7 +120,7 @@ convert_globalVariable(
 
 	if (!c->hasInitializer()) {
 		auto t = convert_type(c->getType(), ctx);
-		auto r = ctx.module().create_variable(*t, false);
+		auto r = ctx.module().create_variable(*t);
 		tacs.push_back(create_undef_constant_tac(r));
 		return r;
 	}
@@ -138,7 +138,7 @@ convert_constantPointerNull(
 	auto & c = *llvm::cast<const llvm::ConstantPointerNull>(constant);
 
 	auto t = convert_type(c.getType(), ctx);
-	auto r = ctx.module().create_variable(*t, false);
+	auto r = ctx.module().create_variable(*t);
 	tacs.push_back(create_ptr_constant_null_tac(*t,r));
 	return r;
 }
@@ -164,7 +164,7 @@ convert_constantAggregateZero(
 {
 	JLM_DEBUG_ASSERT(c->getValueID() == llvm::Value::ConstantAggregateZeroVal);
 
-	auto r = ctx.module().create_variable(*convert_type(c->getType(), ctx), false);
+	auto r = ctx.module().create_variable(*convert_type(c->getType(), ctx));
 	tacs.push_back(create_constant_aggregate_zero_tac({r}));
 	return r;
 }
@@ -185,7 +185,7 @@ convert_constantArray(
 		elements.push_back(convert_constant(constant, tacs, ctx));
 	}
 
-	auto r = ctx.module().create_variable(*convert_type(c->getType(), ctx), false);
+	auto r = ctx.module().create_variable(*convert_type(c->getType(), ctx));
 	tacs.push_back(create_constant_array_tac(elements, r));
 	return r;
 }
@@ -203,7 +203,7 @@ convert_constantDataArray(
 	for (size_t n = 0; n < c.getNumElements(); n++)
 		elements.push_back(convert_constant(c.getElementAsConstant(n), tacs, ctx));
 
-	auto r = ctx.module().create_variable(*convert_type(c.getType(), ctx), false);
+	auto r = ctx.module().create_variable(*convert_type(c.getType(), ctx));
 	tacs.push_back(create_data_array_constant_tac(elements, r));
 	return r;
 }
@@ -221,7 +221,7 @@ convert_constantDataVector(
 	for (size_t n = 0; n < c->getNumElements(); n++)
 		elements.push_back(convert_constant(c->getElementAsConstant(n), tacs, ctx));
 
-	auto r = ctx.module().create_variable(*convert_type(c->getType(), ctx), false);
+	auto r = ctx.module().create_variable(*convert_type(c->getType(), ctx));
 	tacs.push_back(constant_data_vector_op::create(elements, r));
 	return r;
 }
@@ -238,7 +238,7 @@ convert_constantStruct(
 	for (size_t n = 0; n < c->getNumOperands(); n++)
 		elements.push_back(convert_constant(c->getAggregateElement(n), tacs, ctx));
 
-	auto r = ctx.module().create_variable(*convert_type(c->getType(), ctx), false);
+	auto r = ctx.module().create_variable(*convert_type(c->getType(), ctx));
 	tacs.push_back(create_struct_constant_tac(elements, r));
 	return r;
 }
@@ -255,7 +255,7 @@ convert_constantVector(
 	for (size_t n = 0; n < c->getNumOperands(); n++)
 		elements.push_back(convert_constant(c->getAggregateElement(n), tacs, ctx));
 
-	auto r = ctx.module().create_variable(*convert_type(c->getType(), ctx), false);
+	auto r = ctx.module().create_variable(*convert_type(c->getType(), ctx));
 	tacs.push_back(constantvector_op::create(elements, r));
 	return r;
 }

@@ -152,7 +152,7 @@ create_cfg(const jive::node & node, context & ctx)
 		if (argument->input()) {
 			v = ctx.variable(argument->input()->origin());
 		} else {
-			v = module.create_variable(argument->type(), "", false);
+			v = module.create_variable(argument->type(), "");
 			cfg->entry().append_argument(v);
 		}
 
@@ -228,7 +228,7 @@ convert_empty_gamma_node(const jive::gamma_node * gamma, context & ctx)
 			continue;
 		}
 
-		auto v = module.create_variable(output->type(), false);
+		auto v = module.create_variable(output->type());
 		if (is<jive::match_op>(predicate->node())) {
 			auto matchop = static_cast<const jive::match_op*>(&predicate->node()->operation());
 			auto d = matchop->default_alternative();
@@ -237,7 +237,7 @@ convert_empty_gamma_node(const jive::gamma_node * gamma, context & ctx)
 			auto f = d == 0 ? ctx.variable(o0) : ctx.variable(o1);
 			append_last(bb, create_select_tac(c, t, f, v));
 		} else {
-			auto c = module.create_variable(jive::bittype(1), false);
+			auto c = module.create_variable(jive::bittype(1));
 			append_last(bb, create_ctl2bits_tac(ctx.variable(predicate), c));
 			append_last(bb, create_select_tac(c, ctx.variable(o1), ctx.variable(o0), v));
 		}
@@ -321,7 +321,7 @@ convert_gamma_node(const jive::node & node, context & ctx)
 		if (select) {
 			/* use select instead of phi */
 			auto d = matchop->default_alternative();
-			auto v = module.create_variable(output->type(), false);
+			auto v = module.create_variable(output->type());
 			auto c = ctx.variable(predicate->node()->input(0)->origin());
 			auto t = d == 0 ? arguments[1].first : arguments[0].first;
 			auto f = d == 0 ? arguments[0].first : arguments[1].first;
@@ -331,7 +331,7 @@ convert_gamma_node(const jive::node & node, context & ctx)
 		}
 
 		/* create phi instruction */
-		auto v = module.create_variable(output->type(), false);
+		auto v = module.create_variable(output->type());
 		append_last(exit, create_phi_tac(arguments, v));
 		ctx.insert(output, v);
 	}
@@ -378,7 +378,7 @@ convert_theta_node(const jive::node & node, context & ctx)
 		auto argument = subregion->argument(n);
 		auto v = ctx.variable(argument->input()->origin());
 		if (phi_needed(argument->input(), v)) {
-			lvs.push_back(ctx.module().create_variable(argument->type(), false));
+			lvs.push_back(ctx.module().create_variable(argument->type()));
 			v = lvs.back();
 		}
 		ctx.insert(argument, v);

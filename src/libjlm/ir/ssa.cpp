@@ -50,7 +50,7 @@ destruct_ssa(jlm::cfg & cfg)
 				break;
 
 			auto phi = static_cast<const phi_op*>(&tac->operation());
-			auto v = cfg.module().create_variable(phi->type(), false);
+			auto v = cfg.module().create_variable(phi->type());
 
 			const variable * value;
 			for (size_t n = 0; n < tac->ninputs(); n++) {

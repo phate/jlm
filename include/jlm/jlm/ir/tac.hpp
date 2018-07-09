@@ -36,7 +36,7 @@ public:
 	tacvariable(
 		const jive::type & type,
 		const std::string & name)
-	: variable (type, name, false)
+	: variable (type, name)
 	, tac_(nullptr)
 	{}
 
