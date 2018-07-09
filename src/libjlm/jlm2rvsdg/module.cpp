@@ -206,7 +206,7 @@ convert_entry_node(
 	scoped_vmap & svmap)
 {
 	JLM_DEBUG_ASSERT(is<entryaggnode>(&node));
-	auto & entry = static_cast<const entryaggnode*>(&node)->attribute();
+	auto en = static_cast<const entryaggnode*>(&node);
 	auto ds = dm.at(&node).get();
 
 	auto arguments = lb.begin_lambda(svmap.region(), {function.fcttype(), function.name(),
@@ -217,9 +217,9 @@ convert_entry_node(
 	auto & vmap = svmap.vmap();
 
 	/* add arguments */
-	JLM_DEBUG_ASSERT(entry.narguments() == arguments.size());
-	for (size_t n = 0; n < entry.narguments(); n++)
-		vmap[entry.argument(n)] = arguments[n];
+	JLM_DEBUG_ASSERT(en->narguments() == arguments.size());
+	for (size_t n = 0; n < en->narguments(); n++)
+		vmap[en->argument(n)] = arguments[n];
 
 	/* add dependencies and undefined values */
 	for (const auto & v : ds->top) {

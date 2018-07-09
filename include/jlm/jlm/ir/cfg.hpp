@@ -60,6 +60,12 @@ public:
 		return arguments_.push_back(v);
 	}
 
+	const std::vector<const variable*> &
+	arguments() const noexcept
+	{
+		return arguments_;
+	}
+
 private:
 	std::vector<const variable*> arguments_;
 };

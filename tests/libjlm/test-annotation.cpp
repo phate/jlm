@@ -90,14 +90,13 @@ test_linear()
 	/*
 		Setup simple linear CFG: Entry -> B1 -> B2 -> Exit
 	*/
-	entry ea({arg});
 	jlm::exit xa({v2});
 
 	basic_block bb1, bb2;
 	bb1.append_last(tac::create(op, {arg}, {v1}));
 	bb2.append_last(tac::create(op, {v1}, {v2}));
 
-	auto en = entryaggnode::create(ea);
+	auto en = entryaggnode::create({arg});
 	auto b1 = blockaggnode::create(std::move(bb1));
 	auto b2 = blockaggnode::create(std::move(bb2));
 	auto xn = exitaggnode::create(xa);

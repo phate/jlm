@@ -210,32 +210,52 @@ is(const aggnode * node)
 /* entry node class */
 
 class entryaggnode final : public aggnode {
+	typedef std::vector<const variable*>::const_iterator const_iterator;
 public:
 	virtual
 	~entryaggnode();
 
 	inline
-	entryaggnode(const jlm::entry & attribute)
-	: attribute_(attribute)
+	entryaggnode(const std::vector<const variable*> & arguments)
+	: arguments_(arguments)
 	{}
+
+	const_iterator
+	begin() const
+	{
+		return arguments_.begin();
+	}
+
+	const_iterator
+	end() const
+	{
+		return arguments_.end();
+	}
+
+	const variable *
+	argument(size_t index) const noexcept
+	{
+		JLM_DEBUG_ASSERT(index < narguments());
+		return arguments_[index];
+	}
+
+	size_t
+	narguments() const noexcept
+	{
+		return arguments_.size();
+	}
 
 	virtual std::string
 	debug_string() const override;
 
-	inline const jlm::entry &
-	attribute() const noexcept
-	{
-		return attribute_;
-	}
-
 	static inline std::unique_ptr<aggnode>
-	create(const jlm::entry & attribute)
+	create(const std::vector<const variable*> & arguments)
 	{
-		return std::make_unique<entryaggnode>(attribute);
+		return std::make_unique<entryaggnode>(arguments);
 	}
 
 private:
-	jlm::entry attribute_;
+	std::vector<const variable*> arguments_;
 };
 
 /* exit node class */
