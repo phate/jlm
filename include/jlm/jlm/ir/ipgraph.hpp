@@ -118,9 +118,6 @@ public:
 	void
 	add_node(std::unique_ptr<ipgraph_node> node);
 
-	ipgraph_node *
-	lookup_node(const std::string & name) const;
-
 	inline size_t
 	nnodes() const noexcept
 	{

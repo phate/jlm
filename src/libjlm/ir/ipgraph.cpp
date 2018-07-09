@@ -62,15 +62,6 @@ ipgraph::add_node(std::unique_ptr<ipgraph_node> node)
 	nodes_[node->name()] = std::move(node);
 }
 
-ipgraph_node *
-ipgraph::lookup_node(const std::string & name) const
-{
-	if (nodes_.find(name) != nodes_.end())
-		return nodes_.find(name)->second.get();
-
-	return nullptr;
-}
-
 std::vector<std::unordered_set<const ipgraph_node*>>
 ipgraph::find_sccs() const
 {
