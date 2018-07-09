@@ -26,9 +26,8 @@ class ipgraph final {
 	class const_iterator {
 	public:
 		inline
-		const_iterator(const std::unordered_map<
-			std::string,
-			std::unique_ptr<ipgraph_node>>::const_iterator & it)
+		const_iterator(
+			const std::vector<std::unique_ptr<ipgraph_node>>::const_iterator & it)
 		: it_(it)
 		{}
 
@@ -62,7 +61,7 @@ class ipgraph final {
 		inline const ipgraph_node *
 		node() const noexcept
 		{
-			return it_->second.get();
+			return it_->get();
 		}
 
 		inline const ipgraph_node &
@@ -78,10 +77,7 @@ class ipgraph final {
 		}
 
 	private:
-		std::unordered_map<
-			std::string,
-			std::unique_ptr<ipgraph_node>
-		>::const_iterator it_;
+		std::vector<std::unique_ptr<ipgraph_node>>::const_iterator it_;
 	};
 
 public:
@@ -128,10 +124,7 @@ public:
 	find_sccs() const;
 
 private:
-	std::unordered_map<
-		std::string,
-		std::unique_ptr<ipgraph_node>
-	> nodes_;
+	std::vector<std::unique_ptr<ipgraph_node>> nodes_;
 };
 
 /* clg node */

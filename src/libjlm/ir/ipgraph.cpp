@@ -58,8 +58,7 @@ namespace jlm {
 void
 ipgraph::add_node(std::unique_ptr<ipgraph_node> node)
 {
-	JLM_DEBUG_ASSERT(nodes_.find(node->name()) == nodes_.end());
-	nodes_[node->name()] = std::move(node);
+	nodes_.push_back(std::move(node));
 }
 
 std::vector<std::unordered_set<const ipgraph_node*>>
