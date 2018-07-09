@@ -9,7 +9,7 @@
 #include <jlm/jlm/ir/basic-block.hpp>
 #include <jlm/jlm/ir/cfg.hpp>
 #include <jlm/jlm/ir/module.hpp>
-#include <jlm/jlm/ir/view.hpp>
+#include <jlm/jlm/ir/print.hpp>
 
 static inline bool
 is_entry(jlm::aggnode * node)

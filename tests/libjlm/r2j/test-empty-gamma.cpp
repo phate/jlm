@@ -13,8 +13,8 @@
 #include <jlm/jlm/ir/cfg-structure.hpp>
 #include <jlm/jlm/ir/module.hpp>
 #include <jlm/jlm/ir/operators.hpp>
+#include <jlm/jlm/ir/print.hpp>
 #include <jlm/jlm/ir/rvsdg.hpp>
-#include <jlm/jlm/ir/view.hpp>
 #include <jlm/jlm/rvsdg2jlm/rvsdg2jlm.hpp>
 
 static void

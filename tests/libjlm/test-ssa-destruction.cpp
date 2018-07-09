@@ -12,7 +12,7 @@
 #include <jlm/jlm/ir/module.hpp>
 #include <jlm/jlm/ir/operators/operators.hpp>
 #include <jlm/jlm/ir/ssa.hpp>
-#include <jlm/jlm/ir/view.hpp>
+#include <jlm/jlm/ir/print.hpp>
 
 static inline void
 test_two_phis()

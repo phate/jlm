@@ -4,8 +4,8 @@
  */
 
 #include <jlm/jlm/ir/module.hpp>
+#include <jlm/jlm/ir/print.hpp>
 #include <jlm/jlm/ir/rvsdg.hpp>
-#include <jlm/jlm/ir/view.hpp>
 #include <jlm/jlm/llvm2jlm/module.hpp>
 #include <jlm/jlm/jlm2llvm/jlm2llvm.hpp>
 #include <jlm/jlm/jlm2rvsdg/module.hpp>

@@ -9,7 +9,7 @@
 #include <jlm/jlm/ir/cfg.hpp>
 #include <jlm/jlm/ir/cfg-structure.hpp>
 #include <jlm/jlm/ir/module.hpp>
-#include <jlm/jlm/ir/view.hpp>
+#include <jlm/jlm/ir/print.hpp>
 #include <jlm/jlm/jlm2rvsdg/restructuring.hpp>
 
 #include <assert.h>

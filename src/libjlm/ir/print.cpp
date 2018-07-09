@@ -8,8 +8,8 @@
 #include <jlm/jlm/ir/cfg.hpp>
 #include <jlm/jlm/ir/module.hpp>
 #include <jlm/jlm/ir/operators/operators.hpp>
+#include <jlm/jlm/ir/print.hpp>
 #include <jlm/jlm/ir/tac.hpp>
-#include <jlm/jlm/ir/view.hpp>
 
 #include <deque>
 

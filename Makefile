@@ -29,11 +29,11 @@ LIBJLM_SRC = \
 	src/libjlm/ir/operators/operators.cpp \
 	src/libjlm/ir/operators/sext.cpp \
 	src/libjlm/ir/operators/store.cpp \
+	src/libjlm/ir/print.cpp \
 	src/libjlm/ir/ssa.cpp \
 	src/libjlm/ir/tac.cpp \
 	src/libjlm/ir/types.cpp \
 	src/libjlm/ir/variable.cpp \
-	src/libjlm/ir/view.cpp \
 	\
 	src/libjlm/jlm2llvm/instruction.cpp \
 	src/libjlm/jlm2llvm/jlm2llvm.cpp \
