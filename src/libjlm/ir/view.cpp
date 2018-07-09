@@ -208,7 +208,7 @@ emit_function_node(const jlm::ipgraph_node & clg_node)
 	operands += ">";
 
 	std::string cfg = node.cfg() ? to_str(*node.cfg()) : "";
-	std::string exported = !node.exported() ? "static" : "";
+	std::string exported = !is_externally_visible(node.linkage()) ? "static" : "";
 
 	return exported + results + " " + node.name() + " " + operands + "\n{\n" + cfg + "}\n";
 }

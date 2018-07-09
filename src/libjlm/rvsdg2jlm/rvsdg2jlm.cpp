@@ -418,10 +418,7 @@ convert_lambda_node(const jive::node & node, context & ctx)
 	auto & module = ctx.module();
 	auto & clg = module.ipgraph();
 
-	const auto & ftype = lambda->fcttype();
-	auto exported = is_exported(node.output(0));
-	auto linkage = exported ? jlm::linkage::external_linkage : jlm::linkage::internal_linkage;
-	auto f = function_node::create(clg, lambda->name(), ftype, linkage, exported);
+	auto f = function_node::create(clg, lambda->name(), lambda->fcttype(), lambda->linkage());
 	auto v = module.create_variable(f);
 
 	f->add_cfg(create_cfg(node, ctx));
@@ -449,9 +446,7 @@ convert_phi_node(const jive::node & node, context & ctx)
 		JLM_DEBUG_ASSERT(is<lambda_op>(result->origin()->node()));
 		auto lambda = static_cast<const lambda_node*>(result->origin()->node());
 
-		auto exported = is_exported(lambda->output(0));
-		auto linkage = exported ? jlm::linkage::external_linkage : jlm::linkage::internal_linkage;
-		auto f = function_node::create(clg, lambda->name(), lambda->fcttype(), linkage, exported);
+		auto f = function_node::create(clg, lambda->name(), lambda->fcttype(), lambda->linkage());
 		ctx.insert(subregion->argument(n), module.create_variable(f));
 	}
 
@@ -531,7 +526,7 @@ rvsdg2jlm(const jlm::rvsdg & rvsdg)
 		auto argument = graph->root()->argument(n);
 		if (auto ftype = is_function_import(argument)) {
 			auto f = function_node::create(clg, argument->port().gate()->name(), *ftype,
-				linkage::external_linkage, false);
+				linkage::external_linkage);
 			auto v = module->create_variable(f);
 			ctx.insert(argument, v);
 		} else {

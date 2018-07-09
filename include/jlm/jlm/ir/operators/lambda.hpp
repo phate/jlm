@@ -188,6 +188,12 @@ public:
 		return static_cast<const lambda_op*>(&operation())->name();
 	}
 
+	inline const jlm::linkage &
+	linkage() const noexcept
+	{
+		return static_cast<const lambda_op*>(&operation())->linkage();
+	}
+
 	virtual lambda_node *
 	copy(jive::region * region, jive::substitution_map & smap) const override;
 };

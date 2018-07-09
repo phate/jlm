@@ -182,12 +182,7 @@ declare_globals(llvm::Module & lm, context & ctx)
 		auto linkage = convert_linkage(f.getLinkage());
 		jive::fcttype fcttype(*convert_type(f.getFunctionType(), ctx));
 
-		auto n = function_node::create(
-			jm.ipgraph(),
-			name,
-			fcttype,
-			linkage,
-			f.getLinkage() != llvm::GlobalValue::InternalLinkage);
+		auto n = function_node::create(jm.ipgraph(), name, fcttype, linkage);
 		ctx.insert_value(&f, ctx.module().create_variable(n));
 	}
 }
