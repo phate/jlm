@@ -153,7 +153,7 @@ create_cfg(const jive::node & node, context & ctx)
 			v = ctx.variable(argument->input()->origin());
 		} else {
 			v = module.create_variable(argument->type(), "");
-			cfg->entry().append_argument(v);
+			cfg->entry_node()->append_argument(v);
 		}
 
 		ctx.insert(argument, v);

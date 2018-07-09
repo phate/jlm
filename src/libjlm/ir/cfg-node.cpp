@@ -52,6 +52,9 @@ cfg_edge::split()
 
 /* node */
 
+cfg_node::~cfg_node()
+{}
+
 size_t
 cfg_node::noutedges() const noexcept
 {

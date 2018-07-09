@@ -66,12 +66,12 @@ emit_global(const jlm::gblvalue * v)
 static inline std::string
 emit_entry(const jlm::cfg_node * node)
 {
-	JLM_DEBUG_ASSERT(is_entry(node->attribute()));
-	auto & entry = *static_cast<const jlm::entry*>(&node->attribute());
+	JLM_DEBUG_ASSERT(is_entry_node(node));
+	auto & en = *static_cast<const jlm::entry_node*>(node);
 
 	std::string str;
-	for (size_t n = 0; n < entry.narguments(); n++)
-		str += entry.argument(n)->debug_string() + " ";
+	for (size_t n = 0; n < en.narguments(); n++)
+		str += en.argument(n)->debug_string() + " ";
 
 	return str + "\n";
 }
@@ -163,8 +163,7 @@ to_str(const jlm::cfg & cfg)
 {
 	static
 	std::unordered_map<std::type_index, std::string(*)(const cfg_node*)> map({
-	  {std::type_index(typeid(entry)), emit_entry}
-	, {std::type_index(typeid(exit)), emit_exit}
+	  {std::type_index(typeid(exit)), emit_exit}
 	, {std::type_index(typeid(basic_block)), emit_basic_block}
 	});
 
@@ -174,8 +173,12 @@ to_str(const jlm::cfg & cfg)
 		str += emit_label(node) + ":";
 		str += (is_basic_block(node->attribute()) ? "\n" : " ");
 
-		JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(node->attribute()))) != map.end());
-		str += map[std::type_index(typeid(node->attribute()))](node) + "\n";
+		if (is_entry_node(node))
+			str += emit_entry(node) + "\n";
+		else {
+			JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(node->attribute()))) != map.end());
+			str += map[std::type_index(typeid(node->attribute()))](node) + "\n";
+		}
 	}
 
 	return str;
@@ -261,14 +264,14 @@ to_str(const jlm::module & module)
 /* dot converters */
 
 static inline std::string
-emit_entry(const jlm::attribute & attribute)
+emit_entry_dot(const jlm::cfg_node * node)
 {
-	JLM_DEBUG_ASSERT(is_entry(attribute));
-	auto & entry = *static_cast<const jlm::entry*>(&attribute);
+	JLM_DEBUG_ASSERT(is_entry_node(node));
+	auto en = static_cast<const jlm::entry_node*>(node);
 
 	std::string str;
-	for (size_t n = 0; n < entry.narguments(); n++) {
-		auto argument = entry.argument(n);
+	for (size_t n = 0; n < en->narguments(); n++) {
+		auto argument = en->argument(n);
 		str += "<" + argument->type().debug_string() + "> " + argument->name() + "\\n";
 	}
 
@@ -328,7 +331,7 @@ emit_basic_block(const jlm::attribute & attribute)
 static inline std::string
 emit_header(const jlm::cfg_node & node)
 {
-	if (is_entry(node.attribute()))
+	if (is_entry_node(&node))
 		return "ENTRY";
 
 	if (is_exit(node.attribute()))
@@ -342,13 +345,17 @@ emit_node(const jlm::cfg_node & node)
 {
 	static
 	std::unordered_map<std::type_index, std::string(*)(const jlm::attribute &)> map({
-	  {std::type_index(typeid(jlm::entry)), emit_entry}
-	, {std::type_index(typeid(jlm::exit)), emit_exit}
+	  {std::type_index(typeid(jlm::exit)), emit_exit}
 	, {std::type_index(typeid(jlm::basic_block)), emit_basic_block}
 	});
 
-	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(node.attribute()))) != map.end());
-	std::string body = map[std::type_index(typeid(node.attribute()))](node.attribute());
+	std::string body;
+	if (is_entry_node(&node))
+		body = emit_entry_dot(&node);
+	else {
+		JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(node.attribute()))) != map.end());
+		std::string body = map[std::type_index(typeid(node.attribute()))](node.attribute());
+	}
 
 	return emit_header(node) + "\\n" + body;
 }

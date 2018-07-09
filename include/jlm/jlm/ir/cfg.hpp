@@ -24,22 +24,16 @@ class basic_block;
 class module;
 class tac;
 
-class entry final : public attribute {
+/* cfg entry node */
+
+class entry_node final : public cfg_node {
 public:
 	virtual
-	~entry();
+	~entry_node();
 
-	inline
-	entry()
-	: attribute()
+	entry_node(jlm::cfg & cfg)
+	: cfg_node(cfg, nullptr)
 	{}
-
-	inline
-	entry(const std::vector<const variable*> & arguments)
-	{
-		for (const auto & v : arguments)
-			append_argument(v);
-	}
 
 	size_t
 	narguments() const noexcept
@@ -66,20 +60,17 @@ public:
 		return arguments_;
 	}
 
+	static entry_node *
+	create(jlm::cfg & cfg);
+
 private:
 	std::vector<const variable*> arguments_;
 };
 
 static inline bool
-is_entry(const jlm::attribute & attribute) noexcept
+is_entry_node(const jlm::cfg_node * node) noexcept
 {
-	return dynamic_cast<const jlm::entry*>(&attribute) != nullptr;
-}
-
-static inline bool
-is_entry_node(const jlm::cfg_node * node)
-{
-	return dynamic_cast<const jlm::entry*>(&node->attribute()) != nullptr;
+	return dynamic_cast<const jlm::entry_node*>(node) != nullptr;
 }
 
 class exit final : public attribute {
@@ -271,16 +262,10 @@ public:
 		return iterator(nodes_.end());
 	}
 
-	inline jlm::cfg_node *
+	inline jlm::entry_node *
 	entry_node() const noexcept
 	{
 		return entry_;
-	}
-
-	inline jlm::entry &
-	entry() const noexcept
-	{
-		return *static_cast<jlm::entry*>(&entry_node()->attribute());
 	}
 
 	inline jlm::cfg_node *
@@ -336,7 +321,7 @@ public:
 	}
 
 private:
-	cfg_node * entry_;
+	jlm::entry_node * entry_;
 	cfg_node * exit_;
 	jlm::module & module_;
 	std::unordered_set<std::unique_ptr<cfg_node>> nodes_;

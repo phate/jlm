@@ -195,7 +195,7 @@ convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 	/* add arguments to context */
 	size_t n = 0;
 	for (auto & arg : f.getArgumentList())
-		ctx.insert(cfg.entry().argument(n++), &arg);
+		ctx.insert(cfg.entry_node()->argument(n++), &arg);
 
 	/* create non-terminator instructions */
 	for (const auto & node : nodes) {

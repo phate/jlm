@@ -56,7 +56,7 @@ private:
 	friend cfg_node;
 };
 
-class cfg_node final {
+class cfg_node {
 	typedef std::unordered_set<cfg_edge*>::const_iterator const_inedge_iterator;
 
 	class const_outedge_iterator final {
@@ -109,6 +109,11 @@ class cfg_node final {
 		std::vector<std::unique_ptr<cfg_edge>>::const_iterator it_;
 	};
 
+public:
+	virtual
+	~cfg_node();
+
+protected:
 	inline
 	cfg_node(jlm::cfg & cfg, std::unique_ptr<jlm::attribute> attr)
 	: cfg_(&cfg)
