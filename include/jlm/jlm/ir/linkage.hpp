@@ -22,6 +22,13 @@ enum class linkage {
 	, common_linkage
 };
 
+static inline bool
+is_externally_visible(const linkage & lnk)
+{
+	/* FIXME: Refine this again. */
+	return lnk != linkage::internal_linkage;
+}
+
 }
 
 #endif
