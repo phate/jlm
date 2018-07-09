@@ -49,6 +49,15 @@ private:
 	std::unique_ptr<jive::type> type_;
 };
 
+template <class T> static inline bool
+is(const jlm::variable * variable) noexcept
+{
+	static_assert(std::is_base_of<jlm::variable, T>::value,
+		"Template parameter T must be derived from jlm::variable.");
+
+	return dynamic_cast<const T*>(variable) != nullptr;
+}
+
 /* top level variable */
 
 class gblvariable : public variable {
