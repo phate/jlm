@@ -322,12 +322,8 @@ public:
 		return init_;
 	}
 
-	inline void
-	set_initialization(tacsvector_t init)
-	{
-		/* FIXME: type check */
-		init_ = std::move(init);
-	}
+	void
+	set_initialization(tacsvector_t init);
 
 	static inline data_node *
 	create(

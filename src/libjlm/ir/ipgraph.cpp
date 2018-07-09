@@ -134,4 +134,20 @@ data_node::linkage() const noexcept
 	return linkage_;
 }
 
+void
+data_node::set_initialization(tacsvector_t init)
+{
+	if (init.empty())
+		jlm::error("Initialization cannot be empty.");
+
+	auto & tac = init.back();
+	if (tac->noutputs() != 1)
+		jlm::error("Last TAC of initialization needs exactly one result.");
+
+	if (tac->output(0)->type() != *type_)
+		jlm::error("Invalid type.");
+
+	init_ = std::move(init);
+}
+
 }
