@@ -90,8 +90,6 @@ test_linear()
 	/*
 		Setup simple linear CFG: Entry -> B1 -> B2 -> Exit
 	*/
-	jlm::exit xa({v2});
-
 	basic_block bb1, bb2;
 	bb1.append_last(tac::create(op, {arg}, {v1}));
 	bb2.append_last(tac::create(op, {v1}, {v2}));
@@ -99,7 +97,7 @@ test_linear()
 	auto en = entryaggnode::create({arg});
 	auto b1 = blockaggnode::create(std::move(bb1));
 	auto b2 = blockaggnode::create(std::move(bb2));
-	auto xn = exitaggnode::create(xa);
+	auto xn = exitaggnode::create({v2});
 	auto enptr = en.get(), b1ptr = b1.get(), b2ptr = b2.get(), xnptr = xn.get();
 
 	auto l1 = linearaggnode::create(std::move(en), std::move(b1));
@@ -189,13 +187,11 @@ test_loop()
 	auto v3 = module.create_variable(vt, "v3");
 	auto v4 = module.create_variable(vt, "v4");
 
-	jlm::exit xa({v3, v4});
-
 	basic_block bb;
 	bb.append_last(tac::create(op, {v1}, {v2}));
 	bb.append_last(tac::create(op, {v2}, {v3}));
 
-	auto xn = exitaggnode::create(xa);
+	auto xn = exitaggnode::create({v3, v4});
 	auto b = blockaggnode::create(std::move(bb));
 	auto xnptr = xn.get(), bptr = b.get();
 

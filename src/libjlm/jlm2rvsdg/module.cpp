@@ -244,12 +244,12 @@ convert_exit_node(
 	scoped_vmap & svmap)
 {
 	JLM_DEBUG_ASSERT(is<exitaggnode>(&node));
-	auto & xa = static_cast<const exitaggnode*>(&node)->attribute();
+	auto xn = static_cast<const exitaggnode*>(&node);
 
 	std::vector<jive::output*> results;
-	for (size_t n = 0; n < xa.nresults(); n++) {
-		JLM_DEBUG_ASSERT(svmap.vmap().find(xa.result(n)) != svmap.vmap().end());
-		results.push_back(svmap.vmap()[xa.result(n)]);
+	for (const auto & result : *xn) {
+		JLM_DEBUG_ASSERT(svmap.vmap().find(result) != svmap.vmap().end());
+		results.push_back(svmap.vmap()[result]);
 	}
 
 	svmap.pop_scope();

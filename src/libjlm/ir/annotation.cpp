@@ -46,11 +46,9 @@ annotaterw(const entryaggnode * node, demandmap & dm)
 static void
 annotaterw(const exitaggnode * node, demandmap & dm)
 {
-	auto & xa = node->attribute();
-
 	auto ds = demandset::create();
-	for (size_t n = 0; n < xa.nresults(); n++)
-		ds->reads.insert(xa.result(n));
+	for (const auto & result : *node)
+		ds->reads.insert(result);
 
 	dm[node] = std::move(ds);
 }

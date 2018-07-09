@@ -261,32 +261,52 @@ private:
 /* exit node class */
 
 class exitaggnode final : public aggnode {
+	typedef std::vector<const variable*>::const_iterator const_iterator;
 public:
 	virtual
 	~exitaggnode();
 
 	inline
-	exitaggnode(const jlm::exit & attribute)
-	: attribute_(attribute)
+	exitaggnode(const std::vector<const variable*> & results)
+	: results_(results)
 	{}
+
+	const_iterator
+	begin() const
+	{
+		return results_.begin();
+	}
+
+	const_iterator
+	end() const
+	{
+		return results_.end();
+	}
+
+	const variable *
+	result(size_t index) const noexcept
+	{
+		JLM_DEBUG_ASSERT(index < nresults());
+		return results_[index];
+	}
+
+	size_t
+	nresults() const noexcept
+	{
+		return results_.size();
+	}
 
 	virtual std::string
 	debug_string() const override;
 
-	inline const jlm::exit &
-	attribute() const noexcept
-	{
-		return attribute_;
-	}
-
 	static inline std::unique_ptr<aggnode>
-	create(const jlm::exit & attribute)
+	create(const std::vector<const variable*> & results)
 	{
-		return std::make_unique<exitaggnode>(attribute);
+		return std::make_unique<exitaggnode>(results);
 	}
 
 private:
-	jlm::exit attribute_;
+	std::vector<const variable*> results_;
 };
 
 /* basic block node class */

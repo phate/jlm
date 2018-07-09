@@ -109,6 +109,12 @@ public:
 		results_.push_back(v);
 	}
 
+	const std::vector<const variable*>
+	results() const noexcept
+	{
+		return results_;
+	}
+
 private:
 	std::vector<const variable*> results_;
 };
