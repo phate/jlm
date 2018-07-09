@@ -61,12 +61,6 @@ private:
 	jlm::tac * tac_;
 };
 
-static inline bool
-is_tacvariable(const jlm::variable * v)
-{
-	return dynamic_cast<const jlm::tacvariable*>(v) != nullptr;
-}
-
 static inline std::unique_ptr<variable>
 create_tacvariable(
 	const jive::type & type,

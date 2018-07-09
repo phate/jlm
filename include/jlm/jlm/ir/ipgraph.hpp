@@ -297,12 +297,6 @@ private:
 	function_node * node_;
 };
 
-static inline bool
-is_fctvariable(const jlm::variable * v)
-{
-	return dynamic_cast<const jlm::fctvariable*>(v) != nullptr;
-}
-
 /* data node */
 
 class data_node final : public ipgraph_node {

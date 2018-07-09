@@ -348,7 +348,7 @@ phi_needed(const jive::input * i, const jlm::variable * v)
 	auto output = theta->output(input->index());
 
 	/* FIXME: solely decide on the input instead of using the variable */
-	if (is_gblvariable(v))
+	if (is<gblvariable>(v))
 		return false;
 
 	if (output->results.first()->origin() == input->arguments.first())

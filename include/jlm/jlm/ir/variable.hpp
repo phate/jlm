@@ -73,12 +73,6 @@ public:
 	{}
 };
 
-static inline bool
-is_gblvariable(const jlm::variable * v) noexcept
-{
-	return dynamic_cast<const jlm::gblvariable*>(v) != nullptr;
-}
-
 }
 
 #endif

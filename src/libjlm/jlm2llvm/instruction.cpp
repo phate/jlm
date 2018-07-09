@@ -171,7 +171,7 @@ convert_call(
 	for (size_t n = 1; n < args.size()-1; n++) {
 		auto argument = args[n];
 		if (is_varargtype(argument->type())) {
-			JLM_DEBUG_ASSERT(is_tacvariable(argument));
+			JLM_DEBUG_ASSERT(is<tacvariable>(argument));
 			auto valist = dynamic_cast<const jlm::tacvariable*>(argument)->tac();
 			JLM_DEBUG_ASSERT(is<valist_op>(valist->operation()));
 			for (size_t n = 0; n < valist->ninputs(); n++)
