@@ -11,6 +11,7 @@
 #include <jive/types/function.h>
 
 #include <jlm/jlm/ir/types.hpp>
+#include <jlm/jlm/ir/variable.hpp>
 
 namespace jlm {
 
@@ -24,9 +25,11 @@ public:
 	inline
 	lambda_op(
 		jive::fcttype fcttype,
-		const std::string & name) noexcept
+		const std::string & name,
+		const jlm::linkage & linkage) noexcept
 	: jive::lambda_op(std::move(fcttype))
 	, name_(name)
+	, linkage_(linkage)
 	{}
 
 	virtual bool
@@ -47,11 +50,18 @@ public:
 		return name_;
 	}
 
+	inline const jlm::linkage &
+	linkage() const noexcept
+	{
+		return linkage_;
+	}
+
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
 private:
 	std::string name_;
+	jlm::linkage linkage_;
 };
 
 /* lambda node */

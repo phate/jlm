@@ -20,7 +20,8 @@ lambda_op::operator==(const operation & other) const noexcept
 	auto op = dynamic_cast<const lambda_op*>(&other);
 	return op
 	    && op->fcttype() == fcttype()
-	    && op->name() == name();
+	    && op->name() == name()
+	    && op->linkage() == linkage();
 }
 
 std::string

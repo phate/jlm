@@ -216,13 +216,15 @@ test_evolving_theta()
 static inline void
 test_lambda()
 {
+	using namespace jlm;
+
 	jlm::valuetype vt;
 
 	jive::graph graph;
 	auto x = graph.add_import(vt, "x");
 
 	jlm::lambda_builder lb;
-	auto arguments = lb.begin_lambda(graph.root(), {{{&vt}, {&vt}}, "f"});
+	auto arguments = lb.begin_lambda(graph.root(), {{{&vt}, {&vt}}, "f", linkage::external_linkage});
 
 	auto d = lb.add_dependency(x);
 	jlm::create_testop(lb.subregion(), {arguments[0], d}, {&vt});
@@ -242,6 +244,8 @@ test_lambda()
 static inline void
 test_phi()
 {
+	using namespace jlm;
+
 	jlm::valuetype vt;
 	jive::fcttype ft({&vt}, {&vt});
 
@@ -258,12 +262,12 @@ test_phi()
 	auto dy = pb.add_dependency(y);
 
 	jlm::lambda_builder lb;
-	auto arguments = lb.begin_lambda(pb.region(), {ft, "f"});
+	auto arguments = lb.begin_lambda(pb.region(), {ft, "f", linkage::external_linkage});
 	lb.add_dependency(rv1->value());
 	lb.add_dependency(dx);
 	auto f1 = lb.end_lambda({arguments[0]});
 
-	arguments = lb.begin_lambda(pb.region(), {ft, "g"});
+	arguments = lb.begin_lambda(pb.region(), {ft, "g", linkage::external_linkage});
 	lb.add_dependency(rv2->value());
 	lb.add_dependency(dy);
 	auto f2 = lb.end_lambda({arguments[0]});

@@ -354,6 +354,8 @@ test_theta5()
 static inline void
 test_lambda()
 {
+	using namespace jlm;
+
 	jlm::valuetype vt;
 	jive::fcttype ft({&vt, &vt}, {&vt});
 
@@ -364,7 +366,7 @@ test_lambda()
 	auto x = graph.add_import(vt, "x");
 
 	jlm::lambda_builder lb;
-	auto region = lb.begin_lambda(graph.root(), {ft, "f"});
+	auto region = lb.begin_lambda(graph.root(), {ft, "f", linkage::external_linkage});
 
 	auto d1 = lb.add_dependency(x);
 	auto d2 = lb.add_dependency(x);
@@ -385,6 +387,8 @@ test_lambda()
 static inline void
 test_phi()
 {
+	using namespace jlm;
+
 	jlm::valuetype vt;
 	jive::fcttype ft({&vt, &vt}, {&vt});
 
@@ -404,11 +408,11 @@ test_phi()
 	auto r2 = pb.add_recvar(ft);
 
 	jlm::lambda_builder lb;
-	lb.begin_lambda(region, {ft, "f"});
+	lb.begin_lambda(region, {ft, "f", linkage::external_linkage});
 	d1 = lb.add_dependency(d1);
 	auto f1 = lb.end_lambda({d1});
 
-	lb.begin_lambda(region, {ft, "g"});
+	lb.begin_lambda(region, {ft, "g", linkage::external_linkage});
 	d2 = lb.add_dependency(d2);
 	auto f2 = lb.end_lambda({d2});
 

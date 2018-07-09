@@ -36,6 +36,8 @@ contains_call_node(const jive::region * region)
 static int
 verify()
 {
+	using namespace jlm;
+
 	jlm::valuetype vt;
 	jive::ctltype ct(2);
 	jive::fcttype ft1({&vt}, {&vt});
@@ -46,13 +48,13 @@ verify()
 
 	/* f1 */
 	jlm::lambda_builder lb;
-	auto arguments = lb.begin_lambda(graph.root(), {ft1, "f1"});
+	auto arguments = lb.begin_lambda(graph.root(), {ft1, "f1", linkage::external_linkage});
 	lb.add_dependency(i);
 	auto t = jlm::create_testop(lb.subregion(), {arguments[0]}, {&vt})[0]->node();
 	auto f1 = lb.end_lambda({t->output(0)});
 
 	/* f2 */
-	arguments = lb.begin_lambda(graph.root(), {ft2, "f2"});
+	arguments = lb.begin_lambda(graph.root(), {ft2, "f2", linkage::external_linkage});
 	auto d = lb.add_dependency(f1->output(0));
 
 	auto gamma = jive::gamma_node::create(arguments[0], 2);

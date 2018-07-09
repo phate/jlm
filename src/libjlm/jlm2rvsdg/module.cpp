@@ -209,7 +209,8 @@ convert_entry_node(
 	auto & entry = static_cast<const entryaggnode*>(&node)->attribute();
 	auto ds = dm.at(&node).get();
 
-	auto arguments = lb.begin_lambda(svmap.region(), {function.fcttype(), function.name()});
+	auto arguments = lb.begin_lambda(svmap.region(), {function.fcttype(), function.name(),
+		function.linkage()});
 	svmap.push_scope(lb.subregion());
 
 	auto & pvmap = svmap.vmap(svmap.nscopes()-2);

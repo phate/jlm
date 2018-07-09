@@ -20,6 +20,8 @@
 static void
 test_with_match()
 {
+	using namespace jlm;
+
 	jlm::valuetype vt;
 	jive::bittype bt1(1);
 	jive::fcttype ft({&bt1, &vt, &vt}, {&vt});
@@ -31,7 +33,7 @@ test_with_match()
 	/* setup graph */
 
 	jlm::lambda_builder lb;
-	auto arguments = lb.begin_lambda(rvsdg.graph()->root(), {ft, "f"});
+	auto arguments = lb.begin_lambda(rvsdg.graph()->root(), {ft, "f", linkage::external_linkage});
 
 	auto match = jive::match(1, {{0, 0}}, 1, 2, arguments[0]);
 	auto gamma = jive::gamma_node::create(match, 2);
@@ -62,6 +64,8 @@ test_with_match()
 static void
 test_without_match()
 {
+	using namespace jlm;
+
 	jlm::valuetype vt;
 	jive::ctltype ctl2(2);
 	jive::bittype bt1(1);
@@ -74,7 +78,7 @@ test_without_match()
 	/* setup graph */
 
 	jlm::lambda_builder lb;
-	auto arguments = lb.begin_lambda(rvsdg.graph()->root(), {ft, "f"});
+	auto arguments = lb.begin_lambda(rvsdg.graph()->root(), {ft, "f", linkage::external_linkage});
 
 	auto gamma = jive::gamma_node::create(arguments[0], 2);
 	auto ev1 = gamma->add_entryvar(arguments[1]);
@@ -105,6 +109,8 @@ test_without_match()
 static void
 test_gamma3()
 {
+	using namespace jlm;
+
 	jlm::valuetype vt;
 	jive::fcttype ft({&jive::bit32, &vt, &vt}, {&vt});
 
@@ -115,7 +121,7 @@ test_gamma3()
 	/* setup graph */
 
 	jlm::lambda_builder lb;
-	auto arguments = lb.begin_lambda(rvsdg.graph()->root(), {ft, "f"});
+	auto arguments = lb.begin_lambda(rvsdg.graph()->root(), {ft, "f", linkage::external_linkage});
 
 	auto match = jive::match(32, {{0, 0}, {1, 1}}, 2, 3, arguments[0]);
 
