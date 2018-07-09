@@ -71,16 +71,6 @@ ipgraph::lookup_node(const std::string & name) const
 	return nullptr;
 }
 
-std::vector<ipgraph_node*>
-ipgraph::nodes() const
-{
-	std::vector<ipgraph_node*> v;
-	for (auto i = nodes_.begin(); i != nodes_.end(); i++)
-		v.push_back(i->second.get());
-
-	return v;
-}
-
 std::vector<std::unordered_set<const ipgraph_node*>>
 ipgraph::find_sccs() const
 {
@@ -90,10 +80,9 @@ ipgraph::find_sccs() const
 	std::vector<const ipgraph_node*> node_stack;
 	size_t index = 0;
 
-	auto nodes = this->nodes();
-	for (auto node : nodes) {
-		if (map.find(node) == map.end())
-			strongconnect(node, map, node_stack, index, sccs);
+	for (auto & node : *this) {
+		if (map.find(&node) == map.end())
+			strongconnect(&node, map, node_stack, index, sccs);
 	}
 
 	return sccs;

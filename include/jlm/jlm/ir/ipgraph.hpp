@@ -121,9 +121,6 @@ public:
 	ipgraph_node *
 	lookup_node(const std::string & name) const;
 
-	std::vector<ipgraph_node*>
-	nodes() const;
-
 	inline size_t
 	nnodes() const noexcept
 	{
