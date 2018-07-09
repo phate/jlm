@@ -116,10 +116,10 @@ public:
 	}
 
 	void
-	add_function(std::unique_ptr<ipgraph_node> node);
+	add_node(std::unique_ptr<ipgraph_node> node);
 
 	ipgraph_node *
-	lookup_function(const std::string & name) const;
+	lookup_node(const std::string & name) const;
 
 	std::vector<ipgraph_node*>
 	nodes() const;
@@ -259,7 +259,7 @@ public:
 	{
 		std::unique_ptr<function_node> node(new function_node(clg, name, type, linkage));
 		auto tmp = node.get();
-		clg.add_function(std::move(node));
+		clg.add_node(std::move(node));
 		return tmp;
 	}
 
@@ -352,7 +352,7 @@ public:
 	{
 		std::unique_ptr<data_node> node(new data_node(clg, name, type, linkage, constant));
 		auto ptr = node.get();
-		clg.add_function(std::move(node));
+		clg.add_node(std::move(node));
 		return ptr;
 	}
 

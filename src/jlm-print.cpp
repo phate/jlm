@@ -131,7 +131,7 @@ find_cfg(
 	const jlm::ipgraph & ipg,
 	const std::string & name)
 {
-	auto node = ipg.lookup_function(name);
+	auto node = ipg.lookup_node(name);
 	if (!node) {
 		std::cerr << "Function " << name << " not found.\n";
 		exit(1);

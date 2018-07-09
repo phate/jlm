@@ -56,14 +56,14 @@ namespace jlm {
 /* ipgraph */
 
 void
-ipgraph::add_function(std::unique_ptr<ipgraph_node> node)
+ipgraph::add_node(std::unique_ptr<ipgraph_node> node)
 {
 	JLM_DEBUG_ASSERT(nodes_.find(node->name()) == nodes_.end());
 	nodes_[node->name()] = std::move(node);
 }
 
 ipgraph_node *
-ipgraph::lookup_function(const std::string & name) const
+ipgraph::lookup_node(const std::string & name) const
 {
 	if (nodes_.find(name) != nodes_.end())
 		return nodes_.find(name)->second.get();
