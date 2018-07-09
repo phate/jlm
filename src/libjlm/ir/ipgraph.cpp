@@ -121,6 +121,12 @@ function_node::type() const noexcept
 	return type_;
 }
 
+const jlm::linkage &
+function_node::linkage() const noexcept
+{
+	return linkage_;
+}
+
 /* function variable */
 
 fctvariable::~fctvariable()
@@ -141,6 +147,12 @@ const jive::type &
 data_node::type() const noexcept
 {
 	return *type_;
+}
+
+const jlm::linkage &
+data_node::linkage() const noexcept
+{
+	return linkage_;
 }
 
 }

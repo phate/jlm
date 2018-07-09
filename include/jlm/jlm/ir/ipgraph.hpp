@@ -202,6 +202,9 @@ public:
 	virtual const jive::type &
 	type() const noexcept = 0;
 
+	virtual const jlm::linkage &
+	linkage() const noexcept = 0;
+
 private:
 	jlm::ipgraph & clg_;
 	std::unordered_set<const ipgraph_node*> dependencies_;
@@ -249,11 +252,8 @@ public:
 		return exported_;
 	}
 
-	inline const jlm::linkage &
-	linkage() const noexcept
-	{
-		return linkage_;
-	}
+	virtual const jlm::linkage &
+	linkage() const noexcept override;
 
 	const std::string &
 	name() const noexcept override;
@@ -342,6 +342,9 @@ public:
 	const std::string &
 	name() const noexcept override;
 
+	virtual const jlm::linkage &
+	linkage() const noexcept override;
+
 	inline bool
 	constant() const noexcept
 	{
@@ -359,12 +362,6 @@ public:
 	{
 		/* FIXME: type check */
 		init_ = std::move(init);
-	}
-
-	inline const jlm::linkage &
-	linkage() const noexcept
-	{
-		return linkage_;
 	}
 
 	static inline data_node *
