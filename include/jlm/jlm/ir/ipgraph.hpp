@@ -218,11 +218,13 @@ private:
 		jlm::ipgraph & clg,
 		const std::string & name,
 		const jive::fcttype & type,
+		const jlm::linkage & linkage,
 		bool exported)
 	: ipgraph_node(clg)
 	, type_(type)
 	, exported_(exported)
 	, name_(name)
+	, linkage_(linkage)
 	{}
 
 public:
@@ -247,6 +249,12 @@ public:
 		return exported_;
 	}
 
+	inline const jlm::linkage &
+	linkage() const noexcept
+	{
+		return linkage_;
+	}
+
 	const std::string &
 	name() const noexcept override;
 
@@ -261,9 +269,10 @@ public:
 		jlm::ipgraph & clg,
 		const std::string & name,
 		const jive::fcttype & type,
+		const jlm::linkage & linkage,
 		bool exported)
 	{
-		std::unique_ptr<function_node> node(new function_node(clg, name, type, exported));
+		std::unique_ptr<function_node> node(new function_node(clg, name, type, linkage, exported));
 		auto tmp = node.get();
 		clg.add_function(std::move(node));
 		return tmp;
@@ -273,6 +282,7 @@ private:
 	ptrtype type_;
 	bool exported_;
 	std::string name_;
+	jlm::linkage linkage_;
 	std::unique_ptr<jlm::cfg> cfg_;
 };
 

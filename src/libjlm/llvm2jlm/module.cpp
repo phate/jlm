@@ -178,11 +178,15 @@ declare_globals(llvm::Module & lm, context & ctx)
 
 	/* forward declare functions */
 	for (const auto & f : lm.getFunctionList()) {
+		auto name = f.getName().str();
+		auto linkage = convert_linkage(f.getLinkage());
 		jive::fcttype fcttype(*convert_type(f.getFunctionType(), ctx));
+
 		auto n = function_node::create(
 			jm.ipgraph(),
-			f.getName().str(),
+			name,
 			fcttype,
+			linkage,
 			f.getLinkage() != llvm::GlobalValue::InternalLinkage);
 		ctx.insert_value(&f, ctx.module().create_variable(n, convert_linkage(f.getLinkage())));
 	}
