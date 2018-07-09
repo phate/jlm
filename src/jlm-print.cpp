@@ -174,11 +174,11 @@ main (int argc, char ** argv)
 	/* LLVM to JLM pass */
 	auto jm = jlm::convert_module(*lm);
 	if (flags.l2j)
-		jlm::view(*jm, stdout);
+		jlm::print(*jm, stdout);
 	if (flags.l2jdot)
-		jlm::view_dot(*find_cfg(jm->ipgraph(), flags.l2jdot_function), stdout);
+		jlm::print_dot(*find_cfg(jm->ipgraph(), flags.l2jdot_function), stdout);
 	if (flags.l2j_ipg_dot)
-		jlm::view_dot(jm->ipgraph(), stdout);
+		jlm::print_dot(jm->ipgraph(), stdout);
 
 	auto rvsdg = jlm::construct_rvsdg(*jm);
 	if (flags.j2r) jive::view(rvsdg->graph()->root(), stdout);
@@ -186,11 +186,11 @@ main (int argc, char ** argv)
 
 	jm = jlm::rvsdg2jlm::rvsdg2jlm(*rvsdg);
 	if (flags.r2j)
-		jlm::view(*jm, stdout);
+		jlm::print(*jm, stdout);
 	if (flags.r2jdot)
-		jlm::view_dot(*find_cfg(jm->ipgraph(), flags.r2jdot_function), stdout);
+		jlm::print_dot(*find_cfg(jm->ipgraph(), flags.r2jdot_function), stdout);
 	if (flags.r2j_ipg_dot)
-		jlm::view_dot(jm->ipgraph(), stdout);
+		jlm::print_dot(jm->ipgraph(), stdout);
 
 	lm = jlm::jlm2llvm::convert(*jm, ctx);
 	if (flags.j2l) lm->dump();

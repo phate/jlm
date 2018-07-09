@@ -436,7 +436,7 @@ to_str(const aggnode & n, const demandmap & dm)
 }
 
 void
-view(const aggnode & n, const demandmap & dm, FILE * out)
+print(const aggnode & n, const demandmap & dm, FILE * out)
 {
 	fputs(to_str(n, dm).c_str(), out);
 	fflush(out);

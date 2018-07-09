@@ -64,7 +64,7 @@ test_is_structured()
 	bb->add_outedge(join);
 	join->add_outedge(cfg.exit_node());
 
-	jlm::view_ascii(cfg, stdout);
+	jlm::print_ascii(cfg, stdout);
 	assert(is_structured(cfg));
 }
 

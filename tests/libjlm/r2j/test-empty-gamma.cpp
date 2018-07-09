@@ -47,7 +47,7 @@ test_with_match()
 
 	jive::view(*rvsdg.graph(), stdout);
 	auto module = jlm::rvsdg2jlm::rvsdg2jlm(rvsdg);
-	jlm::view(*module, stdout);
+	jlm::print(*module, stdout);
 
 	/* verify output */
 
@@ -91,7 +91,7 @@ test_without_match()
 
 	jive::view(*rvsdg.graph(), stdout);
 	auto module = jlm::rvsdg2jlm::rvsdg2jlm(rvsdg);
-	jlm::view(*module, stdout);
+	jlm::print(*module, stdout);
 
 	/* verify output */
 
@@ -135,7 +135,7 @@ test_gamma3()
 
 	jive::view(*rvsdg.graph(), stdout);
 	auto module = jlm::rvsdg2jlm::rvsdg2jlm(rvsdg);
-	jlm::view(*module, stdout);
+	jlm::print(*module, stdout);
 
 	/* verify output */
 

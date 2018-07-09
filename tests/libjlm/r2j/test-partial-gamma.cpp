@@ -49,7 +49,7 @@ test()
 	assert(ipg.nnodes() == 1);
 
 	auto cfg = dynamic_cast<const jlm::function_node&>(*ipg.begin()).cfg();
-	jlm::view_ascii(*cfg, stdout);
+	jlm::print_ascii(*cfg, stdout);
 
 	assert(!is_proper_structured(*cfg));
 	assert(is_structured(*cfg));
