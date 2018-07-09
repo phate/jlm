@@ -63,8 +63,8 @@ test_block()
 	auto v2 = module.create_variable(vt, "v2");
 
 	basic_block bb;
-	bb.append_last(create_tac(op, {v0}, {v1}));
-	bb.append_last(create_tac(op, {v1}, {v2}));
+	bb.append_last(tac::create(op, {v0}, {v1}));
+	bb.append_last(tac::create(op, {v1}, {v2}));
 
 	auto root = blockaggnode::create(std::move(bb));
 
@@ -94,8 +94,8 @@ test_linear()
 	jlm::exit xa({v2});
 
 	basic_block bb1, bb2;
-	bb1.append_last(create_tac(op, {arg}, {v1}));
-	bb2.append_last(create_tac(op, {v1}, {v2}));
+	bb1.append_last(tac::create(op, {arg}, {v1}));
+	bb2.append_last(tac::create(op, {v1}, {v2}));
 
 	auto en = entryaggnode::create(ea);
 	auto b1 = blockaggnode::create(std::move(bb1));
@@ -145,11 +145,11 @@ test_branch()
 		Setup conditional CFG with nodes bbs, b1, b2, and edges bbs -> b1 and bbs -> b2.
 	*/
 	basic_block bbs, bb1, bb2;
-	bbs.append_last(create_tac(op, {arg}, {v1}));
-	bb1.append_last(create_tac(op, {v2}, {v3}));
-	bb2.append_last(create_tac(op, {v1}, {v2}));
-	bb2.append_last(create_tac(op, {v1}, {v3}));
-	bb2.append_last(create_tac(op, {v3}, {v4}));
+	bbs.append_last(tac::create(op, {arg}, {v1}));
+	bb1.append_last(tac::create(op, {v2}, {v3}));
+	bb2.append_last(tac::create(op, {v1}, {v2}));
+	bb2.append_last(tac::create(op, {v1}, {v3}));
+	bb2.append_last(tac::create(op, {v3}, {v4}));
 
 	auto bs = blockaggnode::create(std::move(bbs));
 	auto b1 = blockaggnode::create(std::move(bb1));
@@ -193,8 +193,8 @@ test_loop()
 	jlm::exit xa({v3, v4});
 
 	basic_block bb;
-	bb.append_last(create_tac(op, {v1}, {v2}));
-	bb.append_last(create_tac(op, {v2}, {v3}));
+	bb.append_last(tac::create(op, {v1}, {v2}));
+	bb.append_last(tac::create(op, {v2}, {v3}));
 
 	auto xn = exitaggnode::create(xa);
 	auto b = blockaggnode::create(std::move(bb));
@@ -230,7 +230,7 @@ test_assignment()
 	auto v2 = module.create_variable(vt, "v2");
 
 	basic_block bb;
-	bb.append_last(create_tac(op, {v1}, {v2}));
+	bb.append_last(tac::create(op, {v1}, {v2}));
 
 	auto root = blockaggnode::create(std::move(bb));
 

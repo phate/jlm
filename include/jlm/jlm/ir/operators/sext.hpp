@@ -84,7 +84,7 @@ create_sext_tac(const variable * operand, jlm::variable * result)
 	if (!rt) throw jlm::error("expected bits type.");
 
 	sext_op op(*ot, *rt);
-	return create_tac(op, {operand}, {result});
+	return tac::create(op, {operand}, {result});
 }
 
 static inline jive::output *

@@ -62,7 +62,7 @@ create_testop_tac(
 		result_types.push_back(&res->type());
 
 	test_op op(argument_types, result_types);
-	return create_tac(op, arguments, results);
+	return tac::create(op, arguments, results);
 }
 
 static inline std::vector<jive::output*>

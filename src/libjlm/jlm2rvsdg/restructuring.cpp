@@ -328,7 +328,7 @@ append_constant(jlm::cfg_node * node, const variable * result, size_t value)
 	auto nalternatives = static_cast<const jive::ctltype*>(&result->type())->nalternatives();
 
 	jive::ctlconstant_op op(jive::ctlvalue_repr(value, nalternatives));
-	append_last(node, create_tac(op, {}, {result}));
+	append_last(node, tac::create(op, {}, {result}));
 }
 
 static inline void

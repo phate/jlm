@@ -123,6 +123,15 @@ public:
 		return outputs_[index];
 	}
 
+	static inline std::unique_ptr<jlm::tac>
+	create(
+		const jive::simple_op & operation,
+		const std::vector<const variable *> & operands,
+		const std::vector<const variable *> & results)
+	{
+		return std::make_unique<jlm::tac>(operation, operands, results);
+	}
+
 private:
 	std::vector<const variable*> inputs_;
 	std::vector<const variable*> outputs_;
@@ -133,15 +142,6 @@ template <class T> static inline bool
 is(const jlm::tac * tac)
 {
 	return is<T>(tac->operation());
-}
-
-static inline std::unique_ptr<jlm::tac>
-create_tac(
-	const jive::simple_op & operation,
-	const std::vector<const variable *> & operands,
-	const std::vector<const variable *> & results)
-{
-	return std::make_unique<jlm::tac>(operation, operands, results);
 }
 
 typedef std::vector<std::unique_ptr<jlm::tac>> tacsvector_t;

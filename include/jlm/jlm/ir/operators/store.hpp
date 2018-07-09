@@ -153,7 +153,7 @@ create_store_tac(
 	if (!at) throw jlm::error("expected pointer type.");
 
 	jlm::store_op op(*at, 1, alignment);
-	return create_tac(op, {address, value, state}, {state});
+	return tac::create(op, {address, value, state}, {state});
 }
 
 static inline std::vector<jive::output*>

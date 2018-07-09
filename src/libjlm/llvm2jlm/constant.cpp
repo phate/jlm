@@ -56,7 +56,7 @@ convert_int_constant(
 
 	jive::bitvalue_repr v = convert_apint(constant->getValue());
 	auto r = ctx.module().create_variable(*convert_type(c->getType(), ctx));
-	tacs.push_back(create_tac(jive::bitconstant_op(v), {}, {r}));
+	tacs.push_back(tac::create(jive::bitconstant_op(v), {}, {r}));
 	return r;
 }
 

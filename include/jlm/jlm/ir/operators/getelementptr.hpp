@@ -90,7 +90,7 @@ create_getelementptr_tac(
 	jlm::getelementptr_op op(*at, bts, *rt);
 	std::vector<const variable*> operands(1, address);
 	operands.insert(operands.end(), offsets.begin(), offsets.end());
-	return create_tac(op, operands, {result});
+	return tac::create(op, operands, {result});
 }
 
 }

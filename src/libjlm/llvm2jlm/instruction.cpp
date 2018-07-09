@@ -120,7 +120,7 @@ convert_branch_instruction(llvm::Instruction * instruction, tacsvector_t & tacs,
 	auto c = convert_value(i->getCondition(), tacs, ctx);
 	auto nbits = i->getCondition()->getType()->getIntegerBitWidth();
 	auto op = jive::match_op(nbits, {{1, 1}}, 0, 2);
-	tacs.push_back(create_tac(op, {c}, create_result_variables(ctx.module(), op)));
+	tacs.push_back(tac::create(op, {c}, create_result_variables(ctx.module(), op)));
 	tacs.push_back(create_branch_tac(2,  tacs.back()->output(0)));
 
 	return nullptr;
@@ -147,7 +147,7 @@ convert_switch_instruction(llvm::Instruction * instruction, tacsvector_t & tacs,
 	auto c = convert_value(i->getCondition(), tacs, ctx);
 	auto nbits = i->getCondition()->getType()->getIntegerBitWidth();
 	auto op = jive::match_op(nbits, mapping, n, n+1);
-	tacs.push_back(create_tac(op, {c}, create_result_variables(ctx.module(), op)));
+	tacs.push_back(tac::create(op, {c}, create_result_variables(ctx.module(), op)));
 	tacs.push_back((create_branch_tac(n+1, tacs.back()->output(0))));
 
 	return nullptr;
@@ -210,7 +210,7 @@ convert_icmp_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 		tacs.push_back(vectorbinary_op::create(*static_cast<jive::binary_op*>(binop.get()),
 			op1, op2, ctx.lookup_value(i)));
 	} else {
-		tacs.push_back(create_tac(*static_cast<jive::simple_op*>(binop.get()),
+		tacs.push_back(tac::create(*static_cast<jive::simple_op*>(binop.get()),
 			{op1, op2}, {ctx.lookup_value(i)}));
 	}
 
@@ -246,7 +246,7 @@ convert_fcmp_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 	if (t->isVectorTy())
 		tacs.push_back(vectorbinary_op::create(operation, op1, op2, r));
 	else
-		tacs.push_back(create_tac(operation, {op1, op2}, {r}));
+		tacs.push_back(tac::create(operation, {op1, op2}, {r}));
 
 	return tacs.back()->output(0);
 }
@@ -370,7 +370,7 @@ convert_select_instruction(llvm::Instruction * i, tacsvector_t & tacs, context &
 	auto condition = convert_value(instruction->getCondition(), tacs, ctx);
 	auto tv = convert_value(instruction->getTrueValue(), tacs, ctx);
 	auto fv = convert_value(instruction->getFalseValue(), tacs, ctx);
-	tacs.push_back(create_tac(select_op(tv->type()), {condition, tv, fv}, {ctx.lookup_value(i)}));
+	tacs.push_back(tac::create(select_op(tv->type()), {condition, tv, fv}, {ctx.lookup_value(i)}));
 
 	return tacs.back()->output(0);
 }
@@ -433,7 +433,7 @@ convert_binary_operator(llvm::Instruction * instruction, tacsvector_t & tacs, co
 		auto & binop = *static_cast<jive::binary_op*>(operation.get());
 		tacs.push_back(vectorbinary_op::create(binop, op1, op2, r));
 	} else {
-		tacs.push_back(create_tac(*static_cast<jive::simple_op*>(operation.get()), {op1, op2}, {r}));
+		tacs.push_back(tac::create(*static_cast<jive::simple_op*>(operation.get()), {op1, op2}, {r}));
 	}
 
 	return tacs.back()->output(0);
@@ -555,7 +555,7 @@ convert_cast_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & c
 	if (dt->isVectorTy())
 		tacs.push_back(vectorunary_op::create(*static_cast<jive::unary_op*>(unop.get()), op, r));
 	else
-		tacs.push_back(create_tac(*static_cast<jive::simple_op*>(unop.get()), {op}, {r}));
+		tacs.push_back(tac::create(*static_cast<jive::simple_op*>(unop.get()), {op}, {r}));
 
 	return tacs.back()->output(0);
 }

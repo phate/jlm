@@ -190,7 +190,7 @@ create_load_tac(
 	if (!pt) throw jlm::error("expected pointer type.");
 
 	jlm::load_op op(*pt, 1, alignment);
-	return create_tac(op, {address, state}, {result});
+	return tac::create(op, {address, state}, {result});
 }
 
 static inline jive::output *

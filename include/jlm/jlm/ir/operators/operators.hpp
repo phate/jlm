@@ -89,7 +89,7 @@ create_phi_tac(
 	}
 
 	phi_op phi(nodes, result->type());
-	return create_tac(phi, variables, {result});
+	return tac::create(phi, variables, {result});
 }
 
 /* assignment operator */
@@ -124,7 +124,7 @@ create_assignment(
 	const variable * arg,
 	const variable * r)
 {
-	return create_tac(assignment_op(type), {r, arg}, {});
+	return tac::create(assignment_op(type), {r, arg}, {});
 }
 
 /* select operator */
@@ -167,7 +167,7 @@ create_select_tac(
 	jlm::variable * result)
 {
 	select_op op(t->type());
-	return create_tac(op, {p, t, f}, {result});
+	return tac::create(op, {p, t, f}, {result});
 }
 
 /* fp2ui operator */
@@ -224,7 +224,7 @@ create_fp2ui_tac(const variable * operand, jlm::variable * result)
 	if (!dt) throw jlm::error("expected bitstring type.");
 
 	fp2ui_op op(st->size(), *dt);
-	return create_tac(op, {operand}, {result});
+	return tac::create(op, {operand}, {result});
 }
 
 /* fp2si operator */
@@ -281,7 +281,7 @@ create_fp2si_tac(const variable * operand, jlm::variable * result)
 	if (!dt) throw jlm::error("expected bitstring type.");
 
 	fp2si_op op(st->size(), *dt);
-	return create_tac(op, {operand}, {result});
+	return tac::create(op, {operand}, {result});
 }
 
 /* ctl2bits operator */
@@ -316,7 +316,7 @@ create_ctl2bits_tac(const variable * operand, jlm::variable * result)
 	if (!dt) throw jlm::error("expected bitstring type.");
 
 	ctl2bits_op op(*st, *dt);
-	return create_tac(op, {operand}, {result});
+	return tac::create(op, {operand}, {result});
 }
 
 /* branch operator */
@@ -352,7 +352,7 @@ create_branch_tac(size_t nalternatives, const variable * operand)
 {
 	jive::ctltype type(nalternatives);
 	branch_op op(type);
-	return create_tac(op, {operand}, {});
+	return tac::create(op, {operand}, {});
 }
 
 /* ptr constant */
@@ -390,7 +390,7 @@ create_ptr_constant_null_tac(const jive::type & ptype, jlm::variable * result)
 	if (!pt) throw jlm::error("expected pointer type.");
 
 	jlm::ptr_constant_null_op op(*pt);
-	return create_tac(op, {}, {result});
+	return tac::create(op, {}, {result});
 }
 
 /* bits2ptr operator */
@@ -459,7 +459,7 @@ create_bits2ptr_tac(const variable * argument, jlm::variable * result)
 	if (!pt) throw jlm::error("expected pointer type.");
 
 	jlm::bits2ptr_op op(*at, *pt);
-	return create_tac(op, {argument}, {result});
+	return tac::create(op, {argument}, {result});
 }
 
 /* ptr2bits operator */
@@ -528,7 +528,7 @@ create_ptr2bits_tac(const variable * argument, jlm::variable * result)
 	if (!bt) throw jlm::error("expected bitstring type.");
 
 	jlm::ptr2bits_op op(*pt, *bt);
-	return create_tac(op, {argument}, {result});
+	return tac::create(op, {argument}, {result});
 }
 
 /* data array constant operator */
@@ -580,7 +580,7 @@ create_data_array_constant_tac(
 	if (!vt) throw jlm::error("expected value type.");
 
 	data_array_constant_op op(*vt, elements.size());
-	return create_tac(op, elements, {result});
+	return tac::create(op, elements, {result});
 }
 
 /* pointer compare operator */
@@ -645,7 +645,7 @@ create_ptrcmp_tac(
 	if (!pt) throw jlm::error("expected pointer type.");
 
 	jlm::ptrcmp_op op(*pt, cmp);
-	return create_tac(op, {op1, op2}, {result});
+	return tac::create(op, {op1, op2}, {result});
 }
 
 /* zext operator */
@@ -719,7 +719,7 @@ create_zext_tac(const variable * operand, jlm::variable * result)
 	if (!dt) throw jlm::error("expected bitstring type.");
 
 	jlm::zext_op op(st->nbits(), dt->nbits());
-	return create_tac(op, {operand}, {result});
+	return tac::create(op, {operand}, {result});
 }
 
 /* floating point constant operator */
@@ -769,7 +769,7 @@ create_fpconstant_tac(const llvm::APFloat & constant, jlm::variable * result)
 	if (!ft) throw jlm::error("expected floating point type.");
 
 	jlm::fpconstant_op op(ft->size(), constant);
-	return create_tac(op, {}, {result});
+	return tac::create(op, {}, {result});
 }
 
 /* floating point comparison operator */
@@ -836,7 +836,7 @@ create_fpcmp_tac(
 	if (!ft) throw jlm::error("expected floating point type.");
 
 	jlm::fpcmp_op op(cmp, ft->size());
-	return create_tac(op, {op1, op2}, {result});
+	return tac::create(op, {op1, op2}, {result});
 }
 
 /* undef constant operator */
@@ -892,7 +892,7 @@ create_undef_constant_tac(jlm::variable * result)
 	if (!vt) throw jlm::error("expected value type.");
 
 	jlm::undef_constant_op op(*vt);
-	return create_tac(op, {}, {result});
+	return tac::create(op, {}, {result});
 }
 
 /* floating point arithmetic operator */
@@ -957,7 +957,7 @@ create_fpbin_tac(
 	if (!ft) throw jlm::error("expected floating point type.");
 
 	jlm::fpbin_op op(fpop, ft->size());
-	return create_tac(op, {op1, op2}, {result});
+	return tac::create(op, {op1, op2}, {result});
 }
 
 /* fpext operator */
@@ -1032,7 +1032,7 @@ create_fpext_tac(const variable * operand, jlm::variable * result)
 	if (!dt) throw jlm::error("expected floating point type.");
 
 	jlm::fpext_op op(st->size(), dt->size());
-	return create_tac(op, {operand}, {result});
+	return tac::create(op, {operand}, {result});
 }
 
 /* fptrunc operator */
@@ -1111,7 +1111,7 @@ create_fptrunc_tac(const variable * operand, jlm::variable * result)
 	if (!dt) throw jlm::error("expected floating point type.");
 
 	fptrunc_op op(st->size(), dt->size());
-	return create_tac(op, {operand}, {result});
+	return tac::create(op, {operand}, {result});
 }
 
 /* valist operator */
@@ -1168,7 +1168,7 @@ create_valist_tac(
 	auto result = m.create_tacvariable(t);
 
 	jlm::valist_op op(std::move(operands));
-	auto tac = create_tac(op, arguments, {result});
+	auto tac = tac::create(op, arguments, {result});
 	result->set_tac(tac.get());
 
 	return tac;
@@ -1238,7 +1238,7 @@ create_bitcast_tac(const variable * argument, variable * result)
 	if (!rt) throw jlm::error("expected value type.");
 
 	bitcast_op op(*at, *rt);
-	return create_tac(op, {argument}, {result});
+	return tac::create(op, {argument}, {result});
 }
 
 /* struct constant operator */
@@ -1289,7 +1289,7 @@ create_struct_constant_tac(
 	if (!rt) throw jlm::error("expected struct type.");
 
 	struct_constant_op op(*rt);
-	return create_tac(op, elements, {result});
+	return tac::create(op, elements, {result});
 }
 
 /* trunc operator */
@@ -1363,7 +1363,7 @@ create_trunc_tac(const variable * operand, jlm::variable * result)
 	if (!rt) throw jlm::error("expected bits type.");
 
 	trunc_op op(*ot, *rt);
-	return create_tac(op, {operand}, {result});
+	return tac::create(op, {operand}, {result});
 }
 
 static inline jive::output *
@@ -1429,7 +1429,7 @@ create_uitofp_tac(const variable * operand, jlm::variable * result)
 	if (!rt) throw jlm::error("expected floating point type.");
 
 	uitofp_op op(*st, *rt);
-	return create_tac(op, {operand}, {result});
+	return tac::create(op, {operand}, {result});
 }
 
 /* sitofp operator */
@@ -1486,7 +1486,7 @@ create_sitofp_tac(const variable * operand, jlm::variable * result)
 	if (!rt) throw jlm::error("expected floating point type.");
 
 	sitofp_op op(*st, *rt);
-	return create_tac(op, {operand}, {result});
+	return tac::create(op, {operand}, {result});
 }
 
 /* constant array operator */
@@ -1538,7 +1538,7 @@ create_constant_array_tac(
 	if (!vt) throw jlm::error("expected value type.\n");
 
 	constant_array_op op(*vt, elements.size());
-	return create_tac(op, elements, {result});
+	return tac::create(op, elements, {result});
 }
 
 /* constant aggregate zero */
@@ -1573,7 +1573,7 @@ static inline std::unique_ptr<jlm::tac>
 create_constant_aggregate_zero_tac(jlm::variable * result)
 {
 	constant_aggregate_zero_op op(result->type());
-	return create_tac(op, {}, {result});
+	return tac::create(op, {}, {result});
 }
 
 /* extractelement operator */
@@ -1612,7 +1612,7 @@ public:
 		if (!bt) throw jlm::error("expected bit type.");
 
 		extractelement_op op(*vt, *bt);
-		return create_tac(op, {vector, index}, {result});
+		return tac::create(op, {vector, index}, {result});
 	}
 };
 
@@ -1660,7 +1660,7 @@ public:
 		if (!vt1 || !vt2 || !vt3) throw jlm::error("expected vector type.");
 
 		shufflevector_op op(*vt1, *vt2, *vt3);
-		return create_tac(op, {v1, v2, mask}, {result});
+		return tac::create(op, {v1, v2, mask}, {result});
 	}
 };
 
@@ -1695,7 +1695,7 @@ public:
 		if (!vt) throw jlm::error("expected vector type.");
 
 		constantvector_op op(*vt);
-		return create_tac(op, operands, {result});
+		return tac::create(op, operands, {result});
 	}
 };
 
@@ -1746,7 +1746,7 @@ public:
 		if (!bt) throw jlm::error("expected bit type.");
 
 		insertelement_op op(*vct, *vt, *bt);
-		return create_tac(op, {vector, value, index}, {result});
+		return tac::create(op, {vector, value, index}, {result});
 	}
 };
 
@@ -1834,7 +1834,7 @@ public:
 		if (!vct1 || !vct2) throw jlm::error("expected vector type.");
 
 		vectorunary_op op(unop, *vct1, *vct2);
-		return create_tac(op, {operand}, {result});
+		return tac::create(op, {operand}, {result});
 	}
 
 private:
@@ -1931,7 +1931,7 @@ public:
 		if (!vct1 || !vct2 || !vct3) throw jlm::error("expected vector type.");
 
 		vectorbinary_op op(binop, *vct1, *vct2, *vct3);
-		return create_tac(op, {op1, op2}, {result});
+		return tac::create(op, {op1, op2}, {result});
 	}
 
 private:
@@ -1986,7 +1986,7 @@ public:
 		if (!vt) throw jlm::error("expected value type");
 
 		constant_data_vector_op op(*vt, elements.size());
-		return create_tac(op, elements, {result});
+		return tac::create(op, elements, {result});
 	}
 };
 
@@ -2037,7 +2037,7 @@ public:
 		jlm::variable * result)
 	{
 		extractvalue_op op(aggregate->type(), indices);
-		return create_tac(op, {aggregate}, {result});
+		return tac::create(op, {aggregate}, {result});
 	}
 
 private:

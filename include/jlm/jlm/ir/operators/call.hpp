@@ -94,7 +94,7 @@ create_call_tac(
 	call_op op(*ft);
 	std::vector<const variable*> operands({function});
 	operands.insert(operands.end(), arguments.begin(), arguments.end());
-	return create_tac(op, operands, results);
+	return tac::create(op, operands, results);
 }
 
 static inline std::vector<jive::output*>

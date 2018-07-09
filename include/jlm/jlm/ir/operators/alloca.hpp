@@ -135,7 +135,7 @@ create_alloca_tac(
 	if (!bt) throw jlm::error("expected bits type.");
 
 	jlm::alloca_op op(jlm::ptrtype(*vt), *bt, alignment);
-	return create_tac(op, {size, state}, {result, state});
+	return tac::create(op, {size, state}, {result, state});
 }
 
 static inline std::vector<jive::output*>

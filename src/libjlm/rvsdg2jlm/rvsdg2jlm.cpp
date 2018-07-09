@@ -109,7 +109,7 @@ convert_port(
 	auto result = ctx.module().create_tacvariable(node->output(0)->type());
 
 	auto & op = *static_cast<const jive::simple_op*>(&node->operation());
-	tacs.push_back(create_tac(op, operands, {result}));
+	tacs.push_back(tac::create(op, operands, {result}));
 	return result;
 }
 
@@ -193,7 +193,7 @@ convert_simple_node(const jive::node & node, context & ctx)
 	}
 
 	auto & op = *static_cast<const jive::simple_op*>(&node.operation());
-	append_last(ctx.lpbb(), create_tac(op, operands, results));
+	append_last(ctx.lpbb(), tac::create(op, operands, results));
 	/* FIXME: remove again once tacvariables owner's are tacs */
 	for (const auto & tv : tvs)
 		tv->set_tac(static_cast<const basic_block*>(&ctx.lpbb()->attribute())->last());
