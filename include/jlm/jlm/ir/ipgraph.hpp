@@ -121,12 +121,6 @@ public:
 	ipgraph_node *
 	lookup_function(const std::string & name) const;
 
-	inline ipgraph_node *
-	lookup_function(const char * name) const
-	{
-		return lookup_function(std::string(name));
-	}
-
 	std::vector<ipgraph_node*>
 	nodes() const;
 
