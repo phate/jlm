@@ -59,20 +59,9 @@ public:
 	inline
 	gblvariable(
 		const jive::type & type,
-		const std::string & name,
-		const jlm::linkage & linkage)
+		const std::string & name)
 	: variable(type, name)
-	, linkage_(linkage)
 	{}
-
-	inline const jlm::linkage &
-	linkage() const noexcept
-	{
-		return linkage_;
-	}
-
-private:
-	jlm::linkage linkage_;
 };
 
 static inline bool

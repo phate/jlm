@@ -292,8 +292,8 @@ public:
 	~fctvariable();
 
 	inline
-	fctvariable(function_node * node, const jlm::linkage & linkage)
-	: gblvariable(node->type(), node->name(), linkage)
+	fctvariable(function_node * node)
+	: gblvariable(node->type(), node->name())
 	, node_(node)
 	{}
 

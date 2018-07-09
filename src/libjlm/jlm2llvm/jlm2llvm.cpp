@@ -290,7 +290,7 @@ convert_ipgraph(const jlm::ipgraph & clg, context & ctx)
 			ctx.insert(v, gv);
 		} else if (auto n = dynamic_cast<const function_node*>(&node)) {
 			auto type = convert_type(n->fcttype(), ctx);
-			auto linkage = convert_linkage(dynamic_cast<const fctvariable*>(v)->linkage());
+			auto linkage = convert_linkage(n->linkage());
 			auto f = llvm::Function::Create(type, linkage, n->name(), &lm);
 			ctx.insert(v, f);
 		} else

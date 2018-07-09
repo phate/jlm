@@ -422,7 +422,7 @@ convert_lambda_node(const jive::node & node, context & ctx)
 	auto exported = is_exported(node.output(0));
 	auto linkage = exported ? jlm::linkage::external_linkage : jlm::linkage::internal_linkage;
 	auto f = function_node::create(clg, lambda->name(), ftype, linkage, exported);
-	auto v = module.create_variable(f, linkage);
+	auto v = module.create_variable(f);
 
 	f->add_cfg(create_cfg(node, ctx));
 	ctx.insert(node.output(0), v);
@@ -452,7 +452,7 @@ convert_phi_node(const jive::node & node, context & ctx)
 		auto exported = is_exported(lambda->output(0));
 		auto linkage = exported ? jlm::linkage::external_linkage : jlm::linkage::internal_linkage;
 		auto f = function_node::create(clg, lambda->name(), lambda->fcttype(), linkage, exported);
-		ctx.insert(subregion->argument(n), module.create_variable(f, linkage));
+		ctx.insert(subregion->argument(n), module.create_variable(f));
 	}
 
 	/* convert function bodies */
@@ -532,7 +532,7 @@ rvsdg2jlm(const jlm::rvsdg & rvsdg)
 		if (auto ftype = is_function_import(argument)) {
 			auto f = function_node::create(clg, argument->port().gate()->name(), *ftype,
 				linkage::external_linkage, false);
-			auto v = module->create_variable(f, jlm::linkage::external_linkage);
+			auto v = module->create_variable(f);
 			ctx.insert(argument, v);
 		} else {
 			const auto & type = argument->type();

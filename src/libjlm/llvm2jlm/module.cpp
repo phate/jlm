@@ -188,7 +188,7 @@ declare_globals(llvm::Module & lm, context & ctx)
 			fcttype,
 			linkage,
 			f.getLinkage() != llvm::GlobalValue::InternalLinkage);
-		ctx.insert_value(&f, ctx.module().create_variable(n, convert_linkage(f.getLinkage())));
+		ctx.insert_value(&f, ctx.module().create_variable(n));
 	}
 }
 
