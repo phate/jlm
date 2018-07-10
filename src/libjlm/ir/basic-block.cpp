@@ -29,9 +29,7 @@ basic_block *
 basic_block::create(jlm::cfg & cfg)
 {
 	std::unique_ptr<basic_block> node(new basic_block(cfg));
-	auto tmp = node.get();
-	cfg.add_node(std::move(node));
-	return tmp;
+	return static_cast<basic_block*>(cfg.add_node(std::move(node)));
 }
 
 }

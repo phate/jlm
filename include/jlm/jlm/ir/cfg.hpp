@@ -273,10 +273,12 @@ public:
 		return exit_;
 	}
 
-	inline void
+	inline cfg_node *
 	add_node(std::unique_ptr<jlm::cfg_node> node)
 	{
+		auto tmp = node.get();
 		nodes_.insert(std::move(node));
+		return tmp;
 	}
 
 	inline cfg::iterator

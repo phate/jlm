@@ -33,9 +33,7 @@ entry_node *
 entry_node::create(jlm::cfg & cfg)
 {
 	std::unique_ptr<entry_node> node(new entry_node(cfg));
-	auto tmp = node.get();
-	cfg.add_node(std::move(node));
-	return tmp;
+	return static_cast<entry_node*>(cfg.add_node(std::move(node)));
 }
 
 /* cfg exit node */
@@ -47,9 +45,7 @@ exit_node *
 exit_node::create(jlm::cfg & cfg)
 {
 	std::unique_ptr<exit_node> node(new exit_node(cfg));
-	auto tmp = node.get();
-	cfg.add_node(std::move(node));
-	return tmp;
+	return static_cast<exit_node*>(cfg.add_node(std::move(node)));
 }
 
 /* cfg */
