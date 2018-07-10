@@ -64,15 +64,12 @@ copy_structural(const jlm::cfg & in)
 
 	/* create all nodes */
 	std::unordered_map<const jlm::cfg_node*, jlm::cfg_node*> node_map({
-	  {in.entry(), out->entry()}
+	  {in.entry(), out->entry()}, {in.exit(), out->exit()}
 	});
+
 	for (const auto & node : in) {
-		if (&node == in.exit()) {
-			node_map[&node] = out->exit();
-		} else {
-			JLM_DEBUG_ASSERT(jlm::is<jlm::basic_block>(&node));
-			node_map[&node] = jlm::basic_block::create(*out);
-		}
+		JLM_DEBUG_ASSERT(jlm::is<jlm::basic_block>(&node));
+		node_map[&node] = jlm::basic_block::create(*out);
 	}
 
 	/* establish control flow */
@@ -418,13 +415,12 @@ is_valid(const jlm::cfg & cfg)
 	if (cfg.entry()->outedge(0)->index() != 0)
 		return false;
 
-	for (const auto & node : cfg) {
-		if (&node == cfg.exit()) {
-			if (!node.no_successor())
-				return false;
-			continue;
-		}
+	/* check exit node */
+	if (!cfg.exit()->no_successor())
+		return false;
 
+	/* check basic blocks */
+	for (const auto & node : cfg) {
 		if (node.no_successor())
 			return false;
 
@@ -456,9 +452,6 @@ is_linear(const jlm::cfg & cfg)
 	JLM_DEBUG_ASSERT(is_closed(cfg));
 
 	for (const auto & node : cfg) {
-		if (&node == cfg.exit())
-			continue;
-
 		if (!node.single_successor() || !node.single_predecessor())
 			return false;
 	}
@@ -488,7 +481,7 @@ reduce(
 	JLM_DEBUG_ASSERT(is_closed(cfg));
 	auto c = copy_structural(cfg);
 
-	std::unordered_set<cfg_node*> to_visit({c->entry()});
+	std::unordered_set<cfg_node*> to_visit({c->entry(), c->exit()});
 	for (auto & node : *c)
 		to_visit.insert(&node);
 
@@ -542,8 +535,7 @@ purge(jlm::cfg & cfg)
 	auto it = cfg.begin();
 	while (it != cfg.end()) {
 		auto bb = dynamic_cast<const basic_block*>(it.node());
-
-		if (bb && bb->tacs().ntacs() == 0) {
+		if (bb->tacs().ntacs() == 0) {
 			JLM_DEBUG_ASSERT(it.node()->noutedges() == 1);
 			it.node()->divert_inedges(it.node()->outedge(0)->sink());
 			it = cfg.remove_node(it);

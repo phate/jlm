@@ -100,9 +100,6 @@ public:
 		return results_;
 	}
 
-	static exit_node *
-	create(jlm::cfg & cfg);
-
 private:
 	std::vector<const variable*> results_;
 };
@@ -265,7 +262,7 @@ public:
 	inline jlm::exit_node *
 	exit() const noexcept
 	{
-		return exit_;
+		return exit_.get();
 	}
 
 	inline cfg_node *
@@ -311,8 +308,8 @@ public:
 	}
 
 private:
-	jlm::exit_node * exit_;
 	jlm::module & module_;
+	std::unique_ptr<exit_node> exit_;
 	std::unique_ptr<entry_node> entry_;
 	std::unordered_set<std::unique_ptr<cfg_node>> nodes_;
 };

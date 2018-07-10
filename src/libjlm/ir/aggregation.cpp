@@ -276,18 +276,15 @@ aggregate(jlm::cfg & cfg)
 {
 	JLM_DEBUG_ASSERT(is_proper_structured(cfg));
 	auto entry = cfg.entry();
+	auto exit = cfg.exit();
 
 	/* insert all aggregation leaves into the map */
-	std::unordered_set<cfg_node*> to_visit({entry});
+	std::unordered_set<cfg_node*> to_visit({entry, exit});
 	std::unordered_map<jlm::cfg_node*, std::unique_ptr<aggnode>> map;
-	map[entry] = entryaggnode::create(static_cast<const entry_node*>(entry)->arguments());
+	map[entry] = entryaggnode::create(entry->arguments());
+	map[exit] = exitaggnode::create(exit->results());
 	for (auto & node : cfg) {
-		if (is<basic_block>(&node))
-			map[&node] = blockaggnode::create(std::move(static_cast<basic_block*>(&node)->tacs()));
-		else if (is<exit_node>(&node))
-			map[&node] = exitaggnode::create(static_cast<const jlm::exit_node*>(&node)->results());
-		else
-			JLM_DEBUG_ASSERT(0);
+		map[&node] = blockaggnode::create(std::move(static_cast<basic_block*>(&node)->tacs()));
 		to_visit.insert(&node);
 	}
 

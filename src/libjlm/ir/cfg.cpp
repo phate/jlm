@@ -34,21 +34,14 @@ entry_node::~entry_node()
 exit_node::~exit_node()
 {}
 
-exit_node *
-exit_node::create(jlm::cfg & cfg)
-{
-	std::unique_ptr<exit_node> node(new exit_node(cfg));
-	return static_cast<exit_node*>(cfg.add_node(std::move(node)));
-}
-
 /* cfg */
 
 cfg::cfg(jlm::module & module)
 : module_(module)
 {
 	entry_ = std::unique_ptr<entry_node>(new entry_node(*this));
-	exit_ = exit_node::create(*this);
-	entry_->add_outedge(exit_);
+	exit_ = std::unique_ptr<exit_node>(new exit_node(*this));
+	entry_->add_outedge(exit_.get());
 }
 
 cfg::iterator
