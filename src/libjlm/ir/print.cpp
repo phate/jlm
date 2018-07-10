@@ -356,10 +356,18 @@ emit_node(const jlm::cfg_node & node)
 std::string
 to_dot(const jlm::cfg & cfg)
 {
+	auto entry = cfg.entry();
+
 	std::string dot("digraph cfg {\n");
+
+	/* emit entry node */
+	dot += strfmt("{ rank = source; ", (intptr_t)entry, "[shape=box, label = \"",
+		emit_node(*entry), "\"]; }\n");
+	dot += strfmt((intptr_t)entry, " -> ", (intptr_t)entry->outedge(0)->sink(), "[label=\"0\"];\n");
+
+
 	for (const auto & node : cfg) {
 		dot += "{ ";
-		if (&node == cfg.entry()) dot += "rank = source; ";
 		if (&node == cfg.exit()) dot += "rank = sink; ";
 
 		dot += strfmt((intptr_t)&node);

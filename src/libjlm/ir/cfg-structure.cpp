@@ -57,15 +57,17 @@ strongconnect(
 static inline std::unique_ptr<jlm::cfg>
 copy_structural(const jlm::cfg & in)
 {
+	JLM_DEBUG_ASSERT(is_valid(in));
+
 	std::unique_ptr<jlm::cfg> out(new jlm::cfg(in.module()));
 	out->entry()->remove_outedge(0);
 
 	/* create all nodes */
-	std::unordered_map<const jlm::cfg_node*, jlm::cfg_node*> node_map;
+	std::unordered_map<const jlm::cfg_node*, jlm::cfg_node*> node_map({
+	  {in.entry(), out->entry()}
+	});
 	for (const auto & node : in) {
-		if (&node == in.entry()) {
-			node_map[&node] = out->entry();
-		} else if (&node == in.exit()) {
+		if (&node == in.exit()) {
 			node_map[&node] = out->exit();
 		} else {
 			JLM_DEBUG_ASSERT(jlm::is<jlm::basic_block>(&node));
@@ -74,6 +76,7 @@ copy_structural(const jlm::cfg & in)
 	}
 
 	/* establish control flow */
+	node_map[in.entry()]->add_outedge(node_map[in.entry()->outedge(0)->sink()]);
 	for (const auto & node : in) {
 		for (auto it = node.begin_outedges(); it != node.end_outedges(); it++)
 			node_map[&node]->add_outedge(node_map[it->sink()]);
@@ -407,19 +410,17 @@ check_phis(const taclist & bb)
 bool
 is_valid(const jlm::cfg & cfg)
 {
+	/* check entry node */
+	if (!cfg.entry()->no_predecessor())
+		return false;
+	if (!cfg.entry()->single_successor())
+		return false;
+	if (cfg.entry()->outedge(0)->index() != 0)
+		return false;
+
 	for (const auto & node : cfg) {
 		if (&node == cfg.exit()) {
 			if (!node.no_successor())
-				return false;
-			continue;
-		}
-
-		if (&node == cfg.entry()) {
-			if (!node.no_predecessor())
-				return false;
-			if (!node.single_successor())
-				return false;
-			if (node.outedge(0)->index() != 0)
 				return false;
 			continue;
 		}
@@ -442,9 +443,6 @@ is_closed(const jlm::cfg & cfg)
 	JLM_DEBUG_ASSERT(is_valid(cfg));
 
 	for (const auto & node : cfg) {
-		if (&node == cfg.entry())
-			continue;
-
 		if (node.no_predecessor())
 			return false;
 	}
@@ -458,7 +456,7 @@ is_linear(const jlm::cfg & cfg)
 	JLM_DEBUG_ASSERT(is_closed(cfg));
 
 	for (const auto & node : cfg) {
-		if (&node == cfg.entry() || &node == cfg.exit())
+		if (&node == cfg.exit())
 			continue;
 
 		if (!node.single_successor() || !node.single_predecessor())
@@ -490,7 +488,7 @@ reduce(
 	JLM_DEBUG_ASSERT(is_closed(cfg));
 	auto c = copy_structural(cfg);
 
-	std::unordered_set<cfg_node*> to_visit;
+	std::unordered_set<cfg_node*> to_visit({c->entry()});
 	for (auto & node : *c)
 		to_visit.insert(&node);
 

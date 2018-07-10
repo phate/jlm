@@ -55,7 +55,7 @@ test_with_match()
 	assert(ipg.nnodes() == 1);
 
 	auto cfg = dynamic_cast<const jlm::function_node&>(*ipg.begin()).cfg();
-	assert(cfg->nnodes() == 3);
+	assert(cfg->nnodes() == 2);
 	auto node = cfg->entry()->outedge(0)->sink();
 	auto bb = dynamic_cast<const basic_block*>(node);
 	assert(jive::is<jlm::select_op>(bb->tacs().last()->operation()));
@@ -99,7 +99,7 @@ test_without_match()
 	assert(ipg.nnodes() == 1);
 
 	auto cfg = dynamic_cast<const jlm::function_node&>(*ipg.begin()).cfg();
-	assert(cfg->nnodes() == 3);
+	assert(cfg->nnodes() == 2);
 	auto node = cfg->entry()->outedge(0)->sink();
 	auto bb = dynamic_cast<const basic_block*>(node);
 	assert(jive::is<jlm::ctl2bits_op>(bb->tacs().first()->operation()));

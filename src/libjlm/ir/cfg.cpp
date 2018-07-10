@@ -29,13 +29,6 @@ namespace jlm {
 entry_node::~entry_node()
 {}
 
-entry_node *
-entry_node::create(jlm::cfg & cfg)
-{
-	std::unique_ptr<entry_node> node(new entry_node(cfg));
-	return static_cast<entry_node*>(cfg.add_node(std::move(node)));
-}
-
 /* cfg exit node */
 
 exit_node::~exit_node()
@@ -53,7 +46,7 @@ exit_node::create(jlm::cfg & cfg)
 cfg::cfg(jlm::module & module)
 : module_(module)
 {
-	entry_ = entry_node::create(*this);
+	entry_ = std::unique_ptr<entry_node>(new entry_node(*this));
 	exit_ = exit_node::create(*this);
 	entry_->add_outedge(exit_);
 }
