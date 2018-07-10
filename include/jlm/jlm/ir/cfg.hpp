@@ -260,7 +260,7 @@ public:
 	}
 
 	inline jlm::entry_node *
-	entry_node() const noexcept
+	entry() const noexcept
 	{
 		return entry_;
 	}

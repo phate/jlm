@@ -21,9 +21,9 @@ namespace jlm {
 static inline std::vector<jlm::cfg_node*>
 breadth_first_traversal(const jlm::cfg & cfg)
 {
-	std::deque<jlm::cfg_node*> next({cfg.entry_node()});
-	std::vector<jlm::cfg_node*> nodes({cfg.entry_node()});
-	std::unordered_set<jlm::cfg_node*> visited({cfg.entry_node()});
+	std::deque<jlm::cfg_node*> next({cfg.entry()});
+	std::vector<jlm::cfg_node*> nodes({cfg.entry()});
+	std::unordered_set<jlm::cfg_node*> visited({cfg.entry()});
 	while (!next.empty()) {
 		auto node = next.front();
 		next.pop_front();
@@ -359,7 +359,7 @@ to_dot(const jlm::cfg & cfg)
 	std::string dot("digraph cfg {\n");
 	for (const auto & node : cfg) {
 		dot += "{ ";
-		if (&node == cfg.entry_node()) dot += "rank = source; ";
+		if (&node == cfg.entry()) dot += "rank = source; ";
 		if (&node == cfg.exit_node()) dot += "rank = sink; ";
 
 		dot += strfmt((intptr_t)&node);

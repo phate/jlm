@@ -58,13 +58,13 @@ static inline std::unique_ptr<jlm::cfg>
 copy_structural(const jlm::cfg & in)
 {
 	std::unique_ptr<jlm::cfg> out(new jlm::cfg(in.module()));
-	out->entry_node()->remove_outedge(0);
+	out->entry()->remove_outedge(0);
 
 	/* create all nodes */
 	std::unordered_map<const jlm::cfg_node*, jlm::cfg_node*> node_map;
 	for (const auto & node : in) {
-		if (&node == in.entry_node()) {
-			node_map[&node] = out->entry_node();
+		if (&node == in.entry()) {
+			node_map[&node] = out->entry();
 		} else if (&node == in.exit_node()) {
 			node_map[&node] = out->exit_node();
 		} else {
@@ -414,7 +414,7 @@ is_valid(const jlm::cfg & cfg)
 			continue;
 		}
 
-		if (&node == cfg.entry_node()) {
+		if (&node == cfg.entry()) {
 			if (!node.no_predecessor())
 				return false;
 			if (!node.single_successor())
@@ -442,7 +442,7 @@ is_closed(const jlm::cfg & cfg)
 	JLM_DEBUG_ASSERT(is_valid(cfg));
 
 	for (const auto & node : cfg) {
-		if (&node == cfg.entry_node())
+		if (&node == cfg.entry())
 			continue;
 
 		if (node.no_predecessor())
@@ -458,7 +458,7 @@ is_linear(const jlm::cfg & cfg)
 	JLM_DEBUG_ASSERT(is_closed(cfg));
 
 	for (const auto & node : cfg) {
-		if (&node == cfg.entry_node() || &node == cfg.exit_node())
+		if (&node == cfg.entry() || &node == cfg.exit_node())
 			continue;
 
 		if (!node.single_successor() || !node.single_predecessor())
@@ -477,7 +477,7 @@ find_sccs(const jlm::cfg & cfg)
 	std::vector<cfg_node*> node_stack;
 	std::vector<std::unordered_set<cfg_node*>> sccs;
 	std::unordered_map<cfg_node*, std::pair<size_t,size_t>> map;
-	strongconnect(cfg.entry_node(), cfg.exit_node(), map, node_stack, index, sccs);
+	strongconnect(cfg.entry(), cfg.exit_node(), map, node_stack, index, sccs);
 
 	return sccs;
 }
@@ -562,7 +562,7 @@ prune(jlm::cfg & cfg)
 
 	/* find all nodes that are dominated by the entry node */
 	std::unordered_set<cfg_node*> visited;
-	std::unordered_set<cfg_node*> to_visit({cfg.entry_node()});
+	std::unordered_set<cfg_node*> to_visit({cfg.entry()});
 	while (!to_visit.empty()) {
 		auto node = *to_visit.begin();
 		to_visit.erase(to_visit.begin());

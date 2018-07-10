@@ -28,9 +28,9 @@
 static inline std::vector<jlm::cfg_node*>
 breadth_first_traversal(const jlm::cfg & cfg)
 {
-	std::deque<jlm::cfg_node*> next({cfg.entry_node()});
-	std::vector<jlm::cfg_node*> nodes({cfg.entry_node()});
-	std::unordered_set<jlm::cfg_node*> visited({cfg.entry_node()});
+	std::deque<jlm::cfg_node*> next({cfg.entry()});
+	std::vector<jlm::cfg_node*> nodes({cfg.entry()});
+	std::unordered_set<jlm::cfg_node*> visited({cfg.entry()});
 	while (!next.empty()) {
 		auto node = next.front();
 		next.pop_front();
@@ -185,7 +185,7 @@ convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 
 	/* create basic blocks */
 	for (const auto & node : nodes) {
-		if (node == cfg.entry_node() || node == cfg.exit_node())
+		if (node == cfg.entry() || node == cfg.exit_node())
 			continue;
 
 		auto bb = llvm::BasicBlock::Create(f.getContext(), strfmt("bb", &node), &f);
@@ -195,11 +195,11 @@ convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 	/* add arguments to context */
 	size_t n = 0;
 	for (auto & arg : f.getArgumentList())
-		ctx.insert(cfg.entry_node()->argument(n++), &arg);
+		ctx.insert(cfg.entry()->argument(n++), &arg);
 
 	/* create non-terminator instructions */
 	for (const auto & node : nodes) {
-		if (node == cfg.entry_node() || node == cfg.exit_node())
+		if (node == cfg.entry() || node == cfg.exit_node())
 			continue;
 
 		JLM_DEBUG_ASSERT(is<basic_block>(node));
@@ -210,7 +210,7 @@ convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 
 	/* create cfg structure */
 	for (const auto & node : nodes) {
-		if (node == cfg.entry_node() || node == cfg.exit_node())
+		if (node == cfg.entry() || node == cfg.exit_node())
 			continue;
 
 		create_terminator_instruction(node, ctx);
@@ -218,7 +218,7 @@ convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 
 	/* patch phi instructions */
 	for (const auto & node : nodes) {
-		if (node == cfg.entry_node() || node == cfg.exit_node())
+		if (node == cfg.entry() || node == cfg.exit_node())
 			continue;
 
 		JLM_DEBUG_ASSERT(is<basic_block>(node));
