@@ -32,7 +32,7 @@ public:
 	~entry_node();
 
 	entry_node(jlm::cfg & cfg)
-	: cfg_node(cfg, nullptr)
+	: cfg_node(cfg)
 	{}
 
 	size_t
@@ -81,7 +81,7 @@ public:
 	~exit_node();
 
 	exit_node(jlm::cfg & cfg)
-	: cfg_node(cfg, nullptr)
+	: cfg_node(cfg)
 	{}
 
 	size_t

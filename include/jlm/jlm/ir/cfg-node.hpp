@@ -16,17 +16,6 @@
 
 namespace jlm {
 
-class attribute {
-public:
-	virtual
-	~attribute();
-
-protected:
-	inline constexpr
-	attribute()
-	{}
-};
-
 class cfg;
 class cfg_node;
 
@@ -115,24 +104,11 @@ public:
 
 protected:
 	inline
-	cfg_node(jlm::cfg & cfg, std::unique_ptr<jlm::attribute> attr)
+	cfg_node(jlm::cfg & cfg)
 	: cfg_(&cfg)
-	, attr_(std::move(attr))
 	{}
 
 public:
-	inline jlm::attribute &
-	attribute() noexcept
-	{
-		return *attr_;
-	}
-
-	inline const jlm::attribute &
-	attribute() const noexcept
-	{
-		return *attr_;
-	}
-
 	inline jlm::cfg * cfg() const noexcept { return cfg_; }
 
 	cfg_edge *
@@ -221,11 +197,10 @@ public:
 	bool has_selfloop_edge() const noexcept;
 
 	static cfg_node *
-	create(jlm::cfg & cfg, std::unique_ptr<jlm::attribute> attr);
+	create(jlm::cfg & cfg);
 
 private:
 	jlm::cfg * cfg_;
-	std::unique_ptr<jlm::attribute> attr_;
 	std::vector<std::unique_ptr<cfg_edge>> outedges_;
 	std::unordered_set<cfg_edge*> inedges_;
 

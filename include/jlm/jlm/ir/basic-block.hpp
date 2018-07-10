@@ -20,24 +20,21 @@ namespace jlm {
 
 class expr;
 
-class taclist final : public attribute {
+class taclist final {
 public:
 	typedef std::list<tac*>::const_iterator const_iterator;
 	typedef std::list<tac*>::const_reverse_iterator const_reverse_iterator;
 
-	virtual
 	~taclist();
 
 	inline
 	taclist()
-	: attribute()
 	{}
 
 	taclist(const taclist&) = delete;
 
 	taclist(taclist && other)
-	: attribute(other)
-	, tacs_(std::move(other.tacs_))
+	: tacs_(std::move(other.tacs_))
 	{}
 
 	taclist &
@@ -175,7 +172,7 @@ public:
 
 private:
 	basic_block(jlm::cfg & cfg)
-	: cfg_node(cfg, nullptr)
+	: cfg_node(cfg)
 	{}
 
 	basic_block(const basic_block&) = delete;
