@@ -91,7 +91,7 @@ convert_return_instruction(llvm::Instruction * instruction, tacsvector_t & tacs,
 	JLM_DEBUG_ASSERT(instruction->getOpcode() == llvm::Instruction::Ret);
 	auto i = llvm::cast<llvm::ReturnInst>(instruction);
 
-	auto bb = ctx.lookup_basic_block(i->getParent());
+	auto bb = ctx.get(i->getParent());
 	bb->add_outedge(bb->cfg().exit());
 	if (!i->getReturnValue())
 		return {};
@@ -107,15 +107,15 @@ convert_branch_instruction(llvm::Instruction * instruction, tacsvector_t & tacs,
 {
 	JLM_DEBUG_ASSERT(instruction->getOpcode() == llvm::Instruction::Br);
 	auto i = llvm::cast<llvm::BranchInst>(instruction);
-	auto bb = ctx.lookup_basic_block(i->getParent());
+	auto bb = ctx.get(i->getParent());
 
 	if (i->isUnconditional()) {
-		bb->add_outedge(ctx.lookup_basic_block(i->getSuccessor(0)));
+		bb->add_outedge(ctx.get(i->getSuccessor(0)));
 		return {};
 	}
 
-	bb->add_outedge(ctx.lookup_basic_block(i->getSuccessor(1))); /* false */
-	bb->add_outedge(ctx.lookup_basic_block(i->getSuccessor(0))); /* true */
+	bb->add_outedge(ctx.get(i->getSuccessor(1))); /* false */
+	bb->add_outedge(ctx.get(i->getSuccessor(0))); /* true */
 
 	auto c = convert_value(i->getCondition(), tacs, ctx);
 	auto nbits = i->getCondition()->getType()->getIntegerBitWidth();
@@ -131,17 +131,17 @@ convert_switch_instruction(llvm::Instruction * instruction, tacsvector_t & tacs,
 {
 	JLM_DEBUG_ASSERT(instruction->getOpcode() == llvm::Instruction::Switch);
 	auto i = llvm::cast<llvm::SwitchInst>(instruction);
-	auto bb = ctx.lookup_basic_block(i->getParent());
+	auto bb = ctx.get(i->getParent());
 
 	size_t n = 0;
 	std::unordered_map<uint64_t, uint64_t> mapping;
 	for (auto it = i->case_begin(); it != i->case_end(); it++) {
 		JLM_DEBUG_ASSERT(it != i->case_default());
 		mapping[it.getCaseValue()->getZExtValue()] = n++;
-		bb->add_outedge(ctx.lookup_basic_block(it.getCaseSuccessor()));
+		bb->add_outedge(ctx.get(it.getCaseSuccessor()));
 	}
 
-	bb->add_outedge(ctx.lookup_basic_block(i->case_default().getCaseSuccessor()));
+	bb->add_outedge(ctx.get(i->case_default().getCaseSuccessor()));
 	JLM_DEBUG_ASSERT(i->getNumSuccessors() == n+1);
 
 	auto c = convert_value(i->getCondition(), tacs, ctx);
@@ -157,7 +157,7 @@ static inline const variable *
 convert_unreachable_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
 {
 	JLM_DEBUG_ASSERT(i->getOpcode() == llvm::Instruction::Unreachable);
-	auto bb = ctx.lookup_basic_block(i->getParent());
+	auto bb = ctx.get(i->getParent());
 	bb->add_outedge(bb->cfg().exit());
 	return nullptr;
 }
@@ -289,7 +289,7 @@ convert_phi_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, co
 	std::vector<std::pair<const variable*, cfg_node*>> arguments;
 	for (auto it = i->block_begin(); it != i->block_end(); it++) {
 		tacsvector_t tacs;
-		auto bb = ctx.lookup_basic_block(*it);
+		auto bb = ctx.get(*it);
 		auto v = convert_value(i->getIncomingValueForBlock(*it), tacs, ctx);
 		insert_before_branch(bb, tacs);
 		arguments.push_back(std::make_pair(v, bb));

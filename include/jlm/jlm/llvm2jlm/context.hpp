@@ -33,55 +33,55 @@ class variable;
 class basic_block_map final {
 public:
 	inline bool
-	has_basic_block(const llvm::BasicBlock * bb) const noexcept
+	has(const llvm::BasicBlock * bb) const noexcept
 	{
 		return llvm2jlm_.find(bb) != llvm2jlm_.end();
 	}
 
 	inline bool
-	has_basic_block(const cfg_node * bb) const noexcept
+	has(const basic_block * bb) const noexcept
 	{
 		return jlm2llvm_.find(bb) != jlm2llvm_.end();
 	}
 
-	inline cfg_node *
-	lookup_basic_block(const llvm::BasicBlock * bb) const noexcept
+	inline basic_block *
+	get(const llvm::BasicBlock * bb) const noexcept
 	{
-		JLM_DEBUG_ASSERT(has_basic_block(bb));
+		JLM_DEBUG_ASSERT(has(bb));
 		return llvm2jlm_.find(bb)->second;
 	}
 
 	inline const llvm::BasicBlock *
-	lookup_basic_block(const cfg_node * bb) const noexcept
+	get(const basic_block * bb) const noexcept
 	{
-		JLM_DEBUG_ASSERT(has_basic_block(bb));
+		JLM_DEBUG_ASSERT(has(bb));
 		return jlm2llvm_.find(bb)->second;
 	}
 
 	inline void
-	insert_basic_block(const llvm::BasicBlock * bb1, cfg_node * bb2)
+	insert(const llvm::BasicBlock * bb1, basic_block * bb2)
 	{
-		JLM_DEBUG_ASSERT(!has_basic_block(bb1));
-		JLM_DEBUG_ASSERT(!has_basic_block(bb2));
+		JLM_DEBUG_ASSERT(!has(bb1));
+		JLM_DEBUG_ASSERT(!has(bb2));
 		llvm2jlm_[bb1] = bb2;
 		jlm2llvm_[bb2] = bb1;
 	}
 
-	cfg_node *
+	basic_block *
 	operator[](const llvm::BasicBlock * bb) const
 	{
-		return lookup_basic_block(bb);
+		return get(bb);
 	}
 
 	const llvm::BasicBlock *
-	operator[](const cfg_node * bb) const
+	operator[](const basic_block * bb) const
 	{
-		return lookup_basic_block(bb);
+		return get(bb);
 	}
 
 private:
-	std::unordered_map<const llvm::BasicBlock*, cfg_node*> llvm2jlm_;
-	std::unordered_map<const cfg_node*, const llvm::BasicBlock*> jlm2llvm_;
+	std::unordered_map<const llvm::BasicBlock*, basic_block*> llvm2jlm_;
+	std::unordered_map<const basic_block*, const llvm::BasicBlock*> jlm2llvm_;
 };
 
 class context final {
@@ -117,27 +117,27 @@ public:
 	}
 
 	inline bool
-	has_basic_block(const llvm::BasicBlock * bb) const noexcept
+	has(const llvm::BasicBlock * bb) const noexcept
 	{
-		return bbmap_.has_basic_block(bb);
+		return bbmap_.has(bb);
 	}
 
 	inline bool
-	has_basic_block(const cfg_node * bb) const noexcept
+	has(const basic_block * bb) const noexcept
 	{
-		return bbmap_.has_basic_block(bb);
+		return bbmap_.has(bb);
 	}
 
-	inline cfg_node *
-	lookup_basic_block(const llvm::BasicBlock * bb) const noexcept
+	inline basic_block *
+	get(const llvm::BasicBlock * bb) const noexcept
 	{
-		return bbmap_.lookup_basic_block(bb);
+		return bbmap_.get(bb);
 	}
 
 	inline const llvm::BasicBlock *
-	lookup_basic_block(const cfg_node * bb) const noexcept
+	get(const basic_block * bb) const noexcept
 	{
-		return bbmap_.lookup_basic_block(bb);
+		return bbmap_.get(bb);
 	}
 
 	inline void

@@ -51,9 +51,9 @@ convert_basic_blocks(
 			std::vector<std::unique_ptr<jlm::tac>> tacs;
 			convert_instruction(&instruction, tacs, ctx);
 			if (instruction.getOpcode() == llvm::Instruction::PHI)
-				append_first(ctx.lookup_basic_block(&bb), tacs);
+				append_first(ctx.get(&bb), tacs);
 			else
-				append_last(ctx.lookup_basic_block(&bb), tacs);
+				append_last(ctx.get(&bb), tacs);
 		}
 	}
 }
@@ -88,7 +88,7 @@ create_cfg(llvm::Function & f, context & ctx)
 	/* create all basic blocks */
 	basic_block_map bbmap;
 	for (const auto & bb : f.getBasicBlockList())
-			bbmap.insert_basic_block(&bb, basic_block::create(*cfg));
+			bbmap.insert(&bb, basic_block::create(*cfg));
 
 	/* create entry block */
 	auto entry_block = basic_block::create(*cfg);
