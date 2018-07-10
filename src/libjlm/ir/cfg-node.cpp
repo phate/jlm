@@ -125,13 +125,4 @@ cfg_node::has_selfloop_edge() const noexcept
 	return false;
 }
 
-cfg_node *
-cfg_node::create(jlm::cfg & cfg)
-{
-	std::unique_ptr<jlm::cfg_node> node(new cfg_node(cfg));
-	auto tmp = node.get();
-	cfg.add_node(std::move(node));
-	return tmp;
-}
-
 }

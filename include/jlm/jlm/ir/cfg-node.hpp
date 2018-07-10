@@ -200,9 +200,6 @@ public:
 
 	bool has_selfloop_edge() const noexcept;
 
-	static cfg_node *
-	create(jlm::cfg & cfg);
-
 private:
 	jlm::cfg & cfg_;
 	std::vector<std::unique_ptr<cfg_edge>> outedges_;
