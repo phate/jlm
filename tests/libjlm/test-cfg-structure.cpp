@@ -34,9 +34,9 @@ test_straightening()
 	bb2->add_outedge(bb3);
 	bb3->add_outedge(cfg.exit());
 
-	jlm::append_last(bb1, jlm::create_testop_tac({v}, {v}));
-	jlm::append_last(bb2, jlm::create_testop_tac({v}, {v}));
-	jlm::append_last(bb3, jlm::create_testop_tac({v}, {v}));
+	bb1->append_last(create_testop_tac({v}, {v}));
+	bb2->append_last(create_testop_tac({v}, {v}));
+	bb3->append_last(create_testop_tac({v}, {v}));
 
 	auto bb3_last = static_cast<const basic_block*>(bb3)->tacs().last();
 	straighten(cfg);

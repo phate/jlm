@@ -520,7 +520,7 @@ straighten(jlm::cfg & cfg)
 		if (is_linear_reduction(it.node())
 		&& is<basic_block>(it.node())
 		&& is<basic_block>(it->outedge(0)->sink())) {
-			append_first(it->outedge(0)->sink(), it.node());
+			static_cast<basic_block*>(it->outedge(0)->sink())->append_first(it.node()->tacs());
 			it->divert_inedges(it->outedge(0)->sink());
 			it = cfg.remove_node(it);
 		} else {

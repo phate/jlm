@@ -313,26 +313,25 @@ create_rvariable(jlm::module & m)
 }
 
 static inline void
-append_branch(jlm::cfg_node * node, const variable * operand)
+append_branch(basic_block * bb, const variable * operand)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const jive::ctltype*>(&operand->type()));
 	auto nalternatives = static_cast<const jive::ctltype*>(&operand->type())->nalternatives();
-
-	append_last(node, create_branch_tac(nalternatives, operand));
+	bb->append_last(create_branch_tac(nalternatives, operand));
 }
 
 static inline void
-append_constant(jlm::cfg_node * node, const variable * result, size_t value)
+append_constant(basic_block * bb, const variable * result, size_t value)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const jive::ctltype*>(&result->type()));
 	auto nalternatives = static_cast<const jive::ctltype*>(&result->type())->nalternatives();
 
 	jive::ctlconstant_op op(jive::ctlvalue_repr(value, nalternatives));
-	append_last(node, tac::create(op, {}, {result}));
+	bb->append_last(tac::create(op, {}, {result}));
 }
 
 static inline void
-restructure_loop_entry(const scc_structure & s, jlm::cfg_node * new_ne, const variable * q)
+restructure_loop_entry(const scc_structure & s, basic_block * new_ne, const variable * q)
 {
 	size_t n = 0;
 	std::unordered_map<jlm::cfg_node*, size_t> indices;
@@ -353,8 +352,8 @@ restructure_loop_entry(const scc_structure & s, jlm::cfg_node * new_ne, const va
 static inline void
 restructure_loop_exit(
 	const scc_structure & s,
-	jlm::cfg_node * new_nr,
-	jlm::cfg_node * new_nx,
+	basic_block * new_nr,
+	basic_block * new_nx,
 	const variable * q,
 	const variable * r)
 {

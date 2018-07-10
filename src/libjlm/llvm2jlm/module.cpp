@@ -51,9 +51,9 @@ convert_basic_blocks(
 			std::vector<std::unique_ptr<jlm::tac>> tacs;
 			convert_instruction(&instruction, tacs, ctx);
 			if (instruction.getOpcode() == llvm::Instruction::PHI)
-				append_first(ctx.get(&bb), tacs);
+				ctx.get(&bb)->append_first(tacs);
 			else
-				append_last(ctx.get(&bb), tacs);
+				ctx.get(&bb)->append_last(tacs);
 		}
 	}
 }
@@ -99,7 +99,7 @@ create_cfg(llvm::Function & f, context & ctx)
 	jlm::variable * result = nullptr;
 	if (!f.getReturnType()->isVoidTy()) {
 		result = m.create_variable(*convert_type(f.getReturnType(), ctx), "_r_");
-		append_last(entry_block, create_undef_constant_tac(result));
+		entry_block->append_last(create_undef_constant_tac(result));
 
 		JLM_DEBUG_ASSERT(node->fcttype().nresults() == 2);
 		JLM_DEBUG_ASSERT(result->type() == node->fcttype().result_type(0));

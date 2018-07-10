@@ -51,14 +51,14 @@ public:
 		return it->second;
 	}
 
-	inline jlm::cfg_node *
+	inline basic_block *
 	lpbb() const noexcept
 	{
 		return lpbb_;
 	}
 
 	inline void
-	set_lpbb(jlm::cfg_node * lpbb) noexcept
+	set_lpbb(basic_block * lpbb) noexcept
 	{
 		lpbb_ = lpbb;
 	}
@@ -78,7 +78,7 @@ public:
 private:
 	jlm::cfg * cfg_;
 	jlm::module & module_;
-	jlm::cfg_node * lpbb_;
+	basic_block * lpbb_;
 	std::unordered_map<const jive::output*, const jlm::variable*> ports_;
 };
 
