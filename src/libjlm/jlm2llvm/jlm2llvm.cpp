@@ -71,26 +71,26 @@ static void
 create_return(const cfg_node * node, context & ctx)
 {
 	JLM_DEBUG_ASSERT(node->noutedges() == 1);
-	JLM_DEBUG_ASSERT(node->outedge(0)->sink() == node->cfg()->exit_node());
+	JLM_DEBUG_ASSERT(node->outedge(0)->sink() == node->cfg().exit_node());
 	llvm::IRBuilder<> builder(ctx.basic_block(node));
-	auto cfg = node->cfg();
+	auto & cfg = node->cfg();
 
 	/* return without result */
-	if (cfg->exit_node()->nresults() == 1) {
+	if (cfg.exit_node()->nresults() == 1) {
 		/* FIXME: This works only as long as we only use one state edge. */
 		builder.CreateRetVoid();
 		return;
 	}
 
 	/* FIXME: This assumes that the value is the first result. */
-	builder.CreateRet(ctx.value(cfg->exit_node()->result(0)));
+	builder.CreateRet(ctx.value(cfg.exit_node()->result(0)));
 }
 
 static void
 create_unconditional_branch(const cfg_node * node, context & ctx)
 {
 	JLM_DEBUG_ASSERT(node->noutedges() == 1);
-	JLM_DEBUG_ASSERT(node->outedge(0)->sink() != node->cfg()->exit_node());
+	JLM_DEBUG_ASSERT(node->outedge(0)->sink() != node->cfg().exit_node());
 	llvm::IRBuilder<> builder(ctx.basic_block(node));
 	auto target = node->outedge(0)->sink();
 
@@ -101,8 +101,8 @@ static void
 create_conditional_branch(const cfg_node * node, context & ctx)
 {
 	JLM_DEBUG_ASSERT(node->noutedges() == 2);
-	JLM_DEBUG_ASSERT(node->outedge(0)->sink() != node->cfg()->exit_node());
-	JLM_DEBUG_ASSERT(node->outedge(1)->sink() != node->cfg()->exit_node());
+	JLM_DEBUG_ASSERT(node->outedge(0)->sink() != node->cfg().exit_node());
+	JLM_DEBUG_ASSERT(node->outedge(1)->sink() != node->cfg().exit_node());
 	llvm::IRBuilder<> builder(ctx.basic_block(node));
 
 	auto branch = static_cast<const basic_block*>(node)->tacs().last();
@@ -153,12 +153,12 @@ create_terminator_instruction(const jlm::cfg_node * node, context & ctx)
 {
 	JLM_DEBUG_ASSERT(is_basic_block(node));
 	auto & tacs = static_cast<const basic_block*>(node)->tacs();
-	auto cfg = node->cfg();
+	auto & cfg = node->cfg();
 
 	/* unconditional branch or return statement */
 	if (node->noutedges() == 1) {
 		auto target = node->outedge(0)->sink();
-		if (target == cfg->exit_node())
+		if (target == cfg.exit_node())
 			return create_return(node, ctx);
 
 		return create_unconditional_branch(node, ctx);

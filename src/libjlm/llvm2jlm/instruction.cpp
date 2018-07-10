@@ -92,7 +92,7 @@ convert_return_instruction(llvm::Instruction * instruction, tacsvector_t & tacs,
 	auto i = llvm::cast<llvm::ReturnInst>(instruction);
 
 	auto bb = ctx.lookup_basic_block(i->getParent());
-	bb->add_outedge(bb->cfg()->exit_node());
+	bb->add_outedge(bb->cfg().exit_node());
 	if (!i->getReturnValue())
 		return {};
 
@@ -158,7 +158,7 @@ convert_unreachable_instruction(llvm::Instruction * i, tacsvector_t & tacs, cont
 {
 	JLM_DEBUG_ASSERT(i->getOpcode() == llvm::Instruction::Unreachable);
 	auto bb = ctx.lookup_basic_block(i->getParent());
-	bb->add_outedge(bb->cfg()->exit_node());
+	bb->add_outedge(bb->cfg().exit_node());
 	return nullptr;
 }
 

@@ -61,7 +61,7 @@ cfg::cfg(jlm::module & module)
 cfg::iterator
 cfg::remove_node(cfg::iterator & it)
 {
-	if (it->cfg() != this)
+	if (&it->cfg() != this)
 		throw jlm::error("node does not belong to this CFG.");
 
 	if (it->ninedges())

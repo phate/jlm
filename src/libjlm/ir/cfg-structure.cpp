@@ -199,9 +199,9 @@ reduce_loop(
 	std::unordered_set<jlm::cfg_node*> & to_visit)
 {
 	JLM_DEBUG_ASSERT(is_loop(node));
-	auto cfg = node->cfg();
+	auto & cfg = node->cfg();
 
-	auto reduction = jlm::basic_block::create(*cfg);
+	auto reduction = jlm::basic_block::create(cfg);
 	for (auto it = node->begin_outedges(); it != node->end_outedges(); it++) {
 		if (it->is_selfloop()) {
 			node->remove_outedge(it->index());
@@ -224,9 +224,9 @@ reduce_linear(
 {
 	JLM_DEBUG_ASSERT(is_linear_reduction(entry));
 	auto exit = entry->outedge(0)->sink();
-	auto cfg = entry->cfg();
+	auto & cfg = entry->cfg();
 
-	auto reduction = jlm::basic_block::create(*cfg);
+	auto reduction = jlm::basic_block::create(cfg);
 	entry->divert_inedges(reduction);
 	for (auto it = exit->begin_outedges(); it != exit->end_outedges(); it++)
 		reduction->add_outedge(it->sink());
@@ -244,9 +244,9 @@ reduce_branch(
 {
 	JLM_DEBUG_ASSERT(is_branch(split));
 	auto join = find_join(split);
-	auto cfg = split->cfg();
+	auto & cfg = split->cfg();
 
-	auto reduction = jlm::basic_block::create(*cfg);
+	auto reduction = jlm::basic_block::create(cfg);
 	split->divert_inedges(reduction);
 	reduction->add_outedge(join);
 	for (auto it = split->begin_outedges(); it != split->end_outedges(); it++) {
@@ -269,7 +269,7 @@ reduce_proper_branch(
 	JLM_DEBUG_ASSERT(is_proper_branch(split));
 	auto join = split->outedge(0)->sink()->outedge(0)->sink();
 
-	auto reduction = jlm::basic_block::create(*split->cfg());
+	auto reduction = jlm::basic_block::create(split->cfg());
 	split->divert_inedges(reduction);
 	join->remove_inedges();
 	reduction->add_outedge(join);

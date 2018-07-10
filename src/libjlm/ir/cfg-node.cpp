@@ -39,7 +39,7 @@ cfg_node *
 cfg_edge::split()
 {
 	auto sink = sink_;
-	auto bb = basic_block::create(*source_->cfg());
+	auto bb = basic_block::create(source_->cfg());
 	divert(bb);
 	bb->add_outedge(sink);
 	return bb;

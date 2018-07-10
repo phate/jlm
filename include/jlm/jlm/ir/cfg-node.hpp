@@ -105,11 +105,15 @@ public:
 protected:
 	inline
 	cfg_node(jlm::cfg & cfg)
-	: cfg_(&cfg)
+	: cfg_(cfg)
 	{}
 
 public:
-	inline jlm::cfg * cfg() const noexcept { return cfg_; }
+	jlm::cfg &
+	cfg() const noexcept
+	{
+		return cfg_;
+	}
 
 	cfg_edge *
 	add_outedge(cfg_node * sink)
@@ -200,7 +204,7 @@ public:
 	create(jlm::cfg & cfg);
 
 private:
-	jlm::cfg * cfg_;
+	jlm::cfg & cfg_;
 	std::vector<std::unique_ptr<cfg_edge>> outedges_;
 	std::unordered_set<cfg_edge*> inedges_;
 

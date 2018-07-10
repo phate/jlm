@@ -146,7 +146,7 @@ reduce_linear(
 	JLM_DEBUG_ASSERT(map.find(exit) != map.end());
 
 	/* perform reduction */
-	auto reduction = basic_block::create(*entry->cfg());
+	auto reduction = basic_block::create(entry->cfg());
 	entry->divert_inedges(reduction);
 	for (auto it = exit->begin_outedges(); it != exit->end_outedges(); it++)
 		reduction->add_outedge(it->sink());
@@ -173,7 +173,7 @@ reduce_loop(
 	JLM_DEBUG_ASSERT(map.find(node) != map.end());
 
 	/* perform reduction */
-	auto reduction = basic_block::create(*node->cfg());
+	auto reduction = basic_block::create(node->cfg());
 	for (auto it = node->begin_outedges(); it != node->end_outedges(); it++) {
 		if (it->is_selfloop()) {
 			node->remove_outedge(it->index());
@@ -212,7 +212,7 @@ reduce_branch(
 	}
 
 	/* perform reduction */
-	auto reduction = basic_block::create(*split->cfg());
+	auto reduction = basic_block::create(split->cfg());
 	split->divert_inedges(reduction);
 	join->remove_inedges();
 	reduction->add_outedge(join);

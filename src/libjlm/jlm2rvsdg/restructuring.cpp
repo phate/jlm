@@ -162,7 +162,7 @@ static inline tcloop
 extract_tcloop(jlm::cfg_node * ne, jlm::cfg_node * nx)
 {
 	JLM_DEBUG_ASSERT(nx->noutedges() == 2);
-	auto cfg = ne->cfg();
+	auto & cfg = ne->cfg();
 
 	auto er = nx->outedge(0);
 	auto ex = nx->outedge(1);
@@ -172,8 +172,8 @@ extract_tcloop(jlm::cfg_node * ne, jlm::cfg_node * nx)
 	}
 	JLM_DEBUG_ASSERT(er->sink() == ne);
 
-	auto exsink = basic_block::create(*cfg);
-	auto replacement = basic_block::create(*cfg);
+	auto exsink = basic_block::create(cfg);
+	auto replacement = basic_block::create(cfg);
 	ne->divert_inedges(replacement);
 	replacement->add_outedge(ex->sink());
 	ex->divert(exsink);
@@ -187,13 +187,13 @@ reinsert_tcloop(const tcloop & l)
 {
 	JLM_DEBUG_ASSERT(l.insert->ninedges() == 1);
 	JLM_DEBUG_ASSERT(l.replacement->noutedges() == 1);
-	auto cfg = l.ne->cfg();
+	auto & cfg = l.ne->cfg();
 
 	l.replacement->divert_inedges(l.ne);
 	l.insert->divert_inedges(l.replacement->outedge(0)->sink());
 
-	cfg->remove_node(l.insert);
-	cfg->remove_node(l.replacement);
+	cfg.remove_node(l.insert);
+	cfg.remove_node(l.replacement);
 }
 
 static scc_structure
@@ -407,8 +407,8 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit, std::vector<tcloo
 	if (entry == exit)
 		return;
 
-	auto cfg = entry->cfg();
-	auto & module = cfg->module();
+	auto & cfg = entry->cfg();
+	auto & module = cfg.module();
 
 	auto sccs = find_sccs(entry, exit);
 	for (auto scc : sccs) {
@@ -423,9 +423,9 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit, std::vector<tcloo
 		auto r = create_rvariable(module);
 		jive::ctltype t(std::max(s.nenodes(), s.nxnodes()));
 		auto q = t.nalternatives() > 1 ? create_qvariable(t, module) : nullptr;
-		auto new_ne = basic_block::create(*cfg);
-		auto new_nr = basic_block::create(*cfg);
-		auto new_nx = basic_block::create(*cfg);
+		auto new_ne = basic_block::create(cfg);
+		auto new_nr = basic_block::create(cfg);
+		auto new_nx = basic_block::create(cfg);
 		new_nr->add_outedge(new_nx);
 		new_nr->add_outedge(new_ne);
 		append_branch(new_nr, r);
@@ -523,8 +523,8 @@ compute_continuation(jlm::cfg_node * hb)
 static inline void
 restructure_branches(jlm::cfg_node * entry, jlm::cfg_node * exit)
 {
-	auto cfg = entry->cfg();
-	auto & module = cfg->module();
+	auto & cfg = entry->cfg();
+	auto & module = cfg.module();
 
 	auto hb = find_head_branch(entry, exit);
 	if (hb == exit) return;
@@ -552,7 +552,7 @@ restructure_branches(jlm::cfg_node * entry, jlm::cfg_node * exit)
 			}
 
 			/* more than one continuation edge */
-			auto null = basic_block::create(*cfg);
+			auto null = basic_block::create(cfg);
 			null->add_outedge(cpoint);
 			for (const auto & e : cedges)
 				e->divert(null);
@@ -566,7 +566,7 @@ restructure_branches(jlm::cfg_node * entry, jlm::cfg_node * exit)
 
 	/* insert new continuation point */
 	auto p = create_pvariable(jive::ctltype(c.points.size()), module);
-	auto cn = basic_block::create(*cfg);
+	auto cn = basic_block::create(cfg);
 	append_branch(cn, p);
 	std::unordered_map<cfg_node*, size_t> indices;
 	for (const auto & cp : c.points) {
@@ -578,10 +578,10 @@ restructure_branches(jlm::cfg_node * entry, jlm::cfg_node * exit)
 	for (auto it = hb->begin_outedges(); it != hb->end_outedges(); it++) {
 		auto cedges = c.edges[it.edge()];
 
-		auto null = basic_block::create(*cfg);
+		auto null = basic_block::create(cfg);
 		null->add_outedge(cn);
 		for (const auto & e : cedges) {
-			auto bb = basic_block::create(*cfg);
+			auto bb = basic_block::create(cfg);
 			append_constant(bb, p, indices[e->sink()]);
 			bb->add_outedge(null);
 			e->divert(bb);
