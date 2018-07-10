@@ -88,10 +88,10 @@ create_cfg(llvm::Function & f, context & ctx)
 	/* create all basic blocks */
 	basic_block_map bbmap;
 	for (const auto & bb : f.getBasicBlockList())
-			bbmap.insert_basic_block(&bb, create_basic_block_node(cfg.get()));
+			bbmap.insert_basic_block(&bb, basic_block::create(*cfg));
 
 	/* create entry block */
-	auto entry_block = create_basic_block_node(cfg.get());
+	auto entry_block = basic_block::create(*cfg);
 	cfg->exit_node()->divert_inedges(entry_block);
 	entry_block->add_outedge(bbmap[&f.getEntryBlock()]);
 
@@ -115,7 +115,7 @@ create_cfg(llvm::Function & f, context & ctx)
 
 	/* ensure that exit node has only one incoming edge */
 	if (cfg->exit_node()->ninedges() > 1) {
-		auto bb = create_basic_block_node(cfg.get());
+		auto bb = basic_block::create(*cfg);
 		cfg->exit_node()->divert_inedges(bb);
 		bb->add_outedge(cfg->exit_node());
 	}

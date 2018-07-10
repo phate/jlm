@@ -41,22 +41,22 @@ create_result_variables(jlm::module & m, const jive::simple_op & op)
 }
 
 static inline void
-insert_before_branch(jlm::cfg_node * node, jlm::tacsvector_t & tacs)
+insert_before_branch(jlm::cfg_node * node, jlm::tacsvector_t & tv)
 {
 	using namespace jlm;
 
-	JLM_DEBUG_ASSERT(is_basic_block(node->attribute()));
-	auto & bb = *static_cast<taclist*>(&node->attribute());
+	JLM_DEBUG_ASSERT(is_basic_block(node));
+	auto & tacs = static_cast<basic_block*>(node)->tacs();
 
-	auto it = bb.rbegin();
-	while (it != bb.rend()) {
+	auto it = tacs.rbegin();
+	while (it != tacs.rend()) {
 		if (*it && !is<branch_op>((*it)->operation()))
 			break;
 
 		it = std::next(it);
 	}
 
-	bb.insert(it.base(), tacs);
+	tacs.insert(it.base(), tv);
 }
 
 namespace jlm {

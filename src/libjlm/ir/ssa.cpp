@@ -24,18 +24,18 @@ destruct_ssa(jlm::cfg & cfg)
 	/* find all blocks containing phis */
 	std::unordered_set<cfg_node*> phi_blocks;
 	for (auto & node : cfg) {
-		if (!is_basic_block(node.attribute()))
+		if (!is_basic_block(&node))
 			continue;
 
-		auto attr = static_cast<taclist*>(&node.attribute());
-		if (attr->ntacs() != 0 && dynamic_cast<const phi_op*>(&attr->first()->operation()))
+		auto & tacs = static_cast<basic_block*>(&node)->tacs();
+		if (tacs.ntacs() != 0 && dynamic_cast<const phi_op*>(&tacs.first()->operation()))
 			phi_blocks.insert(&node);
 	}
 
 	/* eliminate phis */
 	for (auto phi_block : phi_blocks) {
-		auto ass_block = create_basic_block_node(&cfg);
-		auto phi_attr = static_cast<taclist*>(&phi_block->attribute());
+		auto ass_block = basic_block::create(cfg);
+		auto & tacs = static_cast<basic_block*>(phi_block)->tacs();
 
 		/* collect inedges of phi block */
 		std::unordered_map<cfg_node*, cfg_edge*> edges;
@@ -44,8 +44,8 @@ destruct_ssa(jlm::cfg & cfg)
 			edges[(*it)->source()] = *it;
 		}
 
-		while (phi_attr->first()) {
-			auto tac = phi_attr->first();
+		while (tacs.first()) {
+			auto tac = tacs.first();
 			if (!dynamic_cast<const phi_op*>(&tac->operation()))
 				break;
 
@@ -60,7 +60,7 @@ destruct_ssa(jlm::cfg & cfg)
 			}
 
 			append_last(ass_block, create_assignment(tac->output(0)->type(), value, tac->output(0)));
-			phi_attr->drop_first();
+			tacs.drop_first();
 		}
 
 		phi_block->divert_inedges(ass_block);

@@ -50,10 +50,12 @@ is_branch(jlm::aggnode * node, size_t nchildren)
 static inline void
 test_linear_reduction()
 {
+	using namespace jlm;
+
 	jlm::module module("", "");
 
 	jlm::cfg cfg(module);
-	auto bb = create_basic_block_node(&cfg);
+	auto bb = basic_block::create(cfg);
 	cfg.exit_node()->divert_inedges(bb);
 	bb->add_outedge(cfg.exit_node());
 
@@ -76,11 +78,13 @@ test_linear_reduction()
 static inline void
 test_loop_reduction()
 {
+	using namespace jlm;
+
 	jlm::module module("", "");
 
 	jlm::cfg cfg(module);
-	auto bb1 = create_basic_block_node(&cfg);
-	auto bb2 = create_basic_block_node(&cfg);
+	auto bb1 = basic_block::create(cfg);
+	auto bb2 = basic_block::create(cfg);
 	cfg.exit_node()->divert_inedges(bb1);
 	bb1->add_outedge(bb2);
 	bb2->add_outedge(cfg.exit_node());
@@ -116,15 +120,17 @@ test_loop_reduction()
 static void
 test_branch_reduction()
 {
+	using namespace jlm;
+
 	jlm::module module("", "");
 
 	jlm::cfg cfg(module);
-	auto split = create_basic_block_node(&cfg);
-	auto bb1 = create_basic_block_node(&cfg);
-	auto bb2 = create_basic_block_node(&cfg);
-	auto bb3 = create_basic_block_node(&cfg);
-	auto bb4 = create_basic_block_node(&cfg);
-	auto join = create_basic_block_node(&cfg);
+	auto split = basic_block::create(cfg);
+	auto bb1 = basic_block::create(cfg);
+	auto bb2 = basic_block::create(cfg);
+	auto bb3 = basic_block::create(cfg);
+	auto bb4 = basic_block::create(cfg);
+	auto join = basic_block::create(cfg);
 
 	cfg.exit_node()->divert_inedges(split);
 	split->add_outedge(bb1);
@@ -175,15 +181,17 @@ test_branch_reduction()
 static void
 test_branch_loop_reduction()
 {
+	using namespace jlm;
+
 	jlm::module module("", "");
 
 	jlm::cfg cfg(module);
-	auto split = create_basic_block_node(&cfg);
-	auto bb1 = create_basic_block_node(&cfg);
-	auto bb2 = create_basic_block_node(&cfg);
-	auto bb3 = create_basic_block_node(&cfg);
-	auto bb4 = create_basic_block_node(&cfg);
-	auto join = create_basic_block_node(&cfg);
+	auto split = basic_block::create(cfg);
+	auto bb1 = basic_block::create(cfg);
+	auto bb2 = basic_block::create(cfg);
+	auto bb3 = basic_block::create(cfg);
+	auto bb4 = basic_block::create(cfg);
+	auto join = basic_block::create(cfg);
 
 	cfg.exit_node()->divert_inedges(split);
 	split->add_outedge(bb1);
@@ -247,14 +255,16 @@ test_branch_loop_reduction()
 static void
 test_loop_branch_reduction()
 {
+	using namespace jlm;
+
 	jlm::module module("", "");
 
 	jlm::cfg cfg(module);
-	auto split = create_basic_block_node(&cfg);
-	auto bb1 = create_basic_block_node(&cfg);
-	auto bb2 = create_basic_block_node(&cfg);
-	auto join = create_basic_block_node(&cfg);
-	auto bb3 = create_basic_block_node(&cfg);
+	auto split = basic_block::create(cfg);
+	auto bb1 = basic_block::create(cfg);
+	auto bb2 = basic_block::create(cfg);
+	auto join = basic_block::create(cfg);
+	auto bb3 = basic_block::create(cfg);
 
 	cfg.exit_node()->divert_inedges(split);
 	split->add_outedge(bb1);
@@ -308,14 +318,16 @@ test_loop_branch_reduction()
 static void
 test_ifthen_reduction()
 {
+	using namespace jlm;
+
 	jlm::module module("", "");
 
 	jlm::cfg cfg(module);
-	auto split = create_basic_block_node(&cfg);
-	auto n2 = create_basic_block_node(&cfg);
-	auto n3 = create_basic_block_node(&cfg);
-	auto n4 = create_basic_block_node(&cfg);
-	auto join = create_basic_block_node(&cfg);
+	auto split = basic_block::create(cfg);
+	auto n2 = basic_block::create(cfg);
+	auto n3 = basic_block::create(cfg);
+	auto n4 = basic_block::create(cfg);
+	auto join = basic_block::create(cfg);
 
 	cfg.exit_node()->divert_inedges(split);
 	split->add_outedge(n4);

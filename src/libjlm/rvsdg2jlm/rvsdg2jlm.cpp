@@ -119,14 +119,14 @@ convert_node(const jive::node & node, context & ctx);
 static inline void
 convert_region(jive::region & region, context & ctx)
 {
-	auto entry = create_basic_block_node(ctx.cfg());
+	auto entry = basic_block::create(*ctx.cfg());
 	ctx.lpbb()->add_outedge(entry);
 	ctx.set_lpbb(entry);
 
 	for (const auto & node : jive::topdown_traverser(&region))
 		convert_node(*node, ctx);
 
-	auto exit = create_basic_block_node(ctx.cfg());
+	auto exit = basic_block::create(*ctx.cfg());
 	ctx.lpbb()->add_outedge(exit);
 	ctx.set_lpbb(exit);
 }
@@ -140,7 +140,7 @@ create_cfg(const jive::node & node, context & ctx)
 
 	JLM_DEBUG_ASSERT(ctx.lpbb() == nullptr);
 	std::unique_ptr<jlm::cfg> cfg(new jlm::cfg(ctx.module()));
-	auto entry = create_basic_block_node(cfg.get());
+	auto entry = basic_block::create(*cfg);
 	cfg->exit_node()->divert_inedges(entry);
 	ctx.set_lpbb(entry);
 	ctx.set_cfg(cfg.get());
@@ -196,7 +196,7 @@ convert_simple_node(const jive::node & node, context & ctx)
 	append_last(ctx.lpbb(), tac::create(op, operands, results));
 	/* FIXME: remove again once tacvariables owner's are tacs */
 	for (const auto & tv : tvs)
-		tv->set_tac(static_cast<const taclist*>(&ctx.lpbb()->attribute())->last());
+		tv->set_tac(static_cast<const basic_block*>(ctx.lpbb())->tacs().last());
 }
 
 static void
@@ -211,7 +211,7 @@ convert_empty_gamma_node(const jive::gamma_node * gamma, context & ctx)
 	auto & module = ctx.module();
 	auto cfg = ctx.cfg();
 
-	auto bb = create_basic_block_node(cfg);
+	auto bb = basic_block::create(*cfg);
 	ctx.lpbb()->add_outedge(bb);
 
 	for (size_t n = 0; n < gamma->noutputs(); n++) {
@@ -264,8 +264,8 @@ convert_gamma_node(const jive::node & node, context & ctx)
 		return convert_empty_gamma_node(gamma, ctx);
 
 	auto matchop = dynamic_cast<const jive::match_op*>(&predicate->node()->operation());
-	auto entry = create_basic_block_node(cfg);
-	auto exit = create_basic_block_node(cfg);
+	auto entry = basic_block::create(*cfg);
+	auto exit = basic_block::create(*cfg);
 	ctx.lpbb()->add_outedge(entry);
 
 	/* convert gamma regions */
@@ -286,7 +286,7 @@ convert_gamma_node(const jive::node & node, context & ctx)
 			entry->add_outedge(exit);
 		} else {
 			/* convert subregion */
-			auto region_entry = create_basic_block_node(cfg);
+			auto region_entry = basic_block::create(*cfg);
 			entry->add_outedge(region_entry);
 			ctx.set_lpbb(region_entry);
 			convert_region(*subregion, ctx);
@@ -368,7 +368,7 @@ convert_theta_node(const jive::node & node, context & ctx)
 	auto predicate = subregion->result(0)->origin();
 
 	auto pre_entry = ctx.lpbb();
-	auto entry = create_basic_block_node(ctx.cfg());
+	auto entry = basic_block::create(*ctx.cfg());
 	pre_entry->add_outedge(entry);
 	ctx.set_lpbb(entry);
 
@@ -404,7 +404,7 @@ convert_theta_node(const jive::node & node, context & ctx)
 	JLM_DEBUG_ASSERT(lvs.empty());
 
 	append_last(ctx.lpbb(), create_branch_tac(2, ctx.variable(predicate)));
-	auto exit = create_basic_block_node(ctx.cfg());
+	auto exit = basic_block::create(*ctx.cfg());
 	ctx.lpbb()->add_outedge(exit);
 	ctx.lpbb()->add_outedge(entry);
 	ctx.set_lpbb(exit);

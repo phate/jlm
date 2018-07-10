@@ -68,8 +68,8 @@ copy_structural(const jlm::cfg & in)
 		} else if (&node == in.exit_node()) {
 			node_map[&node] = out->exit_node();
 		} else {
-			JLM_DEBUG_ASSERT(is_basic_block(node.attribute()));
-			node_map[&node] = create_basic_block_node(out.get());
+			JLM_DEBUG_ASSERT(is_basic_block(&node));
+			node_map[&node] = jlm::basic_block::create(*out);
 		}
 	}
 
@@ -201,7 +201,7 @@ reduce_loop(
 	JLM_DEBUG_ASSERT(is_loop(node));
 	auto cfg = node->cfg();
 
-	auto reduction = create_basic_block_node(cfg);
+	auto reduction = jlm::basic_block::create(*cfg);
 	for (auto it = node->begin_outedges(); it != node->end_outedges(); it++) {
 		if (it->is_selfloop()) {
 			node->remove_outedge(it->index());
@@ -226,7 +226,7 @@ reduce_linear(
 	auto exit = entry->outedge(0)->sink();
 	auto cfg = entry->cfg();
 
-	auto reduction = create_basic_block_node(cfg);
+	auto reduction = jlm::basic_block::create(*cfg);
 	entry->divert_inedges(reduction);
 	for (auto it = exit->begin_outedges(); it != exit->end_outedges(); it++)
 		reduction->add_outedge(it->sink());
@@ -246,7 +246,7 @@ reduce_branch(
 	auto join = find_join(split);
 	auto cfg = split->cfg();
 
-	auto reduction = create_basic_block_node(cfg);
+	auto reduction = jlm::basic_block::create(*cfg);
 	split->divert_inedges(reduction);
 	reduction->add_outedge(join);
 	for (auto it = split->begin_outedges(); it != split->end_outedges(); it++) {
@@ -269,7 +269,7 @@ reduce_proper_branch(
 	JLM_DEBUG_ASSERT(is_proper_branch(split));
 	auto join = split->outedge(0)->sink()->outedge(0)->sink();
 
-	auto reduction = create_basic_block_node(split->cfg());
+	auto reduction = jlm::basic_block::create(*split->cfg());
 	split->divert_inedges(reduction);
 	join->remove_inedges();
 	reduction->add_outedge(join);
@@ -373,9 +373,9 @@ reduce_reducible(
 namespace jlm {
 
 static bool
-check_phis(const taclist * bb)
+check_phis(const taclist & bb)
 {
-	for (auto it = bb->begin(); it != bb->end(); it++) {
+	for (auto it = bb.begin(); it != bb.end(); it++) {
 		auto tac = *it;
 		if (!is<phi_op>(tac))
 			continue;
@@ -396,7 +396,7 @@ check_phis(const taclist * bb)
 		}
 
 		/* ensure all phi nodes are at the beginning of a basic block */
-		if (tac != bb->first() && !is<phi_op>(*std::prev(it)))
+		if (tac != bb.first() && !is<phi_op>(*std::prev(it)))
 			return false;
 
 	}
@@ -427,9 +427,9 @@ is_valid(const jlm::cfg & cfg)
 		if (node.no_successor())
 			return false;
 
-		JLM_DEBUG_ASSERT(is_basic_block(node.attribute()));
-		auto bb = static_cast<const taclist*>(&node.attribute());
-		if (!check_phis(bb))
+		JLM_DEBUG_ASSERT(is_basic_block(&node));
+		auto bb = static_cast<const basic_block*>(&node);
+		if (!check_phis(bb->tacs()))
 			return false;
 	}
 
@@ -527,8 +527,8 @@ straighten(jlm::cfg & cfg)
 	auto it = cfg.begin();
 	while (it != cfg.end()) {
 		if (is_linear_reduction(it.node())
-		&& is_basic_block(it.node()->attribute())
-		&& is_basic_block(it->outedge(0)->sink()->attribute())) {
+		&& is_basic_block(it.node())
+		&& is_basic_block(it->outedge(0)->sink())) {
 			append_first(it->outedge(0)->sink(), it.node());
 			it->divert_inedges(it->outedge(0)->sink());
 			it = cfg.remove_node(it);
@@ -543,9 +543,9 @@ purge(jlm::cfg & cfg)
 {
 	auto it = cfg.begin();
 	while (it != cfg.end()) {
-		auto bb = dynamic_cast<const taclist*>(&it.node()->attribute());
+		auto bb = dynamic_cast<const basic_block*>(it.node());
 
-		if (bb && bb->ntacs() == 0) {
+		if (bb && bb->tacs().ntacs() == 0) {
 			JLM_DEBUG_ASSERT(it.node()->noutedges() == 1);
 			it.node()->divert_inedges(it.node()->outedge(0)->sink());
 			it = cfg.remove_node(it);

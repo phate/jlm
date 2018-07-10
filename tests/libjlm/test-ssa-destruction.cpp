@@ -17,6 +17,8 @@
 static inline void
 test_two_phis()
 {
+	using namespace jlm;
+
 	jlm::valuetype vt;
 	jlm::module module("", "");
 
@@ -29,10 +31,10 @@ test_two_phis()
 	auto r2 = module.create_variable(vt, "r2");
 
 	jlm::cfg cfg(module);
-	auto bb1 = create_basic_block_node(&cfg);
-	auto bb2 = create_basic_block_node(&cfg);
-	auto bb3 = create_basic_block_node(&cfg);
-	auto bb4 = create_basic_block_node(&cfg);
+	auto bb1 = basic_block::create(cfg);
+	auto bb2 = basic_block::create(cfg);
+	auto bb3 = basic_block::create(cfg);
+	auto bb4 = basic_block::create(cfg);
 
 	cfg.exit_node()->divert_inedges(bb1);
 	bb1->add_outedge(bb2);

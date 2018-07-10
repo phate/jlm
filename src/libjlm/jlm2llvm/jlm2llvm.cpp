@@ -105,7 +105,7 @@ create_conditional_branch(const cfg_node * node, context & ctx)
 	JLM_DEBUG_ASSERT(node->outedge(1)->sink() != node->cfg()->exit_node());
 	llvm::IRBuilder<> builder(ctx.basic_block(node));
 
-	auto branch = static_cast<const taclist*>(&node->attribute())->last();
+	auto branch = static_cast<const basic_block*>(node)->tacs().last();
 	JLM_DEBUG_ASSERT(branch && is<branch_op>(branch));
 	JLM_DEBUG_ASSERT(ctx.value(branch->input(0))->getType()->isIntegerTy(1));
 
@@ -119,13 +119,13 @@ static void
 create_switch(const cfg_node * node, context & ctx)
 {
 	JLM_DEBUG_ASSERT(node->noutedges() >= 2);
-	auto bb = static_cast<const taclist*>(&node->attribute());
+	auto bb = static_cast<const basic_block*>(node);
 	llvm::IRBuilder<> builder(ctx.basic_block(node));
 
-	auto branch = bb->last();
+	auto branch = bb->tacs().last();
 	JLM_DEBUG_ASSERT(branch && is<branch_op>(branch));
 	auto condition = ctx.value(branch->input(0));
-	auto match = find_match_tac(bb);
+	auto match = find_match_tac(&bb->tacs());
 
 	if (match) {
 		JLM_DEBUG_ASSERT(match->output(0) == branch->input(0));
@@ -151,8 +151,8 @@ create_switch(const cfg_node * node, context & ctx)
 static void
 create_terminator_instruction(const jlm::cfg_node * node, context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_basic_block(node->attribute()));
-	auto bb = static_cast<const taclist*>(&node->attribute());
+	JLM_DEBUG_ASSERT(is_basic_block(node));
+	auto & tacs = static_cast<const basic_block*>(node)->tacs();
 	auto cfg = node->cfg();
 
 	/* unconditional branch or return statement */
@@ -164,7 +164,7 @@ create_terminator_instruction(const jlm::cfg_node * node, context & ctx)
 		return create_unconditional_branch(node, ctx);
 	}
 
-	auto branch = bb->last();
+	auto branch = tacs.last();
 	JLM_DEBUG_ASSERT(branch && is<branch_op>(branch));
 
 	/* conditional branch */
@@ -202,9 +202,9 @@ convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 		if (node == cfg.entry_node() || node == cfg.exit_node())
 			continue;
 
-		JLM_DEBUG_ASSERT(is_basic_block(node->attribute()));
-		auto & bb = *static_cast<const taclist*>(&node->attribute());
-		for (const auto & tac : bb)
+		JLM_DEBUG_ASSERT(is_basic_block(node));
+		auto & tacs = static_cast<const basic_block*>(node)->tacs();
+		for (const auto & tac : tacs)
 			convert_instruction(*tac, node, ctx);
 	}
 
@@ -221,9 +221,9 @@ convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 		if (node == cfg.entry_node() || node == cfg.exit_node())
 			continue;
 
-		JLM_DEBUG_ASSERT(is_basic_block(node->attribute()));
-		auto & bb = *static_cast<const taclist*>(&node->attribute());
-		for (const auto & tac : bb) {
+		JLM_DEBUG_ASSERT(is_basic_block(node));
+		auto & tacs = static_cast<const basic_block*>(node)->tacs();
+		for (const auto & tac : tacs) {
 			if (!is<phi_op>(tac->operation()))
 				continue;
 			if (dynamic_cast<const jive::memtype*>(&tac->output(0)->type()))

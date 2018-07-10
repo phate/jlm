@@ -172,8 +172,8 @@ extract_tcloop(jlm::cfg_node * ne, jlm::cfg_node * nx)
 	}
 	JLM_DEBUG_ASSERT(er->sink() == ne);
 
-	auto exsink = create_basic_block_node(cfg);
-	auto replacement = create_basic_block_node(cfg);
+	auto exsink = basic_block::create(*cfg);
+	auto replacement = basic_block::create(*cfg);
 	ne->divert_inedges(replacement);
 	replacement->add_outedge(ex->sink());
 	ex->divert(exsink);
@@ -423,9 +423,9 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit, std::vector<tcloo
 		auto r = create_rvariable(module);
 		jive::ctltype t(std::max(s.nenodes(), s.nxnodes()));
 		auto q = t.nalternatives() > 1 ? create_qvariable(t, module) : nullptr;
-		auto new_ne = create_basic_block_node(cfg);
-		auto new_nr = create_basic_block_node(cfg);
-		auto new_nx = create_basic_block_node(cfg);
+		auto new_ne = basic_block::create(*cfg);
+		auto new_nr = basic_block::create(*cfg);
+		auto new_nx = basic_block::create(*cfg);
 		new_nr->add_outedge(new_nx);
 		new_nr->add_outedge(new_ne);
 		append_branch(new_nr, r);
@@ -552,7 +552,7 @@ restructure_branches(jlm::cfg_node * entry, jlm::cfg_node * exit)
 			}
 
 			/* more than one continuation edge */
-			auto null = create_basic_block_node(cfg);
+			auto null = basic_block::create(*cfg);
 			null->add_outedge(cpoint);
 			for (const auto & e : cedges)
 				e->divert(null);
@@ -566,7 +566,7 @@ restructure_branches(jlm::cfg_node * entry, jlm::cfg_node * exit)
 
 	/* insert new continuation point */
 	auto p = create_pvariable(jive::ctltype(c.points.size()), module);
-	auto cn = create_basic_block_node(cfg);
+	auto cn = basic_block::create(*cfg);
 	append_branch(cn, p);
 	std::unordered_map<cfg_node*, size_t> indices;
 	for (const auto & cp : c.points) {
@@ -578,10 +578,10 @@ restructure_branches(jlm::cfg_node * entry, jlm::cfg_node * exit)
 	for (auto it = hb->begin_outedges(); it != hb->end_outedges(); it++) {
 		auto cedges = c.edges[it.edge()];
 
-		auto null = create_basic_block_node(cfg);
+		auto null = basic_block::create(*cfg);
 		null->add_outedge(cn);
 		for (const auto & e : cedges) {
-			auto bb = create_basic_block_node(cfg);
+			auto bb = basic_block::create(*cfg);
 			append_constant(bb, p, indices[e->sink()]);
 			bb->add_outedge(null);
 			e->divert(bb);

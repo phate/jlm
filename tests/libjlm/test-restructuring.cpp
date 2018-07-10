@@ -17,13 +17,15 @@
 static inline void
 test_acyclic_structured()
 {
+	using namespace jlm;
+
 	jlm::module module("", "");
 
 	jlm::cfg cfg(module);
-	auto bb1 = create_basic_block_node(&cfg);
-	auto bb2 = create_basic_block_node(&cfg);
-	auto bb3 = create_basic_block_node(&cfg);
-	auto bb4 = create_basic_block_node(&cfg);
+	auto bb1 = basic_block::create(cfg);
+	auto bb2 = basic_block::create(cfg);
+	auto bb3 = basic_block::create(cfg);
+	auto bb4 = basic_block::create(cfg);
 
 	cfg.exit_node()->divert_inedges(bb1);
 	bb1->add_outedge(bb2);
@@ -45,13 +47,15 @@ test_acyclic_structured()
 static inline void
 test_acyclic_unstructured()
 {
+	using namespace jlm;
+
 	jlm::module module("", "");
 
 	jlm::cfg cfg(module);
-	auto bb1 = create_basic_block_node(&cfg);
-	auto bb2 = create_basic_block_node(&cfg);
-	auto bb3 = create_basic_block_node(&cfg);
-	auto bb4 = create_basic_block_node(&cfg);
+	auto bb1 = basic_block::create(cfg);
+	auto bb2 = basic_block::create(cfg);
+	auto bb3 = basic_block::create(cfg);
+	auto bb4 = basic_block::create(cfg);
 
 	cfg.exit_node()->divert_inedges(bb1);
 	bb1->add_outedge(bb2);
@@ -73,12 +77,14 @@ test_acyclic_unstructured()
 static inline void
 test_dowhile()
 {
+	using namespace jlm;
+
 	jlm::module module("", "");
 
 	jlm::cfg cfg(module);
-	auto bb1 = create_basic_block_node(&cfg);
-	auto bb2 = create_basic_block_node(&cfg);
-	auto bb3 = create_basic_block_node(&cfg);
+	auto bb1 = basic_block::create(cfg);
+	auto bb2 = basic_block::create(cfg);
+	auto bb3 = basic_block::create(cfg);
 
 	cfg.exit_node()->divert_inedges(bb1);
 	bb1->add_outedge(bb2);
@@ -102,11 +108,13 @@ test_dowhile()
 static inline void
 test_while()
 {
+	using namespace jlm;
+
 	jlm::module module("", "");
 
 	jlm::cfg cfg(module);
-	auto bb1 = create_basic_block_node(&cfg);
-	auto bb2 = create_basic_block_node(&cfg);
+	auto bb1 = basic_block::create(cfg);
+	auto bb2 = basic_block::create(cfg);
 
 	cfg.exit_node()->divert_inedges(bb1);
 	bb1->add_outedge(cfg.exit_node());
@@ -126,14 +134,16 @@ test_while()
 static inline void
 test_irreducible()
 {
+	using namespace jlm;
+
 	jlm::module module("", "");
 
 	jlm::cfg cfg(module);
-	auto bb1 = create_basic_block_node(&cfg);
-	auto bb2 = create_basic_block_node(&cfg);
-	auto bb3 = create_basic_block_node(&cfg);
-	auto bb4 = create_basic_block_node(&cfg);
-	auto bb5 = create_basic_block_node(&cfg);
+	auto bb1 = basic_block::create(cfg);
+	auto bb2 = basic_block::create(cfg);
+	auto bb3 = basic_block::create(cfg);
+	auto bb4 = basic_block::create(cfg);
+	auto bb5 = basic_block::create(cfg);
 
 	cfg.exit_node()->divert_inedges(bb1);
 	bb1->add_outedge(bb2);
@@ -156,13 +166,15 @@ test_irreducible()
 static inline void
 test_acyclic_unstructured_in_dowhile()
 {
+	using namespace jlm;
+
 	jlm::module module("", "");
 
 	jlm::cfg cfg(module);
-	auto bb1 = create_basic_block_node(&cfg);
-	auto bb2 = create_basic_block_node(&cfg);
-	auto bb3 = create_basic_block_node(&cfg);
-	auto bb4 = create_basic_block_node(&cfg);
+	auto bb1 = basic_block::create(cfg);
+	auto bb2 = basic_block::create(cfg);
+	auto bb3 = basic_block::create(cfg);
+	auto bb4 = basic_block::create(cfg);
 
 	cfg.exit_node()->divert_inedges(bb1);
 	bb1->add_outedge(bb3);
@@ -184,13 +196,15 @@ test_acyclic_unstructured_in_dowhile()
 static inline void
 test_lor_before_dowhile()
 {
+	using namespace jlm;
+
 	jlm::module module("", "");
 
 	jlm::cfg cfg(module);
-	auto bb1 = create_basic_block_node(&cfg);
-	auto bb2 = create_basic_block_node(&cfg);
-	auto bb3 = create_basic_block_node(&cfg);
-	auto bb4 = create_basic_block_node(&cfg);
+	auto bb1 = basic_block::create(cfg);
+	auto bb2 = basic_block::create(cfg);
+	auto bb3 = basic_block::create(cfg);
+	auto bb4 = basic_block::create(cfg);
 
 	cfg.exit_node()->divert_inedges(bb1);
 	bb1->add_outedge(bb2);

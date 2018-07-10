@@ -189,8 +189,8 @@ ntacs(const jlm::module & module)
 		if (!cfg) continue;
 
 		for (const auto & node : *f->cfg()) {
-			if (auto bb = dynamic_cast<const taclist*>(&node.attribute()))
-				ntacs += bb->ntacs();
+			if (auto bb = dynamic_cast<const basic_block*>(&node))
+				ntacs += bb->tacs().ntacs();
 		}
 	}
 

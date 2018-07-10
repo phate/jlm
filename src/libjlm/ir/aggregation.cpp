@@ -146,7 +146,7 @@ reduce_linear(
 	JLM_DEBUG_ASSERT(map.find(exit) != map.end());
 
 	/* perform reduction */
-	auto reduction = create_basic_block_node(entry->cfg());
+	auto reduction = basic_block::create(*entry->cfg());
 	entry->divert_inedges(reduction);
 	for (auto it = exit->begin_outedges(); it != exit->end_outedges(); it++)
 		reduction->add_outedge(it->sink());
@@ -173,7 +173,7 @@ reduce_loop(
 	JLM_DEBUG_ASSERT(map.find(node) != map.end());
 
 	/* perform reduction */
-	auto reduction = create_basic_block_node(node->cfg());
+	auto reduction = basic_block::create(*node->cfg());
 	for (auto it = node->begin_outedges(); it != node->end_outedges(); it++) {
 		if (it->is_selfloop()) {
 			node->remove_outedge(it->index());
@@ -212,7 +212,7 @@ reduce_branch(
 	}
 
 	/* perform reduction */
-	auto reduction = create_basic_block_node(split->cfg());
+	auto reduction = basic_block::create(*split->cfg());
 	split->divert_inedges(reduction);
 	join->remove_inedges();
 	reduction->add_outedge(join);
@@ -280,8 +280,8 @@ aggregate(jlm::cfg & cfg)
 	std::unordered_set<cfg_node*> to_visit;
 	std::unordered_map<jlm::cfg_node*, std::unique_ptr<aggnode>> map;
 	for (auto & node : cfg) {
-		if (is_basic_block(node.attribute()))
-			map[&node] = blockaggnode::create(std::move(*static_cast<taclist*>(&node.attribute())));
+		if (is_basic_block(&node))
+			map[&node] = blockaggnode::create(std::move(static_cast<basic_block*>(&node)->tacs()));
 		else if (is_entry_node(&node))
 			map[&node] = entryaggnode::create(static_cast<const jlm::entry_node*>(&node)->arguments());
 		else if (is_exit_node(&node))

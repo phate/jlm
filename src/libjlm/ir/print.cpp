@@ -136,18 +136,18 @@ emit_targets(const jlm::cfg_node * node)
 static inline std::string
 emit_basic_block(const jlm::cfg_node * node)
 {
-	JLM_DEBUG_ASSERT(is_basic_block(node->attribute()));
-	auto & bb = *static_cast<const taclist*>(&node->attribute());
+	JLM_DEBUG_ASSERT(is_basic_block(node));
+	auto & tacs = static_cast<const basic_block*>(node)->tacs();
 
 	std::string str;
-	for (const auto & tac : bb) {
+	for (const auto & tac : tacs) {
 		str += "\t" + emit_tac(*tac);
-		if (tac != bb.last())
+		if (tac != tacs.last())
 			str += "\n";
 	}
 
-	if (bb.last()) {
-		if (is<branch_op>(bb.last()->operation()))
+	if (tacs.last()) {
+		if (is<branch_op>(tacs.last()->operation()))
 			str += " " + emit_targets(node);
 		else
 			str += "\n\t" + emit_targets(node);
@@ -163,23 +163,19 @@ to_str(const jlm::cfg & cfg)
 {
 	static
 	std::unordered_map<std::type_index, std::string(*)(const cfg_node*)> map({
-		{std::type_index(typeid(taclist)), emit_basic_block}
+	  {typeid(entry_node), emit_entry}
+	, {typeid(exit_node), emit_exit}
+	, {typeid(basic_block), emit_basic_block}
 	});
 
 	std::string str;
 	auto nodes = breadth_first_traversal(cfg);
 	for (const auto & node : nodes) {
 		str += emit_label(node) + ":";
-		str += (is_basic_block(node->attribute()) ? "\n" : " ");
+		str += (is_basic_block(node) ? "\n" : " ");
 
-		if (is_entry_node(node))
-			str += emit_entry(node) + "\n";
-		else if (is_exit_node(node))
-			str += emit_exit(node) + "\n";
-		else {
-			JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(node->attribute()))) != map.end());
-			str += map[std::type_index(typeid(node->attribute()))](node) + "\n";
-		}
+		JLM_DEBUG_ASSERT(map.find(typeid(*node)) != map.end());
+		str += map[typeid(*node)](node) + "\n";
 	}
 
 	return str;
@@ -265,10 +261,10 @@ to_str(const jlm::module & module)
 /* dot converters */
 
 static inline std::string
-emit_entry_dot(const jlm::cfg_node * node)
+emit_entry_dot(const jlm::cfg_node & node)
 {
-	JLM_DEBUG_ASSERT(is_entry_node(node));
-	auto en = static_cast<const jlm::entry_node*>(node);
+	JLM_DEBUG_ASSERT(is_entry_node(&node));
+	auto en = static_cast<const jlm::entry_node*>(&node);
 
 	std::string str;
 	for (size_t n = 0; n < en->narguments(); n++) {
@@ -280,10 +276,10 @@ emit_entry_dot(const jlm::cfg_node * node)
 }
 
 static inline std::string
-emit_exit_dot(const jlm::cfg_node * node)
+emit_exit_dot(const jlm::cfg_node & node)
 {
-	JLM_DEBUG_ASSERT(is_exit_node(node));
-	auto xn = static_cast<const jlm::exit_node*>(node);
+	JLM_DEBUG_ASSERT(is_exit_node(&node));
+	auto xn = static_cast<const jlm::exit_node*>(&node);
 
 	std::string str;
 	for (size_t n = 0; n < xn->nresults(); n++) {
@@ -317,13 +313,13 @@ to_dot(const jlm::tac & tac)
 }
 
 static inline std::string
-emit_basic_block(const jlm::attribute & attribute)
+emit_basic_block(const cfg_node & node)
 {
-	JLM_DEBUG_ASSERT(is_basic_block(attribute));
-	auto & bb = *static_cast<const taclist*>(&attribute);
+	JLM_DEBUG_ASSERT(is_basic_block(&node));
+	auto & tacs = static_cast<const basic_block*>(&node)->tacs();
 
 	std::string str;
-	for (const auto & tac : bb)
+	for (const auto & tac : tacs)
 		str += emit_tac(*tac) + "\\n";
 
 	return str;
@@ -345,19 +341,14 @@ static inline std::string
 emit_node(const jlm::cfg_node & node)
 {
 	static
-	std::unordered_map<std::type_index, std::string(*)(const jlm::attribute &)> map({
-	  {std::type_index(typeid(taclist)), emit_basic_block}
+	std::unordered_map<std::type_index, std::string(*)(const cfg_node &)> map({
+	  {typeid(entry_node), emit_entry_dot}
+	, {typeid(exit_node), emit_exit_dot}
+	, {typeid(basic_block), emit_basic_block}
 	});
 
-	std::string body;
-	if (is_entry_node(&node))
-		body = emit_entry_dot(&node);
-	else if (is_exit_node(&node))
-		body = emit_exit_dot(&node);
-	else {
-		JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(node.attribute()))) != map.end());
-		std::string body = map[std::type_index(typeid(node.attribute()))](node.attribute());
-	}
+	JLM_DEBUG_ASSERT(map.find(typeid(node)) != map.end());
+	std::string body = map[typeid(node)](node);
 
 	return emit_header(node) + "\\n" + body;
 }

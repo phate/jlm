@@ -25,9 +25,9 @@ test_straightening()
 	auto v = module.create_variable(vt, "v");
 
 	jlm::cfg cfg(module);
-	auto bb1 = create_basic_block_node(&cfg);
-	auto bb2 = create_basic_block_node(&cfg);
-	auto bb3 = create_basic_block_node(&cfg);
+	auto bb1 = basic_block::create(cfg);
+	auto bb2 = basic_block::create(cfg);
+	auto bb3 = basic_block::create(cfg);
 
 	cfg.exit_node()->divert_inedges(bb1);
 	bb1->add_outedge(bb2);
@@ -38,27 +38,29 @@ test_straightening()
 	jlm::append_last(bb2, jlm::create_testop_tac({v}, {v}));
 	jlm::append_last(bb3, jlm::create_testop_tac({v}, {v}));
 
-	auto bb3_last = static_cast<const taclist*>(&bb3->attribute())->last();
+	auto bb3_last = static_cast<const basic_block*>(bb3)->tacs().last();
 	straighten(cfg);
 
 	assert(cfg.nnodes() == 3);
 	auto node = cfg.entry_node()->outedge(0)->sink();
 
-	assert(is_basic_block(node->attribute()));
-	auto bb = static_cast<const taclist*>(&node->attribute());
-	assert(bb->ntacs() == 3);
-	assert(bb->last() == bb3_last);
+	assert(is_basic_block(node));
+	auto & tacs = static_cast<const basic_block*>(node)->tacs();
+	assert(tacs.ntacs() == 3);
+	assert(tacs.last() == bb3_last);
 }
 
 static void
 test_is_structured()
 {
+	using namespace jlm;
+
 	jlm::module module("", "");
 
 	jlm::cfg cfg(module);
-	auto split = create_basic_block_node(&cfg);
-	auto bb = create_basic_block_node(&cfg);
-	auto join = create_basic_block_node(&cfg);
+	auto split = basic_block::create(cfg);
+	auto bb = basic_block::create(cfg);
+	auto join = basic_block::create(cfg);
 
 	cfg.exit_node()->divert_inedges(split);
 	split->add_outedge(join);

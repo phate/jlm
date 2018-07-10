@@ -12,12 +12,26 @@
 
 namespace jlm {
 
-/* basic block attribute */
+/* taclist */
 
 taclist::~taclist()
 {
 	for (const auto & tac : tacs_)
 		delete tac;
+}
+
+/* basic block */
+
+basic_block::~basic_block()
+{}
+
+basic_block *
+basic_block::create(jlm::cfg & cfg)
+{
+	std::unique_ptr<basic_block> node(new basic_block(cfg));
+	auto tmp = node.get();
+	cfg.add_node(std::move(node));
+	return tmp;
 }
 
 }
