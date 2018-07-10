@@ -236,6 +236,16 @@ public:
 
 	cfg(jlm::module & module);
 
+	cfg(const cfg&) = delete;
+
+	cfg(cfg&&) = delete;
+
+	cfg &
+	operator=(const cfg&) = delete;
+
+	cfg &
+	operator=(cfg&&) = delete;
+
 public:
 	inline const_iterator
 	begin() const
