@@ -54,7 +54,7 @@ cfg::remove_node(cfg::iterator & it)
 		throw jlm::error("cannot remove node. It has still incoming edges.");
 
 	it->remove_outedges();
-	std::unique_ptr<jlm::cfg_node> tmp(it.node());
+	std::unique_ptr<basic_block> tmp(it.node());
 	auto rit = iterator(std::next(nodes_.find(tmp)));
 	nodes_.erase(tmp);
 	tmp.release();

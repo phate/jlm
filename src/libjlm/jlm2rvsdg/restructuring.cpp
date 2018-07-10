@@ -146,16 +146,16 @@ struct tcloop {
 	inline
 	tcloop(
 		jlm::cfg_node * entry,
-		jlm::cfg_node * i,
-		jlm::cfg_node * r)
+		basic_block * i,
+		basic_block * r)
 	: ne(entry)
 	, insert(i)
 	, replacement(r)
 	{}
 
 	jlm::cfg_node * ne;
-	jlm::cfg_node * insert;
-	jlm::cfg_node * replacement;
+	basic_block * insert;
+	basic_block * replacement;
 };
 
 static inline tcloop

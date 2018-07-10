@@ -6,6 +6,7 @@
 #define JLM_IR_CFG_H
 
 #include <jlm/common.hpp>
+#include <jlm/jlm/ir/basic-block.hpp>
 #include <jlm/jlm/ir/cfg-node.hpp>
 #include <jlm/jlm/ir/variable.hpp>
 
@@ -110,7 +111,7 @@ class cfg final {
 	class iterator final {
 	public:
 		inline
-		iterator(std::unordered_set<std::unique_ptr<cfg_node>>::iterator it)
+		iterator(std::unordered_set<std::unique_ptr<basic_block>>::iterator it)
 		: it_(it)
 		{}
 
@@ -141,32 +142,32 @@ class cfg final {
 			return tmp;
 		}
 
-		inline cfg_node *
+		inline basic_block *
 		node() const noexcept
 		{
 			return it_->get();
 		}
 
-		inline cfg_node &
+		inline basic_block &
 		operator*() const noexcept
 		{
 			return *it_->get();
 		}
 
-		inline cfg_node *
+		inline basic_block *
 		operator->() const noexcept
 		{
 			return node();
 		}
 
 	private:
-		std::unordered_set<std::unique_ptr<cfg_node>>::iterator it_;
+		std::unordered_set<std::unique_ptr<basic_block>>::iterator it_;
 	};
 
 	class const_iterator final {
 	public:
 		inline
-		const_iterator(std::unordered_set<std::unique_ptr<cfg_node>>::const_iterator it)
+		const_iterator(std::unordered_set<std::unique_ptr<basic_block>>::const_iterator it)
 		: it_(it)
 		{}
 
@@ -197,20 +198,20 @@ class cfg final {
 			return tmp;
 		}
 
-		inline const cfg_node &
+		inline const basic_block &
 		operator*() noexcept
 		{
 			return *it_->get();
 		}
 
-		inline const cfg_node *
+		inline const basic_block *
 		operator->() noexcept
 		{
 			return it_->get();
 		}
 
 	private:
-		std::unordered_set<std::unique_ptr<cfg_node>>::const_iterator it_;
+		std::unordered_set<std::unique_ptr<basic_block>>::const_iterator it_;
 	};
 
 public:
@@ -265,18 +266,18 @@ public:
 		return exit_.get();
 	}
 
-	inline cfg_node *
-	add_node(std::unique_ptr<jlm::cfg_node> node)
+	inline basic_block *
+	add_node(std::unique_ptr<basic_block> bb)
 	{
-		auto tmp = node.get();
-		nodes_.insert(std::move(node));
+		auto tmp = bb.get();
+		nodes_.insert(std::move(bb));
 		return tmp;
 	}
 
 	inline cfg::iterator
-	find_node(jlm::cfg_node * n)
+	find_node(basic_block * bb)
 	{
-		std::unique_ptr<cfg_node> up(n);
+		std::unique_ptr<basic_block> up(bb);
 		auto it = nodes_.find(up);
 		up.release();
 		return iterator(it);
@@ -286,9 +287,9 @@ public:
 	remove_node(cfg::iterator & it);
 
 	inline cfg::iterator
-	remove_node(jlm::cfg_node * n)
+	remove_node(basic_block * bb)
 	{
-		auto it = find_node(n);
+		auto it = find_node(bb);
 		if (it == end())
 			throw jlm::error("node does not belong to this CFG.");
 
@@ -311,7 +312,7 @@ private:
 	jlm::module & module_;
 	std::unique_ptr<exit_node> exit_;
 	std::unique_ptr<entry_node> entry_;
-	std::unordered_set<std::unique_ptr<cfg_node>> nodes_;
+	std::unordered_set<std::unique_ptr<basic_block>> nodes_;
 };
 
 }
