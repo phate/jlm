@@ -280,11 +280,11 @@ aggregate(jlm::cfg & cfg)
 	std::unordered_set<cfg_node*> to_visit;
 	std::unordered_map<jlm::cfg_node*, std::unique_ptr<aggnode>> map;
 	for (auto & node : cfg) {
-		if (is_basic_block(&node))
+		if (is<basic_block>(&node))
 			map[&node] = blockaggnode::create(std::move(static_cast<basic_block*>(&node)->tacs()));
-		else if (is_entry_node(&node))
+		else if (is<entry_node>(&node))
 			map[&node] = entryaggnode::create(static_cast<const jlm::entry_node*>(&node)->arguments());
-		else if (is_exit_node(&node))
+		else if (is<exit_node>(&node))
 			map[&node] = exitaggnode::create(static_cast<const jlm::exit_node*>(&node)->results());
 		else
 			JLM_DEBUG_ASSERT(0);

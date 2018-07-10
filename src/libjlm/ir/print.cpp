@@ -66,7 +66,7 @@ emit_global(const jlm::gblvalue * v)
 static inline std::string
 emit_entry(const jlm::cfg_node * node)
 {
-	JLM_DEBUG_ASSERT(is_entry_node(node));
+	JLM_DEBUG_ASSERT(is<entry_node>(node));
 	auto & en = *static_cast<const jlm::entry_node*>(node);
 
 	std::string str;
@@ -79,7 +79,7 @@ emit_entry(const jlm::cfg_node * node)
 static inline std::string
 emit_exit(const jlm::cfg_node * node)
 {
-	JLM_DEBUG_ASSERT(is_exit_node(node));
+	JLM_DEBUG_ASSERT(is<exit_node>(node));
 	auto & xn = *static_cast<const jlm::exit_node*>(node);
 
 	std::string str;
@@ -136,7 +136,7 @@ emit_targets(const jlm::cfg_node * node)
 static inline std::string
 emit_basic_block(const jlm::cfg_node * node)
 {
-	JLM_DEBUG_ASSERT(is_basic_block(node));
+	JLM_DEBUG_ASSERT(is<basic_block>(node));
 	auto & tacs = static_cast<const basic_block*>(node)->tacs();
 
 	std::string str;
@@ -172,7 +172,7 @@ to_str(const jlm::cfg & cfg)
 	auto nodes = breadth_first_traversal(cfg);
 	for (const auto & node : nodes) {
 		str += emit_label(node) + ":";
-		str += (is_basic_block(node) ? "\n" : " ");
+		str += (is<basic_block>(node) ? "\n" : " ");
 
 		JLM_DEBUG_ASSERT(map.find(typeid(*node)) != map.end());
 		str += map[typeid(*node)](node) + "\n";
@@ -263,7 +263,7 @@ to_str(const jlm::module & module)
 static inline std::string
 emit_entry_dot(const jlm::cfg_node & node)
 {
-	JLM_DEBUG_ASSERT(is_entry_node(&node));
+	JLM_DEBUG_ASSERT(is<entry_node>(&node));
 	auto en = static_cast<const jlm::entry_node*>(&node);
 
 	std::string str;
@@ -278,7 +278,7 @@ emit_entry_dot(const jlm::cfg_node & node)
 static inline std::string
 emit_exit_dot(const jlm::cfg_node & node)
 {
-	JLM_DEBUG_ASSERT(is_exit_node(&node));
+	JLM_DEBUG_ASSERT(is<exit_node>(&node));
 	auto xn = static_cast<const jlm::exit_node*>(&node);
 
 	std::string str;
@@ -315,7 +315,7 @@ to_dot(const jlm::tac & tac)
 static inline std::string
 emit_basic_block(const cfg_node & node)
 {
-	JLM_DEBUG_ASSERT(is_basic_block(&node));
+	JLM_DEBUG_ASSERT(is<basic_block>(&node));
 	auto & tacs = static_cast<const basic_block*>(&node)->tacs();
 
 	std::string str;
@@ -328,10 +328,10 @@ emit_basic_block(const cfg_node & node)
 static inline std::string
 emit_header(const jlm::cfg_node & node)
 {
-	if (is_entry_node(&node))
+	if (is<entry_node>(&node))
 		return "ENTRY";
 
-	if (is_exit_node(&node))
+	if (is<exit_node>(&node))
 		return "EXIT";
 
 	return strfmt(&node);

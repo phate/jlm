@@ -211,6 +211,15 @@ private:
 	friend cfg_edge;
 };
 
+template <class T> static inline bool
+is(const cfg_node * node) noexcept
+{
+	static_assert(std::is_base_of<cfg_node, T>::value,
+		"Template parameter T must be derived from jlm::cfg_node.");
+
+	return dynamic_cast<const T*>(node) != nullptr;
+}
+
 }
 
 #endif

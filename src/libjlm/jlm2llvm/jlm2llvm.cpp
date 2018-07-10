@@ -151,7 +151,7 @@ create_switch(const cfg_node * node, context & ctx)
 static void
 create_terminator_instruction(const jlm::cfg_node * node, context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_basic_block(node));
+	JLM_DEBUG_ASSERT(is<basic_block>(node));
 	auto & tacs = static_cast<const basic_block*>(node)->tacs();
 	auto & cfg = node->cfg();
 
@@ -202,7 +202,7 @@ convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 		if (node == cfg.entry_node() || node == cfg.exit_node())
 			continue;
 
-		JLM_DEBUG_ASSERT(is_basic_block(node));
+		JLM_DEBUG_ASSERT(is<basic_block>(node));
 		auto & tacs = static_cast<const basic_block*>(node)->tacs();
 		for (const auto & tac : tacs)
 			convert_instruction(*tac, node, ctx);
@@ -221,7 +221,7 @@ convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 		if (node == cfg.entry_node() || node == cfg.exit_node())
 			continue;
 
-		JLM_DEBUG_ASSERT(is_basic_block(node));
+		JLM_DEBUG_ASSERT(is<basic_block>(node));
 		auto & tacs = static_cast<const basic_block*>(node)->tacs();
 		for (const auto & tac : tacs) {
 			if (!is<phi_op>(tac->operation()))

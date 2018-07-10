@@ -67,12 +67,6 @@ private:
 	std::vector<const variable*> arguments_;
 };
 
-static inline bool
-is_entry_node(const jlm::cfg_node * node) noexcept
-{
-	return dynamic_cast<const jlm::entry_node*>(node) != nullptr;
-}
-
 /* cfg exit node */
 
 class exit_node final : public cfg_node {
@@ -115,12 +109,6 @@ public:
 private:
 	std::vector<const variable*> results_;
 };
-
-static inline bool
-is_exit_node(const jlm::cfg_node * node)
-{
-	return dynamic_cast<const exit_node*>(node) != nullptr;
-}
 
 /* control flow graph */
 

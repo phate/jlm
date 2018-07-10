@@ -44,7 +44,7 @@ test_straightening()
 	assert(cfg.nnodes() == 3);
 	auto node = cfg.entry_node()->outedge(0)->sink();
 
-	assert(is_basic_block(node));
+	assert(is<basic_block>(node));
 	auto & tacs = static_cast<const basic_block*>(node)->tacs();
 	assert(tacs.ntacs() == 3);
 	assert(tacs.last() == bb3_last);

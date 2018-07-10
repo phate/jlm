@@ -45,7 +45,7 @@ insert_before_branch(jlm::cfg_node * node, jlm::tacsvector_t & tv)
 {
 	using namespace jlm;
 
-	JLM_DEBUG_ASSERT(is_basic_block(node));
+	JLM_DEBUG_ASSERT(is<basic_block>(node));
 	auto & tacs = static_cast<basic_block*>(node)->tacs();
 
 	auto it = tacs.rbegin();

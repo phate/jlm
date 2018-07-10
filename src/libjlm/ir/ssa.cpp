@@ -24,7 +24,7 @@ destruct_ssa(jlm::cfg & cfg)
 	/* find all blocks containing phis */
 	std::unordered_set<cfg_node*> phi_blocks;
 	for (auto & node : cfg) {
-		if (!is_basic_block(&node))
+		if (!is<basic_block>(&node))
 			continue;
 
 		auto & tacs = static_cast<basic_block*>(&node)->tacs();

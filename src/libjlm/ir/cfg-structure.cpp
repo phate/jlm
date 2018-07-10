@@ -68,7 +68,7 @@ copy_structural(const jlm::cfg & in)
 		} else if (&node == in.exit_node()) {
 			node_map[&node] = out->exit_node();
 		} else {
-			JLM_DEBUG_ASSERT(is_basic_block(&node));
+			JLM_DEBUG_ASSERT(jlm::is<jlm::basic_block>(&node));
 			node_map[&node] = jlm::basic_block::create(*out);
 		}
 	}
@@ -427,7 +427,7 @@ is_valid(const jlm::cfg & cfg)
 		if (node.no_successor())
 			return false;
 
-		JLM_DEBUG_ASSERT(is_basic_block(&node));
+		JLM_DEBUG_ASSERT(is<basic_block>(&node));
 		auto bb = static_cast<const basic_block*>(&node);
 		if (!check_phis(bb->tacs()))
 			return false;
@@ -527,8 +527,8 @@ straighten(jlm::cfg & cfg)
 	auto it = cfg.begin();
 	while (it != cfg.end()) {
 		if (is_linear_reduction(it.node())
-		&& is_basic_block(it.node())
-		&& is_basic_block(it->outedge(0)->sink())) {
+		&& is<basic_block>(it.node())
+		&& is<basic_block>(it->outedge(0)->sink())) {
 			append_first(it->outedge(0)->sink(), it.node());
 			it->divert_inedges(it->outedge(0)->sink());
 			it = cfg.remove_node(it);
