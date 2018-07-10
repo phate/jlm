@@ -73,22 +73,16 @@ is_entry_node(const jlm::cfg_node * node) noexcept
 	return dynamic_cast<const jlm::entry_node*>(node) != nullptr;
 }
 
-class exit final : public attribute {
+/* cfg exit node */
+
+class exit_node final : public cfg_node {
 public:
 	virtual
-	~exit();
+	~exit_node();
 
-	inline
-	exit()
-	: attribute()
+	exit_node(jlm::cfg & cfg)
+	: cfg_node(cfg, nullptr)
 	{}
-
-	inline
-	exit(const std::vector<const variable*> & results)
-	{
-		for (const auto & v : results)
-			append_result(v);
-	}
 
 	size_t
 	nresults() const noexcept
@@ -115,21 +109,20 @@ public:
 		return results_;
 	}
 
+	static exit_node *
+	create(jlm::cfg & cfg);
+
 private:
 	std::vector<const variable*> results_;
 };
 
 static inline bool
-is_exit(const jlm::attribute & attribute) noexcept
-{
-	return dynamic_cast<const jlm::exit*>(&attribute) != nullptr;
-}
-
-static inline bool
 is_exit_node(const jlm::cfg_node * node)
 {
-	return dynamic_cast<const jlm::exit*>(&node->attribute()) != nullptr;
+	return dynamic_cast<const exit_node*>(node) != nullptr;
 }
+
+/* control flow graph */
 
 class cfg final {
 	class iterator final {
@@ -274,16 +267,10 @@ public:
 		return entry_;
 	}
 
-	inline jlm::cfg_node *
+	inline jlm::exit_node *
 	exit_node() const noexcept
 	{
 		return exit_;
-	}
-
-	inline jlm::exit &
-	exit() const noexcept
-	{
-		return *static_cast<jlm::exit*>(&exit_node()->attribute());
 	}
 
 	inline void
@@ -328,7 +315,7 @@ public:
 
 private:
 	jlm::entry_node * entry_;
-	cfg_node * exit_;
+	jlm::exit_node * exit_;
 	jlm::module & module_;
 	std::unordered_set<std::unique_ptr<cfg_node>> nodes_;
 };

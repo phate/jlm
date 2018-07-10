@@ -285,8 +285,7 @@ aggregate(jlm::cfg & cfg)
 		else if (is_entry_node(&node))
 			map[&node] = entryaggnode::create(static_cast<const jlm::entry_node*>(&node)->arguments());
 		else if (is_exit_node(&node))
-			map[&node] = exitaggnode::create(static_cast<const jlm::exit*>(
-				&node.attribute())->results());
+			map[&node] = exitaggnode::create(static_cast<const jlm::exit_node*>(&node)->results());
 		else
 			JLM_DEBUG_ASSERT(0);
 		to_visit.insert(&node);

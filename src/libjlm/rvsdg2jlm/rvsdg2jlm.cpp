@@ -163,7 +163,7 @@ create_cfg(const jive::node & node, context & ctx)
 
 	/* add results */
 	for (size_t n = 0; n < region->nresults(); n++)
-		cfg->exit().append_result(ctx.variable(region->result(n)->origin()));
+		cfg->exit_node()->append_result(ctx.variable(region->result(n)->origin()));
 
 	ctx.lpbb()->add_outedge(cfg->exit_node());
 	ctx.set_lpbb(nullptr);

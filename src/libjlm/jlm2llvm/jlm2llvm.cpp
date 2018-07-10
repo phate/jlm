@@ -76,14 +76,14 @@ create_return(const cfg_node * node, context & ctx)
 	auto cfg = node->cfg();
 
 	/* return without result */
-	if (cfg->exit().nresults() == 1) {
+	if (cfg->exit_node()->nresults() == 1) {
 		/* FIXME: This works only as long as we only use one state edge. */
 		builder.CreateRetVoid();
 		return;
 	}
 
 	/* FIXME: This assumes that the value is the first result. */
-	builder.CreateRet(ctx.value(cfg->exit().result(0)));
+	builder.CreateRet(ctx.value(cfg->exit_node()->result(0)));
 }
 
 static void

@@ -103,9 +103,9 @@ create_cfg(llvm::Function & f, context & ctx)
 
 		JLM_DEBUG_ASSERT(node->fcttype().nresults() == 2);
 		JLM_DEBUG_ASSERT(result->type() == node->fcttype().result_type(0));
-		cfg->exit().append_result(result);
+		cfg->exit_node()->append_result(result);
 	}
-	cfg->exit().append_result(state);
+	cfg->exit_node()->append_result(state);
 
 	/* convert instructions */
 	ctx.set_basic_block_map(bbmap);
