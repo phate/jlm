@@ -14,7 +14,7 @@ namespace jlm {
 
 /* basic block attribute */
 
-basic_block::~basic_block()
+taclist::~taclist()
 {
 	for (const auto & tac : tacs_)
 		delete tac;

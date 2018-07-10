@@ -62,7 +62,7 @@ test_block()
 	auto v1 = module.create_variable(vt, "v1");
 	auto v2 = module.create_variable(vt, "v2");
 
-	basic_block bb;
+	taclist bb;
 	bb.append_last(tac::create(op, {v0}, {v1}));
 	bb.append_last(tac::create(op, {v1}, {v2}));
 
@@ -90,7 +90,7 @@ test_linear()
 	/*
 		Setup simple linear CFG: Entry -> B1 -> B2 -> Exit
 	*/
-	basic_block bb1, bb2;
+	taclist bb1, bb2;
 	bb1.append_last(tac::create(op, {arg}, {v1}));
 	bb2.append_last(tac::create(op, {v1}, {v2}));
 
@@ -141,7 +141,7 @@ test_branch()
 	/*
 		Setup conditional CFG with nodes bbs, b1, b2, and edges bbs -> b1 and bbs -> b2.
 	*/
-	basic_block bbs, bb1, bb2;
+	taclist bbs, bb1, bb2;
 	bbs.append_last(tac::create(op, {arg}, {v1}));
 	bb1.append_last(tac::create(op, {v2}, {v3}));
 	bb2.append_last(tac::create(op, {v1}, {v2}));
@@ -187,7 +187,7 @@ test_loop()
 	auto v3 = module.create_variable(vt, "v3");
 	auto v4 = module.create_variable(vt, "v4");
 
-	basic_block bb;
+	taclist bb;
 	bb.append_last(tac::create(op, {v1}, {v2}));
 	bb.append_last(tac::create(op, {v2}, {v3}));
 
@@ -224,7 +224,7 @@ test_assignment()
 	auto v1 = module.create_variable(vt, "v1");
 	auto v2 = module.create_variable(vt, "v2");
 
-	basic_block bb;
+	taclist bb;
 	bb.append_last(tac::create(op, {v1}, {v2}));
 
 	auto root = blockaggnode::create(std::move(bb));

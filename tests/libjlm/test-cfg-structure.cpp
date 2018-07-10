@@ -18,6 +18,8 @@
 static void
 test_straightening()
 {
+	using namespace jlm;
+
 	jlm::valuetype vt;
 	jlm::module module("", "");
 	auto v = module.create_variable(vt, "v");
@@ -36,14 +38,14 @@ test_straightening()
 	jlm::append_last(bb2, jlm::create_testop_tac({v}, {v}));
 	jlm::append_last(bb3, jlm::create_testop_tac({v}, {v}));
 
-	auto bb3_last = static_cast<const jlm::basic_block*>(&bb3->attribute())->last();
+	auto bb3_last = static_cast<const taclist*>(&bb3->attribute())->last();
 	straighten(cfg);
 
 	assert(cfg.nnodes() == 3);
 	auto node = cfg.entry_node()->outedge(0)->sink();
 
 	assert(is_basic_block(node->attribute()));
-	auto bb = static_cast<const jlm::basic_block*>(&node->attribute());
+	auto bb = static_cast<const taclist*>(&node->attribute());
 	assert(bb->ntacs() == 3);
 	assert(bb->last() == bb3_last);
 }

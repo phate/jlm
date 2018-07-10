@@ -27,7 +27,7 @@ destruct_ssa(jlm::cfg & cfg)
 		if (!is_basic_block(node.attribute()))
 			continue;
 
-		auto attr = static_cast<basic_block*>(&node.attribute());
+		auto attr = static_cast<taclist*>(&node.attribute());
 		if (attr->ntacs() != 0 && dynamic_cast<const phi_op*>(&attr->first()->operation()))
 			phi_blocks.insert(&node);
 	}
@@ -35,7 +35,7 @@ destruct_ssa(jlm::cfg & cfg)
 	/* eliminate phis */
 	for (auto phi_block : phi_blocks) {
 		auto ass_block = create_basic_block_node(&cfg);
-		auto phi_attr = static_cast<basic_block*>(&phi_block->attribute());
+		auto phi_attr = static_cast<taclist*>(&phi_block->attribute());
 
 		/* collect inedges of phi block */
 		std::unordered_map<cfg_node*, cfg_edge*> edges;

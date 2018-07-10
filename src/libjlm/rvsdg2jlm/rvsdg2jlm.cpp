@@ -196,7 +196,7 @@ convert_simple_node(const jive::node & node, context & ctx)
 	append_last(ctx.lpbb(), tac::create(op, operands, results));
 	/* FIXME: remove again once tacvariables owner's are tacs */
 	for (const auto & tv : tvs)
-		tv->set_tac(static_cast<const basic_block*>(&ctx.lpbb()->attribute())->last());
+		tv->set_tac(static_cast<const taclist*>(&ctx.lpbb()->attribute())->last());
 }
 
 static void

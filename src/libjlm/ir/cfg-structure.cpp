@@ -373,7 +373,7 @@ reduce_reducible(
 namespace jlm {
 
 static bool
-check_phis(const basic_block * bb)
+check_phis(const taclist * bb)
 {
 	for (auto it = bb->begin(); it != bb->end(); it++) {
 		auto tac = *it;
@@ -428,7 +428,7 @@ is_valid(const jlm::cfg & cfg)
 			return false;
 
 		JLM_DEBUG_ASSERT(is_basic_block(node.attribute()));
-		auto bb = static_cast<const basic_block*>(&node.attribute());
+		auto bb = static_cast<const taclist*>(&node.attribute());
 		if (!check_phis(bb))
 			return false;
 	}
@@ -543,7 +543,7 @@ purge(jlm::cfg & cfg)
 {
 	auto it = cfg.begin();
 	while (it != cfg.end()) {
-		auto bb = dynamic_cast<const jlm::basic_block*>(&it.node()->attribute());
+		auto bb = dynamic_cast<const taclist*>(&it.node()->attribute());
 
 		if (bb && bb->ntacs() == 0) {
 			JLM_DEBUG_ASSERT(it.node()->noutedges() == 1);

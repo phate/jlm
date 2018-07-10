@@ -56,7 +56,7 @@ annotaterw(const exitaggnode * node, demandmap & dm)
 static void
 annotaterw(const blockaggnode * node, demandmap & dm)
 {
-	auto & bb = node->basic_block();
+	auto & bb = node->tacs();
 
 	auto ds = demandset::create();
 	for (auto it = bb.rbegin(); it != bb.rend(); it++) {

@@ -137,7 +137,7 @@ static inline std::string
 emit_basic_block(const jlm::cfg_node * node)
 {
 	JLM_DEBUG_ASSERT(is_basic_block(node->attribute()));
-	auto & bb = *static_cast<const jlm::basic_block*>(&node->attribute());
+	auto & bb = *static_cast<const taclist*>(&node->attribute());
 
 	std::string str;
 	for (const auto & tac : bb) {
@@ -163,7 +163,7 @@ to_str(const jlm::cfg & cfg)
 {
 	static
 	std::unordered_map<std::type_index, std::string(*)(const cfg_node*)> map({
-		{std::type_index(typeid(basic_block)), emit_basic_block}
+		{std::type_index(typeid(taclist)), emit_basic_block}
 	});
 
 	std::string str;
@@ -320,7 +320,7 @@ static inline std::string
 emit_basic_block(const jlm::attribute & attribute)
 {
 	JLM_DEBUG_ASSERT(is_basic_block(attribute));
-	auto & bb = *static_cast<const jlm::basic_block*>(&attribute);
+	auto & bb = *static_cast<const taclist*>(&attribute);
 
 	std::string str;
 	for (const auto & tac : bb)
@@ -346,7 +346,7 @@ emit_node(const jlm::cfg_node & node)
 {
 	static
 	std::unordered_map<std::type_index, std::string(*)(const jlm::attribute &)> map({
-	  {std::type_index(typeid(jlm::basic_block)), emit_basic_block}
+	  {std::type_index(typeid(taclist)), emit_basic_block}
 	});
 
 	std::string body;

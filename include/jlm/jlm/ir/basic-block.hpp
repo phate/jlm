@@ -20,31 +20,31 @@ namespace jlm {
 
 class expr;
 
-class basic_block final : public attribute {
+class taclist final : public attribute {
 public:
 	typedef std::list<tac*>::const_iterator const_iterator;
 	typedef std::list<tac*>::const_reverse_iterator const_reverse_iterator;
 
 	virtual
-	~basic_block();
+	~taclist();
 
 	inline
-	basic_block()
+	taclist()
 	: attribute()
 	{}
 
-	basic_block(const basic_block&) = delete;
+	taclist(const taclist&) = delete;
 
-	basic_block(basic_block && other)
+	taclist(taclist && other)
 	: attribute(other)
 	, tacs_(std::move(other.tacs_))
 	{}
 
-	basic_block &
-	operator=(const basic_block &) = delete;
+	taclist &
+	operator=(const taclist &) = delete;
 
-	basic_block &
-	operator=(basic_block && other)
+	taclist &
+	operator=(taclist && other)
 	{
 		if (this == &other)
 			return *this;
@@ -124,7 +124,7 @@ public:
 	}
 
 	inline void
-	append_first(basic_block & bb)
+	append_first(taclist & bb)
 	{
 		tacs_.insert(tacs_.begin(), bb.begin(), bb.end());
 		bb.tacs_.clear();
@@ -169,40 +169,40 @@ private:
 static inline bool
 is_basic_block(const jlm::attribute & attribute) noexcept
 {
-	return dynamic_cast<const jlm::basic_block*>(&attribute) != nullptr;
+	return dynamic_cast<const jlm::taclist*>(&attribute) != nullptr;
 }
 
 static inline cfg_node *
 create_basic_block_node(jlm::cfg * cfg)
 {
-	return cfg_node::create(*cfg, std::make_unique<basic_block>());
+	return cfg_node::create(*cfg, std::make_unique<taclist>());
 }
 
-static inline basic_block *
-create_basic_block(jlm::cfg * cfg)
+static inline taclist *
+create_taclist(jlm::cfg * cfg)
 {
-	return static_cast<basic_block*>(&create_basic_block_node(cfg)->attribute());
+	return static_cast<taclist*>(&create_basic_block_node(cfg)->attribute());
 }
 
 static inline jlm::tac *
 insert(
 	jlm::cfg_node * node,
-	const basic_block::const_iterator & it,
+	const taclist::const_iterator & it,
 	std::unique_ptr<jlm::tac> tac)
 {
 	JLM_DEBUG_ASSERT(is_basic_block(node->attribute()));
-	auto & bb = *static_cast<jlm::basic_block*>(&node->attribute());
+	auto & bb = *static_cast<jlm::taclist*>(&node->attribute());
 	return bb.insert(it, std::move(tac));
 }
 
 static inline void
 insert(
 	jlm::cfg_node * node,
-	const basic_block::const_iterator & it,
+	const taclist::const_iterator & it,
 	std::vector<std::unique_ptr<jlm::tac>> & tacs)
 {
 	JLM_DEBUG_ASSERT(is_basic_block(node->attribute()));
-	auto & bb = *static_cast<jlm::basic_block*>(&node->attribute());
+	auto & bb = *static_cast<jlm::taclist*>(&node->attribute());
 	return bb.insert(it, tacs);
 }
 
@@ -210,7 +210,7 @@ static inline jlm::tac *
 append_last(jlm::cfg_node * node, std::unique_ptr<jlm::tac> tac)
 {
 	JLM_DEBUG_ASSERT(is_basic_block(node->attribute()));
-	auto & bb = *static_cast<jlm::basic_block*>(&node->attribute());
+	auto & bb = *static_cast<jlm::taclist*>(&node->attribute());
 	bb.append_last(std::move(tac));
 	return bb.last();
 }
@@ -219,7 +219,7 @@ static inline void
 append_last(jlm::cfg_node * node, std::vector<std::unique_ptr<jlm::tac>> & tacs)
 {
 	JLM_DEBUG_ASSERT(is_basic_block(node->attribute()));
-	auto & bb = *static_cast<jlm::basic_block*>(&node->attribute());
+	auto & bb = *static_cast<jlm::taclist*>(&node->attribute());
 	bb.append_last(tacs);
 }
 
@@ -227,7 +227,7 @@ static inline jlm::tac *
 append_first(jlm::cfg_node * node, std::unique_ptr<jlm::tac> tac)
 {
 	JLM_DEBUG_ASSERT(is_basic_block(node->attribute()));
-	auto & bb = *static_cast<jlm::basic_block*>(&node->attribute());
+	auto & bb = *static_cast<jlm::taclist*>(&node->attribute());
 	bb.append_first(std::move(tac));
 	return bb.first();
 }
@@ -236,7 +236,7 @@ static inline void
 append_first(jlm::cfg_node * node, std::vector<std::unique_ptr<jlm::tac>> & tacs)
 {
 	JLM_DEBUG_ASSERT(is_basic_block(node->attribute()));
-	auto & bb = *static_cast<jlm::basic_block*>(&node->attribute());
+	auto & bb = *static_cast<jlm::taclist*>(&node->attribute());
 	bb.append_first(tacs);
 }
 
@@ -244,8 +244,8 @@ static inline void
 append_first(jlm::cfg_node * node, jlm::cfg_node * source)
 {
 	JLM_DEBUG_ASSERT(is_basic_block(node->attribute()) && is_basic_block(source->attribute()));
-	auto & bb = *static_cast<jlm::basic_block*>(&node->attribute());
-	auto & s = *static_cast<jlm::basic_block*>(&source->attribute());
+	auto & bb = *static_cast<jlm::taclist*>(&node->attribute());
+	auto & s = *static_cast<jlm::taclist*>(&source->attribute());
 	bb.append_first(s);
 }
 

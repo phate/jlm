@@ -51,7 +51,7 @@ namespace jlm {
 namespace jlm2llvm {
 
 static inline const jlm::tac *
-find_match_tac(const basic_block * bb)
+find_match_tac(const taclist * bb)
 {
 	auto it = bb->rbegin();
 	const jlm::tac * tac = nullptr;
@@ -105,7 +105,7 @@ create_conditional_branch(const cfg_node * node, context & ctx)
 	JLM_DEBUG_ASSERT(node->outedge(1)->sink() != node->cfg()->exit_node());
 	llvm::IRBuilder<> builder(ctx.basic_block(node));
 
-	auto branch = static_cast<const jlm::basic_block*>(&node->attribute())->last();
+	auto branch = static_cast<const taclist*>(&node->attribute())->last();
 	JLM_DEBUG_ASSERT(branch && is<branch_op>(branch));
 	JLM_DEBUG_ASSERT(ctx.value(branch->input(0))->getType()->isIntegerTy(1));
 
@@ -119,7 +119,7 @@ static void
 create_switch(const cfg_node * node, context & ctx)
 {
 	JLM_DEBUG_ASSERT(node->noutedges() >= 2);
-	auto bb = static_cast<const jlm::basic_block*>(&node->attribute());
+	auto bb = static_cast<const taclist*>(&node->attribute());
 	llvm::IRBuilder<> builder(ctx.basic_block(node));
 
 	auto branch = bb->last();
@@ -152,7 +152,7 @@ static void
 create_terminator_instruction(const jlm::cfg_node * node, context & ctx)
 {
 	JLM_DEBUG_ASSERT(is_basic_block(node->attribute()));
-	auto bb = static_cast<const basic_block*>(&node->attribute());
+	auto bb = static_cast<const taclist*>(&node->attribute());
 	auto cfg = node->cfg();
 
 	/* unconditional branch or return statement */
@@ -203,7 +203,7 @@ convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 			continue;
 
 		JLM_DEBUG_ASSERT(is_basic_block(node->attribute()));
-		auto & bb = *static_cast<const jlm::basic_block*>(&node->attribute());
+		auto & bb = *static_cast<const taclist*>(&node->attribute());
 		for (const auto & tac : bb)
 			convert_instruction(*tac, node, ctx);
 	}
@@ -222,7 +222,7 @@ convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 			continue;
 
 		JLM_DEBUG_ASSERT(is_basic_block(node->attribute()));
-		auto & bb = *static_cast<const jlm::basic_block*>(&node->attribute());
+		auto & bb = *static_cast<const taclist*>(&node->attribute());
 		for (const auto & tac : bb) {
 			if (!is<phi_op>(tac->operation()))
 				continue;

@@ -317,27 +317,27 @@ public:
 	~blockaggnode();
 
 	inline
-	blockaggnode(jlm::basic_block && bb)
+	blockaggnode(jlm::taclist && bb)
 	: bb_(std::move(bb))
 	{}
 
 	virtual std::string
 	debug_string() const override;
 
-	inline const jlm::basic_block &
-	basic_block() const noexcept
+	inline const jlm::taclist &
+	tacs() const noexcept
 	{
 		return bb_;
 	}
 
 	static inline std::unique_ptr<aggnode>
-	create(jlm::basic_block && bb)
+	create(jlm::taclist && bb)
 	{
 		return std::make_unique<blockaggnode>(std::move(bb));
 	}
 
 private:
-	jlm::basic_block bb_;
+	jlm::taclist bb_;
 };
 
 /* linear node class */

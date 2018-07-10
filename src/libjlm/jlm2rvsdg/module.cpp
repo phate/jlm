@@ -183,7 +183,7 @@ convert_tac(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
 }
 
 static void
-convert_basic_block(const basic_block & bb, jive::region * region, jlm::vmap & vmap)
+convert_basic_block(const taclist & bb, jive::region * region, jlm::vmap & vmap)
 {
 	for (const auto & tac: bb)
 		convert_tac(*tac, region, vmap);
@@ -265,7 +265,7 @@ convert_block_node(
 	scoped_vmap & svmap)
 {
 	JLM_DEBUG_ASSERT(is<blockaggnode>(&node));
-	auto & bb = static_cast<const blockaggnode*>(&node)->basic_block();
+	auto & bb = static_cast<const blockaggnode*>(&node)->tacs();
 	convert_basic_block(bb, svmap.region(), svmap.vmap());
 	return nullptr;
 }
@@ -302,7 +302,7 @@ convert_branch_node(
 	auto split = node.parent()->child(0);
 	while (!is<blockaggnode>(split))
 		split = split->child(split->nchildren()-1);
-	auto & sb = dynamic_cast<const blockaggnode*>(split)->basic_block();
+	auto & sb = dynamic_cast<const blockaggnode*>(split)->tacs();
 
 	JLM_DEBUG_ASSERT(is<branch_op>(sb.last()->operation()));
 	auto predicate = svmap.vmap()[sb.last()->input(0)];
@@ -392,7 +392,7 @@ convert_loop_node(
 	while (lblock->nchildren() != 0)
 		lblock = lblock->child(lblock->nchildren()-1);
 	JLM_DEBUG_ASSERT(is<blockaggnode>(lblock));
-	auto & bb = static_cast<const blockaggnode*>(lblock)->basic_block();
+	auto & bb = static_cast<const blockaggnode*>(lblock)->tacs();
 	JLM_DEBUG_ASSERT(is<branch_op>(bb.last()->operation()));
 	auto predicate = bb.last()->input(0);
 
