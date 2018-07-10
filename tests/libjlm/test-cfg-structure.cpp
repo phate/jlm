@@ -29,10 +29,10 @@ test_straightening()
 	auto bb2 = basic_block::create(cfg);
 	auto bb3 = basic_block::create(cfg);
 
-	cfg.exit_node()->divert_inedges(bb1);
+	cfg.exit()->divert_inedges(bb1);
 	bb1->add_outedge(bb2);
 	bb2->add_outedge(bb3);
-	bb3->add_outedge(cfg.exit_node());
+	bb3->add_outedge(cfg.exit());
 
 	jlm::append_last(bb1, jlm::create_testop_tac({v}, {v}));
 	jlm::append_last(bb2, jlm::create_testop_tac({v}, {v}));
@@ -62,11 +62,11 @@ test_is_structured()
 	auto bb = basic_block::create(cfg);
 	auto join = basic_block::create(cfg);
 
-	cfg.exit_node()->divert_inedges(split);
+	cfg.exit()->divert_inedges(split);
 	split->add_outedge(join);
 	split->add_outedge(bb);
 	bb->add_outedge(join);
-	join->add_outedge(cfg.exit_node());
+	join->add_outedge(cfg.exit());
 
 	jlm::print_ascii(cfg, stdout);
 	assert(is_structured(cfg));

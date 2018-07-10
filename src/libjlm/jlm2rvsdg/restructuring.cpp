@@ -600,7 +600,7 @@ restructure_loops(jlm::cfg * cfg)
 	JLM_DEBUG_ASSERT(is_closed(*cfg));
 
 	std::vector<tcloop> loops;
-	restructure_loops(cfg->entry(), cfg->exit_node(), loops);
+	restructure_loops(cfg->entry(), cfg->exit(), loops);
 
 	for (const auto & l : loops)
 		reinsert_tcloop(l);
@@ -610,7 +610,7 @@ void
 restructure_branches(jlm::cfg * cfg)
 {
 	JLM_DEBUG_ASSERT(is_acyclic(*cfg));
-	restructure_branches(cfg->entry(), cfg->exit_node());
+	restructure_branches(cfg->entry(), cfg->exit());
 	JLM_DEBUG_ASSERT(is_proper_structured(*cfg));
 }
 
@@ -627,7 +627,7 @@ restructure(jlm::cfg * cfg)
 	JLM_DEBUG_ASSERT(is_closed(*cfg));
 
 	std::vector<tcloop> tcloops;
-	restructure(cfg->entry(), cfg->exit_node(), tcloops);
+	restructure(cfg->entry(), cfg->exit(), tcloops);
 
 	for (const auto & l : tcloops)
 		reinsert_tcloop(l);

@@ -266,7 +266,7 @@ public:
 	}
 
 	inline jlm::exit_node *
-	exit_node() const noexcept
+	exit() const noexcept
 	{
 		return exit_;
 	}

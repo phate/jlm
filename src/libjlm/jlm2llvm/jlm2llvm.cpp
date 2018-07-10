@@ -71,26 +71,26 @@ static void
 create_return(const cfg_node * node, context & ctx)
 {
 	JLM_DEBUG_ASSERT(node->noutedges() == 1);
-	JLM_DEBUG_ASSERT(node->outedge(0)->sink() == node->cfg().exit_node());
+	JLM_DEBUG_ASSERT(node->outedge(0)->sink() == node->cfg().exit());
 	llvm::IRBuilder<> builder(ctx.basic_block(node));
 	auto & cfg = node->cfg();
 
 	/* return without result */
-	if (cfg.exit_node()->nresults() == 1) {
+	if (cfg.exit()->nresults() == 1) {
 		/* FIXME: This works only as long as we only use one state edge. */
 		builder.CreateRetVoid();
 		return;
 	}
 
 	/* FIXME: This assumes that the value is the first result. */
-	builder.CreateRet(ctx.value(cfg.exit_node()->result(0)));
+	builder.CreateRet(ctx.value(cfg.exit()->result(0)));
 }
 
 static void
 create_unconditional_branch(const cfg_node * node, context & ctx)
 {
 	JLM_DEBUG_ASSERT(node->noutedges() == 1);
-	JLM_DEBUG_ASSERT(node->outedge(0)->sink() != node->cfg().exit_node());
+	JLM_DEBUG_ASSERT(node->outedge(0)->sink() != node->cfg().exit());
 	llvm::IRBuilder<> builder(ctx.basic_block(node));
 	auto target = node->outedge(0)->sink();
 
@@ -101,8 +101,8 @@ static void
 create_conditional_branch(const cfg_node * node, context & ctx)
 {
 	JLM_DEBUG_ASSERT(node->noutedges() == 2);
-	JLM_DEBUG_ASSERT(node->outedge(0)->sink() != node->cfg().exit_node());
-	JLM_DEBUG_ASSERT(node->outedge(1)->sink() != node->cfg().exit_node());
+	JLM_DEBUG_ASSERT(node->outedge(0)->sink() != node->cfg().exit());
+	JLM_DEBUG_ASSERT(node->outedge(1)->sink() != node->cfg().exit());
 	llvm::IRBuilder<> builder(ctx.basic_block(node));
 
 	auto branch = static_cast<const basic_block*>(node)->tacs().last();
@@ -158,7 +158,7 @@ create_terminator_instruction(const jlm::cfg_node * node, context & ctx)
 	/* unconditional branch or return statement */
 	if (node->noutedges() == 1) {
 		auto target = node->outedge(0)->sink();
-		if (target == cfg.exit_node())
+		if (target == cfg.exit())
 			return create_return(node, ctx);
 
 		return create_unconditional_branch(node, ctx);
@@ -185,7 +185,7 @@ convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 
 	/* create basic blocks */
 	for (const auto & node : nodes) {
-		if (node == cfg.entry() || node == cfg.exit_node())
+		if (node == cfg.entry() || node == cfg.exit())
 			continue;
 
 		auto bb = llvm::BasicBlock::Create(f.getContext(), strfmt("bb", &node), &f);
@@ -199,7 +199,7 @@ convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 
 	/* create non-terminator instructions */
 	for (const auto & node : nodes) {
-		if (node == cfg.entry() || node == cfg.exit_node())
+		if (node == cfg.entry() || node == cfg.exit())
 			continue;
 
 		JLM_DEBUG_ASSERT(is<basic_block>(node));
@@ -210,7 +210,7 @@ convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 
 	/* create cfg structure */
 	for (const auto & node : nodes) {
-		if (node == cfg.entry() || node == cfg.exit_node())
+		if (node == cfg.entry() || node == cfg.exit())
 			continue;
 
 		create_terminator_instruction(node, ctx);
@@ -218,7 +218,7 @@ convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 
 	/* patch phi instructions */
 	for (const auto & node : nodes) {
-		if (node == cfg.entry() || node == cfg.exit_node())
+		if (node == cfg.entry() || node == cfg.exit())
 			continue;
 
 		JLM_DEBUG_ASSERT(is<basic_block>(node));

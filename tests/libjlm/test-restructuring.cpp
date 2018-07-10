@@ -27,12 +27,12 @@ test_acyclic_structured()
 	auto bb3 = basic_block::create(cfg);
 	auto bb4 = basic_block::create(cfg);
 
-	cfg.exit_node()->divert_inedges(bb1);
+	cfg.exit()->divert_inedges(bb1);
 	bb1->add_outedge(bb2);
 	bb1->add_outedge(bb3);
 	bb2->add_outedge(bb4);
 	bb3->add_outedge(bb4);
-	bb4->add_outedge(cfg.exit_node());
+	bb4->add_outedge(cfg.exit());
 
 //	jlm::view_ascii(cfg, stdout);
 
@@ -57,13 +57,13 @@ test_acyclic_unstructured()
 	auto bb3 = basic_block::create(cfg);
 	auto bb4 = basic_block::create(cfg);
 
-	cfg.exit_node()->divert_inedges(bb1);
+	cfg.exit()->divert_inedges(bb1);
 	bb1->add_outedge(bb2);
 	bb1->add_outedge(bb3);
 	bb2->add_outedge(bb3);
 	bb2->add_outedge(bb4);
 	bb3->add_outedge(bb4);
-	bb4->add_outedge(cfg.exit_node());
+	bb4->add_outedge(cfg.exit());
 
 //	jlm::view_ascii(cfg, stdout);
 
@@ -86,12 +86,12 @@ test_dowhile()
 	auto bb2 = basic_block::create(cfg);
 	auto bb3 = basic_block::create(cfg);
 
-	cfg.exit_node()->divert_inedges(bb1);
+	cfg.exit()->divert_inedges(bb1);
 	bb1->add_outedge(bb2);
 	bb2->add_outedge(bb2);
 	bb2->add_outedge(bb3);
 	bb3->add_outedge(bb1);
-	bb3->add_outedge(cfg.exit_node());
+	bb3->add_outedge(cfg.exit());
 
 //	jlm::view_ascii(cfg, stdout);
 
@@ -116,8 +116,8 @@ test_while()
 	auto bb1 = basic_block::create(cfg);
 	auto bb2 = basic_block::create(cfg);
 
-	cfg.exit_node()->divert_inedges(bb1);
-	bb1->add_outedge(cfg.exit_node());
+	cfg.exit()->divert_inedges(bb1);
+	bb1->add_outedge(cfg.exit());
 	bb1->add_outedge(bb2);
 	bb2->add_outedge(bb1);
 
@@ -145,15 +145,15 @@ test_irreducible()
 	auto bb4 = basic_block::create(cfg);
 	auto bb5 = basic_block::create(cfg);
 
-	cfg.exit_node()->divert_inedges(bb1);
+	cfg.exit()->divert_inedges(bb1);
 	bb1->add_outedge(bb2);
 	bb1->add_outedge(bb3);
 	bb2->add_outedge(bb4);
 	bb2->add_outedge(bb3);
 	bb3->add_outedge(bb2);
 	bb3->add_outedge(bb5);
-	bb4->add_outedge(cfg.exit_node());
-	bb5->add_outedge(cfg.exit_node());
+	bb4->add_outedge(cfg.exit());
+	bb5->add_outedge(cfg.exit());
 
 //	jlm::view_ascii(cfg, stdout);
 
@@ -176,14 +176,14 @@ test_acyclic_unstructured_in_dowhile()
 	auto bb3 = basic_block::create(cfg);
 	auto bb4 = basic_block::create(cfg);
 
-	cfg.exit_node()->divert_inedges(bb1);
+	cfg.exit()->divert_inedges(bb1);
 	bb1->add_outedge(bb3);
 	bb1->add_outedge(bb2);
 	bb2->add_outedge(bb3);
 	bb2->add_outedge(bb4);
 	bb3->add_outedge(bb4);
 	bb4->add_outedge(bb1);
-	bb4->add_outedge(cfg.exit_node());
+	bb4->add_outedge(cfg.exit());
 
 //	jlm::view_ascii(cfg, stdout);
 
@@ -206,13 +206,13 @@ test_lor_before_dowhile()
 	auto bb3 = basic_block::create(cfg);
 	auto bb4 = basic_block::create(cfg);
 
-	cfg.exit_node()->divert_inedges(bb1);
+	cfg.exit()->divert_inedges(bb1);
 	bb1->add_outedge(bb2);
 	bb1->add_outedge(bb3);
 	bb2->add_outedge(bb4);
 	bb2->add_outedge(bb3);
 	bb3->add_outedge(bb4);
-	bb4->add_outedge(cfg.exit_node());
+	bb4->add_outedge(cfg.exit());
 	bb4->add_outedge(bb4);
 
 //	jlm::view_ascii(cfg, stdout);

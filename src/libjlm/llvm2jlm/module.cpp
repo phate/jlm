@@ -92,7 +92,7 @@ create_cfg(llvm::Function & f, context & ctx)
 
 	/* create entry block */
 	auto entry_block = basic_block::create(*cfg);
-	cfg->exit_node()->divert_inedges(entry_block);
+	cfg->exit()->divert_inedges(entry_block);
 	entry_block->add_outedge(bbmap[&f.getEntryBlock()]);
 
 	/* add results */
@@ -103,9 +103,9 @@ create_cfg(llvm::Function & f, context & ctx)
 
 		JLM_DEBUG_ASSERT(node->fcttype().nresults() == 2);
 		JLM_DEBUG_ASSERT(result->type() == node->fcttype().result_type(0));
-		cfg->exit_node()->append_result(result);
+		cfg->exit()->append_result(result);
 	}
-	cfg->exit_node()->append_result(state);
+	cfg->exit()->append_result(state);
 
 	/* convert instructions */
 	ctx.set_basic_block_map(bbmap);
@@ -114,10 +114,10 @@ create_cfg(llvm::Function & f, context & ctx)
 	convert_basic_blocks(f.getBasicBlockList(), ctx);
 
 	/* ensure that exit node has only one incoming edge */
-	if (cfg->exit_node()->ninedges() > 1) {
+	if (cfg->exit()->ninedges() > 1) {
 		auto bb = basic_block::create(*cfg);
-		cfg->exit_node()->divert_inedges(bb);
-		bb->add_outedge(cfg->exit_node());
+		cfg->exit()->divert_inedges(bb);
+		bb->add_outedge(cfg->exit());
 	}
 
 	straighten(*cfg);

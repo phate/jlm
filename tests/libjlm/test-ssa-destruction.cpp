@@ -36,12 +36,12 @@ test_two_phis()
 	auto bb3 = basic_block::create(cfg);
 	auto bb4 = basic_block::create(cfg);
 
-	cfg.exit_node()->divert_inedges(bb1);
+	cfg.exit()->divert_inedges(bb1);
 	bb1->add_outedge(bb2);
 	bb1->add_outedge(bb3);
 	bb2->add_outedge(bb4);
 	bb3->add_outedge(bb4);
-	bb4->add_outedge(cfg.exit_node());
+	bb4->add_outedge(cfg.exit());
 
 	append_last(bb2, jlm::create_testop_tac({}, {v1}));
 	append_last(bb2, jlm::create_testop_tac({}, {v3}));

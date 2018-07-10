@@ -360,7 +360,7 @@ to_dot(const jlm::cfg & cfg)
 	for (const auto & node : cfg) {
 		dot += "{ ";
 		if (&node == cfg.entry()) dot += "rank = source; ";
-		if (&node == cfg.exit_node()) dot += "rank = sink; ";
+		if (&node == cfg.exit()) dot += "rank = sink; ";
 
 		dot += strfmt((intptr_t)&node);
 		dot += strfmt("[shape = box, label = \"", emit_node(node), "\"]; }\n");

@@ -65,8 +65,8 @@ copy_structural(const jlm::cfg & in)
 	for (const auto & node : in) {
 		if (&node == in.entry()) {
 			node_map[&node] = out->entry();
-		} else if (&node == in.exit_node()) {
-			node_map[&node] = out->exit_node();
+		} else if (&node == in.exit()) {
+			node_map[&node] = out->exit();
 		} else {
 			JLM_DEBUG_ASSERT(jlm::is<jlm::basic_block>(&node));
 			node_map[&node] = jlm::basic_block::create(*out);
@@ -408,7 +408,7 @@ bool
 is_valid(const jlm::cfg & cfg)
 {
 	for (const auto & node : cfg) {
-		if (&node == cfg.exit_node()) {
+		if (&node == cfg.exit()) {
 			if (!node.no_successor())
 				return false;
 			continue;
@@ -458,7 +458,7 @@ is_linear(const jlm::cfg & cfg)
 	JLM_DEBUG_ASSERT(is_closed(cfg));
 
 	for (const auto & node : cfg) {
-		if (&node == cfg.entry() || &node == cfg.exit_node())
+		if (&node == cfg.entry() || &node == cfg.exit())
 			continue;
 
 		if (!node.single_successor() || !node.single_predecessor())
@@ -477,7 +477,7 @@ find_sccs(const jlm::cfg & cfg)
 	std::vector<cfg_node*> node_stack;
 	std::vector<std::unordered_set<cfg_node*>> sccs;
 	std::unordered_map<cfg_node*, std::pair<size_t,size_t>> map;
-	strongconnect(cfg.entry(), cfg.exit_node(), map, node_stack, index, sccs);
+	strongconnect(cfg.entry(), cfg.exit(), map, node_stack, index, sccs);
 
 	return sccs;
 }

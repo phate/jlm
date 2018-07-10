@@ -141,7 +141,7 @@ create_cfg(const jive::node & node, context & ctx)
 	JLM_DEBUG_ASSERT(ctx.lpbb() == nullptr);
 	std::unique_ptr<jlm::cfg> cfg(new jlm::cfg(ctx.module()));
 	auto entry = basic_block::create(*cfg);
-	cfg->exit_node()->divert_inedges(entry);
+	cfg->exit()->divert_inedges(entry);
 	ctx.set_lpbb(entry);
 	ctx.set_cfg(cfg.get());
 
@@ -163,9 +163,9 @@ create_cfg(const jive::node & node, context & ctx)
 
 	/* add results */
 	for (size_t n = 0; n < region->nresults(); n++)
-		cfg->exit_node()->append_result(ctx.variable(region->result(n)->origin()));
+		cfg->exit()->append_result(ctx.variable(region->result(n)->origin()));
 
-	ctx.lpbb()->add_outedge(cfg->exit_node());
+	ctx.lpbb()->add_outedge(cfg->exit());
 	ctx.set_lpbb(nullptr);
 	ctx.set_cfg(nullptr);
 
