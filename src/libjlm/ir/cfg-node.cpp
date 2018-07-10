@@ -35,7 +35,7 @@ cfg_edge::divert(cfg_node * new_sink)
 	new_sink->inedges_.insert(this);
 }
 
-cfg_node *
+basic_block *
 cfg_edge::split()
 {
 	auto sink = sink_;

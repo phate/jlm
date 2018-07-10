@@ -16,6 +16,7 @@
 
 namespace jlm {
 
+class basic_block;
 class cfg;
 class cfg_node;
 
@@ -28,7 +29,7 @@ public:
 	void
 	divert(cfg_node * new_sink);
 
-	cfg_node *
+	basic_block *
 	split();
 
 	inline cfg_node * source() const noexcept { return source_; }
