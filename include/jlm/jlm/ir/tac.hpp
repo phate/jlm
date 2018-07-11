@@ -142,7 +142,7 @@ private:
 template <class T> static inline bool
 is(const jlm::tac * tac)
 {
-	return is<T>(tac->operation());
+	return tac && is<T>(tac->operation());
 }
 
 /* FIXME: Replace all occurences of tacsvector_t with taclist
