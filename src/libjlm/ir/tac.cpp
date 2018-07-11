@@ -16,6 +16,14 @@ namespace jlm {
 tacvariable::~tacvariable()
 {}
 
+/* taclist */
+
+taclist::~taclist()
+{
+	for (const auto & tac : tacs_)
+		delete tac;
+}
+
 /* tac */
 
 tac::tac(

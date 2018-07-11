@@ -13,14 +13,6 @@
 
 namespace jlm {
 
-/* taclist */
-
-taclist::~taclist()
-{
-	for (const auto & tac : tacs_)
-		delete tac;
-}
-
 /* basic block */
 
 basic_block::~basic_block()

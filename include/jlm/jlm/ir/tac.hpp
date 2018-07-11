@@ -11,6 +11,7 @@
 
 #include <jive/rvsdg/operation.h>
 
+#include <list>
 #include <memory>
 #include <vector>
 
@@ -144,7 +145,138 @@ is(const jlm::tac * tac)
 	return is<T>(tac->operation());
 }
 
+/* FIXME: Replace all occurences of tacsvector_t with taclist
+	and then remove tacsvector_t.
+*/
 typedef std::vector<std::unique_ptr<jlm::tac>> tacsvector_t;
+
+/* taclist */
+
+class taclist final {
+public:
+	typedef std::list<tac*>::const_iterator const_iterator;
+	typedef std::list<tac*>::const_reverse_iterator const_reverse_iterator;
+
+	~taclist();
+
+	inline
+	taclist()
+	{}
+
+	taclist(const taclist&) = delete;
+
+	taclist(taclist && other)
+	: tacs_(std::move(other.tacs_))
+	{}
+
+	taclist &
+	operator=(const taclist &) = delete;
+
+	taclist &
+	operator=(taclist && other)
+	{
+		if (this == &other)
+			return *this;
+
+		for (const auto & tac : tacs_)
+			delete tac;
+
+		tacs_.clear();
+		tacs_ = std::move(other.tacs_);
+
+		return *this;
+	}
+
+	inline const_iterator
+	begin() const noexcept
+	{
+		return tacs_.begin();
+	}
+
+	inline const_reverse_iterator
+	rbegin() const noexcept
+	{
+		return tacs_.rbegin();
+	}
+
+	inline const_iterator
+	end() const noexcept
+	{
+		return tacs_.end();
+	}
+
+	inline const_reverse_iterator
+	rend() const noexcept
+	{
+		return tacs_.rend();
+	}
+
+	inline tac *
+	insert_before(const const_iterator & it, std::unique_ptr<jlm::tac> tac)
+	{
+		return *tacs_.insert(it, tac.release());
+	}
+
+	inline void
+	insert_before(const const_iterator & it, taclist & tl)
+	{
+		tacs_.insert(it, tl.begin(), tl.end());
+	}
+
+	inline void
+	append_last(std::unique_ptr<jlm::tac> tac)
+	{
+		tacs_.push_back(tac.release());
+	}
+
+	inline void
+	append_first(std::unique_ptr<jlm::tac> tac)
+	{
+		tacs_.push_front(tac.release());
+	}
+
+	inline void
+	append_first(taclist & tl)
+	{
+		tacs_.insert(tacs_.begin(), tl.begin(), tl.end());
+		tl.tacs_.clear();
+	}
+
+	inline size_t
+	ntacs() const noexcept
+	{
+		return tacs_.size();
+	}
+
+	inline tac *
+	first() const noexcept
+	{
+		return ntacs() != 0 ? tacs_.front() : nullptr;
+	}
+
+	inline tac *
+	last() const noexcept
+	{
+		return ntacs() != 0 ? tacs_.back() : nullptr;
+	}
+
+	inline void
+	drop_first()
+	{
+		delete tacs_.front();
+		tacs_.pop_front();
+	}
+
+	inline void
+	drop_last()
+	{
+		delete tacs_.back();
+		tacs_.pop_back();
+	}
+
+private:
+	std::list<tac*> tacs_;
+};
 
 }
 
