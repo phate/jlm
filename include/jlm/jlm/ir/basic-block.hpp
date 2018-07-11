@@ -46,7 +46,7 @@ public:
 		if (this == &other)
 			return *this;
 
-		for (const auto & tac : other.tacs_)
+		for (const auto & tac : tacs_)
 			delete tac;
 
 		tacs_.clear();
@@ -80,44 +80,27 @@ public:
 	}
 
 	inline tac *
-	insert(const const_iterator & it, std::unique_ptr<jlm::tac> tac)
+	insert_before(const const_iterator & it, std::unique_ptr<jlm::tac> tac)
 	{
 		return *tacs_.insert(it, tac.release());
 	}
 
 	inline void
-	insert(const const_iterator & it, std::vector<std::unique_ptr<jlm::tac>> & tacs)
+	insert_before(const const_iterator & it, taclist & tl)
 	{
-		for (auto & tac : tacs)
-			tacs_.insert(it, tac.release());
+		tacs_.insert(it, tl.begin(), tl.end());
 	}
 
-	inline tac *
+	inline void
 	append_last(std::unique_ptr<jlm::tac> tac)
 	{
 		tacs_.push_back(tac.release());
-		return tacs_.back();
 	}
 
 	inline void
-	append_last(std::vector<std::unique_ptr<jlm::tac>> & tacs)
-	{
-		for (auto & tac : tacs)
-			tacs_.push_back(tac.release());
-	}
-
-	inline tac *
 	append_first(std::unique_ptr<jlm::tac> tac)
 	{
 		tacs_.push_front(tac.release());
-		return tacs_.front();
-	}
-
-	inline void
-	append_first(std::vector<std::unique_ptr<jlm::tac>> & tacs)
-	{
-		for (auto & tac : tacs)
-			tacs_.push_front(tac.release());
 	}
 
 	inline void
@@ -198,6 +181,60 @@ public:
 		return tacs_;
 	}
 
+	inline taclist::const_iterator
+	begin() const noexcept
+	{
+		return tacs_.begin();
+	}
+
+	inline taclist::const_reverse_iterator
+	rbegin() const noexcept
+	{
+		return tacs_.rbegin();
+	}
+
+	inline taclist::const_iterator
+	end() const noexcept
+	{
+		return tacs_.end();
+	}
+
+	inline taclist::const_reverse_iterator
+	rend() const noexcept
+	{
+		return tacs_.rend();
+	}
+
+	inline size_t
+	ntacs() const noexcept
+	{
+		return tacs_.ntacs();
+	}
+
+	inline tac *
+	first() const noexcept
+	{
+		return ntacs() != 0 ? tacs_.first() : nullptr;
+	}
+
+	inline tac *
+	last() const noexcept
+	{
+		return ntacs() != 0 ? tacs_.last() : nullptr;
+	}
+
+	inline void
+	drop_first()
+	{
+		tacs_.drop_first();
+	}
+
+	inline void
+	drop_last()
+	{
+		tacs_.drop_last();
+	}
+
 	jlm::tac *
 	append_first(std::unique_ptr<jlm::tac> tac)
 	{
@@ -235,19 +272,21 @@ public:
 	}
 
 	jlm::tac *
-	insert(
+	insert_before(
 		const taclist::const_iterator & it,
 		std::unique_ptr<jlm::tac> tac)
 	{
-		return tacs_.insert(it, std::move(tac));
+		return tacs_.insert_before(it, std::move(tac));
 	}
 
 	void
-	insert(
+	insert_before(
 		const taclist::const_iterator & it,
-		std::vector<std::unique_ptr<tac>> & tacs)
+		tacsvector_t & tv)
 	{
-		tacs_.insert(it, tacs);
+		for (auto & tac : tv)
+			tacs_.insert_before(it, std::move(tac));
+		tv.clear();
 	}
 
 	static basic_block *
