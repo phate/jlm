@@ -315,6 +315,12 @@ private:
 	std::unordered_set<std::unique_ptr<basic_block>> nodes_;
 };
 
+std::vector<cfg_node*>
+postorder(const jlm::cfg & cfg);
+
+std::vector<cfg_node*>
+reverse_postorder(const jlm::cfg & cfg);
+
 }
 
 #endif

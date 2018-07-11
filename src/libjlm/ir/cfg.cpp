@@ -61,4 +61,45 @@ cfg::remove_node(cfg::iterator & it)
 	return rit;
 }
 
+/* supporting functions */
+
+std::vector<cfg_node*>
+postorder(const jlm::cfg & cfg)
+{
+	JLM_DEBUG_ASSERT(is_closed(cfg));
+
+	std::function<void(
+		cfg_node*,
+		std::unordered_set<cfg_node*>&,
+		std::vector<cfg_node*>&
+	)> traverse = [&](
+		cfg_node * node,
+		std::unordered_set<cfg_node*> & visited,
+		std::vector<cfg_node*> & nodes)
+	{
+		visited.insert(node);
+		for (size_t n = 0; n < node->noutedges(); n++) {
+			auto edge = node->outedge(n);
+			if (visited.find(edge->sink()) == visited.end())
+				traverse(edge->sink(), visited, nodes);
+		}
+
+		nodes.push_back(node);
+	};
+
+	std::vector<cfg_node*> nodes;
+	std::unordered_set<cfg_node*> visited;
+	traverse(cfg.entry(), visited, nodes);
+
+	return nodes;
+}
+
+std::vector<cfg_node*>
+reverse_postorder(const jlm::cfg & cfg)
+{
+	auto nodes = postorder(cfg);
+	std::reverse(nodes.begin(), nodes.end());
+	return nodes;
+}
+
 }

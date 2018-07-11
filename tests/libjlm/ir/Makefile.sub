@@ -1,1 +1,4 @@
 include tests/libjlm/ir/operators/Makefile.sub
+
+TESTS += \
+	libjlm/ir/test-cfg-orderings
