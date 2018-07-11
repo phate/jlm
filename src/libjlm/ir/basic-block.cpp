@@ -5,6 +5,7 @@
 
 #include <jlm/jlm/ir/basic-block.hpp>
 #include <jlm/jlm/ir/cfg.hpp>
+#include <jlm/jlm/ir/operators/operators.hpp>
 #include <jlm/jlm/ir/tac.hpp>
 #include <jlm/jlm/ir/variable.hpp>
 
@@ -24,6 +25,13 @@ taclist::~taclist()
 
 basic_block::~basic_block()
 {}
+
+void
+basic_block::insert_before_branch(tacsvector_t & tv)
+{
+	auto it = is<branch_op>(last()) ? std::prev(end()) : end();
+	insert_before(it, tv);
+}
 
 basic_block *
 basic_block::create(jlm::cfg & cfg)

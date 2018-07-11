@@ -18,6 +18,7 @@ namespace jive {
 
 namespace jlm {
 
+class branch_op;
 class expr;
 
 class taclist final {
@@ -288,6 +289,9 @@ public:
 			tacs_.insert_before(it, std::move(tac));
 		tv.clear();
 	}
+
+	void
+	insert_before_branch(tacsvector_t & tv);
 
 	static basic_block *
 	create(jlm::cfg & cfg);

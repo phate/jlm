@@ -40,14 +40,6 @@ create_result_variables(jlm::module & m, const jive::simple_op & op)
 	return variables;
 }
 
-static inline void
-insert_before_branch(jlm::basic_block & bb, jlm::tacsvector_t & tv)
-{
-	using namespace jlm;
-	auto it = is<branch_op>(bb.last()) ? std::prev(bb.end()) : bb.end();
-	bb.insert_before(it, tv);
-}
-
 namespace jlm {
 
 const variable *
@@ -280,7 +272,7 @@ convert_phi_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, co
 		tacsvector_t tacs;
 		auto bb = ctx.get(*it);
 		auto v = convert_value(i->getIncomingValueForBlock(*it), tacs, ctx);
-		insert_before_branch(*bb, tacs);
+		bb->insert_before_branch(tacs);
 		arguments.push_back(std::make_pair(v, bb));
 	}
 
