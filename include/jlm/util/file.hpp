@@ -72,6 +72,23 @@ public:
 		return fn.substr(pos+1, fn.size()-pos);
 	}
 
+	/**
+	* \brief Returns a file's path, excluding the file name.
+	*
+	* Example:
+	*    jlm::file f("/tmp/archive.tar.gz");
+	*    auto path = f.path(); // path = "/tmp/"
+	*/
+	std::string
+	path() const noexcept
+	{
+		auto pos = file_.find_last_of("/");
+		if (pos == std::string::npos)
+			return "";
+
+		return file_.substr(0, pos+1);
+	}
+
 	inline std::string
 	to_str() const noexcept
 	{
