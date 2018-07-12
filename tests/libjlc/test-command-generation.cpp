@@ -13,12 +13,10 @@
 static void
 test1()
 {
-	jlm::cmdline_options clopts;
-	clopts.enable_linker = false;
-	clopts.ofile = {"foo.o"};
-	clopts.ifiles.push_back({"foo.c"});
+	jlm::cmdline_options options;
+	options.compilations.push_back({{"foo.c"}, {"foo.o"}, true, true, true, false});
 
-	auto pgraph = jlm::generate_commands(clopts);
+	auto pgraph = jlm::generate_commands(options);
 
 	auto node = (*pgraph->exit()->begin_inedges())->source();
 	auto cmd = dynamic_cast<const jlm::cgencmd*>(&node->cmd());
@@ -29,12 +27,8 @@ static void
 test2()
 {
 	jlm::cmdline_options options;
-	options.enable_parser = false;
-	options.enable_optimizer = false;
-	options.enable_assembler = false;
-	options.enable_linker = true;
-	options.ofile = {"foobar"};
-	options.ifiles.push_back({"foo.o"});
+	options.compilations.push_back({{"foo.o"}, {"foo.o"}, false, false, false, true});
+	options.lnkofile = {"foobar"};
 
 	auto pgraph = jlm::generate_commands(options);
 	assert(pgraph->nnodes() == 3);

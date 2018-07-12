@@ -23,37 +23,97 @@ enum class standard {none, c89, c90, c99, c11, cpp98, cpp03, cpp11, cpp14};
 std::string
 to_str(const standard & std);
 
+class compilation {
+public:
+	compilation(
+		const jlm::file & ifile,
+		const jlm::file & ofile,
+		bool parse,
+		bool optimize,
+		bool assemble,
+		bool link)
+	: link_(link)
+	, parse_(parse)
+	, optimize_(optimize)
+	, assemble_(assemble)
+	, ifile_(ifile)
+	, ofile_(ofile)
+	{}
+
+	const jlm::file &
+	ifile() const noexcept
+	{
+		return ifile_;
+	}
+
+	const jlm::file &
+	ofile() const noexcept
+	{
+		return ofile_;
+	}
+
+	void
+	set_ofile(const jlm::file & ofile)
+	{
+		ofile_ = ofile;
+	}
+
+	bool
+	parse() const noexcept
+	{
+		return parse_;
+	}
+
+	bool
+	optimize() const noexcept
+	{
+		return optimize_;
+	}
+
+	bool
+	assemble() const noexcept
+	{
+		return assemble_;
+	}
+
+	bool
+	link() const noexcept
+	{
+		return link_;
+	}
+
+private:
+	bool link_;
+	bool parse_;
+	bool optimize_;
+	bool assemble_;
+	jlm::file ifile_;
+	jlm::file ofile_;
+};
+
 class cmdline_options {
 public:
 	cmdline_options()
 	: only_print_commands(false)
 	, generate_debug_information(false)
-	, enable_parser(true)
-	, enable_optimizer(true)
-	, enable_assembler(true)
-	, enable_linker(true)
 	, Olvl(optlvl::O0)
 	, std(standard::none)
-	, ofile("a.out")
+	, lnkofile("a.out")
 	{}
 
 	bool only_print_commands;
 	bool generate_debug_information;
 
-	bool enable_parser;
-	bool enable_optimizer;
-	bool enable_assembler;
-	bool enable_linker;
-
 	optlvl Olvl;
 	standard std;
-	jlm::file ofile;
+	jlm::file lnkofile;
 	std::vector<std::string> libs;
 	std::vector<std::string> macros;
 	std::vector<std::string> libpaths;
 	std::vector<std::string> warnings;
-	std::vector<jlm::file> ifiles;
 	std::vector<std::string> includepaths;
+
+	std::vector<compilation> compilations;
 };
 
 void

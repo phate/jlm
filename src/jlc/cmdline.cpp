@@ -49,6 +49,12 @@ is_objfile(const jlm::file & file)
 	return file.complete_suffix() == "o";
 }
 
+static jlm::file
+to_objfile(const jlm::file & f)
+{
+	return jlm::file(f.path() + f.base() + ".o");
+}
+
 void
 parse_cmdline(int argc, char ** argv, jlm::cmdline_options & flags)
 {
@@ -97,7 +103,6 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & flags)
 
 	cl::opt<std::string> ofilepath(
 	  "o"
-	, cl::init("a.out")
 	, cl::desc("Write output to <file>.")
 	, cl::value_desc("file"));
 
@@ -177,26 +182,37 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & flags)
 		exit(EXIT_FAILURE);
 	}
 
+	if (ifiles.size() > 1 && no_linking && !ofilepath.empty()) {
+		std::cerr << "jlc: cannot specify -o when generating multiple output files.\n";
+		exit(EXIT_FAILURE);
+	}
+
 	flags.libs = libs;
 	flags.macros = Dmacros;
 	flags.libpaths = libpaths;
 	flags.warnings = Wwarnings;
-	flags.ofile = ofilepath;
-	flags.enable_linker = !no_linking;
-
-	for (const auto & ifile : ifiles)
-		flags.ifiles.push_back({ifile});
-
-	JLM_DEBUG_ASSERT(!flags.ifiles.empty());
-	if (is_objfile(flags.ifiles[0])) {
-		flags.enable_parser = false;
-		flags.enable_optimizer = false;
-		flags.enable_assembler = false;
-	}
-
 	flags.includepaths = includepaths;
 	flags.only_print_commands = print_commands;
 	flags.generate_debug_information = generate_debug_information;
+
+	for (const auto & ifile : ifiles) {
+		if (is_objfile(ifile)) {
+			/* FIXME: print a warning like clang if no_linking is true */
+			flags.compilations.push_back({ifile, ifile, false, false, false, true});
+			continue;
+		}
+
+		flags.compilations.push_back({ifile, to_objfile(ifile), true, true, true, !no_linking});
+	}
+
+	if (!ofilepath.empty()) {
+		if (no_linking) {
+			JLM_DEBUG_ASSERT(flags.compilations.size() == 1);
+			flags.compilations[0].set_ofile(ofilepath);
+		} else {
+			flags.lnkofile = jlm::file(ofilepath);
+		}
+	}
 }
 
 }

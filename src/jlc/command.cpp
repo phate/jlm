@@ -13,12 +13,6 @@
 
 namespace jlm {
 
-static jlm::file
-create_cgencmd_ofile(const jlm::file & ifile)
-{
-	return jlm::file(strfmt("/tmp/", ifile.base(), "-llc-out.o"));
-}
-
 /* command generation */
 
 std::unique_ptr<passgraph>
@@ -27,25 +21,24 @@ generate_commands(const jlm::cmdline_options & opts)
 	std::unique_ptr<passgraph> pgraph(new passgraph());
 
 	std::vector<passgraph_node*> leaves;
-	for (const auto & ifile : opts.ifiles) {
+	for (const auto & c : opts.compilations) {
 		passgraph_node * last = pgraph->entry();
 
-		if (opts.enable_parser) {
-			auto prsnode = prscmd::create(pgraph.get(), ifile, opts.includepaths, opts.macros,
+		if (c.parse()) {
+			auto prsnode = prscmd::create(pgraph.get(), c.ifile(), opts.includepaths, opts.macros,
 				opts.warnings, opts.std);
 			last->add_edge(prsnode);
 			last = prsnode;
 		}
 
-		if (opts.enable_optimizer) {
-			auto optnode = optcmd::create(pgraph.get(), ifile);
+		if (c.optimize()) {
+			auto optnode = optcmd::create(pgraph.get(), c.ifile());
 			last->add_edge(optnode);
 			last = optnode;
 		}
 
-		if (opts.enable_assembler) {
-			auto asmofile = !opts.enable_linker ? opts.ofile : create_cgencmd_ofile(ifile);
-			auto asmnode = cgencmd::create(pgraph.get(), ifile, asmofile, opts.Olvl);
+		if (c.assemble()) {
+			auto asmnode = cgencmd::create(pgraph.get(), c.ifile(), c.ofile(), opts.Olvl);
 			last->add_edge(asmnode);
 			last = asmnode;
 		}
@@ -53,12 +46,15 @@ generate_commands(const jlm::cmdline_options & opts)
 		leaves.push_back(last);
 	}
 
-	if (opts.enable_linker) {
-		std::vector<jlm::file> ifiles;
-		for (const auto & ifile : opts.ifiles)
-			ifiles.push_back(opts.enable_assembler ? create_cgencmd_ofile(ifile) : ifile);
+	std::vector<jlm::file> lnkifiles;
+	for (const auto & c : opts.compilations) {
+		if (c.link())
+			lnkifiles.push_back(c.ofile());
+	}
 
-		auto lnknode = lnkcmd::create(pgraph.get(), ifiles, opts.ofile, opts.libpaths, opts.libs);
+	if (!lnkifiles.empty()) {
+		auto lnknode = lnkcmd::create(pgraph.get(), lnkifiles, opts.lnkofile,
+			opts.libpaths, opts.libs);
 		for (const auto & leave : leaves)
 			leave->add_edge(lnknode);
 
