@@ -18,6 +18,7 @@ LIBJLM_SRC = \
 	src/libjlm/ir/cfg.cpp \
 	src/libjlm/ir/cfg-structure.cpp \
 	src/libjlm/ir/cfg-node.cpp \
+	src/libjlm/ir/domtree.cpp \
 	src/libjlm/ir/ipgraph.cpp \
 	src/libjlm/ir/module.cpp \
 	src/libjlm/ir/operators/alloca.cpp \
