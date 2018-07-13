@@ -47,6 +47,7 @@ private:
 };
 
 class cfg_node {
+	typedef std::unordered_set<cfg_edge*>::iterator inedge_iterator;
 	typedef std::unordered_set<cfg_edge*>::const_iterator const_inedge_iterator;
 
 	class const_outedge_iterator final {
@@ -166,10 +167,22 @@ public:
 		return const_outedge_iterator(outedges_.end());
 	}
 
+	inedge_iterator
+	begin_inedges()
+	{
+		return inedges_.begin();
+	}
+
 	inline const_inedge_iterator
 	begin_inedges() const
 	{
 		return inedges_.begin();
+	}
+
+	inedge_iterator
+	end_inedges()
+	{
+		return inedges_.end();
 	}
 
 	inline const_inedge_iterator
