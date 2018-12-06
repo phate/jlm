@@ -150,6 +150,18 @@ public:
 		return subregion()->add_argument(input, origin->type());
 	}
 
+	const jlm::linkage &
+	linkage() const noexcept
+	{
+		return static_cast<const delta_op*>(&operation())->linkage();
+	}
+
+	bool
+	constant() const noexcept
+	{
+		return static_cast<const delta_op*>(&operation())->constant();
+	}
+
 	virtual delta_node *
 	copy(jive::region * region, jive::substitution_map & smap) const override;
 };
