@@ -218,6 +218,8 @@ public:
 
 		auto output = node_->add_output({std::move(create_ptrtype(data->type()))});
 		region()->add_result(data, output, data->type());
+		node_ = nullptr;
+
 		return output;
 	}
 
