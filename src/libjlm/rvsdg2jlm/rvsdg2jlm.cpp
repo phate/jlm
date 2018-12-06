@@ -476,7 +476,7 @@ convert_delta_node(const jive::node & node, context & ctx)
 	auto result = subregion->result(0);
 
 	auto name = get_name(result->output());
-	const auto & type = result->output()->type();
+	auto & type = *static_cast<const jive::valuetype*>(&result->output()->type());
 
 	tacsvector_t tacs;
 	convert_port(result->origin(), tacs, ctx);
@@ -530,7 +530,7 @@ rvsdg2jlm(const jlm::rvsdg & rvsdg)
 			auto v = module->create_variable(f);
 			ctx.insert(argument, v);
 		} else {
-			const auto & type = argument->type();
+			auto & type = *static_cast<const jive::valuetype*>(&argument->type());
 			const auto & name = argument->port().gate()->name();
 			auto dnode = data_node::create(clg, name, type, jlm::linkage::external_linkage, false);
 			auto v = module->create_global_value(dnode);

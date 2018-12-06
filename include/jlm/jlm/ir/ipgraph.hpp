@@ -322,6 +322,12 @@ public:
 		return init_;
 	}
 
+	const jive::valuetype &
+	valuetype() const noexcept
+	{
+		return *static_cast<const jive::valuetype*>(type_.get());
+	}
+
 	void
 	set_initialization(tacsvector_t init);
 
@@ -329,7 +335,7 @@ public:
 	create(
 		jlm::ipgraph & clg,
 		const std::string & name,
-		const jive::type & type,
+		const jive::valuetype & type,
 		const jlm::linkage & linkage,
 		bool constant)
 	{
