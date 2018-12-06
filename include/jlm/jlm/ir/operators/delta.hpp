@@ -18,11 +18,33 @@ namespace jlm {
 
 class delta_op final : public jive::structural_op {
 public:
-	inline constexpr
-	delta_op(const jlm::linkage & linkage, bool constant)
+	inline
+	delta_op(
+		const jive::valuetype & type,
+		const jlm::linkage & linkage,
+		bool constant)
 	: constant_(constant)
 	, linkage_(linkage)
+	, type_(std::move(type.copy()))
 	{}
+
+	delta_op(const delta_op & other)
+	: constant_(other.constant_)
+	, linkage_(other.linkage_)
+	, type_(other.type_->copy())
+	{}
+
+	delta_op(delta_op && other)
+	: constant_(other.constant_)
+	, linkage_(other.linkage_)
+	, type_(std::move(other.type_))
+	{}
+
+	delta_op &
+	operator=(const delta_op&) = delete;
+
+	delta_op &
+	operator=(delta_op&&) = delete;
 
 	virtual std::string
 	debug_string() const override;
@@ -45,9 +67,16 @@ public:
 		return constant_;
 	}
 
+	const jive::valuetype &
+	valuetype() const noexcept
+	{
+		return *static_cast<const jive::valuetype*>(type_.get());
+	}
+
 private:
 	bool constant_;
 	jlm::linkage linkage_;
+	std::unique_ptr<jive::type> type_;
 };
 
 /* delta node */
@@ -71,10 +100,11 @@ private:
 	static delta_node *
 	create(
 		jive::region * parent,
+		const jive::valuetype & type,
 		const jlm::linkage & linkage,
 		bool constant)
 	{
-		delta_op op(linkage, constant);
+		delta_op op(type, linkage, constant);
 		return new delta_node(parent, op);
 	}
 
@@ -162,6 +192,12 @@ public:
 		return static_cast<const delta_op*>(&operation())->constant();
 	}
 
+	const jive::valuetype &
+	valuetype() const noexcept
+	{
+		return static_cast<const delta_op*>(&operation())->valuetype();
+	}
+
 	virtual delta_node *
 	copy(jive::region * region, jive::substitution_map & smap) const override;
 };
@@ -194,13 +230,14 @@ public:
 	inline jive::region *
 	begin(
 		jive::region * parent,
+		const jive::valuetype & type,
 		const jlm::linkage & linkage,
 		bool constant)
 	{
 		if (node_)
 			return region();
 
-		node_ = delta_node::create(parent, linkage, constant);
+		node_ = delta_node::create(parent, type, linkage, constant);
 		return region();
 	}
 
