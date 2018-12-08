@@ -42,7 +42,7 @@ root_port(const jive::output * port)
 		return port;
 
 	auto node = port->node();
-	JLM_DEBUG_ASSERT(is<lambda_op>(node));
+	JLM_DEBUG_ASSERT(node->noutputs() == 1);
 	JLM_DEBUG_ASSERT(node->output(0)->nusers() == 1);
 	auto user = *node->output(0)->begin();
 	node = port->region()->node();
@@ -85,7 +85,7 @@ create_assignment_lpbb(const jlm::variable * argument, const jlm::variable * res
 {
 	return ctx.lpbb()->append_last(create_assignment(argument->type(), argument, result));
 }
-
+/*
 static const variable *
 convert_port(
 	const jive::output * port,
@@ -111,6 +111,37 @@ convert_port(
 	auto & op = *static_cast<const jive::simple_op*>(&node->operation());
 	tacs.push_back(tac::create(op, operands, {result}));
 	return result;
+}
+*/
+
+static void
+create_initialization(
+	const delta_node * delta,
+	tacsvector_t & tacs,
+	context & ctx)
+{
+	/* add delta dependencies to context */
+	for (size_t n = 0; n < delta->ninputs(); n++) {
+		auto v = ctx.variable(delta->input(n)->origin());
+		ctx.insert(delta->input(n)->arguments.first(), v);
+	}
+
+	/* convert all nodes to tacs */
+	for (const auto & node : jive::topdown_traverser(delta->subregion())) {
+		JLM_DEBUG_ASSERT(node->noutputs() == 1);
+		auto output = node->output(0);
+
+		/* collect operand variables */
+		std::vector<const variable*> operands;
+		for (size_t n = 0; n < node->ninputs(); n++)
+			operands.push_back(ctx.variable(node->input(n)->origin()));
+
+		/* convert node to tac */
+		auto v = ctx.module().create_tacvariable(output->type());
+		auto & op = *static_cast<const jive::simple_op*>(&node->operation());
+		tacs.push_back(tac::create(op, operands, {v}));
+		ctx.insert(output, v);
+	}
 }
 
 static void
@@ -428,37 +459,58 @@ convert_lambda_node(const jive::node & node, context & ctx)
 static inline void
 convert_phi_node(const jive::node & node, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::phi_op*>(&node.operation()));
-	auto snode = static_cast<const jive::structural_node*>(&node);
-	auto subregion = snode->subregion(0);
+	JLM_DEBUG_ASSERT(is<jive::phi_op>(&node));
+	auto phi = static_cast<const jive::structural_node*>(&node);
+	auto subregion = phi->subregion(0);
 	auto & module = ctx.module();
-	auto & clg = module.ipgraph();
+	auto & ipg = module.ipgraph();
 
 	/* add dependencies to context */
-	for (size_t n = 0; n < snode->ninputs(); n++) {
-		auto v = ctx.variable(snode->input(n)->origin());
-		ctx.insert(snode->input(n)->arguments.first(), v);
+	for (size_t n = 0; n < phi->ninputs(); n++) {
+		auto v = ctx.variable(phi->input(n)->origin());
+		ctx.insert(phi->input(n)->arguments.first(), v);
 	}
 
-	/* forward declare all functions */
+	/* forward declare all functions and globals */
 	for (size_t n = 0; n < subregion->nresults(); n++) {
+		JLM_DEBUG_ASSERT(subregion->argument(n)->input() == nullptr);
+		auto node = subregion->result(n)->origin()->node();
+
+		if (auto lambda = dynamic_cast<const lambda_node*>(node)) {
+			auto f = function_node::create(ipg, lambda->name(), lambda->fcttype(), lambda->linkage());
+			ctx.insert(subregion->argument(n), module.create_variable(f));
+		} else {
+			JLM_DEBUG_ASSERT(is<delta_op>(node));
+			auto d = static_cast<const delta_node*>(node);
+			auto data = data_node::create(ipg, get_name(d->output(0)), d->type(), d->linkage(),
+				d->constant());
+			ctx.insert(subregion->argument(n), module.create_global_value(data));
+		}
+	}
+
+	/* convert function bodies and global initializations */
+	for (size_t n = 0; n < subregion->nresults(); n++) {
+		JLM_DEBUG_ASSERT(subregion->argument(n)->input() == nullptr);
 		auto result = subregion->result(n);
-		JLM_DEBUG_ASSERT(is<lambda_op>(result->origin()->node()));
-		auto lambda = static_cast<const lambda_node*>(result->origin()->node());
+		auto node = result->origin()->node();
 
-		auto f = function_node::create(clg, lambda->name(), lambda->fcttype(), lambda->linkage());
-		ctx.insert(subregion->argument(n), module.create_variable(f));
+		if (is<lambda_op>(node)) {
+			auto v = static_cast<const fctvariable*>(ctx.variable(subregion->argument(n)));
+			v->function()->add_cfg(create_cfg(*node, ctx));
+			ctx.insert(node->output(0), v);
+		} else {
+			JLM_DEBUG_ASSERT(is<delta_op>(node));
+			auto delta = static_cast<const delta_node*>(node);
+			auto v = static_cast<const gblvalue*>(ctx.variable(subregion->argument(n)));
+
+			tacsvector_t tacs;
+			create_initialization(delta, tacs, ctx);
+			v->node()->set_initialization(std::move(tacs));
+			ctx.insert(node->output(0), v);
+		}
 	}
 
-	/* convert function bodies */
-	for (size_t n = 0; n < subregion->nresults(); n++) {
-		auto lambda = subregion->result(n)->origin()->node();
-		auto v = static_cast<const jlm::fctvariable*>(ctx.variable(subregion->argument(n)));
-		v->function()->add_cfg(create_cfg(*lambda, ctx));
-		ctx.insert(lambda->output(0), v);
-	}
-
-	/* add functions to context */
+	/* add functions and globals to context */
 	JLM_DEBUG_ASSERT(node.noutputs() == subregion->nresults());
 	for (size_t n = 0; n < node.noutputs(); n++)
 		ctx.insert(node.output(n), ctx.variable(subregion->result(n)->origin()));
@@ -467,16 +519,16 @@ convert_phi_node(const jive::node & node, context & ctx)
 static inline void
 convert_delta_node(const jive::node & node, context & ctx)
 {
-	JLM_DEBUG_ASSERT(jive::is<delta_op>(&node));
-	auto subregion = static_cast<const jive::structural_node*>(&node)->subregion(0);
+	JLM_DEBUG_ASSERT(is<delta_op>(&node));
+	auto delta = static_cast<const delta_node*>(&node);
 	const auto & op = *static_cast<const jlm::delta_op*>(&node.operation());
 	auto & module = ctx.module();
 
-	JLM_DEBUG_ASSERT(subregion->nresults() == 1);
-	auto result = subregion->result(0);
+	JLM_DEBUG_ASSERT(delta->subregion()->nresults() == 1);
+	auto result = delta->subregion()->result(0);
 
 	tacsvector_t tacs;
-	convert_port(result->origin(), tacs, ctx);
+	create_initialization(delta, tacs, ctx);
 
 	auto name = get_name(result->output());
 	auto dnode = data_node::create(module.ipgraph(), name, op.type(), op.linkage(), op.constant());
