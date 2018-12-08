@@ -475,15 +475,11 @@ convert_delta_node(const jive::node & node, context & ctx)
 	JLM_DEBUG_ASSERT(subregion->nresults() == 1);
 	auto result = subregion->result(0);
 
-	auto name = get_name(result->output());
-	auto & type = *static_cast<const jive::valuetype*>(&result->output()->type());
-
 	tacsvector_t tacs;
 	convert_port(result->origin(), tacs, ctx);
 
-	auto linkage = op.linkage();
-	auto constant = op.constant();
-	auto dnode = data_node::create(module.ipgraph(), name, type, linkage, constant);
+	auto name = get_name(result->output());
+	auto dnode = data_node::create(module.ipgraph(), name, op.type(), op.linkage(), op.constant());
 	dnode->set_initialization(std::move(tacs));
 	auto v = module.create_global_value(dnode);
 	ctx.insert(result->output(), v);
@@ -522,6 +518,8 @@ rvsdg2jlm(const jlm::rvsdg & rvsdg)
 	auto & clg = module->ipgraph();
 
 	context ctx(*module);
+
+	/* Add all imports to context */
 	for (size_t n = 0; n < graph->root()->narguments(); n++) {
 		auto argument = graph->root()->argument(n);
 		if (auto ftype = is_function_import(argument)) {
@@ -530,7 +528,8 @@ rvsdg2jlm(const jlm::rvsdg & rvsdg)
 			auto v = module->create_variable(f);
 			ctx.insert(argument, v);
 		} else {
-			auto & type = *static_cast<const jive::valuetype*>(&argument->type());
+			JLM_DEBUG_ASSERT(dynamic_cast<const ptrtype*>(&argument->type()));
+			auto & type = *static_cast<const ptrtype*>(&argument->type());
 			const auto & name = argument->port().gate()->name();
 			auto dnode = data_node::create(clg, name, type, jlm::linkage::external_linkage, false);
 			auto v = module->create_global_value(dnode);

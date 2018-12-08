@@ -122,10 +122,11 @@ data_node::name() const noexcept
 	return name_;
 }
 
-const jive::type &
+const ptrtype &
 data_node::type() const noexcept
 {
-	return *type_;
+	JLM_DEBUG_ASSERT(dynamic_cast<const ptrtype*>(type_.get()));
+	return *static_cast<const ptrtype*>(type_.get());
 }
 
 const jlm::linkage &

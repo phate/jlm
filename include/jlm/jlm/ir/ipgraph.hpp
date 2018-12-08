@@ -290,7 +290,7 @@ private:
 	data_node(
 		jlm::ipgraph & clg,
 		const std::string & name,
-		const jive::type & type,
+		const ptrtype & type,
 		const jlm::linkage & linkage,
 		bool constant)
 	: ipgraph_node(clg)
@@ -301,7 +301,7 @@ private:
 	{}
 
 public:
-	virtual const jive::type &
+	virtual const ptrtype &
 	type() const noexcept override;
 
 	const std::string &
@@ -322,12 +322,6 @@ public:
 		return init_;
 	}
 
-	const jive::valuetype &
-	valuetype() const noexcept
-	{
-		return *static_cast<const jive::valuetype*>(type_.get());
-	}
-
 	void
 	set_initialization(tacsvector_t init);
 
@@ -335,7 +329,7 @@ public:
 	create(
 		jlm::ipgraph & clg,
 		const std::string & name,
-		const jive::valuetype & type,
+		const jlm::ptrtype & type,
 		const jlm::linkage & linkage,
 		bool constant)
 	{

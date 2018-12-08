@@ -20,7 +20,7 @@ class delta_op final : public jive::structural_op {
 public:
 	inline
 	delta_op(
-		const jive::valuetype & type,
+		const ptrtype & type,
 		const jlm::linkage & linkage,
 		bool constant)
 	: constant_(constant)
@@ -67,10 +67,11 @@ public:
 		return constant_;
 	}
 
-	const jive::valuetype &
-	valuetype() const noexcept
+	const ptrtype &
+	type() const noexcept
 	{
-		return *static_cast<const jive::valuetype*>(type_.get());
+		JLM_DEBUG_ASSERT(dynamic_cast<const ptrtype*>(type_.get()));
+		return *static_cast<const ptrtype*>(type_.get());
 	}
 
 private:
@@ -100,7 +101,7 @@ private:
 	static delta_node *
 	create(
 		jive::region * parent,
-		const jive::valuetype & type,
+		const ptrtype & type,
 		const jlm::linkage & linkage,
 		bool constant)
 	{
@@ -192,10 +193,10 @@ public:
 		return static_cast<const delta_op*>(&operation())->constant();
 	}
 
-	const jive::valuetype &
-	valuetype() const noexcept
+	const ptrtype &
+	type() const noexcept
 	{
-		return static_cast<const delta_op*>(&operation())->valuetype();
+		return static_cast<const delta_op*>(&operation())->type();
 	}
 
 	virtual delta_node *
@@ -230,7 +231,7 @@ public:
 	inline jive::region *
 	begin(
 		jive::region * parent,
-		const jive::valuetype & type,
+		const ptrtype & type,
 		const jlm::linkage & linkage,
 		bool constant)
 	{
@@ -253,7 +254,10 @@ public:
 		if (!node_)
 			return nullptr;
 
-		auto output = node_->add_output({std::move(create_ptrtype(data->type()))});
+		if (data->type() != node_->type().pointee_type())
+			throw jlm::error("Invalid type.");
+
+		auto output = node_->add_output({std::move(node_->type())});
 		region()->add_result(data, output, data->type());
 		node_ = nullptr;
 

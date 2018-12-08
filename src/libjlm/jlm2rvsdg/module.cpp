@@ -500,7 +500,7 @@ convert_data_node(
 		data = region->graph()->add_import(n->type(), n->name());
 	} else {
 		jlm::delta_builder db;
-		auto r = db.begin(region, n->valuetype(), n->linkage(), n->constant());
+		auto r = db.begin(region, n->type(), n->linkage(), n->constant());
 		auto & pv = svmap.vmap();
 		svmap.push_scope(r);
 

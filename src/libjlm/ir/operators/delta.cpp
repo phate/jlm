@@ -44,7 +44,7 @@ delta_node::copy(jive::region * region, jive::substitution_map & smap) const
 	auto & op = *static_cast<const delta_op*>(&operation());
 
 	delta_builder db;
-	db.begin(region, op.valuetype(), op.linkage(), op.constant());
+	db.begin(region, op.type(), op.linkage(), op.constant());
 
 	/* add dependencies */
 	jive::substitution_map rmap;
