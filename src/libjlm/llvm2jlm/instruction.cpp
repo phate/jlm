@@ -405,7 +405,12 @@ convert_binary_operator(llvm::Instruction * instruction, tacsvector_t & tacs, co
 	} else
 		JLM_ASSERT(0);
 
-	auto r = ctx.lookup_value(i);
+	jlm::variable * r;
+	if (ctx.has_value(i))
+		r = ctx.lookup_value(i);
+	else
+		r = ctx.module().create_variable(*convert_type(i->getType(), ctx));
+
 	auto op1 = convert_value(i->getOperand(0), tacs, ctx);
 	auto op2 = convert_value(i->getOperand(1), tacs, ctx);
 	JLM_DEBUG_ASSERT(is<jive::binary_op>(*operation));
