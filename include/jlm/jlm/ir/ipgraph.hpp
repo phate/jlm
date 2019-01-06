@@ -280,6 +280,55 @@ private:
 
 /* data node */
 
+class data_node_init final {
+public:
+	data_node_init(const variable * value)
+	: value_(value)
+	{}
+
+	data_node_init(tacsvector_t tacs)
+	: tacs_(std::move(tacs))
+	{
+		if (tacs_.empty())
+			throw jlm::error("Initialization cannot be empty.");
+
+		auto & tac = tacs_.back();
+		if (tac->noutputs() != 1)
+			throw jlm::error("Last TAC of initialization needs exactly one result.");
+
+		value_ = tac->output(0);
+	}
+
+	data_node_init(const data_node_init&) = delete;
+
+	data_node_init(data_node_init && other)
+	: tacs_(std::move(other.tacs_))
+	, value_(other.value_)
+	{}
+
+	data_node_init &
+	operator=(const data_node_init&) = delete;
+
+	data_node_init &
+	operator=(data_node_init&&) = delete;
+
+	const variable *
+	value() const noexcept
+	{
+		return value_;
+	}
+
+	const tacsvector_t &
+	tacs() const noexcept
+	{
+		return tacs_;
+	}
+
+private:
+	tacsvector_t tacs_;
+	const variable * value_;
+};
+
 class data_node final : public ipgraph_node {
 public:
 	virtual
@@ -316,14 +365,23 @@ public:
 		return constant_;
 	}
 
-	inline const tacsvector_t &
+	inline const data_node_init *
 	initialization() const noexcept
 	{
-		return init_;
+		return init_.get();
 	}
 
 	void
-	set_initialization(tacsvector_t init);
+	set_initialization(std::unique_ptr<data_node_init> init)
+	{
+		if (!init)
+			return;
+
+		if (init->value()->type() != type().pointee_type())
+			throw jlm::error("Invalid type.");
+
+		init_ = std::move(init);
+	}
 
 	static inline data_node *
 	create(
@@ -342,9 +400,9 @@ public:
 private:
 	bool constant_;
 	std::string name_;
-	tacsvector_t init_;
 	jlm::linkage linkage_;
 	std::unique_ptr<jive::type> type_;
+	std::unique_ptr<data_node_init> init_;
 };
 
 }

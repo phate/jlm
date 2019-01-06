@@ -23,7 +23,7 @@ class context;
 void
 convert_instruction(const jlm::tac & tac, const jlm::cfg_node * node, context & ctx);
 
-llvm::Constant *
+void
 convert_tacs(const tacsvector_t & tacs, context & ctx);
 
 }}

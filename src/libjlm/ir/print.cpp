@@ -56,9 +56,11 @@ emit_tacs(const tacsvector_t & tacs)
 static inline std::string
 emit_global(const jlm::gblvalue * v)
 {
+	auto init = v->node()->initialization();
+
 	std::string str = v->debug_string();
-	if (!v->node()->initialization().empty())
-		str += " = " + emit_tacs(v->node()->initialization());
+	if (init)
+		str += " = " + emit_tacs(init->tacs());
 
 	return str;
 }
@@ -218,10 +220,11 @@ emit_data_node(const jlm::ipgraph_node & clg_node)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const data_node*>(&clg_node));
 	auto & node = *static_cast<const data_node*>(&clg_node);
+	auto init = node.initialization();
 
 	std::string str = node.name();
-	if (!node.initialization().empty())
-		str += " = " + emit_tacs(node.initialization());
+	if (init)
+		str += " = " + emit_tacs(init->tacs());
 
 	return str;
 }

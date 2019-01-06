@@ -472,17 +472,13 @@ construct_lambda(
 }
 
 static jive::output *
-convert_tacs(const tacsvector_t & tacs, jive::region * region, scoped_vmap & svmap)
+convert_initialization(const data_node_init & init, jive::region * region, scoped_vmap & svmap)
 {
-	JLM_DEBUG_ASSERT(!tacs.empty());
-
 	auto & vmap = svmap.vmap();
-	for (const auto & tac : tacs)
+	for (const auto & tac : init.tacs())
 		convert_tac(*tac, region, vmap);
 
-	auto & tac = tacs.back();
-	JLM_DEBUG_ASSERT(tac->noutputs() == 1);
-	return vmap[tac->output(0)];
+	return vmap[init.value()];
 }
 
 static jive::output *
@@ -493,28 +489,29 @@ convert_data_node(
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const data_node*>(node));
 	auto n = static_cast<const data_node*>(node);
+	auto init = n->initialization();
 	auto & m = svmap.module();
 
-	jive::output * data = nullptr;
-	if (n->initialization().empty()) {
-		data = region->graph()->add_import(n->type(), n->name());
-	} else {
-		jlm::delta_builder db;
-		auto r = db.begin(region, n->type(), n->linkage(), n->constant());
-		auto & pv = svmap.vmap();
-		svmap.push_scope(r);
+	/* data node without initialization */
+	if (!init)
+		return region->graph()->add_import(n->type(), n->name());
 
-		/* add dependencies */
-		for (const auto & dp : *node) {
-			auto v = m.variable(dp);
-			JLM_DEBUG_ASSERT(pv.find(v) != pv.end());
-			auto argument = db.add_dependency(pv[v]);
-			svmap.vmap()[v] = argument;
-		}
+	/* data node with initialization */
+	jlm::delta_builder db;
+	auto r = db.begin(region, n->type(), n->linkage(), n->constant());
+	auto & pv = svmap.vmap();
+	svmap.push_scope(r);
 
-		data = db.end(convert_tacs(n->initialization(), r, svmap));
-		svmap.pop_scope();
+	/* add dependencies */
+	for (const auto & dp : *node) {
+		auto v = m.variable(dp);
+		JLM_DEBUG_ASSERT(pv.find(v) != pv.end());
+		auto argument = db.add_dependency(pv[v]);
+		svmap.vmap()[v] = argument;
 	}
+
+	auto data = db.end(convert_initialization(*init, r, svmap));
+	svmap.pop_scope();
 
 	return data;
 }

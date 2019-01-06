@@ -187,20 +187,36 @@ declare_globals(llvm::Module & lm, context & ctx)
 	}
 }
 
+static std::unique_ptr<data_node_init>
+create_initialization(llvm::GlobalVariable & gv, context & ctx)
+{
+	if (!gv.hasInitializer())
+		return nullptr;
+
+	auto init = gv.getInitializer();
+	auto tacs = convert_constant(init, ctx);
+	if (tacs.empty())
+		return std::make_unique<data_node_init>(ctx.lookup_value(init));
+
+	return std::make_unique<data_node_init>(std::move(tacs));
+}
+
+static void
+convert_global_value(llvm::GlobalVariable & gv, context & ctx)
+{
+	auto v = static_cast<gblvalue*>(ctx.lookup_value(&gv));
+
+	ctx.set_node(v->node());
+	v->node()->set_initialization(create_initialization(gv, ctx));
+	ctx.set_node(nullptr);
+}
+
 static void
 convert_globals(llvm::Module & lm, context & ctx)
 {
-	/* convert global variables */
-	for (auto & gv : lm.getGlobalList()) {
-		if (gv.hasInitializer()) {
-			auto v = static_cast<gblvalue*>(ctx.lookup_value(&gv));
-			ctx.set_node(v->node());
-			v->node()->set_initialization(std::move(convert_constant(gv.getInitializer(), ctx)));
-			ctx.set_node(nullptr);
-		}
-	}
+	for (auto & gv : lm.getGlobalList())
+		convert_global_value(gv, ctx);
 
-	/* convert functions */
 	for (auto & f : lm.getFunctionList())
 		convert_function(f, ctx);
 }

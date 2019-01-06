@@ -114,19 +114,25 @@ convert_port(
 }
 */
 
-static void
-create_initialization(
-	const delta_node * delta,
-	tacsvector_t & tacs,
-	context & ctx)
+static std::unique_ptr<data_node_init>
+create_initialization(const delta_node * delta, context & ctx)
 {
+	auto subregion = delta->subregion();
+
 	/* add delta dependencies to context */
 	for (size_t n = 0; n < delta->ninputs(); n++) {
 		auto v = ctx.variable(delta->input(n)->origin());
 		ctx.insert(delta->input(n)->arguments.first(), v);
 	}
 
-	/* convert all nodes to tacs */
+
+	if (subregion->nnodes() == 0) {
+		auto value = ctx.variable(subregion->result(0)->origin());
+		return std::make_unique<data_node_init>(value);
+	}
+
+
+	tacsvector_t tacs;
 	for (const auto & node : jive::topdown_traverser(delta->subregion())) {
 		JLM_DEBUG_ASSERT(node->noutputs() == 1);
 		auto output = node->output(0);
@@ -142,6 +148,8 @@ create_initialization(
 		tacs.push_back(tac::create(op, operands, {v}));
 		ctx.insert(output, v);
 	}
+
+	return std::make_unique<data_node_init>(std::move(tacs));
 }
 
 static void
@@ -503,9 +511,7 @@ convert_phi_node(const jive::node & node, context & ctx)
 			auto delta = static_cast<const delta_node*>(node);
 			auto v = static_cast<const gblvalue*>(ctx.variable(subregion->argument(n)));
 
-			tacsvector_t tacs;
-			create_initialization(delta, tacs, ctx);
-			v->node()->set_initialization(std::move(tacs));
+			v->node()->set_initialization(create_initialization(delta, ctx));
 			ctx.insert(node->output(0), v);
 		}
 	}
@@ -527,12 +533,9 @@ convert_delta_node(const jive::node & node, context & ctx)
 	JLM_DEBUG_ASSERT(delta->subregion()->nresults() == 1);
 	auto result = delta->subregion()->result(0);
 
-	tacsvector_t tacs;
-	create_initialization(delta, tacs, ctx);
-
 	auto name = get_name(result->output());
 	auto dnode = data_node::create(module.ipgraph(), name, op.type(), op.linkage(), op.constant());
-	dnode->set_initialization(std::move(tacs));
+	dnode->set_initialization(create_initialization(delta, ctx));
 	auto v = module.create_global_value(dnode);
 	ctx.insert(result->output(), v);
 }

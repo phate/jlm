@@ -249,6 +249,20 @@ convert_function(const jlm::function_node & node, context & ctx)
 	convert_cfg(*node.cfg(), *f, ctx);
 }
 
+static void
+convert_data_node(const data_node & node, context & ctx)
+{
+	if (!node.initialization())
+		return;
+
+	auto & jm = ctx.jlm_module();
+	auto init = node.initialization();
+	convert_tacs(init->tacs(), ctx);
+
+	auto gv = llvm::dyn_cast<llvm::GlobalVariable>(ctx.value(jm.variable(&node)));
+	gv->setInitializer(llvm::dyn_cast<llvm::Constant>(ctx.value(init->value())));
+}
+
 static const llvm::GlobalValue::LinkageTypes &
 convert_linkage(const jlm::linkage & linkage)
 {
@@ -300,9 +314,7 @@ convert_ipgraph(const jlm::ipgraph & clg, context & ctx)
 	/* convert all nodes */
 	for (const auto & node : jm.ipgraph()) {
 		if (auto n = dynamic_cast<const data_node*>(&node)) {
-			auto & tacs = n->initialization();
-			auto init = tacs.empty() ? nullptr : convert_tacs(tacs, ctx);
-			llvm::dyn_cast<llvm::GlobalVariable>(ctx.value(jm.variable(n)))->setInitializer(init);
+			convert_data_node(*n, ctx);
 		} else if (auto n = dynamic_cast<const function_node*>(&node)) {
 			convert_function(*n, ctx);
 		} else
