@@ -63,8 +63,11 @@ print_dot(const jlm::ipgraph & ipg, FILE * out)
 
 /* module */
 
-std::string
-to_str(const jlm::module & module);
+static inline std::string
+to_str(const jlm::module & module)
+{
+	return to_str(module.ipgraph());
+}
 
 static inline void
 print(const jlm::module & module, FILE * out)

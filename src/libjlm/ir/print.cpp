@@ -246,18 +246,6 @@ to_str(const jlm::ipgraph & clg)
 	return str;
 }
 
-std::string
-to_str(const jlm::module & module)
-{
-	std::string str;
-	for (const auto & gv : module)
-		str += emit_global(gv) + "\n\n";
-
-	str += to_str(module.ipgraph());
-
-	return str;
-}
-
 /* dot converters */
 
 static inline std::string
