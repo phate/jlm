@@ -85,34 +85,6 @@ create_assignment_lpbb(const jlm::variable * argument, const jlm::variable * res
 {
 	return ctx.lpbb()->append_last(create_assignment(argument->type(), argument, result));
 }
-/*
-static const variable *
-convert_port(
-	const jive::output * port,
-	tacsvector_t & tacs,
-	context & ctx)
-{
-	auto node = port->node();
-
-	if (!node) {
-		JLM_DEBUG_ASSERT(dynamic_cast<const jive::argument*>(port));
-		auto argument = static_cast<const jive::argument*>(port);
-		return ctx.variable(argument->input()->origin());
-	}
-
-
-	std::vector<const variable*> operands;
-	for (size_t n = 0; n < node->ninputs(); n++)
-		operands.push_back(convert_port(node->input(n)->origin(), tacs, ctx));
-
-	JLM_DEBUG_ASSERT(node->noutputs() == 1);
-	auto result = ctx.module().create_tacvariable(node->output(0)->type());
-
-	auto & op = *static_cast<const jive::simple_op*>(&node->operation());
-	tacs.push_back(tac::create(op, operands, {result}));
-	return result;
-}
-*/
 
 static std::unique_ptr<data_node_init>
 create_initialization(const delta_node * delta, context & ctx)
