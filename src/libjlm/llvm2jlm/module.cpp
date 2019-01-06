@@ -195,7 +195,7 @@ convert_globals(llvm::Module & lm, context & ctx)
 		if (gv.hasInitializer()) {
 			auto v = static_cast<gblvalue*>(ctx.lookup_value(&gv));
 			ctx.set_node(v->node());
-			v->node()->set_initialization(std::move(convert_constant(&gv, ctx)));
+			v->node()->set_initialization(std::move(convert_constant(gv.getInitializer(), ctx)));
 			ctx.set_node(nullptr);
 		}
 	}

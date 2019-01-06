@@ -111,21 +111,12 @@ convert_constantFP(
 
 static const variable *
 convert_globalVariable(
-	llvm::Constant * constant,
+	llvm::Constant * c,
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::GlobalVariable*>(constant));
-	auto c = static_cast<llvm::GlobalVariable*>(constant);
-
-	if (!c->hasInitializer()) {
-		auto t = convert_type(c->getType(), ctx);
-		auto r = ctx.module().create_variable(*t);
-		tacs.push_back(create_undef_constant_tac(r));
-		return r;
-	}
-
-	return convert_constant(c->getInitializer(), tacs, ctx);
+	JLM_DEBUG_ASSERT(c->getValueID() == llvm::Value::GlobalVariableVal);
+	return convert_value(c, tacs, ctx);
 }
 
 static const variable *
