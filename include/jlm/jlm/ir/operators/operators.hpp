@@ -886,7 +886,7 @@ public:
 };
 
 static inline std::unique_ptr<jlm::tac>
-create_undef_constant_tac(jlm::variable * result)
+create_undef_constant_tac(const jlm::variable * result)
 {
 	auto vt = dynamic_cast<const jive::valuetype*>(&result->type());
 	if (!vt) throw jlm::error("expected value type.");
