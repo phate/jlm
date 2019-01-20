@@ -304,6 +304,13 @@ create_qvariable(const jive::ctltype & type, jlm::module & m)
 	return m.create_variable(type, strfmt("#q", c++, "#"));
 }
 
+static const variable *
+create_tvariable(const jive::ctltype & type, jlm::module & m)
+{
+	static size_t c = 0;
+	return m.create_variable(type, strfmt("#t", c++, "#"));
+}
+
 static inline const variable *
 create_rvariable(jlm::module & m)
 {
@@ -331,7 +338,7 @@ append_constant(basic_block * bb, const variable * result, size_t value)
 }
 
 static inline void
-restructure_loop_entry(const scc_structure & s, basic_block * new_ne, const variable * q)
+restructure_loop_entry(const scc_structure & s, basic_block * new_ne, const variable * ev)
 {
 	size_t n = 0;
 	std::unordered_map<jlm::cfg_node*, size_t> indices;
@@ -340,12 +347,12 @@ restructure_loop_entry(const scc_structure & s, basic_block * new_ne, const vari
 		indices[*it] = n;
 	}
 
-	if (q) append_branch(new_ne, q);
+	if (ev) append_branch(new_ne, ev);
 
 	for (auto it = s.begin_eedges(); it != s.end_eedges(); it++) {
 		auto os = (*it)->sink();
 		(*it)->divert(new_ne);
-		if (q) append_constant((*it)->split(), q, indices[os]);
+		if (ev) append_constant((*it)->split(), ev, indices[os]);
 	}
 }
 
@@ -354,8 +361,8 @@ restructure_loop_exit(
 	const scc_structure & s,
 	basic_block * new_nr,
 	basic_block * new_nx,
-	const variable * q,
-	const variable * r)
+	const variable * rv,
+	const variable * xv)
 {
 	size_t n = 0;
 	std::unordered_map<jlm::cfg_node*, size_t> indices;
@@ -364,14 +371,14 @@ restructure_loop_exit(
 		indices[*it] = n;
 	}
 
-	if (q) append_branch(new_nx, q);
+	if (xv) append_branch(new_nx, xv);
 
 	for (auto it = s.begin_xedges(); it != s.end_xedges(); it++) {
 		auto os = (*it)->sink();
 		(*it)->divert(new_nr);
 		auto bb = (*it)->split();
-		if (q) append_constant(bb, q, indices[os]);
-		append_constant(bb, r, 0);
+		if (xv) append_constant(bb, xv, indices[os]);
+		append_constant(bb, rv, 0);
 	}
 }
 
@@ -380,8 +387,9 @@ restructure_loop_repetition(
 	const scc_structure & s,
 	jlm::cfg_node * new_nr,
 	jlm::cfg_node * new_nx,
-	const variable * q,
-	const variable * r)
+	const variable * ev,
+	const variable * rv,
+	const variable * xv)
 {
 	size_t n = 0;
 	std::unordered_map<jlm::cfg_node*, size_t> indices;
@@ -392,8 +400,13 @@ restructure_loop_repetition(
 		auto os = (*it)->sink();
 		(*it)->divert(new_nr);
 		auto bb = (*it)->split();
-		if (q) append_constant(bb, q, indices[os]);
-		append_constant(bb, r, 1);
+		if (ev) append_constant(bb, ev, indices[os]);
+		/*
+			This assignment to xv is only inserted to ensure that xv is defined on all paths
+			leading to new_nx. At runtime, this value of xv is never used.
+		*/
+		if (xv) append_constant(bb, xv, 0);
+		append_constant(bb, rv, 1);
 	}
 }
 
@@ -419,19 +432,19 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit, std::vector<tcloo
 			continue;
 		}
 
-		auto r = create_rvariable(module);
-		jive::ctltype t(std::max(s.nenodes(), s.nxnodes()));
-		auto q = t.nalternatives() > 1 ? create_qvariable(t, module) : nullptr;
+		auto ev = s.nenodes() > 1 ? create_tvariable(jive::ctltype(s.nenodes()), module) : nullptr;
+		auto rv = create_rvariable(module);
+		auto xv = s.nxnodes() > 1 ? create_qvariable(jive::ctltype(s.nxnodes()), module) : nullptr;
 		auto new_ne = basic_block::create(cfg);
 		auto new_nr = basic_block::create(cfg);
 		auto new_nx = basic_block::create(cfg);
 		new_nr->add_outedge(new_nx);
 		new_nr->add_outedge(new_ne);
-		append_branch(new_nr, r);
+		append_branch(new_nr, rv);
 
-		restructure_loop_entry(s, new_ne, q);
-		restructure_loop_exit(s, new_nr, new_nx, q, r);
-		restructure_loop_repetition(s, new_nr, new_nr, q, r);
+		restructure_loop_entry(s, new_ne, ev);
+		restructure_loop_exit(s, new_nr, new_nx, rv, xv);
+		restructure_loop_repetition(s, new_nr, new_nr, ev, rv, xv);
 
 		restructure(new_ne, new_nr, loops);
 		loops.push_back(extract_tcloop(new_ne, new_nr));
