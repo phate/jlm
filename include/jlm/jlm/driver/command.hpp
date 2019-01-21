@@ -14,6 +14,9 @@ namespace jlm {
 
 class command {
 public:
+	virtual
+	~command();
+
 	virtual std::string
 	to_str() const = 0;
 

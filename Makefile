@@ -10,6 +10,7 @@ LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --l
 LIBJLM_SRC = \
 	src/common.cpp \
 	\
+	src/libjlm/driver/command.cpp \
 	src/libjlm/driver/passgraph.cpp \
 	\
 	src/libjlm/ir/aggregation.cpp \

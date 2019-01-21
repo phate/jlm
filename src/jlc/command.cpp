@@ -84,6 +84,9 @@ create_prscmd_ofile(const std::string & ifile)
 	return strfmt("tmp-", ifile, "-clang-out.ll");
 }
 
+prscmd::~prscmd()
+{}
+
 std::string
 prscmd::to_str() const
 {
@@ -128,6 +131,9 @@ create_optcmd_ofile(const std::string & ifile)
 	return strfmt("tmp-", ifile, "-jlm-opt-out.ll");
 }
 
+optcmd::~optcmd()
+{}
+
 std::string
 optcmd::to_str() const
 {
@@ -149,6 +155,9 @@ optcmd::run() const
 
 /* code generator command */
 
+cgencmd::~cgencmd()
+{}
+
 std::string
 cgencmd::to_str() const
 {
@@ -169,6 +178,9 @@ cgencmd::run() const
 }
 
 /* linker command */
+
+lnkcmd::~lnkcmd()
+{}
 
 std::string
 lnkcmd::to_str() const
@@ -203,6 +215,9 @@ lnkcmd::run() const
 }
 
 /* print command */
+
+printcmd::~printcmd()
+{}
 
 std::string
 printcmd::to_str() const

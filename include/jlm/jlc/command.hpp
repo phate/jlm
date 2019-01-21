@@ -22,6 +22,9 @@ generate_commands(const jlm::cmdline_options & options);
 
 class prscmd final : public command {
 public:
+	virtual
+	~prscmd();
+
 	prscmd(
 		const jlm::file & ifile,
 		const std::vector<std::string> & Ipaths,
@@ -66,6 +69,9 @@ private:
 
 class optcmd final : public command {
 public:
+	virtual
+	~optcmd();
+
 	optcmd(const jlm::file & ifile)
 	: ifile_(ifile)
 	{}
@@ -92,6 +98,9 @@ private:
 
 class cgencmd final : public command {
 public:
+	virtual
+	~cgencmd();
+
 	cgencmd(
 		const jlm::file & ifile,
 		const jlm::file & ofile,
@@ -133,6 +142,9 @@ private:
 
 class lnkcmd final : public command {
 public:
+	virtual
+	~lnkcmd();
+
 	lnkcmd(
 		const std::vector<jlm::file> & ifiles,
 		const jlm::file & ofile,
@@ -185,6 +197,9 @@ private:
 
 class printcmd final : public command {
 public:
+	virtual
+	~printcmd();
+
 	printcmd(
 		std::unique_ptr<passgraph> pgraph)
 	: pgraph_(std::move(pgraph))
