@@ -355,4 +355,4 @@ test()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-aggregation", test);
+JLM_UNIT_TEST_REGISTER("libjlm/test-aggregation", test)

@@ -127,7 +127,7 @@ annotaterw(const aggnode * node, demandmap & dm)
 {
 	JLM_DEBUG_ASSERT(is<T>(node));
 	annotaterw(static_cast<const T*>(node), dm);
-};
+}
 
 static void
 annotaterw(const aggnode * node, demandmap & dm)

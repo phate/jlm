@@ -272,4 +272,4 @@ verify()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/opt/test-unroll", verify);
+JLM_UNIT_TEST_REGISTER("libjlm/opt/test-unroll", verify)

@@ -103,4 +103,4 @@ test()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-sext", test);
+JLM_UNIT_TEST_REGISTER("libjlm/test-sext", test)

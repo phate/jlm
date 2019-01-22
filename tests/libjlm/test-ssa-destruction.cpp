@@ -66,4 +66,4 @@ verify()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-ssa-destruction", verify);
+JLM_UNIT_TEST_REGISTER("libjlm/test-ssa-destruction", verify)

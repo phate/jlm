@@ -45,4 +45,4 @@ test()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/ir/test-cfg-orderings", test);
+JLM_UNIT_TEST_REGISTER("libjlm/ir/test-cfg-orderings", test)

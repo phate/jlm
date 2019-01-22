@@ -207,6 +207,6 @@ unroll(jive::theta_node * node, size_t factor);
 void
 unroll(jive::graph & rvsdg, size_t factor);
 
-};
+}
 
 #endif

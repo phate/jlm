@@ -227,4 +227,4 @@ test()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-load", test);
+JLM_UNIT_TEST_REGISTER("libjlm/test-load", test)

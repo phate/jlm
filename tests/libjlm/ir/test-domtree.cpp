@@ -83,4 +83,4 @@ test()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/ir/test-domtree", test);
+JLM_UNIT_TEST_REGISTER("libjlm/ir/test-domtree", test)
