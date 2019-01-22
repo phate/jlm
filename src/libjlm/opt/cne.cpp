@@ -157,12 +157,10 @@ congruent(
 	if (o1->type() != o2->type())
 		return false;
 
-	auto a1 = static_cast<jive::argument*>(o1);
-	auto a2 = static_cast<jive::argument*>(o2);
-	auto so1 = static_cast<jive::structural_output*>(o1);
-	auto so2 = static_cast<jive::structural_output*>(o2);
 	if (is_theta_argument(o1) && is_theta_argument(o2)) {
 		JLM_DEBUG_ASSERT(o1->region()->node() == o2->region()->node());
+		auto a1 = static_cast<jive::argument*>(o1);
+		auto a2 = static_cast<jive::argument*>(o2);
 		vs.insert(a1, a2);
 		auto i1 = a1->input(), i2 = a2->input();
 		if (!congruent(a1->input()->origin(), a2->input()->origin(), vs, ctx))
@@ -176,6 +174,8 @@ congruent(
 	if (jive::is<jive::theta_op>(o1->node())
 	&& jive::is<jive::theta_op>(o2->node())
 	&& o1->node() == o2->node()) {
+		auto so1 = static_cast<jive::structural_output*>(o1);
+		auto so2 = static_cast<jive::structural_output*>(o2);
 		vs.insert(o1, o2);
 		auto r1 = so1->results.first();
 		auto r2 = so2->results.first();
@@ -183,6 +183,8 @@ congruent(
 	}
 
 	if (jive::is<jive::gamma_op>(o1->node()) && o1->node() == o2->node()) {
+		auto so1 = static_cast<jive::structural_output*>(o1);
+		auto so2 = static_cast<jive::structural_output*>(o2);
 		auto r1 = so1->results.begin();
 		auto r2 = so2->results.begin();
 		for (; r1 != so1->results.end(); r1++, r2++) {
@@ -195,6 +197,8 @@ congruent(
 
 	if (is_gamma_argument(o1) && is_gamma_argument(o2)) {
 		JLM_DEBUG_ASSERT(o1->region()->node() == o2->region()->node());
+		auto a1 = static_cast<jive::argument*>(o1);
+		auto a2 = static_cast<jive::argument*>(o2);
 		return congruent(a1->input()->origin(), a2->input()->origin(), vs, ctx);
 	}
 
