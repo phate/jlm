@@ -123,10 +123,9 @@ mark(const jive::output * output, dnectx & ctx)
 	if (is_import(output))
 		return;
 
-	auto argument = static_cast<const jive::argument*>(output);
-	auto soutput = static_cast<const jive::structural_output*>(output);
 	if (jive::is<jive::gamma_op>(output->node())) {
 		auto gamma = static_cast<const jive::gamma_node*>(output->node());
+		auto soutput = static_cast<const jive::structural_output*>(output);
 		mark(gamma->predicate()->origin(), ctx);
 		for (const auto & result : soutput->results)
 			mark(result.origin(), ctx);
@@ -134,6 +133,7 @@ mark(const jive::output * output, dnectx & ctx)
 	}
 
 	if (is_gamma_argument(output)) {
+		auto argument = static_cast<const jive::argument*>(output);
 		mark(argument->input()->origin(), ctx);
 		return;
 	}
@@ -148,29 +148,34 @@ mark(const jive::output * output, dnectx & ctx)
 
 	if (is_theta_argument(output)) {
 		auto theta = output->region()->node();
+		auto argument = static_cast<const jive::argument*>(output);
 		mark(theta->output(argument->input()->index()), ctx);
 		mark(argument->input()->origin(), ctx);
 		return;
 	}
 
 	if (is_lambda_output(output)) {
+		auto soutput = static_cast<const jive::structural_output*>(output);
 		for (size_t n = 0; n < soutput->node()->subregion(0)->nresults(); n++)
 			mark(soutput->node()->subregion(0)->result(n)->origin(), ctx);
 		return;
 	}
 
 	if (is_lambda_argument(output)) {
+		auto argument = static_cast<const jive::argument*>(output);
 		if (argument->input())
 			mark(argument->input()->origin(), ctx);
 		return;
 	}
 
 	if (is_phi_output(output)) {
+		auto soutput = static_cast<const jive::structural_output*>(output);
 		mark(soutput->results.first()->origin(), ctx);
 		return;
 	}
 
 	if (is_phi_argument(output)) {
+		auto argument = static_cast<const jive::argument*>(output);
 		if (argument->input()) mark(argument->input()->origin(), ctx);
 		else mark(argument->region()->result(argument->index())->origin(), ctx);
 		return;
