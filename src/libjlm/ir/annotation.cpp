@@ -250,15 +250,16 @@ annotateds(
 {
 	auto & ds = dm[node];
 
-	variableset loop = ds->reads;
-	for (const auto & v : ds->writes) {
-		if (pds.find(v) != pds.end())
-			loop.insert(v);
-	}
-	ds->bottom = ds->top = loop;
-
-	annotateds(node->child(0), loop, dm);
 	pds.insert(ds->reads.begin(), ds->reads.end());
+	ds->bottom = ds->top = pds;
+	annotateds(node->child(0), pds, dm);
+
+	for (const auto & v : ds->reads)
+		JLM_DEBUG_ASSERT(pds.find(v) != pds.end());
+
+	for (const auto & v : ds->writes)
+		if (ds->reads.find(v) == ds->reads.end())
+			JLM_DEBUG_ASSERT(pds.find(v) == pds.end());
 }
 
 template<class T> static void

@@ -207,9 +207,62 @@ test_loop()
 	print(*root, dm, stdout);
 
 	assert(contains(dm, xnptr, {}, {v3, v4}, {v3, v4}, {}));
-	assert(contains(dm, bptr, {v1, v3}, {v1}, {v1}, {v2, v3}));
-	assert(contains(dm, lnptr, {v1, v3}, {v1, v3}, {v1}, {v2, v3}));
+	assert(contains(dm, bptr, {v1, v3, v4}, {v1, v4}, {v1}, {v2, v3}));
+	assert(contains(dm, lnptr, {v1, v3, v4}, {v1, v3, v4}, {v1}, {v2, v3}));
 	assert(contains(dm , root.get(), {}, {v1, v4}, {v1, v4}, {v2, v3}));
+}
+
+static void
+test_branch_in_loop()
+{
+	using namespace jlm;
+
+	valuetype vt;
+	test_op op({&vt}, {&vt});
+
+	jlm::module module("", "");
+	auto v1 = module.create_variable(vt, "v1");
+	auto v2 = module.create_variable(vt, "v2");
+	auto v3 = module.create_variable(vt, "v3");
+	auto v4 = module.create_variable(vt, "v4");
+
+	taclist tl_cb1, tl_cb2;
+	tl_cb1.append_last(tac::create(op, {v1}, {v2}));
+	tl_cb1.append_last(tac::create(op, {v1}, {v3}));
+	tl_cb1.append_last(tac::create(op, {v1}, {v4}));
+
+	tl_cb2.append_last(tac::create(op, {v1}, {v3}));
+	tl_cb2.append_last(tac::create(op, {v4}, {v3}));
+
+	auto xn = exitaggnode::create({v2, v3});
+	auto xnptr = xn.get();
+
+	auto b1 = blockaggnode::create(std::move(tl_cb1));
+	auto b2 = blockaggnode::create(std::move(tl_cb2));
+	auto b1ptr = b1.get(), b2ptr = b2.get();
+
+	auto branch = branchaggnode::create();
+	branch->add_child(std::move(b1));
+	branch->add_child(std::move(b2));
+	auto branchptr = branch.get();
+
+	auto loop = loopaggnode::create(std::move(branch));
+	auto loopptr = loop.get();
+
+	auto root = linearaggnode::create(std::move(loop), std::move(xn));
+
+	/*
+		Create and verify demand map
+	*/
+	auto dm = annotate(*root);
+	print(*root, dm, stdout);
+
+	assert(contains(dm, xnptr, {}, {v2, v3}, {v2, v3}, {}));
+	assert(contains(dm, b1ptr, {v1, v2, v3, v4}, {v1}, {v1}, {v2, v3, v4}));
+	assert(contains(dm, b2ptr, {v1, v2, v3, v4}, {v1, v2, v4}, {v1, v4}, {v3}));
+	assert(contains(dm, branchptr, {v1, v2, v3, v4}, {v1, v2, v4}, {v1, v4}, {v3}));
+	assert(contains(dm, loopptr, {v1, v2, v3, v4}, {v1, v2, v3, v4}, {v1, v4}, {v3}));
+	assert(contains(dm, root.get(), {}, {v1, v2, v4}, {v1, v2, v4}, {v3}));
 }
 
 static void
@@ -245,6 +298,7 @@ test()
 	test_linear();
 	test_branch();
 	test_loop();
+	test_branch_in_loop();
 	test_assignment();
 
 	return 0;

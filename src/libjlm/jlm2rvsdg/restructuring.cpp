@@ -388,8 +388,7 @@ restructure_loop_repetition(
 	jlm::cfg_node * new_nr,
 	jlm::cfg_node * new_nx,
 	const variable * ev,
-	const variable * rv,
-	const variable * xv)
+	const variable * rv)
 {
 	size_t n = 0;
 	std::unordered_map<jlm::cfg_node*, size_t> indices;
@@ -401,11 +400,6 @@ restructure_loop_repetition(
 		(*it)->divert(new_nr);
 		auto bb = (*it)->split();
 		if (ev) append_constant(bb, ev, indices[os]);
-		/*
-			This assignment to xv is only inserted to ensure that xv is defined on all paths
-			leading to new_nx. At runtime, this value of xv is never used.
-		*/
-		if (xv) append_constant(bb, xv, 0);
 		append_constant(bb, rv, 1);
 	}
 }
@@ -444,7 +438,7 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit, std::vector<tcloo
 
 		restructure_loop_entry(s, new_ne, ev);
 		restructure_loop_exit(s, new_nr, new_nx, rv, xv);
-		restructure_loop_repetition(s, new_nr, new_nr, ev, rv, xv);
+		restructure_loop_repetition(s, new_nr, new_nr, ev, rv);
 
 		restructure(new_ne, new_nr, loops);
 		loops.push_back(extract_tcloop(new_ne, new_nr));
