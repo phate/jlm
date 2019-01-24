@@ -373,15 +373,43 @@ reduce_reducible(
 namespace jlm {
 
 static bool
-check_phis(const taclist & bb)
+has_valid_phis(const basic_block & bb)
 {
+	/*
+		No phi nodes should be in blocks with less
+		than two incoming edges.
+	*/
+	if (bb.ninedges() < 2) {
+		for (const auto & tac : bb.tacs()) {
+			if (is<phi_op>(tac))
+				return false;
+		}
+
+		return true;
+	}
+
+	/*
+		It is a basic block with multiple incoming edges.
+	*/
 	for (auto it = bb.begin(); it != bb.end(); it++) {
 		auto tac = *it;
 		if (!is<phi_op>(tac))
 			continue;
 
 		/*
-			Ensure that all phi nodes do not have for the same basic block
+			Ensure the number of phi operands equals the number of incoming edges
+		*/
+		if (tac->ninputs() != bb.ninedges())
+			return false;
+
+		/*
+			Ensure all phi nodes are at the beginning of a basic block
+		*/
+		if (tac != bb.first() && !is<phi_op>(*std::prev(it)))
+			return false;
+
+		/*
+			Ensure that a phi node does not have for the same basic block
 			multiple incoming variables.
 		*/
 		auto phi = static_cast<const phi_op*>(&tac->operation());
@@ -394,39 +422,55 @@ check_phis(const taclist & bb)
 			if (mit == map.end())
 				map[phi->node(n)] = tac->input(n);
 		}
-
-		/* ensure all phi nodes are at the beginning of a basic block */
-		if (tac != bb.first() && !is<phi_op>(*std::prev(it)))
-			return false;
-
 	}
 
 	return true;
 }
 
+static bool
+is_valid_basic_block(const basic_block & bb)
+{
+	if (bb.no_successor())
+		return false;
+
+	if (!has_valid_phis(bb))
+		return false;
+
+	return true;
+}
+
+static bool
+has_valid_entry(const jlm::cfg & cfg)
+{
+	if (!cfg.entry()->no_predecessor())
+		return false;
+
+	if (cfg.entry()->noutedges() != 1)
+		return false;
+
+	return true;
+}
+
+static bool
+has_valid_exit(const jlm::cfg & cfg)
+{
+	return cfg.exit()->no_successor();
+}
+
 bool
 is_valid(const jlm::cfg & cfg)
 {
-	/* check entry node */
-	if (!cfg.entry()->no_predecessor())
-		return false;
-	if (!cfg.entry()->single_successor())
-		return false;
-	if (cfg.entry()->outedge(0)->index() != 0)
+	if (!has_valid_entry(cfg))
 		return false;
 
-	/* check exit node */
-	if (!cfg.exit()->no_successor())
+	if (!has_valid_exit(cfg))
 		return false;
 
 	/* check basic blocks */
 	for (const auto & node : cfg) {
-		if (node.no_successor())
-			return false;
-
 		JLM_DEBUG_ASSERT(is<basic_block>(&node));
-		auto bb = static_cast<const basic_block*>(&node);
-		if (!check_phis(bb->tacs()))
+		auto & bb = *static_cast<const basic_block*>(&node);
+		if (!is_valid_basic_block(bb))
 			return false;
 	}
 
