@@ -260,6 +260,22 @@ public:
 		return ntacs() != 0 ? tacs_.back() : nullptr;
 	}
 
+	std::unique_ptr<tac>
+	pop_first() noexcept
+	{
+		std::unique_ptr<tac> tac(tacs_.front());
+		tacs_.pop_front();
+		return tac;
+	}
+
+	std::unique_ptr<tac>
+	pop_last() noexcept
+	{
+		std::unique_ptr<tac> tac(tacs_.back());
+		tacs_.pop_back();
+		return tac;
+	}
+
 	inline void
 	drop_first()
 	{
