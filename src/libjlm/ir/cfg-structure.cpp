@@ -609,15 +609,66 @@ prune(jlm::cfg & cfg)
 		}
 	}
 
-	/* remove all nodes not dominated by the entry node */
+	/*
+		Nothing needs to be done if all CFG nodes are dominated
+		by the entry node.
+	*/
+	if (visited.size() == cfg.nnodes()+2) {
+		JLM_DEBUG_ASSERT(is_closed(cfg));
+		return;
+	}
+
+	/*
+		Remove all nodes that are not dominated by the entry node.
+	*/
 	auto it = cfg.begin();
 	while (it != cfg.end()) {
-		if (visited.find(it.node()) == visited.end()) {
-			it->remove_inedges();
-			it = cfg.remove_node(it);
-		} else {
-			it++;
+		if (visited.find(it.node()) != visited.end()) {
+			it++; continue;
 		}
+
+		/* adjust phi operations in sink nodes */
+		for (size_t n = 0; n < it->noutedges(); n++) {
+			auto sink = dynamic_cast<basic_block*>(it->outedge(n)->sink());
+
+			/*
+				Nothing needs to be done if the sink node is not a
+				basic block or if it is also going to be removed.
+			*/
+			if (!sink || visited.find(sink) == visited.end())
+				continue;
+
+			/*
+				Collect all phi tacs from sink node.
+			*/
+			tacsvector_t old_phis;
+			while (is<phi_op>(sink->tacs().first()))
+				old_phis.push_back(sink->tacs().pop_first());
+
+			/*
+				Create new phi/assignment tacs without the node that is removed.
+			*/
+			taclist new_phis;
+			for (const auto & tac : old_phis) {
+				std::vector<std::pair<const variable*, cfg_node*>> args;
+				for (size_t n = 0; n < tac->ninputs(); n++) {
+					auto old_phi = static_cast<const phi_op*>(&tac->operation());
+					if (old_phi->node(n) != it.node())
+						args.push_back(std::make_pair(tac->input(n), old_phi->node(n)));
+				}
+				JLM_DEBUG_ASSERT(tac->ninputs()-1 == args.size());
+
+				if (args.size() == 1) {
+					auto ass = create_assignment(args[0].first->type(), args[0].first, tac->output(0));
+					new_phis.append_first(std::move(ass));
+				} else
+					new_phis.append_first(create_phi_tac(args, tac->output(0)));
+			}
+			sink->append_first(new_phis);
+		}
+
+		it->remove_inedges();
+		it = cfg.remove_node(it);
 	}
 
 	JLM_DEBUG_ASSERT(is_closed(cfg));
