@@ -146,7 +146,7 @@ public:
 		bbmap_ = bbmap;
 	}
 
-	inline const bool
+	inline bool
 	has_value(const llvm::Value * value) const noexcept
 	{
 		return vmap_.find(value) != vmap_.end();
