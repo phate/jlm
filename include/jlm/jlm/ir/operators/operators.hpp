@@ -79,7 +79,7 @@ private:
 static inline std::unique_ptr<jlm::tac>
 create_phi_tac(
 	const std::vector<std::pair<const variable*, cfg_node*>> & arguments,
-	jlm::variable * result)
+	const jlm::variable * result)
 {
 	std::vector<cfg_node*> nodes;
 	std::vector<const variable*> variables;
