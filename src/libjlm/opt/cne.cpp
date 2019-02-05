@@ -202,7 +202,8 @@ congruent(
 		return congruent(a1->input()->origin(), a2->input()->origin(), vs, ctx);
 	}
 
-	if (jive::is_simple_node(o1->node()) && jive::is_simple_node(o2->node())
+	if (jive::is<jive::simple_op>(o1->node())
+	&& jive::is<jive::simple_op>(o2->node())
 	&& o1->node()->operation() == o2->node()->operation()
 	&& o1->node()->ninputs() == o2->node()->ninputs()
 	&& o1->index() == o2->index()) {

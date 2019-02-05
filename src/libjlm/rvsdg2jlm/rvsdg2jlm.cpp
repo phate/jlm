@@ -70,9 +70,8 @@ get_name(const jive::output * port)
 {
 	port = root_port(port);
 	for (const auto & user : *port) {
-		if (auto result = dynamic_cast<const jive::result*>(user)) {
-			JLM_DEBUG_ASSERT(result->port().gate());
-			return result->port().gate()->name();
+		if (auto ep = dynamic_cast<const jive::expport*>(&user->port())) {
+			return ep->name();
 		}
 	}
 
@@ -549,15 +548,15 @@ rvsdg2jlm(const jlm::rvsdg & rvsdg)
 	/* Add all imports to context */
 	for (size_t n = 0; n < graph->root()->narguments(); n++) {
 		auto argument = graph->root()->argument(n);
+		auto import = static_cast<const jive::impport*>(&argument->port());
 		if (auto ftype = is_function_import(argument)) {
-			auto f = function_node::create(clg, argument->port().gate()->name(), *ftype,
-				linkage::external_linkage);
+			auto f = function_node::create(clg, import->name(), *ftype, linkage::external_linkage);
 			auto v = module->create_variable(f);
 			ctx.insert(argument, v);
 		} else {
 			JLM_DEBUG_ASSERT(dynamic_cast<const ptrtype*>(&argument->type()));
 			auto & type = *static_cast<const ptrtype*>(&argument->type());
-			const auto & name = argument->port().gate()->name();
+			const auto & name = import->name();
 			auto dnode = data_node::create(clg, name, type, jlm::linkage::external_linkage, false);
 			auto v = module->create_global_value(dnode);
 			ctx.insert(argument, v);
