@@ -23,8 +23,8 @@ test_pullin_top()
 	jlm::test_op cop({&ct, &vt}, {&ct});
 
 	jive::graph graph;
-	auto c = graph.add_import(ct, "c");
-	auto x = graph.add_import(vt, "x");
+	auto c = graph.add_import({ct, "c"});
+	auto x = graph.add_import({vt, "x"});
 
 	auto n1 = jlm::create_testop(graph.root(), {x}, {&vt})[0];
 	auto n2 = jlm::create_testop(graph.root(), {x}, {&vt})[0];
@@ -38,8 +38,8 @@ test_pullin_top()
 	auto ev = gamma->add_entryvar(n5);
 	gamma->add_exitvar({ev->argument(0), ev->argument(1)});
 
-	graph.add_export(gamma->output(0), "x");
-	graph.add_export(n2, "y");
+	graph.add_export(gamma->output(0), {gamma->output(0)->type(), "x"});
+	graph.add_export(n2, {n2->type(), "y"});
 
 //	jive::view(graph, stdout);
 	jlm::pullin_top(gamma);
@@ -56,8 +56,8 @@ test_pullin_bottom()
 	jive::ctltype ct(2);
 
 	jive::graph graph;
-	auto c = graph.add_import(ct, "c");
-	auto x = graph.add_import(vt, "x");
+	auto c = graph.add_import({ct, "c"});
+	auto x = graph.add_import({vt, "x"});
 
 	auto gamma = jive::gamma_node::create(c, 2);
 
@@ -67,7 +67,7 @@ test_pullin_bottom()
 	auto b1 = jlm::create_testop(graph.root(), {gamma->output(0), x}, {&vt})[0];
 	auto b2 = jlm::create_testop(graph.root(), {gamma->output(0), b1}, {&vt})[0];
 
-	auto xp = graph.add_export(b2, "x");
+	auto xp = graph.add_export(b2, {b2->type(), "x"});
 
 //	jive::view(graph, stdout);
 	jlm::pullin_bottom(gamma);
@@ -84,7 +84,7 @@ test_pull()
 	jlm::valuetype vt;
 
 	jive::graph graph;
-	auto p = graph.add_import(jive::ctl2, "");
+	auto p = graph.add_import({jive::ctl2, ""});
 
 	auto croot = jlm::create_testop(graph.root(), {}, {&vt})[0];
 
@@ -104,7 +104,7 @@ test_pull()
 
 	auto g1xv = gamma1->add_exitvar({cg1, g2xv});
 
-	graph.add_export(g1xv, "");
+	graph.add_export(g1xv, {g1xv->type(), ""});
 
 	jive::view(graph, stdout);
 	jlm::pull(graph);

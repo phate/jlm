@@ -23,7 +23,7 @@ test()
 	ptrtype pt(vt);
 	jlm::rvsdg rvsdg("", "");
 
-	auto imp = rvsdg.graph()->add_import(vt, "");
+	auto imp = rvsdg.graph()->add_import({vt, ""});
 
 	delta_builder db;
 	db.begin(rvsdg.graph()->root(), pt, linkage::external_linkage, true);
@@ -33,8 +33,8 @@ test()
 	db.begin(rvsdg.graph()->root(), pt, linkage::internal_linkage, false);
 	auto d2 = db.end(create_testop(db.region(), {}, {&vt})[0]);
 
-	rvsdg.graph()->add_export(d1, "");
-	rvsdg.graph()->add_export(d2, "");
+	rvsdg.graph()->add_export(d1, {d1->type(), ""});
+	rvsdg.graph()->add_export(d2, {d2->type(), ""});
 
 	jive::view(*rvsdg.graph(), stdout);
 

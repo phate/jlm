@@ -25,9 +25,9 @@ test_gamma()
 	jive::ctltype ct(2);
 
 	jive::graph graph;
-	auto c = graph.add_import(ct, "c");
-	auto x = graph.add_import(vt, "x");
-	auto s = graph.add_import(st, "s");
+	auto c = graph.add_import({ct, "c"});
+	auto x = graph.add_import({vt, "x"});
+	auto s = graph.add_import({st, "s"});
 
 	auto gamma = jive::gamma_node::create(c, 2);
 	auto evx = gamma->add_entryvar(x);
@@ -39,7 +39,7 @@ test_gamma()
 
 	gamma->add_exitvar({state, evs->argument(1)});
 
-	graph.add_export(gamma->output(0), "x");
+	graph.add_export(gamma->output(0), {gamma->output(0)->type(), "x"});
 
 //	jive::view(graph.root(), stdout);
 	jlm::push(graph);
@@ -60,9 +60,9 @@ test_theta()
 	jlm::test_op sop({&vt, &st}, {&st});
 
 	jive::graph graph;
-	auto c = graph.add_import(ct, "c");
-	auto x = graph.add_import(vt, "x");
-	auto s = graph.add_import(st, "s");
+	auto c = graph.add_import({ct, "c"});
+	auto x = graph.add_import({vt, "x"});
+	auto s = graph.add_import({st, "s"});
 
 	auto theta = jive::theta_node::create(graph.root());
 
@@ -81,7 +81,7 @@ test_theta()
 
 	theta->set_predicate(lv1->argument());
 
-	graph.add_export(theta->output(0), "c");
+	graph.add_export(theta->output(0), {theta->output(0)->type(), "c"});
 
 //	jive::view(graph.root(), stdout);
 	jlm::push(graph);
@@ -99,10 +99,10 @@ test_push_theta_bottom()
 	jive::ctltype ct(2);
 
 	jive::graph graph;
-	auto c = graph.add_import(ct, "c");
-	auto a = graph.add_import(pt, "a");
-	auto v = graph.add_import(vt, "v");
-	auto s = graph.add_import(mt, "s");
+	auto c = graph.add_import({ct, "c"});
+	auto a = graph.add_import({pt, "a"});
+	auto v = graph.add_import({vt, "v"});
+	auto s = graph.add_import({mt, "s"});
 
 	auto theta = jive::theta_node::create(graph.root());
 
@@ -116,7 +116,7 @@ test_push_theta_bottom()
 	lvs->result()->divert_to(s1);
 	theta->set_predicate(lvc->argument());
 
-	auto ex = graph.add_export(lvs, "s");
+	auto ex = graph.add_export(lvs, {lvs->type(), "s"});
 
 	jive::view(graph, stdout);
 	jlm::push_bottom(theta);

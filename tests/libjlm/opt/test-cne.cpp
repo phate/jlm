@@ -27,9 +27,9 @@ test_simple()
 	auto nf = graph.node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
-	auto x = graph.add_import(vt, "x");
-	auto y = graph.add_import(vt, "y");
-	auto z = graph.add_import(vt, "z");
+	auto x = graph.add_import({vt, "x"});
+	auto y = graph.add_import({vt, "y"});
+	auto z = graph.add_import({vt, "z"});
 
 	auto n1 = jlm::create_testop(graph.root(), {}, {&vt})[0];
 	auto n2 = jlm::create_testop(graph.root(), {}, {&vt})[0];
@@ -41,13 +41,13 @@ test_simple()
 	auto b3 = jlm::create_testop(graph.root(), {n1, z}, {&vt})[0];
 	auto b4 = jlm::create_testop(graph.root(), {n2, z}, {&vt})[0];
 
-	graph.add_export(n1, "n1");
-	graph.add_export(n2, "n2");
-	graph.add_export(u1, "u1");
-	graph.add_export(b1, "b1");
-	graph.add_export(b2, "b2");
-	graph.add_export(b3, "b3");
-	graph.add_export(b4, "b4");
+	graph.add_export(n1, {n1->type(), "n1"});
+	graph.add_export(n2, {n2->type(), "n2"});
+	graph.add_export(u1, {n2->type(), "u1"});
+	graph.add_export(b1, {n2->type(), "b1"});
+	graph.add_export(b2, {n2->type(), "b2"});
+	graph.add_export(b3, {n2->type(), "b3"});
+	graph.add_export(b4, {n2->type(), "b4"});
 
 //	jive::view(graph.root(), stdout);
 	jlm::cne(graph);
@@ -68,10 +68,10 @@ test_gamma()
 	auto nf = graph.node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
-	auto c = graph.add_import(ct, "c");
-	auto x = graph.add_import(vt, "x");
-	auto y = graph.add_import(vt, "y");
-	auto z = graph.add_import(vt, "z");
+	auto c = graph.add_import({ct, "c"});
+	auto x = graph.add_import({vt, "x"});
+	auto y = graph.add_import({vt, "y"});
+	auto z = graph.add_import({vt, "z"});
 
 	auto u1 = jlm::create_testop(graph.root(), {x}, {&vt})[0];
 	auto u2 = jlm::create_testop(graph.root(), {x}, {&vt})[0];
@@ -96,9 +96,9 @@ test_gamma()
 	gamma->add_exitvar({n3, ev3->argument(1)});
 	gamma->add_exitvar({ev5->argument(0), ev4->argument(1)});
 
-	graph.add_export(gamma->output(0), "x1");
-	graph.add_export(gamma->output(1), "x2");
-	graph.add_export(gamma->output(2), "y");
+	graph.add_export(gamma->output(0), {gamma->output(0)->type(), "x1"});
+	graph.add_export(gamma->output(1), {gamma->output(1)->type(), "x2"});
+	graph.add_export(gamma->output(2), {gamma->output(2)->type(), "y"});
 
 //	jive::view(graph.root(), stdout);
 	jlm::cne(graph);
@@ -128,8 +128,8 @@ test_theta()
 	auto nf = graph.node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
-	auto c = graph.add_import(ct, "c");
-	auto x = graph.add_import(vt, "x");
+	auto c = graph.add_import({ct, "c"});
+	auto x = graph.add_import({vt, "x"});
 
 	auto theta = jive::theta_node::create(graph.root());
 	auto region = theta->subregion();
@@ -149,9 +149,9 @@ test_theta()
 
 	theta->set_predicate(lv1->argument());
 
-	graph.add_export(theta->output(1), "lv2");
-	graph.add_export(theta->output(2), "lv3");
-	graph.add_export(theta->output(3), "lv4");
+	graph.add_export(theta->output(1), {theta->output(1)->type(), "lv2"});
+	graph.add_export(theta->output(2), {theta->output(2)->type(), "lv3"});
+	graph.add_export(theta->output(3), {theta->output(3)->type(), "lv4"});
 
 //	jive::view(graph.root(), stdout);
 	jlm::cne(graph);
@@ -174,8 +174,8 @@ test_theta2()
 	auto nf = graph.node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
-	auto c = graph.add_import(ct, "c");
-	auto x = graph.add_import(vt, "x");
+	auto c = graph.add_import({ct, "c"});
+	auto x = graph.add_import({vt, "x"});
 
 	auto theta = jive::theta_node::create(graph.root());
 	auto region = theta->subregion();
@@ -193,8 +193,8 @@ test_theta2()
 
 	theta->set_predicate(lv1->argument());
 
-	graph.add_export(theta->output(1), "lv2");
-	graph.add_export(theta->output(2), "lv3");
+	graph.add_export(theta->output(1), {theta->output(1)->type(), "lv2"});
+	graph.add_export(theta->output(2), {theta->output(2)->type(), "lv3"});
 
 //	jive::view(graph, stdout);
 	jlm::cne(graph);
@@ -214,8 +214,8 @@ test_theta3()
 	auto nf = graph.node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
-	auto c = graph.add_import(ct, "c");
-	auto x = graph.add_import(vt, "x");
+	auto c = graph.add_import({ct, "c"});
+	auto x = graph.add_import({vt, "x"});
 
 	auto theta1 = jive::theta_node::create(graph.root());
 	auto r1 = theta1->subregion();
@@ -243,9 +243,9 @@ test_theta3()
 
 	theta1->set_predicate(lv1->argument());
 
-	graph.add_export(theta1->output(1), "lv2");
-	graph.add_export(theta1->output(2), "lv3");
-	graph.add_export(theta1->output(3), "lv4");
+	graph.add_export(theta1->output(1), {theta1->output(1)->type(), "lv2"});
+	graph.add_export(theta1->output(2), {theta1->output(2)->type(), "lv3"});
+	graph.add_export(theta1->output(3), {theta1->output(3)->type(), "lv4"});
 
 //	jive::view(graph, stdout);
 	jlm::cne(graph);
@@ -269,9 +269,9 @@ test_theta4()
 	auto nf = graph.node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
-	auto c = graph.add_import(ct, "c");
-	auto x = graph.add_import(vt, "x");
-	auto y = graph.add_import(vt, "y");
+	auto c = graph.add_import({ct, "c"});
+	auto x = graph.add_import({vt, "x"});
+	auto y = graph.add_import({vt, "y"});
 
 	auto theta = jive::theta_node::create(graph.root());
 	auto region = theta->subregion();
@@ -294,10 +294,10 @@ test_theta4()
 
 	theta->set_predicate(lv1->argument());
 
-	auto ex1 = graph.add_export(theta->output(1), "lv2");
-	auto ex2 = graph.add_export(theta->output(2), "lv3");
-	graph.add_export(theta->output(3), "lv4");
-	graph.add_export(theta->output(4), "lv5");
+	auto ex1 = graph.add_export(theta->output(1), {theta->output(1)->type(), "lv2"});
+	auto ex2 = graph.add_export(theta->output(2), {theta->output(2)->type(), "lv3"});
+	graph.add_export(theta->output(3), {theta->output(3)->type(), "lv4"});
+	graph.add_export(theta->output(4), {theta->output(4)->type(), "lv5"});
 
 //	jive::view(graph, stdout);
 	jlm::cne(graph);
@@ -318,9 +318,9 @@ test_theta5()
 	auto nf = graph.node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
-	auto c = graph.add_import(ct, "c");
-	auto x = graph.add_import(vt, "x");
-	auto y = graph.add_import(vt, "y");
+	auto c = graph.add_import({ct, "c"});
+	auto x = graph.add_import({vt, "x"});
+	auto y = graph.add_import({vt, "y"});
 
 	auto theta = jive::theta_node::create(graph.root());
 	auto region = theta->subregion();
@@ -336,10 +336,10 @@ test_theta5()
 
 	theta->set_predicate(lv0->argument());
 
-	auto ex1 = graph.add_export(theta->output(1), "lv1");
-	auto ex2 = graph.add_export(theta->output(2), "lv2");
-	auto ex3 = graph.add_export(theta->output(3), "lv3");
-	auto ex4 = graph.add_export(theta->output(4), "lv4");
+	auto ex1 = graph.add_export(theta->output(1), {theta->output(1)->type(), "lv1"});
+	auto ex2 = graph.add_export(theta->output(2), {theta->output(2)->type(), "lv2"});
+	auto ex3 = graph.add_export(theta->output(3), {theta->output(3)->type(), "lv3"});
+	auto ex4 = graph.add_export(theta->output(4), {theta->output(4)->type(), "lv4"});
 
 //	jive::view(graph, stdout);
 	jlm::cne(graph);
@@ -363,7 +363,7 @@ test_lambda()
 	auto nf = graph.node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
-	auto x = graph.add_import(vt, "x");
+	auto x = graph.add_import({vt, "x"});
 
 	jlm::lambda_builder lb;
 	auto region = lb.begin_lambda(graph.root(), {ft, "f", linkage::external_linkage});
@@ -375,7 +375,7 @@ test_lambda()
 
 	auto lambda = lb.end_lambda({b1});
 
-	graph.add_export(lambda->output(0), "f");
+	graph.add_export(lambda->output(0), {lambda->output(0)->type(), "f"});
 
 //	jive::view(graph.root(), stdout);
 	jlm::cne(graph);
@@ -396,7 +396,7 @@ test_phi()
 	auto nf = graph.node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
-	auto x = graph.add_import(vt, "x");
+	auto x = graph.add_import({vt, "x"});
 
 	jive::phi_builder pb;
 	auto region = pb.begin_phi(graph.root());
@@ -421,8 +421,8 @@ test_phi()
 
 	auto phi = pb.end_phi();
 
-	graph.add_export(phi->output(0), "f1");
-	graph.add_export(phi->output(1), "f2");
+	graph.add_export(phi->output(0), {phi->output(0)->type(), "f1"});
+	graph.add_export(phi->output(1), {phi->output(1)->type(), "f2"});
 
 //	jive::view(graph.root(), stdout);
 	jlm::cne(graph);

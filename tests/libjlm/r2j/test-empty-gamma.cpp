@@ -42,7 +42,7 @@ test_with_match()
 	auto ex = gamma->add_exitvar({ev1->argument(0), ev2->argument(1)});
 
 	auto lambda = lb.end_lambda({ex});
-	rvsdg.graph()->add_export(lambda->output(0), "");
+	rvsdg.graph()->add_export(lambda->output(0), {lambda->output(0)->type(), ""});
 
 
 	jive::view(*rvsdg.graph(), stdout);
@@ -86,7 +86,7 @@ test_without_match()
 	auto ex = gamma->add_exitvar({ev1->argument(0), ev2->argument(1)});
 
 	auto lambda = lb.end_lambda({ex});
-	rvsdg.graph()->add_export(lambda->output(0), "");
+	rvsdg.graph()->add_export(lambda->output(0), {lambda->output(0)->type(), ""});
 
 
 	jive::view(*rvsdg.graph(), stdout);
@@ -131,7 +131,7 @@ test_gamma3()
 	auto ex = gamma->add_exitvar({ev1->argument(0), ev1->argument(1), ev2->argument(2)});
 
 	auto lambda = lb.end_lambda({ex});
-	rvsdg.graph()->add_export(lambda->output(0), "");
+	rvsdg.graph()->add_export(lambda->output(0), {lambda->output(0)->type(), ""});
 
 	jive::view(*rvsdg.graph(), stdout);
 	auto module = jlm::rvsdg2jlm::rvsdg2jlm(rvsdg);

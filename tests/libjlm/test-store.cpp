@@ -29,16 +29,16 @@ test_store_mux_reduction()
 	snf->set_mutable(false);
 	snf->set_store_mux_reducible(false);
 
-	auto a = graph.add_import(pt, "a");
-	auto v = graph.add_import(vt, "v");
-	auto s1 = graph.add_import(mt, "s1");
-	auto s2 = graph.add_import(mt, "s2");
-	auto s3 = graph.add_import(mt, "s3");
+	auto a = graph.add_import({pt, "a"});
+	auto v = graph.add_import({vt, "v"});
+	auto s1 = graph.add_import({mt, "s1"});
+	auto s2 = graph.add_import({mt, "s2"});
+	auto s3 = graph.add_import({mt, "s3"});
 
 	auto mux = jive::create_state_merge(mt, {s1, s2, s3});
 	auto state = jlm::create_store(a, v, {mux}, 4);
 
-	auto ex = graph.add_export(state[0], "s");
+	auto ex = graph.add_export(state[0], {state[0]->type(), "s"});
 
 //	jive::view(graph.root(), stdout);
 
@@ -70,13 +70,13 @@ test_multiple_origin_reduction()
 	snf->set_mutable(false);
 	snf->set_multiple_origin_reducible(false);
 
-	auto a = graph.add_import(pt, "a");
-	auto v = graph.add_import(vt, "v");
-	auto s = graph.add_import(mt, "s");
+	auto a = graph.add_import({pt, "a"});
+	auto v = graph.add_import({vt, "v"});
+	auto s = graph.add_import({mt, "s"});
 
 	auto states = jlm::create_store(a, v, {s, s, s, s}, 4);
 
-	auto ex = graph.add_export(states[0], "s");
+	auto ex = graph.add_export(states[0], {states[0]->type(), "s"});
 
 //	jive::view(graph.root(), stdout);
 
@@ -104,18 +104,18 @@ test_store_alloca_reduction()
 	snf->set_mutable(false);
 	snf->set_store_alloca_reducible(false);
 
-	auto size = graph.add_import(bt, "size");
-	auto value = graph.add_import(vt, "value");
-	auto s = graph.add_import(mt, "s");
+	auto size = graph.add_import({bt, "size"});
+	auto value = graph.add_import({vt, "value"});
+	auto s = graph.add_import({mt, "s"});
 
 	auto alloca1 = jlm::create_alloca(vt, size, s, 4);
 	auto alloca2 = jlm::create_alloca(vt, size, s, 4);
 	auto states1 = jlm::create_store(alloca1[0], value, {alloca1[1], alloca2[1], s}, 4);
 	auto states2 = jlm::create_store(alloca2[0], value, states1, 4);
 
-	graph.add_export(states2[0], "s1");
-	graph.add_export(states2[1], "s2");
-	graph.add_export(states2[2], "s3");
+	graph.add_export(states2[0], {states2[0]->type(), "s1"});
+	graph.add_export(states2[1], {states2[1]->type(), "s2"});
+	graph.add_export(states2[2], {states2[2]->type(), "s3"});
 
 //	jive::view(graph.root(), stdout);
 
@@ -144,15 +144,15 @@ test_store_store_reduction()
 	jive::memtype mt;
 
 	jive::graph graph;
-	auto a = graph.add_import(pt, "address");
-	auto v1 = graph.add_import(vt, "value");
-	auto v2 = graph.add_import(vt, "value");
-	auto s = graph.add_import(mt, "state");
+	auto a = graph.add_import({pt, "address"});
+	auto v1 = graph.add_import({vt, "value"});
+	auto v2 = graph.add_import({vt, "value"});
+	auto s = graph.add_import({mt, "state"});
 
 	auto s1 = jlm::create_store(a, v1, {s}, 4)[0];
 	auto s2 = jlm::create_store(a, v2, {s1}, 4)[0];
 
-	auto ex = graph.add_export(s2, "state");
+	auto ex = graph.add_export(s2, {s2->type(), "state"});
 
 	jive::view(graph.root(), stdout);
 

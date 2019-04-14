@@ -475,7 +475,7 @@ construct_lambda(
 	auto & function = *static_cast<const function_node*>(node);
 
 	if (function.cfg() == nullptr)
-		return region->graph()->add_import(function.type(), function.name());
+		return region->graph()->add_import({function.type(), function.name()});
 
 	return convert_cfg(function, region, svmap);
 }
@@ -503,7 +503,7 @@ convert_data_node(
 
 	/* data node without initialization */
 	if (!init)
-		return region->graph()->add_import(n->type(), n->name());
+		return region->graph()->add_import({n->type(), n->name()});
 
 	/* data node with initialization */
 	jlm::delta_builder db;
@@ -550,7 +550,7 @@ handle_scc(
 		JLM_DEBUG_ASSERT(v);
 		svmap.vmap()[v] = output;
 		if (is_externally_visible(node->linkage()))
-			graph->add_export(output, v->name());
+			graph->add_export(output, {output->type(), v->name()});
 	} else {
 		jive::phi_builder pb;
 		pb.begin_phi(graph->root());
@@ -595,7 +595,7 @@ handle_scc(
 			auto value = recvars[v]->value();
 			svmap.vmap()[v] = value;
 			if (is_externally_visible(node->linkage()))
-				graph->add_export(value, v->name());
+				graph->add_export(value, {value->type(), v->name()});
 		}
 	}
 }

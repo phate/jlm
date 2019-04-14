@@ -26,7 +26,7 @@ test()
 	jlm::rvsdg rvsdg("", "");
 
 	/* setup graph */
-	auto imp = rvsdg.graph()->add_import(pt, "");
+	auto imp = rvsdg.graph()->add_import({pt, ""});
 
 	jive::phi_builder pb;
 	auto region = pb.begin_phi(rvsdg.graph()->root());
@@ -55,7 +55,7 @@ test()
 	r2->set_value(delta2);
 
 	auto phi = pb.end_phi();
-	rvsdg.graph()->add_export(phi->output(0), "");
+	rvsdg.graph()->add_export(phi->output(0), {phi->output(0)->type(), ""});
 
 
 	jive::view(*rvsdg.graph(), stdout);

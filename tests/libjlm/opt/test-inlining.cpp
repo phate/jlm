@@ -44,7 +44,7 @@ verify()
 	jive::fcttype ft2({&ct, &vt}, {&vt});
 
 	jive::graph graph;
-	auto i = graph.add_import(vt, "i");
+	auto i = graph.add_import({vt, "i"});
 
 	/* f1 */
 	jlm::lambda_builder lb;
@@ -64,7 +64,7 @@ verify()
 	auto xv1 = gamma->add_exitvar({apply, ev1->argument(1)});
 	auto f2 = lb.end_lambda({xv1});
 
-	graph.add_export(f2->output(0), "f2");
+	graph.add_export(f2->output(0), {f2->output(0)->type(), "f2"});
 
 	jive::view(graph.root(), stdout);
 	jlm::inlining(graph);

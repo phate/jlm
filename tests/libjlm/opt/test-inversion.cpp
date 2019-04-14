@@ -22,9 +22,9 @@ test1()
 
 	jive::graph graph;
 
-	auto x = graph.add_import(vt, "x");
-	auto y = graph.add_import(vt, "y");
-	auto z = graph.add_import(vt, "z");
+	auto x = graph.add_import({vt, "x"});
+	auto y = graph.add_import({vt, "y"});
+	auto z = graph.add_import({vt, "z"});
 
 	auto theta = jive::theta_node::create(graph.root());
 
@@ -49,9 +49,9 @@ test1()
 
 	theta->set_predicate(predicate);
 
-	auto ex1 = graph.add_export(theta->output(0), "x");
-	auto ex2 = graph.add_export(theta->output(1), "y");
-	auto ex3 = graph.add_export(theta->output(2), "z");
+	auto ex1 = graph.add_export(theta->output(0), {theta->output(0)->type(), "x"});
+	auto ex2 = graph.add_export(theta->output(1), {theta->output(1)->type(), "y"});
+	auto ex3 = graph.add_export(theta->output(2), {theta->output(2)->type(), "z"});
 
 //	jive::view(graph.root(), stdout);
 	jlm::invert(graph);
@@ -69,7 +69,7 @@ test2()
 
 	jive::graph graph;
 
-	auto x = graph.add_import(vt, "x");
+	auto x = graph.add_import({vt, "x"});
 
 	auto theta = jive::theta_node::create(graph.root());
 
@@ -93,7 +93,7 @@ test2()
 
 	theta->set_predicate(predicate);
 
-	auto ex = graph.add_export(theta->output(0), "x");
+	auto ex = graph.add_export(theta->output(0), {theta->output(0)->type(), "x"});
 
 //	jive::view(graph.root(), stdout);
 	jlm::invert(graph);
