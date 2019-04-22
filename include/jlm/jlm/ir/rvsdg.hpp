@@ -8,7 +8,58 @@
 
 #include <jive/rvsdg/graph.h>
 
+#include <jlm/jlm/ir/linkage.hpp>
+
 namespace jlm {
+
+/* impport class */
+
+class impport final : public jive::impport {
+public:
+	virtual
+	~impport();
+
+	impport(
+		const jive::type & type
+	, const std::string & name
+	, const jlm::linkage & lnk)
+	: jive::impport(type, name)
+	, linkage_(lnk)
+	{}
+
+	impport(const impport & other)
+	: jive::impport(other)
+	, linkage_(other.linkage_)
+	{}
+
+	impport(impport && other)
+	: jive::impport(other)
+	, linkage_(std::move(other.linkage_))
+	{}
+
+	impport&
+	operator=(const impport&) = delete;
+
+	impport&
+	operator=(impport&&) = delete;
+
+	const jlm::linkage &
+	linkage() const noexcept
+	{
+		return linkage_;
+	}
+
+	virtual bool
+	operator==(const port&) const noexcept override;
+
+	virtual std::unique_ptr<port>
+	copy() const override;
+
+private:
+	jlm::linkage linkage_;
+};
+
+/* rvsdg class */
 
 class rvsdg final {
 public:

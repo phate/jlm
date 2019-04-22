@@ -32,6 +32,7 @@ LIBJLM_SRC = \
 	src/libjlm/ir/operators/sext.cpp \
 	src/libjlm/ir/operators/store.cpp \
 	src/libjlm/ir/print.cpp \
+	src/libjlm/ir/rvsdg.cpp \
 	src/libjlm/ir/ssa.cpp \
 	src/libjlm/ir/tac.cpp \
 	src/libjlm/ir/types.cpp \
