@@ -474,8 +474,10 @@ construct_lambda(
 	JLM_DEBUG_ASSERT(dynamic_cast<const function_node*>(node));
 	auto & function = *static_cast<const function_node*>(node);
 
-	if (function.cfg() == nullptr)
-		return region->graph()->add_import({function.type(), function.name()});
+	if (function.cfg() == nullptr) {
+		jlm::impport port(function.type(), function.name(), function.linkage());
+		return region->graph()->add_import(port);
+	}
 
 	return convert_cfg(function, region, svmap);
 }
@@ -502,8 +504,10 @@ convert_data_node(
 	auto & m = svmap.module();
 
 	/* data node without initialization */
-	if (!init)
-		return region->graph()->add_import({n->type(), n->name()});
+	if (!init) {
+		jlm::impport port(n->type(), n->name(), n->linkage());
+		return region->graph()->add_import(port);
+	}
 
 	/* data node with initialization */
 	jlm::delta_builder db;
