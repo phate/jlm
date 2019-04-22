@@ -28,6 +28,7 @@ delta_op::operator==(const operation & other) const noexcept
 {
 	auto op = dynamic_cast<const delta_op*>(&other);
 	return op
+	    && op->name_ == name_
 	    && op->linkage_ == linkage_
 	    && op->constant_ == constant_
 	    && *op->type_ == *type_;
@@ -44,7 +45,7 @@ delta_node::copy(jive::region * region, jive::substitution_map & smap) const
 	auto & op = *static_cast<const delta_op*>(&operation());
 
 	delta_builder db;
-	db.begin(region, op.type(), op.linkage(), op.constant());
+	db.begin(region, op.type(), op.name(), op.linkage(), op.constant());
 
 	/* add dependencies */
 	jive::substitution_map rmap;

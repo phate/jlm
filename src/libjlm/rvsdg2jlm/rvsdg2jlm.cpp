@@ -34,51 +34,6 @@ is_function_import(const jive::argument * argument)
 	return dynamic_cast<const jive::fcttype*>(&at->pointee_type());
 }
 
-static inline const jive::output *
-root_port(const jive::output * port)
-{
-	auto root = port->region()->graph()->root();
-	if (port->region() == root)
-		return port;
-
-	auto node = port->node();
-	JLM_DEBUG_ASSERT(node->noutputs() == 1);
-	JLM_DEBUG_ASSERT(node->output(0)->nusers() == 1);
-	auto user = *node->output(0)->begin();
-	node = port->region()->node();
-	JLM_DEBUG_ASSERT(node && dynamic_cast<const jive::phi_op*>(&node->operation()));
-	port = node->output(user->index());
-
-	JLM_DEBUG_ASSERT(port->region() == root);
-	return port;
-}
-
-static inline bool
-is_exported(const jive::output * port)
-{
-	port = root_port(port);
-	for (const auto & user : *port) {
-		if (dynamic_cast<const jive::result*>(user))
-			return true;
-	}
-
-	return false;
-}
-
-static inline std::string
-get_name(const jive::output * port)
-{
-	port = root_port(port);
-	for (const auto & user : *port) {
-		if (auto ep = dynamic_cast<const jive::expport*>(&user->port())) {
-			return ep->name();
-		}
-	}
-
-	static size_t c = 0;
-	return strfmt("f", c++);
-}
-
 static inline const jlm::tac *
 create_assignment_lpbb(const jlm::variable * argument, const jlm::variable * result, context & ctx)
 {
@@ -461,7 +416,7 @@ convert_phi_node(const jive::node & node, context & ctx)
 		} else {
 			JLM_DEBUG_ASSERT(is<delta_op>(node));
 			auto d = static_cast<const delta_node*>(node);
-			auto data = data_node::create(ipg, get_name(d->output(0)), d->type(), d->linkage(),
+			auto data = data_node::create(ipg, d->name(), d->type(), d->linkage(),
 				d->constant());
 			ctx.insert(subregion->argument(n), module.create_global_value(data));
 		}
@@ -499,15 +454,14 @@ convert_delta_node(const jive::node & node, context & ctx)
 	JLM_DEBUG_ASSERT(is<delta_op>(&node));
 	auto delta = static_cast<const delta_node*>(&node);
 	const auto & op = *static_cast<const jlm::delta_op*>(&node.operation());
-	auto & module = ctx.module();
+	auto & m = ctx.module();
 
 	JLM_DEBUG_ASSERT(delta->subregion()->nresults() == 1);
 	auto result = delta->subregion()->result(0);
 
-	auto name = get_name(result->output());
-	auto dnode = data_node::create(module.ipgraph(), name, op.type(), op.linkage(), op.constant());
+	auto dnode = data_node::create(m.ipgraph(), op.name(), op.type(), op.linkage(), op.constant());
 	dnode->set_initialization(create_initialization(delta, ctx));
-	auto v = module.create_global_value(dnode);
+	auto v = m.create_global_value(dnode);
 	ctx.insert(result->output(), v);
 }
 

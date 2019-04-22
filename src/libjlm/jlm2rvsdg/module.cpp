@@ -511,7 +511,7 @@ convert_data_node(
 
 	/* data node with initialization */
 	jlm::delta_builder db;
-	auto r = db.begin(region, n->type(), n->linkage(), n->constant());
+	auto r = db.begin(region, n->type(), n->name(), n->linkage(), n->constant());
 	auto & pv = svmap.vmap();
 	svmap.push_scope(r);
 

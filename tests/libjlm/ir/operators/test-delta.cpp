@@ -26,11 +26,11 @@ test()
 	auto imp = rvsdg.graph()->add_import({vt, ""});
 
 	delta_builder db;
-	db.begin(rvsdg.graph()->root(), pt, linkage::external_linkage, true);
+	db.begin(rvsdg.graph()->root(), pt, "test-delta1", linkage::external_linkage, true);
 	auto dep = db.add_dependency(imp);
 	auto d1 = db.end(create_testop(db.region(), {dep}, {&vt})[0]);
 
-	db.begin(rvsdg.graph()->root(), pt, linkage::internal_linkage, false);
+	db.begin(rvsdg.graph()->root(), pt, "test-delta2", linkage::internal_linkage, false);
 	auto d2 = db.end(create_testop(db.region(), {}, {&vt})[0]);
 
 	rvsdg.graph()->add_export(d1, {d1->type(), ""});

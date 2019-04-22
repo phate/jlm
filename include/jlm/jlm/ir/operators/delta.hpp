@@ -21,21 +21,25 @@ public:
 	inline
 	delta_op(
 		const ptrtype & type,
+		const std::string & name,
 		const jlm::linkage & linkage,
 		bool constant)
 	: constant_(constant)
+	, name_(name)
 	, linkage_(linkage)
 	, type_(std::move(type.copy()))
 	{}
 
 	delta_op(const delta_op & other)
 	: constant_(other.constant_)
+	, name_(other.name_)
 	, linkage_(other.linkage_)
 	, type_(other.type_->copy())
 	{}
 
 	delta_op(delta_op && other)
 	: constant_(other.constant_)
+	, name_(std::move(other.name_))
 	, linkage_(other.linkage_)
 	, type_(std::move(other.type_))
 	{}
@@ -54,6 +58,12 @@ public:
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
+
+	const std::string &
+	name() const noexcept
+	{
+		return name_;
+	}
 
 	const jlm::linkage &
 	linkage() const noexcept
@@ -76,6 +86,7 @@ public:
 
 private:
 	bool constant_;
+	std::string name_;
 	jlm::linkage linkage_;
 	std::unique_ptr<jive::type> type_;
 };
@@ -102,10 +113,11 @@ private:
 	create(
 		jive::region * parent,
 		const ptrtype & type,
+		const std::string & name,
 		const jlm::linkage & linkage,
 		bool constant)
 	{
-		delta_op op(type, linkage, constant);
+		delta_op op(type, name, linkage, constant);
 		return new delta_node(parent, op);
 	}
 
@@ -181,6 +193,12 @@ public:
 		return subregion()->add_argument(input, origin->type());
 	}
 
+	const std::string &
+	name() const noexcept
+	{
+		return static_cast<const delta_op*>(&operation())->name();
+	}
+
 	const jlm::linkage &
 	linkage() const noexcept
 	{
@@ -232,13 +250,14 @@ public:
 	begin(
 		jive::region * parent,
 		const ptrtype & type,
+		const std::string & name,
 		const jlm::linkage & linkage,
 		bool constant)
 	{
 		if (node_)
 			return region();
 
-		node_ = delta_node::create(parent, type, linkage, constant);
+		node_ = delta_node::create(parent, type, name, linkage, constant);
 		return region();
 	}
 
