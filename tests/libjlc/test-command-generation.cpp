@@ -5,8 +5,8 @@
 
 #include <test-registry.hpp>
 
-#include <jlm/jlc/cmdline.hpp>
-#include <jlm/jlc/command.hpp>
+#include <jlc/cmdline.hpp>
+#include <jlc/command.hpp>
 
 #include <assert.h>
 

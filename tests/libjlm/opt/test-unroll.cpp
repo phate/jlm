@@ -17,8 +17,8 @@
 #include <jive/rvsdg/simple-node.h>
 #include <jive/rvsdg/theta.h>
 
-#include <jlm/jlm/opt/dne.hpp>
-#include <jlm/jlm/opt/unroll.hpp>
+#include <jlm/opt/dne.hpp>
+#include <jlm/opt/unroll.hpp>
 
 static size_t
 nthetas(jive::region * region)

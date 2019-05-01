@@ -9,10 +9,10 @@
 
 #include <jive/view.h>
 
-#include <jlm/jlm/ir/module.hpp>
-#include <jlm/jlm/ir/print.hpp>
-#include <jlm/jlm/ir/rvsdg.hpp>
-#include <jlm/jlm/jlm2rvsdg/module.hpp>
+#include <jlm/ir/module.hpp>
+#include <jlm/ir/print.hpp>
+#include <jlm/ir/rvsdg.hpp>
+#include <jlm/jlm2rvsdg/module.hpp>
 
 static int
 test()

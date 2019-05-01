@@ -5,8 +5,8 @@
 
 #include "test-registry.hpp"
 
-#include <jlm/jlm/ir/cfg.hpp>
-#include <jlm/jlm/ir/module.hpp>
+#include <jlm/ir/cfg.hpp>
+#include <jlm/ir/module.hpp>
 
 #include <assert.h>
 

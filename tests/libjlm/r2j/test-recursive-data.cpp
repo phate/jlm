@@ -10,11 +10,11 @@
 #include <jive/rvsdg/phi.h>
 #include <jive/view.h>
 
-#include <jlm/jlm/ir/module.hpp>
-#include <jlm/jlm/ir/operators/delta.hpp>
-#include <jlm/jlm/ir/print.hpp>
-#include <jlm/jlm/ir/rvsdg.hpp>
-#include <jlm/jlm/rvsdg2jlm/rvsdg2jlm.hpp>
+#include <jlm/ir/module.hpp>
+#include <jlm/ir/operators/delta.hpp>
+#include <jlm/ir/print.hpp>
+#include <jlm/ir/rvsdg.hpp>
+#include <jlm/rvsdg2jlm/rvsdg2jlm.hpp>
 
 static int
 test()

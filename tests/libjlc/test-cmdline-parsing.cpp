@@ -5,7 +5,7 @@
 
 #include <test-registry.hpp>
 
-#include <jlm/jlc/cmdline.hpp>
+#include <jlc/cmdline.hpp>
 
 #include <assert.h>
 #include <string.h>

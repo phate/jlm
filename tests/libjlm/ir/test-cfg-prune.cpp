@@ -7,11 +7,11 @@
 #include <test-registry.hpp>
 #include <test-types.hpp>
 
-#include <jlm/jlm/ir/cfg.hpp>
-#include <jlm/jlm/ir/cfg-structure.hpp>
-#include <jlm/jlm/ir/module.hpp>
-#include <jlm/jlm/ir/operators/operators.hpp>
-#include <jlm/jlm/ir/print.hpp>
+#include <jlm/ir/cfg.hpp>
+#include <jlm/ir/cfg-structure.hpp>
+#include <jlm/ir/module.hpp>
+#include <jlm/ir/operators/operators.hpp>
+#include <jlm/ir/print.hpp>
 
 static int
 test()

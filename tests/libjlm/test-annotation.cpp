@@ -7,12 +7,12 @@
 #include <test-registry.hpp>
 #include <test-types.hpp>
 
-#include <jlm/jlm/ir/aggregation.hpp>
-#include <jlm/jlm/ir/annotation.hpp>
-#include <jlm/jlm/ir/basic-block.hpp>
-#include <jlm/jlm/ir/module.hpp>
-#include <jlm/jlm/ir/operators/operators.hpp>
-#include <jlm/jlm/ir/print.hpp>
+#include <jlm/ir/aggregation.hpp>
+#include <jlm/ir/annotation.hpp>
+#include <jlm/ir/basic-block.hpp>
+#include <jlm/ir/module.hpp>
+#include <jlm/ir/operators/operators.hpp>
+#include <jlm/ir/print.hpp>
 
 static bool
 contains(

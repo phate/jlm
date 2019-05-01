@@ -10,7 +10,7 @@
 #include <jive/rvsdg/graph.h>
 #include <jive/rvsdg/statemux.h>
 
-#include <jlm/jlm/ir/operators/alloca.hpp>
+#include <jlm/ir/operators/alloca.hpp>
 
 static inline void
 test_alloca_alloca_reduction()

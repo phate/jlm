@@ -5,11 +5,11 @@
 
 #include "test-registry.hpp"
 
-#include <jlm/jlm/ir/aggregation.hpp>
-#include <jlm/jlm/ir/basic-block.hpp>
-#include <jlm/jlm/ir/cfg.hpp>
-#include <jlm/jlm/ir/module.hpp>
-#include <jlm/jlm/ir/print.hpp>
+#include <jlm/ir/aggregation.hpp>
+#include <jlm/ir/basic-block.hpp>
+#include <jlm/ir/cfg.hpp>
+#include <jlm/ir/module.hpp>
+#include <jlm/ir/print.hpp>
 
 static inline bool
 is_entry(jlm::aggnode * node)

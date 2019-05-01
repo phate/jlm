@@ -5,9 +5,9 @@
 
 #include "test-registry.hpp"
 
-#include <jlm/jlm/ir/cfg.hpp>
-#include <jlm/jlm/ir/domtree.hpp>
-#include <jlm/jlm/ir/module.hpp>
+#include <jlm/ir/cfg.hpp>
+#include <jlm/ir/domtree.hpp>
+#include <jlm/ir/module.hpp>
 
 #include <unordered_set>
 

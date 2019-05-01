@@ -1,0 +1,18 @@
+# Copyright 2019 Nico Reißmann <nico.reissmann@gmail.com>
+# See COPYING for terms of redistribution.
+
+LIBJLC_SRC = \
+	libjlc/src/cmdline.cpp \
+	libjlc/src/command.cpp \
+
+JLC_SRC = \
+	libjlc/src/jlc.cpp \
+
+libjlc.a: CPPFLAGS += -Ilibjlc/include -Ilibjlm/include
+libjlc.a: LDFLAGS += -L. -ljlm
+libjlc.a: $(patsubst %.cpp, %.la, $(LIBJLC_SRC)) libjlm.a
+
+jlc: CPPFLAGS += -Ilibjlc/include -Ilibjlm/include
+jlc: LDFLAGS += -L. -ljlc -ljlm -ljive
+jlc: $(patsubst %.cpp, %.o, $(JLC_SRC)) libjlc.a
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o bin/$@ $^ $(LDFLAGS)

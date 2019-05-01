@@ -13,9 +13,9 @@
 #include <jive/rvsdg/simple-node.h>
 #include <jive/rvsdg/theta.h>
 
-#include <jlm/jlm/ir/operators/store.hpp>
-#include <jlm/jlm/ir/types.hpp>
-#include <jlm/jlm/opt/push.hpp>
+#include <jlm/ir/operators/store.hpp>
+#include <jlm/ir/types.hpp>
+#include <jlm/opt/push.hpp>
 
 static inline void
 test_gamma()

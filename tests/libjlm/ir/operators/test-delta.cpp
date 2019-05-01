@@ -9,8 +9,8 @@
 
 #include <jive/view.h>
 
-#include <jlm/jlm/ir/rvsdg.hpp>
-#include <jlm/jlm/ir/operators/delta.hpp>
+#include <jlm/ir/rvsdg.hpp>
+#include <jlm/ir/operators/delta.hpp>
 
 static int
 test()

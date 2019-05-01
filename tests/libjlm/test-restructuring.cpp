@@ -5,12 +5,12 @@
 
 #include "test-registry.hpp"
 
-#include <jlm/jlm/ir/basic-block.hpp>
-#include <jlm/jlm/ir/cfg.hpp>
-#include <jlm/jlm/ir/cfg-structure.hpp>
-#include <jlm/jlm/ir/module.hpp>
-#include <jlm/jlm/ir/print.hpp>
-#include <jlm/jlm/jlm2rvsdg/restructuring.hpp>
+#include <jlm/ir/basic-block.hpp>
+#include <jlm/ir/cfg.hpp>
+#include <jlm/ir/cfg-structure.hpp>
+#include <jlm/ir/module.hpp>
+#include <jlm/ir/print.hpp>
+#include <jlm/jlm2rvsdg/restructuring.hpp>
 
 #include <assert.h>
 

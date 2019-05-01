@@ -1,0 +1,10 @@
+# Copyright 2019 Nico Reißmann <nico.reissmann@gmail.com>
+# See COPYING for terms of redistribution.
+
+JLMPRINT_SRC = \
+	jlm-print/jlm-print.cpp \
+
+jlm-print: CPPFLAGS += -Ilibjlm/include
+jlm-print: LDFLAGS+=-L. -ljlm -ljive
+jlm-print: $(patsubst %.cpp, %.o, $(JLMPRINT_SRC)) libjlm.a
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o bin/$@ $^ $(LDFLAGS)

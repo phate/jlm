@@ -8,8 +8,8 @@
 #include <jive/types/bitstring/arithmetic.h>
 #include <jive/view.h>
 
-#include <jlm/jlm/ir/operators/operators.hpp>
-#include <jlm/jlm/ir/operators/sext.hpp>
+#include <jlm/ir/operators/operators.hpp>
+#include <jlm/ir/operators/sext.hpp>
 
 static inline void
 test_bitunary_reduction()

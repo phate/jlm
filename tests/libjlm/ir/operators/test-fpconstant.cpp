@@ -5,7 +5,7 @@
 
 #include <test-registry.hpp>
 
-#include <jlm/jlm/ir/operators/operators.hpp>
+#include <jlm/ir/operators/operators.hpp>
 
 static void
 test_equality()

@@ -1,0 +1,61 @@
+# Copyright 2019 Nico Reißmann <nico.reissmann@gmail.com>
+# See COPYING for terms of redistribution.
+
+LIBJLM_SRC = \
+	libjlm/src/common.cpp \
+	\
+	libjlm/src/driver/command.cpp \
+	libjlm/src/driver/passgraph.cpp \
+	\
+	libjlm/src/ir/aggregation.cpp \
+	libjlm/src/ir/annotation.cpp \
+	libjlm/src/ir/basic-block.cpp \
+	libjlm/src/ir/cfg.cpp \
+	libjlm/src/ir/cfg-structure.cpp \
+	libjlm/src/ir/cfg-node.cpp \
+	libjlm/src/ir/domtree.cpp \
+	libjlm/src/ir/ipgraph.cpp \
+	libjlm/src/ir/module.cpp \
+	libjlm/src/ir/operators/alloca.cpp \
+	libjlm/src/ir/operators/call.cpp \
+	libjlm/src/ir/operators/delta.cpp \
+	libjlm/src/ir/operators/getelementptr.cpp \
+	libjlm/src/ir/operators/lambda.cpp \
+	libjlm/src/ir/operators/load.cpp \
+	libjlm/src/ir/operators/operators.cpp \
+	libjlm/src/ir/operators/sext.cpp \
+	libjlm/src/ir/operators/store.cpp \
+	libjlm/src/ir/print.cpp \
+	libjlm/src/ir/rvsdg.cpp \
+	libjlm/src/ir/ssa.cpp \
+	libjlm/src/ir/tac.cpp \
+	libjlm/src/ir/types.cpp \
+	libjlm/src/ir/variable.cpp \
+	\
+	libjlm/src/jlm2llvm/instruction.cpp \
+	libjlm/src/jlm2llvm/jlm2llvm.cpp \
+	libjlm/src/jlm2llvm/type.cpp \
+	\
+	libjlm/src/jlm2rvsdg/module.cpp \
+	libjlm/src/jlm2rvsdg/restructuring.cpp \
+	\
+	libjlm/src/llvm2jlm/constant.cpp \
+	libjlm/src/llvm2jlm/instruction.cpp \
+	libjlm/src/llvm2jlm/module.cpp \
+	libjlm/src/llvm2jlm/type.cpp \
+	\
+	libjlm/src/rvsdg2jlm/rvsdg2jlm.cpp \
+	\
+	libjlm/src/opt/cne.cpp \
+	libjlm/src/opt/dne.cpp \
+	libjlm/src/opt/inlining.cpp \
+	libjlm/src/opt/invariance.cpp \
+	libjlm/src/opt/inversion.cpp \
+	libjlm/src/opt/optimization.cpp \
+	libjlm/src/opt/pull.cpp \
+	libjlm/src/opt/push.cpp \
+	libjlm/src/opt/reduction.cpp \
+	libjlm/src/opt/unroll.cpp \
+
+libjlm.a: CPPFLAGS += -Ilibjlm/include
+libjlm.a: $(patsubst %.cpp, %.la, $(LIBJLM_SRC))

@@ -1,0 +1,10 @@
+# Copyright 2019 Nico Reißmann <nico.reissmann@gmail.com>
+# See COPYING for terms of redistribution.
+
+JLMOPT_SRC = \
+	jlm-opt/jlm-opt.cpp \
+
+jlm-opt: CPPFLAGS += -Ilibjlm/include
+jlm-opt: LDFLAGS += -L. -ljlm -ljive
+jlm-opt: $(patsubst %.cpp, %.o, $(JLMOPT_SRC)) libjlm.a
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o bin/$@ $^ $(LDFLAGS)
