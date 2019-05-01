@@ -36,7 +36,7 @@ convert_basic_blocks(
 	/* forward declare all instructions, except terminator instructions */
 	for (auto bb = bbs.begin(); bb != bbs.end(); bb++) {
 		for (auto i = bb->begin(); i != bb->end(); i++) {
-			if (dynamic_cast<const llvm::TerminatorInst*>(&(*i)))
+			if (llvm::dyn_cast<const llvm::TerminatorInst>(&(*i)))
 				continue;
 
 			if (i->getType()->getTypeID() != llvm::Type::VoidTyID) {
@@ -68,7 +68,7 @@ create_cfg(llvm::Function & f, context & ctx)
 
 	/* add arguments */
 	size_t n = 0;
-	for (const auto & arg : f.getArgumentList()) {
+	for (const auto & arg : f.args()) {
 		JLM_DEBUG_ASSERT(n < node->fcttype().narguments());
 		auto & type = node->fcttype().argument_type(n++);
 		auto v = ctx.module().create_variable(type, arg.getName().str());

@@ -17,7 +17,7 @@
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IRReader/IRReader.h>
-#include <llvm/Support/raw_ostream.h>
+#include <llvm/Support/raw_os_ostream.h>
 #include <llvm/Support/SourceMgr.h>
 
 #include <iostream>
@@ -193,7 +193,10 @@ main (int argc, char ** argv)
 		jlm::print_dot(jm->ipgraph(), stdout);
 
 	lm = jlm::jlm2llvm::convert(*jm, ctx);
-	if (flags.j2l) lm->dump();
+	if (flags.j2l) {
+		llvm::raw_os_ostream os(std::cout);
+		lm->print(os, nullptr);
+	}
 
 	return 0;
 }

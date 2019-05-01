@@ -51,7 +51,7 @@ convert_int_constant(
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantInt*>(c));
+	JLM_DEBUG_ASSERT(c->getValueID() == llvm::Value::ConstantIntVal);
 	const llvm::ConstantInt * constant = static_cast<const llvm::ConstantInt*>(c);
 
 	jive::bitvalue_repr v = convert_apint(constant->getValue());
@@ -80,7 +80,7 @@ convert_constantExpr(
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::ConstantExpr*>(constant));
+	JLM_DEBUG_ASSERT(constant->getValueID() == llvm::Value::ConstantExprVal);
 	auto c = llvm::cast<llvm::ConstantExpr>(constant);
 
 	/*
@@ -140,7 +140,7 @@ convert_blockAddress(
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::BlockAddress*>(constant));
+	JLM_DEBUG_ASSERT(constant->getValueID() == llvm::Value::BlockAddressVal);
 
 	/* FIXME */
 	JLM_DEBUG_ASSERT(0);
@@ -257,7 +257,7 @@ convert_globalAlias(
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::GlobalAlias*>(constant));
+	JLM_DEBUG_ASSERT(constant->getValueID() == llvm::Value::GlobalAliasVal);
 
 	/* FIXME */
 	JLM_DEBUG_ASSERT(0);

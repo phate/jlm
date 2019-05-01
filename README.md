@@ -4,7 +4,7 @@ Jlm is an experimental compiler/optimizer that consumes and produces LLVM IR. It
 Regionalized Value State Dependence Graph (RVSDG) as intermediate representation for optimizations.
 
 ## Dependencies:
-* Clang/LLVM 4
+* Clang/LLVM 7
 
 ## Bootstrap:
 * git submodule init

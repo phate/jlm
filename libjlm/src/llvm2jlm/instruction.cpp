@@ -118,11 +118,11 @@ convert_switch_instruction(llvm::Instruction * instruction, tacsvector_t & tacs,
 	std::unordered_map<uint64_t, uint64_t> mapping;
 	for (auto it = i->case_begin(); it != i->case_end(); it++) {
 		JLM_DEBUG_ASSERT(it != i->case_default());
-		mapping[it.getCaseValue()->getZExtValue()] = n++;
-		bb->add_outedge(ctx.get(it.getCaseSuccessor()));
+		mapping[it->getCaseValue()->getZExtValue()] = n++;
+		bb->add_outedge(ctx.get(it->getCaseSuccessor()));
 	}
 
-	bb->add_outedge(ctx.get(i->case_default().getCaseSuccessor()));
+	bb->add_outedge(ctx.get(i->case_default()->getCaseSuccessor()));
 	JLM_DEBUG_ASSERT(i->getNumSuccessors() == n+1);
 
 	auto c = convert_value(i->getCondition(), tacs, ctx);
@@ -235,7 +235,7 @@ convert_fcmp_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 static inline const variable *
 convert_load_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::LoadInst*>(i));
+	JLM_DEBUG_ASSERT(i->getOpcode() == llvm::Instruction::Load);
 	auto instruction = static_cast<llvm::LoadInst*>(i);
 
 	/* FIXME: volatile and alignment */
@@ -250,7 +250,7 @@ convert_load_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & c
 static inline const variable *
 convert_store_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::StoreInst*>(i));
+	JLM_DEBUG_ASSERT(i->getOpcode() == llvm::Instruction::Store);
 	auto instruction = static_cast<llvm::StoreInst*>(i);
 
 	/* FIXME: volatile and alignement */
@@ -345,7 +345,7 @@ convert_call_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 static inline const variable *
 convert_select_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::SelectInst*>(i));
+	JLM_DEBUG_ASSERT(i->getOpcode() == llvm::Instruction::Select);
 	auto instruction = static_cast<llvm::SelectInst*>(i);
 
 	auto condition = convert_value(instruction->getCondition(), tacs, ctx);
@@ -428,7 +428,7 @@ convert_binary_operator(llvm::Instruction * instruction, tacsvector_t & tacs, co
 static inline const variable *
 convert_alloca_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const llvm::AllocaInst*>(instruction));
+	JLM_DEBUG_ASSERT(instruction->getOpcode() == llvm::Instruction::Alloca);
 	auto i = static_cast<llvm::AllocaInst*>(instruction);
 
 	auto result = ctx.lookup_value(i);
@@ -556,32 +556,49 @@ convert_instruction(
 		return convert_cast_instruction(i, tacs, ctx);
 
 	static std::unordered_map<
-		std::type_index,
+		unsigned,
 		const variable*(*)(llvm::Instruction*, std::vector<std::unique_ptr<jlm::tac>>&, context&)
 	> map({
-		{std::type_index(typeid(llvm::ReturnInst)), convert_return_instruction}
-	,	{std::type_index(typeid(llvm::BranchInst)), convert_branch_instruction}
-	,	{std::type_index(typeid(llvm::SwitchInst)), convert_switch_instruction}
-	,	{std::type_index(typeid(llvm::UnreachableInst)), convert_unreachable_instruction}
-	,	{std::type_index(typeid(llvm::BinaryOperator)), convert_binary_operator}
-	,	{std::type_index(typeid(llvm::ICmpInst)), convert_icmp_instruction}
-	,	{std::type_index(typeid(llvm::FCmpInst)), convert_fcmp_instruction}
-	,	{std::type_index(typeid(llvm::LoadInst)), convert_load_instruction}
-	,	{std::type_index(typeid(llvm::StoreInst)), convert_store_instruction}
-	,	{std::type_index(typeid(llvm::PHINode)), convert_phi_instruction}
-	,	{std::type_index(typeid(llvm::GetElementPtrInst)), convert_getelementptr_instruction}
-	,	{std::type_index(typeid(llvm::CallInst)), convert_call_instruction}
-	,	{std::type_index(typeid(llvm::SelectInst)), convert_select_instruction}
-	,	{std::type_index(typeid(llvm::AllocaInst)), convert_alloca_instruction}
-	,	{std::type_index(typeid(llvm::InsertValueInst)), convert_insertvalue_instruction}
-	,	{typeid(llvm::ExtractValueInst), convert_extractvalue}
-	,	{typeid(llvm::ExtractElementInst), convert_extractelement_instruction}
-	,	{typeid(llvm::ShuffleVectorInst), convert_shufflevector_instruction}
-	,	{typeid(llvm::InsertElementInst), convert_insertelement_instruction}
+		{llvm::Instruction::Ret, convert_return_instruction}
+	,	{llvm::Instruction::Br, convert_branch_instruction}
+	,	{llvm::Instruction::Switch, convert_switch_instruction}
+	,	{llvm::Instruction::Unreachable, convert_unreachable_instruction}
+	,	{llvm::Instruction::Add, convert_binary_operator}
+	,	{llvm::Instruction::And, convert_binary_operator}
+	,	{llvm::Instruction::AShr, convert_binary_operator}
+	,	{llvm::Instruction::Sub, convert_binary_operator}
+	,	{llvm::Instruction::UDiv, convert_binary_operator}
+	,	{llvm::Instruction::SDiv, convert_binary_operator}
+	,	{llvm::Instruction::URem, convert_binary_operator}
+	,	{llvm::Instruction::SRem, convert_binary_operator}
+	,	{llvm::Instruction::Shl, convert_binary_operator}
+	,	{llvm::Instruction::LShr, convert_binary_operator}
+	,	{llvm::Instruction::Or, convert_binary_operator}
+	,	{llvm::Instruction::Xor, convert_binary_operator}
+	,	{llvm::Instruction::Mul, convert_binary_operator}
+	,	{llvm::Instruction::FAdd, convert_binary_operator}
+	,	{llvm::Instruction::FSub, convert_binary_operator}
+	,	{llvm::Instruction::FMul, convert_binary_operator}
+	,	{llvm::Instruction::FDiv, convert_binary_operator}
+	,	{llvm::Instruction::FRem, convert_binary_operator}
+	,	{llvm::Instruction::ICmp, convert_icmp_instruction}
+	,	{llvm::Instruction::FCmp, convert_fcmp_instruction}
+	,	{llvm::Instruction::Load, convert_load_instruction}
+	,	{llvm::Instruction::Store, convert_store_instruction}
+	,	{llvm::Instruction::PHI, convert_phi_instruction}
+	,	{llvm::Instruction::GetElementPtr, convert_getelementptr_instruction}
+	,	{llvm::Instruction::Call, convert_call_instruction}
+	,	{llvm::Instruction::Select, convert_select_instruction}
+	,	{llvm::Instruction::Alloca, convert_alloca_instruction}
+	,	{llvm::Instruction::InsertValue, convert_insertvalue_instruction}
+	,	{llvm::Instruction::ExtractValue, convert_extractvalue}
+	,	{llvm::Instruction::ExtractElement, convert_extractelement_instruction}
+	,	{llvm::Instruction::ShuffleVector, convert_shufflevector_instruction}
+	,	{llvm::Instruction::InsertElement, convert_insertelement_instruction}
 	});
 
-	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(*i))) != map.end());
-	return map[std::type_index(typeid(*i))](i, tacs, ctx);
+	JLM_DEBUG_ASSERT(map.find(i->getOpcode()) != map.end());
+	return map[i->getOpcode()](i, tacs, ctx);
 }
 
 }
