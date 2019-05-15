@@ -3,8 +3,20 @@
 
 JLMPRINT_SRC = \
 	jlm-print/jlm-print.cpp \
+ 
+.PHONY: jlm-print
+jlm-print: $(JLM_ROOT)/bin/jlm-print
 
-jlm-print: CPPFLAGS += -Ilibjlm/include
-jlm-print: LDFLAGS+=-L. -ljlm -ljive
-jlm-print: $(patsubst %.cpp, %.o, $(JLMPRINT_SRC)) libjlm.a
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o bin/$@ $^ $(LDFLAGS)
+$(JLM_ROOT)/bin/jlm-print: $(JIVE_ROOT)/libjive.a
+$(JLM_ROOT)/bin/jlm-print: CPPFLAGS += -I$(JLM_ROOT)/libjlm/include -I$(JIVE_ROOT)/include -I$(shell $(LLVMCONFIG) --includedir)
+$(JLM_ROOT)/bin/jlm-print: CXXFLAGS += -Wall -Wpedantic -Wextra -Wno-unused-parameter --std=c++14 -Wfatal-errors
+$(JLM_ROOT)/bin/jlm-print: LDFLAGS+=-L$(JLM_ROOT)/ -ljlm -ljive
+$(JLM_ROOT)/bin/jlm-print: $(patsubst %.cpp, $(JLM_ROOT)/%.o, $(JLMPRINT_SRC)) $(JLM_ROOT)/libjlm.a
+	@mkdir -p $(JLM_ROOT)/bin
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
+
+.PHONY: jlmprint-clean
+jlmprint-clean:
+	@find  $(JLM_ROOT)/jlm-print/ -name "*.o" -o -name "*.la" -o -name "*.a" | grep -v external | xargs rm -rf
+	@rm -rf $(JLM_ROOT)/bin/jlm-print
+
