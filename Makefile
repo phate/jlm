@@ -1,25 +1,26 @@
 # Copyright 2014 Nico Reißmann <nico.reissmann@gmail.com>
 # See COPYING for terms of redistribution.
 
-LLVMCONFIG = llvm-config
+JLM_ROOT ?= .
+JIVE_ROOT ?= $(JLM_ROOT)/external/jive
 
-CPPFLAGS += -Iexternal/jive/include -I$(shell $(LLVMCONFIG) --includedir)
-CXXFLAGS += -Wall -Wpedantic -Wextra -Wno-unused-parameter --std=c++14 -Wfatal-errors
-LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -Lexternal/jive/
+LLVMCONFIG ?= llvm-config
 
-all: create-folders libjlm.a libjlc.a jlm-print jlm-opt jlc check
+LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -L$(JIVE_ROOT)
 
+all: libjlm.a libjlc.a jlm-print jlm-opt jlc check
+
+include $(JIVE_ROOT)/Makefile.sub
 include libjlm/Makefile.sub
 include libjlc/Makefile.sub
 include jlm-print/Makefile.sub
 include jlm-opt/Makefile.sub
 include tests/Makefile.sub
 
-.PHONY: create-folders
-create-folders:
-	mkdir -p bin
-
 %.la: %.cpp
+	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) -o $@ $<
+
+%.la: %.c
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) -o $@ $<
 
 %.o: %.cpp
@@ -31,10 +32,8 @@ create-folders:
 	ranlib $@
 
 .PHONY: clean
-clean:
-	find . -name "*.o" -o -name "*.la" -o -name "*.a" | grep -v external | xargs rm -rf
-	rm -rf tests/test-runner
-	rm -rf bin
+clean: jive-clean libjlm-clean libjlc-clean jlmopt-clean jlmprint-clean jlmtest-clean
+	@rm -rf $(JLM_ROOT)/bin
 
 ifeq ($(shell if [ -e .Makefile.override ] ; then echo yes ; fi),yes)
 include .Makefile.override

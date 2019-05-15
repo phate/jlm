@@ -4,6 +4,12 @@ include tests/util/Makefile.sub
 include tests/libjlm/Makefile.sub
 include tests/libjlc/Makefile.sub
 
+# Font colors for terminal
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m' # No Color
+
+
 TEST_SOURCES = \
 	tests/test-operation.cpp \
 	tests/test-registry.cpp \
@@ -11,38 +17,45 @@ TEST_SOURCES = \
 	tests/test-types.cpp \
 	$(patsubst %, tests/%.cpp, $(TESTS))
 
-tests/test-runner: libjlc.a libjlm.a
-tests/test-runner: CPPFLAGS += -Ilibjlm/include -Ilibjlc/include
+tests/test-runner: libjlc.a libjlm.a $(JIVE_ROOT)/libjive.a
+tests/test-runner: CPPFLAGS += -I$(JLM_ROOT)/libjlm/include -I$(JLM_ROOT)/libjlc/include -I$(JIVE_ROOT)/include
 tests/test-runner: LDFLAGS=-L. -Lexternal/jive -ljlc -ljlm $(shell $(LLVMCONFIG) --ldflags --libs) -ljive
 tests/test-runner: %: $(patsubst %.cpp, %.la, $(TEST_SOURCES)) libjlm.a
 	$(CXX) -o $@ $(filter %.la, $^) $(LDFLAGS)
 
-$(patsubst %, tests/%.la, $(TESTS)): CPPFLAGS += -Itests
+$(patsubst %, tests/%.la, $(TESTS)): CPPFLAGS += -Itests -I$(shell $(LLVMCONFIG) --includedir)
 
 TESTLOG = true
 
 check: check-utests check-ctests
 
 check-ctests: jlc jlm-opt
-	rm -rf ctests.log
+	@rm -rf ctests.log
 	@FAILED_TESTS="" ; \
 	for TEST in `ls tests/c-tests`; do \
 		$(TESTLOG) -n "$$TEST: " ; if tests/test-jlc.sh tests/c-tests/$$TEST >>ctests.log 2>&1 ; then $(TESTLOG) pass ; else $(TESTLOG) FAIL ; FAILED_TESTS="$$FAILED_TESTS $$TEST" ; fi ; \
 	done ; \
-	if [ "x$$FAILED_TESTS" != x ] ; then echo "Failed tests:$$FAILED_TESTS" ; else echo "All tests passed" ; fi ; \
+	if [ "x$$FAILED_TESTS" != x ] ; then echo $(RED)Failed c-tests:$(NC)$$FAILED_TESTS ; else echo $(GREEN)All c-tests passed$(NC) ; fi ; \
 
 check-utests: tests/test-runner
-	rm -rf utests.log
+	@rm -rf utests.log
 	@FAILED_TESTS="" ; \
 	for TEST in $(TESTS); do \
 		$(TESTLOG) -n "$$TEST: " ; if tests/test-runner $$TEST >>utests.log 2>&1 ; then $(TESTLOG) pass ; else $(TESTLOG) FAIL ; FAILED_TESTS="$$FAILED_TESTS $$TEST" ; fi ; \
 	done ; \
-	if [ "x$$FAILED_TESTS" != x ] ; then echo "Failed tests:$$FAILED_TESTS" ; else echo "All tests passed" ; fi ; \
+	if [ "x$$FAILED_TESTS" != x ] ; then echo $(RED)Failed u-tests:$(NC)$$FAILED_TESTS ; else echo $(GREEN)All u-tests passed$(NC) ; fi ; \
 
 valgrind-check: tests/test-runner
-	rm -rf check.log
+	@rm -rf check.log
 	@FAILED_TESTS="" ; \
 	for TEST in $(TESTS); do \
 		$(TESTLOG) -n "$$TEST: " ; if valgrind --leak-check=full --error-exitcode=1 tests/test-runner $$TEST >>check.log 2>&1 ; then $(TESTLOG) pass ; else $(TESTLOG) FAIL ; FAILED_TESTS="$$UNEXPECTED_FAILED_TESTS $$TEST" ; fi ; \
 	done ; \
-	if [ "x$$FAILED_TESTS" != x ] ; then echo "Failed tests:$$FAILED_TESTS" ; else echo "All tests passed" ; fi ; \
+	if [ "x$$FAILED_TESTS" != x ] ; then echo $(RED)Failed valgrind-tests:$(NC)$$FAILED_TESTS ; else echo $(GREEN)All valgrind-tests passed$(NC) ; fi ; \
+
+.PHONY: jlmtest-clean
+jlmtest-clean:
+	@rm -rf $(JLM_ROOT)/tests/test-runner
+	@rm -rf $(JLM_ROOT)/utests.log
+	@rm -rf $(JLM_ROOT)/ctests.log
+	@rm -rf $(JLM_ROOT)/check.log

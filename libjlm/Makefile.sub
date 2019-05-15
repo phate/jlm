@@ -57,5 +57,14 @@ LIBJLM_SRC = \
 	libjlm/src/opt/reduction.cpp \
 	libjlm/src/opt/unroll.cpp \
 
-libjlm.a: CPPFLAGS += -Ilibjlm/include
-libjlm.a: $(patsubst %.cpp, %.la, $(LIBJLM_SRC))
+.PHONY: libjlm
+libjlm: $(JLM_ROOT)/libjlm.a
+
+$(JLM_ROOT)/libjlm.a: CPPFLAGS += -I$(JIVE_ROOT)/include -I$(shell $(LLVMCONFIG) --includedir) -I$(JLM_ROOT)/libjlm/include
+$(JLM_ROOT)/libjlm.a: CXXFLAGS += -Wall -Wpedantic -Wextra -Wno-unused-parameter --std=c++14 -Wfatal-errors
+$(JLM_ROOT)/libjlm.a: $(patsubst %.cpp, $(JLM_ROOT)/%.la, $(LIBJLM_SRC))
+
+.PHONY: libjlm-clean
+libjlm-clean:
+	@find $(JLM_ROOT)/libjlm/ -name "*.o" -o -name "*.la" -o -name "*.a" | grep -v external | xargs rm -rf
+	@rm -rf $(JLM_ROOT)/libjlm.a
