@@ -1,0 +1,29 @@
+define HELP_TEXT_JLM
+echo ""
+echo "JLM Make Targets"
+echo "--------------------------------------------------------------------------------"
+echo "jlm                    Compiles all jlm libraries and tools"
+echo "jlm-clean              Cleans all build files and libraries"
+echo "jlc                    Compiles the jlc compiler"
+echo "jlm-print              Compiles the jlm print tool"
+echo "jlm-opt                Compiles the jlm optimizer tool"
+echo "libjlm                 Compiles the jlm library"
+echo "libjlc                 Compiles the jlc library"
+endef
+
+include $(JLM_ROOT)/libjlm/Makefile.sub
+include $(JLM_ROOT)/libjlc/Makefile.sub
+include $(JLM_ROOT)/jlm-print/Makefile.sub
+include $(JLM_ROOT)/jlm-opt/Makefile.sub
+
+.PHONY: jlm
+jlm: libjlm libjlc jlm-print jlm-opt jlc
+
+.PHONY: jlm-clean
+jlm-clean: libjlc-clean libjlm-clean jlmopt-clean jlmprint-clean
+	@rm -rf $(JLM_ROOT)/bin
+	@rm -rf $(JLM_ROOT)/tests/test-runner
+	@rm -rf $(JLM_ROOT)/utests.log
+	@rm -rf $(JLM_ROOT)/ctests.log
+	@rm -rf $(JLM_ROOT)/check.log
+	@find $(JLM_ROOT)/tests -name "*.o" -o -name "*.la" | grep -v external | xargs rm -rf
