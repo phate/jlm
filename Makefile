@@ -23,8 +23,6 @@ include $(JIVE_ROOT)/Makefile.sub
 
 LLVMCONFIG ?= llvm-config
 
-LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -L$(JIVE_ROOT)
-
 .PHONY: all
 all: jive jlm check
 

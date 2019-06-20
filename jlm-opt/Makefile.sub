@@ -10,7 +10,7 @@ jlm-opt: $(JLM_ROOT)/bin/jlm-opt
 $(JLM_ROOT)/bin/jlm-opt: $(JIVE_ROOT)/libjive.a
 $(JLM_ROOT)/bin/jlm-opt: CPPFLAGS += -I$(JLM_ROOT)/libjlm/include -I$(JIVE_ROOT)/include -I$(shell $(LLVMCONFIG) --includedir)
 $(JLM_ROOT)/bin/jlm-opt: CXXFLAGS += -Wall -Wpedantic -Wextra -Wno-unused-parameter --std=c++14 -Wfatal-errors
-$(JLM_ROOT)/bin/jlm-opt: LDFLAGS += -L$(JLM_ROOT)/ -ljlm -ljive
+$(JLM_ROOT)/bin/jlm-opt: LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -L$(JIVE_ROOT) -L$(JLM_ROOT)/ -ljlm -ljive
 $(JLM_ROOT)/bin/jlm-opt: $(patsubst %.cpp, $(JLM_ROOT)/%.o, $(JLMOPT_SRC)) $(JLM_ROOT)/libjlm.a
 	@mkdir -p $(JLM_ROOT)/bin
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
