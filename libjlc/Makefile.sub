@@ -8,11 +8,27 @@ LIBJLC_SRC = \
 JLC_SRC = \
 	libjlc/src/jlc.cpp \
 
-libjlc.a: CPPFLAGS += -Ilibjlc/include -Ilibjlm/include
-libjlc.a: LDFLAGS += -L. -ljlm
-libjlc.a: $(patsubst %.cpp, %.la, $(LIBJLC_SRC)) libjlm.a
+.PHONY: libjlc
+libjlc: $(JLM_ROOT)/libjlc.a
 
-jlc: CPPFLAGS += -Ilibjlc/include -Ilibjlm/include
-jlc: LDFLAGS += -L. -ljlc -ljlm -ljive
-jlc: $(patsubst %.cpp, %.o, $(JLC_SRC)) libjlc.a
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o bin/$@ $^ $(LDFLAGS)
+$(JLM_ROOT)/libjlc.a: CPPFLAGS += -I$(JLM_ROOT)/libjlc/include -I$(JLM_ROOT)/libjlm/include -I$(shell $(LLVMCONFIG) --includedir)
+$(JLM_ROOT)/libjlc.a: CXXFLAGS += -Wall -Wpedantic -Wextra -Wno-unused-parameter --std=c++14 -Wfatal-errors
+$(JLM_ROOT)/libjlc.a: LDFLAGS += -L$(JLM_ROOT)/ -ljlm
+$(JLM_ROOT)/libjlc.a: $(patsubst %.cpp, $(JLM_ROOT)/%.la, $(LIBJLC_SRC)) $(JLM_ROOT)/libjlm.a
+
+.PHONY: jlc
+jlc: $(JLM_ROOT)/bin/jlc
+
+$(JLM_ROOT)/bin/jlc: $(JIVE_ROOT)/libjive.a
+$(JLM_ROOT)/bin/jlc: CPPFLAGS += -I$(JIVE_ROOT)/include -I$(JLM_ROOT)/libjlc/include -I$(JLM_ROOT)/libjlm/include -I$(shell $(LLVMCONFIG) --includedir)
+$(JLM_ROOT)/bin/jlc: CXXFLAGS += -Wall -Wpedantic -Wextra -Wno-unused-parameter --std=c++14 -Wfatal-errors
+$(JLM_ROOT)/bin/jlc: LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -L$(JIVE_ROOT) -L$(JLM_ROOT)/ -ljlc -ljlm -ljive
+$(JLM_ROOT)/bin/jlc: $(patsubst %.cpp, $(JLM_ROOT)/%.o, $(JLC_SRC)) $(JLM_ROOT)/libjlc.a
+	@mkdir -p $(JLM_ROOT)/bin
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
+
+.PHONY: libjlc-clean
+libjlc-clean:
+	@find  $(JLM_ROOT)/libjlc/ -name "*.o" -o -name "*.la" -o -name "*.a" | grep -v external | xargs rm -rf
+	@rm -rf $(JLM_ROOT)/libjlc.a
+	@rm -rf $(JLM_ROOT)/bin/jlc
