@@ -44,7 +44,7 @@ public:
 
 		time_ = std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count();
 		nnodes_after_ = jive::nnodes(rvsdg.root());
-		ninputs_after_ = jive::nnodes(rvsdg.root());
+		ninputs_after_ = jive::ninputs(rvsdg.root());
 	}
 
 	inline size_t
