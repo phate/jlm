@@ -102,4 +102,16 @@ reverse_postorder(const jlm::cfg & cfg)
 	return nodes;
 }
 
+size_t
+ntacs(const jlm::cfg & cfg)
+{
+	size_t ntacs = 0;
+	for (auto & node : cfg) {
+		if (auto bb = dynamic_cast<const basic_block*>(&node))
+			ntacs += bb->ntacs();
+	}
+
+	return ntacs;
+}
+
 }

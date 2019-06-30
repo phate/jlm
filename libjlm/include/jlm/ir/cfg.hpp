@@ -321,6 +321,9 @@ postorder(const jlm::cfg & cfg);
 std::vector<cfg_node*>
 reverse_postorder(const jlm::cfg & cfg);
 
+size_t
+ntacs(const jlm::cfg & cfg);
+
 }
 
 #endif
