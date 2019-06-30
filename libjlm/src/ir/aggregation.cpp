@@ -294,4 +294,17 @@ aggregate(jlm::cfg & cfg)
 	return std::move(std::move(map.begin()->second));
 }
 
+size_t
+ntacs(const jlm::aggnode & root)
+{
+	size_t n = 0;
+	for (auto & child : root)
+		n += ntacs(child);
+
+	if (auto bb = dynamic_cast<const blockaggnode*>(&root))
+		n += bb->tacs().ntacs();
+
+	return n;
+}
+
 }

@@ -417,6 +417,9 @@ public:
 std::unique_ptr<aggnode>
 aggregate(jlm::cfg & cfg);
 
+size_t
+ntacs(const jlm::aggnode & root);
+
 }
 
 #endif
