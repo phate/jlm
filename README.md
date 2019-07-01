@@ -7,7 +7,5 @@ Regionalized Value State Dependence Graph (RVSDG) as intermediate representation
 * Clang/LLVM 7
 
 ## Bootstrap:
-* git submodule init
-* git submodule update
-* cd external/jive && make
-* cd ../../ && make
+* make submodule
+* make all
