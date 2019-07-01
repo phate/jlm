@@ -10,6 +10,7 @@ endef
 help:
 	@$(HELP_TEXT)
 	@$(HELP_TEXT_JLM)
+	@echo "submodule              Initializes all the dependent git submodules"
 	@echo "all                    Compiles jlm, and runs unit and C tests"
 	@echo "clean                  Calls clean for jive and jlm"
 	@$(HELP_TEXT_JIVE)
@@ -19,12 +20,18 @@ JIVE_ROOT ?= $(JLM_ROOT)/external/jive
 
 include $(JLM_ROOT)/Makefile.sub
 include $(JLM_ROOT)/tests/Makefile.sub
+ifneq ("$(wildcard $(JIVE_ROOT)/Makefile.sub)","")
 include $(JIVE_ROOT)/Makefile.sub
+endif
 
 LLVMCONFIG ?= llvm-config
 
 .PHONY: all
 all: jive jlm check
+
+.PHONY: submodule
+submodule:
+	git submodule update --init --recursive
 
 %.la: %.cpp
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) -o $@ $<
