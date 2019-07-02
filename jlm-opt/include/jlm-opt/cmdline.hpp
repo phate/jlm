@@ -20,10 +20,12 @@ class cmdline_options {
 public:
 	cmdline_options()
 	: ifile("")
+	, ofile("")
 	, format(outputformat::llvm)
 	{}
 
 	jlm::file ifile;
+	jlm::file ofile;
 	outputformat format;
 	std::vector<jlm::optimization> optimizations;
 };

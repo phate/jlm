@@ -32,6 +32,11 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 	  cl::Positional
 	, cl::desc("<input>"));
 
+	cl::opt<std::string> ofile(
+	  "o"
+	, cl::desc("Write output to <file>")
+	, cl::value_desc("file"));
+
 	cl::opt<outputformat> format(
 	  cl::values(
 		  clEnumValN(outputformat::llvm, "llvm", "Output LLVM IR [default]")
@@ -57,6 +62,9 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 		cl::PrintHelpMessage();
 		exit(EXIT_SUCCESS);
 	}
+
+	if (!ofile.empty())
+		options.ofile = ofile;
 
 	options.ifile = ifile;
 	options.format = format;

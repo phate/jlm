@@ -68,12 +68,22 @@ main(int argc, char ** argv)
 		#endif
 
 		lm = jlm::jlm2llvm::convert(*jm, ctx);
-		llvm::raw_os_ostream os(std::cout);
-		lm->print(os, nullptr);
+		if (flags.ofile == "") {
+			llvm::raw_os_ostream os(std::cout);
+			lm->print(os, nullptr);
+		} else {
+			std::error_code ec;
+			llvm::raw_fd_ostream os(flags.ofile.to_str(), ec);
+			lm->print(os, nullptr);
+		}
 	}
 
-	if (flags.format == jlm::outputformat::xml)
-		jive::view_xml(rvsdg->graph()->root(), stdout);
+	if (flags.format == jlm::outputformat::xml) {
+		auto fd = flags.ofile == "" ? stdout : fopen(flags.ofile.to_str().c_str(), "w");
+		jive::view_xml(rvsdg->graph()->root(), fd);
+		if (fd != stdout)
+			fclose(fd);
+	}
 
 	return 0;
 }
