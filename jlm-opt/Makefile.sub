@@ -2,13 +2,14 @@
 # See COPYING for terms of redistribution.
 
 JLMOPT_SRC = \
-	jlm-opt/jlm-opt.cpp \
+	jlm-opt/src/cmdline.cpp \
+	jlm-opt/src/jlm-opt.cpp \
 
 .PHONY: jlm-opt
 jlm-opt: $(JLM_ROOT)/bin/jlm-opt
 
 $(JLM_ROOT)/bin/jlm-opt: $(JIVE_ROOT)/libjive.a
-$(JLM_ROOT)/bin/jlm-opt: CPPFLAGS += -I$(JLM_ROOT)/libjlm/include -I$(JIVE_ROOT)/include -I$(shell $(LLVMCONFIG) --includedir)
+$(JLM_ROOT)/bin/jlm-opt: CPPFLAGS += -I$(JLM_ROOT)/libjlm/include -I$(JLM_ROOT)/jlm-opt/include -I$(JIVE_ROOT)/include -I$(shell $(LLVMCONFIG) --includedir)
 $(JLM_ROOT)/bin/jlm-opt: CXXFLAGS += -Wall -Wpedantic -Wextra -Wno-unused-parameter --std=c++14 -Wfatal-errors
 $(JLM_ROOT)/bin/jlm-opt: LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -L$(JIVE_ROOT) -L$(JLM_ROOT)/ -ljlm -ljive
 $(JLM_ROOT)/bin/jlm-opt: $(patsubst %.cpp, $(JLM_ROOT)/%.o, $(JLMOPT_SRC)) $(JLM_ROOT)/libjlm.a
