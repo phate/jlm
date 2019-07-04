@@ -6,6 +6,8 @@
 #ifndef JLM_UTIL_FILE_HPP
 #define JLM_UTIL_FILE_HPP
 
+#include <jlm/common.hpp>
+
 #include <string>
 
 namespace jlm {
@@ -16,6 +18,34 @@ public:
 	filepath(const std::string & path)
 	: path_(path)
 	{}
+
+	filepath(const filepath & other)
+	: path_(other.path_)
+	{}
+
+	filepath(filepath && other)
+	: path_(std::move(other.path_))
+	{}
+
+	filepath &
+	operator=(const filepath & other)
+	{
+		if (this == &other)
+			return *this;
+
+		path_ = other.path_;
+		return *this;
+	}
+
+	filepath &
+	operator=(filepath && other)
+	{
+		if (this == &other)
+			return *this;
+
+		path_ = std::move(other.path_);
+		return *this;
+	}
 
 	/**
 	* \brief Returns the base name of the file without the path.
@@ -109,6 +139,82 @@ public:
 
 private:
 	std::string path_;
+};
+
+class file final {
+public:
+	file(const filepath & path)
+	: fd_(NULL)
+	, path_(path)
+	{}
+
+	~file()
+	{
+		close();
+	}
+
+	file(const file&) = delete;
+
+	file(file && other)
+	: fd_(other.fd_)
+	, path_(std::move(other.path_))
+	{
+		other.fd_ = NULL;
+	}
+
+	file &
+	operator=(const file&) = delete;
+
+	file &
+	operator=(file && other)
+	{
+		if (this == &other)
+			return *this;
+
+		fd_ = other.fd_;
+		path_ = std::move(other.path_);
+		other.fd_ = NULL;
+
+		return *this;
+	}
+
+	void
+	close() noexcept
+	{
+		if (fd_)
+			fclose(fd_);
+
+		fd_ = NULL;
+	}
+
+	void
+	open(const char * mode)
+	{
+		fd_ = fopen(path_.to_str().c_str(), mode);
+		if (!fd_) throw jlm::error("Cannot open file " + path_.to_str());
+	}
+
+	bool
+	is_open() const noexcept
+	{
+		return fd_ != NULL;
+	}
+
+	FILE *
+	fd() const noexcept
+	{
+		return fd_;
+	}
+
+	const jlm::filepath &
+	path() const noexcept
+	{
+		return path_;
+	}
+
+private:
+	FILE * fd_;
+	jlm::filepath path_;
 };
 
 }
