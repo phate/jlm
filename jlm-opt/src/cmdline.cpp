@@ -37,6 +37,27 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 	, cl::desc("Write output to <file>")
 	, cl::value_desc("file"));
 
+	std::string desc("Write stats to <file>. Default is " + options.sd.file().path().to_str() + ".");
+	cl::opt<std::string> sfile(
+	  "s"
+	, cl::desc(desc)
+	, cl::value_desc("file"));
+
+	cl::opt<bool> print_cfr_time(
+	  "print-cfr-time"
+	, cl::ValueDisallowed
+	, cl::desc("Write CFR time to stats file."));
+
+	cl::opt<bool> print_aggregation_time(
+	  "print-aggregation-time"
+	, cl::ValueDisallowed
+	, cl::desc("Write aggregation time to stats file."));
+
+	cl::opt<bool> print_annotation_time(
+	  "print-annotation-time"
+	, cl::ValueDisallowed
+	, cl::desc("Write annotation time to stats file."));
+
 	cl::opt<outputformat> format(
 	  cl::values(
 		  clEnumValN(outputformat::llvm, "llvm", "Output LLVM IR [default]")
@@ -66,9 +87,15 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 	if (!ofile.empty())
 		options.ofile = ofile;
 
+	if (!sfile.empty())
+		options.sd.set_file(sfile);
+
 	options.ifile = ifile;
 	options.format = format;
 	options.optimizations = optimizations;
+	options.sd.print_cfr_time = print_cfr_time;
+	options.sd.print_annotation_time = print_annotation_time;
+	options.sd.print_aggregation_time = print_aggregation_time;
 }
 
 }
