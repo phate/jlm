@@ -8,6 +8,7 @@
 
 #include <jlm/opt/optimization.hpp>
 #include <jlm/util/file.hpp>
+#include <jlm/util/stats.hpp>
 
 #include <string>
 #include <vector>
@@ -27,6 +28,7 @@ public:
 	jlm::filepath ifile;
 	jlm::filepath ofile;
 	outputformat format;
+	stats_descriptor sd;
 	std::vector<jlm::optimization> optimizations;
 };
 

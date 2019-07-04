@@ -13,6 +13,7 @@
 #include <jlm/ir/print.hpp>
 #include <jlm/ir/rvsdg.hpp>
 #include <jlm/jlm2rvsdg/module.hpp>
+#include <jlm/util/stats.hpp>
 
 static int
 test()
@@ -45,7 +46,8 @@ test()
 	d1->set_initialization(std::make_unique<data_node_init>(std::move(tvec1)));
 	d2->set_initialization(std::make_unique<data_node_init>(std::move(tvec2)));
 
-	auto rvsdg = construct_rvsdg(m);
+	stats_descriptor sd;
+	auto rvsdg = construct_rvsdg(m, sd);
 
 	jive::view(*rvsdg->graph(), stdout);
 

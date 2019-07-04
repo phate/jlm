@@ -16,9 +16,10 @@ namespace jlm {
 
 class module;
 class rvsdg;
+class stats_descriptor;
 
 std::unique_ptr<jlm::rvsdg>
-construct_rvsdg(const module & m);
+construct_rvsdg(const module & m, const stats_descriptor & sd);
 
 }
 

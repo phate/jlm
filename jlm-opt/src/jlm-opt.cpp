@@ -46,7 +46,7 @@ main(int argc, char ** argv)
 		auto start = std::chrono::high_resolution_clock::now();
 	#endif
 
-	auto rvsdg = jlm::construct_rvsdg(*jm);
+	auto rvsdg = jlm::construct_rvsdg(*jm, flags.sd);
 
 	#ifdef RVSDGTIME
 		size_t nnodes = jive::nnodes(rvsdg->graph()->root());

@@ -10,6 +10,7 @@
 #include <jlm/jlm2llvm/jlm2llvm.hpp>
 #include <jlm/jlm2rvsdg/module.hpp>
 #include <jlm/rvsdg2jlm/rvsdg2jlm.hpp>
+#include <jlm/util/stats.hpp>
 
 #include <jive/rvsdg/graph.h>
 #include <jive/view.h>
@@ -49,6 +50,7 @@ public:
 	bool r2jdot;
 	bool r2j_ipg_dot;
 	std::string file;
+	jlm::stats_descriptor sd;
 	std::string l2jdot_function;
 	std::string r2jdot_function;
 };
@@ -180,7 +182,7 @@ main (int argc, char ** argv)
 	if (flags.l2j_ipg_dot)
 		jlm::print_dot(jm->ipgraph(), stdout);
 
-	auto rvsdg = jlm::construct_rvsdg(*jm);
+	auto rvsdg = jlm::construct_rvsdg(*jm, flags.sd);
 	if (flags.j2r) jive::view(rvsdg->graph()->root(), stdout);
 	if (flags.j2rx) jive::view_xml(rvsdg->graph()->root(), stdout);
 

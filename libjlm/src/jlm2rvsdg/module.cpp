@@ -17,6 +17,9 @@
 #include <jlm/ir/ssa.hpp>
 #include <jlm/ir/tac.hpp>
 
+#include <jlm/util/stats.hpp>
+#include <jlm/util/time.hpp>
+
 #include <jive/arch/address.h>
 #include <jive/arch/addresstype.h>
 #include <jive/arch/dataobject.h>
@@ -448,7 +451,8 @@ static jive::output *
 convert_cfg(
 	const jlm::function_node & function,
 	jive::region * region,
-	scoped_vmap & svmap)
+	scoped_vmap & svmap,
+	const stats_descriptor & sd)
 {
 	auto cfg = function.cfg();
 
@@ -456,9 +460,48 @@ convert_cfg(
 	straighten(*cfg);
 	purge(*cfg);
 
+	jlm::timer timer;
+	size_t nnodes = 0;
+	if (sd.print_cfr_time) {
+		timer.start();
+		nnodes = cfg->nnodes();
+	}
+
 	restructure(cfg);
+
+	if (sd.print_cfr_time) {
+		timer.stop();
+		fprintf(sd.file().fd(),
+			"CFRTIME %s %zu %zu\n", function.name().c_str(), nnodes, timer.ns());
+	}
+
+
+	if (sd.print_aggregation_time) {
+		timer.start();
+		nnodes = cfg->nnodes();
+	}
+
 	auto root = aggregate(*cfg);
+
+	if (sd.print_aggregation_time) {
+		timer.stop();
+		fprintf(sd.file().fd(),
+			"AGGREGATIONTIME %s %zu %zu\n", function.name().c_str(), nnodes, timer.ns());
+	}
+
+	size_t ntacs = 0;
+	if (sd.print_annotation_time) {
+		timer.start();
+		ntacs = jlm::ntacs(*root);
+	}
+
 	auto dm = annotate(*root);
+
+	if (sd.print_annotation_time) {
+		timer.stop();
+		fprintf(sd.file().fd(),
+			"ANNOTATIONTIME %s %zu %zu\n", function.name().c_str(), ntacs, timer.ns());
+	}
 
 	lambda_builder lb;
 	auto lambda = convert_node(*root, dm, function, lb, svmap);
@@ -469,7 +512,8 @@ static jive::output *
 construct_lambda(
 	const ipgraph_node * node,
 	jive::region * region,
-	scoped_vmap & svmap)
+	scoped_vmap & svmap,
+	const stats_descriptor & sd)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const function_node*>(node));
 	auto & function = *static_cast<const function_node*>(node);
@@ -479,7 +523,7 @@ construct_lambda(
 		return region->graph()->add_import(port);
 	}
 
-	return convert_cfg(function, region, svmap);
+	return convert_cfg(function, region, svmap, sd);
 }
 
 static jive::output *
@@ -496,7 +540,8 @@ static jive::output *
 convert_data_node(
 	const jlm::ipgraph_node * node,
 	jive::region * region,
-	scoped_vmap & svmap)
+	scoped_vmap & svmap,
+	const stats_descriptor&)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const data_node*>(node));
 	auto n = static_cast<const data_node*>(node);
@@ -533,13 +578,18 @@ static void
 handle_scc(
 	const std::unordered_set<const jlm::ipgraph_node*> & scc,
 	jive::graph * graph,
-	scoped_vmap & svmap)
+	scoped_vmap & svmap,
+	const stats_descriptor & sd)
 {
 	auto & m = svmap.module();
 
 	static std::unordered_map<
 		std::type_index,
-		std::function<jive::output*(const ipgraph_node*, jive::region*, scoped_vmap&)>
+		std::function<jive::output*(
+		  const ipgraph_node*
+		, jive::region*
+		, scoped_vmap&
+		, const stats_descriptor&)>
 	> map({
 	  {typeid(data_node), convert_data_node}
 	, {typeid(function_node), construct_lambda}
@@ -548,7 +598,7 @@ handle_scc(
 	if (scc.size() == 1 && !(*scc.begin())->is_selfrecursive()) {
 		auto & node = *scc.begin();
 		JLM_DEBUG_ASSERT(map.find(typeid(*node)) != map.end());
-		auto output = map[typeid(*node)](node, graph->root(), svmap);
+		auto output = map[typeid(*node)](node, graph->root(), svmap, sd);
 
 		auto v = m.variable(node);
 		JLM_DEBUG_ASSERT(v);
@@ -586,7 +636,7 @@ handle_scc(
 
 		/* convert SCC nodes */
 		for (const auto & node : scc) {
-			auto output = map[typeid(*node)](node, pb.region(), svmap);
+			auto output = map[typeid(*node)](node, pb.region(), svmap, sd);
 			recvars[m.variable(node)]->set_value(output);
 		}
 
@@ -605,7 +655,7 @@ handle_scc(
 }
 
 std::unique_ptr<jlm::rvsdg>
-construct_rvsdg(const module & m)
+construct_rvsdg(const module & m, const stats_descriptor & sd)
 {
 	auto rvsdg = std::make_unique<jlm::rvsdg>(m.target_triple(), m.data_layout());
 	auto graph = rvsdg->graph();
@@ -621,7 +671,7 @@ construct_rvsdg(const module & m)
 	/* convert ipgraph nodes */
 	auto sccs = m.ipgraph().find_sccs();
 	for (const auto & scc : sccs)
-		handle_scc(scc, graph, svmap);
+		handle_scc(scc, graph, svmap, sd);
 
 	return std::move(rvsdg);
 }
