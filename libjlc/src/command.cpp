@@ -46,7 +46,7 @@ generate_commands(const jlm::cmdline_options & opts)
 		leaves.push_back(last);
 	}
 
-	std::vector<jlm::file> lnkifiles;
+	std::vector<jlm::filepath> lnkifiles;
 	for (const auto & c : opts.compilations) {
 		if (c.link())
 			lnkifiles.push_back(c.ofile());

@@ -24,8 +24,8 @@ public:
 	, format(outputformat::llvm)
 	{}
 
-	jlm::file ifile;
-	jlm::file ofile;
+	jlm::filepath ifile;
+	jlm::filepath ofile;
 	outputformat format;
 	std::vector<jlm::optimization> optimizations;
 };

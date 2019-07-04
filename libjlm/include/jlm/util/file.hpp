@@ -10,11 +10,11 @@
 
 namespace jlm {
 
-class file final {
+class filepath final {
 public:
 	inline
-	file(const std::string & f)
-	: file_(f)
+	filepath(const std::string & path)
+	: path_(path)
 	{}
 
 	/**
@@ -47,11 +47,11 @@ public:
 	inline std::string
 	name() const noexcept
 	{
-		auto pos = file_.find_last_of("/");
+		auto pos = path_.find_last_of("/");
 		if (pos == std::string::npos)
-			return file_;
+			return path_;
 
-		return file_.substr(pos+1, file_.size()-pos);
+		return path_.substr(pos+1, path_.size()-pos);
 	}
 
 	/**
@@ -82,33 +82,33 @@ public:
 	std::string
 	path() const noexcept
 	{
-		auto pos = file_.find_last_of("/");
+		auto pos = path_.find_last_of("/");
 		if (pos == std::string::npos)
 			return "";
 
-		return file_.substr(0, pos+1);
+		return path_.substr(0, pos+1);
 	}
 
 	inline std::string
 	to_str() const noexcept
 	{
-		return file_;
+		return path_;
 	}
 
 	inline bool
-	operator==(const jlm::file & other) const noexcept
+	operator==(const jlm::filepath & other) const noexcept
 	{
-		return file_ == other.file_;
+		return path_ == other.path_;
 	}
 
 	inline bool
 	operator==(const std::string & f) const noexcept
 	{
-		return file_ == f;
+		return path_ == f;
 	}
 
 private:
-	std::string file_;
+	std::string path_;
 };
 
 }

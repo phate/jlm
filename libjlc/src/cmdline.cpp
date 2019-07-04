@@ -44,15 +44,15 @@ to_str(const standard & std)
 /* cmdline parser */
 
 static bool
-is_objfile(const jlm::file & file)
+is_objfile(const jlm::filepath & file)
 {
 	return file.complete_suffix() == "o";
 }
 
-static jlm::file
-to_objfile(const jlm::file & f)
+static jlm::filepath
+to_objfile(const jlm::filepath & f)
 {
-	return jlm::file(f.path() + f.base() + ".o");
+	return jlm::filepath(f.path() + f.base() + ".o");
 }
 
 void
@@ -210,7 +210,7 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & flags)
 			JLM_DEBUG_ASSERT(flags.compilations.size() == 1);
 			flags.compilations[0].set_ofile(ofilepath);
 		} else {
-			flags.lnkofile = jlm::file(ofilepath);
+			flags.lnkofile = jlm::filepath(ofilepath);
 		}
 	}
 }

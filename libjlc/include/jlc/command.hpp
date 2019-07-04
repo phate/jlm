@@ -26,7 +26,7 @@ public:
 	~prscmd();
 
 	prscmd(
-		const jlm::file & ifile,
+		const jlm::filepath & ifile,
 		const std::vector<std::string> & Ipaths,
 		const std::vector<std::string> & Dmacros,
 		const std::vector<std::string> & Wwarnings,
@@ -47,7 +47,7 @@ public:
 	static passgraph_node *
 	create(
 		passgraph * pgraph,
-		const jlm::file & ifile,
+		const jlm::filepath & ifile,
 		const std::vector<std::string> & Ipaths,
 		const std::vector<std::string> & Dmacros,
 		const std::vector<std::string> & Wwarnings,
@@ -59,7 +59,7 @@ public:
 
 private:
 	standard std_;
-	jlm::file ifile_;
+	jlm::filepath ifile_;
 	std::vector<std::string> Ipaths_;
 	std::vector<std::string> Dmacros_;
 	std::vector<std::string> Wwarnings_;
@@ -72,7 +72,7 @@ public:
 	virtual
 	~optcmd();
 
-	optcmd(const jlm::file & ifile)
+	optcmd(const jlm::filepath & ifile)
 	: ifile_(ifile)
 	{}
 
@@ -85,13 +85,13 @@ public:
 	static passgraph_node *
 	create(
 		passgraph * pgraph,
-		const jlm::file & ifile)
+		const jlm::filepath & ifile)
 	{
 		return passgraph_node::create(pgraph, std::make_unique<optcmd>(ifile));
 	}
 
 private:
-	jlm::file ifile_;
+	jlm::filepath ifile_;
 };
 
 /* code generator command */
@@ -102,8 +102,8 @@ public:
 	~cgencmd();
 
 	cgencmd(
-		const jlm::file & ifile,
-		const jlm::file & ofile,
+		const jlm::filepath & ifile,
+		const jlm::filepath & ofile,
 		const optlvl & ol)
 	: ol_(ol)
 	, ifile_(ifile)
@@ -116,7 +116,7 @@ public:
 	virtual void
 	run() const override;
 
-	inline const jlm::file &
+	inline const jlm::filepath &
 	ofile() const noexcept
 	{
 		return ofile_;
@@ -125,8 +125,8 @@ public:
 	static passgraph_node *
 	create(
 		passgraph * pgraph,
-		const jlm::file & ifile,
-		const jlm::file & ofile,
+		const jlm::filepath & ifile,
+		const jlm::filepath & ofile,
 		const optlvl & ol)
 	{
 		return passgraph_node::create(pgraph, std::make_unique<cgencmd>(ifile, ofile, ol));
@@ -134,8 +134,8 @@ public:
 
 private:
 	optlvl ol_;
-	jlm::file ifile_;
-	jlm::file ofile_;
+	jlm::filepath ifile_;
+	jlm::filepath ofile_;
 };
 
 /* linker command */
@@ -146,8 +146,8 @@ public:
 	~lnkcmd();
 
 	lnkcmd(
-		const std::vector<jlm::file> & ifiles,
-		const jlm::file & ofile,
+		const std::vector<jlm::filepath> & ifiles,
+		const jlm::filepath & ofile,
 		const std::vector<std::string> & Lpaths,
 		const std::vector<std::string> & libs)
 	: ofile_(ofile)
@@ -162,13 +162,13 @@ public:
 	virtual void
 	run() const override;
 
-	inline const jlm::file &
+	inline const jlm::filepath &
 	ofile() const noexcept
 	{
 		return ofile_;
 	}
 
-	inline const std::vector<jlm::file> &
+	inline const std::vector<jlm::filepath> &
 	ifiles() const noexcept
 	{
 		return ifiles_;
@@ -177,8 +177,8 @@ public:
 	static passgraph_node *
 	create(
 		passgraph * pgraph,
-		const std::vector<jlm::file> & ifiles,
-		const jlm::file & ofile,
+		const std::vector<jlm::filepath> & ifiles,
+		const jlm::filepath & ofile,
 		const std::vector<std::string> & Lpaths,
 		const std::vector<std::string> & libs)
 	{
@@ -187,9 +187,9 @@ public:
 	}
 
 private:
-	jlm::file ofile_;
+	jlm::filepath ofile_;
 	std::vector<std::string> libs_;
-	std::vector<jlm::file> ifiles_;
+	std::vector<jlm::filepath> ifiles_;
 	std::vector<std::string> Lpaths_;
 };
 

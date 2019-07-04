@@ -26,8 +26,8 @@ to_str(const standard & std);
 class compilation {
 public:
 	compilation(
-		const jlm::file & ifile,
-		const jlm::file & ofile,
+		const jlm::filepath & ifile,
+		const jlm::filepath & ofile,
 		bool parse,
 		bool optimize,
 		bool assemble,
@@ -40,20 +40,20 @@ public:
 	, ofile_(ofile)
 	{}
 
-	const jlm::file &
+	const jlm::filepath &
 	ifile() const noexcept
 	{
 		return ifile_;
 	}
 
-	const jlm::file &
+	const jlm::filepath &
 	ofile() const noexcept
 	{
 		return ofile_;
 	}
 
 	void
-	set_ofile(const jlm::file & ofile)
+	set_ofile(const jlm::filepath & ofile)
 	{
 		ofile_ = ofile;
 	}
@@ -87,8 +87,8 @@ private:
 	bool parse_;
 	bool optimize_;
 	bool assemble_;
-	jlm::file ifile_;
-	jlm::file ofile_;
+	jlm::filepath ifile_;
+	jlm::filepath ofile_;
 };
 
 class cmdline_options {
@@ -106,7 +106,7 @@ public:
 
 	optlvl Olvl;
 	standard std;
-	jlm::file lnkofile;
+	jlm::filepath lnkofile;
 	std::vector<std::string> libs;
 	std::vector<std::string> macros;
 	std::vector<std::string> libpaths;
