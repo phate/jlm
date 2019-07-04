@@ -9,7 +9,49 @@
 #include <jive/rvsdg/graph.h>
 #include <jive/rvsdg/region.h>
 
+#include <jlm/util/file.hpp>
+
 #include <chrono>
+
+namespace jlm {
+
+class stats_descriptor final {
+public:
+	stats_descriptor()
+	: stats_descriptor(std::string("/tmp/jlm-stats.log"))
+	{}
+
+	stats_descriptor(const jlm::filepath & path)
+	: print_cfr_time(false)
+	, print_annotation_time(false)
+	, print_aggregation_time(false)
+	, file_(path)
+	{
+		file_.open("a");
+	}
+
+	const jlm::file &
+	file() const noexcept
+	{
+		return file_;
+	}
+
+	void
+	set_file(const jlm::filepath & path) noexcept
+	{
+		file_ = std::move(jlm::file(path));
+		file_.open("a");
+	}
+
+	bool print_cfr_time;
+	bool print_annotation_time;
+	bool print_aggregation_time;
+
+private:
+	jlm::file file_;
+};
+
+}
 
 class statscollector final {
 public:
