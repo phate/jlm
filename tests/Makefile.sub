@@ -19,7 +19,7 @@ TEST_SOURCES = \
 
 tests/test-runner: libjlc.a libjlm.a $(JIVE_ROOT)/libjive.a
 tests/test-runner: CPPFLAGS += -I$(JLM_ROOT)/libjlm/include -I$(JLM_ROOT)/libjlc/include -I$(JIVE_ROOT)/include
-tests/test-runner: LDFLAGS=-L. -Lexternal/jive -ljlc -ljlm $(shell $(LLVMCONFIG) --ldflags --libs) -ljive
+tests/test-runner: LDFLAGS=-L. -Lexternal/jive -ljlc -ljlm $(shell $(LLVMCONFIG) --ldflags --libs --system-libs) -ljive
 tests/test-runner: %: $(patsubst %.cpp, %.la, $(TEST_SOURCES)) libjlm.a
 	$(CXX) -o $@ $(filter %.la, $^) $(LDFLAGS)
 
