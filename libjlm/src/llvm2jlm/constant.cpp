@@ -92,7 +92,11 @@ convert_constantExpr(
 	*/
 
 	/* FIXME: getAsInstruction is none const, forcing all llvm parameters to be none const */
-	return convert_instruction(c->getAsInstruction(), tacs, ctx);
+	/* FIXME: The invocation of getAsInstruction() introduces a memory leak. */
+	auto instruction = c->getAsInstruction();
+	auto v = convert_instruction(instruction, tacs, ctx);
+	instruction->dropAllReferences();
+	return v;
 }
 
 static const variable *
