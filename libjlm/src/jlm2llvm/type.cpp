@@ -104,7 +104,7 @@ convert_struct_type(const jive::type & type, context & ctx)
 	auto st = ctx.structtype(t.declaration());
 	if (st) return st;
 
-	st = llvm::StructType::create(ctx.llvm_module().getContext(), {}, "", t.packed());
+	st = llvm::StructType::create(ctx.llvm_module().getContext());
 	if (t.has_name()) st->setName(t.name());
 	ctx.add_structtype(t.declaration(), st);
 
