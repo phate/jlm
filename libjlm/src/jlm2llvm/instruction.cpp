@@ -210,9 +210,9 @@ convert_match(
 		return ctx.value(args[0]);
 
 	if (mop->nalternatives() == 2 && mop->nbits() == 1) {
-		auto i2 = llvm::IntegerType::get(builder.getContext(), 2);
-		auto t = llvm::ConstantInt::getFalse(i2);
-		auto f = llvm::ConstantInt::getTrue(i2);
+		auto i1 = llvm::IntegerType::get(builder.getContext(), 1);
+		auto t = llvm::ConstantInt::getFalse(i1);
+		auto f = llvm::ConstantInt::getTrue(i1);
 		return builder.CreateSelect(ctx.value(args[0]), t, f);
 	}
 
