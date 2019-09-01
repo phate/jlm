@@ -39,6 +39,8 @@
 #include <cmath>
 #include <stack>
 
+static std::string source_filename;
+
 static inline jive::output *
 create_undef_value(jive::region * region, const jive::type & type)
 {
@@ -472,7 +474,8 @@ convert_cfg(
 	if (sd.print_cfr_time) {
 		timer.stop();
 		fprintf(sd.file().fd(),
-			"CFRTIME %s %zu %zu\n", function.name().c_str(), nnodes, timer.ns());
+			"CFRTIME %s %s %zu %zu\n",
+			source_filename.c_str(), function.name().c_str(), nnodes, timer.ns());
 	}
 
 
@@ -486,7 +489,8 @@ convert_cfg(
 	if (sd.print_aggregation_time) {
 		timer.stop();
 		fprintf(sd.file().fd(),
-			"AGGREGATIONTIME %s %zu %zu\n", function.name().c_str(), nnodes, timer.ns());
+			"AGGREGATIONTIME %s %s %zu %zu\n",
+			source_filename.c_str(), function.name().c_str(), nnodes, timer.ns());
 	}
 
 	size_t ntacs = 0;
@@ -500,7 +504,8 @@ convert_cfg(
 	if (sd.print_annotation_time) {
 		timer.stop();
 		fprintf(sd.file().fd(),
-			"ANNOTATIONTIME %s %zu %zu\n", function.name().c_str(), ntacs, timer.ns());
+			"ANNOTATIONTIME %s %s %zu %zu\n",
+			source_filename.c_str(), function.name().c_str(), ntacs, timer.ns());
 	}
 
 	lambda_builder lb;
@@ -679,6 +684,8 @@ convert_module(const module & m, const stats_descriptor & sd)
 std::unique_ptr<jlm::rvsdg>
 construct_rvsdg(const module & m, const stats_descriptor & sd)
 {
+	source_filename = m.source_filename().to_str();
+
 	size_t ntacs = 0;
 	jlm::timer timer;
 	if (sd.print_rvsdg_construction) {
@@ -692,7 +699,7 @@ construct_rvsdg(const module & m, const stats_descriptor & sd)
 		timer.stop();
 		size_t nnodes = jive::nnodes(rvsdg->graph()->root());
 		fprintf(sd.file().fd(),
-			"RVSDGCONSTRUCTION %zu %zu %zu\n", ntacs, nnodes, timer.ns());
+			"RVSDGCONSTRUCTION %s %zu %zu %zu\n", source_filename.c_str(), ntacs, nnodes, timer.ns());
 	}
 
 	return std::move(rvsdg);
