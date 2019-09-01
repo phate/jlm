@@ -25,6 +25,7 @@ public:
 	: print_cfr_time(false)
 	, print_annotation_time(false)
 	, print_aggregation_time(false)
+	, print_rvsdg_construction(false)
 	, file_(path)
 	{
 		file_.open("a");
@@ -46,6 +47,7 @@ public:
 	bool print_cfr_time;
 	bool print_annotation_time;
 	bool print_aggregation_time;
+	bool print_rvsdg_construction;
 
 private:
 	jlm::file file_;

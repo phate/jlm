@@ -654,8 +654,8 @@ handle_scc(
 	}
 }
 
-std::unique_ptr<jlm::rvsdg>
-construct_rvsdg(const module & m, const stats_descriptor & sd)
+static std::unique_ptr<jlm::rvsdg>
+convert_module(const module & m, const stats_descriptor & sd)
 {
 	auto rvsdg = std::make_unique<jlm::rvsdg>(m.target_triple(), m.data_layout());
 	auto graph = rvsdg->graph();
@@ -672,6 +672,28 @@ construct_rvsdg(const module & m, const stats_descriptor & sd)
 	auto sccs = m.ipgraph().find_sccs();
 	for (const auto & scc : sccs)
 		handle_scc(scc, graph, svmap, sd);
+
+	return rvsdg;
+}
+
+std::unique_ptr<jlm::rvsdg>
+construct_rvsdg(const module & m, const stats_descriptor & sd)
+{
+	size_t ntacs = 0;
+	jlm::timer timer;
+	if (sd.print_rvsdg_construction) {
+		ntacs = jlm::ntacs(m);
+		timer.start();
+	}
+
+	auto rvsdg = convert_module(m, sd);
+
+	if (sd.print_rvsdg_construction) {
+		timer.stop();
+		size_t nnodes = jive::nnodes(rvsdg->graph()->root());
+		fprintf(sd.file().fd(),
+			"RVSDGCONSTRUCTION %zu %zu %zu\n", ntacs, nnodes, timer.ns());
+	}
 
 	return std::move(rvsdg);
 }
