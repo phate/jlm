@@ -22,8 +22,76 @@
 #include <llvm/Support/raw_os_ostream.h>
 #include <llvm/Support/SourceMgr.h>
 
-#include <chrono>
 #include <iostream>
+
+static std::unique_ptr<llvm::Module>
+parse_llvm_file(
+	const char * executable,
+	const jlm::filepath & file,
+	llvm::LLVMContext & ctx)
+{
+	llvm::SMDiagnostic d;
+	auto module = llvm::parseIRFile(file.to_str(), d, ctx);
+	if (!module) {
+		d.print(executable, llvm::errs());
+		exit(EXIT_FAILURE);
+	}
+
+	return module;
+}
+
+static std::unique_ptr<jlm::module>
+construct_jlm_module(llvm::Module & module)
+{
+	return jlm::convert_module(module);
+}
+
+static void
+print_as_xml(const jlm::rvsdg & rvsdg, const jlm::filepath & fp)
+{
+	auto fd = fp == "" ? stdout : fopen(fp.to_str().c_str(), "w");
+
+	jive::view_xml(rvsdg.graph()->root(), fd);
+
+	if (fd != stdout)
+			fclose(fd);
+}
+
+static void
+print_as_llvm(const jlm::rvsdg & rvsdg, const jlm::filepath & fp)
+{
+	auto jlm_module = jlm::rvsdg2jlm::rvsdg2jlm(rvsdg);
+
+	llvm::LLVMContext ctx;
+	auto llvm_module = jlm::jlm2llvm::convert(*jlm_module, ctx);
+
+	if (fp == "") {
+		llvm::raw_os_ostream os(std::cout);
+		llvm_module->print(os, nullptr);
+	} else {
+		std::error_code ec;
+		llvm::raw_fd_ostream os(fp.to_str(), ec);
+		llvm_module->print(os, nullptr);
+	}
+}
+
+static void
+print(
+	const jlm::rvsdg & rvsdg,
+	const jlm::filepath & fp,
+	const jlm::outputformat & format)
+{
+	static std::unordered_map<
+		jlm::outputformat,
+		std::function<void(const jlm::rvsdg&, const jlm::filepath&)>
+	> formatters({
+		{jlm::outputformat::xml,  print_as_xml}
+	, {jlm::outputformat::llvm, print_as_llvm}
+	});
+
+	JLM_DEBUG_ASSERT(formatters.find(format) != formatters.end());
+	formatters[format](rvsdg, fp);
+}
 
 int
 main(int argc, char ** argv)
@@ -31,59 +99,15 @@ main(int argc, char ** argv)
 	jlm::cmdline_options flags;
 	parse_cmdline(argc, argv, flags);
 
-	llvm::SMDiagnostic d;
 	llvm::LLVMContext ctx;
-	auto lm = llvm::parseIRFile(flags.ifile.to_str(), d, ctx);
-	if (!lm) {
-		d.print(argv[0], llvm::errs());
-		exit(1);
-	}
+	auto llvm_module = parse_llvm_file(argv[0], flags.ifile, ctx);
+	auto jlm_module = construct_jlm_module(*llvm_module);
 
-	auto jm = jlm::convert_module(*lm);
+	auto rvsdg = jlm::construct_rvsdg(*jlm_module, flags.sd);
 
-	#ifdef RVSDGTIME
-		size_t ntacs = jlm::ntacs(*jm);
-		auto start = std::chrono::high_resolution_clock::now();
-	#endif
+	optimize(*rvsdg->graph(), flags.optimizations);
 
-	auto rvsdg = jlm::construct_rvsdg(*jm, flags.sd);
-
-	#ifdef RVSDGTIME
-		size_t nnodes = jive::nnodes(rvsdg->graph()->root());
-	#endif
-
-	for (const auto & opt : flags.optimizations)
-		optimize(*rvsdg->graph(), opt);
-
-	if (flags.format == jlm::outputformat::llvm) {
-		jm = jlm::rvsdg2jlm::rvsdg2jlm(*rvsdg);
-
-		#ifdef RVSDGTIME
-			auto end = std::chrono::high_resolution_clock::now();
-			std::cerr << "RVSDGTIME: "
-			          << ntacs << " "
-			          << nnodes << " "
-			          << std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count()
-			          << "\n";
-		#endif
-
-		lm = jlm::jlm2llvm::convert(*jm, ctx);
-		if (flags.ofile == "") {
-			llvm::raw_os_ostream os(std::cout);
-			lm->print(os, nullptr);
-		} else {
-			std::error_code ec;
-			llvm::raw_fd_ostream os(flags.ofile.to_str(), ec);
-			lm->print(os, nullptr);
-		}
-	}
-
-	if (flags.format == jlm::outputformat::xml) {
-		auto fd = flags.ofile == "" ? stdout : fopen(flags.ofile.to_str().c_str(), "w");
-		jive::view_xml(rvsdg->graph()->root(), fd);
-		if (fd != stdout)
-			fclose(fd);
-	}
+	print(*rvsdg, flags.ofile, flags.format);
 
 	return 0;
 }
