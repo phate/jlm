@@ -21,7 +21,7 @@ test_straightening()
 	using namespace jlm;
 
 	jlm::valuetype vt;
-	jlm::module module("", "");
+	jlm::module module(filepath(""), "", "");
 	auto v = module.create_variable(vt, "v");
 
 	jlm::cfg cfg(module);
@@ -55,7 +55,7 @@ test_is_structured()
 {
 	using namespace jlm;
 
-	jlm::module module("", "");
+	jlm::module module(filepath(""), "", "");
 
 	jlm::cfg cfg(module);
 	auto split = basic_block::create(cfg);

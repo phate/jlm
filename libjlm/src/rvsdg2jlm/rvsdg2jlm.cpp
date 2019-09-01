@@ -491,13 +491,11 @@ convert_node(const jive::node & node, context & ctx)
 std::unique_ptr<jlm::module>
 rvsdg2jlm(const jlm::rvsdg & rvsdg)
 {
-	auto & dl = rvsdg.data_layout();
-	auto & tt = rvsdg.target_triple();
-	std::unique_ptr<jlm::module> module(new jlm::module(tt, dl));
+	auto m = module::create(rvsdg.source_filename(), rvsdg.target_triple(), rvsdg.data_layout());
 	auto graph = rvsdg.graph();
-	auto & clg = module->ipgraph();
+	auto & clg = m->ipgraph();
 
-	context ctx(*module);
+	context ctx(*m);
 
 	/* Add all imports to context */
 	for (size_t n = 0; n < graph->root()->narguments(); n++) {
@@ -505,14 +503,14 @@ rvsdg2jlm(const jlm::rvsdg & rvsdg)
 		auto import = static_cast<const jlm::impport*>(&argument->port());
 		if (auto ftype = is_function_import(argument)) {
 			auto f = function_node::create(clg, import->name(), *ftype, import->linkage());
-			auto v = module->create_variable(f);
+			auto v = m->create_variable(f);
 			ctx.insert(argument, v);
 		} else {
 			JLM_DEBUG_ASSERT(dynamic_cast<const ptrtype*>(&argument->type()));
 			auto & type = *static_cast<const ptrtype*>(&argument->type());
 			const auto & name = import->name();
 			auto dnode = data_node::create(clg, name, type, import->linkage(), false);
-			auto v = module->create_global_value(dnode);
+			auto v = m->create_global_value(dnode);
 			ctx.insert(argument, v);
 		}
 	}
@@ -520,7 +518,7 @@ rvsdg2jlm(const jlm::rvsdg & rvsdg)
 	for (const auto & node : jive::topdown_traverser(graph->root()))
 		convert_node(*node, ctx);
 
-	return module;
+	return m;
 }
 
 }}

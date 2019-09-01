@@ -9,6 +9,7 @@
 #include <jive/rvsdg/graph.h>
 
 #include <jlm/ir/linkage.hpp>
+#include <jlm/util/file.hpp>
 
 namespace jlm {
 
@@ -64,9 +65,13 @@ private:
 class rvsdg final {
 public:
 	inline
-	rvsdg(const std::string & target_triple, const std::string & data_layout)
+	rvsdg(
+		const jlm::filepath & source_filename,
+		const std::string & target_triple,
+		const std::string & data_layout)
 	: data_layout_(data_layout)
 	, target_triple_(target_triple)
+	, source_filename_(source_filename)
 	{}
 
 	rvsdg(const rvsdg &) = delete;
@@ -91,6 +96,12 @@ public:
 		return &graph_;
 	}
 
+	const jlm::filepath &
+	source_filename() const noexcept
+	{
+		return source_filename_;
+	}
+
 	inline const std::string &
 	target_triple() const noexcept
 	{
@@ -103,10 +114,20 @@ public:
 		return data_layout_;
 	}
 
+	static std::unique_ptr<jlm::rvsdg>
+	create(
+		const jlm::filepath & source_filename,
+		const std::string & target_triple,
+		const std::string & data_layout)
+	{
+		return std::make_unique<jlm::rvsdg>(source_filename, target_triple, data_layout);
+	}
+
 private:
 	jive::graph graph_;
 	std::string data_layout_;
 	std::string target_triple_;
+	const jlm::filepath source_filename_;
 };
 
 }

@@ -21,7 +21,7 @@ test()
 
 	valuetype vt;
 	ptrtype pt(vt);
-	jlm::rvsdg rvsdg("", "");
+	jlm::rvsdg rvsdg(filepath(""), "", "");
 
 	auto imp = rvsdg.graph()->add_import({vt, ""});
 

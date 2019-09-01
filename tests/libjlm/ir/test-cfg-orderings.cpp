@@ -17,7 +17,7 @@ test()
 
 	/* setup cfg */
 
-	jlm::module module("", "");
+	jlm::module module(filepath(""), "", "");
 
 	jlm::cfg cfg(module);
 	auto bb0 = basic_block::create(cfg);

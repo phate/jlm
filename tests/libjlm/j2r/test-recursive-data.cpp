@@ -21,7 +21,7 @@ test()
 	using namespace jlm;
 
 	valuetype vt;
-	module m("", "");
+	module m(filepath(""), "", "");
 
 	auto d0 = data_node::create(m.ipgraph(), "d0", vt, linkage::external_linkage, false);
 

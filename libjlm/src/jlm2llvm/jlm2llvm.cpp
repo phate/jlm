@@ -326,6 +326,7 @@ std::unique_ptr<llvm::Module>
 convert(jlm::module & jm, llvm::LLVMContext & lctx)
 {
 	std::unique_ptr<llvm::Module> lm(new llvm::Module("module", lctx));
+	lm->setSourceFileName(jm.source_filename().to_str());
 	lm->setTargetTriple(jm.target_triple());
 	lm->setDataLayout(jm.data_layout());
 

@@ -657,7 +657,7 @@ handle_scc(
 static std::unique_ptr<jlm::rvsdg>
 convert_module(const module & m, const stats_descriptor & sd)
 {
-	auto rvsdg = std::make_unique<jlm::rvsdg>(m.target_triple(), m.data_layout());
+	auto rvsdg = jlm::rvsdg::create(m.source_filename(), m.target_triple(), m.data_layout());
 	auto graph = rvsdg->graph();
 
 	auto nf = graph->node_normal_form(typeid(jive::operation));

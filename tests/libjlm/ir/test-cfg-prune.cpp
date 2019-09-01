@@ -23,7 +23,7 @@ test()
 
 	/* setup cfg */
 
-	jlm::module module("", "");
+	jlm::module module(filepath(""), "", "");
 	auto arg = module.create_variable(vt, "arg");
 	auto c = module.create_variable(vt, "c");
 	auto p = module.create_variable(vt, "p");

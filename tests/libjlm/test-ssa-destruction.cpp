@@ -20,7 +20,7 @@ test_two_phis()
 	using namespace jlm;
 
 	jlm::valuetype vt;
-	jlm::module module("", "");
+	jlm::module module(filepath(""), "", "");
 
 	auto v1 = module.create_variable(vt, "vbl1");
 	auto v2 = module.create_variable(vt, "vbl2");

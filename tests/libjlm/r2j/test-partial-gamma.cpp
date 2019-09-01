@@ -27,7 +27,7 @@ test()
 	jive::bittype bt1(1);
 	jive::fcttype ft({&bt1, &vt}, {&vt});
 
-	jlm::rvsdg rvsdg("", "");
+	jlm::rvsdg rvsdg(filepath(""), "", "");
 
 	jlm::lambda_builder lb;
 	auto arguments = lb.begin_lambda(rvsdg.graph()->root(), {ft, "f", linkage::external_linkage});

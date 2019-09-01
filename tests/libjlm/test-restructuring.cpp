@@ -19,7 +19,7 @@ test_acyclic_structured()
 {
 	using namespace jlm;
 
-	jlm::module module("", "");
+	jlm::module module(filepath(""), "", "");
 
 	jlm::cfg cfg(module);
 	auto bb1 = basic_block::create(cfg);
@@ -49,7 +49,7 @@ test_acyclic_unstructured()
 {
 	using namespace jlm;
 
-	jlm::module module("", "");
+	jlm::module module(filepath(""), "", "");
 
 	jlm::cfg cfg(module);
 	auto bb1 = basic_block::create(cfg);
@@ -79,7 +79,7 @@ test_dowhile()
 {
 	using namespace jlm;
 
-	jlm::module module("", "");
+	jlm::module module(filepath(""), "", "");
 
 	jlm::cfg cfg(module);
 	auto bb1 = basic_block::create(cfg);
@@ -110,7 +110,7 @@ test_while()
 {
 	using namespace jlm;
 
-	jlm::module module("", "");
+	jlm::module module(filepath(""), "", "");
 
 	jlm::cfg cfg(module);
 	auto bb1 = basic_block::create(cfg);
@@ -136,7 +136,7 @@ test_irreducible()
 {
 	using namespace jlm;
 
-	jlm::module module("", "");
+	jlm::module module(filepath(""), "", "");
 
 	jlm::cfg cfg(module);
 	auto bb1 = basic_block::create(cfg);
@@ -168,7 +168,7 @@ test_acyclic_unstructured_in_dowhile()
 {
 	using namespace jlm;
 
-	jlm::module module("", "");
+	jlm::module module(filepath(""), "", "");
 
 	jlm::cfg cfg(module);
 	auto bb1 = basic_block::create(cfg);
@@ -198,7 +198,7 @@ test_lor_before_dowhile()
 {
 	using namespace jlm;
 
-	jlm::module module("", "");
+	jlm::module module(filepath(""), "", "");
 
 	jlm::cfg cfg(module);
 	auto bb1 = basic_block::create(cfg);

@@ -42,7 +42,7 @@ test()
 {
 	using namespace jlm;
 
-	jlm::module module("", "");
+	jlm::module module(filepath(""), "", "");
 
 	/* setup cfg */
 

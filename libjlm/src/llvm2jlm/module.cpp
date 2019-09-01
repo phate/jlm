@@ -222,17 +222,16 @@ convert_globals(llvm::Module & lm, context & ctx)
 }
 
 std::unique_ptr<module>
-convert_module(llvm::Module & module)
+convert_module(llvm::Module & m)
 {
-	auto tt = module.getTargetTriple();
-	auto dl = module.getDataLayoutStr();
-	std::unique_ptr<jlm::module> m(new jlm::module(tt, dl));
+	filepath fp(m.getSourceFileName());
+	auto module = module::create(fp, m.getTargetTriple(), m.getDataLayoutStr());
 
-	context ctx(*m);
-	declare_globals(module, ctx);
-	convert_globals(module, ctx);
+	context ctx(*module);
+	declare_globals(m, ctx);
+	convert_globals(m, ctx);
 
-	return m;
+	return module;
 }
 
 }

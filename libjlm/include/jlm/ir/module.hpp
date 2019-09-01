@@ -10,6 +10,8 @@
 #include <jlm/ir/ipgraph.hpp>
 #include <jlm/ir/tac.hpp>
 
+#include <jlm/util/file.hpp>
+
 namespace jlm {
 
 /* global value */
@@ -63,10 +65,12 @@ public:
 
 	inline
 	module(
+		const jlm::filepath & source_filename,
 		const std::string & target_triple,
 		const std::string & data_layout) noexcept
 	: data_layout_(data_layout)
 	, target_triple_(target_triple)
+	, source_filename_(source_filename)
 	{}
 
 	inline jlm::ipgraph &
@@ -156,6 +160,12 @@ public:
 		return it != functions_.end() ? it->second : nullptr;
 	}
 
+	const jlm::filepath &
+	source_filename() const noexcept
+	{
+		return source_filename_;
+	}
+
 	inline const std::string &
 	target_triple() const noexcept
 	{
@@ -168,10 +178,20 @@ public:
 		return data_layout_;
 	}
 
+	static std::unique_ptr<jlm::module>
+	create(
+		const jlm::filepath & source_filename,
+		const std::string & target_triple,
+		const std::string & data_layout)
+	{
+		return std::make_unique<jlm::module>(source_filename, target_triple, data_layout);
+	}
+
 private:
 	jlm::ipgraph clg_;
 	std::string data_layout_;
 	std::string target_triple_;
+	const jlm::filepath source_filename_;
 	std::unordered_set<const jlm::gblvalue*> globals_;
 	std::unordered_set<std::unique_ptr<jlm::variable>> variables_;
 	std::unordered_map<const ipgraph_node*, const jlm::variable*> functions_;
