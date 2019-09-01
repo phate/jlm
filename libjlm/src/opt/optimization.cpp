@@ -14,6 +14,9 @@
 #include <jlm/opt/reduction.hpp>
 #include <jlm/opt/unroll.hpp>
 
+#include <jlm/util/stats.hpp>
+#include <jlm/util/time.hpp>
+
 #include <unordered_map>
 
 namespace jlm {
@@ -36,6 +39,30 @@ optimize(jive::graph & graph, const optimization & opt)
 
 	JLM_DEBUG_ASSERT(map.find(opt) != map.end());
 	map[opt](graph);
+}
+
+void
+optimize(
+	jive::graph & graph,
+	const std::vector<optimization> & opts,
+	const stats_descriptor & sd)
+{
+	jlm::timer timer;
+	size_t nnodes_before = 0;
+	if (sd.print_rvsdg_optimization) {
+		nnodes_before = jive::nnodes(graph.root());
+		timer.start();
+	}
+
+	for (const auto & opt : opts)
+		optimize(graph, opt);
+
+	if (sd.print_rvsdg_optimization) {
+		timer.stop();
+		size_t nnodes_after = jive::nnodes(graph.root());
+		fprintf(sd.file().fd(),
+			"RVSDGOPTIMIZATION %zu %zu %zu\n", nnodes_before, nnodes_after, timer.ns());
+	}
 }
 
 }
