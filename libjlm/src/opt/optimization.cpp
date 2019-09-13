@@ -3,6 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/ir/rvsdg.hpp>
+
 #include <jlm/opt/cne.hpp>
 #include <jlm/opt/dne.hpp>
 #include <jlm/opt/inlining.hpp>
@@ -22,7 +24,7 @@
 namespace jlm {
 
 void
-optimize(jive::graph & graph, const optimization & opt)
+optimize(jlm::rvsdg & rvsdg, const optimization & opt)
 {
 	static std::unordered_map<optimization, void(*)(jive::graph&)> map({
 	  {optimization::cne, [](jive::graph & graph){ jlm::cne(graph); }}
@@ -38,30 +40,31 @@ optimize(jive::graph & graph, const optimization & opt)
 
 
 	JLM_DEBUG_ASSERT(map.find(opt) != map.end());
-	map[opt](graph);
+	map[opt](*rvsdg.graph());
 }
 
 void
 optimize(
-	jive::graph & graph,
+	jlm::rvsdg & rvsdg,
 	const std::vector<optimization> & opts,
 	const stats_descriptor & sd)
 {
 	jlm::timer timer;
 	size_t nnodes_before = 0;
 	if (sd.print_rvsdg_optimization) {
-		nnodes_before = jive::nnodes(graph.root());
+		nnodes_before = jive::nnodes(rvsdg.graph()->root());
 		timer.start();
 	}
 
 	for (const auto & opt : opts)
-		optimize(graph, opt);
+		optimize(rvsdg, opt);
 
 	if (sd.print_rvsdg_optimization) {
 		timer.stop();
-		size_t nnodes_after = jive::nnodes(graph.root());
+		size_t nnodes_after = jive::nnodes(rvsdg.graph()->root());
 		fprintf(sd.file().fd(),
-			"RVSDGOPTIMIZATION %zu %zu %zu\n", nnodes_before, nnodes_after, timer.ns());
+			"RVSDGOPTIMIZATION %s %zu %zu %zu\n", rvsdg.source_filename().to_str().c_str(),
+				nnodes_before, nnodes_after, timer.ns());
 	}
 }
 

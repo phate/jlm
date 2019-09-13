@@ -105,7 +105,7 @@ main(int argc, char ** argv)
 
 	auto rvsdg = jlm::construct_rvsdg(*jlm_module, flags.sd);
 
-	optimize(*rvsdg->graph(), flags.optimizations, flags.sd);
+	optimize(*rvsdg, flags.optimizations, flags.sd);
 
 	print(*rvsdg, flags.ofile, flags.format);
 

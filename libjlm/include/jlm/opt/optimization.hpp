@@ -8,22 +8,19 @@
 
 #include <vector>
 
-namespace jive {
-	class graph;
-}
-
 namespace jlm {
 
+class rvsdg;
 class stats_descriptor;
 
 enum class optimization {cne, dne, iln, inv, psh, red, ivt, url, pll};
 
 void
-optimize(jive::graph & graph, const optimization & opt);
+optimize(jlm::rvsdg & rvsdg, const optimization & opt);
 
 void
 optimize(
-	jive::graph & graph,
+	jlm::rvsdg & rvsdg,
 	const std::vector<optimization> & opts,
 	const stats_descriptor & sd);
 
