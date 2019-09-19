@@ -39,7 +39,6 @@ LIBJLM_SRC = \
 	libjlm/src/jlm2rvsdg/module.cpp \
 	libjlm/src/jlm2rvsdg/restructuring.cpp \
 	\
-	libjlm/src/llvm2jlm/constant.cpp \
 	libjlm/src/llvm2jlm/instruction.cpp \
 	libjlm/src/llvm2jlm/module.cpp \
 	libjlm/src/llvm2jlm/type.cpp \

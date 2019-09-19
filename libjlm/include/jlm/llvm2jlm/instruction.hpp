@@ -7,13 +7,13 @@
 #define JLM_LLVM2JLM_INSTRUCTION_HPP
 
 namespace llvm {
+	class Constant;
 	class Instruction;
 	class Value;
 }
 
 namespace jlm  {
 
-class basic_block_attribute;
 class context;
 class variable;
 
@@ -28,6 +28,16 @@ convert_instruction(
 	llvm::Instruction * i,
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx);
+
+std::vector<std::unique_ptr<jlm::tac>>
+convert_constant(llvm::Constant * constant, context & ctx);
+
+const variable *
+convert_constant(
+	llvm::Constant * constant,
+	std::vector<std::unique_ptr<jlm::tac>> & tacs,
+	context & ctx);
+
 
 }
 
