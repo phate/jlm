@@ -37,10 +37,7 @@ public:
 	phi_op(const std::vector<jlm::cfg_node*> & nodes, const jive::type & type)
 	: jive::simple_op(std::vector<jive::port>(nodes.size(), {type}), {type})
 	, nodes_(nodes)
-	{
-		if (nodes.size() < 2)
-			throw jlm::error("expected at least two arguments.");
-	}
+	{}
 
 	phi_op(const phi_op &) = default;
 
@@ -71,7 +68,6 @@ public:
 		JLM_DEBUG_ASSERT(n < narguments());
 		return nodes_[n];
 	}
-
 
 	static std::unique_ptr<jlm::tac>
 	create(

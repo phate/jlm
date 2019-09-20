@@ -19,7 +19,9 @@
 #include <jive/arch/addresstype.h>
 #include <jive/rvsdg/type.h>
 
+#include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/IR/BasicBlock.h>
+#include <llvm/IR/CFG.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/Module.h>
@@ -27,33 +29,43 @@
 namespace jlm
 {
 
-static void
-convert_basic_blocks(
-	llvm::Function::BasicBlockListType & bbs,
-	context & ctx)
+static std::vector<llvm::PHINode*>
+convert_instructions(llvm::Function & function, context & ctx)
 {
-	/* forward declare all instructions, except terminator instructions */
-	for (auto bb = bbs.begin(); bb != bbs.end(); bb++) {
-		for (auto i = bb->begin(); i != bb->end(); i++) {
-			if (llvm::dyn_cast<const llvm::TerminatorInst>(&(*i)))
-				continue;
-
-			if (i->getType()->getTypeID() != llvm::Type::VoidTyID) {
-				auto v = ctx.module().create_variable(*convert_type(i->getType(), ctx));
-				ctx.insert_value(&(*i), v);
+	std::vector<llvm::PHINode*> phis;
+	llvm::ReversePostOrderTraversal<llvm::Function*> rpotraverser(&function);
+	for (auto & bb : rpotraverser) {
+		for (auto & instruction : *bb) {
+			tacsvector_t tacs;
+			convert_instruction(&instruction, tacs, ctx);
+			if (auto phi = llvm::dyn_cast<llvm::PHINode>(&instruction)) {
+				phis.push_back(phi);
+				ctx.get(bb)->append_first(tacs);
+			} else {
+				ctx.get(bb)->append_last(tacs);
 			}
 		}
 	}
 
-	for (auto & bb : bbs) {
-		for (auto & instruction : bb) {
-			std::vector<std::unique_ptr<jlm::tac>> tacs;
-			convert_instruction(&instruction, tacs, ctx);
-			if (instruction.getOpcode() == llvm::Instruction::PHI)
-				ctx.get(&bb)->append_first(tacs);
-			else
-				ctx.get(&bb)->append_last(tacs);
+	return phis;
+}
+
+static void
+patch_phi_operands(const std::vector<llvm::PHINode*> & phis, context & ctx)
+{
+	for (const auto & phi : phis) {
+		std::vector<cfg_node*> nodes;
+		std::vector<const variable*> operands;
+		for (size_t n = 0; n < phi->getNumOperands(); n++) {
+			tacsvector_t tacs;
+			auto bb = ctx.get(phi->getIncomingBlock(n));
+			operands.push_back(convert_value(phi->getIncomingValue(n), tacs, ctx));
+			bb->insert_before_branch(tacs);
+			nodes.push_back(bb);
 		}
+
+		auto phi_tac = static_cast<tacvariable*>(ctx.lookup_value(phi))->tac();
+		phi_tac->replace(phi_op(nodes, phi_tac->output(0)->type()), operands, {phi_tac->output(0)});
 	}
 }
 
@@ -114,7 +126,8 @@ create_cfg(llvm::Function & f, context & ctx)
 	ctx.set_memory_state(memstate);
 	ctx.set_loop_state(loopstate);
 	ctx.set_result(result);
-	convert_basic_blocks(f.getBasicBlockList(), ctx);
+	auto phis = convert_instructions(f, ctx);
+	patch_phi_operands(phis, ctx);
 
 	/* ensure that exit node has only one incoming edge */
 	if (cfg->exit()->ninedges() > 1) {
