@@ -26,29 +26,58 @@ taclist::~taclist()
 
 /* tac */
 
-tac::tac(
+static void
+check_operands(
 	const jive::simple_op & operation,
-	const std::vector<const variable *> & operands,
-	const std::vector<const variable *> & results)
-	: operation_(std::move(operation.copy()))
+	const std::vector<const variable*> & operands)
 {
 	if (operands.size() != operation.narguments())
 		throw jlm::error("invalid number of operands.");
 
-	if (results.size() != operation.nresults())
-		throw jlm::error("invalid number of variables.");
-
 	for (size_t n = 0; n < operands.size(); n++) {
 		if (operands[n]->type() != operation.argument(n).type())
 			throw jlm::error("invalid type.");
-		inputs_.push_back(operands[n]);
 	}
+}
+
+static void
+check_results(
+	const jive::simple_op & operation,
+	const std::vector<const variable*> & results)
+{
+	if (results.size() != operation.nresults())
+		throw jlm::error("invalid number of variables.");
 
 	for (size_t n = 0; n < results.size(); n++) {
 		if (results[n]->type() != operation.result(n).type())
 			throw jlm::error("invalid type.");
-		outputs_.push_back(results[n]);
 	}
+}
+
+tac::tac(
+	const jive::simple_op & operation,
+	const std::vector<const variable *> & operands,
+	const std::vector<const variable *> & results)
+	: inputs_(operands)
+	, outputs_(results)
+	, operation_(std::move(operation.copy()))
+{
+	check_operands(operation, operands);
+	check_results(operation, results);
+}
+
+void
+tac::replace(
+	const jive::simple_op & operation,
+	const std::vector<const variable*> & operands,
+	const std::vector<const variable*> & results)
+{
+	check_operands(operation, operands);
+	check_results(operation, results);
+
+	inputs_ = operands;
+	outputs_ = results;
+	operation_ = std::move(operation.copy());
 }
 
 }

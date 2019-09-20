@@ -124,7 +124,13 @@ public:
 		return outputs_[index];
 	}
 
-	static inline std::unique_ptr<jlm::tac>
+	void
+	replace(
+		const jive::simple_op & operation,
+		const std::vector<const variable*> & operands,
+		const std::vector<const variable*> & results);
+
+	static std::unique_ptr<jlm::tac>
 	create(
 		const jive::simple_op & operation,
 		const std::vector<const variable *> & operands,
