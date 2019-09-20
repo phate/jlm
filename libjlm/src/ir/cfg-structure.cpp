@@ -662,7 +662,7 @@ prune(jlm::cfg & cfg)
 					auto ass = create_assignment(args[0].first->type(), args[0].first, tac->output(0));
 					new_phis.append_first(std::move(ass));
 				} else
-					new_phis.append_first(create_phi_tac(args, tac->output(0)));
+					new_phis.append_first(phi_op::create(args, tac->output(0)));
 			}
 			sink->append_first(new_phis);
 		}

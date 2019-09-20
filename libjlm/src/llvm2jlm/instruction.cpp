@@ -575,7 +575,7 @@ convert_phi_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, co
 		arguments.push_back(std::make_pair(v, bb));
 	}
 
-	tacs.push_back(create_phi_tac(arguments, {ctx.lookup_value(i)}));
+	tacs.push_back(phi_op::create(arguments, {ctx.lookup_value(i)}));
 
 	return tacs.back()->output(0);
 }

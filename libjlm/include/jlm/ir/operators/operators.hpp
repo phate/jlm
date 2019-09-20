@@ -72,25 +72,26 @@ public:
 		return nodes_[n];
 	}
 
+
+	static std::unique_ptr<jlm::tac>
+	create(
+		const std::vector<std::pair<const variable*,cfg_node*>> & arguments,
+		const jlm::variable * result)
+	{
+		std::vector<cfg_node*> nodes;
+		std::vector<const variable*> operands;
+		for (const auto & argument : arguments) {
+			nodes.push_back(argument.second);
+			operands.push_back(argument.first);
+		}
+
+		phi_op phi(nodes, result->type());
+		return tac::create(phi, operands, {result});
+	}
+
 private:
 	std::vector<cfg_node*> nodes_;
 };
-
-static inline std::unique_ptr<jlm::tac>
-create_phi_tac(
-	const std::vector<std::pair<const variable*, cfg_node*>> & arguments,
-	const jlm::variable * result)
-{
-	std::vector<cfg_node*> nodes;
-	std::vector<const variable*> variables;
-	for (const auto & p : arguments) {
-		nodes.push_back(p.second);
-		variables.push_back(p.first);
-	}
-
-	phi_op phi(nodes, result->type());
-	return tac::create(phi, variables, {result});
-}
 
 /* assignment operator */
 

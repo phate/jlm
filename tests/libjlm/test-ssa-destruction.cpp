@@ -48,8 +48,8 @@ test_two_phis()
 	bb3->append_last(create_testop_tac({}, {v2}));
 	bb3->append_last(create_testop_tac({}, {v4}));
 
-	bb4->append_last(create_phi_tac({{v1, bb2}, {v2, bb3}}, r1));
-	bb4->append_last(create_phi_tac({{v3, bb2}, {v4, bb3}}, r2));
+	bb4->append_last(phi_op::create({{v1, bb2}, {v2, bb3}}, r1));
+	bb4->append_last(phi_op::create({{v3, bb2}, {v4, bb3}}, r2));
 
 //	jlm::view_ascii(cfg, stdout);
 

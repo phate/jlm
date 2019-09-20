@@ -40,7 +40,7 @@ test()
 
 	taclist tlbb0, tlbb1;
 	tlbb0.append_last(tac::create(op, {}, {c}));
-	tlbb1.append_last(create_phi_tac({{c,bb0}, {arg, cfg.entry()}}, p));
+	tlbb1.append_last(phi_op::create({{c,bb0}, {arg, cfg.entry()}}, p));
 
 	bb0->append_first(tlbb0);
 	bb1->append_first(tlbb1);
