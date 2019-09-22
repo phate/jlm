@@ -58,6 +58,12 @@ public:
 		tac_ = tac;
 	}
 
+	static std::unique_ptr<tacvariable>
+	create(const jive::type & type, const std::string & name)
+	{
+		return std::make_unique<tacvariable>(type, name);
+	}
+
 private:
 	jlm::tac * tac_;
 };
