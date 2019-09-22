@@ -29,6 +29,21 @@ public:
 	, type_(type.copy())
 	{}
 
+	variable(variable && other)
+	: name_(std::move(other.name_))
+	, type_(std::move(other.type_))
+	{}
+
+	variable &
+	operator=(variable && other)
+	{
+		if (this == &other)
+			return *this;
+
+		name_ = std::move(other.name_);
+		type_ = std::move(other.type_);
+	}
+
 	virtual std::string
 	debug_string() const;
 
