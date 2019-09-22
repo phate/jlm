@@ -399,7 +399,7 @@ has_valid_phis(const basic_block & bb)
 		/*
 			Ensure the number of phi operands equals the number of incoming edges
 		*/
-		if (tac->ninputs() != bb.ninedges())
+		if (tac->noperands() != bb.ninedges())
 			return false;
 
 		/*
@@ -414,13 +414,13 @@ has_valid_phis(const basic_block & bb)
 		*/
 		auto phi = static_cast<const phi_op*>(&tac->operation());
 		std::unordered_map<cfg_node*, const variable*> map;
-		for (size_t n = 0; n < tac->ninputs(); n++) {
+		for (size_t n = 0; n < tac->noperands(); n++) {
 			auto mit = map.find(phi->node(n));
-			if (mit != map.end() && mit->second != tac->input(n))
+			if (mit != map.end() && mit->second != tac->operand(n))
 				return false;
 
 			if (mit == map.end())
-				map[phi->node(n)] = tac->input(n);
+				map[phi->node(n)] = tac->operand(n);
 		}
 	}
 
@@ -651,18 +651,18 @@ prune(jlm::cfg & cfg)
 			taclist new_phis;
 			for (const auto & tac : old_phis) {
 				std::vector<std::pair<const variable*, cfg_node*>> args;
-				for (size_t n = 0; n < tac->ninputs(); n++) {
+				for (size_t n = 0; n < tac->noperands(); n++) {
 					auto old_phi = static_cast<const phi_op*>(&tac->operation());
 					if (old_phi->node(n) != it.node())
-						args.push_back(std::make_pair(tac->input(n), old_phi->node(n)));
+						args.push_back(std::make_pair(tac->operand(n), old_phi->node(n)));
 				}
-				JLM_DEBUG_ASSERT(tac->ninputs()-1 == args.size());
+				JLM_DEBUG_ASSERT(tac->noperands()-1 == args.size());
 
 				if (args.size() == 1) {
-					auto ass = create_assignment(args[0].first->type(), args[0].first, tac->output(0));
+					auto ass = create_assignment(args[0].first->type(), args[0].first, tac->result(0));
 					new_phis.append_first(std::move(ass));
 				} else
-					new_phis.append_first(phi_op::create(args, tac->output(0)));
+					new_phis.append_first(phi_op::create(args, tac->result(0)));
 			}
 			sink->append_first(new_phis);
 		}

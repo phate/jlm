@@ -53,13 +53,13 @@ destruct_ssa(jlm::cfg & cfg)
 			auto v = cfg.module().create_variable(phi->type());
 
 			const variable * value;
-			for (size_t n = 0; n < tac->ninputs(); n++) {
+			for (size_t n = 0; n < tac->noperands(); n++) {
 				JLM_DEBUG_ASSERT(edges.find(phi->node(n)) != edges.end());
 				auto bb = edges[phi->node(n)]->split();
-				value = bb->append_last(create_assignment(v->type(), tac->input(n), v))->input(0);
+				value = bb->append_last(create_assignment(v->type(), tac->operand(n), v))->operand(0);
 			}
 
-			ass_block->append_last(create_assignment(tac->output(0)->type(), value, tac->output(0)));
+			ass_block->append_last(create_assignment(tac->result(0)->type(), value, tac->result(0)));
 			tacs.drop_first();
 		}
 

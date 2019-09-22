@@ -293,10 +293,10 @@ public:
 			throw jlm::error("Initialization cannot be empty.");
 
 		auto & tac = tacs_.back();
-		if (tac->noutputs() != 1)
+		if (tac->nresults() != 1)
 			throw jlm::error("Last TAC of initialization needs exactly one result.");
 
-		value_ = tac->output(0);
+		value_ = tac->result(0);
 	}
 
 	data_node_init(const data_node_init&) = delete;

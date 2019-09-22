@@ -58,8 +58,8 @@ tac::tac(
 	const jive::simple_op & operation,
 	const std::vector<const variable *> & operands,
 	const std::vector<const variable *> & results)
-	: inputs_(operands)
-	, outputs_(results)
+	: results_(results)
+	, operands_(operands)
 	, operation_(std::move(operation.copy()))
 {
 	check_operands(operation, operands);
@@ -75,8 +75,8 @@ tac::replace(
 	check_operands(operation, operands);
 	check_results(operation, results);
 
-	inputs_ = operands;
-	outputs_ = results;
+	results_ = results;
+	operands_ = operands;
 	operation_ = std::move(operation.copy());
 }
 

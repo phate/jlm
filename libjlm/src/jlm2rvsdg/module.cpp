@@ -142,23 +142,23 @@ static void
 convert_assignment(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
 {
 	JLM_DEBUG_ASSERT(is<assignment_op>(tac.operation()));
-	vmap[tac.input(0)] = vmap[tac.input(1)];
+	vmap[tac.operand(0)] = vmap[tac.operand(1)];
 }
 
 static void
 convert_select(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
 {
 	JLM_DEBUG_ASSERT(is<select_op>(tac.operation()));
-	JLM_DEBUG_ASSERT(tac.ninputs() == 3 && tac.noutputs() == 1);
+	JLM_DEBUG_ASSERT(tac.noperands() == 3 && tac.nresults() == 1);
 
 	auto op = jive::match_op(1, {{1, 1}}, 0, 2);
-	auto predicate = jive::simple_node::create_normalized(region, op, {vmap[tac.input(0)]})[0];
+	auto predicate = jive::simple_node::create_normalized(region, op, {vmap[tac.operand(0)]})[0];
 
 	auto gamma = jive::gamma_node::create(predicate, 2);
-	auto ev1 = gamma->add_entryvar(vmap[tac.input(2)]);
-	auto ev2 = gamma->add_entryvar(vmap[tac.input(1)]);
+	auto ev1 = gamma->add_entryvar(vmap[tac.operand(2)]);
+	auto ev2 = gamma->add_entryvar(vmap[tac.operand(1)]);
 	auto ex = gamma->add_exitvar({ev1->argument(0), ev2->argument(1)});
-	vmap[tac.output(0)] = ex;
+	vmap[tac.result(0)] = ex;
 }
 
 static void
@@ -183,17 +183,17 @@ convert_tac(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
 		return map[std::type_index(typeid(tac.operation()))](tac, region, vmap);
 
 	std::vector<jive::output*> operands;
-	for (size_t n = 0; n < tac.ninputs(); n++) {
-		JLM_DEBUG_ASSERT(vmap.find(tac.input(n)) != vmap.end());
-		operands.push_back(vmap[tac.input(n)]);
+	for (size_t n = 0; n < tac.noperands(); n++) {
+		JLM_DEBUG_ASSERT(vmap.find(tac.operand(n)) != vmap.end());
+		operands.push_back(vmap[tac.operand(n)]);
 	}
 
 	auto results = jive::simple_node::create_normalized(region, static_cast<const jive::simple_op&>(
 		tac.operation()), operands);
 
-	JLM_DEBUG_ASSERT(results.size() == tac.noutputs());
-	for (size_t n = 0; n < tac.noutputs(); n++)
-		vmap[tac.output(n)] = results[n];
+	JLM_DEBUG_ASSERT(results.size() == tac.nresults());
+	for (size_t n = 0; n < tac.nresults(); n++)
+		vmap[tac.result(n)] = results[n];
 }
 
 static void
@@ -319,7 +319,7 @@ convert_branch_node(
 	auto & sb = dynamic_cast<const blockaggnode*>(split)->tacs();
 
 	JLM_DEBUG_ASSERT(is<branch_op>(sb.last()->operation()));
-	auto predicate = svmap.vmap()[sb.last()->input(0)];
+	auto predicate = svmap.vmap()[sb.last()->operand(0)];
 	auto gamma = jive::gamma_node::create(predicate, node.nchildren());
 
 	/* add entry variables */
@@ -408,7 +408,7 @@ convert_loop_node(
 	JLM_DEBUG_ASSERT(is<blockaggnode>(lblock));
 	auto & bb = static_cast<const blockaggnode*>(lblock)->tacs();
 	JLM_DEBUG_ASSERT(is<branch_op>(bb.last()->operation()));
-	auto predicate = bb.last()->input(0);
+	auto predicate = bb.last()->operand(0);
 
 	/* update variable map */
 	JLM_DEBUG_ASSERT(vmap.find(predicate) != vmap.end());

@@ -66,17 +66,17 @@ annotaterw(const blockaggnode * node, demandmap & dm)
 					We need special treatment for assignment operation, since the variable
 					they assign the value to is modeled as an argument of the tac.
 			*/
-			JLM_DEBUG_ASSERT(tac->ninputs() == 2 && tac->noutputs() == 0);
-			ds->reads.erase(tac->input(0));
-			ds->writes.insert(tac->input(0));
-			ds->reads.insert(tac->input(1));
+			JLM_DEBUG_ASSERT(tac->noperands() == 2 && tac->nresults() == 0);
+			ds->reads.erase(tac->operand(0));
+			ds->writes.insert(tac->operand(0));
+			ds->reads.insert(tac->operand(1));
 		} else {
-			for (size_t n = 0; n < tac->noutputs(); n++) {
-				ds->reads.erase(tac->output(n));
-				ds->writes.insert(tac->output(n));
+			for (size_t n = 0; n < tac->nresults(); n++) {
+				ds->reads.erase(tac->result(n));
+				ds->writes.insert(tac->result(n));
 			}
-			for (size_t n = 0; n < tac->ninputs(); n++)
-				ds->reads.insert(tac->input(n));
+			for (size_t n = 0; n < tac->noperands(); n++)
+				ds->reads.insert(tac->operand(n));
 		}
 	}
 

@@ -119,9 +119,9 @@ create_conditional_branch(const cfg_node * node, context & ctx)
 
 	auto branch = static_cast<const basic_block*>(node)->tacs().last();
 	JLM_DEBUG_ASSERT(branch && is<branch_op>(branch));
-	JLM_DEBUG_ASSERT(ctx.value(branch->input(0))->getType()->isIntegerTy(1));
+	JLM_DEBUG_ASSERT(ctx.value(branch->operand(0))->getType()->isIntegerTy(1));
 
-	auto condition = ctx.value(branch->input(0));
+	auto condition = ctx.value(branch->operand(0));
 	auto bbfalse = ctx.basic_block(node->outedge(0)->sink());
 	auto bbtrue = ctx.basic_block(node->outedge(1)->sink());
 	builder.CreateCondBr(condition, bbtrue, bbfalse);
@@ -136,11 +136,11 @@ create_switch(const cfg_node * node, context & ctx)
 
 	auto branch = bb->tacs().last();
 	JLM_DEBUG_ASSERT(branch && is<branch_op>(branch));
-	auto condition = ctx.value(branch->input(0));
+	auto condition = ctx.value(branch->operand(0));
 	auto match = find_match_tac(&bb->tacs());
 
 	if (match) {
-		JLM_DEBUG_ASSERT(match->output(0) == branch->input(0));
+		JLM_DEBUG_ASSERT(match->result(0) == branch->operand(0));
 		auto mop = static_cast<const jive::match_op*>(&match->operation());
 
 		auto defbb = ctx.basic_block(node->outedge(mop->default_alternative())->sink());
@@ -180,7 +180,7 @@ create_terminator_instruction(const jlm::cfg_node * node, context & ctx)
 	JLM_DEBUG_ASSERT(branch && is<branch_op>(branch));
 
 	/* conditional branch */
-	if (ctx.value(branch->input(0))->getType()->isIntegerTy(1))
+	if (ctx.value(branch->operand(0))->getType()->isIntegerTy(1))
 		return create_conditional_branch(node, ctx);
 
 	/* switch */
@@ -238,16 +238,16 @@ convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 		for (const auto & tac : tacs) {
 			if (!is<phi_op>(tac->operation()))
 				continue;
-			if (is<jive::memtype>(tac->output(0)->type()))
+			if (is<jive::memtype>(tac->result(0)->type()))
 				continue;
-			if (is<loopstatetype>(tac->output(0)->type()))
+			if (is<loopstatetype>(tac->result(0)->type()))
 				continue;
 
-			JLM_DEBUG_ASSERT(node->ninedges() == tac->ninputs());
+			JLM_DEBUG_ASSERT(node->ninedges() == tac->noperands());
 			auto & op = *static_cast<const jlm::phi_op*>(&tac->operation());
-			auto phi = llvm::dyn_cast<llvm::PHINode>(ctx.value(tac->output(0)));
-			for (size_t n = 0; n < tac->ninputs(); n++)
-				phi->addIncoming(ctx.value(tac->input(n)), ctx.basic_block(op.node(n)));
+			auto phi = llvm::dyn_cast<llvm::PHINode>(ctx.value(tac->result(0)));
+			for (size_t n = 0; n < tac->noperands(); n++)
+				phi->addIncoming(ctx.value(tac->operand(n)), ctx.basic_block(op.node(n)));
 		}
 	}
 }

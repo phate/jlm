@@ -180,8 +180,8 @@ convert_call(
 			JLM_DEBUG_ASSERT(is<tacvariable>(argument));
 			auto valist = dynamic_cast<const jlm::tacvariable*>(argument)->tac();
 			JLM_DEBUG_ASSERT(is<valist_op>(valist->operation()));
-			for (size_t n = 0; n < valist->ninputs(); n++)
-				operands.push_back(ctx.value(valist->input(n)));
+			for (size_t n = 0; n < valist->noperands(); n++)
+				operands.push_back(ctx.value(valist->operand(n)));
 			continue;
 		}
 
@@ -823,12 +823,12 @@ void
 convert_instruction(const jlm::tac & tac, const jlm::cfg_node * node, context & ctx)
 {
 	std::vector<const variable*> operands;
-	for (size_t n = 0; n < tac.ninputs(); n++)
-		operands.push_back(tac.input(n));
+	for (size_t n = 0; n < tac.noperands(); n++)
+		operands.push_back(tac.operand(n));
 
 	llvm::IRBuilder<> builder(ctx.basic_block(node));
 	auto r = convert_operation(tac.operation(), operands, builder, ctx);
-	if (r != nullptr) ctx.insert(tac.output(0), r);
+	if (r != nullptr) ctx.insert(tac.result(0), r);
 }
 
 void
@@ -837,12 +837,12 @@ convert_tacs(const tacsvector_t & tacs, context & ctx)
 	llvm::IRBuilder<> builder(ctx.llvm_module().getContext());
 	for (const auto & tac : tacs) {
 		std::vector<const variable*> operands;
-		for (size_t n = 0; n < tac->ninputs(); n++)
-			operands.push_back(tac->input(n));
+		for (size_t n = 0; n < tac->noperands(); n++)
+			operands.push_back(tac->operand(n));
 
-		JLM_DEBUG_ASSERT(tac->noutputs() == 1);
+		JLM_DEBUG_ASSERT(tac->nresults() == 1);
 		auto r = convert_operation(tac->operation(), operands, builder, ctx);
-		ctx.insert(tac->output(0), r);
+		ctx.insert(tac->result(0), r);
 	}
 }
 

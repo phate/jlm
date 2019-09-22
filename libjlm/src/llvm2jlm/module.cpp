@@ -67,7 +67,7 @@ patch_phi_operands(const std::vector<llvm::PHINode*> & phis, context & ctx)
 		}
 
 		auto phi_tac = static_cast<const tacvariable*>(ctx.lookup_value(phi))->tac();
-		phi_tac->replace(phi_op(nodes, phi_tac->output(0)->type()), operands, {phi_tac->output(0)});
+		phi_tac->replace(phi_op(nodes, phi_tac->result(0)->type()), operands, {phi_tac->result(0)});
 	}
 }
 

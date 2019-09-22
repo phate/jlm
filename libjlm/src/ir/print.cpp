@@ -96,17 +96,17 @@ emit_tac(const jlm::tac & tac)
 {
 	/* convert results */
 	std::string results;
-	for (size_t n = 0; n < tac.noutputs(); n++) {
-		results += tac.output(n)->debug_string();
-		if (n != tac.noutputs()-1)
+	for (size_t n = 0; n < tac.nresults(); n++) {
+		results += tac.result(n)->debug_string();
+		if (n != tac.nresults()-1)
 			results += ", ";
 	}
 
 	/* convert operands */
 	std::string operands;
-	for (size_t n = 0; n < tac.ninputs(); n++) {
-		operands += tac.input(n)->debug_string();
-		if (n != tac.ninputs()-1)
+	for (size_t n = 0; n < tac.noperands(); n++) {
+		operands += tac.operand(n)->debug_string();
+		if (n != tac.noperands()-1)
 			operands += ", ";
 	}
 
@@ -285,19 +285,19 @@ static inline std::string
 to_dot(const jlm::tac & tac)
 {
 	std::string str;
-	if (tac.noutputs() != 0) {
-		for (size_t n = 0; n < tac.noutputs()-1; n++)
-			str +=  tac.output(n)->debug_string() + ", ";
-		str += tac.output(tac.noutputs()-1)->debug_string() + " = ";
+	if (tac.nresults() != 0) {
+		for (size_t n = 0; n < tac.nresults()-1; n++)
+			str +=  tac.result(n)->debug_string() + ", ";
+		str += tac.result(tac.nresults()-1)->debug_string() + " = ";
 	}
 
 	str += tac.operation().debug_string();
 
-	if (tac.ninputs() != 0) {
+	if (tac.noperands() != 0) {
 		str += " ";
-		for (size_t n = 0; n < tac.ninputs()-1; n++)
-			str += tac.input(n)->debug_string() + ", ";
-		str += tac.input(tac.ninputs()-1)->debug_string();
+		for (size_t n = 0; n < tac.noperands()-1; n++)
+			str += tac.operand(n)->debug_string() + ", ";
+		str += tac.operand(tac.noperands()-1)->debug_string();
 	}
 
 	return str;

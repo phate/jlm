@@ -99,29 +99,29 @@ public:
 	}
 
 	inline size_t
-	ninputs() const noexcept
+	noperands() const noexcept
 	{
-		return inputs_.size();
+		return operands_.size();
 	}
 
 	inline const variable *
-	input(size_t index) const noexcept
+	operand(size_t index) const noexcept
 	{
-		JLM_DEBUG_ASSERT(index < inputs_.size());
-		return inputs_[index];
+		JLM_DEBUG_ASSERT(index < operands_.size());
+		return operands_[index];
 	}
 
 	inline size_t
-	noutputs() const noexcept
+	nresults() const noexcept
 	{
-		return outputs_.size();
+		return results_.size();
 	}
 
 	inline const variable *
-	output(size_t index) const noexcept
+	result(size_t index) const noexcept
 	{
-		JLM_DEBUG_ASSERT(index < outputs_.size());
-		return outputs_[index];
+		JLM_DEBUG_ASSERT(index < results_.size());
+		return results_[index];
 	}
 
 	void
@@ -140,8 +140,8 @@ public:
 	}
 
 private:
-	std::vector<const variable*> inputs_;
-	std::vector<const variable*> outputs_;
+	std::vector<const variable*> results_;
+	std::vector<const variable*> operands_;
 	std::unique_ptr<jive::operation> operation_;
 };
 
