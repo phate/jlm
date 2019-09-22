@@ -376,7 +376,7 @@ convert_return_instruction(llvm::Instruction * instruction, tacsvector_t & tacs,
 		return {};
 
 	auto value = convert_value(i->getReturnValue(), tacs, ctx);
-	tacs.push_back(create_assignment(ctx.result()->type(), value, ctx.result()));
+	tacs.push_back(assignment_op::create(value, ctx.result()));
 
 	return ctx.result();
 }

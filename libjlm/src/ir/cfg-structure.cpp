@@ -659,7 +659,7 @@ prune(jlm::cfg & cfg)
 				JLM_DEBUG_ASSERT(tac->noperands()-1 == args.size());
 
 				if (args.size() == 1) {
-					auto ass = create_assignment(args[0].first->type(), args[0].first, tac->result(0));
+					auto ass = assignment_op::create(args[0].first, tac->result(0));
 					new_phis.append_first(std::move(ass));
 				} else
 					new_phis.append_first(phi_op::create(args, tac->result(0)));

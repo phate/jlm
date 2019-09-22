@@ -113,16 +113,16 @@ public:
 
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
-};
 
-static inline std::unique_ptr<jlm::tac>
-create_assignment(
-	const jive::type & type,
-	const variable * arg,
-	const variable * r)
-{
-	return tac::create(assignment_op(type), {r, arg}, {});
-}
+	static std::unique_ptr<jlm::tac>
+	create(const variable * rhs, const variable * lhs)
+	{
+		if (rhs->type() != lhs->type())
+			throw jlm::error("LHS and RHS of assignment must have same type.");
+
+		return tac::create(assignment_op(rhs->type()), {lhs, rhs}, {});
+	}
+};
 
 /* select operator */
 
