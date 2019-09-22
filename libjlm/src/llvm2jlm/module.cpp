@@ -37,7 +37,9 @@ convert_instructions(llvm::Function & function, context & ctx)
 	for (auto & bb : rpotraverser) {
 		for (auto & instruction : *bb) {
 			tacsvector_t tacs;
-			convert_instruction(&instruction, tacs, ctx);
+			if (auto result = convert_instruction(&instruction, tacs, ctx))
+				ctx.insert_value(&instruction, result);
+
 			if (auto phi = llvm::dyn_cast<llvm::PHINode>(&instruction)) {
 				phis.push_back(phi);
 				ctx.get(bb)->append_first(tacs);
@@ -64,7 +66,7 @@ patch_phi_operands(const std::vector<llvm::PHINode*> & phis, context & ctx)
 			nodes.push_back(bb);
 		}
 
-		auto phi_tac = static_cast<tacvariable*>(ctx.lookup_value(phi))->tac();
+		auto phi_tac = static_cast<const tacvariable*>(ctx.lookup_value(phi))->tac();
 		phi_tac->replace(phi_op(nodes, phi_tac->output(0)->type()), operands, {phi_tac->output(0)});
 	}
 }
@@ -220,7 +222,7 @@ create_initialization(llvm::GlobalVariable & gv, context & ctx)
 static void
 convert_global_value(llvm::GlobalVariable & gv, context & ctx)
 {
-	auto v = static_cast<gblvalue*>(ctx.lookup_value(&gv));
+	auto v = static_cast<const gblvalue*>(ctx.lookup_value(&gv));
 
 	ctx.set_node(v->node());
 	v->node()->set_initialization(create_initialization(gv, ctx));
