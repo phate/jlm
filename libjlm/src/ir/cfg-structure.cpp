@@ -589,13 +589,13 @@ purge(jlm::cfg & cfg)
 	}
 }
 
-void
-prune(jlm::cfg & cfg)
+/*
+* @brief Find all nodes dominated by the entry node.
+*/
+static std::unordered_set<const cfg_node*>
+compute_livenodes(const jlm::cfg & cfg)
 {
-	JLM_DEBUG_ASSERT(is_valid(cfg));
-
-	/* find all nodes that are dominated by the entry node */
-	std::unordered_set<cfg_node*> visited;
+	std::unordered_set<const cfg_node*> visited;
 	std::unordered_set<cfg_node*> to_visit({cfg.entry()});
 	while (!to_visit.empty()) {
 		auto node = *to_visit.begin();
@@ -609,67 +609,104 @@ prune(jlm::cfg & cfg)
 		}
 	}
 
-	/*
-		Nothing needs to be done if all CFG nodes are dominated
-		by the entry node.
-	*/
-	if (visited.size() == cfg.nnodes()+2) {
-		JLM_DEBUG_ASSERT(is_closed(cfg));
-		return;
+	return visited;
+}
+
+/*
+* @brief Find all nodes that are NOT dominated by the entry node.
+*/
+static std::unordered_set<cfg_node*>
+compute_deadnodes(jlm::cfg & cfg)
+{
+	auto livenodes = compute_livenodes(cfg);
+
+	std::unordered_set<cfg_node*> deadnodes;
+	for (auto & node : cfg) {
+		if (livenodes.find(&node) == livenodes.end())
+			deadnodes.insert(&node);
 	}
 
-	/*
-		Remove all nodes that are not dominated by the entry node.
-	*/
-	auto it = cfg.begin();
-	while (it != cfg.end()) {
-		if (visited.find(it.node()) != visited.end()) {
-			it++; continue;
+	JLM_DEBUG_ASSERT(deadnodes.find(cfg.entry()) == deadnodes.end());
+	JLM_DEBUG_ASSERT(deadnodes.find(cfg.exit()) == deadnodes.end());
+	return deadnodes;
+}
+
+/*
+* @brief Returns all basic blocks that are live and a sink
+*	of a dead node.
+*/
+static std::unordered_set<basic_block*>
+compute_live_sinks(const std::unordered_set<cfg_node*> & deadnodes)
+{
+	std::unordered_set<basic_block*> sinks;
+	for (auto & node : deadnodes) {
+		for (size_t n = 0; n < node->noutedges(); n++) {
+			auto sink = dynamic_cast<basic_block*>(node->outedge(n)->sink());
+			if (sink && deadnodes.find(sink) == deadnodes.end())
+				sinks.insert(sink);
 		}
-
-		/* adjust phi operations in sink nodes */
-		for (size_t n = 0; n < it->noutedges(); n++) {
-			auto sink = dynamic_cast<basic_block*>(it->outedge(n)->sink());
-
-			/*
-				Nothing needs to be done if the sink node is not a
-				basic block or if it is also going to be removed.
-			*/
-			if (!sink || visited.find(sink) == visited.end())
-				continue;
-
-			/*
-				Collect all phi tacs from sink node.
-			*/
-			tacsvector_t old_phis;
-			while (is<phi_op>(sink->tacs().first()))
-				old_phis.push_back(sink->tacs().pop_first());
-
-			/*
-				Create new phi/assignment tacs without the node that is removed.
-			*/
-			taclist new_phis;
-			for (const auto & tac : old_phis) {
-				std::vector<std::pair<const variable*, cfg_node*>> args;
-				for (size_t n = 0; n < tac->noperands(); n++) {
-					auto old_phi = static_cast<const phi_op*>(&tac->operation());
-					if (old_phi->node(n) != it.node())
-						args.push_back(std::make_pair(tac->operand(n), old_phi->node(n)));
-				}
-				JLM_DEBUG_ASSERT(tac->noperands()-1 == args.size());
-
-				if (args.size() == 1) {
-					auto ass = assignment_op::create(args[0].first, tac->result(0));
-					new_phis.append_first(std::move(ass));
-				} else
-					new_phis.append_first(phi_op::create(args, tac->result(0)));
-			}
-			sink->append_first(new_phis);
-		}
-
-		it->remove_inedges();
-		it = cfg.remove_node(it);
 	}
+
+	return sinks;
+}
+
+static void
+update_phi_operands(
+	jlm::tac & phitac,
+	const std::unordered_set<cfg_node*> & deadnodes)
+{
+	JLM_DEBUG_ASSERT(is<phi_op>(&phitac));
+	auto phi = static_cast<const phi_op*>(&phitac.operation());
+
+	std::vector<cfg_node*> nodes;
+	std::vector<const variable*> operands;
+	for (size_t n = 0; n < phitac.noperands(); n++) {
+		if (deadnodes.find(phi->node(n)) == deadnodes.end()) {
+			operands.push_back(phitac.operand(n));
+			nodes.push_back(phi->node(n));
+		}
+	}
+
+	if (nodes.size() == 1)
+		phitac.replace(assignment_op(phi->type()), {phitac.result(0), operands[0]}, {});
+	else
+		phitac.replace(phi_op(nodes, phi->type()), operands, {phitac.result(0)});
+}
+
+static void
+update_phi_operands(
+	const std::unordered_set<basic_block*> & sinks,
+	const std::unordered_set<cfg_node*> & deadnodes)
+{
+	for (auto & sink : sinks) {
+		for (auto & tac : *sink) {
+			if (!is<phi_op>(tac))
+				break;
+
+			update_phi_operands(*tac, deadnodes);
+		}
+	}
+}
+
+static void
+remove_deadnodes(const std::unordered_set<cfg_node*> & deadnodes)
+{
+	for (auto & node : deadnodes) {
+		node->remove_inedges();
+		JLM_DEBUG_ASSERT(is<basic_block>(node));
+		node->cfg().remove_node(static_cast<basic_block*>(node));
+	}
+}
+
+void
+prune(jlm::cfg & cfg)
+{
+	JLM_DEBUG_ASSERT(is_valid(cfg));
+
+	auto deadnodes = compute_deadnodes(cfg);
+	auto sinks = compute_live_sinks(deadnodes);
+	update_phi_operands(sinks, deadnodes);
+	remove_deadnodes(deadnodes);
 
 	JLM_DEBUG_ASSERT(is_closed(cfg));
 }
