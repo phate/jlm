@@ -166,6 +166,20 @@ public:
 		return static_cast<jlm::load_normal_form*>(graph->node_normal_form(typeid(load_op)));
 	}
 
+	static std::unique_ptr<jlm::tac>
+	create(
+		const variable * address,
+		const variable * state,
+		size_t alignment,
+		jlm::variable * result)
+	{
+		auto pt = dynamic_cast<const jlm::ptrtype*>(&address->type());
+		if (!pt) throw jlm::error("expected pointer type.");
+
+		jlm::load_op op(*pt, 1, alignment);
+		return tac::create(op, {address, state}, {result});
+	}
+
 private:
 	static inline std::vector<jive::port>
 	create_srcports(const ptrtype & ptype, size_t nstates)
@@ -178,20 +192,6 @@ private:
 
 	size_t alignment_;
 };
-
-static inline std::unique_ptr<jlm::tac>
-create_load_tac(
-	const variable * address,
-	const variable * state,
-	size_t alignment,
-	jlm::variable * result)
-{
-	auto pt = dynamic_cast<const jlm::ptrtype*>(&address->type());
-	if (!pt) throw jlm::error("expected pointer type.");
-
-	jlm::load_op op(*pt, 1, alignment);
-	return tac::create(op, {address, state}, {result});
-}
 
 static inline jive::output *
 create_load(
