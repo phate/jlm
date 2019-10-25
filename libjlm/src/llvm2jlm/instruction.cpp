@@ -242,7 +242,7 @@ convert_load_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & c
 
 	auto value = ctx.lookup_value(i);
 	auto address = convert_value(instruction->getPointerOperand(), tacs, ctx);
-	tacs.push_back(load_op::create(address, ctx.state(), instruction->getAlignment(), value));
+	tacs.push_back(load_op::create(address, instruction->getAlignment(), value, ctx.state()));
 
 	return tacs.back()->output(0);
 }

@@ -129,7 +129,7 @@ public:
 		const jlm::ptrtype & ptype,
 		size_t nstates,
 		size_t alignment)
-	: simple_op(create_srcports(ptype, nstates), {ptype.pointee_type()})
+	: simple_op(create_ports(ptype, nstates), create_ports(ptype.pointee_type(), nstates))
 	, alignment_(alignment)
 	{}
 
@@ -167,24 +167,20 @@ public:
 	}
 
 	static std::unique_ptr<jlm::tac>
-	create(
-		const variable * address,
-		const variable * state,
-		size_t alignment,
-		jlm::variable * result)
+	create(const variable * address, size_t alignment, variable * result, variable * state)
 	{
 		auto pt = dynamic_cast<const jlm::ptrtype*>(&address->type());
 		if (!pt) throw jlm::error("expected pointer type.");
 
 		jlm::load_op op(*pt, 1, alignment);
-		return tac::create(op, {address, state}, {result});
+		return tac::create(op, {address, state}, {result, state});
 	}
 
 private:
-	static inline std::vector<jive::port>
-	create_srcports(const ptrtype & ptype, size_t nstates)
+	static std::vector<jive::port>
+	create_ports(const jive::valuetype & vtype, size_t nstates)
 	{
-		std::vector<jive::port> ports(1, {ptype});
+		std::vector<jive::port> ports(1, {vtype});
 		std::vector<jive::port> states(nstates, {jive::memtype::instance()});
 		ports.insert(ports.end(), states.begin(), states.end());
 		return ports;
@@ -193,7 +189,7 @@ private:
 	size_t alignment_;
 };
 
-static inline jive::output *
+static inline std::vector<jive::output*>
 create_load(
 	jive::output * address,
 	const std::vector<jive::output*> & states,
@@ -206,7 +202,7 @@ create_load(
 	operands.insert(operands.end(), states.begin(), states.end());
 
 	jlm::load_op op(*pt, states.size(), alignment);
-	return jive::simple_node::create_normalized(address->region(), op, operands)[0];
+	return jive::simple_node::create_normalized(address->region(), op, operands);
 }
 
 }

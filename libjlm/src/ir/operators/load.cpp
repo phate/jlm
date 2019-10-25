@@ -41,45 +41,67 @@ load_op::copy() const
 
 /* load normal form */
 
+/*
+	sx1 ... sxN = mux_op si1 ... siM
+	v sl1 ... slN = load_op a sx1 ... sxN
+	=>
+	v sl1 ... slM = load_op a si1 ... siM
+	sx1 ... sxN = mux_op sl1 ... slM
+*/
 static bool
 is_load_mux_reducible(const std::vector<jive::output*> & operands)
 {
+	JLM_DEBUG_ASSERT(operands.size() >= 2);
+
 	auto muxnode = operands[1]->node();
-	if (!muxnode || !is_mux_op(muxnode->operation()))
+	if (!is<jive::mux_op>(muxnode))
 		return false;
 
 	for (size_t n = 1; n < operands.size(); n++) {
-		JLM_DEBUG_ASSERT(dynamic_cast<const jive::memtype*>(&operands[n]->type()));
-		if (operands[n]->node() && operands[n]->node() != muxnode)
+		if (operands[n]->node() != muxnode)
 			return false;
 	}
 
 	return true;
 }
 
-static std::vector<jive::output*>
+/*
+	If the producer of a load's address is an alloca, then we can remove
+	all state edges originating from other allocas.
+
+	a1 s1 = alloca_op ...
+	a2 s2 = alloca_op ...
+	s3 = mux_op s1
+	v sl1 sl2 sl3 = load_op a1 s1 s2 s3
+	=>
+	...
+	v sl1 sl3 = load_op a1 s1 s3
+*/
+static bool
 is_load_alloca_reducible(const std::vector<jive::output*> & operands)
 {
 	auto address = operands[0];
 
 	auto allocanode = address->node();
-	if (!allocanode || !is_alloca_op(allocanode->operation()))
-		return {std::next(operands.begin()), operands.end()};
+	if (!is<alloca_op>(allocanode))
+		return false;
 
-	std::vector<jive::output*> new_states;
 	for (size_t n = 1; n < operands.size(); n++) {
-		JLM_DEBUG_ASSERT(dynamic_cast<const jive::memtype*>(&operands[n]->type()));
 		auto node = operands[n]->node();
-		if (node && is_alloca_op(node->operation()) && node != allocanode)
-			continue;
-
-		new_states.push_back(operands[n]);
+		if (is<alloca_op>(node) && node != allocanode)
+			return true;
 	}
 
-	JLM_DEBUG_ASSERT(!new_states.empty());
-	return new_states;
+	return false;
 }
 
+/*
+	a s = alloca_op
+	ss = store_op a ... s
+	v sl = load_op a ss
+	=>
+	v s
+*/
 static bool
 is_load_store_alloca_reducible(const std::vector<jive::output*> & operands)
 {
@@ -90,11 +112,11 @@ is_load_store_alloca_reducible(const std::vector<jive::output*> & operands)
 	auto state = operands[1];
 
 	auto alloca = address->node();
-	if (!alloca || !is_alloca_op(alloca->operation()))
+	if (!is<alloca_op>(alloca))
 		return false;
 
 	auto store = state->node();
-	if (!store || !is<store_op>(store->operation()))
+	if (!is<store_op>(store))
 		return false;
 
 	if (store->input(0)->origin() != alloca->output(0))
@@ -115,37 +137,57 @@ is_load_store_alloca_reducible(const std::vector<jive::output*> & operands)
 	return true;
 }
 
-static std::vector<jive::output*>
-is_load_store_state_reducible(const std::vector<jive::output*> & operands)
+static bool
+is_reducible_state(const jive::output * state, const jive::node * loadalloca)
+{
+	if (is<store_op>(state->node())) {
+		auto addressnode = state->node()->input(0)->origin()->node();
+		if (is<alloca_op>(addressnode) && addressnode != loadalloca)
+			return true;
+	}
+
+	return false;
+}
+
+/*
+	a1 sa1 = alloca_op ...
+	a2 sa2 = alloca_op ...
+	ss1 = store_op a1 ... sa1
+	ss2 = store_op a2 ... sa2
+	... = load_op a1 ss1 ss2
+	=>
+	...
+	... = load_op a1 ss1
+*/
+static bool
+is_load_store_state_reducible(
+	const load_op & op,
+	const std::vector<jive::output*> & operands)
 {
 	auto address = operands[0];
 
 	if (operands.size() == 2)
-		return {operands[1]};
+		return false;
 
 	auto allocanode = address->node();
-	if (!allocanode || !is_alloca_op(allocanode->operation()))
-		return {std::next(operands.begin()), operands.end()};
+	if (!is<alloca_op>(allocanode))
+		return false;
 
-	std::vector<jive::output*> new_states;
+	size_t redstates = 0;
 	for (size_t n = 1; n < operands.size(); n++) {
-		JLM_DEBUG_ASSERT(dynamic_cast<const jive::memtype*>(&operands[n]->type()));
-		auto node = operands[n]->node();
-		if (node && is<store_op>(node->operation())) {
-			auto addressnode = node->input(0)->origin()->node();
-			if (addressnode && is_alloca_op(addressnode->operation()) && addressnode != allocanode)
-				continue;
-		}
-
-		new_states.push_back(operands[n]);
+		auto state = operands[n];
+		if (is_reducible_state(state, allocanode))
+			redstates++;
 	}
 
-	if (new_states.empty())
-		return {std::next(operands.begin()), operands.end()};
-
-	return new_states;
+	return redstates == op.nstates() || redstates == 0 ? false : true;
 }
 
+/*
+	v so1 so2 so3 = load_op a si1 si1 si1
+	=>
+	v so1 = load_op a si1
+*/
 static bool
 is_multiple_origin_reducible(const std::vector<jive::output*> & operands)
 {
@@ -186,10 +228,12 @@ perform_load_store_reduction(
 	const jlm::load_op & op,
 	const std::vector<jive::output*> & operands)
 {
-	JLM_DEBUG_ASSERT(is_load_store_reducible(op, operands));
 	auto storenode = operands[1]->node();
 
-	return {storenode->input(1)->origin()};
+	std::vector<jive::output*> results(1, storenode->input(1)->origin());
+	results.insert(results.end(), std::next(operands.begin()), operands.end());
+
+	return results;
 }
 
 static std::vector<jive::output*>
@@ -197,7 +241,10 @@ perform_load_store_alloca_reduction(
 	const jlm::load_op & op,
 	const std::vector<jive::output*> & operands)
 {
-	return {operands[1]->node()->input(1)->origin()};
+	auto allocanode = operands[0]->node();
+	auto storenode = operands[1]->node();
+
+	return {storenode->input(1)->origin(), allocanode->output(1)};
 }
 
 static std::vector<jive::output*>
@@ -206,27 +253,68 @@ perform_load_mux_reduction(
 	const std::vector<jive::output*> & operands)
 {
 	auto muxnode = operands[1]->node();
-	return {create_load(operands[0], jive::operands(muxnode), op.alignment())};
+	auto & statetype = muxnode->output(0)->type();
+
+	auto ld = create_load(operands[0], jive::operands(muxnode), op.alignment());
+	auto mx = jive::create_state_mux(statetype, {std::next(ld.begin()), ld.end()},
+		muxnode->noutputs());
+
+	std::vector<jive::output*> results(1, ld[0]);
+	results.insert(results.end(), mx.begin(), mx.end());
+	return results;
 }
 
 static std::vector<jive::output*>
 perform_load_alloca_reduction(
 	const jlm::load_op & op,
-	const std::vector<jive::output*> & operands,
-	const std::vector<jive::output*> & new_states)
+	const std::vector<jive::output*> & operands)
 {
-	JLM_DEBUG_ASSERT(!new_states.empty());
-	return {create_load(operands[0], new_states, op.alignment())};
+	auto allocanode = operands[0]->node();
+
+	std::vector<jive::output*> loadstates;
+	std::vector<jive::output*> otherstates;
+	for (size_t n = 1; n < operands.size(); n++) {
+		auto node = operands[n]->node();
+		if (!is<alloca_op>(node) || node == allocanode)
+			loadstates.push_back(operands[n]);
+		else
+			otherstates.push_back(operands[n]);
+	}
+
+	auto ld = create_load(operands[0], loadstates, op.alignment());
+
+	std::vector<jive::output*> results(1, ld[0]);
+	results.insert(results.end(), std::next(ld.begin()), ld.end());
+	results.insert(results.end(), otherstates.begin(), otherstates.end());
+	return results;
 }
 
 static std::vector<jive::output*>
 perform_load_store_state_reduction(
 	const jlm::load_op & op,
-	const std::vector<jive::output*> & operands,
-	const std::vector<jive::output*> & new_states)
+	const std::vector<jive::output*> & operands)
 {
-	JLM_DEBUG_ASSERT(!new_states.empty());
-	return {create_load(operands[0], new_states, op.alignment())};
+	auto address = operands[0];
+	auto allocanode = address->node();
+
+	std::vector<jive::output*> new_loadstates;
+	std::vector<jive::output*> results(operands.size(), nullptr);
+	for (size_t n = 1; n < operands.size(); n++) {
+		auto state = operands[n];
+		if (is_reducible_state(state, allocanode))
+			results[n] = state;
+		else new_loadstates.push_back(state);
+	}
+
+	auto ld = create_load(operands[0], new_loadstates, op.alignment());
+
+	results[0] = ld[0];
+	for (size_t n = 1, s = 1; n < results.size(); n++) {
+		if (results[n] == nullptr)
+			results[n] = ld[s++];
+	}
+
+	return results;
 }
 
 static std::vector<jive::output*>
@@ -234,8 +322,28 @@ perform_multiple_origin_reduction(
 	const jlm::load_op & op,
 	const std::vector<jive::output*> & operands)
 {
-	std::unordered_set<jive::output*> states(std::next(operands.begin()), operands.end());
-	return {create_load(operands[0], {states.begin(), states.end()}, op.alignment())};
+	std::vector<jive::output*> new_loadstates;
+	std::unordered_set<jive::output*> seen_state;
+	std::vector<jive::output*> results(operands.size(), nullptr);
+	for (size_t n = 1; n < operands.size(); n++) {
+		auto state = operands[n];
+		if (seen_state.find(state) != seen_state.end())
+			results[n] = state;
+		else
+			new_loadstates.push_back(state);
+
+		seen_state.insert(state);
+	}
+
+	auto ld = create_load(operands[0], new_loadstates, op.alignment());
+
+	results[0] = ld[0];
+	for (size_t n = 1, s = 1; n < results.size(); n++) {
+		if (results[n] == nullptr)
+			results[n] = ld[s++];
+	}
+
+	return results;
 }
 
 load_normal_form::~load_normal_form()
@@ -276,16 +384,14 @@ load_normal_form::normalize_node(jive::node * node) const
 		return false;
 	}
 
-	auto new_states = is_load_alloca_reducible(operands);
-	if (get_load_alloca_reducible() && new_states.size() != operands.size()-1) {
-		divert_users(node, perform_load_alloca_reduction(*op, operands, new_states));
+	if (get_load_alloca_reducible() && is_load_alloca_reducible(operands)) {
+		divert_users(node, perform_load_alloca_reduction(*op, operands));
 		remove(node);
 		return false;
 	}
 
-	new_states = is_load_store_state_reducible(operands);
-	if (get_load_store_state_reducible() && new_states.size() != operands.size()-1) {
-		divert_users(node, perform_load_store_state_reduction(*op, operands, new_states));
+	if (get_load_store_state_reducible() && is_load_store_state_reducible(*op, operands)) {
+		divert_users(node, perform_load_store_state_reduction(*op, operands));
 		remove(node);
 		return false;
 	}
@@ -323,13 +429,11 @@ load_normal_form::normalized_create(
 	if (get_load_store_reducible() && is_load_store_reducible(*lop, operands))
 		return perform_load_store_reduction(*lop, operands);
 
-	auto new_states = is_load_alloca_reducible(operands);
-	if (get_load_alloca_reducible() && new_states.size() != operands.size()-1)
-		return perform_load_alloca_reduction(*lop, operands, new_states);
+	if (get_load_alloca_reducible() && is_load_alloca_reducible(operands))
+		return perform_load_alloca_reduction(*lop, operands);
 
-	new_states = is_load_store_state_reducible(operands);
-	if (get_load_store_state_reducible() && new_states.size() != operands.size()-1)
-		return perform_load_store_state_reduction(*lop, operands, new_states);
+	if (get_load_store_state_reducible() && is_load_store_state_reducible(*lop, operands))
+		return perform_load_store_state_reduction(*lop, operands);
 
 	if (get_multiple_origin_reducible() && is_multiple_origin_reducible(operands))
 		return perform_multiple_origin_reduction(*lop, operands);
