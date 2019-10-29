@@ -387,6 +387,34 @@ is_fcttype(const jive::type & type)
 	return dynamic_cast<const jive::fcttype*>(&type) != nullptr;
 }
 
+/* loop state type */
+
+class loopstatetype final : public jive::statetype {
+public:
+	virtual
+	~loopstatetype();
+
+	constexpr
+	loopstatetype() noexcept
+	: statetype()
+	{}
+
+	virtual bool
+	operator==(const jive::type & other) const noexcept override;
+
+	virtual std::unique_ptr<jive::type>
+	copy() const override;
+
+	virtual std::string
+	debug_string() const override;
+
+	static std::unique_ptr<jive::type>
+	create()
+	{
+		return std::unique_ptr<jive::type>(new loopstatetype());
+	}
+};
+
 }
 
 #endif

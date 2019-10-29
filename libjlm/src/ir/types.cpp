@@ -167,4 +167,27 @@ vectortype::copy() const
 	return std::unique_ptr<jive::type>(new vectortype(*this));
 }
 
+/* loop state type */
+
+loopstatetype::~loopstatetype()
+{}
+
+bool
+loopstatetype::operator==(const jive::type & other) const noexcept
+{
+	return dynamic_cast<const loopstatetype*>(&other) != nullptr;
+}
+
+std::string
+loopstatetype::debug_string() const
+{
+	return "loopstate";
+}
+
+std::unique_ptr<jive::type>
+loopstatetype::copy() const
+{
+	return std::unique_ptr<jive::type>(new loopstatetype(*this));
+}
+
 }
