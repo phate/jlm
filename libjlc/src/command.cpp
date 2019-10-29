@@ -4,6 +4,7 @@
  */
 
 #include <jlc/command.hpp>
+#include <jlc/llvmpaths.hpp>
 #include <jlm/util/strfmt.hpp>
 
 #include <deque>
@@ -105,7 +106,7 @@ prscmd::to_str() const
 		Wwarnings += "-W" + Wwarning + " ";
 
 	return strfmt(
-	  "clang "
+	  clangpath.to_str() + " "
 	, Wwarnings, " "
 	, std_ != standard::none ? "-std="+jlm::to_str(std_)+" " : ""
 	, Dmacros, " "
@@ -162,7 +163,7 @@ std::string
 cgencmd::to_str() const
 {
 	return strfmt(
-	  "llc "
+	  llcpath.to_str() + " "
 	, "-", jlm::to_str(ol_), " "
 	, "-filetype=obj "
 	, "-o ", ofile_.to_str()
@@ -198,7 +199,7 @@ lnkcmd::to_str() const
 		libs += "-l" + lib + " ";
 
 	return strfmt(
-	  "clang "
+	  clangpath.to_str() + " "
 	, "-O0 "
 	, ifiles
 	, "-o ", ofile_.to_str(), " "

@@ -7,3 +7,4 @@ check.log
 /bin
 tests/test-runner
 .Makefile.override
+libjlc/include/jlc/llvmpaths.hpp

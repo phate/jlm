@@ -8,13 +8,34 @@ LIBJLC_SRC = \
 JLC_SRC = \
 	libjlc/src/jlc.cpp \
 
+LLVMPATHS = \
+" \
+\#ifndef JLM_JLC_LLVMPATHS_HPP\n \
+\#define JLM_JLC_LLVMPATHS_HPP\n \
+\n \
+\#include <jlm/util/file.hpp>\n \
+\n \
+namespace jlm {\n \
+\n \
+  filepath clangpath(\"$(shell $(LLVMCONFIG) --bindir)/clang\");\n \
+  filepath llcpath(\"$(shell $(LLVMCONFIG) --bindir)/llc\");\n \
+\n \
+}\n \
+\n \
+\#endif \
+"
+LLVMPATHSFILE = $(JLM_ROOT)/libjlc/include/jlc/llvmpaths.hpp
+
+$(LLVMPATHSFILE):
+	@printf $(LLVMPATHS) > $@
+
 .PHONY: libjlc
 libjlc: $(JLM_ROOT)/libjlc.a
 
 $(JLM_ROOT)/libjlc.a: CPPFLAGS += -I$(JLM_ROOT)/libjlc/include -I$(JLM_ROOT)/libjlm/include -I$(shell $(LLVMCONFIG) --includedir)
 $(JLM_ROOT)/libjlc.a: CXXFLAGS += -Wall -Wpedantic -Wextra -Wno-unused-parameter --std=c++14 -Wfatal-errors
 $(JLM_ROOT)/libjlc.a: LDFLAGS += -L$(JLM_ROOT)/ -ljlm
-$(JLM_ROOT)/libjlc.a: $(patsubst %.cpp, $(JLM_ROOT)/%.la, $(LIBJLC_SRC)) $(JLM_ROOT)/libjlm.a
+$(JLM_ROOT)/libjlc.a: $(LLVMPATHSFILE) $(patsubst %.cpp, $(JLM_ROOT)/%.la, $(LIBJLC_SRC)) $(JLM_ROOT)/libjlm.a
 
 .PHONY: jlc
 jlc: $(JLM_ROOT)/bin/jlc
@@ -30,5 +51,6 @@ $(JLM_ROOT)/bin/jlc: $(patsubst %.cpp, $(JLM_ROOT)/%.o, $(JLC_SRC)) $(JLM_ROOT)/
 .PHONY: libjlc-clean
 libjlc-clean:
 	@find  $(JLM_ROOT)/libjlc/ -name "*.o" -o -name "*.la" -o -name "*.a" | grep -v external | xargs rm -rf
+	@rm -f $(LLVMPATHSFILE)
 	@rm -rf $(JLM_ROOT)/libjlc.a
 	@rm -rf $(JLM_ROOT)/bin/jlc
