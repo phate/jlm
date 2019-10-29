@@ -109,7 +109,7 @@ create_cfg(llvm::Function & f, context & ctx)
 
 	/* convert instructions */
 	ctx.set_basic_block_map(bbmap);
-	ctx.set_state(state);
+	ctx.set_memory_state(state);
 	ctx.set_result(result);
 	convert_basic_blocks(f.getBasicBlockList(), ctx);
 

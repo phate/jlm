@@ -88,8 +88,9 @@ class context final {
 public:
 	inline
 	context(jlm::module & module)
-		: module_(module)
-		, node_(nullptr)
+	: module_(module)
+	, node_(nullptr)
+	, memory_state_(nullptr)
 	{}
 
 	inline jlm::variable *
@@ -105,15 +106,15 @@ public:
 	}
 
 	inline jlm::variable *
-	state() const noexcept
+	memory_state() const noexcept
 	{
-		return state_;
+		return memory_state_;
 	}
 
 	inline void
-	set_state(jlm::variable * state)
+	set_memory_state(jlm::variable * state)
 	{
-		state_ = state;
+		memory_state_ = state;
 	}
 
 	inline bool
@@ -206,9 +207,9 @@ public:
 private:
 	jlm::module & module_;
 	basic_block_map bbmap_;
-	jlm::variable * state_;
 	ipgraph_node * node_;
 	jlm::variable * result_;
+	jlm::variable * memory_state_;
 	std::unordered_map<const llvm::Value*, jlm::variable*> vmap_;
 	std::unordered_map<
 		const llvm::StructType*,

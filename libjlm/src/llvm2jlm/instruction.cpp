@@ -239,10 +239,10 @@ convert_load_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & c
 	auto instruction = static_cast<llvm::LoadInst*>(i);
 
 	/* FIXME: volatile and alignment */
-
 	auto value = ctx.lookup_value(i);
+	auto memstate = ctx.memory_state();
 	auto address = convert_value(instruction->getPointerOperand(), tacs, ctx);
-	tacs.push_back(load_op::create(address, instruction->getAlignment(), value, ctx.state()));
+	tacs.push_back(load_op::create(address, instruction->getAlignment(), value, memstate));
 
 	return tacs.back()->output(0);
 }
@@ -254,9 +254,10 @@ convert_store_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & 
 	auto instruction = static_cast<llvm::StoreInst*>(i);
 
 	/* FIXME: volatile and alignement */
+	auto memstate = ctx.memory_state();
 	auto address = convert_value(instruction->getPointerOperand(), tacs, ctx);
 	auto value = convert_value(instruction->getValueOperand(), tacs, ctx);
-	tacs.push_back(create_store_tac(address, value, instruction->getAlignment(), ctx.state()));
+	tacs.push_back(create_store_tac(address, value, instruction->getAlignment(), memstate));
 
 	return nullptr;
 }
@@ -329,13 +330,13 @@ convert_call_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 		tacs.push_back(create_valist_tac(vargs, ctx.module()));
 		arguments.push_back(tacs.back()->output(0));
 	}
-	arguments.push_back(ctx.state());
+	arguments.push_back(ctx.memory_state());
 
 	/* results */
 	std::vector<const jlm::variable*> results;
 	if (!ftype->getReturnType()->isVoidTy())
 		results.push_back(ctx.lookup_value(i));
-	results.push_back(ctx.state());
+	results.push_back(ctx.memory_state());
 
 	auto fctvar = convert_value(f, tacs, ctx);
 	tacs.push_back(create_call_tac(fctvar, arguments, results));
@@ -434,7 +435,7 @@ convert_alloca_instruction(llvm::Instruction * instruction, tacsvector_t & tacs,
 	auto result = ctx.lookup_value(i);
 	auto size = convert_value(i->getArraySize(), tacs, ctx);
 	auto vtype = convert_type(i->getAllocatedType(), ctx);
-	tacs.push_back(create_alloca_tac(*vtype, size, i->getAlignment(), ctx.state(), result));
+	tacs.push_back(create_alloca_tac(*vtype, size, i->getAlignment(), ctx.memory_state(), result));
 
 	return tacs.back()->output(0);
 }
