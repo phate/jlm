@@ -4,6 +4,7 @@
  */
 
 #include <jlm/common.hpp>
+#include <jlm/ir/types.hpp>
 #include <jlm/opt/invariance.hpp>
 
 #include <jive/rvsdg/gamma.h>
@@ -63,8 +64,7 @@ theta_invariance(jive::structural_node * node)
 		we need to know whether a loop terminates.*/
 
 	for (const auto & lv : *theta) {
-		if (jive::is_invariant(lv)
-		&& dynamic_cast<const jive::valuetype*>(&lv->argument()->type()))
+		if (jive::is_invariant(lv) && !is<loopstatetype>(lv->argument()->type()))
 			lv->divert_users(lv->input()->origin());
 	}
 }
@@ -73,20 +73,20 @@ static void
 invariance(jive::region * region)
 {
 	for (auto node : jive::topdown_traverser(region)) {
-		if (dynamic_cast<const jive::simple_op*>(&node->operation()))
+		if (jive::is<jive::simple_op>(node))
 			continue;
 
-		JLM_DEBUG_ASSERT(dynamic_cast<const jive::structural_node*>(node));
+		JLM_DEBUG_ASSERT(jive::is<jive::structural_op>(node));
 		auto strnode = static_cast<jive::structural_node*>(node);
 		for (size_t n = 0; n < strnode->nsubregions(); n++)
 			invariance(strnode->subregion(n));
 
-		if (jive::is<jive::gamma_op>(node->operation())) {
+		if (jive::is<jive::gamma_op>(node)) {
 			gamma_invariance(strnode);
 			continue;
 		}
 
-		if (jive::is<jive::theta_op>(node->operation())) {
+		if (jive::is<jive::theta_op>(node)) {
 			theta_invariance(strnode);
 			continue;
 		}

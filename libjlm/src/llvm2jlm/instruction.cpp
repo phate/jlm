@@ -331,12 +331,14 @@ convert_call_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 		arguments.push_back(tacs.back()->output(0));
 	}
 	arguments.push_back(ctx.memory_state());
+	arguments.push_back(ctx.loop_state());
 
 	/* results */
 	std::vector<const jlm::variable*> results;
 	if (!ftype->getReturnType()->isVoidTy())
 		results.push_back(ctx.lookup_value(i));
 	results.push_back(ctx.memory_state());
+	results.push_back(ctx.loop_state());
 
 	auto fctvar = convert_value(f, tacs, ctx);
 	tacs.push_back(create_call_tac(fctvar, arguments, results));

@@ -164,13 +164,19 @@ convert_call(
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(is<call_op>(op));
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::memtype*>(&args[args.size()-1]->type()));
 
 	auto function = ctx.value(args[0]);
+
 	std::vector<llvm::Value*> operands;
-	for (size_t n = 1; n < args.size()-1; n++) {
+	for (size_t n = 1; n < args.size(); n++) {
 		auto argument = args[n];
-		if (is_varargtype(argument->type())) {
+
+		if (is<jive::memtype>(argument->type()))
+			continue;
+		if (is<loopstatetype>(argument->type()))
+			continue;
+
+		if (is<varargtype>(argument->type())) {
 			JLM_DEBUG_ASSERT(is<tacvariable>(argument));
 			auto valist = dynamic_cast<const jlm::tacvariable*>(argument)->tac();
 			JLM_DEBUG_ASSERT(is<valist_op>(valist->operation()));
@@ -239,12 +245,14 @@ convert_phi(
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(is<phi_op>(op));
-	auto & pop = *static_cast<const jlm::phi_op*>(&op);
+	auto & phi = *static_cast<const jlm::phi_op*>(&op);
 
-	if (dynamic_cast<const jive::memtype*>(&pop.type()))
+	if (is<jive::memtype>(phi.type()))
+		return nullptr;
+	if (is<loopstatetype>(phi.type()))
 		return nullptr;
 
-	auto t = convert_type(pop.type(), ctx);
+	auto t = convert_type(phi.type(), ctx);
 	return builder.CreatePHI(t, op.narguments());
 }
 

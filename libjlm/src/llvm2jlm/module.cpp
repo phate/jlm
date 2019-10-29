@@ -81,8 +81,10 @@ create_cfg(llvm::Function & f, context & ctx)
 		cfg->entry()->append_argument(v);
 	}
 	JLM_DEBUG_ASSERT(n < node->fcttype().narguments());
-	auto state = m.create_variable(node->fcttype().argument_type(n++), "_s_");
-	cfg->entry()->append_argument(state);
+	auto memstate = m.create_variable(node->fcttype().argument_type(n++), "_s_");
+	auto loopstate = m.create_variable(node->fcttype().argument_type(n++), "_l_");
+	cfg->entry()->append_argument(memstate);
+	cfg->entry()->append_argument(loopstate);
 	JLM_DEBUG_ASSERT(n == node->fcttype().narguments());
 
 	/* create all basic blocks */
@@ -101,15 +103,17 @@ create_cfg(llvm::Function & f, context & ctx)
 		result = m.create_variable(*convert_type(f.getReturnType(), ctx), "_r_");
 		entry_block->append_last(create_undef_constant_tac(result));
 
-		JLM_DEBUG_ASSERT(node->fcttype().nresults() == 2);
+		JLM_DEBUG_ASSERT(node->fcttype().nresults() == 3);
 		JLM_DEBUG_ASSERT(result->type() == node->fcttype().result_type(0));
 		cfg->exit()->append_result(result);
 	}
-	cfg->exit()->append_result(state);
+	cfg->exit()->append_result(memstate);
+	cfg->exit()->append_result(loopstate);
 
 	/* convert instructions */
 	ctx.set_basic_block_map(bbmap);
-	ctx.set_memory_state(state);
+	ctx.set_memory_state(memstate);
+	ctx.set_loop_state(loopstate);
 	ctx.set_result(result);
 	convert_basic_blocks(f.getBasicBlockList(), ctx);
 

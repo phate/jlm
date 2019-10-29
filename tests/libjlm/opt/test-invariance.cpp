@@ -12,6 +12,7 @@
 #include <jive/rvsdg/graph.h>
 #include <jive/rvsdg/theta.h>
 
+#include <jlm/ir/types.hpp>
 #include <jlm/opt/invariance.hpp>
 
 static inline void
@@ -53,33 +54,42 @@ test_gamma()
 static inline void
 test_theta()
 {
+	using namespace jlm;
+
+	loopstatetype lt;
 	jlm::valuetype vt;
 	jive::ctltype ct(2);
 
 	jive::graph graph;
 	auto c = graph.add_import({ct, "c"});
 	auto x = graph.add_import({vt, "x"});
+	auto l = graph.add_import({lt, "l"});
 
 	auto theta1 = jive::theta_node::create(graph.root());
 	auto lv1 = theta1->add_loopvar(c);
 	auto lv2 = theta1->add_loopvar(x);
+	auto lv3 = theta1->add_loopvar(l);
 
 	auto theta2 = jive::theta_node::create(theta1->subregion());
-	auto lv3 = theta2->add_loopvar(lv1->argument());
+	auto t2lv1 = theta2->add_loopvar(lv1->argument());
 	theta2->add_loopvar(lv2->argument());
-	theta2->set_predicate(lv3->argument());
+	auto t2lv3 = theta2->add_loopvar(lv3->argument());
+	theta2->set_predicate(t2lv1->argument());
 
+	lv3->result()->divert_to(t2lv3);
 	theta1->set_predicate(lv1->argument());
 
 	graph.add_export(lv1, {lv1->type(), "c"});
 	graph.add_export(lv2, {lv2->type(), "x"});
+	graph.add_export(lv3, {lv3->type(), "l"});
 
 	jive::view(graph.root(), stdout);
 	jlm::invariance(graph);
 	jive::view(graph.root(), stdout);
 
-	assert(graph.root()->result(0)->origin() == lv1);
+	assert(graph.root()->result(0)->origin() == graph.root()->argument(0));
 	assert(graph.root()->result(1)->origin() == graph.root()->argument(1));
+	assert(graph.root()->result(2)->origin() == lv3);
 }
 
 static int

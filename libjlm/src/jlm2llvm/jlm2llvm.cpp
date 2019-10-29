@@ -67,6 +67,18 @@ find_match_tac(const taclist * bb)
 	return tac;
 }
 
+static bool
+has_return_value(const jlm::cfg & cfg)
+{
+	for (size_t n=0; n < cfg.exit()->nresults(); n++) {
+		auto result = cfg.exit()->result(n);
+		if (is<jive::valuetype>(result->type()))
+			return true;
+	}
+
+	return false;
+}
+
 static void
 create_return(const cfg_node * node, context & ctx)
 {
@@ -76,14 +88,14 @@ create_return(const cfg_node * node, context & ctx)
 	auto & cfg = node->cfg();
 
 	/* return without result */
-	if (cfg.exit()->nresults() == 1) {
-		/* FIXME: This works only as long as we only use one state edge. */
+	if (!has_return_value(cfg)) {
 		builder.CreateRetVoid();
 		return;
 	}
 
-	/* FIXME: This assumes that the value is the first result. */
-	builder.CreateRet(ctx.value(cfg.exit()->result(0)));
+	auto result = cfg.exit()->result(0);
+	JLM_DEBUG_ASSERT(is<jive::valuetype>(result->type()));
+	builder.CreateRet(ctx.value(result));
 }
 
 static void
@@ -226,7 +238,9 @@ convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 		for (const auto & tac : tacs) {
 			if (!is<phi_op>(tac->operation()))
 				continue;
-			if (dynamic_cast<const jive::memtype*>(&tac->output(0)->type()))
+			if (is<jive::memtype>(tac->output(0)->type()))
+				continue;
+			if (is<loopstatetype>(tac->output(0)->type()))
 				continue;
 
 			JLM_DEBUG_ASSERT(node->ninedges() == tac->ninputs());

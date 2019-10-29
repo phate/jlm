@@ -90,6 +90,7 @@ public:
 	context(jlm::module & module)
 	: module_(module)
 	, node_(nullptr)
+	, loop_state_(nullptr)
 	, memory_state_(nullptr)
 	{}
 
@@ -115,6 +116,18 @@ public:
 	set_memory_state(jlm::variable * state)
 	{
 		memory_state_ = state;
+	}
+
+	jlm::variable *
+	loop_state() const noexcept
+	{
+		return loop_state_;
+	}
+
+	void
+	set_loop_state(jlm::variable * state)
+	{
+		loop_state_ = state;
 	}
 
 	inline bool
@@ -209,6 +222,7 @@ private:
 	basic_block_map bbmap_;
 	ipgraph_node * node_;
 	jlm::variable * result_;
+	jlm::variable * loop_state_;
 	jlm::variable * memory_state_;
 	std::unordered_map<const llvm::Value*, jlm::variable*> vmap_;
 	std::unordered_map<
