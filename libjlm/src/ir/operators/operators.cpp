@@ -1148,4 +1148,27 @@ extractvalue_op::copy() const
 	return std::unique_ptr<jive::operation>(new extractvalue_op(*this));
 }
 
+/* loop state mux operator */
+
+loopstatemux_op::~loopstatemux_op()
+{}
+
+bool
+loopstatemux_op::operator==(const jive::operation & other) const noexcept
+{
+	return dynamic_cast<const loopstatemux_op*>(&other) != nullptr;
+}
+
+std::string
+loopstatemux_op::debug_string() const
+{
+	return "LOOPSTATEMUX";
+}
+
+std::unique_ptr<jive::operation>
+loopstatemux_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new loopstatemux_op(*this));
+}
+
 }
