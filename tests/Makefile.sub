@@ -11,10 +11,11 @@ TEST_SOURCES = \
 	tests/test-types.cpp \
 	$(patsubst %, tests/%.cpp, $(TESTS))
 
-tests/test-runner: libjlc.a libjlm.a $(JIVE_ROOT)/libjive.a
+tests/test-runner: jive-debug libjlm-debug libjlc-debug
+tests/test-runner: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG
 tests/test-runner: CPPFLAGS += -I$(JLM_ROOT)/libjlm/include -I$(JLM_ROOT)/libjlc/include -I$(JIVE_ROOT)/include
 tests/test-runner: LDFLAGS=-L. -Lexternal/jive -ljlc -ljlm $(shell $(LLVMCONFIG) --ldflags --libs --system-libs) -ljive
-tests/test-runner: %: $(patsubst %.cpp, %.la, $(TEST_SOURCES)) libjlm.a
+tests/test-runner: %: $(patsubst %.cpp, %.la, $(TEST_SOURCES)) $(JIVE_ROOT)/libjive.a $(JLM_ROOT)/libjlm.a $(JLM_ROOT)/libjlc.a
 	$(CXX) -o $@ $(filter %.la, $^) $(LDFLAGS)
 
 $(patsubst %, tests/%.la, $(TESTS)): CPPFLAGS += -Itests -I$(shell $(LLVMCONFIG) --includedir)
@@ -23,7 +24,7 @@ TESTLOG = true
 
 check: check-utests check-ctests
 
-check-ctests: jlc jlm-opt
+check-ctests: jlc-debug jlm-opt-debug
 	@rm -rf ctests.log
 	@FAILED_TESTS="" ; \
 	for TEST in `ls tests/c-tests`; do \

@@ -2,13 +2,24 @@ define HELP_TEXT_JLM
 echo ""
 echo "JLM Make Targets"
 echo "--------------------------------------------------------------------------------"
-echo "jlm                    Compiles all jlm libraries and tools"
-echo "jlm-clean              Cleans all build files and libraries"
-echo "jlc                    Compiles the jlc compiler"
-echo "jlm-print              Compiles the jlm print tool"
-echo "jlm-opt                Compiles the jlm optimizer tool"
-echo "libjlm                 Compiles the jlm library"
-echo "libjlc                 Compiles the jlc library"
+echo "jlm-debug              Compile jlm libraries and tools in debug mode"
+echo "jlm-release            Compile jlm libraries and tools in release mode"
+echo "jlm-clean              Clean all build files and libraries"
+echo ""
+echo "jlc-debug              Compile jlc compiler in debug mode"
+echo "jlc-release            Compile jlc compiler in release mode"
+echo ""
+echo "jlm-print-debug        Compile jlm printer in debug mode"
+echo "jlm-print-release      Compile jlm printer in release mode"
+echo ""
+echo "jlm-opt-debug          Compile jlm optimizer in debug mode"
+echo "jlm-opt-release        Compile jlm optimizer in release mode"
+echo ""
+echo "libjlm-debug           Compile jlm library in debug mode"
+echo "libjlm-release         Compile jlm library in release mode"
+echo ""
+echo "libjlc-debug           Compile jlc library in debug mode"
+echo "libjlc-release         Compile jlc library in release mode"
 endef
 
 include $(JLM_ROOT)/libjlm/Makefile.sub
@@ -16,8 +27,11 @@ include $(JLM_ROOT)/libjlc/Makefile.sub
 include $(JLM_ROOT)/jlm-print/Makefile.sub
 include $(JLM_ROOT)/jlm-opt/Makefile.sub
 
-.PHONY: jlm
-jlm: libjlm libjlc jlm-print jlm-opt jlc
+.PHONY: jlm-debug
+jlm-debug: libjlm-debug libjlc-debug jlm-print-debug jlm-opt-debug jlc-debug
+
+.PHONY: jlm-release
+jlm-release: libjlm-release libjlc-release jlm-print-release jlm-opt-release jlc-release
 
 .PHONY: jlm-clean
 jlm-clean: libjlc-clean libjlm-clean jlmopt-clean jlmprint-clean

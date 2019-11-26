@@ -56,8 +56,13 @@ LIBJLM_SRC = \
 	libjlm/src/opt/reduction.cpp \
 	libjlm/src/opt/unroll.cpp \
 
-.PHONY: libjlm
-libjlm: $(JLM_ROOT)/libjlm.a
+.PHONY: libjlm-debug
+libjlm-debug: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG
+libjlm-debug: $(JLM_ROOT)/libjlm.a
+
+.PHONY: libjlm-release
+libjlm-release: CXXFLAGS += -O3
+libjlm-release: $(JLM_ROOT)/libjlm.a
 
 $(JLM_ROOT)/libjlm.a: CPPFLAGS += -I$(JIVE_ROOT)/include -I$(shell $(LLVMCONFIG) --includedir) -I$(JLM_ROOT)/libjlm/include
 $(JLM_ROOT)/libjlm.a: CXXFLAGS += -Wall -Wpedantic -Wextra -Wno-unused-parameter --std=c++14 -Wfatal-errors

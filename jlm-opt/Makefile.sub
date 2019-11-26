@@ -5,14 +5,18 @@ JLMOPT_SRC = \
 	jlm-opt/src/cmdline.cpp \
 	jlm-opt/src/jlm-opt.cpp \
 
-.PHONY: jlm-opt
-jlm-opt: $(JLM_ROOT)/bin/jlm-opt
+.PHONY: jlm-opt-debug
+jlm-opt-debug: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG
+jlm-opt-debug: jive-debug $(JLM_ROOT)/libjlm.a $(JLM_ROOT)/bin/jlm-opt
 
-$(JLM_ROOT)/bin/jlm-opt: $(JIVE_ROOT)/libjive.a
+.PHONY: jlm-opt-release
+jlm-opt-release: CXXFLAGS += -O3
+jlm-opt-release: jive-release $(JLM_ROOT)/libjlm.a $(JLM_ROOT)/bin/jlm-opt
+
 $(JLM_ROOT)/bin/jlm-opt: CPPFLAGS += -I$(JLM_ROOT)/libjlm/include -I$(JLM_ROOT)/jlm-opt/include -I$(JIVE_ROOT)/include -I$(shell $(LLVMCONFIG) --includedir)
 $(JLM_ROOT)/bin/jlm-opt: CXXFLAGS += -Wall -Wpedantic -Wextra -Wno-unused-parameter --std=c++14 -Wfatal-errors
 $(JLM_ROOT)/bin/jlm-opt: LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -L$(JIVE_ROOT) -L$(JLM_ROOT)/ -ljlm -ljive
-$(JLM_ROOT)/bin/jlm-opt: $(patsubst %.cpp, $(JLM_ROOT)/%.o, $(JLMOPT_SRC)) $(JLM_ROOT)/libjlm.a
+$(JLM_ROOT)/bin/jlm-opt: $(patsubst %.cpp, $(JLM_ROOT)/%.o, $(JLMOPT_SRC)) $(JIVE_ROOT)/libjive.a $(JLM_ROOT)/libjlm.a
 	@mkdir -p $(JLM_ROOT)/bin
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 

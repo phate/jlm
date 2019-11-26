@@ -4,14 +4,15 @@
 define HELP_TEXT
 clear
 echo "Makefile for the JLM compiler"
-echo "Version 1.0 - 2019-06-18"
+echo "Version 1.1 - 2019-11-26"
 endef
 .PHONY: help
 help:
 	@$(HELP_TEXT)
 	@$(HELP_TEXT_JLM)
+	@echo ""
 	@echo "submodule              Initializes all the dependent git submodules"
-	@echo "all                    Compiles jlm, and runs unit and C tests"
+	@echo "all                    Compile jlm in debug mode, and run unit and C tests"
 	@echo "clean                  Calls clean for jive and jlm"
 	@$(HELP_TEXT_JIVE)
 
@@ -27,7 +28,7 @@ endif
 LLVMCONFIG ?= llvm-config
 
 .PHONY: all
-all: jive jlm check
+all: jlm-debug check
 
 .PHONY: submodule
 submodule:
