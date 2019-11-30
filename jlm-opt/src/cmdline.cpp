@@ -63,6 +63,11 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 	, cl::ValueDisallowed
 	, cl::desc("Write RVSDG construction stats to file."));
 
+	cl::opt<bool> print_rvsdg_destruction(
+	  "print-rvsdg-destruction"
+	, cl::ValueDisallowed
+	, cl::desc("Write RVSDG destruction stats to file."));
+
 	cl::opt<bool> print_rvsdg_optimization(
 	  "print-rvsdg-optimization"
 	, cl::ValueDisallowed
@@ -107,6 +112,7 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 	options.sd.print_annotation_time = print_annotation_time;
 	options.sd.print_aggregation_time = print_aggregation_time;
 	options.sd.print_rvsdg_construction = print_rvsdg_construction;
+	options.sd.print_rvsdg_destruction = print_rvsdg_destruction;
 	options.sd.print_rvsdg_optimization = print_rvsdg_optimization;
 }
 
