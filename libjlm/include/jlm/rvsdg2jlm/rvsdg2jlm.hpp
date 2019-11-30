@@ -18,11 +18,12 @@ namespace jlm {
 
 class module;
 class rvsdg;
+class stats_descriptor;
 
 namespace rvsdg2jlm {
 
 std::unique_ptr<jlm::module>
-rvsdg2jlm(const jlm::rvsdg & rvsdg);
+rvsdg2jlm(const jlm::rvsdg & rvsdg, const stats_descriptor & sd);
 
 }}
 

@@ -16,6 +16,7 @@
 #include <jlm/ir/print.hpp>
 #include <jlm/ir/rvsdg.hpp>
 #include <jlm/rvsdg2jlm/rvsdg2jlm.hpp>
+#include <jlm/util/stats.hpp>
 
 static void
 test_with_match()
@@ -44,9 +45,10 @@ test_with_match()
 	auto lambda = lb.end_lambda({ex});
 	rvsdg.graph()->add_export(lambda->output(0), {lambda->output(0)->type(), ""});
 
-
 	jive::view(*rvsdg.graph(), stdout);
-	auto module = jlm::rvsdg2jlm::rvsdg2jlm(rvsdg);
+
+	stats_descriptor sd;
+	auto module = rvsdg2jlm::rvsdg2jlm(rvsdg, sd);
 	jlm::print(*module, stdout);
 
 	/* verify output */
@@ -88,9 +90,10 @@ test_without_match()
 	auto lambda = lb.end_lambda({ex});
 	rvsdg.graph()->add_export(lambda->output(0), {lambda->output(0)->type(), ""});
 
-
 	jive::view(*rvsdg.graph(), stdout);
-	auto module = jlm::rvsdg2jlm::rvsdg2jlm(rvsdg);
+
+	stats_descriptor sd;
+	auto module = rvsdg2jlm::rvsdg2jlm(rvsdg, sd);
 	jlm::print(*module, stdout);
 
 	/* verify output */
@@ -134,7 +137,9 @@ test_gamma3()
 	rvsdg.graph()->add_export(lambda->output(0), {lambda->output(0)->type(), ""});
 
 	jive::view(*rvsdg.graph(), stdout);
-	auto module = jlm::rvsdg2jlm::rvsdg2jlm(rvsdg);
+
+	stats_descriptor sd;
+	auto module = rvsdg2jlm::rvsdg2jlm(rvsdg, sd);
 	jlm::print(*module, stdout);
 
 	/* verify output */

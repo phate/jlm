@@ -17,6 +17,7 @@
 #include <jlm/ir/print.hpp>
 #include <jlm/ir/rvsdg.hpp>
 #include <jlm/rvsdg2jlm/rvsdg2jlm.hpp>
+#include <jlm/util/stats.hpp>
 
 static int
 test()
@@ -44,7 +45,8 @@ test()
 
 	jive::view(*rvsdg.graph(), stdout);
 
-	auto module = jlm::rvsdg2jlm::rvsdg2jlm(rvsdg);
+	stats_descriptor sd;
+	auto module = rvsdg2jlm::rvsdg2jlm(rvsdg, sd);
 	auto & ipg = module->ipgraph();
 	assert(ipg.nnodes() == 1);
 

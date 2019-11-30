@@ -186,7 +186,7 @@ main (int argc, char ** argv)
 	if (flags.j2r) jive::view(rvsdg->graph()->root(), stdout);
 	if (flags.j2rx) jive::view_xml(rvsdg->graph()->root(), stdout);
 
-	jm = jlm::rvsdg2jlm::rvsdg2jlm(*rvsdg);
+	jm = jlm::rvsdg2jlm::rvsdg2jlm(*rvsdg, flags.sd);
 	if (flags.r2j)
 		jlm::print(*jm, stdout);
 	if (flags.r2jdot)

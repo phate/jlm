@@ -15,6 +15,7 @@
 #include <jlm/ir/print.hpp>
 #include <jlm/ir/rvsdg.hpp>
 #include <jlm/rvsdg2jlm/rvsdg2jlm.hpp>
+#include <jlm/util/stats.hpp>
 
 static int
 test()
@@ -57,9 +58,10 @@ test()
 	auto phi = pb.end_phi();
 	rvsdg.graph()->add_export(phi->output(0), {phi->output(0)->type(), ""});
 
-
 	jive::view(*rvsdg.graph(), stdout);
-	auto module = jlm::rvsdg2jlm::rvsdg2jlm(rvsdg);
+
+	stats_descriptor sd;
+	auto module = rvsdg2jlm::rvsdg2jlm(rvsdg, sd);
 	jlm::print(*module, stdout);
 
 	/* verify output */
