@@ -28,7 +28,7 @@ public:
 	}
 
 	size_t
-	ns()
+	ns() const
 	{
 		return std::chrono::duration_cast<std::chrono::nanoseconds>(end_-start_).count();
 	}
