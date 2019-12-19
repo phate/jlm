@@ -71,6 +71,17 @@ patch_phi_operands(const std::vector<llvm::PHINode*> & phis, context & ctx)
 	}
 }
 
+static basic_block_map
+convert_basic_blocks(llvm::Function & f, jlm::cfg & cfg)
+{
+	basic_block_map bbmap;
+	llvm::ReversePostOrderTraversal<llvm::Function*> rpotraverser(&f);
+	for (auto & bb : rpotraverser)
+			bbmap.insert(bb, basic_block::create(cfg));
+
+	return bbmap;
+}
+
 std::unique_ptr<jlm::cfg>
 create_cfg(llvm::Function & f, context & ctx)
 {
@@ -100,10 +111,7 @@ create_cfg(llvm::Function & f, context & ctx)
 	cfg->entry()->append_argument(loopstate);
 	JLM_DEBUG_ASSERT(n == node->fcttype().narguments());
 
-	/* create all basic blocks */
-	basic_block_map bbmap;
-	for (const auto & bb : f.getBasicBlockList())
-			bbmap.insert(&bb, basic_block::create(*cfg));
+	auto bbmap = convert_basic_blocks(f, *cfg);
 
 	/* create entry block */
 	auto entry_block = basic_block::create(*cfg);
