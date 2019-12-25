@@ -53,6 +53,7 @@ reduce(jive::graph & graph)
 		nf->set_multiple_origin_reducible(true);
 		nf->set_load_store_state_reducible(true);
 		nf->set_load_store_alloca_reducible(true);
+		nf->set_load_load_state_reducible(true);
 	}
 
 	/* gamma operation */

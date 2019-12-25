@@ -236,6 +236,62 @@ test_load_store_reduction()
 	assert(x2->origin() == s1);
 }
 
+static void
+test_load_load_reduction()
+{
+	using namespace jlm;
+
+	valuetype vt;
+	ptrtype pt(vt);
+	jive::memtype mt;
+
+	jive::graph graph;
+	auto nf = load_op::normal_form(&graph);
+	nf->set_mutable(false);
+
+	auto a1 = graph.add_import({pt, "a1"});
+	auto a2 = graph.add_import({pt, "a2"});
+	auto a3 = graph.add_import({pt, "a3"});
+	auto a4 = graph.add_import({pt, "a4"});
+	auto v1 = graph.add_import({vt, "v1"});
+	auto s1 = graph.add_import({mt, "s1"});
+	auto s2 = graph.add_import({mt, "s2"});
+
+	auto st1 = store_op::create(a1, v1, {s1}, 4);
+	auto ld1 = jlm::create_load(a2, {s1}, 4);
+	auto ld2 = jlm::create_load(a3, {s2}, 4);
+
+	auto ld3 = jlm::create_load(a4, {st1[0], ld1[1], ld2[1]}, 4);
+
+	auto x1 = graph.add_export(ld3[1], {mt, "s"});
+	auto x2 = graph.add_export(ld3[2], {mt, "s"});
+	auto x3 = graph.add_export(ld3[3], {mt, "s"});
+
+	jive::view(graph.root(), stdout);
+
+	nf->set_mutable(true);
+	nf->set_load_load_state_reducible(true);
+	graph.normalize();
+	graph.prune();
+
+	jive::view(graph.root(), stdout);
+
+	assert(graph.root()->nnodes() == 6);
+
+	auto ld = x1->origin()->node();
+	assert(is<load_op>(ld));
+
+	auto mx1 = x2->origin()->node();
+	assert(is<jive::mux_op>(mx1) && mx1->ninputs() == 2);
+	assert(mx1->input(0)->origin() == ld1[1] || mx1->input(0)->origin() == ld->output(2));
+	assert(mx1->input(1)->origin() == ld1[1] || mx1->input(1)->origin() == ld->output(2));
+
+	auto mx2 = x3->origin()->node();
+	assert(is<jive::mux_op>(mx2) && mx2->ninputs() == 2);
+	assert(mx2->input(0)->origin() == ld2[1] || mx2->input(0)->origin() == ld->output(3));
+	assert(mx2->input(1)->origin() == ld2[1] || mx2->input(1)->origin() == ld->output(3));
+}
+
 static int
 test()
 {
@@ -245,6 +301,7 @@ test()
 	test_load_store_state_reduction();
 	test_load_store_alloca_reduction();
 	test_load_store_reduction();
+	test_load_load_reduction();
 
 	return 0;
 }

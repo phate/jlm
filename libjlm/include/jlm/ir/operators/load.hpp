@@ -109,10 +109,23 @@ public:
 		return enable_load_store_;
 	}
 
+	void
+	set_load_load_state_reducible(bool enable) noexcept
+	{
+		enable_load_load_state_ = enable;
+	}
+
+	bool
+	get_load_load_state_reducible() const noexcept
+	{
+		return enable_load_load_state_;
+	}
+
 private:
 	bool enable_load_mux_;
 	bool enable_load_store_;
 	bool enable_load_alloca_;
+	bool enable_load_load_state_;
 	bool enable_multiple_origin_;
 	bool enable_load_store_state_;
 	bool enable_load_store_alloca_;

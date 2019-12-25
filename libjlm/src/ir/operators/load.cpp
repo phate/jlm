@@ -346,6 +346,81 @@ perform_multiple_origin_reduction(
 	return results;
 }
 
+/*
+	_ so1 = load_op _ si1
+	_ so2 = load_op _ so1
+	_ so3 = load_op _ so2
+	=>
+	_ so1 = load_op _ si1
+	_ so2 = load_op _ si1
+	_ so3 = load_op _ si1
+*/
+static bool
+is_load_load_state_reducible(const std::vector<jive::output*> & operands)
+{
+	JLM_DEBUG_ASSERT(operands.size() >= 2);
+
+	for (size_t n = 1; n < operands.size(); n++) {
+		if (is<load_op>(operands[n]->node()))
+			return true;
+	}
+
+	return false;
+}
+
+static std::vector<jive::output*>
+perform_load_load_state_reduction(
+	const jlm::load_op & op,
+	const std::vector<jive::output*> & operands)
+{
+	size_t nstates = operands.size()-1;
+
+	auto load_state_input = [](jive::output * result)
+	{
+		auto ld = result->node();
+		JLM_DEBUG_ASSERT(is<load_op>(ld));
+
+		/*
+			FIXME: This function returns the corresponding state input for a state output of a load
+			node. It should be part of a load node class.
+		*/
+		for (size_t n = 1; n < ld->noutputs(); n++) {
+			if (result == ld->output(n))
+				return ld->input(n);
+		}
+
+		JLM_ASSERT(0);
+	};
+
+	std::function<jive::output*(size_t, jive::output*, std::vector<std::vector<jive::output*>>&)>
+	reduce_state = [&](size_t index, jive::output * operand, auto & mxstates)
+	{
+		JLM_DEBUG_ASSERT(is<jive::statetype>(operand->type()));
+
+		if (!is<load_op>(operand->node()))
+			return operand;
+
+		mxstates[index].push_back(operand);
+		return reduce_state(index, load_state_input(operand)->origin(), mxstates);
+	};
+
+	std::vector<jive::output*> ldstates;
+	std::vector<std::vector<jive::output*>> mxstates(nstates);
+	for (size_t n = 1; n < operands.size(); n++)
+		ldstates.push_back(reduce_state(n-1, operands[n], mxstates));
+
+	auto ld = jlm::create_load(operands[0], ldstates, op.alignment());
+	for (size_t n = 0; n < mxstates.size(); n++) {
+		auto & states = mxstates[n];
+		if (!states.empty()) {
+			states.push_back(ld[n+1]);
+			ld[n+1] = jive::create_state_merge(jive::memtype::instance(), states);
+		}
+	}
+
+	return ld;
+}
+
 load_normal_form::~load_normal_form()
 {}
 
@@ -357,6 +432,7 @@ load_normal_form::load_normal_form(
 , enable_load_mux_(false)
 , enable_load_store_(false)
 , enable_load_alloca_(false)
+, enable_load_load_state_(false)
 , enable_multiple_origin_(false)
 , enable_load_store_state_(false)
 , enable_load_store_alloca_(false)
@@ -408,6 +484,12 @@ load_normal_form::normalize_node(jive::node * node) const
 		return false;
 	}
 
+	if (get_load_load_state_reducible() && is_load_load_state_reducible(operands)) {
+		divert_users(node, perform_load_load_state_reduction(*op, operands));
+		remove(node);
+		return false;
+	}
+
 	return simple_normal_form::normalize_node(node);
 }
 
@@ -440,6 +522,9 @@ load_normal_form::normalized_create(
 
 	if (get_load_store_alloca_reducible() && is_load_store_alloca_reducible(operands))
 		return perform_load_store_alloca_reduction(*lop, operands);
+
+	if (get_load_load_state_reducible() && is_load_load_state_reducible(operands))
+		return perform_load_load_state_reduction(*lop, operands);
 
 	return simple_normal_form::normalized_create(region, op, operands);
 }
