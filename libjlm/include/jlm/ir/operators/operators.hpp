@@ -154,18 +154,18 @@ public:
 	{
 		return result(0).type();
 	}
-};
 
-static inline std::unique_ptr<jlm::tac>
-create_select_tac(
-	const jlm::variable * p,
-	const jlm::variable * t,
-	const jlm::variable * f,
-	jlm::variable * result)
-{
-	select_op op(t->type());
-	return tac::create(op, {p, t, f}, {result});
-}
+	static std::unique_ptr<jlm::tac>
+	create(
+		const jlm::variable * p,
+		const jlm::variable * t,
+		const jlm::variable * f,
+		jlm::variable * result)
+	{
+		select_op op(t->type());
+		return tac::create(op, {p, t, f}, {result});
+	}
+};
 
 /* fp2ui operator */
 
