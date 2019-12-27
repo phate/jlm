@@ -4,8 +4,7 @@
  */
 
 #include <jlm/common.hpp>
-#include <jlm/ir/operators/operators.hpp>
-#include <jlm/ir/operators/store.hpp>
+#include <jlm/ir/operators.hpp>
 #include <jlm/opt/push.hpp>
 
 #include <jive/rvsdg/gamma.h>
@@ -120,6 +119,20 @@ copy_from_theta(jive::node * node)
 	return arguments;
 }
 
+static bool
+is_gamma_top_pushable(const jive::node * node)
+{
+	/*
+		FIXME: This is techically not fully correct. It is
+		only possible to push a load out of a gamma node, if
+		it is guaranteed to load from a valid address.
+	*/
+	if (is<load_op>(node))
+		return true;
+
+	return !has_side_effects(node);
+}
+
 void
 push(jive::gamma_node * gamma)
 {
@@ -146,8 +159,7 @@ push(jive::gamma_node * gamma)
 		while (!wl.empty()) {
 			auto node = wl.pop_front();
 
-			/* we cannot push out nodes with side-effects */
-			if (has_side_effects(node))
+			if (!is_gamma_top_pushable(node))
 				continue;
 
 			auto arguments = copy_from_gamma(node, r);
