@@ -548,6 +548,10 @@ convert_select(
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(is<select_op>(op));
+	auto & select = *static_cast<const jlm::select_op*>(&op);
+
+	if (is<jive::statetype>(select.type()))
+		return nullptr;
 
 	auto c = ctx.value(operands[0]);
 	auto t = ctx.value(operands[1]);
