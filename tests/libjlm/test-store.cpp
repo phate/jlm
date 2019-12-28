@@ -19,6 +19,8 @@
 static inline void
 test_store_mux_reduction()
 {
+	using namespace jlm;
+
 	jlm::valuetype vt;
 	jlm::ptrtype pt(vt);
 	jive::memtype mt;
@@ -36,7 +38,7 @@ test_store_mux_reduction()
 	auto s3 = graph.add_import({mt, "s3"});
 
 	auto mux = jive::create_state_merge(mt, {s1, s2, s3});
-	auto state = jlm::create_store(a, v, {mux}, 4);
+	auto state = store_op::create(a, v, {mux}, 4);
 
 	auto ex = graph.add_export(state[0], {state[0]->type(), "s"});
 
@@ -60,6 +62,8 @@ test_store_mux_reduction()
 static inline void
 test_multiple_origin_reduction()
 {
+	using namespace jlm;
+
 	jlm::valuetype vt;
 	jlm::ptrtype pt(vt);
 	jive::memtype mt;
@@ -74,7 +78,7 @@ test_multiple_origin_reduction()
 	auto v = graph.add_import({vt, "v"});
 	auto s = graph.add_import({mt, "s"});
 
-	auto states = jlm::create_store(a, v, {s, s, s, s}, 4);
+	auto states = store_op::create(a, v, {s, s, s, s}, 4);
 
 	auto ex = graph.add_export(states[0], {states[0]->type(), "s"});
 
@@ -94,6 +98,8 @@ test_multiple_origin_reduction()
 static inline void
 test_store_alloca_reduction()
 {
+	using namespace jlm;
+
 	jlm::valuetype vt;
 	jive::memtype mt;
 	jive::bittype bt(32);
@@ -110,8 +116,8 @@ test_store_alloca_reduction()
 
 	auto alloca1 = jlm::create_alloca(vt, size, s, 4);
 	auto alloca2 = jlm::create_alloca(vt, size, s, 4);
-	auto states1 = jlm::create_store(alloca1[0], value, {alloca1[1], alloca2[1], s}, 4);
-	auto states2 = jlm::create_store(alloca2[0], value, states1, 4);
+	auto states1 = store_op::create(alloca1[0], value, {alloca1[1], alloca2[1], s}, 4);
+	auto states2 = store_op::create(alloca2[0], value, states1, 4);
 
 	graph.add_export(states2[0], {states2[0]->type(), "s1"});
 	graph.add_export(states2[1], {states2[1]->type(), "s2"});
@@ -149,8 +155,8 @@ test_store_store_reduction()
 	auto v2 = graph.add_import({vt, "value"});
 	auto s = graph.add_import({mt, "state"});
 
-	auto s1 = jlm::create_store(a, v1, {s}, 4)[0];
-	auto s2 = jlm::create_store(a, v2, {s1}, 4)[0];
+	auto s1 = store_op::create(a, v1, {s}, 4)[0];
+	auto s2 = store_op::create(a, v2, {s1}, 4)[0];
 
 	auto ex = graph.add_export(s2, {s2->type(), "state"});
 

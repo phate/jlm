@@ -144,8 +144,8 @@ test_load_store_state_reduction()
 
 	auto alloca1 = jlm::create_alloca(bt, size, state, 4);
 	auto alloca2 = jlm::create_alloca(bt, size, state, 4);
-	auto store1 = jlm::create_store(alloca1[0], size, {alloca1[1]}, 4);
-	auto store2 = jlm::create_store(alloca2[0], size, {alloca2[1]}, 4);
+	auto store1 = store_op::create(alloca1[0], size, {alloca1[1]}, 4);
+	auto store2 = store_op::create(alloca2[0], size, {alloca2[1]}, 4);
 
 	auto value1 = jlm::create_load(alloca1[0], {store1[0], store2[0]}, 4)[0];
 	auto value2 = jlm::create_load(alloca1[0], {store1[0]}, 8)[0];
@@ -174,6 +174,8 @@ test_load_store_state_reduction()
 static inline void
 test_load_store_alloca_reduction()
 {
+	using namespace jlm;
+
 	jive::memtype mt;
 	jive::bittype bt(32);
 
@@ -186,7 +188,7 @@ test_load_store_alloca_reduction()
 	auto state = graph.add_import({mt, "s"});
 
 	auto alloca = jlm::create_alloca(bt, size, state, 4);
-	auto store = jlm::create_store(alloca[0], size, {alloca[1]}, 4);
+	auto store = store_op::create(alloca[0], size, {alloca[1]}, 4);
 	auto load = jlm::create_load(alloca[0], store, 4);
 
 	auto value = graph.add_export(load[0], {load[0]->type(), "l"});
@@ -221,7 +223,7 @@ test_load_store_reduction()
 	auto v = graph.add_import({vt, "value"});
 	auto s = graph.add_import({mt, "state"});
 
-	auto s1 = jlm::create_store(a, v, {s}, 4)[0];
+	auto s1 = store_op::create(a, v, {s}, 4)[0];
 	auto load = jlm::create_load(a, {s1}, 4);
 
 	auto x1 = graph.add_export(load[0], {load[0]->type(), "value"});

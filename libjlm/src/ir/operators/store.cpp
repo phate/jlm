@@ -120,7 +120,9 @@ perform_store_mux_reduction(
 	const std::vector<jive::output*> & operands)
 {
 	auto muxnode = operands[2]->node();
-	auto states = create_store(operands[0], operands[1], jive::operands(muxnode), op.alignment());
+	auto muxoperands = jive::operands(muxnode);
+
+	auto states = store_op::create(operands[0], operands[1], muxoperands, op.alignment());
 	return jive::create_state_mux(muxnode->input(0)->type(), states, op.nstates());
 }
 
@@ -134,7 +136,7 @@ perform_store_store_reduction(
 
 	auto storeops = jive::operands(storenode);
 	std::vector<jive::output*> states(std::next(std::next(storeops.begin())), storeops.end());
-	return jlm::create_store(operands[0], operands[1], states, op.alignment());
+	return store_op::create(operands[0], operands[1], states, op.alignment());
 }
 
 static std::vector<jive::output*>
@@ -147,7 +149,7 @@ perform_store_alloca_reduction(
 	auto alloca_state = address->node()->output(1);
 	std::unordered_set<jive::output*> states(std::next(std::next(operands.begin())), operands.end());
 
-	auto outputs = create_store(address, value, {alloca_state}, op.alignment());
+	auto outputs = store_op::create(address, value, {alloca_state}, op.alignment());
 	states.erase(alloca_state);
 	states.insert(outputs[0]);
 	return {states.begin(), states.end()};
@@ -159,7 +161,7 @@ perform_multiple_origin_reduction(
 	const std::vector<jive::output*> & operands)
 {
 	std::unordered_set<jive::output*> states(std::next(std::next(operands.begin())), operands.end());
-	return jlm::create_store(operands[0], operands[1], {states.begin(), states.end()},
+	return store_op::create(operands[0], operands[1], {states.begin(), states.end()},
 		op.alignment());
 }
 
