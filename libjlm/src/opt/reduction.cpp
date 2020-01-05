@@ -8,13 +8,16 @@
 #include <jive/rvsdg/statemux.h>
 
 #include <jlm/ir/operators.hpp>
+#include <jlm/ir/rvsdg.hpp>
 #include <jlm/opt/reduction.hpp>
 
 namespace jlm {
 
 void
-reduce(jive::graph & graph)
+reduce(jlm::rvsdg & rvsdg)
 {
+	auto & graph = *rvsdg.graph();
+
 	/* alloca operation */
 	{
 		auto nf = graph.node_normal_form(typeid(jlm::alloca_op));

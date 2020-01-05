@@ -13,10 +13,11 @@
 
 namespace jive {
 	class bitvalue_repr;
-	class graph;
 }
 
 namespace jlm {
+
+class rvsdg;
 
 class unrollinfo final {
 public:
@@ -205,7 +206,7 @@ void
 unroll(jive::theta_node * node, size_t factor);
 
 void
-unroll(jive::graph & rvsdg, size_t factor);
+unroll(jlm::rvsdg & rvsdg, size_t factor);
 
 }
 

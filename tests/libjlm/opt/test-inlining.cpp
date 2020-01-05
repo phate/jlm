@@ -12,26 +12,8 @@
 #include <jive/rvsdg/gamma.h>
 
 #include <jlm/ir/operators.hpp>
+#include <jlm/ir/rvsdg.hpp>
 #include <jlm/opt/inlining.hpp>
-
-/* FIXME: replace with contains function from jive */
-static bool
-contains_call_node(const jive::region * region)
-{
-	for (const auto & node : region->nodes) {
-		if (jive::is<jlm::call_op>(&node))
-			return true;
-
-		if (auto structnode = dynamic_cast<const jive::structural_node*>(&node)) {
-			for (size_t n = 0; n < structnode->nsubregions(); n++) {
-				if (contains_call_node(structnode->subregion(n)))
-					return true;
-			}
-		}
-	}
-
-	return false;
-}
 
 static int
 verify()
@@ -43,7 +25,8 @@ verify()
 	jive::fcttype ft1({&vt}, {&vt});
 	jive::fcttype ft2({&ct, &vt}, {&vt});
 
-	jive::graph graph;
+	jlm::rvsdg rvsdg(filepath(""), "", "");
+	auto & graph = *rvsdg.graph();
 	auto i = graph.add_import({vt, "i"});
 
 	/* f1 */
@@ -67,10 +50,10 @@ verify()
 	graph.add_export(f2->output(0), {f2->output(0)->type(), "f2"});
 
 	jive::view(graph.root(), stdout);
-	jlm::inlining(graph);
+	jlm::inlining(rvsdg);
 	jive::view(graph.root(), stdout);
 
-	assert(!contains_call_node(graph.root()));
+	assert(!jive::contains<jlm::call_op>(graph.root(), true));
 	return 0;
 }
 

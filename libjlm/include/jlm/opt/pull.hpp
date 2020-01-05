@@ -15,6 +15,8 @@ namespace jive {
 
 namespace jlm {
 
+class rvsdg;
+
 void
 pullin_top(jive::gamma_node * gamma);
 
@@ -28,11 +30,8 @@ pull(jive::gamma_node * gamma);
 void
 pull(jive::region * region);
 
-static inline void
-pull(jive::graph & graph)
-{
-	pull(graph.root());
-}
+void
+pull(jlm::rvsdg & rvsdg);
 
 }
 

@@ -12,16 +12,20 @@
 #include <jive/rvsdg/graph.h>
 #include <jive/rvsdg/theta.h>
 
+#include <jlm/ir/rvsdg.hpp>
 #include <jlm/ir/types.hpp>
 #include <jlm/opt/invariance.hpp>
 
 static inline void
 test_gamma()
 {
+	using namespace jlm;
+
 	jlm::valuetype vt;
 	jive::ctltype ct(2);
 
-	jive::graph graph;
+	jlm::rvsdg rvsdg(filepath(""), "", "");
+	auto & graph = *rvsdg.graph();
 	auto c = graph.add_import({ct, "c"});
 	auto x = graph.add_import({vt, "x"});
 	auto y = graph.add_import({vt, "y"});
@@ -44,7 +48,7 @@ test_gamma()
 	graph.add_export(gamma1->output(1), {gamma1->output(1)->type(), "y"});
 
 	jive::view(graph.root(), stdout);
-	jlm::invariance(graph);
+	jlm::invariance(rvsdg);
 	jive::view(graph.root(), stdout);
 
 	assert(graph.root()->result(0)->origin() == graph.root()->argument(1));
@@ -60,7 +64,8 @@ test_theta()
 	jlm::valuetype vt;
 	jive::ctltype ct(2);
 
-	jive::graph graph;
+	jlm::rvsdg rvsdg(filepath(""), "", "");
+	auto & graph = *rvsdg.graph();
 	auto c = graph.add_import({ct, "c"});
 	auto x = graph.add_import({vt, "x"});
 	auto l = graph.add_import({lt, "l"});
@@ -84,7 +89,7 @@ test_theta()
 	graph.add_export(lv3, {lv3->type(), "l"});
 
 	jive::view(graph.root(), stdout);
-	jlm::invariance(graph);
+	jlm::invariance(rvsdg);
 	jive::view(graph.root(), stdout);
 
 	assert(graph.root()->result(0)->origin() == graph.root()->argument(0));

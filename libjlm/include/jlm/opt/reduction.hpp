@@ -6,14 +6,12 @@
 #ifndef JLM_OPT_REDUCTION_HPP
 #define JLM_OPT_REDUCTION_HPP
 
-namespace jive {
-	class graph;
-}
-
 namespace jlm {
 
+class rvsdg;
+
 void
-reduce(jive::graph & graph);
+reduce(jlm::rvsdg & rvsdg);
 
 }
 

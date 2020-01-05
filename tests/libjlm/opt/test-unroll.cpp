@@ -17,6 +17,7 @@
 #include <jive/rvsdg/simple-node.h>
 #include <jive/rvsdg/theta.h>
 
+#include <jlm/ir/rvsdg.hpp>
 #include <jlm/opt/dne.hpp>
 #include <jlm/opt/unroll.hpp>
 
@@ -229,10 +230,14 @@ test_known_boundaries()
 static inline void
 test_unknown_boundaries()
 {
+	using namespace jlm;
+
 	jive::bittype bt(32);
 	jlm::test_op op({&bt}, {&bt});
 
-	jive::graph graph;
+	jlm::rvsdg rvsdg(filepath(""), "", "");
+	auto & graph = *rvsdg.graph();
+
 	auto x = graph.add_import({bt, "x"});
 	auto y = graph.add_import({bt, "y"});
 
@@ -252,7 +257,7 @@ test_unknown_boundaries()
 	auto ex1 = graph.add_export(lv1, {lv1->type(), "x"});
 
 	jive::view(graph, stdout);
-	jlm::unroll(graph, 2);
+	jlm::unroll(rvsdg, 2);
 	jive::view(graph, stdout);
 
 	auto node = ex1->origin()->node();

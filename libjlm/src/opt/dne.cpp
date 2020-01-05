@@ -5,6 +5,7 @@
 
 #include <jlm/common.hpp>
 #include <jlm/ir/operators.hpp>
+#include <jlm/ir/rvsdg.hpp>
 #include <jlm/opt/dne.hpp>
 #include <jlm/util/stats.hpp>
 
@@ -377,8 +378,10 @@ sweep(jive::region * region, const dnectx & ctx)
 }
 
 void
-dne(jive::graph & graph)
+dne(jlm::rvsdg & rvsdg)
 {
+	auto & graph = *rvsdg.graph();
+
 	dnectx ctx;
 
 	auto mark_ = [&](jive::graph & graph)

@@ -6,14 +6,12 @@
 #ifndef JLM_OPT_CNE_HPP
 #define JLM_OPT_CNE_HPP
 
-namespace jive {
-	class graph;
-}
-
 namespace jlm {
 
+class rvsdg;
+
 void
-cne(jive::graph & rvsdg);
+cne(jlm::rvsdg & rvsdg);
 
 }
 

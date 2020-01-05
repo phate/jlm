@@ -5,6 +5,7 @@
 
 #include <jlm/common.hpp>
 #include <jlm/ir/operators.hpp>
+#include <jlm/ir/rvsdg.hpp>
 #include <jlm/opt/cne.hpp>
 #include <jlm/util/stats.hpp>
 
@@ -514,8 +515,10 @@ divert(jive::region * region, cnectx & ctx)
 }
 
 void
-cne(jive::graph & graph)
+cne(jlm::rvsdg & rvsdg)
 {
+	auto & graph = *rvsdg.graph();
+
 	cnectx ctx;
 
 	auto mark_ = [&](jive::graph & graph)

@@ -6,14 +6,12 @@
 #ifndef JLM_OPT_INVARIANCE_HPP
 #define JLM_OPT_INVARIANCE_HPP
 
-namespace jive {
-	class graph;
-}
-
 namespace jlm {
 
+class rvsdg;
+
 void
-invariance(jive::graph & graph);
+invariance(jlm::rvsdg & rvsdg);
 
 }
 

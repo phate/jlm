@@ -6,14 +6,12 @@
 #ifndef JLM_OPT_INLINE_HPP
 #define JLM_OPT_INLINE_HPP
 
-namespace jive {
-	class graph;
-}
-
 namespace jlm {
 
+class rvsdg;
+
 void
-inlining(jive::graph & rvsdg);
+inlining(jlm::rvsdg & rvsdg);
 
 }
 

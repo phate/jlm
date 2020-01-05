@@ -14,17 +14,23 @@
 #include <jive/rvsdg/theta.h>
 
 #include <jlm/ir/operators/store.hpp>
+#include <jlm/ir/rvsdg.hpp>
 #include <jlm/ir/types.hpp>
 #include <jlm/opt/push.hpp>
+
+static const jlm::statetype st;
+static const jlm::valuetype vt;
 
 static inline void
 test_gamma()
 {
-	jlm::statetype st;
-	jlm::valuetype vt;
+	using namespace jlm;
+
 	jive::ctltype ct(2);
 
-	jive::graph graph;
+	jlm::rvsdg rvsdg(filepath(""), "", "");
+	auto & graph = *rvsdg.graph();
+
 	auto c = graph.add_import({ct, "c"});
 	auto x = graph.add_import({vt, "x"});
 	auto s = graph.add_import({st, "s"});
@@ -42,7 +48,7 @@ test_gamma()
 	graph.add_export(gamma->output(0), {gamma->output(0)->type(), "x"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::push(graph);
+	jlm::push(rvsdg);
 //	jive::view(graph.root(), stdout);
 
 	assert(graph.root()->nodes.size() == 3);
@@ -51,15 +57,17 @@ test_gamma()
 static inline void
 test_theta()
 {
-	jlm::statetype st;
-	jlm::valuetype vt;
+	using namespace jlm;
+
 	jive::ctltype ct(2);
 
 	jlm::test_op nop({}, {&vt});
 	jlm::test_op bop({&vt, &vt}, {&vt});
 	jlm::test_op sop({&vt, &st}, {&st});
 
-	jive::graph graph;
+	jlm::rvsdg rvsdg(filepath(""), "", "");
+	auto & graph = *rvsdg.graph();
+
 	auto c = graph.add_import({ct, "c"});
 	auto x = graph.add_import({vt, "x"});
 	auto s = graph.add_import({st, "s"});
@@ -84,7 +92,7 @@ test_theta()
 	graph.add_export(theta->output(0), {theta->output(0)->type(), "c"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::push(graph);
+	jlm::push(rvsdg);
 //	jive::view(graph.root(), stdout);
 
 	assert(graph.root()->nodes.size() == 3);
@@ -96,7 +104,6 @@ test_push_theta_bottom()
 	using namespace jlm;
 
 	jive::memtype mt;
-	jlm::valuetype vt;
 	jlm::ptrtype pt(vt);
 	jive::ctltype ct(2);
 

@@ -16,18 +16,22 @@
 #include <jive/rvsdg/theta.h>
 
 #include <jlm/ir/operators/lambda.hpp>
+#include <jlm/ir/rvsdg.hpp>
 #include <jlm/opt/dne.hpp>
 
 static inline void
 test_root()
 {
-	jive::graph graph;
+	using namespace jlm;
+
+	jlm::rvsdg rvsdg(filepath(""), "", "");
+	auto & graph = *rvsdg.graph();
 	graph.add_import({jlm::valuetype(), "x"});
 	auto y = graph.add_import({jlm::valuetype(), "y"});
 	graph.add_export(y, {y->type(), "z"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::dne(graph);
+	jlm::dne(rvsdg);
 //	jive::view(graph.root(), stdout);
 
 	assert(graph.root()->narguments() == 1);
@@ -36,10 +40,13 @@ test_root()
 static inline void
 test_gamma()
 {
+	using namespace jlm;
+
 	jlm::valuetype vt;
 	jive::ctltype ct(2);
 
-	jive::graph graph;
+	jlm::rvsdg rvsdg(filepath(""), "", "");
+	auto & graph = *rvsdg.graph();
 	auto c = graph.add_import({ct, "c"});
 	auto x = graph.add_import({vt, "x"});
 	auto y = graph.add_import({vt, "y"});
@@ -59,7 +66,7 @@ test_gamma()
 	graph.add_export(gamma->output(2), {gamma->output(2)->type(), "w"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::dne(graph);
+	jlm::dne(rvsdg);
 //	jive::view(graph.root(), stdout);
 
 	assert(gamma->noutputs() == 2);
@@ -72,10 +79,13 @@ test_gamma()
 static inline void
 test_gamma2()
 {
+	using namespace jlm;
+
 	jlm::valuetype vt;
 	jive::ctltype ct(2);
 
-	jive::graph graph;
+	jlm::rvsdg rvsdg(filepath(""), "", "");
+	auto & graph = *rvsdg.graph();
 	auto c = graph.add_import({ct, "c"});
 	auto x = graph.add_import({vt, "x"});
 
@@ -90,7 +100,7 @@ test_gamma2()
 	graph.add_export(gamma->output(0), {gamma->output(0)->type(), "x"});
 
 //	jive::view(graph, stdout);
-	jlm::dne(graph);
+	jlm::dne(rvsdg);
 //	jive::view(graph, stdout);
 
 	assert(graph.root()->narguments() == 1);
@@ -99,10 +109,13 @@ test_gamma2()
 static inline void
 test_theta()
 {
+	using namespace jlm;
+
 	jlm::valuetype vt;
 	jive::ctltype ct(2);
 
-	jive::graph graph;
+	jlm::rvsdg rvsdg(filepath(""), "", "");
+	auto & graph = *rvsdg.graph();
 	auto x = graph.add_import({vt, "x"});
 	auto y = graph.add_import({vt, "y"});
 	auto z = graph.add_import({vt, "z"});
@@ -128,7 +141,7 @@ test_theta()
 	graph.add_export(theta->output(3), {theta->output(0)->type(), "b"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::dne(graph);
+	jlm::dne(rvsdg);
 //	jive::view(graph.root(), stdout);
 
 	assert(theta->noutputs() == 3);
@@ -139,10 +152,13 @@ test_theta()
 static inline void
 test_nested_theta()
 {
+	using namespace jlm;
+
 	jlm::valuetype vt;
 	jive::ctltype ct(2);
 
-	jive::graph graph;
+	jlm::rvsdg rvsdg(filepath(""), "", "");
+	auto & graph = *rvsdg.graph();
 	auto c = graph.add_import({ct, "c"});
 	auto x = graph.add_import({vt, "x"});
 	auto y = graph.add_import({vt, "y"});
@@ -171,7 +187,7 @@ test_nested_theta()
 	graph.add_export(otheta->output(2), {otheta->output(2)->type(), "y"});
 
 //	jive::view(graph, stdout);
-	jlm::dne(graph);
+	jlm::dne(rvsdg);
 //	jive::view(graph, stdout);
 
 	assert(otheta->noutputs() == 3);
@@ -180,10 +196,13 @@ test_nested_theta()
 static inline void
 test_evolving_theta()
 {
+	using namespace jlm;
+
 	jlm::valuetype vt;
 	jive::ctltype ct(2);
 
-	jive::graph graph;
+	jlm::rvsdg rvsdg(filepath(""), "", "");
+	auto & graph = *rvsdg.graph();
 	auto c = graph.add_import({ct, "c"});
 	auto x1 = graph.add_import({vt, "x1"});
 	auto x2 = graph.add_import({vt, "x2"});
@@ -207,7 +226,7 @@ test_evolving_theta()
 	graph.add_export(lv1, {lv1->type(), "x1"});
 
 //	jive::view(graph, stdout);
-	jlm::dne(graph);
+	jlm::dne(rvsdg);
 //	jive::view(graph, stdout);
 
 	assert(theta->noutputs() == 5);
@@ -220,7 +239,8 @@ test_lambda()
 
 	jlm::valuetype vt;
 
-	jive::graph graph;
+	jlm::rvsdg rvsdg(filepath(""), "", "");
+	auto & graph = *rvsdg.graph();
 	auto x = graph.add_import({vt, "x"});
 
 	jlm::lambda_builder lb;
@@ -234,7 +254,7 @@ test_lambda()
 	graph.add_export(lambda->output(0), {lambda->output(0)->type(), "f"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::dne(graph);
+	jlm::dne(rvsdg);
 //	jive::view(graph.root(), stdout);
 
 	assert(lambda->subregion()->nodes.size() == 0);
@@ -249,7 +269,8 @@ test_phi()
 	jlm::valuetype vt;
 	jive::fcttype ft({&vt}, {&vt});
 
-	jive::graph graph;
+	jlm::rvsdg rvsdg(filepath(""), "", "");
+	auto & graph = *rvsdg.graph();
 	auto x = graph.add_import({vt, "x"});
 	auto y = graph.add_import({vt, "y"});
 
@@ -279,7 +300,7 @@ test_phi()
 	graph.add_export(phi->output(0), {phi->output(0)->type(), "f1"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::dne(graph);
+	jlm::dne(rvsdg);
 //	jive::view(graph.root(), stdout);
 }
 

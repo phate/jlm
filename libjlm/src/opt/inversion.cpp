@@ -4,6 +4,7 @@
  */
 
 #include <jlm/common.hpp>
+#include <jlm/ir/rvsdg.hpp>
 #include <jlm/opt/inversion.hpp>
 #include <jlm/opt/pull.hpp>
 
@@ -251,9 +252,9 @@ invert(jive::region * region)
 }
 
 void
-invert(jive::graph & graph)
+invert(jlm::rvsdg & rvsdg)
 {
-	auto root = graph.root();
+	auto root = rvsdg.graph()->root();
 
 	#ifdef IVTTIME
 		auto nnodes = jive::nnodes(root);

@@ -11,18 +11,24 @@
 #include <jive/rvsdg/gamma.h>
 #include <jive/rvsdg/simple-node.h>
 
+#include <jlm/ir/rvsdg.hpp>
 #include <jlm/opt/pull.hpp>
+
+static const jlm::valuetype vt;
 
 static inline void
 test_pullin_top()
 {
-	jlm::valuetype vt;
+	using namespace jlm;
+
 	jive::ctltype ct(2);
 	jlm::test_op uop({&vt}, {&vt});
 	jlm::test_op bop({&vt, &vt}, {&vt});
 	jlm::test_op cop({&ct, &vt}, {&ct});
 
-	jive::graph graph;
+	jlm::rvsdg rvsdg(filepath(""), "", "");
+	auto & graph = *rvsdg.graph();
+
 	auto c = graph.add_import({ct, "c"});
 	auto x = graph.add_import({vt, "x"});
 
@@ -81,9 +87,11 @@ test_pullin_bottom()
 static void
 test_pull()
 {
-	jlm::valuetype vt;
+	using namespace jlm;
 
-	jive::graph graph;
+	jlm::rvsdg rvsdg(filepath(""), "", "");
+	auto & graph = *rvsdg.graph();
+
 	auto p = graph.add_import({jive::ctl2, ""});
 
 	auto croot = jlm::create_testop(graph.root(), {}, {&vt})[0];
@@ -107,7 +115,7 @@ test_pull()
 	graph.add_export(g1xv, {g1xv->type(), ""});
 
 	jive::view(graph, stdout);
-	jlm::pull(graph);
+	jlm::pull(rvsdg);
 	graph.prune();
 	jive::view(graph, stdout);
 

@@ -6,14 +6,12 @@
 #ifndef JLM_OPT_DNE_HPP
 #define JLM_OPT_DNE_HPP
 
-namespace jive {
-	class graph;
-}
-
 namespace jlm {
 
+class rvsdg;
+
 void
-dne(jive::graph & rvsdg);
+dne(jlm::rvsdg & rvsdg);
 
 }
 

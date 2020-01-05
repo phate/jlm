@@ -15,6 +15,7 @@
 #include <jive/rvsdg/traverser.h>
 
 #include <jlm/common.hpp>
+#include <jlm/ir/rvsdg.hpp>
 #include <jlm/opt/unroll.hpp>
 
 namespace jlm {
@@ -455,12 +456,12 @@ unroll(jive::region * region, size_t factor)
 }
 
 void
-unroll(jive::graph & rvsdg, size_t factor)
+unroll(jlm::rvsdg & rvsdg, size_t factor)
 {
 	if (factor < 2)
 		return;
 
-	unroll(rvsdg.root(), factor);
+	unroll(rvsdg.graph()->root(), factor);
 }
 
 }

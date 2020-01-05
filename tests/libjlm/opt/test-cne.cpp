@@ -16,14 +16,18 @@
 #include <jive/rvsdg/theta.h>
 
 #include <jlm/ir/operators/lambda.hpp>
+#include <jlm/ir/rvsdg.hpp>
 #include <jlm/opt/cne.hpp>
 
 static inline void
 test_simple()
 {
+	using namespace jlm;
+
 	jlm::valuetype vt;
 
-	jive::graph graph;
+	jlm::rvsdg rvsdg(filepath(""), "", "");
+	auto & graph = *rvsdg.graph();
 	auto nf = graph.node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
@@ -50,7 +54,7 @@ test_simple()
 	graph.add_export(b4, {n2->type(), "b4"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::cne(graph);
+	jlm::cne(rvsdg);
 //	jive::view(graph.root(), stdout);
 
 	assert(graph.root()->result(0)->origin() == graph.root()->result(1)->origin());
@@ -61,10 +65,13 @@ test_simple()
 static inline void
 test_gamma()
 {
+	using namespace jlm;
+
 	jlm::valuetype vt;
 	jive::ctltype ct(2);
 
-	jive::graph graph;
+	jlm::rvsdg rvsdg(filepath(""), "", "");
+	auto & graph = *rvsdg.graph();
 	auto nf = graph.node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
@@ -101,7 +108,7 @@ test_gamma()
 	graph.add_export(gamma->output(2), {gamma->output(2)->type(), "y"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::cne(graph);
+	jlm::cne(rvsdg);
 //	jive::view(graph.root(), stdout);
 
 	auto subregion0 = gamma->subregion(0);
@@ -121,10 +128,13 @@ test_gamma()
 static inline void
 test_theta()
 {
+	using namespace jlm;
+
 	jlm::valuetype vt;
 	jive::ctltype ct(2);
 
-	jive::graph graph;
+	jlm::rvsdg rvsdg(filepath(""), "", "");
+	auto & graph = *rvsdg.graph();
 	auto nf = graph.node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
@@ -154,7 +164,7 @@ test_theta()
 	graph.add_export(theta->output(3), {theta->output(3)->type(), "lv4"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::cne(graph);
+	jlm::cne(rvsdg);
 //	jive::view(graph.root(), stdout);
 
 	assert(u1->node()->input(0)->origin() == u2->node()->input(0)->origin());
@@ -167,10 +177,13 @@ test_theta()
 static inline void
 test_theta2()
 {
+	using namespace jlm;
+
 	jlm::valuetype vt;
 	jive::ctltype ct(2);
 
-	jive::graph graph;
+	jlm::rvsdg rvsdg(jlm::filepath(""), "", "");
+	auto & graph = *rvsdg.graph();
 	auto nf = graph.node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
@@ -197,7 +210,7 @@ test_theta2()
 	graph.add_export(theta->output(2), {theta->output(2)->type(), "lv3"});
 
 //	jive::view(graph, stdout);
-	jlm::cne(graph);
+	jlm::cne(rvsdg);
 //	jive::view(graph, stdout);
 
 	assert(lv2->result()->origin() == u1);
@@ -207,10 +220,13 @@ test_theta2()
 static inline void
 test_theta3()
 {
+	using namespace jlm;
+
 	jlm::valuetype vt;
 	jive::ctltype ct(2);
 
-	jive::graph graph;
+	jlm::rvsdg rvsdg(jlm::filepath(""), "", "");
+	auto & graph = *rvsdg.graph();
 	auto nf = graph.node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
@@ -248,7 +264,7 @@ test_theta3()
 	graph.add_export(theta1->output(3), {theta1->output(3)->type(), "lv4"});
 
 //	jive::view(graph, stdout);
-	jlm::cne(graph);
+	jlm::cne(rvsdg);
 //	jive::view(graph, stdout);
 
 	assert(r1->result(2)->origin() == r1->result(4)->origin());
@@ -262,10 +278,13 @@ test_theta3()
 static inline void
 test_theta4()
 {
+	using namespace jlm;
+
 	jlm::valuetype vt;
 	jive::ctltype ct(2);
 
-	jive::graph graph;
+	jlm::rvsdg rvsdg(jlm::filepath(""), "", "");
+	auto & graph = *rvsdg.graph();
 	auto nf = graph.node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
@@ -300,7 +319,7 @@ test_theta4()
 	graph.add_export(theta->output(4), {theta->output(4)->type(), "lv5"});
 
 //	jive::view(graph, stdout);
-	jlm::cne(graph);
+	jlm::cne(rvsdg);
 //	jive::view(graph, stdout);
 
 	assert(ex1->origin() != ex2->origin());
@@ -311,10 +330,13 @@ test_theta4()
 static inline void
 test_theta5()
 {
+	using namespace jlm;
+
 	jlm::valuetype vt;
 	jive::ctltype ct(2);
 
-	jive::graph graph;
+	jlm::rvsdg rvsdg(jlm::filepath(""), "", "");
+	auto & graph = *rvsdg.graph();
 	auto nf = graph.node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
@@ -342,7 +364,7 @@ test_theta5()
 	auto ex4 = graph.add_export(theta->output(4), {theta->output(4)->type(), "lv4"});
 
 //	jive::view(graph, stdout);
-	jlm::cne(graph);
+	jlm::cne(rvsdg);
 //	jive::view(graph, stdout);
 
 	assert(ex1->origin() == ex2->origin());
@@ -359,7 +381,8 @@ test_lambda()
 	jlm::valuetype vt;
 	jive::fcttype ft({&vt, &vt}, {&vt});
 
-	jive::graph graph;
+	jlm::rvsdg rvsdg(jlm::filepath(""), "", "");
+	auto & graph = *rvsdg.graph();
 	auto nf = graph.node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
@@ -378,7 +401,7 @@ test_lambda()
 	graph.add_export(lambda->output(0), {lambda->output(0)->type(), "f"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::cne(graph);
+	jlm::cne(rvsdg);
 //	jive::view(graph.root(), stdout);
 
 	assert(b1->node()->input(0)->origin() == b1->node()->input(1)->origin());
@@ -392,7 +415,8 @@ test_phi()
 	jlm::valuetype vt;
 	jive::fcttype ft({&vt, &vt}, {&vt});
 
-	jive::graph graph;
+	jlm::rvsdg rvsdg(jlm::filepath(""), "", "");
+	auto & graph = *rvsdg.graph();
 	auto nf = graph.node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
@@ -425,7 +449,7 @@ test_phi()
 	graph.add_export(phi->output(1), {phi->output(1)->type(), "f2"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::cne(graph);
+	jlm::cne(rvsdg);
 //	jive::view(graph.root(), stdout);
 
 	assert(f1->input(0)->origin() == f2->input(0)->origin());

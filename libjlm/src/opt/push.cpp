@@ -5,6 +5,7 @@
 
 #include <jlm/common.hpp>
 #include <jlm/ir/operators.hpp>
+#include <jlm/ir/rvsdg.hpp>
 #include <jlm/opt/push.hpp>
 
 #include <jive/rvsdg/gamma.h>
@@ -362,9 +363,9 @@ push(jive::region * region)
 }
 
 void
-push(jive::graph & graph)
+push(jlm::rvsdg & rvsdg)
 {
-	auto root = graph.root();
+	auto root = rvsdg.graph()->root();
 
 	#ifdef PSHTIME
 		auto nnodes = jive::nnodes(root);

@@ -6,14 +6,12 @@
 #ifndef JLM_OPT_INVERSION_HPP
 #define JLM_OPT_INVERSION_HPP
 
-namespace jive {
-	class graph;
-}
-
 namespace jlm {
 
+class rvsdg;
+
 void
-invert(jive::graph & rvsdg);
+invert(jlm::rvsdg & rvsdg);
 
 }
 

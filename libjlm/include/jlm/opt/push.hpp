@@ -9,12 +9,13 @@
 namespace jive {
 
 class gamma_node;
-class graph;
 class theta_node;
 
 }
 
 namespace jlm {
+
+class rvsdg;
 
 void
 push_top(jive::theta_node * theta);
@@ -29,7 +30,7 @@ void
 push(jive::gamma_node * gamma);
 
 void
-push(jive::graph & rvsdg);
+push(jlm::rvsdg & rvsdg);
 
 }
 

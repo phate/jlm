@@ -4,6 +4,7 @@
  */
 
 #include <jlm/common.hpp>
+#include <jlm/ir/rvsdg.hpp>
 #include <jlm/ir/types.hpp>
 #include <jlm/opt/invariance.hpp>
 
@@ -94,9 +95,9 @@ invariance(jive::region * region)
 }
 
 void
-invariance(jive::graph & graph)
+invariance(jlm::rvsdg & rvsdg)
 {
-	auto root = graph.root();
+	auto root = rvsdg.graph()->root();
 
 	#ifdef INVTIME
 		auto nnodes = jive::nnodes(root);

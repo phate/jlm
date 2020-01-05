@@ -12,15 +12,18 @@
 #include <jive/rvsdg/simple-node.h>
 #include <jive/rvsdg/theta.h>
 
+#include <jlm/ir/rvsdg.hpp>
 #include <jlm/opt/inversion.hpp>
+
+static const jlm::valuetype vt;
 
 static inline void
 test1()
 {
-	jlm::valuetype vt;
-	jive::bittype bt(1);
+	using namespace jlm;
 
-	jive::graph graph;
+	jlm::rvsdg rvsdg(filepath(""), "", "");
+	auto & graph = *rvsdg.graph();
 
 	auto x = graph.add_import({vt, "x"});
 	auto y = graph.add_import({vt, "y"});
@@ -32,7 +35,8 @@ test1()
 	auto lvy = theta->add_loopvar(y);
 	theta->add_loopvar(z);
 
-	auto a = jlm::create_testop(theta->subregion(), {lvx->argument(), lvy->argument()}, {&bt})[0];
+	auto a = jlm::create_testop(theta->subregion(), {lvx->argument(), lvy->argument()},
+		{&jive::bit1})[0];
 	auto predicate = jive::match(1, {{1, 0}}, 1, 2, a);
 
 	auto gamma = jive::gamma_node::create(predicate, 2);
@@ -54,7 +58,7 @@ test1()
 	auto ex3 = graph.add_export(theta->output(2), {theta->output(2)->type(), "z"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::invert(graph);
+	jlm::invert(rvsdg);
 //	jive::view(graph.root(), stdout);
 
 	assert(jive::is<jive::gamma_op>(ex1->origin()->node()));
@@ -65,9 +69,10 @@ test1()
 static inline void
 test2()
 {
-	jlm::valuetype vt;
+	using namespace jlm;
 
-	jive::graph graph;
+	jlm::rvsdg rvsdg(filepath(""), "", "");
+	auto & graph = *rvsdg.graph();
 
 	auto x = graph.add_import({vt, "x"});
 
@@ -96,7 +101,7 @@ test2()
 	auto ex = graph.add_export(theta->output(0), {theta->output(0)->type(), "x"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::invert(graph);
+	jlm::invert(rvsdg);
 //	jive::view(graph.root(), stdout);
 
 	assert(jive::is<jive::gamma_op>(ex->origin()->node()));

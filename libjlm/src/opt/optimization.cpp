@@ -26,21 +26,21 @@ namespace jlm {
 void
 optimize(jlm::rvsdg & rvsdg, const optimization & opt)
 {
-	static std::unordered_map<optimization, void(*)(jive::graph&)> map({
-	  {optimization::cne, [](jive::graph & graph){ jlm::cne(graph); }}
-	, {optimization::dne, [](jive::graph & graph){ jlm::dne(graph); }}
-	, {optimization::iln, [](jive::graph & graph){ jlm::inlining(graph); }}
-	, {optimization::inv, [](jive::graph & graph){ jlm::invariance(graph); }}
-	, {optimization::pll, [](jive::graph & graph){ jlm::pull(graph); }}
-	, {optimization::psh, [](jive::graph & graph){ jlm::push(graph); }}
-	, {optimization::ivt, [](jive::graph & graph){ jlm::invert(graph); }}
-	, {optimization::url, [](jive::graph & graph){ jlm::unroll(graph, 4); }}
-	, {optimization::red, [](jive::graph & graph){ jlm::reduce(graph); }}
+	static std::unordered_map<optimization, void(*)(jlm::rvsdg&)> map({
+	  {optimization::cne, jlm::cne }
+	, {optimization::dne, jlm::dne }
+	, {optimization::iln, jlm::inlining }
+	, {optimization::inv, jlm::invariance }
+	, {optimization::pll, jlm::pull }
+	, {optimization::psh, jlm::push }
+	, {optimization::ivt, jlm::invert }
+	, {optimization::url, [](jlm::rvsdg & rvsdg){ jlm::unroll(rvsdg, 4); }}
+	, {optimization::red, jlm::reduce }
 	});
 
 
 	JLM_DEBUG_ASSERT(map.find(opt) != map.end());
-	map[opt](*rvsdg.graph());
+	map[opt](rvsdg);
 }
 
 void

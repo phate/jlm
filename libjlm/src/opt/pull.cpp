@@ -7,6 +7,7 @@
 #include <jive/rvsdg/traverser.h>
 
 #include <jlm/common.hpp>
+#include <jlm/ir/rvsdg.hpp>
 #include <jlm/opt/pull.hpp>
 
 namespace jlm {
@@ -226,6 +227,12 @@ pull(jive::region * region)
 				pull(structnode->subregion(n));
 		}
 	}
+}
+
+void
+pull(jlm::rvsdg & rvsdg)
+{
+	pull(rvsdg.graph()->root());
 }
 
 }

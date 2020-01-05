@@ -5,6 +5,7 @@
 
 #include <jlm/common.hpp>
 #include <jlm/ir/operators.hpp>
+#include <jlm/ir/rvsdg.hpp>
 #include <jlm/opt/inlining.hpp>
 
 #include <jive/rvsdg/gamma.h>
@@ -153,9 +154,9 @@ inline_apply(const jive::structural_node * lambda, jive::simple_node * apply)
 }
 
 void
-inlining(jive::graph & graph)
+inlining(jlm::rvsdg & rvsdg)
 {
-	auto root = graph.root();
+	auto root = rvsdg.graph()->root();
 
 	#ifdef ILNTIME
 		auto nnodes = jive::nnodes(root);
