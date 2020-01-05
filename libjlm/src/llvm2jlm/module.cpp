@@ -247,17 +247,17 @@ convert_globals(llvm::Module & lm, context & ctx)
 		convert_function(f, ctx);
 }
 
-std::unique_ptr<module>
+std::unique_ptr<ipgraph_module>
 convert_module(llvm::Module & m)
 {
 	filepath fp(m.getSourceFileName());
-	auto module = module::create(fp, m.getTargetTriple(), m.getDataLayoutStr());
+	auto im = ipgraph_module::create(fp, m.getTargetTriple(), m.getDataLayoutStr());
 
-	context ctx(*module);
+	context ctx(*im);
 	declare_globals(m, ctx);
 	convert_globals(m, ctx);
 
-	return module;
+	return im;
 }
 
 }

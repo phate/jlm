@@ -258,8 +258,8 @@ convert_function(const jlm::function_node & node, context & ctx)
 	if (!node.cfg())
 		return;
 
-	auto & jm = ctx.jlm_module();
-	auto f = llvm::cast<llvm::Function>(ctx.value(jm.variable(&node)));
+	auto & im = ctx.module();
+	auto f = llvm::cast<llvm::Function>(ctx.value(im.variable(&node)));
 	convert_cfg(*node.cfg(), *f, ctx);
 }
 
@@ -269,7 +269,7 @@ convert_data_node(const data_node & node, context & ctx)
 	if (!node.initialization())
 		return;
 
-	auto & jm = ctx.jlm_module();
+	auto & jm = ctx.module();
 	auto init = node.initialization();
 	convert_tacs(init->tacs(), ctx);
 
@@ -301,7 +301,7 @@ convert_linkage(const jlm::linkage & linkage)
 static void
 convert_ipgraph(const jlm::ipgraph & clg, context & ctx)
 {
-	auto & jm = ctx.jlm_module();
+	auto & jm = ctx.module();
 	auto & lm = ctx.llvm_module();
 
 	/* forward declare all nodes */
@@ -337,15 +337,15 @@ convert_ipgraph(const jlm::ipgraph & clg, context & ctx)
 }
 
 std::unique_ptr<llvm::Module>
-convert(jlm::module & jm, llvm::LLVMContext & lctx)
+convert(ipgraph_module & im, llvm::LLVMContext & lctx)
 {
 	std::unique_ptr<llvm::Module> lm(new llvm::Module("module", lctx));
-	lm->setSourceFileName(jm.source_filename().to_str());
-	lm->setTargetTriple(jm.target_triple());
-	lm->setDataLayout(jm.data_layout());
+	lm->setSourceFileName(im.source_filename().to_str());
+	lm->setTargetTriple(im.target_triple());
+	lm->setDataLayout(im.data_layout());
 
-	context ctx(jm, *lm);
-	convert_ipgraph(jm.ipgraph(), ctx);
+	context ctx(im, *lm);
+	convert_ipgraph(im.ipgraph(), ctx);
 
 	return lm;
 }

@@ -15,7 +15,7 @@ namespace jlm {
 
 class cfg;
 class ipgraph;
-class module;
+class ipgraph_module;
 
 /* control flow graph */
 
@@ -61,18 +61,18 @@ print_dot(const jlm::ipgraph & ipg, FILE * out)
 	fflush(out);
 }
 
-/* module */
+/* ipgraph module */
 
 static inline std::string
-to_str(const jlm::module & module)
+to_str(const ipgraph_module & im)
 {
-	return to_str(module.ipgraph());
+	return to_str(im.ipgraph());
 }
 
 static inline void
-print(const jlm::module & module, FILE * out)
+print(const ipgraph_module & im, FILE * out)
 {
-	fputs(to_str(module).c_str(), out);
+	fputs(to_str(im).c_str(), out);
 	fflush(out);
 }
 

@@ -14,9 +14,9 @@ namespace llvm {
 
 namespace jlm {
 
-class module;
+class ipgraph_module;
 
-std::unique_ptr<module>
+std::unique_ptr<ipgraph_module>
 convert_module(llvm::Module & module);
 
 }

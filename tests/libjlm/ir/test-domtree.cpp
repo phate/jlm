@@ -42,11 +42,11 @@ test()
 {
 	using namespace jlm;
 
-	jlm::module module(filepath(""), "", "");
+	ipgraph_module im(filepath(""), "", "");
 
 	/* setup cfg */
 
-	jlm::cfg cfg(module);
+	jlm::cfg cfg(im);
 	auto bb1 = basic_block::create(cfg);
 	auto bb2 = basic_block::create(cfg);
 	auto bb3 = basic_block::create(cfg);

@@ -22,7 +22,7 @@ namespace jlm {
 
 class clg_node;
 class basic_block;
-class module;
+class ipgraph_module;
 class tac;
 
 /* cfg entry node */
@@ -217,7 +217,7 @@ class cfg final {
 public:
 	~cfg() {}
 
-	cfg(jlm::module & module);
+	cfg(ipgraph_module & im);
 
 	cfg(const cfg&) = delete;
 
@@ -302,14 +302,14 @@ public:
 		return nodes_.size();
 	}
 
-	inline jlm::module &
+	inline ipgraph_module &
 	module() const noexcept
 	{
 		return module_;
 	}
 
 private:
-	jlm::module & module_;
+	ipgraph_module & module_;
 	std::unique_ptr<exit_node> exit_;
 	std::unique_ptr<entry_node> entry_;
 	std::unordered_set<std::unique_ptr<basic_block>> nodes_;

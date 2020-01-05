@@ -30,11 +30,11 @@
 #include <typeindex>
 
 static inline std::vector<const jlm::variable*>
-create_result_variables(jlm::module & m, const jive::simple_op & op)
+create_result_variables(jlm::ipgraph_module & im, const jive::simple_op & op)
 {
 	std::vector<const jlm::variable*> variables;
 	for (size_t n = 0; n < op.nresults(); n++)
-		variables.push_back(m.create_variable(op.result(n).type()));
+		variables.push_back(im.create_variable(op.result(n).type()));
 
 	return variables;
 }

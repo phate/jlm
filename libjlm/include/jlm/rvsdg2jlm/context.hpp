@@ -6,7 +6,7 @@
 namespace jlm {
 
 class cfg_node;
-class module;
+class ipgraph_module;
 class variable;
 
 namespace rvsdg2jlm {
@@ -14,9 +14,9 @@ namespace rvsdg2jlm {
 class context final {
 public:
 	inline
-	context(jlm::module & module)
+	context(ipgraph_module & im)
 	: cfg_(nullptr)
-	, module_(module)
+	, module_(im)
 	, lpbb_(nullptr)
 	{}
 
@@ -30,7 +30,7 @@ public:
 	context&
 	operator=(context&&) = delete;
 
-	inline jlm::module &
+	inline ipgraph_module &
 	module() const noexcept
 	{
 		return module_;
@@ -78,7 +78,7 @@ public:
 
 private:
 	jlm::cfg * cfg_;
-	jlm::module & module_;
+	ipgraph_module & module_;
 	basic_block * lpbb_;
 	std::unordered_map<const jive::output*, const jlm::variable*> ports_;
 };

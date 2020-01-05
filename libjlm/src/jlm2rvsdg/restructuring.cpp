@@ -291,32 +291,32 @@ find_sccs(jlm::cfg_node * enter, jlm::cfg_node * exit)
 }
 
 static inline const variable *
-create_pvariable(const jive::ctltype & type, jlm::module & m)
+create_pvariable(const jive::ctltype & type, ipgraph_module & im)
 {
 	static size_t c = 0;
-	return m.create_variable(type, strfmt("#p", c++, "#"));
+	return im.create_variable(type, strfmt("#p", c++, "#"));
 }
 
 static inline const variable *
-create_qvariable(const jive::ctltype & type, jlm::module & m)
+create_qvariable(const jive::ctltype & type, ipgraph_module & im)
 {
 	static size_t c = 0;
-	return m.create_variable(type, strfmt("#q", c++, "#"));
+	return im.create_variable(type, strfmt("#q", c++, "#"));
 }
 
 static const variable *
-create_tvariable(const jive::ctltype & type, jlm::module & m)
+create_tvariable(const jive::ctltype & type, ipgraph_module & im)
 {
 	static size_t c = 0;
-	return m.create_variable(type, strfmt("#t", c++, "#"));
+	return im.create_variable(type, strfmt("#t", c++, "#"));
 }
 
 static inline const variable *
-create_rvariable(jlm::module & m)
+create_rvariable(ipgraph_module & im)
 {
 	static size_t c = 0;
 	jive::ctltype type(2);
-	return m.create_variable(type, strfmt("#r", c++, "#"));
+	return im.create_variable(type, strfmt("#r", c++, "#"));
 }
 
 static inline void

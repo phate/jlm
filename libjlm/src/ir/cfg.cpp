@@ -36,8 +36,8 @@ exit_node::~exit_node()
 
 /* cfg */
 
-cfg::cfg(jlm::module & module)
-: module_(module)
+cfg::cfg(ipgraph_module & im)
+: module_(im)
 {
 	entry_ = std::unique_ptr<entry_node>(new entry_node(*this));
 	exit_ = std::unique_ptr<exit_node>(new exit_node(*this));

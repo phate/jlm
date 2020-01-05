@@ -1155,14 +1155,14 @@ private:
 static inline std::unique_ptr<jlm::tac>
 create_valist_tac(
 	const std::vector<const variable*> & arguments,
-	jlm::module & m)
+	ipgraph_module & im)
 {
 	std::vector<std::unique_ptr<jive::type>> operands;
 	for (const auto & argument : arguments)
 		operands.push_back(argument->type().copy());
 
 	varargtype t;
-	auto result = m.create_tacvariable(t);
+	auto result = im.create_tacvariable(t);
 
 	jlm::valist_op op(std::move(operands));
 	auto tac = tac::create(op, arguments, {result});

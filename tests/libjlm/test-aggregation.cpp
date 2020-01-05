@@ -52,7 +52,7 @@ test_linear_reduction()
 {
 	using namespace jlm;
 
-	jlm::module module(filepath(""), "", "");
+	ipgraph_module module(filepath(""), "", "");
 
 	jlm::cfg cfg(module);
 	auto bb = basic_block::create(cfg);
@@ -80,7 +80,7 @@ test_loop_reduction()
 {
 	using namespace jlm;
 
-	jlm::module module(filepath(""), "", "");
+	ipgraph_module module(filepath(""), "", "");
 
 	jlm::cfg cfg(module);
 	auto bb1 = basic_block::create(cfg);
@@ -122,7 +122,7 @@ test_branch_reduction()
 {
 	using namespace jlm;
 
-	jlm::module module(filepath(""), "", "");
+	ipgraph_module module(filepath(""), "", "");
 
 	jlm::cfg cfg(module);
 	auto split = basic_block::create(cfg);
@@ -183,7 +183,7 @@ test_branch_loop_reduction()
 {
 	using namespace jlm;
 
-	jlm::module module(filepath(""), "", "");
+	ipgraph_module module(filepath(""), "", "");
 
 	jlm::cfg cfg(module);
 	auto split = basic_block::create(cfg);
@@ -257,7 +257,7 @@ test_loop_branch_reduction()
 {
 	using namespace jlm;
 
-	jlm::module module(filepath(""), "", "");
+	ipgraph_module module(filepath(""), "", "");
 
 	jlm::cfg cfg(module);
 	auto split = basic_block::create(cfg);
@@ -320,7 +320,7 @@ test_ifthen_reduction()
 {
 	using namespace jlm;
 
-	jlm::module module(filepath(""), "", "");
+	ipgraph_module module(filepath(""), "", "");
 
 	jlm::cfg cfg(module);
 	auto split = basic_block::create(cfg);

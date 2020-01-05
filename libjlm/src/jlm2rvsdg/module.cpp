@@ -71,8 +71,8 @@ public:
 	}
 
 	inline
-	scoped_vmap(const jlm::module & module, jive::region * region)
-	: module_(module)
+	scoped_vmap(const ipgraph_module & im, jive::region * region)
+	: module_(im)
 	{
 		push_scope(region);
 	}
@@ -126,14 +126,14 @@ public:
 		regions_.pop_back();
 	}
 
-	const jlm::module &
+	const ipgraph_module &
 	module() const noexcept
 	{
 		return module_;
 	}
 
 private:
-	const jlm::module & module_;
+	const ipgraph_module & module_;
 	std::vector<std::unique_ptr<jlm::vmap>> vmaps_;
 	std::vector<jive::region*> regions_;
 };
@@ -660,9 +660,9 @@ handle_scc(
 }
 
 static std::unique_ptr<rvsdg_module>
-convert_module(const module & m, const stats_descriptor & sd)
+convert_module(const ipgraph_module & im, const stats_descriptor & sd)
 {
-	auto rm = rvsdg_module::create(m.source_filename(), m.target_triple(), m.data_layout());
+	auto rm = rvsdg_module::create(im.source_filename(), im.target_triple(), im.data_layout());
 	auto graph = rm->graph();
 
 	auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -671,10 +671,10 @@ convert_module(const module & m, const stats_descriptor & sd)
 	/* FIXME: we currently cannot handle flattened_binary_op in jlm2llvm pass */
 	jive::binary_op::normal_form(graph)->set_flatten(false);
 
-	scoped_vmap svmap(m, graph->root());
+	scoped_vmap svmap(im, graph->root());
 
 	/* convert ipgraph nodes */
-	auto sccs = m.ipgraph().find_sccs();
+	auto sccs = im.ipgraph().find_sccs();
 	for (const auto & scc : sccs)
 		handle_scc(scc, graph, svmap, sd);
 
@@ -682,18 +682,18 @@ convert_module(const module & m, const stats_descriptor & sd)
 }
 
 std::unique_ptr<rvsdg_module>
-construct_rvsdg(const module & m, const stats_descriptor & sd)
+construct_rvsdg(const ipgraph_module & im, const stats_descriptor & sd)
 {
-	source_filename = m.source_filename().to_str();
+	source_filename = im.source_filename().to_str();
 
 	size_t ntacs = 0;
 	jlm::timer timer;
 	if (sd.print_rvsdg_construction) {
-		ntacs = jlm::ntacs(m);
+		ntacs = jlm::ntacs(im);
 		timer.start();
 	}
 
-	auto rm = convert_module(m, sd);
+	auto rm = convert_module(im, sd);
 
 	if (sd.print_rvsdg_construction) {
 		timer.stop();

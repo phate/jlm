@@ -498,68 +498,68 @@ convert_nodes(const jive::graph & graph, context & ctx)
 }
 
 static void
-convert_imports(const jive::graph & graph, jlm::module & module, context & ctx)
+convert_imports(const jive::graph & graph, ipgraph_module & im, context & ctx)
 {
-	auto & ipg = module.ipgraph();
+	auto & ipg = im.ipgraph();
 
 	for (size_t n = 0; n < graph.root()->narguments(); n++) {
 		auto argument = graph.root()->argument(n);
 		auto import = static_cast<const jlm::impport*>(&argument->port());
 		if (auto ftype = is_function_import(argument)) {
 			auto f = function_node::create(ipg, import->name(), *ftype, import->linkage());
-			auto v = module.create_variable(f);
+			auto v = im.create_variable(f);
 			ctx.insert(argument, v);
 		} else {
 			JLM_DEBUG_ASSERT(dynamic_cast<const ptrtype*>(&argument->type()));
 			auto & type = *static_cast<const ptrtype*>(&argument->type());
 			const auto & name = import->name();
 			auto dnode = data_node::create(ipg, name, type, import->linkage(), false);
-			auto v = module.create_global_value(dnode);
+			auto v = im.create_global_value(dnode);
 			ctx.insert(argument, v);
 		}
 	}
 }
 
-static std::unique_ptr<jlm::module>
+static std::unique_ptr<ipgraph_module>
 convert_rvsdg(const rvsdg_module & rm)
 {
-	auto module = module::create(rm.source_filename(), rm.target_triple(), rm.data_layout());
+	auto im = ipgraph_module::create(rm.source_filename(), rm.target_triple(), rm.data_layout());
 
-	context ctx(*module);
-	convert_imports(*rm.graph(), *module, ctx);
+	context ctx(*im);
+	convert_imports(*rm.graph(), *im, ctx);
 	convert_nodes(*rm.graph(), ctx);
 
-	return module;
+	return im;
 }
 
 static rvsdg_destruction_stat
 create_stat(
 	const rvsdg_module & rm,
-	const jlm::module & module,
+	const ipgraph_module & im,
 	const jlm::timer & timer)
 {
 	auto nnodes = jive::nnodes(rm.graph()->root());
-	auto ntacs = jlm::ntacs(module);
+	auto ntacs = jlm::ntacs(im);
 	auto time = timer.ns();
-	auto & filename = module.source_filename();
+	auto & filename = im.source_filename();
 	return rvsdg_destruction_stat(nnodes, ntacs, time, filename);
 }
 
-std::unique_ptr<jlm::module>
+std::unique_ptr<ipgraph_module>
 rvsdg2jlm(const rvsdg_module & rm, const stats_descriptor & sd)
 {
 	jlm::timer timer;
 	if (sd.print_rvsdg_destruction)
 		timer.start();
 
-	auto module = convert_rvsdg(rm);
+	auto im = convert_rvsdg(rm);
 
 	if (sd.print_rvsdg_destruction) {
 		timer.stop();
-		sd.print_stat(create_stat(rm, *module, timer));
+		sd.print_stat(create_stat(rm, *im, timer));
 	}
 
-	return module;
+	return im;
 }
 
 }}

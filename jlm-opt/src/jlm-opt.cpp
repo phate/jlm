@@ -40,7 +40,7 @@ parse_llvm_file(
 	return module;
 }
 
-static std::unique_ptr<jlm::module>
+static std::unique_ptr<jlm::ipgraph_module>
 construct_jlm_module(llvm::Module & module)
 {
 	return jlm::convert_module(module);

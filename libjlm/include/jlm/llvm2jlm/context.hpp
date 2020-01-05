@@ -27,7 +27,7 @@ namespace jlm {
 class cfg;
 class cfg_node;
 class clg_node;
-class module;
+class ipgraph_module;
 class variable;
 
 class basic_block_map final {
@@ -87,8 +87,8 @@ private:
 class context final {
 public:
 	inline
-	context(jlm::module & module)
-	: module_(module)
+	context(ipgraph_module & im)
+	: module_(im)
 	, node_(nullptr)
 	, loop_state_(nullptr)
 	, memory_state_(nullptr)
@@ -199,7 +199,7 @@ public:
 		return declarations_[type];
 	}
 
-	inline jlm::module &
+	inline ipgraph_module &
 	module() const noexcept
 	{
 		return module_;
@@ -218,7 +218,7 @@ public:
 	}
 
 private:
-	jlm::module & module_;
+	ipgraph_module & module_;
 	basic_block_map bbmap_;
 	ipgraph_node * node_;
 	jlm::variable * result_;

@@ -21,16 +21,16 @@ test()
 	using namespace jlm;
 
 	valuetype vt;
-	module m(filepath(""), "", "");
+	ipgraph_module im(filepath(""), "", "");
 
-	auto d0 = data_node::create(m.ipgraph(), "d0", vt, linkage::external_linkage, false);
+	auto d0 = data_node::create(im.ipgraph(), "d0", vt, linkage::external_linkage, false);
 
-	auto d1 = data_node::create(m.ipgraph(), "d1", vt, linkage::external_linkage, false);
-	auto d2 = data_node::create(m.ipgraph(), "d2", vt, linkage::external_linkage, false);
+	auto d1 = data_node::create(im.ipgraph(), "d1", vt, linkage::external_linkage, false);
+	auto d2 = data_node::create(im.ipgraph(), "d2", vt, linkage::external_linkage, false);
 
-	auto v0 = m.create_global_value(d0);
-	auto v1 = m.create_global_value(d1);
-	auto v2 = m.create_global_value(d2);
+	auto v0 = im.create_global_value(d0);
+	auto v1 = im.create_global_value(d1);
+	auto v2 = im.create_global_value(d2);
 
 	d1->add_dependency(d0);
 	d1->add_dependency(d2);
@@ -38,8 +38,8 @@ test()
 	d2->add_dependency(d1);
 
 	tacsvector_t tvec1, tvec2;
-	auto tv1 = m.create_tacvariable(vt);
-	auto tv2 = m.create_tacvariable(vt);
+	auto tv1 = im.create_tacvariable(vt);
+	auto tv2 = im.create_tacvariable(vt);
 	tvec1.push_back(std::move(create_testop_tac({v0, v2}, {tv1})));
 	tvec2.push_back(std::move(create_testop_tac({v0, v1}, {tv2})));
 
@@ -47,7 +47,7 @@ test()
 	d2->set_initialization(std::make_unique<data_node_init>(std::move(tvec2)));
 
 	stats_descriptor sd;
-	auto rvsdg = construct_rvsdg(m, sd);
+	auto rvsdg = construct_rvsdg(im, sd);
 
 	jive::view(*rvsdg->graph(), stdout);
 

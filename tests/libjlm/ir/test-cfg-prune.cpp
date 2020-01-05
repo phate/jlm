@@ -23,12 +23,12 @@ test()
 
 	/* setup cfg */
 
-	jlm::module module(filepath(""), "", "");
-	auto arg = module.create_variable(vt, "arg");
-	auto c = module.create_variable(vt, "c");
-	auto p = module.create_variable(vt, "p");
+	ipgraph_module im(filepath(""), "", "");
+	auto arg = im.create_variable(vt, "arg");
+	auto c = im.create_variable(vt, "c");
+	auto p = im.create_variable(vt, "p");
 
-	jlm::cfg cfg(module);
+	jlm::cfg cfg(im);
 	cfg.entry()->append_argument(arg);
 	cfg.exit()->append_result(p);
 	auto bb0 = basic_block::create(cfg);

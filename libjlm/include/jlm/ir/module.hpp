@@ -53,18 +53,18 @@ create_gblvalue(data_node * node)
 	return std::make_unique<jlm::gblvalue>(node);
 }
 
-/* module */
+/* ipgraph module */
 
-class module final {
+class ipgraph_module final {
 	typedef std::unordered_set<const jlm::gblvalue*>::const_iterator const_iterator;
 
 public:
 	inline
-	~module()
+	~ipgraph_module()
 	{}
 
 	inline
-	module(
+	ipgraph_module(
 		const jlm::filepath & source_filename,
 		const std::string & target_triple,
 		const std::string & data_layout) noexcept
@@ -178,13 +178,13 @@ public:
 		return data_layout_;
 	}
 
-	static std::unique_ptr<jlm::module>
+	static std::unique_ptr<ipgraph_module>
 	create(
 		const jlm::filepath & source_filename,
 		const std::string & target_triple,
 		const std::string & data_layout)
 	{
-		return std::make_unique<jlm::module>(source_filename, target_triple, data_layout);
+		return std::make_unique<ipgraph_module>(source_filename, target_triple, data_layout);
 	}
 
 private:
@@ -198,10 +198,10 @@ private:
 };
 
 static inline size_t
-ntacs(const jlm::module & module)
+ntacs(const ipgraph_module & im)
 {
 	size_t ntacs = 0;
-	for (const auto & n : module.ipgraph()) {
+	for (const auto & n : im.ipgraph()) {
 		auto f = dynamic_cast<const function_node*>(&n);
 		if (!f) continue;
 

@@ -20,11 +20,11 @@ namespace jlm2llvm {
 
 class module;
 /*
-	FIXME: jlm::module should be const, but we still need to create variables to translate
+	FIXME: ipgraph_module should be const, but we still need to create variables to translate
 	       expressions.
 */
 std::unique_ptr<llvm::Module>
-convert(jlm::module & module, llvm::LLVMContext & ctx);
+convert(ipgraph_module & im, llvm::LLVMContext & ctx);
 
 }}
 

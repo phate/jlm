@@ -23,7 +23,7 @@ test()
 	valuetype vt;
 	ptrtype pt(vt);
 	jive::memtype mt;
-	module m(filepath(""), "", "");
+	ipgraph_module m(filepath(""), "", "");
 
 	auto p = m.create_variable(jive::bit1, "p");
 	auto s1 = m.create_variable(mt, "s1");

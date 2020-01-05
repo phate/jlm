@@ -14,12 +14,12 @@ namespace jive {
 
 namespace jlm {
 
-class module;
+class ipgraph_module;
 class rvsdg_module;
 class stats_descriptor;
 
 std::unique_ptr<rvsdg_module>
-construct_rvsdg(const module & m, const stats_descriptor & sd);
+construct_rvsdg(const ipgraph_module & im, const stats_descriptor & sd);
 
 }
 

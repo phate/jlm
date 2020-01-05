@@ -30,7 +30,7 @@ class Value;
 namespace jlm {
 
 class cfg_node;
-class module;
+class ipgraph_module;
 class variable;
 
 namespace jlm2llvm {
@@ -40,9 +40,9 @@ class context final {
 
 public:
 	inline
-	context(jlm::module & jm, llvm::Module & lm)
+	context(ipgraph_module & im, llvm::Module & lm)
 	: lm_(lm)
-	, jm_(jm)
+	, im_(im)
 	{}
 
 	context(const context&) = delete;
@@ -59,10 +59,10 @@ public:
 		FIXME: It should be a const reference, but we still have to create variables to translate
 		       expressions.
 	*/
-	inline jlm::module &
-	jlm_module() const noexcept
+	jlm::ipgraph_module &
+	module() const noexcept
 	{
-		return jm_;
+		return im_;
 	}
 
 	inline llvm::Module &
@@ -129,7 +129,7 @@ public:
 
 private:
 	llvm::Module & lm_;
-	jlm::module & jm_;
+	ipgraph_module & im_;
 	std::unordered_map<const jlm::variable*, llvm::Value*> variables_;
 	std::unordered_map<const jlm::cfg_node*, llvm::BasicBlock*> nodes_;
 	std::unordered_map<const jive::rcddeclaration*, llvm::StructType*> structtypes_;

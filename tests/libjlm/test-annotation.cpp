@@ -57,7 +57,7 @@ test_block()
 	valuetype vt;
 	test_op op({&vt}, {&vt});
 
-	jlm::module module(filepath(""), "", "");
+	ipgraph_module module(filepath(""), "", "");
 	auto v0 = module.create_variable(vt, "v0");
 	auto v1 = module.create_variable(vt, "v1");
 	auto v2 = module.create_variable(vt, "v2");
@@ -82,7 +82,7 @@ test_linear()
 	valuetype vt;
 	test_op op({&vt}, {&vt});
 
-	jlm::module module(filepath(""), "", "");
+	ipgraph_module module(filepath(""), "", "");
 	auto arg = module.create_variable(vt, "arg");
 	auto v1 = module.create_variable(vt, "v1");
 	auto v2 = module.create_variable(vt, "v2");
@@ -131,7 +131,7 @@ test_branch()
 	valuetype vt;
 	test_op op({&vt}, {&vt});
 
-	jlm::module module(filepath(""), "", "");
+	ipgraph_module module(filepath(""), "", "");
 	auto arg = module.create_variable(vt, "arg");
 	auto v1 = module.create_variable(vt, "v1");
 	auto v2 = module.create_variable(vt, "v2");
@@ -181,7 +181,7 @@ test_loop()
 	valuetype vt;
 	test_op op({&vt}, {&vt});
 
-	jlm::module module(filepath(""), "", "");
+	ipgraph_module module(filepath(""), "", "");
 	auto v1 = module.create_variable(vt, "v1");
 	auto v2 = module.create_variable(vt, "v2");
 	auto v3 = module.create_variable(vt, "v3");
@@ -220,7 +220,7 @@ test_branch_in_loop()
 	valuetype vt;
 	test_op op({&vt}, {&vt});
 
-	jlm::module module(filepath(""), "", "");
+	ipgraph_module module(filepath(""), "", "");
 	auto v1 = module.create_variable(vt, "v1");
 	auto v2 = module.create_variable(vt, "v2");
 	auto v3 = module.create_variable(vt, "v3");
@@ -273,7 +273,7 @@ test_assignment()
 	valuetype vt;
 	test_op op({&vt}, {&vt});
 
-	jlm::module module(filepath(""), "", "");
+	ipgraph_module module(filepath(""), "", "");
 	auto v1 = module.create_variable(vt, "v1");
 	auto v2 = module.create_variable(vt, "v2");
 
