@@ -13,7 +13,7 @@
 #include <jlm/ir/module.hpp>
 #include <jlm/ir/operators/delta.hpp>
 #include <jlm/ir/print.hpp>
-#include <jlm/ir/rvsdg.hpp>
+#include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/rvsdg2jlm/rvsdg2jlm.hpp>
 #include <jlm/util/stats.hpp>
 

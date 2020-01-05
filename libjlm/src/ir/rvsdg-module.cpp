@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/ir/rvsdg.hpp>
+#include <jlm/ir/rvsdg-module.hpp>
 
 namespace jlm {
 

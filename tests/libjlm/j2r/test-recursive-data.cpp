@@ -11,7 +11,7 @@
 
 #include <jlm/ir/module.hpp>
 #include <jlm/ir/print.hpp>
-#include <jlm/ir/rvsdg.hpp>
+#include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/jlm2rvsdg/module.hpp>
 #include <jlm/util/stats.hpp>
 

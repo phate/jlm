@@ -7,7 +7,7 @@
 
 #include <jlm/ir/module.hpp>
 #include <jlm/ir/operators.hpp>
-#include <jlm/ir/rvsdg.hpp>
+#include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/jlm2rvsdg/module.hpp>
 #include <jlm/jlm2llvm/jlm2llvm.hpp>
 #include <jlm/llvm2jlm/module.hpp>

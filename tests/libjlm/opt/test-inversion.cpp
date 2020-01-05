@@ -12,7 +12,7 @@
 #include <jive/rvsdg/simple-node.h>
 #include <jive/rvsdg/theta.h>
 
-#include <jlm/ir/rvsdg.hpp>
+#include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/opt/inversion.hpp>
 
 static const jlm::valuetype vt;

@@ -7,7 +7,7 @@
 #include <jive/rvsdg/traverser.h>
 
 #include <jlm/common.hpp>
-#include <jlm/ir/rvsdg.hpp>
+#include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/opt/pull.hpp>
 
 namespace jlm {

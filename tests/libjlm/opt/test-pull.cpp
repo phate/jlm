@@ -11,7 +11,7 @@
 #include <jive/rvsdg/gamma.h>
 #include <jive/rvsdg/simple-node.h>
 
-#include <jlm/ir/rvsdg.hpp>
+#include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/opt/pull.hpp>
 
 static const jlm::valuetype vt;

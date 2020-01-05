@@ -14,7 +14,7 @@
 #include <jive/rvsdg/theta.h>
 
 #include <jlm/ir/operators/store.hpp>
-#include <jlm/ir/rvsdg.hpp>
+#include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/ir/types.hpp>
 #include <jlm/opt/push.hpp>
 

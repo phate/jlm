@@ -4,7 +4,7 @@
  */
 
 #include <jlm/common.hpp>
-#include <jlm/ir/rvsdg.hpp>
+#include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/ir/types.hpp>
 #include <jlm/opt/invariance.hpp>
 

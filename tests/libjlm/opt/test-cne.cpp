@@ -16,7 +16,7 @@
 #include <jive/rvsdg/theta.h>
 
 #include <jlm/ir/operators/lambda.hpp>
-#include <jlm/ir/rvsdg.hpp>
+#include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/opt/cne.hpp>
 
 static inline void

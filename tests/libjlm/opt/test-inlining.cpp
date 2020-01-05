@@ -12,7 +12,7 @@
 #include <jive/rvsdg/gamma.h>
 
 #include <jlm/ir/operators.hpp>
-#include <jlm/ir/rvsdg.hpp>
+#include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/opt/inlining.hpp>
 
 static int
