@@ -8,10 +8,10 @@
 
 namespace jlm {
 
-class rvsdg;
+class rvsdg_module;
 
 void
-inlining(jlm::rvsdg & rvsdg);
+inlining(rvsdg_module & rm);
 
 }
 

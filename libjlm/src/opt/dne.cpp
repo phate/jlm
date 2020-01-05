@@ -378,9 +378,9 @@ sweep(jive::region * region, const dnectx & ctx)
 }
 
 void
-dne(jlm::rvsdg & rvsdg)
+dne(rvsdg_module & rm)
 {
-	auto & graph = *rvsdg.graph();
+	auto & graph = *rm.graph();
 
 	dnectx ctx;
 

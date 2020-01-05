@@ -25,8 +25,8 @@ verify()
 	jive::fcttype ft1({&vt}, {&vt});
 	jive::fcttype ft2({&ct, &vt}, {&vt});
 
-	jlm::rvsdg rvsdg(filepath(""), "", "");
-	auto & graph = *rvsdg.graph();
+	rvsdg_module rm(filepath(""), "", "");
+	auto & graph = *rm.graph();
 	auto i = graph.add_import({vt, "i"});
 
 	/* f1 */
@@ -50,7 +50,7 @@ verify()
 	graph.add_export(f2->output(0), {f2->output(0)->type(), "f2"});
 
 	jive::view(graph.root(), stdout);
-	jlm::inlining(rvsdg);
+	jlm::inlining(rm);
 	jive::view(graph.root(), stdout);
 
 	assert(!jive::contains<jlm::call_op>(graph.root(), true));

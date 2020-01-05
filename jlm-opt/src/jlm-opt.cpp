@@ -48,13 +48,13 @@ construct_jlm_module(llvm::Module & module)
 
 static void
 print_as_xml(
-	const jlm::rvsdg & rvsdg,
+	const jlm::rvsdg_module & rm,
 	const jlm::filepath & fp,
 	const jlm::stats_descriptor&)
 {
 	auto fd = fp == "" ? stdout : fopen(fp.to_str().c_str(), "w");
 
-	jive::view_xml(rvsdg.graph()->root(), fd);
+	jive::view_xml(rm.graph()->root(), fd);
 
 	if (fd != stdout)
 			fclose(fd);
@@ -62,11 +62,11 @@ print_as_xml(
 
 static void
 print_as_llvm(
-	const jlm::rvsdg & rvsdg,
+	const jlm::rvsdg_module & rm,
 	const jlm::filepath & fp,
 	const jlm::stats_descriptor & sd)
 {
-	auto jlm_module = jlm::rvsdg2jlm::rvsdg2jlm(rvsdg, sd);
+	auto jlm_module = jlm::rvsdg2jlm::rvsdg2jlm(rm, sd);
 
 	llvm::LLVMContext ctx;
 	auto llvm_module = jlm::jlm2llvm::convert(*jlm_module, ctx);
@@ -83,21 +83,23 @@ print_as_llvm(
 
 static void
 print(
-	const jlm::rvsdg & rvsdg,
+	const jlm::rvsdg_module & rm,
 	const jlm::filepath & fp,
 	const jlm::outputformat & format,
 	const jlm::stats_descriptor & sd)
 {
+	using namespace jlm;
+
 	static std::unordered_map<
 		jlm::outputformat,
-		std::function<void(const jlm::rvsdg&, const jlm::filepath&, const jlm::stats_descriptor&)>
+		std::function<void(const rvsdg_module&, const filepath&, const stats_descriptor&)>
 	> formatters({
-		{jlm::outputformat::xml,  print_as_xml}
-	, {jlm::outputformat::llvm, print_as_llvm}
+		{outputformat::xml,  print_as_xml}
+	, {outputformat::llvm, print_as_llvm}
 	});
 
 	JLM_DEBUG_ASSERT(formatters.find(format) != formatters.end());
-	formatters[format](rvsdg, fp, sd);
+	formatters[format](rm, fp, sd);
 }
 
 int
@@ -110,11 +112,11 @@ main(int argc, char ** argv)
 	auto llvm_module = parse_llvm_file(argv[0], flags.ifile, ctx);
 	auto jlm_module = construct_jlm_module(*llvm_module);
 
-	auto rvsdg = jlm::construct_rvsdg(*jlm_module, flags.sd);
+	auto rm = jlm::construct_rvsdg(*jlm_module, flags.sd);
 
-	optimize(*rvsdg, flags.optimizations, flags.sd);
+	optimize(*rm, flags.optimizations, flags.sd);
 
-	print(*rvsdg, flags.ofile, flags.format, flags.sd);
+	print(*rm, flags.ofile, flags.format, flags.sd);
 
 	return 0;
 }

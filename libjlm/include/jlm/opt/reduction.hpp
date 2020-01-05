@@ -11,7 +11,7 @@ namespace jlm {
 class rvsdg;
 
 void
-reduce(jlm::rvsdg & rvsdg);
+reduce(rvsdg_module & rm);
 
 }
 

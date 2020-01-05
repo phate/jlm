@@ -17,13 +17,13 @@ class graph;
 namespace jlm {
 
 class module;
-class rvsdg;
+class rvsdg_module;
 class stats_descriptor;
 
 namespace rvsdg2jlm {
 
 std::unique_ptr<jlm::module>
-rvsdg2jlm(const jlm::rvsdg & rvsdg, const stats_descriptor & sd);
+rvsdg2jlm(const rvsdg_module & rm, const stats_descriptor & sd);
 
 }}
 

@@ -521,25 +521,24 @@ convert_imports(const jive::graph & graph, jlm::module & module, context & ctx)
 }
 
 static std::unique_ptr<jlm::module>
-convert_rvsdg(const jlm::rvsdg & rvsdg)
+convert_rvsdg(const rvsdg_module & rm)
 {
-	auto module = module::create(rvsdg.source_filename(), rvsdg.target_triple(),
-		rvsdg.data_layout());
+	auto module = module::create(rm.source_filename(), rm.target_triple(), rm.data_layout());
 
 	context ctx(*module);
-	convert_imports(*rvsdg.graph(), *module, ctx);
-	convert_nodes(*rvsdg.graph(), ctx);
+	convert_imports(*rm.graph(), *module, ctx);
+	convert_nodes(*rm.graph(), ctx);
 
 	return module;
 }
 
 static rvsdg_destruction_stat
 create_stat(
-	const jlm::rvsdg & rvsdg,
+	const rvsdg_module & rm,
 	const jlm::module & module,
 	const jlm::timer & timer)
 {
-	auto nnodes = jive::nnodes(rvsdg.graph()->root());
+	auto nnodes = jive::nnodes(rm.graph()->root());
 	auto ntacs = jlm::ntacs(module);
 	auto time = timer.ns();
 	auto & filename = module.source_filename();
@@ -547,17 +546,17 @@ create_stat(
 }
 
 std::unique_ptr<jlm::module>
-rvsdg2jlm(const jlm::rvsdg & rvsdg, const stats_descriptor & sd)
+rvsdg2jlm(const rvsdg_module & rm, const stats_descriptor & sd)
 {
 	jlm::timer timer;
 	if (sd.print_rvsdg_destruction)
 		timer.start();
 
-	auto module = convert_rvsdg(rvsdg);
+	auto module = convert_rvsdg(rm);
 
 	if (sd.print_rvsdg_destruction) {
 		timer.stop();
-		sd.print_stat(create_stat(rvsdg, *module, timer));
+		sd.print_stat(create_stat(rm, *module, timer));
 	}
 
 	return module;

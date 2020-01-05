@@ -363,9 +363,9 @@ push(jive::region * region)
 }
 
 void
-push(jlm::rvsdg & rvsdg)
+push(rvsdg_module & rm)
 {
-	auto root = rvsdg.graph()->root();
+	auto root = rm.graph()->root();
 
 	#ifdef PSHTIME
 		auto nnodes = jive::nnodes(root);

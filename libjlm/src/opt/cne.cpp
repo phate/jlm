@@ -515,9 +515,9 @@ divert(jive::region * region, cnectx & ctx)
 }
 
 void
-cne(jlm::rvsdg & rvsdg)
+cne(rvsdg_module & rm)
 {
-	auto & graph = *rvsdg.graph();
+	auto & graph = *rm.graph();
 
 	cnectx ctx;
 

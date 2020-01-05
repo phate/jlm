@@ -235,8 +235,8 @@ test_unknown_boundaries()
 	jive::bittype bt(32);
 	jlm::test_op op({&bt}, {&bt});
 
-	jlm::rvsdg rvsdg(filepath(""), "", "");
-	auto & graph = *rvsdg.graph();
+	rvsdg_module rm(filepath(""), "", "");
+	auto & graph = *rm.graph();
 
 	auto x = graph.add_import({bt, "x"});
 	auto y = graph.add_import({bt, "y"});
@@ -257,7 +257,7 @@ test_unknown_boundaries()
 	auto ex1 = graph.add_export(lv1, {lv1->type(), "x"});
 
 	jive::view(graph, stdout);
-	jlm::unroll(rvsdg, 2);
+	jlm::unroll(rm, 2);
 	jive::view(graph, stdout);
 
 	auto node = ex1->origin()->node();

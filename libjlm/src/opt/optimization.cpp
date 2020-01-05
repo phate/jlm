@@ -24,9 +24,9 @@
 namespace jlm {
 
 void
-optimize(jlm::rvsdg & rvsdg, const optimization & opt)
+optimize(rvsdg_module & rm, const optimization & opt)
 {
-	static std::unordered_map<optimization, void(*)(jlm::rvsdg&)> map({
+	static std::unordered_map<optimization, void(*)(rvsdg_module&)> map({
 	  {optimization::cne, jlm::cne }
 	, {optimization::dne, jlm::dne }
 	, {optimization::iln, jlm::inlining }
@@ -34,36 +34,36 @@ optimize(jlm::rvsdg & rvsdg, const optimization & opt)
 	, {optimization::pll, jlm::pull }
 	, {optimization::psh, jlm::push }
 	, {optimization::ivt, jlm::invert }
-	, {optimization::url, [](jlm::rvsdg & rvsdg){ jlm::unroll(rvsdg, 4); }}
+	, {optimization::url, [](rvsdg_module & rm){ jlm::unroll(rm, 4); }}
 	, {optimization::red, jlm::reduce }
 	});
 
 
 	JLM_DEBUG_ASSERT(map.find(opt) != map.end());
-	map[opt](rvsdg);
+	map[opt](rm);
 }
 
 void
 optimize(
-	jlm::rvsdg & rvsdg,
+	rvsdg_module & rm,
 	const std::vector<optimization> & opts,
 	const stats_descriptor & sd)
 {
 	jlm::timer timer;
 	size_t nnodes_before = 0;
 	if (sd.print_rvsdg_optimization) {
-		nnodes_before = jive::nnodes(rvsdg.graph()->root());
+		nnodes_before = jive::nnodes(rm.graph()->root());
 		timer.start();
 	}
 
 	for (const auto & opt : opts)
-		optimize(rvsdg, opt);
+		optimize(rm, opt);
 
 	if (sd.print_rvsdg_optimization) {
 		timer.stop();
-		size_t nnodes_after = jive::nnodes(rvsdg.graph()->root());
+		size_t nnodes_after = jive::nnodes(rm.graph()->root());
 		fprintf(sd.file().fd(),
-			"RVSDGOPTIMIZATION %s %zu %zu %zu\n", rvsdg.source_filename().to_str().c_str(),
+			"RVSDGOPTIMIZATION %s %zu %zu %zu\n", rm.source_filename().to_str().c_str(),
 				nnodes_before, nnodes_after, timer.ns());
 	}
 }

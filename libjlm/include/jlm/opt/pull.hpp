@@ -15,7 +15,7 @@ namespace jive {
 
 namespace jlm {
 
-class rvsdg;
+class rvsdg_module;
 
 void
 pullin_top(jive::gamma_node * gamma);
@@ -31,7 +31,7 @@ void
 pull(jive::region * region);
 
 void
-pull(jlm::rvsdg & rvsdg);
+pull(rvsdg_module & rm);
 
 }
 

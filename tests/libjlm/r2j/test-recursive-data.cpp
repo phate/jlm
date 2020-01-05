@@ -24,13 +24,14 @@ test()
 
 	valuetype vt;
 	ptrtype pt(vt);
-	jlm::rvsdg rvsdg(filepath(""), "", "");
+
+	rvsdg_module rm(filepath(""), "", "");
 
 	/* setup graph */
-	auto imp = rvsdg.graph()->add_import({pt, ""});
+	auto imp = rm.graph()->add_import({pt, ""});
 
 	jive::phi_builder pb;
-	auto region = pb.begin_phi(rvsdg.graph()->root());
+	auto region = pb.begin_phi(rm.graph()->root());
 	auto r1 = pb.add_recvar(pt);
 	auto r2 = pb.add_recvar(pt);
 	auto dep = pb.add_dependency(imp);
@@ -56,12 +57,12 @@ test()
 	r2->set_value(delta2);
 
 	auto phi = pb.end_phi();
-	rvsdg.graph()->add_export(phi->output(0), {phi->output(0)->type(), ""});
+	rm.graph()->add_export(phi->output(0), {phi->output(0)->type(), ""});
 
-	jive::view(*rvsdg.graph(), stdout);
+	jive::view(*rm.graph(), stdout);
 
 	stats_descriptor sd;
-	auto module = rvsdg2jlm::rvsdg2jlm(rvsdg, sd);
+	auto module = rvsdg2jlm::rvsdg2jlm(rm, sd);
 	jlm::print(*module, stdout);
 
 	/* verify output */

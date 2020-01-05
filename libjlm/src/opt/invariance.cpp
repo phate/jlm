@@ -95,9 +95,9 @@ invariance(jive::region * region)
 }
 
 void
-invariance(jlm::rvsdg & rvsdg)
+invariance(rvsdg_module & rm)
 {
-	auto root = rvsdg.graph()->root();
+	auto root = rm.graph()->root();
 
 	#ifdef INVTIME
 		auto nnodes = jive::nnodes(root);

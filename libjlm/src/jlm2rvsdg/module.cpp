@@ -659,11 +659,11 @@ handle_scc(
 	}
 }
 
-static std::unique_ptr<jlm::rvsdg>
+static std::unique_ptr<rvsdg_module>
 convert_module(const module & m, const stats_descriptor & sd)
 {
-	auto rvsdg = jlm::rvsdg::create(m.source_filename(), m.target_triple(), m.data_layout());
-	auto graph = rvsdg->graph();
+	auto rm = rvsdg_module::create(m.source_filename(), m.target_triple(), m.data_layout());
+	auto graph = rm->graph();
 
 	auto nf = graph->node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
@@ -678,10 +678,10 @@ convert_module(const module & m, const stats_descriptor & sd)
 	for (const auto & scc : sccs)
 		handle_scc(scc, graph, svmap, sd);
 
-	return rvsdg;
+	return rm;
 }
 
-std::unique_ptr<jlm::rvsdg>
+std::unique_ptr<rvsdg_module>
 construct_rvsdg(const module & m, const stats_descriptor & sd)
 {
 	source_filename = m.source_filename().to_str();
@@ -693,16 +693,16 @@ construct_rvsdg(const module & m, const stats_descriptor & sd)
 		timer.start();
 	}
 
-	auto rvsdg = convert_module(m, sd);
+	auto rm = convert_module(m, sd);
 
 	if (sd.print_rvsdg_construction) {
 		timer.stop();
-		size_t nnodes = jive::nnodes(rvsdg->graph()->root());
+		size_t nnodes = jive::nnodes(rm->graph()->root());
 		fprintf(sd.file().fd(),
 			"RVSDGCONSTRUCTION %s %zu %zu %zu\n", source_filename.c_str(), ntacs, nnodes, timer.ns());
 	}
 
-	return std::move(rvsdg);
+	return rm;
 }
 
 }

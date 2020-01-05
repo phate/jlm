@@ -230,9 +230,9 @@ pull(jive::region * region)
 }
 
 void
-pull(jlm::rvsdg & rvsdg)
+pull(rvsdg_module & rm)
 {
-	pull(rvsdg.graph()->root());
+	pull(rm.graph()->root());
 }
 
 }

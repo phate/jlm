@@ -22,8 +22,8 @@ test1()
 {
 	using namespace jlm;
 
-	jlm::rvsdg rvsdg(filepath(""), "", "");
-	auto & graph = *rvsdg.graph();
+	rvsdg_module rm(filepath(""), "", "");
+	auto & graph = *rm.graph();
 
 	auto x = graph.add_import({vt, "x"});
 	auto y = graph.add_import({vt, "y"});
@@ -58,7 +58,7 @@ test1()
 	auto ex3 = graph.add_export(theta->output(2), {theta->output(2)->type(), "z"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::invert(rvsdg);
+	jlm::invert(rm);
 //	jive::view(graph.root(), stdout);
 
 	assert(jive::is<jive::gamma_op>(ex1->origin()->node()));
@@ -71,8 +71,8 @@ test2()
 {
 	using namespace jlm;
 
-	jlm::rvsdg rvsdg(filepath(""), "", "");
-	auto & graph = *rvsdg.graph();
+	rvsdg_module rm(filepath(""), "", "");
+	auto & graph = *rm.graph();
 
 	auto x = graph.add_import({vt, "x"});
 
@@ -101,7 +101,7 @@ test2()
 	auto ex = graph.add_export(theta->output(0), {theta->output(0)->type(), "x"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::invert(rvsdg);
+	jlm::invert(rm);
 //	jive::view(graph.root(), stdout);
 
 	assert(jive::is<jive::gamma_op>(ex->origin()->node()));

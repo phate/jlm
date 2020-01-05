@@ -28,8 +28,8 @@ test_gamma()
 
 	jive::ctltype ct(2);
 
-	jlm::rvsdg rvsdg(filepath(""), "", "");
-	auto & graph = *rvsdg.graph();
+	rvsdg_module rm(filepath(""), "", "");
+	auto & graph = *rm.graph();
 
 	auto c = graph.add_import({ct, "c"});
 	auto x = graph.add_import({vt, "x"});
@@ -48,7 +48,7 @@ test_gamma()
 	graph.add_export(gamma->output(0), {gamma->output(0)->type(), "x"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::push(rvsdg);
+	jlm::push(rm);
 //	jive::view(graph.root(), stdout);
 
 	assert(graph.root()->nodes.size() == 3);
@@ -65,8 +65,8 @@ test_theta()
 	jlm::test_op bop({&vt, &vt}, {&vt});
 	jlm::test_op sop({&vt, &st}, {&st});
 
-	jlm::rvsdg rvsdg(filepath(""), "", "");
-	auto & graph = *rvsdg.graph();
+	rvsdg_module rm(filepath(""), "", "");
+	auto & graph = *rm.graph();
 
 	auto c = graph.add_import({ct, "c"});
 	auto x = graph.add_import({vt, "x"});
@@ -92,7 +92,7 @@ test_theta()
 	graph.add_export(theta->output(0), {theta->output(0)->type(), "c"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::push(rvsdg);
+	jlm::push(rm);
 //	jive::view(graph.root(), stdout);
 
 	assert(graph.root()->nodes.size() == 3);

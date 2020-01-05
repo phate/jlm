@@ -456,12 +456,12 @@ unroll(jive::region * region, size_t factor)
 }
 
 void
-unroll(jlm::rvsdg & rvsdg, size_t factor)
+unroll(rvsdg_module & rm, size_t factor)
 {
 	if (factor < 2)
 		return;
 
-	unroll(rvsdg.graph()->root(), factor);
+	unroll(rm.graph()->root(), factor);
 }
 
 }

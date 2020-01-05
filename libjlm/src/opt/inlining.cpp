@@ -154,9 +154,9 @@ inline_apply(const jive::structural_node * lambda, jive::simple_node * apply)
 }
 
 void
-inlining(jlm::rvsdg & rvsdg)
+inlining(rvsdg_module & rm)
 {
-	auto root = rvsdg.graph()->root();
+	auto root = rm.graph()->root();
 
 	#ifdef ILNTIME
 		auto nnodes = jive::nnodes(root);

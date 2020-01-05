@@ -14,9 +14,9 @@
 namespace jlm {
 
 void
-reduce(jlm::rvsdg & rvsdg)
+reduce(rvsdg_module & rm)
 {
-	auto & graph = *rvsdg.graph();
+	auto & graph = *rm.graph();
 
 	/* alloca operation */
 	{

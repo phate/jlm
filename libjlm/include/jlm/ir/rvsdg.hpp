@@ -60,12 +60,12 @@ private:
 	jlm::linkage linkage_;
 };
 
-/* rvsdg class */
+/* rvsdg module class */
 
-class rvsdg final {
+class rvsdg_module final {
 public:
 	inline
-	rvsdg(
+	rvsdg_module(
 		const jlm::filepath & source_filename,
 		const std::string & target_triple,
 		const std::string & data_layout)
@@ -74,15 +74,15 @@ public:
 	, source_filename_(source_filename)
 	{}
 
-	rvsdg(const rvsdg &) = delete;
+	rvsdg_module(const rvsdg_module &) = delete;
 
-	rvsdg(rvsdg &&) = delete;
+	rvsdg_module(rvsdg_module &&) = delete;
 
-	rvsdg &
-	operator=(const rvsdg &) = delete;
+	rvsdg_module &
+	operator=(const rvsdg_module &) = delete;
 
-	rvsdg &
-	operator=(rvsdg &&) = delete;
+	rvsdg_module &
+	operator=(rvsdg_module &&) = delete;
 
 	inline jive::graph *
 	graph() noexcept
@@ -114,13 +114,13 @@ public:
 		return data_layout_;
 	}
 
-	static std::unique_ptr<jlm::rvsdg>
+	static std::unique_ptr<rvsdg_module>
 	create(
 		const jlm::filepath & source_filename,
 		const std::string & target_triple,
 		const std::string & data_layout)
 	{
-		return std::make_unique<jlm::rvsdg>(source_filename, target_triple, data_layout);
+		return std::make_unique<rvsdg_module>(source_filename, target_triple, data_layout);
 	}
 
 private:

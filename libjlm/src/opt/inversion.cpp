@@ -252,9 +252,9 @@ invert(jive::region * region)
 }
 
 void
-invert(jlm::rvsdg & rvsdg)
+invert(rvsdg_module & rm)
 {
-	auto root = rvsdg.graph()->root();
+	auto root = rm.graph()->root();
 
 	#ifdef IVTTIME
 		auto nnodes = jive::nnodes(root);

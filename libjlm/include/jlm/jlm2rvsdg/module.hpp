@@ -15,10 +15,10 @@ namespace jive {
 namespace jlm {
 
 class module;
-class rvsdg;
+class rvsdg_module;
 class stats_descriptor;
 
-std::unique_ptr<jlm::rvsdg>
+std::unique_ptr<rvsdg_module>
 construct_rvsdg(const module & m, const stats_descriptor & sd);
 
 }

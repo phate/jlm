@@ -206,7 +206,7 @@ void
 unroll(jive::theta_node * node, size_t factor);
 
 void
-unroll(jlm::rvsdg & rvsdg, size_t factor);
+unroll(rvsdg_module & rm, size_t factor);
 
 }
 

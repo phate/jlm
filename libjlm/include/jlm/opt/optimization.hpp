@@ -10,17 +10,17 @@
 
 namespace jlm {
 
-class rvsdg;
+class rvsdg_module;
 class stats_descriptor;
 
 enum class optimization {cne, dne, iln, inv, psh, red, ivt, url, pll};
 
 void
-optimize(jlm::rvsdg & rvsdg, const optimization & opt);
+optimize(rvsdg_module & rm, const optimization & opt);
 
 void
 optimize(
-	jlm::rvsdg & rvsdg,
+	rvsdg_module & rm,
 	const std::vector<optimization> & opts,
 	const stats_descriptor & sd);
 

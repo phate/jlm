@@ -28,10 +28,10 @@ test()
 	jive::bittype bt1(1);
 	jive::fcttype ft({&bt1, &vt}, {&vt});
 
-	jlm::rvsdg rvsdg(filepath(""), "", "");
+	rvsdg_module rm(filepath(""), "", "");
 
 	jlm::lambda_builder lb;
-	auto arguments = lb.begin_lambda(rvsdg.graph()->root(), {ft, "f", linkage::external_linkage});
+	auto arguments = lb.begin_lambda(rm.graph()->root(), {ft, "f", linkage::external_linkage});
 
 	auto match = jive::match(1, {{0, 0}}, 1, 2, arguments[0]);
 	auto gamma = jive::gamma_node::create(match, 2);
@@ -41,12 +41,12 @@ test()
 
 	auto lambda = lb.end_lambda({ex});
 
-	rvsdg.graph()->add_export(lambda->output(0), {lambda->output(0)->type(), ""});
+	rm.graph()->add_export(lambda->output(0), {lambda->output(0)->type(), ""});
 
-	jive::view(*rvsdg.graph(), stdout);
+	jive::view(*rm.graph(), stdout);
 
 	stats_descriptor sd;
-	auto module = rvsdg2jlm::rvsdg2jlm(rvsdg, sd);
+	auto module = rvsdg2jlm::rvsdg2jlm(rm, sd);
 	auto & ipg = module->ipgraph();
 	assert(ipg.nnodes() == 1);
 

@@ -8,10 +8,10 @@
 
 namespace jlm {
 
-class rvsdg;
+class rvsdg_module;
 
 void
-invert(jlm::rvsdg & rvsdg);
+invert(rvsdg_module & rm);
 
 }
 

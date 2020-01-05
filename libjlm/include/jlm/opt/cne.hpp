@@ -8,10 +8,10 @@
 
 namespace jlm {
 
-class rvsdg;
+class rvsdg_module;
 
 void
-cne(jlm::rvsdg & rvsdg);
+cne(rvsdg_module & rm);
 
 }
 
