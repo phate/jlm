@@ -9,7 +9,7 @@
 #include <jive/rvsdg/statemux.h>
 
 #include <jlm/ir/cfg-node.hpp>
-#include <jlm/ir/module.hpp>
+#include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/tac.hpp>
 

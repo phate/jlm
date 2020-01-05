@@ -10,7 +10,7 @@
 #include <jlm/ir/basic-block.hpp>
 #include <jlm/ir/cfg.hpp>
 #include <jlm/ir/cfg-structure.hpp>
-#include <jlm/ir/module.hpp>
+#include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/print.hpp>
 
 #include <assert.h>

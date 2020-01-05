@@ -10,7 +10,7 @@
 #include <jive/rvsdg/phi.h>
 #include <jive/view.h>
 
-#include <jlm/ir/module.hpp>
+#include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/operators/delta.hpp>
 #include <jlm/ir/print.hpp>
 #include <jlm/ir/rvsdg-module.hpp>

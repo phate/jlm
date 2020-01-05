@@ -15,7 +15,7 @@ LIBJLM_SRC = \
 	libjlm/src/ir/cfg-node.cpp \
 	libjlm/src/ir/domtree.cpp \
 	libjlm/src/ir/ipgraph.cpp \
-	libjlm/src/ir/module.cpp \
+	libjlm/src/ir/ipgraph-module.cpp \
 	libjlm/src/ir/operators/alloca.cpp \
 	libjlm/src/ir/operators/call.cpp \
 	libjlm/src/ir/operators/delta.cpp \

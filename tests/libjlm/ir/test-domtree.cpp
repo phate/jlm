@@ -7,7 +7,7 @@
 
 #include <jlm/ir/cfg.hpp>
 #include <jlm/ir/domtree.hpp>
-#include <jlm/ir/module.hpp>
+#include <jlm/ir/ipgraph-module.hpp>
 
 #include <unordered_set>
 

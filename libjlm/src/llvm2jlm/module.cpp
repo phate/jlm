@@ -9,7 +9,7 @@
 #include <jlm/ir/cfg-structure.hpp>
 #include <jlm/ir/cfg-node.hpp>
 #include <jlm/ir/ipgraph.hpp>
-#include <jlm/ir/module.hpp>
+#include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/operators/operators.hpp>
 #include <jlm/llvm2jlm/context.hpp>
 #include <jlm/llvm2jlm/instruction.hpp>

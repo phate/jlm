@@ -8,7 +8,7 @@
 #include <jlm/ir/aggregation.hpp>
 #include <jlm/ir/basic-block.hpp>
 #include <jlm/ir/cfg.hpp>
-#include <jlm/ir/module.hpp>
+#include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/print.hpp>
 
 static inline bool

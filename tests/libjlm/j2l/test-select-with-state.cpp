@@ -7,7 +7,7 @@
 #include "test-operation.hpp"
 #include "test-types.hpp"
 
-#include <jlm/ir/module.hpp>
+#include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/print.hpp>
 #include <jlm/jlm2llvm/jlm2llvm.hpp>

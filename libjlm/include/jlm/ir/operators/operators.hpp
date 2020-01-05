@@ -16,7 +16,7 @@
 #include <jive/rvsdg/type.h>
 #include <jive/rvsdg/unary.h>
 
-#include <jlm/ir/module.hpp>
+#include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/tac.hpp>
 #include <jlm/ir/types.hpp>
 

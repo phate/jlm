@@ -11,7 +11,7 @@
 #include <jlm/ir/basic-block.hpp>
 #include <jlm/ir/cfg-structure.hpp>
 #include <jlm/ir/ipgraph.hpp>
-#include <jlm/ir/module.hpp>
+#include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/ir/ssa.hpp>

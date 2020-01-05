@@ -7,7 +7,7 @@
 #define JLM_LLVM2JLM_CONTEXT_HPP
 
 #include <jlm/ir/cfg-node.hpp>
-#include <jlm/ir/module.hpp>
+#include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/tac.hpp>
 #include <jlm/llvm2jlm/type.hpp>
 

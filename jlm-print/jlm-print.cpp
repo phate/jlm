@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/ir/module.hpp>
+#include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/print.hpp>
 #include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/llvm2jlm/module.hpp>
