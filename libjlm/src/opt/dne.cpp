@@ -8,6 +8,7 @@
 #include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/opt/dne.hpp>
 #include <jlm/util/stats.hpp>
+#include <jlm/util/time.hpp>
 
 #include <jive/rvsdg/gamma.h>
 #include <jive/rvsdg/phi.h>
@@ -16,11 +17,63 @@
 #include <jive/rvsdg/theta.h>
 #include <jive/rvsdg/traverser.h>
 
-#if defined(DNEMARKTIME) || defined(DNESWEEPTIME)
-	#include <iostream>
-#endif
-
 namespace jlm {
+
+class dnestat final : public stat {
+public:
+	virtual
+	~dnestat()
+	{}
+
+	dnestat()
+	: nnodes_before_(0), nnodes_after_(0)
+	, ninputs_before_(0), ninputs_after_(0)
+	{}
+
+	void
+	start_mark_stat(const jive::graph & graph) noexcept
+	{
+		nnodes_before_ = jive::nnodes(graph.root());
+		ninputs_before_ = jive::ninputs(graph.root());
+		marktimer_.start();
+	}
+
+	void
+	end_mark_stat() noexcept
+	{
+		marktimer_.stop();
+	}
+
+	void
+	start_sweep_stat() noexcept
+	{
+		sweeptimer_.start();
+	}
+
+	void
+	end_sweep_stat(const jive::graph & graph) noexcept
+	{
+		nnodes_after_ = jive::nnodes(graph.root());
+		ninputs_after_ = jive::ninputs(graph.root());
+		sweeptimer_.stop();
+	}
+
+	virtual std::string
+	to_str() const override
+	{
+		return strfmt("DNE ",
+			nnodes_before_, " ", nnodes_after_, " ",
+			ninputs_before_, " ", ninputs_after_, " ",
+			marktimer_.ns(), " ", sweeptimer_.ns()
+		);
+	}
+
+private:
+	size_t nnodes_before_, nnodes_after_;
+	size_t ninputs_before_, ninputs_after_;
+	jlm::timer marktimer_, sweeptimer_;
+};
+
 
 class dnectx {
 public:
@@ -377,45 +430,40 @@ sweep(jive::region * region, const dnectx & ctx)
 	JLM_DEBUG_ASSERT(region->bottom_nodes.empty());
 }
 
+static void
+mark(const jive::graph & graph, dnectx & ctx)
+{
+	for (size_t n = 0; n < graph.root()->nresults(); n++)
+		mark(graph.root()->result(n)->origin(), ctx);
+}
+
+static void
+sweep(jive::graph & graph, dnectx & ctx)
+{
+	sweep(graph.root(), ctx);
+	for (ssize_t n = graph.root()->narguments()-1; n >= 0; n--) {
+		if (!ctx.is_alive(graph.root()->argument(n)))
+			graph.root()->remove_argument(n);
+	}
+}
+
 void
 dne(rvsdg_module & rm, const stats_descriptor & sd)
 {
 	auto & graph = *rm.graph();
 
 	dnectx ctx;
+	dnestat ds;
 
-	auto mark_ = [&](jive::graph & graph)
-	{
-		for (size_t n = 0; n < graph.root()->nresults(); n++)
-			mark(graph.root()->result(n)->origin(), ctx);
-	};
+	ds.start_mark_stat(graph);
+	mark(graph, ctx);
+	ds.end_mark_stat();
 
-	auto sweep_ = [&](jive::graph & graph)
-	{
-		sweep(graph.root(), ctx);
-		for (ssize_t n = graph.root()->narguments()-1; n >= 0; n--) {
-			if (!ctx.is_alive(graph.root()->argument(n)))
-				graph.root()->remove_argument(n);
-		}
-	};
+	ds.start_sweep_stat();
+	sweep(graph, ctx);
+	ds.end_sweep_stat(graph);
 
-	statscollector mc, sc;
-	mc.run(mark_, graph);
-	sc.run(sweep_, graph);
-
-#ifdef DNEMARKTIME
-	std::cout << "DNEMARKTIME: "
-	          << mc.nnodes_before() << " "
-	          << mc.ninputs_before() << " "
-	          << mc.time() << "\n";
-#endif
-
-#ifdef DNESWEEPTIME
-	std::cout << "DNESWEEPTIME: "
-	          << sc.nnodes_before() << " "
-	          << sc.ninputs_before() << " "
-	          << sc.time() << "\n";
-#endif
+	if (sd.print_dne_stat)
+		sd.print_stat(ds);
 }
-
 }
