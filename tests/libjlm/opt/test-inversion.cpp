@@ -14,8 +14,10 @@
 
 #include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/opt/inversion.hpp>
+#include <jlm/util/stats.hpp>
 
 static const jlm::valuetype vt;
+static const jlm::stats_descriptor sd;
 
 static inline void
 test1()
@@ -58,7 +60,7 @@ test1()
 	auto ex3 = graph.add_export(theta->output(2), {theta->output(2)->type(), "z"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::invert(rm);
+	jlm::invert(rm, sd);
 //	jive::view(graph.root(), stdout);
 
 	assert(jive::is<jive::gamma_op>(ex1->origin()->node()));
@@ -101,7 +103,7 @@ test2()
 	auto ex = graph.add_export(theta->output(0), {theta->output(0)->type(), "x"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::invert(rm);
+	jlm::invert(rm, sd);
 //	jive::view(graph.root(), stdout);
 
 	assert(jive::is<jive::gamma_op>(ex->origin()->node()));

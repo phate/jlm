@@ -378,7 +378,7 @@ sweep(jive::region * region, const dnectx & ctx)
 }
 
 void
-dne(rvsdg_module & rm)
+dne(rvsdg_module & rm, const stats_descriptor & sd)
 {
 	auto & graph = *rm.graph();
 

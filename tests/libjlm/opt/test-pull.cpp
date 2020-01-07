@@ -13,8 +13,10 @@
 
 #include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/opt/pull.hpp>
+#include <jlm/util/stats.hpp>
 
 static const jlm::valuetype vt;
+static const jlm::stats_descriptor sd;
 
 static inline void
 test_pullin_top()
@@ -115,7 +117,7 @@ test_pull()
 	graph.add_export(g1xv, {g1xv->type(), ""});
 
 	jive::view(graph, stdout);
-	jlm::pull(rm);
+	jlm::pull(rm, sd);
 	graph.prune();
 	jive::view(graph, stdout);
 

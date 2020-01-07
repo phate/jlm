@@ -14,6 +14,9 @@
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/opt/inlining.hpp>
+#include <jlm/util/stats.hpp>
+
+static const jlm::stats_descriptor sd;
 
 static int
 verify()
@@ -50,7 +53,7 @@ verify()
 	graph.add_export(f2->output(0), {f2->output(0)->type(), "f2"});
 
 	jive::view(graph.root(), stdout);
-	jlm::inlining(rm);
+	jlm::inlining(rm, sd);
 	jive::view(graph.root(), stdout);
 
 	assert(!jive::contains<jlm::call_op>(graph.root(), true));

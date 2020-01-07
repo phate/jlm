@@ -18,6 +18,9 @@
 #include <jlm/ir/operators/lambda.hpp>
 #include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/opt/dne.hpp>
+#include <jlm/util/stats.hpp>
+
+static const jlm::stats_descriptor sd;
 
 static inline void
 test_root()
@@ -31,7 +34,7 @@ test_root()
 	graph.add_export(y, {y->type(), "z"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::dne(rm);
+	jlm::dne(rm, sd);
 //	jive::view(graph.root(), stdout);
 
 	assert(graph.root()->narguments() == 1);
@@ -66,7 +69,7 @@ test_gamma()
 	graph.add_export(gamma->output(2), {gamma->output(2)->type(), "w"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::dne(rm);
+	jlm::dne(rm, sd);
 //	jive::view(graph.root(), stdout);
 
 	assert(gamma->noutputs() == 2);
@@ -100,7 +103,7 @@ test_gamma2()
 	graph.add_export(gamma->output(0), {gamma->output(0)->type(), "x"});
 
 //	jive::view(graph, stdout);
-	jlm::dne(rm);
+	jlm::dne(rm, sd);
 //	jive::view(graph, stdout);
 
 	assert(graph.root()->narguments() == 1);
@@ -141,7 +144,7 @@ test_theta()
 	graph.add_export(theta->output(3), {theta->output(0)->type(), "b"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::dne(rm);
+	jlm::dne(rm, sd);
 //	jive::view(graph.root(), stdout);
 
 	assert(theta->noutputs() == 3);
@@ -187,7 +190,7 @@ test_nested_theta()
 	graph.add_export(otheta->output(2), {otheta->output(2)->type(), "y"});
 
 //	jive::view(graph, stdout);
-	jlm::dne(rm);
+	jlm::dne(rm, sd);
 //	jive::view(graph, stdout);
 
 	assert(otheta->noutputs() == 3);
@@ -226,7 +229,7 @@ test_evolving_theta()
 	graph.add_export(lv1, {lv1->type(), "x1"});
 
 //	jive::view(graph, stdout);
-	jlm::dne(rm);
+	jlm::dne(rm, sd);
 //	jive::view(graph, stdout);
 
 	assert(theta->noutputs() == 5);
@@ -254,7 +257,7 @@ test_lambda()
 	graph.add_export(lambda->output(0), {lambda->output(0)->type(), "f"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::dne(rm);
+	jlm::dne(rm, sd);
 //	jive::view(graph.root(), stdout);
 
 	assert(lambda->subregion()->nodes.size() == 0);
@@ -300,7 +303,7 @@ test_phi()
 	graph.add_export(phi->output(0), {phi->output(0)->type(), "f1"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::dne(rm);
+	jlm::dne(rm, sd);
 //	jive::view(graph.root(), stdout);
 }
 

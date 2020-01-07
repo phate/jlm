@@ -252,7 +252,7 @@ invert(jive::region * region)
 }
 
 void
-invert(rvsdg_module & rm)
+invert(rvsdg_module & rm, const stats_descriptor & sd)
 {
 	auto root = rm.graph()->root();
 

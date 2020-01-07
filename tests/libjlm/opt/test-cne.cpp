@@ -18,6 +18,9 @@
 #include <jlm/ir/operators/lambda.hpp>
 #include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/opt/cne.hpp>
+#include <jlm/util/stats.hpp>
+
+static const jlm::stats_descriptor sd;
 
 static inline void
 test_simple()
@@ -54,7 +57,7 @@ test_simple()
 	graph.add_export(b4, {n2->type(), "b4"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::cne(rm);
+	jlm::cne(rm, sd);
 //	jive::view(graph.root(), stdout);
 
 	assert(graph.root()->result(0)->origin() == graph.root()->result(1)->origin());
@@ -108,7 +111,7 @@ test_gamma()
 	graph.add_export(gamma->output(2), {gamma->output(2)->type(), "y"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::cne(rm);
+	jlm::cne(rm, sd);
 //	jive::view(graph.root(), stdout);
 
 	auto subregion0 = gamma->subregion(0);
@@ -164,7 +167,7 @@ test_theta()
 	graph.add_export(theta->output(3), {theta->output(3)->type(), "lv4"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::cne(rm);
+	jlm::cne(rm, sd);
 //	jive::view(graph.root(), stdout);
 
 	assert(u1->node()->input(0)->origin() == u2->node()->input(0)->origin());
@@ -210,7 +213,7 @@ test_theta2()
 	graph.add_export(theta->output(2), {theta->output(2)->type(), "lv3"});
 
 //	jive::view(graph, stdout);
-	jlm::cne(rm);
+	jlm::cne(rm, sd);
 //	jive::view(graph, stdout);
 
 	assert(lv2->result()->origin() == u1);
@@ -264,7 +267,7 @@ test_theta3()
 	graph.add_export(theta1->output(3), {theta1->output(3)->type(), "lv4"});
 
 //	jive::view(graph, stdout);
-	jlm::cne(rm);
+	jlm::cne(rm, sd);
 //	jive::view(graph, stdout);
 
 	assert(r1->result(2)->origin() == r1->result(4)->origin());
@@ -319,7 +322,7 @@ test_theta4()
 	graph.add_export(theta->output(4), {theta->output(4)->type(), "lv5"});
 
 //	jive::view(graph, stdout);
-	jlm::cne(rm);
+	jlm::cne(rm, sd);
 //	jive::view(graph, stdout);
 
 	assert(ex1->origin() != ex2->origin());
@@ -364,7 +367,7 @@ test_theta5()
 	auto ex4 = graph.add_export(theta->output(4), {theta->output(4)->type(), "lv4"});
 
 //	jive::view(graph, stdout);
-	jlm::cne(rm);
+	jlm::cne(rm, sd);
 //	jive::view(graph, stdout);
 
 	assert(ex1->origin() == ex2->origin());
@@ -401,7 +404,7 @@ test_lambda()
 	graph.add_export(lambda->output(0), {lambda->output(0)->type(), "f"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::cne(rm);
+	jlm::cne(rm, sd);
 //	jive::view(graph.root(), stdout);
 
 	assert(b1->node()->input(0)->origin() == b1->node()->input(1)->origin());
@@ -449,7 +452,7 @@ test_phi()
 	graph.add_export(phi->output(1), {phi->output(1)->type(), "f2"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::cne(rm);
+	jlm::cne(rm, sd);
 //	jive::view(graph.root(), stdout);
 
 	assert(f1->input(0)->origin() == f2->input(0)->origin());

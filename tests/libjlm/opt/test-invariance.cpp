@@ -15,6 +15,9 @@
 #include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/ir/types.hpp>
 #include <jlm/opt/invariance.hpp>
+#include <jlm/util/stats.hpp>
+
+static const jlm::stats_descriptor sd;
 
 static inline void
 test_gamma()
@@ -48,7 +51,7 @@ test_gamma()
 	graph.add_export(gamma1->output(1), {gamma1->output(1)->type(), "y"});
 
 	jive::view(graph.root(), stdout);
-	jlm::invariance(rm);
+	jlm::invariance(rm, sd);
 	jive::view(graph.root(), stdout);
 
 	assert(graph.root()->result(0)->origin() == graph.root()->argument(1));
@@ -89,7 +92,7 @@ test_theta()
 	graph.add_export(lv3, {lv3->type(), "l"});
 
 	jive::view(graph.root(), stdout);
-	jlm::invariance(rm);
+	jlm::invariance(rm, sd);
 	jive::view(graph.root(), stdout);
 
 	assert(graph.root()->result(0)->origin() == graph.root()->argument(0));

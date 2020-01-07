@@ -16,6 +16,7 @@ namespace jive {
 namespace jlm {
 
 class rvsdg_module;
+class stats_descriptor;
 
 void
 pullin_top(jive::gamma_node * gamma);
@@ -31,7 +32,7 @@ void
 pull(jive::region * region);
 
 void
-pull(rvsdg_module & rm);
+pull(rvsdg_module & rm, const stats_descriptor & sd);
 
 }
 

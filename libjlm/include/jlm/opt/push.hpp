@@ -16,6 +16,7 @@ class theta_node;
 namespace jlm {
 
 class rvsdg_module;
+class stats_descriptor;
 
 void
 push_top(jive::theta_node * theta);
@@ -30,7 +31,7 @@ void
 push(jive::gamma_node * gamma);
 
 void
-push(rvsdg_module & rm);
+push(rvsdg_module & rm, const stats_descriptor & sd);
 
 }
 

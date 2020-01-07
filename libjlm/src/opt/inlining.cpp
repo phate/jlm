@@ -154,7 +154,7 @@ inline_apply(const jive::structural_node * lambda, jive::simple_node * apply)
 }
 
 void
-inlining(rvsdg_module & rm)
+inlining(rvsdg_module & rm, const stats_descriptor & sd)
 {
 	auto root = rm.graph()->root();
 

@@ -95,7 +95,7 @@ invariance(jive::region * region)
 }
 
 void
-invariance(rvsdg_module & rm)
+invariance(rvsdg_module & rm, const stats_descriptor & sd)
 {
 	auto root = rm.graph()->root();
 

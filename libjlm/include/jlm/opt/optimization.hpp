@@ -16,13 +16,14 @@ class stats_descriptor;
 enum class optimization {cne, dne, iln, inv, psh, red, ivt, url, pll};
 
 void
-optimize(rvsdg_module & rm, const optimization & opt);
+optimize(rvsdg_module & rm,
+	const stats_descriptor & sd,
+	const optimization & opt);
 
 void
-optimize(
-	rvsdg_module & rm,
-	const std::vector<optimization> & opts,
-	const stats_descriptor & sd);
+optimize(rvsdg_module & rm,
+	const stats_descriptor & sd,
+	const std::vector<optimization> & opts);
 
 }
 

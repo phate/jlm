@@ -14,7 +14,7 @@
 namespace jlm {
 
 void
-reduce(rvsdg_module & rm)
+reduce(rvsdg_module & rm, const stats_descriptor & sd)
 {
 	auto & graph = *rm.graph();
 

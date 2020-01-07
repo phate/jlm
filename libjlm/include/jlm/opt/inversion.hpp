@@ -9,9 +9,10 @@
 namespace jlm {
 
 class rvsdg_module;
+class stats_descriptor;
 
 void
-invert(rvsdg_module & rm);
+invert(rvsdg_module & rm, const stats_descriptor & sd);
 
 }
 

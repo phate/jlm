@@ -515,7 +515,7 @@ divert(jive::region * region, cnectx & ctx)
 }
 
 void
-cne(rvsdg_module & rm)
+cne(rvsdg_module & rm, const stats_descriptor & sd)
 {
 	auto & graph = *rm.graph();
 

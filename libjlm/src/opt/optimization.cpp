@@ -23,10 +23,16 @@
 
 namespace jlm {
 
-void
-optimize(rvsdg_module & rm, const optimization & opt)
+static void
+unroll(rvsdg_module & rm, const stats_descriptor & sd)
 {
-	static std::unordered_map<optimization, void(*)(rvsdg_module&)> map({
+	jlm::unroll(rm, sd, 4);
+}
+
+void
+optimize(rvsdg_module & rm, const stats_descriptor & sd, const optimization & opt)
+{
+	static std::unordered_map<optimization, void(*)(rvsdg_module&, const stats_descriptor&)> map({
 	  {optimization::cne, jlm::cne }
 	, {optimization::dne, jlm::dne }
 	, {optimization::iln, jlm::inlining }
@@ -34,20 +40,20 @@ optimize(rvsdg_module & rm, const optimization & opt)
 	, {optimization::pll, jlm::pull }
 	, {optimization::psh, jlm::push }
 	, {optimization::ivt, jlm::invert }
-	, {optimization::url, [](rvsdg_module & rm){ jlm::unroll(rm, 4); }}
+	, {optimization::url, unroll }
 	, {optimization::red, jlm::reduce }
 	});
 
 
 	JLM_DEBUG_ASSERT(map.find(opt) != map.end());
-	map[opt](rm);
+	map[opt](rm, sd);
 }
 
 void
 optimize(
 	rvsdg_module & rm,
-	const std::vector<optimization> & opts,
-	const stats_descriptor & sd)
+	const stats_descriptor & sd,
+	const std::vector<optimization> & opts)
 {
 	jlm::timer timer;
 	size_t nnodes_before = 0;
@@ -57,7 +63,7 @@ optimize(
 	}
 
 	for (const auto & opt : opts)
-		optimize(rm, opt);
+		optimize(rm, sd, opt);
 
 	if (sd.print_rvsdg_optimization) {
 		timer.stop();

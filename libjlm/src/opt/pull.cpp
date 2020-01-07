@@ -230,7 +230,7 @@ pull(jive::region * region)
 }
 
 void
-pull(rvsdg_module & rm)
+pull(rvsdg_module & rm, const stats_descriptor & sd)
 {
 	pull(rm.graph()->root());
 }

@@ -17,7 +17,8 @@ namespace jive {
 
 namespace jlm {
 
-class rvsdg;
+class rvsdg_module;
+class stats_descriptor;
 
 class unrollinfo final {
 public:
@@ -206,7 +207,7 @@ void
 unroll(jive::theta_node * node, size_t factor);
 
 void
-unroll(rvsdg_module & rm, size_t factor);
+unroll(rvsdg_module & rm, const stats_descriptor & sd, size_t factor);
 
 }
 

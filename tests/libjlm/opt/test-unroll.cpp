@@ -20,6 +20,9 @@
 #include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/opt/dne.hpp>
 #include <jlm/opt/unroll.hpp>
+#include <jlm/util/stats.hpp>
+
+static const jlm::stats_descriptor sd;
 
 static size_t
 nthetas(jive::region * region)
@@ -257,7 +260,7 @@ test_unknown_boundaries()
 	auto ex1 = graph.add_export(lv1, {lv1->type(), "x"});
 
 	jive::view(graph, stdout);
-	jlm::unroll(rm, 2);
+	jlm::unroll(rm, sd, 2);
 	jive::view(graph, stdout);
 
 	auto node = ex1->origin()->node();

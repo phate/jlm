@@ -9,9 +9,10 @@
 namespace jlm {
 
 class rvsdg;
+class stats_descriptor;
 
 void
-reduce(rvsdg_module & rm);
+reduce(rvsdg_module & rm, const stats_descriptor & sd);
 
 }
 

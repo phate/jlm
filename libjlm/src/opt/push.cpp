@@ -363,7 +363,7 @@ push(jive::region * region)
 }
 
 void
-push(rvsdg_module & rm)
+push(rvsdg_module & rm, const stats_descriptor & sd)
 {
 	auto root = rm.graph()->root();
 

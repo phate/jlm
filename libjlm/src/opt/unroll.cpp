@@ -456,7 +456,7 @@ unroll(jive::region * region, size_t factor)
 }
 
 void
-unroll(rvsdg_module & rm, size_t factor)
+unroll(rvsdg_module & rm, const stats_descriptor & sd, size_t factor)
 {
 	if (factor < 2)
 		return;

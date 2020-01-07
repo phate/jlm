@@ -114,7 +114,7 @@ main(int argc, char ** argv)
 
 	auto rm = jlm::construct_rvsdg(*jlm_module, flags.sd);
 
-	optimize(*rm, flags.optimizations, flags.sd);
+	optimize(*rm, flags.sd, flags.optimizations);
 
 	print(*rm, flags.ofile, flags.format, flags.sd);
 

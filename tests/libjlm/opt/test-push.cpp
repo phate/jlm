@@ -17,9 +17,11 @@
 #include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/ir/types.hpp>
 #include <jlm/opt/push.hpp>
+#include <jlm/util/stats.hpp>
 
 static const jlm::statetype st;
 static const jlm::valuetype vt;
+static const jlm::stats_descriptor sd;
 
 static inline void
 test_gamma()
@@ -48,7 +50,7 @@ test_gamma()
 	graph.add_export(gamma->output(0), {gamma->output(0)->type(), "x"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::push(rm);
+	jlm::push(rm, sd);
 //	jive::view(graph.root(), stdout);
 
 	assert(graph.root()->nodes.size() == 3);
@@ -92,7 +94,7 @@ test_theta()
 	graph.add_export(theta->output(0), {theta->output(0)->type(), "c"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::push(rm);
+	jlm::push(rm, sd);
 //	jive::view(graph.root(), stdout);
 
 	assert(graph.root()->nodes.size() == 3);
