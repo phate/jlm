@@ -59,6 +59,14 @@ private:
 	jlm::filepath filename_;
 };
 
+class stat {
+public:
+	virtual
+	~stat();
+
+	virtual std::string
+	to_str() const = 0;
+};
 
 class stats_descriptor final {
 public:
@@ -96,6 +104,12 @@ public:
 	{
 		fprintf(file().fd(), "RVSDGDESTRUCTION %s %zu %zu %zu\n",
 			stat.filename().to_str().c_str(), stat.nnodes(), stat.ntacs(), stat.time());
+	}
+
+	void
+	print_stat(const stat & s) const noexcept
+	{
+		fprintf(file().fd(), "%s\n", s.to_str().c_str());
 	}
 
 	bool print_cfr_time;
