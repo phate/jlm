@@ -76,6 +76,7 @@ public:
 
 	stats_descriptor(const jlm::filepath & path)
 	: print_cfr_time(false)
+	, print_cne_stat(false)
 	, print_dne_stat(false)
 	, print_annotation_time(false)
 	, print_aggregation_time(false)
@@ -114,6 +115,7 @@ public:
 	}
 
 	bool print_cfr_time;
+	bool print_cne_stat;
 	bool print_dne_stat;
 	bool print_annotation_time;
 	bool print_aggregation_time;

@@ -78,6 +78,11 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 	, cl::ValueDisallowed
 	, cl::desc("Write dead node elimination statistics to file."));
 
+	cl::opt<bool> print_cne_stat(
+	  "print-cne-stat"
+	, cl::ValueDisallowed
+	, cl::desc("Write common node elimination statistics to file."));
+
 	cl::opt<outputformat> format(
 	  cl::values(
 		  clEnumValN(outputformat::llvm, "llvm", "Output LLVM IR [default]")
@@ -114,6 +119,7 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 	options.format = format;
 	options.optimizations = optimizations;
 	options.sd.print_cfr_time = print_cfr_time;
+	options.sd.print_cne_stat = print_cne_stat;
 	options.sd.print_dne_stat = print_dne_stat;
 	options.sd.print_annotation_time = print_annotation_time;
 	options.sd.print_aggregation_time = print_aggregation_time;

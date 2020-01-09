@@ -8,6 +8,7 @@
 #include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/opt/cne.hpp>
 #include <jlm/util/stats.hpp>
+#include <jlm/util/time.hpp>
 
 #include <jive/rvsdg/gamma.h>
 #include <jive/rvsdg/phi.h>
@@ -15,11 +16,63 @@
 #include <jive/rvsdg/theta.h>
 #include <jive/rvsdg/traverser.h>
 
-#if defined(CNEMARKTIME) || defined(CNEDIVERTTIME)
-	#include <iostream>
-#endif
-
 namespace jlm {
+
+class cnestat final : public stat {
+public:
+	virtual
+	~cnestat()
+	{}
+
+	cnestat()
+	: nnodes_before_(0), nnodes_after_(0)
+	, ninputs_before_(0), ninputs_after_(0)
+	{}
+
+	void
+	start_mark_stat(const jive::graph & graph) noexcept
+	{
+		nnodes_before_ = jive::nnodes(graph.root());
+		ninputs_before_ = jive::ninputs(graph.root());
+		marktimer_.start();
+	}
+
+	void
+	end_mark_stat() noexcept
+	{
+		marktimer_.stop();
+	}
+
+	void
+	start_divert_stat() noexcept
+	{
+		diverttimer_.start();
+	}
+
+	void
+	end_divert_stat(const jive::graph & graph) noexcept
+	{
+		nnodes_after_ = jive::nnodes(graph.root());
+		ninputs_after_ = jive::ninputs(graph.root());
+		diverttimer_.stop();
+	}
+
+	virtual std::string
+	to_str() const override
+	{
+		return strfmt("CNE ",
+			nnodes_before_, " ", nnodes_after_, " ",
+			ninputs_before_, " ", ninputs_after_, " ",
+			marktimer_.ns(), " ", diverttimer_.ns()
+		);
+	}
+
+private:
+	size_t nnodes_before_, nnodes_after_;
+	size_t ninputs_before_, ninputs_after_;
+	jlm::timer marktimer_, diverttimer_;
+};
+
 
 typedef std::unordered_set<jive::output*> congruence_set;
 
@@ -520,34 +573,18 @@ cne(rvsdg_module & rm, const stats_descriptor & sd)
 	auto & graph = *rm.graph();
 
 	cnectx ctx;
+	cnestat stat;
 
-	auto mark_ = [&](jive::graph & graph)
-	{
-		mark(graph.root(), ctx);
-	};
+	stat.start_mark_stat(graph);
+	mark(graph.root(), ctx);
+	stat.end_mark_stat();
 
-	auto divert_ = [&](jive::graph & graph)
-	{
-		divert(graph.root(), ctx);
-	};
+	stat.start_divert_stat();
+	divert(graph.root(), ctx);
+	stat.end_divert_stat(graph);
 
-	statscollector mc, dc;
-	mc.run(mark_, graph);
-	dc.run(divert_, graph);
-
-#ifdef CNEMARKTIME
-	std::cout << "CNEMARKTIME: "
-	          << mc.nnodes_before() << " "
-	          << mc.ninputs_before() << " "
-	          << mc.time() << "\n";
-#endif
-
-#ifdef CNEDIVERTTIME
-	std::cout << "CNEDIVERTTIME: "
-	          << dc.nnodes_before() << " "
-	          << dc.ninputs_before() << " "
-	          << dc.time() << "\n";
-#endif
+	if (sd.print_cne_stat)
+		sd.print_stat(stat);
 }
 
 }
