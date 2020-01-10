@@ -7,18 +7,50 @@
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/opt/inlining.hpp>
+#include <jlm/util/stats.hpp>
+#include <jlm/util/time.hpp>
 
 #include <jive/rvsdg/gamma.h>
 #include <jive/rvsdg/substitution.h>
 #include <jive/rvsdg/theta.h>
 #include <jive/rvsdg/traverser.h>
 
-#ifdef ILNTIME
-#include <chrono>
-#include <iostream>
-#endif
-
 namespace jlm {
+
+class ilnstat final : public stat {
+public:
+	virtual
+	~ilnstat()
+	{}
+
+	ilnstat()
+	: nnodes_before_(0), nnodes_after_(0)
+	{}
+
+	void
+	start(const jive::graph & graph)
+	{
+		nnodes_before_ = jive::nnodes(graph.root());
+		timer_.start();
+	}
+
+	void
+	stop(const jive::graph & graph)
+	{
+		nnodes_after_ = jive::nnodes(graph.root());
+		timer_.stop();
+	}
+
+	virtual std::string
+	to_str() const override
+	{
+		return strfmt("ILN ", nnodes_before_, " ", nnodes_after_, " ", timer_.ns());
+	}
+
+private:
+	size_t nnodes_before_, nnodes_after_;
+	jlm::timer timer_;
+};
 
 static bool
 is_exported(jive::output * output)
@@ -153,15 +185,10 @@ inline_apply(const jive::structural_node * lambda, jive::simple_node * apply)
 	remove(apply);
 }
 
-void
-inlining(rvsdg_module & rm, const stats_descriptor & sd)
+static void
+inlining(jive::graph & graph)
 {
-	auto root = rm.graph()->root();
-
-	#ifdef ILNTIME
-		auto nnodes = jive::nnodes(root);
-		auto start = std::chrono::high_resolution_clock::now();
-	#endif
+	auto root = graph.root();
 
 	for (auto node : jive::topdown_traverser(root)) {
 		if (!is<lambda_op>(node->operation()))
@@ -176,14 +203,20 @@ inlining(rvsdg_module & rm, const stats_descriptor & sd)
 		&& dynamic_cast<const call_op*>(&consumers[0]->operation()))
 			inline_apply(snode, static_cast<jive::simple_node*>(consumers[0]));
 	}
+}
 
-	#ifdef ILNTIME
-		auto end = std::chrono::high_resolution_clock::now();
-		std::cout << "ILNTIME: "
-		          << nnodes
-		          << " " << std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count()
-		          << "\n";
-	#endif
+void
+inlining(rvsdg_module & rm, const stats_descriptor & sd)
+{
+	auto & graph = *rm.graph();
+
+	ilnstat stat;
+	stat.start(graph);
+	inlining(graph);
+	stat.stop(graph);
+
+	if (sd.print_iln_stat)
+		sd.print_stat(stat);
 }
 
 }
