@@ -7,18 +7,59 @@
 #include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/opt/inversion.hpp>
 #include <jlm/opt/pull.hpp>
+#include <jlm/util/stats.hpp>
+#include <jlm/util/strfmt.hpp>
+#include <jlm/util/time.hpp>
 
 #include <jive/rvsdg/gamma.h>
 #include <jive/rvsdg/substitution.h>
 #include <jive/rvsdg/theta.h>
 #include <jive/rvsdg/traverser.h>
 
-#ifdef IVTTIME
-#include <chrono>
-#include <iostream>
-#endif
-
 namespace jlm {
+
+class ivtstat final : public stat {
+public:
+	virtual
+	~ivtstat()
+	{}
+
+	ivtstat()
+	: nnodes_before_(0), nnodes_after_(0)
+	, ninputs_before_(0), ninputs_after_(0)
+	{}
+
+	void
+	start(const jive::graph & graph) noexcept
+	{
+		nnodes_before_ = jive::nnodes(graph.root());
+		ninputs_before_ = jive::ninputs(graph.root());
+		timer_.start();
+	}
+
+	void
+	end(const jive::graph & graph) noexcept
+	{
+		nnodes_after_ = jive::nnodes(graph.root());
+		ninputs_after_ = jive::ninputs(graph.root());
+		timer_.stop();
+	}
+
+	virtual std::string
+	to_str() const override
+	{
+		return strfmt("IVT ",
+			nnodes_before_, " ", nnodes_after_, " ",
+			ninputs_before_, " ", ninputs_after_, " ",
+			timer_.ns()
+		);
+	}
+
+private:
+	size_t nnodes_before_, nnodes_after_;
+	size_t ninputs_before_, ninputs_after_;
+	jlm::timer timer_;
+};
 
 static jive::gamma_node *
 is_applicable(const jive::theta_node * theta)
@@ -254,22 +295,14 @@ invert(jive::region * region)
 void
 invert(rvsdg_module & rm, const stats_descriptor & sd)
 {
-	auto root = rm.graph()->root();
+	ivtstat stat;
 
-	#ifdef IVTTIME
-		auto nnodes = jive::nnodes(root);
-		auto start = std::chrono::high_resolution_clock::now();
-	#endif
+	stat.start(*rm.graph());
+	invert(rm.graph()->root());
+	stat.end(*rm.graph());
 
-	invert(root);
-
-	#ifdef IVTTIME
-		auto end = std::chrono::high_resolution_clock::now();
-		std::cout << "IVTTIME: "
-		          << nnodes
-		          << " " << std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count()
-		          << "\n";
-	#endif
+	if (sd.print_ivt_stat)
+		sd.print_stat(stat);
 }
 
 }
