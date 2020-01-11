@@ -17,8 +17,49 @@
 #include <jlm/common.hpp>
 #include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/opt/unroll.hpp>
+#include <jlm/util/stats.hpp>
+#include <jlm/util/strfmt.hpp>
+#include <jlm/util/time.hpp>
 
 namespace jlm {
+
+class unrollstat final : public stat {
+public:
+	virtual
+	~unrollstat()
+	{}
+
+	unrollstat()
+	: nnodes_before_(0), nnodes_after_(0)
+	{}
+
+	void
+	start(const jive::graph & graph) noexcept
+	{
+		nnodes_before_ = jive::nnodes(graph.root());
+		timer_.start();
+	}
+
+	void
+	end(const jive::graph & graph) noexcept
+	{
+		nnodes_after_ = jive::nnodes(graph.root());
+		timer_.stop();
+	}
+
+	virtual std::string
+	to_str() const override
+	{
+		return strfmt("UNROLL ",
+			nnodes_before_, " ", nnodes_after_, " ",
+			timer_.ns()
+		);
+	}
+
+private:
+	size_t nnodes_before_, nnodes_after_;
+	jlm::timer timer_;
+};
 
 /* helper functions */
 
@@ -455,13 +496,26 @@ unroll(jive::region * region, size_t factor)
 	}
 }
 
-void
-unroll(rvsdg_module & rm, const stats_descriptor & sd, size_t factor)
+static void
+unroll(jive::graph & graph, size_t factor)
 {
 	if (factor < 2)
 		return;
 
-	unroll(rm.graph()->root(), factor);
+	unroll(graph.root(), factor);
+}
+
+void
+unroll(rvsdg_module & rm, const stats_descriptor & sd, size_t factor)
+{
+	unrollstat stat;
+
+	stat.start(*rm.graph());
+	unroll(*rm.graph(), factor);
+	stat.end(*rm.graph());
+
+	if (sd.print_unroll_stat)
+		sd.print_stat(stat);
 }
 
 }

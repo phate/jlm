@@ -113,6 +113,11 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 	, cl::ValueDisallowed
 	, cl::desc("Write reduction statistics to file."));
 
+	cl::opt<bool> print_unroll_stat(
+	  "print-unroll-stat"
+	, cl::ValueDisallowed
+	, cl::desc("Write loop unrolling statistics to file."));
+
 	cl::opt<outputformat> format(
 	  cl::values(
 		  clEnumValN(outputformat::llvm, "llvm", "Output LLVM IR [default]")
@@ -157,6 +162,7 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 	options.sd.print_pull_stat = print_pull_stat;
 	options.sd.print_push_stat = print_push_stat;
 	options.sd.print_reduction_stat = print_reduction_stat;
+	options.sd.print_unroll_stat = print_unroll_stat;
 	options.sd.print_annotation_time = print_annotation_time;
 	options.sd.print_aggregation_time = print_aggregation_time;
 	options.sd.print_rvsdg_construction = print_rvsdg_construction;
