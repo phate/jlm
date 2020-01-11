@@ -81,6 +81,7 @@ public:
 	, print_iln_stat(false)
 	, print_inv_stat(false)
 	, print_ivt_stat(false)
+	, print_pull_stat(false)
 	, print_annotation_time(false)
 	, print_aggregation_time(false)
 	, print_rvsdg_construction(false)
@@ -123,6 +124,7 @@ public:
 	bool print_iln_stat;
 	bool print_inv_stat;
 	bool print_ivt_stat;
+	bool print_pull_stat;
 	bool print_annotation_time;
 	bool print_aggregation_time;
 	bool print_rvsdg_construction;

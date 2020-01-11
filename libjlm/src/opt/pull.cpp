@@ -9,8 +9,49 @@
 #include <jlm/common.hpp>
 #include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/opt/pull.hpp>
+#include <jlm/util/stats.hpp>
+#include <jlm/util/strfmt.hpp>
+#include <jlm/util/time.hpp>
 
 namespace jlm {
+
+class pullstat final : public stat {
+public:
+	virtual
+	~pullstat()
+	{}
+
+	pullstat()
+	: ninputs_before_(0), ninputs_after_(0)
+	{}
+
+	void
+	start(const jive::graph & graph) noexcept
+	{
+		ninputs_before_ = jive::ninputs(graph.root());
+		timer_.start();
+	}
+
+	void
+	end(const jive::graph & graph) noexcept
+	{
+		ninputs_after_ = jive::ninputs(graph.root());
+		timer_.stop();
+	}
+
+	virtual std::string
+	to_str() const override
+	{
+		return strfmt("PULL ",
+			ninputs_before_, " ", ninputs_after_, " ",
+			timer_.ns()
+		);
+	}
+
+private:
+	size_t ninputs_before_, ninputs_after_;
+	jlm::timer timer_;
+};
 
 static bool
 empty(const jive::gamma_node * gamma)
@@ -232,7 +273,14 @@ pull(jive::region * region)
 void
 pull(rvsdg_module & rm, const stats_descriptor & sd)
 {
+	pullstat stat;
+
+	stat.start(*rm.graph());
 	pull(rm.graph()->root());
+	stat.end(*rm.graph());
+
+	if (sd.print_pull_stat)
+		sd.print_stat(stat);
 }
 
 }
