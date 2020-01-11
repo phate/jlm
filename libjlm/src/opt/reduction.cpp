@@ -10,8 +10,53 @@
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/opt/reduction.hpp>
+#include <jlm/util/stats.hpp>
+#include <jlm/util/time.hpp>
 
 namespace jlm {
+
+class redstat final : public stat {
+public:
+	virtual
+	~redstat()
+	{}
+
+	redstat()
+	: nnodes_before_(0), nnodes_after_(0)
+	, ninputs_before_(0), ninputs_after_(0)
+	{}
+
+	void
+	start(const jive::graph & graph) noexcept
+	{
+		nnodes_before_ = jive::nnodes(graph.root());
+		ninputs_before_ = jive::ninputs(graph.root());
+		timer_.start();
+	}
+
+	void
+	end(const jive::graph & graph) noexcept
+	{
+		nnodes_after_ = jive::nnodes(graph.root());
+		ninputs_after_ = jive::ninputs(graph.root());
+		timer_.stop();
+	}
+
+	virtual std::string
+	to_str() const override
+	{
+		return strfmt("RED ",
+			nnodes_before_, " ", nnodes_after_, " ",
+			ninputs_before_, " ", ninputs_after_, " ",
+			timer_.ns()
+		);
+	}
+
+private:
+	size_t nnodes_before_, nnodes_after_;
+	size_t ninputs_before_, ninputs_after_;
+	jlm::timer timer_;
+};
 
 static void
 enable_alloca_reductions(jive::graph & graph)
@@ -88,6 +133,9 @@ reduce(rvsdg_module & rm, const stats_descriptor & sd)
 {
 	auto & graph = *rm.graph();
 
+	redstat stat;
+	stat.start(graph);
+
 	enable_alloca_reductions(graph);
 	enable_mux_reductions(graph);
 	enable_store_reductions(graph);
@@ -97,6 +145,10 @@ reduce(rvsdg_module & rm, const stats_descriptor & sd)
 	enable_binary_reductions(graph);
 
 	graph.normalize();
+	stat.end(graph);
+
+	if (sd.print_reduction_stat)
+		sd.print_stat(stat);
 }
 
 }
