@@ -7,6 +7,9 @@
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/opt/push.hpp>
+#include <jlm/util/stats.hpp>
+#include <jlm/util/strfmt.hpp>
+#include <jlm/util/time.hpp>
 
 #include <jive/rvsdg/gamma.h>
 #include <jive/rvsdg/theta.h>
@@ -14,12 +17,45 @@
 
 #include <deque>
 
-#ifdef PSHTIME
-#include <chrono>
-#include <iostream>
-#endif
-
 namespace jlm {
+
+class pushstat final : public stat {
+public:
+	virtual
+	~pushstat()
+	{}
+
+	pushstat()
+	: ninputs_before_(0), ninputs_after_(0)
+	{}
+
+	void
+	start(const jive::graph & graph) noexcept
+	{
+		ninputs_before_ = jive::ninputs(graph.root());
+		timer_.start();
+	}
+
+	void
+	end(const jive::graph & graph) noexcept
+	{
+		ninputs_after_ = jive::ninputs(graph.root());
+		timer_.stop();
+	}
+
+	virtual std::string
+	to_str() const override
+	{
+		return strfmt("PUSH ",
+			ninputs_before_, " ", ninputs_after_, " ",
+			timer_.ns()
+		);
+	}
+
+private:
+	size_t ninputs_before_, ninputs_after_;
+	jlm::timer timer_;
+};
 
 class worklist {
 public:
@@ -365,22 +401,14 @@ push(jive::region * region)
 void
 push(rvsdg_module & rm, const stats_descriptor & sd)
 {
-	auto root = rm.graph()->root();
+	pushstat stat;
 
-	#ifdef PSHTIME
-		auto nnodes = jive::nnodes(root);
-		auto start = std::chrono::high_resolution_clock::now();
-	#endif
+	stat.start(*rm.graph());
+	push(rm.graph()->root());
+	stat.end(*rm.graph());
 
-	push(root);
-
-	#ifdef PSHTIME
-		auto end = std::chrono::high_resolution_clock::now();
-		std::cout << "PSHTIME: "
-		          << nnodes
-		          << " " << std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count()
-		          << "\n";
-	#endif
+	if (sd.print_push_stat)
+		sd.print_stat(stat);
 }
 
 }
