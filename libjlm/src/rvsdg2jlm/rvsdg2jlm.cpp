@@ -24,6 +24,50 @@
 #include <deque>
 
 namespace jlm {
+
+class rvsdg_destruction_stat final : public stat {
+public:
+	virtual
+	~rvsdg_destruction_stat()
+	{}
+
+	rvsdg_destruction_stat(const jlm::filepath & filename)
+	: ntacs_(0)
+	, nnodes_(0)
+	, filename_(filename)
+	{}
+
+	void
+	start(const jive::graph & graph) noexcept
+	{
+		nnodes_ = jive::nnodes(graph.root());
+		timer_.start();
+	}
+
+	void
+	end(const ipgraph_module & im)
+	{
+		ntacs_ = jlm::ntacs(im);
+		timer_.stop();
+	}
+
+	virtual std::string
+	to_str() const override
+	{
+		return strfmt("RVSDGDESTRUCTION ",
+			filename_.to_str(), " ",
+			nnodes_, " ", ntacs_, " ",
+			timer_.ns()
+		);
+	}
+
+private:
+	size_t ntacs_;
+	size_t nnodes_;
+	jlm::timer timer_;
+	jlm::filepath filename_;
+};
+
 namespace rvsdg2jlm {
 
 static const jive::fcttype *
@@ -532,32 +576,17 @@ convert_rvsdg(const rvsdg_module & rm)
 	return im;
 }
 
-static rvsdg_destruction_stat
-create_stat(
-	const rvsdg_module & rm,
-	const ipgraph_module & im,
-	const jlm::timer & timer)
-{
-	auto nnodes = jive::nnodes(rm.graph()->root());
-	auto ntacs = jlm::ntacs(im);
-	auto time = timer.ns();
-	auto & filename = im.source_filename();
-	return rvsdg_destruction_stat(nnodes, ntacs, time, filename);
-}
-
 std::unique_ptr<ipgraph_module>
 rvsdg2jlm(const rvsdg_module & rm, const stats_descriptor & sd)
 {
-	jlm::timer timer;
-	if (sd.print_rvsdg_destruction)
-		timer.start();
+	rvsdg_destruction_stat stat(rm.source_filename());
 
+	stat.start(*rm.graph());
 	auto im = convert_rvsdg(rm);
+	stat.end(*im);
 
-	if (sd.print_rvsdg_destruction) {
-		timer.stop();
-		sd.print_stat(create_stat(rm, *im, timer));
-	}
+	if (sd.print_rvsdg_destruction)
+		sd.print_stat(stat);
 
 	return im;
 }
