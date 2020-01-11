@@ -79,6 +79,7 @@ public:
 	, print_cne_stat(false)
 	, print_dne_stat(false)
 	, print_iln_stat(false)
+	, print_inv_stat(false)
 	, print_annotation_time(false)
 	, print_aggregation_time(false)
 	, print_rvsdg_construction(false)
@@ -119,6 +120,7 @@ public:
 	bool print_cne_stat;
 	bool print_dne_stat;
 	bool print_iln_stat;
+	bool print_inv_stat;
 	bool print_annotation_time;
 	bool print_aggregation_time;
 	bool print_rvsdg_construction;

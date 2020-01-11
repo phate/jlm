@@ -7,17 +7,58 @@
 #include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/ir/types.hpp>
 #include <jlm/opt/invariance.hpp>
+#include <jlm/util/stats.hpp>
+#include <jlm/util/strfmt.hpp>
+#include <jlm/util/time.hpp>
 
 #include <jive/rvsdg/gamma.h>
 #include <jive/rvsdg/theta.h>
 #include <jive/rvsdg/traverser.h>
 
-#ifdef INVTIME
-#include <chrono>
-#include <iostream>
-#endif
-
 namespace jlm {
+
+class invstat final : public stat {
+public:
+	virtual
+	~invstat()
+	{}
+
+	invstat()
+	: nnodes_before_(0), nnodes_after_(0)
+	, ninputs_before_(0), ninputs_after_(0)
+	{}
+
+	void
+	start(const jive::graph & graph) noexcept
+	{
+		nnodes_before_ = jive::nnodes(graph.root());
+		ninputs_before_ = jive::ninputs(graph.root());
+		timer_.start();
+	}
+
+	void
+	end(const jive::graph & graph) noexcept
+	{
+		nnodes_after_ = jive::nnodes(graph.root());
+		ninputs_after_ = jive::ninputs(graph.root());
+		timer_.stop();
+	}
+
+	virtual std::string
+	to_str() const override
+	{
+		return strfmt("INV ",
+			nnodes_before_, " ", nnodes_after_, " ",
+			ninputs_before_, " ", ninputs_after_, " ",
+			timer_.ns()
+		);
+	}
+
+private:
+	size_t nnodes_before_, nnodes_after_;
+	size_t ninputs_before_, ninputs_after_;
+	jlm::timer timer_;
+};
 
 static bool
 is_invariant(const jive::gamma_output * output)
@@ -97,22 +138,14 @@ invariance(jive::region * region)
 void
 invariance(rvsdg_module & rm, const stats_descriptor & sd)
 {
-	auto root = rm.graph()->root();
+	invstat stat;
 
-	#ifdef INVTIME
-		auto nnodes = jive::nnodes(root);
-		auto start = std::chrono::high_resolution_clock::now();
-	#endif
+	stat.start(*rm.graph());
+	invariance(rm.graph()->root());
+	stat.end(*rm.graph());
 
-	invariance(root);
-
-	#ifdef INVTIME
-		auto end = std::chrono::high_resolution_clock::now();
-		std::cout << "INVTIME: "
-		          << nnodes
-		          << " " << std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count()
-		          << "\n";
-	#endif
+	if (sd.print_inv_stat)
+		sd.print_stat(stat);
 }
 
 }

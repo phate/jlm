@@ -88,6 +88,11 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 	, cl::ValueDisallowed
 	, cl::desc("Write function inlining statistics to file."));
 
+	cl::opt<bool> print_inv_stat(
+	  "print-inv-stat"
+	, cl::ValueDisallowed
+	, cl::desc("Write invariant value reduction statistics to file."));
+
 	cl::opt<outputformat> format(
 	  cl::values(
 		  clEnumValN(outputformat::llvm, "llvm", "Output LLVM IR [default]")
@@ -127,6 +132,7 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 	options.sd.print_cne_stat = print_cne_stat;
 	options.sd.print_dne_stat = print_dne_stat;
 	options.sd.print_iln_stat = print_iln_stat;
+	options.sd.print_inv_stat = print_inv_stat;
 	options.sd.print_annotation_time = print_annotation_time;
 	options.sd.print_aggregation_time = print_aggregation_time;
 	options.sd.print_rvsdg_construction = print_rvsdg_construction;
