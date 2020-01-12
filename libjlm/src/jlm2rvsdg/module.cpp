@@ -135,6 +135,44 @@ private:
 	std::string filename_;
 };
 
+class annotation_stat final : public stat {
+public:
+	virtual
+	~annotation_stat()
+	{}
+
+	annotation_stat(const std::string & filename, const std::string & fctname)
+	: ntacs_(0)
+	, fctname_(fctname)
+	, filename_(filename)
+	{}
+
+	void
+	start(const aggnode & node) noexcept
+	{
+		ntacs_ = jlm::ntacs(node);
+		timer_.start();
+	}
+
+	void
+	end() noexcept
+	{
+		timer_.stop();
+	}
+
+	virtual std::string
+	to_str() const override
+	{
+		return strfmt("ANNOTATIONTIME ", filename_, " ", fctname_, " ", ntacs_, " ", timer_.ns());
+	}
+
+private:
+	size_t ntacs_;
+	jlm::timer timer_;
+	std::string fctname_;
+	std::string filename_;
+};
+
 typedef std::unordered_map<const variable*, jive::output*> vmap;
 
 class scoped_vmap final {
@@ -557,20 +595,14 @@ convert_cfg(
 			sd.print_stat(stat);
 	}
 
-	jlm::timer timer;
-	size_t ntacs = 0;
-	if (sd.print_annotation_time) {
-		timer.start();
-		ntacs = jlm::ntacs(*root);
-	}
-
-	auto dm = annotate(*root);
-
-	if (sd.print_annotation_time) {
-		timer.stop();
-		fprintf(sd.file().fd(),
-			"ANNOTATIONTIME %s %s %zu %zu\n",
-			source_filename.c_str(), function.name().c_str(), ntacs, timer.ns());
+	demandmap dm;
+	{
+		annotation_stat stat(source_filename, function.name());
+		stat.start(*root);
+		dm = annotate(*root);
+		stat.end();
+		if (sd.print_annotation_time)
+			sd.print_stat(stat);
 	}
 
 	lambda_builder lb;
