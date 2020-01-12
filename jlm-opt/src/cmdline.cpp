@@ -37,7 +37,7 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 	, cl::desc("Write output to <file>")
 	, cl::value_desc("file"));
 
-	std::string desc("Write stats to <file>. Default is " + options.sd.file().path().to_str() + ".");
+	std::string desc("Write stats to <file>. Default is " + options.sd.filepath().to_str() + ".");
 	cl::opt<std::string> sfile(
 	  "s"
 	, cl::desc(desc)

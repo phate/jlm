@@ -46,10 +46,11 @@ public:
 		file_.open("a");
 	}
 
-	const jlm::file &
-	file() const noexcept
+
+	const jlm::filepath &
+	filepath() const noexcept
 	{
-		return file_;
+		return file_.path();
 	}
 
 	void
@@ -62,7 +63,7 @@ public:
 	void
 	print_stat(const stat & s) const noexcept
 	{
-		fprintf(file().fd(), "%s\n", s.to_str().c_str());
+		fprintf(file_.fd(), "%s\n", s.to_str().c_str());
 	}
 
 	bool print_cfr_time;
