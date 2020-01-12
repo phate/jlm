@@ -59,6 +59,44 @@ create_undef_value(jive::region * region, const jive::type & type)
 
 namespace jlm {
 
+class cfrstat final : public stat {
+public:
+	virtual
+	~cfrstat()
+	{}
+
+	cfrstat(const std::string & filename, const std::string & fctname)
+	: nnodes_(0)
+	, fctname_(fctname)
+	, filename_(filename)
+	{}
+
+	void
+	start(const jlm::cfg & cfg) noexcept
+	{
+		nnodes_ = cfg.nnodes();
+		timer_.start();
+	}
+
+	void
+	end() noexcept
+	{
+		timer_.stop();
+	}
+
+	virtual std::string
+	to_str() const override
+	{
+		return strfmt("CFRTIME ", filename_, " ", fctname_, " ", nnodes_, " ", timer_.ns());
+	}
+
+private:
+	size_t nnodes_;
+	jlm::timer timer_;
+	std::string fctname_;
+	std::string filename_;
+};
+
 typedef std::unordered_map<const variable*, jive::output*> vmap;
 
 class scoped_vmap final {
@@ -462,23 +500,17 @@ convert_cfg(
 	straighten(*cfg);
 	purge(*cfg);
 
+	{
+		cfrstat stat(source_filename, function.name());
+		stat.start(*cfg);
+		restructure(cfg);
+		stat.end();
+		if (sd.print_cfr_time)
+			sd.print_stat(stat);
+	}
+
 	jlm::timer timer;
 	size_t nnodes = 0;
-	if (sd.print_cfr_time) {
-		timer.start();
-		nnodes = cfg->nnodes();
-	}
-
-	restructure(cfg);
-
-	if (sd.print_cfr_time) {
-		timer.stop();
-		fprintf(sd.file().fd(),
-			"CFRTIME %s %s %zu %zu\n",
-			source_filename.c_str(), function.name().c_str(), nnodes, timer.ns());
-	}
-
-
 	if (sd.print_aggregation_time) {
 		timer.start();
 		nnodes = cfg->nnodes();
