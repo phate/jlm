@@ -173,6 +173,46 @@ private:
 	std::string filename_;
 };
 
+class rvsdg_construction_stat final : public stat {
+public:
+	virtual
+	~rvsdg_construction_stat()
+	{}
+
+	rvsdg_construction_stat(const jlm::filepath & filename)
+	: ntacs_(0)
+	, nnodes_(0)
+	, filename_(filename)
+	{}
+
+	void
+	start(const ipgraph_module & im) noexcept
+	{
+		ntacs_ = jlm::ntacs(im);
+		timer_.start();
+	}
+
+	void
+	end(const jive::graph & graph) noexcept
+	{
+		timer_.stop();
+		nnodes_ = jive::nnodes(graph.root());
+	}
+
+	virtual std::string
+	to_str() const override
+	{
+		return strfmt("RVSDGCONSTRUCTION ", filename_.to_str(), " ",
+			ntacs_, " ", nnodes_, " ", timer_.ns());
+	}
+
+private:
+	size_t ntacs_;
+	size_t nnodes_;
+	jlm::timer timer_;
+	jlm::filepath filename_;
+};
+
 typedef std::unordered_map<const variable*, jive::output*> vmap;
 
 class scoped_vmap final {
@@ -783,21 +823,14 @@ construct_rvsdg(const ipgraph_module & im, const stats_descriptor & sd)
 {
 	source_filename = im.source_filename().to_str();
 
-	size_t ntacs = 0;
-	jlm::timer timer;
-	if (sd.print_rvsdg_construction) {
-		ntacs = jlm::ntacs(im);
-		timer.start();
-	}
+	rvsdg_construction_stat stat(im.source_filename());
 
+	stat.start(im);
 	auto rm = convert_module(im, sd);
+	stat.end(*rm->graph());
 
-	if (sd.print_rvsdg_construction) {
-		timer.stop();
-		size_t nnodes = jive::nnodes(rm->graph()->root());
-		fprintf(sd.file().fd(),
-			"RVSDGCONSTRUCTION %s %zu %zu %zu\n", source_filename.c_str(), ntacs, nnodes, timer.ns());
-	}
+	if (sd.print_rvsdg_construction)
+		sd.print_stat(stat);
 
 	return rm;
 }
