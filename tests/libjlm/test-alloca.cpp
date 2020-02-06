@@ -15,6 +15,8 @@
 static inline void
 test_alloca_alloca_reduction()
 {
+	using namespace jlm;
+
 	jive::memtype mt;
 	jive::bittype bt(32);
 
@@ -27,8 +29,8 @@ test_alloca_alloca_reduction()
 	auto size = graph.add_import({bt, "size"});
 	auto state = graph.add_import({mt, "state"});
 
-	auto outputs = jlm::create_alloca(bt, size, state, 4);
-	outputs = jlm::create_alloca(bt, size, outputs[1], 4);
+	auto outputs = alloca_op::create(bt, size, state, 4);
+	outputs = alloca_op::create(bt, size, outputs[1], 4);
 
 	graph.add_export(outputs[0], {outputs[0]->type(), "address"});
 	auto exs = graph.add_export(outputs[1], {outputs[1]->type(), "state"});
@@ -68,12 +70,12 @@ test_alloca_mux_reduction()
 	auto size = graph.add_import({bt, "size"});
 	auto state = graph.add_import({mt, "state"});
 
-	auto alloc1 = jlm::create_alloca(bt, size, state, 4);
-	auto alloc2 = jlm::create_alloca(bt, size, state, 4);
+	auto alloc1 = alloca_op::create(bt, size, state, 4);
+	auto alloc2 = alloca_op::create(bt, size, state, 4);
 
 	auto s = jive::create_state_merge(mt, {alloc1[1], alloc2[1]});
 
-	auto alloc3 = jlm::create_alloca(bt, size, s, 4);
+	auto alloc3 = alloca_op::create(bt, size, s, 4);
 
 	graph.add_export(alloc3[0], {alloc3[0]->type(), "address"});
 	auto exs = graph.add_export(alloc3[1], {alloc3[1]->type(), "state"});

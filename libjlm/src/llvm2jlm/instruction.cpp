@@ -728,7 +728,7 @@ convert_alloca_instruction(llvm::Instruction * instruction, tacsvector_t & tacs,
 
 	auto size = convert_value(i->getArraySize(), tacs, ctx);
 	auto vtype = convert_type(i->getAllocatedType(), ctx);
-	tacs.push_back(create_alloca_tac(*vtype, size, i->getAlignment(), ctx.memory_state(), result));
+	tacs.push_back(alloca_op::create(*vtype, size, i->getAlignment(), ctx.memory_state(), result));
 
 	return tacs.back()->result(0);
 }

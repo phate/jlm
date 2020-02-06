@@ -69,8 +69,8 @@ test_load_alloca_reduction()
 	auto size = graph.add_import({bt, "v"});
 	auto state = graph.add_import({mt, "s"});
 
-	auto alloca1 = jlm::create_alloca(bt, size, state, 4);
-	auto alloca2 = jlm::create_alloca(bt, size, state, 4);
+	auto alloca1 = alloca_op::create(bt, size, state, 4);
+	auto alloca2 = alloca_op::create(bt, size, state, 4);
 	auto mux = jive::create_state_mux(mt, {alloca1[1]}, 1);
 	auto value = jlm::create_load(alloca1[0], {alloca1[1], alloca2[1], mux[0]}, 4)[0];
 
@@ -142,8 +142,8 @@ test_load_store_state_reduction()
 	auto size = graph.add_import({bt, "v"});
 	auto state = graph.add_import({mt, "s"});
 
-	auto alloca1 = jlm::create_alloca(bt, size, state, 4);
-	auto alloca2 = jlm::create_alloca(bt, size, state, 4);
+	auto alloca1 = alloca_op::create(bt, size, state, 4);
+	auto alloca2 = alloca_op::create(bt, size, state, 4);
 	auto store1 = store_op::create(alloca1[0], size, {alloca1[1]}, 4);
 	auto store2 = store_op::create(alloca2[0], size, {alloca2[1]}, 4);
 
@@ -187,7 +187,7 @@ test_load_store_alloca_reduction()
 	auto size = graph.add_import({bt, "v"});
 	auto state = graph.add_import({mt, "s"});
 
-	auto alloca = jlm::create_alloca(bt, size, state, 4);
+	auto alloca = alloca_op::create(bt, size, state, 4);
 	auto store = store_op::create(alloca[0], size, {alloca[1]}, 4);
 	auto load = jlm::create_load(alloca[0], store, 4);
 
