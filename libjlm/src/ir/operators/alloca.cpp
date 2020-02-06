@@ -40,7 +40,7 @@ static bool
 is_alloca_alloca_reducible(const std::vector<jive::output*> & operands)
 {
 	return operands[1]->node()
-	    && is_alloca_op(operands[1]->node()->operation())
+	    && is<alloca_op>(operands[1]->node()->operation())
 	    && operands[1]->nusers() == 1;
 }
 
@@ -56,7 +56,7 @@ is_alloca_mux_reducible(const std::vector<jive::output*> & operands)
 	std::vector<jive::node*> allocas;
 	for (size_t n = 0; n < muxnode->ninputs(); n++) {
 		auto node = muxnode->input(n)->origin()->node();
-		if (!node || !is_alloca_op(node->operation()))
+		if (!node || !is<alloca_op>(node->operation()))
 			return false;
 		allocas.push_back(node);
 	}
@@ -76,7 +76,7 @@ perform_alloca_alloca_reduction(
 	const jlm::alloca_op & op,
 	const std::vector<jive::output*> & operands)
 {
-	JLM_DEBUG_ASSERT(is_alloca_op(operands[1]->node()->operation()));
+	JLM_DEBUG_ASSERT(is<alloca_op>(operands[1]->node()->operation()));
 	auto region = operands[0]->region();
 	auto origin = operands[1]->node()->input(1)->origin();
 
@@ -121,7 +121,7 @@ alloca_normal_form::alloca_normal_form(
 bool
 alloca_normal_form::normalize_node(jive::node * node) const
 {
-	JLM_DEBUG_ASSERT(is_alloca_op(node->operation()));
+	JLM_DEBUG_ASSERT(is<alloca_op>(node->operation()));
 	auto op = static_cast<const jlm::alloca_op*>(&node->operation());
 	auto operands = jive::operands(node);
 
@@ -149,7 +149,7 @@ alloca_normal_form::normalized_create(
 	const jive::simple_op & op,
 	const std::vector<jive::output*> & operands) const
 {
-	JLM_DEBUG_ASSERT(is_alloca_op(op));
+	JLM_DEBUG_ASSERT(is<alloca_op>(op));
 	auto aop = static_cast<const jlm::alloca_op*>(&op);
 
 	if (!get_mutable())

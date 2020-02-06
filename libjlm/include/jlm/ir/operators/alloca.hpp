@@ -114,12 +114,6 @@ private:
 	size_t alignment_;
 };
 
-static inline bool
-is_alloca_op(const jive::operation & op) noexcept
-{
-	return dynamic_cast<const jlm::alloca_op*>(&op) != nullptr;
-}
-
 static inline std::unique_ptr<jlm::tac>
 create_alloca_tac(
 	const jive::type & vtype,

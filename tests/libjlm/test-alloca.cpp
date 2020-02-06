@@ -54,6 +54,8 @@ test_alloca_alloca_reduction()
 static inline void
 test_alloca_mux_reduction()
 {
+	using namespace jlm;
+
 	jive::memtype mt;
 	jive::bittype bt(32);
 
@@ -89,7 +91,7 @@ test_alloca_mux_reduction()
 	assert(dynamic_cast<const jive::mux_op*>(&mux->operation()));
 	auto n1 = mux->input(0)->origin()->node();
 	auto n2 = mux->input(1)->origin()->node();
-	assert(jlm::is_alloca_op(n1->operation()) || jlm::is_alloca_op(n2->operation()));
+	assert(is<alloca_op>(n1->operation()) || is<alloca_op>(n2->operation()));
 	assert(dynamic_cast<const jive::mux_op*>(&n1->operation())
 		|| dynamic_cast<const jive::mux_op*>(&n2->operation()));
 }
