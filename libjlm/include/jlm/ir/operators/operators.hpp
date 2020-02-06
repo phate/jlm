@@ -6,6 +6,7 @@
 #ifndef JLM_IR_OPERATORS_OPERATORS_HPP
 #define JLM_IR_OPERATORS_OPERATORS_HPP
 
+#include <jive/arch/addresstype.h>
 #include <jive/types/bitstring/type.h>
 #include <jive/types/function.h>
 #include <jive/types/record.h>
@@ -2121,6 +2122,77 @@ private:
 	create_portvector(size_t size)
 	{
 		return std::vector<jive::port>(size, loopstatetype());
+	}
+};
+
+/* memory state mux operator */
+
+class memstatemux_op final : public jive::simple_op {
+public:
+	virtual
+	~memstatemux_op() noexcept;
+
+	memstatemux_op(size_t noperands, size_t nresults)
+	: simple_op(create_portvector(noperands), create_portvector(nresults))
+	{}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+	static std::vector<jive::output*>
+	create(
+		const std::vector<jive::output*> & operands,
+		size_t nresults)
+	{
+		if (operands.empty())
+			throw jlm::error("Insufficient number of operands.");
+
+		auto region = operands.front()->region();
+		memstatemux_op op(operands.size(), nresults);
+		return jive::simple_node::create_normalized(region, op, operands);
+	}
+
+	static std::vector<jive::output*>
+	create_split(jive::output * operand, size_t nresults)
+	{
+		memstatemux_op op(1, nresults);
+		return jive::simple_node::create_normalized(operand->region(), op, {operand});
+	}
+
+	static jive::output *
+	create_merge(const std::vector<jive::output*> & operands)
+	{
+		if (operands.empty())
+			throw jlm::error("Insufficient number of operands.");
+
+		memstatemux_op op(operands.size(), 1);
+		auto region = operands.front()->region();
+		return jive::simple_node::create_normalized(region, op, operands)[0];
+	}
+
+	static std::unique_ptr<jlm::tac>
+	create_merge(
+		const std::vector<const variable*> & operands,
+		const variable * result)
+	{
+		if (operands.empty())
+			throw jlm::error("Insufficient number of operands.");
+
+		memstatemux_op op(operands.size(), 1);
+		return tac::create(op, operands, {result});
+	}
+
+private:
+	static std::vector<jive::port>
+	create_portvector(size_t size)
+	{
+		return std::vector<jive::port>(size, jive::memtype::instance());
 	}
 };
 
