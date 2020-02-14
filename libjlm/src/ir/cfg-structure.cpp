@@ -375,22 +375,6 @@ namespace jlm {
 static bool
 has_valid_phis(const basic_block & bb)
 {
-	/*
-		No phi nodes should be in blocks with less
-		than two incoming edges.
-	*/
-	if (bb.ninedges() < 2) {
-		for (const auto & tac : bb.tacs()) {
-			if (is<phi_op>(tac))
-				return false;
-		}
-
-		return true;
-	}
-
-	/*
-		It is a basic block with multiple incoming edges.
-	*/
 	for (auto it = bb.begin(); it != bb.end(); it++) {
 		auto tac = *it;
 		if (!is<phi_op>(tac))
