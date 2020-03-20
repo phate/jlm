@@ -59,16 +59,6 @@ private:
 };
 
 static void
-enable_alloca_reductions(jive::graph & graph)
-{
-	auto nf = graph.node_normal_form(typeid(jlm::alloca_op));
-	auto allocanf = static_cast<jlm::alloca_normal_form*>(nf);
-	allocanf->set_mutable(true);
-	allocanf->set_alloca_alloca_reducible(true);
-	allocanf->set_alloca_mux_reducible(true);
-}
-
-static void
 enable_mux_reductions(jive::graph & graph)
 {
 	auto nf = graph.node_normal_form(typeid(jive::mux_op));
@@ -136,7 +126,6 @@ reduce(rvsdg_module & rm, const stats_descriptor & sd)
 	redstat stat;
 	stat.start(graph);
 
-	enable_alloca_reductions(graph);
 	enable_mux_reductions(graph);
 	enable_store_reductions(graph);
 	enable_load_reductions(graph);

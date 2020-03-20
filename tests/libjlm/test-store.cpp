@@ -114,8 +114,8 @@ test_store_alloca_reduction()
 	auto value = graph.add_import({vt, "value"});
 	auto s = graph.add_import({mt, "s"});
 
-	auto alloca1 = alloca_op::create(vt, size, s, 4);
-	auto alloca2 = alloca_op::create(vt, size, s, 4);
+	auto alloca1 = alloca_op::create(vt, size, 4);
+	auto alloca2 = alloca_op::create(vt, size, 4);
 	auto states1 = store_op::create(alloca1[0], value, {alloca1[1], alloca2[1], s}, 4);
 	auto states2 = store_op::create(alloca2[0], value, states1, 4);
 

@@ -724,13 +724,19 @@ convert_alloca_instruction(llvm::Instruction * instruction, tacsvector_t & tacs,
 	JLM_DEBUG_ASSERT(instruction->getOpcode() == llvm::Instruction::Alloca);
 	auto i = static_cast<llvm::AllocaInst*>(instruction);
 
+	auto msvar = ctx.module().create_variable(jive::memtype::instance());
 	auto result = ctx.module().create_variable(*convert_type(i->getType(), ctx));
 
+	auto memstate = ctx.memory_state();
 	auto size = convert_value(i->getArraySize(), tacs, ctx);
 	auto vtype = convert_type(i->getAllocatedType(), ctx);
-	tacs.push_back(alloca_op::create(*vtype, size, i->getAlignment(), ctx.memory_state(), result));
 
-	return tacs.back()->result(0);
+	auto alloca = alloca_op::create(*vtype, size, i->getAlignment(), msvar, result);
+	auto memmerge = memstatemux_op::create_merge({alloca->result(1), memstate}, memstate);
+
+	tacs.push_back(std::move(alloca));
+	tacs.push_back(std::move(memmerge));
+	return result;
 }
 
 static inline const variable *

@@ -17,50 +17,6 @@
 
 namespace jlm {
 
-/* alloca normal form */
-
-class alloca_normal_form final : public jive::simple_normal_form {
-public:
-	virtual
-	~alloca_normal_form() noexcept;
-
-	alloca_normal_form(
-		const std::type_info & opclass,
-		jive::node_normal_form * parent,
-		jive::graph * graph) noexcept;
-
-	virtual bool
-	normalize_node(jive::node * node) const override;
-
-	virtual std::vector<jive::output*>
-	normalized_create(
-		jive::region * region,
-		const jive::simple_op & op,
-		const std::vector<jive::output*> & arguments) const override;
-
-	virtual void
-	set_alloca_mux_reducible(bool enable);
-
-	virtual void
-	set_alloca_alloca_reducible(bool enable);
-
-	inline bool
-	get_alloca_mux_reducible() const noexcept
-	{
-		return enable_alloca_mux_;
-	}
-
-	inline bool
-	get_alloca_alloca_reducible() const noexcept
-	{
-		return enable_alloca_alloca_;
-	}
-
-private:
-	bool enable_alloca_mux_;
-	bool enable_alloca_alloca_;
-};
-
 /* alloca operator */
 
 class alloca_op final : public jive::simple_op {
@@ -73,7 +29,7 @@ public:
 		const jlm::ptrtype & atype,
 		const jive::bittype & btype,
 		size_t alignment)
-	: simple_op({btype, jive::memtype::instance()}, {atype, jive::memtype::instance()})
+	: simple_op({btype}, {atype, jive::memtype::instance()})
 	, alignment_(alignment)
 	{}
 
@@ -104,12 +60,6 @@ public:
 		return alignment_;
 	}
 
-	static jlm::alloca_normal_form *
-	normal_form(jive::graph * graph) noexcept
-	{
-		return static_cast<jlm::alloca_normal_form*>(graph->node_normal_form(typeid(alloca_op)));
-	}
-
 	static std::unique_ptr<jlm::tac>
 	create(
 		const jive::type & vtype,
@@ -125,14 +75,13 @@ public:
 		if (!bt) throw jlm::error("expected bits type.");
 
 		jlm::alloca_op op(jlm::ptrtype(*vt), *bt, alignment);
-		return tac::create(op, {size, state}, {result, state});
+		return tac::create(op, {size}, {result, state});
 	}
 
 	static std::vector<jive::output*>
 	create(
 		const jive::type & type,
 		jive::output * size,
-		jive::output * state,
 		size_t alignment)
 	{
 		auto vt = dynamic_cast<const jive::valuetype*>(&type);
@@ -142,7 +91,7 @@ public:
 		if (!bt) throw jlm::error("expected bits type.");
 
 		jlm::alloca_op op(jlm::ptrtype(*vt), *bt, alignment);
-		return jive::simple_node::create_normalized(size->region(), op, {size, state});
+		return jive::simple_node::create_normalized(size->region(), op, {size});
 	}
 
 private:

@@ -293,7 +293,7 @@ convert_alloca(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<alloca_op>(op) && args.size() == 2);
+	JLM_DEBUG_ASSERT(is<alloca_op>(op));
 	auto & aop = *static_cast<const jlm::alloca_op*>(&op);
 
 	auto t = convert_type(aop.value_type(), ctx);
@@ -566,6 +566,11 @@ convert_mux(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
+	/*
+		FIXME: We would like to specialize the mux operations for
+		the individual types such that this general conversion can
+		be removed.
+	*/
 	JLM_DEBUG_ASSERT(is<jive::mux_op>(op));
 	return nullptr;
 }
@@ -748,6 +753,16 @@ convert(
 	return convert(*static_cast<const OP*>(&op), operands, builder, ctx);
 }
 
+static llvm::Value *
+convert(
+	const memstatemux_op&,
+	const std::vector<const variable*>&,
+	llvm::IRBuilder<>&,
+	context&)
+{
+	return nullptr;
+}
+
 llvm::Value *
 convert_operation(
 	const jive::simple_op & op,
@@ -817,6 +832,8 @@ convert_operation(
 	, {typeid(trunc_op), convert_cast<llvm::Instruction::Trunc>}
 	, {typeid(uitofp_op), convert_cast<llvm::Instruction::UIToFP>}
 	, {typeid(zext_op), convert_cast<llvm::Instruction::ZExt>}
+
+	, {typeid(memstatemux_op), convert<memstatemux_op>}
 	});
 
 	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
