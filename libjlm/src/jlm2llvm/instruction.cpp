@@ -560,22 +560,6 @@ convert_select(
 }
 
 static inline llvm::Value *
-convert_mux(
-	const jive::simple_op & op,
-	const std::vector<const variable*> & args,
-	llvm::IRBuilder<> & builder,
-	context & ctx)
-{
-	/*
-		FIXME: We would like to specialize the mux operations for
-		the individual types such that this general conversion can
-		be removed.
-	*/
-	JLM_DEBUG_ASSERT(is<jive::mux_op>(op));
-	return nullptr;
-}
-
-static inline llvm::Value *
 convert_ctl2bits(
 	const jive::simple_op & op,
 	const std::vector<const variable*> & args,
@@ -805,7 +789,6 @@ convert_operation(
 	, {std::type_index(typeid(jlm::struct_constant_op)), convert_struct_constant}
 	, {std::type_index(typeid(jlm::ptr_constant_null_op)), convert_ptr_constant_null}
 	, {std::type_index(typeid(jlm::select_op)), convert_select}
-	, {std::type_index(typeid(jive::mux_op)), convert_mux}
 	, {typeid(jlm::constant_array_op), convert_constant_array}
 	, {typeid(constant_aggregate_zero_op), convert_constant_aggregate_zero}
 	, {typeid(ctl2bits_op), convert_ctl2bits}

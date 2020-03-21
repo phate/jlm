@@ -7,6 +7,7 @@
 #include <jive/rvsdg/statemux.h>
 
 #include <jlm/ir/operators/alloca.hpp>
+#include <jlm/ir/operators/operators.hpp>
 #include <jlm/ir/operators/store.hpp>
 
 namespace jlm {
@@ -47,7 +48,7 @@ is_store_mux_reducible(const std::vector<jive::output*> & operands)
 	JLM_DEBUG_ASSERT(operands.size() > 2);
 
 	auto muxnode = operands[2]->node();
-	if (!muxnode || !is_mux_op(muxnode->operation()))
+	if (!is<memstatemux_op>(muxnode))
 		return false;
 
 	for (size_t n = 2; n < operands.size(); n++) {
@@ -123,7 +124,7 @@ perform_store_mux_reduction(
 	auto muxoperands = jive::operands(muxnode);
 
 	auto states = store_op::create(operands[0], operands[1], muxoperands, op.alignment());
-	return jive::create_state_mux(muxnode->input(0)->type(), states, op.nstates());
+	return memstatemux_op::create(states, op.nstates());
 }
 
 static std::vector<jive::output*>

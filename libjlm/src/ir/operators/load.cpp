@@ -8,6 +8,7 @@
 
 #include <jlm/ir/operators/alloca.hpp>
 #include <jlm/ir/operators/load.hpp>
+#include <jlm/ir/operators/operators.hpp>
 #include <jlm/ir/operators/store.hpp>
 
 namespace jlm {
@@ -54,7 +55,7 @@ is_load_mux_reducible(const std::vector<jive::output*> & operands)
 	JLM_DEBUG_ASSERT(operands.size() >= 2);
 
 	auto muxnode = operands[1]->node();
-	if (!is<jive::mux_op>(muxnode))
+	if (!is<memstatemux_op>(muxnode))
 		return false;
 
 	for (size_t n = 1; n < operands.size(); n++) {
@@ -253,11 +254,9 @@ perform_load_mux_reduction(
 	const std::vector<jive::output*> & operands)
 {
 	auto muxnode = operands[1]->node();
-	auto & statetype = muxnode->output(0)->type();
 
 	auto ld = create_load(operands[0], jive::operands(muxnode), op.alignment());
-	auto mx = jive::create_state_mux(statetype, {std::next(ld.begin()), ld.end()},
-		muxnode->noutputs());
+	auto mx = memstatemux_op::create({std::next(ld.begin()), ld.end()}, muxnode->noutputs());
 
 	std::vector<jive::output*> results(1, ld[0]);
 	results.insert(results.end(), mx.begin(), mx.end());
@@ -414,7 +413,7 @@ perform_load_load_state_reduction(
 		auto & states = mxstates[n];
 		if (!states.empty()) {
 			states.push_back(ld[n+1]);
-			ld[n+1] = jive::create_state_merge(jive::memtype::instance(), states);
+			ld[n+1] = memstatemux_op::create_merge(states);
 		}
 	}
 

@@ -12,11 +12,14 @@
 
 #include <jlm/ir/operators/alloca.hpp>
 #include <jlm/ir/operators/load.hpp>
+#include <jlm/ir/operators/operators.hpp>
 #include <jlm/ir/operators/store.hpp>
 
 static inline void
 test_load_mux_reduction()
 {
+	using namespace jlm;
+
 	jlm::valuetype vt;
 	jlm::ptrtype pt(vt);
 	jive::memtype mt;
@@ -31,7 +34,7 @@ test_load_mux_reduction()
 	auto s2 = graph.add_import({mt, "s2"});
 	auto s3 = graph.add_import({mt, "s3"});
 
-	auto mux = jive::create_state_merge(mt, {s1, s2, s3});
+	auto mux = memstatemux_op::create_merge({s1, s2, s3});
 	auto value = jlm::create_load(a, {mux}, 4)[0];
 
 	auto ex = graph.add_export(value, {value->type(), "v"});
@@ -278,12 +281,12 @@ test_load_load_reduction()
 	assert(is<load_op>(ld));
 
 	auto mx1 = x2->origin()->node();
-	assert(is<jive::mux_op>(mx1) && mx1->ninputs() == 2);
+	assert(is<memstatemux_op>(mx1) && mx1->ninputs() == 2);
 	assert(mx1->input(0)->origin() == ld1[1] || mx1->input(0)->origin() == ld->output(2));
 	assert(mx1->input(1)->origin() == ld1[1] || mx1->input(1)->origin() == ld->output(2));
 
 	auto mx2 = x3->origin()->node();
-	assert(is<jive::mux_op>(mx2) && mx2->ninputs() == 2);
+	assert(is<memstatemux_op>(mx2) && mx2->ninputs() == 2);
 	assert(mx2->input(0)->origin() == ld2[1] || mx2->input(0)->origin() == ld->output(3));
 	assert(mx2->input(1)->origin() == ld2[1] || mx2->input(1)->origin() == ld->output(3));
 }
