@@ -2196,6 +2196,63 @@ private:
 	}
 };
 
+/* malloc operator */
+
+class malloc_op final : public jive::simple_op {
+public:
+	virtual
+	~malloc_op() noexcept;
+
+	malloc_op(const jive::bittype & btype)
+	: simple_op({btype}, {jlm::ptrtype(jive::bittype(8)), jive::memtype::instance()})
+	{}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+	const jive::bittype &
+	size_type() const noexcept
+	{
+		return *static_cast<const jive::bittype*>(&argument(0).type());
+	}
+
+	const jive::fcttype
+	fcttype() const
+	{
+		JLM_DEBUG_ASSERT(narguments() == 1 && nresults() == 2);
+		return jive::fcttype({&argument(0).type()}, {&result(0).type(), &result(1).type()});
+	}
+
+	static std::unique_ptr<jlm::tac>
+	create(
+		const variable * size,
+		jlm::variable * state,
+		jlm::variable * result)
+	{
+		auto bt = dynamic_cast<const jive::bittype*>(&size->type());
+		if (!bt) throw jlm::error("expected bits type.");
+
+		jlm::malloc_op op(*bt);
+		return tac::create(op, {size}, {result, state});
+	}
+
+	static std::vector<jive::output*>
+	create(jive::output * size)
+	{
+		auto bt = dynamic_cast<const jive::bittype*>(&size->type());
+		if (!bt) throw jlm::error("expected bits type.");
+
+		jlm::malloc_op op(*bt);
+		return jive::simple_node::create_normalized(size->region(), op, {size});
+	}
+};
+
 }
 
 #endif

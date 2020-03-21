@@ -1194,4 +1194,30 @@ memstatemux_op::copy() const
 	return std::unique_ptr<jive::operation>(new memstatemux_op(*this));
 }
 
+/* malloc operator */
+
+malloc_op::~malloc_op()
+{}
+
+bool
+malloc_op::operator==(const operation & other) const noexcept
+{
+	/*
+		Avoid CNE for malloc operator
+	*/
+	return this == &other;
+}
+
+std::string
+malloc_op::debug_string() const
+{
+	return "MALLOC";
+}
+
+std::unique_ptr<jive::operation>
+malloc_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new malloc_op(*this));
+}
+
 }
