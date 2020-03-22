@@ -8,6 +8,8 @@
 
 /* FIXME: I would rather like to forward declare demandmap and demand_set */
 #include <jlm/ir/annotation.hpp>
+#include <jlm/ir/ipgraph-module.hpp>
+
 
 #include <string>
 
