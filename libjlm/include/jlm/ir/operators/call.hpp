@@ -57,6 +57,24 @@ public:
 		return jive::simple_node::create_normalized(function->region(), op, operands);
 	}
 
+	static std::unique_ptr<tac>
+	create(
+		const variable * function,
+		const std::vector<const variable*> & arguments,
+		const std::vector<const variable*> & results)
+	{
+		auto at = dynamic_cast<const ptrtype*>(&function->type());
+		if (!at) throw jlm::error("Expected pointer type.");
+
+		auto ft = dynamic_cast<const jive::fcttype*>(&at->pointee_type());
+		if (!ft) throw jlm::error("Expected function type.");
+
+		call_op op(*ft);
+		std::vector<const variable*> operands({function});
+		operands.insert(operands.end(), arguments.begin(), arguments.end());
+		return tac::create(op, operands, results);
+	}
+
 private:
 	static inline std::vector<jive::port>
 	create_srcports(const jive::fcttype & fcttype)
@@ -78,41 +96,6 @@ private:
 		return ports;
 	}
 };
-
-static inline std::unique_ptr<tac>
-create_call_tac(
-	const variable * function,
-	const std::vector<const variable*> & arguments,
-	const std::vector<const variable*> & results)
-{
-	auto at = dynamic_cast<const ptrtype*>(&function->type());
-	if (!at) throw jlm::error("Expected pointer type.");
-
-	auto ft = dynamic_cast<const jive::fcttype*>(&at->pointee_type());
-	if (!ft) throw jlm::error("Expected function type.");
-
-	call_op op(*ft);
-	std::vector<const variable*> operands({function});
-	operands.insert(operands.end(), arguments.begin(), arguments.end());
-	return tac::create(op, operands, results);
-}
-
-static inline std::vector<jive::output*>
-create_call(
-	jive::output * function,
-	const std::vector<jive::output*> & arguments)
-{
-	auto at = dynamic_cast<const ptrtype*>(&function->type());
-	if (!at) throw jlm::error("Expected pointer type.");
-
-	auto ft = dynamic_cast<const jive::fcttype*>(&at->pointee_type());
-	if (!ft) throw jlm::error("Expected function type.");
-
-	call_op op(*ft);
-	std::vector<jive::output*> operands({function});
-	operands.insert(operands.end(), arguments.begin(), arguments.end());
-	return jive::simple_node::create_normalized(function->region(), op, operands);
-}
 
 }
 

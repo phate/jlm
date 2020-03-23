@@ -46,7 +46,7 @@ verify()
 	auto gamma = jive::gamma_node::create(arguments[0], 2);
 	auto ev1 = gamma->add_entryvar(arguments[1]);
 	auto ev2 = gamma->add_entryvar(d);
-	auto apply = jlm::create_call(ev2->argument(0), {ev1->argument(0)})[0];
+	auto apply = call_op::create(ev2->argument(0), {ev1->argument(0)})[0];
 	auto xv1 = gamma->add_exitvar({apply, ev1->argument(1)});
 	auto f2 = lb.end_lambda({xv1});
 

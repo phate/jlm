@@ -633,7 +633,7 @@ convert_call_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 	results.push_back(ctx.loop_state());
 
 	auto fctvar = convert_value(f, tacs, ctx);
-	tacs.push_back(create_call_tac(fctvar, arguments, results));
+	tacs.push_back(call_op::create(fctvar, arguments, results));
 	return tacs.back()->result(0);
 }
 
