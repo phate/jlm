@@ -308,6 +308,12 @@ public:
 		return module_;
 	}
 
+	static std::unique_ptr<cfg>
+	create(ipgraph_module & im)
+	{
+		return std::unique_ptr<cfg>(new cfg(im));
+	}
+
 private:
 	ipgraph_module & module_;
 	std::unique_ptr<exit_node> exit_;
