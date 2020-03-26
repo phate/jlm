@@ -1,0 +1,2 @@
+TESTS += \
+	libjlm/jlm-llvm/test-select-with-state

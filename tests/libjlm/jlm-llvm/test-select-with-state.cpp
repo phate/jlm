@@ -57,4 +57,4 @@ test()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/j2l/test-select-with-state", test)
+JLM_UNIT_TEST_REGISTER("libjlm/jlm-llvm/test-select-with-state", test)
