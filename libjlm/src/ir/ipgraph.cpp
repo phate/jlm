@@ -106,6 +106,15 @@ function_node::linkage() const noexcept
 	return linkage_;
 }
 
+void
+function_node::add_cfg(std::unique_ptr<jlm::cfg> cfg)
+{
+	if (cfg->fcttype() != fcttype())
+		throw jlm::error("CFG does not match the function node's type.");
+
+	cfg_ = std::move(cfg);
+}
+
 /* function variable */
 
 fctvariable::~fctvariable()

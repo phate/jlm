@@ -231,11 +231,12 @@ public:
 	const std::string &
 	name() const noexcept override;
 
-	inline void
-	add_cfg(std::unique_ptr<jlm::cfg> cfg)
-	{
-		cfg_ = std::move(cfg);
-	}
+	/**
+	* \brief Adds \p cfg to the function node. If the function node already has a CFG, then it is
+		replaced with \p cfg.
+	**/
+	void
+	add_cfg(std::unique_ptr<jlm::cfg> cfg);
 
 	static inline function_node *
 	create(
