@@ -49,8 +49,10 @@ convert_function_type(const jive::type & type, context & ctx)
 		ats.push_back(convert_type(t.argument_type(n), ctx));
 	}
 
+	auto rt = Type::getVoidTy(lctx);
 	JLM_DEBUG_ASSERT(t.nresults() == 2 || t.nresults() == 3);
-	auto rt = t.nresults() == 2 ? llvm::Type::getVoidTy(lctx) : convert_type(t.result_type(0), ctx);
+	if (is<jive::valuetype>(t.result_type(0)))
+		rt = convert_type(t.result_type(0), ctx);
 
 	return FunctionType::get(rt, ats, isvararg);
 }
