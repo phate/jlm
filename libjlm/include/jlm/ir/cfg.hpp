@@ -10,6 +10,7 @@
 #include <jlm/ir/cfg-node.hpp>
 #include <jlm/ir/variable.hpp>
 
+#include <jive/types/function.h>
 #include <jive/rvsdg/operation.h>
 
 namespace jive {
@@ -306,6 +307,20 @@ public:
 	module() const noexcept
 	{
 		return module_;
+	}
+
+	jive::fcttype
+	fcttype() const
+	{
+		std::vector<const jive::type*> arguments;
+		for (size_t n = 0; n < entry()->narguments(); n++)
+			arguments.push_back(&entry()->argument(n)->type());
+
+		std::vector<const jive::type*> results;
+		for (size_t n = 0; n < exit()->nresults(); n++)
+			results.push_back(&exit()->result(n)->type());
+
+		return jive::fcttype(arguments, results);
 	}
 
 	static std::unique_ptr<cfg>
