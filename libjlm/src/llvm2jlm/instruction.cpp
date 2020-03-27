@@ -594,45 +594,103 @@ convert_getelementptr_instruction(llvm::Instruction * inst, tacsvector_t & tacs,
 	return tacs.back()->result(0);
 }
 
-static inline const variable *
+static const llvm::FunctionType *
+function_type(const llvm::CallInst * i)
+{
+	auto f = i->getCalledValue();
+	JLM_DEBUG_ASSERT(f->getType()->isPointerTy());
+	JLM_DEBUG_ASSERT(f->getType()->getContainedType(0)->isFunctionTy());
+	return llvm::cast<const llvm::FunctionType>(f->getType()->getContainedType(0));
+}
+
+static const variable *
+convert_malloc_call(const llvm::CallInst * i, tacsvector_t & tacs, context & ctx)
+{
+	auto result = ctx.module().create_variable(*convert_type(i->getType(), ctx));
+	auto state = ctx.module().create_variable(jive::memtype::instance());
+
+	auto memstate = ctx.memory_state();
+	auto size = convert_value(i->getArgOperand(0), tacs, ctx);
+
+	auto malloc = malloc_op::create(size, state, result);
+	auto memmerge = memstatemux_op::create_merge({state, memstate}, memstate);
+
+	tacs.push_back(std::move(malloc));
+	tacs.push_back(std::move(memmerge));
+	return result;
+}
+
+static const variable *
 convert_call_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, context & ctx)
 {
 	JLM_DEBUG_ASSERT(instruction->getOpcode() == llvm::Instruction::Call);
 	auto i = llvm::cast<llvm::CallInst>(instruction);
 
-	auto f = i->getCalledValue();
-	/* FIXME: currently needed to insert edge in call graph */
-	convert_value(f, tacs, ctx);
-	JLM_DEBUG_ASSERT(f->getType()->isPointerTy());
-	JLM_DEBUG_ASSERT(f->getType()->getContainedType(0)->isFunctionTy());
-	auto ftype = llvm::cast<const llvm::FunctionType>(f->getType()->getContainedType(0));
-	auto type = convert_type(ftype, ctx);
+	auto create_arguments = [](
+		const llvm::CallInst * i,
+		tacsvector_t & tacs,
+		context & ctx)
+	{
+		auto ftype = function_type(i);
+		std::vector<const jlm::variable*> arguments;
+		for (size_t n = 0; n < ftype->getNumParams(); n++)
+			arguments.push_back(convert_value(i->getArgOperand(n), tacs, ctx));
 
-	/* arguments */
-	std::vector<const jlm::variable*> vargs;
-	std::vector<const jlm::variable*> arguments;
-	for (size_t n = 0; n < ftype->getNumParams(); n++)
-		arguments.push_back(convert_value(i->getArgOperand(n), tacs, ctx));
-	for (size_t n = ftype->getNumParams(); n < i->getNumOperands()-1; n++)
-		vargs.push_back(convert_value(i->getArgOperand(n), tacs, ctx));
+		return arguments;
+	};
 
-	if (ftype->isVarArg()) {
-		tacs.push_back(create_valist_tac(vargs, ctx.module()));
-		arguments.push_back(tacs.back()->result(0));
-	}
+	auto create_varargs = [](
+		const llvm::CallInst * i,
+		tacsvector_t & tacs,
+		context & ctx)
+	{
+		auto ftype = function_type(i);
+		std::vector<const jlm::variable*> varargs;
+		for (size_t n = ftype->getNumParams(); n < i->getNumOperands()-1; n++)
+			varargs.push_back(convert_value(i->getArgOperand(n), tacs, ctx));
+
+		tacs.push_back(create_valist_tac(varargs, ctx.module()));
+		return tacs.back()->result(0);
+	};
+
+	auto create_results = [](
+		const llvm::CallInst * i,
+		context & ctx)
+	{
+		auto ftype = function_type(i);
+		std::vector<const jlm::variable*> results;
+		if (!ftype->getReturnType()->isVoidTy()) {
+			auto result = ctx.module().create_variable(*convert_type(i->getType(), ctx));
+			results.push_back(result);
+		}
+		results.push_back(ctx.memory_state());
+		results.push_back(ctx.loop_state());
+
+		return results;
+	};
+
+	auto is_malloc_call = [](const llvm::CallInst * i)
+	{
+		auto f = i->getCalledFunction();
+		return f && f->getName() == "malloc";
+	};
+
+	if (is_malloc_call(i))
+		return convert_malloc_call(i, tacs, ctx);
+
+
+	auto ftype = function_type(i);
+
+	auto arguments = create_arguments(i, tacs, ctx);
+	if (ftype->isVarArg())
+		arguments.push_back(create_varargs(i, tacs, ctx));
 	arguments.push_back(ctx.memory_state());
 	arguments.push_back(ctx.loop_state());
 
-	/* results */
-	std::vector<const jlm::variable*> results;
-	if (!ftype->getReturnType()->isVoidTy()) {
-		auto result = ctx.module().create_variable(*convert_type(i->getType(), ctx));
-		results.push_back(result);
-	}
-	results.push_back(ctx.memory_state());
-	results.push_back(ctx.loop_state());
+	auto results = create_results(i, ctx);
 
-	auto fctvar = convert_value(f, tacs, ctx);
+
+	auto fctvar = convert_value(i->getCalledValue(), tacs, ctx);
 	tacs.push_back(call_op::create(fctvar, arguments, results));
 	return tacs.back()->result(0);
 }

@@ -726,15 +726,20 @@ convert(
 	return builder.CreateExtractValue(ctx.value(operands[0]), indices);
 }
 
-template<class OP> static llvm::Value *
+static llvm::Value *
 convert(
-	const jive::simple_op & op,
-	const std::vector<const variable*> & operands,
+	const malloc_op & op,
+	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<OP>(op));
-	return convert(*static_cast<const OP*>(&op), operands, builder, ctx);
+	JLM_DEBUG_ASSERT(args.size() == 1);
+	auto & lm = ctx.llvm_module();
+
+	auto fcttype = convert_type(op.fcttype(), ctx);
+	auto function = lm.getOrInsertFunction("malloc", fcttype);
+	auto fctargs = llvm::ArrayRef<llvm::Value*>(ctx.value(args[0]));
+	return builder.CreateCall(function, fctargs);
 }
 
 static llvm::Value *
@@ -745,6 +750,17 @@ convert(
 	context&)
 {
 	return nullptr;
+}
+
+template<class OP> static llvm::Value *
+convert(
+	const jive::simple_op & op,
+	const std::vector<const variable*> & operands,
+	llvm::IRBuilder<> & builder,
+	context & ctx)
+{
+	JLM_DEBUG_ASSERT(is<OP>(op));
+	return convert(*static_cast<const OP*>(&op), operands, builder, ctx);
 }
 
 llvm::Value *
@@ -773,7 +789,6 @@ convert_operation(
 	, {std::type_index(typeid(jlm::fpconstant_op)), convert_fpconstant}
 	, {std::type_index(typeid(jlm::undef_constant_op)), convert_undef}
 	, {typeid(jive::match_op), convert_match}
-	, {typeid(call_op), convert_call}
 	, {std::type_index(typeid(jlm::assignment_op)), convert_assignment}
 	, {std::type_index(typeid(jlm::branch_op)), convert_branch}
 	, {std::type_index(typeid(jlm::phi_op)), convert_phi}
@@ -800,6 +815,9 @@ convert_operation(
 	, {typeid(vectorunary_op), convert_vectorunary}
 	, {typeid(vectorbinary_op), convert_vectorbinary}
 	, {typeid(extractvalue_op), convert<extractvalue_op>}
+
+	, {typeid(call_op), convert_call}
+	, {typeid(malloc_op), convert<malloc_op>}
 
 	/* LLVM Cast Instructions */
 	/* FIXME: AddrSpaceCast instruction is not supported */
