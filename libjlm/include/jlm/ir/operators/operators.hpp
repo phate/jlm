@@ -132,14 +132,9 @@ public:
 	virtual
 	~select_op() noexcept;
 
-	inline
 	select_op(const jive::type & type)
 	: jive::simple_op({jive::bit1, type, type}, {type})
 	{}
-
-	select_op(const select_op &) = default;
-
-	select_op(select_op &&) = default;
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
@@ -150,7 +145,7 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
-	inline const jive::type &
+	const jive::type &
 	type() const noexcept
 	{
 		return result(0).type();
