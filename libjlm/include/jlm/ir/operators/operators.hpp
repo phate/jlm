@@ -168,6 +168,60 @@ public:
 	}
 };
 
+/* vector select operator */
+
+class vectorselect_op final : public jive::simple_op {
+public:
+	virtual
+	~vectorselect_op() noexcept;
+
+private:
+	vectorselect_op(
+		const vectortype & pt,
+		const vectortype & vt)
+	: jive::simple_op({pt, vt, vt}, {vt})
+	{}
+
+public:
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+	const jive::type &
+	type() const noexcept
+	{
+		return result(0).type();
+	}
+
+	size_t
+	size() const noexcept
+	{
+		return dynamic_cast<const vectortype*>(&type())->size();
+	}
+
+	static std::unique_ptr<jlm::tac>
+	create(
+		const variable * p,
+		const variable * t,
+		const variable * f,
+		variable * result)
+	{
+		auto vpt = dynamic_cast<const vectortype*>(&p->type());
+		if (!vpt) throw jlm::error("Expected vector type.");
+
+		auto vtt = dynamic_cast<const vectortype*>(&t->type());
+		if (!vtt) throw jlm::error("Excpected vector type.");
+
+		vectorselect_op op(vectortype(jive::bit1, vpt->size()), vectortype(vtt->type(), vpt->size()));
+		return tac::create(op, {p, t, f}, {result});
+	}
+};
+
 /* fp2ui operator */
 
 class fp2ui_op final : public jive::unary_op {

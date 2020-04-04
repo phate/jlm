@@ -94,6 +94,30 @@ select_op::copy() const
 	return std::unique_ptr<jive::operation>(new select_op(*this));
 }
 
+/* vectorselect operator */
+
+vectorselect_op::~vectorselect_op() noexcept
+{}
+
+bool
+vectorselect_op::operator==(const operation & other) const noexcept
+{
+	auto op = dynamic_cast<const vectorselect_op*>(&other);
+	return op && op->type() == type();
+}
+
+std::string
+vectorselect_op::debug_string() const
+{
+	return "VECTORSELECT";
+}
+
+std::unique_ptr<jive::operation>
+vectorselect_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new vectorselect_op(*this));
+}
+
 /* fp2ui operator */
 
 fp2ui_op::~fp2ui_op() noexcept
