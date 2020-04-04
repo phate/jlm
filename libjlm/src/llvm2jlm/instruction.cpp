@@ -703,10 +703,14 @@ convert_select_instruction(llvm::Instruction * i, tacsvector_t & tacs, context &
 
 	auto r = ctx.module().create_variable(*convert_type(i->getType(), ctx));
 
-	auto condition = convert_value(instruction->getCondition(), tacs, ctx);
-	auto tv = convert_value(instruction->getTrueValue(), tacs, ctx);
-	auto fv = convert_value(instruction->getFalseValue(), tacs, ctx);
-	tacs.push_back(tac::create(select_op(tv->type()), {condition, tv, fv}, {r}));
+	auto p = convert_value(instruction->getCondition(), tacs, ctx);
+	auto t = convert_value(instruction->getTrueValue(), tacs, ctx);
+	auto f = convert_value(instruction->getFalseValue(), tacs, ctx);
+
+	if (i->getType()->isVectorTy())
+		tacs.push_back(vectorselect_op::create(p, t, f, r));
+	else
+		tacs.push_back(select_op::create(p, t, f, r));
 
 	return tacs.back()->result(0);
 }

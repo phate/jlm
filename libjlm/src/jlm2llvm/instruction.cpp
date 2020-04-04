@@ -695,6 +695,19 @@ convert_vectorbinary(
 	return convert_operation(vop->operation(), operands, builder, ctx);
 }
 
+static llvm::Value *
+convert(
+	const vectorselect_op & op,
+	const std::vector<const variable*> & operands,
+	llvm::IRBuilder<> & builder,
+	context & ctx)
+{
+	auto c = ctx.value(operands[0]);
+	auto t = ctx.value(operands[1]);
+	auto f = ctx.value(operands[2]);
+	return builder.CreateSelect(c, t, f);
+}
+
 template<llvm::Instruction::CastOps OPCODE> static llvm::Value *
 convert_cast(
 	const jive::simple_op & op,
@@ -814,6 +827,7 @@ convert_operation(
 	, {typeid(insertelement_op), convert_insertelement}
 	, {typeid(vectorunary_op), convert_vectorunary}
 	, {typeid(vectorbinary_op), convert_vectorbinary}
+	, {typeid(vectorselect_op), convert<vectorselect_op>}
 	, {typeid(extractvalue_op), convert<extractvalue_op>}
 
 	, {typeid(call_op), convert_call}

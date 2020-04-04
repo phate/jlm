@@ -1,2 +1,3 @@
 TESTS += \
-	libjlm/llvm-jlm/test-function-call
+	libjlm/llvm-jlm/test-function-call \
+	libjlm/llvm-jlm/test-select \
