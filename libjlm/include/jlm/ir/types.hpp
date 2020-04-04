@@ -377,16 +377,6 @@ private:
 	std::unique_ptr<jive::type> type_;
 };
 
-/* function type */
-
-/* FIXME: this belongs into jive */
-
-static inline bool
-is_fcttype(const jive::type & type)
-{
-	return dynamic_cast<const jive::fcttype*>(&type) != nullptr;
-}
-
 /* loop state type */
 
 class loopstatetype final : public jive::statetype {
