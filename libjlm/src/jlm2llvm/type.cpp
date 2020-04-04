@@ -69,7 +69,7 @@ convert_pointer_type(const jive::type & type, context & ctx)
 static inline llvm::Type *
 convert_array_type(const jive::type & type, context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_arraytype(type));
+	JLM_DEBUG_ASSERT(is<arraytype>(type));
 	auto & t = *static_cast<const jlm::arraytype*>(&type);
 
 	return llvm::ArrayType::get(convert_type(t.element_type(), ctx), t.nelements());

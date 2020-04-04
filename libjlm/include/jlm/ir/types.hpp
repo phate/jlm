@@ -135,12 +135,6 @@ private:
 	std::unique_ptr<jive::type> type_;
 };
 
-static inline bool
-is_arraytype(const jive::type & type)
-{
-	return dynamic_cast<const jlm::arraytype*>(&type) != nullptr;
-}
-
 static inline std::unique_ptr<jive::type>
 create_arraytype(const jive::type & type, size_t nelements)
 {
