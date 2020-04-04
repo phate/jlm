@@ -123,6 +123,9 @@ public:
 	std::vector<std::unordered_set<const ipgraph_node*>>
 	find_sccs() const;
 
+	const ipgraph_node *
+	find(const std::string & name) const noexcept;
+
 private:
 	std::vector<std::unique_ptr<ipgraph_node>> nodes_;
 };

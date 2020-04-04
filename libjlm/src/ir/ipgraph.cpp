@@ -78,6 +78,17 @@ ipgraph::find_sccs() const
 	return sccs;
 }
 
+const ipgraph_node *
+ipgraph::find(const std::string & name) const noexcept
+{
+	for (auto & node : nodes_) {
+		if (node->name() == name)
+			return node.get();
+	}
+
+	return nullptr;
+}
+
 /* ipgraph node */
 
 ipgraph_node::~ipgraph_node()
