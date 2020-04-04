@@ -60,7 +60,7 @@ convert_function_type(const jive::type & type, context & ctx)
 static inline llvm::Type *
 convert_pointer_type(const jive::type & type, context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_ptrtype(type));
+	JLM_DEBUG_ASSERT(is<ptrtype>(type));
 	auto & t = *static_cast<const jlm::ptrtype*>(&type);
 
 	return llvm::PointerType::get(convert_type(t.pointee_type(), ctx), 0);

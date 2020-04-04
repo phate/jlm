@@ -309,7 +309,7 @@ convert_ipgraph(const jlm::ipgraph & clg, context & ctx)
 		auto v = jm.variable(&node);
 
 		if (auto n = dynamic_cast<const data_node*>(&node)) {
-			JLM_DEBUG_ASSERT(is_ptrtype(n->type()));
+			JLM_DEBUG_ASSERT(is<ptrtype>(n->type()));
 			auto pt = static_cast<const jlm::ptrtype*>(&n->type());
 			auto type = convert_type(pt->pointee_type(), ctx);
 

@@ -66,12 +66,6 @@ private:
 	std::unique_ptr<jive::type> ptype_;
 };
 
-static inline bool
-is_ptrtype(const jive::type & type)
-{
-	return dynamic_cast<const jlm::ptrtype*>(&type) != nullptr;
-}
-
 static inline std::unique_ptr<jive::type>
 create_ptrtype(const jive::type & vtype)
 {
