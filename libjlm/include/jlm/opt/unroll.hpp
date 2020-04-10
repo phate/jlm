@@ -10,6 +10,7 @@
 #include <jive/types/bitstring.h>
 
 #include <jlm/common.hpp>
+#include <jlm/opt/optimization.hpp>
 
 namespace jive {
 	class bitvalue_repr;
@@ -19,6 +20,27 @@ namespace jlm {
 
 class rvsdg_module;
 class stats_descriptor;
+
+/**
+* \brief Loop Unrolling
+*/
+class loopunroll final : public optimization {
+public:
+	virtual
+	~loopunroll();
+
+	constexpr
+	loopunroll(size_t factor)
+	: factor_(factor)
+	{}
+
+	virtual void
+	run(rvsdg_module & module, const stats_descriptor & sd) override;
+
+private:
+	size_t factor_;
+};
+
 
 class unrollinfo final {
 public:
@@ -205,9 +227,6 @@ private:
 
 void
 unroll(jive::theta_node * node, size_t factor);
-
-void
-unroll(rvsdg_module & rm, const stats_descriptor & sd, size_t factor);
 
 }
 

@@ -117,7 +117,8 @@ test_pull()
 	graph.add_export(g1xv, {g1xv->type(), ""});
 
 	jive::view(graph, stdout);
-	jlm::pull(rm, sd);
+	jlm::pullin pullin;
+	pullin.run(rm, sd);
 	graph.prune();
 	jive::view(graph, stdout);
 

@@ -50,7 +50,8 @@ test_gamma()
 	graph.add_export(gamma->output(0), {gamma->output(0)->type(), "x"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::push(rm, sd);
+	jlm::pushout pushout;
+	pushout.run(rm, sd);
 //	jive::view(graph.root(), stdout);
 
 	assert(graph.root()->nodes.size() == 3);
@@ -94,7 +95,8 @@ test_theta()
 	graph.add_export(theta->output(0), {theta->output(0)->type(), "c"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::push(rm, sd);
+	jlm::pushout pushout;
+	pushout.run(rm, sd);
 //	jive::view(graph.root(), stdout);
 
 	assert(graph.root()->nodes.size() == 3);

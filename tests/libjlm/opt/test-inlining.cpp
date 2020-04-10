@@ -53,7 +53,8 @@ verify()
 	graph.add_export(f2->output(0), {f2->output(0)->type(), "f2"});
 
 	jive::view(graph.root(), stdout);
-	jlm::inlining(rm, sd);
+	jlm::fctinline fctinline;
+	fctinline.run(rm, sd);
 	jive::view(graph.root(), stdout);
 
 	assert(!jive::contains<jlm::call_op>(graph.root(), true));

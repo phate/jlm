@@ -505,7 +505,7 @@ unroll(jive::graph & graph, size_t factor)
 	unroll(graph.root(), factor);
 }
 
-void
+static void
 unroll(rvsdg_module & rm, const stats_descriptor & sd, size_t factor)
 {
 	unrollstat stat;
@@ -516,6 +516,17 @@ unroll(rvsdg_module & rm, const stats_descriptor & sd, size_t factor)
 
 	if (sd.print_unroll_stat)
 		sd.print_stat(stat);
+}
+
+/* loopunroll class */
+
+loopunroll::~loopunroll()
+{}
+
+void
+loopunroll::run(rvsdg_module & module, const stats_descriptor & sd)
+{
+	unroll(module, sd, factor_);
 }
 
 }

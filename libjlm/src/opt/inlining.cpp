@@ -205,7 +205,7 @@ inlining(jive::graph & graph)
 	}
 }
 
-void
+static void
 inlining(rvsdg_module & rm, const stats_descriptor & sd)
 {
 	auto & graph = *rm.graph();
@@ -217,6 +217,17 @@ inlining(rvsdg_module & rm, const stats_descriptor & sd)
 
 	if (sd.print_iln_stat)
 		sd.print_stat(stat);
+}
+
+/* fctinline class */
+
+fctinline::~fctinline()
+{}
+
+void
+fctinline::run(rvsdg_module & module, const stats_descriptor & sd)
+{
+	inlining(module, sd);
 }
 
 }

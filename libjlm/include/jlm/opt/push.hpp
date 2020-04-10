@@ -6,6 +6,8 @@
 #ifndef JLM_OPT_PUSH_HPP
 #define JLM_OPT_PUSH_HPP
 
+#include <jlm/opt/optimization.hpp>
+
 namespace jive {
 
 class gamma_node;
@@ -18,6 +20,18 @@ namespace jlm {
 class rvsdg_module;
 class stats_descriptor;
 
+/**
+* \brief Node Push-Out Optimization
+*/
+class pushout final : public optimization {
+public:
+	virtual
+	~pushout();
+
+	virtual void
+	run(rvsdg_module & module, const stats_descriptor & sd) override;
+};
+
 void
 push_top(jive::theta_node * theta);
 
@@ -29,9 +43,6 @@ push(jive::theta_node * theta);
 
 void
 push(jive::gamma_node * gamma);
-
-void
-push(rvsdg_module & rm, const stats_descriptor & sd);
 
 }
 

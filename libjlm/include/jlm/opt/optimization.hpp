@@ -13,17 +13,35 @@ namespace jlm {
 class rvsdg_module;
 class stats_descriptor;
 
-enum class optimization {cne, dne, iln, inv, psh, red, ivt, url, pll};
+/**
+* \brief Optimization pass interface
+*/
+class optimization {
+public:
+	virtual
+	~optimization();
 
+	/**
+	* \brief Perform optimization
+	*
+	* This method is expected to be called multiple times. An
+	* implementation is required to reset the objects' internal state
+	* to ensure correct behavior after every incovation.
+	*
+	* \param module RVSDG module the optimization is performed on.
+	* \param sd     A stats descriptor for collecting optimization statistics.
+	*/
+	virtual void
+	run(rvsdg_module & module, const stats_descriptor & sd) = 0;
+};
+
+/*
+	FIXME: This function should be removed.
+*/
 void
 optimize(rvsdg_module & rm,
 	const stats_descriptor & sd,
-	const optimization & opt);
-
-void
-optimize(rvsdg_module & rm,
-	const stats_descriptor & sd,
-	const std::vector<optimization> & opts);
+	const std::vector<optimization*> & opts);
 
 }
 

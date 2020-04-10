@@ -6,13 +6,24 @@
 #ifndef JLM_OPT_INLINE_HPP
 #define JLM_OPT_INLINE_HPP
 
+#include <jlm/opt/optimization.hpp>
+
 namespace jlm {
 
 class rvsdg_module;
 class stats_descriptor;
 
-void
-inlining(rvsdg_module & rm, const stats_descriptor & sd);
+/**
+* \brief Function Inlining
+*/
+class fctinline final : public optimization {
+public:
+	virtual
+	~fctinline();
+
+	virtual void
+	run(rvsdg_module & module, const stats_descriptor & sd) override;
+};
 
 }
 

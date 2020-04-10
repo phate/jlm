@@ -118,7 +118,7 @@ enable_binary_reductions(jive::graph & graph)
 	nf->set_reducible(true);
 }
 
-void
+static void
 reduce(rvsdg_module & rm, const stats_descriptor & sd)
 {
 	auto & graph = *rm.graph();
@@ -138,6 +138,17 @@ reduce(rvsdg_module & rm, const stats_descriptor & sd)
 
 	if (sd.print_reduction_stat)
 		sd.print_stat(stat);
+}
+
+/* nodereduction class */
+
+nodereduction::~nodereduction()
+{}
+
+void
+nodereduction::run(rvsdg_module & module, const stats_descriptor & sd)
+{
+	reduce(module, sd);
 }
 
 }

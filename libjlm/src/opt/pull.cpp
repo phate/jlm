@@ -270,7 +270,7 @@ pull(jive::region * region)
 	}
 }
 
-void
+static void
 pull(rvsdg_module & rm, const stats_descriptor & sd)
 {
 	pullstat stat;
@@ -281,6 +281,17 @@ pull(rvsdg_module & rm, const stats_descriptor & sd)
 
 	if (sd.print_pull_stat)
 		sd.print_stat(stat);
+}
+
+/* pullin class */
+
+pullin::~pullin()
+{}
+
+void
+pullin::run(rvsdg_module & module, const stats_descriptor & sd)
+{
+	pull(module, sd);
 }
 
 }

@@ -19,6 +19,8 @@
 
 namespace jlm {
 
+/* dnestat class */
+
 class dnestat final : public stat {
 public:
 	virtual
@@ -447,7 +449,7 @@ sweep(jive::graph & graph, dnectx & ctx)
 	}
 }
 
-void
+static void
 dne(rvsdg_module & rm, const stats_descriptor & sd)
 {
 	auto & graph = *rm.graph();
@@ -466,4 +468,16 @@ dne(rvsdg_module & rm, const stats_descriptor & sd)
 	if (sd.print_dne_stat)
 		sd.print_stat(ds);
 }
+
+/* dne class */
+
+dne::~dne()
+{}
+
+void
+dne::run(rvsdg_module & module, const stats_descriptor & sd)
+{
+	jlm::dne(module, sd);
+}
+
 }

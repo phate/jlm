@@ -567,7 +567,7 @@ divert(jive::region * region, cnectx & ctx)
 	}
 }
 
-void
+static void
 cne(rvsdg_module & rm, const stats_descriptor & sd)
 {
 	auto & graph = *rm.graph();
@@ -585,6 +585,17 @@ cne(rvsdg_module & rm, const stats_descriptor & sd)
 
 	if (sd.print_cne_stat)
 		sd.print_stat(stat);
+}
+
+/* cne class */
+
+cne::~cne()
+{}
+
+void
+cne::run(rvsdg_module & module, const stats_descriptor & sd)
+{
+	jlm::cne(module, sd);
 }
 
 }

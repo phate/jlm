@@ -8,6 +8,8 @@
 
 #include <jive/rvsdg/graph.h>
 
+#include <jlm/opt/optimization.hpp>
+
 namespace jive {
 	class gamma_node;
 	class region;
@@ -17,6 +19,18 @@ namespace jlm {
 
 class rvsdg_module;
 class stats_descriptor;
+
+/**
+* \brief Node Pull-In Optimization
+*/
+class pullin final : public optimization {
+public:
+	virtual
+	~pullin();
+
+	virtual void
+	run(rvsdg_module & module, const stats_descriptor & sd) override;
+};
 
 void
 pullin_top(jive::gamma_node * gamma);
@@ -30,9 +44,6 @@ pull(jive::gamma_node * gamma);
 
 void
 pull(jive::region * region);
-
-void
-pull(rvsdg_module & rm, const stats_descriptor & sd);
 
 }
 

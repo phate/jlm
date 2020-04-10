@@ -6,7 +6,6 @@
 #ifndef JLM_JLMOPT_CMDLINE_HPP
 #define JLM_JLMOPT_CMDLINE_HPP
 
-#include <jlm/opt/optimization.hpp>
 #include <jlm/util/file.hpp>
 #include <jlm/util/stats.hpp>
 
@@ -14,6 +13,8 @@
 #include <vector>
 
 namespace jlm {
+
+class optimization;
 
 enum class outputformat {llvm, xml};
 
@@ -29,7 +30,7 @@ public:
 	jlm::filepath ofile;
 	outputformat format;
 	stats_descriptor sd;
-	std::vector<jlm::optimization> optimizations;
+	std::vector<jlm::optimization*> optimizations;
 };
 
 void

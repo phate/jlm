@@ -292,7 +292,7 @@ invert(jive::region * region)
 	}
 }
 
-void
+static void
 invert(rvsdg_module & rm, const stats_descriptor & sd)
 {
 	ivtstat stat;
@@ -303,6 +303,17 @@ invert(rvsdg_module & rm, const stats_descriptor & sd)
 
 	if (sd.print_ivt_stat)
 		sd.print_stat(stat);
+}
+
+/* tginversion */
+
+tginversion::~tginversion()
+{}
+
+void
+tginversion::run(rvsdg_module & module, const stats_descriptor & sd)
+{
+	invert(module, sd);
 }
 
 }

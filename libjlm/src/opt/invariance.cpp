@@ -135,7 +135,7 @@ invariance(jive::region * region)
 	}
 }
 
-void
+static void
 invariance(rvsdg_module & rm, const stats_descriptor & sd)
 {
 	invstat stat;
@@ -146,6 +146,17 @@ invariance(rvsdg_module & rm, const stats_descriptor & sd)
 
 	if (sd.print_inv_stat)
 		sd.print_stat(stat);
+}
+
+/* ivr class */
+
+ivr::~ivr()
+{}
+
+void
+ivr::run(rvsdg_module & module, const stats_descriptor & sd)
+{
+	invariance(module, sd);
 }
 
 }

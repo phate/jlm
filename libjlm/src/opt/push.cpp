@@ -398,7 +398,7 @@ push(jive::region * region)
 	}
 }
 
-void
+static void
 push(rvsdg_module & rm, const stats_descriptor & sd)
 {
 	pushstat stat;
@@ -409,6 +409,17 @@ push(rvsdg_module & rm, const stats_descriptor & sd)
 
 	if (sd.print_push_stat)
 		sd.print_stat(stat);
+}
+
+/* pushout class */
+
+pushout::~pushout()
+{}
+
+void
+pushout::run(rvsdg_module & module, const stats_descriptor & sd)
+{
+	push(module, sd);
 }
 
 }

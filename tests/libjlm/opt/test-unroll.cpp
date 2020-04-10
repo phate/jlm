@@ -260,7 +260,8 @@ test_unknown_boundaries()
 	auto ex1 = graph.add_export(lv1, {lv1->type(), "x"});
 
 	jive::view(graph, stdout);
-	jlm::unroll(rm, sd, 2);
+	jlm::loopunroll loopunroll(2);
+	loopunroll.run(rm, sd);
 	jive::view(graph, stdout);
 
 	auto node = ex1->origin()->node();

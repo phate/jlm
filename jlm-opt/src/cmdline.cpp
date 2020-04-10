@@ -5,9 +5,52 @@
 
 #include <jlm-opt/cmdline.hpp>
 
+#include <jlm/opt/dne.hpp>
+#include <jlm/opt/cne.hpp>
+#include <jlm/opt/inlining.hpp>
+#include <jlm/opt/invariance.hpp>
+#include <jlm/opt/pull.hpp>
+#include <jlm/opt/push.hpp>
+#include <jlm/opt/inversion.hpp>
+#include <jlm/opt/unroll.hpp>
+#include <jlm/opt/reduction.hpp>
+#include <jlm/opt/optimization.hpp>
+
 #include <llvm/Support/CommandLine.h>
 
 namespace jlm {
+
+enum class optimizationid {cne, dne, iln, inv, psh, red, ivt, url, pll};
+
+static jlm::optimization *
+mapoptid(enum optimizationid id)
+{
+	static jlm::cne cne;
+	static jlm::dne dne;
+	static jlm::fctinline fctinline;
+	static jlm::ivr ivr;
+	static jlm::pullin pullin;
+	static jlm::pushout pushout;
+	static jlm::tginversion tginversion;
+	static jlm::loopunroll loopunroll(4);
+	static jlm::nodereduction nodereduction;
+
+	static std::unordered_map<optimizationid, jlm::optimization*>
+	map({
+	  {optimizationid::cne, &cne}
+	, {optimizationid::dne, &dne}
+	, {optimizationid::iln, &fctinline}
+	, {optimizationid::inv, &ivr}
+	, {optimizationid::pll, &pullin}
+	, {optimizationid::psh, &pushout}
+	, {optimizationid::ivt, &tginversion}
+	, {optimizationid::url, &loopunroll}
+	, {optimizationid::red, &nodereduction}
+	});
+
+	JLM_DEBUG_ASSERT(map.find(id) != map.end());
+	return map[id];
+}
 
 void
 parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
@@ -124,17 +167,17 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 		, clEnumValN(outputformat::xml, "xml", "Output XML"))
 	, cl::desc("Select output format"));
 
-	cl::list<jlm::optimization> optimizations(
+	cl::list<jlm::optimizationid> optids(
 		cl::values(
-		  clEnumValN(jlm::optimization::cne, "cne", "Common node elimination")
-		, clEnumValN(jlm::optimization::dne, "dne", "Dead node elimination")
-		, clEnumValN(jlm::optimization::iln, "iln", "Function inlining")
-		, clEnumValN(jlm::optimization::inv, "inv", "Invariant value reduction")
-		, clEnumValN(jlm::optimization::psh, "psh", "Node push out")
-		, clEnumValN(jlm::optimization::pll, "pll", "Node pull in")
-		, clEnumValN(jlm::optimization::red, "red", "Node reductions")
-		, clEnumValN(jlm::optimization::ivt, "ivt", "Theta-gamma inversion")
-		, clEnumValN(jlm::optimization::url, "url", "Loop unrolling"))
+		  clEnumValN(jlm::optimizationid::cne, "cne", "Common node elimination")
+		, clEnumValN(jlm::optimizationid::dne, "dne", "Dead node elimination")
+		, clEnumValN(jlm::optimizationid::iln, "iln", "Function inlining")
+		, clEnumValN(jlm::optimizationid::inv, "inv", "Invariant value reduction")
+		, clEnumValN(jlm::optimizationid::psh, "psh", "Node push out")
+		, clEnumValN(jlm::optimizationid::pll, "pll", "Node pull in")
+		, clEnumValN(jlm::optimizationid::red, "red", "Node reductions")
+		, clEnumValN(jlm::optimizationid::ivt, "ivt", "Theta-gamma inversion")
+		, clEnumValN(jlm::optimizationid::url, "url", "Loop unrolling"))
 	, cl::desc("Perform optimization"));
 
 	cl::ParseCommandLineOptions(argc, argv);
@@ -149,6 +192,10 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 
 	if (!sfile.empty())
 		options.sd.set_file(sfile);
+
+	std::vector<jlm::optimization*> optimizations;
+	for (auto & optid : optids)
+		optimizations.push_back(mapoptid(optid));
 
 	options.ifile = ifile;
 	options.format = format;
