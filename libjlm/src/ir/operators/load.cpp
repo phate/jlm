@@ -255,7 +255,7 @@ perform_load_mux_reduction(
 {
 	auto muxnode = operands[1]->node();
 
-	auto ld = create_load(operands[0], jive::operands(muxnode), op.alignment());
+	auto ld = load_op::create(operands[0], jive::operands(muxnode), op.alignment());
 	auto mx = memstatemux_op::create({std::next(ld.begin()), ld.end()}, muxnode->noutputs());
 
 	std::vector<jive::output*> results(1, ld[0]);
@@ -280,7 +280,7 @@ perform_load_alloca_reduction(
 			otherstates.push_back(operands[n]);
 	}
 
-	auto ld = create_load(operands[0], loadstates, op.alignment());
+	auto ld = load_op::create(operands[0], loadstates, op.alignment());
 
 	std::vector<jive::output*> results(1, ld[0]);
 	results.insert(results.end(), std::next(ld.begin()), ld.end());
@@ -305,7 +305,7 @@ perform_load_store_state_reduction(
 		else new_loadstates.push_back(state);
 	}
 
-	auto ld = create_load(operands[0], new_loadstates, op.alignment());
+	auto ld = load_op::create(operands[0], new_loadstates, op.alignment());
 
 	results[0] = ld[0];
 	for (size_t n = 1, s = 1; n < results.size(); n++) {
@@ -334,7 +334,7 @@ perform_multiple_origin_reduction(
 		seen_state.insert(state);
 	}
 
-	auto ld = create_load(operands[0], new_loadstates, op.alignment());
+	auto ld = load_op::create(operands[0], new_loadstates, op.alignment());
 
 	results[0] = ld[0];
 	for (size_t n = 1, s = 1; n < results.size(); n++) {
@@ -408,7 +408,7 @@ perform_load_load_state_reduction(
 	for (size_t n = 1; n < operands.size(); n++)
 		ldstates.push_back(reduce_state(n-1, operands[n], mxstates));
 
-	auto ld = jlm::create_load(operands[0], ldstates, op.alignment());
+	auto ld = load_op::create(operands[0], ldstates, op.alignment());
 	for (size_t n = 0; n < mxstates.size(); n++) {
 		auto & states = mxstates[n];
 		if (!states.empty()) {

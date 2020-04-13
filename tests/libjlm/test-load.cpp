@@ -35,7 +35,7 @@ test_load_mux_reduction()
 	auto s3 = graph.add_import({mt, "s3"});
 
 	auto mux = memstatemux_op::create_merge({s1, s2, s3});
-	auto value = jlm::create_load(a, {mux}, 4)[0];
+	auto value = load_op::create(a, {mux}, 4)[0];
 
 	auto ex = graph.add_export(value, {value->type(), "v"});
 
@@ -74,7 +74,7 @@ test_load_alloca_reduction()
 	auto alloca1 = alloca_op::create(bt, size, 4);
 	auto alloca2 = alloca_op::create(bt, size, 4);
 	auto mux = jive::create_state_mux(mt, {alloca1[1]}, 1);
-	auto value = jlm::create_load(alloca1[0], {alloca1[1], alloca2[1], mux[0]}, 4)[0];
+	auto value = load_op::create(alloca1[0], {alloca1[1], alloca2[1], mux[0]}, 4)[0];
 
 	auto ex = graph.add_export(value, {value->type(), "l"});
 
@@ -111,7 +111,7 @@ test_multiple_origin_reduction()
 	auto a = graph.add_import({pt, "a"});
 	auto s = graph.add_import({mt, "s"});
 
-	auto load = jlm::create_load(a, {s, s, s, s}, 4)[0];
+	auto load = load_op::create(a, {s, s, s, s}, 4)[0];
 
 	auto ex = graph.add_export(load, {load->type(), "l"});
 
@@ -147,8 +147,8 @@ test_load_store_state_reduction()
 	auto store1 = store_op::create(alloca1[0], size, {alloca1[1]}, 4);
 	auto store2 = store_op::create(alloca2[0], size, {alloca2[1]}, 4);
 
-	auto value1 = jlm::create_load(alloca1[0], {store1[0], store2[0]}, 4)[0];
-	auto value2 = jlm::create_load(alloca1[0], {store1[0]}, 8)[0];
+	auto value1 = load_op::create(alloca1[0], {store1[0], store2[0]}, 4)[0];
+	auto value2 = load_op::create(alloca1[0], {store1[0]}, 8)[0];
 
 	auto ex1 = graph.add_export(value1, {value1->type(), "l1"});
 	auto ex2 = graph.add_export(value2, {value2->type(), "l2"});
@@ -188,7 +188,7 @@ test_load_store_alloca_reduction()
 
 	auto alloca = alloca_op::create(bt, size, 4);
 	auto store = store_op::create(alloca[0], size, {alloca[1]}, 4);
-	auto load = jlm::create_load(alloca[0], store, 4);
+	auto load = load_op::create(alloca[0], store, 4);
 
 	auto value = graph.add_export(load[0], {load[0]->type(), "l"});
 	auto rstate = graph.add_export(load[1], {mt, "s"});
@@ -223,7 +223,7 @@ test_load_store_reduction()
 	auto s = graph.add_import({mt, "state"});
 
 	auto s1 = store_op::create(a, v, {s}, 4)[0];
-	auto load = jlm::create_load(a, {s1}, 4);
+	auto load = load_op::create(a, {s1}, 4);
 
 	auto x1 = graph.add_export(load[0], {load[0]->type(), "value"});
 	auto x2 = graph.add_export(load[1], {load[1]->type(), "state"});
@@ -257,10 +257,10 @@ test_load_load_reduction()
 	auto s2 = graph.add_import({mt, "s2"});
 
 	auto st1 = store_op::create(a1, v1, {s1}, 4);
-	auto ld1 = jlm::create_load(a2, {s1}, 4);
-	auto ld2 = jlm::create_load(a3, {s2}, 4);
+	auto ld1 = load_op::create(a2, {s1}, 4);
+	auto ld2 = load_op::create(a3, {s2}, 4);
 
-	auto ld3 = jlm::create_load(a4, {st1[0], ld1[1], ld2[1]}, 4);
+	auto ld3 = load_op::create(a4, {st1[0], ld1[1], ld2[1]}, 4);
 
 	auto x1 = graph.add_export(ld3[1], {mt, "s"});
 	auto x2 = graph.add_export(ld3[2], {mt, "s"});
