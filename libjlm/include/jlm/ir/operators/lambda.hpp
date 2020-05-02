@@ -86,6 +86,82 @@ private:
 		return new lambda_node(parent, op);
 	}
 
+	class argument_iterator final : public std::iterator<std::forward_iterator_tag,
+		jive::argument*, ptrdiff_t> {
+
+		friend class lambda_node;
+
+		using super = std::iterator<std::forward_iterator_tag, jive::argument*, ptrdiff_t>;
+
+		argument_iterator(jive::argument * argument)
+		: argument_(argument)
+		{}
+
+	public:
+		jive::argument *
+		argument() const
+		{
+			return operator->();
+		}
+
+		jive::argument &
+		operator*() const
+		{
+			JLM_DEBUG_ASSERT(argument_ != nullptr);
+			return *argument_;
+		}
+
+		jive::argument *
+		operator->() const
+		{
+			return &operator*();
+		}
+
+		argument_iterator &
+		operator++()
+		{
+			if (argument_ == nullptr) {
+				argument_ = nullptr;
+				return *this;
+			}
+
+			auto region = argument_->region();
+			auto index = argument_->index() + 1;
+			if (index >= region->narguments()) {
+				argument_ = nullptr;
+				return *this;
+			}
+
+			auto argument = region->argument(index);
+			argument_ = argument->input() != nullptr ? nullptr : argument;
+
+			return *this;
+		}
+
+		argument_iterator
+		operator++(int)
+		{
+			argument_iterator tmp = *this;
+			++*this;
+			return tmp;
+		}
+
+		bool
+		operator==(const argument_iterator & other) const
+		{
+			return argument_ == other.argument_;
+		}
+
+		bool
+		operator!=(const argument_iterator & other) const
+		{
+			return !operator==(other);
+		}
+
+	private:
+		jive::argument * argument_;
+	};
+
 	class dependency_iterator final {
 	public:
 		inline constexpr
@@ -139,6 +215,22 @@ public:
 		return jive::structural_node::subregion(0);
 	}
 
+	argument_iterator
+	begin_argument() const
+	{
+		if (subregion()->narguments() == 0
+		|| subregion()->argument(0)->input() != nullptr)
+			return end_argument();
+
+		return argument_iterator(subregion()->argument(0));
+	}
+
+	argument_iterator
+	end_argument() const
+	{
+		return argument_iterator(nullptr);
+	}
+
 	inline lambda_node::dependency_iterator
 	begin() const
 	{
@@ -155,16 +247,12 @@ public:
 		return dependency_iterator(nullptr);
 	}
 
-	inline std::vector<jive::argument*>
+	std::vector<jive::argument*>
 	arguments() const noexcept
 	{
 		std::vector<jive::argument*> arguments;
-
-		auto argument = subregion()->argument(0);
-		while (argument && argument->input() == nullptr) {
-			arguments.push_back(argument);
-			argument = subregion()->argument(argument->index()+1);
-		}
+		for (auto it = begin_argument(); it != end_argument(); it++)
+			arguments.push_back(it.argument());
 
 		return arguments;
 	}

@@ -1,3 +1,4 @@
 TESTS += \
 	libjlm/ir/operators/test-delta \
 	libjlm/ir/operators/test-fpconstant \
+	libjlm/ir/operators/test-lambda \
