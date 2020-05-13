@@ -62,12 +62,6 @@ private:
 	}
 };
 
-static inline bool
-is_getelementptr_op(const jive::operation & op)
-{
-	return dynamic_cast<const jlm::getelementptr_op*>(&op) != nullptr;
-}
-
 static inline std::unique_ptr<jlm::tac>
 create_getelementptr_tac(
 	const variable * address,
