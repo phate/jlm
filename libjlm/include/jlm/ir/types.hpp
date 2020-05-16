@@ -62,18 +62,18 @@ public:
 		return *static_cast<const jive::valuetype*>(ptype_.get());
 	}
 
+	static std::unique_ptr<jive::type>
+	create(const jive::type & type)
+	{
+		auto vt = dynamic_cast<const jive::valuetype*>(&type);
+		if (!vt) throw jlm::error("expected value type.");
+
+		return std::unique_ptr<jive::type>(new jlm::ptrtype(*vt));
+	}
+
 private:
 	std::unique_ptr<jive::type> ptype_;
 };
-
-static inline std::unique_ptr<jive::type>
-create_ptrtype(const jive::type & vtype)
-{
-	auto vt = dynamic_cast<const jive::valuetype*>(&vtype);
-	if (!vt) throw jlm::error("expected value type.");
-
-	return std::unique_ptr<jive::type>(new jlm::ptrtype(*vt));
-}
 
 /* array type */
 
