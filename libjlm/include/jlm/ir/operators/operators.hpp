@@ -1239,11 +1239,7 @@ public:
 		std::unique_ptr<jive::type> dsttype)
 	: unary_op(*srctype, *dsttype)
 	{
-		auto at = dynamic_cast<const jive::valuetype*>(srctype.get());
-		if (!at) throw jlm::error("expected value type.");
-
-		auto rt = dynamic_cast<const jive::valuetype*>(dsttype.get());
-		if (!rt) throw jlm::error("expected value type.");
+		check_types(*srctype, *dsttype);
 	}
 
 	bitcast_op(const bitcast_op &) = default;
@@ -1273,20 +1269,38 @@ public:
 	reduce_operand(
 		jive_unop_reduction_path_t path,
 		jive::output * output) const override;
+
+	static std::unique_ptr<jlm::tac>
+	create(const variable * operand, variable * result)
+	{
+		auto pair = check_types(operand->type(), result->type());
+
+		bitcast_op op(*pair.first, *pair.second);
+		return tac::create(op, {operand}, {result});
+	}
+
+	static jive::output *
+	create(jive::output * operand, const jive::type & rtype)
+	{
+		auto pair = check_types(operand->type(), rtype);
+
+		bitcast_op op(*pair.first, *pair.second);
+		return jive::simple_node::create_normalized(operand->region(), op, {operand})[0];
+	}
+
+private:
+	static std::pair<const jive::valuetype*, const jive::valuetype*>
+	check_types(const jive::type & otype, const jive::type & rtype)
+	{
+		auto ot = dynamic_cast<const jive::valuetype*>(&otype);
+		if (!ot) throw jlm::error("expected value type.");
+
+		auto rt = dynamic_cast<const jive::valuetype*>(&rtype);
+		if (!rt) throw jlm::error("expected value type.");
+
+		return std::make_pair(ot, rt);
+	}
 };
-
-static inline std::unique_ptr<jlm::tac>
-create_bitcast_tac(const variable * argument, variable * result)
-{
-	auto at = dynamic_cast<const jive::valuetype*>(&argument->type());
-	if (!at) throw jlm::error("expected value type.");
-
-	auto rt = dynamic_cast<const jive::valuetype*>(&result->type());
-	if (!rt) throw jlm::error("expected value type.");
-
-	bitcast_op op(*at, *rt);
-	return tac::create(op, {argument}, {result});
-}
 
 /* struct constant operator */
 
