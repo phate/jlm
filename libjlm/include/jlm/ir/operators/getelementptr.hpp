@@ -50,6 +50,58 @@ public:
 		return static_cast<const jlm::ptrtype*>(&argument(0).type())->pointee_type();
 	}
 
+	static std::unique_ptr<jlm::tac>
+	create(
+		const variable * address,
+		const std::vector<const variable*> & offsets,
+		jlm::variable * result)
+	{
+		auto at = dynamic_cast<const jlm::ptrtype*>(&address->type());
+		if (!at) throw jlm::error("expected pointer type.");
+
+		std::vector<jive::bittype> bts;
+		for (const auto & v : offsets) {
+			auto bt = dynamic_cast<const jive::bittype*>(&v->type());
+			if (!bt) throw jlm::error("expected bitstring type.");
+			bts.push_back(*bt);
+		}
+
+		auto rt = dynamic_cast<const jlm::ptrtype*>(&result->type());
+		if (!rt) throw jlm::error("expected pointer type.");
+
+		jlm::getelementptr_op op(*at, bts, *rt);
+		std::vector<const variable*> operands(1, address);
+		operands.insert(operands.end(), offsets.begin(), offsets.end());
+
+		return tac::create(op, operands, {result});
+	}
+
+	static jive::output *
+	create(
+		jive::output * address,
+		const std::vector<jive::output*> & offsets,
+		const jive::type & rtype)
+	{
+		auto at = dynamic_cast<const jlm::ptrtype*>(&address->type());
+		if (!at) throw jlm::error("expected pointer type.");
+
+		std::vector<jive::bittype> bts;
+		for (const auto & v : offsets) {
+			auto bt = dynamic_cast<const jive::bittype*>(&v->type());
+			if (!bt) throw jlm::error("expected bitstring type.");
+			bts.push_back(*bt);
+		}
+
+		auto rt = dynamic_cast<const jlm::ptrtype*>(&rtype);
+		if (!rt) throw jlm::error("expected pointer type.");
+
+		jlm::getelementptr_op op(*at, bts, *rt);
+		std::vector<jive::output*> operands(1, address);
+		operands.insert(operands.end(), offsets.begin(), offsets.end());
+
+		return jive::simple_node::create_normalized(address->region(), op, operands)[0];
+	}
+
 private:
 	static inline std::vector<jive::port>
 	create_srcports(const ptrtype & ptype, const std::vector<jive::bittype> & btypes)
@@ -61,31 +113,6 @@ private:
 		return ports;
 	}
 };
-
-static inline std::unique_ptr<jlm::tac>
-create_getelementptr_tac(
-	const variable * address,
-	const std::vector<const variable*> offsets,
-	jlm::variable * result)
-{
-	auto at = dynamic_cast<const jlm::ptrtype*>(&address->type());
-	if (!at) throw jlm::error("expected pointer type.");
-
-	std::vector<jive::bittype> bts;
-	for (const auto & v : offsets) {
-		auto bt = dynamic_cast<const jive::bittype*>(&v->type());
-		if (!bt) throw jlm::error("expected bitstring type.");
-		bts.push_back(*bt);
-	}
-
-	auto rt = dynamic_cast<const jlm::ptrtype*>(&result->type());
-	if (!rt) throw jlm::error("expected pointer type.");
-
-	jlm::getelementptr_op op(*at, bts, *rt);
-	std::vector<const variable*> operands(1, address);
-	operands.insert(operands.end(), offsets.begin(), offsets.end());
-	return tac::create(op, operands, {result});
-}
 
 }
 

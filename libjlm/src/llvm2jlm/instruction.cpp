@@ -590,7 +590,7 @@ convert_getelementptr_instruction(llvm::Instruction * inst, tacsvector_t & tacs,
 
 	auto result = m.create_variable(*convert_type(i->getType(), ctx));
 
-	tacs.push_back(create_getelementptr_tac(base, indices, result));
+	tacs.push_back(getelementptr_op::create(base, indices, result));
 	return tacs.back()->result(0);
 }
 
