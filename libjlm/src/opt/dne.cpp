@@ -139,15 +139,6 @@ is_lambda_output(const jive::output * output)
 }
 
 static bool
-is_lambda_argument(const jive::output * output)
-{
-	auto argument = dynamic_cast<const jive::argument*>(output);
-	return argument
-	    && argument->region()->node()
-	    && dynamic_cast<const lambda_op*>(&argument->region()->node()->operation());
-}
-
-static bool
 is_phi_output(const jive::output * output)
 {
 	return output->node()

@@ -286,6 +286,14 @@ public:
 	copy(jive::region * region, jive::substitution_map & smap) const override;
 };
 
+
+static inline bool
+is_lambda_argument(const jive::output * output)
+{
+	auto argument = dynamic_cast<const jive::argument*>(output);
+	return argument && jive::is<lambda_op>(argument->region()->node());
+}
+
 /* lambda builder */
 
 class lambda_builder final {
