@@ -9,6 +9,7 @@
 #include <jlm/ir/operators/alloca.hpp>
 #include <jlm/ir/operators/call.hpp>
 #include <jlm/ir/operators/delta.hpp>
+#include <jlm/ir/operators/gamma.hpp>
 #include <jlm/ir/operators/getelementptr.hpp>
 #include <jlm/ir/operators/lambda.hpp>
 #include <jlm/ir/operators/load.hpp>

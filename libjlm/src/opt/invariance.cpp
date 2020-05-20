@@ -4,6 +4,7 @@
  */
 
 #include <jlm/common.hpp>
+#include <jlm/ir/operators/gamma.hpp>
 #include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/ir/types.hpp>
 #include <jlm/opt/invariance.hpp>
@@ -60,24 +61,6 @@ private:
 	jlm::timer timer_;
 };
 
-static bool
-is_invariant(const jive::gamma_output * output)
-{
-	auto argument = dynamic_cast<const jive::argument*>(output->result(0)->origin());
-	if (!argument)
-		return false;
-
-	size_t n;
-	auto origin = argument->input()->origin();
-	for (n = 1; n < output->nresults(); n++) {
-		auto argument = dynamic_cast<const jive::argument*>(output->result(n)->origin());
-		if (argument == nullptr || argument->input()->origin() != origin)
-			break;
-	}
-
-	return n == output->nresults();
-}
-
 static void
 invariance(jive::region * region);
 
@@ -89,10 +72,8 @@ gamma_invariance(jive::structural_node * node)
 
 	for (size_t n = 0; n < gamma->noutputs(); n++) {
 		auto output = static_cast<jive::gamma_output*>(gamma->output(n));
-		if (is_invariant(output)) {
-			auto no = static_cast<jive::argument*>(output->result(0)->origin())->input()->origin();
+		if (auto no = is_invariant(output))
 			output->divert_users(no);
-		}
 	}
 }
 
