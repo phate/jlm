@@ -178,15 +178,6 @@ private:
 	> sets_;
 };
 
-static bool
-is_theta_argument(const jive::output * output)
-{
-	using namespace jive;
-
-	auto a = dynamic_cast<const argument*>(output);
-	return a && is<theta_op>(a->region()->node());
-}
-
 /* mark phase */
 
 static bool

@@ -114,15 +114,6 @@ is_import(const jive::output * output)
 }
 
 static bool
-is_theta_argument(const jive::output * output)
-{
-	using namespace jive;
-
-	auto a = dynamic_cast<const argument*>(output);
-	return a && is<theta_op>(a->region()->node());
-}
-
-static bool
 is_lambda_output(const jive::output * output)
 {
 	return output->node()

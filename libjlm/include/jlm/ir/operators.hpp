@@ -16,5 +16,6 @@
 #include <jlm/ir/operators/operators.hpp>
 #include <jlm/ir/operators/sext.hpp>
 #include <jlm/ir/operators/store.hpp>
+#include <jlm/ir/operators/theta.hpp>
 
 #endif
