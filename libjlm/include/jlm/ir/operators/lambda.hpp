@@ -257,6 +257,13 @@ public:
 		return arguments;
 	}
 
+	size_t
+	narguments() const noexcept
+	{
+		JLM_DEBUG_ASSERT(subregion()->narguments() >= ninputs());
+		return subregion()->narguments() - ninputs();
+	}
+
 	inline jive::argument *
 	add_dependency(jive::output * origin)
 	{
