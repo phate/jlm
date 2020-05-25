@@ -60,6 +60,15 @@ private:
 	jlm::linkage linkage_;
 };
 
+static inline bool
+is_import(const jive::output * output)
+{
+	auto graph = output->region()->graph();
+
+	auto argument = dynamic_cast<const jive::argument*>(output);
+	return argument && argument->region() == graph->root();
+}
+
 /* rvsdg module class */
 
 class rvsdg_module final {

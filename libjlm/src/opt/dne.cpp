@@ -107,13 +107,6 @@ private:
 };
 
 static bool
-is_import(const jive::output * output)
-{
-	auto argument = dynamic_cast<const jive::argument*>(output);
-	return argument && !argument->region()->node();
-}
-
-static bool
 is_lambda_output(const jive::output * output)
 {
 	return output->node()
