@@ -286,14 +286,6 @@ public:
 	copy(jive::region * region, jive::substitution_map & smap) const override;
 };
 
-
-static inline bool
-is_lambda_argument(const jive::output * output)
-{
-	auto argument = dynamic_cast<const jive::argument*>(output);
-	return argument && jive::is<lambda_op>(argument->region()->node());
-}
-
 /* lambda builder */
 
 class lambda_builder final {
@@ -353,6 +345,28 @@ public:
 private:
 	lambda_node * lambda_;
 };
+
+static inline bool
+is_lambda_argument(const jive::output * output)
+{
+	auto argument = dynamic_cast<const jive::argument*>(output);
+	return argument && jive::is<lambda_op>(argument->region()->node());
+}
+
+static inline bool
+is_lambda_output(const jive::output * output)
+{
+	return is<lambda_op>(output->node());
+}
+
+static inline bool
+is_lambda_cv(const jive::output * output)
+{
+	auto argument = dynamic_cast<const jive::argument*>(output);
+	return argument
+	    && is<lambda_op>(argument->region()->node())
+	    && argument->input() != nullptr;
+}
 
 }
 

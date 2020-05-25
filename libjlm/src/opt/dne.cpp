@@ -107,13 +107,6 @@ private:
 };
 
 static bool
-is_lambda_output(const jive::output * output)
-{
-	return output->node()
-	    && dynamic_cast<const lambda_op*>(&output->node()->operation());
-}
-
-static bool
 is_phi_output(const jive::output * output)
 {
 	return output->node()
