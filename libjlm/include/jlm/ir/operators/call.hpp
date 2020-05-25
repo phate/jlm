@@ -14,6 +14,8 @@
 
 namespace jlm {
 
+class lambda_node;
+
 /* call operator */
 
 class call_op final : public jive::simple_op {
@@ -97,6 +99,29 @@ private:
 	}
 };
 
+/**
+* \brief Traces function input of call node
+*
+* Traces the function input of a call node upwards, trying to
+* find the corresponding lambda output. The function can handle
+* invariant gamma exit variables and invariant theta loop variables.
+*
+* \param node A call node.
+*
+* \return The traced output.
+*/
+jive::output *
+trace_function_input(const jive::simple_node & node);
+
+/**
+* \brief Checks if a node is a direct call node.
+*
+* \param node A simple node
+*
+* \return The corresponding lambda node if its a direct call, otherwise NULL.
+*/
+lambda_node *
+is_direct_call(const jive::simple_node & node);
 }
 
 #endif
