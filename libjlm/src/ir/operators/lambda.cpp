@@ -27,7 +27,7 @@ lambda_op::operator==(const operation & other) const noexcept
 std::string
 lambda_op::debug_string() const
 {
-	return "LAMBDA";
+	return strfmt("LAMBDA[", name(), "]");
 }
 
 std::unique_ptr<jive::operation>
