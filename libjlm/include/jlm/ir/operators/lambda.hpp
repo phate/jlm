@@ -162,14 +162,43 @@ private:
 		jive::argument * argument_;
 	};
 
-	class dependency_iterator final {
-	public:
-		inline constexpr
-		dependency_iterator(jive::input * input) noexcept
+	class cv_iterator final : public std::iterator<std::forward_iterator_tag,
+		jive::structural_input*, ptrdiff_t> {
+
+		friend class lambda_node;
+
+		constexpr
+		cv_iterator(jive::structural_input * input) noexcept
 		: input_(input)
 		{}
 
-		inline const dependency_iterator &
+	public:
+		jive::structural_input *
+		input() const
+		{
+			return operator->();
+		}
+
+		jive::argument *
+		argument() const
+		{
+			return input_->arguments.first();
+		}
+
+		jive::structural_input &
+		operator*() const
+		{
+			JLM_DEBUG_ASSERT(input_ != nullptr);
+			return *input_;
+		}
+
+		jive::structural_input *
+		operator->() const
+		{
+			return &operator*();
+		}
+
+		const cv_iterator &
 		operator++() noexcept
 		{
 			auto node = input_->node();
@@ -178,34 +207,28 @@ private:
 			return *this;
 		}
 
-		inline const dependency_iterator
+		const cv_iterator
 		operator++(int) noexcept
 		{
-			dependency_iterator it(*this);
+			cv_iterator it(*this);
 			++(*this);
 			return it;
 		}
 
-		inline bool
-		operator==(const dependency_iterator & other) const noexcept
+		bool
+		operator==(const cv_iterator & other) const noexcept
 		{
 			return input_ == other.input_;
 		}
 
-		inline bool
-		operator!=(const dependency_iterator & other) const noexcept
+		bool
+		operator!=(const cv_iterator & other) const noexcept
 		{
 			return !(*this == other);
 		}
 
-		inline jive::input *
-		operator*() noexcept
-		{
-			return input_;
-		}
-
 	private:
-		jive::input * input_;
+		jive::structural_input * input_;
 	};
 
 public:
@@ -231,20 +254,31 @@ public:
 		return argument_iterator(nullptr);
 	}
 
-	inline lambda_node::dependency_iterator
-	begin() const
+	cv_iterator
+	begin_cv() const
 	{
-		auto argument = subregion()->argument(0);
-		while (argument && argument->input() == nullptr)
-			argument = subregion()->argument(argument->index()+1);
+		if (ninputs() == 0)
+			return end_cv();
 
-		return dependency_iterator(argument->input());
+		return cv_iterator(input(0));
 	}
 
-	inline lambda_node::dependency_iterator
+	cv_iterator
+	end_cv() const
+	{
+		return cv_iterator(nullptr);
+	}
+
+	cv_iterator
+	begin() const
+	{
+		return begin_cv();
+	}
+
+	cv_iterator
 	end() const
 	{
-		return dependency_iterator(nullptr);
+		return end_cv();
 	}
 
 	std::vector<jive::argument*>

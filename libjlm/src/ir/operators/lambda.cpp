@@ -52,8 +52,8 @@ lambda_node::copy(jive::region * region, jive::substitution_map & smap) const
 	for (size_t n = 0; n < fcttype().narguments(); n++)
 		rmap.insert(subregion()->argument(n), arguments[n]);
 	for (const auto & odv : *this) {
-		auto ndv = lb.add_dependency(smap.lookup(odv->origin()));
-		rmap.insert(dynamic_cast<jive::structural_input*>(odv)->arguments.first(), ndv);
+		auto ndv = lb.add_dependency(smap.lookup(odv.origin()));
+		rmap.insert(odv.arguments.first(), ndv);
 	}
 
 	/* copy subregion */
