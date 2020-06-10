@@ -14,7 +14,7 @@ namespace jlm {
 std::string
 delta_op::debug_string() const
 {
-	return "DELTA";
+	return strfmt("DELTA[", name(), "]");
 }
 
 std::unique_ptr<jive::operation>
@@ -49,9 +49,9 @@ delta_node::copy(jive::region * region, jive::substitution_map & smap) const
 
 	/* add dependencies */
 	jive::substitution_map rmap;
-	for (const auto & od : *this) {
-		auto nd = db.add_dependency(smap.lookup(od->origin()));
-		rmap.insert(dynamic_cast<jive::structural_input*>(od)->arguments.first(), nd);
+	for (const auto & input : *this) {
+		auto nd = db.add_dependency(smap.lookup(input.origin()));
+		rmap.insert(input.arguments.first(), nd);
 	}
 
 	/* copy subregion */

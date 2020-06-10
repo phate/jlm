@@ -121,14 +121,30 @@ private:
 		return new delta_node(parent, op);
 	}
 
-	class iterator final {
-	public:
-		inline constexpr
-		iterator(jive::input * input) noexcept
+	class iterator final : public std::iterator<std::forward_iterator_tag,
+		jive::structural_input*, ptrdiff_t> {
+
+		friend class delta_node;
+
+		constexpr
+		iterator(jive::structural_input * input) noexcept
 		: input_(input)
 		{}
 
-		inline const iterator &
+	public:
+		jive::structural_input *
+		input() const
+		{
+			return operator->();
+		}
+
+		jive::argument *
+		argument() const
+		{
+			return input_->arguments.first();
+		}
+
+		const iterator &
 		operator++() noexcept
 		{
 			auto node = input_->node();
@@ -137,7 +153,7 @@ private:
 			return *this;
 		}
 
-		inline const iterator
+		const iterator
 		operator++(int) noexcept
 		{
 			iterator it(*this);
@@ -145,26 +161,33 @@ private:
 			return it;
 		}
 
-		inline bool
+		bool
 		operator==(const iterator & other) const noexcept
 		{
 			return input_ == other.input_;
 		}
 
-		inline bool
+		bool
 		operator!=(const iterator & other) const noexcept
 		{
 			return !(*this == other);
 		}
 
-		inline jive::input *
-		operator*() noexcept
+		jive::structural_input *
+		operator->() const noexcept
 		{
 			return input_;
 		}
 
+		jive::structural_input &
+		operator*() const noexcept
+		{
+			JLM_DEBUG_ASSERT(input_ != nullptr);
+			return *input_;
+		}
+
 	private:
-		jive::input * input_;
+		jive::structural_input * input_;
 	};
 
 public:
@@ -174,13 +197,16 @@ public:
 		return jive::structural_node::subregion(0);
 	}
 
-	inline delta_node::iterator
+	delta_node::iterator
 	begin() const
 	{
-		return iterator(subregion()->argument(0)->input());
+		if (ninputs() == 0)
+			return end();
+
+		return iterator(input(0));
 	}
 
-	inline delta_node::iterator
+	delta_node::iterator
 	end() const
 	{
 		return iterator(nullptr);
