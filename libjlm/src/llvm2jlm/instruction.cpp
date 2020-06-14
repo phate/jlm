@@ -176,7 +176,7 @@ convert_constantPointerNull(
 
 	auto t = convert_type(c.getType(), ctx);
 	auto r = ctx.module().create_variable(*t);
-	tacs.push_back(create_ptr_constant_null_tac(*t,r));
+	tacs.push_back(ptr_constant_null_op::create(*t,r));
 	return r;
 }
 

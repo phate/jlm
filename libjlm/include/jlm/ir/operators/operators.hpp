@@ -428,17 +428,35 @@ public:
 	{
 		return static_cast<const jlm::ptrtype*>(&result(0).type())->pointee_type();
 	}
+
+	static std::unique_ptr<jlm::tac>
+	create(const jive::type & ptype, jlm::variable * result)
+	{
+		auto & pt = check_type(ptype);
+
+		jlm::ptr_constant_null_op op(pt);
+		return tac::create(op, {}, {result});
+	}
+
+	static jive::output *
+	create(jive::region * region, const jive::type & ptype)
+	{
+		auto & pt = check_type(ptype);
+
+		ptr_constant_null_op op(pt);
+		return jive::simple_node::create_normalized(region, op, {})[0];
+	}
+
+private:
+	static const jlm::ptrtype &
+	check_type(const jive::type & type)
+	{
+		auto pt = dynamic_cast<const jlm::ptrtype*>(&type);
+		if (!pt) throw jlm::error("expected pointer type.");
+
+		return *pt;
+	}
 };
-
-static inline std::unique_ptr<jlm::tac>
-create_ptr_constant_null_tac(const jive::type & ptype, jlm::variable * result)
-{
-	auto pt = dynamic_cast<const jlm::ptrtype*>(&ptype);
-	if (!pt) throw jlm::error("expected pointer type.");
-
-	jlm::ptr_constant_null_op op(*pt);
-	return tac::create(op, {}, {result});
-}
 
 /* bits2ptr operator */
 
