@@ -393,6 +393,34 @@ public:
 	}
 };
 
+/** \brief Input/Output state type
+*
+* This type is used for state edges that sequentialize input/output operations.
+*/
+class iostatetype final : public jive::statetype {
+public:
+	~iostatetype() override;
+
+	constexpr
+	iostatetype() noexcept
+	{}
+
+	virtual bool
+	operator==(const jive::type & other) const noexcept override;
+
+	virtual std::unique_ptr<jive::type>
+	copy() const override;
+
+	virtual std::string
+	debug_string() const override;
+
+	static std::unique_ptr<jive::type>
+	create()
+	{
+		return std::make_unique<iostatetype>();
+	}
+};
+
 /*
 	FIXME: This function should be moved into jive.
 */

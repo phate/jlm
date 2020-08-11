@@ -190,4 +190,27 @@ loopstatetype::copy() const
 	return std::unique_ptr<jive::type>(new loopstatetype(*this));
 }
 
+/* I/O state type */
+
+iostatetype::~iostatetype()
+{}
+
+bool
+iostatetype::operator==(const jive::type & other) const noexcept
+{
+	return is<iostatetype>(other);
+}
+
+std::string
+iostatetype::debug_string() const
+{
+	return "iostate";
+}
+
+std::unique_ptr<jive::type>
+iostatetype::copy() const
+{
+	return std::unique_ptr<jive::type>(new iostatetype(*this));
+}
+
 }
