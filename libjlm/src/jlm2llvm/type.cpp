@@ -41,6 +41,9 @@ convert_function_type(const jive::type & type, context & ctx)
 			isvararg = true;
 			continue;
 		}
+
+		if (is<iostatetype>(t.argument_type(n)))
+			continue;
 		if (is<jive::memtype>(t.argument_type(n)))
 			continue;
 		if (is<loopstatetype>(t.argument_type(n)))
@@ -49,8 +52,11 @@ convert_function_type(const jive::type & type, context & ctx)
 		ats.push_back(convert_type(t.argument_type(n), ctx));
 	}
 
+	/*
+		The return type can either be (valuetype, statetype, statetype, ...) if the function has
+		a return value, or (statetype, statetype, ...) if the function returns void.
+	*/
 	auto rt = Type::getVoidTy(lctx);
-	JLM_DEBUG_ASSERT(t.nresults() == 2 || t.nresults() == 3);
 	if (is<jive::valuetype>(t.result_type(0)))
 		rt = convert_type(t.result_type(0), ctx);
 

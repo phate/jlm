@@ -238,6 +238,9 @@ convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 		for (const auto & tac : tacs) {
 			if (!is<phi_op>(tac->operation()))
 				continue;
+
+			if (is<iostatetype>(tac->result(0)->type()))
+				continue;
 			if (is<jive::memtype>(tac->result(0)->type()))
 				continue;
 			if (is<loopstatetype>(tac->result(0)->type()))

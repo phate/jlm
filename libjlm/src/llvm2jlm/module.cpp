@@ -88,7 +88,7 @@ create_cfg(llvm::Function & f, context & ctx)
 	auto node = static_cast<const fctvariable*>(ctx.lookup_value(&f))->function();
 	auto & m = ctx.module();
 
-	std::unique_ptr<jlm::cfg> cfg(new jlm::cfg(ctx.module()));
+	auto cfg = cfg::create(ctx.module());
 
 	/* add arguments */
 	size_t n = 0;
@@ -105,8 +105,10 @@ create_cfg(llvm::Function & f, context & ctx)
 		cfg->entry()->append_argument(v);
 	}
 	JLM_DEBUG_ASSERT(n < node->fcttype().narguments());
+	auto iostate = m.create_variable(node->fcttype().argument_type(n++), "_io_");
 	auto memstate = m.create_variable(node->fcttype().argument_type(n++), "_s_");
 	auto loopstate = m.create_variable(node->fcttype().argument_type(n++), "_l_");
+	cfg->entry()->append_argument(iostate);
 	cfg->entry()->append_argument(memstate);
 	cfg->entry()->append_argument(loopstate);
 	JLM_DEBUG_ASSERT(n == node->fcttype().narguments());
@@ -124,15 +126,17 @@ create_cfg(llvm::Function & f, context & ctx)
 		result = m.create_variable(*convert_type(f.getReturnType(), ctx), "_r_");
 		entry_block->append_last(create_undef_constant_tac(result));
 
-		JLM_DEBUG_ASSERT(node->fcttype().nresults() == 3);
+		JLM_DEBUG_ASSERT(node->fcttype().nresults() == 4);
 		JLM_DEBUG_ASSERT(result->type() == node->fcttype().result_type(0));
 		cfg->exit()->append_result(result);
 	}
+	cfg->exit()->append_result(iostate);
 	cfg->exit()->append_result(memstate);
 	cfg->exit()->append_result(loopstate);
 
 	/* convert instructions */
 	ctx.set_basic_block_map(bbmap);
+	ctx.set_iostate(iostate);
 	ctx.set_memory_state(memstate);
 	ctx.set_loop_state(loopstate);
 	ctx.set_result(result);

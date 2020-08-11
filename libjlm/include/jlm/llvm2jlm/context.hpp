@@ -90,6 +90,7 @@ public:
 	context(ipgraph_module & im)
 	: module_(im)
 	, node_(nullptr)
+	, iostate_(nullptr)
 	, loop_state_(nullptr)
 	, memory_state_(nullptr)
 	{}
@@ -104,6 +105,18 @@ public:
 	set_result(jlm::variable * result)
 	{
 		result_ = result;
+	}
+
+	jlm::variable *
+	iostate() const noexcept
+	{
+		return iostate_;
+	}
+
+	void
+	set_iostate(jlm::variable * state)
+	{
+		iostate_ = state;
 	}
 
 	inline jlm::variable *
@@ -222,6 +235,7 @@ private:
 	basic_block_map bbmap_;
 	ipgraph_node * node_;
 	jlm::variable * result_;
+	jlm::variable * iostate_;
 	jlm::variable * loop_state_;
 	jlm::variable * memory_state_;
 	std::unordered_map<const llvm::Value*, const jlm::variable*> vmap_;

@@ -171,6 +171,8 @@ convert_call(
 	for (size_t n = 1; n < args.size(); n++) {
 		auto argument = args[n];
 
+		if (is<iostatetype>(argument->type()))
+			continue;
 		if (is<jive::memtype>(argument->type()))
 			continue;
 		if (is<loopstatetype>(argument->type()))
@@ -247,6 +249,8 @@ convert_phi(
 	JLM_DEBUG_ASSERT(is<phi_op>(op));
 	auto & phi = *static_cast<const jlm::phi_op*>(&op);
 
+	if (is<iostatetype>(phi.type()))
+		return nullptr;
 	if (is<jive::memtype>(phi.type()))
 		return nullptr;
 	if (is<loopstatetype>(phi.type()))

@@ -66,6 +66,7 @@ convert_function_type(const llvm::Type * t, context & ctx)
 	for (size_t n = 0; n < type->getNumParams(); n++)
 		argument_types.push_back(convert_type(type->getParamType(n), ctx));
 	if (type->isVarArg()) argument_types.push_back(create_varargtype());
+	argument_types.push_back(iostatetype::create());
 	argument_types.push_back(std::unique_ptr<jive::type>(new jive::memtype()));
 	argument_types.push_back(loopstatetype::create());
 
@@ -73,6 +74,7 @@ convert_function_type(const llvm::Type * t, context & ctx)
 	std::vector<std::unique_ptr<jive::type>> result_types;
 	if (type->getReturnType()->getTypeID() != llvm::Type::VoidTyID)
 		result_types.push_back(convert_type(type->getReturnType(), ctx));
+	result_types.push_back(iostatetype::create());
 	result_types.push_back(std::unique_ptr<jive::type>(new jive::memtype()));
 	result_types.push_back(loopstatetype::create());
 

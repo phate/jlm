@@ -663,6 +663,7 @@ convert_call_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 			auto result = ctx.module().create_variable(*convert_type(i->getType(), ctx));
 			results.push_back(result);
 		}
+		results.push_back(ctx.iostate());
 		results.push_back(ctx.memory_state());
 		results.push_back(ctx.loop_state());
 
@@ -684,6 +685,7 @@ convert_call_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 	auto arguments = create_arguments(i, tacs, ctx);
 	if (ftype->isVarArg())
 		arguments.push_back(create_varargs(i, tacs, ctx));
+	arguments.push_back(ctx.iostate());
 	arguments.push_back(ctx.memory_state());
 	arguments.push_back(ctx.loop_state());
 
