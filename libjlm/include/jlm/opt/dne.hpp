@@ -8,6 +8,10 @@
 
 #include <jlm/opt/optimization.hpp>
 
+namespace jive {
+	class region;
+}
+
 namespace jlm {
 
 class rvsdg_module;
@@ -20,6 +24,9 @@ class dne final : public optimization {
 public:
 	virtual
 	~dne();
+
+	void
+	run(jive::region & region);
 
 	virtual void
 	run(rvsdg_module & module, const stats_descriptor & sd) override;
