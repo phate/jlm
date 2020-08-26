@@ -2325,6 +2325,9 @@ public:
 	static std::vector<jive::output*>
 	create_split(jive::output * operand, size_t nresults)
 	{
+		if (nresults == 0)
+			throw error("Insufficient number of resutls.");
+
 		memstatemux_op op(1, nresults);
 		return jive::simple_node::create_normalized(operand->region(), op, {operand});
 	}
