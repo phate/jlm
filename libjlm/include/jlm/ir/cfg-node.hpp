@@ -194,6 +194,9 @@ public:
 	inline void
 	divert_inedges(jlm::cfg_node * new_successor)
 	{
+		if (this == new_successor)
+			return;
+
 		while (ninedges())
 			(*begin_inedges())->divert(new_successor);
 	}
