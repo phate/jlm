@@ -284,18 +284,11 @@ public:
 		return iterator(it);
 	}
 
-	cfg::iterator
+	static cfg::iterator
 	remove_node(cfg::iterator & it);
 
-	inline cfg::iterator
-	remove_node(basic_block * bb)
-	{
-		auto it = find_node(bb);
-		if (it == end())
-			throw jlm::error("node does not belong to this CFG.");
-
-		return remove_node(it);
-	}
+	static cfg::iterator
+	remove_node(basic_block * bb);
 
 	inline size_t
 	nnodes() const noexcept

@@ -47,8 +47,7 @@ cfg::cfg(ipgraph_module & im)
 cfg::iterator
 cfg::remove_node(cfg::iterator & nodeit)
 {
-	if (&nodeit->cfg() != this)
-		throw jlm::error("node does not belong to this CFG.");
+	auto & cfg = nodeit->cfg();
 
 	for (auto it = nodeit->begin_inedges(); it != nodeit->end_inedges(); it++)
 		if ((*it)->source() != nodeit.node())
@@ -56,10 +55,19 @@ cfg::remove_node(cfg::iterator & nodeit)
 
 	nodeit->remove_outedges();
 	std::unique_ptr<basic_block> tmp(nodeit.node());
-	auto rit = iterator(std::next(nodes_.find(tmp)));
-	nodes_.erase(tmp);
+	auto rit = iterator(std::next(cfg.nodes_.find(tmp)));
+	cfg.nodes_.erase(tmp);
 	tmp.release();
 	return rit;
+}
+
+cfg::iterator
+cfg::remove_node(basic_block * bb)
+{
+	auto & cfg = bb->cfg();
+
+	auto it = cfg.find_node(bb);
+	return remove_node(it);
 }
 
 /* supporting functions */
