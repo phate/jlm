@@ -45,16 +45,17 @@ cfg::cfg(ipgraph_module & im)
 }
 
 cfg::iterator
-cfg::remove_node(cfg::iterator & it)
+cfg::remove_node(cfg::iterator & nodeit)
 {
-	if (&it->cfg() != this)
+	if (&nodeit->cfg() != this)
 		throw jlm::error("node does not belong to this CFG.");
 
-	if (it->ninedges())
-		throw jlm::error("cannot remove node. It has still incoming edges.");
+	for (auto it = nodeit->begin_inedges(); it != nodeit->end_inedges(); it++)
+		if ((*it)->source() != nodeit.node())
+			throw jlm::error("cannot remove node. It has still incoming edges.");
 
-	it->remove_outedges();
-	std::unique_ptr<basic_block> tmp(it.node());
+	nodeit->remove_outedges();
+	std::unique_ptr<basic_block> tmp(nodeit.node());
 	auto rit = iterator(std::next(nodes_.find(tmp)));
 	nodes_.erase(tmp);
 	tmp.release();
