@@ -111,6 +111,28 @@ reverse_postorder(const jlm::cfg & cfg)
 	return nodes;
 }
 
+std::vector<cfg_node*>
+breadth_first(const jlm::cfg & cfg)
+{
+	std::deque<jlm::cfg_node*> next({cfg.entry()});
+	std::vector<jlm::cfg_node*> nodes({cfg.entry()});
+	std::unordered_set<jlm::cfg_node*> visited({cfg.entry()});
+	while (!next.empty()) {
+		auto node = next.front();
+		next.pop_front();
+
+		for (auto it = node->begin_outedges(); it != node->end_outedges(); it++) {
+			if (visited.find(it->sink()) == visited.end()) {
+				visited.insert(it->sink());
+				next.push_back(it->sink());
+				nodes.push_back(it->sink());
+			}
+		}
+	}
+
+	return nodes;
+}
+
 size_t
 ntacs(const jlm::cfg & cfg)
 {

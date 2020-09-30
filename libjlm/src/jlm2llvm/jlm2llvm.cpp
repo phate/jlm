@@ -25,28 +25,6 @@
 #include <deque>
 #include <unordered_map>
 
-static inline std::vector<jlm::cfg_node*>
-breadth_first_traversal(const jlm::cfg & cfg)
-{
-	std::deque<jlm::cfg_node*> next({cfg.entry()});
-	std::vector<jlm::cfg_node*> nodes({cfg.entry()});
-	std::unordered_set<jlm::cfg_node*> visited({cfg.entry()});
-	while (!next.empty()) {
-		auto node = next.front();
-		next.pop_front();
-
-		for (auto it = node->begin_outedges(); it != node->end_outedges(); it++) {
-			if (visited.find(it->sink()) == visited.end()) {
-				visited.insert(it->sink());
-				next.push_back(it->sink());
-				nodes.push_back(it->sink());
-			}
-		}
-	}
-
-	return nodes;
-}
-
 namespace jlm {
 namespace jlm2llvm {
 
@@ -193,7 +171,7 @@ convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 	JLM_DEBUG_ASSERT(is_closed(cfg));
 
 	straighten(cfg);
-	auto nodes = breadth_first_traversal(cfg);
+	auto nodes = breadth_first(cfg);
 
 	/* create basic blocks */
 	for (const auto & node : nodes) {

@@ -17,29 +17,6 @@ namespace jlm {
 
 /* string converters */
 
-/* FIXME: replace with traverser */
-static inline std::vector<jlm::cfg_node*>
-breadth_first_traversal(const jlm::cfg & cfg)
-{
-	std::deque<jlm::cfg_node*> next({cfg.entry()});
-	std::vector<jlm::cfg_node*> nodes({cfg.entry()});
-	std::unordered_set<jlm::cfg_node*> visited({cfg.entry()});
-	while (!next.empty()) {
-		auto node = next.front();
-		next.pop_front();
-
-		for (auto it = node->begin_outedges(); it != node->end_outedges(); it++) {
-			if (visited.find(it->sink()) == visited.end()) {
-				visited.insert(it->sink());
-				next.push_back(it->sink());
-				nodes.push_back(it->sink());
-			}
-		}
-	}
-
-	return nodes;
-}
-
 static std::string
 emit_tac(const jlm::tac &);
 
@@ -171,7 +148,7 @@ to_str(const jlm::cfg & cfg)
 	});
 
 	std::string str;
-	auto nodes = breadth_first_traversal(cfg);
+	auto nodes = breadth_first(cfg);
 	for (const auto & node : nodes) {
 		str += emit_label(node) + ":";
 		str += (is<basic_block>(node) ? "\n" : " ");

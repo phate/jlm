@@ -335,6 +335,17 @@ postorder(const jlm::cfg & cfg);
 std::vector<cfg_node*>
 reverse_postorder(const jlm::cfg & cfg);
 
+/** Order CFG nodes breadth-first
+*
+* Note, all nodes that are not dominated by the entry node are ignored.
+*
+* param cfg Control flow graph
+*
+* return A vector with all CFG nodes ordered breadth-first
+*/
+std::vector<cfg_node*>
+breadth_first(const jlm::cfg & cfg);
+
 size_t
 ntacs(const jlm::cfg & cfg);
 
