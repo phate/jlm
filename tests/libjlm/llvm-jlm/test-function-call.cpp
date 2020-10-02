@@ -4,6 +4,7 @@
  */
 
 #include <test-registry.hpp>
+#include <test-util.hpp>
 
 #include <jlm/ir/print.hpp>
 #include <jlm/ir/operators/call.hpp>
@@ -13,16 +14,7 @@
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
-#include <llvm/Support/raw_os_ostream.h>
 
-#include <iostream>
-
-static void
-print(const llvm::Module & module)
-{
-	llvm::raw_os_ostream os(std::cout);
-	module.print(os, nullptr);
-}
 
 static void
 test_function_call()
@@ -67,7 +59,7 @@ test_function_call()
 
 	llvm::LLVMContext ctx;
 	auto llmod = setup(ctx);
-	print(*llmod);
+	jlm::print(*llmod);
 
 	auto ipgmod = jlm::convert_module(*llmod);
 	jlm::print(*ipgmod, stdout);
@@ -121,7 +113,7 @@ test_malloc_call()
 
 	llvm::LLVMContext ctx;
 	auto llmod = setup(ctx);
-	print(*llmod);
+	jlm::print(*llmod);
 
 	auto ipgmod = jlm::convert_module(*llmod);
 	jlm::print(*ipgmod, stdout);
