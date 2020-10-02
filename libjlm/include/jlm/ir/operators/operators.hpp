@@ -392,15 +392,15 @@ public:
 	{
 		return static_cast<const jive::ctltype*>(&argument(0).type())->nalternatives();
 	}
-};
 
-static inline std::unique_ptr<jlm::tac>
-create_branch_tac(size_t nalternatives, const variable * operand)
-{
-	jive::ctltype type(nalternatives);
-	branch_op op(type);
-	return tac::create(op, {operand}, {});
-}
+	static std::unique_ptr<jlm::tac>
+	create(size_t nalternatives, const variable * operand)
+	{
+		jive::ctltype type(nalternatives);
+		branch_op op(type);
+		return tac::create(op, {operand}, {});
+	}
+};
 
 /* ptr constant */
 

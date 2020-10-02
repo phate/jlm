@@ -400,7 +400,7 @@ convert_branch_instruction(llvm::Instruction * instruction, tacsvector_t & tacs,
 	auto nbits = i->getCondition()->getType()->getIntegerBitWidth();
 	auto op = jive::match_op(nbits, {{1, 1}}, 0, 2);
 	tacs.push_back(tac::create(op, {c}, create_result_variables(ctx.module(), op)));
-	tacs.push_back(create_branch_tac(2,  tacs.back()->result(0)));
+	tacs.push_back(branch_op::create(2,  tacs.back()->result(0)));
 
 	return nullptr;
 }
@@ -427,7 +427,7 @@ convert_switch_instruction(llvm::Instruction * instruction, tacsvector_t & tacs,
 	auto nbits = i->getCondition()->getType()->getIntegerBitWidth();
 	auto op = jive::match_op(nbits, mapping, n, n+1);
 	tacs.push_back(tac::create(op, {c}, create_result_variables(ctx.module(), op)));
-	tacs.push_back((create_branch_tac(n+1, tacs.back()->result(0))));
+	tacs.push_back((branch_op::create(n+1, tacs.back()->result(0))));
 
 	return nullptr;
 }

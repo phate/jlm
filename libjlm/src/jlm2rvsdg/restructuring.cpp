@@ -324,7 +324,7 @@ append_branch(basic_block * bb, const variable * operand)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const jive::ctltype*>(&operand->type()));
 	auto nalternatives = static_cast<const jive::ctltype*>(&operand->type())->nalternatives();
-	bb->append_last(create_branch_tac(nalternatives, operand));
+	bb->append_last(branch_op::create(nalternatives, operand));
 }
 
 static inline void

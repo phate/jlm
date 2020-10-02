@@ -280,7 +280,7 @@ convert_gamma_node(const jive::node & node, context & ctx)
 
 	/* convert gamma regions */
 	std::vector<cfg_node*> phi_nodes;
-	entry->append_last(create_branch_tac(nalternatives, ctx.variable(predicate)));
+	entry->append_last(branch_op::create(nalternatives, ctx.variable(predicate)));
 	for (size_t n = 0; n < gamma->nsubregions(); n++) {
 		auto subregion = gamma->subregion(n);
 
@@ -414,7 +414,7 @@ convert_theta_node(const jive::node & node, context & ctx)
 	}
 	JLM_DEBUG_ASSERT(lvs.empty());
 
-	ctx.lpbb()->append_last(create_branch_tac(2, ctx.variable(predicate)));
+	ctx.lpbb()->append_last(branch_op::create(2, ctx.variable(predicate)));
 	auto exit = basic_block::create(*ctx.cfg());
 	ctx.lpbb()->add_outedge(exit);
 	ctx.lpbb()->add_outedge(entry);
