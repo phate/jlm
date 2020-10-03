@@ -361,9 +361,27 @@ restructure_loop_exit(
 	const scc_structure & s,
 	basic_block * new_nr,
 	basic_block * new_nx,
+	cfg_node * exit,
 	const variable * rv,
 	const variable * xv)
 {
+	/*
+		It could be that an SCC has no exit edge. This can arise when the input CFG contains a
+		statically detectable endless loop, e.g., entry -> basic block  exit. Note the missing
+		                                                   ^_________|
+		edge to the exit node.
+
+		Such CFGs do not play well with our restructuring algorithm, as the exit node does not
+		post-dominate the basic block. We circumvent this problem by inserting an additional
+		edge from the newly created exit basic block of the loop to the exit of the SESE region.
+		This edge is never taken at runtime, but fixes the CFGs structure at compile-time such
+		that we can create an RVSDG.
+	*/
+	if (s.nxedges() == 0) {
+		new_nx->add_outedge(exit);
+		return;
+	}
+
 	size_t n = 0;
 	std::unordered_map<jlm::cfg_node*, size_t> indices;
 	for (auto it = s.begin_xnodes(); it != s.end_xnodes(); it++, n++) {
@@ -437,7 +455,7 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit, std::vector<tcloo
 		append_branch(new_nr, rv);
 
 		restructure_loop_entry(s, new_ne, ev);
-		restructure_loop_exit(s, new_nr, new_nx, rv, xv);
+		restructure_loop_exit(s, new_nr, new_nx, exit, rv, xv);
 		restructure_loop_repetition(s, new_nr, new_nr, ev, rv);
 
 		restructure(new_ne, new_nr, loops);

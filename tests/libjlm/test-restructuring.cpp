@@ -223,6 +223,31 @@ test_lor_before_dowhile()
 	assert(is_proper_structured(cfg));
 }
 
+static void
+test_static_endless_loop()
+{
+	using namespace jlm;
+
+	ipgraph_module im(filepath(""), "", "");
+
+	jlm::cfg cfg(im);
+	auto bb1 = basic_block::create(cfg);
+	auto bb2 = basic_block::create(cfg);
+
+	cfg.exit()->divert_inedges(bb1);
+	bb1->add_outedge(bb2);
+	bb1->add_outedge(bb1);
+	bb1->add_outedge(cfg.exit());
+	bb2->add_outedge(bb2);
+
+//	jlm::print_dot(cfg, stdout);
+
+	restructure(&cfg);
+
+//	jlm::print_dot(cfg, stdout);
+	assert(is_proper_structured(cfg));
+}
+
 static int
 verify()
 {
@@ -233,6 +258,7 @@ verify()
 	test_irreducible();
 	test_acyclic_unstructured_in_dowhile();
 	test_lor_before_dowhile();
+	test_static_endless_loop();
 
 	return 0;
 }
