@@ -100,6 +100,17 @@ convert_bitscompare(
 	return builder.CreateICmp(map[std::type_index(typeid(op))], op1, op2);
 }
 
+static llvm::APInt
+convert_bitvalue_repr(const jive::bitvalue_repr & vr)
+{
+	JLM_DEBUG_ASSERT(vr.is_defined());
+
+	std::string str = vr.str();
+	std::reverse(str.begin(), str.end());
+
+	return llvm::APInt(vr.nbits(), str, 2);
+}
+
 static inline llvm::Value *
 convert_bitconstant(
 	const jive::simple_op & op,
@@ -108,11 +119,12 @@ convert_bitconstant(
 	context & ctx)
 {
 	JLM_DEBUG_ASSERT(dynamic_cast<const jive::bitconstant_op*>(&op));
-	auto & cop = *static_cast<const jive::bitconstant_op*>(&op);
-	auto type = llvm::IntegerType::get(builder.getContext(), cop.value().nbits());
+	auto value = static_cast<const jive::bitconstant_op*>(&op)->value();
 
-	if (cop.value().is_defined())
-		return llvm::ConstantInt::get(type, cop.value().to_uint());
+	auto type = llvm::IntegerType::get(builder.getContext(), value.nbits());
+
+	if (value.is_defined())
+		return llvm::ConstantInt::get(type, convert_bitvalue_repr(value));
 
 	return llvm::UndefValue::get(type);
 }
