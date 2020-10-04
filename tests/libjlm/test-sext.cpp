@@ -69,6 +69,8 @@ test_bitbinary_reduction()
 static inline void
 test_inverse_reduction()
 {
+	using namespace jlm;
+
 	jive::bittype bt64(64);
 
 	jive::graph graph;
@@ -77,7 +79,7 @@ test_inverse_reduction()
 
 	auto x = graph.add_import({bt64, "x"});
 
-	auto y = jlm::create_trunc(32, x);
+	auto y = trunc_op::create(32, x);
 	auto z = jlm::create_sext(64, y);
 
 	auto ex = graph.add_export(z, {z->type(), "x"});
