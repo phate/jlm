@@ -52,7 +52,7 @@ destruct_ssa(jlm::cfg & cfg)
 			auto phi = static_cast<const phi_op*>(&tac->operation());
 			auto v = cfg.module().create_variable(phi->type());
 
-			const variable * value;
+			const variable * value = nullptr;
 			for (size_t n = 0; n < tac->noperands(); n++) {
 				JLM_DEBUG_ASSERT(edges.find(phi->node(n)) != edges.end());
 				auto bb = edges[phi->node(n)]->split();
