@@ -767,8 +767,8 @@ convert(
 
 	auto fcttype = convert_type(op.fcttype(), ctx);
 	auto function = lm.getOrInsertFunction("malloc", fcttype);
-	auto fctargs = llvm::ArrayRef<llvm::Value*>(ctx.value(args[0]));
-	return builder.CreateCall(function, fctargs);
+	auto operands = std::vector<llvm::Value*>(1, ctx.value(args[0]));
+	return builder.CreateCall(function, operands);
 }
 
 static llvm::Value *
