@@ -12,8 +12,11 @@ help:
 	@$(HELP_TEXT_JLM)
 	@echo ""
 	@echo "submodule              Initializes all the dependent git submodules"
-	@echo "all                    Compile jlm in debug mode, and run unit and C tests"
-	@echo "clean                  Calls clean for jive and jlm"
+	@echo "all                    Compile jlm in release mode, and run unit and C tests"
+	@echo "release                Alias for jlm-release"
+	@echo "debug                  Alias for jlm-debug and check"
+	@echo "clean                  Alias for jlm-clean"
+	@echo "purge                  Alias for jlm-clean and jive-clean"
 	@$(HELP_TEXT_JIVE)
 
 JLM_ROOT ?= .
@@ -28,7 +31,13 @@ endif
 LLVMCONFIG ?= llvm-config
 
 .PHONY: all
-all: jlm-debug check
+all: jlm-release check
+
+.PHONY: release
+release: jlm-release
+
+.PHONY: debug
+debug: jlm-debug check
 
 .PHONY: submodule
 submodule:
@@ -46,7 +55,10 @@ submodule:
 	ranlib $@
 
 .PHONY: clean
-clean: jive-clean jlm-clean
+clean: jlm-clean
+
+.PHONY: purge 
+purge: jive-clean jlm-clean
 
 ifeq ($(shell if [ -e .Makefile.override ] ; then echo yes ; fi),yes)
 include .Makefile.override
