@@ -6,16 +6,16 @@
 #include "test-operation.hpp"
 #include "test-registry.hpp"
 
-#include <jive/evaluator/eval.h>
-#include <jive/evaluator/literal.h>
-#include <jive/types/bitstring/arithmetic.h>
-#include <jive/types/bitstring/constant.h>
-#include <jive/types/bitstring/comparison.h>
-#include <jive/view.h>
-#include <jive/rvsdg/gamma.h>
-#include <jive/rvsdg/graph.h>
-#include <jive/rvsdg/simple-node.h>
-#include <jive/rvsdg/theta.h>
+#include <jive/evaluator/eval.hpp>
+#include <jive/evaluator/literal.hpp>
+#include <jive/types/bitstring/arithmetic.hpp>
+#include <jive/types/bitstring/constant.hpp>
+#include <jive/types/bitstring/comparison.hpp>
+#include <jive/view.hpp>
+#include <jive/rvsdg/gamma.hpp>
+#include <jive/rvsdg/graph.hpp>
+#include <jive/rvsdg/simple-node.hpp>
+#include <jive/rvsdg/theta.hpp>
 
 #include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/opt/dne.hpp>

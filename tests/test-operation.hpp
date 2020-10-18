@@ -6,9 +6,9 @@
 #ifndef TESTS_TEST_OPERATION_HPP
 #define TESTS_TEST_OPERATION_HPP
 
-#include <jive/rvsdg/operation.h>
-#include <jive/rvsdg/simple-node.h>
-#include <jive/rvsdg/type.h>
+#include <jive/rvsdg/operation.hpp>
+#include <jive/rvsdg/simple-node.hpp>
+#include <jive/rvsdg/type.hpp>
 
 #include <jlm/ir/tac.hpp>
 

@@ -10,7 +10,7 @@
 #include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/operators/operators.hpp>
 
-#include <jive/rvsdg/control.h>
+#include <jive/rvsdg/control.hpp>
 
 #include <algorithm>
 #include <cmath>

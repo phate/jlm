@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jive/arch/addresstype.h>
-#include <jive/rvsdg/statemux.h>
+#include <jive/arch/addresstype.hpp>
+#include <jive/rvsdg/statemux.hpp>
 
 #include <jlm/ir/operators/alloca.hpp>
 #include <jlm/ir/operators/load.hpp>

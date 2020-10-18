@@ -20,21 +20,21 @@
 #include <jlm/util/stats.hpp>
 #include <jlm/util/time.hpp>
 
-#include <jive/arch/address.h>
-#include <jive/arch/addresstype.h>
-#include <jive/arch/dataobject.h>
-#include <jive/arch/memlayout-simple.h>
-#include <jive/types/bitstring/constant.h>
-#include <jive/types/bitstring/type.h>
-#include <jive/types/float.h>
-#include <jive/types/function.h>
-#include <jive/rvsdg/binary.h>
-#include <jive/rvsdg/control.h>
-#include <jive/rvsdg/gamma.h>
-#include <jive/rvsdg/phi.h>
-#include <jive/rvsdg/region.h>
-#include <jive/rvsdg/theta.h>
-#include <jive/rvsdg/type.h>
+#include <jive/arch/address.hpp>
+#include <jive/arch/addresstype.hpp>
+#include <jive/arch/dataobject.hpp>
+#include <jive/arch/memlayout-simple.hpp>
+#include <jive/types/bitstring/constant.hpp>
+#include <jive/types/bitstring/type.hpp>
+#include <jive/types/float.hpp>
+#include <jive/types/function.hpp>
+#include <jive/rvsdg/binary.hpp>
+#include <jive/rvsdg/control.hpp>
+#include <jive/rvsdg/gamma.hpp>
+#include <jive/rvsdg/phi.hpp>
+#include <jive/rvsdg/region.hpp>
+#include <jive/rvsdg/theta.hpp>
+#include <jive/rvsdg/type.hpp>
 
 #include <cmath>
 #include <stack>

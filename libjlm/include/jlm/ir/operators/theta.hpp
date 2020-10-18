@@ -6,7 +6,7 @@
 #ifndef JLM_IR_OPERATORS_THETA_HPP
 #define JLM_IR_OPERATORS_THETA_HPP
 
-#include <jive/rvsdg/theta.h>
+#include <jive/rvsdg/theta.hpp>
 
 namespace jlm {
 

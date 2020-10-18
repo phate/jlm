@@ -5,7 +5,7 @@
 
 #include <jlm/ir/operators/delta.hpp>
 
-#include <jive/rvsdg/substitution.h>
+#include <jive/rvsdg/substitution.hpp>
 
 namespace jlm {
 

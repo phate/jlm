@@ -7,9 +7,9 @@
 #include "test-registry.hpp"
 #include "test-types.hpp"
 
-#include <jive/view.h>
-#include <jive/rvsdg/gamma.h>
-#include <jive/rvsdg/simple-node.h>
+#include <jive/view.hpp>
+#include <jive/rvsdg/gamma.hpp>
+#include <jive/rvsdg/simple-node.hpp>
 
 #include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/opt/pull.hpp>

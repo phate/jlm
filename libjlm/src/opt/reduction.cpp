@@ -3,9 +3,9 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jive/rvsdg/binary.h>
-#include <jive/rvsdg/gamma.h>
-#include <jive/rvsdg/statemux.h>
+#include <jive/rvsdg/binary.hpp>
+#include <jive/rvsdg/gamma.hpp>
+#include <jive/rvsdg/statemux.hpp>
 
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/rvsdg-module.hpp>

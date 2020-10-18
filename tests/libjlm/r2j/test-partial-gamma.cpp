@@ -7,9 +7,9 @@
 #include "test-registry.hpp"
 #include "test-types.hpp"
 
-#include <jive/rvsdg/control.h>
-#include <jive/rvsdg/gamma.h>
-#include <jive/view.h>
+#include <jive/rvsdg/control.hpp>
+#include <jive/rvsdg/gamma.hpp>
+#include <jive/view.hpp>
 
 #include <jlm/ir/cfg-structure.hpp>
 #include <jlm/ir/ipgraph-module.hpp>

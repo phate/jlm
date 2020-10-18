@@ -3,10 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jive/arch/addresstype.h>
-#include <jive/types/bitstring.h>
-#include <jive/rvsdg/control.h>
-#include <jive/rvsdg/statemux.h>
+#include <jive/arch/addresstype.hpp>
+#include <jive/types/bitstring.hpp>
+#include <jive/rvsdg/control.hpp>
+#include <jive/rvsdg/statemux.hpp>
 
 #include <jlm/ir/cfg-node.hpp>
 #include <jlm/ir/ipgraph-module.hpp>

@@ -6,7 +6,7 @@
 #ifndef JLM_IR_OPERATORS_PHI_HPP
 #define JLM_IR_OPERATORS_PHI_HPP
 
-#include <jive/rvsdg/phi.h>
+#include <jive/rvsdg/phi.hpp>
 
 /*
 	FIXME: This should be defined in jive.

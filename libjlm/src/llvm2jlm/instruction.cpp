@@ -13,15 +13,15 @@
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/tac.hpp>
 
-#include <jive/arch/address.h>
-#include <jive/arch/address-transform.h>
-#include <jive/arch/load.h>
-#include <jive/arch/addresstype.h>
-#include <jive/arch/store.h>
-#include <jive/types/bitstring.h>
-#include <jive/types/float.h>
-#include <jive/types/record.h>
-#include <jive/rvsdg/control.h>
+#include <jive/arch/address.hpp>
+#include <jive/arch/address-transform.hpp>
+#include <jive/arch/load.hpp>
+#include <jive/arch/addresstype.hpp>
+#include <jive/arch/store.hpp>
+#include <jive/types/bitstring.hpp>
+#include <jive/types/float.hpp>
+#include <jive/types/record.hpp>
+#include <jive/rvsdg/control.hpp>
 
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/Instructions.h>

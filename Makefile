@@ -37,9 +37,6 @@ submodule:
 %.la: %.cpp
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) -o $@ $<
 
-%.la: %.c
-	$(CXX) -c $(CFLAGS) $(CPPFLAGS) -o $@ $<
-
 %.o: %.cpp
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) -o $@ $<
 

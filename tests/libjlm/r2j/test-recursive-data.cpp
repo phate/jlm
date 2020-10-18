@@ -7,8 +7,8 @@
 #include "test-operation.hpp"
 #include "test-types.hpp"
 
-#include <jive/rvsdg/phi.h>
-#include <jive/view.h>
+#include <jive/rvsdg/phi.hpp>
+#include <jive/view.hpp>
 
 #include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/operators/delta.hpp>

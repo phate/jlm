@@ -6,10 +6,10 @@
 #ifndef JLM_IR_OPERATORS_LOAD_HPP
 #define JLM_IR_OPERATORS_LOAD_HPP
 
-#include <jive/arch/addresstype.h>
-#include <jive/rvsdg/graph.h>
-#include <jive/rvsdg/simple-normal-form.h>
-#include <jive/rvsdg/simple-node.h>
+#include <jive/arch/addresstype.hpp>
+#include <jive/rvsdg/graph.hpp>
+#include <jive/rvsdg/simple-normal-form.hpp>
+#include <jive/rvsdg/simple-node.hpp>
 
 #include <jlm/ir/tac.hpp>
 #include <jlm/ir/types.hpp>

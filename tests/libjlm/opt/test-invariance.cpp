@@ -6,11 +6,11 @@
 #include "test-registry.hpp"
 #include "test-types.hpp"
 
-#include <jive/view.h>
-#include <jive/rvsdg/control.h>
-#include <jive/rvsdg/gamma.h>
-#include <jive/rvsdg/graph.h>
-#include <jive/rvsdg/theta.h>
+#include <jive/view.hpp>
+#include <jive/rvsdg/control.hpp>
+#include <jive/rvsdg/gamma.hpp>
+#include <jive/rvsdg/graph.hpp>
+#include <jive/rvsdg/theta.hpp>
 
 #include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/ir/types.hpp>

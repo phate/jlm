@@ -5,8 +5,8 @@
 
 #include <test-registry.hpp>
 
-#include <jive/types/bitstring/arithmetic.h>
-#include <jive/view.h>
+#include <jive/types/bitstring/arithmetic.hpp>
+#include <jive/view.hpp>
 
 #include <jlm/ir/operators/operators.hpp>
 #include <jlm/ir/operators/sext.hpp>

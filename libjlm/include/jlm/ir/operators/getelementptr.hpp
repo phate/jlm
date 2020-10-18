@@ -6,8 +6,8 @@
 #ifndef JLM_IR_OPERATORS_GETELEMENTPTR_HPP
 #define JLM_IR_OPERATORS_GETELEMENTPTR_HPP
 
-#include <jive/types/bitstring/type.h>
-#include <jive/rvsdg/simple-node.h>
+#include <jive/types/bitstring/type.hpp>
+#include <jive/rvsdg/simple-node.hpp>
 
 #include <jlm/ir/tac.hpp>
 #include <jlm/ir/types.hpp>

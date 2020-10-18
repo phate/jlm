@@ -6,7 +6,7 @@
 #ifndef JLM_OPT_PULL_HPP
 #define JLM_OPT_PULL_HPP
 
-#include <jive/rvsdg/graph.h>
+#include <jive/rvsdg/graph.hpp>
 
 #include <jlm/opt/optimization.hpp>
 
