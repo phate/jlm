@@ -56,7 +56,7 @@ public:
 	void
 	set_file(const jlm::filepath & path) noexcept
 	{
-		file_ = std::move(jlm::file(path));
+		file_ = jlm::file(path);
 		file_.open("a");
 	}
 

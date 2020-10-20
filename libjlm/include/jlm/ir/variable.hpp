@@ -42,6 +42,8 @@ public:
 
 		name_ = std::move(other.name_);
 		type_ = std::move(other.type_);
+
+		return *this;
 	}
 
 	virtual std::string

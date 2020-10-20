@@ -23,7 +23,7 @@ namespace jlm {
 class error : public std::runtime_error {
 public:
 	virtual
-	~error() noexcept;
+	~error();
 
 	inline
 	error(const std::string & msg)

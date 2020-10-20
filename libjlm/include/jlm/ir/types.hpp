@@ -32,7 +32,7 @@ public:
 	inline
 	ptrtype(const jlm::ptrtype & other)
 	: jive::valuetype(other)
-	, ptype_(std::move(other.ptype_->copy()))
+	, ptype_(other.ptype_->copy())
 	{}
 
 	inline
@@ -93,7 +93,7 @@ public:
 	arraytype(const jlm::arraytype & other)
 	: jive::valuetype(other)
 	, nelements_(other.nelements_)
-	, type_(std::move(other.type_->copy()))
+	, type_(other.type_->copy())
 	{}
 
 	inline

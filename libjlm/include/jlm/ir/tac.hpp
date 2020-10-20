@@ -31,7 +31,7 @@ class tac;
 class tacvariable final : public variable {
 public:
 	virtual
-	~tacvariable() noexcept;
+	~tacvariable();
 
 	inline
 	tacvariable(

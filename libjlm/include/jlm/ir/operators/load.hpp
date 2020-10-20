@@ -21,7 +21,7 @@ namespace jlm {
 class load_normal_form final : public jive::simple_normal_form {
 public:
 	virtual
-	~load_normal_form() noexcept;
+	~load_normal_form();
 
 	load_normal_form(
 		const std::type_info & opclass,

@@ -28,8 +28,8 @@ public:
 	: simple_op(create_srcports(fcttype), create_dstports(fcttype))
 	{}
 
-	virtual bool
-	operator==(const operation & other) const noexcept;
+ 	virtual bool
+ 	operator==(const operation & other) const noexcept override;
 
 	virtual std::string
 	debug_string() const override;
