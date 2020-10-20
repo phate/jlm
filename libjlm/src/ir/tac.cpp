@@ -60,7 +60,7 @@ tac::tac(
 	const std::vector<const variable *> & results)
 	: results_(results)
 	, operands_(operands)
-	, operation_(std::move(operation.copy()))
+	, operation_(operation.copy())
 {
 	check_operands(operation, operands);
 	check_results(operation, results);
@@ -77,7 +77,7 @@ tac::replace(
 
 	results_ = results;
 	operands_ = operands;
-	operation_ = std::move(operation.copy());
+	operation_ = operation.copy();
 }
 
 }

@@ -367,9 +367,9 @@ sweep(jive::structural_node * node, const dnectx & ctx)
 	, {typeid(jlm::delta_op), sweep_delta}
 	});
 
-	std::type_index index(typeid(node->operation()));
-	JLM_DEBUG_ASSERT(map.find(index) != map.end());
-	map[index](node, ctx);
+	auto & op = node->operation();
+	JLM_DEBUG_ASSERT(map.find(typeid(op)) != map.end());
+	map[typeid(op)](node, ctx);
 }
 
 static void

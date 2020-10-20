@@ -40,8 +40,8 @@ test()
 	tacsvector_t tvec1, tvec2;
 	auto tv1 = im.create_tacvariable(vt);
 	auto tv2 = im.create_tacvariable(vt);
-	tvec1.push_back(std::move(create_testop_tac({v0, v2}, {tv1})));
-	tvec2.push_back(std::move(create_testop_tac({v0, v1}, {tv2})));
+	tvec1.push_back(create_testop_tac({v0, v2}, {tv1}));
+	tvec2.push_back(create_testop_tac({v0, v1}, {tv2}));
 
 	d1->set_initialization(std::make_unique<data_node_init>(std::move(tvec1)));
 	d2->set_initialization(std::make_unique<data_node_init>(std::move(tvec2)));

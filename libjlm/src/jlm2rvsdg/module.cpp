@@ -333,8 +333,9 @@ convert_tac(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
 	, {std::type_index(typeid(branch_op)), convert_branch}
 	});
 
-	if (map.find(std::type_index(typeid(tac.operation()))) != map.end())
-		return map[std::type_index(typeid(tac.operation()))](tac, region, vmap);
+	auto & op = tac.operation();
+	if (map.find(typeid(op)) != map.end())
+		return map[typeid(op)](tac, region, vmap);
 
 	std::vector<jive::output*> operands;
 	for (size_t n = 0; n < tac.noperands(); n++) {

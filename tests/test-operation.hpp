@@ -17,7 +17,7 @@ namespace jlm {
 class test_op final : public jive::simple_op {
 public:
 	virtual
-	~test_op() noexcept;
+	~test_op();
 
 	inline
 	test_op(
