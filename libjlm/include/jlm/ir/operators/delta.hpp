@@ -27,7 +27,7 @@ public:
 	: constant_(constant)
 	, name_(name)
 	, linkage_(linkage)
-	, type_(std::move(type.copy()))
+	, type_(type.copy())
 	{}
 
 	delta_op(const delta_op & other)

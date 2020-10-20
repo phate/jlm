@@ -21,7 +21,7 @@ namespace jlm {
 class store_normal_form final : public jive::simple_normal_form {
 public:
 	virtual
-	~store_normal_form() noexcept;
+	~store_normal_form();
 
 	store_normal_form(
 		const std::type_info & opclass,

@@ -138,7 +138,7 @@ class ipgraph_node {
 	typedef std::unordered_set<const ipgraph_node*>::const_iterator const_iterator;
 public:
 	virtual
-	~ipgraph_node() noexcept;
+	~ipgraph_node();
 
 protected:
 	inline
@@ -197,7 +197,7 @@ private:
 class function_node final : public ipgraph_node {
 public:
 	virtual
-	~function_node() noexcept;
+	~function_node();
 
 private:
 	inline
@@ -336,7 +336,7 @@ private:
 class data_node final : public ipgraph_node {
 public:
 	virtual
-	~data_node() noexcept;
+	~data_node();
 
 private:
 	inline
@@ -350,7 +350,7 @@ private:
 	, constant_(constant)
 	, name_(name)
 	, linkage_(linkage)
-	, type_(std::move(type.copy()))
+	, type_(type.copy())
 	{}
 
 public:

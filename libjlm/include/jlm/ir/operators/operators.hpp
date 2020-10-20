@@ -424,7 +424,7 @@ public:
 	copy() const override;
 
 	inline const jive::valuetype &
-	pointee_type() const noexcept
+	pointee_type() const
 	{
 		return static_cast<const jlm::ptrtype*>(&result(0).type())->pointee_type();
 	}
@@ -463,7 +463,7 @@ private:
 class bits2ptr_op final : public jive::unary_op {
 public:
 	virtual
-	~bits2ptr_op() noexcept;
+	~bits2ptr_op();
 
 	inline
 	bits2ptr_op(const jive::bittype & btype, const jlm::ptrtype & ptype)
@@ -508,7 +508,7 @@ public:
 	}
 
 	inline const jive::valuetype &
-	pointee_type() const noexcept
+	pointee_type() const
 	{
 		return static_cast<const jlm::ptrtype*>(&result(0).type())->pointee_type();
 	}
@@ -532,7 +532,7 @@ create_bits2ptr_tac(const variable * argument, jlm::variable * result)
 class ptr2bits_op final : public jive::unary_op {
 public:
 	virtual
-	~ptr2bits_op() noexcept;
+	~ptr2bits_op();
 
 	inline
 	ptr2bits_op(const jlm::ptrtype & ptype, const jive::bittype & btype)
@@ -655,7 +655,7 @@ enum class cmp {eq, ne, gt, ge, lt, le};
 class ptrcmp_op final : public jive::binary_op {
 public:
 	virtual
-	~ptrcmp_op() noexcept;
+	~ptrcmp_op();
 
 	inline
 	ptrcmp_op(const jlm::ptrtype & ptype, const jlm::cmp & cmp)
@@ -718,7 +718,7 @@ create_ptrcmp_tac(
 class zext_op final : public jive::unary_op {
 public:
 	virtual
-	~zext_op() noexcept;
+	~zext_op();
 
 	inline
 	zext_op(size_t nsrcbits, size_t ndstbits)
@@ -846,7 +846,7 @@ enum class fpcmp {
 class fpcmp_op final : public jive::binary_op {
 public:
 	virtual
-	~fpcmp_op() noexcept;
+	~fpcmp_op();
 
 	inline
 	fpcmp_op(const jlm::fpcmp & cmp, const jlm::fpsize & size)
@@ -909,7 +909,7 @@ create_fpcmp_tac(
 class undef_constant_op final : public jive::simple_op {
 public:
 	virtual
-	~undef_constant_op() noexcept;
+	~undef_constant_op();
 
 	inline
 	undef_constant_op(const jive::valuetype & type)
@@ -967,7 +967,7 @@ enum class fpop {add, sub, mul, div, mod};
 class fpbin_op final : public jive::binary_op {
 public:
 	virtual
-	~fpbin_op() noexcept;
+	~fpbin_op();
 
 	inline
 	fpbin_op(const jlm::fpop & op, const jlm::fpsize & size)
@@ -1030,7 +1030,7 @@ create_fpbin_tac(
 class fpext_op final : public jive::unary_op {
 public:
 	virtual
-	~fpext_op() noexcept;
+	~fpext_op();
 
 	inline
 	fpext_op(const jlm::fpsize & srcsize, const jlm::fpsize & dstsize)
@@ -1105,7 +1105,7 @@ create_fpext_tac(const variable * operand, jlm::variable * result)
 class fptrunc_op final : public jive::unary_op {
 public:
 	virtual
-	~fptrunc_op() noexcept;
+	~fptrunc_op();
 
 	inline
 	fptrunc_op(const fpsize & srcsize, const fpsize & dstsize)
@@ -1184,7 +1184,7 @@ create_fptrunc_tac(const variable * operand, jlm::variable * result)
 class valist_op final : public jive::simple_op {
 public:
 	virtual
-	~valist_op() noexcept;
+	~valist_op();
 
 	inline
 	valist_op(std::vector<std::unique_ptr<jive::type>> types)
@@ -1578,7 +1578,7 @@ create_sitofp_tac(const variable * operand, jlm::variable * result)
 class constant_array_op final : public jive::simple_op {
 public:
 	virtual
-	~constant_array_op() noexcept;
+	~constant_array_op();
 
 	inline
 	constant_array_op(const jive::valuetype & type, size_t size)
@@ -1847,7 +1847,7 @@ public:
 		const vectortype & operand,
 		const vectortype & result)
 	: simple_op({operand}, {result})
-	, op_(std::move(op.copy()))
+	, op_(op.copy())
 	{
 		if (operand.type() != op.argument(0).type()) {
 			auto received = operand.type().debug_string();
@@ -1865,7 +1865,7 @@ public:
 	inline
 	vectorunary_op(const vectorunary_op & other)
 	: simple_op(other)
-	, op_(std::move(other.op_->copy()))
+	, op_(other.op_->copy())
 	{}
 
 	inline
@@ -1878,7 +1878,7 @@ public:
 	operator=(const vectorunary_op & other)
 	{
 		if (this != &other)
-			op_ = std::move(other.op_->copy());
+			op_ = other.op_->copy();
 
 		return *this;
 	}
@@ -1939,7 +1939,7 @@ public:
 		const vectortype & op2,
 		const vectortype & result)
 	: simple_op({op1, op2}, {result})
-	, op_(std::move(binop.copy()))
+	, op_(binop.copy())
 	{
 		if (op1 != op2)
 			throw jlm::error("expected the same vector types.");
@@ -1960,7 +1960,7 @@ public:
 	inline
 	vectorbinary_op(const vectorbinary_op & other)
 	: simple_op(other)
-	, op_(std::move(other.op_->copy()))
+	, op_(other.op_->copy())
 	{}
 
 	inline
@@ -1973,7 +1973,7 @@ public:
 	operator=(const vectorbinary_op & other)
 	{
 		if (this != &other)
-			op_ = std::move(other.op_->copy());
+			op_ = other.op_->copy();
 
 		return *this;
 	}
@@ -2027,7 +2027,7 @@ private:
 class constant_data_vector_op final : public jive::simple_op {
 public:
 	virtual
-	~constant_data_vector_op() noexcept;
+	~constant_data_vector_op();
 
 	inline
 	constant_data_vector_op(const jive::valuetype & type, size_t size)
@@ -2080,7 +2080,7 @@ class extractvalue_op final : public jive::simple_op {
 	typedef std::vector<unsigned>::const_iterator const_iterator;
 public:
 	virtual
-	~extractvalue_op() noexcept;
+	~extractvalue_op();
 
 	inline
 	extractvalue_op(
@@ -2157,7 +2157,7 @@ private:
 class loopstatemux_op final : public jive::simple_op {
 public:
 	virtual
-	~loopstatemux_op() noexcept;
+	~loopstatemux_op();
 
 	loopstatemux_op(size_t noperands, size_t nresults)
 	: simple_op(create_portvector(noperands), create_portvector(nresults))
@@ -2216,7 +2216,7 @@ private:
 class memstatemux_op final : public jive::simple_op {
 public:
 	virtual
-	~memstatemux_op() noexcept;
+	~memstatemux_op();
 
 	memstatemux_op(size_t noperands, size_t nresults)
 	: simple_op(create_portvector(noperands), create_portvector(nresults))
@@ -2287,7 +2287,7 @@ private:
 class malloc_op final : public jive::simple_op {
 public:
 	virtual
-	~malloc_op() noexcept;
+	~malloc_op();
 
 	malloc_op(const jive::bittype & btype)
 	: simple_op({btype}, {jlm::ptrtype(jive::bittype(8)), jive::memtype::instance()})

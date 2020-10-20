@@ -10,7 +10,7 @@ namespace jlm {
 
 /* call operator */
 
-call_op::~call_op() noexcept
+call_op::~call_op()
 {}
 
 bool
