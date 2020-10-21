@@ -12,9 +12,9 @@
 #include <jlm/util/strfmt.hpp>
 #include <jlm/util/time.hpp>
 
-#include <jive/rvsdg/gamma.h>
-#include <jive/rvsdg/theta.h>
-#include <jive/rvsdg/traverser.h>
+#include <jive/rvsdg/gamma.hpp>
+#include <jive/rvsdg/theta.hpp>
+#include <jive/rvsdg/traverser.hpp>
 
 namespace jlm {
 

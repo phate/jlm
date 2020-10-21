@@ -10,8 +10,8 @@
 #include <jlm/ir/cfg-node.hpp>
 #include <jlm/ir/variable.hpp>
 
-#include <jive/types/function.h>
-#include <jive/rvsdg/operation.h>
+#include <jive/types/function.hpp>
+#include <jive/rvsdg/operation.hpp>
 
 namespace jive {
 namespace base {

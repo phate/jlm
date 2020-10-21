@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jive/rvsdg/gamma.h>
-#include <jive/rvsdg/traverser.h>
+#include <jive/rvsdg/gamma.hpp>
+#include <jive/rvsdg/traverser.hpp>
 
 #include <jlm/common.hpp>
 #include <jlm/ir/rvsdg-module.hpp>

@@ -6,9 +6,9 @@
 #ifndef JLM_IR_OPERATORS_LAMBDA_HPP
 #define JLM_IR_OPERATORS_LAMBDA_HPP
 
-#include <jive/rvsdg/region.h>
-#include <jive/rvsdg/structural-node.h>
-#include <jive/types/function.h>
+#include <jive/rvsdg/region.hpp>
+#include <jive/rvsdg/structural-node.hpp>
+#include <jive/types/function.hpp>
 
 #include <jlm/ir/types.hpp>
 #include <jlm/ir/variable.hpp>

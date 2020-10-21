@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jive/view.h>
+#include <jive/view.hpp>
 
 #include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/operators.hpp>

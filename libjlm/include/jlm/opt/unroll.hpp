@@ -6,8 +6,8 @@
 #ifndef JLM_OPT_UNROLL_HPP
 #define JLM_OPT_UNROLL_HPP
 
-#include <jive/rvsdg/theta.h>
-#include <jive/types/bitstring.h>
+#include <jive/rvsdg/theta.hpp>
+#include <jive/types/bitstring.hpp>
 
 #include <jlm/common.hpp>
 #include <jlm/opt/optimization.hpp>

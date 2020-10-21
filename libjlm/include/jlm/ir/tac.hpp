@@ -9,7 +9,7 @@
 #include <jlm/common.hpp>
 #include <jlm/ir/variable.hpp>
 
-#include <jive/rvsdg/operation.h>
+#include <jive/rvsdg/operation.hpp>
 
 #include <list>
 #include <memory>

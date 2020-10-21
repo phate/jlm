@@ -11,7 +11,7 @@
 #include <jlm/ir/types.hpp>
 #include <jlm/ir/variable.hpp>
 
-#include <jive/types/function.h>
+#include <jive/types/function.hpp>
 
 #include <unordered_map>
 #include <unordered_set>

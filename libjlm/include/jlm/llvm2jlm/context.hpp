@@ -11,7 +11,7 @@
 #include <jlm/ir/tac.hpp>
 #include <jlm/llvm2jlm/type.hpp>
 
-#include <jive/types/record.h>
+#include <jive/types/record.hpp>
 #include <llvm/IR/DerivedTypes.h>
 
 #include <unordered_map>

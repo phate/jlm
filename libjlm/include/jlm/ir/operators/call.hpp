@@ -6,8 +6,8 @@
 #ifndef JLM_IR_OPERATORS_CALL_HPP
 #define JLM_IR_OPERATORS_CALL_HPP
 
-#include <jive/rvsdg/simple-node.h>
-#include <jive/types/function.h>
+#include <jive/rvsdg/simple-node.hpp>
+#include <jive/types/function.hpp>
 
 #include <jlm/ir/tac.hpp>
 #include <jlm/ir/types.hpp>

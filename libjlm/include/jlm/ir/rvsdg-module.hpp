@@ -6,7 +6,7 @@
 #ifndef JLM_IR_RVSDG_MODULE_HPP
 #define JLM_IR_RVSDG_MODULE_HPP
 
-#include <jive/rvsdg/graph.h>
+#include <jive/rvsdg/graph.hpp>
 
 #include <jlm/ir/linkage.hpp>
 #include <jlm/util/file.hpp>

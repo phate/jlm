@@ -3,16 +3,16 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jive/arch/addresstype.h>
-#include <jive/types/bitstring/arithmetic.h>
-#include <jive/types/bitstring/comparison.h>
-#include <jive/types/bitstring/constant.h>
-#include <jive/rvsdg/binary.h>
-#include <jive/rvsdg/gamma.h>
-#include <jive/rvsdg/structural-node.h>
-#include <jive/rvsdg/substitution.h>
-#include <jive/rvsdg/theta.h>
-#include <jive/rvsdg/traverser.h>
+#include <jive/arch/addresstype.hpp>
+#include <jive/types/bitstring/arithmetic.hpp>
+#include <jive/types/bitstring/comparison.hpp>
+#include <jive/types/bitstring/constant.hpp>
+#include <jive/rvsdg/binary.hpp>
+#include <jive/rvsdg/gamma.hpp>
+#include <jive/rvsdg/structural-node.hpp>
+#include <jive/rvsdg/substitution.hpp>
+#include <jive/rvsdg/theta.hpp>
+#include <jive/rvsdg/traverser.hpp>
 
 #include <jlm/common.hpp>
 #include <jlm/ir/rvsdg-module.hpp>

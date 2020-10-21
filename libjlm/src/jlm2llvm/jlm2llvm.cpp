@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jive/arch/addresstype.h>
-#include <jive/rvsdg/control.h>
+#include <jive/arch/addresstype.hpp>
+#include <jive/rvsdg/control.hpp>
 
 #include <jlm/ir/basic-block.hpp>
 #include <jlm/ir/cfg.hpp>

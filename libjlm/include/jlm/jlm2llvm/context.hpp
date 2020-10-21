@@ -8,7 +8,7 @@
 
 #include <jlm/common.hpp>
 
-#include <jive/types/record.h>
+#include <jive/types/record.hpp>
 
 #include <memory>
 #include <unordered_map>

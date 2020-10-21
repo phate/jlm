@@ -7,7 +7,7 @@
 #include "test-operation.hpp"
 #include "test-types.hpp"
 
-#include <jive/view.h>
+#include <jive/view.hpp>
 
 #include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/print.hpp>

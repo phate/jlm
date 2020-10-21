@@ -5,9 +5,9 @@
 
 #include <jlm/ir/operators/operators.hpp>
 
-#include <jive/arch/addresstype.h>
-#include <jive/types/bitstring/constant.h>
-#include <jive/types/float/flttype.h>
+#include <jive/arch/addresstype.hpp>
+#include <jive/types/bitstring/constant.hpp>
+#include <jive/types/float/flttype.hpp>
 
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/raw_ostream.h>

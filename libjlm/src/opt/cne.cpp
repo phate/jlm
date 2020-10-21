@@ -10,11 +10,11 @@
 #include <jlm/util/stats.hpp>
 #include <jlm/util/time.hpp>
 
-#include <jive/rvsdg/gamma.h>
-#include <jive/rvsdg/phi.h>
-#include <jive/rvsdg/simple-node.h>
-#include <jive/rvsdg/theta.h>
-#include <jive/rvsdg/traverser.h>
+#include <jive/rvsdg/gamma.hpp>
+#include <jive/rvsdg/phi.hpp>
+#include <jive/rvsdg/simple-node.hpp>
+#include <jive/rvsdg/theta.hpp>
+#include <jive/rvsdg/traverser.hpp>
 
 namespace jlm {
 

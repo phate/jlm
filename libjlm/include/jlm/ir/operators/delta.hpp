@@ -6,8 +6,8 @@
 #ifndef JLM_IR_OPERATORS_DELTA_HPP
 #define JLM_IR_OPERATORS_DELTA_HPP
 
-#include <jive/rvsdg/region.h>
-#include <jive/rvsdg/structural-node.h>
+#include <jive/rvsdg/region.hpp>
+#include <jive/rvsdg/structural-node.hpp>
 
 #include <jlm/ir/types.hpp>
 #include <jlm/ir/variable.hpp>

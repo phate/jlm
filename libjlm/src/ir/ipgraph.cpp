@@ -7,7 +7,7 @@
 #include <jlm/ir/cfg.hpp>
 #include <jlm/ir/tac.hpp>
 
-#include <jive/common.h>
+#include <jive/common.hpp>
 
 #include <stdio.h>
 

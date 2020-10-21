@@ -16,8 +16,8 @@
 #include <jlm/llvm2jlm/module.hpp>
 #include <jlm/llvm2jlm/type.hpp>
 
-#include <jive/arch/addresstype.h>
-#include <jive/rvsdg/type.h>
+#include <jive/arch/addresstype.hpp>
+#include <jive/rvsdg/type.hpp>
 
 #include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/IR/BasicBlock.h>

@@ -8,10 +8,10 @@
 #include <jlm/llvm2jlm/context.hpp>
 #include <jlm/llvm2jlm/type.hpp>
 
-#include <jive/arch/addresstype.h>
-#include <jive/types/bitstring/type.h>
-#include <jive/types/float/flttype.h>
-#include <jive/types/function.h>
+#include <jive/arch/addresstype.hpp>
+#include <jive/types/bitstring/type.hpp>
+#include <jive/types/float/flttype.hpp>
+#include <jive/types/function.hpp>
 
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Type.h>

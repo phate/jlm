@@ -6,7 +6,7 @@
 #ifndef JLM_IR_VARIABLE_HPP
 #define JLM_IR_VARIABLE_HPP
 
-#include <jive/rvsdg/type.h>
+#include <jive/rvsdg/type.hpp>
 
 #include <jlm/ir/linkage.hpp>
 #include <jlm/util/strfmt.hpp>

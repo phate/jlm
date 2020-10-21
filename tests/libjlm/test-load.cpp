@@ -6,9 +6,9 @@
 #include <test-registry.hpp>
 #include <test-types.hpp>
 
-#include <jive/arch/addresstype.h>
-#include <jive/view.h>
-#include <jive/rvsdg/statemux.h>
+#include <jive/arch/addresstype.hpp>
+#include <jive/view.hpp>
+#include <jive/rvsdg/statemux.hpp>
 
 #include <jlm/ir/operators/alloca.hpp>
 #include <jlm/ir/operators/load.hpp>

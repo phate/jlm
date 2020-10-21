@@ -3,11 +3,11 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jive/rvsdg/gamma.h>
-#include <jive/rvsdg/graph.h>
-#include <jive/rvsdg/phi.h>
-#include <jive/rvsdg/theta.h>
-#include <jive/rvsdg/traverser.h>
+#include <jive/rvsdg/gamma.hpp>
+#include <jive/rvsdg/graph.hpp>
+#include <jive/rvsdg/phi.hpp>
+#include <jive/rvsdg/theta.hpp>
+#include <jive/rvsdg/traverser.hpp>
 
 #include <jlm/common.hpp>
 #include <jlm/ir/basic-block.hpp>

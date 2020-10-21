@@ -6,9 +6,9 @@
 #ifndef JLM_IR_TYPES_HPP
 #define JLM_IR_TYPES_HPP
 
-#include <jive/types/function.h>
-#include <jive/types/record.h>
-#include <jive/rvsdg/type.h>
+#include <jive/types/function.hpp>
+#include <jive/types/record.hpp>
+#include <jive/rvsdg/type.hpp>
 
 #include <jlm/common.hpp>
 
