@@ -28,7 +28,12 @@ ifneq ("$(wildcard $(JIVE_ROOT)/Makefile.sub)","")
 include $(JIVE_ROOT)/Makefile.sub
 endif
 
+
+# LLVM related variables
 LLVMCONFIG ?= llvm-config
+CLANG_BIN=$(shell $(LLVMCONFIG) --bindir)
+CC=$(CLANG)
+CXX=$(CLANG_BIN)/clang++
 
 .PHONY: all
 all: jlm-release check
