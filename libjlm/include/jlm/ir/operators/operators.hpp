@@ -1100,6 +1100,58 @@ create_fpext_tac(const variable * operand, jlm::variable * result)
 	return tac::create(op, {operand}, {result});
 }
 
+/* fpneg operator */
+
+class fpneg_op final : public jive::unary_op {
+public:
+	~fpneg_op() override;
+
+	fpneg_op(const jlm::fpsize & size)
+	: unary_op(fptype(size), fptype(size))
+	{}
+
+	fpneg_op(const jive::type & type)
+	: unary_op(type, type)
+	{
+		auto st = dynamic_cast<const jlm::fptype*>(&type);
+		if (!st) throw jlm::error("expected floating point type.");
+	}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+	jive_unop_reduction_path_t
+	can_reduce_operand(
+		const jive::output * output) const noexcept override;
+
+	jive::output *
+	reduce_operand(
+		jive_unop_reduction_path_t path,
+		jive::output * output) const override;
+
+	const jlm::fpsize &
+	size() const noexcept
+	{
+		return static_cast<const jlm::fptype*>(&argument(0).type())->size();
+	}
+
+	static std::unique_ptr<jlm::tac>
+	create(const variable * operand, jlm::variable * result)
+        {
+		auto type = dynamic_cast<const jlm::fptype*>(&operand->type());
+		if (!type) throw jlm::error("expected floating point type.");
+
+		jlm::fpneg_op op(type->size());
+		return tac::create(op, {operand}, {result});
+	}
+};
+
 /* fptrunc operator */
 
 class fptrunc_op final : public jive::unary_op {

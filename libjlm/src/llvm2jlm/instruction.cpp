@@ -864,6 +864,25 @@ convert_insertelement_instruction(llvm::Instruction * i, tacsvector_t & tacs, co
 	return tacs.back()->result(0);
 }
 
+static const variable *
+convert_fneg_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
+{
+	JLM_DEBUG_ASSERT(i->getOpcode() == llvm::Instruction::FNeg);
+	auto t = i->getType();
+
+	auto type = convert_type(t->isVectorTy() ? t->getVectorElementType() : t, ctx);
+
+	auto result = ctx.module().create_variable(*type);
+	auto operand = convert_value(i->getOperand(0), tacs, ctx);
+
+	if (t->isVectorTy())
+		tacs.push_back(vectorunary_op::create(fpneg_op(*type), operand, result));
+	else
+		tacs.push_back(fpneg_op::create(operand, result));
+
+	return tacs.back()->result(0);
+}
+
 template<class OP> static std::unique_ptr<jive::operation>
 create_unop(std::unique_ptr<jive::type> st, std::unique_ptr<jive::type> dt)
 {
@@ -948,6 +967,7 @@ convert_instruction(
 	,	{llvm::Instruction::FMul, convert_binary_operator}
 	,	{llvm::Instruction::FDiv, convert_binary_operator}
 	,	{llvm::Instruction::FRem, convert_binary_operator}
+	,	{llvm::Instruction::FNeg, convert_fneg_instruction}
 	,	{llvm::Instruction::ICmp, convert_icmp_instruction}
 	,	{llvm::Instruction::FCmp, convert_fcmp_instruction}
 	,	{llvm::Instruction::Load, convert_load_instruction}
