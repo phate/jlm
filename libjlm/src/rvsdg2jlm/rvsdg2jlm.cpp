@@ -530,8 +530,9 @@ convert_node(const jive::node & node, context & ctx)
 		return;
 	}
 
-	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(node.operation()))) != map.end());
-	map[std::type_index(typeid(node.operation()))](node, ctx);
+	auto & Node = node.operation();
+	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(Node))) != map.end());
+	map[std::type_index(typeid(Node))](node, ctx);
 }
 
 static void

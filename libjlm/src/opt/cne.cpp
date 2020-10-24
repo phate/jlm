@@ -384,7 +384,8 @@ mark(const jive::structural_node * node, cnectx & ctx)
 	, {typeid(delta_op), mark_delta}
 	});
 
-	std::type_index index(typeid(node->operation()));
+	auto & Node = node->operation();
+	std::type_index index(typeid(Node));
 	JLM_DEBUG_ASSERT(map.find(index) != map.end());
 	map[index](node, ctx);
 }
@@ -533,7 +534,8 @@ divert(jive::structural_node * node, cnectx & ctx)
 	, {typeid(delta_op), divert_delta}
 	});
 
-	std::type_index index(typeid(node->operation()));
+	auto & Node = node->operation();
+	std::type_index index(typeid(Node));
 	JLM_DEBUG_ASSERT(map.find(index) != map.end());
 	map[index](node, ctx);
 }

@@ -13,7 +13,7 @@ namespace jlm {
 class valuetype final : public jive::valuetype {
 public:
 	virtual
-	~valuetype() noexcept;
+	~valuetype();
 
 	inline constexpr
 	valuetype() noexcept
@@ -33,7 +33,7 @@ public:
 class statetype final : public jive::statetype {
 public:
 	virtual
-	~statetype() noexcept;
+	~statetype();
 
 	inline constexpr
 	statetype() noexcept
