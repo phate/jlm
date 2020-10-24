@@ -665,6 +665,44 @@ fpext_op::reduce_operand(
 	JLM_ASSERT(0);
 }
 
+/* fpneg operator */
+
+fpneg_op::~fpneg_op()
+{}
+
+bool
+fpneg_op::operator==(const operation & other) const noexcept
+{
+	auto op = dynamic_cast<const jlm::fpneg_op*>(&other);
+	return op && op->size() == size();
+}
+
+std::string
+fpneg_op::debug_string() const
+{
+	return "fpneg";
+}
+
+std::unique_ptr<jive::operation>
+fpneg_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new jlm::fpneg_op(*this));
+}
+
+jive_unop_reduction_path_t
+fpneg_op::can_reduce_operand(const jive::output * operand) const noexcept
+{
+	return jive_unop_reduction_none;
+}
+
+jive::output *
+fpneg_op::reduce_operand(
+	jive_unop_reduction_path_t path,
+	jive::output * operand) const
+{
+	JLM_ASSERT(0);
+}
+
 /* fptrunc operator */
 
 fptrunc_op::~fptrunc_op()

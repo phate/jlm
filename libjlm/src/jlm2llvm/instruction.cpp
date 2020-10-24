@@ -514,6 +514,18 @@ convert_fpbin(
 	return builder.CreateBinOp(map[fpbin.fpop()], op1, op2);
 }
 
+static llvm::Value *
+convert_fpneg(
+	const jive::simple_op & op,
+	const std::vector<const variable*> & args,
+	llvm::IRBuilder<> & builder,
+	context & ctx)
+{
+	JLM_DEBUG_ASSERT(is<fpneg_op>(op));
+	auto operand = ctx.value(args[0]);
+	return builder.CreateUnOp(llvm::Instruction::FNeg, operand);
+}
+
 static inline llvm::Value *
 convert_valist(
 	const jive::simple_op & op,
@@ -848,6 +860,8 @@ convert_operation(
 
 	, {typeid(call_op), convert_call}
 	, {typeid(malloc_op), convert<malloc_op>}
+
+	, {typeid(fpneg_op), convert_fpneg}
 
 	/* LLVM Cast Instructions */
 	/* FIXME: AddrSpaceCast instruction is not supported */
