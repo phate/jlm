@@ -193,6 +193,28 @@ public:
 	virtual std::string
 	debug_string() const = 0;
 
+	/** Normalizes an aggregation tree
+
+	This function normalizes an aggregation tree by reducing nested linear nodes to a single linear
+	node. For example, the tree:
+
+	linear
+	- linear
+	-- block
+	-- block
+	- block
+
+	is reduced to:
+
+	linear
+	- block
+	- block
+	- block
+
+	*/
+	static void
+	normalize(aggnode & node);
+
 private:
 	aggnode * parent_;
 	std::vector<std::unique_ptr<aggnode>> children_;

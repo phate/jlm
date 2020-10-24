@@ -20,6 +20,34 @@ namespace jlm {
 aggnode::~aggnode()
 {}
 
+void
+aggnode::normalize(aggnode & node)
+{
+	std::function<std::vector<std::unique_ptr<aggnode>>(aggnode&)> reduce = [&](aggnode & node)
+	{
+		JLM_DEBUG_ASSERT(is<linearaggnode>(&node));
+
+		std::vector<std::unique_ptr<aggnode>> children;
+		for (size_t n = 0; n < node.children_.size(); n++) {
+			auto & child = node.children_[n];
+			if (is<linearaggnode>(child.get())) {
+				auto tmp = reduce(*child);
+				std::move(tmp.begin(), tmp.end(), std::back_inserter(children));
+			} else {
+				children.push_back(std::move(child));
+			}
+		}
+
+		return children;
+	};
+
+	if (is<linearaggnode>(&node))
+		node.children_ =reduce(node);
+
+	for (auto & child : node)
+		normalize(child);
+}
+
 /* entryaggnode class */
 
 entryaggnode::~entryaggnode()
