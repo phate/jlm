@@ -283,7 +283,7 @@ convert_load(
 	auto load = static_cast<const load_op*>(&op);
 
 	auto i = builder.CreateLoad(ctx.value(args[0]));
-	i->setAlignment(load->alignment());
+	i->setAlignment(llvm::MaybeAlign(load->alignment()));
 	return i;
 }
 
@@ -298,7 +298,7 @@ convert_store(
 	auto store = static_cast<const store_op*>(&op);
 
 	auto i = builder.CreateStore(ctx.value(args[1]), ctx.value(args[0]));
-	i->setAlignment(store->alignment());
+	i->setAlignment(llvm::MaybeAlign(store->alignment()));
 	return nullptr;
 }
 
@@ -314,7 +314,7 @@ convert_alloca(
 
 	auto t = convert_type(aop.value_type(), ctx);
 	auto i = builder.CreateAlloca(t, ctx.value(args[0]));
-	i->setAlignment(aop.alignment());
+	i->setAlignment(llvm::MaybeAlign(aop.alignment()));
 	return i;
 }
 
