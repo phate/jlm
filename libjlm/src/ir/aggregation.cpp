@@ -242,11 +242,11 @@ reduce_branch(
 	/* perform reduction */
 	auto reduction = basic_block::create(split->cfg());
 	split->divert_inedges(reduction);
-	join->remove_inedges();
 	reduction->add_outedge(join);
 
 	auto branch = branchaggnode::create();
 	for (auto it = split->begin_outedges(); it != split->end_outedges(); it++) {
+		it->sink()->remove_outedge(0);
 		branch->add_child(std::move(map[it->sink()]));
 		map.erase(it->sink());
 		to_visit.erase(it->sink());
