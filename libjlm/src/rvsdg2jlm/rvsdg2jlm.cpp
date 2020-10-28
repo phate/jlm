@@ -80,12 +80,6 @@ is_function_import(const jive::argument * argument)
 	return dynamic_cast<const jive::fcttype*>(&at->pointee_type());
 }
 
-static inline const jlm::tac *
-create_assignment_lpbb(const jlm::variable * argument, const jlm::variable * result, context & ctx)
-{
-	return ctx.lpbb()->append_last(assignment_op::create(argument, result));
-}
-
 static std::unique_ptr<data_node_init>
 create_initialization(const delta_node * delta, context & ctx)
 {
