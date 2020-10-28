@@ -12,7 +12,7 @@ TEST_SOURCES = \
 	$(patsubst %, tests/%.cpp, $(TESTS))
 
 tests/test-runner: jive-debug libjlm-debug libjlc-debug
-tests/test-runner: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG
+tests/test-runner: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG -Wall -Wpedantic -Wextra -Wno-unused-parameter --std=c++14 -Wfatal-errors
 tests/test-runner: CPPFLAGS += -I$(JLM_ROOT)/libjlm/include -I$(JLM_ROOT)/libjlc/include -I$(JIVE_ROOT)/include
 tests/test-runner: LDFLAGS=-L. -Lexternal/jive -ljlc -ljlm $(shell $(LLVMCONFIG) --ldflags --libs --system-libs) -ljive
 tests/test-runner: %: $(patsubst %.cpp, %.la, $(TEST_SOURCES)) $(JIVE_ROOT)/libjive.a $(JLM_ROOT)/libjlm.a $(JLM_ROOT)/libjlc.a
