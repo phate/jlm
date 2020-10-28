@@ -31,18 +31,6 @@ emit_tacs(const tacsvector_t & tacs)
 }
 
 static inline std::string
-emit_global(const jlm::gblvalue * v)
-{
-	auto init = v->node()->initialization();
-
-	std::string str = v->debug_string();
-	if (init)
-		str += " = " + emit_tacs(init->tacs());
-
-	return str;
-}
-
-static inline std::string
 emit_entry(const jlm::cfg_node * node)
 {
 	JLM_DEBUG_ASSERT(is<entry_node>(node));
@@ -253,28 +241,6 @@ emit_exit_dot(const jlm::cfg_node & node)
 	for (size_t n = 0; n < xn->nresults(); n++) {
 		auto result = xn->result(n);
 		str += "<" + result->type().debug_string() + "> " + result->name() + "\\n";
-	}
-
-	return str;
-}
-
-static inline std::string
-to_dot(const jlm::tac & tac)
-{
-	std::string str;
-	if (tac.nresults() != 0) {
-		for (size_t n = 0; n < tac.nresults()-1; n++)
-			str +=  tac.result(n)->debug_string() + ", ";
-		str += tac.result(tac.nresults()-1)->debug_string() + " = ";
-	}
-
-	str += tac.operation().debug_string();
-
-	if (tac.noperands() != 0) {
-		str += " ";
-		for (size_t n = 0; n < tac.noperands()-1; n++)
-			str += tac.operand(n)->debug_string() + ", ";
-		str += tac.operand(tac.noperands()-1)->debug_string();
 	}
 
 	return str;
