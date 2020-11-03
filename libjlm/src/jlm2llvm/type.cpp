@@ -126,7 +126,7 @@ convert_struct_type(const jive::type & type, context & ctx)
 	std::vector<llvm::Type*> elements;
 	for (size_t n = 0; n < t.declaration()->nelements(); n++)
 		elements.push_back(convert_type(t.declaration()->element(n), ctx));
-	st->setBody(elements);
+	st->setBody(elements, t.packed());
 
 	return st;
 }

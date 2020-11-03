@@ -1,4 +1,5 @@
 TESTS += \
 	libjlm/jlm-llvm/test-bitconstant \
 	libjlm/jlm-llvm/test-function-calls \
-	libjlm/jlm-llvm/test-select-with-state
+	libjlm/jlm-llvm/test-select-with-state \
+	libjlm/jlm-llvm/test-type-conversion \
