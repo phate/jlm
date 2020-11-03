@@ -16,40 +16,37 @@
 namespace jlm {
 namespace jlm2llvm {
 
-static inline llvm::Type *
-convert_integer_type(const jive::type & type, context & ctx)
+static llvm::Type *
+convert(const jive::bittype & type, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::bittype*>(&type));
-	auto & t = *static_cast<const jive::bittype*>(&type);
-
-	return llvm::Type::getIntNTy(ctx.llvm_module().getContext(), t.nbits());
+	return llvm::Type::getIntNTy(ctx.llvm_module().getContext(), type.nbits());
 }
 
-static inline llvm::Type *
-convert_function_type(const jive::type & type, context & ctx)
+static llvm::Type *
+convert(const jive::fcttype & type, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::fcttype*>(&type));
-	auto & t = *static_cast<const jive::fcttype*>(&type);
 	auto & lctx = ctx.llvm_module().getContext();
 
 	using namespace llvm;
 
 	bool isvararg = false;
 	std::vector<Type*> ats;
-	for (size_t n = 0; n < t.narguments(); n++) {
-		if (is_varargtype(t.argument_type(n))) {
+	for (size_t n = 0; n < type.narguments(); n++) {
+		auto & argtype = type.argument_type(n);
+
+		if (is_varargtype(argtype)) {
 			isvararg = true;
 			continue;
 		}
 
-		if (is<iostatetype>(t.argument_type(n)))
+		if (is<iostatetype>(argtype))
 			continue;
-		if (is<jive::memtype>(t.argument_type(n)))
+		if (is<jive::memtype>(argtype))
 			continue;
-		if (is<loopstatetype>(t.argument_type(n)))
+		if (is<loopstatetype>(argtype))
 			continue;
 
-		ats.push_back(convert_type(t.argument_type(n), ctx));
+		ats.push_back(convert_type(argtype, ctx));
 	}
 
 	/*
@@ -57,86 +54,85 @@ convert_function_type(const jive::type & type, context & ctx)
 		a return value, or (statetype, statetype, ...) if the function returns void.
 	*/
 	auto rt = Type::getVoidTy(lctx);
-	if (is<jive::valuetype>(t.result_type(0)))
-		rt = convert_type(t.result_type(0), ctx);
+	if (is<jive::valuetype>(type.result_type(0)))
+		rt = convert_type(type.result_type(0), ctx);
 
 	return FunctionType::get(rt, ats, isvararg);
 }
 
-static inline llvm::Type *
-convert_pointer_type(const jive::type & type, context & ctx)
+static llvm::Type *
+convert(const ptrtype & type, context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<ptrtype>(type));
-	auto & t = *static_cast<const jlm::ptrtype*>(&type);
-
-	return llvm::PointerType::get(convert_type(t.pointee_type(), ctx), 0);
+	return llvm::PointerType::get(convert_type(type.pointee_type(), ctx), 0);
 }
 
-static inline llvm::Type *
-convert_array_type(const jive::type & type, context & ctx)
+static llvm::Type *
+convert(const arraytype & type, context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<arraytype>(type));
-	auto & t = *static_cast<const jlm::arraytype*>(&type);
-
-	return llvm::ArrayType::get(convert_type(t.element_type(), ctx), t.nelements());
+	return llvm::ArrayType::get(convert_type(type.element_type(), ctx), type.nelements());
 }
 
-static inline llvm::Type *
-convert_ctl_type(const jive::type & type, context & ctx)
+static llvm::Type *
+convert(const jive::ctltype & type, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::ctltype*>(&type));
-	auto & t = *static_cast<const jive::ctltype*>(&type);
-
-	if (t.nalternatives() == 2)
+	if (type.nalternatives() == 2)
 		return llvm::Type::getInt1Ty(ctx.llvm_module().getContext());
 
 	return llvm::Type::getInt32Ty(ctx.llvm_module().getContext());
 }
 
-static inline llvm::Type *
-convert_fp_type(const jive::type & type, context & ctx)
+static llvm::Type *
+convert(const fptype & type, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jlm::fptype*>(&type));
-	auto & t = *static_cast<const jlm::fptype*>(&type);
-
-	static std::unordered_map<fpsize, llvm::Type*(*)(llvm::LLVMContext&)> map({
-	  {fpsize::half, [](llvm::LLVMContext & ctx){ return llvm::Type::getHalfTy(ctx); }}
-	, {fpsize::flt, [](llvm::LLVMContext & ctx){ return llvm::Type::getFloatTy(ctx); }}
-	, {fpsize::dbl, [](llvm::LLVMContext & ctx){ return llvm::Type::getDoubleTy(ctx); }}
-	, {fpsize::x86fp80, [](llvm::LLVMContext & ctx){ return llvm::Type::getX86_FP80Ty(ctx); }}
+	static std::unordered_map<
+		fpsize
+	, llvm::Type*(*)(llvm::LLVMContext&)
+	> map({
+	  {fpsize::half,    llvm::Type::getHalfTy}
+	, {fpsize::flt,     llvm::Type::getFloatTy}
+	, {fpsize::dbl,     llvm::Type::getDoubleTy}
+	, {fpsize::x86fp80, llvm::Type::getX86_FP80Ty}
 	});
 
-	JLM_DEBUG_ASSERT(map.find(t.size()) != map.end());
-	return map[t.size()](ctx.llvm_module().getContext());
+	JLM_DEBUG_ASSERT(map.find(type.size()) != map.end());
+	return map[type.size()](ctx.llvm_module().getContext());
 }
 
-static inline llvm::Type *
-convert_struct_type(const jive::type & type, context & ctx)
+static llvm::Type *
+convert(const structtype & type, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const structtype*>(&type));
-	auto & t = *static_cast<const structtype*>(&type);
+	auto decl = type.declaration();
 
-	auto st = ctx.structtype(t.declaration());
-	if (st) return st;
+	if (auto st = ctx.structtype(decl))
+		return st;
 
-	st = llvm::StructType::create(ctx.llvm_module().getContext());
-	if (t.has_name()) st->setName(t.name());
-	ctx.add_structtype(t.declaration(), st);
+	auto st = llvm::StructType::create(ctx.llvm_module().getContext());
+	ctx.add_structtype(decl, st);
 
 	std::vector<llvm::Type*> elements;
-	for (size_t n = 0; n < t.declaration()->nelements(); n++)
-		elements.push_back(convert_type(t.declaration()->element(n), ctx));
-	st->setBody(elements, t.packed());
+	for (size_t n = 0; n < decl->nelements(); n++)
+		elements.push_back(convert_type(decl->element(n), ctx));
+
+	if (type.has_name())
+		st->setName(type.name());
+	st->setBody(elements, type.packed());
 
 	return st;
 }
 
 static llvm::Type *
-convert_vector_type(const jive::type & type, context & ctx)
+convert(const vectortype & type, context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const vectortype*>(&type));
-	auto & t = *static_cast<const vectortype*>(&type);
-	return llvm::VectorType::get(convert_type(t.type(), ctx), t.size());
+	return llvm::VectorType::get(convert_type(type.type(), ctx), type.size());
+}
+
+template<class T> static llvm::Type *
+convert(
+	const jive::type & type,
+	context & ctx)
+{
+	JLM_DEBUG_ASSERT(is<T>(type));
+	return convert(*static_cast<const T*>(&type), ctx);
 }
 
 llvm::Type *
@@ -146,18 +142,18 @@ convert_type(const jive::type & type, context & ctx)
 		std::type_index
 	, std::function<llvm::Type*(const jive::type&, context&)>
 	> map({
-	  {typeid(jive::bittype), convert_integer_type}
-	, {typeid(jive::fcttype), convert_function_type}
-	, {std::type_index(typeid(jlm::ptrtype)), convert_pointer_type}
-	, {std::type_index(typeid(jlm::arraytype)), convert_array_type}
-	, {typeid(jive::ctltype), convert_ctl_type}
-	, {std::type_index(typeid(jlm::fptype)), convert_fp_type}
-	, {std::type_index(typeid(structtype)), convert_struct_type}
-	, {typeid(vectortype), convert_vector_type}
+	  {typeid(jive::bittype), convert<jive::bittype>}
+	, {typeid(jive::fcttype), convert<jive::fcttype>}
+	, {typeid(ptrtype),       convert<ptrtype>}
+	, {typeid(arraytype),     convert<arraytype>}
+	, {typeid(jive::ctltype), convert<jive::ctltype>}
+	, {typeid(fptype),        convert<fptype>}
+	, {typeid(structtype),    convert<structtype>}
+	, {typeid(vectortype),    convert<vectortype>}
 	});
 
-	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(type))) != map.end());
-	return map[std::type_index(typeid(type))](type, ctx);
+	JLM_DEBUG_ASSERT(map.find(typeid(type)) != map.end());
+	return map[typeid(type)](type, ctx);
 }
 
 }}
