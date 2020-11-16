@@ -243,14 +243,14 @@ public:
 
 	static inline function_node *
 	create(
-		jlm::ipgraph & clg,
+		jlm::ipgraph & ipg,
 		const std::string & name,
 		const jive::fcttype & type,
 		const jlm::linkage & linkage)
 	{
-		std::unique_ptr<function_node> node(new function_node(clg, name, type, linkage));
+		std::unique_ptr<function_node> node(new function_node(ipg, name, type, linkage));
 		auto tmp = node.get();
-		clg.add_node(std::move(node));
+		ipg.add_node(std::move(node));
 		return tmp;
 	}
 
