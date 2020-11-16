@@ -192,28 +192,34 @@ convert_linkage(const llvm::GlobalValue::LinkageTypes & linkage)
 static void
 declare_globals(llvm::Module & lm, context & ctx)
 {
-	auto & jm = ctx.module();
-
-	/* forward declare global variables */
-	for (auto & gv : lm.getGlobalList()) {
+	auto create_data_node = [](const llvm::GlobalVariable & gv, context & ctx)
+	{
 		auto name = gv.getName().str();
 		auto constant = gv.isConstant();
 		auto type = convert_type(gv.getType(), ctx);
 		auto linkage = convert_linkage(gv.getLinkage());
 
-		auto node = data_node::create(jm.ipgraph(), name, *type, linkage, constant);
-		auto v = jm.create_global_value(node);
-		ctx.insert_value(&gv, v);
-	}
+		return data_node::create(ctx.module().ipgraph(), name, *type, linkage, constant);
+	};
 
-	/* forward declare functions */
-	for (const auto & f : lm.getFunctionList()) {
+	auto create_function_node = [](const llvm::Function & f, context & ctx)
+	{
 		auto name = f.getName().str();
 		auto linkage = convert_linkage(f.getLinkage());
-		jive::fcttype fcttype(*convert_type(f.getFunctionType(), ctx));
+		auto type = convert_type(f.getFunctionType(), ctx);
 
-		auto n = function_node::create(jm.ipgraph(), name, fcttype, linkage);
-		ctx.insert_value(&f, ctx.module().create_variable(n));
+		return function_node::create(ctx.module().ipgraph(), name, *type, linkage);
+	};
+
+
+	for (auto & gv : lm.getGlobalList()) {
+		auto node = create_data_node(gv, ctx);
+		ctx.insert_value(&gv, ctx.module().create_global_value(node));
+	}
+
+	for (auto & f : lm.getFunctionList()) {
+		auto node = create_function_node(f, ctx);
+		ctx.insert_value(&f, ctx.module().create_variable(node));
 	}
 }
 
