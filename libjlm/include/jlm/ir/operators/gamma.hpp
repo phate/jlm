@@ -18,7 +18,7 @@ is_gamma_argument(const jive::output * output)
 {
 	using namespace jive;
 
-	auto a = dynamic_cast<const argument*>(output);
+	auto a = dynamic_cast<const jive::argument*>(output);
 	if (a && is<gamma_op>(a->region()->node()))
 		return a;
 

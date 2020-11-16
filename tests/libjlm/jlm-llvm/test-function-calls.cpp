@@ -38,8 +38,7 @@ test_malloc()
 		cfg->exit()->divert_inedges(bb);
 		bb->add_outedge(cfg->exit());
 
-		auto size = im->create_variable(jive::bit64, "size");
-		cfg->entry()->append_argument(size);
+		auto size = cfg->entry()->append_argument(argument::create("size", jive::bit64));
 
 		auto address = im->create_variable(pt, "address");
 		auto memstate = im->create_variable(mt, "state");

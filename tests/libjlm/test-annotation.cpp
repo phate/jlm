@@ -83,7 +83,7 @@ test_linear()
 	test_op op({&vt}, {&vt});
 
 	ipgraph_module module(filepath(""), "", "");
-	auto arg = module.create_variable(vt, "arg");
+	argument arg("arg", vt);
 	auto v1 = module.create_variable(vt, "v1");
 	auto v2 = module.create_variable(vt, "v2");
 
@@ -91,10 +91,10 @@ test_linear()
 		Setup simple linear CFG: Entry -> B1 -> B2 -> Exit
 	*/
 	taclist bb1, bb2;
-	bb1.append_last(tac::create(op, {arg}, {v1}));
+	bb1.append_last(tac::create(op, {&arg}, {v1}));
 	bb2.append_last(tac::create(op, {v1}, {v2}));
 
-	auto en = entryaggnode::create({arg});
+	auto en = entryaggnode::create({&arg});
 	auto b1 = blockaggnode::create(std::move(bb1));
 	auto b2 = blockaggnode::create(std::move(bb2));
 	auto xn = exitaggnode::create({v2});
@@ -116,11 +116,11 @@ test_linear()
 	assert(contains(dm, b2ptr, {v2}, {v1}, {v1}, {v2}));
 	assert(contains(dm, l2ptr, {}, {v1}, {v1}, {v2}));
 
-	assert(contains(dm, b1ptr, {v1}, {arg}, {arg}, {v1}));
-	assert(contains(dm, enptr, {arg}, {}, {}, {arg}));
-	assert(contains(dm, l1ptr, {v1}, {}, {}, {v1, arg}));
+	assert(contains(dm, b1ptr, {v1}, {&arg}, {&arg}, {v1}));
+	assert(contains(dm, enptr, {&arg}, {}, {}, {&arg}));
+	assert(contains(dm, l1ptr, {v1}, {}, {}, {v1, &arg}));
 
-	assert(contains(dm, root.get(), {}, {}, {}, {v1, arg, v2}));
+	assert(contains(dm, root.get(), {}, {}, {}, {v1, &arg, v2}));
 }
 
 static void

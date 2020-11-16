@@ -53,6 +53,18 @@ aggnode::normalize(aggnode & node)
 entryaggnode::~entryaggnode()
 {}
 
+entryaggnode::constiterator
+entryaggnode::begin() const
+{
+	return constiterator(arguments_.begin());
+}
+
+entryaggnode::constiterator
+entryaggnode::end() const
+{
+	return constiterator(arguments_.end());
+}
+
 std::string
 entryaggnode::debug_string() const
 {

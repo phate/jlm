@@ -25,18 +25,14 @@ test()
 	jive::memtype mt;
 	ipgraph_module m(filepath(""), "", "");
 
-	auto p = m.create_variable(jive::bit1, "p");
-	auto s1 = m.create_variable(mt, "s1");
-	auto s2 = m.create_variable(mt, "s2");
-
 	std::unique_ptr<jlm::cfg> cfg(new jlm::cfg(m));
 	auto bb = basic_block::create(*cfg);
 	cfg->exit()->divert_inedges(bb);
 	bb->add_outedge(cfg->exit());
 
-	cfg->entry()->append_argument(p);
-	cfg->entry()->append_argument(s1);
-	cfg->entry()->append_argument(s2);
+	auto p = cfg->entry()->append_argument(argument::create("p", jive::bit1));
+	auto s1 = cfg->entry()->append_argument(argument::create("s1", mt));
+	auto s2 = cfg->entry()->append_argument(argument::create("s2", mt));
 
 	auto s3 = m.create_variable(mt, "s3");
 

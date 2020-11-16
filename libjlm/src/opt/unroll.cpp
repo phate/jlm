@@ -133,7 +133,7 @@ is_idv(jive::input * input)
 	auto node = input_node(input);
 	JLM_DEBUG_ASSERT(is<bitadd_op>(node) || is<bitsub_op>(node));
 
-	auto a = dynamic_cast<argument*>(input->origin());
+	auto a = dynamic_cast<jive::argument*>(input->origin());
 	if (!a) return false;
 
 	auto tinput = static_cast<const theta_input*>(a->input());
@@ -192,7 +192,7 @@ unrollinfo::create(jive::theta_node * theta)
 	if (!is_idv(i0) && !is_idv(i1))
 		return nullptr;
 
-	auto idv = static_cast<argument*>(is_idv(i0) ? i0->origin() : i1->origin());
+	auto idv = static_cast<jive::argument*>(is_idv(i0) ? i0->origin() : i1->origin());
 
 	auto step = idv == i0->origin() ? i1->origin() : i0->origin();
 	if (!is_theta_invariant(step))

@@ -29,6 +29,13 @@ public:
 	, type_(type.copy())
 	{}
 
+	variable(
+		std::unique_ptr<jive::type> type,
+		const std::string & name)
+	: name_(name)
+	, type_(std::move(type))
+	{}
+
 	variable(variable && other)
 	: name_(std::move(other.name_))
 	, type_(std::move(other.type_))

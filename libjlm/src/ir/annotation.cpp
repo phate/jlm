@@ -38,7 +38,7 @@ annotaterw(const entryaggnode * node, demandmap & dm)
 {
 	auto ds = demandset::create();
 	for (const auto & argument : *node)
-		ds->writes.insert(argument);
+		ds->writes.insert(&argument);
 
 	dm[node] = std::move(ds);
 }

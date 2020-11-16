@@ -14,9 +14,7 @@
 #include <jive/rvsdg/operation.hpp>
 
 namespace jive {
-namespace base {
 	class type;
-}
 }
 
 namespace jlm {
@@ -25,6 +23,41 @@ class clg_node;
 class basic_block;
 class ipgraph_module;
 class tac;
+
+/** \brief Function argument
+*/
+class argument final : public variable {
+public:
+	~argument() override;
+
+	argument(
+		const std::string & name,
+		const jive::type & type)
+	: variable(*type.copy(), name)
+	{}
+
+	argument(
+		const std::string & name,
+		std::unique_ptr<jive::type> type)
+	: variable(std::move(type), name)
+	{}
+
+	static std::unique_ptr<argument>
+	create(
+		const std::string & name,
+		const jive::type & type)
+	{
+		return std::make_unique<argument>(name, type);
+	}
+
+	static std::unique_ptr<argument>
+	create(
+		const std::string & name,
+		std::unique_ptr<jive::type> type)
+	{
+		return std::make_unique<argument>(name, std::move(type));
+	}
+};
 
 /* cfg entry node */
 
@@ -43,27 +76,32 @@ public:
 		return arguments_.size();
 	}
 
-	const variable *
+	const jlm::argument *
 	argument(size_t index) const
 	{
 		JLM_DEBUG_ASSERT(index < narguments());
-		return arguments_[index];
+		return arguments_[index].get();
 	}
 
-	inline void
-	append_argument(const variable * v)
+	jlm::argument *
+	append_argument(std::unique_ptr<jlm::argument> arg)
 	{
-		return arguments_.push_back(v);
+		arguments_.push_back(std::move(arg));
+		return arguments_.back().get();
 	}
 
-	const std::vector<const variable*> &
+	std::vector<jlm::argument*>
 	arguments() const noexcept
 	{
-		return arguments_;
+		std::vector<jlm::argument*> arguments;
+		for (auto & argument : arguments_)
+			arguments.push_back(argument.get());
+
+		return arguments;
 	}
 
 private:
-	std::vector<const variable*> arguments_;
+	std::vector<std::unique_ptr<jlm::argument>> arguments_;
 };
 
 /* cfg exit node */

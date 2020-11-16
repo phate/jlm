@@ -20,11 +20,10 @@ test_single_operand_phi()
 	valuetype vt;
 
 	ipgraph_module im(filepath(""), "", "");
-	auto arg = im.create_variable(vt, "arg");
 	auto p = im.create_variable(vt, "p");
 
 	jlm::cfg cfg(im);
-	cfg.entry()->append_argument(arg);
+	auto arg = cfg.entry()->append_argument(argument::create("arg", vt));
 	cfg.exit()->append_result(p);
 
 	auto bb0 = basic_block::create(cfg);

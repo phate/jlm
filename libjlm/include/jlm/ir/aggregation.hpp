@@ -232,29 +232,23 @@ is(const aggnode * node)
 /* entry node class */
 
 class entryaggnode final : public aggnode {
-	typedef std::vector<const variable*>::const_iterator const_iterator;
+	class constiterator;
+
 public:
 	virtual
 	~entryaggnode();
 
-	inline
-	entryaggnode(const std::vector<const variable*> & arguments)
+	entryaggnode(const std::vector<jlm::argument*> & arguments)
 	: arguments_(arguments)
 	{}
 
-	const_iterator
-	begin() const
-	{
-		return arguments_.begin();
-	}
+	constiterator
+	begin() const;
 
-	const_iterator
-	end() const
-	{
-		return arguments_.end();
-	}
+	constiterator
+	end() const;
 
-	const variable *
+	const jlm::argument *
 	argument(size_t index) const noexcept
 	{
 		JLM_DEBUG_ASSERT(index < narguments());
@@ -270,14 +264,66 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	static inline std::unique_ptr<aggnode>
-	create(const std::vector<const variable*> & arguments)
+	static std::unique_ptr<aggnode>
+	create(const std::vector<jlm::argument*> & arguments)
 	{
 		return std::make_unique<entryaggnode>(arguments);
 	}
 
 private:
-	std::vector<const variable*> arguments_;
+	std::vector<jlm::argument*> arguments_;
+};
+
+class entryaggnode::constiterator final : public std::iterator<
+	std::forward_iterator_tag, const jlm::argument*, ptrdiff_t>
+{
+public:
+	constexpr
+	constiterator(const std::vector<jlm::argument*>::const_iterator & it)
+	: it_(it)
+	{}
+
+	const jlm::argument &
+	operator*() const
+	{
+		return *operator->();
+	}
+
+	const jlm::argument *
+	operator->() const
+	{
+		return *it_;
+	}
+
+	constiterator &
+	operator++()
+	{
+		it_++;
+		return *this;
+	}
+
+	constiterator
+	operator++(int)
+	{
+		constiterator tmp = *this;
+		it_++;
+		return tmp;
+	}
+
+	bool
+	operator==(const constiterator & other) const
+	{
+		return it_ == other.it_;
+	}
+
+	bool
+	operator!=(const constiterator & other) const
+	{
+		return !operator==(other);
+	}
+
+private:
+	std::vector<jlm::argument*>::const_iterator it_;
 };
 
 /* exit node class */

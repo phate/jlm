@@ -24,6 +24,11 @@
 
 namespace jlm {
 
+/* argument */
+
+argument::~argument()
+{}
+
 /* cfg entry node */
 
 entry_node::~entry_node()

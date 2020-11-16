@@ -141,7 +141,6 @@ create_cfg(const jive::node & node, context & ctx)
 {
 	JLM_DEBUG_ASSERT(is<lambda_op>(&node));
 	auto region = static_cast<const jive::structural_node*>(&node)->subregion(0);
-	auto & module = ctx.module();
 
 	JLM_DEBUG_ASSERT(ctx.lpbb() == nullptr);
 	std::unique_ptr<jlm::cfg> cfg(new jlm::cfg(ctx.module()));
@@ -157,8 +156,7 @@ create_cfg(const jive::node & node, context & ctx)
 		if (argument->input()) {
 			v = ctx.variable(argument->input()->origin());
 		} else {
-			v = module.create_variable(argument->type(), "");
-			cfg->entry()->append_argument(v);
+			v = cfg->entry()->append_argument(jlm::argument::create("", argument->type()));
 		}
 
 		ctx.insert(argument, v);

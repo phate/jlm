@@ -88,31 +88,46 @@ create_cfg(llvm::Function & f, context & ctx)
 	auto node = static_cast<const fctvariable*>(ctx.lookup_value(&f))->function();
 	auto & m = ctx.module();
 
+	auto add_arguments = [](const llvm::Function & f, jlm::cfg & cfg, context & ctx)
+	{
+		auto node = static_cast<const fctvariable*>(ctx.lookup_value(&f))->function();
+
+		size_t n = 0;
+		for (const auto & arg : f.args()) {
+			JLM_DEBUG_ASSERT(n < node->fcttype().narguments());
+
+			auto name = arg.getName().str();
+			auto & type = node->fcttype().argument_type(n++);
+
+			auto argument = cfg.entry()->append_argument(argument::create(name, type));
+			ctx.insert_value(&arg, argument);
+		}
+
+		if (f.isVarArg()) {
+			JLM_DEBUG_ASSERT(n < node->fcttype().narguments());
+			auto & type = node->fcttype().argument_type(n++);
+			cfg.entry()->append_argument(argument::create("_varg_", type));
+		}
+		JLM_DEBUG_ASSERT(n < node->fcttype().narguments());
+
+		auto & iotype = node->fcttype().argument_type(n++);
+		auto iostate = cfg.entry()->append_argument(argument::create("_io_", iotype));
+
+		auto & memtype = node->fcttype().argument_type(n++);
+		auto memstate = cfg.entry()->append_argument(argument::create("_s_", memtype));
+
+		auto & looptype = node->fcttype().argument_type(n++);
+		auto loopstate = cfg.entry()->append_argument(argument::create("_l_", looptype));
+
+		JLM_DEBUG_ASSERT(n == node->fcttype().narguments());
+		ctx.set_iostate(iostate);
+		ctx.set_memory_state(memstate);
+		ctx.set_loop_state(loopstate);
+	};
+
 	auto cfg = cfg::create(ctx.module());
 
-	/* add arguments */
-	size_t n = 0;
-	for (const auto & arg : f.args()) {
-		JLM_DEBUG_ASSERT(n < node->fcttype().narguments());
-		auto & type = node->fcttype().argument_type(n++);
-		auto v = ctx.module().create_variable(type, arg.getName().str());
-		cfg->entry()->append_argument(v);
-		ctx.insert_value(&arg, v);
-	}
-	if (f.isVarArg()) {
-		JLM_DEBUG_ASSERT(n < node->fcttype().narguments());
-		auto v = m.create_variable(node->fcttype().argument_type(n++), "_varg_");
-		cfg->entry()->append_argument(v);
-	}
-	JLM_DEBUG_ASSERT(n < node->fcttype().narguments());
-	auto iostate = m.create_variable(node->fcttype().argument_type(n++), "_io_");
-	auto memstate = m.create_variable(node->fcttype().argument_type(n++), "_s_");
-	auto loopstate = m.create_variable(node->fcttype().argument_type(n++), "_l_");
-	cfg->entry()->append_argument(iostate);
-	cfg->entry()->append_argument(memstate);
-	cfg->entry()->append_argument(loopstate);
-	JLM_DEBUG_ASSERT(n == node->fcttype().narguments());
-
+	add_arguments(f, *cfg, ctx);
 	auto bbmap = convert_basic_blocks(f, *cfg);
 
 	/* create entry block */
@@ -130,15 +145,12 @@ create_cfg(llvm::Function & f, context & ctx)
 		JLM_DEBUG_ASSERT(result->type() == node->fcttype().result_type(0));
 		cfg->exit()->append_result(result);
 	}
-	cfg->exit()->append_result(iostate);
-	cfg->exit()->append_result(memstate);
-	cfg->exit()->append_result(loopstate);
+	cfg->exit()->append_result(ctx.iostate());
+	cfg->exit()->append_result(ctx.memory_state());
+	cfg->exit()->append_result(ctx.loop_state());
 
 	/* convert instructions */
 	ctx.set_basic_block_map(bbmap);
-	ctx.set_iostate(iostate);
-	ctx.set_memory_state(memstate);
-	ctx.set_loop_state(loopstate);
 	ctx.set_result(result);
 	auto phis = convert_instructions(f, ctx);
 	patch_phi_operands(phis, ctx);
