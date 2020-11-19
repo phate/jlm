@@ -187,8 +187,9 @@ push(jive::gamma_node * gamma)
 		for (size_t n = 0; n < region->narguments(); n++) {
 			auto argument = region->argument(n);
 			for (const auto & user : *argument) {
-				if (user->node() && user->node()->depth() == 0)
-					wl.push_back(user->node());
+				auto tmp = input_node(user);
+				if (tmp && tmp->depth() == 0)
+					wl.push_back(tmp);
 			}
 		}
 
@@ -204,8 +205,9 @@ push(jive::gamma_node * gamma)
 			/* add consumers to worklist */
 			for (const auto & argument : arguments) {
 				for (const auto & user : *argument) {
-					if (user->node() && user->node()->depth() == 0)
-						wl.push_back(user->node());
+					auto tmp = input_node(user);
+					if (tmp && tmp->depth() == 0)
+						wl.push_back(tmp);
 				}
 			}
 		}
@@ -253,9 +255,9 @@ push_top(jive::theta_node * theta)
 	for (const auto & lv : *theta) {
 		auto argument = lv->argument();
 		for (const auto & user : *argument) {
-			if (user->node() && user->node()->depth() == 0
-			&& is_theta_invariant(user->node(), invariants))
-				wl.push_back(user->node());
+			auto tmp = input_node(user);
+			if (tmp && tmp->depth() == 0 && is_theta_invariant(tmp, invariants))
+				wl.push_back(tmp);
 		}
 	}
 
@@ -273,9 +275,9 @@ push_top(jive::theta_node * theta)
 		/* add consumers to worklist */
 		for (const auto & argument : arguments) {
 			for (const auto  & user : *argument) {
-				if (user->node() && user->node()->depth() == 0
-				&& is_theta_invariant(user->node(), invariants))
-					wl.push_back(user->node());
+				auto tmp = input_node(user);
+				if (tmp && tmp->depth() == 0 && is_theta_invariant(tmp, invariants))
+					wl.push_back(tmp);
 			}
 		}
 	}
@@ -345,7 +347,7 @@ pushout_store(jive::node * storenode)
 	for (size_t n = 0; n < states.size(); n++) {
 		std::unordered_set<jive::input*> users;
 		for (const auto & user : *states[n]) {
-			if (user->node() != nstates[0]->node())
+			if (input_node(user) != jive::node_output::node(nstates[0]))
 				users.insert(user);
 		}
 
@@ -360,7 +362,7 @@ void
 push_bottom(jive::theta_node * theta)
 {
 	for (const auto & lv : *theta) {
-		auto storenode = lv->result()->origin()->node();
+		auto storenode = jive::node_output::node(lv->result()->origin());
 		if (jive::is<store_op>(storenode) && is_movable_store(storenode)) {
 			pushout_store(storenode);
 			break;

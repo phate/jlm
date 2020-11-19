@@ -50,7 +50,7 @@ has_return_value(const jlm::cfg & cfg)
 {
 	for (size_t n=0; n < cfg.exit()->nresults(); n++) {
 		auto result = cfg.exit()->result(n);
-		if (is<jive::valuetype>(result->type()))
+		if (jive::is<jive::valuetype>(result->type()))
 			return true;
 	}
 
@@ -72,7 +72,7 @@ create_return(const cfg_node * node, context & ctx)
 	}
 
 	auto result = cfg.exit()->result(0);
-	JLM_DEBUG_ASSERT(is<jive::valuetype>(result->type()));
+	JLM_DEBUG_ASSERT(jive::is<jive::valuetype>(result->type()));
 	builder.CreateRet(ctx.value(result));
 }
 
@@ -217,11 +217,11 @@ convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 			if (!is<phi_op>(tac->operation()))
 				continue;
 
-			if (is<iostatetype>(tac->result(0)->type()))
+			if (jive::is<iostatetype>(tac->result(0)->type()))
 				continue;
-			if (is<jive::memtype>(tac->result(0)->type()))
+			if (jive::is<jive::memtype>(tac->result(0)->type()))
 				continue;
-			if (is<loopstatetype>(tac->result(0)->type()))
+			if (jive::is<loopstatetype>(tac->result(0)->type()))
 				continue;
 
 			JLM_DEBUG_ASSERT(node->ninedges() == tac->noperands());
@@ -290,7 +290,7 @@ convert_ipgraph(const jlm::ipgraph & clg, context & ctx)
 		auto v = jm.variable(&node);
 
 		if (auto n = dynamic_cast<const data_node*>(&node)) {
-			JLM_DEBUG_ASSERT(is<ptrtype>(n->type()));
+			JLM_DEBUG_ASSERT(jive::is<ptrtype>(n->type()));
 			auto pt = static_cast<const jlm::ptrtype*>(&n->type());
 			auto type = convert_type(pt->pointee_type(), ctx);
 

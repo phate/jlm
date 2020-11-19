@@ -42,12 +42,12 @@ test()
 
 	assert(rm.graph()->root()->nnodes() == 2);
 
-	auto delta1 = static_cast<const delta_node*>(d1->node());
+	auto delta1 = static_cast<const delta_node*>(jive::node_output::node(d1));
 	assert(delta1->linkage() == linkage::external_linkage);
 	assert(delta1->constant() == true);
 	assert(delta1->type() == pt);
 
-	auto delta2= static_cast<const delta_node*>(d2->node());
+	auto delta2= static_cast<const delta_node*>(jive::node_output::node(d2));
 	assert(delta2->linkage() == linkage::internal_linkage);
 	assert(delta2->constant() == false);
 	assert(delta2->type() == pt);

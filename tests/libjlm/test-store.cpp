@@ -52,12 +52,15 @@ test_store_mux_reduction()
 
 //	jive::view(graph.root(), stdout);
 
-	auto muxnode= ex->origin()->node();
+	auto muxnode= jive::node_output::node(ex->origin());
 	assert(jive::is<memstatemux_op>(muxnode));
 	assert(muxnode->ninputs() == 3);
-	assert(jive::is<jlm::store_op>(muxnode->input(0)->origin()->node()->operation()));
-	assert(jive::is<jlm::store_op>(muxnode->input(1)->origin()->node()->operation()));
-	assert(jive::is<jlm::store_op>(muxnode->input(2)->origin()->node()->operation()));
+	auto n0 = jive::node_output::node(muxnode->input(0)->origin());
+	auto n1 = jive::node_output::node(muxnode->input(1)->origin());
+	auto n2 = jive::node_output::node(muxnode->input(2)->origin());
+	assert(jive::is<jlm::store_op>(n0->operation()));
+	assert(jive::is<jlm::store_op>(n1->operation()));
+	assert(jive::is<jlm::store_op>(n2->operation()));
 }
 
 static inline void
@@ -92,7 +95,7 @@ test_multiple_origin_reduction()
 
 //	jive::view(graph.root(), stdout);
 
-	auto node = ex->origin()->node();
+	auto node = jive::node_output::node(ex->origin());
 	assert(jive::is<jlm::store_op>(node->operation()) && node->ninputs() == 3);
 }
 
@@ -171,7 +174,7 @@ test_store_store_reduction()
 	jive::view(graph.root(), stdout);
 
 	assert(graph.root()->nnodes() == 1);
-	assert(ex->origin()->node()->input(1)->origin() == v2);
+	assert(jive::node_output::node(ex->origin())->input(1)->origin() == v2);
 }
 
 static int

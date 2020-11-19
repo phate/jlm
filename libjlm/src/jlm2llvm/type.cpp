@@ -39,11 +39,11 @@ convert(const jive::fcttype & type, context & ctx)
 			continue;
 		}
 
-		if (is<iostatetype>(argtype))
+		if (jive::is<iostatetype>(argtype))
 			continue;
-		if (is<jive::memtype>(argtype))
+		if (jive::is<jive::memtype>(argtype))
 			continue;
-		if (is<loopstatetype>(argtype))
+		if (jive::is<loopstatetype>(argtype))
 			continue;
 
 		ats.push_back(convert_type(argtype, ctx));
@@ -54,7 +54,7 @@ convert(const jive::fcttype & type, context & ctx)
 		a return value, or (statetype, statetype, ...) if the function returns void.
 	*/
 	auto rt = Type::getVoidTy(lctx);
-	if (is<jive::valuetype>(type.result_type(0)))
+	if (jive::is<jive::valuetype>(type.result_type(0)))
 		rt = convert_type(type.result_type(0), ctx);
 
 	return FunctionType::get(rt, ats, isvararg);
@@ -131,7 +131,7 @@ convert(
 	const jive::type & type,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<T>(type));
+	JLM_DEBUG_ASSERT(jive::is<T>(type));
 	return convert(*static_cast<const T*>(&type), ctx);
 }
 

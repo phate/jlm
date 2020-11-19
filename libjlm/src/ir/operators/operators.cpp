@@ -465,7 +465,8 @@ zext_op::reduce_operand(
 {
 	if (path == jive_unop_reduction_constant) {
 		auto c = static_cast<const jive::bitconstant_op*>(&producer(operand)->operation());
-		return create_bitconstant(operand->node()->region(), c->value().zext(ndstbits()-nsrcbits()));
+		return create_bitconstant(jive::node_output::node(operand)->region(),
+			c->value().zext(ndstbits()-nsrcbits()));
 	}
 
 	return nullptr;

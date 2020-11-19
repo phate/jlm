@@ -215,8 +215,8 @@ public:
 	inline jive::argument *
 	add_dependency(jive::output * origin)
 	{
-		auto input = add_input(origin->type(), origin);
-		return subregion()->add_argument(input, origin->type());
+		auto input = jive::structural_input::create(this, origin, origin->type());
+		return jive::argument::create(subregion(), input, input->port());
 	}
 
 	const std::string &
@@ -302,8 +302,8 @@ public:
 		if (data->type() != node_->type().pointee_type())
 			throw jlm::error("Invalid type.");
 
-		auto output = node_->add_output({std::move(node_->type())});
-		region()->add_result(data, output, data->type());
+		auto output = jive::structural_output::create(node_, node_->type());
+		jive::result::create(region(), data, output, data->type());
 		node_ = nullptr;
 
 		return output;

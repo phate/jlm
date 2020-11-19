@@ -37,6 +37,20 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
+	static jive::simple_node *
+	create(
+		jive::region * region,
+		const std::vector<jive::output*> & operands,
+		const std::vector<const jive::type*> & result_types)
+	{
+		std::vector<const jive::type*> operand_types;
+		for (const auto & operand : operands)
+			operand_types.push_back(&operand->type());
+
+		test_op op(operand_types, result_types);
+		return jive::simple_node::create(region, op, {operands});
+	}
+
 private:
 	static inline std::vector<jive::port>
 	create_ports(const std::vector<const jive::type*> & types)

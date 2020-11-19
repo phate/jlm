@@ -749,20 +749,20 @@ handle_scc(
 		if (is_externally_visible(node->linkage()))
 			graph->add_export(output, {output->type(), v->name()});
 	} else {
-		jive::phi_builder pb;
-		pb.begin_phi(graph->root());
-		svmap.push_scope(pb.region());
+		jive::phi::builder pb;
+		pb.begin(graph->root());
+		svmap.push_scope(pb.subregion());
 
 		auto & pvmap = svmap.vmap(svmap.nscopes()-2);
 		auto & vmap = svmap.vmap();
 
 		/* add recursion variables */
-		std::unordered_map<const variable*, std::shared_ptr<jive::recvar>> recvars;
+		std::unordered_map<const variable*, jive::phi::rvoutput*> recvars;
 		for (const auto & node : scc) {
 			auto rv = pb.add_recvar(node->type());
 			auto v = m.variable(node);
 			JLM_DEBUG_ASSERT(v);
-			vmap[v] = rv->value();
+			vmap[v] = rv->argument();
 			JLM_DEBUG_ASSERT(recvars.find(v) == recvars.end());
 			recvars[v] = rv;
 		}
@@ -773,23 +773,23 @@ handle_scc(
 				auto v = m.variable(dep);
 				JLM_DEBUG_ASSERT(v);
 				if (recvars.find(v) == recvars.end())
-					vmap[v] = pb.add_dependency(pvmap[v]);
+					vmap[v] = pb.add_ctxvar(pvmap[v]);
 			}
 		}
 
 		/* convert SCC nodes */
 		for (const auto & node : scc) {
-			auto output = map[typeid(*node)](node, pb.region(), svmap, sd);
-			recvars[m.variable(node)]->set_value(output);
+			auto output = map[typeid(*node)](node, pb.subregion(), svmap, sd);
+			recvars[m.variable(node)]->set_rvorigin(output);
 		}
 
 		svmap.pop_scope();
-		pb.end_phi();
+		pb.end();
 
 		/* add phi outputs */
 		for (const auto & node : scc) {
 			auto v = m.variable(node);
-			auto value = recvars[v]->value();
+			auto value = recvars[v];
 			svmap.vmap()[v] = value;
 			if (is_externally_visible(node->linkage()))
 				graph->add_export(value, {value->type(), v->name()});

@@ -284,28 +284,28 @@ test_phi()
 	auto x = graph.add_import({vt, "x"});
 	auto y = graph.add_import({vt, "y"});
 
-	jive::phi_builder pb;
-	pb.begin_phi(graph.root());
+	jive::phi::builder pb;
+	pb.begin(graph.root());
 
-	auto rv1 = pb.add_recvar(ft);
-	auto rv2 = pb.add_recvar(ft);
-	auto dx = pb.add_dependency(x);
-	auto dy = pb.add_dependency(y);
+	auto rv1 = pb.add_recvar(ptrtype(ft));
+	auto rv2 = pb.add_recvar(ptrtype(ft));
+	auto dx = pb.add_ctxvar(x);
+	auto dy = pb.add_ctxvar(y);
 
 	jlm::lambda_builder lb;
-	auto arguments = lb.begin_lambda(pb.region(), {ft, "f", linkage::external_linkage});
-	lb.add_dependency(rv1->value());
+	auto arguments = lb.begin_lambda(pb.subregion(), {ft, "f", linkage::external_linkage});
+	lb.add_dependency(rv1->argument());
 	lb.add_dependency(dx);
 	auto f1 = lb.end_lambda({arguments[0]});
 
-	arguments = lb.begin_lambda(pb.region(), {ft, "g", linkage::external_linkage});
-	lb.add_dependency(rv2->value());
+	arguments = lb.begin_lambda(pb.subregion(), {ft, "g", linkage::external_linkage});
+	lb.add_dependency(rv2->argument());
 	lb.add_dependency(dy);
 	auto f2 = lb.end_lambda({arguments[0]});
 
-	rv1->set_value(f1->output(0));
-	rv2->set_value(f2->output(0));
-	auto phi = pb.end_phi();
+	rv1->set_rvorigin(f1->output(0));
+	rv2->set_rvorigin(f2->output(0));
+	auto phi = pb.end();
 
 	graph.add_export(phi->output(0), {phi->output(0)->type(), "f1"});
 

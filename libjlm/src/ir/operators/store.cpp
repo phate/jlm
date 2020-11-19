@@ -47,13 +47,14 @@ is_store_mux_reducible(const std::vector<jive::output*> & operands)
 {
 	JLM_DEBUG_ASSERT(operands.size() > 2);
 
-	auto muxnode = operands[2]->node();
+	auto muxnode = jive::node_output::node(operands[2]);
 	if (!is<memstatemux_op>(muxnode))
 		return false;
 
 	for (size_t n = 2; n < operands.size(); n++) {
 		JLM_DEBUG_ASSERT(dynamic_cast<const jive::memtype*>(&operands[n]->type()));
-		if (operands[n]->node() && operands[n]->node() != muxnode)
+		auto node = jive::node_output::node(operands[n]);
+		if (node != muxnode)
 			return false;
 	}
 
@@ -67,7 +68,7 @@ is_store_store_reducible(
 {
 	JLM_DEBUG_ASSERT(operands.size() > 2);
 
-	auto storenode = operands[2]->node();
+	auto storenode = jive::node_output::node(operands[2]);
 	if (!is<store_op>(storenode))
 		return false;
 
@@ -79,7 +80,7 @@ is_store_store_reducible(
 		return false;
 
 	for (size_t n = 2; n < operands.size(); n++) {
-		if (operands[n]->node() != storenode || operands[n]->nusers() != 1)
+		if (jive::node_output::node(operands[n]) != storenode || operands[n]->nusers() != 1)
 			return false;
 	}
 
@@ -94,7 +95,7 @@ is_store_alloca_reducible(const std::vector<jive::output*> & operands)
 	if (operands.size() == 3)
 		return false;
 
-	auto alloca = operands[0]->node();
+	auto alloca = jive::node_output::node(operands[0]);
 	if (!alloca || !is<alloca_op>(alloca->operation()))
 		return false;
 
@@ -120,7 +121,7 @@ perform_store_mux_reduction(
 	const jlm::store_op & op,
 	const std::vector<jive::output*> & operands)
 {
-	auto muxnode = operands[2]->node();
+	auto muxnode = jive::node_output::node(operands[2]);
 	auto muxoperands = jive::operands(muxnode);
 
 	auto states = store_op::create(operands[0], operands[1], muxoperands, op.alignment());
@@ -133,7 +134,7 @@ perform_store_store_reduction(
 	const std::vector<jive::output*> & operands)
 {
 	JLM_DEBUG_ASSERT(is_store_store_reducible(op, operands));
-	auto storenode = operands[2]->node();
+	auto storenode = jive::node_output::node(operands[2]);
 
 	auto storeops = jive::operands(storenode);
 	std::vector<jive::output*> states(std::next(std::next(storeops.begin())), storeops.end());
@@ -147,7 +148,7 @@ perform_store_alloca_reduction(
 {
 	auto value = operands[1];
 	auto address = operands[0];
-	auto alloca_state = address->node()->output(1);
+	auto alloca_state = jive::node_output::node(address)->output(1);
 	std::unordered_set<jive::output*> states(std::next(std::next(operands.begin())), operands.end());
 
 	auto outputs = store_op::create(address, value, {alloca_state}, op.alignment());
@@ -216,7 +217,7 @@ store_normal_form::normalize_node(jive::node * node) const
 
 	if (get_multiple_origin_reducible() && is_multiple_origin_reducible(operands)) {
 		auto outputs = perform_multiple_origin_reduction(*op, operands);
-		auto new_node = outputs[0]->node();
+		auto new_node = jive::node_output::node(outputs[0]);
 
 		std::unordered_map<jive::output*, jive::output*> origin2output;
 		for (size_t n = 0; n < outputs.size(); n++) {

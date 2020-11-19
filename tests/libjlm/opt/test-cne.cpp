@@ -173,9 +173,12 @@ test_theta()
 	cne.run(rm, sd);
 //	jive::view(graph.root(), stdout);
 
-	assert(u1->node()->input(0)->origin() == u2->node()->input(0)->origin());
-	assert(b1->node()->input(0)->origin() == u1->node()->input(0)->origin());
-	assert(b1->node()->input(1)->origin() == region->argument(3));
+	auto un1 = jive::node_output::node(u1);
+	auto un2 = jive::node_output::node(u2);
+	auto bn1 = jive::node_output::node(b1);
+	assert(un1->input(0)->origin() == un2->input(0)->origin());
+	assert(bn1->input(0)->origin() == un1->input(0)->origin());
+	assert(bn1->input(1)->origin() == region->argument(3));
 	assert(region->result(2)->origin() == region->result(3)->origin());
 	assert(graph.root()->result(0)->origin() == graph.root()->result(1)->origin());
 }
@@ -256,9 +259,9 @@ test_theta3()
 	theta2->add_loopvar(lv4->argument());
 	theta2->set_predicate(p->argument());
 
-	auto u1 = jlm::create_testop(r1, {theta2->output(1)}, {&vt})[0]->node();
-	auto b1 = jlm::create_testop(r1, {theta2->output(2), theta2->output(2)}, {&vt})[0]->node();
-	auto u2 = jlm::create_testop(r1, {theta2->output(3)}, {&vt})[0]->node();
+	auto u1 = test_op::create(r1, {theta2->output(1)}, {&vt});
+	auto b1 = test_op::create(r1, {theta2->output(2), theta2->output(2)}, {&vt});
+	auto u2 = test_op::create(r1, {theta2->output(3)}, {&vt});
 
 	lv2->result()->divert_to(u1->output(0));
 	lv3->result()->divert_to(b1->output(0));
@@ -311,8 +314,8 @@ test_theta4()
 	auto lv6 = theta->add_loopvar(x);
 	auto lv7 = theta->add_loopvar(x);
 
-	auto u1 = jlm::create_testop(region, {lv2->argument()}, {&vt})[0]->node();
-	auto b1 = jlm::create_testop(region, {lv3->argument(), lv3->argument()}, {&vt})[0]->node();
+	auto u1 = test_op::create(region, {lv2->argument()}, {&vt});
+	auto b1 = test_op::create(region, {lv3->argument(), lv3->argument()}, {&vt});
 
 	lv2->result()->divert_to(lv4->argument());
 	lv3->result()->divert_to(lv5->argument());
@@ -415,7 +418,8 @@ test_lambda()
 	cne.run(rm, sd);
 //	jive::view(graph.root(), stdout);
 
-	assert(b1->node()->input(0)->origin() == b1->node()->input(1)->origin());
+	auto bn1 = jive::node_output::node(b1);
+	assert(bn1->input(0)->origin() == bn1->input(1)->origin());
 }
 
 static inline void
@@ -433,28 +437,29 @@ test_phi()
 
 	auto x = graph.add_import({vt, "x"});
 
-	jive::phi_builder pb;
-	auto region = pb.begin_phi(graph.root());
+	jive::phi::builder pb;
+	pb.begin(graph.root());
+	auto region = pb.subregion();
 
-	auto d1 = pb.add_dependency(x);
-	auto d2 = pb.add_dependency(x);
+	auto d1 = pb.add_ctxvar(x);
+	auto d2 = pb.add_ctxvar(x);
 
-	auto r1 = pb.add_recvar(ft);
-	auto r2 = pb.add_recvar(ft);
+	auto r1 = pb.add_recvar(ptrtype(ft));
+	auto r2 = pb.add_recvar(ptrtype(ft));
 
 	jlm::lambda_builder lb;
 	lb.begin_lambda(region, {ft, "f", linkage::external_linkage});
-	d1 = lb.add_dependency(d1);
-	auto f1 = lb.end_lambda({d1});
+	auto arg = lb.add_dependency(d1);
+	auto f1 = lb.end_lambda({arg});
 
 	lb.begin_lambda(region, {ft, "g", linkage::external_linkage});
-	d2 = lb.add_dependency(d2);
-	auto f2 = lb.end_lambda({d2});
+	auto arg2 = lb.add_dependency(d2);
+	auto f2 = lb.end_lambda({arg2});
 
-	r1->set_value(f1->output(0));
-	r2->set_value(f2->output(0));
+	r1->set_rvorigin(f1->output(0));
+	r2->set_rvorigin(f2->output(0));
 
-	auto phi = pb.end_phi();
+	auto phi = pb.end();
 
 	graph.add_export(phi->output(0), {phi->output(0)->type(), "f1"});
 	graph.add_export(phi->output(1), {phi->output(1)->type(), "f2"});

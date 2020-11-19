@@ -15,6 +15,7 @@
 #include <jive/rvsdg/traverser.hpp>
 
 #include <jlm/common.hpp>
+#include <jlm/ir/operators.hpp>
 #include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/opt/unroll.hpp>
 #include <jlm/util/stats.hpp>
@@ -96,7 +97,7 @@ is_theta_invariant(const jive::output * output)
 {
 	JLM_DEBUG_ASSERT(jive::is<jive::theta_op>(output->region()->node()));
 
-	if (jive::is<jive::bitconstant_op>(output->node()))
+	if (jive::is<jive::bitconstant_op>(jive::node_output::node(output)))
 		return true;
 
 	auto argument = dynamic_cast<const jive::argument*>(output);
@@ -112,11 +113,12 @@ push_from_theta(jive::output * output)
 	auto argument = dynamic_cast<jive::argument*>(output);
 	if (argument) return argument;
 
-	JLM_DEBUG_ASSERT(jive::is<jive::bitconstant_op>(output->node()));
-	JLM_DEBUG_ASSERT(jive::is<jive::theta_op>(output->node()->region()->node()));
-	auto theta = static_cast<jive::theta_node*>(output->node()->region()->node());
+	auto tmp = jive::node_output::node(output);
+	JLM_DEBUG_ASSERT(jive::is<jive::bitconstant_op>(tmp));
+	JLM_DEBUG_ASSERT(jive::is<jive::theta_op>(tmp->region()->node()));
+	auto theta = static_cast<jive::theta_node*>(tmp->region()->node());
 
-	auto node = output->node()->copy(theta->region(), {});
+	auto node = tmp->copy(theta->region(), {});
 	auto lv = theta->add_loopvar(node->output(0));
 	output->divert_users(lv->argument());
 
@@ -128,14 +130,14 @@ is_idv(jive::input * input)
 {
 	using namespace jive;
 
-	auto node = input->node();
+	auto node = input_node(input);
 	JLM_DEBUG_ASSERT(is<bitadd_op>(node) || is<bitsub_op>(node));
 
 	auto a = dynamic_cast<argument*>(input->origin());
 	if (!a) return false;
 
 	auto tinput = static_cast<const theta_input*>(a->input());
-	return tinput->result()->origin()->node() == node;
+	return jive::node_output::node(tinput->result()->origin()) == node;
 }
 
 std::unique_ptr<jive::bitvalue_repr>
@@ -166,11 +168,11 @@ unrollinfo::create(jive::theta_node * theta)
 {
 	using namespace jive;
 
-	auto matchnode = theta->predicate()->origin()->node();
+	auto matchnode = jive::node_output::node(theta->predicate()->origin());
 	if (!is<match_op>(matchnode))
 		return nullptr;
 
-	auto cmpnode = matchnode->input(0)->origin()->node();
+	auto cmpnode = jive::node_output::node(matchnode->input(0)->origin());
 	if (!is<bitcompare_op>(cmpnode))
 		return nullptr;
 
@@ -179,7 +181,7 @@ unrollinfo::create(jive::theta_node * theta)
 	auto end = is_theta_invariant(o0) ? o0 : (is_theta_invariant(o1) ? o1 : nullptr);
 	if (!end) return nullptr;
 
-	auto armnode = (end == o0 ? o1 : o0)->node();
+	auto armnode = jive::node_output::node((end == o0 ? o1 : o0));
 	if (!is<bitadd_op>(armnode) && !is<bitsub_op>(armnode))
 		return nullptr;
 	if (armnode->ninputs() != 2)
@@ -292,7 +294,7 @@ unroll_known_theta(const unrollinfo & ui, size_t factor)
 		multiple of the step value, and add an epilogue after the unrolled loop that
 		computes the residual iterations.
 	*/
-	auto cmp = smap.lookup(cmpnode->output(0))->node();
+	auto cmp = jive::node_output::node(smap.lookup(cmpnode->output(0)));
 	auto input = cmp->input(0)->origin() == smap.lookup(ui.end()) ? cmp->input(0) : cmp->input(1);
 	JLM_DEBUG_ASSERT(input->origin() == smap.lookup(ui.end()));
 
@@ -360,7 +362,7 @@ create_unrolled_theta_predicate(
 	using namespace jive;
 
 	auto region = smap.lookup(ui.cmpnode()->output(0))->region();
-	auto cmpnode = smap.lookup(ui.cmpnode()->output(0))->node();
+	auto cmpnode = jive::node_output::node(smap.lookup(ui.cmpnode()->output(0)));
 	auto step = smap.lookup(ui.step());
 	auto end = smap.lookup(ui.end());
 	auto nbits = ui.nbits();

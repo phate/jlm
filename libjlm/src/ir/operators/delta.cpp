@@ -60,7 +60,8 @@ delta_node::copy(jive::region * region, jive::substitution_map & smap) const
 	auto result = rmap.lookup(subregion()->result(0)->origin());
 	auto data = db.end(result);
 	smap.insert(output(0), data);
-	return static_cast<delta_node*>(data->node());
+
+	return static_cast<delta_node*>(jive::node_output::node(data));
 }
 
 }

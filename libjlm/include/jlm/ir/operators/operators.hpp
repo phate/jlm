@@ -2391,6 +2391,16 @@ public:
 	}
 };
 
+/*
+	FIXME: This function should be in jive and not in jlm.
+*/
+static inline jive::node *
+input_node(const jive::input * input)
+{
+	auto ni = dynamic_cast<const jive::node_input*>(input);
+	return ni != nullptr ? ni->node() : nullptr;
+}
+
 }
 
 #endif

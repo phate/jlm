@@ -107,19 +107,12 @@ private:
 };
 
 static bool
-is_phi_output(const jive::output * output)
-{
-	return output->node()
-	    && dynamic_cast<const jive::phi_op*>(&output->node()->operation());
-}
-
-static bool
 is_phi_argument(const jive::output * output)
 {
 	auto argument = dynamic_cast<const jive::argument*>(output);
 	return argument
 	    && argument->region()->node()
-	    && dynamic_cast<const jive::phi_op*>(&argument->region()->node()->operation());
+	    && is<jive::phi::operation>(argument->region()->node());
 }
 
 /* mark phase */
@@ -138,8 +131,8 @@ mark(const jive::output * output, dnectx & ctx)
 	if (is_import(output))
 		return;
 
-	if (jive::is<jive::gamma_op>(output->node())) {
-		auto gamma = static_cast<const jive::gamma_node*>(output->node());
+	if (is_gamma_output(output)) {
+		auto gamma = static_cast<const jive::gamma_node*>(jive::node_output::node(output));
 		auto soutput = static_cast<const jive::structural_output*>(output);
 		mark(gamma->predicate()->origin(), ctx);
 		for (const auto & result : soutput->results)
@@ -196,8 +189,9 @@ mark(const jive::output * output, dnectx & ctx)
 		return;
 	}
 
-	for (size_t n = 0; n < output->node()->ninputs(); n++)
-		mark(output->node()->input(n)->origin(), ctx);
+	auto node = jive::node_output::node(output);
+	for (size_t n = 0; n < node->ninputs(); n++)
+		mark(node->input(n)->origin(), ctx);
 }
 
 /* sweep phase */
@@ -220,7 +214,7 @@ sweep_delta(jive::structural_node * node, const dnectx & ctx)
 static void
 sweep_phi(jive::structural_node * node, const dnectx & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::phi_op*>(&node->operation()));
+	JLM_DEBUG_ASSERT(is<jive::phi::operation>(node));
 	auto subregion = node->subregion(0);
 
 	if (!ctx.is_alive(node)) {
@@ -363,7 +357,7 @@ sweep(jive::structural_node * node, const dnectx & ctx)
 	  {std::type_index(typeid(jive::gamma_op)), sweep_gamma}
 	, {std::type_index(typeid(jive::theta_op)), sweep_theta}
 	, {std::type_index(typeid(jlm::lambda_op)), sweep_lambda}
-	, {std::type_index(typeid(jive::phi_op)), sweep_phi}
+	, {typeid(jive::phi::operation), sweep_phi}
 	, {typeid(jlm::delta_op), sweep_delta}
 	});
 

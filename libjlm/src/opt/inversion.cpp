@@ -4,6 +4,7 @@
  */
 
 #include <jlm/common.hpp>
+#include <jlm/ir/operators.hpp>
 #include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/opt/inversion.hpp>
 #include <jlm/opt/pull.hpp>
@@ -64,7 +65,7 @@ private:
 static jive::gamma_node *
 is_applicable(const jive::theta_node * theta)
 {
-	auto matchnode = theta->predicate()->origin()->node();
+	auto matchnode = jive::node_output::node(theta->predicate()->origin());
 	if (!jive::is<jive::match_op>(matchnode))
 		return nullptr;
 
@@ -76,10 +77,10 @@ is_applicable(const jive::theta_node * theta)
 		if (user == theta->predicate())
 			continue;
 
-		if (!jive::is<jive::gamma_op>(user->node()))
+		if (!jive::is<jive::gamma_op>(input_node(user)))
 			return nullptr;
 
-		gnode = dynamic_cast<jive::gamma_node*>(user->node());
+		gnode = dynamic_cast<jive::gamma_node*>(input_node(user));
 	}
 
 	return gnode;
@@ -90,7 +91,7 @@ pullin(jive::gamma_node * gamma, jive::theta_node * theta)
 {
 	pullin_bottom(gamma);
 	for (const auto & lv : *theta)	{
-		if (lv->result()->origin()->node() != gamma) {
+		if (jive::node_output::node(lv->result()->origin()) != gamma) {
 			auto ev = gamma->add_entryvar(lv->result()->origin());
 			JLM_DEBUG_ASSERT(ev->narguments() == 2);
 			auto xv = gamma->add_exitvar({ev->argument(0), ev->argument(1)});

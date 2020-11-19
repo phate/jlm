@@ -14,7 +14,9 @@
 static inline bool
 is_phi_output(const jive::output * output)
 {
-	return jive::is<jive::phi_op>(output->node());
+	using namespace jive;
+
+	return is<phi::operation>(node_output::node(output));
 }
 
 /*
@@ -27,7 +29,7 @@ is_phi_cv(const jive::output * output)
 
 	auto a = dynamic_cast<const argument*>(output);
 	return a
-	    && is<phi_op>(a->region()->node())
+	    && is<phi::operation>(a->region()->node())
 	    && a->input() != nullptr;
 }
 
@@ -38,7 +40,7 @@ is_phi_recvar_argument(const jive::output * output)
 
 	auto a = dynamic_cast<const argument*>(output);
 	return a
-	    && is<phi_op>(a->region()->node())
+	    && is<phi::operation>(a->region()->node())
 	    && a->input() == nullptr;
 }
 
@@ -49,7 +51,7 @@ static inline jive::result *
 phi_result(const jive::output * output)
 {
 	JLM_DEBUG_ASSERT(is_phi_output(output));
-	auto result = output->node()->region()->result(output->index());
+	auto result = jive::node_output::node(output)->region()->result(output->index());
 	JLM_DEBUG_ASSERT(result->output() == output);
 	return result;
 }

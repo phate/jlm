@@ -7,6 +7,7 @@
 #include <jive/rvsdg/traverser.hpp>
 
 #include <jlm/common.hpp>
+#include <jlm/ir/operators.hpp>
 #include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/opt/pull.hpp>
 #include <jlm/util/stats.hpp>
@@ -70,7 +71,7 @@ single_successor(const jive::node * node)
 	std::unordered_set<jive::node*> successors;
 	for (size_t n = 0; n < node->noutputs(); n++) {
 		for (const auto & user : *node->output(n))
-			successors.insert(user->node());
+			successors.insert(input_node(user));
 	}
 
 	return successors.size() == 1;
@@ -132,8 +133,9 @@ pullin_top(jive::gamma_node * gamma)
 	/* FIXME: This is inefficient. We can do better. */
 	auto ev = gamma->begin_entryvar();
 	while (ev != gamma->end_entryvar()) {
-		auto node = ev->origin()->node();
-		if (node && gamma->predicate()->origin()->node() != node && single_successor(node)) {
+		auto node = jive::node_output::node(ev->origin());
+		auto tmp = jive::node_output::node(gamma->predicate()->origin());
+		if (node && tmp != node && single_successor(node)) {
 			pullin_node(gamma, node);
 
 			cleanup(gamma, node);
@@ -153,8 +155,9 @@ pullin_bottom(jive::gamma_node * gamma)
 	for (size_t n = 0; n < gamma->noutputs(); n++) {
 		auto output = gamma->output(n);
 		for (const auto & user : *output) {
-			if (user->node() && user->node()->depth() == gamma->depth()+1)
-				workset.insert(user->node());
+			auto node = input_node(user);
+			if (node && node->depth() == gamma->depth()+1)
+				workset.insert(node);
 		}
 	}
 
@@ -169,7 +172,7 @@ pullin_bottom(jive::gamma_node * gamma)
 			std::vector<jive::output*> operands;
 			for (size_t i = 0; i < node->ninputs(); i++) {
 				auto input = node->input(i);
-				if (input->origin()->node() == gamma) {
+				if (jive::node_output::node(input->origin()) == gamma) {
 					auto output = static_cast<jive::structural_output*>(input->origin());
 					operands.push_back(gamma->subregion(r)->result(output->index())->origin());
 				} else {
@@ -186,9 +189,11 @@ pullin_bottom(jive::gamma_node * gamma)
 		/* adjust outputs and update workset */
 		for (size_t n = 0; n < node->noutputs(); n++) {
 			auto output = node->output(n);
-			for (const auto & user : *output)
-				if (user->node()  && user->node()->depth() == node->depth()+1)
-					workset.insert(user->node());
+			for (const auto & user : *output) {
+				auto tmp = input_node(user);
+				if (tmp && tmp->depth() == node->depth()+1)
+					workset.insert(tmp);
+			}
 
 			auto xv = gamma->add_exitvar(outputs[n]);
 			output->divert_users(xv);
@@ -232,12 +237,12 @@ pull(jive::gamma_node * gamma)
 	if (gamma->nsubregions() == 2 && empty(gamma))
 		return;
 
-	auto prednode = gamma->predicate()->origin()->node();
+	auto prednode = jive::node_output::node(gamma->predicate()->origin());
 
 	/* FIXME: This is inefficient. We can do better. */
 	auto ev = gamma->begin_entryvar();
 	while (ev != gamma->end_entryvar()) {
-		auto node = ev->origin()->node();
+		auto node = jive::node_output::node(ev->origin());
 		if (!node || prednode == node || !single_successor(node)) {
 			ev++; continue;
 		}

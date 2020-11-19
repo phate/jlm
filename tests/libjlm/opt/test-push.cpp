@@ -135,11 +135,11 @@ test_push_theta_bottom()
 	jlm::push_bottom(theta);
 	jive::view(graph, stdout);
 
-	auto storenode = ex->origin()->node();
+	auto storenode = jive::node_output::node(ex->origin());
 	assert(jive::is<jlm::store_op>(storenode));
 	assert(storenode->input(0)->origin() == a);
-	assert(jive::is<jive::theta_op>(storenode->input(1)->origin()->node()));
-	assert(jive::is<jive::theta_op>(storenode->input(2)->origin()->node()));
+	assert(jive::is<jive::theta_op>(jive::node_output::node(storenode->input(1)->origin())));
+	assert(jive::is<jive::theta_op>(jive::node_output::node(storenode->input(2)->origin())));
 }
 
 static int

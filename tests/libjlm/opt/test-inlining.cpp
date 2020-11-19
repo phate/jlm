@@ -36,7 +36,7 @@ verify()
 	jlm::lambda_builder lb;
 	auto arguments = lb.begin_lambda(graph.root(), {ft1, "f1", linkage::external_linkage});
 	lb.add_dependency(i);
-	auto t = jlm::create_testop(lb.subregion(), {arguments[0]}, {&vt})[0]->node();
+	auto t = test_op::create(lb.subregion(), {arguments[0]}, {&vt});
 	auto f1 = lb.end_lambda({t->output(0)});
 
 	/* f2 */

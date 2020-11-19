@@ -40,7 +40,7 @@ static inline std::unique_ptr<jlm::arraytype>
 convert_arraytype(const llvm::ArrayType * type, context & ctx)
 {
 	auto t = convert_type(llvm::cast<llvm::Type>(type), ctx);
-	JLM_DEBUG_ASSERT(is<arraytype>(*t));
+	JLM_DEBUG_ASSERT(jive::is<arraytype>(*t));
 	return std::unique_ptr<jlm::arraytype>(static_cast<jlm::arraytype*>(t.release()));
 }
 

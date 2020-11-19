@@ -198,7 +198,7 @@ iostatetype::~iostatetype()
 bool
 iostatetype::operator==(const jive::type & other) const noexcept
 {
-	return is<iostatetype>(other);
+	return jive::is<iostatetype>(other);
 }
 
 std::string

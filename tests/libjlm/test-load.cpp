@@ -48,7 +48,7 @@ test_load_mux_reduction()
 
 //	jive::view(graph.root(), stdout);
 
-	auto load = ex->origin()->node();
+	auto load = jive::node_output::node(ex->origin());
 	assert(jive::is<jlm::load_op>(load));
 	assert(load->ninputs() == 4);
 	assert(load->input(1)->origin() == s1);
@@ -87,7 +87,7 @@ test_load_alloca_reduction()
 
 //	jive::view(graph.root(), stdout);
 
-	auto node = ex->origin()->node();
+	auto node = jive::node_output::node(ex->origin());
 	assert(jive::is<load_op>(node));
 	assert(node->ninputs() == 3);
 	assert(node->input(1)->origin() == alloca1[1]);
@@ -123,7 +123,7 @@ test_multiple_origin_reduction()
 
 //	jive::view(graph.root(), stdout);
 
-	auto node = ex->origin()->node();
+	auto node = jive::node_output::node(ex->origin());
 	assert(is<load_op>(node));
 	assert(node->ninputs() == 2);
 }
@@ -162,11 +162,11 @@ test_load_store_state_reduction()
 
 //	jive::view(graph.root(), stdout);
 
-	auto node = ex1->origin()->node();
+	auto node = jive::node_output::node(ex1->origin());
 	assert(is<load_op>(node));
 	assert(node->ninputs() == 2);
 
-	node = ex2->origin()->node();
+	node = jive::node_output::node(ex2->origin());
 	assert(is<load_op>(node));
 	assert(node->ninputs() == 2);
 }
@@ -277,15 +277,15 @@ test_load_load_reduction()
 
 	assert(graph.root()->nnodes() == 6);
 
-	auto ld = x1->origin()->node();
+	auto ld = jive::node_output::node(x1->origin());
 	assert(is<load_op>(ld));
 
-	auto mx1 = x2->origin()->node();
+	auto mx1 = jive::node_output::node(x2->origin());
 	assert(is<memstatemux_op>(mx1) && mx1->ninputs() == 2);
 	assert(mx1->input(0)->origin() == ld1[1] || mx1->input(0)->origin() == ld->output(2));
 	assert(mx1->input(1)->origin() == ld1[1] || mx1->input(1)->origin() == ld->output(2));
 
-	auto mx2 = x3->origin()->node();
+	auto mx2 = jive::node_output::node(x3->origin());
 	assert(is<memstatemux_op>(mx2) && mx2->ninputs() == 2);
 	assert(mx2->input(0)->origin() == ld2[1] || mx2->input(0)->origin() == ld->output(3));
 	assert(mx2->input(1)->origin() == ld2[1] || mx2->input(1)->origin() == ld->output(3));

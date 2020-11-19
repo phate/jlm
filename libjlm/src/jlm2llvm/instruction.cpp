@@ -183,14 +183,14 @@ convert_call(
 	for (size_t n = 1; n < args.size(); n++) {
 		auto argument = args[n];
 
-		if (is<iostatetype>(argument->type()))
+		if (jive::is<iostatetype>(argument->type()))
 			continue;
-		if (is<jive::memtype>(argument->type()))
+		if (jive::is<jive::memtype>(argument->type()))
 			continue;
-		if (is<loopstatetype>(argument->type()))
+		if (jive::is<loopstatetype>(argument->type()))
 			continue;
 
-		if (is<varargtype>(argument->type())) {
+		if (jive::is<varargtype>(argument->type())) {
 			JLM_DEBUG_ASSERT(is<tacvariable>(argument));
 			auto valist = dynamic_cast<const jlm::tacvariable*>(argument)->tac();
 			JLM_DEBUG_ASSERT(is<valist_op>(valist->operation()));
@@ -261,11 +261,11 @@ convert_phi(
 	JLM_DEBUG_ASSERT(is<phi_op>(op));
 	auto & phi = *static_cast<const jlm::phi_op*>(&op);
 
-	if (is<iostatetype>(phi.type()))
+	if (jive::is<iostatetype>(phi.type()))
 		return nullptr;
-	if (is<jive::memtype>(phi.type()))
+	if (jive::is<jive::memtype>(phi.type()))
 		return nullptr;
-	if (is<loopstatetype>(phi.type()))
+	if (jive::is<loopstatetype>(phi.type()))
 		return nullptr;
 
 	auto t = convert_type(phi.type(), ctx);
@@ -578,7 +578,7 @@ convert_select(
 	JLM_DEBUG_ASSERT(is<select_op>(op));
 	auto & select = *static_cast<const jlm::select_op*>(&op);
 
-	if (is<jive::statetype>(select.type()))
+	if (jive::is<jive::statetype>(select.type()))
 		return nullptr;
 
 	auto c = ctx.value(operands[0]);

@@ -83,7 +83,7 @@ find_consumers(const jive::structural_node * node)
 				continue;
 			}
 
-			if (auto simple = dynamic_cast<jive::simple_node*>(user->node())) {
+			if (auto simple = dynamic_cast<jive::simple_node*>(input_node(user))) {
 				consumers.push_back(simple);
 				continue;
 			}

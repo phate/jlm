@@ -264,9 +264,9 @@ test_unknown_boundaries()
 	loopunroll.run(rm, sd);
 	jive::view(graph, stdout);
 
-	auto node = ex1->origin()->node();
+	auto node = jive::node_output::node(ex1->origin());
 	assert(jive::is<jive::gamma_op>(node));
-	node = node->input(1)->origin()->node();
+	node = jive::node_output::node(node->input(1)->origin());
 	assert(jive::is<jive::gamma_op>(node));
 }
 

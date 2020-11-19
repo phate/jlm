@@ -301,8 +301,8 @@ public:
 	inline jive::argument *
 	add_dependency(jive::output * origin)
 	{
-		auto input = add_input(origin->type(), origin);
-		return subregion()->add_argument(input, origin->type());
+		auto input = jive::structural_input::create(this, origin, origin->type());
+		return jive::argument::create(subregion(), input, input->port());
 	}
 
 	inline const jive::fcttype &
@@ -346,7 +346,7 @@ public:
 		lambda_ = lambda_node::create(parent, op);
 		for (size_t n = 0; n < lambda_->fcttype().narguments(); n++) {
 			auto & type = lambda_->fcttype().argument_type(n);
-			arguments.push_back(lambda_->subregion()->add_argument(nullptr, type));
+			arguments.push_back(jive::argument::create(lambda_->subregion(), nullptr, type));
 		}
 
 		return arguments;
@@ -375,8 +375,8 @@ public:
 			throw jlm::error("incorrect number of results.");
 
 		for (size_t n = 0; n < results.size(); n++)
-			lambda_->subregion()->add_result(results[n], nullptr, fcttype.result_type(n));
-		lambda_->add_output(ptrtype(fcttype));
+			jive::result::create(lambda_->subregion(), results[n], nullptr, fcttype.result_type(n));
+		jive::structural_output::create(lambda_, ptrtype(fcttype));
 
 		auto lambda = lambda_;
 		lambda_ = nullptr;
@@ -397,7 +397,7 @@ is_lambda_argument(const jive::output * output)
 static inline bool
 is_lambda_output(const jive::output * output)
 {
-	return is<lambda_op>(output->node());
+	return is<lambda_op>(jive::node_output::node(output));
 }
 
 static inline bool

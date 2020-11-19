@@ -87,7 +87,7 @@ theta_invariance(jive::structural_node * node)
 		we need to know whether a loop terminates.*/
 
 	for (const auto & lv : *theta) {
-		if (jive::is_invariant(lv) && !is<loopstatetype>(lv->argument()->type()))
+		if (jive::is_invariant(lv) && !jive::is<loopstatetype>(lv->argument()->type()))
 			lv->divert_users(lv->input()->origin());
 	}
 }

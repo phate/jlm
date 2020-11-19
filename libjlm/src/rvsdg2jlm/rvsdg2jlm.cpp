@@ -234,10 +234,11 @@ convert_empty_gamma_node(const jive::gamma_node * gamma, context & ctx)
 		}
 
 		auto v = module.create_variable(output->type());
-		if (is<jive::match_op>(predicate->node())) {
-			auto matchop = static_cast<const jive::match_op*>(&predicate->node()->operation());
+		auto matchnode = jive::node_output::node(predicate);
+		if (is<jive::match_op>(matchnode)) {
+			auto matchop = static_cast<const jive::match_op*>(&matchnode->operation());
 			auto d = matchop->default_alternative();
-			auto c = ctx.variable(predicate->node()->input(0)->origin());
+			auto c = ctx.variable(matchnode->input(0)->origin());
 			auto t = d == 0 ? ctx.variable(o1) : ctx.variable(o0);
 			auto f = d == 0 ? ctx.variable(o0) : ctx.variable(o1);
 			bb->append_last(select_op::create(c, t, f, v));
@@ -305,7 +306,8 @@ convert_gamma_node(const jive::node & node, context & ctx)
 		auto output = gamma->output(n);
 
 		bool invariant = true;
-		bool select = (gamma->nsubregions() == 2) && is<jive::match_op>(predicate->node());
+		auto matchnode = jive::node_output::node(predicate);
+		bool select = (gamma->nsubregions() == 2) && is<jive::match_op>(matchnode);
 		std::vector<std::pair<const variable*, cfg_node*>> arguments;
 		for (size_t r = 0; r < gamma->nsubregions(); r++) {
 			auto origin = gamma->subregion(r)->result(n)->origin();
@@ -313,7 +315,8 @@ convert_gamma_node(const jive::node & node, context & ctx)
 			auto v = ctx.variable(origin);
 			arguments.push_back(std::make_pair(v, phi_nodes[r]));
 			invariant &= (v == ctx.variable(gamma->subregion(0)->result(n)->origin()));
-			select &= (origin->node() == nullptr && origin->region()->node() == &node);
+			auto tmp = jive::node_output::node(origin);
+			select &= (tmp == nullptr && origin->region()->node() == &node);
 		}
 
 		if (invariant) {
@@ -324,10 +327,11 @@ convert_gamma_node(const jive::node & node, context & ctx)
 
 		if (select) {
 			/* use select instead of phi */
-			auto matchop = static_cast<const jive::match_op*>(&predicate->node()->operation());
+			auto matchnode = jive::node_output::node(predicate);
+			auto matchop = static_cast<const jive::match_op*>(&matchnode->operation());
 			auto d = matchop->default_alternative();
 			auto v = module.create_variable(output->type());
-			auto c = ctx.variable(predicate->node()->input(0)->origin());
+			auto c = ctx.variable(matchnode->input(0)->origin());
 			auto t = d == 0 ? arguments[1].first : arguments[0].first;
 			auto f = d == 0 ? arguments[0].first : arguments[1].first;
 			entry->append_first(select_op::create(c, t, f, v));
@@ -347,8 +351,9 @@ convert_gamma_node(const jive::node & node, context & ctx)
 static inline bool
 phi_needed(const jive::input * i, const jlm::variable * v)
 {
-	JLM_DEBUG_ASSERT(is<jive::theta_op>(i->node()));
-	auto theta = static_cast<const jive::structural_node*>(i->node());
+	auto node = input_node(i);
+	JLM_DEBUG_ASSERT(is<jive::theta_op>(node));
+	auto theta = static_cast<const jive::structural_node*>(node);
 	auto input = static_cast<const jive::structural_input*>(i);
 	auto output = theta->output(input->index());
 
@@ -433,7 +438,7 @@ convert_lambda_node(const jive::node & node, context & ctx)
 static inline void
 convert_phi_node(const jive::node & node, context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<jive::phi_op>(&node));
+	JLM_DEBUG_ASSERT(jive::is<jive::phi::operation>(&node));
 	auto phi = static_cast<const jive::structural_node*>(&node);
 	auto subregion = phi->subregion(0);
 	auto & module = ctx.module();
@@ -448,7 +453,7 @@ convert_phi_node(const jive::node & node, context & ctx)
 	/* forward declare all functions and globals */
 	for (size_t n = 0; n < subregion->nresults(); n++) {
 		JLM_DEBUG_ASSERT(subregion->argument(n)->input() == nullptr);
-		auto node = subregion->result(n)->origin()->node();
+		auto node = jive::node_output::node(subregion->result(n)->origin());
 
 		if (auto lambda = dynamic_cast<const lambda_node*>(node)) {
 			auto f = function_node::create(ipg, lambda->name(), lambda->fcttype(), lambda->linkage());
@@ -466,7 +471,7 @@ convert_phi_node(const jive::node & node, context & ctx)
 	for (size_t n = 0; n < subregion->nresults(); n++) {
 		JLM_DEBUG_ASSERT(subregion->argument(n)->input() == nullptr);
 		auto result = subregion->result(n);
-		auto node = result->origin()->node();
+		auto node = jive::node_output::node(result->origin());
 
 		if (is<lambda_op>(node)) {
 			auto v = static_cast<const fctvariable*>(ctx.variable(subregion->argument(n)));
@@ -515,7 +520,7 @@ convert_node(const jive::node & node, context & ctx)
 	  {typeid(lambda_op), convert_lambda_node}
 	, {std::type_index(typeid(jive::gamma_op)), convert_gamma_node}
 	, {std::type_index(typeid(jive::theta_op)), convert_theta_node}
-	, {std::type_index(typeid(jive::phi_op)), convert_phi_node}
+	, {typeid(jive::phi::operation), convert_phi_node}
 	, {typeid(jlm::delta_op), convert_delta_node}
 	});
 

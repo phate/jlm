@@ -64,9 +64,9 @@ test1()
 	tginversion.run(rm, sd);
 //	jive::view(graph.root(), stdout);
 
-	assert(jive::is<jive::gamma_op>(ex1->origin()->node()));
-	assert(jive::is<jive::gamma_op>(ex2->origin()->node()));
-	assert(jive::is<jive::gamma_op>(ex3->origin()->node()));
+	assert(jive::is<jive::gamma_op>(jive::node_output::node(ex1->origin())));
+	assert(jive::is<jive::gamma_op>(jive::node_output::node(ex2->origin())));
+	assert(jive::is<jive::gamma_op>(jive::node_output::node(ex3->origin())));
 }
 
 static inline void
@@ -108,7 +108,7 @@ test2()
 	tginversion.run(rm, sd);
 //	jive::view(graph.root(), stdout);
 
-	assert(jive::is<jive::gamma_op>(ex->origin()->node()));
+	assert(jive::is<jive::gamma_op>(jive::node_output::node(ex->origin())));
 }
 
 static int

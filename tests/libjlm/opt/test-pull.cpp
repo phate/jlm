@@ -81,7 +81,7 @@ test_pullin_bottom()
 	jlm::pullin_bottom(gamma);
 //	jive::view(graph, stdout);
 
-	assert(xp->origin()->node() == gamma);
+	assert(jive::node_output::node(xp->origin()) == gamma);
 	assert(gamma->subregion(0)->nnodes() == 2);
 	assert(gamma->subregion(1)->nnodes() == 2);
 }

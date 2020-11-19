@@ -207,9 +207,9 @@ congruent(
 		return congruent(output1, output2, vs, ctx);
 	}
 
-	if (jive::is<jive::theta_op>(o1->node())
-	&& jive::is<jive::theta_op>(o2->node())
-	&& o1->node() == o2->node()) {
+	auto n1 = jive::node_output::node(o1);
+	auto n2 = jive::node_output::node(o2);
+	if (jive::is<jive::theta_op>(n1) && jive::is<jive::theta_op>(n2) && n1 == n2) {
 		auto so1 = static_cast<jive::structural_output*>(o1);
 		auto so2 = static_cast<jive::structural_output*>(o2);
 		vs.insert(o1, o2);
@@ -218,7 +218,7 @@ congruent(
 		return congruent(r1->origin(), r2->origin(), vs, ctx);
 	}
 
-	if (jive::is<jive::gamma_op>(o1->node()) && o1->node() == o2->node()) {
+	if (jive::is<jive::gamma_op>(n1) && n1 == n2) {
 		auto so1 = static_cast<jive::structural_output*>(o1);
 		auto so2 = static_cast<jive::structural_output*>(o2);
 		auto r1 = so1->results.begin();
@@ -238,12 +238,11 @@ congruent(
 		return congruent(a1->input()->origin(), a2->input()->origin(), vs, ctx);
 	}
 
-	if (jive::is<jive::simple_op>(o1->node())
-	&& jive::is<jive::simple_op>(o2->node())
-	&& o1->node()->operation() == o2->node()->operation()
-	&& o1->node()->ninputs() == o2->node()->ninputs()
+	if (jive::is<jive::simple_op>(n1)
+	&& jive::is<jive::simple_op>(n2)
+	&& n1->operation() == n2->operation()
+	&& n1->ninputs() == n2->ninputs()
 	&& o1->index() == o2->index()) {
-		auto n1 = o1->node(), n2 = o2->node();
 		for (size_t n = 0; n < n1->ninputs(); n++) {
 			auto origin1 = n1->input(n)->origin();
 			auto origin2 = n2->input(n)->origin();
@@ -349,7 +348,7 @@ mark_lambda(const jive::structural_node * node, cnectx & ctx)
 static void
 mark_phi(const jive::structural_node * node, cnectx & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::phi_op*>(&node->operation()));
+	JLM_DEBUG_ASSERT(is<jive::phi::operation>(node));
 
 	/* mark dependencies */
 	for (size_t i1 = 0; i1 < node->ninputs(); i1++) {
@@ -380,7 +379,7 @@ mark(const jive::structural_node * node, cnectx & ctx)
 	  {std::type_index(typeid(jive::gamma_op)), mark_gamma}
 	, {std::type_index(typeid(jive::theta_op)), mark_theta}
 	, {std::type_index(typeid(lambda_op)), mark_lambda}
-	, {std::type_index(typeid(jive::phi_op)), mark_phi}
+	, {typeid(jive::phi::operation), mark_phi}
 	, {typeid(delta_op), mark_delta}
 	});
 
@@ -405,7 +404,8 @@ mark(const jive::simple_node * node, cnectx & ctx)
 	auto set = ctx.set(node->input(0)->origin());
 	for (const auto & origin : *set) {
 		for (const auto & user : *origin) {
-			auto other = user->node();
+			auto ni = dynamic_cast<const jive::node_input*>(user);
+			auto other = ni ? ni->node() : nullptr;
 			if (!other
 			|| other == node
 			|| other->operation() != node->operation()
@@ -507,7 +507,7 @@ divert_lambda(jive::structural_node * node, cnectx & ctx)
 static void
 divert_phi(jive::structural_node * node, cnectx & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::phi_op*>(&node->operation()));
+	JLM_DEBUG_ASSERT(is<jive::phi::operation>(node));
 
 	divert_arguments(node->subregion(0), ctx);
 	divert(node->subregion(0), ctx);
@@ -529,7 +529,7 @@ divert(jive::structural_node * node, cnectx & ctx)
 	  {std::type_index(typeid(jive::gamma_op)), divert_gamma}
 	, {std::type_index(typeid(jive::theta_op)), divert_theta}
 	, {std::type_index(typeid(lambda_op)), divert_lambda}
-	, {std::type_index(typeid(jive::phi_op)), divert_phi}
+	, {typeid(jive::phi::operation), divert_phi}
 	, {typeid(delta_op), divert_delta}
 	});
 
