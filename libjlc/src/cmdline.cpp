@@ -56,7 +56,7 @@ to_objfile(const jlm::filepath & f)
 }
 
 void
-parse_cmdline(int argc, char ** argv, jlm::cmdline_options & flags)
+parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 {
 	using namespace llvm;
 
@@ -140,6 +140,12 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & flags)
 	, cl::desc("Language standard.")
 	, cl::value_desc("standard"));
 
+	cl::list<std::string> flags(
+	  "f"
+	, cl::Prefix
+	, cl::desc("Specify flags.")
+	, cl::value_desc("flag"));
+
 	cl::ParseCommandLineOptions(argc, argv);
 
 	if (show_help)
@@ -165,7 +171,7 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & flags)
 			std::cerr << "Unknown optimization level.\n";
 			exit(EXIT_FAILURE);
 		}
-		flags.Olvl = olvl->second;
+		options.Olvl = olvl->second;
 	}
 
 	if (!std.empty()) {
@@ -174,7 +180,7 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & flags)
 			std::cerr << "Unknown language standard.\n";
 			exit(EXIT_FAILURE);
 		}
-		flags.std = stdit->second;
+		options.std = stdit->second;
 	}
 
 	if (ifiles.empty()) {
@@ -187,30 +193,31 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & flags)
 		exit(EXIT_FAILURE);
 	}
 
-	flags.libs = libs;
-	flags.macros = Dmacros;
-	flags.libpaths = libpaths;
-	flags.warnings = Wwarnings;
-	flags.includepaths = includepaths;
-	flags.only_print_commands = print_commands;
-	flags.generate_debug_information = generate_debug_information;
+	options.libs = libs;
+	options.macros = Dmacros;
+	options.libpaths = libpaths;
+	options.warnings = Wwarnings;
+	options.includepaths = includepaths;
+	options.only_print_commands = print_commands;
+	options.generate_debug_information = generate_debug_information;
+	options.flags = flags;
 
 	for (const auto & ifile : ifiles) {
 		if (is_objfile(ifile)) {
 			/* FIXME: print a warning like clang if no_linking is true */
-			flags.compilations.push_back({ifile, ifile, false, false, false, true});
+			options.compilations.push_back({ifile, ifile, false, false, false, true});
 			continue;
 		}
 
-		flags.compilations.push_back({ifile, to_objfile(ifile), true, true, true, !no_linking});
+		options.compilations.push_back({ifile, to_objfile(ifile), true, true, true, !no_linking});
 	}
 
 	if (!ofilepath.empty()) {
 		if (no_linking) {
-			JLM_DEBUG_ASSERT(flags.compilations.size() == 1);
-			flags.compilations[0].set_ofile(ofilepath);
+			JLM_DEBUG_ASSERT(options.compilations.size() == 1);
+			options.compilations[0].set_ofile(ofilepath);
 		} else {
-			flags.lnkofile = jlm::filepath(ofilepath);
+			options.lnkofile = jlm::filepath(ofilepath);
 		}
 	}
 }

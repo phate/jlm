@@ -30,12 +30,14 @@ public:
 		const std::vector<std::string> & Ipaths,
 		const std::vector<std::string> & Dmacros,
 		const std::vector<std::string> & Wwarnings,
+		const std::vector<std::string> & flags,
 		const standard & std)
 	: std_(std)
 	, ifile_(ifile)
 	, Ipaths_(Ipaths)
 	, Dmacros_(Dmacros)
 	, Wwarnings_(Wwarnings)
+	, flags_(flags)
 	{}
 
 	virtual std::string
@@ -51,9 +53,10 @@ public:
 		const std::vector<std::string> & Ipaths,
 		const std::vector<std::string> & Dmacros,
 		const std::vector<std::string> & Wwarnings,
+		const std::vector<std::string> & flags,
 		const standard & std)
 	{
-		std::unique_ptr<prscmd> cmd(new prscmd(ifile, Ipaths, Dmacros, Wwarnings, std));
+		std::unique_ptr<prscmd> cmd(new prscmd(ifile, Ipaths, Dmacros, Wwarnings, flags, std));
 		return passgraph_node::create(pgraph, std::move(cmd));
 	}
 
@@ -63,6 +66,7 @@ private:
 	std::vector<std::string> Ipaths_;
 	std::vector<std::string> Dmacros_;
 	std::vector<std::string> Wwarnings_;
+	std::vector<std::string> flags_;
 };
 
 /* optimization command */
