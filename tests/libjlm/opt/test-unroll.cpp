@@ -259,22 +259,153 @@ test_unknown_boundaries()
 
 	auto ex1 = graph.add_export(lv1, {lv1->type(), "x"});
 
-	jive::view(graph, stdout);
+//	jive::view(graph, stdout);
 	jlm::loopunroll loopunroll(2);
 	loopunroll.run(rm, sd);
-	jive::view(graph, stdout);
+//	jive::view(graph, stdout);
 
 	auto node = jive::node_output::node(ex1->origin());
 	assert(jive::is<jive::gamma_op>(node));
 	node = jive::node_output::node(node->input(1)->origin());
 	assert(jive::is<jive::gamma_op>(node));
+
+	/* Create cleaner output */
+	jlm::dne dne;
+	dne.run(rm, sd);
+//	jive::view(graph, stdout);
 }
+
+static inline void
+test_nested_theta()
+{
+	jlm::rvsdg_module rm(jlm::filepath(""), "", "");
+	auto & graph = *rm.graph();
+
+	auto nf = graph.node_normal_form(typeid(jive::operation));
+	nf->set_mutable(false);
+
+	auto init = jive::create_bitconstant(graph.root(), 32, 0);
+	auto step = jive::create_bitconstant(graph.root(), 32, 1);
+	auto end = jive::create_bitconstant(graph.root(), 32, 97);
+
+	/* Outer loop */
+	auto otheta = jive::theta_node::create(graph.root());
+
+	auto lvo_init = otheta->add_loopvar(init);
+	auto lvo_step = otheta->add_loopvar(step);
+	auto lvo_end = otheta->add_loopvar(end);
+
+	auto add = jive::bitadd_op::create(32, lvo_init->argument(), lvo_step->argument());
+	auto compare = jive::bitult_op::create(32, add, lvo_end->argument());
+	auto match = jive::match(1, {{1, 1}}, 0, 2, compare);
+	otheta->set_predicate(match);
+	lvo_init->result()->divert_to(add);
+
+	/* First inner loop in the original loop */
+	auto inner_theta = jive::theta_node::create(otheta->subregion());
+
+	auto inner_init = jive::create_bitconstant(otheta->subregion(), 32, 0);
+	auto lvi_init = inner_theta->add_loopvar(inner_init);
+	auto lvi_step = inner_theta->add_loopvar(lvo_step->argument());
+	auto lvi_end = inner_theta->add_loopvar(lvo_end->argument());
+
+	auto inner_add = jive::bitadd_op::create(32, lvi_init->argument(), lvi_step->argument());
+	auto inner_compare = jive::bitult_op::create(32, inner_add, lvi_end->argument());
+	auto inner_match = jive::match(1, {{1, 1}}, 0, 2, inner_compare);
+	inner_theta->set_predicate(inner_match);
+	lvi_init->result()->divert_to(inner_add);
+
+	/* Nested inner loop */
+	auto inner_nested_theta = jive::theta_node::create(inner_theta->subregion());
+
+	auto inner_nested_init = jive::create_bitconstant(inner_theta->subregion(), 32, 0);
+	auto lvi_nested_init = inner_nested_theta->add_loopvar(inner_nested_init);
+	auto lvi_nested_step = inner_nested_theta->add_loopvar(lvi_step->argument());
+	auto lvi_nested_end = inner_nested_theta->add_loopvar(lvi_end->argument());
+
+	auto inner_nested_add = jive::bitadd_op::create(32, lvi_nested_init->argument(), lvi_nested_step->argument());
+	auto inner_nested_compare = jive::bitult_op::create(32, inner_nested_add, lvi_nested_end->argument());
+	auto inner_nested_match = jive::match(1, {{1, 1}}, 0, 2, inner_nested_compare);
+	inner_nested_theta->set_predicate(inner_nested_match);
+	lvi_nested_init->result()->divert_to(inner_nested_add);
+	
+	/* Second inner loop in the original loop */
+	auto inner2_theta = jive::theta_node::create(otheta->subregion());
+
+	auto inner2_init = jive::create_bitconstant(otheta->subregion(), 32, 0);
+	auto lvi2_init = inner2_theta->add_loopvar(inner2_init);
+	auto lvi2_step = inner2_theta->add_loopvar(lvo_step->argument());
+	auto lvi2_end = inner2_theta->add_loopvar(lvo_end->argument());
+
+	auto inner2_add = jive::bitadd_op::create(32, lvi2_init->argument(), lvi2_step->argument());
+	auto inner2_compare = jive::bitult_op::create(32, inner2_add, lvi2_end->argument());
+	auto inner2_match = jive::match(1, {{1, 1}}, 0, 2, inner2_compare);
+	inner2_theta->set_predicate(inner2_match);
+	lvi2_init->result()->divert_to(inner2_add);
+
+	
+//	jive::view(graph, stdout);
+	jlm::loopunroll loopunroll(4);
+	loopunroll.run(rm, sd);
+	/*
+		The outher theta should contain two inner thetas
+	*/
+	assert(nthetas(otheta->subregion()) == 2);
+	/*
+		The outer theta should not be unrolled and since the
+		original graph contains 7 nodes and the unroll factor
+		is 4 an unrolled theta should have around 28 nodes. So
+		we check for less than 20 nodes in case an updated
+		unroll algorithm would hoist code from the innner
+		thetas.
+	*/
+	assert(otheta->subregion()->nnodes() <= 20);
+	/*
+		The inner theta should not be unrolled and since the
+		original graph contains 5 nodes and the unroll factor
+		is 4 an unrolled theta should have around 20 nodes. So
+		we check for less than 15 nodes in case an updated
+		unroll algorithm would hoist code from the innner
+		thetas.
+	*/
+	assert(inner_theta->subregion()->nnodes() <= 15);
+	/*
+		The innermost theta should be unrolled and since the
+		original graph contains 3 nodes and the unroll factor
+		is 4 an unrolled theta should have around 12 nodes. So
+		we check for more than 7 nodes in case an updated
+		unroll algorithm would hoist code from the innner
+		thetas.
+	*/
+	assert(inner_nested_theta->subregion()->nnodes() >= 7);
+	/*
+		The second inner theta should be unrolled and since
+		the original graph contains 3 nodes and the unroll
+		factor is 4 an unrolled theta should have around 12
+		nodes. So we check for less than 7 nodes in case an
+		updated unroll algorithm would hoist code from the
+		innner thetas.
+	*/
+	/* FIX ME! Call to subregion() cause an assertion */
+//	assert(inner2_theta->subregion()->nnodes() >= 7);
+//	jive::view(graph, stdout);
+	jlm::unroll(otheta, 4);
+//	jive::view(graph, stdout);
+	/*
+		After unrolling the outher theta four times it should
+		now contain 8 thetas.
+	*/
+	/* FIX ME! Why can't subregion() be called when it worked earlier */
+//	assert(nthetas(otheta->subregion()) == 8);
+}
+
 
 static int
 verify()
 {
 	test_unrollinfo();
 
+	test_nested_theta();
 	test_known_boundaries();
 	test_unknown_boundaries();
 
