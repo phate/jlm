@@ -56,21 +56,17 @@ trace_function_input(const jive::simple_node & node)
 		if (is<lambda::output>(origin))
 			return origin;
 
+		if (is<lambda::fctargument>(origin))
+			return origin;
+
+		if (is_import(origin))
+			return origin;
+
 		if (is<lambda::cvargument>(origin)) {
 			auto argument = static_cast<const jive::argument*>(origin);
 			origin = argument->input()->origin();
 			continue;
 		}
-
-		/*
-			FIXME: This lambda argument is dangerous.
-			It overlaps with is_lambda_cv().
-		*/
-		if (is_lambda_argument(origin))
-			return origin;
-
-		if (is_import(origin))
-			return origin;
 
 		if (auto output = is_gamma_output(origin)) {
 			if (auto new_origin = is_invariant(output)) {

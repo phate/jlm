@@ -168,8 +168,7 @@ mark(const jive::output * output, dnectx & ctx)
 		return;
 	}
 
-	if (is_lambda_argument(output)) {
-		auto argument = static_cast<const jive::argument*>(output);
+	if (auto argument = dynamic_cast<const lambda::fctargument*>(output)) {
 		if (argument->input())
 			mark(argument->input()->origin(), ctx);
 		return;

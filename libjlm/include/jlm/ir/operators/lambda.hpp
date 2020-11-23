@@ -591,16 +591,6 @@ class node::fctresconstiterator final : public jive::input::constiterator<lambda
 	}
 };
 
-}
-
-static inline bool
-is_lambda_argument(const jive::output * output)
-{
-	auto argument = dynamic_cast<const jive::argument*>(output);
-	return argument
-	    && jive::is<lambda::operation>(argument->region()->node());
-}
-
-}
+}}
 
 #endif
