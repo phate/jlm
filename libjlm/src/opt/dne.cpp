@@ -162,10 +162,9 @@ mark(const jive::output * output, dnectx & ctx)
 		return;
 	}
 
-	if (is_lambda_output(output)) {
-		auto soutput = static_cast<const jive::structural_output*>(output);
-		for (size_t n = 0; n < soutput->node()->subregion(0)->nresults(); n++)
-			mark(soutput->node()->subregion(0)->result(n)->origin(), ctx);
+	if (auto o = dynamic_cast<const lambda::output*>(output)) {
+		for (auto it = o->node()->begin_res(); it != o->node()->end_res(); it++)
+			mark(it->origin(), ctx);
 		return;
 	}
 

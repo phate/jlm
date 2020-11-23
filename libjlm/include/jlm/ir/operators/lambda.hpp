@@ -601,12 +601,6 @@ is_lambda_argument(const jive::output * output)
 	    && jive::is<lambda::operation>(argument->region()->node());
 }
 
-static inline bool
-is_lambda_output(const jive::output * output)
-{
-	return is<lambda::operation>(jive::node_output::node(output));
-}
-
 }
 
 #endif

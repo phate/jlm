@@ -53,7 +53,7 @@ trace_function_input(const jive::simple_node & node)
 	auto origin = node.input(0)->origin();
 
 	while (true) {
-		if (is_lambda_output(origin))
+		if (is<lambda::output>(origin))
 			return origin;
 
 		if (is<lambda::cvargument>(origin)) {
@@ -139,10 +139,8 @@ is_direct_call(const jive::simple_node & node)
 
 	auto output = trace_function_input(node);
 
-	if (is_lambda_output(output)) {
-		JLM_DEBUG_ASSERT(is<lambda::operation>(jive::node_output::node(output)));
-		return static_cast<lambda::node*>(jive::node_output::node(output));
-	}
+	if (auto o = dynamic_cast<const lambda::output*>(output))
+		return o->node();
 
 	return nullptr;
 }
