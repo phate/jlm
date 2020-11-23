@@ -607,15 +607,6 @@ is_lambda_output(const jive::output * output)
 	return is<lambda::operation>(jive::node_output::node(output));
 }
 
-static inline bool
-is_lambda_cv(const jive::output * output)
-{
-	auto argument = dynamic_cast<const jive::argument*>(output);
-	return argument
-	    && is<lambda::operation>(argument->region()->node())
-	    && argument->input() != nullptr;
-}
-
 }
 
 #endif

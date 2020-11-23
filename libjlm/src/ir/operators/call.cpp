@@ -56,7 +56,7 @@ trace_function_input(const jive::simple_node & node)
 		if (is_lambda_output(origin))
 			return origin;
 
-		if (is_lambda_cv(origin)) {
+		if (is<lambda::cvargument>(origin)) {
 			auto argument = static_cast<const jive::argument*>(origin);
 			origin = argument->input()->origin();
 			continue;
