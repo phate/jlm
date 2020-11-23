@@ -33,17 +33,16 @@ test_with_match()
 
 	/* setup graph */
 
-	jlm::lambda_builder lb;
-	auto arguments = lb.begin_lambda(rm.graph()->root(), {ft, "f", linkage::external_linkage});
+	auto lambda = lambda::node::create(rm.graph()->root(), ft, "f", linkage::external_linkage);
 
-	auto match = jive::match(1, {{0, 0}}, 1, 2, arguments[0]);
+	auto match = jive::match(1, {{0, 0}}, 1, 2, lambda->fctargument(0));
 	auto gamma = jive::gamma_node::create(match, 2);
-	auto ev1 = gamma->add_entryvar(arguments[1]);
-	auto ev2 = gamma->add_entryvar(arguments[2]);
+	auto ev1 = gamma->add_entryvar(lambda->fctargument(1));
+	auto ev2 = gamma->add_entryvar(lambda->fctargument(2));
 	auto ex = gamma->add_exitvar({ev1->argument(0), ev2->argument(1)});
 
-	auto lambda = lb.end_lambda({ex});
-	rm.graph()->add_export(lambda->output(0), {lambda->output(0)->type(), ""});
+	auto f = lambda->finalize({ex});
+	rm.graph()->add_export(f, {f->type(), ""});
 
 	jive::view(*rm.graph(), stdout);
 
@@ -79,16 +78,15 @@ test_without_match()
 
 	/* setup graph */
 
-	jlm::lambda_builder lb;
-	auto arguments = lb.begin_lambda(rm.graph()->root(), {ft, "f", linkage::external_linkage});
+	auto lambda = lambda::node::create(rm.graph()->root(), ft, "f", linkage::external_linkage);
 
-	auto gamma = jive::gamma_node::create(arguments[0], 2);
-	auto ev1 = gamma->add_entryvar(arguments[1]);
-	auto ev2 = gamma->add_entryvar(arguments[2]);
+	auto gamma = jive::gamma_node::create(lambda->fctargument(0), 2);
+	auto ev1 = gamma->add_entryvar(lambda->fctargument(1));
+	auto ev2 = gamma->add_entryvar(lambda->fctargument(2));
 	auto ex = gamma->add_exitvar({ev1->argument(0), ev2->argument(1)});
 
-	auto lambda = lb.end_lambda({ex});
-	rm.graph()->add_export(lambda->output(0), {lambda->output(0)->type(), ""});
+	auto f = lambda->finalize({ex});
+	rm.graph()->add_export(f, {f->type(), ""});
 
 	jive::view(*rm.graph(), stdout);
 
@@ -123,18 +121,17 @@ test_gamma3()
 
 	/* setup graph */
 
-	jlm::lambda_builder lb;
-	auto arguments = lb.begin_lambda(rm.graph()->root(), {ft, "f", linkage::external_linkage});
+	auto lambda = lambda::node::create(rm.graph()->root(), ft, "f", linkage::external_linkage);
 
-	auto match = jive::match(32, {{0, 0}, {1, 1}}, 2, 3, arguments[0]);
+	auto match = jive::match(32, {{0, 0}, {1, 1}}, 2, 3, lambda->fctargument(0));
 
 	auto gamma = jive::gamma_node::create(match, 3);
-	auto ev1 = gamma->add_entryvar(arguments[1]);
-	auto ev2 = gamma->add_entryvar(arguments[2]);
+	auto ev1 = gamma->add_entryvar(lambda->fctargument(1));
+	auto ev2 = gamma->add_entryvar(lambda->fctargument(2));
 	auto ex = gamma->add_exitvar({ev1->argument(0), ev1->argument(1), ev2->argument(2)});
 
-	auto lambda = lb.end_lambda({ex});
-	rm.graph()->add_export(lambda->output(0), {lambda->output(0)->type(), ""});
+	auto f = lambda->finalize({ex});
+	rm.graph()->add_export(f, {f->type(), ""});
 
 	jive::view(*rm.graph(), stdout);
 

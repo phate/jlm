@@ -33,24 +33,23 @@ verify()
 	auto i = graph.add_import({vt, "i"});
 
 	/* f1 */
-	jlm::lambda_builder lb;
-	auto arguments = lb.begin_lambda(graph.root(), {ft1, "f1", linkage::external_linkage});
-	lb.add_dependency(i);
-	auto t = test_op::create(lb.subregion(), {arguments[0]}, {&vt});
-	auto f1 = lb.end_lambda({t->output(0)});
+	auto lambda1 = lambda::node::create(graph.root(), ft1, "f1", linkage::external_linkage);
+	lambda1->add_ctxvar(i);
+	auto t = test_op::create(lambda1->subregion(), {lambda1->fctargument(0)}, {&vt});
+	auto f1 = lambda1->finalize({t->output(0)});
 
 	/* f2 */
-	arguments = lb.begin_lambda(graph.root(), {ft2, "f2", linkage::external_linkage});
-	auto d = lb.add_dependency(f1->output(0));
+	auto lambda2 = lambda::node::create(graph.root(), ft2, "f1", linkage::external_linkage);
+	auto d = lambda2->add_ctxvar(f1);
 
-	auto gamma = jive::gamma_node::create(arguments[0], 2);
-	auto ev1 = gamma->add_entryvar(arguments[1]);
+	auto gamma = jive::gamma_node::create(lambda2->fctargument(0), 2);
+	auto ev1 = gamma->add_entryvar(lambda2->fctargument(1));
 	auto ev2 = gamma->add_entryvar(d);
 	auto apply = call_op::create(ev2->argument(0), {ev1->argument(0)})[0];
 	auto xv1 = gamma->add_exitvar({apply, ev1->argument(1)});
-	auto f2 = lb.end_lambda({xv1});
+	auto f2 = lambda2->finalize({xv1});
 
-	graph.add_export(f2->output(0), {f2->output(0)->type(), "f2"});
+	graph.add_export(f2, {f2->type(), "f2"});
 
 	jive::view(graph.root(), stdout);
 	jlm::fctinline fctinline;

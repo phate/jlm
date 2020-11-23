@@ -6,398 +6,605 @@
 #ifndef JLM_IR_OPERATORS_LAMBDA_HPP
 #define JLM_IR_OPERATORS_LAMBDA_HPP
 
-#include <jive/rvsdg/region.hpp>
-#include <jive/rvsdg/structural-node.hpp>
-#include <jive/types/function.hpp>
-
+#include <jlm/ir/linkage.hpp>
 #include <jlm/ir/types.hpp>
-#include <jlm/ir/variable.hpp>
+
+#include <jive/rvsdg/structural-node.hpp>
+#include <jive/rvsdg/substitution.hpp>
 
 namespace jlm {
+namespace lambda {
 
-/* lambda operation */
-
-class lambda_op final : public jive::lambda_op {
+/** \brief Lambda operation
+*
+* A lamba operation determines a lambda's name and \ref fcttype "function type".
+*/
+class operation final : public jive::structural_op {
 public:
-	virtual
-	~lambda_op();
+	~operation() override;
 
-	inline
-	lambda_op(
-		jive::fcttype fcttype,
+	operation(
+		const jive::fcttype & type,
 		const std::string & name,
-		const jlm::linkage & linkage) noexcept
-	: jive::lambda_op(std::move(fcttype))
+		const jlm::linkage & linkage)
+	: type_(type)
 	, name_(name)
 	, linkage_(linkage)
 	{}
 
-	virtual bool
-	operator==(const operation & other) const noexcept override;
+	operation(const operation & other)
+	: type_(other.type_)
+	, name_(other.name_)
+	, linkage_(other.linkage_)
+	{}
 
-	virtual std::string
-	debug_string() const override;
+	operation(operation && other)
+	: type_(std::move(other.type_))
+	, name_(std::move(other.name_))
+	, linkage_(std::move(other.linkage_))
+	{}
 
-	inline const jive::fcttype &
-	fcttype() const noexcept
+	operation &
+	operator=(const operation & other)
 	{
-		return function_type();
+		if (this == &other)
+			return *this;
+
+		type_ = other.type_;
+		name_ = other.name_;
+		linkage_ = other.linkage_;
+
+		return *this;
 	}
 
-	inline const std::string &
+	operation &
+	operator=(operation && other)
+	{
+		if (this == &other)
+			return *this;
+
+		type_ = std::move(other.type_);
+		name_ = std::move(other.name_);
+		linkage_ = std::move(other.linkage_);
+
+		return *this;
+	}
+
+	const jive::fcttype &
+	type() const noexcept
+	{
+		return type_;
+	}
+
+	const std::string &
 	name() const noexcept
 	{
 		return name_;
 	}
 
-	inline const jlm::linkage &
+	const jlm::linkage &
 	linkage() const noexcept
 	{
 		return linkage_;
 	}
 
+	virtual std::string
+	debug_string() const override;
+
+	virtual bool
+	operator==(const jive::operation & other) const noexcept override;
+
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
 private:
+	jive::fcttype type_;
 	std::string name_;
 	jlm::linkage linkage_;
 };
 
-/* lambda node */
+class cvargument;
+class cvinput;
+class fctargument;
+class output;
+class result;
 
-class lambda_builder;
+/** \brief Lambda node
+*
+* A lambda node represents a lambda expression in the RVSDG. Its creation requires the invocation
+* of two functions: \ref create() and \ref finalize(). First, a node with only the function
+* arguments is created by invoking \ref create(). The free variables of the lambda expression can
+* then be added to the lambda node using the \ref add_ctxvar() method, and the body of the lambda
+* node can be created. Finally, the lambda node can be finalized by invoking \ref finalize().
+*
+* The following snippet illustrates the creation of lambda nodes:
+*
+* \code{.cpp}
+*   auto lambda = lambda::node::create(...);
+*   ...
+*   auto cv1 = lambda->add_ctxvar(...);
+*   auto cv2 = lambda->add_ctxvar(...);
+*   ...
+*   // generate lambda body
+*   ...
+*   auto output = lambda->finalize(...);
+* \endcode
+*/
+class node final : public jive::structural_node {
+	class cviterator;
+	class cvconstiterator;
 
-class lambda_node final : public jive::structural_node {
-	friend lambda_builder;
+	class fctargiterator;
+	class fctargconstiterator;
+
+	class fctresiterator;
+	class fctresconstiterator;
+
 public:
-	virtual
-	~lambda_node();
+	~node() override;
 
 private:
-	inline
-	lambda_node(jive::region * parent, const jlm::lambda_op & op)
-	: jive::structural_node(op, parent, 1)
+	node(
+		jive::region * parent,
+		lambda::operation && op)
+	: structural_node(op, parent, 1)
 	{}
 
-	static lambda_node *
-	create(jive::region * parent, const jlm::lambda_op & op)
-	{
-		return new lambda_node(parent, op);
-	}
-
-	class argument_iterator final : public std::iterator<std::forward_iterator_tag,
-		jive::argument*, ptrdiff_t> {
-
-		friend class lambda_node;
-
-		using super = std::iterator<std::forward_iterator_tag, jive::argument*, ptrdiff_t>;
-
-		argument_iterator(jive::argument * argument)
-		: argument_(argument)
-		{}
-
-	public:
-		jive::argument *
-		argument() const
-		{
-			return operator->();
-		}
-
-		jive::argument &
-		operator*() const
-		{
-			JLM_DEBUG_ASSERT(argument_ != nullptr);
-			return *argument_;
-		}
-
-		jive::argument *
-		operator->() const
-		{
-			return &operator*();
-		}
-
-		argument_iterator &
-		operator++()
-		{
-			if (argument_ == nullptr) {
-				argument_ = nullptr;
-				return *this;
-			}
-
-			auto region = argument_->region();
-			auto index = argument_->index() + 1;
-			if (index >= region->narguments()) {
-				argument_ = nullptr;
-				return *this;
-			}
-
-			auto argument = region->argument(index);
-			argument_ = argument->input() != nullptr ? nullptr : argument;
-
-			return *this;
-		}
-
-		argument_iterator
-		operator++(int)
-		{
-			argument_iterator tmp = *this;
-			++*this;
-			return tmp;
-		}
-
-		bool
-		operator==(const argument_iterator & other) const
-		{
-			return argument_ == other.argument_;
-		}
-
-		bool
-		operator!=(const argument_iterator & other) const
-		{
-			return !operator==(other);
-		}
-
-	private:
-		jive::argument * argument_;
-	};
-
-	class cv_iterator final : public std::iterator<std::forward_iterator_tag,
-		jive::structural_input*, ptrdiff_t> {
-
-		friend class lambda_node;
-
-		constexpr
-		cv_iterator(jive::structural_input * input) noexcept
-		: input_(input)
-		{}
-
-	public:
-		jive::structural_input *
-		input() const
-		{
-			return operator->();
-		}
-
-		jive::argument *
-		argument() const
-		{
-			return input_->arguments.first();
-		}
-
-		jive::structural_input &
-		operator*() const
-		{
-			JLM_DEBUG_ASSERT(input_ != nullptr);
-			return *input_;
-		}
-
-		jive::structural_input *
-		operator->() const
-		{
-			return &operator*();
-		}
-
-		const cv_iterator &
-		operator++() noexcept
-		{
-			auto node = input_->node();
-			auto index = input_->index();
-			input_ = (index == node->ninputs()-1) ? nullptr : node->input(index+1);
-			return *this;
-		}
-
-		const cv_iterator
-		operator++(int) noexcept
-		{
-			cv_iterator it(*this);
-			++(*this);
-			return it;
-		}
-
-		bool
-		operator==(const cv_iterator & other) const noexcept
-		{
-			return input_ == other.input_;
-		}
-
-		bool
-		operator!=(const cv_iterator & other) const noexcept
-		{
-			return !(*this == other);
-		}
-
-	private:
-		jive::structural_input * input_;
-	};
-
 public:
-	inline jive::region *
+	cviterator
+	begin_cv();
+
+	fctargiterator
+	begin_arg();
+
+	fctresiterator
+	begin_res();
+
+	cvconstiterator
+	begin_cv() const;
+
+	fctargconstiterator
+	begin_arg() const;
+
+	fctresconstiterator
+	begin_res() const;
+
+	cviterator
+	end_cv();
+
+	fctargiterator
+	end_arg();
+
+	fctresiterator
+	end_res();
+
+	cvconstiterator
+	end_cv() const;
+
+	fctargconstiterator
+	end_arg() const;
+
+	fctresconstiterator
+	end_res() const;
+
+	jive::region *
 	subregion() const noexcept
 	{
-		return jive::structural_node::subregion(0);
+		return structural_node::subregion(0);
 	}
 
-	argument_iterator
-	begin_argument() const
+	const lambda::operation &
+	operation() const noexcept
 	{
-		if (subregion()->narguments() == 0
-		|| subregion()->argument(0)->input() != nullptr)
-			return end_argument();
-
-		return argument_iterator(subregion()->argument(0));
+		return *static_cast<const lambda::operation*>(&structural_node::operation());
 	}
 
-	argument_iterator
-	end_argument() const
+	const jive::fcttype &
+	type() const noexcept
 	{
-		return argument_iterator(nullptr);
+		return operation().type();
 	}
 
-	cv_iterator
-	begin_cv() const
+	const std::string &
+	name() const noexcept
 	{
-		if (ninputs() == 0)
-			return end_cv();
-
-		return cv_iterator(input(0));
+		return operation().name();
 	}
 
-	cv_iterator
-	end_cv() const
+	const jlm::linkage &
+	linkage() const noexcept
 	{
-		return cv_iterator(nullptr);
-	}
-
-	cv_iterator
-	begin() const
-	{
-		return begin_cv();
-	}
-
-	cv_iterator
-	end() const
-	{
-		return end_cv();
-	}
-
-	std::vector<jive::argument*>
-	arguments() const noexcept
-	{
-		std::vector<jive::argument*> arguments;
-		for (auto it = begin_argument(); it != end_argument(); it++)
-			arguments.push_back(it.argument());
-
-		return arguments;
+		return operation().linkage();
 	}
 
 	size_t
-	narguments() const noexcept
+	ncvarguments() const noexcept
 	{
-		JLM_DEBUG_ASSERT(subregion()->narguments() >= ninputs());
+		return ninputs();
+	}
+
+	size_t
+	nfctarguments() const noexcept
+	{
 		return subregion()->narguments() - ninputs();
 	}
 
-	inline jive::argument *
-	add_dependency(jive::output * origin)
+	size_t
+	nfctresults() const noexcept
 	{
-		auto input = jive::structural_input::create(this, origin, origin->type());
-		return jive::argument::create(subregion(), input, input->port());
+		return subregion()->nresults();
 	}
 
-	inline const jive::fcttype &
-	fcttype() const noexcept
-	{
-		return static_cast<const lambda_op*>(&operation())->fcttype();
-	}
+	/**
+	* Adds a context/free variable to the lambda node. The \p origin must be from the same region
+	* as the lambda node.
+	*
+	* \return The context variable argument from the lambda region.
+	*/
+	lambda::cvargument *
+	add_ctxvar(jive::output * origin);
 
-	inline const std::string &
-	name() const noexcept
-	{
-		return static_cast<const lambda_op*>(&operation())->name();
-	}
+	cvinput *
+	input(size_t n) const noexcept;
 
-	inline const jlm::linkage &
-	linkage() const noexcept
-	{
-		return static_cast<const lambda_op*>(&operation())->linkage();
-	}
+	lambda::output *
+	output() const noexcept;
 
-	virtual lambda_node *
-	copy(jive::region * region, jive::substitution_map & smap) const override;
+	lambda::fctargument *
+	fctargument(size_t n) const noexcept;
+
+	lambda::cvargument *
+	cvargument(size_t n) const noexcept;
+
+	lambda::result *
+	fctresult(size_t n) const noexcept;
+
+	virtual lambda::node *
+	copy(
+		jive::region * region,
+		const std::vector<jive::output*> & operands) const override;
+
+	virtual lambda::node *
+	copy(
+		jive::region * region,
+		jive::substitution_map & smap) const override;
+
+	/**
+	* Creates a lambda node in the region \p parent with the function type \p type and name \p name.
+	* After the invocation of \ref create(), the lambda node only features the function arguments.
+	* Free variables can be added to the function node using \ref add_ctxvar(). The generation of the
+	* node can be finished using the \ref finalize() method.
+	*
+	* \param parent The region where the lambda node is created.
+	* \param type The lambda node's type.
+	* \param name The lambda node's name.
+	* \param linkage The lambda node's linkage.
+	*
+	* \return A lambda node featuring only function arguments.
+	*/
+	static node *
+	create(
+		jive::region * parent,
+		const jive::fcttype & type,
+		const std::string & name,
+		const jlm::linkage & linkage);
+
+	/**
+	* Finalizes the creation of a lambda node.
+	*
+	* \param results The result values of the lambda expression, originating from the lambda region.
+	*
+	* \return The output of the lambda node.
+	*/
+	lambda::output *
+	finalize(const std::vector<jive::output*> & results);
 };
 
-/* lambda builder */
+/** \brief Lambda context variable input
+*/
+class cvinput final : public jive::structural_input {
+	friend ::jlm::lambda::node;
 
-class lambda_builder final {
 public:
-	inline
-	lambda_builder()
-	: lambda_(nullptr)
-	{}
-
-	inline std::vector<jive::argument*>
-	begin_lambda(jive::region * parent, const jlm::lambda_op & op)
-	{
-		if (lambda_)
-			return lambda_->arguments();
-
-		std::vector<jive::argument*> arguments;
-		lambda_ = lambda_node::create(parent, op);
-		for (size_t n = 0; n < lambda_->fcttype().narguments(); n++) {
-			auto & type = lambda_->fcttype().argument_type(n);
-			arguments.push_back(jive::argument::create(lambda_->subregion(), nullptr, type));
-		}
-
-		return arguments;
-	}
-
-	inline jive::region *
-	subregion() const noexcept
-	{
-		return lambda_ ? lambda_->subregion() : nullptr;
-	}
-
-	inline jive::output *
-	add_dependency(jive::output * origin)
-	{
-		return lambda_ ? lambda_->add_dependency(origin) : nullptr;
-	}
-
-	inline lambda_node *
-	end_lambda(const std::vector<jive::output*> & results)
-	{
-		if (!lambda_)
-			return nullptr;
-
-		const auto & fcttype = lambda_->fcttype();
-		if (results.size() != fcttype.nresults())
-			throw jlm::error("incorrect number of results.");
-
-		for (size_t n = 0; n < results.size(); n++)
-			jive::result::create(lambda_->subregion(), results[n], nullptr, fcttype.result_type(n));
-		jive::structural_output::create(lambda_, ptrtype(fcttype));
-
-		auto lambda = lambda_;
-		lambda_ = nullptr;
-		return lambda;
-	}
+	~cvinput() override;
 
 private:
-	lambda_node * lambda_;
+	cvinput(
+		lambda::node * node,
+		jive::output * origin)
+	: structural_input(node, origin, origin->port())
+	{}
+
+	static cvinput *
+	create(
+		lambda::node * node,
+		jive::output * origin)
+	{
+		auto input = std::unique_ptr<cvinput>(new cvinput(node, origin));
+		return static_cast<cvinput*>(node->append_input(std::move(input)));
+	}
+
+public:
+	cvargument *
+	argument() const noexcept;
+
+	lambda::node *
+	node() const noexcept
+	{
+		return static_cast<lambda::node*>(structural_input::node());
+	}
 };
+
+/** \brief Lambda context variable iterator
+*/
+class node::cviterator final : public jive::input::iterator<cvinput> {
+	friend ::jlm::lambda::node;
+
+	constexpr
+	cviterator(cvinput * input)
+	: jive::input::iterator<cvinput>(input)
+	{}
+
+	virtual cvinput *
+	next() const override
+	{
+		auto node = value()->node();
+		auto index = value()->index();
+
+		return node->ninputs() > index+1 ? node->input(index+1) : nullptr;
+	}
+};
+
+/** \brief Lambda context variable const iterator
+*/
+class node::cvconstiterator final : public jive::input::constiterator<cvinput> {
+	friend ::jlm::lambda::node;
+
+	constexpr
+	cvconstiterator(const cvinput * input)
+	: jive::input::constiterator<cvinput>(input)
+	{}
+
+	virtual const cvinput *
+	next() const override
+	{
+		auto node = value()->node();
+		auto index = value()->index();
+
+		return node->ninputs() > index+1 ? node->input(index+1) : nullptr;
+	}
+};
+
+/** \brief Lambda output
+*/
+class output final : public jive::structural_output {
+	friend ::jlm::lambda::node;
+
+public:
+	~output() override;
+
+private:
+	output(
+		lambda::node * node,
+		const jive::port & port)
+	: structural_output(node, port)
+	{}
+
+	static output *
+	create(
+		lambda::node * node,
+		const jive::port & port)
+	{
+		auto output = std::unique_ptr<lambda::output>(new lambda::output(node, port));
+		return static_cast<lambda::output*>(node->append_output(std::move(output)));
+	}
+
+public:
+	lambda::node *
+	node() const noexcept
+	{
+		return static_cast<lambda::node*>(structural_output::node());
+	}
+};
+
+/** \brief Lambda function argument
+*/
+class fctargument final : public jive::argument {
+	friend ::jlm::lambda::node;
+
+public:
+	~fctargument() override;
+
+private:
+	fctargument(
+		jive::region * region,
+		const jive::type & type)
+	: jive::argument(region, nullptr, type)
+	{}
+
+	static fctargument *
+	create(
+		jive::region * region,
+		const jive::type & type)
+	{
+		auto argument = new fctargument(region, type);
+		region->append_argument(argument);
+		return argument;
+	}
+};
+
+/** \brief Lambda function argument iterator
+*/
+class node::fctargiterator final : public jive::output::iterator<lambda::fctargument> {
+	friend ::jlm::lambda::node;
+
+	constexpr
+	fctargiterator(lambda::fctargument * argument)
+	: jive::output::iterator<lambda::fctargument>(argument)
+	{}
+
+	virtual lambda::fctargument *
+	next() const override
+	{
+		auto index = value()->index();
+		auto lambda = static_cast<lambda::node*>(value()->region()->node());
+
+		/*
+			This assumes that all function arguments were added to the lambda region
+			before any context variable was added.
+		*/
+		return lambda->nfctarguments() > index+1
+		     ? lambda->fctargument(index+1)
+		     : nullptr;
+	}
+};
+
+/** \brief Lambda function argument const iterator
+*/
+class node::fctargconstiterator final : public jive::output::constiterator<lambda::fctargument> {
+	friend ::jlm::lambda::node;
+
+	constexpr
+	fctargconstiterator(const lambda::fctargument * argument)
+	: jive::output::constiterator<lambda::fctargument>(argument)
+	{}
+
+	virtual const lambda::fctargument *
+	next() const override
+	{
+		auto index = value()->index();
+		auto lambda = static_cast<lambda::node*>(value()->region()->node());
+
+		/*
+			This assumes that all function arguments were added to the lambda region
+			before any context variable was added.
+		*/
+		return lambda->nfctarguments() > index+1
+		     ? lambda->fctargument(index+1)
+		     : nullptr;
+	}
+};
+
+/** \brief Lambda context variable argument
+*/
+class cvargument final : public jive::argument {
+	friend ::jlm::lambda::node;
+
+public:
+	~cvargument() override;
+
+private:
+	cvargument(
+		jive::region * region,
+		cvinput * input)
+	: jive::argument(region, input, input->port())
+	{}
+
+	static cvargument *
+	create(
+		jive::region * region,
+		lambda::cvinput * input)
+	{
+		auto argument = new cvargument(region, input);
+		region->append_argument(argument);
+		return argument;
+	}
+
+public:
+	cvinput *
+	input() const noexcept
+	{
+		return static_cast<cvinput*>(jive::argument::input());
+	}
+};
+
+/** \brief Lambda result
+*/
+class result final : public jive::result {
+	friend ::jlm::lambda::node;
+
+public:
+	~result() override;
+
+private:
+	result(jive::output * origin)
+	: jive::result(origin->region(), origin, nullptr, origin->port())
+	{}
+
+	static result *
+	create(jive::output * origin)
+	{
+		auto result = new lambda::result(origin);
+		origin->region()->append_result(result);
+		return result;
+	}
+
+public:
+	lambda::output *
+	output() const noexcept
+	{
+		return static_cast<lambda::output*>(jive::result::output());
+	}
+};
+
+/** \brief Lambda result iterator
+*/
+class node::fctresiterator final : public jive::input::iterator<lambda::result> {
+	friend ::jlm::lambda::node;
+
+	constexpr
+	fctresiterator(lambda::result * result)
+	: jive::input::iterator<lambda::result>(result)
+	{}
+
+	virtual lambda::result *
+	next() const override
+	{
+		auto index = value()->index();
+		auto lambda = static_cast<lambda::node*>(value()->region()->node());
+
+		return lambda->nfctresults() > index+1
+		     ? lambda->fctresult(index+1)
+		     : nullptr;
+	}
+};
+
+/** \brief Lambda result const iterator
+*/
+class node::fctresconstiterator final : public jive::input::constiterator<lambda::result> {
+	friend ::jlm::lambda::node;
+
+	constexpr
+	fctresconstiterator(const lambda::result * result)
+	: jive::input::constiterator<lambda::result>(result)
+	{}
+
+	virtual const lambda::result *
+	next() const override
+	{
+		auto index = value()->index();
+		auto lambda = static_cast<lambda::node*>(value()->region()->node());
+
+		return lambda->nfctresults() > index+1
+		     ? lambda->fctresult(index+1)
+		     : nullptr;
+	}
+};
+
+}
 
 static inline bool
 is_lambda_argument(const jive::output * output)
 {
 	auto argument = dynamic_cast<const jive::argument*>(output);
-	return argument && jive::is<lambda_op>(argument->region()->node());
+	return argument
+	    && jive::is<lambda::operation>(argument->region()->node());
 }
 
 static inline bool
 is_lambda_output(const jive::output * output)
 {
-	return is<lambda_op>(jive::node_output::node(output));
+	return is<lambda::operation>(jive::node_output::node(output));
 }
 
 static inline bool
@@ -405,7 +612,7 @@ is_lambda_cv(const jive::output * output)
 {
 	auto argument = dynamic_cast<const jive::argument*>(output);
 	return argument
-	    && is<lambda_op>(argument->region()->node())
+	    && is<lambda::operation>(argument->region()->node())
 	    && argument->input() != nullptr;
 }
 

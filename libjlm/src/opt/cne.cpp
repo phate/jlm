@@ -330,7 +330,7 @@ mark_theta(const jive::structural_node * node, cnectx & ctx)
 static void
 mark_lambda(const jive::structural_node * node, cnectx & ctx)
 {
-	JLM_DEBUG_ASSERT(jive::is<lambda_op>(node));
+	JLM_DEBUG_ASSERT(jive::is<lambda::operation>(node));
 
 	/* mark dependencies */
 	for (size_t i1 = 0; i1 < node->ninputs(); i1++) {
@@ -378,7 +378,7 @@ mark(const jive::structural_node * node, cnectx & ctx)
 	> map({
 	  {std::type_index(typeid(jive::gamma_op)), mark_gamma}
 	, {std::type_index(typeid(jive::theta_op)), mark_theta}
-	, {std::type_index(typeid(lambda_op)), mark_lambda}
+	, {typeid(lambda::operation), mark_lambda}
 	, {typeid(jive::phi::operation), mark_phi}
 	, {typeid(delta_op), mark_delta}
 	});
@@ -498,7 +498,7 @@ divert_theta(jive::structural_node * node, cnectx & ctx)
 static void
 divert_lambda(jive::structural_node * node, cnectx & ctx)
 {
-	JLM_DEBUG_ASSERT(jive::is<lambda_op>(node));
+	JLM_DEBUG_ASSERT(jive::is<lambda::operation>(node));
 
 	divert_arguments(node->subregion(0), ctx);
 	divert(node->subregion(0), ctx);
@@ -528,7 +528,7 @@ divert(jive::structural_node * node, cnectx & ctx)
 	> map({
 	  {std::type_index(typeid(jive::gamma_op)), divert_gamma}
 	, {std::type_index(typeid(jive::theta_op)), divert_theta}
-	, {std::type_index(typeid(lambda_op)), divert_lambda}
+	, {typeid(lambda::operation), divert_lambda}
 	, {typeid(jive::phi::operation), divert_phi}
 	, {typeid(delta_op), divert_delta}
 	});

@@ -20,58 +20,48 @@ test_argument_iterators()
 
 	{
 		jive::fcttype ft({&vt}, {&vt});
-		lambda_op op(ft, "f", linkage::external_linkage);
 
-		lambda_builder lb;
-		auto arguments = lb.begin_lambda(rm.graph()->root(), op);
-		auto lambda = lb.end_lambda({arguments[0]});
+		auto lambda = lambda::node::create(rm.graph()->root(), ft, "f", linkage::external_linkage);
+		lambda->finalize({lambda->fctargument(0)});
 
 		std::vector<jive::argument*> args;
-		for (auto it = lambda->begin_argument(); it != lambda->end_argument(); it++)
-			args.push_back(it.argument());
+		for (auto it = lambda->begin_arg(); it != lambda->end_arg(); it++)
+			args.push_back(it.value());
 
-		assert(args.size() == 1 && args[0] == lambda->subregion()->argument(0));
+		assert(args.size() == 1 && args[0] == lambda->fctargument(0));
 	}
 
 	{
 		jive::fcttype ft({}, {&vt});
-		lambda_op op(ft, "f", linkage::external_linkage);
 
-		lambda_builder lb;
-		lb.begin_lambda(rm.graph()->root(), op);
+		auto lambda = lambda::node::create(rm.graph()->root(), ft, "f", linkage::external_linkage);
 
-		auto nullary = create_testop(lb.subregion(), {}, {&vt});
+		auto nullary = create_testop(lambda->subregion(), {}, {&vt});
 
-		auto lambda = lb.end_lambda(nullary);
+		lambda->finalize({nullary});
 
-		size_t narguments = 0;
-		for (auto it = lambda->begin_argument(); it != lambda->end_argument(); it++)
-			narguments++;
-
-		assert(narguments == 0);
+		assert(lambda->nfctarguments() == 0);
 	}
 
 	{
 		auto i = rm.graph()->add_import({vt, ""});
 
 		jive::fcttype ft({&vt, &vt, &vt}, {&vt, &vt});
-		lambda_op op(ft, "f", linkage::external_linkage);
 
-		lambda_builder lb;
-		auto arguments = lb.begin_lambda(rm.graph()->root(), op);
+		auto lambda = lambda::node::create(rm.graph()->root(), ft, "f", linkage::external_linkage);
 
-		auto cv = lb.add_dependency(i);
+		auto cv = lambda->add_ctxvar(i);
 
-		auto lambda = lb.end_lambda({arguments[0], cv});
+		lambda->finalize({lambda->fctargument(0), cv});
 
 		std::vector<jive::argument*> args;
-		for (auto it = lambda->begin_argument(); it != lambda->end_argument(); it++)
-			args.push_back(it.argument());
+		for (auto it = lambda->begin_arg(); it != lambda->end_arg(); it++)
+			args.push_back(it.value());
 
 		assert(args.size() == 3);
-		assert(args[0] == lambda->subregion()->argument(0));
-		assert(args[1] == lambda->subregion()->argument(1));
-		assert(args[2] == lambda->subregion()->argument(2));
+		assert(args[0] == lambda->fctargument(0));
+		assert(args[1] == lambda->fctargument(1));
+		assert(args[2] == lambda->fctargument(2));
 	}
 }
 

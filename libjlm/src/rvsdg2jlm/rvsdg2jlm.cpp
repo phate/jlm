@@ -139,7 +139,7 @@ convert_region(jive::region & region, context & ctx)
 static inline std::unique_ptr<jlm::cfg>
 create_cfg(const jive::node & node, context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<lambda_op>(&node));
+	JLM_DEBUG_ASSERT(is<lambda::operation>(&node));
 	auto region = static_cast<const jive::structural_node*>(&node)->subregion(0);
 
 	JLM_DEBUG_ASSERT(ctx.lpbb() == nullptr);
@@ -421,12 +421,12 @@ convert_theta_node(const jive::node & node, context & ctx)
 static inline void
 convert_lambda_node(const jive::node & node, context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<lambda_op>(&node));
-	auto lambda = static_cast<const lambda_node*>(&node);
+	JLM_DEBUG_ASSERT(is<lambda::operation>(&node));
+	auto lambda = static_cast<const lambda::node*>(&node);
 	auto & module = ctx.module();
 	auto & clg = module.ipgraph();
 
-	auto f = function_node::create(clg, lambda->name(), lambda->fcttype(), lambda->linkage());
+	auto f = function_node::create(clg, lambda->name(), lambda->type(), lambda->linkage());
 	auto v = module.create_variable(f);
 
 	f->add_cfg(create_cfg(node, ctx));
@@ -453,8 +453,8 @@ convert_phi_node(const jive::node & node, context & ctx)
 		JLM_DEBUG_ASSERT(subregion->argument(n)->input() == nullptr);
 		auto node = jive::node_output::node(subregion->result(n)->origin());
 
-		if (auto lambda = dynamic_cast<const lambda_node*>(node)) {
-			auto f = function_node::create(ipg, lambda->name(), lambda->fcttype(), lambda->linkage());
+		if (auto lambda = dynamic_cast<const lambda::node*>(node)) {
+			auto f = function_node::create(ipg, lambda->name(), lambda->type(), lambda->linkage());
 			ctx.insert(subregion->argument(n), module.create_variable(f));
 		} else {
 			JLM_DEBUG_ASSERT(is<delta_op>(node));
@@ -471,7 +471,7 @@ convert_phi_node(const jive::node & node, context & ctx)
 		auto result = subregion->result(n);
 		auto node = jive::node_output::node(result->origin());
 
-		if (is<lambda_op>(node)) {
+		if (is<lambda::operation>(node)) {
 			auto v = static_cast<const fctvariable*>(ctx.variable(subregion->argument(n)));
 			v->function()->add_cfg(create_cfg(*node, ctx));
 			ctx.insert(node->output(0), v);
@@ -515,7 +515,7 @@ convert_node(const jive::node & node, context & ctx)
 	  std::type_index
 	, std::function<void(const jive::node & node, context & ctx)
 	>> map({
-	  {typeid(lambda_op), convert_lambda_node}
+	  {typeid(lambda::operation), convert_lambda_node}
 	, {std::type_index(typeid(jive::gamma_op)), convert_gamma_node}
 	, {std::type_index(typeid(jive::theta_op)), convert_theta_node}
 	, {typeid(jive::phi::operation), convert_phi_node}

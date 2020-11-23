@@ -252,15 +252,14 @@ test_lambda()
 	auto & graph = *rm.graph();
 	auto x = graph.add_import({vt, "x"});
 
-	jlm::lambda_builder lb;
-	auto arguments = lb.begin_lambda(graph.root(), {{{&vt}, {&vt}}, "f", linkage::external_linkage});
+	auto lambda = lambda::node::create(graph.root(), {{&vt}, {&vt}}, "f", linkage::external_linkage);
 
-	auto d = lb.add_dependency(x);
-	jlm::create_testop(lb.subregion(), {arguments[0], d}, {&vt});
+	auto d = lambda->add_ctxvar(x);
+	jlm::create_testop(lambda->subregion(), {lambda->fctargument(0), d}, {&vt});
 
-	auto lambda = lb.end_lambda({arguments[0]});
+	auto output = lambda->finalize({lambda->fctargument(0)});
 
-	graph.add_export(lambda->output(0), {lambda->output(0)->type(), "f"});
+	graph.add_export(output, {output->type(), "f"});
 
 //	jive::view(graph.root(), stdout);
 	jlm::dne dne;
@@ -292,19 +291,18 @@ test_phi()
 	auto dx = pb.add_ctxvar(x);
 	auto dy = pb.add_ctxvar(y);
 
-	jlm::lambda_builder lb;
-	auto arguments = lb.begin_lambda(pb.subregion(), {ft, "f", linkage::external_linkage});
-	lb.add_dependency(rv1->argument());
-	lb.add_dependency(dx);
-	auto f1 = lb.end_lambda({arguments[0]});
+	auto lambda1 = lambda::node::create(pb.subregion(), ft, "f", linkage::external_linkage);
+	lambda1->add_ctxvar(rv1->argument());
+	lambda1->add_ctxvar(dx);
+	auto f1 = lambda1->finalize({lambda1->fctargument(0)});
 
-	arguments = lb.begin_lambda(pb.subregion(), {ft, "g", linkage::external_linkage});
-	lb.add_dependency(rv2->argument());
-	lb.add_dependency(dy);
-	auto f2 = lb.end_lambda({arguments[0]});
+	auto lambda2 = lambda::node::create(pb.subregion(), ft, "f", linkage::external_linkage);
+	lambda2->add_ctxvar(rv2->argument());
+	lambda2->add_ctxvar(dy);
+	auto f2 = lambda2->finalize({lambda2->fctargument(0)});
 
-	rv1->set_rvorigin(f1->output(0));
-	rv2->set_rvorigin(f2->output(0));
+	rv1->set_rvorigin(f1);
+	rv2->set_rvorigin(f2);
 	auto phi = pb.end();
 
 	graph.add_export(phi->output(0), {phi->output(0)->type(), "f1"});

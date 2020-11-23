@@ -68,7 +68,7 @@ is_exported(jive::output * output)
 static std::vector<jive::simple_node*>
 find_consumers(const jive::structural_node * node)
 {
-	JLM_DEBUG_ASSERT(is<lambda_op>(node->operation()));
+	JLM_DEBUG_ASSERT(is<lambda::operation>(node));
 
 	std::vector<jive::simple_node*> consumers;
 	std::unordered_set<jive::output*> worklist({node->output(0)});
@@ -128,8 +128,8 @@ route_to_region(jive::output * output, jive::region * region)
 		output = region->argument(region->narguments()-1);
 	}	else if (auto theta = dynamic_cast<jive::theta_node*>(region->node())) {
 		output = theta->add_loopvar(output)->argument();
-	} else if (auto lambda = dynamic_cast<lambda_node*>(region->node())) {
-		output = lambda->add_dependency(output);
+	} else if (auto lambda = dynamic_cast<lambda::node*>(region->node())) {
+		output = lambda->add_ctxvar(output);
 	} else {
 		JLM_DEBUG_ASSERT(0);
 	}
@@ -140,7 +140,7 @@ route_to_region(jive::output * output, jive::region * region)
 static std::vector<jive::output*>
 route_dependencies(const jive::structural_node * lambda, const jive::simple_node * apply)
 {
-	JLM_DEBUG_ASSERT(is<lambda_op>(lambda->operation()));
+	JLM_DEBUG_ASSERT(is<lambda::operation>(lambda));
 	JLM_DEBUG_ASSERT(dynamic_cast<const call_op*>(&apply->operation()));
 
 	/* collect origins of dependencies */
@@ -158,7 +158,7 @@ route_dependencies(const jive::structural_node * lambda, const jive::simple_node
 static void
 inline_apply(const jive::structural_node * lambda, jive::simple_node * apply)
 {
-	JLM_DEBUG_ASSERT(is<lambda_op>(lambda->operation()));
+	JLM_DEBUG_ASSERT(is<lambda::operation>(lambda));
 	JLM_DEBUG_ASSERT(dynamic_cast<const call_op*>(&apply->operation()));
 
 	auto deps = route_dependencies(lambda, apply);
@@ -191,7 +191,7 @@ inlining(jive::graph & graph)
 	auto root = graph.root();
 
 	for (auto node : jive::topdown_traverser(root)) {
-		if (!is<lambda_op>(node->operation()))
+		if (!is<lambda::operation>(node))
 			continue;
 
 		if (is_exported(node->output(0)))

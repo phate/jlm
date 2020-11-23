@@ -248,7 +248,7 @@ sweep_phi(jive::structural_node * node, const dnectx & ctx)
 static void
 sweep_lambda(jive::structural_node * node, const dnectx & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const lambda_op*>(&node->operation()));
+	JLM_DEBUG_ASSERT(is<lambda::operation>(node));
 	auto subregion = node->subregion(0);
 
 	if (!ctx.is_alive(node)) {
@@ -356,7 +356,7 @@ sweep(jive::structural_node * node, const dnectx & ctx)
 	> map({
 	  {std::type_index(typeid(jive::gamma_op)), sweep_gamma}
 	, {std::type_index(typeid(jive::theta_op)), sweep_theta}
-	, {std::type_index(typeid(jlm::lambda_op)), sweep_lambda}
+	, {typeid(lambda::operation), sweep_lambda}
 	, {typeid(jive::phi::operation), sweep_phi}
 	, {typeid(jlm::delta_op), sweep_delta}
 	});

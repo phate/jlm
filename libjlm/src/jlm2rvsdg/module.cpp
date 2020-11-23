@@ -358,58 +358,54 @@ convert_basic_block(const taclist & bb, jive::region * region, jlm::vmap & vmap)
 		convert_tac(*tac, region, vmap);
 }
 
-static jive::node *
+static void
 convert_node(
 	const aggnode & node,
 	const demandmap & dm,
 	const jlm::function_node & function,
-	lambda_builder & lb,
+	lambda::node * lambda,
 	scoped_vmap & svmap);
 
-static jive::node *
+static void
 convert_entry_node(
 	const aggnode & node,
 	const demandmap & dm,
 	const jlm::function_node & function,
-	lambda_builder & lb,
+	lambda::node * lambda,
 	scoped_vmap & svmap)
 {
 	JLM_DEBUG_ASSERT(is<entryaggnode>(&node));
 	auto en = static_cast<const entryaggnode*>(&node);
 	auto ds = dm.at(&node).get();
 
-	auto arguments = lb.begin_lambda(svmap.region(), {function.fcttype(), function.name(),
-		function.linkage()});
-	svmap.push_scope(lb.subregion());
+	svmap.push_scope(lambda->subregion());
 
 	auto & pvmap = svmap.vmap(svmap.nscopes()-2);
 	auto & vmap = svmap.vmap();
 
 	/* add arguments */
-	JLM_DEBUG_ASSERT(en->narguments() == arguments.size());
+	JLM_DEBUG_ASSERT(en->narguments() == lambda->nfctarguments());
 	for (size_t n = 0; n < en->narguments(); n++)
-		vmap[en->argument(n)] = arguments[n];
+		vmap[en->argument(n)] = lambda->fctargument(n);
 
 	/* add dependencies and undefined values */
 	for (const auto & v : ds->top) {
 		if (pvmap.find(v) != pvmap.end()) {
-			vmap[v] = lb.add_dependency(pvmap[v]);
+			vmap[v] = lambda->add_ctxvar(pvmap[v]);
 		} else {
-			auto value = create_undef_value(lb.subregion(), v->type());
+			auto value = create_undef_value(lambda->subregion(), v->type());
 			JLM_DEBUG_ASSERT(value);
 			vmap[v] = value;
 		}
 	}
-
-	return nullptr;
 }
 
-static jive::node *
+static void
 convert_exit_node(
 	const aggnode & node,
 	const demandmap & dm,
 	const jlm::function_node & function,
-	lambda_builder & lb,
+	lambda::node * lambda,
 	scoped_vmap & svmap)
 {
 	JLM_DEBUG_ASSERT(is<exitaggnode>(&node));
@@ -422,46 +418,42 @@ convert_exit_node(
 	}
 
 	svmap.pop_scope();
-	return lb.end_lambda(results);
+	lambda->finalize(results);
 }
 
-static jive::node *
+static void
 convert_block_node(
 	const aggnode & node,
 	const demandmap & dm,
 	const jlm::function_node & function,
-	lambda_builder & lb,
+	lambda::node * lambda,
 	scoped_vmap & svmap)
 {
 	JLM_DEBUG_ASSERT(is<blockaggnode>(&node));
 	auto & bb = static_cast<const blockaggnode*>(&node)->tacs();
 	convert_basic_block(bb, svmap.region(), svmap.vmap());
-	return nullptr;
 }
 
-static jive::node *
+static void
 convert_linear_node(
 	const aggnode & node,
 	const demandmap & dm,
 	const jlm::function_node & function,
-	lambda_builder & lb,
+	lambda::node * lambda,
 	scoped_vmap & svmap)
 {
 	JLM_DEBUG_ASSERT(is<linearaggnode>(&node));
 
-	jive::node * n = nullptr;
 	for (const auto & child : node)
-		n = convert_node(child, dm, function, lb, svmap);
-
-	return n;
+		convert_node(child, dm, function, lambda, svmap);
 }
 
-static jive::node *
+static void
 convert_branch_node(
 	const aggnode & node,
 	const demandmap & dm,
 	const jlm::function_node & function,
-	lambda_builder & lb,
+	lambda::node * lambda,
 	scoped_vmap & svmap)
 {
 	JLM_DEBUG_ASSERT(is<branchaggnode>(&node));
@@ -493,7 +485,7 @@ convert_branch_node(
 		for (const auto & pair : evmap)
 			svmap.vmap()[pair.first] = pair.second->argument(n);
 
-		convert_node(*node.child(n), dm, function, lb, svmap);
+		convert_node(*node.child(n), dm, function, lambda, svmap);
 
 		for (const auto & v : ds->bottom) {
 			JLM_DEBUG_ASSERT(svmap.vmap().find(v) != svmap.vmap().end());
@@ -507,16 +499,14 @@ convert_branch_node(
 		JLM_DEBUG_ASSERT(xvmap.find(v) != xvmap.end());
 		svmap.vmap()[v] = gamma->add_exitvar(xvmap[v]);
 	}
-
-	return nullptr;
 }
 
-static jive::node *
+static void
 convert_loop_node(
 	const aggnode & node,
 	const demandmap & dm,
 	const jlm::function_node & function,
-	lambda_builder & lb,
+	lambda::node * lambda,
 	scoped_vmap & svmap)
 {
 	JIVE_DEBUG_ASSERT(is<loopaggnode>(&node));
@@ -547,7 +537,7 @@ convert_loop_node(
 
 	/* convert loop body */
 	JLM_DEBUG_ASSERT(node.nchildren() == 1);
-	convert_node(*node.child(0), dm, function, lb, svmap);
+	convert_node(*node.child(0), dm, function, lambda, svmap);
 
 	/* update loop variables */
 	for (const auto & v : ds->top) {
@@ -573,25 +563,23 @@ convert_loop_node(
 		JLM_DEBUG_ASSERT(pvmap.find(v) != pvmap.end());
 		pvmap[v] = lvmap[v];
 	}
-
-	return nullptr;
 }
 
-static jive::node *
+static void
 convert_node(
 	const aggnode & node,
 	const demandmap & dm,
 	const jlm::function_node & function,
-	lambda_builder & lb,
+	lambda::node * lambda,
 	scoped_vmap & svmap)
 {
 	static std::unordered_map<
 		std::type_index,
-		std::function<jive::node*(
+		std::function<void(
 			const aggnode&,
 			const demandmap&,
-			const jlm::function_node&,
-			lambda_builder&,
+			const function_node&,
+			lambda::node*,
 			scoped_vmap&)
 		>
 	> map ({
@@ -601,7 +589,7 @@ convert_node(
 	});
 
 	JLM_DEBUG_ASSERT(map.find(typeid(node)) != map.end());
-	return map[typeid(node)](node, dm, function, lb, svmap);
+	map[typeid(node)](node, dm, function, lambda, svmap);
 }
 
 static jive::output *
@@ -646,9 +634,14 @@ convert_cfg(
 			sd.print_stat(stat);
 	}
 
-	lambda_builder lb;
-	auto lambda = convert_node(*root, dm, function, lb, svmap);
-	return lambda->output(0);
+	auto & name = function.name();
+	auto & fcttype = function.fcttype();
+	auto & linkage = function.linkage();
+	auto lambda = lambda::node::create(svmap.region(), fcttype, name, linkage);
+
+	convert_node(*root, dm, function, lambda, svmap);
+
+	return lambda->output();
 }
 
 static jive::output *

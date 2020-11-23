@@ -14,7 +14,9 @@
 
 namespace jlm {
 
-class lambda_node;
+namespace lambda {
+	class node;
+}
 
 /* call operator */
 
@@ -120,8 +122,9 @@ trace_function_input(const jive::simple_node & node);
 *
 * \return The corresponding lambda node if its a direct call, otherwise NULL.
 */
-lambda_node *
+lambda::node *
 is_direct_call(const jive::simple_node & node);
+
 }
 
 #endif

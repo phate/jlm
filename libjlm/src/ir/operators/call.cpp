@@ -131,7 +131,7 @@ trace_function_input(const jive::simple_node & node)
 	}
 }
 
-lambda_node *
+lambda::node *
 is_direct_call(const jive::simple_node & node)
 {
 	if (!is<call_op>(&node))
@@ -140,8 +140,8 @@ is_direct_call(const jive::simple_node & node)
 	auto output = trace_function_input(node);
 
 	if (is_lambda_output(output)) {
-		JLM_DEBUG_ASSERT(is<lambda_op>(jive::node_output::node(output)));
-		return static_cast<lambda_node*>(jive::node_output::node(output));
+		JLM_DEBUG_ASSERT(is<lambda::operation>(jive::node_output::node(output)));
+		return static_cast<lambda::node*>(jive::node_output::node(output));
 	}
 
 	return nullptr;

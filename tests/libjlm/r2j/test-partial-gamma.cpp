@@ -30,18 +30,17 @@ test()
 
 	rvsdg_module rm(filepath(""), "", "");
 
-	jlm::lambda_builder lb;
-	auto arguments = lb.begin_lambda(rm.graph()->root(), {ft, "f", linkage::external_linkage});
+	auto lambda = lambda::node::create(rm.graph()->root(), ft, "f", linkage::external_linkage);
 
-	auto match = jive::match(1, {{0, 0}}, 1, 2, arguments[0]);
+	auto match = jive::match(1, {{0, 0}}, 1, 2, lambda->fctargument(0));
 	auto gamma = jive::gamma_node::create(match, 2);
-	auto ev = gamma->add_entryvar(arguments[1]);
+	auto ev = gamma->add_entryvar(lambda->fctargument(1));
 	auto output = jlm::create_testop(gamma->subregion(1), {ev->argument(1)}, {&vt})[0];
 	auto ex = gamma->add_exitvar({ev->argument(0), output});
 
-	auto lambda = lb.end_lambda({ex});
+	auto f = lambda->finalize({ex});
 
-	rm.graph()->add_export(lambda->output(0), {lambda->output(0)->type(), ""});
+	rm.graph()->add_export(f, {f->type(), ""});
 
 	jive::view(*rm.graph(), stdout);
 
