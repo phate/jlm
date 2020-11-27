@@ -202,6 +202,12 @@ public:
 		return static_cast<const jive::bitcompare_op*>(&cmpnode()->operation())->type().nbits();
 	}
 
+	inline jive::bitvalue_repr
+	remainder(size_t factor) const noexcept
+	{
+	  return niterations()->umod({nbits(), (int64_t)factor});
+	}
+
 	static std::unique_ptr<unrollinfo>
 	create(jive::theta_node * theta);
 

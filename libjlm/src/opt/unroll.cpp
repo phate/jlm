@@ -193,9 +193,9 @@ unroll_body(
 	const jive::theta_node * theta,
 	jive::region * target,
 	jive::substitution_map & smap,
-	size_t ntimes)
+	size_t factor)
 {
-	for (size_t n = 0; n < ntimes-1; n++) {
+	for (size_t n = 0; n < factor-1; n++) {
 		theta->subregion()->copy(target, smap, false, false);
 		jive::substitution_map tmap;
 		for (const auto & olv : *theta)
@@ -205,96 +205,94 @@ unroll_body(
 	theta->subregion()->copy(target, smap, false, false);
 }
 
+/*
+	Copy the body of the theta and unroll it factor number of times.
+	The unrolled body has the same inputs and outputs as the theta.
+	The theta itself is not deleted.
+*/
 static void
-unroll_known_theta(const unrollinfo & ui, size_t factor)
+copy_body_and_unroll(
+	const jive::theta_node * theta,
+	size_t factor)
 {
-	JLM_DEBUG_ASSERT(ui.is_known() && ui.niterations());
-	auto niterations = ui.niterations();
-	auto cmpnode = ui.cmpnode();
-	auto otheta = ui.theta();
-	auto nbits = ui.nbits();
-
-	JLM_DEBUG_ASSERT(niterations != 0);
-	if (niterations->ule({nbits, (int64_t)factor}) == '1') {
-		/*
-			Completely unroll the loop body and remove the theta node, as
-			the number of iterations is smaller than the unroll factor.
-		*/
-		jive::substitution_map smap;
-		for (const auto & olv : *otheta)
-			smap.insert(olv->argument(), olv->input()->origin());
-
-		unroll_body(otheta, otheta->region(), smap, niterations->to_uint());
-
-		for (const auto & olv : *otheta)
-			olv->divert_users(smap.lookup(olv->result()->origin()));
-		return remove(otheta);
-	}
-
-	/*
-		Unroll theta node by given factor.
-	*/
-	JLM_DEBUG_ASSERT(niterations->ugt({nbits, (int64_t)factor}) == '1');
-
 	jive::substitution_map smap;
-	auto ntheta = jive::theta_node::create(otheta->region());
-	for (const auto & olv : *otheta) {
-		auto nlv = ntheta->add_loopvar(olv->input()->origin());
+	for (const auto & olv : *theta)
+		smap.insert(olv->argument(), olv->input()->origin());
+
+	unroll_body(theta, theta->region(), smap, factor);
+
+	for (const auto & olv : *theta)
+		olv->divert_users(smap.lookup(olv->result()->origin()));
+}
+
+/*
+	Unroll theta node by given factor.
+*/
+static void
+unroll_theta(
+	const unrollinfo & ui,
+	jive::substitution_map & smap,
+	size_t factor)
+{
+	auto theta = ui.theta();
+	auto remainder = ui.remainder(factor);
+	auto unrolled_theta = jive::theta_node::create(theta->region());
+
+
+	for (const auto & olv : *theta) {
+		auto nlv = unrolled_theta->add_loopvar(olv->input()->origin());
 		smap.insert(olv->argument(), nlv->argument());
 	}
 
-	unroll_body(otheta, ntheta->subregion(), smap, factor);
-	ntheta->set_predicate(smap.lookup(otheta->predicate()->origin()));
+	unroll_body(theta, unrolled_theta->subregion(), smap, factor);
+	unrolled_theta->set_predicate(smap.lookup(theta->predicate()->origin()));
 
-	for (auto olv = otheta->begin(), nlv = ntheta->begin(); olv != otheta->end(); olv++, nlv++) {
+	for (auto olv = theta->begin(), nlv = unrolled_theta->begin();
+	     olv != theta->end(); olv++, nlv++) {
 		auto origin = smap.lookup((*olv)->result()->origin());
 		(*nlv)->result()->divert_to(origin);
 		smap.insert(*olv, *nlv);
 	}
 
-	auto remainder = niterations->umod({nbits, (int64_t)factor});
+	if (remainder != 0) {
+		/*
+			We have residual iterations. Adjust the end value of the unrolled loop
+			to a multiple of the step value.
+		*/
+		auto cmpnode = ui.cmpnode();
+		auto cmp = jive::node_output::node(smap.lookup(cmpnode->output(0)));
+		auto input = cmp->input(0)->origin() == smap.lookup(ui.end()) ? cmp->input(0) : cmp->input(1);
+		JLM_DEBUG_ASSERT(input->origin() == smap.lookup(ui.end()));
+
+		auto sv = ui.is_additive() ? *ui.step_value() : ui.step_value()->neg();
+		auto end = remainder.mul(sv);
+		auto ev = ui.is_additive() ? ui.end_value()->sub(end) : ui.end_value()->add(end);
+
+		auto c = jive::create_bitconstant(unrolled_theta->subregion(), ev);
+		input->divert_to(c);
+	}
+}
+
+/*
+	Adde the reminder for the lopp if any
+*/
+static void
+add_remainder(
+	const unrollinfo & ui,
+	jive::substitution_map & smap,
+	size_t factor)
+{
+	auto theta = ui.theta();
+	auto remainder = ui.remainder(factor);
+
 	if (remainder == 0) {
 		/*
 			We only need to redirect the users of the outputs of the old theta node
 			to the outputs of the new theta node, as there are no residual iterations.
 		*/
-		for (const auto & olv : *otheta)
+		for (const auto & olv : *theta)
 			olv->divert_users(smap.lookup(olv));
-		return remove(otheta);
-	}
-
-	/*
-		We have residual iterations. Adjust the end value of the unrolled loop to a
-		multiple of the step value, and add an epilogue after the unrolled loop that
-		computes the residual iterations.
-	*/
-	auto cmp = jive::node_output::node(smap.lookup(cmpnode->output(0)));
-	auto input = cmp->input(0)->origin() == smap.lookup(ui.end()) ? cmp->input(0) : cmp->input(1);
-	JLM_DEBUG_ASSERT(input->origin() == smap.lookup(ui.end()));
-
-	auto sv = ui.is_additive() ? *ui.step_value() : ui.step_value()->neg();
-	/* FIXME: What is if we need a high mul operation? */
-	auto end = remainder.mul(sv);
-	auto ev = ui.is_additive() ? ui.end_value()->sub(end) : ui.end_value()->add(end);
-
-	auto c = jive::create_bitconstant(ntheta->subregion(), ev);
-	input->divert_to(c);
-
-	if (remainder == 1) {
-		/*
-				There is only one loop iteration remaining. Just copy the loop body
-				after the unrolled loop and remove the old loop.
-		*/
-		jive::substitution_map rmap;
-		for (const auto & olv : *otheta)
-			rmap.insert(olv->argument(), smap.lookup(olv));
-
-		otheta->subregion()->copy(ntheta->region(), rmap, false, false);
-
-		for (const auto & olv : *otheta)
-			olv->divert_users(rmap.lookup(olv->result()->origin()));
-
-		return remove(otheta);
+		return remove(theta);
 	}
 
 	/*
@@ -302,8 +300,50 @@ unroll_known_theta(const unrollinfo & ui, size_t factor)
 		redirecting the inputs of the old theta to the outputs of the unrolled
 		theta.
 	*/
-	for (const auto & olv : *otheta)
+	for (const auto & olv : *theta)
 		olv->input()->divert_to(smap.lookup(olv));
+
+	if (remainder == 1) {
+		/*
+			There is only one loop iteration remaining.
+			Simply copy the body of the theta to replace it.
+		*/
+		copy_body_and_unroll(theta, 1);
+		remove(theta);
+	}
+}
+
+
+static void
+unroll_known_theta(const unrollinfo & ui, size_t factor)
+{
+	JLM_DEBUG_ASSERT(ui.is_known() && ui.niterations());
+	auto niterations = ui.niterations();
+	auto original_theta = ui.theta();
+	auto nbits = ui.nbits();
+
+	JLM_DEBUG_ASSERT(niterations != 0);
+	if (niterations->ule({nbits, (int64_t)factor}) == '1') {
+		/*
+			Completely unroll the loop body and then remove the theta node,
+			as the number of iterations is smaller than the unroll factor.
+		*/
+		copy_body_and_unroll(original_theta, niterations->to_uint());
+		return remove(original_theta);
+	}
+
+	JLM_DEBUG_ASSERT(niterations->ugt({nbits, (int64_t)factor}) == '1');
+
+	/*
+		Unroll the theta
+	*/
+	jive::substitution_map smap;
+	unroll_theta(ui, smap, factor);
+
+	/*
+		Add code for any potential iterations that remains
+	*/
+	add_remainder(ui, smap, factor);
 }
 
 static jive::output *
@@ -406,6 +446,7 @@ unroll_unknown_theta(const unrollinfo & ui, size_t factor)
 			auto xv = ngamma->add_exitvar({rmap[0].lookup(olv), rmap[1].lookup(olv)});
 			smap.insert(olv, xv);
 		}
+
 	}
 
 	/* handle gamma for residual iterations */
@@ -432,7 +473,6 @@ unroll_unknown_theta(const unrollinfo & ui, size_t factor)
 			smap.insert(*olv, xv);
 		}
 	}
-
 	for (const auto & olv : *otheta)
 		olv->divert_users(smap.lookup(olv));
 	remove(otheta);
