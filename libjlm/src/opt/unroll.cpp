@@ -65,23 +65,6 @@ private:
 /* helper functions */
 
 static bool
-contains_theta(const jive::region * region)
-{
-	for (const auto & node : *region) {
-		if (jive::is<jive::theta_op>(&node))
-			return true;
-
-		if (auto structnode = dynamic_cast<const jive::structural_node*>(&node)) {
-			for (size_t r = 0; r < structnode->nsubregions(); r++)
-				if (contains_theta(structnode->subregion(r)))
-					return true;
-		}
-	}
-
-	return false;
-}
-
-static bool
 is_eqcmp(const jive::operation & op)
 {
 	return dynamic_cast<const jive::bituge_op*>(&op)
@@ -204,15 +187,6 @@ unrollinfo::create(jive::theta_node * theta)
 }
 
 /* loop unrolling */
-
-static std::unique_ptr<unrollinfo>
-is_unrollable(jive::theta_node * theta)
-{
-	if (contains_theta(theta->subregion()))
-		return nullptr;
-
-	return unrollinfo::create(theta);
-}
 
 static void
 unroll_body(
@@ -470,7 +444,7 @@ unroll(jive::theta_node * otheta, size_t factor)
 	if (factor < 2)
 		return;
 
-	auto ui = is_unrollable(otheta);
+	auto ui = unrollinfo::create(otheta);
 	if (!ui) return;
 
 	auto nf = otheta->graph()->node_normal_form(typeid(jive::operation));
@@ -484,40 +458,25 @@ unroll(jive::theta_node * otheta, size_t factor)
 	nf->set_mutable(true);
 }
 
-static void
+static bool
 unroll(jive::region * region, size_t factor)
 {
+	bool unrolled = false;
 	for (auto & node : jive::topdown_traverser(region)) {
 		if (auto structnode = dynamic_cast<jive::structural_node*>(node)) {
 			for (size_t n = 0; n < structnode->nsubregions(); n++)
-				unroll(structnode->subregion(n), factor);
+				unrolled = unroll(structnode->subregion(n), factor);
 
-			if (auto theta = dynamic_cast<jive::theta_node*>(node))
-				unroll(theta, factor);
+			/* Try to unroll if an inner loop hasn't already been found */
+			if (!unrolled) {
+				if (auto theta = dynamic_cast<jive::theta_node*>(node)) {
+					unroll(theta, factor);
+					unrolled = true;
+				}
+			}
 		}
 	}
-}
-
-static void
-unroll(jive::graph & graph, size_t factor)
-{
-	if (factor < 2)
-		return;
-
-	unroll(graph.root(), factor);
-}
-
-static void
-unroll(rvsdg_module & rm, const stats_descriptor & sd, size_t factor)
-{
-	unrollstat stat;
-
-	stat.start(*rm.graph());
-	unroll(*rm.graph(), factor);
-	stat.end(*rm.graph());
-
-	if (sd.print_unroll_stat)
-		sd.print_stat(stat);
+	return unrolled;
 }
 
 /* loopunroll class */
@@ -528,7 +487,19 @@ loopunroll::~loopunroll()
 void
 loopunroll::run(rvsdg_module & module, const stats_descriptor & sd)
 {
-	unroll(module, sd, factor_);
+	if (factor_ < 2)
+		return;
+
+	unrollstat stat;
+
+	stat.start(*module.graph());
+	jive::graph &graph = *module.graph(); 
+	unroll(graph.root(), factor_);
+	stat.end(*module.graph());
+
+	if (sd.print_unroll_stat)
+		sd.print_stat(stat);
+
 }
 
 }

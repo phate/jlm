@@ -22,7 +22,7 @@ class rvsdg_module;
 class stats_descriptor;
 
 /**
-* \brief Loop Unrolling
+* \brief Optimization that attempts to unroll loops (thetas).
 */
 class loopunroll final : public optimization {
 public:
@@ -34,6 +34,14 @@ public:
 	: factor_(factor)
 	{}
 
+	/**
+	* Given a module all inner most loops (thetas) are found and unrolled if possible.
+        * All nodes in the module are traversed and if a theta is found and is the inner most theta
+        * then an attempt is made to unroll it.
+	*
+	* \param module Module where the innermost loops are unrolled
+	* \param sd A descriptor used to store unrolling statistics.
+	*/
 	virtual void
 	run(rvsdg_module & module, const stats_descriptor & sd) override;
 
@@ -225,6 +233,14 @@ private:
 	jive::argument * idv_;
 };
 
+
+/**
+* Try to unroll the given theta.
+*
+* \param theta The theta to attempt the unrolling on.
+* \param factor The number of times to unroll the loop, e.g., if the factor is two then the loop 
+* body is duplicated in the unrolled loop.
+*/
 void
 unroll(jive::theta_node * node, size_t factor);
 
