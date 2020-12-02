@@ -9,6 +9,7 @@ LIBJLM_SRC = \
 	\
 	libjlm/src/ir/aggregation.cpp \
 	libjlm/src/ir/annotation.cpp \
+	libjlm/src/ir/attribute.cpp \
 	libjlm/src/ir/basic-block.cpp \
 	libjlm/src/ir/cfg.cpp \
 	libjlm/src/ir/cfg-structure.cpp \
