@@ -385,8 +385,13 @@ convert_entry_node(
 
 	/* add arguments */
 	JLM_DEBUG_ASSERT(en->narguments() == lambda->nfctarguments());
-	for (size_t n = 0; n < en->narguments(); n++)
-		vmap[en->argument(n)] = lambda->fctargument(n);
+	for (size_t n = 0; n < en->narguments(); n++) {
+		auto jlmarg = en->argument(n);
+		auto fctarg = lambda->fctargument(n);
+
+		vmap[jlmarg] = fctarg;
+		fctarg->set_attributes(jlmarg->attributes());
+	}
 
 	/* add dependencies and undefined values */
 	for (const auto & v : ds->top) {
@@ -637,7 +642,8 @@ convert_cfg(
 	auto & name = function.name();
 	auto & fcttype = function.fcttype();
 	auto & linkage = function.linkage();
-	auto lambda = lambda::node::create(svmap.region(), fcttype, name, linkage);
+	auto & attributes = function.attributes();
+	auto lambda = lambda::node::create(svmap.region(), fcttype, name, linkage, attributes);
 
 	convert_node(*root, dm, function, lambda, svmap);
 

@@ -6,6 +6,7 @@
 #define JLM_IR_CFG_H
 
 #include <jlm/common.hpp>
+#include <jlm/ir/attribute.hpp>
 #include <jlm/ir/basic-block.hpp>
 #include <jlm/ir/cfg-node.hpp>
 #include <jlm/ir/variable.hpp>
@@ -32,31 +33,72 @@ public:
 
 	argument(
 		const std::string & name,
+		const jive::type & type,
+		const attributeset & attributes)
+	: variable(*type.copy(), name)
+	, attributes_(attributes)
+	{}
+
+	argument(
+		const std::string & name,
 		const jive::type & type)
 	: variable(*type.copy(), name)
 	{}
 
 	argument(
 		const std::string & name,
-		std::unique_ptr<jive::type> type)
+		std::unique_ptr<jive::type> type,
+		const attributeset & attributes)
 	: variable(std::move(type), name)
+	, attributes_(attributes)
 	{}
+
+	const attributeset &
+	attributes() const noexcept
+	{
+		return attributes_;
+	}
+
+	void
+	add(const jlm::attribute & attribute)
+	{
+		attributes_.insert(attribute);
+	}
+
+	void
+	add(std::unique_ptr<jlm::attribute> attribute)
+	{
+		attributes_.insert(std::move(attribute));
+	}
+
+	static std::unique_ptr<argument>
+	create(
+		const std::string & name,
+		const jive::type & type,
+		const attributeset & attributes)
+	{
+		return std::make_unique<argument>(name, type, attributes);
+	}
+
+	static std::unique_ptr<argument>
+	create(
+		const std::string & name,
+		std::unique_ptr<jive::type> type,
+		const attributeset & attributes)
+	{
+		return std::make_unique<argument>(name, std::move(type), attributes);
+	}
 
 	static std::unique_ptr<argument>
 	create(
 		const std::string & name,
 		const jive::type & type)
 	{
-		return std::make_unique<argument>(name, type);
+		return create(name, type, {});
 	}
 
-	static std::unique_ptr<argument>
-	create(
-		const std::string & name,
-		std::unique_ptr<jive::type> type)
-	{
-		return std::make_unique<argument>(name, std::move(type));
-	}
+private:
+	attributeset attributes_;
 };
 
 /* cfg entry node */

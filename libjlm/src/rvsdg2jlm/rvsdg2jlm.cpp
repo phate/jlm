@@ -137,11 +137,8 @@ convert_region(jive::region & region, context & ctx)
 }
 
 static inline std::unique_ptr<jlm::cfg>
-create_cfg(const jive::node & node, context & ctx)
+create_cfg(const lambda::node & lambda, context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<lambda::operation>(&node));
-	auto region = static_cast<const jive::structural_node*>(&node)->subregion(0);
-
 	JLM_DEBUG_ASSERT(ctx.lpbb() == nullptr);
 	std::unique_ptr<jlm::cfg> cfg(new jlm::cfg(ctx.module()));
 	auto entry = basic_block::create(*cfg);
@@ -149,24 +146,24 @@ create_cfg(const jive::node & node, context & ctx)
 	ctx.set_lpbb(entry);
 	ctx.set_cfg(cfg.get());
 
-	/* add arguments and dependencies */
-	for (size_t n = 0; n < region->narguments(); n++) {
-		const variable * v = nullptr;
-		auto argument = region->argument(n);
-		if (argument->input()) {
-			v = ctx.variable(argument->input()->origin());
-		} else {
-			v = cfg->entry()->append_argument(jlm::argument::create("", argument->type()));
-		}
-
-		ctx.insert(argument, v);
+	/* add arguments */
+	for (auto it = lambda.begin_arg(); it != lambda.end_arg(); it++) {
+		auto argument = jlm::argument::create("", it->type(), it->attributes());
+		auto v = cfg->entry()->append_argument(std::move(argument));
+		ctx.insert(it.value(), v);
 	}
 
-	convert_region(*region, ctx);
+	/* add context variables */
+	for (auto it = lambda.begin_cv(); it != lambda.end_cv(); it++) {
+		auto v = ctx.variable(it->origin());
+		ctx.insert(it->argument(), v);
+	}
+
+	convert_region(*lambda.subregion(), ctx);
 
 	/* add results */
-	for (size_t n = 0; n < region->nresults(); n++)
-		cfg->exit()->append_result(ctx.variable(region->result(n)->origin()));
+	for (auto it = lambda.begin_res(); it != lambda.end_res(); it++)
+		cfg->exit()->append_result(ctx.variable(it->origin()));
 
 	ctx.lpbb()->add_outedge(cfg->exit());
 	ctx.set_lpbb(nullptr);
@@ -426,10 +423,11 @@ convert_lambda_node(const jive::node & node, context & ctx)
 	auto & module = ctx.module();
 	auto & clg = module.ipgraph();
 
-	auto f = function_node::create(clg, lambda->name(), lambda->type(), lambda->linkage());
+	auto f = function_node::create(clg, lambda->name(), lambda->type(), lambda->linkage(),
+		lambda->attributes());
 	auto v = module.create_variable(f);
 
-	f->add_cfg(create_cfg(node, ctx));
+	f->add_cfg(create_cfg(*lambda, ctx));
 	ctx.insert(node.output(0), v);
 }
 
@@ -454,7 +452,8 @@ convert_phi_node(const jive::node & node, context & ctx)
 		auto node = jive::node_output::node(subregion->result(n)->origin());
 
 		if (auto lambda = dynamic_cast<const lambda::node*>(node)) {
-			auto f = function_node::create(ipg, lambda->name(), lambda->type(), lambda->linkage());
+			auto f = function_node::create(ipg, lambda->name(), lambda->type(), lambda->linkage(),
+				lambda->attributes());
 			ctx.insert(subregion->argument(n), module.create_variable(f));
 		} else {
 			JLM_DEBUG_ASSERT(is<delta_op>(node));
@@ -471,9 +470,9 @@ convert_phi_node(const jive::node & node, context & ctx)
 		auto result = subregion->result(n);
 		auto node = jive::node_output::node(result->origin());
 
-		if (is<lambda::operation>(node)) {
+		if (auto lambda = dynamic_cast<const lambda::node*>(node)) {
 			auto v = static_cast<const fctvariable*>(ctx.variable(subregion->argument(n)));
-			v->function()->add_cfg(create_cfg(*node, ctx));
+			v->function()->add_cfg(create_cfg(*lambda, ctx));
 			ctx.insert(node->output(0), v);
 		} else {
 			JLM_DEBUG_ASSERT(is<delta_op>(node));

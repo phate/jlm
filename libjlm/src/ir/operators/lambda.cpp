@@ -27,7 +27,8 @@ operation::operator==(const jive::operation & other) const noexcept
 	return op
 	    && op->type() == type()
 	    && op->name() == name()
-	    && op->linkage() == linkage();
+	    && op->linkage() == linkage()
+			&& op->attributes() == attributes();
 }
 
 std::unique_ptr<jive::operation>
@@ -177,9 +178,10 @@ node::create(
 	jive::region * parent,
 	const jive::fcttype & type,
 	const std::string & name,
-	const jlm::linkage & linkage)
+	const jlm::linkage & linkage,
+	const attributeset & attributes)
 {
-	lambda::operation op(type, name, linkage);
+	lambda::operation op(type, name, linkage, std::move(attributes));
 	auto node = new lambda::node(parent, std::move(op));
 
 	for (size_t n = 0; n < type.narguments(); n++) {
@@ -226,7 +228,7 @@ node::copy(
 lambda::node *
 node::copy(jive::region * region, jive::substitution_map & smap) const
 {
-	auto lambda = create(region, type(), name(), linkage());
+	auto lambda = create(region, type(), name(), linkage(), attributes());
 
 	/* add context variables */
 	jive::substitution_map subregionmap;

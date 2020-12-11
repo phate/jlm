@@ -6,6 +6,7 @@
 #ifndef JLM_IR_OPERATORS_LAMBDA_HPP
 #define JLM_IR_OPERATORS_LAMBDA_HPP
 
+#include <jlm/ir/attribute.hpp>
 #include <jlm/ir/linkage.hpp>
 #include <jlm/ir/types.hpp>
 
@@ -26,16 +27,19 @@ public:
 	operation(
 		const jive::fcttype & type,
 		const std::string & name,
-		const jlm::linkage & linkage)
+		const jlm::linkage & linkage,
+		const attributeset & attributes)
 	: type_(type)
 	, name_(name)
 	, linkage_(linkage)
+	, attributes_(attributes)
 	{}
 
 	operation(const operation & other)
 	: type_(other.type_)
 	, name_(other.name_)
 	, linkage_(other.linkage_)
+	, attributes_(other.attributes_)
 	{}
 
 	operation(operation && other)
@@ -53,6 +57,7 @@ public:
 		type_ = other.type_;
 		name_ = other.name_;
 		linkage_ = other.linkage_;
+		attributes_ = other.attributes_;
 
 		return *this;
 	}
@@ -66,6 +71,7 @@ public:
 		type_ = std::move(other.type_);
 		name_ = std::move(other.name_);
 		linkage_ = std::move(other.linkage_);
+		attributes_ = std::move(other.attributes_);
 
 		return *this;
 	}
@@ -88,6 +94,12 @@ public:
 		return linkage_;
 	}
 
+	const attributeset &
+	attributes() const noexcept
+	{
+		return attributes_;
+	}
+
 	virtual std::string
 	debug_string() const override;
 
@@ -101,6 +113,7 @@ private:
 	jive::fcttype type_;
 	std::string name_;
 	jlm::linkage linkage_;
+	attributeset attributes_;
 };
 
 class cvargument;
@@ -217,6 +230,12 @@ public:
 		return operation().linkage();
 	}
 
+	const attributeset &
+	attributes() const noexcept
+	{
+		return operation().attributes();
+	}
+
 	size_t
 	ncvarguments() const noexcept
 	{
@@ -279,6 +298,7 @@ public:
 	* \param type The lambda node's type.
 	* \param name The lambda node's name.
 	* \param linkage The lambda node's linkage.
+	* \param attributes The lambda node's attributes.
 	*
 	* \return A lambda node featuring only function arguments.
 	*/
@@ -287,7 +307,21 @@ public:
 		jive::region * parent,
 		const jive::fcttype & type,
 		const std::string & name,
-		const jlm::linkage & linkage);
+		const jlm::linkage & linkage,
+		const attributeset & attributes);
+
+	/**
+	* See \ref create().
+	*/
+	static node *
+	create(
+		jive::region * parent,
+		const jive::fcttype & type,
+		const std::string & name,
+		const jlm::linkage & linkage)
+	{
+		return create(parent, type, name, linkage, {});
+	}
 
 	/**
 	* Finalizes the creation of a lambda node.
@@ -415,6 +449,24 @@ class fctargument final : public jive::argument {
 public:
 	~fctargument() override;
 
+	const attributeset &
+	attributes() const noexcept
+	{
+		return attributes_;
+	}
+
+	void
+	add(const jlm::attribute & attribute)
+	{
+		attributes_.insert(attribute);
+	}
+
+	void
+	set_attributes(const attributeset & attributes)
+	{
+		attributes_ = attributes;
+	}
+
 private:
 	fctargument(
 		jive::region * region,
@@ -431,6 +483,8 @@ private:
 		region->append_argument(argument);
 		return argument;
 	}
+
+	attributeset attributes_;
 };
 
 /** \brief Lambda function argument iterator

@@ -205,11 +205,13 @@ private:
 		jlm::ipgraph & clg,
 		const std::string & name,
 		const jive::fcttype & type,
-		const jlm::linkage & linkage)
+		const jlm::linkage & linkage,
+		const attributeset & attributes)
 	: ipgraph_node(clg)
 	, type_(type)
 	, name_(name)
 	, linkage_(linkage)
+	, attributes_(attributes)
 	{}
 
 public:
@@ -234,6 +236,12 @@ public:
 	const std::string &
 	name() const noexcept override;
 
+	const attributeset &
+	attributes() const noexcept
+	{
+		return attributes_;
+	}
+
 	/**
 	* \brief Adds \p cfg to the function node. If the function node already has a CFG, then it is
 		replaced with \p cfg.
@@ -246,18 +254,30 @@ public:
 		jlm::ipgraph & ipg,
 		const std::string & name,
 		const jive::fcttype & type,
-		const jlm::linkage & linkage)
+		const jlm::linkage & linkage,
+		const attributeset & attributes)
 	{
-		std::unique_ptr<function_node> node(new function_node(ipg, name, type, linkage));
+		std::unique_ptr<function_node> node(new function_node(ipg, name, type, linkage, attributes));
 		auto tmp = node.get();
 		ipg.add_node(std::move(node));
 		return tmp;
+	}
+
+	static function_node *
+	create(
+		jlm::ipgraph & ipg,
+		const std::string & name,
+		const jive::fcttype & type,
+		const jlm::linkage & linkage)
+	{
+		return create(ipg, name, type, linkage, {});
 	}
 
 private:
 	ptrtype type_;
 	std::string name_;
 	jlm::linkage linkage_;
+	attributeset attributes_;
 	std::unique_ptr<jlm::cfg> cfg_;
 };
 

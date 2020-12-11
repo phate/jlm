@@ -165,10 +165,158 @@ create_terminator_instruction(const jlm::cfg_node * node, context & ctx)
 	create_switch(node, ctx);
 }
 
+static llvm::Attribute::AttrKind
+convert_attribute_kind(const jlm::attribute::kind & kind)
+{
+	typedef llvm::Attribute::AttrKind ak;
+
+	static std::unordered_map<attribute::kind, llvm::Attribute::AttrKind> map({
+	  {attribute::kind::alignment,                        ak::Alignment}
+	, {attribute::kind::alloc_size,                       ak::AllocSize}
+	, {attribute::kind::always_inline,                    ak::AlwaysInline}
+	, {attribute::kind::arg_mem_only,                     ak::ArgMemOnly}
+	, {attribute::kind::builtin,                          ak::Builtin}
+	, {attribute::kind::by_val,                           ak::ByVal}
+	, {attribute::kind::cold,                             ak::Cold}
+	, {attribute::kind::convergent,                       ak::Convergent}
+	, {attribute::kind::dereferenceable,                  ak::Dereferenceable}
+	, {attribute::kind::dereferenceable_or_null,          ak::DereferenceableOrNull}
+	, {attribute::kind::imm_arg,                          ak::ImmArg}
+	, {attribute::kind::in_alloca,                        ak::InAlloca}
+	, {attribute::kind::in_reg,                           ak::InReg}
+	, {attribute::kind::inaccessible_mem_only,            ak::InaccessibleMemOnly}
+	, {attribute::kind::inaccessible_mem_or_arg_mem_only, ak::InaccessibleMemOrArgMemOnly}
+	, {attribute::kind::inline_hint,                      ak::InlineHint}
+	, {attribute::kind::jump_table,                       ak::JumpTable}
+	, {attribute::kind::min_size,                         ak::MinSize}
+	, {attribute::kind::naked,                            ak::Naked}
+	, {attribute::kind::nest,                             ak::Nest}
+	, {attribute::kind::no_alias,                         ak::NoAlias}
+	, {attribute::kind::no_builtin,                       ak::NoBuiltin}
+	, {attribute::kind::no_capture,                       ak::NoCapture}
+	, {attribute::kind::no_cf_check,                      ak::NoCfCheck}
+	, {attribute::kind::no_duplicate,                     ak::NoDuplicate}
+	, {attribute::kind::no_free,                          ak::NoFree}
+	, {attribute::kind::no_implicit_float,                ak::NoImplicitFloat}
+	, {attribute::kind::no_inline,                        ak::NoInline}
+	, {attribute::kind::no_recurse,                       ak::NoRecurse}
+	, {attribute::kind::no_red_zone,                      ak::NoRedZone}
+	, {attribute::kind::no_return,                        ak::NoReturn}
+	, {attribute::kind::no_sync,                          ak::NoSync}
+	, {attribute::kind::no_unwind,                        ak::NoUnwind}
+	, {attribute::kind::non_lazy_bind,                    ak::NonLazyBind}
+	, {attribute::kind::non_null,                         ak::NonNull}
+	, {attribute::kind::opt_for_fuzzing,                  ak::OptForFuzzing}
+	, {attribute::kind::optimize_for_size,                ak::OptimizeForSize}
+	, {attribute::kind::optimize_none,                    ak::OptimizeNone}
+	, {attribute::kind::read_none,                        ak::ReadNone}
+	, {attribute::kind::read_only,                        ak::ReadOnly}
+	, {attribute::kind::returned,                         ak::Returned}
+	, {attribute::kind::returns_twice,                    ak::ReturnsTwice}
+	, {attribute::kind::sext,                             ak::SExt}
+	, {attribute::kind::safe_stack,                       ak::SafeStack}
+	, {attribute::kind::sanitize_address,                 ak::SanitizeAddress}
+	, {attribute::kind::sanitize_hwaddress,               ak::SanitizeHWAddress}
+	, {attribute::kind::sanitize_mem_tag,                 ak::SanitizeMemTag}
+	, {attribute::kind::sanitize_memory,                  ak::SanitizeMemory}
+	, {attribute::kind::sanitize_thread,                  ak::SanitizeThread}
+	, {attribute::kind::shadow_call_stack,                ak::ShadowCallStack}
+	, {attribute::kind::speculatable,                     ak::Speculatable}
+	, {attribute::kind::speculative_load_hardening,       ak::SpeculativeLoadHardening}
+	, {attribute::kind::stack_alignment,                  ak::StackAlignment}
+	, {attribute::kind::stack_protect,                    ak::StackProtect}
+	, {attribute::kind::stack_protect_req,                ak::StackProtectReq}
+	, {attribute::kind::stack_protect_strong,             ak::StackProtectStrong}
+	, {attribute::kind::strict_fp,                        ak::StrictFP}
+	, {attribute::kind::struct_ret,                       ak::StructRet}
+	, {attribute::kind::swift_error,                      ak::SwiftError}
+	, {attribute::kind::swift_self,                       ak::SwiftSelf}
+	, {attribute::kind::uwtable,                          ak::UWTable}
+	, {attribute::kind::will_return,                      ak::WillReturn}
+	, {attribute::kind::write_only,                       ak::WriteOnly}
+	, {attribute::kind::zext,                             ak::ZExt}
+	});
+
+	JLM_DEBUG_ASSERT(map.find(kind) != map.end());
+	return map[kind];
+}
+
+static llvm::AttributeSet
+convert_attributes(const attributeset & as, context & ctx)
+{
+	auto convert_attribute = [](const jlm::attribute & attribute, context & ctx)
+	{
+		auto & llvmctx = ctx.llvm_module().getContext();
+
+		if (auto sa = dynamic_cast<const string_attribute*>(&attribute))
+			return llvm::Attribute::get(llvmctx, sa->kind(), sa->value());
+
+		if (typeid(attribute) == typeid(enum_attribute)) {
+			auto ea = dynamic_cast<const enum_attribute*>(&attribute);
+			auto kind = convert_attribute_kind(ea->kind());
+			return llvm::Attribute::get(llvmctx, kind);
+		}
+
+		if (auto ia = dynamic_cast<const int_attribute*>(&attribute)) {
+			auto kind = convert_attribute_kind(ia->kind());
+			return llvm::Attribute::get(llvmctx, kind, ia->value());
+		}
+
+		if (auto ta = dynamic_cast<const type_attribute*>(&attribute)) {
+			auto kind = convert_attribute_kind(ta->kind());
+			auto type = convert_type(ta->type(), ctx);
+			return llvm::Attribute::get(llvmctx, kind, type);
+		}
+
+		JLM_ASSERT(0 && "This should have never happened!");
+	};
+
+	llvm::AttrBuilder builder;
+	for (auto & attribute : as)
+		builder.addAttribute(convert_attribute(attribute, ctx));
+
+	return llvm::AttributeSet::get(ctx.llvm_module().getContext(), builder);
+}
+
+static llvm::AttributeList
+convert_attributes(const jlm::function_node & f, context & ctx)
+{
+	JLM_DEBUG_ASSERT(f.cfg());
+
+	auto & llvmctx = ctx.llvm_module().getContext();
+
+	auto fctset = convert_attributes(f.attributes(), ctx);
+	/*
+		FIXME: return value attributes are currently not supported
+	*/
+	auto retset = llvm::AttributeSet();
+
+	std::vector<llvm::AttributeSet> argsets;
+	for (size_t n = 0; n < f.cfg()->entry()->narguments(); n++) {
+		auto argument = f.cfg()->entry()->argument(n);
+
+		if (jive::is<jive::statetype>(argument->type()))
+			continue;
+
+		argsets.push_back(convert_attributes(argument->attributes(), ctx));
+	}
+
+	return llvm::AttributeList::get(llvmctx, fctset, retset, argsets);
+}
+
 static inline void
 convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 {
 	JLM_DEBUG_ASSERT(is_closed(cfg));
+
+	auto add_arguments = [](const jlm::cfg & cfg, llvm::Function & f, context & ctx)
+	{
+		size_t n = 0;
+		for (auto & llvmarg : f.args()) {
+			auto jlmarg = cfg.entry()->argument(n++);
+			ctx.insert(jlmarg, &llvmarg);
+		}
+	};
 
 	straighten(cfg);
 	auto nodes = breadth_first(cfg);
@@ -182,10 +330,7 @@ convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 		ctx.insert(node, bb);
 	}
 
-	/* add arguments to context */
-	size_t n = 0;
-	for (auto & arg : f.args())
-		ctx.insert(cfg.entry()->argument(n++), &arg);
+	add_arguments(cfg, f, ctx);
 
 	/* create non-terminator instructions */
 	for (const auto & node : nodes) {
@@ -241,6 +386,10 @@ convert_function(const jlm::function_node & node, context & ctx)
 
 	auto & im = ctx.module();
 	auto f = llvm::cast<llvm::Function>(ctx.value(im.variable(&node)));
+
+	auto attributes = convert_attributes(node, ctx);
+	f->setAttributes(attributes);
+
 	convert_cfg(*node.cfg(), *f, ctx);
 }
 

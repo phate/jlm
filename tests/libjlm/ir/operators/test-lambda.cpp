@@ -21,7 +21,7 @@ test_argument_iterators()
 	{
 		jive::fcttype ft({&vt}, {&vt});
 
-		auto lambda = lambda::node::create(rm.graph()->root(), ft, "f", linkage::external_linkage);
+		auto lambda = lambda::node::create(rm.graph()->root(), ft, "f", linkage::external_linkage, {});
 		lambda->finalize({lambda->fctargument(0)});
 
 		std::vector<jive::argument*> args;
@@ -34,7 +34,7 @@ test_argument_iterators()
 	{
 		jive::fcttype ft({}, {&vt});
 
-		auto lambda = lambda::node::create(rm.graph()->root(), ft, "f", linkage::external_linkage);
+		auto lambda = lambda::node::create(rm.graph()->root(), ft, "f", linkage::external_linkage, {});
 
 		auto nullary = create_testop(lambda->subregion(), {}, {&vt});
 
@@ -48,7 +48,7 @@ test_argument_iterators()
 
 		jive::fcttype ft({&vt, &vt, &vt}, {&vt, &vt});
 
-		auto lambda = lambda::node::create(rm.graph()->root(), ft, "f", linkage::external_linkage);
+		auto lambda = lambda::node::create(rm.graph()->root(), ft, "f", linkage::external_linkage, {});
 
 		auto cv = lambda->add_ctxvar(i);
 
