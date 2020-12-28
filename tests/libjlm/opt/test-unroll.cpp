@@ -16,6 +16,7 @@
 #include <jive/rvsdg/graph.hpp>
 #include <jive/rvsdg/simple-node.hpp>
 #include <jive/rvsdg/theta.hpp>
+#include <jive/rvsdg/traverser.hpp>
 
 #include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/opt/dne.hpp>
@@ -275,6 +276,18 @@ test_unknown_boundaries()
 //	jive::view(graph, stdout);
 }
 
+static std::vector<jive::theta_node*>
+find_thetas(jive::region * region)
+{
+	std::vector<jive::theta_node*> thetas;
+	for (auto & node : jive::topdown_traverser(region)) {
+		if (auto theta = dynamic_cast<jive::theta_node*>(node))
+			thetas.push_back(theta);
+	}
+
+	return thetas;
+}
+
 static inline void
 test_nested_theta()
 {
@@ -377,7 +390,8 @@ test_nested_theta()
 		unroll algorithm would hoist code from the innner
 		thetas.
 	*/
-	assert(inner_nested_theta->subregion()->nnodes() >= 7);
+	auto thetas = find_thetas(inner_theta->subregion());
+	assert(thetas.size() == 1 && thetas[0]->subregion()->nnodes() >= 7);
 	/*
 		The second inner theta should be unrolled and since
 		the original graph contains 3 nodes and the unroll
@@ -386,8 +400,8 @@ test_nested_theta()
 		updated unroll algorithm would hoist code from the
 		innner thetas.
 	*/
-	/* FIX ME! Call to subregion() cause an assertion */
-//	assert(inner2_theta->subregion()->nnodes() >= 7);
+	thetas = find_thetas(otheta->subregion());
+	assert(thetas.size() == 2 && thetas[1]->subregion()->nnodes() >= 7);
 //	jive::view(graph, stdout);
 	jlm::unroll(otheta, 4);
 //	jive::view(graph, stdout);
@@ -395,8 +409,8 @@ test_nested_theta()
 		After unrolling the outher theta four times it should
 		now contain 8 thetas.
 	*/
-	/* FIX ME! Why can't subregion() be called when it worked earlier */
-//	assert(nthetas(otheta->subregion()) == 8);
+	thetas = find_thetas(graph.root());
+	assert(thetas.size() == 3 && nthetas(thetas[0]->subregion()) == 8);
 }
 
 
