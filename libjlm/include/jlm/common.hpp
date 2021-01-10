@@ -14,7 +14,7 @@
 #ifdef JLM_ENABLE_ASSERTS
 #	define JLM_ASSERT(x) assert(x)
 #else
-#	define JLM_ASSERT(x) (void)(x)
+#	define JLM_ASSERT(x) do{}while(0 && (x))
 #endif
 
 #define JLM_NORETURN __attribute__((noreturn))
