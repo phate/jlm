@@ -6,7 +6,7 @@ JLMOPT_SRC = \
 	jlm-opt/src/jlm-opt.cpp \
 
 .PHONY: jlm-opt-debug
-jlm-opt-debug: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG
+jlm-opt-debug: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG -DJLM_ENABLE_ASSERTS
 jlm-opt-debug: jive-debug $(JLM_ROOT)/libjlm.a $(JLM_ROOT)/bin/jlm-opt
 
 .PHONY: jlm-opt-release

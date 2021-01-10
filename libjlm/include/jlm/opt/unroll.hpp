@@ -86,7 +86,7 @@ public:
 	theta() const noexcept
 	{
 		auto node = idv()->region()->node();
-		JLM_DEBUG_ASSERT(jive::is<jive::theta_op>(node));
+		JLM_ASSERT(jive::is<jive::theta_op>(node));
 		return static_cast<jive::theta_node*>(node);
 	}
 
@@ -198,7 +198,7 @@ public:
 	inline size_t
 	nbits() const noexcept
 	{
-		JLM_DEBUG_ASSERT(dynamic_cast<const jive::bitcompare_op*>(&cmpnode()->operation()));
+		JLM_ASSERT(dynamic_cast<const jive::bitcompare_op*>(&cmpnode()->operation()));
 		return static_cast<const jive::bitcompare_op*>(&cmpnode()->operation())->type().nbits();
 	}
 

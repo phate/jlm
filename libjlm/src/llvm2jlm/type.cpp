@@ -23,7 +23,7 @@ namespace jlm {
 jlm::fpsize
 convert_fpsize(const llvm::Type * type)
 {
-	JLM_DEBUG_ASSERT(type->isFloatingPointTy());
+	JLM_ASSERT(type->isFloatingPointTy());
 
 	static std::unordered_map<const llvm::Type::TypeID, jlm::fpsize> map({
 	  {llvm::Type::HalfTyID, fpsize::half}
@@ -32,14 +32,14 @@ convert_fpsize(const llvm::Type * type)
 	, {llvm::Type::X86_FP80TyID, fpsize::x86fp80}
 	});
 
-	JLM_DEBUG_ASSERT(map.find(type->getTypeID()) != map.end());
+	JLM_ASSERT(map.find(type->getTypeID()) != map.end());
 	return map[type->getTypeID()];
 }
 
 static std::unique_ptr<jive::valuetype>
 convert_integer_type(const llvm::Type * t, context & ctx)
 {
-	JLM_DEBUG_ASSERT(t->getTypeID() == llvm::Type::IntegerTyID);
+	JLM_ASSERT(t->getTypeID() == llvm::Type::IntegerTyID);
 	const llvm::IntegerType * type = static_cast<const llvm::IntegerType*>(t);
 
 	return std::unique_ptr<jive::valuetype>(new jive::bittype(type->getBitWidth()));
@@ -48,7 +48,7 @@ convert_integer_type(const llvm::Type * t, context & ctx)
 static std::unique_ptr<jive::valuetype>
 convert_pointer_type(const llvm::Type * t, context & ctx)
 {
-	JLM_DEBUG_ASSERT(t->getTypeID() == llvm::Type::PointerTyID);
+	JLM_ASSERT(t->getTypeID() == llvm::Type::PointerTyID);
 	const auto & type = llvm::cast<llvm::PointerType>(t);
 
 	auto et = convert_type(type->getElementType(), ctx);
@@ -58,7 +58,7 @@ convert_pointer_type(const llvm::Type * t, context & ctx)
 static std::unique_ptr<jive::valuetype>
 convert_function_type(const llvm::Type * t, context & ctx)
 {
-	JLM_DEBUG_ASSERT(t->getTypeID() == llvm::Type::FunctionTyID);
+	JLM_ASSERT(t->getTypeID() == llvm::Type::FunctionTyID);
 	auto type = llvm::cast<const llvm::FunctionType>(t);
 
 	/* arguments */
@@ -91,14 +91,14 @@ convert_fp_type(const llvm::Type * t, context & ctx)
 	, {llvm::Type::X86_FP80TyID, fpsize::x86fp80}
 	});
 
-	JLM_DEBUG_ASSERT(map.find(t->getTypeID()) != map.end());
+	JLM_ASSERT(map.find(t->getTypeID()) != map.end());
 	return std::unique_ptr<jive::valuetype>(new jlm::fptype(map[t->getTypeID()]));
 }
 
 static inline std::unique_ptr<jive::valuetype>
 convert_struct_type(const llvm::Type * t, context & ctx)
 {
-	JLM_DEBUG_ASSERT(t->isStructTy());
+	JLM_ASSERT(t->isStructTy());
 	auto type = static_cast<const llvm::StructType*>(t);
 
 	auto packed = type->isPacked();
@@ -112,7 +112,7 @@ convert_struct_type(const llvm::Type * t, context & ctx)
 static std::unique_ptr<jive::valuetype>
 convert_array_type(const llvm::Type * t, context & ctx)
 {
-	JLM_DEBUG_ASSERT(t->isArrayTy());
+	JLM_ASSERT(t->isArrayTy());
 	auto etype = convert_type(t->getArrayElementType(), ctx);
 	return std::unique_ptr<jive::valuetype>(new jlm::arraytype(*etype, t->getArrayNumElements()));
 }
@@ -120,7 +120,7 @@ convert_array_type(const llvm::Type * t, context & ctx)
 static std::unique_ptr<jive::valuetype>
 convert_vector_type(const llvm::Type * t, context & ctx)
 {
-	JLM_DEBUG_ASSERT(t->isVectorTy());
+	JLM_ASSERT(t->isVectorTy());
 	auto type = convert_type(t->getVectorElementType(), ctx);
 	return std::unique_ptr<jive::valuetype>(new jlm::vectortype(*type, t->getVectorNumElements()));
 }
@@ -144,7 +144,7 @@ convert_type(const llvm::Type * t, context & ctx)
 	, {llvm::Type::VectorTyID, convert_vector_type}
 	});
 
-	JLM_DEBUG_ASSERT(map.find(t->getTypeID()) != map.end());
+	JLM_ASSERT(map.find(t->getTypeID()) != map.end());
 	return map[t->getTypeID()](t, ctx);
 }
 

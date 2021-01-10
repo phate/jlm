@@ -67,7 +67,7 @@ invariance(jive::region * region);
 static void
 gamma_invariance(jive::structural_node * node)
 {
-	JLM_DEBUG_ASSERT(jive::is<jive::gamma_op>(node));
+	JLM_ASSERT(jive::is<jive::gamma_op>(node));
 	auto gamma = static_cast<jive::gamma_node*>(node);
 
 	for (size_t n = 0; n < gamma->noutputs(); n++) {
@@ -80,7 +80,7 @@ gamma_invariance(jive::structural_node * node)
 static void
 theta_invariance(jive::structural_node * node)
 {
-	JLM_DEBUG_ASSERT(jive::is<jive::theta_op>(node));
+	JLM_ASSERT(jive::is<jive::theta_op>(node));
 	auto theta = static_cast<jive::theta_node*>(node);
 
 	/* FIXME: In order to also redirect state variables,
@@ -99,7 +99,7 @@ invariance(jive::region * region)
 		if (jive::is<jive::simple_op>(node))
 			continue;
 
-		JLM_DEBUG_ASSERT(jive::is<jive::structural_op>(node));
+		JLM_ASSERT(jive::is<jive::structural_op>(node));
 		auto strnode = static_cast<jive::structural_node*>(node);
 		for (size_t n = 0; n < strnode->nsubregions(); n++)
 			invariance(strnode->subregion(n));

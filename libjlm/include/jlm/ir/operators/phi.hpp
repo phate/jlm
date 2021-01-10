@@ -50,9 +50,9 @@ is_phi_recvar_argument(const jive::output * output)
 static inline jive::result *
 phi_result(const jive::output * output)
 {
-	JLM_DEBUG_ASSERT(is_phi_output(output));
+	JLM_ASSERT(is_phi_output(output));
 	auto result = jive::node_output::node(output)->region()->result(output->index());
-	JLM_DEBUG_ASSERT(result->output() == output);
+	JLM_ASSERT(result->output() == output);
 	return result;
 }
 

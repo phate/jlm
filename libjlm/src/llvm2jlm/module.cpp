@@ -154,7 +154,7 @@ convert_attribute_kind(const llvm::Attribute::AttrKind & kind)
 	, {ak::ZExt,                        attribute::kind::zext}
 	});
 
-	JLM_DEBUG_ASSERT(map.find(kind) != map.end());
+	JLM_ASSERT(map.find(kind) != map.end());
 	return map[kind];
 }
 
@@ -163,7 +163,7 @@ convert_attribute(const llvm::Attribute & attribute, context & ctx)
 {
 	auto convert_type_attribute = [](const llvm::Attribute & attribute, context & ctx)
 	{
-		JLM_DEBUG_ASSERT(attribute.isTypeAttribute());
+		JLM_ASSERT(attribute.isTypeAttribute());
 
 		if (attribute.getKindAsEnum() == llvm::Attribute::AttrKind::ByVal) {
 			auto type = convert_type(attribute.getValueAsType(), ctx);
@@ -175,13 +175,13 @@ convert_attribute(const llvm::Attribute & attribute, context & ctx)
 
 	auto convert_string_attribute = [](const llvm::Attribute & attribute)
 	{
-		JLM_DEBUG_ASSERT(attribute.isStringAttribute());
+		JLM_ASSERT(attribute.isStringAttribute());
 		return string_attribute::create(attribute.getKindAsString(), attribute.getValueAsString());
 	};
 
 	auto convert_enum_attribute = [](const llvm::Attribute & attribute)
 	{
-		JLM_DEBUG_ASSERT(attribute.isEnumAttribute());
+		JLM_ASSERT(attribute.isEnumAttribute());
 
 		auto kind = convert_attribute_kind(attribute.getKindAsEnum());
 		return enum_attribute::create(kind);
@@ -189,7 +189,7 @@ convert_attribute(const llvm::Attribute & attribute, context & ctx)
 
 	auto convert_int_attribute = [](const llvm::Attribute & attribute)
 	{
-		JLM_DEBUG_ASSERT(attribute.isIntAttribute());
+		JLM_ASSERT(attribute.isIntAttribute());
 
 		auto kind = convert_attribute_kind(attribute.getKindAsEnum());
 		return int_attribute::create(kind, attribute.getValueAsInt());
@@ -251,11 +251,11 @@ create_cfg(llvm::Function & f, context & ctx)
 		}
 
 		if (f.isVarArg()) {
-			JLM_DEBUG_ASSERT(n < node->fcttype().narguments());
+			JLM_ASSERT(n < node->fcttype().narguments());
 			auto & type = node->fcttype().argument_type(n++);
 			cfg.entry()->append_argument(argument::create("_varg_", type));
 		}
-		JLM_DEBUG_ASSERT(n < node->fcttype().narguments());
+		JLM_ASSERT(n < node->fcttype().narguments());
 
 		auto & iotype = node->fcttype().argument_type(n++);
 		auto iostate = cfg.entry()->append_argument(argument::create("_io_", iotype));
@@ -266,7 +266,7 @@ create_cfg(llvm::Function & f, context & ctx)
 		auto & looptype = node->fcttype().argument_type(n++);
 		auto loopstate = cfg.entry()->append_argument(argument::create("_l_", looptype));
 
-		JLM_DEBUG_ASSERT(n == node->fcttype().narguments());
+		JLM_ASSERT(n == node->fcttype().narguments());
 		ctx.set_iostate(iostate);
 		ctx.set_memory_state(memstate);
 		ctx.set_loop_state(loopstate);
@@ -288,8 +288,8 @@ create_cfg(llvm::Function & f, context & ctx)
 		result = m.create_variable(*convert_type(f.getReturnType(), ctx), "_r_");
 		entry_block->append_last(create_undef_constant_tac(result));
 
-		JLM_DEBUG_ASSERT(node->fcttype().nresults() == 4);
-		JLM_DEBUG_ASSERT(result->type() == node->fcttype().result_type(0));
+		JLM_ASSERT(node->fcttype().nresults() == 4);
+		JLM_ASSERT(result->type() == node->fcttype().result_type(0));
 		cfg->exit()->append_result(result);
 	}
 	cfg->exit()->append_result(ctx.iostate());

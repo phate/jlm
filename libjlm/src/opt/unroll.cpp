@@ -78,7 +78,7 @@ is_eqcmp(const jive::operation & op)
 static bool
 is_theta_invariant(const jive::output * output)
 {
-	JLM_DEBUG_ASSERT(jive::is<jive::theta_op>(output->region()->node()));
+	JLM_ASSERT(jive::is<jive::theta_op>(output->region()->node()));
 
 	if (jive::is<jive::bitconstant_op>(jive::node_output::node(output)))
 		return true;
@@ -97,8 +97,8 @@ push_from_theta(jive::output * output)
 	if (argument) return argument;
 
 	auto tmp = jive::node_output::node(output);
-	JLM_DEBUG_ASSERT(jive::is<jive::bitconstant_op>(tmp));
-	JLM_DEBUG_ASSERT(jive::is<jive::theta_op>(tmp->region()->node()));
+	JLM_ASSERT(jive::is<jive::bitconstant_op>(tmp));
+	JLM_ASSERT(jive::is<jive::theta_op>(tmp->region()->node()));
 	auto theta = static_cast<jive::theta_node*>(tmp->region()->node());
 
 	auto node = tmp->copy(theta->region(), {});
@@ -114,7 +114,7 @@ is_idv(jive::input * input)
 	using namespace jive;
 
 	auto node = input_node(input);
-	JLM_DEBUG_ASSERT(is<bitadd_op>(node) || is<bitsub_op>(node));
+	JLM_ASSERT(is<bitadd_op>(node) || is<bitsub_op>(node));
 
 	auto a = dynamic_cast<jive::argument*>(input->origin());
 	if (!a) return false;
@@ -262,7 +262,7 @@ unroll_theta(
 		auto cmpnode = ui.cmpnode();
 		auto cmp = jive::node_output::node(smap.lookup(cmpnode->output(0)));
 		auto input = cmp->input(0)->origin() == smap.lookup(ui.end()) ? cmp->input(0) : cmp->input(1);
-		JLM_DEBUG_ASSERT(input->origin() == smap.lookup(ui.end()));
+		JLM_ASSERT(input->origin() == smap.lookup(ui.end()));
 
 		auto sv = ui.is_additive() ? *ui.step_value() : ui.step_value()->neg();
 		auto end = remainder.mul(sv);
@@ -317,12 +317,12 @@ add_remainder(
 static void
 unroll_known_theta(const unrollinfo & ui, size_t factor)
 {
-	JLM_DEBUG_ASSERT(ui.is_known() && ui.niterations());
+	JLM_ASSERT(ui.is_known() && ui.niterations());
 	auto niterations = ui.niterations();
 	auto original_theta = ui.theta();
 	auto nbits = ui.nbits();
 
-	JLM_DEBUG_ASSERT(niterations != 0);
+	JLM_ASSERT(niterations != 0);
 	if (niterations->ule({nbits, (int64_t)factor}) == '1') {
 		/*
 			Completely unroll the loop body and then remove the theta node,
@@ -332,7 +332,7 @@ unroll_known_theta(const unrollinfo & ui, size_t factor)
 		return remove(original_theta);
 	}
 
-	JLM_DEBUG_ASSERT(niterations->ugt({nbits, (int64_t)factor}) == '1');
+	JLM_ASSERT(niterations->ugt({nbits, (int64_t)factor}) == '1');
 
 	/*
 		Unroll the theta

@@ -197,7 +197,7 @@ node::finalize(const std::vector<jive::output*> & results)
 {
 	/* check if finalized was already called */
 	if (noutputs() > 0) {
-		JLM_DEBUG_ASSERT(noutputs() == 1);
+		JLM_ASSERT(noutputs() == 1);
 		return output();
 	}
 

@@ -94,7 +94,7 @@ convert(const fptype & type, context & ctx)
 	, {fpsize::x86fp80, llvm::Type::getX86_FP80Ty}
 	});
 
-	JLM_DEBUG_ASSERT(map.find(type.size()) != map.end());
+	JLM_ASSERT(map.find(type.size()) != map.end());
 	return map[type.size()](ctx.llvm_module().getContext());
 }
 
@@ -131,7 +131,7 @@ convert(
 	const jive::type & type,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(jive::is<T>(type));
+	JLM_ASSERT(jive::is<T>(type));
 	return convert(*static_cast<const T*>(&type), ctx);
 }
 
@@ -152,7 +152,7 @@ convert_type(const jive::type & type, context & ctx)
 	, {typeid(vectortype),    convert<vectortype>}
 	});
 
-	JLM_DEBUG_ASSERT(map.find(typeid(type)) != map.end());
+	JLM_ASSERT(map.find(typeid(type)) != map.end());
 	return map[typeid(type)](type, ctx);
 }
 

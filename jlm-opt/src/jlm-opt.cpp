@@ -98,7 +98,7 @@ print(
 	, {outputformat::llvm, print_as_llvm}
 	});
 
-	JLM_DEBUG_ASSERT(formatters.find(format) != formatters.end());
+	JLM_ASSERT(formatters.find(format) != formatters.end());
 	formatters[format](rm, fp, sd);
 }
 

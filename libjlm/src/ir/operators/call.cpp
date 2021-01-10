@@ -48,7 +48,7 @@ call_op::copy() const
 jive::output *
 trace_function_input(const jive::simple_node & node)
 {
-	JLM_DEBUG_ASSERT(is<call_op>(&node));
+	JLM_ASSERT(is<call_op>(&node));
 
 	auto origin = node.input(0)->origin();
 

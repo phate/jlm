@@ -396,7 +396,7 @@ ptrcmp_op::debug_string() const
 	, {cmp::ge, "ge"}, {cmp::lt, "lt"}, {cmp::le, "le"}
 	});
 
-	JLM_DEBUG_ASSERT(map.find(cmp()) != map.end());
+	JLM_ASSERT(map.find(cmp()) != map.end());
 	return "PTRCMP " + map[cmp()];
 }
 
@@ -530,7 +530,7 @@ fpcmp_op::debug_string() const
 	, {fpcmp::une, "une"}, {fpcmp::uno, "uno"}
 	});
 
-	JLM_DEBUG_ASSERT(map.find(cmp()) != map.end());
+	JLM_ASSERT(map.find(cmp()) != map.end());
 	return "FPCMP " + map[cmp()];
 }
 
@@ -601,7 +601,7 @@ fpbin_op::debug_string() const
 	, {fpop::div, "div"}, {fpop::mod, "mod"}
 	});
 
-	JLM_DEBUG_ASSERT(map.find(fpop()) != map.end());
+	JLM_ASSERT(map.find(fpop()) != map.end());
 	return "FPOP " + map[fpop()];
 }
 

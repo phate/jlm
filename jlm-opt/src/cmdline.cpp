@@ -48,7 +48,7 @@ mapoptid(enum optimizationid id)
 	, {optimizationid::red, &nodereduction}
 	});
 
-	JLM_DEBUG_ASSERT(map.find(id) != map.end());
+	JLM_ASSERT(map.find(id) != map.end());
 	return map[id];
 }
 

@@ -200,8 +200,8 @@ sweep(jive::region * region, const dnectx & ctx);
 static void
 sweep_delta(jive::structural_node * node, const dnectx & ctx)
 {
-	JLM_DEBUG_ASSERT(is<delta_op>(node));
-	JLM_DEBUG_ASSERT(node->noutputs() == 1);
+	JLM_ASSERT(is<delta_op>(node));
+	JLM_ASSERT(node->noutputs() == 1);
 
 	if (!ctx.is_alive(node)) {
 		remove(node);
@@ -212,7 +212,7 @@ sweep_delta(jive::structural_node * node, const dnectx & ctx)
 static void
 sweep_phi(jive::structural_node * node, const dnectx & ctx)
 {
-	JLM_DEBUG_ASSERT(is<jive::phi::operation>(node));
+	JLM_ASSERT(is<jive::phi::operation>(node));
 	auto subregion = node->subregion(0);
 
 	if (!ctx.is_alive(node)) {
@@ -246,7 +246,7 @@ sweep_phi(jive::structural_node * node, const dnectx & ctx)
 static void
 sweep_lambda(jive::structural_node * node, const dnectx & ctx)
 {
-	JLM_DEBUG_ASSERT(is<lambda::operation>(node));
+	JLM_ASSERT(is<lambda::operation>(node));
 	auto subregion = node->subregion(0);
 
 	if (!ctx.is_alive(node)) {
@@ -273,7 +273,7 @@ sweep_lambda(jive::structural_node * node, const dnectx & ctx)
 static void
 sweep_theta(jive::structural_node * node, const dnectx & ctx)
 {
-	JLM_DEBUG_ASSERT(jive::is<jive::theta_op>(node));
+	JLM_ASSERT(jive::is<jive::theta_op>(node));
 	auto subregion = node->subregion(0);
 
 	if (!ctx.is_alive(node)) {
@@ -292,21 +292,21 @@ sweep_theta(jive::structural_node * node, const dnectx & ctx)
 	/* remove outputs, inputs, and arguments */
 	for (ssize_t n = subregion->narguments()-1; n >= 0; n--) {
 		if (!ctx.is_alive(subregion->argument(n)) && !ctx.is_alive(node->output(n))) {
-			JLM_DEBUG_ASSERT(node->output(n)->results.first() == nullptr);
+			JLM_ASSERT(node->output(n)->results.first() == nullptr);
 			subregion->remove_argument(n);
 			node->remove_input(n);
 			node->remove_output(n);
 		}
 	}
 
-	JLM_DEBUG_ASSERT(node->ninputs() == node->noutputs());
-	JLM_DEBUG_ASSERT(subregion->narguments() == subregion->nresults()-1);
+	JLM_ASSERT(node->ninputs() == node->noutputs());
+	JLM_ASSERT(subregion->narguments() == subregion->nresults()-1);
 }
 
 static void
 sweep_gamma(jive::structural_node * node, const dnectx & ctx)
 {
-	JLM_DEBUG_ASSERT(jive::is<jive::gamma_op>(node));
+	JLM_ASSERT(jive::is<jive::gamma_op>(node));
 
 	if (!ctx.is_alive(node)) {
 		remove(node);
@@ -360,7 +360,7 @@ sweep(jive::structural_node * node, const dnectx & ctx)
 	});
 
 	auto & op = node->operation();
-	JLM_DEBUG_ASSERT(map.find(typeid(op)) != map.end());
+	JLM_ASSERT(map.find(typeid(op)) != map.end());
 	map[typeid(op)](node, ctx);
 }
 
@@ -380,7 +380,7 @@ sweep(jive::region * region, const dnectx & ctx)
 		else
 			sweep(static_cast<jive::structural_node*>(node), ctx);
 	}
-	JLM_DEBUG_ASSERT(region->bottom_nodes.empty());
+	JLM_ASSERT(region->bottom_nodes.empty());
 }
 
 static void

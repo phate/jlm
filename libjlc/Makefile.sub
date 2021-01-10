@@ -30,7 +30,7 @@ $(LLVMPATHSFILE):
 	@printf $(LLVMPATHS) > $@
 
 .PHONY: libjlc-debug
-libjlc-debug: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG
+libjlc-debug: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG -DJLM_ENABLE_ASSERTS
 libjlc-debug: $(JLM_ROOT)/libjlc.a
 
 .PHONY: libjlc-release
@@ -42,7 +42,7 @@ $(JLM_ROOT)/libjlc.a: CXXFLAGS += -Wall -Wpedantic -Wextra -Wno-unused-parameter
 $(JLM_ROOT)/libjlc.a: $(LLVMPATHSFILE) $(patsubst %.cpp, $(JLM_ROOT)/%.la, $(LIBJLC_SRC))
 
 .PHONY: jlc-debug
-jlc-debug: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG
+jlc-debug: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG -DJLM_ENABLE_ASSERTS
 jlc-debug: jive-debug $(JLM_ROOT)/libjlm.a $(JLM_ROOT)/libjlc.a $(JLM_ROOT)/bin/jlc
 
 .PHONY: jlc-release

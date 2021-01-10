@@ -66,7 +66,7 @@ annotaterw(const blockaggnode * node, demandmap & dm)
 					We need special treatment for assignment operation, since the variable
 					they assign the value to is modeled as an argument of the tac.
 			*/
-			JLM_DEBUG_ASSERT(tac->noperands() == 2 && tac->nresults() == 0);
+			JLM_ASSERT(tac->noperands() == 2 && tac->nresults() == 0);
 			ds->reads.erase(tac->operand(0));
 			ds->writes.insert(tac->operand(0));
 			ds->reads.insert(tac->operand(1));
@@ -125,7 +125,7 @@ annotaterw(const loopaggnode * node, demandmap & dm)
 template<class T> static void
 annotaterw(const aggnode * node, demandmap & dm)
 {
-	JLM_DEBUG_ASSERT(is<T>(node));
+	JLM_ASSERT(is<T>(node));
 	annotaterw(static_cast<const T*>(node), dm);
 }
 
@@ -147,7 +147,7 @@ annotaterw(const aggnode * node, demandmap & dm)
 	for (size_t n = 0; n < node->nchildren(); n++)
 		annotaterw(node->child(n), dm);
 
-	JLM_DEBUG_ASSERT(map.find(typeid(*node)) != map.end());
+	JLM_ASSERT(map.find(typeid(*node)) != map.end());
 	return map[typeid(*node)](node, dm);
 }
 
@@ -255,11 +255,11 @@ annotateds(
 	annotateds(node->child(0), pds, dm);
 
 	for (const auto & v : ds->reads)
-		JLM_DEBUG_ASSERT(pds.find(v) != pds.end());
+		JLM_ASSERT(pds.find(v) != pds.end());
 
 	for (const auto & v : ds->writes)
 		if (ds->reads.find(v) == ds->reads.end())
-			JLM_DEBUG_ASSERT(pds.find(v) == pds.end());
+			JLM_ASSERT(pds.find(v) == pds.end());
 }
 
 template<class T> static void
@@ -268,7 +268,7 @@ annotateds(
 	variableset & pds,
 	demandmap & dm)
 {
-	JLM_DEBUG_ASSERT(is<T>(node));
+	JLM_ASSERT(is<T>(node));
 	annotateds(static_cast<const T*>(node), pds, dm);
 }
 
@@ -290,7 +290,7 @@ annotateds(
 	, {typeid(loopaggnode), annotateds<loopaggnode>}
 	});
 
-	JLM_DEBUG_ASSERT(map.find(typeid(*node)) != map.end());
+	JLM_ASSERT(map.find(typeid(*node)) != map.end());
 	return map[typeid(*node)](node, pds, dm);
 }
 

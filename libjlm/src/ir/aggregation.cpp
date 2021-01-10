@@ -25,7 +25,7 @@ aggnode::normalize(aggnode & node)
 {
 	std::function<std::vector<std::unique_ptr<aggnode>>(aggnode&)> reduce = [&](aggnode & node)
 	{
-		JLM_DEBUG_ASSERT(is<linearaggnode>(&node));
+		JLM_ASSERT(is<linearaggnode>(&node));
 
 		std::vector<std::unique_ptr<aggnode>> children;
 		for (size_t n = 0; n < node.children_.size(); n++) {
@@ -178,12 +178,12 @@ reduce_linear(
 	std::unordered_map<cfg_node*, std::unique_ptr<aggnode>> & map)
 {
 	/* sanity checks */
-	JLM_DEBUG_ASSERT(entry->noutedges() == 1);
-	JLM_DEBUG_ASSERT(map.find(entry) != map.end());
+	JLM_ASSERT(entry->noutedges() == 1);
+	JLM_ASSERT(map.find(entry) != map.end());
 
 	auto exit = entry->outedge(0)->sink();
-	JLM_DEBUG_ASSERT(exit->ninedges() == 1);
-	JLM_DEBUG_ASSERT(map.find(exit) != map.end());
+	JLM_ASSERT(exit->ninedges() == 1);
+	JLM_ASSERT(map.find(exit) != map.end());
 
 	/* perform reduction */
 	auto reduction = basic_block::create(entry->cfg());
@@ -209,8 +209,8 @@ reduce_loop(
 	std::unordered_map<cfg_node*, std::unique_ptr<aggnode>> & map)
 {
 	/* sanity checks */
-	JLM_DEBUG_ASSERT(is_loop(node));
-	JLM_DEBUG_ASSERT(map.find(node) != map.end());
+	JLM_ASSERT(is_loop(node));
+	JLM_ASSERT(map.find(node) != map.end());
 
 	/* perform reduction */
 	auto reduction = basic_block::create(node->cfg());
@@ -239,16 +239,16 @@ reduce_branch(
 	std::unordered_map<cfg_node*, std::unique_ptr<aggnode>> & map)
 {
 	/* sanity checks */
-	JLM_DEBUG_ASSERT(split->noutedges() > 1);
-	JLM_DEBUG_ASSERT(split->outedge(0)->sink()->noutedges() == 1);
-	JLM_DEBUG_ASSERT(map.find(split) != map.end());
+	JLM_ASSERT(split->noutedges() > 1);
+	JLM_ASSERT(split->outedge(0)->sink()->noutedges() == 1);
+	JLM_ASSERT(map.find(split) != map.end());
 
 	auto join = split->outedge(0)->sink()->outedge(0)->sink();
 	for (auto it = split->begin_outedges(); it != split->end_outedges(); it++) {
-		JLM_DEBUG_ASSERT(it->sink()->ninedges() == 1);
-		JLM_DEBUG_ASSERT(map.find(it->sink()) != map.end());
-		JLM_DEBUG_ASSERT(it->sink()->noutedges() == 1);
-		JLM_DEBUG_ASSERT(it->sink()->outedge(0)->sink() == join);
+		JLM_ASSERT(it->sink()->ninedges() == 1);
+		JLM_ASSERT(map.find(it->sink()) != map.end());
+		JLM_ASSERT(it->sink()->noutedges() == 1);
+		JLM_ASSERT(it->sink()->outedge(0)->sink() == join);
 	}
 
 	/* perform reduction */
@@ -308,13 +308,13 @@ aggregate(
 		it = reduced ? to_visit.begin() : std::next(it);
 	}
 
-	JLM_DEBUG_ASSERT(to_visit.size() == 1);
+	JLM_ASSERT(to_visit.size() == 1);
 }
 
 std::unique_ptr<aggnode>
 aggregate(jlm::cfg & cfg)
 {
-	JLM_DEBUG_ASSERT(is_proper_structured(cfg));
+	JLM_ASSERT(is_proper_structured(cfg));
 	auto entry = cfg.entry();
 	auto exit = cfg.exit();
 
@@ -329,7 +329,7 @@ aggregate(jlm::cfg & cfg)
 	}
 
 	aggregate(to_visit, map);
-	JLM_DEBUG_ASSERT(map.size() == 1);
+	JLM_ASSERT(map.size() == 1);
 
 	return std::move(std::move(map.begin()->second));
 }

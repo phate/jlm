@@ -59,7 +59,7 @@ public:
 	domnode *
 	child(size_t index) const noexcept
 	{
-		JLM_DEBUG_ASSERT(index < nchildren());
+		JLM_ASSERT(index < nchildren());
 		return children_[index].get();
 	}
 

@@ -45,14 +45,14 @@ store_op::copy() const
 static bool
 is_store_mux_reducible(const std::vector<jive::output*> & operands)
 {
-	JLM_DEBUG_ASSERT(operands.size() > 2);
+	JLM_ASSERT(operands.size() > 2);
 
 	auto muxnode = jive::node_output::node(operands[2]);
 	if (!is<memstatemux_op>(muxnode))
 		return false;
 
 	for (size_t n = 2; n < operands.size(); n++) {
-		JLM_DEBUG_ASSERT(dynamic_cast<const jive::memtype*>(&operands[n]->type()));
+		JLM_ASSERT(dynamic_cast<const jive::memtype*>(&operands[n]->type()));
 		auto node = jive::node_output::node(operands[n]);
 		if (node != muxnode)
 			return false;
@@ -66,7 +66,7 @@ is_store_store_reducible(
 	const store_op & op,
 	const std::vector<jive::output*> & operands)
 {
-	JLM_DEBUG_ASSERT(operands.size() > 2);
+	JLM_ASSERT(operands.size() > 2);
 
 	auto storenode = jive::node_output::node(operands[2]);
 	if (!is<store_op>(storenode))
@@ -85,7 +85,7 @@ is_store_store_reducible(
 	}
 
 	auto other = static_cast<const store_op*>(&storenode->operation());
-	JLM_DEBUG_ASSERT(op.alignment() == other->alignment());
+	JLM_ASSERT(op.alignment() == other->alignment());
 	return true;
 }
 
@@ -133,7 +133,7 @@ perform_store_store_reduction(
 	const jlm::store_op & op,
 	const std::vector<jive::output*> & operands)
 {
-	JLM_DEBUG_ASSERT(is_store_store_reducible(op, operands));
+	JLM_ASSERT(is_store_store_reducible(op, operands));
 	auto storenode = jive::node_output::node(operands[2]);
 
 	auto storeops = jive::operands(storenode);
@@ -190,7 +190,7 @@ store_normal_form::store_normal_form(
 bool
 store_normal_form::normalize_node(jive::node * node) const
 {
-	JLM_DEBUG_ASSERT(is<store_op>(node->operation()));
+	JLM_ASSERT(is<store_op>(node->operation()));
 	auto op = static_cast<const jlm::store_op*>(&node->operation());
 	auto operands = jive::operands(node);
 
@@ -222,13 +222,13 @@ store_normal_form::normalize_node(jive::node * node) const
 		std::unordered_map<jive::output*, jive::output*> origin2output;
 		for (size_t n = 0; n < outputs.size(); n++) {
 			auto origin = new_node->input(n+2)->origin();
-			JLM_DEBUG_ASSERT(origin2output.find(origin) == origin2output.end());
+			JLM_ASSERT(origin2output.find(origin) == origin2output.end());
 			origin2output[origin] = outputs[n];
 		}
 
 		for (size_t n = 2; n < node->ninputs(); n++) {
 			auto origin = node->input(n)->origin();
-			JLM_DEBUG_ASSERT(origin2output.find(origin) != origin2output.end());
+			JLM_ASSERT(origin2output.find(origin) != origin2output.end());
 			node->output(n-2)->divert_users(origin2output[origin]);
 		}
 		remove(node);
@@ -244,7 +244,7 @@ store_normal_form::normalized_create(
 	const jive::simple_op & op,
 	const std::vector<jive::output*> & ops) const
 {
-	JLM_DEBUG_ASSERT(is<store_op>(op));
+	JLM_ASSERT(is<store_op>(op));
 	auto sop = static_cast<const jlm::store_op*>(&op);
 
 	if (!get_mutable())

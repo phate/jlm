@@ -52,7 +52,7 @@ load_op::copy() const
 static bool
 is_load_mux_reducible(const std::vector<jive::output*> & operands)
 {
-	JLM_DEBUG_ASSERT(operands.size() >= 2);
+	JLM_ASSERT(operands.size() >= 2);
 
 	auto muxnode = jive::node_output::node(operands[1]);
 	if (!is<memstatemux_op>(muxnode))
@@ -202,7 +202,7 @@ is_load_store_reducible(
 	const load_op & op,
 	const std::vector<jive::output*> & operands)
 {
-	JLM_DEBUG_ASSERT(operands.size() > 1);
+	JLM_ASSERT(operands.size() > 1);
 
 	auto storenode = jive::node_output::node(operands[1]);
 	if (!is<store_op>(storenode))
@@ -221,7 +221,7 @@ is_load_store_reducible(
 			return false;
 	}
 
-	JLM_DEBUG_ASSERT(op.alignment() == sop->alignment());
+	JLM_ASSERT(op.alignment() == sop->alignment());
 	return true;
 }
 
@@ -358,7 +358,7 @@ perform_multiple_origin_reduction(
 static bool
 is_load_load_state_reducible(const std::vector<jive::output*> & operands)
 {
-	JLM_DEBUG_ASSERT(operands.size() >= 2);
+	JLM_ASSERT(operands.size() >= 2);
 
 	for (size_t n = 1; n < operands.size(); n++) {
 		if (is<load_op>(jive::node_output::node(operands[n])))
@@ -378,7 +378,7 @@ perform_load_load_state_reduction(
 	auto load_state_input = [](jive::output * result)
 	{
 		auto ld = jive::node_output::node(result);
-		JLM_DEBUG_ASSERT(is<load_op>(ld));
+		JLM_ASSERT(is<load_op>(ld));
 
 		/*
 			FIXME: This function returns the corresponding state input for a state output of a load
@@ -395,7 +395,7 @@ perform_load_load_state_reduction(
 	std::function<jive::output*(size_t, jive::output*, std::vector<std::vector<jive::output*>>&)>
 	reduce_state = [&](size_t index, jive::output * operand, auto & mxstates)
 	{
-		JLM_DEBUG_ASSERT(jive::is<jive::statetype>(operand->type()));
+		JLM_ASSERT(jive::is<jive::statetype>(operand->type()));
 
 		if (!is<load_op>(jive::node_output::node(operand)))
 			return operand;
@@ -441,7 +441,7 @@ load_normal_form::load_normal_form(
 bool
 load_normal_form::normalize_node(jive::node * node) const
 {
-	JLM_DEBUG_ASSERT(is<load_op>(node->operation()));
+	JLM_ASSERT(is<load_op>(node->operation()));
 	auto op = static_cast<const jlm::load_op*>(&node->operation());
 	auto operands = jive::operands(node);
 
@@ -499,7 +499,7 @@ load_normal_form::normalized_create(
 	const jive::simple_op & op,
 	const std::vector<jive::output*> & operands) const
 {
-	JLM_DEBUG_ASSERT(is<load_op>(op));
+	JLM_ASSERT(is<load_op>(op));
 	auto lop = static_cast<const jlm::load_op*>(&op);
 
 	if (!get_mutable())

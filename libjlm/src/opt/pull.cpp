@@ -105,7 +105,7 @@ pullin_node(jive::gamma_node * gamma, jive::node * node)
 		/* redirect outputs */
 		for (size_t o = 0; o < node->noutputs(); o++) {
 			for (const auto & user : *node->output(o)) {
-				JLM_DEBUG_ASSERT(dynamic_cast<jive::structural_input*>(user));
+				JLM_ASSERT(dynamic_cast<jive::structural_input*>(user));
 				auto sinput = static_cast<jive::structural_input*>(user);
 				auto argument = gamma->subregion(r)->argument(sinput->index()-1);
 				argument->divert_users(copy->output(o));
@@ -117,7 +117,7 @@ pullin_node(jive::gamma_node * gamma, jive::node * node)
 static void
 cleanup(jive::gamma_node * gamma, jive::node * node)
 {
-	JLM_DEBUG_ASSERT(single_successor(node));
+	JLM_ASSERT(single_successor(node));
 
 	/* remove entry variables and node */
 	for (size_t n = 0; n < node->noutputs(); n++) {
@@ -204,13 +204,13 @@ pullin_bottom(jive::gamma_node * gamma)
 static size_t
 is_used_in_nsubregions(const jive::gamma_node * gamma, const jive::node * node)
 {
-	JLM_DEBUG_ASSERT(single_successor(node));
+	JLM_ASSERT(single_successor(node));
 
 	/* collect all gamma inputs */
 	std::unordered_set<const jive::gamma_input*> inputs;
 	for (size_t n = 0; n < node->noutputs(); n++) {
 		for (const auto & user : *(node->output(n))) {
-			JLM_DEBUG_ASSERT(is_gamma_input(user));
+			JLM_ASSERT(is_gamma_input(user));
 			inputs.insert(static_cast<const jive::gamma_input*>(user));
 		}
 	}

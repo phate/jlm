@@ -80,7 +80,7 @@ cfg::remove_node(basic_block * bb)
 std::vector<cfg_node*>
 postorder(const jlm::cfg & cfg)
 {
-	JLM_DEBUG_ASSERT(is_closed(cfg));
+	JLM_ASSERT(is_closed(cfg));
 
 	std::function<void(
 		cfg_node*,

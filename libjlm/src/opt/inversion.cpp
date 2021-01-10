@@ -93,7 +93,7 @@ pullin(jive::gamma_node * gamma, jive::theta_node * theta)
 	for (const auto & lv : *theta)	{
 		if (jive::node_output::node(lv->result()->origin()) != gamma) {
 			auto ev = gamma->add_entryvar(lv->result()->origin());
-			JLM_DEBUG_ASSERT(ev->narguments() == 2);
+			JLM_ASSERT(ev->narguments() == 2);
 			auto xv = gamma->add_exitvar({ev->argument(0), ev->argument(1)});
 			lv->result()->divert_to(xv);
 		}
@@ -106,9 +106,9 @@ collect_condition_nodes(
 	jive::structural_node * tnode,
 	jive::structural_node * gnode)
 {
-	JLM_DEBUG_ASSERT(jive::is<jive::theta_op>(tnode));
-	JLM_DEBUG_ASSERT(jive::is<jive::gamma_op>(gnode));
-	JLM_DEBUG_ASSERT(gnode->region()->node() == tnode);
+	JLM_ASSERT(jive::is<jive::theta_op>(tnode));
+	JLM_ASSERT(jive::is<jive::gamma_op>(gnode));
+	JLM_ASSERT(gnode->region()->node() == tnode);
 
 	std::vector<std::vector<jive::node*>> nodes;
 	for (auto & node : tnode->subregion(0)->nodes) {

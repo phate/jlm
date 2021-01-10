@@ -60,7 +60,7 @@ LIBJLM_SRC = \
 	libjlm/src/util/stats.cpp \
 
 .PHONY: libjlm-debug
-libjlm-debug: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG
+libjlm-debug: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG -DJLM_ENABLE_ASSERTS
 libjlm-debug: $(JLM_ROOT)/libjlm.a
 
 .PHONY: libjlm-release

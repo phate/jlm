@@ -23,7 +23,7 @@ to_str(const optlvl & ol)
 	, {optlvl::O2, "O2"}, {optlvl::O3, "O3"}
 	});
 
-	JLM_DEBUG_ASSERT(map.find(ol) != map.end());
+	JLM_ASSERT(map.find(ol) != map.end());
 	return map[ol];
 }
 
@@ -37,7 +37,7 @@ to_str(const standard & std)
 	, {standard::cpp11, "c++11"}, {standard::cpp14, "c++14"}
 	});
 
-	JLM_DEBUG_ASSERT(map.find(std) != map.end());
+	JLM_ASSERT(map.find(std) != map.end());
 	return map[std];
 }
 
@@ -214,7 +214,7 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 
 	if (!ofilepath.empty()) {
 		if (no_linking) {
-			JLM_DEBUG_ASSERT(options.compilations.size() == 1);
+			JLM_ASSERT(options.compilations.size() == 1);
 			options.compilations[0].set_ofile(ofilepath);
 		} else {
 			options.lnkofile = jlm::filepath(ofilepath);

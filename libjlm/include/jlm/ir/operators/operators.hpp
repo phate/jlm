@@ -66,7 +66,7 @@ public:
 	inline cfg_node *
 	node(size_t n) const noexcept
 	{
-		JLM_DEBUG_ASSERT(n < narguments());
+		JLM_ASSERT(n < narguments());
 		return nodes_[n];
 	}
 
@@ -2363,7 +2363,7 @@ public:
 	const jive::fcttype
 	fcttype() const
 	{
-		JLM_DEBUG_ASSERT(narguments() == 1 && nresults() == 2);
+		JLM_ASSERT(narguments() == 1 && nresults() == 2);
 		return jive::fcttype({&argument(0).type()}, {&result(0).type(), &result(1).type()});
 	}
 

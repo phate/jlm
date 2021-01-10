@@ -128,7 +128,7 @@ public:
 	inline void
 	remove_outedge(size_t n)
 	{
-		JLM_DEBUG_ASSERT(n < noutedges());
+		JLM_ASSERT(n < noutedges());
 		auto edge = outedges_[n].get();
 
 		edge->sink()->inedges_.erase(edge);
@@ -149,7 +149,7 @@ public:
 	inline cfg_edge *
 	outedge(size_t n) const
 	{
-		JLM_DEBUG_ASSERT(n < noutedges());
+		JLM_ASSERT(n < noutedges());
 		return outedges_[n].get();
 	}
 

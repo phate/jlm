@@ -5,7 +5,7 @@ JLMPRINT_SRC = \
 	jlm-print/jlm-print.cpp \
  
 .PHONY: jlm-print-debug
-jlm-print-debug: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG
+jlm-print-debug: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG -DJLM_ENABLE_ASSERTS
 jlm-print-debug: jive-debug $(JLM_ROOT)/libjlm.a $(JLM_ROOT)/bin/jlm-print
 
 .PHONY: jlm-print-release

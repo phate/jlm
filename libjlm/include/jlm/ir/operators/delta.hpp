@@ -80,7 +80,7 @@ public:
 	const ptrtype &
 	type() const noexcept
 	{
-		JLM_DEBUG_ASSERT(dynamic_cast<const ptrtype*>(type_.get()));
+		JLM_ASSERT(dynamic_cast<const ptrtype*>(type_.get()));
 		return *static_cast<const ptrtype*>(type_.get());
 	}
 
@@ -182,7 +182,7 @@ private:
 		jive::structural_input &
 		operator*() const noexcept
 		{
-			JLM_DEBUG_ASSERT(input_ != nullptr);
+			JLM_ASSERT(input_ != nullptr);
 			return *input_;
 		}
 

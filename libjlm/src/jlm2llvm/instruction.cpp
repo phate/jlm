@@ -37,7 +37,7 @@ convert_assignment(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<assignment_op>(op));
+	JLM_ASSERT(is<assignment_op>(op));
 	return ctx.value(args[0]);
 }
 
@@ -48,7 +48,7 @@ convert_bitsbinary(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::bitbinary_op*>(&op));
+	JLM_ASSERT(dynamic_cast<const jive::bitbinary_op*>(&op));
 
 	static std::unordered_map<std::type_index, llvm::Instruction::BinaryOps> map({
 	  {typeid(jive::bitadd_op), llvm::Instruction::Add}
@@ -68,7 +68,7 @@ convert_bitsbinary(
 
 	auto op1 = ctx.value(args[0]);
 	auto op2 = ctx.value(args[1]);
-	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
+	JLM_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
 	return builder.CreateBinOp(map[std::type_index(typeid(op))], op1, op2);
 }
 
@@ -79,7 +79,7 @@ convert_bitscompare(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::bitcompare_op*>(&op));
+	JLM_ASSERT(dynamic_cast<const jive::bitcompare_op*>(&op));
 
 	static std::unordered_map<std::type_index, llvm::CmpInst::Predicate> map({
 	  {typeid(jive::biteq_op), llvm::CmpInst::ICMP_EQ}
@@ -96,14 +96,14 @@ convert_bitscompare(
 
 	auto op1 = ctx.value(args[0]);
 	auto op2 = ctx.value(args[1]);
-	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
+	JLM_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
 	return builder.CreateICmp(map[std::type_index(typeid(op))], op1, op2);
 }
 
 static llvm::APInt
 convert_bitvalue_repr(const jive::bitvalue_repr & vr)
 {
-	JLM_DEBUG_ASSERT(vr.is_defined());
+	JLM_ASSERT(vr.is_defined());
 
 	std::string str = vr.str();
 	std::reverse(str.begin(), str.end());
@@ -118,7 +118,7 @@ convert_bitconstant(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::bitconstant_op*>(&op));
+	JLM_ASSERT(dynamic_cast<const jive::bitconstant_op*>(&op));
 	auto value = static_cast<const jive::bitconstant_op*>(&op)->value();
 
 	auto type = llvm::IntegerType::get(builder.getContext(), value.nbits());
@@ -136,7 +136,7 @@ convert_ctlconstant(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_ctlconstant_op(op));
+	JLM_ASSERT(is_ctlconstant_op(op));
 	auto & cop = *static_cast<const jive::ctlconstant_op*>(&op);
 
 	size_t nbits = cop.value().nalternatives() == 2 ? 1 : 32;
@@ -151,7 +151,7 @@ convert_fpconstant(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<fpconstant_op>(op));
+	JLM_ASSERT(is<fpconstant_op>(op));
 	auto & cop = *static_cast<const jlm::fpconstant_op*>(&op);
 
 	return llvm::ConstantFP::get(builder.getContext(), cop.constant());
@@ -164,7 +164,7 @@ convert_undef(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<undef_constant_op>(op));
+	JLM_ASSERT(is<undef_constant_op>(op));
 	return llvm::UndefValue::get(convert_type(op.result(0).type(), ctx));
 }
 
@@ -175,7 +175,7 @@ convert_call(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<call_op>(op));
+	JLM_ASSERT(is<call_op>(op));
 
 	auto function = ctx.value(args[0]);
 
@@ -191,9 +191,9 @@ convert_call(
 			continue;
 
 		if (jive::is<varargtype>(argument->type())) {
-			JLM_DEBUG_ASSERT(is<tacvariable>(argument));
+			JLM_ASSERT(is<tacvariable>(argument));
 			auto valist = dynamic_cast<const jlm::tacvariable*>(argument)->tac();
-			JLM_DEBUG_ASSERT(is<valist_op>(valist->operation()));
+			JLM_ASSERT(is<valist_op>(valist->operation()));
 			for (size_t n = 0; n < valist->noperands(); n++)
 				operands.push_back(ctx.value(valist->operand(n)));
 			continue;
@@ -223,7 +223,7 @@ convert_match(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<jive::match_op>(op));
+	JLM_ASSERT(is<jive::match_op>(op));
 	auto mop = static_cast<const jive::match_op*>(&op);
 
 	if (is_identity_mapping(*mop))
@@ -247,7 +247,7 @@ convert_branch(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<branch_op>(op));
+	JLM_ASSERT(is<branch_op>(op));
 	return nullptr;
 }
 
@@ -258,7 +258,7 @@ convert_phi(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<phi_op>(op));
+	JLM_ASSERT(is<phi_op>(op));
 	auto & phi = *static_cast<const jlm::phi_op*>(&op);
 
 	if (jive::is<iostatetype>(phi.type()))
@@ -279,7 +279,7 @@ convert_load(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<load_op>(op));
+	JLM_ASSERT(is<load_op>(op));
 	auto load = static_cast<const load_op*>(&op);
 
 	auto i = builder.CreateLoad(ctx.value(args[0]));
@@ -294,7 +294,7 @@ convert_store(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<store_op>(op) && args.size() >= 2);
+	JLM_ASSERT(is<store_op>(op) && args.size() >= 2);
 	auto store = static_cast<const store_op*>(&op);
 
 	auto i = builder.CreateStore(ctx.value(args[1]), ctx.value(args[0]));
@@ -309,7 +309,7 @@ convert_alloca(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<alloca_op>(op));
+	JLM_ASSERT(is<alloca_op>(op));
 	auto & aop = *static_cast<const jlm::alloca_op*>(&op);
 
 	auto t = convert_type(aop.value_type(), ctx);
@@ -325,7 +325,7 @@ convert_getelementptr(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<getelementptr_op>(op) && args.size() >= 2);
+	JLM_ASSERT(is<getelementptr_op>(op) && args.size() >= 2);
 	auto & pop = *static_cast<const getelementptr_op*>(&op);
 
 	std::vector<llvm::Value*> indices;
@@ -344,7 +344,7 @@ get_bitdata(
 	std::vector<T> data;
 	for (size_t n = 0; n < args.size(); n++) {
 		auto c = llvm::dyn_cast<const llvm::ConstantInt>(ctx.value(args[n]));
-		JLM_DEBUG_ASSERT(c);
+		JLM_ASSERT(c);
 		data.push_back(c->getZExtValue());
 	}
 
@@ -359,7 +359,7 @@ get_fpdata(
 	std::vector<T> data;
 	for (size_t n = 0; n < args.size(); n++) {
 		auto c = llvm::dyn_cast<const llvm::ConstantFP>(ctx.value(args[n]));
-		JLM_DEBUG_ASSERT(c);
+		JLM_ASSERT(c);
 		data.push_back(c->getValueAPF().bitcastToAPInt().getZExtValue());
 	}
 
@@ -373,7 +373,7 @@ convert_data_array_constant(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<data_array_constant_op>(op));
+	JLM_ASSERT(is<data_array_constant_op>(op));
 	auto & cop = *static_cast<const data_array_constant_op*>(&op);
 
 	if (auto bt = dynamic_cast<const jive::bittype*>(&cop.type())) {
@@ -415,12 +415,12 @@ convert_constant_array(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<constant_array_op>(op));
+	JLM_ASSERT(is<constant_array_op>(op));
 
 	std::vector<llvm::Constant*> data;
 	for (size_t n = 0; n < args.size(); n++) {
 		auto c = llvm::dyn_cast<llvm::Constant>(ctx.value(args[n]));
-		JLM_DEBUG_ASSERT(c);
+		JLM_ASSERT(c);
 		data.push_back(c);
 	}
 
@@ -436,7 +436,7 @@ convert_constant_aggregate_zero(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<constant_aggregate_zero_op>(op));
+	JLM_ASSERT(is<constant_aggregate_zero_op>(op));
 	auto type = convert_type(op.result(0).type(), ctx);
 	return llvm::ConstantAggregateZero::get(type);
 }
@@ -448,7 +448,7 @@ convert_ptrcmp(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<ptrcmp_op>(op));
+	JLM_ASSERT(is<ptrcmp_op>(op));
 	auto & pop = *static_cast<const ptrcmp_op*>(&op);
 
 	static std::unordered_map<jlm::cmp, llvm::CmpInst::Predicate> map({
@@ -459,7 +459,7 @@ convert_ptrcmp(
 
 	auto op1 = ctx.value(args[0]);
 	auto op2 = ctx.value(args[1]);
-	JLM_DEBUG_ASSERT(map.find(pop.cmp()) != map.end());
+	JLM_ASSERT(map.find(pop.cmp()) != map.end());
 	return builder.CreateICmp(map[pop.cmp()], op1, op2);
 }
 
@@ -470,7 +470,7 @@ convert_fpcmp(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<fpcmp_op>(op));
+	JLM_ASSERT(is<fpcmp_op>(op));
 	auto & fpcmp = *static_cast<const jlm::fpcmp_op*>(&op);
 
 	static std::unordered_map<jlm::fpcmp, llvm::CmpInst::Predicate> map({
@@ -486,7 +486,7 @@ convert_fpcmp(
 
 	auto op1 = ctx.value(args[0]);
 	auto op2 = ctx.value(args[1]);
-	JLM_DEBUG_ASSERT(map.find(fpcmp.cmp()) != map.end());
+	JLM_ASSERT(map.find(fpcmp.cmp()) != map.end());
 	return builder.CreateFCmp(map[fpcmp.cmp()], op1, op2);
 }
 
@@ -497,7 +497,7 @@ convert_fpbin(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<fpbin_op>(op));
+	JLM_ASSERT(is<fpbin_op>(op));
 	auto & fpbin = *static_cast<const jlm::fpbin_op*>(&op);
 
 	static std::unordered_map<jlm::fpop, llvm::Instruction::BinaryOps> map({
@@ -508,7 +508,7 @@ convert_fpbin(
 
 	auto op1 = ctx.value(args[0]);
 	auto op2 = ctx.value(args[1]);
-	JLM_DEBUG_ASSERT(map.find(fpbin.fpop()) != map.end());
+	JLM_ASSERT(map.find(fpbin.fpop()) != map.end());
 	return builder.CreateBinOp(map[fpbin.fpop()], op1, op2);
 }
 
@@ -519,7 +519,7 @@ convert_fpneg(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<fpneg_op>(op));
+	JLM_ASSERT(is<fpneg_op>(op));
 	auto operand = ctx.value(args[0]);
 	return builder.CreateUnOp(llvm::Instruction::FNeg, operand);
 }
@@ -531,7 +531,7 @@ convert_valist(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<valist_op>(op));
+	JLM_ASSERT(is<valist_op>(op));
 	return nullptr;
 }
 
@@ -542,7 +542,7 @@ convert_struct_constant(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<struct_constant_op>(op));
+	JLM_ASSERT(is<struct_constant_op>(op));
 	auto & cop = *static_cast<const jlm::struct_constant_op*>(&op);
 
 	std::vector<llvm::Constant*> operands;
@@ -560,7 +560,7 @@ convert_ptr_constant_null(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<ptr_constant_null_op>(op));
+	JLM_ASSERT(is<ptr_constant_null_op>(op));
 
 	auto type = static_cast<const jlm::ptrtype*>(&op.result(0).type());
 	return llvm::ConstantPointerNull::get(convert_type(*type, ctx));
@@ -573,7 +573,7 @@ convert_select(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<select_op>(op));
+	JLM_ASSERT(is<select_op>(op));
 	auto & select = *static_cast<const jlm::select_op*>(&op);
 
 	if (jive::is<jive::statetype>(select.type()))
@@ -592,7 +592,7 @@ convert_ctl2bits(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<ctl2bits_op>(op));
+	JLM_ASSERT(is<ctl2bits_op>(op));
 	return ctx.value(args[0]);
 }
 
@@ -603,7 +603,7 @@ convert_constantvector(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<constantvector_op>(op));
+	JLM_ASSERT(is<constantvector_op>(op));
 
 	std::vector<llvm::Constant*> ops;
 	for (const auto & operand: operands)
@@ -619,7 +619,7 @@ convert_constantdatavector(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<constant_data_vector_op>(op));
+	JLM_ASSERT(is<constant_data_vector_op>(op));
 	auto & cop = *static_cast<const constant_data_vector_op*>(&op);
 
 	if (auto bt = dynamic_cast<const jive::bittype*>(&cop.type())) {
@@ -661,7 +661,7 @@ convert_extractelement(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<extractelement_op>(op));
+	JLM_ASSERT(is<extractelement_op>(op));
 	return builder.CreateExtractElement(ctx.value(args[0]), ctx.value(args[1]));
 }
 
@@ -672,7 +672,7 @@ convert_shufflevector(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<shufflevector_op>(op));
+	JLM_ASSERT(is<shufflevector_op>(op));
 
 	auto v1 = ctx.value(operands[0]);
 	auto v2 = ctx.value(operands[1]);
@@ -687,7 +687,7 @@ convert_insertelement(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<insertelement_op>(op));
+	JLM_ASSERT(is<insertelement_op>(op));
 
 	auto vector = ctx.value(operands[0]);
 	auto value = ctx.value(operands[1]);
@@ -702,7 +702,7 @@ convert_vectorunary(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<vectorunary_op>(op));
+	JLM_ASSERT(is<vectorunary_op>(op));
 	auto vop = static_cast<const vectorunary_op*>(&op);
 	return convert_operation(vop->operation(), operands, builder, ctx);
 }
@@ -714,7 +714,7 @@ convert_vectorbinary(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<vectorbinary_op>(op));
+	JLM_ASSERT(is<vectorbinary_op>(op));
 	auto vop = static_cast<const vectorbinary_op*>(&op);
 	return convert_operation(vop->operation(), operands, builder, ctx);
 }
@@ -739,7 +739,7 @@ convert_cast(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(llvm::Instruction::isCast(OPCODE));
+	JLM_ASSERT(llvm::Instruction::isCast(OPCODE));
 	auto & dsttype = *static_cast<const jive::valuetype*>(&op.result(0).type());
 	auto operand = operands[0];
 
@@ -770,7 +770,7 @@ convert(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(args.size() == 1);
+	JLM_ASSERT(args.size() == 1);
 	auto & lm = ctx.llvm_module();
 
 	auto fcttype = convert_type(op.fcttype(), ctx);
@@ -796,7 +796,7 @@ convert(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<OP>(op));
+	JLM_ASSERT(is<OP>(op));
 	return convert(*static_cast<const OP*>(&op), operands, builder, ctx);
 }
 
@@ -877,7 +877,7 @@ convert_operation(
 	, {typeid(memstatemux_op), convert<memstatemux_op>}
 	});
 
-	JLM_DEBUG_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
+	JLM_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
 	return map[std::type_index(typeid(op))](op, arguments, builder, ctx);
 }
 
@@ -902,7 +902,7 @@ convert_tacs(const tacsvector_t & tacs, context & ctx)
 		for (size_t n = 0; n < tac->noperands(); n++)
 			operands.push_back(tac->operand(n));
 
-		JLM_DEBUG_ASSERT(tac->nresults() == 1);
+		JLM_ASSERT(tac->nresults() == 1);
 		auto r = convert_operation(tac->operation(), operands, builder, ctx);
 		ctx.insert(tac->result(0), r);
 	}

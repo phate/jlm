@@ -33,7 +33,7 @@ emit_tacs(const tacsvector_t & tacs)
 static inline std::string
 emit_entry(const jlm::cfg_node * node)
 {
-	JLM_DEBUG_ASSERT(is<entry_node>(node));
+	JLM_ASSERT(is<entry_node>(node));
 	auto & en = *static_cast<const jlm::entry_node*>(node);
 
 	std::string str;
@@ -46,7 +46,7 @@ emit_entry(const jlm::cfg_node * node)
 static inline std::string
 emit_exit(const jlm::cfg_node * node)
 {
-	JLM_DEBUG_ASSERT(is<exit_node>(node));
+	JLM_ASSERT(is<exit_node>(node));
 	auto & xn = *static_cast<const jlm::exit_node*>(node);
 
 	std::string str;
@@ -103,7 +103,7 @@ emit_targets(const jlm::cfg_node * node)
 static inline std::string
 emit_basic_block(const jlm::cfg_node * node)
 {
-	JLM_DEBUG_ASSERT(is<basic_block>(node));
+	JLM_ASSERT(is<basic_block>(node));
 	auto & tacs = static_cast<const basic_block*>(node)->tacs();
 
 	std::string str;
@@ -141,7 +141,7 @@ to_str(const jlm::cfg & cfg)
 		str += emit_label(node) + ":";
 		str += (is<basic_block>(node) ? "\n" : " ");
 
-		JLM_DEBUG_ASSERT(map.find(typeid(*node)) != map.end());
+		JLM_ASSERT(map.find(typeid(*node)) != map.end());
 		str += map[typeid(*node)](node) + "\n";
 	}
 
@@ -151,7 +151,7 @@ to_str(const jlm::cfg & cfg)
 static std::string
 emit_function_node(const jlm::ipgraph_node & clg_node)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const function_node*>(&clg_node));
+	JLM_ASSERT(dynamic_cast<const function_node*>(&clg_node));
 	auto & node = *static_cast<const function_node*>(&clg_node);
 
 	const auto & fcttype = node.fcttype();
@@ -183,7 +183,7 @@ emit_function_node(const jlm::ipgraph_node & clg_node)
 static std::string
 emit_data_node(const jlm::ipgraph_node & clg_node)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const data_node*>(&clg_node));
+	JLM_ASSERT(dynamic_cast<const data_node*>(&clg_node));
 	auto & node = *static_cast<const data_node*>(&clg_node);
 	auto init = node.initialization();
 
@@ -207,7 +207,7 @@ to_str(const jlm::ipgraph & clg)
 
 	std::string str;
 	for (const auto & node : clg) {
-		JLM_DEBUG_ASSERT(map.find(typeid(node)) != map.end());
+		JLM_ASSERT(map.find(typeid(node)) != map.end());
 		str += map[typeid(node)](node) + "\n";
 	}
 
@@ -219,7 +219,7 @@ to_str(const jlm::ipgraph & clg)
 static inline std::string
 emit_entry_dot(const jlm::cfg_node & node)
 {
-	JLM_DEBUG_ASSERT(is<entry_node>(&node));
+	JLM_ASSERT(is<entry_node>(&node));
 	auto en = static_cast<const jlm::entry_node*>(&node);
 
 	std::string str;
@@ -234,7 +234,7 @@ emit_entry_dot(const jlm::cfg_node & node)
 static inline std::string
 emit_exit_dot(const jlm::cfg_node & node)
 {
-	JLM_DEBUG_ASSERT(is<exit_node>(&node));
+	JLM_ASSERT(is<exit_node>(&node));
 	auto xn = static_cast<const jlm::exit_node*>(&node);
 
 	std::string str;
@@ -249,7 +249,7 @@ emit_exit_dot(const jlm::cfg_node & node)
 static inline std::string
 emit_basic_block(const cfg_node & node)
 {
-	JLM_DEBUG_ASSERT(is<basic_block>(&node));
+	JLM_ASSERT(is<basic_block>(&node));
 	auto & tacs = static_cast<const basic_block*>(&node)->tacs();
 
 	std::string str;
@@ -281,7 +281,7 @@ emit_node(const jlm::cfg_node & node)
 	, {typeid(basic_block), emit_basic_block}
 	});
 
-	JLM_DEBUG_ASSERT(map.find(typeid(node)) != map.end());
+	JLM_ASSERT(map.find(typeid(node)) != map.end());
 	std::string body = map[typeid(node)](node);
 
 	return emit_header(node) + "\\n" + body;

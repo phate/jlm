@@ -99,7 +99,7 @@ public:
 	basic_block(const jlm::cfg_node * node) const noexcept
 	{
 		auto it = nodes_.find(node);
-		JLM_DEBUG_ASSERT(it != nodes_.end());
+		JLM_ASSERT(it != nodes_.end());
 		return it->second;
 	}
 
@@ -107,7 +107,7 @@ public:
 	value(const jlm::variable * variable) const noexcept
 	{
 		auto it = variables_.find(variable);
-		JLM_DEBUG_ASSERT(it != variables_.end());
+		JLM_ASSERT(it != variables_.end());
 		return it->second;
 	}
 
@@ -123,7 +123,7 @@ public:
 		const jive::rcddeclaration * dcl,
 		llvm::StructType * type)
 	{
-		JLM_DEBUG_ASSERT(structtypes_.find(dcl) == structtypes_.end());
+		JLM_ASSERT(structtypes_.find(dcl) == structtypes_.end());
 		structtypes_[dcl] = type;
 	}
 

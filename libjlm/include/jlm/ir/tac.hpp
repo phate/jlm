@@ -54,7 +54,7 @@ public:
 	inline void
 	set_tac(jlm::tac * tac) noexcept
 	{
-		JLM_DEBUG_ASSERT(tac_ == nullptr);
+		JLM_ASSERT(tac_ == nullptr);
 		tac_ = tac;
 	}
 
@@ -113,7 +113,7 @@ public:
 	inline const variable *
 	operand(size_t index) const noexcept
 	{
-		JLM_DEBUG_ASSERT(index < operands_.size());
+		JLM_ASSERT(index < operands_.size());
 		return operands_[index];
 	}
 
@@ -126,7 +126,7 @@ public:
 	inline const variable *
 	result(size_t index) const noexcept
 	{
-		JLM_DEBUG_ASSERT(index < results_.size());
+		JLM_ASSERT(index < results_.size());
 		return results_[index];
 	}
 

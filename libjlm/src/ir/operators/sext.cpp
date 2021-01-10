@@ -39,7 +39,7 @@ is_inverse_reducible(const sext_op & op, const jive::output * operand)
 static jive::output *
 perform_bitunary_reduction(const sext_op & op, jive::output * operand)
 {
-	JLM_DEBUG_ASSERT(is_bitunary_reducible(operand));
+	JLM_ASSERT(is_bitunary_reducible(operand));
 	auto unary = jive::node_output::node(operand);
 	auto region = operand->region();
 	auto uop = static_cast<const jive::bitunary_op*>(&unary->operation());
@@ -51,12 +51,12 @@ perform_bitunary_reduction(const sext_op & op, jive::output * operand)
 static jive::output *
 perform_bitbinary_reduction(const sext_op & op, jive::output * operand)
 {
-	JLM_DEBUG_ASSERT(is_bitbinary_reducible(operand));
+	JLM_ASSERT(is_bitbinary_reducible(operand));
 	auto binary = jive::node_output::node(operand);
 	auto region = operand->region();
 	auto bop = static_cast<const jive::bitbinary_op*>(&binary->operation());
 
-	JLM_DEBUG_ASSERT(binary->ninputs() == 2);
+	JLM_ASSERT(binary->ninputs() == 2);
 	auto op1 = create_sext(op.ndstbits(), binary->input(0)->origin());
 	auto op2 = create_sext(op.ndstbits(), binary->input(1)->origin());
 
@@ -66,7 +66,7 @@ perform_bitbinary_reduction(const sext_op & op, jive::output * operand)
 static jive::output *
 perform_inverse_reduction(const sext_op & op, jive::output * operand)
 {
-	JLM_DEBUG_ASSERT(is_inverse_reducible(op, operand));
+	JLM_ASSERT(is_inverse_reducible(op, operand));
 	return jive::node_output::node(operand)->input(0)->origin();
 }
 

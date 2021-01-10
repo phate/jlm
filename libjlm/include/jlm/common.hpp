@@ -11,12 +11,10 @@
 #include <iostream>
 #include <stdexcept>
 
-#define JLM_ASSERT(x) assert(x)
-
-#ifdef JLM_DEBUG
-#	define JLM_DEBUG_ASSERT(x) assert(x)
+#ifdef JLM_ENABLE_ASSERTS
+#	define JLM_ASSERT(x) assert(x)
 #else
-#	define JLM_DEBUG_ASSERT(x) (void)(x)
+#	define JLM_ASSERT(x) (void)(x)
 #endif
 
 #define JLM_NORETURN __attribute__((noreturn))

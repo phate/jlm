@@ -47,22 +47,22 @@ public:
 	inline basic_block *
 	get(const llvm::BasicBlock * bb) const noexcept
 	{
-		JLM_DEBUG_ASSERT(has(bb));
+		JLM_ASSERT(has(bb));
 		return llvm2jlm_.find(bb)->second;
 	}
 
 	inline const llvm::BasicBlock *
 	get(const basic_block * bb) const noexcept
 	{
-		JLM_DEBUG_ASSERT(has(bb));
+		JLM_ASSERT(has(bb));
 		return jlm2llvm_.find(bb)->second;
 	}
 
 	inline void
 	insert(const llvm::BasicBlock * bb1, basic_block * bb2)
 	{
-		JLM_DEBUG_ASSERT(!has(bb1));
-		JLM_DEBUG_ASSERT(!has(bb2));
+		JLM_ASSERT(!has(bb1));
+		JLM_ASSERT(!has(bb2));
 		llvm2jlm_[bb1] = bb2;
 		jlm2llvm_[bb2] = bb1;
 	}
@@ -182,14 +182,14 @@ public:
 	inline const jlm::variable *
 	lookup_value(const llvm::Value * value) const noexcept
 	{
-		JLM_DEBUG_ASSERT(has_value(value));
+		JLM_ASSERT(has_value(value));
 		return vmap_.find(value)->second;
 	}
 
 	inline void
 	insert_value(const llvm::Value * value, const jlm::variable * variable)
 	{
-		JLM_DEBUG_ASSERT(!has_value(value));
+		JLM_ASSERT(!has_value(value));
 		vmap_[value] = variable;
 	}
 

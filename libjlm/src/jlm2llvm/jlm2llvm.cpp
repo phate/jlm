@@ -60,8 +60,8 @@ has_return_value(const jlm::cfg & cfg)
 static void
 create_return(const cfg_node * node, context & ctx)
 {
-	JLM_DEBUG_ASSERT(node->noutedges() == 1);
-	JLM_DEBUG_ASSERT(node->outedge(0)->sink() == node->cfg().exit());
+	JLM_ASSERT(node->noutedges() == 1);
+	JLM_ASSERT(node->outedge(0)->sink() == node->cfg().exit());
 	llvm::IRBuilder<> builder(ctx.basic_block(node));
 	auto & cfg = node->cfg();
 
@@ -72,15 +72,15 @@ create_return(const cfg_node * node, context & ctx)
 	}
 
 	auto result = cfg.exit()->result(0);
-	JLM_DEBUG_ASSERT(jive::is<jive::valuetype>(result->type()));
+	JLM_ASSERT(jive::is<jive::valuetype>(result->type()));
 	builder.CreateRet(ctx.value(result));
 }
 
 static void
 create_unconditional_branch(const cfg_node * node, context & ctx)
 {
-	JLM_DEBUG_ASSERT(node->noutedges() == 1);
-	JLM_DEBUG_ASSERT(node->outedge(0)->sink() != node->cfg().exit());
+	JLM_ASSERT(node->noutedges() == 1);
+	JLM_ASSERT(node->outedge(0)->sink() != node->cfg().exit());
 	llvm::IRBuilder<> builder(ctx.basic_block(node));
 	auto target = node->outedge(0)->sink();
 
@@ -90,14 +90,14 @@ create_unconditional_branch(const cfg_node * node, context & ctx)
 static void
 create_conditional_branch(const cfg_node * node, context & ctx)
 {
-	JLM_DEBUG_ASSERT(node->noutedges() == 2);
-	JLM_DEBUG_ASSERT(node->outedge(0)->sink() != node->cfg().exit());
-	JLM_DEBUG_ASSERT(node->outedge(1)->sink() != node->cfg().exit());
+	JLM_ASSERT(node->noutedges() == 2);
+	JLM_ASSERT(node->outedge(0)->sink() != node->cfg().exit());
+	JLM_ASSERT(node->outedge(1)->sink() != node->cfg().exit());
 	llvm::IRBuilder<> builder(ctx.basic_block(node));
 
 	auto branch = static_cast<const basic_block*>(node)->tacs().last();
-	JLM_DEBUG_ASSERT(branch && is<branch_op>(branch));
-	JLM_DEBUG_ASSERT(ctx.value(branch->operand(0))->getType()->isIntegerTy(1));
+	JLM_ASSERT(branch && is<branch_op>(branch));
+	JLM_ASSERT(ctx.value(branch->operand(0))->getType()->isIntegerTy(1));
 
 	auto condition = ctx.value(branch->operand(0));
 	auto bbfalse = ctx.basic_block(node->outedge(0)->sink());
@@ -108,17 +108,17 @@ create_conditional_branch(const cfg_node * node, context & ctx)
 static void
 create_switch(const cfg_node * node, context & ctx)
 {
-	JLM_DEBUG_ASSERT(node->noutedges() >= 2);
+	JLM_ASSERT(node->noutedges() >= 2);
 	auto bb = static_cast<const basic_block*>(node);
 	llvm::IRBuilder<> builder(ctx.basic_block(node));
 
 	auto branch = bb->tacs().last();
-	JLM_DEBUG_ASSERT(branch && is<branch_op>(branch));
+	JLM_ASSERT(branch && is<branch_op>(branch));
 	auto condition = ctx.value(branch->operand(0));
 	auto match = find_match_tac(&bb->tacs());
 
 	if (match) {
-		JLM_DEBUG_ASSERT(match->result(0) == branch->operand(0));
+		JLM_ASSERT(match->result(0) == branch->operand(0));
 		auto mop = static_cast<const jive::match_op*>(&match->operation());
 
 		auto defbb = ctx.basic_block(node->outedge(mop->default_alternative())->sink());
@@ -141,7 +141,7 @@ create_switch(const cfg_node * node, context & ctx)
 static void
 create_terminator_instruction(const jlm::cfg_node * node, context & ctx)
 {
-	JLM_DEBUG_ASSERT(is<basic_block>(node));
+	JLM_ASSERT(is<basic_block>(node));
 	auto & tacs = static_cast<const basic_block*>(node)->tacs();
 	auto & cfg = node->cfg();
 
@@ -155,7 +155,7 @@ create_terminator_instruction(const jlm::cfg_node * node, context & ctx)
 	}
 
 	auto branch = tacs.last();
-	JLM_DEBUG_ASSERT(branch && is<branch_op>(branch));
+	JLM_ASSERT(branch && is<branch_op>(branch));
 
 	/* conditional branch */
 	if (ctx.value(branch->operand(0))->getType()->isIntegerTy(1))
@@ -237,7 +237,7 @@ convert_attribute_kind(const jlm::attribute::kind & kind)
 	, {attribute::kind::zext,                             ak::ZExt}
 	});
 
-	JLM_DEBUG_ASSERT(map.find(kind) != map.end());
+	JLM_ASSERT(map.find(kind) != map.end());
 	return map[kind];
 }
 
@@ -281,7 +281,7 @@ convert_attributes(const attributeset & as, context & ctx)
 static llvm::AttributeList
 convert_attributes(const jlm::function_node & f, context & ctx)
 {
-	JLM_DEBUG_ASSERT(f.cfg());
+	JLM_ASSERT(f.cfg());
 
 	auto & llvmctx = ctx.llvm_module().getContext();
 
@@ -307,7 +307,7 @@ convert_attributes(const jlm::function_node & f, context & ctx)
 static inline void
 convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 {
-	JLM_DEBUG_ASSERT(is_closed(cfg));
+	JLM_ASSERT(is_closed(cfg));
 
 	auto add_arguments = [](const jlm::cfg & cfg, llvm::Function & f, context & ctx)
 	{
@@ -337,7 +337,7 @@ convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 		if (node == cfg.entry() || node == cfg.exit())
 			continue;
 
-		JLM_DEBUG_ASSERT(is<basic_block>(node));
+		JLM_ASSERT(is<basic_block>(node));
 		auto & tacs = static_cast<const basic_block*>(node)->tacs();
 		for (const auto & tac : tacs)
 			convert_instruction(*tac, node, ctx);
@@ -356,7 +356,7 @@ convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 		if (node == cfg.entry() || node == cfg.exit())
 			continue;
 
-		JLM_DEBUG_ASSERT(is<basic_block>(node));
+		JLM_ASSERT(is<basic_block>(node));
 		auto & tacs = static_cast<const basic_block*>(node)->tacs();
 		for (const auto & tac : tacs) {
 			if (!is<phi_op>(tac->operation()))
@@ -369,7 +369,7 @@ convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 			if (jive::is<loopstatetype>(tac->result(0)->type()))
 				continue;
 
-			JLM_DEBUG_ASSERT(node->ninedges() == tac->noperands());
+			JLM_ASSERT(node->ninedges() == tac->noperands());
 			auto & op = *static_cast<const jlm::phi_op*>(&tac->operation());
 			auto phi = llvm::dyn_cast<llvm::PHINode>(ctx.value(tac->result(0)));
 			for (size_t n = 0; n < tac->noperands(); n++)
@@ -424,7 +424,7 @@ convert_linkage(const jlm::linkage & linkage)
 	, {jlm::linkage::common_linkage, llvm::GlobalValue::CommonLinkage}
 	});
 
-	JLM_DEBUG_ASSERT(map.find(linkage) != map.end());
+	JLM_ASSERT(map.find(linkage) != map.end());
 	return map[linkage];
 }
 
@@ -439,7 +439,7 @@ convert_ipgraph(const jlm::ipgraph & clg, context & ctx)
 		auto v = jm.variable(&node);
 
 		if (auto n = dynamic_cast<const data_node*>(&node)) {
-			JLM_DEBUG_ASSERT(jive::is<ptrtype>(n->type()));
+			JLM_ASSERT(jive::is<ptrtype>(n->type()));
 			auto pt = static_cast<const jlm::ptrtype*>(&n->type());
 			auto type = convert_type(pt->pointee_type(), ctx);
 

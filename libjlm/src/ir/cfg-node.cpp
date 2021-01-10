@@ -61,7 +61,7 @@ cfg_node::remove_inedges()
 {
 	while (inedges_.size() != 0) {
 		cfg_edge * edge = *inedges_.begin();
-		JLM_DEBUG_ASSERT(edge->sink() == this);
+		JLM_ASSERT(edge->sink() == this);
 		edge->source()->remove_outedge(edge->index());
 	}
 }
@@ -85,7 +85,7 @@ cfg_node::single_predecessor() const noexcept
 		return false;
 
 	for (auto i = inedges_.begin(); i != inedges_.end(); i++) {
-		JLM_DEBUG_ASSERT((*i)->sink() == this);
+		JLM_ASSERT((*i)->sink() == this);
 		if ((*i)->source() != (*inedges_.begin())->source())
 			return false;
 	}
@@ -106,7 +106,7 @@ cfg_node::single_successor() const noexcept
 		return false;
 
 	for (auto it = begin_outedges(); it != end_outedges(); it++) {
-		JLM_DEBUG_ASSERT(it->source() == this);
+		JLM_ASSERT(it->source() == this);
 		if (it->sink() != begin_outedges()->sink())
 			return false;
 	}

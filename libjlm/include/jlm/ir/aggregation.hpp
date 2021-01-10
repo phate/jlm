@@ -174,7 +174,7 @@ public:
 	inline aggnode *
 	child(size_t n) const noexcept
 	{
-		JLM_DEBUG_ASSERT(n < nchildren());
+		JLM_ASSERT(n < nchildren());
 		return children_[n].get();
 	}
 
@@ -251,7 +251,7 @@ public:
 	const jlm::argument *
 	argument(size_t index) const noexcept
 	{
-		JLM_DEBUG_ASSERT(index < narguments());
+		JLM_ASSERT(index < narguments());
 		return arguments_[index];
 	}
 
@@ -354,7 +354,7 @@ public:
 	const variable *
 	result(size_t index) const noexcept
 	{
-		JLM_DEBUG_ASSERT(index < nresults());
+		JLM_ASSERT(index < nresults());
 		return results_[index];
 	}
 

@@ -144,7 +144,7 @@ public:
 	inline jlm::variable *
 	create_variable(function_node * node)
 	{
-		JLM_DEBUG_ASSERT(!variable(node));
+		JLM_ASSERT(!variable(node));
 
 		auto v = std::unique_ptr<jlm::variable>(new fctvariable(node));
 		auto pv = v.get();

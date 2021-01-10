@@ -19,7 +19,7 @@ namespace jlm {
 void
 destruct_ssa(jlm::cfg & cfg)
 {
-	JLM_DEBUG_ASSERT(is_valid(cfg));
+	JLM_ASSERT(is_valid(cfg));
 
 	/* find all blocks containing phis */
 	std::unordered_set<cfg_node*> phi_blocks;
@@ -40,7 +40,7 @@ destruct_ssa(jlm::cfg & cfg)
 		/* collect inedges of phi block */
 		std::unordered_map<cfg_node*, cfg_edge*> edges;
 		for (auto it = phi_block->begin_inedges(); it != phi_block->end_inedges(); it++) {
-			JLM_DEBUG_ASSERT(edges.find((*it)->source()) == edges.end());
+			JLM_ASSERT(edges.find((*it)->source()) == edges.end());
 			edges[(*it)->source()] = *it;
 		}
 
@@ -54,7 +54,7 @@ destruct_ssa(jlm::cfg & cfg)
 
 			const variable * value = nullptr;
 			for (size_t n = 0; n < tac->noperands(); n++) {
-				JLM_DEBUG_ASSERT(edges.find(phi->node(n)) != edges.end());
+				JLM_ASSERT(edges.find(phi->node(n)) != edges.end());
 				auto bb = edges[phi->node(n)]->split();
 				value = bb->append_last(assignment_op::create(tac->operand(n), v))->operand(0);
 			}

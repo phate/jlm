@@ -87,7 +87,7 @@ intersect(cfg_node * b1, cfg_node * b2,
 std::unique_ptr<domnode>
 domtree(jlm::cfg & cfg)
 {
-	JLM_DEBUG_ASSERT(is_closed(cfg));
+	JLM_ASSERT(is_closed(cfg));
 
 	std::unordered_map<cfg_node*, cfg_node*> doms({
 		{cfg.entry(), cfg.entry()}, {cfg.exit(), nullptr}
@@ -100,7 +100,7 @@ domtree(jlm::cfg & cfg)
 	std::unordered_map<cfg_node*, size_t> indices;
 	for(auto & node : rporder)
 		indices[node] = index--;
-	JLM_DEBUG_ASSERT(index == 0);
+	JLM_ASSERT(index == 0);
 
 	bool changed = true;
 	while (changed) {
@@ -118,7 +118,7 @@ domtree(jlm::cfg & cfg)
 					break;
 				}
 			}
-			JLM_DEBUG_ASSERT(newidom != nullptr);
+			JLM_ASSERT(newidom != nullptr);
 
 			auto pred = newidom;
 			for (auto it = node->begin_inedges(); it != node->end_inedges(); it++) {

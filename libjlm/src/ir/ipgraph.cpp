@@ -145,7 +145,7 @@ data_node::name() const noexcept
 const ptrtype &
 data_node::type() const noexcept
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const ptrtype*>(type_.get()));
+	JLM_ASSERT(dynamic_cast<const ptrtype*>(type_.get()));
 	return *static_cast<const ptrtype*>(type_.get());
 }
 

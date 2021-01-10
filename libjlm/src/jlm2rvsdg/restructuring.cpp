@@ -161,7 +161,7 @@ struct tcloop {
 static inline tcloop
 extract_tcloop(jlm::cfg_node * ne, jlm::cfg_node * nx)
 {
-	JLM_DEBUG_ASSERT(nx->noutedges() == 2);
+	JLM_ASSERT(nx->noutedges() == 2);
 	auto & cfg = ne->cfg();
 
 	auto er = nx->outedge(0);
@@ -170,7 +170,7 @@ extract_tcloop(jlm::cfg_node * ne, jlm::cfg_node * nx)
 		er = nx->outedge(1);
 		ex = nx->outedge(0);
 	}
-	JLM_DEBUG_ASSERT(er->sink() == ne);
+	JLM_ASSERT(er->sink() == ne);
 
 	auto exsink = basic_block::create(cfg);
 	auto replacement = basic_block::create(cfg);
@@ -185,8 +185,8 @@ extract_tcloop(jlm::cfg_node * ne, jlm::cfg_node * nx)
 static inline void
 reinsert_tcloop(const tcloop & l)
 {
-	JLM_DEBUG_ASSERT(l.insert->ninedges() == 1);
-	JLM_DEBUG_ASSERT(l.replacement->noutedges() == 1);
+	JLM_ASSERT(l.insert->ninedges() == 1);
+	JLM_ASSERT(l.replacement->noutedges() == 1);
 	auto & cfg = l.ne->cfg();
 
 	l.replacement->divert_inedges(l.ne);
@@ -322,7 +322,7 @@ create_rvariable(ipgraph_module & im)
 static inline void
 append_branch(basic_block * bb, const variable * operand)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::ctltype*>(&operand->type()));
+	JLM_ASSERT(dynamic_cast<const jive::ctltype*>(&operand->type()));
 	auto nalternatives = static_cast<const jive::ctltype*>(&operand->type())->nalternatives();
 	bb->append_last(branch_op::create(nalternatives, operand));
 }
@@ -330,7 +330,7 @@ append_branch(basic_block * bb, const variable * operand)
 static inline void
 append_constant(basic_block * bb, const variable * result, size_t value)
 {
-	JLM_DEBUG_ASSERT(dynamic_cast<const jive::ctltype*>(&result->type()));
+	JLM_ASSERT(dynamic_cast<const jive::ctltype*>(&result->type()));
 	auto nalternatives = static_cast<const jive::ctltype*>(&result->type())->nalternatives();
 
 	jive::ctlconstant_op op(jive::ctlvalue_repr(value, nalternatives));
@@ -516,7 +516,7 @@ struct continuation {
 static inline continuation
 compute_continuation(jlm::cfg_node * hb)
 {
-	JLM_DEBUG_ASSERT(hb->noutedges() > 1);
+	JLM_ASSERT(hb->noutedges() > 1);
 
 	std::unordered_map<jlm::cfg_edge*, std::unordered_set<jlm::cfg_node*>> dgraphs;
 	for (auto it = hb->begin_outedges(); it != hb->end_outedges(); it++)
@@ -554,7 +554,7 @@ restructure_branches(jlm::cfg_node * entry, jlm::cfg_node * exit)
 	if (hb == exit) return;
 
 	auto c = compute_continuation(hb);
-	JLM_DEBUG_ASSERT(!c.points.empty());
+	JLM_ASSERT(!c.points.empty());
 
 	if (c.points.size() == 1) {
 		auto cpoint = *c.points.begin();
@@ -570,7 +570,7 @@ restructure_branches(jlm::cfg_node * entry, jlm::cfg_node * exit)
 			/* only one continuation edge */
 			if (cedges.size() == 1) {
 				auto e = *cedges.begin();
-				JLM_DEBUG_ASSERT(e != it.edge());
+				JLM_ASSERT(e != it.edge());
 				restructure_branches(it->sink(), e->source());
 				continue;
 			}
@@ -621,7 +621,7 @@ restructure_branches(jlm::cfg_node * entry, jlm::cfg_node * exit)
 void
 restructure_loops(jlm::cfg * cfg)
 {
-	JLM_DEBUG_ASSERT(is_closed(*cfg));
+	JLM_ASSERT(is_closed(*cfg));
 
 	std::vector<tcloop> loops;
 	restructure_loops(cfg->entry(), cfg->exit(), loops);
@@ -633,9 +633,9 @@ restructure_loops(jlm::cfg * cfg)
 void
 restructure_branches(jlm::cfg * cfg)
 {
-	JLM_DEBUG_ASSERT(is_acyclic(*cfg));
+	JLM_ASSERT(is_acyclic(*cfg));
 	restructure_branches(cfg->entry(), cfg->exit());
-	JLM_DEBUG_ASSERT(is_proper_structured(*cfg));
+	JLM_ASSERT(is_proper_structured(*cfg));
 }
 
 static inline void
@@ -648,7 +648,7 @@ restructure(jlm::cfg_node * entry, jlm::cfg_node * exit, std::vector<tcloop> & t
 void
 restructure(jlm::cfg * cfg)
 {
-	JLM_DEBUG_ASSERT(is_closed(*cfg));
+	JLM_ASSERT(is_closed(*cfg));
 
 	std::vector<tcloop> tcloops;
 	restructure(cfg->entry(), cfg->exit(), tcloops);
@@ -656,7 +656,7 @@ restructure(jlm::cfg * cfg)
 	for (const auto & l : tcloops)
 		reinsert_tcloop(l);
 
-	JLM_DEBUG_ASSERT(is_proper_structured(*cfg));
+	JLM_ASSERT(is_proper_structured(*cfg));
 }
 
 }

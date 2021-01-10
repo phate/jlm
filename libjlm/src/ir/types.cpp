@@ -74,7 +74,7 @@ fptype::debug_string() const
 	, {fpsize::x86fp80, "x86fp80"}
 	});
 
-	JLM_DEBUG_ASSERT(map.find(size()) != map.end());
+	JLM_ASSERT(map.find(size()) != map.end());
 	return map[size()];
 }
 
