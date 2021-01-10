@@ -8,6 +8,7 @@
 
 #include <assert.h>
 
+#include <iostream>
 #include <stdexcept>
 
 #define JLM_ASSERT(x) assert(x)
@@ -17,6 +18,29 @@
 #else
 #	define JLM_DEBUG_ASSERT(x) (void)(x)
 #endif
+
+#define JLM_NORETURN __attribute__((noreturn))
+
+namespace jlm {
+
+JLM_NORETURN static inline void
+unreachable(const char * msg, const char * file, unsigned line)
+{
+	if (msg)
+		std::cerr << msg << "\n";
+
+	std::cerr << "UNREACHABLE executed";
+
+	if (file)
+		std::cerr << " at " << file << ":" << line << "\n";
+
+	abort();
+}
+
+}
+
+
+#define JLM_UNREACHABLE(msg) jlm::unreachable(msg, __FILE__, __LINE__)
 
 namespace jlm {
 

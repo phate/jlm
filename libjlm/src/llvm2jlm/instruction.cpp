@@ -59,8 +59,7 @@ convert_value(llvm::Value * v, tacsvector_t & tacs, context & ctx)
 	if (auto c = llvm::dyn_cast<llvm::Constant>(v))
 		return convert_constant(c, tacs, ctx);
 
-	JLM_DEBUG_ASSERT(0);
-	return nullptr;
+	JLM_UNREACHABLE("This should not have happened!");
 }
 
 /* constant */

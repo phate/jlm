@@ -170,7 +170,7 @@ convert_attribute(const llvm::Attribute & attribute, context & ctx)
 			return type_attribute::create_byval(std::move(type));
 		}
 
-		JLM_ASSERT(0 && "Unhandled attribute");
+		JLM_UNREACHABLE("Unhandled attribute");
 	};
 
 	auto convert_string_attribute = [](const llvm::Attribute & attribute)
@@ -208,7 +208,7 @@ convert_attribute(const llvm::Attribute & attribute, context & ctx)
 	if (attribute.isIntAttribute())
 		return convert_int_attribute(attribute);
 
-	JLM_ASSERT(0 && "Unhandled attribute");
+	JLM_UNREACHABLE("Unhandled attribute");
 }
 
 static attributeset

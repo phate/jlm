@@ -155,7 +155,7 @@ fp2ui_op::reduce_operand(
 	jive_unop_reduction_path_t path,
 	jive::output * operand) const
 {
-	JLM_ASSERT(0);
+	JLM_UNREACHABLE("Not implemented");
 }
 
 /* fp2si operator */
@@ -195,7 +195,7 @@ fp2si_op::reduce_operand(
 	jive_unop_reduction_path_t path,
 	jive::output * operand) const
 {
-	JLM_ASSERT(0);
+	JLM_UNREACHABLE("Not implemented!");
 }
 
 /* ctl2bits operator */
@@ -309,7 +309,7 @@ bits2ptr_op::reduce_operand(
 	jive_unop_reduction_path_t path,
 	jive::output * operand) const
 {
-	JLM_ASSERT(0);
+	JLM_UNREACHABLE("Not implemented!");
 }
 
 /* ptr2bits operator */
@@ -349,7 +349,7 @@ ptr2bits_op::reduce_operand(
 	jive_unop_reduction_path_t path,
 	jive::output * operand) const
 {
-	JLM_ASSERT(0);
+	JLM_UNREACHABLE("Not implemented!");
 }
 
 /* data array constant operator */
@@ -420,7 +420,7 @@ ptrcmp_op::reduce_operand_pair(
 	jive::output * op1,
 	jive::output * op2) const
 {
-	JLM_ASSERT(0);
+	JLM_UNREACHABLE("Not implemented!");
 }
 
 /* zext operator */
@@ -554,7 +554,7 @@ fpcmp_op::reduce_operand_pair(
 	jive::output * op1,
 	jive::output * op2) const
 {
-	JLM_ASSERT(0);
+	JLM_UNREACHABLE("Not implemented!");
 }
 
 /* undef constant operator */
@@ -625,7 +625,7 @@ fpbin_op::reduce_operand_pair(
 	jive::output * op1,
 	jive::output * op2) const
 {
-	JLM_ASSERT(0);
+	JLM_UNREACHABLE("Not implemented!");
 }
 
 /* fpext operator */
@@ -663,7 +663,7 @@ fpext_op::reduce_operand(
 	jive_unop_reduction_path_t path,
 	jive::output * operand) const
 {
-	JLM_ASSERT(0);
+	JLM_UNREACHABLE("Not implemented!");
 }
 
 /* fpneg operator */
@@ -701,7 +701,7 @@ fpneg_op::reduce_operand(
 	jive_unop_reduction_path_t path,
 	jive::output * operand) const
 {
-	JLM_ASSERT(0);
+	JLM_UNREACHABLE("Not implemented!");
 }
 
 /* fptrunc operator */
@@ -739,7 +739,7 @@ fptrunc_op::reduce_operand(
 	jive_unop_reduction_path_t path,
 	jive::output * operand) const
 {
-	JLM_ASSERT(0);
+	JLM_UNREACHABLE("Not implemented!");
 }
 
 /* valist operator */
@@ -812,7 +812,7 @@ bitcast_op::reduce_operand(
 	jive_unop_reduction_path_t path,
 	jive::output * operand) const
 {
-	JLM_ASSERT(0);
+	JLM_UNREACHABLE("Not implemented!");
 }
 
 /* struct constant operator */
@@ -876,7 +876,7 @@ trunc_op::reduce_operand(
 	jive_unop_reduction_path_t path,
 	jive::output * operand) const
 {
-	JLM_ASSERT(0);
+	JLM_UNREACHABLE("Not implemented!");
 }
 
 
@@ -918,7 +918,7 @@ uitofp_op::reduce_operand(
 	jive_unop_reduction_path_t path,
 	jive::output * operand) const
 {
-	JLM_ASSERT(0);
+	JLM_UNREACHABLE("Not implemented!");
 }
 
 /* sitofp operator */
@@ -958,7 +958,7 @@ sitofp_op::reduce_operand(
 	jive_unop_reduction_path_t path,
 	jive::output * operand) const
 {
-	JLM_ASSERT(0);
+	JLM_UNREACHABLE("Not implemented!");
 }
 
 /* constant array operator */

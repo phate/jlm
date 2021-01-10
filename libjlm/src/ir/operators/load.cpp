@@ -389,7 +389,7 @@ perform_load_load_state_reduction(
 				return ld->input(n);
 		}
 
-		JLM_ASSERT(0);
+		JLM_UNREACHABLE("This should have never happened!");
 	};
 
 	std::function<jive::output*(size_t, jive::output*, std::vector<std::vector<jive::output*>>&)>

@@ -389,8 +389,7 @@ convert_data_array_constant(
 		} else if (bt->nbits() == 64) {
 			auto data = get_bitdata<uint64_t>(args, ctx);
 			return llvm::ConstantDataArray::get(builder.getContext(), data);
-		} else
-			JLM_ASSERT(0);
+		}
 	}
 
 	if (auto ft = dynamic_cast<const fptype*>(&cop.type())) {
@@ -403,11 +402,10 @@ convert_data_array_constant(
 		} else if (ft->size() == fpsize::dbl) {
 			auto data = get_fpdata<uint64_t>(args, ctx);
 			return llvm::ConstantDataArray::getFP(builder.getContext(), data);
-		} else
-			JLM_ASSERT(0);
+		}
 	}
 
-	JLM_ASSERT(0);
+	JLM_UNREACHABLE("This should not have happened!");
 }
 
 static inline llvm::Value *
@@ -637,8 +635,7 @@ convert_constantdatavector(
 		} else if (bt->nbits() == 64) {
 			auto data = get_bitdata<uint64_t>(operands, ctx);
 			return llvm::ConstantDataVector::get(builder.getContext(), data);
-		} else
-			JLM_ASSERT(0);
+		}
 	}
 
 	if (auto ft = dynamic_cast<const fptype*>(&cop.type())) {
@@ -651,11 +648,10 @@ convert_constantdatavector(
 		} else if (ft->size() == fpsize::dbl) {
 			auto data = get_fpdata<uint64_t>(operands, ctx);
 			return llvm::ConstantDataVector::getFP(builder.getContext(), data);
-		} else
-		JLM_ASSERT(0);
+		}
 	}
 
-	JLM_ASSERT(0);
+	JLM_UNREACHABLE("This should not have happened!");
 }
 
 static llvm::Value *

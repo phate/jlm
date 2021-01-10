@@ -268,7 +268,7 @@ convert_attributes(const attributeset & as, context & ctx)
 			return llvm::Attribute::get(llvmctx, kind, type);
 		}
 
-		JLM_ASSERT(0 && "This should have never happened!");
+		JLM_UNREACHABLE("This should have never happened!");
 	};
 
 	llvm::AttrBuilder builder;
