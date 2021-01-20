@@ -146,6 +146,12 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 	, cl::desc("Specify flags.")
 	, cl::value_desc("flag"));
 
+	cl::list<std::string> jlmopts(
+	  "J"
+	, cl::Prefix
+	, cl::desc("jlm-opt optimization. Run 'jlm-opt -help' for viable options.")
+	, cl::value_desc("jlmopt"));
+
 	cl::ParseCommandLineOptions(argc, argv);
 
 	if (show_help)
