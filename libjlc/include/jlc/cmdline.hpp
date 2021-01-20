@@ -112,7 +112,8 @@ public:
 	std::vector<std::string> libpaths;
 	std::vector<std::string> warnings;
 	std::vector<std::string> includepaths;
-  	std::vector<std::string> flags;
+	std::vector<std::string> flags;
+	std::vector<std::string> jlmopts;
 
 	std::vector<compilation> compilations;
 };
