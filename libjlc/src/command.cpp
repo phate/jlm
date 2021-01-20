@@ -33,7 +33,7 @@ generate_commands(const jlm::cmdline_options & opts)
 		}
 
 		if (c.optimize()) {
-			auto optnode = optcmd::create(pgraph.get(), c.ifile());
+			auto optnode = optcmd::create(pgraph.get(), c.ifile(), opts.jlmopts);
 			last->add_edge(optnode);
 			last = optnode;
 		}
@@ -145,9 +145,14 @@ optcmd::to_str() const
 {
 	auto f = ifile_.base();
 
+	std::string jlmopts;
+	for (const auto & jlmopt : jlmopts_)
+		jlmopts += "--" + jlmopt + " ";
+
 	return strfmt(
 	  "jlm-opt "
 	, "--llvm "
+	, jlmopts
 	, "/tmp/", create_prscmd_ofile(f), " > /tmp/", create_optcmd_ofile(f)
 	);
 }

@@ -76,8 +76,11 @@ public:
 	virtual
 	~optcmd();
 
-	optcmd(const jlm::filepath & ifile)
+	optcmd(
+		const jlm::filepath & ifile,
+		const std::vector<std::string> & jlmopts)
 	: ifile_(ifile)
+	, jlmopts_(jlmopts)
 	{}
 
 	virtual std::string
@@ -89,13 +92,15 @@ public:
 	static passgraph_node *
 	create(
 		passgraph * pgraph,
-		const jlm::filepath & ifile)
+		const jlm::filepath & ifile,
+		const std::vector<std::string> & jlmopts)
 	{
-		return passgraph_node::create(pgraph, std::make_unique<optcmd>(ifile));
+		return passgraph_node::create(pgraph, std::make_unique<optcmd>(ifile, jlmopts));
 	}
 
 private:
 	jlm::filepath ifile_;
+	std::vector<std::string> jlmopts_;
 };
 
 /* code generator command */
