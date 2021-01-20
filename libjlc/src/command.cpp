@@ -33,7 +33,7 @@ generate_commands(const jlm::cmdline_options & opts)
 		}
 
 		if (c.optimize()) {
-			auto optnode = optcmd::create(pgraph.get(), c.ifile(), opts.jlmopts);
+			auto optnode = optcmd::create(pgraph.get(), c.ifile(), opts.jlmopts, opts.Olvl);
 			last->add_edge(optnode);
 			last = optnode;
 		}
@@ -148,6 +148,20 @@ optcmd::to_str() const
 	std::string jlmopts;
 	for (const auto & jlmopt : jlmopts_)
 		jlmopts += "--" + jlmopt + " ";
+
+	/*
+		If a default optimization level has been specified (-O) and no specific jlm-options 
+		have been specified (-J) then use a default set of optimizations.
+	 */
+	if (jlmopts.empty()) {
+		/*
+			Only -O3 sets default optimizations
+		*/
+		if (ol_ == optlvl::O3) {
+			jlmopts  = "--iln --inv --red --dne --ivt --inv --dne --psh --inv --dne ";
+			jlmopts += "--red --cne --dne --pll --inv --dne --url --inv ";
+		}
+	}
 
 	return strfmt(
 	  "jlm-opt "
