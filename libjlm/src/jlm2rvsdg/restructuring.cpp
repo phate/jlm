@@ -197,7 +197,7 @@ reinsert_tcloop(const tcloop & l)
 }
 
 static scc_structure
-find_scc_structure(const std::unordered_set<jlm::cfg_node*> & scc)
+find_scc_structure(const jlm::scc & scc)
 {
 	std::unordered_set<jlm::cfg_edge*> eedges;
 	std::unordered_set<jlm::cfg_edge*> redges;
@@ -205,17 +205,17 @@ find_scc_structure(const std::unordered_set<jlm::cfg_node*> & scc)
 	std::unordered_set<jlm::cfg_node*> enodes;
 	std::unordered_set<jlm::cfg_node*> xnodes;
 
-	for (auto node : scc) {
-		for (auto it = node->begin_inedges(); it != node->end_inedges(); it++) {
-			if (scc.find((*it)->source()) == scc.end()) {
+	for (auto & node : scc) {
+		for (auto it = node.begin_inedges(); it != node.end_inedges(); it++) {
+			if (!scc.contains((*it)->source())) {
 				eedges.insert(*it);
-				if (enodes.find(node) == enodes.end())
-					enodes.insert(node);
+				if (enodes.find(&node) == enodes.end())
+					enodes.insert(&node);
 			}
 		}
 
-		for (auto it = node->begin_outedges(); it != node->end_outedges(); it++) {
-			if (scc.find(it->sink()) == scc.end()) {
+		for (auto it = node.begin_outedges(); it != node.end_outedges(); it++) {
+			if (!scc.contains(it->sink())) {
 				xedges.insert(it.edge());
 				if (xnodes.find(it->sink()) == xnodes.end())
 					xnodes.insert(it->sink());
@@ -223,71 +223,14 @@ find_scc_structure(const std::unordered_set<jlm::cfg_node*> & scc)
 		}
 	}
 
-	for (auto node : scc) {
-		for (auto it = node->begin_outedges(); it != node->end_outedges(); it++) {
+	for (auto & node : scc) {
+		for (auto it = node.begin_outedges(); it != node.end_outedges(); it++) {
 			if (enodes.find(it->sink()) != enodes.end())
 				redges.insert(it.edge());
 		}
 	}
 
 	return scc_structure(enodes, xnodes, eedges, redges, xedges);
-}
-
-/* Tarjan's SCC algorithm */
-
-static void
-strongconnect(
-	jlm::cfg_node * node,
-	jlm::cfg_node * exit,
-	std::unordered_map<jlm::cfg_node*, std::pair<size_t,size_t>> & map,
-	std::vector<jlm::cfg_node*> & node_stack,
-	size_t & index,
-	std::vector<std::unordered_set<jlm::cfg_node*>> & sccs)
-{
-	map.emplace(node, std::make_pair(index, index));
-	node_stack.push_back(node);
-	index++;
-
-	if (node != exit) {
-		for (auto it = node->begin_outedges(); it != node->end_outedges(); it++) {
-			jlm::cfg_node * successor = it->sink();
-			if (map.find(successor) == map.end()) {
-				/* successor has not been visited yet; recurse on it */
-				strongconnect(successor, exit, map, node_stack, index, sccs);
-				map[node].second = std::min(map[node].second, map[successor].second);
-			} else if (std::find(node_stack.begin(), node_stack.end(), successor) != node_stack.end()) {
-				/* successor is in stack and hence in the current SCC */
-				map[node].second = std::min(map[node].second, map[successor].first);
-			}
-		}
-	}
-
-	if (map[node].second == map[node].first) {
-		std::unordered_set<jlm::cfg_node*> scc;
-		jlm::cfg_node * w;
-		do {
-			w = node_stack.back();
-			node_stack.pop_back();
-			scc.insert(w);
-		} while (w != node);
-
-		if (scc.size() != 1 || (*scc.begin())->has_selfloop_edge())
-			sccs.push_back(scc);
-	}
-}
-
-static std::vector<std::unordered_set<cfg_node*>>
-find_sccs(jlm::cfg_node * enter, jlm::cfg_node * exit)
-{
-	std::vector<std::unordered_set<cfg_node*>> sccs;
-
-	std::unordered_map<cfg_node*, std::pair<size_t,size_t>> map;
-	std::vector<cfg_node*> node_stack;
-	size_t index = 0;
-
-	strongconnect(enter, exit, map, node_stack, index, sccs);
-
-	return sccs;
 }
 
 static inline const variable *

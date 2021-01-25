@@ -11,8 +11,26 @@
 #include <algorithm>
 #include <unordered_map>
 
-/* Tarjan's SCC algorithm */
+namespace jlm {
 
+/* scc class */
+
+scc::constiterator
+scc::begin() const
+{
+	return constiterator(nodes_.begin());
+}
+
+scc::constiterator
+scc::end() const
+{
+	return constiterator(nodes_.end());
+}
+
+
+/**
+* Tarjan's SCC algorithm
+*/
 static void
 strongconnect(
 	jlm::cfg_node * node,
@@ -20,7 +38,7 @@ strongconnect(
 	std::unordered_map<jlm::cfg_node*, std::pair<size_t,size_t>> & map,
 	std::vector<jlm::cfg_node*> & node_stack,
 	size_t & index,
-	std::vector<std::unordered_set<jlm::cfg_node*>> & sccs)
+	std::vector<jlm::scc> & sccs)
 {
 	map.emplace(node, std::make_pair(index, index));
 	node_stack.push_back(node);
@@ -41,17 +59,39 @@ strongconnect(
 	}
 
 	if (map[node].second == map[node].first) {
-		std::unordered_set<jlm::cfg_node*> scc;
+		std::unordered_set<jlm::cfg_node*> set;
 		jlm::cfg_node * w;
 		do {
 			w = node_stack.back();
 			node_stack.pop_back();
-			scc.insert(w);
+			set.insert(w);
 		} while (w != node);
 
-		if (scc.size() != 1 || (*scc.begin())->has_selfloop_edge())
-			sccs.push_back(scc);
+		if (set.size() != 1 || (*set.begin())->has_selfloop_edge())
+			sccs.push_back(jlm::scc(set));
 	}
+}
+
+std::vector<jlm::scc>
+find_sccs(const jlm::cfg & cfg)
+{
+	JLM_ASSERT(is_closed(cfg));
+
+	return find_sccs(cfg.entry(), cfg.exit());
+}
+
+std::vector<jlm::scc>
+find_sccs(cfg_node * entry, cfg_node * exit)
+{
+	size_t index = 0;
+	std::vector<scc> sccs;
+	std::vector<cfg_node*> node_stack;
+	std::unordered_map<cfg_node*, std::pair<size_t,size_t>> map;
+	strongconnect(entry, exit, map, node_stack, index, sccs);
+
+	return sccs;
+}
+
 }
 
 static inline std::unique_ptr<jlm::cfg>
@@ -485,20 +525,6 @@ is_linear(const jlm::cfg & cfg)
 	}
 
 	return true;
-}
-
-std::vector<std::unordered_set<cfg_node*>>
-find_sccs(const jlm::cfg & cfg)
-{
-	JLM_ASSERT(is_closed(cfg));
-
-	size_t index = 0;
-	std::vector<cfg_node*> node_stack;
-	std::vector<std::unordered_set<cfg_node*>> sccs;
-	std::unordered_map<cfg_node*, std::pair<size_t,size_t>> map;
-	strongconnect(cfg.entry(), cfg.exit(), map, node_stack, index, sccs);
-
-	return sccs;
 }
 
 static inline bool

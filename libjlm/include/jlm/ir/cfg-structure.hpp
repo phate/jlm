@@ -14,6 +14,93 @@ namespace jlm {
 class cfg;
 class cfg_node;
 
+/** \brief Strongly Connected Component
+*/
+class scc final {
+	class constiterator;
+
+public:
+	scc(const std::unordered_set<cfg_node*> & nodes)
+	: nodes_(nodes)
+	{}
+
+	constiterator
+	begin() const;
+
+	constiterator
+	end() const;
+
+	bool
+	contains(cfg_node * node) const
+	{
+		return nodes_.find(node) != nodes_.end();
+	}
+
+	size_t
+	nnodes() const noexcept
+	{
+		return nodes_.size();
+	}
+
+private:
+	std::unordered_set<cfg_node*> nodes_;
+};
+
+/** \brief Strongly Connected Component Iterator
+*/
+class scc::constiterator final : public std::iterator<std::forward_iterator_tag, cfg_node*,
+	ptrdiff_t> {
+	friend ::jlm::scc;
+
+private:
+	constiterator(const std::unordered_set<cfg_node*>::const_iterator & it)
+	: it_(it)
+	{}
+
+public:
+	cfg_node *
+	operator->() const
+	{
+		return *it_;
+	}
+
+	cfg_node &
+	operator*() const
+	{
+		return *operator->();
+	}
+
+	constiterator &
+	operator++()
+	{
+		it_++;
+		return *this;
+	}
+
+	constiterator
+	operator++(int)
+	{
+		constiterator tmp = *this;
+		++*this;
+		return tmp;
+	}
+
+	bool
+	operator==(const constiterator & other) const
+	{
+		return it_ == other.it_;
+	}
+
+	bool
+	operator!=(const constiterator & other) const
+	{
+		return !operator==(other);
+	}
+
+private:
+	std::unordered_set<cfg_node*>::const_iterator it_;
+};
+
 bool
 is_valid(const jlm::cfg & cfg);
 
@@ -23,8 +110,18 @@ is_closed(const jlm::cfg & cfg);
 bool
 is_linear(const jlm::cfg & cfg);
 
-std::vector<std::unordered_set<jlm::cfg_node*>>
+/**
+* Compute a Control Flow Graph's Strongly Connected Components.
+*/
+std::vector<scc>
 find_sccs(const jlm::cfg & cfg);
+
+/**
+* Compute all Strongly Connected Components of a single-entry/single-exit region.
+* The \p entry parameter must dominate the \p exit parameter.
+*/
+std::vector<scc>
+find_sccs(cfg_node * entry, cfg_node * exit);
 
 static inline bool
 is_acyclic(const jlm::cfg & cfg)
