@@ -20,128 +20,6 @@
 
 namespace jlm {
 
-struct scc_structure {
-	typedef std::unordered_set<jlm::cfg_node*>::const_iterator const_node_iterator;
-	typedef std::unordered_set<jlm::cfg_edge*>::const_iterator const_edge_iterator;
-
-	inline
-	scc_structure(
-		const std::unordered_set<jlm::cfg_node*> & enodes,
-		const std::unordered_set<jlm::cfg_node*> & xnodes,
-		const std::unordered_set<jlm::cfg_edge*> & eedges,
-		const std::unordered_set<jlm::cfg_edge*> & redges,
-		const std::unordered_set<jlm::cfg_edge*> & xedges)
-	: enodes_(enodes)
-	, xnodes_(xnodes)
-	, eedges_(eedges)
-	, redges_(redges)
-	, xedges_(xedges)
-	{}
-
-	inline size_t
-	nenodes() const noexcept
-	{
-		return enodes_.size();
-	}
-
-	inline size_t
-	nxnodes() const noexcept
-	{
-		return xnodes_.size();
-	}
-
-	inline size_t
-	needges() const noexcept
-	{
-		return eedges_.size();
-	}
-
-	inline size_t
-	nredges() const noexcept
-	{
-		return redges_.size();
-	}
-
-	inline size_t
-	nxedges() const noexcept
-	{
-		return xedges_.size();
-	}
-
-	inline const_node_iterator
-	begin_enodes() const
-	{
-		return enodes_.begin();
-	}
-
-	inline const_node_iterator
-	end_enodes() const
-	{
-		return enodes_.end();
-	}
-
-	inline const_node_iterator
-	begin_xnodes() const
-	{
-		return xnodes_.begin();
-	}
-
-	inline const_node_iterator
-	end_xnodes() const
-	{
-		return xnodes_.end();
-	}
-
-	inline const_edge_iterator
-	begin_eedges() const
-	{
-		return eedges_.begin();
-	}
-
-	inline const_edge_iterator
-	end_eedges() const
-	{
-		return eedges_.end();
-	}
-
-	inline const_edge_iterator
-	begin_redges() const
-	{
-		return redges_.begin();
-	}
-
-	inline const_edge_iterator
-	end_redges() const
-	{
-		return redges_.end();
-	}
-
-	inline const_edge_iterator
-	begin_xedges() const
-	{
-		return xedges_.begin();
-	}
-
-	inline const_edge_iterator
-	end_xedges() const
-	{
-		return xedges_.end();
-	}
-
-	std::unordered_set<jlm::cfg_node*> enodes_;
-	std::unordered_set<jlm::cfg_node*> xnodes_;
-	std::unordered_set<jlm::cfg_edge*> eedges_;
-	std::unordered_set<jlm::cfg_edge*> redges_;
-	std::unordered_set<jlm::cfg_edge*> xedges_;
-};
-
-static inline bool
-is_tcloop(const scc_structure & s)
-{
-	return s.nenodes() == 1 && s.nredges() == 1 && s.nxedges() == 1
-			&& (*s.begin_redges())->source() == (*s.begin_xedges())->source();
-}
-
 struct tcloop {
 	inline
 	tcloop(
@@ -196,43 +74,6 @@ reinsert_tcloop(const tcloop & l)
 	cfg.remove_node(l.replacement);
 }
 
-static scc_structure
-find_scc_structure(const jlm::scc & scc)
-{
-	std::unordered_set<jlm::cfg_edge*> eedges;
-	std::unordered_set<jlm::cfg_edge*> redges;
-	std::unordered_set<jlm::cfg_edge*> xedges;
-	std::unordered_set<jlm::cfg_node*> enodes;
-	std::unordered_set<jlm::cfg_node*> xnodes;
-
-	for (auto & node : scc) {
-		for (auto it = node.begin_inedges(); it != node.end_inedges(); it++) {
-			if (!scc.contains((*it)->source())) {
-				eedges.insert(*it);
-				if (enodes.find(&node) == enodes.end())
-					enodes.insert(&node);
-			}
-		}
-
-		for (auto it = node.begin_outedges(); it != node.end_outedges(); it++) {
-			if (!scc.contains(it->sink())) {
-				xedges.insert(it.edge());
-				if (xnodes.find(it->sink()) == xnodes.end())
-					xnodes.insert(it->sink());
-			}
-		}
-	}
-
-	for (auto & node : scc) {
-		for (auto it = node.begin_outedges(); it != node.end_outedges(); it++) {
-			if (enodes.find(it->sink()) != enodes.end())
-				redges.insert(it.edge());
-		}
-	}
-
-	return scc_structure(enodes, xnodes, eedges, redges, xedges);
-}
-
 static inline const variable *
 create_pvariable(const jive::ctltype & type, ipgraph_module & im)
 {
@@ -281,27 +122,27 @@ append_constant(basic_block * bb, const variable * result, size_t value)
 }
 
 static inline void
-restructure_loop_entry(const scc_structure & s, basic_block * new_ne, const variable * ev)
+restructure_loop_entry(const sccstructure & s, basic_block * new_ne, const variable * ev)
 {
 	size_t n = 0;
 	std::unordered_map<jlm::cfg_node*, size_t> indices;
-	for (auto it = s.begin_enodes(); it != s.end_enodes(); it++, n++) {
-		new_ne->add_outedge(*it);
-		indices[*it] = n;
+	for (auto & node : s.enodes()) {
+		new_ne->add_outedge(node);
+		indices[node] = n++;
 	}
 
 	if (ev) append_branch(new_ne, ev);
 
-	for (auto it = s.begin_eedges(); it != s.end_eedges(); it++) {
-		auto os = (*it)->sink();
-		(*it)->divert(new_ne);
-		if (ev) append_constant((*it)->split(), ev, indices[os]);
+	for (auto & edge : s.eedges()) {
+		auto os = edge->sink();
+		edge->divert(new_ne);
+		if (ev) append_constant(edge->split(), ev, indices[os]);
 	}
 }
 
 static inline void
 restructure_loop_exit(
-	const scc_structure & s,
+	const sccstructure & s,
 	basic_block * new_nr,
 	basic_block * new_nx,
 	cfg_node * exit,
@@ -327,17 +168,17 @@ restructure_loop_exit(
 
 	size_t n = 0;
 	std::unordered_map<jlm::cfg_node*, size_t> indices;
-	for (auto it = s.begin_xnodes(); it != s.end_xnodes(); it++, n++) {
-		new_nx->add_outedge(*it);
-		indices[*it] = n;
+	for (auto & node : s.xnodes()) {
+		new_nx->add_outedge(node);
+		indices[node] = n++;
 	}
 
 	if (xv) append_branch(new_nx, xv);
 
-	for (auto it = s.begin_xedges(); it != s.end_xedges(); it++) {
-		auto os = (*it)->sink();
-		(*it)->divert(new_nr);
-		auto bb = (*it)->split();
+	for (auto & edge : s.xedges()) {
+		auto os = edge->sink();
+		edge->divert(new_nr);
+		auto bb = edge->split();
 		if (xv) append_constant(bb, xv, indices[os]);
 		append_constant(bb, rv, 0);
 	}
@@ -345,7 +186,7 @@ restructure_loop_exit(
 
 static inline void
 restructure_loop_repetition(
-	const scc_structure & s,
+	const sccstructure & s,
 	jlm::cfg_node * new_nr,
 	jlm::cfg_node * new_nx,
 	const variable * ev,
@@ -353,13 +194,13 @@ restructure_loop_repetition(
 {
 	size_t n = 0;
 	std::unordered_map<jlm::cfg_node*, size_t> indices;
-	for (auto it = s.begin_enodes(); it != s.end_enodes(); it++, n++)
-		indices[*it] = n;
+	for (auto & node : s.enodes())
+		indices[node] = n++;
 
-	for (auto it = s.begin_redges(); it != s.end_redges(); it++) {
-		auto os = (*it)->sink();
-		(*it)->divert(new_nr);
-		auto bb = (*it)->split();
+	for (auto & edge : s.redges()) {
+		auto os = edge->sink();
+		edge->divert(new_nr);
+		auto bb = edge->split();
 		if (ev) append_constant(bb, ev, indices[os]);
 		append_constant(bb, rv, 1);
 	}
@@ -378,18 +219,27 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit, std::vector<tcloo
 	auto & module = cfg.module();
 
 	auto sccs = find_sccs(entry, exit);
-	for (auto scc : sccs) {
-		auto s = find_scc_structure(scc);
+	for (auto & scc : sccs) {
+		auto sccstruct = sccstructure::create(scc);
 
-		if (is_tcloop(s)) {
-			restructure(*s.begin_enodes(), (*s.begin_xedges())->source(), loops);
-			loops.push_back(extract_tcloop(*s.begin_enodes(), (*s.begin_xedges())->source()));
+		if (sccstruct->is_tcloop()) {
+			auto tcloop_entry = *sccstruct->enodes().begin();
+			auto tcloop_exit = (*sccstruct->xedges().begin())->source();
+			restructure(tcloop_entry, tcloop_exit, loops);
+			loops.push_back(extract_tcloop(tcloop_entry, tcloop_exit));
 			continue;
 		}
 
-		auto ev = s.nenodes() > 1 ? create_tvariable(jive::ctltype(s.nenodes()), module) : nullptr;
+		const variable * ev = nullptr;
+		if (sccstruct->nenodes() > 1)
+			ev = create_tvariable(jive::ctltype(sccstruct->nenodes()), module);
+
 		auto rv = create_rvariable(module);
-		auto xv = s.nxnodes() > 1 ? create_qvariable(jive::ctltype(s.nxnodes()), module) : nullptr;
+
+		const variable * xv = nullptr;
+		if (sccstruct->nxnodes() > 1)
+			xv = create_qvariable(jive::ctltype(sccstruct->nxnodes()), module);
+
 		auto new_ne = basic_block::create(cfg);
 		auto new_nr = basic_block::create(cfg);
 		auto new_nx = basic_block::create(cfg);
@@ -397,9 +247,9 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit, std::vector<tcloo
 		new_nr->add_outedge(new_ne);
 		append_branch(new_nr, rv);
 
-		restructure_loop_entry(s, new_ne, ev);
-		restructure_loop_exit(s, new_nr, new_nx, exit, rv, xv);
-		restructure_loop_repetition(s, new_nr, new_nr, ev, rv);
+		restructure_loop_entry(*sccstruct, new_ne, ev);
+		restructure_loop_exit(*sccstruct, new_nr, new_nx, exit, rv, xv);
+		restructure_loop_repetition(*sccstruct, new_nr, new_nr, ev, rv);
 
 		restructure(new_ne, new_nr, loops);
 		loops.push_back(extract_tcloop(new_ne, new_nr));

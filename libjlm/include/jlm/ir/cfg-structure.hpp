@@ -6,12 +6,15 @@
 #ifndef JLM_IR_CFG_STRUCTURE_HPP
 #define JLM_IR_CFG_STRUCTURE_HPP
 
+#include <jlm/util/iterator_range.hpp>
+
 #include <unordered_set>
 #include <vector>
 
 namespace jlm {
 
 class cfg;
+class cfg_edge;
 class cfg_node;
 
 /** \brief Strongly Connected Component
@@ -99,6 +102,107 @@ public:
 
 private:
 	std::unordered_set<cfg_node*>::const_iterator it_;
+};
+
+/** \brief Strongly Connected Component Structure
+*
+* This class computes the structure of strongly connected components (SCCs). It detects the
+* following entities:
+*
+* 1. Entry edges (eedges): All edges from a node outside the SCC pointing to a node in the SCC.
+* 2. Entry nodes (enodes): All nodes that are the target of one or more entry edges.
+* 3. Exit edges (xedges): All edges from a node inside the SCC pointing to a node outside the SCC.
+* 4. Exit nodes (xnodes): All nodes that are the target of one or more exit edges.
+* 5. Repetition edges (redges): All edges from a node inside the SCC to an entry node.
+*/
+class sccstructure final {
+	using cfg_edge_constiterator = std::unordered_set<cfg_edge*>::const_iterator;
+	using cfg_node_constiterator = std::unordered_set<cfg_node*>::const_iterator;
+
+	using edge_iterator_range = iterator_range<cfg_edge_constiterator>;
+	using node_iterator_range = iterator_range<cfg_node_constiterator>;
+
+public:
+	size_t
+	nenodes() const noexcept
+	{
+		return enodes_.size();
+	}
+
+	size_t
+	nxnodes() const noexcept
+	{
+		return xnodes_.size();
+	}
+
+	size_t
+	needges() const noexcept
+	{
+		return eedges_.size();
+	}
+
+	size_t
+	nredges() const noexcept
+	{
+		return redges_.size();
+	}
+
+	size_t
+	nxedges() const noexcept
+	{
+		return xedges_.size();
+	}
+
+	node_iterator_range
+	enodes() const
+	{
+		return node_iterator_range(enodes_);
+	}
+
+	node_iterator_range
+	xnodes() const
+	{
+		return node_iterator_range(xnodes_);
+	}
+
+	edge_iterator_range
+	eedges() const
+	{
+		return edge_iterator_range(eedges_);
+	}
+
+	edge_iterator_range
+	redges() const
+	{
+		return edge_iterator_range(redges_);
+	}
+
+	edge_iterator_range
+	xedges() const
+	{
+		return edge_iterator_range(xedges_);
+	}
+
+	/**
+	* Creates a SCC structure from SCC \p scc.
+	*/
+	static std::unique_ptr<sccstructure>
+	create(const jlm::scc & scc);
+
+	/**
+	* Checks if the SCC structure is a tail-controlled loop. A tail-controlled loop is defined as an
+	* SSC with a single enttry node, as well as a single repetition and exit edge. Both these edges
+	* must have the same CFG node as origin.
+	*/
+	bool
+	is_tcloop() const;
+
+private:
+	std::unordered_set<cfg_node*> enodes_;
+	std::unordered_set<cfg_node*> xnodes_;
+	std::unordered_set<cfg_edge*> eedges_;
+	std::unordered_set<cfg_edge*> redges_;
+	std::unordered_set<cfg_edge*> xedges_;
 };
 
 bool

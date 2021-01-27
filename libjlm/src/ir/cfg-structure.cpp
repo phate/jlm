@@ -27,6 +27,49 @@ scc::end() const
 	return constiterator(nodes_.end());
 }
 
+/* sccstructure class */
+
+bool
+sccstructure::is_tcloop() const
+{
+	return nenodes() == 1
+	    && nredges() == 1
+	    && nxedges() == 1
+	    && (*redges().begin())->source() == (*xedges().begin())->source();
+}
+
+std::unique_ptr<sccstructure>
+sccstructure::create(const jlm::scc & scc)
+{
+	auto sccstruct = std::make_unique<sccstructure>();
+
+	for (auto & node : scc) {
+		for (auto it = node.begin_inedges(); it != node.end_inedges(); it++) {
+			if (!scc.contains((*it)->source())) {
+				sccstruct->eedges_.insert(*it);
+				if (sccstruct->enodes_.find(&node) == sccstruct->enodes_.end())
+					sccstruct->enodes_.insert(&node);
+			}
+		}
+
+		for (auto it = node.begin_outedges(); it != node.end_outedges(); it++) {
+			if (!scc.contains(it->sink())) {
+				sccstruct->xedges_.insert(it.edge());
+				if (sccstruct->xnodes_.find(it->sink()) == sccstruct->xnodes_.end())
+					sccstruct->xnodes_.insert(it->sink());
+			}
+		}
+	}
+
+	for (auto & node : scc) {
+		for (auto it = node.begin_outedges(); it != node.end_outedges(); it++) {
+			if (sccstruct->enodes_.find(it->sink()) != sccstruct->enodes_.end())
+				sccstruct->redges_.insert(it.edge());
+		}
+	}
+
+	return sccstruct;
+}
 
 /**
 * Tarjan's SCC algorithm
