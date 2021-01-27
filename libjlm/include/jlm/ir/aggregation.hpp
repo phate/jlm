@@ -480,8 +480,43 @@ public:
 	}
 };
 
-/* aggregation */
-
+/** \brief Aggregate a properly structured CFG to a aggregation tree.
+*
+* This function reduces a properly structured CFG to an aggregation tree. The CFG is only
+* allowed to consist of the following subgraphs:
+*
+* 1. Linear subgraphs, such as:
+* \dot
+* 	digraph linear {
+* 		A -> B;
+* 	}
+* \enddot
+*
+* 2. Branch subgraphs, such as:
+* \dot
+* 	\digraph branches {
+* 		Split -> A;
+* 		Split -> B;
+* 		Split -> C;
+* 		A -> Join;
+* 		B -> Join;
+* 		C -> Join;
+* 	}
+* \enddot
+*
+* 3. Tail-Controlled Loops, such as:
+* \dot
+* 	digraph tcloop {
+* 		A -> Loop;
+* 		Loop -> Loop;
+* 		Loop -> B;
+* 	}
+* \enddot
+*
+* These subgraphs can be arbitrarily nested. Please refer to Reissmann et al. - RVSDG: An
+* Intermediate Representation for Optimizing Compilers [https://doi.org/10.1145/3391902] for more
+* information.
+*/
 std::unique_ptr<aggnode>
 aggregate(jlm::cfg & cfg);
 

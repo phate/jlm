@@ -47,7 +47,7 @@ is_branch(const jlm::aggnode * node, size_t nchildren)
 	return jlm::is<jlm::branchaggnode>(node) && node->nchildren() == nchildren;
 }
 
-static inline void
+static void
 test_linear_reduction()
 {
 	using namespace jlm;
@@ -83,7 +83,7 @@ test_linear_reduction()
 	verify_aggtree(*root);
 }
 
-static inline void
+static void
 test_loop_reduction()
 {
 	using namespace jlm;
