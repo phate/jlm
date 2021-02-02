@@ -32,19 +32,43 @@ is_block(const jlm::aggnode * node)
 static bool
 is_linear(const jlm::aggnode * node, size_t nchildren)
 {
-	return jlm::is<jlm::linearaggnode>(node) && node->nchildren() == nchildren;
+	if (!jlm::is<jlm::linearaggnode>(node))
+		return false;
+
+	if (node->nchildren() != nchildren)
+		return false;
+
+	for (auto & child : *node) {
+		if (child.parent() != node)
+			return false;
+	}
+
+	return true;
 }
 
 static bool
 is_loop(const jlm::aggnode * node)
 {
-	return jlm::is<jlm::loopaggnode>(node) && node->nchildren() == 1;
+	return jlm::is<jlm::loopaggnode>(node)
+	    && node->nchildren() == 1
+	    && node->child(0)->parent() == node;
 }
 
 static bool
 is_branch(const jlm::aggnode * node, size_t nchildren)
 {
-	return jlm::is<jlm::branchaggnode>(node) && node->nchildren() == nchildren;
+	if (!jlm::is<jlm::branchaggnode>(node))
+		return false;
+
+	if (node->nchildren() != nchildren)
+		return false;
+
+	for (auto & child : *node) {
+		if (child.parent() != node)
+			return false;
+	}
+
+	return true;
 }
 
 static void

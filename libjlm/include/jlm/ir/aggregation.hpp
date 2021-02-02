@@ -216,6 +216,12 @@ public:
 	normalize(aggnode & node);
 
 private:
+	void
+	remove_children()
+	{
+		children_.clear();
+	}
+
 	aggnode * parent_;
 	std::vector<std::unique_ptr<aggnode>> children_;
 };

@@ -30,6 +30,7 @@ aggnode::normalize(aggnode & node)
 		std::vector<std::unique_ptr<aggnode>> children;
 		for (size_t n = 0; n < node.children_.size(); n++) {
 			auto & child = node.children_[n];
+
 			if (is<linearaggnode>(child.get())) {
 				auto tmp = reduce(*child);
 				std::move(tmp.begin(), tmp.end(), std::back_inserter(children));
@@ -41,8 +42,13 @@ aggnode::normalize(aggnode & node)
 		return children;
 	};
 
-	if (is<linearaggnode>(&node))
-		node.children_ =reduce(node);
+	if (is<linearaggnode>(&node)) {
+		auto children = reduce(node);
+
+		node.remove_children();
+		for (auto & child : children)
+			node.add_child(std::move(child));
+	}
 
 	for (auto & child : node)
 		normalize(child);
