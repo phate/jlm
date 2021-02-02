@@ -190,6 +190,19 @@ public:
 		return parent_;
 	}
 
+	/**
+	* Return the number of nodes of the entire subtree.
+	*/
+	size_t
+	nnodes() const noexcept
+	{
+		size_t n = 1;
+		for (auto & child : children_)
+			n += child->nnodes();
+
+		return n;
+	}
+
 	virtual std::string
 	debug_string() const = 0;
 
