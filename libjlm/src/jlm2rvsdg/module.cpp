@@ -463,9 +463,8 @@ convert_branch_node(
 {
 	JLM_ASSERT(is<branchaggnode>(&node));
 	JLM_ASSERT(is<linearaggnode>(node.parent()));
-	JLM_ASSERT(node.parent()->nchildren() == 2 && node.parent()->child(1) == &node);
 
-	auto split = node.parent()->child(0);
+	auto split = node.parent()->child(node.index()-1);
 	while (!is<blockaggnode>(split))
 		split = split->child(split->nchildren()-1);
 	auto & sb = dynamic_cast<const blockaggnode*>(split)->tacs();
@@ -614,6 +613,7 @@ convert_cfg(
 		cfrstat stat(source_filename, function.name());
 		stat.start(*cfg);
 		restructure(cfg);
+		straighten(*cfg);
 		stat.end();
 		if (sd.print_cfr_time)
 			sd.print_stat(stat);
@@ -624,6 +624,7 @@ convert_cfg(
 		aggregation_stat stat(source_filename, function.name());
 		stat.start(*cfg);
 		root = aggregate(*cfg);
+		aggnode::normalize(*root);
 		stat.end();
 		if (sd.print_aggregation_time)
 			sd.print_stat(stat);
