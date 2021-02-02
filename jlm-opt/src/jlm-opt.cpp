@@ -110,8 +110,10 @@ main(int argc, char ** argv)
 
 	llvm::LLVMContext ctx;
 	auto llvm_module = parse_llvm_file(argv[0], flags.ifile, ctx);
+
 	auto jlm_module = construct_jlm_module(*llvm_module);
 
+	llvm_module.reset();
 	auto rm = jlm::construct_rvsdg(*jlm_module, flags.sd);
 
 	optimize(*rm, flags.sd, flags.optimizations);
