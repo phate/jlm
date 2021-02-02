@@ -304,4 +304,4 @@ test()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-annotation", test)
+JLM_UNIT_TEST_REGISTER("libjlm/ir/test-annotation", test)

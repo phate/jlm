@@ -2,6 +2,7 @@ include tests/libjlm/ir/operators/Makefile.sub
 
 TESTS += \
 	libjlm/ir/test-aggregation \
+	libjlm/ir/test-annotation \
 	libjlm/ir/test-cfg \
 	libjlm/ir/test-cfg-node \
 	libjlm/ir/test-cfg-orderings \

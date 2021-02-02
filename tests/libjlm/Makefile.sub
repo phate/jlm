@@ -6,7 +6,6 @@ include tests/libjlm/llvm-jlm/Makefile.sub
 include tests/libjlm/r2j/Makefile.sub
 
 TESTS += \
-	libjlm/test-annotation \
 	libjlm/test-cfg-structure \
 	libjlm/test-load \
 	libjlm/test-restructuring \
