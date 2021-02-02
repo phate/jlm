@@ -119,9 +119,9 @@ public:
 	virtual
 	~aggnode();
 
-	inline
 	aggnode()
-	: parent_(nullptr)
+	: index_(0)
+	, parent_(nullptr)
 	{}
 
 	aggnode(const aggnode & other) = delete;
@@ -167,8 +167,10 @@ public:
 	inline void
 	add_child(std::unique_ptr<aggnode> child)
 	{
+		size_t index = nchildren();
 		children_.emplace_back(std::move(child));
-		children_[nchildren()-1]->parent_ = this;
+		children_[index]->parent_ = this;
+		children_[index]->index_ = index;
 	}
 
 	inline aggnode *
@@ -178,16 +180,25 @@ public:
 		return children_[n].get();
 	}
 
-	inline aggnode *
+	aggnode *
 	parent() noexcept
 	{
+		JLM_ASSERT(parent_->child(index_) == this);
 		return parent_;
 	}
 
-	inline const aggnode *
+	const aggnode *
 	parent() const noexcept
 	{
+		JLM_ASSERT(parent_->child(index_) == this);
 		return parent_;
+	}
+
+	size_t
+	index() const noexcept
+	{
+		JLM_ASSERT(parent()->child(index_) == this);
+		return index_;
 	}
 
 	/**
@@ -235,6 +246,7 @@ private:
 		children_.clear();
 	}
 
+	size_t index_;
 	aggnode * parent_;
 	std::vector<std::unique_ptr<aggnode>> children_;
 };
