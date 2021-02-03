@@ -23,7 +23,7 @@ contains(
 		return false;
 
 	for (const auto & v : variables) {
-		if (ds.find(v) == ds.end())
+		if (!ds.contains(v))
 			return false;
 	}
 

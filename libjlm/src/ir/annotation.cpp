@@ -17,17 +17,6 @@ namespace jlm {
 demandset::~demandset()
 {}
 
-static variableset
-intersect(const variableset & vs1, const variableset & vs2)
-{
-	variableset intersect;
-	for (const auto & v : vs1) {
-		if (vs2.find(v) != vs2.end())
-			intersect.insert(v);
-	}
-	return intersect;
-}
-
 /* read-write annotation */
 
 static void
@@ -67,12 +56,12 @@ annotaterw(const blockaggnode * node, demandmap & dm)
 					they assign the value to is modeled as an argument of the tac.
 			*/
 			JLM_ASSERT(tac->noperands() == 2 && tac->nresults() == 0);
-			ds->reads.erase(tac->operand(0));
+			ds->reads.remove(tac->operand(0));
 			ds->writes.insert(tac->operand(0));
 			ds->reads.insert(tac->operand(1));
 		} else {
 			for (size_t n = 0; n < tac->nresults(); n++) {
-				ds->reads.erase(tac->result(n));
+				ds->reads.remove(tac->result(n));
 				ds->writes.insert(tac->result(n));
 			}
 			for (size_t n = 0; n < tac->noperands(); n++)
@@ -90,9 +79,9 @@ annotaterw(const linearaggnode * node, demandmap & dm)
 	for (ssize_t n = node->nchildren()-1; n >= 0; n--) {
 		auto & cs = *dm[node->child(n)];
 		for (const auto & v : cs.writes)
-			ds->reads.erase(v);
-		ds->reads.insert(cs.reads.begin(), cs.reads.end());
-		ds->writes.insert(cs.writes.begin(), cs.writes.end());
+			ds->reads.remove(v);
+		ds->reads.insert(cs.reads);
+		ds->writes.insert(cs.writes);
 	}
 
 	dm[node] = std::move(ds);
@@ -106,8 +95,8 @@ annotaterw(const branchaggnode * node, demandmap & dm)
 	ds->writes = dm[node->child(0)]->writes;
 	for (size_t n = 1; n < node->nchildren(); n++) {
 		auto & cs = *dm[node->child(n)];
-		ds->writes = intersect(ds->writes, cs.writes);
-		ds->reads.insert(cs.reads.begin(), cs.reads.end());
+		ds->writes.intersect(cs.writes);
+		ds->reads.insert(cs.reads);
 	}
 
 	dm[node] = std::move(ds);
@@ -165,8 +154,7 @@ annotateds(
 	auto & ds = dm[node];
 	ds->bottom = pds;
 
-	for (const auto & v : ds->writes)
-		pds.erase(v);
+	pds.remove(ds->writes);
 
 	ds->top = pds;
 }
@@ -195,9 +183,8 @@ annotateds(
 	auto & ds = dm[node];
 	ds->bottom = pds;
 
-	for (const auto & v : ds->writes)
-		pds.erase(v);
-	pds.insert(ds->reads.begin(), ds->reads.end());
+	pds.remove(ds->writes);
+	pds.insert(ds->reads);
 
 	ds->top = pds;
 }
@@ -214,9 +201,8 @@ annotateds(
 	for (ssize_t n = node->nchildren()-1; n >= 0; n--)
 		annotateds(node->child(n), pds, dm);
 
-	for (const auto & v : ds->writes)
-		pds.erase(v);
-	pds.insert(ds->reads.begin(), ds->reads.end());
+	pds.remove(ds->writes);
+	pds.insert(ds->reads);
 
 	ds->top = pds;
 }
@@ -235,9 +221,8 @@ annotateds(
 		annotateds(node->child(n), tmp, dm);
 	}
 
-	for (const auto & v : ds->writes)
-		pds.erase(v);
-	pds.insert(ds->reads.begin(), ds->reads.end());
+	pds.remove(ds->writes);
+	pds.insert(ds->reads);
 
 	ds->top = pds;
 }
@@ -250,16 +235,16 @@ annotateds(
 {
 	auto & ds = dm[node];
 
-	pds.insert(ds->reads.begin(), ds->reads.end());
+	pds.insert(ds->reads);
 	ds->bottom = ds->top = pds;
 	annotateds(node->child(0), pds, dm);
 
 	for (const auto & v : ds->reads)
-		JLM_ASSERT(pds.find(v) != pds.end());
+		JLM_ASSERT(pds.contains(v));
 
 	for (const auto & v : ds->writes)
-		if (ds->reads.find(v) == ds->reads.end())
-			JLM_ASSERT(pds.find(v) == pds.end());
+		if (!ds->reads.contains(v))
+			JLM_ASSERT(!pds.contains(v));
 }
 
 template<class T> static void
