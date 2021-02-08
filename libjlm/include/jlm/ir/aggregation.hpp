@@ -415,6 +415,9 @@ public:
 	virtual
 	~blockaggnode();
 
+	blockaggnode()
+	{}
+
 	inline
 	blockaggnode(jlm::taclist && bb)
 	: bb_(std::move(bb))
@@ -427,6 +430,12 @@ public:
 	tacs() const noexcept
 	{
 		return bb_;
+	}
+
+	static std::unique_ptr<aggnode>
+	create()
+	{
+		return std::make_unique<blockaggnode>();
 	}
 
 	static inline std::unique_ptr<aggnode>

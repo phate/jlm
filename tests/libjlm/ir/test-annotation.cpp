@@ -37,7 +37,8 @@ contains(
 	const std::vector<const jlm::variable*> & bottom,
 	const std::vector<const jlm::variable*> & top,
 	const std::vector<const jlm::variable*> & reads,
-	const std::vector<const jlm::variable*> & writes)
+	const std::vector<const jlm::variable*> & fullwrites,
+	const std::vector<const jlm::variable*> & allwrites)
 {
 	if (dm.find(node) == dm.end())
 		return false;
@@ -46,7 +47,7 @@ contains(
 	return contains(ds->bottom, bottom)
 	    && contains(ds->top, top)
 	    && contains(ds->reads, reads)
-	    && contains(ds->writes, writes);
+	    && contains(ds->fullwrites, fullwrites);
 }
 
 static void
@@ -71,7 +72,7 @@ test_block()
 	auto dm = annotate(*root);
 	print(*root, dm, stdout);
 
-	assert(contains(dm, root.get(), {}, {v0}, {v0}, {v1, v2}));
+	assert(contains(dm, root.get(), {}, {v0}, {v0}, {v1, v2}, {v1, v2}));
 }
 
 static void
@@ -112,15 +113,15 @@ test_linear()
 	auto dm = annotate(*root);
 	print(*root, dm, stdout);
 
-	assert(contains(dm, xnptr, {}, {v2}, {v2}, {}));
-	assert(contains(dm, b2ptr, {v2}, {v1}, {v1}, {v2}));
-	assert(contains(dm, l2ptr, {}, {v1}, {v1}, {v2}));
+	assert(contains(dm, xnptr, {}, {v2}, {v2}, {}, {}));
+	assert(contains(dm, b2ptr, {v2}, {v1}, {v1}, {v2}, {v2}));
+	assert(contains(dm, l2ptr, {}, {v1}, {v1}, {v2}, {v2}));
 
-	assert(contains(dm, b1ptr, {v1}, {&arg}, {&arg}, {v1}));
-	assert(contains(dm, enptr, {&arg}, {}, {}, {&arg}));
-	assert(contains(dm, l1ptr, {v1}, {}, {}, {v1, &arg}));
+	assert(contains(dm, b1ptr, {v1}, {&arg}, {&arg}, {v1}, {v1}));
+	assert(contains(dm, enptr, {&arg}, {}, {}, {&arg}, {&arg}));
+	assert(contains(dm, l1ptr, {v1}, {}, {}, {v1, &arg}, {v1, &arg}));
 
-	assert(contains(dm, root.get(), {}, {}, {}, {v1, &arg, v2}));
+	assert(contains(dm, root.get(), {}, {}, {}, {v1, &arg, v2}, {v1, &arg, v2}));
 }
 
 static void
@@ -166,11 +167,11 @@ test_branch()
 	auto dm = annotate(*root);
 	print(*root, dm, stdout);
 
-	assert(contains(dm, b1ptr, {}, {v2}, {v2}, {v3}));
-	assert(contains(dm, b2ptr, {}, {v1}, {v1}, {v2, v4, v3}));
-	assert(contains(dm, branchptr, {}, {v1, v2}, {v1, v2}, {v3}));
-	assert(contains(dm, bsptr, {v1, v2}, {v2, arg}, {arg}, {v1}));
-	assert(contains(dm, root.get(), {}, {arg, v2}, {arg, v2}, {v1, v3}));
+	assert(contains(dm, b1ptr, {}, {v2}, {v2}, {v3}, {v3}));
+	assert(contains(dm, b2ptr, {}, {v1}, {v1}, {v2, v4, v3}, {v2, v4, v3}));
+	assert(contains(dm, branchptr, {}, {v1, v2}, {v1, v2}, {v3}, {v2, v3, v4}));
+	assert(contains(dm, bsptr, {v1, v2}, {v2, arg}, {arg}, {v1}, {v1}));
+	assert(contains(dm, root.get(), {}, {arg, v2}, {arg, v2}, {v1, v3}, {}));
 }
 
 static void
@@ -206,10 +207,10 @@ test_loop()
 	auto dm = annotate(*root);
 	print(*root, dm, stdout);
 
-	assert(contains(dm, xnptr, {}, {v3, v4}, {v3, v4}, {}));
-	assert(contains(dm, bptr, {v1, v3, v4}, {v1, v4}, {v1}, {v2, v3}));
-	assert(contains(dm, lnptr, {v1, v3, v4}, {v1, v3, v4}, {v1}, {v2, v3}));
-	assert(contains(dm , root.get(), {}, {v1, v4}, {v1, v4}, {v2, v3}));
+	assert(contains(dm, xnptr, {}, {v3, v4}, {v3, v4}, {}, {}));
+	assert(contains(dm, bptr, {v1, v3, v4}, {v1, v4}, {v1}, {v2, v3}, {v2, v3}));
+	assert(contains(dm, lnptr, {v1, v3, v4}, {v1, v3, v4}, {v1}, {v2, v3}, {v2, v3}));
+	assert(contains(dm , root.get(), {}, {v1, v4}, {v1, v4}, {v2, v3}, {v2, v3}));
 }
 
 static void
@@ -257,12 +258,12 @@ test_branch_in_loop()
 	auto dm = annotate(*root);
 	print(*root, dm, stdout);
 
-	assert(contains(dm, xnptr, {}, {v2, v3}, {v2, v3}, {}));
-	assert(contains(dm, b1ptr, {v1, v2, v3, v4}, {v1}, {v1}, {v2, v3, v4}));
-	assert(contains(dm, b2ptr, {v1, v2, v3, v4}, {v1, v2, v4}, {v1, v4}, {v3}));
-	assert(contains(dm, branchptr, {v1, v2, v3, v4}, {v1, v2, v4}, {v1, v4}, {v3}));
-	assert(contains(dm, loopptr, {v1, v2, v3, v4}, {v1, v2, v3, v4}, {v1, v4}, {v3}));
-	assert(contains(dm, root.get(), {}, {v1, v2, v4}, {v1, v2, v4}, {v3}));
+	assert(contains(dm, xnptr, {}, {v2, v3}, {v2, v3}, {}, {}));
+	assert(contains(dm, b1ptr, {v2, v3, v4}, {v1}, {v1}, {v2, v3, v4}, {v2, v3, v4}));
+	assert(contains(dm, b2ptr, {v2, v3, v4}, {v1, v2, v4}, {v1, v4}, {v3}, {v3}));
+	assert(contains(dm, branchptr, {v2, v3, v4}, {v1, v2, v4}, {v1, v4}, {v3}, {v2, v3, v4}));
+	assert(contains(dm, loopptr, {v1, v2, v3, v4}, {v1, v2, v3, v4}, {v1, v4}, {v3}, {v2, v3, v4}));
+	assert(contains(dm, root.get(), {}, {v1, v2, v4}, {v1, v2, v4}, {v3}, {}));
 }
 
 static void
@@ -288,18 +289,73 @@ test_assignment()
 	auto dm = annotate(*root);
 	print(*root, dm, stdout);
 
-	assert(contains(dm, root.get(), {}, {v1}, {v1}, {v2}));
+	assert(contains(dm, root.get(), {}, {v1}, {v1}, {v2}, {v2}));
+}
+
+static void
+test_branch_passby()
+{
+	using namespace jlm;
+
+	valuetype vt;
+	test_op op({}, {&vt});
+	ipgraph_module module(filepath(""), "", "");
+
+	auto v1 = module.create_variable(vt, "v1");
+	auto v2 = module.create_variable(vt, "v2");
+	auto v3 = module.create_variable(vt, "v3");
+
+	taclist tlsplit, tlb1, tlb2;
+	tlsplit.append_last(tac::create(op, {}, {v1}));
+	tlsplit.append_last(tac::create(op, {}, {v2}));
+	tlb1.append_last(tac::create(op, {}, {v2}));
+	tlb1.append_last(tac::create(op, {}, {v3}));
+	tlb2.append_last(tac::create(op, {}, {v3}));
+
+	auto split = blockaggnode::create(std::move(tlsplit));
+	auto branch = branchaggnode::create();
+	auto b1 = blockaggnode::create(std::move(tlb1));
+	auto b2 = blockaggnode::create(std::move(tlb2));
+	auto join = blockaggnode::create();
+	auto xn = exitaggnode::create({v1, v2, v3});
+
+	branch->add_child(std::move(b1));
+	branch->add_child(std::move(b2));
+	auto root = linearaggnode::create(std::move(split), std::move(branch));
+	root->add_child(std::move(join));
+	root->add_child(std::move(xn));
+
+
+	auto dm = annotate(*root);
+	print(*root, dm, stdout);
+
+	assert(contains(dm, root.get(), {}, {}, {}, {v1, v2, v3}, {v1, v2, v3}));
+	{
+		assert(contains(dm, root->child(0), {v1, v2}, {}, {}, {v1, v2}, {v1, v2}));
+
+		auto branch = root->child(1);
+		assert(contains(dm, branch, {v2, v3}, {v1, v2}, {}, {v3}, {v2, v3}));
+		{
+			assert(contains(dm, branch->child(0), {v2, v3}, {}, {}, {v2, v3}, {v2, v3}));
+			assert(contains(dm, branch->child(1), {v2, v3}, {v2}, {}, {v3}, {v3}));
+		}
+
+		assert(contains(dm, root->child(2), {v1, v2, v3}, {v1, v2, v3}, {}, {}, {}));
+		assert(contains(dm, root->child(3), {}, {v1, v2, v3}, {v1, v2, v3}, {}, {}));
+	}
 }
 
 static int
 test()
 {
+
 	test_block();
 	test_linear();
 	test_branch();
 	test_loop();
 	test_branch_in_loop();
 	test_assignment();
+	test_branch_passby();
 
 	return 0;
 }

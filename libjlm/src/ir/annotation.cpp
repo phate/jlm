@@ -26,8 +26,10 @@ static void
 annotaterw(const entryaggnode * node, demandmap & dm)
 {
 	auto ds = demandset::create();
-	for (const auto & argument : *node)
-		ds->writes.insert(&argument);
+	for (const auto & argument : *node) {
+		ds->allwrites.insert(&argument);
+		ds->fullwrites.insert(&argument);
+	}
 
 	dm[node] = std::move(ds);
 }
@@ -57,12 +59,14 @@ annotaterw(const blockaggnode * node, demandmap & dm)
 			*/
 			JLM_ASSERT(tac->noperands() == 2 && tac->nresults() == 0);
 			ds->reads.remove(tac->operand(0));
-			ds->writes.insert(tac->operand(0));
+			ds->allwrites.insert(tac->operand(0));
+			ds->fullwrites.insert(tac->operand(0));
 			ds->reads.insert(tac->operand(1));
 		} else {
 			for (size_t n = 0; n < tac->nresults(); n++) {
 				ds->reads.remove(tac->result(n));
-				ds->writes.insert(tac->result(n));
+				ds->allwrites.insert(tac->result(n));
+				ds->fullwrites.insert(tac->result(n));
 			}
 			for (size_t n = 0; n < tac->noperands(); n++)
 				ds->reads.insert(tac->operand(n));
@@ -78,10 +82,11 @@ annotaterw(const linearaggnode * node, demandmap & dm)
 	auto ds = demandset::create();
 	for (ssize_t n = node->nchildren()-1; n >= 0; n--) {
 		auto & cs = *dm[node->child(n)];
-		for (const auto & v : cs.writes)
+		for (const auto & v : cs.fullwrites)
 			ds->reads.remove(v);
 		ds->reads.insert(cs.reads);
-		ds->writes.insert(cs.writes);
+		ds->allwrites.insert(cs.allwrites);
+		ds->fullwrites.insert(cs.fullwrites);
 	}
 
 	dm[node] = std::move(ds);
@@ -92,10 +97,12 @@ annotaterw(const branchaggnode * node, demandmap & dm)
 {
 	auto ds = demandset::create();
 	ds->reads = dm[node->child(0)]->reads;
-	ds->writes = dm[node->child(0)]->writes;
+	ds->allwrites = dm[node->child(0)]->allwrites;
+	ds->fullwrites = dm[node->child(0)]->fullwrites;
 	for (size_t n = 1; n < node->nchildren(); n++) {
 		auto & cs = *dm[node->child(n)];
-		ds->writes.intersect(cs.writes);
+		ds->allwrites.insert(cs.allwrites);
+		ds->fullwrites.intersect(cs.fullwrites);
 		ds->reads.insert(cs.reads);
 	}
 
@@ -107,7 +114,8 @@ annotaterw(const loopaggnode * node, demandmap & dm)
 {
 	auto ds = demandset::create();
 	ds->reads = dm[node->child(0)]->reads;
-	ds->writes = dm[node->child(0)]->writes;
+	ds->allwrites = dm[node->child(0)]->allwrites;
+	ds->fullwrites = dm[node->child(0)]->fullwrites;
 	dm[node] = std::move(ds);
 }
 
@@ -154,7 +162,7 @@ annotateds(
 	auto & ds = dm[node];
 	ds->bottom = pds;
 
-	pds.remove(ds->writes);
+	pds.remove(ds->fullwrites);
 
 	ds->top = pds;
 }
@@ -183,7 +191,7 @@ annotateds(
 	auto & ds = dm[node];
 	ds->bottom = pds;
 
-	pds.remove(ds->writes);
+	pds.remove(ds->fullwrites);
 	pds.insert(ds->reads);
 
 	ds->top = pds;
@@ -201,7 +209,7 @@ annotateds(
 	for (ssize_t n = node->nchildren()-1; n >= 0; n--)
 		annotateds(node->child(n), pds, dm);
 
-	pds.remove(ds->writes);
+	pds.remove(ds->fullwrites);
 	pds.insert(ds->reads);
 
 	ds->top = pds;
@@ -214,15 +222,23 @@ annotateds(
 	demandmap & dm)
 {
 	auto & ds = dm[node];
-	ds->bottom = pds;
+
+	variableset passthrough = pds;
+	passthrough.subtract(ds->allwrites);
+
+	variableset bottom = pds;
+	bottom.intersect(ds->allwrites);
+	ds->bottom = bottom;
 
 	for (size_t n = 0; n < node->nchildren(); n++) {
-		auto tmp = pds;
+		auto tmp = bottom;
 		annotateds(node->child(n), tmp, dm);
 	}
 
-	pds.remove(ds->writes);
+
+	pds.remove(ds->fullwrites);
 	pds.insert(ds->reads);
+	pds.insert(passthrough);
 
 	ds->top = pds;
 }
@@ -242,7 +258,7 @@ annotateds(
 	for (const auto & v : ds->reads)
 		JLM_ASSERT(pds.contains(v));
 
-	for (const auto & v : ds->writes)
+	for (const auto & v : ds->fullwrites)
 		if (!ds->reads.contains(v))
 			JLM_ASSERT(!pds.contains(v));
 }

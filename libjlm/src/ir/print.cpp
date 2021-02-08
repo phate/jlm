@@ -353,8 +353,12 @@ emit_variableset(const variableset & ds)
 static std::string
 emit_demandset(const demandset & ds)
 {
-	return emit_variableset(ds.bottom) + " -> " + emit_variableset(ds.top)
-	     + " [" + emit_variableset(ds.reads) + "] [" + emit_variableset(ds.writes) + "]";
+	return emit_variableset(ds.bottom)
+	     + " -> " + emit_variableset(ds.top)
+	     + " [" + emit_variableset(ds.reads)
+	     + "] [" + emit_variableset(ds.fullwrites)
+	     + "] [" + emit_variableset(ds.allwrites)
+	     + "]";
 }
 
 std::string

@@ -130,7 +130,8 @@ public:
 	variableset bottom;
 
 	variableset reads;
-	variableset writes;
+	variableset allwrites;
+	variableset fullwrites;
 };
 
 typedef std::unordered_map<const aggnode*, std::unique_ptr<demandset>> demandmap;
