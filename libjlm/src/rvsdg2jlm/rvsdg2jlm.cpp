@@ -335,7 +335,7 @@ convert_gamma_node(const jive::node & node, context & ctx)
 		}
 
 		/* create phi instruction */
-		auto v = module.create_variable(output->type());
+		auto v = module.create_tacvariable(output->type());
 		exit->append_last(phi_op::create(arguments, v));
 		ctx.insert(output, v);
 	}
@@ -383,7 +383,7 @@ convert_theta_node(const jive::node & node, context & ctx)
 		auto argument = subregion->argument(n);
 		auto v = ctx.variable(argument->input()->origin());
 		if (phi_needed(argument->input(), v)) {
-			lvs.push_back(ctx.module().create_variable(argument->type()));
+			lvs.push_back(ctx.module().create_tacvariable(argument->type()));
 			v = lvs.back();
 		}
 		ctx.insert(argument, v);

@@ -73,7 +73,7 @@ public:
 	static std::unique_ptr<jlm::tac>
 	create(
 		const std::vector<std::pair<const variable*,cfg_node*>> & arguments,
-		const jlm::variable * result)
+		jlm::variable * result)
 	{
 		std::vector<cfg_node*> nodes;
 		std::vector<const variable*> operands;
@@ -83,7 +83,11 @@ public:
 		}
 
 		phi_op phi(nodes, result->type());
-		return tac::create(phi, operands, {result});
+		auto phitac = tac::create(phi, operands, {result});
+		if (auto tv = dynamic_cast<tacvariable*>(result))
+			tv->set_tac(phitac.get());
+
+		return phitac;
 	}
 
 private:

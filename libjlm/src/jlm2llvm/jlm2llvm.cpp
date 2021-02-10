@@ -28,21 +28,12 @@
 namespace jlm {
 namespace jlm2llvm {
 
-static inline const jlm::tac *
-find_match_tac(const taclist * bb)
+static const jlm::tac *
+get_match(const jlm::tac * branch)
 {
-	auto it = bb->rbegin();
-	const jlm::tac * tac = nullptr;
-	while (it != bb->rend()) {
-		if (*it && dynamic_cast<const jive::match_op*>(&(*it)->operation())) {
-			tac = *it;
-			break;
-		}
-
-		it = std::next(it);
-	}
-
-	return tac;
+	JLM_ASSERT(is<tacvariable>(branch->operand(0)));
+	auto tv = static_cast<const tacvariable*>(branch->operand(0));
+	return tv->tac();
 }
 
 static bool
@@ -115,9 +106,9 @@ create_switch(const cfg_node * node, context & ctx)
 	auto branch = bb->tacs().last();
 	JLM_ASSERT(branch && is<branch_op>(branch));
 	auto condition = ctx.value(branch->operand(0));
-	auto match = find_match_tac(&bb->tacs());
+	auto match = get_match(branch);
 
-	if (match) {
+	if (is<jive::match_op>(match)) {
 		JLM_ASSERT(match->result(0) == branch->operand(0));
 		auto mop = static_cast<const jive::match_op*>(&match->operation());
 

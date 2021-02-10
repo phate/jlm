@@ -568,10 +568,7 @@ convert_phi_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & ct
 	JLM_ASSERT(i->getOpcode() == llvm::Instruction::PHI);
 
 	auto result = ctx.module().create_tacvariable(*convert_type(i->getType(), ctx));
-
 	tacs.push_back(phi_op::create({}, result));
-	result->set_tac(tacs.back().get());
-
 	return tacs.back()->result(0);
 }
 
