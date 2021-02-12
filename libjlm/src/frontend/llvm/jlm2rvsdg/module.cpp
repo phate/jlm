@@ -173,6 +173,41 @@ private:
 	std::string filename_;
 };
 
+class jlm_rvsdg_conversion_stat final : public stat {
+public:
+	virtual
+	~jlm_rvsdg_conversion_stat()
+	{}
+
+	jlm_rvsdg_conversion_stat(const std::string & filename, const std::string & fctname)
+	: fctname_(fctname)
+	, filename_(filename)
+	{}
+
+	void
+	start() noexcept
+	{
+		timer_.start();
+	}
+
+	void
+	end() noexcept
+	{
+		timer_.stop();
+	}
+
+	virtual std::string
+	to_str() const override
+	{
+		return strfmt("RVSDGCREATIONTIME ", filename_, " ", fctname_, " ", timer_.ns());
+	}
+
+private:
+	jlm::timer timer_;
+	std::string fctname_;
+	std::string filename_;
+};
+
 class rvsdg_construction_stat final : public stat {
 public:
 	virtual
@@ -664,7 +699,14 @@ convert_cfg(
 	auto & attributes = function.attributes();
 	auto lambda = lambda::node::create(svmap.region(), fcttype, name, linkage, attributes);
 
-	convert_node(*root, dm, function, lambda, svmap);
+	{
+		jlm_rvsdg_conversion_stat stat(source_filename, function.name());
+		stat.start();
+		convert_node(*root, dm, function, lambda, svmap);
+		stat.end();
+		if (sd.print_jlm_rvsdg_conversion)
+			sd.print_stat(stat);
+	}
 
 	return lambda->output();
 }

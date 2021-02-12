@@ -41,6 +41,7 @@ public:
 	, print_rvsdg_construction(false)
 	, print_rvsdg_destruction(false)
 	, print_rvsdg_optimization(false)
+	, print_jlm_rvsdg_conversion(false)
 	, file_(path)
 	{
 		file_.open("a");
@@ -81,6 +82,7 @@ public:
 	bool print_rvsdg_construction;
 	bool print_rvsdg_destruction;
 	bool print_rvsdg_optimization;
+	bool print_jlm_rvsdg_conversion;
 
 private:
 	jlm::file file_;
