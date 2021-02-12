@@ -168,9 +168,11 @@ mark(const jive::output * output, dnectx & ctx)
 		return;
 	}
 
-	if (auto argument = dynamic_cast<const lambda::fctargument*>(output)) {
-		if (argument->input())
-			mark(argument->input()->origin(), ctx);
+	if (is<lambda::fctargument>(output))
+		return;
+
+	if (auto cv = dynamic_cast<const lambda::cvargument*>(output)) {
+		mark(cv->input()->origin(), ctx);
 		return;
 	}
 
@@ -188,6 +190,7 @@ mark(const jive::output * output, dnectx & ctx)
 	}
 
 	auto node = jive::node_output::node(output);
+	JLM_ASSERT(node);
 	for (size_t n = 0; n < node->ninputs(); n++)
 		mark(node->input(n)->origin(), ctx);
 }

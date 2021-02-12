@@ -251,13 +251,16 @@ test_lambda()
 	rvsdg_module rm(filepath(""), "", "");
 	auto & graph = *rm.graph();
 	auto x = graph.add_import({vt, "x"});
+	auto y = graph.add_import({vt, "y"});
 
-	auto lambda = lambda::node::create(graph.root(), {{&vt}, {&vt}}, "f", linkage::external_linkage);
+	auto lambda = lambda::node::create(graph.root(), {{&vt}, {&vt, &vt}}, "f",
+		linkage::external_linkage);
 
-	auto d = lambda->add_ctxvar(x);
-	jlm::create_testop(lambda->subregion(), {lambda->fctargument(0), d}, {&vt});
+	auto cv1 = lambda->add_ctxvar(x);
+	auto cv2 = lambda->add_ctxvar(y);
+	jlm::create_testop(lambda->subregion(), {lambda->fctargument(0), cv1}, {&vt});
 
-	auto output = lambda->finalize({lambda->fctargument(0)});
+	auto output = lambda->finalize({lambda->fctargument(0), cv2});
 
 	graph.add_export(output, {output->type(), "f"});
 
@@ -267,7 +270,7 @@ test_lambda()
 //	jive::view(graph.root(), stdout);
 
 	assert(lambda->subregion()->nodes.size() == 0);
-	assert(graph.root()->narguments() == 0);
+	assert(graph.root()->narguments() == 1);
 }
 
 static inline void
