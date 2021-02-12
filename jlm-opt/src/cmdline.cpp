@@ -101,6 +101,11 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 	, cl::ValueDisallowed
 	, cl::desc("Write annotation time to stats file."));
 
+	cl::opt<bool> print_jlm_rvsdg_conversion(
+	  "print-jlm-rvsdg-conversion"
+	, cl::ValueDisallowed
+	, cl::desc("Write JLM to RVSDG conversion stats to file."));
+
 	cl::opt<bool> print_rvsdg_construction(
 	  "print-rvsdg-construction"
 	, cl::ValueDisallowed
@@ -215,6 +220,7 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 	options.sd.print_rvsdg_construction = print_rvsdg_construction;
 	options.sd.print_rvsdg_destruction = print_rvsdg_destruction;
 	options.sd.print_rvsdg_optimization = print_rvsdg_optimization;
+	options.sd.print_jlm_rvsdg_conversion = print_jlm_rvsdg_conversion;
 }
 
 }
