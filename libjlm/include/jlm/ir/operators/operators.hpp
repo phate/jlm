@@ -1025,23 +1025,23 @@ public:
 		return static_cast<const jlm::fptype*>(&result(0).type())->size();
 	}
 
+	static std::unique_ptr<jlm::tac>
+	create(
+		const jlm::fpop & fpop,
+		const variable * op1,
+		const variable * op2,
+		variable * result)
+	{
+		auto ft = dynamic_cast<const jlm::fptype*>(&op1->type());
+		if (!ft) throw jlm::error("expected floating point type.");
+
+		jlm::fpbin_op op(fpop, ft->size());
+		return tac::create(op, {op1, op2}, {result});
+	}
+
 private:
 	jlm::fpop op_;
 };
-
-static inline std::unique_ptr<jlm::tac>
-create_fpbin_tac(
-	const jlm::fpop & fpop,
-	const variable * op1,
-	const variable * op2,
-	jlm::variable * result)
-{
-	auto ft = dynamic_cast<const jlm::fptype*>(&op1->type());
-	if (!ft) throw jlm::error("expected floating point type.");
-
-	jlm::fpbin_op op(fpop, ft->size());
-	return tac::create(op, {op1, op2}, {result});
-}
 
 /* fpext operator */
 
