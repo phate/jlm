@@ -966,17 +966,17 @@ public:
 		jlm::undef_constant_op op(*vt);
 		return jive::simple_node::create_normalized(region, op, {})[0];
 	}
+
+	static std::unique_ptr<jlm::tac>
+	create(const variable * result)
+	{
+		auto vt = dynamic_cast<const jive::valuetype*>(&result->type());
+		if (!vt) throw jlm::error("expected value type.");
+
+		jlm::undef_constant_op op(*vt);
+		return tac::create(op, {}, {result});
+	}
 };
-
-static inline std::unique_ptr<jlm::tac>
-create_undef_constant_tac(const jlm::variable * result)
-{
-	auto vt = dynamic_cast<const jive::valuetype*>(&result->type());
-	if (!vt) throw jlm::error("expected value type.");
-
-	jlm::undef_constant_op op(*vt);
-	return tac::create(op, {}, {result});
-}
 
 /* floating point arithmetic operator */
 

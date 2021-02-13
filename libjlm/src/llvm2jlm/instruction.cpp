@@ -111,7 +111,7 @@ convert_undefvalue(
 
 	auto t = convert_type(c->getType(), ctx);
 	auto r = ctx.module().create_variable(*t);
-	tacs.push_back(create_undef_constant_tac(r));
+	tacs.push_back(undef_constant_op::create(r));
 	return r;
 }
 

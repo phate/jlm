@@ -286,7 +286,7 @@ create_cfg(llvm::Function & f, context & ctx)
 	jlm::variable * result = nullptr;
 	if (!f.getReturnType()->isVoidTy()) {
 		result = m.create_variable(*convert_type(f.getReturnType(), ctx), "_r_");
-		entry_block->append_last(create_undef_constant_tac(result));
+		entry_block->append_last(undef_constant_op::create(result));
 
 		JLM_ASSERT(node->fcttype().nresults() == 4);
 		JLM_ASSERT(result->type() == node->fcttype().result_type(0));
