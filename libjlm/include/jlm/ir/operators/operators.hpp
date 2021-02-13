@@ -709,23 +709,23 @@ public:
 		return static_cast<const jlm::ptrtype*>(&argument(0).type())->pointee_type();
 	}
 
+	static std::unique_ptr<jlm::tac>
+	create(
+		const jlm::cmp & cmp,
+		const variable * op1,
+		const variable * op2,
+		variable * result)
+	{
+		auto pt = dynamic_cast<const jlm::ptrtype*>(&op1->type());
+		if (!pt) throw jlm::error("expected pointer type.");
+
+		jlm::ptrcmp_op op(*pt, cmp);
+		return tac::create(op, {op1, op2}, {result});
+	}
+
 private:
 	jlm::cmp cmp_;
 };
-
-static inline std::unique_ptr<jlm::tac>
-create_ptrcmp_tac(
-	const jlm::cmp & cmp,
-	const variable * op1,
-	const variable * op2,
-	jlm::variable * result)
-{
-	auto pt = dynamic_cast<const jlm::ptrtype*>(&op1->type());
-	if (!pt) throw jlm::error("expected pointer type.");
-
-	jlm::ptrcmp_op op(*pt, cmp);
-	return tac::create(op, {op1, op2}, {result});
-}
 
 /* zext operator */
 
