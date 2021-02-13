@@ -1634,20 +1634,22 @@ public:
 	reduce_operand(
 		jive_unop_reduction_path_t path,
 		jive::output * output) const override;
+
+	static std::unique_ptr<jlm::tac>
+	create(
+		const variable * operand,
+		variable * result)
+	{
+		auto st = dynamic_cast<const jive::bittype*>(&operand->type());
+		if (!st) throw jlm::error("expected bits type.");
+
+		auto rt = dynamic_cast<const jlm::fptype*>(&result->type());
+		if (!rt) throw jlm::error("expected floating point type.");
+
+		sitofp_op op(*st, *rt);
+		return tac::create(op, {operand}, {result});
+	}
 };
-
-static inline std::unique_ptr<jlm::tac>
-create_sitofp_tac(const variable * operand, jlm::variable * result)
-{
-	auto st = dynamic_cast<const jive::bittype*>(&operand->type());
-	if (!st) throw jlm::error("expected bits type.");
-
-	auto rt = dynamic_cast<const jlm::fptype*>(&result->type());
-	if (!rt) throw jlm::error("expected floating point type.");
-
-	sitofp_op op(*st, *rt);
-	return tac::create(op, {operand}, {result});
-}
 
 /* constant array operator */
 
