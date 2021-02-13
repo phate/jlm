@@ -645,7 +645,7 @@ convert_call_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 		for (size_t n = ftype->getNumParams(); n < i->getNumOperands()-1; n++)
 			varargs.push_back(convert_value(i->getArgOperand(n), tacs, ctx));
 
-		tacs.push_back(create_valist_tac(varargs, ctx.module()));
+		tacs.push_back(valist_op::create(varargs, ctx.module()));
 		return tacs.back()->result(0);
 	};
 

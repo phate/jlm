@@ -1282,6 +1282,25 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
+	static std::unique_ptr<jlm::tac>
+	create(
+		const std::vector<const variable*> & arguments,
+		ipgraph_module & im)
+	{
+		std::vector<std::unique_ptr<jive::type>> operands;
+		for (const auto & argument : arguments)
+			operands.push_back(argument->type().copy());
+
+		varargtype t;
+		auto result = im.create_tacvariable(t);
+
+		jlm::valist_op op(std::move(operands));
+		auto tac = tac::create(op, arguments, {result});
+		result->set_tac(tac.get());
+
+		return tac;
+	}
+
 private:
 	static inline std::vector<jive::port>
 	create_srcports(std::vector<std::unique_ptr<jive::type>> types)
@@ -1293,25 +1312,6 @@ private:
 		return ports;
 	}
 };
-
-static inline std::unique_ptr<jlm::tac>
-create_valist_tac(
-	const std::vector<const variable*> & arguments,
-	ipgraph_module & im)
-{
-	std::vector<std::unique_ptr<jive::type>> operands;
-	for (const auto & argument : arguments)
-		operands.push_back(argument->type().copy());
-
-	varargtype t;
-	auto result = im.create_tacvariable(t);
-
-	jlm::valist_op op(std::move(operands));
-	auto tac = tac::create(op, arguments, {result});
-	result->set_tac(tac.get());
-
-	return tac;
-}
 
 /* bitcast operator */
 
