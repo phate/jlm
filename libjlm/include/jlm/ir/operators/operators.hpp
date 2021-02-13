@@ -904,23 +904,23 @@ public:
 		return static_cast<const jlm::fptype*>(&argument(0).type())->size();
 	}
 
+	static std::unique_ptr<jlm::tac>
+	create(
+		const jlm::fpcmp & cmp,
+		const variable * op1,
+		const variable * op2,
+		variable * result)
+	{
+		auto ft = dynamic_cast<const jlm::fptype*>(&op1->type());
+		if (!ft) throw jlm::error("expected floating point type.");
+
+		jlm::fpcmp_op op(cmp, ft->size());
+		return tac::create(op, {op1, op2}, {result});
+	}
+
 private:
 	jlm::fpcmp cmp_;
 };
-
-static inline std::unique_ptr<jlm::tac>
-create_fpcmp_tac(
-	const jlm::fpcmp & cmp,
-	const variable * op1,
-	const variable * op2,
-	jlm::variable * result)
-{
-	auto ft = dynamic_cast<const jlm::fptype*>(&op1->type());
-	if (!ft) throw jlm::error("expected floating point type.");
-
-	jlm::fpcmp_op op(cmp, ft->size());
-	return tac::create(op, {op1, op2}, {result});
-}
 
 /* undef constant operator */
 
