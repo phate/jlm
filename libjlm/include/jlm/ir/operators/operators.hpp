@@ -359,20 +359,22 @@ public:
 
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
+
+	static std::unique_ptr<jlm::tac>
+	create(
+		const variable * operand,
+		jlm::variable * result)
+	{
+		auto st = dynamic_cast<const jive::ctltype*>(&operand->type());
+		if (!st) throw jlm::error("expected control type.");
+
+		auto dt = dynamic_cast<const jive::bittype*>(&result->type());
+		if (!dt) throw jlm::error("expected bitstring type.");
+
+		ctl2bits_op op(*st, *dt);
+		return tac::create(op, {operand}, {result});
+	}
 };
-
-static inline std::unique_ptr<jlm::tac>
-create_ctl2bits_tac(const variable * operand, jlm::variable * result)
-{
-	auto st = dynamic_cast<const jive::ctltype*>(&operand->type());
-	if (!st) throw jlm::error("expected control type.");
-
-	auto dt = dynamic_cast<const jive::bittype*>(&result->type());
-	if (!dt) throw jlm::error("expected bitstring type.");
-
-	ctl2bits_op op(*st, *dt);
-	return tac::create(op, {operand}, {result});
-}
 
 /* branch operator */
 

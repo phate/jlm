@@ -239,7 +239,7 @@ convert_empty_gamma_node(const jive::gamma_node * gamma, context & ctx)
 			bb->append_last(select_op::create(c, t, f, v));
 		} else {
 			auto c = module.create_variable(jive::bittype(1));
-			bb->append_last(create_ctl2bits_tac(ctx.variable(predicate), c));
+			bb->append_last(ctl2bits_op::create(ctx.variable(predicate), c));
 			bb->append_last(select_op::create(c, ctx.variable(o1), ctx.variable(o0), v));
 		}
 
