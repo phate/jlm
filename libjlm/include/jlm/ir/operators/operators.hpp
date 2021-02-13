@@ -593,20 +593,22 @@ public:
 	{
 		return static_cast<const jlm::ptrtype*>(&argument(0).type())->pointee_type();
 	}
+
+	static std::unique_ptr<jlm::tac>
+	create(
+		const variable * argument,
+		jlm::variable * result)
+	{
+		auto pt = dynamic_cast<const jlm::ptrtype*>(&argument->type());
+		if (!pt) throw jlm::error("expected pointer type.");
+
+		auto bt = dynamic_cast<const jive::bittype*>(&result->type());
+		if (!bt) throw jlm::error("expected bitstring type.");
+
+		jlm::ptr2bits_op op(*pt, *bt);
+		return tac::create(op, {argument}, {result});
+	}
 };
-
-static inline std::unique_ptr<jlm::tac>
-create_ptr2bits_tac(const variable * argument, jlm::variable * result)
-{
-	auto pt = dynamic_cast<const jlm::ptrtype*>(&argument->type());
-	if (!pt) throw jlm::error("expected pointer type.");
-
-	auto bt = dynamic_cast<const jive::bittype*>(&result->type());
-	if (!bt) throw jlm::error("expected bitstring type.");
-
-	jlm::ptr2bits_op op(*pt, *bt);
-	return tac::create(op, {argument}, {result});
-}
 
 /* data array constant operator */
 
