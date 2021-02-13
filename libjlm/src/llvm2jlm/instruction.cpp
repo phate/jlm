@@ -222,7 +222,7 @@ convert_constantArray(
 	}
 
 	auto r = ctx.module().create_variable(*convert_type(c->getType(), ctx));
-	tacs.push_back(create_constant_array_tac(elements, r));
+	tacs.push_back(constant_array_op::create(elements, r));
 	return r;
 }
 
