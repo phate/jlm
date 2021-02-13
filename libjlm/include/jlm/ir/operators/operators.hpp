@@ -786,20 +786,22 @@ public:
 	{
 		return static_cast<const jive::bittype*>(&result(0).type())->nbits();
 	}
+
+	static std::unique_ptr<jlm::tac>
+	create(
+		const variable * operand,
+		jlm::variable * result)
+	{
+		auto st = dynamic_cast<const jive::bittype*>(&operand->type());
+		if (!st) throw jlm::error("expected bitstring type.");
+
+		auto dt = dynamic_cast<const jive::bittype*>(&result->type());
+		if (!dt) throw jlm::error("expected bitstring type.");
+
+		jlm::zext_op op(st->nbits(), dt->nbits());
+		return tac::create(op, {operand}, {result});
+	}
 };
-
-static inline std::unique_ptr<jlm::tac>
-create_zext_tac(const variable * operand, jlm::variable * result)
-{
-	auto st = dynamic_cast<const jive::bittype*>(&operand->type());
-	if (!st) throw jlm::error("expected bitstring type.");
-
-	auto dt = dynamic_cast<const jive::bittype*>(&result->type());
-	if (!dt) throw jlm::error("expected bitstring type.");
-
-	jlm::zext_op op(st->nbits(), dt->nbits());
-	return tac::create(op, {operand}, {result});
-}
 
 /* floating point constant operator */
 
