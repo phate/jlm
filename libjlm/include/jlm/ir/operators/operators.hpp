@@ -837,21 +837,23 @@ public:
 		return static_cast<const jlm::fptype*>(&result(0).type())->size();
 	}
 
+	static std::unique_ptr<jlm::tac>
+	create(
+		const llvm::APFloat & constant,
+		jlm::variable * result)
+	{
+		auto ft = dynamic_cast<const jlm::fptype*>(&result->type());
+		if (!ft) throw jlm::error("expected floating point type.");
+
+		jlm::fpconstant_op op(ft->size(), constant);
+		return tac::create(op, {}, {result});
+	}
+
 private:
 	/* FIXME: I would not like to use the APFloat here,
 	   but I don't have a replacement right now. */
 	llvm::APFloat constant_;
 };
-
-static inline std::unique_ptr<jlm::tac>
-create_fpconstant_tac(const llvm::APFloat & constant, jlm::variable * result)
-{
-	auto ft = dynamic_cast<const jlm::fptype*>(&result->type());
-	if (!ft) throw jlm::error("expected floating point type.");
-
-	jlm::fpconstant_op op(ft->size(), constant);
-	return tac::create(op, {}, {result});
-}
 
 /* floating point comparison operator */
 
