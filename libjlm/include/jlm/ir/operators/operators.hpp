@@ -645,22 +645,22 @@ public:
 	{
 		return static_cast<const arraytype*>(&result(0).type())->element_type();
 	}
+
+	static std::unique_ptr<jlm::tac>
+	create(
+		const std::vector<const variable*> & elements,
+		jlm::variable * result)
+	{
+		if (elements.size() == 0)
+			throw jlm::error("expected at least one element.");
+
+		auto vt = dynamic_cast<const jive::valuetype*>(&elements[0]->type());
+		if (!vt) throw jlm::error("expected value type.");
+
+		data_array_constant_op op(*vt, elements.size());
+		return tac::create(op, elements, {result});
+	}
 };
-
-static inline std::unique_ptr<jlm::tac>
-create_data_array_constant_tac(
-	const std::vector<const variable*> & elements,
-	jlm::variable * result)
-{
-	if (elements.size() == 0)
-		throw jlm::error("expected at least one element.");
-
-	auto vt = dynamic_cast<const jive::valuetype*>(&elements[0]->type());
-	if (!vt) throw jlm::error("expected value type.");
-
-	data_array_constant_op op(*vt, elements.size());
-	return tac::create(op, elements, {result});
-}
 
 /* pointer compare operator */
 

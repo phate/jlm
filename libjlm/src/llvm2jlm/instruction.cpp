@@ -240,7 +240,7 @@ convert_constantDataArray(
 		elements.push_back(convert_constant(c.getElementAsConstant(n), tacs, ctx));
 
 	auto r = ctx.module().create_variable(*convert_type(c.getType(), ctx));
-	tacs.push_back(create_data_array_constant_tac(elements, r));
+	tacs.push_back(data_array_constant_op::create(elements, r));
 	return r;
 }
 
