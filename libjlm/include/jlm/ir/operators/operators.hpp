@@ -322,20 +322,22 @@ public:
 	reduce_operand(
 		jive_unop_reduction_path_t path,
 		jive::output * output) const override;
+
+	static std::unique_ptr<jlm::tac>
+	create(
+		const variable * operand,
+		jlm::variable * result)
+	{
+		auto st = dynamic_cast<const fptype*>(&operand->type());
+		if (!st) throw jlm::error("expected floating point type.");
+
+		auto dt = dynamic_cast<const jive::bittype*>(&result->type());
+		if (!dt) throw jlm::error("expected bitstring type.");
+
+		fp2si_op op(st->size(), *dt);
+		return tac::create(op, {operand}, {result});
+	}
 };
-
-static inline std::unique_ptr<jlm::tac>
-create_fp2si_tac(const variable * operand, jlm::variable * result)
-{
-	auto st = dynamic_cast<const fptype*>(&operand->type());
-	if (!st) throw jlm::error("expected floating point type.");
-
-	auto dt = dynamic_cast<const jive::bittype*>(&result->type());
-	if (!dt) throw jlm::error("expected bitstring type.");
-
-	fp2si_op op(st->size(), *dt);
-	return tac::create(op, {operand}, {result});
-}
 
 /* ctl2bits operator */
 
