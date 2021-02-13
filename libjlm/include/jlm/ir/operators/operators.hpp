@@ -1236,20 +1236,22 @@ public:
 	{
 		return static_cast<const fptype*>(&result(0).type())->size();
 	}
+
+	static std::unique_ptr<jlm::tac>
+	create(
+		const variable * operand,
+		variable * result)
+	{
+		auto st = dynamic_cast<const fptype*>(&operand->type());
+		if (!st) throw jlm::error("expected floating point type.");
+
+		auto dt = dynamic_cast<const fptype*>(&result->type());
+		if (!dt) throw jlm::error("expected floating point type.");
+
+		fptrunc_op op(st->size(), dt->size());
+		return tac::create(op, {operand}, {result});
+	}
 };
-
-static inline std::unique_ptr<jlm::tac>
-create_fptrunc_tac(const variable * operand, jlm::variable * result)
-{
-	auto st = dynamic_cast<const fptype*>(&operand->type());
-	if (!st) throw jlm::error("expected floating point type.");
-
-	auto dt = dynamic_cast<const fptype*>(&result->type());
-	if (!dt) throw jlm::error("expected floating point type.");
-
-	fptrunc_op op(st->size(), dt->size());
-	return tac::create(op, {operand}, {result});
-}
 
 /* valist operator */
 
