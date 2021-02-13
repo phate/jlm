@@ -201,7 +201,7 @@ convert_constantAggregateZero(
 	JLM_ASSERT(c->getValueID() == llvm::Value::ConstantAggregateZeroVal);
 
 	auto r = ctx.module().create_variable(*convert_type(c->getType(), ctx));
-	tacs.push_back(create_constant_aggregate_zero_tac(r));
+	tacs.push_back(constant_aggregate_zero_op::create(r));
 	return r;
 }
 

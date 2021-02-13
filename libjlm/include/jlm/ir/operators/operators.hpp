@@ -1729,14 +1729,14 @@ public:
 
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
-};
 
-static inline std::unique_ptr<jlm::tac>
-create_constant_aggregate_zero_tac(jlm::variable * result)
-{
-	constant_aggregate_zero_op op(result->type());
-	return tac::create(op, {}, {result});
-}
+	static std::unique_ptr<jlm::tac>
+	create(variable * result)
+	{
+		constant_aggregate_zero_op op(result->type());
+		return tac::create(op, {}, {result});
+	}
+};
 
 /* extractelement operator */
 
