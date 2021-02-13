@@ -1421,6 +1421,18 @@ public:
 		return *static_cast<const structtype*>(&result(0).type());
 	}
 
+	static std::unique_ptr<jlm::tac>
+	create(
+		const std::vector<const variable*> & elements,
+		variable * result)
+	{
+		auto rt = dynamic_cast<const structtype*>(&result->type());
+		if (!rt) throw jlm::error("expected struct type.");
+
+		struct_constant_op op(*rt);
+		return tac::create(op, elements, {result});
+	}
+
 private:
 	static inline std::vector<jive::port>
 	create_srcports(const structtype & type)
@@ -1432,18 +1444,6 @@ private:
 		return ports;
 	}
 };
-
-static inline std::unique_ptr<jlm::tac>
-create_struct_constant_tac(
-	const std::vector<const variable*> & elements,
-	jlm::variable * result)
-{
-	auto rt = dynamic_cast<const structtype*>(&result->type());
-	if (!rt) throw jlm::error("expected struct type.");
-
-	struct_constant_op op(*rt);
-	return tac::create(op, elements, {result});
-}
 
 /* trunc operator */
 
