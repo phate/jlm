@@ -44,7 +44,7 @@ perform_bitunary_reduction(const sext_op & op, jive::output * operand)
 	auto region = operand->region();
 	auto uop = static_cast<const jive::bitunary_op*>(&unary->operation());
 
-	auto output = create_sext(op.ndstbits(), unary->input(0)->origin());
+	auto output = sext_op::create(op.ndstbits(), unary->input(0)->origin());
 	return jive::simple_node::create_normalized(region, *uop->create(op.ndstbits()), {output})[0];
 }
 
@@ -57,8 +57,8 @@ perform_bitbinary_reduction(const sext_op & op, jive::output * operand)
 	auto bop = static_cast<const jive::bitbinary_op*>(&binary->operation());
 
 	JLM_ASSERT(binary->ninputs() == 2);
-	auto op1 = create_sext(op.ndstbits(), binary->input(0)->origin());
-	auto op2 = create_sext(op.ndstbits(), binary->input(1)->origin());
+	auto op1 = sext_op::create(op.ndstbits(), binary->input(0)->origin());
+	auto op2 = sext_op::create(op.ndstbits(), binary->input(1)->origin());
 
 	return jive::simple_node::create_normalized(region, *bop->create(op.ndstbits()), {op1, op2})[0];
 }

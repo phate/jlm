@@ -72,30 +72,34 @@ public:
 	{
 		return static_cast<const jive::bittype*>(&result(0).type())->nbits();
 	}
+
+	static std::unique_ptr<jlm::tac>
+	create(
+		const variable * operand,
+		jlm::variable * result)
+	{
+		auto ot = dynamic_cast<const jive::bittype*>(&operand->type());
+		if (!ot) throw jlm::error("expected bits type.");
+
+		auto rt = dynamic_cast<const jive::bittype*>(&result->type());
+		if (!rt) throw jlm::error("expected bits type.");
+
+		sext_op op(*ot, *rt);
+		return tac::create(op, {operand}, {result});
+	}
+
+	static jive::output *
+	create(
+		size_t ndstbits,
+		jive::output * operand)
+	{
+		auto ot = dynamic_cast<const jive::bittype*>(&operand->type());
+		if (!ot) throw jlm::error("expected bits type.");
+
+		sext_op op(*ot, jive::bittype(ndstbits));
+		return jive::simple_node::create_normalized(operand->region(), op, {operand})[0];
+	}
 };
-
-static inline std::unique_ptr<jlm::tac>
-create_sext_tac(const variable * operand, jlm::variable * result)
-{
-	auto ot = dynamic_cast<const jive::bittype*>(&operand->type());
-	if (!ot) throw jlm::error("expected bits type.");
-
-	auto rt = dynamic_cast<const jive::bittype*>(&result->type());
-	if (!rt) throw jlm::error("expected bits type.");
-
-	sext_op op(*ot, *rt);
-	return tac::create(op, {operand}, {result});
-}
-
-static inline jive::output *
-create_sext(size_t ndstbits, jive::output * operand)
-{
-	auto ot = dynamic_cast<const jive::bittype*>(&operand->type());
-	if (!ot) throw jlm::error("expected bits type.");
-
-	sext_op op(*ot, jive::bittype(ndstbits));
-	return jive::simple_node::create_normalized(operand->region(), op, {operand})[0];
-}
 
 }
 

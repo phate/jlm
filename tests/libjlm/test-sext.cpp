@@ -23,7 +23,7 @@ test_bitunary_reduction()
 	auto x = graph.add_import({bt32, "x"});
 
 	auto y = jive::bitnot_op::create(32, x);
-	auto z = jlm::create_sext(64, y);
+	auto z = jlm::sext_op::create(64, y);
 
 	auto ex = graph.add_export(z, {z->type(), "x"});
 
@@ -51,7 +51,7 @@ test_bitbinary_reduction()
 	auto y = graph.add_import({bt32, "y"});
 
 	auto z = jive::bitadd_op::create(32, x, y);
-	auto w = jlm::create_sext(64, z);
+	auto w = jlm::sext_op::create(64, z);
 
 	auto ex = graph.add_export(w, {w->type(), "x"});
 
@@ -80,7 +80,7 @@ test_inverse_reduction()
 	auto x = graph.add_import({bt64, "x"});
 
 	auto y = trunc_op::create(32, x);
-	auto z = jlm::create_sext(64, y);
+	auto z = jlm::sext_op::create(64, y);
 
 	auto ex = graph.add_export(z, {z->type(), "x"});
 
