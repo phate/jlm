@@ -272,14 +272,13 @@ test_assignment()
 	using namespace jlm;
 
 	valuetype vt;
-	test_op op({&vt}, {&vt});
 
 	ipgraph_module module(filepath(""), "", "");
 	auto v1 = module.create_variable(vt, "v1");
 	auto v2 = module.create_variable(vt, "v2");
 
 	taclist bb;
-	bb.append_last(tac::create(op, {v1}, {v2}));
+	bb.append_last(assignment_op::create(v1, v2));
 
 	auto root = blockaggnode::create(std::move(bb));
 
