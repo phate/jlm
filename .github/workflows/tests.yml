@@ -45,5 +45,5 @@ jobs:
       run: echo "LLVMCONFIG=llvm-config-10" >> $GITHUB_ENV
     - name: Clone polybench
       run: git clone https://github.com/phate/polybench-jlm.git
-    - name: Compare polybench
-      run: make -C polybench-jlm compare
+    - name: Check polybench
+      run: make -C polybench-jlm check
