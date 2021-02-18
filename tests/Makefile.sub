@@ -30,7 +30,8 @@ check-ctests: jlc-debug jlm-opt-debug
 	for TEST in `ls tests/c-tests`; do \
 		$(TESTLOG) -n "$$TEST: " ; if tests/test-jlc.sh tests/c-tests/$$TEST >>ctests.log 2>&1 ; then $(TESTLOG) pass ; else $(TESTLOG) FAIL ; FAILED_TESTS="$$FAILED_TESTS $$TEST" ; fi ; \
 	done ; \
-	if [ "x$$FAILED_TESTS" != x ] ; then printf '\033[0;31m%s\033[0m%s\n' "Failed c-tests:" "$$FAILED_TESTS" ; else printf '\033[0;32m%s\n\033[0m' "All c-tests passed" ; fi ; \
+	set -e ; \
+	if [ "x$$FAILED_TESTS" != x ] ; then printf '\033[0;31m%s\033[0m%s\n' "Failed c-tests:" "$$FAILED_TESTS" ; exit 1 ; else printf '\033[0;32m%s\n\033[0m' "All c-tests passed" ; fi ; \
 
 check-utests: tests/test-runner
 	@rm -rf utests.log
@@ -38,7 +39,8 @@ check-utests: tests/test-runner
 	for TEST in $(TESTS); do \
 		$(TESTLOG) -n "$$TEST: " ; if tests/test-runner $$TEST >>utests.log 2>&1 ; then $(TESTLOG) pass ; else $(TESTLOG) FAIL ; FAILED_TESTS="$$FAILED_TESTS $$TEST" ; fi ; \
 	done ; \
-	if [ "x$$FAILED_TESTS" != x ] ; then printf '\033[0;31m%s\033[0m%s\n' "Failed u-tests:" "$$FAILED_TESTS" ; else printf '\033[0;32m%s\n\033[0m' "All u-tests passed" ; fi ; \
+	set -e ; \
+	if [ "x$$FAILED_TESTS" != x ] ; then printf '\033[0;31m%s\033[0m%s\n' "Failed u-tests:" "$$FAILED_TESTS" ; exit 1 ; else printf '\033[0;32m%s\n\033[0m' "All u-tests passed" ; fi ; \
 
 valgrind-check: tests/test-runner
 	@rm -rf check.log
