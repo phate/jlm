@@ -64,9 +64,9 @@ public:
 	create(
 		const jive::type & vtype,
 		const variable * size,
-		size_t alignment,
+		jlm::variable * result,
 		jlm::variable * state,
-		jlm::variable * result)
+		size_t alignment)
 	{
 		auto vt = dynamic_cast<const jive::valuetype*>(&vtype);
 		if (!vt) throw jlm::error("expected value type.");

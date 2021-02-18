@@ -788,18 +788,18 @@ convert_alloca_instruction(llvm::Instruction * instruction, tacsvector_t & tacs,
 	JLM_ASSERT(instruction->getOpcode() == llvm::Instruction::Alloca);
 	auto i = static_cast<llvm::AllocaInst*>(instruction);
 
-	auto msvar = ctx.module().create_variable(jive::memtype::instance());
+	auto astate = ctx.module().create_variable(jive::memtype::instance());
+	auto outstate = ctx.module().create_tacvariable(jive::memtype::instance());
 	auto result = ctx.module().create_variable(*convert_type(i->getType(), ctx));
 
 	auto memstate = ctx.memory_state();
 	auto size = convert_value(i->getArraySize(), tacs, ctx);
 	auto vtype = convert_type(i->getAllocatedType(), ctx);
 
-	auto alloca = alloca_op::create(*vtype, size, i->getAlignment(), msvar, result);
-	auto memmerge = memstatemux_op::create_merge({alloca->result(1), memstate}, memstate);
+	tacs.push_back(alloca_op::create(*vtype, size, result, astate, i->getAlignment()));
+	tacs.push_back(memstatemux_op::create_merge({tacs.back()->result(1), memstate}, outstate));
+	tacs.push_back(assignment_op::create(outstate, memstate));
 
-	tacs.push_back(std::move(alloca));
-	tacs.push_back(std::move(memmerge));
 	return result;
 }
 
