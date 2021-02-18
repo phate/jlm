@@ -134,14 +134,15 @@ public:
 	create(
 		const variable * address,
 		const variable * value,
-		size_t alignment,
-		jlm::variable * state)
+		const variable * instate,
+		jlm::variable * outstate,
+		size_t alignment)
 	{
 		auto at = dynamic_cast<const jlm::ptrtype*>(&address->type());
 		if (!at) throw jlm::error("expected pointer type.");
 
 		jlm::store_op op(*at, 1, alignment);
-		return tac::create(op, {address, value, state}, {state});
+		return tac::create(op, {address, value, instate}, {outstate});
 	}
 
 	static std::vector<jive::output*>
