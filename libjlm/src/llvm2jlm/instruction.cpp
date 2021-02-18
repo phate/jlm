@@ -663,9 +663,9 @@ convert_call_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 			auto result = ctx.module().create_variable(*convert_type(i->getType(), ctx));
 			results.push_back(result);
 		}
-		results.push_back(ctx.iostate());
-		results.push_back(ctx.memory_state());
-		results.push_back(ctx.loop_state());
+		results.push_back(ctx.module().create_tacvariable(iostatetype()));
+		results.push_back(ctx.module().create_tacvariable(jive::memtype::instance()));
+		results.push_back(ctx.module().create_tacvariable(loopstatetype()));
 
 		return results;
 	};
@@ -691,10 +691,20 @@ convert_call_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 
 	auto results = create_results(i, ctx);
 
-
 	auto fctvar = convert_value(i->getCalledValue(), tacs, ctx);
-	tacs.push_back(call_op::create(fctvar, arguments, results));
-	return tacs.back()->result(0);
+	auto call = call_op::create(fctvar, arguments, results);
+
+	auto result = call->result(0);
+	auto iostate = call->result(call->nresults() - 3);
+	auto memstate = call->result(call->nresults() - 2);
+	auto loopstate = call->result(call->nresults() - 1);
+
+	tacs.push_back(std::move(call));
+	tacs.push_back(assignment_op::create(iostate, ctx.iostate()));
+	tacs.push_back(assignment_op::create(memstate, ctx.memory_state()));
+	tacs.push_back(assignment_op::create(loopstate, ctx.loop_state()));
+
+	return result;
 }
 
 static inline const variable *
