@@ -539,12 +539,14 @@ convert_load_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & c
 	auto instruction = static_cast<llvm::LoadInst*>(i);
 
 	/* FIXME: volatile and alignment */
-	auto memstate = ctx.memory_state();
-	auto value = ctx.module().create_variable(*convert_type(i->getType(), ctx));
+	auto alignment = instruction->getAlignment();
 	auto address = convert_value(instruction->getPointerOperand(), tacs, ctx);
-	tacs.push_back(load_op::create(address, instruction->getAlignment(), value, memstate));
+	auto value = ctx.module().create_variable(*convert_type(i->getType(), ctx));
+	auto outstate = ctx.module().create_tacvariable(jive::memtype::instance());
+	tacs.push_back(load_op::create(address, ctx.memory_state(), value, outstate, alignment));
+	tacs.push_back(assignment_op::create(outstate, ctx.memory_state()));
 
-	return tacs.back()->result(0);
+	return value;
 }
 
 static inline const variable *
