@@ -107,8 +107,8 @@ test_malloc_call()
 		}
 
 		auto bb = dynamic_cast<const basic_block*>(cfg->entry()->outedge(0)->sink());
-		assert(is<memstatemux_op>(bb->last()->operation()));
-		assert(is<malloc_op>((*std::next(bb->rbegin()))->operation()));
+		assert(is<memstatemux_op>(*std::next(bb->rbegin())));
+		assert(is<malloc_op>((*std::next(bb->rbegin(), 2))));
 	};
 
 	llvm::LLVMContext ctx;

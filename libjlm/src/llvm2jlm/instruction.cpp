@@ -607,16 +607,19 @@ static const variable *
 convert_malloc_call(const llvm::CallInst * i, tacsvector_t & tacs, context & ctx)
 {
 	auto result = ctx.module().create_variable(*convert_type(i->getType(), ctx));
-	auto state = ctx.module().create_variable(jive::memtype::instance());
+	auto mstate = ctx.module().create_variable(jive::memtype::instance());
+	auto outstate = ctx.module().create_variable(jive::memtype::instance());
 
 	auto memstate = ctx.memory_state();
 	auto size = convert_value(i->getArgOperand(0), tacs, ctx);
 
-	auto malloc = malloc_op::create(size, state, result);
-	auto memmerge = memstatemux_op::create_merge({state, memstate}, memstate);
+	auto malloc = malloc_op::create(size, mstate, result);
+	auto memmerge = memstatemux_op::create_merge({mstate, memstate}, outstate);
 
 	tacs.push_back(std::move(malloc));
 	tacs.push_back(std::move(memmerge));
+	tacs.push_back(assignment_op::create(outstate, memstate));
+
 	return result;
 }
 
