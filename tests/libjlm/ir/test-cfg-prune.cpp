@@ -24,8 +24,8 @@ test()
 	/* setup cfg */
 
 	ipgraph_module im(filepath(""), "", "");
-	auto c = im.create_variable(vt, "c");
-	auto p = im.create_variable(vt, "p");
+	auto c = im.create_tacvariable(vt, "c");
+	auto p = im.create_tacvariable(vt, "p");
 
 	jlm::cfg cfg(im);
 	auto arg = cfg.entry()->append_argument(argument::create("arg", vt));

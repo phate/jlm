@@ -66,7 +66,7 @@ private:
 static inline std::unique_ptr<jlm::tac>
 create_testop_tac(
 	const std::vector<const variable*> & arguments,
-	const std::vector<const variable*> & results)
+	const std::vector<tacvariable*> & results)
 {
 	std::vector<const jive::type*> result_types;
 	std::vector<const jive::type*> argument_types;

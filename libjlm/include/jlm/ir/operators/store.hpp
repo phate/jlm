@@ -135,7 +135,7 @@ public:
 		const variable * address,
 		const variable * value,
 		const variable * instate,
-		jlm::variable * outstate,
+		tacvariable * outstate,
 		size_t alignment)
 	{
 		auto at = dynamic_cast<const jlm::ptrtype*>(&address->type());

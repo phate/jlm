@@ -22,13 +22,13 @@ test_two_phis()
 	jlm::valuetype vt;
 	ipgraph_module module(filepath(""), "", "");
 
-	auto v1 = module.create_variable(vt, "vbl1");
-	auto v2 = module.create_variable(vt, "vbl2");
-	auto v3 = module.create_variable(vt, "vbl3");
-	auto v4 = module.create_variable(vt, "vbl4");
+	auto v1 = module.create_tacvariable(vt, "vbl1");
+	auto v2 = module.create_tacvariable(vt, "vbl2");
+	auto v3 = module.create_tacvariable(vt, "vbl3");
+	auto v4 = module.create_tacvariable(vt, "vbl4");
 
-	auto r1 = module.create_variable(vt, "r1");
-	auto r2 = module.create_variable(vt, "r2");
+	auto r1 = module.create_tacvariable(vt, "r1");
+	auto r2 = module.create_tacvariable(vt, "r2");
 
 	jlm::cfg cfg(module);
 	auto bb1 = basic_block::create(cfg);

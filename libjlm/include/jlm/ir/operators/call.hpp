@@ -65,7 +65,7 @@ public:
 	create(
 		const variable * function,
 		const std::vector<const variable*> & arguments,
-		const std::vector<const variable*> & results)
+		const std::vector<tacvariable*> & results)
 	{
 		auto at = dynamic_cast<const ptrtype*>(&function->type());
 		if (!at) throw jlm::error("Expected pointer type.");

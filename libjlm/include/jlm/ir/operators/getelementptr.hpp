@@ -54,7 +54,7 @@ public:
 	create(
 		const variable * address,
 		const std::vector<const variable*> & offsets,
-		jlm::variable * result)
+		tacvariable * result)
 	{
 		auto at = dynamic_cast<const jlm::ptrtype*>(&address->type());
 		if (!at) throw jlm::error("expected pointer type.");

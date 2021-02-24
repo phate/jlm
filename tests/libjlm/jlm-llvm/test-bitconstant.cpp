@@ -28,7 +28,7 @@ test()
 	jive::bitvalue_repr vr(bs);
 
 	ipgraph_module im(filepath(""), "", "");
-	auto c = im.create_variable(bt65, "c");
+	auto c = im.create_tacvariable(bt65, "c");
 
 	auto cfg = cfg::create(im);
 	auto bb = basic_block::create(*cfg);

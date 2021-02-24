@@ -34,7 +34,7 @@ test()
 	auto s1 = cfg->entry()->append_argument(argument::create("s1", mt));
 	auto s2 = cfg->entry()->append_argument(argument::create("s2", mt));
 
-	auto s3 = m.create_variable(mt, "s3");
+	auto s3 = m.create_tacvariable(mt, "s3");
 
 	bb->append_last(select_op::create(p, s1, s2, s3));
 

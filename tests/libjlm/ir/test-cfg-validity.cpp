@@ -20,7 +20,7 @@ test_single_operand_phi()
 	valuetype vt;
 
 	ipgraph_module im(filepath(""), "", "");
-	auto p = im.create_variable(vt, "p");
+	auto p = im.create_tacvariable(vt, "p");
 
 	jlm::cfg cfg(im);
 	auto arg = cfg.entry()->append_argument(argument::create("arg", vt));

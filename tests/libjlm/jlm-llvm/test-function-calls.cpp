@@ -40,8 +40,8 @@ test_malloc()
 
 		auto size = cfg->entry()->append_argument(argument::create("size", jive::bit64));
 
-		auto address = im->create_variable(pt, "address");
-		auto memstate = im->create_variable(mt, "state");
+		auto address = im->create_tacvariable(pt, "address");
+		auto memstate = im->create_tacvariable(mt, "state");
 		bb->append_last(malloc_op::create(size, memstate, address));
 
 		cfg->exit()->append_result(address);

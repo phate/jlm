@@ -74,33 +74,33 @@ reinsert_tcloop(const tcloop & l)
 	cfg.remove_node(l.replacement);
 }
 
-static inline const variable *
+static tacvariable *
 create_pvariable(const jive::ctltype & type, ipgraph_module & im)
 {
 	static size_t c = 0;
-	return im.create_variable(type, strfmt("#p", c++, "#"));
+	return im.create_tacvariable(type, strfmt("#p", c++, "#"));
 }
 
-static inline const variable *
+static tacvariable *
 create_qvariable(const jive::ctltype & type, ipgraph_module & im)
 {
 	static size_t c = 0;
-	return im.create_variable(type, strfmt("#q", c++, "#"));
+	return im.create_tacvariable(type, strfmt("#q", c++, "#"));
 }
 
-static const variable *
+static tacvariable *
 create_tvariable(const jive::ctltype & type, ipgraph_module & im)
 {
 	static size_t c = 0;
-	return im.create_variable(type, strfmt("#t", c++, "#"));
+	return im.create_tacvariable(type, strfmt("#t", c++, "#"));
 }
 
-static inline const variable *
+static tacvariable *
 create_rvariable(ipgraph_module & im)
 {
 	static size_t c = 0;
 	jive::ctltype type(2);
-	return im.create_variable(type, strfmt("#r", c++, "#"));
+	return im.create_tacvariable(type, strfmt("#r", c++, "#"));
 }
 
 static inline void
@@ -112,17 +112,20 @@ append_branch(basic_block * bb, const variable * operand)
 }
 
 static inline void
-append_constant(basic_block * bb, const variable * result, size_t value)
+append_constant(basic_block * bb, tacvariable * result, size_t value)
 {
 	JLM_ASSERT(dynamic_cast<const jive::ctltype*>(&result->type()));
 	auto nalternatives = static_cast<const jive::ctltype*>(&result->type())->nalternatives();
 
+	auto tmp = bb->cfg().module().create_tacvariable(result->type());
+
 	jive::ctlconstant_op op(jive::ctlvalue_repr(value, nalternatives));
-	bb->append_last(tac::create(op, {}, {result}));
+	bb->append_last(tac::create(op, {}, {tmp}));
+	bb->append_last(assignment_op::create(tmp, result));
 }
 
 static inline void
-restructure_loop_entry(const sccstructure & s, basic_block * new_ne, const variable * ev)
+restructure_loop_entry(const sccstructure & s, basic_block * new_ne, tacvariable * ev)
 {
 	size_t n = 0;
 	std::unordered_map<jlm::cfg_node*, size_t> indices;
@@ -146,8 +149,8 @@ restructure_loop_exit(
 	basic_block * new_nr,
 	basic_block * new_nx,
 	cfg_node * exit,
-	const variable * rv,
-	const variable * xv)
+	tacvariable * rv,
+	tacvariable * xv)
 {
 	/*
 		It could be that an SCC has no exit edge. This can arise when the input CFG contains a
@@ -189,8 +192,8 @@ restructure_loop_repetition(
 	const sccstructure & s,
 	jlm::cfg_node * new_nr,
 	jlm::cfg_node * new_nx,
-	const variable * ev,
-	const variable * rv)
+	tacvariable * ev,
+	tacvariable * rv)
 {
 	size_t n = 0;
 	std::unordered_map<jlm::cfg_node*, size_t> indices;
@@ -230,13 +233,13 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit, std::vector<tcloo
 			continue;
 		}
 
-		const variable * ev = nullptr;
+		tacvariable * ev = nullptr;
 		if (sccstruct->nenodes() > 1)
 			ev = create_tvariable(jive::ctltype(sccstruct->nenodes()), module);
 
 		auto rv = create_rvariable(module);
 
-		const variable * xv = nullptr;
+		tacvariable * xv = nullptr;
 		if (sccstruct->nxnodes() > 1)
 			xv = create_qvariable(jive::ctltype(sccstruct->nxnodes()), module);
 

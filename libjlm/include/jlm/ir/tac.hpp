@@ -86,7 +86,7 @@ public:
 
 	tac(const jive::simple_op & operation,
 		const std::vector<const variable*> & operands,
-		const std::vector<const variable*> & results);
+		const std::vector<tacvariable*> & results);
 
 	tac(const jlm::tac &) = delete;
 
@@ -123,7 +123,10 @@ public:
 		return results_.size();
 	}
 
-	inline const variable *
+	/*
+		FIXME: convert this back to a const pointer
+	*/
+	tacvariable *
 	result(size_t index) const noexcept
 	{
 		JLM_ASSERT(index < results_.size());
@@ -134,19 +137,24 @@ public:
 	replace(
 		const jive::simple_op & operation,
 		const std::vector<const variable*> & operands,
-		const std::vector<const variable*> & results);
+		const std::vector<tacvariable*> & results);
+
+	void
+	replace(
+		const jive::simple_op & operation,
+		const std::vector<const variable*> & operands);
 
 	static std::unique_ptr<jlm::tac>
 	create(
 		const jive::simple_op & operation,
 		const std::vector<const variable *> & operands,
-		const std::vector<const variable *> & results)
+		const std::vector<tacvariable *> & results)
 	{
 		return std::make_unique<jlm::tac>(operation, operands, results);
 	}
 
 private:
-	std::vector<const variable*> results_;
+	std::vector<tacvariable*> results_;
 	std::vector<const variable*> operands_;
 	std::unique_ptr<jive::operation> operation_;
 };

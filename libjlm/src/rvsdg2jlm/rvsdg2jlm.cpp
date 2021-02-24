@@ -184,7 +184,7 @@ convert_simple_node(const jive::node & node, context & ctx)
 		operands.push_back(ctx.variable(node.input(n)->origin()));
 
 	std::vector<tacvariable*> tvs;
-	std::vector<const variable*> results;
+	std::vector<tacvariable*> results;
 	for (size_t n = 0; n < node.noutputs(); n++) {
 		auto v = ctx.module().create_tacvariable(node.output(n)->type());
 		ctx.insert(node.output(n), v);
@@ -194,9 +194,6 @@ convert_simple_node(const jive::node & node, context & ctx)
 
 	auto & op = *static_cast<const jive::simple_op*>(&node.operation());
 	ctx.lpbb()->append_last(tac::create(op, operands, results));
-	/* FIXME: remove again once tacvariables owner's are tacs */
-	for (const auto & tv : tvs)
-		tv->set_tac(static_cast<const basic_block*>(ctx.lpbb())->tacs().last());
 }
 
 static void
@@ -228,7 +225,7 @@ convert_empty_gamma_node(const jive::gamma_node * gamma, context & ctx)
 			continue;
 		}
 
-		auto v = module.create_variable(output->type());
+		auto v = module.create_tacvariable(output->type());
 		auto matchnode = jive::node_output::node(predicate);
 		if (is<jive::match_op>(matchnode)) {
 			auto matchop = static_cast<const jive::match_op*>(&matchnode->operation());
@@ -238,7 +235,7 @@ convert_empty_gamma_node(const jive::gamma_node * gamma, context & ctx)
 			auto f = d == 0 ? ctx.variable(o0) : ctx.variable(o1);
 			bb->append_last(select_op::create(c, t, f, v));
 		} else {
-			auto c = module.create_variable(jive::bittype(1));
+			auto c = module.create_tacvariable(jive::bittype(1));
 			bb->append_last(ctl2bits_op::create(ctx.variable(predicate), c));
 			bb->append_last(select_op::create(c, ctx.variable(o1), ctx.variable(o0), v));
 		}
@@ -325,7 +322,7 @@ convert_gamma_node(const jive::node & node, context & ctx)
 			auto matchnode = jive::node_output::node(predicate);
 			auto matchop = static_cast<const jive::match_op*>(&matchnode->operation());
 			auto d = matchop->default_alternative();
-			auto v = module.create_variable(output->type());
+			auto v = module.create_tacvariable(output->type());
 			auto c = ctx.variable(matchnode->input(0)->origin());
 			auto t = d == 0 ? arguments[1].first : arguments[0].first;
 			auto f = d == 0 ? arguments[0].first : arguments[1].first;
@@ -378,7 +375,7 @@ convert_theta_node(const jive::node & node, context & ctx)
 	ctx.set_lpbb(entry);
 
 	/* create loop variables and add arguments to context */
-	std::deque<jlm::variable*> lvs;
+	std::deque<tacvariable*> lvs;
 	for (size_t n = 0; n < subregion->narguments(); n++) {
 		auto argument = subregion->argument(n);
 		auto v = ctx.variable(argument->input()->origin());

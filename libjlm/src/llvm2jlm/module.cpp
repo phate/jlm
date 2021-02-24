@@ -68,7 +68,7 @@ patch_phi_operands(const std::vector<llvm::PHINode*> & phis, context & ctx)
 		}
 
 		auto phi_tac = static_cast<const tacvariable*>(ctx.lookup_value(phi))->tac();
-		phi_tac->replace(phi_op(nodes, phi_tac->result(0)->type()), operands, {phi_tac->result(0)});
+		phi_tac->replace(phi_op(nodes, phi_tac->result(0)->type()), operands);
 	}
 }
 
@@ -283,9 +283,9 @@ create_cfg(llvm::Function & f, context & ctx)
 	entry_block->add_outedge(bbmap[&f.getEntryBlock()]);
 
 	/* add results */
-	jlm::variable * result = nullptr;
+	tacvariable * result = nullptr;
 	if (!f.getReturnType()->isVoidTy()) {
-		result = m.create_variable(*convert_type(f.getReturnType(), ctx), "_r_");
+		result = m.create_tacvariable(*convert_type(f.getReturnType(), ctx), "_r_");
 		entry_block->append_last(undef_constant_op::create(result));
 
 		JLM_ASSERT(node->fcttype().nresults() == 4);

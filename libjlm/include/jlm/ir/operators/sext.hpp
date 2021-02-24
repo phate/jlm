@@ -76,7 +76,7 @@ public:
 	static std::unique_ptr<jlm::tac>
 	create(
 		const variable * operand,
-		jlm::variable * result)
+		tacvariable * result)
 	{
 		auto ot = dynamic_cast<const jive::bittype*>(&operand->type());
 		if (!ot) throw jlm::error("expected bits type.");

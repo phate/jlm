@@ -64,8 +64,8 @@ public:
 	create(
 		const jive::type & vtype,
 		const variable * size,
-		jlm::variable * result,
-		jlm::variable * state,
+		tacvariable * result,
+		tacvariable * state,
 		size_t alignment)
 	{
 		auto vt = dynamic_cast<const jive::valuetype*>(&vtype);

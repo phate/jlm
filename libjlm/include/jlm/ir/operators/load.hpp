@@ -184,8 +184,8 @@ public:
 	create(
 		const variable * address,
 		const variable * instate,
-		variable * result,
-		variable * outstate,
+		tacvariable * result,
+		tacvariable * outstate,
 		size_t alignment)
 	{
 		auto pt = check_address(address->type());
