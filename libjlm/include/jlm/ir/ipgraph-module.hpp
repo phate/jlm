@@ -108,28 +108,6 @@ public:
 		return ptr;
 	}
 
-	/*
-		FIXME: tacs are supposed to be the owners of tacvariable. This is going to be removed
-		       again.
-	*/
-	jlm::tacvariable *
-	create_tacvariable(
-		const jive::type & type,
-		const std::string & name)
-	{
-		auto v = jlm::create_tacvariable(type, name);
-		auto pv = v.get();
-		variables_.insert(std::move(v));
-		return static_cast<tacvariable*>(pv);
-	}
-
-	tacvariable *
-	create_tacvariable(const jive::type & type)
-	{
-		static uint64_t c = 0;
-		return create_tacvariable(type, strfmt("tv", c++));
-	}
-
 	inline jlm::variable *
 	create_variable(const jive::type & type, const std::string & name)
 	{

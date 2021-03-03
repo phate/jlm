@@ -920,7 +920,7 @@ public:
 	~undef_constant_op();
 
 	inline
-	undef_constant_op(const jive::valuetype & type)
+	undef_constant_op(const jive::type & type)
 	: simple_op({}, {type})
 	{}
 
@@ -941,27 +941,23 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
-	inline const jive::valuetype &
+	const jive::type &
 	type() const noexcept
 	{
-		return *static_cast<const jive::valuetype*>(&result(0).type());
+		return result(0).type();
 	}
 
 	static inline jive::output *
 	create(jive::region * region, const jive::type & type)
 	{
-		auto vt = check_type(type);
-
-		jlm::undef_constant_op op(*vt);
+		jlm::undef_constant_op op(type);
 		return jive::simple_node::create_normalized(region, op, {})[0];
 	}
 
 	static std::unique_ptr<jlm::tac>
 	create(const jive::type & type)
 	{
-		auto vt = check_type(type);
-
-		jlm::undef_constant_op op(*vt);
+		jlm::undef_constant_op op(type);
 		return tac::create(op, {});
 	}
 
@@ -970,20 +966,8 @@ public:
 		const jive::type & type,
 		const std::string & name)
 	{
-		auto vt = check_type(type);
-
-		undef_constant_op op(*vt);
+		undef_constant_op op(type);
 		return tac::create(op, {}, {name});
-	}
-
-private:
-	static const jive::valuetype *
-	check_type(const jive::type & type)
-	{
-		auto vt = dynamic_cast<const jive::valuetype*>(&type);
-		if (!vt) throw jlm::error("expected value type.");
-
-		return vt;
 	}
 };
 

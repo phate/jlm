@@ -33,14 +33,6 @@ public:
 	virtual
 	~tacvariable();
 
-	inline
-	tacvariable(
-		const jive::type & type,
-		const std::string & name)
-	: variable (type, name)
-	, tac_(nullptr)
-	{}
-
 	tacvariable(
 		jlm::tac * tac,
 		const jive::type & type,
@@ -56,12 +48,6 @@ public:
 	}
 
 	static std::unique_ptr<tacvariable>
-	create(const jive::type & type, const std::string & name)
-	{
-		return std::make_unique<tacvariable>(type, name);
-	}
-
-	static std::unique_ptr<tacvariable>
 	create(
 		jlm::tac * tac,
 		const jive::type & type,
@@ -73,14 +59,6 @@ public:
 private:
 	jlm::tac * tac_;
 };
-
-static inline std::unique_ptr<variable>
-create_tacvariable(
-	const jive::type & type,
-	const std::string & name)
-{
-	return std::unique_ptr<variable>(new tacvariable(type, name));
-}
 
 /* tac */
 

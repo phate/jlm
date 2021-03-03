@@ -137,7 +137,7 @@ test_branch()
 
 	ipgraph_module module(filepath(""), "", "");
 	auto arg = module.create_variable(vt, "arg");
-	auto v3 = module.create_tacvariable(vt, "v3");
+	auto v3 = module.create_variable(vt, "v3");
 
 	/*
 		Setup conditional CFG with nodes bbs, b1, b2, and edges bbs -> b1 and bbs -> b2.
@@ -229,7 +229,7 @@ test_branch_in_loop()
 
 	ipgraph_module module(filepath(""), "", "");
 	auto v1 = module.create_variable(vt, "v1");
-	auto v3 = module.create_tacvariable(vt, "v3");
+	auto v3 = module.create_variable(vt, "v3");
 
 	taclist tl_cb1, tl_cb2;
 	tl_cb1.append_last(tac::create(op, {v1}));
@@ -307,7 +307,7 @@ test_branch_passby()
 	test_op op({}, {&vt});
 	ipgraph_module module(filepath(""), "", "");
 
-	auto v3 = module.create_tacvariable(vt, "v3");
+	auto v3 = module.create_variable(vt, "v3");
 
 	taclist tlsplit, tlb1, tlb2;
 	tlsplit.append_last(tac::create(op, {}));

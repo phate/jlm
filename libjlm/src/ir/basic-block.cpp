@@ -18,6 +18,13 @@ namespace jlm {
 basic_block::~basic_block()
 {}
 
+jlm::tac *
+basic_block::insert_before_branch(std::unique_ptr<jlm::tac> tac)
+{
+	auto it = is<branch_op>(last()) ? std::prev(end()) : end();
+	return insert_before(it, std::move(tac));
+}
+
 void
 basic_block::insert_before_branch(tacsvector_t & tv)
 {

@@ -22,7 +22,6 @@ test_straightening()
 
 	jlm::valuetype vt;
 	ipgraph_module module(filepath(""), "", "");
-	auto v0 = module.create_tacvariable(vt, "v0");
 
 	jlm::cfg cfg(module);
 	auto bb1 = basic_block::create(cfg);
@@ -34,9 +33,10 @@ test_straightening()
 	bb2->add_outedge(bb3);
 	bb3->add_outedge(cfg.exit());
 
-	bb1->append_last(create_testop_tac({v0}, {&vt}));
-	bb2->append_last(create_testop_tac({v0}, {&vt}));
-	bb3->append_last(create_testop_tac({v0}, {&vt}));
+	auto arg = cfg.entry()->append_argument(argument::create("arg", vt));
+	bb1->append_last(create_testop_tac({arg}, {&vt}));
+	bb2->append_last(create_testop_tac({arg}, {&vt}));
+	bb3->append_last(create_testop_tac({arg}, {&vt}));
 
 	auto bb3_last = static_cast<const basic_block*>(bb3)->tacs().last();
 	straighten(cfg);

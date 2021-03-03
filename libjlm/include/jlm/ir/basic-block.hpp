@@ -161,6 +161,9 @@ public:
 		tv.clear();
 	}
 
+	jlm::tac *
+	insert_before_branch(std::unique_ptr<jlm::tac> tac);
+
 	void
 	insert_before_branch(tacsvector_t & tv);
 
