@@ -22,14 +22,6 @@ test_two_phis()
 	jlm::valuetype vt;
 	ipgraph_module module(filepath(""), "", "");
 
-	auto v1 = module.create_tacvariable(vt, "vbl1");
-	auto v2 = module.create_tacvariable(vt, "vbl2");
-	auto v3 = module.create_tacvariable(vt, "vbl3");
-	auto v4 = module.create_tacvariable(vt, "vbl4");
-
-	auto r1 = module.create_tacvariable(vt, "r1");
-	auto r2 = module.create_tacvariable(vt, "r2");
-
 	jlm::cfg cfg(module);
 	auto bb1 = basic_block::create(cfg);
 	auto bb2 = basic_block::create(cfg);
@@ -43,13 +35,20 @@ test_two_phis()
 	bb3->add_outedge(bb4);
 	bb4->add_outedge(cfg.exit());
 
-	bb2->append_last(create_testop_tac({}, {v1}));
-	bb2->append_last(create_testop_tac({}, {v3}));
-	bb3->append_last(create_testop_tac({}, {v2}));
-	bb3->append_last(create_testop_tac({}, {v4}));
+	bb2->append_last(create_testop_tac({}, {&vt}));
+	auto v1 = bb2->last()->result(0);
 
-	bb4->append_last(phi_op::create({{v1, bb2}, {v2, bb3}}, r1));
-	bb4->append_last(phi_op::create({{v3, bb2}, {v4, bb3}}, r2));
+	bb2->append_last(create_testop_tac({}, {&vt}));
+	auto v3 = bb2->last()->result(0);
+
+	bb3->append_last(create_testop_tac({}, {&vt}));
+	auto v2 = bb3->last()->result(0);
+
+	bb3->append_last(create_testop_tac({}, {&vt}));
+	auto v4 = bb3->last()->result(0);
+
+	bb4->append_last(phi_op::create({{v1, bb2}, {v2, bb3}}, vt));
+	bb4->append_last(phi_op::create({{v3, bb2}, {v4, bb3}}, vt));
 
 //	jlm::view_ascii(cfg, stdout);
 

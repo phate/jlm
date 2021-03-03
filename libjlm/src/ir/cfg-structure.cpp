@@ -720,10 +720,7 @@ update_phi_operands(
 		}
 	}
 
-	if (nodes.size() == 1)
-		phitac.replace(assignment_op(phi->type()), {phitac.result(0), operands[0]}, {});
-	else
-		phitac.replace(phi_op(nodes, phi->type()), operands, {phitac.result(0)});
+	phitac.replace(phi_op(nodes, phi->type()), operands);
 }
 
 static void

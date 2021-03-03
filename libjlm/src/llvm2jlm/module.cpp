@@ -237,7 +237,6 @@ static std::unique_ptr<jlm::cfg>
 create_cfg(llvm::Function & f, context & ctx)
 {
 	auto node = static_cast<const fctvariable*>(ctx.lookup_value(&f))->function();
-	auto & m = ctx.module();
 
 	auto add_arguments = [](const llvm::Function & f, jlm::cfg & cfg, context & ctx)
 	{
@@ -283,10 +282,11 @@ create_cfg(llvm::Function & f, context & ctx)
 	entry_block->add_outedge(bbmap[&f.getEntryBlock()]);
 
 	/* add results */
-	tacvariable * result = nullptr;
+	const tacvariable * result = nullptr;
 	if (!f.getReturnType()->isVoidTy()) {
-		result = m.create_tacvariable(*convert_type(f.getReturnType(), ctx), "_r_");
-		entry_block->append_last(undef_constant_op::create(result));
+		auto type = convert_type(f.getReturnType(), ctx);
+		entry_block->append_last(undef_constant_op::create(*type, "_r_"));
+		result = entry_block->last()->result(0);
 
 		JLM_ASSERT(node->fcttype().nresults() == 4);
 		JLM_ASSERT(result->type() == node->fcttype().result_type(0));

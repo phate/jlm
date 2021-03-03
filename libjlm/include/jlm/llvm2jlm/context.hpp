@@ -95,14 +95,14 @@ public:
 	, memory_state_(nullptr)
 	{}
 
-	inline jlm::variable *
+	const jlm::variable *
 	result() const noexcept
 	{
 		return result_;
 	}
 
 	inline void
-	set_result(jlm::variable * result)
+	set_result(const jlm::variable * result)
 	{
 		result_ = result;
 	}
@@ -234,7 +234,7 @@ private:
 	ipgraph_module & module_;
 	basic_block_map bbmap_;
 	ipgraph_node * node_;
-	jlm::variable * result_;
+	const jlm::variable * result_;
 	jlm::variable * iostate_;
 	jlm::variable * loop_state_;
 	jlm::variable * memory_state_;

@@ -28,11 +28,12 @@ test()
 	jive::bitvalue_repr vr(bs);
 
 	ipgraph_module im(filepath(""), "", "");
-	auto c = im.create_tacvariable(bt65, "c");
 
 	auto cfg = cfg::create(im);
 	auto bb = basic_block::create(*cfg);
-	bb->append_last(tac::create(jive::bitconstant_op(vr), {}, {c}));
+	bb->append_last(tac::create(jive::bitconstant_op(vr), {}));
+	auto c = bb->last()->result(0);
+
 	cfg->exit()->divert_inedges(bb);
 	bb->add_outedge(cfg->exit());
 	cfg->exit()->append_result(c);

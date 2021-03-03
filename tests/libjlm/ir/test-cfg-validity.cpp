@@ -20,20 +20,16 @@ test_single_operand_phi()
 	valuetype vt;
 
 	ipgraph_module im(filepath(""), "", "");
-	auto p = im.create_tacvariable(vt, "p");
 
 	jlm::cfg cfg(im);
 	auto arg = cfg.entry()->append_argument(argument::create("arg", vt));
-	cfg.exit()->append_result(p);
 
 	auto bb0 = basic_block::create(cfg);
+	bb0->append_first(phi_op::create({{arg, cfg.entry()}}, vt));
 
 	cfg.exit()->divert_inedges(bb0);
 	bb0->add_outedge(cfg.exit());
-
-	taclist tlbb0;
-	tlbb0.append_last(phi_op::create({{arg, cfg.entry()}}, p));
-	bb0->append_first(tlbb0);
+	cfg.exit()->append_result(bb0->last()->result(0));
 
 	print_ascii(cfg, stdout);
 

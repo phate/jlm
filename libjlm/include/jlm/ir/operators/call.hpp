@@ -64,8 +64,7 @@ public:
 	static std::unique_ptr<tac>
 	create(
 		const variable * function,
-		const std::vector<const variable*> & arguments,
-		const std::vector<tacvariable*> & results)
+		const std::vector<const variable*> & arguments)
 	{
 		auto at = dynamic_cast<const ptrtype*>(&function->type());
 		if (!at) throw jlm::error("Expected pointer type.");
@@ -76,7 +75,7 @@ public:
 		call_op op(*ft);
 		std::vector<const variable*> operands({function});
 		operands.insert(operands.end(), arguments.begin(), arguments.end());
-		return tac::create(op, operands, results);
+		return tac::create(op, operands);
 	}
 
 private:

@@ -76,16 +76,16 @@ public:
 	static std::unique_ptr<jlm::tac>
 	create(
 		const variable * operand,
-		tacvariable * result)
+		const jive::type & type)
 	{
 		auto ot = dynamic_cast<const jive::bittype*>(&operand->type());
 		if (!ot) throw jlm::error("expected bits type.");
 
-		auto rt = dynamic_cast<const jive::bittype*>(&result->type());
+		auto rt = dynamic_cast<const jive::bittype*>(&type);
 		if (!rt) throw jlm::error("expected bits type.");
 
 		sext_op op(*ot, *rt);
-		return tac::create(op, {operand}, {result});
+		return tac::create(op, {operand});
 	}
 
 	static jive::output *

@@ -43,7 +43,7 @@ check_operands(
 static void
 check_results(
 	const jive::simple_op & operation,
-	const std::vector<tacvariable*> & results)
+	const std::vector<std::unique_ptr<tacvariable>> & results)
 {
 	if (results.size() != operation.nresults())
 		throw jlm::error("invalid number of variables.");
@@ -56,34 +56,44 @@ check_results(
 
 tac::tac(
 	const jive::simple_op & operation,
-	const std::vector<const variable *> & operands,
-	const std::vector<tacvariable *> & results)
-	: results_(results)
-	, operands_(operands)
-	, operation_(operation.copy())
+	const std::vector<const variable*> & operands)
+: operands_(operands)
+, operation_(operation.copy())
 {
 	check_operands(operation, operands);
-	check_results(operation, results);
 
-	for (auto & result : results)
-		result->set_tac(this);
+	auto names = create_names(operation.nresults());
+	create_results(operation, names);
+}
+
+tac::tac(
+	const jive::simple_op & operation,
+	const std::vector<const variable*> & operands,
+	const std::vector<std::string> & names)
+: operands_(operands)
+, operation_(operation.copy())
+{
+	check_operands(operation, operands);
+
+	if (names.size() != operation.nresults())
+		throw jlm::error("Invalid number of result names.");
+
+	create_results(operation, names);
 }
 
 void
-tac::replace(
+tac::convert(
 	const jive::simple_op & operation,
-	const std::vector<const variable*> & operands,
-	const std::vector<tacvariable*> & results)
+	const std::vector<const variable*> & operands)
 {
 	check_operands(operation, operands);
-	check_results(operation, results);
 
-	results_ = results;
+	results_.clear();
 	operands_ = operands;
 	operation_ = operation.copy();
 
-	for (auto & result : results)
-		result->set_tac(this);
+	auto names = create_names(operation.nresults());
+	create_results(operation, names);
 }
 
 void

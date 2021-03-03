@@ -117,11 +117,9 @@ append_constant(basic_block * bb, tacvariable * result, size_t value)
 	JLM_ASSERT(dynamic_cast<const jive::ctltype*>(&result->type()));
 	auto nalternatives = static_cast<const jive::ctltype*>(&result->type())->nalternatives();
 
-	auto tmp = bb->cfg().module().create_tacvariable(result->type());
-
 	jive::ctlconstant_op op(jive::ctlvalue_repr(value, nalternatives));
-	bb->append_last(tac::create(op, {}, {tmp}));
-	bb->append_last(assignment_op::create(tmp, result));
+	bb->append_last(tac::create(op, {}));
+	bb->append_last(assignment_op::create(bb->last()->result(0), result));
 }
 
 static inline void

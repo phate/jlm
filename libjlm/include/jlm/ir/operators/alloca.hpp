@@ -64,8 +64,6 @@ public:
 	create(
 		const jive::type & vtype,
 		const variable * size,
-		tacvariable * result,
-		tacvariable * state,
 		size_t alignment)
 	{
 		auto vt = dynamic_cast<const jive::valuetype*>(&vtype);
@@ -75,7 +73,7 @@ public:
 		if (!bt) throw jlm::error("expected bits type.");
 
 		jlm::alloca_op op(jlm::ptrtype(*vt), *bt, alignment);
-		return tac::create(op, {size}, {result, state});
+		return tac::create(op, {size});
 	}
 
 	static std::vector<jive::output*>

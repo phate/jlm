@@ -184,14 +184,12 @@ public:
 	create(
 		const variable * address,
 		const variable * instate,
-		tacvariable * result,
-		tacvariable * outstate,
 		size_t alignment)
 	{
 		auto pt = check_address(address->type());
 
 		jlm::load_op op(*pt, 1, alignment);
-		return tac::create(op, {address, instate}, {result, outstate});
+		return tac::create(op, {address, instate});
 	}
 
 	static std::vector<jive::output*>

@@ -109,10 +109,9 @@ create_initialization(const delta_node * delta, context & ctx)
 			operands.push_back(ctx.variable(node->input(n)->origin()));
 
 		/* convert node to tac */
-		auto v = ctx.module().create_tacvariable(output->type());
 		auto & op = *static_cast<const jive::simple_op*>(&node->operation());
-		tacs.push_back(tac::create(op, operands, {v}));
-		ctx.insert(output, v);
+		tacs.push_back(tac::create(op, operands));
+		ctx.insert(output, tacs.back()->result(0));
 	}
 
 	return std::make_unique<data_node_init>(std::move(tacs));
@@ -183,17 +182,11 @@ convert_simple_node(const jive::node & node, context & ctx)
 	for (size_t n = 0; n < node.ninputs(); n++)
 		operands.push_back(ctx.variable(node.input(n)->origin()));
 
-	std::vector<tacvariable*> tvs;
-	std::vector<tacvariable*> results;
-	for (size_t n = 0; n < node.noutputs(); n++) {
-		auto v = ctx.module().create_tacvariable(node.output(n)->type());
-		ctx.insert(node.output(n), v);
-		results.push_back(v);
-		tvs.push_back(v);
-	}
-
 	auto & op = *static_cast<const jive::simple_op*>(&node.operation());
-	ctx.lpbb()->append_last(tac::create(op, operands, results));
+	ctx.lpbb()->append_last(tac::create(op, operands));
+
+	for (size_t n = 0; n < node.noutputs(); n++)
+		ctx.insert(node.output(n), ctx.lpbb()->last()->result(n));
 }
 
 static void
@@ -205,7 +198,6 @@ convert_empty_gamma_node(const jive::gamma_node * gamma, context & ctx)
 	/* both regions are empty, create only select instructions */
 
 	auto predicate = gamma->predicate()->origin();
-	auto & module = ctx.module();
 	auto cfg = ctx.cfg();
 
 	auto bb = basic_block::create(*cfg);
@@ -225,7 +217,6 @@ convert_empty_gamma_node(const jive::gamma_node * gamma, context & ctx)
 			continue;
 		}
 
-		auto v = module.create_tacvariable(output->type());
 		auto matchnode = jive::node_output::node(predicate);
 		if (is<jive::match_op>(matchnode)) {
 			auto matchop = static_cast<const jive::match_op*>(&matchnode->operation());
@@ -233,14 +224,15 @@ convert_empty_gamma_node(const jive::gamma_node * gamma, context & ctx)
 			auto c = ctx.variable(matchnode->input(0)->origin());
 			auto t = d == 0 ? ctx.variable(o1) : ctx.variable(o0);
 			auto f = d == 0 ? ctx.variable(o0) : ctx.variable(o1);
-			bb->append_last(select_op::create(c, t, f, v));
+			bb->append_last(select_op::create(c, t, f));
 		} else {
-			auto c = module.create_tacvariable(jive::bittype(1));
-			bb->append_last(ctl2bits_op::create(ctx.variable(predicate), c));
-			bb->append_last(select_op::create(c, ctx.variable(o1), ctx.variable(o0), v));
+			auto vo0 = ctx.variable(o0);
+			auto vo1 = ctx.variable(o1);
+			bb->append_last(ctl2bits_op::create(ctx.variable(predicate), jive::bittype(1)));
+			bb->append_last(select_op::create(bb->last()->result(0), vo0, vo1));
 		}
 
-		ctx.insert(output, v);
+		ctx.insert(output, bb->last()->result(0));
 	}
 
 	ctx.set_lpbb(bb);
@@ -253,7 +245,6 @@ convert_gamma_node(const jive::node & node, context & ctx)
 	auto gamma = static_cast<const jive::gamma_node*>(&node);
 	auto nalternatives = gamma->nsubregions();
 	auto predicate = gamma->predicate()->origin();
-	auto & module = ctx.module();
 	auto cfg = ctx.cfg();
 
 	if (gamma->nsubregions() == 2
@@ -322,19 +313,17 @@ convert_gamma_node(const jive::node & node, context & ctx)
 			auto matchnode = jive::node_output::node(predicate);
 			auto matchop = static_cast<const jive::match_op*>(&matchnode->operation());
 			auto d = matchop->default_alternative();
-			auto v = module.create_tacvariable(output->type());
 			auto c = ctx.variable(matchnode->input(0)->origin());
 			auto t = d == 0 ? arguments[1].first : arguments[0].first;
 			auto f = d == 0 ? arguments[0].first : arguments[1].first;
-			entry->append_first(select_op::create(c, t, f, v));
-			ctx.insert(output, v);
+			entry->append_first(select_op::create(c, t, f));
+			ctx.insert(output, entry->first()->result(0));
 			continue;
 		}
 
 		/* create phi instruction */
-		auto v = module.create_tacvariable(output->type());
-		exit->append_last(phi_op::create(arguments, v));
-		ctx.insert(output, v);
+		exit->append_last(phi_op::create(arguments, output->type()));
+		ctx.insert(output, exit->last()->result(0));
 	}
 
 	ctx.set_lpbb(exit);
@@ -374,21 +363,22 @@ convert_theta_node(const jive::node & node, context & ctx)
 	pre_entry->add_outedge(entry);
 	ctx.set_lpbb(entry);
 
-	/* create loop variables and add arguments to context */
-	std::deque<tacvariable*> lvs;
+	/* create phi nodes and add arguments to context */
+	std::deque<jlm::tac*> phis;
 	for (size_t n = 0; n < subregion->narguments(); n++) {
 		auto argument = subregion->argument(n);
 		auto v = ctx.variable(argument->input()->origin());
 		if (phi_needed(argument->input(), v)) {
-			lvs.push_back(ctx.module().create_tacvariable(argument->type()));
-			v = lvs.back();
+			auto phi = entry->append_last(phi_op::create({}, argument->type()));
+			phis.push_back(phi);
+			v = phi->result(0);
 		}
 		ctx.insert(argument, v);
 	}
 
 	convert_region(*subregion, ctx);
 
-	/* add phi instructions and results to context */
+	/* add phi operands and results to context */
 	for (size_t n = 1; n < subregion->nresults(); n++) {
 		auto result = subregion->result(n);
 		auto ve = ctx.variable(node.input(n-1)->origin());
@@ -398,12 +388,12 @@ convert_theta_node(const jive::node & node, context & ctx)
 		}
 
 		auto vr = ctx.variable(result->origin());
-		auto v = lvs.front();
-		lvs.pop_front();
-		entry->append_last(phi_op::create({{ve, pre_entry}, {vr, ctx.lpbb()}}, v));
+		auto phi = phis.front();
+		phis.pop_front();
+		phi->replace(phi_op({pre_entry, ctx.lpbb()}, vr->type()), {ve, vr});
 		ctx.insert(result->output(), vr);
 	}
-	JLM_ASSERT(lvs.empty());
+	JLM_ASSERT(phis.empty());
 
 	ctx.lpbb()->append_last(branch_op::create(2, ctx.variable(predicate)));
 	auto exit = basic_block::create(*ctx.cfg());

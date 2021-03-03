@@ -41,27 +41,33 @@ public:
 	, tac_(nullptr)
 	{}
 
+	tacvariable(
+		jlm::tac * tac,
+		const jive::type & type,
+		const std::string & name)
+	: variable(type, name)
+	, tac_(tac)
+	{}
+
 	inline jlm::tac *
 	tac() const noexcept
 	{
 		return tac_;
 	}
 
-	/*
-		FIXME: ensure tac is set in the constructor
-	*/
-
-	inline void
-	set_tac(jlm::tac * tac) noexcept
-	{
-		JLM_ASSERT(tac_ == nullptr);
-		tac_ = tac;
-	}
-
 	static std::unique_ptr<tacvariable>
 	create(const jive::type & type, const std::string & name)
 	{
 		return std::make_unique<tacvariable>(type, name);
+	}
+
+	static std::unique_ptr<tacvariable>
+	create(
+		jlm::tac * tac,
+		const jive::type & type,
+		const std::string & name)
+	{
+		return std::make_unique<tacvariable>(tac, type, name);
 	}
 
 private:
@@ -84,9 +90,14 @@ public:
 	~tac() noexcept
 	{}
 
-	tac(const jive::simple_op & operation,
+	tac(
+		const jive::simple_op & operation,
+		const std::vector<const variable*> & operands);
+
+	tac(
+		const jive::simple_op & operation,
 		const std::vector<const variable*> & operands,
-		const std::vector<tacvariable*> & results);
+		const std::vector<std::string> & names);
 
 	tac(const jlm::tac &) = delete;
 
@@ -123,40 +134,68 @@ public:
 		return results_.size();
 	}
 
-	/*
-		FIXME: convert this back to a const pointer
-	*/
-	tacvariable *
+	const tacvariable *
 	result(size_t index) const noexcept
 	{
 		JLM_ASSERT(index < results_.size());
-		return results_[index];
+		return results_[index].get();
 	}
-
-	void
-	replace(
-		const jive::simple_op & operation,
-		const std::vector<const variable*> & operands,
-		const std::vector<tacvariable*> & results);
 
 	void
 	replace(
 		const jive::simple_op & operation,
 		const std::vector<const variable*> & operands);
 
+	void
+	convert(
+		const jive::simple_op & operation,
+		const std::vector<const variable*> & operands);
+
 	static std::unique_ptr<jlm::tac>
 	create(
 		const jive::simple_op & operation,
-		const std::vector<const variable *> & operands,
-		const std::vector<tacvariable *> & results)
+		const std::vector<const variable*> & operands)
 	{
-		return std::make_unique<jlm::tac>(operation, operands, results);
+		return std::make_unique<jlm::tac>(operation, operands);
+	}
+
+	static std::unique_ptr<jlm::tac>
+	create(
+		const jive::simple_op & operation,
+		const std::vector<const variable*> & operands,
+		const std::vector<std::string> & names)
+	{
+		return std::make_unique<jlm::tac>(operation, operands, names);
 	}
 
 private:
-	std::vector<tacvariable*> results_;
+	void
+	create_results(
+		const jive::simple_op & operation,
+		const std::vector<std::string> & names)
+	{
+		JLM_ASSERT(names.size() == operation.nresults());
+
+		for (size_t n = 0; n < operation.nresults(); n++) {
+			auto & type = operation.result(n).type();
+			results_.push_back(tacvariable::create(this, type, names[n]));
+		}
+	}
+
+	static std::vector<std::string>
+	create_names(size_t nnames)
+	{
+		static size_t c = 0;
+		std::vector<std::string> names;
+		for (size_t n = 0; n < nnames; n++)
+			names.push_back(strfmt("tv", c++));
+
+		return names;
+	}
+
 	std::vector<const variable*> operands_;
 	std::unique_ptr<jive::operation> operation_;
+	std::vector<std::unique_ptr<tacvariable>> results_;
 };
 
 template <class T> static inline bool

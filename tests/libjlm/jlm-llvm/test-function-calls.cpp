@@ -40,12 +40,10 @@ test_malloc()
 
 		auto size = cfg->entry()->append_argument(argument::create("size", jive::bit64));
 
-		auto address = im->create_tacvariable(pt, "address");
-		auto memstate = im->create_tacvariable(mt, "state");
-		bb->append_last(malloc_op::create(size, memstate, address));
+		bb->append_last(malloc_op::create(size));
 
-		cfg->exit()->append_result(address);
-		cfg->exit()->append_result(memstate);
+		cfg->exit()->append_result(bb->last()->result(0));
+		cfg->exit()->append_result(bb->last()->result(1));
 
 		jive::fcttype ft({&jive::bit64}, {&pt, &mt});
 		auto f = function_node::create(im->ipgraph(), "f", ft, linkage::external_linkage);

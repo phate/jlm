@@ -54,7 +54,7 @@ public:
 	create(
 		const variable * address,
 		const std::vector<const variable*> & offsets,
-		tacvariable * result)
+		const jive::type & type)
 	{
 		auto at = dynamic_cast<const jlm::ptrtype*>(&address->type());
 		if (!at) throw jlm::error("expected pointer type.");
@@ -66,14 +66,14 @@ public:
 			bts.push_back(*bt);
 		}
 
-		auto rt = dynamic_cast<const jlm::ptrtype*>(&result->type());
+		auto rt = dynamic_cast<const jlm::ptrtype*>(&type);
 		if (!rt) throw jlm::error("expected pointer type.");
 
 		jlm::getelementptr_op op(*at, bts, *rt);
 		std::vector<const variable*> operands(1, address);
 		operands.insert(operands.end(), offsets.begin(), offsets.end());
 
-		return tac::create(op, operands, {result});
+		return tac::create(op, operands);
 	}
 
 	static jive::output *

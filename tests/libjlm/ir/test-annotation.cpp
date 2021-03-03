@@ -60,12 +60,14 @@ test_block()
 
 	ipgraph_module module(filepath(""), "", "");
 	auto v0 = module.create_variable(vt, "v0");
-	auto v1 = module.create_tacvariable(vt, "v1");
-	auto v2 = module.create_tacvariable(vt, "v2");
 
 	taclist bb;
-	bb.append_last(tac::create(op, {v0}, {v1}));
-	bb.append_last(tac::create(op, {v1}, {v2}));
+	bb.append_last(tac::create(op, {v0}));
+	auto v1 = bb.last()->result(0);
+
+	bb.append_last(tac::create(op, {v1}));
+	auto v2 = bb.last()->result(0);
+
 
 	auto root = blockaggnode::create(std::move(bb));
 
@@ -85,15 +87,16 @@ test_linear()
 
 	ipgraph_module module(filepath(""), "", "");
 	argument arg("arg", vt);
-	auto v1 = module.create_tacvariable(vt, "v1");
-	auto v2 = module.create_tacvariable(vt, "v2");
 
 	/*
 		Setup simple linear CFG: Entry -> B1 -> B2 -> Exit
 	*/
 	taclist bb1, bb2;
-	bb1.append_last(tac::create(op, {&arg}, {v1}));
-	bb2.append_last(tac::create(op, {v1}, {v2}));
+	bb1.append_last(tac::create(op, {&arg}));
+	auto v1 = bb1.last()->result(0);
+
+	bb2.append_last(tac::create(op, {v1}));
+	auto v2 = bb2.last()->result(0);
 
 	auto en = entryaggnode::create({&arg});
 	auto b1 = blockaggnode::create(std::move(bb1));
@@ -134,20 +137,22 @@ test_branch()
 
 	ipgraph_module module(filepath(""), "", "");
 	auto arg = module.create_variable(vt, "arg");
-	auto v1 = module.create_tacvariable(vt, "v1");
-	auto v2 = module.create_tacvariable(vt, "v2");
 	auto v3 = module.create_tacvariable(vt, "v3");
-	auto v4 = module.create_tacvariable(vt, "v4");
 
 	/*
 		Setup conditional CFG with nodes bbs, b1, b2, and edges bbs -> b1 and bbs -> b2.
 	*/
 	taclist bbs, bb1, bb2;
-	bbs.append_last(tac::create(op, {arg}, {v1}));
+	bbs.append_last(tac::create(op, {arg}));
+	auto v1 = bbs.last()->result(0);
+
+	bb2.append_last(tac::create(op, {v1}));
+	auto v2 = bb2.last()->result(0);
+
 	bb1.append_last(assignment_op::create(v2, v3));
-	bb2.append_last(tac::create(op, {v1}, {v2}));
 	bb2.append_last(assignment_op::create(v1, v3));
-	bb2.append_last(tac::create(op, {v3}, {v4}));
+	bb2.append_last(tac::create(op, {v3}));
+	auto v4 = bb2.last()->result(0);
 
 	auto bs = blockaggnode::create(std::move(bbs));
 	auto b1 = blockaggnode::create(std::move(bb1));
@@ -184,13 +189,14 @@ test_loop()
 
 	ipgraph_module module(filepath(""), "", "");
 	auto v1 = module.create_variable(vt, "v1");
-	auto v2 = module.create_tacvariable(vt, "v2");
-	auto v3 = module.create_tacvariable(vt, "v3");
 	auto v4 = module.create_variable(vt, "v4");
 
 	taclist bb;
-	bb.append_last(tac::create(op, {v1}, {v2}));
-	bb.append_last(tac::create(op, {v2}, {v3}));
+	bb.append_last(tac::create(op, {v1}));
+	auto v2 = bb.last()->result(0);
+
+	bb.append_last(tac::create(op, {v2}));
+	auto v3 = bb.last()->result(0);
 
 	auto xn = exitaggnode::create({v3, v4});
 	auto b = blockaggnode::create(std::move(bb));
@@ -223,14 +229,15 @@ test_branch_in_loop()
 
 	ipgraph_module module(filepath(""), "", "");
 	auto v1 = module.create_variable(vt, "v1");
-	auto v2 = module.create_tacvariable(vt, "v2");
 	auto v3 = module.create_tacvariable(vt, "v3");
-	auto v4 = module.create_tacvariable(vt, "v4");
 
 	taclist tl_cb1, tl_cb2;
-	tl_cb1.append_last(tac::create(op, {v1}, {v2}));
+	tl_cb1.append_last(tac::create(op, {v1}));
+	auto v2 = tl_cb1.last()->result(0);
+
 	tl_cb1.append_last(assignment_op::create(v1, v3));
-	tl_cb1.append_last(tac::create(op, {v1}, {v4}));
+	tl_cb1.append_last(tac::create(op, {v1}));
+	auto v4 = tl_cb1.last()->result(0);
 
 	tl_cb2.append_last(assignment_op::create(v1, v3));
 	tl_cb2.append_last(assignment_op::create(v4, v3));
@@ -300,13 +307,15 @@ test_branch_passby()
 	test_op op({}, {&vt});
 	ipgraph_module module(filepath(""), "", "");
 
-	auto v1 = module.create_tacvariable(vt, "v1");
-	auto v2 = module.create_tacvariable(vt, "v2");
 	auto v3 = module.create_tacvariable(vt, "v3");
 
 	taclist tlsplit, tlb1, tlb2;
-	tlsplit.append_last(tac::create(op, {}, {v1}));
-	tlsplit.append_last(tac::create(op, {}, {v2}));
+	tlsplit.append_last(tac::create(op, {}));
+	auto v1 = tlsplit.last()->result(0);
+
+	tlsplit.append_last(tac::create(op, {}));
+	auto v2 = tlsplit.last()->result(0);
+
 	tlb1.append_last(assignment_op::create(v1, v2));
 	tlb1.append_last(assignment_op::create(v1, v3));
 	tlb2.append_last(assignment_op::create(v1, v3));
