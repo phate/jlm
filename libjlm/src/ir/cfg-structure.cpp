@@ -44,9 +44,9 @@ sccstructure::create(const jlm::scc & scc)
 	auto sccstruct = std::make_unique<sccstructure>();
 
 	for (auto & node : scc) {
-		for (auto it = node.begin_inedges(); it != node.end_inedges(); it++) {
-			if (!scc.contains((*it)->source())) {
-				sccstruct->eedges_.insert(*it);
+		for (auto & inedge : node.inedges()) {
+			if (!scc.contains(inedge->source())) {
+				sccstruct->eedges_.insert(inedge);
 				if (sccstruct->enodes_.find(&node) == sccstruct->enodes_.end())
 					sccstruct->enodes_.insert(&node);
 			}
@@ -267,9 +267,9 @@ is_T2(const jlm::cfg_node * node) noexcept
 	if (node->ninedges() == 0)
 		return false;
 
-	auto source = (*node->begin_inedges())->source();
-	for (auto it = node->begin_inedges(); it != node->end_inedges(); it++) {
-		if ((*it)->source() != source)
+	auto source = (*node->inedges().begin())->source();
+	for (auto & inedge : node->inedges()) {
+		if (inedge->source() != source)
 			return false;
 	}
 
@@ -383,7 +383,7 @@ reduce_T2(
 {
 	JLM_ASSERT(is_T2(node));
 
-	auto p = (*node->begin_inedges())->source();
+	auto p = (*node->inedges().begin())->source();
 	p->divert_inedges(node);
 	p->remove_outedges();
 	to_visit.erase(p);

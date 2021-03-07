@@ -314,8 +314,8 @@ find_dominator_graph(const jlm::cfg_edge * edge)
 			continue;
 
 		bool accept = true;
-		for (auto it = node->begin_inedges(); it != node->end_inedges(); it++) {
-			if (edges.find(*it) == edges.end()) {
+		for (auto & inedge : node->inedges()) {
+			if (edges.find(inedge) == edges.end()) {
 				accept = false;
 				break;
 			}

@@ -171,30 +171,6 @@ public:
 		return const_outedge_iterator(outedges_.end());
 	}
 
-	inedge_iterator
-	begin_inedges()
-	{
-		return inedges_.begin();
-	}
-
-	inline const_inedge_iterator
-	begin_inedges() const
-	{
-		return inedges_.begin();
-	}
-
-	inedge_iterator
-	end_inedges()
-	{
-		return inedges_.end();
-	}
-
-	inline const_inedge_iterator
-	end_inedges() const
-	{
-		return inedges_.end();
-	}
-
 	inedge_iterator_range
 	inedges()
 	{
@@ -214,7 +190,7 @@ public:
 			return;
 
 		while (ninedges())
-			(*begin_inedges())->divert(new_successor);
+			(*inedges().begin())->divert(new_successor);
 	}
 
 	void remove_inedges();

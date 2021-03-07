@@ -54,9 +54,10 @@ cfg::remove_node(cfg::iterator & nodeit)
 {
 	auto & cfg = nodeit->cfg();
 
-	for (auto it = nodeit->begin_inedges(); it != nodeit->end_inedges(); it++)
-		if ((*it)->source() != nodeit.node())
+	for (auto & inedge : nodeit->inedges()) {
+		if (inedge->source() != nodeit.node())
 			throw jlm::error("cannot remove node. It has still incoming edges.");
+	}
 
 	nodeit->remove_outedges();
 	std::unique_ptr<basic_block> tmp(nodeit.node());

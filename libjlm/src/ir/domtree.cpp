@@ -111,8 +111,8 @@ domtree(jlm::cfg & cfg)
 
 			/* find first processed predecessor */
 			cfg_node * newidom = nullptr;
-			for (auto it = node->begin_inedges(); it != node->end_inedges(); it++) {
-				auto p = (*it)->source();
+			for (auto & inedge : node->inedges()) {
+				auto p = inedge->source();
 				if (doms[p] != nullptr) {
 					newidom = p;
 					break;
@@ -121,8 +121,8 @@ domtree(jlm::cfg & cfg)
 			JLM_ASSERT(newidom != nullptr);
 
 			auto pred = newidom;
-			for (auto it = node->begin_inedges(); it != node->end_inedges(); it++) {
-				auto p = (*it)->source();
+			for (auto & inedge : node->inedges()) {
+				auto p = inedge->source();
 				if (p == pred)
 					continue;
 
