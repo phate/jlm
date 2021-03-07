@@ -10,5 +10,4 @@ TESTS += \
 	libjlm/test-load \
 	libjlm/test-restructuring \
 	libjlm/test-sext \
-	libjlm/test-ssa-destruction \
 	libjlm/test-store \
