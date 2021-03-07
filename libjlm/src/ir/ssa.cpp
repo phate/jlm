@@ -21,51 +21,66 @@ destruct_ssa(jlm::cfg & cfg)
 {
 	JLM_ASSERT(is_valid(cfg));
 
-	/* find all blocks containing phis */
-	std::unordered_set<cfg_node*> phi_blocks;
-	for (auto & node : cfg) {
-		if (!is<basic_block>(&node))
-			continue;
-
-		auto & tacs = static_cast<basic_block*>(&node)->tacs();
-		if (tacs.ntacs() != 0 && dynamic_cast<const phi_op*>(&tacs.first()->operation()))
-			phi_blocks.insert(&node);
-	}
-
-	/* eliminate phis */
-	for (auto phi_block : phi_blocks) {
-		auto ass_block = basic_block::create(cfg);
-		auto & tacs = static_cast<basic_block*>(phi_block)->tacs();
-
-		/* collect inedges of phi block */
-		std::unordered_map<cfg_node*, cfg_edge*> edges;
-		for (auto it = phi_block->begin_inedges(); it != phi_block->end_inedges(); it++) {
-			JLM_ASSERT(edges.find((*it)->source()) == edges.end());
-			edges[(*it)->source()] = *it;
+	auto collect_phi_blocks = [](jlm::cfg & cfg)
+	{
+		std::unordered_set<basic_block*> phi_blocks;
+		for (auto & bb : cfg) {
+			if (is<phi_op>(bb.first()))
+				phi_blocks.insert(&bb);
 		}
 
-		while (tacs.first()) {
-			auto tac = tacs.first();
-			if (!dynamic_cast<const phi_op*>(&tac->operation()))
-				break;
+		return phi_blocks;
+	};
 
-			auto phi = static_cast<const phi_op*>(&tac->operation());
-			auto v = cfg.module().create_variable(phi->type());
+	auto eliminate_phis = [](
+		jlm::cfg & cfg,
+		const std::unordered_set<basic_block*> & phi_blocks)
+	{
+		if (phi_blocks.empty())
+			return;
 
-			const variable * value = nullptr;
-			for (size_t n = 0; n < tac->noperands(); n++) {
-				JLM_ASSERT(edges.find(phi->node(n)) != edges.end());
-				auto bb = edges[phi->node(n)]->split();
-				value = bb->append_last(assignment_op::create(tac->operand(n), v))->operand(0);
+		auto firstbb = static_cast<basic_block*>(cfg.entry()->outedge(0)->sink());
+
+		for (auto phi_block : phi_blocks) {
+			auto ass_block = basic_block::create(cfg);
+			auto & tacs = phi_block->tacs();
+
+			/* collect inedges of phi block */
+			std::unordered_map<cfg_node*, cfg_edge*> edges;
+			for (auto & inedge : phi_block->inedges()) {
+				JLM_ASSERT(edges.find(inedge->source()) == edges.end());
+				edges[inedge->source()] = inedge;
 			}
 
-			ass_block->append_last(assignment_op::create(value, tac->result(0)));
-			tacs.drop_first();
-		}
+			while (tacs.first()) {
+				auto phitac = tacs.first();
+				if (!is<phi_op>(phitac))
+					break;
 
-		phi_block->divert_inedges(ass_block);
-		ass_block->add_outedge(phi_block);
-	}
+				auto phi = static_cast<const phi_op*>(&phitac->operation());
+				auto v = cfg.module().create_variable(phi->type());
+
+				const variable * value = nullptr;
+				for (size_t n = 0; n < phitac->noperands(); n++) {
+					JLM_ASSERT(edges.find(phi->node(n)) != edges.end());
+					auto bb = edges[phi->node(n)]->split();
+					value = bb->append_last(assignment_op::create(phitac->operand(n), v))->operand(0);
+				}
+
+				auto phiresult = std::move(phitac->results()[0]);
+				auto undef = firstbb->append_first(undef_constant_op::create(std::move(phiresult)));
+				ass_block->append_last(assignment_op::create(value, undef->result(0)));
+				tacs.drop_first();
+			}
+
+			phi_block->divert_inedges(ass_block);
+			ass_block->add_outedge(phi_block);
+		}
+	};
+
+
+	auto phi_blocks = collect_phi_blocks(cfg);
+	eliminate_phis(cfg, phi_blocks);
 }
 
 }
