@@ -7,6 +7,7 @@
 #define JLM_IR_CFG_NODE_H
 
 #include <jlm/common.hpp>
+#include <jlm/util/iterator_range.hpp>
 
 #include <memory>
 #include <string>
@@ -49,6 +50,9 @@ private:
 class cfg_node {
 	typedef std::unordered_set<cfg_edge*>::iterator inedge_iterator;
 	typedef std::unordered_set<cfg_edge*>::const_iterator const_inedge_iterator;
+
+	using inedge_iterator_range = iterator_range<inedge_iterator>;
+	using constinedge_iterator_range = iterator_range<const_inedge_iterator>;
 
 	class const_outedge_iterator final {
 	public:
@@ -189,6 +193,18 @@ public:
 	end_inedges() const
 	{
 		return inedges_.end();
+	}
+
+	inedge_iterator_range
+	inedges()
+	{
+		return inedge_iterator_range(inedges_.begin(), inedges_.end());
+	}
+
+	constinedge_iterator_range
+	inedges() const
+	{
+		return constinedge_iterator_range(inedges_.begin(), inedges_.end());
 	}
 
 	inline void
