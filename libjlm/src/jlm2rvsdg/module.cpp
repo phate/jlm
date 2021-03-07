@@ -213,7 +213,31 @@ private:
 	jlm::filepath filename_;
 };
 
-typedef std::unordered_map<const variable*, jive::output*> vmap;
+class vmap final {
+public:
+	bool
+	contains(const variable * v) const noexcept
+	{
+		return map_.find(v) != map_.end();
+	}
+
+	jive::output *
+	lookup(const variable * v) const
+	{
+		JLM_ASSERT(contains(v));
+		return map_.at(v);
+	}
+
+	void
+	insert(const variable * v, jive::output * o)
+	{
+		JLM_ASSERT(v->type() == o->type());
+		map_[v] = o;
+	}
+
+private:
+	std::unordered_map<const variable*, jive::output*> map_;
+};
 
 class scoped_vmap final {
 public:
@@ -296,7 +320,9 @@ static void
 convert_assignment(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
 {
 	JLM_ASSERT(is<assignment_op>(tac.operation()));
-	vmap[tac.operand(0)] = vmap[tac.operand(1)];
+	auto lhs = tac.operand(0);
+	auto rhs = tac.operand(1);
+	vmap.insert(lhs, vmap.lookup(rhs));
 }
 
 static void
@@ -306,13 +332,14 @@ convert_select(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
 	JLM_ASSERT(tac.noperands() == 3 && tac.nresults() == 1);
 
 	auto op = jive::match_op(1, {{1, 1}}, 0, 2);
-	auto predicate = jive::simple_node::create_normalized(region, op, {vmap[tac.operand(0)]})[0];
+	auto p = vmap.lookup(tac.operand(0));
+	auto predicate = jive::simple_node::create_normalized(region, op, {p})[0];
 
 	auto gamma = jive::gamma_node::create(predicate, 2);
-	auto ev1 = gamma->add_entryvar(vmap[tac.operand(2)]);
-	auto ev2 = gamma->add_entryvar(vmap[tac.operand(1)]);
+	auto ev1 = gamma->add_entryvar(vmap.lookup(tac.operand(2)));
+	auto ev2 = gamma->add_entryvar(vmap.lookup(tac.operand(1)));
 	auto ex = gamma->add_exitvar({ev1->argument(0), ev2->argument(1)});
-	vmap[tac.result(0)] = ex;
+	vmap.insert(tac.result(0), ex);
 }
 
 static void
@@ -338,17 +365,15 @@ convert_tac(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
 		return map[typeid(op)](tac, region, vmap);
 
 	std::vector<jive::output*> operands;
-	for (size_t n = 0; n < tac.noperands(); n++) {
-		JLM_ASSERT(vmap.find(tac.operand(n)) != vmap.end());
-		operands.push_back(vmap[tac.operand(n)]);
-	}
+	for (size_t n = 0; n < tac.noperands(); n++)
+		operands.push_back(vmap.lookup(tac.operand(n)));
 
 	auto results = jive::simple_node::create_normalized(region, static_cast<const jive::simple_op&>(
 		tac.operation()), operands);
 
 	JLM_ASSERT(results.size() == tac.nresults());
 	for (size_t n = 0; n < tac.nresults(); n++)
-		vmap[tac.result(n)] = results[n];
+		vmap.insert(tac.result(n), results[n]);
 }
 
 static void
@@ -389,18 +414,17 @@ convert_entry_node(
 		auto jlmarg = en->argument(n);
 		auto fctarg = lambda->fctargument(n);
 
-		vmap[jlmarg] = fctarg;
+		vmap.insert(jlmarg, fctarg);
 		fctarg->set_attributes(jlmarg->attributes());
 	}
 
 	/* add dependencies and undefined values */
 	for (const auto & v : ds->top) {
-		if (pvmap.find(v) != pvmap.end()) {
-			vmap[v] = lambda->add_ctxvar(pvmap[v]);
+		if (pvmap.contains(v)) {
+			vmap.insert(v, lambda->add_ctxvar(pvmap.lookup(v)));
 		} else {
 			auto value = create_undef_value(lambda->subregion(), v->type());
-			JLM_ASSERT(value);
-			vmap[v] = value;
+			vmap.insert(v, value);
 		}
 	}
 }
@@ -418,8 +442,8 @@ convert_exit_node(
 
 	std::vector<jive::output*> results;
 	for (const auto & result : *xn) {
-		JLM_ASSERT(svmap.vmap().find(result) != svmap.vmap().end());
-		results.push_back(svmap.vmap()[result]);
+		JLM_ASSERT(svmap.vmap().contains(result));
+		results.push_back(svmap.vmap().lookup(result));
 	}
 
 	svmap.pop_scope();
@@ -470,16 +494,14 @@ convert_branch_node(
 	auto & sb = dynamic_cast<const blockaggnode*>(split)->tacs();
 
 	JLM_ASSERT(is<branch_op>(sb.last()->operation()));
-	auto predicate = svmap.vmap()[sb.last()->operand(0)];
+	auto predicate = svmap.vmap().lookup(sb.last()->operand(0));
 	auto gamma = jive::gamma_node::create(predicate, node.nchildren());
 
 	/* add entry variables */
 	auto & ds = dm.at(&node);
 	std::unordered_map<const variable*, jive::gamma_input*> evmap;
-	for (const auto & v : ds->top) {
-		JLM_ASSERT(svmap.vmap().find(v) != svmap.vmap().end());
-		evmap[v] = gamma->add_entryvar(svmap.vmap()[v]);
-	}
+	for (const auto & v : ds->top)
+		evmap[v] = gamma->add_entryvar(svmap.vmap().lookup(v));
 
 	/* convert branch cases */
 	std::unordered_map<const variable*, std::vector<jive::output*>> xvmap;
@@ -487,21 +509,19 @@ convert_branch_node(
 	for (size_t n = 0; n < gamma->nsubregions(); n++) {
 		svmap.push_scope(gamma->subregion(n));
 		for (const auto & pair : evmap)
-			svmap.vmap()[pair.first] = pair.second->argument(n);
+			svmap.vmap().insert(pair.first, pair.second->argument(n));
 
 		convert_node(*node.child(n), dm, function, lambda, svmap);
 
-		for (const auto & v : ds->bottom) {
-			JLM_ASSERT(svmap.vmap().find(v) != svmap.vmap().end());
-			xvmap[v].push_back(svmap.vmap()[v]);
-		}
+		for (const auto & v : ds->bottom)
+			xvmap[v].push_back(svmap.vmap().lookup(v));
 		svmap.pop_scope();
 	}
 
 	/* add exit variables */
 	for (const auto & v : ds->bottom) {
 		JLM_ASSERT(xvmap.find(v) != xvmap.end());
-		svmap.vmap()[v] = gamma->add_exitvar(xvmap[v]);
+		svmap.vmap().insert(v, gamma->add_exitvar(xvmap[v]));
 	}
 }
 
@@ -528,15 +548,15 @@ convert_loop_node(
 	std::unordered_map<const variable*, jive::theta_output*> lvmap;
 	for (const auto & v : ds->top) {
 		jive::output * value = nullptr;
-		if (pvmap.find(v) == pvmap.end()) {
+		if (!pvmap.contains(v)) {
 			value = create_undef_value(parent, v->type());
 			JLM_ASSERT(value);
-			pvmap[v] = value;
+			pvmap.insert(v, value);
 		} else {
-			value = pvmap[v];
+			value = pvmap.lookup(v);
 		}
 		lvmap[v] = theta->add_loopvar(value);
-		vmap[v] = lvmap[v]->argument();
+		vmap.insert(v, lvmap[v]->argument());
 	}
 
 	/* convert loop body */
@@ -545,9 +565,8 @@ convert_loop_node(
 
 	/* update loop variables */
 	for (const auto & v : ds->top) {
-		JLM_ASSERT(vmap.find(v) != vmap.end());
 		JLM_ASSERT(lvmap.find(v) != lvmap.end());
-		lvmap[v]->result()->divert_to(vmap[v]);
+		lvmap[v]->result()->divert_to(vmap.lookup(v));
 	}
 
 	/* find predicate */
@@ -560,12 +579,11 @@ convert_loop_node(
 	auto predicate = bb.last()->operand(0);
 
 	/* update variable map */
-	JLM_ASSERT(vmap.find(predicate) != vmap.end());
-	theta->set_predicate(vmap[predicate]);
+	theta->set_predicate(vmap.lookup(predicate));
 	svmap.pop_scope();
 	for (const auto & v : ds->bottom) {
-		JLM_ASSERT(pvmap.find(v) != pvmap.end());
-		pvmap[v] = lvmap[v];
+		JLM_ASSERT(pvmap.contains(v));
+		pvmap.insert(v, lvmap[v]);
 	}
 }
 
@@ -676,7 +694,7 @@ convert_initialization(const data_node_init & init, jive::region * region, scope
 	for (const auto & tac : init.tacs())
 		convert_tac(*tac, region, vmap);
 
-	return vmap[init.value()];
+	return vmap.lookup(init.value());
 }
 
 static jive::output *
@@ -706,9 +724,8 @@ convert_data_node(
 	/* add dependencies */
 	for (const auto & dp : *node) {
 		auto v = m.variable(dp);
-		JLM_ASSERT(pv.find(v) != pv.end());
-		auto argument = db.add_dependency(pv[v]);
-		svmap.vmap()[v] = argument;
+		auto argument = db.add_dependency(pv.lookup(v));
+		svmap.vmap().insert(v, argument);
 	}
 
 	auto data = db.end(convert_initialization(*init, r, svmap));
@@ -745,7 +762,7 @@ handle_scc(
 
 		auto v = m.variable(node);
 		JLM_ASSERT(v);
-		svmap.vmap()[v] = output;
+		svmap.vmap().insert(v, output);
 		if (is_externally_visible(node->linkage()))
 			graph->add_export(output, {output->type(), v->name()});
 	} else {
@@ -762,7 +779,7 @@ handle_scc(
 			auto rv = pb.add_recvar(node->type());
 			auto v = m.variable(node);
 			JLM_ASSERT(v);
-			vmap[v] = rv->argument();
+			vmap.insert(v, rv->argument());
 			JLM_ASSERT(recvars.find(v) == recvars.end());
 			recvars[v] = rv;
 		}
@@ -773,7 +790,7 @@ handle_scc(
 				auto v = m.variable(dep);
 				JLM_ASSERT(v);
 				if (recvars.find(v) == recvars.end())
-					vmap[v] = pb.add_ctxvar(pvmap[v]);
+					vmap.insert(v, pb.add_ctxvar(pvmap.lookup(v)));
 			}
 		}
 
@@ -790,7 +807,7 @@ handle_scc(
 		for (const auto & node : scc) {
 			auto v = m.variable(node);
 			auto value = recvars[v];
-			svmap.vmap()[v] = value;
+			svmap.vmap().insert(v, value);
 			if (is_externally_visible(node->linkage()))
 				graph->add_export(value, {value->type(), v->name()});
 		}
