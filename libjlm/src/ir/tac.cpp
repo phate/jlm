@@ -81,6 +81,18 @@ tac::tac(
 	create_results(operation, names);
 }
 
+tac::tac(
+	const jive::simple_op & operation,
+	const std::vector<const variable*> & operands,
+	std::vector<std::unique_ptr<tacvariable>> results)
+: operands_(operands)
+, operation_(operation.copy())
+, results_(std::move(results))
+{
+	check_operands(operation, operands);
+	check_results(operation, results_);
+}
+
 void
 tac::convert(
 	const jive::simple_op & operation,

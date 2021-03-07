@@ -77,6 +77,11 @@ public:
 		const std::vector<const variable*> & operands,
 		const std::vector<std::string> & names);
 
+	tac(
+		const jive::simple_op & operation,
+		const std::vector<const variable*> & operands,
+		std::vector<std::unique_ptr<tacvariable>> results);
+
 	tac(const jlm::tac &) = delete;
 
 	tac(jlm::tac &&) = delete;
@@ -144,6 +149,15 @@ public:
 		const std::vector<std::string> & names)
 	{
 		return std::make_unique<jlm::tac>(operation, operands, names);
+	}
+
+	static std::unique_ptr<jlm::tac>
+	create(
+		const jive::simple_op & operation,
+		const std::vector<const variable*> & operands,
+		std::vector<std::unique_ptr<tacvariable>> results)
+	{
+		return std::make_unique<jlm::tac>(operation, operands, std::move(results));
 	}
 
 private:
