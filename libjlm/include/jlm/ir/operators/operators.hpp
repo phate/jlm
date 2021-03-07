@@ -969,6 +969,28 @@ public:
 		undef_constant_op op(type);
 		return tac::create(op, {}, {name});
 	}
+
+	static std::unique_ptr<jlm::tac>
+	create(std::unique_ptr<tacvariable> result)
+	{
+		auto vt = check_type(result->type());
+
+		std::vector<std::unique_ptr<tacvariable>> results;
+		results.push_back(std::move(result));
+
+		undef_constant_op op(*vt);
+		return tac::create(op, {}, std::move(results));
+	}
+
+private:
+	static const jive::valuetype *
+	check_type(const jive::type & type)
+	{
+		auto vt = dynamic_cast<const jive::valuetype*>(&type);
+		if (!vt) throw jlm::error("expected value type.");
+
+		return vt;
+	}
 };
 
 /* floating point arithmetic operator */
