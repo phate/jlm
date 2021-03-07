@@ -124,6 +124,16 @@ public:
 		return results_[index].get();
 	}
 
+	/*
+		FIXME: I am really not happy with this function exposing
+		the results, but we need these results for the SSA destruction.
+	*/
+	std::vector<std::unique_ptr<tacvariable>>
+	results()
+	{
+		return std::move(results_);
+	}
+
 	void
 	replace(
 		const jive::simple_op & operation,
