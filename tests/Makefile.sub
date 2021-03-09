@@ -48,4 +48,5 @@ valgrind-check: tests/test-runner
 	for TEST in $(TESTS); do \
 		$(TESTLOG) -n "$$TEST: " ; if valgrind --leak-check=full --error-exitcode=1 tests/test-runner $$TEST >>check.log 2>&1 ; then $(TESTLOG) pass ; else $(TESTLOG) FAIL ; FAILED_TESTS="$$UNEXPECTED_FAILED_TESTS $$TEST" ; fi ; \
 	done ; \
-	if [ "x$$FAILED_TESTS" != x ] ; then printf '\033[0;31m%s\033[0m%s\n' "Failed valgrind-tests:" "$$FAILED_TESTS" ; else printf '\033[0;32m%s\n\033[0m' "All valgrind-tests passed" ; fi ; \
+	set -e ; \
+	if [ "x$$FAILED_TESTS" != x ] ; then printf '\033[0;31m%s\033[0m%s\n' "Failed valgrind-tests:" "$$FAILED_TESTS" ; exit 1 ; else printf '\033[0;32m%s\n\033[0m' "All valgrind-tests passed" ; fi ; \
