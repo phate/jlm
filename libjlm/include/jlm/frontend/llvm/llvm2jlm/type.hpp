@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_LLVM2JLM_TYPE_HPP
-#define JLM_LLVM2JLM_TYPE_HPP
+#ifndef JLM_FRONTEND_LLVM_LLVM2JLM_TYPE_HPP
+#define JLM_FRONTEND_LLVM_LLVM2JLM_TYPE_HPP
 
 #include <jive/types/record.hpp>
 

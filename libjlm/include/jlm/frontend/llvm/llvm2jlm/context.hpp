@@ -3,13 +3,13 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_LLVM2JLM_CONTEXT_HPP
-#define JLM_LLVM2JLM_CONTEXT_HPP
+#ifndef JLM_FRONTEND_LLVM_LLVM2JLM_CONTEXT_HPP
+#define JLM_FRONTEND_LLVM_LLVM2JLM_CONTEXT_HPP
 
+#include <jlm/frontend/llvm/llvm2jlm/type.hpp>
 #include <jlm/ir/cfg-node.hpp>
 #include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/tac.hpp>
-#include <jlm/llvm2jlm/type.hpp>
 
 #include <jive/types/record.hpp>
 #include <llvm/IR/DerivedTypes.h>

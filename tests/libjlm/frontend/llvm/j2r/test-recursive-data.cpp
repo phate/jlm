@@ -9,10 +9,10 @@
 
 #include <jive/view.hpp>
 
+#include <jlm/frontend/llvm/jlm2rvsdg/module.hpp>
 #include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/print.hpp>
 #include <jlm/ir/rvsdg-module.hpp>
-#include <jlm/jlm2rvsdg/module.hpp>
 #include <jlm/util/stats.hpp>
 
 static int
@@ -52,4 +52,4 @@ test()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/j2r/test-recursive-data", test)
+JLM_UNIT_TEST_REGISTER("libjlm/frontend/llvm/j2r/test-recursive-data", test)

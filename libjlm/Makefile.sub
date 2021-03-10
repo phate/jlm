@@ -12,6 +12,12 @@ LIBJLM_SRC = \
 	libjlm/src/driver/command.cpp \
 	libjlm/src/driver/passgraph.cpp \
 	\
+	libjlm/src/frontend/llvm/jlm2rvsdg/module.cpp \
+	libjlm/src/frontend/llvm/jlm2rvsdg/restructuring.cpp \
+	libjlm/src/frontend/llvm/llvm2jlm/instruction.cpp \
+	libjlm/src/frontend/llvm/llvm2jlm/module.cpp \
+	libjlm/src/frontend/llvm/llvm2jlm/type.cpp \
+	\
 	libjlm/src/ir/aggregation.cpp \
 	libjlm/src/ir/annotation.cpp \
 	libjlm/src/ir/attribute.cpp \
@@ -37,13 +43,6 @@ LIBJLM_SRC = \
 	libjlm/src/ir/tac.cpp \
 	libjlm/src/ir/types.cpp \
 	libjlm/src/ir/variable.cpp \
-	\
-	libjlm/src/jlm2rvsdg/module.cpp \
-	libjlm/src/jlm2rvsdg/restructuring.cpp \
-	\
-	libjlm/src/llvm2jlm/instruction.cpp \
-	libjlm/src/llvm2jlm/module.cpp \
-	libjlm/src/llvm2jlm/type.cpp \
 	\
 	libjlm/src/opt/cne.cpp \
 	libjlm/src/opt/dne.cpp \

@@ -5,11 +5,11 @@
 
 #include <jlm/backend/llvm/jlm2llvm/jlm2llvm.hpp>
 #include <jlm/backend/llvm/rvsdg2jlm/rvsdg2jlm.hpp>
+#include <jlm/frontend/llvm/llvm2jlm/module.hpp>
+#include <jlm/frontend/llvm/jlm2rvsdg/module.hpp>
 #include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/print.hpp>
 #include <jlm/ir/rvsdg-module.hpp>
-#include <jlm/llvm2jlm/module.hpp>
-#include <jlm/jlm2rvsdg/module.hpp>
 #include <jlm/util/stats.hpp>
 
 #include <jive/rvsdg/graph.hpp>

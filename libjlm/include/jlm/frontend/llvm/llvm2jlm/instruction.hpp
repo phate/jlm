@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_LLVM2JLM_INSTRUCTION_HPP
-#define JLM_LLVM2JLM_INSTRUCTION_HPP
+#ifndef JLM_FRONTEND_LLVM_LLVM2JLM_INSTRUCTION_HPP
+#define JLM_FRONTEND_LLVM_LLVM2JLM_INSTRUCTION_HPP
 
 namespace llvm {
 	class Constant;

@@ -4,9 +4,9 @@
  */
 
 #include <jlm/common.hpp>
-#include <jlm/llvm2jlm/context.hpp>
-#include <jlm/llvm2jlm/instruction.hpp>
-#include <jlm/llvm2jlm/type.hpp>
+#include <jlm/frontend/llvm/llvm2jlm/context.hpp>
+#include <jlm/frontend/llvm/llvm2jlm/instruction.hpp>
+#include <jlm/frontend/llvm/llvm2jlm/type.hpp>
 
 #include <jlm/ir/basic-block.hpp>
 #include <jlm/ir/ipgraph.hpp>

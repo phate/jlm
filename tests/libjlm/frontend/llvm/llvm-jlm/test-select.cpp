@@ -6,10 +6,10 @@
 #include <test-registry.hpp>
 #include <test-util.hpp>
 
+#include <jlm/frontend/llvm/llvm2jlm/module.hpp>
 #include <jlm/ir/print.hpp>
 #include <jlm/ir/operators/call.hpp>
 #include <jlm/ir/operators/operators.hpp>
-#include <jlm/llvm2jlm/module.hpp>
 
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/IRBuilder.h>
@@ -107,4 +107,4 @@ test()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/llvm-jlm/test-select", test)
+JLM_UNIT_TEST_REGISTER("libjlm/frontend/llvm/llvm-jlm/test-select", test)

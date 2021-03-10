@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_JLM2RVSDG_MODULE_H
-#define JLM_JLM2RVSDG_MODULE_H
+#ifndef JLM_FRONTEND_LLVM_JLM2RVSDG_MODULE_H
+#define JLM_FRONTEND_LLVM_JLM2RVSDG_MODULE_H
 
 #include <memory>
 
