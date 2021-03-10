@@ -13,9 +13,9 @@
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/tac.hpp>
 
-#include <jlm/jlm2llvm/context.hpp>
-#include <jlm/jlm2llvm/instruction.hpp>
-#include <jlm/jlm2llvm/type.hpp>
+#include <jlm/backend/llvm/jlm2llvm/context.hpp>
+#include <jlm/backend/llvm/jlm2llvm/instruction.hpp>
+#include <jlm/backend/llvm/jlm2llvm/type.hpp>
 
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>

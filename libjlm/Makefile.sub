@@ -4,6 +4,11 @@
 LIBJLM_SRC = \
 	libjlm/src/common.cpp \
 	\
+	libjlm/src/backend/llvm/jlm2llvm/instruction.cpp \
+	libjlm/src/backend/llvm/jlm2llvm/jlm2llvm.cpp \
+	libjlm/src/backend/llvm/jlm2llvm/type.cpp \
+	libjlm/src/backend/llvm/rvsdg2jlm/rvsdg2jlm.cpp \
+	\
 	libjlm/src/driver/command.cpp \
 	libjlm/src/driver/passgraph.cpp \
 	\
@@ -33,18 +38,12 @@ LIBJLM_SRC = \
 	libjlm/src/ir/types.cpp \
 	libjlm/src/ir/variable.cpp \
 	\
-	libjlm/src/jlm2llvm/instruction.cpp \
-	libjlm/src/jlm2llvm/jlm2llvm.cpp \
-	libjlm/src/jlm2llvm/type.cpp \
-	\
 	libjlm/src/jlm2rvsdg/module.cpp \
 	libjlm/src/jlm2rvsdg/restructuring.cpp \
 	\
 	libjlm/src/llvm2jlm/instruction.cpp \
 	libjlm/src/llvm2jlm/module.cpp \
 	libjlm/src/llvm2jlm/type.cpp \
-	\
-	libjlm/src/rvsdg2jlm/rvsdg2jlm.cpp \
 	\
 	libjlm/src/opt/cne.cpp \
 	libjlm/src/opt/dne.cpp \

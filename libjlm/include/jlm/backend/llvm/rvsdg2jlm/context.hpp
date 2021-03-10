@@ -3,6 +3,9 @@
  * See COPYING for terms of redistribution.
  */
 
+#ifndef JLM_BACKEND_LLVM_RVSDG2JLM_CONTEXT_HPP
+#define JLM_BACKEND_LLVM_RVSDG2JLM_CONTEXT_HPP
+
 namespace jlm {
 
 class cfg_node;
@@ -84,3 +87,5 @@ private:
 };
 
 }}
+
+#endif

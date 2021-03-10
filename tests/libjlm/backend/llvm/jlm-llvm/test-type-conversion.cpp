@@ -6,10 +6,10 @@
 #include <test-registry.hpp>
 #include <test-util.hpp>
 
+#include <jlm/backend/llvm/jlm2llvm/context.hpp>
+#include <jlm/backend/llvm/jlm2llvm/type.hpp>
 #include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/types.hpp>
-#include <jlm/jlm2llvm/context.hpp>
-#include <jlm/jlm2llvm/type.hpp>
 
 static void
 test_structtype(jlm::jlm2llvm::context & ctx)
@@ -51,4 +51,4 @@ test()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/jlm-llvm/test-type-conversion", test)
+JLM_UNIT_TEST_REGISTER("libjlm/backend/llvm/jlm-llvm/test-type-conversion", test)

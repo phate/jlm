@@ -1,0 +1,2 @@
+include tests/libjlm/backend/llvm/jlm-llvm/Makefile.sub
+include tests/libjlm/backend/llvm/r2j/Makefile.sub

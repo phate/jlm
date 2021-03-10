@@ -16,8 +16,8 @@
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/ir/tac.hpp>
-#include <jlm/rvsdg2jlm/context.hpp>
-#include <jlm/rvsdg2jlm/rvsdg2jlm.hpp>
+#include <jlm/backend/llvm/rvsdg2jlm/context.hpp>
+#include <jlm/backend/llvm/rvsdg2jlm/rvsdg2jlm.hpp>
 #include <jlm/util/stats.hpp>
 #include <jlm/util/time.hpp>
 

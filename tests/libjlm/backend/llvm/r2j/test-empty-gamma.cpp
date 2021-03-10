@@ -10,12 +10,12 @@
 #include <jive/rvsdg/gamma.hpp>
 #include <jive/view.hpp>
 
+#include <jlm/backend/llvm/rvsdg2jlm/rvsdg2jlm.hpp>
 #include <jlm/ir/cfg-structure.hpp>
 #include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/print.hpp>
 #include <jlm/ir/rvsdg-module.hpp>
-#include <jlm/rvsdg2jlm/rvsdg2jlm.hpp>
 #include <jlm/util/stats.hpp>
 
 static void
@@ -159,4 +159,4 @@ test()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/r2j/test-empty-gamma", test)
+JLM_UNIT_TEST_REGISTER("libjlm/backend/llvm/r2j/test-empty-gamma", test)

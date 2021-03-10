@@ -10,11 +10,11 @@
 #include <jive/rvsdg/phi.hpp>
 #include <jive/view.hpp>
 
+#include <jlm/backend/llvm/rvsdg2jlm/rvsdg2jlm.hpp>
 #include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/operators/delta.hpp>
 #include <jlm/ir/print.hpp>
 #include <jlm/ir/rvsdg-module.hpp>
-#include <jlm/rvsdg2jlm/rvsdg2jlm.hpp>
 #include <jlm/util/stats.hpp>
 
 static int
@@ -74,4 +74,4 @@ test()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/r2j/test-recursive-data", test)
+JLM_UNIT_TEST_REGISTER("libjlm/backend/llvm/r2j/test-recursive-data", test)

@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/jlm2llvm/context.hpp>
-#include <jlm/jlm2llvm/type.hpp>
+#include <jlm/backend/llvm/jlm2llvm/context.hpp>
+#include <jlm/backend/llvm/jlm2llvm/type.hpp>
 
 #include <jive/arch/addresstype.hpp>
 

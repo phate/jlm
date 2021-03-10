@@ -13,10 +13,10 @@
 #include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/operators/operators.hpp>
 
-#include <jlm/jlm2llvm/context.hpp>
-#include <jlm/jlm2llvm/instruction.hpp>
-#include <jlm/jlm2llvm/jlm2llvm.hpp>
-#include <jlm/jlm2llvm/type.hpp>
+#include <jlm/backend/llvm/jlm2llvm/context.hpp>
+#include <jlm/backend/llvm/jlm2llvm/instruction.hpp>
+#include <jlm/backend/llvm/jlm2llvm/jlm2llvm.hpp>
+#include <jlm/backend/llvm/jlm2llvm/type.hpp>
 
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/IRBuilder.h>

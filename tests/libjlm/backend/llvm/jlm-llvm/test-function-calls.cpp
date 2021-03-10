@@ -7,7 +7,7 @@
 #include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/print.hpp>
-#include <jlm/jlm2llvm/jlm2llvm.hpp>
+#include <jlm/backend/llvm/jlm2llvm/jlm2llvm.hpp>
 
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/LLVMContext.h>
@@ -81,4 +81,4 @@ test()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/jlm-llvm/test-function-calls", test)
+JLM_UNIT_TEST_REGISTER("libjlm/backend/llvm/jlm-llvm/test-function-calls", test)

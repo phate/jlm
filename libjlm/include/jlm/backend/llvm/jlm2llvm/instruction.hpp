@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_JLM2LLVM_INSTRUCTION_HPP
-#define JLM_JLM2LLVM_INSTRUCTION_HPP
+#ifndef JLM_BACKEND_LLVM_JLM2LLVM_INSTRUCTION_HPP
+#define JLM_BACKEND_LLVM_JLM2LLVM_INSTRUCTION_HPP
 
 namespace llvm {
 

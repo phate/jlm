@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_JLM2LLVM_JLM2LLVM_HPP
-#define JLM_JLM2LLVM_JLM2LLVM_HPP
+#ifndef JLM_BACKEND_LLVM_JLM2LLVM_JLM2LLVM_HPP
+#define JLM_BACKEND_LLVM_JLM2LLVM_JLM2LLVM_HPP
 
 #include <memory>
 
@@ -16,9 +16,11 @@ class Module;
 }
 
 namespace jlm {
+
+class ipgraph_module;
+
 namespace jlm2llvm {
 
-class module;
 /*
 	FIXME: ipgraph_module should be const, but we still need to create variables to translate
 	       expressions.

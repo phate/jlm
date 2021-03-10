@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_JLM2LLVM_CONTEXT_HPP
-#define JLM_JLM2LLVM_CONTEXT_HPP
+#ifndef JLM_BACKEND_LLVM_JLM2LLVM_CONTEXT_HPP
+#define JLM_BACKEND_LLVM_JLM2LLVM_CONTEXT_HPP
 
 #include <jlm/common.hpp>
 
