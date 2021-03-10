@@ -263,4 +263,4 @@ verify()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/test-restructuring", verify)
+JLM_UNIT_TEST_REGISTER("libjlm/frontend/llvm/j2r/test-restructuring", verify)

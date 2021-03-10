@@ -6,6 +6,5 @@ include tests/libjlm/opt/Makefile.sub
 TESTS += \
 	libjlm/test-cfg-structure \
 	libjlm/test-load \
-	libjlm/test-restructuring \
 	libjlm/test-sext \
 	libjlm/test-store \
