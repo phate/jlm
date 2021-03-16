@@ -28,7 +28,7 @@ test()
 	rvsdg_module rm(filepath(""), "", "");
 
 	/* setup graph */
-	auto imp = rm.graph()->add_import({pt, ""});
+	auto imp = rm.graph()->add_import(impport(pt, "", linkage::external_linkage));
 
 	jive::phi::builder pb;
 	pb.begin(rm.graph()->root());
