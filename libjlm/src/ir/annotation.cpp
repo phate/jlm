@@ -223,8 +223,8 @@ annotateds(
 {
 	auto & ds = dm[node];
 
-	variableset passthrough = pds;
-	passthrough.subtract(ds->allwrites);
+	variableset passby = pds;
+	passby.subtract(ds->allwrites);
 
 	variableset bottom = pds;
 	bottom.intersect(ds->allwrites);
@@ -238,9 +238,9 @@ annotateds(
 
 	pds.remove(ds->fullwrites);
 	pds.insert(ds->reads);
-	pds.insert(passthrough);
-
 	ds->top = pds;
+
+	pds.insert(passby);
 }
 
 static void
