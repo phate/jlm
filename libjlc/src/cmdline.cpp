@@ -152,6 +152,21 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 	, cl::desc("jlm-opt optimization. Run 'jlm-opt -help' for viable options.")
 	, cl::value_desc("jlmopt"));
 
+	cl::opt<bool> verbose(
+	  "v"
+	, cl::ValueDisallowed
+	, cl::desc("Show commands to run and use verbose output. (Affects only clang for now)"));
+
+	cl::opt<bool> rdynamic(
+	  "rdynamic"
+	, cl::ValueDisallowed
+	, cl::desc("rdynamic option passed to clang"));
+
+	cl::opt<bool> suppress(
+	  "w"
+	, cl::ValueDisallowed
+	, cl::desc("Suppress all warnings"));
+
 	cl::ParseCommandLineOptions(argc, argv);
 
 	if (show_help)
@@ -208,6 +223,9 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 	options.generate_debug_information = generate_debug_information;
 	options.flags = flags;
 	options.jlmopts = jlmopts;
+	options.verbose = verbose;
+	options.rdynamic = rdynamic;
+	options.suppress = suppress;
 
 	for (const auto & ifile : ifiles) {
 		if (is_objfile(ifile)) {
