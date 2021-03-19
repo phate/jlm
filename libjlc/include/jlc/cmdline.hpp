@@ -96,6 +96,9 @@ public:
 	cmdline_options()
 	: only_print_commands(false)
 	, generate_debug_information(false)
+	, verbose(false)
+	, rdynamic(false)
+	, suppress(false)
 	, Olvl(optlvl::O0)
 	, std(standard::none)
 	, lnkofile("a.out")
@@ -103,6 +106,9 @@ public:
 
 	bool only_print_commands;
 	bool generate_debug_information;
+	bool verbose;
+	bool rdynamic;
+	bool suppress;
 
 	optlvl Olvl;
 	standard std;

@@ -27,7 +27,7 @@ generate_commands(const jlm::cmdline_options & opts)
 
 		if (c.parse()) {
 			auto prsnode = prscmd::create(pgraph.get(), c.ifile(), opts.includepaths, opts.macros,
-				opts.warnings, opts.flags, opts.std);
+				opts.warnings, opts.flags, opts.verbose, opts.rdynamic, opts.suppress, opts.std);
 			last->add_edge(prsnode);
 			last = prsnode;
 		}
@@ -109,8 +109,19 @@ prscmd::to_str() const
 	for (const auto & flag : flags_)
 		flags += "-f" + flag + " ";
 
+	std::string arguments;
+	if (verbose_)
+	  arguments += "-v ";
+
+	if (rdynamic_)
+	  arguments += "-rdynamic ";
+
+	if (suppress_)
+	  arguments += "-w ";
+
 	return strfmt(
 	  clangpath.to_str() + " "
+	, arguments, " "
 	, Wwarnings, " "
 	, flags, " "
 	, std_ != standard::none ? "-std="+jlm::to_str(std_)+" " : ""
