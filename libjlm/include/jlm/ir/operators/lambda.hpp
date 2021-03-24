@@ -647,4 +647,15 @@ class node::fctresconstiterator final : public jive::input::constiterator<lambda
 
 }}
 
+static inline bool
+is_exported(const jlm::lambda::node & lambda)
+{
+	for (auto & user : *lambda.output()) {
+		if (dynamic_cast<const jive::expport*>(&user->port()))
+			return true;
+	}
+
+	return false;
+}
+
 #endif
