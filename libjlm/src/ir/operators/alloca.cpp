@@ -25,7 +25,7 @@ alloca_op::operator==(const operation & other) const noexcept
 std::string
 alloca_op::debug_string() const
 {
-	return "ALLOCA";
+	return "ALLOCA[" + value_type().debug_string() + "]";
 }
 
 std::unique_ptr<jive::operation>
