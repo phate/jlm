@@ -5,8 +5,9 @@
 
 #include <jlm-opt/cmdline.hpp>
 
-#include <jlm/opt/dne.hpp>
+#include <jlm/opt/alias-analyses/Optimization.hpp>
 #include <jlm/opt/cne.hpp>
+#include <jlm/opt/dne.hpp>
 #include <jlm/opt/inlining.hpp>
 #include <jlm/opt/invariance.hpp>
 #include <jlm/opt/pull.hpp>
@@ -20,11 +21,12 @@
 
 namespace jlm {
 
-enum class optimizationid {cne, dne, iln, inv, psh, red, ivt, url, pll};
+enum class optimizationid {aasteensgaard, cne, dne, iln, inv, psh, red, ivt, url, pll};
 
 static jlm::optimization *
 mapoptid(enum optimizationid id)
 {
+	static jlm::aa::SteensgaardBasic aasteensgaard;
 	static jlm::cne cne;
 	static jlm::dne dne;
 	static jlm::fctinline fctinline;
@@ -37,7 +39,8 @@ mapoptid(enum optimizationid id)
 
 	static std::unordered_map<optimizationid, jlm::optimization*>
 	map({
-	  {optimizationid::cne, &cne}
+	  {optimizationid::aasteensgaard, &aasteensgaard}
+	, {optimizationid::cne, &cne}
 	, {optimizationid::dne, &dne}
 	, {optimizationid::iln, &fctinline}
 	, {optimizationid::inv, &ivr}
@@ -174,7 +177,9 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 
 	cl::list<jlm::optimizationid> optids(
 		cl::values(
-		  clEnumValN(jlm::optimizationid::cne, "cne", "Common node elimination")
+		  clEnumValN(jlm::optimizationid::aasteensgaard,
+		    "aa-steensgaard", "Steensgaard alias analysis")
+		, clEnumValN(jlm::optimizationid::cne, "cne", "Common node elimination")
 		, clEnumValN(jlm::optimizationid::dne, "dne", "Dead node elimination")
 		, clEnumValN(jlm::optimizationid::iln, "iln", "Function inlining")
 		, clEnumValN(jlm::optimizationid::inv, "inv", "Invariant value reduction")
