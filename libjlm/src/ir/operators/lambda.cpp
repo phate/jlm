@@ -43,6 +43,30 @@ operation::copy() const
 node::~node()
 {}
 
+node::fctargument_range
+node::fctarguments()
+{
+	fctargiterator end(nullptr);
+
+	if (nfctarguments() == 0)
+		return fctargument_range(end, end);
+
+	fctargiterator begin(fctargument(0));
+	return fctargument_range(begin, end);
+}
+
+node::fctargument_constrange
+node::fctarguments() const
+{
+	fctargconstiterator end(nullptr);
+
+	if (nfctarguments() == 0)
+		return fctargument_constrange(end, end);
+
+	fctargconstiterator begin(fctargument(0));
+	return fctargument_constrange(begin, end);
+}
+
 node::cviterator
 node::begin_cv()
 {
@@ -59,26 +83,6 @@ node::begin_cv() const
 		return end_cv();
 
 	return cvconstiterator(input(0));
-}
-
-node::fctargiterator
-node::begin_arg()
-{
-	if (nfctarguments() == 0)
-		return end_arg();
-
-	auto arg = static_cast<lambda::fctargument*>(subregion()->argument(0));
-	return fctargiterator(arg);
-}
-
-node::fctargconstiterator
-node::begin_arg() const
-{
-	if (nfctarguments() == 0)
-		return end_arg();
-
-	auto arg = static_cast<const lambda::fctargument*>(subregion()->argument(0));
-	return fctargconstiterator(arg);
 }
 
 node::fctresiterator
@@ -111,18 +115,6 @@ node::cvconstiterator
 node::end_cv() const
 {
 	return cvconstiterator(nullptr);
-}
-
-node::fctargiterator
-node::end_arg()
-{
-	return fctargiterator(nullptr);
-}
-
-node::fctargconstiterator
-node::end_arg() const
-{
-	return fctargconstiterator(nullptr);
 }
 
 node::fctresiterator

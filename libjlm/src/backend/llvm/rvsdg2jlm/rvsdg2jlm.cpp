@@ -146,10 +146,10 @@ create_cfg(const lambda::node & lambda, context & ctx)
 	ctx.set_cfg(cfg.get());
 
 	/* add arguments */
-	for (auto it = lambda.begin_arg(); it != lambda.end_arg(); it++) {
-		auto argument = jlm::argument::create("", it->type(), it->attributes());
+	for (auto & fctarg : lambda.fctarguments()) {
+		auto argument = jlm::argument::create("", fctarg.type(), fctarg.attributes());
 		auto v = cfg->entry()->append_argument(std::move(argument));
-		ctx.insert(it.value(), v);
+		ctx.insert(&fctarg, v);
 	}
 
 	/* add context variables */

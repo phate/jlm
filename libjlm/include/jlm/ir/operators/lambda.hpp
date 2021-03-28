@@ -9,6 +9,7 @@
 #include <jlm/ir/attribute.hpp>
 #include <jlm/ir/linkage.hpp>
 #include <jlm/ir/types.hpp>
+#include <jlm/util/iterator_range.hpp>
 
 #include <jive/rvsdg/structural-node.hpp>
 #include <jive/rvsdg/substitution.hpp>
@@ -153,6 +154,9 @@ class node final : public jive::structural_node {
 	class fctresiterator;
 	class fctresconstiterator;
 
+	using fctargument_range = iterator_range<fctargiterator>;
+	using fctargument_constrange = iterator_range<fctargconstiterator>;
+
 public:
 	~node() override;
 
@@ -164,11 +168,14 @@ private:
 	{}
 
 public:
+	fctargument_range
+	fctarguments();
+
+	fctargument_constrange
+	fctarguments() const;
+
 	cviterator
 	begin_cv();
-
-	fctargiterator
-	begin_arg();
 
 	fctresiterator
 	begin_res();
@@ -176,26 +183,17 @@ public:
 	cvconstiterator
 	begin_cv() const;
 
-	fctargconstiterator
-	begin_arg() const;
-
 	fctresconstiterator
 	begin_res() const;
 
 	cviterator
 	end_cv();
 
-	fctargiterator
-	end_arg();
-
 	fctresiterator
 	end_res();
 
 	cvconstiterator
 	end_cv() const;
-
-	fctargconstiterator
-	end_arg() const;
 
 	fctresconstiterator
 	end_res() const;

@@ -25,8 +25,8 @@ test_argument_iterators()
 		lambda->finalize({lambda->fctargument(0)});
 
 		std::vector<jive::argument*> args;
-		for (auto it = lambda->begin_arg(); it != lambda->end_arg(); it++)
-			args.push_back(it.value());
+		for (auto & argument : lambda->fctarguments())
+			args.push_back(&argument);
 
 		assert(args.size() == 1 && args[0] == lambda->fctargument(0));
 	}
@@ -55,8 +55,8 @@ test_argument_iterators()
 		lambda->finalize({lambda->fctargument(0), cv});
 
 		std::vector<jive::argument*> args;
-		for (auto it = lambda->begin_arg(); it != lambda->end_arg(); it++)
-			args.push_back(it.value());
+		for (auto & argument : lambda->fctarguments())
+			args.push_back(&argument);
 
 		assert(args.size() == 3);
 		assert(args[0] == lambda->fctargument(0));
