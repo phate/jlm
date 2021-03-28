@@ -67,22 +67,28 @@ node::fctarguments() const
 	return fctargument_constrange(begin, end);
 }
 
-node::cviterator
-node::begin_cv()
+node::ctxvar_range
+node::ctxvars()
 {
-	if (ninputs() == 0)
-		return end_cv();
+	cviterator end(nullptr);
 
-	return cviterator(input(0));
+	if (ncvarguments() == 0)
+		return ctxvar_range(end, end);
+
+	cviterator begin(input(0));
+	return ctxvar_range(begin, end);
 }
 
-node::cvconstiterator
-node::begin_cv() const
+node::ctxvar_constrange
+node::ctxvars() const
 {
-	if (ninputs() == 0)
-		return end_cv();
+	cvconstiterator end(nullptr);
 
-	return cvconstiterator(input(0));
+	if (ncvarguments() == 0)
+		return ctxvar_constrange(end, end);
+
+	cvconstiterator begin(input(0));
+	return ctxvar_constrange(begin, end);
 }
 
 node::fctresiterator
@@ -103,18 +109,6 @@ node::begin_res() const
 
 	auto res = static_cast<const lambda::result*>(subregion()->result(0));
 	return fctresconstiterator(res);
-}
-
-node::cviterator
-node::end_cv()
-{
-	return cviterator(nullptr);
-}
-
-node::cvconstiterator
-node::end_cv() const
-{
-	return cvconstiterator(nullptr);
 }
 
 node::fctresiterator
@@ -225,10 +219,10 @@ node::copy(jive::region * region, jive::substitution_map & smap) const
 
 	/* add context variables */
 	jive::substitution_map subregionmap;
-	for (auto it = begin_cv(); it != end_cv(); it++) {
-		auto & origin = smap.lookup(*it->origin());
-		auto newcv = lambda->add_ctxvar(&origin);
-		subregionmap.insert(it->argument(), newcv);
+	for (auto & cv : ctxvars()) {
+		auto origin = smap.lookup(cv.origin());
+		auto newcv = lambda->add_ctxvar(origin);
+		subregionmap.insert(cv.argument(), newcv);
 	}
 
 	/* collect function arguments */

@@ -157,6 +157,9 @@ class node final : public jive::structural_node {
 	using fctargument_range = iterator_range<fctargiterator>;
 	using fctargument_constrange = iterator_range<fctargconstiterator>;
 
+	using ctxvar_range = iterator_range<cviterator>;
+	using ctxvar_constrange = iterator_range<cvconstiterator>;
+
 public:
 	~node() override;
 
@@ -174,26 +177,20 @@ public:
 	fctargument_constrange
 	fctarguments() const;
 
-	cviterator
-	begin_cv();
+	ctxvar_range
+	ctxvars();
+
+	ctxvar_constrange
+	ctxvars() const;
 
 	fctresiterator
 	begin_res();
 
-	cvconstiterator
-	begin_cv() const;
-
 	fctresconstiterator
 	begin_res() const;
 
-	cviterator
-	end_cv();
-
 	fctresiterator
 	end_res();
-
-	cvconstiterator
-	end_cv() const;
 
 	fctresconstiterator
 	end_res() const;
