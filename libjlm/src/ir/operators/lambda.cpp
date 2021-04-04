@@ -5,6 +5,7 @@
 
 #include <jlm/common.hpp>
 #include <jlm/ir/operators/lambda.hpp>
+#include <jlm/util/strfmt.hpp>
 
 namespace jlm {
 namespace lambda {
@@ -17,7 +18,7 @@ operation::~operation()
 std::string
 operation::debug_string() const
 {
-	return "LAMBDA";
+	return strfmt("LAMBDA[", name(), "]");
 }
 
 bool
