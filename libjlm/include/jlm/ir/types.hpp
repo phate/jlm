@@ -419,6 +419,13 @@ public:
 	{
 		return std::make_unique<iostatetype>();
 	}
+
+	static const iostatetype &
+	instance() noexcept
+	{
+		static iostatetype iotype;
+		return iotype;
+	}
 };
 
 /*
