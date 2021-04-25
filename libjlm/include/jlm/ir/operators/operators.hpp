@@ -2412,6 +2412,93 @@ public:
 	}
 };
 
+/* free operator */
+
+class free_op final : public jive::simple_op {
+public:
+	virtual
+	~free_op();
+
+	free_op(size_t nmemstates)
+	: simple_op(create_operand_portvector(nmemstates), create_result_portvector(nmemstates))
+	{}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+	const jive::fcttype
+	fcttype() const
+	{
+		JLM_ASSERT(narguments() == 3 && nresults() == 2);
+		return jive::fcttype({&argument(0).type()}, {&result(0).type(), &result(1).type()});
+	}
+
+	static std::unique_ptr<jlm::tac>
+	create(
+		const variable * pointer,
+		const std::vector<const variable*> & memstates,
+		const variable * iostate)
+	{
+		if (memstates.empty())
+			throw jlm::error("Number of memory states cannot be zero.");
+
+		std::vector<const variable*> operands;
+		operands.push_back(pointer);
+		operands.insert(operands.end(), memstates.begin(), memstates.end());
+		operands.push_back(iostate);
+
+		free_op op(memstates.size());
+		return tac::create(op, operands);
+	}
+
+	static std::vector<jive::output*>
+	create(
+		jive::output * pointer,
+		const std::vector<jive::output*> & memstates,
+		jive::output * iostate)
+	{
+		if (memstates.empty())
+			throw jlm::error("Number of memory states cannot be zero.");
+
+		std::vector<jive::output*> operands;
+		operands.push_back(pointer);
+		operands.insert(operands.end(), memstates.begin(), memstates.end());
+		operands.push_back(iostate);
+
+		free_op op(memstates.size());
+		return jive::simple_node::create_normalized(pointer->region(), op, operands);
+	}
+
+private:
+	static std::vector<jive::port>
+	create_operand_portvector(size_t nmemstates)
+	{
+		std::vector<jive::port> memstates(nmemstates, jive::memtype::instance());
+
+		std::vector<jive::port> ports;
+		ports.push_back(ptrtype(jive::bittype(8)));
+		ports.insert(ports.end(), memstates.begin(), memstates.end());
+		ports.push_back(iostatetype::instance());
+
+		return ports;
+	}
+
+	static std::vector<jive::port>
+	create_result_portvector(size_t nmemstates)
+	{
+		std::vector<jive::port> ports(nmemstates, jive::memtype::instance());
+		ports.push_back(iostatetype::instance());
+
+		return ports;
+	}
+};
+
 /*
 	FIXME: This function should be in jive and not in jlm.
 */

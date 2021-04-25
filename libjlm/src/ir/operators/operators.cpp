@@ -1283,4 +1283,30 @@ malloc_op::copy() const
 	return std::unique_ptr<jive::operation>(new malloc_op(*this));
 }
 
+/* free operator */
+
+free_op::~free_op()
+{}
+
+bool
+free_op::operator==(const operation & other) const noexcept
+{
+	/*
+		Avoid CNE for free operator
+	*/
+	return this == &other;
+}
+
+std::string
+free_op::debug_string() const
+{
+	return "FREE";
+}
+
+std::unique_ptr<jive::operation>
+free_op::copy() const
+{
+	return std::unique_ptr<jive::operation>(new free_op(*this));
+}
+
 }

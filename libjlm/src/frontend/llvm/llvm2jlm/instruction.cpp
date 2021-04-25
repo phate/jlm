@@ -616,6 +616,20 @@ convert_malloc_call(const llvm::CallInst * i, tacsvector_t & tacs, context & ctx
 }
 
 static const variable *
+convert_free_call(const llvm::CallInst * i, tacsvector_t & tacs, context & ctx)
+{
+	auto iostate = ctx.iostate();
+	auto memstate = ctx.memory_state();
+
+	auto pointer = convert_value(i->getArgOperand(0), tacs, ctx);
+
+	tacs.push_back(free_op::create(pointer, {memstate}, iostate));
+	tacs.push_back(assignment_op::create(tacs.back()->result(0), memstate));
+
+	return nullptr;
+}
+
+static const variable *
 convert_call_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, context & ctx)
 {
 	JLM_ASSERT(instruction->getOpcode() == llvm::Instruction::Call);
@@ -654,9 +668,16 @@ convert_call_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 		return f && f->getName() == "malloc";
 	};
 
+	auto is_free_call = [](const llvm::CallInst * i)
+	{
+		auto f = i->getCalledFunction();
+		return f && f->getName() == "free";
+	};
+
 	if (is_malloc_call(i))
 		return convert_malloc_call(i, tacs, ctx);
-
+	if (is_free_call(i))
+		return convert_free_call(i, tacs, ctx);
 
 	auto ftype = function_type(i);
 

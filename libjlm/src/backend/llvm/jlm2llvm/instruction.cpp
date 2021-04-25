@@ -781,6 +781,21 @@ convert(
 
 static llvm::Value *
 convert(
+	const free_op & op,
+	const std::vector<const variable*> & args,
+	llvm::IRBuilder<> & builder,
+	context & ctx)
+{
+	auto & llvmmod = ctx.llvm_module();
+
+	auto fcttype = convert_type(op.fcttype(), ctx);
+	auto function = llvmmod.getOrInsertFunction("free", fcttype);
+	auto operands = std::vector<llvm::Value*>(1, ctx.value(args[0]));
+	return builder.CreateCall(function, operands);
+}
+
+static llvm::Value *
+convert(
 	const memstatemux_op&,
 	const std::vector<const variable*>&,
 	llvm::IRBuilder<>&,
@@ -856,6 +871,7 @@ convert_operation(
 
 	, {typeid(call_op), convert_call}
 	, {typeid(malloc_op), convert<malloc_op>}
+	, {typeid(free_op), convert<free_op>}
 
 	, {typeid(fpneg_op), convert_fpneg}
 
