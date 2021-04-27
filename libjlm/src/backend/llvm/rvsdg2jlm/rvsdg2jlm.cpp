@@ -161,8 +161,8 @@ create_cfg(const lambda::node & lambda, context & ctx)
 	convert_region(*lambda.subregion(), ctx);
 
 	/* add results */
-	for (auto it = lambda.begin_res(); it != lambda.end_res(); it++)
-		cfg->exit()->append_result(ctx.variable(it->origin()));
+	for (auto & result : lambda.fctresults())
+		cfg->exit()->append_result(ctx.variable(result.origin()));
 
 	ctx.lpbb()->add_outedge(cfg->exit());
 	ctx.set_lpbb(nullptr);

@@ -163,8 +163,8 @@ mark(const jive::output * output, dnectx & ctx)
 	}
 
 	if (auto o = dynamic_cast<const lambda::output*>(output)) {
-		for (auto it = o->node()->begin_res(); it != o->node()->end_res(); it++)
-			mark(it->origin(), ctx);
+		for (auto & result : o->node()->fctresults())
+			mark(result.origin(), ctx);
 		return;
 	}
 

@@ -91,36 +91,28 @@ node::ctxvars() const
 	return ctxvar_constrange(begin, end);
 }
 
-node::fctresiterator
-node::begin_res()
+node::fctresult_range
+node::fctresults()
 {
+	fctresiterator end(nullptr);
+
 	if (nfctresults() == 0)
-		return end_res();
+		return fctresult_range(end, end);
 
-	auto res = static_cast<lambda::result*>(subregion()->result(0));
-	return fctresiterator(res);
+	fctresiterator begin(fctresult(0));
+	return fctresult_range(begin, end);
 }
 
-node::fctresconstiterator
-node::begin_res() const
+node::fctresult_constrange
+node::fctresults() const
 {
+	fctresconstiterator end(nullptr);
+
 	if (nfctresults() == 0)
-		return end_res();
+		return fctresult_constrange(end, end);
 
-	auto res = static_cast<const lambda::result*>(subregion()->result(0));
-	return fctresconstiterator(res);
-}
-
-node::fctresiterator
-node::end_res()
-{
-	return fctresiterator(nullptr);
-}
-
-node::fctresconstiterator
-node::end_res() const
-{
-	return fctresconstiterator(nullptr);
+	fctresconstiterator begin(fctresult(0));
+	return fctresult_constrange(begin, end);
 }
 
 cvinput *
@@ -234,8 +226,8 @@ node::copy(jive::region * region, jive::substitution_map & smap) const
 
 	/* collect function results */
 	std::vector<jive::output*> results;
-	for (auto it = begin_res(); it != end_res(); it++)
-		results.push_back(subregionmap.lookup(it->origin()));
+	for (auto & result : fctresults())
+		results.push_back(subregionmap.lookup(result.origin()));
 
 	/* finalize lambda */
 	auto o = lambda->finalize(results);
