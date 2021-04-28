@@ -428,18 +428,6 @@ public:
 	}
 };
 
-/*
-	FIXME: This function should be moved into jive.
-*/
-template <class T> static inline bool
-is(const jive::type & type) noexcept
-{
-	static_assert(std::is_base_of<jive::type, T>::value,
-		"Template parameter T must be derived from jive::type.");
-
-	return dynamic_cast<const T*>(&type) != nullptr;
-}
-
 }
 
 #endif
