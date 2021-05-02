@@ -2309,7 +2309,7 @@ private:
 
 /* memory state mux operator */
 
-class memstatemux_op final : public jive::simple_op {
+class memstatemux_op : public jive::simple_op {
 public:
 	virtual
 	~memstatemux_op();

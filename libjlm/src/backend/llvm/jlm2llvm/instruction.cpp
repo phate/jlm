@@ -13,6 +13,8 @@
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/tac.hpp>
 
+#include <jlm/opt/alias-analyses/operators.hpp>
+
 #include <jlm/backend/llvm/jlm2llvm/context.hpp>
 #include <jlm/backend/llvm/jlm2llvm/instruction.hpp>
 #include <jlm/backend/llvm/jlm2llvm/type.hpp>
@@ -817,6 +819,26 @@ convert(
 	return nullptr;
 }
 
+static llvm::Value *
+convert(
+	const aa::lambda_aamux_op&,
+	const std::vector<const variable*>&,
+	llvm::IRBuilder<>&,
+	context&)
+{
+	return nullptr;
+}
+
+static llvm::Value *
+convert(
+	const aa::call_aamux_op&,
+	const std::vector<const variable*>&,
+	llvm::IRBuilder<>&,
+	context&)
+{
+	return nullptr;
+}
+
 template<class OP> static llvm::Value *
 convert(
 	const jive::simple_op & op,
@@ -905,6 +927,8 @@ convert_operation(
 	, {typeid(zext_op), convert_cast<llvm::Instruction::ZExt>}
 
 	, {typeid(memstatemux_op), convert<memstatemux_op>}
+	, {typeid(aa::lambda_aamux_op), convert<aa::lambda_aamux_op>}
+	, {typeid(aa::call_aamux_op), convert<aa::call_aamux_op>}
 	});
 
 	JLM_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
