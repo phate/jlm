@@ -188,6 +188,9 @@ node::finalize(const std::vector<jive::output*> & results)
 		auto & received = results[n]->type();
 		if (results[n]->type() != type().result_type(n))
 			throw jlm::error("Expected " + expected.debug_string() + ", got " + received.debug_string());
+
+		if (results[n]->region() != subregion())
+			throw jlm::error("Invalid operand region.");
 	}
 
 	for (const auto & origin : results)
