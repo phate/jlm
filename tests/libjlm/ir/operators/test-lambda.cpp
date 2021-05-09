@@ -65,10 +65,35 @@ test_argument_iterators()
 	}
 }
 
+static void
+test_invalid_operand_region()
+{
+	using namespace jlm;
+
+	valuetype vt;
+	jive::fcttype fcttype({}, {&vt});
+
+	auto module = rvsdg_module::create(filepath(""), "", "");
+	auto graph = module->graph();
+
+	auto fct1 = lambda::node::create(graph->root(), fcttype, "fct1", linkage::external_linkage);
+	auto result = create_testop(graph->root(), {}, {&vt})[0];
+
+	bool invalid_region_error_caught = false;
+	try {
+		fct1->finalize({result});
+	} catch (jlm::error) {
+		invalid_region_error_caught = true;
+	}
+
+	assert(invalid_region_error_caught);
+}
+
 static int
 test()
 {
 	test_argument_iterators();
+	test_invalid_operand_region();
 
 	return 0;
 }
