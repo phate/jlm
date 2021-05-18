@@ -4,8 +4,15 @@
  */
 
 #include <jlm/common.hpp>
-#include <jlm/ir/operators/lambda.hpp>
+#include <jlm/ir/operators.hpp>
+#include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/util/strfmt.hpp>
+
+#include <jive/rvsdg/gamma.hpp>
+#include <jive/rvsdg/phi.hpp>
+#include <jive/rvsdg/theta.hpp>
+
+#include <deque>
 
 namespace jlm {
 namespace lambda {
@@ -237,6 +244,101 @@ node::copy(jive::region * region, jive::substitution_map & smap) const
 	smap.insert(output(), o);
 
 	return lambda;
+}
+
+/*
+	FIXME: This function should be in jive.
+*/
+static jive::node *
+input_node(const jive::input * input)
+{
+	using namespace jive;
+
+	auto i = dynamic_cast<const jive::node_input*>(input);
+	return i ? i->node() : nullptr;
+}
+
+bool
+node::direct_calls(std::vector<jive::simple_node*> * calls) const
+{
+	std::deque<jive::input*> worklist;
+	worklist.insert(worklist.end(), output()->begin(), output()->end());
+
+	bool has_only_direct_calls = true;
+	while (!worklist.empty()) {
+		auto input = worklist.front();
+		worklist.pop_front();
+
+		if (auto cvinput = dynamic_cast<lambda::cvinput*>(input)) {
+			auto argument = cvinput->argument();
+			worklist.insert(worklist.end(), argument->begin(), argument->end());
+			continue;
+		}
+
+		if (auto gamma_input = dynamic_cast<jive::gamma_input*>(input)) {
+			for (auto & argument : *gamma_input)
+				worklist.insert(worklist.end(), argument.begin(), argument.end());
+			continue;
+		}
+
+		if (auto result = is_gamma_result(input)) {
+			auto output = result->output();
+			worklist.insert(worklist.end(), output->begin(), output->end());
+			continue;
+		}
+
+		if (auto theta_input = dynamic_cast<jive::theta_input*>(input)) {
+			auto argument = theta_input->argument();
+			worklist.insert(worklist.end(), argument->begin(), argument->end());
+			continue;
+		}
+
+		if (auto result = is_theta_result(input)) {
+			auto output = result->output();
+			worklist.insert(worklist.end(), output->begin(), output->end());
+			continue;
+		}
+
+		if (auto cvinput = dynamic_cast<jive::phi::cvinput*>(input)) {
+			auto argument = cvinput->argument();
+			worklist.insert(worklist.end(), argument->begin(), argument->end());
+			continue;
+		}
+
+		if (auto rvresult = dynamic_cast<jive::phi::rvresult*>(input)) {
+			auto argument = rvresult->argument();
+			worklist.insert(worklist.end(), argument->begin(), argument->end());
+
+			auto output = rvresult->output();
+			worklist.insert(worklist.end(), output->begin(), output->end());
+			continue;
+		}
+
+		if (auto cvinput = is_delta_input(input)) {
+			auto argument = cvinput->arguments.first();
+			worklist.insert(worklist.end(), argument->begin(), argument->end());
+			continue;
+		}
+
+		auto node = input_node(input);
+		if (is<call_op>(node) && input == node->input(0)) {
+			if (calls != nullptr)
+				calls->push_back(static_cast<jive::simple_node*>(node));
+			continue;
+		}
+
+		if (is_export(input) || is<jive::simple_op>(node)) {
+			if (calls == nullptr)
+				return false;
+
+			has_only_direct_calls = false;
+			continue;
+		}
+
+		JLM_UNREACHABLE("This should have never happend!");
+	}
+
+	return has_only_direct_calls;
 }
 
 /* lambda context variable input class */
