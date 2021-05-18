@@ -1,2 +1,3 @@
 TESTS += \
+	libjlm/opt/alias-analyses/test-encoders \
 	libjlm/opt/alias-analyses/test-steensgaard \
