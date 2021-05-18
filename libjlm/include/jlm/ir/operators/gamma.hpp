@@ -34,6 +34,21 @@ is_gamma_output(const jive::output * output)
 	return dynamic_cast<const jive::gamma_output*>(output);
 }
 
+/*
+	FIXME: This should be defined in jive.
+*/
+static inline const jive::result *
+is_gamma_result(const jive::input * input)
+{
+	using namespace jive;
+
+	auto r = dynamic_cast<const result*>(input);
+	if (r && is<gamma_op>(r->region()->node()))
+		return r;
+
+	return nullptr;
+}
+
 }
 
 /*
