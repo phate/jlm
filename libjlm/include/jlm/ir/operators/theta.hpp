@@ -25,6 +25,18 @@ is_theta_argument(const jive::output * output)
 	return nullptr;
 }
 
+static inline const jive::result *
+is_theta_result(const jive::input * input)
+{
+	using namespace jive;
+
+	auto r = dynamic_cast<const jive::result*>(input);
+	if (r && is<theta_op>(r->region()->node()))
+		return r;
+
+	return nullptr;
+}
+
 /*
 	FIXME: This function exists in jive, but is currently (2020-05-21) broken.
 */
