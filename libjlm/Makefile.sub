@@ -44,6 +44,7 @@ LIBJLM_SRC = \
 	libjlm/src/ir/types.cpp \
 	libjlm/src/ir/variable.cpp \
 	\
+	libjlm/src/opt/alias-analyses/encoders.cpp \
 	libjlm/src/opt/alias-analyses/operators.cpp \
 	libjlm/src/opt/alias-analyses/pointsto-graph.cpp \
 	libjlm/src/opt/alias-analyses/steensgaard.cpp \
