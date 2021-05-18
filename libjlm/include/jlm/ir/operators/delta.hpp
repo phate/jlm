@@ -313,6 +313,15 @@ private:
 	delta_node * node_;
 };
 
+static inline const jive::structural_input *
+is_delta_input(const jive::input * input)
+{
+	using namespace jive;
+
+	auto i = dynamic_cast<const structural_input*>(input);
+	return i && is<delta_op>(i->node()) ? i : nullptr;
+}
+
 }
 
 #endif
