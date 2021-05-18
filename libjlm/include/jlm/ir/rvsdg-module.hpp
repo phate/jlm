@@ -69,6 +69,15 @@ is_import(const jive::output * output)
 	return argument && argument->region() == graph->root();
 }
 
+static inline bool
+is_export(const jive::input * input)
+{
+	auto graph = input->region()->graph();
+
+	auto result = dynamic_cast<const jive::result*>(input);
+	return result && result->region() == graph->root();
+}
+
 /* rvsdg module class */
 
 class rvsdg_module final {
