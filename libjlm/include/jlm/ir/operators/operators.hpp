@@ -531,6 +531,21 @@ public:
 		jlm::bits2ptr_op op(*at, *pt);
 		return tac::create(op, {argument});
 	}
+
+	static jive::output *
+	create(
+		jive::output * operand,
+		const jive::type & type)
+	{
+		auto ot = dynamic_cast<const jive::bittype*>(&operand->type());
+		if (!ot) throw jlm::error("expected bitstring type.");
+
+		auto pt = dynamic_cast<const jlm::ptrtype*>(&type);
+		if (!pt) throw jlm::error("expected pointer type.");
+
+		jlm::bits2ptr_op op(*ot, *pt);
+		return jive::simple_node::create_normalized(operand->region(), op, {operand})[0];
+	}
 };
 
 /* ptr2bits operator */
