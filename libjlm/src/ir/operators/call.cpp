@@ -62,6 +62,9 @@ trace_function_input(const jive::simple_node & node)
 		if (is_import(origin))
 			return origin;
 
+		if (is<jive::simple_op>(jive::node_output::node(origin)))
+			return origin;
+
 		if (is<lambda::cvargument>(origin)) {
 			auto argument = static_cast<const jive::argument*>(origin);
 			origin = argument->input()->origin();
@@ -118,8 +121,8 @@ trace_function_input(const jive::simple_node & node)
 			continue;
 		}
 
-		if (is_phi_output(origin)) {
-			origin = phi_result(origin)->origin();
+		if (auto rvoutput = dynamic_cast<const jive::phi::rvoutput*>(origin)) {
+			origin = rvoutput->result()->origin();
 			continue;
 		}
 
