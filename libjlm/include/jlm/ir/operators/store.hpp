@@ -154,6 +154,9 @@ public:
 		auto at = dynamic_cast<const jlm::ptrtype*>(&address->type());
 		if (!at) throw jlm::error("expected pointer type.");
 
+		if (states.size() == 0)
+			throw jlm::error("Expected at least one memory state.");
+
 		std::vector<jive::output*> operands({address, value});
 		operands.insert(operands.end(), states.begin(), states.end());
 
