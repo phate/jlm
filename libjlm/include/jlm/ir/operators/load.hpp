@@ -200,6 +200,9 @@ public:
 	{
 		auto pt = check_address(address->type());
 
+		if (states.size() == 0)
+			throw jlm::error("Expected at least one memory state.");
+
 		std::vector<jive::output*> operands({address});
 		operands.insert(operands.end(), states.begin(), states.end());
 
