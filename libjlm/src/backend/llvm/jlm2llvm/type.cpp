@@ -54,7 +54,8 @@ convert(const jive::fcttype & type, context & ctx)
 		a return value, or (statetype, statetype, ...) if the function returns void.
 	*/
 	auto rt = Type::getVoidTy(lctx);
-	if (jive::is<jive::valuetype>(type.result_type(0)))
+	if (type.nresults() > 0
+	&& jive::is<jive::valuetype>(type.result_type(0)))
 		rt = convert_type(type.result_type(0), ctx);
 
 	return FunctionType::get(rt, ats, isvararg);
