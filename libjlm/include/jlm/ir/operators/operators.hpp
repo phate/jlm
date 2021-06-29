@@ -619,15 +619,14 @@ public:
 	}
 };
 
-/* data array constant operator */
+/* Constant Data Array operator */
 
-class data_array_constant_op final : public jive::simple_op {
+class ConstantDataArray final : public jive::simple_op {
 public:
 	virtual
-	~data_array_constant_op();
+	~ConstantDataArray();
 
-	inline
-	data_array_constant_op(const jive::valuetype & type, size_t size)
+	ConstantDataArray(const jive::valuetype & type, size_t size)
 	: simple_op(std::vector<jive::port>(size, type), {jlm::arraytype(type, size)})
 	{
 		if (size == 0)
@@ -635,7 +634,7 @@ public:
 	}
 
 	virtual bool
-	operator==(const operation & other) const noexcept override;
+	operator==(const jive::operation & other) const noexcept override;
 
 	virtual std::string
 	debug_string() const override;
@@ -643,13 +642,13 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
-	inline size_t
+	size_t
 	size() const noexcept
 	{
 		return static_cast<const arraytype*>(&result(0).type())->nelements();
 	}
 
-	inline const jive::valuetype &
+	const jive::valuetype &
 	type() const noexcept
 	{
 		return static_cast<const arraytype*>(&result(0).type())->element_type();
@@ -664,7 +663,7 @@ public:
 		auto vt = dynamic_cast<const jive::valuetype*>(&elements[0]->type());
 		if (!vt) throw jlm::error("expected value type.");
 
-		data_array_constant_op op(*vt, elements.size());
+		ConstantDataArray op(*vt, elements.size());
 		return tac::create(op, elements);
 	}
 };

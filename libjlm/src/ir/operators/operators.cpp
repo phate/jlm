@@ -352,28 +352,28 @@ ptr2bits_op::reduce_operand(
 	JLM_UNREACHABLE("Not implemented!");
 }
 
-/* data array constant operator */
 
-data_array_constant_op::~data_array_constant_op()
+ConstantDataArray::~ConstantDataArray()
 {}
 
 bool
-data_array_constant_op::operator==(const operation & other) const noexcept
+ConstantDataArray::operator==(const jive::operation & other) const noexcept
 {
-	auto op = dynamic_cast<const data_array_constant_op*>(&other);
-	return op && op->result(0) == result(0);
+	auto op = dynamic_cast<const ConstantDataArray*>(&other);
+	return op
+	    && op->result(0) == result(0);
 }
 
 std::string
-data_array_constant_op::debug_string() const
+ConstantDataArray::debug_string() const
 {
-	return "ARRAYCONSTANT";
+	return "ConstantDataArray";
 }
 
 std::unique_ptr<jive::operation>
-data_array_constant_op::copy() const
+ConstantDataArray::copy() const
 {
-	return std::unique_ptr<jive::operation>(new data_array_constant_op(*this));
+	return std::unique_ptr<jive::operation>(new ConstantDataArray(*this));
 }
 
 /* pointer compare operator */

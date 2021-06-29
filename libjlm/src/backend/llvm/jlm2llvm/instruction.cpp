@@ -366,41 +366,40 @@ get_fpdata(
 	return data;
 }
 
-static inline llvm::Value *
-convert_data_array_constant(
-	const jive::simple_op & op,
-	const std::vector<const variable*> & args,
+static llvm::Value *
+convert(
+	const ConstantDataArray & op,
+	const std::vector<const variable*> & operands,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_ASSERT(is<data_array_constant_op>(op));
-	auto & cop = *static_cast<const data_array_constant_op*>(&op);
+	JLM_ASSERT(is<ConstantDataArray>(op));
 
-	if (auto bt = dynamic_cast<const jive::bittype*>(&cop.type())) {
+	if (auto bt = dynamic_cast<const jive::bittype*>(&op.type())) {
 		if (bt->nbits() == 8) {
-			auto data = get_bitdata<uint8_t>(args, ctx);
+			auto data = get_bitdata<uint8_t>(operands, ctx);
 			return llvm::ConstantDataArray::get(builder.getContext(), data);
 		} else if (bt->nbits() == 16) {
-			auto data = get_bitdata<uint16_t>(args, ctx);
+			auto data = get_bitdata<uint16_t>(operands, ctx);
 			return llvm::ConstantDataArray::get(builder.getContext(), data);
 		} else if (bt->nbits() == 32) {
-			auto data = get_bitdata<uint32_t>(args, ctx);
+			auto data = get_bitdata<uint32_t>(operands, ctx);
 			return llvm::ConstantDataArray::get(builder.getContext(), data);
 		} else if (bt->nbits() == 64) {
-			auto data = get_bitdata<uint64_t>(args, ctx);
+			auto data = get_bitdata<uint64_t>(operands, ctx);
 			return llvm::ConstantDataArray::get(builder.getContext(), data);
 		}
 	}
 
-	if (auto ft = dynamic_cast<const fptype*>(&cop.type())) {
+	if (auto ft = dynamic_cast<const fptype*>(&op.type())) {
 		if (ft->size() == fpsize::half) {
-			auto data = get_fpdata<uint16_t>(args, ctx);
+			auto data = get_fpdata<uint16_t>(operands, ctx);
 			return llvm::ConstantDataArray::getFP(builder.getContext(), data);
 		} else if (ft->size() == fpsize::flt) {
-			auto data = get_fpdata<uint32_t>(args, ctx);
+			auto data = get_fpdata<uint32_t>(operands, ctx);
 			return llvm::ConstantDataArray::getFP(builder.getContext(), data);
 		} else if (ft->size() == fpsize::dbl) {
-			auto data = get_fpdata<uint64_t>(args, ctx);
+			auto data = get_fpdata<uint64_t>(operands, ctx);
 			return llvm::ConstantDataArray::getFP(builder.getContext(), data);
 		}
 	}
@@ -848,7 +847,7 @@ convert_operation(
 	, {std::type_index(typeid(jlm::store_op)), convert_store}
 	, {std::type_index(typeid(jlm::alloca_op)), convert_alloca}
 	, {typeid(jlm::getelementptr_op), convert_getelementptr}
-	, {std::type_index(typeid(jlm::data_array_constant_op)), convert_data_array_constant}
+	, {typeid(ConstantDataArray), convert<ConstantDataArray>}
 	, {std::type_index(typeid(jlm::ptrcmp_op)), convert_ptrcmp}
 	, {std::type_index(typeid(jlm::fpcmp_op)), convert_fpcmp}
 	, {std::type_index(typeid(jlm::fpbin_op)), convert_fpbin}
