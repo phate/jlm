@@ -961,28 +961,29 @@ sitofp_op::reduce_operand(
 	JLM_UNREACHABLE("Not implemented!");
 }
 
-/* constant array operator */
+/* ConstantArray operator */
 
-constant_array_op::~constant_array_op()
+ConstantArray::~ConstantArray()
 {}
 
 bool
-constant_array_op::operator==(const operation & other) const noexcept
+ConstantArray::operator==(const operation & other) const noexcept
 {
-	auto op = dynamic_cast<const constant_array_op*>(&other);
-	return op && op->result(0) == result(0);
+	auto op = dynamic_cast<const ConstantArray*>(&other);
+	return op
+	    && op->result(0) == result(0);
 }
 
 std::string
-constant_array_op::debug_string() const
+ConstantArray::debug_string() const
 {
-	return "CONSTANTARRAY";
+	return "ConstantArray";
 }
 
 std::unique_ptr<jive::operation>
-constant_array_op::copy() const
+ConstantArray::copy() const
 {
-	return std::unique_ptr<jive::operation>(new constant_array_op(*this));
+	return std::unique_ptr<jive::operation>(new ConstantArray(*this));
 }
 
 /* constant aggregate zero operator */

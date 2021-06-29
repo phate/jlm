@@ -213,7 +213,7 @@ convert_constantArray(
 		elements.push_back(convert_constant(constant, tacs, ctx));
 	}
 
-	tacs.push_back(constant_array_op::create(elements));
+	tacs.push_back(ConstantArray::create(elements));
 
 	return tacs.back()->result(0);
 }
