@@ -795,6 +795,27 @@ convert(
 
 static llvm::Value *
 convert(
+	const Memcpy & op,
+	const std::vector<const variable*> & operands,
+	llvm::IRBuilder<> & builder,
+	context & ctx)
+{
+	auto destination = ctx.value(operands[0]);
+	auto source = ctx.value(operands[1]);
+	auto length = ctx.value(operands[2]);
+	auto isVolatile = ctx.value(operands[3]);
+
+	return builder.CreateMemCpy(
+		destination,
+		llvm::MaybeAlign(),
+		source,
+		llvm::MaybeAlign(),
+		length,
+		isVolatile);
+}
+
+static llvm::Value *
+convert(
 	const memstatemux_op&,
 	const std::vector<const variable*>&,
 	llvm::IRBuilder<>&,
@@ -871,6 +892,7 @@ convert_operation(
 	, {typeid(call_op), convert_call}
 	, {typeid(malloc_op), convert<malloc_op>}
 	, {typeid(free_op), convert<free_op>}
+	, {typeid(Memcpy), convert<Memcpy>}
 
 	, {typeid(fpneg_op), convert_fpneg}
 
