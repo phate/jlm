@@ -407,18 +407,18 @@ convert(
 	JLM_UNREACHABLE("This should not have happened!");
 }
 
-static inline llvm::Value *
-convert_constant_array(
-	const jive::simple_op & op,
-	const std::vector<const variable*> & args,
+static llvm::Value *
+convert(
+	const ConstantArray & op,
+	const std::vector<const variable*> & operands,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_ASSERT(is<constant_array_op>(op));
+	JLM_ASSERT(is<ConstantArray>(op));
 
 	std::vector<llvm::Constant*> data;
-	for (size_t n = 0; n < args.size(); n++) {
-		auto c = llvm::dyn_cast<llvm::Constant>(ctx.value(args[n]));
+	for (size_t n = 0; n < operands.size(); n++) {
+		auto c = llvm::dyn_cast<llvm::Constant>(ctx.value(operands[n]));
 		JLM_ASSERT(c);
 		data.push_back(c);
 	}
@@ -855,7 +855,7 @@ convert_operation(
 	, {std::type_index(typeid(jlm::struct_constant_op)), convert_struct_constant}
 	, {std::type_index(typeid(jlm::ptr_constant_null_op)), convert_ptr_constant_null}
 	, {std::type_index(typeid(jlm::select_op)), convert_select}
-	, {typeid(jlm::constant_array_op), convert_constant_array}
+	, {typeid(ConstantArray), convert<ConstantArray>}
 	, {typeid(constant_aggregate_zero_op), convert_constant_aggregate_zero}
 	, {typeid(ctl2bits_op), convert_ctl2bits}
 	, {typeid(constantvector_op), convert_constantvector}

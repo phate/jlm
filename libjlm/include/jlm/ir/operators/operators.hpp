@@ -1673,15 +1673,14 @@ public:
 	}
 };
 
-/* constant array operator */
+/* ConstantArray */
 
-class constant_array_op final : public jive::simple_op {
+class ConstantArray final : public jive::simple_op {
 public:
 	virtual
-	~constant_array_op();
+	~ConstantArray();
 
-	inline
-	constant_array_op(const jive::valuetype & type, size_t size)
+	ConstantArray(const jive::valuetype & type, size_t size)
 	: jive::simple_op(std::vector<jive::port>(size, type), {arraytype(type, size)})
 	{
 		if (size == 0)
@@ -1697,13 +1696,13 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
-	inline size_t
+	size_t
 	size() const noexcept
 	{
 		return static_cast<const arraytype*>(&result(0).type())->nelements();
 	}
 
-	inline const jive::valuetype &
+	const jive::valuetype &
 	type() const noexcept
 	{
 		return static_cast<const arraytype*>(&result(0).type())->element_type();
@@ -1718,7 +1717,7 @@ public:
 		auto vt = dynamic_cast<const jive::valuetype*>(&elements[0]->type());
 		if (!vt) throw jlm::error("expected value type.\n");
 
-		constant_array_op op(*vt, elements.size());
+		ConstantArray op(*vt, elements.size());
 		return tac::create(op, elements);
 	}
 };
