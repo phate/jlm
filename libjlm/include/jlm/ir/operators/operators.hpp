@@ -2515,6 +2515,92 @@ private:
 	}
 };
 
+/* memcpy operation */
+
+class Memcpy final : public jive::simple_op {
+public:
+	virtual
+	~Memcpy();
+
+	Memcpy(
+		const std::vector<jive::port> & operandPorts,
+		const std::vector<jive::port> & resultPorts)
+	: simple_op(operandPorts, resultPorts)
+	{}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+	static std::unique_ptr<jlm::tac>
+	create(
+		const variable * destination,
+		const variable * source,
+		const variable * length,
+		const variable * isVolatile,
+		const std::vector<const variable*> & memoryStates)
+	{
+		auto operandPorts = CheckAndCreateOperandPorts(length->type(), memoryStates.size());
+		auto resultPorts = CreateResultPorts(memoryStates.size());
+
+		std::vector<const variable*> operands = {destination, source, length, isVolatile};
+		operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
+
+		Memcpy op(operandPorts, resultPorts);
+		return tac::create(op, operands);
+	}
+
+	static std::vector<jive::output*>
+	create(
+		jive::output * destination,
+		jive::output * source,
+		jive::output * length,
+		jive::output * isVolatile,
+		const std::vector<jive::output*> & memoryStates)
+	{
+		auto operandPorts = CheckAndCreateOperandPorts(length->type(), memoryStates.size());
+		auto resultPorts = CreateResultPorts(memoryStates.size());
+
+		std::vector<jive::output*> operands = {destination, source, length, isVolatile};
+		operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
+
+		Memcpy op(operandPorts, resultPorts);
+		return jive::simple_node::create_normalized(destination->region(), op, operands);
+	}
+
+private:
+	static std::vector<jive::port>
+	CheckAndCreateOperandPorts(
+		const jive::type & length,
+		size_t nMemoryStates)
+	{
+		if (length != jive::bit32
+		&& length != jive::bit64)
+			throw jlm::error("Expected 32 bit or 64 bit integer type.");
+
+		if (nMemoryStates == 0)
+			throw jlm::error("Number of memory states cannot be zero.");
+
+		ptrtype pt(jive::bit8);
+
+		std::vector<jive::port> ports = {pt, pt, length, jive::bit1};
+		ports.insert(ports.end(), nMemoryStates, jive::memtype::instance());
+
+		return ports;
+	}
+
+	static std::vector<jive::port>
+	CreateResultPorts(size_t nMemoryStates)
+	{
+		return std::vector<jive::port>(nMemoryStates, jive::memtype::instance());
+	}
+};
+
 /*
 	FIXME: This function should be in jive and not in jlm.
 */

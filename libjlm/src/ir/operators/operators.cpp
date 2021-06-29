@@ -1310,4 +1310,30 @@ free_op::copy() const
 	return std::unique_ptr<jive::operation>(new free_op(*this));
 }
 
+/* memcpy operator */
+
+Memcpy::~Memcpy()
+{}
+
+bool
+Memcpy::operator==(const operation & other) const noexcept
+{
+	/*
+		Avoid CNE for memcpy operator
+	*/
+	return this == &other;
+}
+
+std::string
+Memcpy::debug_string() const
+{
+	return "Memcpy";
+}
+
+std::unique_ptr<jive::operation>
+Memcpy::copy() const
+{
+	return std::unique_ptr<jive::operation>(new Memcpy(*this));
+}
+
 }

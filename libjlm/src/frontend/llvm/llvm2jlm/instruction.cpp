@@ -25,6 +25,7 @@
 
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/Instructions.h>
+#include <llvm/IR/IntrinsicInst.h>
 #include <llvm/IR/Function.h>
 
 #include <typeindex>
@@ -629,6 +630,23 @@ convert_free_call(const llvm::CallInst * i, tacsvector_t & tacs, context & ctx)
 	return nullptr;
 }
 
+static const variable*
+convert_memcpy_call(
+	const llvm::CallInst * i, tacsvector_t & tacs, context & ctx)
+{
+	auto memstate = ctx.memory_state();
+
+	auto destination = convert_value(i->getArgOperand(0), tacs, ctx);
+	auto source = convert_value(i->getArgOperand(1), tacs, ctx);
+	auto length = convert_value(i->getArgOperand(2), tacs, ctx);
+	auto isVolatile = convert_value(i->getArgOperand(3), tacs, ctx);
+
+	tacs.push_back(Memcpy::create(destination, source, length, isVolatile, {memstate}));
+	tacs.push_back(assignment_op::create(tacs.back()->result(0), memstate));
+
+	return nullptr;
+}
+
 static const variable *
 convert_call_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, context & ctx)
 {
@@ -674,10 +692,17 @@ convert_call_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 		return f && f->getName() == "free";
 	};
 
+	auto IsMemcpyCall = [](const llvm::CallInst  * i)
+	{
+		return llvm::dyn_cast<llvm::MemCpyInst>(i) != nullptr;
+	};
+
 	if (is_malloc_call(i))
 		return convert_malloc_call(i, tacs, ctx);
 	if (is_free_call(i))
 		return convert_free_call(i, tacs, ctx);
+	if (IsMemcpyCall(i))
+		return convert_memcpy_call(i, tacs, ctx);
 
 	auto ftype = function_type(i);
 
