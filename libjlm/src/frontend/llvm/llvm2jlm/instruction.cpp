@@ -224,14 +224,14 @@ convert_constantDataArray(
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx)
 {
-	JLM_ASSERT(llvm::dyn_cast<llvm::ConstantDataArray>(constant));
+	JLM_ASSERT(constant->getValueID() == llvm::Value::ConstantDataArrayVal);
 	const auto & c = *llvm::cast<const llvm::ConstantDataArray>(constant);
 
 	std::vector<const variable*> elements;
 	for (size_t n = 0; n < c.getNumElements(); n++)
 		elements.push_back(convert_constant(c.getElementAsConstant(n), tacs, ctx));
 
-	tacs.push_back(data_array_constant_op::create(elements));
+	tacs.push_back(ConstantDataArray::create(elements));
 
 	return tacs.back()->result(0);
 }
