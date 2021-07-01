@@ -366,7 +366,7 @@ mark_phi(const jive::structural_node * node, cnectx & ctx)
 static void
 mark_delta(const jive::structural_node * node, cnectx & ctx)
 {
-	JLM_ASSERT(jive::is<delta_op>(node));
+	JLM_ASSERT(jive::is<delta::operation>(node));
 }
 
 static void
@@ -380,7 +380,7 @@ mark(const jive::structural_node * node, cnectx & ctx)
 	, {std::type_index(typeid(jive::theta_op)), mark_theta}
 	, {typeid(lambda::operation), mark_lambda}
 	, {typeid(jive::phi::operation), mark_phi}
-	, {typeid(delta_op), mark_delta}
+	, {typeid(delta::operation), mark_delta}
 	});
 
 	auto & op = node->operation();
@@ -516,7 +516,7 @@ divert_phi(jive::structural_node * node, cnectx & ctx)
 static void
 divert_delta(jive::structural_node * node, cnectx & ctx)
 {
-	JLM_ASSERT(jive::is<delta_op>(node));
+	JLM_ASSERT(jive::is<delta::operation>(node));
 }
 
 static void
@@ -530,7 +530,7 @@ divert(jive::structural_node * node, cnectx & ctx)
 	, {std::type_index(typeid(jive::theta_op)), divert_theta}
 	, {typeid(lambda::operation), divert_lambda}
 	, {typeid(jive::phi::operation), divert_phi}
-	, {typeid(delta_op), divert_delta}
+	, {typeid(delta::operation), divert_delta}
 	});
 
 	auto & op = node->operation();

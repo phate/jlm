@@ -203,7 +203,7 @@ sweep(jive::region * region, const dnectx & ctx);
 static void
 sweep_delta(jive::structural_node * node, const dnectx & ctx)
 {
-	JLM_ASSERT(is<delta_op>(node));
+	JLM_ASSERT(is<delta::operation>(node));
 	JLM_ASSERT(node->noutputs() == 1);
 
 	if (!ctx.is_alive(node)) {
@@ -359,7 +359,7 @@ sweep(jive::structural_node * node, const dnectx & ctx)
 	, {std::type_index(typeid(jive::theta_op)), sweep_theta}
 	, {typeid(lambda::operation), sweep_lambda}
 	, {typeid(jive::phi::operation), sweep_phi}
-	, {typeid(jlm::delta_op), sweep_delta}
+	, {typeid(delta::operation), sweep_delta}
 	});
 
 	auto & op = node->operation();

@@ -8,25 +8,29 @@
 #include <jive/rvsdg/substitution.hpp>
 
 namespace jlm {
+namespace delta {
 
 /* delta operator */
 
+operation::~operation()
+{}
+
 std::string
-delta_op::debug_string() const
+operation::debug_string() const
 {
 	return strfmt("DELTA[", name(), "]");
 }
 
 std::unique_ptr<jive::operation>
-delta_op::copy() const
+operation::copy() const
 {
-	return std::unique_ptr<jive::operation>(new delta_op(*this));
+	return std::unique_ptr<jive::operation>(new delta::operation(*this));
 }
 
 bool
-delta_op::operator==(const operation & other) const noexcept
+operation::operator==(const jive::operation & other) const noexcept
 {
-	auto op = dynamic_cast<const delta_op*>(&other);
+	auto op = dynamic_cast<const delta::operation*>(&other);
 	return op
 	    && op->name_ == name_
 	    && op->linkage_ == linkage_
@@ -36,32 +40,136 @@ delta_op::operator==(const operation & other) const noexcept
 
 /* delta node */
 
-delta_node::~delta_node()
+node::~node()
 {}
 
-delta_node *
-delta_node::copy(jive::region * region, jive::substitution_map & smap) const
+delta::node *
+node::copy(
+	jive::region * region,
+	const std::vector<jive::output*> & operands) const
 {
-	auto & op = *static_cast<const delta_op*>(&operation());
+	return static_cast<delta::node*>(jive::node::copy(region, operands));
+}
 
-	delta_builder db;
-	db.begin(region, op.type(), op.name(), op.linkage(), op.constant());
+delta::node *
+node::copy(jive::region * region, jive::substitution_map & smap) const
+{
+	auto delta = create(region, type(), name(), linkage(), constant());
 
-	/* add dependencies */
-	jive::substitution_map rmap;
-	for (const auto & input : *this) {
-		auto nd = db.add_dependency(smap.lookup(input.origin()));
-		rmap.insert(input.arguments.first(), nd);
+	/* add context variables */
+	jive::substitution_map subregionmap;
+	for (auto & cv : ctxvars()) {
+		auto origin = smap.lookup(cv.origin());
+		auto newcv = delta->add_ctxvar(origin);
+		subregionmap.insert(cv.argument(), newcv);
 	}
 
 	/* copy subregion */
-	subregion()->copy(db.region(), rmap, false, false);
+	subregion()->copy(delta->subregion(), subregionmap, false, false);
 
-	auto result = rmap.lookup(subregion()->result(0)->origin());
-	auto data = db.end(result);
-	smap.insert(output(0), data);
+	/* finalize delta */
+	auto result = subregionmap.lookup(delta->result()->origin());
+	auto o = delta->finalize(result);
+	smap.insert(output(), o);
 
-	return static_cast<delta_node*>(jive::node_output::node(data));
+	return delta;
 }
 
+node::ctxvar_range
+node::ctxvars()
+{
+	cviterator end(nullptr);
+
+	if (ncvarguments() == 0)
+		return ctxvar_range(end, end);
+
+	cviterator begin(input(0));
+	return ctxvar_range(begin, end);
 }
+
+node::ctxvar_constrange
+node::ctxvars() const
+{
+	cvconstiterator end(nullptr);
+
+	if (ncvarguments() == 0)
+		return ctxvar_constrange(end, end);
+
+	cvconstiterator begin(input(0));
+	return ctxvar_constrange(begin, end);
+}
+
+cvargument *
+node::add_ctxvar(jive::output * origin)
+{
+	auto input = cvinput::create(this, origin);
+	return cvargument::create(subregion(), input);
+}
+
+cvinput *
+node::input(size_t n) const noexcept
+{
+	return static_cast<cvinput*>(structural_node::input(n));
+}
+
+delta::output *
+node::output() const noexcept
+{
+	return static_cast<delta::output*>(structural_node::output(0));
+}
+
+delta::result *
+node::result() const noexcept
+{
+	return static_cast<delta::result*>(subregion()->result(0));
+}
+
+delta::output *
+node::finalize(jive::output * origin)
+{
+	/* check if finalized was already called */
+	if (noutputs() > 0) {
+		JLM_ASSERT(noutputs() == 1);
+		return output();
+	}
+
+	auto & expected = type().pointee_type();
+	auto & received = origin->type();
+	if (expected != received)
+		throw jlm::error("Expected " + expected.debug_string() + ", got " + received.debug_string());
+
+	if (origin->region() != subregion())
+		throw jlm::error("Invalid operand region.");
+
+	delta::result::create(origin);
+
+	return output::create(this, ptrtype(type()));
+}
+
+/* delta context variable input class */
+
+cvinput::~cvinput()
+{}
+
+cvargument *
+cvinput::argument() const noexcept
+{
+	return static_cast<cvargument*>(arguments.first());
+}
+
+/* delta output class */
+
+output::~output()
+{}
+
+/* delta context variable argument class */
+
+cvargument::~cvargument()
+{}
+
+/* delta result class */
+
+result::~result()
+{}
+
+}}

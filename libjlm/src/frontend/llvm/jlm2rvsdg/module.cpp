@@ -758,19 +758,18 @@ convert_data_node(
 	}
 
 	/* data node with initialization */
-	jlm::delta_builder db;
-	auto r = db.begin(region, n->type(), n->name(), n->linkage(), n->constant());
+	auto delta = delta::node::create(region, n->type(), n->name(), n->linkage(), n->constant());
 	auto & pv = svmap.vmap();
-	svmap.push_scope(r);
+	svmap.push_scope(delta->subregion());
 
 	/* add dependencies */
 	for (const auto & dp : *node) {
 		auto v = m.variable(dp);
-		auto argument = db.add_dependency(pv.lookup(v));
+		auto argument = delta->add_ctxvar(pv.lookup(v));
 		svmap.vmap().insert(v, argument);
 	}
 
-	auto data = db.end(convert_initialization(*init, r, svmap));
+	auto data = delta->finalize(convert_initialization(*init, delta->subregion(), svmap));
 	svmap.pop_scope();
 
 	return data;

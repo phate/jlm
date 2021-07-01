@@ -81,7 +81,7 @@ is_function_import(const jive::argument * argument)
 }
 
 static std::unique_ptr<data_node_init>
-create_initialization(const delta_node * delta, context & ctx)
+create_initialization(const delta::node * delta, context & ctx)
 {
 	auto subregion = delta->subregion();
 
@@ -443,8 +443,8 @@ convert_phi_node(const jive::node & node, context & ctx)
 				lambda->attributes());
 			ctx.insert(subregion->argument(n), module.create_variable(f));
 		} else {
-			JLM_ASSERT(is<delta_op>(node));
-			auto d = static_cast<const delta_node*>(node);
+			JLM_ASSERT(is<delta::operation>(node));
+			auto d = static_cast<const delta::node*>(node);
 			auto data = data_node::create(ipg, d->name(), d->type(), d->linkage(),
 				d->constant());
 			ctx.insert(subregion->argument(n), module.create_global_value(data));
@@ -462,8 +462,8 @@ convert_phi_node(const jive::node & node, context & ctx)
 			v->function()->add_cfg(create_cfg(*lambda, ctx));
 			ctx.insert(node->output(0), v);
 		} else {
-			JLM_ASSERT(is<delta_op>(node));
-			auto delta = static_cast<const delta_node*>(node);
+			JLM_ASSERT(is<delta::operation>(node));
+			auto delta = static_cast<const delta::node*>(node);
 			auto v = static_cast<const gblvalue*>(ctx.variable(subregion->argument(n)));
 
 			v->node()->set_initialization(create_initialization(delta, ctx));
@@ -480,18 +480,19 @@ convert_phi_node(const jive::node & node, context & ctx)
 static inline void
 convert_delta_node(const jive::node & node, context & ctx)
 {
-	JLM_ASSERT(is<delta_op>(&node));
-	auto delta = static_cast<const delta_node*>(&node);
-	const auto & op = *static_cast<const jlm::delta_op*>(&node.operation());
+	JLM_ASSERT(is<delta::operation>(&node));
+	auto delta = static_cast<const delta::node*>(&node);
 	auto & m = ctx.module();
 
-	JLM_ASSERT(delta->subregion()->nresults() == 1);
-	auto result = delta->subregion()->result(0);
-
-	auto dnode = data_node::create(m.ipgraph(), op.name(), op.type(), op.linkage(), op.constant());
+	auto dnode = data_node::create(
+		m.ipgraph(),
+		delta->name(),
+		delta->type(),
+		delta->linkage(),
+		delta->constant());
 	dnode->set_initialization(create_initialization(delta, ctx));
 	auto v = m.create_global_value(dnode);
-	ctx.insert(result->output(), v);
+	ctx.insert(delta->output(), v);
 }
 
 static inline void
@@ -505,7 +506,7 @@ convert_node(const jive::node & node, context & ctx)
 	, {std::type_index(typeid(jive::gamma_op)), convert_gamma_node}
 	, {std::type_index(typeid(jive::theta_op)), convert_theta_node}
 	, {typeid(jive::phi::operation), convert_phi_node}
-	, {typeid(jlm::delta_op), convert_delta_node}
+	, {typeid(delta::operation), convert_delta_node}
 	});
 
 	if (dynamic_cast<const jive::simple_op*>(&node.operation())) {
