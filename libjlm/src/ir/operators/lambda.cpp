@@ -314,7 +314,7 @@ node::direct_calls(std::vector<jive::simple_node*> * calls) const
 			continue;
 		}
 
-		if (auto cvinput = is_delta_input(input)) {
+		if (auto cvinput = dynamic_cast<delta::cvinput*>(input)) {
 			auto argument = cvinput->arguments.first();
 			worklist.insert(worklist.end(), argument->begin(), argument->end());
 			continue;

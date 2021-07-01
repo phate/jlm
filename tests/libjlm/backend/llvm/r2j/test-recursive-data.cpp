@@ -39,19 +39,27 @@ test()
 
 	jive::output * delta1, * delta2;
 	{
-		delta_builder db;
-		auto subregion = db.begin(region, vt, "test-delta1", linkage::external_linkage, false);
-		auto dep1 = db.add_dependency(r2->argument());
-		auto dep2 = db.add_dependency(dep);
-		delta1 = db.end(create_testop(subregion, {dep1, dep2}, {&vt})[0]);
+		auto delta = delta::node::create(
+			region,
+			vt,
+			"test-delta1",
+			linkage::external_linkage,
+			false);
+		auto dep1 = delta->add_ctxvar(r2->argument());
+		auto dep2 = delta->add_ctxvar(dep);
+		delta1 = delta->finalize(create_testop(delta->subregion(), {dep1, dep2}, {&vt})[0]);
 	}
 
 	{
-		delta_builder db;
-		auto subregion = db.begin(region, vt, "test-delta2", linkage::external_linkage, false);
-		auto dep1 = db.add_dependency(r1->argument());
-		auto dep2 = db.add_dependency(dep);
-		delta2 = db.end(create_testop(subregion, {dep1, dep2}, {&vt})[0]);
+		auto delta = delta::node::create(
+			region,
+			vt,
+			"test-delta2",
+			linkage::external_linkage,
+			false);
+		auto dep1 = delta->add_ctxvar(r1->argument());
+		auto dep2 = delta->add_ctxvar(dep);
+		delta2 = delta->finalize(create_testop(delta->subregion(), {dep1, dep2}, {&vt})[0]);
 	}
 
 	r1->set_rvorigin(delta1);
