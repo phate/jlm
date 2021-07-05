@@ -11,6 +11,7 @@
 #include <functional>
 #include <iostream>
 #include <memory>
+#include <algorithm>
 
 namespace jlm {
 
@@ -27,7 +28,7 @@ generate_commands(const jlm::cmdline_options & opts)
 
 		if (c.parse()) {
 			auto prsnode = prscmd::create(pgraph.get(), c.ifile(), opts.includepaths, opts.macros,
-				opts.warnings, opts.flags, opts.verbose, opts.rdynamic, opts.suppress, opts.std);
+				opts.warnings, opts.flags, opts.verbose, opts.rdynamic, opts.suppress, opts.pthread, opts.std);
 			last->add_edge(prsnode);
 			last = prsnode;
 		}
@@ -55,7 +56,7 @@ generate_commands(const jlm::cmdline_options & opts)
 
 	if (!lnkifiles.empty()) {
 		auto lnknode = lnkcmd::create(pgraph.get(), lnkifiles, opts.lnkofile,
-			opts.libpaths, opts.libs);
+			opts.libpaths, opts.libs, opts.pthread);
 		for (const auto & leave : leaves)
 			leave->add_edge(lnknode);
 
@@ -89,6 +90,16 @@ prscmd::~prscmd()
 {}
 
 std::string
+prscmd::replace_all(std::string str, const std::string& from, const std::string& to) {
+    size_t start_pos = 0;
+    while((start_pos = str.find(from, start_pos)) != std::string::npos) {
+        str.replace(start_pos, from.length(), to);
+        start_pos += to.length();
+    }
+    return str;
+}
+
+std::string
 prscmd::to_str() const
 {
 	auto f = ifile_.base();
@@ -119,13 +130,16 @@ prscmd::to_str() const
 	if (suppress_)
 	  arguments += "-w ";
 
+	if (pthread_)
+	  arguments += "-pthread ";
+
 	return strfmt(
 	  clangpath.to_str() + " "
 	, arguments, " "
 	, Wwarnings, " "
 	, flags, " "
 	, std_ != standard::none ? "-std="+jlm::to_str(std_)+" " : ""
-	, Dmacros, " "
+	, replace_all(Dmacros, std::string("\""), std::string("\\\"")), " "
 	, Ipaths, " "
 	, "-S -emit-llvm "
 	, "-o /tmp/", create_prscmd_ofile(f), " "
@@ -233,9 +247,14 @@ lnkcmd::to_str() const
 	for (const auto & lib : libs_)
 		libs += "-l" + lib + " ";
 
+	std::string arguments;
+	if (pthread_)
+	  arguments += "-pthread ";
+
 	return strfmt(
 	  clangpath.to_str() + " "
 	, "-O0 "
+        , arguments
 	, ifiles
 	, "-o ", ofile_.to_str(), " "
 	, Lpaths

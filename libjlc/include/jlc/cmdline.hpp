@@ -18,7 +18,7 @@ enum class optlvl {O0, O1, O2, O3};
 std::string
 to_str(const optlvl & ol);
 
-enum class standard {none, c89, c90, c99, c11, cpp98, cpp03, cpp11, cpp14};
+enum class standard {none, gnu89, gnu99, c89, c90, c99, c11, cpp98, cpp03, cpp11, cpp14};
 
 std::string
 to_str(const standard & std);
@@ -99,6 +99,7 @@ public:
 	, verbose(false)
 	, rdynamic(false)
 	, suppress(false)
+	, pthread(false)
 	, Olvl(optlvl::O0)
 	, std(standard::none)
 	, lnkofile("a.out")
@@ -109,6 +110,7 @@ public:
 	bool verbose;
 	bool rdynamic;
 	bool suppress;
+	bool pthread;
 
 	optlvl Olvl;
 	standard std;

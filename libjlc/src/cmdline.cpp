@@ -31,8 +31,9 @@ std::string
 to_str(const standard & std)
 {
 	static std::unordered_map<standard, const char*> map({
-	  {standard::none, ""}, {standard::c89, "c89"}
-	, {standard::c99, "c99"}, {standard::c11, "c11"}
+	  {standard::none, ""}
+	, {standard::gnu89, "gnu89"}, {standard::gnu99, "gnu99"}
+	, {standard::c89, "c89"}, {standard::c99, "c99"}, {standard::c11, "c11"}
 	, {standard::cpp98, "c++98"}, {standard::cpp03, "c++03"}
 	, {standard::cpp11, "c++11"}, {standard::cpp14, "c++14"}
 	});
@@ -167,6 +168,11 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 	, cl::ValueDisallowed
 	, cl::desc("Suppress all warnings"));
 
+	cl::opt<bool> pthread(
+	  "pthread"
+	, cl::ValueDisallowed
+	, cl::desc("Support POSIX threads in generated code"));
+
 	cl::ParseCommandLineOptions(argc, argv);
 
 	if (show_help)
@@ -180,7 +186,8 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 	);
 
 	static std::unordered_map<std::string, standard> stdmap({
-		{"c89", standard::c89}, {"c90", standard::c99}
+	  {"gnu89", standard::gnu89}, {"gnu99", standard::gnu99}
+	, {"c89", standard::c89}, {"c90", standard::c99}
 	, {"c99", standard::c99}, {"c11", standard::c11}
 	, {"c++98", standard::cpp98}, {"c++03", standard::cpp03}
 	, {"c++11", standard::cpp11}, {"c++14", standard::cpp14}
@@ -226,6 +233,7 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 	options.verbose = verbose;
 	options.rdynamic = rdynamic;
 	options.suppress = suppress;
+	options.pthread = pthread;
 
 	for (const auto & ifile : ifiles) {
 		if (is_objfile(ifile)) {

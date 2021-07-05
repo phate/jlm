@@ -34,6 +34,7 @@ public:
 		bool verbose,
 		bool rdynamic,
 		bool suppress,
+		bool pthread,
 		const standard & std)
 	: std_(std)
 	, ifile_(ifile)
@@ -44,6 +45,7 @@ public:
 	, verbose_(verbose)
 	, rdynamic_(rdynamic)
 	, suppress_(suppress)
+	, pthread_(pthread)
 	{}
 
 	virtual std::string
@@ -63,13 +65,17 @@ public:
 		bool verbose,
 		bool rdynamic,
 		bool suppress,
+		bool pthread,
 		const standard & std)
 	{
-		std::unique_ptr<prscmd> cmd(new prscmd(ifile, Ipaths, Dmacros, Wwarnings, flags, verbose, rdynamic, suppress, std));
+		std::unique_ptr<prscmd> cmd(new prscmd(ifile, Ipaths, Dmacros, Wwarnings, flags, verbose, rdynamic, suppress, pthread, std));
 		return passgraph_node::create(pgraph, std::move(cmd));
 	}
 
 private:
+	static std::string
+	replace_all(std::string str, const std::string& from, const std::string& to);
+
 	standard std_;
 	jlm::filepath ifile_;
 	std::vector<std::string> Ipaths_;
@@ -79,6 +85,7 @@ private:
 	bool verbose_;
 	bool rdynamic_;
 	bool suppress_;
+	bool pthread_;
 };
 
 /* optimization command */
@@ -174,11 +181,13 @@ public:
 		const std::vector<jlm::filepath> & ifiles,
 		const jlm::filepath & ofile,
 		const std::vector<std::string> & Lpaths,
-		const std::vector<std::string> & libs)
+		const std::vector<std::string> & libs,
+		bool pthread)
 	: ofile_(ofile)
 	, libs_(libs)
 	, ifiles_(ifiles)
 	, Lpaths_(Lpaths)
+	, pthread_(pthread)
 	{}
 
 	virtual std::string
@@ -205,9 +214,10 @@ public:
 		const std::vector<jlm::filepath> & ifiles,
 		const jlm::filepath & ofile,
 		const std::vector<std::string> & Lpaths,
-		const std::vector<std::string> & libs)
+		const std::vector<std::string> & libs,
+		bool pthread)
 	{
-		std::unique_ptr<lnkcmd> cmd(new lnkcmd(ifiles, ofile, Lpaths, libs));
+		std::unique_ptr<lnkcmd> cmd(new lnkcmd(ifiles, ofile, Lpaths, libs, pthread));
 		return passgraph_node::create(pgraph, std::move(cmd));
 	}
 
@@ -216,6 +226,7 @@ private:
 	std::vector<std::string> libs_;
 	std::vector<jlm::filepath> ifiles_;
 	std::vector<std::string> Lpaths_;
+	bool pthread_;
 };
 
 /* print command */
