@@ -203,8 +203,9 @@ optcmd::to_str() const
 			Only -O3 sets default optimizations
 		*/
 		if (ol_ == optlvl::O3) {
-			jlmopts  = "--iln --inv --red --dne --ivt --inv --dne --psh --inv --dne ";
-			jlmopts += "--red --cne --dne --pll --inv --dne --url --inv ";
+			jlmopts = "--aa-steensgaard --red --inv --dne --red --dne ";
+//			jlmopts  = "--iln --inv --red --dne --ivt --inv --dne --psh --inv --dne ";
+//			jlmopts += "--red --cne --dne --pll --inv --dne --url --inv ";
 		}
 	}
 

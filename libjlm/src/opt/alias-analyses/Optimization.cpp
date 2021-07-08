@@ -22,6 +22,8 @@ SteensgaardBasic::run(
 	Steensgaard steensgaard;
 	auto ptg = steensgaard.Analyze(module);
 
+//	std::cout << jlm::aa::ptg::to_dot(*ptg) << std::flush;
+
 	BasicEncoder encoder(*ptg);
 	encoder.Encode(module);
 }

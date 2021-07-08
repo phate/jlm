@@ -58,6 +58,9 @@ is_load_mux_reducible(const std::vector<jive::output*> & operands)
 	if (!is<memstatemux_op>(muxnode))
 		return false;
 
+	if (muxnode->noutputs() != operands.size()-1)
+		return false;
+
 	for (size_t n = 1; n < operands.size(); n++) {
 		if (jive::node_output::node(operands[n]) != muxnode)
 			return false;
