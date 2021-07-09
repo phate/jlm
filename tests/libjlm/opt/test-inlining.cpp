@@ -18,8 +18,8 @@
 
 static const jlm::stats_descriptor sd;
 
-static int
-verify()
+static void
+test1()
 {
 	using namespace jlm;
 
@@ -51,12 +51,62 @@ verify()
 
 	graph.add_export(f2, {f2->type(), "f2"});
 
+//	jive::view(graph.root(), stdout);
+	jlm::fctinline fctinline;
+	fctinline.run(rm, sd);
+//	jive::view(graph.root(), stdout);
+
+	assert(!jive::contains<jlm::call_op>(graph.root(), true));
+}
+
+static void
+test2()
+{
+	using namespace jlm;
+
+	valuetype vt;
+	statetype st;
+	jive::fcttype ft1({&vt, &st}, {&st});
+	jive::fcttype ft2({&st}, {&st});
+	ptrtype pt(ft1);
+	jive::fcttype ft3({&pt, &st}, {&st});
+
+	rvsdg_module rm(filepath(""), "", "");
+	auto & graph = *rm.graph();
+	auto i = graph.add_import({ptrtype(ft3), "i"});
+
+	/* f1 */
+	auto f1Lambda = lambda::node::create(graph.root(), ft1, "f1", linkage::external_linkage);
+	auto f1 = f1Lambda->finalize({f1Lambda->fctargument(1)});
+
+	/* f2 */
+	auto f2Lambda = lambda::node::create(graph.root(), ft2, "f2", linkage::external_linkage);
+	auto cvi = f2Lambda->add_ctxvar(i);
+	auto cvf1 = f2Lambda->add_ctxvar(f1);
+
+	auto call = call_op::create(cvi, {cvf1, f2Lambda->fctargument(0)});
+
+	auto f2 = f2Lambda->finalize({call[0]});
+
+	graph.add_export(f2, {f2->type(), "f2"});
+
 	jive::view(graph.root(), stdout);
 	jlm::fctinline fctinline;
 	fctinline.run(rm, sd);
 	jive::view(graph.root(), stdout);
 
-	assert(!jive::contains<jlm::call_op>(graph.root(), true));
+	/*
+		Function f1 should not have been inlined.
+	*/
+	assert(is<call_op>(jive::node_output::node(f2Lambda->fctresult(0)->origin())));
+}
+
+static int
+verify()
+{
+	test1();
+	test2();
+
 	return 0;
 }
 
