@@ -52,51 +52,6 @@ private:
 	jlm::timer timer_;
 };
 
-static bool
-is_exported(jive::output * output)
-{
-	auto graph = output->region()->graph();
-
-	for (const auto & user : *output) {
-		if (dynamic_cast<const jive::result*>(user) && user->region() == graph->root())
-			return true;
-	}
-
-	return false;
-}
-
-static std::vector<jive::simple_node*>
-find_consumers(const jive::structural_node * node)
-{
-	JLM_ASSERT(is<lambda::operation>(node));
-
-	std::vector<jive::simple_node*> consumers;
-	std::unordered_set<jive::output*> worklist({node->output(0)});
-	while (!worklist.empty()) {
-		auto output = *worklist.begin();
-		worklist.erase(output);
-
-		for (const auto & user : *output) {
-			if (auto result = dynamic_cast<const jive::result*>(user)) {
-				JLM_ASSERT(result->output() != nullptr);
-				worklist.insert(result->output());
-				continue;
-			}
-
-			if (auto simple = dynamic_cast<jive::simple_node*>(input_node(user))) {
-				consumers.push_back(simple);
-				continue;
-			}
-
-			auto sinput = dynamic_cast<jive::structural_input*>(user);
-			for (auto & argument : sinput->arguments)
-				worklist.insert(&argument);
-		}
-	}
-
-	return consumers;
-}
-
 static jive::output *
 find_producer(jive::input * input)
 {
@@ -138,10 +93,9 @@ route_to_region(jive::output * output, jive::region * region)
 }
 
 static std::vector<jive::output*>
-route_dependencies(const jive::structural_node * lambda, const jive::simple_node * apply)
+route_dependencies(const lambda::node * lambda, const jive::simple_node * apply)
 {
-	JLM_ASSERT(is<lambda::operation>(lambda));
-	JLM_ASSERT(dynamic_cast<const call_op*>(&apply->operation()));
+	JLM_ASSERT(is<call_op>(apply));
 
 	/* collect origins of dependencies */
 	std::vector<jive::output*> deps;
@@ -156,33 +110,29 @@ route_dependencies(const jive::structural_node * lambda, const jive::simple_node
 }
 
 static void
-inline_apply(const jive::structural_node * lambda, jive::simple_node * apply)
+inlineCall(jive::simple_node * call, const lambda::node * lambda)
 {
-	JLM_ASSERT(is<lambda::operation>(lambda));
-	JLM_ASSERT(dynamic_cast<const call_op*>(&apply->operation()));
+	JLM_ASSERT(is<call_op>(call));
 
-	auto deps = route_dependencies(lambda, apply);
+	auto deps = route_dependencies(lambda, call);
+	JLM_ASSERT(lambda->ncvarguments() == deps.size());
 
 	jive::substitution_map smap;
-	for (size_t n = 1; n < apply->ninputs(); n++) {
-		auto argument = lambda->subregion(0)->argument(n-1);
-		JLM_ASSERT(argument->input() == nullptr);
-		smap.insert(argument, apply->input(n)->origin());
+	for (size_t n = 1; n < call->ninputs(); n++) {
+		auto argument = lambda->fctargument(n-1);
+		smap.insert(argument, call->input(n)->origin());
 	}
-	for (size_t n = 0; n < lambda->ninputs(); n++) {
-		auto argument = lambda->input(n)->arguments.first();
-		JLM_ASSERT(argument != nullptr);
-		smap.insert(argument, deps[n]);
-	}
+	for (size_t n = 0; n < lambda->ncvarguments(); n++)
+		smap.insert(lambda->cvargument(n), deps[n]);
 
-	lambda->subregion(0)->copy(apply->region(), smap, false, false);
+	lambda->subregion()->copy(call->region(), smap, false, false);
 
-	for (size_t n = 0; n < apply->noutputs(); n++) {
-		auto output = lambda->subregion(0)->result(n)->origin();
+	for (size_t n = 0; n < call->noutputs(); n++) {
+		auto output = lambda->subregion()->result(n)->origin();
 		JLM_ASSERT(smap.lookup(output));
-		apply->output(n)->divert_users(smap.lookup(output));
+		call->output(n)->divert_users(smap.lookup(output));
 	}
-	remove(apply);
+	remove(call);
 }
 
 static void
@@ -194,14 +144,13 @@ inlining(jive::graph & graph)
 		if (!is<lambda::operation>(node))
 			continue;
 
-		if (is_exported(node->output(0)))
-			continue;
+		auto lambda = static_cast<const lambda::node*>(node);
 
-		auto snode = static_cast<const jive::structural_node*>(node);
-		auto consumers = find_consumers(snode);
-		if (consumers.size() == 1
-		&& dynamic_cast<const call_op*>(&consumers[0]->operation()))
-			inline_apply(snode, static_cast<jive::simple_node*>(consumers[0]));
+		std::vector<jive::simple_node*> calls;
+		bool onlyDirectCalls = lambda->direct_calls(&calls);
+
+		if (onlyDirectCalls && calls.size() == 1)
+			inlineCall(calls[0], lambda);
 	}
 }
 
