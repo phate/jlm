@@ -52,4 +52,4 @@ test()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/frontend/llvm/j2r/test-recursive-data", test)
+JLM_UNIT_TEST_REGISTER("libjlm/frontend/llvm/jlm-rvsdg/test-recursive-data", test)
