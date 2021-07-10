@@ -81,12 +81,14 @@ route_to_region(jive::output * output, jive::region * region)
 	if (auto gamma = dynamic_cast<jive::gamma_node*>(region->node())) {
 		gamma->add_entryvar(output);
 		output = region->argument(region->narguments()-1);
-	}	else if (auto theta = dynamic_cast<jive::theta_node*>(region->node())) {
+	} else if (auto theta = dynamic_cast<jive::theta_node*>(region->node())) {
 		output = theta->add_loopvar(output)->argument();
 	} else if (auto lambda = dynamic_cast<lambda::node*>(region->node())) {
 		output = lambda->add_ctxvar(output);
+	} else if (auto phi = dynamic_cast<jive::phi::node*>(region->node())) {
+		output = phi->add_ctxvar(output);
 	} else {
-		JLM_ASSERT(0);
+		JLM_UNREACHABLE("This should have never happened!");
 	}
 
 	return output;
