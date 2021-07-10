@@ -1,3 +1,0 @@
-TESTS += \
-	libjlm/frontend/llvm/j2r/test-recursive-data \
-	libjlm/frontend/llvm/j2r/test-restructuring
