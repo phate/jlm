@@ -189,6 +189,9 @@ public:
 	virtual const jlm::linkage &
 	linkage() const noexcept = 0;
 
+	virtual bool
+	hasBody() const noexcept = 0;
+
 private:
 	jlm::ipgraph & clg_;
 	std::unordered_set<const ipgraph_node*> dependencies_;
@@ -233,8 +236,11 @@ public:
 	virtual const jlm::linkage &
 	linkage() const noexcept override;
 
-	const std::string &
+	virtual const std::string &
 	name() const noexcept override;
+
+	virtual bool
+	hasBody() const noexcept override;
 
 	const attributeset &
 	attributes() const noexcept
@@ -382,6 +388,9 @@ public:
 
 	virtual const jlm::linkage &
 	linkage() const noexcept override;
+
+	virtual bool
+	hasBody() const noexcept override;
 
 	inline bool
 	constant() const noexcept

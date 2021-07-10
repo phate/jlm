@@ -117,6 +117,12 @@ function_node::linkage() const noexcept
 	return linkage_;
 }
 
+bool
+function_node::hasBody() const noexcept
+{
+	return cfg() != nullptr;
+}
+
 void
 function_node::add_cfg(std::unique_ptr<jlm::cfg> cfg)
 {
@@ -153,6 +159,12 @@ const jlm::linkage &
 data_node::linkage() const noexcept
 {
 	return linkage_;
+}
+
+bool
+data_node::hasBody() const noexcept
+{
+	return initialization() != nullptr;
 }
 
 }

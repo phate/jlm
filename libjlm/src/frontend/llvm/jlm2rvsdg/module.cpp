@@ -351,6 +351,13 @@ private:
 	std::vector<jive::region*> regions_;
 };
 
+static bool
+requiresExport(const ipgraph_node & node)
+{
+	return node.hasBody()
+	    && is_externally_visible(node.linkage());
+}
+
 static void
 convert_assignment(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
 {
@@ -775,6 +782,25 @@ convert_data_node(
 	return data;
 }
 
+static jive::output *
+handleSingleNode(
+	const ipgraph_node & node,
+	jive::region * region,
+	scoped_vmap & svmap,
+	const stats_descriptor & sd)
+{
+	jive::output * output = nullptr;
+	if (auto functionNode = dynamic_cast<const function_node*>(&node)) {
+		output = construct_lambda(functionNode, region, svmap, sd);
+	} else if (auto dataNode = dynamic_cast<const data_node*>(&node)) {
+		output = convert_data_node(dataNode, region, svmap, sd);
+	} else {
+		JLM_UNREACHABLE("This should have never happened.");
+	}
+
+	return output;
+}
+
 static void
 handle_scc(
 	const std::unordered_set<const jlm::ipgraph_node*> & scc,
@@ -782,76 +808,71 @@ handle_scc(
 	scoped_vmap & svmap,
 	const stats_descriptor & sd)
 {
-	auto & m = svmap.module();
+	auto & module = svmap.module();
 
-	static std::unordered_map<
-		std::type_index,
-		std::function<jive::output*(
-		  const ipgraph_node*
-		, jive::region*
-		, scoped_vmap&
-		, const stats_descriptor&)>
-	> map({
-	  {typeid(data_node), convert_data_node}
-	, {typeid(function_node), construct_lambda}
-	});
-
+	/*
+		It is a single node that is not self-recursive. We do not
+		need a phi node to break any cycles.
+	*/
 	if (scc.size() == 1 && !(*scc.begin())->is_selfrecursive()) {
 		auto & node = *scc.begin();
-		JLM_ASSERT(map.find(typeid(*node)) != map.end());
-		auto output = map[typeid(*node)](node, graph->root(), svmap, sd);
 
-		auto v = m.variable(node);
+		auto output = handleSingleNode(*node, graph->root(), svmap, sd);
+
+		auto v = module.variable(node);
 		JLM_ASSERT(v);
 		svmap.vmap().insert(v, output);
-		if (is_externally_visible(node->linkage()))
+
+		if (requiresExport(*node))
 			graph->add_export(output, {output->type(), v->name()});
-	} else {
-		jive::phi::builder pb;
-		pb.begin(graph->root());
-		svmap.push_scope(pb.subregion());
 
-		auto & pvmap = svmap.vmap(svmap.nscopes()-2);
-		auto & vmap = svmap.vmap();
+		return;
+	}
 
-		/* add recursion variables */
-		std::unordered_map<const variable*, jive::phi::rvoutput*> recvars;
-		for (const auto & node : scc) {
-			auto rv = pb.add_recvar(node->type());
-			auto v = m.variable(node);
+	jive::phi::builder pb;
+	pb.begin(graph->root());
+	svmap.push_scope(pb.subregion());
+
+	auto & pvmap = svmap.vmap(svmap.nscopes()-2);
+	auto & vmap = svmap.vmap();
+
+	/* add recursion variables */
+	std::unordered_map<const variable*, jive::phi::rvoutput*> recvars;
+	for (const auto & node : scc) {
+		auto rv = pb.add_recvar(node->type());
+		auto v = module.variable(node);
+		JLM_ASSERT(v);
+		vmap.insert(v, rv->argument());
+		JLM_ASSERT(recvars.find(v) == recvars.end());
+		recvars[v] = rv;
+	}
+
+	/* add dependencies */
+	for (const auto & node : scc) {
+		for (const auto & dep : *node) {
+			auto v = module.variable(dep);
 			JLM_ASSERT(v);
-			vmap.insert(v, rv->argument());
-			JLM_ASSERT(recvars.find(v) == recvars.end());
-			recvars[v] = rv;
+			if (recvars.find(v) == recvars.end())
+				vmap.insert(v, pb.add_ctxvar(pvmap.lookup(v)));
 		}
+	}
 
-		/* add dependencies */
-		for (const auto & node : scc) {
-			for (const auto & dep : *node) {
-				auto v = m.variable(dep);
-				JLM_ASSERT(v);
-				if (recvars.find(v) == recvars.end())
-					vmap.insert(v, pb.add_ctxvar(pvmap.lookup(v)));
-			}
-		}
+	/* convert SCC nodes */
+	for (const auto & node : scc) {
+		auto output = handleSingleNode(*node, pb.subregion(), svmap, sd);
+		recvars[module.variable(node)]->set_rvorigin(output);
+	}
 
-		/* convert SCC nodes */
-		for (const auto & node : scc) {
-			auto output = map[typeid(*node)](node, pb.subregion(), svmap, sd);
-			recvars[m.variable(node)]->set_rvorigin(output);
-		}
+	svmap.pop_scope();
+	pb.end();
 
-		svmap.pop_scope();
-		pb.end();
-
-		/* add phi outputs */
-		for (const auto & node : scc) {
-			auto v = m.variable(node);
-			auto value = recvars[v];
-			svmap.vmap().insert(v, value);
-			if (is_externally_visible(node->linkage()))
-				graph->add_export(value, {value->type(), v->name()});
-		}
+	/* add phi outputs */
+	for (const auto & node : scc) {
+		auto v = module.variable(node);
+		auto value = recvars[v];
+		svmap.vmap().insert(v, value);
+		if (requiresExport(*node))
+			graph->add_export(value, {value->type(), v->name()});
 	}
 }
 
