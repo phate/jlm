@@ -2,6 +2,7 @@ include tests/libjlm/backend/Makefile.sub
 include tests/libjlm/frontend/Makefile.sub
 include tests/libjlm/ir/Makefile.sub
 include tests/libjlm/opt/Makefile.sub
+include tests/libjlm/util/Makefile.sub
 
 TESTS += \
 	libjlm/test-cfg-structure \

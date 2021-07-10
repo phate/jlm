@@ -1,6 +1,5 @@
 TESTS = \
 
-include tests/util/Makefile.sub
 include tests/libjlm/Makefile.sub
 include tests/libjlc/Makefile.sub
 
