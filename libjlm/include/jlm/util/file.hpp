@@ -103,6 +103,24 @@ public:
 	}
 
 	/**
+	* \brief Returns the last suffix (extension) of the file.
+	*
+	* Example:
+	*    jlm::file f("/tmp/archive.tar.gz");
+	*    auto ext = f.complete_suffix(); // ext = "gz"
+	*/
+	inline std::string
+	last_suffix() const noexcept
+	{
+		auto fn = name();
+		auto pos = fn.find_last_of(".");
+		if (pos == std::string::npos)
+			return fn;
+
+		return fn.substr(pos+1, fn.size()-pos);
+	}
+
+	/**
 	* \brief Returns a file's path, excluding the file name.
 	*
 	* Example:

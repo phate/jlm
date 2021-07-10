@@ -46,7 +46,7 @@ to_str(const standard & std)
 static bool
 is_objfile(const jlm::filepath & file)
 {
-	return file.complete_suffix() == "o";
+	return file.last_suffix() == "o";
 }
 
 static jlm::filepath
