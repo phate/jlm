@@ -179,9 +179,7 @@ convert_blockAddress(
 {
 	JLM_ASSERT(constant->getValueID() == llvm::Value::BlockAddressVal);
 
-	/* FIXME */
-	JLM_ASSERT(0);
-	return nullptr;
+	JLM_UNREACHABLE("Blockaddress constants are not supported.");
 }
 
 static const variable *
@@ -299,9 +297,7 @@ convert_globalAlias(
 {
 	JLM_ASSERT(constant->getValueID() == llvm::Value::GlobalAliasVal);
 
-	/* FIXME */
-	JLM_ASSERT(0);
-	return nullptr;
+	JLM_UNREACHABLE("GlobalAlias constants are not supported.");
 }
 
 static inline const variable *
@@ -344,7 +340,9 @@ convert_constant(
 	,	{llvm::Value::FunctionVal, convert_function}
 	});
 
-	JLM_ASSERT(cmap.find(c->getValueID()) != cmap.end());
+	if (cmap.find(c->getValueID()) == cmap.end())
+		JLM_UNREACHABLE("This should have never happend.");
+
 	return cmap[c->getValueID()](c, tacs, ctx);
 }
 
@@ -833,14 +831,6 @@ convert_alloca_instruction(llvm::Instruction * instruction, tacsvector_t & tacs,
 }
 
 static inline const variable *
-convert_insertvalue_instruction(llvm::Instruction * inst, tacsvector_t & tacs, context & ctx)
-{
-	/* FIXME: add support */
-	JLM_ASSERT(0);
-	return nullptr;
-}
-
-static inline const variable *
 convert_extractvalue(llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
 {
 	JLM_ASSERT(i->getOpcode() == llvm::Instruction::ExtractValue);
@@ -1002,14 +992,15 @@ convert_instruction(
 	,	{llvm::Instruction::Call, convert_call_instruction}
 	,	{llvm::Instruction::Select, convert_select_instruction}
 	,	{llvm::Instruction::Alloca, convert_alloca_instruction}
-	,	{llvm::Instruction::InsertValue, convert_insertvalue_instruction}
 	,	{llvm::Instruction::ExtractValue, convert_extractvalue}
 	,	{llvm::Instruction::ExtractElement, convert_extractelement_instruction}
 	,	{llvm::Instruction::ShuffleVector, convert_shufflevector_instruction}
 	,	{llvm::Instruction::InsertElement, convert_insertelement_instruction}
 	});
 
-	JLM_ASSERT(map.find(i->getOpcode()) != map.end());
+	if (map.find(i->getOpcode()) == map.end())
+		JLM_UNREACHABLE(strfmt(i->getOpcodeName(), " is not supported.").c_str());
+
 	return map[i->getOpcode()](i, tacs, ctx);
 }
 
