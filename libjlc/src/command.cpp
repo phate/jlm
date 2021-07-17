@@ -40,6 +40,7 @@ generate_commands(const jlm::cmdline_options & opts)
 				opts.suppress,
 				opts.pthread,
 				opts.MD,
+				c.Mt(),
 				opts.std);
 
 			last->add_edge(prsnode);
@@ -149,6 +150,7 @@ prscmd::to_str() const
 	if (MD_) {
 		arguments += "-MD ";
 		arguments += "-MF " + dependencyFile_.to_str() + " ";
+		arguments += "-MT " + mT_ + " ";
 	}
 
 	return strfmt(

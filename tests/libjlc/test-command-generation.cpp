@@ -14,7 +14,15 @@ static void
 test1()
 {
 	jlm::cmdline_options options;
-	options.compilations.push_back({{"foo.c"}, {"foo.d"}, {"foo.o"}, true, true, true, false});
+	options.compilations.push_back({
+		{"foo.c"},
+		{"foo.d"},
+		{"foo.o"},
+		"foo.o",
+		true,
+		true,
+		true,
+		false});
 
 	auto pgraph = jlm::generate_commands(options);
 
@@ -27,7 +35,7 @@ static void
 test2()
 {
 	jlm::cmdline_options options;
-	options.compilations.push_back({{"foo.o"}, {""}, {"foo.o"}, false, false, false, true});
+	options.compilations.push_back({{"foo.o"}, {""}, {"foo.o"}, "foo.o", false, false, false, true});
 	options.lnkofile = {"foobar"};
 
 	auto pgraph = jlm::generate_commands(options);
