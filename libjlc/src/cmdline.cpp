@@ -184,6 +184,10 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 	, cl::ValueDisallowed
 	, cl::desc("Write a depfile containing user and system headers"));
 
+	cl::opt<std::string> MF(
+	  "MF"
+	, cl::desc("Write depfile output from -MD to <file>.")
+	, cl::value_desc("file"));
 
 	cl::ParseCommandLineOptions(argc, argv);
 
@@ -257,7 +261,7 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 
 		options.compilations.push_back({
 			ifile,
-			ToDependencyFile(ifile),
+			MF.empty() ? ToDependencyFile(ifile) : jlm::filepath(MF),
 			to_objfile(ifile),
 			true,
 			true,
