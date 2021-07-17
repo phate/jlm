@@ -189,6 +189,11 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 	, cl::desc("Write depfile output from -MD to <file>.")
 	, cl::value_desc("file"));
 
+	cl::opt<std::string> MT(
+	  "MT"
+	, cl::desc("Specify name of main file output in depfile.")
+	, cl::value_desc("value"));
+
 	cl::ParseCommandLineOptions(argc, argv);
 
 	if (show_help)
@@ -255,7 +260,16 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 	for (const auto & ifile : ifiles) {
 		if (is_objfile(ifile)) {
 			/* FIXME: print a warning like clang if no_linking is true */
-			options.compilations.push_back({ifile, jlm::filepath(""), ifile, false, false, false, true});
+			options.compilations.push_back({
+				ifile,
+				jlm::filepath(""),
+				ifile,
+				"",
+				false,
+				false,
+				false,
+				true});
+
 			continue;
 		}
 
@@ -263,6 +277,7 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 			ifile,
 			MF.empty() ? ToDependencyFile(ifile) : jlm::filepath(MF),
 			to_objfile(ifile),
+			MT.empty() ? to_objfile(ifile).name() : MT,
 			true,
 			true,
 			true,

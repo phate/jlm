@@ -37,6 +37,7 @@ public:
 		bool suppress,
 		bool pthread,
 		bool MD,
+		const std::string & mT,
 		const standard & std)
 	: std_(std)
 	, ifile_(ifile)
@@ -49,6 +50,7 @@ public:
 	, suppress_(suppress)
 	, pthread_(pthread)
 	, MD_(MD)
+	, mT_(mT)
 	, dependencyFile_(dependencyFile)
 	{}
 
@@ -72,6 +74,7 @@ public:
 		bool suppress,
 		bool pthread,
 		bool MD,
+		const std::string & mT,
 		const standard & std)
 	{
 		std::unique_ptr<prscmd> cmd(new prscmd(
@@ -86,6 +89,7 @@ public:
 			suppress,
 			pthread,
 			MD,
+			mT,
 			std));
 
 		return passgraph_node::create(pgraph, std::move(cmd));
@@ -106,6 +110,7 @@ private:
 	bool suppress_;
 	bool pthread_;
 	bool MD_;
+	std::string mT_;
 	jlm::filepath dependencyFile_;
 };
 

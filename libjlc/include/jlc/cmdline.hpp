@@ -29,6 +29,7 @@ public:
 		const jlm::filepath & ifile,
 		const jlm::filepath & dependencyFile,
 		const jlm::filepath & ofile,
+		const std::string & mT,
 		bool parse,
 		bool optimize,
 		bool assemble,
@@ -40,6 +41,7 @@ public:
 	, ifile_(ifile)
 	, ofile_(ofile)
 	, dependencyFile_(dependencyFile)
+	, mT_(mT)
 	{}
 
 	const jlm::filepath &
@@ -58,6 +60,12 @@ public:
 	ofile() const noexcept
 	{
 		return ofile_;
+	}
+
+	const std::string &
+	Mt() const noexcept
+	{
+		return mT_;
 	}
 
 	void
@@ -98,6 +106,7 @@ private:
 	jlm::filepath ifile_;
 	jlm::filepath ofile_;
 	jlm::filepath dependencyFile_;
+	const std::string mT_;
 };
 
 class cmdline_options {
