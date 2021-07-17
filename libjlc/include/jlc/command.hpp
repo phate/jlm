@@ -27,6 +27,7 @@ public:
 
 	prscmd(
 		const jlm::filepath & ifile,
+		const jlm::filepath & dependencyFile,
 		const std::vector<std::string> & Ipaths,
 		const std::vector<std::string> & Dmacros,
 		const std::vector<std::string> & Wwarnings,
@@ -35,6 +36,7 @@ public:
 		bool rdynamic,
 		bool suppress,
 		bool pthread,
+		bool MD,
 		const standard & std)
 	: std_(std)
 	, ifile_(ifile)
@@ -46,6 +48,8 @@ public:
 	, rdynamic_(rdynamic)
 	, suppress_(suppress)
 	, pthread_(pthread)
+	, MD_(MD)
+	, dependencyFile_(dependencyFile)
 	{}
 
 	virtual std::string
@@ -58,6 +62,7 @@ public:
 	create(
 		passgraph * pgraph,
 		const jlm::filepath & ifile,
+		const jlm::filepath & dependencyFile,
 		const std::vector<std::string> & Ipaths,
 		const std::vector<std::string> & Dmacros,
 		const std::vector<std::string> & Wwarnings,
@@ -66,9 +71,23 @@ public:
 		bool rdynamic,
 		bool suppress,
 		bool pthread,
+		bool MD,
 		const standard & std)
 	{
-		std::unique_ptr<prscmd> cmd(new prscmd(ifile, Ipaths, Dmacros, Wwarnings, flags, verbose, rdynamic, suppress, pthread, std));
+		std::unique_ptr<prscmd> cmd(new prscmd(
+			ifile,
+			dependencyFile,
+			Ipaths,
+			Dmacros,
+			Wwarnings,
+			flags,
+			verbose,
+			rdynamic,
+			suppress,
+			pthread,
+			MD,
+			std));
+
 		return passgraph_node::create(pgraph, std::move(cmd));
 	}
 
@@ -86,6 +105,8 @@ private:
 	bool rdynamic_;
 	bool suppress_;
 	bool pthread_;
+	bool MD_;
+	jlm::filepath dependencyFile_;
 };
 
 /* optimization command */
