@@ -56,6 +56,12 @@ to_objfile(const jlm::filepath & f)
 	return jlm::filepath(f.path() + f.base() + ".o");
 }
 
+static jlm::filepath
+ToDependencyFile(const jlm::filepath & f)
+{
+	return jlm::filepath(f.path() + f.base() + ".d");
+}
+
 void
 parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 {
@@ -173,6 +179,12 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 	, cl::ValueDisallowed
 	, cl::desc("Support POSIX threads in generated code"));
 
+	cl::opt<bool> MD(
+	  "MD"
+	, cl::ValueDisallowed
+	, cl::desc("Write a depfile containing user and system headers"));
+
+
 	cl::ParseCommandLineOptions(argc, argv);
 
 	if (show_help)
@@ -234,15 +246,23 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 	options.rdynamic = rdynamic;
 	options.suppress = suppress;
 	options.pthread = pthread;
+	options.MD = MD;
 
 	for (const auto & ifile : ifiles) {
 		if (is_objfile(ifile)) {
 			/* FIXME: print a warning like clang if no_linking is true */
-			options.compilations.push_back({ifile, ifile, false, false, false, true});
+			options.compilations.push_back({ifile, jlm::filepath(""), ifile, false, false, false, true});
 			continue;
 		}
 
-		options.compilations.push_back({ifile, to_objfile(ifile), true, true, true, !no_linking});
+		options.compilations.push_back({
+			ifile,
+			ToDependencyFile(ifile),
+			to_objfile(ifile),
+			true,
+			true,
+			true,
+			!no_linking});
 	}
 
 	if (!ofilepath.empty()) {

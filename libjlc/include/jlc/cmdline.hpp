@@ -27,6 +27,7 @@ class compilation {
 public:
 	compilation(
 		const jlm::filepath & ifile,
+		const jlm::filepath & dependencyFile,
 		const jlm::filepath & ofile,
 		bool parse,
 		bool optimize,
@@ -38,12 +39,19 @@ public:
 	, assemble_(assemble)
 	, ifile_(ifile)
 	, ofile_(ofile)
+	, dependencyFile_(dependencyFile)
 	{}
 
 	const jlm::filepath &
 	ifile() const noexcept
 	{
 		return ifile_;
+	}
+
+	const jlm::filepath &
+	DependencyFile() const noexcept
+	{
+		return dependencyFile_;
 	}
 
 	const jlm::filepath &
@@ -89,6 +97,7 @@ private:
 	bool assemble_;
 	jlm::filepath ifile_;
 	jlm::filepath ofile_;
+	jlm::filepath dependencyFile_;
 };
 
 class cmdline_options {
@@ -100,6 +109,7 @@ public:
 	, rdynamic(false)
 	, suppress(false)
 	, pthread(false)
+	, MD(false)
 	, Olvl(optlvl::O0)
 	, std(standard::none)
 	, lnkofile("a.out")
@@ -111,6 +121,8 @@ public:
 	bool rdynamic;
 	bool suppress;
 	bool pthread;
+
+	bool MD;
 
 	optlvl Olvl;
 	standard std;

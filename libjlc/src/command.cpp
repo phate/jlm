@@ -27,8 +27,21 @@ generate_commands(const jlm::cmdline_options & opts)
 		passgraph_node * last = pgraph->entry();
 
 		if (c.parse()) {
-			auto prsnode = prscmd::create(pgraph.get(), c.ifile(), opts.includepaths, opts.macros,
-				opts.warnings, opts.flags, opts.verbose, opts.rdynamic, opts.suppress, opts.pthread, opts.std);
+			auto prsnode = prscmd::create(
+				pgraph.get(),
+				c.ifile(),
+				c.DependencyFile(),
+				opts.includepaths,
+				opts.macros,
+				opts.warnings,
+				opts.flags,
+				opts.verbose,
+				opts.rdynamic,
+				opts.suppress,
+				opts.pthread,
+				opts.MD,
+				opts.std);
+
 			last->add_edge(prsnode);
 			last = prsnode;
 		}
@@ -132,6 +145,11 @@ prscmd::to_str() const
 
 	if (pthread_)
 	  arguments += "-pthread ";
+
+	if (MD_) {
+		arguments += "-MD ";
+		arguments += "-MF " + dependencyFile_.to_str() + " ";
+	}
 
 	return strfmt(
 	  clangpath.to_str() + " "
