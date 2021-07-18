@@ -253,6 +253,31 @@ private:
 	const jive::argument * argument_;
 };
 
+/** \brief FIXME: write documentation
+*/
+class DummyLocation final : public location {
+public:
+	virtual
+	~DummyLocation()
+	{}
+
+	DummyLocation()
+	: location(false)
+	{}
+
+	virtual std::string
+	debug_string() const noexcept override
+	{
+		return "UNNAMED";
+	}
+
+	static std::unique_ptr<location>
+	create()
+	{
+		return std::make_unique<DummyLocation>();
+	}
+};
+
 /* locationmap class */
 
 locationset::~locationset() = default;
@@ -285,6 +310,16 @@ jlm::aa::location *
 locationset::insert(const jive::node * node)
 {
 	locations_.push_back(memloc::create(node));
+	auto location = locations_.back().get();
+	djset_.insert(location);
+
+	return location;
+}
+
+location *
+locationset::insertDummy()
+{
+	locations_.push_back(DummyLocation::create());
 	auto location = locations_.back().get();
 	djset_.insert(location);
 
@@ -397,16 +432,6 @@ locationset::to_dot() const
 /* steensgaard class */
 
 Steensgaard::~Steensgaard() = default;
-
-/*
-	FIXME: I would like this to be somewhere else.
-*/
-static void
-show_dot(const std::string & dotstr, FILE * out)
-{
-	fputs(dotstr.c_str(), out);
-	fflush(out);
-}
 
 void
 Steensgaard::join(location & x, location & y)
@@ -670,21 +695,49 @@ Steensgaard::AnalyzeMemcpy(const jive::simple_node & node)
 {
 	JLM_ASSERT(is<Memcpy>(&node));
 
-	auto destination = lset_.find(node.input(0)->origin());
-	auto source = lset_.find(node.input(1)->origin());
+	/*
+		FIXME: handle unknown
+	*/
 
-	auto destinationPointsTo = lset_.find(destination->pointsto());
-	auto sourcePointsTo  = lset_.find(source->pointsto());
+	/*
+		FIXME: write some documentation about the implementation
+	*/
 
-	if (destinationPointsTo->pointsto() == nullptr)	{
-		if (sourcePointsTo->pointsto() == nullptr)
-			return;
+	auto dstAddress = lset_.find(node.input(0)->origin());
+	auto srcAddress = lset_.find(node.input(1)->origin());
 
-		destinationPointsTo->set_pointsto(sourcePointsTo->pointsto());
-		return;
+	if (srcAddress->pointsto() == nullptr) {
+		/*
+			If we do not know where the source address points to yet(!),
+			insert a dummy location so we have something to work with.
+		*/
+		auto dummyLocation = lset_.insertDummy();
+		srcAddress->set_pointsto(dummyLocation);
 	}
 
-	join(*destinationPointsTo->pointsto(), *sourcePointsTo->pointsto());
+	if (dstAddress->pointsto() == nullptr) {
+		/*
+			If we do not know where the destination address points to yet(!),
+			insert a dummy location so we have somehting to work with.
+		*/
+		auto dummyLocation = lset_.insertDummy();
+		dstAddress->set_pointsto(dummyLocation);
+	}
+
+	auto srcMemory = lset_.find(srcAddress->pointsto());
+	auto dstMemory = lset_.find(dstAddress->pointsto());
+
+	if (srcMemory->pointsto() == nullptr) {
+		auto dummyLocation = lset_.insertDummy();
+		srcMemory->set_pointsto(dummyLocation);
+	}
+
+	if (dstMemory->pointsto() == nullptr) {
+		auto dummyLocation = lset_.insertDummy();
+		dstMemory->set_pointsto(dummyLocation);
+	}
+
+	join(*srcMemory->pointsto(), *dstMemory->pointsto());
 }
 
 void
@@ -929,8 +982,9 @@ Steensgaard::Analyze(const rvsdg_module & module)
 	ResetState();
 
 	Analyze(*module.graph());
-//	show_dot(lset_.to_dot(), stdout);
+//	std::cout << lset_.to_dot() << std::flush;
 	auto ptg = ConstructPointsToGraph(lset_);
+//	std::cout << ptg::to_dot(*ptg) << std::flush;
 
 	return ptg;
 }
@@ -969,6 +1023,10 @@ Steensgaard::ConstructPointsToGraph(const locationset & lset) const
 				continue;
 			}
 
+			if (auto unnamedLocation = dynamic_cast<DummyLocation*>(loc)) {
+				continue;
+			}
+
 			JLM_UNREACHABLE("Unhandled location node.");
 		}
 	}
@@ -980,6 +1038,9 @@ Steensgaard::ConstructPointsToGraph(const locationset & lset) const
 		bool pointsToUnknown = lset.set(*set.begin()).value()->unknown();
 
 		for (auto & loc : set) {
+			if (dynamic_cast<DummyLocation*>(loc))
+				continue;
+
 			if (pointsToUnknown) {
 				map[loc]->add_edge(&ptg->memunknown());
 			}

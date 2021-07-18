@@ -83,6 +83,9 @@ public:
 	location *
 	insert(const jive::argument * argument);
 
+	location *
+	insertDummy();
+
 	/*
 		FIXME: make private
 	*/
