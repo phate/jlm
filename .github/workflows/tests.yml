@@ -75,7 +75,7 @@ jobs:
 #      run: make -C polybench-jlm check
 
   llvm-test-suite:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     needs: build
     steps:
     - name: Cache
@@ -89,12 +89,12 @@ jobs:
       run: sudo apt-get install llvm-10-dev clang-10
     - name: Set LLVMCONFIG
       run: echo "LLVMCONFIG=llvm-config-10" >> $GITHUB_ENV
-    - name: Clone jlm-test-suite
-      run: git clone https://github.com/phate/jlm-eval-suite.git
-    - name: Update submodules
-      run: make -C jlm-eval-suite submodule
-    - name: Compile jlm
-      run: cd jlm-eval-suite && make jlm-release
+#    - name: Clone jlm-test-suite
+#      run: git clone https://github.com/phate/jlm-eval-suite.git
+#    - name: Update submodules
+#      run: make -C jlm-eval-suite submodule
+#    - name: Compile jlm
+#      run: cd jlm-eval-suite && make jlm-release
     - name: Install lit
       run: cd jlm-eval-suite && make install-lit 
     - name: Apply patch
