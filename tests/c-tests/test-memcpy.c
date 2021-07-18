@@ -8,10 +8,8 @@ Create()
 }
 
 static void
-Copy(const char** pp)
+Copy(const char* p)
 {
-	const char * p = *pp;
-
 	char tmp[200];
 	memcpy(tmp, p, 200);
 }
@@ -20,6 +18,6 @@ int
 main()
 {
 	const char * p = Create();
-	Copy(&p);
+	Copy(p);
 	return 0;
 }
