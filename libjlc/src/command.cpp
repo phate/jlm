@@ -5,6 +5,7 @@
 
 #include <jlc/command.hpp>
 #include <jlc/llvmpaths.hpp>
+#include <jlc/toolpaths.hpp>
 #include <jlm/util/strfmt.hpp>
 
 #include <deque>
@@ -12,85 +13,10 @@
 #include <iostream>
 #include <memory>
 #include <algorithm>
+#include <sys/stat.h>
 
 namespace jlm {
 
-/* command generation */
-
-std::unique_ptr<passgraph>
-generate_commands(const jlm::cmdline_options & opts)
-{
-	std::unique_ptr<passgraph> pgraph(new passgraph());
-
-	std::vector<passgraph_node*> leaves;
-	for (const auto & c : opts.compilations) {
-		passgraph_node * last = pgraph->entry();
-
-		if (c.parse()) {
-			auto prsnode = prscmd::create(
-				pgraph.get(),
-				c.ifile(),
-				c.DependencyFile(),
-				opts.includepaths,
-				opts.macros,
-				opts.warnings,
-				opts.flags,
-				opts.verbose,
-				opts.rdynamic,
-				opts.suppress,
-				opts.pthread,
-				opts.MD,
-				c.Mt(),
-				opts.std);
-
-			last->add_edge(prsnode);
-			last = prsnode;
-		}
-
-		if (c.optimize()) {
-			auto optnode = optcmd::create(pgraph.get(), c.ifile(), opts.jlmopts, opts.Olvl);
-			last->add_edge(optnode);
-			last = optnode;
-		}
-
-		if (c.assemble()) {
-			auto asmnode = cgencmd::create(pgraph.get(), c.ifile(), c.ofile(), opts.Olvl);
-			last->add_edge(asmnode);
-			last = asmnode;
-		}
-
-		leaves.push_back(last);
-	}
-
-	std::vector<jlm::filepath> lnkifiles;
-	for (const auto & c : opts.compilations) {
-		if (c.link())
-			lnkifiles.push_back(c.ofile());
-	}
-
-	if (!lnkifiles.empty()) {
-		auto lnknode = lnkcmd::create(pgraph.get(), lnkifiles, opts.lnkofile,
-			opts.libpaths, opts.libs, opts.pthread);
-		for (const auto & leave : leaves)
-			leave->add_edge(lnknode);
-
-		leaves.clear();
-		leaves.push_back(lnknode);
-	}
-
-	for (const auto & leave : leaves)
-		leave->add_edge(pgraph->exit());
-
-	if (opts.only_print_commands) {
-		std::unique_ptr<passgraph> pg(new passgraph());
-		auto printnode = printcmd::create(pg.get(), std::move(pgraph));
-		pg->entry()->add_edge(printnode);
-		printnode->add_edge(pg->exit());
-		pgraph = std::move(pg);
-	}
-
-	return pgraph;
-}
 
 /* parser command */
 
@@ -102,6 +28,13 @@ create_prscmd_ofile(const std::string & ifile)
 
 prscmd::~prscmd()
 {}
+
+jlm::filepath
+prscmd::ofile() const
+{
+	auto f = ifile_.base();
+	return tmpfolder_.to_str()+create_prscmd_ofile(f);
+}
 
 std::string
 prscmd::replace_all(std::string str, const std::string& from, const std::string& to) {
@@ -153,6 +86,21 @@ prscmd::to_str() const
 		arguments += "-MT " + mT_ + " ";
 	}
 
+	if (hls_) {
+		return strfmt(
+		clangpath.to_str() + " "
+		, arguments, " "
+		, Wwarnings, " "
+		, flags, " "
+		, std_ != standard::none ? "-std="+jlm::to_str(std_)+" " : ""
+		, replace_all(Dmacros, std::string("\""), std::string("\\\"")), " "
+		, Ipaths, " "
+		, "-S -emit-llvm -Xclang -disable-O0-optnone "
+		, "-o ", tmpfolder_.to_str()+create_prscmd_ofile(f), " "
+		, ifile_.to_str()
+		);
+	}
+
 	return strfmt(
 	  clangpath.to_str() + " "
 	, arguments, " "
@@ -162,7 +110,7 @@ prscmd::to_str() const
 	, replace_all(Dmacros, std::string("\""), std::string("\\\"")), " "
 	, Ipaths, " "
 	, "-S -emit-llvm "
-	, "-o /tmp/", create_prscmd_ofile(f), " "
+	, "-o ", tmpfolder_.to_str()+create_prscmd_ofile(f), " "
 	, ifile_.to_str()
 	);
 }
@@ -212,7 +160,8 @@ optcmd::to_str() const
 	  "jlm-opt "
 	, "--llvm "
 	, jlmopts
-	, "/tmp/", create_prscmd_ofile(f), " > /tmp/", create_optcmd_ofile(f)
+	, tmpfolder_.to_str(), create_prscmd_ofile(f), " > "
+	, tmpfolder_.to_str(), create_optcmd_ofile(f)
 	);
 }
 
@@ -231,12 +180,24 @@ cgencmd::~cgencmd()
 std::string
 cgencmd::to_str() const
 {
+	if (hls_) {
+		return strfmt(
+		llcpath.to_str() + " "
+		, "-", jlm::to_str(ol_), " "
+		, "--relocation-model=pic "
+		, "-filetype=obj "
+		, "-o ", ofile_.to_str()
+		, " ", ifile_.to_str()
+		);
+
+	}
+
 	return strfmt(
-	  llcpath.to_str() + " "
+	llcpath.to_str() + " "
 	, "-", jlm::to_str(ol_), " "
 	, "-filetype=obj "
 	, "-o ", ofile_.to_str()
-	, " /tmp/", create_optcmd_ofile(ifile_.base())
+	, " ", tmpfolder_.to_str(), create_optcmd_ofile(ifile_.base())
 	);
 }
 
@@ -309,4 +270,194 @@ printcmd::run() const
 	}
 }
 
+/* HLS */
+
+std::string
+lllnkcmd::to_str() const {
+
+	auto llvm_link = clangpath.path() + "llvm-link";
+	std::string ifiles;
+	for (const auto & ifile : ifiles_)
+		ifiles += ifile.to_str() + " ";
+	return strfmt(
+			llvm_link, " "
+			, "-S -v "
+			, "-o ", ofile_.to_str(), " "
+			, ifiles
+	);
 }
+
+void
+lllnkcmd::run() const {
+	if (system(to_str().c_str()))
+		exit(EXIT_FAILURE);
+}
+
+void
+hlscmd::run() const {
+	if (system(to_str().c_str()))
+		exit(EXIT_FAILURE);
+}
+
+std::string
+hlscmd::to_str() const {
+	if (circt_)
+		return strfmt(
+			      "jlm-opt"
+			      , " --hls-file ", ifile().to_str()
+			      , " --outfolder ", outfolder_
+			      , " --circt "
+			      );
+	else
+		return strfmt(
+			      "jlm-opt"
+			      , " --hls-file ", ifile().to_str()
+			      , " --outfolder ", outfolder_
+			      );
+}
+
+void
+extractcmd::run() const {
+	if (system(to_str().c_str()))
+		exit(EXIT_FAILURE);
+}
+
+std::string
+extractcmd::to_str() const {
+        return strfmt(
+		      "jlm-opt"
+		      , " --hls-file ", ifile().to_str()
+		      , " --hls-function ", function()
+		      , " --outfolder ", outfolder_
+		      );
+}
+
+void
+firrtlcmd::run() const {
+	if (system(to_str().c_str()))
+		exit(EXIT_FAILURE);
+}
+
+std::string
+firrtlcmd::to_str() const {
+	return strfmt(
+		      firtoolpath.to_str()
+		      , " -format=fir --verilog "
+		      , ifile().to_str()
+		      , " > ", ofile().to_str()
+		      );
+}
+
+void
+verilatorcmd::run() const {
+	if (system(to_str().c_str()))
+		exit(EXIT_FAILURE);
+}
+
+std::string
+gcd() {
+	char tmp[256];
+	getcwd(tmp, 256);
+	auto cd = std::string(tmp);
+	return cd;
+}
+
+std::string
+verilatorcmd::to_str() const {
+	std::string lfiles;
+	for (const auto & ifile : lfiles_)
+		lfiles += ifile.to_str() + " ";
+
+	std::string Lpaths;
+	for (const auto & Lpath : Lpaths_)
+		Lpaths += "-L" + Lpath + " ";
+
+	std::string libs;
+	for (const auto & lib : libs_)
+		libs += "-l" + lib + " ";
+
+	std::string cflags;
+//	if(!libs.empty()||!Lpaths.empty()){
+	cflags = " -CFLAGS \"" + libs + Lpaths + " -fPIC\"";
+//	}
+
+	std::string ofile = ofile_.to_str();
+	if(ofile.at(0)!='/'){
+		ofile = gcd() + "/" + ofile;
+	}
+        std::string verilator_root;
+        if(verilatorrootpath.to_str().size()){
+		verilator_root = strfmt(
+					"VERILATOR_ROOT="
+					, verilatorrootpath.to_str()
+					, " "
+					);
+        }
+	return strfmt(
+		      verilator_root
+		      ,verilatorpath.to_str()
+		      , " --cc"
+		      , " --build"
+		      , " --exe"
+#ifndef HLS_USE_VCD
+		      , " --trace-fst"
+#else
+		      , " --trace"
+#endif
+		      , " -Wno-WIDTH" //divisions otherwise cause errors
+		      , " -j"
+		      , " -Mdir ", tmpfolder_.to_str(), "verilator/"
+		      , " -MAKEFLAGS CXX=g++"
+		      , " -CFLAGS -g" // TODO: switch for this
+		      , " --assert"
+		      , cflags
+		      , " -o ", ofile
+		      , " ", vfile().to_str()
+		      , " ", hfile().to_str()
+		      , " ", lfiles
+		      );
+}
+
+jlm::filepath
+m2rcmd::ofile() const
+{
+	return ofile_;
+}
+
+std::string
+m2rcmd::to_str() const
+{
+	auto opt = clangpath.path() + "opt";
+
+	return strfmt(
+		      opt + " "
+		      , "-mem2reg -S "
+		      , "-o ", ofile().to_str(), " "
+		      , ifile_.to_str()
+		      );
+}
+
+void
+m2rcmd::run() const
+{
+	if (system(to_str().c_str()))
+		exit(EXIT_FAILURE);
+}
+
+std::string
+mkdircmd::to_str() const
+{
+	return strfmt(
+		      "mkdir "
+		      , path_.to_str()
+		      );
+}
+
+void
+mkdircmd::run() const
+{
+	if (mkdir(path_.to_str().c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)!=0)
+		throw jlm::error("mkdir failed: "+path_.to_str());
+}
+
+} // jlm

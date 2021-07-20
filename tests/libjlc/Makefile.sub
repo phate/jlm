@@ -1,3 +1,2 @@
 TESTS += \
 	libjlc/test-cmdline-parsing \
-	libjlc/test-command-generation \

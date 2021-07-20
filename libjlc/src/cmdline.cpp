@@ -189,6 +189,22 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 	, cl::desc("Specify name of main file output in depfile.")
 	, cl::value_desc("value"));
 
+	cl::list<std::string> hls_function(
+	  "hls-function"
+	, cl::Prefix
+	, cl::desc("function that should be accelerated")
+	, cl::value_desc("regex"));
+
+	cl::opt<bool> generate_firrtl(
+	  "firrtl"
+	, cl::ValueDisallowed
+	, cl::desc("Generate firrtl"));
+
+	cl::opt<bool> circt(
+	  "circt"
+	, cl::Prefix
+	, cl::desc("Use circt to generate FIRRTL"));
+
 	cl::ParseCommandLineOptions(argc, argv);
 
 	/* Process parsed options */
@@ -234,6 +250,16 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 		exit(EXIT_FAILURE);
 	}
 
+	if (!hls_function.empty()) {
+		options.hls = true;
+		options.hls_function_regex = hls_function.front();
+	}
+
+	if (hls_function.size() > 1) {
+		std::cerr << "jlc-hls: more than one function regex specified\n";
+		exit(EXIT_FAILURE);
+	}
+
 	options.libs = libs;
 	options.macros = Dmacros;
 	options.libpaths = libpaths;
@@ -248,6 +274,8 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 	options.suppress = suppress;
 	options.pthread = pthread;
 	options.MD = MD;
+	options.generate_firrtl = generate_firrtl;
+	options.circt = circt;
 
 	for (const auto & ifile : ifiles) {
 		if (is_objfile(ifile)) {

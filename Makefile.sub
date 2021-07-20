@@ -62,15 +62,17 @@ include $(JLM_ROOT)/docs/Makefile.sub
 include $(JLM_ROOT)/tests/Makefile.sub
 
 .PHONY: jlm-debug
-jlm-debug: libjlm-debug libjlc-debug jlm-print-debug jlm-opt-debug jlc-debug
+jlm-debug: libjlm-debug libjlc-debug jlm-print-debug jlm-opt-debug jlc-debug hls-debug
 
 .PHONY: jlm-release
-jlm-release: libjlm-release libjlc-release jlm-print-release jlm-opt-release jlc-release
+jlm-release: libjlm-release libjlc-release jlm-print-release jlm-opt-release jlc-release hls-release
 
 .PHONY: jlm-clean
 jlm-clean:
 	@rm -rf $(JLM_BUILD)
 	@rm -rf $(JLM_BIN)
-	@rm -rf $(JLM_ROOT)/utests.log
-	@rm -rf $(JLM_ROOT)/ctests.log
-	@rm -rf $(JLM_ROOT)/check.log
+	@rm -f $(JLM_ROOT)/utests.log
+	@rm -f $(JLM_ROOT)/ctests.log
+	@rm -f $(JLM_ROOT)/check.log
+	@rm -f $(LLVMPATHSFILE)
+	@rm -f $(TOOLPATHSFILE)
