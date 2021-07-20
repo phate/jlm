@@ -54,7 +54,7 @@ private:
 	jlm::timer timer_;
 };
 
-static jive::output *
+jive::output *
 find_producer(jive::input * input)
 {
 	auto graph = input->region()->graph();
@@ -113,7 +113,7 @@ route_dependencies(const lambda::node * lambda, const jive::simple_node * apply)
 	return deps;
 }
 
-static void
+void
 inlineCall(jive::simple_node * call, const lambda::node * lambda)
 {
 	JLM_ASSERT(is<CallOperation>(call));
