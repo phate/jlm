@@ -130,6 +130,9 @@ public:
 	bool rdynamic;
 	bool suppress;
 	bool pthread;
+	bool generate_firrtl;
+	bool circt;
+	bool hls = false;
 
 	bool MD;
 
@@ -145,6 +148,7 @@ public:
 	std::vector<std::string> jlmopts;
 
 	std::vector<compilation> compilations;
+	std::string hls_function_regex;
 };
 
 void

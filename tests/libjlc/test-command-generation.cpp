@@ -39,7 +39,7 @@ test2()
 	options.lnkofile = {"foobar"};
 
 	auto pgraph = jlm::generate_commands(options);
-	assert(pgraph->nnodes() == 3);
+	assert(pgraph->nnodes() == 4);
 
 	auto node = (*pgraph->exit()->begin_inedges())->source();
 	auto cmd = dynamic_cast<const jlm::lnkcmd*>(&node->cmd());

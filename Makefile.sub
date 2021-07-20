@@ -71,6 +71,8 @@ jlm-release: libjlm-release libjlc-release jlm-print-release jlm-opt-release jlc
 jlm-clean:
 	@rm -rf $(JLM_BUILD)
 	@rm -rf $(JLM_BIN)
-	@rm -rf $(JLM_ROOT)/utests.log
-	@rm -rf $(JLM_ROOT)/ctests.log
-	@rm -rf $(JLM_ROOT)/check.log
+	@rm -f $(JLM_ROOT)/utests.log
+	@rm -f $(JLM_ROOT)/ctests.log
+	@rm -f $(JLM_ROOT)/check.log
+	@rm -f $(LLVMPATHSFILE)
+	@rm -f $(TOOLPATHSFILE)
