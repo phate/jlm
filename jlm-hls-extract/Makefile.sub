@@ -1,0 +1,25 @@
+# Copyright 2019 Nico Reißmann <nico.reissmann@gmail.com>
+# See COPYING for terms of redistribution.
+
+JLMHLSEXTRACT_SRC = \
+	jlm-hls-extract/jlm-hls-extract.cpp \
+
+.PHONY: jlm-hls-extract-debug
+jlm-hls-extract-debug: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG -DJLM_ENABLE_ASSERTS
+jlm-hls-extract-debug: jive-debug $(JLM_ROOT)/libjlm.a $(JLM_ROOT)/bin/jlm-hls-extract
+
+.PHONY: jlm-hls-extract-release
+jlm-hls-extract-release: CXXFLAGS += -O3
+jlm-hls-extract-release: jive-release $(JLM_ROOT)/libjlm.a $(JLM_ROOT)/bin/jlm-hls-extract
+
+$(JLM_ROOT)/bin/jlm-hls-extract: CPPFLAGS += -I$(JLM_ROOT)/libjlm/include -I$(JLM_ROOT)/jlm-hls-extract/include -I$(JLM_ROOT)/libjive/include -I$(shell $(LLVMCONFIG) --includedir)
+$(JLM_ROOT)/bin/jlm-hls-extract: CXXFLAGS += --std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Wfatal-errors
+$(JLM_ROOT)/bin/jlm-hls-extract: LDFLAGS  += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -L$(JLM_ROOT)/ -ljlm -ljive
+$(JLM_ROOT)/bin/jlm-hls-extract: $(patsubst %.cpp, $(JLM_ROOT)/%.o, $(JLMHLSEXTRACT_SRC)) $(JLM_ROOT)/libjive.a $(JLM_ROOT)/libjlm.a
+	@mkdir -p $(JLM_ROOT)/bin
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
+
+.PHONY: jlmhlsextract-clean
+jlmhlsextract-clean:
+	@find  $(JLM_ROOT)/jlm-hls-extract/ -name "*.o" -o -name "*.la" -o -name "*.a" | grep -v external | xargs rm -rf
+	@rm -rf $(JLM_ROOT)/bin/jlm-hls-extract

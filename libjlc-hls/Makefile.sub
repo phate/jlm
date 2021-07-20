@@ -1,0 +1,65 @@
+# Copyright 2019 Nico Reißmann <nico.reissmann@gmail.com>
+# See COPYING for terms of redistribution.
+
+LIBJLC_HLS_SRC = \
+	libjlc-hls/src/cmdline.cpp \
+	libjlc-hls/src/command.cpp \
+
+JLC_HLS_SRC = \
+	libjlc-hls/src/jlc-hls.cpp \
+
+TOOLPATHS = \
+" \
+\#ifndef JLM_JLC_HLS_TOOLPATHS_HPP\n \
+\#define JLM_JLC_HLS_TOOLPATHS_HPP\n \
+\n \
+\#include <jlm/util/file.hpp>\n \
+\n \
+namespace jlm {\n \
+\n \
+  filepath firtoolpath(\"$(FIRTOOL)\");\n \
+  filepath verilatorpath(\"$(VERILATOR_BIN)\");\n \
+  filepath verilatorrootpath(\"$(VERILATOR_ROOT)\");\n \
+\n \
+}\n \
+\n \
+\#endif \
+"
+TOOLPATHSFILE = $(JLM_ROOT)/libjlc-hls/include/jlc-hls/toolpaths.hpp
+
+$(TOOLPATHSFILE):
+	@printf $(TOOLPATHS) > $@
+
+.PHONY: libjlc-hls-debug
+libjlc-hls-debug: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG -DJLM_ENABLE_ASSERTS
+libjlc-hls-debug: $(JLM_ROOT)/libjlc-hls.a
+
+.PHONY: libjlc-hls-release
+libjlc-hls-release: CXXFLAGS += -O3
+libjlc-hls-release: $(JLM_ROOT)/libjlc-hls.a
+
+$(JLM_ROOT)/libjlc-hls.a: CPPFLAGS += -I$(JLM_ROOT)/libjlc-hls/include -I$(JLM_ROOT)/libjlc/include -I$(JLM_ROOT)/libjlm/include -I$(shell $(LLVMCONFIG) --includedir)
+$(JLM_ROOT)/libjlc-hls.a: CXXFLAGS += --std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Wfatal-errors
+$(JLM_ROOT)/libjlc-hls.a: $(TOOLPATHSFILE) $(patsubst %.cpp, $(JLM_ROOT)/%.la, $(LIBJLC_HLS_SRC))
+
+.PHONY: jlc-hls-debug
+jlc-hls-debug: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG -DJLM_ENABLE_ASSERTS
+jlc-hls-debug: jive-debug $(JLM_ROOT)/libjlm.a $(JLM_ROOT)/libjlc-hls.a $(JLM_ROOT)/bin/jlc-hls
+
+.PHONY: jlc-hls-release
+jlc-hls-release: CXXFLAGS += -O3
+jlc-hls-release: jive-release $(JLM_ROOT)/libjlm.a $(JLM_ROOT)/libjlc-hls.a $(JLM_ROOT)/bin/jlc-hls
+
+$(JLM_ROOT)/bin/jlc-hls: CPPFLAGS += -I$(JLM_ROOT)/libjive/include -I$(JLM_ROOT)/libjlc-hls/include -I$(JLM_ROOT)/libjlm/include -I$(shell $(LLVMCONFIG) --includedir)
+$(JLM_ROOT)/bin/jlc-hls: CXXFLAGS += --std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Wfatal-errors
+$(JLM_ROOT)/bin/jlc-hls: LDFLAGS  += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -L$(JLM_ROOT)/ -ljlc-hls -ljlm -ljive
+$(JLM_ROOT)/bin/jlc-hls: $(patsubst %.cpp, $(JLM_ROOT)/%.o, $(JLC_HLS_SRC)) $(JLM_ROOT)/libjive.a $(JLM_ROOT)/libjlm.a $(JLM_ROOT)/libjlc-hls.a
+	@mkdir -p $(JLM_ROOT)/bin
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
+
+.PHONY: libjlchls-clean
+libjlchls-clean:
+	@find  $(JLM_ROOT)/libjlc-hls/ -name "*.o" -o -name "*.la" -o -name "*.a" | grep -v external | xargs rm -rf
+	@rm -f $(TOOLPATHSFILE)
+	@rm -rf $(JLM_ROOT)/libjlc-hls.a
+	@rm -rf $(JLM_ROOT)/bin/jlc-hls

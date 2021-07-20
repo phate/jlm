@@ -8,4 +8,6 @@ check.log
 tests/test-runner
 .Makefile.override
 libjlc/include/jlc/llvmpaths.hpp
+libjlc-hls/include/jlc-hls/toolpaths.hpp
+.idea
 docs/html

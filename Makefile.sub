@@ -15,11 +15,17 @@ echo ""
 echo "jlm-opt-debug          Compile jlm optimizer in debug mode"
 echo "jlm-opt-release        Compile jlm optimizer in release mode"
 echo ""
+echo "jlm-hls-debug          Compile jlm HLS tool in debug mode"
+echo "jlm-hls-release        Compile jlm HLS tool in release mode"
+echo ""
 echo "libjlm-debug           Compile jlm library in debug mode"
 echo "libjlm-release         Compile jlm library in release mode"
 echo ""
 echo "libjlc-debug           Compile jlc library in debug mode"
 echo "libjlc-release         Compile jlc library in release mode"
+echo ""
+echo "jlc-hls-debug           Compile jlc-hls in debug mode"
+echo "jlc-hls-release         Compile jlc-hls in release mode"
 endef
 
 # Try to detect llvm-config 
@@ -40,18 +46,21 @@ endif
 include $(JLM_ROOT)/libjive/Makefile.sub
 include $(JLM_ROOT)/libjlm/Makefile.sub
 include $(JLM_ROOT)/libjlc/Makefile.sub
+include $(JLM_ROOT)/libjlc-hls/Makefile.sub
 include $(JLM_ROOT)/jlm-print/Makefile.sub
 include $(JLM_ROOT)/jlm-opt/Makefile.sub
 include $(JLM_ROOT)/docs/Makefile.sub
+include $(JLM_ROOT)/jlm-hls/Makefile.sub
+include $(JLM_ROOT)/jlm-hls-extract/Makefile.sub
 
 .PHONY: jlm-debug
-jlm-debug: libjlm-debug libjlc-debug jlm-print-debug jlm-opt-debug jlc-debug
+jlm-debug: libjlm-debug libjlc-debug jlm-print-debug jlm-opt-debug jlc-debug jlm-hls-debug jlm-hls-extract-debug libjlc-hls-debug jlc-hls-debug
 
 .PHONY: jlm-release
-jlm-release: libjlm-release libjlc-release jlm-print-release jlm-opt-release jlc-release
+jlm-release: libjlm-release libjlc-release jlm-print-release jlm-opt-release jlc-release jlm-hls-release jlm-hls-extract-release libjlc-hls-release jlc-hls-release
 
 .PHONY: jlm-clean
-jlm-clean: libjlc-clean libjlm-clean jlmopt-clean jlmprint-clean
+jlm-clean: libjlc-clean libjlm-clean jlmopt-clean jlmprint-clean jlmhls-clean jlmhlsextract-clean libjlchls-clean
 	@rm -rf $(JLM_ROOT)/bin
 	@rm -rf $(JLM_ROOT)/tests/test-runner
 	@rm -rf $(JLM_ROOT)/utests.log
