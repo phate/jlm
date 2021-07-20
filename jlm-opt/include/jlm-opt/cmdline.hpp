@@ -31,6 +31,10 @@ public:
 	outputformat format;
 	StatisticsDescriptor sd;
 	std::vector<jlm::optimization*> optimizations;
+	std::string hls_file;
+	std::string hls_function;
+	std::string outfolder;
+	bool circt = false;
 };
 
 void
