@@ -84,11 +84,11 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 	, cl::desc(desc)
 	, cl::value_desc("file"));
 
-  cl::list<StatisticsDescriptor::StatisticsId> printStatistics(
+    cl::list<StatisticsDescriptor::StatisticsId> printStatistics(
     cl::values(
         clEnumValN(StatisticsDescriptor::StatisticsId::Aggregation,
                    "print-aggregation-time",
-                  "Write aggregation statistics to file."),
+                   "Write aggregation statistics to file."),
         clEnumValN(StatisticsDescriptor::StatisticsId::Annotation,
                    "print-annotation-time",
                    "Write annotation statistics to file."),
@@ -169,6 +169,27 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 		, clEnumValN(jlm::optimizationid::url, "url", "Loop unrolling"))
 	, cl::desc("Perform optimization"));
 
+	cl::opt<std::string> hls_file(
+	  "hls-file"
+	, cl::desc("The file to apply the HLS backend on")
+	, cl::value_desc("hls-file"));
+
+	cl::opt<std::string> hls_function(
+	  "hls-function"
+	, cl::Prefix
+	, cl::desc("function that should be accelerated")
+	, cl::value_desc("hls-function"));
+
+	cl::opt<std::string> outfolder(
+	  "outfolder"
+	, cl::desc("Output folder for HLS related files")
+	, cl::value_desc("outfolder"));
+
+	cl::opt<bool> circt(
+	  "circt"
+	, cl::Prefix
+	, cl::desc("Use circt to generate FIRRTL"));
+
 	cl::ParseCommandLineOptions(argc, argv);
 
 	if (!ofile.empty())
@@ -187,7 +208,11 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 	options.ifile = ifile;
 	options.format = format;
 	options.optimizations = optimizations;
-  options.sd.SetPrintStatisticsIds(printStatisticsIds);
+	options.sd.SetPrintStatisticsIds(printStatisticsIds);
+	options.hls_file = hls_file;
+	options.hls_function = hls_function;
+	options.outfolder = outfolder;
+	options.circt = circt;
 }
 
 }
