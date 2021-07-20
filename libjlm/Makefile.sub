@@ -44,6 +44,7 @@ LIBJLM_SRC = \
 	libjlm/src/ir/tac.cpp \
 	libjlm/src/ir/types.cpp \
 	libjlm/src/ir/variable.cpp \
+	libjlm/src/ir/hls/hls.cpp \
 	\
 	libjlm/src/opt/alias-analyses/BasicEncoder.cpp \
 	libjlm/src/opt/alias-analyses/MemoryStateEncoder.cpp \
@@ -63,6 +64,24 @@ LIBJLM_SRC = \
 	libjlm/src/opt/unroll.cpp \
 	\
 	libjlm/src/util/Statistics.cpp \
+	\
+	libjlm/src/backend/hls/rvsdg2rhls/add-triggers.cpp \
+	libjlm/src/backend/hls/rvsdg2rhls/gamma-conv.cpp \
+	libjlm/src/backend/hls/rvsdg2rhls/theta-conv.cpp \
+	libjlm/src/backend/hls/rvsdg2rhls/add-sinks.cpp \
+	libjlm/src/backend/hls/rvsdg2rhls/add-forks.cpp \
+	libjlm/src/backend/hls/rvsdg2rhls/check-rhls.cpp \
+	libjlm/src/backend/hls/rvsdg2rhls/rhls-dne.cpp \
+	libjlm/src/backend/hls/rvsdg2rhls/remove-unused-state.cpp \
+	libjlm/src/backend/hls/rvsdg2rhls/rvsdg2rhls.cpp \
+	libjlm/src/backend/hls/rvsdg2rhls/add-prints.cpp \
+	libjlm/src/backend/hls/rvsdg2rhls/add-buffers.cpp \
+	\
+	libjlm/src/backend/hls/rhls2firrtl/base-hls.cpp \
+	libjlm/src/backend/hls/rhls2firrtl/dot-hls.cpp \
+	libjlm/src/backend/hls/rhls2firrtl/verilator-harness-hls.cpp \
+	libjlm/src/backend/hls/rhls2firrtl/firrtl-hls.cpp \
+	libjlm/src/backend/hls/rhls2firrtl/mlirgen.cpp \
 
 .PHONY: libjlm-debug
 libjlm-debug: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG -DJLM_ENABLE_ASSERTS
