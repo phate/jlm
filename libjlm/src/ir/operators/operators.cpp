@@ -480,10 +480,10 @@ ConstantFP::~ConstantFP()
 bool
 ConstantFP::operator==(const operation & other) const noexcept
 {
-	auto op = dynamic_cast<const jlm::ConstantFP*>(&other);
+	auto op = dynamic_cast<const ConstantFP*>(&other);
 	return op
-	    && op->result(0) == result(0)
-	    && op->constant().compare(constant()) == llvm::APFloatBase::cmpEqual;
+	    && size() == op->size()
+	    && constant().bitwiseIsEqual(op->constant());
 }
 
 std::string
