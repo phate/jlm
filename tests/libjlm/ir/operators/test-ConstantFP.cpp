@@ -12,10 +12,12 @@ test_equality()
 {
 	using namespace jlm;
 
-	ConstantFP fp1(fpsize::half, llvm::APFloat(0.0));
-	ConstantFP fp2(fpsize::flt, llvm::APFloat(0.0));
+	ConstantFP c1(fpsize::half, llvm::APFloat(0.0));
+	ConstantFP c2(fpsize::flt, llvm::APFloat(0.0));
+	ConstantFP c3(fpsize::flt, llvm::APFloat(-0.0));
 
-	assert(fp1 != fp2);
+	assert(c1 != c2);
+	assert(c2 != c3);
 }
 
 static int
