@@ -12,8 +12,8 @@ test_equality()
 {
 	using namespace jlm;
 
-	fpconstant_op fp1(fpsize::half, llvm::APFloat(0.0));
-	fpconstant_op fp2(fpsize::flt, llvm::APFloat(0.0));
+	ConstantFP fp1(fpsize::half, llvm::APFloat(0.0));
+	ConstantFP fp2(fpsize::flt, llvm::APFloat(0.0));
 
 	assert(fp1 != fp2);
 }
@@ -26,4 +26,4 @@ test()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/ir/operators/test-fpconstant", test)
+JLM_UNIT_TEST_REGISTER("libjlm/ir/operators/test-ConstantFP", test)

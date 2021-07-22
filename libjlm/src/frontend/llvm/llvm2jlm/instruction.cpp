@@ -141,7 +141,7 @@ convert_constantFP(
 	auto c = llvm::cast<llvm::ConstantFP>(constant);
 
 	auto type = convert_type(c->getType(), ctx);
-	tacs.push_back(fpconstant_op::create(c->getValueAPF(), *type));
+	tacs.push_back(ConstantFP::create(c->getValueAPF(), *type));
 
 	return tacs.back()->result(0);
 }
