@@ -810,13 +810,13 @@ public:
 
 /* floating point constant operator */
 
-class fpconstant_op final : public jive::simple_op {
+class ConstantFP final : public jive::simple_op {
 public:
 	virtual
-	~fpconstant_op();
+	~ConstantFP();
 
 	inline
-	fpconstant_op(const jlm::fpsize & size, const llvm::APFloat & constant)
+	ConstantFP(const jlm::fpsize & size, const llvm::APFloat & constant)
 	: simple_op({}, {fptype(size)})
 	, constant_(constant)
 	{}
@@ -850,7 +850,7 @@ public:
 		auto ft = dynamic_cast<const jlm::fptype*>(&type);
 		if (!ft) throw jlm::error("expected floating point type.");
 
-		jlm::fpconstant_op op(ft->size(), constant);
+		jlm::ConstantFP op(ft->size(), constant);
 		return tac::create(op, {});
 	}
 

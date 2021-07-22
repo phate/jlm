@@ -144,17 +144,14 @@ convert_ctlconstant(
 	return llvm::ConstantInt::get(type, cop.value().alternative());
 }
 
-static inline llvm::Value *
-convert_fpconstant(
-	const jive::simple_op & op,
+static llvm::Value *
+convert(
+	const ConstantFP & op,
 	const std::vector<const variable*> &,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_ASSERT(is<fpconstant_op>(op));
-	auto & cop = *static_cast<const jlm::fpconstant_op*>(&op);
-
-	return llvm::ConstantFP::get(builder.getContext(), cop.constant());
+	return llvm::ConstantFP::get(builder.getContext(), op.constant());
 }
 
 static inline llvm::Value *
@@ -858,7 +855,7 @@ convert_operation(
 	> map({
 	  {typeid(jive::bitconstant_op), convert_bitconstant}
 	, {typeid(jive::ctlconstant_op), convert_ctlconstant}
-	, {std::type_index(typeid(jlm::fpconstant_op)), convert_fpconstant}
+	, {typeid(ConstantFP), convert<ConstantFP>}
 	, {std::type_index(typeid(jlm::undef_constant_op)), convert_undef}
 	, {typeid(jive::match_op), convert_match}
 	, {std::type_index(typeid(jlm::assignment_op)), convert_assignment}

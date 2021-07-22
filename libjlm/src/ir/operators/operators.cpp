@@ -474,20 +474,20 @@ zext_op::reduce_operand(
 
 /* floating point constant operator */
 
-fpconstant_op::~fpconstant_op()
+ConstantFP::~ConstantFP()
 {}
 
 bool
-fpconstant_op::operator==(const operation & other) const noexcept
+ConstantFP::operator==(const operation & other) const noexcept
 {
-	auto op = dynamic_cast<const jlm::fpconstant_op*>(&other);
+	auto op = dynamic_cast<const jlm::ConstantFP*>(&other);
 	return op
 	    && op->result(0) == result(0)
 	    && op->constant().compare(constant()) == llvm::APFloatBase::cmpEqual;
 }
 
 std::string
-fpconstant_op::debug_string() const
+ConstantFP::debug_string() const
 {
 	llvm::SmallVector<char, 32> v;
 	constant().toString(v, 32, 0);
@@ -501,9 +501,9 @@ fpconstant_op::debug_string() const
 }
 
 std::unique_ptr<jive::operation>
-fpconstant_op::copy() const
+ConstantFP::copy() const
 {
-	return std::unique_ptr<jive::operation>(new fpconstant_op(*this));
+	return std::unique_ptr<jive::operation>(new ConstantFP(*this));
 }
 
 /* floating point comparison operator */
