@@ -254,7 +254,7 @@ convert_constantDataVector(
 }
 
 static const variable *
-convert_constantStruct(
+ConvertConstantStruct(
 	llvm::Constant * c,
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx)
@@ -266,7 +266,7 @@ convert_constantStruct(
 		elements.push_back(convert_constant(c->getAggregateElement(n), tacs, ctx));
 
 	auto type = convert_type(c->getType(), ctx);
-	tacs.push_back(struct_constant_op::create(elements, *type));
+	tacs.push_back(ConstantStruct::create(elements, *type));
 
 	return tacs.back()->result(0);
 }
@@ -323,21 +323,21 @@ convert_constant(
 			std::vector<std::unique_ptr<jlm::tac>>&,
 			context & ctx)
 	> cmap({
-		{llvm::Value::ConstantIntVal, convert_int_constant}
-	,	{llvm::Value::UndefValueVal, convert_undefvalue}
-	,	{llvm::Value::ConstantExprVal, convert_constantExpr}
-	,	{llvm::Value::ConstantFPVal, convert_constantFP}
-	,	{llvm::Value::GlobalVariableVal, convert_globalVariable}
-	,	{llvm::Value::ConstantPointerNullVal, convert_constantPointerNull}
-	,	{llvm::Value::BlockAddressVal, convert_blockAddress}
+		{llvm::Value::ConstantIntVal,           convert_int_constant}
+	,	{llvm::Value::UndefValueVal,            convert_undefvalue}
+	,	{llvm::Value::ConstantExprVal,          convert_constantExpr}
+	,	{llvm::Value::ConstantFPVal,            convert_constantFP}
+	,	{llvm::Value::GlobalVariableVal,        convert_globalVariable}
+	,	{llvm::Value::ConstantPointerNullVal,   convert_constantPointerNull}
+	,	{llvm::Value::BlockAddressVal,          convert_blockAddress}
 	,	{llvm::Value::ConstantAggregateZeroVal, convert_constantAggregateZero}
-	,	{llvm::Value::ConstantArrayVal, convert_constantArray}
-	,	{llvm::Value::ConstantDataArrayVal, convert_constantDataArray}
-	,	{llvm::Value::ConstantDataVectorVal, convert_constantDataVector}
-	,	{llvm::Value::ConstantStructVal, convert_constantStruct}
-	,	{llvm::Value::ConstantVectorVal, convert_constantVector}
-	,	{llvm::Value::GlobalAliasVal, convert_globalAlias}
-	,	{llvm::Value::FunctionVal, convert_function}
+	,	{llvm::Value::ConstantArrayVal,         convert_constantArray}
+	,	{llvm::Value::ConstantDataArrayVal,     convert_constantDataArray}
+	,	{llvm::Value::ConstantDataVectorVal,    convert_constantDataVector}
+	,	{llvm::Value::ConstantStructVal,        ConvertConstantStruct}
+	,	{llvm::Value::ConstantVectorVal,        convert_constantVector}
+	,	{llvm::Value::GlobalAliasVal,           convert_globalAlias}
+	,	{llvm::Value::FunctionVal,              convert_function}
 	});
 
 	if (cmap.find(c->getValueID()) == cmap.end())
