@@ -1416,15 +1416,15 @@ private:
 	}
 };
 
-/* struct constant operator */
+/* ConstantStruct operator */
 
-class struct_constant_op final : public jive::simple_op {
+class ConstantStruct final : public jive::simple_op {
 public:
 	virtual
-	~struct_constant_op();
+	~ConstantStruct();
 
 	inline
-	struct_constant_op(const structtype & type)
+	ConstantStruct(const structtype & type)
 	: simple_op(create_srcports(type), {type})
 	{}
 
@@ -1451,7 +1451,7 @@ public:
 		auto rt = dynamic_cast<const structtype*>(&type);
 		if (!rt) throw jlm::error("expected struct type.");
 
-		struct_constant_op op(*rt);
+		ConstantStruct op(*rt);
 		return tac::create(op, elements);
 	}
 

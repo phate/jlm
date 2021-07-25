@@ -815,28 +815,29 @@ bitcast_op::reduce_operand(
 	JLM_UNREACHABLE("Not implemented!");
 }
 
-/* struct constant operator */
+/* ConstantStruct operator */
 
-struct_constant_op::~struct_constant_op()
+ConstantStruct::~ConstantStruct()
 {}
 
 bool
-struct_constant_op::operator==(const operation & other) const noexcept
+ConstantStruct::operator==(const operation & other) const noexcept
 {
-	auto op = dynamic_cast<const struct_constant_op*>(&other);
-	return op && op->result(0) == result(0);
+	auto op = dynamic_cast<const ConstantStruct*>(&other);
+	return op
+	    && op->result(0) == result(0);
 }
 
 std::string
-struct_constant_op::debug_string() const
+ConstantStruct::debug_string() const
 {
-	return "STRUCTCONSTANT";
+	return "ConstantStruct";
 }
 
 std::unique_ptr<jive::operation>
-struct_constant_op::copy() const
+ConstantStruct::copy() const
 {
-	return std::unique_ptr<jive::operation>(new struct_constant_op(*this));
+	return std::unique_ptr<jive::operation>(new ConstantStruct(*this));
 }
 
 /* trunc operator */

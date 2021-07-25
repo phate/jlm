@@ -532,20 +532,17 @@ convert_valist(
 }
 
 static inline llvm::Value *
-convert_struct_constant(
-	const jive::simple_op & op,
+convert(
+	const ConstantStruct & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_ASSERT(is<struct_constant_op>(op));
-	auto & cop = *static_cast<const jlm::struct_constant_op*>(&op);
-
 	std::vector<llvm::Constant*> operands;
 	for (const auto & arg : args)
 		operands.push_back(llvm::cast<llvm::Constant>(ctx.value(arg)));
 
-	auto t = convert_type(cop.type(), ctx);
+	auto t = convert_type(op.type(), ctx);
 	return llvm::ConstantStruct::get(t, operands);
 }
 
@@ -870,7 +867,7 @@ convert_operation(
 	, {std::type_index(typeid(jlm::fpcmp_op)), convert_fpcmp}
 	, {std::type_index(typeid(jlm::fpbin_op)), convert_fpbin}
 	, {std::type_index(typeid(jlm::valist_op)), convert_valist}
-	, {std::type_index(typeid(jlm::struct_constant_op)), convert_struct_constant}
+	, {typeid(ConstantStruct), convert<ConstantStruct>}
 	, {std::type_index(typeid(jlm::ptr_constant_null_op)), convert_ptr_constant_null}
 	, {std::type_index(typeid(jlm::select_op)), convert_select}
 	, {typeid(ConstantArray), convert<ConstantArray>}
