@@ -1722,15 +1722,14 @@ public:
 	}
 };
 
-/* constant aggregate zero */
+/* ConstantAggregateZero operator */
 
-class constant_aggregate_zero_op final : public jive::simple_op {
+class ConstantAggregateZero final : public jive::simple_op {
 public:
 	virtual
-	~constant_aggregate_zero_op();
+	~ConstantAggregateZero();
 
-	inline
-	constant_aggregate_zero_op(const jive::type & type)
+	ConstantAggregateZero(const jive::type & type)
 	: simple_op({}, {type})
 	{
 		auto st = dynamic_cast<const structtype*>(&type);
@@ -1752,7 +1751,7 @@ public:
 	static std::unique_ptr<jlm::tac>
 	create(const jive::type & type)
 	{
-		constant_aggregate_zero_op op(type);
+		ConstantAggregateZero op(type);
 		return tac::create(op, {});
 	}
 };

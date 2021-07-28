@@ -426,13 +426,12 @@ convert(
 }
 
 static llvm::Value *
-convert_constant_aggregate_zero(
-	const jive::simple_op & op,
+convert(
+	const ConstantAggregateZero & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_ASSERT(is<constant_aggregate_zero_op>(op));
 	auto type = convert_type(op.result(0).type(), ctx);
 	return llvm::ConstantAggregateZero::get(type);
 }
@@ -871,7 +870,7 @@ convert_operation(
 	, {std::type_index(typeid(jlm::ptr_constant_null_op)), convert_ptr_constant_null}
 	, {std::type_index(typeid(jlm::select_op)), convert_select}
 	, {typeid(ConstantArray), convert<ConstantArray>}
-	, {typeid(constant_aggregate_zero_op), convert_constant_aggregate_zero}
+	, {typeid(ConstantAggregateZero), convert<ConstantAggregateZero>}
 	, {typeid(ctl2bits_op), convert_ctl2bits}
 	, {typeid(constantvector_op), convert_constantvector}
 	, {typeid(constant_data_vector_op), convert_constantdatavector}
