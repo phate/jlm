@@ -987,28 +987,29 @@ ConstantArray::copy() const
 	return std::unique_ptr<jive::operation>(new ConstantArray(*this));
 }
 
-/* constant aggregate zero operator */
+/* ConstantAggregateZero operator */
 
-constant_aggregate_zero_op::~constant_aggregate_zero_op()
+ConstantAggregateZero::~ConstantAggregateZero()
 {}
 
 bool
-constant_aggregate_zero_op::operator==(const operation & other) const noexcept
+ConstantAggregateZero::operator==(const operation & other) const noexcept
 {
-	auto op = dynamic_cast<const constant_aggregate_zero_op*>(&other);
-	return op && op->result(0) == result(0);
+	auto op = dynamic_cast<const ConstantAggregateZero*>(&other);
+	return op
+	    && op->result(0) == result(0);
 }
 
 std::string
-constant_aggregate_zero_op::debug_string() const
+ConstantAggregateZero::debug_string() const
 {
-	return "CONSTANT_AGGREGATE_ZERO";
+	return "ConstantAggregateZero";
 }
 
 std::unique_ptr<jive::operation>
-constant_aggregate_zero_op::copy() const
+ConstantAggregateZero::copy() const
 {
-	return std::unique_ptr<jive::operation>(new constant_aggregate_zero_op(*this));
+	return std::unique_ptr<jive::operation>(new ConstantAggregateZero(*this));
 }
 
 /* extractelement operator */

@@ -191,7 +191,7 @@ convert_constantAggregateZero(
 	JLM_ASSERT(c->getValueID() == llvm::Value::ConstantAggregateZeroVal);
 
 	auto type = convert_type(c->getType(), ctx);
-	tacs.push_back(constant_aggregate_zero_op::create(*type));
+	tacs.push_back(ConstantAggregateZero::create(*type));
 
 	return tacs.back()->result(0);
 }
