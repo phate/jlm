@@ -746,7 +746,7 @@ convert_cast(
 
 static llvm::Value *
 convert(
-	const extractvalue_op & op,
+	const ExtractValue & op,
 	const std::vector<const variable*> & operands,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -880,7 +880,7 @@ convert_operation(
 	, {typeid(vectorunary_op), convert_vectorunary}
 	, {typeid(vectorbinary_op), convert_vectorbinary}
 	, {typeid(vectorselect_op), convert<vectorselect_op>}
-	, {typeid(extractvalue_op), convert<extractvalue_op>}
+	, {typeid(ExtractValue), convert<ExtractValue>}
 
 	, {typeid(call_op), convert_call}
 	, {typeid(malloc_op), convert<malloc_op>}
