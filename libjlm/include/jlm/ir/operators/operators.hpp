@@ -2165,16 +2165,16 @@ public:
 	}
 };
 
-/* extractvalue operator */
+/* ExtractValue operator */
 
-class extractvalue_op final : public jive::simple_op {
+class ExtractValue final : public jive::simple_op {
 	typedef std::vector<unsigned>::const_iterator const_iterator;
 public:
 	virtual
-	~extractvalue_op();
+	~ExtractValue();
 
 	inline
-	extractvalue_op(
+	ExtractValue(
 		const jive::type & aggtype,
 		const std::vector<unsigned> & indices)
 	: simple_op({aggtype}, {dsttype(aggtype, indices)})
@@ -2205,12 +2205,18 @@ public:
 		return indices_.end();
 	}
 
+	const jive::valuetype &
+	type() const noexcept
+	{
+		return *static_cast<const jive::valuetype*>(&argument(0).type());
+	}
+
 	static inline std::unique_ptr<jlm::tac>
 	create(
 		const jlm::variable * aggregate,
 		const std::vector<unsigned> & indices)
 	{
-		extractvalue_op op(aggregate->type(), indices);
+		ExtractValue op(aggregate->type(), indices);
 		return tac::create(op, {aggregate});
 	}
 

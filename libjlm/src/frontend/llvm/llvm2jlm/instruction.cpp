@@ -830,14 +830,14 @@ convert_alloca_instruction(llvm::Instruction * instruction, tacsvector_t & tacs,
 	return result;
 }
 
-static inline const variable *
+static const variable *
 convert_extractvalue(llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
 {
 	JLM_ASSERT(i->getOpcode() == llvm::Instruction::ExtractValue);
 	auto ev = llvm::dyn_cast<llvm::ExtractValueInst>(i);
 
 	auto aggregate = convert_value(ev->getOperand(0), tacs, ctx);
-	tacs.push_back(extractvalue_op::create(aggregate, ev->getIndices()));
+	tacs.push_back(ExtractValue::create(aggregate, ev->getIndices()));
 
 	return tacs.back()->result(0);
 }

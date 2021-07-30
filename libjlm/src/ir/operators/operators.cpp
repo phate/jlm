@@ -1190,28 +1190,28 @@ constant_data_vector_op::copy() const
 
 /* extractvalue operator */
 
-extractvalue_op::~extractvalue_op()
+ExtractValue::~ExtractValue()
 {}
 
 bool
-extractvalue_op::operator==(const jive::operation & other) const noexcept
+ExtractValue::operator==(const jive::operation & other) const noexcept
 {
-	auto op = dynamic_cast<const extractvalue_op*>(&other);
+	auto op = dynamic_cast<const ExtractValue*>(&other);
 	return op
 	    && op->indices_ == indices_
-	    && op->argument(0) == argument(0);
+	    && op->type() == type();
 }
 
 std::string
-extractvalue_op::debug_string() const
+ExtractValue::debug_string() const
 {
-	return "EXTRACTVALUE";
+	return "ExtractValue";
 }
 
 std::unique_ptr<jive::operation>
-extractvalue_op::copy() const
+ExtractValue::copy() const
 {
-	return std::unique_ptr<jive::operation>(new extractvalue_op(*this));
+	return std::unique_ptr<jive::operation>(new ExtractValue(*this));
 }
 
 /* loop state mux operator */
