@@ -7,6 +7,7 @@ TESTS += \
 	libjlm/ir/test-cfg-node \
 	libjlm/ir/test-cfg-orderings \
 	libjlm/ir/test-cfg-prune \
+	libjlm/ir/test-cfg-purge \
 	libjlm/ir/test-cfg-validity \
 	libjlm/ir/test-domtree \
 	libjlm/ir/test-ssa-destruction \

@@ -629,17 +629,35 @@ straighten(jlm::cfg & cfg)
 void
 purge(jlm::cfg & cfg)
 {
+	JLM_ASSERT(is_valid(cfg));
+
 	auto it = cfg.begin();
 	while (it != cfg.end()) {
-		auto bb = dynamic_cast<const basic_block*>(it.node());
-		if (bb->tacs().ntacs() == 0) {
-			JLM_ASSERT(it.node()->noutedges() == 1);
-			it.node()->divert_inedges(it.node()->outedge(0)->sink());
-			it = cfg.remove_node(it);
-		} else {
+		auto bb = it.node();
+
+		/*
+			Ignore basic blocks with instructions
+		*/
+		if (bb->ntacs() != 0) {
 			it++;
+			continue;
 		}
+
+		JLM_ASSERT(bb->noutedges() == 1);
+		auto outedge = bb->outedge(0);
+		/*
+			Ignore endless loops
+		*/
+		if (outedge->sink() == bb) {
+			it++;
+			continue;
+		}
+
+		bb->divert_inedges(outedge->sink());
+		it = cfg.remove_node(it);
 	}
+
+	JLM_ASSERT(is_valid(cfg));
 }
 
 /*
