@@ -8,6 +8,7 @@
 
 #include <jlm/util/iterator_range.hpp>
 
+#include <memory>
 #include <unordered_set>
 #include <vector>
 
