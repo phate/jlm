@@ -247,6 +247,8 @@ is_reducible(const jlm::cfg & cfg);
 void
 straighten(jlm::cfg & cfg);
 
+/** \brief Remove all basic blocks without instructions
+*/
 void
 purge(jlm::cfg & cfg);
 
