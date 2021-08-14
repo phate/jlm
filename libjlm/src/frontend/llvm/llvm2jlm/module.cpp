@@ -233,6 +233,66 @@ convert_argument(const llvm::Argument & argument, context & ctx)
 	return jlm::argument::create(name, *type, attributes);
 }
 
+static void
+EnsureSingleInEdgeToExitNode(jlm::cfg & cfg)
+{
+	auto exitNode = cfg.exit();
+
+	if (exitNode->ninedges() == 0) {
+		/*
+			LLVM can produce CFGs that have no incoming edge to the exit node. This can happen if
+			endless loops are present in the code. For example, this code
+
+			\code{.cpp}
+				int foo()
+				{
+					while (1) {
+						printf("foo\n");
+					}
+
+					return 0;
+				}
+			\endcode
+
+			results in a JLM CFG with no incoming edge to the exit node.
+
+			We solve this problem by finding the first SCC with no exit edge, i.e., an endless loop, and
+			restructure it to an SCC with an exit edge to the CFG's exit node.
+		*/
+		auto stronglyConnectedComponents = find_sccs(cfg);
+		for (auto stronglyConnectedComponent : stronglyConnectedComponents) {
+			auto structure = sccstructure::create(stronglyConnectedComponent);
+
+			if (structure->nxedges() == 0) {
+				auto repetitionEdge = *structure->redges().begin();
+
+				auto basicBlock = basic_block::create(cfg);
+
+				jive::ctlconstant_op op(jive::ctlvalue_repr(1, 2));
+				auto operand = basicBlock->append_last(tac::create(op, {}))->result(0);
+				basicBlock->append_last(branch_op::create(2, operand));
+
+				basicBlock->add_outedge(exitNode);
+				basicBlock->add_outedge(repetitionEdge->sink());
+
+				repetitionEdge->divert(basicBlock);
+				break;
+			}
+		}
+	}
+
+	if (exitNode->ninedges() == 1)
+		return;
+
+	/*
+		We have multiple incoming edges to the exit node. Insert an empty basic block, divert all
+		incoming edges to this block, and add an outgoing edge from this block to the exit node.
+	*/
+	auto basicBlock = basic_block::create(cfg);
+	exitNode->divert_inedges(basicBlock);
+	basicBlock->add_outedge(exitNode);
+}
+
 static std::unique_ptr<jlm::cfg>
 create_cfg(llvm::Function & f, context & ctx)
 {
@@ -302,12 +362,7 @@ create_cfg(llvm::Function & f, context & ctx)
 	auto phis = convert_instructions(f, ctx);
 	patch_phi_operands(phis, ctx);
 
-	/* ensure that exit node has only one incoming edge */
-	if (cfg->exit()->ninedges() > 1) {
-		auto bb = basic_block::create(*cfg);
-		cfg->exit()->divert_inedges(bb);
-		bb->add_outedge(cfg->exit());
-	}
+	EnsureSingleInEdgeToExitNode(*cfg);
 
 	straighten(*cfg);
 	prune(*cfg);
