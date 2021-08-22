@@ -3,14 +3,18 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <test-operation.hpp>
 #include <test-registry.hpp>
 #include <test-types.hpp>
 
 #include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/ir/operators.hpp>
 
+#include <jive/rvsdg/theta.hpp>
+#include <jive/view.hpp>
+
 static void
-test_trace_function_input()
+test_trace_function_input1()
 {
 	using namespace jlm;
 
@@ -45,10 +49,65 @@ test_trace_function_input()
 	assert(load[0] == trace_function_input(*callnode));
 }
 
+static void
+test_trace_function_input2()
+{
+	using namespace jlm;
+
+	// Arrange
+	valuetype vt;
+	jive::fcttype gtype({}, {&vt});
+	jive::fcttype ftype({}, {&vt});
+
+	auto module = rvsdg_module::create(filepath(""), "", "");
+	auto graph = module->graph();
+
+	auto nf = graph->node_normal_form(typeid(jive::operation));
+	nf->set_mutable(false);
+
+	/* function g */
+	auto g = lambda::node::create(graph->root(), gtype, "g", linkage::external_linkage);
+	auto constant = test_op::create(g->subregion(), {}, {&vt});
+	g->finalize({constant->output(0)});
+
+	/* function f */
+	auto f = lambda::node::create(graph->root(), ftype, "f", linkage::external_linkage);
+	auto ctxg = f->add_ctxvar(g->output());
+
+	auto outerTheta = jive::theta_node::create(f->subregion());
+	auto otf = outerTheta->add_loopvar(ctxg);
+
+	auto innerTheta = jive::theta_node::create(outerTheta->subregion());
+	auto itf = innerTheta->add_loopvar(otf->argument());
+
+	auto predicate = jive_control_false(innerTheta->subregion());
+	auto gamma = jive::gamma_node::create(predicate, 2);
+	auto ev = gamma->add_entryvar(itf->argument());
+	auto xv = gamma->add_exitvar({ev->argument(0), ev->argument(1)});
+
+	itf->result()->divert_to(xv);
+	otf->result()->divert_to(itf);
+
+	auto call = call_op::create(otf, {});
+
+	f->finalize(call);
+	graph->add_export(f->output(), {ptrtype(f->type()), "f"});
+
+	jive::view(graph->root(), stdout);
+
+	// Act
+	auto callNode = jive::node_output::node(call[0]);
+	auto tracedOutput = trace_function_input(*static_cast<const jive::simple_node*>(callNode));
+
+	// Assert
+	assert(tracedOutput == g->output());
+}
+
 static int
 test()
 {
-	test_trace_function_input();
+	test_trace_function_input1();
+	test_trace_function_input2();
 
 	return 0;
 }
