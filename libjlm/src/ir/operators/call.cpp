@@ -45,6 +45,72 @@ call_op::copy() const
 	return std::unique_ptr<jive::operation>(new call_op(*this));
 }
 
+static jive::input *
+invariantInput(const jive::output & output);
+
+static jive::structural_input *
+invariantInput(const jive::gamma_output & output)
+{
+	size_t n;
+	jive::structural_input * input = nullptr;
+	for (n = 0; n < output.nresults(); n++) {
+		auto origin = output.result(n)->origin();
+
+		bool resultIsInvariant = false;
+		while (true) {
+			if (auto argument = dynamic_cast<const jive::argument*>(origin)) {
+				resultIsInvariant = true;
+				input = argument->input();
+				break;
+			}
+
+			if (auto input = invariantInput(*origin)) {
+				origin = input->origin();
+				continue;
+			}
+
+			break;
+		}
+
+		if (resultIsInvariant == false)
+			break;
+	}
+
+	return n == output.nresults() ? input : nullptr;
+}
+
+static jive::theta_input *
+invariantInput(const jive::theta_output & output)
+{
+	auto origin = output.result()->origin();
+
+	while (true) {
+		if (origin == output.argument())
+			return output.input();
+
+		if (auto input = invariantInput(*origin)) {
+			origin = input->origin();
+			continue;
+		}
+
+		break;
+	}
+
+	return nullptr;
+}
+
+static jive::input *
+invariantInput(const jive::output & output)
+{
+	if (auto thetaOutput = dynamic_cast<const jive::theta_output*>(&output))
+		return invariantInput(*thetaOutput);
+
+	if (auto gammaOutput = dynamic_cast<const jive::gamma_output*>(&output))
+		return invariantInput(*gammaOutput);
+
+	return nullptr;
+}
+
 jive::output *
 trace_function_input(const jive::simple_node & node)
 {
@@ -72,8 +138,8 @@ trace_function_input(const jive::simple_node & node)
 		}
 
 		if (auto output = is_gamma_output(origin)) {
-			if (auto new_origin = is_invariant(output)) {
-				origin = new_origin;
+			if (auto input = invariantInput(*output)) {
+				origin = input->origin();
 				continue;
 			}
 
@@ -86,8 +152,8 @@ trace_function_input(const jive::simple_node & node)
 		}
 
 		if (auto output = is_theta_output(origin)) {
-			if (is_invariant(output)) {
-				origin = output->input()->origin();
+			if (auto input = invariantInput(*output)) {
+				origin = input->origin();
 				continue;
 			}
 
