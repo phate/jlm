@@ -45,11 +45,17 @@ call_op::copy() const
 	return std::unique_ptr<jive::operation>(new call_op(*this));
 }
 
+using InvariantOutputMap = std::unordered_map<const jive::output*, jive::input*>;
+
 static jive::input *
-invariantInput(const jive::output & output);
+invariantInput(
+	const jive::output & output,
+	InvariantOutputMap & invariantOutputs);
 
 static jive::structural_input *
-invariantInput(const jive::gamma_output & output)
+invariantInput(
+	const jive::gamma_output & output,
+	InvariantOutputMap & invariantOutputs)
 {
 	size_t n;
 	jive::structural_input * input = nullptr;
@@ -64,7 +70,7 @@ invariantInput(const jive::gamma_output & output)
 				break;
 			}
 
-			if (auto input = invariantInput(*origin)) {
+			if (auto input = invariantInput(*origin, invariantOutputs)) {
 				origin = input->origin();
 				continue;
 			}
@@ -76,19 +82,29 @@ invariantInput(const jive::gamma_output & output)
 			break;
 	}
 
-	return n == output.nresults() ? input : nullptr;
+	if (n == output.nresults()) {
+		invariantOutputs[&output] = input;
+		return input;
+	}
+
+	invariantOutputs[&output] = nullptr;
+	return nullptr;
 }
 
 static jive::theta_input *
-invariantInput(const jive::theta_output & output)
+invariantInput(
+	const jive::theta_output & output,
+	InvariantOutputMap & invariantOutputs)
 {
 	auto origin = output.result()->origin();
 
 	while (true) {
-		if (origin == output.argument())
+		if (origin == output.argument()) {
+			invariantOutputs[&output] = output.input();
 			return output.input();
+		}
 
-		if (auto input = invariantInput(*origin)) {
+		if (auto input = invariantInput(*origin, invariantOutputs)) {
 			origin = input->origin();
 			continue;
 		}
@@ -96,19 +112,40 @@ invariantInput(const jive::theta_output & output)
 		break;
 	}
 
+	invariantOutputs[&output] = nullptr;
+	return nullptr;
+}
+
+static jive::input *
+invariantInput(
+	const jive::output & output,
+	InvariantOutputMap & invariantOutputs)
+{
+	/*
+		We already have seen the output, just return the corresponding input.
+	*/
+	if (invariantOutputs.find(&output) != invariantOutputs.end())
+		return invariantOutputs[&output];
+
+	if (auto thetaOutput = dynamic_cast<const jive::theta_output*>(&output))
+		return invariantInput(*thetaOutput, invariantOutputs);
+
+	if (auto thetaArgument = is_theta_argument(&output)) {
+		auto thetaInput = static_cast<const jive::theta_input*>(thetaArgument->input());
+		return invariantInput(*thetaInput->output(), invariantOutputs);
+	}
+
+	if (auto gammaOutput = dynamic_cast<const jive::gamma_output*>(&output))
+		return invariantInput(*gammaOutput, invariantOutputs);
+
 	return nullptr;
 }
 
 static jive::input *
 invariantInput(const jive::output & output)
 {
-	if (auto thetaOutput = dynamic_cast<const jive::theta_output*>(&output))
-		return invariantInput(*thetaOutput);
-
-	if (auto gammaOutput = dynamic_cast<const jive::gamma_output*>(&output))
-		return invariantInput(*gammaOutput);
-
-	return nullptr;
+	InvariantOutputMap invariantOutputs;
+	return invariantInput(output, invariantOutputs);
 }
 
 jive::output *
@@ -161,9 +198,8 @@ trace_function_input(const jive::simple_node & node)
 		}
 
 		if (auto argument = is_theta_argument(origin)) {
-			auto output = static_cast<const jive::theta_input*>(argument->input())->output();
-			if (is_invariant(output)) {
-				origin = argument->input()->origin();
+			if (auto input = invariantInput(*argument)) {
+				origin = input->origin();
 				continue;
 			}
 
@@ -192,7 +228,7 @@ trace_function_input(const jive::simple_node & node)
 			continue;
 		}
 
-		JLM_ASSERT(0 && "We should have never reached this statement.");
+		JLM_UNREACHABLE("We should have never reached this statement.");
 	}
 }
 
