@@ -131,34 +131,29 @@ mark(const jive::output * output, dnectx & ctx)
 	if (is_import(output))
 		return;
 
-	if (is_gamma_output(output)) {
-		auto gamma = static_cast<const jive::gamma_node*>(jive::node_output::node(output));
-		auto soutput = static_cast<const jive::structural_output*>(output);
-		mark(gamma->predicate()->origin(), ctx);
-		for (const auto & result : soutput->results)
+	if (auto gammaOutput = is_gamma_output(output)) {
+		mark(gammaOutput->node()->predicate()->origin(), ctx);
+		for (const auto & result : gammaOutput->results)
 			mark(result.origin(), ctx);
 		return;
 	}
 
-	if (is_gamma_argument(output)) {
-		auto argument = static_cast<const jive::argument*>(output);
+	if (auto argument = is_gamma_argument(output)) {
 		mark(argument->input()->origin(), ctx);
 		return;
 	}
 
-	if (dynamic_cast<const jive::theta_output*>(output)) {
-		auto lv = static_cast<const jive::theta_output*>(output);
-		mark(lv->node()->predicate()->origin(), ctx);
-		mark(lv->result()->origin(), ctx);
-		mark(lv->input()->origin(), ctx);
+	if (auto thetaOutput = is_theta_output(output)) {
+		mark(thetaOutput->node()->predicate()->origin(), ctx);
+		mark(thetaOutput->result()->origin(), ctx);
+		mark(thetaOutput->input()->origin(), ctx);
 		return;
 	}
 
-	if (is_theta_argument(output)) {
-		auto theta = output->region()->node();
-		auto argument = static_cast<const jive::argument*>(output);
-		mark(theta->output(argument->input()->index()), ctx);
-		mark(argument->input()->origin(), ctx);
+	if (auto thetaArgument = is_theta_argument(output)) {
+		auto thetaInput = static_cast<const jive::theta_input*>(thetaArgument->input());
+		mark(thetaInput->output(), ctx);
+		mark(thetaInput->origin(), ctx);
 		return;
 	}
 
@@ -355,11 +350,11 @@ sweep(jive::structural_node * node, const dnectx & ctx)
 		std::type_index
 	, void(*)(jive::structural_node*, const dnectx&)
 	> map({
-	  {std::type_index(typeid(jive::gamma_op)), sweep_gamma}
-	, {std::type_index(typeid(jive::theta_op)), sweep_theta}
-	, {typeid(lambda::operation), sweep_lambda}
+	  {typeid(jive::gamma_op),       sweep_gamma}
+	, {typeid(jive::theta_op),       sweep_theta}
+	, {typeid(lambda::operation),    sweep_lambda}
 	, {typeid(jive::phi::operation), sweep_phi}
-	, {typeid(delta::operation), sweep_delta}
+	, {typeid(delta::operation),     sweep_delta}
 	});
 
 	auto & op = node->operation();
