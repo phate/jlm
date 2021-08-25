@@ -93,7 +93,7 @@ test_trace_function_input2()
 	f->finalize(call);
 	graph->add_export(f->output(), {ptrtype(f->type()), "f"});
 
-	jive::view(graph->root(), stdout);
+//	jive::view(graph->root(), stdout);
 
 	// Act
 	auto callNode = jive::node_output::node(call[0]);
@@ -103,11 +103,65 @@ test_trace_function_input2()
 	assert(tracedOutput == g->output());
 }
 
+static void
+test_trace_function_input3()
+{
+	using namespace jlm;
+
+	// Arrange
+	valuetype vt;
+	jive::fcttype gtype({}, {&vt});
+	jive::fcttype ftype({}, {&vt});
+
+	auto module = rvsdg_module::create(filepath(""), "", "");
+	auto graph = module->graph();
+
+	auto nf = graph->node_normal_form(typeid(jive::operation));
+	nf->set_mutable(false);
+
+	/* function g */
+	auto g = lambda::node::create(graph->root(), gtype, "g", linkage::external_linkage);
+	auto c1 = test_op::create(g->subregion(), {}, {&vt});
+	g->finalize({c1->output(0)});
+
+	/* function f */
+	auto f = lambda::node::create(graph->root(), ftype, "f", linkage::external_linkage);
+	auto ctxg = f->add_ctxvar(g->output());
+
+	auto c2 = test_op::create(f->subregion(), {}, {&vt});
+
+	auto outerTheta = jive::theta_node::create(f->subregion());
+	auto otf = outerTheta->add_loopvar(ctxg);
+	auto oc2 = outerTheta->add_loopvar(c2->output(0));
+
+	auto innerTheta = jive::theta_node::create(outerTheta->subregion());
+	auto itf = innerTheta->add_loopvar(otf->argument());
+
+	auto call = call_op::create(itf, {});
+
+	otf->result()->divert_to(itf);
+	oc2->result()->divert_to(call[0]);
+
+	f->finalize({oc2});
+	graph->add_export(f->output(), {ptrtype(f->type()), "f"});
+
+	jive::view(graph->root(), stdout);
+
+	// Act
+	auto callNode = jive::node_output::node(call[0]);
+	auto tracedOutput = trace_function_input(*static_cast<const jive::simple_node*>(callNode));
+
+	// Assert
+	assert(tracedOutput == g->output());
+
+}
+
 static int
 test()
 {
 	test_trace_function_input1();
 	test_trace_function_input2();
+	test_trace_function_input3();
 
 	return 0;
 }
