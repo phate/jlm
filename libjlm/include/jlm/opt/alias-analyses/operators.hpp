@@ -13,7 +13,7 @@ namespace aa {
 
 /** \brief FIXME: write documentation
 */
-class lambda_aamux_op final : public memstatemux_op {
+class lambda_aamux_op final : public MemStateOperator {
 public:
 	~lambda_aamux_op() override;
 
@@ -23,7 +23,7 @@ private:
 		size_t nresults,
 		bool is_entry,
 		const std::vector<std::string> & dbgstrs)
-	: memstatemux_op(noperands, nresults)
+	: MemStateOperator(noperands, nresults)
 	, is_entry_(is_entry)
 	, dbgstrs_(dbgstrs)
 	{}
@@ -76,7 +76,7 @@ private:
 
 /** \brief FIXME: write documentation
 */
-class call_aamux_op final : public memstatemux_op {
+class call_aamux_op final : public MemStateOperator {
 public:
 	~call_aamux_op() override;
 
@@ -86,7 +86,7 @@ private:
 		size_t nresults,
 		bool is_entry,
 		const std::vector<std::string> & dbgstrs)
-	: memstatemux_op(noperands, nresults)
+	: MemStateOperator(noperands, nresults)
 	, is_entry_(is_entry)
 	, dbgstrs_(dbgstrs)
 	{}

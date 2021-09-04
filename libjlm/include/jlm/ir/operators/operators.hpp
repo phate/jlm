@@ -2307,11 +2307,11 @@ private:
 	}
 };
 
-/* memory state mux operator */
+/* MemState operator */
 
-class memstatemux_op : public jive::simple_op {
+class MemStateOperator : public jive::simple_op {
 public:
-	memstatemux_op(size_t noperands, size_t nresults)
+	MemStateOperator(size_t noperands, size_t nresults)
 	: simple_op(create_portvector(noperands), create_portvector(nresults))
 	{}
 
@@ -2325,12 +2325,12 @@ private:
 
 /** \brief MemStateMerge operator
 */
-class MemStateMergeOperator final : public memstatemux_op {
+class MemStateMergeOperator final : public MemStateOperator {
 public:
 	~MemStateMergeOperator() override;
 
 	MemStateMergeOperator(size_t noperands)
-	: memstatemux_op(noperands, 1)
+	: MemStateOperator(noperands, 1)
 	{}
 
 	virtual bool
@@ -2366,12 +2366,12 @@ public:
 
 /** \brief MemStateSplit operator
 */
-class MemStateSplitOperator final : public memstatemux_op {
+class MemStateSplitOperator final : public MemStateOperator {
 public:
 	~MemStateSplitOperator() override;
 
 	MemStateSplitOperator(size_t nresults)
-	: memstatemux_op(1, nresults)
+	: MemStateOperator(1, nresults)
 	{}
 
 	virtual bool
