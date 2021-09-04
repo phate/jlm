@@ -43,23 +43,23 @@ load_op::copy() const
 /* load normal form */
 
 /*
-	sx1 ... sxN = mux_op si1 ... siM
-	v sl1 ... slN = load_op a sx1 ... sxN
+	sx1 = MemStateMerge si1 ... siM
+	v sl1 = load_op a sx1
 	=>
 	v sl1 ... slM = load_op a si1 ... siM
-	sx1 ... sxN = mux_op sl1 ... slM
+	sx1 = MemStateMerge sl1 ... slM
 */
 static bool
 is_load_mux_reducible(const std::vector<jive::output*> & operands)
 {
 	JLM_ASSERT(operands.size() >= 2);
 
-	auto muxnode = jive::node_output::node(operands[1]);
-	if (!is<memstatemux_op>(muxnode))
+	auto memStateMergeNode = jive::node_output::node(operands[1]);
+	if (!is<MemStateMergeOperator>(memStateMergeNode))
 		return false;
 
 	for (size_t n = 1; n < operands.size(); n++) {
-		if (jive::node_output::node(operands[n]) != muxnode)
+		if (jive::node_output::node(operands[n]) != memStateMergeNode)
 			return false;
 	}
 
@@ -254,14 +254,14 @@ perform_load_mux_reduction(
 	const jlm::load_op & op,
 	const std::vector<jive::output*> & operands)
 {
-	auto muxnode = jive::node_output::node(operands[1]);
+	auto memStateMergeNode = jive::node_output::node(operands[1]);
 
-	auto ld = load_op::create(operands[0], jive::operands(muxnode), op.alignment());
-	auto mx = memstatemux_op::create({std::next(ld.begin()), ld.end()}, muxnode->noutputs());
+	auto ld = load_op::create(operands[0], jive::operands(memStateMergeNode), op.alignment());
 
-	std::vector<jive::output*> results(1, ld[0]);
-	results.insert(results.end(), mx.begin(), mx.end());
-	return results;
+	std::vector<jive::output*> states = {std::next(ld.begin()), ld.end()};
+	auto mx = MemStateMergeOperator::Create(states);
+
+	return {ld[0], mx};
 }
 
 static std::vector<jive::output*>
@@ -414,7 +414,7 @@ perform_load_load_state_reduction(
 		auto & states = mxstates[n];
 		if (!states.empty()) {
 			states.push_back(ld[n+1]);
-			ld[n+1] = memstatemux_op::create_merge(states);
+			ld[n+1] = MemStateMergeOperator::Create(states);
 		}
 	}
 

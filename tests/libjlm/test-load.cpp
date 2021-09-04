@@ -34,7 +34,7 @@ test_load_mux_reduction()
 	auto s2 = graph.add_import({mt, "s2"});
 	auto s3 = graph.add_import({mt, "s3"});
 
-	auto mux = memstatemux_op::create_merge({s1, s2, s3});
+	auto mux = MemStateMergeOperator::Create({s1, s2, s3});
 	auto value = load_op::create(a, {mux}, 4)[0];
 
 	auto ex = graph.add_export(value, {value->type(), "v"});
@@ -281,12 +281,12 @@ test_load_load_reduction()
 	assert(is<load_op>(ld));
 
 	auto mx1 = jive::node_output::node(x2->origin());
-	assert(is<memstatemux_op>(mx1) && mx1->ninputs() == 2);
+	assert(is<MemStateMergeOperator>(mx1) && mx1->ninputs() == 2);
 	assert(mx1->input(0)->origin() == ld1[1] || mx1->input(0)->origin() == ld->output(2));
 	assert(mx1->input(1)->origin() == ld1[1] || mx1->input(1)->origin() == ld->output(2));
 
 	auto mx2 = jive::node_output::node(x3->origin());
-	assert(is<memstatemux_op>(mx2) && mx2->ninputs() == 2);
+	assert(is<MemStateMergeOperator>(mx2) && mx2->ninputs() == 2);
 	assert(mx2->input(0)->origin() == ld2[1] || mx2->input(0)->origin() == ld->output(3));
 	assert(mx2->input(1)->origin() == ld2[1] || mx2->input(1)->origin() == ld->output(3));
 }

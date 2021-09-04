@@ -107,7 +107,7 @@ test_malloc_call()
 		}
 
 		auto bb = dynamic_cast<const basic_block*>(cfg->entry()->outedge(0)->sink());
-		assert(is<memstatemux_op>(*std::next(bb->rbegin())));
+		assert(is<MemStateMergeOperator>(*std::next(bb->rbegin())));
 		assert(is<malloc_op>((*std::next(bb->rbegin(), 2))));
 	};
 

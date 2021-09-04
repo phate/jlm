@@ -47,14 +47,13 @@ is_store_mux_reducible(const std::vector<jive::output*> & operands)
 {
 	JLM_ASSERT(operands.size() > 2);
 
-	auto muxnode = jive::node_output::node(operands[2]);
-	if (!is<memstatemux_op>(muxnode))
+	auto memStateMergeNode = jive::node_output::node(operands[2]);
+	if (!is<MemStateMergeOperator>(memStateMergeNode))
 		return false;
 
 	for (size_t n = 2; n < operands.size(); n++) {
-		JLM_ASSERT(dynamic_cast<const jive::memtype*>(&operands[n]->type()));
 		auto node = jive::node_output::node(operands[n]);
-		if (node != muxnode)
+		if (node != memStateMergeNode)
 			return false;
 	}
 
@@ -121,11 +120,11 @@ perform_store_mux_reduction(
 	const jlm::store_op & op,
 	const std::vector<jive::output*> & operands)
 {
-	auto muxnode = jive::node_output::node(operands[2]);
-	auto muxoperands = jive::operands(muxnode);
+	auto memStateMergeNode = jive::node_output::node(operands[2]);
+	auto memStateMergeOperands = jive::operands(memStateMergeNode);
 
-	auto states = store_op::create(operands[0], operands[1], muxoperands, op.alignment());
-	return memstatemux_op::create(states, op.nstates());
+	auto states = store_op::create(operands[0], operands[1], memStateMergeOperands, op.alignment());
+	return {MemStateMergeOperator::Create(states)};
 }
 
 static std::vector<jive::output*>

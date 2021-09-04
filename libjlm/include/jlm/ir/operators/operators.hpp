@@ -2311,65 +2311,9 @@ private:
 
 class memstatemux_op : public jive::simple_op {
 public:
-	virtual
-	~memstatemux_op();
-
 	memstatemux_op(size_t noperands, size_t nresults)
 	: simple_op(create_portvector(noperands), create_portvector(nresults))
 	{}
-
-	virtual bool
-	operator==(const operation & other) const noexcept override;
-
-	virtual std::string
-	debug_string() const override;
-
-	virtual std::unique_ptr<jive::operation>
-	copy() const override;
-
-	static std::vector<jive::output*>
-	create(
-		const std::vector<jive::output*> & operands,
-		size_t nresults)
-	{
-		if (operands.empty())
-			throw jlm::error("Insufficient number of operands.");
-
-		auto region = operands.front()->region();
-		memstatemux_op op(operands.size(), nresults);
-		return jive::simple_node::create_normalized(region, op, operands);
-	}
-
-	static std::vector<jive::output*>
-	create_split(jive::output * operand, size_t nresults)
-	{
-		if (nresults == 0)
-			throw error("Insufficient number of resutls.");
-
-		memstatemux_op op(1, nresults);
-		return jive::simple_node::create_normalized(operand->region(), op, {operand});
-	}
-
-	static jive::output *
-	create_merge(const std::vector<jive::output*> & operands)
-	{
-		if (operands.empty())
-			throw jlm::error("Insufficient number of operands.");
-
-		memstatemux_op op(operands.size(), 1);
-		auto region = operands.front()->region();
-		return jive::simple_node::create_normalized(region, op, operands)[0];
-	}
-
-	static std::unique_ptr<jlm::tac>
-	create_merge(const std::vector<const variable*> & operands)
-	{
-		if (operands.empty())
-			throw jlm::error("Insufficient number of operands.");
-
-		memstatemux_op op(operands.size(), 1);
-		return tac::create(op, operands);
-	}
 
 private:
 	static std::vector<jive::port>

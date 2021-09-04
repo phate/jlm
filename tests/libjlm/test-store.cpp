@@ -38,7 +38,7 @@ test_store_mux_reduction()
 	auto s2 = graph.add_import({mt, "s2"});
 	auto s3 = graph.add_import({mt, "s3"});
 
-	auto mux = memstatemux_op::create_merge({s1, s2, s3});
+	auto mux = MemStateMergeOperator::Create({s1, s2, s3});
 	auto state = store_op::create(a, v, {mux}, 4);
 
 	auto ex = graph.add_export(state[0], {state[0]->type(), "s"});
@@ -53,7 +53,7 @@ test_store_mux_reduction()
 //	jive::view(graph.root(), stdout);
 
 	auto muxnode= jive::node_output::node(ex->origin());
-	assert(jive::is<memstatemux_op>(muxnode));
+	assert(is<MemStateMergeOperator>(muxnode));
 	assert(muxnode->ninputs() == 3);
 	auto n0 = jive::node_output::node(muxnode->input(0)->origin());
 	auto n1 = jive::node_output::node(muxnode->input(1)->origin());
