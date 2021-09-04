@@ -1237,29 +1237,6 @@ loopstatemux_op::copy() const
 	return std::unique_ptr<jive::operation>(new loopstatemux_op(*this));
 }
 
-/* memory state mux operator */
-
-memstatemux_op::~memstatemux_op()
-{}
-
-bool
-memstatemux_op::operator==(const jive::operation & other) const noexcept
-{
-	return is<memstatemux_op>(other);
-}
-
-std::string
-memstatemux_op::debug_string() const
-{
-	return "MEMSTATEMUX";
-}
-
-std::unique_ptr<jive::operation>
-memstatemux_op::copy() const
-{
-	return std::unique_ptr<jive::operation>(new memstatemux_op(*this));
-}
-
 /* MemStateMerge operator */
 
 MemStateMergeOperator::~MemStateMergeOperator()

@@ -89,10 +89,10 @@ public:
 		auto b = alloca_op::create(*ppt, size, 4);
 		auto a = alloca_op::create(*pppt, size, 4);
 
-		auto mux_d = memstatemux_op::create_merge({d[1], fct->fctargument(0)});
-		auto mux_c = memstatemux_op::create_merge(std::vector<jive::output*>({c[1], mux_d}));
-		auto mux_b = memstatemux_op::create_merge(std::vector<jive::output*>({b[1], mux_c}));
-		auto mux_a = memstatemux_op::create_merge(std::vector<jive::output*>({a[1], mux_b}));
+		auto mux_d = MemStateMergeOperator::Create({d[1], fct->fctargument(0)});
+		auto mux_c = MemStateMergeOperator::Create(std::vector<jive::output*>({c[1], mux_d}));
+		auto mux_b = MemStateMergeOperator::Create(std::vector<jive::output*>({b[1], mux_c}));
+		auto mux_a = MemStateMergeOperator::Create(std::vector<jive::output*>({a[1], mux_b}));
 
 		auto a_amp_b = store_op::create(a[0], b[0], {mux_a}, 4);
 		auto b_amp_c = store_op::create(b[0], c[0], {a_amp_b[0]}, 4);
@@ -199,11 +199,11 @@ public:
 		auto y = alloca_op::create(*pt, size, 4);
 		auto p = alloca_op::create(*ppt, size, 4);
 
-		auto mux_a = memstatemux_op::create_merge({a[1], fct->fctargument(0)});
-		auto mux_b = memstatemux_op::create_merge(std::vector<jive::output*>({b[1], mux_a}));
-		auto mux_x = memstatemux_op::create_merge(std::vector<jive::output*>({x[1], mux_b}));
-		auto mux_y = memstatemux_op::create_merge(std::vector<jive::output*>({y[1], mux_x}));
-		auto mux_p = memstatemux_op::create_merge(std::vector<jive::output*>({p[1], mux_y}));
+		auto mux_a = MemStateMergeOperator::Create({a[1], fct->fctargument(0)});
+		auto mux_b = MemStateMergeOperator::Create(std::vector<jive::output*>({b[1], mux_a}));
+		auto mux_x = MemStateMergeOperator::Create(std::vector<jive::output*>({x[1], mux_b}));
+		auto mux_y = MemStateMergeOperator::Create(std::vector<jive::output*>({y[1], mux_x}));
+		auto mux_p = MemStateMergeOperator::Create(std::vector<jive::output*>({p[1], mux_y}));
 
 		auto x_amp_a = store_op::create(x[0], a[0], {mux_p}, 4);
 		auto y_amp_b = store_op::create(y[0], b[0], {x_amp_a[0]}, 4);
@@ -313,12 +313,12 @@ setup_assignment_test()
 	auto x = alloca_op::create(*ppt, size, 4);
 	auto y = alloca_op::create(*ppt, size, 4);
 
-	auto mux1 = memstatemux_op::create_merge(std::vector<jive::output*>({a[1], fct->fctargument(0)}));
-	auto mux2 = memstatemux_op::create_merge(std::vector<jive::output*>({b[1], mux1}));
-	auto mux3 = memstatemux_op::create_merge(std::vector<jive::output*>({c[1], mux2}));
-	auto mux4 = memstatemux_op::create_merge(std::vector<jive::output*>({d[1], mux3}));
-	auto mux5 = memstatemux_op::create_merge(std::vector<jive::output*>({x[1], mux4}));
-	auto mux6 = memstatemux_op::create_merge(std::vector<jive::output*>({y[1], mux5}));
+	auto mux1 = MemStateMergeOperator::Create(std::vector<jive::output*>({a[1], fct->fctargument(0)}));
+	auto mux2 = MemStateMergeOperator::Create(std::vector<jive::output*>({b[1], mux1}));
+	auto mux3 = MemStateMergeOperator::Create(std::vector<jive::output*>({c[1], mux2}));
+	auto mux4 = MemStateMergeOperator::Create(std::vector<jive::output*>({d[1], mux3}));
+	auto mux5 = MemStateMergeOperator::Create(std::vector<jive::output*>({x[1], mux4}));
+	auto mux6 = MemStateMergeOperator::Create(std::vector<jive::output*>({y[1], mux5}));
 
 	auto c_amp_a = store_op::create(c[0], a[0], {mux6}, 4);
 	auto d_amp_b = store_op::create(d[0], b[0], {c_amp_a[0]}, 4);
@@ -452,11 +452,11 @@ public:
 		auto y = alloca_op::create(*pt, size, 4);
 		auto p = alloca_op::create(*ppt, size, 4);
 
-		auto mux_a = memstatemux_op::create_merge({a[1], fct->fctargument(0)});
-		auto mux_b = memstatemux_op::create_merge(std::vector<jive::output*>({b[1], mux_a}));
-		auto mux_x = memstatemux_op::create_merge(std::vector<jive::output*>({x[1], mux_b}));
-		auto mux_y = memstatemux_op::create_merge(std::vector<jive::output*>({y[1], mux_x}));
-		auto mux_p = memstatemux_op::create_merge(std::vector<jive::output*>({p[1], mux_y}));
+		auto mux_a = MemStateMergeOperator::Create({a[1], fct->fctargument(0)});
+		auto mux_b = MemStateMergeOperator::Create(std::vector<jive::output*>({b[1], mux_a}));
+		auto mux_x = MemStateMergeOperator::Create(std::vector<jive::output*>({x[1], mux_b}));
+		auto mux_y = MemStateMergeOperator::Create(std::vector<jive::output*>({y[1], mux_x}));
+		auto mux_p = MemStateMergeOperator::Create(std::vector<jive::output*>({p[1], mux_y}));
 
 		auto x_amp_a = store_op::create(x[0], a[0], {mux_p}, 4);
 		auto y_amp_b = store_op::create(y[0], b[0], x_amp_a, 4);
@@ -877,9 +877,9 @@ public:
 		auto y = alloca_op::create(jive::bit32, size, 4);
 		auto z = alloca_op::create(jive::bit32, size, 4);
 
-		auto mx = memstatemux_op::create_merge(std::vector<jive::output*>({x[1], h->fctargument(0)}));
-		auto my = memstatemux_op::create_merge(std::vector<jive::output*>({y[1], mx}));
-		auto mz = memstatemux_op::create_merge(std::vector<jive::output*>({z[1], my}));
+		auto mx = MemStateMergeOperator::Create(std::vector<jive::output*>({x[1], h->fctargument(0)}));
+		auto my = MemStateMergeOperator::Create(std::vector<jive::output*>({y[1], mx}));
+		auto mz = MemStateMergeOperator::Create(std::vector<jive::output*>({z[1], my}));
 
 		auto five = jive::create_bitconstant(h->subregion(), 32, 5);
 		auto six = jive::create_bitconstant(h->subregion(), 32, 6);
@@ -986,7 +986,7 @@ public:
 
 		auto alloc = malloc_op::create(prod);
 		auto cast = bitcast_op::create(alloc[0], *pbit32);
-		auto mx = memstatemux_op::create_merge(std::vector<jive::output*>(
+		auto mx = MemStateMergeOperator::Create(std::vector<jive::output*>(
 			{alloc[1], create->fctargument(1)}));
 
 		create->finalize({cast, mx, create->fctargument(2)});
@@ -1753,7 +1753,7 @@ public:
 
 		auto ten = jive::create_bitconstant(testfct->subregion(), 64, 10);
 		auto alloca = alloca_op::create(at, ten, 16);
-		auto state = memstatemux_op::create_merge({alloca[1], testfct->fctargument(0)});
+		auto state = MemStateMergeOperator::Create({alloca[1], testfct->fctargument(0)});
 
 		auto zero = jive::create_bitconstant(testfct->subregion(), 64, 0);
 		auto gep = getelementptr_op::create(alloca[0], {zero, zero}, pbit64);
