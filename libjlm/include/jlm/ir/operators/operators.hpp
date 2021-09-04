@@ -2379,6 +2379,47 @@ private:
 	}
 };
 
+/** \brief MemStateMerge operator
+*/
+class MemStateMergeOperator final : public memstatemux_op {
+public:
+	~MemStateMergeOperator() override;
+
+	MemStateMergeOperator(size_t noperands)
+	: memstatemux_op(noperands, 1)
+	{}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+	static jive::output *
+	Create(const std::vector<jive::output*> & operands)
+	{
+		if (operands.empty())
+			throw error("Insufficient number of operands.");
+
+		MemStateMergeOperator op(operands.size());
+		auto region = operands.front()->region();
+		return jive::simple_node::create_normalized(region, op, operands)[0];
+	}
+
+	static std::unique_ptr<tac>
+	Create(const std::vector<const variable*> & operands)
+	{
+		if (operands.empty())
+			throw error("Insufficient number of operands.");
+
+		MemStateMergeOperator op(operands.size());
+		return tac::create(op, operands);
+	}
+};
+
 /* malloc operator */
 
 class malloc_op final : public jive::simple_op {

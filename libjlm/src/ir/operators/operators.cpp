@@ -1260,6 +1260,29 @@ memstatemux_op::copy() const
 	return std::unique_ptr<jive::operation>(new memstatemux_op(*this));
 }
 
+/* MemStateMerge operator */
+
+MemStateMergeOperator::~MemStateMergeOperator()
+{}
+
+bool
+MemStateMergeOperator::operator==(const jive::operation & other) const noexcept
+{
+	return is<MemStateMergeOperator>(other);
+}
+
+std::string
+MemStateMergeOperator::debug_string() const
+{
+	return "MemStateMerge";
+}
+
+std::unique_ptr<jive::operation>
+MemStateMergeOperator::copy() const
+{
+	return std::unique_ptr<jive::operation>(new MemStateMergeOperator(*this));
+}
+
 /* malloc operator */
 
 malloc_op::~malloc_op()
