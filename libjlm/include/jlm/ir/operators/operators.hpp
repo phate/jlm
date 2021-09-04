@@ -2420,6 +2420,36 @@ public:
 	}
 };
 
+/** \brief MemStateSplit operator
+*/
+class MemStateSplitOperator final : public memstatemux_op {
+public:
+	~MemStateSplitOperator() override;
+
+	MemStateSplitOperator(size_t nresults)
+	: memstatemux_op(1, nresults)
+	{}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jive::operation>
+	copy() const override;
+
+	static std::vector<jive::output*>
+	Create(jive::output * operand, size_t nresults)
+	{
+		if (nresults == 0)
+			throw error("Insufficient number of results.");
+
+		MemStateSplitOperator op(nresults);
+		return jive::simple_node::create_normalized(operand->region(), op, {operand});
+	}
+};
+
 /* malloc operator */
 
 class malloc_op final : public jive::simple_op {

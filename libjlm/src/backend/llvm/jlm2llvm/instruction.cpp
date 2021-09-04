@@ -831,6 +831,16 @@ convert(
 
 static llvm::Value *
 convert(
+	const MemStateSplitOperator&,
+	const std::vector<const variable*>&,
+	llvm::IRBuilder<>&,
+	context&)
+{
+	return nullptr;
+}
+
+static llvm::Value *
+convert(
 	const aa::lambda_aamux_op&,
 	const std::vector<const variable*>&,
 	llvm::IRBuilder<>&,
@@ -938,6 +948,7 @@ convert_operation(
 
 	, {typeid(memstatemux_op), convert<memstatemux_op>}
 	, {typeid(MemStateMergeOperator), convert<MemStateMergeOperator>}
+	, {typeid(MemStateSplitOperator), convert<MemStateSplitOperator>}
 	, {typeid(aa::lambda_aamux_op), convert<aa::lambda_aamux_op>}
 	, {typeid(aa::call_aamux_op), convert<aa::call_aamux_op>}
 	});
