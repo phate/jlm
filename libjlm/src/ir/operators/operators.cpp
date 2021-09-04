@@ -1283,6 +1283,29 @@ MemStateMergeOperator::copy() const
 	return std::unique_ptr<jive::operation>(new MemStateMergeOperator(*this));
 }
 
+/* MemStateSplit operator */
+
+MemStateSplitOperator::~MemStateSplitOperator()
+{}
+
+bool
+MemStateSplitOperator::operator==(const jive::operation & other) const noexcept
+{
+	return is<MemStateSplitOperator>(other);
+}
+
+std::string
+MemStateSplitOperator::debug_string() const
+{
+	return "MemStateSplit";
+}
+
+std::unique_ptr<jive::operation>
+MemStateSplitOperator::copy() const
+{
+	return std::unique_ptr<jive::operation>(new MemStateSplitOperator(*this));
+}
+
 /* malloc operator */
 
 malloc_op::~malloc_op()
