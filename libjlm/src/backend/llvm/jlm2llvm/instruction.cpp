@@ -167,15 +167,13 @@ convert_undef(
 	return llvm::UndefValue::get(convert_type(op.result(0).type(), ctx));
 }
 
-static inline llvm::Value *
-convert_call(
-	const jive::simple_op & op,
+static llvm::Value *
+convert(
+	const call_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_ASSERT(is<call_op>(op));
-
 	auto function = ctx.value(args[0]);
 
 	std::vector<llvm::Value*> operands;
@@ -201,7 +199,8 @@ convert_call(
 		operands.push_back(ctx.value(argument));
 	}
 
-	return builder.CreateCall(function, operands);
+	auto ftype = convert_type(op.fcttype(), ctx);
+	return builder.CreateCall(ftype, function, operands);
 }
 
 static inline bool
@@ -914,7 +913,7 @@ convert_operation(
 	, {typeid(vectorselect_op), convert<vectorselect_op>}
 	, {typeid(ExtractValue), convert<ExtractValue>}
 
-	, {typeid(call_op), convert_call}
+	, {typeid(call_op), convert<call_op>}
 	, {typeid(malloc_op), convert<malloc_op>}
 	, {typeid(free_op), convert<free_op>}
 	, {typeid(Memcpy), convert<Memcpy>}
