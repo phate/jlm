@@ -104,7 +104,7 @@ convert_struct_type(const llvm::Type * t, context & ctx)
 	auto packed = type->isPacked();
 	auto dcl = ctx.lookup_declaration(type);
 	if (type->hasName())
-		return std::unique_ptr<jive::valuetype>(new structtype(type->getName(), packed, dcl));
+		return std::unique_ptr<jive::valuetype>(new structtype(type->getName().str(), packed, dcl));
 
 	return std::unique_ptr<jive::valuetype>(new structtype(packed, dcl));
 }

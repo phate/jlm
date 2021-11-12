@@ -176,7 +176,7 @@ convert_attribute(const llvm::Attribute & attribute, context & ctx)
 	auto convert_string_attribute = [](const llvm::Attribute & attribute)
 	{
 		JLM_ASSERT(attribute.isStringAttribute());
-		return string_attribute::create(attribute.getKindAsString(), attribute.getValueAsString());
+		return string_attribute::create(attribute.getKindAsString().str(), attribute.getValueAsString().str());
 	};
 
 	auto convert_enum_attribute = [](const llvm::Attribute & attribute)
