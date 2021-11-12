@@ -591,7 +591,7 @@ convert_getelementptr_instruction(llvm::Instruction * inst, tacsvector_t & tacs,
 static const llvm::FunctionType *
 function_type(const llvm::CallInst * i)
 {
-	auto f = i->getCalledValue();
+	auto f = i->getCalledOperand();
 	JLM_ASSERT(f->getType()->isPointerTy());
 	JLM_ASSERT(f->getType()->getContainedType(0)->isFunctionTy());
 	return llvm::cast<const llvm::FunctionType>(f->getType()->getContainedType(0));
@@ -711,7 +711,7 @@ convert_call_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 	arguments.push_back(ctx.memory_state());
 	arguments.push_back(ctx.loop_state());
 
-	auto fctvar = convert_value(i->getCalledValue(), tacs, ctx);
+	auto fctvar = convert_value(i->getCalledOperand(), tacs, ctx);
 	auto call = call_op::create(fctvar, arguments);
 
 	auto result = call->result(0);
