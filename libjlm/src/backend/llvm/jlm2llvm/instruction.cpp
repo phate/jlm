@@ -392,13 +392,16 @@ convert(
 	if (auto ft = dynamic_cast<const fptype*>(&op.type())) {
 		if (ft->size() == fpsize::half) {
 			auto data = get_fpdata<uint16_t>(operands, ctx);
-			return llvm::ConstantDataArray::getFP(builder.getContext(), data);
+			auto type = llvm::Type::getBFloatTy(builder.getContext());
+			return llvm::ConstantDataArray::getFP(type, data);
 		} else if (ft->size() == fpsize::flt) {
 			auto data = get_fpdata<uint32_t>(operands, ctx);
-			return llvm::ConstantDataArray::getFP(builder.getContext(), data);
+			auto type = llvm::Type::getFloatTy(builder.getContext());
+			return llvm::ConstantDataArray::getFP(type, data);
 		} else if (ft->size() == fpsize::dbl) {
 			auto data = get_fpdata<uint64_t>(operands, ctx);
-			return llvm::ConstantDataArray::getFP(builder.getContext(), data);
+			auto type = llvm::Type::getDoubleTy(builder.getContext());
+			return llvm::ConstantDataArray::getFP(type, data);
 		}
 	}
 
@@ -634,13 +637,16 @@ convert_constantdatavector(
 	if (auto ft = dynamic_cast<const fptype*>(&cop.type())) {
 		if (ft->size() == fpsize::half) {
 			auto data = get_fpdata<uint16_t>(operands, ctx);
-			return llvm::ConstantDataVector::getFP(builder.getContext(), data);
+			auto type = llvm::Type::getBFloatTy(builder.getContext());
+			return llvm::ConstantDataVector::getFP(type, data);
 		} else if (ft->size() == fpsize::flt) {
 			auto data = get_fpdata<uint32_t>(operands, ctx);
-			return llvm::ConstantDataVector::getFP(builder.getContext(), data);
+			auto type = llvm::Type::getFloatTy(builder.getContext());
+			return llvm::ConstantDataVector::getFP(type, data);
 		} else if (ft->size() == fpsize::dbl) {
 			auto data = get_fpdata<uint64_t>(operands, ctx);
-			return llvm::ConstantDataVector::getFP(builder.getContext(), data);
+			auto type = llvm::Type::getDoubleTy(builder.getContext());
+			return llvm::ConstantDataVector::getFP(type, data);
 		}
 	}
 
