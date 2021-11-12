@@ -466,12 +466,13 @@ convert_icmp_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 	auto op2 = convert_value(i->getOperand(1), tacs, ctx);
 
 	std::unique_ptr<jive::operation> binop;
-	if (t->isIntegerTy() || (t->isVectorTy() && t->getVectorElementType()->isIntegerTy())) {
-		auto it = t->isVectorTy() ? t->getVectorElementType() : t;
+
+	if (t->isIntegerTy() || (t->isVectorTy() && llvm::cast<llvm::VectorType>(t)->getElementType()->isIntegerTy())) {
 		/* FIXME: This is inefficient. We return a unique ptr and then take copy it. */
+		auto it = t->isVectorTy() ? llvm::cast<llvm::VectorType>(t)->getElementType() : t;
 		binop = map[p](it->getIntegerBitWidth());
-	} else if (t->isPointerTy() || (t->isVectorTy() && t->getVectorElementType()->isPointerTy())) {
-		auto pt = llvm::cast<llvm::PointerType>(t->isVectorTy() ? t->getVectorElementType() : t);
+	} else if (t->isPointerTy() || (t->isVectorTy() && llvm::cast<llvm::VectorType>(t)->getElementType()->isPointerTy())) {
+		auto pt = llvm::cast<llvm::PointerType>(t->isVectorTy() ? llvm::cast<llvm::VectorType>(t)->getElementType() : t);
 		binop = std::make_unique<ptrcmp_op>(*convert_type(pt, ctx), ptrmap[p]);
 	} else
 		JLM_ASSERT(0);
@@ -514,7 +515,7 @@ convert_fcmp_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 	auto op2 = convert_value(i->getOperand(1), tacs, ctx);
 
 	JLM_ASSERT(map.find(i->getPredicate()) != map.end());
-	auto fptype = t->isVectorTy() ? t->getVectorElementType() : t;
+	auto fptype = t->isVectorTy() ? llvm::cast<llvm::VectorType>(t)->getElementType() : t;
 	fpcmp_op operation(map[i->getPredicate()], convert_fpsize(fptype));
 
 	if (t->isVectorTy())
@@ -783,7 +784,7 @@ convert_binary_operator(llvm::Instruction * instruction, tacsvector_t & tacs, co
 	});
 
 	std::unique_ptr<jive::operation> operation;
-	auto t = i->getType()->isVectorTy() ? i->getType()->getVectorElementType() : i->getType();
+	auto t = i->getType()->isVectorTy() ? llvm::cast<llvm::VectorType>(i->getType())->getElementType() : i->getType();
 	if (t->isIntegerTy()) {
 		JLM_ASSERT(bitmap.find(i->getOpcode()) != bitmap.end());
 		operation = bitmap[i->getOpcode()](t->getIntegerBitWidth());
@@ -886,7 +887,7 @@ convert_fneg_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & c
 	JLM_ASSERT(i->getOpcode() == llvm::Instruction::FNeg);
 	auto t = i->getType();
 
-	auto type = convert_type(t->isVectorTy() ? t->getVectorElementType() : t, ctx);
+	auto type = convert_type(t->isVectorTy() ? llvm::cast<llvm::VectorType>(t)->getElementType() : t, ctx);
 
 	auto operand = convert_value(i->getOperand(0), tacs, ctx);
 
@@ -932,8 +933,8 @@ convert_cast_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & c
 	auto type = convert_type(i->getType(), ctx);
 
 	auto op = convert_value(i->getOperand(0), tacs, ctx);
-	auto srctype = convert_type(st->isVectorTy() ? st->getVectorElementType() : st, ctx);
-	auto dsttype = convert_type(dt->isVectorTy() ? dt->getVectorElementType() : dt, ctx);
+	auto srctype = convert_type(st->isVectorTy() ? llvm::cast<llvm::VectorType>(st)->getElementType() : st, ctx);
+	auto dsttype = convert_type(dt->isVectorTy() ? llvm::cast<llvm::VectorType>(dt)->getElementType() : dt, ctx);
 
 	JLM_ASSERT(map.find(i->getOpcode()) != map.end());
 	auto unop = map[i->getOpcode()](std::move(srctype), std::move(dsttype));
@@ -946,6 +947,28 @@ convert_cast_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & c
 
 	return tacs.back()->result(0);
 }
+
+/*
+static inline const variable *
+convert_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
+{
+	auto v1 = convert_value(i->getOperand(0), tacs, ctx);
+	auto v2 = convert_value(i->getOperand(1), tacs, ctx);
+	auto mask = convert_value(i->getOperand(2), tacs, ctx);
+	tacs.push_back(shufflevector_op::create(v1, v2, mask));
+
+	return tacs.back()->result(0);
+}
+
+template<class inst> static const Variable *
+convert_instruction(llvm::Instruction * inst, tacsvector_t & tacs, context & ctx)
+{
+
+	JLM_ASSERT(inst->getOpcode() == inst);
+
+	return convert_instruction(*static_cast<const inst*>(&inst), tacs, ctx);
+}
+*/
 
 const variable *
 convert_instruction(

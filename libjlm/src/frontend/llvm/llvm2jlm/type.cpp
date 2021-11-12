@@ -118,11 +118,19 @@ convert_array_type(const llvm::Type * t, context & ctx)
 }
 
 static std::unique_ptr<jive::valuetype>
-convert_vector_type(const llvm::Type * t, context & ctx)
+convert_fixed_vector_type(const llvm::Type * t, context & ctx)
 {
-	JLM_ASSERT(t->isVectorTy());
-	auto type = convert_type(t->getVectorElementType(), ctx);
-	return std::unique_ptr<jive::valuetype>(new jlm::vectortype(*type, t->getVectorNumElements()));
+	JLM_ASSERT(t->getTypeID() == llvm::Type::FixedVectorTyID);
+	auto type = convert_type(t->getScalarType(), ctx);
+	return std::unique_ptr<jive::valuetype>(new jlm::fixedvectortype(*type, llvm::cast<llvm::FixedVectorType>(t)->getNumElements()));
+}
+
+static std::unique_ptr<jive::valuetype>
+convert_scalable_vector_type(const llvm::Type * t, context & ctx)
+{
+	JLM_ASSERT(t->getTypeID() == llvm::Type::ScalableVectorTyID);
+	auto type = convert_type(t->getScalarType(), ctx);
+	return std::unique_ptr<jive::valuetype>(new jlm::scalablevectortype(*type, llvm::cast<llvm::ScalableVectorType>(t)->getMinNumElements()));
 }
 
 std::unique_ptr<jive::valuetype>
@@ -141,7 +149,8 @@ convert_type(const llvm::Type * t, context & ctx)
 	, {llvm::Type::X86_FP80TyID, convert_fp_type}
 	, {llvm::Type::StructTyID, convert_struct_type}
 	, {llvm::Type::ArrayTyID, convert_array_type}
-	, {llvm::Type::VectorTyID, convert_vector_type}
+	, {llvm::Type::FixedVectorTyID, convert_fixed_vector_type}
+	, {llvm::Type::ScalableVectorTyID, convert_scalable_vector_type}
 	});
 
 	JLM_ASSERT(map.find(t->getTypeID()) != map.end());

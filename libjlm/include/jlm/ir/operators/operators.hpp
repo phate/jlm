@@ -210,8 +210,14 @@ public:
 		auto vtt = dynamic_cast<const vectortype*>(&t->type());
 		if (!vtt) throw jlm::error("Excpected vector type.");
 
-		vectorselect_op op(vectortype(jive::bit1, vpt->size()), vectortype(vtt->type(), vpt->size()));
-		return tac::create(op, {p, t, f});
+		if (vpt->isScalable() && vtt->isScalable()) {
+		  vectorselect_op op(scalablevectortype(jive::bit1, vpt->size()), scalablevectortype(vtt->type(), vpt->size()));
+		  return tac::create(op, {p, t, f});
+		} else if (!vpt->isScalable() && !vtt->isScalable()) {
+		  vectorselect_op op(fixedvectortype(jive::bit1, vpt->size()), fixedvectortype(vtt->type(), vpt->size()));
+		  return tac::create(op, {p, t, f});
+		} else
+		  throw jlm::error("Expected same vector type.");
 	}
 };
 
@@ -1807,7 +1813,9 @@ public:
 		const vectortype & v1,
 		const vectortype & v2,
 		const vectortype & mask)
-	: simple_op({v1, v2, mask}, {vectortype(v1.type(), mask.size())})
+	: simple_op({v1, v2, mask}, {fixedvectortype(v1.type(), mask.size())})
+	// FIXME! This should select between creating a scalable or fixed vectortype
+	//	: simple_op({v1, v2, mask}, {v1.isScalable() ? static_cast<vectortype>(scalablevectortype(v1.type(), mask.size())) : static_cast<vectortype>(fixedvectortype(v1.type(), mask.size()))})
 	{
 		if (v1 != v2)
 			throw jlm::error("expected the same vector type.");
@@ -2124,7 +2132,8 @@ public:
 
 	inline
 	constant_data_vector_op(const jive::valuetype & type, size_t size)
-	: simple_op(std::vector<jive::port>(size, type), {vectortype(type, size)})
+	// FIXME! Should this create either fixed or scalable vectortypes depending on incoming type?
+	: simple_op(std::vector<jive::port>(size, type), {fixedvectortype(type, size)})
 	{
 		if (size == 0)
 			throw jlm::error("size equals zero");

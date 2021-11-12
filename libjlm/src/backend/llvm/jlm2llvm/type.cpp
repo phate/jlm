@@ -150,7 +150,8 @@ convert_type(const jive::type & type, context & ctx)
 	, {typeid(jive::ctltype), convert<jive::ctltype>}
 	, {typeid(fptype),        convert<fptype>}
 	, {typeid(structtype),    convert<structtype>}
-	, {typeid(vectortype),    convert<vectortype>}
+	, {typeid(fixedvectortype),    convert<fixedvectortype>}
+	, {typeid(scalablevectortype),    convert<scalablevectortype>}
 	});
 
 	JLM_ASSERT(map.find(typeid(type)) != map.end());

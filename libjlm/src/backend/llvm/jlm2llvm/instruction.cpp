@@ -743,8 +743,13 @@ convert_cast(
 	auto operand = operands[0];
 
 	if (auto vtype = dynamic_cast<const vectortype*>(&operand->type())) {
-		auto type = convert_type(vectortype(dsttype, vtype->size()), ctx);
-		return builder.CreateCast(OPCODE, ctx.value(operand), type);
+		if (vtype->isScalable()) {
+			auto type = convert_type(scalablevectortype(dsttype, vtype->size()), ctx);
+			return builder.CreateCast(OPCODE, ctx.value(operand), type);
+		} else {
+			auto type = convert_type(scalablevectortype(dsttype, vtype->size()), ctx);
+			return builder.CreateCast(OPCODE, ctx.value(operand), type);
+		}
 	}
 
 	auto type = convert_type(dsttype, ctx);
