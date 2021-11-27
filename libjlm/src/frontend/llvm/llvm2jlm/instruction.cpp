@@ -756,15 +756,15 @@ convert_binary_operator(llvm::Instruction * instruction, tacsvector_t & tacs, co
 		std::unique_ptr<jive::operation>(*)(size_t)> bitmap({
 			{llvm::Instruction::Add,	[](size_t nbits){jive::bitadd_op o(nbits); return o.copy();}}
 		,	{llvm::Instruction::And,	[](size_t nbits){jive::bitand_op o(nbits); return o.copy();}}
-		,	{llvm::Instruction::AShr,   [](size_t nbits){jive::bitashr_op o(nbits); return o.copy();}}
+		,	{llvm::Instruction::AShr,[](size_t nbits){jive::bitashr_op o(nbits); return o.copy();}}
 		,	{llvm::Instruction::Sub,	[](size_t nbits){jive::bitsub_op o(nbits); return o.copy();}}
-		,	{llvm::Instruction::UDiv,   [](size_t nbits){jive::bitudiv_op o(nbits); return o.copy();}}
-		,	{llvm::Instruction::SDiv,   [](size_t nbits){jive::bitsdiv_op o(nbits); return o.copy();}}
-		,	{llvm::Instruction::URem,   [](size_t nbits){jive::bitumod_op o(nbits); return o.copy();}}
-		,	{llvm::Instruction::SRem,   [](size_t nbits){jive::bitsmod_op o(nbits); return o.copy();}}
+		,	{llvm::Instruction::UDiv,[](size_t nbits){jive::bitudiv_op o(nbits); return o.copy();}}
+		,	{llvm::Instruction::SDiv,[](size_t nbits){jive::bitsdiv_op o(nbits); return o.copy();}}
+		,	{llvm::Instruction::URem,[](size_t nbits){jive::bitumod_op o(nbits); return o.copy();}}
+		,	{llvm::Instruction::SRem,[](size_t nbits){jive::bitsmod_op o(nbits); return o.copy();}}
 		,	{llvm::Instruction::Shl,	[](size_t nbits){jive::bitshl_op o(nbits); return o.copy();}}
-		,	{llvm::Instruction::LShr,   [](size_t nbits){jive::bitshr_op o(nbits); return o.copy();}}
-		,	{llvm::Instruction::Or,	    [](size_t nbits){jive::bitor_op o(nbits); return o.copy();}}
+		,	{llvm::Instruction::LShr,[](size_t nbits){jive::bitshr_op o(nbits); return o.copy();}}
+		,	{llvm::Instruction::Or,	[](size_t nbits){jive::bitor_op o(nbits); return o.copy();}}
 		,	{llvm::Instruction::Xor,	[](size_t nbits){jive::bitxor_op o(nbits); return o.copy();}}
 		,	{llvm::Instruction::Mul,	[](size_t nbits){jive::bitmul_op o(nbits); return o.copy();}}
 	});
