@@ -1847,8 +1847,8 @@ public:
 	static std::unique_ptr<jlm::tac>
 	create(
             const variable * v1,
-		    const variable * v2,
-		    const variable * mask)
+            const variable * v2,
+            const variable * mask)
 	{
         if (is<fixedvectortype>(v1->type())
         && is<fixedvectortype>(v2->type())
