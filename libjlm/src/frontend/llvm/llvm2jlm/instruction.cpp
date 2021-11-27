@@ -854,17 +854,22 @@ convert_extractelement_instruction(llvm::Instruction * i, tacsvector_t & tacs, c
 	return tacs.back()->result(0);
 }
 
-static inline const variable *
-convert_shufflevector_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
+static const variable *
+convert(
+        llvm::ShuffleVectorInst * i,
+        tacsvector_t & tacs,
+        context & ctx)
 {
-	JLM_ASSERT(i->getOpcode() == llvm::Instruction::ShuffleVector);
+    auto v1 = convert_value(i->getOperand(0), tacs, ctx);
+    auto v2 = convert_value(i->getOperand(1), tacs, ctx);
 
-	auto v1 = convert_value(i->getOperand(0), tacs, ctx);
-	auto v2 = convert_value(i->getOperand(1), tacs, ctx);
-	auto mask = convert_value(i->getOperand(2), tacs, ctx);
-	tacs.push_back(shufflevector_op::create(v1, v2, mask));
+    std::vector<int> mask;
+    for (auto & element : i->getShuffleMask())
+        mask.push_back(element);
 
-	return tacs.back()->result(0);
+    tacs.push_back(shufflevector_op::create(v1, v2, mask));
+
+    return tacs.back()->result(0);
 }
 
 static const variable *
@@ -947,6 +952,16 @@ convert_cast_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & c
 	return tacs.back()->result(0);
 }
 
+template<class INSTRUCTIONTYPE> static const variable*
+convert(
+    llvm::Instruction * instruction,
+    tacsvector_t & tacs,
+    context & ctx)
+{
+    JLM_ASSERT(llvm::isa<INSTRUCTIONTYPE>(instruction));
+    return convert(llvm::cast<INSTRUCTIONTYPE>(instruction), tacs, ctx);
+}
+
 const variable *
 convert_instruction(
 	llvm::Instruction * i,
@@ -994,7 +1009,7 @@ convert_instruction(
 	,	{llvm::Instruction::Alloca, convert_alloca_instruction}
 	,	{llvm::Instruction::ExtractValue, convert_extractvalue}
 	,	{llvm::Instruction::ExtractElement, convert_extractelement_instruction}
-	,	{llvm::Instruction::ShuffleVector, convert_shufflevector_instruction}
+	,	{llvm::Instruction::ShuffleVector, convert<llvm::ShuffleVectorInst>}
 	,	{llvm::Instruction::InsertElement, convert_insertelement_instruction}
 	});
 

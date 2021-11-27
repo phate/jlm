@@ -665,18 +665,15 @@ convert_extractelement(
 }
 
 static llvm::Value *
-convert_shufflevector(
-	const jive::simple_op & op,
+convert(
+	const shufflevector_op & op,
 	const std::vector<const variable*> & operands,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_ASSERT(is<shufflevector_op>(op));
-
 	auto v1 = ctx.value(operands[0]);
 	auto v2 = ctx.value(operands[1]);
-	auto mask = ctx.value(operands[2]);
-	return builder.CreateShuffleVector(v1, v2, mask);
+	return builder.CreateShuffleVector(v1, v2, op.Mask());
 }
 
 static llvm::Value *
@@ -919,7 +916,7 @@ convert_operation(
 	, {typeid(constantvector_op), convert_constantvector}
 	, {typeid(constant_data_vector_op), convert_constantdatavector}
 	, {typeid(extractelement_op), convert_extractelement}
-	, {typeid(shufflevector_op), convert_shufflevector}
+	, {typeid(shufflevector_op), convert<shufflevector_op>}
 	, {typeid(insertelement_op), convert_insertelement}
 	, {typeid(vectorunary_op), convert_vectorunary}
 	, {typeid(vectorbinary_op), convert_vectorbinary}

@@ -1049,7 +1049,7 @@ shufflevector_op::operator==(const operation & other) const noexcept
 	auto op = dynamic_cast<const shufflevector_op*>(&other);
 	return op
 	    && op->argument(0) == argument(0)
-	    && op->argument(2) == argument(2);
+	    && op->Mask() == Mask();
 }
 
 std::string

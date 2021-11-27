@@ -1812,28 +1812,21 @@ public:
 
 class shufflevector_op final : public jive::simple_op {
 public:
-	virtual
-	~shufflevector_op();
+	~shufflevector_op() override;
 
 	shufflevector_op(
-		const fixedvectortype & v,
-		const fixedvectortype & mask)
-	: simple_op({v, v, mask}, {fixedvectortype(v.type(), mask.size())})
-    {
-		auto bt = dynamic_cast<const jive::bittype*>(&mask.type());
-		if (!bt || bt->nbits() != 32)
-			throw jlm::error("expected bit32 type.");
-	}
+        const fixedvectortype & v,
+        const std::vector<int> & mask)
+    : simple_op({v, v}, {v})
+    , Mask_(mask)
+    {}
 
     shufflevector_op(
         const scalablevectortype & v,
-        const scalablevectortype & mask)
-    : simple_op({v, v, mask}, {scalablevectortype(v.type(), mask.size())})
-    {
-        auto bt = dynamic_cast<const jive::bittype*>(&mask.type());
-        if (!bt || bt->nbits() != 32)
-            throw jlm::error("expected bit32 type.");
-    }
+        const std::vector<int> & mask)
+    : simple_op({v, v}, {v})
+    , Mask_(mask)
+    {}
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
@@ -1844,20 +1837,24 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
+    const llvm::ArrayRef<int>
+    Mask() const
+    {
+        return Mask_;
+    }
+
 	static std::unique_ptr<jlm::tac>
 	create(
             const variable * v1,
             const variable * v2,
-            const variable * mask)
+            const std::vector<int> & mask)
 	{
         if (is<fixedvectortype>(v1->type())
-        && is<fixedvectortype>(v2->type())
-        && is<fixedvectortype>(mask->type()))
+        && is<fixedvectortype>(v2->type()))
             return CreateShuffleVectorTac<fixedvectortype>(v1, v2, mask);
 
         if (is<scalablevectortype>(v1->type())
-        && is<scalablevectortype>(v2->type())
-        && is<scalablevectortype>(mask->type()))
+        && is<scalablevectortype>(v2->type()))
             return CreateShuffleVectorTac<scalablevectortype>(v1, v2, mask);
 
         throw error("Expected vector types as operands.");
@@ -1868,13 +1865,14 @@ private:
     CreateShuffleVectorTac(
             const variable * v1,
             const variable * v2,
-            const variable * mask)
+            const std::vector<int> & mask)
     {
         auto vt = static_cast<const T*>(&v1->type());
-        auto mt = static_cast<const T*>(&mask->type());
-        shufflevector_op op(*vt, *mt);
-        return tac::create(op, {v1, v2, mask});
+        shufflevector_op op(*vt, mask);
+        return tac::create(op, {v1, v2});
     }
+
+    std::vector<int> Mask_;
 };
 
 /* constantvector operator */
