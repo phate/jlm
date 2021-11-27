@@ -72,8 +72,8 @@ test_vector_select()
 
 		std::unique_ptr<Module> module(new Module("module", ctx));
 
-		auto vint1 = VectorType::get(Type::getIntNTy(ctx, 1), 4);
-		auto vint64 = VectorType::get(Type::getIntNTy(ctx, 64), 4);
+		auto vint1 = VectorType::get(Type::getIntNTy(ctx, 1), 4, false);
+		auto vint64 = VectorType::get(Type::getIntNTy(ctx, 64), 4, false);
 
 		auto fctargs = std::vector<Type*>({vint1, vint64, vint64});
 		auto fcttype = FunctionType::get(vint64, fctargs, false);
