@@ -248,7 +248,7 @@ convert_constantDataVector(
 	for (size_t n = 0; n < c->getNumElements(); n++)
 		elements.push_back(convert_constant(c->getElementAsConstant(n), tacs, ctx));
 
-	tacs.push_back(constant_data_vector_op::create(elements));
+	tacs.push_back(constant_data_vector_op::CreateFixedDataConstantVectorTac(elements));
 
 	return tacs.back()->result(0);
 }
@@ -467,15 +467,14 @@ convert_icmp_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 
 	std::unique_ptr<jive::operation> binop;
 
-	if (t->isIntegerTy() || (t->isVectorTy() && llvm::cast<llvm::VectorType>(t)->getElementType()->isIntegerTy())) {
-		/* FIXME: This is inefficient. We return a unique ptr and then take copy it. */
-		auto it = t->isVectorTy() ? llvm::cast<llvm::VectorType>(t)->getElementType() : t;
+	if (t->isIntegerTy() || (t->isVectorTy() && t->getScalarType()->isIntegerTy())) {
+		auto it = t->isVectorTy() ? t->getScalarType() : t;
 		binop = map[p](it->getIntegerBitWidth());
-	} else if (t->isPointerTy() || (t->isVectorTy() && llvm::cast<llvm::VectorType>(t)->getElementType()->isPointerTy())) {
-		auto pt = llvm::cast<llvm::PointerType>(t->isVectorTy() ? llvm::cast<llvm::VectorType>(t)->getElementType() : t);
+	} else if (t->isPointerTy() || (t->isVectorTy() && t->getScalarType()->isPointerTy())) {
+		auto pt = llvm::cast<llvm::PointerType>(t->isVectorTy() ? t->getScalarType() : t);
 		binop = std::make_unique<ptrcmp_op>(*convert_type(pt, ctx), ptrmap[p]);
 	} else
-		JLM_ASSERT(0);
+		JLM_UNREACHABLE("This should have never happend.");
 
 	auto type = convert_type(i->getType(), ctx);
 
@@ -515,7 +514,7 @@ convert_fcmp_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 	auto op2 = convert_value(i->getOperand(1), tacs, ctx);
 
 	JLM_ASSERT(map.find(i->getPredicate()) != map.end());
-	auto fptype = t->isVectorTy() ? llvm::cast<llvm::VectorType>(t)->getElementType() : t;
+	auto fptype = t->isVectorTy() ? t->getScalarType() : t;
 	fpcmp_op operation(map[i->getPredicate()], convert_fpsize(fptype));
 
 	if (t->isVectorTy())
@@ -757,15 +756,15 @@ convert_binary_operator(llvm::Instruction * instruction, tacsvector_t & tacs, co
 		std::unique_ptr<jive::operation>(*)(size_t)> bitmap({
 			{llvm::Instruction::Add,	[](size_t nbits){jive::bitadd_op o(nbits); return o.copy();}}
 		,	{llvm::Instruction::And,	[](size_t nbits){jive::bitand_op o(nbits); return o.copy();}}
-		,	{llvm::Instruction::AShr,	[](size_t nbits){jive::bitashr_op o(nbits); return o.copy();}}
+		,	{llvm::Instruction::AShr,   [](size_t nbits){jive::bitashr_op o(nbits); return o.copy();}}
 		,	{llvm::Instruction::Sub,	[](size_t nbits){jive::bitsub_op o(nbits); return o.copy();}}
-		,	{llvm::Instruction::UDiv,	[](size_t nbits){jive::bitudiv_op o(nbits); return o.copy();}}
-		,	{llvm::Instruction::SDiv,	[](size_t nbits){jive::bitsdiv_op o(nbits); return o.copy();}}
-		,	{llvm::Instruction::URem,	[](size_t nbits){jive::bitumod_op o(nbits); return o.copy();}}
-		,	{llvm::Instruction::SRem,	[](size_t nbits){jive::bitsmod_op o(nbits); return o.copy();}}
+		,	{llvm::Instruction::UDiv,   [](size_t nbits){jive::bitudiv_op o(nbits); return o.copy();}}
+		,	{llvm::Instruction::SDiv,   [](size_t nbits){jive::bitsdiv_op o(nbits); return o.copy();}}
+		,	{llvm::Instruction::URem,   [](size_t nbits){jive::bitumod_op o(nbits); return o.copy();}}
+		,	{llvm::Instruction::SRem,   [](size_t nbits){jive::bitsmod_op o(nbits); return o.copy();}}
 		,	{llvm::Instruction::Shl,	[](size_t nbits){jive::bitshl_op o(nbits); return o.copy();}}
-		,	{llvm::Instruction::LShr,	[](size_t nbits){jive::bitshr_op o(nbits); return o.copy();}}
-		,	{llvm::Instruction::Or,		[](size_t nbits){jive::bitor_op o(nbits); return o.copy();}}
+		,	{llvm::Instruction::LShr,   [](size_t nbits){jive::bitshr_op o(nbits); return o.copy();}}
+		,	{llvm::Instruction::Or,	    [](size_t nbits){jive::bitor_op o(nbits); return o.copy();}}
 		,	{llvm::Instruction::Xor,	[](size_t nbits){jive::bitxor_op o(nbits); return o.copy();}}
 		,	{llvm::Instruction::Mul,	[](size_t nbits){jive::bitmul_op o(nbits); return o.copy();}}
 	});
@@ -784,7 +783,7 @@ convert_binary_operator(llvm::Instruction * instruction, tacsvector_t & tacs, co
 	});
 
 	std::unique_ptr<jive::operation> operation;
-	auto t = i->getType()->isVectorTy() ? llvm::cast<llvm::VectorType>(i->getType())->getElementType() : i->getType();
+	auto t = i->getType()->isVectorTy() ? i->getType()->getScalarType() : i->getType();
 	if (t->isIntegerTy()) {
 		JLM_ASSERT(bitmap.find(i->getOpcode()) != bitmap.end());
 		operation = bitmap[i->getOpcode()](t->getIntegerBitWidth());
@@ -887,7 +886,7 @@ convert_fneg_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & c
 	JLM_ASSERT(i->getOpcode() == llvm::Instruction::FNeg);
 	auto t = i->getType();
 
-	auto type = convert_type(t->isVectorTy() ? llvm::cast<llvm::VectorType>(t)->getElementType() : t, ctx);
+	auto type = convert_type(t->isVectorTy() ? t->getScalarType() : t, ctx);
 
 	auto operand = convert_value(i->getOperand(0), tacs, ctx);
 
@@ -933,8 +932,8 @@ convert_cast_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & c
 	auto type = convert_type(i->getType(), ctx);
 
 	auto op = convert_value(i->getOperand(0), tacs, ctx);
-	auto srctype = convert_type(st->isVectorTy() ? llvm::cast<llvm::VectorType>(st)->getElementType() : st, ctx);
-	auto dsttype = convert_type(dt->isVectorTy() ? llvm::cast<llvm::VectorType>(dt)->getElementType() : dt, ctx);
+	auto srctype = convert_type(st->isVectorTy() ? st->getScalarType() : st, ctx);
+	auto dsttype = convert_type(dt->isVectorTy() ? dt->getScalarType() : dt, ctx);
 
 	JLM_ASSERT(map.find(i->getOpcode()) != map.end());
 	auto unop = map[i->getOpcode()](std::move(srctype), std::move(dsttype));
@@ -947,28 +946,6 @@ convert_cast_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & c
 
 	return tacs.back()->result(0);
 }
-
-/*
-static inline const variable *
-convert_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
-{
-	auto v1 = convert_value(i->getOperand(0), tacs, ctx);
-	auto v2 = convert_value(i->getOperand(1), tacs, ctx);
-	auto mask = convert_value(i->getOperand(2), tacs, ctx);
-	tacs.push_back(shufflevector_op::create(v1, v2, mask));
-
-	return tacs.back()->result(0);
-}
-
-template<class inst> static const Variable *
-convert_instruction(llvm::Instruction * inst, tacsvector_t & tacs, context & ctx)
-{
-
-	JLM_ASSERT(inst->getOpcode() == inst);
-
-	return convert_instruction(*static_cast<const inst*>(&inst), tacs, ctx);
-}
-*/
 
 const variable *
 convert_instruction(

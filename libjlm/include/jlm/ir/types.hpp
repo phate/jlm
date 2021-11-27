@@ -336,14 +336,6 @@ public:
 	virtual bool
 	operator==(const jive::type & other) const noexcept override;
 
-  /*
-	virtual std::unique_ptr<jive::type>
-	copy() const override;
-
-	virtual std::string
-	debug_string() const override;
-  */
-
 	size_t
 	size() const noexcept
 	{
@@ -354,12 +346,6 @@ public:
 	type() const noexcept
 	{
 		return *static_cast<const jive::valuetype*>(type_.get());
-	}
-
-	bool
-	isScalable() const noexcept
-	{
-		return false;
 	}
 
 private:
@@ -385,7 +371,6 @@ public:
 
 	virtual std::string
 	debug_string() const override;
-
 };
 
 class scalablevectortype final : public vectortype {
@@ -406,12 +391,6 @@ public:
 
 	virtual std::string
 	debug_string() const override;
-
-	bool
-	isScalable() const noexcept
-	{
-		return true;
-	}
 };
 
 /* loop state type */

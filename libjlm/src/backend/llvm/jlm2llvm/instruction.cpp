@@ -742,15 +742,17 @@ convert_cast(
 	auto & dsttype = *static_cast<const jive::valuetype*>(&op.result(0).type());
 	auto operand = operands[0];
 
-	if (auto vtype = dynamic_cast<const vectortype*>(&operand->type())) {
-		if (vtype->isScalable()) {
-			auto type = convert_type(scalablevectortype(dsttype, vtype->size()), ctx);
-			return builder.CreateCast(OPCODE, ctx.value(operand), type);
-		} else {
-			auto type = convert_type(scalablevectortype(dsttype, vtype->size()), ctx);
-			return builder.CreateCast(OPCODE, ctx.value(operand), type);
-		}
-	}
+    if (auto vt = dynamic_cast<const fixedvectortype*>(&operand->type()))
+    {
+        auto type = convert_type(fixedvectortype(dsttype, vt->size()), ctx);
+        return builder.CreateCast(OPCODE, ctx.value(operand), type);
+    }
+
+    if (auto vt = dynamic_cast<const scalablevectortype*>(&operand->type()))
+    {
+        auto type = convert_type(scalablevectortype(dsttype, vt->size()), ctx);
+        return builder.CreateCast(OPCODE, ctx.value(operand), type);
+    }
 
 	auto type = convert_type(dsttype, ctx);
 	return builder.CreateCast(OPCODE, ctx.value(operand), type);

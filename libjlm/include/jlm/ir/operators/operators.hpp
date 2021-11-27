@@ -204,21 +204,28 @@ public:
 		const variable * t,
 		const variable * f)
 	{
-		auto vpt = dynamic_cast<const vectortype*>(&p->type());
-		if (!vpt) throw jlm::error("Expected vector type.");
+        if (is<fixedvectortype>(p->type()) && is<fixedvectortype>(t->type()))
+            return createVectorSelectTac<fixedvectortype>(p, t, f);
 
-		auto vtt = dynamic_cast<const vectortype*>(&t->type());
-		if (!vtt) throw jlm::error("Excpected vector type.");
+        if (is<scalablevectortype>(p->type()) && is<scalablevectortype>(t->type()))
+            return createVectorSelectTac<scalablevectortype>(p, t, f);
 
-		if (vpt->isScalable() && vtt->isScalable()) {
-		  vectorselect_op op(scalablevectortype(jive::bit1, vpt->size()), scalablevectortype(vtt->type(), vpt->size()));
-		  return tac::create(op, {p, t, f});
-		} else if (!vpt->isScalable() && !vtt->isScalable()) {
-		  vectorselect_op op(fixedvectortype(jive::bit1, vpt->size()), fixedvectortype(vtt->type(), vpt->size()));
-		  return tac::create(op, {p, t, f});
-		} else
-		  throw jlm::error("Expected same vector type.");
+        throw error("Expected vector types as operands.");
 	}
+
+private:
+    template<typename T> static std::unique_ptr<tac>
+    createVectorSelectTac(
+        const variable * p,
+        const variable * t,
+        const variable * f)
+    {
+        auto fvt = static_cast<const T*>(&t->type());
+        T pt(jive::bit1, fvt->size());
+        T vt(fvt->type(), fvt->size());
+        vectorselect_op op(pt, vt);
+        return tac::create(op, {p, t, f});
+    };
 };
 
 /* fp2ui operator */
@@ -1808,22 +1815,25 @@ public:
 	virtual
 	~shufflevector_op();
 
-	inline
 	shufflevector_op(
-		const vectortype & v1,
-		const vectortype & v2,
-		const vectortype & mask)
-	: simple_op({v1, v2, mask}, {fixedvectortype(v1.type(), mask.size())})
-	// FIXME! This should select between creating a scalable or fixed vectortype
-	//	: simple_op({v1, v2, mask}, {v1.isScalable() ? static_cast<vectortype>(scalablevectortype(v1.type(), mask.size())) : static_cast<vectortype>(fixedvectortype(v1.type(), mask.size()))})
-	{
-		if (v1 != v2)
-			throw jlm::error("expected the same vector type.");
-
+		const fixedvectortype & v,
+		const fixedvectortype & mask)
+	: simple_op({v, v, mask}, {fixedvectortype(v.type(), mask.size())})
+    {
 		auto bt = dynamic_cast<const jive::bittype*>(&mask.type());
 		if (!bt || bt->nbits() != 32)
 			throw jlm::error("expected bit32 type.");
 	}
+
+    shufflevector_op(
+        const scalablevectortype & v,
+        const scalablevectortype & mask)
+    : simple_op({v, v, mask}, {scalablevectortype(v.type(), mask.size())})
+    {
+        auto bt = dynamic_cast<const jive::bittype*>(&mask.type());
+        if (!bt || bt->nbits() != 32)
+            throw jlm::error("expected bit32 type.");
+    }
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
@@ -1834,20 +1844,37 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
-	static inline std::unique_ptr<jlm::tac>
+	static std::unique_ptr<jlm::tac>
 	create(
-		const jlm::variable * v1,
-		const jlm::variable * v2,
-		const jlm::variable * mask)
+            const variable * v1,
+		    const variable * v2,
+		    const variable * mask)
 	{
-		auto vt1 = dynamic_cast<const vectortype*>(&v1->type());
-		auto vt2 = dynamic_cast<const vectortype*>(&v2->type());
-		auto vt3 = dynamic_cast<const vectortype*>(&mask->type());
-		if (!vt1 || !vt2 || !vt3) throw jlm::error("expected vector type.");
+        if (is<fixedvectortype>(v1->type())
+        && is<fixedvectortype>(v2->type())
+        && is<fixedvectortype>(mask->type()))
+            return CreateShuffleVectorTac<fixedvectortype>(v1, v2, mask);
 
-		shufflevector_op op(*vt1, *vt2, *vt3);
-		return tac::create(op, {v1, v2, mask});
+        if (is<scalablevectortype>(v1->type())
+        && is<scalablevectortype>(v2->type())
+        && is<scalablevectortype>(mask->type()))
+            return CreateShuffleVectorTac<scalablevectortype>(v1, v2, mask);
+
+        throw error("Expected vector types as operands.");
 	}
+
+private:
+    template<typename T> static std::unique_ptr<tac>
+    CreateShuffleVectorTac(
+            const variable * v1,
+            const variable * v2,
+            const variable * mask)
+    {
+        auto vt = static_cast<const T*>(&v1->type());
+        auto mt = static_cast<const T*>(&mask->type());
+        shufflevector_op op(*vt, *mt);
+        return tac::create(op, {v1, v2, mask});
+    }
 };
 
 /* constantvector operator */
@@ -2127,18 +2154,14 @@ private:
 
 class constant_data_vector_op final : public jive::simple_op {
 public:
-	virtual
-	~constant_data_vector_op();
+	~constant_data_vector_op() override;
 
-	inline
-	constant_data_vector_op(const jive::valuetype & type, size_t size)
-	// FIXME! Should this create either fixed or scalable vectortypes depending on incoming type?
-	: simple_op(std::vector<jive::port>(size, type), {fixedvectortype(type, size)})
-	{
-		if (size == 0)
-			throw jlm::error("size equals zero");
-	}
+private:
+	constant_data_vector_op(const vectortype & vt)
+	: simple_op(std::vector<jive::port>(vt.size(), vt.type()), {vt})
+	{}
 
+public:
 	virtual bool
 	operator==(const operation & other) const noexcept override;
 
@@ -2148,30 +2171,44 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
-	inline size_t
+	size_t
 	size() const noexcept
 	{
 		return static_cast<const vectortype*>(&result(0).type())->size();
 	}
 
-	inline const jive::valuetype &
+	const jive::valuetype &
 	type() const noexcept
 	{
 		return static_cast<const vectortype*>(&result(0).type())->type();
 	}
 
-	static inline std::unique_ptr<jlm::tac>
-	create(const std::vector<const variable*> & elements)
+	static std::unique_ptr<tac>
+	CreateFixedDataConstantVectorTac(const std::vector<const variable*> & elements)
 	{
-		if (elements.size() == 0)
-			throw jlm::error("expected at least one element");
-
-		auto vt = dynamic_cast<const jive::valuetype*>(&elements[0]->type());
-		if (!vt) throw jlm::error("expected value type");
-
-		constant_data_vector_op op(*vt, elements.size());
-		return tac::create(op, elements);
+        return CreateConstantDataVectorTac<fixedvectortype>(elements);
 	}
+
+    static std::unique_ptr<tac>
+    CreateScalableDataConstantVectorTac(const std::vector<const variable*> & elements)
+    {
+        return CreateConstantDataVectorTac<scalablevectortype>(elements);
+    }
+
+private:
+    template<typename T> static std::unique_ptr<tac>
+    CreateConstantDataVectorTac(const std::vector<const variable*> & elements)
+    {
+        if (elements.empty())
+            throw error("Expected at least one element.");
+
+        auto vt = dynamic_cast<const jive::valuetype*>(&elements[0]->type());
+        if (!vt) throw error("Expected value type.");
+
+        T type(*vt, elements.size());
+        constant_data_vector_op op(type);
+        return tac::create(op, elements);
+    }
 };
 
 /* ExtractValue operator */
