@@ -2184,31 +2184,17 @@ public:
 	}
 
 	static std::unique_ptr<tac>
-	CreateFixedDataConstantVectorTac(const std::vector<const variable*> & elements)
+	Create(const std::vector<const variable*> & elements)
 	{
-        return CreateConstantDataVectorTac<fixedvectortype>(elements);
-	}
-
-    static std::unique_ptr<tac>
-    CreateScalableDataConstantVectorTac(const std::vector<const variable*> & elements)
-    {
-        return CreateConstantDataVectorTac<scalablevectortype>(elements);
-    }
-
-private:
-    template<typename T> static std::unique_ptr<tac>
-    CreateConstantDataVectorTac(const std::vector<const variable*> & elements)
-    {
         if (elements.empty())
             throw error("Expected at least one element.");
 
         auto vt = dynamic_cast<const jive::valuetype*>(&elements[0]->type());
         if (!vt) throw error("Expected value type.");
 
-        T type(*vt, elements.size());
-        constant_data_vector_op op(type);
+        constant_data_vector_op op(fixedvectortype(*vt, elements.size()));
         return tac::create(op, elements);
-    }
+	}
 };
 
 /* ExtractValue operator */

@@ -248,7 +248,7 @@ convert_constantDataVector(
 	for (size_t n = 0; n < c->getNumElements(); n++)
 		elements.push_back(convert_constant(c->getElementAsConstant(n), tacs, ctx));
 
-	tacs.push_back(constant_data_vector_op::CreateFixedDataConstantVectorTac(elements));
+	tacs.push_back(constant_data_vector_op::Create(elements));
 
 	return tacs.back()->result(0);
 }
