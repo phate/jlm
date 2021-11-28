@@ -24,9 +24,9 @@ jobs:
         path: ${{ github.workspace }}/*
         key: ${{ runner.os }}-${{ github.sha }}-jlm
     - name: Install dependencies (LLVM)
-      run: sudo apt-get install llvm-10-dev clang-10
+      run: sudo apt-get install llvm-11-dev clang-11
     - name: Set LLVMCONFIG
-      run: echo "LLVMCONFIG=llvm-config-10" >> $GITHUB_ENV
+      run: echo "LLVMCONFIG=llvm-config-11" >> $GITHUB_ENV
     - name: Initialize submodules
       run: make submodule
     - name: Compile jive and jlm
@@ -39,9 +39,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install dependencies (LLVM)
-      run: sudo apt-get install llvm-10-dev clang-10
+      run: sudo apt-get install llvm-11-dev clang-11
     - name: Set LLVMCONFIG
-      run: echo "LLVMCONFIG=llvm-config-10" >> $GITHUB_ENV
+      run: echo "LLVMCONFIG=llvm-config-11" >> $GITHUB_ENV
     - name: Initialize submodules
       run: make submodule
     - name: Compile jive and jlm
@@ -61,11 +61,11 @@ jobs:
     - name: Add jlc to PATH
       run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
     - name: Install dependencies (LLVM)
-      run: sudo apt-get install llvm-10-dev clang-10
+      run: sudo apt-get install llvm-11-dev clang-11
     - name: Install valgrind
       run: sudo apt-get install valgrind
     - name: Set LLVMCONFIG
-      run: echo "LLVMCONFIG=llvm-config-10" >> $GITHUB_ENV
+      run: echo "LLVMCONFIG=llvm-config-11" >> $GITHUB_ENV
     - name: Valgrind Check 
       run: make -C ${{ github.workspace }} valgrind-check
 
@@ -81,9 +81,9 @@ jobs:
     - name: Add jlc to PATH
       run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
     - name: Install dependencies (LLVM)
-      run: sudo apt-get install llvm-10-dev clang-10
+      run: sudo apt-get install llvm-11-dev clang-11
     - name: Set LLVMCONFIG
-      run: echo "LLVMCONFIG=llvm-config-10" >> $GITHUB_ENV
+      run: echo "LLVMCONFIG=llvm-config-11" >> $GITHUB_ENV
     - name: Clone polybench
       run: git clone https://github.com/phate/polybench-jlm.git
     - name: Check polybench
@@ -101,9 +101,9 @@ jobs:
     - name: Add jlc to PATH
       run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
     - name: Install dependencies (LLVM)
-      run: sudo apt-get install llvm-10-dev clang-10
+      run: sudo apt-get install llvm-11-dev clang-11
     - name: Set LLVMCONFIG
-      run: echo "LLVMCONFIG=llvm-config-10" >> $GITHUB_ENV
+      run: echo "LLVMCONFIG=llvm-config-11" >> $GITHUB_ENV
     - name: Clone jlm-test-suite
       run: git clone https://github.com/phate/jlm-eval-suite.git
     - name: Update submodules

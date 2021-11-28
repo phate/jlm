@@ -248,7 +248,7 @@ convert_constantDataVector(
 	for (size_t n = 0; n < c->getNumElements(); n++)
 		elements.push_back(convert_constant(c->getElementAsConstant(n), tacs, ctx));
 
-	tacs.push_back(constant_data_vector_op::create(elements));
+	tacs.push_back(constant_data_vector_op::Create(elements));
 
 	return tacs.back()->result(0);
 }
@@ -466,15 +466,15 @@ convert_icmp_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 	auto op2 = convert_value(i->getOperand(1), tacs, ctx);
 
 	std::unique_ptr<jive::operation> binop;
-	if (t->isIntegerTy() || (t->isVectorTy() && t->getVectorElementType()->isIntegerTy())) {
-		auto it = t->isVectorTy() ? t->getVectorElementType() : t;
-		/* FIXME: This is inefficient. We return a unique ptr and then take copy it. */
+
+	if (t->isIntegerTy() || (t->isVectorTy() && t->getScalarType()->isIntegerTy())) {
+		auto it = t->isVectorTy() ? t->getScalarType() : t;
 		binop = map[p](it->getIntegerBitWidth());
-	} else if (t->isPointerTy() || (t->isVectorTy() && t->getVectorElementType()->isPointerTy())) {
-		auto pt = llvm::cast<llvm::PointerType>(t->isVectorTy() ? t->getVectorElementType() : t);
+	} else if (t->isPointerTy() || (t->isVectorTy() && t->getScalarType()->isPointerTy())) {
+		auto pt = llvm::cast<llvm::PointerType>(t->isVectorTy() ? t->getScalarType() : t);
 		binop = std::make_unique<ptrcmp_op>(*convert_type(pt, ctx), ptrmap[p]);
 	} else
-		JLM_ASSERT(0);
+		JLM_UNREACHABLE("This should have never happend.");
 
 	auto type = convert_type(i->getType(), ctx);
 
@@ -514,7 +514,7 @@ convert_fcmp_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 	auto op2 = convert_value(i->getOperand(1), tacs, ctx);
 
 	JLM_ASSERT(map.find(i->getPredicate()) != map.end());
-	auto fptype = t->isVectorTy() ? t->getVectorElementType() : t;
+	auto fptype = t->isVectorTy() ? t->getScalarType() : t;
 	fpcmp_op operation(map[i->getPredicate()], convert_fpsize(fptype));
 
 	if (t->isVectorTy())
@@ -591,7 +591,7 @@ convert_getelementptr_instruction(llvm::Instruction * inst, tacsvector_t & tacs,
 static const llvm::FunctionType *
 function_type(const llvm::CallInst * i)
 {
-	auto f = i->getCalledValue();
+	auto f = i->getCalledOperand();
 	JLM_ASSERT(f->getType()->isPointerTy());
 	JLM_ASSERT(f->getType()->getContainedType(0)->isFunctionTy());
 	return llvm::cast<const llvm::FunctionType>(f->getType()->getContainedType(0));
@@ -711,7 +711,7 @@ convert_call_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 	arguments.push_back(ctx.memory_state());
 	arguments.push_back(ctx.loop_state());
 
-	auto fctvar = convert_value(i->getCalledValue(), tacs, ctx);
+	auto fctvar = convert_value(i->getCalledOperand(), tacs, ctx);
 	auto call = call_op::create(fctvar, arguments);
 
 	auto result = call->result(0);
@@ -756,15 +756,15 @@ convert_binary_operator(llvm::Instruction * instruction, tacsvector_t & tacs, co
 		std::unique_ptr<jive::operation>(*)(size_t)> bitmap({
 			{llvm::Instruction::Add,	[](size_t nbits){jive::bitadd_op o(nbits); return o.copy();}}
 		,	{llvm::Instruction::And,	[](size_t nbits){jive::bitand_op o(nbits); return o.copy();}}
-		,	{llvm::Instruction::AShr,	[](size_t nbits){jive::bitashr_op o(nbits); return o.copy();}}
+		,	{llvm::Instruction::AShr,[](size_t nbits){jive::bitashr_op o(nbits); return o.copy();}}
 		,	{llvm::Instruction::Sub,	[](size_t nbits){jive::bitsub_op o(nbits); return o.copy();}}
-		,	{llvm::Instruction::UDiv,	[](size_t nbits){jive::bitudiv_op o(nbits); return o.copy();}}
-		,	{llvm::Instruction::SDiv,	[](size_t nbits){jive::bitsdiv_op o(nbits); return o.copy();}}
-		,	{llvm::Instruction::URem,	[](size_t nbits){jive::bitumod_op o(nbits); return o.copy();}}
-		,	{llvm::Instruction::SRem,	[](size_t nbits){jive::bitsmod_op o(nbits); return o.copy();}}
+		,	{llvm::Instruction::UDiv,[](size_t nbits){jive::bitudiv_op o(nbits); return o.copy();}}
+		,	{llvm::Instruction::SDiv,[](size_t nbits){jive::bitsdiv_op o(nbits); return o.copy();}}
+		,	{llvm::Instruction::URem,[](size_t nbits){jive::bitumod_op o(nbits); return o.copy();}}
+		,	{llvm::Instruction::SRem,[](size_t nbits){jive::bitsmod_op o(nbits); return o.copy();}}
 		,	{llvm::Instruction::Shl,	[](size_t nbits){jive::bitshl_op o(nbits); return o.copy();}}
-		,	{llvm::Instruction::LShr,	[](size_t nbits){jive::bitshr_op o(nbits); return o.copy();}}
-		,	{llvm::Instruction::Or,		[](size_t nbits){jive::bitor_op o(nbits); return o.copy();}}
+		,	{llvm::Instruction::LShr,[](size_t nbits){jive::bitshr_op o(nbits); return o.copy();}}
+		,	{llvm::Instruction::Or,	[](size_t nbits){jive::bitor_op o(nbits); return o.copy();}}
 		,	{llvm::Instruction::Xor,	[](size_t nbits){jive::bitxor_op o(nbits); return o.copy();}}
 		,	{llvm::Instruction::Mul,	[](size_t nbits){jive::bitmul_op o(nbits); return o.copy();}}
 	});
@@ -783,7 +783,7 @@ convert_binary_operator(llvm::Instruction * instruction, tacsvector_t & tacs, co
 	});
 
 	std::unique_ptr<jive::operation> operation;
-	auto t = i->getType()->isVectorTy() ? i->getType()->getVectorElementType() : i->getType();
+	auto t = i->getType()->isVectorTy() ? i->getType()->getScalarType() : i->getType();
 	if (t->isIntegerTy()) {
 		JLM_ASSERT(bitmap.find(i->getOpcode()) != bitmap.end());
 		operation = bitmap[i->getOpcode()](t->getIntegerBitWidth());
@@ -854,17 +854,22 @@ convert_extractelement_instruction(llvm::Instruction * i, tacsvector_t & tacs, c
 	return tacs.back()->result(0);
 }
 
-static inline const variable *
-convert_shufflevector_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
+static const variable *
+convert(
+        llvm::ShuffleVectorInst * i,
+        tacsvector_t & tacs,
+        context & ctx)
 {
-	JLM_ASSERT(i->getOpcode() == llvm::Instruction::ShuffleVector);
+    auto v1 = convert_value(i->getOperand(0), tacs, ctx);
+    auto v2 = convert_value(i->getOperand(1), tacs, ctx);
 
-	auto v1 = convert_value(i->getOperand(0), tacs, ctx);
-	auto v2 = convert_value(i->getOperand(1), tacs, ctx);
-	auto mask = convert_value(i->getOperand(2), tacs, ctx);
-	tacs.push_back(shufflevector_op::create(v1, v2, mask));
+    std::vector<int> mask;
+    for (auto & element : i->getShuffleMask())
+        mask.push_back(element);
 
-	return tacs.back()->result(0);
+    tacs.push_back(shufflevector_op::create(v1, v2, mask));
+
+    return tacs.back()->result(0);
 }
 
 static const variable *
@@ -886,7 +891,7 @@ convert_fneg_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & c
 	JLM_ASSERT(i->getOpcode() == llvm::Instruction::FNeg);
 	auto t = i->getType();
 
-	auto type = convert_type(t->isVectorTy() ? t->getVectorElementType() : t, ctx);
+	auto type = convert_type(t->isVectorTy() ? t->getScalarType() : t, ctx);
 
 	auto operand = convert_value(i->getOperand(0), tacs, ctx);
 
@@ -932,8 +937,8 @@ convert_cast_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & c
 	auto type = convert_type(i->getType(), ctx);
 
 	auto op = convert_value(i->getOperand(0), tacs, ctx);
-	auto srctype = convert_type(st->isVectorTy() ? st->getVectorElementType() : st, ctx);
-	auto dsttype = convert_type(dt->isVectorTy() ? dt->getVectorElementType() : dt, ctx);
+	auto srctype = convert_type(st->isVectorTy() ? st->getScalarType() : st, ctx);
+	auto dsttype = convert_type(dt->isVectorTy() ? dt->getScalarType() : dt, ctx);
 
 	JLM_ASSERT(map.find(i->getOpcode()) != map.end());
 	auto unop = map[i->getOpcode()](std::move(srctype), std::move(dsttype));
@@ -945,6 +950,16 @@ convert_cast_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & c
 		tacs.push_back(tac::create(*static_cast<jive::simple_op*>(unop.get()), {op}));
 
 	return tacs.back()->result(0);
+}
+
+template<class INSTRUCTIONTYPE> static const variable*
+convert(
+    llvm::Instruction * instruction,
+    tacsvector_t & tacs,
+    context & ctx)
+{
+    JLM_ASSERT(llvm::isa<INSTRUCTIONTYPE>(instruction));
+    return convert(llvm::cast<INSTRUCTIONTYPE>(instruction), tacs, ctx);
 }
 
 const variable *
@@ -994,7 +1009,7 @@ convert_instruction(
 	,	{llvm::Instruction::Alloca, convert_alloca_instruction}
 	,	{llvm::Instruction::ExtractValue, convert_extractvalue}
 	,	{llvm::Instruction::ExtractElement, convert_extractelement_instruction}
-	,	{llvm::Instruction::ShuffleVector, convert_shufflevector_instruction}
+	,	{llvm::Instruction::ShuffleVector, convert<llvm::ShuffleVectorInst>}
 	,	{llvm::Instruction::InsertElement, convert_insertelement_instruction}
 	});
 

@@ -167,15 +167,13 @@ convert_undef(
 	return llvm::UndefValue::get(convert_type(op.result(0).type(), ctx));
 }
 
-static inline llvm::Value *
-convert_call(
-	const jive::simple_op & op,
+static llvm::Value *
+convert(
+	const call_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_ASSERT(is<call_op>(op));
-
 	auto function = ctx.value(args[0]);
 
 	std::vector<llvm::Value*> operands;
@@ -201,7 +199,8 @@ convert_call(
 		operands.push_back(ctx.value(argument));
 	}
 
-	return builder.CreateCall(function, operands);
+	auto ftype = convert_type(op.fcttype(), ctx);
+	return builder.CreateCall(ftype, function, operands);
 }
 
 static inline bool
@@ -282,7 +281,7 @@ convert_load(
 	auto load = static_cast<const load_op*>(&op);
 
 	auto i = builder.CreateLoad(ctx.value(args[0]));
-	i->setAlignment(llvm::MaybeAlign(load->alignment()));
+	i->setAlignment(llvm::Align(load->alignment()));
 	return i;
 }
 
@@ -297,7 +296,7 @@ convert_store(
 	auto store = static_cast<const store_op*>(&op);
 
 	auto i = builder.CreateStore(ctx.value(args[1]), ctx.value(args[0]));
-	i->setAlignment(llvm::MaybeAlign(store->alignment()));
+	i->setAlignment(llvm::Align(store->alignment()));
 	return nullptr;
 }
 
@@ -313,7 +312,7 @@ convert_alloca(
 
 	auto t = convert_type(aop.value_type(), ctx);
 	auto i = builder.CreateAlloca(t, ctx.value(args[0]));
-	i->setAlignment(llvm::MaybeAlign(aop.alignment()));
+	i->setAlignment(llvm::Align(aop.alignment()));
 	return i;
 }
 
@@ -393,13 +392,16 @@ convert(
 	if (auto ft = dynamic_cast<const fptype*>(&op.type())) {
 		if (ft->size() == fpsize::half) {
 			auto data = get_fpdata<uint16_t>(operands, ctx);
-			return llvm::ConstantDataArray::getFP(builder.getContext(), data);
+			auto type = llvm::Type::getBFloatTy(builder.getContext());
+			return llvm::ConstantDataArray::getFP(type, data);
 		} else if (ft->size() == fpsize::flt) {
 			auto data = get_fpdata<uint32_t>(operands, ctx);
-			return llvm::ConstantDataArray::getFP(builder.getContext(), data);
+			auto type = llvm::Type::getFloatTy(builder.getContext());
+			return llvm::ConstantDataArray::getFP(type, data);
 		} else if (ft->size() == fpsize::dbl) {
 			auto data = get_fpdata<uint64_t>(operands, ctx);
-			return llvm::ConstantDataArray::getFP(builder.getContext(), data);
+			auto type = llvm::Type::getDoubleTy(builder.getContext());
+			return llvm::ConstantDataArray::getFP(type, data);
 		}
 	}
 
@@ -635,13 +637,16 @@ convert_constantdatavector(
 	if (auto ft = dynamic_cast<const fptype*>(&cop.type())) {
 		if (ft->size() == fpsize::half) {
 			auto data = get_fpdata<uint16_t>(operands, ctx);
-			return llvm::ConstantDataVector::getFP(builder.getContext(), data);
+			auto type = llvm::Type::getBFloatTy(builder.getContext());
+			return llvm::ConstantDataVector::getFP(type, data);
 		} else if (ft->size() == fpsize::flt) {
 			auto data = get_fpdata<uint32_t>(operands, ctx);
-			return llvm::ConstantDataVector::getFP(builder.getContext(), data);
+			auto type = llvm::Type::getFloatTy(builder.getContext());
+			return llvm::ConstantDataVector::getFP(type, data);
 		} else if (ft->size() == fpsize::dbl) {
 			auto data = get_fpdata<uint64_t>(operands, ctx);
-			return llvm::ConstantDataVector::getFP(builder.getContext(), data);
+			auto type = llvm::Type::getDoubleTy(builder.getContext());
+			return llvm::ConstantDataVector::getFP(type, data);
 		}
 	}
 
@@ -660,18 +665,15 @@ convert_extractelement(
 }
 
 static llvm::Value *
-convert_shufflevector(
-	const jive::simple_op & op,
+convert(
+	const shufflevector_op & op,
 	const std::vector<const variable*> & operands,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_ASSERT(is<shufflevector_op>(op));
-
 	auto v1 = ctx.value(operands[0]);
 	auto v2 = ctx.value(operands[1]);
-	auto mask = ctx.value(operands[2]);
-	return builder.CreateShuffleVector(v1, v2, mask);
+	return builder.CreateShuffleVector(v1, v2, op.Mask());
 }
 
 static llvm::Value *
@@ -737,10 +739,17 @@ convert_cast(
 	auto & dsttype = *static_cast<const jive::valuetype*>(&op.result(0).type());
 	auto operand = operands[0];
 
-	if (auto vtype = dynamic_cast<const vectortype*>(&operand->type())) {
-		auto type = convert_type(vectortype(dsttype, vtype->size()), ctx);
-		return builder.CreateCast(OPCODE, ctx.value(operand), type);
-	}
+    if (auto vt = dynamic_cast<const fixedvectortype*>(&operand->type()))
+    {
+        auto type = convert_type(fixedvectortype(dsttype, vt->size()), ctx);
+        return builder.CreateCast(OPCODE, ctx.value(operand), type);
+    }
+
+    if (auto vt = dynamic_cast<const scalablevectortype*>(&operand->type()))
+    {
+        auto type = convert_type(scalablevectortype(dsttype, vt->size()), ctx);
+        return builder.CreateCast(OPCODE, ctx.value(operand), type);
+    }
 
 	auto type = convert_type(dsttype, ctx);
 	return builder.CreateCast(OPCODE, ctx.value(operand), type);
@@ -907,14 +916,14 @@ convert_operation(
 	, {typeid(constantvector_op), convert_constantvector}
 	, {typeid(constant_data_vector_op), convert_constantdatavector}
 	, {typeid(extractelement_op), convert_extractelement}
-	, {typeid(shufflevector_op), convert_shufflevector}
+	, {typeid(shufflevector_op), convert<shufflevector_op>}
 	, {typeid(insertelement_op), convert_insertelement}
 	, {typeid(vectorunary_op), convert_vectorunary}
 	, {typeid(vectorbinary_op), convert_vectorbinary}
 	, {typeid(vectorselect_op), convert<vectorselect_op>}
 	, {typeid(ExtractValue), convert<ExtractValue>}
 
-	, {typeid(call_op), convert_call}
+	, {typeid(call_op), convert<call_op>}
 	, {typeid(malloc_op), convert<malloc_op>}
 	, {typeid(free_op), convert<free_op>}
 	, {typeid(Memcpy), convert<Memcpy>}

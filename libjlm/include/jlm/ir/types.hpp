@@ -290,12 +290,8 @@ private:
 
 /* vector type */
 
-class vectortype final : public jive::valuetype {
+class vectortype : public jive::valuetype {
 public:
-	virtual
-	~vectortype();
-
-	inline
 	vectortype(
 		const jive::valuetype & type,
 		size_t size)
@@ -303,14 +299,12 @@ public:
 	, type_(type.copy())
 	{}
 
-	inline
 	vectortype(const vectortype & other)
 	: valuetype(other)
 	, size_(other.size_)
 	, type_(other.type_->copy())
 	{}
 
-	inline
 	vectortype(vectortype && other)
 	: valuetype(other)
 	, size_(other.size_)
@@ -339,17 +333,35 @@ public:
 		return *this;
 	}
 
-	inline size_t
+	virtual bool
+	operator==(const jive::type & other) const noexcept override;
+
+	size_t
 	size() const noexcept
 	{
 		return size_;
 	}
 
-	inline const jive::valuetype &
+	const jive::valuetype &
 	type() const noexcept
 	{
 		return *static_cast<const jive::valuetype*>(type_.get());
 	}
+
+private:
+	size_t size_;
+	std::unique_ptr<jive::type> type_;
+};
+
+class fixedvectortype final : public vectortype {
+public:
+	~fixedvectortype() override;
+
+	fixedvectortype(
+		const jive::valuetype & type,
+		size_t size)
+	: vectortype(type, size)
+	{}
 
 	virtual bool
 	operator==(const jive::type & other) const noexcept override;
@@ -359,10 +371,26 @@ public:
 
 	virtual std::string
 	debug_string() const override;
+};
 
-private:
-	size_t size_;
-	std::unique_ptr<jive::type> type_;
+class scalablevectortype final : public vectortype {
+public:
+	~scalablevectortype() override;
+
+	scalablevectortype(
+		const jive::valuetype & type,
+		size_t size)
+	: vectortype(type, size)
+	{}
+
+	virtual bool
+	operator==(const jive::type & other) const noexcept override;
+
+	virtual std::unique_ptr<jive::type>
+	copy() const override;
+
+	virtual std::string
+	debug_string() const override;
 };
 
 /* loop state type */

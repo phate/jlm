@@ -143,9 +143,6 @@ structtype::copy() const
 
 /* vectortype */
 
-vectortype::~vectortype()
-{}
-
 bool
 vectortype::operator==(const jive::type & other) const noexcept
 {
@@ -155,16 +152,51 @@ vectortype::operator==(const jive::type & other) const noexcept
 	    && *type->type_ == *type_;
 }
 
-std::string
-vectortype::debug_string() const
+/* fixedvectortype */
+
+fixedvectortype::~fixedvectortype()
+{}
+
+bool
+fixedvectortype::operator==(const jive::type & other) const noexcept
 {
-	return strfmt("vector[", type().debug_string(), ":", size(), "]");
+	return vectortype::operator==(other);
+}
+
+std::string
+fixedvectortype::debug_string() const
+{
+	return strfmt("fixedvector[", type().debug_string(), ":", size(), "]");
 }
 
 std::unique_ptr<jive::type>
-vectortype::copy() const
+fixedvectortype::copy() const
 {
-	return std::unique_ptr<jive::type>(new vectortype(*this));
+	return std::unique_ptr<jive::type>(new fixedvectortype(*this));
+}
+
+
+/* scalablevectortype */
+
+scalablevectortype::~scalablevectortype()
+{}
+
+bool
+scalablevectortype::operator==(const jive::type & other) const noexcept
+{
+	return vectortype::operator==(other);
+}
+
+std::string
+scalablevectortype::debug_string() const
+{
+	return strfmt("scalablevector[", type().debug_string(), ":", size(), "]");
+}
+
+std::unique_ptr<jive::type>
+scalablevectortype::copy() const
+{
+	return std::unique_ptr<jive::type>(new scalablevectortype(*this));
 }
 
 /* loop state type */

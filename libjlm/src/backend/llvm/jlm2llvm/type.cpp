@@ -122,9 +122,15 @@ convert(const structtype & type, context & ctx)
 }
 
 static llvm::Type *
-convert(const vectortype & type, context & ctx)
+convert(const fixedvectortype & type, context & ctx)
 {
-	return llvm::VectorType::get(convert_type(type.type(), ctx), type.size());
+    return llvm::VectorType::get(convert_type(type.type(), ctx), type.size(), false);
+}
+
+static llvm::Type *
+convert(const scalablevectortype & type, context & ctx)
+{
+    return llvm::VectorType::get(convert_type(type.type(), ctx), type.size(), true);
 }
 
 template<class T> static llvm::Type *
@@ -143,14 +149,15 @@ convert_type(const jive::type & type, context & ctx)
 		std::type_index
 	, std::function<llvm::Type*(const jive::type&, context&)>
 	> map({
-	  {typeid(jive::bittype), convert<jive::bittype>}
-	, {typeid(jive::fcttype), convert<jive::fcttype>}
-	, {typeid(ptrtype),       convert<ptrtype>}
-	, {typeid(arraytype),     convert<arraytype>}
-	, {typeid(jive::ctltype), convert<jive::ctltype>}
-	, {typeid(fptype),        convert<fptype>}
-	, {typeid(structtype),    convert<structtype>}
-	, {typeid(vectortype),    convert<vectortype>}
+	  {typeid(jive::bittype),      convert<jive::bittype>}
+	, {typeid(jive::fcttype),      convert<jive::fcttype>}
+	, {typeid(ptrtype),            convert<ptrtype>}
+	, {typeid(arraytype),          convert<arraytype>}
+	, {typeid(jive::ctltype),      convert<jive::ctltype>}
+	, {typeid(fptype),             convert<fptype>}
+	, {typeid(structtype),         convert<structtype>}
+	, {typeid(fixedvectortype),    convert<fixedvectortype>}
+	, {typeid(scalablevectortype), convert<scalablevectortype>}
 	});
 
 	JLM_ASSERT(map.find(typeid(type)) != map.end());
