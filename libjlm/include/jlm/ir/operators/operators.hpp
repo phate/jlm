@@ -225,7 +225,7 @@ private:
         T vt(fvt->type(), fvt->size());
         vectorselect_op op(pt, vt);
         return tac::create(op, {p, t, f});
-    };
+    }
 };
 
 /* fp2ui operator */
