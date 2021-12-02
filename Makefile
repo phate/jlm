@@ -56,7 +56,7 @@ submodule:
 
 %.a:
 	rm -f $@
-	ar clqv $@ $^
+	ar cqv $@ $^
 	ranlib $@
 
 .PHONY: clean
