@@ -82,7 +82,7 @@ test_invalid_operand_region()
 	bool invalid_region_error_caught = false;
 	try {
 		fct1->finalize({result});
-	} catch (jlm::error) {
+	} catch (jlm::error&) {
 		invalid_region_error_caught = true;
 	}
 
