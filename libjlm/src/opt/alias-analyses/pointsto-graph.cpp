@@ -199,7 +199,7 @@ ptg::node::sources() const
 void
 ptg::node::add_edge(ptg::node * target)
 {
-	if (ptg() != target->ptg())
+	if (Graph() != target->Graph())
 		throw jlm::error("Points-to graph nodes are not in the same graph.");
 
 	targets_.insert(target);
@@ -209,7 +209,7 @@ ptg::node::add_edge(ptg::node * target)
 void
 ptg::node::remove_edge(ptg::node * target)
 {
-	if (ptg() != target->ptg())
+	if (Graph() != target->Graph())
 		throw jlm::error("Points-to graph nodes are not in the same graph.");
 
 	target->sources_.erase(this);

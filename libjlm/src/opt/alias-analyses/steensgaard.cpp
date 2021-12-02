@@ -1121,7 +1121,7 @@ Steensgaard::ConstructPointsToGraph(const locationset & lset) const
 				continue;
 			}
 
-			if (auto unnamedLocation = dynamic_cast<DummyLocation*>(loc)) {
+			if (dynamic_cast<DummyLocation*>(loc)) {
 				continue;
 			}
 

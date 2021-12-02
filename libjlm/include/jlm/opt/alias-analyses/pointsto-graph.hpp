@@ -249,7 +249,7 @@ public:
 		FIXME: change to ptg &
 	*/
 	jlm::aa::ptg *
-	ptg() const noexcept
+	Graph() const noexcept
 	{
 		return ptg_;
 	}
