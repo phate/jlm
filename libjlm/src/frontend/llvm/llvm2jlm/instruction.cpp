@@ -59,7 +59,9 @@ convert_apint(const llvm::APInt & value)
 	if (value.isNegative())
 		v = -value;
 
-	std::string str = value.toString(2, false);
+	llvm::SmallString<256> small_str;
+	value.toString(small_str, 2, false);
+	std::string str = small_str.str().str();
 	std::reverse(str.begin(), str.end());
 
 	jive::bitvalue_repr vr(str.c_str());
