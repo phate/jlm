@@ -6,6 +6,7 @@ TESTS += \
 	libjlm/opt/test-inlining \
 	libjlm/opt/test-invariance \
 	libjlm/opt/test-inversion \
+	libjlm/opt/TestLoadMuxReduction \
 	libjlm/opt/test-pull \
 	libjlm/opt/test-push \
 	libjlm/opt/test-unroll \
