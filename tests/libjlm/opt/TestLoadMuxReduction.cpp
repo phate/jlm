@@ -11,7 +11,7 @@
 
 #include <jive/view.hpp>
 
-static inline void
+static void
 test_load_mux_reduction()
 {
   using namespace jlm;
@@ -31,9 +31,10 @@ test_load_mux_reduction()
   auto s3 = graph.add_import({mt, "s3"});
 
   auto mux = MemStateMergeOperator::Create({s1, s2, s3});
-  auto value = load_op::create(a, {mux}, 4)[0];
+  auto ld = load_op::create(a, {mux}, 4);
 
-  auto ex = graph.add_export(value, {value->type(), "v"});
+  auto ex1 = graph.add_export(ld[0], {ld[0]->type(), "v"});
+  auto ex2 = graph.add_export(ld[1], {ld[1]->type(), "s"});
 
   // jive::view(graph.root(), stdout);
 
@@ -44,12 +45,20 @@ test_load_mux_reduction()
 
   // jive::view(graph.root(), stdout);
 
-  auto load = jive::node_output::node(ex->origin());
-  assert(jive::is<jlm::load_op>(load));
+  auto load = jive::node_output::node(ex1->origin());
+  assert(is<jlm::load_op>(load));
   assert(load->ninputs() == 4);
   assert(load->input(1)->origin() == s1);
   assert(load->input(2)->origin() == s2);
   assert(load->input(3)->origin() == s3);
+
+  auto merge = jive::node_output::node(ex2->origin());
+  assert(is<jlm::MemStateMergeOperator>(merge));
+  assert(merge->ninputs() == 3);
+  for (size_t n = 0; n < merge->ninputs(); n++) {
+    auto node = jive::node_output::node(merge->input(n)->origin());
+    assert(node == load);
+  }
 }
 
 static int
