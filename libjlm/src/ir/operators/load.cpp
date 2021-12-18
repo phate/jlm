@@ -48,6 +48,8 @@ load_op::copy() const
 	=>
 	v sl1 ... slM = load_op a si1 ... siM
 	sx1 = MemStateMerge sl1 ... slM
+
+  FIXME: The reduction can be generalized: A load node can have multiple operands from different merge nodes.
 */
 static bool
 is_load_mux_reducible(const std::vector<jive::output*> & operands)
@@ -58,10 +60,8 @@ is_load_mux_reducible(const std::vector<jive::output*> & operands)
 	if (!is<MemStateMergeOperator>(memStateMergeNode))
 		return false;
 
-	for (size_t n = 1; n < operands.size(); n++) {
-		if (jive::node_output::node(operands[n]) != memStateMergeNode)
-			return false;
-	}
+  if (operands.size() != 2)
+    return false;
 
 	return true;
 }
