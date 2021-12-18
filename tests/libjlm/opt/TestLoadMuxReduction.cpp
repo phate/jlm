@@ -61,10 +61,63 @@ test_load_mux_reduction()
   }
 }
 
+static void
+test_load_mux_reduction2()
+{
+  /*
+   * Arrange
+   */
+  using namespace jlm;
+
+  jlm::valuetype vt;
+  jlm::ptrtype pt(vt);
+  jive::memtype mt;
+
+  jive::graph graph;
+  auto nf = jlm::load_op::normal_form(&graph);
+  nf->set_mutable(false);
+  nf->set_load_mux_reducible(false);
+
+  auto a = graph.add_import({pt, "a"});
+  auto s1 = graph.add_import({mt, "s1"});
+  auto s2 = graph.add_import({mt, "s2"});
+
+  auto merge = MemStateMergeOperator::Create(std::vector<jive::output*>{s1, s2});
+  auto ld = load_op::create(a, {merge, merge}, 4);
+
+  auto ex1 = graph.add_export(ld[0], {ld[0]->type(), "v"});
+  auto ex2 = graph.add_export(ld[1], {ld[1]->type(), "s1"});
+  auto ex3 = graph.add_export(ld[2], {ld[2]->type(), "s2"});
+
+  jive::view(graph.root(), stdout);
+
+  /*
+   * Act
+   */
+  nf->set_mutable(true);
+  nf->set_load_mux_reducible(true);
+  graph.normalize();
+  graph.prune();
+
+  jive::view(graph.root(), stdout);
+
+  /*
+   * Assert
+   *
+   * The LoadMux reduction should not be performed, as the current implementation does not correctly take care of
+   * the two identical load state operands originating from the merge node.
+   */
+  assert(ld.size() == 3);
+  assert(ex1->origin() == ld[0]);
+  assert(ex2->origin() == ld[1]);
+  assert(ex3->origin() == ld[2]);
+}
+
 static int
 test()
 {
   test_load_mux_reduction();
+  test_load_mux_reduction2();
 
   return 0;
 }
