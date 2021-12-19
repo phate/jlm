@@ -599,7 +599,7 @@ BasicEncoder::EncodeCall(const jive::simple_node & node)
 		auto meminput = call_memstate_input(node);
 
 		auto states = Context_->StateMap().states(*region, memnodes);
-		auto state = call_aamux_op::create_entry(region, states, dbgstrs(memnodes));
+		auto state = CallEntryMemStateOperator::Create(region, states, dbgstrs(memnodes));
 		meminput->divert_to(state);
 	};
 
@@ -608,7 +608,7 @@ BasicEncoder::EncodeCall(const jive::simple_node & node)
 		auto memoutput = call_memstate_output(node);
 		auto & memnodes = Context_->MemoryNodes();
 
-		auto states = call_aamux_op::create_exit(memoutput, memnodes.size(), dbgstrs(memnodes));
+		auto states = CallExitMemStateOperator::Create(memoutput, memnodes.size(), dbgstrs(memnodes));
 		Context_->StateMap().replace(memnodes, states);
 	};
 
@@ -651,7 +651,7 @@ BasicEncoder::Encode(const lambda::node & lambda)
 		auto memstate = lambda_memstate_argument(lambda);
 		auto & memnodes = Context_->MemoryNodes();
 
-		auto states = lambda_aamux_op::create_entry(memstate, memnodes.size(), dbgstrs(memnodes));
+		auto states = LambdaEntryMemStateOperator::Create(memstate, memnodes.size(), dbgstrs(memnodes));
 		Context_->StateMap().insert(memnodes, states);
 	};
 
@@ -662,7 +662,7 @@ BasicEncoder::Encode(const lambda::node & lambda)
 		auto memresult = lambda_memstate_result(lambda);
 
 		auto states = Context_->StateMap().states(*subregion, memnodes);
-		auto state = lambda_aamux_op::create_exit(subregion, states, dbgstrs(memnodes));
+		auto state = LambdaExitMemStateOperator::Create(subregion, states, dbgstrs(memnodes));
 		memresult->divert_to(state);
 	};
 

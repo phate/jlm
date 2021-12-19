@@ -25,60 +25,92 @@ dbgstr(const std::vector<std::string> & dbgstrs)
 	return dbgstr;
 }
 
-/* lambda_aamux_op class */
+/* LambdaEntryMemStateOperator class */
 
-lambda_aamux_op::~lambda_aamux_op()
-{}
+LambdaEntryMemStateOperator::~LambdaEntryMemStateOperator() = default;
 
 bool
-lambda_aamux_op::operator==(const jive::operation & other) const noexcept
+LambdaEntryMemStateOperator::operator==(const jive::operation & other) const noexcept
 {
-	auto op = dynamic_cast<const lambda_aamux_op*>(&other);
-	return op
-	    && op->is_entry_ == is_entry_;
+    return is<LambdaEntryMemStateOperator>(other);
 }
 
 std::string
-lambda_aamux_op::debug_string() const
+LambdaEntryMemStateOperator::debug_string() const
 {
-	if (is_entry_)
-		return strfmt("LAMBDA_ENTRY_AAMUX[", dbgstr(dbgstrs_), "]");
-
-	return strfmt("LAMBDA_EXIT_AAMUX[", dbgstr(dbgstrs_), "]");
+    return strfmt("LambdaEntryMemState[", dbgstr(dbgstrs_), "]");
 }
 
 std::unique_ptr<jive::operation>
-lambda_aamux_op::copy() const
+LambdaEntryMemStateOperator::copy() const
 {
-	return std::unique_ptr<jive::operation>(new lambda_aamux_op(*this));
+    return std::unique_ptr<jive::operation>(new LambdaEntryMemStateOperator(*this));
 }
 
-/* call_aamux_op class */
+/* LambdaExitMemStateOperator class */
 
-call_aamux_op::~call_aamux_op()
-{}
+LambdaExitMemStateOperator::~LambdaExitMemStateOperator() = default;
 
 bool
-call_aamux_op::operator==(const jive::operation & other) const noexcept
+LambdaExitMemStateOperator::operator==(const jive::operation & other) const noexcept
 {
-	auto op = dynamic_cast<const call_aamux_op*>(&other);
-	return op
-	    && op->is_entry_ == is_entry_;
+    return is<LambdaExitMemStateOperator>(other);
 }
 
 std::string
-call_aamux_op::debug_string() const
+LambdaExitMemStateOperator::debug_string() const
 {
-	if (is_entry_)
-		return strfmt("CALL_ENTRY_AAMUX[", dbgstr(dbgstrs_), "]");
-
-	return strfmt("CALL_EXIT_AAMUX[", dbgstr(dbgstrs_), "]");
+    return strfmt("LambdaExitMemState[", dbgstr(dbgstrs_), "]");
 }
 
 std::unique_ptr<jive::operation>
-call_aamux_op::copy() const
+LambdaExitMemStateOperator::copy() const
 {
-	return std::unique_ptr<jive::operation>(new call_aamux_op(*this));
+    return std::unique_ptr<jive::operation>(new LambdaExitMemStateOperator(*this));
+}
+
+/* CallEntryMemStateOperator class */
+
+CallEntryMemStateOperator::~CallEntryMemStateOperator() = default;
+
+bool
+CallEntryMemStateOperator::operator==(const jive::operation & other) const noexcept
+{
+  return is<CallEntryMemStateOperator>(other);
+}
+
+std::string
+CallEntryMemStateOperator::debug_string() const
+{
+  return strfmt("CallEntryMemState[", dbgstr(dbgstrs_), "]");
+}
+
+std::unique_ptr<jive::operation>
+CallEntryMemStateOperator::copy() const
+{
+  return std::unique_ptr<jive::operation>(new CallEntryMemStateOperator(*this));
+}
+
+/* CallExitMemStateOperator class */
+
+CallExitMemStateOperator::~CallExitMemStateOperator() = default;
+
+bool
+CallExitMemStateOperator::operator==(const jive::operation & other) const noexcept
+{
+  return is<CallExitMemStateOperator>(other);
+}
+
+std::string
+CallExitMemStateOperator::debug_string() const
+{
+  return strfmt("CallExitMemState[", dbgstr(dbgstrs_), "]");
+}
+
+std::unique_ptr<jive::operation>
+CallExitMemStateOperator::copy() const
+{
+  return std::unique_ptr<jive::operation>(new CallExitMemStateOperator(*this));
 }
 
 }
