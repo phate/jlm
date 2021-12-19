@@ -47,7 +47,7 @@ test_store1()
 		assert(test.lambda->subregion()->nnodes() == 10);
 
 		auto lambda_exit_mux = jive::node_output::node(test.lambda->fctresult(0)->origin());
-		assert(is<aa::lambda_aamux_op>(*lambda_exit_mux, 5, 1));
+		assert(is<aa::LambdaExitMemStateOperator>(*lambda_exit_mux, 5, 1));
 
 		/* FIXME: We can do better */
 	};
@@ -133,7 +133,7 @@ test_call1()
 		/* validate f */
 		{
 			auto lambda_exit_mux = jive::node_output::node(test.lambda_f->fctresult(1)->origin());
-			assert(is<aa::lambda_aamux_op>(*lambda_exit_mux, 6, 1));
+			assert(is<aa::LambdaExitMemStateOperator>(*lambda_exit_mux, 6, 1));
 
 			/* FIXME: We can do better */
 		}
@@ -141,7 +141,7 @@ test_call1()
 		/* validate g */
 		{
 			auto lambda_exit_mux = jive::node_output::node(test.lambda_g->fctresult(1)->origin());
-			assert(is<aa::lambda_aamux_op>(*lambda_exit_mux, 6, 1));
+			assert(is<aa::LambdaExitMemStateOperator>(*lambda_exit_mux, 6, 1));
 
 			/* FIXME: We can do better */
 		}
@@ -175,7 +175,7 @@ test_call2()
 			assert(test.lambda_create->subregion()->nnodes() == 6);
 
 			auto lambda_exit_mux = jive::node_output::node(test.lambda_create->fctresult(1)->origin());
-			assert(is<aa::lambda_aamux_op>(*lambda_exit_mux, 4, 1));
+			assert(is<aa::LambdaExitMemStateOperator>(*lambda_exit_mux, 4, 1));
 
 			/* FIXME: We can do better */
 		}
@@ -185,7 +185,7 @@ test_call2()
 			assert(test.lambda_destroy->subregion()->nnodes() == 4);
 
 			auto lambda_exit_mux = jive::node_output::node(test.lambda_destroy->fctresult(0)->origin());
-			assert(is<aa::lambda_aamux_op>(*lambda_exit_mux, 4, 1));
+			assert(is<aa::LambdaExitMemStateOperator>(*lambda_exit_mux, 4, 1));
 
 			/* FIXME: We can do better */
 		}
@@ -221,19 +221,19 @@ test_indirect_call()
 			assert(test.lambda_indcall->subregion()->nnodes() == 5);
 
 			auto lambda_exit_mux = jive::node_output::node(test.lambda_indcall->fctresult(1)->origin());
-			assert(is<aa::lambda_aamux_op>(*lambda_exit_mux, 4, 1));
+			assert(is<aa::LambdaExitMemStateOperator>(*lambda_exit_mux, 4, 1));
 
 			auto call_exit_mux = jive::node_output::node(lambda_exit_mux->input(0)->origin());
-			assert(is<aa::call_aamux_op>(*call_exit_mux, 1, 4));
+			assert(is<aa::CallExitMemStateOperator>(*call_exit_mux, 1, 4));
 
 			auto call = jive::node_output::node(call_exit_mux->input(0)->origin());
 			assert(is<call_op>(*call, 3, 3));
 
 			auto call_entry_mux = jive::node_output::node(call->input(1)->origin());
-			assert(is<aa::call_aamux_op>(*call_entry_mux, 4, 1));
+			assert(is<aa::CallEntryMemStateOperator>(*call_entry_mux, 4, 1));
 
 			auto lambda_entry_mux = jive::node_output::node(call_entry_mux->input(1)->origin());
-			assert(is<aa::lambda_aamux_op>(*lambda_entry_mux, 1, 4));
+			assert(is<aa::LambdaEntryMemStateOperator>(*lambda_entry_mux, 1, 4));
 		}
 
 		/* validate test function */
@@ -241,28 +241,28 @@ test_indirect_call()
 			assert(test.lambda_test->subregion()->nnodes() == 9);
 
 			auto lambda_exit_mux = jive::node_output::node(test.lambda_test->fctresult(1)->origin());
-			assert(is<aa::lambda_aamux_op>(*lambda_exit_mux, 4, 1));
+			assert(is<aa::LambdaExitMemStateOperator>(*lambda_exit_mux, 4, 1));
 
 			auto call_exit_mux = jive::node_output::node(lambda_exit_mux->input(0)->origin());
-			assert(is<aa::call_aamux_op>(*call_exit_mux, 1, 4));
+			assert(is<aa::CallExitMemStateOperator>(*call_exit_mux, 1, 4));
 
 			auto call = jive::node_output::node(call_exit_mux->input(0)->origin());
 			assert(is<call_op>(*call, 4, 3));
 
 			auto call_entry_mux = jive::node_output::node(call->input(2)->origin());
-			assert(is<aa::call_aamux_op>(*call_entry_mux, 4, 1));
+			assert(is<aa::CallEntryMemStateOperator>(*call_entry_mux, 4, 1));
 
 			call_exit_mux = jive::node_output::node(call_entry_mux->input(0)->origin());
-			assert(is<aa::call_aamux_op>(*call_exit_mux, 1, 4));
+			assert(is<aa::CallExitMemStateOperator>(*call_exit_mux, 1, 4));
 
 			call = jive::node_output::node(call_exit_mux->input(0)->origin());
 			assert(is<call_op>(*call, 4, 3));
 
 			call_entry_mux = jive::node_output::node(call->input(2)->origin());
-			assert(is<aa::call_aamux_op>(*call_entry_mux, 4, 1));
+			assert(is<aa::CallEntryMemStateOperator>(*call_entry_mux, 4, 1));
 
 			auto lambda_entry_mux = jive::node_output::node(call_entry_mux->input(1)->origin());
-			assert(is<aa::lambda_aamux_op>(*lambda_entry_mux, 1, 4));
+			assert(is<aa::LambdaEntryMemStateOperator>(*lambda_entry_mux, 1, 4));
 		}
 	};
 
@@ -306,7 +306,7 @@ test_theta()
 		assert(test.lambda->subregion()->nnodes() == 4);
 
 		auto lambda_exit_mux = jive::node_output::node(test.lambda->fctresult(0)->origin());
-		assert(is<aa::lambda_aamux_op>(*lambda_exit_mux, 1, 1));
+		assert(is<aa::LambdaExitMemStateOperator>(*lambda_exit_mux, 1, 1));
 
 		auto theta = jive::node_output::node(lambda_exit_mux->input(0)->origin());
 		assert(theta == test.theta);
@@ -316,7 +316,7 @@ test_theta()
 		assert(store->input(2)->origin() == test.theta->output(4)->argument());
 
 		auto lambda_entry_mux = jive::node_output::node(test.theta->input(4)->origin());
-		assert(is<aa::lambda_aamux_op>(*lambda_entry_mux, 1, 1));
+		assert(is<aa::LambdaEntryMemStateOperator>(*lambda_entry_mux, 1, 1));
 	};
 
 	theta_test test;

@@ -840,22 +840,42 @@ convert(
 
 static llvm::Value *
 convert(
-	const aa::lambda_aamux_op&,
-	const std::vector<const variable*>&,
-	llvm::IRBuilder<>&,
-	context&)
+  const aa::LambdaEntryMemStateOperator&,
+  const std::vector<const variable*>&,
+  llvm::IRBuilder<>&,
+  context&)
 {
-	return nullptr;
+  return nullptr;
 }
 
 static llvm::Value *
 convert(
-	const aa::call_aamux_op&,
-	const std::vector<const variable*>&,
-	llvm::IRBuilder<>&,
-	context&)
+    const aa::LambdaExitMemStateOperator&,
+    const std::vector<const variable*>&,
+    llvm::IRBuilder<>&,
+    context&)
 {
-	return nullptr;
+    return nullptr;
+}
+
+static llvm::Value *
+convert(
+  const aa::CallEntryMemStateOperator&,
+  const std::vector<const variable*>&,
+  llvm::IRBuilder<>&,
+  context&)
+{
+  return nullptr;
+}
+
+static llvm::Value *
+convert(
+  const aa::CallExitMemStateOperator&,
+  const std::vector<const variable*>&,
+  llvm::IRBuilder<>&,
+  context&)
+{
+  return nullptr;
 }
 
 template<class OP> static llvm::Value *
@@ -871,88 +891,86 @@ convert(
 
 llvm::Value *
 convert_operation(
-	const jive::simple_op & op,
-	const std::vector<const variable*> & arguments,
-	llvm::IRBuilder<> & builder,
-	context & ctx)
+  const jive::simple_op & op,
+  const std::vector<const variable*> & arguments,
+  llvm::IRBuilder<> & builder,
+  context & ctx)
 {
-	if (dynamic_cast<const jive::bitbinary_op*>(&op))
-		return convert_bitsbinary(op, arguments, builder, ctx);
+  if (dynamic_cast<const jive::bitbinary_op*>(&op))
+    return convert_bitsbinary(op, arguments, builder, ctx);
 
-	if (dynamic_cast<const jive::bitcompare_op*>(&op))
-		return convert_bitscompare(op, arguments, builder, ctx);
+  if (dynamic_cast<const jive::bitcompare_op*>(&op))
+    return convert_bitscompare(op, arguments, builder, ctx);
 
-	static std::unordered_map<
-		std::type_index
-	, llvm::Value*(*)(
-			const jive::simple_op &,
-			const std::vector<const variable*> &,
-			llvm::IRBuilder<> &,
-			context & ctx)
-	> map({
-	  {typeid(jive::bitconstant_op), convert_bitconstant}
-	, {typeid(jive::ctlconstant_op), convert_ctlconstant}
-	, {typeid(ConstantFP), convert<ConstantFP>}
-	, {std::type_index(typeid(jlm::undef_constant_op)), convert_undef}
-	, {typeid(jive::match_op), convert_match}
-	, {std::type_index(typeid(jlm::assignment_op)), convert_assignment}
-	, {std::type_index(typeid(jlm::branch_op)), convert_branch}
-	, {std::type_index(typeid(jlm::phi_op)), convert_phi}
-	, {std::type_index(typeid(jlm::load_op)), convert_load}
-	, {std::type_index(typeid(jlm::store_op)), convert_store}
-	, {std::type_index(typeid(jlm::alloca_op)), convert_alloca}
-	, {typeid(jlm::getelementptr_op), convert_getelementptr}
-	, {typeid(ConstantDataArray), convert<ConstantDataArray>}
-	, {std::type_index(typeid(jlm::ptrcmp_op)), convert_ptrcmp}
-	, {std::type_index(typeid(jlm::fpcmp_op)), convert_fpcmp}
-	, {std::type_index(typeid(jlm::fpbin_op)), convert_fpbin}
-	, {std::type_index(typeid(jlm::valist_op)), convert_valist}
-	, {typeid(ConstantStruct), convert<ConstantStruct>}
-	, {std::type_index(typeid(jlm::ptr_constant_null_op)), convert_ptr_constant_null}
-	, {std::type_index(typeid(jlm::select_op)), convert_select}
-	, {typeid(ConstantArray), convert<ConstantArray>}
-	, {typeid(ConstantAggregateZero), convert<ConstantAggregateZero>}
-	, {typeid(ctl2bits_op), convert_ctl2bits}
-	, {typeid(constantvector_op), convert_constantvector}
-	, {typeid(constant_data_vector_op), convert_constantdatavector}
-	, {typeid(extractelement_op), convert_extractelement}
-	, {typeid(shufflevector_op), convert<shufflevector_op>}
-	, {typeid(insertelement_op), convert_insertelement}
-	, {typeid(vectorunary_op), convert_vectorunary}
-	, {typeid(vectorbinary_op), convert_vectorbinary}
-	, {typeid(vectorselect_op), convert<vectorselect_op>}
-	, {typeid(ExtractValue), convert<ExtractValue>}
+  static std::unordered_map<
+    std::type_index
+    , llvm::Value*(*)(const jive::simple_op &, const std::vector<const variable*> &, llvm::IRBuilder<> &, context & ctx)
+  > map({
+    {typeid(jive::bitconstant_op), convert_bitconstant}
+  , {typeid(jive::ctlconstant_op), convert_ctlconstant}
+  , {typeid(ConstantFP), convert<ConstantFP>}
+  , {typeid(jlm::undef_constant_op), convert_undef}
+  , {typeid(jive::match_op), convert_match}
+  , {typeid(jlm::assignment_op), convert_assignment}
+  , {typeid(jlm::branch_op), convert_branch}
+  , {typeid(jlm::phi_op), convert_phi}
+  , {typeid(jlm::load_op), convert_load}
+  , {typeid(jlm::store_op), convert_store}
+  , {typeid(jlm::alloca_op), convert_alloca}
+  , {typeid(jlm::getelementptr_op), convert_getelementptr}
+  , {typeid(ConstantDataArray), convert<ConstantDataArray>}
+  , {typeid(jlm::ptrcmp_op), convert_ptrcmp}
+  , {typeid(jlm::fpcmp_op), convert_fpcmp}
+  , {typeid(jlm::fpbin_op), convert_fpbin}
+  , {typeid(jlm::valist_op), convert_valist}
+  , {typeid(ConstantStruct), convert<ConstantStruct>}
+  , {typeid(jlm::ptr_constant_null_op), convert_ptr_constant_null}
+  , {typeid(jlm::select_op), convert_select}
+  , {typeid(ConstantArray), convert<ConstantArray>}
+  , {typeid(ConstantAggregateZero), convert<ConstantAggregateZero>}
+  , {typeid(ctl2bits_op), convert_ctl2bits}
+  , {typeid(constantvector_op), convert_constantvector}
+  , {typeid(constant_data_vector_op), convert_constantdatavector}
+  , {typeid(extractelement_op), convert_extractelement}
+  , {typeid(shufflevector_op), convert<shufflevector_op>}
+  , {typeid(insertelement_op), convert_insertelement}
+  , {typeid(vectorunary_op), convert_vectorunary}
+  , {typeid(vectorbinary_op), convert_vectorbinary}
+  , {typeid(vectorselect_op), convert<vectorselect_op>}
+  , {typeid(ExtractValue), convert<ExtractValue>}
 
-	, {typeid(call_op), convert<call_op>}
-	, {typeid(malloc_op), convert<malloc_op>}
-	, {typeid(free_op), convert<free_op>}
-	, {typeid(Memcpy), convert<Memcpy>}
+  , {typeid(call_op), convert<call_op>}
+  , {typeid(malloc_op), convert<malloc_op>}
+  , {typeid(free_op), convert<free_op>}
+  , {typeid(Memcpy), convert<Memcpy>}
 
-	, {typeid(fpneg_op), convert_fpneg}
+  , {typeid(fpneg_op), convert_fpneg}
 
-	/* LLVM Cast Instructions */
-	/* FIXME: AddrSpaceCast instruction is not supported */
-	, {typeid(bitcast_op), convert_cast<llvm::Instruction::BitCast>}
-	, {typeid(fpext_op), convert_cast<llvm::Instruction::FPExt>}
-	, {typeid(fp2si_op), convert_cast<llvm::Instruction::FPToSI>}
-	, {typeid(fp2ui_op), convert_cast<llvm::Instruction::FPToUI>}
-	, {typeid(fptrunc_op), convert_cast<llvm::Instruction::FPTrunc>}
-	, {typeid(bits2ptr_op), convert_cast<llvm::Instruction::IntToPtr>}
-	, {typeid(ptr2bits_op), convert_cast<llvm::Instruction::PtrToInt>}
-	, {typeid(sext_op), convert_cast<llvm::Instruction::SExt>}
-	, {typeid(sitofp_op), convert_cast<llvm::Instruction::SIToFP>}
-	, {typeid(trunc_op), convert_cast<llvm::Instruction::Trunc>}
-	, {typeid(uitofp_op), convert_cast<llvm::Instruction::UIToFP>}
-	, {typeid(zext_op), convert_cast<llvm::Instruction::ZExt>}
+  /* LLVM Cast Instructions */
+  /* FIXME: AddrSpaceCast instruction is not supported */
+  , {typeid(bitcast_op), convert_cast<llvm::Instruction::BitCast>}
+  , {typeid(fpext_op), convert_cast<llvm::Instruction::FPExt>}
+  , {typeid(fp2si_op), convert_cast<llvm::Instruction::FPToSI>}
+  , {typeid(fp2ui_op), convert_cast<llvm::Instruction::FPToUI>}
+  , {typeid(fptrunc_op), convert_cast<llvm::Instruction::FPTrunc>}
+  , {typeid(bits2ptr_op), convert_cast<llvm::Instruction::IntToPtr>}
+  , {typeid(ptr2bits_op), convert_cast<llvm::Instruction::PtrToInt>}
+  , {typeid(sext_op), convert_cast<llvm::Instruction::SExt>}
+  , {typeid(sitofp_op), convert_cast<llvm::Instruction::SIToFP>}
+  , {typeid(trunc_op), convert_cast<llvm::Instruction::Trunc>}
+  , {typeid(uitofp_op), convert_cast<llvm::Instruction::UIToFP>}
+  , {typeid(zext_op), convert_cast<llvm::Instruction::ZExt>}
 
-	, {typeid(MemStateMergeOperator), convert<MemStateMergeOperator>}
-	, {typeid(MemStateSplitOperator), convert<MemStateSplitOperator>}
-	, {typeid(aa::lambda_aamux_op), convert<aa::lambda_aamux_op>}
-	, {typeid(aa::call_aamux_op), convert<aa::call_aamux_op>}
-	});
+  , {typeid(MemStateMergeOperator), convert<MemStateMergeOperator>}
+  , {typeid(MemStateSplitOperator), convert<MemStateSplitOperator>}
+  , {typeid(aa::LambdaEntryMemStateOperator), convert<aa::LambdaEntryMemStateOperator>}
+  , {typeid(aa::LambdaExitMemStateOperator), convert<aa::LambdaExitMemStateOperator>}
+  , {typeid(aa::CallEntryMemStateOperator), convert<aa::CallEntryMemStateOperator>}
+  , {typeid(aa::CallExitMemStateOperator), convert<aa::CallExitMemStateOperator>}
+  });
 
-	JLM_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
-	return map[std::type_index(typeid(op))](op, arguments, builder, ctx);
+  JLM_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
+  return map[std::type_index(typeid(op))](op, arguments, builder, ctx);
 }
 
 void
