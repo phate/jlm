@@ -45,7 +45,7 @@ LIBJLM_SRC = \
 	libjlm/src/ir/variable.cpp \
 	\
 	libjlm/src/opt/alias-analyses/BasicEncoder.cpp \
-	libjlm/src/opt/alias-analyses/encoders.cpp \
+	libjlm/src/opt/alias-analyses/MemoryStateEncoder.cpp \
 	libjlm/src/opt/alias-analyses/operators.cpp \
 	libjlm/src/opt/alias-analyses/Optimization.cpp \
 	libjlm/src/opt/alias-analyses/pointsto-graph.cpp \
