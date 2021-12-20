@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/opt/alias-analyses/encoders.hpp>
+#include <jlm/opt/alias-analyses/BasicEncoder.hpp>
 #include <jlm/opt/alias-analyses/Optimization.hpp>
 #include <jlm/opt/alias-analyses/pointsto-graph.hpp>
 #include <jlm/opt/alias-analyses/steensgaard.hpp>
@@ -11,8 +11,7 @@
 namespace jlm {
 namespace aa {
 
-SteensgaardBasic::~SteensgaardBasic()
-{}
+SteensgaardBasic::~SteensgaardBasic() = default;
 
 void
 SteensgaardBasic::run(
