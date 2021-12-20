@@ -8,23 +8,6 @@
 namespace jlm {
 namespace aa {
 
-static std::string
-dbgstr(const std::vector<std::string> & dbgstrs)
-{
-	/*
-		FIXME: This is a string join. It is about time that we get our own string type.
-	*/
-	std::string dbgstr = "";
-	for (size_t n = 0; n < dbgstrs.size(); n++) {
-		if (n != 0)
-			dbgstr += "|";
-
-		dbgstr += dbgstrs[n];
-	}
-
-	return dbgstr;
-}
-
 /* LambdaEntryMemStateOperator class */
 
 LambdaEntryMemStateOperator::~LambdaEntryMemStateOperator() = default;
@@ -38,7 +21,7 @@ LambdaEntryMemStateOperator::operator==(const jive::operation & other) const noe
 std::string
 LambdaEntryMemStateOperator::debug_string() const
 {
-    return strfmt("LambdaEntryMemState[", dbgstr(dbgstrs_), "]");
+    return "LambdaEntryMemState";
 }
 
 std::unique_ptr<jive::operation>
@@ -60,7 +43,7 @@ LambdaExitMemStateOperator::operator==(const jive::operation & other) const noex
 std::string
 LambdaExitMemStateOperator::debug_string() const
 {
-    return strfmt("LambdaExitMemState[", dbgstr(dbgstrs_), "]");
+    return "LambdaExitMemState";
 }
 
 std::unique_ptr<jive::operation>
@@ -82,7 +65,7 @@ CallEntryMemStateOperator::operator==(const jive::operation & other) const noexc
 std::string
 CallEntryMemStateOperator::debug_string() const
 {
-  return strfmt("CallEntryMemState[", dbgstr(dbgstrs_), "]");
+  return "CallEntryMemState";
 }
 
 std::unique_ptr<jive::operation>
@@ -104,7 +87,7 @@ CallExitMemStateOperator::operator==(const jive::operation & other) const noexce
 std::string
 CallExitMemStateOperator::debug_string() const
 {
-  return strfmt("CallExitMemState[", dbgstr(dbgstrs_), "]");
+  return "CallExitMemState";
 }
 
 std::unique_ptr<jive::operation>
