@@ -40,7 +40,7 @@ is(
 static void
 test_store1()
 {
-	auto validate_rvsdg = [](const store_test1 & test)
+	auto validate_rvsdg = [](const StoreTest1 & test)
 	{
 		using namespace jlm;
 
@@ -52,7 +52,7 @@ test_store1()
 		/* FIXME: We can do better */
 	};
 
-	store_test1 test;
+	StoreTest1 test;
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = run_steensgaard(test.module());
@@ -66,14 +66,14 @@ test_store1()
 static void
 test_store2()
 {
-	auto validate_rvsdg = [](const store_test2 & test)
+	auto validate_rvsdg = [](const StoreTest2 & test)
 	{
 		using namespace jlm;
 
 		/* FIXME: write assertions */
 	};
 
-	store_test2 test;
+	StoreTest2 test;
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = run_steensgaard(test.module());
@@ -87,12 +87,12 @@ test_store2()
 static void
 test_load1()
 {
-	auto ValidateRvsdg = [](const load_test1 & test)
+	auto ValidateRvsdg = [](const LoadTest1 & test)
 	{
 		/* FIXME: write assertions */
 	};
 
-	load_test1 test;
+	LoadTest1 test;
 //	jive::view(test.graph()->root(), stdout);
 
 	auto ptg = run_steensgaard(test.module());
@@ -105,14 +105,14 @@ test_load1()
 static void
 test_load2()
 {
-	auto validate_rvsdg = [](const load_test2 & test)
+	auto validate_rvsdg = [](const LoadTest2 & test)
 	{
 		using namespace jlm;
 
 		/* FIXME: insert assertions */
 	};
 
-	load_test2 test;
+	LoadTest2 test;
 	jive::view(test.graph().root(), stdout);
 
 	auto ptg = run_steensgaard(test.module());
@@ -126,7 +126,7 @@ test_load2()
 static void
 test_call1()
 {
-	auto validate_rvsdg = [](const call_test1 & test)
+	auto validate_rvsdg = [](const CallTest1 & test)
 	{
 		using namespace jlm;
 
@@ -152,7 +152,7 @@ test_call1()
 		}
 	};
 
-	call_test1 test;
+	CallTest1 test;
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = run_steensgaard(test.module());
@@ -166,7 +166,7 @@ test_call1()
 static void
 test_call2()
 {
-	auto validate_rvsdg = [](const call_test2 & test)
+	auto validate_rvsdg = [](const CallTest2 & test)
 	{
 		using namespace jlm;
 
@@ -198,7 +198,7 @@ test_call2()
 		}
 	};
 
-	call_test2 test;
+	CallTest2 test;
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = run_steensgaard(test.module());
@@ -212,7 +212,7 @@ test_call2()
 static void
 test_indirect_call()
 {
-	auto validate_rvsdg = [](const indirect_call_test & test)
+	auto validate_rvsdg = [](const IndirectCallTest & test)
 	{
 		using namespace jlm;
 
@@ -266,7 +266,7 @@ test_indirect_call()
 		}
 	};
 
-	indirect_call_test test;
+	IndirectCallTest test;
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = run_steensgaard(test.module());
@@ -280,12 +280,12 @@ test_indirect_call()
 static void
 test_gamma()
 {
-	auto validate_rvsdg = [](const gamma_test & test)
+	auto validate_rvsdg = [](const GammaTest & test)
 	{
 		/* FIXME: write assertions */
 	};
 
-	gamma_test test;
+	GammaTest test;
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = run_steensgaard(test.module());
@@ -299,7 +299,7 @@ test_gamma()
 static void
 test_theta()
 {
-	auto validate_rvsdg = [](const theta_test & test)
+	auto validate_rvsdg = [](const ThetaTest & test)
 	{
 		using namespace jlm;
 
@@ -319,7 +319,7 @@ test_theta()
 		assert(is<aa::LambdaEntryMemStateOperator>(*lambda_entry_mux, 1, 1));
 	};
 
-	theta_test test;
+	ThetaTest test;
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = run_steensgaard(test.module());
@@ -333,12 +333,12 @@ test_theta()
 static void
 test_delta1()
 {
-	auto ValidateRvsdg = [](const delta_test1 & test)
+	auto ValidateRvsdg = [](const DeltaTest1 & test)
 	{
 		/* FIXME: write assertions */
 	};
 
-	delta_test1 test;
+	DeltaTest1 test;
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = run_steensgaard(test.module());
@@ -352,12 +352,12 @@ test_delta1()
 static void
 test_delta2()
 {
-	auto ValidateRvsdg = [](const delta_test2 & test)
+	auto ValidateRvsdg = [](const DeltaTest2 & test)
 	{
 		/* FIXME: write assertions */
 	};
 
-	delta_test2 test;
+	DeltaTest2 test;
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = run_steensgaard(test.module());
@@ -371,12 +371,12 @@ test_delta2()
 static void
 test_imports()
 {
-	auto ValidateRvsdg = [](const import_test & test)
+	auto ValidateRvsdg = [](const ImportTest & test)
 	{
 		/* FIXME: write assertions */
 	};
 
-	import_test test;
+	ImportTest test;
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = run_steensgaard(test.module());
@@ -390,14 +390,14 @@ test_imports()
 static void
 test_phi()
 {
-	auto validate_rvsdg = [](const phi_test & test)
+	auto validate_rvsdg = [](const PhiTest & test)
 	{
 		using namespace jlm;
 
 		/* FIXME: add assertions */
 	};
 
-	phi_test test;
+	PhiTest test;
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = run_steensgaard(test.module());
