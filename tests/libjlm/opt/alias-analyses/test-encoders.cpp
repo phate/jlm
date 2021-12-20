@@ -9,7 +9,7 @@
 
 #include <jive/view.hpp>
 
-#include <jlm/opt/alias-analyses/encoders.hpp>
+#include <jlm/opt/alias-analyses/BasicEncoder.hpp>
 #include <jlm/opt/alias-analyses/operators.hpp>
 #include <jlm/opt/alias-analyses/pointsto-graph.hpp>
 #include <jlm/opt/alias-analyses/steensgaard.hpp>
