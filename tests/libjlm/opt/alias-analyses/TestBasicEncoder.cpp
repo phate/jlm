@@ -434,4 +434,4 @@ test()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/opt/alias-analyses/test-encoders", test)
+JLM_UNIT_TEST_REGISTER("libjlm/opt/alias-analyses/TestBasicEncoder", test)
