@@ -43,7 +43,7 @@ assertTargets(
 static void
 TestStore1()
 {
-	auto validate_ptg = [](const jlm::aa::ptg & ptg, const store_test1 & test)
+	auto validate_ptg = [](const jlm::aa::ptg & ptg, const StoreTest1 & test)
 	{
 		assert(ptg.nallocnodes() == 5);
 		assert(ptg.nregnodes() == 5);
@@ -75,7 +75,7 @@ TestStore1()
 		assertTargets(plambda, {&lambda});
 	};
 
-	store_test1 test;
+	StoreTest1 test;
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = runSteensgaard(test.module());
@@ -86,7 +86,7 @@ TestStore1()
 static void
 TestStore2()
 {
-	auto validate_ptg = [](const jlm::aa::ptg & ptg, const store_test2 & test)
+	auto validate_ptg = [](const jlm::aa::ptg & ptg, const StoreTest2 & test)
 	{
 		assert(ptg.nallocnodes() == 6);
 		assert(ptg.nregnodes() == 6);
@@ -122,7 +122,7 @@ TestStore2()
 		assertTargets(plambda, {&lambda});
 	};
 
-	store_test2 test;
+	StoreTest2 test;
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = runSteensgaard(test.module());
@@ -133,7 +133,7 @@ TestStore2()
 static void
 TestLoad1()
 {
-	auto validate_ptg = [](const jlm::aa::ptg & ptg, const load_test1 & test)
+	auto validate_ptg = [](const jlm::aa::ptg & ptg, const LoadTest1 & test)
 	{
 		assert(ptg.nallocnodes() == 1);
 		assert(ptg.nregnodes() == 3);
@@ -150,7 +150,7 @@ TestLoad1()
 		assertTargets(lambarg0, {&ptg.memunknown()});
 	};
 
-	load_test1 test;
+	LoadTest1 test;
 //	jive::view(test.graph()->root(), stdout);
 	auto ptg = runSteensgaard(test.module());
 //	std::cout << jlm::aa::ptg::to_dot(*ptg);
@@ -161,7 +161,7 @@ TestLoad1()
 static void
 TestLoad2()
 {
-	auto validate_ptg = [](const jlm::aa::ptg & ptg, const load_test2 & test)
+	auto validate_ptg = [](const jlm::aa::ptg & ptg, const LoadTest2 & test)
 	{
 		assert(ptg.nallocnodes() == 6);
 		assert(ptg.nregnodes() == 8);
@@ -182,7 +182,7 @@ TestLoad2()
 		assertTargets(pload_a, {&alloca_a, &alloca_b});
 	};
 
-	load_test2 test;
+	LoadTest2 test;
 //	jive::view(test.graph()->root(), stdout);
 	auto ptg = runSteensgaard(test.module());
 //	std::cout << jlm::aa::ptg::to_dot(*ptg);
@@ -274,7 +274,7 @@ TestConstantPointerNull()
 static void
 TestBits2Ptr()
 {
-	auto validate_ptg = [](const jlm::aa::ptg & ptg, const bits2ptr_test & test)
+	auto validate_ptg = [](const jlm::aa::ptg & ptg, const Bits2PtrTest & test)
 	{
 		assert(ptg.nallocnodes() == 2);
 		assert(ptg.nregnodes() == 5);
@@ -286,7 +286,7 @@ TestBits2Ptr()
 		assertTargets(bits2ptr, {&ptg.memunknown()});
 	};
 
-	bits2ptr_test test;
+	Bits2PtrTest test;
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = runSteensgaard(test.module());
@@ -297,7 +297,7 @@ TestBits2Ptr()
 static void
 TestCall1()
 {
-	auto validate_ptg = [](const jlm::aa::ptg & ptg, const call_test1 & test)
+	auto validate_ptg = [](const jlm::aa::ptg & ptg, const CallTest1 & test)
 	{
 		assert(ptg.nallocnodes() == 6);
 		assert(ptg.nregnodes() == 12);
@@ -345,7 +345,7 @@ TestCall1()
 		assertTargets(lambda_h_cv1, {&lambda_g});
 	};
 
-	call_test1 test;
+	CallTest1 test;
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = runSteensgaard(test.module());
@@ -356,7 +356,7 @@ TestCall1()
 static void
 TestCall2()
 {
-	auto validate_ptg = [](const jlm::aa::ptg & ptg, const call_test2 & test)
+	auto validate_ptg = [](const jlm::aa::ptg & ptg, const CallTest2 & test)
 	{
 		assert(ptg.nallocnodes() == 4);
 		assert(ptg.nimpnodes() == 0);
@@ -395,7 +395,7 @@ TestCall2()
 		assertTargets(malloc_out, {&malloc});
 	};
 
-	call_test2 test;
+	CallTest2 test;
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = runSteensgaard(test.module());
@@ -406,7 +406,7 @@ TestCall2()
 static void
 TestIndirectCall()
 {
-	auto validate_ptg = [](const jlm::aa::ptg & ptg, const indirect_call_test & test)
+	auto validate_ptg = [](const jlm::aa::ptg & ptg, const IndirectCallTest & test)
 	{
 		assert(ptg.nallocnodes() == 4);
 		assert(ptg.nimpnodes() == 0);
@@ -441,7 +441,7 @@ TestIndirectCall()
 		assertTargets(lambda_test_cv2, {&lambda_three, &lambda_four});
 	};
 
-	indirect_call_test test;
+	IndirectCallTest test;
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = runSteensgaard(test.module());
@@ -452,7 +452,7 @@ TestIndirectCall()
 static void
 TestGamma()
 {
-	auto validate_ptg = [](const jlm::aa::ptg & ptg, const gamma_test & test)
+	auto validate_ptg = [](const jlm::aa::ptg & ptg, const GammaTest & test)
 	{
 		assert(ptg.nallocnodes() == 1);
 		assert(ptg.nregnodes() == 15);
@@ -476,7 +476,7 @@ TestGamma()
 		}
 	};
 
-	gamma_test test;
+	GammaTest test;
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = runSteensgaard(test.module());
@@ -487,7 +487,7 @@ TestGamma()
 static void
 TestTheta()
 {
-	auto validate_ptg = [](const jlm::aa::ptg & ptg, const theta_test & test)
+	auto validate_ptg = [](const jlm::aa::ptg & ptg, const ThetaTest & test)
 	{
 		assert(ptg.nallocnodes() == 1);
 		assert(ptg.nregnodes() == 5);
@@ -510,7 +510,7 @@ TestTheta()
 		assertTargets(theta_lv2_out, {&ptg.memunknown()});
 	};
 
-	theta_test test;
+	ThetaTest test;
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = runSteensgaard(test.module());
@@ -521,7 +521,7 @@ TestTheta()
 static void
 TestDelta1()
 {
-	auto validate_ptg = [](const jlm::aa::ptg & ptg, const delta_test1 & test)
+	auto validate_ptg = [](const jlm::aa::ptg & ptg, const DeltaTest1 & test)
 	{
 		assert(ptg.nallocnodes() == 3);
 		assert(ptg.nregnodes() == 6);
@@ -549,7 +549,7 @@ TestDelta1()
 		assertTargets(lambda_h_cv1, {&lambda_g});
 	};
 
-	delta_test1 test;
+	DeltaTest1 test;
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = runSteensgaard(test.module());
@@ -560,7 +560,7 @@ TestDelta1()
 static void
 TestDelta2()
 {
-	auto validate_ptg = [](const jlm::aa::ptg & ptg, const delta_test2 & test)
+	auto validate_ptg = [](const jlm::aa::ptg & ptg, const DeltaTest2 & test)
 	{
 		assert(ptg.nallocnodes() == 4);
 		assert(ptg.nregnodes() == 8);
@@ -593,7 +593,7 @@ TestDelta2()
 		assertTargets(lambda_f2_cvf1, {&lambda_f1});
 	};
 
-	delta_test2 test;
+	DeltaTest2 test;
 	jive::view(test.graph().root(), stdout);
 
 	auto ptg = runSteensgaard(test.module());
@@ -604,7 +604,7 @@ TestDelta2()
 static void
 TestImports()
 {
-	auto validate_ptg = [](const jlm::aa::ptg & ptg, const import_test & test)
+	auto validate_ptg = [](const jlm::aa::ptg & ptg, const ImportTest & test)
 	{
 		assert(ptg.nallocnodes() == 2);
 		assert(ptg.nimpnodes() == 2);
@@ -638,7 +638,7 @@ TestImports()
 		assertTargets(lambda_f2_cvf1, {&lambda_f1});
 	};
 
-	import_test test;
+	ImportTest test;
 	jive::view(test.graph().root(), stdout);
 
 	auto ptg = runSteensgaard(test.module());
@@ -649,7 +649,7 @@ TestImports()
 static void
 TestPhi()
 {
-	auto validate_ptg = [](const jlm::aa::ptg & ptg, const phi_test & test)
+	auto validate_ptg = [](const jlm::aa::ptg & ptg, const PhiTest & test)
 	{
 		assert(ptg.nallocnodes() == 3);
 		assert(ptg.nregnodes() == 16);
@@ -684,7 +684,7 @@ TestPhi()
 		assertTargets(alloca_out, {&alloca});
 	};
 
-	phi_test test;
+	PhiTest test;
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = runSteensgaard(test.module());
