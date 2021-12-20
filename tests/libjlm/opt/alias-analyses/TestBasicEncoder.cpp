@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "aa-tests.hpp"
+#include "AliasAnalysesTests.hpp"
 
 #include <test-registry.hpp>
 
