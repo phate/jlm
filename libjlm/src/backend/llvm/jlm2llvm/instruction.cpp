@@ -13,7 +13,7 @@
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/tac.hpp>
 
-#include <jlm/opt/alias-analyses/operators.hpp>
+#include <jlm/opt/alias-analyses/Operators.hpp>
 
 #include <jlm/backend/llvm/jlm2llvm/context.hpp>
 #include <jlm/backend/llvm/jlm2llvm/instruction.hpp>

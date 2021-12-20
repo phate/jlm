@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/opt/alias-analyses/operators.hpp>
+#include <jlm/opt/alias-analyses/Operators.hpp>
 
 namespace jlm {
 namespace aa {

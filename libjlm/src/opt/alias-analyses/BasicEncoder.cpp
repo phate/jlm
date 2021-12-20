@@ -6,7 +6,7 @@
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/types.hpp>
 #include <jlm/opt/alias-analyses/BasicEncoder.hpp>
-#include <jlm/opt/alias-analyses/operators.hpp>
+#include <jlm/opt/alias-analyses/Operators.hpp>
 #include <jlm/opt/alias-analyses/pointsto-graph.hpp>
 #include <jlm/opt/dne.hpp>
 
