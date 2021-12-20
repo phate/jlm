@@ -88,15 +88,15 @@ protected:
 	Encode(const jive::simple_node & node);
 };
 
-/** FIXME: write documentation
+/** \brief BasicEncoder class
 */
 class BasicEncoder final : public MemoryStateEncoder {
 public:
 	class Context;
 
-	virtual
 	~BasicEncoder() override;
 
+  explicit
 	BasicEncoder(jlm::aa::ptg & ptg);
 
 	BasicEncoder(const BasicEncoder&) = delete;
@@ -115,7 +115,7 @@ public:
 		return Ptg_;
 	}
 
-	virtual void
+  void
 	Encode(rvsdg_module & module) override;
 
 	static void
@@ -124,40 +124,40 @@ public:
 		rvsdg_module & module);
 
 private:
-	virtual void
+  void
 	EncodeAlloca(const jive::simple_node & node) override;
 
-	virtual void
+  void
 	EncodeMalloc(const jive::simple_node & node) override;
 
-	virtual void
+  void
 	EncodeLoad(const jive::simple_node & node) override;
 
-	virtual void
+  void
 	EncodeStore(const jive::simple_node & node) override;
 
-	virtual void
+  void
 	EncodeFree(const jive::simple_node & node) override;
 
-	virtual void
+  void
 	EncodeCall(const jive::simple_node & node) override;
 
-	virtual void
+  void
 	EncodeMemcpy(const jive::simple_node & node) override;
 
-	virtual void
+  void
 	Encode(const lambda::node & lambda) override;
 
-	virtual void
+  void
 	Encode(const jive::phi::node & phi) override;
 
-	virtual void
+  void
 	Encode(const delta::node & delta) override;
 
-	virtual void
+  void
 	Encode(jive::gamma_node & gamma) override;
 
-	virtual void
+  void
 	Encode(jive::theta_node & theta) override;
 
 	static void
