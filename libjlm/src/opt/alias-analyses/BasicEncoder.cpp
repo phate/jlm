@@ -16,17 +16,6 @@
 namespace jlm {
 namespace aa {
 
-static std::vector<std::string>
-dbgstrs(const std::vector<const ptg::memnode*> & memnodes)
-{
-  std::vector<std::string> strs;
-  strs.reserve(memnodes.size());
-  for (auto memnode : memnodes)
-    strs.push_back(memnode->debug_string());
-
-  return strs;
-}
-
 static jive::input *
 call_memstate_input(const jive::simple_node & node)
 {
@@ -530,7 +519,7 @@ BasicEncoder::EncodeCall(const jive::simple_node & node)
     auto meminput = call_memstate_input(node);
 
     auto states = Context_->StateMap().states(*region, memnodes);
-    auto state = CallEntryMemStateOperator::Create(region, states, dbgstrs(memnodes));
+    auto state = CallEntryMemStateOperator::Create(region, states);
     meminput->divert_to(state);
   };
 
@@ -539,7 +528,7 @@ BasicEncoder::EncodeCall(const jive::simple_node & node)
     auto memoutput = call_memstate_output(node);
     auto & memnodes = Context_->MemoryNodes();
 
-    auto states = CallExitMemStateOperator::Create(memoutput, memnodes.size(), dbgstrs(memnodes));
+    auto states = CallExitMemStateOperator::Create(memoutput, memnodes.size());
     Context_->StateMap().replace(memnodes, states);
   };
 
@@ -582,7 +571,7 @@ BasicEncoder::Encode(const lambda::node & lambda)
     auto memstate = lambda_memstate_argument(lambda);
     auto & memnodes = Context_->MemoryNodes();
 
-    auto states = LambdaEntryMemStateOperator::Create(memstate, memnodes.size(), dbgstrs(memnodes));
+    auto states = LambdaEntryMemStateOperator::Create(memstate, memnodes.size());
     Context_->StateMap().insert(memnodes, states);
   };
 
@@ -593,7 +582,7 @@ BasicEncoder::Encode(const lambda::node & lambda)
     auto memresult = lambda_memstate_result(lambda);
 
     auto states = Context_->StateMap().states(*subregion, memnodes);
-    auto state = LambdaExitMemStateOperator::Create(subregion, states, dbgstrs(memnodes));
+    auto state = LambdaExitMemStateOperator::Create(subregion, states);
     memresult->divert_to(state);
   };
 

@@ -18,11 +18,10 @@ public:
   ~LambdaEntryMemStateOperator() override;
 
 private:
+  explicit
   LambdaEntryMemStateOperator(
-    size_t nresults,
-    std::vector<std::string>  dbgstrs)
+    size_t nresults)
     : MemStateOperator(1, nresults)
-    , dbgstrs_(std::move(dbgstrs))
   {}
 
 public:
@@ -38,19 +37,12 @@ public:
   static std::vector<jive::output*>
   Create(
     jive::output * output,
-    size_t nresults,
-    const std::vector<std::string> & dbgstrs)
+    size_t nresults)
   {
-    if (nresults != dbgstrs.size())
-      throw error("Insufficient number of state debug strings.");
-
     auto region = output->region();
-    LambdaEntryMemStateOperator op(nresults, dbgstrs);
+    LambdaEntryMemStateOperator op(nresults);
     return jive::simple_node::create_normalized(region, op, {output});
   }
-
-private:
-  std::vector<std::string> dbgstrs_;
 };
 
 /** \brief LambdaExitMemStateOperator class
@@ -60,11 +52,10 @@ public:
   ~LambdaExitMemStateOperator() override;
 
 private:
+  explicit
   LambdaExitMemStateOperator(
-    size_t noperands,
-    std::vector<std::string>  dbgstrs)
+    size_t noperands)
     : MemStateOperator(noperands, 1)
-    , dbgstrs_(std::move(dbgstrs))
   {}
 
 public:
@@ -80,18 +71,11 @@ public:
   static jive::output *
   Create(
     jive::region * region,
-    const std::vector<jive::output*> & operands,
-    const std::vector<std::string> & dbgstrs)
+    const std::vector<jive::output*> & operands)
   {
-    if (operands.size() != dbgstrs.size())
-      throw error("Insufficient number of state debug strings.");
-
-    LambdaExitMemStateOperator op(operands.size(), dbgstrs);
+    LambdaExitMemStateOperator op(operands.size());
     return jive::simple_node::create_normalized(region, op, operands)[0];
   }
-
-private:
-  std::vector<std::string> dbgstrs_;
 };
 
 /** \brief CallEntryMemStateOperator class
@@ -101,11 +85,10 @@ public:
   ~CallEntryMemStateOperator() override;
 
 private:
+  explicit
   CallEntryMemStateOperator(
-    size_t noperands,
-    std::vector<std::string>  dbgstrs)
+    size_t noperands)
     : MemStateOperator(noperands, 1)
-    , dbgstrs_(std::move(dbgstrs))
   {}
 
 public:
@@ -121,18 +104,11 @@ public:
   static jive::output *
   Create(
     jive::region * region,
-    const std::vector<jive::output*> & operands,
-    const std::vector<std::string> & dbgstrs)
+    const std::vector<jive::output*> & operands)
   {
-    if (operands.size() != dbgstrs.size())
-      throw error("Insufficient number of state debug strings.");
-
-    CallEntryMemStateOperator op(operands.size(), dbgstrs);
+    CallEntryMemStateOperator op(operands.size());
     return jive::simple_node::create_normalized(region, op, operands)[0];
   }
-
-private:
-  std::vector<std::string> dbgstrs_;
 };
 
 /** \brief CallExitMemStateOperator class
@@ -142,11 +118,10 @@ public:
   ~CallExitMemStateOperator() override;
 
 private:
+  explicit
   CallExitMemStateOperator(
-    size_t nresults,
-    std::vector<std::string>  dbgstrs)
+    size_t nresults)
     : MemStateOperator(1, nresults)
-    , dbgstrs_(std::move(dbgstrs))
   {}
 
 public:
@@ -162,19 +137,12 @@ public:
   static std::vector<jive::output*>
   Create(
     jive::output * output,
-    size_t nresults,
-    const std::vector<std::string> & dbgstrs)
+    size_t nresults)
   {
-    if (nresults != dbgstrs.size())
-      throw error("Insufficient number of state debug strings.");
-
     auto region = output->region();
-    CallExitMemStateOperator op(nresults, dbgstrs);
+    CallExitMemStateOperator op(nresults);
     return jive::simple_node::create_normalized(region, op, {output});
   }
-
-private:
-  std::vector<std::string> dbgstrs_;
 };
 
 }
