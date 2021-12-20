@@ -6,11 +6,10 @@
 #ifndef JLM_OPT_ALIAS_ANALYSES_BASICENCODER_HPP
 #define JLM_OPT_ALIAS_ANALYSES_BASICENCODER_HPP
 
-#include <jlm/opt/alias-analyses/encoders.hpp>
+#include <jlm/opt/alias-analyses/MemoryStateEncoder.hpp>
 
 namespace jlm {
-namespace aa
-{
+namespace aa {
 
 /** \brief BasicEncoder class
 */
