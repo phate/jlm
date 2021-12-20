@@ -16,14 +16,14 @@
 namespace jlm {
 namespace aa {
 
-MemoryStateEncoder::~MemoryStateEncoder()
-{}
+MemoryStateEncoder::~MemoryStateEncoder() = default;
 
 static std::vector<std::string>
 dbgstrs(const std::vector<const ptg::memnode*> & memnodes)
 {
 	std::vector<std::string> strs;
-	for (auto memnode : memnodes)
+	strs.reserve(memnodes.size());
+  for (auto memnode : memnodes)
 		strs.push_back(memnode->debug_string());
 
 	return strs;
@@ -97,12 +97,11 @@ lambda_memstate_result(const lambda::node & lambda)
 	JLM_UNREACHABLE("This should have never happened!");
 }
 
-/** \brief Hash map for mapping point-to graph memory nodes to RVSDG memory states.
+/** \brief Hash map for mapping points-to graph memory nodes to RVSDG memory states.
 */
 class StateMap final {
 public:
-	StateMap()
-	{}
+	StateMap() = default;
 
 	StateMap(const StateMap&) = delete;
 
@@ -128,13 +127,14 @@ public:
 	}
 
 	std::vector<jive::output*>
-	states(const std::vector<const ptg::memnode*> & nodes)
+	states(const std::vector<const ptg::memnode*> & nodes) const
 	{
-		std::vector<jive::output*> states;
-		for (auto & node : nodes)
-			states.push_back(state(node));
+    std::vector<jive::output*> states;
+    states.reserve(nodes.size());
+    for (auto & node : nodes)
+      states.push_back(state(node));
 
-		return states;
+    return states;
 	}
 
 	void
@@ -172,7 +172,7 @@ public:
 
 	void
 	replace(
-		const std::vector<const ptg::memnode*> nodes,
+		const std::vector<const ptg::memnode*> & nodes,
 		const std::vector<jive::output*> & states)
 	{
 		JLM_ASSERT(nodes.size() == states.size());
@@ -194,6 +194,7 @@ private:
 */
 class RegionalizedStateMap final {
 public:
+  explicit
 	RegionalizedStateMap(const jlm::aa::ptg & ptg)
 	{
 		CollectAddressMemNodes(ptg);
@@ -304,12 +305,12 @@ public:
 	{
 		JLM_ASSERT(is<ptrtype>(output->type()));
 		JLM_ASSERT(AddressMemNodeMap_.find(output) != AddressMemNodeMap_.end());
-		JLM_ASSERT(AddressMemNodeMap_[output].size() != 0);
+		JLM_ASSERT(!AddressMemNodeMap_[output].empty());
 
 		return AddressMemNodeMap_[output];
 	}
 
-	std::unique_ptr<BasicEncoder::Context>
+	static std::unique_ptr<BasicEncoder::Context>
 	Create(const jlm::aa::ptg & ptg)
 	{
 		return std::make_unique<BasicEncoder::Context>(ptg);
@@ -414,6 +415,7 @@ MemoryStateEncoder::Encode(jive::region & region)
 */
 class BasicEncoder::Context final {
 public:
+  explicit
 	Context(const jlm::aa::ptg & ptg)
 	: StateMap_(ptg)
 	{
@@ -463,8 +465,7 @@ private:
 	std::vector<const ptg::memnode*> MemoryNodes_;
 };
 
-BasicEncoder::~BasicEncoder()
-{}
+BasicEncoder::~BasicEncoder() = default;
 
 BasicEncoder::BasicEncoder(jlm::aa::ptg & ptg)
 : Ptg_(ptg)
