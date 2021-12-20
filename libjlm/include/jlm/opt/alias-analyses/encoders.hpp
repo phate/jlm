@@ -167,13 +167,6 @@ private:
 	std::unique_ptr<Context> Context_;
 };
 
-#if 0
-/** FIXME: write documentation
-*/
-void
-encode(const jlm::aa::ptg & ptg, rvsdg_module & module);
-#endif
-
 }}
 
 #endif
