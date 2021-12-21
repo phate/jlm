@@ -726,4 +726,4 @@ test()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/opt/alias-analyses/test-steensgaard", test)
+JLM_UNIT_TEST_REGISTER("libjlm/opt/alias-analyses/TestSteensgaard", test)
