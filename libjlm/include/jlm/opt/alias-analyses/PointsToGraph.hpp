@@ -41,7 +41,7 @@ public:
 	class allocator;
 	class edge;
 	class impnode;
-	class memnode;
+	class MemoryNode;
 	class Node;
 	class RegisterNode;
 	class unknown;
@@ -134,7 +134,7 @@ public:
 	}
 
 	/*
-		FIXME: I would like to call this function memnode() or Node().
+		FIXME: I would like to call this function MemoryNode() or Node().
 	*/
 	const PointsToGraph::allocator &
 	find(const jive::node * node) const
@@ -271,7 +271,7 @@ public:
 
 	/*
 		FIXME: change to PointsToGraph::Node &
-		FIXME: I believe that this can only be a memnode. If so, make it explicit in the type.
+		FIXME: I believe that this can only be a MemoryNode. If so, make it explicit in the type.
 	*/
 	void
 	add_edge(PointsToGraph::Node * target);
@@ -315,7 +315,7 @@ public:
 	/**
 		FIXME: write documentation
 	*/
-	static std::vector<const PointsToGraph::memnode*>
+	static std::vector<const PointsToGraph::MemoryNode*>
 	allocators(const PointsToGraph::RegisterNode & node);
 
 	static PointsToGraph::RegisterNode *
@@ -336,12 +336,12 @@ private:
 *
 * FIXME: Add final and convert protected to private after unknown inheritance is resolved.
 */
-class PointsToGraph::memnode : public PointsToGraph::Node {
+class PointsToGraph::MemoryNode : public PointsToGraph::Node {
 public:
-	~memnode() override;
+	~MemoryNode() override;
 
 protected:
-	memnode(jlm::aa::PointsToGraph * ptg)
+	MemoryNode(jlm::aa::PointsToGraph * ptg)
 	: Node(ptg)
 	{}
 };
@@ -350,7 +350,7 @@ protected:
 /**
 * FIXME: write documentation
 */
-class PointsToGraph::allocator final : public PointsToGraph::memnode {
+class PointsToGraph::allocator final : public PointsToGraph::MemoryNode {
 public:
 	~allocator() override;
 
@@ -358,7 +358,7 @@ private:
 	allocator(
 		jlm::aa::PointsToGraph * ptg
 	, const jive::node * node)
-	: memnode(ptg)
+	: MemoryNode(ptg)
 	, node_(node)
 	{}
 
@@ -388,7 +388,7 @@ private:
 /** \brief FIXME: write documentation
 *
 */
-class PointsToGraph::impnode final : public PointsToGraph::memnode {
+class PointsToGraph::impnode final : public PointsToGraph::MemoryNode {
 public:
 	~impnode() override;
 
@@ -396,7 +396,7 @@ private:
 	impnode(
 		jlm::aa::PointsToGraph * ptg
 	, const jive::argument * argument)
-	: memnode(ptg)
+	: MemoryNode(ptg)
 	, argument_(argument)
 	{
 		JLM_ASSERT(dynamic_cast<const jlm::impport*>(&argument->port()));
@@ -429,7 +429,7 @@ private:
 *
 * FIXME: write documentation
 */
-class PointsToGraph::unknown final : public PointsToGraph::memnode {
+class PointsToGraph::unknown final : public PointsToGraph::MemoryNode {
 	friend jlm::aa::PointsToGraph;
 
 public:
@@ -437,7 +437,7 @@ public:
 
 private:
 	unknown(jlm::aa::PointsToGraph * ptg)
-	: memnode(ptg)
+	: MemoryNode(ptg)
 	{}
 
 	virtual std::string

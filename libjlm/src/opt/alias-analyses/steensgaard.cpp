@@ -1095,9 +1095,9 @@ Steensgaard::ConstructPointsToGraph(const locationset & lset) const
 	/*
 		Create points-to graph nodes
 	*/
-	std::vector<PointsToGraph::memnode*> memNodes;
+	std::vector<PointsToGraph::MemoryNode*> memNodes;
 	std::unordered_map<location*, PointsToGraph::Node*> map;
-	std::unordered_map<const disjointset<location*>::set*, std::vector<PointsToGraph::memnode*>> allocators;
+	std::unordered_map<const disjointset<location*>::set*, std::vector<PointsToGraph::MemoryNode*>> allocators;
 	for (auto & set : lset) {
 		for (auto & loc : set) {
 			if (auto regloc = dynamic_cast<jlm::aa::regloc*>(loc)) {

@@ -241,16 +241,16 @@ PointsToGraph::RegisterNode::debug_string() const
 	return "REGNODE";
 }
 
-std::vector<const PointsToGraph::memnode*>
+std::vector<const PointsToGraph::MemoryNode*>
 PointsToGraph::RegisterNode::allocators(const PointsToGraph::RegisterNode & node)
 {
 	/*
 		FIXME: This function currently iterates through all pointstos of the RegisterNode.
 		Maybe we can be more efficient?
 	*/
-	std::vector<const PointsToGraph::memnode*> memnodes;
+	std::vector<const PointsToGraph::MemoryNode*> memnodes;
 	for (auto & target : node.targets()) {
-		if (auto memnode = dynamic_cast<const PointsToGraph::memnode*>(&target))
+		if (auto memnode = dynamic_cast<const PointsToGraph::MemoryNode*>(&target))
 			memnodes.push_back(memnode);
 	}
 
@@ -259,7 +259,7 @@ PointsToGraph::RegisterNode::allocators(const PointsToGraph::RegisterNode & node
 
 /* points-to graph memory node */
 
-PointsToGraph::memnode::~memnode()
+PointsToGraph::MemoryNode::~MemoryNode()
 {}
 
 /* points-to graph allocator node */
