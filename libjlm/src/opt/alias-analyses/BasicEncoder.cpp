@@ -101,20 +101,20 @@ public:
   operator=(StateMap&&) = delete;
 
   bool
-  contains(const PointsToGraph::memnode * node) const noexcept
+  contains(const PointsToGraph::MemoryNode * node) const noexcept
   {
     return states_.find(node) != states_.end();
   }
 
   jive::output *
-  state(const PointsToGraph::memnode * node) const noexcept
+  state(const PointsToGraph::MemoryNode * node) const noexcept
   {
     JLM_ASSERT(contains(node));
     return states_.at(node);
   }
 
   std::vector<jive::output*>
-  states(const std::vector<const PointsToGraph::memnode*> & nodes) const
+  states(const std::vector<const PointsToGraph::MemoryNode*> & nodes) const
   {
     std::vector<jive::output*> states;
     states.reserve(nodes.size());
@@ -126,7 +126,7 @@ public:
 
   void
   insert(
-    const PointsToGraph::memnode * node,
+    const PointsToGraph::MemoryNode * node,
     jive::output * state)
   {
     JLM_ASSERT(!contains(node));
@@ -137,7 +137,7 @@ public:
 
   void
   insert(
-    const std::vector<const PointsToGraph::memnode*> & nodes,
+    const std::vector<const PointsToGraph::MemoryNode*> & nodes,
     const std::vector<jive::output*> & states)
   {
     JLM_ASSERT(nodes.size() == states.size());
@@ -148,7 +148,7 @@ public:
 
   void
   replace(
-    const PointsToGraph::memnode * node,
+    const PointsToGraph::MemoryNode * node,
     jive::output * state)
   {
     JLM_ASSERT(contains(node));
@@ -159,7 +159,7 @@ public:
 
   void
   replace(
-    const std::vector<const PointsToGraph::memnode*> & nodes,
+    const std::vector<const PointsToGraph::MemoryNode*> & nodes,
     const std::vector<jive::output*> & states)
   {
     JLM_ASSERT(nodes.size() == states.size());
@@ -174,7 +174,7 @@ public:
   }
 
 private:
-  std::unordered_map<const PointsToGraph::memnode*, jive::output*> states_;
+  std::unordered_map<const PointsToGraph::MemoryNode*, jive::output*> states_;
 };
 
 /** FIXME: write documentation
@@ -200,14 +200,14 @@ public:
   bool
   contains(
     const jive::region & region,
-    const PointsToGraph::memnode * node)
+    const PointsToGraph::MemoryNode * node)
   {
     return GetOrInsertStateMap(region).contains(node);
   }
 
   void
   insert(
-    const PointsToGraph::memnode * node,
+    const PointsToGraph::MemoryNode * node,
     jive::output * state)
   {
     GetOrInsertStateMap(*state->region()).insert(node, state);
@@ -215,7 +215,7 @@ public:
 
   void
   insert(
-    const std::vector<const PointsToGraph::memnode*> & nodes,
+    const std::vector<const PointsToGraph::MemoryNode*> & nodes,
     const std::vector<jive::output*> & states)
   {
     JLM_ASSERT(nodes.size() == states.size());
@@ -247,7 +247,7 @@ public:
 
   void
   replace(
-    const PointsToGraph::memnode * node,
+    const PointsToGraph::MemoryNode * node,
     jive::output * state)
   {
     GetOrInsertStateMap(*state->region()).replace(node, state);
@@ -255,7 +255,7 @@ public:
 
   void
   replace(
-    const std::vector<const PointsToGraph::memnode*> & nodes,
+    const std::vector<const PointsToGraph::MemoryNode*> & nodes,
     const std::vector<jive::output*> & states)
   {
     JLM_ASSERT(nodes.size() == states.size());
@@ -274,7 +274,7 @@ public:
   std::vector<jive::output*>
   states(
     const jive::region & region,
-    const std::vector<const PointsToGraph::memnode*> & nodes)
+    const std::vector<const PointsToGraph::MemoryNode*> & nodes)
   {
     return GetOrInsertStateMap(region).states(nodes);
   }
@@ -282,12 +282,12 @@ public:
   jive::output *
   state(
     const jive::region & region,
-    const PointsToGraph::memnode & memnode)
+    const PointsToGraph::MemoryNode & memnode)
   {
     return states(region, {&memnode})[0];
   }
 
-  std::vector<const PointsToGraph::memnode*>
+  std::vector<const PointsToGraph::MemoryNode*>
   memnodes(const jive::output * output)
   {
     JLM_ASSERT(is<ptrtype>(output->type()));
@@ -324,7 +324,7 @@ private:
     }
   }
 
-  std::unordered_map<const jive::output*, std::vector<const PointsToGraph::memnode*>> AddressMemNodeMap_;
+  std::unordered_map<const jive::output*, std::vector<const PointsToGraph::MemoryNode*>> AddressMemNodeMap_;
   std::unordered_map<const jive::region*, std::unique_ptr<StateMap>> StateMaps_;
 };
 
@@ -357,7 +357,7 @@ public:
     return StateMap_;
   }
 
-  const std::vector<const PointsToGraph::memnode*> &
+  const std::vector<const PointsToGraph::MemoryNode*> &
   MemoryNodes()
   {
     return MemoryNodes_;
@@ -377,11 +377,11 @@ private:
       MemoryNodes_.push_back(pair.second.get());
 
     for (auto & pair : ptg.impnodes())
-      MemoryNodes_.push_back(static_cast<const PointsToGraph::memnode*>(pair.second.get()));
+      MemoryNodes_.push_back(static_cast<const PointsToGraph::MemoryNode*>(pair.second.get()));
   }
 
   RegionalizedStateMap StateMap_;
-  std::vector<const PointsToGraph::memnode*> MemoryNodes_;
+  std::vector<const PointsToGraph::MemoryNode*> MemoryNodes_;
 };
 
 BasicEncoder::~BasicEncoder() = default;
