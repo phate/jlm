@@ -318,7 +318,7 @@ private:
   {
     for (auto & regnode : ptg.regnodes()) {
       auto output = regnode.first;
-      auto memNodes = PointsToGraph::regnode::allocators(*regnode.second);
+      auto memNodes = PointsToGraph::RegisterNode::allocators(*regnode.second);
 
       AddressMemNodeMap_[output] = memNodes;
     }

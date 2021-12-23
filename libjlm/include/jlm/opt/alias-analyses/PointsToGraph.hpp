@@ -43,12 +43,12 @@ public:
 	class impnode;
 	class memnode;
 	class Node;
-	class regnode;
+	class RegisterNode;
 	class unknown;
 
 	using allocnodemap = std::unordered_map<const jive::node*, std::unique_ptr<PointsToGraph::allocator>>;
 	using impnodemap = std::unordered_map<const jive::argument*, std::unique_ptr<PointsToGraph::impnode>>;
-	using regnodemap = std::unordered_map<const jive::output*, std::unique_ptr<PointsToGraph::regnode>>;
+	using regnodemap = std::unordered_map<const jive::output*, std::unique_ptr<PointsToGraph::RegisterNode>>;
 
 	using allocnode_range = iterator_range<allocnodemap::iterator>;
 	using allocnode_constrange = iterator_range<allocnodemap::const_iterator>;
@@ -157,9 +157,9 @@ public:
 	}
 
 	/*
-		FIXME: I would like to call this function regnode() or node().
+		FIXME: I would like to call this function RegisterNode() or node().
 	*/
-	const PointsToGraph::regnode &
+	const PointsToGraph::RegisterNode &
 	find_regnode(const jive::output * output) const
 	{
 		auto it = regnodes_.find(output);
@@ -179,7 +179,7 @@ public:
 		FIXME: change return value to PointsToGraph::Node &
 	*/
 	PointsToGraph::Node *
-	add(std::unique_ptr<PointsToGraph::regnode> node);
+	add(std::unique_ptr<PointsToGraph::RegisterNode> node);
 
 	PointsToGraph::Node *
 	add(std::unique_ptr<PointsToGraph::impnode> node);
@@ -290,12 +290,12 @@ private:
 *
 * FIXME: write documentation
 */
-class PointsToGraph::regnode final : public PointsToGraph::Node {
+class PointsToGraph::RegisterNode final : public PointsToGraph::Node {
 public:
-	~regnode() override;
+	~RegisterNode() override;
 
 private:
-	regnode(
+	RegisterNode(
 		jlm::aa::PointsToGraph * ptg,
 		const jive::output * output)
 	: Node(ptg)
@@ -316,13 +316,13 @@ public:
 		FIXME: write documentation
 	*/
 	static std::vector<const PointsToGraph::memnode*>
-	allocators(const PointsToGraph::regnode & node);
+	allocators(const PointsToGraph::RegisterNode & node);
 
-	static PointsToGraph::regnode *
+	static PointsToGraph::RegisterNode *
 	create(jlm::aa::PointsToGraph * ptg, const jive::output * output)
 	{
-		auto node = std::unique_ptr<PointsToGraph::regnode>(new regnode(ptg, output));
-		return static_cast<regnode*>(ptg->add(std::move(node)));
+		auto node = std::unique_ptr<PointsToGraph::RegisterNode>(new RegisterNode(ptg, output));
+		return static_cast<RegisterNode*>(ptg->add(std::move(node)));
 	}
 
 private:

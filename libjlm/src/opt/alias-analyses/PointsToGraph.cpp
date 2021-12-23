@@ -110,7 +110,7 @@ PointsToGraph::add(std::unique_ptr<PointsToGraph::allocator> node)
 }
 
 PointsToGraph::Node *
-PointsToGraph::add(std::unique_ptr<PointsToGraph::regnode> node)
+PointsToGraph::add(std::unique_ptr<PointsToGraph::RegisterNode> node)
 {
 	auto tmp = node.get();
 	regnodes_[node->output()] = std::move(node);
@@ -132,10 +132,10 @@ PointsToGraph::to_dot(const jlm::aa::PointsToGraph & ptg)
 {
 	auto shape = [](const PointsToGraph::Node & node) {
 		static std::unordered_map<std::type_index, std::string> shapes({
-		  {typeid(allocator), "box"}
-	  , {typeid(impnode),   "box"}
-		, {typeid(regnode),   "oval"}
-		, {typeid(unknown),   "box"}
+		  {typeid(allocator),    "box"}
+	  , {typeid(impnode),      "box"}
+		, {typeid(RegisterNode), "oval"}
+		, {typeid(unknown),      "box"}
 		});
 
 		if (shapes.find(typeid(node)) != shapes.end())
@@ -218,11 +218,11 @@ PointsToGraph::Node::remove_edge(PointsToGraph::Node * target)
 
 /* points-to graph register node */
 
-PointsToGraph::regnode::~regnode()
+PointsToGraph::RegisterNode::~RegisterNode()
 {}
 
 std::string
-PointsToGraph::regnode::debug_string() const
+PointsToGraph::RegisterNode::debug_string() const
 {
 	auto node = jive::node_output::node(output());
 
@@ -242,10 +242,10 @@ PointsToGraph::regnode::debug_string() const
 }
 
 std::vector<const PointsToGraph::memnode*>
-PointsToGraph::regnode::allocators(const PointsToGraph::regnode & node)
+PointsToGraph::RegisterNode::allocators(const PointsToGraph::RegisterNode & node)
 {
 	/*
-		FIXME: This function currently iterates through all pointstos of the regnode.
+		FIXME: This function currently iterates through all pointstos of the RegisterNode.
 		Maybe we can be more efficient?
 	*/
 	std::vector<const PointsToGraph::memnode*> memnodes;
