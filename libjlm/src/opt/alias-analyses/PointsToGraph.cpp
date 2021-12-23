@@ -101,7 +101,7 @@ PointsToGraph::end() const
 }
 
 PointsToGraph::Node *
-PointsToGraph::add(std::unique_ptr<PointsToGraph::allocator> node)
+PointsToGraph::add(std::unique_ptr<PointsToGraph::AllocatorNode> node)
 {
 	auto tmp = node.get();
 	allocnodes_[node->node()] = std::move(node);
@@ -132,7 +132,7 @@ PointsToGraph::to_dot(const jlm::aa::PointsToGraph & ptg)
 {
 	auto shape = [](const PointsToGraph::Node & node) {
 		static std::unordered_map<std::type_index, std::string> shapes({
-		  {typeid(allocator),    "box"}
+		  {typeid(AllocatorNode), "box"}
 	  , {typeid(impnode),      "box"}
 		, {typeid(RegisterNode), "oval"}
 		, {typeid(unknown),      "box"}
@@ -262,13 +262,13 @@ PointsToGraph::RegisterNode::allocators(const PointsToGraph::RegisterNode & node
 PointsToGraph::MemoryNode::~MemoryNode()
 {}
 
-/* points-to graph allocator node */
+/* points-to graph AllocatorNode */
 
-PointsToGraph::allocator::~allocator()
+PointsToGraph::AllocatorNode::~AllocatorNode()
 {}
 
 std::string
-PointsToGraph::allocator::debug_string() const
+PointsToGraph::AllocatorNode::debug_string() const
 {
 	return node()->operation().debug_string();
 }

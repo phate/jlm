@@ -38,7 +38,7 @@ class PointsToGraph final {
 	class iterator;
 
 public:
-	class allocator;
+	class AllocatorNode;
 	class edge;
 	class impnode;
 	class MemoryNode;
@@ -46,7 +46,7 @@ public:
 	class RegisterNode;
 	class unknown;
 
-	using allocnodemap = std::unordered_map<const jive::node*, std::unique_ptr<PointsToGraph::allocator>>;
+	using allocnodemap = std::unordered_map<const jive::node*, std::unique_ptr<PointsToGraph::AllocatorNode>>;
 	using impnodemap = std::unordered_map<const jive::argument*, std::unique_ptr<PointsToGraph::impnode>>;
 	using regnodemap = std::unordered_map<const jive::output*, std::unique_ptr<PointsToGraph::RegisterNode>>;
 
@@ -136,7 +136,7 @@ public:
 	/*
 		FIXME: I would like to call this function MemoryNode() or Node().
 	*/
-	const PointsToGraph::allocator &
+	const PointsToGraph::AllocatorNode &
 	find(const jive::node * node) const
 	{
 		auto it = allocnodes_.find(node);
@@ -173,7 +173,7 @@ public:
 		FIXME: change return value to PointsToGraph::Node &
 	*/
 	PointsToGraph::Node *
-	add(std::unique_ptr<PointsToGraph::allocator> node);
+	add(std::unique_ptr<PointsToGraph::AllocatorNode> node);
 
 	/*
 		FIXME: change return value to PointsToGraph::Node &
@@ -350,12 +350,12 @@ protected:
 /**
 * FIXME: write documentation
 */
-class PointsToGraph::allocator final : public PointsToGraph::MemoryNode {
+class PointsToGraph::AllocatorNode final : public PointsToGraph::MemoryNode {
 public:
-	~allocator() override;
+	~AllocatorNode() override;
 
 private:
-	allocator(
+	AllocatorNode(
 		jlm::aa::PointsToGraph * ptg
 	, const jive::node * node)
 	: MemoryNode(ptg)
@@ -372,13 +372,13 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	static jlm::aa::PointsToGraph::allocator *
+	static PointsToGraph::AllocatorNode *
 	create(
 		jlm::aa::PointsToGraph * ptg
 	, const jive::node * node)
 	{
-		auto n = std::unique_ptr<PointsToGraph::allocator>(new allocator(ptg, node));
-		return static_cast<jlm::aa::PointsToGraph::allocator*>(ptg->add(std::move(n)));
+		auto n = std::unique_ptr<PointsToGraph::AllocatorNode>(new AllocatorNode(ptg, node));
+		return static_cast<PointsToGraph::AllocatorNode*>(ptg->add(std::move(n)));
 	}
 
 private:

@@ -1106,7 +1106,7 @@ Steensgaard::ConstructPointsToGraph(const locationset & lset) const
 			}
 
 			if (auto memloc = dynamic_cast<jlm::aa::memloc*>(loc)) {
-				auto node = PointsToGraph::allocator::create(ptg.get(), memloc->node());
+				auto node = PointsToGraph::AllocatorNode::create(ptg.get(), memloc->node());
 				allocators[&set].push_back(node);
 				memNodes.push_back(node);
 				map[loc] = node;
