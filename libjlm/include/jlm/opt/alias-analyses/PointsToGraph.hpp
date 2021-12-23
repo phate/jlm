@@ -44,7 +44,7 @@ public:
 	class MemoryNode;
 	class Node;
 	class RegisterNode;
-	class unknown;
+	class UnknownNode;
 
 	using allocnodemap = std::unordered_map<const jive::node*, std::unique_ptr<PointsToGraph::AllocatorNode>>;
 	using impnodemap = std::unordered_map<const jive::argument*, std::unique_ptr<PointsToGraph::impnode>>;
@@ -127,7 +127,7 @@ public:
 		return nallocnodes() + nimpnodes() + nregnodes();
 	}
 
-	jlm::aa::PointsToGraph::unknown &
+	PointsToGraph::UnknownNode &
 	memunknown() const noexcept
 	{
 		return *memunknown_;
@@ -197,7 +197,7 @@ private:
 	impnodemap impnodes_;
 	regnodemap regnodes_;
 	allocnodemap allocnodes_;
-	std::unique_ptr<jlm::aa::PointsToGraph::unknown> memunknown_;
+	std::unique_ptr<PointsToGraph::UnknownNode> memunknown_;
 };
 
 
@@ -334,7 +334,7 @@ private:
 *
 * FIXME: write documentation
 *
-* FIXME: Add final and convert protected to private after unknown inheritance is resolved.
+* FIXME: Add final and convert protected to private after UnknownNode inheritance is resolved.
 */
 class PointsToGraph::MemoryNode : public PointsToGraph::Node {
 public:
@@ -429,14 +429,14 @@ private:
 *
 * FIXME: write documentation
 */
-class PointsToGraph::unknown final : public PointsToGraph::MemoryNode {
+class PointsToGraph::UnknownNode final : public PointsToGraph::MemoryNode {
 	friend jlm::aa::PointsToGraph;
 
 public:
-	~unknown() override;
+	~UnknownNode() override;
 
 private:
-	unknown(jlm::aa::PointsToGraph * ptg)
+	UnknownNode(jlm::aa::PointsToGraph * ptg)
 	: MemoryNode(ptg)
 	{}
 

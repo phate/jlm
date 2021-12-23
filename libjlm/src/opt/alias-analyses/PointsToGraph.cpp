@@ -25,7 +25,7 @@ namespace aa {
 
 PointsToGraph::PointsToGraph()
 {
-	memunknown_ = std::unique_ptr<jlm::aa::PointsToGraph::unknown>(new PointsToGraph::unknown(this));
+	memunknown_ = std::unique_ptr<PointsToGraph::UnknownNode>(new PointsToGraph::UnknownNode(this));
 }
 
 PointsToGraph::allocnode_range
@@ -133,9 +133,9 @@ PointsToGraph::to_dot(const jlm::aa::PointsToGraph & ptg)
 	auto shape = [](const PointsToGraph::Node & node) {
 		static std::unordered_map<std::type_index, std::string> shapes({
 		  {typeid(AllocatorNode), "box"}
-	  , {typeid(impnode),      "box"}
-		, {typeid(RegisterNode), "oval"}
-		, {typeid(unknown),      "box"}
+	  , {typeid(impnode),       "box"}
+		, {typeid(RegisterNode),  "oval"}
+		, {typeid(UnknownNode),   "box"}
 		});
 
 		if (shapes.find(typeid(node)) != shapes.end())
@@ -285,13 +285,13 @@ PointsToGraph::impnode::debug_string() const
 	return port->name();
 }
 
-/* points-to graph unknown node */
+/* PointsToGraph::UnknownNode class */
 
-PointsToGraph::unknown::~unknown()
+PointsToGraph::UnknownNode::~UnknownNode()
 {}
 
 std::string
-PointsToGraph::unknown::debug_string() const
+PointsToGraph::UnknownNode::debug_string() const
 {
 	return "Unknown";
 }
