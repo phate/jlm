@@ -40,14 +40,14 @@ class PointsToGraph final {
 public:
 	class AllocatorNode;
 	class edge;
-	class impnode;
+	class ImportNode;
 	class MemoryNode;
 	class Node;
 	class RegisterNode;
 	class UnknownNode;
 
 	using allocnodemap = std::unordered_map<const jive::node*, std::unique_ptr<PointsToGraph::AllocatorNode>>;
-	using impnodemap = std::unordered_map<const jive::argument*, std::unique_ptr<PointsToGraph::impnode>>;
+	using impnodemap = std::unordered_map<const jive::argument*, std::unique_ptr<PointsToGraph::ImportNode>>;
 	using regnodemap = std::unordered_map<const jive::output*, std::unique_ptr<PointsToGraph::RegisterNode>>;
 
 	using allocnode_range = iterator_range<allocnodemap::iterator>;
@@ -146,7 +146,7 @@ public:
 		return *it->second;
 	}
 
-	const PointsToGraph::impnode &
+	const PointsToGraph::ImportNode &
 	find(const jive::argument * argument) const
 	{
 		auto it = impnodes_.find(argument);
@@ -182,7 +182,7 @@ public:
 	add(std::unique_ptr<PointsToGraph::RegisterNode> node);
 
 	PointsToGraph::Node *
-	add(std::unique_ptr<PointsToGraph::impnode> node);
+	add(std::unique_ptr<PointsToGraph::ImportNode> node);
 
 	static std::string
 	to_dot(const jlm::aa::PointsToGraph & ptg);
@@ -388,12 +388,12 @@ private:
 /** \brief FIXME: write documentation
 *
 */
-class PointsToGraph::impnode final : public PointsToGraph::MemoryNode {
+class PointsToGraph::ImportNode final : public PointsToGraph::MemoryNode {
 public:
-	~impnode() override;
+	~ImportNode() override;
 
 private:
-	impnode(
+	ImportNode(
 		jlm::aa::PointsToGraph * ptg
 	, const jive::argument * argument)
 	: MemoryNode(ptg)
@@ -412,13 +412,13 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	static jlm::aa::PointsToGraph::impnode *
+	static jlm::aa::PointsToGraph::ImportNode *
 	create(
 		jlm::aa::PointsToGraph * ptg
 	, const jive::argument * argument)
 	{
-		auto n = std::unique_ptr<PointsToGraph::impnode>(new impnode(ptg, argument));
-		return static_cast<jlm::aa::PointsToGraph::impnode*>(ptg->add(std::move(n)));
+		auto n = std::unique_ptr<PointsToGraph::ImportNode>(new ImportNode(ptg, argument));
+		return static_cast<PointsToGraph::ImportNode*>(ptg->add(std::move(n)));
 	}
 
 private:
