@@ -23,49 +23,49 @@ namespace aa {
 
 /* points-to graph */
 
-ptg::ptg()
+PointsToGraph::PointsToGraph()
 {
-	memunknown_ = std::unique_ptr<jlm::aa::ptg::unknown>(new ptg::unknown(this));
+	memunknown_ = std::unique_ptr<jlm::aa::PointsToGraph::unknown>(new PointsToGraph::unknown(this));
 }
 
-ptg::allocnode_range
-ptg::allocnodes()
+PointsToGraph::allocnode_range
+PointsToGraph::allocnodes()
 {
 	return allocnode_range(allocnodes_.begin(), allocnodes_.end());
 }
 
-ptg::allocnode_constrange
-ptg::allocnodes() const
+PointsToGraph::allocnode_constrange
+PointsToGraph::allocnodes() const
 {
 	return allocnode_constrange(allocnodes_.begin(), allocnodes_.end());
 }
 
-ptg::impnode_range
-ptg::impnodes()
+PointsToGraph::impnode_range
+PointsToGraph::impnodes()
 {
 	return impnode_range(impnodes_.begin(), impnodes_.end());
 }
 
-ptg::impnode_constrange
-ptg::impnodes() const
+PointsToGraph::impnode_constrange
+PointsToGraph::impnodes() const
 {
 	return impnode_constrange(impnodes_.begin(), impnodes_.end());
 }
 
-ptg::regnode_range
-ptg::regnodes()
+PointsToGraph::regnode_range
+PointsToGraph::regnodes()
 {
 	return regnode_range(regnodes_.begin(), regnodes_.end());
 }
 
-ptg::regnode_constrange
-ptg::regnodes() const
+PointsToGraph::regnode_constrange
+PointsToGraph::regnodes() const
 {
 	return regnode_constrange(regnodes_.begin(), regnodes_.end());
 }
 
-ptg::iterator
-ptg::begin()
+PointsToGraph::iterator
+PointsToGraph::begin()
 {
 	auto anodes = allocnodes();
 	auto inodes = impnodes();
@@ -73,8 +73,8 @@ ptg::begin()
 	return iterator(anodes.begin(), inodes.begin(), rnodes.begin(), anodes, inodes, rnodes);
 }
 
-ptg::constiterator
-ptg::begin() const
+PointsToGraph::constiterator
+PointsToGraph::begin() const
 {
 	auto anodes = allocnodes();
 	auto inodes = impnodes();
@@ -82,8 +82,8 @@ ptg::begin() const
 	return constiterator(anodes.begin(), inodes.begin(), rnodes.begin(), anodes, inodes, rnodes);
 }
 
-ptg::iterator
-ptg::end()
+PointsToGraph::iterator
+PointsToGraph::end()
 {
 	auto anodes = allocnodes();
 	auto inodes = impnodes();
@@ -91,8 +91,8 @@ ptg::end()
 	return iterator(anodes.end(), inodes.end(), rnodes.end(), anodes, inodes, rnodes);
 }
 
-ptg::constiterator
-ptg::end() const
+PointsToGraph::constiterator
+PointsToGraph::end() const
 {
 	auto anodes = allocnodes();
 	auto inodes = impnodes();
@@ -100,8 +100,8 @@ ptg::end() const
 	return constiterator(anodes.end(), inodes.end(), rnodes.end(), anodes, inodes, rnodes);
 }
 
-ptg::node *
-ptg::add(std::unique_ptr<ptg::allocator> node)
+PointsToGraph::node *
+PointsToGraph::add(std::unique_ptr<PointsToGraph::allocator> node)
 {
 	auto tmp = node.get();
 	allocnodes_[node->node()] = std::move(node);
@@ -109,8 +109,8 @@ ptg::add(std::unique_ptr<ptg::allocator> node)
 	return tmp;
 }
 
-ptg::node *
-ptg::add(std::unique_ptr<ptg::regnode> node)
+PointsToGraph::node *
+PointsToGraph::add(std::unique_ptr<PointsToGraph::regnode> node)
 {
 	auto tmp = node.get();
 	regnodes_[node->output()] = std::move(node);
@@ -118,8 +118,8 @@ ptg::add(std::unique_ptr<ptg::regnode> node)
 	return tmp;
 }
 
-ptg::node *
-ptg::add(std::unique_ptr<ptg::impnode> node)
+PointsToGraph::node *
+PointsToGraph::add(std::unique_ptr<PointsToGraph::impnode> node)
 {
 	auto tmp = node.get();
 	impnodes_[node->argument()] = std::move(node);
@@ -128,9 +128,9 @@ ptg::add(std::unique_ptr<ptg::impnode> node)
 }
 
 std::string
-ptg::to_dot(const jlm::aa::ptg & ptg)
+PointsToGraph::to_dot(const jlm::aa::PointsToGraph & ptg)
 {
-	auto shape = [](const ptg::node & node) {
+	auto shape = [](const PointsToGraph::node & node) {
 		static std::unordered_map<std::type_index, std::string> shapes({
 		  {typeid(allocator), "box"}
 	  , {typeid(impnode),   "box"}
@@ -144,18 +144,18 @@ ptg::to_dot(const jlm::aa::ptg & ptg)
 		JLM_UNREACHABLE("Unknown points-to graph node type.");
 	};
 
-	auto nodestring = [&](const ptg::node & node) {
+	auto nodestring = [&](const PointsToGraph::node & node) {
 		return strfmt("{ ", (intptr_t)&node, " ["
 			, "label = \"", node.debug_string(), "\" "
 			, "shape = \"", shape(node), "\"]; }\n");
 	};
 
-	auto edgestring = [](const ptg::node & node, const ptg::node & target)
+	auto edgestring = [](const PointsToGraph::node & node, const PointsToGraph::node & target)
 	{
 		return strfmt((intptr_t)&node, " -> ", (intptr_t)&target, "\n");
 	};
 
-	std::string dot("digraph ptg {\n");
+	std::string dot("digraph PointsToGraph {\n");
 	for (auto & node : ptg) {
 		dot += nodestring(node);
 		for (auto & target : node.targets())
@@ -169,35 +169,35 @@ ptg::to_dot(const jlm::aa::ptg & ptg)
 
 /* points-to graph node */
 
-ptg::node::~node()
+PointsToGraph::node::~node()
 {}
 
-ptg::node::node_range
-ptg::node::targets()
+PointsToGraph::node::node_range
+PointsToGraph::node::targets()
 {
 	return node_range(targets_.begin(), targets_.end());
 }
 
-ptg::node::node_constrange
-ptg::node::targets() const
+PointsToGraph::node::node_constrange
+PointsToGraph::node::targets() const
 {
 	return node_constrange(targets_.begin(), targets_.end());
 }
 
-ptg::node::node_range
-ptg::node::sources()
+PointsToGraph::node::node_range
+PointsToGraph::node::sources()
 {
 	return node_range(sources_.begin(), sources_.end());
 }
 
-ptg::node::node_constrange
-ptg::node::sources() const
+PointsToGraph::node::node_constrange
+PointsToGraph::node::sources() const
 {
 	return node_constrange(sources_.begin(), sources_.end());
 }
 
 void
-ptg::node::add_edge(ptg::node * target)
+PointsToGraph::node::add_edge(PointsToGraph::node * target)
 {
 	if (Graph() != target->Graph())
 		throw jlm::error("Points-to graph nodes are not in the same graph.");
@@ -207,7 +207,7 @@ ptg::node::add_edge(ptg::node * target)
 }
 
 void
-ptg::node::remove_edge(ptg::node * target)
+PointsToGraph::node::remove_edge(PointsToGraph::node * target)
 {
 	if (Graph() != target->Graph())
 		throw jlm::error("Points-to graph nodes are not in the same graph.");
@@ -218,11 +218,11 @@ ptg::node::remove_edge(ptg::node * target)
 
 /* points-to graph register node */
 
-ptg::regnode::~regnode()
+PointsToGraph::regnode::~regnode()
 {}
 
 std::string
-ptg::regnode::debug_string() const
+PointsToGraph::regnode::debug_string() const
 {
 	auto node = jive::node_output::node(output());
 
@@ -241,16 +241,16 @@ ptg::regnode::debug_string() const
 	return "REGNODE";
 }
 
-std::vector<const ptg::memnode*>
-ptg::regnode::allocators(const ptg::regnode & node)
+std::vector<const PointsToGraph::memnode*>
+PointsToGraph::regnode::allocators(const PointsToGraph::regnode & node)
 {
 	/*
 		FIXME: This function currently iterates through all pointstos of the regnode.
 		Maybe we can be more efficient?
 	*/
-	std::vector<const ptg::memnode*> memnodes;
+	std::vector<const PointsToGraph::memnode*> memnodes;
 	for (auto & target : node.targets()) {
-		if (auto memnode = dynamic_cast<const ptg::memnode*>(&target))
+		if (auto memnode = dynamic_cast<const PointsToGraph::memnode*>(&target))
 			memnodes.push_back(memnode);
 	}
 
@@ -259,27 +259,27 @@ ptg::regnode::allocators(const ptg::regnode & node)
 
 /* points-to graph memory node */
 
-ptg::memnode::~memnode()
+PointsToGraph::memnode::~memnode()
 {}
 
 /* points-to graph allocator node */
 
-ptg::allocator::~allocator()
+PointsToGraph::allocator::~allocator()
 {}
 
 std::string
-ptg::allocator::debug_string() const
+PointsToGraph::allocator::debug_string() const
 {
 	return node()->operation().debug_string();
 }
 
 /* points-to graph import node */
 
-ptg::impnode::~impnode()
+PointsToGraph::impnode::~impnode()
 {}
 
 std::string
-ptg::impnode::debug_string() const
+PointsToGraph::impnode::debug_string() const
 {
 	auto port = static_cast<const jlm::impport*>(&argument()->port());
 	return port->name();
@@ -287,11 +287,11 @@ ptg::impnode::debug_string() const
 
 /* points-to graph unknown node */
 
-ptg::unknown::~unknown()
+PointsToGraph::unknown::~unknown()
 {}
 
 std::string
-ptg::unknown::debug_string() const
+PointsToGraph::unknown::debug_string() const
 {
 	return "Unknown";
 }

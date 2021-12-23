@@ -33,7 +33,7 @@ namespace lambda { class node; }
 namespace aa {
 
 class location;
-class ptg;
+class PointsToGraph;
 
 /**
 * FIXME: Some documentation
@@ -145,7 +145,7 @@ public:
 	Steensgaard &
 	operator=(Steensgaard &&) = delete;
 
-	virtual std::unique_ptr<ptg>
+	virtual std::unique_ptr<PointsToGraph>
 	Analyze(const rvsdg_module & module) override;
 
 private:
@@ -224,7 +224,7 @@ private:
 	void
 	AnalyzeExtractValue(const jive::simple_node & node);
 
-	std::unique_ptr<ptg>
+	std::unique_ptr<PointsToGraph>
 	ConstructPointsToGraph(const locationset & lset) const;
 
 	/**

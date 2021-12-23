@@ -15,7 +15,7 @@
 
 #include <iostream>
 
-static std::unique_ptr<jlm::aa::ptg>
+static std::unique_ptr<jlm::aa::PointsToGraph>
 runSteensgaard(jlm::rvsdg_module & module)
 {
 	using namespace jlm;
@@ -26,14 +26,14 @@ runSteensgaard(jlm::rvsdg_module & module)
 
 static void
 assertTargets(
-	const jlm::aa::ptg::node & node,
-	const std::unordered_set<const jlm::aa::ptg::node*> & targets)
+	const jlm::aa::PointsToGraph::node & node,
+	const std::unordered_set<const jlm::aa::PointsToGraph::node*> & targets)
 {
 	using namespace jlm::aa;
 
 	assert(node.ntargets() == targets.size());
 
-	std::unordered_set<const ptg::node*> node_targets;
+	std::unordered_set<const PointsToGraph::node*> node_targets;
 	for (auto & target : node.targets())
 		node_targets.insert(&target);
 
@@ -43,7 +43,7 @@ assertTargets(
 static void
 TestStore1()
 {
-	auto validate_ptg = [](const jlm::aa::ptg & ptg, const StoreTest1 & test)
+	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const StoreTest1 & test)
 	{
 		assert(ptg.nallocnodes() == 5);
 		assert(ptg.nregnodes() == 5);
@@ -79,14 +79,14 @@ TestStore1()
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = runSteensgaard(test.module());
-//	std::cout << jlm::aa::ptg::to_dot(*ptg);
+//	std::cout << jlm::aa::PointsToGraph::to_dot(*PointsToGraph);
 	validate_ptg(*ptg, test);
 }
 
 static void
 TestStore2()
 {
-	auto validate_ptg = [](const jlm::aa::ptg & ptg, const StoreTest2 & test)
+	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const StoreTest2 & test)
 	{
 		assert(ptg.nallocnodes() == 6);
 		assert(ptg.nregnodes() == 6);
@@ -126,14 +126,14 @@ TestStore2()
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = runSteensgaard(test.module());
-//	std::cout << jlm::aa::ptg::to_dot(*ptg);
+//	std::cout << jlm::aa::PointsToGraph::to_dot(*PointsToGraph);
 	validate_ptg(*ptg, test);
 }
 
 static void
 TestLoad1()
 {
-	auto validate_ptg = [](const jlm::aa::ptg & ptg, const LoadTest1 & test)
+	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const LoadTest1 & test)
 	{
 		assert(ptg.nallocnodes() == 1);
 		assert(ptg.nregnodes() == 3);
@@ -153,7 +153,7 @@ TestLoad1()
 	LoadTest1 test;
 //	jive::view(test.graph()->root(), stdout);
 	auto ptg = runSteensgaard(test.module());
-//	std::cout << jlm::aa::ptg::to_dot(*ptg);
+//	std::cout << jlm::aa::PointsToGraph::to_dot(*PointsToGraph);
 
 	validate_ptg(*ptg, test);
 }
@@ -161,7 +161,7 @@ TestLoad1()
 static void
 TestLoad2()
 {
-	auto validate_ptg = [](const jlm::aa::ptg & ptg, const LoadTest2 & test)
+	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const LoadTest2 & test)
 	{
 		assert(ptg.nallocnodes() == 6);
 		assert(ptg.nregnodes() == 8);
@@ -185,7 +185,7 @@ TestLoad2()
 	LoadTest2 test;
 //	jive::view(test.graph()->root(), stdout);
 	auto ptg = runSteensgaard(test.module());
-//	std::cout << jlm::aa::ptg::to_dot(*ptg);
+//	std::cout << jlm::aa::PointsToGraph::to_dot(*PointsToGraph);
 
 	validate_ptg(*ptg, test);
 }
@@ -193,7 +193,7 @@ TestLoad2()
 static void
 TestGetElementPtr()
 {
-	auto validatePtg = [](const jlm::aa::ptg & ptg, const GetElementPtrTest & test)
+	auto validatePtg = [](const jlm::aa::PointsToGraph & ptg, const GetElementPtrTest & test)
 	{
 		assert(ptg.nallocnodes() == 1);
 		assert(ptg.nregnodes() == 4);
@@ -213,14 +213,14 @@ TestGetElementPtr()
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = runSteensgaard(test.module());
-//	std::cout << jlm::aa::ptg::to_dot(*ptg);
+//	std::cout << jlm::aa::PointsToGraph::to_dot(*PointsToGraph);
 	validatePtg(*ptg, test);
 }
 
 static void
 TestBitCast()
 {
-	auto validatePtg = [](const jlm::aa::ptg & ptg, const BitCastTest & test)
+	auto validatePtg = [](const jlm::aa::PointsToGraph & ptg, const BitCastTest & test)
 	{
 		assert(ptg.nallocnodes() == 1);
 		assert(ptg.nregnodes() == 3);
@@ -240,14 +240,14 @@ TestBitCast()
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = runSteensgaard(test.module());
-//	std::cout << jlm::aa::ptg::to_dot(*ptg);
+//	std::cout << jlm::aa::PointsToGraph::to_dot(*PointsToGraph);
 	validatePtg(*ptg, test);
 }
 
 static void
 TestConstantPointerNull()
 {
-	auto validatePtg = [](const jlm::aa::ptg & ptg, const ConstantPointerNullTest & test)
+	auto validatePtg = [](const jlm::aa::PointsToGraph & ptg, const ConstantPointerNullTest & test)
 	{
 		assert(ptg.nallocnodes() == 1);
 		assert(ptg.nregnodes() == 3);
@@ -267,14 +267,14 @@ TestConstantPointerNull()
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = runSteensgaard(test.module());
-//	std::cout << jlm::aa::ptg::to_dot(*ptg);
+//	std::cout << jlm::aa::PointsToGraph::to_dot(*PointsToGraph);
 	validatePtg(*ptg, test);
 }
 
 static void
 TestBits2Ptr()
 {
-	auto validate_ptg = [](const jlm::aa::ptg & ptg, const Bits2PtrTest & test)
+	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const Bits2PtrTest & test)
 	{
 		assert(ptg.nallocnodes() == 2);
 		assert(ptg.nregnodes() == 5);
@@ -290,14 +290,14 @@ TestBits2Ptr()
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = runSteensgaard(test.module());
-//	std::cout << jlm::aa::ptg::to_dot(*ptg);
+//	std::cout << jlm::aa::PointsToGraph::to_dot(*PointsToGraph);
 	validate_ptg(*ptg, test);
 }
 
 static void
 TestCall1()
 {
-	auto validate_ptg = [](const jlm::aa::ptg & ptg, const CallTest1 & test)
+	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const CallTest1 & test)
 	{
 		assert(ptg.nallocnodes() == 6);
 		assert(ptg.nregnodes() == 12);
@@ -349,14 +349,14 @@ TestCall1()
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = runSteensgaard(test.module());
-//	std::cout << jlm::aa::ptg::to_dot(*ptg);
+//	std::cout << jlm::aa::PointsToGraph::to_dot(*PointsToGraph);
 	validate_ptg(*ptg, test);
 }
 
 static void
 TestCall2()
 {
-	auto validate_ptg = [](const jlm::aa::ptg & ptg, const CallTest2 & test)
+	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const CallTest2 & test)
 	{
 		assert(ptg.nallocnodes() == 4);
 		assert(ptg.nimpnodes() == 0);
@@ -399,14 +399,14 @@ TestCall2()
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = runSteensgaard(test.module());
-//	std::cout << jlm::aa::ptg::to_dot(*ptg);
+//	std::cout << jlm::aa::PointsToGraph::to_dot(*PointsToGraph);
 	validate_ptg(*ptg, test);
 }
 
 static void
 TestIndirectCall()
 {
-	auto validate_ptg = [](const jlm::aa::ptg & ptg, const IndirectCallTest & test)
+	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const IndirectCallTest & test)
 	{
 		assert(ptg.nallocnodes() == 4);
 		assert(ptg.nimpnodes() == 0);
@@ -445,14 +445,14 @@ TestIndirectCall()
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = runSteensgaard(test.module());
-//	std::cout << jlm::aa::ptg::to_dot(*ptg);
+//	std::cout << jlm::aa::PointsToGraph::to_dot(*PointsToGraph);
 	validate_ptg(*ptg, test);
 }
 
 static void
 TestGamma()
 {
-	auto validate_ptg = [](const jlm::aa::ptg & ptg, const GammaTest & test)
+	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const GammaTest & test)
 	{
 		assert(ptg.nallocnodes() == 1);
 		assert(ptg.nregnodes() == 15);
@@ -480,14 +480,14 @@ TestGamma()
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = runSteensgaard(test.module());
-//	std::cout << jlm::aa::ptg::to_dot(*ptg);
+//	std::cout << jlm::aa::PointsToGraph::to_dot(*PointsToGraph);
 	validate_ptg(*ptg, test);
 }
 
 static void
 TestTheta()
 {
-	auto validate_ptg = [](const jlm::aa::ptg & ptg, const ThetaTest & test)
+	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const ThetaTest & test)
 	{
 		assert(ptg.nallocnodes() == 1);
 		assert(ptg.nregnodes() == 5);
@@ -514,14 +514,14 @@ TestTheta()
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = runSteensgaard(test.module());
-//	std::cout << jlm::aa::ptg::to_dot(*ptg);
+//	std::cout << jlm::aa::PointsToGraph::to_dot(*PointsToGraph);
 	validate_ptg(*ptg, test);
 }
 
 static void
 TestDelta1()
 {
-	auto validate_ptg = [](const jlm::aa::ptg & ptg, const DeltaTest1 & test)
+	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const DeltaTest1 & test)
 	{
 		assert(ptg.nallocnodes() == 3);
 		assert(ptg.nregnodes() == 6);
@@ -553,14 +553,14 @@ TestDelta1()
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = runSteensgaard(test.module());
-//	std::cout << jlm::aa::ptg::to_dot(*ptg);
+//	std::cout << jlm::aa::PointsToGraph::to_dot(*PointsToGraph);
 	validate_ptg(*ptg, test);
 }
 
 static void
 TestDelta2()
 {
-	auto validate_ptg = [](const jlm::aa::ptg & ptg, const DeltaTest2 & test)
+	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const DeltaTest2 & test)
 	{
 		assert(ptg.nallocnodes() == 4);
 		assert(ptg.nregnodes() == 8);
@@ -597,14 +597,14 @@ TestDelta2()
 	jive::view(test.graph().root(), stdout);
 
 	auto ptg = runSteensgaard(test.module());
-	std::cout << jlm::aa::ptg::to_dot(*ptg);
+	std::cout << jlm::aa::PointsToGraph::to_dot(*ptg);
 	validate_ptg(*ptg, test);
 }
 
 static void
 TestImports()
 {
-	auto validate_ptg = [](const jlm::aa::ptg & ptg, const ImportTest & test)
+	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const ImportTest & test)
 	{
 		assert(ptg.nallocnodes() == 2);
 		assert(ptg.nimpnodes() == 2);
@@ -642,14 +642,14 @@ TestImports()
 	jive::view(test.graph().root(), stdout);
 
 	auto ptg = runSteensgaard(test.module());
-	std::cout << jlm::aa::ptg::to_dot(*ptg);
+	std::cout << jlm::aa::PointsToGraph::to_dot(*ptg);
 	validate_ptg(*ptg, test);
 }
 
 static void
 TestPhi()
 {
-	auto validate_ptg = [](const jlm::aa::ptg & ptg, const PhiTest & test)
+	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const PhiTest & test)
 	{
 		assert(ptg.nallocnodes() == 3);
 		assert(ptg.nregnodes() == 16);
@@ -688,7 +688,7 @@ TestPhi()
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = runSteensgaard(test.module());
-//	std::cout << jlm::aa::ptg::to_dot(*ptg);
+//	std::cout << jlm::aa::PointsToGraph::to_dot(*PointsToGraph);
 	validate_ptg(*ptg, test);
 }
 

@@ -14,7 +14,7 @@ class rvsdg_module;
 
 namespace aa {
 
-class ptg;
+class PointsToGraph;
 
 /**
 * \brief Alias Analysis Interface
@@ -31,7 +31,7 @@ public:
 	*
 	* \return A PointsTo graph.
 	*/
-	virtual std::unique_ptr<ptg>
+	virtual std::unique_ptr<PointsToGraph>
 	Analyze(const rvsdg_module & module) = 0;
 };
 
