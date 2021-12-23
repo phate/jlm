@@ -42,7 +42,7 @@ public:
 	class edge;
 	class impnode;
 	class memnode;
-	class node;
+	class Node;
 	class regnode;
 	class unknown;
 
@@ -134,7 +134,7 @@ public:
 	}
 
 	/*
-		FIXME: I would like to call this function memnode() or node().
+		FIXME: I would like to call this function memnode() or Node().
 	*/
 	const PointsToGraph::allocator &
 	find(const jive::node * node) const
@@ -170,18 +170,18 @@ public:
 	}
 
 	/*
-		FIXME: change return value to PointsToGraph::node &
+		FIXME: change return value to PointsToGraph::Node &
 	*/
-	jlm::aa::PointsToGraph::node *
+	PointsToGraph::Node *
 	add(std::unique_ptr<PointsToGraph::allocator> node);
 
 	/*
-		FIXME: change return value to PointsToGraph::node &
+		FIXME: change return value to PointsToGraph::Node &
 	*/
-	jlm::aa::PointsToGraph::node *
+	PointsToGraph::Node *
 	add(std::unique_ptr<PointsToGraph::regnode> node);
 
-	PointsToGraph::node *
+	PointsToGraph::Node *
 	add(std::unique_ptr<PointsToGraph::impnode> node);
 
 	static std::string
@@ -201,37 +201,37 @@ private:
 };
 
 
-/** \brief Points-to graph node
+/** \brief PointsTo graph node class
 *
 * FIXME: write documentation
 */
-class PointsToGraph::node {
+class PointsToGraph::Node {
 	class constiterator;
 	class iterator;
 
-	using node_range = iterator_range<PointsToGraph::node::iterator>;
-	using node_constrange = iterator_range<PointsToGraph::node::constiterator>;
+	using node_range = iterator_range<PointsToGraph::Node::iterator>;
+	using node_constrange = iterator_range<PointsToGraph::Node::constiterator>;
 
 public:
 	virtual
-	~node();
+	~Node();
 
 	/*
 		FIXME: change to PointsToGraph &
 	*/
-	node(jlm::aa::PointsToGraph * ptg)
+	Node(jlm::aa::PointsToGraph * ptg)
 	: ptg_(ptg)
 	{}
 
-	node(const node&) = delete;
+	Node(const Node&) = delete;
 
-	node(node&&) = delete;
+	Node(Node&&) = delete;
 
-	node&
-	operator=(const node&) = delete;
+	Node&
+	operator=(const Node&) = delete;
 
-	node&
-	operator=(node&&) = delete;
+	Node&
+	operator=(Node&&) = delete;
 
 	node_range
 	targets();
@@ -270,27 +270,27 @@ public:
 	debug_string() const = 0;
 
 	/*
-		FIXME: change to PointsToGraph::node &
+		FIXME: change to PointsToGraph::Node &
 		FIXME: I believe that this can only be a memnode. If so, make it explicit in the type.
 	*/
 	void
-	add_edge(PointsToGraph::node * target);
+	add_edge(PointsToGraph::Node * target);
 
 	void
-	remove_edge(PointsToGraph::node * target);
+	remove_edge(PointsToGraph::Node * target);
 
 private:
 	jlm::aa::PointsToGraph * ptg_;
-	std::unordered_set<PointsToGraph::node*> targets_;
-	std::unordered_set<PointsToGraph::node*> sources_;
+	std::unordered_set<PointsToGraph::Node*> targets_;
+	std::unordered_set<PointsToGraph::Node*> sources_;
 };
 
 
-/** \brief Points-to graph register node
+/** \brief Points-to graph register Node
 *
 * FIXME: write documentation
 */
-class PointsToGraph::regnode final : public PointsToGraph::node {
+class PointsToGraph::regnode final : public PointsToGraph::Node {
 public:
 	~regnode() override;
 
@@ -298,7 +298,7 @@ private:
 	regnode(
 		jlm::aa::PointsToGraph * ptg,
 		const jive::output * output)
-	: node(ptg)
+	: Node(ptg)
 	, output_(output)
 	{}
 
@@ -336,13 +336,13 @@ private:
 *
 * FIXME: Add final and convert protected to private after unknown inheritance is resolved.
 */
-class PointsToGraph::memnode : public PointsToGraph::node {
+class PointsToGraph::memnode : public PointsToGraph::Node {
 public:
 	~memnode() override;
 
 protected:
 	memnode(jlm::aa::PointsToGraph * ptg)
-	: node(ptg)
+	: Node(ptg)
 	{}
 };
 
@@ -448,7 +448,7 @@ private:
 /** \brief Points-to graph node iterator
 */
 class PointsToGraph::iterator final : public std::iterator<std::forward_iterator_tag,
-	PointsToGraph::node*, ptrdiff_t> {
+	PointsToGraph::Node*, ptrdiff_t> {
 
 	friend jlm::aa::PointsToGraph;
 
@@ -469,7 +469,7 @@ class PointsToGraph::iterator final : public std::iterator<std::forward_iterator
 	{}
 
 public:
-	PointsToGraph::node *
+	PointsToGraph::Node *
 	node() const noexcept
 	{
 		if (anit_ != anrange_.end())
@@ -481,14 +481,14 @@ public:
 		return rnit_->second.get();
 	}
 
-	PointsToGraph::node &
+	PointsToGraph::Node &
 	operator*() const
 	{
 		JLM_ASSERT(node() != nullptr);
 		return *node();
 	}
 
-	PointsToGraph::node *
+	PointsToGraph::Node *
 	operator->() const
 	{
 		return node();
@@ -546,7 +546,7 @@ private:
 /** \brief Points-to graph node const iterator
 */
 class PointsToGraph::constiterator final : public std::iterator<std::forward_iterator_tag,
-	const PointsToGraph::node*, ptrdiff_t> {
+	const PointsToGraph::Node*, ptrdiff_t> {
 
 	friend jlm::aa::PointsToGraph;
 
@@ -567,7 +567,7 @@ class PointsToGraph::constiterator final : public std::iterator<std::forward_ite
 	{}
 
 public:
-	const PointsToGraph::node *
+	const PointsToGraph::Node *
 	node() const noexcept
 	{
 		if (anit_ != anrange_.end())
@@ -579,14 +579,14 @@ public:
 		return rnit_->second.get();
 	}
 
-	const PointsToGraph::node &
+	const PointsToGraph::Node &
 	operator*() const
 	{
 		JLM_ASSERT(node() != nullptr);
 		return *node();
 	}
 
-	const PointsToGraph::node *
+	const PointsToGraph::Node *
 	operator->() const
 	{
 		return node();
@@ -644,30 +644,30 @@ private:
 
 /** \brief Points-to graph edge iterator
 */
-class PointsToGraph::node::iterator final : public std::iterator<std::forward_iterator_tag,
-	PointsToGraph::node*, ptrdiff_t> {
+class PointsToGraph::Node::iterator final : public std::iterator<std::forward_iterator_tag,
+	PointsToGraph::Node*, ptrdiff_t> {
 
-	friend PointsToGraph::node;
+	friend PointsToGraph::Node;
 
-	iterator(const std::unordered_set<PointsToGraph::node*>::iterator & it)
+	iterator(const std::unordered_set<PointsToGraph::Node*>::iterator & it)
 	: it_(it)
 	{}
 
 public:
-	PointsToGraph::node *
+	PointsToGraph::Node *
 	target() const noexcept
 	{
 		return *it_;
 	}
 
-	PointsToGraph::node &
+	PointsToGraph::Node &
 	operator*() const
 	{
 		JLM_ASSERT(target() != nullptr);
 		return *target();
 	}
 
-	PointsToGraph::node *
+	PointsToGraph::Node *
 	operator->() const
 	{
 		return target();
@@ -701,36 +701,36 @@ public:
 	}
 
 private:
-	std::unordered_set<PointsToGraph::node*>::iterator it_;
+	std::unordered_set<PointsToGraph::Node*>::iterator it_;
 };
 
 
 /** \brief Points-to graph edge const iterator
 */
-class PointsToGraph::node::constiterator final : public std::iterator<std::forward_iterator_tag,
-	const PointsToGraph::node*, ptrdiff_t> {
+class PointsToGraph::Node::constiterator final : public std::iterator<std::forward_iterator_tag,
+	const PointsToGraph::Node*, ptrdiff_t> {
 
 	friend jlm::aa::PointsToGraph;
 
-	constiterator(const std::unordered_set<PointsToGraph::node*>::const_iterator & it)
+	constiterator(const std::unordered_set<PointsToGraph::Node*>::const_iterator & it)
 	: it_(it)
 	{}
 
 public:
-	const PointsToGraph::node *
+	const PointsToGraph::Node *
 	target() const noexcept
 	{
 		return *it_;
 	}
 
-	const PointsToGraph::node &
+	const PointsToGraph::Node &
 	operator*() const
 	{
 		JLM_ASSERT(target() != nullptr);
 		return *target();
 	}
 
-	const PointsToGraph::node *
+	const PointsToGraph::Node *
 	operator->() const
 	{
 		return target();
@@ -764,7 +764,7 @@ public:
 	}
 
 private:
-	std::unordered_set<PointsToGraph::node*>::const_iterator it_;
+	std::unordered_set<PointsToGraph::Node*>::const_iterator it_;
 };
 
 }}

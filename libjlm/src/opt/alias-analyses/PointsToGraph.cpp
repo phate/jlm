@@ -100,7 +100,7 @@ PointsToGraph::end() const
 	return constiterator(anodes.end(), inodes.end(), rnodes.end(), anodes, inodes, rnodes);
 }
 
-PointsToGraph::node *
+PointsToGraph::Node *
 PointsToGraph::add(std::unique_ptr<PointsToGraph::allocator> node)
 {
 	auto tmp = node.get();
@@ -109,7 +109,7 @@ PointsToGraph::add(std::unique_ptr<PointsToGraph::allocator> node)
 	return tmp;
 }
 
-PointsToGraph::node *
+PointsToGraph::Node *
 PointsToGraph::add(std::unique_ptr<PointsToGraph::regnode> node)
 {
 	auto tmp = node.get();
@@ -118,7 +118,7 @@ PointsToGraph::add(std::unique_ptr<PointsToGraph::regnode> node)
 	return tmp;
 }
 
-PointsToGraph::node *
+PointsToGraph::Node *
 PointsToGraph::add(std::unique_ptr<PointsToGraph::impnode> node)
 {
 	auto tmp = node.get();
@@ -130,7 +130,7 @@ PointsToGraph::add(std::unique_ptr<PointsToGraph::impnode> node)
 std::string
 PointsToGraph::to_dot(const jlm::aa::PointsToGraph & ptg)
 {
-	auto shape = [](const PointsToGraph::node & node) {
+	auto shape = [](const PointsToGraph::Node & node) {
 		static std::unordered_map<std::type_index, std::string> shapes({
 		  {typeid(allocator), "box"}
 	  , {typeid(impnode),   "box"}
@@ -141,16 +141,16 @@ PointsToGraph::to_dot(const jlm::aa::PointsToGraph & ptg)
 		if (shapes.find(typeid(node)) != shapes.end())
 			return shapes[typeid(node)];
 
-		JLM_UNREACHABLE("Unknown points-to graph node type.");
+		JLM_UNREACHABLE("Unknown points-to graph Node type.");
 	};
 
-	auto nodestring = [&](const PointsToGraph::node & node) {
+	auto nodestring = [&](const PointsToGraph::Node & node) {
 		return strfmt("{ ", (intptr_t)&node, " ["
 			, "label = \"", node.debug_string(), "\" "
 			, "shape = \"", shape(node), "\"]; }\n");
 	};
 
-	auto edgestring = [](const PointsToGraph::node & node, const PointsToGraph::node & target)
+	auto edgestring = [](const PointsToGraph::Node & node, const PointsToGraph::Node & target)
 	{
 		return strfmt((intptr_t)&node, " -> ", (intptr_t)&target, "\n");
 	};
@@ -167,37 +167,37 @@ PointsToGraph::to_dot(const jlm::aa::PointsToGraph & ptg)
 	return dot;
 }
 
-/* points-to graph node */
+/* PointsToGraph::Node */
 
-PointsToGraph::node::~node()
+PointsToGraph::Node::~Node()
 {}
 
-PointsToGraph::node::node_range
-PointsToGraph::node::targets()
+PointsToGraph::Node::node_range
+PointsToGraph::Node::targets()
 {
 	return node_range(targets_.begin(), targets_.end());
 }
 
-PointsToGraph::node::node_constrange
-PointsToGraph::node::targets() const
+PointsToGraph::Node::node_constrange
+PointsToGraph::Node::targets() const
 {
 	return node_constrange(targets_.begin(), targets_.end());
 }
 
-PointsToGraph::node::node_range
-PointsToGraph::node::sources()
+PointsToGraph::Node::node_range
+PointsToGraph::Node::sources()
 {
 	return node_range(sources_.begin(), sources_.end());
 }
 
-PointsToGraph::node::node_constrange
-PointsToGraph::node::sources() const
+PointsToGraph::Node::node_constrange
+PointsToGraph::Node::sources() const
 {
 	return node_constrange(sources_.begin(), sources_.end());
 }
 
 void
-PointsToGraph::node::add_edge(PointsToGraph::node * target)
+PointsToGraph::Node::add_edge(PointsToGraph::Node * target)
 {
 	if (Graph() != target->Graph())
 		throw jlm::error("Points-to graph nodes are not in the same graph.");
@@ -207,7 +207,7 @@ PointsToGraph::node::add_edge(PointsToGraph::node * target)
 }
 
 void
-PointsToGraph::node::remove_edge(PointsToGraph::node * target)
+PointsToGraph::Node::remove_edge(PointsToGraph::Node * target)
 {
 	if (Graph() != target->Graph())
 		throw jlm::error("Points-to graph nodes are not in the same graph.");

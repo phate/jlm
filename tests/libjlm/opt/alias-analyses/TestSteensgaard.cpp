@@ -26,14 +26,14 @@ runSteensgaard(jlm::rvsdg_module & module)
 
 static void
 assertTargets(
-	const jlm::aa::PointsToGraph::node & node,
-	const std::unordered_set<const jlm::aa::PointsToGraph::node*> & targets)
+	const jlm::aa::PointsToGraph::Node & node,
+	const std::unordered_set<const jlm::aa::PointsToGraph::Node*> & targets)
 {
 	using namespace jlm::aa;
 
 	assert(node.ntargets() == targets.size());
 
-	std::unordered_set<const PointsToGraph::node*> node_targets;
+	std::unordered_set<const PointsToGraph::Node*> node_targets;
 	for (auto & target : node.targets())
 		node_targets.insert(&target);
 
