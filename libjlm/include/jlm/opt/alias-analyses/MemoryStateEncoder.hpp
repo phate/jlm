@@ -29,7 +29,7 @@ namespace lambda { class node; }
 
 namespace aa {
 
-class ptg;
+class PointsToGraph;
 
 /** \brief Encodes a Points-To graph in the RVSDG.
 */

@@ -410,7 +410,7 @@ locationset::to_dot() const
 	};
 
 	std::string str;
-	str.append("digraph ptg {\n");
+	str.append("digraph PointsToGraph {\n");
 
 	for (auto & set : djset_) {
 		str += dot_node(set) + "\n";
@@ -1074,7 +1074,7 @@ Steensgaard::Analyze(const jive::graph & graph)
 	Analyze(*graph.root());
 }
 
-std::unique_ptr<ptg>
+std::unique_ptr<PointsToGraph>
 Steensgaard::Analyze(const rvsdg_module & module)
 {
 	ResetState();
@@ -1082,31 +1082,31 @@ Steensgaard::Analyze(const rvsdg_module & module)
 	Analyze(*module.graph());
 //	std::cout << lset_.to_dot() << std::flush;
 	auto ptg = ConstructPointsToGraph(lset_);
-//	std::cout << ptg::to_dot(*ptg) << std::flush;
+//	std::cout << PointsToGraph::to_dot(*PointsToGraph) << std::flush;
 
 	return ptg;
 }
 
-std::unique_ptr<ptg>
+std::unique_ptr<PointsToGraph>
 Steensgaard::ConstructPointsToGraph(const locationset & lset) const
 {
-	auto ptg = ptg::create();
+	auto ptg = PointsToGraph::create();
 
 	/*
 		Create points-to graph nodes
 	*/
-	std::vector<ptg::memnode*> memNodes;
-	std::unordered_map<location*, ptg::node*> map;
-	std::unordered_map<const disjointset<location*>::set*, std::vector<ptg::memnode*>> allocators;
+	std::vector<PointsToGraph::memnode*> memNodes;
+	std::unordered_map<location*, PointsToGraph::node*> map;
+	std::unordered_map<const disjointset<location*>::set*, std::vector<PointsToGraph::memnode*>> allocators;
 	for (auto & set : lset) {
 		for (auto & loc : set) {
 			if (auto regloc = dynamic_cast<jlm::aa::regloc*>(loc)) {
-				map[loc] = ptg::regnode::create(ptg.get(), regloc->output());
+				map[loc] = PointsToGraph::regnode::create(ptg.get(), regloc->output());
 				continue;
 			}
 
 			if (auto memloc = dynamic_cast<jlm::aa::memloc*>(loc)) {
-				auto node = ptg::allocator::create(ptg.get(), memloc->node());
+				auto node = PointsToGraph::allocator::create(ptg.get(), memloc->node());
 				allocators[&set].push_back(node);
 				memNodes.push_back(node);
 				map[loc] = node;
@@ -1114,7 +1114,7 @@ Steensgaard::ConstructPointsToGraph(const locationset & lset) const
 			}
 
 			if (auto l = dynamic_cast<imploc*>(loc)) {
-				auto node = ptg::impnode::create(ptg.get(), l->argument());
+				auto node = PointsToGraph::impnode::create(ptg.get(), l->argument());
 				allocators[&set].push_back(node);
 				memNodes.push_back(node);
 				map[loc] = node;

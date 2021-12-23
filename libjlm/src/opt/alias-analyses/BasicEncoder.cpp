@@ -101,20 +101,20 @@ public:
   operator=(StateMap&&) = delete;
 
   bool
-  contains(const ptg::memnode * node) const noexcept
+  contains(const PointsToGraph::memnode * node) const noexcept
   {
     return states_.find(node) != states_.end();
   }
 
   jive::output *
-  state(const ptg::memnode * node) const noexcept
+  state(const PointsToGraph::memnode * node) const noexcept
   {
     JLM_ASSERT(contains(node));
     return states_.at(node);
   }
 
   std::vector<jive::output*>
-  states(const std::vector<const ptg::memnode*> & nodes) const
+  states(const std::vector<const PointsToGraph::memnode*> & nodes) const
   {
     std::vector<jive::output*> states;
     states.reserve(nodes.size());
@@ -126,7 +126,7 @@ public:
 
   void
   insert(
-    const ptg::memnode * node,
+    const PointsToGraph::memnode * node,
     jive::output * state)
   {
     JLM_ASSERT(!contains(node));
@@ -137,7 +137,7 @@ public:
 
   void
   insert(
-    const std::vector<const ptg::memnode*> & nodes,
+    const std::vector<const PointsToGraph::memnode*> & nodes,
     const std::vector<jive::output*> & states)
   {
     JLM_ASSERT(nodes.size() == states.size());
@@ -148,7 +148,7 @@ public:
 
   void
   replace(
-    const ptg::memnode * node,
+    const PointsToGraph::memnode * node,
     jive::output * state)
   {
     JLM_ASSERT(contains(node));
@@ -159,7 +159,7 @@ public:
 
   void
   replace(
-    const std::vector<const ptg::memnode*> & nodes,
+    const std::vector<const PointsToGraph::memnode*> & nodes,
     const std::vector<jive::output*> & states)
   {
     JLM_ASSERT(nodes.size() == states.size());
@@ -174,7 +174,7 @@ public:
   }
 
 private:
-  std::unordered_map<const ptg::memnode*, jive::output*> states_;
+  std::unordered_map<const PointsToGraph::memnode*, jive::output*> states_;
 };
 
 /** FIXME: write documentation
@@ -182,7 +182,7 @@ private:
 class RegionalizedStateMap final {
 public:
   explicit
-  RegionalizedStateMap(const jlm::aa::ptg & ptg)
+  RegionalizedStateMap(const jlm::aa::PointsToGraph & ptg)
   {
     CollectAddressMemNodes(ptg);
   }
@@ -200,14 +200,14 @@ public:
   bool
   contains(
     const jive::region & region,
-    const ptg::memnode * node)
+    const PointsToGraph::memnode * node)
   {
     return GetOrInsertStateMap(region).contains(node);
   }
 
   void
   insert(
-    const ptg::memnode * node,
+    const PointsToGraph::memnode * node,
     jive::output * state)
   {
     GetOrInsertStateMap(*state->region()).insert(node, state);
@@ -215,7 +215,7 @@ public:
 
   void
   insert(
-    const std::vector<const ptg::memnode*> & nodes,
+    const std::vector<const PointsToGraph::memnode*> & nodes,
     const std::vector<jive::output*> & states)
   {
     JLM_ASSERT(nodes.size() == states.size());
@@ -247,7 +247,7 @@ public:
 
   void
   replace(
-    const ptg::memnode * node,
+    const PointsToGraph::memnode * node,
     jive::output * state)
   {
     GetOrInsertStateMap(*state->region()).replace(node, state);
@@ -255,7 +255,7 @@ public:
 
   void
   replace(
-    const std::vector<const ptg::memnode*> & nodes,
+    const std::vector<const PointsToGraph::memnode*> & nodes,
     const std::vector<jive::output*> & states)
   {
     JLM_ASSERT(nodes.size() == states.size());
@@ -274,7 +274,7 @@ public:
   std::vector<jive::output*>
   states(
     const jive::region & region,
-    const std::vector<const ptg::memnode*> & nodes)
+    const std::vector<const PointsToGraph::memnode*> & nodes)
   {
     return GetOrInsertStateMap(region).states(nodes);
   }
@@ -282,12 +282,12 @@ public:
   jive::output *
   state(
     const jive::region & region,
-    const ptg::memnode & memnode)
+    const PointsToGraph::memnode & memnode)
   {
     return states(region, {&memnode})[0];
   }
 
-  std::vector<const ptg::memnode*>
+  std::vector<const PointsToGraph::memnode*>
   memnodes(const jive::output * output)
   {
     JLM_ASSERT(is<ptrtype>(output->type()));
@@ -298,7 +298,7 @@ public:
   }
 
   static std::unique_ptr<BasicEncoder::Context>
-  Create(const jlm::aa::ptg & ptg)
+  Create(const jlm::aa::PointsToGraph & ptg)
   {
     return std::make_unique<BasicEncoder::Context>(ptg);
   }
@@ -314,17 +314,17 @@ private:
   }
 
   void
-  CollectAddressMemNodes(const jlm::aa::ptg & ptg)
+  CollectAddressMemNodes(const jlm::aa::PointsToGraph & ptg)
   {
     for (auto & regnode : ptg.regnodes()) {
       auto output = regnode.first;
-      auto memNodes = ptg::regnode::allocators(*regnode.second);
+      auto memNodes = PointsToGraph::regnode::allocators(*regnode.second);
 
       AddressMemNodeMap_[output] = memNodes;
     }
   }
 
-  std::unordered_map<const jive::output*, std::vector<const ptg::memnode*>> AddressMemNodeMap_;
+  std::unordered_map<const jive::output*, std::vector<const PointsToGraph::memnode*>> AddressMemNodeMap_;
   std::unordered_map<const jive::region*, std::unique_ptr<StateMap>> StateMaps_;
 };
 
@@ -335,7 +335,7 @@ private:
 class BasicEncoder::Context final {
 public:
   explicit
-  Context(const jlm::aa::ptg & ptg)
+  Context(const jlm::aa::PointsToGraph & ptg)
     : StateMap_(ptg)
   {
     collect_memnodes(ptg);
@@ -357,48 +357,48 @@ public:
     return StateMap_;
   }
 
-  const std::vector<const ptg::memnode*> &
+  const std::vector<const PointsToGraph::memnode*> &
   MemoryNodes()
   {
     return MemoryNodes_;
   }
 
   static std::unique_ptr<BasicEncoder::Context>
-  Create(const jlm::aa::ptg & ptg)
+  Create(const jlm::aa::PointsToGraph & ptg)
   {
     return std::make_unique<Context>(ptg);
   }
 
 private:
   void
-  collect_memnodes(const jlm::aa::ptg & ptg)
+  collect_memnodes(const jlm::aa::PointsToGraph & ptg)
   {
     for (auto & pair : ptg.allocnodes())
       MemoryNodes_.push_back(pair.second.get());
 
     for (auto & pair : ptg.impnodes())
-      MemoryNodes_.push_back(static_cast<const ptg::memnode*>(pair.second.get()));
+      MemoryNodes_.push_back(static_cast<const PointsToGraph::memnode*>(pair.second.get()));
   }
 
   RegionalizedStateMap StateMap_;
-  std::vector<const ptg::memnode*> MemoryNodes_;
+  std::vector<const PointsToGraph::memnode*> MemoryNodes_;
 };
 
 BasicEncoder::~BasicEncoder() = default;
 
-BasicEncoder::BasicEncoder(jlm::aa::ptg & ptg)
+BasicEncoder::BasicEncoder(jlm::aa::PointsToGraph & ptg)
   : Ptg_(ptg)
 {
   UnlinkMemUnknown(Ptg_);
 }
 
 void
-BasicEncoder::UnlinkMemUnknown(jlm::aa::ptg & ptg)
+BasicEncoder::UnlinkMemUnknown(jlm::aa::PointsToGraph & ptg)
 {
   /*
     FIXME: There should be a kind of memory nodes iterator in the points-to graph.
   */
-  std::vector<ptg::node*> memNodes;
+  std::vector<PointsToGraph::node*> memNodes;
   for (auto & node : ptg.allocnodes())
     memNodes.push_back(node.second.get());
   for (auto & node : ptg.impnodes())
@@ -415,7 +415,7 @@ BasicEncoder::UnlinkMemUnknown(jlm::aa::ptg & ptg)
 
 void
 BasicEncoder::Encode(
-  jlm::aa::ptg & ptg,
+  jlm::aa::PointsToGraph & ptg,
   rvsdg_module & module)
 {
   jlm::aa::BasicEncoder encoder(ptg);
