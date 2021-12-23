@@ -31,7 +31,6 @@ namespace aa {
 
 /** /brief PointsTo Graph
 *
-* FIXME: write documentation
 */
 class PointsToGraph final {
 	class constiterator;
@@ -39,7 +38,6 @@ class PointsToGraph final {
 
 public:
 	class AllocatorNode;
-	class edge;
 	class ImportNode;
 	class MemoryNode;
 	class Node;
@@ -62,17 +60,17 @@ public:
 private:
 	PointsToGraph();
 
-	PointsToGraph(const jlm::aa::PointsToGraph&) = delete;
-
-	PointsToGraph(jlm::aa::PointsToGraph&&) = delete;
-
-	jlm::aa::PointsToGraph &
-	operator=(const jlm::aa::PointsToGraph&) = delete;
-
-	jlm::aa::PointsToGraph &
-	operator=(jlm::aa::PointsToGraph&&) = delete;
-
 public:
+	PointsToGraph(const PointsToGraph&) = delete;
+
+	PointsToGraph(PointsToGraph&&) = delete;
+
+	PointsToGraph &
+	operator=(const PointsToGraph&) = delete;
+
+	PointsToGraph &
+	operator=(PointsToGraph&&) = delete;
+
 	allocnode_range
 	allocnodes();
 
@@ -133,11 +131,8 @@ public:
 		return *memunknown_;
 	}
 
-	/*
-		FIXME: I would like to call this function MemoryNode() or Node().
-	*/
 	const PointsToGraph::AllocatorNode &
-	find(const jive::node * node) const
+	GetAllocatorNode(const jive::node * node) const
 	{
 		auto it = allocnodes_.find(node);
 		if (it == allocnodes_.end())
@@ -147,7 +142,7 @@ public:
 	}
 
 	const PointsToGraph::ImportNode &
-	find(const jive::argument * argument) const
+	GetImportNode(const jive::argument * argument) const
 	{
 		auto it = impnodes_.find(argument);
 		if (it == impnodes_.end())
@@ -156,11 +151,8 @@ public:
 		return *it->second;
 	}
 
-	/*
-		FIXME: I would like to call this function RegisterNode() or node().
-	*/
 	const PointsToGraph::RegisterNode &
-	find_regnode(const jive::output * output) const
+	GetRegisterNode(const jive::output * output) const
 	{
 		auto it = regnodes_.find(output);
 		if (it == regnodes_.end())
@@ -169,28 +161,22 @@ public:
 		return *it->second;
 	}
 
-	/*
-		FIXME: change return value to PointsToGraph::Node &
-	*/
-	PointsToGraph::Node *
+	PointsToGraph::AllocatorNode &
 	add(std::unique_ptr<PointsToGraph::AllocatorNode> node);
 
-	/*
-		FIXME: change return value to PointsToGraph::Node &
-	*/
-	PointsToGraph::Node *
+	PointsToGraph::RegisterNode &
 	add(std::unique_ptr<PointsToGraph::RegisterNode> node);
 
-	PointsToGraph::Node *
+	PointsToGraph::ImportNode &
 	add(std::unique_ptr<PointsToGraph::ImportNode> node);
 
 	static std::string
-	to_dot(const jlm::aa::PointsToGraph & ptg);
+	ToDot(const PointsToGraph & ptg);
 
 	static std::unique_ptr<PointsToGraph>
-	create()
+	Create()
 	{
-		return std::unique_ptr<jlm::aa::PointsToGraph>(new PointsToGraph());
+		return std::unique_ptr<PointsToGraph>(new PointsToGraph());
 	}
 
 private:
@@ -201,9 +187,8 @@ private:
 };
 
 
-/** \brief PointsTo graph node class
+/** \brief PointsTo graph node
 *
-* FIXME: write documentation
 */
 class PointsToGraph::Node {
 	class constiterator;
@@ -216,11 +201,9 @@ public:
 	virtual
 	~Node();
 
-	/*
-		FIXME: change to PointsToGraph &
-	*/
-	Node(jlm::aa::PointsToGraph * ptg)
-	: ptg_(ptg)
+  explicit
+	Node(PointsToGraph & ptg)
+	: ptg_(&ptg)
 	{}
 
 	Node(const Node&) = delete;
@@ -245,13 +228,10 @@ public:
 	node_constrange
 	sources() const;
 
-	/*
-		FIXME: change to PointsToGraph &
-	*/
-	jlm::aa::PointsToGraph *
+	PointsToGraph&
 	Graph() const noexcept
 	{
-		return ptg_;
+		return *ptg_;
 	}
 
 	size_t
@@ -269,26 +249,21 @@ public:
 	virtual std::string
 	debug_string() const = 0;
 
-	/*
-		FIXME: change to PointsToGraph::Node &
-		FIXME: I believe that this can only be a MemoryNode. If so, make it explicit in the type.
-	*/
 	void
-	add_edge(PointsToGraph::Node * target);
+	add_edge(PointsToGraph::MemoryNode & target);
 
 	void
-	remove_edge(PointsToGraph::Node * target);
+	remove_edge(PointsToGraph::MemoryNode & target);
 
 private:
-	jlm::aa::PointsToGraph * ptg_;
+	PointsToGraph * ptg_;
 	std::unordered_set<PointsToGraph::Node*> targets_;
 	std::unordered_set<PointsToGraph::Node*> sources_;
 };
 
 
-/** \brief Points-to graph register Node
+/** \brief PointsTo graph register node
 *
-* FIXME: write documentation
 */
 class PointsToGraph::RegisterNode final : public PointsToGraph::Node {
 public:
@@ -296,10 +271,10 @@ public:
 
 private:
 	RegisterNode(
-		jlm::aa::PointsToGraph * ptg,
-		const jive::output * output)
-	: Node(ptg)
-	, output_(output)
+    PointsToGraph & ptg,
+    const jive::output * output)
+    : Node(ptg)
+    , output_(output)
 	{}
 
 public:
@@ -309,7 +284,7 @@ public:
 		return output_;
 	}
 
-	virtual std::string
+	std::string
 	debug_string() const override;
 
 	/**
@@ -318,11 +293,13 @@ public:
 	static std::vector<const PointsToGraph::MemoryNode*>
 	allocators(const PointsToGraph::RegisterNode & node);
 
-	static PointsToGraph::RegisterNode *
-	create(jlm::aa::PointsToGraph * ptg, const jive::output * output)
+	static PointsToGraph::RegisterNode &
+	create(
+    PointsToGraph & ptg,
+    const jive::output * output)
 	{
 		auto node = std::unique_ptr<PointsToGraph::RegisterNode>(new RegisterNode(ptg, output));
-		return static_cast<RegisterNode*>(ptg->add(std::move(node)));
+		return ptg.add(std::move(node));
 	}
 
 private:
@@ -330,25 +307,23 @@ private:
 };
 
 
-/** \brief Points-to graph memory node
+/** \brief PointsTo graph memory node
 *
-* FIXME: write documentation
-*
-* FIXME: Add final and convert protected to private after UnknownNode inheritance is resolved.
 */
 class PointsToGraph::MemoryNode : public PointsToGraph::Node {
 public:
 	~MemoryNode() override;
 
 protected:
-	MemoryNode(jlm::aa::PointsToGraph * ptg)
+  explicit
+	MemoryNode(PointsToGraph & ptg)
 	: Node(ptg)
 	{}
 };
 
 
-/**
-* FIXME: write documentation
+/** \brief PointsTo graph allocator node
+*
 */
 class PointsToGraph::AllocatorNode final : public PointsToGraph::MemoryNode {
 public:
@@ -356,10 +331,10 @@ public:
 
 private:
 	AllocatorNode(
-		jlm::aa::PointsToGraph * ptg
-	, const jive::node * node)
-	: MemoryNode(ptg)
-	, node_(node)
+    PointsToGraph & ptg,
+    const jive::node * node)
+    : MemoryNode(ptg)
+    , node_(node)
 	{}
 
 public:
@@ -369,23 +344,23 @@ public:
 		return node_;
 	}
 
-	virtual std::string
+	std::string
 	debug_string() const override;
 
-	static PointsToGraph::AllocatorNode *
+	static PointsToGraph::AllocatorNode &
 	create(
-		jlm::aa::PointsToGraph * ptg
-	, const jive::node * node)
+    PointsToGraph & ptg,
+    const jive::node * node)
 	{
 		auto n = std::unique_ptr<PointsToGraph::AllocatorNode>(new AllocatorNode(ptg, node));
-		return static_cast<PointsToGraph::AllocatorNode*>(ptg->add(std::move(n)));
+		return ptg.add(std::move(n));
 	}
 
 private:
 	const jive::node * node_;
 };
 
-/** \brief FIXME: write documentation
+/** \brief PointsTo graph import node
 *
 */
 class PointsToGraph::ImportNode final : public PointsToGraph::MemoryNode {
@@ -394,10 +369,10 @@ public:
 
 private:
 	ImportNode(
-		jlm::aa::PointsToGraph * ptg
-	, const jive::argument * argument)
-	: MemoryNode(ptg)
-	, argument_(argument)
+    PointsToGraph & ptg,
+    const jive::argument * argument)
+    : MemoryNode(ptg)
+    , argument_(argument)
 	{
 		JLM_ASSERT(dynamic_cast<const jlm::impport*>(&argument->port()));
 	}
@@ -409,48 +384,48 @@ public:
 		return argument_;
 	}
 
-	virtual std::string
+	std::string
 	debug_string() const override;
 
-	static jlm::aa::PointsToGraph::ImportNode *
+	static PointsToGraph::ImportNode &
 	create(
-		jlm::aa::PointsToGraph * ptg
-	, const jive::argument * argument)
+    PointsToGraph & ptg,
+    const jive::argument * argument)
 	{
 		auto n = std::unique_ptr<PointsToGraph::ImportNode>(new ImportNode(ptg, argument));
-		return static_cast<PointsToGraph::ImportNode*>(ptg->add(std::move(n)));
+		return ptg.add(std::move(n));
 	}
 
 private:
 	const jive::argument * argument_;
 };
 
-/**
+/** \brief PointsTo graph unknown node
 *
-* FIXME: write documentation
 */
 class PointsToGraph::UnknownNode final : public PointsToGraph::MemoryNode {
-	friend jlm::aa::PointsToGraph;
+	friend PointsToGraph;
 
 public:
 	~UnknownNode() override;
 
 private:
-	UnknownNode(jlm::aa::PointsToGraph * ptg)
+  explicit
+	UnknownNode(PointsToGraph & ptg)
 	: MemoryNode(ptg)
 	{}
 
-	virtual std::string
+	std::string
 	debug_string() const override;
 };
 
 
-/** \brief Points-to graph node iterator
+/** \brief PointsTo graph node iterator
 */
 class PointsToGraph::iterator final : public std::iterator<std::forward_iterator_tag,
 	PointsToGraph::Node*, ptrdiff_t> {
 
-	friend jlm::aa::PointsToGraph;
+	friend PointsToGraph;
 
 	iterator(
 		allocnodemap::iterator anit,
@@ -543,12 +518,12 @@ private:
 	regnode_range rnrange_;
 };
 
-/** \brief Points-to graph node const iterator
+/** \brief PointsTo graph node const iterator
 */
 class PointsToGraph::constiterator final : public std::iterator<std::forward_iterator_tag,
 	const PointsToGraph::Node*, ptrdiff_t> {
 
-	friend jlm::aa::PointsToGraph;
+	friend PointsToGraph;
 
 	constiterator(
 		allocnodemap::const_iterator anit,
@@ -710,7 +685,7 @@ private:
 class PointsToGraph::Node::constiterator final : public std::iterator<std::forward_iterator_tag,
 	const PointsToGraph::Node*, ptrdiff_t> {
 
-	friend jlm::aa::PointsToGraph;
+	friend PointsToGraph;
 
 	constiterator(const std::unordered_set<PointsToGraph::Node*>::const_iterator & it)
 	: it_(it)

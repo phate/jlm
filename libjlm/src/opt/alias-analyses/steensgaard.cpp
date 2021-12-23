@@ -1082,7 +1082,7 @@ Steensgaard::Analyze(const rvsdg_module & module)
 	Analyze(*module.graph());
 //	std::cout << lset_.to_dot() << std::flush;
 	auto ptg = ConstructPointsToGraph(lset_);
-//	std::cout << PointsToGraph::to_dot(*PointsToGraph) << std::flush;
+//	std::cout << PointsToGraph::ToDot(*PointsToGraph) << std::flush;
 
 	return ptg;
 }
@@ -1090,7 +1090,7 @@ Steensgaard::Analyze(const rvsdg_module & module)
 std::unique_ptr<PointsToGraph>
 Steensgaard::ConstructPointsToGraph(const locationset & lset) const
 {
-	auto ptg = PointsToGraph::create();
+	auto ptg = PointsToGraph::Create();
 
 	/*
 		Create points-to graph nodes
@@ -1101,12 +1101,12 @@ Steensgaard::ConstructPointsToGraph(const locationset & lset) const
 	for (auto & set : lset) {
 		for (auto & loc : set) {
 			if (auto regloc = dynamic_cast<jlm::aa::regloc*>(loc)) {
-				map[loc] = PointsToGraph::RegisterNode::create(ptg.get(), regloc->output());
+				map[loc] = &PointsToGraph::RegisterNode::create(*ptg, regloc->output());
 				continue;
 			}
 
 			if (auto memloc = dynamic_cast<jlm::aa::memloc*>(loc)) {
-				auto node = PointsToGraph::AllocatorNode::create(ptg.get(), memloc->node());
+				auto node = &PointsToGraph::AllocatorNode::create(*ptg, memloc->node());
 				allocators[&set].push_back(node);
 				memNodes.push_back(node);
 				map[loc] = node;
@@ -1114,7 +1114,7 @@ Steensgaard::ConstructPointsToGraph(const locationset & lset) const
 			}
 
 			if (auto l = dynamic_cast<imploc*>(loc)) {
-				auto node = PointsToGraph::ImportNode::create(ptg.get(), l->argument());
+				auto node = &PointsToGraph::ImportNode::create(*ptg, l->argument());
 				allocators[&set].push_back(node);
 				memNodes.push_back(node);
 				map[loc] = node;
@@ -1140,12 +1140,12 @@ Steensgaard::ConstructPointsToGraph(const locationset & lset) const
 				continue;
 
 			if (pointsToUnknown) {
-				map[loc]->add_edge(&ptg->memunknown());
+				map[loc]->add_edge(ptg->memunknown());
 			}
 
 			auto pt = set.value()->pointsto();
 			if (pt == nullptr) {
-				map[loc]->add_edge(&ptg->memunknown());
+				map[loc]->add_edge(ptg->memunknown());
 				continue;
 			}
 
@@ -1158,12 +1158,12 @@ Steensgaard::ConstructPointsToGraph(const locationset & lset) const
 					points to. Let's be conservative and let it just point to
 					unknown.
 				*/
-				map[loc]->add_edge(&ptg->memunknown());
+				map[loc]->add_edge(ptg->memunknown());
 				continue;
 			}
 
 			for (auto & allocator : allocators[&ptset])
-				map[loc]->add_edge(allocator);
+				map[loc]->add_edge(*allocator);
 		}
 	}
 
