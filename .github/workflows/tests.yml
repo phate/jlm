@@ -34,7 +34,7 @@ jobs:
     - name: Run unit and C tests
       run: make check -j 2
 
-  ubuntu-latest:
+  ubuntu-latest-gcc:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -45,7 +45,7 @@ jobs:
     - name: Initialize submodules
       run: make submodule
     - name: Compile jive and jlm
-      run: make jive-release jlm-release -j 2
+      run: make CXX=g++ jive-release jlm-release -j 2
     - name: Run unit and C tests
       run: make check -j 2
 
