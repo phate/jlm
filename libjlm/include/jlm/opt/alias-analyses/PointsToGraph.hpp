@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_OPT_ALIAS_ANALYSES_POINTSTO_GRAPH_HPP
-#define JLM_OPT_ALIAS_ANALYSES_POINTSTO_GRAPH_HPP
+#ifndef JLM_OPT_ALIAS_ANALYSES_POINTSTOGRAPH_HPP
+#define JLM_OPT_ALIAS_ANALYSES_POINTSTOGRAPH_HPP
 
 #include <jlm/common.hpp>
 #include <jlm/util/iterator_range.hpp>

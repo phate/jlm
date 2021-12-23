@@ -6,7 +6,7 @@
 #include <jlm/ir/types.hpp>
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/rvsdg-module.hpp>
-#include <jlm/opt/alias-analyses/pointsto-graph.hpp>
+#include <jlm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/util/strfmt.hpp>
 
 #include <jive/arch/addresstype.hpp>

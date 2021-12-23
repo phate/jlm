@@ -7,7 +7,7 @@
 #include <jlm/ir/types.hpp>
 #include <jlm/opt/alias-analyses/BasicEncoder.hpp>
 #include <jlm/opt/alias-analyses/Operators.hpp>
-#include <jlm/opt/alias-analyses/pointsto-graph.hpp>
+#include <jlm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/opt/dne.hpp>
 
 #include <jive/arch/addresstype.hpp>

@@ -48,7 +48,7 @@ LIBJLM_SRC = \
 	libjlm/src/opt/alias-analyses/MemoryStateEncoder.cpp \
 	libjlm/src/opt/alias-analyses/Operators.cpp \
 	libjlm/src/opt/alias-analyses/Optimization.cpp \
-	libjlm/src/opt/alias-analyses/pointsto-graph.cpp \
+	libjlm/src/opt/alias-analyses/PointsToGraph.cpp \
 	libjlm/src/opt/alias-analyses/steensgaard.cpp \
 	libjlm/src/opt/cne.cpp \
 	libjlm/src/opt/dne.cpp \
