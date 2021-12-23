@@ -30,9 +30,9 @@ jobs:
     - name: Initialize submodules
       run: make submodule
     - name: Compile jive and jlm
-      run: make jive-release jlm-release -j 2
+      run: make jive-release jlm-release -j `nproc`
     - name: Run unit and C tests
-      run: make check -j 2
+      run: make check -j `nproc`
 
   ubuntu-latest-gcc:
     runs-on: ubuntu-latest
@@ -45,9 +45,9 @@ jobs:
     - name: Initialize submodules
       run: make submodule
     - name: Compile jive and jlm
-      run: make CXX=g++ jive-release jlm-release -j 2
+      run: make CXX=g++ jive-release jlm-release -j `nproc`
     - name: Run unit and C tests
-      run: make check -j 2
+      run: make check -j `nproc`
 
   valgrind:
     runs-on: ubuntu-20.04
