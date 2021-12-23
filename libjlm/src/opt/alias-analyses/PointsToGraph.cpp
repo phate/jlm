@@ -119,7 +119,7 @@ PointsToGraph::add(std::unique_ptr<PointsToGraph::RegisterNode> node)
 }
 
 PointsToGraph::Node *
-PointsToGraph::add(std::unique_ptr<PointsToGraph::impnode> node)
+PointsToGraph::add(std::unique_ptr<PointsToGraph::ImportNode> node)
 {
 	auto tmp = node.get();
 	impnodes_[node->argument()] = std::move(node);
@@ -133,7 +133,7 @@ PointsToGraph::to_dot(const jlm::aa::PointsToGraph & ptg)
 	auto shape = [](const PointsToGraph::Node & node) {
 		static std::unordered_map<std::type_index, std::string> shapes({
 		  {typeid(AllocatorNode), "box"}
-	  , {typeid(impnode),       "box"}
+	  , {typeid(ImportNode),    "box"}
 		, {typeid(RegisterNode),  "oval"}
 		, {typeid(UnknownNode),   "box"}
 		});
@@ -275,11 +275,11 @@ PointsToGraph::AllocatorNode::debug_string() const
 
 /* points-to graph import node */
 
-PointsToGraph::impnode::~impnode()
+PointsToGraph::ImportNode::~ImportNode()
 {}
 
 std::string
-PointsToGraph::impnode::debug_string() const
+PointsToGraph::ImportNode::debug_string() const
 {
 	auto port = static_cast<const jlm::impport*>(&argument()->port());
 	return port->name();

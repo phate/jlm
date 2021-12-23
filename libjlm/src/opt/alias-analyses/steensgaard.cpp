@@ -1114,7 +1114,7 @@ Steensgaard::ConstructPointsToGraph(const locationset & lset) const
 			}
 
 			if (auto l = dynamic_cast<imploc*>(loc)) {
-				auto node = PointsToGraph::impnode::create(ptg.get(), l->argument());
+				auto node = PointsToGraph::ImportNode::create(ptg.get(), l->argument());
 				allocators[&set].push_back(node);
 				memNodes.push_back(node);
 				map[loc] = node;
