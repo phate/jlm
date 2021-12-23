@@ -398,7 +398,7 @@ BasicEncoder::UnlinkMemUnknown(jlm::aa::PointsToGraph & ptg)
   /*
     FIXME: There should be a kind of memory nodes iterator in the points-to graph.
   */
-  std::vector<PointsToGraph::node*> memNodes;
+  std::vector<PointsToGraph::Node*> memNodes;
   for (auto & node : ptg.allocnodes())
     memNodes.push_back(node.second.get());
   for (auto & node : ptg.impnodes())
