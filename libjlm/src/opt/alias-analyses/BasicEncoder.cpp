@@ -408,8 +408,8 @@ BasicEncoder::UnlinkMemUnknown(jlm::aa::PointsToGraph & ptg)
   while (memUnknown.nsources() != 0) {
     auto & source = *memUnknown.sources().begin();
     for (auto & memNode : memNodes)
-      source.add_edge(memNode);
-    source.remove_edge(&memUnknown);
+      source.add_edge(*dynamic_cast<PointsToGraph::MemoryNode*>(memNode));
+    source.remove_edge(memUnknown);
   }
 }
 
@@ -442,7 +442,7 @@ BasicEncoder::EncodeAlloca(const jive::simple_node & node)
 {
   JLM_ASSERT(is<alloca_op>(&node));
 
-  auto & memnode = Ptg().find(&node);
+  auto & memnode = Ptg().GetAllocatorNode(&node);
   Context_->StateMap().replace(&memnode, node.output(1));
 }
 
@@ -451,7 +451,7 @@ BasicEncoder::EncodeMalloc(const jive::simple_node & node)
 {
   JLM_ASSERT(is<malloc_op>(&node));
 
-  auto & memnode = Ptg().find(&node);
+  auto & memnode = Ptg().GetAllocatorNode(&node);
   Context_->StateMap().replace(&memnode, node.output(1));
 }
 
