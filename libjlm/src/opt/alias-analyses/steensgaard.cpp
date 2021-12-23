@@ -1101,7 +1101,7 @@ Steensgaard::ConstructPointsToGraph(const locationset & lset) const
 	for (auto & set : lset) {
 		for (auto & loc : set) {
 			if (auto regloc = dynamic_cast<jlm::aa::regloc*>(loc)) {
-				map[loc] = PointsToGraph::regnode::create(ptg.get(), regloc->output());
+				map[loc] = PointsToGraph::RegisterNode::create(ptg.get(), regloc->output());
 				continue;
 			}
 
