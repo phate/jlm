@@ -73,9 +73,6 @@ public:
 		return djset_.end();
 	}
 
-	Location &
-	InsertMemoryLocation(const jive::node * node);
-
   Location &
   InsertAllocaLocation(const jive::node & node);
 
