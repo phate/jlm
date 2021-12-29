@@ -82,6 +82,9 @@ public:
   Location &
   InsertMallocLocation(const jive::node & node);
 
+  Location &
+  InsertLambdaLocation(const lambda::node & lambda);
+
 	Location &
 	InsertImportLocation(const jive::argument * argument);
 
