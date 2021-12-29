@@ -319,6 +319,43 @@ private:
   const lambda::node & lambda_;
 };
 
+/** \brief DeltaLocation class
+ *
+ * This class represents an abstract global variable location, statically allocated by a delta operation.
+ */
+class DeltaLocation final : public MemoryLocation {
+
+  ~DeltaLocation() override = default;
+
+  constexpr explicit
+  DeltaLocation(const delta::node & delta)
+    : MemoryLocation(&delta)
+    , delta_(delta)
+  {}
+
+public:
+  const delta::node &
+  Node() const noexcept
+  {
+    return delta_;
+  }
+
+  std::string
+  debug_string() const noexcept override
+  {
+    return delta_.operation().debug_string();
+  }
+
+  static std::unique_ptr<Location>
+  Create(const delta::node & node)
+  {
+    return std::unique_ptr<Location>(new DeltaLocation(node));
+  }
+
+private:
+  const delta::node & delta_;
+};
+
 /** \brief FIXME: write documentation
 *
 * FIXME: This class should be derived from a meloc, but we do not
@@ -449,6 +486,16 @@ Location &
 LocationSet::InsertLambdaLocation(const lambda::node & node)
 {
   locations_.push_back(LambdaLocation::Create(node));
+  auto location = locations_.back().get();
+  djset_.insert(location);
+
+  return *location;
+}
+
+Location &
+LocationSet::InsertDeltaLocation(const delta::node & node)
+{
+  locations_.push_back(DeltaLocation::Create(node));
   auto location = locations_.back().get();
   djset_.insert(location);
 
@@ -1043,7 +1090,7 @@ Steensgaard::Analyze(const delta::node & delta)
 	Analyze(*delta.subregion());
 
 	auto & deltaOutputLocation = locationSet_.FindOrInsertRegisterLocation(delta.output(), false);
-	auto & deltaLocation = locationSet_.InsertMemoryLocation(&delta);
+	auto & deltaLocation = locationSet_.InsertDeltaLocation(delta);
   deltaOutputLocation.SetPointsTo(deltaLocation);
 
 	auto origin = delta.result()->origin();
@@ -1263,6 +1310,14 @@ Steensgaard::ConstructPointsToGraph(const LocationSet & lset)
 
       if (auto lambdaLocation = dynamic_cast<LambdaLocation*>(loc)) {
         auto node = &PointsToGraph::AllocatorNode::create(*ptg, &lambdaLocation->Node());
+        allocators[&set].push_back(node);
+        memNodes.push_back(node);
+        map[loc] = node;
+        continue;
+      }
+
+      if (auto deltaLocation = dynamic_cast<DeltaLocation*>(loc)) {
+        auto node = &PointsToGraph::AllocatorNode::create(*ptg, &deltaLocation->Node());
         allocators[&set].push_back(node);
         memNodes.push_back(node);
         map[loc] = node;

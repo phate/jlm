@@ -85,6 +85,9 @@ public:
   Location &
   InsertLambdaLocation(const lambda::node & lambda);
 
+  Location &
+  InsertDeltaLocation(const delta::node & delta);
+
 	Location &
 	InsertImportLocation(const jive::argument * argument);
 
