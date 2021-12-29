@@ -32,80 +32,76 @@ namespace lambda { class node; }
 
 namespace aa {
 
-class location;
+class Location;
 class PointsToGraph;
 
-/**
-* FIXME: Some documentation
+/** \brief LocationSet class
 */
-class locationset final {
-private:
-	using locdjset = typename jlm::disjointset<jlm::aa::location*>;
+class LocationSet final {
+
+	using DisjointLocationSet = typename jlm::disjointset<Location*>;
 
 public:
 	using const_iterator = std::unordered_map<
 	  const jive::output*
-	, jlm::aa::location*
+	, Location*
 	>::const_iterator;
 
-	~locationset();
+	~LocationSet();
 
-	locationset();
+	LocationSet();
 
-	locationset(const locationset &) = delete;
+	LocationSet(const LocationSet &) = delete;
 
-	locationset(locationset &&) = delete;
+	LocationSet(LocationSet &&) = delete;
 
-	locationset &
-	operator=(const locationset &) = delete;
+	LocationSet &
+	operator=(const LocationSet &) = delete;
 
-	locationset &
-	operator=(locationset &&) = delete;
+	LocationSet &
+	operator=(LocationSet &&) = delete;
 
-	locdjset::set_iterator
+	DisjointLocationSet::set_iterator
 	begin() const
 	{
 		return djset_.begin();
 	}
 
-	locdjset::set_iterator
+	DisjointLocationSet::set_iterator
 	end() const
 	{
 		return djset_.end();
 	}
 
-	jlm::aa::location *
-	insert(const jive::node * node);
+	Location &
+	InsertMemoryLocation(const jive::node * node);
 
-	location *
-	insert(const jive::argument * argument);
+	Location &
+	InsertImportLocation(const jive::argument * argument);
 
-	location *
-	insertDummy();
+	Location &
+	InsertDummyLocation();
 
 	bool
 	contains(const jive::output * output) const noexcept;
 
-	jlm::aa::location *
-	FindOrInsert(const jive::output * output, bool unknown);
+	Location &
+	FindOrInsertRegisterLocation(const jive::output * output, bool unknown);
 
-	const disjointset<jlm::aa::location*>::set &
-	set(jlm::aa::location * l) const
+	const DisjointLocationSet::set &
+	set(Location & l) const
 	{
-		return *djset_.find(l);
+		return *djset_.find(&l);
 	}
 
-	/*
-		FIXME: The implementation of find can be expressed using set().
-	*/
-	jlm::aa::location *
-	find(jlm::aa::location * l) const;
+	Location &
+	GetRootLocation(Location & l) const;
 
-	jlm::aa::location *
+	Location &
 	Find(const jive::output * output);
 
-	jlm::aa::location *
-	merge(jlm::aa::location * l1, jlm::aa::location * l2);
+	Location &
+	Merge(Location & l1, Location & l2);
 
 	std::string
 	to_dot() const;
@@ -114,24 +110,26 @@ public:
 	clear();
 
 private:
-	jlm::aa::location *
-	Insert(const jive::output * output, bool unknown);
+	Location &
+	InsertRegisterLocation(const jive::output * output, bool unknown);
 
-	jlm::aa::location *
+	Location *
 	lookup(const jive::output * output);
 
-	disjointset<jlm::aa::location*> djset_;
-	std::vector<std::unique_ptr<jlm::aa::location>> locations_;
-	std::unordered_map<const jive::output*, jlm::aa::location*> map_;
+	DisjointLocationSet djset_;
+	std::vector<std::unique_ptr<Location>> locations_;
+	std::unordered_map<const jive::output*, Location*> map_;
 };
 
-/**
-* \brief FIXME: some documentation
-*/
+/** \brief Steensgaard alias analysis
+ *
+ * This class implements a Steensgaard alias analysis. The analysis is inter-procedural, field-insensitive,
+ * context-insensitive, flow-insensitive, and uses a static heap model. It is an implementation corresponding to the
+ * algorithm presented in Bjarne Steensgaard - Points-to Analysis in Almost Linear Time.
+ */
 class Steensgaard final : public AliasAnalysis {
 public:
-	virtual
-	~Steensgaard();
+	~Steensgaard() override;
 
 	Steensgaard() = default;
 
@@ -145,7 +143,7 @@ public:
 	Steensgaard &
 	operator=(Steensgaard &&) = delete;
 
-	virtual std::unique_ptr<PointsToGraph>
+	std::unique_ptr<PointsToGraph>
 	Analyze(const rvsdg_module & module) override;
 
 private:
@@ -224,18 +222,15 @@ private:
 	void
 	AnalyzeExtractValue(const jive::simple_node & node);
 
-	std::unique_ptr<PointsToGraph>
-	ConstructPointsToGraph(const locationset & lset) const;
+	static std::unique_ptr<PointsToGraph>
+	ConstructPointsToGraph(const LocationSet & lset);
 
-	/**
-	* \brief Peform a recursive union of location \p x and \p y.
-	*
-	* FIXME
+	/** \brief Perform a recursive union of Location \p x and \p y.
 	*/
 	void
-	join(location & x, location & y);
+	join(Location & x, Location & y);
 
-	locationset lset_;
+	LocationSet locationSet_;
 };
 
 }}
