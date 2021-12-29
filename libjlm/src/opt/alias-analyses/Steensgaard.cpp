@@ -169,39 +169,16 @@ private:
 	const jive::output * output_;
 };
 
-/** \brief FIXME: write documentation
+/** \brief MemoryLocation class
 *
+* This class represents an abstract memory location.
 */
 class MemoryLocation : public Location {
 public:
-	~MemoryLocation() override = default;
-
-	constexpr explicit
-	MemoryLocation(const jive::node * node)
+	constexpr
+	MemoryLocation()
 	: Location(false)
-	, node_(node)
-	{}
-
-	const jive::node *
-	node() const noexcept
-	{
-		return node_;
-	}
-
-	std::string
-	debug_string() const noexcept override
-	{
-		return node_->operation().debug_string();
-	}
-
-	static std::unique_ptr<Location>
-	create(const jive::node * node)
-	{
-		return std::unique_ptr<Location>(new MemoryLocation(node));
-	}
-
-private:
-	const jive::node * node_;
+  {}
 };
 
 /** \brief AllocaLocation class
@@ -214,7 +191,7 @@ class AllocaLocation final : public MemoryLocation {
 
   constexpr explicit
   AllocaLocation(const jive::node & node)
-  : MemoryLocation(&node)
+  : MemoryLocation()
   , node_(node)
   {
     JLM_ASSERT(is<alloca_op>(&node));
@@ -253,8 +230,8 @@ class MallocLocation final : public MemoryLocation {
 
   constexpr explicit
   MallocLocation(const jive::node & node)
-    : MemoryLocation(&node)
-    , node_(node)
+  : MemoryLocation()
+  , node_(node)
   {
     JLM_ASSERT(is<malloc_op>(&node));
   }
@@ -292,7 +269,7 @@ class LambdaLocation final : public MemoryLocation {
 
   constexpr explicit
   LambdaLocation(const lambda::node & lambda)
-  : MemoryLocation(&lambda)
+  : MemoryLocation()
   , lambda_(lambda)
   {}
 
@@ -329,7 +306,7 @@ class DeltaLocation final : public MemoryLocation {
 
   constexpr explicit
   DeltaLocation(const delta::node & delta)
-    : MemoryLocation(&delta)
+    : MemoryLocation()
     , delta_(delta)
   {}
 
@@ -447,16 +424,6 @@ LocationSet::InsertRegisterLocation(const jive::output * output, bool unknown)
 	auto location = locations_.back().get();
 
 	map_[output] = location;
-	djset_.insert(location);
-
-	return *location;
-}
-
-Location &
-LocationSet::InsertMemoryLocation(const jive::node * node)
-{
-	locations_.push_back(MemoryLocation::create(node));
-	auto location = locations_.back().get();
 	djset_.insert(location);
 
 	return *location;
@@ -1323,14 +1290,6 @@ Steensgaard::ConstructPointsToGraph(const LocationSet & lset)
         map[loc] = node;
         continue;
       }
-
-			if (auto memloc = dynamic_cast<jlm::aa::MemoryLocation*>(loc)) {
-				auto node = &PointsToGraph::AllocatorNode::create(*ptg, memloc->node());
-				allocators[&set].push_back(node);
-				memNodes.push_back(node);
-				map[loc] = node;
-				continue;
-			}
 
 			if (auto l = dynamic_cast<ImportLocation*>(loc)) {
 				auto node = &PointsToGraph::ImportNode::create(*ptg, l->argument());
