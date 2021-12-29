@@ -282,6 +282,43 @@ private:
   const jive::node & node_;
 };
 
+/** \brief LambdaLocation class
+ *
+ * This class represents an abstract function location, statically allocated by a lambda operation.
+ */
+class LambdaLocation final : public MemoryLocation {
+
+  ~LambdaLocation() override = default;
+
+  constexpr explicit
+  LambdaLocation(const lambda::node & lambda)
+  : MemoryLocation(&lambda)
+  , lambda_(lambda)
+  {}
+
+public:
+  const lambda::node &
+  Node() const noexcept
+  {
+    return lambda_;
+  }
+
+  std::string
+  debug_string() const noexcept override
+  {
+    return lambda_.operation().debug_string();
+  }
+
+  static std::unique_ptr<Location>
+  Create(const lambda::node & node)
+  {
+    return std::unique_ptr<Location>(new LambdaLocation(node));
+  }
+
+private:
+  const lambda::node & lambda_;
+};
+
 /** \brief FIXME: write documentation
 *
 * FIXME: This class should be derived from a meloc, but we do not
@@ -402,6 +439,16 @@ Location &
 LocationSet::InsertMallocLocation(const jive::node & node)
 {
   locations_.push_back(MallocLocation::Create(node));
+  auto location = locations_.back().get();
+  djset_.insert(location);
+
+  return *location;
+}
+
+Location &
+LocationSet::InsertLambdaLocation(const lambda::node & node)
+{
+  locations_.push_back(LambdaLocation::Create(node));
   auto location = locations_.back().get();
   djset_.insert(location);
 
@@ -948,8 +995,9 @@ Steensgaard::Analyze(const lambda::node & lambda)
 
 		Analyze(*lambda.subregion());
 
-		auto & ptr = locationSet_.FindOrInsertRegisterLocation(lambda.output(), false);
-    ptr.SetPointsTo(locationSet_.InsertMemoryLocation(&lambda));
+		auto & lambdaOutputLocation = locationSet_.FindOrInsertRegisterLocation(lambda.output(), false);
+    auto & lambdaLocation = locationSet_.InsertLambdaLocation(lambda);
+    lambdaOutputLocation.SetPointsTo(lambdaLocation);
 	} else {
 		/* handle context variables */
 		for (auto & cv : lambda.ctxvars()) {
@@ -971,8 +1019,9 @@ Steensgaard::Analyze(const lambda::node & lambda)
 
 		Analyze(*lambda.subregion());
 
-		auto & ptr = locationSet_.FindOrInsertRegisterLocation(lambda.output(), false);
-    ptr.SetPointsTo(locationSet_.InsertMemoryLocation(&lambda));
+		auto & lambdaOutputLocation = locationSet_.FindOrInsertRegisterLocation(lambda.output(), false);
+    auto & lambdaLocation = locationSet_.InsertLambdaLocation(lambda);
+    lambdaOutputLocation.SetPointsTo(lambdaLocation);
 	}
 }
 
@@ -1206,6 +1255,14 @@ Steensgaard::ConstructPointsToGraph(const LocationSet & lset)
 
       if (auto mallocLocation = dynamic_cast<MallocLocation*>(loc)) {
         auto node = &PointsToGraph::AllocatorNode::create(*ptg, &mallocLocation->Node());
+        allocators[&set].push_back(node);
+        memNodes.push_back(node);
+        map[loc] = node;
+        continue;
+      }
+
+      if (auto lambdaLocation = dynamic_cast<LambdaLocation*>(loc)) {
+        auto node = &PointsToGraph::AllocatorNode::create(*ptg, &lambdaLocation->Node());
         allocators[&set].push_back(node);
         memNodes.push_back(node);
         map[loc] = node;
