@@ -10,7 +10,7 @@
 #include <jive/view.hpp>
 
 #include <jlm/opt/alias-analyses/PointsToGraph.hpp>
-#include <jlm/opt/alias-analyses/steensgaard.hpp>
+#include <jlm/opt/alias-analyses/Steensgaard.hpp>
 #include <jlm/util/stats.hpp>
 
 #include <iostream>

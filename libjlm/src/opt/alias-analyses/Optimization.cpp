@@ -6,7 +6,7 @@
 #include <jlm/opt/alias-analyses/BasicEncoder.hpp>
 #include <jlm/opt/alias-analyses/Optimization.hpp>
 #include <jlm/opt/alias-analyses/PointsToGraph.hpp>
-#include <jlm/opt/alias-analyses/steensgaard.hpp>
+#include <jlm/opt/alias-analyses/Steensgaard.hpp>
 
 namespace jlm {
 namespace aa {
