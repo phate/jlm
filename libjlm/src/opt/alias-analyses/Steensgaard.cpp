@@ -172,7 +172,7 @@ private:
 /** \brief FIXME: write documentation
 *
 */
-class MemoryLocation final : public Location {
+class MemoryLocation : public Location {
 public:
 	~MemoryLocation() override = default;
 
@@ -202,6 +202,45 @@ public:
 
 private:
 	const jive::node * node_;
+};
+
+/** \brief AllocaLocation class
+ *
+ * This class represents an abstract stack location allocated by a alloca operation.
+ */
+class AllocaLocation final : public MemoryLocation {
+
+  ~AllocaLocation() override = default;
+
+  constexpr explicit
+  AllocaLocation(const jive::node & node)
+  : MemoryLocation(&node)
+  , node_(node)
+  {
+    JLM_ASSERT(is<alloca_op>(&node));
+  }
+
+public:
+  const jive::node &
+  Node() const noexcept
+  {
+    return node_;
+  }
+
+  std::string
+  debug_string() const noexcept override
+  {
+    return node_.operation().debug_string();
+  }
+
+  static std::unique_ptr<Location>
+  Create(const jive::node & node)
+  {
+    return std::unique_ptr<Location>(new AllocaLocation(node));
+  }
+
+private:
+  const jive::node & node_;
 };
 
 /** \brief FIXME: write documentation
@@ -308,6 +347,16 @@ LocationSet::InsertMemoryLocation(const jive::node * node)
 	djset_.insert(location);
 
 	return *location;
+}
+
+Location &
+LocationSet::InsertAllocaLocation(const jive::node & node)
+{
+  locations_.push_back(AllocaLocation::Create(node));
+  auto location = locations_.back().get();
+  djset_.insert(location);
+
+  return *location;
 }
 
 Location &
@@ -495,7 +544,7 @@ Steensgaard::Analyze(const jive::simple_node & node)
 void
 Steensgaard::AnalyzeAlloca(const jive::simple_node & node)
 {
-	JLM_ASSERT(jive::is<alloca_op>(&node));
+	JLM_ASSERT(is<alloca_op>(&node));
 
 	std::function<bool(const jive::valuetype&)>
 	IsVaListAlloca = [&](const jive::valuetype & type)
@@ -522,7 +571,7 @@ Steensgaard::AnalyzeAlloca(const jive::simple_node & node)
 	};
 
 	auto & allocaOutputLocation = locationSet_.FindOrInsertRegisterLocation(node.output(0), false);
-	auto & allocaLocation = locationSet_.InsertMemoryLocation(&node);
+	auto & allocaLocation = locationSet_.InsertAllocaLocation(node);
   allocaOutputLocation.SetPointsTo(allocaLocation);
 
 	auto & op = *dynamic_cast<const alloca_op*>(&node.operation());
@@ -1096,6 +1145,14 @@ Steensgaard::ConstructPointsToGraph(const LocationSet & lset)
 				map[loc] = &PointsToGraph::RegisterNode::create(*ptg, regloc->output());
 				continue;
 			}
+
+      if (auto allocaLocation = dynamic_cast<AllocaLocation*>(loc)) {
+        auto node = &PointsToGraph::AllocatorNode::create(*ptg, &allocaLocation->Node());
+        allocators[&set].push_back(node);
+        memNodes.push_back(node);
+        map[loc] = node;
+        continue;
+      }
 
 			if (auto memloc = dynamic_cast<jlm::aa::MemoryLocation*>(loc)) {
 				auto node = &PointsToGraph::AllocatorNode::create(*ptg, memloc->node());

@@ -76,6 +76,9 @@ public:
 	Location &
 	InsertMemoryLocation(const jive::node * node);
 
+  Location &
+  InsertAllocaLocation(const jive::node & node);
+
 	Location &
 	InsertImportLocation(const jive::argument * argument);
 
