@@ -243,6 +243,45 @@ private:
   const jive::node & node_;
 };
 
+/** \brief MallocLocation class
+ *
+ * This class represents an abstract heap location allocated by a malloc operation.
+ */
+class MallocLocation final : public MemoryLocation {
+
+  ~MallocLocation() override = default;
+
+  constexpr explicit
+  MallocLocation(const jive::node & node)
+    : MemoryLocation(&node)
+    , node_(node)
+  {
+    JLM_ASSERT(is<malloc_op>(&node));
+  }
+
+public:
+  const jive::node &
+  Node() const noexcept
+  {
+    return node_;
+  }
+
+  std::string
+  debug_string() const noexcept override
+  {
+    return node_.operation().debug_string();
+  }
+
+  static std::unique_ptr<Location>
+  Create(const jive::node & node)
+  {
+    return std::unique_ptr<Location>(new MallocLocation(node));
+  }
+
+private:
+  const jive::node & node_;
+};
+
 /** \brief FIXME: write documentation
 *
 * FIXME: This class should be derived from a meloc, but we do not
@@ -353,6 +392,16 @@ Location &
 LocationSet::InsertAllocaLocation(const jive::node & node)
 {
   locations_.push_back(AllocaLocation::Create(node));
+  auto location = locations_.back().get();
+  djset_.insert(location);
+
+  return *location;
+}
+
+Location &
+LocationSet::InsertMallocLocation(const jive::node & node)
+{
+  locations_.push_back(MallocLocation::Create(node));
   auto location = locations_.back().get();
   djset_.insert(location);
 
@@ -592,8 +641,9 @@ Steensgaard::AnalyzeMalloc(const jive::simple_node & node)
 {
 	JLM_ASSERT(is<malloc_op>(&node));
 
-	auto & ptr = locationSet_.FindOrInsertRegisterLocation(node.output(0), false);
-  ptr.SetPointsTo(locationSet_.InsertMemoryLocation(&node));
+	auto & mallocOutputLocation = locationSet_.FindOrInsertRegisterLocation(node.output(0), false);
+  auto & mallocLocation = locationSet_.InsertMallocLocation(node);
+  mallocOutputLocation.SetPointsTo(mallocLocation);
 }
 
 void
@@ -1148,6 +1198,14 @@ Steensgaard::ConstructPointsToGraph(const LocationSet & lset)
 
       if (auto allocaLocation = dynamic_cast<AllocaLocation*>(loc)) {
         auto node = &PointsToGraph::AllocatorNode::create(*ptg, &allocaLocation->Node());
+        allocators[&set].push_back(node);
+        memNodes.push_back(node);
+        map[loc] = node;
+        continue;
+      }
+
+      if (auto mallocLocation = dynamic_cast<MallocLocation*>(loc)) {
+        auto node = &PointsToGraph::AllocatorNode::create(*ptg, &mallocLocation->Node());
         allocators[&set].push_back(node);
         memNodes.push_back(node);
         map[loc] = node;
