@@ -675,7 +675,7 @@ convert_cfg(
 		restructure(cfg);
 		straighten(*cfg);
 		stat.end();
-		if (sd.print_cfr_time)
+		if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::ControlFlowRecovery))
 			sd.print_stat(stat);
 	}
 
@@ -686,7 +686,7 @@ convert_cfg(
 		root = aggregate(*cfg);
 		aggnode::normalize(*root);
 		stat.end();
-		if (sd.print_aggregation_time)
+		if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::Aggregation))
 			sd.print_stat(stat);
 	}
 
@@ -696,7 +696,7 @@ convert_cfg(
 		stat.start(*root);
 		dm = annotate(*root);
 		stat.end();
-		if (sd.print_annotation_time)
+		if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::Annotation))
 			sd.print_stat(stat);
 	}
 
@@ -711,7 +711,7 @@ convert_cfg(
 		stat.start();
 		convert_node(*root, dm, function, lambda, svmap);
 		stat.end();
-		if (sd.print_jlm_rvsdg_conversion)
+		if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::JlmToRvsdgConversion))
 			sd.print_stat(stat);
 	}
 
@@ -909,7 +909,7 @@ construct_rvsdg(const ipgraph_module & im, const StatisticsDescriptor & sd)
 	auto rm = convert_module(im, sd);
 	stat.end(*rm->graph());
 
-	if (sd.print_rvsdg_construction)
+	if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::RvsdgConstruction))
 		sd.print_stat(stat);
 
 	return rm;

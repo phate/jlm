@@ -284,7 +284,7 @@ pull(rvsdg_module & rm, const StatisticsDescriptor & sd)
 	pull(rm.graph()->root());
 	stat.end(*rm.graph());
 
-	if (sd.print_pull_stat)
+	if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::PullNodes))
 		sd.print_stat(stat);
 }
 

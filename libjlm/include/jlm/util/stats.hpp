@@ -8,6 +8,8 @@
 
 #include <jlm/util/file.hpp>
 
+#include <unordered_set>
+
 namespace jlm {
 
 class stat {
@@ -21,28 +23,43 @@ public:
 
 class StatisticsDescriptor final {
 public:
+  enum class StatisticsId {
+    Aggregation,
+    Annotation,
+    CommonNodeElimination,
+    ControlFlowRecovery,
+    DeadNodeElimination,
+    FunctionInlining,
+    InvariantValueReduction,
+    JlmToRvsdgConversion,
+    LoopUnrolling,
+    PullNodes,
+    PushNodes,
+    ReduceNodes,
+    RvsdgConstruction,
+    RvsdgDestruction,
+    RvsdgOptimization,
+    ThetaGammaInversion
+  };
+
 	StatisticsDescriptor()
-	: StatisticsDescriptor(std::string("/tmp/jlm-stats.log"))
+	: StatisticsDescriptor(
+    std::string("/tmp/jlm-stats.log"),
+    {})
 	{}
 
-	StatisticsDescriptor(const jlm::filepath & path)
-	: print_cfr_time(false)
-	, print_cne_stat(false)
-	, print_dne_stat(false)
-	, print_iln_stat(false)
-	, print_inv_stat(false)
-	, print_ivt_stat(false)
-	, print_pull_stat(false)
-	, print_push_stat(false)
-	, print_reduction_stat(false)
-	, print_unroll_stat(false)
-	, print_annotation_time(false)
-	, print_aggregation_time(false)
-	, print_rvsdg_construction(false)
-	, print_rvsdg_destruction(false)
-	, print_rvsdg_optimization(false)
-	, print_jlm_rvsdg_conversion(false)
-	, file_(path)
+  explicit
+  StatisticsDescriptor(std::unordered_set<StatisticsId> printStatistics)
+  : StatisticsDescriptor(
+    std::string("tmp/jlm-stats.log"),
+    std::move(printStatistics))
+  {}
+
+	StatisticsDescriptor(
+    const jlm::filepath & path,
+    std::unordered_set<StatisticsId> printStatistics)
+	: file_(path)
+  , printStatistics_(std::move(printStatistics))
 	{
 		file_.open("a");
 	}
@@ -61,31 +78,27 @@ public:
 		file_.open("a");
 	}
 
+  void
+  SetPrintStatisticsIds(std::unordered_set<StatisticsId> printStatistics)
+  {
+    printStatistics_ = std::move(printStatistics);
+  }
+
 	void
 	print_stat(const stat & s) const noexcept
 	{
 		fprintf(file_.fd(), "%s\n", s.to_str().c_str());
 	}
 
-	bool print_cfr_time;
-	bool print_cne_stat;
-	bool print_dne_stat;
-	bool print_iln_stat;
-	bool print_inv_stat;
-	bool print_ivt_stat;
-	bool print_pull_stat;
-	bool print_push_stat;
-	bool print_reduction_stat;
-	bool print_unroll_stat;
-	bool print_annotation_time;
-	bool print_aggregation_time;
-	bool print_rvsdg_construction;
-	bool print_rvsdg_destruction;
-	bool print_rvsdg_optimization;
-	bool print_jlm_rvsdg_conversion;
+  bool
+  IsPrintable(StatisticsId id) const
+  {
+    return printStatistics_.find(id) != printStatistics_.end();
+  }
 
 private:
 	jlm::file file_;
+  std::unordered_set<StatisticsId> printStatistics_;
 };
 
 }

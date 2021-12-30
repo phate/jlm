@@ -565,7 +565,7 @@ cne(rvsdg_module & rm, const StatisticsDescriptor & sd)
 	divert(graph.root(), ctx);
 	stat.end_divert_stat(graph);
 
-	if (sd.print_cne_stat)
+	if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::CommonNodeElimination))
 		sd.print_stat(stat);
 }
 

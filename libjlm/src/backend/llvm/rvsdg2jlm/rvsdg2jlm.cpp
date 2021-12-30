@@ -570,7 +570,7 @@ rvsdg2jlm(const rvsdg_module & rm, const StatisticsDescriptor & sd)
 	auto im = convert_rvsdg(rm);
 	stat.end(*im);
 
-	if (sd.print_rvsdg_destruction)
+	if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::RvsdgConstruction))
 		sd.print_stat(stat);
 
 	return im;

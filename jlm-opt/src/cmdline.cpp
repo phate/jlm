@@ -23,25 +23,6 @@ namespace jlm {
 
 enum class optimizationid {aasteensgaard, cne, dne, iln, inv, psh, red, ivt, url, pll};
 
-enum class PrintStatistics {
-  Aggregation,
-  Annotation,
-  CommonNodeElimination,
-  ControlFlowRecovery,
-  DeadNodeElimination,
-  FunctionInlining,
-  InvariantValueReduction,
-  JlmToRvsdgConversion,
-  LoopUnrolling,
-  PullNodes,
-  PushNodes,
-  ReduceNodes,
-  RvsdgConstruction,
-  RvsdgDestruction,
-  RvsdgOptimization,
-  ThetaGammaInversion
-};
-
 static jlm::optimization *
 mapoptid(enum optimizationid id)
 {
@@ -108,54 +89,54 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 	, cl::desc(desc)
 	, cl::value_desc("file"));
 
-  cl::bits<PrintStatistics> printStatistics(
+  cl::list<StatisticsDescriptor::StatisticsId> printStatistics(
     cl::values(
-      clEnumValN(PrintStatistics::Aggregation,
+      clEnumValN(StatisticsDescriptor::StatisticsId::Aggregation,
                  "print-aggregation-time",
                  "Write aggregation statistics to file."),
-      clEnumValN(PrintStatistics::Annotation,
+      clEnumValN(StatisticsDescriptor::StatisticsId::Annotation,
                  "print-annotation-time",
                  "Write annotation statistics to file."),
-      clEnumValN(PrintStatistics::CommonNodeElimination,
+      clEnumValN(StatisticsDescriptor::StatisticsId::CommonNodeElimination,
                  "print-cne-stat",
                  "Write common node elimination statistics to file."),
-      clEnumValN(PrintStatistics::ControlFlowRecovery,
+      clEnumValN(StatisticsDescriptor::StatisticsId::ControlFlowRecovery,
                  "print-cfr-time",
                  "Write control flow recovery statistics to file."),
-      clEnumValN(PrintStatistics::DeadNodeElimination,
+      clEnumValN(StatisticsDescriptor::StatisticsId::DeadNodeElimination,
                  "print-dne-stat",
                  "Write dead node elimination statistics to file."),
-      clEnumValN(PrintStatistics::FunctionInlining,
+      clEnumValN(StatisticsDescriptor::StatisticsId::FunctionInlining,
                  "print-iln-stat",
                  "Write function inlining statistics to file."),
-      clEnumValN(PrintStatistics::InvariantValueReduction,
+      clEnumValN(StatisticsDescriptor::StatisticsId::InvariantValueReduction,
                  "print-inv-stat",
                  "Write invariant value reduction statistics to file."),
-      clEnumValN(PrintStatistics::JlmToRvsdgConversion,
+      clEnumValN(StatisticsDescriptor::StatisticsId::JlmToRvsdgConversion,
                  "print-jlm-rvsdg-conversion",
                  "Write Jlm to RVSDG conversion statistics to file."),
-      clEnumValN(PrintStatistics::LoopUnrolling,
+      clEnumValN(StatisticsDescriptor::StatisticsId::LoopUnrolling,
                  "print-unroll-stat",
                  "Write loop unrolling statistics to file."),
-      clEnumValN(PrintStatistics::PullNodes,
+      clEnumValN(StatisticsDescriptor::StatisticsId::PullNodes,
                  "print-pull-stat",
                  "Write node pull statistics to file."),
-      clEnumValN(PrintStatistics::PushNodes,
+      clEnumValN(StatisticsDescriptor::StatisticsId::PushNodes,
                  "print-push-stat",
                  "Write node push statistics to file."),
-      clEnumValN(PrintStatistics::ReduceNodes,
+      clEnumValN(StatisticsDescriptor::StatisticsId::ReduceNodes,
                  "print-reduction-stat",
                  "Write node reduction statistics to file."),
-      clEnumValN(PrintStatistics::RvsdgConstruction,
+      clEnumValN(StatisticsDescriptor::StatisticsId::RvsdgConstruction,
                  "print-rvsdg-construction",
                  "Write RVSDG construction statistics to file."),
-      clEnumValN(PrintStatistics::RvsdgDestruction,
+      clEnumValN(StatisticsDescriptor::StatisticsId::RvsdgDestruction,
                  "print-rvsdg-destruction",
                  "Write RVSDG destruction statistics to file."),
-      clEnumValN(PrintStatistics::RvsdgOptimization,
+      clEnumValN(StatisticsDescriptor::StatisticsId::RvsdgOptimization,
                  "print-rvsdg-optimization",
                  "Write RVSDG optimization statistics to file."),
-      clEnumValN(PrintStatistics::ThetaGammaInversion,
+      clEnumValN(StatisticsDescriptor::StatisticsId::ThetaGammaInversion,
                  "print-ivt-stat",
                  "Write theta-gamma inversion statistics to file.")),
     cl::desc("Write statistics"));
@@ -198,25 +179,13 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 	for (auto & optid : optids)
 		optimizations.push_back(mapoptid(optid));
 
+  std::unordered_set<StatisticsDescriptor::StatisticsId> printStatisticsIds(
+    printStatistics.begin(), printStatistics.end());
+
 	options.ifile = ifile;
 	options.format = format;
 	options.optimizations = optimizations;
-	options.sd.print_cfr_time = printStatistics.isSet(PrintStatistics::ControlFlowRecovery);
-	options.sd.print_cne_stat = printStatistics.isSet(PrintStatistics::CommonNodeElimination);
-	options.sd.print_dne_stat = printStatistics.isSet(PrintStatistics::DeadNodeElimination);
-	options.sd.print_iln_stat = printStatistics.isSet(PrintStatistics::FunctionInlining);
-	options.sd.print_inv_stat = printStatistics.isSet(PrintStatistics::InvariantValueReduction);
-	options.sd.print_ivt_stat = printStatistics.isSet(PrintStatistics::ThetaGammaInversion);
-	options.sd.print_pull_stat = printStatistics.isSet(PrintStatistics::PullNodes);
-	options.sd.print_push_stat = printStatistics.isSet(PrintStatistics::PushNodes);
-	options.sd.print_reduction_stat = printStatistics.isSet(PrintStatistics::ReduceNodes);
-	options.sd.print_unroll_stat = printStatistics.isSet(PrintStatistics::LoopUnrolling);
-	options.sd.print_annotation_time = printStatistics.isSet(PrintStatistics::Annotation);
-	options.sd.print_aggregation_time = printStatistics.isSet(PrintStatistics::Aggregation);
-	options.sd.print_rvsdg_construction = printStatistics.isSet(PrintStatistics::RvsdgConstruction);
-	options.sd.print_rvsdg_destruction = printStatistics.isSet(PrintStatistics::RvsdgDestruction);
-	options.sd.print_rvsdg_optimization = printStatistics.isSet(PrintStatistics::RvsdgOptimization);
-	options.sd.print_jlm_rvsdg_conversion = printStatistics.isSet(PrintStatistics::JlmToRvsdgConversion);
+  options.sd.SetPrintStatisticsIds(printStatisticsIds);
 }
 
 }
