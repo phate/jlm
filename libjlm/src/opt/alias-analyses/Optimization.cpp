@@ -16,7 +16,7 @@ SteensgaardBasic::~SteensgaardBasic() = default;
 void
 SteensgaardBasic::run(
 	rvsdg_module & module,
-	const stats_descriptor & sd)
+	const StatisticsDescriptor & sd)
 {
 	Steensgaard steensgaard;
 	auto ptg = steensgaard.Analyze(module);

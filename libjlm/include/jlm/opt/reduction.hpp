@@ -11,7 +11,7 @@
 namespace jlm {
 
 class rvsdg;
-class stats_descriptor;
+class StatisticsDescriptor;
 
 /**
 * \brief Node Reduction Optimization
@@ -22,7 +22,7 @@ public:
 	~nodereduction();
 
 	virtual void
-	run(rvsdg_module & module, const stats_descriptor & sd) override;
+	run(rvsdg_module & module, const StatisticsDescriptor & sd) override;
 };
 
 }

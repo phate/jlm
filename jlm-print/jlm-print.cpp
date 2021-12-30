@@ -50,7 +50,7 @@ public:
 	bool r2jdot;
 	bool r2j_ipg_dot;
 	std::string file;
-	jlm::stats_descriptor sd;
+	jlm::StatisticsDescriptor sd;
 	std::string l2jdot_function;
 	std::string r2jdot_function;
 };

@@ -50,7 +50,7 @@ static void
 print_as_xml(
 	const jlm::rvsdg_module & rm,
 	const jlm::filepath & fp,
-	const jlm::stats_descriptor&)
+	const jlm::StatisticsDescriptor&)
 {
 	auto fd = fp == "" ? stdout : fopen(fp.to_str().c_str(), "w");
 
@@ -64,7 +64,7 @@ static void
 print_as_llvm(
 	const jlm::rvsdg_module & rm,
 	const jlm::filepath & fp,
-	const jlm::stats_descriptor & sd)
+	const jlm::StatisticsDescriptor & sd)
 {
 	auto jlm_module = jlm::rvsdg2jlm::rvsdg2jlm(rm, sd);
 
@@ -86,13 +86,13 @@ print(
 	const jlm::rvsdg_module & rm,
 	const jlm::filepath & fp,
 	const jlm::outputformat & format,
-	const jlm::stats_descriptor & sd)
+	const jlm::StatisticsDescriptor & sd)
 {
 	using namespace jlm;
 
 	static std::unordered_map<
 		jlm::outputformat,
-		std::function<void(const rvsdg_module&, const filepath&, const stats_descriptor&)>
+		std::function<void(const rvsdg_module&, const filepath&, const StatisticsDescriptor&)>
 	> formatters({
 		{outputformat::xml,  print_as_xml}
 	, {outputformat::llvm, print_as_llvm}

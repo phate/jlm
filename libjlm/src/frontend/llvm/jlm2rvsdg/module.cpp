@@ -661,7 +661,7 @@ convert_cfg(
 	const jlm::function_node & function,
 	jive::region * region,
 	scoped_vmap & svmap,
-	const stats_descriptor & sd)
+	const StatisticsDescriptor & sd)
 {
 	auto cfg = function.cfg();
 
@@ -723,7 +723,7 @@ construct_lambda(
 	const ipgraph_node * node,
 	jive::region * region,
 	scoped_vmap & svmap,
-	const stats_descriptor & sd)
+	const StatisticsDescriptor & sd)
 {
 	JLM_ASSERT(dynamic_cast<const function_node*>(node));
 	auto & function = *static_cast<const function_node*>(node);
@@ -751,7 +751,7 @@ convert_data_node(
 	const jlm::ipgraph_node * node,
 	jive::region * region,
 	scoped_vmap & svmap,
-	const stats_descriptor&)
+	const StatisticsDescriptor&)
 {
 	JLM_ASSERT(dynamic_cast<const data_node*>(node));
 	auto n = static_cast<const data_node*>(node);
@@ -787,7 +787,7 @@ handleSingleNode(
 	const ipgraph_node & node,
 	jive::region * region,
 	scoped_vmap & svmap,
-	const stats_descriptor & sd)
+	const StatisticsDescriptor & sd)
 {
 	jive::output * output = nullptr;
 	if (auto functionNode = dynamic_cast<const function_node*>(&node)) {
@@ -806,7 +806,7 @@ handle_scc(
 	const std::unordered_set<const jlm::ipgraph_node*> & scc,
 	jive::graph * graph,
 	scoped_vmap & svmap,
-	const stats_descriptor & sd)
+	const StatisticsDescriptor & sd)
 {
 	auto & module = svmap.module();
 
@@ -877,7 +877,7 @@ handle_scc(
 }
 
 static std::unique_ptr<rvsdg_module>
-convert_module(const ipgraph_module & im, const stats_descriptor & sd)
+convert_module(const ipgraph_module & im, const StatisticsDescriptor & sd)
 {
 	auto rm = rvsdg_module::create(im.source_filename(), im.target_triple(), im.data_layout());
 	auto graph = rm->graph();
@@ -899,7 +899,7 @@ convert_module(const ipgraph_module & im, const stats_descriptor & sd)
 }
 
 std::unique_ptr<rvsdg_module>
-construct_rvsdg(const ipgraph_module & im, const stats_descriptor & sd)
+construct_rvsdg(const ipgraph_module & im, const StatisticsDescriptor & sd)
 {
 	source_filename = im.source_filename().to_str();
 

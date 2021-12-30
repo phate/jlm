@@ -19,13 +19,13 @@ public:
 	to_str() const = 0;
 };
 
-class stats_descriptor final {
+class StatisticsDescriptor final {
 public:
-	stats_descriptor()
-	: stats_descriptor(std::string("/tmp/jlm-stats.log"))
+	StatisticsDescriptor()
+	: StatisticsDescriptor(std::string("/tmp/jlm-stats.log"))
 	{}
 
-	stats_descriptor(const jlm::filepath & path)
+	StatisticsDescriptor(const jlm::filepath & path)
 	: print_cfr_time(false)
 	, print_cne_stat(false)
 	, print_dne_stat(false)

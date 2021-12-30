@@ -30,7 +30,7 @@ test()
 	im.create_global_value(d);
 	im.create_variable(f);
 
-	stats_descriptor sd;
+	StatisticsDescriptor sd;
 	auto rvsdg = construct_rvsdg(im, sd);
 
 	jive::view(*rvsdg->graph(), stdout);

@@ -294,7 +294,7 @@ invert(jive::region * region)
 }
 
 static void
-invert(rvsdg_module & rm, const stats_descriptor & sd)
+invert(rvsdg_module & rm, const StatisticsDescriptor & sd)
 {
 	ivtstat stat;
 
@@ -312,7 +312,7 @@ tginversion::~tginversion()
 {}
 
 void
-tginversion::run(rvsdg_module & module, const stats_descriptor & sd)
+tginversion::run(rvsdg_module & module, const StatisticsDescriptor & sd)
 {
 	invert(module, sd);
 }

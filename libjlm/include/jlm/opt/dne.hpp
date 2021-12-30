@@ -15,7 +15,7 @@ namespace jive {
 namespace jlm {
 
 class rvsdg_module;
-class stats_descriptor;
+class StatisticsDescriptor;
 
 /**
 * \brief Dead Node Elimination
@@ -29,7 +29,7 @@ public:
 	run(jive::region & region);
 
 	virtual void
-	run(rvsdg_module & module, const stats_descriptor & sd) override;
+	run(rvsdg_module & module, const StatisticsDescriptor & sd) override;
 };
 
 }

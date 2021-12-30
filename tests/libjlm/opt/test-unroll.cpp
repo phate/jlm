@@ -23,7 +23,7 @@
 #include <jlm/opt/unroll.hpp>
 #include <jlm/util/stats.hpp>
 
-static const jlm::stats_descriptor sd;
+static const jlm::StatisticsDescriptor sd;
 
 static size_t
 nthetas(jive::region * region)

@@ -44,7 +44,7 @@ test()
 	d1->set_initialization(std::make_unique<data_node_init>(std::move(tvec1)));
 	d2->set_initialization(std::make_unique<data_node_init>(std::move(tvec2)));
 
-	stats_descriptor sd;
+	StatisticsDescriptor sd;
 	auto rvsdg = construct_rvsdg(im, sd);
 
 	jive::view(*rvsdg->graph(), stdout);
