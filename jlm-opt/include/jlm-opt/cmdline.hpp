@@ -29,7 +29,7 @@ public:
 	jlm::filepath ifile;
 	jlm::filepath ofile;
 	outputformat format;
-	stats_descriptor sd;
+	StatisticsDescriptor sd;
 	std::vector<jlm::optimization*> optimizations;
 };
 

@@ -16,7 +16,7 @@
 #include <jlm/opt/inlining.hpp>
 #include <jlm/util/stats.hpp>
 
-static const jlm::stats_descriptor sd;
+static const jlm::StatisticsDescriptor sd;
 
 static void
 test1()

@@ -17,7 +17,7 @@ public:
 	~SteensgaardBasic() override;
 
 	virtual void
-	run(rvsdg_module & module, const stats_descriptor & sd) override;
+	run(rvsdg_module & module, const StatisticsDescriptor & sd) override;
 };
 
 }}

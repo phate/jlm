@@ -16,7 +16,7 @@
 #include <jlm/util/stats.hpp>
 
 static const jlm::valuetype vt;
-static const jlm::stats_descriptor sd;
+static const jlm::StatisticsDescriptor sd;
 
 static inline void
 test_pullin_top()

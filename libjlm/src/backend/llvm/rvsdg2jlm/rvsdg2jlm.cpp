@@ -562,7 +562,7 @@ convert_rvsdg(const rvsdg_module & rm)
 }
 
 std::unique_ptr<ipgraph_module>
-rvsdg2jlm(const rvsdg_module & rm, const stats_descriptor & sd)
+rvsdg2jlm(const rvsdg_module & rm, const StatisticsDescriptor & sd)
 {
 	rvsdg_destruction_stat stat(rm.source_filename());
 

@@ -73,7 +73,7 @@ private:
 void
 optimize(
 	rvsdg_module & rm,
-	const stats_descriptor & sd,
+	const StatisticsDescriptor & sd,
 	const std::vector<optimization*> & opts)
 {
 	optimization_stat stat(rm.source_filename());

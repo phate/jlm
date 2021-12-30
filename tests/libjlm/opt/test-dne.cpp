@@ -20,7 +20,7 @@
 #include <jlm/opt/dne.hpp>
 #include <jlm/util/stats.hpp>
 
-static const jlm::stats_descriptor sd;
+static const jlm::StatisticsDescriptor sd;
 
 static inline void
 test_root()

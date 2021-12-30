@@ -21,7 +21,7 @@
 
 static const jlm::statetype st;
 static const jlm::valuetype vt;
-static const jlm::stats_descriptor sd;
+static const jlm::StatisticsDescriptor sd;
 
 static inline void
 test_gamma()

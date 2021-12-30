@@ -19,7 +19,7 @@ namespace jive {
 namespace jlm {
 
 class rvsdg_module;
-class stats_descriptor;
+class StatisticsDescriptor;
 
 /**
 * \brief Optimization that attempts to unroll loops (thetas).
@@ -43,7 +43,7 @@ public:
 	* \param sd A descriptor used to store unrolling statistics.
 	*/
 	virtual void
-	run(rvsdg_module & module, const stats_descriptor & sd) override;
+	run(rvsdg_module & module, const StatisticsDescriptor & sd) override;
 
 private:
 	size_t factor_;

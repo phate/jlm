@@ -399,7 +399,7 @@ sweep(jive::graph & graph, dnectx & ctx)
 }
 
 static void
-dne(rvsdg_module & rm, const stats_descriptor & sd)
+dne(rvsdg_module & rm, const StatisticsDescriptor & sd)
 {
 	auto & graph = *rm.graph();
 
@@ -432,7 +432,7 @@ dne::run(jive::region & region)
 }
 
 void
-dne::run(rvsdg_module & module, const stats_descriptor & sd)
+dne::run(rvsdg_module & module, const StatisticsDescriptor & sd)
 {
 	jlm::dne(module, sd);
 }

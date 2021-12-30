@@ -44,7 +44,7 @@ test()
 
 	jive::view(*rm.graph(), stdout);
 
-	stats_descriptor sd;
+	StatisticsDescriptor sd;
 	auto module = rvsdg2jlm::rvsdg2jlm(rm, sd);
 	auto & ipg = module->ipgraph();
 	assert(ipg.nnodes() == 1);
