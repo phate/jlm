@@ -19,7 +19,7 @@ SteensgaardBasic::run(
 	const StatisticsDescriptor & sd)
 {
 	Steensgaard steensgaard;
-	auto ptg = steensgaard.Analyze(module);
+	auto ptg = steensgaard.Analyze(module, sd);
 
 	BasicEncoder encoder(*ptg);
 	encoder.Encode(module);

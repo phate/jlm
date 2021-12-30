@@ -11,6 +11,7 @@
 namespace jlm {
 
 class rvsdg_module;
+class StatisticsDescriptor;
 
 namespace aa {
 
@@ -25,14 +26,17 @@ public:
 	~AliasAnalysis() = default;
 
 	/**
-	* \brief Analyze RVSDG module
-	*
-	* \param module RVSDG module the analysis is performed on.
-	*
-	* \return A PointsTo graph.
-	*/
+	  * \brief Analyze RVSDG module
+	  *
+	  * \param module RVSDG module the analysis is performed on.
+	  * \param sd Statistics descriptor for printing analysis statistics.
+	  *
+	  * \return A PointsTo graph.
+	  */
 	virtual std::unique_ptr<PointsToGraph>
-	Analyze(const rvsdg_module & module) = 0;
+	Analyze(
+    const rvsdg_module & module,
+    const StatisticsDescriptor & sd) = 0;
 };
 
 }}

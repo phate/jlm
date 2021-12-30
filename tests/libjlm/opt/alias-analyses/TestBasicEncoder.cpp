@@ -23,7 +23,8 @@ run_steensgaard(jlm::rvsdg_module & module)
 	using namespace jlm;
 
 	aa::Steensgaard stgd;
-	return stgd.Analyze(module);
+  StatisticsDescriptor sd;
+	return stgd.Analyze(module, sd);
 }
 
 template <class OP> static bool

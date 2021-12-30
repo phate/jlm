@@ -13,7 +13,9 @@
 #include <jlm/ir/operators.hpp>
 #include <jlm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/opt/alias-analyses/Steensgaard.hpp>
+#include <jlm/util/stats.hpp>
 #include <jlm/util/strfmt.hpp>
+#include <jlm/util/time.hpp>
 
 /*
 	FIXME: to be removed again
@@ -22,6 +24,48 @@
 
 namespace jlm {
 namespace aa {
+
+/** \brief Steensgaard analysis statistics class
+ *
+ */
+class SteensgaardAnalysisStatistics final : public stat {
+public:
+  ~SteensgaardAnalysisStatistics() override = default;
+
+  explicit
+  SteensgaardAnalysisStatistics(jlm::filepath sourceFile)
+  : numNodesBefore_(0)
+  , sourceFile_(std::move(sourceFile))
+  {}
+
+  void
+  start(const jive::graph & graph) noexcept
+  {
+    numNodesBefore_ = jive::nnodes(graph.root());
+    timer_.start();
+  }
+
+  void
+  end() noexcept
+  {
+    timer_.stop();
+  }
+
+  std::string
+  to_str() const override
+  {
+    return strfmt("SteensgaardAnalysis ",
+                  sourceFile_.to_str(), " ",
+                  numNodesBefore_, " ",
+                  timer_.ns());
+  }
+
+private:
+  size_t numNodesBefore_;
+  jlm::filepath sourceFile_;
+
+  jlm::timer timer_;
+};
 
 /** \brief Location class
  *
@@ -1229,12 +1273,20 @@ Steensgaard::Analyze(const jive::graph & graph)
 }
 
 std::unique_ptr<PointsToGraph>
-Steensgaard::Analyze(const rvsdg_module & module)
+Steensgaard::Analyze(
+  const rvsdg_module & module,
+  const StatisticsDescriptor & sd)
 {
 	ResetState();
 
+  SteensgaardAnalysisStatistics statistics(module.source_filename());
+  statistics.start(*module.graph());
 	Analyze(*module.graph());
 //	std::cout << locationSet_.to_dot() << std::flush;
+  statistics.end();
+  if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::SteensgaardAnalysis))
+    sd.print_stat(statistics);
+
 	auto ptg = ConstructPointsToGraph(locationSet_);
 //	std::cout << PointsToGraph::ToDot(*PointsToGraph) << std::flush;
 
