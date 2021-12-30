@@ -103,6 +103,18 @@ public:
 		return *djset_.find(&l);
 	}
 
+  size_t
+  NumDisjointSets() const noexcept
+  {
+    return djset_.nsets();
+  }
+
+  size_t
+  NumLocations() const noexcept
+  {
+    return djset_.nvalues();
+  }
+
 	Location &
 	GetRootLocation(Location & l) const;
 
