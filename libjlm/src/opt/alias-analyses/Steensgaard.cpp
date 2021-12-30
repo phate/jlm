@@ -67,6 +67,50 @@ private:
   jlm::timer timer_;
 };
 
+/** \brief Steensgaard PointsTo graph construction statistics class
+ *
+ */
+class SteensgaardPointsToGraphConstructionStatistics final : public stat {
+public:
+  ~SteensgaardPointsToGraphConstructionStatistics() override = default;
+
+  explicit
+  SteensgaardPointsToGraphConstructionStatistics(jlm::filepath sourceFile)
+  : sourceFile_(std::move(sourceFile))
+  , numDisjointSets_(0)
+  , numLocations_(0)
+  {}
+
+  void
+  start(const LocationSet & locationSet)
+  {
+    numDisjointSets_ = locationSet.NumDisjointSets();
+    numLocations_ = locationSet.NumLocations();
+    timer_.start();
+  }
+
+  void
+  stop()
+  {
+    timer_.stop();
+  }
+
+  std::string
+  to_str() const override
+  {
+    return strfmt("SteensgaardPointsToGraphConstruction ",
+                  sourceFile_.to_str(), " ",
+                  numDisjointSets_, " ",
+                  numLocations_, " ",
+                  timer_.ns());
+  }
+private:
+  jlm::filepath sourceFile_;
+  size_t numDisjointSets_;
+  size_t numLocations_;
+  jlm::timer timer_;
+};
+
 /** \brief Location class
  *
  * This class represents an abstract location in the program.
@@ -1279,16 +1323,28 @@ Steensgaard::Analyze(
 {
 	ResetState();
 
-  SteensgaardAnalysisStatistics statistics(module.source_filename());
-  statistics.start(*module.graph());
+  /**
+   * Perform Steensgaard analysis
+   */
+  SteensgaardAnalysisStatistics steensgardStatistics(module.source_filename());
+  steensgardStatistics.start(*module.graph());
 	Analyze(*module.graph());
 //	std::cout << locationSet_.to_dot() << std::flush;
-  statistics.end();
+  steensgardStatistics.end();
   if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::SteensgaardAnalysis))
-    sd.print_stat(statistics);
+    sd.print_stat(steensgardStatistics);
 
+
+  /**
+   * Construct PointsTo graph
+   */
+  SteensgaardPointsToGraphConstructionStatistics ptgConstructionStatistics(module.source_filename());
+  ptgConstructionStatistics.start(locationSet_);
 	auto ptg = ConstructPointsToGraph(locationSet_);
 //	std::cout << PointsToGraph::ToDot(*PointsToGraph) << std::flush;
+  ptgConstructionStatistics.stop();
+  if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::SteensgaardPointsToGraphConstruction))
+    sd.print_stat(ptgConstructionStatistics);
 
 	return ptg;
 }
