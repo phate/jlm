@@ -39,6 +39,7 @@ public:
     RvsdgConstruction,
     RvsdgDestruction,
     RvsdgOptimization,
+    SteensgaardAnalysis,
     ThetaGammaInversion
   };
 

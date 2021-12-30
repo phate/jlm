@@ -153,7 +153,9 @@ public:
 	operator=(Steensgaard &&) = delete;
 
 	std::unique_ptr<PointsToGraph>
-	Analyze(const rvsdg_module & module) override;
+	Analyze(
+    const rvsdg_module & module,
+    const StatisticsDescriptor & sd) override;
 
 private:
 	void
