@@ -166,7 +166,7 @@ inlining(rvsdg_module & rm, const StatisticsDescriptor & sd)
 	inlining(graph);
 	stat.stop(graph);
 
-	if (sd.print_iln_stat)
+	if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::FunctionInlining))
 		sd.print_stat(stat);
 }
 

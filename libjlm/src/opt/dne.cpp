@@ -414,7 +414,7 @@ dne(rvsdg_module & rm, const StatisticsDescriptor & sd)
 	sweep(graph, ctx);
 	ds.end_sweep_stat(graph);
 
-	if (sd.print_dne_stat)
+	if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::DeadNodeElimination))
 		sd.print_stat(ds);
 }
 

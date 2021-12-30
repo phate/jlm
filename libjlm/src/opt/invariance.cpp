@@ -125,7 +125,7 @@ invariance(rvsdg_module & rm, const StatisticsDescriptor & sd)
 	invariance(rm.graph()->root());
 	stat.end(*rm.graph());
 
-	if (sd.print_inv_stat)
+	if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::InvariantValueReduction))
 		sd.print_stat(stat);
 }
 
