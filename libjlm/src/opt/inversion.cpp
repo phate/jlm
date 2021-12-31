@@ -19,7 +19,7 @@
 
 namespace jlm {
 
-class ivtstat final : public stat {
+class ivtstat final : public Statistics {
 public:
 	virtual
 	~ivtstat()

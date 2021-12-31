@@ -28,7 +28,7 @@ namespace aa {
 /** \brief Steensgaard analysis statistics class
  *
  */
-class SteensgaardAnalysisStatistics final : public stat {
+class SteensgaardAnalysisStatistics final : public Statistics {
 public:
   ~SteensgaardAnalysisStatistics() override = default;
 
@@ -70,7 +70,7 @@ private:
 /** \brief Steensgaard PointsTo graph construction statistics class
  *
  */
-class SteensgaardPointsToGraphConstructionStatistics final : public stat {
+class SteensgaardPointsToGraphConstructionStatistics final : public Statistics {
 public:
   ~SteensgaardPointsToGraphConstructionStatistics() override = default;
 

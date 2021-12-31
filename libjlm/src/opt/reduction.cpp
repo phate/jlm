@@ -15,7 +15,7 @@
 
 namespace jlm {
 
-class redstat final : public stat {
+class redstat final : public Statistics {
 public:
 	virtual
 	~redstat()

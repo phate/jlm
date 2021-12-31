@@ -16,7 +16,7 @@
 
 namespace jlm {
 
-class pullstat final : public stat {
+class pullstat final : public Statistics {
 public:
 	virtual
 	~pullstat()

@@ -31,7 +31,7 @@ optimization::~optimization()
 
 /* optimization_stat class */
 
-class optimization_stat final : public stat {
+class optimization_stat final : public Statistics {
 public:
 	virtual
 	~optimization_stat()

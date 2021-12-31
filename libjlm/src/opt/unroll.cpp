@@ -24,7 +24,7 @@
 
 namespace jlm {
 
-class unrollstat final : public stat {
+class unrollstat final : public Statistics {
 public:
 	virtual
 	~unrollstat()
