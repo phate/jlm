@@ -757,6 +757,7 @@ DeltaTest1::SetupRvsdg()
   this->delta_f = dfNode;
 
   this->call_g = jive::node_output::node(callg[0]);
+  this->constantFive = jive::node_output::node(five);
 
   return module;
 }

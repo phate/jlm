@@ -534,6 +534,7 @@ public:
 	jlm::delta::node * delta_f;
 
 	jive::node * call_g;
+  jive::node * constantFive;
 };
 
 /** \brief DeltaTest2 class

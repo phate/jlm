@@ -115,17 +115,15 @@ TestStore2()
     assert(jive::node_output::node(storeB->input(2)->origin()) == storeA);
     assert(jive::node_output::node(storeB->input(3)->origin()) == storeA);
 
-    auto storeX = input_node(*test.alloca_x->output(0)->begin());
+    auto storeX = input_node(*test.alloca_p->output(1)->begin());
     assert(is<store_op>(*storeX, 3, 1));
     assert(storeX->input(0)->origin() == test.alloca_p->output(0));
     assert(storeX->input(1)->origin() == test.alloca_x->output(0));
-    assert(storeX->input(2)->origin() == test.alloca_p->output(1));
 
-    auto storeY = input_node(*test.alloca_y->output(0)->begin());
+    auto storeY = input_node(*storeX->output(0)->begin());
     assert(is<store_op>(*storeY, 3, 1));
     assert(storeY->input(0)->origin() == test.alloca_p->output(0));
     assert(storeY->input(1)->origin() == test.alloca_y->output(0));
-    assert(storeY->input(2)->origin() == storeX->output(0));
 	};
 
 	StoreTest2 test;
@@ -432,7 +430,7 @@ TestGamma()
     assert(is<load_op>(*loadTmp1, 2, 2));
 
     auto gamma = jive::node_output::node(loadTmp1->input(1)->origin());
-    assert(gamma = test.gamma);
+    assert(gamma == test.gamma);
 	};
 
 	GammaTest test;
@@ -492,7 +490,7 @@ TestDelta1()
     auto lambdaEntrySplit = input_node(*test.lambda_h->fctargument(0)->begin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 3));
 
-    auto storeF = input_node(*test.lambda_h->cvargument(0)->begin());
+    auto storeF = input_node(*test.constantFive->output(0)->begin());
     assert(is<store_op>(*storeF, 3, 1));
     assert(jive::node_output::node(storeF->input(2)->origin()) == lambdaEntrySplit);
 
