@@ -44,7 +44,7 @@ public:
 	}
 
 	virtual std::string
-	to_str() const override
+	ToString() const override
 	{
 		return strfmt("PUSH ",
 			ninputs_before_, " ", ninputs_after_, " ",

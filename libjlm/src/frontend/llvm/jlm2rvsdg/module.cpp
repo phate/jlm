@@ -85,7 +85,7 @@ public:
 	}
 
 	virtual std::string
-	to_str() const override
+	ToString() const override
 	{
 		return strfmt("CFRTIME ", filename_, " ", fctname_, " ", nnodes_, " ", timer_.ns());
 	}
@@ -123,7 +123,7 @@ public:
 	}
 
 	virtual std::string
-	to_str() const override
+	ToString() const override
 	{
 		return strfmt("AGGREGATIONTIME ", filename_, " ", fctname_, " ", nnodes_, " ", timer_.ns());
 	}
@@ -161,7 +161,7 @@ public:
 	}
 
 	virtual std::string
-	to_str() const override
+	ToString() const override
 	{
 		return strfmt("ANNOTATIONTIME ", filename_, " ", fctname_, " ", ntacs_, " ", timer_.ns());
 	}
@@ -197,7 +197,7 @@ public:
 	}
 
 	virtual std::string
-	to_str() const override
+	ToString() const override
 	{
 		return strfmt("RVSDGCREATIONTIME ", filename_, " ", fctname_, " ", timer_.ns());
 	}
@@ -235,7 +235,7 @@ public:
 	}
 
 	virtual std::string
-	to_str() const override
+	ToString() const override
 	{
 		return strfmt("RVSDGCONSTRUCTION ", filename_.to_str(), " ",
 			ntacs_, " ", nnodes_, " ", timer_.ns());

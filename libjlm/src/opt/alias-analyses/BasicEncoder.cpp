@@ -46,7 +46,7 @@ public:
   }
 
   std::string
-  to_str() const override
+  ToString() const override
   {
     return strfmt("BasicEncoderEncoding ",
                   sourceFile_.to_str(), " ",
@@ -85,7 +85,7 @@ public:
   }
 
   std::string
-  to_str() const override
+  ToString() const override
   {
     return strfmt("BasicEncoderContextCreation ",
                   sourceFile_.to_str(), " ",

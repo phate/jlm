@@ -52,7 +52,7 @@ public:
   }
 
   std::string
-  to_str() const override
+  ToString() const override
   {
     return strfmt("SteensgaardAnalysis ",
                   sourceFile_.to_str(), " ",
@@ -96,7 +96,7 @@ public:
   }
 
   std::string
-  to_str() const override
+  ToString() const override
   {
     return strfmt("SteensgaardPointsToGraphConstruction ",
                   sourceFile_.to_str(), " ",

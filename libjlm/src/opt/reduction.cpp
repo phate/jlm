@@ -43,7 +43,7 @@ public:
 	}
 
 	virtual std::string
-	to_str() const override
+	ToString() const override
 	{
 		return strfmt("RED ",
 			nnodes_before_, " ", nnodes_after_, " ",

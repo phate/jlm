@@ -49,7 +49,7 @@ public:
 	}
 
 	virtual std::string
-	to_str() const override
+	ToString() const override
 	{
 		return strfmt("UNROLL ",
 			nnodes_before_, " ", nnodes_after_, " ",
