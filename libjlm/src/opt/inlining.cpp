@@ -17,7 +17,7 @@
 
 namespace jlm {
 
-class ilnstat final : public stat {
+class ilnstat final : public Statistics {
 public:
 	virtual
 	~ilnstat()

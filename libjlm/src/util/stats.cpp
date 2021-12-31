@@ -7,7 +7,7 @@
 
 namespace jlm {
 
-stat::~stat()
+Statistics::~Statistics()
 {}
 
 }

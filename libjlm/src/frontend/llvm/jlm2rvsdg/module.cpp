@@ -59,7 +59,7 @@ create_undef_value(jive::region * region, const jive::type & type)
 
 namespace jlm {
 
-class cfrstat final : public stat {
+class cfrstat final : public Statistics {
 public:
 	virtual
 	~cfrstat()
@@ -97,7 +97,7 @@ private:
 	std::string filename_;
 };
 
-class aggregation_stat final : public stat {
+class aggregation_stat final : public Statistics {
 public:
 	virtual
 	~aggregation_stat()
@@ -135,7 +135,7 @@ private:
 	std::string filename_;
 };
 
-class annotation_stat final : public stat {
+class annotation_stat final : public Statistics {
 public:
 	virtual
 	~annotation_stat()
@@ -173,7 +173,7 @@ private:
 	std::string filename_;
 };
 
-class jlm_rvsdg_conversion_stat final : public stat {
+class jlm_rvsdg_conversion_stat final : public Statistics {
 public:
 	virtual
 	~jlm_rvsdg_conversion_stat()
@@ -208,7 +208,7 @@ private:
 	std::string filename_;
 };
 
-class rvsdg_construction_stat final : public stat {
+class rvsdg_construction_stat final : public Statistics {
 public:
 	virtual
 	~rvsdg_construction_stat()

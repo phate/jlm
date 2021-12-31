@@ -19,7 +19,7 @@
 
 namespace jlm {
 
-class pushstat final : public stat {
+class pushstat final : public Statistics {
 public:
 	virtual
 	~pushstat()

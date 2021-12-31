@@ -25,7 +25,7 @@
 
 namespace jlm {
 
-class rvsdg_destruction_stat final : public stat {
+class rvsdg_destruction_stat final : public Statistics {
 public:
 	virtual
 	~rvsdg_destruction_stat()

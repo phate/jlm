@@ -22,7 +22,7 @@ namespace aa {
 /** \brief Statistics class for basic encoder encoding
  *
  */
-class EncodingStatistics final : public stat {
+class EncodingStatistics final : public Statistics {
 public:
   ~EncodingStatistics() override = default;
 
@@ -63,7 +63,7 @@ private:
 /** \brief Statistics class for basic encoder context creation
  *
  */
-class ContextCreationStatistics final : public stat {
+class ContextCreationStatistics final : public Statistics {
 public:
   ~ContextCreationStatistics() override = default;
 

@@ -18,7 +18,7 @@
 
 namespace jlm {
 
-class cnestat final : public stat {
+class cnestat final : public Statistics {
 public:
 	virtual
 	~cnestat()

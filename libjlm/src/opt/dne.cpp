@@ -21,7 +21,7 @@ namespace jlm {
 
 /* dnestat class */
 
-class dnestat final : public stat {
+class dnestat final : public Statistics {
 public:
 	virtual
 	~dnestat()
