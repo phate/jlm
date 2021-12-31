@@ -20,7 +20,7 @@ public:
   ~BasicEncoder() override;
 
   explicit
-  BasicEncoder(jlm::aa::PointsToGraph &ptg);
+  BasicEncoder(PointsToGraph &ptg);
 
   BasicEncoder(const BasicEncoder &) = delete;
 
@@ -32,7 +32,7 @@ public:
   BasicEncoder &
   operator=(BasicEncoder &&) = delete;
 
-  const jlm::aa::PointsToGraph &
+  const PointsToGraph &
   Ptg() const noexcept
   {
     return Ptg_;
@@ -43,7 +43,7 @@ public:
 
   static void
   Encode(
-    jlm::aa::PointsToGraph &ptg,
+    PointsToGraph &ptg,
     rvsdg_module &module);
 
 private:
@@ -84,9 +84,9 @@ private:
   Encode(jive::theta_node &theta) override;
 
   static void
-  UnlinkMemUnknown(jlm::aa::PointsToGraph &ptg);
+  UnlinkMemUnknown(PointsToGraph &ptg);
 
-  jlm::aa::PointsToGraph &Ptg_;
+  PointsToGraph &Ptg_;
   std::unique_ptr <Context> Context_;
 };
 
