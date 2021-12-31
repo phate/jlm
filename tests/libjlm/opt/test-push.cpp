@@ -17,7 +17,7 @@
 #include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/ir/types.hpp>
 #include <jlm/opt/push.hpp>
-#include <jlm/util/stats.hpp>
+#include <jlm/util/Statistics.hpp>
 
 static const jlm::statetype st;
 static const jlm::valuetype vt;

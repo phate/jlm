@@ -7,7 +7,7 @@
 #define JLM_JLMOPT_CMDLINE_HPP
 
 #include <jlm/util/file.hpp>
-#include <jlm/util/stats.hpp>
+#include <jlm/util/Statistics.hpp>
 
 #include <string>
 #include <vector>

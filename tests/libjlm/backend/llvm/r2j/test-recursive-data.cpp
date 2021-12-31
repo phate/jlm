@@ -15,7 +15,7 @@
 #include <jlm/ir/operators/delta.hpp>
 #include <jlm/ir/print.hpp>
 #include <jlm/ir/rvsdg-module.hpp>
-#include <jlm/util/stats.hpp>
+#include <jlm/util/Statistics.hpp>
 
 static int
 test()

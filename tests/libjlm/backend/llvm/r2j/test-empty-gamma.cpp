@@ -16,7 +16,7 @@
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/print.hpp>
 #include <jlm/ir/rvsdg-module.hpp>
-#include <jlm/util/stats.hpp>
+#include <jlm/util/Statistics.hpp>
 
 static void
 test_with_match()

@@ -17,7 +17,7 @@
 #include <jlm/ir/ssa.hpp>
 #include <jlm/ir/tac.hpp>
 
-#include <jlm/util/stats.hpp>
+#include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 
 #include <jive/arch/address.hpp>

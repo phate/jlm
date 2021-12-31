@@ -16,7 +16,7 @@
 #include <jlm/opt/reduction.hpp>
 #include <jlm/opt/unroll.hpp>
 
-#include <jlm/util/stats.hpp>
+#include <jlm/util/Statistics.hpp>
 #include <jlm/util/strfmt.hpp>
 #include <jlm/util/time.hpp>
 
