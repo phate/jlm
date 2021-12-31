@@ -21,7 +21,7 @@
 #include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/opt/dne.hpp>
 #include <jlm/opt/unroll.hpp>
-#include <jlm/util/stats.hpp>
+#include <jlm/util/Statistics.hpp>
 
 static const jlm::StatisticsDescriptor sd;
 

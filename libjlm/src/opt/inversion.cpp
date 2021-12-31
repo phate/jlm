@@ -8,7 +8,7 @@
 #include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/opt/inversion.hpp>
 #include <jlm/opt/pull.hpp>
-#include <jlm/util/stats.hpp>
+#include <jlm/util/Statistics.hpp>
 #include <jlm/util/strfmt.hpp>
 #include <jlm/util/time.hpp>
 

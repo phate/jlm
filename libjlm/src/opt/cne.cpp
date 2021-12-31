@@ -7,7 +7,7 @@
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/opt/cne.hpp>
-#include <jlm/util/stats.hpp>
+#include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 
 #include <jive/rvsdg/gamma.hpp>

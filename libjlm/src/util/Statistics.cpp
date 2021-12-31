@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/util/stats.hpp>
+#include <jlm/util/Statistics.hpp>
 
 namespace jlm {
 

@@ -9,7 +9,7 @@
 #include <jlm/opt/alias-analyses/Operators.hpp>
 #include <jlm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/opt/dne.hpp>
-#include <jlm/util/stats.hpp>
+#include <jlm/util/Statistics.hpp>
 #include <jlm/util/strfmt.hpp>
 #include <jlm/util/time.hpp>
 

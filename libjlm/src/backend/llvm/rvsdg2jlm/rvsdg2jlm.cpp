@@ -18,7 +18,7 @@
 #include <jlm/ir/tac.hpp>
 #include <jlm/backend/llvm/rvsdg2jlm/context.hpp>
 #include <jlm/backend/llvm/rvsdg2jlm/rvsdg2jlm.hpp>
-#include <jlm/util/stats.hpp>
+#include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 
 #include <deque>

@@ -10,7 +10,7 @@
 #include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/print.hpp>
 #include <jlm/ir/rvsdg-module.hpp>
-#include <jlm/util/stats.hpp>
+#include <jlm/util/Statistics.hpp>
 
 #include <jive/rvsdg/graph.hpp>
 #include <jive/view.hpp>

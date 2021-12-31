@@ -14,7 +14,7 @@
 
 #include <jlm/ir/rvsdg-module.hpp>
 #include <jlm/opt/inversion.hpp>
-#include <jlm/util/stats.hpp>
+#include <jlm/util/Statistics.hpp>
 
 static const jlm::valuetype vt;
 static const jlm::StatisticsDescriptor sd;
