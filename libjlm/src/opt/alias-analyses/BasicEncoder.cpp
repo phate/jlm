@@ -26,11 +26,11 @@ call_memstate_input(const jive::simple_node & node)
   */
   for (size_t n = 0; n < node.ninputs(); n++) {
     auto input = node.input(n);
-    if (jive::is<jive::memtype>(input->type()))
+    if (is<jive::memtype>(input->type()))
       return input;
   }
 
-  JLM_ASSERT(0 && "This should have never happened!");
+  JLM_UNREACHABLE("This should have never happened!");
 }
 
 static jive::output *
@@ -43,7 +43,7 @@ call_memstate_output(const jive::simple_node & node)
   */
   for (size_t n = 0; n < node.noutputs(); n++) {
     auto output = node.output(n);
-    if (jive::is<jive::memtype>(output->type()))
+    if (is<jive::memtype>(output->type()))
       return output;
   }
 
@@ -60,7 +60,7 @@ lambda_memstate_argument(const lambda::node & lambda)
   */
   for (size_t n = 0; n < subregion->narguments(); n++) {
     auto argument = subregion->argument(n);
-    if (jive::is<jive::memtype>(argument->type()))
+    if (is<jive::memtype>(argument->type()))
       return argument;
   }
 
@@ -77,7 +77,7 @@ lambda_memstate_result(const lambda::node & lambda)
   */
   for (size_t n = 0; n < subregion->nresults(); n++) {
     auto result = subregion->result(n);
-    if (jive::is<jive::memtype>(result->type()))
+    if (is<jive::memtype>(result->type()))
       return result;
   }
 
@@ -177,12 +177,12 @@ private:
   std::unordered_map<const PointsToGraph::MemoryNode*, jive::output*> states_;
 };
 
-/** FIXME: write documentation
+/** \brief Hash map for mapping Rvsdg regions to StateMap class instances.
 */
 class RegionalizedStateMap final {
 public:
   explicit
-  RegionalizedStateMap(const jlm::aa::PointsToGraph & ptg)
+  RegionalizedStateMap(const PointsToGraph & ptg)
   {
     CollectAddressMemNodes(ptg);
   }
@@ -298,7 +298,7 @@ public:
   }
 
   static std::unique_ptr<BasicEncoder::Context>
-  Create(const jlm::aa::PointsToGraph & ptg)
+  Create(const PointsToGraph & ptg)
   {
     return std::make_unique<BasicEncoder::Context>(ptg);
   }
@@ -314,7 +314,7 @@ private:
   }
 
   void
-  CollectAddressMemNodes(const jlm::aa::PointsToGraph & ptg)
+  CollectAddressMemNodes(const PointsToGraph & ptg)
   {
     for (auto & regnode : ptg.regnodes()) {
       auto output = regnode.first;
@@ -330,12 +330,12 @@ private:
 
 /* BasicEncoder class */
 
-/** FIXME: write documentation
+/** \brief Context for the basic encoder
 */
 class BasicEncoder::Context final {
 public:
   explicit
-  Context(const jlm::aa::PointsToGraph & ptg)
+  Context(const PointsToGraph & ptg)
     : StateMap_(ptg)
   {
     collect_memnodes(ptg);
@@ -364,14 +364,14 @@ public:
   }
 
   static std::unique_ptr<BasicEncoder::Context>
-  Create(const jlm::aa::PointsToGraph & ptg)
+  Create(const PointsToGraph & ptg)
   {
     return std::make_unique<Context>(ptg);
   }
 
 private:
   void
-  collect_memnodes(const jlm::aa::PointsToGraph & ptg)
+  collect_memnodes(const PointsToGraph & ptg)
   {
     for (auto & pair : ptg.allocnodes())
       MemoryNodes_.push_back(pair.second.get());
@@ -386,14 +386,14 @@ private:
 
 BasicEncoder::~BasicEncoder() = default;
 
-BasicEncoder::BasicEncoder(jlm::aa::PointsToGraph & ptg)
+BasicEncoder::BasicEncoder(PointsToGraph & ptg)
   : Ptg_(ptg)
 {
   UnlinkMemUnknown(Ptg_);
 }
 
 void
-BasicEncoder::UnlinkMemUnknown(jlm::aa::PointsToGraph & ptg)
+BasicEncoder::UnlinkMemUnknown(PointsToGraph & ptg)
 {
   /*
     FIXME: There should be a kind of memory nodes iterator in the points-to graph.
@@ -415,10 +415,10 @@ BasicEncoder::UnlinkMemUnknown(jlm::aa::PointsToGraph & ptg)
 
 void
 BasicEncoder::Encode(
-  jlm::aa::PointsToGraph & ptg,
+  PointsToGraph & ptg,
   rvsdg_module & module)
 {
-  jlm::aa::BasicEncoder encoder(ptg);
+  BasicEncoder encoder(ptg);
   encoder.Encode(module);
 }
 
@@ -429,9 +429,9 @@ BasicEncoder::Encode(rvsdg_module & module)
 
   MemoryStateEncoder::Encode(*module.graph()->root());
 
-  /*
-    Remove all nodes that became dead throughout the encoding.
-  */
+  /**
+   * Remove all nodes that became dead throughout the encoding.
+   */
   jlm::dne dne;
   dne.run(*module.graph()->root());
 
