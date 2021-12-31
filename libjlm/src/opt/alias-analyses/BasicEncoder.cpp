@@ -60,6 +60,43 @@ private:
   jlm::filepath sourceFile_;
 };
 
+/** \brief Statistics class for basic encoder context creation
+ *
+ */
+class ContextCreationStatistics final : public stat {
+public:
+  ~ContextCreationStatistics() override = default;
+
+  explicit
+  ContextCreationStatistics(jlm::filepath sourceFile)
+  : sourceFile_(std::move(sourceFile))
+  {}
+
+  void
+  start()
+  {
+    timer_.start();
+  }
+
+  void
+  stop()
+  {
+    timer_.stop();
+  }
+
+  std::string
+  to_str() const override
+  {
+    return strfmt("BasicEncoderContextCreation ",
+                  sourceFile_.to_str(), " ",
+                  timer_.ns());
+  }
+
+private:
+  jlm::timer timer_;
+  jlm::filepath sourceFile_;
+};
+
 static jive::input *
 call_memstate_input(const jive::simple_node & node)
 {
@@ -472,7 +509,12 @@ BasicEncoder::Encode(
   rvsdg_module & module,
   const StatisticsDescriptor & sd)
 {
+  ContextCreationStatistics contextCreationStatistics(module.source_filename());
+  contextCreationStatistics.start();
   Context_ = Context::Create(Ptg());
+  contextCreationStatistics.stop();
+  if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::BasicEncoderContextCreation))
+    sd.print_stat(contextCreationStatistics);
 
   EncodingStatistics encodingStatistics(module.source_filename());
   encodingStatistics.start(*module.graph());
