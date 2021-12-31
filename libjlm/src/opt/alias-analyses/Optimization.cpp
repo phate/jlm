@@ -22,7 +22,7 @@ SteensgaardBasic::run(
 	auto ptg = steensgaard.Analyze(module, sd);
 
 	BasicEncoder encoder(*ptg);
-	encoder.Encode(module);
+	encoder.Encode(module, sd);
 }
 
 }}

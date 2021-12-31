@@ -23,6 +23,7 @@ namespace phi { class node; }
 namespace jlm {
 
 class rvsdg_module;
+class StatisticsDescriptor;
 
 namespace delta { class node; }
 namespace lambda { class node; }
@@ -39,7 +40,9 @@ public:
 	~MemoryStateEncoder();
 
 	virtual void
-	Encode(rvsdg_module & module) = 0;
+	Encode(
+    rvsdg_module & module,
+    const StatisticsDescriptor & sd) = 0;
 
 	virtual void
 	EncodeAlloca(const jive::simple_node & node) = 0;

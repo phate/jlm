@@ -9,12 +9,56 @@
 #include <jlm/opt/alias-analyses/Operators.hpp>
 #include <jlm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/opt/dne.hpp>
+#include <jlm/util/stats.hpp>
+#include <jlm/util/strfmt.hpp>
+#include <jlm/util/time.hpp>
 
 #include <jive/arch/addresstype.hpp>
 #include <jive/rvsdg/traverser.hpp>
 
 namespace jlm {
 namespace aa {
+
+/** \brief Statistics class for basic encoder encoding
+ *
+ */
+class EncodingStatistics final : public stat {
+public:
+  ~EncodingStatistics() override = default;
+
+  explicit
+  EncodingStatistics(jlm::filepath sourceFile)
+  : numNodesBefore_(0)
+  , sourceFile_(std::move(sourceFile))
+  {}
+
+  void
+  start(const jive::graph & graph)
+  {
+    numNodesBefore_ = jive::nnodes(graph.root());
+    timer_.start();
+  }
+
+  void
+  stop()
+  {
+    timer_.stop();
+  }
+
+  std::string
+  to_str() const override
+  {
+    return strfmt("BasicEncoderEncoding ",
+                  sourceFile_.to_str(), " ",
+                  numNodesBefore_, " ",
+                  timer_.ns());
+  }
+
+private:
+  jlm::timer timer_;
+  size_t numNodesBefore_;
+  jlm::filepath sourceFile_;
+};
 
 static jive::input *
 call_memstate_input(const jive::simple_node & node)
@@ -416,18 +460,26 @@ BasicEncoder::UnlinkMemUnknown(PointsToGraph & ptg)
 void
 BasicEncoder::Encode(
   PointsToGraph & ptg,
-  rvsdg_module & module)
+  rvsdg_module & module,
+  const StatisticsDescriptor & sd)
 {
   BasicEncoder encoder(ptg);
-  encoder.Encode(module);
+  encoder.Encode(module, sd);
 }
 
 void
-BasicEncoder::Encode(rvsdg_module & module)
+BasicEncoder::Encode(
+  rvsdg_module & module,
+  const StatisticsDescriptor & sd)
 {
   Context_ = Context::Create(Ptg());
 
+  EncodingStatistics encodingStatistics(module.source_filename());
+  encodingStatistics.start(*module.graph());
   MemoryStateEncoder::Encode(*module.graph()->root());
+  encodingStatistics.stop();
+  if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::BasicEncoderEncoding))
+    sd.print_stat(encodingStatistics);
 
   /**
    * Remove all nodes that became dead throughout the encoding.

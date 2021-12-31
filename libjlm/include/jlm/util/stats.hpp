@@ -26,6 +26,7 @@ public:
   enum class StatisticsId {
     Aggregation,
     Annotation,
+    BasicEncoderEncoding,
     CommonNodeElimination,
     ControlFlowRecovery,
     DeadNodeElimination,
