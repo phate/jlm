@@ -18,7 +18,7 @@ public:
 	~Statistics();
 
 	virtual std::string
-	to_str() const = 0;
+	ToString() const = 0;
 };
 
 class StatisticsDescriptor final {
@@ -91,7 +91,7 @@ public:
 	void
 	print_stat(const Statistics & s) const noexcept
 	{
-		fprintf(file_.fd(), "%s\n", s.to_str().c_str());
+		fprintf(file_.fd(), "%s\n", s.ToString().c_str());
 	}
 
   bool

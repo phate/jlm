@@ -58,7 +58,7 @@ public:
 	}
 
 	virtual std::string
-	to_str() const override
+	ToString() const override
 	{
 		return strfmt("RVSDGOPTIMIZATION ", filename_.to_str(), " ",
 			nnodes_before_, " ", nnodes_after_, " ", timer_.ns());

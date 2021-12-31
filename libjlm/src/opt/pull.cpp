@@ -41,7 +41,7 @@ public:
 	}
 
 	virtual std::string
-	to_str() const override
+	ToString() const override
 	{
 		return strfmt("PULL ",
 			ninputs_before_, " ", ninputs_after_, " ",

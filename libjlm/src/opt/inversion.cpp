@@ -47,7 +47,7 @@ public:
 	}
 
 	virtual std::string
-	to_str() const override
+	ToString() const override
 	{
 		return strfmt("IVT ",
 			nnodes_before_, " ", nnodes_after_, " ",

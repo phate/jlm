@@ -52,7 +52,7 @@ public:
 	}
 
 	virtual std::string
-	to_str() const override
+	ToString() const override
 	{
 		return strfmt("RVSDGDESTRUCTION ",
 			filename_.to_str(), " ",
