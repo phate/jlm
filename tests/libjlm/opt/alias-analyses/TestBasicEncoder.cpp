@@ -27,6 +27,17 @@ run_steensgaard(jlm::rvsdg_module & module)
 	return stgd.Analyze(module, sd);
 }
 
+static void
+RunBasicEncoder(
+  jlm::aa::PointsToGraph & pointsToGraph,
+  jlm::rvsdg_module & module)
+{
+  using namespace jlm;
+
+  StatisticsDescriptor sd;
+  aa::BasicEncoder::Encode(pointsToGraph, module, sd);
+}
+
 template <class OP> static bool
 is(
 	const jive::node & node,
@@ -79,7 +90,7 @@ TestStore1()
 	auto ptg = run_steensgaard(test.module());
 	// std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
-	jlm::aa::BasicEncoder::Encode(*ptg, test.module());
+  RunBasicEncoder(*ptg, test.module());
 	// jive::view(test.graph().root(), stdout);
 	ValidateRvsdg(test);
 }
@@ -132,8 +143,8 @@ TestStore2()
 	auto ptg = run_steensgaard(test.module());
 	// std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
-	jlm::aa::BasicEncoder::Encode(*ptg, test.module());
-	// jive::view(test.graph().root(), stdout);
+  RunBasicEncoder(*ptg, test.module());
+	jive::view(test.graph().root(), stdout);
 	ValidateRvsdg(test);
 }
 
@@ -169,7 +180,7 @@ TestLoad1()
 	auto ptg = run_steensgaard(test.module());
 	// std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
-	jlm::aa::BasicEncoder::Encode(*ptg, test.module());
+  RunBasicEncoder(*ptg, test.module());
   // jive::view(test.graph().root(), stdout);
 	ValidateRvsdg(test);
 }
@@ -233,7 +244,7 @@ TestLoad2()
 	auto ptg = run_steensgaard(test.module());
 	// std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
-	jlm::aa::BasicEncoder::Encode(*ptg, test.module());
+  RunBasicEncoder(*ptg, test.module());
 	// jive::view(test.graph().root(), stdout);
 	ValidateRvsdg(test);
 }
@@ -301,7 +312,7 @@ TestCall1()
 	auto ptg = run_steensgaard(test.module());
 	// std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
-	jlm::aa::BasicEncoder::Encode(*ptg, test.module());
+  RunBasicEncoder(*ptg, test.module());
 	// jive::view(test.graph().root(), stdout);
 	ValidateRvsdg(test);
 }
@@ -340,7 +351,7 @@ TestCall2()
 	auto ptg = run_steensgaard(test.module());
 	// std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
-	jlm::aa::BasicEncoder::Encode(*ptg, test.module());
+  RunBasicEncoder(*ptg, test.module());
 	// jive::view(test.graph().root(), stdout);
 	ValidateRvsdg(test);
 }
@@ -408,7 +419,7 @@ TestIndirectCall()
 	auto ptg = run_steensgaard(test.module());
 //	std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
-	jlm::aa::BasicEncoder::Encode(*ptg, test.module());
+  RunBasicEncoder(*ptg, test.module());
 //	jive::view(test.graph().root(), stdout);
 	validate_rvsdg(test);
 }
@@ -439,7 +450,7 @@ TestGamma()
 	auto ptg = run_steensgaard(test.module());
 	// std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
-	jlm::aa::BasicEncoder::Encode(*ptg, test.module());
+  RunBasicEncoder(*ptg, test.module());
 	// jive::view(test.graph().root(), stdout);
 	ValidateRvsdg(test);
 }
@@ -473,7 +484,7 @@ TestTheta()
 	auto ptg = run_steensgaard(test.module());
 //	std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
-	jlm::aa::BasicEncoder::Encode(*ptg, test.module());
+  RunBasicEncoder(*ptg, test.module());
 //	jive::view(test.graph().root(), stdout);
 	ValidateRvsdg(test);
 }
@@ -507,7 +518,7 @@ TestDelta1()
 	auto ptg = run_steensgaard(test.module());
 	// std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
-	jlm::aa::BasicEncoder::Encode(*ptg, test.module());
+  RunBasicEncoder(*ptg, test.module());
 	// jive::view(test.graph().root(), stdout);
 	ValidateRvsdg(test);
 }
@@ -547,7 +558,7 @@ TestDelta2()
 	auto ptg = run_steensgaard(test.module());
 	// std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
-	jlm::aa::BasicEncoder::Encode(*ptg, test.module());
+  RunBasicEncoder(*ptg, test.module());
 	// jive::view(test.graph().root(), stdout);
 	ValidateRvsdg(test);
 }
@@ -587,7 +598,7 @@ TestImports()
 	auto ptg = run_steensgaard(test.module());
 	std::cout << jlm::aa::PointsToGraph::ToDot(*ptg);
 
-	jlm::aa::BasicEncoder::Encode(*ptg, test.module());
+  RunBasicEncoder(*ptg, test.module());
 	jive::view(test.graph().root(), stdout);
 	ValidateRvsdg(test);
 }
@@ -627,7 +638,7 @@ TestPhi()
 	auto ptg = run_steensgaard(test.module());
   // std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
-	jlm::aa::BasicEncoder::Encode(*ptg, test.module());
+  RunBasicEncoder(*ptg, test.module());
 	// jive::view(test.graph().root(), stdout);
 	ValidateRvsdg(test);
 }

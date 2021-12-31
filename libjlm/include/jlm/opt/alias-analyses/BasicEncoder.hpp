@@ -39,12 +39,15 @@ public:
   }
 
   void
-  Encode(rvsdg_module &module) override;
+  Encode(
+    rvsdg_module &module,
+    const StatisticsDescriptor & sd) override;
 
   static void
   Encode(
     PointsToGraph &ptg,
-    rvsdg_module &module);
+    rvsdg_module &module,
+    const StatisticsDescriptor &sd);
 
 private:
   void
