@@ -144,7 +144,7 @@ TestStore2()
 	// std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
   RunBasicEncoder(*ptg, test.module());
-	jive::view(test.graph().root(), stdout);
+	// jive::view(test.graph().root(), stdout);
 	ValidateRvsdg(test);
 }
 
@@ -216,11 +216,10 @@ TestLoad2()
     assert(jive::node_output::node(storeB->input(2)->origin()) == storeA);
     assert(jive::node_output::node(storeB->input(3)->origin()) == storeA);
 
-    auto storeX = input_node(*test.alloca_x->output(0)->begin());
+    auto storeX = input_node(*test.alloca_p->output(1)->begin());
     assert(is<store_op>(*storeX, 3, 1));
     assert(storeX->input(0)->origin() == test.alloca_p->output(0));
     assert(storeX->input(1)->origin() == test.alloca_x->output(0));
-    assert(storeX->input(2)->origin() == test.alloca_p->output(1));
 
     auto loadP = input_node(*storeX->output(0)->begin());
     assert(is<load_op>(*loadP, 2, 2));
@@ -245,7 +244,7 @@ TestLoad2()
 	// std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
   RunBasicEncoder(*ptg, test.module());
-	// jive::view(test.graph().root(), stdout);
+	jive::view(test.graph().root(), stdout);
 	ValidateRvsdg(test);
 }
 
@@ -596,10 +595,10 @@ TestImports()
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = run_steensgaard(test.module());
-	std::cout << jlm::aa::PointsToGraph::ToDot(*ptg);
+	// std::cout << jlm::aa::PointsToGraph::ToDot(*ptg);
 
   RunBasicEncoder(*ptg, test.module());
-	jive::view(test.graph().root(), stdout);
+	// jive::view(test.graph().root(), stdout);
 	ValidateRvsdg(test);
 }
 
