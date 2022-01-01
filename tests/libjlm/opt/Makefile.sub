@@ -2,7 +2,7 @@ include tests/libjlm/opt/alias-analyses/Makefile.sub
 
 TESTS += \
 	libjlm/opt/test-cne \
-	libjlm/opt/test-dne \
+	libjlm/opt/TestDeadNodeElimination \
 	libjlm/opt/test-inlining \
 	libjlm/opt/test-invariance \
 	libjlm/opt/test-inversion \
