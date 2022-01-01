@@ -7,7 +7,7 @@
 
 #include <jlm/opt/alias-analyses/Optimization.hpp>
 #include <jlm/opt/cne.hpp>
-#include <jlm/opt/dne.hpp>
+#include <jlm/opt/DeadNodeElimination.hpp>
 #include <jlm/opt/inlining.hpp>
 #include <jlm/opt/invariance.hpp>
 #include <jlm/opt/pull.hpp>

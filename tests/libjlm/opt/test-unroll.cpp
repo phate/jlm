@@ -19,7 +19,7 @@
 #include <jive/rvsdg/traverser.hpp>
 
 #include <jlm/ir/rvsdg-module.hpp>
-#include <jlm/opt/dne.hpp>
+#include <jlm/opt/DeadNodeElimination.hpp>
 #include <jlm/opt/unroll.hpp>
 #include <jlm/util/Statistics.hpp>
 

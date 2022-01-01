@@ -8,7 +8,7 @@
 #include <jlm/opt/alias-analyses/BasicEncoder.hpp>
 #include <jlm/opt/alias-analyses/Operators.hpp>
 #include <jlm/opt/alias-analyses/PointsToGraph.hpp>
-#include <jlm/opt/dne.hpp>
+#include <jlm/opt/DeadNodeElimination.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/strfmt.hpp>
 #include <jlm/util/time.hpp>
