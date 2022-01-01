@@ -526,7 +526,7 @@ BasicEncoder::Encode(
   /**
    * Remove all nodes that became dead throughout the encoding.
    */
-  jlm::dne dne;
+  jlm::DeadNodeElimination dne;
   dne.run(module, sd);
 }
 

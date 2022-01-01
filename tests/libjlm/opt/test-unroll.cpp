@@ -271,7 +271,7 @@ test_unknown_boundaries()
 	assert(jive::is<jive::gamma_op>(node));
 
 	/* Create cleaner output */
-	jlm::dne dne;
+	jlm::DeadNodeElimination dne;
 	dne.run(rm, sd);
 //	jive::view(graph, stdout);
 }

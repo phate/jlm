@@ -28,7 +28,7 @@ mapoptid(enum optimizationid id)
 {
 	static jlm::aa::SteensgaardBasic aasteensgaard;
 	static jlm::cne cne;
-	static jlm::dne dne;
+	static jlm::DeadNodeElimination dne;
 	static jlm::fctinline fctinline;
 	static jlm::ivr ivr;
 	static jlm::pullin pullin;
