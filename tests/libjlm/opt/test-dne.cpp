@@ -34,7 +34,7 @@ test_root()
 	graph.add_export(y, {y->type(), "z"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::dne dne;
+	jlm::DeadNodeElimination dne;
 	dne.run(rm, sd);
 //	jive::view(graph.root(), stdout);
 
@@ -70,7 +70,7 @@ test_gamma()
 	graph.add_export(gamma->output(2), {gamma->output(2)->type(), "w"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::dne dne;
+	jlm::DeadNodeElimination dne;
 	dne.run(rm, sd);
 //	jive::view(graph.root(), stdout);
 
@@ -105,7 +105,7 @@ test_gamma2()
 	graph.add_export(gamma->output(0), {gamma->output(0)->type(), "x"});
 
 //	jive::view(graph, stdout);
-	jlm::dne dne;
+	jlm::DeadNodeElimination dne;
 	dne.run(rm, sd);
 //	jive::view(graph, stdout);
 
@@ -147,7 +147,7 @@ test_theta()
 	graph.add_export(theta->output(3), {theta->output(0)->type(), "b"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::dne dne;
+	jlm::DeadNodeElimination dne;
 	dne.run(rm, sd);
 //	jive::view(graph.root(), stdout);
 
@@ -194,7 +194,7 @@ test_nested_theta()
 	graph.add_export(otheta->output(2), {otheta->output(2)->type(), "y"});
 
 //	jive::view(graph, stdout);
-	jlm::dne dne;
+	jlm::DeadNodeElimination dne;
 	dne.run(rm, sd);
 //	jive::view(graph, stdout);
 
@@ -234,7 +234,7 @@ test_evolving_theta()
 	graph.add_export(lv1, {lv1->type(), "x1"});
 
 //	jive::view(graph, stdout);
-	jlm::dne dne;
+	jlm::DeadNodeElimination dne;
 	dne.run(rm, sd);
 //	jive::view(graph, stdout);
 
@@ -265,7 +265,7 @@ test_lambda()
 	graph.add_export(output, {output->type(), "f"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::dne dne;
+	jlm::DeadNodeElimination dne;
 	dne.run(rm, sd);
 //	jive::view(graph.root(), stdout);
 
@@ -311,7 +311,7 @@ test_phi()
 	graph.add_export(phi->output(0), {phi->output(0)->type(), "f1"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::dne dne;
+	jlm::DeadNodeElimination dne;
 	dne.run(rm, sd);
 //	jive::view(graph.root(), stdout);
 }

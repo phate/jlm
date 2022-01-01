@@ -420,11 +420,11 @@ dne(rvsdg_module & rm, const StatisticsDescriptor & sd)
 
 /* dne class */
 
-dne::~dne()
+DeadNodeElimination::~DeadNodeElimination()
 {}
 
 void
-dne::run(jive::region & region)
+DeadNodeElimination::run(jive::region & region)
 {
 	dnectx ctx;
 	mark(region, ctx);
@@ -432,7 +432,7 @@ dne::run(jive::region & region)
 }
 
 void
-dne::run(rvsdg_module & module, const StatisticsDescriptor & sd)
+DeadNodeElimination::run(rvsdg_module & module, const StatisticsDescriptor & sd)
 {
 	jlm::dne(module, sd);
 }

@@ -20,10 +20,10 @@ class StatisticsDescriptor;
 /**
 * \brief Dead Node Elimination
 */
-class dne final : public optimization {
+class DeadNodeElimination final : public optimization {
 public:
 	virtual
-	~dne();
+	~DeadNodeElimination();
 
 	void
 	run(jive::region & region);
