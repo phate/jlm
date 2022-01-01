@@ -10,9 +10,7 @@
 #include <jive/view.hpp>
 #include <jive/rvsdg/control.hpp>
 #include <jive/rvsdg/gamma.hpp>
-#include <jive/rvsdg/graph.hpp>
 #include <jive/rvsdg/phi.hpp>
-#include <jive/rvsdg/simple-node.hpp>
 #include <jive/rvsdg/theta.hpp>
 
 #include <jlm/ir/operators/lambda.hpp>
@@ -20,10 +18,16 @@
 #include <jlm/opt/DeadNodeElimination.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static const jlm::StatisticsDescriptor sd;
+static void
+RunDeadNodeElimination(jlm::rvsdg_module & rvsdgModule)
+{
+  jlm::StatisticsDescriptor statisticsDescriptor;
+  jlm::DeadNodeElimination deadNodeElimination;
+  deadNodeElimination.run(rvsdgModule, statisticsDescriptor);
+}
 
-static inline void
-test_root()
+static void
+TestRoot()
 {
 	using namespace jlm;
 
@@ -34,15 +38,14 @@ test_root()
 	graph.add_export(y, {y->type(), "z"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::DeadNodeElimination dne;
-	dne.run(rm, sd);
+  RunDeadNodeElimination(rm);
 //	jive::view(graph.root(), stdout);
 
 	assert(graph.root()->narguments() == 1);
 }
 
-static inline void
-test_gamma()
+static void
+TestGamma()
 {
 	using namespace jlm;
 
@@ -70,19 +73,18 @@ test_gamma()
 	graph.add_export(gamma->output(2), {gamma->output(2)->type(), "w"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::DeadNodeElimination dne;
-	dne.run(rm, sd);
+  RunDeadNodeElimination(rm);
 //	jive::view(graph.root(), stdout);
 
 	assert(gamma->noutputs() == 2);
-	assert(gamma->subregion(1)->nodes.size() == 0);
+	assert(gamma->subregion(1)->nodes.empty());
 	assert(gamma->subregion(1)->narguments() == 2);
 	assert(gamma->ninputs() == 3);
 	assert(graph.root()->narguments() == 2);
 }
 
-static inline void
-test_gamma2()
+static void
+TestGamma2()
 {
 	using namespace jlm;
 
@@ -105,15 +107,14 @@ test_gamma2()
 	graph.add_export(gamma->output(0), {gamma->output(0)->type(), "x"});
 
 //	jive::view(graph, stdout);
-	jlm::DeadNodeElimination dne;
-	dne.run(rm, sd);
+  RunDeadNodeElimination(rm);
 //	jive::view(graph, stdout);
 
 	assert(graph.root()->narguments() == 1);
 }
 
-static inline void
-test_theta()
+static void
+TestTheta()
 {
 	using namespace jlm;
 
@@ -147,8 +148,7 @@ test_theta()
 	graph.add_export(theta->output(3), {theta->output(0)->type(), "b"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::DeadNodeElimination dne;
-	dne.run(rm, sd);
+  RunDeadNodeElimination(rm);
 //	jive::view(graph.root(), stdout);
 
 	assert(theta->noutputs() == 3);
@@ -156,8 +156,8 @@ test_theta()
 	assert(graph.root()->narguments() == 2);
 }
 
-static inline void
-test_nested_theta()
+static void
+TestNestedTheta()
 {
 	using namespace jlm;
 
@@ -194,15 +194,14 @@ test_nested_theta()
 	graph.add_export(otheta->output(2), {otheta->output(2)->type(), "y"});
 
 //	jive::view(graph, stdout);
-	jlm::DeadNodeElimination dne;
-	dne.run(rm, sd);
+  RunDeadNodeElimination(rm);
 //	jive::view(graph, stdout);
 
 	assert(otheta->noutputs() == 3);
 }
 
-static inline void
-test_evolving_theta()
+static void
+TestEvolvingTheta()
 {
 	using namespace jlm;
 
@@ -234,15 +233,14 @@ test_evolving_theta()
 	graph.add_export(lv1, {lv1->type(), "x1"});
 
 //	jive::view(graph, stdout);
-	jlm::DeadNodeElimination dne;
-	dne.run(rm, sd);
+  RunDeadNodeElimination(rm);
 //	jive::view(graph, stdout);
 
 	assert(theta->noutputs() == 5);
 }
 
-static inline void
-test_lambda()
+static void
+TestLambda()
 {
 	using namespace jlm;
 
@@ -265,16 +263,15 @@ test_lambda()
 	graph.add_export(output, {output->type(), "f"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::DeadNodeElimination dne;
-	dne.run(rm, sd);
+  RunDeadNodeElimination(rm);
 //	jive::view(graph.root(), stdout);
 
-	assert(lambda->subregion()->nodes.size() == 0);
+	assert(lambda->subregion()->nodes.empty());
 	assert(graph.root()->narguments() == 1);
 }
 
-static inline void
-test_phi()
+static void
+TestPhi()
 {
 	using namespace jlm;
 
@@ -311,22 +308,21 @@ test_phi()
 	graph.add_export(phi->output(0), {phi->output(0)->type(), "f1"});
 
 //	jive::view(graph.root(), stdout);
-	jlm::DeadNodeElimination dne;
-	dne.run(rm, sd);
+  RunDeadNodeElimination(rm);
 //	jive::view(graph.root(), stdout);
 }
 
 static int
 verify()
 {
-	test_root();
-	test_gamma();
-	test_gamma2();
-	test_theta();
-	test_nested_theta();
-	test_evolving_theta();
-	test_lambda();
-	test_phi();
+  TestRoot();
+  TestGamma();
+  TestGamma2();
+  TestTheta();
+  TestNestedTheta();
+  TestEvolvingTheta();
+  TestLambda();
+  TestPhi();
 
 	return 0;
 }
