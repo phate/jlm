@@ -6,7 +6,7 @@
 #include <jlm/common.hpp>
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/rvsdg-module.hpp>
-#include <jlm/opt/dne.hpp>
+#include <jlm/opt/DeadNodeElimination.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 

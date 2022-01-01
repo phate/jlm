@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_OPT_DNE_HPP
-#define JLM_OPT_DNE_HPP
+#ifndef JLM_OPT_DEADNODEELIMINATION_HPP
+#define JLM_OPT_DEADNODEELIMINATION_HPP
 
 #include <jlm/opt/optimization.hpp>
 
