@@ -204,30 +204,6 @@ DeadNodeElimination::Mark(const jive::output & output)
 
   if (auto simpleOutput = dynamic_cast<const jive::simple_output*>(&output)) {
     auto node = simpleOutput->node();
-
-    /**
-     * A single output of this simple node is alive, which
-     * in turn means that the entire node is alive. Thus,
-     * we proactively mark all other outputs of this node
-     * as alive. This is not necessary for correctness, but
-     * rather for performance. By marking all outputs alive,
-     * we avoid that we reiterate through all inputs of this node
-     * again in the future. The following example illustrates the
-     * issue:
-     *
-     * o1 ... oN = Node2 i1 ... iN
-     * p1 ... pN = Node1 o1 ... oN
-     *
-     * When we mark o1 as alive, we also mark with the following
-     * loop o2 ... oN proactively alive. This means that when we
-     * try to mark o2 alive in the future, we can immediately stop
-     * marking instead of reiterating through i1 ... iN again. Thus,
-     * proactively marking reduces the runtime for marking Node2 from
-     * O(oN x iN) to O(oN + iN).
-     */
-    for (size_t n = 0; n < node->noutputs(); n++)
-      context_.Mark(*node->output(n));
-
     for (size_t n = 0; n < node->ninputs(); n++)
       Mark(*node->input(n)->origin());
     return;
