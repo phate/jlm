@@ -33,25 +33,48 @@ class DeadNodeElimination final : public optimization {
 
   /** \brief Dead Node Elimination context class
    *
-   * This class keeps track of all the outputs that are alive.
+   * This class keeps track of all the nodes and outputs that are alive. In contrast to all other nodes, a simple node
+   * is considered alive if already a single of its outputs is alive. For this reason, this class keeps separately track
+   * of simple nodes and therefore avoids to store all its outputs (and instead stores the node itself).
+   * By marking the entire node as alive, we also avoid that we reiterate through all inputs of this node again in the
+   * future. The following example illustrates the issue:
+   *
+   * o1 ... oN = Node2 i1 ... iN
+   * p1 ... pN = Node1 o1 ... oN
+   *
+   * When we mark o1 as alive, we actually mark the entire Node2 as alive. This means that when we try to mark o2 alive
+   * in the future, we can immediately stop marking instead of reiterating through i1 ... iN again. Thus, by marking the
+   * entire simple node instead of just its outputs, we reduce the runtime for marking Node2 from
+   * O(oN x iN) to O(oN + iN).
    */
   class Context final {
   public:
     void
     Mark(const jive::output & output)
     {
+      if (auto simpleOutput = dynamic_cast<const jive::simple_output*>(&output)) {
+          simpleNodes_.insert(simpleOutput->node());
+          return;
+      }
+
       outputs_.insert(&output);
     }
 
     bool
     IsAlive(const jive::output & output) const noexcept
     {
+      if (auto simpleOutput = dynamic_cast<const jive::simple_output*>(&output))
+        return simpleNodes_.find(simpleOutput->node()) != simpleNodes_.end();
+
       return outputs_.find(&output) != outputs_.end();
     }
 
     bool
     IsAlive(const jive::node & node) const noexcept
     {
+      if (auto simpleNode = dynamic_cast<const jive::simple_node*>(&node))
+        return simpleNodes_.find(simpleNode) != simpleNodes_.end();
+
       for (size_t n = 0; n < node.noutputs(); n++) {
         if (IsAlive(*node.output(n)))
           return true;
@@ -63,10 +86,12 @@ class DeadNodeElimination final : public optimization {
     void
     Clear()
     {
+      simpleNodes_.clear();
       outputs_.clear();
     }
 
   private:
+    std::unordered_set<const jive::simple_node*> simpleNodes_;
     std::unordered_set<const jive::output*> outputs_;
   };
 
