@@ -196,9 +196,12 @@ DeadNodeElimination::Mark(const jive::output & output)
   }
 
   if (auto deltaOutput = dynamic_cast<const delta::output*>(&output)) {
-    auto deltaNode = deltaOutput->node();
-    for (size_t n = 0; n < deltaNode->ninputs(); n++)
-      Mark(*deltaNode->input(n)->origin());
+    Mark(*deltaOutput->node()->subregion()->result(0)->origin());
+    return;
+  }
+
+  if (auto deltaCvArgument = dynamic_cast<const delta::cvargument*>(&output)) {
+    Mark(*deltaCvArgument->input()->origin());
     return;
   }
 
@@ -387,8 +390,24 @@ void
 DeadNodeElimination::SweepDelta(jive::structural_node & node) const
 {
   JLM_ASSERT(is<delta::operation>(&node));
+  auto & deltaNode = *static_cast<delta::node*>(&node);
+  auto subregion = deltaNode.subregion();
 
-  /* Nothing needs to be done. */
+  /**
+   * A delta subregion can only contain simple nodes. Thus, a simple prune is sufficient.
+   */
+  subregion->prune(false);
+
+  /**
+   * Remove all dead arguments and inputs.
+   */
+  for (size_t n = deltaNode.ninputs()-1; n != static_cast<size_t>(-1); n--) {
+    auto input = deltaNode.input(n);
+    if (!context_.IsAlive(*input->argument())) {
+      subregion->remove_argument(input->argument()->index());
+      deltaNode.remove_input(input->index());
+    }
+  }
 }
 
 }
