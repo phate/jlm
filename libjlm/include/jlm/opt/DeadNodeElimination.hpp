@@ -125,9 +125,6 @@ private:
   Sweep(jive::region & region) const;
 
   void
-  Sweep(jive::simple_node & node) const;
-
-  void
   Sweep(jive::structural_node & node) const;
 
   void

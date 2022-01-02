@@ -225,21 +225,25 @@ DeadNodeElimination::Sweep(jive::graph & graph) const
 void
 DeadNodeElimination::Sweep(jive::region & region) const
 {
-  for (const auto & node : jive::bottomup_traverser(&region)) {
-    if (auto simple = dynamic_cast<jive::simple_node*>(node))
-      Sweep(*simple);
-    else
-      Sweep(*static_cast<jive::structural_node*>(node));
+  region.prune(false);
+
+  std::vector<std::vector<jive::node*>> nodesTopDown(region.nnodes());
+  for (auto & node : region.nodes)
+    nodesTopDown[node.depth()].push_back(&node);
+
+  for (auto it = nodesTopDown.rbegin(); it != nodesTopDown.rend(); it++) {
+    for (auto node : *it) {
+      if (!context_.IsAlive(*node)) {
+        remove(node);
+        continue;
+      }
+
+      if (auto structuralNode = dynamic_cast<jive::structural_node*>(node))
+        Sweep(*structuralNode);
+    }
   }
 
   JLM_ASSERT(region.bottom_nodes.empty());
-}
-
-void
-DeadNodeElimination::Sweep(jive::simple_node & node) const
-{
-  if (!context_.IsAlive(node))
-    remove(&node);
 }
 
 void
@@ -265,11 +269,6 @@ void
 DeadNodeElimination::SweepGamma(jive::structural_node & node) const
 {
   JLM_ASSERT(jive::is<jive::gamma_op>(&node));
-
-  if (!context_.IsAlive(node)) {
-    remove(&node);
-    return;
-  }
 
   /* remove outputs and results */
   for (ssize_t n = node.noutputs()-1; n >= 0; n--) {
@@ -309,11 +308,6 @@ DeadNodeElimination::SweepTheta(jive::structural_node & node) const
   JLM_ASSERT(jive::is<jive::theta_op>(&node));
   auto subregion = node.subregion(0);
 
-  if (!context_.IsAlive(node)) {
-    remove(&node);
-    return;
-  }
-
   /* remove results */
   for (ssize_t n = subregion->nresults()-1; n >= 1; n--) {
     if (!context_.IsAlive(*subregion->argument(n - 1))
@@ -344,11 +338,6 @@ DeadNodeElimination::SweepLambda(jive::structural_node & node) const
   JLM_ASSERT(is<lambda::operation>(&node));
   auto subregion = node.subregion(0);
 
-  if (!context_.IsAlive(node)) {
-    remove(&node);
-    return;
-  }
-
   Sweep(*subregion);
 
   /* remove inputs and arguments */
@@ -370,11 +359,6 @@ DeadNodeElimination::SweepPhi(jive::structural_node & node) const
 {
   JLM_ASSERT(is<jive::phi::operation>(&node));
   auto subregion = node.subregion(0);
-
-  if (!context_.IsAlive(node)) {
-    remove(&node);
-    return;
-  }
 
   /* remove outputs and results */
   for (ssize_t n = subregion->nresults()-1; n >= 1; n--) {
@@ -403,12 +387,8 @@ void
 DeadNodeElimination::SweepDelta(jive::structural_node & node) const
 {
   JLM_ASSERT(is<delta::operation>(&node));
-  JLM_ASSERT(node.noutputs() == 1);
 
-  if (!context_.IsAlive(node)) {
-    remove(&node);
-    return;
-  }
+  /* Nothing needs to be done. */
 }
 
 }
