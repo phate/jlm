@@ -137,7 +137,7 @@ DeadNodeElimination::Mark(const jive::output & output)
   if (context_.IsAlive(output))
     return;
 
-  context_.Mark(output);
+  context_.MarkAlive(output);
 
   if (is_import(&output))
     return;

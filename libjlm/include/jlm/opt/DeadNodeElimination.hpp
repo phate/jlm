@@ -50,7 +50,7 @@ class DeadNodeElimination final : public optimization {
   class Context final {
   public:
     void
-    Mark(const jive::output & output)
+    MarkAlive(const jive::output & output)
     {
       if (auto simpleOutput = dynamic_cast<const jive::simple_output*>(&output)) {
           simpleNodes_.insert(simpleOutput->node());
