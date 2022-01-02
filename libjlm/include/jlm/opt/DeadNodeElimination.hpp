@@ -11,7 +11,24 @@
 #include <jive/rvsdg/simple-node.hpp>
 #include <jive/rvsdg/structural-node.hpp>
 
+namespace jive {
+class gamma_node;
+
+namespace phi {
+class node;
+}
+
+class theta_node;
+}
+
 namespace jlm {
+
+namespace delta {
+class node;
+}
+namespace lambda {
+class node;
+}
 
 class rvsdg_module;
 class StatisticsDescriptor;
@@ -128,19 +145,19 @@ private:
   Sweep(jive::structural_node & node) const;
 
   void
-  SweepGamma(jive::structural_node & node) const;
+  SweepGamma(jive::gamma_node & gammaNode) const;
 
   void
-  SweepTheta(jive::structural_node & node) const;
+  SweepTheta(jive::theta_node & thetaNode) const;
 
   void
-  SweepLambda(jive::structural_node & node) const;
+  SweepLambda(lambda::node & lambdaNode) const;
 
   void
-  SweepPhi(jive::structural_node & node) const;
+  SweepPhi(jive::phi::node & phiNode) const;
 
   void
-  SweepDelta(jive::structural_node & node) const;
+  SweepDelta(delta::node & deltaNode) const;
 
   Context context_;
 };
