@@ -544,8 +544,19 @@ BasicEncoder::EncodeMalloc(const jive::simple_node & node)
 {
   JLM_ASSERT(is<malloc_op>(&node));
 
-  auto & memnode = Ptg().GetAllocatorNode(&node);
-  Context_->StateMap().replace(&memnode, node.output(1));
+  auto & mallocNode = Ptg().GetAllocatorNode(&node);
+
+  /**
+   * We use a static heap model. This means that multiple invocations of an malloc
+   * at runtime can refer to the same abstract memory location. We therefore need to
+   * merge the previous and the current state to ensure that the previous state
+   * is not just simply replaced and therefore "lost".
+   */
+  auto previousState = Context_->StateMap().state(*node.region(), mallocNode);
+  auto currentState = node.output(1);
+  auto newState = MemStateMergeOperator::Create({currentState, previousState});
+
+  Context_->StateMap().replace(&mallocNode, newState);
 }
 
 void

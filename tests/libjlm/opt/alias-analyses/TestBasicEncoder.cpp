@@ -325,7 +325,20 @@ TestCall2()
 
 		/* validate create function */
 		{
-			assert(test.lambda_create->subregion()->nnodes() == 6);
+			assert(test.lambda_create->subregion()->nnodes() == 7);
+
+      auto stateMerge = input_node(*test.malloc->output(1)->begin());
+      assert(is<MemStateMergeOperator>(*stateMerge, 2, 1));
+
+      auto lambdaEntrySplit = jive::node_output::node(stateMerge->input(1)->origin());
+      assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 4));
+
+      auto lambdaExitMerge = input_node(*stateMerge->output(0)->begin());
+      assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 4, 1));
+
+      auto mallocStateLambdaEntryIndex = stateMerge->input(1)->origin()->index();
+      auto mallocStateLambdaExitIndex = (*stateMerge->output(0)->begin())->index();
+      assert(mallocStateLambdaEntryIndex == mallocStateLambdaExitIndex);
 		}
 
 		/* validate destroy function */
@@ -336,11 +349,6 @@ TestCall2()
 		/* validate test function */
 		{
 			assert(test.lambda_test->subregion()->nnodes() == 16);
-
-      /* FIXME: The encoding is not completely correct. We are using a static heap model and the
-       * two malloc allocations need to be merged as they are referring to the same abstract memory
-       * location. Have a second look at this test.
-       */
 		}
 	};
 
