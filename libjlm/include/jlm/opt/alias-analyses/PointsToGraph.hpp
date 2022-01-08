@@ -43,6 +43,7 @@ public:
 	class Node;
 	class RegisterNode;
 	class UnknownNode;
+  class ExternalMemoryNode;
 
 	using allocnodemap = std::unordered_map<const jive::node*, std::unique_ptr<PointsToGraph::AllocatorNode>>;
 	using impnodemap = std::unordered_map<const jive::argument*, std::unique_ptr<PointsToGraph::ImportNode>>;
@@ -131,6 +132,12 @@ public:
 		return *memunknown_;
 	}
 
+  ExternalMemoryNode &
+  GetExternalMemoryNode() const noexcept
+  {
+    return *ExternalMemory_;
+  }
+
 	const PointsToGraph::AllocatorNode &
 	GetAllocatorNode(const jive::node * node) const
 	{
@@ -184,6 +191,7 @@ private:
 	regnodemap regnodes_;
 	allocnodemap allocnodes_;
 	std::unique_ptr<PointsToGraph::UnknownNode> memunknown_;
+  std::unique_ptr<ExternalMemoryNode> ExternalMemory_;
 };
 
 
@@ -419,6 +427,27 @@ private:
 	debug_string() const override;
 };
 
+class PointsToGraph::ExternalMemoryNode final : public PointsToGraph::MemoryNode {
+  friend PointsToGraph;
+
+public:
+  ~ExternalMemoryNode() override;
+
+private:
+  explicit
+  ExternalMemoryNode(PointsToGraph & pointsToGraph)
+  : MemoryNode(pointsToGraph)
+  {}
+
+  static std::unique_ptr<ExternalMemoryNode>
+  Create(PointsToGraph & pointsToGraph)
+  {
+    return std::unique_ptr<ExternalMemoryNode>(new ExternalMemoryNode(pointsToGraph));
+  }
+
+  std::string
+  debug_string() const override;
+};
 
 /** \brief PointsTo graph node iterator
 */
