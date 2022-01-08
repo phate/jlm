@@ -23,6 +23,7 @@ namespace aa {
 PointsToGraph::PointsToGraph()
 {
 	memunknown_ = std::unique_ptr<PointsToGraph::UnknownNode>(new PointsToGraph::UnknownNode(*this));
+  ExternalMemory_ = ExternalMemoryNode::Create(*this);
 }
 
 PointsToGraph::allocnode_range
@@ -133,6 +134,7 @@ PointsToGraph::ToDot(const PointsToGraph & ptg)
 	  , {typeid(ImportNode),    "box"}
 		, {typeid(RegisterNode),  "oval"}
 		, {typeid(UnknownNode),   "box"}
+    , {typeid(ExternalMemoryNode), "box"}
 		});
 
 		if (shapes.find(typeid(node)) != shapes.end())
@@ -159,6 +161,7 @@ PointsToGraph::ToDot(const PointsToGraph & ptg)
 			dot += edgestring(node, target);
 	}
 	dot += nodestring(ptg.memunknown());
+  dot += nodestring(ptg.GetExternalMemoryNode());
 	dot += "}\n";
 
 	return dot;
@@ -285,6 +288,18 @@ std::string
 PointsToGraph::UnknownNode::debug_string() const
 {
 	return "Unknown";
+}
+
+/**
+ * PointsToGraph::ExternalMemoryNode class
+ */
+PointsToGraph::ExternalMemoryNode::~ExternalMemoryNode()
+= default;
+
+std::string
+PointsToGraph::ExternalMemoryNode::debug_string() const
+{
+  return "ExternalMemory";
 }
 
 }}
