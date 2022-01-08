@@ -670,3 +670,29 @@ public:
 
 	jive::node * alloca;
 };
+
+/** \brief ExternalMemoryTest class
+ *
+ * This function sets up an RVSDG representing the following code snippet:
+ *
+ * \code{.c}
+ *  void
+ *  f(int32_t * x, int32_t * y)
+ *  {
+ *      *x = 1;
+ *      *y = 2;
+ *  }
+ * \endcode
+ *
+ * It uses a single memory state to sequentialize the respective memory
+ * operations.
+ */
+class ExternalMemoryTest final : public AliasAnalysisTest {
+private:
+  std::unique_ptr<jlm::rvsdg_module>
+  SetupRvsdg() override;
+
+public:
+  jlm::lambda::node * LambdaF;
+
+};

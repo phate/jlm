@@ -995,3 +995,37 @@ PhiTest::SetupRvsdg()
 
   return module;
 }
+
+std::unique_ptr<jlm::rvsdg_module>
+ExternalMemoryTest::SetupRvsdg()
+{
+  using namespace jlm;
+
+  auto pt = ptrtype::create(jive::bit32);
+  jive::fcttype ft({pt.get(), pt.get(), &jive::memtype::instance()}, {&jive::memtype::instance()});
+
+  auto module = rvsdg_module::create(filepath(""), "", "");
+  auto graph = module->graph();
+
+  auto nf = graph->node_normal_form(typeid(jive::operation));
+  nf->set_mutable(false);
+
+  /**
+   * Setup function f.
+   */
+  LambdaF = lambda::node::create(graph->root(), ft, "f", linkage::external_linkage);
+  auto x = LambdaF->fctargument(0);
+  auto y = LambdaF->fctargument(1);
+  auto state = LambdaF->fctargument(2);
+
+  auto one = jive::create_bitconstant(LambdaF->subregion(), 32, 1);
+  auto two = jive::create_bitconstant(LambdaF->subregion(), 32, 2);
+
+  auto storeOne = store_op::create(x, one, {state}, 4);
+  auto storeTwo = store_op::create(y, two, {storeOne[0]}, 4);
+
+  LambdaF->finalize(storeTwo);
+  graph->add_export(LambdaF->output(), {ptrtype(LambdaF->type()), "f"});
+
+  return module;
+}
