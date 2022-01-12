@@ -95,7 +95,10 @@ public:
 	contains(const jive::output * output) const noexcept;
 
 	Location &
-	FindOrInsertRegisterLocation(const jive::output * output, bool unknown);
+	FindOrInsertRegisterLocation(
+    const jive::output * output,
+    bool unknown,
+    bool pointsToExternalMemory);
 
 	const DisjointLocationSet::set &
 	set(Location & l) const
@@ -132,7 +135,10 @@ public:
 
 private:
 	Location &
-	InsertRegisterLocation(const jive::output * output, bool unknown);
+	InsertRegisterLocation(
+    const jive::output * output,
+    bool unknown,
+    bool pointsToExternalMemory);
 
 	Location *
 	lookup(const jive::output * output);

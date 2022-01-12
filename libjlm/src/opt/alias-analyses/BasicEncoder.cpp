@@ -459,6 +459,8 @@ private:
 
     for (auto & pair : ptg.impnodes())
       MemoryNodes_.push_back(static_cast<const PointsToGraph::MemoryNode*>(pair.second.get()));
+
+    MemoryNodes_.push_back(&ptg.GetExternalMemoryNode());
   }
 
   RegionalizedStateMap StateMap_;

@@ -145,10 +145,10 @@ TestLoad1()
 		auto & plambda = ptg.GetRegisterNode(test.lambda->output());
 		auto & lambarg0 = ptg.GetRegisterNode(test.lambda->subregion()->argument(0));
 
-		assertTargets(pload_p, {&ptg.memunknown()});
+		assertTargets(pload_p, {&ptg.memunknown(), &ptg.GetExternalMemoryNode()});
 
 		assertTargets(plambda, {&lambda});
-		assertTargets(lambarg0, {&ptg.memunknown()});
+		assertTargets(lambarg0, {&ptg.memunknown(), &ptg.GetExternalMemoryNode()});
 	};
 
 	LoadTest1 test;
@@ -206,8 +206,8 @@ TestGetElementPtr()
 		auto & gepX = ptg.GetRegisterNode(test.getElementPtrX->output(0));
 		auto & gepY = ptg.GetRegisterNode(test.getElementPtrY->output(0));
 
-		assertTargets(gepX, {&ptg.memunknown()});
-		assertTargets(gepY, {&ptg.memunknown()});
+		assertTargets(gepX, {&ptg.memunknown(), &ptg.GetExternalMemoryNode()});
+		assertTargets(gepY, {&ptg.memunknown(), &ptg.GetExternalMemoryNode()});
 	};
 
 	GetElementPtrTest test;
@@ -233,8 +233,8 @@ TestBitCast()
 		auto & bitCast = ptg.GetRegisterNode(test.bitCast->output(0));
 
 		assertTargets(lambdaOut, {&lambda});
-		assertTargets(lambdaArg, {&ptg.memunknown()});
-		assertTargets(bitCast, {&ptg.memunknown()});
+		assertTargets(lambdaArg, {&ptg.memunknown(), &ptg.GetExternalMemoryNode()});
+		assertTargets(bitCast, {&ptg.memunknown(), &ptg.GetExternalMemoryNode()});
 	};
 
 	BitCastTest test;
@@ -260,8 +260,8 @@ TestConstantPointerNull()
 		auto & null = ptg.GetRegisterNode(test.null->output(0));
 
 		assertTargets(lambdaOut, {&lambda});
-		assertTargets(lambdaArg, {&ptg.memunknown()});
-		assertTargets(null, {&ptg.memunknown()});
+		assertTargets(lambdaArg, {&ptg.memunknown(), &ptg.GetExternalMemoryNode()});
+		assertTargets(null, {&ptg.memunknown(), &ptg.GetExternalMemoryNode()});
 	};
 
 	ConstantPointerNullTest test;
@@ -281,10 +281,10 @@ TestBits2Ptr()
 		assert(ptg.nregnodes() == 5);
 
 		auto & call_out0 = ptg.GetRegisterNode(test.call->output(0));
-		assertTargets(call_out0, {&ptg.memunknown()});
+		assertTargets(call_out0, {&ptg.memunknown(), &ptg.GetExternalMemoryNode()});
 
 		auto & bits2ptr = ptg.GetRegisterNode(test.call->output(0));
-		assertTargets(bits2ptr, {&ptg.memunknown()});
+		assertTargets(bits2ptr, {&ptg.memunknown(), &ptg.GetExternalMemoryNode()});
 	};
 
 	Bits2PtrTest test;
@@ -460,20 +460,20 @@ TestGamma()
 
 		for (size_t n = 1; n < 5; n++) {
 			auto & lambda_arg = ptg.GetRegisterNode(test.lambda->fctargument(n));
-			assertTargets(lambda_arg, {&ptg.memunknown()});
+			assertTargets(lambda_arg, {&ptg.memunknown(), &ptg.GetExternalMemoryNode()});
 		}
 
 		for (size_t n = 0; n < 4; n++) {
 			auto & argument0 = ptg.GetRegisterNode(test.gamma->entryvar(n)->argument(0));
 			auto & argument1 = ptg.GetRegisterNode(test.gamma->entryvar(n)->argument(1));
 
-			assertTargets(argument0, {&ptg.memunknown()});
-			assertTargets(argument1, {&ptg.memunknown()});
+			assertTargets(argument0, {&ptg.memunknown(), &ptg.GetExternalMemoryNode()});
+			assertTargets(argument1, {&ptg.memunknown(), &ptg.GetExternalMemoryNode()});
 		}
 
 		for (size_t n = 0; n < 4; n++) {
 			auto & output = ptg.GetRegisterNode(test.gamma->exitvar(0));
-			assertTargets(output, {&ptg.memunknown()});
+			assertTargets(output, {&ptg.memunknown(), &ptg.GetExternalMemoryNode()});
 		}
 	};
 
@@ -502,13 +502,13 @@ TestTheta()
 		auto & theta_lv2_arg = ptg.GetRegisterNode(test.theta->output(2)->argument());
 		auto & theta_lv2_out = ptg.GetRegisterNode(test.theta->output(2));
 
-		assertTargets(lambda_arg1, {&ptg.memunknown()});
+		assertTargets(lambda_arg1, {&ptg.memunknown(), &ptg.GetExternalMemoryNode()});
 		assertTargets(lambda_out, {&lambda});
 
-		assertTargets(gep_out, {&ptg.memunknown()});
+		assertTargets(gep_out, {&ptg.memunknown(), &ptg.GetExternalMemoryNode()});
 
-		assertTargets(theta_lv2_arg, {&ptg.memunknown()});
-		assertTargets(theta_lv2_out, {&ptg.memunknown()});
+		assertTargets(theta_lv2_arg, {&ptg.memunknown(), &ptg.GetExternalMemoryNode()});
+		assertTargets(theta_lv2_out, {&ptg.memunknown(), &ptg.GetExternalMemoryNode()});
 	};
 
 	ThetaTest test;
@@ -693,6 +693,29 @@ TestPhi()
 	validate_ptg(*ptg, test);
 }
 
+static void
+TestExternalMemory()
+{
+  auto ValidatePointsToGraph = [](const jlm::aa::PointsToGraph & pointsToGraph, const ExternalMemoryTest & test)
+  {
+    assert(pointsToGraph.nallocnodes() == 1);
+    assert(pointsToGraph.nregnodes() == 3);
+
+    auto & lambdaFArgument0 = pointsToGraph.GetRegisterNode(test.LambdaF->fctargument(0));
+    auto & lambdaFArgument1 = pointsToGraph.GetRegisterNode(test.LambdaF->fctargument(1));
+
+    assertTargets(lambdaFArgument0, {&pointsToGraph.memunknown(), &pointsToGraph.GetExternalMemoryNode()});
+    assertTargets(lambdaFArgument1, {&pointsToGraph.memunknown(), &pointsToGraph.GetExternalMemoryNode()});
+  };
+
+  ExternalMemoryTest test;
+  // jive::view(test.graph().root(), stdout);
+
+  auto pointsToGraph = runSteensgaard(test.module());
+  // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
+  ValidatePointsToGraph(*pointsToGraph, test);
+}
+
 static int
 test()
 {
@@ -723,6 +746,8 @@ test()
 	TestImports();
 
 	TestPhi();
+
+  TestExternalMemory();
 
 	return 0;
 }
