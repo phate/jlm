@@ -22,7 +22,7 @@ public:
 	~nodereduction();
 
 	virtual void
-	run(rvsdg_module & module, const StatisticsDescriptor & sd) override;
+	run(RvsdgModule & module, const StatisticsDescriptor & sd) override;
 };
 
 }

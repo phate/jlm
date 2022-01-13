@@ -17,7 +17,7 @@ class theta_node;
 
 namespace jlm {
 
-class rvsdg_module;
+class RvsdgModule;
 class StatisticsDescriptor;
 
 /**
@@ -29,7 +29,7 @@ public:
 	~pushout();
 
 	virtual void
-	run(rvsdg_module & module, const StatisticsDescriptor & sd) override;
+	run(RvsdgModule & module, const StatisticsDescriptor & sd) override;
 };
 
 void

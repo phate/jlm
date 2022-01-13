@@ -525,7 +525,7 @@ loopunroll::~loopunroll()
 {}
 
 void
-loopunroll::run(rvsdg_module & module, const StatisticsDescriptor & sd)
+loopunroll::run(RvsdgModule & module, const StatisticsDescriptor & sd)
 {
 	if (factor_ < 2)
 		return;

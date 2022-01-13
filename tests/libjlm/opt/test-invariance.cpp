@@ -27,7 +27,7 @@ test_gamma()
 	jlm::valuetype vt;
 	jive::ctltype ct(2);
 
-	rvsdg_module rm(filepath(""), "", "");
+	RvsdgModule rm(filepath(""), "", "");
 	auto & graph = *rm.graph();
 	auto c = graph.add_import({ct, "c"});
 	auto x = graph.add_import({vt, "x"});
@@ -68,7 +68,7 @@ test_theta()
 	jlm::valuetype vt;
 	jive::ctltype ct(2);
 
-	rvsdg_module rm(filepath(""), "", "");
+	RvsdgModule rm(filepath(""), "", "");
 	auto & graph = *rm.graph();
 	auto c = graph.add_import({ct, "c"});
 	auto x = graph.add_import({vt, "x"});

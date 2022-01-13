@@ -172,7 +172,7 @@ public:
 
 	std::unique_ptr<PointsToGraph>
 	Analyze(
-    const rvsdg_module & module,
+    const RvsdgModule & module,
     const StatisticsDescriptor & sd) override;
 
 private:

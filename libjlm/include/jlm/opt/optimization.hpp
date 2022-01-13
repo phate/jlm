@@ -10,7 +10,7 @@
 
 namespace jlm {
 
-class rvsdg_module;
+class RvsdgModule;
 class StatisticsDescriptor;
 
 /**
@@ -32,16 +32,16 @@ public:
 	* \param sd     A stats descriptor for collecting optimization statistics.
 	*/
 	virtual void
-	run(rvsdg_module & module, const StatisticsDescriptor & sd) = 0;
+	run(RvsdgModule & module, const StatisticsDescriptor & sd) = 0;
 };
 
 /*
 	FIXME: This function should be removed.
 */
 void
-optimize(rvsdg_module & rm,
-	const StatisticsDescriptor & sd,
-	const std::vector<optimization*> & opts);
+optimize(RvsdgModule & rm,
+         const StatisticsDescriptor & sd,
+         const std::vector<optimization*> & opts);
 
 }
 

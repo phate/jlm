@@ -550,7 +550,7 @@ convert_imports(const jive::graph & graph, ipgraph_module & im, context & ctx)
 }
 
 static std::unique_ptr<ipgraph_module>
-convert_rvsdg(const rvsdg_module & rm)
+convert_rvsdg(const RvsdgModule & rm)
 {
 	auto im = ipgraph_module::create(rm.source_filename(), rm.target_triple(), rm.data_layout());
 
@@ -562,7 +562,7 @@ convert_rvsdg(const rvsdg_module & rm)
 }
 
 std::unique_ptr<ipgraph_module>
-rvsdg2jlm(const rvsdg_module & rm, const StatisticsDescriptor & sd)
+rvsdg2jlm(const RvsdgModule & rm, const StatisticsDescriptor & sd)
 {
 	rvsdg_destruction_stat stat(rm.source_filename());
 

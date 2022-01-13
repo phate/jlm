@@ -27,7 +27,7 @@ test_with_match()
 	jive::bittype bt1(1);
 	jive::fcttype ft({&bt1, &vt, &vt}, {&vt});
 
-	rvsdg_module rm(filepath(""), "", "");
+	RvsdgModule rm(filepath(""), "", "");
 	auto nf = rm.graph()->node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
@@ -72,7 +72,7 @@ test_without_match()
 	jive::bittype bt1(1);
 	jive::fcttype ft({&ctl2, &vt, &vt}, {&vt});
 
-	rvsdg_module rm(filepath(""), "", "");
+	RvsdgModule rm(filepath(""), "", "");
 	auto nf = rm.graph()->node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
@@ -115,7 +115,7 @@ test_gamma3()
 	jlm::valuetype vt;
 	jive::fcttype ft({&jive::bit32, &vt, &vt}, {&vt});
 
-	rvsdg_module rm(filepath(""), "", "");
+	RvsdgModule rm(filepath(""), "", "");
 	auto nf = rm.graph()->node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 

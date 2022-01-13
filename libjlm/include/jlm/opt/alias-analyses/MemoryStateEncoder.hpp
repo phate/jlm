@@ -22,7 +22,7 @@ namespace phi { class node; }
 
 namespace jlm {
 
-class rvsdg_module;
+class RvsdgModule;
 class StatisticsDescriptor;
 
 namespace delta { class node; }
@@ -41,7 +41,7 @@ public:
 
 	virtual void
 	Encode(
-    rvsdg_module & module,
+    RvsdgModule & module,
     const StatisticsDescriptor & sd) = 0;
 
 	virtual void

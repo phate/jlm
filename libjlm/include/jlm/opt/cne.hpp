@@ -10,7 +10,7 @@
 
 namespace jlm {
 
-class rvsdg_module;
+class RvsdgModule;
 class StatisticsDescriptor;
 
 /**
@@ -22,7 +22,7 @@ public:
 	~cne();
 
 	virtual void
-	run(rvsdg_module & module, const StatisticsDescriptor & sd) override;
+	run(RvsdgModule & module, const StatisticsDescriptor & sd) override;
 };
 
 }

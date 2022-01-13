@@ -18,7 +18,7 @@ namespace jive {
 
 namespace jlm {
 
-class rvsdg_module;
+class RvsdgModule;
 class StatisticsDescriptor;
 
 /**
@@ -43,7 +43,7 @@ public:
 	* \param sd A descriptor used to store unrolling statistics.
 	*/
 	virtual void
-	run(rvsdg_module & module, const StatisticsDescriptor & sd) override;
+	run(RvsdgModule & module, const StatisticsDescriptor & sd) override;
 
 private:
 	size_t factor_;

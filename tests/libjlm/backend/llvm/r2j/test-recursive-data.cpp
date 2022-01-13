@@ -25,7 +25,7 @@ test()
 	valuetype vt;
 	ptrtype pt(vt);
 
-	rvsdg_module rm(filepath(""), "", "");
+	RvsdgModule rm(filepath(""), "", "");
 
 	/* setup graph */
 	auto imp = rm.graph()->add_import(impport(pt, "", linkage::external_linkage));

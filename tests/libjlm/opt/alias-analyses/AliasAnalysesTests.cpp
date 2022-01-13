@@ -5,7 +5,7 @@
 
 #include "AliasAnalysesTests.hpp"
 
-std::unique_ptr<jlm::rvsdg_module>
+std::unique_ptr<jlm::RvsdgModule>
 StoreTest1::SetupRvsdg()
 {
   using namespace jlm;
@@ -17,7 +17,7 @@ StoreTest1::SetupRvsdg()
     {&jive::memtype::instance()},
     {&jive::memtype::instance()});
 
-  auto module = rvsdg_module::create(filepath(""), "", "");
+  auto module = RvsdgModule::create(filepath(""), "", "");
   auto graph = module->graph();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -59,7 +59,7 @@ StoreTest1::SetupRvsdg()
   return module;
 }
 
-std::unique_ptr<jlm::rvsdg_module>
+std::unique_ptr<jlm::RvsdgModule>
 StoreTest2::SetupRvsdg()
 {
   using namespace jlm;
@@ -69,7 +69,7 @@ StoreTest2::SetupRvsdg()
   jive::fcttype fcttype(
     {&jive::memtype::instance()}, {&jive::memtype::instance()});
 
-  auto module = rvsdg_module::create(filepath(""), "", "");
+  auto module = RvsdgModule::create(filepath(""), "", "");
   auto graph = module->graph();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -115,7 +115,7 @@ StoreTest2::SetupRvsdg()
   return module;
 }
 
-std::unique_ptr<jlm::rvsdg_module>
+std::unique_ptr<jlm::RvsdgModule>
 LoadTest1::SetupRvsdg()
 {
   using namespace jlm;
@@ -125,7 +125,7 @@ LoadTest1::SetupRvsdg()
   jive::fcttype fcttype(
     {ppt.get(), &jive::memtype::instance()}, {&jive::bit32, &jive::memtype::instance()});
 
-  auto module = rvsdg_module::create(filepath(""), "", "");
+  auto module = RvsdgModule::create(filepath(""), "", "");
   auto graph = module->graph();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -150,7 +150,7 @@ LoadTest1::SetupRvsdg()
   return module;
 }
 
-std::unique_ptr<jlm::rvsdg_module>
+std::unique_ptr<jlm::RvsdgModule>
 LoadTest2::SetupRvsdg()
 {
   using namespace jlm;
@@ -160,7 +160,7 @@ LoadTest2::SetupRvsdg()
   jive::fcttype fcttype(
     {&jive::memtype::instance()}, {&jive::memtype::instance()});
 
-  auto module = rvsdg_module::create(filepath(""), "", "");
+  auto module = RvsdgModule::create(filepath(""), "", "");
   auto graph = module->graph();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -212,7 +212,7 @@ LoadTest2::SetupRvsdg()
   return module;
 }
 
-std::unique_ptr<jlm::rvsdg_module>
+std::unique_ptr<jlm::RvsdgModule>
 GetElementPtrTest::SetupRvsdg()
 {
   using namespace jlm;
@@ -225,7 +225,7 @@ GetElementPtrTest::SetupRvsdg()
   jive::fcttype fcttype(
     {pt.get(), &jive::memtype::instance()}, {&jive::bit32, &jive::memtype::instance()});
 
-  auto module = rvsdg_module::create(filepath(""), "", "");
+  auto module = RvsdgModule::create(filepath(""), "", "");
   auto graph = module->graph();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -258,7 +258,7 @@ GetElementPtrTest::SetupRvsdg()
   return module;
 }
 
-std::unique_ptr<jlm::rvsdg_module>
+std::unique_ptr<jlm::RvsdgModule>
 BitCastTest::SetupRvsdg()
 {
   using namespace jlm;
@@ -267,7 +267,7 @@ BitCastTest::SetupRvsdg()
   auto pbt32 = ptrtype::create(jive::bit32);
   jive::fcttype fcttype({pbt32.get()}, {pbt16.get()});
 
-  auto module = rvsdg_module::create(filepath(""), "", "");
+  auto module = RvsdgModule::create(filepath(""), "", "");
   auto graph = module->graph();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -289,7 +289,7 @@ BitCastTest::SetupRvsdg()
   return module;
 }
 
-std::unique_ptr<jlm::rvsdg_module>
+std::unique_ptr<jlm::RvsdgModule>
 Bits2PtrTest::SetupRvsdg()
 {
   using namespace jlm;
@@ -299,7 +299,7 @@ Bits2PtrTest::SetupRvsdg()
   jive::fcttype fctbits2ptrtype({&jive::bit64, &mt}, {pt.get(), &mt});
   jive::fcttype fcttesttype({&jive::bit64, &mt}, {&mt});
 
-  auto module = rvsdg_module::create(filepath(""), "", "");
+  auto module = RvsdgModule::create(filepath(""), "", "");
   auto graph = module->graph();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -333,7 +333,7 @@ Bits2PtrTest::SetupRvsdg()
   return module;
 }
 
-std::unique_ptr<jlm::rvsdg_module>
+std::unique_ptr<jlm::RvsdgModule>
 ConstantPointerNullTest::SetupRvsdg()
 {
   using namespace jlm;
@@ -343,7 +343,7 @@ ConstantPointerNullTest::SetupRvsdg()
   jive::fcttype fcttype(
     {ppt.get(), &jive::memtype::instance()}, {&jive::memtype::instance()});
 
-  auto module = rvsdg_module::create(filepath(""), "", "");
+  auto module = RvsdgModule::create(filepath(""), "", "");
   auto graph = module->graph();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -365,7 +365,7 @@ ConstantPointerNullTest::SetupRvsdg()
   return module;
 }
 
-std::unique_ptr<jlm::rvsdg_module>
+std::unique_ptr<jlm::RvsdgModule>
 CallTest1::SetupRvsdg()
 {
   using namespace jlm;
@@ -377,7 +377,7 @@ CallTest1::SetupRvsdg()
   jive::fcttype ft2(
     {&jive::memtype::instance()}, {&jive::bit32, &jive::memtype::instance()});
 
-  auto module = rvsdg_module::create(filepath(""), "", "");
+  auto module = RvsdgModule::create(filepath(""), "", "");
   auto graph = module->graph();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -451,7 +451,7 @@ CallTest1::SetupRvsdg()
   return module;
 }
 
-std::unique_ptr<jlm::rvsdg_module>
+std::unique_ptr<jlm::RvsdgModule>
 CallTest2::SetupRvsdg()
 {
   using namespace jlm;
@@ -465,7 +465,7 @@ CallTest2::SetupRvsdg()
   jive::fcttype destroy_type({pbit32.get(), &mt, &iot}, {&mt, &iot});
   jive::fcttype test_type({&mt, &iot}, {&mt, &iot});
 
-  auto module = rvsdg_module::create(filepath(""), "", "");
+  auto module = RvsdgModule::create(filepath(""), "", "");
   auto graph = module->graph();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -530,7 +530,7 @@ CallTest2::SetupRvsdg()
   return module;
 }
 
-std::unique_ptr<jlm::rvsdg_module>
+std::unique_ptr<jlm::RvsdgModule>
 IndirectCallTest::SetupRvsdg()
 {
   using namespace jlm;
@@ -546,7 +546,7 @@ IndirectCallTest::SetupRvsdg()
   jive::fcttype test_type({&mt, &iot}, {&jive::bit32, &mt, &iot});
 
 
-  auto module = rvsdg_module::create(filepath(""), "", "");
+  auto module = RvsdgModule::create(filepath(""), "", "");
   auto graph = module->graph();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -608,7 +608,7 @@ IndirectCallTest::SetupRvsdg()
   return module;
 }
 
-std::unique_ptr<jlm::rvsdg_module>
+std::unique_ptr<jlm::RvsdgModule>
 GammaTest::SetupRvsdg()
 {
   using namespace jlm;
@@ -618,7 +618,7 @@ GammaTest::SetupRvsdg()
     {&jive::bit32, pt.get(), pt.get(), pt.get(), pt.get(), &jive::memtype::instance()},
     {&jive::bit32, &jive::memtype::instance()});
 
-  auto module = rvsdg_module::create(filepath(""), "", "");
+  auto module = RvsdgModule::create(filepath(""), "", "");
   auto graph = module->graph();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -655,7 +655,7 @@ GammaTest::SetupRvsdg()
   return module;
 }
 
-std::unique_ptr<jlm::rvsdg_module>
+std::unique_ptr<jlm::RvsdgModule>
 ThetaTest::SetupRvsdg()
 {
   using namespace jlm;
@@ -664,7 +664,7 @@ ThetaTest::SetupRvsdg()
   jive::fcttype fcttype(
     {&jive::bit32, pt.get(), &jive::bit32, &jive::memtype::instance()}, {&jive::memtype::instance()});
 
-  auto module = rvsdg_module::create(filepath(""), "", "");
+  auto module = RvsdgModule::create(filepath(""), "", "");
   auto graph = module->graph();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -706,7 +706,7 @@ ThetaTest::SetupRvsdg()
   return module;
 }
 
-std::unique_ptr<jlm::rvsdg_module>
+std::unique_ptr<jlm::RvsdgModule>
 DeltaTest1::SetupRvsdg()
 {
   using namespace jlm;
@@ -717,7 +717,7 @@ DeltaTest1::SetupRvsdg()
   jive::fcttype fcthtype(
     {&jive::memtype::instance()}, {&jive::bit32, &jive::memtype::instance()});
 
-  auto module = rvsdg_module::create(filepath(""), "", "");
+  auto module = RvsdgModule::create(filepath(""), "", "");
   auto graph = module->graph();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -762,14 +762,14 @@ DeltaTest1::SetupRvsdg()
   return module;
 }
 
-std::unique_ptr<jlm::rvsdg_module>
+std::unique_ptr<jlm::RvsdgModule>
 DeltaTest2::SetupRvsdg()
 {
   using namespace jlm;
 
   jive::fcttype ft({&jive::memtype::instance()}, {&jive::memtype::instance()});
 
-  auto module = rvsdg_module::create(filepath(""), "", "");
+  auto module = RvsdgModule::create(filepath(""), "", "");
   auto graph = module->graph();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -827,14 +827,14 @@ DeltaTest2::SetupRvsdg()
   return module;
 }
 
-std::unique_ptr<jlm::rvsdg_module>
+std::unique_ptr<jlm::RvsdgModule>
 ImportTest::SetupRvsdg()
 {
   using namespace jlm;
 
   jive::fcttype ft({&jive::memtype::instance()}, {&jive::memtype::instance()});
 
-  auto module = rvsdg_module::create(filepath(""), "", "");
+  auto module = RvsdgModule::create(filepath(""), "", "");
   auto graph = module->graph();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -880,7 +880,7 @@ ImportTest::SetupRvsdg()
   return module;
 }
 
-std::unique_ptr<jlm::rvsdg_module>
+std::unique_ptr<jlm::RvsdgModule>
 PhiTest::SetupRvsdg()
 {
   using namespace jlm;
@@ -899,7 +899,7 @@ PhiTest::SetupRvsdg()
 
   jive::fcttype testfcttype({&mt}, {&mt});
 
-  auto module = rvsdg_module::create(filepath(""), "", "");
+  auto module = RvsdgModule::create(filepath(""), "", "");
   auto graph = module->graph();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -996,7 +996,7 @@ PhiTest::SetupRvsdg()
   return module;
 }
 
-std::unique_ptr<jlm::rvsdg_module>
+std::unique_ptr<jlm::RvsdgModule>
 ExternalMemoryTest::SetupRvsdg()
 {
   using namespace jlm;
@@ -1004,7 +1004,7 @@ ExternalMemoryTest::SetupRvsdg()
   auto pt = ptrtype::create(jive::bit32);
   jive::fcttype ft({pt.get(), pt.get(), &jive::memtype::instance()}, {&jive::memtype::instance()});
 
-  auto module = rvsdg_module::create(filepath(""), "", "");
+  auto module = RvsdgModule::create(filepath(""), "", "");
   auto graph = module->graph();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));

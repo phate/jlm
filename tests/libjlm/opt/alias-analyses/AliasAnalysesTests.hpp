@@ -13,7 +13,7 @@
 */
 class AliasAnalysisTest {
 public:
-	jlm::rvsdg_module &
+	jlm::RvsdgModule &
 	module() noexcept
 	{
     if (module_ == nullptr)
@@ -32,10 +32,10 @@ private:
   /**
    * \brief Create RVSDG for this test.
    */
-	virtual std::unique_ptr<jlm::rvsdg_module>
+	virtual std::unique_ptr<jlm::RvsdgModule>
 	SetupRvsdg() = 0;
 
-	std::unique_ptr<jlm::rvsdg_module> module_;
+	std::unique_ptr<jlm::RvsdgModule> module_;
 };
 
 /** \brief StoreTest1 class
@@ -61,7 +61,7 @@ private:
 */
 class StoreTest1 final : public AliasAnalysisTest {
 private:
-	std::unique_ptr<jlm::rvsdg_module>
+	std::unique_ptr<jlm::RvsdgModule>
 	SetupRvsdg() override;
 
 public:
@@ -98,7 +98,7 @@ public:
 */
 class StoreTest2 final : public AliasAnalysisTest {
 private:
-	std::unique_ptr<jlm::rvsdg_module>
+	std::unique_ptr<jlm::RvsdgModule>
 	SetupRvsdg() override;
 
 public:
@@ -131,7 +131,7 @@ public:
 */
 class LoadTest1 final : public AliasAnalysisTest {
 private:
-	std::unique_ptr<jlm::rvsdg_module>
+	std::unique_ptr<jlm::RvsdgModule>
 	SetupRvsdg() override;
 
 public:
@@ -164,7 +164,7 @@ public:
 */
 class LoadTest2 final : public AliasAnalysisTest {
 private:
-	std::unique_ptr<jlm::rvsdg_module>
+	std::unique_ptr<jlm::RvsdgModule>
 	SetupRvsdg() override;
 
 public:
@@ -203,7 +203,7 @@ public:
 */
 class GetElementPtrTest final : public AliasAnalysisTest {
 private:
-	std::unique_ptr<jlm::rvsdg_module>
+	std::unique_ptr<jlm::RvsdgModule>
 	SetupRvsdg() override;
 
 public:
@@ -226,7 +226,7 @@ public:
 */
 class BitCastTest final : public AliasAnalysisTest {
 private:
-	std::unique_ptr<jlm::rvsdg_module>
+	std::unique_ptr<jlm::RvsdgModule>
 	SetupRvsdg() override;
 
 public:
@@ -257,7 +257,7 @@ public:
 */
 class Bits2PtrTest final : public AliasAnalysisTest {
 private:
-  std::unique_ptr<jlm::rvsdg_module>
+  std::unique_ptr<jlm::RvsdgModule>
 	SetupRvsdg() override;
 
 public:
@@ -282,7 +282,7 @@ public:
 */
 class ConstantPointerNullTest final : public AliasAnalysisTest {
 private:
-	std::unique_ptr<jlm::rvsdg_module>
+	std::unique_ptr<jlm::RvsdgModule>
 	SetupRvsdg() override;
 
 public:
@@ -321,7 +321,7 @@ public:
 */
 class CallTest1 final : public AliasAnalysisTest {
 private:
-	std::unique_ptr<jlm::rvsdg_module>
+	std::unique_ptr<jlm::RvsdgModule>
 	SetupRvsdg() override;
 
 public:
@@ -370,7 +370,7 @@ public:
 */
 class CallTest2 final : public AliasAnalysisTest {
 private:
-	std::unique_ptr<jlm::rvsdg_module>
+	std::unique_ptr<jlm::RvsdgModule>
 	SetupRvsdg() override;
 
 public:
@@ -423,7 +423,7 @@ public:
 */
 class IndirectCallTest final : public AliasAnalysisTest {
 private:
-	std::unique_ptr<jlm::rvsdg_module>
+	std::unique_ptr<jlm::RvsdgModule>
 	SetupRvsdg() override;
 
 public:
@@ -461,7 +461,7 @@ public:
 */
 class GammaTest final : public AliasAnalysisTest {
 private:
-	std::unique_ptr<jlm::rvsdg_module>
+	std::unique_ptr<jlm::RvsdgModule>
 	SetupRvsdg() override;
 
 public:
@@ -489,7 +489,7 @@ public:
 */
 class ThetaTest final : public AliasAnalysisTest {
 private:
-	std::unique_ptr<jlm::rvsdg_module>
+	std::unique_ptr<jlm::RvsdgModule>
 	SetupRvsdg() override;
 
 public:
@@ -524,7 +524,7 @@ public:
 */
 class DeltaTest1 final : public AliasAnalysisTest {
 private:
-	std::unique_ptr<jlm::rvsdg_module>
+	std::unique_ptr<jlm::RvsdgModule>
 	SetupRvsdg() override;
 
 public:
@@ -565,7 +565,7 @@ public:
 */
 class DeltaTest2 final : public AliasAnalysisTest {
 private:
-	std::unique_ptr<jlm::rvsdg_module>
+	std::unique_ptr<jlm::RvsdgModule>
 	SetupRvsdg() override;
 
 public:
@@ -606,7 +606,7 @@ public:
 */
 class ImportTest final : public AliasAnalysisTest {
 private:
-	std::unique_ptr<jlm::rvsdg_module>
+	std::unique_ptr<jlm::RvsdgModule>
 	SetupRvsdg() override;
 
 public:
@@ -652,7 +652,7 @@ public:
 */
 class PhiTest final : public AliasAnalysisTest {
 private:
-	std::unique_ptr<jlm::rvsdg_module>
+	std::unique_ptr<jlm::RvsdgModule>
 	SetupRvsdg() override;
 
 public:
@@ -689,7 +689,7 @@ public:
  */
 class ExternalMemoryTest final : public AliasAnalysisTest {
 private:
-  std::unique_ptr<jlm::rvsdg_module>
+  std::unique_ptr<jlm::RvsdgModule>
   SetupRvsdg() override;
 
 public:

@@ -16,7 +16,7 @@
 #include <iostream>
 
 static std::unique_ptr<jlm::aa::PointsToGraph>
-runSteensgaard(jlm::rvsdg_module & module)
+runSteensgaard(jlm::RvsdgModule & module)
 {
 	using namespace jlm;
 

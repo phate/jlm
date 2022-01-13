@@ -876,10 +876,10 @@ handle_scc(
 	}
 }
 
-static std::unique_ptr<rvsdg_module>
+static std::unique_ptr<RvsdgModule>
 convert_module(const ipgraph_module & im, const StatisticsDescriptor & sd)
 {
-	auto rm = rvsdg_module::create(im.source_filename(), im.target_triple(), im.data_layout());
+	auto rm = RvsdgModule::create(im.source_filename(), im.target_triple(), im.data_layout());
 	auto graph = rm->graph();
 
 	auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -898,7 +898,7 @@ convert_module(const ipgraph_module & im, const StatisticsDescriptor & sd)
 	return rm;
 }
 
-std::unique_ptr<rvsdg_module>
+std::unique_ptr<RvsdgModule>
 construct_rvsdg(const ipgraph_module & im, const StatisticsDescriptor & sd)
 {
 	source_filename = im.source_filename().to_str();

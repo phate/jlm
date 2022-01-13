@@ -78,12 +78,13 @@ is_export(const jive::input * input)
 	return result && result->region() == graph->root();
 }
 
-/* rvsdg module class */
-
-class rvsdg_module final {
+/** \brief RVSDG module class
+ *
+ */
+class RvsdgModule final {
 public:
 	inline
-	rvsdg_module(
+	RvsdgModule(
 		const jlm::filepath & source_filename,
 		const std::string & target_triple,
 		const std::string & data_layout)
@@ -92,15 +93,15 @@ public:
 	, source_filename_(source_filename)
 	{}
 
-	rvsdg_module(const rvsdg_module &) = delete;
+	RvsdgModule(const RvsdgModule &) = delete;
 
-	rvsdg_module(rvsdg_module &&) = delete;
+	RvsdgModule(RvsdgModule &&) = delete;
 
-	rvsdg_module &
-	operator=(const rvsdg_module &) = delete;
+	RvsdgModule &
+	operator=(const RvsdgModule &) = delete;
 
-	rvsdg_module &
-	operator=(rvsdg_module &&) = delete;
+	RvsdgModule &
+	operator=(RvsdgModule &&) = delete;
 
 	inline jive::graph *
 	graph() noexcept
@@ -132,13 +133,13 @@ public:
 		return data_layout_;
 	}
 
-	static std::unique_ptr<rvsdg_module>
+	static std::unique_ptr<RvsdgModule>
 	create(
 		const jlm::filepath & source_filename,
 		const std::string & target_triple,
 		const std::string & data_layout)
 	{
-		return std::make_unique<rvsdg_module>(source_filename, target_triple, data_layout);
+		return std::make_unique<RvsdgModule>(source_filename, target_triple, data_layout);
 	}
 
 private:

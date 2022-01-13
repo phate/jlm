@@ -16,7 +16,7 @@ test_argument_iterators()
 	using namespace jlm;
 
 	valuetype vt;
-	rvsdg_module rm(filepath(""), "", "");
+	RvsdgModule rm(filepath(""), "", "");
 
 	{
 		jive::fcttype ft({&vt}, {&vt});
@@ -73,7 +73,7 @@ test_invalid_operand_region()
 	valuetype vt;
 	jive::fcttype fcttype({}, {&vt});
 
-	auto module = rvsdg_module::create(filepath(""), "", "");
+	auto module = RvsdgModule::create(filepath(""), "", "");
 	auto graph = module->graph();
 
 	auto fct1 = lambda::node::create(graph->root(), fcttype, "fct1", linkage::external_linkage);

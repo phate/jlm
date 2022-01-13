@@ -496,7 +496,7 @@ BasicEncoder::UnlinkMemUnknown(PointsToGraph & ptg)
 void
 BasicEncoder::Encode(
   PointsToGraph & ptg,
-  rvsdg_module & module,
+  RvsdgModule & module,
   const StatisticsDescriptor & sd)
 {
   BasicEncoder encoder(ptg);
@@ -505,7 +505,7 @@ BasicEncoder::Encode(
 
 void
 BasicEncoder::Encode(
-  rvsdg_module & module,
+  RvsdgModule & module,
   const StatisticsDescriptor & sd)
 {
   ContextCreationStatistics contextCreationStatistics(module.source_filename());
