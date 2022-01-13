@@ -508,14 +508,14 @@ BasicEncoder::Encode(
   RvsdgModule & module,
   const StatisticsDescriptor & sd)
 {
-  ContextCreationStatistics contextCreationStatistics(module.source_filename());
+  ContextCreationStatistics contextCreationStatistics(module.SourceFileName());
   contextCreationStatistics.start();
   Context_ = Context::Create(Ptg());
   contextCreationStatistics.stop();
   if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::BasicEncoderContextCreation))
     sd.print_stat(contextCreationStatistics);
 
-  EncodingStatistics encodingStatistics(module.source_filename());
+  EncodingStatistics encodingStatistics(module.SourceFileName());
   encodingStatistics.start(*module.graph());
   MemoryStateEncoder::Encode(*module.graph()->root());
   encodingStatistics.stop();

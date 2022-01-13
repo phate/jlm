@@ -75,7 +75,7 @@ optimize(
   const StatisticsDescriptor & sd,
   const std::vector<optimization*> & opts)
 {
-	optimization_stat stat(rm.source_filename());
+	optimization_stat stat(rm.SourceFileName());
 
 	stat.start(*rm.graph());
 	for (const auto & opt : opts)
