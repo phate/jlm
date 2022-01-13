@@ -516,8 +516,8 @@ BasicEncoder::Encode(
     sd.print_stat(contextCreationStatistics);
 
   EncodingStatistics encodingStatistics(module.SourceFileName());
-  encodingStatistics.start(*module.Rvsdg());
-  MemoryStateEncoder::Encode(*module.Rvsdg()->root());
+  encodingStatistics.start(module.Rvsdg());
+  MemoryStateEncoder::Encode(*module.Rvsdg().root());
   encodingStatistics.stop();
   if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::BasicEncoderEncoding))
     sd.print_stat(encodingStatistics);

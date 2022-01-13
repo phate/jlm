@@ -30,7 +30,7 @@ test()
 
 	RvsdgModule rm(filepath(""), "", "");
 
-	auto lambda = lambda::node::create(rm.Rvsdg()->root(), ft, "f", linkage::external_linkage);
+	auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage);
 
 	auto match = jive::match(1, {{0, 0}}, 1, 2, lambda->fctargument(0));
 	auto gamma = jive::gamma_node::create(match, 2);
@@ -40,9 +40,9 @@ test()
 
 	auto f = lambda->finalize({ex});
 
-  rm.Rvsdg()->add_export(f, {f->type(), ""});
+  rm.Rvsdg().add_export(f, {f->type(), ""});
 
-	jive::view(*rm.Rvsdg(), stdout);
+	jive::view(rm.Rvsdg(), stdout);
 
 	StatisticsDescriptor sd;
 	auto module = rvsdg2jlm::rvsdg2jlm(rm, sd);

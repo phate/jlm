@@ -121,7 +121,7 @@ enable_binary_reductions(jive::graph & graph)
 static void
 reduce(RvsdgModule & rm, const StatisticsDescriptor & sd)
 {
-	auto & graph = *rm.Rvsdg();
+	auto & graph = rm.Rvsdg();
 
 	redstat stat;
 	stat.start(graph);

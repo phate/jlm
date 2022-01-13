@@ -30,7 +30,7 @@ test_simple()
 	jlm::valuetype vt;
 
 	RvsdgModule rm(filepath(""), "", "");
-	auto & graph = *rm.Rvsdg();
+	auto & graph = rm.Rvsdg();
 	auto nf = graph.node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
@@ -75,7 +75,7 @@ test_gamma()
 	jive::ctltype ct(2);
 
 	RvsdgModule rm(filepath(""), "", "");
-	auto & graph = *rm.Rvsdg();
+	auto & graph = rm.Rvsdg();
 	auto nf = graph.node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
@@ -139,7 +139,7 @@ test_theta()
 	jive::ctltype ct(2);
 
 	RvsdgModule rm(filepath(""), "", "");
-	auto & graph = *rm.Rvsdg();
+	auto & graph = rm.Rvsdg();
 	auto nf = graph.node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
@@ -192,7 +192,7 @@ test_theta2()
 	jive::ctltype ct(2);
 
 	RvsdgModule rm(jlm::filepath(""), "", "");
-	auto & graph = *rm.Rvsdg();
+	auto & graph = rm.Rvsdg();
 	auto nf = graph.node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
@@ -236,7 +236,7 @@ test_theta3()
 	jive::ctltype ct(2);
 
 	RvsdgModule rm(jlm::filepath(""), "", "");
-	auto & graph = *rm.Rvsdg();
+	auto & graph = rm.Rvsdg();
 	auto nf = graph.node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
@@ -295,7 +295,7 @@ test_theta4()
 	jive::ctltype ct(2);
 
 	RvsdgModule rm(jlm::filepath(""), "", "");
-	auto & graph = *rm.Rvsdg();
+	auto & graph = rm.Rvsdg();
 	auto nf = graph.node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
@@ -348,7 +348,7 @@ test_theta5()
 	jive::ctltype ct(2);
 
 	RvsdgModule rm(jlm::filepath(""), "", "");
-	auto & graph = *rm.Rvsdg();
+	auto & graph = rm.Rvsdg();
 	auto nf = graph.node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
@@ -395,7 +395,7 @@ test_lambda()
 	jive::fcttype ft({&vt, &vt}, {&vt});
 
 	RvsdgModule rm(jlm::filepath(""), "", "");
-	auto & graph = *rm.Rvsdg();
+	auto & graph = rm.Rvsdg();
 	auto nf = graph.node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
@@ -430,7 +430,7 @@ test_phi()
 	jive::fcttype ft({&vt, &vt}, {&vt});
 
 	RvsdgModule rm(jlm::filepath(""), "", "");
-	auto & graph = *rm.Rvsdg();
+	auto & graph = rm.Rvsdg();
 	auto nf = graph.node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 

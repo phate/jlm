@@ -121,9 +121,9 @@ invariance(RvsdgModule & rm, const StatisticsDescriptor & sd)
 {
 	invstat stat;
 
-	stat.start(*rm.Rvsdg());
-	invariance(rm.Rvsdg()->root());
-	stat.end(*rm.Rvsdg());
+	stat.start(rm.Rvsdg());
+	invariance(rm.Rvsdg().root());
+	stat.end(rm.Rvsdg());
 
 	if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::InvariantValueReduction))
 		sd.print_stat(stat);

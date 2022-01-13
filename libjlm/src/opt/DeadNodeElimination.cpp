@@ -100,7 +100,7 @@ DeadNodeElimination::run(
   RvsdgModule & module,
   const StatisticsDescriptor & sd)
 {
-  auto & graph = *module.Rvsdg();
+  auto & graph = module.Rvsdg();
 
   ResetState();
 
