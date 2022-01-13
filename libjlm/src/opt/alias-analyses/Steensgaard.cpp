@@ -1381,7 +1381,7 @@ Steensgaard::Analyze(
   /**
    * Perform Steensgaard analysis
    */
-  SteensgaardAnalysisStatistics steensgardStatistics(module.source_filename());
+  SteensgaardAnalysisStatistics steensgardStatistics(module.SourceFileName());
   steensgardStatistics.start(*module.graph());
 	Analyze(*module.graph());
 //	std::cout << locationSet_.to_dot() << std::flush;
@@ -1393,7 +1393,7 @@ Steensgaard::Analyze(
   /**
    * Construct PointsTo graph
    */
-  SteensgaardPointsToGraphConstructionStatistics ptgConstructionStatistics(module.source_filename());
+  SteensgaardPointsToGraphConstructionStatistics ptgConstructionStatistics(module.SourceFileName());
   ptgConstructionStatistics.start(locationSet_);
 	auto pointsToGraph = ConstructPointsToGraph(locationSet_);
 //	std::cout << PointsToGraph::ToDot(*pointsToGraph) << std::flush;
