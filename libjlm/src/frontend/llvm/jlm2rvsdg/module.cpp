@@ -879,7 +879,7 @@ handle_scc(
 static std::unique_ptr<RvsdgModule>
 convert_module(const ipgraph_module & im, const StatisticsDescriptor & sd)
 {
-	auto rm = RvsdgModule::create(im.source_filename(), im.target_triple(), im.data_layout());
+	auto rm = RvsdgModule::Create(im.source_filename(), im.target_triple(), im.data_layout());
 	auto graph = rm->Rvsdg();
 
 	auto nf = graph->node_normal_form(typeid(jive::operation));

@@ -17,7 +17,7 @@ StoreTest1::SetupRvsdg()
     {&jive::memtype::instance()},
     {&jive::memtype::instance()});
 
-  auto module = RvsdgModule::create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(filepath(""), "", "");
   auto graph = module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -69,7 +69,7 @@ StoreTest2::SetupRvsdg()
   jive::fcttype fcttype(
     {&jive::memtype::instance()}, {&jive::memtype::instance()});
 
-  auto module = RvsdgModule::create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(filepath(""), "", "");
   auto graph = module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -125,7 +125,7 @@ LoadTest1::SetupRvsdg()
   jive::fcttype fcttype(
     {ppt.get(), &jive::memtype::instance()}, {&jive::bit32, &jive::memtype::instance()});
 
-  auto module = RvsdgModule::create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(filepath(""), "", "");
   auto graph = module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -160,7 +160,7 @@ LoadTest2::SetupRvsdg()
   jive::fcttype fcttype(
     {&jive::memtype::instance()}, {&jive::memtype::instance()});
 
-  auto module = RvsdgModule::create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(filepath(""), "", "");
   auto graph = module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -225,7 +225,7 @@ GetElementPtrTest::SetupRvsdg()
   jive::fcttype fcttype(
     {pt.get(), &jive::memtype::instance()}, {&jive::bit32, &jive::memtype::instance()});
 
-  auto module = RvsdgModule::create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(filepath(""), "", "");
   auto graph = module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -267,7 +267,7 @@ BitCastTest::SetupRvsdg()
   auto pbt32 = ptrtype::create(jive::bit32);
   jive::fcttype fcttype({pbt32.get()}, {pbt16.get()});
 
-  auto module = RvsdgModule::create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(filepath(""), "", "");
   auto graph = module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -299,7 +299,7 @@ Bits2PtrTest::SetupRvsdg()
   jive::fcttype fctbits2ptrtype({&jive::bit64, &mt}, {pt.get(), &mt});
   jive::fcttype fcttesttype({&jive::bit64, &mt}, {&mt});
 
-  auto module = RvsdgModule::create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(filepath(""), "", "");
   auto graph = module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -343,7 +343,7 @@ ConstantPointerNullTest::SetupRvsdg()
   jive::fcttype fcttype(
     {ppt.get(), &jive::memtype::instance()}, {&jive::memtype::instance()});
 
-  auto module = RvsdgModule::create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(filepath(""), "", "");
   auto graph = module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -377,7 +377,7 @@ CallTest1::SetupRvsdg()
   jive::fcttype ft2(
     {&jive::memtype::instance()}, {&jive::bit32, &jive::memtype::instance()});
 
-  auto module = RvsdgModule::create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(filepath(""), "", "");
   auto graph = module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -465,7 +465,7 @@ CallTest2::SetupRvsdg()
   jive::fcttype destroy_type({pbit32.get(), &mt, &iot}, {&mt, &iot});
   jive::fcttype test_type({&mt, &iot}, {&mt, &iot});
 
-  auto module = RvsdgModule::create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(filepath(""), "", "");
   auto graph = module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -546,7 +546,7 @@ IndirectCallTest::SetupRvsdg()
   jive::fcttype test_type({&mt, &iot}, {&jive::bit32, &mt, &iot});
 
 
-  auto module = RvsdgModule::create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(filepath(""), "", "");
   auto graph = module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -618,7 +618,7 @@ GammaTest::SetupRvsdg()
     {&jive::bit32, pt.get(), pt.get(), pt.get(), pt.get(), &jive::memtype::instance()},
     {&jive::bit32, &jive::memtype::instance()});
 
-  auto module = RvsdgModule::create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(filepath(""), "", "");
   auto graph = module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -664,7 +664,7 @@ ThetaTest::SetupRvsdg()
   jive::fcttype fcttype(
     {&jive::bit32, pt.get(), &jive::bit32, &jive::memtype::instance()}, {&jive::memtype::instance()});
 
-  auto module = RvsdgModule::create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(filepath(""), "", "");
   auto graph = module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -717,7 +717,7 @@ DeltaTest1::SetupRvsdg()
   jive::fcttype fcthtype(
     {&jive::memtype::instance()}, {&jive::bit32, &jive::memtype::instance()});
 
-  auto module = RvsdgModule::create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(filepath(""), "", "");
   auto graph = module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -769,7 +769,7 @@ DeltaTest2::SetupRvsdg()
 
   jive::fcttype ft({&jive::memtype::instance()}, {&jive::memtype::instance()});
 
-  auto module = RvsdgModule::create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(filepath(""), "", "");
   auto graph = module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -834,7 +834,7 @@ ImportTest::SetupRvsdg()
 
   jive::fcttype ft({&jive::memtype::instance()}, {&jive::memtype::instance()});
 
-  auto module = RvsdgModule::create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(filepath(""), "", "");
   auto graph = module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -899,7 +899,7 @@ PhiTest::SetupRvsdg()
 
   jive::fcttype testfcttype({&mt}, {&mt});
 
-  auto module = RvsdgModule::create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(filepath(""), "", "");
   auto graph = module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -1004,7 +1004,7 @@ ExternalMemoryTest::SetupRvsdg()
   auto pt = ptrtype::create(jive::bit32);
   jive::fcttype ft({pt.get(), pt.get(), &jive::memtype::instance()}, {&jive::memtype::instance()});
 
-  auto module = RvsdgModule::create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(filepath(""), "", "");
   auto graph = module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
