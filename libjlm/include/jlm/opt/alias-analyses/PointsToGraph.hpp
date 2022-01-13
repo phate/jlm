@@ -25,7 +25,7 @@ namespace jive {
 
 namespace jlm {
 
-class rvsdg_module;
+class RvsdgModule;
 
 namespace aa {
 

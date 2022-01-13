@@ -18,7 +18,7 @@
 #include <iostream>
 
 static std::unique_ptr<jlm::aa::PointsToGraph>
-run_steensgaard(jlm::rvsdg_module & module)
+run_steensgaard(jlm::RvsdgModule & module)
 {
 	using namespace jlm;
 
@@ -30,7 +30,7 @@ run_steensgaard(jlm::rvsdg_module & module)
 static void
 RunBasicEncoder(
   jlm::aa::PointsToGraph & pointsToGraph,
-  jlm::rvsdg_module & module)
+  jlm::RvsdgModule & module)
 {
   using namespace jlm;
 

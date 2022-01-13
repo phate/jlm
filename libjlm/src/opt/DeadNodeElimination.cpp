@@ -97,7 +97,7 @@ DeadNodeElimination::run(jive::region & region)
 
 void
 DeadNodeElimination::run(
-  rvsdg_module & module,
+  RvsdgModule & module,
   const StatisticsDescriptor & sd)
 {
   auto & graph = *module.graph();

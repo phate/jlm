@@ -17,13 +17,13 @@ class graph;
 namespace jlm {
 
 class ipgraph_module;
-class rvsdg_module;
+class RvsdgModule;
 class StatisticsDescriptor;
 
 namespace rvsdg2jlm {
 
 std::unique_ptr<ipgraph_module>
-rvsdg2jlm(const rvsdg_module & rm, const StatisticsDescriptor & sd);
+rvsdg2jlm(const RvsdgModule & rm, const StatisticsDescriptor & sd);
 
 }}
 

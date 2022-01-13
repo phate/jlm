@@ -17,7 +17,7 @@ namespace jive {
 
 namespace jlm {
 
-class rvsdg_module;
+class RvsdgModule;
 class StatisticsDescriptor;
 
 /**
@@ -29,7 +29,7 @@ public:
 	~pullin();
 
 	virtual void
-	run(rvsdg_module & module, const StatisticsDescriptor & sd) override;
+	run(RvsdgModule & module, const StatisticsDescriptor & sd) override;
 };
 
 void

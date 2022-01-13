@@ -1373,7 +1373,7 @@ Steensgaard::Analyze(const jive::graph & graph)
 
 std::unique_ptr<PointsToGraph>
 Steensgaard::Analyze(
-  const rvsdg_module & module,
+  const RvsdgModule & module,
   const StatisticsDescriptor & sd)
 {
 	ResetState();

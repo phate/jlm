@@ -276,7 +276,7 @@ pull(jive::region * region)
 }
 
 static void
-pull(rvsdg_module & rm, const StatisticsDescriptor & sd)
+pull(RvsdgModule & rm, const StatisticsDescriptor & sd)
 {
 	pullstat stat;
 
@@ -294,7 +294,7 @@ pullin::~pullin()
 {}
 
 void
-pullin::run(rvsdg_module & module, const StatisticsDescriptor & sd)
+pullin::run(RvsdgModule & module, const StatisticsDescriptor & sd)
 {
 	pull(module, sd);
 }

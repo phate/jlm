@@ -30,7 +30,7 @@ namespace lambda {
 class node;
 }
 
-class rvsdg_module;
+class RvsdgModule;
 class StatisticsDescriptor;
 
 /** \brief Dead Node Elimination Optimization
@@ -122,7 +122,7 @@ public:
 
 	void
 	run(
-    rvsdg_module & module,
+    RvsdgModule & module,
     const StatisticsDescriptor & sd) override;
 
 private:

@@ -21,7 +21,7 @@ test()
 
 	valuetype vt;
 	ptrtype pt(vt);
-	rvsdg_module rm(filepath(""), "", "");
+	RvsdgModule rm(filepath(""), "", "");
 
 	auto imp = rm.graph()->add_import({vt, ""});
 
