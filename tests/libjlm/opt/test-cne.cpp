@@ -16,7 +16,7 @@
 #include <jive/rvsdg/theta.hpp>
 
 #include <jlm/ir/operators/lambda.hpp>
-#include <jlm/ir/rvsdg-module.hpp>
+#include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/opt/cne.hpp>
 #include <jlm/util/Statistics.hpp>
 

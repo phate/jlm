@@ -13,7 +13,7 @@
 #include <jlm/ir/ipgraph.hpp>
 #include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/operators.hpp>
-#include <jlm/ir/rvsdg-module.hpp>
+#include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/ir/ssa.hpp>
 #include <jlm/ir/tac.hpp>
 

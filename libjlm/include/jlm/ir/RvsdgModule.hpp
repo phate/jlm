@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_IR_RVSDG_MODULE_HPP
-#define JLM_IR_RVSDG_MODULE_HPP
+#ifndef JLM_IR_RVSDGMODULE_HPP
+#define JLM_IR_RVSDGMODULE_HPP
 
 #include <jive/rvsdg/graph.hpp>
 

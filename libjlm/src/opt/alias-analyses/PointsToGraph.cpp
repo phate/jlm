@@ -4,7 +4,7 @@
  */
 
 #include <jlm/ir/operators.hpp>
-#include <jlm/ir/rvsdg-module.hpp>
+#include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/util/strfmt.hpp>
 

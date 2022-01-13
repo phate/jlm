@@ -11,7 +11,7 @@
 #include <jlm/frontend/llvm/llvm2jlm/module.hpp>
 #include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/operators.hpp>
-#include <jlm/ir/rvsdg-module.hpp>
+#include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/opt/optimization.hpp>
 
 #include <jlm-opt/cmdline.hpp>

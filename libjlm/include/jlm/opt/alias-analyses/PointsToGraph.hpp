@@ -8,7 +8,7 @@
 
 #include <jlm/common.hpp>
 #include <jlm/util/iterator_range.hpp>
-#include <jlm/ir/rvsdg-module.hpp>
+#include <jlm/ir/RvsdgModule.hpp>
 
 #include <jive/rvsdg/node.hpp>
 

@@ -12,7 +12,7 @@
 #include <jive/rvsdg/graph.hpp>
 #include <jive/rvsdg/theta.hpp>
 
-#include <jlm/ir/rvsdg-module.hpp>
+#include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/ir/types.hpp>
 #include <jlm/opt/invariance.hpp>
 #include <jlm/util/Statistics.hpp>

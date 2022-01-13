@@ -5,7 +5,7 @@
 
 #include <jive/rvsdg/theta.hpp>
 
-#include <jlm/ir/rvsdg-module.hpp>
+#include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/ir/operators.hpp>
 
 /**

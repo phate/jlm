@@ -8,7 +8,7 @@
 #include <jive/rvsdg/statemux.hpp>
 
 #include <jlm/ir/operators.hpp>
-#include <jlm/ir/rvsdg-module.hpp>
+#include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/opt/reduction.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>

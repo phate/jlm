@@ -8,7 +8,7 @@
 #include <jive/rvsdg/structural-node.hpp>
 #include <jive/rvsdg/traverser.hpp>
 
-#include <jlm/ir/rvsdg-module.hpp>
+#include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/ir/types.hpp>
 #include <jlm/ir/operators.hpp>
 #include <jlm/opt/alias-analyses/PointsToGraph.hpp>

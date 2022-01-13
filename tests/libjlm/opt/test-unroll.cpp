@@ -18,7 +18,7 @@
 #include <jive/rvsdg/theta.hpp>
 #include <jive/rvsdg/traverser.hpp>
 
-#include <jlm/ir/rvsdg-module.hpp>
+#include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/opt/DeadNodeElimination.hpp>
 #include <jlm/opt/unroll.hpp>
 #include <jlm/util/Statistics.hpp>

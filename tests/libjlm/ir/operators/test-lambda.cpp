@@ -7,7 +7,7 @@
 #include <test-registry.hpp>
 #include <test-types.hpp>
 
-#include <jlm/ir/rvsdg-module.hpp>
+#include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/ir/operators/lambda.hpp>
 
 static void
