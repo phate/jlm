@@ -11,7 +11,7 @@
 #include <jive/rvsdg/gamma.hpp>
 #include <jive/rvsdg/simple-node.hpp>
 
-#include <jlm/ir/rvsdg-module.hpp>
+#include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/opt/pull.hpp>
 #include <jlm/util/Statistics.hpp>
 

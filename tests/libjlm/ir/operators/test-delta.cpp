@@ -9,7 +9,7 @@
 
 #include <jive/view.hpp>
 
-#include <jlm/ir/rvsdg-module.hpp>
+#include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/ir/operators/delta.hpp>
 
 static int

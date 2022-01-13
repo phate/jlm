@@ -14,7 +14,7 @@
 #include <jlm/ir/cfg-structure.hpp>
 #include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/operators.hpp>
-#include <jlm/ir/rvsdg-module.hpp>
+#include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/ir/tac.hpp>
 #include <jlm/backend/llvm/rvsdg2jlm/context.hpp>
 #include <jlm/backend/llvm/rvsdg2jlm/rvsdg2jlm.hpp>

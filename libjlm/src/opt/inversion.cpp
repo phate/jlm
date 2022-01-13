@@ -5,7 +5,7 @@
 
 #include <jlm/common.hpp>
 #include <jlm/ir/operators.hpp>
-#include <jlm/ir/rvsdg-module.hpp>
+#include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/opt/inversion.hpp>
 #include <jlm/opt/pull.hpp>
 #include <jlm/util/Statistics.hpp>

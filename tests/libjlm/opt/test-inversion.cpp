@@ -12,7 +12,7 @@
 #include <jive/rvsdg/simple-node.hpp>
 #include <jive/rvsdg/theta.hpp>
 
-#include <jlm/ir/rvsdg-module.hpp>
+#include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/opt/inversion.hpp>
 #include <jlm/util/Statistics.hpp>
 

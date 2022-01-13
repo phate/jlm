@@ -12,7 +12,7 @@
 #include <jive/rvsdg/gamma.hpp>
 
 #include <jlm/ir/operators.hpp>
-#include <jlm/ir/rvsdg-module.hpp>
+#include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/opt/inlining.hpp>
 #include <jlm/util/Statistics.hpp>
 
