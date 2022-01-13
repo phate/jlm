@@ -33,14 +33,14 @@ test()
 	StatisticsDescriptor sd;
 	auto rvsdg = construct_rvsdg(im, sd);
 
-	jive::view(*rvsdg->graph(), stdout);
+	jive::view(*rvsdg->Rvsdg(), stdout);
 
 	/*
 		We should have no exports in the RVSDG. The data and function
 		node should be converted to RVSDG imports as they do not have
 		a body, i.e., either a CFG or a initialization.
 	*/
-	assert(rvsdg->graph()->root()->nresults() == 0);
+	assert(rvsdg->Rvsdg()->root()->nresults() == 0);
 
 	return 0;
 }

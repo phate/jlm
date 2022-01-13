@@ -28,10 +28,10 @@ test()
 	RvsdgModule rm(filepath(""), "", "");
 
 	/* setup graph */
-	auto imp = rm.graph()->add_import(impport(pt, "", linkage::external_linkage));
+	auto imp = rm.Rvsdg()->add_import(impport(pt, "", linkage::external_linkage));
 
 	jive::phi::builder pb;
-	pb.begin(rm.graph()->root());
+	pb.begin(rm.Rvsdg()->root());
 	auto region = pb.subregion();
 	auto r1 = pb.add_recvar(pt);
 	auto r2 = pb.add_recvar(pt);
@@ -66,9 +66,9 @@ test()
 	r2->set_rvorigin(delta2);
 
 	auto phi = pb.end();
-	rm.graph()->add_export(phi->output(0), {phi->output(0)->type(), ""});
+  rm.Rvsdg()->add_export(phi->output(0), {phi->output(0)->type(), ""});
 
-	jive::view(*rm.graph(), stdout);
+	jive::view(*rm.Rvsdg(), stdout);
 
 	StatisticsDescriptor sd;
 	auto module = rvsdg2jlm::rvsdg2jlm(rm, sd);

@@ -183,8 +183,8 @@ main (int argc, char ** argv)
 		jlm::print_dot(jm->ipgraph(), stdout);
 
 	auto rm = jlm::construct_rvsdg(*jm, flags.sd);
-	if (flags.j2r) jive::view(rm->graph()->root(), stdout);
-	if (flags.j2rx) jive::view_xml(rm->graph()->root(), stdout);
+	if (flags.j2r) jive::view(rm->Rvsdg()->root(), stdout);
+	if (flags.j2rx) jive::view_xml(rm->Rvsdg()->root(), stdout);
 
 	jm = jlm::rvsdg2jlm::rvsdg2jlm(*rm, flags.sd);
 	if (flags.r2j)

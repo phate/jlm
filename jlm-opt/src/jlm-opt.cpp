@@ -54,7 +54,7 @@ print_as_xml(
 {
 	auto fd = fp == "" ? stdout : fopen(fp.to_str().c_str(), "w");
 
-	jive::view_xml(rm.graph()->root(), fd);
+	jive::view_xml(rm.Rvsdg()->root(), fd);
 
 	if (fd != stdout)
 			fclose(fd);

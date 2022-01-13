@@ -532,10 +532,10 @@ loopunroll::run(RvsdgModule & module, const StatisticsDescriptor & sd)
 
 	unrollstat stat;
 
-	stat.start(*module.graph());
-	jive::graph &graph = *module.graph(); 
+	stat.start(*module.Rvsdg());
+	jive::graph &graph = *module.Rvsdg();
 	unroll(graph.root(), factor_);
-	stat.end(*module.graph());
+	stat.end(*module.Rvsdg());
 
 	if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::LoopUnrolling))
 		sd.print_stat(stat);

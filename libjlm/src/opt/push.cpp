@@ -405,9 +405,9 @@ push(RvsdgModule & rm, const StatisticsDescriptor & sd)
 {
 	pushstat stat;
 
-	stat.start(*rm.graph());
-	push(rm.graph()->root());
-	stat.end(*rm.graph());
+	stat.start(*rm.Rvsdg());
+	push(rm.Rvsdg()->root());
+	stat.end(*rm.Rvsdg());
 
 	if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::PushNodes))
 		sd.print_stat(stat);

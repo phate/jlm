@@ -102,16 +102,16 @@ public:
 	RvsdgModule &
 	operator=(RvsdgModule &&) = delete;
 
-	inline jive::graph *
-	graph() noexcept
+	jive::graph *
+	Rvsdg() noexcept
 	{
-		return &graph_;
+		return &Rvsdg_;
 	}
 
-	inline const jive::graph *
-	graph() const noexcept
+	const jive::graph *
+	Rvsdg() const noexcept
 	{
-		return &graph_;
+		return &Rvsdg_;
 	}
 
 	const jlm::filepath &
@@ -142,7 +142,7 @@ public:
 	}
 
 private:
-	jive::graph graph_;
+	jive::graph Rvsdg_;
 	std::string DataLayout_;
 	std::string TargetTriple_;
 	const jlm::filepath SourceFileName_;

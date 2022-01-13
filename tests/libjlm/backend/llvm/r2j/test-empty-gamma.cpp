@@ -28,12 +28,12 @@ test_with_match()
 	jive::fcttype ft({&bt1, &vt, &vt}, {&vt});
 
 	RvsdgModule rm(filepath(""), "", "");
-	auto nf = rm.graph()->node_normal_form(typeid(jive::operation));
+	auto nf = rm.Rvsdg()->node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
 	/* setup graph */
 
-	auto lambda = lambda::node::create(rm.graph()->root(), ft, "f", linkage::external_linkage);
+	auto lambda = lambda::node::create(rm.Rvsdg()->root(), ft, "f", linkage::external_linkage);
 
 	auto match = jive::match(1, {{0, 0}}, 1, 2, lambda->fctargument(0));
 	auto gamma = jive::gamma_node::create(match, 2);
@@ -42,9 +42,9 @@ test_with_match()
 	auto ex = gamma->add_exitvar({ev1->argument(0), ev2->argument(1)});
 
 	auto f = lambda->finalize({ex});
-	rm.graph()->add_export(f, {f->type(), ""});
+  rm.Rvsdg()->add_export(f, {f->type(), ""});
 
-	jive::view(*rm.graph(), stdout);
+	jive::view(*rm.Rvsdg(), stdout);
 
 	StatisticsDescriptor sd;
 	auto module = rvsdg2jlm::rvsdg2jlm(rm, sd);
@@ -73,12 +73,12 @@ test_without_match()
 	jive::fcttype ft({&ctl2, &vt, &vt}, {&vt});
 
 	RvsdgModule rm(filepath(""), "", "");
-	auto nf = rm.graph()->node_normal_form(typeid(jive::operation));
+	auto nf = rm.Rvsdg()->node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
 	/* setup graph */
 
-	auto lambda = lambda::node::create(rm.graph()->root(), ft, "f", linkage::external_linkage);
+	auto lambda = lambda::node::create(rm.Rvsdg()->root(), ft, "f", linkage::external_linkage);
 
 	auto gamma = jive::gamma_node::create(lambda->fctargument(0), 2);
 	auto ev1 = gamma->add_entryvar(lambda->fctargument(1));
@@ -86,9 +86,9 @@ test_without_match()
 	auto ex = gamma->add_exitvar({ev1->argument(0), ev2->argument(1)});
 
 	auto f = lambda->finalize({ex});
-	rm.graph()->add_export(f, {f->type(), ""});
+  rm.Rvsdg()->add_export(f, {f->type(), ""});
 
-	jive::view(*rm.graph(), stdout);
+	jive::view(*rm.Rvsdg(), stdout);
 
 	StatisticsDescriptor sd;
 	auto module = rvsdg2jlm::rvsdg2jlm(rm, sd);
@@ -116,12 +116,12 @@ test_gamma3()
 	jive::fcttype ft({&jive::bit32, &vt, &vt}, {&vt});
 
 	RvsdgModule rm(filepath(""), "", "");
-	auto nf = rm.graph()->node_normal_form(typeid(jive::operation));
+	auto nf = rm.Rvsdg()->node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
 	/* setup graph */
 
-	auto lambda = lambda::node::create(rm.graph()->root(), ft, "f", linkage::external_linkage);
+	auto lambda = lambda::node::create(rm.Rvsdg()->root(), ft, "f", linkage::external_linkage);
 
 	auto match = jive::match(32, {{0, 0}, {1, 1}}, 2, 3, lambda->fctargument(0));
 
@@ -131,9 +131,9 @@ test_gamma3()
 	auto ex = gamma->add_exitvar({ev1->argument(0), ev1->argument(1), ev2->argument(2)});
 
 	auto f = lambda->finalize({ex});
-	rm.graph()->add_export(f, {f->type(), ""});
+  rm.Rvsdg()->add_export(f, {f->type(), ""});
 
-	jive::view(*rm.graph(), stdout);
+	jive::view(*rm.Rvsdg(), stdout);
 
 	StatisticsDescriptor sd;
 	auto module = rvsdg2jlm::rvsdg2jlm(rm, sd);

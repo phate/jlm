@@ -1382,8 +1382,8 @@ Steensgaard::Analyze(
    * Perform Steensgaard analysis
    */
   SteensgaardAnalysisStatistics steensgardStatistics(module.SourceFileName());
-  steensgardStatistics.start(*module.graph());
-	Analyze(*module.graph());
+  steensgardStatistics.start(*module.Rvsdg());
+	Analyze(*module.Rvsdg());
 //	std::cout << locationSet_.to_dot() << std::flush;
   steensgardStatistics.end();
   if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::SteensgaardAnalysis))

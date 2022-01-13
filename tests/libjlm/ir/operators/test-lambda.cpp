@@ -21,7 +21,7 @@ test_argument_iterators()
 	{
 		jive::fcttype ft({&vt}, {&vt});
 
-		auto lambda = lambda::node::create(rm.graph()->root(), ft, "f", linkage::external_linkage, {});
+		auto lambda = lambda::node::create(rm.Rvsdg()->root(), ft, "f", linkage::external_linkage, {});
 		lambda->finalize({lambda->fctargument(0)});
 
 		std::vector<jive::argument*> args;
@@ -34,7 +34,7 @@ test_argument_iterators()
 	{
 		jive::fcttype ft({}, {&vt});
 
-		auto lambda = lambda::node::create(rm.graph()->root(), ft, "f", linkage::external_linkage, {});
+		auto lambda = lambda::node::create(rm.Rvsdg()->root(), ft, "f", linkage::external_linkage, {});
 
 		auto nullary = create_testop(lambda->subregion(), {}, {&vt});
 
@@ -44,11 +44,11 @@ test_argument_iterators()
 	}
 
 	{
-		auto i = rm.graph()->add_import({vt, ""});
+		auto i = rm.Rvsdg()->add_import({vt, ""});
 
 		jive::fcttype ft({&vt, &vt, &vt}, {&vt, &vt});
 
-		auto lambda = lambda::node::create(rm.graph()->root(), ft, "f", linkage::external_linkage, {});
+		auto lambda = lambda::node::create(rm.Rvsdg()->root(), ft, "f", linkage::external_linkage, {});
 
 		auto cv = lambda->add_ctxvar(i);
 
@@ -74,7 +74,7 @@ test_invalid_operand_region()
 	jive::fcttype fcttype({}, {&vt});
 
 	auto module = RvsdgModule::create(filepath(""), "", "");
-	auto graph = module->graph();
+	auto graph = module->Rvsdg();
 
 	auto fct1 = lambda::node::create(graph->root(), fcttype, "fct1", linkage::external_linkage);
 	auto result = create_testop(graph->root(), {}, {&vt})[0];

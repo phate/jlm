@@ -23,10 +23,10 @@ test()
 	ptrtype pt(vt);
 	RvsdgModule rm(filepath(""), "", "");
 
-	auto imp = rm.graph()->add_import({vt, ""});
+	auto imp = rm.Rvsdg()->add_import({vt, ""});
 
 	auto delta1 = delta::node::create(
-		rm.graph()->root(),
+    rm.Rvsdg()->root(),
 		pt,
 		"test-delta1",
 		linkage::external_linkage,
@@ -35,21 +35,21 @@ test()
 	auto d1 = delta1->finalize(create_testop(delta1->subregion(), {dep}, {&vt})[0]);
 
 	auto delta2 = delta::node::create(
-		rm.graph()->root(),
+    rm.Rvsdg()->root(),
 		pt,
 		"test-delta2",
 		linkage::internal_linkage,
 		false);
 	auto d2 = delta2->finalize(create_testop(delta2->subregion(), {}, {&vt})[0]);
 
-	rm.graph()->add_export(d1, {d1->type(), ""});
-	rm.graph()->add_export(d2, {d2->type(), ""});
+  rm.Rvsdg()->add_export(d1, {d1->type(), ""});
+  rm.Rvsdg()->add_export(d2, {d2->type(), ""});
 
-	jive::view(*rm.graph(), stdout);
+	jive::view(*rm.Rvsdg(), stdout);
 
 	/* verify graph */
 
-	assert(rm.graph()->root()->nnodes() == 2);
+	assert(rm.Rvsdg()->root()->nnodes() == 2);
 
 	assert(delta1->linkage() == linkage::external_linkage);
 	assert(delta1->constant() == true);
