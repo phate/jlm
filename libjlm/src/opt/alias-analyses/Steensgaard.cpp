@@ -79,6 +79,10 @@ public:
   : sourceFile_(std::move(sourceFile))
   , numDisjointSets_(0)
   , numLocations_(0)
+  , numRegisterNodes_(0)
+  , numAllocatorNodes_(0)
+  , numImportNodes_(0)
+  , numUnknownMemorySources_(0)
   {}
 
   void
@@ -90,9 +94,13 @@ public:
   }
 
   void
-  stop()
+  stop(const PointsToGraph & pointsToGraph)
   {
     timer_.stop();
+    numRegisterNodes_ = pointsToGraph.nregnodes();
+    numAllocatorNodes_ = pointsToGraph.nallocnodes();
+    numImportNodes_ = pointsToGraph.nimpnodes();
+    numUnknownMemorySources_ = pointsToGraph.memunknown().nsources();
   }
 
   std::string
@@ -100,14 +108,22 @@ public:
   {
     return strfmt("SteensgaardPointsToGraphConstruction ",
                   sourceFile_.to_str(), " ",
-                  numDisjointSets_, " ",
-                  numLocations_, " ",
-                  timer_.ns());
+                  "#DisjointSets:", numDisjointSets_, " ",
+                  "#Locations:", numLocations_, " ",
+                  "#RegisterNodes:", numRegisterNodes_, " ",
+                  "#AllocatorNodes:", numAllocatorNodes_, " ",
+                  "#ImportNodes:", numImportNodes_, " ",
+                  "#UnknownMemorySources:", numUnknownMemorySources_, " ",
+                  "Time[ns]:", timer_.ns());
   }
 private:
   jlm::filepath sourceFile_;
   size_t numDisjointSets_;
   size_t numLocations_;
+  size_t numRegisterNodes_;
+  size_t numAllocatorNodes_;
+  size_t numImportNodes_;
+  size_t numUnknownMemorySources_;
   jlm::timer timer_;
 };
 
@@ -1379,13 +1395,13 @@ Steensgaard::Analyze(
    */
   SteensgaardPointsToGraphConstructionStatistics ptgConstructionStatistics(module.source_filename());
   ptgConstructionStatistics.start(locationSet_);
-	auto ptg = ConstructPointsToGraph(locationSet_);
-//	std::cout << PointsToGraph::ToDot(*PointsToGraph) << std::flush;
-  ptgConstructionStatistics.stop();
+	auto pointsToGraph = ConstructPointsToGraph(locationSet_);
+//	std::cout << PointsToGraph::ToDot(*pointsToGraph) << std::flush;
+  ptgConstructionStatistics.stop(*pointsToGraph);
   if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::SteensgaardPointsToGraphConstruction))
     sd.print_stat(ptgConstructionStatistics);
 
-	return ptg;
+	return pointsToGraph;
 }
 
 std::unique_ptr<PointsToGraph>
