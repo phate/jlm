@@ -102,16 +102,16 @@ public:
 	RvsdgModule &
 	operator=(RvsdgModule &&) = delete;
 
-	jive::graph *
-	Rvsdg() noexcept
+	jive::graph &
+  Rvsdg() noexcept
 	{
-		return &Rvsdg_;
+		return Rvsdg_;
 	}
 
-	const jive::graph *
-	Rvsdg() const noexcept
+	const jive::graph &
+  Rvsdg() const noexcept
 	{
-		return &Rvsdg_;
+		return Rvsdg_;
 	}
 
 	const jlm::filepath &

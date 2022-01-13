@@ -25,7 +25,7 @@ test1()
 	using namespace jlm;
 
 	RvsdgModule rm(filepath(""), "", "");
-	auto & graph = *rm.Rvsdg();
+	auto & graph = rm.Rvsdg();
 
 	auto x = graph.add_import({vt, "x"});
 	auto y = graph.add_import({vt, "y"});
@@ -75,7 +75,7 @@ test2()
 	using namespace jlm;
 
 	RvsdgModule rm(filepath(""), "", "");
-	auto & graph = *rm.Rvsdg();
+	auto & graph = rm.Rvsdg();
 
 	auto x = graph.add_import({vt, "x"});
 

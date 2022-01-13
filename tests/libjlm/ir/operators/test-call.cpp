@@ -24,7 +24,7 @@ test_trace_function_input1()
 	jive::fcttype fcttype2({&pt}, {&vt});
 
 	auto module = RvsdgModule::Create(filepath(""), "", "");
-	auto graph = module->Rvsdg();
+	auto graph = &module->Rvsdg();
 
 	auto nf = graph->node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
@@ -60,7 +60,7 @@ test_trace_function_input2()
 	jive::fcttype ftype({}, {&vt});
 
 	auto module = RvsdgModule::Create(filepath(""), "", "");
-	auto graph = module->Rvsdg();
+	auto graph = &module->Rvsdg();
 
 	auto nf = graph->node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
@@ -114,7 +114,7 @@ test_trace_function_input3()
 	jive::fcttype ftype({}, {&vt});
 
 	auto module = RvsdgModule::Create(filepath(""), "", "");
-	auto graph = module->Rvsdg();
+	auto graph = &module->Rvsdg();
 
 	auto nf = graph->node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);

@@ -552,7 +552,7 @@ divert(jive::region * region, cnectx & ctx)
 static void
 cne(RvsdgModule & rm, const StatisticsDescriptor & sd)
 {
-	auto & graph = *rm.Rvsdg();
+	auto & graph = rm.Rvsdg();
 
 	cnectx ctx;
 	cnestat stat;

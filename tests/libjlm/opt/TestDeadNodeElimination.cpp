@@ -32,7 +32,7 @@ TestRoot()
 	using namespace jlm;
 
 	RvsdgModule rm(filepath(""), "", "");
-	auto & graph = *rm.Rvsdg();
+	auto & graph = rm.Rvsdg();
 	graph.add_import({jlm::valuetype(), "x"});
 	auto y = graph.add_import({jlm::valuetype(), "y"});
 	graph.add_export(y, {y->type(), "z"});
@@ -53,7 +53,7 @@ TestGamma()
 	jive::ctltype ct(2);
 
 	RvsdgModule rm(filepath(""), "", "");
-	auto & graph = *rm.Rvsdg();
+	auto & graph = rm.Rvsdg();
 	auto c = graph.add_import({ct, "c"});
 	auto x = graph.add_import({vt, "x"});
 	auto y = graph.add_import({vt, "y"});
@@ -92,7 +92,7 @@ TestGamma2()
 	jive::ctltype ct(2);
 
 	RvsdgModule rm(filepath(""), "", "");
-	auto & graph = *rm.Rvsdg();
+	auto & graph = rm.Rvsdg();
 	auto c = graph.add_import({ct, "c"});
 	auto x = graph.add_import({vt, "x"});
 
@@ -122,7 +122,7 @@ TestTheta()
 	jive::ctltype ct(2);
 
 	RvsdgModule rm(filepath(""), "", "");
-	auto & graph = *rm.Rvsdg();
+	auto & graph = rm.Rvsdg();
 	auto x = graph.add_import({vt, "x"});
 	auto y = graph.add_import({vt, "y"});
 	auto z = graph.add_import({vt, "z"});
@@ -165,7 +165,7 @@ TestNestedTheta()
 	jive::ctltype ct(2);
 
 	RvsdgModule rm(filepath(""), "", "");
-	auto & graph = *rm.Rvsdg();
+	auto & graph = rm.Rvsdg();
 	auto c = graph.add_import({ct, "c"});
 	auto x = graph.add_import({vt, "x"});
 	auto y = graph.add_import({vt, "y"});
@@ -209,7 +209,7 @@ TestEvolvingTheta()
 	jive::ctltype ct(2);
 
 	RvsdgModule rm(filepath(""), "", "");
-	auto & graph = *rm.Rvsdg();
+	auto & graph = rm.Rvsdg();
 	auto c = graph.add_import({ct, "c"});
 	auto x1 = graph.add_import({vt, "x1"});
 	auto x2 = graph.add_import({vt, "x2"});
@@ -247,7 +247,7 @@ TestLambda()
 	jlm::valuetype vt;
 
 	RvsdgModule rm(filepath(""), "", "");
-	auto & graph = *rm.Rvsdg();
+	auto & graph = rm.Rvsdg();
 	auto x = graph.add_import({vt, "x"});
 	auto y = graph.add_import({vt, "y"});
 
@@ -279,7 +279,7 @@ TestPhi()
 	jive::fcttype ft({&vt}, {&vt});
 
 	RvsdgModule rm(filepath(""), "", "");
-	auto & graph = *rm.Rvsdg();
+	auto & graph = rm.Rvsdg();
 	auto x = graph.add_import({vt, "x"});
 	auto y = graph.add_import({vt, "y"});
 

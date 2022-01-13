@@ -555,8 +555,8 @@ convert_rvsdg(const RvsdgModule & rm)
 	auto im = ipgraph_module::create(rm.SourceFileName(), rm.TargetTriple(), rm.DataLayout());
 
 	context ctx(*im);
-	convert_imports(*rm.Rvsdg(), *im, ctx);
-	convert_nodes(*rm.Rvsdg(), ctx);
+	convert_imports(rm.Rvsdg(), *im, ctx);
+	convert_nodes(rm.Rvsdg(), ctx);
 
 	return im;
 }
@@ -566,7 +566,7 @@ rvsdg2jlm(const RvsdgModule & rm, const StatisticsDescriptor & sd)
 {
 	rvsdg_destruction_stat stat(rm.SourceFileName());
 
-	stat.start(*rm.Rvsdg());
+	stat.start(rm.Rvsdg());
 	auto im = convert_rvsdg(rm);
 	stat.end(*im);
 

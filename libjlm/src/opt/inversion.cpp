@@ -298,9 +298,9 @@ invert(RvsdgModule & rm, const StatisticsDescriptor & sd)
 {
 	ivtstat stat;
 
-	stat.start(*rm.Rvsdg());
-	invert(rm.Rvsdg()->root());
-	stat.end(*rm.Rvsdg());
+	stat.start(rm.Rvsdg());
+	invert(rm.Rvsdg().root());
+	stat.end(rm.Rvsdg());
 
 	if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::ThetaGammaInversion))
 		sd.print_stat(stat);
