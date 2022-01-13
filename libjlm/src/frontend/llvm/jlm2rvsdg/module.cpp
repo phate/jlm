@@ -880,7 +880,7 @@ static std::unique_ptr<RvsdgModule>
 convert_module(const ipgraph_module & im, const StatisticsDescriptor & sd)
 {
 	auto rm = RvsdgModule::create(im.source_filename(), im.target_triple(), im.data_layout());
-	auto graph = rm->graph();
+	auto graph = rm->Rvsdg();
 
 	auto nf = graph->node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
@@ -907,7 +907,7 @@ construct_rvsdg(const ipgraph_module & im, const StatisticsDescriptor & sd)
 
 	stat.start(im);
 	auto rm = convert_module(im, sd);
-	stat.end(*rm->graph());
+	stat.end(*rm->Rvsdg());
 
 	if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::RvsdgConstruction))
 		sd.print_stat(stat);

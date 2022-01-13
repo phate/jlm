@@ -29,7 +29,7 @@ test1()
 	jive::fcttype ft2({&ct, &vt}, {&vt});
 
 	RvsdgModule rm(filepath(""), "", "");
-	auto & graph = *rm.graph();
+	auto & graph = *rm.Rvsdg();
 	auto i = graph.add_import({vt, "i"});
 
 	/* f1 */
@@ -72,7 +72,7 @@ test2()
 	jive::fcttype ft3({&pt, &st}, {&st});
 
 	RvsdgModule rm(filepath(""), "", "");
-	auto & graph = *rm.graph();
+	auto & graph = *rm.Rvsdg();
 	auto i = graph.add_import({ptrtype(ft3), "i"});
 
 	/* f1 */

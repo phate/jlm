@@ -29,7 +29,7 @@ test_pullin_top()
 	jlm::test_op cop({&ct, &vt}, {&ct});
 
 	RvsdgModule rm(filepath(""), "", "");
-	auto & graph = *rm.graph();
+	auto & graph = *rm.Rvsdg();
 
 	auto c = graph.add_import({ct, "c"});
 	auto x = graph.add_import({vt, "x"});
@@ -92,7 +92,7 @@ test_pull()
 	using namespace jlm;
 
 	RvsdgModule rm(filepath(""), "", "");
-	auto & graph = *rm.graph();
+	auto & graph = *rm.Rvsdg();
 
 	auto p = graph.add_import({jive::ctl2, ""});
 

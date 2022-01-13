@@ -280,9 +280,9 @@ pull(RvsdgModule & rm, const StatisticsDescriptor & sd)
 {
 	pullstat stat;
 
-	stat.start(*rm.graph());
-	pull(rm.graph()->root());
-	stat.end(*rm.graph());
+	stat.start(*rm.Rvsdg());
+	pull(rm.Rvsdg()->root());
+	stat.end(*rm.Rvsdg());
 
 	if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::PullNodes))
 		sd.print_stat(stat);

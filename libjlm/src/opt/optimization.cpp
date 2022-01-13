@@ -77,10 +77,10 @@ optimize(
 {
 	optimization_stat stat(rm.SourceFileName());
 
-	stat.start(*rm.graph());
+	stat.start(*rm.Rvsdg());
 	for (const auto & opt : opts)
 		opt->run(rm, sd);
-	stat.end(*rm.graph());
+	stat.end(*rm.Rvsdg());
 
 	if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::RvsdgOptimization))
 		sd.print_stat(stat);

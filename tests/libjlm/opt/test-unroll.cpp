@@ -240,7 +240,7 @@ test_unknown_boundaries()
 	jlm::test_op op({&bt}, {&bt});
 
 	RvsdgModule rm(filepath(""), "", "");
-	auto & graph = *rm.graph();
+	auto & graph = *rm.Rvsdg();
 
 	auto x = graph.add_import({bt, "x"});
 	auto y = graph.add_import({bt, "y"});
@@ -292,7 +292,7 @@ static inline void
 test_nested_theta()
 {
 	jlm::RvsdgModule rm(jlm::filepath(""), "", "");
-	auto & graph = *rm.graph();
+	auto & graph = *rm.Rvsdg();
 
 	auto nf = graph.node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);

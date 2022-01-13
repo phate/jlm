@@ -47,7 +47,7 @@ test()
 	StatisticsDescriptor sd;
 	auto rvsdg = construct_rvsdg(im, sd);
 
-	jive::view(*rvsdg->graph(), stdout);
+	jive::view(*rvsdg->Rvsdg(), stdout);
 
 	return 0;
 }

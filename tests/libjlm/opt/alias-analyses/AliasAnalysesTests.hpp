@@ -25,7 +25,7 @@ public:
 	const jive::graph &
 	graph() noexcept
 	{
-		return *module().graph();
+		return *module().Rvsdg();
 	}
 
 private:

@@ -159,7 +159,7 @@ inlining(jive::graph & graph)
 static void
 inlining(RvsdgModule & rm, const StatisticsDescriptor & sd)
 {
-	auto & graph = *rm.graph();
+	auto & graph = *rm.Rvsdg();
 
 	ilnstat stat;
 	stat.start(graph);
