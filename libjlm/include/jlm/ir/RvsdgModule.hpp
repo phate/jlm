@@ -86,8 +86,8 @@ public:
 	RvsdgModule(
 		jlm::filepath sourceFileName,
 		std::string targetTriple,
-		const std::string & data_layout)
-	: data_layout_(data_layout)
+		std::string dataLayout)
+	: DataLayout_(std::move(dataLayout))
 	, TargetTriple_(std::move(targetTriple))
 	, SourceFileName_(std::move(sourceFileName))
 	{}
@@ -126,24 +126,24 @@ public:
 		return TargetTriple_;
 	}
 
-	inline const std::string &
-	data_layout() const noexcept
+	const std::string &
+	DataLayout() const noexcept
 	{
-		return data_layout_;
+		return DataLayout_;
 	}
 
 	static std::unique_ptr<RvsdgModule>
 	create(
 		const jlm::filepath & sourceFileName,
 		const std::string & targetTriple,
-		const std::string & data_layout)
+		const std::string & dataLayout)
 	{
-		return std::make_unique<RvsdgModule>(sourceFileName, targetTriple, data_layout);
+		return std::make_unique<RvsdgModule>(sourceFileName, targetTriple, dataLayout);
 	}
 
 private:
 	jive::graph graph_;
-	std::string data_layout_;
+	std::string DataLayout_;
 	std::string TargetTriple_;
 	const jlm::filepath SourceFileName_;
 };
