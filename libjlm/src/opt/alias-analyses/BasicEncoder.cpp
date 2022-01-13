@@ -14,7 +14,6 @@
 #include <jlm/util/time.hpp>
 
 #include <jive/arch/addresstype.hpp>
-#include <jive/rvsdg/traverser.hpp>
 
 namespace jlm {
 namespace aa {
@@ -408,8 +407,6 @@ private:
   std::unordered_map<const jive::output*, std::vector<const PointsToGraph::MemoryNode*>> AddressMemNodeMap_;
   std::unordered_map<const jive::region*, std::unique_ptr<StateMap>> StateMaps_;
 };
-
-/* BasicEncoder class */
 
 /** \brief Context for the basic encoder
 */
