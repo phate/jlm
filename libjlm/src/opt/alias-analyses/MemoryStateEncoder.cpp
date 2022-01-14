@@ -22,13 +22,13 @@ MemoryStateEncoder::Encode(const jive::simple_node & node)
 		std::type_index
 	, std::function<void(MemoryStateEncoder&, const jive::simple_node&)>
 	> nodes({
-	  {typeid(alloca_op), [](auto & mse, auto & node){ mse.EncodeAlloca(node); }}
-	, {typeid(malloc_op), [](auto & mse, auto & node){ mse.EncodeMalloc(node); }}
-	, {typeid(load_op),   [](auto & mse, auto & node){ mse.EncodeLoad(node);   }}
-	, {typeid(store_op),  [](auto & mse, auto & node){ mse.EncodeStore(node);  }}
-	, {typeid(call_op),   [](auto & mse, auto & node){ mse.EncodeCall(node);   }}
-	, {typeid(free_op),   [](auto & mse, auto & node){ mse.EncodeFree(node);   }}
-	, {typeid(Memcpy),    [](auto & mse, auto & node){ mse.EncodeMemcpy(node); }}
+	  {typeid(alloca_op),     [](auto & mse, auto & node){ mse.EncodeAlloca(node); }}
+	, {typeid(malloc_op),     [](auto & mse, auto & node){ mse.EncodeMalloc(node); }}
+	, {typeid(load_op),       [](auto & mse, auto & node){ mse.EncodeLoad(node);   }}
+	, {typeid(store_op),      [](auto & mse, auto & node){ mse.EncodeStore(node);  }}
+	, {typeid(CallOperation), [](auto & mse, auto & node){ mse.EncodeCall(node);   }}
+	, {typeid(free_op),       [](auto & mse, auto & node){ mse.EncodeFree(node);   }}
+	, {typeid(Memcpy),        [](auto & mse, auto & node){ mse.EncodeMemcpy(node); }}
 	});
 
 	auto & op = node.operation();

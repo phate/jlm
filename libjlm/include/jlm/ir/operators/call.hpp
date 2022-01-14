@@ -20,12 +20,12 @@ namespace lambda {
 /** \brief Call operation class
  *
  */
-class call_op final : public jive::simple_op {
+class CallOperation final : public jive::simple_op {
 public:
-	~call_op() override;
+	~CallOperation() override;
 
 	explicit
-	call_op(const FunctionType & functionType)
+	CallOperation(const FunctionType & functionType)
 	: simple_op(create_srcports(functionType), create_dstports(functionType))
 	{}
 
@@ -54,7 +54,7 @@ public:
 		auto ft = dynamic_cast<const FunctionType*>(&at->pointee_type());
 		if (!ft) throw jlm::error("expected function type.");
 
-		call_op op(*ft);
+		CallOperation op(*ft);
 		std::vector<jive::output*> operands({function});
 		operands.insert(operands.end(), arguments.begin(), arguments.end());
 		return jive::simple_node::create_normalized(function->region(), op, operands);
@@ -71,7 +71,7 @@ public:
 		auto ft = dynamic_cast<const FunctionType*>(&at->pointee_type());
 		if (!ft) throw jlm::error("Expected function type.");
 
-		call_op op(*ft);
+		CallOperation op(*ft);
 		std::vector<const variable*> operands({function});
 		operands.insert(operands.end(), arguments.begin(), arguments.end());
 		return tac::create(op, operands);

@@ -45,7 +45,7 @@ test1()
 	auto gamma = jive::gamma_node::create(lambda2->fctargument(0), 2);
 	auto ev1 = gamma->add_entryvar(lambda2->fctargument(1));
 	auto ev2 = gamma->add_entryvar(d);
-	auto apply = call_op::create(ev2->argument(0), {ev1->argument(0)})[0];
+	auto apply = CallOperation::create(ev2->argument(0), {ev1->argument(0)})[0];
 	auto xv1 = gamma->add_exitvar({apply, ev1->argument(1)});
 	auto f2 = lambda2->finalize({xv1});
 
@@ -56,7 +56,7 @@ test1()
 	fctinline.run(rm, sd);
 //	jive::view(graph.root(), stdout);
 
-	assert(!jive::contains<jlm::call_op>(graph.root(), true));
+	assert(!jive::contains<jlm::CallOperation>(graph.root(), true));
 }
 
 static void
@@ -84,7 +84,7 @@ test2()
 	auto cvi = f2Lambda->add_ctxvar(i);
 	auto cvf1 = f2Lambda->add_ctxvar(f1);
 
-	auto call = call_op::create(cvi, {cvf1, f2Lambda->fctargument(0)});
+	auto call = CallOperation::create(cvi, {cvf1, f2Lambda->fctargument(0)});
 
 	auto f2 = f2Lambda->finalize({call[0]});
 
@@ -98,7 +98,7 @@ test2()
 	/*
 		Function f1 should not have been inlined.
 	*/
-	assert(is<call_op>(jive::node_output::node(f2Lambda->fctresult(0)->origin())));
+	assert(is<CallOperation>(jive::node_output::node(f2Lambda->fctresult(0)->origin())));
 }
 
 static int

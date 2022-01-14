@@ -318,7 +318,7 @@ node::direct_calls(std::vector<jive::simple_node*> * calls) const
 		}
 
 		auto node = input_node(input);
-		if (is<call_op>(node) && input == node->input(0)) {
+		if (is<CallOperation>(node) && input == node->input(0)) {
 			if (calls != nullptr)
 				calls->push_back(static_cast<jive::simple_node*>(node));
 			continue;

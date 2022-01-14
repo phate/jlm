@@ -39,7 +39,7 @@ test_trace_function_input1()
 
 	auto load = load_op::create(alloca[0], store, 8);
 
-	auto call = call_op::create(load[0], {});
+	auto call = CallOperation::create(load[0], {});
 
 	fct->finalize({call[0]});
 
@@ -88,7 +88,7 @@ test_trace_function_input2()
 	itf->result()->divert_to(xv);
 	otf->result()->divert_to(itf);
 
-	auto call = call_op::create(otf, {});
+	auto call = CallOperation::create(otf, {});
 
 	f->finalize(call);
 	graph->add_export(f->output(), {ptrtype(f->type()), "f"});
@@ -137,7 +137,7 @@ test_trace_function_input3()
 	auto innerTheta = jive::theta_node::create(outerTheta->subregion());
 	auto itf = innerTheta->add_loopvar(otf->argument());
 
-	auto call = call_op::create(itf, {});
+	auto call = CallOperation::create(itf, {});
 
 	otf->result()->divert_to(itf);
 	oc2->result()->divert_to(call[0]);

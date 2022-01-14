@@ -763,7 +763,7 @@ Steensgaard::Analyze(const jive::simple_node & node)
 	, {typeid(malloc_op),             [](auto & s, auto & n){ s.AnalyzeMalloc(n);                }}
 	, {typeid(load_op),               [](auto & s, auto & n){ s.AnalyzeLoad(n);                  }}
 	, {typeid(store_op),              [](auto & s, auto & n){ s.AnalyzeStore(n);                 }}
-	, {typeid(call_op),               [](auto & s, auto & n){ s.AnalyzeCall(n);                  }}
+	, {typeid(CallOperation),         [](auto & s, auto & n){ s.AnalyzeCall(n);                  }}
 	, {typeid(getelementptr_op),      [](auto & s, auto & n){ s.AnalyzeGep(n);                   }}
 	, {typeid(bitcast_op),            [](auto & s, auto & n){ s.AnalyzeBitcast(n);               }}
 	, {typeid(bits2ptr_op),           [](auto & s, auto & n){ s.AnalyzeBits2ptr(n);              }}
@@ -894,7 +894,7 @@ Steensgaard::AnalyzeStore(const jive::simple_node & node)
 void
 Steensgaard::AnalyzeCall(const jive::simple_node & node)
 {
-	JLM_ASSERT(is<call_op>(&node));
+	JLM_ASSERT(is<CallOperation>(&node));
 
 	auto handle_direct_call = [&](const jive::simple_node & call, const lambda::node & lambda)
 	{

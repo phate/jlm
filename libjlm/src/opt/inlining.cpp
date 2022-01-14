@@ -97,7 +97,7 @@ route_to_region(jive::output * output, jive::region * region)
 static std::vector<jive::output*>
 route_dependencies(const lambda::node * lambda, const jive::simple_node * apply)
 {
-	JLM_ASSERT(is<call_op>(apply));
+	JLM_ASSERT(is<CallOperation>(apply));
 
 	/* collect origins of dependencies */
 	std::vector<jive::output*> deps;
@@ -114,7 +114,7 @@ route_dependencies(const lambda::node * lambda, const jive::simple_node * apply)
 static void
 inlineCall(jive::simple_node * call, const lambda::node * lambda)
 {
-	JLM_ASSERT(is<call_op>(call));
+	JLM_ASSERT(is<CallOperation>(call));
 
 	auto deps = route_dependencies(lambda, call);
 	JLM_ASSERT(lambda->ncvarguments() == deps.size());
