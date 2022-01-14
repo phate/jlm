@@ -36,7 +36,7 @@ public:
 	debug_string() const override;
 
 	const FunctionType &
-	fcttype() const noexcept
+	GetFunctionType() const noexcept
 	{
 		auto at = static_cast<const ptrtype*>(&argument(0).type());
 		return *static_cast<const FunctionType*>(&at->pointee_type());
@@ -45,7 +45,7 @@ public:
 	std::unique_ptr<jive::operation>
 	copy() const override;
 
-	static inline std::vector<jive::output*>
+	static std::vector<jive::output*>
 	create(jive::output * function, const std::vector<jive::output*> & arguments)
 	{
 		auto at = dynamic_cast<const ptrtype*>(&function->type());

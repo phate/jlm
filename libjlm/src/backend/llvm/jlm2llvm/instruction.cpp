@@ -198,7 +198,7 @@ convert(
 		operands.push_back(ctx.value(argument));
 	}
 
-	auto ftype = convert_type(op.fcttype(), ctx);
+	auto ftype = convert_type(op.GetFunctionType(), ctx);
 	return builder.CreateCall(ftype, function, operands);
 }
 
