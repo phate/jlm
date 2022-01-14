@@ -17,22 +17,22 @@ namespace lambda {
 	class node;
 }
 
-/* call operator */
-
+/** \brief Call operation class
+ *
+ */
 class call_op final : public jive::simple_op {
 public:
-	virtual
-	~call_op();
+	~call_op() override;
 
-	inline
+	explicit
 	call_op(const FunctionType & functionType)
 	: simple_op(create_srcports(functionType), create_dstports(functionType))
 	{}
 
- 	virtual bool
+	bool
  	operator==(const operation & other) const noexcept override;
 
-	virtual std::string
+	std::string
 	debug_string() const override;
 
 	const FunctionType &
@@ -42,7 +42,7 @@ public:
 		return *static_cast<const FunctionType*>(&at->pointee_type());
 	}
 
-	virtual std::unique_ptr<jive::operation>
+	std::unique_ptr<jive::operation>
 	copy() const override;
 
 	static inline std::vector<jive::output*>

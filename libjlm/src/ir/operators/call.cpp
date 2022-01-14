@@ -11,7 +11,7 @@ namespace jlm {
 /* call operator */
 
 call_op::~call_op()
-{}
+= default;
 
 bool
 call_op::operator==(const operation & other) const noexcept
