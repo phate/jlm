@@ -97,7 +97,7 @@ private:
 static jive::input *
 call_memstate_input(const jive::simple_node & node)
 {
-  JLM_ASSERT(is<call_op>(&node));
+  JLM_ASSERT(is<CallOperation>(&node));
 
   /*
     FIXME: This function should be part of the call node.
@@ -114,7 +114,7 @@ call_memstate_input(const jive::simple_node & node)
 static jive::output *
 call_memstate_output(const jive::simple_node & node)
 {
-  JLM_ASSERT(is<call_op>(&node));
+  JLM_ASSERT(is<CallOperation>(&node));
 
   /*
     FIXME: This function should be part of the call node.
@@ -611,7 +611,7 @@ BasicEncoder::EncodeFree(const jive::simple_node & node)
 void
 BasicEncoder::EncodeCall(const jive::simple_node & node)
 {
-  JLM_ASSERT(is<call_op>(&node));
+  JLM_ASSERT(is<CallOperation>(&node));
 
   auto EncodeEntry = [this](const jive::simple_node & node)
   {

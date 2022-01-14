@@ -706,7 +706,7 @@ convert_call_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 	arguments.push_back(ctx.loop_state());
 
 	auto fctvar = convert_value(i->getCalledOperand(), tacs, ctx);
-	auto call = call_op::create(fctvar, arguments);
+	auto call = CallOperation::create(fctvar, arguments);
 
 	auto result = call->result(0);
 	auto iostate = call->result(call->nresults() - 3);

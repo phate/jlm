@@ -168,7 +168,7 @@ convert_undef(
 
 static llvm::Value *
 convert(
-	const call_op & op,
+	const CallOperation & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -938,7 +938,7 @@ convert_operation(
   , {typeid(vectorselect_op), convert<vectorselect_op>}
   , {typeid(ExtractValue), convert<ExtractValue>}
 
-  , {typeid(call_op), convert<call_op>}
+  , {typeid(CallOperation), convert<CallOperation>}
   , {typeid(malloc_op), convert<malloc_op>}
   , {typeid(free_op), convert<free_op>}
   , {typeid(Memcpy), convert<Memcpy>}

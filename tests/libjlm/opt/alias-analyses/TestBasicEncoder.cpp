@@ -381,7 +381,7 @@ TestIndirectCall()
 			assert(is<aa::CallExitMemStateOperator>(*call_exit_mux, 1, 5));
 
 			auto call = jive::node_output::node(call_exit_mux->input(0)->origin());
-			assert(is<call_op>(*call, 3, 3));
+			assert(is<CallOperation>(*call, 3, 3));
 
 			auto call_entry_mux = jive::node_output::node(call->input(1)->origin());
 			assert(is<aa::CallEntryMemStateOperator>(*call_entry_mux, 5, 1));
@@ -401,7 +401,7 @@ TestIndirectCall()
 			assert(is<aa::CallExitMemStateOperator>(*call_exit_mux, 1, 5));
 
 			auto call = jive::node_output::node(call_exit_mux->input(0)->origin());
-			assert(is<call_op>(*call, 4, 3));
+			assert(is<CallOperation>(*call, 4, 3));
 
 			auto call_entry_mux = jive::node_output::node(call->input(2)->origin());
 			assert(is<aa::CallEntryMemStateOperator>(*call_entry_mux, 5, 1));
@@ -410,7 +410,7 @@ TestIndirectCall()
 			assert(is<aa::CallExitMemStateOperator>(*call_exit_mux, 1, 5));
 
 			call = jive::node_output::node(call_exit_mux->input(0)->origin());
-			assert(is<call_op>(*call, 4, 3));
+			assert(is<CallOperation>(*call, 4, 3));
 
 			call_entry_mux = jive::node_output::node(call->input(2)->origin());
 			assert(is<aa::CallEntryMemStateOperator>(*call_entry_mux, 5, 1));

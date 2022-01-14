@@ -10,13 +10,13 @@ namespace jlm {
 
 /* call operator */
 
-call_op::~call_op()
+CallOperation::~CallOperation()
 = default;
 
 bool
-call_op::operator==(const operation & other) const noexcept
+CallOperation::operator==(const operation & other) const noexcept
 {
-	auto op = dynamic_cast<const call_op*>(&other);
+	auto op = dynamic_cast<const CallOperation*>(&other);
 	if (!op || op->narguments() != narguments() || op->nresults() != nresults())
 		return false;
 
@@ -34,15 +34,15 @@ call_op::operator==(const operation & other) const noexcept
 }
 
 std::string
-call_op::debug_string() const
+CallOperation::debug_string() const
 {
 	return "CALL";
 }
 
 std::unique_ptr<jive::operation>
-call_op::copy() const
+CallOperation::copy() const
 {
-	return std::unique_ptr<jive::operation>(new call_op(*this));
+	return std::unique_ptr<jive::operation>(new CallOperation(*this));
 }
 
 using InvariantOutputMap = std::unordered_map<const jive::output*, jive::input*>;
@@ -151,7 +151,7 @@ invariantInput(const jive::output & output)
 jive::output *
 trace_function_input(const jive::simple_node & node)
 {
-	JLM_ASSERT(is<call_op>(&node));
+	JLM_ASSERT(is<CallOperation>(&node));
 
 	auto origin = node.input(0)->origin();
 
@@ -235,7 +235,7 @@ trace_function_input(const jive::simple_node & node)
 lambda::node *
 is_direct_call(const jive::simple_node & node)
 {
-	if (!is<call_op>(&node))
+	if (!is<CallOperation>(&node))
 		return nullptr;
 
 	auto output = trace_function_input(node);

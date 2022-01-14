@@ -53,7 +53,7 @@ test_function_call()
 		}
 
 		auto bb = dynamic_cast<const basic_block*>(cfg->entry()->outedge(0)->sink());
-		assert(is<call_op>(*std::next(bb->rbegin(), 3)));
+		assert(is<CallOperation>(*std::next(bb->rbegin(), 3)));
 	};
 
 
