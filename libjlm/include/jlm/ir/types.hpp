@@ -6,15 +6,146 @@
 #ifndef JLM_IR_TYPES_HPP
 #define JLM_IR_TYPES_HPP
 
-#include <jive/types/function.hpp>
 #include <jive/types/record.hpp>
 #include <jive/rvsdg/type.hpp>
 
 #include <jlm/common.hpp>
+#include <jlm/util/iterator_range.hpp>
 
 #include <vector>
 
 namespace jlm {
+
+/** \brief Function type class
+ *
+ */
+class FunctionType final : public jive::valuetype {
+
+  class TypeConstIterator final : public std::iterator<std::forward_iterator_tag, jive::type*, ptrdiff_t> {
+  public:
+    explicit
+    TypeConstIterator(const std::vector<std::unique_ptr<jive::type>>::const_iterator & it)
+      : It_(it)
+    {}
+
+  public:
+    jive::type *
+    type() const noexcept
+    {
+      return It_->get();
+    }
+
+    jive::type &
+    operator*() const
+    {
+      JLM_ASSERT(type() != nullptr);
+      return *type();
+    }
+
+    jive::type *
+    operator->() const
+    {
+      return type();
+    }
+
+    TypeConstIterator &
+    operator++()
+    {
+      ++It_;
+      return *this;
+    }
+
+    TypeConstIterator
+    operator++(int)
+    {
+      TypeConstIterator tmp = *this;
+      ++*this;
+      return tmp;
+    }
+
+    bool
+    operator==(const TypeConstIterator & other) const
+    {
+      return It_ == other.It_;
+    }
+
+    bool
+    operator!=(const TypeConstIterator & other) const
+    {
+      return !operator==(other);
+    }
+
+  private:
+    std::vector<std::unique_ptr<jive::type>>::const_iterator It_;
+  };
+
+  using ArgumentConstRange = iterator_range<TypeConstIterator>;
+  using ResultConstRange = iterator_range<TypeConstIterator>;
+
+public:
+  ~FunctionType() noexcept override;
+
+  FunctionType(
+    const std::vector<const jive::type*> & argumentTypes,
+    const std::vector<const jive::type*> & resultTypes);
+
+  FunctionType(
+    std::vector<std::unique_ptr<jive::type>> argumentTypes,
+    std::vector<std::unique_ptr<jive::type>> resultTypes);
+
+  FunctionType(const FunctionType & other);
+
+  FunctionType(FunctionType && other) noexcept;
+
+  FunctionType &
+  operator=(const FunctionType & other);
+
+  FunctionType &
+  operator=(FunctionType && other) noexcept;
+
+  ArgumentConstRange
+  Arguments() const;
+
+  ResultConstRange
+  Results() const;
+
+  size_t
+  NumResults() const noexcept
+  {
+    return ResultTypes_.size();
+  }
+
+  size_t
+  NumArguments() const noexcept
+  {
+    return ArgumentTypes_.size();
+  }
+
+  const jive::type &
+  ResultType(size_t index) const noexcept
+  {
+    return *ResultTypes_[index];
+  }
+
+  const jive::type &
+  ArgumentType(size_t index) const noexcept
+  {
+    return *ArgumentTypes_[index];
+  }
+
+  std::string
+  debug_string() const override;
+
+  bool
+  operator==(const jive::type & other) const noexcept override;
+
+  std::unique_ptr<jive::type>
+  copy() const override;
+
+private:
+  std::vector<std::unique_ptr<jive::type>> ResultTypes_;
+  std::vector<std::unique_ptr<jive::type>> ArgumentTypes_;
+};
 
 /* pointer type */
 
