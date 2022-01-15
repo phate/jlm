@@ -310,22 +310,22 @@ create_cfg(llvm::Function & f, context & ctx)
 		}
 
 		if (f.isVarArg()) {
-			JLM_ASSERT(n < node->fcttype().narguments());
-			auto & type = node->fcttype().argument_type(n++);
+			JLM_ASSERT(n < node->fcttype().NumArguments());
+			auto & type = node->fcttype().ArgumentType(n++);
 			cfg.entry()->append_argument(argument::create("_varg_", type));
 		}
-		JLM_ASSERT(n < node->fcttype().narguments());
+		JLM_ASSERT(n < node->fcttype().NumArguments());
 
-		auto & iotype = node->fcttype().argument_type(n++);
+		auto & iotype = node->fcttype().ArgumentType(n++);
 		auto iostate = cfg.entry()->append_argument(argument::create("_io_", iotype));
 
-		auto & memtype = node->fcttype().argument_type(n++);
+		auto & memtype = node->fcttype().ArgumentType(n++);
 		auto memstate = cfg.entry()->append_argument(argument::create("_s_", memtype));
 
-		auto & looptype = node->fcttype().argument_type(n++);
+		auto & looptype = node->fcttype().ArgumentType(n++);
 		auto loopstate = cfg.entry()->append_argument(argument::create("_l_", looptype));
 
-		JLM_ASSERT(n == node->fcttype().narguments());
+		JLM_ASSERT(n == node->fcttype().NumArguments());
 		ctx.set_iostate(iostate);
 		ctx.set_memory_state(memstate);
 		ctx.set_loop_state(loopstate);
@@ -348,8 +348,8 @@ create_cfg(llvm::Function & f, context & ctx)
 		entry_block->append_last(undef_constant_op::create(*type, "_r_"));
 		result = entry_block->last()->result(0);
 
-		JLM_ASSERT(node->fcttype().nresults() == 4);
-		JLM_ASSERT(result->type() == node->fcttype().result_type(0));
+		JLM_ASSERT(node->fcttype().NumResults() == 4);
+		JLM_ASSERT(result->type() == node->fcttype().ResultType(0));
 		cfg->exit()->append_result(result);
 	}
 	cfg->exit()->append_result(ctx.iostate());

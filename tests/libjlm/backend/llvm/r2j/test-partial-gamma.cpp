@@ -26,7 +26,7 @@ test()
 
 	jlm::valuetype vt;
 	jive::bittype bt1(1);
-	jive::fcttype ft({&bt1, &vt}, {&vt});
+	FunctionType ft({&bt1, &vt}, {&vt});
 
 	RvsdgModule rm(filepath(""), "", "");
 

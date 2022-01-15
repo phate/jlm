@@ -9,9 +9,9 @@
 #include <jlm/ir/attribute.hpp>
 #include <jlm/ir/basic-block.hpp>
 #include <jlm/ir/cfg-node.hpp>
+#include <jlm/ir/types.hpp>
 #include <jlm/ir/variable.hpp>
 
-#include <jive/types/function.hpp>
 #include <jive/rvsdg/operation.hpp>
 
 namespace jive {
@@ -382,7 +382,7 @@ public:
 		return module_;
 	}
 
-	jive::fcttype
+	FunctionType
 	fcttype() const
 	{
 		std::vector<const jive::type*> arguments;
@@ -393,7 +393,7 @@ public:
 		for (size_t n = 0; n < exit()->nresults(); n++)
 			results.push_back(&exit()->result(n)->type());
 
-		return jive::fcttype(arguments, results);
+		return FunctionType(arguments, results);
 	}
 
 	static std::unique_ptr<cfg>

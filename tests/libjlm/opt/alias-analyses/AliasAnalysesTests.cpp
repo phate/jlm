@@ -13,7 +13,7 @@ StoreTest1::SetupRvsdg()
   auto pt = ptrtype::create(jive::bit32);
   auto ppt = ptrtype::create(*pt);
   auto pppt = ptrtype::create(*ppt);
-  jive::fcttype fcttype(
+  FunctionType fcttype(
     {&jive::memtype::instance()},
     {&jive::memtype::instance()});
 
@@ -66,7 +66,7 @@ StoreTest2::SetupRvsdg()
 
   auto pt = ptrtype::create(jive::bit32);
   auto ppt = ptrtype::create(*pt);
-  jive::fcttype fcttype(
+  FunctionType fcttype(
     {&jive::memtype::instance()}, {&jive::memtype::instance()});
 
   auto module = RvsdgModule::Create(filepath(""), "", "");
@@ -122,7 +122,7 @@ LoadTest1::SetupRvsdg()
 
   auto pt = ptrtype::create(jive::bit32);
   auto ppt = ptrtype::create(*pt);
-  jive::fcttype fcttype(
+  FunctionType fcttype(
     {ppt.get(), &jive::memtype::instance()}, {&jive::bit32, &jive::memtype::instance()});
 
   auto module = RvsdgModule::Create(filepath(""), "", "");
@@ -157,7 +157,7 @@ LoadTest2::SetupRvsdg()
 
   auto pt = ptrtype::create(jive::bit32);
   auto ppt = ptrtype::create(*pt);
-  jive::fcttype fcttype(
+  FunctionType fcttype(
     {&jive::memtype::instance()}, {&jive::memtype::instance()});
 
   auto module = RvsdgModule::Create(filepath(""), "", "");
@@ -222,7 +222,7 @@ GetElementPtrTest::SetupRvsdg()
 
   auto pt = ptrtype::create(rt);
   auto pbt = ptrtype::create(jive::bit32);
-  jive::fcttype fcttype(
+  FunctionType fcttype(
     {pt.get(), &jive::memtype::instance()}, {&jive::bit32, &jive::memtype::instance()});
 
   auto module = RvsdgModule::Create(filepath(""), "", "");
@@ -265,7 +265,7 @@ BitCastTest::SetupRvsdg()
 
   auto pbt16 = ptrtype::create(jive::bit16);
   auto pbt32 = ptrtype::create(jive::bit32);
-  jive::fcttype fcttype({pbt32.get()}, {pbt16.get()});
+  FunctionType fcttype({pbt32.get()}, {pbt16.get()});
 
   auto module = RvsdgModule::Create(filepath(""), "", "");
   auto graph = &module->Rvsdg();
@@ -296,8 +296,8 @@ Bits2PtrTest::SetupRvsdg()
 
   jive::memtype mt;
   auto pt = ptrtype::create(jive::bit8);
-  jive::fcttype fctbits2ptrtype({&jive::bit64, &mt}, {pt.get(), &mt});
-  jive::fcttype fcttesttype({&jive::bit64, &mt}, {&mt});
+  FunctionType fctbits2ptrtype({&jive::bit64, &mt}, {pt.get(), &mt});
+  FunctionType fcttesttype({&jive::bit64, &mt}, {&mt});
 
   auto module = RvsdgModule::Create(filepath(""), "", "");
   auto graph = &module->Rvsdg();
@@ -340,7 +340,7 @@ ConstantPointerNullTest::SetupRvsdg()
 
   auto pt = ptrtype::create(jive::bit32);
   auto ppt = ptrtype::create(*pt);
-  jive::fcttype fcttype(
+  FunctionType fcttype(
     {ppt.get(), &jive::memtype::instance()}, {&jive::memtype::instance()});
 
   auto module = RvsdgModule::Create(filepath(""), "", "");
@@ -371,10 +371,10 @@ CallTest1::SetupRvsdg()
   using namespace jlm;
 
   auto pt = ptrtype::create(jive::bit32);
-  jive::fcttype ft1(
+  FunctionType ft1(
     {pt.get(), pt.get(), &jive::memtype::instance()}, {&jive::bit32, &jive::memtype::instance()});
 
-  jive::fcttype ft2(
+  FunctionType ft2(
     {&jive::memtype::instance()}, {&jive::bit32, &jive::memtype::instance()});
 
   auto module = RvsdgModule::Create(filepath(""), "", "");
@@ -461,9 +461,9 @@ CallTest2::SetupRvsdg()
   auto pbit8 = ptrtype::create(jive::bit8);
   auto pbit32 = ptrtype::create(jive::bit32);
 
-  jive::fcttype create_type({&jive::bit32, &mt, &iot}, {pbit32.get(), &mt, &iot});
-  jive::fcttype destroy_type({pbit32.get(), &mt, &iot}, {&mt, &iot});
-  jive::fcttype test_type({&mt, &iot}, {&mt, &iot});
+  FunctionType create_type({&jive::bit32, &mt, &iot}, {pbit32.get(), &mt, &iot});
+  FunctionType destroy_type({pbit32.get(), &mt, &iot}, {&mt, &iot});
+  FunctionType test_type({&mt, &iot}, {&mt, &iot});
 
   auto module = RvsdgModule::Create(filepath(""), "", "");
   auto graph = &module->Rvsdg();
@@ -538,12 +538,12 @@ IndirectCallTest::SetupRvsdg()
   iostatetype iot;
   jive::memtype mt;
 
-  jive::fcttype four_type({&mt, &iot}, {&jive::bit32, &mt, &iot});
+  FunctionType four_type({&mt, &iot}, {&jive::bit32, &mt, &iot});
 
   auto pfct = ptrtype::create(four_type);
-  jive::fcttype indcall_type({pfct.get(), &mt, &iot}, {&jive::bit32, &mt, &iot});
+  FunctionType indcall_type({pfct.get(), &mt, &iot}, {&jive::bit32, &mt, &iot});
 
-  jive::fcttype test_type({&mt, &iot}, {&jive::bit32, &mt, &iot});
+  FunctionType test_type({&mt, &iot}, {&jive::bit32, &mt, &iot});
 
 
   auto module = RvsdgModule::Create(filepath(""), "", "");
@@ -614,7 +614,7 @@ GammaTest::SetupRvsdg()
   using namespace jlm;
 
   auto pt = ptrtype::create(jive::bit32);
-  jive::fcttype fcttype(
+  FunctionType fcttype(
     {&jive::bit32, pt.get(), pt.get(), pt.get(), pt.get(), &jive::memtype::instance()},
     {&jive::bit32, &jive::memtype::instance()});
 
@@ -661,7 +661,7 @@ ThetaTest::SetupRvsdg()
   using namespace jlm;
 
   auto pt = ptrtype::create(jive::bit32);
-  jive::fcttype fcttype(
+  FunctionType fcttype(
     {&jive::bit32, pt.get(), &jive::bit32, &jive::memtype::instance()}, {&jive::memtype::instance()});
 
   auto module = RvsdgModule::Create(filepath(""), "", "");
@@ -712,9 +712,9 @@ DeltaTest1::SetupRvsdg()
   using namespace jlm;
 
   auto pt = ptrtype::create(jive::bit32);
-  jive::fcttype fctgtype(
+  FunctionType fctgtype(
     {pt.get(), &jive::memtype::instance()}, {&jive::bit32, &jive::memtype::instance()});
-  jive::fcttype fcthtype(
+  FunctionType fcthtype(
     {&jive::memtype::instance()}, {&jive::bit32, &jive::memtype::instance()});
 
   auto module = RvsdgModule::Create(filepath(""), "", "");
@@ -767,7 +767,7 @@ DeltaTest2::SetupRvsdg()
 {
   using namespace jlm;
 
-  jive::fcttype ft({&jive::memtype::instance()}, {&jive::memtype::instance()});
+  FunctionType ft({&jive::memtype::instance()}, {&jive::memtype::instance()});
 
   auto module = RvsdgModule::Create(filepath(""), "", "");
   auto graph = &module->Rvsdg();
@@ -832,7 +832,7 @@ ImportTest::SetupRvsdg()
 {
   using namespace jlm;
 
-  jive::fcttype ft({&jive::memtype::instance()}, {&jive::memtype::instance()});
+  FunctionType ft({&jive::memtype::instance()}, {&jive::memtype::instance()});
 
   auto module = RvsdgModule::Create(filepath(""), "", "");
   auto graph = &module->Rvsdg();
@@ -892,12 +892,12 @@ PhiTest::SetupRvsdg()
 
   ptrtype pbit64(jive::bit64);
 
-  jive::fcttype fibfcttype(
+  FunctionType fibfcttype(
     {&jive::bit64, &pbit64, &mt},
     {&mt});
   ptrtype pfibfcttype(fibfcttype);
 
-  jive::fcttype testfcttype({&mt}, {&mt});
+  FunctionType testfcttype({&mt}, {&mt});
 
   auto module = RvsdgModule::Create(filepath(""), "", "");
   auto graph = &module->Rvsdg();
@@ -1002,7 +1002,7 @@ ExternalMemoryTest::SetupRvsdg()
   using namespace jlm;
 
   auto pt = ptrtype::create(jive::bit32);
-  jive::fcttype ft({pt.get(), pt.get(), &jive::memtype::instance()}, {&jive::memtype::instance()});
+  FunctionType ft({pt.get(), pt.get(), &jive::memtype::instance()}, {&jive::memtype::instance()});
 
   auto module = RvsdgModule::Create(filepath(""), "", "");
   auto graph = &module->Rvsdg();

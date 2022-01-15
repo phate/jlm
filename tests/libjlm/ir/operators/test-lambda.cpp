@@ -19,7 +19,7 @@ test_argument_iterators()
 	RvsdgModule rm(filepath(""), "", "");
 
 	{
-		jive::fcttype ft({&vt}, {&vt});
+		FunctionType ft({&vt}, {&vt});
 
 		auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage, {});
 		lambda->finalize({lambda->fctargument(0)});
@@ -32,7 +32,7 @@ test_argument_iterators()
 	}
 
 	{
-		jive::fcttype ft({}, {&vt});
+		FunctionType ft({}, {&vt});
 
 		auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage, {});
 
@@ -46,7 +46,7 @@ test_argument_iterators()
 	{
 		auto i = rm.Rvsdg().add_import({vt, ""});
 
-		jive::fcttype ft({&vt, &vt, &vt}, {&vt, &vt});
+		FunctionType ft({&vt, &vt, &vt}, {&vt, &vt});
 
 		auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage, {});
 
@@ -71,7 +71,7 @@ test_invalid_operand_region()
 	using namespace jlm;
 
 	valuetype vt;
-	jive::fcttype fcttype({}, {&vt});
+	FunctionType fcttype({}, {&vt});
 
 	auto module = RvsdgModule::Create(filepath(""), "", "");
 	auto graph = &module->Rvsdg();

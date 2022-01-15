@@ -8,7 +8,6 @@
 
 #include <jive/arch/addresstype.hpp>
 #include <jive/types/bitstring/type.hpp>
-#include <jive/types/function.hpp>
 #include <jive/types/record.hpp>
 #include <jive/rvsdg/binary.hpp>
 #include <jive/rvsdg/control.hpp>
@@ -2450,11 +2449,11 @@ public:
 		return *static_cast<const jive::bittype*>(&argument(0).type());
 	}
 
-	const jive::fcttype
+	FunctionType
 	fcttype() const
 	{
 		JLM_ASSERT(narguments() == 1 && nresults() == 2);
-		return jive::fcttype({&argument(0).type()}, {&result(0).type(), &result(1).type()});
+		return FunctionType({&argument(0).type()}, {&result(0).type(), &result(1).type()});
 	}
 
 	static std::unique_ptr<jlm::tac>
@@ -2498,11 +2497,11 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
-	const jive::fcttype
+	const FunctionType
 	fcttype() const
 	{
 		JLM_ASSERT(narguments() == 3 && nresults() == 2);
-		return jive::fcttype({&argument(0).type()}, {&result(0).type(), &result(1).type()});
+		return FunctionType({&argument(0).type()}, {&result(0).type(), &result(1).type()});
 	}
 
 	static std::unique_ptr<jlm::tac>

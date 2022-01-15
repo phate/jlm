@@ -6,7 +6,6 @@
 #include "test-registry.hpp"
 #include "test-types.hpp"
 
-#include <jive/types/function.hpp>
 #include <jive/view.hpp>
 
 #include <jlm/frontend/llvm/jlm2rvsdg/module.hpp>
@@ -20,7 +19,7 @@ test()
 	using namespace jlm;
 
 	valuetype vt;
-	jive::fcttype ft({&vt}, {&vt});
+	FunctionType ft({&vt}, {&vt});
 
 	ipgraph_module im(filepath(""), "", "");
 

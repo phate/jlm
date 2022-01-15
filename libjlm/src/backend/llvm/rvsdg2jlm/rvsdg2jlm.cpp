@@ -70,14 +70,14 @@ private:
 
 namespace rvsdg2jlm {
 
-static const jive::fcttype *
+static const FunctionType *
 is_function_import(const jive::argument * argument)
 {
 	JLM_ASSERT(argument->region()->graph()->root() == argument->region());
 	auto at = dynamic_cast<const ptrtype*>(&argument->type());
 	JLM_ASSERT(at != nullptr);
 
-	return dynamic_cast<const jive::fcttype*>(&at->pointee_type());
+	return dynamic_cast<const FunctionType*>(&at->pointee_type());
 }
 
 static std::unique_ptr<data_node_init>

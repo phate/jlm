@@ -23,42 +23,39 @@ convert(const jive::bittype & type, context & ctx)
 }
 
 static llvm::Type *
-convert(const jive::fcttype & type, context & ctx)
+convert(const FunctionType & functionType, context & ctx)
 {
 	auto & lctx = ctx.llvm_module().getContext();
 
 	using namespace llvm;
 
 	bool isvararg = false;
-	std::vector<Type*> ats;
-	for (size_t n = 0; n < type.narguments(); n++) {
-		auto & argtype = type.argument_type(n);
-
-		if (is_varargtype(argtype)) {
+	std::vector<Type*> argumentTypes;
+  for (auto & argumentType : functionType.Arguments()) {
+		if (jive::is<varargtype>(argumentType)) {
 			isvararg = true;
 			continue;
 		}
 
-		if (jive::is<iostatetype>(argtype))
+		if (jive::is<iostatetype>(argumentType))
 			continue;
-		if (jive::is<jive::memtype>(argtype))
+		if (jive::is<jive::memtype>(argumentType))
 			continue;
-		if (jive::is<loopstatetype>(argtype))
+		if (jive::is<loopstatetype>(argumentType))
 			continue;
 
-		ats.push_back(convert_type(argtype, ctx));
+		argumentTypes.push_back(convert_type(argumentType, ctx));
 	}
 
 	/*
 		The return type can either be (valuetype, statetype, statetype, ...) if the function has
 		a return value, or (statetype, statetype, ...) if the function returns void.
 	*/
-	auto rt = Type::getVoidTy(lctx);
-	if (type.nresults() > 0
-	&& jive::is<jive::valuetype>(type.result_type(0)))
-		rt = convert_type(type.result_type(0), ctx);
+	auto resultType = Type::getVoidTy(lctx);
+	if (functionType.NumResults() > 0 && jive::is<jive::valuetype>(functionType.ResultType(0)))
+		resultType = convert_type(functionType.ResultType(0), ctx);
 
-	return llvm::FunctionType::get(rt, ats, isvararg);
+	return llvm::FunctionType::get(resultType, argumentTypes, isvararg);
 }
 
 static llvm::Type *
@@ -150,7 +147,7 @@ convert_type(const jive::type & type, context & ctx)
 	, std::function<llvm::Type*(const jive::type&, context&)>
 	> map({
 	  {typeid(jive::bittype),      convert<jive::bittype>}
-	, {typeid(jive::fcttype),      convert<jive::fcttype>}
+	, {typeid(FunctionType),       convert<FunctionType>}
 	, {typeid(ptrtype),            convert<ptrtype>}
 	, {typeid(arraytype),          convert<arraytype>}
 	, {typeid(jive::ctltype),      convert<jive::ctltype>}

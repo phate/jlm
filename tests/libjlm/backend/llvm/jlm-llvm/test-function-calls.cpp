@@ -37,7 +37,7 @@ test_malloc()
 		cfg->exit()->append_result(bb->last()->result(0));
 		cfg->exit()->append_result(bb->last()->result(1));
 
-		jive::fcttype ft({&jive::bit64}, {&pt, &mt});
+		FunctionType ft({&jive::bit64}, {&pt, &mt});
 		auto f = function_node::create(im->ipgraph(), "f", ft, linkage::external_linkage);
 		f->add_cfg(std::move(cfg));
 
@@ -77,7 +77,7 @@ test_free()
 
 		auto ipgmod = ipgraph_module::create(filepath(""), "", "");
 
-		jive::fcttype ft({&pt, &mt, &iot}, {&mt, &iot});
+		FunctionType ft({&pt, &mt, &iot}, {&mt, &iot});
 		auto f = function_node::create(ipgmod->ipgraph(), "f", ft, linkage::external_linkage);
 
 		auto cfg = cfg::create(*ipgmod);

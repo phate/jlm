@@ -20,14 +20,7 @@
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 
-#include <jive/arch/address.hpp>
-#include <jive/arch/addresstype.hpp>
-#include <jive/arch/dataobject.hpp>
-#include <jive/arch/memlayout-simple.hpp>
-#include <jive/types/bitstring/constant.hpp>
 #include <jive/types/bitstring/type.hpp>
-#include <jive/types/float.hpp>
-#include <jive/types/function.hpp>
 #include <jive/rvsdg/binary.hpp>
 #include <jive/rvsdg/control.hpp>
 #include <jive/rvsdg/gamma.hpp>

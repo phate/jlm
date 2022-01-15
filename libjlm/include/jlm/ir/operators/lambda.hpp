@@ -26,7 +26,7 @@ public:
 	~operation() override;
 
 	operation(
-		const jive::fcttype & type,
+		const FunctionType & type,
 		const std::string & name,
 		const jlm::linkage & linkage,
 		const attributeset & attributes)
@@ -77,7 +77,7 @@ public:
 		return *this;
 	}
 
-	const jive::fcttype &
+	const FunctionType &
 	type() const noexcept
 	{
 		return type_;
@@ -111,7 +111,7 @@ public:
 	copy() const override;
 
 private:
-	jive::fcttype type_;
+	FunctionType type_;
 	std::string name_;
 	jlm::linkage linkage_;
 	attributeset attributes_;
@@ -204,7 +204,7 @@ public:
 		return *static_cast<const lambda::operation*>(&structural_node::operation());
 	}
 
-	const jive::fcttype &
+	const FunctionType &
 	type() const noexcept
 	{
 		return operation().type();
@@ -297,7 +297,7 @@ public:
 	static node *
 	create(
 		jive::region * parent,
-		const jive::fcttype & type,
+		const FunctionType & type,
 		const std::string & name,
 		const jlm::linkage & linkage,
 		const attributeset & attributes);
@@ -308,7 +308,7 @@ public:
 	static node *
 	create(
 		jive::region * parent,
-		const jive::fcttype & type,
+		const FunctionType & type,
 		const std::string & name,
 		const jlm::linkage & linkage)
 	{
