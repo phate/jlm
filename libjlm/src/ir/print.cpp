@@ -158,18 +158,18 @@ emit_function_node(const jlm::ipgraph_node & clg_node)
 
 	/* convert result types */
 	std::string results("<");
-	for(size_t n = 0; n < fcttype.nresults(); n++) {
-		results += fcttype.result_type(n).debug_string();
-		if (n != fcttype.nresults()-1)
+	for(size_t n = 0; n < fcttype.NumResults(); n++) {
+		results += fcttype.ResultType(n).debug_string();
+		if (n != fcttype.NumResults()-1)
 			results += ", ";
 	}
 	results += ">";
 
 	/* convert operand types */
 	std::string operands("<");
-	for (size_t n = 0; n < fcttype.narguments(); n++) {
-		operands += fcttype.argument_type(n).debug_string();
-		if (n != fcttype.narguments()-1)
+	for (size_t n = 0; n < fcttype.NumArguments(); n++) {
+		operands += fcttype.ArgumentType(n).debug_string();
+		if (n != fcttype.NumArguments()-1)
 			operands += ", ";
 	}
 	operands += ">";

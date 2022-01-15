@@ -162,7 +162,7 @@ node::add_ctxvar(jive::output * origin)
 lambda::node *
 node::create(
 	jive::region * parent,
-	const jive::fcttype & type,
+	const FunctionType & type,
 	const std::string & name,
 	const jlm::linkage & linkage,
 	const attributeset & attributes)
@@ -170,10 +170,8 @@ node::create(
 	lambda::operation op(type, name, linkage, std::move(attributes));
 	auto node = new lambda::node(parent, std::move(op));
 
-	for (size_t n = 0; n < type.narguments(); n++) {
-		auto & at = type.argument_type(n);
-		lambda::fctargument::create(node->subregion(), at);
-	}
+  for (auto & argumentType : type.Arguments())
+		lambda::fctargument::create(node->subregion(), argumentType);
 
 	return node;
 }
@@ -187,13 +185,13 @@ node::finalize(const std::vector<jive::output*> & results)
 		return output();
 	}
 
-	if (type().nresults() != results.size())
+	if (type().NumResults() != results.size())
 		throw jlm::error("Incorrect number of results.");
 
 	for (size_t n = 0; n < results.size(); n++) {
-		auto & expected = type().result_type(n);
+		auto & expected = type().ResultType(n);
 		auto & received = results[n]->type();
-		if (results[n]->type() != type().result_type(n))
+		if (results[n]->type() != type().ResultType(n))
 			throw jlm::error("Expected " + expected.debug_string() + ", got " + received.debug_string());
 
 		if (results[n]->region() != subregion())

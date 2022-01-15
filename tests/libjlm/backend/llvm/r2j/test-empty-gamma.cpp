@@ -25,7 +25,7 @@ test_with_match()
 
 	jlm::valuetype vt;
 	jive::bittype bt1(1);
-	jive::fcttype ft({&bt1, &vt, &vt}, {&vt});
+	FunctionType ft({&bt1, &vt, &vt}, {&vt});
 
 	RvsdgModule rm(filepath(""), "", "");
 	auto nf = rm.Rvsdg().node_normal_form(typeid(jive::operation));
@@ -70,7 +70,7 @@ test_without_match()
 	jlm::valuetype vt;
 	jive::ctltype ctl2(2);
 	jive::bittype bt1(1);
-	jive::fcttype ft({&ctl2, &vt, &vt}, {&vt});
+	FunctionType ft({&ctl2, &vt, &vt}, {&vt});
 
 	RvsdgModule rm(filepath(""), "", "");
 	auto nf = rm.Rvsdg().node_normal_form(typeid(jive::operation));
@@ -113,7 +113,7 @@ test_gamma3()
 	using namespace jlm;
 
 	jlm::valuetype vt;
-	jive::fcttype ft({&jive::bit32, &vt, &vt}, {&vt});
+	FunctionType ft({&jive::bit32, &vt, &vt}, {&vt});
 
 	RvsdgModule rm(filepath(""), "", "");
 	auto nf = rm.Rvsdg().node_normal_form(typeid(jive::operation));

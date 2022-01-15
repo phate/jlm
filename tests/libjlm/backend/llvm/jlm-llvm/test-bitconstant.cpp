@@ -23,7 +23,7 @@ test()
 	using namespace jlm;
 
 	jive::bittype bt65(65);
-	jive::fcttype ft({}, {&bt65});
+	FunctionType ft({}, {&bt65});
 
 	jive::bitvalue_repr vr(bs);
 

@@ -19,9 +19,9 @@ test_trace_function_input1()
 	using namespace jlm;
 
 	valuetype vt;
-	jive::fcttype fcttype1({}, {&vt});
+	FunctionType fcttype1({}, {&vt});
 	ptrtype pt(fcttype1);
-	jive::fcttype fcttype2({&pt}, {&vt});
+	FunctionType fcttype2({&pt}, {&vt});
 
 	auto module = RvsdgModule::Create(filepath(""), "", "");
 	auto graph = &module->Rvsdg();
@@ -56,8 +56,8 @@ test_trace_function_input2()
 
 	// Arrange
 	valuetype vt;
-	jive::fcttype gtype({}, {&vt});
-	jive::fcttype ftype({}, {&vt});
+	FunctionType gtype({}, {&vt});
+	FunctionType ftype({}, {&vt});
 
 	auto module = RvsdgModule::Create(filepath(""), "", "");
 	auto graph = &module->Rvsdg();
@@ -110,8 +110,8 @@ test_trace_function_input3()
 
 	// Arrange
 	valuetype vt;
-	jive::fcttype gtype({}, {&vt});
-	jive::fcttype ftype({}, {&vt});
+	FunctionType gtype({}, {&vt});
+	FunctionType ftype({}, {&vt});
 
 	auto module = RvsdgModule::Create(filepath(""), "", "");
 	auto graph = &module->Rvsdg();

@@ -11,8 +11,6 @@
 #include <jlm/ir/types.hpp>
 #include <jlm/ir/variable.hpp>
 
-#include <jive/types/function.hpp>
-
 #include <unordered_map>
 #include <unordered_set>
 
@@ -207,7 +205,7 @@ private:
 	function_node(
 		jlm::ipgraph & clg,
 		const std::string & name,
-		const jive::fcttype & type,
+		const FunctionType & type,
 		const jlm::linkage & linkage,
 		const attributeset & attributes)
 	: ipgraph_node(clg)
@@ -227,10 +225,10 @@ public:
 	virtual const jive::type &
 	type() const noexcept override;
 
-	const jive::fcttype &
+	const FunctionType &
 	fcttype() const noexcept
 	{
-		return *static_cast<const jive::fcttype*>(&type_.pointee_type());
+		return *static_cast<const FunctionType*>(&type_.pointee_type());
 	}
 
 	virtual const jlm::linkage &
@@ -259,7 +257,7 @@ public:
 	create(
 		jlm::ipgraph & ipg,
 		const std::string & name,
-		const jive::fcttype & type,
+		const FunctionType & type,
 		const jlm::linkage & linkage,
 		const attributeset & attributes)
 	{
@@ -273,7 +271,7 @@ public:
 	create(
 		jlm::ipgraph & ipg,
 		const std::string & name,
-		const jive::fcttype & type,
+		const FunctionType & type,
 		const jlm::linkage & linkage)
 	{
 		return create(ipg, name, type, linkage, {});

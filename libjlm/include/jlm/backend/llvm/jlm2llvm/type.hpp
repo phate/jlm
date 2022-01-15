@@ -7,7 +7,6 @@
 #define JLM_BACKEND_LLVM_JLM2LLVM_TYPE_HPP
 
 #include <jive/types/bitstring/type.hpp>
-#include <jive/types/function.hpp>
 #include <jive/types/record.hpp>
 #include <jive/rvsdg/control.hpp>
 
@@ -40,7 +39,7 @@ convert_type(const jive::bittype & type, context & ctx)
 }
 
 static inline llvm::FunctionType *
-convert_type(const jive::fcttype & type, context & ctx)
+convert_type(const jlm::FunctionType & type, context & ctx)
 {
 	auto t = convert_type(*static_cast<const jive::type*>(&type), ctx);
 	JLM_ASSERT(t->getTypeID() == llvm::Type::FunctionTyID);

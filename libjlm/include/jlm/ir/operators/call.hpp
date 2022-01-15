@@ -7,7 +7,6 @@
 #define JLM_IR_OPERATORS_CALL_HPP
 
 #include <jive/rvsdg/simple-node.hpp>
-#include <jive/types/function.hpp>
 
 #include <jlm/ir/tac.hpp>
 #include <jlm/ir/types.hpp>
@@ -26,8 +25,8 @@ public:
 	~call_op();
 
 	inline
-	call_op(const jive::fcttype & fcttype)
-	: simple_op(create_srcports(fcttype), create_dstports(fcttype))
+	call_op(const FunctionType & functionType)
+	: simple_op(create_srcports(functionType), create_dstports(functionType))
 	{}
 
  	virtual bool
@@ -36,11 +35,11 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	inline const jive::fcttype &
+	const FunctionType &
 	fcttype() const noexcept
 	{
 		auto at = static_cast<const ptrtype*>(&argument(0).type());
-		return *static_cast<const jive::fcttype*>(&at->pointee_type());
+		return *static_cast<const FunctionType*>(&at->pointee_type());
 	}
 
 	virtual std::unique_ptr<jive::operation>
@@ -52,7 +51,7 @@ public:
 		auto at = dynamic_cast<const ptrtype*>(&function->type());
 		if (!at) throw jlm::error("expected pointer type.");
 
-		auto ft = dynamic_cast<const jive::fcttype*>(&at->pointee_type());
+		auto ft = dynamic_cast<const FunctionType*>(&at->pointee_type());
 		if (!ft) throw jlm::error("expected function type.");
 
 		call_op op(*ft);
@@ -69,7 +68,7 @@ public:
 		auto at = dynamic_cast<const ptrtype*>(&function->type());
 		if (!at) throw jlm::error("Expected pointer type.");
 
-		auto ft = dynamic_cast<const jive::fcttype*>(&at->pointee_type());
+		auto ft = dynamic_cast<const FunctionType*>(&at->pointee_type());
 		if (!ft) throw jlm::error("Expected function type.");
 
 		call_op op(*ft);
@@ -80,21 +79,21 @@ public:
 
 private:
 	static inline std::vector<jive::port>
-	create_srcports(const jive::fcttype & fcttype)
+	create_srcports(const FunctionType & functionType)
 	{
-		std::vector<jive::port> ports(1, {ptrtype(fcttype)});
-		for (size_t n = 0; n < fcttype.narguments(); n++)
-			ports.push_back(fcttype.argument_type(n));
+		std::vector<jive::port> ports(1, {ptrtype(functionType)});
+    for (auto & argumentType : functionType.Arguments())
+			ports.emplace_back(argumentType);
 
 		return ports;
 	}
 
 	static inline std::vector<jive::port>
-	create_dstports(const jive::fcttype & fcttype)
+	create_dstports(const FunctionType & functionType)
 	{
 		std::vector<jive::port> ports;
-		for (size_t n = 0; n < fcttype.nresults(); n++)
-			ports.push_back(fcttype.result_type(n));
+    for (auto & resultType : functionType.Results())
+			ports.emplace_back(resultType);
 
 		return ports;
 	}

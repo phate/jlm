@@ -276,7 +276,7 @@ TestPhi()
 	using namespace jlm;
 
 	jlm::valuetype vt;
-	jive::fcttype ft({&vt}, {&vt});
+	FunctionType ft({&vt}, {&vt});
 
 	RvsdgModule rm(filepath(""), "", "");
 	auto & graph = rm.Rvsdg();

@@ -25,8 +25,8 @@ test1()
 
 	jlm::valuetype vt;
 	jive::ctltype ct(2);
-	jive::fcttype ft1({&vt}, {&vt});
-	jive::fcttype ft2({&ct, &vt}, {&vt});
+	FunctionType ft1({&vt}, {&vt});
+	FunctionType ft2({&ct, &vt}, {&vt});
 
 	RvsdgModule rm(filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
@@ -66,10 +66,10 @@ test2()
 
 	valuetype vt;
 	statetype st;
-	jive::fcttype ft1({&vt, &st}, {&st});
-	jive::fcttype ft2({&st}, {&st});
+	FunctionType ft1({&vt, &st}, {&st});
+	FunctionType ft2({&st}, {&st});
 	ptrtype pt(ft1);
-	jive::fcttype ft3({&pt, &st}, {&st});
+	FunctionType ft3({&pt, &st}, {&st});
 
 	RvsdgModule rm(filepath(""), "", "");
 	auto & graph = rm.Rvsdg();

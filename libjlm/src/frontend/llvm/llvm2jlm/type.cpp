@@ -10,8 +10,6 @@
 
 #include <jive/arch/addresstype.hpp>
 #include <jive/types/bitstring/type.hpp>
-#include <jive/types/float/flttype.hpp>
-#include <jive/types/function.hpp>
 
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Type.h>
@@ -62,23 +60,25 @@ convert_function_type(const llvm::Type * t, context & ctx)
 	auto type = llvm::cast<const llvm::FunctionType>(t);
 
 	/* arguments */
-	std::vector<std::unique_ptr<jive::type>> argument_types;
+	std::vector<std::unique_ptr<jive::type>> argumentTypes;
 	for (size_t n = 0; n < type->getNumParams(); n++)
-		argument_types.push_back(convert_type(type->getParamType(n), ctx));
-	if (type->isVarArg()) argument_types.push_back(create_varargtype());
-	argument_types.push_back(iostatetype::create());
-	argument_types.push_back(std::unique_ptr<jive::type>(new jive::memtype()));
-	argument_types.push_back(loopstatetype::create());
+		argumentTypes.push_back(convert_type(type->getParamType(n), ctx));
+	if (type->isVarArg()) argumentTypes.push_back(create_varargtype());
+	argumentTypes.push_back(iostatetype::create());
+	argumentTypes.push_back(std::unique_ptr<jive::type>(new jive::memtype()));
+	argumentTypes.push_back(loopstatetype::create());
 
 	/* results */
-	std::vector<std::unique_ptr<jive::type>> result_types;
+	std::vector<std::unique_ptr<jive::type>> resultTypes;
 	if (type->getReturnType()->getTypeID() != llvm::Type::VoidTyID)
-		result_types.push_back(convert_type(type->getReturnType(), ctx));
-	result_types.push_back(iostatetype::create());
-	result_types.push_back(std::unique_ptr<jive::type>(new jive::memtype()));
-	result_types.push_back(loopstatetype::create());
+		resultTypes.push_back(convert_type(type->getReturnType(), ctx));
+	resultTypes.push_back(iostatetype::create());
+	resultTypes.push_back(std::unique_ptr<jive::type>(new jive::memtype()));
+	resultTypes.push_back(loopstatetype::create());
 
-	return std::unique_ptr<jive::valuetype>(new jive::fcttype(argument_types, result_types));
+	return std::unique_ptr<jive::valuetype>(new FunctionType(
+    std::move(argumentTypes),
+    std::move(resultTypes)));
 }
 
 static inline std::unique_ptr<jive::valuetype>

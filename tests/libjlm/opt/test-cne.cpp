@@ -392,7 +392,7 @@ test_lambda()
 	using namespace jlm;
 
 	jlm::valuetype vt;
-	jive::fcttype ft({&vt, &vt}, {&vt});
+	FunctionType ft({&vt, &vt}, {&vt});
 
 	RvsdgModule rm(jlm::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
@@ -427,7 +427,7 @@ test_phi()
 	using namespace jlm;
 
 	jlm::valuetype vt;
-	jive::fcttype ft({&vt, &vt}, {&vt});
+	FunctionType ft({&vt, &vt}, {&vt});
 
 	RvsdgModule rm(jlm::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();

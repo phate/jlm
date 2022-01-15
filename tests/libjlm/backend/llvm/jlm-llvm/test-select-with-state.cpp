@@ -40,7 +40,7 @@ test()
 	cfg->exit()->append_result(s3);
 	cfg->exit()->append_result(s3);
 
-	jive::fcttype ft({&jive::bit1, &mt, &mt}, {&mt, &mt});
+	FunctionType ft({&jive::bit1, &mt, &mt}, {&mt, &mt});
 	auto f = function_node::create(m.ipgraph(), "f", ft, linkage::external_linkage);
 	f->add_cfg(std::move(cfg));
 
