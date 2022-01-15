@@ -11,6 +11,122 @@
 
 namespace jlm {
 
+/**
+ * FunctionType class
+ */
+FunctionType::~FunctionType() noexcept
+= default;
+
+FunctionType::FunctionType(
+  const std::vector<const jive::type*> & argumentTypes,
+  const std::vector<const jive::type*> & resultTypes)
+  : jive::valuetype()
+{
+  for (auto & type : argumentTypes)
+    ArgumentTypes_.emplace_back(type->copy());
+
+  for (auto & type : resultTypes)
+    ResultTypes_.emplace_back(type->copy());
+}
+
+FunctionType::FunctionType(
+  std::vector<std::unique_ptr<jive::type>> argumentTypes,
+  std::vector<std::unique_ptr<jive::type>> resultTypes)
+  : jive::valuetype()
+  , ResultTypes_(std::move(resultTypes))
+  , ArgumentTypes_(std::move(argumentTypes))
+{}
+
+FunctionType::FunctionType(const FunctionType & rhs)
+  : jive::valuetype(rhs)
+{
+  for (auto & type : rhs.ArgumentTypes_)
+    ArgumentTypes_.push_back(type->copy());
+
+  for (auto & type : rhs.ResultTypes_)
+    ResultTypes_.push_back(type->copy());
+}
+
+FunctionType::FunctionType(FunctionType && other) noexcept
+  : jive::valuetype(other)
+  , ResultTypes_(std::move(other.ResultTypes_))
+  , ArgumentTypes_(std::move(other.ArgumentTypes_))
+{}
+
+FunctionType::ArgumentConstRange
+FunctionType::Arguments() const
+{
+  return {TypeConstIterator(ArgumentTypes_.begin()), TypeConstIterator(ArgumentTypes_.end())};
+}
+
+FunctionType::ResultConstRange
+FunctionType::Results() const
+{
+  return {TypeConstIterator(ResultTypes_.begin()), TypeConstIterator(ResultTypes_.end())};
+}
+
+std::string
+FunctionType::debug_string() const
+{
+  return "fct";
+}
+
+bool
+FunctionType::operator==(const jive::type & _other) const noexcept
+{
+  auto other = dynamic_cast<const FunctionType*>(&_other);
+  if (other == nullptr)
+    return false;
+
+  if (this->NumResults() != other->NumResults())
+    return false;
+
+  if (this->NumArguments() != other->NumArguments())
+    return false;
+
+  for (size_t i = 0; i < this->NumResults(); i++){
+    if (this->ResultType(i) != other->ResultType(i))
+      return false;
+  }
+
+  for (size_t i = 0; i < this->NumArguments(); i++){
+    if (this->ArgumentType(i) != other->ArgumentType(i))
+      return false;
+  }
+
+  return true;
+}
+
+std::unique_ptr<jive::type>
+FunctionType::copy() const
+{
+  return std::unique_ptr<jive::type>(new FunctionType(*this));
+}
+
+FunctionType &
+FunctionType::operator=(const FunctionType & rhs)
+{
+  ResultTypes_.clear();
+  ArgumentTypes_.clear();
+
+  for (auto & type : rhs.ArgumentTypes_)
+    ArgumentTypes_.push_back(type->copy());
+
+  for (auto & type : rhs.ResultTypes_)
+    ResultTypes_.push_back(type->copy());
+
+  return *this;
+}
+
+FunctionType &
+FunctionType::operator=(FunctionType && rhs) noexcept
+{
+  ResultTypes_ = std::move(rhs.ResultTypes_);
+  ArgumentTypes_ = std::move(rhs.ArgumentTypes_);
+  return *this;
+}
+
+
 /* pointer type */
 
 ptrtype::~ptrtype()

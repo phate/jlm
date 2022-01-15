@@ -58,7 +58,7 @@ convert(const jive::fcttype & type, context & ctx)
 	&& jive::is<jive::valuetype>(type.result_type(0)))
 		rt = convert_type(type.result_type(0), ctx);
 
-	return FunctionType::get(rt, ats, isvararg);
+	return llvm::FunctionType::get(rt, ats, isvararg);
 }
 
 static llvm::Type *
