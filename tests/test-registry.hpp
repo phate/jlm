@@ -25,7 +25,7 @@ run_unit_test(const std::string & name);
 }
 
 #define JLM_UNIT_TEST_REGISTER(name, verify) \
-	static void __attribute__((constructor)) register_##verification(void) \
+	static void __attribute__((constructor)) register_##verify(void) \
 	{ \
 		jlm::register_unit_test(name, verify); \
 	} \

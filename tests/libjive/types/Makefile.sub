@@ -1,0 +1,3 @@
+TESTS+=\
+	libjive/types/bitstring \
+	libjive/types/function \

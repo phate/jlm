@@ -27,10 +27,8 @@ jobs:
       run: sudo apt-get install llvm-11-dev clang-11
     - name: Set LLVMCONFIG
       run: echo "LLVMCONFIG=llvm-config-11" >> $GITHUB_ENV
-    - name: Initialize submodules
-      run: make submodule
-    - name: Compile jive and jlm
-      run: make jive-release jlm-release -j `nproc`
+    - name: Compile jlm
+      run: make jlm-release -j `nproc`
     - name: Run unit and C tests
       run: make check -j `nproc`
 
@@ -42,10 +40,8 @@ jobs:
       run: sudo apt-get install llvm-11-dev clang-11
     - name: Set LLVMCONFIG
       run: echo "LLVMCONFIG=llvm-config-11" >> $GITHUB_ENV
-    - name: Initialize submodules
-      run: make submodule
-    - name: Compile jive and jlm
-      run: make CXX=g++ jive-release jlm-release -j `nproc`
+    - name: Compile jlm
+      run: make CXX=g++ jlm-release -j `nproc`
     - name: Run unit and C tests
       run: make check -j `nproc`
 
