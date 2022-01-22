@@ -171,7 +171,7 @@ TestLoad1()
 
     assert(is<load_op>(*loadX, 3, 3));
     assert(loadX->input(0)->origin() == test.lambda->fctargument(0));
-    assert(loadX->input(1)->origin() == lambdaEntrySplit->output(0));
+    assert(jive::node_output::node(loadX->input(1)->origin()) == lambdaEntrySplit);
 	};
 
 	LoadTest1 test;
