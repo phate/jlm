@@ -22,6 +22,7 @@ echo "libjlc-debug           Compile jlc library in debug mode"
 echo "libjlc-release         Compile jlc library in release mode"
 endef
 
+include $(JLM_ROOT)/libjive/Makefile.sub
 include $(JLM_ROOT)/libjlm/Makefile.sub
 include $(JLM_ROOT)/libjlc/Makefile.sub
 include $(JLM_ROOT)/jlm-print/Makefile.sub

@@ -1,5 +1,6 @@
 TESTS = \
 
+include tests/libjive/Makefile.sub
 include tests/libjlm/Makefile.sub
 include tests/libjlc/Makefile.sub
 
@@ -13,9 +14,9 @@ TEST_SOURCES = \
 
 tests/test-runner: jive-debug libjlm-debug libjlc-debug
 tests/test-runner: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG -DJLM_ENABLE_ASSERTS -Wall -Wpedantic -Wextra -Wno-unused-parameter --std=c++14 -Wfatal-errors
-tests/test-runner: CPPFLAGS += -I$(JLM_ROOT)/libjlm/include -I$(JLM_ROOT)/libjlc/include -I$(JIVE_ROOT)/include -I$(shell $(LLVMCONFIG) --includedir)
-tests/test-runner: LDFLAGS=-L. -Lexternal/jive -ljlc -ljlm $(shell $(LLVMCONFIG) --ldflags --libs --system-libs) -ljive
-tests/test-runner: %: $(patsubst %.cpp, %.la, $(TEST_SOURCES)) $(JIVE_ROOT)/libjive.a $(JLM_ROOT)/libjlm.a $(JLM_ROOT)/libjlc.a
+tests/test-runner: CPPFLAGS += -I$(JLM_ROOT)/libjlm/include -I$(JLM_ROOT)/libjlc/include -I$(JLM_ROOT)/libjive/include -I$(shell $(LLVMCONFIG) --includedir)
+tests/test-runner: LDFLAGS=-L. -ljlc -ljlm $(shell $(LLVMCONFIG) --ldflags --libs --system-libs) -ljive
+tests/test-runner: %: $(patsubst %.cpp, %.la, $(TEST_SOURCES)) $(JLM_ROOT)/libjive.a $(JLM_ROOT)/libjlm.a $(JLM_ROOT)/libjlc.a
 	$(CXX) -o $@ $(filter %.la, $^) $(LDFLAGS)
 
 $(patsubst %, tests/%.la, $(TESTS)): CPPFLAGS += -Itests -I$(shell $(LLVMCONFIG) --includedir)

@@ -6,8 +6,6 @@
 #include "test-operation.hpp"
 #include "test-registry.hpp"
 
-#include <jive/evaluator/eval.hpp>
-#include <jive/evaluator/literal.hpp>
 #include <jive/types/bitstring/arithmetic.hpp>
 #include <jive/types/bitstring/constant.hpp>
 #include <jive/types/bitstring/comparison.hpp>

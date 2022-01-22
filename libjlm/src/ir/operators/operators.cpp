@@ -7,7 +7,6 @@
 
 #include <jive/arch/addresstype.hpp>
 #include <jive/types/bitstring/constant.hpp>
-#include <jive/types/float/flttype.hpp>
 
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/raw_ostream.h>

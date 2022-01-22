@@ -1,0 +1,13 @@
+include tests/libjive/rvsdg/traverser/Makefile.sub
+
+TESTS+=\
+	libjive/rvsdg/test-binary \
+	libjive/rvsdg/test-cse \
+	libjive/rvsdg/test-gamma \
+	libjive/rvsdg/test-graph \
+	libjive/rvsdg/test-nodes \
+	libjive/rvsdg/test-phi \
+	libjive/rvsdg/test-regionmismatch \
+	libjive/rvsdg/test-statemux \
+	libjive/rvsdg/test-theta \
+	libjive/rvsdg/test-typemismatch \

@@ -1,0 +1,3 @@
+include tests/libjive/rvsdg/Makefile.sub
+include tests/libjive/types/Makefile.sub
+include tests/libjive/util/Makefile.sub
