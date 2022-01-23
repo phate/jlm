@@ -4,7 +4,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jive/types/function.hpp>
 #include <jive/rvsdg/gamma.hpp>
 #include <jive/rvsdg/region.hpp>
 #include <jive/rvsdg/simple-node.hpp>
@@ -294,9 +293,6 @@ type(const jive::node * n)
 
 	if (dynamic_cast<const jive::theta_op*>(&n->operation()))
 		return "theta";
-
-	if (is<lambda_op>(n))
-		return "lambda";
 
 	return "";
 }

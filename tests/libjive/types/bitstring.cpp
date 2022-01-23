@@ -7,16 +7,13 @@
 #include "test-registry.hpp"
 
 #include <assert.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
-#include <jive/rvsdg.hpp>
 #include <jive/rvsdg/control.hpp>
 #include <jive/types/bitstring.hpp>
 #include <jive/types/bitstring/constant.hpp>
 #include <jive/types/bitstring/value-representation.hpp>
-#include <jive/types/function.hpp>
 #include <jive/view.hpp>
 
 static int types_bitstring_arithmetic_test_bitand(void)
