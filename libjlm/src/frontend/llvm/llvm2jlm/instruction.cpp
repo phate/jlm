@@ -13,7 +13,6 @@
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/tac.hpp>
 
-#include <jive/arch/addresstype.hpp>
 #include <jive/types/bitstring.hpp>
 #include <jive/types/record.hpp>
 #include <jive/rvsdg/control.hpp>

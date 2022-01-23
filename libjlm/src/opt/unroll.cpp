@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jive/arch/addresstype.hpp>
 #include <jive/types/bitstring/arithmetic.hpp>
 #include <jive/types/bitstring/comparison.hpp>
 #include <jive/types/bitstring/constant.hpp>

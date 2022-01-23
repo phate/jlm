@@ -17,7 +17,6 @@
 #include <jlm/frontend/llvm/llvm2jlm/module.hpp>
 #include <jlm/frontend/llvm/llvm2jlm/type.hpp>
 
-#include <jive/arch/addresstype.hpp>
 #include <jive/rvsdg/type.hpp>
 
 #include <llvm/ADT/PostOrderIterator.h>

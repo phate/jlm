@@ -6,8 +6,6 @@
 #include <jlm/backend/llvm/jlm2llvm/context.hpp>
 #include <jlm/backend/llvm/jlm2llvm/type.hpp>
 
-#include <jive/arch/addresstype.hpp>
-
 #include <llvm/IR/Module.h>
 
 #include <typeindex>

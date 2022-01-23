@@ -62,10 +62,6 @@ LIBJIVE_SRC += \
 LIBJIVE_SRC += \
 	libjive/src/types/function.cpp \
 
-# arch definitions
-LIBJIVE_SRC += \
-	libjive/src/arch/addresstype.cpp \
-
 SOURCES += $(LIBJIVE_SRC)
 
 HEADERS = $(shell find 	$(JLM_ROOT)/libjive/include -name "*.h")

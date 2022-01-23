@@ -5,7 +5,6 @@
 
 #include <jlm/ir/operators/operators.hpp>
 
-#include <jive/arch/addresstype.hpp>
 #include <jive/types/bitstring/constant.hpp>
 
 #include <llvm/ADT/SmallVector.h>

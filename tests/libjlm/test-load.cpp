@@ -6,7 +6,6 @@
 #include <test-registry.hpp>
 #include <test-types.hpp>
 
-#include <jive/arch/addresstype.hpp>
 #include <jive/view.hpp>
 #include <jive/rvsdg/statemux.hpp>
 

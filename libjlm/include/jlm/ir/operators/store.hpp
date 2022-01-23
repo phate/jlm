@@ -6,7 +6,6 @@
 #ifndef JLM_IR_OPERATORS_STORE_HPP
 #define JLM_IR_OPERATORS_STORE_HPP
 
-#include <jive/arch/addresstype.hpp>
 #include <jive/rvsdg/graph.hpp>
 #include <jive/rvsdg/simple-normal-form.hpp>
 #include <jive/rvsdg/simple-node.hpp>

@@ -13,8 +13,6 @@
 #include <jlm/util/strfmt.hpp>
 #include <jlm/util/time.hpp>
 
-#include <jive/arch/addresstype.hpp>
-
 namespace jlm {
 namespace aa {
 
