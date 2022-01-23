@@ -25,7 +25,6 @@ LIBJIVE_SRC = \
 	libjive/src/rvsdg/simple-normal-form.cpp \
 	libjive/src/rvsdg/simple-node.cpp \
 	libjive/src/rvsdg/statemux.cpp \
-	libjive/src/rvsdg/splitnode.cpp \
 	libjive/src/rvsdg/structural-normal-form.cpp \
 	libjive/src/rvsdg/structural-node.cpp \
 	libjive/src/rvsdg/theta.cpp \
