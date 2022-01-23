@@ -7,7 +7,6 @@
 #include <cxxabi.h>
 
 #include <jive/rvsdg/graph.hpp>
-#include <jive/rvsdg/label.hpp>
 #include <jive/rvsdg/node-normal-form.hpp>
 #include <jive/rvsdg/node.hpp>
 #include <jive/rvsdg/region.hpp>
