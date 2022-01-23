@@ -8,11 +8,9 @@
 
 #include <jive/common.hpp>
 
-#include <jive/rvsdg/control.hpp>
 #include <jive/rvsdg/node-normal-form.hpp>
 #include <jive/rvsdg/notifiers.hpp>
 #include <jive/rvsdg/region.hpp>
-#include <jive/rvsdg/resource.hpp>
 #include <jive/rvsdg/simple-node.hpp>
 #include <jive/rvsdg/substitution.hpp>
 #include <jive/rvsdg/theta.hpp>

@@ -21,7 +21,6 @@ LIBJIVE_SRC = \
 	libjive/src/rvsdg/nullary.cpp \
 	libjive/src/rvsdg/operation.cpp \
 	libjive/src/rvsdg/region.cpp \
-	libjive/src/rvsdg/resource.cpp \
 	libjive/src/rvsdg/simple-normal-form.cpp \
 	libjive/src/rvsdg/simple-node.cpp \
 	libjive/src/rvsdg/statemux.cpp \

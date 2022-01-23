@@ -10,6 +10,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#include <unordered_map>
+
 #include <jive/util/callbacks.hpp>
 
 namespace jive {
