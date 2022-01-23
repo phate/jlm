@@ -12,7 +12,6 @@
 
 #include <jive/common.hpp>
 #include <jive/rvsdg/node.hpp>
-#include <jive/rvsdg/section.hpp>
 
 namespace jive {
 
