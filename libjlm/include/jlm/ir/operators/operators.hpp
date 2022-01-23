@@ -2348,7 +2348,7 @@ private:
 	static std::vector<jive::port>
 	create_portvector(size_t size)
 	{
-		return std::vector<jive::port>(size, jive::memtype::instance());
+		return {size, jive::port(MemoryStateType::Create())};
 	}
 };
 
@@ -2431,7 +2431,7 @@ public:
 	~malloc_op();
 
 	malloc_op(const jive::bittype & btype)
-	: simple_op({btype}, {jlm::ptrtype(jive::bittype(8)), jive::memtype::instance()})
+	: simple_op({btype}, {jlm::ptrtype(jive::bittype(8)), {MemoryStateType::Create()}})
 	{}
 
 	virtual bool
@@ -2544,7 +2544,7 @@ private:
 	static std::vector<jive::port>
 	create_operand_portvector(size_t nmemstates)
 	{
-		std::vector<jive::port> memstates(nmemstates, jive::memtype::instance());
+		std::vector<jive::port> memstates(nmemstates, {MemoryStateType::Create()});
 
 		std::vector<jive::port> ports;
 		ports.push_back(ptrtype(jive::bittype(8)));
@@ -2557,7 +2557,7 @@ private:
 	static std::vector<jive::port>
 	create_result_portvector(size_t nmemstates)
 	{
-		std::vector<jive::port> ports(nmemstates, jive::memtype::instance());
+		std::vector<jive::port> ports(nmemstates, {MemoryStateType::Create()});
 		ports.push_back(iostatetype::instance());
 
 		return ports;
@@ -2638,7 +2638,7 @@ private:
 		ptrtype pt(jive::bit8);
 
 		std::vector<jive::port> ports = {pt, pt, length, jive::bit1};
-		ports.insert(ports.end(), nMemoryStates, jive::memtype::instance());
+		ports.insert(ports.end(), nMemoryStates, {MemoryStateType::Create()});
 
 		return ports;
 	}
@@ -2646,7 +2646,7 @@ private:
 	static std::vector<jive::port>
 	CreateResultPorts(size_t nMemoryStates)
 	{
-		return std::vector<jive::port>(nMemoryStates, jive::memtype::instance());
+		return std::vector<jive::port>(nMemoryStates, {MemoryStateType::Create()});
 	}
 };
 

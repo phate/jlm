@@ -18,7 +18,7 @@ test_load_mux_reduction()
 
   jlm::valuetype vt;
   jlm::ptrtype pt(vt);
-  jive::memtype mt;
+  MemoryStateType mt;
 
   jive::graph graph;
   auto nf = jlm::load_op::normal_form(&graph);
@@ -71,7 +71,7 @@ test_load_mux_reduction2()
 
   jlm::valuetype vt;
   jlm::ptrtype pt(vt);
-  jive::memtype mt;
+  MemoryStateType mt;
 
   jive::graph graph;
   auto nf = jlm::load_op::normal_form(&graph);

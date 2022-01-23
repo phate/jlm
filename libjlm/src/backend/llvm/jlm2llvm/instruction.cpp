@@ -182,7 +182,7 @@ convert(
 
 		if (jive::is<iostatetype>(argument->type()))
 			continue;
-		if (jive::is<jive::memtype>(argument->type()))
+		if (jive::is<MemoryStateType>(argument->type()))
 			continue;
 		if (jive::is<loopstatetype>(argument->type()))
 			continue;
@@ -261,7 +261,7 @@ convert_phi(
 
 	if (jive::is<iostatetype>(phi.type()))
 		return nullptr;
-	if (jive::is<jive::memtype>(phi.type()))
+	if (jive::is<MemoryStateType>(phi.type()))
 		return nullptr;
 	if (jive::is<loopstatetype>(phi.type()))
 		return nullptr;

@@ -39,7 +39,7 @@ convert(const FunctionType & functionType, context & ctx)
 
 		if (jive::is<iostatetype>(argumentType))
 			continue;
-		if (jive::is<jive::memtype>(argumentType))
+		if (jive::is<MemoryStateType>(argumentType))
 			continue;
 		if (jive::is<loopstatetype>(argumentType))
 			continue;
