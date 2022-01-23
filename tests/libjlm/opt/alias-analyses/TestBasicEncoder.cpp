@@ -167,7 +167,7 @@ TestLoad1()
     auto loadX = jive::node_output::node(loadA->input(0)->origin());
 
     assert(is<load_op>(*loadA, 3, 3));
-    assert(loadA->input(1)->origin() == loadX->output(1));
+    assert(jive::node_output::node(loadA->input(1)->origin()) == loadX);
 
     assert(is<load_op>(*loadX, 3, 3));
     assert(loadX->input(0)->origin() == test.lambda->fctargument(0));
@@ -181,7 +181,7 @@ TestLoad1()
 	// std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
   RunBasicEncoder(*ptg, test.module());
-  // jive::view(test.graph().root(), stdout);
+  jive::view(test.graph().root(), stdout);
 	ValidateRvsdg(test);
 }
 
