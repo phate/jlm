@@ -16,8 +16,6 @@ class simple_node;
 class structural_node;
 class theta_node;
 
-namespace phi { class node; }
-
 }
 
 namespace jlm {
@@ -27,6 +25,7 @@ class StatisticsDescriptor;
 
 namespace delta { class node; }
 namespace lambda { class node; }
+namespace phi { class node; }
 
 namespace aa {
 
@@ -69,7 +68,7 @@ public:
 	Encode(const lambda::node & lambda) = 0;
 
 	virtual void
-	Encode(const jive::phi::node & phi) = 0;
+	Encode(const phi::node & phi) = 0;
 
 	virtual void
 	Encode(const delta::node & delta) = 0;

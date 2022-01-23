@@ -9,7 +9,6 @@
 #include <jlm/util/strfmt.hpp>
 
 #include <jive/rvsdg/gamma.hpp>
-#include <jive/rvsdg/phi.hpp>
 #include <jive/rvsdg/theta.hpp>
 
 #include <deque>
@@ -297,13 +296,13 @@ node::direct_calls(std::vector<jive::simple_node*> * calls) const
 			continue;
 		}
 
-		if (auto cvinput = dynamic_cast<jive::phi::cvinput*>(input)) {
+		if (auto cvinput = dynamic_cast<phi::cvinput*>(input)) {
 			auto argument = cvinput->argument();
 			worklist.insert(worklist.end(), argument->begin(), argument->end());
 			continue;
 		}
 
-		if (auto rvresult = dynamic_cast<jive::phi::rvresult*>(input)) {
+		if (auto rvresult = dynamic_cast<phi::rvresult*>(input)) {
 			auto argument = rvresult->argument();
 			worklist.insert(worklist.end(), argument->begin(), argument->end());
 

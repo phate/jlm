@@ -223,7 +223,7 @@ trace_function_input(const jive::simple_node & node)
 			continue;
 		}
 
-		if (auto rvoutput = dynamic_cast<const jive::phi::rvoutput*>(origin)) {
+		if (auto rvoutput = dynamic_cast<const phi::rvoutput*>(origin)) {
 			origin = rvoutput->result()->origin();
 			continue;
 		}

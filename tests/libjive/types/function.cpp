@@ -11,7 +11,6 @@
 #include <assert.h>
 
 #include <jive/rvsdg.hpp>
-#include <jive/rvsdg/phi.hpp>
 #include <jive/types/bitstring.hpp>
 #include <jive/types/function.hpp>
 #include <jive/view.hpp>

@@ -85,7 +85,7 @@ route_to_region(jive::output * output, jive::region * region)
 		output = theta->add_loopvar(output)->argument();
 	} else if (auto lambda = dynamic_cast<lambda::node*>(region->node())) {
 		output = lambda->add_ctxvar(output);
-	} else if (auto phi = dynamic_cast<jive::phi::node*>(region->node())) {
+	} else if (auto phi = dynamic_cast<phi::node*>(region->node())) {
 		output = phi->add_ctxvar(output);
 	} else {
 		JLM_UNREACHABLE("This should have never happened!");

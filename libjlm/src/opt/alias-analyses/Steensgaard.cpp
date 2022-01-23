@@ -269,12 +269,12 @@ public:
 			return strfmt("imp:", imp->name());
 		}
 
-		if (is<jive::phi::rvargument>(output_)) {
+		if (is<phi::rvargument>(output_)) {
 			auto dbgstr = output_->region()->node()->operation().debug_string();
 			return strfmt(dbgstr, ":rvarg", index);
 		}
 
-		if (is<jive::phi::cvargument>(output_)) {
+		if (is<phi::cvargument>(output_)) {
 			auto dbgstr = output_->region()->node()->operation().debug_string();
 			return strfmt(dbgstr, ":cvarg", index);
 		}
@@ -1211,7 +1211,7 @@ Steensgaard::Analyze(const delta::node & delta)
 }
 
 void
-Steensgaard::Analyze(const jive::phi::node & phi)
+Steensgaard::Analyze(const phi::node & phi)
 {
 	/* handle context variables */
 	for (auto cv = phi.begin_cv(); cv != phi.end_cv(); cv++) {
@@ -1314,17 +1314,17 @@ Steensgaard::Analyze(const jive::structural_node & node)
 	auto analyzeDelta  = [](auto& s, auto& n){s.Analyze(*static_cast<const delta::node*>(&n));     };
 	auto analyzeGamma  = [](auto& s, auto& n){s.Analyze(*static_cast<const jive::gamma_node*>(&n));};
 	auto analyzeTheta  = [](auto& s, auto& n){s.Analyze(*static_cast<const jive::theta_node*>(&n));};
-	auto analyzePhi    = [](auto& s, auto& n){s.Analyze(*static_cast<const jive::phi::node*>(&n)); };
+	auto analyzePhi    = [](auto& s, auto& n){s.Analyze(*static_cast<const phi::node*>(&n));       };
 
 	static std::unordered_map<
 		std::type_index
 	, std::function<void(Steensgaard&, const jive::structural_node&)>> nodes
 	({
-	  {typeid(lambda::operation),    analyzeLambda }
-	, {typeid(delta::operation),     analyzeDelta  }
-	, {typeid(jive::gamma_op),       analyzeGamma  }
-	, {typeid(jive::theta_op),       analyzeTheta  }
-	, {typeid(jive::phi::operation), analyzePhi    }
+	  {typeid(lambda::operation), analyzeLambda }
+	, {typeid(delta::operation),  analyzeDelta  }
+	, {typeid(jive::gamma_op),    analyzeGamma  }
+	, {typeid(jive::theta_op),    analyzeTheta  }
+	, {typeid(phi::operation),    analyzePhi    }
 	});
 
 	auto & op = node.operation();

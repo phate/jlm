@@ -11,7 +11,6 @@
 #include <jlm/util/time.hpp>
 
 #include <jive/rvsdg/gamma.hpp>
-#include <jive/rvsdg/phi.hpp>
 #include <jive/rvsdg/simple-node.hpp>
 #include <jive/rvsdg/theta.hpp>
 #include <jive/rvsdg/traverser.hpp>
@@ -348,7 +347,7 @@ mark_lambda(const jive::structural_node * node, cnectx & ctx)
 static void
 mark_phi(const jive::structural_node * node, cnectx & ctx)
 {
-	JLM_ASSERT(is<jive::phi::operation>(node));
+	JLM_ASSERT(is<phi::operation>(node));
 
 	/* mark dependencies */
 	for (size_t i1 = 0; i1 < node->ninputs(); i1++) {
@@ -379,7 +378,7 @@ mark(const jive::structural_node * node, cnectx & ctx)
 	  {std::type_index(typeid(jive::gamma_op)), mark_gamma}
 	, {std::type_index(typeid(jive::theta_op)), mark_theta}
 	, {typeid(lambda::operation), mark_lambda}
-	, {typeid(jive::phi::operation), mark_phi}
+	, {typeid(phi::operation), mark_phi}
 	, {typeid(delta::operation), mark_delta}
 	});
 
@@ -507,7 +506,7 @@ divert_lambda(jive::structural_node * node, cnectx & ctx)
 static void
 divert_phi(jive::structural_node * node, cnectx & ctx)
 {
-	JLM_ASSERT(is<jive::phi::operation>(node));
+	JLM_ASSERT(is<phi::operation>(node));
 
 	divert_arguments(node->subregion(0), ctx);
 	divert(node->subregion(0), ctx);
@@ -529,7 +528,7 @@ divert(jive::structural_node * node, cnectx & ctx)
 	  {std::type_index(typeid(jive::gamma_op)), divert_gamma}
 	, {std::type_index(typeid(jive::theta_op)), divert_theta}
 	, {typeid(lambda::operation), divert_lambda}
-	, {typeid(jive::phi::operation), divert_phi}
+	, {typeid(phi::operation),divert_phi}
 	, {typeid(delta::operation), divert_delta}
 	});
 

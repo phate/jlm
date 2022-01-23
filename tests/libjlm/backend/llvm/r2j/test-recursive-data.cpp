@@ -7,12 +7,11 @@
 #include "test-operation.hpp"
 #include "test-types.hpp"
 
-#include <jive/rvsdg/phi.hpp>
 #include <jive/view.hpp>
 
 #include <jlm/backend/llvm/rvsdg2jlm/rvsdg2jlm.hpp>
-#include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/operators/delta.hpp>
+#include <jlm/ir/operators/Phi.hpp>
 #include <jlm/ir/print.hpp>
 #include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/util/Statistics.hpp>
@@ -30,7 +29,7 @@ test()
 	/* setup graph */
 	auto imp = rm.Rvsdg().add_import(impport(pt, "", linkage::external_linkage));
 
-	jive::phi::builder pb;
+	phi::builder pb;
 	pb.begin(rm.Rvsdg().root());
 	auto region = pb.subregion();
 	auto r1 = pb.add_recvar(pt);

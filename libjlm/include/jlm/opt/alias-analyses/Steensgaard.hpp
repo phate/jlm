@@ -21,14 +21,13 @@ namespace jive {
 	class simple_node;
 	class structural_node;
 	class theta_node;
-
-namespace phi { class node; }
 }
 
 namespace jlm {
 
 namespace delta { class node; }
 namespace lambda { class node; }
+namespace phi { class node; }
 
 namespace aa {
 
@@ -192,7 +191,7 @@ private:
 	Analyze(const delta::node & node);
 
 	void
-	Analyze(const jive::phi::node & node);
+	Analyze(const phi::node & node);
 
 	void
 	Analyze(const jive::gamma_node & node);

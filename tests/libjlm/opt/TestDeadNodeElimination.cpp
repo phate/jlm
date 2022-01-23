@@ -10,10 +10,10 @@
 #include <jive/view.hpp>
 #include <jive/rvsdg/control.hpp>
 #include <jive/rvsdg/gamma.hpp>
-#include <jive/rvsdg/phi.hpp>
 #include <jive/rvsdg/theta.hpp>
 
 #include <jlm/ir/operators/lambda.hpp>
+#include <jlm/ir/operators/Phi.hpp>
 #include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/opt/DeadNodeElimination.hpp>
 #include <jlm/util/Statistics.hpp>
@@ -283,7 +283,7 @@ TestPhi()
 	auto x = graph.add_import({vt, "x"});
 	auto y = graph.add_import({vt, "y"});
 
-	jive::phi::builder pb;
+	phi::builder pb;
 	pb.begin(graph.root());
 
 	auto rv1 = pb.add_recvar(ptrtype(ft));
