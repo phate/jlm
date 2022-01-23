@@ -587,6 +587,36 @@ public:
 	}
 };
 
+/** \brief Memory state type class
+ *
+ * Represents the type of abstract memory locations and is used in state edges for sequentialiazing memory operations,
+ * such as load and store operations.
+ */
+class MemoryStateType final : public jive::statetype {
+public:
+  ~MemoryStateType() noexcept override;
+
+  constexpr
+  MemoryStateType() noexcept
+  : jive::statetype()
+  {}
+
+  std::string
+  debug_string() const override;
+
+  bool
+  operator==(const jive::type & other) const noexcept override;
+
+  std::unique_ptr<jive::type>
+  copy() const override;
+
+  static std::unique_ptr<MemoryStateType>
+  Create()
+  {
+    return std::make_unique<MemoryStateType>();
+  }
+};
+
 }
 
 #endif
