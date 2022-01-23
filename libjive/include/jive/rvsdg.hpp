@@ -12,7 +12,6 @@
 #include <jive/rvsdg/node.hpp>
 #include <jive/rvsdg/notifiers.hpp>
 #include <jive/rvsdg/region.hpp>
-#include <jive/rvsdg/resource.hpp>
 #include <jive/rvsdg/simple-node.hpp>
 #include <jive/rvsdg/traverser.hpp>
 

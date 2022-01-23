@@ -13,8 +13,8 @@
 #include <unordered_set>
 #include <utility>
 
+#include <jive/common.hpp>
 #include <jive/rvsdg/operation.hpp>
-#include <jive/rvsdg/resource.hpp>
 #include <jive/util/intrusive-list.hpp>
 #include <jive/util/strfmt.hpp>
 

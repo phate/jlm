@@ -20,7 +20,6 @@ class node;
 class node_normal_form;
 class output;
 class region;
-class resource_class;
 class simple_normal_form;
 class structural_normal_form;
 
@@ -35,21 +34,15 @@ public:
 
 	port(std::unique_ptr<jive::type> type);
 
-	port(const resource_class * rescls);
-
 	inline
 	port(const port & other)
-	: rescls_(other.rescls_)
-	, type_(other.type_->copy())
+	: type_(other.type_->copy())
 	{}
 
 	inline
 	port(port && other)
-	: rescls_(other.rescls_)
-	, type_(std::move(other.type_))
-	{
-		other.rescls_ = nullptr;
-	}
+	: type_(std::move(other.type_))
+	{}
 
 	inline port &
 	operator=(const port & other)
@@ -57,7 +50,6 @@ public:
 		if (&other == this)
 			return *this;
 
-		rescls_ = other.rescls_;
 		type_ = other.type_->copy();
 
 		return *this;
@@ -69,9 +61,7 @@ public:
 		if (&other == this)
 			return *this;
 
-		rescls_ = other.rescls_;
 		type_ = std::move(other.type_);
-		other.rescls_ = nullptr;
 
 		return *this;
 	}
@@ -85,12 +75,6 @@ public:
 		return !(*this == other);
 	}
 
-	inline const resource_class *
-	rescls() const noexcept
-	{
-		return rescls_;
-	}
-
 	inline const jive::type &
 	type() const noexcept
 	{
@@ -101,7 +85,6 @@ public:
 	copy() const;
 
 private:
-	const resource_class * rescls_;
 	std::unique_ptr<jive::type> type_;
 };
 

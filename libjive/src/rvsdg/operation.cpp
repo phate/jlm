@@ -6,8 +6,6 @@
 
 #include <jive/rvsdg/graph.hpp>
 #include <jive/rvsdg/operation.hpp>
-#include <jive/rvsdg/region.hpp>
-#include <jive/rvsdg/resource.hpp>
 #include <jive/rvsdg/simple-normal-form.hpp>
 #include <jive/rvsdg/structural-normal-form.hpp>
 
@@ -23,19 +21,13 @@ port::port(const jive::type & type)
 {}
 
 port::port(std::unique_ptr<jive::type> type)
-: rescls_(&jive_root_resource_class)
-, type_(std::move(type))
-{}
-
-port::port(const resource_class * rescls)
-: rescls_(rescls)
-, type_(rescls->type().copy())
+: type_(std::move(type))
 {}
 
 bool
 port::operator==(const port & other) const noexcept
 {
-	return rescls_ == other.rescls_ && *type_ == *other.type_;
+	return *type_ == *other.type_;
 }
 
 std::unique_ptr<port>
