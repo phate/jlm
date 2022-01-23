@@ -35,6 +35,7 @@ LIBJLM_SRC = \
 	libjlm/src/ir/operators/lambda.cpp \
 	libjlm/src/ir/operators/load.cpp \
 	libjlm/src/ir/operators/operators.cpp \
+	libjlm/src/ir/operators/Phi.cpp \
 	libjlm/src/ir/operators/sext.cpp \
 	libjlm/src/ir/operators/store.cpp \
 	libjlm/src/ir/print.cpp \
