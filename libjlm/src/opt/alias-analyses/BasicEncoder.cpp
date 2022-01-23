@@ -693,7 +693,7 @@ BasicEncoder::Encode(const lambda::node & lambda)
 }
 
 void
-BasicEncoder::Encode(const jive::phi::node & phi)
+BasicEncoder::Encode(const phi::node & phi)
 {
   MemoryStateEncoder::Encode(*phi.subregion());
 }

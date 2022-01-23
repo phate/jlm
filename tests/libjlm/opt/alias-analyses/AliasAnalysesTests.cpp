@@ -905,7 +905,7 @@ PhiTest::SetupRvsdg()
   nf->set_mutable(false);
 
   /* fib function */
-  jive::phi::builder pb;
+  jlm::phi::builder pb;
   pb.begin(graph->root());
   auto fibrv = pb.add_recvar(pfibfcttype);
 

@@ -24,7 +24,6 @@
 #include <jive/rvsdg/binary.hpp>
 #include <jive/rvsdg/control.hpp>
 #include <jive/rvsdg/gamma.hpp>
-#include <jive/rvsdg/phi.hpp>
 #include <jive/rvsdg/region.hpp>
 #include <jive/rvsdg/theta.hpp>
 #include <jive/rvsdg/type.hpp>
@@ -822,7 +821,7 @@ handle_scc(
 		return;
 	}
 
-	jive::phi::builder pb;
+	phi::builder pb;
 	pb.begin(graph->root());
 	svmap.push_scope(pb.subregion());
 
@@ -830,7 +829,7 @@ handle_scc(
 	auto & vmap = svmap.vmap();
 
 	/* add recursion variables */
-	std::unordered_map<const variable*, jive::phi::rvoutput*> recvars;
+	std::unordered_map<const variable*, phi::rvoutput*> recvars;
 	for (const auto & node : scc) {
 		auto rv = pb.add_recvar(node->type());
 		auto v = module.variable(node);

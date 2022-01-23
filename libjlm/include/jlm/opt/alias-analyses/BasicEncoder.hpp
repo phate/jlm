@@ -75,7 +75,7 @@ private:
   Encode(const lambda::node &lambda) override;
 
   void
-  Encode(const jive::phi::node &phi) override;
+  Encode(const phi::node &phi) override;
 
   void
   Encode(const delta::node &delta) override;

@@ -11,7 +11,6 @@
 #include <jlm/util/time.hpp>
 
 #include <jive/rvsdg/gamma.hpp>
-#include <jive/rvsdg/phi.hpp>
 #include <jive/rvsdg/theta.hpp>
 
 namespace jlm {
@@ -22,7 +21,7 @@ is_phi_argument(const jive::output * output)
   auto argument = dynamic_cast<const jive::argument*>(output);
   return argument
          && argument->region()->node()
-         && is<jive::phi::operation>(argument->region()->node());
+         && is<phi::operation>(argument->region()->node());
 }
 
 /** \brief Dead Node Elimination statistics class
@@ -261,9 +260,9 @@ DeadNodeElimination::Sweep(jive::structural_node & node) const
   > map({
     {typeid(jive::gamma_op),       [](auto & d, auto & n){ d.SweepGamma(*static_cast<jive::gamma_node*>(&n)); }},
     {typeid(jive::theta_op),       [](auto & d, auto & n){ d.SweepTheta(*static_cast<jive::theta_node*>(&n)); }},
-    {typeid(lambda::operation),    [](auto & d, auto & n){ d.SweepLambda(*static_cast<lambda::node*>(&n)); }},
-    {typeid(jive::phi::operation), [](auto & d, auto & n){ d.SweepPhi(*static_cast<jive::phi::node*>(&n)); }},
-    {typeid(delta::operation),     [](auto & d, auto & n){ d.SweepDelta(*static_cast<delta::node*>(&n)); }}
+    {typeid(lambda::operation),    [](auto & d, auto & n){ d.SweepLambda(*static_cast<lambda::node*>(&n));    }},
+    {typeid(phi::operation),       [](auto & d, auto & n){ d.SweepPhi(*static_cast<phi::node*>(&n));          }},
+    {typeid(delta::operation),     [](auto & d, auto & n){ d.SweepDelta(*static_cast<delta::node*>(&n));      }}
   });
 
   auto & op = node.operation();
@@ -371,7 +370,7 @@ DeadNodeElimination::SweepLambda(lambda::node & lambdaNode) const
 }
 
 void
-DeadNodeElimination::SweepPhi(jive::phi::node & phiNode) const
+DeadNodeElimination::SweepPhi(phi::node & phiNode) const
 {
   auto subregion = phiNode.subregion();
 

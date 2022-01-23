@@ -43,7 +43,7 @@ MemoryStateEncoder::Encode(jive::structural_node & node)
 {
 	auto encodeLambda = [](auto & mse, auto & n){mse.Encode(*static_cast<lambda::node*>(&n));     };
 	auto encodeDelta  = [](auto & mse, auto & n){mse.Encode(*static_cast<delta::node*>(&n));      };
-	auto encodePhi    = [](auto & mse, auto & n){mse.Encode(*static_cast<jive::phi::node*>(&n));  };
+	auto encodePhi    = [](auto & mse, auto & n){mse.Encode(*static_cast<phi::node*>(&n));        };
 	auto encodeGamma  = [](auto & mse, auto & n){mse.Encode(*static_cast<jive::gamma_node*>(&n)); };
 	auto encodeTheta  = [](auto & mse, auto & n){mse.Encode(*static_cast<jive::theta_node*>(&n)); };
 
@@ -51,11 +51,11 @@ MemoryStateEncoder::Encode(jive::structural_node & node)
 		std::type_index,
 		std::function<void(MemoryStateEncoder&, jive::structural_node&)>
 	> nodes({
-	  {typeid(lambda::operation),    encodeLambda }
-	, {typeid(delta::operation),     encodeDelta  }
-	, {typeid(jive::phi::operation), encodePhi    }
-	, {typeid(jive::gamma_op),       encodeGamma  }
-	, {typeid(jive::theta_op),       encodeTheta  }
+	  {typeid(lambda::operation), encodeLambda }
+	, {typeid(delta::operation),  encodeDelta  }
+	, {typeid(phi::operation),    encodePhi    }
+	, {typeid(jive::gamma_op),    encodeGamma  }
+	, {typeid(jive::theta_op),    encodeTheta  }
 	});
 
 	auto & op = node.operation();

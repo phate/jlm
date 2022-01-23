@@ -11,11 +11,10 @@
 #include <jive/rvsdg/control.hpp>
 #include <jive/rvsdg/gamma.hpp>
 #include <jive/rvsdg/graph.hpp>
-#include <jive/rvsdg/phi.hpp>
-#include <jive/rvsdg/simple-node.hpp>
 #include <jive/rvsdg/theta.hpp>
 
 #include <jlm/ir/operators/lambda.hpp>
+#include <jlm/ir/operators/Phi.hpp>
 #include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/opt/cne.hpp>
 #include <jlm/util/Statistics.hpp>
@@ -436,7 +435,7 @@ test_phi()
 
 	auto x = graph.add_import({vt, "x"});
 
-	jive::phi::builder pb;
+	phi::builder pb;
 	pb.begin(graph.root());
 	auto region = pb.subregion();
 

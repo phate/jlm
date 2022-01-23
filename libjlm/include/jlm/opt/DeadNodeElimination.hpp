@@ -14,10 +14,6 @@
 namespace jive {
 class gamma_node;
 
-namespace phi {
-class node;
-}
-
 class theta_node;
 }
 
@@ -29,6 +25,8 @@ class node;
 namespace lambda {
 class node;
 }
+
+namespace phi { class node; }
 
 class RvsdgModule;
 class StatisticsDescriptor;
@@ -154,7 +152,7 @@ private:
   SweepLambda(lambda::node & lambdaNode) const;
 
   void
-  SweepPhi(jive::phi::node & phiNode) const;
+  SweepPhi(phi::node & phiNode) const;
 
   void
   SweepDelta(delta::node & deltaNode) const;

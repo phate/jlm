@@ -5,7 +5,6 @@
 
 #include <jive/rvsdg/gamma.hpp>
 #include <jive/rvsdg/graph.hpp>
-#include <jive/rvsdg/phi.hpp>
 #include <jive/rvsdg/theta.hpp>
 #include <jive/rvsdg/traverser.hpp>
 
@@ -421,7 +420,7 @@ convert_lambda_node(const jive::node & node, context & ctx)
 static inline void
 convert_phi_node(const jive::node & node, context & ctx)
 {
-	JLM_ASSERT(jive::is<jive::phi::operation>(&node));
+	JLM_ASSERT(jive::is<phi::operation>(&node));
 	auto phi = static_cast<const jive::structural_node*>(&node);
 	auto subregion = phi->subregion(0);
 	auto & module = ctx.module();
@@ -505,7 +504,7 @@ convert_node(const jive::node & node, context & ctx)
 	  {typeid(lambda::operation), convert_lambda_node}
 	, {std::type_index(typeid(jive::gamma_op)), convert_gamma_node}
 	, {std::type_index(typeid(jive::theta_op)), convert_theta_node}
-	, {typeid(jive::phi::operation), convert_phi_node}
+	, {typeid(phi::operation), convert_phi_node}
 	, {typeid(delta::operation), convert_delta_node}
 	});
 

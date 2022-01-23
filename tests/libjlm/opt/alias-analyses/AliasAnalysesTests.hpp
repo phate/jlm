@@ -661,7 +661,7 @@ public:
 
 	jive::gamma_node * gamma;
 
-	jive::phi::node * phi;
+	jlm::phi::node * phi;
 
 	jive::node * callfibm1;
 	jive::node * callfibm2;

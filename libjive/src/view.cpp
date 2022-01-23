@@ -6,7 +6,6 @@
 
 #include <jive/types/function.hpp>
 #include <jive/rvsdg/gamma.hpp>
-#include <jive/rvsdg/phi.hpp>
 #include <jive/rvsdg/region.hpp>
 #include <jive/rvsdg/simple-node.hpp>
 #include <jive/rvsdg/structural-node.hpp>
@@ -298,9 +297,6 @@ type(const jive::node * n)
 
 	if (is<lambda_op>(n))
 		return "lambda";
-
-	if (is<phi::operation>(n))
-		return "phi";
 
 	return "";
 }
