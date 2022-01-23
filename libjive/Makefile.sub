@@ -23,7 +23,6 @@ LIBJIVE_SRC = \
 	libjive/src/rvsdg/notifiers.cpp \
 	libjive/src/rvsdg/nullary.cpp \
 	libjive/src/rvsdg/operation.cpp \
-	libjive/src/rvsdg/phi.cpp \
 	libjive/src/rvsdg/region.cpp \
 	libjive/src/rvsdg/resource.cpp \
 	libjive/src/rvsdg/simple-normal-form.cpp \
