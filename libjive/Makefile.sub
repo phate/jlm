@@ -13,7 +13,6 @@ LIBJIVE_SRC = \
 	libjive/src/common.cpp \
 	libjive/src/rvsdg/binary.cpp \
 	libjive/src/rvsdg/control.cpp \
-	libjive/src/rvsdg/equivalence.cpp \
 	libjive/src/rvsdg/gamma.cpp \
 	libjive/src/rvsdg/graph.cpp \
 	libjive/src/rvsdg/label.cpp \
