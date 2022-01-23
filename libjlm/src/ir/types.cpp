@@ -361,4 +361,28 @@ iostatetype::copy() const
 	return std::unique_ptr<jive::type>(new iostatetype(*this));
 }
 
+/**
+ * MemoryStateType class
+ */
+MemoryStateType::~MemoryStateType() noexcept
+= default;
+
+std::string
+MemoryStateType::debug_string() const
+{
+  return "mem";
+}
+
+bool
+MemoryStateType::operator==(const jive::type &other) const noexcept
+{
+  return jive::is<MemoryStateType>(other);
+}
+
+std::unique_ptr<jive::type>
+MemoryStateType::copy() const
+{
+  return std::unique_ptr<jive::type>(new MemoryStateType(*this));
+}
+
 }
