@@ -355,7 +355,7 @@ convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 
 			if (jive::is<iostatetype>(tac->result(0)->type()))
 				continue;
-			if (jive::is<jive::memtype>(tac->result(0)->type()))
+			if (jive::is<MemoryStateType>(tac->result(0)->type()))
 				continue;
 			if (jive::is<loopstatetype>(tac->result(0)->type()))
 				continue;

@@ -29,7 +29,7 @@ public:
 		const jlm::ptrtype & atype,
 		const jive::bittype & btype,
 		size_t alignment)
-	: simple_op({btype}, {atype, jive::memtype::instance()})
+	: simple_op({btype}, {atype, {MemoryStateType::Create()}})
 	, alignment_(alignment)
 	{}
 

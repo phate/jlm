@@ -107,7 +107,7 @@ test_push_theta_bottom()
 {
 	using namespace jlm;
 
-	jive::memtype mt;
+	MemoryStateType mt;
 	jlm::ptrtype pt(vt);
 	jive::ctltype ct(2);
 

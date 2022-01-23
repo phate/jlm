@@ -22,7 +22,7 @@ test()
 
 	valuetype vt;
 	ptrtype pt(vt);
-	jive::memtype mt;
+	MemoryStateType mt;
 	ipgraph_module m(filepath(""), "", "");
 
 	std::unique_ptr<jlm::cfg> cfg(new jlm::cfg(m));

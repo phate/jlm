@@ -106,7 +106,7 @@ call_memstate_input(const jive::simple_node & node)
   */
   for (size_t n = 0; n < node.ninputs(); n++) {
     auto input = node.input(n);
-    if (is<jive::memtype>(input->type()))
+    if (is<MemoryStateType>(input->type()))
       return input;
   }
 
@@ -123,7 +123,7 @@ call_memstate_output(const jive::simple_node & node)
   */
   for (size_t n = 0; n < node.noutputs(); n++) {
     auto output = node.output(n);
-    if (is<jive::memtype>(output->type()))
+    if (is<MemoryStateType>(output->type()))
       return output;
   }
 
@@ -140,7 +140,7 @@ lambda_memstate_argument(const lambda::node & lambda)
   */
   for (size_t n = 0; n < subregion->narguments(); n++) {
     auto argument = subregion->argument(n);
-    if (is<jive::memtype>(argument->type()))
+    if (is<MemoryStateType>(argument->type()))
       return argument;
   }
 
@@ -157,7 +157,7 @@ lambda_memstate_result(const lambda::node & lambda)
   */
   for (size_t n = 0; n < subregion->nresults(); n++) {
     auto result = subregion->result(n);
-    if (is<jive::memtype>(result->type()))
+    if (is<MemoryStateType>(result->type()))
       return result;
   }
 
@@ -210,7 +210,7 @@ public:
     jive::output * state)
   {
     JLM_ASSERT(!contains(node));
-    JLM_ASSERT(is<jive::memtype>(state->type()));
+    JLM_ASSERT(is<MemoryStateType>(state->type()));
 
     states_[node] = state;
   }
@@ -232,7 +232,7 @@ public:
     jive::output * state)
   {
     JLM_ASSERT(contains(node));
-    JLM_ASSERT(is<jive::memtype>(state->type()));
+    JLM_ASSERT(is<MemoryStateType>(state->type()));
 
     states_[node] = state;
   }

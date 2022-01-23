@@ -24,7 +24,7 @@ test_store_mux_reduction()
 
 	jlm::valuetype vt;
 	jlm::ptrtype pt(vt);
-	jive::memtype mt;
+	MemoryStateType mt;
 
 	jive::graph graph;
 	auto nf = graph.node_normal_form(typeid(jlm::store_op));
@@ -70,7 +70,7 @@ test_multiple_origin_reduction()
 
 	jlm::valuetype vt;
 	jlm::ptrtype pt(vt);
-	jive::memtype mt;
+	MemoryStateType mt;
 
 	jive::graph graph;
 	auto nf = graph.node_normal_form(typeid(jlm::store_op));
@@ -105,7 +105,7 @@ test_store_alloca_reduction()
 	using namespace jlm;
 
 	jlm::valuetype vt;
-	jive::memtype mt;
+	MemoryStateType mt;
 	jive::bittype bt(32);
 
 	jive::graph graph;
@@ -151,7 +151,7 @@ test_store_store_reduction()
 
 	valuetype vt;
 	jlm::ptrtype pt(vt);
-	jive::memtype mt;
+	MemoryStateType mt;
 
 	jive::graph graph;
 	auto a = graph.add_import({pt, "address"});

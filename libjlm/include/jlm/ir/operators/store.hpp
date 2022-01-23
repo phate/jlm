@@ -93,7 +93,7 @@ public:
 		size_t nstates,
 		size_t alignment)
 	: simple_op(create_srcports(ptype, nstates),
-			std::vector<jive::port>(nstates, {jive::memtype::instance()}))
+			std::vector<jive::port>(nstates, {MemoryStateType::Create()}))
 	, alignment_(alignment)
 	{}
 
@@ -169,7 +169,7 @@ private:
 	create_srcports(const ptrtype & ptype, size_t nstates)
 	{
 		std::vector<jive::port> ports({ptype, ptype.pointee_type()});
-		std::vector<jive::port> states(nstates, {jive::memtype::instance()});
+		std::vector<jive::port> states(nstates, {MemoryStateType::Create()});
 		ports.insert(ports.end(), states.begin(), states.end());
 		return ports;
 	}

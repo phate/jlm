@@ -21,7 +21,7 @@ test_malloc()
 	auto setup = []() {
 		using namespace jlm;
 
-		jive::memtype mt;
+		MemoryStateType mt;
 		ptrtype pt(jive::bit8);
 		auto im = ipgraph_module::create(filepath(""), "", "");
 
@@ -72,7 +72,7 @@ test_free()
 		using namespace jlm;
 
 		iostatetype iot;
-		jive::memtype mt;
+		MemoryStateType mt;
 		ptrtype pt(jive::bit8);
 
 		auto ipgmod = ipgraph_module::create(filepath(""), "", "");

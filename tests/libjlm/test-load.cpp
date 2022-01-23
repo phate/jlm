@@ -20,7 +20,7 @@ test_load_alloca_reduction()
 {
 	using namespace jlm;
 
-	jive::memtype mt;
+	MemoryStateType mt;
 	jive::bittype bt(32);
 
 	jive::graph graph;
@@ -58,7 +58,7 @@ test_multiple_origin_reduction()
 {
 	using namespace jlm;
 
-	jive::memtype mt;
+	MemoryStateType mt;
 	jlm::valuetype vt;
 	jlm::ptrtype pt(vt);
 
@@ -135,7 +135,7 @@ test_load_store_alloca_reduction()
 {
 	using namespace jlm;
 
-	jive::memtype mt;
+	MemoryStateType mt;
 	jive::bittype bt(32);
 
 	jive::graph graph;
@@ -171,7 +171,7 @@ test_load_store_reduction()
 
 	valuetype vt;
 	ptrtype pt(vt);
-	jive::memtype mt;
+	MemoryStateType mt;
 
 	jive::graph graph;
 	auto nf = load_op::normal_form(&graph);
@@ -201,7 +201,7 @@ test_load_load_reduction()
 
 	valuetype vt;
 	ptrtype pt(vt);
-	jive::memtype mt;
+	MemoryStateType mt;
 
 	jive::graph graph;
 	auto nf = load_op::normal_form(&graph);

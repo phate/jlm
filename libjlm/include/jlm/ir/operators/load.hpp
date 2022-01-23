@@ -224,7 +224,7 @@ private:
 	create_ports(const jive::valuetype & vtype, size_t nstates)
 	{
 		std::vector<jive::port> ports(1, {vtype});
-		std::vector<jive::port> states(nstates, {jive::memtype::instance()});
+		std::vector<jive::port> states(nstates, {MemoryStateType::Create()});
 		ports.insert(ports.end(), states.begin(), states.end());
 		return ports;
 	}
