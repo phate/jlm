@@ -3,3 +3,4 @@ TESTS += \
 	libjlm/ir/operators/test-ConstantFP \
 	libjlm/ir/operators/test-delta \
 	libjlm/ir/operators/test-lambda \
+	libjlm/ir/operators/TestPhi \
