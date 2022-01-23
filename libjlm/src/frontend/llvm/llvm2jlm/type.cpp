@@ -8,7 +8,6 @@
 #include <jlm/frontend/llvm/llvm2jlm/type.hpp>
 #include <jlm/ir/types.hpp>
 
-#include <jive/arch/addresstype.hpp>
 #include <jive/types/bitstring/type.hpp>
 
 #include <llvm/IR/DerivedTypes.h>

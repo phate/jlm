@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jive/arch/addresstype.hpp>
 #include <jive/types/bitstring.hpp>
 #include <jive/rvsdg/control.hpp>
 #include <jive/rvsdg/statemux.hpp>

@@ -7,10 +7,8 @@
 #include "test-registry.hpp"
 #include "test-types.hpp"
 
-#include <jive/arch/addresstype.hpp>
 #include <jive/view.hpp>
 #include <jive/rvsdg/gamma.hpp>
-#include <jive/rvsdg/simple-node.hpp>
 #include <jive/rvsdg/theta.hpp>
 
 #include <jlm/ir/operators/store.hpp>

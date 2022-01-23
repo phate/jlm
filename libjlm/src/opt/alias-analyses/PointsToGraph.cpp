@@ -8,7 +8,6 @@
 #include <jlm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/util/strfmt.hpp>
 
-#include <jive/arch/addresstype.hpp>
 #include <jive/rvsdg/node.hpp>
 #include <jive/rvsdg/structural-node.hpp>
 

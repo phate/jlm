@@ -6,7 +6,6 @@
 #ifndef JLM_IR_OPERATORS_OPERATORS_HPP
 #define JLM_IR_OPERATORS_OPERATORS_HPP
 
-#include <jive/arch/addresstype.hpp>
 #include <jive/types/bitstring/type.hpp>
 #include <jive/types/record.hpp>
 #include <jive/rvsdg/binary.hpp>
