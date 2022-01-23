@@ -15,7 +15,6 @@ LIBJIVE_SRC = \
 	libjive/src/rvsdg/control.cpp \
 	libjive/src/rvsdg/gamma.cpp \
 	libjive/src/rvsdg/graph.cpp \
-	libjive/src/rvsdg/label.cpp \
 	libjive/src/rvsdg/negotiator.cpp \
 	libjive/src/rvsdg/node-normal-form.cpp \
 	libjive/src/rvsdg/node.cpp \
