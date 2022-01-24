@@ -382,6 +382,27 @@ convert_branch(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
 	JLM_ASSERT(is<branch_op>(tac.operation()));
 }
 
+template<class NODE> static void
+Convert(
+  const jlm::tac & threeAddressCode,
+  jive::region * region,
+  jlm::vmap & variableMap)
+{
+  std::vector<jive::output*> operands;
+  for (size_t n = 0; n < threeAddressCode.noperands(); n++) {
+    auto operand = threeAddressCode.operand(n);
+    operands.push_back(variableMap.lookup(operand));
+  }
+
+  auto results = NODE::Create(operands);
+
+  JLM_ASSERT(results.size() == threeAddressCode.nresults());
+  for (size_t n = 0; n < threeAddressCode.nresults(); n++) {
+    auto result = threeAddressCode.result(n);
+    variableMap.insert(result, results[n]);
+  }
+}
+
 static void
 convert_tac(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
 {
@@ -392,6 +413,7 @@ convert_tac(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
 	  {std::type_index(typeid(assignment_op)), convert_assignment}
 	, {std::type_index(typeid(select_op)), convert_select}
 	, {std::type_index(typeid(branch_op)), convert_branch}
+  , {typeid(CallOperation), Convert<CallNode>}
 	});
 
 	auto & op = tac.operation();

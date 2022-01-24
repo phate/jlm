@@ -315,7 +315,7 @@ Bits2PtrTest::SetupRvsdg()
                                       linkage::external_linkage);
   auto cvbits2ptr = testfct->add_ctxvar(b2p);
 
-  auto results = CallOperation::create(cvbits2ptr, {testfct->fctargument(0), testfct->fctargument(1)});
+  auto results = CallNode::Create(cvbits2ptr, {testfct->fctargument(0), testfct->fctargument(1)});
 
   testfct->finalize({results[1]});
   graph->add_export(testfct->output(), {ptrtype(testfct->type()), "testfct"});
@@ -424,8 +424,8 @@ CallTest1::SetupRvsdg()
   auto sty = store_op::create(y[0], six, {stx[0]}, 4);
   auto stz = store_op::create(z[0], seven, {sty[0]}, 4);
 
-  auto callf = CallOperation::create(cvf, {x[0], y[0], stz[0]});
-  auto callg = CallOperation::create(cvg, {z[0], z[0], callf[1]});
+  auto callf = CallNode::Create(cvf, {x[0], y[0], stz[0]});
+  auto callg = CallNode::Create(cvg, {z[0], z[0], callf[1]});
 
   sum = jive::bitadd_op::create(32, callf[0], callg[0]);
 
@@ -498,13 +498,13 @@ CallTest2::SetupRvsdg()
   auto six = jive::create_bitconstant(test->subregion(), 32, 6);
   auto seven = jive::create_bitconstant(test->subregion(), 32, 7);
 
-  auto create1 = CallOperation::create(
+  auto create1 = CallNode::Create(
     create_cv,
     {six, test->fctargument(0), test->fctargument(1)});
-  auto create2 = CallOperation::create(create_cv, {seven, create1[1], create1[2]});
+  auto create2 = CallNode::Create(create_cv, {seven, create1[1], create1[2]});
 
-  auto destroy1 = CallOperation::create(destroy_cv, {create1[0], create2[1], create2[2]});
-  auto destroy2 = CallOperation::create(destroy_cv, {create2[0], destroy1[0], destroy1[1]});
+  auto destroy1 = CallNode::Create(destroy_cv, {create1[0], create2[1], create2[2]});
+  auto destroy2 = CallNode::Create(destroy_cv, {create2[0], destroy1[0], destroy1[1]});
 
   test->finalize(destroy2);
   graph->add_export(test->output(), {ptrtype(test->type()), "test"});
@@ -569,8 +569,9 @@ IndirectCallTest::SetupRvsdg()
   auto fctindcall = lambda::node::create(graph->root(), indcall_type, "indcall",
                                          linkage::external_linkage);
 
-  auto call = CallOperation::create(fctindcall->fctargument(0),
-                                    {fctindcall->fctargument(1), fctindcall->fctargument(2)});
+  auto call = CallNode::Create(
+    fctindcall->fctargument(0),
+    {fctindcall->fctargument(1), fctindcall->fctargument(2)});
 
   fctindcall->finalize(call);
 
@@ -581,10 +582,12 @@ IndirectCallTest::SetupRvsdg()
   auto fctfour_cv = fcttest->add_ctxvar(fctfour->output());
   auto fctthree_cv = fcttest->add_ctxvar(fctthree->output());
 
-  auto call_four = CallOperation::create(fctindcall_cv,
-                                         {fctfour_cv, fcttest->fctargument(0), fcttest->fctargument(1)});
-  auto call_three = CallOperation::create(fctindcall_cv,
-                                          {fctthree_cv, call_four[1], call_four[2]});
+  auto call_four = CallNode::Create(
+    fctindcall_cv,
+    {fctfour_cv, fcttest->fctargument(0), fcttest->fctargument(1)});
+  auto call_three = CallNode::Create(
+    fctindcall_cv,
+    {fctthree_cv, call_four[1], call_four[2]});
 
   auto add = jive::bitadd_op::create(32, call_four[0], call_three[0]);
 
@@ -741,7 +744,7 @@ DeltaTest1::SetupRvsdg()
 
   auto five = jive::create_bitconstant(h->subregion(), 32, 5);
   auto st = store_op::create(cvf, five, {h->fctargument(0)}, 4);
-  auto callg = CallOperation::create(cvg, {cvf, st[0]});
+  auto callg = CallNode::Create(cvg, {cvf, st[0]});
 
   h->finalize(callg);
   graph->add_export(h->output(), {ptrtype(h->type()), "h"});
@@ -806,7 +809,7 @@ DeltaTest2::SetupRvsdg()
   auto b5 = jive::create_bitconstant(f2->subregion(), 32, 5);
   auto b42 = jive::create_bitconstant(f2->subregion(), 32, 42);
   st = store_op::create(cvd1, b5, {f2->fctargument(0)}, 4);
-  auto callf1 = CallOperation::create(cvf1, st);
+  auto callf1 = CallNode::Create(cvf1, st);
   st = store_op::create(cvd2, b42, callf1, 4);
 
   f2->finalize(st);
@@ -860,7 +863,7 @@ ImportTest::SetupRvsdg()
   auto b2 = jive::create_bitconstant(f2->subregion(), 32, 2);
   auto b21 = jive::create_bitconstant(f2->subregion(), 32, 21);
   st = store_op::create(cvd1, b2, {f2->fctargument(0)}, 4);
-  auto callf1 = CallOperation::create(cvf1, st);
+  auto callf1 = CallNode::Create(cvf1, st);
   st = store_op::create(cvd2, b21, callf1, 4);
 
   f2->finalize(st);
@@ -926,14 +929,14 @@ PhiTest::SetupRvsdg()
   /* gamma subregion 0 */
   auto one = jive::create_bitconstant(gammaNode->subregion(0), 64, 1);
   auto nm1 = jive::bitsub_op::create(64, nev->argument(0), one);
-  auto callfibm1Results = CallOperation::create(
+  auto callfibm1Results = CallNode::Create(
     fibev->argument(0),
     {nm1, resultev->argument(0),
      stateev->argument(0)});
 
   two = jive::create_bitconstant(gammaNode->subregion(0), 64, 2);
   auto nm2 = jive::bitsub_op::create(64, nev->argument(0), two);
-  auto callfibm2Results = CallOperation::create(
+  auto callfibm2Results = CallNode::Create(
     fibev->argument(0),
     {nm2, resultev->argument(0),
      callfibm1Results[0]});
@@ -972,7 +975,7 @@ PhiTest::SetupRvsdg()
   auto zero = jive::create_bitconstant(testfct->subregion(), 64, 0);
   auto gep = getelementptr_op::create(allocaResults[0], {zero, zero}, pbit64);
 
-  auto call = CallOperation::create(fibcv, {ten, gep, state});
+  auto call = CallNode::Create(fibcv, {ten, gep, state});
 
   testfct->finalize({call[0]});
   graph->add_export(testfct->output(), {ptrtype(testfcttype), "test"});
