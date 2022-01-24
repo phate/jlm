@@ -45,21 +45,6 @@ public:
 	std::unique_ptr<jive::operation>
 	copy() const override;
 
-	static std::vector<jive::output*>
-	create(jive::output * function, const std::vector<jive::output*> & arguments)
-	{
-		auto at = dynamic_cast<const ptrtype*>(&function->type());
-		if (!at) throw jlm::error("expected pointer type.");
-
-		auto ft = dynamic_cast<const FunctionType*>(&at->pointee_type());
-		if (!ft) throw jlm::error("expected function type.");
-
-		CallOperation op(*ft);
-		std::vector<jive::output*> operands({function});
-		operands.insert(operands.end(), arguments.begin(), arguments.end());
-		return jive::simple_node::create_normalized(function->region(), op, operands);
-	}
-
 	static std::unique_ptr<tac>
 	create(
 		const variable * function,
