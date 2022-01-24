@@ -45,7 +45,7 @@ test1()
 	auto gamma = jive::gamma_node::create(lambda2->fctargument(0), 2);
 	auto ev1 = gamma->add_entryvar(lambda2->fctargument(1));
 	auto ev2 = gamma->add_entryvar(d);
-	auto apply = CallOperation::create(ev2->argument(0), {ev1->argument(0)})[0];
+	auto apply = CallNode::Create(ev2->argument(0), {ev1->argument(0)})[0];
 	auto xv1 = gamma->add_exitvar({apply, ev1->argument(1)});
 	auto f2 = lambda2->finalize({xv1});
 
@@ -84,7 +84,7 @@ test2()
 	auto cvi = f2Lambda->add_ctxvar(i);
 	auto cvf1 = f2Lambda->add_ctxvar(f1);
 
-	auto call = CallOperation::create(cvi, {cvf1, f2Lambda->fctargument(0)});
+	auto call = CallNode::Create(cvi, {cvf1, f2Lambda->fctargument(0)});
 
 	auto f2 = f2Lambda->finalize({call[0]});
 

@@ -51,7 +51,7 @@ static int test_main()
     "f2",
     linkage::external_linkage);
   auto dep = lambdaF2->add_ctxvar(rv3->argument());
-  auto ret = CallOperation::create(dep, {lambdaF2->fctargument(0)})[0];
+  auto ret = CallNode::Create(dep, {lambdaF2->fctargument(0)})[0];
   auto lambda2 = lambdaF2->finalize({ret});
 
   rv1->set_rvorigin(lambda0);
