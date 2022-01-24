@@ -99,6 +99,81 @@ private:
 	}
 };
 
+/** \brief Call node
+ *
+ */
+class CallNode final : public jive::simple_node {
+private:
+  CallNode(
+    jive::region * region,
+    CallOperation & operation,
+    const std::vector<jive::output*> & operands)
+    : simple_node(region, operation, operands)
+  {}
+
+public:
+  const CallOperation&
+  GetOperation() const noexcept
+  {
+    return *static_cast<const CallOperation*>(&operation());
+  }
+
+  size_t
+  NumArguments() const noexcept
+  {
+    return ninputs()-1;
+  }
+
+  size_t
+  NumResults() const noexcept
+  {
+    return noutputs();
+  }
+
+  jive::input *
+  GetFunctionInput() const noexcept
+  {
+    auto function = input(0);
+    JLM_ASSERT(is<FunctionType>(function->type()));
+    return function;
+  }
+
+  static std::vector<jive::output*>
+  Create(
+    jive::output * function,
+    std::vector<jive::output*> arguments)
+  {
+    auto functionType = CheckAndExtractFunctionType(function);
+
+    CallOperation callOperation(functionType);
+    std::vector<jive::output*> operands({function});
+    operands.insert(operands.end(), arguments.begin(), arguments.end());
+    return jive::simple_node::create_normalized(function->region(), callOperation, operands);
+  }
+
+  static std::vector<jive::output*>
+  Create(std::vector<jive::output*> operands)
+  {
+    JLM_ASSERT(!operands.empty());
+    return Create(operands[0], {std::next(operands.begin()), operands.end()});
+  }
+
+private:
+  static const FunctionType &
+  CheckAndExtractFunctionType(const jive::output * function)
+  {
+    auto pointerType = dynamic_cast<const ptrtype*>(&function->type());
+    if (!pointerType)
+      throw jlm::error("Expected pointer type.");
+
+    auto functionType = dynamic_cast<const FunctionType*>(&pointerType->pointee_type());
+    if (!functionType)
+      throw jlm::error("Expected function type.");
+
+    return *functionType;
+  }
+};
+
 /**
 * \brief Traces function input of call node
 *
