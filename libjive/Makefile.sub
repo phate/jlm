@@ -64,7 +64,7 @@ jive-debug: $(JLM_ROOT)/libjive.a
 jive-release: CXXFLAGS += -O3
 jive-release: $(JLM_ROOT)/libjive.a
 
-$(JLM_ROOT)/libjive.a: CXXFLAGS+=-Wall -Wpedantic -Wextra -Wno-unused-parameter --std=c++14
+$(JLM_ROOT)/libjive.a: CXXFLAGS+=-Wall -Wpedantic -Wextra -Wno-unused-parameter --std=c++17
 $(JLM_ROOT)/libjive.a: CPPFLAGS+=-I$(JLM_ROOT)/libjive/include
 $(JLM_ROOT)/libjive.a: $(patsubst %.cpp, $(JLM_ROOT)/%.la, $(LIBJIVE_SRC))
 
