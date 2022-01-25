@@ -124,12 +124,14 @@ public:
   const jive::type &
   ResultType(size_t index) const noexcept
   {
+    JLM_ASSERT(index < ResultTypes_.size());
     return *ResultTypes_[index];
   }
 
   const jive::type &
   ArgumentType(size_t index) const noexcept
   {
+    JLM_ASSERT(index < ArgumentTypes_.size());
     return *ArgumentTypes_[index];
   }
 
