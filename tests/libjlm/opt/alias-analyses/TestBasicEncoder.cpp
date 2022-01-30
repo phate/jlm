@@ -251,14 +251,14 @@ TestLoad2()
 static void
 TestCall1()
 {
-	auto ValidateRvsdg = [](const CallTest1 & test)
-	{
-		using namespace jlm;
+  auto ValidateRvsdg = [](const CallTest1 & test)
+  {
+    using namespace jlm;
 
-		/* validate f */
-		{
-      auto lambdaEntrySplit = input_node(*test.lambda_f->fctargument(2)->begin());
-			auto lambdaExitMerge = jive::node_output::node(test.lambda_f->fctresult(1)->origin());
+    /* validate f */
+    {
+      auto lambdaEntrySplit = input_node(*test.lambda_f->fctargument(3)->begin());
+      auto lambdaExitMerge = jive::node_output::node(test.lambda_f->fctresult(2)->origin());
       auto loadX = input_node(*test.lambda_f->fctargument(0)->begin());
       auto loadY = input_node(*test.lambda_f->fctargument(1)->begin());
 
@@ -270,12 +270,12 @@ TestCall1()
 
       assert(is<load_op>(*loadY, 2, 2));
       assert(jive::node_output::node(loadY->input(1)->origin()) == lambdaEntrySplit);
-		}
+    }
 
 		/* validate g */
-		{
-      auto lambdaEntrySplit = input_node(*test.lambda_g->fctargument(2)->begin());
-      auto lambdaExitMerge = jive::node_output::node(test.lambda_g->fctresult(1)->origin());
+    {
+      auto lambdaEntrySplit = input_node(*test.lambda_g->fctargument(3)->begin());
+      auto lambdaExitMerge = jive::node_output::node(test.lambda_g->fctresult(2)->origin());
       auto loadX = input_node(*test.lambda_g->fctargument(0)->begin());
       auto loadY = input_node(*test.lambda_g->fctargument(1)->begin());
 
@@ -287,22 +287,22 @@ TestCall1()
 
       assert(is<load_op>(*loadY, 2, 2));
       assert(jive::node_output::node(loadY->input(1)->origin()) == loadX);
-		}
+    }
 
 		/* validate h */
-		{
-			auto callEntryMerge = jive::node_output::node(test.callF->input(3)->origin());
-      auto callExitSplit = input_node(*test.callF->output(1)->begin());
+    {
+      auto callEntryMerge = jive::node_output::node(test.callF->input(4)->origin());
+      auto callExitSplit = input_node(*test.callF->output(2)->begin());
 
       assert(is<aa::CallEntryMemStateOperator>(*callEntryMerge, 7, 1));
       assert(is<aa::CallExitMemStateOperator>(*callExitSplit, 1, 7));
 
-      callEntryMerge = jive::node_output::node(test.callG->input(3)->origin());
-      callExitSplit = input_node(*test.callG->output(1)->begin());
+      callEntryMerge = jive::node_output::node(test.callG->input(4)->origin());
+      callExitSplit = input_node(*test.callG->output(2)->begin());
 
       assert(is<aa::CallEntryMemStateOperator>(*callEntryMerge, 7, 1));
       assert(is<aa::CallExitMemStateOperator>(*callExitSplit, 1, 7));
-		}
+    }
 	};
 
 	CallTest1 test;
@@ -374,19 +374,19 @@ TestIndirectCall()
 		{
 			assert(test.lambda_indcall->subregion()->nnodes() == 5);
 
-			auto lambda_exit_mux = jive::node_output::node(test.lambda_indcall->fctresult(1)->origin());
+			auto lambda_exit_mux = jive::node_output::node(test.lambda_indcall->fctresult(2)->origin());
 			assert(is<aa::LambdaExitMemStateOperator>(*lambda_exit_mux, 5, 1));
 
 			auto call_exit_mux = jive::node_output::node(lambda_exit_mux->input(0)->origin());
 			assert(is<aa::CallExitMemStateOperator>(*call_exit_mux, 1, 5));
 
 			auto call = jive::node_output::node(call_exit_mux->input(0)->origin());
-			assert(is<CallOperation>(*call, 3, 3));
+			assert(is<CallOperation>(*call, 4, 4));
 
-			auto call_entry_mux = jive::node_output::node(call->input(1)->origin());
+			auto call_entry_mux = jive::node_output::node(call->input(2)->origin());
 			assert(is<aa::CallEntryMemStateOperator>(*call_entry_mux, 5, 1));
 
-			auto lambda_entry_mux = jive::node_output::node(call_entry_mux->input(1)->origin());
+			auto lambda_entry_mux = jive::node_output::node(call_entry_mux->input(2)->origin());
 			assert(is<aa::LambdaEntryMemStateOperator>(*lambda_entry_mux, 1, 5));
 		}
 
@@ -394,28 +394,28 @@ TestIndirectCall()
 		{
 			assert(test.lambda_test->subregion()->nnodes() == 9);
 
-			auto lambda_exit_mux = jive::node_output::node(test.lambda_test->fctresult(1)->origin());
+			auto lambda_exit_mux = jive::node_output::node(test.lambda_test->fctresult(2)->origin());
 			assert(is<aa::LambdaExitMemStateOperator>(*lambda_exit_mux, 5, 1));
 
 			auto call_exit_mux = jive::node_output::node(lambda_exit_mux->input(0)->origin());
 			assert(is<aa::CallExitMemStateOperator>(*call_exit_mux, 1, 5));
 
 			auto call = jive::node_output::node(call_exit_mux->input(0)->origin());
-			assert(is<CallOperation>(*call, 4, 3));
+			assert(is<CallOperation>(*call, 5, 4));
 
-			auto call_entry_mux = jive::node_output::node(call->input(2)->origin());
+			auto call_entry_mux = jive::node_output::node(call->input(3)->origin());
 			assert(is<aa::CallEntryMemStateOperator>(*call_entry_mux, 5, 1));
 
 			call_exit_mux = jive::node_output::node(call_entry_mux->input(0)->origin());
 			assert(is<aa::CallExitMemStateOperator>(*call_exit_mux, 1, 5));
 
 			call = jive::node_output::node(call_exit_mux->input(0)->origin());
-			assert(is<CallOperation>(*call, 4, 3));
+			assert(is<CallOperation>(*call, 5, 4));
 
-			call_entry_mux = jive::node_output::node(call->input(2)->origin());
+			call_entry_mux = jive::node_output::node(call->input(3)->origin());
 			assert(is<aa::CallEntryMemStateOperator>(*call_entry_mux, 5, 1));
 
-			auto lambda_entry_mux = jive::node_output::node(call_entry_mux->input(1)->origin());
+			auto lambda_entry_mux = jive::node_output::node(call_entry_mux->input(2)->origin());
 			assert(is<aa::LambdaEntryMemStateOperator>(*lambda_entry_mux, 1, 5));
 		}
 	};
@@ -427,7 +427,7 @@ TestIndirectCall()
 //	std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
   RunBasicEncoder(*ptg, test.module());
-//	jive::view(test.graph().root(), stdout);
+	jive::view(test.graph().root(), stdout);
 	validate_rvsdg(test);
 }
 
@@ -505,7 +505,7 @@ TestDelta1()
 
     assert(test.lambda_h->subregion()->nnodes() == 7);
 
-    auto lambdaEntrySplit = input_node(*test.lambda_h->fctargument(0)->begin());
+    auto lambdaEntrySplit = input_node(*test.lambda_h->fctargument(1)->begin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 4));
 
     auto storeF = input_node(*test.constantFive->output(0)->begin());
@@ -539,7 +539,7 @@ TestDelta2()
 
     assert(test.lambda_f2->subregion()->nnodes() == 9);
 
-    auto lambdaEntrySplit = input_node(*test.lambda_f2->fctargument(0)->begin());
+    auto lambdaEntrySplit = input_node(*test.lambda_f2->fctargument(1)->begin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 5));
 
     auto storeD1InF2 = input_node(*test.lambda_f2->cvargument(0)->begin());
@@ -579,7 +579,7 @@ TestImports()
 
     assert(test.lambda_f2->subregion()->nnodes() == 9);
 
-    auto lambdaEntrySplit = input_node(*test.lambda_f2->fctargument(0)->begin());
+    auto lambdaEntrySplit = input_node(*test.lambda_f2->fctargument(1)->begin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 5));
 
     auto storeD1InF2 = input_node(*test.lambda_f2->cvargument(0)->begin());
@@ -619,7 +619,7 @@ TestPhi()
 
 		auto arrayStateIndex = (*test.alloca->output(1)->begin())->index();
 
-    auto lambdaExitMerge = jive::node_output::node(test.lambda_fib->fctresult(0)->origin());
+    auto lambdaExitMerge = jive::node_output::node(test.lambda_fib->fctresult(1)->origin());
     assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 4, 1));
 
     auto store = jive::node_output::node(lambdaExitMerge->input(arrayStateIndex)->origin());

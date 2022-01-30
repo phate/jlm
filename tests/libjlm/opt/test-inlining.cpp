@@ -23,82 +23,182 @@ test1()
 {
 	using namespace jlm;
 
-	jlm::valuetype vt;
-	jive::ctltype ct(2);
-	FunctionType ft1({&vt}, {&vt});
-	FunctionType ft2({&ct, &vt}, {&vt});
-
+  /**
+   * Arrange
+   */
 	RvsdgModule rm(filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
-	auto i = graph.add_import({vt, "i"});
+	auto i = graph.add_import({jlm::valuetype(), "i"});
 
-	/* f1 */
-	auto lambda1 = lambda::node::create(graph.root(), ft1, "f1", linkage::external_linkage);
-	lambda1->add_ctxvar(i);
-	auto t = test_op::create(lambda1->subregion(), {lambda1->fctargument(0)}, {&vt});
-	auto f1 = lambda1->finalize({t->output(0)});
+  auto SetupF1 = [&]()
+  {
+    jlm::valuetype vt;
+    iostatetype iOStateType;
+    MemoryStateType memoryStateType;
+    loopstatetype loopStateType;
+    FunctionType functionType(
+      {&vt, &iOStateType, &memoryStateType, &loopStateType},
+      {&vt, &iOStateType, &memoryStateType, &loopStateType});
 
-	/* f2 */
-	auto lambda2 = lambda::node::create(graph.root(), ft2, "f1", linkage::external_linkage);
-	auto d = lambda2->add_ctxvar(f1);
+    auto lambda = lambda::node::create(
+      graph.root(),
+      functionType,
+      "f1",
+      linkage::external_linkage);
+    lambda->add_ctxvar(i);
 
-	auto gamma = jive::gamma_node::create(lambda2->fctargument(0), 2);
-	auto ev1 = gamma->add_entryvar(lambda2->fctargument(1));
-	auto ev2 = gamma->add_entryvar(d);
-	auto apply = CallNode::Create(ev2->argument(0), {ev1->argument(0)})[0];
-	auto xv1 = gamma->add_exitvar({apply, ev1->argument(1)});
-	auto f2 = lambda2->finalize({xv1});
+    auto t = test_op::create(lambda->subregion(), {lambda->fctargument(0)}, {&vt});
+
+    return lambda->finalize({t->output(0), lambda->fctargument(1), lambda->fctargument(2), lambda->fctargument(3)});
+  };
+
+  auto SetupF2 = [&](lambda::output * f1)
+  {
+    jlm::valuetype vt;
+    iostatetype iOStateType;
+    MemoryStateType memoryStateType;
+    loopstatetype loopStateType;
+    jive::ctltype ct(2);
+    FunctionType functionType(
+      {&ct, &vt, &iOStateType, &memoryStateType, &loopStateType},
+      {&vt, &iOStateType, &memoryStateType, &loopStateType});
+
+    auto lambda = lambda::node::create(
+      graph.root(),
+      functionType,
+      "f1",
+      linkage::external_linkage);
+    auto d = lambda->add_ctxvar(f1);
+    auto controlArgument = lambda->fctargument(0);
+    auto valueArgument = lambda->fctargument(1);
+    auto iOStateArgument = lambda->fctargument(2);
+    auto memoryStateArgument = lambda->fctargument(3);
+    auto loopStateArgument = lambda->fctargument(4);
+
+    auto gamma = jive::gamma_node::create(controlArgument, 2);
+    auto gammaInputF1 = gamma->add_entryvar(d);
+    auto gammaInputValue = gamma->add_entryvar(valueArgument);
+    auto gammaInputIoState = gamma->add_entryvar(iOStateArgument);
+    auto gammaInputMemoryState = gamma->add_entryvar(memoryStateArgument);
+    auto gammaInputLoopState = gamma->add_entryvar(loopStateArgument);
+
+    auto callResults = CallNode::Create(
+      gammaInputF1->argument(0),
+      {gammaInputValue->argument(0), gammaInputIoState->argument(0), gammaInputMemoryState->argument(0),
+       gammaInputLoopState->argument(0)});
+
+    auto gammaOutputValue = gamma->add_exitvar({callResults[0], gammaInputValue->argument(1)});
+    auto gammaOutputIoState = gamma->add_exitvar({callResults[1], gammaInputIoState->argument(1)});
+    auto gammaOutputMemoryState = gamma->add_exitvar({callResults[2], gammaInputMemoryState->argument(1)});
+    auto gammaOutputLoopState = gamma->add_exitvar({callResults[3], gammaInputLoopState->argument(1)});
+
+    return lambda->finalize({gammaOutputValue, gammaOutputIoState, gammaOutputMemoryState, gammaOutputLoopState});
+  };
+
+  auto f1 = SetupF1();
+  auto f2 = SetupF2(f1);
 
 	graph.add_export(f2, {f2->type(), "f2"});
 
 //	jive::view(graph.root(), stdout);
+
+  /*
+   * Act
+   */
 	jlm::fctinline fctinline;
 	fctinline.run(rm, sd);
 //	jive::view(graph.root(), stdout);
 
+  /*
+   * Assert
+   */
 	assert(!jive::contains<jlm::CallOperation>(graph.root(), true));
 }
 
 static void
 test2()
 {
+  /*
+   * Arrange
+   */
 	using namespace jlm;
 
 	valuetype vt;
-	statetype st;
-	FunctionType ft1({&vt, &st}, {&st});
-	FunctionType ft2({&st}, {&st});
-	ptrtype pt(ft1);
-	FunctionType ft3({&pt, &st}, {&st});
+  iostatetype iOStateType;
+  MemoryStateType memoryStateType;
+  loopstatetype loopStateType;
+
+  FunctionType functionType1(
+    {&vt, &iOStateType, &memoryStateType, &loopStateType},
+    {&iOStateType, &memoryStateType, &loopStateType});
+	ptrtype pt(functionType1);
+
+	FunctionType functionType2(
+    {&pt, &iOStateType, &memoryStateType, &loopStateType},
+    {&iOStateType, &memoryStateType, &loopStateType});
+
 
 	RvsdgModule rm(filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
-	auto i = graph.add_import({ptrtype(ft3), "i"});
+	auto i = graph.add_import({ptrtype(functionType2), "i"});
 
-	/* f1 */
-	auto f1Lambda = lambda::node::create(graph.root(), ft1, "f1", linkage::external_linkage);
-	auto f1 = f1Lambda->finalize({f1Lambda->fctargument(1)});
+  auto SetupF1 = [&](const FunctionType & functionType)
+  {
+    auto lambda = lambda::node::create(
+      graph.root(),
+      functionType,
+      "f1",
+      linkage::external_linkage);
+    return lambda->finalize({lambda->fctargument(1), lambda->fctargument(2), lambda->fctargument(3)});
+  };
 
-	/* f2 */
-	auto f2Lambda = lambda::node::create(graph.root(), ft2, "f2", linkage::external_linkage);
-	auto cvi = f2Lambda->add_ctxvar(i);
-	auto cvf1 = f2Lambda->add_ctxvar(f1);
+  auto SetupF2 = [&](lambda::output * f1)
+  {
+    iostatetype iOStateType;
+    MemoryStateType memoryStateType;
+    loopstatetype loopStateType;
+    FunctionType functionType(
+      {&iOStateType, &memoryStateType, &loopStateType},
+      {&iOStateType, &memoryStateType, &loopStateType});
 
-	auto call = CallNode::Create(cvi, {cvf1, f2Lambda->fctargument(0)});
+    auto lambda = lambda::node::create(
+      graph.root(),
+      functionType,
+      "f2",
+      linkage::external_linkage);
+    auto cvi = lambda->add_ctxvar(i);
+    auto cvf1 = lambda->add_ctxvar(f1);
+    auto iOStateArgument = lambda->fctargument(0);
+    auto memoryStateArgument = lambda->fctargument(1);
+    auto loopStateArgument = lambda->fctargument(2);
 
-	auto f2 = f2Lambda->finalize({call[0]});
+    auto callResults = CallNode::Create(
+      cvi,
+      {cvf1, iOStateArgument, memoryStateArgument, loopStateArgument});
+
+    return lambda->finalize(callResults);
+  };
+
+  auto f1 = SetupF1(functionType1);
+  auto f2 = SetupF2(f1);
 
 	graph.add_export(f2, {f2->type(), "f2"});
 
 	jive::view(graph.root(), stdout);
+
+  /*
+   * Act
+   */
 	jlm::fctinline fctinline;
 	fctinline.run(rm, sd);
 	jive::view(graph.root(), stdout);
 
-	/*
-		Function f1 should not have been inlined.
-	*/
-	assert(is<CallOperation>(jive::node_output::node(f2Lambda->fctresult(0)->origin())));
+  /*
+   * Assert
+   *
+   * Function f1 should not have been inlined.
+   */
+	assert(is<CallOperation>(jive::node_output::node(f2->node()->fctresult(0)->origin())));
 }
 
 static int

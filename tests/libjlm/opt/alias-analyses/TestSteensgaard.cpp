@@ -319,14 +319,14 @@ TestCall1()
 		auto & plambda_g = ptg.GetRegisterNode(test.lambda_g->output());
 		auto & plambda_h = ptg.GetRegisterNode(test.lambda_h->output());
 
-		auto & lambda_f_arg0 = ptg.GetRegisterNode(test.lambda_f->subregion()->argument(0));
-		auto & lambda_f_arg1 = ptg.GetRegisterNode(test.lambda_f->subregion()->argument(1));
+		auto & lambda_f_arg0 = ptg.GetRegisterNode(test.lambda_f->fctargument(0));
+		auto & lambda_f_arg1 = ptg.GetRegisterNode(test.lambda_f->fctargument(1));
 
-		auto & lambda_g_arg0 = ptg.GetRegisterNode(test.lambda_g->subregion()->argument(0));
-		auto & lambda_g_arg1 = ptg.GetRegisterNode(test.lambda_g->subregion()->argument(1));
+		auto & lambda_g_arg0 = ptg.GetRegisterNode(test.lambda_g->fctargument(0));
+		auto & lambda_g_arg1 = ptg.GetRegisterNode(test.lambda_g->fctargument(1));
 
-		auto & lambda_h_cv0 = ptg.GetRegisterNode(test.lambda_h->subregion()->argument(1));
-		auto & lambda_h_cv1 = ptg.GetRegisterNode(test.lambda_h->subregion()->argument(2));
+		auto & lambda_h_cv0 = ptg.GetRegisterNode(test.lambda_h->cvargument(0));
+		auto & lambda_h_cv1 = ptg.GetRegisterNode(test.lambda_h->cvargument(1));
 
 		assertTargets(palloca_x, {&alloca_x});
 		assertTargets(palloca_y, {&alloca_y});
