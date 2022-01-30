@@ -159,6 +159,44 @@ private:
   static const FunctionType &
   CheckAndExtractFunctionType(const jive::output * function)
   {
+    auto CheckArgumentTypes = [](const FunctionType & functionType)
+    {
+      if (functionType.NumArguments() < 3)
+        throw error("Expected at least three argument types.");
+
+      auto loopStateArgumentIndex = functionType.NumArguments()-1;
+      auto memoryStateArgumentIndex = functionType.NumArguments()-2;
+      auto iOStateArgumentIndex = functionType.NumArguments()-3;
+
+      if (!is<loopstatetype>(functionType.ArgumentType(loopStateArgumentIndex)))
+        throw error("Expected loop state type.");
+
+      if (!is<MemoryStateType>(functionType.ArgumentType(memoryStateArgumentIndex)))
+        throw error("Expected memory state type.");
+
+      if (!is<iostatetype>(functionType.ArgumentType(iOStateArgumentIndex)))
+        throw error("Expected IO state type.");
+    };
+
+    auto CheckResultTypes = [](const FunctionType & functionType)
+    {
+      if (functionType.NumResults() < 3)
+        throw error("Expected at least three result types.");
+
+      auto loopStateResultIndex = functionType.NumResults()-1;
+      auto memoryStateResultIndex = functionType.NumResults()-2;
+      auto iOStateResultIndex = functionType.NumResults()-3;
+
+      if (!is<loopstatetype>(functionType.ResultType(loopStateResultIndex)))
+        throw error("Expected loop state type.");
+
+      if (!is<MemoryStateType>(functionType.ResultType(memoryStateResultIndex)))
+        throw error("Expected memory state type.");
+
+      if (!is<iostatetype>(functionType.ResultType(iOStateResultIndex)))
+        throw error("Expected IO state type.");
+    };
+
     auto pointerType = dynamic_cast<const ptrtype*>(&function->type());
     if (!pointerType)
       throw jlm::error("Expected pointer type.");
@@ -166,6 +204,9 @@ private:
     auto functionType = dynamic_cast<const FunctionType*>(&pointerType->pointee_type());
     if (!functionType)
       throw jlm::error("Expected function type.");
+
+    CheckArgumentTypes(*functionType);
+    CheckResultTypes(*functionType);
 
     return *functionType;
   }
