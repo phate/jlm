@@ -109,6 +109,12 @@ public:
     return ninputs()-1;
   }
 
+  jive::input *
+  Argument(size_t n) const
+  {
+    return input(n);
+  }
+
   size_t
   NumResults() const noexcept
   {
