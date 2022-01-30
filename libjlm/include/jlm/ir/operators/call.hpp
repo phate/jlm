@@ -121,6 +121,12 @@ public:
     return noutputs();
   }
 
+  jive::output *
+  Result(size_t n) const noexcept
+  {
+    return output(n);
+  }
+
   jive::input *
   GetFunctionInput() const noexcept
   {
