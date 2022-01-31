@@ -609,32 +609,30 @@ BasicEncoder::EncodeFree(const jive::simple_node & node)
 }
 
 void
-BasicEncoder::EncodeCall(const jive::simple_node & node)
+BasicEncoder::EncodeCall(const CallNode & callNode)
 {
-  JLM_ASSERT(is<CallOperation>(&node));
-
-  auto EncodeEntry = [this](const jive::simple_node & node)
+  auto EncodeEntry = [this](const CallNode & callNode)
   {
-    auto region = node.region();
+    auto region = callNode.region();
     auto & memnodes = Context_->MemoryNodes();
-    auto meminput = call_memstate_input(node);
+    auto meminput = call_memstate_input(callNode);
 
     auto states = Context_->StateMap().states(*region, memnodes);
     auto state = CallEntryMemStateOperator::Create(region, states);
     meminput->divert_to(state);
   };
 
-  auto EncodeExit = [this](const jive::simple_node & node)
+  auto EncodeExit = [this](const CallNode & callNode)
   {
-    auto memoutput = call_memstate_output(node);
+    auto memoutput = call_memstate_output(callNode);
     auto & memnodes = Context_->MemoryNodes();
 
     auto states = CallExitMemStateOperator::Create(memoutput, memnodes.size());
     Context_->StateMap().replace(memnodes, states);
   };
 
-  EncodeEntry(node);
-  EncodeExit(node);
+  EncodeEntry(callNode);
+  EncodeExit(callNode);
 }
 
 void

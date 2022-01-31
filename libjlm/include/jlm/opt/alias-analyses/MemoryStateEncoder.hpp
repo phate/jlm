@@ -20,6 +20,7 @@ class theta_node;
 
 namespace jlm {
 
+class CallNode;
 class RvsdgModule;
 class StatisticsDescriptor;
 
@@ -59,7 +60,7 @@ public:
 	EncodeFree(const jive::simple_node & node) = 0;
 
 	virtual void
-	EncodeCall(const jive::simple_node & node) = 0;
+	EncodeCall(const CallNode & callNode) = 0;
 
 	virtual void
 	EncodeMemcpy(const jive::simple_node & node) = 0;
