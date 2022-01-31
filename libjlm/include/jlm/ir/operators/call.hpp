@@ -135,6 +135,54 @@ public:
     return function;
   }
 
+  jive::input *
+  GetIoStateInput() const noexcept
+  {
+    auto iOState = input(ninputs()-3);
+    JLM_ASSERT(is<iostatetype>(iOState->type()));
+    return iOState;
+  }
+
+  jive::input *
+  GetMemoryStateInput() const noexcept
+  {
+    auto memoryState = input(ninputs()-2);
+    JLM_ASSERT(is<MemoryStateType>(memoryState->type()));
+    return memoryState;
+  }
+
+  jive::input *
+  GetLoopStateInput() const noexcept
+  {
+    auto loopState = input(ninputs()-1);
+    JLM_ASSERT(is<loopstatetype>(loopState->type()));
+    return loopState;
+  }
+
+  jive::output *
+  GetIoStateOutput() const noexcept
+  {
+    auto iOState = output(noutputs()-3);
+    JLM_ASSERT(is<iostatetype>(iOState->type()));
+    return iOState;
+  }
+
+  jive::output *
+  GetMemoryStateOutput() const noexcept
+  {
+    auto memoryState = output(noutputs()-2);
+    JLM_ASSERT(is<MemoryStateType>(memoryState->type()));
+    return memoryState;
+  }
+
+  jive::output *
+  GetLoopStateOutput() const noexcept
+  {
+    auto loopState = output(noutputs()-1);
+    JLM_ASSERT(is<loopstatetype>(loopState->type()));
+    return loopState;
+  }
+
   static std::vector<jive::output*>
   Create(
     jive::output * function,
