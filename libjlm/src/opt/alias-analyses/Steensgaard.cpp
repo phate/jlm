@@ -955,7 +955,7 @@ Steensgaard::AnalyzeCall(const CallNode & callNode)
 		}
 	};
 
-	if (auto lambda = is_direct_call(callNode)) {
+	if (auto lambda = CallNode::IsDirectCall(callNode)) {
 		handle_direct_call(callNode, *lambda);
 		return;
 	}

@@ -45,6 +45,25 @@ CallOperation::copy() const
 	return std::unique_ptr<jive::operation>(new CallOperation(*this));
 }
 
+/**
+ * CallNode class
+ */
+
+lambda::node *
+CallNode::IsDirectCall(const CallNode & callNode)
+{
+  auto output = trace_function_input(callNode);
+
+  if (auto o = dynamic_cast<const lambda::output*>(output))
+    return o->node();
+
+  return nullptr;
+}
+
+/**
+ * Support functions
+ */
+
 using InvariantOutputMap = std::unordered_map<const jive::output*, jive::input*>;
 
 static jive::input *
@@ -230,20 +249,6 @@ trace_function_input(const jive::simple_node & node)
 
 		JLM_UNREACHABLE("We should have never reached this statement.");
 	}
-}
-
-lambda::node *
-is_direct_call(const jive::simple_node & node)
-{
-	if (!is<CallOperation>(&node))
-		return nullptr;
-
-	auto output = trace_function_input(node);
-
-	if (auto o = dynamic_cast<const lambda::output*>(output))
-		return o->node();
-
-	return nullptr;
 }
 
 }
