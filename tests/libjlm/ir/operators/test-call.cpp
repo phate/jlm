@@ -72,7 +72,7 @@ test_trace_function_input1()
   /**
    * Act
    */
-  auto tracedOutput = trace_function_input(*callNode);
+  auto tracedOutput = CallNode::TraceFunctionInput(*callNode);
 
   /**
    * Assert
@@ -87,8 +87,6 @@ test_trace_function_input2()
    * Arrange
    */
 	using namespace jlm;
-
-
 
 	auto module = RvsdgModule::Create(filepath(""), "", "");
 	auto graph = &module->Rvsdg();
@@ -185,7 +183,7 @@ test_trace_function_input2()
 //	jive::view(graph->root(), stdout);
 
 	// Act
-	auto tracedOutput = trace_function_input(*callNode);
+	auto tracedOutput = CallNode::TraceFunctionInput(*callNode);
 
 	// Assert
 	assert(tracedOutput == g);
@@ -325,7 +323,7 @@ test_trace_function_input3()
 	/*
 	 * Act
 	 */
-	auto tracedOutput = trace_function_input(*callNode);
+	auto tracedOutput = CallNode::TraceFunctionInput(*callNode);
 
 	/*
 	 * Assert
