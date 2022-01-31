@@ -218,7 +218,7 @@ private:
 	AnalyzeStore(const jive::simple_node & node);
 
 	void
-	AnalyzeCall(const jive::simple_node & node);
+	AnalyzeCall(const CallNode & callNode);
 
 	void
 	AnalyzeGep(const jive::simple_node & node);
