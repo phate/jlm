@@ -206,6 +206,20 @@ public:
   }
 
   /**
+  * \brief Traces function input of call node
+  *
+  * Traces the function input of a call node upwards, trying to
+  * find the corresponding lambda output. The function can handle
+  * invariant gamma exit variables and invariant theta loop variables.
+  *
+  * \param callNode A call node.
+  *
+  * \return The traced output.
+  */
+  static jive::output *
+  TraceFunctionInput(const CallNode & callNode);
+
+  /**
   * \brief Checks if a node is a direct call node.
   *
   * \param callNode A simple node
@@ -271,20 +285,6 @@ private:
     return *functionType;
   }
 };
-
-/**
-* \brief Traces function input of call node
-*
-* Traces the function input of a call node upwards, trying to
-* find the corresponding lambda output. The function can handle
-* invariant gamma exit variables and invariant theta loop variables.
-*
-* \param node A call node.
-*
-* \return The traced output.
-*/
-jive::output *
-trace_function_input(const jive::simple_node & node);
 
 }
 
