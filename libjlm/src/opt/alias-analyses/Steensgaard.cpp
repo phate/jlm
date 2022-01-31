@@ -755,6 +755,8 @@ Steensgaard::join(Location & x, Location & y)
 void
 Steensgaard::Analyze(const jive::simple_node & node)
 {
+  auto AnalyzeCall = [](auto & s, auto & n) { s.AnalyzeCall(*static_cast<const CallNode*>(&n)); };
+
 	static std::unordered_map<
 		std::type_index
 	, std::function<void(Steensgaard&, const jive::simple_node&)>> nodes
@@ -763,7 +765,7 @@ Steensgaard::Analyze(const jive::simple_node & node)
 	, {typeid(malloc_op),             [](auto & s, auto & n){ s.AnalyzeMalloc(n);                }}
 	, {typeid(load_op),               [](auto & s, auto & n){ s.AnalyzeLoad(n);                  }}
 	, {typeid(store_op),              [](auto & s, auto & n){ s.AnalyzeStore(n);                 }}
-	, {typeid(CallOperation),         [](auto & s, auto & n){ s.AnalyzeCall(n);                  }}
+	, {typeid(CallOperation),         AnalyzeCall                                                 }
 	, {typeid(getelementptr_op),      [](auto & s, auto & n){ s.AnalyzeGep(n);                   }}
 	, {typeid(bitcast_op),            [](auto & s, auto & n){ s.AnalyzeBitcast(n);               }}
 	, {typeid(bits2ptr_op),           [](auto & s, auto & n){ s.AnalyzeBits2ptr(n);              }}
@@ -892,11 +894,9 @@ Steensgaard::AnalyzeStore(const jive::simple_node & node)
 }
 
 void
-Steensgaard::AnalyzeCall(const jive::simple_node & node)
+Steensgaard::AnalyzeCall(const CallNode & callNode)
 {
-	JLM_ASSERT(is<CallOperation>(&node));
-
-	auto handle_direct_call = [&](const jive::simple_node & call, const lambda::node & lambda)
+	auto handle_direct_call = [&](const CallNode & call, const lambda::node & lambda)
 	{
 		/*
 			FIXME: What about varargs
@@ -921,7 +921,7 @@ Steensgaard::AnalyzeCall(const jive::simple_node & node)
 
 		/* handle call node results */
 		auto subregion = lambda.subregion();
-		JLM_ASSERT(subregion->nresults() == node.noutputs());
+		JLM_ASSERT(subregion->nresults() == callNode.noutputs());
 		for (size_t n = 0; n < call.noutputs(); n++) {
 			auto callResult = call.output(n);
 			auto lambdaResult = subregion->result(n)->origin();
@@ -938,7 +938,7 @@ Steensgaard::AnalyzeCall(const jive::simple_node & node)
 		}
 	};
 
-	auto handle_indirect_call = [&](const jive::simple_node & call)
+	auto handle_indirect_call = [&](const CallNode & call)
 	{
 		/*
 			Nothing can be done for the call/lambda arguments, as it is
@@ -955,12 +955,12 @@ Steensgaard::AnalyzeCall(const jive::simple_node & node)
 		}
 	};
 
-	if (auto lambda = is_direct_call(node)) {
-		handle_direct_call(node, *lambda);
+	if (auto lambda = is_direct_call(callNode)) {
+		handle_direct_call(callNode, *lambda);
 		return;
 	}
 
-	handle_indirect_call(node);
+	handle_indirect_call(callNode);
 }
 
 void
