@@ -131,7 +131,9 @@ public:
   GetFunctionInput() const noexcept
   {
     auto function = input(0);
-    JLM_ASSERT(is<FunctionType>(function->type()));
+    JLM_ASSERT(is<ptrtype>(function->type()));
+    auto pointerType = static_cast<const ptrtype*>(&function->type());
+    JLM_ASSERT(is<FunctionType>(pointerType->pointee_type()));
     return function;
   }
 
