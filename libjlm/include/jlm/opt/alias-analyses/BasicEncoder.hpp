@@ -66,7 +66,7 @@ private:
   EncodeFree(const jive::simple_node &node) override;
 
   void
-  EncodeCall(const jive::simple_node &node) override;
+  EncodeCall(const CallNode & callNode) override;
 
   void
   EncodeMemcpy(const jive::simple_node &node) override;

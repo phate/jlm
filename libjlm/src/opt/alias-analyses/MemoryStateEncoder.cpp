@@ -4,6 +4,7 @@
  */
 
 #include <jlm/ir/operators.hpp>
+#include <jlm/ir/operators/call.hpp>
 #include <jlm/ir/types.hpp>
 #include <jlm/opt/alias-analyses/MemoryStateEncoder.hpp>
 #include <jlm/opt/alias-analyses/PointsToGraph.hpp>
@@ -18,6 +19,8 @@ MemoryStateEncoder::~MemoryStateEncoder() = default;
 void
 MemoryStateEncoder::Encode(const jive::simple_node & node)
 {
+  auto EncodeCall = [](auto & mse, auto & node) { mse.EncodeCall(*static_cast<const jlm::CallNode*>(&node)); };
+
 	static std::unordered_map<
 		std::type_index
 	, std::function<void(MemoryStateEncoder&, const jive::simple_node&)>
@@ -26,7 +29,7 @@ MemoryStateEncoder::Encode(const jive::simple_node & node)
 	, {typeid(malloc_op),     [](auto & mse, auto & node){ mse.EncodeMalloc(node); }}
 	, {typeid(load_op),       [](auto & mse, auto & node){ mse.EncodeLoad(node);   }}
 	, {typeid(store_op),      [](auto & mse, auto & node){ mse.EncodeStore(node);  }}
-	, {typeid(CallOperation), [](auto & mse, auto & node){ mse.EncodeCall(node);   }}
+	, {typeid(CallOperation), EncodeCall}
 	, {typeid(free_op),       [](auto & mse, auto & node){ mse.EncodeFree(node);   }}
 	, {typeid(Memcpy),        [](auto & mse, auto & node){ mse.EncodeMemcpy(node); }}
 	});
