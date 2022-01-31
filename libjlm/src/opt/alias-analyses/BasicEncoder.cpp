@@ -94,40 +94,6 @@ private:
   jlm::filepath sourceFile_;
 };
 
-static jive::input *
-call_memstate_input(const jive::simple_node & node)
-{
-  JLM_ASSERT(is<CallOperation>(&node));
-
-  /*
-    FIXME: This function should be part of the call node.
-  */
-  for (size_t n = 0; n < node.ninputs(); n++) {
-    auto input = node.input(n);
-    if (is<MemoryStateType>(input->type()))
-      return input;
-  }
-
-  JLM_UNREACHABLE("This should have never happened!");
-}
-
-static jive::output *
-call_memstate_output(const jive::simple_node & node)
-{
-  JLM_ASSERT(is<CallOperation>(&node));
-
-  /*
-    FIXME: This function should be part of the call node.
-  */
-  for (size_t n = 0; n < node.noutputs(); n++) {
-    auto output = node.output(n);
-    if (is<MemoryStateType>(output->type()))
-      return output;
-  }
-
-  JLM_UNREACHABLE("This should have never happened!");
-}
-
 static jive::argument *
 lambda_memstate_argument(const lambda::node & lambda)
 {
@@ -614,21 +580,19 @@ BasicEncoder::EncodeCall(const CallNode & callNode)
   auto EncodeEntry = [this](const CallNode & callNode)
   {
     auto region = callNode.region();
-    auto & memnodes = Context_->MemoryNodes();
-    auto meminput = call_memstate_input(callNode);
+    auto & memoryNodes = Context_->MemoryNodes();
 
-    auto states = Context_->StateMap().states(*region, memnodes);
+    auto states = Context_->StateMap().states(*region, memoryNodes);
     auto state = CallEntryMemStateOperator::Create(region, states);
-    meminput->divert_to(state);
+    callNode.GetMemoryStateInput()->divert_to(state);
   };
 
   auto EncodeExit = [this](const CallNode & callNode)
   {
-    auto memoutput = call_memstate_output(callNode);
-    auto & memnodes = Context_->MemoryNodes();
+    auto & memoryNodes = Context_->MemoryNodes();
 
-    auto states = CallExitMemStateOperator::Create(memoutput, memnodes.size());
-    Context_->StateMap().replace(memnodes, states);
+    auto states = CallExitMemStateOperator::Create(callNode.GetMemoryStateOutput(), memoryNodes.size());
+    Context_->StateMap().replace(memoryNodes, states);
   };
 
   EncodeEntry(callNode);
