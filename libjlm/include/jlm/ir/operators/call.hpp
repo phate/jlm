@@ -203,6 +203,16 @@ public:
     return Create(operands[0], {std::next(operands.begin()), operands.end()});
   }
 
+  /**
+  * \brief Checks if a node is a direct call node.
+  *
+  * \param callNode A simple node
+  *
+  * \return The corresponding lambda node if its a direct call, otherwise NULL.
+  */
+  static lambda::node *
+  IsDirectCall(const CallNode & callNode);
+
 private:
   static const FunctionType &
   CheckAndExtractFunctionType(const jive::output * function)
@@ -273,16 +283,6 @@ private:
 */
 jive::output *
 trace_function_input(const jive::simple_node & node);
-
-/**
-* \brief Checks if a node is a direct call node.
-*
-* \param node A simple node
-*
-* \return The corresponding lambda node if its a direct call, otherwise NULL.
-*/
-lambda::node *
-is_direct_call(const jive::simple_node & node);
 
 }
 
