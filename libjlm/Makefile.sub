@@ -73,7 +73,7 @@ libjlm-release: CXXFLAGS += -O3
 libjlm-release: $(JLM_ROOT)/libjlm.a
 
 $(JLM_ROOT)/libjlm.a: CPPFLAGS += -I$(JLM_ROOT)/libjive/include -I$(shell $(LLVMCONFIG) --includedir) -I$(JLM_ROOT)/libjlm/include
-$(JLM_ROOT)/libjlm.a: CXXFLAGS += -Wall -Wpedantic -Wextra -Wno-unused-parameter --std=c++17 -Wfatal-errors
+$(JLM_ROOT)/libjlm.a: CXXFLAGS += --std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Wfatal-errors
 $(JLM_ROOT)/libjlm.a: $(patsubst %.cpp, $(JLM_ROOT)/%.la, $(LIBJLM_SRC))
 
 .PHONY: libjlm-clean
