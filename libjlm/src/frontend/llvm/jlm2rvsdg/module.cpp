@@ -132,42 +132,45 @@ private:
 	std::string FileName_;
 };
 
-class annotation_stat final : public Statistics {
+class AnnotationStatistics final : public Statistics {
 public:
-	virtual
-	~annotation_stat()
-	{}
+	~AnnotationStatistics() override
+	= default;
 
-	annotation_stat(const std::string & filename, const std::string & fctname)
-	: ntacs_(0)
-	, fctname_(fctname)
-	, filename_(filename)
+	AnnotationStatistics(std::string fileName, std::string functionName)
+	: NumThreeAddressCodes_(0)
+	, FunctionName_(std::move(functionName))
+	, FileName_(std::move(fileName))
 	{}
 
 	void
-	start(const aggnode & node) noexcept
+	Start(const aggnode & node) noexcept
 	{
-		ntacs_ = jlm::ntacs(node);
-		timer_.start();
+		NumThreeAddressCodes_ = jlm::ntacs(node);
+		Timer_.start();
 	}
 
 	void
-	end() noexcept
+	End() noexcept
 	{
-		timer_.stop();
+		Timer_.stop();
 	}
 
-	virtual std::string
+  std::string
 	ToString() const override
 	{
-		return strfmt("ANNOTATIONTIME ", filename_, " ", fctname_, " ", ntacs_, " ", timer_.ns());
+		return strfmt("Annotation ",
+                  FileName_, " ",
+                  FunctionName_, " ",
+                  "#ThreeAddressCodes:", NumThreeAddressCodes_, " ",
+                  "Time[ns]:", Timer_.ns());
 	}
 
 private:
-	size_t ntacs_;
-	jlm::timer timer_;
-	std::string fctname_;
-	std::string filename_;
+	size_t NumThreeAddressCodes_;
+	jlm::timer Timer_;
+	std::string FunctionName_;
+	std::string FileName_;
 };
 
 class jlm_rvsdg_conversion_stat final : public Statistics {
@@ -711,10 +714,10 @@ convert_cfg(
 
 	demandmap dm;
 	{
-		annotation_stat stat(source_filename, function.name());
-		stat.start(*root);
+		AnnotationStatistics stat(source_filename, function.name());
+    stat.Start(*root);
 		dm = annotate(*root);
-		stat.end();
+    stat.End();
 		if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::Annotation))
 			sd.print_stat(stat);
 	}
