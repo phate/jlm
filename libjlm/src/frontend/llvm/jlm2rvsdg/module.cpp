@@ -91,42 +91,45 @@ private:
 	std::string FileName_;
 };
 
-class aggregation_stat final : public Statistics {
+class AggregationStatistics final : public Statistics {
 public:
-	virtual
-	~aggregation_stat()
-	{}
+	~AggregationStatistics() override
+	= default;
 
-	aggregation_stat(const std::string & filename, const std::string & fctname)
-	: nnodes_(0)
-	, fctname_(fctname)
-	, filename_(filename)
+	AggregationStatistics(std::string fileName, std::string functionName)
+	: NumNodes_(0)
+	, FunctionName_(std::move(functionName))
+	, FileName_(std::move(fileName))
 	{}
 
 	void
-	start(const jlm::cfg & cfg) noexcept
+	Start(const jlm::cfg & cfg) noexcept
 	{
-		nnodes_ = cfg.nnodes();
-		timer_.start();
+		NumNodes_ = cfg.nnodes();
+		Timer_.start();
 	}
 
 	void
-	end() noexcept
+	End() noexcept
 	{
-		timer_.stop();
+		Timer_.stop();
 	}
 
-	virtual std::string
+	std::string
 	ToString() const override
 	{
-		return strfmt("AGGREGATIONTIME ", filename_, " ", fctname_, " ", nnodes_, " ", timer_.ns());
+		return strfmt("Aggregation ",
+                  FileName_, " ",
+                  FunctionName_, " ",
+                  "#Nodes:", NumNodes_, " ",
+                  "Time[ns]:", Timer_.ns());
 	}
 
 private:
-	size_t nnodes_;
-	jlm::timer timer_;
-	std::string fctname_;
-	std::string filename_;
+	size_t NumNodes_;
+	jlm::timer Timer_;
+	std::string FunctionName_;
+	std::string FileName_;
 };
 
 class annotation_stat final : public Statistics {
@@ -697,11 +700,11 @@ convert_cfg(
 
 	std::unique_ptr<aggnode> root;
 	{
-		aggregation_stat stat(source_filename, function.name());
-		stat.start(*cfg);
+		AggregationStatistics stat(source_filename, function.name());
+    stat.Start(*cfg);
 		root = aggregate(*cfg);
 		aggnode::normalize(*root);
-		stat.end();
+    stat.End();
 		if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::Aggregation))
 			sd.print_stat(stat);
 	}
