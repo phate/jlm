@@ -28,7 +28,6 @@
 #include <jive/rvsdg/theta.hpp>
 #include <jive/rvsdg/type.hpp>
 
-#include <cmath>
 #include <stack>
 
 static std::string source_filename;
@@ -51,42 +50,45 @@ create_undef_value(jive::region * region, const jive::type & type)
 
 namespace jlm {
 
-class cfrstat final : public Statistics {
+class ControlFlowRestructuringStatistics final : public Statistics {
 public:
-	virtual
-	~cfrstat()
-	{}
+	~ControlFlowRestructuringStatistics() override
+	= default;
 
-	cfrstat(const std::string & filename, const std::string & fctname)
-	: nnodes_(0)
-	, fctname_(fctname)
-	, filename_(filename)
+	ControlFlowRestructuringStatistics(std::string fileName, std::string functionName)
+	: NumNodes_(0)
+	, FunctionName_(std::move(functionName))
+	, FileName_(std::move(fileName))
 	{}
 
 	void
-	start(const jlm::cfg & cfg) noexcept
+	Start(const jlm::cfg & cfg) noexcept
 	{
-		nnodes_ = cfg.nnodes();
-		timer_.start();
+		NumNodes_ = cfg.nnodes();
+		Timer_.start();
 	}
 
 	void
-	end() noexcept
+	End() noexcept
 	{
-		timer_.stop();
+		Timer_.stop();
 	}
 
-	virtual std::string
+	std::string
 	ToString() const override
 	{
-		return strfmt("CFRTIME ", filename_, " ", fctname_, " ", nnodes_, " ", timer_.ns());
+		return strfmt("ControlFlowRestructuring ",
+                  FileName_, " ",
+                  FunctionName_, " ",
+                  "#Nodes:", NumNodes_, " ",
+                  "Time[ns]:", Timer_.ns());
 	}
 
 private:
-	size_t nnodes_;
-	jlm::timer timer_;
-	std::string fctname_;
-	std::string filename_;
+	size_t NumNodes_;
+	jlm::timer Timer_;
+	std::string FunctionName_;
+	std::string FileName_;
 };
 
 class aggregation_stat final : public Statistics {
@@ -684,11 +686,11 @@ convert_cfg(
 	purge(*cfg);
 
 	{
-		cfrstat stat(source_filename, function.name());
-		stat.start(*cfg);
+		ControlFlowRestructuringStatistics stat(source_filename, function.name());
+    stat.Start(*cfg);
 		restructure(cfg);
 		straighten(*cfg);
-		stat.end();
+    stat.End();
 		if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::ControlFlowRecovery))
 			sd.print_stat(stat);
 	}
