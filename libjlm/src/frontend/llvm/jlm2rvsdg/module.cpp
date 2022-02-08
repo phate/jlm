@@ -173,39 +173,41 @@ private:
 	std::string FileName_;
 };
 
-class jlm_rvsdg_conversion_stat final : public Statistics {
+class AggregationTreeToLambdaStatistics final : public Statistics {
 public:
-	virtual
-	~jlm_rvsdg_conversion_stat()
-	{}
+	~AggregationTreeToLambdaStatistics() override
+	= default;
 
-	jlm_rvsdg_conversion_stat(const std::string & filename, const std::string & fctname)
-	: fctname_(fctname)
-	, filename_(filename)
+	AggregationTreeToLambdaStatistics(std::string fileName, std::string functionName)
+	: FunctionName_(std::move(functionName))
+	, FileName_(std::move(fileName))
 	{}
 
 	void
-	start() noexcept
+	Start() noexcept
 	{
-		timer_.start();
+		Timer_.start();
 	}
 
 	void
-	end() noexcept
+	End() noexcept
 	{
-		timer_.stop();
+		Timer_.stop();
 	}
 
-	virtual std::string
+	std::string
 	ToString() const override
 	{
-		return strfmt("RVSDGCREATIONTIME ", filename_, " ", fctname_, " ", timer_.ns());
+		return strfmt("ControlFlowGraphToLambda ",
+                  FileName_, " ",
+                  FunctionName_, " ",
+                  "Time[ns]:", Timer_.ns());
 	}
 
 private:
-	jlm::timer timer_;
-	std::string fctname_;
-	std::string filename_;
+	jlm::timer Timer_;
+	std::string FunctionName_;
+	std::string FileName_;
 };
 
 class rvsdg_construction_stat final : public Statistics {
@@ -729,10 +731,10 @@ convert_cfg(
 	auto lambda = lambda::node::create(svmap.region(), fcttype, name, linkage, attributes);
 
 	{
-		jlm_rvsdg_conversion_stat stat(source_filename, function.name());
-		stat.start();
+		AggregationTreeToLambdaStatistics stat(source_filename, function.name());
+    stat.Start();
 		convert_node(*root, dm, function, lambda, svmap);
-		stat.end();
+    stat.End();
 		if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::JlmToRvsdgConversion))
 			sd.print_stat(stat);
 	}
