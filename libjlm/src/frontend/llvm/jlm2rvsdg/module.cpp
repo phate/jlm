@@ -456,7 +456,6 @@ static void
 convert_node(
 	const aggnode & node,
 	const demandmap & dm,
-	const jlm::function_node & function,
 	lambda::node * lambda,
 	scoped_vmap & svmap);
 
@@ -464,7 +463,6 @@ static void
 convert_entry_node(
 	const aggnode & node,
 	const demandmap & dm,
-	const jlm::function_node & function,
 	lambda::node * lambda,
 	scoped_vmap & svmap)
 {
@@ -502,7 +500,6 @@ static void
 convert_exit_node(
 	const aggnode & node,
 	const demandmap & dm,
-	const jlm::function_node & function,
 	lambda::node * lambda,
 	scoped_vmap & svmap)
 {
@@ -523,7 +520,6 @@ static void
 convert_block_node(
 	const aggnode & node,
 	const demandmap & dm,
-	const jlm::function_node & function,
 	lambda::node * lambda,
 	scoped_vmap & svmap)
 {
@@ -536,21 +532,19 @@ static void
 convert_linear_node(
 	const aggnode & node,
 	const demandmap & dm,
-	const jlm::function_node & function,
 	lambda::node * lambda,
 	scoped_vmap & svmap)
 {
 	JLM_ASSERT(is<linearaggnode>(&node));
 
 	for (const auto & child : node)
-		convert_node(child, dm, function, lambda, svmap);
+		convert_node(child, dm, lambda, svmap);
 }
 
 static void
 convert_branch_node(
 	const aggnode & node,
 	const demandmap & dm,
-	const jlm::function_node & function,
 	lambda::node * lambda,
 	scoped_vmap & svmap)
 {
@@ -580,7 +574,7 @@ convert_branch_node(
 		for (const auto & pair : evmap)
 			svmap.vmap().insert(pair.first, pair.second->argument(n));
 
-		convert_node(*node.child(n), dm, function, lambda, svmap);
+		convert_node(*node.child(n), dm, lambda, svmap);
 
 		for (const auto & v : ds->bottom)
 			xvmap[v].push_back(svmap.vmap().lookup(v));
@@ -598,7 +592,6 @@ static void
 convert_loop_node(
 	const aggnode & node,
 	const demandmap & dm,
-	const jlm::function_node & function,
 	lambda::node * lambda,
 	scoped_vmap & svmap)
 {
@@ -630,7 +623,7 @@ convert_loop_node(
 
 	/* convert loop body */
 	JLM_ASSERT(node.nchildren() == 1);
-	convert_node(*node.child(0), dm, function, lambda, svmap);
+	convert_node(*node.child(0), dm, lambda, svmap);
 
 	/* update loop variables */
 	for (const auto & v : ds->top) {
@@ -660,7 +653,6 @@ static void
 convert_node(
 	const aggnode & node,
 	const demandmap & dm,
-	const jlm::function_node & function,
 	lambda::node * lambda,
 	scoped_vmap & svmap)
 {
@@ -669,7 +661,6 @@ convert_node(
 		std::function<void(
 			const aggnode&,
 			const demandmap&,
-			const function_node&,
 			lambda::node*,
 			scoped_vmap&)
 		>
@@ -680,87 +671,150 @@ convert_node(
 	});
 
 	JLM_ASSERT(map.find(typeid(node)) != map.end());
-	map[typeid(node)](node, dm, function, lambda, svmap);
+	map[typeid(node)](node, dm, lambda, svmap);
+}
+
+static void
+RestructureControlFlowGraph(
+  jlm::cfg & controlFlowGraph,
+  const std::string & functionName,
+  const StatisticsDescriptor & statisticsDescriptor)
+{
+  ControlFlowRestructuringStatistics statistics(source_filename, functionName);
+  statistics.Start(controlFlowGraph);
+
+  restructure(&controlFlowGraph);
+  straighten(controlFlowGraph);
+
+  statistics.End();
+  if (statisticsDescriptor.IsPrintable(StatisticsDescriptor::StatisticsId::ControlFlowRecovery))
+    statisticsDescriptor.print_stat(statistics);
+}
+
+static std::unique_ptr<aggnode>
+AggregateControlFlowGraph(
+  jlm::cfg & controlFlowGraph,
+  const std::string & functionName,
+  const StatisticsDescriptor & statisticsDescriptor)
+{
+  AggregationStatistics stat(source_filename, functionName);
+  stat.Start(controlFlowGraph);
+
+  auto aggregationTreeRoot = aggregate(controlFlowGraph);
+  aggnode::normalize(*aggregationTreeRoot);
+
+  stat.End();
+  if (statisticsDescriptor.IsPrintable(StatisticsDescriptor::StatisticsId::Aggregation))
+    statisticsDescriptor.print_stat(stat);
+
+  return aggregationTreeRoot;
+}
+
+static demandmap
+AnnotateAggregationTree(
+  const aggnode & aggregationTreeRoot,
+  const std::string & functionName,
+  const StatisticsDescriptor & statisticsDescriptor)
+{
+  AnnotationStatistics statistics(source_filename, functionName);
+  statistics.Start(aggregationTreeRoot);
+
+  auto demandMap = annotate(aggregationTreeRoot);
+
+  statistics.End();
+  if (statisticsDescriptor.IsPrintable(StatisticsDescriptor::StatisticsId::Annotation))
+    statisticsDescriptor.print_stat(statistics);
+
+  return demandMap;
+}
+
+static lambda::output *
+ConvertAggregationTreeToLambda(
+  const aggnode & aggregationTreeRoot,
+  const demandmap & demandMap,
+  scoped_vmap & scopedVariableMap,
+  const std::string & functionName,
+  const FunctionType & functionType,
+  const linkage & functionLinkage,
+  const attributeset & functionAttributes,
+  const StatisticsDescriptor & statisticsDescriptor)
+{
+  auto lambdaNode = lambda::node::create(
+    scopedVariableMap.region(),
+    functionType,
+    functionName,
+    functionLinkage,
+    functionAttributes);
+
+  AggregationTreeToLambdaStatistics statistics(source_filename, functionName);
+  statistics.Start();
+
+  convert_node(aggregationTreeRoot, demandMap, lambdaNode, scopedVariableMap);
+
+  statistics.End();
+  if (statisticsDescriptor.IsPrintable(StatisticsDescriptor::StatisticsId::JlmToRvsdgConversion))
+    statisticsDescriptor.print_stat(statistics);
+
+  return lambdaNode->output();
 }
 
 static jive::output *
 convert_cfg(
-	const jlm::function_node & function,
-	jive::region * region,
+	const jlm::function_node & functionNode,
 	scoped_vmap & svmap,
-	const StatisticsDescriptor & sd)
+	const StatisticsDescriptor & statisticsDescriptor)
 {
-	auto cfg = function.cfg();
+  auto & functionName = functionNode.name();
+	auto & controlFlowGraph = *functionNode.cfg();
 
-	destruct_ssa(*cfg);
-	straighten(*cfg);
-	purge(*cfg);
+	destruct_ssa(controlFlowGraph);
+	straighten(controlFlowGraph);
+	purge(controlFlowGraph);
 
-	{
-		ControlFlowRestructuringStatistics stat(source_filename, function.name());
-    stat.Start(*cfg);
-		restructure(cfg);
-		straighten(*cfg);
-    stat.End();
-		if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::ControlFlowRecovery))
-			sd.print_stat(stat);
-	}
+  RestructureControlFlowGraph(
+    controlFlowGraph,
+    functionName,
+    statisticsDescriptor);
 
-	std::unique_ptr<aggnode> root;
-	{
-		AggregationStatistics stat(source_filename, function.name());
-    stat.Start(*cfg);
-		root = aggregate(*cfg);
-		aggnode::normalize(*root);
-    stat.End();
-		if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::Aggregation))
-			sd.print_stat(stat);
-	}
+  auto aggregationTreeRoot = AggregateControlFlowGraph(
+    controlFlowGraph,
+    functionName,
+    statisticsDescriptor);
 
-	demandmap dm;
-	{
-		AnnotationStatistics stat(source_filename, function.name());
-    stat.Start(*root);
-		dm = annotate(*root);
-    stat.End();
-		if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::Annotation))
-			sd.print_stat(stat);
-	}
+  auto demandMap = AnnotateAggregationTree(
+    *aggregationTreeRoot,
+    functionName,
+    statisticsDescriptor);
 
-	auto & name = function.name();
-	auto & fcttype = function.fcttype();
-	auto & linkage = function.linkage();
-	auto & attributes = function.attributes();
-	auto lambda = lambda::node::create(svmap.region(), fcttype, name, linkage, attributes);
+  auto lambdaOutput = ConvertAggregationTreeToLambda(
+    *aggregationTreeRoot,
+    demandMap,
+    svmap,
+    functionName,
+    functionNode.fcttype(),
+    functionNode.linkage(),
+    functionNode.attributes(),
+    statisticsDescriptor);
 
-	{
-		AggregationTreeToLambdaStatistics stat(source_filename, function.name());
-    stat.Start();
-		convert_node(*root, dm, function, lambda, svmap);
-    stat.End();
-		if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::JlmToRvsdgConversion))
-			sd.print_stat(stat);
-	}
-
-	return lambda->output();
+	return lambdaOutput;
 }
 
 static jive::output *
 construct_lambda(
 	const ipgraph_node * node,
-	jive::region * region,
 	scoped_vmap & svmap,
 	const StatisticsDescriptor & sd)
 {
 	JLM_ASSERT(dynamic_cast<const function_node*>(node));
 	auto & function = *static_cast<const function_node*>(node);
+  auto region = svmap.region();
 
 	if (function.cfg() == nullptr) {
 		jlm::impport port(function.type(), function.name(), function.linkage());
 		return region->graph()->add_import(port);
 	}
 
-	return convert_cfg(function, region, svmap, sd);
+	return convert_cfg(function, svmap, sd);
 }
 
 static jive::output *
@@ -776,7 +830,6 @@ convert_initialization(const data_node_init & init, jive::region * region, scope
 static jive::output *
 convert_data_node(
 	const jlm::ipgraph_node * node,
-	jive::region * region,
 	scoped_vmap & svmap,
 	const StatisticsDescriptor&)
 {
@@ -784,6 +837,7 @@ convert_data_node(
 	auto n = static_cast<const data_node*>(node);
 	auto init = n->initialization();
 	auto & m = svmap.module();
+  auto region = svmap.region();
 
 	/* data node without initialization */
 	if (!init) {
@@ -792,7 +846,12 @@ convert_data_node(
 	}
 
 	/* data node with initialization */
-	auto delta = delta::node::create(region, n->type(), n->name(), n->linkage(), n->constant());
+	auto delta = delta::node::create(
+    region,
+    n->type(),
+    n->name(),
+    n->linkage(),
+    n->constant());
 	auto & pv = svmap.vmap();
 	svmap.push_scope(delta->subregion());
 
@@ -812,15 +871,14 @@ convert_data_node(
 static jive::output *
 handleSingleNode(
 	const ipgraph_node & node,
-	jive::region * region,
 	scoped_vmap & svmap,
 	const StatisticsDescriptor & sd)
 {
 	jive::output * output = nullptr;
 	if (auto functionNode = dynamic_cast<const function_node*>(&node)) {
-		output = construct_lambda(functionNode, region, svmap, sd);
+		output = construct_lambda(functionNode, svmap, sd);
 	} else if (auto dataNode = dynamic_cast<const data_node*>(&node)) {
-		output = convert_data_node(dataNode, region, svmap, sd);
+		output = convert_data_node(dataNode, svmap, sd);
 	} else {
 		JLM_UNREACHABLE("This should have never happened.");
 	}
@@ -844,7 +902,7 @@ handle_scc(
 	if (scc.size() == 1 && !(*scc.begin())->is_selfrecursive()) {
 		auto & node = *scc.begin();
 
-		auto output = handleSingleNode(*node, graph->root(), svmap, sd);
+		auto output = handleSingleNode(*node, svmap, sd);
 
 		auto v = module.variable(node);
 		JLM_ASSERT(v);
@@ -886,7 +944,7 @@ handle_scc(
 
 	/* convert SCC nodes */
 	for (const auto & node : scc) {
-		auto output = handleSingleNode(*node, pb.subregion(), svmap, sd);
+		auto output = handleSingleNode(*node, svmap, sd);
 		recvars[module.variable(node)]->set_rvorigin(output);
 	}
 
