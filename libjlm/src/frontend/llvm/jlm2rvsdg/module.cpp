@@ -210,44 +210,47 @@ private:
 	std::string FileName_;
 };
 
-class rvsdg_construction_stat final : public Statistics {
+class InterProceduralGraphToRvsdgStatistics final : public Statistics {
 public:
-	virtual
-	~rvsdg_construction_stat()
-	{}
+	~InterProceduralGraphToRvsdgStatistics() override
+	= default;
 
-	rvsdg_construction_stat(const jlm::filepath & filename)
-	: ntacs_(0)
-	, nnodes_(0)
-	, filename_(filename)
+  explicit
+	InterProceduralGraphToRvsdgStatistics(jlm::filepath filename)
+	: NumThreeAddressCodes_(0)
+	, NumRvsdgNodes_(0)
+	, FileName_(std::move(filename))
 	{}
 
 	void
-	start(const ipgraph_module & im) noexcept
+	Start(const ipgraph_module & interProceduralGraphModule) noexcept
 	{
-		ntacs_ = jlm::ntacs(im);
-		timer_.start();
+		NumThreeAddressCodes_ = jlm::ntacs(interProceduralGraphModule);
+		Timer_.start();
 	}
 
 	void
-	end(const jive::graph & graph) noexcept
+	End(const jive::graph & graph) noexcept
 	{
-		timer_.stop();
-		nnodes_ = jive::nnodes(graph.root());
+		Timer_.stop();
+		NumRvsdgNodes_ = jive::nnodes(graph.root());
 	}
 
-	virtual std::string
+	std::string
 	ToString() const override
 	{
-		return strfmt("RVSDGCONSTRUCTION ", filename_.to_str(), " ",
-			ntacs_, " ", nnodes_, " ", timer_.ns());
+		return strfmt("InterProceduralGraphToRvsdg ",
+                  FileName_.to_str(), " ",
+                  "#ThreeAddressCodes:", NumThreeAddressCodes_, " ",
+                  "#RvsdgNodes:", NumRvsdgNodes_, " ",
+                  "Time[ns]:", Timer_.ns());
 	}
 
 private:
-	size_t ntacs_;
-	size_t nnodes_;
-	jlm::timer timer_;
-	jlm::filepath filename_;
+	size_t NumThreeAddressCodes_;
+	size_t NumRvsdgNodes_;
+	jlm::timer Timer_;
+	jlm::filepath FileName_;
 };
 
 class vmap final {
@@ -927,11 +930,11 @@ construct_rvsdg(const ipgraph_module & im, const StatisticsDescriptor & sd)
 {
 	source_filename = im.source_filename().to_str();
 
-	rvsdg_construction_stat stat(im.source_filename());
+	InterProceduralGraphToRvsdgStatistics stat(im.source_filename());
 
-	stat.start(im);
+  stat.Start(im);
 	auto rm = convert_module(im, sd);
-	stat.end(rm->Rvsdg());
+  stat.End(rm->Rvsdg());
 
 	if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::RvsdgConstruction))
 		sd.print_stat(stat);
