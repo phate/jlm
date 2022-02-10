@@ -565,7 +565,7 @@ cne(RvsdgModule & rm, const StatisticsDescriptor & sd)
 	divert(graph.root(), ctx);
 	stat.end_divert_stat(graph);
 
-  sd.print_stat(stat);
+  sd.PrintStatistics(stat);
 }
 
 /* cne class */

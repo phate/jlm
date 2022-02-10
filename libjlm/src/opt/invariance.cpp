@@ -126,7 +126,7 @@ invariance(RvsdgModule & rm, const StatisticsDescriptor & sd)
 	invariance(rm.Rvsdg().root());
 	stat.end(rm.Rvsdg());
 
-  sd.print_stat(stat);
+  sd.PrintStatistics(stat);
 }
 
 /* ivr class */
