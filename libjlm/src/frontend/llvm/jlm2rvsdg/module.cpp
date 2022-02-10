@@ -692,7 +692,7 @@ RestructureControlFlowGraph(
   straighten(controlFlowGraph);
 
   statistics.End();
-  statisticsDescriptor.print_stat(statistics);
+  statisticsDescriptor.PrintStatistics(statistics);
 }
 
 static std::unique_ptr<aggnode>
@@ -708,7 +708,7 @@ AggregateControlFlowGraph(
   aggnode::normalize(*aggregationTreeRoot);
 
   stat.End();
-  statisticsDescriptor.print_stat(stat);
+  statisticsDescriptor.PrintStatistics(stat);
 
   return aggregationTreeRoot;
 }
@@ -725,7 +725,7 @@ AnnotateAggregationTree(
   auto demandMap = annotate(aggregationTreeRoot);
 
   statistics.End();
-  statisticsDescriptor.print_stat(statistics);
+  statisticsDescriptor.PrintStatistics(statistics);
 
   return demandMap;
 }
@@ -754,7 +754,7 @@ ConvertAggregationTreeToLambda(
   convert_node(aggregationTreeRoot, demandMap, lambdaNode, scopedVariableMap);
 
   statistics.End();
-  statisticsDescriptor.print_stat(statistics);
+  statisticsDescriptor.PrintStatistics(statistics);
 
   return lambdaNode->output();
 }
@@ -995,7 +995,7 @@ construct_rvsdg(const ipgraph_module & im, const StatisticsDescriptor & sd)
 	auto rm = convert_module(im, sd);
   stat.End(rm->Rvsdg());
 
-  sd.print_stat(stat);
+  sd.PrintStatistics(stat);
 
 	return rm;
 }

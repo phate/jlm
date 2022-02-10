@@ -113,7 +113,7 @@ DeadNodeElimination::run(
   Sweep(graph);
   statistics.StopSweepStatistics(graph);
 
-  sd.print_stat(statistics);
+  sd.PrintStatistics(statistics);
 }
 
 void

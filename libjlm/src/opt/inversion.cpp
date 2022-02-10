@@ -303,7 +303,7 @@ invert(RvsdgModule & rm, const StatisticsDescriptor & sd)
 	invert(rm.Rvsdg().root());
 	stat.end(rm.Rvsdg());
 
-  sd.print_stat(stat);
+  sd.PrintStatistics(stat);
 }
 
 /* tginversion */

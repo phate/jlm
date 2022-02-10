@@ -8,10 +8,10 @@
 namespace jlm {
 
 void
-StatisticsDescriptor::print_stat(const Statistics & statistics) const noexcept
+StatisticsDescriptor::PrintStatistics(const Statistics & s) const noexcept
 {
-  if (IsPrintable(statistics.GetStatisticsId()))
-    fprintf(file_.fd(), "%s\n", statistics.ToString().c_str());
+  if (IsPrintable(s.GetStatisticsId()))
+    fprintf(file_.fd(), "%s\n", s.ToString().c_str());
 }
 
 Statistics::~Statistics()

@@ -82,7 +82,7 @@ public:
   }
 
 	void
-	print_stat(const Statistics & s) const noexcept;
+	PrintStatistics(const Statistics & statistics) const noexcept;
 
   bool
   IsPrintable(StatisticsId id) const

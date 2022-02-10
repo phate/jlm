@@ -410,7 +410,7 @@ push(RvsdgModule & rm, const StatisticsDescriptor & sd)
 	push(rm.Rvsdg().root());
 	stat.end(rm.Rvsdg());
 
-  sd.print_stat(stat);
+  sd.PrintStatistics(stat);
 }
 
 /* pushout class */

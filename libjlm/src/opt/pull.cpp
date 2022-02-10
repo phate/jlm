@@ -285,7 +285,7 @@ pull(RvsdgModule & rm, const StatisticsDescriptor & sd)
 	pull(rm.Rvsdg().root());
 	stat.end(rm.Rvsdg());
 
-  sd.print_stat(stat);
+  sd.PrintStatistics(stat);
 }
 
 /* pullin class */
