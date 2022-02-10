@@ -81,6 +81,16 @@ public:
     printStatistics_ = std::move(printStatistics);
   }
 
+  /** \brief Prints statistics to file.
+   *
+   * Prints \p statistics to the statistics file iff the \p statistics'
+   * StatisticsId was set with SetPrintStatisticsIds().
+   *
+   * @param statistics The statistics that is printed.
+   *
+   * @see SetPrintStatisticsIds()
+   * @see IsPrintable()
+   */
 	void
 	PrintStatistics(const Statistics & statistics) const noexcept;
 
