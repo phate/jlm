@@ -478,15 +478,13 @@ BasicEncoder::Encode(
   contextCreationStatistics.start();
   Context_ = Context::Create(Ptg());
   contextCreationStatistics.stop();
-  if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::BasicEncoderContextCreation))
-    sd.print_stat(contextCreationStatistics);
+  sd.print_stat(contextCreationStatistics);
 
   EncodingStatistics encodingStatistics(module.SourceFileName());
   encodingStatistics.start(module.Rvsdg());
   MemoryStateEncoder::Encode(*module.Rvsdg().root());
   encodingStatistics.stop();
-  if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::BasicEncoderEncoding))
-    sd.print_stat(encodingStatistics);
+  sd.print_stat(encodingStatistics);
 
   /**
    * Remove all nodes that became dead throughout the encoding.

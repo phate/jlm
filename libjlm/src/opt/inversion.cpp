@@ -303,8 +303,7 @@ invert(RvsdgModule & rm, const StatisticsDescriptor & sd)
 	invert(rm.Rvsdg().root());
 	stat.end(rm.Rvsdg());
 
-	if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::ThetaGammaInversion))
-		sd.print_stat(stat);
+  sd.print_stat(stat);
 }
 
 /* tginversion */

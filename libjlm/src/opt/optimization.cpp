@@ -83,8 +83,7 @@ optimize(
 		opt->run(rm, sd);
 	stat.end(rm.Rvsdg());
 
-	if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::RvsdgOptimization))
-		sd.print_stat(stat);
+  sd.print_stat(stat);
 }
 
 }
