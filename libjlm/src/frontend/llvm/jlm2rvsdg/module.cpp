@@ -30,8 +30,6 @@
 
 #include <stack>
 
-static std::string source_filename;
-
 static inline jive::output *
 create_undef_value(jive::region * region, const jive::type & type)
 {
@@ -50,16 +48,121 @@ create_undef_value(jive::region * region, const jive::type & type)
 
 namespace jlm {
 
+class vmap final {
+public:
+  bool
+  contains(const variable * v) const noexcept
+  {
+    return map_.find(v) != map_.end();
+  }
+
+  jive::output *
+  lookup(const variable * v) const
+  {
+    JLM_ASSERT(contains(v));
+    return map_.at(v);
+  }
+
+  void
+  insert(const variable * v, jive::output * o)
+  {
+    JLM_ASSERT(v->type() == o->type());
+    map_[v] = o;
+  }
+
+private:
+  std::unordered_map<const variable*, jive::output*> map_;
+};
+
+class scoped_vmap final {
+public:
+  inline
+  ~scoped_vmap()
+  {
+    pop_scope();
+    JLM_ASSERT(nscopes() == 0);
+  }
+
+  inline
+  scoped_vmap(const ipgraph_module & im, jive::region * region)
+    : module_(im)
+  {
+    push_scope(region);
+  }
+
+  inline size_t
+  nscopes() const noexcept
+  {
+    JLM_ASSERT(vmaps_.size() == regions_.size());
+    return vmaps_.size();
+  }
+
+  inline jlm::vmap &
+  vmap(size_t n) noexcept
+  {
+    JLM_ASSERT(n < nscopes());
+    return *vmaps_[n];
+  }
+
+  inline jlm::vmap &
+  vmap() noexcept
+  {
+    JLM_ASSERT(nscopes() > 0);
+    return vmap(nscopes()-1);
+  }
+
+  inline jive::region *
+  region(size_t n) noexcept
+  {
+    JLM_ASSERT(n < nscopes());
+    return regions_[n];
+  }
+
+  inline jive::region *
+  region() noexcept
+  {
+    JLM_ASSERT(nscopes() > 0);
+    return region(nscopes()-1);
+  }
+
+  inline void
+  push_scope(jive::region * region)
+  {
+    vmaps_.push_back(std::make_unique<jlm::vmap>());
+    regions_.push_back(region);
+  }
+
+  inline void
+  pop_scope()
+  {
+    vmaps_.pop_back();
+    regions_.pop_back();
+  }
+
+  const ipgraph_module &
+  module() const noexcept
+  {
+    return module_;
+  }
+
+private:
+  const ipgraph_module & module_;
+  std::vector<std::unique_ptr<jlm::vmap>> vmaps_;
+  std::vector<jive::region*> regions_;
+};
+
 class ControlFlowRestructuringStatistics final : public Statistics {
 public:
 	~ControlFlowRestructuringStatistics() override
 	= default;
 
-	ControlFlowRestructuringStatistics(std::string fileName, std::string functionName)
+	ControlFlowRestructuringStatistics(
+    filepath sourceFileName,
+    std::string functionName)
 	: Statistics(StatisticsDescriptor::StatisticsId::ControlFlowRecovery)
   , NumNodes_(0)
 	, FunctionName_(std::move(functionName))
-	, FileName_(std::move(fileName))
+	, SourceFileName_(std::move(sourceFileName))
 	{}
 
 	void
@@ -79,17 +182,27 @@ public:
 	ToString() const override
 	{
 		return strfmt("ControlFlowRestructuring ",
-                  FileName_, " ",
+                  SourceFileName_.to_str(), " ",
                   FunctionName_, " ",
                   "#Nodes:", NumNodes_, " ",
                   "Time[ns]:", Timer_.ns());
 	}
 
+  static std::unique_ptr<ControlFlowRestructuringStatistics>
+  Create(
+    filepath sourceFileName,
+    std::string functionName)
+  {
+    return std::make_unique<ControlFlowRestructuringStatistics>(
+      std::move(sourceFileName),
+      std::move(functionName));
+  }
+
 private:
 	size_t NumNodes_;
 	jlm::timer Timer_;
 	std::string FunctionName_;
-	std::string FileName_;
+	filepath SourceFileName_;
 };
 
 class AggregationStatistics final : public Statistics {
@@ -97,11 +210,13 @@ public:
 	~AggregationStatistics() override
 	= default;
 
-	AggregationStatistics(std::string fileName, std::string functionName)
+	AggregationStatistics(
+    filepath sourceFileName,
+    std::string functionName)
 	: Statistics(StatisticsDescriptor::StatisticsId::Aggregation)
   , NumNodes_(0)
 	, FunctionName_(std::move(functionName))
-	, FileName_(std::move(fileName))
+	, SourceFileName_(std::move(sourceFileName))
 	{}
 
 	void
@@ -121,17 +236,27 @@ public:
 	ToString() const override
 	{
 		return strfmt("Aggregation ",
-                  FileName_, " ",
+                  SourceFileName_.to_str(), " ",
                   FunctionName_, " ",
                   "#Nodes:", NumNodes_, " ",
                   "Time[ns]:", Timer_.ns());
 	}
 
+  static std::unique_ptr<AggregationStatistics>
+  Create(
+    filepath sourceFileName,
+    std::string functionName)
+  {
+    return std::make_unique<AggregationStatistics>(
+      std::move(sourceFileName),
+      std::move(functionName));
+  }
+
 private:
 	size_t NumNodes_;
 	jlm::timer Timer_;
 	std::string FunctionName_;
-	std::string FileName_;
+	filepath SourceFileName_;
 };
 
 class AnnotationStatistics final : public Statistics {
@@ -139,11 +264,13 @@ public:
 	~AnnotationStatistics() override
 	= default;
 
-	AnnotationStatistics(std::string fileName, std::string functionName)
+	AnnotationStatistics(
+    filepath sourceFileName,
+    std::string functionName)
 	: Statistics(StatisticsDescriptor::StatisticsId::Annotation)
   , NumThreeAddressCodes_(0)
 	, FunctionName_(std::move(functionName))
-	, FileName_(std::move(fileName))
+	, SourceFileName_(std::move(sourceFileName))
 	{}
 
 	void
@@ -163,17 +290,27 @@ public:
 	ToString() const override
 	{
 		return strfmt("Annotation ",
-                  FileName_, " ",
+                  SourceFileName_.to_str(), " ",
                   FunctionName_, " ",
                   "#ThreeAddressCodes:", NumThreeAddressCodes_, " ",
                   "Time[ns]:", Timer_.ns());
 	}
 
+  static std::unique_ptr<AnnotationStatistics>
+  Create(
+    filepath sourceFileName,
+    std::string functionName)
+  {
+    return std::make_unique<AnnotationStatistics>(
+      std::move(sourceFileName),
+      std::move(functionName));
+  }
+
 private:
 	size_t NumThreeAddressCodes_;
 	jlm::timer Timer_;
 	std::string FunctionName_;
-	std::string FileName_;
+	filepath SourceFileName_;
 };
 
 class AggregationTreeToLambdaStatistics final : public Statistics {
@@ -181,10 +318,12 @@ public:
 	~AggregationTreeToLambdaStatistics() override
 	= default;
 
-	AggregationTreeToLambdaStatistics(std::string fileName, std::string functionName)
+	AggregationTreeToLambdaStatistics(
+    filepath sourceFileName,
+    std::string functionName)
 	: Statistics(StatisticsDescriptor::StatisticsId::JlmToRvsdgConversion)
   , FunctionName_(std::move(functionName))
-	, FileName_(std::move(fileName))
+	, SourceFileName_(std::move(sourceFileName))
 	{}
 
 	void
@@ -203,15 +342,25 @@ public:
 	ToString() const override
 	{
 		return strfmt("ControlFlowGraphToLambda ",
-                  FileName_, " ",
+                  SourceFileName_.to_str(), " ",
                   FunctionName_, " ",
                   "Time[ns]:", Timer_.ns());
 	}
 
+  static std::unique_ptr<AggregationTreeToLambdaStatistics>
+  Create(
+    filepath sourceFileName,
+    std::string functionName)
+  {
+    return std::make_unique<AggregationTreeToLambdaStatistics>(
+      std::move(sourceFileName),
+      std::move(functionName));
+  }
+
 private:
 	jlm::timer Timer_;
 	std::string FunctionName_;
-	std::string FileName_;
+	filepath SourceFileName_;
 };
 
 class InterProceduralGraphToRvsdgStatistics final : public Statistics {
@@ -220,11 +369,11 @@ public:
 	= default;
 
   explicit
-	InterProceduralGraphToRvsdgStatistics(jlm::filepath filename)
+	InterProceduralGraphToRvsdgStatistics(filepath sourceFileName)
 	: Statistics(StatisticsDescriptor::StatisticsId::RvsdgConstruction)
   , NumThreeAddressCodes_(0)
 	, NumRvsdgNodes_(0)
-	, FileName_(std::move(filename))
+	, SourceFileName_(std::move(sourceFileName))
 	{}
 
 	void
@@ -245,120 +394,152 @@ public:
 	ToString() const override
 	{
 		return strfmt("InterProceduralGraphToRvsdg ",
-                  FileName_.to_str(), " ",
+                  SourceFileName_.to_str(), " ",
                   "#ThreeAddressCodes:", NumThreeAddressCodes_, " ",
                   "#RvsdgNodes:", NumRvsdgNodes_, " ",
                   "Time[ns]:", Timer_.ns());
 	}
 
+  static std::unique_ptr<InterProceduralGraphToRvsdgStatistics>
+  Create(filepath sourceFileName)
+  {
+    return std::make_unique<InterProceduralGraphToRvsdgStatistics>(std::move(sourceFileName));
+  }
+
 private:
 	size_t NumThreeAddressCodes_;
 	size_t NumRvsdgNodes_;
 	jlm::timer Timer_;
-	jlm::filepath FileName_;
+	filepath SourceFileName_;
 };
 
-class vmap final {
+class StatisticsCollector final
+{
 public:
-	bool
-	contains(const variable * v) const noexcept
-	{
-		return map_.find(v) != map_.end();
-	}
+  explicit
+  StatisticsCollector(
+    const StatisticsDescriptor & statisticsDescriptor,
+    filepath sourceFileName)
+  : SourceFileName_(std::move(sourceFileName))
+  , StatisticsDescriptor_(statisticsDescriptor)
+  {}
 
-	jive::output *
-	lookup(const variable * v) const
-	{
-		JLM_ASSERT(contains(v));
-		return map_.at(v);
-	}
+  void
+  CollectControlFlowRestructuringStatistics(
+    const std::function<void(jlm::cfg*)> & restructureControlFlowGraph,
+    jlm::cfg & cfg,
+    std::string functionName)
+  {
+    auto & statistics = Create<ControlFlowRestructuringStatistics>(std::move(functionName));
+    if (!StatisticsDescriptor_.IsPrintable(statistics.GetStatisticsId())) {
+      restructureControlFlowGraph(&cfg);
+      return;
+    }
 
-	void
-	insert(const variable * v, jive::output * o)
-	{
-		JLM_ASSERT(v->type() == o->type());
-		map_[v] = o;
-	}
+    statistics.Start(cfg);
+    restructureControlFlowGraph(&cfg);
+    statistics.End();
+  }
+
+  std::unique_ptr<aggnode>
+  CollectAggregationStatistics(
+    const std::function<std::unique_ptr<aggnode>(jlm::cfg&)> & aggregateControlFlowGraph,
+    jlm::cfg & cfg,
+    std::string functionName)
+  {
+    auto & statistics = Create<AggregationStatistics>(std::move(functionName));
+    if (!StatisticsDescriptor_.IsPrintable(statistics.GetStatisticsId()))
+      return aggregateControlFlowGraph(cfg);
+
+    statistics.Start(cfg);
+    auto aggregationTreeRoot = aggregateControlFlowGraph(cfg);
+    statistics.End();
+
+    return aggregationTreeRoot;
+  }
+
+  demandmap
+  CollectAnnotationStatistics(
+    const std::function<demandmap(const aggnode&)> & annotateAggregationTree,
+    const aggnode & aggregationTreeRoot,
+    std::string functionName)
+  {
+    auto & statistics = Create<AnnotationStatistics>(std::move(functionName));
+    if (!StatisticsDescriptor_.IsPrintable(statistics.GetStatisticsId()))
+      return annotateAggregationTree(aggregationTreeRoot);
+
+    statistics.Start(aggregationTreeRoot);
+    auto demandMap = annotateAggregationTree(aggregationTreeRoot);
+    statistics.End();
+
+    return demandMap;
+  }
+
+  void
+  CollectAggregationTreeToLambdaStatistics(
+    const std::function<void()> & convertAggregationTreeToLambda,
+    std::string functionName)
+  {
+    auto & statistics = Create<AggregationTreeToLambdaStatistics>(std::move(functionName));
+    if (!StatisticsDescriptor_.IsPrintable(statistics.GetStatisticsId()))
+      return convertAggregationTreeToLambda();
+
+    statistics.Start();
+    convertAggregationTreeToLambda();
+    statistics.End();
+  }
+
+  std::unique_ptr<RvsdgModule>
+  CollectInterProceduralGraphToRvsdgStatistics(
+    const std::function<std::unique_ptr<RvsdgModule>(const ipgraph_module&)> & convertInterProceduralGraphModule,
+    const ipgraph_module & interProceduralGraphModule)
+  {
+    auto & statistics = CreateInterProceduralGraphToRvsdgStatistics();
+    if (!StatisticsDescriptor_.IsPrintable(statistics.GetStatisticsId()))
+      return convertInterProceduralGraphModule(interProceduralGraphModule);
+
+    statistics.Start(interProceduralGraphModule);
+    auto rvsdgModule = convertInterProceduralGraphModule(interProceduralGraphModule);
+    statistics.End(rvsdgModule->Rvsdg());
+
+    return rvsdgModule;
+  }
+
+  void
+  PrintStatistics() const noexcept
+  {
+    for (auto & statistics : Statistics_)
+      StatisticsDescriptor_.PrintStatistics(*statistics);
+  }
 
 private:
-	std::unordered_map<const variable*, jive::output*> map_;
-};
+  template<class T> T &
+  Create(std::string functionName)
+  {
+    auto statistics = T::Create(
+      SourceFileName_,
+      std::move(functionName));
 
-class scoped_vmap final {
-public:
-	inline
-	~scoped_vmap()
-	{
-		pop_scope();
-		JLM_ASSERT(nscopes() == 0);
-	}
+    auto tmp = statistics.get();
+    Statistics_.push_back(std::move(statistics));
 
-	inline
-	scoped_vmap(const ipgraph_module & im, jive::region * region)
-	: module_(im)
-	{
-		push_scope(region);
-	}
+    return *tmp;
+  }
 
-	inline size_t
-	nscopes() const noexcept
-	{
-		JLM_ASSERT(vmaps_.size() == regions_.size());
-		return vmaps_.size();
-	}
+  InterProceduralGraphToRvsdgStatistics &
+  CreateInterProceduralGraphToRvsdgStatistics()
+  {
+    auto statistics = InterProceduralGraphToRvsdgStatistics::Create(SourceFileName_);
 
-	inline jlm::vmap &
-	vmap(size_t n) noexcept
-	{
-		JLM_ASSERT(n < nscopes());
-		return *vmaps_[n];
-	}
+    auto tmp = statistics.get();
+    Statistics_.push_back(std::move(statistics));
 
-	inline jlm::vmap &
-	vmap() noexcept
-	{
-		JLM_ASSERT(nscopes() > 0);
-		return vmap(nscopes()-1);
-	}
+    return *tmp;
+  }
 
-	inline jive::region *
-	region(size_t n) noexcept
-	{
-		JLM_ASSERT(n < nscopes());
-		return regions_[n];
-	}
-
-	inline jive::region *
-	region() noexcept
-	{
-		JLM_ASSERT(nscopes() > 0);
-		return region(nscopes()-1);
-	}
-
-	inline void
-	push_scope(jive::region * region)
-	{
-		vmaps_.push_back(std::make_unique<jlm::vmap>());
-		regions_.push_back(region);
-	}
-
-	inline void
-	pop_scope()
-	{
-		vmaps_.pop_back();
-		regions_.pop_back();
-	}
-
-	const ipgraph_module &
-	module() const noexcept
-	{
-		return module_;
-	}
-
-private:
-	const ipgraph_module & module_;
-	std::vector<std::unique_ptr<jlm::vmap>> vmaps_;
-	std::vector<jive::region*> regions_;
+  const filepath SourceFileName_;
+  std::vector<std::unique_ptr<Statistics>> Statistics_;
+  const StatisticsDescriptor & StatisticsDescriptor_;
 };
 
 static bool
@@ -683,32 +864,38 @@ static void
 RestructureControlFlowGraph(
   jlm::cfg & controlFlowGraph,
   const std::string & functionName,
-  const StatisticsDescriptor & statisticsDescriptor)
+  StatisticsCollector & statisticsCollector)
 {
-  ControlFlowRestructuringStatistics statistics(source_filename, functionName);
-  statistics.Start(controlFlowGraph);
+  auto restructureControlFlowGraph = [](jlm::cfg * controlFlowGraph)
+  {
+    restructure(controlFlowGraph);
+    straighten(*controlFlowGraph);
+  };
 
-  restructure(&controlFlowGraph);
-  straighten(controlFlowGraph);
-
-  statistics.End();
-  statisticsDescriptor.PrintStatistics(statistics);
+  statisticsCollector.CollectControlFlowRestructuringStatistics(
+    restructureControlFlowGraph,
+    controlFlowGraph,
+    functionName);
 }
 
 static std::unique_ptr<aggnode>
 AggregateControlFlowGraph(
   jlm::cfg & controlFlowGraph,
   const std::string & functionName,
-  const StatisticsDescriptor & statisticsDescriptor)
+  StatisticsCollector & statisticsCollector)
 {
-  AggregationStatistics stat(source_filename, functionName);
-  stat.Start(controlFlowGraph);
+  auto aggregateControlFlowGraph = [](jlm::cfg & controlFlowGraph)
+  {
+    auto aggregationTreeRoot = aggregate(controlFlowGraph);
+    aggnode::normalize(*aggregationTreeRoot);
 
-  auto aggregationTreeRoot = aggregate(controlFlowGraph);
-  aggnode::normalize(*aggregationTreeRoot);
+    return aggregationTreeRoot;
+  };
 
-  stat.End();
-  statisticsDescriptor.PrintStatistics(stat);
+  auto aggregationTreeRoot = statisticsCollector.CollectAggregationStatistics(
+    aggregateControlFlowGraph,
+    controlFlowGraph,
+    functionName);
 
   return aggregationTreeRoot;
 }
@@ -717,15 +904,12 @@ static demandmap
 AnnotateAggregationTree(
   const aggnode & aggregationTreeRoot,
   const std::string & functionName,
-  const StatisticsDescriptor & statisticsDescriptor)
+  StatisticsCollector & statisticsCollector)
 {
-  AnnotationStatistics statistics(source_filename, functionName);
-  statistics.Start(aggregationTreeRoot);
-
-  auto demandMap = annotate(aggregationTreeRoot);
-
-  statistics.End();
-  statisticsDescriptor.PrintStatistics(statistics);
+  auto demandMap = statisticsCollector.CollectAnnotationStatistics(
+    annotate,
+    aggregationTreeRoot,
+    functionName);
 
   return demandMap;
 }
@@ -739,7 +923,7 @@ ConvertAggregationTreeToLambda(
   const FunctionType & functionType,
   const linkage & functionLinkage,
   const attributeset & functionAttributes,
-  const StatisticsDescriptor & statisticsDescriptor)
+  StatisticsCollector & statisticsCollector)
 {
   auto lambdaNode = lambda::node::create(
     scopedVariableMap.region(),
@@ -748,13 +932,14 @@ ConvertAggregationTreeToLambda(
     functionLinkage,
     functionAttributes);
 
-  AggregationTreeToLambdaStatistics statistics(source_filename, functionName);
-  statistics.Start();
+  auto convertAggregationTreeToLambda = [&]()
+  {
+    convert_node(aggregationTreeRoot, demandMap, lambdaNode, scopedVariableMap);
+  };
 
-  convert_node(aggregationTreeRoot, demandMap, lambdaNode, scopedVariableMap);
-
-  statistics.End();
-  statisticsDescriptor.PrintStatistics(statistics);
+  statisticsCollector.CollectAggregationTreeToLambdaStatistics(
+    convertAggregationTreeToLambda,
+    functionName);
 
   return lambdaNode->output();
 }
@@ -763,7 +948,7 @@ static jive::output *
 convert_cfg(
 	const jlm::function_node & functionNode,
 	scoped_vmap & svmap,
-	const StatisticsDescriptor & statisticsDescriptor)
+	StatisticsCollector & statisticsCollector)
 {
   auto & functionName = functionNode.name();
 	auto & controlFlowGraph = *functionNode.cfg();
@@ -775,17 +960,17 @@ convert_cfg(
   RestructureControlFlowGraph(
     controlFlowGraph,
     functionName,
-    statisticsDescriptor);
+    statisticsCollector);
 
   auto aggregationTreeRoot = AggregateControlFlowGraph(
     controlFlowGraph,
     functionName,
-    statisticsDescriptor);
+    statisticsCollector);
 
   auto demandMap = AnnotateAggregationTree(
     *aggregationTreeRoot,
     functionName,
-    statisticsDescriptor);
+    statisticsCollector);
 
   auto lambdaOutput = ConvertAggregationTreeToLambda(
     *aggregationTreeRoot,
@@ -795,7 +980,7 @@ convert_cfg(
     functionNode.fcttype(),
     functionNode.linkage(),
     functionNode.attributes(),
-    statisticsDescriptor);
+    statisticsCollector);
 
 	return lambdaOutput;
 }
@@ -804,7 +989,7 @@ static jive::output *
 construct_lambda(
 	const ipgraph_node * node,
 	scoped_vmap & svmap,
-	const StatisticsDescriptor & sd)
+  StatisticsCollector & statisticsCollector)
 {
 	JLM_ASSERT(dynamic_cast<const function_node*>(node));
 	auto & function = *static_cast<const function_node*>(node);
@@ -815,7 +1000,7 @@ construct_lambda(
 		return region->graph()->add_import(port);
 	}
 
-	return convert_cfg(function, svmap, sd);
+	return convert_cfg(function, svmap, statisticsCollector);
 }
 
 static jive::output *
@@ -832,7 +1017,7 @@ static jive::output *
 convert_data_node(
 	const jlm::ipgraph_node * node,
 	scoped_vmap & svmap,
-	const StatisticsDescriptor&)
+	StatisticsCollector&)
 {
 	JLM_ASSERT(dynamic_cast<const data_node*>(node));
 	auto n = static_cast<const data_node*>(node);
@@ -873,13 +1058,13 @@ static jive::output *
 handleSingleNode(
 	const ipgraph_node & node,
 	scoped_vmap & svmap,
-	const StatisticsDescriptor & sd)
+	StatisticsCollector & statisticsCollector)
 {
 	jive::output * output = nullptr;
 	if (auto functionNode = dynamic_cast<const function_node*>(&node)) {
-		output = construct_lambda(functionNode, svmap, sd);
+		output = construct_lambda(functionNode, svmap, statisticsCollector);
 	} else if (auto dataNode = dynamic_cast<const data_node*>(&node)) {
-		output = convert_data_node(dataNode, svmap, sd);
+		output = convert_data_node(dataNode, svmap, statisticsCollector);
 	} else {
 		JLM_UNREACHABLE("This should have never happened.");
 	}
@@ -892,7 +1077,7 @@ handle_scc(
 	const std::unordered_set<const jlm::ipgraph_node*> & scc,
 	jive::graph * graph,
 	scoped_vmap & svmap,
-	const StatisticsDescriptor & sd)
+	StatisticsCollector & statisticsCollector)
 {
 	auto & module = svmap.module();
 
@@ -903,7 +1088,7 @@ handle_scc(
 	if (scc.size() == 1 && !(*scc.begin())->is_selfrecursive()) {
 		auto & node = *scc.begin();
 
-		auto output = handleSingleNode(*node, svmap, sd);
+		auto output = handleSingleNode(*node, svmap, statisticsCollector);
 
 		auto v = module.variable(node);
 		JLM_ASSERT(v);
@@ -945,7 +1130,7 @@ handle_scc(
 
 	/* convert SCC nodes */
 	for (const auto & node : scc) {
-		auto output = handleSingleNode(*node, svmap, sd);
+		auto output = handleSingleNode(*node, svmap, statisticsCollector);
 		recvars[module.variable(node)]->set_rvorigin(output);
 	}
 
@@ -963,10 +1148,15 @@ handle_scc(
 }
 
 static std::unique_ptr<RvsdgModule>
-convert_module(const ipgraph_module & im, const StatisticsDescriptor & sd)
+convert_module(
+  const ipgraph_module & interProceduralGraphModule,
+  StatisticsCollector & statisticsCollector)
 {
-	auto rm = RvsdgModule::Create(im.source_filename(), im.target_triple(), im.data_layout());
-	auto graph = &rm->Rvsdg();
+	auto rvsdgModule = RvsdgModule::Create(
+    interProceduralGraphModule.source_filename(),
+    interProceduralGraphModule.target_triple(),
+    interProceduralGraphModule.data_layout());
+	auto graph = &rvsdgModule->Rvsdg();
 
 	auto nf = graph->node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
@@ -974,30 +1164,37 @@ convert_module(const ipgraph_module & im, const StatisticsDescriptor & sd)
 	/* FIXME: we currently cannot handle flattened_binary_op in jlm2llvm pass */
 	jive::binary_op::normal_form(graph)->set_flatten(false);
 
-	scoped_vmap svmap(im, graph->root());
+	scoped_vmap svmap(interProceduralGraphModule, graph->root());
 
 	/* convert ipgraph nodes */
-	auto sccs = im.ipgraph().find_sccs();
+	auto sccs = interProceduralGraphModule.ipgraph().find_sccs();
 	for (const auto & scc : sccs)
-		handle_scc(scc, graph, svmap, sd);
+		handle_scc(scc, graph, svmap, statisticsCollector);
 
-	return rm;
+	return rvsdgModule;
 }
 
 std::unique_ptr<RvsdgModule>
-construct_rvsdg(const ipgraph_module & im, const StatisticsDescriptor & sd)
+construct_rvsdg(
+  const ipgraph_module & interProceduralGraphModule,
+  const StatisticsDescriptor & statisticsDescriptor)
 {
-	source_filename = im.source_filename().to_str();
+  StatisticsCollector statisticsCollector(
+    statisticsDescriptor,
+    interProceduralGraphModule.source_filename());
 
-	InterProceduralGraphToRvsdgStatistics stat(im.source_filename());
+  auto convertInterProceduralGraphModule = [&](const ipgraph_module & interProceduralGraphModule)
+  {
+    return convert_module(interProceduralGraphModule, statisticsCollector);
+  };
 
-  stat.Start(im);
-	auto rm = convert_module(im, sd);
-  stat.End(rm->Rvsdg());
+  auto rvsdgModule = statisticsCollector.CollectInterProceduralGraphToRvsdgStatistics(
+    convertInterProceduralGraphModule,
+    interProceduralGraphModule);
 
-  sd.PrintStatistics(stat);
+  statisticsCollector.PrintStatistics();
 
-	return rm;
+  return rvsdgModule;
 }
 
 }
