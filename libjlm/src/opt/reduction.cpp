@@ -137,8 +137,7 @@ reduce(RvsdgModule & rm, const StatisticsDescriptor & sd)
 	graph.normalize();
 	stat.end(graph);
 
-	if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::ReduceNodes))
-		sd.print_stat(stat);
+  sd.print_stat(stat);
 }
 
 /* nodereduction class */

@@ -1388,8 +1388,7 @@ Steensgaard::Analyze(
 	Analyze(module.Rvsdg());
 //	std::cout << locationSet_.to_dot() << std::flush;
   steensgardStatistics.end();
-  if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::SteensgaardAnalysis))
-    sd.print_stat(steensgardStatistics);
+  sd.print_stat(steensgardStatistics);
 
 
   /**
@@ -1400,8 +1399,7 @@ Steensgaard::Analyze(
 	auto pointsToGraph = ConstructPointsToGraph(locationSet_);
 //	std::cout << PointsToGraph::ToDot(*pointsToGraph) << std::flush;
   ptgConstructionStatistics.stop(*pointsToGraph);
-  if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::SteensgaardPointsToGraphConstruction))
-    sd.print_stat(ptgConstructionStatistics);
+  sd.print_stat(ptgConstructionStatistics);
 
 	return pointsToGraph;
 }

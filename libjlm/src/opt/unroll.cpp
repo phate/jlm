@@ -537,9 +537,7 @@ loopunroll::run(RvsdgModule & module, const StatisticsDescriptor & sd)
 	unroll(graph.root(), factor_);
 	stat.end(module.Rvsdg());
 
-	if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::LoopUnrolling))
-		sd.print_stat(stat);
-
+  sd.print_stat(stat);
 }
 
 }

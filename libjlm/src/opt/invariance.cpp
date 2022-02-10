@@ -126,8 +126,7 @@ invariance(RvsdgModule & rm, const StatisticsDescriptor & sd)
 	invariance(rm.Rvsdg().root());
 	stat.end(rm.Rvsdg());
 
-	if (sd.IsPrintable(StatisticsDescriptor::StatisticsId::InvariantValueReduction))
-		sd.print_stat(stat);
+  sd.print_stat(stat);
 }
 
 /* ivr class */
