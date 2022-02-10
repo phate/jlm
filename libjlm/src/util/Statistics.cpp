@@ -7,7 +7,13 @@
 
 namespace jlm {
 
+void
+StatisticsDescriptor::print_stat(const Statistics & s) const noexcept
+{
+  fprintf(file_.fd(), "%s\n", s.ToString().c_str());
+}
+
 Statistics::~Statistics()
-{}
+= default;
 
 }

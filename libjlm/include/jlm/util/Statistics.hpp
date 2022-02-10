@@ -12,14 +12,7 @@
 
 namespace jlm {
 
-class Statistics {
-public:
-	virtual
-	~Statistics();
-
-	virtual std::string
-	ToString() const = 0;
-};
+class Statistics;
 
 class StatisticsDescriptor final {
 public:
@@ -89,10 +82,7 @@ public:
   }
 
 	void
-	print_stat(const Statistics & s) const noexcept
-	{
-		fprintf(file_.fd(), "%s\n", s.ToString().c_str());
-	}
+	print_stat(const Statistics & s) const noexcept;
 
   bool
   IsPrintable(StatisticsId id) const
@@ -103,6 +93,29 @@ public:
 private:
 	jlm::file file_;
   std::unordered_set<StatisticsId> printStatistics_;
+};
+
+class Statistics {
+public:
+  virtual
+  ~Statistics();
+
+  explicit
+  Statistics(const StatisticsDescriptor::StatisticsId & statisticsId)
+  : StatisticsId_(statisticsId)
+  {}
+
+  StatisticsDescriptor::StatisticsId
+  GetStatisticsId() const noexcept
+  {
+    return StatisticsId_;
+  }
+
+  virtual std::string
+  ToString() const = 0;
+
+private:
+  StatisticsDescriptor::StatisticsId StatisticsId_;
 };
 
 }

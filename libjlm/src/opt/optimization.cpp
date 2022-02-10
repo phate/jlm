@@ -37,7 +37,8 @@ public:
 	{}
 
 	optimization_stat(const jlm::filepath & filename)
-	: filename_(filename)
+	: Statistics(StatisticsDescriptor::StatisticsId::RvsdgOptimization)
+  , filename_(filename)
 	, nnodes_before_(0)
 	, nnodes_after_(0)
 	{}
