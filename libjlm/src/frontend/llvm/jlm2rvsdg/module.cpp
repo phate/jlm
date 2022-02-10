@@ -56,7 +56,8 @@ public:
 	= default;
 
 	ControlFlowRestructuringStatistics(std::string fileName, std::string functionName)
-	: NumNodes_(0)
+	: Statistics(StatisticsDescriptor::StatisticsId::ControlFlowRecovery)
+  , NumNodes_(0)
 	, FunctionName_(std::move(functionName))
 	, FileName_(std::move(fileName))
 	{}
@@ -97,7 +98,8 @@ public:
 	= default;
 
 	AggregationStatistics(std::string fileName, std::string functionName)
-	: NumNodes_(0)
+	: Statistics(StatisticsDescriptor::StatisticsId::Aggregation)
+  , NumNodes_(0)
 	, FunctionName_(std::move(functionName))
 	, FileName_(std::move(fileName))
 	{}
@@ -138,7 +140,8 @@ public:
 	= default;
 
 	AnnotationStatistics(std::string fileName, std::string functionName)
-	: NumThreeAddressCodes_(0)
+	: Statistics(StatisticsDescriptor::StatisticsId::Annotation)
+  , NumThreeAddressCodes_(0)
 	, FunctionName_(std::move(functionName))
 	, FileName_(std::move(fileName))
 	{}
@@ -179,7 +182,8 @@ public:
 	= default;
 
 	AggregationTreeToLambdaStatistics(std::string fileName, std::string functionName)
-	: FunctionName_(std::move(functionName))
+	: Statistics(StatisticsDescriptor::StatisticsId::JlmToRvsdgConversion)
+  , FunctionName_(std::move(functionName))
 	, FileName_(std::move(fileName))
 	{}
 
@@ -217,7 +221,8 @@ public:
 
   explicit
 	InterProceduralGraphToRvsdgStatistics(jlm::filepath filename)
-	: NumThreeAddressCodes_(0)
+	: Statistics(StatisticsDescriptor::StatisticsId::RvsdgConstruction)
+  , NumThreeAddressCodes_(0)
 	, NumRvsdgNodes_(0)
 	, FileName_(std::move(filename))
 	{}

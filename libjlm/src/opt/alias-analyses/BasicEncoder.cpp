@@ -25,7 +25,8 @@ public:
 
   explicit
   EncodingStatistics(jlm::filepath sourceFile)
-  : numNodesBefore_(0)
+  : Statistics(StatisticsDescriptor::StatisticsId::BasicEncoderEncoding)
+  , numNodesBefore_(0)
   , sourceFile_(std::move(sourceFile))
   {}
 
@@ -66,7 +67,8 @@ public:
 
   explicit
   ContextCreationStatistics(jlm::filepath sourceFile)
-  : sourceFile_(std::move(sourceFile))
+  : Statistics(StatisticsDescriptor::StatisticsId::BasicEncoderContextCreation)
+  , sourceFile_(std::move(sourceFile))
   {}
 
   void

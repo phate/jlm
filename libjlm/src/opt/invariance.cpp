@@ -25,7 +25,8 @@ public:
 	{}
 
 	invstat()
-	: nnodes_before_(0), nnodes_after_(0)
+	: Statistics(StatisticsDescriptor::StatisticsId::InvariantValueReduction)
+  , nnodes_before_(0), nnodes_after_(0)
 	, ninputs_before_(0), ninputs_after_(0)
 	{}
 
