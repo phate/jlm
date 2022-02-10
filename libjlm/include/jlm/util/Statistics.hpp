@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_UTIL_STATS_HPP
-#define JLM_UTIL_STATS_HPP
+#ifndef JLM_UTIL_STATISTICS_HPP
+#define JLM_UTIL_STATISTICS_HPP
 
 #include <jlm/util/file.hpp>
 
