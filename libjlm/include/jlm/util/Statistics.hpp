@@ -23,6 +23,7 @@ public:
     BasicEncoderEncoding,
     CommonNodeElimination,
     ControlFlowRecovery,
+    DataNodeToDelta,
     DeadNodeElimination,
     FunctionInlining,
     InvariantValueReduction,

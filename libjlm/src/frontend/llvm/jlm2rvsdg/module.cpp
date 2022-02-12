@@ -363,6 +363,60 @@ private:
 	filepath SourceFileName_;
 };
 
+class DataNodeToDeltaStatistics final : public Statistics {
+public:
+  ~DataNodeToDeltaStatistics() override
+  = default;
+
+  DataNodeToDeltaStatistics(
+    filepath sourceFileName,
+    std::string dataNodeName)
+  : Statistics(StatisticsDescriptor::StatisticsId::DataNodeToDelta)
+  , NumInitializationThreeAddressCodes_(0)
+  , DataNodeName_(std::move(dataNodeName))
+  , SourceFileName_(std::move(sourceFileName))
+  {}
+
+  void
+  Start(size_t numInitializationThreeAddressCodes) noexcept
+  {
+    NumInitializationThreeAddressCodes_ = numInitializationThreeAddressCodes;
+    Timer_.start();
+  }
+
+  void
+  End() noexcept
+  {
+    Timer_.stop();
+  }
+
+  std::string
+  ToString() const override
+  {
+    return strfmt("DataNodeToDeltaStatistics ",
+                  SourceFileName_.to_str(), " ",
+                  DataNodeName_, " ",
+                  "#InitializationThreeAddressCodes:", NumInitializationThreeAddressCodes_, " ",
+                  "Time[ns]:", Timer_.ns());
+  }
+
+  static std::unique_ptr<DataNodeToDeltaStatistics>
+  Create(
+    filepath sourceFileName,
+    std::string dataNodeName)
+  {
+    return std::make_unique<DataNodeToDeltaStatistics>(
+      std::move(sourceFileName),
+      std::move(dataNodeName));
+  }
+
+private:
+  jlm::timer Timer_;
+  size_t NumInitializationThreeAddressCodes_;
+  std::string DataNodeName_;
+  filepath SourceFileName_;
+};
+
 class InterProceduralGraphToRvsdgStatistics final : public Statistics {
 public:
 	~InterProceduralGraphToRvsdgStatistics() override
@@ -487,6 +541,23 @@ public:
     statistics.Start();
     convertAggregationTreeToLambda();
     statistics.End();
+  }
+
+  jive::output *
+  CollectDataNodeToDeltaStatistics(
+    const std::function<jive::output*()> & convertDataNodeToDelta,
+    std::string dataNodeName,
+    size_t NumInitializationThreeAddressCodes)
+  {
+    auto & statistics = Create<DataNodeToDeltaStatistics>(std::move(dataNodeName));
+    if (!StatisticsDescriptor_.IsPrintable(statistics.GetStatisticsId()))
+      return convertDataNodeToDelta();
+
+    statistics.Start(NumInitializationThreeAddressCodes);
+    auto output = convertDataNodeToDelta();
+    statistics.End();
+
+    return output;
   }
 
   std::unique_ptr<RvsdgModule>
@@ -1017,41 +1088,55 @@ static jive::output *
 convert_data_node(
 	const jlm::ipgraph_node * node,
 	scoped_vmap & svmap,
-	StatisticsCollector&)
+	StatisticsCollector & statisticsCollector)
 {
 	JLM_ASSERT(dynamic_cast<const data_node*>(node));
 	auto n = static_cast<const data_node*>(node);
-	auto init = n->initialization();
-	auto & m = svmap.module();
-  auto region = svmap.region();
+  auto dataNodeInitialization = n->initialization();
 
-	/* data node without initialization */
-	if (!init) {
-		jlm::impport port(n->type(), n->name(), n->linkage());
-		return region->graph()->add_import(port);
-	}
+  auto convertDataNodeToDeltaNode = [&]() -> jive::output*
+  {
+    auto & m = svmap.module();
+    auto region = svmap.region();
 
-	/* data node with initialization */
-	auto delta = delta::node::create(
-    region,
-    n->type(),
+    /* data node without initialization */
+    if (!dataNodeInitialization) {
+      jlm::impport port(n->type(), n->name(), n->linkage());
+      return region->graph()->add_import(port);
+    }
+
+    /* data node with initialization */
+    auto delta = delta::node::create(
+      region,
+      n->type(),
+      n->name(),
+      n->linkage(),
+      n->constant());
+    auto & pv = svmap.vmap();
+    svmap.push_scope(delta->subregion());
+
+    /* add dependencies */
+    for (const auto & dp : *node) {
+      auto v = m.variable(dp);
+      auto argument = delta->add_ctxvar(pv.lookup(v));
+      svmap.vmap().insert(v, argument);
+    }
+
+    auto deltaOutput = delta->finalize(convert_initialization(
+      *dataNodeInitialization,
+      delta->subregion(),
+      svmap));
+    svmap.pop_scope();
+
+    return deltaOutput;
+  };
+
+  auto deltaOutput = statisticsCollector.CollectDataNodeToDeltaStatistics(
+    convertDataNodeToDeltaNode,
     n->name(),
-    n->linkage(),
-    n->constant());
-	auto & pv = svmap.vmap();
-	svmap.push_scope(delta->subregion());
+    dataNodeInitialization ? dataNodeInitialization->tacs().size() : 0);
 
-	/* add dependencies */
-	for (const auto & dp : *node) {
-		auto v = m.variable(dp);
-		auto argument = delta->add_ctxvar(pv.lookup(v));
-		svmap.vmap().insert(v, argument);
-	}
-
-	auto data = delta->finalize(convert_initialization(*init, delta->subregion(), svmap));
-	svmap.pop_scope();
-
-	return data;
+	return deltaOutput;
 }
 
 static jive::output *
