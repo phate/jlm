@@ -134,9 +134,9 @@ public:
 	VariableSet fullwrites;
 };
 
-typedef std::unordered_map<const aggnode*, std::unique_ptr<demandset>> demandmap;
+typedef std::unordered_map<const aggnode*, std::unique_ptr<demandset>> DemandMap;
 
-demandmap
+DemandMap
 Annotate(const jlm::aggnode & root);
 
 }
