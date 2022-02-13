@@ -19,11 +19,11 @@ contains(
 	const jlm::VariableSet & ds,
 	const std::vector<const jlm::variable*> & variables)
 {
-	if (ds.size() != variables.size())
+	if (ds.Size() != variables.size())
 		return false;
 
-	for (const auto & v : variables) {
-		if (!ds.contains(v))
+	for (auto & v : variables) {
+		if (!ds.Contains(*v))
 			return false;
 	}
 
@@ -32,7 +32,7 @@ contains(
 
 static bool
 contains(
-	const jlm::DemandMap & dm,
+	const jlm::DemandMap & demandMap,
 	const jlm::aggnode * node,
 	const std::vector<const jlm::variable*> & bottom,
 	const std::vector<const jlm::variable*> & top,
@@ -40,14 +40,15 @@ contains(
 	const std::vector<const jlm::variable*> & fullwrites,
 	const std::vector<const jlm::variable*> & allwrites)
 {
-	if (dm.find(node) == dm.end())
+  if (!demandMap.Contains(*node))
 		return false;
 
-	auto ds = dm.at(node).get();
-	return contains(ds->bottom, bottom)
-	    && contains(ds->top, top)
-	    && contains(ds->reads, reads)
-	    && contains(ds->fullwrites, fullwrites);
+	auto & demandSet = demandMap.Lookup(*node);
+	return contains(demandSet.bottom, bottom)
+	    && contains(demandSet.top, top)
+	    && contains(demandSet.ReadSet(), reads)
+	    && contains(demandSet.FullWriteSet(), fullwrites);
+      // TODO: allwrites is not checked
 }
 
 static void
@@ -72,9 +73,9 @@ test_block()
 	auto root = blockaggnode::create(std::move(bb));
 
 	auto dm = Annotate(*root);
-	print(*root, dm, stdout);
+	print(*root, *dm, stdout);
 
-	assert(contains(dm, root.get(), {}, {v0}, {v0}, {v1, v2}, {v1, v2}));
+	assert(contains(*dm, root.get(), {}, {v0}, {v0}, {v1, v2}, {v1, v2}));
 }
 
 static void
@@ -114,17 +115,17 @@ test_linear()
 		Create and verify demand map
 	*/
 	auto dm = Annotate(*root);
-	print(*root, dm, stdout);
+	print(*root, *dm, stdout);
 
-	assert(contains(dm, xnptr, {}, {v2}, {v2}, {}, {}));
-	assert(contains(dm, b2ptr, {v2}, {v1}, {v1}, {v2}, {v2}));
-	assert(contains(dm, l2ptr, {}, {v1}, {v1}, {v2}, {v2}));
+	assert(contains(*dm, xnptr, {}, {v2}, {v2}, {}, {}));
+	assert(contains(*dm, b2ptr, {v2}, {v1}, {v1}, {v2}, {v2}));
+	assert(contains(*dm, l2ptr, {}, {v1}, {v1}, {v2}, {v2}));
 
-	assert(contains(dm, b1ptr, {v1}, {&arg}, {&arg}, {v1}, {v1}));
-	assert(contains(dm, enptr, {&arg}, {}, {}, {&arg}, {&arg}));
-	assert(contains(dm, l1ptr, {v1}, {}, {}, {v1, &arg}, {v1, &arg}));
+	assert(contains(*dm, b1ptr, {v1}, {&arg}, {&arg}, {v1}, {v1}));
+	assert(contains(*dm, enptr, {&arg}, {}, {}, {&arg}, {&arg}));
+	assert(contains(*dm, l1ptr, {v1}, {}, {}, {v1, &arg}, {v1, &arg}));
 
-	assert(contains(dm, root.get(), {}, {}, {}, {v1, &arg, v2}, {v1, &arg, v2}));
+	assert(contains(*dm, root.get(), {}, {}, {}, {v1, &arg, v2}, {v1, &arg, v2}));
 }
 
 static void
@@ -170,13 +171,13 @@ test_branch()
 		Create and verify demand map
 	*/
 	auto dm = Annotate(*root);
-	print(*root, dm, stdout);
+	print(*root, *dm, stdout);
 
-	assert(contains(dm, b1ptr, {}, {v2}, {v2}, {v3}, {v3}));
-	assert(contains(dm, b2ptr, {}, {v1}, {v1}, {v2, v4, v3}, {v2, v4, v3}));
-	assert(contains(dm, branchptr, {}, {v1, v2}, {v1, v2}, {v3}, {v2, v3, v4}));
-	assert(contains(dm, bsptr, {v1, v2}, {v2, arg}, {arg}, {v1}, {v1}));
-	assert(contains(dm, root.get(), {}, {arg, v2}, {arg, v2}, {v1, v3}, {}));
+	assert(contains(*dm, b1ptr, {}, {v2}, {v2}, {v3}, {v3}));
+	assert(contains(*dm, b2ptr, {}, {v1}, {v1}, {v2, v4, v3}, {v2, v4, v3}));
+	assert(contains(*dm, branchptr, {}, {v1, v2}, {v1, v2}, {v3}, {v2, v3, v4}));
+	assert(contains(*dm, bsptr, {v1, v2}, {v2, arg}, {arg}, {v1}, {v1}));
+	assert(contains(*dm, root.get(), {}, {arg, v2}, {arg, v2}, {v1, v3}, {}));
 }
 
 static void
@@ -211,12 +212,12 @@ test_loop()
 		Create and verify demand map
 	*/
 	auto dm = Annotate(*root);
-	print(*root, dm, stdout);
+	print(*root, *dm, stdout);
 
-	assert(contains(dm, xnptr, {}, {v3, v4}, {v3, v4}, {}, {}));
-	assert(contains(dm, bptr, {v1, v3, v4}, {v1, v4}, {v1}, {v2, v3}, {v2, v3}));
-	assert(contains(dm, lnptr, {v1, v3, v4}, {v1, v3, v4}, {v1}, {v2, v3}, {v2, v3}));
-	assert(contains(dm , root.get(), {}, {v1, v4}, {v1, v4}, {v2, v3}, {v2, v3}));
+	assert(contains(*dm, xnptr, {}, {v3, v4}, {v3, v4}, {}, {}));
+	assert(contains(*dm, bptr, {v1, v3, v4}, {v1, v4}, {v1}, {v2, v3}, {v2, v3}));
+	assert(contains(*dm, lnptr, {v1, v3, v4}, {v1, v3, v4}, {v1}, {v2, v3}, {v2, v3}));
+	assert(contains(*dm , root.get(), {}, {v1, v4}, {v1, v4}, {v2, v3}, {v2, v3}));
 }
 
 static void
@@ -263,14 +264,14 @@ test_branch_in_loop()
 		Create and verify demand map
 	*/
 	auto dm = Annotate(*root);
-	print(*root, dm, stdout);
+	print(*root, *dm, stdout);
 
-	assert(contains(dm, xnptr, {}, {v2, v3}, {v2, v3}, {}, {}));
-	assert(contains(dm, b1ptr, {v2, v3, v4}, {v1}, {v1}, {v2, v3, v4}, {v2, v3, v4}));
-	assert(contains(dm, b2ptr, {v2, v3, v4}, {v1, v2, v4}, {v1, v4}, {v3}, {v3}));
-	assert(contains(dm, branchptr, {v2, v3, v4}, {v1, v2, v4}, {v1, v4}, {v3}, {v2, v3, v4}));
-	assert(contains(dm, loopptr, {v1, v2, v3, v4}, {v1, v2, v3, v4}, {v1, v4}, {v3}, {v2, v3, v4}));
-	assert(contains(dm, root.get(), {}, {v1, v2, v4}, {v1, v2, v4}, {v3}, {}));
+	assert(contains(*dm, xnptr, {}, {v2, v3}, {v2, v3}, {}, {}));
+	assert(contains(*dm, b1ptr, {v2, v3, v4}, {v1}, {v1}, {v2, v3, v4}, {v2, v3, v4}));
+	assert(contains(*dm, b2ptr, {v2, v3, v4}, {v1, v2, v4}, {v1, v4}, {v3}, {v3}));
+	assert(contains(*dm, branchptr, {v2, v3, v4}, {v1, v2, v4}, {v1, v4}, {v3}, {v2, v3, v4}));
+	assert(contains(*dm, loopptr, {v1, v2, v3, v4}, {v1, v2, v3, v4}, {v1, v4}, {v3}, {v2, v3, v4}));
+	assert(contains(*dm, root.get(), {}, {v1, v2, v4}, {v1, v2, v4}, {v3}, {}));
 }
 
 static void
@@ -293,9 +294,9 @@ test_assignment()
 		Create and verify demand map
 	*/
 	auto dm = Annotate(*root);
-	print(*root, dm, stdout);
+	print(*root, *dm, stdout);
 
-	assert(contains(dm, root.get(), {}, {v1}, {v1}, {v2}, {v2}));
+	assert(contains(*dm, root.get(), {}, {v1}, {v1}, {v2}, {v2}));
 }
 
 static void
@@ -335,21 +336,21 @@ test_branch_passby()
 
 
 	auto dm = Annotate(*root);
-	print(*root, dm, stdout);
+	print(*root, *dm, stdout);
 
-	assert(contains(dm, root.get(), {}, {}, {}, {v1, v2, v3}, {v1, v2, v3}));
+	assert(contains(*dm, root.get(), {}, {}, {}, {v1, v2, v3}, {v1, v2, v3}));
 	{
-		assert(contains(dm, root->child(0), {v1, v2}, {}, {}, {v1, v2}, {v1, v2}));
+		assert(contains(*dm, root->child(0), {v1, v2}, {}, {}, {v1, v2}, {v1, v2}));
 
 		auto branch = root->child(1);
-		assert(contains(dm, branch, {v2, v3}, {v1, v2}, {v1}, {v3}, {v2, v3}));
+		assert(contains(*dm, branch, {v2, v3}, {v1, v2}, {v1}, {v3}, {v2, v3}));
 		{
-			assert(contains(dm, branch->child(0), {v2, v3}, {v1}, {v1}, {v2, v3}, {v2, v3}));
-			assert(contains(dm, branch->child(1), {v2, v3}, {v1, v2}, {v1}, {v3}, {v3}));
+			assert(contains(*dm, branch->child(0), {v2, v3}, {v1}, {v1}, {v2, v3}, {v2, v3}));
+			assert(contains(*dm, branch->child(1), {v2, v3}, {v1, v2}, {v1}, {v3}, {v3}));
 		}
 
-		assert(contains(dm, root->child(2), {v1, v2, v3}, {v1, v2, v3}, {}, {}, {}));
-		assert(contains(dm, root->child(3), {}, {v1, v2, v3}, {v1, v2, v3}, {}, {}));
+		assert(contains(*dm, root->child(2), {v1, v2, v3}, {v1, v2, v3}, {}, {}, {}));
+		assert(contains(*dm, root->child(3), {}, {v1, v2, v3}, {v1, v2, v3}, {}, {}));
 	}
 }
 

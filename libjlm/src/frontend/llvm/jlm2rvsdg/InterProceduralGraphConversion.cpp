@@ -512,9 +512,9 @@ public:
     return aggregationTreeRoot;
   }
 
-  DemandMap
+  std::unique_ptr<DemandMap>
   CollectAnnotationStatistics(
-    const std::function<DemandMap(const aggnode&)> & annotateAggregationTree,
+    const std::function<std::unique_ptr<DemandMap>(const aggnode&)> & annotateAggregationTree,
     const aggnode & aggregationTreeRoot,
     std::string functionName)
   {
@@ -742,7 +742,7 @@ Convert(
   lambda::node & lambdaNode,
   RegionalizedVariableMap & regionalizedVariableMap)
 {
-	auto demandSet = demandMap.at(&entryAggregationNode).get();
+	auto & demandSet = demandMap.Lookup(entryAggregationNode);
 
   regionalizedVariableMap.PushRegion(*lambdaNode.subregion());
 
@@ -764,12 +764,12 @@ Convert(
 	/*
 	 * Add dependencies and undefined values
 	 */
-	for (const auto & v : demandSet->top) {
-		if (outerVariableMap.contains(v)) {
-			topVariableMap.insert(v, lambdaNode.add_ctxvar(outerVariableMap.lookup(v)));
+	for (auto & v : demandSet.top.Variables()) {
+		if (outerVariableMap.contains(&v)) {
+			topVariableMap.insert(&v, lambdaNode.add_ctxvar(outerVariableMap.lookup(&v)));
 		} else {
-			auto value = create_undef_value(*lambdaNode.subregion(), v->type());
-			topVariableMap.insert(v, value);
+			auto value = create_undef_value(*lambdaNode.subregion(), v.type());
+			topVariableMap.insert(&v, value);
 		}
 	}
 }
@@ -839,10 +839,10 @@ Convert(
 	/*
 	 * Add gamma inputs.
 	 */
-	auto & ds = demandMap.at(&branchAggregationNode);
+	auto & demandSet = demandMap.Lookup(branchAggregationNode);
 	std::unordered_map<const variable*, jive::gamma_input*> gammaInputMap;
-	for (const auto & v : ds->top)
-    gammaInputMap[v] = gamma->add_entryvar(regionalizedVariableMap.GetTopVariableMap().lookup(v));
+	for (auto & v : demandSet.top.Variables())
+    gammaInputMap[&v] = gamma->add_entryvar(regionalizedVariableMap.GetTopVariableMap().lookup(&v));
 
 	/*
 	 * Convert subregions.
@@ -856,17 +856,17 @@ Convert(
 
     ConvertAggregationNode(*branchAggregationNode.child(n), demandMap, lambdaNode, regionalizedVariableMap);
 
-		for (const auto & v : ds->bottom)
-			xvmap[v].push_back(regionalizedVariableMap.GetTopVariableMap().lookup(v));
+		for (auto & v : demandSet.bottom.Variables())
+			xvmap[&v].push_back(regionalizedVariableMap.GetTopVariableMap().lookup(&v));
     regionalizedVariableMap.PopRegion();
 	}
 
 	/*
 	 * Add gamma outputs.
 	 */
-	for (const auto & v : ds->bottom) {
-		JLM_ASSERT(xvmap.find(v) != xvmap.end());
-    regionalizedVariableMap.GetTopVariableMap().insert(v, gamma->add_exitvar(xvmap[v]));
+	for (auto & v : demandSet.bottom.Variables()) {
+		JLM_ASSERT(xvmap.find(&v) != xvmap.end());
+    regionalizedVariableMap.GetTopVariableMap().insert(&v, gamma->add_exitvar(xvmap[&v]));
 	}
 }
 
@@ -888,20 +888,20 @@ Convert(
 	/*
 	 * Add loop variables
 	 */
-	auto ds = demandMap.at(&loopAggregationNode).get();
-	JLM_ASSERT(ds->top == ds->bottom);
+	auto & demandSet = demandMap.Lookup(loopAggregationNode);
+	JLM_ASSERT(demandSet.top == demandSet.bottom);
 	std::unordered_map<const variable*, jive::theta_output*> thetaOutputMap;
-	for (const auto & v : ds->top) {
+	for (auto & v : demandSet.top.Variables()) {
 		jive::output * value = nullptr;
-		if (!outerVariableMap.contains(v)) {
-			value = create_undef_value(parentRegion, v->type());
+		if (!outerVariableMap.contains(&v)) {
+			value = create_undef_value(parentRegion, v.type());
 			JLM_ASSERT(value);
-			outerVariableMap.insert(v, value);
+			outerVariableMap.insert(&v, value);
 		} else {
-			value = outerVariableMap.lookup(v);
+			value = outerVariableMap.lookup(&v);
 		}
-    thetaOutputMap[v] = theta->add_loopvar(value);
-		thetaVariableMap.insert(v, thetaOutputMap[v]->argument());
+    thetaOutputMap[&v] = theta->add_loopvar(value);
+		thetaVariableMap.insert(&v, thetaOutputMap[&v]->argument());
 	}
 
 	/*
@@ -913,9 +913,9 @@ Convert(
 	/*
 	 * Update loop variables
 	 */
-	for (const auto & v : ds->top) {
-		JLM_ASSERT(thetaOutputMap.find(v) != thetaOutputMap.end());
-		thetaOutputMap[v]->result()->divert_to(thetaVariableMap.lookup(v));
+	for (auto & v : demandSet.top.Variables()) {
+		JLM_ASSERT(thetaOutputMap.find(&v) != thetaOutputMap.end());
+		thetaOutputMap[&v]->result()->divert_to(thetaVariableMap.lookup(&v));
 	}
 
 	/*
@@ -934,9 +934,9 @@ Convert(
 	 */
 	theta->set_predicate(thetaVariableMap.lookup(predicate));
   regionalizedVariableMap.PopRegion();
-	for (const auto & v : ds->bottom) {
-		JLM_ASSERT(outerVariableMap.contains(v));
-		outerVariableMap.insert(v, thetaOutputMap[v]);
+	for (auto & v : demandSet.bottom.Variables()) {
+		JLM_ASSERT(outerVariableMap.contains(&v));
+		outerVariableMap.insert(&v, thetaOutputMap[&v]);
 	}
 }
 
@@ -1020,7 +1020,7 @@ AggregateControlFlowGraph(
   return aggregationTreeRoot;
 }
 
-static DemandMap
+static std::unique_ptr<DemandMap>
 AnnotateAggregationTree(
   const aggnode & aggregationTreeRoot,
   const std::string & functionName,
@@ -1094,7 +1094,7 @@ ConvertControlFlowGraph(
 
   auto lambdaOutput = ConvertAggregationTreeToLambda(
     *aggregationTreeRoot,
-    demandMap,
+    *demandMap,
     regionalizedVariableMap,
     functionName,
     functionNode.fcttype(),

@@ -340,9 +340,9 @@ static std::string
 emit_variableset(const VariableSet & ds)
 {
 	std::string s("{");
-	for (auto it = ds.begin(); it != ds.end(); it++) {
-		s += (*it)->name();
-		if (std::next(it) != ds.end())
+  for (auto it = ds.Variables().begin(); it != ds.Variables().end(); it++) {
+		s += (*it).name();
+		if (std::next(it) != ds.Variables().end())
 			s += ", ";
 	}
 	s += "}";
@@ -355,9 +355,9 @@ emit_demandset(const DemandSet & ds)
 {
 	return emit_variableset(ds.bottom)
 	     + " -> " + emit_variableset(ds.top)
-	     + " [" + emit_variableset(ds.reads)
-	     + "] [" + emit_variableset(ds.fullwrites)
-	     + "] [" + emit_variableset(ds.allwrites)
+	     + " [" + emit_variableset(ds.ReadSet())
+	     + "] [" + emit_variableset(ds.FullWriteSet())
+	     + "] [" + emit_variableset(ds.AllWriteSet())
 	     + "]";
 }
 
@@ -371,8 +371,8 @@ to_str(const aggnode & n, const DemandMap & dm)
     std::string subtree(depth, '-');
     subtree += n.debug_string();
 
-		auto it = dm.find(&n);
-		subtree += (it != dm.end() ? " " + emit_demandset(*it->second) : "") + "\n";
+    if (dm.Contains(n))
+		  subtree += " " + emit_demandset(dm.Lookup(n)) + "\n";
 
     for (const auto & child : n)
       subtree += f(child, depth+1);
