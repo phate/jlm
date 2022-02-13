@@ -71,7 +71,7 @@ test_block()
 
 	auto root = blockaggnode::create(std::move(bb));
 
-	auto dm = annotate(*root);
+	auto dm = Annotate(*root);
 	print(*root, dm, stdout);
 
 	assert(contains(dm, root.get(), {}, {v0}, {v0}, {v1, v2}, {v1, v2}));
@@ -113,7 +113,7 @@ test_linear()
 	/*
 		Create and verify demand map
 	*/
-	auto dm = annotate(*root);
+	auto dm = Annotate(*root);
 	print(*root, dm, stdout);
 
 	assert(contains(dm, xnptr, {}, {v2}, {v2}, {}, {}));
@@ -169,7 +169,7 @@ test_branch()
 	/*
 		Create and verify demand map
 	*/
-	auto dm = annotate(*root);
+	auto dm = Annotate(*root);
 	print(*root, dm, stdout);
 
 	assert(contains(dm, b1ptr, {}, {v2}, {v2}, {v3}, {v3}));
@@ -210,7 +210,7 @@ test_loop()
 	/*
 		Create and verify demand map
 	*/
-	auto dm = annotate(*root);
+	auto dm = Annotate(*root);
 	print(*root, dm, stdout);
 
 	assert(contains(dm, xnptr, {}, {v3, v4}, {v3, v4}, {}, {}));
@@ -262,7 +262,7 @@ test_branch_in_loop()
 	/*
 		Create and verify demand map
 	*/
-	auto dm = annotate(*root);
+	auto dm = Annotate(*root);
 	print(*root, dm, stdout);
 
 	assert(contains(dm, xnptr, {}, {v2, v3}, {v2, v3}, {}, {}));
@@ -292,7 +292,7 @@ test_assignment()
 	/*
 		Create and verify demand map
 	*/
-	auto dm = annotate(*root);
+	auto dm = Annotate(*root);
 	print(*root, dm, stdout);
 
 	assert(contains(dm, root.get(), {}, {v1}, {v1}, {v2}, {v2}));
@@ -334,7 +334,7 @@ test_branch_passby()
 	root->add_child(std::move(xn));
 
 
-	auto dm = annotate(*root);
+	auto dm = Annotate(*root);
 	print(*root, dm, stdout);
 
 	assert(contains(dm, root.get(), {}, {}, {}, {v1, v2, v3}, {v1, v2, v3}));
