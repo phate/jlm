@@ -30,8 +30,8 @@
 
 #include <stack>
 
-static inline jive::output *
-create_undef_value(jive::region * region, const jive::type & type)
+static jive::output *
+create_undef_value(jive::region & region, const jive::type & type)
 {
 	/*
 		We currently cannot create an undef_constant_op of control type,
@@ -39,116 +39,116 @@ create_undef_value(jive::region * region, const jive::type & type)
 		type. Use a control constant as a poor man's replacement instead.
 	*/
 	if (auto ct = dynamic_cast<const jive::ctltype*>(&type))
-		return jive_control_constant(region, ct->nalternatives(), 0);
+		return jive_control_constant(&region, ct->nalternatives(), 0);
 
 	JLM_ASSERT(dynamic_cast<const jive::valuetype*>(&type));
 	jlm::undef_constant_op op(*static_cast<const jive::valuetype*>(&type));
-	return jive::simple_node::create_normalized(region, op, {})[0];
+	return jive::simple_node::create_normalized(&region, op, {})[0];
 }
 
 namespace jlm {
 
-class vmap final {
+class VariableMap final {
 public:
   bool
   contains(const variable * v) const noexcept
   {
-    return map_.find(v) != map_.end();
+    return Map_.find(v) != Map_.end();
   }
 
   jive::output *
   lookup(const variable * v) const
   {
     JLM_ASSERT(contains(v));
-    return map_.at(v);
+    return Map_.at(v);
   }
 
   void
   insert(const variable * v, jive::output * o)
   {
     JLM_ASSERT(v->type() == o->type());
-    map_[v] = o;
+    Map_[v] = o;
   }
 
 private:
-  std::unordered_map<const variable*, jive::output*> map_;
+  std::unordered_map<const variable*, jive::output*> Map_;
 };
 
-class scoped_vmap final {
+class RegionalizedVariableMap final {
 public:
-  inline
-  ~scoped_vmap()
+  ~RegionalizedVariableMap()
   {
-    pop_scope();
-    JLM_ASSERT(nscopes() == 0);
+    PopRegion();
+    JLM_ASSERT(NumRegions() == 0);
   }
 
-  inline
-  scoped_vmap(const ipgraph_module & im, jive::region * region)
-    : module_(im)
+  RegionalizedVariableMap(
+    const ipgraph_module & interProceduralGraphModule,
+    jive::region & region)
+    : InterProceduralGraphModule_(interProceduralGraphModule)
   {
-    push_scope(region);
+    PushRegion(region);
   }
 
-  inline size_t
-  nscopes() const noexcept
+  size_t
+  NumRegions() const noexcept
   {
-    JLM_ASSERT(vmaps_.size() == regions_.size());
-    return vmaps_.size();
+    JLM_ASSERT(VariableMapStack_.size() == RegionStack_.size());
+    return VariableMapStack_.size();
   }
 
-  inline jlm::vmap &
-  vmap(size_t n) noexcept
+  jlm::VariableMap &
+  VariableMap(size_t n) noexcept
   {
-    JLM_ASSERT(n < nscopes());
-    return *vmaps_[n];
+    JLM_ASSERT(n < NumRegions());
+    return *VariableMapStack_[n];
   }
 
-  inline jlm::vmap &
-  vmap() noexcept
+  jlm::VariableMap &
+  GetTopVariableMap() noexcept
   {
-    JLM_ASSERT(nscopes() > 0);
-    return vmap(nscopes()-1);
+    JLM_ASSERT(NumRegions() > 0);
+    return VariableMap(NumRegions() - 1);
   }
 
-  inline jive::region *
-  region(size_t n) noexcept
+  jive::region &
+  GetRegion(size_t n) noexcept
   {
-    JLM_ASSERT(n < nscopes());
-    return regions_[n];
+    JLM_ASSERT(n < NumRegions());
+    return *RegionStack_[n];
   }
 
-  inline jive::region *
-  region() noexcept
+  jive::region &
+  GetTopRegion() noexcept
   {
-    JLM_ASSERT(nscopes() > 0);
-    return region(nscopes()-1);
+    JLM_ASSERT(NumRegions() > 0);
+    return GetRegion(NumRegions() - 1);
   }
 
-  inline void
-  push_scope(jive::region * region)
+  void
+  PushRegion(jive::region & region)
   {
-    vmaps_.push_back(std::make_unique<jlm::vmap>());
-    regions_.push_back(region);
+    VariableMapStack_.push_back(std::make_unique<jlm::VariableMap>());
+    RegionStack_.push_back(&region);
   }
 
-  inline void
-  pop_scope()
+  void
+  PopRegion()
   {
-    vmaps_.pop_back();
-    regions_.pop_back();
+    VariableMapStack_.pop_back();
+    RegionStack_.pop_back();
   }
 
   const ipgraph_module &
-  module() const noexcept
+  GetInterProceduralGraphModule() const noexcept
   {
-    return module_;
+    return InterProceduralGraphModule_;
   }
 
 private:
-  const ipgraph_module & module_;
-  std::vector<std::unique_ptr<jlm::vmap>> vmaps_;
-  std::vector<jive::region*> regions_;
+  const ipgraph_module & InterProceduralGraphModule_;
+  std::vector<std::unique_ptr<jlm::VariableMap>> VariableMapStack_;
+  std::vector<jive::region*> RegionStack_;
 };
 
 class ControlFlowRestructuringStatistics final : public Statistics {
@@ -614,49 +614,62 @@ private:
 };
 
 static bool
-requiresExport(const ipgraph_node & node)
+requiresExport(const ipgraph_node & ipgNode)
 {
-	return node.hasBody()
-	    && is_externally_visible(node.linkage());
+	return ipgNode.hasBody()
+         && is_externally_visible(ipgNode.linkage());
 }
 
 static void
-convert_assignment(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
+ConvertAssignment(
+  const jlm::tac & threeAddressCode,
+  jive::region & region,
+  jlm::VariableMap & variableMap)
 {
-	JLM_ASSERT(is<assignment_op>(tac.operation()));
-	auto lhs = tac.operand(0);
-	auto rhs = tac.operand(1);
-	vmap.insert(lhs, vmap.lookup(rhs));
+	JLM_ASSERT(is<assignment_op>(threeAddressCode.operation()));
+
+	auto lhs = threeAddressCode.operand(0);
+	auto rhs = threeAddressCode.operand(1);
+	variableMap.insert(lhs, variableMap.lookup(rhs));
 }
 
 static void
-convert_select(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
+ConvertSelect(
+  const jlm::tac & threeAddressCode,
+  jive::region & region,
+  jlm::VariableMap & variableMap)
 {
-	JLM_ASSERT(is<select_op>(tac.operation()));
-	JLM_ASSERT(tac.noperands() == 3 && tac.nresults() == 1);
+	JLM_ASSERT(is<select_op>(threeAddressCode.operation()));
+	JLM_ASSERT(threeAddressCode.noperands() == 3 && threeAddressCode.nresults() == 1);
 
 	auto op = jive::match_op(1, {{1, 1}}, 0, 2);
-	auto p = vmap.lookup(tac.operand(0));
-	auto predicate = jive::simple_node::create_normalized(region, op, {p})[0];
+	auto p = variableMap.lookup(threeAddressCode.operand(0));
+	auto predicate = jive::simple_node::create_normalized(&region, op, {p})[0];
 
 	auto gamma = jive::gamma_node::create(predicate, 2);
-	auto ev1 = gamma->add_entryvar(vmap.lookup(tac.operand(2)));
-	auto ev2 = gamma->add_entryvar(vmap.lookup(tac.operand(1)));
+	auto ev1 = gamma->add_entryvar(variableMap.lookup(threeAddressCode.operand(2)));
+	auto ev2 = gamma->add_entryvar(variableMap.lookup(threeAddressCode.operand(1)));
 	auto ex = gamma->add_exitvar({ev1->argument(0), ev2->argument(1)});
-	vmap.insert(tac.result(0), ex);
+	variableMap.insert(threeAddressCode.result(0), ex);
 }
 
 static void
-convert_branch(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
+ConvertBranch(
+  const jlm::tac & threeAddressCode,
+  jive::region & region,
+  jlm::VariableMap & variableMap)
 {
-	JLM_ASSERT(is<branch_op>(tac.operation()));
+	JLM_ASSERT(is<branch_op>(threeAddressCode.operation()));
+  /*
+   * Nothing needs to be done. Branches are simply ignored.
+   */
 }
 
 template<class NODE> static void
 Convert(
   const jlm::tac & threeAddressCode,
-  jive::region * region,
-  jlm::vmap & variableMap)
+  jive::region & region,
+  jlm::VariableMap & variableMap)
 {
   std::vector<jive::output*> operands;
   for (size_t n = 0; n < threeAddressCode.noperands(); n++) {
@@ -674,222 +687,241 @@ Convert(
 }
 
 static void
-convert_tac(const jlm::tac & tac, jive::region * region, jlm::vmap & vmap)
+ConvertThreeAddressCode(
+  const jlm::tac & threeAddressCode,
+  jive::region & region,
+  jlm::VariableMap & variableMap)
 {
 	static std::unordered_map<
 		std::type_index,
-		std::function<void(const jlm::tac&, jive::region*, jlm::vmap&)>
+		std::function<void(const jlm::tac&, jive::region&, jlm::VariableMap&)>
 	> map({
-	  {std::type_index(typeid(assignment_op)), convert_assignment}
-	, {std::type_index(typeid(select_op)), convert_select}
-	, {std::type_index(typeid(branch_op)), convert_branch}
+	  {typeid(assignment_op), ConvertAssignment}
+	, {typeid(select_op),     ConvertSelect}
+	, {typeid(branch_op),     ConvertBranch}
   , {typeid(CallOperation), Convert<CallNode>}
 	});
 
-	auto & op = tac.operation();
+	auto & op = threeAddressCode.operation();
 	if (map.find(typeid(op)) != map.end())
-		return map[typeid(op)](tac, region, vmap);
+		return map[typeid(op)](threeAddressCode, region, variableMap);
 
 	std::vector<jive::output*> operands;
-	for (size_t n = 0; n < tac.noperands(); n++)
-		operands.push_back(vmap.lookup(tac.operand(n)));
+	for (size_t n = 0; n < threeAddressCode.noperands(); n++)
+		operands.push_back(variableMap.lookup(threeAddressCode.operand(n)));
 
-	auto results = jive::simple_node::create_normalized(region, static_cast<const jive::simple_op&>(
-		tac.operation()), operands);
+  auto & simpleOperation = static_cast<const jive::simple_op&>(threeAddressCode.operation());
+	auto results = jive::simple_node::create_normalized(&region, simpleOperation, operands);
 
-	JLM_ASSERT(results.size() == tac.nresults());
-	for (size_t n = 0; n < tac.nresults(); n++)
-		vmap.insert(tac.result(n), results[n]);
+	JLM_ASSERT(results.size() == threeAddressCode.nresults());
+	for (size_t n = 0; n < threeAddressCode.nresults(); n++)
+		variableMap.insert(threeAddressCode.result(n), results[n]);
 }
 
 static void
-convert_basic_block(const taclist & bb, jive::region * region, jlm::vmap & vmap)
+ConvertBasicBlock(
+  const taclist & basicBlock,
+  jive::region & region,
+  jlm::VariableMap & variableMap)
 {
-	for (const auto & tac: bb)
-		convert_tac(*tac, region, vmap);
+	for (const auto & threeAddressCode: basicBlock)
+    ConvertThreeAddressCode(*threeAddressCode, region, variableMap);
 }
 
 static void
-convert_node(
-	const aggnode & node,
-	const demandmap & dm,
-	lambda::node * lambda,
-	scoped_vmap & svmap);
+ConvertAggregationNode(
+  const aggnode & aggregationNode,
+  const demandmap & demandMap,
+  lambda::node & lambdaNode,
+  RegionalizedVariableMap & regionalizedVariableMap);
 
 static void
-convert_entry_node(
-	const aggnode & node,
-	const demandmap & dm,
-	lambda::node * lambda,
-	scoped_vmap & svmap)
+Convert(
+  const entryaggnode & entryAggregationNode,
+  const demandmap & demandMap,
+  lambda::node & lambdaNode,
+  RegionalizedVariableMap & regionalizedVariableMap)
 {
-	JLM_ASSERT(is<entryaggnode>(&node));
-	auto en = static_cast<const entryaggnode*>(&node);
-	auto ds = dm.at(&node).get();
+	auto demandSet = demandMap.at(&entryAggregationNode).get();
 
-	svmap.push_scope(lambda->subregion());
+  regionalizedVariableMap.PushRegion(*lambdaNode.subregion());
 
-	auto & pvmap = svmap.vmap(svmap.nscopes()-2);
-	auto & vmap = svmap.vmap();
+	auto & outerVariableMap = regionalizedVariableMap.VariableMap(regionalizedVariableMap.NumRegions() - 2);
+	auto & topVariableMap = regionalizedVariableMap.GetTopVariableMap();
 
-	/* add arguments */
-	JLM_ASSERT(en->narguments() == lambda->nfctarguments());
-	for (size_t n = 0; n < en->narguments(); n++) {
-		auto jlmarg = en->argument(n);
-		auto fctarg = lambda->fctargument(n);
+	/*
+	 * Add arguments
+	 */
+	JLM_ASSERT(entryAggregationNode.narguments() == lambdaNode.nfctarguments());
+	for (size_t n = 0; n < entryAggregationNode.narguments(); n++) {
+		auto functionNodeArgument = entryAggregationNode.argument(n);
+		auto lambdaNodeArgument = lambdaNode.fctargument(n);
 
-		vmap.insert(jlmarg, fctarg);
-		fctarg->set_attributes(jlmarg->attributes());
+		topVariableMap.insert(functionNodeArgument, lambdaNodeArgument);
+		lambdaNodeArgument->set_attributes(functionNodeArgument->attributes());
 	}
 
-	/* add dependencies and undefined values */
-	for (const auto & v : ds->top) {
-		if (pvmap.contains(v)) {
-			vmap.insert(v, lambda->add_ctxvar(pvmap.lookup(v)));
+	/*
+	 * Add dependencies and undefined values
+	 */
+	for (const auto & v : demandSet->top) {
+		if (outerVariableMap.contains(v)) {
+			topVariableMap.insert(v, lambdaNode.add_ctxvar(outerVariableMap.lookup(v)));
 		} else {
-			auto value = create_undef_value(lambda->subregion(), v->type());
-			vmap.insert(v, value);
+			auto value = create_undef_value(*lambdaNode.subregion(), v->type());
+			topVariableMap.insert(v, value);
 		}
 	}
 }
 
 static void
-convert_exit_node(
-	const aggnode & node,
-	const demandmap & dm,
-	lambda::node * lambda,
-	scoped_vmap & svmap)
+Convert(
+  const exitaggnode & exitAggregationNode,
+  const demandmap & demandMap,
+  lambda::node & lambdaNode,
+  RegionalizedVariableMap & regionalizedVariableMap)
 {
-	JLM_ASSERT(is<exitaggnode>(&node));
-	auto xn = static_cast<const exitaggnode*>(&node);
-
 	std::vector<jive::output*> results;
-	for (const auto & result : *xn) {
-		JLM_ASSERT(svmap.vmap().contains(result));
-		results.push_back(svmap.vmap().lookup(result));
+	for (const auto & result : exitAggregationNode) {
+		JLM_ASSERT(regionalizedVariableMap.GetTopVariableMap().contains(result));
+		results.push_back(regionalizedVariableMap.GetTopVariableMap().lookup(result));
 	}
 
-	svmap.pop_scope();
-	lambda->finalize(results);
+  regionalizedVariableMap.PopRegion();
+	lambdaNode.finalize(results);
 }
 
 static void
-convert_block_node(
-	const aggnode & node,
-	const demandmap & dm,
-	lambda::node * lambda,
-	scoped_vmap & svmap)
+Convert(
+  const blockaggnode & blockAggregationNode,
+  const demandmap & demandMap,
+  lambda::node & lambdaNode,
+  RegionalizedVariableMap & regionalizedVariableMap)
 {
-	JLM_ASSERT(is<blockaggnode>(&node));
-	auto & bb = static_cast<const blockaggnode*>(&node)->tacs();
-	convert_basic_block(bb, svmap.region(), svmap.vmap());
+  ConvertBasicBlock(
+    blockAggregationNode.tacs(),
+    regionalizedVariableMap.GetTopRegion(),
+    regionalizedVariableMap.GetTopVariableMap());
 }
 
 static void
-convert_linear_node(
-	const aggnode & node,
-	const demandmap & dm,
-	lambda::node * lambda,
-	scoped_vmap & svmap)
+Convert(
+  const linearaggnode & linearAggregationNode,
+  const demandmap & demandMap,
+  lambda::node & lambdaNode,
+  RegionalizedVariableMap & regionalizedVariableMap)
 {
-	JLM_ASSERT(is<linearaggnode>(&node));
-
-	for (const auto & child : node)
-		convert_node(child, dm, lambda, svmap);
+	for (const auto & child : linearAggregationNode)
+    ConvertAggregationNode(child, demandMap, lambdaNode, regionalizedVariableMap);
 }
 
 static void
-convert_branch_node(
-	const aggnode & node,
-	const demandmap & dm,
-	lambda::node * lambda,
-	scoped_vmap & svmap)
+Convert(
+  const branchaggnode & branchAggregationNode,
+  const demandmap & demandMap,
+  lambda::node & lambdaNode,
+  RegionalizedVariableMap & regionalizedVariableMap)
 {
-	JLM_ASSERT(is<branchaggnode>(&node));
-	JLM_ASSERT(is<linearaggnode>(node.parent()));
+	JLM_ASSERT(is<linearaggnode>(branchAggregationNode.parent()));
 
-	auto split = node.parent()->child(node.index()-1);
+  /*
+   * Find predicate
+   */
+	auto split = branchAggregationNode.parent()->child(branchAggregationNode.index() - 1);
 	while (!is<blockaggnode>(split))
 		split = split->child(split->nchildren()-1);
 	auto & sb = dynamic_cast<const blockaggnode*>(split)->tacs();
-
 	JLM_ASSERT(is<branch_op>(sb.last()->operation()));
-	auto predicate = svmap.vmap().lookup(sb.last()->operand(0));
-	auto gamma = jive::gamma_node::create(predicate, node.nchildren());
+	auto predicate = regionalizedVariableMap.GetTopVariableMap().lookup(sb.last()->operand(0));
 
-	/* add entry variables */
-	auto & ds = dm.at(&node);
-	std::unordered_map<const variable*, jive::gamma_input*> evmap;
+	auto gamma = jive::gamma_node::create(predicate, branchAggregationNode.nchildren());
+
+	/*
+	 * Add gamma inputs.
+	 */
+	auto & ds = demandMap.at(&branchAggregationNode);
+	std::unordered_map<const variable*, jive::gamma_input*> gammaInputMap;
 	for (const auto & v : ds->top)
-		evmap[v] = gamma->add_entryvar(svmap.vmap().lookup(v));
+    gammaInputMap[v] = gamma->add_entryvar(regionalizedVariableMap.GetTopVariableMap().lookup(v));
 
-	/* convert branch cases */
+	/*
+	 * Convert subregions.
+	 */
 	std::unordered_map<const variable*, std::vector<jive::output*>> xvmap;
-	JLM_ASSERT(gamma->nsubregions() == node.nchildren());
+	JLM_ASSERT(gamma->nsubregions() == branchAggregationNode.nchildren());
 	for (size_t n = 0; n < gamma->nsubregions(); n++) {
-		svmap.push_scope(gamma->subregion(n));
-		for (const auto & pair : evmap)
-			svmap.vmap().insert(pair.first, pair.second->argument(n));
+    regionalizedVariableMap.PushRegion(*gamma->subregion(n));
+		for (const auto & pair : gammaInputMap)
+      regionalizedVariableMap.GetTopVariableMap().insert(pair.first, pair.second->argument(n));
 
-		convert_node(*node.child(n), dm, lambda, svmap);
+    ConvertAggregationNode(*branchAggregationNode.child(n), demandMap, lambdaNode, regionalizedVariableMap);
 
 		for (const auto & v : ds->bottom)
-			xvmap[v].push_back(svmap.vmap().lookup(v));
-		svmap.pop_scope();
+			xvmap[v].push_back(regionalizedVariableMap.GetTopVariableMap().lookup(v));
+    regionalizedVariableMap.PopRegion();
 	}
 
-	/* add exit variables */
+	/*
+	 * Add gamma outputs.
+	 */
 	for (const auto & v : ds->bottom) {
 		JLM_ASSERT(xvmap.find(v) != xvmap.end());
-		svmap.vmap().insert(v, gamma->add_exitvar(xvmap[v]));
+    regionalizedVariableMap.GetTopVariableMap().insert(v, gamma->add_exitvar(xvmap[v]));
 	}
 }
 
 static void
-convert_loop_node(
-	const aggnode & node,
-	const demandmap & dm,
-	lambda::node * lambda,
-	scoped_vmap & svmap)
+Convert(
+  const loopaggnode & loopAggregationNode,
+  const demandmap & demandMap,
+  lambda::node & lambdaNode,
+  RegionalizedVariableMap & regionalizedVariableMap)
 {
-	JIVE_DEBUG_ASSERT(is<loopaggnode>(&node));
-	auto parent = svmap.region();
+  auto & parentRegion = regionalizedVariableMap.GetTopRegion();
 
-	auto theta = jive::theta_node::create(parent);
+	auto theta = jive::theta_node::create(&parentRegion);
 
-	svmap.push_scope(theta->subregion());
-	auto & vmap = svmap.vmap();
-	auto & pvmap = svmap.vmap(svmap.nscopes()-2);
+  regionalizedVariableMap.PushRegion(*theta->subregion());
+	auto & thetaVariableMap = regionalizedVariableMap.GetTopVariableMap();
+	auto & outerVariableMap = regionalizedVariableMap.VariableMap(regionalizedVariableMap.NumRegions() - 2);
 
-	/* add loop variables */
-	auto ds = dm.at(&node).get();
+	/*
+	 * Add loop variables
+	 */
+	auto ds = demandMap.at(&loopAggregationNode).get();
 	JLM_ASSERT(ds->top == ds->bottom);
-	std::unordered_map<const variable*, jive::theta_output*> lvmap;
+	std::unordered_map<const variable*, jive::theta_output*> thetaOutputMap;
 	for (const auto & v : ds->top) {
 		jive::output * value = nullptr;
-		if (!pvmap.contains(v)) {
-			value = create_undef_value(parent, v->type());
+		if (!outerVariableMap.contains(v)) {
+			value = create_undef_value(parentRegion, v->type());
 			JLM_ASSERT(value);
-			pvmap.insert(v, value);
+			outerVariableMap.insert(v, value);
 		} else {
-			value = pvmap.lookup(v);
+			value = outerVariableMap.lookup(v);
 		}
-		lvmap[v] = theta->add_loopvar(value);
-		vmap.insert(v, lvmap[v]->argument());
+    thetaOutputMap[v] = theta->add_loopvar(value);
+		thetaVariableMap.insert(v, thetaOutputMap[v]->argument());
 	}
 
-	/* convert loop body */
-	JLM_ASSERT(node.nchildren() == 1);
-	convert_node(*node.child(0), dm, lambda, svmap);
+	/*
+	 * Convert loop body
+	 */
+	JLM_ASSERT(loopAggregationNode.nchildren() == 1);
+  ConvertAggregationNode(*loopAggregationNode.child(0), demandMap, lambdaNode, regionalizedVariableMap);
 
-	/* update loop variables */
+	/*
+	 * Update loop variables
+	 */
 	for (const auto & v : ds->top) {
-		JLM_ASSERT(lvmap.find(v) != lvmap.end());
-		lvmap[v]->result()->divert_to(vmap.lookup(v));
+		JLM_ASSERT(thetaOutputMap.find(v) != thetaOutputMap.end());
+		thetaOutputMap[v]->result()->divert_to(thetaVariableMap.lookup(v));
 	}
 
-	/* find predicate */
-	auto lblock = node.child(0);
+	/*
+	 * Find predicate
+	 */
+	auto lblock = loopAggregationNode.child(0);
 	while (lblock->nchildren() != 0)
 		lblock = lblock->child(lblock->nchildren()-1);
 	JLM_ASSERT(is<blockaggnode>(lblock));
@@ -897,38 +929,55 @@ convert_loop_node(
 	JLM_ASSERT(is<branch_op>(bb.last()->operation()));
 	auto predicate = bb.last()->operand(0);
 
-	/* update variable map */
-	theta->set_predicate(vmap.lookup(predicate));
-	svmap.pop_scope();
+	/*
+	 * Update variable map
+	 */
+	theta->set_predicate(thetaVariableMap.lookup(predicate));
+  regionalizedVariableMap.PopRegion();
 	for (const auto & v : ds->bottom) {
-		JLM_ASSERT(pvmap.contains(v));
-		pvmap.insert(v, lvmap[v]);
+		JLM_ASSERT(outerVariableMap.contains(v));
+		outerVariableMap.insert(v, thetaOutputMap[v]);
 	}
 }
 
+template<class NODE> static void
+ConvertAggregationNode(
+  const aggnode & aggregationNode,
+  const demandmap & demandMap,
+  lambda::node & lambdaNode,
+  RegionalizedVariableMap & regionalizedVariableMap)
+{
+  JLM_ASSERT(dynamic_cast<const NODE*>(&aggregationNode));
+  auto & castedNode = *static_cast<const NODE*>(&aggregationNode);
+  Convert(castedNode, demandMap, lambdaNode, regionalizedVariableMap);
+}
+
 static void
-convert_node(
-	const aggnode & node,
-	const demandmap & dm,
-	lambda::node * lambda,
-	scoped_vmap & svmap)
+ConvertAggregationNode(
+  const aggnode & aggregationNode,
+  const demandmap & demandMap,
+  lambda::node & lambdaNode,
+  RegionalizedVariableMap & regionalizedVariableMap)
 {
 	static std::unordered_map<
 		std::type_index,
 		std::function<void(
-			const aggnode&,
-			const demandmap&,
-			lambda::node*,
-			scoped_vmap&)
+      const aggnode&,
+      const demandmap&,
+      lambda::node&,
+      RegionalizedVariableMap&)
 		>
 	> map ({
-	  {typeid(entryaggnode), convert_entry_node}, {typeid(exitaggnode), convert_exit_node}
-	, {typeid(blockaggnode), convert_block_node}, {typeid(linearaggnode), convert_linear_node}
-	, {typeid(branchaggnode), convert_branch_node}, {typeid(loopaggnode), convert_loop_node}
+    {typeid(entryaggnode),  ConvertAggregationNode<entryaggnode>},
+    {typeid(exitaggnode),   ConvertAggregationNode<exitaggnode>},
+    {typeid(blockaggnode),  ConvertAggregationNode<blockaggnode>},
+    {typeid(linearaggnode), ConvertAggregationNode<linearaggnode>},
+    {typeid(branchaggnode), ConvertAggregationNode<branchaggnode>},
+    {typeid(loopaggnode),   ConvertAggregationNode<loopaggnode>}
 	});
 
-	JLM_ASSERT(map.find(typeid(node)) != map.end());
-	map[typeid(node)](node, dm, lambda, svmap);
+	JLM_ASSERT(map.find(typeid(aggregationNode)) != map.end());
+	map[typeid(aggregationNode)](aggregationNode, demandMap, lambdaNode, regionalizedVariableMap);
 }
 
 static void
@@ -989,7 +1038,7 @@ static lambda::output *
 ConvertAggregationTreeToLambda(
   const aggnode & aggregationTreeRoot,
   const demandmap & demandMap,
-  scoped_vmap & scopedVariableMap,
+  RegionalizedVariableMap & scopedVariableMap,
   const std::string & functionName,
   const FunctionType & functionType,
   const linkage & functionLinkage,
@@ -997,7 +1046,7 @@ ConvertAggregationTreeToLambda(
   StatisticsCollector & statisticsCollector)
 {
   auto lambdaNode = lambda::node::create(
-    scopedVariableMap.region(),
+    &scopedVariableMap.GetTopRegion(),
     functionType,
     functionName,
     functionLinkage,
@@ -1005,7 +1054,7 @@ ConvertAggregationTreeToLambda(
 
   auto convertAggregationTreeToLambda = [&]()
   {
-    convert_node(aggregationTreeRoot, demandMap, lambdaNode, scopedVariableMap);
+    ConvertAggregationNode(aggregationTreeRoot, demandMap, *lambdaNode, scopedVariableMap);
   };
 
   statisticsCollector.CollectAggregationTreeToLambdaStatistics(
@@ -1016,10 +1065,10 @@ ConvertAggregationTreeToLambda(
 }
 
 static jive::output *
-convert_cfg(
-	const jlm::function_node & functionNode,
-	scoped_vmap & svmap,
-	StatisticsCollector & statisticsCollector)
+ConvertControlFlowGraph(
+  const function_node & functionNode,
+  RegionalizedVariableMap & regionalizedVariableMap,
+  StatisticsCollector & statisticsCollector)
 {
   auto & functionName = functionNode.name();
 	auto & controlFlowGraph = *functionNode.cfg();
@@ -1046,7 +1095,7 @@ convert_cfg(
   auto lambdaOutput = ConvertAggregationTreeToLambda(
     *aggregationTreeRoot,
     demandMap,
-    svmap,
+    regionalizedVariableMap,
     functionName,
     functionNode.fcttype(),
     functionNode.linkage(),
@@ -1057,183 +1106,194 @@ convert_cfg(
 }
 
 static jive::output *
-construct_lambda(
-	const ipgraph_node * node,
-	scoped_vmap & svmap,
+ConvertFunctionNode(
+  const function_node & functionNode,
+  RegionalizedVariableMap & regionalizedVariableMap,
   StatisticsCollector & statisticsCollector)
 {
-	JLM_ASSERT(dynamic_cast<const function_node*>(node));
-	auto & function = *static_cast<const function_node*>(node);
-  auto region = svmap.region();
+  auto & region = regionalizedVariableMap.GetTopRegion();
 
-	if (function.cfg() == nullptr) {
-		jlm::impport port(function.type(), function.name(), function.linkage());
-		return region->graph()->add_import(port);
+  /*
+   * It is a function declaration as there is no control flow graph attached to the function. Simply add a function
+   * import.
+   */
+	if (functionNode.cfg() == nullptr) {
+		jlm::impport port(functionNode.type(), functionNode.name(), functionNode.linkage());
+		return region.graph()->add_import(port);
 	}
 
-	return convert_cfg(function, svmap, statisticsCollector);
+	return ConvertControlFlowGraph(functionNode, regionalizedVariableMap, statisticsCollector);
 }
 
 static jive::output *
-convert_initialization(const data_node_init & init, jive::region * region, scoped_vmap & svmap)
+ConvertDataNodeInitialization(
+  const data_node_init & init,
+  jive::region & region,
+  RegionalizedVariableMap & regionalizedVariableMap)
 {
-	auto & vmap = svmap.vmap();
+	auto & variableMap = regionalizedVariableMap.GetTopVariableMap();
 	for (const auto & tac : init.tacs())
-		convert_tac(*tac, region, vmap);
+    ConvertThreeAddressCode(*tac, region, variableMap);
 
-	return vmap.lookup(init.value());
+	return variableMap.lookup(init.value());
 }
 
 static jive::output *
-convert_data_node(
-	const jlm::ipgraph_node * node,
-	scoped_vmap & svmap,
-	StatisticsCollector & statisticsCollector)
+ConvertDataNode(
+  const data_node & dataNode,
+  RegionalizedVariableMap & regionalizedVariableMap,
+  StatisticsCollector & statisticsCollector)
 {
-	JLM_ASSERT(dynamic_cast<const data_node*>(node));
-	auto n = static_cast<const data_node*>(node);
-  auto dataNodeInitialization = n->initialization();
+  auto dataNodeInitialization = dataNode.initialization();
 
   auto convertDataNodeToDeltaNode = [&]() -> jive::output*
   {
-    auto & m = svmap.module();
-    auto region = svmap.region();
+    auto & interProceduralGraphModule = regionalizedVariableMap.GetInterProceduralGraphModule();
+    auto & region = regionalizedVariableMap.GetTopRegion();
 
-    /* data node without initialization */
+    /*
+     * We have a data node without initialization. Simply add an RVSDG import.
+     */
     if (!dataNodeInitialization) {
-      jlm::impport port(n->type(), n->name(), n->linkage());
-      return region->graph()->add_import(port);
+      jlm::impport port(dataNode.type(), dataNode.name(), dataNode.linkage());
+      return region.graph()->add_import(port);
     }
 
-    /* data node with initialization */
-    auto delta = delta::node::create(
-      region,
-      n->type(),
-      n->name(),
-      n->linkage(),
-      n->constant());
-    auto & pv = svmap.vmap();
-    svmap.push_scope(delta->subregion());
+    /*
+     * data node with initialization
+     */
+    auto deltaNode = delta::node::create(
+      &region,
+      dataNode.type(),
+      dataNode.name(),
+      dataNode.linkage(),
+      dataNode.constant());
+    auto & outerVariableMap = regionalizedVariableMap.GetTopVariableMap();
+    regionalizedVariableMap.PushRegion(*deltaNode->subregion());
 
-    /* add dependencies */
-    for (const auto & dp : *node) {
-      auto v = m.variable(dp);
-      auto argument = delta->add_ctxvar(pv.lookup(v));
-      svmap.vmap().insert(v, argument);
+    /*
+     * Add dependencies
+     */
+    for (const auto & dependency : dataNode) {
+      auto dependencyVariable = interProceduralGraphModule.variable(dependency);
+      auto argument = deltaNode->add_ctxvar(outerVariableMap.lookup(dependencyVariable));
+      regionalizedVariableMap.GetTopVariableMap().insert(dependencyVariable, argument);
     }
 
-    auto deltaOutput = delta->finalize(convert_initialization(
+    auto initOutput = ConvertDataNodeInitialization(
       *dataNodeInitialization,
-      delta->subregion(),
-      svmap));
-    svmap.pop_scope();
+      *deltaNode->subregion(),
+      regionalizedVariableMap);
+    auto deltaOutput = deltaNode->finalize(initOutput);
+    regionalizedVariableMap.PopRegion();
 
     return deltaOutput;
   };
 
   auto deltaOutput = statisticsCollector.CollectDataNodeToDeltaStatistics(
     convertDataNodeToDeltaNode,
-    n->name(),
+    dataNode.name(),
     dataNodeInitialization ? dataNodeInitialization->tacs().size() : 0);
 
 	return deltaOutput;
 }
 
 static jive::output *
-handleSingleNode(
-	const ipgraph_node & node,
-	scoped_vmap & svmap,
-	StatisticsCollector & statisticsCollector)
+ConvertInterProceduralGraphNode(
+  const ipgraph_node & ipgNode,
+  RegionalizedVariableMap & regionalizedVariableMap,
+  StatisticsCollector & statisticsCollector)
 {
-	jive::output * output = nullptr;
-	if (auto functionNode = dynamic_cast<const function_node*>(&node)) {
-		output = construct_lambda(functionNode, svmap, statisticsCollector);
-	} else if (auto dataNode = dynamic_cast<const data_node*>(&node)) {
-		output = convert_data_node(dataNode, svmap, statisticsCollector);
-	} else {
-		JLM_UNREACHABLE("This should have never happened.");
-	}
+	if (auto functionNode = dynamic_cast<const function_node*>(&ipgNode))
+		return ConvertFunctionNode(*functionNode, regionalizedVariableMap, statisticsCollector);
 
-	return output;
+	if (auto dataNode = dynamic_cast<const data_node*>(&ipgNode))
+		return ConvertDataNode(*dataNode, regionalizedVariableMap, statisticsCollector);
+
+  JLM_UNREACHABLE("This should have never happened.");
 }
 
 static void
-handle_scc(
-	const std::unordered_set<const jlm::ipgraph_node*> & scc,
-	jive::graph * graph,
-	scoped_vmap & svmap,
-	StatisticsCollector & statisticsCollector)
+ConvertStronglyConnectedComponent(
+  const std::unordered_set<const jlm::ipgraph_node*> & stronglyConnectedComponent,
+  jive::graph & graph,
+  RegionalizedVariableMap & regionalizedVariableMap,
+  StatisticsCollector & statisticsCollector)
 {
-	auto & module = svmap.module();
+	auto & interProceduralGraphModule = regionalizedVariableMap.GetInterProceduralGraphModule();
 
-	/*
-		It is a single node that is not self-recursive. We do not
-		need a phi node to break any cycles.
-	*/
-	if (scc.size() == 1 && !(*scc.begin())->is_selfrecursive()) {
-		auto & node = *scc.begin();
+  /*
+   * It is a single node that is not self-recursive. We do not need a phi node to break any cycles.
+   */
+	if (stronglyConnectedComponent.size() == 1 && !(*stronglyConnectedComponent.begin())->is_selfrecursive()) {
+		auto & ipgNode = *stronglyConnectedComponent.begin();
 
-		auto output = handleSingleNode(*node, svmap, statisticsCollector);
+		auto output = ConvertInterProceduralGraphNode(*ipgNode, regionalizedVariableMap, statisticsCollector);
 
-		auto v = module.variable(node);
-		JLM_ASSERT(v);
-		svmap.vmap().insert(v, output);
+		auto ipgNodeVariable = interProceduralGraphModule.variable(ipgNode);
+    regionalizedVariableMap.GetTopVariableMap().insert(ipgNodeVariable, output);
 
-		if (requiresExport(*node))
-			graph->add_export(output, {output->type(), v->name()});
+		if (requiresExport(*ipgNode))
+			graph.add_export(output, {output->type(), ipgNodeVariable->name()});
 
 		return;
 	}
 
 	phi::builder pb;
-	pb.begin(graph->root());
-	svmap.push_scope(pb.subregion());
+	pb.begin(graph.root());
+  regionalizedVariableMap.PushRegion(*pb.subregion());
 
-	auto & pvmap = svmap.vmap(svmap.nscopes()-2);
-	auto & vmap = svmap.vmap();
+	auto & outerVariableMap = regionalizedVariableMap.VariableMap(regionalizedVariableMap.NumRegions() - 2);
+	auto & phiVariableMap = regionalizedVariableMap.GetTopVariableMap();
 
-	/* add recursion variables */
-	std::unordered_map<const variable*, phi::rvoutput*> recvars;
-	for (const auto & node : scc) {
-		auto rv = pb.add_recvar(node->type());
-		auto v = module.variable(node);
-		JLM_ASSERT(v);
-		vmap.insert(v, rv->argument());
-		JLM_ASSERT(recvars.find(v) == recvars.end());
-		recvars[v] = rv;
+	/*
+	 * Add recursion variables
+	 */
+	std::unordered_map<const variable*, phi::rvoutput*> recursionVariables;
+	for (const auto & ipgNode : stronglyConnectedComponent) {
+		auto recursionVariable = pb.add_recvar(ipgNode->type());
+		auto ipgNodeVariable = interProceduralGraphModule.variable(ipgNode);
+		phiVariableMap.insert(ipgNodeVariable, recursionVariable->argument());
+		JLM_ASSERT(recursionVariables.find(ipgNodeVariable) == recursionVariables.end());
+    recursionVariables[ipgNodeVariable] = recursionVariable;
 	}
 
-	/* add dependencies */
-	for (const auto & node : scc) {
-		for (const auto & dep : *node) {
-			auto v = module.variable(dep);
-			JLM_ASSERT(v);
-			if (recvars.find(v) == recvars.end())
-				vmap.insert(v, pb.add_ctxvar(pvmap.lookup(v)));
+	/*
+	 * Add phi node dependencies
+	 */
+	for (const auto & ipgNode : stronglyConnectedComponent) {
+		for (const auto & ipgNodeDependency : *ipgNode) {
+			auto dependencyVariable = interProceduralGraphModule.variable(ipgNodeDependency);
+			if (recursionVariables.find(dependencyVariable) == recursionVariables.end())
+				phiVariableMap.insert(dependencyVariable, pb.add_ctxvar(outerVariableMap.lookup(dependencyVariable)));
 		}
 	}
 
-	/* convert SCC nodes */
-	for (const auto & node : scc) {
-		auto output = handleSingleNode(*node, svmap, statisticsCollector);
-		recvars[module.variable(node)]->set_rvorigin(output);
+	/*
+	 * Convert SCC nodes
+	 */
+	for (const auto & ipgNode : stronglyConnectedComponent) {
+		auto output = ConvertInterProceduralGraphNode(*ipgNode, regionalizedVariableMap, statisticsCollector);
+		recursionVariables[interProceduralGraphModule.variable(ipgNode)]->set_rvorigin(output);
 	}
 
-	svmap.pop_scope();
+  regionalizedVariableMap.PopRegion();
 	pb.end();
 
-	/* add phi outputs */
-	for (const auto & node : scc) {
-		auto v = module.variable(node);
-		auto value = recvars[v];
-		svmap.vmap().insert(v, value);
-		if (requiresExport(*node))
-			graph->add_export(value, {value->type(), v->name()});
+	/*
+	 * Add phi outputs
+	 */
+	for (const auto & ipgNode : stronglyConnectedComponent) {
+		auto ipgNodeVariable = interProceduralGraphModule.variable(ipgNode);
+		auto recursionVariable = recursionVariables[ipgNodeVariable];
+    regionalizedVariableMap.GetTopVariableMap().insert(ipgNodeVariable, recursionVariable);
+		if (requiresExport(*ipgNode))
+			graph.add_export(recursionVariable, {recursionVariable->type(), ipgNodeVariable->name()});
 	}
 }
 
 static std::unique_ptr<RvsdgModule>
-convert_module(
+ConvertInterProceduralGraphModule(
   const ipgraph_module & interProceduralGraphModule,
   StatisticsCollector & statisticsCollector)
 {
@@ -1249,12 +1309,15 @@ convert_module(
 	/* FIXME: we currently cannot handle flattened_binary_op in jlm2llvm pass */
 	jive::binary_op::normal_form(graph)->set_flatten(false);
 
-	scoped_vmap svmap(interProceduralGraphModule, graph->root());
+	RegionalizedVariableMap regionalizedVariableMap(interProceduralGraphModule, *graph->root());
 
-	/* convert ipgraph nodes */
-	auto sccs = interProceduralGraphModule.ipgraph().find_sccs();
-	for (const auto & scc : sccs)
-		handle_scc(scc, graph, svmap, statisticsCollector);
+	auto stronglyConnectedComponents = interProceduralGraphModule.ipgraph().find_sccs();
+	for (const auto & stronglyConnectedComponent : stronglyConnectedComponents)
+    ConvertStronglyConnectedComponent(
+      stronglyConnectedComponent,
+      *graph,
+      regionalizedVariableMap,
+      statisticsCollector);
 
 	return rvsdgModule;
 }
@@ -1270,7 +1333,7 @@ ConvertInterProceduralGraphModule(
 
   auto convertInterProceduralGraphModule = [&](const ipgraph_module & interProceduralGraphModule)
   {
-    return convert_module(interProceduralGraphModule, statisticsCollector);
+    return ConvertInterProceduralGraphModule(interProceduralGraphModule, statisticsCollector);
   };
 
   auto rvsdgModule = statisticsCollector.CollectInterProceduralGraphToRvsdgStatistics(
