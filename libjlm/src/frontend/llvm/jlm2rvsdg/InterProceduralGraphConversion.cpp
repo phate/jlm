@@ -1027,7 +1027,7 @@ AnnotateAggregationTree(
   StatisticsCollector & statisticsCollector)
 {
   auto demandMap = statisticsCollector.CollectAnnotationStatistics(
-    annotate,
+    Annotate,
     aggregationTreeRoot,
     functionName);
 

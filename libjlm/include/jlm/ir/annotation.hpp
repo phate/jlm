@@ -137,7 +137,7 @@ public:
 typedef std::unordered_map<const aggnode*, std::unique_ptr<demandset>> demandmap;
 
 demandmap
-annotate(const jlm::aggnode & root);
+Annotate(const jlm::aggnode & root);
 
 }
 

@@ -296,7 +296,7 @@ annotateds(
 }
 
 demandmap
-annotate(const aggnode & root)
+Annotate(const aggnode & root)
 {
 	demandmap dm;
 	variableset ds;
