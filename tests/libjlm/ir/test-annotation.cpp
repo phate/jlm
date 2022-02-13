@@ -16,7 +16,7 @@
 
 static bool
 contains(
-	const jlm::variableset & ds,
+	const jlm::VariableSet & ds,
 	const std::vector<const jlm::variable*> & variables)
 {
 	if (ds.size() != variables.size())

@@ -15,7 +15,7 @@ namespace jlm {
 class aggnode;
 class variable;
 
-class variableset final {
+class VariableSet final {
 	using constiterator = std::unordered_set<const variable*>::const_iterator;
 
 public:
@@ -50,7 +50,7 @@ public:
 	}
 
 	void
-	insert(const variableset & vs)
+	insert(const VariableSet & vs)
 	{
 		set_.insert(vs.set_.begin(), vs.set_.end());
 	}
@@ -62,14 +62,14 @@ public:
 	}
 
 	void
-	remove(const variableset & vs)
+	remove(const VariableSet & vs)
 	{
 		for (const auto & v : vs)
 			remove(v);
 	}
 
 	void
-	intersect(const variableset & vs)
+	intersect(const VariableSet & vs)
 	{
 		std::unordered_set<const variable*> intersect;
 		for (const auto & v : vs) {
@@ -81,14 +81,14 @@ public:
 	}
 
 	void
-	subtract(const variableset & vs)
+	subtract(const VariableSet & vs)
 	{
 		for (auto & v : vs)
 			remove(v);
 	}
 
 	bool
-	operator==(const variableset & other) const
+	operator==(const VariableSet & other) const
 	{
 		if (size() != other.size())
 			return false;
@@ -102,7 +102,7 @@ public:
 	}
 
 	bool
-	operator!=(const variableset & other) const
+	operator!=(const VariableSet & other) const
 	{
 		return !(*this == other);
 	}
@@ -126,12 +126,12 @@ public:
 		return std::make_unique<demandset>();
 	}
 
-	variableset top;
-	variableset bottom;
+	VariableSet top;
+	VariableSet bottom;
 
-	variableset reads;
-	variableset allwrites;
-	variableset fullwrites;
+	VariableSet reads;
+	VariableSet allwrites;
+	VariableSet fullwrites;
 };
 
 typedef std::unordered_map<const aggnode*, std::unique_ptr<demandset>> demandmap;
