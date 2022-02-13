@@ -151,13 +151,13 @@ annotaterw(const aggnode * node, demandmap & dm)
 /* demandset annotation */
 
 static void
-annotateds(const aggnode*, variableset&, demandmap&);
+annotateds(const aggnode*, VariableSet&, demandmap&);
 
 static void
 annotateds(
-	const entryaggnode * node,
-	variableset & pds,
-	demandmap & dm)
+  const entryaggnode * node,
+  VariableSet & pds,
+  demandmap & dm)
 {
 	auto & ds = dm[node];
 	ds->bottom = pds;
@@ -169,9 +169,9 @@ annotateds(
 
 static void
 annotateds(
-	const exitaggnode * node,
-	variableset & pds,
-	demandmap & dm)
+  const exitaggnode * node,
+  VariableSet & pds,
+  demandmap & dm)
 {
 	auto & ds = dm[node];
 	ds->bottom = pds;
@@ -184,9 +184,9 @@ annotateds(
 
 static void
 annotateds(
-	const blockaggnode * node,
-	variableset & pds,
-	demandmap & dm)
+  const blockaggnode * node,
+  VariableSet & pds,
+  demandmap & dm)
 {
 	auto & ds = dm[node];
 	ds->bottom = pds;
@@ -199,9 +199,9 @@ annotateds(
 
 static void
 annotateds(
-	const linearaggnode * node,
-	variableset & pds,
-	demandmap & dm)
+  const linearaggnode * node,
+  VariableSet & pds,
+  demandmap & dm)
 {
 	auto & ds = dm[node];
 	ds->bottom = pds;
@@ -217,16 +217,16 @@ annotateds(
 
 static void
 annotateds(
-	const branchaggnode * node,
-	variableset & pds,
-	demandmap & dm)
+  const branchaggnode * node,
+  VariableSet & pds,
+  demandmap & dm)
 {
 	auto & ds = dm[node];
 
-	variableset passby = pds;
+	VariableSet passby = pds;
 	passby.subtract(ds->allwrites);
 
-	variableset bottom = pds;
+	VariableSet bottom = pds;
 	bottom.intersect(ds->allwrites);
 	ds->bottom = bottom;
 
@@ -245,9 +245,9 @@ annotateds(
 
 static void
 annotateds(
-	const loopaggnode * node,
-	variableset & pds,
-	demandmap & dm)
+  const loopaggnode * node,
+  VariableSet & pds,
+  demandmap & dm)
 {
 	auto & ds = dm[node];
 
@@ -265,9 +265,9 @@ annotateds(
 
 template<class T> static void
 annotateds(
-	const aggnode * node,
-	variableset & pds,
-	demandmap & dm)
+  const aggnode * node,
+  VariableSet & pds,
+  demandmap & dm)
 {
 	JLM_ASSERT(is<T>(node));
 	annotateds(static_cast<const T*>(node), pds, dm);
@@ -275,13 +275,13 @@ annotateds(
 
 static void
 annotateds(
-	const aggnode * node,
-	variableset & pds,
-	demandmap & dm)
+  const aggnode * node,
+  VariableSet & pds,
+  demandmap & dm)
 {
 	static std::unordered_map<
 		std::type_index,
-		void(*)(const aggnode*, variableset&, demandmap&)
+		void(*)(const aggnode*, VariableSet&, demandmap&)
 	> map({
 	  {typeid(entryaggnode), annotateds<entryaggnode>}
 	, {typeid(exitaggnode), annotateds<exitaggnode>}
@@ -299,7 +299,7 @@ demandmap
 Annotate(const aggnode & root)
 {
 	demandmap dm;
-	variableset ds;
+	VariableSet ds;
 	annotaterw(&root, dm);
 	annotateds(&root, ds, dm);
 	return dm;

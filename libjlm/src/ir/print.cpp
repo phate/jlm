@@ -337,7 +337,7 @@ to_dot(const jlm::ipgraph & clg)
 /* aggregation node */
 
 static std::string
-emit_variableset(const variableset & ds)
+emit_variableset(const VariableSet & ds)
 {
 	std::string s("{");
 	for (auto it = ds.begin(); it != ds.end(); it++) {
