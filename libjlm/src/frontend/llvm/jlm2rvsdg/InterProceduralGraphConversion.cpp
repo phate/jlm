@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/frontend/llvm/jlm2rvsdg/module.hpp>
+#include <jlm/frontend/llvm/jlm2rvsdg/InterProceduralGraphConversion.hpp>
 #include <jlm/frontend/llvm/jlm2rvsdg/restructuring.hpp>
 
 #include <jlm/ir/aggregation.hpp>

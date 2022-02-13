@@ -12,7 +12,7 @@ LIBJLM_SRC = \
 	libjlm/src/driver/command.cpp \
 	libjlm/src/driver/passgraph.cpp \
 	\
-	libjlm/src/frontend/llvm/jlm2rvsdg/module.cpp \
+	libjlm/src/frontend/llvm/jlm2rvsdg/InterProceduralGraphConversion.cpp \
 	libjlm/src/frontend/llvm/jlm2rvsdg/restructuring.cpp \
 	libjlm/src/frontend/llvm/llvm2jlm/instruction.cpp \
 	libjlm/src/frontend/llvm/llvm2jlm/module.cpp \

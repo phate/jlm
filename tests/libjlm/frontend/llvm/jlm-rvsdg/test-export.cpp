@@ -8,7 +8,7 @@
 
 #include <jive/view.hpp>
 
-#include <jlm/frontend/llvm/jlm2rvsdg/module.hpp>
+#include <jlm/frontend/llvm/jlm2rvsdg/InterProceduralGraphConversion.hpp>
 #include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/util/Statistics.hpp>
