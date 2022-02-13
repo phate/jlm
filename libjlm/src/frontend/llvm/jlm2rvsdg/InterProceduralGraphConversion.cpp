@@ -512,9 +512,9 @@ public:
     return aggregationTreeRoot;
   }
 
-  demandmap
+  DemandMap
   CollectAnnotationStatistics(
-    const std::function<demandmap(const aggnode&)> & annotateAggregationTree,
+    const std::function<DemandMap(const aggnode&)> & annotateAggregationTree,
     const aggnode & aggregationTreeRoot,
     std::string functionName)
   {
@@ -731,14 +731,14 @@ ConvertBasicBlock(
 static void
 ConvertAggregationNode(
   const aggnode & aggregationNode,
-  const demandmap & demandMap,
+  const DemandMap & demandMap,
   lambda::node & lambdaNode,
   RegionalizedVariableMap & regionalizedVariableMap);
 
 static void
 Convert(
   const entryaggnode & entryAggregationNode,
-  const demandmap & demandMap,
+  const DemandMap & demandMap,
   lambda::node & lambdaNode,
   RegionalizedVariableMap & regionalizedVariableMap)
 {
@@ -777,7 +777,7 @@ Convert(
 static void
 Convert(
   const exitaggnode & exitAggregationNode,
-  const demandmap & demandMap,
+  const DemandMap & demandMap,
   lambda::node & lambdaNode,
   RegionalizedVariableMap & regionalizedVariableMap)
 {
@@ -794,7 +794,7 @@ Convert(
 static void
 Convert(
   const blockaggnode & blockAggregationNode,
-  const demandmap & demandMap,
+  const DemandMap & demandMap,
   lambda::node & lambdaNode,
   RegionalizedVariableMap & regionalizedVariableMap)
 {
@@ -807,7 +807,7 @@ Convert(
 static void
 Convert(
   const linearaggnode & linearAggregationNode,
-  const demandmap & demandMap,
+  const DemandMap & demandMap,
   lambda::node & lambdaNode,
   RegionalizedVariableMap & regionalizedVariableMap)
 {
@@ -818,7 +818,7 @@ Convert(
 static void
 Convert(
   const branchaggnode & branchAggregationNode,
-  const demandmap & demandMap,
+  const DemandMap & demandMap,
   lambda::node & lambdaNode,
   RegionalizedVariableMap & regionalizedVariableMap)
 {
@@ -873,7 +873,7 @@ Convert(
 static void
 Convert(
   const loopaggnode & loopAggregationNode,
-  const demandmap & demandMap,
+  const DemandMap & demandMap,
   lambda::node & lambdaNode,
   RegionalizedVariableMap & regionalizedVariableMap)
 {
@@ -943,7 +943,7 @@ Convert(
 template<class NODE> static void
 ConvertAggregationNode(
   const aggnode & aggregationNode,
-  const demandmap & demandMap,
+  const DemandMap & demandMap,
   lambda::node & lambdaNode,
   RegionalizedVariableMap & regionalizedVariableMap)
 {
@@ -955,7 +955,7 @@ ConvertAggregationNode(
 static void
 ConvertAggregationNode(
   const aggnode & aggregationNode,
-  const demandmap & demandMap,
+  const DemandMap & demandMap,
   lambda::node & lambdaNode,
   RegionalizedVariableMap & regionalizedVariableMap)
 {
@@ -963,7 +963,7 @@ ConvertAggregationNode(
 		std::type_index,
 		std::function<void(
       const aggnode&,
-      const demandmap&,
+      const DemandMap&,
       lambda::node&,
       RegionalizedVariableMap&)
 		>
@@ -1020,7 +1020,7 @@ AggregateControlFlowGraph(
   return aggregationTreeRoot;
 }
 
-static demandmap
+static DemandMap
 AnnotateAggregationTree(
   const aggnode & aggregationTreeRoot,
   const std::string & functionName,
@@ -1037,7 +1037,7 @@ AnnotateAggregationTree(
 static lambda::output *
 ConvertAggregationTreeToLambda(
   const aggnode & aggregationTreeRoot,
-  const demandmap & demandMap,
+  const DemandMap & demandMap,
   RegionalizedVariableMap & scopedVariableMap,
   const std::string & functionName,
   const FunctionType & functionType,

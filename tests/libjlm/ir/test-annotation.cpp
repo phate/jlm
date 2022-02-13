@@ -32,7 +32,7 @@ contains(
 
 static bool
 contains(
-	const jlm::demandmap & dm,
+	const jlm::DemandMap & dm,
 	const jlm::aggnode * node,
 	const std::vector<const jlm::variable*> & bottom,
 	const std::vector<const jlm::variable*> & top,

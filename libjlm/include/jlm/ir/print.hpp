@@ -6,7 +6,7 @@
 #ifndef JLM_JLM_IR_PRINT_HPP
 #define JLM_JLM_IR_PRINT_HPP
 
-/* FIXME: I would rather like to forward declare demandmap and demand_set */
+/* FIXME: I would rather like to forward declare DemandMap and demand_set */
 #include <jlm/ir/annotation.hpp>
 #include <jlm/ir/ipgraph-module.hpp>
 
@@ -81,7 +81,7 @@ print(const ipgraph_module & im, FILE * out)
 /* aggregation tree */
 
 std::string
-to_str(const aggnode & n, const demandmap & dm);
+to_str(const aggnode & n, const DemandMap & dm);
 
 static inline std::string
 to_str(const aggnode & n)
@@ -90,7 +90,7 @@ to_str(const aggnode & n)
 }
 
 void
-print(const aggnode & n, const demandmap & dm, FILE * out);
+print(const aggnode & n, const DemandMap & dm, FILE * out);
 
 static inline void
 print(const aggnode & n, FILE * out)
