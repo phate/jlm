@@ -9,48 +9,64 @@
 #include <jlm/ir/operators/operators.hpp>
 
 #include <algorithm>
-#include <functional>
 #include <typeindex>
 
 namespace jlm {
 
 DemandSet::~DemandSet()
-{}
-
-/* read-write annotation */
+= default;
 
 static void
-annotaterw(const aggnode * node, DemandMap & dm);
+AnnotateReadWrite(
+  const aggnode&,
+  DemandMap&);
 
 static void
-annotaterw(const entryaggnode * node, DemandMap & dm)
+AnnotateReadWrite(
+  const entryaggnode & entryAggregationNode,
+  DemandMap & demandMap)
 {
-	auto ds = DemandSet::create();
-	for (const auto & argument : *node) {
-		ds->allwrites.insert(&argument);
-		ds->fullwrites.insert(&argument);
+  VariableSet allWriteSet;
+  VariableSet fullWriteSet;
+	for (auto & argument : entryAggregationNode) {
+		allWriteSet.Insert(argument);
+		fullWriteSet.Insert(argument);
 	}
 
-	dm[node] = std::move(ds);
+  auto demandSet = DemandSet::Create(
+    VariableSet(),
+    std::move(allWriteSet),
+    std::move(fullWriteSet));
+  demandMap.Insert(entryAggregationNode, std::move(demandSet));
 }
 
 static void
-annotaterw(const exitaggnode * node, DemandMap & dm)
+AnnotateReadWrite(
+  const exitaggnode & exitAggregationNode,
+  DemandMap & demandMap)
 {
-	auto ds = DemandSet::create();
-	for (const auto & result : *node)
-		ds->reads.insert(result);
+  VariableSet readSet;
+	for (auto & result : exitAggregationNode)
+		readSet.Insert(*result);
 
-	dm[node] = std::move(ds);
+  auto demandSet = DemandSet::Create(
+    std::move(readSet),
+    VariableSet(),
+    VariableSet());
+  demandMap.Insert(exitAggregationNode, std::move(demandSet));
 }
 
 static void
-annotaterw(const blockaggnode * node, DemandMap & dm)
+AnnotateReadWrite(
+  const blockaggnode & basicBlockAggregationNode,
+  DemandMap & demandMap)
 {
-	auto & bb = node->tacs();
+	auto & threeAddressCodeList = basicBlockAggregationNode.tacs();
 
-	auto ds = DemandSet::create();
-	for (auto it = bb.rbegin(); it != bb.rend(); it++) {
+  VariableSet readSet;
+  VariableSet allWriteSet;
+  VariableSet fullWriteSet;
+	for (auto it = threeAddressCodeList.rbegin(); it != threeAddressCodeList.rend(); it++) {
 		auto & tac = *it;
 		if (is<assignment_op>(tac->operation())) {
 			/*
@@ -58,251 +74,288 @@ annotaterw(const blockaggnode * node, DemandMap & dm)
 					they assign the value to is modeled as an argument of the tac.
 			*/
 			JLM_ASSERT(tac->noperands() == 2 && tac->nresults() == 0);
-			ds->reads.remove(tac->operand(0));
-			ds->allwrites.insert(tac->operand(0));
-			ds->fullwrites.insert(tac->operand(0));
-			ds->reads.insert(tac->operand(1));
+			readSet.Remove(*tac->operand(0));
+			allWriteSet.Insert(*tac->operand(0));
+			fullWriteSet.Insert(*tac->operand(0));
+			readSet.Insert(*tac->operand(1));
 		} else {
 			for (size_t n = 0; n < tac->nresults(); n++) {
-				ds->reads.remove(tac->result(n));
-				ds->allwrites.insert(tac->result(n));
-				ds->fullwrites.insert(tac->result(n));
+				readSet.Remove(*tac->result(n));
+				allWriteSet.Insert(*tac->result(n));
+				fullWriteSet.Insert(*tac->result(n));
 			}
 			for (size_t n = 0; n < tac->noperands(); n++)
-				ds->reads.insert(tac->operand(n));
+				readSet.Insert(*tac->operand(n));
 		}
 	}
 
-	dm[node] = std::move(ds);
+  auto demandSet = DemandSet::Create(
+    std::move(readSet),
+    std::move(allWriteSet),
+    std::move(fullWriteSet));
+  demandMap.Insert(basicBlockAggregationNode, std::move(demandSet));
 }
 
 static void
-annotaterw(const linearaggnode * node, DemandMap & dm)
+AnnotateReadWrite(
+  const linearaggnode & linearAggregationNode,
+  DemandMap & demandMap)
 {
-	auto ds = DemandSet::create();
-	for (ssize_t n = node->nchildren()-1; n >= 0; n--) {
-		auto & cs = *dm[node->child(n)];
-		for (const auto & v : cs.fullwrites)
-			ds->reads.remove(v);
-		ds->reads.insert(cs.reads);
-		ds->allwrites.insert(cs.allwrites);
-		ds->fullwrites.insert(cs.fullwrites);
+  VariableSet readSet;
+  VariableSet allWriteSet;
+  VariableSet fullWriteSet;
+	for (size_t n = linearAggregationNode.nchildren() - 1; n != static_cast<size_t>(-1); n--) {
+		auto & childDemandSet = demandMap.Lookup(*linearAggregationNode.child(n));
+
+    readSet.Remove(childDemandSet.FullWriteSet());
+    readSet.Insert(childDemandSet.ReadSet());
+    allWriteSet.Insert(childDemandSet.AllWriteSet());
+    fullWriteSet.Insert(childDemandSet.FullWriteSet());
 	}
 
-	dm[node] = std::move(ds);
+  auto demandSet = DemandSet::Create(
+    std::move(readSet),
+    std::move(allWriteSet),
+    std::move(fullWriteSet));
+  demandMap.Insert(linearAggregationNode, std::move(demandSet));
 }
 
 static void
-annotaterw(const branchaggnode * node, DemandMap & dm)
+AnnotateReadWrite(
+  const branchaggnode & branchAggregationNode,
+  DemandMap & demandMap)
 {
-	auto ds = DemandSet::create();
-	ds->reads = dm[node->child(0)]->reads;
-	ds->allwrites = dm[node->child(0)]->allwrites;
-	ds->fullwrites = dm[node->child(0)]->fullwrites;
-	for (size_t n = 1; n < node->nchildren(); n++) {
-		auto & cs = *dm[node->child(n)];
-		ds->allwrites.insert(cs.allwrites);
-		ds->fullwrites.intersect(cs.fullwrites);
-		ds->reads.insert(cs.reads);
+  auto & case0DemandSet = demandMap.Lookup(*branchAggregationNode.child(0));
+  auto & case0ReadSet = case0DemandSet.ReadSet();
+  auto & case0AllWriteSet = case0DemandSet.AllWriteSet();
+  auto & case0FullWriteSet = case0DemandSet.FullWriteSet();
+
+  VariableSet branchReadSet(case0ReadSet);
+  VariableSet branchAllWriteSet(case0AllWriteSet);
+  VariableSet branchFullWriteSet(case0FullWriteSet);
+	for (size_t n = 1; n < branchAggregationNode.nchildren(); n++) {
+		auto & caseDemandSet = demandMap.Lookup(*branchAggregationNode.child(n));
+
+		branchAllWriteSet.Insert(caseDemandSet.AllWriteSet());
+		branchFullWriteSet.Intersect(caseDemandSet.FullWriteSet());
+		branchReadSet.Insert(caseDemandSet.ReadSet());
 	}
 
-	dm[node] = std::move(ds);
+  auto branchDemandSet = DemandSet::Create(
+    std::move(branchReadSet),
+    std::move(branchAllWriteSet),
+    std::move(branchFullWriteSet));
+  demandMap.Insert(branchAggregationNode, std::move(branchDemandSet));
 }
 
 static void
-annotaterw(const loopaggnode * node, DemandMap & dm)
+AnnotateReadWrite(
+  const loopaggnode & loopAggregationNode,
+  DemandMap & demandMap)
 {
-	auto ds = DemandSet::create();
-	ds->reads = dm[node->child(0)]->reads;
-	ds->allwrites = dm[node->child(0)]->allwrites;
-	ds->fullwrites = dm[node->child(0)]->fullwrites;
-	dm[node] = std::move(ds);
+  auto & loopBody = *loopAggregationNode.child(0);
+
+  auto & readSet = demandMap.Lookup(loopBody).ReadSet();
+  auto & allWriteSet = demandMap.Lookup(loopBody).AllWriteSet();
+  auto & fullWriteSet = demandMap.Lookup(loopBody).FullWriteSet();
+
+	auto demandSet = DemandSet::Create(
+    VariableSet(readSet),
+    VariableSet(allWriteSet),
+    VariableSet(fullWriteSet));
+  demandMap.Insert(loopAggregationNode, std::move(demandSet));
 }
 
 template<class T> static void
-annotaterw(const aggnode * node, DemandMap & dm)
+AnnotateReadWrite(
+  const aggnode & aggregationNode,
+  DemandMap & DemandMap)
 {
-	JLM_ASSERT(is<T>(node));
-	annotaterw(static_cast<const T*>(node), dm);
+	JLM_ASSERT(is<T>(&aggregationNode));
+  AnnotateReadWrite(*static_cast<const T*>(&aggregationNode), DemandMap);
 }
 
 static void
-annotaterw(const aggnode * node, DemandMap & dm)
+AnnotateReadWrite(
+  const aggnode & aggregationNode,
+  DemandMap & demandMap)
 {
 	static std::unordered_map<
 		std::type_index,
-		void(*)(const aggnode*, DemandMap&)
+		void(*)(const aggnode&, DemandMap&)
 	> map({
-	  {typeid(entryaggnode), annotaterw<entryaggnode>}
-	, {typeid(exitaggnode), annotaterw<exitaggnode>}
-	, {typeid(blockaggnode), annotaterw<blockaggnode>}
-	, {typeid(linearaggnode), annotaterw<linearaggnode>}
-	, {typeid(branchaggnode), annotaterw<branchaggnode>}
-	, {typeid(loopaggnode), annotaterw<loopaggnode>}
+	  {typeid(entryaggnode),  AnnotateReadWrite<entryaggnode>}
+	, {typeid(exitaggnode),   AnnotateReadWrite<exitaggnode>}
+	, {typeid(blockaggnode),  AnnotateReadWrite<blockaggnode>}
+	, {typeid(linearaggnode), AnnotateReadWrite<linearaggnode>}
+	, {typeid(branchaggnode), AnnotateReadWrite<branchaggnode>}
+	, {typeid(loopaggnode),   AnnotateReadWrite<loopaggnode>}
 	});
 
-	for (size_t n = 0; n < node->nchildren(); n++)
-		annotaterw(node->child(n), dm);
+	for (size_t n = 0; n < aggregationNode.nchildren(); n++)
+    AnnotateReadWrite(*aggregationNode.child(n), demandMap);
 
-	JLM_ASSERT(map.find(typeid(*node)) != map.end());
-	return map[typeid(*node)](node, dm);
-}
-
-/* DemandSet annotation */
-
-static void
-annotateds(const aggnode*, VariableSet&, DemandMap&);
-
-static void
-annotateds(
-  const entryaggnode * node,
-  VariableSet & pds,
-  DemandMap & dm)
-{
-	auto & ds = dm[node];
-	ds->bottom = pds;
-
-	pds.remove(ds->fullwrites);
-
-	ds->top = pds;
+	JLM_ASSERT(map.find(typeid(aggregationNode)) != map.end());
+	return map[typeid(aggregationNode)](aggregationNode, demandMap);
 }
 
 static void
-annotateds(
-  const exitaggnode * node,
-  VariableSet & pds,
-  DemandMap & dm)
+AnnotateDemandSet(
+  const aggnode&,
+  VariableSet&,
+  DemandMap&);
+
+static void
+AnnotateDemandSet(
+  const entryaggnode & entryAggregationNode,
+  VariableSet & workingSet,
+  DemandMap & demandMap)
 {
-	auto & ds = dm[node];
-	ds->bottom = pds;
+	auto & demandSet = demandMap.Lookup(entryAggregationNode);
+  demandSet.bottom = workingSet;
 
-	for (const auto & v : ds->reads)
-		pds.insert(v);
+	workingSet.Remove(demandSet.FullWriteSet());
 
-	ds->top = pds;
+  demandSet.top = workingSet;
 }
 
 static void
-annotateds(
-  const blockaggnode * node,
-  VariableSet & pds,
-  DemandMap & dm)
+AnnotateDemandSet(
+  const exitaggnode & exitAggregationNode,
+  VariableSet & workingSet,
+  DemandMap & demandMap)
 {
-	auto & ds = dm[node];
-	ds->bottom = pds;
+	auto & demandSet = demandMap.Lookup(exitAggregationNode);
+  demandSet.bottom = workingSet;
 
-	pds.remove(ds->fullwrites);
-	pds.insert(ds->reads);
+  workingSet.Insert(demandSet.ReadSet());
 
-	ds->top = pds;
+  demandSet.top = workingSet;
 }
 
 static void
-annotateds(
-  const linearaggnode * node,
-  VariableSet & pds,
-  DemandMap & dm)
+AnnotateDemandSet(
+  const blockaggnode & basicBlockAggregationNode,
+  VariableSet & workingSet,
+  DemandMap & demandMap)
 {
-	auto & ds = dm[node];
-	ds->bottom = pds;
+	auto & demandSet = demandMap.Lookup(basicBlockAggregationNode);
+  demandSet.bottom = workingSet;
 
-	for (ssize_t n = node->nchildren()-1; n >= 0; n--)
-		annotateds(node->child(n), pds, dm);
+	workingSet.Remove(demandSet.FullWriteSet());
+	workingSet.Insert(demandSet.ReadSet());
 
-	pds.remove(ds->fullwrites);
-	pds.insert(ds->reads);
-
-	ds->top = pds;
+  demandSet.top = workingSet;
 }
 
 static void
-annotateds(
-  const branchaggnode * node,
-  VariableSet & pds,
-  DemandMap & dm)
+AnnotateDemandSet(
+  const linearaggnode & linearAggregationNode,
+  VariableSet & workingSet,
+  DemandMap & demandMap)
 {
-	auto & ds = dm[node];
+	auto & demandSet = demandMap.Lookup(linearAggregationNode);
+  demandSet.bottom = workingSet;
 
-	VariableSet passby = pds;
-	passby.subtract(ds->allwrites);
+	for (size_t n = linearAggregationNode.nchildren() - 1; n != static_cast<size_t>(-1); n--)
+    AnnotateDemandSet(*linearAggregationNode.child(n), workingSet, demandMap);
 
-	VariableSet bottom = pds;
-	bottom.intersect(ds->allwrites);
-	ds->bottom = bottom;
+	workingSet.Remove(demandSet.FullWriteSet());
+	workingSet.Insert(demandSet.ReadSet());
 
-	for (size_t n = 0; n < node->nchildren(); n++) {
+  demandSet.top = workingSet;
+}
+
+static void
+AnnotateDemandSet(
+  const branchaggnode & branchAggregationNode,
+  VariableSet & workingSet,
+  DemandMap & demandMap)
+{
+	auto & demandSet = demandMap.Lookup(branchAggregationNode);
+
+	VariableSet passby = workingSet;
+	passby.Subtract(demandSet.AllWriteSet());
+
+	VariableSet bottom = workingSet;
+	bottom.Intersect(demandSet.AllWriteSet());
+  demandSet.bottom = bottom;
+
+	for (size_t n = 0; n < branchAggregationNode.nchildren(); n++) {
 		auto tmp = bottom;
-		annotateds(node->child(n), tmp, dm);
+    AnnotateDemandSet(*branchAggregationNode.child(n), tmp, demandMap);
 	}
 
 
-	pds.remove(ds->fullwrites);
-	pds.insert(ds->reads);
-	ds->top = pds;
+	workingSet.Remove(demandSet.FullWriteSet());
+	workingSet.Insert(demandSet.ReadSet());
+  demandSet.top = workingSet;
 
-	pds.insert(passby);
+	workingSet.Insert(passby);
 }
 
 static void
-annotateds(
-  const loopaggnode * node,
-  VariableSet & pds,
-  DemandMap & dm)
+AnnotateDemandSet(
+  const loopaggnode & loopAggregationNode,
+  VariableSet & workingSet,
+  DemandMap & demandMap)
 {
-	auto & ds = dm[node];
+	auto & demandSet = demandMap.Lookup(loopAggregationNode);
 
-	pds.insert(ds->reads);
-	ds->bottom = ds->top = pds;
-	annotateds(node->child(0), pds, dm);
+	workingSet.Insert(demandSet.ReadSet());
+  demandSet.bottom = demandSet.top = workingSet;
+  AnnotateDemandSet(*loopAggregationNode.child(0), workingSet, demandMap);
 
-	for (const auto & v : ds->reads)
-		JLM_ASSERT(pds.contains(v));
+	for (auto & v : demandSet.ReadSet().Variables())
+		JLM_ASSERT(workingSet.Contains(v));
 
-	for (const auto & v : ds->fullwrites)
-		if (!ds->reads.contains(v))
-			JLM_ASSERT(!pds.contains(v));
+	for (auto & v : demandSet.FullWriteSet().Variables())
+		if (!demandSet.ReadSet().Contains(v))
+			JLM_ASSERT(!workingSet.Contains(v));
 }
 
 template<class T> static void
-annotateds(
-  const aggnode * node,
-  VariableSet & pds,
-  DemandMap & dm)
+AnnotateDemandSet(
+  const aggnode * aggregationNode,
+  VariableSet & workingSet,
+  DemandMap & demandMap)
 {
-	JLM_ASSERT(is<T>(node));
-	annotateds(static_cast<const T*>(node), pds, dm);
+	JLM_ASSERT(is<T>(aggregationNode));
+  AnnotateDemandSet(*static_cast<const T *>(aggregationNode), workingSet, demandMap);
 }
 
 static void
-annotateds(
-  const aggnode * node,
-  VariableSet & pds,
-  DemandMap & dm)
+AnnotateDemandSet(
+  const aggnode & aggregationNode,
+  VariableSet & workingSet,
+  DemandMap & demandMap)
 {
 	static std::unordered_map<
 		std::type_index,
 		void(*)(const aggnode*, VariableSet&, DemandMap&)
 	> map({
-	  {typeid(entryaggnode), annotateds<entryaggnode>}
-	, {typeid(exitaggnode), annotateds<exitaggnode>}
-	, {typeid(blockaggnode), annotateds<blockaggnode>}
-	, {typeid(linearaggnode), annotateds<linearaggnode>}
-	, {typeid(branchaggnode), annotateds<branchaggnode>}
-	, {typeid(loopaggnode), annotateds<loopaggnode>}
+	  {typeid(entryaggnode),  AnnotateDemandSet<entryaggnode>}
+	, {typeid(exitaggnode),   AnnotateDemandSet<exitaggnode>}
+	, {typeid(blockaggnode),  AnnotateDemandSet<blockaggnode>}
+	, {typeid(linearaggnode), AnnotateDemandSet<linearaggnode>}
+	, {typeid(branchaggnode), AnnotateDemandSet<branchaggnode>}
+	, {typeid(loopaggnode),   AnnotateDemandSet<loopaggnode>}
 	});
 
-	JLM_ASSERT(map.find(typeid(*node)) != map.end());
-	return map[typeid(*node)](node, pds, dm);
+	JLM_ASSERT(map.find(typeid(aggregationNode)) != map.end());
+	return map[typeid(aggregationNode)](&aggregationNode, workingSet, demandMap);
 }
 
-DemandMap
-Annotate(const aggnode & root)
+std::unique_ptr<DemandMap>
+Annotate(const aggnode & aggregationTreeRoot)
 {
-	DemandMap dm;
-	VariableSet ds;
-	annotaterw(&root, dm);
-	annotateds(&root, ds, dm);
-	return dm;
+	auto demandMap = DemandMap::Create();
+  AnnotateReadWrite(aggregationTreeRoot, *demandMap);
+
+  VariableSet workingSet;
+  AnnotateDemandSet(aggregationTreeRoot, workingSet, *demandMap);
+
+	return demandMap;
 }
 
 }

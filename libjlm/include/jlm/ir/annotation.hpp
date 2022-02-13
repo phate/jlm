@@ -6,6 +6,10 @@
 #ifndef JLM_IR_ANNOTATION_HPP
 #define JLM_IR_ANNOTATION_HPP
 
+#include <jlm/common.hpp>
+#include <jlm/util/iterator_range.hpp>
+
+#include <algorithm>
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
@@ -16,89 +20,140 @@ class aggnode;
 class variable;
 
 class VariableSet final {
-	using constiterator = std::unordered_set<const variable*>::const_iterator;
+
+  class ConstIterator final : public std::iterator<std::forward_iterator_tag, const jlm::variable*, ptrdiff_t> {
+  public:
+    explicit
+    ConstIterator(const std::unordered_set<const jlm::variable*>::const_iterator & it)
+      : It_(it)
+    {}
+
+  public:
+    const jlm::variable &
+    GetVariable() const noexcept
+    {
+      return **It_;
+    }
+
+    const jlm::variable &
+    operator*() const
+    {
+      return GetVariable();
+    }
+
+    const jlm::variable *
+    operator->() const
+    {
+      return &GetVariable();
+    }
+
+    ConstIterator &
+    operator++()
+    {
+      ++It_;
+      return *this;
+    }
+
+    ConstIterator
+    operator++(int)
+    {
+      ConstIterator tmp = *this;
+      ++*this;
+      return tmp;
+    }
+
+    bool
+    operator==(const ConstIterator & other) const
+    {
+      return It_ == other.It_;
+    }
+
+    bool
+    operator!=(const ConstIterator & other) const
+    {
+      return !operator==(other);
+    }
+
+  private:
+    std::unordered_set<const jlm::variable*>::const_iterator It_;
+  };
+
+  using ConstRange = iterator_range<ConstIterator>;
 
 public:
-	constiterator
-	begin() const
-	{
-		return set_.begin();
-	}
 
-	constiterator
-	end() const
-	{
-		return set_.end();
-	}
+  ConstRange
+  Variables() const noexcept
+  {
+    return {ConstIterator(Set_.begin()), ConstIterator(Set_.end())};
+  }
 
 	bool
-	contains(const variable * v) const
+	Contains(const variable & v) const
 	{
-		return set_.find(v) != set_.end();
+		return Set_.find(&v) != Set_.end();
 	}
 
 	size_t
-	size() const noexcept
+	Size() const noexcept
 	{
-		return set_.size();
+		return Set_.size();
 	}
 
 	void
-	insert(const variable * v)
+	Insert(const variable & v)
 	{
-		set_.insert(v);
+		Set_.insert(&v);
 	}
 
 	void
-	insert(const VariableSet & vs)
+	Insert(const VariableSet & variableSet)
 	{
-		set_.insert(vs.set_.begin(), vs.set_.end());
+		Set_.insert(variableSet.Set_.begin(), variableSet.Set_.end());
 	}
 
 	void
-	remove(const variable * v)
+	Remove(const variable & v)
 	{
-		set_.erase(v);
+		Set_.erase(&v);
 	}
 
 	void
-	remove(const VariableSet & vs)
+	Remove(const VariableSet & variableSet)
 	{
-		for (const auto & v : vs)
-			remove(v);
+		for (auto & v : variableSet.Variables())
+			Remove(v);
 	}
 
 	void
-	intersect(const VariableSet & vs)
+	Intersect(const VariableSet & variableSet)
 	{
 		std::unordered_set<const variable*> intersect;
-		for (const auto & v : vs) {
-			if (contains(v))
-				intersect.insert(v);
+		for (auto & v : variableSet.Variables()) {
+			if (Contains(v))
+				intersect.insert(&v);
 		}
 
-		set_ = intersect;
+		Set_ = intersect;
 	}
 
 	void
-	subtract(const VariableSet & vs)
+	Subtract(const VariableSet & variableSet)
 	{
-		for (auto & v : vs)
-			remove(v);
+		for (auto & v : variableSet.Variables())
+			Remove(v);
 	}
 
 	bool
 	operator==(const VariableSet & other) const
 	{
-		if (size() != other.size())
+		if (Size() != other.Size())
 			return false;
 
-		for (const auto & v : other) {
-			if (!contains(v))
-				return false;
-		}
-
-		return true;
+    return std::all_of(
+      Set_.begin(),
+      Set_.end(),
+      [&](const variable * v){ return Contains(*v); });
 	}
 
 	bool
@@ -108,7 +163,7 @@ public:
 	}
 
 private:
-	std::unordered_set<const variable*> set_;
+	std::unordered_set<const variable*> Set_;
 };
 
 class DemandSet {
@@ -116,28 +171,114 @@ public:
 	virtual
 	~DemandSet();
 
-	inline
-	DemandSet()
-	{}
+	DemandSet(
+    VariableSet readSet,
+    VariableSet allWriteSet,
+    VariableSet fullWriteSet)
+    : ReadSet_(std::move(readSet))
+    , AllWriteSet_(std::move(allWriteSet))
+    , FullWriteSet_(std::move(fullWriteSet))
+  {}
+
+  DemandSet(const DemandSet&) = delete;
+
+  DemandSet(DemandSet&&) noexcept = delete;
+
+  DemandSet&
+  operator=(const DemandSet&) = delete;
+
+  DemandSet&
+  operator=(DemandSet&&) = delete;
+
+  const VariableSet &
+  ReadSet() const noexcept
+  {
+    return ReadSet_;
+  }
+
+  const VariableSet &
+  AllWriteSet() const noexcept
+  {
+    return AllWriteSet_;
+  }
+
+  const VariableSet &
+  FullWriteSet() const noexcept
+  {
+    return FullWriteSet_;
+  }
+
 
 	static inline std::unique_ptr<DemandSet>
-	create()
+	Create(
+    VariableSet readSet,
+    VariableSet allWriteSet,
+    VariableSet fullWriteSet)
 	{
-		return std::make_unique<DemandSet>();
+		return std::make_unique<DemandSet>(
+      std::move(readSet),
+      std::move(allWriteSet),
+      std::move(fullWriteSet));
 	}
 
 	VariableSet top;
 	VariableSet bottom;
 
-	VariableSet reads;
-	VariableSet allwrites;
-	VariableSet fullwrites;
+private:
+	VariableSet ReadSet_;
+	VariableSet AllWriteSet_;
+	VariableSet FullWriteSet_;
 };
 
-typedef std::unordered_map<const aggnode*, std::unique_ptr<DemandSet>> DemandMap;
+class DemandMap final {
+public:
+  DemandMap()
+  = default;
 
-DemandMap
-Annotate(const jlm::aggnode & root);
+  DemandMap(const DemandMap&) = delete;
+
+  DemandMap(DemandMap&&) noexcept = delete;
+
+  DemandMap&
+  operator=(const DemandMap&) = delete;
+
+  DemandMap&
+  operator=(DemandMap&&) noexcept = delete;
+
+  bool
+  Contains(const aggnode & aggregationNode) const noexcept
+  {
+    return Map_.find(&aggregationNode) != Map_.end();
+  }
+
+  DemandSet&
+  Lookup(const aggnode & aggregationNode) const noexcept
+  {
+    JLM_ASSERT(Contains(aggregationNode));
+    return *Map_.find(&aggregationNode)->second;
+  }
+
+  void
+  Insert(
+    const aggnode & aggregationNode,
+    std::unique_ptr<DemandSet> demandSet)
+  {
+    JLM_ASSERT(!Contains(aggregationNode));
+    Map_[&aggregationNode] = std::move(demandSet);
+  }
+
+  static std::unique_ptr<DemandMap>
+  Create()
+  {
+    return std::make_unique<DemandMap>();
+  }
+
+private:
+  std::unordered_map<const aggnode*, std::unique_ptr<DemandSet>> Map_;
+};
+
+std::unique_ptr<DemandMap>
+Annotate(const jlm::aggnode & aggregationTreeRoot);
 
 }
 
