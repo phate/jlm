@@ -14,7 +14,7 @@
 
 namespace jlm {
 
-demandset::~demandset()
+DemandSet::~DemandSet()
 {}
 
 /* read-write annotation */
@@ -25,7 +25,7 @@ annotaterw(const aggnode * node, DemandMap & dm);
 static void
 annotaterw(const entryaggnode * node, DemandMap & dm)
 {
-	auto ds = demandset::create();
+	auto ds = DemandSet::create();
 	for (const auto & argument : *node) {
 		ds->allwrites.insert(&argument);
 		ds->fullwrites.insert(&argument);
@@ -37,7 +37,7 @@ annotaterw(const entryaggnode * node, DemandMap & dm)
 static void
 annotaterw(const exitaggnode * node, DemandMap & dm)
 {
-	auto ds = demandset::create();
+	auto ds = DemandSet::create();
 	for (const auto & result : *node)
 		ds->reads.insert(result);
 
@@ -49,7 +49,7 @@ annotaterw(const blockaggnode * node, DemandMap & dm)
 {
 	auto & bb = node->tacs();
 
-	auto ds = demandset::create();
+	auto ds = DemandSet::create();
 	for (auto it = bb.rbegin(); it != bb.rend(); it++) {
 		auto & tac = *it;
 		if (is<assignment_op>(tac->operation())) {
@@ -79,7 +79,7 @@ annotaterw(const blockaggnode * node, DemandMap & dm)
 static void
 annotaterw(const linearaggnode * node, DemandMap & dm)
 {
-	auto ds = demandset::create();
+	auto ds = DemandSet::create();
 	for (ssize_t n = node->nchildren()-1; n >= 0; n--) {
 		auto & cs = *dm[node->child(n)];
 		for (const auto & v : cs.fullwrites)
@@ -95,7 +95,7 @@ annotaterw(const linearaggnode * node, DemandMap & dm)
 static void
 annotaterw(const branchaggnode * node, DemandMap & dm)
 {
-	auto ds = demandset::create();
+	auto ds = DemandSet::create();
 	ds->reads = dm[node->child(0)]->reads;
 	ds->allwrites = dm[node->child(0)]->allwrites;
 	ds->fullwrites = dm[node->child(0)]->fullwrites;
@@ -112,7 +112,7 @@ annotaterw(const branchaggnode * node, DemandMap & dm)
 static void
 annotaterw(const loopaggnode * node, DemandMap & dm)
 {
-	auto ds = demandset::create();
+	auto ds = DemandSet::create();
 	ds->reads = dm[node->child(0)]->reads;
 	ds->allwrites = dm[node->child(0)]->allwrites;
 	ds->fullwrites = dm[node->child(0)]->fullwrites;
@@ -148,7 +148,7 @@ annotaterw(const aggnode * node, DemandMap & dm)
 	return map[typeid(*node)](node, dm);
 }
 
-/* demandset annotation */
+/* DemandSet annotation */
 
 static void
 annotateds(const aggnode*, VariableSet&, DemandMap&);
