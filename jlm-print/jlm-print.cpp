@@ -182,11 +182,11 @@ main (int argc, char ** argv)
 	if (flags.l2j_ipg_dot)
 		jlm::print_dot(jm->ipgraph(), stdout);
 
-	auto rm = jlm::construct_rvsdg(*jm, flags.sd);
-	if (flags.j2r) jive::view(rm->Rvsdg().root(), stdout);
-	if (flags.j2rx) jive::view_xml(rm->Rvsdg().root(), stdout);
+	auto rvsdgModule = jlm::ConvertInterProceduralGraphModule(*jm, flags.sd);
+	if (flags.j2r) jive::view(rvsdgModule->Rvsdg().root(), stdout);
+	if (flags.j2rx) jive::view_xml(rvsdgModule->Rvsdg().root(), stdout);
 
-	jm = jlm::rvsdg2jlm::rvsdg2jlm(*rm, flags.sd);
+	jm = jlm::rvsdg2jlm::rvsdg2jlm(*rvsdgModule, flags.sd);
 	if (flags.r2j)
 		jlm::print(*jm, stdout);
 	if (flags.r2jdot)

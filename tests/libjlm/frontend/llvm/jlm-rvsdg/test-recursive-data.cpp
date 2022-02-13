@@ -45,9 +45,9 @@ test()
 	d2->set_initialization(std::make_unique<data_node_init>(std::move(tvec2)));
 
 	StatisticsDescriptor sd;
-	auto rvsdg = construct_rvsdg(im, sd);
+	auto rvsdgModule = ConvertInterProceduralGraphModule(im, sd);
 
-	jive::view(rvsdg->Rvsdg(), stdout);
+	jive::view(rvsdgModule->Rvsdg(), stdout);
 
 	return 0;
 }
