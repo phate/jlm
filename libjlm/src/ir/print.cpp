@@ -351,7 +351,7 @@ emit_variableset(const VariableSet & ds)
 }
 
 static std::string
-emit_demandset(const demandset & ds)
+emit_demandset(const DemandSet & ds)
 {
 	return emit_variableset(ds.bottom)
 	     + " -> " + emit_variableset(ds.top)

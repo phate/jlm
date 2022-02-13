@@ -111,19 +111,19 @@ private:
 	std::unordered_set<const variable*> set_;
 };
 
-class demandset {
+class DemandSet {
 public:
 	virtual
-	~demandset();
+	~DemandSet();
 
 	inline
-	demandset()
+	DemandSet()
 	{}
 
-	static inline std::unique_ptr<demandset>
+	static inline std::unique_ptr<DemandSet>
 	create()
 	{
-		return std::make_unique<demandset>();
+		return std::make_unique<DemandSet>();
 	}
 
 	VariableSet top;
@@ -134,7 +134,7 @@ public:
 	VariableSet fullwrites;
 };
 
-typedef std::unordered_map<const aggnode*, std::unique_ptr<demandset>> DemandMap;
+typedef std::unordered_map<const aggnode*, std::unique_ptr<DemandSet>> DemandMap;
 
 DemandMap
 Annotate(const jlm::aggnode & root);
