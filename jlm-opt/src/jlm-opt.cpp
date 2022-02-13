@@ -114,11 +114,11 @@ main(int argc, char ** argv)
 	auto jlm_module = construct_jlm_module(*llvm_module);
 
 	llvm_module.reset();
-	auto rm = jlm::construct_rvsdg(*jlm_module, flags.sd);
+	auto rvsdgModule = jlm::ConvertInterProceduralGraphModule(*jlm_module, flags.sd);
 
-	optimize(*rm, flags.sd, flags.optimizations);
+	optimize(*rvsdgModule, flags.sd, flags.optimizations);
 
-	print(*rm, flags.ofile, flags.format, flags.sd);
+	print(*rvsdgModule, flags.ofile, flags.format, flags.sd);
 
 	return 0;
 }

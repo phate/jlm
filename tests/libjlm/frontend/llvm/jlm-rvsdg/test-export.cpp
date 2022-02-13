@@ -30,16 +30,16 @@ test()
 	im.create_variable(f);
 
 	StatisticsDescriptor sd;
-	auto rvsdg = construct_rvsdg(im, sd);
+	auto rvsdgModule = ConvertInterProceduralGraphModule(im, sd);
 
-	jive::view(rvsdg->Rvsdg(), stdout);
+	jive::view(rvsdgModule->Rvsdg(), stdout);
 
 	/*
 		We should have no exports in the RVSDG. The data and function
 		node should be converted to RVSDG imports as they do not have
 		a body, i.e., either a CFG or a initialization.
 	*/
-	assert(rvsdg->Rvsdg().root()->nresults() == 0);
+	assert(rvsdgModule->Rvsdg().root()->nresults() == 0);
 
 	return 0;
 }

@@ -1260,7 +1260,7 @@ convert_module(
 }
 
 std::unique_ptr<RvsdgModule>
-construct_rvsdg(
+ConvertInterProceduralGraphModule(
   const ipgraph_module & interProceduralGraphModule,
   const StatisticsDescriptor & statisticsDescriptor)
 {

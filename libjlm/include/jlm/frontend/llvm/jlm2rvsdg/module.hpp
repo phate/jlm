@@ -8,10 +8,6 @@
 
 #include <memory>
 
-namespace jive {
-	class graph;
-}
-
 namespace jlm {
 
 class ipgraph_module;
@@ -19,7 +15,7 @@ class RvsdgModule;
 class StatisticsDescriptor;
 
 std::unique_ptr<RvsdgModule>
-construct_rvsdg(const ipgraph_module & im, const StatisticsDescriptor & sd);
+ConvertInterProceduralGraphModule(const ipgraph_module & im, const StatisticsDescriptor & sd);
 
 }
 
