@@ -4,7 +4,7 @@
  */
 
 #include <jlm/ir/aggregation.hpp>
-#include <jlm/ir/annotation.hpp>
+#include <jlm/ir/Annotation.hpp>
 #include <jlm/ir/basic-block.hpp>
 #include <jlm/ir/operators/operators.hpp>
 

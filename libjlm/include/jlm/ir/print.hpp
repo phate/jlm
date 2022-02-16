@@ -7,7 +7,7 @@
 #define JLM_JLM_IR_PRINT_HPP
 
 /* FIXME: I would rather like to forward declare DemandMap and demand_set */
-#include <jlm/ir/annotation.hpp>
+#include <jlm/ir/Annotation.hpp>
 #include <jlm/ir/ipgraph-module.hpp>
 
 
