@@ -81,6 +81,12 @@ class VariableSet final {
   using ConstRange = iterator_range<ConstIterator>;
 
 public:
+  VariableSet()
+  = default;
+
+  VariableSet(std::initializer_list<const variable*> init)
+  : Set_(init)
+  {}
 
   ConstRange
   Variables() const noexcept
@@ -93,6 +99,18 @@ public:
 	{
 		return Set_.find(&v) != Set_.end();
 	}
+
+  bool
+  Contains(const VariableSet & variableSet) const
+  {
+    if (variableSet.Size() > Size())
+      return false;
+
+    return std::all_of(
+      variableSet.Set_.begin(),
+      variableSet.Set_.end(),
+      [&](const variable * v){ return Contains(*v); });
+  }
 
 	size_t
 	Size() const noexcept
@@ -180,6 +198,19 @@ public:
     , FullWriteSet_(std::move(fullWriteSet))
   {}
 
+  DemandSet(
+    VariableSet readSet,
+    VariableSet allWriteSet,
+    VariableSet fullWriteSet,
+    VariableSet topSet,
+    VariableSet bottomSet)
+    : top(std::move(topSet))
+    , bottom(std::move(bottomSet))
+    , ReadSet_(std::move(readSet))
+    , AllWriteSet_(std::move(allWriteSet))
+    , FullWriteSet_(std::move(fullWriteSet))
+  {}
+
   DemandSet(const DemandSet&) = delete;
 
   DemandSet(DemandSet&&) noexcept = delete;
@@ -208,8 +239,23 @@ public:
     return FullWriteSet_;
   }
 
+  virtual bool
+  operator==(const DemandSet & other)
+  {
+    return ReadSet_ == other.ReadSet_
+        && AllWriteSet_ == other.AllWriteSet_
+        && FullWriteSet_ == other.FullWriteSet_
+        && top == other.top
+        && bottom == other.bottom;
+  }
 
-	static inline std::unique_ptr<DemandSet>
+  bool
+  operator!=(const DemandSet & other)
+  {
+    return !(*this == other);
+  }
+
+	static std::unique_ptr<DemandSet>
 	Create(
     VariableSet readSet,
     VariableSet allWriteSet,
