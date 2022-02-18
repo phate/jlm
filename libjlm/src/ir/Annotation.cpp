@@ -405,7 +405,7 @@ AnnotateDemandSet(
 	auto & demandSet = demandMap.Lookup<BranchDemandSet>(branchAggregationNode);
 
 	VariableSet passby = workingSet;
-	passby.Subtract(demandSet.AllWriteSet());
+	passby.Remove(demandSet.AllWriteSet());
 
 	VariableSet bottom = workingSet;
 	bottom.Intersect(demandSet.AllWriteSet());
@@ -438,15 +438,15 @@ AnnotateDemandSet(
   demandSet.SetLoopVariables(std::move(loopVariables));
 
   VariableSet passBySet(workingSet);
-  passBySet.Subtract(demandSet.AllWriteSet());
-  passBySet.Subtract(demandSet.ReadSet());
+  passBySet.Remove(demandSet.AllWriteSet());
+  passBySet.Remove(demandSet.ReadSet());
 
   VariableSet bodyWorkingSet(workingSet);
-  bodyWorkingSet.Subtract(passBySet);
+  bodyWorkingSet.Remove(passBySet);
 
   AnnotateDemandSet(*loopAggregationNode.child(0), bodyWorkingSet, demandMap);
 
-  workingSet.Subtract(demandSet.FullWriteSet());
+  workingSet.Remove(demandSet.FullWriteSet());
   workingSet.Insert(demandSet.ReadSet());
 }
 
