@@ -889,9 +889,8 @@ Convert(
 	 * Add loop variables
 	 */
 	auto & demandSet = demandMap.Lookup<LoopDemandSet>(loopAggregationNode);
-	JLM_ASSERT(demandSet.TopSet_ == demandSet.BottomSet_);
 	std::unordered_map<const variable*, jive::theta_output*> thetaOutputMap;
-	for (auto & v : demandSet.TopSet_.Variables()) {
+	for (auto & v : demandSet.LoopVariables().Variables()) {
 		jive::output * value = nullptr;
 		if (!outerVariableMap.contains(&v)) {
 			value = create_undef_value(parentRegion, v.type());
@@ -913,7 +912,7 @@ Convert(
 	/*
 	 * Update loop variables
 	 */
-	for (auto & v : demandSet.TopSet_.Variables()) {
+	for (auto & v : demandSet.LoopVariables().Variables()) {
 		JLM_ASSERT(thetaOutputMap.find(&v) != thetaOutputMap.end());
 		thetaOutputMap[&v]->result()->divert_to(thetaVariableMap.lookup(&v));
 	}
@@ -934,7 +933,7 @@ Convert(
 	 */
 	theta->set_predicate(thetaVariableMap.lookup(predicate));
   regionalizedVariableMap.PopRegion();
-	for (auto & v : demandSet.BottomSet_.Variables()) {
+	for (auto & v : demandSet.LoopVariables().Variables()) {
 		JLM_ASSERT(outerVariableMap.contains(&v));
 		outerVariableMap.insert(&v, thetaOutputMap[&v]);
 	}
