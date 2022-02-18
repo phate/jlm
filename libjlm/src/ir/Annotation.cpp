@@ -41,8 +41,7 @@ EntryDemandSet::DebugString() const noexcept
   return strfmt("ReadSet:", ReadSet().DebugString(), " ",
                 "AllWriteSet:", AllWriteSet().DebugString(), " ",
                 "FullWriteSet:", FullWriteSet().DebugString(), " ",
-                "TopSet:", TopSet_.DebugString(), " ",
-                "BottomSet:", BottomSet_.DebugString(), " ");
+                "TopSet:", TopSet_.DebugString(), " ");
 }
 
 bool
@@ -51,8 +50,7 @@ EntryDemandSet::operator==(const DemandSet & other)
   auto otherEntryDemandSet = dynamic_cast<const EntryDemandSet*>(&other);
   return otherEntryDemandSet
       && DemandSet::operator==(other)
-      && TopSet_ == otherEntryDemandSet->TopSet_
-      && BottomSet_ == otherEntryDemandSet->BottomSet_;
+      && TopSet_ == otherEntryDemandSet->TopSet_;
 }
 
 ExitDemandSet::~ExitDemandSet() noexcept
@@ -359,7 +357,6 @@ AnnotateDemandSet(
   DemandMap & demandMap)
 {
 	auto & demandSet = demandMap.Lookup<EntryDemandSet>(entryAggregationNode);
-  demandSet.BottomSet_ = workingSet;
 
 	workingSet.Remove(demandSet.FullWriteSet());
 
