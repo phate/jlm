@@ -404,24 +404,20 @@ AnnotateDemandSet(
 {
 	auto & demandSet = demandMap.Lookup<BranchDemandSet>(branchAggregationNode);
 
-	VariableSet passby = workingSet;
-	passby.Remove(demandSet.AllWriteSet());
-
-	VariableSet bottom = workingSet;
-	bottom.Intersect(demandSet.AllWriteSet());
-  demandSet.BottomSet_ = bottom;
+	VariableSet branchWorkingSet = workingSet;
+	branchWorkingSet.Intersect(demandSet.AllWriteSet());
+  demandSet.BottomSet_ = branchWorkingSet;
 
 	for (size_t n = 0; n < branchAggregationNode.nchildren(); n++) {
-		auto tmp = bottom;
-    AnnotateDemandSet(*branchAggregationNode.child(n), tmp, demandMap);
+		auto caseWorkingSet = branchWorkingSet;
+    AnnotateDemandSet(*branchAggregationNode.child(n), caseWorkingSet, demandMap);
 	}
 
+  branchWorkingSet.Remove(demandSet.FullWriteSet());
+  branchWorkingSet.Insert(demandSet.ReadSet());
+  demandSet.TopSet_ = branchWorkingSet;
 
-	workingSet.Remove(demandSet.FullWriteSet());
-	workingSet.Insert(demandSet.ReadSet());
-  demandSet.TopSet_ = workingSet;
-
-	workingSet.Insert(passby);
+  workingSet.Insert(branchWorkingSet);
 }
 
 static void
@@ -435,13 +431,6 @@ AnnotateDemandSet(
 	workingSet.Insert(demandSet.ReadSet());
   demandSet.SetLoopVariables(workingSet);
   AnnotateDemandSet(*loopAggregationNode.child(0), workingSet, demandMap);
-  
-	for (auto & v : demandSet.ReadSet().Variables())
-		JLM_ASSERT(workingSet.Contains(v));
-
-	for (auto & v : demandSet.FullWriteSet().Variables())
-		if (!demandSet.ReadSet().Contains(v))
-			JLM_ASSERT(!workingSet.Contains(v));
 }
 
 template<class T> static void
