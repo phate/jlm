@@ -180,6 +180,9 @@ public:
 		return !(*this == other);
 	}
 
+  std::string
+  DebugString() const noexcept;
+
 private:
 	std::unordered_set<const variable*> Set_;
 };
@@ -187,26 +190,13 @@ private:
 class DemandSet {
 public:
 	virtual
-	~DemandSet();
+	~DemandSet() noexcept;
 
 	DemandSet(
     VariableSet readSet,
     VariableSet allWriteSet,
     VariableSet fullWriteSet)
     : ReadSet_(std::move(readSet))
-    , AllWriteSet_(std::move(allWriteSet))
-    , FullWriteSet_(std::move(fullWriteSet))
-  {}
-
-  DemandSet(
-    VariableSet readSet,
-    VariableSet allWriteSet,
-    VariableSet fullWriteSet,
-    VariableSet topSet,
-    VariableSet bottomSet)
-    : top(std::move(topSet))
-    , bottom(std::move(bottomSet))
-    , ReadSet_(std::move(readSet))
     , AllWriteSet_(std::move(allWriteSet))
     , FullWriteSet_(std::move(fullWriteSet))
   {}
@@ -244,9 +234,7 @@ public:
   {
     return ReadSet_ == other.ReadSet_
         && AllWriteSet_ == other.AllWriteSet_
-        && FullWriteSet_ == other.FullWriteSet_
-        && top == other.top
-        && bottom == other.bottom;
+        && FullWriteSet_ == other.FullWriteSet_;
   }
 
   bool
@@ -255,25 +243,313 @@ public:
     return !(*this == other);
   }
 
-	static std::unique_ptr<DemandSet>
-	Create(
-    VariableSet readSet,
-    VariableSet allWriteSet,
-    VariableSet fullWriteSet)
-	{
-		return std::make_unique<DemandSet>(
-      std::move(readSet),
-      std::move(allWriteSet),
-      std::move(fullWriteSet));
-	}
-
-	VariableSet top;
-	VariableSet bottom;
+  virtual std::string
+  DebugString() const noexcept = 0;
 
 private:
 	VariableSet ReadSet_;
 	VariableSet AllWriteSet_;
 	VariableSet FullWriteSet_;
+};
+
+class EntryDemandSet final : public DemandSet {
+public:
+  ~EntryDemandSet() noexcept override;
+
+  EntryDemandSet(
+    VariableSet readSet,
+    VariableSet allWriteSet,
+    VariableSet fullWriteSet)
+  : DemandSet(
+    std::move(readSet),
+    std::move(allWriteSet),
+    std::move(fullWriteSet))
+  {}
+
+  EntryDemandSet(
+    VariableSet readSet,
+    VariableSet allWriteSet,
+    VariableSet fullWriteSet,
+    VariableSet topSet,
+    VariableSet bottomSet)
+  : DemandSet(
+    std::move(readSet),
+    std::move(allWriteSet),
+    std::move(fullWriteSet))
+  , TopSet_(std::move(topSet))
+  , BottomSet_(std::move(bottomSet))
+  {}
+
+  static std::unique_ptr<EntryDemandSet>
+  Create(
+    VariableSet readSet,
+    VariableSet allWriteSet,
+    VariableSet fullWriteSet)
+  {
+    return std::make_unique<EntryDemandSet>(
+      std::move(readSet),
+      std::move(allWriteSet),
+      std::move(fullWriteSet));
+  }
+
+  std::string
+  DebugString() const noexcept override;
+
+  bool
+  operator==(const DemandSet & other) override;
+
+  VariableSet TopSet_;
+  VariableSet BottomSet_;
+};
+
+class ExitDemandSet final : public DemandSet {
+public:
+  ~ExitDemandSet() noexcept override;
+
+  ExitDemandSet(
+    VariableSet readSet,
+    VariableSet allWriteSet,
+    VariableSet fullWriteSet)
+    : DemandSet(
+    std::move(readSet),
+    std::move(allWriteSet),
+    std::move(fullWriteSet))
+  {}
+
+  ExitDemandSet(
+    VariableSet readSet,
+    VariableSet allWriteSet,
+    VariableSet fullWriteSet,
+    VariableSet topSet,
+    VariableSet bottomSet)
+  : DemandSet(
+    std::move(readSet),
+    std::move(allWriteSet),
+    std::move(fullWriteSet))
+  , TopSet_(std::move(topSet))
+  , BottomSet_(std::move(bottomSet))
+  {}
+
+  static std::unique_ptr<ExitDemandSet>
+  Create(
+    VariableSet readSet,
+    VariableSet allWriteSet,
+    VariableSet fullWriteSet)
+  {
+    return std::make_unique<ExitDemandSet>(
+      std::move(readSet),
+      std::move(allWriteSet),
+      std::move(fullWriteSet));
+  }
+
+  std::string
+  DebugString() const noexcept override;
+
+  bool
+  operator==(const DemandSet & other) override;
+
+  VariableSet TopSet_;
+  VariableSet BottomSet_;
+};
+
+class BasicBlockDemandSet final : public DemandSet {
+public:
+  ~BasicBlockDemandSet() noexcept override;
+
+  BasicBlockDemandSet(
+    VariableSet readSet,
+    VariableSet allWriteSet,
+    VariableSet fullWriteSet)
+    : DemandSet(
+    std::move(readSet),
+    std::move(allWriteSet),
+    std::move(fullWriteSet))
+  {}
+
+  BasicBlockDemandSet(
+    VariableSet readSet,
+    VariableSet allWriteSet,
+    VariableSet fullWriteSet,
+    VariableSet topSet,
+    VariableSet bottomSet)
+  : DemandSet(
+    std::move(readSet),
+    std::move(allWriteSet),
+    std::move(fullWriteSet))
+  , TopSet_(std::move(topSet))
+  , BottomSet_(std::move(bottomSet))
+  {}
+
+  static std::unique_ptr<BasicBlockDemandSet>
+  Create(
+    VariableSet readSet,
+    VariableSet allWriteSet,
+    VariableSet fullWriteSet)
+  {
+    return std::make_unique<BasicBlockDemandSet>(
+      std::move(readSet),
+      std::move(allWriteSet),
+      std::move(fullWriteSet));
+  }
+
+  std::string
+  DebugString() const noexcept override;
+
+  bool
+  operator==(const DemandSet & other) override;
+
+  VariableSet TopSet_;
+  VariableSet BottomSet_;
+};
+
+class LinearDemandSet final : public DemandSet {
+public:
+  ~LinearDemandSet() noexcept override;
+
+  LinearDemandSet(
+    VariableSet readSet,
+    VariableSet allWriteSet,
+    VariableSet fullWriteSet)
+    : DemandSet(
+    std::move(readSet),
+    std::move(allWriteSet),
+    std::move(fullWriteSet))
+  {}
+
+  LinearDemandSet(
+    VariableSet readSet,
+    VariableSet allWriteSet,
+    VariableSet fullWriteSet,
+    VariableSet topSet,
+    VariableSet bottomSet)
+  : DemandSet(
+    std::move(readSet),
+    std::move(allWriteSet),
+    std::move(fullWriteSet))
+  , TopSet_(std::move(topSet))
+  , BottomSet_(std::move(bottomSet))
+  {}
+
+  static std::unique_ptr<LinearDemandSet>
+  Create(
+    VariableSet readSet,
+    VariableSet allWriteSet,
+    VariableSet fullWriteSet)
+  {
+    return std::make_unique<LinearDemandSet>(
+      std::move(readSet),
+      std::move(allWriteSet),
+      std::move(fullWriteSet));
+  }
+
+  std::string
+  DebugString() const noexcept override;
+
+  bool
+  operator==(const DemandSet & other) override;
+
+  VariableSet TopSet_;
+  VariableSet BottomSet_;
+};
+
+class BranchDemandSet final : public DemandSet {
+public:
+  ~BranchDemandSet() noexcept override;
+
+  BranchDemandSet(
+    VariableSet readSet,
+    VariableSet allWriteSet,
+    VariableSet fullWriteSet)
+    : DemandSet(
+    std::move(readSet),
+    std::move(allWriteSet),
+    std::move(fullWriteSet))
+  {}
+
+  BranchDemandSet(
+    VariableSet readSet,
+    VariableSet allWriteSet,
+    VariableSet fullWriteSet,
+    VariableSet topSet,
+    VariableSet bottomSet)
+  : DemandSet(
+    std::move(readSet),
+    std::move(allWriteSet),
+    std::move(fullWriteSet))
+  , TopSet_(std::move(topSet))
+  , BottomSet_(std::move(bottomSet))
+  {}
+
+  static std::unique_ptr<BranchDemandSet>
+  Create(
+    VariableSet readSet,
+    VariableSet allWriteSet,
+    VariableSet fullWriteSet)
+  {
+    return std::make_unique<BranchDemandSet>(
+      std::move(readSet),
+      std::move(allWriteSet),
+      std::move(fullWriteSet));
+  }
+
+  std::string
+  DebugString() const noexcept override;
+
+  bool
+  operator==(const DemandSet & other) override;
+
+  VariableSet TopSet_;
+  VariableSet BottomSet_;
+};
+
+class LoopDemandSet final : public DemandSet {
+public:
+  ~LoopDemandSet() noexcept override;
+
+  LoopDemandSet(
+    VariableSet readSet,
+    VariableSet allWriteSet,
+    VariableSet fullWriteSet)
+    : DemandSet(
+    std::move(readSet),
+    std::move(allWriteSet),
+    std::move(fullWriteSet))
+  {}
+
+  LoopDemandSet(
+    VariableSet readSet,
+    VariableSet allWriteSet,
+    VariableSet fullWriteSet,
+    VariableSet topSet,
+    VariableSet bottomSet)
+  : DemandSet(
+    std::move(readSet),
+    std::move(allWriteSet),
+    std::move(fullWriteSet))
+  , TopSet_(std::move(topSet))
+  , BottomSet_(std::move(bottomSet))
+  {}
+
+  static std::unique_ptr<LoopDemandSet>
+  Create(
+    VariableSet readSet,
+    VariableSet allWriteSet,
+    VariableSet fullWriteSet)
+  {
+    return std::make_unique<LoopDemandSet>(
+      std::move(readSet),
+      std::move(allWriteSet),
+      std::move(fullWriteSet));
+  }
+
+  std::string
+  DebugString() const noexcept override;
+
+  bool
+  operator==(const DemandSet & other) override;
+
+  VariableSet TopSet_;
+  VariableSet BottomSet_;
 };
 
 class DemandMap final {
@@ -297,11 +573,13 @@ public:
     return Map_.find(&aggregationNode) != Map_.end();
   }
 
-  DemandSet&
+  template <class T> T&
   Lookup(const aggnode & aggregationNode) const noexcept
   {
     JLM_ASSERT(Contains(aggregationNode));
-    return *Map_.find(&aggregationNode)->second;
+    auto & demandSet = *Map_.find(&aggregationNode)->second;
+    JLM_ASSERT(dynamic_cast<const T*>(&demandSet));
+    return *static_cast<T*>(&demandSet);
   }
 
   void

@@ -742,7 +742,7 @@ Convert(
   lambda::node & lambdaNode,
   RegionalizedVariableMap & regionalizedVariableMap)
 {
-	auto & demandSet = demandMap.Lookup(entryAggregationNode);
+	auto & demandSet = demandMap.Lookup<EntryDemandSet>(entryAggregationNode);
 
   regionalizedVariableMap.PushRegion(*lambdaNode.subregion());
 
@@ -764,7 +764,7 @@ Convert(
 	/*
 	 * Add dependencies and undefined values
 	 */
-	for (auto & v : demandSet.top.Variables()) {
+	for (auto & v : demandSet.TopSet_.Variables()) {
 		if (outerVariableMap.contains(&v)) {
 			topVariableMap.insert(&v, lambdaNode.add_ctxvar(outerVariableMap.lookup(&v)));
 		} else {
@@ -839,9 +839,9 @@ Convert(
 	/*
 	 * Add gamma inputs.
 	 */
-	auto & demandSet = demandMap.Lookup(branchAggregationNode);
+	auto & demandSet = demandMap.Lookup<BranchDemandSet>(branchAggregationNode);
 	std::unordered_map<const variable*, jive::gamma_input*> gammaInputMap;
-	for (auto & v : demandSet.top.Variables())
+	for (auto & v : demandSet.TopSet_.Variables())
     gammaInputMap[&v] = gamma->add_entryvar(regionalizedVariableMap.GetTopVariableMap().lookup(&v));
 
 	/*
@@ -856,7 +856,7 @@ Convert(
 
     ConvertAggregationNode(*branchAggregationNode.child(n), demandMap, lambdaNode, regionalizedVariableMap);
 
-		for (auto & v : demandSet.bottom.Variables())
+		for (auto & v : demandSet.BottomSet_.Variables())
 			xvmap[&v].push_back(regionalizedVariableMap.GetTopVariableMap().lookup(&v));
     regionalizedVariableMap.PopRegion();
 	}
@@ -864,7 +864,7 @@ Convert(
 	/*
 	 * Add gamma outputs.
 	 */
-	for (auto & v : demandSet.bottom.Variables()) {
+	for (auto & v : demandSet.BottomSet_.Variables()) {
 		JLM_ASSERT(xvmap.find(&v) != xvmap.end());
     regionalizedVariableMap.GetTopVariableMap().insert(&v, gamma->add_exitvar(xvmap[&v]));
 	}
@@ -888,10 +888,10 @@ Convert(
 	/*
 	 * Add loop variables
 	 */
-	auto & demandSet = demandMap.Lookup(loopAggregationNode);
-	JLM_ASSERT(demandSet.top == demandSet.bottom);
+	auto & demandSet = demandMap.Lookup<LoopDemandSet>(loopAggregationNode);
+	JLM_ASSERT(demandSet.TopSet_ == demandSet.BottomSet_);
 	std::unordered_map<const variable*, jive::theta_output*> thetaOutputMap;
-	for (auto & v : demandSet.top.Variables()) {
+	for (auto & v : demandSet.TopSet_.Variables()) {
 		jive::output * value = nullptr;
 		if (!outerVariableMap.contains(&v)) {
 			value = create_undef_value(parentRegion, v.type());
@@ -913,7 +913,7 @@ Convert(
 	/*
 	 * Update loop variables
 	 */
-	for (auto & v : demandSet.top.Variables()) {
+	for (auto & v : demandSet.TopSet_.Variables()) {
 		JLM_ASSERT(thetaOutputMap.find(&v) != thetaOutputMap.end());
 		thetaOutputMap[&v]->result()->divert_to(thetaVariableMap.lookup(&v));
 	}
@@ -934,7 +934,7 @@ Convert(
 	 */
 	theta->set_predicate(thetaVariableMap.lookup(predicate));
   regionalizedVariableMap.PopRegion();
-	for (auto & v : demandSet.bottom.Variables()) {
+	for (auto & v : demandSet.BottomSet_.Variables()) {
 		JLM_ASSERT(outerVariableMap.contains(&v));
 		outerVariableMap.insert(&v, thetaOutputMap[&v]);
 	}
