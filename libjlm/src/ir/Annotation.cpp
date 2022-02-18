@@ -80,9 +80,7 @@ BasicBlockDemandSet::DebugString() const noexcept
 {
   return strfmt("ReadSet:", ReadSet().DebugString(), " ",
                 "AllWriteSet:", AllWriteSet().DebugString(), " ",
-                "FullWriteSet:", FullWriteSet().DebugString(), " ",
-                "TopSet:", TopSet_.DebugString(), " ",
-                "BottomSet:", BottomSet_.DebugString(), " ");
+                "FullWriteSet:", FullWriteSet().DebugString(), " ");
 }
 
 bool
@@ -90,9 +88,7 @@ BasicBlockDemandSet::operator==(const DemandSet & other)
 {
   auto otherBasicBlockDemandSet = dynamic_cast<const BasicBlockDemandSet*>(&other);
   return otherBasicBlockDemandSet
-         && DemandSet::operator==(other)
-         && TopSet_ == otherBasicBlockDemandSet->TopSet_
-         && BottomSet_ == otherBasicBlockDemandSet->BottomSet_;
+         && DemandSet::operator==(other);
 }
 
 LinearDemandSet::~LinearDemandSet() noexcept
@@ -380,12 +376,8 @@ AnnotateDemandSet(
   DemandMap & demandMap)
 {
 	auto & demandSet = demandMap.Lookup<BasicBlockDemandSet>(basicBlockAggregationNode);
-  demandSet.BottomSet_ = workingSet;
-
 	workingSet.Remove(demandSet.FullWriteSet());
 	workingSet.Insert(demandSet.ReadSet());
-
-  demandSet.TopSet_ = workingSet;
 }
 
 static void
