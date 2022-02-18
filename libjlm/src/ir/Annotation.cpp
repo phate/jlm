@@ -63,9 +63,7 @@ ExitDemandSet::DebugString() const noexcept
 {
   return strfmt("ReadSet:", ReadSet().DebugString(), " ",
                 "AllWriteSet:", AllWriteSet().DebugString(), " ",
-                "FullWriteSet:", FullWriteSet().DebugString(), " ",
-                "TopSet:", TopSet_.DebugString(), " ",
-                "BottomSet:", BottomSet_.DebugString(), " ");
+                "FullWriteSet:", FullWriteSet().DebugString(), " ");
 }
 
 bool
@@ -73,9 +71,7 @@ ExitDemandSet::operator==(const DemandSet & other)
 {
   auto otherExitDemandSet = dynamic_cast<const ExitDemandSet*>(&other);
   return otherExitDemandSet
-         && DemandSet::operator==(other)
-         && TopSet_ == otherExitDemandSet->TopSet_
-         && BottomSet_ == otherExitDemandSet->BottomSet_;
+         && DemandSet::operator==(other);
 }
 
 BasicBlockDemandSet::~BasicBlockDemandSet() noexcept
@@ -377,11 +373,7 @@ AnnotateDemandSet(
   DemandMap & demandMap)
 {
 	auto & demandSet = demandMap.Lookup<ExitDemandSet>(exitAggregationNode);
-  demandSet.BottomSet_ = workingSet;
-
   workingSet.Insert(demandSet.ReadSet());
-
-  demandSet.TopSet_ = workingSet;
 }
 
 static void
