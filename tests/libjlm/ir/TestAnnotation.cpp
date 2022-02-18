@@ -111,7 +111,7 @@ TestLinearSubgraphAnnotation()
     assert(demandMap->Lookup<LinearDemandSet>(*linearNode1) == LinearDemandSet({}, {v1, &argument}, {v1, &argument}, {}, {v1}));
     {
       auto entryNode = linearNode1->child(0);
-      assert(demandMap->Lookup<EntryDemandSet>(*entryNode) == EntryDemandSet({}, {&argument}, {&argument}, {}, {&argument}));
+      assert(demandMap->Lookup<EntryDemandSet>(*entryNode) == EntryDemandSet({}, {&argument}, {&argument}, {}));
 
       auto basicBlockNode1 = linearNode1->child(1);
       assert(demandMap->Lookup<BasicBlockDemandSet>(*basicBlockNode1) == BasicBlockDemandSet({&argument}, {v1}, {v1}, {&argument}, {v1}));
