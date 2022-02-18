@@ -404,24 +404,20 @@ AnnotateDemandSet(
 {
 	auto & demandSet = demandMap.Lookup<BranchDemandSet>(branchAggregationNode);
 
-	VariableSet passby = workingSet;
-	passby.Remove(demandSet.AllWriteSet());
-
-	VariableSet bottom = workingSet;
-	bottom.Intersect(demandSet.AllWriteSet());
-  demandSet.BottomSet_ = bottom;
+	VariableSet branchWorkingSet = workingSet;
+	branchWorkingSet.Intersect(demandSet.AllWriteSet());
+  demandSet.BottomSet_ = branchWorkingSet;
 
 	for (size_t n = 0; n < branchAggregationNode.nchildren(); n++) {
-		auto tmp = bottom;
-    AnnotateDemandSet(*branchAggregationNode.child(n), tmp, demandMap);
+		auto caseWorkingSet = branchWorkingSet;
+    AnnotateDemandSet(*branchAggregationNode.child(n), caseWorkingSet, demandMap);
 	}
 
+  branchWorkingSet.Remove(demandSet.FullWriteSet());
+  branchWorkingSet.Insert(demandSet.ReadSet());
+  demandSet.TopSet_ = branchWorkingSet;
 
-	workingSet.Remove(demandSet.FullWriteSet());
-	workingSet.Insert(demandSet.ReadSet());
-  demandSet.TopSet_ = workingSet;
-
-	workingSet.Insert(passby);
+  workingSet.Insert(branchWorkingSet);
 }
 
 static void
