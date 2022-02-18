@@ -483,14 +483,12 @@ public:
     VariableSet readSet,
     VariableSet allWriteSet,
     VariableSet fullWriteSet,
-    VariableSet topSet,
-    VariableSet bottomSet)
+    VariableSet loopVariables)
   : DemandSet(
     std::move(readSet),
     std::move(allWriteSet),
     std::move(fullWriteSet))
-  , TopSet_(std::move(topSet))
-  , BottomSet_(std::move(bottomSet))
+  , LoopVariables_(std::move(loopVariables))
   {}
 
   static std::unique_ptr<LoopDemandSet>
@@ -511,8 +509,20 @@ public:
   bool
   operator==(const DemandSet & other) override;
 
-  VariableSet TopSet_;
-  VariableSet BottomSet_;
+  const VariableSet &
+  LoopVariables() const noexcept
+  {
+    return LoopVariables_;
+  }
+
+  void
+  SetLoopVariables(VariableSet loopVariables) noexcept
+  {
+    LoopVariables_ = std::move(loopVariables);
+  }
+
+private:
+  VariableSet LoopVariables_;
 };
 
 class DemandMap final {

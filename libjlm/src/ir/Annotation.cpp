@@ -146,8 +146,7 @@ LoopDemandSet::DebugString() const noexcept
   return strfmt("ReadSet:", ReadSet().DebugString(), " ",
                 "AllWriteSet:", AllWriteSet().DebugString(), " ",
                 "FullWriteSet:", FullWriteSet().DebugString(), " ",
-                "TopSet:", TopSet_.DebugString(), " ",
-                "BottomSet:", BottomSet_.DebugString(), " ");
+                "LoopVariables:", LoopVariables_.DebugString(), " ");
 }
 
 bool
@@ -156,8 +155,7 @@ LoopDemandSet::operator==(const DemandSet & other)
   auto otherLoopDemandSet = dynamic_cast<const LoopDemandSet*>(&other);
   return otherLoopDemandSet
          && DemandSet::operator==(other)
-         && TopSet_ == otherLoopDemandSet->TopSet_
-         && BottomSet_ == otherLoopDemandSet->BottomSet_;
+         && LoopVariables_ == otherLoopDemandSet->LoopVariables_;
 }
 
 static void
@@ -435,7 +433,7 @@ AnnotateDemandSet(
 	auto & demandSet = demandMap.Lookup<LoopDemandSet>(loopAggregationNode);
 
 	workingSet.Insert(demandSet.ReadSet());
-  demandSet.BottomSet_ = demandSet.TopSet_ = workingSet;
+  demandSet.SetLoopVariables(workingSet);
   AnnotateDemandSet(*loopAggregationNode.child(0), workingSet, demandMap);
 
 	for (auto & v : demandSet.ReadSet().Variables())
