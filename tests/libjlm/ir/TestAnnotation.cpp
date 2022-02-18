@@ -252,7 +252,7 @@ TestLoopAnnotation()
   assert(demandMap->Lookup<LinearDemandSet>(*aggregationTreeRoot) == LinearDemandSet({v1, v4}, {v2, v3}, {v2, v3}, {v1, v4}, {}));
   {
     auto loopNode = aggregationTreeRoot->child(0);
-    assert(demandMap->Lookup<LoopDemandSet>(*loopNode) == LoopDemandSet({v1}, {v2, v3}, {v2, v3}, {v1, v3, v4}));
+    assert(demandMap->Lookup<LoopDemandSet>(*loopNode) == LoopDemandSet({v1}, {v2, v3}, {v2, v3}, {v1, v3}));
     {
       auto basicBlockNode = loopNode->child(0);
       assert(demandMap->Lookup<BasicBlockDemandSet>(*basicBlockNode) == BasicBlockDemandSet({v1}, {v2, v3}, {v2, v3}));
@@ -324,7 +324,7 @@ TestBranchInLoopAnnotation()
     assert(demandMap->Lookup<LoopDemandSet>(*loopNode) == LoopDemandSet({v1, v4}, {v2, v3, v4}, {v3}, {v1, v2, v3, v4}));
     {
       auto branchNode = loopNode->child(0);
-      assert(demandMap->Lookup<BranchDemandSet>(*branchNode) == BranchDemandSet({v1, v4}, {v2, v3, v4}, {v3}, {v1, v2, v4}, {v2, v3, v4}));
+      assert(demandMap->Lookup<BranchDemandSet>(*branchNode) == BranchDemandSet({v1, v4}, {v2, v3, v4}, {v3}, {v1, v2, v4}, {v2, v3}));
       {
         auto basicBlockNode1 = branchNode->child(0);
         assert(demandMap->Lookup<BasicBlockDemandSet>(*basicBlockNode1) == BasicBlockDemandSet({v1}, {v2, v3, v4}, {v2, v3, v4}));

@@ -432,16 +432,22 @@ AnnotateDemandSet(
 {
 	auto & demandSet = demandMap.Lookup<LoopDemandSet>(loopAggregationNode);
 
-	workingSet.Insert(demandSet.ReadSet());
-  demandSet.SetLoopVariables(workingSet);
-  AnnotateDemandSet(*loopAggregationNode.child(0), workingSet, demandMap);
+  VariableSet loopVariables(demandSet.AllWriteSet());
+  loopVariables.Intersect(workingSet);
+  loopVariables.Insert(demandSet.ReadSet());
+  demandSet.SetLoopVariables(std::move(loopVariables));
 
-	for (auto & v : demandSet.ReadSet().Variables())
-		JLM_ASSERT(workingSet.Contains(v));
+  VariableSet passBySet(workingSet);
+  passBySet.Subtract(demandSet.AllWriteSet());
+  passBySet.Subtract(demandSet.ReadSet());
 
-	for (auto & v : demandSet.FullWriteSet().Variables())
-		if (!demandSet.ReadSet().Contains(v))
-			JLM_ASSERT(!workingSet.Contains(v));
+  VariableSet bodyWorkingSet(workingSet);
+  bodyWorkingSet.Subtract(passBySet);
+
+  AnnotateDemandSet(*loopAggregationNode.child(0), bodyWorkingSet, demandMap);
+
+  workingSet.Subtract(demandSet.FullWriteSet());
+  workingSet.Insert(demandSet.ReadSet());
 }
 
 template<class T> static void
