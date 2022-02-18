@@ -346,20 +346,6 @@ public:
     std::move(fullWriteSet))
   {}
 
-  BasicBlockDemandSet(
-    VariableSet readSet,
-    VariableSet allWriteSet,
-    VariableSet fullWriteSet,
-    VariableSet topSet,
-    VariableSet bottomSet)
-  : DemandSet(
-    std::move(readSet),
-    std::move(allWriteSet),
-    std::move(fullWriteSet))
-  , TopSet_(std::move(topSet))
-  , BottomSet_(std::move(bottomSet))
-  {}
-
   static std::unique_ptr<BasicBlockDemandSet>
   Create(
     VariableSet readSet,
@@ -377,9 +363,6 @@ public:
 
   bool
   operator==(const DemandSet & other) override;
-
-  VariableSet TopSet_;
-  VariableSet BottomSet_;
 };
 
 class LinearDemandSet final : public DemandSet {
