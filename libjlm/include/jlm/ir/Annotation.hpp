@@ -155,13 +155,6 @@ public:
 		Set_ = intersect;
 	}
 
-	void
-	Subtract(const VariableSet & variableSet)
-	{
-		for (auto & v : variableSet.Variables())
-			Remove(v);
-	}
-
 	bool
 	operator==(const VariableSet & other) const
 	{
