@@ -146,13 +146,12 @@ public:
 	void
 	Intersect(const VariableSet & variableSet)
 	{
-		std::unordered_set<const variable*> intersect;
-		for (auto & v : variableSet.Variables()) {
-			if (Contains(v))
-				intersect.insert(&v);
-		}
-
-		Set_ = intersect;
+    for (auto it = Set_.begin(); it != Set_.end();) {
+      if (!variableSet.Contains(**it))
+        it = Set_.erase(it);
+      else
+        it++;
+    }
 	}
 
 	bool
