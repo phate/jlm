@@ -13,8 +13,162 @@
 
 namespace jlm {
 
-DemandSet::~DemandSet()
+std::string VariableSet::DebugString() const noexcept
+{
+  std::string debugString("{");
+
+  bool isFirst = true;
+  for (auto & variable : Variables()) {
+    debugString += isFirst ? "" : ", ";
+    debugString += variable.name();
+    isFirst = false;
+  }
+
+  debugString += "}";
+
+  return debugString;
+}
+
+DemandSet::~DemandSet() noexcept
 = default;
+
+EntryDemandSet::~EntryDemandSet() noexcept
+= default;
+
+std::string
+EntryDemandSet::DebugString() const noexcept
+{
+  return strfmt("ReadSet:", ReadSet().DebugString(), " ",
+                "AllWriteSet:", AllWriteSet().DebugString(), " ",
+                "FullWriteSet:", FullWriteSet().DebugString(), " ",
+                "TopSet:", TopSet_.DebugString(), " ",
+                "BottomSet:", BottomSet_.DebugString(), " ");
+}
+
+bool
+EntryDemandSet::operator==(const DemandSet & other)
+{
+  auto otherEntryDemandSet = dynamic_cast<const EntryDemandSet*>(&other);
+  return otherEntryDemandSet
+      && DemandSet::operator==(other)
+      && TopSet_ == otherEntryDemandSet->TopSet_
+      && BottomSet_ == otherEntryDemandSet->BottomSet_;
+}
+
+ExitDemandSet::~ExitDemandSet() noexcept
+= default;
+
+std::string
+ExitDemandSet::DebugString() const noexcept
+{
+  return strfmt("ReadSet:", ReadSet().DebugString(), " ",
+                "AllWriteSet:", AllWriteSet().DebugString(), " ",
+                "FullWriteSet:", FullWriteSet().DebugString(), " ",
+                "TopSet:", TopSet_.DebugString(), " ",
+                "BottomSet:", BottomSet_.DebugString(), " ");
+}
+
+bool
+ExitDemandSet::operator==(const DemandSet & other)
+{
+  auto otherExitDemandSet = dynamic_cast<const ExitDemandSet*>(&other);
+  return otherExitDemandSet
+         && DemandSet::operator==(other)
+         && TopSet_ == otherExitDemandSet->TopSet_
+         && BottomSet_ == otherExitDemandSet->BottomSet_;
+}
+
+BasicBlockDemandSet::~BasicBlockDemandSet() noexcept
+= default;
+
+std::string
+BasicBlockDemandSet::DebugString() const noexcept
+{
+  return strfmt("ReadSet:", ReadSet().DebugString(), " ",
+                "AllWriteSet:", AllWriteSet().DebugString(), " ",
+                "FullWriteSet:", FullWriteSet().DebugString(), " ",
+                "TopSet:", TopSet_.DebugString(), " ",
+                "BottomSet:", BottomSet_.DebugString(), " ");
+}
+
+bool
+BasicBlockDemandSet::operator==(const DemandSet & other)
+{
+  auto otherBasicBlockDemandSet = dynamic_cast<const BasicBlockDemandSet*>(&other);
+  return otherBasicBlockDemandSet
+         && DemandSet::operator==(other)
+         && TopSet_ == otherBasicBlockDemandSet->TopSet_
+         && BottomSet_ == otherBasicBlockDemandSet->BottomSet_;
+}
+
+LinearDemandSet::~LinearDemandSet() noexcept
+= default;
+
+std::string
+LinearDemandSet::DebugString() const noexcept
+{
+  return strfmt("ReadSet:", ReadSet().DebugString(), " ",
+                "AllWriteSet:", AllWriteSet().DebugString(), " ",
+                "FullWriteSet:", FullWriteSet().DebugString(), " ",
+                "TopSet:", TopSet_.DebugString(), " ",
+                "BottomSet:", BottomSet_.DebugString(), " ");
+}
+
+bool
+LinearDemandSet::operator==(const DemandSet & other)
+{
+  auto otherLinearDemandSet = dynamic_cast<const LinearDemandSet*>(&other);
+  return otherLinearDemandSet
+         && DemandSet::operator==(other)
+         && TopSet_ == otherLinearDemandSet->TopSet_
+         && BottomSet_ == otherLinearDemandSet->BottomSet_;
+}
+
+BranchDemandSet::~BranchDemandSet() noexcept
+= default;
+
+std::string
+BranchDemandSet::DebugString() const noexcept
+{
+  return strfmt("ReadSet:", ReadSet().DebugString(), " ",
+                "AllWriteSet:", AllWriteSet().DebugString(), " ",
+                "FullWriteSet:", FullWriteSet().DebugString(), " ",
+                "TopSet:", TopSet_.DebugString(), " ",
+                "BottomSet:", BottomSet_.DebugString(), " ");
+}
+
+bool
+BranchDemandSet::operator==(const DemandSet & other)
+{
+  auto otherBranchDemandSet = dynamic_cast<const BranchDemandSet*>(&other);
+  return otherBranchDemandSet
+         && DemandSet::operator==(other)
+         && TopSet_ == otherBranchDemandSet->TopSet_
+         && BottomSet_ == otherBranchDemandSet->BottomSet_;
+}
+
+LoopDemandSet::~LoopDemandSet() noexcept
+= default;
+
+std::string
+LoopDemandSet::DebugString() const noexcept
+{
+  return strfmt("ReadSet:", ReadSet().DebugString(), " ",
+                "AllWriteSet:", AllWriteSet().DebugString(), " ",
+                "FullWriteSet:", FullWriteSet().DebugString(), " ",
+                "TopSet:", TopSet_.DebugString(), " ",
+                "BottomSet:", BottomSet_.DebugString(), " ");
+}
+
+bool
+LoopDemandSet::operator==(const DemandSet & other)
+{
+  auto otherLoopDemandSet = dynamic_cast<const LoopDemandSet*>(&other);
+  return otherLoopDemandSet
+         && DemandSet::operator==(other)
+         && TopSet_ == otherLoopDemandSet->TopSet_
+         && BottomSet_ == otherLoopDemandSet->BottomSet_;
+}
 
 static void
 AnnotateReadWrite(
@@ -33,7 +187,7 @@ AnnotateReadWrite(
 		fullWriteSet.Insert(argument);
 	}
 
-  auto demandSet = DemandSet::Create(
+  auto demandSet = EntryDemandSet::Create(
     VariableSet(),
     std::move(allWriteSet),
     std::move(fullWriteSet));
@@ -49,7 +203,7 @@ AnnotateReadWrite(
 	for (auto & result : exitAggregationNode)
 		readSet.Insert(*result);
 
-  auto demandSet = DemandSet::Create(
+  auto demandSet = ExitDemandSet::Create(
     std::move(readSet),
     VariableSet(),
     VariableSet());
@@ -89,7 +243,7 @@ AnnotateReadWrite(
 		}
 	}
 
-  auto demandSet = DemandSet::Create(
+  auto demandSet = BasicBlockDemandSet::Create(
     std::move(readSet),
     std::move(allWriteSet),
     std::move(fullWriteSet));
@@ -105,7 +259,7 @@ AnnotateReadWrite(
   VariableSet allWriteSet;
   VariableSet fullWriteSet;
 	for (size_t n = linearAggregationNode.nchildren() - 1; n != static_cast<size_t>(-1); n--) {
-		auto & childDemandSet = demandMap.Lookup(*linearAggregationNode.child(n));
+		auto & childDemandSet = demandMap.Lookup<DemandSet>(*linearAggregationNode.child(n));
 
     readSet.Remove(childDemandSet.FullWriteSet());
     readSet.Insert(childDemandSet.ReadSet());
@@ -113,7 +267,7 @@ AnnotateReadWrite(
     fullWriteSet.Insert(childDemandSet.FullWriteSet());
 	}
 
-  auto demandSet = DemandSet::Create(
+  auto demandSet = LinearDemandSet::Create(
     std::move(readSet),
     std::move(allWriteSet),
     std::move(fullWriteSet));
@@ -125,7 +279,7 @@ AnnotateReadWrite(
   const branchaggnode & branchAggregationNode,
   DemandMap & demandMap)
 {
-  auto & case0DemandSet = demandMap.Lookup(*branchAggregationNode.child(0));
+  auto & case0DemandSet = demandMap.Lookup<DemandSet>(*branchAggregationNode.child(0));
   auto & case0ReadSet = case0DemandSet.ReadSet();
   auto & case0AllWriteSet = case0DemandSet.AllWriteSet();
   auto & case0FullWriteSet = case0DemandSet.FullWriteSet();
@@ -134,14 +288,14 @@ AnnotateReadWrite(
   VariableSet branchAllWriteSet(case0AllWriteSet);
   VariableSet branchFullWriteSet(case0FullWriteSet);
 	for (size_t n = 1; n < branchAggregationNode.nchildren(); n++) {
-		auto & caseDemandSet = demandMap.Lookup(*branchAggregationNode.child(n));
+		auto & caseDemandSet = demandMap.Lookup<DemandSet>(*branchAggregationNode.child(n));
 
 		branchAllWriteSet.Insert(caseDemandSet.AllWriteSet());
 		branchFullWriteSet.Intersect(caseDemandSet.FullWriteSet());
 		branchReadSet.Insert(caseDemandSet.ReadSet());
 	}
 
-  auto branchDemandSet = DemandSet::Create(
+  auto branchDemandSet = BranchDemandSet::Create(
     std::move(branchReadSet),
     std::move(branchAllWriteSet),
     std::move(branchFullWriteSet));
@@ -154,15 +308,12 @@ AnnotateReadWrite(
   DemandMap & demandMap)
 {
   auto & loopBody = *loopAggregationNode.child(0);
+  auto & bodyDemandSet = demandMap.Lookup<DemandSet>(loopBody);
 
-  auto & readSet = demandMap.Lookup(loopBody).ReadSet();
-  auto & allWriteSet = demandMap.Lookup(loopBody).AllWriteSet();
-  auto & fullWriteSet = demandMap.Lookup(loopBody).FullWriteSet();
-
-	auto demandSet = DemandSet::Create(
-    VariableSet(readSet),
-    VariableSet(allWriteSet),
-    VariableSet(fullWriteSet));
+	auto demandSet = LoopDemandSet::Create(
+    bodyDemandSet.ReadSet(),
+    bodyDemandSet.AllWriteSet(),
+    bodyDemandSet.FullWriteSet());
   demandMap.Insert(loopAggregationNode, std::move(demandSet));
 }
 
@@ -211,12 +362,12 @@ AnnotateDemandSet(
   VariableSet & workingSet,
   DemandMap & demandMap)
 {
-	auto & demandSet = demandMap.Lookup(entryAggregationNode);
-  demandSet.bottom = workingSet;
+	auto & demandSet = demandMap.Lookup<EntryDemandSet>(entryAggregationNode);
+  demandSet.BottomSet_ = workingSet;
 
 	workingSet.Remove(demandSet.FullWriteSet());
 
-  demandSet.top = workingSet;
+  demandSet.TopSet_ = workingSet;
 }
 
 static void
@@ -225,12 +376,12 @@ AnnotateDemandSet(
   VariableSet & workingSet,
   DemandMap & demandMap)
 {
-	auto & demandSet = demandMap.Lookup(exitAggregationNode);
-  demandSet.bottom = workingSet;
+	auto & demandSet = demandMap.Lookup<ExitDemandSet>(exitAggregationNode);
+  demandSet.BottomSet_ = workingSet;
 
   workingSet.Insert(demandSet.ReadSet());
 
-  demandSet.top = workingSet;
+  demandSet.TopSet_ = workingSet;
 }
 
 static void
@@ -239,13 +390,13 @@ AnnotateDemandSet(
   VariableSet & workingSet,
   DemandMap & demandMap)
 {
-	auto & demandSet = demandMap.Lookup(basicBlockAggregationNode);
-  demandSet.bottom = workingSet;
+	auto & demandSet = demandMap.Lookup<BasicBlockDemandSet>(basicBlockAggregationNode);
+  demandSet.BottomSet_ = workingSet;
 
 	workingSet.Remove(demandSet.FullWriteSet());
 	workingSet.Insert(demandSet.ReadSet());
 
-  demandSet.top = workingSet;
+  demandSet.TopSet_ = workingSet;
 }
 
 static void
@@ -254,8 +405,8 @@ AnnotateDemandSet(
   VariableSet & workingSet,
   DemandMap & demandMap)
 {
-	auto & demandSet = demandMap.Lookup(linearAggregationNode);
-  demandSet.bottom = workingSet;
+	auto & demandSet = demandMap.Lookup<LinearDemandSet>(linearAggregationNode);
+  demandSet.BottomSet_ = workingSet;
 
 	for (size_t n = linearAggregationNode.nchildren() - 1; n != static_cast<size_t>(-1); n--)
     AnnotateDemandSet(*linearAggregationNode.child(n), workingSet, demandMap);
@@ -263,7 +414,7 @@ AnnotateDemandSet(
 	workingSet.Remove(demandSet.FullWriteSet());
 	workingSet.Insert(demandSet.ReadSet());
 
-  demandSet.top = workingSet;
+  demandSet.TopSet_ = workingSet;
 }
 
 static void
@@ -272,14 +423,14 @@ AnnotateDemandSet(
   VariableSet & workingSet,
   DemandMap & demandMap)
 {
-	auto & demandSet = demandMap.Lookup(branchAggregationNode);
+	auto & demandSet = demandMap.Lookup<BranchDemandSet>(branchAggregationNode);
 
 	VariableSet passby = workingSet;
 	passby.Subtract(demandSet.AllWriteSet());
 
 	VariableSet bottom = workingSet;
 	bottom.Intersect(demandSet.AllWriteSet());
-  demandSet.bottom = bottom;
+  demandSet.BottomSet_ = bottom;
 
 	for (size_t n = 0; n < branchAggregationNode.nchildren(); n++) {
 		auto tmp = bottom;
@@ -289,7 +440,7 @@ AnnotateDemandSet(
 
 	workingSet.Remove(demandSet.FullWriteSet());
 	workingSet.Insert(demandSet.ReadSet());
-  demandSet.top = workingSet;
+  demandSet.TopSet_ = workingSet;
 
 	workingSet.Insert(passby);
 }
@@ -300,10 +451,10 @@ AnnotateDemandSet(
   VariableSet & workingSet,
   DemandMap & demandMap)
 {
-	auto & demandSet = demandMap.Lookup(loopAggregationNode);
+	auto & demandSet = demandMap.Lookup<LoopDemandSet>(loopAggregationNode);
 
 	workingSet.Insert(demandSet.ReadSet());
-  demandSet.bottom = demandSet.top = workingSet;
+  demandSet.BottomSet_ = demandSet.TopSet_ = workingSet;
   AnnotateDemandSet(*loopAggregationNode.child(0), workingSet, demandMap);
 
 	for (auto & v : demandSet.ReadSet().Variables())

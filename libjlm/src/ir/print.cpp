@@ -336,31 +336,6 @@ to_dot(const jlm::ipgraph & clg)
 
 /* aggregation node */
 
-static std::string
-emit_variableset(const VariableSet & ds)
-{
-	std::string s("{");
-  for (auto it = ds.Variables().begin(); it != ds.Variables().end(); it++) {
-		s += (*it).name();
-		if (std::next(it) != ds.Variables().end())
-			s += ", ";
-	}
-	s += "}";
-
-	return s;
-}
-
-static std::string
-emit_demandset(const DemandSet & ds)
-{
-	return emit_variableset(ds.bottom)
-	     + " -> " + emit_variableset(ds.top)
-	     + " [" + emit_variableset(ds.ReadSet())
-	     + "] [" + emit_variableset(ds.FullWriteSet())
-	     + "] [" + emit_variableset(ds.AllWriteSet())
-	     + "]";
-}
-
 std::string
 to_str(const aggnode & n, const DemandMap & dm)
 {
@@ -372,7 +347,7 @@ to_str(const aggnode & n, const DemandMap & dm)
     subtree += n.debug_string();
 
     if (dm.Contains(n))
-		  subtree += " " + emit_demandset(dm.Lookup(n)) + "\n";
+		  subtree += " " + dm.Lookup<DemandSet>(n).DebugString() + "\n";
 
     for (const auto & child : n)
       subtree += f(child, depth+1);
