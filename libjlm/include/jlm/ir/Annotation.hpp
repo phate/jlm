@@ -270,14 +270,12 @@ public:
     VariableSet readSet,
     VariableSet allWriteSet,
     VariableSet fullWriteSet,
-    VariableSet topSet,
-    VariableSet bottomSet)
+    VariableSet topSet)
   : DemandSet(
     std::move(readSet),
     std::move(allWriteSet),
     std::move(fullWriteSet))
   , TopSet_(std::move(topSet))
-  , BottomSet_(std::move(bottomSet))
   {}
 
   static std::unique_ptr<EntryDemandSet>
@@ -299,7 +297,6 @@ public:
   operator==(const DemandSet & other) override;
 
   VariableSet TopSet_;
-  VariableSet BottomSet_;
 };
 
 class ExitDemandSet final : public DemandSet {
