@@ -124,7 +124,7 @@ TestLinearSubgraphAnnotation()
       assert(demandMap->Lookup<BasicBlockDemandSet>(*basicBlockNode2) == BasicBlockDemandSet({v1}, {v2}, {v2}, {v1}, {v2}));
 
       auto exitNode = linearNode2->child(1);
-      assert(demandMap->Lookup<ExitDemandSet>(*exitNode) == ExitDemandSet({v2}, {}, {}, {v2}, {}));
+      assert(demandMap->Lookup<ExitDemandSet>(*exitNode) == ExitDemandSet({v2}, {}, {}));
     }
   }
 }
@@ -259,7 +259,7 @@ TestLoopAnnotation()
     }
 
     auto exitNode = aggregationTreeRoot->child(1);
-    assert(demandMap->Lookup<ExitDemandSet>(*exitNode) == ExitDemandSet({v3, v4}, {}, {}, {v3, v4}, {}));
+    assert(demandMap->Lookup<ExitDemandSet>(*exitNode) == ExitDemandSet({v3, v4}, {}, {}));
   }
 }
 
@@ -335,7 +335,7 @@ TestBranchInLoopAnnotation()
     }
 
     auto exitNode = aggregationTreeRoot->child(1);
-    assert(demandMap->Lookup<ExitDemandSet>(*exitNode) == ExitDemandSet({v2, v3}, {}, {}, {v2, v3}, {}));
+    assert(demandMap->Lookup<ExitDemandSet>(*exitNode) == ExitDemandSet({v2, v3}, {}, {}));
   }
 }
 
@@ -454,7 +454,7 @@ TestBranchPassByAnnotation()
     assert(demandMap->Lookup<BasicBlockDemandSet>(*joinNode) == BasicBlockDemandSet({}, {}, {}, {v1, v2, v3}, {v1, v2, v3}));
 
     auto exitNode = aggregationTreeRoot->child(3);
-    assert(demandMap->Lookup<ExitDemandSet>(*exitNode) == ExitDemandSet({v1, v2, v3}, {}, {}, {v1, v2, v3}, {}));
+    assert(demandMap->Lookup<ExitDemandSet>(*exitNode) == ExitDemandSet({v1, v2, v3}, {}, {}));
 	}
 }
 
