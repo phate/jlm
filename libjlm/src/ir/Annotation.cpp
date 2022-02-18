@@ -405,7 +405,7 @@ AnnotateDemandSet(
 	auto & demandSet = demandMap.Lookup<BranchDemandSet>(branchAggregationNode);
 
 	VariableSet passby = workingSet;
-	passby.Subtract(demandSet.AllWriteSet());
+	passby.Remove(demandSet.AllWriteSet());
 
 	VariableSet bottom = workingSet;
 	bottom.Intersect(demandSet.AllWriteSet());
@@ -435,7 +435,7 @@ AnnotateDemandSet(
 	workingSet.Insert(demandSet.ReadSet());
   demandSet.SetLoopVariables(workingSet);
   AnnotateDemandSet(*loopAggregationNode.child(0), workingSet, demandMap);
-
+  
 	for (auto & v : demandSet.ReadSet().Variables())
 		JLM_ASSERT(workingSet.Contains(v));
 
