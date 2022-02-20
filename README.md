@@ -11,7 +11,6 @@ Regionalized Value State Dependence Graph (RVSDG) as intermediate representation
 ## Bootstrap
 ```
 export LLVMCONFIG=<path-to-llvm-config>
-make submodule
 make all
 ```
 Please ensure that `LLVMCONFIG` is set to the correct version of `llvm-config` as stated in
