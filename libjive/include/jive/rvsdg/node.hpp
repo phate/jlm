@@ -673,9 +673,8 @@ public:
 
 	/**
 		\brief Copy a node with substitutions
-		\param self Node to be copied
-		\param target Target region to create node in
-		\param substitution Operand substitutions
+		\param region Target region to create node in
+		\param smap Operand substitutions
 		\return Copied node
 
 		Create a new node that is semantically equivalent to an
