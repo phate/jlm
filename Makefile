@@ -14,6 +14,7 @@ help:
 	@echo "all                    Compile jlm in release mode, and run unit and C tests"
 	@echo "release                Alias for jlm-release"
 	@echo "debug                  Alias for jlm-debug and check"
+	@echo "docs                   Generate doxygen documentation."
 	@echo "clean                  Alias for jlm-clean"
 	@$(HELP_TEXT_JIVE)
 
@@ -36,6 +37,9 @@ release: jlm-release
 
 .PHONY: debug
 debug: jlm-debug check
+
+.PHONY: docs
+docs: jlm-docs-build
 
 %.la: %.cpp
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) -o $@ $<
