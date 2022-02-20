@@ -243,7 +243,7 @@ private:
 /**
 * Try to unroll the given theta.
 *
-* \param theta The theta to attempt the unrolling on.
+* \param node The theta to attempt the unrolling on.
 * \param factor The number of times to unroll the loop, e.g., if the factor is two then the loop 
 * body is duplicated in the unrolled loop.
 */

@@ -19,7 +19,7 @@ namespace lambda {
 
 /** \brief Lambda operation
 *
-* A lamba operation determines a lambda's name and \ref fcttype "function type".
+* A lamba operation determines a lambda's name and \ref FunctionType "function type".
 */
 class operation final : public jive::structural_op {
 public:

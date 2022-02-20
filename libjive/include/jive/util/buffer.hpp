@@ -16,8 +16,6 @@
 #include <stdint.h>
 #include <vector>
 
-/** \file jive/buffer.h */
-
 namespace jive {
 
 class buffer final {
