@@ -179,12 +179,12 @@ private:
 	std::unordered_set<const variable*> Set_;
 };
 
-class DemandSet {
+class AnnotationSet {
 public:
 	virtual
-	~DemandSet() noexcept;
+	~AnnotationSet() noexcept;
 
-	DemandSet(
+	AnnotationSet(
     VariableSet readSet,
     VariableSet allWriteSet,
     VariableSet fullWriteSet)
@@ -193,15 +193,15 @@ public:
     , FullWriteSet_(std::move(fullWriteSet))
   {}
 
-  DemandSet(const DemandSet&) = delete;
+  AnnotationSet(const AnnotationSet&) = delete;
 
-  DemandSet(DemandSet&&) noexcept = delete;
+  AnnotationSet(AnnotationSet&&) noexcept = delete;
 
-  DemandSet&
-  operator=(const DemandSet&) = delete;
+  AnnotationSet&
+  operator=(const AnnotationSet&) = delete;
 
-  DemandSet&
-  operator=(DemandSet&&) = delete;
+  AnnotationSet&
+  operator=(AnnotationSet&&) = delete;
 
   const VariableSet &
   ReadSet() const noexcept
@@ -222,7 +222,7 @@ public:
   }
 
   virtual bool
-  operator==(const DemandSet & other)
+  operator==(const AnnotationSet & other)
   {
     return ReadSet_ == other.ReadSet_
         && AllWriteSet_ == other.AllWriteSet_
@@ -230,7 +230,7 @@ public:
   }
 
   bool
-  operator!=(const DemandSet & other)
+  operator!=(const AnnotationSet & other)
   {
     return !(*this == other);
   }
@@ -244,39 +244,39 @@ private:
 	VariableSet FullWriteSet_;
 };
 
-class EntryDemandSet final : public DemandSet {
+class EntryAnnotationSet final : public AnnotationSet {
 public:
-  ~EntryDemandSet() noexcept override;
+  ~EntryAnnotationSet() noexcept override;
 
-  EntryDemandSet(
+  EntryAnnotationSet(
     VariableSet readSet,
     VariableSet allWriteSet,
     VariableSet fullWriteSet)
-  : DemandSet(
+  : AnnotationSet(
     std::move(readSet),
     std::move(allWriteSet),
     std::move(fullWriteSet))
   {}
 
-  EntryDemandSet(
+  EntryAnnotationSet(
     VariableSet readSet,
     VariableSet allWriteSet,
     VariableSet fullWriteSet,
     VariableSet topSet)
-  : DemandSet(
+  : AnnotationSet(
     std::move(readSet),
     std::move(allWriteSet),
     std::move(fullWriteSet))
   , TopSet_(std::move(topSet))
   {}
 
-  static std::unique_ptr<EntryDemandSet>
+  static std::unique_ptr<EntryAnnotationSet>
   Create(
     VariableSet readSet,
     VariableSet allWriteSet,
     VariableSet fullWriteSet)
   {
-    return std::make_unique<EntryDemandSet>(
+    return std::make_unique<EntryAnnotationSet>(
       std::move(readSet),
       std::move(allWriteSet),
       std::move(fullWriteSet));
@@ -286,32 +286,32 @@ public:
   DebugString() const noexcept override;
 
   bool
-  operator==(const DemandSet & other) override;
+  operator==(const AnnotationSet & other) override;
 
   VariableSet TopSet_;
 };
 
-class ExitDemandSet final : public DemandSet {
+class ExitAnnotationSet final : public AnnotationSet {
 public:
-  ~ExitDemandSet() noexcept override;
+  ~ExitAnnotationSet() noexcept override;
 
-  ExitDemandSet(
+  ExitAnnotationSet(
     VariableSet readSet,
     VariableSet allWriteSet,
     VariableSet fullWriteSet)
-    : DemandSet(
+    : AnnotationSet(
     std::move(readSet),
     std::move(allWriteSet),
     std::move(fullWriteSet))
   {}
 
-  static std::unique_ptr<ExitDemandSet>
+  static std::unique_ptr<ExitAnnotationSet>
   Create(
     VariableSet readSet,
     VariableSet allWriteSet,
     VariableSet fullWriteSet)
   {
-    return std::make_unique<ExitDemandSet>(
+    return std::make_unique<ExitAnnotationSet>(
       std::move(readSet),
       std::move(allWriteSet),
       std::move(fullWriteSet));
@@ -321,30 +321,30 @@ public:
   DebugString() const noexcept override;
 
   bool
-  operator==(const DemandSet & other) override;
+  operator==(const AnnotationSet & other) override;
 };
 
-class BasicBlockDemandSet final : public DemandSet {
+class BasicBlockAnnotationSet final : public AnnotationSet {
 public:
-  ~BasicBlockDemandSet() noexcept override;
+  ~BasicBlockAnnotationSet() noexcept override;
 
-  BasicBlockDemandSet(
+  BasicBlockAnnotationSet(
     VariableSet readSet,
     VariableSet allWriteSet,
     VariableSet fullWriteSet)
-    : DemandSet(
+    : AnnotationSet(
     std::move(readSet),
     std::move(allWriteSet),
     std::move(fullWriteSet))
   {}
 
-  static std::unique_ptr<BasicBlockDemandSet>
+  static std::unique_ptr<BasicBlockAnnotationSet>
   Create(
     VariableSet readSet,
     VariableSet allWriteSet,
     VariableSet fullWriteSet)
   {
-    return std::make_unique<BasicBlockDemandSet>(
+    return std::make_unique<BasicBlockAnnotationSet>(
       std::move(readSet),
       std::move(allWriteSet),
       std::move(fullWriteSet));
@@ -354,30 +354,30 @@ public:
   DebugString() const noexcept override;
 
   bool
-  operator==(const DemandSet & other) override;
+  operator==(const AnnotationSet & other) override;
 };
 
-class LinearDemandSet final : public DemandSet {
+class LinearAnnotationSet final : public AnnotationSet {
 public:
-  ~LinearDemandSet() noexcept override;
+  ~LinearAnnotationSet() noexcept override;
 
-  LinearDemandSet(
+  LinearAnnotationSet(
     VariableSet readSet,
     VariableSet allWriteSet,
     VariableSet fullWriteSet)
-    : DemandSet(
+    : AnnotationSet(
     std::move(readSet),
     std::move(allWriteSet),
     std::move(fullWriteSet))
   {}
 
-  LinearDemandSet(
+  LinearAnnotationSet(
     VariableSet readSet,
     VariableSet allWriteSet,
     VariableSet fullWriteSet,
     VariableSet topSet,
     VariableSet bottomSet)
-  : DemandSet(
+  : AnnotationSet(
     std::move(readSet),
     std::move(allWriteSet),
     std::move(fullWriteSet))
@@ -385,13 +385,13 @@ public:
   , BottomSet_(std::move(bottomSet))
   {}
 
-  static std::unique_ptr<LinearDemandSet>
+  static std::unique_ptr<LinearAnnotationSet>
   Create(
     VariableSet readSet,
     VariableSet allWriteSet,
     VariableSet fullWriteSet)
   {
-    return std::make_unique<LinearDemandSet>(
+    return std::make_unique<LinearAnnotationSet>(
       std::move(readSet),
       std::move(allWriteSet),
       std::move(fullWriteSet));
@@ -401,33 +401,33 @@ public:
   DebugString() const noexcept override;
 
   bool
-  operator==(const DemandSet & other) override;
+  operator==(const AnnotationSet & other) override;
 
   VariableSet TopSet_;
   VariableSet BottomSet_;
 };
 
-class BranchDemandSet final : public DemandSet {
+class BranchAnnotationSet final : public AnnotationSet {
 public:
-  ~BranchDemandSet() noexcept override;
+  ~BranchAnnotationSet() noexcept override;
 
-  BranchDemandSet(
+  BranchAnnotationSet(
     VariableSet readSet,
     VariableSet allWriteSet,
     VariableSet fullWriteSet)
-    : DemandSet(
+    : AnnotationSet(
     std::move(readSet),
     std::move(allWriteSet),
     std::move(fullWriteSet))
   {}
 
-  BranchDemandSet(
+  BranchAnnotationSet(
     VariableSet readSet,
     VariableSet allWriteSet,
     VariableSet fullWriteSet,
     VariableSet topSet,
     VariableSet bottomSet)
-  : DemandSet(
+  : AnnotationSet(
     std::move(readSet),
     std::move(allWriteSet),
     std::move(fullWriteSet))
@@ -435,13 +435,13 @@ public:
   , BottomSet_(std::move(bottomSet))
   {}
 
-  static std::unique_ptr<BranchDemandSet>
+  static std::unique_ptr<BranchAnnotationSet>
   Create(
     VariableSet readSet,
     VariableSet allWriteSet,
     VariableSet fullWriteSet)
   {
-    return std::make_unique<BranchDemandSet>(
+    return std::make_unique<BranchAnnotationSet>(
       std::move(readSet),
       std::move(allWriteSet),
       std::move(fullWriteSet));
@@ -451,45 +451,45 @@ public:
   DebugString() const noexcept override;
 
   bool
-  operator==(const DemandSet & other) override;
+  operator==(const AnnotationSet & other) override;
 
   VariableSet TopSet_;
   VariableSet BottomSet_;
 };
 
-class LoopDemandSet final : public DemandSet {
+class LoopAnnotationSet final : public AnnotationSet {
 public:
-  ~LoopDemandSet() noexcept override;
+  ~LoopAnnotationSet() noexcept override;
 
-  LoopDemandSet(
+  LoopAnnotationSet(
     VariableSet readSet,
     VariableSet allWriteSet,
     VariableSet fullWriteSet)
-    : DemandSet(
+    : AnnotationSet(
     std::move(readSet),
     std::move(allWriteSet),
     std::move(fullWriteSet))
   {}
 
-  LoopDemandSet(
+  LoopAnnotationSet(
     VariableSet readSet,
     VariableSet allWriteSet,
     VariableSet fullWriteSet,
     VariableSet loopVariables)
-  : DemandSet(
+  : AnnotationSet(
     std::move(readSet),
     std::move(allWriteSet),
     std::move(fullWriteSet))
   , LoopVariables_(std::move(loopVariables))
   {}
 
-  static std::unique_ptr<LoopDemandSet>
+  static std::unique_ptr<LoopAnnotationSet>
   Create(
     VariableSet readSet,
     VariableSet allWriteSet,
     VariableSet fullWriteSet)
   {
-    return std::make_unique<LoopDemandSet>(
+    return std::make_unique<LoopAnnotationSet>(
       std::move(readSet),
       std::move(allWriteSet),
       std::move(fullWriteSet));
@@ -499,7 +499,7 @@ public:
   DebugString() const noexcept override;
 
   bool
-  operator==(const DemandSet & other) override;
+  operator==(const AnnotationSet & other) override;
 
   const VariableSet &
   LoopVariables() const noexcept
@@ -517,20 +517,20 @@ private:
   VariableSet LoopVariables_;
 };
 
-class DemandMap final {
+class AnnotationMap final {
 public:
-  DemandMap()
+  AnnotationMap()
   = default;
 
-  DemandMap(const DemandMap&) = delete;
+  AnnotationMap(const AnnotationMap&) = delete;
 
-  DemandMap(DemandMap&&) noexcept = delete;
+  AnnotationMap(AnnotationMap&&) noexcept = delete;
 
-  DemandMap&
-  operator=(const DemandMap&) = delete;
+  AnnotationMap&
+  operator=(const AnnotationMap&) = delete;
 
-  DemandMap&
-  operator=(DemandMap&&) noexcept = delete;
+  AnnotationMap&
+  operator=(AnnotationMap&&) noexcept = delete;
 
   bool
   Contains(const aggnode & aggregationNode) const noexcept
@@ -550,23 +550,23 @@ public:
   void
   Insert(
     const aggnode & aggregationNode,
-    std::unique_ptr<DemandSet> demandSet)
+    std::unique_ptr<AnnotationSet> annotationSet)
   {
     JLM_ASSERT(!Contains(aggregationNode));
-    Map_[&aggregationNode] = std::move(demandSet);
+    Map_[&aggregationNode] = std::move(annotationSet);
   }
 
-  static std::unique_ptr<DemandMap>
+  static std::unique_ptr<AnnotationMap>
   Create()
   {
-    return std::make_unique<DemandMap>();
+    return std::make_unique<AnnotationMap>();
   }
 
 private:
-  std::unordered_map<const aggnode*, std::unique_ptr<DemandSet>> Map_;
+  std::unordered_map<const aggnode*, std::unique_ptr<AnnotationSet>> Map_;
 };
 
-std::unique_ptr<DemandMap>
+std::unique_ptr<AnnotationMap>
 Annotate(const jlm::aggnode & aggregationTreeRoot);
 
 }

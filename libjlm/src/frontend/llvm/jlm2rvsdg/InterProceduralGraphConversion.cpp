@@ -512,9 +512,9 @@ public:
     return aggregationTreeRoot;
   }
 
-  std::unique_ptr<DemandMap>
+  std::unique_ptr<AnnotationMap>
   CollectAnnotationStatistics(
-    const std::function<std::unique_ptr<DemandMap>(const aggnode&)> & annotateAggregationTree,
+    const std::function<std::unique_ptr<AnnotationMap>(const aggnode&)> & annotateAggregationTree,
     const aggnode & aggregationTreeRoot,
     std::string functionName)
   {
@@ -731,18 +731,18 @@ ConvertBasicBlock(
 static void
 ConvertAggregationNode(
   const aggnode & aggregationNode,
-  const DemandMap & demandMap,
+  const AnnotationMap & demandMap,
   lambda::node & lambdaNode,
   RegionalizedVariableMap & regionalizedVariableMap);
 
 static void
 Convert(
   const entryaggnode & entryAggregationNode,
-  const DemandMap & demandMap,
+  const AnnotationMap & demandMap,
   lambda::node & lambdaNode,
   RegionalizedVariableMap & regionalizedVariableMap)
 {
-	auto & demandSet = demandMap.Lookup<EntryDemandSet>(entryAggregationNode);
+	auto & demandSet = demandMap.Lookup<EntryAnnotationSet>(entryAggregationNode);
 
   regionalizedVariableMap.PushRegion(*lambdaNode.subregion());
 
@@ -777,7 +777,7 @@ Convert(
 static void
 Convert(
   const exitaggnode & exitAggregationNode,
-  const DemandMap & demandMap,
+  const AnnotationMap & demandMap,
   lambda::node & lambdaNode,
   RegionalizedVariableMap & regionalizedVariableMap)
 {
@@ -794,7 +794,7 @@ Convert(
 static void
 Convert(
   const blockaggnode & blockAggregationNode,
-  const DemandMap & demandMap,
+  const AnnotationMap & demandMap,
   lambda::node & lambdaNode,
   RegionalizedVariableMap & regionalizedVariableMap)
 {
@@ -807,7 +807,7 @@ Convert(
 static void
 Convert(
   const linearaggnode & linearAggregationNode,
-  const DemandMap & demandMap,
+  const AnnotationMap & demandMap,
   lambda::node & lambdaNode,
   RegionalizedVariableMap & regionalizedVariableMap)
 {
@@ -818,7 +818,7 @@ Convert(
 static void
 Convert(
   const branchaggnode & branchAggregationNode,
-  const DemandMap & demandMap,
+  const AnnotationMap & demandMap,
   lambda::node & lambdaNode,
   RegionalizedVariableMap & regionalizedVariableMap)
 {
@@ -839,7 +839,7 @@ Convert(
 	/*
 	 * Add gamma inputs.
 	 */
-	auto & demandSet = demandMap.Lookup<BranchDemandSet>(branchAggregationNode);
+	auto & demandSet = demandMap.Lookup<BranchAnnotationSet>(branchAggregationNode);
 	std::unordered_map<const variable*, jive::gamma_input*> gammaInputMap;
 	for (auto & v : demandSet.TopSet_.Variables())
     gammaInputMap[&v] = gamma->add_entryvar(regionalizedVariableMap.GetTopVariableMap().lookup(&v));
@@ -873,7 +873,7 @@ Convert(
 static void
 Convert(
   const loopaggnode & loopAggregationNode,
-  const DemandMap & demandMap,
+  const AnnotationMap & demandMap,
   lambda::node & lambdaNode,
   RegionalizedVariableMap & regionalizedVariableMap)
 {
@@ -888,7 +888,7 @@ Convert(
 	/*
 	 * Add loop variables
 	 */
-	auto & demandSet = demandMap.Lookup<LoopDemandSet>(loopAggregationNode);
+	auto & demandSet = demandMap.Lookup<LoopAnnotationSet>(loopAggregationNode);
 	std::unordered_map<const variable*, jive::theta_output*> thetaOutputMap;
 	for (auto & v : demandSet.LoopVariables().Variables()) {
 		jive::output * value = nullptr;
@@ -942,7 +942,7 @@ Convert(
 template<class NODE> static void
 ConvertAggregationNode(
   const aggnode & aggregationNode,
-  const DemandMap & demandMap,
+  const AnnotationMap & demandMap,
   lambda::node & lambdaNode,
   RegionalizedVariableMap & regionalizedVariableMap)
 {
@@ -954,7 +954,7 @@ ConvertAggregationNode(
 static void
 ConvertAggregationNode(
   const aggnode & aggregationNode,
-  const DemandMap & demandMap,
+  const AnnotationMap & demandMap,
   lambda::node & lambdaNode,
   RegionalizedVariableMap & regionalizedVariableMap)
 {
@@ -962,7 +962,7 @@ ConvertAggregationNode(
 		std::type_index,
 		std::function<void(
       const aggnode&,
-      const DemandMap&,
+      const AnnotationMap&,
       lambda::node&,
       RegionalizedVariableMap&)
 		>
@@ -1019,7 +1019,7 @@ AggregateControlFlowGraph(
   return aggregationTreeRoot;
 }
 
-static std::unique_ptr<DemandMap>
+static std::unique_ptr<AnnotationMap>
 AnnotateAggregationTree(
   const aggnode & aggregationTreeRoot,
   const std::string & functionName,
@@ -1036,7 +1036,7 @@ AnnotateAggregationTree(
 static lambda::output *
 ConvertAggregationTreeToLambda(
   const aggnode & aggregationTreeRoot,
-  const DemandMap & demandMap,
+  const AnnotationMap & demandMap,
   RegionalizedVariableMap & scopedVariableMap,
   const std::string & functionName,
   const FunctionType & functionType,
