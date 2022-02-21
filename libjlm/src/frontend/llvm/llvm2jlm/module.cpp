@@ -105,6 +105,7 @@ convert_attribute_kind(const llvm::Attribute::AttrKind & kind)
 	, {ak::InlineHint,                  attribute::kind::inline_hint}
 	, {ak::JumpTable,                   attribute::kind::jump_table}
 	, {ak::MinSize,                     attribute::kind::min_size}
+	, {ak::MustProgress,                attribute::kind::MustProgress}
 	, {ak::Naked,                       attribute::kind::naked}
 	, {ak::Nest,                        attribute::kind::nest}
 	, {ak::NoAlias,                     attribute::kind::no_alias}
@@ -165,6 +166,9 @@ convert_attribute(const llvm::Attribute & attribute, context & ctx)
 		JLM_ASSERT(attribute.isTypeAttribute());
 
 		if (attribute.getKindAsEnum() == llvm::Attribute::AttrKind::ByVal) {
+			auto type = convert_type(attribute.getValueAsType(), ctx);
+			return type_attribute::create_byval(std::move(type));
+		} else if (attribute.getKindAsEnum() == llvm::Attribute::StructRet) {
 			auto type = convert_type(attribute.getValueAsType(), ctx);
 			return type_attribute::create_byval(std::move(type));
 		}

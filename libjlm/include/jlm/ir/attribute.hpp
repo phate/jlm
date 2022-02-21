@@ -39,6 +39,7 @@ public:
 	, inline_hint
 	, jump_table
 	, min_size
+	, MustProgress
 	, naked
 	, nest
 	, no_alias
