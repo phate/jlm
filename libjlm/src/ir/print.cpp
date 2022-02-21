@@ -337,7 +337,7 @@ to_dot(const jlm::ipgraph & clg)
 /* aggregation node */
 
 std::string
-to_str(const aggnode & n, const DemandMap & dm)
+to_str(const aggnode & n, const AnnotationMap & dm)
 {
   std::function<std::string(const aggnode&, size_t)> f = [&] (
     const aggnode & n,
@@ -347,7 +347,7 @@ to_str(const aggnode & n, const DemandMap & dm)
     subtree += n.debug_string();
 
     if (dm.Contains(n))
-		  subtree += " " + dm.Lookup<DemandSet>(n).DebugString() + "\n";
+		  subtree += " " + dm.Lookup<AnnotationSet>(n).DebugString() + "\n";
 
     for (const auto & child : n)
       subtree += f(child, depth+1);
@@ -359,7 +359,7 @@ to_str(const aggnode & n, const DemandMap & dm)
 }
 
 void
-print(const aggnode & n, const DemandMap & dm, FILE * out)
+print(const aggnode & n, const AnnotationMap & dm, FILE * out)
 {
 	fputs(to_str(n, dm).c_str(), out);
 	fflush(out);
