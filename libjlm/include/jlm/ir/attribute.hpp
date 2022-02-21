@@ -26,11 +26,15 @@ public:
 	, always_inline
 	, arg_mem_only
 	, builtin
+	, ByRef
 	, by_val
 	, cold
 	, convergent
 	, dereferenceable
 	, dereferenceable_or_null
+	, DisableSanitizerInstrumentation
+	, ElementType
+	, Hot
 	, imm_arg
 	, in_alloca
 	, in_reg
@@ -39,26 +43,34 @@ public:
 	, inline_hint
 	, jump_table
 	, min_size
+	, MustProgress
 	, naked
 	, nest
 	, no_alias
 	, no_builtin
+	, NoCallback
 	, no_capture
 	, no_cf_check
 	, no_duplicate
 	, no_free
 	, no_implicit_float
 	, no_inline
+	, NoMerge
+	, NoProfile
 	, no_recurse
 	, no_red_zone
 	, no_return
+	, NoSanitizeCoverage
 	, no_sync
+	, NoUndef
 	, no_unwind
 	, non_lazy_bind
 	, non_null
+	, NullPointerIsValid
 	, opt_for_fuzzing
 	, optimize_for_size
 	, optimize_none
+	, Preallocated
 	, read_none
 	, read_only
 	, returned
@@ -79,9 +91,11 @@ public:
 	, stack_protect_strong
 	, strict_fp
 	, struct_ret
+	, SwiftAsync
 	, swift_error
 	, swift_self
 	, uwtable
+	, VScaleRange
 	, will_return
 	, write_only
 	, zext

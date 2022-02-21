@@ -93,10 +93,14 @@ convert_attribute_kind(const llvm::Attribute::AttrKind & kind)
 	, {ak::AlwaysInline,                attribute::kind::always_inline}
 	, {ak::ArgMemOnly,                  attribute::kind::arg_mem_only}
 	, {ak::Builtin,                     attribute::kind::builtin}
+	, {ak::ByRef,                       attribute::kind::ByRef}
+	, {ak::ByVal,                       attribute::kind::by_val}
 	, {ak::Cold,                        attribute::kind::cold}
 	, {ak::Convergent,                  attribute::kind::convergent}
 	, {ak::Dereferenceable,             attribute::kind::dereferenceable}
 	, {ak::DereferenceableOrNull,       attribute::kind::dereferenceable_or_null}
+	, {ak::ElementType,                 attribute::kind::ElementType}
+	, {ak::Hot,                         attribute::kind::Hot}
 	, {ak::ImmArg,                      attribute::kind::imm_arg}
 	, {ak::InAlloca,                    attribute::kind::in_alloca}
 	, {ak::InReg,                       attribute::kind::in_reg}
@@ -105,26 +109,33 @@ convert_attribute_kind(const llvm::Attribute::AttrKind & kind)
 	, {ak::InlineHint,                  attribute::kind::inline_hint}
 	, {ak::JumpTable,                   attribute::kind::jump_table}
 	, {ak::MinSize,                     attribute::kind::min_size}
+	, {ak::MustProgress,                attribute::kind::MustProgress}
 	, {ak::Naked,                       attribute::kind::naked}
 	, {ak::Nest,                        attribute::kind::nest}
 	, {ak::NoAlias,                     attribute::kind::no_alias}
 	, {ak::NoBuiltin,                   attribute::kind::no_builtin}
+	, {ak::NoCallback,                  attribute::kind::NoCallback}
 	, {ak::NoCapture,                   attribute::kind::no_capture}
 	, {ak::NoCfCheck,                   attribute::kind::no_cf_check}
 	, {ak::NoDuplicate,                 attribute::kind::no_duplicate}
 	, {ak::NoFree,                      attribute::kind::no_free}
 	, {ak::NoImplicitFloat,             attribute::kind::no_implicit_float}
 	, {ak::NoInline,                    attribute::kind::no_inline}
+	, {ak::NoMerge,                     attribute::kind::NoMerge}
+	, {ak::NoProfile,                   attribute::kind::NoProfile}
 	, {ak::NoRecurse,                   attribute::kind::no_recurse}
 	, {ak::NoRedZone,                   attribute::kind::no_red_zone}
 	, {ak::NoReturn,                    attribute::kind::no_return}
+	, {ak::NoSanitizeCoverage,          attribute::kind::NoSanitizeCoverage}
 	, {ak::NoSync,                      attribute::kind::no_sync}
 	, {ak::NoUnwind,                    attribute::kind::no_unwind}
 	, {ak::NonLazyBind,                 attribute::kind::non_lazy_bind}
 	, {ak::NonNull,                     attribute::kind::non_null}
+	, {ak::NullPointerIsValid,          attribute::kind::NullPointerIsValid}
 	, {ak::OptForFuzzing,               attribute::kind::opt_for_fuzzing}
 	, {ak::OptimizeForSize,             attribute::kind::optimize_for_size}
 	, {ak::OptimizeNone,                attribute::kind::optimize_none}
+	, {ak::Preallocated,                attribute::kind::Preallocated}
 	, {ak::ReadNone,                    attribute::kind::read_none}
 	, {ak::ReadOnly,                    attribute::kind::read_only}
 	, {ak::Returned,                    attribute::kind::returned}
@@ -145,6 +156,7 @@ convert_attribute_kind(const llvm::Attribute::AttrKind & kind)
 	, {ak::StackProtectStrong,          attribute::kind::stack_protect_strong}
 	, {ak::StrictFP,                    attribute::kind::strict_fp}
 	, {ak::StructRet,                   attribute::kind::struct_ret}
+	, {ak::SwiftAsync,                  attribute::kind::SwiftAsync}
 	, {ak::SwiftError,                  attribute::kind::swift_error}
 	, {ak::SwiftSelf,                   attribute::kind::swift_self}
 	, {ak::UWTable,                     attribute::kind::uwtable}
@@ -165,6 +177,9 @@ convert_attribute(const llvm::Attribute & attribute, context & ctx)
 		JLM_ASSERT(attribute.isTypeAttribute());
 
 		if (attribute.getKindAsEnum() == llvm::Attribute::AttrKind::ByVal) {
+			auto type = convert_type(attribute.getValueAsType(), ctx);
+			return type_attribute::create_byval(std::move(type));
+		} else if (attribute.getKindAsEnum() == llvm::Attribute::StructRet) {
 			auto type = convert_type(attribute.getValueAsType(), ctx);
 			return type_attribute::create_byval(std::move(type));
 		}
