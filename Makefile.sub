@@ -22,6 +22,21 @@ echo "libjlc-debug           Compile jlc library in debug mode"
 echo "libjlc-release         Compile jlc library in release mode"
 endef
 
+# Try to detect llvm-config 
+CONFIG        := $(shell command -v llvm-config 2> /dev/null)
+CONFIGVERSION := $(shell command -v llvm-config-11 2> /dev/null)
+ifdef LLVMCONFIG
+  $(info LLVMCONFIG specified by user)
+else ifdef CONFIGVERSION
+  $(info Found llvm-config-11)
+  LLVMCONFIG ?= llvm-config-11
+else ifdef CONFIG
+  $(info Found llvm-config (make sure that it is llvm 11))
+  LLVMCONFIG ?= llvm-config
+else
+  $(info Did not find llvm-config or llvm-config-11 and LLVMCONFIG is not specified)
+endif
+
 include $(JLM_ROOT)/libjive/Makefile.sub
 include $(JLM_ROOT)/libjlm/Makefile.sub
 include $(JLM_ROOT)/libjlc/Makefile.sub
