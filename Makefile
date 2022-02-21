@@ -24,7 +24,6 @@ include $(JLM_ROOT)/Makefile.sub
 include $(JLM_ROOT)/tests/Makefile.sub
 
 # LLVM related variables
-LLVMCONFIG ?= llvm-config
 CLANG_BIN=$(shell $(LLVMCONFIG) --bindir)
 CC=$(CLANG)
 CXX=$(CLANG_BIN)/clang++
