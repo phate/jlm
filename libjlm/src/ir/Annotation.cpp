@@ -99,9 +99,7 @@ LinearAnnotationSet::DebugString() const noexcept
 {
   return strfmt("ReadSet:", ReadSet().DebugString(), " ",
                 "AllWriteSet:", AllWriteSet().DebugString(), " ",
-                "FullWriteSet:", FullWriteSet().DebugString(), " ",
-                "TopSet:", TopSet_.DebugString(), " ",
-                "BottomSet:", BottomSet_.DebugString(), " ");
+                "FullWriteSet:", FullWriteSet().DebugString(), " ");
 }
 
 bool
@@ -109,9 +107,7 @@ LinearAnnotationSet::operator==(const AnnotationSet & other)
 {
   auto otherLinearDemandSet = dynamic_cast<const LinearAnnotationSet*>(&other);
   return otherLinearDemandSet
-         && AnnotationSet::operator==(other)
-         && TopSet_ == otherLinearDemandSet->TopSet_
-         && BottomSet_ == otherLinearDemandSet->BottomSet_;
+         && AnnotationSet::operator==(other);
 }
 
 BranchAnnotationSet::~BranchAnnotationSet() noexcept
@@ -385,15 +381,12 @@ AnnotateDemandSet(
   AnnotationMap & demandMap)
 {
 	auto & demandSet = demandMap.Lookup<LinearAnnotationSet>(linearAggregationNode);
-  demandSet.BottomSet_ = workingSet;
 
 	for (size_t n = linearAggregationNode.nchildren() - 1; n != static_cast<size_t>(-1); n--)
     AnnotateDemandSet(*linearAggregationNode.child(n), workingSet, demandMap);
 
 	workingSet.Remove(demandSet.FullWriteSet());
 	workingSet.Insert(demandSet.ReadSet());
-
-  demandSet.TopSet_ = workingSet;
 }
 
 static void

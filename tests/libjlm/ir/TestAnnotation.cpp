@@ -105,10 +105,10 @@ TestLinearSubgraphAnnotation()
   /*
    * Assert
    */
-  assert(demandMap->Lookup<LinearAnnotationSet>(*aggregationTreeRoot) == LinearAnnotationSet({}, {v1, &argument, v2}, {v1, &argument, v2}, {}, {}));
+  assert(demandMap->Lookup<LinearAnnotationSet>(*aggregationTreeRoot) == LinearAnnotationSet({}, {v1, &argument, v2}, {v1, &argument, v2}));
   {
     auto linearNode1 = aggregationTreeRoot->child(0);
-    assert(demandMap->Lookup<LinearAnnotationSet>(*linearNode1) == LinearAnnotationSet({}, {v1, &argument}, {v1, &argument}, {}, {v1}));
+    assert(demandMap->Lookup<LinearAnnotationSet>(*linearNode1) == LinearAnnotationSet({}, {v1, &argument}, {v1, &argument}));
     {
       auto entryNode = linearNode1->child(0);
       assert(demandMap->Lookup<EntryAnnotationSet>(*entryNode) == EntryAnnotationSet({}, {&argument}, {&argument}, {}));
@@ -118,7 +118,7 @@ TestLinearSubgraphAnnotation()
     }
 
     auto linearNode2 = aggregationTreeRoot->child(1);
-    assert(demandMap->Lookup<LinearAnnotationSet>(*linearNode2) == LinearAnnotationSet({v1}, {v2}, {v2}, {v1}, {}));
+    assert(demandMap->Lookup<LinearAnnotationSet>(*linearNode2) == LinearAnnotationSet({v1}, {v2}, {v2}));
     {
       auto basicBlockNode2 = linearNode2->child(0);
       assert(demandMap->Lookup<BasicBlockAnnotationSet>(*basicBlockNode2) == BasicBlockAnnotationSet({v1}, {v2}, {v2}));
@@ -188,7 +188,7 @@ TestBranchAnnotation()
   /*
    * Assert
    */
-  assert(demandMap->Lookup<LinearAnnotationSet>(*aggregationTreeRoot) == LinearAnnotationSet({argument, v2}, {v1, v2, v3, v4}, {v1, v3}, {argument, v2}, {}));
+  assert(demandMap->Lookup<LinearAnnotationSet>(*aggregationTreeRoot) == LinearAnnotationSet({argument, v2}, {v1, v2, v3, v4}, {v1, v3}));
   {
     auto splitNode = aggregationTreeRoot->child(0);
     assert(demandMap->Lookup<BasicBlockAnnotationSet>(*splitNode) == BasicBlockAnnotationSet({argument}, {v1}, {v1}));
@@ -249,7 +249,7 @@ TestLoopAnnotation()
   /*
    * Act
    */
-  assert(demandMap->Lookup<LinearAnnotationSet>(*aggregationTreeRoot) == LinearAnnotationSet({v1, v4}, {v2, v3}, {v2, v3}, {v1, v4}, {}));
+  assert(demandMap->Lookup<LinearAnnotationSet>(*aggregationTreeRoot) == LinearAnnotationSet({v1, v4}, {v2, v3}, {v2, v3}));
   {
     auto loopNode = aggregationTreeRoot->child(0);
     assert(demandMap->Lookup<LoopAnnotationSet>(*loopNode) == LoopAnnotationSet({v1}, {v2, v3}, {v2, v3}, {v1, v3, v4}));
@@ -318,7 +318,7 @@ TestBranchInLoopAnnotation()
   /*
    * Assert
    */
-  assert(demandMap->Lookup<LinearAnnotationSet>(*aggregationTreeRoot) == LinearAnnotationSet({v1, v2, v4}, {v2, v3, v4}, {v3}, {v1, v2, v4}, {}));
+  assert(demandMap->Lookup<LinearAnnotationSet>(*aggregationTreeRoot) == LinearAnnotationSet({v1, v2, v4}, {v2, v3, v4}, {v3}));
   {
     auto loopNode = aggregationTreeRoot->child(0);
     assert(demandMap->Lookup<LoopAnnotationSet>(*loopNode) == LoopAnnotationSet({v1, v4}, {v2, v3, v4}, {v3}, {v1, v2, v3, v4}));
@@ -435,7 +435,7 @@ TestBranchPassByAnnotation()
   /*
    * Assert
    */
-  assert(demandMap->Lookup<LinearAnnotationSet>(*aggregationTreeRoot) == LinearAnnotationSet({}, {v1, v2, v3}, {v1, v2, v3}, {}, {}));
+  assert(demandMap->Lookup<LinearAnnotationSet>(*aggregationTreeRoot) == LinearAnnotationSet({}, {v1, v2, v3}, {v1, v2, v3}));
 	{
     auto splitNode = aggregationTreeRoot->child(0);
     assert(demandMap->Lookup<BasicBlockAnnotationSet>(*splitNode) == BasicBlockAnnotationSet({}, {v1, v2}, {v1, v2}));

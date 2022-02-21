@@ -371,20 +371,6 @@ public:
     std::move(fullWriteSet))
   {}
 
-  LinearAnnotationSet(
-    VariableSet readSet,
-    VariableSet allWriteSet,
-    VariableSet fullWriteSet,
-    VariableSet topSet,
-    VariableSet bottomSet)
-  : AnnotationSet(
-    std::move(readSet),
-    std::move(allWriteSet),
-    std::move(fullWriteSet))
-  , TopSet_(std::move(topSet))
-  , BottomSet_(std::move(bottomSet))
-  {}
-
   static std::unique_ptr<LinearAnnotationSet>
   Create(
     VariableSet readSet,
@@ -402,9 +388,6 @@ public:
 
   bool
   operator==(const AnnotationSet & other) override;
-
-  VariableSet TopSet_;
-  VariableSet BottomSet_;
 };
 
 class BranchAnnotationSet final : public AnnotationSet {
