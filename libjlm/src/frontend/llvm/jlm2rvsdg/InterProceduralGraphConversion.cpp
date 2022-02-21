@@ -841,7 +841,7 @@ Convert(
 	 */
 	auto & demandSet = demandMap.Lookup<BranchAnnotationSet>(branchAggregationNode);
 	std::unordered_map<const variable*, jive::gamma_input*> gammaInputMap;
-	for (auto & v : demandSet.TopSet_.Variables())
+	for (auto & v : demandSet.InputVariables().Variables())
     gammaInputMap[&v] = gamma->add_entryvar(regionalizedVariableMap.GetTopVariableMap().lookup(&v));
 
 	/*
@@ -856,7 +856,7 @@ Convert(
 
     ConvertAggregationNode(*branchAggregationNode.child(n), demandMap, lambdaNode, regionalizedVariableMap);
 
-		for (auto & v : demandSet.BottomSet_.Variables())
+		for (auto & v : demandSet.OutputVariables().Variables())
 			xvmap[&v].push_back(regionalizedVariableMap.GetTopVariableMap().lookup(&v));
     regionalizedVariableMap.PopRegion();
 	}
@@ -864,7 +864,7 @@ Convert(
 	/*
 	 * Add gamma outputs.
 	 */
-	for (auto & v : demandSet.BottomSet_.Variables()) {
+	for (auto & v : demandSet.OutputVariables().Variables()) {
 		JLM_ASSERT(xvmap.find(&v) != xvmap.end());
     regionalizedVariableMap.GetTopVariableMap().insert(&v, gamma->add_exitvar(xvmap[&v]));
 	}

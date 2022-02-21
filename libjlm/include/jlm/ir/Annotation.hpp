@@ -425,14 +425,14 @@ public:
     VariableSet readSet,
     VariableSet allWriteSet,
     VariableSet fullWriteSet,
-    VariableSet topSet,
-    VariableSet bottomSet)
+    VariableSet inputVariables,
+    VariableSet outputVariables)
   : AnnotationSet(
     std::move(readSet),
     std::move(allWriteSet),
     std::move(fullWriteSet))
-  , TopSet_(std::move(topSet))
-  , BottomSet_(std::move(bottomSet))
+  , InputVariables_(std::move(inputVariables))
+  , OutputVariables_(std::move(outputVariables))
   {}
 
   static std::unique_ptr<BranchAnnotationSet>
@@ -453,8 +453,33 @@ public:
   bool
   operator==(const AnnotationSet & other) override;
 
-  VariableSet TopSet_;
-  VariableSet BottomSet_;
+  const VariableSet &
+  InputVariables() const noexcept
+  {
+    return InputVariables_;
+  }
+
+  void
+  SetInputVariables(VariableSet inputVariables) noexcept
+  {
+    InputVariables_ = std::move(inputVariables);
+  }
+
+  const VariableSet &
+  OutputVariables() const noexcept
+  {
+    return OutputVariables_;
+  }
+
+  void
+  SetOutputVariables(VariableSet outputVariables) noexcept
+  {
+    OutputVariables_ = std::move(outputVariables);
+  }
+
+private:
+  VariableSet InputVariables_;
+  VariableSet OutputVariables_;
 };
 
 class LoopAnnotationSet final : public AnnotationSet {

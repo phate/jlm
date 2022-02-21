@@ -123,8 +123,8 @@ BranchAnnotationSet::DebugString() const noexcept
   return strfmt("ReadSet:", ReadSet().DebugString(), " ",
                 "AllWriteSet:", AllWriteSet().DebugString(), " ",
                 "FullWriteSet:", FullWriteSet().DebugString(), " ",
-                "TopSet:", TopSet_.DebugString(), " ",
-                "BottomSet:", BottomSet_.DebugString(), " ");
+                "TopSet:", InputVariables().DebugString(), " ",
+                "BottomSet:", OutputVariables().DebugString(), " ");
 }
 
 bool
@@ -133,8 +133,8 @@ BranchAnnotationSet::operator==(const AnnotationSet & other)
   auto otherBranchDemandSet = dynamic_cast<const BranchAnnotationSet*>(&other);
   return otherBranchDemandSet
          && AnnotationSet::operator==(other)
-         && TopSet_ == otherBranchDemandSet->TopSet_
-         && BottomSet_ == otherBranchDemandSet->BottomSet_;
+         && InputVariables_ == otherBranchDemandSet->InputVariables_
+         && OutputVariables_ == otherBranchDemandSet->OutputVariables_;
 }
 
 LoopAnnotationSet::~LoopAnnotationSet() noexcept
@@ -406,7 +406,7 @@ AnnotateDemandSet(
 
 	VariableSet branchWorkingSet = workingSet;
 	branchWorkingSet.Intersect(demandSet.AllWriteSet());
-  demandSet.BottomSet_ = branchWorkingSet;
+  demandSet.SetOutputVariables(branchWorkingSet);
 
 	for (size_t n = 0; n < branchAggregationNode.nchildren(); n++) {
 		auto caseWorkingSet = branchWorkingSet;
@@ -415,7 +415,7 @@ AnnotateDemandSet(
 
   branchWorkingSet.Remove(demandSet.FullWriteSet());
   branchWorkingSet.Insert(demandSet.ReadSet());
-  demandSet.TopSet_ = branchWorkingSet;
+  demandSet.SetInputVariables(branchWorkingSet);
 
   workingSet.Insert(branchWorkingSet);
 }
