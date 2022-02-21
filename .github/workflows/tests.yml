@@ -8,7 +8,7 @@ on:
 
 jobs:
   docs:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-20.10
     steps:
     - uses: actions/checkout@v2
     - name: Install dependencies
@@ -17,7 +17,7 @@ jobs:
       run: make docs
 
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-20.10
     steps:
     - uses: actions/checkout@v2
     - name: Cache build
@@ -33,29 +33,29 @@ jobs:
         path: ${{ github.workspace }}/*
         key: ${{ runner.os }}-${{ github.sha }}-jlm
     - name: Install dependencies (LLVM)
-      run: sudo apt-get install llvm-11-dev clang-11
+      run: sudo apt-get install llvm-13-dev clang-13
     - name: Set LLVMCONFIG
-      run: echo "LLVMCONFIG=llvm-config-11" >> $GITHUB_ENV
+      run: echo "LLVMCONFIG=llvm-config-13" >> $GITHUB_ENV
     - name: Compile jlm
       run: make jlm-release -j `nproc`
     - name: Run unit and C tests
       run: make check -j `nproc`
 
-  ubuntu-latest-gcc:
-    runs-on: ubuntu-latest
+  gcc:
+    runs-on: ubuntu-20.10
     steps:
     - uses: actions/checkout@v2
     - name: Install dependencies (LLVM)
-      run: sudo apt-get install llvm-11-dev clang-11
+      run: sudo apt-get install llvm-13-dev clang-13
     - name: Set LLVMCONFIG
-      run: echo "LLVMCONFIG=llvm-config-11" >> $GITHUB_ENV
+      run: echo "LLVMCONFIG=llvm-config-13" >> $GITHUB_ENV
     - name: Compile jlm
       run: make CXX=g++ jlm-release -j `nproc`
     - name: Run unit and C tests
       run: make check -j `nproc`
 
   valgrind:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-20.10
     needs: build
     steps:
     - name: Cache
@@ -66,16 +66,16 @@ jobs:
     - name: Add jlc to PATH
       run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
     - name: Install dependencies (LLVM)
-      run: sudo apt-get install llvm-11-dev clang-11
+      run: sudo apt-get install llvm-13-dev clang-13
     - name: Install valgrind
       run: sudo apt-get install valgrind
     - name: Set LLVMCONFIG
-      run: echo "LLVMCONFIG=llvm-config-11" >> $GITHUB_ENV
+      run: echo "LLVMCONFIG=llvm-config-13" >> $GITHUB_ENV
     - name: Valgrind Check 
       run: make -C ${{ github.workspace }} valgrind-check
 
   polybench:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-20.10
     needs: build
     steps:
     - name: Cache
@@ -86,16 +86,16 @@ jobs:
     - name: Add jlc to PATH
       run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
     - name: Install dependencies (LLVM)
-      run: sudo apt-get install llvm-11-dev clang-11
+      run: sudo apt-get install llvm-13-dev clang-13
     - name: Set LLVMCONFIG
-      run: echo "LLVMCONFIG=llvm-config-11" >> $GITHUB_ENV
+      run: echo "LLVMCONFIG=llvm-config-13" >> $GITHUB_ENV
     - name: Clone polybench
       run: git clone https://github.com/phate/polybench-jlm.git
     - name: Check polybench
       run: make -C polybench-jlm check
 
   llvm-test-suite:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-20.10
     needs: build
     steps:
     - name: Cache
@@ -106,9 +106,9 @@ jobs:
     - name: Add jlc to PATH
       run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
     - name: Install dependencies (LLVM)
-      run: sudo apt-get install llvm-11-dev clang-11
+      run: sudo apt-get install llvm-13-dev clang-13
     - name: Set LLVMCONFIG
-      run: echo "LLVMCONFIG=llvm-config-11" >> $GITHUB_ENV
+      run: echo "LLVMCONFIG=llvm-config-13" >> $GITHUB_ENV
     - name: Clone jlm-test-suite
       run: git clone https://github.com/phate/jlm-eval-suite.git
     - name: Update submodules
