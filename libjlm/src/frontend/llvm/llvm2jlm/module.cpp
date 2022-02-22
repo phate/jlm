@@ -82,7 +82,7 @@ convert_basic_blocks(llvm::Function & f, jlm::cfg & cfg)
 	return bbmap;
 }
 
-static attribute::kind
+attribute::kind
 convert_attribute_kind(const llvm::Attribute::AttrKind & kind)
 {
   typedef llvm::Attribute::AttrKind ak;

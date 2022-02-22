@@ -6,6 +6,10 @@
 #ifndef JLM_FRONTEND_LLVM_LLVM2JLM_MODULE_HPP
 #define JLM_FRONTEND_LLVM_LLVM2JLM_MODULE_HPP
 
+#include <jlm/ir/attribute.hpp>
+
+#include <llvm/IR/Attributes.h>
+
 #include <memory>
 
 namespace llvm {
@@ -15,6 +19,9 @@ namespace llvm {
 namespace jlm {
 
 class ipgraph_module;
+
+attribute::kind
+convert_attribute_kind(const llvm::Attribute::AttrKind & kind);
 
 std::unique_ptr<ipgraph_module>
 convert_module(llvm::Module & module);
