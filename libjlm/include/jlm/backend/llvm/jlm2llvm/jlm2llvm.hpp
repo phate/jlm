@@ -6,6 +6,10 @@
 #ifndef JLM_BACKEND_LLVM_JLM2LLVM_JLM2LLVM_HPP
 #define JLM_BACKEND_LLVM_JLM2LLVM_JLM2LLVM_HPP
 
+#include <jlm/ir/attribute.hpp>
+
+#include <llvm/IR/Attributes.h>
+
 #include <memory>
 
 namespace llvm {
@@ -20,6 +24,9 @@ namespace jlm {
 class ipgraph_module;
 
 namespace jlm2llvm {
+
+llvm::Attribute::AttrKind
+convert_attribute_kind(const jlm::attribute::kind & kind);
 
 /*
 	FIXME: ipgraph_module should be const, but we still need to create variables to translate
