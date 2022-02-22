@@ -155,7 +155,7 @@ create_terminator_instruction(const jlm::cfg_node * node, context & ctx)
 	create_switch(node, ctx);
 }
 
-static llvm::Attribute::AttrKind
+llvm::Attribute::AttrKind
 convert_attribute_kind(const jlm::attribute::kind & kind)
 {
   typedef llvm::Attribute::AttrKind ak;
