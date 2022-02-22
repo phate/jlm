@@ -21,7 +21,8 @@ namespace jlm {
 class attribute {
 public:
 	enum class kind {
-	  alignment
+    None ///< No attributes have been set
+	, alignment
 	, alloc_size
 	, always_inline
 	, arg_mem_only
@@ -49,16 +50,20 @@ public:
 	, no_free
 	, no_implicit_float
 	, no_inline
+  , NoMerge
 	, no_recurse
 	, no_red_zone
 	, no_return
 	, no_sync
+  , NoUndef
 	, no_unwind
 	, non_lazy_bind
 	, non_null
+  , NullPointerIsValid
 	, opt_for_fuzzing
 	, optimize_for_size
 	, optimize_none
+  , Preallocated
 	, read_none
 	, read_only
 	, returned
@@ -85,6 +90,7 @@ public:
 	, will_return
 	, write_only
 	, zext
+  , EndAttrKinds ///< Sentinel value useful for loops
 	};
 
 	virtual

@@ -85,76 +85,83 @@ convert_basic_blocks(llvm::Function & f, jlm::cfg & cfg)
 static attribute::kind
 convert_attribute_kind(const llvm::Attribute::AttrKind & kind)
 {
-	typedef llvm::Attribute::AttrKind ak;
+  typedef llvm::Attribute::AttrKind ak;
 
-	static std::unordered_map<llvm::Attribute::AttrKind, attribute::kind> map({
-	  {ak::Alignment,                   attribute::kind::alignment}
-	, {ak::AllocSize,                   attribute::kind::alloc_size}
-	, {ak::AlwaysInline,                attribute::kind::always_inline}
-	, {ak::ArgMemOnly,                  attribute::kind::arg_mem_only}
-	, {ak::Builtin,                     attribute::kind::builtin}
-	, {ak::Cold,                        attribute::kind::cold}
-	, {ak::Convergent,                  attribute::kind::convergent}
-	, {ak::Dereferenceable,             attribute::kind::dereferenceable}
-	, {ak::DereferenceableOrNull,       attribute::kind::dereferenceable_or_null}
-	, {ak::ImmArg,                      attribute::kind::imm_arg}
-	, {ak::InAlloca,                    attribute::kind::in_alloca}
-	, {ak::InReg,                       attribute::kind::in_reg}
-	, {ak::InaccessibleMemOnly,         attribute::kind::inaccessible_mem_only}
-	, {ak::InaccessibleMemOrArgMemOnly, attribute::kind::inaccessible_mem_or_arg_mem_only}
-	, {ak::InlineHint,                  attribute::kind::inline_hint}
-	, {ak::JumpTable,                   attribute::kind::jump_table}
-	, {ak::MinSize,                     attribute::kind::min_size}
-	, {ak::Naked,                       attribute::kind::naked}
-	, {ak::Nest,                        attribute::kind::nest}
-	, {ak::NoAlias,                     attribute::kind::no_alias}
-	, {ak::NoBuiltin,                   attribute::kind::no_builtin}
-	, {ak::NoCapture,                   attribute::kind::no_capture}
-	, {ak::NoCfCheck,                   attribute::kind::no_cf_check}
-	, {ak::NoDuplicate,                 attribute::kind::no_duplicate}
-	, {ak::NoFree,                      attribute::kind::no_free}
-	, {ak::NoImplicitFloat,             attribute::kind::no_implicit_float}
-	, {ak::NoInline,                    attribute::kind::no_inline}
-	, {ak::NoRecurse,                   attribute::kind::no_recurse}
-	, {ak::NoRedZone,                   attribute::kind::no_red_zone}
-	, {ak::NoReturn,                    attribute::kind::no_return}
-	, {ak::NoSync,                      attribute::kind::no_sync}
-	, {ak::NoUnwind,                    attribute::kind::no_unwind}
-	, {ak::NonLazyBind,                 attribute::kind::non_lazy_bind}
-	, {ak::NonNull,                     attribute::kind::non_null}
-	, {ak::OptForFuzzing,               attribute::kind::opt_for_fuzzing}
-	, {ak::OptimizeForSize,             attribute::kind::optimize_for_size}
-	, {ak::OptimizeNone,                attribute::kind::optimize_none}
-	, {ak::ReadNone,                    attribute::kind::read_none}
-	, {ak::ReadOnly,                    attribute::kind::read_only}
-	, {ak::Returned,                    attribute::kind::returned}
-	, {ak::ReturnsTwice,                attribute::kind::returns_twice}
-	, {ak::SExt,                        attribute::kind::sext}
-	, {ak::SafeStack,                   attribute::kind::safe_stack}
-	, {ak::SanitizeAddress,             attribute::kind::sanitize_address}
-	, {ak::SanitizeHWAddress,           attribute::kind::sanitize_hwaddress}
-	, {ak::SanitizeMemTag,              attribute::kind::sanitize_mem_tag}
-	, {ak::SanitizeMemory,              attribute::kind::sanitize_memory}
-	, {ak::SanitizeThread,              attribute::kind::sanitize_thread}
-	, {ak::ShadowCallStack,             attribute::kind::shadow_call_stack}
-	, {ak::Speculatable,                attribute::kind::speculatable}
-	, {ak::SpeculativeLoadHardening,    attribute::kind::speculative_load_hardening}
-	, {ak::StackAlignment,              attribute::kind::stack_alignment}
-	, {ak::StackProtect,                attribute::kind::stack_protect}
-	, {ak::StackProtectReq,             attribute::kind::stack_protect_req}
-	, {ak::StackProtectStrong,          attribute::kind::stack_protect_strong}
-	, {ak::StrictFP,                    attribute::kind::strict_fp}
-	, {ak::StructRet,                   attribute::kind::struct_ret}
-	, {ak::SwiftError,                  attribute::kind::swift_error}
-	, {ak::SwiftSelf,                   attribute::kind::swift_self}
-	, {ak::UWTable,                     attribute::kind::uwtable}
-	, {ak::WillReturn,                  attribute::kind::will_return}
-	, {ak::WriteOnly,                   attribute::kind::write_only}
-	, {ak::ZExt,                        attribute::kind::zext}
-	});
+  static std::unordered_map<llvm::Attribute::AttrKind, attribute::kind> map({
+    {ak::None,                        attribute::kind::None},
+    {ak::Alignment,                   attribute::kind::alignment},
+    {ak::AllocSize,                   attribute::kind::alloc_size},
+    {ak::AlwaysInline,                attribute::kind::always_inline},
+    {ak::ArgMemOnly,                  attribute::kind::arg_mem_only},
+    {ak::Builtin,                     attribute::kind::builtin},
+    {ak::ByVal,                       attribute::kind::by_val},
+    {ak::Cold,                        attribute::kind::cold},
+    {ak::Convergent,                  attribute::kind::convergent},
+    {ak::Dereferenceable,             attribute::kind::dereferenceable},
+    {ak::DereferenceableOrNull,       attribute::kind::dereferenceable_or_null},
+    {ak::ImmArg,                      attribute::kind::imm_arg},
+    {ak::InAlloca,                    attribute::kind::in_alloca},
+    {ak::InReg,                       attribute::kind::in_reg},
+    {ak::InaccessibleMemOnly,         attribute::kind::inaccessible_mem_only},
+    {ak::InaccessibleMemOrArgMemOnly, attribute::kind::inaccessible_mem_or_arg_mem_only},
+    {ak::InlineHint,                  attribute::kind::inline_hint},
+    {ak::JumpTable,                   attribute::kind::jump_table},
+    {ak::MinSize,                     attribute::kind::min_size},
+    {ak::Naked,                       attribute::kind::naked},
+    {ak::Nest,                        attribute::kind::nest},
+    {ak::NoAlias,                     attribute::kind::no_alias},
+    {ak::NoBuiltin,                   attribute::kind::no_builtin},
+    {ak::NoCapture,                   attribute::kind::no_capture},
+    {ak::NoCfCheck,                   attribute::kind::no_cf_check},
+    {ak::NoDuplicate,                 attribute::kind::no_duplicate},
+    {ak::NoFree,                      attribute::kind::no_free},
+    {ak::NoImplicitFloat,             attribute::kind::no_implicit_float},
+    {ak::NoInline,                    attribute::kind::no_inline},
+    {ak::NoMerge,                     attribute::kind::NoMerge},
+    {ak::NoRecurse,                   attribute::kind::no_recurse},
+    {ak::NoRedZone,                   attribute::kind::no_red_zone},
+    {ak::NoReturn,                    attribute::kind::no_return},
+    {ak::NoSync,                      attribute::kind::no_sync},
+    {ak::NoUndef,                     attribute::kind::NoUndef},
+    {ak::NoUnwind,                    attribute::kind::no_unwind},
+    {ak::NonLazyBind,                 attribute::kind::non_lazy_bind},
+    {ak::NonNull,                     attribute::kind::non_null},
+    {ak::NullPointerIsValid,          attribute::kind::NullPointerIsValid},
+    {ak::OptForFuzzing,               attribute::kind::opt_for_fuzzing},
+    {ak::OptimizeForSize,             attribute::kind::optimize_for_size},
+    {ak::OptimizeNone,                attribute::kind::optimize_none},
+    {ak::Preallocated,                attribute::kind::Preallocated},
+    {ak::ReadNone,                    attribute::kind::read_none},
+    {ak::ReadOnly,                    attribute::kind::read_only},
+    {ak::Returned,                    attribute::kind::returned},
+    {ak::ReturnsTwice,                attribute::kind::returns_twice},
+    {ak::SExt,                        attribute::kind::sext},
+    {ak::SafeStack,                   attribute::kind::safe_stack},
+    {ak::SanitizeAddress,             attribute::kind::sanitize_address},
+    {ak::SanitizeHWAddress,           attribute::kind::sanitize_hwaddress},
+    {ak::SanitizeMemTag,              attribute::kind::sanitize_mem_tag},
+    {ak::SanitizeMemory,              attribute::kind::sanitize_memory},
+    {ak::SanitizeThread,              attribute::kind::sanitize_thread},
+    {ak::ShadowCallStack,             attribute::kind::shadow_call_stack},
+    {ak::Speculatable,                attribute::kind::speculatable},
+    {ak::SpeculativeLoadHardening,    attribute::kind::speculative_load_hardening},
+    {ak::StackAlignment,              attribute::kind::stack_alignment},
+    {ak::StackProtect,                attribute::kind::stack_protect},
+    {ak::StackProtectReq,             attribute::kind::stack_protect_req},
+    {ak::StackProtectStrong,          attribute::kind::stack_protect_strong},
+    {ak::StrictFP,                    attribute::kind::strict_fp},
+    {ak::StructRet,                   attribute::kind::struct_ret},
+    {ak::SwiftError,                  attribute::kind::swift_error},
+    {ak::SwiftSelf,                   attribute::kind::swift_self},
+    {ak::UWTable,                     attribute::kind::uwtable},
+    {ak::WillReturn,                  attribute::kind::will_return},
+    {ak::WriteOnly,                   attribute::kind::write_only},
+    {ak::ZExt,                        attribute::kind::zext},
+    {ak::EndAttrKinds,                attribute::kind::EndAttrKinds}
+  });
 
-	JLM_ASSERT(map.find(kind) != map.end());
-	return map[kind];
+  JLM_ASSERT(map.find(kind) != map.end());
+  return map[kind];
 }
 
 static std::unique_ptr<jlm::attribute>
