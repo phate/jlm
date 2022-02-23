@@ -27,11 +27,13 @@ public:
 	, always_inline
 	, arg_mem_only
 	, builtin
+  , ByRef
 	, by_val
 	, cold
 	, convergent
 	, dereferenceable
 	, dereferenceable_or_null
+  , Hot
 	, imm_arg
 	, in_alloca
 	, in_reg
@@ -40,10 +42,12 @@ public:
 	, inline_hint
 	, jump_table
 	, min_size
+  , MustProgress
 	, naked
 	, nest
 	, no_alias
 	, no_builtin
+  , NoCallback
 	, no_capture
 	, no_cf_check
 	, no_duplicate
@@ -51,6 +55,7 @@ public:
 	, no_implicit_float
 	, no_inline
   , NoMerge
+  , NoProfile
 	, no_recurse
 	, no_red_zone
 	, no_return
@@ -280,6 +285,12 @@ public:
 		std::unique_ptr<type_attribute> ta(new type_attribute(kind::by_val, std::move(type)));
 		return ta;
 	}
+
+  static std::unique_ptr<attribute>
+  CreateStructRetAttribute(std::unique_ptr<jive::valuetype> type)
+  {
+    return std::unique_ptr<attribute>(new type_attribute(kind::struct_ret, std::move(type)));
+  }
 
 private:
 	std::unique_ptr<jive::valuetype> type_;
