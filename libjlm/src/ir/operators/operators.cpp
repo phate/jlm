@@ -579,6 +579,29 @@ undef_constant_op::copy() const
 	return std::unique_ptr<jive::operation>(new jlm::undef_constant_op(*this));
 }
 
+PoisonValueOperation::~PoisonValueOperation() noexcept
+= default;
+
+bool
+PoisonValueOperation::operator==(const operation & other) const noexcept
+{
+  auto operation = dynamic_cast<const PoisonValueOperation*>(&other);
+  return operation
+      && operation->GetType() == GetType();
+}
+
+std::string
+PoisonValueOperation::debug_string() const
+{
+  return "poison";
+}
+
+std::unique_ptr<jive::operation>
+PoisonValueOperation::copy() const
+{
+  return std::unique_ptr<jive::operation>(new PoisonValueOperation(*this));
+}
+
 /* floating point arithmetic operator */
 
 fpbin_op::~fpbin_op()

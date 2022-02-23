@@ -94,11 +94,13 @@ convert_attribute_kind(const llvm::Attribute::AttrKind & kind)
     {ak::AlwaysInline,                attribute::kind::always_inline},
     {ak::ArgMemOnly,                  attribute::kind::arg_mem_only},
     {ak::Builtin,                     attribute::kind::builtin},
+    {ak::ByRef,                       attribute::kind::ByRef},
     {ak::ByVal,                       attribute::kind::by_val},
     {ak::Cold,                        attribute::kind::cold},
     {ak::Convergent,                  attribute::kind::convergent},
     {ak::Dereferenceable,             attribute::kind::dereferenceable},
     {ak::DereferenceableOrNull,       attribute::kind::dereferenceable_or_null},
+    {ak::Hot,                         attribute::kind::Hot},
     {ak::ImmArg,                      attribute::kind::imm_arg},
     {ak::InAlloca,                    attribute::kind::in_alloca},
     {ak::InReg,                       attribute::kind::in_reg},
@@ -107,10 +109,12 @@ convert_attribute_kind(const llvm::Attribute::AttrKind & kind)
     {ak::InlineHint,                  attribute::kind::inline_hint},
     {ak::JumpTable,                   attribute::kind::jump_table},
     {ak::MinSize,                     attribute::kind::min_size},
+    {ak::MustProgress,                attribute::kind::MustProgress},
     {ak::Naked,                       attribute::kind::naked},
     {ak::Nest,                        attribute::kind::nest},
     {ak::NoAlias,                     attribute::kind::no_alias},
     {ak::NoBuiltin,                   attribute::kind::no_builtin},
+    {ak::NoCallback,                  attribute::kind::NoCallback},
     {ak::NoCapture,                   attribute::kind::no_capture},
     {ak::NoCfCheck,                   attribute::kind::no_cf_check},
     {ak::NoDuplicate,                 attribute::kind::no_duplicate},
@@ -118,6 +122,7 @@ convert_attribute_kind(const llvm::Attribute::AttrKind & kind)
     {ak::NoImplicitFloat,             attribute::kind::no_implicit_float},
     {ak::NoInline,                    attribute::kind::no_inline},
     {ak::NoMerge,                     attribute::kind::NoMerge},
+    {ak::NoProfile,                   attribute::kind::NoProfile},
     {ak::NoRecurse,                   attribute::kind::no_recurse},
     {ak::NoRedZone,                   attribute::kind::no_red_zone},
     {ak::NoReturn,                    attribute::kind::no_return},
@@ -175,6 +180,11 @@ convert_attribute(const llvm::Attribute & attribute, context & ctx)
 			auto type = convert_type(attribute.getValueAsType(), ctx);
 			return type_attribute::create_byval(std::move(type));
 		}
+
+    if (attribute.getKindAsEnum() == llvm::Attribute::AttrKind::StructRet) {
+      auto type = convert_type(attribute.getValueAsType(), ctx);
+      return type_attribute::CreateStructRetAttribute(std::move(type));
+    }
 
 		JLM_UNREACHABLE("Unhandled attribute");
 	};

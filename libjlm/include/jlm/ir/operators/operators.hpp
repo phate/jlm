@@ -1018,6 +1018,76 @@ private:
 	}
 };
 
+/** \brief PoisonValueOperation class
+ *
+ * This operator is the Jlm equivalent of LLVM's PoisonValue constant.
+ */
+class PoisonValueOperation final : public jive::simple_op {
+public:
+  ~PoisonValueOperation() noexcept override;
+
+  explicit
+  PoisonValueOperation(const jive::valuetype & type)
+  : jive::simple_op({}, {type})
+  {}
+
+  PoisonValueOperation(const PoisonValueOperation&)
+  = default;
+
+  PoisonValueOperation(PoisonValueOperation&&)  = delete;
+
+  PoisonValueOperation &
+  operator=(const PoisonValueOperation&) = delete;
+
+  PoisonValueOperation &
+  operator=(PoisonValueOperation&&)  = delete;
+
+  bool
+  operator==(const operation & other) const noexcept override;
+
+  std::string
+  debug_string() const override;
+
+  std::unique_ptr<jive::operation>
+  copy() const override;
+
+  const jive::valuetype &
+  GetType() const noexcept
+  {
+    auto & type = result(0).type();
+    JLM_ASSERT(dynamic_cast<const jive::valuetype*>(&type));
+    return *static_cast<const jive::valuetype*>(&type);
+  }
+
+  static std::unique_ptr<jlm::tac>
+  Create(const jive::type & type)
+  {
+    auto & valueType = CheckAndConvertType(type);
+
+    PoisonValueOperation operation(valueType);
+    return tac::create(operation, {});
+  }
+
+  static jive::output *
+  Create(jive::region * region, const jive::type & type)
+  {
+    auto & valueType = CheckAndConvertType(type);
+
+    PoisonValueOperation operation(valueType);
+    return jive::simple_node::create_normalized(region, operation, {})[0];
+  }
+
+private:
+  static const jive::valuetype &
+  CheckAndConvertType(const jive::type & type)
+  {
+    if (auto valueType = dynamic_cast<const jive::valuetype*>(&type))
+      return *valueType;
+
+    throw jlm::error("Expected value type.");
+  }
+};
+
 /* floating point arithmetic operator */
 
 enum class fpop {add, sub, mul, div, mod};

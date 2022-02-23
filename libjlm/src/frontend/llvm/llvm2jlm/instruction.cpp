@@ -304,40 +304,60 @@ convert_function(
 	return convert_value(c, tacs, ctx);
 }
 
+static const variable *
+ConvertConstant(
+  llvm::PoisonValue * poisonValue,
+  tacsvector_t & threeAddressCodeVector,
+  jlm::context & context)
+{
+  auto type = convert_type(poisonValue->getType(), context);
+  threeAddressCodeVector.push_back(PoisonValueOperation::Create(*type));
+
+  return threeAddressCodeVector.back()->result(0);
+}
+
+template <class T> static const variable *
+ConvertConstant(
+  llvm::Constant * constant,
+  tacsvector_t & threeAddressCodeVector,
+  jlm::context & context)
+{
+  JLM_ASSERT(llvm::dyn_cast<T>(constant));
+  return ConvertConstant(llvm::cast<T>(constant), threeAddressCodeVector, context);
+}
+
 const variable *
 convert_constant(
 	llvm::Constant * c,
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx)
 {
-	static std::unordered_map<
-		unsigned,
-		const variable*(*)(
-			llvm::Constant*,
-			std::vector<std::unique_ptr<jlm::tac>>&,
-			context & ctx)
-	> cmap({
-		{llvm::Value::ConstantIntVal,           convert_int_constant}
-	,	{llvm::Value::UndefValueVal,            convert_undefvalue}
-	,	{llvm::Value::ConstantExprVal,          convert_constantExpr}
-	,	{llvm::Value::ConstantFPVal,            convert_constantFP}
-	,	{llvm::Value::GlobalVariableVal,        convert_globalVariable}
-	,	{llvm::Value::ConstantPointerNullVal,   convert_constantPointerNull}
-	,	{llvm::Value::BlockAddressVal,          convert_blockAddress}
-	,	{llvm::Value::ConstantAggregateZeroVal, convert_constantAggregateZero}
-	,	{llvm::Value::ConstantArrayVal,         convert_constantArray}
-	,	{llvm::Value::ConstantDataArrayVal,     convert_constantDataArray}
-	,	{llvm::Value::ConstantDataVectorVal,    convert_constantDataVector}
-	,	{llvm::Value::ConstantStructVal,        ConvertConstantStruct}
-	,	{llvm::Value::ConstantVectorVal,        convert_constantVector}
-	,	{llvm::Value::GlobalAliasVal,           convert_globalAlias}
-	,	{llvm::Value::FunctionVal,              convert_function}
-	});
+  static std::unordered_map<
+    unsigned,
+    const variable*(*)(llvm::Constant*, std::vector<std::unique_ptr<jlm::tac>>&, context & ctx)
+    > constantMap({
+      {llvm::Value::BlockAddressVal,          convert_blockAddress},
+      {llvm::Value::ConstantAggregateZeroVal, convert_constantAggregateZero},
+      {llvm::Value::ConstantArrayVal,         convert_constantArray},
+      {llvm::Value::ConstantDataArrayVal,     convert_constantDataArray},
+      {llvm::Value::ConstantDataVectorVal,    convert_constantDataVector},
+      {llvm::Value::ConstantExprVal,          convert_constantExpr},
+      {llvm::Value::ConstantFPVal,            convert_constantFP},
+      {llvm::Value::ConstantIntVal,           convert_int_constant},
+      {llvm::Value::ConstantPointerNullVal,   convert_constantPointerNull},
+      {llvm::Value::ConstantStructVal,        ConvertConstantStruct},
+      {llvm::Value::ConstantVectorVal,        convert_constantVector},
+      {llvm::Value::FunctionVal,              convert_function},
+      {llvm::Value::GlobalAliasVal,           convert_globalAlias},
+      {llvm::Value::GlobalVariableVal,        convert_globalVariable},
+      {llvm::Value::PoisonValueVal,           ConvertConstant<llvm::PoisonValue>},
+      {llvm::Value::UndefValueVal,            convert_undefvalue}
+    });
 
-	if (cmap.find(c->getValueID()) == cmap.end())
-		JLM_UNREACHABLE("This should have never happend.");
+  if (constantMap.find(c->getValueID()) != constantMap.end())
+    return constantMap[c->getValueID()](c, tacs, ctx);
 
-	return cmap[c->getValueID()](c, tacs, ctx);
+  JLM_UNREACHABLE("Unsupported LLVM Constant.");
 }
 
 std::vector<std::unique_ptr<jlm::tac>>

@@ -168,6 +168,16 @@ convert_undef(
 
 static llvm::Value *
 convert(
+  const PoisonValueOperation & operation,
+  const std::vector<const variable*>&,
+  llvm::IRBuilder<>&,
+  context & ctx)
+{
+  return llvm::PoisonValue::get(convert_type(operation.GetType(), ctx));
+}
+
+static llvm::Value *
+convert(
 	const CallOperation & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
@@ -909,6 +919,7 @@ convert_operation(
   , {typeid(jive::ctlconstant_op), convert_ctlconstant}
   , {typeid(ConstantFP), convert<ConstantFP>}
   , {typeid(jlm::undef_constant_op), convert_undef}
+  , {typeid(PoisonValueOperation), convert<PoisonValueOperation>}
   , {typeid(jive::match_op), convert_match}
   , {typeid(jlm::assignment_op), convert_assignment}
   , {typeid(jlm::branch_op), convert_branch}
