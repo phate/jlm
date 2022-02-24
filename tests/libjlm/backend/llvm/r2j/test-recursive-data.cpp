@@ -38,11 +38,12 @@ test()
 
 	jive::output * delta1, * delta2;
 	{
-		auto delta = delta::node::create(
+		auto delta = delta::node::Create(
 			region,
 			vt,
 			"test-delta1",
 			linkage::external_linkage,
+      "",
 			false);
 		auto dep1 = delta->add_ctxvar(r2->argument());
 		auto dep2 = delta->add_ctxvar(dep);
@@ -50,11 +51,12 @@ test()
 	}
 
 	{
-		auto delta = delta::node::create(
+		auto delta = delta::node::Create(
 			region,
 			vt,
 			"test-delta2",
 			linkage::external_linkage,
+      "",
 			false);
 		auto dep1 = delta->add_ctxvar(r1->argument());
 		auto dep2 = delta->add_ctxvar(dep);

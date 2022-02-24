@@ -26,9 +26,11 @@ public:
 		const ptrtype & type,
 		const std::string & name,
 		const jlm::linkage & linkage,
+    std::string section,
 		bool constant)
 	: constant_(constant)
 	, name_(name)
+  , Section_(std::move(section))
 	, linkage_(linkage)
 	, type_(type.copy())
 	{}
@@ -36,13 +38,15 @@ public:
 	operation(const operation & other)
 	: constant_(other.constant_)
 	, name_(other.name_)
+  , Section_(other.Section_)
 	, linkage_(other.linkage_)
 	, type_(other.type_->copy())
 	{}
 
-	operation(operation && other)
+	operation(operation && other) noexcept
 	: constant_(other.constant_)
 	, name_(std::move(other.name_))
+  , Section_(std::move(other.Section_))
 	, linkage_(other.linkage_)
 	, type_(std::move(other.type_))
 	{}
@@ -68,6 +72,12 @@ public:
 		return name_;
 	}
 
+  [[nodiscard]] const std::string &
+  Section() const noexcept
+  {
+    return Section_;
+  }
+
 	const jlm::linkage &
 	linkage() const noexcept
 	{
@@ -90,6 +100,7 @@ public:
 private:
 	bool constant_;
 	std::string name_;
+  std::string Section_;
 	jlm::linkage linkage_;
 	std::unique_ptr<jive::type> type_;
 };
@@ -168,6 +179,12 @@ public:
 		return operation().name();
 	}
 
+  [[nodiscard]] const std::string &
+  Section() const noexcept
+  {
+    return operation().Section();
+  }
+
 	const jlm::linkage &
 	linkage() const noexcept
 	{
@@ -227,19 +244,21 @@ public:
 	* \param type The delta node's type.
 	* \param name The delta node's name.
 	* \param linkage The delta node's linkage.
+	* \param Section The delta node's section.
 	* \param constant True, if the delta node is constant, otherwise false.
 	*
 	* \return A delta node without inputs or outputs.
 	*/
 	static node *
-	create(
+	Create(
 		jive::region * parent,
 		const ptrtype & type,
 		const std::string & name,
 		const jlm::linkage & linkage,
+    std::string section,
 		bool constant)
 	{
-		delta::operation op(type, name, linkage, constant);
+		delta::operation op(type, name, linkage, std::move(section), constant);
 		return new delta::node(parent, std::move(op));
 	}
 

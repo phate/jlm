@@ -17,11 +17,8 @@
 #include <jlm/frontend/llvm/llvm2jlm/module.hpp>
 #include <jlm/frontend/llvm/llvm2jlm/type.hpp>
 
-#include <jive/rvsdg/type.hpp>
-
 #include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/IR/BasicBlock.h>
-#include <llvm/IR/CFG.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/Module.h>
@@ -100,6 +97,7 @@ convert_attribute_kind(const llvm::Attribute::AttrKind & kind)
     {ak::Convergent,                  attribute::kind::convergent},
     {ak::Dereferenceable,             attribute::kind::dereferenceable},
     {ak::DereferenceableOrNull,       attribute::kind::dereferenceable_or_null},
+    {ak::ElementType,                 attribute::kind::ElementType},
     {ak::Hot,                         attribute::kind::Hot},
     {ak::ImmArg,                      attribute::kind::imm_arg},
     {ak::InAlloca,                    attribute::kind::in_alloca},
@@ -126,6 +124,7 @@ convert_attribute_kind(const llvm::Attribute::AttrKind & kind)
     {ak::NoRecurse,                   attribute::kind::no_recurse},
     {ak::NoRedZone,                   attribute::kind::no_red_zone},
     {ak::NoReturn,                    attribute::kind::no_return},
+    {ak::NoSanitizeCoverage,          attribute::kind::NoSanitizeCoverage},
     {ak::NoSync,                      attribute::kind::no_sync},
     {ak::NoUndef,                     attribute::kind::NoUndef},
     {ak::NoUnwind,                    attribute::kind::no_unwind},
@@ -156,9 +155,11 @@ convert_attribute_kind(const llvm::Attribute::AttrKind & kind)
     {ak::StackProtectStrong,          attribute::kind::stack_protect_strong},
     {ak::StrictFP,                    attribute::kind::strict_fp},
     {ak::StructRet,                   attribute::kind::struct_ret},
+    {ak::SwiftAsync,                  attribute::kind::SwiftAsync},
     {ak::SwiftError,                  attribute::kind::swift_error},
     {ak::SwiftSelf,                   attribute::kind::swift_self},
     {ak::UWTable,                     attribute::kind::uwtable},
+    {ak::VScaleRange,                 attribute::kind::VScaleRange},
     {ak::WillReturn,                  attribute::kind::will_return},
     {ak::WriteOnly,                   attribute::kind::write_only},
     {ak::ZExt,                        attribute::kind::zext},
@@ -428,8 +429,15 @@ declare_globals(llvm::Module & lm, context & ctx)
 		auto constant = gv.isConstant();
 		auto type = convert_type(gv.getType(), ctx);
 		auto linkage = convert_linkage(gv.getLinkage());
+    auto section = gv.getSection().str();
 
-		return data_node::create(ctx.module().ipgraph(), name, *type, linkage, constant);
+		return data_node::Create(
+      ctx.module().ipgraph(),
+      name,
+      *type,
+      linkage,
+      std::move(section),
+      constant);
 	};
 
 	auto create_function_node = [](const llvm::Function & f, context & ctx)

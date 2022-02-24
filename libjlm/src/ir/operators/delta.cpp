@@ -35,6 +35,7 @@ operation::operator==(const jive::operation & other) const noexcept
 	    && op->name_ == name_
 	    && op->linkage_ == linkage_
 	    && op->constant_ == constant_
+      && op->Section_ == Section_
 	    && *op->type_ == *type_;
 }
 
@@ -54,7 +55,13 @@ node::copy(
 delta::node *
 node::copy(jive::region * region, jive::substitution_map & smap) const
 {
-	auto delta = create(region, type(), name(), linkage(), constant());
+	auto delta = Create(
+    region,
+    type(),
+    name(),
+    linkage(),
+    Section(),
+    constant());
 
 	/* add context variables */
 	jive::substitution_map subregionmap;

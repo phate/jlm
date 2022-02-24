@@ -369,10 +369,12 @@ private:
 		const std::string & name,
 		const ptrtype & type,
 		const jlm::linkage & linkage,
+    std::string section,
 		bool constant)
 	: ipgraph_node(clg)
 	, constant_(constant)
 	, name_(name)
+  , Section_(std::move(section))
 	, linkage_(linkage)
 	, type_(type.copy())
 	{}
@@ -396,6 +398,12 @@ public:
 		return constant_;
 	}
 
+  const std::string &
+  Section() const noexcept
+  {
+    return Section_;
+  }
+
 	inline const data_node_init *
 	initialization() const noexcept
 	{
@@ -414,15 +422,16 @@ public:
 		init_ = std::move(init);
 	}
 
-	static inline data_node *
-	create(
+	static data_node *
+	Create(
 		jlm::ipgraph & clg,
 		const std::string & name,
 		const jlm::ptrtype & type,
 		const jlm::linkage & linkage,
+    std::string section,
 		bool constant)
 	{
-		std::unique_ptr<data_node> node(new data_node(clg, name, type, linkage, constant));
+		std::unique_ptr<data_node> node(new data_node(clg, name, type, linkage, std::move(section), constant));
 		auto ptr = node.get();
 		clg.add_node(std::move(node));
 		return ptr;
@@ -431,6 +440,7 @@ public:
 private:
 	bool constant_;
 	std::string name_;
+  std::string Section_;
 	jlm::linkage linkage_;
 	std::unique_ptr<jive::type> type_;
 	std::unique_ptr<data_node_init> init_;
