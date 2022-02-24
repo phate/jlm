@@ -33,6 +33,7 @@ public:
 	, convergent
 	, dereferenceable
 	, dereferenceable_or_null
+  , ElementType
   , Hot
 	, imm_arg
 	, in_alloca
@@ -59,6 +60,7 @@ public:
 	, no_recurse
 	, no_red_zone
 	, no_return
+  , NoSanitizeCoverage
 	, no_sync
   , NoUndef
 	, no_unwind
@@ -89,9 +91,11 @@ public:
 	, stack_protect_strong
 	, strict_fp
 	, struct_ret
+  , SwiftAsync
 	, swift_error
 	, swift_self
 	, uwtable
+  , VScaleRange
 	, will_return
 	, write_only
 	, zext

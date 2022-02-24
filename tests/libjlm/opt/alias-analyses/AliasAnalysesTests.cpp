@@ -946,11 +946,12 @@ DeltaTest1::SetupRvsdg()
 
   auto SetupGlobalF = [&]()
   {
-    auto dfNode = delta::node::create(
+    auto dfNode = delta::node::Create(
       graph->root(),
       ptrtype(jive::bit32),
       "f",
       linkage::external_linkage,
+      "",
       false);
 
     auto constant = jive::create_bitconstant(dfNode->subregion(), 32, 0);
@@ -1047,11 +1048,12 @@ DeltaTest2::SetupRvsdg()
 
   auto SetupD1 = [&]()
   {
-    auto delta = delta::node::create(
+    auto delta = delta::node::Create(
       graph->root(),
       ptrtype(jive::bit32),
       "d1",
       linkage::external_linkage,
+      "",
       false);
 
     auto constant = jive::create_bitconstant(delta->subregion(), 32, 0);
@@ -1061,11 +1063,12 @@ DeltaTest2::SetupRvsdg()
 
   auto SetupD2 = [&]()
   {
-    auto delta = delta::node::create(
+    auto delta = delta::node::Create(
       graph->root(),
       ptrtype(jive::bit32),
       "d2",
       linkage::external_linkage,
+      "",
       false);
 
     auto constant = jive::create_bitconstant(delta->subregion(), 32, 0);

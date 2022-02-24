@@ -445,7 +445,12 @@ convert_phi_node(const jive::node & node, context & ctx)
 		} else {
 			JLM_ASSERT(is<delta::operation>(node));
 			auto d = static_cast<const delta::node*>(node);
-			auto data = data_node::create(ipg, d->name(), d->type(), d->linkage(),
+			auto data = data_node::Create(
+        ipg,
+        d->name(),
+        d->type(),
+        d->linkage(),
+        d->Section(),
 				d->constant());
 			ctx.insert(subregion->argument(n), module.create_global_value(data));
 		}
@@ -484,11 +489,12 @@ convert_delta_node(const jive::node & node, context & ctx)
 	auto delta = static_cast<const delta::node*>(&node);
 	auto & m = ctx.module();
 
-	auto dnode = data_node::create(
+	auto dnode = data_node::Create(
 		m.ipgraph(),
 		delta->name(),
 		delta->type(),
 		delta->linkage(),
+    delta->Section(),
 		delta->constant());
 	dnode->set_initialization(create_initialization(delta, ctx));
 	auto v = m.create_global_value(dnode);
@@ -542,7 +548,13 @@ convert_imports(const jive::graph & graph, ipgraph_module & im, context & ctx)
 			JLM_ASSERT(dynamic_cast<const ptrtype*>(&argument->type()));
 			auto & type = *static_cast<const ptrtype*>(&argument->type());
 			const auto & name = import->name();
-			auto dnode = data_node::create(ipg, name, type, import->linkage(), false);
+			auto dnode = data_node::Create(
+        ipg,
+        name,
+        type,
+        import->linkage(),
+        "",
+        false);
 			auto v = im.create_global_value(dnode);
 			ctx.insert(argument, v);
 		}

@@ -25,20 +25,22 @@ test()
 
 	auto imp = rm.Rvsdg().add_import({vt, ""});
 
-	auto delta1 = delta::node::create(
+	auto delta1 = delta::node::Create(
     rm.Rvsdg().root(),
 		pt,
 		"test-delta1",
 		linkage::external_linkage,
+    "",
 		true);
 	auto dep = delta1->add_ctxvar(imp);
 	auto d1 = delta1->finalize(create_testop(delta1->subregion(), {dep}, {&vt})[0]);
 
-	auto delta2 = delta::node::create(
+	auto delta2 = delta::node::Create(
     rm.Rvsdg().root(),
 		pt,
 		"test-delta2",
 		linkage::internal_linkage,
+    "",
 		false);
 	auto d2 = delta2->finalize(create_testop(delta2->subregion(), {}, {&vt})[0]);
 

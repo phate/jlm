@@ -32,19 +32,39 @@ jobs:
       with:
         path: ${{ github.workspace }}/*
         key: ${{ runner.os }}-${{ github.sha }}-jlm
+    - name: Get key used for LLVM packages
+      run: wget https://apt.llvm.org/llvm-snapshot.gpg.key
+    - name: Add the key to apt
+      run: sudo apt-key add llvm-snapshot.gpg.key
+    - name: Add deb URL to sources.list
+      run: sudo sh -c 'echo "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-13 main" >> /etc/apt/sources.list'
+    - name: Add deb-src URL to sources.list
+      run: sudo sh -c 'echo "deb-src http://apt.llvm.org/focal/ llvm-toolchain-focal-13 main" >> /etc/apt/sources.list'
+    - name: Update the list of packages
+      run: sudo apt-get update
     - name: Install dependencies (LLVM)
-      run: sudo apt-get install llvm-12-dev clang-12
+      run: sudo apt-get install llvm-13-dev clang-13
     - name: Compile jlm
       run: make jlm-release -j `nproc`
     - name: Run unit and C tests
       run: make check -j `nproc`
 
   ubuntu-latest-gcc:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
+    - name: Get key used for LLVM packages
+      run: wget https://apt.llvm.org/llvm-snapshot.gpg.key
+    - name: Add the key to apt
+      run: sudo apt-key add llvm-snapshot.gpg.key
+    - name: Add deb URL to sources.list
+      run: sudo sh -c 'echo "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-13 main" >> /etc/apt/sources.list'
+    - name: Add deb-src URL to sources.list
+      run: sudo sh -c 'echo "deb-src http://apt.llvm.org/focal/ llvm-toolchain-focal-13 main" >> /etc/apt/sources.list'
+    - name: Update the list of packages
+      run: sudo apt-get update
     - name: Install dependencies (LLVM)
-      run: sudo apt-get install llvm-12-dev clang-12
+      run: sudo apt-get install llvm-13-dev clang-13
     - name: Compile jlm
       run: make CXX=g++ jlm-release -j `nproc`
     - name: Run unit and C tests
@@ -61,8 +81,18 @@ jobs:
         key: ${{ runner.os }}-${{ github.sha }}-jlm
     - name: Add jlc to PATH
       run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
+    - name: Get key used for LLVM packages
+      run: wget https://apt.llvm.org/llvm-snapshot.gpg.key
+    - name: Add the key to apt
+      run: sudo apt-key add llvm-snapshot.gpg.key
+    - name: Add deb URL to sources.list
+      run: sudo sh -c 'echo "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-13 main" >> /etc/apt/sources.list'
+    - name: Add deb-src URL to sources.list
+      run: sudo sh -c 'echo "deb-src http://apt.llvm.org/focal/ llvm-toolchain-focal-13 main" >> /etc/apt/sources.list'
+    - name: Update the list of packages
+      run: sudo apt-get update
     - name: Install dependencies (LLVM)
-      run: sudo apt-get install llvm-12-dev clang-12
+      run: sudo apt-get install llvm-13-dev clang-13
     - name: Install valgrind
       run: sudo apt-get install valgrind
     - name: Valgrind Check 
@@ -79,8 +109,18 @@ jobs:
         key: ${{ runner.os }}-${{ github.sha }}-jlm-bin
     - name: Add jlc to PATH
       run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
+    - name: Get key used for LLVM packages
+      run: wget https://apt.llvm.org/llvm-snapshot.gpg.key
+    - name: Add the key to apt
+      run: sudo apt-key add llvm-snapshot.gpg.key
+    - name: Add deb URL to sources.list
+      run: sudo sh -c 'echo "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-13 main" >> /etc/apt/sources.list'
+    - name: Add deb-src URL to sources.list
+      run: sudo sh -c 'echo "deb-src http://apt.llvm.org/focal/ llvm-toolchain-focal-13 main" >> /etc/apt/sources.list'
+    - name: Update the list of packages
+      run: sudo apt-get update
     - name: Install dependencies (LLVM)
-      run: sudo apt-get install llvm-12-dev clang-12
+      run: sudo apt-get install llvm-13-dev clang-13
     - name: Clone polybench
       run: git clone https://github.com/phate/polybench-jlm.git
     - name: Check polybench
@@ -97,8 +137,18 @@ jobs:
         key: ${{ runner.os }}-${{ github.sha }}-jlm-bin
     - name: Add jlc to PATH
       run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
+    - name: Get key used for LLVM packages
+      run: wget https://apt.llvm.org/llvm-snapshot.gpg.key
+    - name: Add the key to apt
+      run: sudo apt-key add llvm-snapshot.gpg.key
+    - name: Add deb URL to sources.list
+      run: sudo sh -c 'echo "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-13 main" >> /etc/apt/sources.list'
+    - name: Add deb-src URL to sources.list
+      run: sudo sh -c 'echo "deb-src http://apt.llvm.org/focal/ llvm-toolchain-focal-13 main" >> /etc/apt/sources.list'
+    - name: Update the list of packages
+      run: sudo apt-get update
     - name: Install dependencies (LLVM)
-      run: sudo apt-get install llvm-12-dev clang-12
+      run: sudo apt-get install llvm-13-dev clang-13
     - name: Clone jlm-test-suite
       run: git clone https://github.com/phate/jlm-eval-suite.git
     - name: Update submodules

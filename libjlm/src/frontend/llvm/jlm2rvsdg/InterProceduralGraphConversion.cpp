@@ -1161,11 +1161,12 @@ ConvertDataNode(
     /*
      * data node with initialization
      */
-    auto deltaNode = delta::node::create(
+    auto deltaNode = delta::node::Create(
       &region,
       dataNode.type(),
       dataNode.name(),
       dataNode.linkage(),
+      dataNode.Section(),
       dataNode.constant());
     auto & outerVariableMap = regionalizedVariableMap.GetTopVariableMap();
     regionalizedVariableMap.PushRegion(*deltaNode->subregion());
