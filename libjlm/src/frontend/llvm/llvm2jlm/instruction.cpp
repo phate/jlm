@@ -55,20 +55,20 @@ convert_constant(llvm::Constant*, std::vector<std::unique_ptr<jlm::tac>>&, conte
 static jive::bitvalue_repr
 convert_apint(const llvm::APInt & value)
 {
-	llvm::APInt v;
-	if (value.isNegative())
-		v = -value;
+  llvm::APInt v;
+  if (value.isNegative())
+    v = -value;
 
-	std::string str = value.toString(2, false);
-	std::reverse(str.begin(), str.end());
+  auto str = toString(value, 2, false);
+  std::reverse(str.begin(), str.end());
 
-	jive::bitvalue_repr vr(str.c_str());
-	if (value.isNegative())
-		vr = vr.sext(value.getBitWidth() - str.size());
-	else
-		vr = vr.zext(value.getBitWidth() - str.size());
+  jive::bitvalue_repr vr(str.c_str());
+  if (value.isNegative())
+    vr = vr.sext(value.getBitWidth() - str.size());
+  else
+    vr = vr.zext(value.getBitWidth() - str.size());
 
-	return vr;
+  return vr;
 }
 
 static const variable *
