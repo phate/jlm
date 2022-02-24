@@ -279,19 +279,17 @@ convert_phi(
 	return builder.CreatePHI(t, op.narguments());
 }
 
-static inline llvm::Value *
-convert_load(
-	const jive::simple_op & op,
+static llvm::Value *
+convert(
+	const load_op & operation,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_ASSERT(is<load_op>(op));
-	auto load = static_cast<const load_op*>(&op);
-
-	auto i = builder.CreateLoad(ctx.value(args[0]));
-	i->setAlignment(llvm::Align(load->alignment()));
-	return i;
+  auto type = convert_type(operation.pointee_type(), ctx);
+	auto loadInstruction = builder.CreateLoad(type, ctx.value(args[0]));
+	loadInstruction->setAlignment(llvm::Align(operation.alignment()));
+	return loadInstruction;
 }
 
 static inline llvm::Value *
@@ -924,7 +922,7 @@ convert_operation(
   , {typeid(jlm::assignment_op), convert_assignment}
   , {typeid(jlm::branch_op), convert_branch}
   , {typeid(jlm::phi_op), convert_phi}
-  , {typeid(jlm::load_op), convert_load}
+  , {typeid(jlm::load_op), convert<load_op>}
   , {typeid(jlm::store_op), convert_store}
   , {typeid(jlm::alloca_op), convert_alloca}
   , {typeid(jlm::getelementptr_op), convert_getelementptr}
