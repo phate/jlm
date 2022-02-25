@@ -8,7 +8,7 @@ on:
 
 jobs:
   docs:
-    runs-on: ubuntu-20.10
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
     - name: Install dependencies
@@ -17,7 +17,7 @@ jobs:
       run: make docs
 
   build:
-    runs-on: ubuntu-20.10
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
     - name: Cache build
@@ -32,7 +32,17 @@ jobs:
       with:
         path: ${{ github.workspace }}/*
         key: ${{ runner.os }}-${{ github.sha }}-jlm
-    - name: Install dependencies (LLVM)
+    - name: Get key used for LLVM packages
+      run: wget https://apt.llvm.org/llvm-snapshot.gpg.key
+    - name: Add the key to apt
+      run: sudo apt-key add llvm-snapshot.gpg.key
+    - name: Add deb URL to sources.list
+      run: sudo sh -c 'echo "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-13 main" >> /etc/apt/sources.list'
+    - name: Add deb-src URL to sources.list
+      run: sudo sh -c 'echo "deb-src http://apt.llvm.org/focal/ llvm-toolchain-focal-13 main" >> /etc/apt/sources.list'
+    - name: Update the list of packages
+      run: sudo apt-get update
+    - name: Install LLVM-13
       run: sudo apt-get install llvm-13-dev clang-13
     - name: Compile jlm
       run: make jlm-release -j `nproc`
@@ -40,10 +50,20 @@ jobs:
       run: make check -j `nproc`
 
   ubuntu-latest-gcc:
-    runs-on: ubuntu-20.10
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
-    - name: Install dependencies (LLVM)
+    - name: Get key used for LLVM packages
+      run: wget https://apt.llvm.org/llvm-snapshot.gpg.key
+    - name: Add the key to apt
+      run: sudo apt-key add llvm-snapshot.gpg.key
+    - name: Add deb URL to sources.list
+      run: sudo sh -c 'echo "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-13 main" >> /etc/apt/sources.list'
+    - name: Add deb-src URL to sources.list
+      run: sudo sh -c 'echo "deb-src http://apt.llvm.org/focal/ llvm-toolchain-focal-13 main" >> /etc/apt/sources.list'
+    - name: Update the list of packages
+      run: sudo apt-get update
+    - name: Install LLVM-13
       run: sudo apt-get install llvm-13-dev clang-13
     - name: Compile jlm
       run: make CXX=g++ jlm-release -j `nproc`
@@ -51,7 +71,7 @@ jobs:
       run: make check -j `nproc`
 
   valgrind:
-    runs-on: ubuntu-20.10
+    runs-on: ubuntu-20.04
     needs: build
     steps:
     - name: Cache
@@ -61,15 +81,25 @@ jobs:
         key: ${{ runner.os }}-${{ github.sha }}-jlm
     - name: Add jlc to PATH
       run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
-    - name: Install dependencies (LLVM)
-      run: sudo apt-get install llvm-12-dev clang-13
+    - name: Get key used for LLVM packages
+      run: wget https://apt.llvm.org/llvm-snapshot.gpg.key
+    - name: Add the key to apt
+      run: sudo apt-key add llvm-snapshot.gpg.key
+    - name: Add deb URL to sources.list
+      run: sudo sh -c 'echo "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-13 main" >> /etc/apt/sources.list'
+    - name: Add deb-src URL to sources.list
+      run: sudo sh -c 'echo "deb-src http://apt.llvm.org/focal/ llvm-toolchain-focal-13 main" >> /etc/apt/sources.list'
+    - name: Update the list of packages
+      run: sudo apt-get update
+    - name: Install LLVM-13
+      run: sudo apt-get install llvm-13-dev clang-13
     - name: Install valgrind
       run: sudo apt-get install valgrind
     - name: Valgrind Check 
       run: make -C ${{ github.workspace }} valgrind-check
 
   polybench:
-    runs-on: ubuntu-20.10
+    runs-on: ubuntu-20.04
     needs: build
     steps:
     - name: Cache
@@ -79,7 +109,17 @@ jobs:
         key: ${{ runner.os }}-${{ github.sha }}-jlm-bin
     - name: Add jlc to PATH
       run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
-    - name: Install dependencies (LLVM)
+    - name: Get key used for LLVM packages
+      run: wget https://apt.llvm.org/llvm-snapshot.gpg.key
+    - name: Add the key to apt
+      run: sudo apt-key add llvm-snapshot.gpg.key
+    - name: Add deb URL to sources.list
+      run: sudo sh -c 'echo "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-13 main" >> /etc/apt/sources.list'
+    - name: Add deb-src URL to sources.list
+      run: sudo sh -c 'echo "deb-src http://apt.llvm.org/focal/ llvm-toolchain-focal-13 main" >> /etc/apt/sources.list'
+    - name: Update the list of packages
+      run: sudo apt-get update
+    - name: Install LLVM-13
       run: sudo apt-get install llvm-13-dev clang-13
     - name: Clone polybench
       run: git clone https://github.com/phate/polybench-jlm.git
@@ -87,7 +127,7 @@ jobs:
       run: make -C polybench-jlm check
 
   llvm-test-suite:
-    runs-on: ubuntu-20.10
+    runs-on: ubuntu-20.04
     needs: build
     steps:
     - name: Cache
@@ -97,7 +137,17 @@ jobs:
         key: ${{ runner.os }}-${{ github.sha }}-jlm-bin
     - name: Add jlc to PATH
       run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
-    - name: Install dependencies (LLVM)
+    - name: Get key used for LLVM packages
+      run: wget https://apt.llvm.org/llvm-snapshot.gpg.key
+    - name: Add the key to apt
+      run: sudo apt-key add llvm-snapshot.gpg.key
+    - name: Add deb URL to sources.list
+      run: sudo sh -c 'echo "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-13 main" >> /etc/apt/sources.list'
+    - name: Add deb-src URL to sources.list
+      run: sudo sh -c 'echo "deb-src http://apt.llvm.org/focal/ llvm-toolchain-focal-13 main" >> /etc/apt/sources.list'
+    - name: Update the list of packages
+      run: sudo apt-get update
+    - name: Install LLVM-13
       run: sudo apt-get install llvm-13-dev clang-13
     - name: Clone jlm-test-suite
       run: git clone https://github.com/phate/jlm-eval-suite.git
