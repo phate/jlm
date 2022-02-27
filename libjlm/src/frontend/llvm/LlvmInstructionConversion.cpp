@@ -22,8 +22,6 @@
 #include <llvm/IR/IntrinsicInst.h>
 #include <llvm/IR/Function.h>
 
-#include <typeindex>
-
 namespace jlm {
 
 const variable *
@@ -159,7 +157,7 @@ convert_constantPointerNull(
 	JLM_ASSERT(llvm::dyn_cast<const llvm::ConstantPointerNull>(constant));
 	auto & c = *llvm::cast<const llvm::ConstantPointerNull>(constant);
 
-	auto t = convert_type(c.getType(), ctx);
+	auto t = ConvertPointerType(c.getType(), ctx);
 	tacs.push_back(ptr_constant_null_op::create(*t));
 
 	return tacs.back()->result(0);
@@ -486,7 +484,7 @@ convert_icmp_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 		binop = map[p](it->getIntegerBitWidth());
 	} else if (t->isPointerTy() || (t->isVectorTy() && t->getScalarType()->isPointerTy())) {
 		auto pt = llvm::cast<llvm::PointerType>(t->isVectorTy() ? t->getScalarType() : t);
-		binop = std::make_unique<ptrcmp_op>(*convert_type(pt, ctx), ptrmap[p]);
+		binop = std::make_unique<ptrcmp_op>(*ConvertPointerType(pt, ctx), ptrmap[p]);
 	} else
 		JLM_UNREACHABLE("This should have never happend.");
 
