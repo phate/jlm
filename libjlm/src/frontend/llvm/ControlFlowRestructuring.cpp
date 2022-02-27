@@ -457,7 +457,7 @@ restructure_loops(jlm::cfg * cfg)
 }
 
 void
-restructure_branches(jlm::cfg * cfg)
+RestructureBranches(jlm::cfg * cfg)
 {
 	JLM_ASSERT(is_acyclic(*cfg));
 	restructure_branches(cfg->entry(), cfg->exit());
