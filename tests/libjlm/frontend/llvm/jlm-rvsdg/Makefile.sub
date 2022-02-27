@@ -1,4 +1,0 @@
-TESTS += \
-	libjlm/frontend/llvm/jlm-rvsdg/test-export \
-	libjlm/frontend/llvm/jlm-rvsdg/test-recursive-data \
-	libjlm/frontend/llvm/jlm-rvsdg/test-restructuring

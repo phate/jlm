@@ -5,7 +5,7 @@
 
 #include "test-registry.hpp"
 
-#include <jlm/frontend/llvm/jlm2rvsdg/ControlFlowRestructuring.hpp>
+#include <jlm/frontend/llvm/ControlFlowRestructuring.hpp>
 #include <jlm/ir/basic-block.hpp>
 #include <jlm/ir/cfg.hpp>
 #include <jlm/ir/cfg-structure.hpp>
@@ -263,4 +263,4 @@ verify()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/frontend/llvm/jlm-rvsdg/test-restructuring", verify)
+JLM_UNIT_TEST_REGISTER("libjlm/frontend/llvm/test-restructuring", verify)
