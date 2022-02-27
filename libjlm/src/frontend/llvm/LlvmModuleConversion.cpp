@@ -178,12 +178,12 @@ convert_attribute(const llvm::Attribute & attribute, context & ctx)
 		JLM_ASSERT(attribute.isTypeAttribute());
 
 		if (attribute.getKindAsEnum() == llvm::Attribute::AttrKind::ByVal) {
-			auto type = convert_type(attribute.getValueAsType(), ctx);
+			auto type = ConvertType(attribute.getValueAsType(), ctx);
 			return type_attribute::create_byval(std::move(type));
 		}
 
     if (attribute.getKindAsEnum() == llvm::Attribute::AttrKind::StructRet) {
-      auto type = convert_type(attribute.getValueAsType(), ctx);
+      auto type = ConvertType(attribute.getValueAsType(), ctx);
       return type_attribute::CreateStructRetAttribute(std::move(type));
     }
 
@@ -243,7 +243,7 @@ convert_argument(const llvm::Argument & argument, context & ctx)
 {
 	auto function = argument.getParent();
 	auto name = argument.getName().str();
-	auto type = convert_type(argument.getType(), ctx);
+	auto type = ConvertType(argument.getType(), ctx);
 	auto attributes = convert_attributes(function->getAttributes().getParamAttributes(
 		argument.getArgNo()), ctx);
 
@@ -361,7 +361,7 @@ create_cfg(llvm::Function & f, context & ctx)
 	/* add results */
 	const tacvariable * result = nullptr;
 	if (!f.getReturnType()->isVoidTy()) {
-		auto type = convert_type(f.getReturnType(), ctx);
+		auto type = ConvertType(f.getReturnType(), ctx);
 		entry_block->append_last(undef_constant_op::create(*type, "_r_"));
 		result = entry_block->last()->result(0);
 

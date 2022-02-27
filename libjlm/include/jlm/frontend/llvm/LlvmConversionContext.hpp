@@ -206,7 +206,7 @@ public:
 		auto dcl = jive::rcddeclaration::create();
 		declarations_[type] = dcl.get();
 		for (size_t n = 0; n < type->getNumElements(); n++)
-			dcl->append(*convert_type(type->getElementType(n), *this));
+			dcl->append(*ConvertType(type->getElementType(n), *this));
 
 		dcls.push_back(std::move(dcl));
 		return declarations_[type];
