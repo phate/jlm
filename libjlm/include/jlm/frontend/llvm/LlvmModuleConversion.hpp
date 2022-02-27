@@ -21,7 +21,7 @@ namespace jlm {
 class ipgraph_module;
 
 attribute::kind
-convert_attribute_kind(const llvm::Attribute::AttrKind & kind);
+ConvertAttributeKind(const llvm::Attribute::AttrKind & kind);
 
 std::unique_ptr<ipgraph_module>
 ConvertLlvmModule(llvm::Module & module);

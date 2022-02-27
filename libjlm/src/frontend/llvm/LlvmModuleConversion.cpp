@@ -80,7 +80,7 @@ convert_basic_blocks(llvm::Function & f, jlm::cfg & cfg)
 }
 
 attribute::kind
-convert_attribute_kind(const llvm::Attribute::AttrKind & kind)
+ConvertAttributeKind(const llvm::Attribute::AttrKind & kind)
 {
   typedef llvm::Attribute::AttrKind ak;
 
@@ -200,7 +200,7 @@ convert_attribute(const llvm::Attribute & attribute, context & ctx)
 	{
 		JLM_ASSERT(attribute.isEnumAttribute());
 
-		auto kind = convert_attribute_kind(attribute.getKindAsEnum());
+		auto kind = ConvertAttributeKind(attribute.getKindAsEnum());
 		return enum_attribute::create(kind);
 	};
 
@@ -208,7 +208,7 @@ convert_attribute(const llvm::Attribute & attribute, context & ctx)
 	{
 		JLM_ASSERT(attribute.isIntAttribute());
 
-		auto kind = convert_attribute_kind(attribute.getKindAsEnum());
+		auto kind = ConvertAttributeKind(attribute.getKindAsEnum());
 		return int_attribute::create(kind, attribute.getValueAsInt());
 	};
 
