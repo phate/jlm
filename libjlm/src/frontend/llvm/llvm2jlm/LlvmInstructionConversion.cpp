@@ -5,7 +5,7 @@
 
 #include <jlm/common.hpp>
 #include <jlm/frontend/llvm/llvm2jlm/context.hpp>
-#include <jlm/frontend/llvm/llvm2jlm/instruction.hpp>
+#include <jlm/frontend/llvm/llvm2jlm/LlvmInstructionConversion.hpp>
 #include <jlm/frontend/llvm/llvm2jlm/LlvmTypeConversion.hpp>
 
 #include <jlm/ir/basic-block.hpp>
