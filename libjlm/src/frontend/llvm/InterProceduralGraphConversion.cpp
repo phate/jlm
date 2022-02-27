@@ -987,7 +987,7 @@ RestructureControlFlowGraph(
 {
   auto restructureControlFlowGraph = [](jlm::cfg * controlFlowGraph)
   {
-    restructure(controlFlowGraph);
+    RestructureControlFlow(controlFlowGraph);
     straighten(*controlFlowGraph);
   };
 

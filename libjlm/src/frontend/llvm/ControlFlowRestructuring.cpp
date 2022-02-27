@@ -472,7 +472,7 @@ restructure(jlm::cfg_node * entry, jlm::cfg_node * exit, std::vector<tcloop> & t
 }
 
 void
-restructure(jlm::cfg * cfg)
+RestructureControlFlow(jlm::cfg * cfg)
 {
 	JLM_ASSERT(is_closed(*cfg));
 
