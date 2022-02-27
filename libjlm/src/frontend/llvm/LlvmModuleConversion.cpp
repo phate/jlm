@@ -12,10 +12,10 @@
 #include <jlm/ir/ipgraph.hpp>
 #include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/operators/operators.hpp>
-#include <jlm/frontend/llvm/llvm2jlm/LlvmConversionContext.hpp>
-#include <jlm/frontend/llvm/llvm2jlm/LlvmInstructionConversion.hpp>
-#include <jlm/frontend/llvm/llvm2jlm/LlvmModuleConversion.hpp>
-#include <jlm/frontend/llvm/llvm2jlm/LlvmTypeConversion.hpp>
+#include <jlm/frontend/llvm/LlvmConversionContext.hpp>
+#include <jlm/frontend/llvm/LlvmInstructionConversion.hpp>
+#include <jlm/frontend/llvm/LlvmModuleConversion.hpp>
+#include <jlm/frontend/llvm/LlvmTypeConversion.hpp>
 
 #include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/IR/BasicBlock.h>

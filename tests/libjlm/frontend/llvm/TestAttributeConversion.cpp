@@ -5,7 +5,7 @@
 
 #include <test-registry.hpp>
 
-#include <jlm/frontend/llvm/llvm2jlm/LlvmModuleConversion.hpp>
+#include <jlm/frontend/llvm/LlvmModuleConversion.hpp>
 
 #include <llvm/IR/Attributes.h>
 
@@ -27,4 +27,4 @@ test()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/frontend/llvm/llvm-jlm/TestAttributeConversion", test)
+JLM_UNIT_TEST_REGISTER("libjlm/frontend/llvm/TestAttributeConversion", test)

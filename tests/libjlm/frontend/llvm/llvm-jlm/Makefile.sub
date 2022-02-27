@@ -1,5 +1,0 @@
-TESTS += \
-    libjlm/frontend/llvm/llvm-jlm/TestAttributeConversion \
-	libjlm/frontend/llvm/llvm-jlm/test-endless-loop \
-	libjlm/frontend/llvm/llvm-jlm/test-function-call \
-	libjlm/frontend/llvm/llvm-jlm/test-select \
