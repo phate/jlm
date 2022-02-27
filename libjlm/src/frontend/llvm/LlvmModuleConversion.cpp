@@ -58,7 +58,7 @@ patch_phi_operands(const std::vector<llvm::PHINode*> & phis, context & ctx)
 		for (size_t n = 0; n < phi->getNumOperands(); n++) {
 			tacsvector_t tacs;
 			auto bb = ctx.get(phi->getIncomingBlock(n));
-			operands.push_back(convert_value(phi->getIncomingValue(n), tacs, ctx));
+			operands.push_back(ConvertValue(phi->getIncomingValue(n), tacs, ctx));
 			bb->insert_before_branch(tacs);
 			nodes.push_back(bb);
 		}

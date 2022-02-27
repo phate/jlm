@@ -18,7 +18,7 @@ class context;
 class variable;
 
 const variable *
-convert_value(
+ConvertValue(
 	llvm::Value * v,
 	tacsvector_t & tacs,
 	context & ctx);
