@@ -69,7 +69,7 @@ convert_type(const llvm::VectorType * type, context & ctx)
 }
 
 static inline std::unique_ptr<ptrtype>
-convert_type(const llvm::PointerType * type, context & ctx)
+ConvertPointerType(const llvm::PointerType * type, context & ctx)
 {
 	auto t = ConvertType(llvm::cast<llvm::Type>(type), ctx);
 	JLM_ASSERT(dynamic_cast<const ptrtype*>(t.get()));
