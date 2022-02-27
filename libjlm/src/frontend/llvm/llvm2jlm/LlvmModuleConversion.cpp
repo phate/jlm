@@ -13,7 +13,7 @@
 #include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/operators/operators.hpp>
 #include <jlm/frontend/llvm/llvm2jlm/context.hpp>
-#include <jlm/frontend/llvm/llvm2jlm/instruction.hpp>
+#include <jlm/frontend/llvm/llvm2jlm/LlvmInstructionConversion.hpp>
 #include <jlm/frontend/llvm/llvm2jlm/LlvmModuleConversion.hpp>
 #include <jlm/frontend/llvm/llvm2jlm/LlvmTypeConversion.hpp>
 
