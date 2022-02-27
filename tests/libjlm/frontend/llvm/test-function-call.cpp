@@ -6,7 +6,7 @@
 #include <test-registry.hpp>
 #include <test-util.hpp>
 
-#include <jlm/frontend/llvm/llvm2jlm/LlvmModuleConversion.hpp>
+#include <jlm/frontend/llvm/LlvmModuleConversion.hpp>
 #include <jlm/ir/print.hpp>
 #include <jlm/ir/operators/call.hpp>
 #include <jlm/ir/operators/operators.hpp>
@@ -183,4 +183,4 @@ test()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/frontend/llvm/llvm-jlm/test-function-call", test)
+JLM_UNIT_TEST_REGISTER("libjlm/frontend/llvm/test-function-call", test)

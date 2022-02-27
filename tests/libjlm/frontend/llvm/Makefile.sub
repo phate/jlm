@@ -1,2 +1,7 @@
-include tests/libjlm/frontend/llvm/llvm-jlm/Makefile.sub
+TESTS += \
+    libjlm/frontend/llvm/TestAttributeConversion \
+	libjlm/frontend/llvm/test-endless-loop \
+	libjlm/frontend/llvm/test-function-call \
+	libjlm/frontend/llvm/test-select \
+
 include tests/libjlm/frontend/llvm/jlm-rvsdg/Makefile.sub
