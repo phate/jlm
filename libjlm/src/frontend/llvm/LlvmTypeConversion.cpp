@@ -18,7 +18,7 @@
 namespace jlm {
 
 jlm::fpsize
-convert_fpsize(const llvm::Type * type)
+ExtractFloatingPointSize(const llvm::Type * type)
 {
 	JLM_ASSERT(type->isFloatingPointTy());
 
