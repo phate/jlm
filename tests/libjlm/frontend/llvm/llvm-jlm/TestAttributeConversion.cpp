@@ -5,7 +5,7 @@
 
 #include <test-registry.hpp>
 
-#include <jlm/frontend/llvm/llvm2jlm/module.hpp>
+#include <jlm/frontend/llvm/llvm2jlm/LlvmModuleConversion.hpp>
 
 #include <llvm/IR/Attributes.h>
 

@@ -6,7 +6,7 @@
 #include <test-registry.hpp>
 #include <test-util.hpp>
 
-#include <jlm/frontend/llvm/llvm2jlm/module.hpp>
+#include <jlm/frontend/llvm/llvm2jlm/LlvmModuleConversion.hpp>
 #include <jlm/ir/print.hpp>
 
 #include <llvm/IR/BasicBlock.h>
