@@ -5,7 +5,7 @@
 
 #include "test-registry.hpp"
 
-#include <jlm/frontend/llvm/jlm2rvsdg/restructuring.hpp>
+#include <jlm/frontend/llvm/jlm2rvsdg/ControlFlowRestructuring.hpp>
 #include <jlm/ir/basic-block.hpp>
 #include <jlm/ir/cfg.hpp>
 #include <jlm/ir/cfg-structure.hpp>

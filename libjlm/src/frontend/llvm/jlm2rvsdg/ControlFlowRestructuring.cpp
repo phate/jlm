@@ -7,7 +7,6 @@
 #include <jlm/ir/cfg.hpp>
 #include <jlm/ir/cfg-structure.hpp>
 #include <jlm/ir/cfg-node.hpp>
-#include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/operators/operators.hpp>
 
 #include <jive/rvsdg/control.hpp>
