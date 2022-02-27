@@ -24,7 +24,7 @@ attribute::kind
 convert_attribute_kind(const llvm::Attribute::AttrKind & kind);
 
 std::unique_ptr<ipgraph_module>
-convert_module(llvm::Module & module);
+ConvertLlvmModule(llvm::Module & module);
 
 }
 

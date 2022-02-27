@@ -497,7 +497,7 @@ convert_globals(llvm::Module & lm, context & ctx)
 }
 
 std::unique_ptr<ipgraph_module>
-convert_module(llvm::Module & m)
+ConvertLlvmModule(llvm::Module & m)
 {
 	filepath fp(m.getSourceFileName());
 	auto im = ipgraph_module::create(fp, m.getTargetTriple(), m.getDataLayoutStr());

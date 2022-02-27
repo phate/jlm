@@ -173,7 +173,7 @@ main (int argc, char ** argv)
 	}
 
 	/* LLVM to JLM pass */
-	auto jm = jlm::convert_module(*lm);
+	auto jm = jlm::ConvertLlvmModule(*lm);
 	if (flags.l2j)
 		jlm::print(*jm, stdout);
 	if (flags.l2jdot)
