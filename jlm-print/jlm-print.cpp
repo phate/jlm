@@ -5,8 +5,8 @@
 
 #include <jlm/backend/llvm/jlm2llvm/jlm2llvm.hpp>
 #include <jlm/backend/llvm/rvsdg2jlm/rvsdg2jlm.hpp>
-#include "jlm/frontend/llvm/LlvmModuleConversion.hpp"
-#include <jlm/frontend/llvm/jlm2rvsdg/InterProceduralGraphConversion.hpp>
+#include <jlm/frontend/llvm/InterProceduralGraphConversion.hpp>
+#include <jlm/frontend/llvm/LlvmModuleConversion.hpp>
 #include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/print.hpp>
 #include <jlm/ir/RvsdgModule.hpp>

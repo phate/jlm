@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/frontend/llvm/jlm2rvsdg/InterProceduralGraphConversion.hpp>
-#include <jlm/frontend/llvm/jlm2rvsdg/ControlFlowRestructuring.hpp>
+#include <jlm/frontend/llvm/ControlFlowRestructuring.hpp>
+#include <jlm/frontend/llvm/InterProceduralGraphConversion.hpp>
 
 #include <jlm/ir/aggregation.hpp>
 #include <jlm/ir/Annotation.hpp>

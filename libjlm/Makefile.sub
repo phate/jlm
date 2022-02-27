@@ -12,8 +12,8 @@ LIBJLM_SRC = \
 	libjlm/src/driver/command.cpp \
 	libjlm/src/driver/passgraph.cpp \
 	\
-	libjlm/src/frontend/llvm/jlm2rvsdg/InterProceduralGraphConversion.cpp \
-	libjlm/src/frontend/llvm/jlm2rvsdg/ControlFlowRestructuring.cpp \
+	libjlm/src/frontend/llvm/ControlFlowRestructuring.cpp \
+	libjlm/src/frontend/llvm/InterProceduralGraphConversion.cpp \
 	libjlm/src/frontend/llvm/LlvmInstructionConversion.cpp \
 	libjlm/src/frontend/llvm/LlvmModuleConversion.cpp \
 	libjlm/src/frontend/llvm/LlvmTypeConversion.cpp \

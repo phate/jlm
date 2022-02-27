@@ -9,7 +9,7 @@
 
 #include <jive/view.hpp>
 
-#include <jlm/frontend/llvm/jlm2rvsdg/InterProceduralGraphConversion.hpp>
+#include <jlm/frontend/llvm/InterProceduralGraphConversion.hpp>
 #include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/print.hpp>
 #include <jlm/ir/RvsdgModule.hpp>
@@ -70,4 +70,4 @@ test()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/frontend/llvm/jlm-rvsdg/test-recursive-data", test)
+JLM_UNIT_TEST_REGISTER("libjlm/frontend/llvm/test-recursive-data", test)

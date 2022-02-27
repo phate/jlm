@@ -8,7 +8,7 @@
 
 #include <jive/view.hpp>
 
-#include <jlm/frontend/llvm/jlm2rvsdg/InterProceduralGraphConversion.hpp>
+#include <jlm/frontend/llvm/InterProceduralGraphConversion.hpp>
 #include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/util/Statistics.hpp>
@@ -50,4 +50,4 @@ test()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/frontend/llvm/jlm-rvsdg/test-export", test)
+JLM_UNIT_TEST_REGISTER("libjlm/frontend/llvm/test-export", test)
