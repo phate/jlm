@@ -30,10 +30,10 @@ ConvertInstruction(
 	context & ctx);
 
 std::vector<std::unique_ptr<jlm::tac>>
-convert_constant(llvm::Constant * constant, context & ctx);
+ConvertConstant(llvm::Constant * constant, context & ctx);
 
 const variable *
-convert_constant(
+ConvertConstant(
 	llvm::Constant * constant,
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx);

@@ -469,7 +469,7 @@ create_initialization(llvm::GlobalVariable & gv, context & ctx)
 		return nullptr;
 
 	auto init = gv.getInitializer();
-	auto tacs = convert_constant(init, ctx);
+	auto tacs = ConvertConstant(init, ctx);
 	if (tacs.empty())
 		return std::make_unique<data_node_init>(ctx.lookup_value(init));
 

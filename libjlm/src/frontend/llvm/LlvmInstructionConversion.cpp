@@ -40,7 +40,7 @@ convert_value(llvm::Value * v, tacsvector_t & tacs, context & ctx)
 		return ctx.lookup_value(v);
 
 	if (auto c = llvm::dyn_cast<llvm::Constant>(v))
-		return convert_constant(c, tacs, ctx);
+		return ConvertConstant(c, tacs, ctx);
 
 	JLM_UNREACHABLE("This should not have happened!");
 }
@@ -48,7 +48,7 @@ convert_value(llvm::Value * v, tacsvector_t & tacs, context & ctx)
 /* constant */
 
 const variable *
-convert_constant(llvm::Constant*, std::vector<std::unique_ptr<jlm::tac>>&, context&);
+ConvertConstant(llvm::Constant*, std::vector<std::unique_ptr<jlm::tac>>&, context&);
 
 static jive::bitvalue_repr
 convert_apint(const llvm::APInt & value)
@@ -201,7 +201,7 @@ convert_constantArray(
 		auto operand = c->getOperand(n);
 		JLM_ASSERT(llvm::dyn_cast<const llvm::Constant>(operand));
 		auto constant = llvm::cast<llvm::Constant>(operand);
-		elements.push_back(convert_constant(constant, tacs, ctx));
+		elements.push_back(ConvertConstant(constant, tacs, ctx));
 	}
 
 	tacs.push_back(ConstantArray::create(elements));
@@ -220,7 +220,7 @@ convert_constantDataArray(
 
 	std::vector<const variable*> elements;
 	for (size_t n = 0; n < c.getNumElements(); n++)
-		elements.push_back(convert_constant(c.getElementAsConstant(n), tacs, ctx));
+		elements.push_back(ConvertConstant(c.getElementAsConstant(n), tacs, ctx));
 
 	tacs.push_back(ConstantDataArray::create(elements));
 
@@ -238,7 +238,7 @@ convert_constantDataVector(
 
 	std::vector<const variable*> elements;
 	for (size_t n = 0; n < c->getNumElements(); n++)
-		elements.push_back(convert_constant(c->getElementAsConstant(n), tacs, ctx));
+		elements.push_back(ConvertConstant(c->getElementAsConstant(n), tacs, ctx));
 
 	tacs.push_back(constant_data_vector_op::Create(elements));
 
@@ -255,7 +255,7 @@ ConvertConstantStruct(
 
 	std::vector<const variable*> elements;
 	for (size_t n = 0; n < c->getNumOperands(); n++)
-		elements.push_back(convert_constant(c->getAggregateElement(n), tacs, ctx));
+		elements.push_back(ConvertConstant(c->getAggregateElement(n), tacs, ctx));
 
 	auto type = ConvertType(c->getType(), ctx);
 	tacs.push_back(ConstantStruct::create(elements, *type));
@@ -273,7 +273,7 @@ convert_constantVector(
 
 	std::vector<const variable*> elements;
 	for (size_t n = 0; n < c->getNumOperands(); n++)
-		elements.push_back(convert_constant(c->getAggregateElement(n), tacs, ctx));
+		elements.push_back(ConvertConstant(c->getAggregateElement(n), tacs, ctx));
 
 	auto type = ConvertType(c->getType(), ctx);
 	tacs.push_back(constantvector_op::create(elements, *type));
@@ -325,7 +325,7 @@ ConvertConstant(
 }
 
 const variable *
-convert_constant(
+ConvertConstant(
 	llvm::Constant * c,
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx)
@@ -359,10 +359,10 @@ convert_constant(
 }
 
 std::vector<std::unique_ptr<jlm::tac>>
-convert_constant(llvm::Constant * c, context & ctx)
+ConvertConstant(llvm::Constant * c, context & ctx)
 {
 	std::vector<std::unique_ptr<jlm::tac>> tacs;
-	convert_constant(c, tacs, ctx);
+  ConvertConstant(c, tacs, ctx);
 	return tacs;
 }
 
