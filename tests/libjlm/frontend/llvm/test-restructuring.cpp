@@ -37,7 +37,7 @@ test_acyclic_structured()
 //	jlm::view_ascii(cfg, stdout);
 
 	size_t nnodes = cfg.nnodes();
-	restructure_branches(&cfg);
+  RestructureBranches(&cfg);
 
 //	jlm::view_ascii(cfg, stdout);
 
@@ -67,7 +67,7 @@ test_acyclic_unstructured()
 
 //	jlm::view_ascii(cfg, stdout);
 
-	restructure_branches(&cfg);
+  RestructureBranches(&cfg);
 
 //	jlm::view_ascii(cfg, stdout);
 

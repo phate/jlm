@@ -14,7 +14,7 @@ void
 restructure_loops(jlm::cfg * cfg);
 
 void
-restructure_branches(jlm::cfg * cfg);
+RestructureBranches(jlm::cfg * cfg);
 
 void
 RestructureControlFlow(jlm::cfg * cfg);
