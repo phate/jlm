@@ -108,9 +108,9 @@ convert_constantExpr(
 	auto c = llvm::cast<llvm::ConstantExpr>(constant);
 
 	/*
-		FIXME: convert_instruction currently assumes that a instruction's result variable
+		FIXME: ConvertInstruction currently assumes that a instruction's result variable
 					 is already added to the context. This is not the case for constants and we
-					 therefore need to do some poilerplate checking in convert_instruction to
+					 therefore need to do some poilerplate checking in ConvertInstruction to
 					 see whether a variable was already declared or we need to create a new
 					 variable.
 	*/
@@ -118,7 +118,7 @@ convert_constantExpr(
 	/* FIXME: getAsInstruction is none const, forcing all llvm parameters to be none const */
 	/* FIXME: The invocation of getAsInstruction() introduces a memory leak. */
 	auto instruction = c->getAsInstruction();
-	auto v = convert_instruction(instruction, tacs, ctx);
+	auto v = ConvertInstruction(instruction, tacs, ctx);
 	instruction->dropAllReferences();
 	return v;
 }
@@ -975,7 +975,7 @@ convert(
 }
 
 const variable *
-convert_instruction(
+ConvertInstruction(
 	llvm::Instruction * i,
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx)
