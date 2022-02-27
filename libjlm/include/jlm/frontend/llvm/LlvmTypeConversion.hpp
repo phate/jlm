@@ -45,7 +45,7 @@ convert_arraytype(const llvm::ArrayType * type, context & ctx)
 }
 
 static inline std::unique_ptr<FunctionType>
-convert_type(const llvm::FunctionType * type, context & ctx)
+ConvertFunctionType(const llvm::FunctionType * type, context & ctx)
 {
 	auto t = ConvertType(llvm::cast<llvm::Type>(type), ctx);
 	JLM_ASSERT(dynamic_cast<const FunctionType*>(t.get()));
