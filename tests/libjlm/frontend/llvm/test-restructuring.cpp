@@ -96,7 +96,7 @@ test_dowhile()
 //	jlm::view_ascii(cfg, stdout);
 
 	size_t nnodes = cfg.nnodes();
-	restructure(&cfg);
+  RestructureControlFlow(&cfg);
 
 //	jlm::view_ascii(cfg, stdout);
 
@@ -123,7 +123,7 @@ test_while()
 
 //	jlm::view_ascii(cfg, stdout);
 
-	restructure(&cfg);
+  RestructureControlFlow(&cfg);
 
 	/* FIXME: Nodes are not printed in the right order */
 //	jlm::view_ascii(cfg, stdout);
@@ -157,7 +157,7 @@ test_irreducible()
 
 //	jlm::view_ascii(cfg, stdout);
 
-	restructure(&cfg);
+  RestructureControlFlow(&cfg);
 
 //	jlm::view_ascii(cfg, stdout);
 	assert(is_proper_structured(cfg));
@@ -187,7 +187,7 @@ test_acyclic_unstructured_in_dowhile()
 
 //	jlm::view_ascii(cfg, stdout);
 
-	restructure(&cfg);
+  RestructureControlFlow(&cfg);
 
 //	jlm::view_ascii(cfg, stdout);
 	assert(is_proper_structured(cfg));
@@ -217,7 +217,7 @@ test_lor_before_dowhile()
 
 //	jlm::view_ascii(cfg, stdout);
 
-	restructure(&cfg);
+  RestructureControlFlow(&cfg);
 
 //	jlm::view_ascii(cfg, stdout);
 	assert(is_proper_structured(cfg));
@@ -242,7 +242,7 @@ test_static_endless_loop()
 
 //	jlm::print_dot(cfg, stdout);
 
-	restructure(&cfg);
+  RestructureControlFlow(&cfg);
 
 //	jlm::print_dot(cfg, stdout);
 	assert(is_proper_structured(cfg));
