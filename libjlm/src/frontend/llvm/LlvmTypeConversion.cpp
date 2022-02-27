@@ -48,7 +48,7 @@ convert_pointer_type(const llvm::Type * t, context & ctx)
 	JLM_ASSERT(t->getTypeID() == llvm::Type::PointerTyID);
 	const auto & type = llvm::cast<llvm::PointerType>(t);
 
-	auto et = convert_type(type->getElementType(), ctx);
+	auto et = ConvertType(type->getElementType(), ctx);
 	return std::unique_ptr<jive::valuetype>(new jlm::ptrtype(*et));
 }
 
@@ -61,7 +61,7 @@ convert_function_type(const llvm::Type * t, context & ctx)
 	/* arguments */
 	std::vector<std::unique_ptr<jive::type>> argumentTypes;
 	for (size_t n = 0; n < type->getNumParams(); n++)
-		argumentTypes.push_back(convert_type(type->getParamType(n), ctx));
+		argumentTypes.push_back(ConvertType(type->getParamType(n), ctx));
 	if (type->isVarArg()) argumentTypes.push_back(create_varargtype());
 	argumentTypes.push_back(iostatetype::create());
 	argumentTypes.push_back(MemoryStateType::Create());
@@ -70,7 +70,7 @@ convert_function_type(const llvm::Type * t, context & ctx)
 	/* results */
 	std::vector<std::unique_ptr<jive::type>> resultTypes;
 	if (type->getReturnType()->getTypeID() != llvm::Type::VoidTyID)
-		resultTypes.push_back(convert_type(type->getReturnType(), ctx));
+		resultTypes.push_back(ConvertType(type->getReturnType(), ctx));
 	resultTypes.push_back(iostatetype::create());
 	resultTypes.push_back(MemoryStateType::Create());
 	resultTypes.push_back(loopstatetype::create());
@@ -112,7 +112,7 @@ static std::unique_ptr<jive::valuetype>
 convert_array_type(const llvm::Type * t, context & ctx)
 {
 	JLM_ASSERT(t->isArrayTy());
-	auto etype = convert_type(t->getArrayElementType(), ctx);
+	auto etype = ConvertType(t->getArrayElementType(), ctx);
 	return std::unique_ptr<jive::valuetype>(new jlm::arraytype(*etype, t->getArrayNumElements()));
 }
 
@@ -120,7 +120,7 @@ static std::unique_ptr<jive::valuetype>
 convert_fixed_vector_type(const llvm::Type * t, context & ctx)
 {
 	JLM_ASSERT(t->getTypeID() == llvm::Type::FixedVectorTyID);
-	auto type = convert_type(t->getScalarType(), ctx);
+	auto type = ConvertType(t->getScalarType(), ctx);
 	return std::unique_ptr<jive::valuetype>(new jlm::fixedvectortype(*type, llvm::cast<llvm::FixedVectorType>(t)->getNumElements()));
 }
 
@@ -128,12 +128,12 @@ static std::unique_ptr<jive::valuetype>
 convert_scalable_vector_type(const llvm::Type * t, context & ctx)
 {
 	JLM_ASSERT(t->getTypeID() == llvm::Type::ScalableVectorTyID);
-	auto type = convert_type(t->getScalarType(), ctx);
+	auto type = ConvertType(t->getScalarType(), ctx);
 	return std::unique_ptr<jive::valuetype>(new jlm::scalablevectortype(*type, llvm::cast<llvm::ScalableVectorType>(t)->getMinNumElements()));
 }
 
 std::unique_ptr<jive::valuetype>
-convert_type(const llvm::Type * t, context & ctx)
+ConvertType(const llvm::Type * t, context & ctx)
 {
 	static std::unordered_map<
 	  llvm::Type::TypeID
