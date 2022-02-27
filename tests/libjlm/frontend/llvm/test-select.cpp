@@ -58,7 +58,7 @@ test_scalar_select()
 	auto llmod = setup(ctx);
 	jlm::print(*llmod);
 
-	auto ipgmod = jlm::convert_module(*llmod);
+	auto ipgmod = jlm::ConvertLlvmModule(*llmod);
 	jlm::print(*ipgmod, stdout);
 
 	assert(contains<jlm::select_op>(*ipgmod, "f"));
@@ -92,7 +92,7 @@ test_vector_select()
 	auto llmod = setup(ctx);
 	jlm::print(*llmod);
 
-	auto ipgmod = jlm::convert_module(*llmod);
+	auto ipgmod = jlm::ConvertLlvmModule(*llmod);
 	jlm::print(*ipgmod, stdout);
 
 	assert(contains<jlm::vectorselect_op>(*ipgmod, "f"));

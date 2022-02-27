@@ -42,7 +42,7 @@ test()
 	auto llvmModule = setup(ctx);
 	jlm::print(*llvmModule);
 
-	auto ipgModule = jlm::convert_module(*llvmModule);
+	auto ipgModule = jlm::ConvertLlvmModule(*llvmModule);
 	jlm::print(*ipgModule, stdout);
 
 	return 0;

@@ -43,7 +43,7 @@ parse_llvm_file(
 static std::unique_ptr<jlm::ipgraph_module>
 construct_jlm_module(llvm::Module & module)
 {
-	return jlm::convert_module(module);
+	return jlm::ConvertLlvmModule(module);
 }
 
 static void
