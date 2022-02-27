@@ -11,7 +11,7 @@ namespace jlm {
 class cfg;
 
 void
-restructure_loops(jlm::cfg * cfg);
+RestructureLoops(jlm::cfg * cfg);
 
 void
 RestructureBranches(jlm::cfg * cfg);

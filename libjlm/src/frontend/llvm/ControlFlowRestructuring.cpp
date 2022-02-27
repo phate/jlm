@@ -445,7 +445,7 @@ restructure_branches(jlm::cfg_node * entry, jlm::cfg_node * exit)
 }
 
 void
-restructure_loops(jlm::cfg * cfg)
+RestructureLoops(jlm::cfg * cfg)
 {
 	JLM_ASSERT(is_closed(*cfg));
 
