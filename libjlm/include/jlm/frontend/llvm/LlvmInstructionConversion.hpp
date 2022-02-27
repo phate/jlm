@@ -24,7 +24,7 @@ convert_value(
 	context & ctx);
 
 const variable *
-convert_instruction(
+ConvertInstruction(
 	llvm::Instruction * i,
 	std::vector<std::unique_ptr<jlm::tac>> & tacs,
 	context & ctx);

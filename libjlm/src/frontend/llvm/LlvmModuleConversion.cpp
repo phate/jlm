@@ -34,7 +34,7 @@ convert_instructions(llvm::Function & function, context & ctx)
 	for (auto & bb : rpotraverser) {
 		for (auto & instruction : *bb) {
 			tacsvector_t tacs;
-			if (auto result = convert_instruction(&instruction, tacs, ctx))
+			if (auto result = ConvertInstruction(&instruction, tacs, ctx))
 				ctx.insert_value(&instruction, result);
 
 			if (auto phi = llvm::dyn_cast<llvm::PHINode>(&instruction)) {
