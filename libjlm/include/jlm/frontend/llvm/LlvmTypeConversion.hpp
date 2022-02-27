@@ -31,7 +31,7 @@ namespace jlm {
 class context;
 
 jlm::fpsize
-convert_fpsize(const llvm::Type * type);
+ExtractFloatingPointSize(const llvm::Type * type);
 
 std::unique_ptr<jive::valuetype>
 ConvertType(const llvm::Type * type, context & ctx);

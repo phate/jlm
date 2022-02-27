@@ -527,7 +527,7 @@ convert_fcmp_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 
 	JLM_ASSERT(map.find(i->getPredicate()) != map.end());
 	auto fptype = t->isVectorTy() ? t->getScalarType() : t;
-	fpcmp_op operation(map[i->getPredicate()], convert_fpsize(fptype));
+	fpcmp_op operation(map[i->getPredicate()], ExtractFloatingPointSize(fptype));
 
 	if (t->isVectorTy())
 		tacs.push_back(vectorbinary_op::create(operation, op1, op2, *type));
