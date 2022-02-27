@@ -4,7 +4,7 @@
  */
 
 #include <jlm/frontend/llvm/jlm2rvsdg/InterProceduralGraphConversion.hpp>
-#include <jlm/frontend/llvm/jlm2rvsdg/restructuring.hpp>
+#include <jlm/frontend/llvm/jlm2rvsdg/ControlFlowRestructuring.hpp>
 
 #include <jlm/ir/aggregation.hpp>
 #include <jlm/ir/Annotation.hpp>
