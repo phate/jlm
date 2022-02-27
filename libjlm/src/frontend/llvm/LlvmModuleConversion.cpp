@@ -444,7 +444,7 @@ declare_globals(llvm::Module & lm, context & ctx)
 	{
 		auto name = f.getName().str();
 		auto linkage = convert_linkage(f.getLinkage());
-		auto type = convert_type(f.getFunctionType(), ctx);
+		auto type = ConvertFunctionType(f.getFunctionType(), ctx);
 		auto attributes = convert_attributes(f.getAttributes().getFnAttributes(), ctx);
 
 		return function_node::create(ctx.module().ipgraph(), name, *type, linkage, attributes);
