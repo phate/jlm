@@ -6,7 +6,7 @@
 #ifndef JLM_FRONTEND_LLVM_LLVM2JLM_CONTEXT_HPP
 #define JLM_FRONTEND_LLVM_LLVM2JLM_CONTEXT_HPP
 
-#include <jlm/frontend/llvm/llvm2jlm/type.hpp>
+#include <jlm/frontend/llvm/llvm2jlm/LlvmTypeConversion.hpp>
 #include <jlm/ir/cfg-node.hpp>
 #include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/tac.hpp>

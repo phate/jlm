@@ -5,7 +5,7 @@
 
 #include <jlm/common.hpp>
 #include <jlm/frontend/llvm/llvm2jlm/context.hpp>
-#include <jlm/frontend/llvm/llvm2jlm/type.hpp>
+#include <jlm/frontend/llvm/llvm2jlm/LlvmTypeConversion.hpp>
 #include <jlm/ir/types.hpp>
 
 #include <jive/types/bitstring/type.hpp>
