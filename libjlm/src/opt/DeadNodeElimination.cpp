@@ -60,18 +60,21 @@ public:
 	void
 	StopSweepStatistics(const jive::graph & graph) noexcept
 	{
+    sweepTimer_.stop();
     numNodesAfter_ = jive::nnodes(graph.root());
     numInputsAfter_ = jive::ninputs(graph.root());
-		sweepTimer_.stop();
 	}
 
-	std::string
+	[[nodiscard]] std::string
 	ToString() const override
 	{
-		return strfmt("DNE ",
-                  numNodesBefore_, " ", numNodesAfter_, " ",
-                  numInputsBefore_, " ", numInputsAfter_, " ",
-                  markTimer_.ns(), " ", sweepTimer_.ns()
+		return strfmt("DeadNodeElimination ",
+                  "#RvsdgNodesBeforeDNE:", numNodesBefore_, " ",
+                  "#RvsdgNodesAfterDNE:", numNodesAfter_, " ",
+                  "#RvsdgInputsBeforeDNE:", numInputsBefore_, " ",
+                  "#RvsdgInputsAfterDNE:", numInputsAfter_, " ",
+                  "MarkTime[ns]:", markTimer_.ns(), " ",
+                  "SweepTime[ns]:", sweepTimer_.ns()
 		);
 	}
 
