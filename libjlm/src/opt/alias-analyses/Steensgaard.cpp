@@ -22,8 +22,7 @@
 */
 #include <iostream>
 
-namespace jlm {
-namespace aa {
+namespace jlm::aa {
 
 /** \brief Steensgaard analysis statistics class
  *
@@ -52,13 +51,13 @@ public:
     timer_.stop();
   }
 
-  std::string
+  [[nodiscard]] std::string
   ToString() const override
   {
     return strfmt("SteensgaardAnalysis ",
                   sourceFile_.to_str(), " ",
-                  numNodesBefore_, " ",
-                  timer_.ns());
+                  "#RvsdgNodes:", numNodesBefore_, " ",
+                  "Time[ns]:", timer_.ns());
   }
 
 private:
@@ -105,7 +104,7 @@ public:
     numUnknownMemorySources_ = pointsToGraph.memunknown().nsources();
   }
 
-  std::string
+  [[nodiscard]] std::string
   ToString() const override
   {
     return strfmt("SteensgaardPointsToGraphConstruction ",
@@ -1522,4 +1521,4 @@ Steensgaard::ResetState()
 	locationSet_.clear();
 }
 
-}}
+}
