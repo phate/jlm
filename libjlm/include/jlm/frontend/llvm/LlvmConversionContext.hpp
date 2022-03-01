@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_FRONTEND_LLVM_LLVM2JLM_LLVMCONVERSIONCONTEXT_HPP
-#define JLM_FRONTEND_LLVM_LLVM2JLM_LLVMCONVERSIONCONTEXT_HPP
+#ifndef JLM_FRONTEND_LLVM_LLVMCONVERSIONCONTEXT_HPP
+#define JLM_FRONTEND_LLVM_LLVMCONVERSIONCONTEXT_HPP
 
 #include <jlm/frontend/llvm/LlvmTypeConversion.hpp>
 #include <jlm/ir/cfg-node.hpp>
