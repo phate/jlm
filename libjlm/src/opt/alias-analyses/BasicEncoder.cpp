@@ -13,8 +13,7 @@
 #include <jlm/util/strfmt.hpp>
 #include <jlm/util/time.hpp>
 
-namespace jlm {
-namespace aa {
+namespace jlm::aa {
 
 /** \brief Statistics class for basic encoder encoding
  *
@@ -43,13 +42,13 @@ public:
     timer_.stop();
   }
 
-  std::string
+  [[nodiscard]] std::string
   ToString() const override
   {
     return strfmt("BasicEncoderEncoding ",
                   sourceFile_.to_str(), " ",
-                  numNodesBefore_, " ",
-                  timer_.ns());
+                  "#RvsdgNodes:", numNodesBefore_, " ",
+                  "Time[ns]:", timer_.ns());
   }
 
 private:
@@ -83,12 +82,12 @@ public:
     timer_.stop();
   }
 
-  std::string
+  [[nodiscard]] std::string
   ToString() const override
   {
     return strfmt("BasicEncoderContextCreation ",
                   sourceFile_.to_str(), " ",
-                  timer_.ns());
+                  "Time[ns]:", timer_.ns());
   }
 
 private:
@@ -754,5 +753,5 @@ BasicEncoder::Encode(jive::theta_node & theta)
   EncodeExit(theta, loopvars);
 }
 
-}}
+}
 
