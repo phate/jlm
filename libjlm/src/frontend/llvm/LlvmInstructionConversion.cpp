@@ -93,7 +93,7 @@ convert_undefvalue(
 	JLM_ASSERT(c->getValueID() == llvm::Value::UndefValueVal);
 
 	auto t = ConvertType(c->getType(), ctx);
-	tacs.push_back(undef_constant_op::create(*t));
+	tacs.push_back(UndefValueOperation::Create(*t));
 
 	return tacs.back()->result(0);
 }

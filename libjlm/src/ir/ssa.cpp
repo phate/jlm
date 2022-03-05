@@ -68,7 +68,7 @@ destruct_ssa(jlm::cfg & cfg)
 				}
 
 				auto phiresult = std::move(phitac->results()[0]);
-				auto undef = firstbb->append_first(undef_constant_op::create(std::move(phiresult)));
+				auto undef = firstbb->append_first(UndefValueOperation::Create(std::move(phiresult)));
 				ass_block->append_last(assignment_op::create(value, undef->result(0)));
 				tacs.drop_first();
 			}

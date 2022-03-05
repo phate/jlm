@@ -80,7 +80,7 @@ create_pvariable(
 {
 	static size_t c = 0;
 	auto name = strfmt("#p", c++, "#");
-	return bb.insert_before_branch(undef_constant_op::create(type, name))->result(0);
+	return bb.insert_before_branch(UndefValueOperation::Create(type, name))->result(0);
 }
 
 static const tacvariable *
@@ -90,7 +90,7 @@ create_qvariable(
 {
 	static size_t c = 0;
 	auto name = strfmt("#q", c++, "#");
-	return bb.append_last(undef_constant_op::create(type, name))->result(0);
+	return bb.append_last(UndefValueOperation::Create(type, name))->result(0);
 }
 
 static const tacvariable *
@@ -100,7 +100,7 @@ create_tvariable(
 {
 	static size_t c = 0;
 	auto name = strfmt("#q", c++, "#");
-	return bb.insert_before_branch(undef_constant_op::create(type, name))->result(0);
+	return bb.insert_before_branch(UndefValueOperation::Create(type, name))->result(0);
 }
 
 static const tacvariable *
@@ -110,7 +110,7 @@ create_rvariable(basic_block & bb)
 	auto name = strfmt("#r", c++, "#");
 
 	jive::ctltype type(2);
-	return bb.append_last(undef_constant_op::create(type, name))->result(0);
+	return bb.append_last(UndefValueOperation::Create(type, name))->result(0);
 }
 
 static inline void

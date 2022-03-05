@@ -362,7 +362,7 @@ create_cfg(llvm::Function & f, context & ctx)
 	const tacvariable * result = nullptr;
 	if (!f.getReturnType()->isVoidTy()) {
 		auto type = ConvertType(f.getReturnType(), ctx);
-		entry_block->append_last(undef_constant_op::create(*type, "_r_"));
+		entry_block->append_last(UndefValueOperation::Create(*type, "_r_"));
 		result = entry_block->last()->result(0);
 
 		JLM_ASSERT(node->fcttype().NumResults() == 4);
