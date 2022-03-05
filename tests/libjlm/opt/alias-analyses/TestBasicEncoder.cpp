@@ -166,10 +166,10 @@ TestLoad1()
     auto loadA = jive::node_output::node(test.lambda->fctresult(0)->origin());
     auto loadX = jive::node_output::node(loadA->input(0)->origin());
 
-    assert(is<load_op>(*loadA, 3, 3));
+    assert(is<LoadOperation>(*loadA, 3, 3));
     assert(jive::node_output::node(loadA->input(1)->origin()) == loadX);
 
-    assert(is<load_op>(*loadX, 3, 3));
+    assert(is<LoadOperation>(*loadX, 3, 3));
     assert(loadX->input(0)->origin() == test.lambda->fctargument(0));
     assert(jive::node_output::node(loadX->input(1)->origin()) == lambdaEntrySplit);
 	};
@@ -222,11 +222,11 @@ TestLoad2()
     assert(storeX->input(1)->origin() == test.alloca_x->output(0));
 
     auto loadP = input_node(*storeX->output(0)->begin());
-    assert(is<load_op>(*loadP, 2, 2));
+    assert(is<LoadOperation>(*loadP, 2, 2));
     assert(loadP->input(0)->origin() == test.alloca_p->output(0));
 
     auto loadXY = input_node(*loadP->output(0)->begin());
-    assert(is<load_op>(*loadXY, 3, 3));
+    assert(is<LoadOperation>(*loadXY, 3, 3));
     assert(jive::node_output::node(loadXY->input(1)->origin()) == storeB);
     assert(jive::node_output::node(loadXY->input(2)->origin()) == storeB);
 
@@ -261,7 +261,7 @@ TestLoadFromUndef()
     assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 2, 1));
 
     auto load = jive::node_output::node(test.Lambda().fctresult(0)->origin());
-    assert(is<load_op>(*load, 3, 3));
+    assert(is<LoadOperation>(*load, 3, 3));
 
     auto lambdaEntrySplit = input_node(*test.Lambda().fctargument(0)->begin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 2));
@@ -295,10 +295,10 @@ TestCall1()
       assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 7, 1));
       assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 7));
 
-      assert(is<load_op>(*loadX, 2, 2));
+      assert(is<LoadOperation>(*loadX, 2, 2));
       assert(jive::node_output::node(loadX->input(1)->origin()) == lambdaEntrySplit);
 
-      assert(is<load_op>(*loadY, 2, 2));
+      assert(is<LoadOperation>(*loadY, 2, 2));
       assert(jive::node_output::node(loadY->input(1)->origin()) == lambdaEntrySplit);
     }
 
@@ -312,10 +312,10 @@ TestCall1()
       assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 7, 1));
       assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 7));
 
-      assert(is<load_op>(*loadX, 2, 2));
+      assert(is<LoadOperation>(*loadX, 2, 2));
       assert(jive::node_output::node(loadX->input(1)->origin()) == lambdaEntrySplit);
 
-      assert(is<load_op>(*loadY, 2, 2));
+      assert(is<LoadOperation>(*loadY, 2, 2));
       assert(jive::node_output::node(loadY->input(1)->origin()) == loadX);
     }
 
@@ -472,10 +472,10 @@ TestGamma()
     assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 2, 1));
 
     auto loadTmp2 = jive::node_output::node(lambdaExitMerge->input(0)->origin());
-    assert(is<load_op>(*loadTmp2, 3, 3));
+    assert(is<LoadOperation>(*loadTmp2, 3, 3));
 
     auto loadTmp1 = jive::node_output::node(loadTmp2->input(1)->origin());
-    assert(is<load_op>(*loadTmp1, 3, 3));
+    assert(is<LoadOperation>(*loadTmp1, 3, 3));
 
     auto gamma = jive::node_output::node(loadTmp1->input(1)->origin());
     assert(gamma == test.gamma);
@@ -545,7 +545,7 @@ TestDelta1()
     auto deltaStateIndex = storeF->input(2)->origin()->index();
 
     auto loadF = input_node(*test.lambda_g->fctargument(0)->begin());
-    assert(is<load_op>(*loadF, 2, 2));
+    assert(is<LoadOperation>(*loadF, 2, 2));
     assert(loadF->input(1)->origin()->index() == deltaStateIndex);
 	};
 
@@ -661,10 +661,10 @@ TestPhi()
     auto gammaStateIndex = store->input(2)->origin()->index();
 
     auto load1 = jive::node_output::node(test.gamma->exitvar(gammaStateIndex)->result(0)->origin());
-	  assert(is<load_op>(*load1, 2, 2));
+	  assert(is<LoadOperation>(*load1, 2, 2));
 
     auto load2 = jive::node_output::node(load1->input(1)->origin());
-    assert(is<load_op>(*load2, 2, 2));
+    assert(is<LoadOperation>(*load2, 2, 2));
 
     assert(load2->input(1)->origin()->index() == arrayStateIndex);
   };

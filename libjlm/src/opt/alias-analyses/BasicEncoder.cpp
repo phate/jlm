@@ -524,15 +524,15 @@ BasicEncoder::EncodeMalloc(const jive::simple_node & node)
 void
 BasicEncoder::EncodeLoad(const jive::simple_node & node)
 {
-  JLM_ASSERT(is<load_op>(&node));
-  auto & op = *static_cast<const load_op*>(&node.operation());
+  JLM_ASSERT(is<LoadOperation>(&node));
+  auto & op = *static_cast<const LoadOperation*>(&node.operation());
   auto & smap = Context_->StateMap();
 
   auto address = node.input(0)->origin();
   auto instates = smap.states(address);
   auto oldResult = node.output(0);
 
-  auto outputs = load_op::create(address, instates, op.alignment());
+  auto outputs = LoadOperation::Create(address, instates, op.GetAlignment());
   oldResult->divert_users(outputs[0]);
 
   smap.replace(address, {std::next(outputs.begin()), outputs.end()});

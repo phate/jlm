@@ -83,7 +83,7 @@ enable_store_reductions(jive::graph & graph)
 static void
 enable_load_reductions(jive::graph & graph)
 {
-	auto nf = jlm::load_op::normal_form(&graph);
+	auto nf = LoadOperation::GetNormalForm(&graph);
 	nf->set_mutable(true);
 	nf->set_load_mux_reducible(true);
 	nf->set_load_store_reducible(true);

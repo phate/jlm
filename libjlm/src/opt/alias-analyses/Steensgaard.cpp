@@ -764,7 +764,7 @@ Steensgaard::Analyze(const jive::simple_node & node)
 	({
 	  {typeid(alloca_op),             [](auto & s, auto & n){ s.AnalyzeAlloca(n);                }}
 	, {typeid(malloc_op),             [](auto & s, auto & n){ s.AnalyzeMalloc(n);                }}
-	, {typeid(load_op),               [](auto & s, auto & n){ s.AnalyzeLoad(n);                  }}
+	, {typeid(LoadOperation),         [](auto & s, auto & n){ s.AnalyzeLoad(n);                  }}
 	, {typeid(store_op),              [](auto & s, auto & n){ s.AnalyzeStore(n);                 }}
 	, {typeid(CallOperation),         AnalyzeCall                                                 }
 	, {typeid(getelementptr_op),      [](auto & s, auto & n){ s.AnalyzeGep(n);                   }}
@@ -853,7 +853,7 @@ Steensgaard::AnalyzeMalloc(const jive::simple_node & node)
 void
 Steensgaard::AnalyzeLoad(const jive::simple_node & node)
 {
-	JLM_ASSERT(is<load_op>(&node));
+	JLM_ASSERT(is<LoadOperation>(&node));
 
 	if (!is<ptrtype>(node.output(0)->type()))
 		return;
