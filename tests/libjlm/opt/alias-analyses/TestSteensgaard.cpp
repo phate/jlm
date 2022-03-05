@@ -192,6 +192,26 @@ TestLoad2()
 }
 
 static void
+TestLoadFromUndef()
+{
+  auto ValidatePointsToGraph = [](const jlm::aa::PointsToGraph & pointsToGraph, const LoadFromUndefTest & test)
+  {
+    assert(pointsToGraph.nallocnodes() == 1);
+    assert(pointsToGraph.nregnodes() == 2);
+
+    auto & undefValueNode = pointsToGraph.GetRegisterNode(test.UndefValueNode()->output(0));
+    assertTargets(undefValueNode, {&pointsToGraph.memunknown(), &pointsToGraph.GetExternalMemoryNode()});
+  };
+
+  LoadFromUndefTest test;
+  // jive::view(test.graph().root(), stdout);
+  auto pointsToGraph = runSteensgaard(test.module());
+  // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
+
+  ValidatePointsToGraph(*pointsToGraph, test);
+}
+
+static void
 TestGetElementPtr()
 {
 	auto validatePtg = [](const jlm::aa::PointsToGraph & ptg, const GetElementPtrTest & test)
@@ -724,6 +744,7 @@ test()
 
 	TestLoad1();
 	TestLoad2();
+  TestLoadFromUndef();
 
 	TestGetElementPtr();
 

@@ -212,6 +212,43 @@ LoadTest2::SetupRvsdg()
 }
 
 std::unique_ptr<jlm::RvsdgModule>
+LoadFromUndefTest::SetupRvsdg()
+{
+  using namespace jlm;
+
+  MemoryStateType memoryStateType;
+  FunctionType functionType(
+    {&memoryStateType},
+    {&jive::bit32, &memoryStateType});
+  ptrtype pointerType(jive::bit32);
+
+  auto rvsdgModule = RvsdgModule::Create(filepath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  auto nf = rvsdg.node_normal_form(typeid(jive::operation));
+  nf->set_mutable(false);
+
+  Lambda_ = lambda::node::create(
+    rvsdg.root(),
+    functionType,
+    "f",
+    linkage::external_linkage);
+
+  auto undefValue = UndefValueOperation::Create(*Lambda_->subregion(), pointerType);
+  auto loadResults = load_op::create(undefValue, {Lambda_->fctargument(0)}, 4);
+
+  Lambda_->finalize(loadResults);
+  rvsdg.add_export(Lambda_->output(), {ptrtype(functionType), "f"});
+
+  /*
+   * Extract nodes
+   */
+  UndefValueNode_ = jive::node_output::node(undefValue);
+
+  return rvsdgModule;
+}
+
+std::unique_ptr<jlm::RvsdgModule>
 GetElementPtrTest::SetupRvsdg()
 {
   using namespace jlm;
