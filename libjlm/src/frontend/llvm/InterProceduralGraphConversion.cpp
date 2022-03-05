@@ -26,25 +26,8 @@
 #include <jive/rvsdg/gamma.hpp>
 #include <jive/rvsdg/region.hpp>
 #include <jive/rvsdg/theta.hpp>
-#include <jive/rvsdg/type.hpp>
 
 #include <stack>
-
-static jive::output *
-create_undef_value(jive::region & region, const jive::type & type)
-{
-	/*
-		We currently cannot create an undef_constant_op of control type,
-		as the operator expects a valuetype. Control type is a state
-		type. Use a control constant as a poor man's replacement instead.
-	*/
-	if (auto ct = dynamic_cast<const jive::ctltype*>(&type))
-		return jive_control_constant(&region, ct->nalternatives(), 0);
-
-	JLM_ASSERT(dynamic_cast<const jive::valuetype*>(&type));
-	jlm::UndefValueOperation op(*static_cast<const jive::valuetype*>(&type));
-	return jive::simple_node::create_normalized(&region, op, {})[0];
-}
 
 namespace jlm {
 
@@ -768,7 +751,7 @@ Convert(
 		if (outerVariableMap.contains(&v)) {
 			topVariableMap.insert(&v, lambdaNode.add_ctxvar(outerVariableMap.lookup(&v)));
 		} else {
-			auto value = create_undef_value(*lambdaNode.subregion(), v.type());
+			auto value = UndefValueOperation::Create(*lambdaNode.subregion(), v.type());
 			topVariableMap.insert(&v, value);
 		}
 	}
@@ -893,8 +876,7 @@ Convert(
 	for (auto & v : demandSet.LoopVariables().Variables()) {
 		jive::output * value = nullptr;
 		if (!outerVariableMap.contains(&v)) {
-			value = create_undef_value(parentRegion, v.type());
-			JLM_ASSERT(value);
+			value = UndefValueOperation::Create(parentRegion, v.type());
 			outerVariableMap.insert(&v, value);
 		} else {
 			value = outerVariableMap.lookup(&v);
