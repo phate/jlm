@@ -555,28 +555,27 @@ fpcmp_op::reduce_operand_pair(
 	JLM_UNREACHABLE("Not implemented!");
 }
 
-/* undef constant operator */
-
-undef_constant_op::~undef_constant_op()
-{}
+UndefValueOperation::~UndefValueOperation() noexcept
+= default;
 
 bool
-undef_constant_op::operator==(const operation & other) const noexcept
+UndefValueOperation::operator==(const operation & other) const noexcept
 {
-	auto op = dynamic_cast<const jlm::undef_constant_op*>(&other);
-	return op && op->result(0) == result(0);
+  auto op = dynamic_cast<const UndefValueOperation*>(&other);
+  return op
+      && op->GetType() == GetType();
 }
 
 std::string
-undef_constant_op::debug_string() const
+UndefValueOperation::debug_string() const
 {
 	return "undef";
 }
 
 std::unique_ptr<jive::operation>
-undef_constant_op::copy() const
+UndefValueOperation::copy() const
 {
-	return std::unique_ptr<jive::operation>(new jlm::undef_constant_op(*this));
+	return std::unique_ptr<jive::operation>(new UndefValueOperation(*this));
 }
 
 PoisonValueOperation::~PoisonValueOperation() noexcept

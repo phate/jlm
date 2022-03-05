@@ -771,7 +771,7 @@ Steensgaard::Analyze(const jive::simple_node & node)
 	, {typeid(bitcast_op),            [](auto & s, auto & n){ s.AnalyzeBitcast(n);               }}
 	, {typeid(bits2ptr_op),           [](auto & s, auto & n){ s.AnalyzeBits2ptr(n);              }}
 	, {typeid(ptr_constant_null_op),  [](auto & s, auto & n){ s.AnalyzeNull(n);                  }}
-	, {typeid(undef_constant_op),     [](auto & s, auto & n){ s.AnalyzeUndef(n);                 }}
+	, {typeid(UndefValueOperation),   [](auto & s, auto & n){ s.AnalyzeUndef(n);                 }}
 	, {typeid(Memcpy),                [](auto & s, auto & n){ s.AnalyzeMemcpy(n);                }}
 	, {typeid(ConstantArray),         [](auto & s, auto & n){ s.AnalyzeConstantArray(n);         }}
 	, {typeid(ConstantStruct),        [](auto & s, auto & n){ s.AnalyzeConstantStruct(n);        }}
@@ -1035,7 +1035,7 @@ Steensgaard::AnalyzeConstantAggregateZero(const jive::simple_node & node)
 void
 Steensgaard::AnalyzeUndef(const jive::simple_node & node)
 {
-	JLM_ASSERT(is<undef_constant_op>(&node));
+	JLM_ASSERT(is<UndefValueOperation>(&node));
 	auto output = node.output(0);
 
 	if (!is<ptrtype>(output->type()))

@@ -162,7 +162,7 @@ convert_undef(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_ASSERT(is<undef_constant_op>(op));
+	JLM_ASSERT(is<UndefValueOperation>(op));
 	return llvm::UndefValue::get(convert_type(op.result(0).type(), ctx));
 }
 
@@ -916,7 +916,7 @@ convert_operation(
     {typeid(jive::bitconstant_op), convert_bitconstant}
   , {typeid(jive::ctlconstant_op), convert_ctlconstant}
   , {typeid(ConstantFP), convert<ConstantFP>}
-  , {typeid(jlm::undef_constant_op), convert_undef}
+  , {typeid(UndefValueOperation), convert_undef}
   , {typeid(PoisonValueOperation), convert<PoisonValueOperation>}
   , {typeid(jive::match_op), convert_match}
   , {typeid(jlm::assignment_op), convert_assignment}

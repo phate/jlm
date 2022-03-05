@@ -330,7 +330,7 @@ pushout_store(jive::node * storenode)
 	auto ovalue = storenode->input(1)->origin();
 
 	/* insert new value for store */
-	auto nvalue = theta->add_loopvar(undef_constant_op::create(theta->region(), ovalue->type()));
+	auto nvalue = theta->add_loopvar(UndefValueOperation::Create(*theta->region(), ovalue->type()));
 	nvalue->result()->divert_to(ovalue);
 
 	/* collect store operands */

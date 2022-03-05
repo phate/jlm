@@ -937,85 +937,78 @@ private:
 	jlm::fpcmp cmp_;
 };
 
-/* undef constant operator */
-
-class undef_constant_op final : public jive::simple_op {
+/** \brief UndefValueOperation class
+ *
+ * This operator is the Jlm equivalent of LLVM's UndefValue constant.
+ */
+class UndefValueOperation final : public jive::simple_op {
 public:
-	virtual
-	~undef_constant_op();
+  ~UndefValueOperation() noexcept override;
 
-	inline
-	undef_constant_op(const jive::type & type)
-	: simple_op({}, {type})
-	{}
+  explicit
+  UndefValueOperation(const jive::type & type)
+    : simple_op({}, {type})
+  {}
 
-	undef_constant_op(const undef_constant_op &) = default;
+  UndefValueOperation(const UndefValueOperation &) = default;
 
-	undef_constant_op &
-	operator=(const undef_constant_op &) = delete;
+  UndefValueOperation &
+  operator=(const UndefValueOperation &) = delete;
 
-	undef_constant_op &
-	operator=(undef_constant_op &&) = delete;
+  UndefValueOperation &
+  operator=(UndefValueOperation &&) = delete;
 
-	virtual bool
-	operator==(const operation & other) const noexcept override;
+  bool
+  operator==(const operation & other) const noexcept override;
 
-	virtual std::string
-	debug_string() const override;
+  [[nodiscard]] std::string
+  debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
-	copy() const override;
+  [[nodiscard]] std::unique_ptr<jive::operation>
+  copy() const override;
 
-	const jive::type &
-	type() const noexcept
-	{
-		return result(0).type();
-	}
+  [[nodiscard]] const jive::type &
+  GetType() const noexcept
+  {
+    return result(0).type();
+  }
 
-	static inline jive::output *
-	create(jive::region * region, const jive::type & type)
-	{
-		jlm::undef_constant_op op(type);
-		return jive::simple_node::create_normalized(region, op, {})[0];
-	}
+  static jive::output *
+  Create(
+    jive::region & region,
+    const jive::type & type)
+  {
+    UndefValueOperation operation(type);
+    return jive::simple_node::create_normalized(&region, operation, {})[0];
+  }
 
-	static std::unique_ptr<jlm::tac>
-	create(const jive::type & type)
-	{
-		jlm::undef_constant_op op(type);
-		return tac::create(op, {});
-	}
+  static std::unique_ptr<jlm::tac>
+  Create(const jive::type & type)
+  {
+    UndefValueOperation operation(type);
+    return tac::create(operation, {});
+  }
 
-	static std::unique_ptr<jlm::tac>
-	create(
-		const jive::type & type,
-		const std::string & name)
-	{
-		undef_constant_op op(type);
-		return tac::create(op, {}, {name});
-	}
+  static std::unique_ptr<jlm::tac>
+  Create(
+    const jive::type & type,
+    const std::string & name)
+  {
+    UndefValueOperation operation(type);
+    return tac::create(operation, {}, {name});
+  }
 
-	static std::unique_ptr<jlm::tac>
-	create(std::unique_ptr<tacvariable> result)
-	{
-		auto vt = check_type(result->type());
+  static std::unique_ptr<jlm::tac>
+  Create(std::unique_ptr<tacvariable> result)
+  {
+    auto & type = result->type();
 
-		std::vector<std::unique_ptr<tacvariable>> results;
-		results.push_back(std::move(result));
+    std::vector<std::unique_ptr<tacvariable>> results;
+    results.push_back(std::move(result));
 
-		undef_constant_op op(*vt);
-		return tac::create(op, {}, std::move(results));
-	}
-
-private:
-	static const jive::valuetype *
-	check_type(const jive::type & type)
-	{
-		auto vt = dynamic_cast<const jive::valuetype*>(&type);
-		if (!vt) throw jlm::error("expected value type.");
-
-		return vt;
-	}
+    UndefValueOperation operation(type);
+    return tac::create(operation, {}, std::move(results));
+  }
 };
 
 /** \brief PoisonValueOperation class

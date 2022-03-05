@@ -42,7 +42,7 @@ create_undef_value(jive::region & region, const jive::type & type)
 		return jive_control_constant(&region, ct->nalternatives(), 0);
 
 	JLM_ASSERT(dynamic_cast<const jive::valuetype*>(&type));
-	jlm::undef_constant_op op(*static_cast<const jive::valuetype*>(&type));
+	jlm::UndefValueOperation op(*static_cast<const jive::valuetype*>(&type));
 	return jive::simple_node::create_normalized(&region, op, {})[0];
 }
 
