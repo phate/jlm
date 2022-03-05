@@ -281,14 +281,14 @@ convert_phi(
 
 static llvm::Value *
 convert(
-	const load_op & operation,
+	const LoadOperation & operation,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-  auto type = convert_type(operation.pointee_type(), ctx);
+  auto type = convert_type(operation.GetPointerType().pointee_type(), ctx);
 	auto loadInstruction = builder.CreateLoad(type, ctx.value(args[0]));
-	loadInstruction->setAlignment(llvm::Align(operation.alignment()));
+	loadInstruction->setAlignment(llvm::Align(operation.GetAlignment()));
 	return loadInstruction;
 }
 
@@ -922,7 +922,7 @@ convert_operation(
   , {typeid(jlm::assignment_op), convert_assignment}
   , {typeid(jlm::branch_op), convert_branch}
   , {typeid(jlm::phi_op), convert_phi}
-  , {typeid(jlm::load_op), convert<load_op>}
+  , {typeid(LoadOperation), convert<LoadOperation>}
   , {typeid(jlm::store_op), convert_store}
   , {typeid(jlm::alloca_op), convert_alloca}
   , {typeid(jlm::getelementptr_op), convert_getelementptr}

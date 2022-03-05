@@ -23,7 +23,7 @@ test_load_alloca_reduction()
 	jive::bittype bt(32);
 
 	jive::graph graph;
-	auto nf = jlm::load_op::normal_form(&graph);
+	auto nf = LoadOperation::GetNormalForm(&graph);
 	nf->set_mutable(false);
 	nf->set_load_alloca_reducible(false);
 
@@ -32,7 +32,7 @@ test_load_alloca_reduction()
 	auto alloca1 = alloca_op::create(bt, size, 4);
 	auto alloca2 = alloca_op::create(bt, size, 4);
 	auto mux = jive::create_state_mux(mt, {alloca1[1]}, 1);
-	auto value = load_op::create(alloca1[0], {alloca1[1], alloca2[1], mux[0]}, 4)[0];
+	auto value = LoadOperation::Create(alloca1[0], {alloca1[1], alloca2[1], mux[0]}, 4)[0];
 
 	auto ex = graph.add_export(value, {value->type(), "l"});
 
@@ -46,7 +46,7 @@ test_load_alloca_reduction()
 //	jive::view(graph.root(), stdout);
 
 	auto node = jive::node_output::node(ex->origin());
-	assert(jive::is<load_op>(node));
+	assert(jive::is<LoadOperation>(node));
 	assert(node->ninputs() == 3);
 	assert(node->input(1)->origin() == alloca1[1]);
 	assert(node->input(2)->origin() == mux[0]);
@@ -62,14 +62,14 @@ test_multiple_origin_reduction()
 	jlm::ptrtype pt(vt);
 
 	jive::graph graph;
-	auto nf = jlm::load_op::normal_form(&graph);
+	auto nf = LoadOperation::GetNormalForm(&graph);
 	nf->set_mutable(false);
 	nf->set_multiple_origin_reducible(false);
 
 	auto a = graph.add_import({pt, "a"});
 	auto s = graph.add_import({mt, "s"});
 
-	auto load = load_op::create(a, {s, s, s, s}, 4)[0];
+	auto load = LoadOperation::Create(a, {s, s, s, s}, 4)[0];
 
 	auto ex = graph.add_export(load, {load->type(), "l"});
 
@@ -82,7 +82,7 @@ test_multiple_origin_reduction()
 //	jive::view(graph.root(), stdout);
 
 	auto node = jive::node_output::node(ex->origin());
-	assert(is<load_op>(node));
+	assert(is<LoadOperation>(node));
 	assert(node->ninputs() == 2);
 }
 
@@ -94,7 +94,7 @@ test_load_store_state_reduction()
 	jive::bittype bt(32);
 
 	jive::graph graph;
-	auto nf = jlm::load_op::normal_form(&graph);
+	auto nf = LoadOperation::GetNormalForm(&graph);
 	nf->set_mutable(false);
 	nf->set_load_store_state_reducible(false);
 
@@ -105,8 +105,8 @@ test_load_store_state_reduction()
 	auto store1 = store_op::create(alloca1[0], size, {alloca1[1]}, 4);
 	auto store2 = store_op::create(alloca2[0], size, {alloca2[1]}, 4);
 
-	auto value1 = load_op::create(alloca1[0], {store1[0], store2[0]}, 4)[0];
-	auto value2 = load_op::create(alloca1[0], {store1[0]}, 8)[0];
+	auto value1 = LoadOperation::Create(alloca1[0], {store1[0], store2[0]}, 4)[0];
+	auto value2 = LoadOperation::Create(alloca1[0], {store1[0]}, 8)[0];
 
 	auto ex1 = graph.add_export(value1, {value1->type(), "l1"});
 	auto ex2 = graph.add_export(value2, {value2->type(), "l2"});
@@ -121,11 +121,11 @@ test_load_store_state_reduction()
 //	jive::view(graph.root(), stdout);
 
 	auto node = jive::node_output::node(ex1->origin());
-	assert(is<load_op>(node));
+	assert(is<LoadOperation>(node));
 	assert(node->ninputs() == 2);
 
 	node = jive::node_output::node(ex2->origin());
-	assert(is<load_op>(node));
+	assert(is<LoadOperation>(node));
 	assert(node->ninputs() == 2);
 }
 
@@ -138,7 +138,7 @@ test_load_store_alloca_reduction()
 	jive::bittype bt(32);
 
 	jive::graph graph;
-	auto nf = jlm::load_op::normal_form(&graph);
+	auto nf = LoadOperation::GetNormalForm(&graph);
 	nf->set_mutable(false);
 	nf->set_load_store_alloca_reducible(false);
 
@@ -146,7 +146,7 @@ test_load_store_alloca_reduction()
 
 	auto alloca = alloca_op::create(bt, size, 4);
 	auto store = store_op::create(alloca[0], size, {alloca[1]}, 4);
-	auto load = load_op::create(alloca[0], store, 4);
+	auto load = LoadOperation::Create(alloca[0], store, 4);
 
 	auto value = graph.add_export(load[0], {load[0]->type(), "l"});
 	auto rstate = graph.add_export(load[1], {mt, "s"});
@@ -173,7 +173,7 @@ test_load_store_reduction()
 	MemoryStateType mt;
 
 	jive::graph graph;
-	auto nf = load_op::normal_form(&graph);
+	auto nf = LoadOperation::GetNormalForm(&graph);
 	nf->set_load_store_reducible(true);
 
 	auto a = graph.add_import({pt, "address"});
@@ -181,7 +181,7 @@ test_load_store_reduction()
 	auto s = graph.add_import({mt, "state"});
 
 	auto s1 = store_op::create(a, v, {s}, 4)[0];
-	auto load = load_op::create(a, {s1}, 4);
+	auto load = LoadOperation::Create(a, {s1}, 4);
 
 	auto x1 = graph.add_export(load[0], {load[0]->type(), "value"});
 	auto x2 = graph.add_export(load[1], {load[1]->type(), "state"});
@@ -203,7 +203,7 @@ test_load_load_reduction()
 	MemoryStateType mt;
 
 	jive::graph graph;
-	auto nf = load_op::normal_form(&graph);
+	auto nf = LoadOperation::GetNormalForm(&graph);
 	nf->set_mutable(false);
 
 	auto a1 = graph.add_import({pt, "a1"});
@@ -215,10 +215,10 @@ test_load_load_reduction()
 	auto s2 = graph.add_import({mt, "s2"});
 
 	auto st1 = store_op::create(a1, v1, {s1}, 4);
-	auto ld1 = load_op::create(a2, {s1}, 4);
-	auto ld2 = load_op::create(a3, {s2}, 4);
+	auto ld1 = LoadOperation::Create(a2, {s1}, 4);
+	auto ld2 = LoadOperation::Create(a3, {s2}, 4);
 
-	auto ld3 = load_op::create(a4, {st1[0], ld1[1], ld2[1]}, 4);
+	auto ld3 = LoadOperation::Create(a4, {st1[0], ld1[1], ld2[1]}, 4);
 
 	auto x1 = graph.add_export(ld3[1], {mt, "s"});
 	auto x2 = graph.add_export(ld3[2], {mt, "s"});
@@ -236,7 +236,7 @@ test_load_load_reduction()
 	assert(graph.root()->nnodes() == 6);
 
 	auto ld = jive::node_output::node(x1->origin());
-	assert(is<load_op>(ld));
+	assert(is<LoadOperation>(ld));
 
 	auto mx1 = jive::node_output::node(x2->origin());
 	assert(is<MemStateMergeOperator>(mx1) && mx1->ninputs() == 2);

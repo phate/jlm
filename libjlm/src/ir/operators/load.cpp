@@ -12,31 +12,29 @@
 
 namespace jlm {
 
-/* load operator */
-
-load_op::~load_op() noexcept
-{}
+LoadOperation::~LoadOperation() noexcept
+= default;
 
 bool
-load_op::operator==(const operation & other) const noexcept
+LoadOperation::operator==(const operation & other) const noexcept
 {
-	auto op = dynamic_cast<const load_op*>(&other);
-	if (!op || op->narguments() != narguments())
-		return false;
-
-	return op->argument(0) == argument(0) && op->alignment() == alignment();
+  auto op = dynamic_cast<const LoadOperation*>(&other);
+  return op
+      && op->narguments() == narguments()
+      && op->GetPointerType() == GetPointerType()
+      && op->GetAlignment() == GetAlignment();
 }
 
 std::string
-load_op::debug_string() const
+LoadOperation::debug_string() const
 {
 	return "LOAD";
 }
 
 std::unique_ptr<jive::operation>
-load_op::copy() const
+LoadOperation::copy() const
 {
-	return std::unique_ptr<jive::operation>(new load_op(*this));
+	return std::unique_ptr<jive::operation>(new LoadOperation(*this));
 }
 
 /* load normal form */
@@ -162,7 +160,7 @@ is_reducible_state(const jive::output * state, const jive::node * loadalloca)
 */
 static bool
 is_load_store_state_reducible(
-	const load_op & op,
+	const LoadOperation & op,
 	const std::vector<jive::output*> & operands)
 {
 	auto address = operands[0];
@@ -181,7 +179,7 @@ is_load_store_state_reducible(
 			redstates++;
 	}
 
-	return redstates == op.nstates() || redstates == 0 ? false : true;
+	return redstates == op.NumStates() || redstates == 0 ? false : true;
 }
 
 /*
@@ -198,7 +196,7 @@ is_multiple_origin_reducible(const std::vector<jive::output*> & operands)
 
 static bool
 is_load_store_reducible(
-	const load_op & op,
+	const LoadOperation & op,
 	const std::vector<jive::output*> & operands)
 {
 	JLM_ASSERT(operands.size() > 1);
@@ -208,7 +206,7 @@ is_load_store_reducible(
 		return false;
 
 	auto sop = static_cast<const store_op*>(&storenode->operation());
-	if (sop->nstates() != op.nstates())
+	if (sop->nstates() != op.NumStates())
 		return false;
 
 	/* check for same address */
@@ -220,13 +218,13 @@ is_load_store_reducible(
 			return false;
 	}
 
-	JLM_ASSERT(op.alignment() == sop->alignment());
+	JLM_ASSERT(op.GetAlignment() == sop->alignment());
 	return true;
 }
 
 static std::vector<jive::output*>
 perform_load_store_reduction(
-	const jlm::load_op & op,
+	const LoadOperation & op,
 	const std::vector<jive::output*> & operands)
 {
 	auto storenode = jive::node_output::node(operands[1]);
@@ -239,7 +237,7 @@ perform_load_store_reduction(
 
 static std::vector<jive::output*>
 perform_load_store_alloca_reduction(
-	const jlm::load_op & op,
+	const LoadOperation & op,
 	const std::vector<jive::output*> & operands)
 {
 	auto allocanode = jive::node_output::node(operands[0]);
@@ -250,12 +248,12 @@ perform_load_store_alloca_reduction(
 
 static std::vector<jive::output*>
 perform_load_mux_reduction(
-	const jlm::load_op & op,
+	const LoadOperation & op,
 	const std::vector<jive::output*> & operands)
 {
 	auto memStateMergeNode = jive::node_output::node(operands[1]);
 
-	auto ld = load_op::create(operands[0], jive::operands(memStateMergeNode), op.alignment());
+	auto ld = LoadOperation::Create(operands[0], jive::operands(memStateMergeNode), op.GetAlignment());
 
 	std::vector<jive::output*> states = {std::next(ld.begin()), ld.end()};
 	auto mx = MemStateMergeOperator::Create(states);
@@ -265,7 +263,7 @@ perform_load_mux_reduction(
 
 static std::vector<jive::output*>
 perform_load_alloca_reduction(
-	const jlm::load_op & op,
+	const LoadOperation & op,
 	const std::vector<jive::output*> & operands)
 {
 	auto allocanode = jive::node_output::node(operands[0]);
@@ -280,7 +278,7 @@ perform_load_alloca_reduction(
 			otherstates.push_back(operands[n]);
 	}
 
-	auto ld = load_op::create(operands[0], loadstates, op.alignment());
+	auto ld = LoadOperation::Create(operands[0], loadstates, op.GetAlignment());
 
 	std::vector<jive::output*> results(1, ld[0]);
 	results.insert(results.end(), std::next(ld.begin()), ld.end());
@@ -290,7 +288,7 @@ perform_load_alloca_reduction(
 
 static std::vector<jive::output*>
 perform_load_store_state_reduction(
-	const jlm::load_op & op,
+	const LoadOperation & op,
 	const std::vector<jive::output*> & operands)
 {
 	auto address = operands[0];
@@ -305,7 +303,7 @@ perform_load_store_state_reduction(
 		else new_loadstates.push_back(state);
 	}
 
-	auto ld = load_op::create(operands[0], new_loadstates, op.alignment());
+	auto ld = LoadOperation::Create(operands[0], new_loadstates, op.GetAlignment());
 
 	results[0] = ld[0];
 	for (size_t n = 1, s = 1; n < results.size(); n++) {
@@ -318,7 +316,7 @@ perform_load_store_state_reduction(
 
 static std::vector<jive::output*>
 perform_multiple_origin_reduction(
-	const jlm::load_op & op,
+	const LoadOperation & op,
 	const std::vector<jive::output*> & operands)
 {
 	std::vector<jive::output*> new_loadstates;
@@ -334,7 +332,7 @@ perform_multiple_origin_reduction(
 		seen_state.insert(state);
 	}
 
-	auto ld = load_op::create(operands[0], new_loadstates, op.alignment());
+	auto ld = LoadOperation::Create(operands[0], new_loadstates, op.GetAlignment());
 
 	results[0] = ld[0];
 	for (size_t n = 1, s = 1; n < results.size(); n++) {
@@ -360,7 +358,7 @@ is_load_load_state_reducible(const std::vector<jive::output*> & operands)
 	JLM_ASSERT(operands.size() >= 2);
 
 	for (size_t n = 1; n < operands.size(); n++) {
-		if (is<load_op>(jive::node_output::node(operands[n])))
+		if (is<LoadOperation>(jive::node_output::node(operands[n])))
 			return true;
 	}
 
@@ -369,7 +367,7 @@ is_load_load_state_reducible(const std::vector<jive::output*> & operands)
 
 static std::vector<jive::output*>
 perform_load_load_state_reduction(
-	const jlm::load_op & op,
+	const LoadOperation & op,
 	const std::vector<jive::output*> & operands)
 {
 	size_t nstates = operands.size()-1;
@@ -377,7 +375,7 @@ perform_load_load_state_reduction(
 	auto load_state_input = [](jive::output * result)
 	{
 		auto ld = jive::node_output::node(result);
-		JLM_ASSERT(is<load_op>(ld));
+		JLM_ASSERT(is<LoadOperation>(ld));
 
 		/*
 			FIXME: This function returns the corresponding state input for a state output of a load
@@ -396,7 +394,7 @@ perform_load_load_state_reduction(
 	{
 		JLM_ASSERT(jive::is<jive::statetype>(operand->type()));
 
-		if (!is<load_op>(jive::node_output::node(operand)))
+		if (!is<LoadOperation>(jive::node_output::node(operand)))
 			return operand;
 
 		mxstates[index].push_back(operand);
@@ -408,7 +406,7 @@ perform_load_load_state_reduction(
 	for (size_t n = 1; n < operands.size(); n++)
 		ldstates.push_back(reduce_state(n-1, operands[n], mxstates));
 
-	auto ld = load_op::create(operands[0], ldstates, op.alignment());
+	auto ld = LoadOperation::Create(operands[0], ldstates, op.GetAlignment());
 	for (size_t n = 0; n < mxstates.size(); n++) {
 		auto & states = mxstates[n];
 		if (!states.empty()) {
@@ -440,8 +438,8 @@ load_normal_form::load_normal_form(
 bool
 load_normal_form::normalize_node(jive::node * node) const
 {
-	JLM_ASSERT(is<load_op>(node->operation()));
-	auto op = static_cast<const jlm::load_op*>(&node->operation());
+	JLM_ASSERT(is<LoadOperation>(node->operation()));
+	auto op = static_cast<const LoadOperation*>(&node->operation());
 	auto operands = jive::operands(node);
 
 	if (!get_mutable())
@@ -498,8 +496,8 @@ load_normal_form::normalized_create(
 	const jive::simple_op & op,
 	const std::vector<jive::output*> & operands) const
 {
-	JLM_ASSERT(is<load_op>(op));
-	auto lop = static_cast<const jlm::load_op*>(&op);
+	JLM_ASSERT(is<LoadOperation>(op));
+	auto lop = static_cast<const LoadOperation*>(&op);
 
 	if (!get_mutable())
 		return simple_normal_form::normalized_create(region, op, operands);
@@ -544,7 +542,7 @@ create_load_normal_form(
 static void __attribute__((constructor))
 register_normal_form()
 {
-	jive::node_normal_form::register_factory(typeid(jlm::load_op), create_load_normal_form);
+	jive::node_normal_form::register_factory(typeid(jlm::LoadOperation), create_load_normal_form);
 }
 
 }

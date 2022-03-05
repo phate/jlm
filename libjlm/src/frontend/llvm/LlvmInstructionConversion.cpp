@@ -547,7 +547,7 @@ convert_load_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & c
 	auto alignment = instruction->getAlignment();
 	auto address = ConvertValue(instruction->getPointerOperand(), tacs, ctx);
 
-	tacs.push_back(load_op::create(address, ctx.memory_state(), alignment));
+	tacs.push_back(LoadOperation::Create(address, ctx.memory_state(), alignment));
 	auto value = tacs.back()->result(0);
 	auto state = tacs.back()->result(1);
 

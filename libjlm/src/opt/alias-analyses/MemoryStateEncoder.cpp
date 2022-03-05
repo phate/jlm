@@ -27,7 +27,7 @@ MemoryStateEncoder::Encode(const jive::simple_node & node)
 	> nodes({
 	  {typeid(alloca_op),     [](auto & mse, auto & node){ mse.EncodeAlloca(node); }}
 	, {typeid(malloc_op),     [](auto & mse, auto & node){ mse.EncodeMalloc(node); }}
-	, {typeid(load_op),       [](auto & mse, auto & node){ mse.EncodeLoad(node);   }}
+	, {typeid(LoadOperation), [](auto & mse, auto & node){ mse.EncodeLoad(node);   }}
 	, {typeid(store_op),      [](auto & mse, auto & node){ mse.EncodeStore(node);  }}
 	, {typeid(CallOperation), EncodeCall}
 	, {typeid(free_op),       [](auto & mse, auto & node){ mse.EncodeFree(node);   }}
