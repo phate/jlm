@@ -14,7 +14,7 @@
 class AliasAnalysisTest {
 public:
 	jlm::RvsdgModule &
-	module() noexcept
+	module()
 	{
     if (module_ == nullptr)
       module_ = SetupRvsdg();
@@ -23,7 +23,7 @@ public:
 	}
 
 	const jive::graph &
-	graph() noexcept
+	graph()
 	{
 		return module().Rvsdg();
 	}
@@ -180,6 +180,44 @@ public:
 
 	jive::node * load_x;
 	jive::node * load_a;
+};
+
+/** \brief LoadFromUndefTest class
+*
+* This function sets up an RVSDG representing the following function:
+*
+* \code{.c}
+*   int f()
+*   {
+*     int * x;
+*     return *x;
+*   }
+* \endcode
+*
+* It uses a single memory state to sequentialize the respective memory
+* operations.
+*/
+class LoadFromUndefTest final : public AliasAnalysisTest {
+private:
+  std::unique_ptr<jlm::RvsdgModule>
+  SetupRvsdg() override;
+
+public:
+  [[nodiscard]] const jlm::lambda::node &
+  Lambda() const noexcept
+  {
+    return *Lambda_;
+  }
+
+  [[nodiscard]] const jive::node *
+  UndefValueNode() const noexcept
+  {
+    return UndefValueNode_;
+  }
+
+private:
+  jlm::lambda::node * Lambda_;
+  jive::node * UndefValueNode_;
 };
 
 /** \brief GetElementPtrTest class

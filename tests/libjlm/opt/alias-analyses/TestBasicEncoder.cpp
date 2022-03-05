@@ -249,6 +249,36 @@ TestLoad2()
 }
 
 static void
+TestLoadFromUndef()
+{
+  auto ValidateRvsdg = [](const LoadFromUndefTest & test)
+  {
+    using namespace jlm;
+
+    assert(test.Lambda().subregion()->nnodes() == 4);
+
+    auto lambdaExitMerge = jive::node_output::node(test.Lambda().fctresult(1)->origin());
+    assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 2, 1));
+
+    auto load = jive::node_output::node(test.Lambda().fctresult(0)->origin());
+    assert(is<load_op>(*load, 3, 3));
+
+    auto lambdaEntrySplit = input_node(*test.Lambda().fctargument(0)->begin());
+    assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 2));
+  };
+
+  LoadFromUndefTest test;
+  // jive::view(test.graph().root(), stdout);
+
+  auto pointsToGraph = run_steensgaard(test.module());
+  // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
+
+  RunBasicEncoder(*pointsToGraph, test.module());
+  // jive::view(test.graph().root(), stdout);
+  ValidateRvsdg(test);
+}
+
+static void
 TestCall1()
 {
   auto ValidateRvsdg = [](const CallTest1 & test)
@@ -658,6 +688,7 @@ test()
 
 	TestLoad1();
 	TestLoad2();
+  TestLoadFromUndef();
 
 	TestCall1();
 	TestCall2();
