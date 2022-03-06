@@ -42,6 +42,13 @@ unreachable(const char * msg, const char * file, unsigned line)
 
 namespace jlm {
 
+template <class To, class From> static inline To *
+AssertedCast(From * value)
+{
+  JLM_ASSERT(dynamic_cast<To*>(value));
+  return static_cast<To*>(value);
+}
+
 class error : public std::runtime_error {
 public:
 	virtual
