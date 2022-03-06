@@ -342,4 +342,4 @@ test()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/ir/operators/test-call", test)
+JLM_UNIT_TEST_REGISTER("libjlm/ir/operators/TestCall", test)
