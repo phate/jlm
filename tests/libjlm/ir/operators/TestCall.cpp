@@ -63,7 +63,7 @@ TraceFunctionInputTest1()
     graph->add_export(lambda->output(), {ptrtype(lambda->type()), "f"});
 
     return std::make_tuple(
-      static_cast<CallNode*>(jive::node_output::node(callResults[0])),
+      AssertedCast<CallNode>(jive::node_output::node(callResults[0])),
       load[0]);
   };
 
@@ -172,7 +172,7 @@ TraceFunctionInputTest2()
 
     return std::make_tuple(
       lambda,
-      static_cast<CallNode*>(jive::node_output::node(callResults[0])));
+      AssertedCast<CallNode>(jive::node_output::node(callResults[0])));
   };
 
   auto g = SetupFunctionG();
@@ -277,7 +277,7 @@ TraceFunctionInputTest3()
         thetaOutputIoState,
         thetaOutputMemoryState,
         thetaOutputLoopState,
-        static_cast<CallNode*>(jive::node_output::node(callResults[0])));
+        AssertedCast<CallNode>(jive::node_output::node(callResults[0])));
     };
 
     valuetype vt;
