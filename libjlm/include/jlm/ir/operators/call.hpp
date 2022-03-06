@@ -32,17 +32,17 @@ public:
 	bool
  	operator==(const operation & other) const noexcept override;
 
-	std::string
+	[[nodiscard]] std::string
 	debug_string() const override;
 
-	const FunctionType &
+	[[nodiscard]] const FunctionType &
 	GetFunctionType() const noexcept
 	{
-		auto at = static_cast<const ptrtype*>(&argument(0).type());
-		return *static_cast<const FunctionType*>(&at->pointee_type());
+    auto pointerType = AssertedCast<const ptrtype>(&argument(0).type());
+    return *AssertedCast<const FunctionType>(&pointerType->pointee_type());
 	}
 
-	std::unique_ptr<jive::operation>
+	[[nodiscard]] std::unique_ptr<jive::operation>
 	copy() const override;
 
 	static std::unique_ptr<tac>
@@ -90,54 +90,53 @@ private:
 class CallNode final : public jive::simple_node {
 private:
   CallNode(
-    jive::region * region,
-    CallOperation & operation,
+    jive::region & region,
+    const CallOperation & operation,
     const std::vector<jive::output*> & operands)
-    : simple_node(region, operation, operands)
+    : simple_node(&region, operation, operands)
   {}
 
 public:
-  const CallOperation&
+  [[nodiscard]] const CallOperation&
   GetOperation() const noexcept
   {
-    return *static_cast<const CallOperation*>(&operation());
+    return *AssertedCast<const CallOperation>(&operation());
   }
 
-  size_t
+  [[nodiscard]] size_t
   NumArguments() const noexcept
   {
     return ninputs()-1;
   }
 
-  jive::input *
+  [[nodiscard]] jive::input *
   Argument(size_t n) const
   {
     return input(n);
   }
 
-  size_t
+  [[nodiscard]] size_t
   NumResults() const noexcept
   {
     return noutputs();
   }
 
-  jive::output *
+  [[nodiscard]] jive::output *
   Result(size_t n) const noexcept
   {
     return output(n);
   }
 
-  jive::input *
+  [[nodiscard]] jive::input *
   GetFunctionInput() const noexcept
   {
     auto function = input(0);
-    JLM_ASSERT(is<ptrtype>(function->type()));
-    auto pointerType = static_cast<const ptrtype*>(&function->type());
+    auto pointerType = AssertedCast<const ptrtype>(&function->type());
     JLM_ASSERT(is<FunctionType>(pointerType->pointee_type()));
     return function;
   }
 
-  jive::input *
+  [[nodiscard]] jive::input *
   GetIoStateInput() const noexcept
   {
     auto iOState = input(ninputs()-3);
@@ -145,7 +144,7 @@ public:
     return iOState;
   }
 
-  jive::input *
+  [[nodiscard]] jive::input *
   GetMemoryStateInput() const noexcept
   {
     auto memoryState = input(ninputs()-2);
@@ -153,7 +152,7 @@ public:
     return memoryState;
   }
 
-  jive::input *
+  [[nodiscard]] jive::input *
   GetLoopStateInput() const noexcept
   {
     auto loopState = input(ninputs()-1);
@@ -161,7 +160,7 @@ public:
     return loopState;
   }
 
-  jive::output *
+  [[nodiscard]] jive::output *
   GetIoStateOutput() const noexcept
   {
     auto iOState = output(noutputs()-3);
@@ -169,7 +168,7 @@ public:
     return iOState;
   }
 
-  jive::output *
+  [[nodiscard]] jive::output *
   GetMemoryStateOutput() const noexcept
   {
     auto memoryState = output(noutputs()-2);
@@ -177,7 +176,7 @@ public:
     return memoryState;
   }
 
-  jive::output *
+  [[nodiscard]] jive::output *
   GetLoopStateOutput() const noexcept
   {
     auto loopState = output(noutputs()-1);
@@ -190,19 +189,35 @@ public:
     jive::output * function,
     std::vector<jive::output*> arguments)
   {
-    auto functionType = CheckAndExtractFunctionType(function);
+    auto functionType = ExtractFunctionType(function);
+    CheckFunctionType(functionType);
 
     CallOperation callOperation(functionType);
     std::vector<jive::output*> operands({function});
     operands.insert(operands.end(), arguments.begin(), arguments.end());
-    return jive::simple_node::create_normalized(function->region(), callOperation, operands);
+
+    return jive::outputs(new CallNode(
+      *function->region(),
+      callOperation,
+      operands));
   }
 
   static std::vector<jive::output*>
-  Create(std::vector<jive::output*> operands)
+  Create(const std::vector<jive::output*> & operands)
   {
-    JLM_ASSERT(!operands.empty());
-    return Create(operands[0], {std::next(operands.begin()), operands.end()});
+    if (operands.empty())
+      throw error("Expected function operand.");
+    auto function = operands[0];
+
+    auto functionType = ExtractFunctionType(function);
+    CheckFunctionType(functionType);
+
+    CallOperation callOperation(functionType);
+
+    return jive::outputs(new CallNode(
+      *function->region(),
+      callOperation,
+      operands));
   }
 
   /**
@@ -230,8 +245,22 @@ public:
   IsDirectCall(const CallNode & callNode);
 
 private:
-  static const FunctionType &
-  CheckAndExtractFunctionType(const jive::output * function)
+  [[nodiscard]] static const FunctionType &
+  ExtractFunctionType(const jive::output * function)
+  {
+    auto pointerType = dynamic_cast<const ptrtype*>(&function->type());
+    if (!pointerType)
+      throw jlm::error("Expected pointer type.");
+
+    auto functionType = dynamic_cast<const FunctionType*>(&pointerType->pointee_type());
+    if (!functionType)
+      throw jlm::error("Expected function type.");
+
+    return *functionType;
+  }
+
+  static void
+  CheckFunctionType(const FunctionType & functionType)
   {
     auto CheckArgumentTypes = [](const FunctionType & functionType)
     {
@@ -271,18 +300,8 @@ private:
         throw error("Expected IO state type.");
     };
 
-    auto pointerType = dynamic_cast<const ptrtype*>(&function->type());
-    if (!pointerType)
-      throw jlm::error("Expected pointer type.");
-
-    auto functionType = dynamic_cast<const FunctionType*>(&pointerType->pointee_type());
-    if (!functionType)
-      throw jlm::error("Expected function type.");
-
-    CheckArgumentTypes(*functionType);
-    CheckResultTypes(*functionType);
-
-    return *functionType;
+    CheckArgumentTypes(functionType);
+    CheckResultTypes(functionType);
   }
 };
 
