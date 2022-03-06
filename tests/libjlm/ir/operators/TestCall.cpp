@@ -14,11 +14,11 @@
 #include <jive/view.hpp>
 
 static void
-test_trace_function_input1()
+TraceFunctionInputTest1()
 {
 	using namespace jlm;
 
-  /**
+  /*
    * Arrange
    */
 	valuetype vt;
@@ -69,19 +69,19 @@ test_trace_function_input1()
 
   auto [callNode, loadOutput] = SetupFunction();
 
-  /**
+  /*
    * Act
    */
   auto tracedOutput = CallNode::TraceFunctionInput(*callNode);
 
-  /**
+  /*
    * Assert
    */
 	assert(loadOutput == tracedOutput);
 }
 
 static void
-test_trace_function_input2()
+TraceFunctionInputTest2()
 {
   /*
    * Arrange
@@ -190,7 +190,7 @@ test_trace_function_input2()
 }
 
 static void
-test_trace_function_input3()
+TraceFunctionInputTest3()
 {
 	using namespace jlm;
 
@@ -333,13 +333,13 @@ test_trace_function_input3()
 }
 
 static int
-test()
+Test()
 {
-	test_trace_function_input1();
-	test_trace_function_input2();
-	test_trace_function_input3();
+  TraceFunctionInputTest1();
+  TraceFunctionInputTest2();
+  TraceFunctionInputTest3();
 
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/ir/operators/TestCall", test)
+JLM_UNIT_TEST_REGISTER("libjlm/ir/operators/TestCall", Test)
