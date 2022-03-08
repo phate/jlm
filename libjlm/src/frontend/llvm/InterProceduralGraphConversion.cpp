@@ -648,7 +648,7 @@ ConvertBranch(
    */
 }
 
-template<class NODE> static void
+template<class NODE, class OPERATION> static void
 Convert(
   const jlm::tac & threeAddressCode,
   jive::region & region,
@@ -660,7 +660,8 @@ Convert(
     operands.push_back(variableMap.lookup(operand));
   }
 
-  auto results = NODE::Create(operands);
+  auto operation = AssertedCast<const OPERATION>(&threeAddressCode.operation());
+  auto results = NODE::Create(region, *operation, operands);
 
   JLM_ASSERT(results.size() == threeAddressCode.nresults());
   for (size_t n = 0; n < threeAddressCode.nresults(); n++) {
@@ -682,7 +683,7 @@ ConvertThreeAddressCode(
 	  {typeid(assignment_op), ConvertAssignment}
 	, {typeid(select_op),     ConvertSelect}
 	, {typeid(branch_op),     ConvertBranch}
-  , {typeid(CallOperation), Convert<CallNode>}
+  , {typeid(CallOperation), Convert<CallNode, CallOperation>}
 	});
 
 	auto & op = threeAddressCode.operation();
