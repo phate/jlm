@@ -203,19 +203,15 @@ public:
   }
 
   static std::vector<jive::output*>
-  Create(const std::vector<jive::output*> & operands)
+  Create(
+    jive::region & region,
+    const CallOperation & callOperation,
+    const std::vector<jive::output*> & operands)
   {
-    if (operands.empty())
-      throw error("Expected function operand.");
-    auto function = operands[0];
-
-    auto functionType = ExtractFunctionType(function);
-    CheckFunctionType(functionType);
-
-    CallOperation callOperation(functionType);
+    CheckFunctionType(callOperation.GetFunctionType());
 
     return jive::outputs(new CallNode(
-      *function->region(),
+      region,
       callOperation,
       operands));
   }
