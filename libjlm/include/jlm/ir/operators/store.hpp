@@ -191,6 +191,152 @@ private:
   size_t Alignment_;
 };
 
+/** \brief StoreNode class
+ *
+ */
+class StoreNode final : public jive::simple_node {
+private:
+  class MemoryStateInputIterator final : public jive::input::iterator<jive::simple_input> {
+    friend StoreNode;
+
+    constexpr explicit
+    MemoryStateInputIterator(jive::simple_input * input)
+      : jive::input::iterator<jive::simple_input>(input)
+    {}
+
+    [[nodiscard]] jive::simple_input *
+    next() const override
+    {
+      auto index = value()->index();
+      auto node = value()->node();
+
+      return node->ninputs() > index+1
+             ? node->input(index+1)
+             : nullptr;
+    }
+  };
+
+  class MemoryStateOutputIterator final : public jive::output::iterator<jive::simple_output> {
+    friend StoreNode;
+
+    constexpr explicit
+    MemoryStateOutputIterator(jive::simple_output * output)
+      : jive::output::iterator<jive::simple_output>(output)
+    {}
+
+    [[nodiscard]] jive::simple_output *
+    next() const override
+    {
+      auto index = value()->index();
+      auto node = value()->node();
+
+      return node->noutputs() > index+1
+             ? node->output(index+1)
+             : nullptr;
+    }
+  };
+
+  using MemoryStateInputRange = iterator_range<MemoryStateInputIterator>;
+  using MemoryStateOutputRange = iterator_range<MemoryStateOutputIterator>;
+
+  StoreNode(
+    jive::region & region,
+    const StoreOperation & operation,
+    const std::vector<jive::output*> & operands)
+    : simple_node(&region, operation, operands)
+  {}
+
+public:
+  [[nodiscard]] const StoreOperation&
+  GetOperation() const noexcept
+  {
+    return *AssertedCast<const StoreOperation>(&operation());
+  }
+
+  [[nodiscard]] MemoryStateInputRange
+  MemoryStateInputs() const noexcept
+  {
+    JLM_ASSERT(ninputs() > 2);
+    return {MemoryStateInputIterator(input(2)), MemoryStateInputIterator(nullptr)};
+  }
+
+  [[nodiscard]] MemoryStateOutputRange
+  MemoryStateOutputs() const noexcept
+  {
+    JLM_ASSERT(noutputs() > 1);
+    return {MemoryStateOutputIterator(output(0)), MemoryStateOutputIterator(nullptr)};
+  }
+
+  [[nodiscard]] size_t
+  NumStates() const noexcept
+  {
+    return GetOperation().NumStates();
+  }
+
+  [[nodiscard]] size_t
+  GetAlignment() const noexcept
+  {
+    return GetOperation().GetAlignment();
+  }
+
+  [[nodiscard]] jive::input *
+  GetAddressInput() const noexcept
+  {
+    auto addressInput = input(0);
+    JLM_ASSERT(is<ptrtype>(addressInput->type()));
+    return addressInput;
+  }
+
+  [[nodiscard]] jive::input *
+  GetValueInput() const noexcept
+  {
+    auto valueInput = input(1);
+    JLM_ASSERT(is<jive::valuetype>(valueInput->type()));
+    return valueInput;
+  }
+
+  static std::vector<jive::output*>
+  Create(
+    jive::output * address,
+    jive::output * value,
+    const std::vector<jive::output*> & states,
+    size_t alignment)
+  {
+    auto & pointerType = CheckAndConvertType(address->type());
+
+    std::vector<jive::output*> operands({address, value});
+    operands.insert(operands.end(), states.begin(), states.end());
+
+    StoreOperation storeOperation(pointerType, states.size(), alignment);
+    return jive::outputs(new StoreNode(
+      *address->region(),
+      storeOperation,
+      operands));
+  }
+
+  static std::vector<jive::output*>
+  Create(
+    jive::region & region,
+    const StoreOperation & storeOperation,
+    const std::vector<jive::output*> & operands)
+  {
+    return jive::outputs(new StoreNode(
+      region,
+      storeOperation,
+      operands));
+  }
+
+private:
+  static const ptrtype &
+  CheckAndConvertType(const jive::type & type)
+  {
+    if (auto pointerType = dynamic_cast<const ptrtype*>(&type))
+      return *pointerType;
+
+    throw error("Expected pointer type.");
+  }
+};
+
 }
 
 #endif
