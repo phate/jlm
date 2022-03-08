@@ -79,100 +79,116 @@ private:
 	bool enable_multiple_origin_;
 };
 
-/* store operator */
-
-class store_op final : public jive::simple_op {
+/** \brief Store Operation
+ *
+ * This operator is the Jlm equivalent of LLVM's store instruction.
+ */
+class StoreOperation final : public jive::simple_op {
 public:
-	virtual
-	~store_op() noexcept;
+  ~StoreOperation() noexcept override;
 
-	inline
-	store_op(
-		const jlm::ptrtype & ptype,
-		size_t nstates,
-		size_t alignment)
-	: simple_op(create_srcports(ptype, nstates),
-			std::vector<jive::port>(nstates, {MemoryStateType::Create()}))
-	, alignment_(alignment)
-	{}
+  StoreOperation(
+    const ptrtype & pointerType,
+    size_t numStates,
+    size_t alignment)
+    : simple_op(
+    CreateArgumentPorts(pointerType, numStates),
+    std::vector<jive::port>(numStates, {MemoryStateType::Create()}))
+    , Alignment_(alignment)
+  {
+    if (numStates == 0)
+      throw error("Expected at least one state.");
+  }
 
-	virtual bool
-	operator==(const operation & other) const noexcept override;
+  bool
+  operator==(const operation & other) const noexcept override;
 
-	virtual std::string
-	debug_string() const override;
+  [[nodiscard]] std::string
+  debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
-	copy() const override;
+  [[nodiscard]] std::unique_ptr<jive::operation>
+  copy() const override;
 
-	inline const jive::valuetype &
-	value_type() const noexcept
-	{
-		return *static_cast<const jive::valuetype*>(&argument(1).type());
-	}
+  [[nodiscard]] const ptrtype &
+  GetPointerType() const noexcept
+  {
+    return *AssertedCast<const ptrtype>(&argument(0).type());
+  }
 
-	inline size_t
-	nstates() const noexcept
-	{
-		return nresults();
-	}
+  [[nodiscard]] const jive::valuetype &
+  GetValueType() const noexcept
+  {
+    return *AssertedCast<const jive::valuetype>(&argument(1).type());
+  }
 
-	inline size_t
-	alignment() const noexcept
-	{
-		return alignment_;
-	}
+  [[nodiscard]] size_t
+  NumStates() const noexcept
+  {
+    return nresults();
+  }
 
-	static jlm::store_normal_form *
-	normal_form(jive::graph * graph) noexcept
-	{
-		return static_cast<jlm::store_normal_form*>(graph->node_normal_form(typeid(store_op)));
-	}
+  [[nodiscard]] size_t
+  GetAlignment() const noexcept
+  {
+    return Alignment_;
+  }
 
-	static std::unique_ptr<jlm::tac>
-	create(
-		const variable * address,
-		const variable * value,
-		const variable * instate,
-		size_t alignment)
-	{
-		auto at = dynamic_cast<const jlm::ptrtype*>(&address->type());
-		if (!at) throw jlm::error("expected pointer type.");
+  static jlm::store_normal_form *
+  GetNormalForm(jive::graph * graph) noexcept
+  {
+    return AssertedCast<jlm::store_normal_form>(graph->node_normal_form(typeid(StoreOperation)));
+  }
 
-		jlm::store_op op(*at, 1, alignment);
-		return tac::create(op, {address, value, instate});
-	}
+  static std::unique_ptr<jlm::tac>
+  Create(
+    const variable * address,
+    const variable * value,
+    const variable * state,
+    size_t alignment)
+  {
+    auto pointerType = dynamic_cast<const ptrtype*>(&address->type());
+    if (!pointerType)
+      throw jlm::error("expected pointer type.");
 
-	static std::vector<jive::output*>
-	create(
-		jive::output * address,
-		jive::output * value,
-		const std::vector<jive::output*> & states,
-		size_t alignment)
-	{
-		auto at = dynamic_cast<const jlm::ptrtype*>(&address->type());
-		if (!at) throw jlm::error("expected pointer type.");
+    StoreOperation op(*pointerType, 1, alignment);
+    return tac::create(op, {address, value, state});
+  }
 
-		if (states.size() == 0)
-			throw jlm::error("Expected at least one memory state.");
+  static std::vector<jive::output*>
+  Create(
+    jive::output * address,
+    jive::output * value,
+    const std::vector<jive::output*> & states,
+    size_t alignment)
+  {
+    auto pointerType = dynamic_cast<const ptrtype*>(&address->type());
+    if (!pointerType)
+      throw jlm::error("expected pointer type.");
 
-		std::vector<jive::output*> operands({address, value});
-		operands.insert(operands.end(), states.begin(), states.end());
+    if (states.empty())
+      throw jlm::error("Expected at least one memory state.");
 
-		jlm::store_op op(*at, states.size(), alignment);
-		return jive::simple_node::create_normalized(address->region(), op, operands);
-	}
+    std::vector<jive::output*> operands({address, value});
+    operands.insert(operands.end(), states.begin(), states.end());
+
+    StoreOperation op(*pointerType, states.size(), alignment);
+    return jive::simple_node::create_normalized(address->region(), op, operands);
+  }
 
 private:
-	static inline std::vector<jive::port>
-	create_srcports(const ptrtype & ptype, size_t nstates)
-	{
-		std::vector<jive::port> ports({ptype, ptype.pointee_type()});
-		std::vector<jive::port> states(nstates, {MemoryStateType::Create()});
-		ports.insert(ports.end(), states.begin(), states.end());
-		return ports;
-	}
-	size_t alignment_;
+  static std::vector<jive::port>
+  CreateArgumentPorts(
+    const ptrtype & pointerType,
+    size_t numStates)
+  {
+    MemoryStateType memoryStateType;
+    std::vector<jive::port> ports({pointerType, pointerType.pointee_type()});
+    std::vector<jive::port> states(numStates, {memoryStateType});
+    ports.insert(ports.end(), states.begin(), states.end());
+    return ports;
+  }
+
+  size_t Alignment_;
 };
 
 }

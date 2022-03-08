@@ -544,15 +544,15 @@ BasicEncoder::EncodeLoad(const jive::simple_node & node)
 void
 BasicEncoder::EncodeStore(const jive::simple_node & node)
 {
-  JLM_ASSERT(is<store_op>(&node));
-  auto & op = *static_cast<const store_op*>(&node.operation());
+  JLM_ASSERT(is<StoreOperation>(&node));
+  auto & op = *static_cast<const StoreOperation*>(&node.operation());
   auto & smap = Context_->StateMap();
 
   auto address = node.input(0)->origin();
   auto value = node.input(1)->origin();
   auto instates = smap.states(address);
 
-  auto outstates = store_op::create(address, value, instates, op.alignment());
+  auto outstates = StoreOperation::Create(address, value, instates, op.GetAlignment());
 
   smap.replace(address, outstates);
 }

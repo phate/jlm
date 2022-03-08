@@ -295,7 +295,7 @@ static bool
 is_movable_store(jive::node * node)
 {
 	JLM_ASSERT(jive::is<jive::theta_op>(node->region()->node()));
-	JLM_ASSERT(jive::is<store_op>(node));
+	JLM_ASSERT(jive::is<StoreOperation>(node));
 
 	auto address = dynamic_cast<jive::argument*>(node->input(0)->origin());
 	if (!address || !is_invariant(address) || address->nusers() != 2)
@@ -323,9 +323,9 @@ static void
 pushout_store(jive::node * storenode)
 {
 	JLM_ASSERT(jive::is<jive::theta_op>(storenode->region()->node()));
-	JLM_ASSERT(jive::is<store_op>(storenode) && is_movable_store(storenode));
+	JLM_ASSERT(jive::is<StoreOperation>(storenode) && is_movable_store(storenode));
 	auto theta = static_cast<jive::theta_node*>(storenode->region()->node());
-	auto storeop = static_cast<const jlm::store_op*>(&storenode->operation());
+	auto storeop = static_cast<const jlm::StoreOperation*>(&storenode->operation());
 	auto oaddress = static_cast<jive::argument*>(storenode->input(0)->origin());
 	auto ovalue = storenode->input(1)->origin();
 
@@ -344,7 +344,7 @@ pushout_store(jive::node * storenode)
 	}
 
 	/* create new store and redirect theta output users */
-	auto nstates = store_op::create(address, nvalue, states, storeop->alignment());
+	auto nstates = StoreOperation::Create(address, nvalue, states, storeop->GetAlignment());
 	for (size_t n = 0; n < states.size(); n++) {
 		std::unordered_set<jive::input*> users;
 		for (const auto & user : *states[n]) {
@@ -364,7 +364,7 @@ push_bottom(jive::theta_node * theta)
 {
 	for (const auto & lv : *theta) {
 		auto storenode = jive::node_output::node(lv->result()->origin());
-		if (jive::is<store_op>(storenode) && is_movable_store(storenode)) {
+		if (jive::is<StoreOperation>(storenode) && is_movable_store(storenode)) {
 			pushout_store(storenode);
 			break;
 		}

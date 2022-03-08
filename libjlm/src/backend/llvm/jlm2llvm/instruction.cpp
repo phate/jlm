@@ -299,11 +299,11 @@ convert_store(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_ASSERT(is<store_op>(op) && args.size() >= 2);
-	auto store = static_cast<const store_op*>(&op);
+	JLM_ASSERT(is<StoreOperation>(op) && args.size() >= 2);
+	auto store = static_cast<const StoreOperation*>(&op);
 
 	auto i = builder.CreateStore(ctx.value(args[1]), ctx.value(args[0]));
-	i->setAlignment(llvm::Align(store->alignment()));
+	i->setAlignment(llvm::Align(store->GetAlignment()));
 	return nullptr;
 }
 
@@ -923,7 +923,7 @@ convert_operation(
   , {typeid(jlm::branch_op), convert_branch}
   , {typeid(jlm::phi_op), convert_phi}
   , {typeid(LoadOperation), convert<LoadOperation>}
-  , {typeid(jlm::store_op), convert_store}
+  , {typeid(StoreOperation), convert_store}
   , {typeid(jlm::alloca_op), convert_alloca}
   , {typeid(jlm::getelementptr_op), convert_getelementptr}
   , {typeid(ConstantDataArray), convert<ConstantDataArray>}

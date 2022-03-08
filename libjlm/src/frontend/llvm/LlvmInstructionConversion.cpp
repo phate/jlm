@@ -567,7 +567,7 @@ convert_store_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & 
 	auto address = ConvertValue(instruction->getPointerOperand(), tacs, ctx);
 	auto value = ConvertValue(instruction->getValueOperand(), tacs, ctx);
 
-	tacs.push_back(store_op::create(address, value, ctx.memory_state(), alignment));
+	tacs.push_back(StoreOperation::Create(address, value, ctx.memory_state(), alignment));
 	tacs.push_back(assignment_op::create(tacs.back()->result(0), ctx.memory_state()));
 
 	return nullptr;

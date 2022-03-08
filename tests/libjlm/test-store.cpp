@@ -25,7 +25,7 @@ test_store_mux_reduction()
 	MemoryStateType mt;
 
 	jive::graph graph;
-	auto nf = graph.node_normal_form(typeid(jlm::store_op));
+	auto nf = graph.node_normal_form(typeid(StoreOperation));
 	auto snf = static_cast<jlm::store_normal_form*>(nf);
 	snf->set_mutable(false);
 	snf->set_store_mux_reducible(false);
@@ -37,7 +37,7 @@ test_store_mux_reduction()
 	auto s3 = graph.add_import({mt, "s3"});
 
 	auto mux = MemStateMergeOperator::Create({s1, s2, s3});
-	auto state = store_op::create(a, v, {mux}, 4);
+	auto state = StoreOperation::Create(a, v, {mux}, 4);
 
 	auto ex = graph.add_export(state[0], {state[0]->type(), "s"});
 
@@ -56,9 +56,9 @@ test_store_mux_reduction()
 	auto n0 = jive::node_output::node(muxnode->input(0)->origin());
 	auto n1 = jive::node_output::node(muxnode->input(1)->origin());
 	auto n2 = jive::node_output::node(muxnode->input(2)->origin());
-	assert(jive::is<jlm::store_op>(n0->operation()));
-	assert(jive::is<jlm::store_op>(n1->operation()));
-	assert(jive::is<jlm::store_op>(n2->operation()));
+	assert(jive::is<StoreOperation>(n0->operation()));
+	assert(jive::is<StoreOperation>(n1->operation()));
+	assert(jive::is<StoreOperation>(n2->operation()));
 }
 
 static inline void
@@ -71,7 +71,7 @@ test_multiple_origin_reduction()
 	MemoryStateType mt;
 
 	jive::graph graph;
-	auto nf = graph.node_normal_form(typeid(jlm::store_op));
+	auto nf = graph.node_normal_form(typeid(StoreOperation));
 	auto snf = static_cast<jlm::store_normal_form*>(nf);
 	snf->set_mutable(false);
 	snf->set_multiple_origin_reducible(false);
@@ -80,7 +80,7 @@ test_multiple_origin_reduction()
 	auto v = graph.add_import({vt, "v"});
 	auto s = graph.add_import({mt, "s"});
 
-	auto states = store_op::create(a, v, {s, s, s, s}, 4);
+	auto states = StoreOperation::Create(a, v, {s, s, s, s}, 4);
 
 	auto ex = graph.add_export(states[0], {states[0]->type(), "s"});
 
@@ -94,7 +94,7 @@ test_multiple_origin_reduction()
 //	jive::view(graph.root(), stdout);
 
 	auto node = jive::node_output::node(ex->origin());
-	assert(jive::is<jlm::store_op>(node->operation()) && node->ninputs() == 3);
+	assert(jive::is<StoreOperation>(node->operation()) && node->ninputs() == 3);
 }
 
 static inline void
@@ -107,7 +107,7 @@ test_store_alloca_reduction()
 	jive::bittype bt(32);
 
 	jive::graph graph;
-	auto nf = graph.node_normal_form(typeid(jlm::store_op));
+	auto nf = graph.node_normal_form(typeid(StoreOperation));
 	auto snf = static_cast<jlm::store_normal_form*>(nf);
 	snf->set_mutable(false);
 	snf->set_store_alloca_reducible(false);
@@ -118,8 +118,8 @@ test_store_alloca_reduction()
 
 	auto alloca1 = alloca_op::create(vt, size, 4);
 	auto alloca2 = alloca_op::create(vt, size, 4);
-	auto states1 = store_op::create(alloca1[0], value, {alloca1[1], alloca2[1], s}, 4);
-	auto states2 = store_op::create(alloca2[0], value, states1, 4);
+	auto states1 = StoreOperation::Create(alloca1[0], value, {alloca1[1], alloca2[1], s}, 4);
+	auto states2 = StoreOperation::Create(alloca2[0], value, states1, 4);
 
 	graph.add_export(states2[0], {states2[0]->type(), "s1"});
 	graph.add_export(states2[1], {states2[1]->type(), "s2"});
@@ -157,14 +157,14 @@ test_store_store_reduction()
 	auto v2 = graph.add_import({vt, "value"});
 	auto s = graph.add_import({mt, "state"});
 
-	auto s1 = store_op::create(a, v1, {s}, 4)[0];
-	auto s2 = store_op::create(a, v2, {s1}, 4)[0];
+	auto s1 = StoreOperation::Create(a, v1, {s}, 4)[0];
+	auto s2 = StoreOperation::Create(a, v2, {s1}, 4)[0];
 
 	auto ex = graph.add_export(s2, {s2->type(), "state"});
 
 	jive::view(graph.root(), stdout);
 
-	auto nf = store_op::normal_form(&graph);
+	auto nf = StoreOperation::GetNormalForm(&graph);
 	nf->set_store_store_reducible(true);
 	graph.normalize();
 	graph.prune();
