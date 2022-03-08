@@ -52,7 +52,7 @@ TraceFunctionInputTest1()
 
     auto store = store_op::create(alloca[0], lambda->fctargument(0), {alloca[1]}, 8);
 
-    auto load = LoadOperation::Create(alloca[0], store, 8);
+    auto load = LoadNode::Create(alloca[0], store, 8);
 
     auto callResults = CallNode::Create(
       load[0],

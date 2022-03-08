@@ -532,7 +532,7 @@ BasicEncoder::EncodeLoad(const jive::simple_node & node)
   auto instates = smap.states(address);
   auto oldResult = node.output(0);
 
-  auto outputs = LoadOperation::Create(address, instates, op.GetAlignment());
+  auto outputs = LoadNode::Create(address, instates, op.GetAlignment());
   oldResult->divert_users(outputs[0]);
 
   smap.replace(address, {std::next(outputs.begin()), outputs.end()});
