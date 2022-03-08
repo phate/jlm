@@ -504,14 +504,16 @@ TestTheta()
 		auto lambda_exit_mux = jive::node_output::node(test.lambda->fctresult(0)->origin());
 		assert(is<aa::LambdaExitMemStateOperator>(*lambda_exit_mux, 2, 1));
 
-		auto theta = jive::node_output::node(lambda_exit_mux->input(0)->origin());
+    auto thetaOutput = AssertedCast<jive::theta_output>(lambda_exit_mux->input(0)->origin());
+		auto theta = jive::node_output::node(thetaOutput);
 		assert(theta == test.theta);
 
-		auto store = jive::node_output::node(test.theta->output(4)->result()->origin());
+    auto storeStateOutput = thetaOutput->result()->origin();
+		auto store = jive::node_output::node(storeStateOutput);
 		assert(is<StoreOperation>(*store, 4, 2));
-		assert(store->input(2)->origin() == test.theta->output(4)->argument());
+		assert(store->input(storeStateOutput->index()+2)->origin() == thetaOutput->argument());
 
-		auto lambda_entry_mux = jive::node_output::node(test.theta->input(4)->origin());
+		auto lambda_entry_mux = jive::node_output::node(thetaOutput->input()->origin());
 		assert(is<aa::LambdaEntryMemStateOperator>(*lambda_entry_mux, 1, 2));
 	};
 
