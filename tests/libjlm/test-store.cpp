@@ -37,7 +37,7 @@ test_store_mux_reduction()
 	auto s3 = graph.add_import({mt, "s3"});
 
 	auto mux = MemStateMergeOperator::Create({s1, s2, s3});
-	auto state = StoreOperation::Create(a, v, {mux}, 4);
+	auto state = StoreNode::Create(a, v, {mux}, 4);
 
 	auto ex = graph.add_export(state[0], {state[0]->type(), "s"});
 
@@ -80,7 +80,7 @@ test_multiple_origin_reduction()
 	auto v = graph.add_import({vt, "v"});
 	auto s = graph.add_import({mt, "s"});
 
-	auto states = StoreOperation::Create(a, v, {s, s, s, s}, 4);
+	auto states = StoreNode::Create(a, v, {s, s, s, s}, 4);
 
 	auto ex = graph.add_export(states[0], {states[0]->type(), "s"});
 
@@ -118,8 +118,8 @@ test_store_alloca_reduction()
 
 	auto alloca1 = alloca_op::create(vt, size, 4);
 	auto alloca2 = alloca_op::create(vt, size, 4);
-	auto states1 = StoreOperation::Create(alloca1[0], value, {alloca1[1], alloca2[1], s}, 4);
-	auto states2 = StoreOperation::Create(alloca2[0], value, states1, 4);
+	auto states1 = StoreNode::Create(alloca1[0], value, {alloca1[1], alloca2[1], s}, 4);
+	auto states2 = StoreNode::Create(alloca2[0], value, states1, 4);
 
 	graph.add_export(states2[0], {states2[0]->type(), "s1"});
 	graph.add_export(states2[1], {states2[1]->type(), "s2"});
@@ -157,8 +157,8 @@ test_store_store_reduction()
 	auto v2 = graph.add_import({vt, "value"});
 	auto s = graph.add_import({mt, "state"});
 
-	auto s1 = StoreOperation::Create(a, v1, {s}, 4)[0];
-	auto s2 = StoreOperation::Create(a, v2, {s1}, 4)[0];
+	auto s1 = StoreNode::Create(a, v1, {s}, 4)[0];
+	auto s2 = StoreNode::Create(a, v2, {s1}, 4)[0];
 
 	auto ex = graph.add_export(s2, {s2->type(), "state"});
 

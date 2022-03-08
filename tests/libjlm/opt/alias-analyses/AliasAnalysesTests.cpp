@@ -36,9 +36,9 @@ StoreTest1::SetupRvsdg()
   auto merge_b = MemStateMergeOperator::Create(std::vector<jive::output *>({b[1], merge_c}));
   auto merge_a = MemStateMergeOperator::Create(std::vector<jive::output *>({a[1], merge_b}));
 
-  auto a_amp_b = StoreOperation::Create(a[0], b[0], {merge_a}, 4);
-  auto b_amp_c = StoreOperation::Create(b[0], c[0], {a_amp_b[0]}, 4);
-  auto c_amp_d = StoreOperation::Create(c[0], d[0], {b_amp_c[0]}, 4);
+  auto a_amp_b = StoreNode::Create(a[0], b[0], {merge_a}, 4);
+  auto b_amp_c = StoreNode::Create(b[0], c[0], {a_amp_b[0]}, 4);
+  auto c_amp_d = StoreNode::Create(c[0], d[0], {b_amp_c[0]}, 4);
 
   fct->finalize({c_amp_d[0]});
 
@@ -90,10 +90,10 @@ StoreTest2::SetupRvsdg()
   auto merge_y = MemStateMergeOperator::Create(std::vector<jive::output *>({y[1], merge_x}));
   auto merge_p = MemStateMergeOperator::Create(std::vector<jive::output *>({p[1], merge_y}));
 
-  auto x_amp_a = StoreOperation::Create(x[0], a[0], {merge_p}, 4);
-  auto y_amp_b = StoreOperation::Create(y[0], b[0], {x_amp_a[0]}, 4);
-  auto p_amp_x = StoreOperation::Create(p[0], x[0], {y_amp_b[0]}, 4);
-  auto p_amp_y = StoreOperation::Create(p[0], y[0], {p_amp_x[0]}, 4);
+  auto x_amp_a = StoreNode::Create(x[0], a[0], {merge_p}, 4);
+  auto y_amp_b = StoreNode::Create(y[0], b[0], {x_amp_a[0]}, 4);
+  auto p_amp_x = StoreNode::Create(p[0], x[0], {y_amp_b[0]}, 4);
+  auto p_amp_y = StoreNode::Create(p[0], y[0], {p_amp_x[0]}, 4);
 
   fct->finalize({p_amp_y[0]});
 
@@ -181,13 +181,13 @@ LoadTest2::SetupRvsdg()
   auto merge_y = MemStateMergeOperator::Create(std::vector<jive::output *>({y[1], merge_x}));
   auto merge_p = MemStateMergeOperator::Create(std::vector<jive::output *>({p[1], merge_y}));
 
-  auto x_amp_a = StoreOperation::Create(x[0], a[0], {merge_p}, 4);
-  auto y_amp_b = StoreOperation::Create(y[0], b[0], x_amp_a, 4);
-  auto p_amp_x = StoreOperation::Create(p[0], x[0], y_amp_b, 4);
+  auto x_amp_a = StoreNode::Create(x[0], a[0], {merge_p}, 4);
+  auto y_amp_b = StoreNode::Create(y[0], b[0], x_amp_a, 4);
+  auto p_amp_x = StoreNode::Create(p[0], x[0], y_amp_b, 4);
 
   auto ld1 = LoadNode::Create(p[0], p_amp_x, 4);
   auto ld2 = LoadNode::Create(ld1[0], {ld1[1]}, 4);
-  auto y_star_p = StoreOperation::Create(y[0], ld2[0], {ld2[1]}, 4);
+  auto y_star_p = StoreNode::Create(y[0], ld2[0], {ld2[1]}, 4);
 
   fct->finalize({y_star_p[0]});
 
@@ -431,7 +431,7 @@ ConstantPointerNullTest::SetupRvsdg()
   auto fct = lambda::node::create(graph->root(), fcttype, "f", linkage::external_linkage);
 
   auto cnull = ptr_constant_null_op::create(fct->subregion(), *pt);
-  auto st = StoreOperation::Create(fct->fctargument(0), cnull, {fct->fctargument(1)}, 4);
+  auto st = StoreNode::Create(fct->fctargument(0), cnull, {fct->fctargument(1)}, 4);
 
   fct->finalize({st[0]});
 
@@ -555,9 +555,9 @@ CallTest1::SetupRvsdg()
     auto six = jive::create_bitconstant(lambda->subregion(), 32, 6);
     auto seven = jive::create_bitconstant(lambda->subregion(), 32, 7);
 
-    auto stx = StoreOperation::Create(x[0], five, {mz}, 4);
-    auto sty = StoreOperation::Create(y[0], six, {stx[0]}, 4);
-    auto stz = StoreOperation::Create(z[0], seven, {sty[0]}, 4);
+    auto stx = StoreNode::Create(x[0], five, {mz}, 4);
+    auto sty = StoreNode::Create(y[0], six, {stx[0]}, 4);
+    auto stz = StoreNode::Create(z[0], seven, {sty[0]}, 4);
 
     auto callFResults = CallNode::Create(
       cvf,
@@ -945,7 +945,7 @@ ThetaTest::SetupRvsdg()
   auto s = thetanode->add_loopvar(fct->fctargument(3));
 
   auto gepnode = getelementptr_op::create(a->argument(), {n->argument()}, *pt);
-  auto store = StoreOperation::Create(gepnode, c->argument(), {s->argument()}, 4);
+  auto store = StoreNode::Create(gepnode, c->argument(), {s->argument()}, 4);
 
   auto one = jive::create_bitconstant(thetanode->subregion(), 32, 1);
   auto sum = jive::bitadd_op::create(32, n->argument(), one);
@@ -1043,7 +1043,7 @@ DeltaTest1::SetupRvsdg()
     auto cvg = lambda->add_ctxvar(g);
 
     auto five = jive::create_bitconstant(lambda->subregion(), 32, 5);
-    auto st = StoreOperation::Create(cvf, five, {memoryStateArgument}, 4);
+    auto st = StoreNode::Create(cvf, five, {memoryStateArgument}, 4);
     auto callg = CallNode::Create(
       cvg,
       {cvf, iOStateArgument, st[0], loopStateArgument});
@@ -1133,7 +1133,7 @@ DeltaTest2::SetupRvsdg()
 
     auto cvd1 = lambda->add_ctxvar(d1);
     auto b2 = jive::create_bitconstant(lambda->subregion(), 32, 2);
-    auto st = StoreOperation::Create(cvd1, b2, {memoryStateArgument}, 4);
+    auto st = StoreNode::Create(cvd1, b2, {memoryStateArgument}, 4);
 
     return lambda->finalize({iOStateArgument, st[0], loopStateArgument});
   };
@@ -1162,11 +1162,11 @@ DeltaTest2::SetupRvsdg()
 
     auto b5 = jive::create_bitconstant(lambda->subregion(), 32, 5);
     auto b42 = jive::create_bitconstant(lambda->subregion(), 32, 42);
-    auto st = StoreOperation::Create(cvd1, b5, {memoryStateArgument}, 4);
+    auto st = StoreNode::Create(cvd1, b5, {memoryStateArgument}, 4);
     auto callResults = CallNode::Create(
       cvf1,
       {iOStateArgument, st[0], loopStateArgument});
-    st = StoreOperation::Create(cvd2, b42, {callResults[1]}, 4);
+    st = StoreNode::Create(cvd2, b42, {callResults[1]}, 4);
 
     auto lambdaOutput = lambda->finalize(callResults);
     graph->add_export(lambdaOutput, {ptrtype(lambda->type()), "f2"});
@@ -1225,7 +1225,7 @@ ImportTest::SetupRvsdg()
     auto cvd1 = lambda->add_ctxvar(d1);
 
     auto b5 = jive::create_bitconstant(lambda->subregion(), 32, 5);
-    auto st = StoreOperation::Create(cvd1, b5, {memoryStateArgument}, 4);
+    auto st = StoreNode::Create(cvd1, b5, {memoryStateArgument}, 4);
 
     return lambda->finalize({iOStateArgument, st[0], loopStateArgument});
   };
@@ -1253,11 +1253,11 @@ ImportTest::SetupRvsdg()
     auto cvf1 = lambda->add_ctxvar(f1);
     auto b2 = jive::create_bitconstant(lambda->subregion(), 32, 2);
     auto b21 = jive::create_bitconstant(lambda->subregion(), 32, 21);
-    auto st = StoreOperation::Create(cvd1, b2, {memoryStateArgument}, 4);
+    auto st = StoreNode::Create(cvd1, b2, {memoryStateArgument}, 4);
     auto callResults = CallNode::Create(
       cvf1,
       {iOStateArgument, st[0], loopStateArgument});
-    st = StoreOperation::Create(cvd2, b21, {callResults[1]}, 4);
+    st = StoreNode::Create(cvd2, b21, {callResults[1]}, 4);
 
     auto lambdaOutput = lambda->finalize(callResults);
     graph->add_export(lambda->output(), {ptrtype(lambda->type()), "f2"});
@@ -1365,7 +1365,7 @@ PhiTest::SetupRvsdg()
     auto gOLoopState = gammaNode->add_exitvar({callfibm2Results[2], gILoopState->argument(1)});
 
     auto gepn = getelementptr_op::create(pointerArgument, {valueArgument}, pbit64);
-    auto store = StoreOperation::Create(gepn, sumex, {gOMemoryState}, 8);
+    auto store = StoreNode::Create(gepn, sumex, {gOMemoryState}, 8);
 
     auto lambdaOutput = lambda->finalize({gOIoState, store[0], gOLoopState});
 
@@ -1470,8 +1470,8 @@ ExternalMemoryTest::SetupRvsdg()
   auto one = jive::create_bitconstant(LambdaF->subregion(), 32, 1);
   auto two = jive::create_bitconstant(LambdaF->subregion(), 32, 2);
 
-  auto storeOne = StoreOperation::Create(x, one, {state}, 4);
-  auto storeTwo = StoreOperation::Create(y, two, {storeOne[0]}, 4);
+  auto storeOne = StoreNode::Create(x, one, {state}, 4);
+  auto storeTwo = StoreNode::Create(y, two, {storeOne[0]}, 4);
 
   LambdaF->finalize(storeTwo);
   graph->add_export(LambdaF->output(), {ptrtype(LambdaF->type()), "f"});

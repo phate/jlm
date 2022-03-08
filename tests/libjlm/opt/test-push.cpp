@@ -122,7 +122,7 @@ test_push_theta_bottom()
 	auto lvv = theta->add_loopvar(v);
 	auto lvs = theta->add_loopvar(s);
 
-	auto s1 = StoreOperation::Create(lva->argument(), lvv->argument(), {lvs->argument()}, 4)[0];
+	auto s1 = StoreNode::Create(lva->argument(), lvv->argument(), {lvs->argument()}, 4)[0];
 
 	lvs->result()->divert_to(s1);
 	theta->set_predicate(lvc->argument());

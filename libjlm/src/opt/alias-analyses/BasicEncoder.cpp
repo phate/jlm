@@ -552,7 +552,7 @@ BasicEncoder::EncodeStore(const jive::simple_node & node)
   auto value = node.input(1)->origin();
   auto instates = smap.states(address);
 
-  auto outstates = StoreOperation::Create(address, value, instates, op.GetAlignment());
+  auto outstates = StoreNode::Create(address, value, instates, op.GetAlignment());
 
   smap.replace(address, outstates);
 }

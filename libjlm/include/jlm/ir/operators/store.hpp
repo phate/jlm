@@ -154,27 +154,6 @@ public:
     return tac::create(op, {address, value, state});
   }
 
-  static std::vector<jive::output*>
-  Create(
-    jive::output * address,
-    jive::output * value,
-    const std::vector<jive::output*> & states,
-    size_t alignment)
-  {
-    auto pointerType = dynamic_cast<const ptrtype*>(&address->type());
-    if (!pointerType)
-      throw jlm::error("expected pointer type.");
-
-    if (states.empty())
-      throw jlm::error("Expected at least one memory state.");
-
-    std::vector<jive::output*> operands({address, value});
-    operands.insert(operands.end(), states.begin(), states.end());
-
-    StoreOperation op(*pointerType, states.size(), alignment);
-    return jive::simple_node::create_normalized(address->region(), op, operands);
-  }
-
 private:
   static std::vector<jive::port>
   CreateArgumentPorts(
