@@ -680,11 +680,12 @@ ConvertThreeAddressCode(
 		std::type_index,
 		std::function<void(const jlm::tac&, jive::region&, jlm::VariableMap&)>
 	> map({
-	  {typeid(assignment_op), ConvertAssignment}
-	, {typeid(select_op),     ConvertSelect}
-	, {typeid(branch_op),     ConvertBranch}
-  , {typeid(CallOperation), Convert<CallNode, CallOperation>}
-  , {typeid(LoadOperation), Convert<LoadNode, LoadOperation>}
+	  {typeid(assignment_op),  ConvertAssignment}
+	, {typeid(select_op),      ConvertSelect}
+	, {typeid(branch_op),      ConvertBranch}
+  , {typeid(CallOperation),  Convert<CallNode, CallOperation>}
+  , {typeid(LoadOperation),  Convert<LoadNode, LoadOperation>}
+  , {typeid(StoreOperation), Convert<StoreNode, StoreOperation>}
 	});
 
 	auto & op = threeAddressCode.operation();

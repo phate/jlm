@@ -344,7 +344,7 @@ pushout_store(jive::node * storenode)
 	}
 
 	/* create new store and redirect theta output users */
-	auto nstates = StoreOperation::Create(address, nvalue, states, storeop->GetAlignment());
+	auto nstates = StoreNode::Create(address, nvalue, states, storeop->GetAlignment());
 	for (size_t n = 0; n < states.size(); n++) {
 		std::unordered_set<jive::input*> users;
 		for (const auto & user : *states[n]) {

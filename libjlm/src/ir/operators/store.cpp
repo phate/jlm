@@ -120,7 +120,7 @@ perform_store_mux_reduction(
 	auto memStateMergeNode = jive::node_output::node(operands[2]);
 	auto memStateMergeOperands = jive::operands(memStateMergeNode);
 
-	auto states = StoreOperation::Create(operands[0], operands[1], memStateMergeOperands, op.GetAlignment());
+	auto states = StoreNode::Create(operands[0], operands[1], memStateMergeOperands, op.GetAlignment());
 	return {MemStateMergeOperator::Create(states)};
 }
 
@@ -134,7 +134,7 @@ perform_store_store_reduction(
 
 	auto storeops = jive::operands(storenode);
 	std::vector<jive::output*> states(std::next(std::next(storeops.begin())), storeops.end());
-	return StoreOperation::Create(operands[0], operands[1], states, op.GetAlignment());
+	return StoreNode::Create(operands[0], operands[1], states, op.GetAlignment());
 }
 
 static std::vector<jive::output*>
@@ -147,7 +147,7 @@ perform_store_alloca_reduction(
 	auto alloca_state = jive::node_output::node(address)->output(1);
 	std::unordered_set<jive::output*> states(std::next(std::next(operands.begin())), operands.end());
 
-	auto outputs = StoreOperation::Create(address, value, {alloca_state}, op.GetAlignment());
+	auto outputs = StoreNode::Create(address, value, {alloca_state}, op.GetAlignment());
 	states.erase(alloca_state);
 	states.insert(outputs[0]);
 	return {states.begin(), states.end()};
@@ -159,7 +159,7 @@ perform_multiple_origin_reduction(
 	const std::vector<jive::output*> & operands)
 {
 	std::unordered_set<jive::output*> states(std::next(std::next(operands.begin())), operands.end());
-	return StoreOperation::Create(operands[0], operands[1], {states.begin(), states.end()},
+	return StoreNode::Create(operands[0], operands[1], {states.begin(), states.end()},
                                 op.GetAlignment());
 }
 
