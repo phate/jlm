@@ -194,24 +194,6 @@ public:
     return tac::create(operation, {address, state});
   }
 
-  static std::vector<jive::output*>
-  Create(
-    jive::output * address,
-    const std::vector<jive::output*> & states,
-    size_t alignment)
-  {
-    auto & pointerType = CheckAndConvertType(address->type());
-
-    if (states.empty())
-      throw error("Expected at least one memory state.");
-
-    std::vector<jive::output*> operands({address});
-    operands.insert(operands.end(), states.begin(), states.end());
-
-    LoadOperation operation(pointerType, states.size(), alignment);
-    return jive::simple_node::create_normalized(address->region(), operation, operands);
-  }
-
 private:
   static const ptrtype &
   CheckAndConvertType(const jive::type & type)

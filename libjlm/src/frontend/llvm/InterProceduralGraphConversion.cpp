@@ -684,6 +684,7 @@ ConvertThreeAddressCode(
 	, {typeid(select_op),     ConvertSelect}
 	, {typeid(branch_op),     ConvertBranch}
   , {typeid(CallOperation), Convert<CallNode, CallOperation>}
+  , {typeid(LoadOperation), Convert<LoadNode, LoadOperation>}
 	});
 
 	auto & op = threeAddressCode.operation();
