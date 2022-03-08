@@ -69,17 +69,17 @@ TestStore1()
     assert(input_node((*test.alloca_d->output(1)->begin())) == lambdaExitMerge);
 
     auto storeD = input_node(*test.alloca_c->output(1)->begin());
-    assert(is<store_op>(*storeD, 3, 1));
+    assert(is<StoreOperation>(*storeD, 3, 1));
     assert(storeD->input(0)->origin() == test.alloca_c->output(0));
     assert(storeD->input(1)->origin() == test.alloca_d->output(0));
 
     auto storeC = input_node(*test.alloca_b->output(1)->begin());
-    assert(is<store_op>(*storeC, 3, 1));
+    assert(is<StoreOperation>(*storeC, 3, 1));
     assert(storeC->input(0)->origin() == test.alloca_b->output(0));
     assert(storeC->input(1)->origin() == test.alloca_c->output(0));
 
     auto storeB = input_node(*test.alloca_a->output(1)->begin());
-    assert(is<store_op>(*storeB, 3, 1));
+    assert(is<StoreOperation>(*storeB, 3, 1));
     assert(storeB->input(0)->origin() == test.alloca_a->output(0));
     assert(storeB->input(1)->origin() == test.alloca_b->output(0));
 	};
@@ -117,22 +117,22 @@ TestStore2()
     assert(input_node((*test.alloca_b->output(1)->begin())) == lambdaExitMerge);
 
     auto storeA = input_node(*test.alloca_a->output(0)->begin());
-    assert(is<store_op>(*storeA, 4, 2));
+    assert(is<StoreOperation>(*storeA, 4, 2));
     assert(storeA->input(0)->origin() == test.alloca_x->output(0));
 
     auto storeB = input_node(*test.alloca_b->output(0)->begin());
-    assert(is<store_op>(*storeB, 4, 2));
+    assert(is<StoreOperation>(*storeB, 4, 2));
     assert(storeB->input(0)->origin() == test.alloca_y->output(0));
     assert(jive::node_output::node(storeB->input(2)->origin()) == storeA);
     assert(jive::node_output::node(storeB->input(3)->origin()) == storeA);
 
     auto storeX = input_node(*test.alloca_p->output(1)->begin());
-    assert(is<store_op>(*storeX, 3, 1));
+    assert(is<StoreOperation>(*storeX, 3, 1));
     assert(storeX->input(0)->origin() == test.alloca_p->output(0));
     assert(storeX->input(1)->origin() == test.alloca_x->output(0));
 
     auto storeY = input_node(*storeX->output(0)->begin());
-    assert(is<store_op>(*storeY, 3, 1));
+    assert(is<StoreOperation>(*storeY, 3, 1));
     assert(storeY->input(0)->origin() == test.alloca_p->output(0));
     assert(storeY->input(1)->origin() == test.alloca_y->output(0));
 	};
@@ -207,17 +207,17 @@ TestLoad2()
     assert(input_node((*test.alloca_b->output(1)->begin())) == lambdaExitMerge);
 
     auto storeA = input_node(*test.alloca_a->output(0)->begin());
-    assert(is<store_op>(*storeA, 4, 2));
+    assert(is<StoreOperation>(*storeA, 4, 2));
     assert(storeA->input(0)->origin() == test.alloca_x->output(0));
 
     auto storeB = input_node(*test.alloca_b->output(0)->begin());
-    assert(is<store_op>(*storeB, 4, 2));
+    assert(is<StoreOperation>(*storeB, 4, 2));
     assert(storeB->input(0)->origin() == test.alloca_y->output(0));
     assert(jive::node_output::node(storeB->input(2)->origin()) == storeA);
     assert(jive::node_output::node(storeB->input(3)->origin()) == storeA);
 
     auto storeX = input_node(*test.alloca_p->output(1)->begin());
-    assert(is<store_op>(*storeX, 3, 1));
+    assert(is<StoreOperation>(*storeX, 3, 1));
     assert(storeX->input(0)->origin() == test.alloca_p->output(0));
     assert(storeX->input(1)->origin() == test.alloca_x->output(0));
 
@@ -231,7 +231,7 @@ TestLoad2()
     assert(jive::node_output::node(loadXY->input(2)->origin()) == storeB);
 
     auto storeY = input_node(*loadXY->output(0)->begin());
-    assert(is<store_op>(*storeY, 4, 2));
+    assert(is<StoreOperation>(*storeY, 4, 2));
     assert(storeY->input(0)->origin() == test.alloca_y->output(0));
     assert(jive::node_output::node(storeY->input(2)->origin()) == loadXY);
     assert(jive::node_output::node(storeY->input(3)->origin()) == loadXY);
@@ -508,7 +508,7 @@ TestTheta()
 		assert(theta == test.theta);
 
 		auto store = jive::node_output::node(test.theta->output(4)->result()->origin());
-		assert(is<store_op>(*store, 4, 2));
+		assert(is<StoreOperation>(*store, 4, 2));
 		assert(store->input(2)->origin() == test.theta->output(4)->argument());
 
 		auto lambda_entry_mux = jive::node_output::node(test.theta->input(4)->origin());
@@ -539,7 +539,7 @@ TestDelta1()
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 4));
 
     auto storeF = input_node(*test.constantFive->output(0)->begin());
-    assert(is<store_op>(*storeF, 3, 1));
+    assert(is<StoreOperation>(*storeF, 3, 1));
     assert(jive::node_output::node(storeF->input(2)->origin()) == lambdaEntrySplit);
 
     auto deltaStateIndex = storeF->input(2)->origin()->index();
@@ -573,18 +573,18 @@ TestDelta2()
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 5));
 
     auto storeD1InF2 = input_node(*test.lambda_f2->cvargument(0)->begin());
-    assert(is<store_op>(*storeD1InF2, 3, 1));
+    assert(is<StoreOperation>(*storeD1InF2, 3, 1));
     assert(jive::node_output::node(storeD1InF2->input(2)->origin()) == lambdaEntrySplit);
 
     auto d1StateIndex = storeD1InF2->input(2)->origin()->index();
 
     auto storeD1InF1 = input_node(*test.lambda_f1->cvargument(0)->begin());
-    assert(is<store_op>(*storeD1InF1, 3, 1));
+    assert(is<StoreOperation>(*storeD1InF1, 3, 1));
 
     assert(d1StateIndex == storeD1InF1->input(2)->origin()->index());
 
     auto storeD2InF2 = input_node(*test.lambda_f2->cvargument(1)->begin());
-    assert(is<store_op>(*storeD1InF2, 3, 1));
+    assert(is<StoreOperation>(*storeD1InF2, 3, 1));
 
     assert(d1StateIndex != storeD2InF2->input(2)->origin()->index());
 	};
@@ -613,18 +613,18 @@ TestImports()
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 5));
 
     auto storeD1InF2 = input_node(*test.lambda_f2->cvargument(0)->begin());
-    assert(is<store_op>(*storeD1InF2, 3, 1));
+    assert(is<StoreOperation>(*storeD1InF2, 3, 1));
     assert(jive::node_output::node(storeD1InF2->input(2)->origin()) == lambdaEntrySplit);
 
     auto d1StateIndex = storeD1InF2->input(2)->origin()->index();
 
     auto storeD1InF1 = input_node(*test.lambda_f1->cvargument(0)->begin());
-    assert(is<store_op>(*storeD1InF1, 3, 1));
+    assert(is<StoreOperation>(*storeD1InF1, 3, 1));
 
     assert(d1StateIndex == storeD1InF1->input(2)->origin()->index());
 
     auto storeD2InF2 = input_node(*test.lambda_f2->cvargument(1)->begin());
-    assert(is<store_op>(*storeD1InF2, 3, 1));
+    assert(is<StoreOperation>(*storeD1InF2, 3, 1));
 
     assert(d1StateIndex != storeD2InF2->input(2)->origin()->index());
 	};
@@ -653,7 +653,7 @@ TestPhi()
     assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 4, 1));
 
     auto store = jive::node_output::node(lambdaExitMerge->input(arrayStateIndex)->origin());
-    assert(is<store_op>(*store, 3, 1));
+    assert(is<StoreOperation>(*store, 3, 1));
 
     auto gamma = jive::node_output::node(store->input(2)->origin());
     assert(gamma == test.gamma);

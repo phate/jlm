@@ -765,7 +765,7 @@ Steensgaard::Analyze(const jive::simple_node & node)
 	  {typeid(alloca_op),             [](auto & s, auto & n){ s.AnalyzeAlloca(n);                }}
 	, {typeid(malloc_op),             [](auto & s, auto & n){ s.AnalyzeMalloc(n);                }}
 	, {typeid(LoadOperation),         [](auto & s, auto & n){ s.AnalyzeLoad(n);                  }}
-	, {typeid(store_op),              [](auto & s, auto & n){ s.AnalyzeStore(n);                 }}
+	, {typeid(StoreOperation),        [](auto & s, auto & n){ s.AnalyzeStore(n);                 }}
 	, {typeid(CallOperation),         AnalyzeCall                                                 }
 	, {typeid(getelementptr_op),      [](auto & s, auto & n){ s.AnalyzeGep(n);                   }}
 	, {typeid(bitcast_op),            [](auto & s, auto & n){ s.AnalyzeBitcast(n);               }}
@@ -875,7 +875,7 @@ Steensgaard::AnalyzeLoad(const jive::simple_node & node)
 void
 Steensgaard::AnalyzeStore(const jive::simple_node & node)
 {
-	JLM_ASSERT(is<store_op>(&node));
+	JLM_ASSERT(is<StoreOperation>(&node));
 
 	auto address = node.input(0)->origin();
 	auto value = node.input(1)->origin();

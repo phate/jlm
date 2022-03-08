@@ -12,32 +12,29 @@
 
 namespace jlm {
 
-/* store operator */
-
-store_op::~store_op() noexcept
-{}
+StoreOperation::~StoreOperation() noexcept
+= default;
 
 bool
-store_op::operator==(const operation & other) const noexcept
+StoreOperation::operator==(const operation & other) const noexcept
 {
-	auto op = dynamic_cast<const store_op*>(&other);
-	if (!op || op->narguments() != narguments())
-		return false;
-
-	return op->argument(0) == argument(0)
-	    && op->alignment() == alignment();
+  auto op = dynamic_cast<const StoreOperation*>(&other);
+  return op
+      && op->NumStates() == NumStates()
+      && op->GetPointerType() == GetPointerType()
+      && op->GetAlignment() == GetAlignment();
 }
 
 std::string
-store_op::debug_string() const
+StoreOperation::debug_string() const
 {
 	return "STORE";
 }
 
 std::unique_ptr<jive::operation>
-store_op::copy() const
+StoreOperation::copy() const
 {
-	return std::unique_ptr<jive::operation>(new store_op(*this));
+	return std::unique_ptr<jive::operation>(new StoreOperation(*this));
 }
 
 /* store normal form */
@@ -62,16 +59,16 @@ is_store_mux_reducible(const std::vector<jive::output*> & operands)
 
 static bool
 is_store_store_reducible(
-	const store_op & op,
+	const StoreOperation & op,
 	const std::vector<jive::output*> & operands)
 {
 	JLM_ASSERT(operands.size() > 2);
 
 	auto storenode = jive::node_output::node(operands[2]);
-	if (!is<store_op>(storenode))
+	if (!is<StoreOperation>(storenode))
 		return false;
 
-	if (op.nstates() != storenode->noutputs())
+	if (op.NumStates() != storenode->noutputs())
 		return false;
 
 	/* check for same address */
@@ -83,8 +80,8 @@ is_store_store_reducible(
 			return false;
 	}
 
-	auto other = static_cast<const store_op*>(&storenode->operation());
-	JLM_ASSERT(op.alignment() == other->alignment());
+	auto other = static_cast<const StoreOperation*>(&storenode->operation());
+	JLM_ASSERT(op.GetAlignment() == other->GetAlignment());
 	return true;
 }
 
@@ -117,19 +114,19 @@ is_multiple_origin_reducible(const std::vector<jive::output*> & operands)
 
 static std::vector<jive::output*>
 perform_store_mux_reduction(
-	const jlm::store_op & op,
+	const StoreOperation & op,
 	const std::vector<jive::output*> & operands)
 {
 	auto memStateMergeNode = jive::node_output::node(operands[2]);
 	auto memStateMergeOperands = jive::operands(memStateMergeNode);
 
-	auto states = store_op::create(operands[0], operands[1], memStateMergeOperands, op.alignment());
+	auto states = StoreOperation::Create(operands[0], operands[1], memStateMergeOperands, op.GetAlignment());
 	return {MemStateMergeOperator::Create(states)};
 }
 
 static std::vector<jive::output*>
 perform_store_store_reduction(
-	const jlm::store_op & op,
+	const StoreOperation & op,
 	const std::vector<jive::output*> & operands)
 {
 	JLM_ASSERT(is_store_store_reducible(op, operands));
@@ -137,12 +134,12 @@ perform_store_store_reduction(
 
 	auto storeops = jive::operands(storenode);
 	std::vector<jive::output*> states(std::next(std::next(storeops.begin())), storeops.end());
-	return store_op::create(operands[0], operands[1], states, op.alignment());
+	return StoreOperation::Create(operands[0], operands[1], states, op.GetAlignment());
 }
 
 static std::vector<jive::output*>
 perform_store_alloca_reduction(
-	const jlm::store_op & op,
+	const StoreOperation & op,
 	const std::vector<jive::output*> & operands)
 {
 	auto value = operands[1];
@@ -150,7 +147,7 @@ perform_store_alloca_reduction(
 	auto alloca_state = jive::node_output::node(address)->output(1);
 	std::unordered_set<jive::output*> states(std::next(std::next(operands.begin())), operands.end());
 
-	auto outputs = store_op::create(address, value, {alloca_state}, op.alignment());
+	auto outputs = StoreOperation::Create(address, value, {alloca_state}, op.GetAlignment());
 	states.erase(alloca_state);
 	states.insert(outputs[0]);
 	return {states.begin(), states.end()};
@@ -158,12 +155,12 @@ perform_store_alloca_reduction(
 
 static std::vector<jive::output*>
 perform_multiple_origin_reduction(
-	const jlm::store_op & op,
+	const StoreOperation & op,
 	const std::vector<jive::output*> & operands)
 {
 	std::unordered_set<jive::output*> states(std::next(std::next(operands.begin())), operands.end());
-	return store_op::create(operands[0], operands[1], {states.begin(), states.end()},
-		op.alignment());
+	return StoreOperation::Create(operands[0], operands[1], {states.begin(), states.end()},
+                                op.GetAlignment());
 }
 
 store_normal_form::~store_normal_form()
@@ -189,8 +186,8 @@ store_normal_form::store_normal_form(
 bool
 store_normal_form::normalize_node(jive::node * node) const
 {
-	JLM_ASSERT(is<store_op>(node->operation()));
-	auto op = static_cast<const jlm::store_op*>(&node->operation());
+	JLM_ASSERT(is<StoreOperation>(node->operation()));
+	auto op = static_cast<const jlm::StoreOperation*>(&node->operation());
 	auto operands = jive::operands(node);
 
 	if (!get_mutable())
@@ -243,8 +240,8 @@ store_normal_form::normalized_create(
 	const jive::simple_op & op,
 	const std::vector<jive::output*> & ops) const
 {
-	JLM_ASSERT(is<store_op>(op));
-	auto sop = static_cast<const jlm::store_op*>(&op);
+	JLM_ASSERT(is<StoreOperation>(op));
+	auto sop = static_cast<const jlm::StoreOperation*>(&op);
 
 	if (!get_mutable())
 		return simple_normal_form::normalized_create(region, op, ops);
@@ -330,7 +327,7 @@ create_store_normal_form(
 static void __attribute__((constructor))
 register_normal_form()
 {
-	jive::node_normal_form::register_factory(typeid(jlm::store_op), create_store_normal_form);
+	jive::node_normal_form::register_factory(typeid(jlm::StoreOperation), create_store_normal_form);
 }
 
 }

@@ -114,7 +114,7 @@ is_load_store_alloca_reducible(const std::vector<jive::output*> & operands)
 		return false;
 
 	auto store = jive::node_output::node(state);
-	if (!is<store_op>(store))
+	if (!is<StoreOperation>(store))
 		return false;
 
 	if (store->input(0)->origin() != alloca->output(0))
@@ -138,7 +138,7 @@ is_load_store_alloca_reducible(const std::vector<jive::output*> & operands)
 static bool
 is_reducible_state(const jive::output * state, const jive::node * loadalloca)
 {
-	if (is<store_op>(jive::node_output::node(state))) {
+	if (is<StoreOperation>(jive::node_output::node(state))) {
 		auto storenode = jive::node_output::node(state);
 		auto addressnode = jive::node_output::node(storenode->input(0)->origin());
 		if (is<alloca_op>(addressnode) && addressnode != loadalloca)
@@ -202,11 +202,11 @@ is_load_store_reducible(
 	JLM_ASSERT(operands.size() > 1);
 
 	auto storenode = jive::node_output::node(operands[1]);
-	if (!is<store_op>(storenode))
+	if (!is<StoreOperation>(storenode))
 		return false;
 
-	auto sop = static_cast<const store_op*>(&storenode->operation());
-	if (sop->nstates() != op.NumStates())
+	auto sop = static_cast<const StoreOperation*>(&storenode->operation());
+	if (sop->NumStates() != op.NumStates())
 		return false;
 
 	/* check for same address */
@@ -218,7 +218,7 @@ is_load_store_reducible(
 			return false;
 	}
 
-	JLM_ASSERT(op.GetAlignment() == sop->alignment());
+	JLM_ASSERT(op.GetAlignment() == sop->GetAlignment());
 	return true;
 }
 

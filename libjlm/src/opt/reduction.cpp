@@ -72,7 +72,7 @@ enable_mux_reductions(jive::graph & graph)
 static void
 enable_store_reductions(jive::graph & graph)
 {
-	auto nf = jlm::store_op::normal_form(&graph);
+	auto nf = StoreOperation::GetNormalForm(&graph);
 	nf->set_mutable(true);
 	nf->set_store_mux_reducible(true);
 	nf->set_store_store_reducible(true);

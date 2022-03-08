@@ -102,8 +102,8 @@ test_load_store_state_reduction()
 
 	auto alloca1 = alloca_op::create(bt, size, 4);
 	auto alloca2 = alloca_op::create(bt, size, 4);
-	auto store1 = store_op::create(alloca1[0], size, {alloca1[1]}, 4);
-	auto store2 = store_op::create(alloca2[0], size, {alloca2[1]}, 4);
+	auto store1 = StoreOperation::Create(alloca1[0], size, {alloca1[1]}, 4);
+	auto store2 = StoreOperation::Create(alloca2[0], size, {alloca2[1]}, 4);
 
 	auto value1 = LoadNode::Create(alloca1[0], {store1[0], store2[0]}, 4)[0];
 	auto value2 = LoadNode::Create(alloca1[0], {store1[0]}, 8)[0];
@@ -145,7 +145,7 @@ test_load_store_alloca_reduction()
 	auto size = graph.add_import({bt, "v"});
 
 	auto alloca = alloca_op::create(bt, size, 4);
-	auto store = store_op::create(alloca[0], size, {alloca[1]}, 4);
+	auto store = StoreOperation::Create(alloca[0], size, {alloca[1]}, 4);
 	auto load = LoadNode::Create(alloca[0], store, 4);
 
 	auto value = graph.add_export(load[0], {load[0]->type(), "l"});
@@ -181,7 +181,7 @@ test_load_store_reduction()
   auto v = graph.add_import({vt, "value"});
   auto s = graph.add_import({mt, "state"});
 
-  auto s1 = store_op::create(a, v, {s}, 4)[0];
+  auto s1 = StoreOperation::Create(a, v, {s}, 4)[0];
   auto load = LoadNode::Create(a, {s1}, 4);
 
   auto x1 = graph.add_export(load[0], {load[0]->type(), "value"});
@@ -221,7 +221,7 @@ test_load_load_reduction()
 	auto s1 = graph.add_import({mt, "s1"});
 	auto s2 = graph.add_import({mt, "s2"});
 
-	auto st1 = store_op::create(a1, v1, {s1}, 4);
+	auto st1 = StoreOperation::Create(a1, v1, {s1}, 4);
 	auto ld1 = LoadNode::Create(a2, {s1}, 4);
 	auto ld2 = LoadNode::Create(a3, {s2}, 4);
 
