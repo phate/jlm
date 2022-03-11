@@ -11,34 +11,35 @@
 
 #include <jive/rvsdg/traverser.hpp>
 
-namespace jlm {
-namespace aa {
+namespace jlm::aa {
 
 MemoryStateEncoder::~MemoryStateEncoder() = default;
 
 void
 MemoryStateEncoder::Encode(const jive::simple_node & node)
 {
-  auto EncodeCall = [](auto & mse, auto & node) { mse.EncodeCall(*static_cast<const jlm::CallNode*>(&node)); };
+  auto EncodeCall  = [](auto & mse, auto & node) { mse.EncodeCall(*AssertedCast<const CallNode>(&node)); };
+  auto EncodeLoad  = [](auto & mse, auto & node) { mse.EncodeLoad(*AssertedCast<const LoadNode>(&node)); };
+  auto EncodeStore = [](auto & mse, auto & node) { mse.EncodeStore(*AssertedCast<const StoreNode>(&node)); };
 
-	static std::unordered_map<
-		std::type_index
-	, std::function<void(MemoryStateEncoder&, const jive::simple_node&)>
-	> nodes({
-	  {typeid(alloca_op),      [](auto & mse, auto & node){ mse.EncodeAlloca(node); }}
-	, {typeid(malloc_op),      [](auto & mse, auto & node){ mse.EncodeMalloc(node); }}
-	, {typeid(LoadOperation),  [](auto & mse, auto & node){ mse.EncodeLoad(node);   }}
-	, {typeid(StoreOperation), [](auto & mse, auto & node){ mse.EncodeStore(node);  }}
-	, {typeid(CallOperation),  EncodeCall}
-	, {typeid(free_op),        [](auto & mse, auto & node){ mse.EncodeFree(node);   }}
-	, {typeid(Memcpy),         [](auto & mse, auto & node){ mse.EncodeMemcpy(node); }}
-	});
+  static std::unordered_map<
+    std::type_index
+    , std::function<void(MemoryStateEncoder&, const jive::simple_node&)>
+  > nodes({
+            {typeid(alloca_op),      [](auto & mse, auto & node){ mse.EncodeAlloca(node); }},
+            {typeid(malloc_op),      [](auto & mse, auto & node){ mse.EncodeMalloc(node); }},
+            {typeid(LoadOperation),  EncodeLoad},
+            {typeid(StoreOperation), EncodeStore},
+            {typeid(CallOperation),  EncodeCall},
+            {typeid(free_op),        [](auto & mse, auto & node){ mse.EncodeFree(node);   }},
+            {typeid(Memcpy),         [](auto & mse, auto & node){ mse.EncodeMemcpy(node); }}
+          });
 
-	auto & op = node.operation();
-	if (nodes.find(typeid(op)) == nodes.end())
-		return;
+  auto & op = node.operation();
+  if (nodes.find(typeid(op)) == nodes.end())
+    return;
 
-	nodes[typeid(op)](*this, node);
+  nodes[typeid(op)](*this, node);
 }
 
 void
@@ -84,4 +85,4 @@ MemoryStateEncoder::Encode(jive::region & region)
 	}
 }
 
-}}
+}

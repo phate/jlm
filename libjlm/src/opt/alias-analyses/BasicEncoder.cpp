@@ -522,39 +522,41 @@ BasicEncoder::EncodeMalloc(const jive::simple_node & node)
 }
 
 void
-BasicEncoder::EncodeLoad(const jive::simple_node & node)
+BasicEncoder::EncodeLoad(const LoadNode & loadNode)
 {
-  JLM_ASSERT(is<LoadOperation>(&node));
-  auto & op = *static_cast<const LoadOperation*>(&node.operation());
-  auto & smap = Context_->StateMap();
+  auto & loadOperation = loadNode.GetOperation();
+  auto & stateMap = Context_->StateMap();
 
-  auto address = node.input(0)->origin();
-  auto instates = smap.states(address);
-  auto oldResult = node.output(0);
+  auto address = loadNode.GetAddressInput()->origin();
+  auto instates = stateMap.states(address);
+  auto oldResult = loadNode.GetValueOutput();
 
-  auto outputs = LoadNode::Create(address, instates, op.GetAlignment());
+  auto outputs = LoadNode::Create(address, instates, loadOperation.GetAlignment());
   oldResult->divert_users(outputs[0]);
 
-  smap.replace(address, {std::next(outputs.begin()), outputs.end()});
+  stateMap.replace(address, {std::next(outputs.begin()), outputs.end()});
 
   if (is<ptrtype>(oldResult->type()))
-    smap.ReplaceAddress(oldResult, outputs[0]);
+    stateMap.ReplaceAddress(oldResult, outputs[0]);
 }
 
 void
-BasicEncoder::EncodeStore(const jive::simple_node & node)
+BasicEncoder::EncodeStore(const StoreNode & storeNode)
 {
-  JLM_ASSERT(is<StoreOperation>(&node));
-  auto & op = *static_cast<const StoreOperation*>(&node.operation());
-  auto & smap = Context_->StateMap();
+  auto & storeOperation = storeNode.GetOperation();
+  auto & stateMap = Context_->StateMap();
 
-  auto address = node.input(0)->origin();
-  auto value = node.input(1)->origin();
-  auto instates = smap.states(address);
+  auto address = storeNode.GetAddressInput()->origin();
+  auto value = storeNode.GetValueInput()->origin();
+  auto inStates = stateMap.states(address);
 
-  auto outstates = StoreNode::Create(address, value, instates, op.GetAlignment());
+  auto outStates = StoreNode::Create(
+    address,
+    value,
+    inStates,
+    storeOperation.GetAlignment());
 
-  smap.replace(address, outstates);
+  stateMap.replace(address, outStates);
 }
 
 void
