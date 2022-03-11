@@ -756,42 +756,44 @@ Steensgaard::join(Location & x, Location & y)
 void
 Steensgaard::Analyze(const jive::simple_node & node)
 {
-  auto AnalyzeCall = [](auto & s, auto & n) { s.AnalyzeCall(*static_cast<const CallNode*>(&n)); };
+  auto AnalyzeCall  = [](auto & s, auto & n) { s.AnalyzeCall(*AssertedCast<const CallNode>(&n)); };
+  auto AnalyzeLoad  = [](auto & s, auto & n) { s.AnalyzeLoad(*AssertedCast<const LoadNode>(&n)); };
+  auto AnalyzeStore = [](auto & s, auto & n) { s.AnalyzeStore(*AssertedCast<const StoreNode>(&n)); };
 
-	static std::unordered_map<
-		std::type_index
-	, std::function<void(Steensgaard&, const jive::simple_node&)>> nodes
-	({
-	  {typeid(alloca_op),             [](auto & s, auto & n){ s.AnalyzeAlloca(n);                }}
-	, {typeid(malloc_op),             [](auto & s, auto & n){ s.AnalyzeMalloc(n);                }}
-	, {typeid(LoadOperation),         [](auto & s, auto & n){ s.AnalyzeLoad(n);                  }}
-	, {typeid(StoreOperation),        [](auto & s, auto & n){ s.AnalyzeStore(n);                 }}
-	, {typeid(CallOperation),         AnalyzeCall                                                 }
-	, {typeid(getelementptr_op),      [](auto & s, auto & n){ s.AnalyzeGep(n);                   }}
-	, {typeid(bitcast_op),            [](auto & s, auto & n){ s.AnalyzeBitcast(n);               }}
-	, {typeid(bits2ptr_op),           [](auto & s, auto & n){ s.AnalyzeBits2ptr(n);              }}
-	, {typeid(ptr_constant_null_op),  [](auto & s, auto & n){ s.AnalyzeNull(n);                  }}
-	, {typeid(UndefValueOperation),   [](auto & s, auto & n){ s.AnalyzeUndef(n);                 }}
-	, {typeid(Memcpy),                [](auto & s, auto & n){ s.AnalyzeMemcpy(n);                }}
-	, {typeid(ConstantArray),         [](auto & s, auto & n){ s.AnalyzeConstantArray(n);         }}
-	, {typeid(ConstantStruct),        [](auto & s, auto & n){ s.AnalyzeConstantStruct(n);        }}
-	, {typeid(ConstantAggregateZero), [](auto & s, auto & n){ s.AnalyzeConstantAggregateZero(n); }}
-	, {typeid(ExtractValue),          [](auto & s, auto & n){ s.AnalyzeExtractValue(n);          }}
-	});
+  static std::unordered_map<
+    std::type_index
+    , std::function<void(Steensgaard&, const jive::simple_node&)>> nodes
+    ({
+         {typeid(alloca_op),             [](auto & s, auto & n){ s.AnalyzeAlloca(n);                }}
+       , {typeid(malloc_op),             [](auto & s, auto & n){ s.AnalyzeMalloc(n);                }}
+       , {typeid(LoadOperation),         AnalyzeLoad                                                 }
+       , {typeid(StoreOperation),        AnalyzeStore                                                }
+       , {typeid(CallOperation),         AnalyzeCall                                                 }
+       , {typeid(getelementptr_op),      [](auto & s, auto & n){ s.AnalyzeGep(n);                   }}
+       , {typeid(bitcast_op),            [](auto & s, auto & n){ s.AnalyzeBitcast(n);               }}
+       , {typeid(bits2ptr_op),           [](auto & s, auto & n){ s.AnalyzeBits2ptr(n);              }}
+       , {typeid(ptr_constant_null_op),  [](auto & s, auto & n){ s.AnalyzeNull(n);                  }}
+       , {typeid(UndefValueOperation),   [](auto & s, auto & n){ s.AnalyzeUndef(n);                 }}
+       , {typeid(Memcpy),                [](auto & s, auto & n){ s.AnalyzeMemcpy(n);                }}
+       , {typeid(ConstantArray),         [](auto & s, auto & n){ s.AnalyzeConstantArray(n);         }}
+       , {typeid(ConstantStruct),        [](auto & s, auto & n){ s.AnalyzeConstantStruct(n);        }}
+       , {typeid(ConstantAggregateZero), [](auto & s, auto & n){ s.AnalyzeConstantAggregateZero(n); }}
+       , {typeid(ExtractValue),          [](auto & s, auto & n){ s.AnalyzeExtractValue(n);          }}
+     });
 
-	auto & op = node.operation();
-	if (nodes.find(typeid(op)) != nodes.end()) {
-		nodes[typeid(op)](*this, node);
-		return;
-	}
+  auto & op = node.operation();
+  if (nodes.find(typeid(op)) != nodes.end()) {
+    nodes[typeid(op)](*this, node);
+    return;
+  }
 
-	/*
-		Ensure that we really took care of all pointer-producing instructions
-	*/
-	for (size_t n = 0; n < node.noutputs(); n++) {
-		if (jive::is<ptrtype>(node.output(n)->type()))
-			JLM_UNREACHABLE("We should have never reached this statement.");
-	}
+  /*
+    Ensure that we really took care of all pointer-producing instructions
+  */
+  for (size_t n = 0; n < node.noutputs(); n++) {
+    if (jive::is<ptrtype>(node.output(n)->type()))
+      JLM_UNREACHABLE("We should have never reached this statement.");
+  }
 }
 
 void
@@ -851,47 +853,43 @@ Steensgaard::AnalyzeMalloc(const jive::simple_node & node)
 }
 
 void
-Steensgaard::AnalyzeLoad(const jive::simple_node & node)
+Steensgaard::AnalyzeLoad(const LoadNode & loadNode)
 {
-	JLM_ASSERT(is<LoadOperation>(&node));
+  if (!is<ptrtype>(loadNode.GetValueOutput()->type()))
+    return;
 
-	if (!is<ptrtype>(node.output(0)->type()))
-		return;
-
-	auto & address = locationSet_.Find(node.input(0)->origin());
-	auto & result = locationSet_.FindOrInsertRegisterLocation(
-    node.output(0),
+  auto & address = locationSet_.Find(loadNode.GetAddressInput()->origin());
+  auto & result = locationSet_.FindOrInsertRegisterLocation(
+    loadNode.GetValueOutput(),
     address.unknown(),
     address.PointsToExternalMemory());
 
-	if (address.GetPointsTo() == nullptr) {
+  if (address.GetPointsTo() == nullptr) {
     address.SetPointsTo(result);
-		return;
-	}
+    return;
+  }
 
-	join(result, *address.GetPointsTo());
+  join(result, *address.GetPointsTo());
 }
 
 void
-Steensgaard::AnalyzeStore(const jive::simple_node & node)
+Steensgaard::AnalyzeStore(const StoreNode & storeNode)
 {
-	JLM_ASSERT(is<StoreOperation>(&node));
+  auto address = storeNode.GetAddressInput()->origin();
+  auto value = storeNode.GetValueInput()->origin();
 
-	auto address = node.input(0)->origin();
-	auto value = node.input(1)->origin();
+  if (!is<ptrtype>(value->type()))
+    return;
 
-	if (!is<ptrtype>(value->type()))
-		return;
+  auto & addressLocation = locationSet_.Find(address);
+  auto & valueLocation = locationSet_.Find(value);
 
-	auto & addressLocation = locationSet_.Find(address);
-	auto & valueLocation = locationSet_.Find(value);
-
-	if (addressLocation.GetPointsTo() == nullptr) {
+  if (addressLocation.GetPointsTo() == nullptr) {
     addressLocation.SetPointsTo(valueLocation);
-		return;
-	}
+    return;
+  }
 
-	join(*addressLocation.GetPointsTo(), valueLocation);
+  join(*addressLocation.GetPointsTo(), valueLocation);
 }
 
 void
