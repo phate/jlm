@@ -557,16 +557,14 @@ convert(
 }
 
 static inline llvm::Value *
-convert_ptr_constant_null(
-	const jive::simple_op & op,
+convert(
+	const ConstantPointerNullOperation & operation,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_ASSERT(is<ptr_constant_null_op>(op));
-
-	auto type = static_cast<const jlm::ptrtype*>(&op.result(0).type());
-	return llvm::ConstantPointerNull::get(convert_type(*type, ctx));
+	auto pointerType = convert_type(operation.GetPointerType(), ctx);
+	return llvm::ConstantPointerNull::get(pointerType);
 }
 
 static inline llvm::Value *
@@ -913,69 +911,64 @@ convert_operation(
     std::type_index
     , llvm::Value*(*)(const jive::simple_op &, const std::vector<const variable*> &, llvm::IRBuilder<> &, context & ctx)
   > map({
-    {typeid(jive::bitconstant_op), convert_bitconstant}
-  , {typeid(jive::ctlconstant_op), convert_ctlconstant}
-  , {typeid(ConstantFP), convert<ConstantFP>}
-  , {typeid(UndefValueOperation), convert_undef}
-  , {typeid(PoisonValueOperation), convert<PoisonValueOperation>}
-  , {typeid(jive::match_op), convert_match}
-  , {typeid(jlm::assignment_op), convert_assignment}
-  , {typeid(jlm::branch_op), convert_branch}
-  , {typeid(jlm::phi_op), convert_phi}
-  , {typeid(LoadOperation), convert<LoadOperation>}
-  , {typeid(StoreOperation), convert_store}
-  , {typeid(jlm::alloca_op), convert_alloca}
-  , {typeid(jlm::getelementptr_op), convert_getelementptr}
-  , {typeid(ConstantDataArray), convert<ConstantDataArray>}
-  , {typeid(jlm::ptrcmp_op), convert_ptrcmp}
-  , {typeid(jlm::fpcmp_op), convert_fpcmp}
-  , {typeid(jlm::fpbin_op), convert_fpbin}
-  , {typeid(jlm::valist_op), convert_valist}
-  , {typeid(ConstantStruct), convert<ConstantStruct>}
-  , {typeid(jlm::ptr_constant_null_op), convert_ptr_constant_null}
-  , {typeid(jlm::select_op), convert_select}
-  , {typeid(ConstantArray), convert<ConstantArray>}
-  , {typeid(ConstantAggregateZero), convert<ConstantAggregateZero>}
-  , {typeid(ctl2bits_op), convert_ctl2bits}
-  , {typeid(constantvector_op), convert_constantvector}
-  , {typeid(constant_data_vector_op), convert_constantdatavector}
-  , {typeid(extractelement_op), convert_extractelement}
-  , {typeid(shufflevector_op), convert<shufflevector_op>}
-  , {typeid(insertelement_op), convert_insertelement}
-  , {typeid(vectorunary_op), convert_vectorunary}
-  , {typeid(vectorbinary_op), convert_vectorbinary}
-  , {typeid(vectorselect_op), convert<vectorselect_op>}
-  , {typeid(ExtractValue), convert<ExtractValue>}
-
-  , {typeid(CallOperation), convert<CallOperation>}
-  , {typeid(malloc_op), convert<malloc_op>}
-  , {typeid(free_op), convert<free_op>}
-  , {typeid(Memcpy), convert<Memcpy>}
-
-  , {typeid(fpneg_op), convert_fpneg}
-
-  /* LLVM Cast Instructions */
+          {typeid(jive::bitconstant_op),            convert_bitconstant},
+          {typeid(jive::ctlconstant_op),            convert_ctlconstant},
+          {typeid(ConstantFP),                      convert<ConstantFP>},
+          {typeid(UndefValueOperation),             convert_undef},
+          {typeid(PoisonValueOperation),            convert<PoisonValueOperation>},
+          {typeid(jive::match_op),                  convert_match},
+          {typeid(assignment_op),                   convert_assignment},
+          {typeid(branch_op),                       convert_branch},
+          {typeid(phi_op),                          convert_phi},
+          {typeid(LoadOperation),                   convert<LoadOperation>},
+          {typeid(StoreOperation),                  convert_store},
+          {typeid(alloca_op),                       convert_alloca},
+          {typeid(getelementptr_op),                convert_getelementptr},
+          {typeid(ConstantDataArray),               convert<ConstantDataArray>},
+          {typeid(ptrcmp_op),                       convert_ptrcmp},
+          {typeid(fpcmp_op),                        convert_fpcmp},
+          {typeid(fpbin_op),                        convert_fpbin},
+          {typeid(valist_op),                       convert_valist},
+          {typeid(ConstantStruct),                  convert<ConstantStruct>},
+          {typeid(ConstantPointerNullOperation),    convert<ConstantPointerNullOperation>},
+          {typeid(select_op),                       convert_select},
+          {typeid(ConstantArray),                   convert<ConstantArray>},
+          {typeid(ConstantAggregateZero),           convert<ConstantAggregateZero>},
+          {typeid(ctl2bits_op),                     convert_ctl2bits},
+          {typeid(constantvector_op),               convert_constantvector},
+          {typeid(constant_data_vector_op),         convert_constantdatavector},
+          {typeid(extractelement_op),               convert_extractelement},
+          {typeid(shufflevector_op),                convert<shufflevector_op>},
+          {typeid(insertelement_op),                convert_insertelement},
+          {typeid(vectorunary_op),                  convert_vectorunary},
+          {typeid(vectorbinary_op),                 convert_vectorbinary},
+          {typeid(vectorselect_op),                 convert<vectorselect_op>},
+          {typeid(ExtractValue),                    convert<ExtractValue>},
+          {typeid(CallOperation),                   convert<CallOperation>},
+          {typeid(malloc_op),                       convert<malloc_op>},
+          {typeid(free_op),                         convert<free_op>},
+          {typeid(Memcpy),                          convert<Memcpy>},
+          {typeid(fpneg_op),                        convert_fpneg},
+          {typeid(bitcast_op),                      convert_cast<llvm::Instruction::BitCast>},
+          {typeid(fpext_op),                        convert_cast<llvm::Instruction::FPExt>},
+          {typeid(fp2si_op),                        convert_cast<llvm::Instruction::FPToSI>},
+          {typeid(fp2ui_op),                        convert_cast<llvm::Instruction::FPToUI>},
+          {typeid(fptrunc_op),                      convert_cast<llvm::Instruction::FPTrunc>},
+          {typeid(bits2ptr_op),                     convert_cast<llvm::Instruction::IntToPtr>},
+          {typeid(ptr2bits_op),                     convert_cast<llvm::Instruction::PtrToInt>},
+          {typeid(sext_op),                         convert_cast<llvm::Instruction::SExt>},
+          {typeid(sitofp_op),                       convert_cast<llvm::Instruction::SIToFP>},
+          {typeid(trunc_op),                        convert_cast<llvm::Instruction::Trunc>},
+          {typeid(uitofp_op),                       convert_cast<llvm::Instruction::UIToFP>},
+          {typeid(zext_op),                         convert_cast<llvm::Instruction::ZExt>},
+          {typeid(MemStateMergeOperator),           convert<MemStateMergeOperator>},
+          {typeid(MemStateSplitOperator),           convert<MemStateSplitOperator>},
+          {typeid(aa::LambdaEntryMemStateOperator), convert<aa::LambdaEntryMemStateOperator>},
+          {typeid(aa::LambdaExitMemStateOperator),  convert<aa::LambdaExitMemStateOperator>},
+          {typeid(aa::CallEntryMemStateOperator),   convert<aa::CallEntryMemStateOperator>},
+          {typeid(aa::CallExitMemStateOperator),    convert<aa::CallExitMemStateOperator>}
+        });
   /* FIXME: AddrSpaceCast instruction is not supported */
-  , {typeid(bitcast_op), convert_cast<llvm::Instruction::BitCast>}
-  , {typeid(fpext_op), convert_cast<llvm::Instruction::FPExt>}
-  , {typeid(fp2si_op), convert_cast<llvm::Instruction::FPToSI>}
-  , {typeid(fp2ui_op), convert_cast<llvm::Instruction::FPToUI>}
-  , {typeid(fptrunc_op), convert_cast<llvm::Instruction::FPTrunc>}
-  , {typeid(bits2ptr_op), convert_cast<llvm::Instruction::IntToPtr>}
-  , {typeid(ptr2bits_op), convert_cast<llvm::Instruction::PtrToInt>}
-  , {typeid(sext_op), convert_cast<llvm::Instruction::SExt>}
-  , {typeid(sitofp_op), convert_cast<llvm::Instruction::SIToFP>}
-  , {typeid(trunc_op), convert_cast<llvm::Instruction::Trunc>}
-  , {typeid(uitofp_op), convert_cast<llvm::Instruction::UIToFP>}
-  , {typeid(zext_op), convert_cast<llvm::Instruction::ZExt>}
-
-  , {typeid(MemStateMergeOperator), convert<MemStateMergeOperator>}
-  , {typeid(MemStateSplitOperator), convert<MemStateSplitOperator>}
-  , {typeid(aa::LambdaEntryMemStateOperator), convert<aa::LambdaEntryMemStateOperator>}
-  , {typeid(aa::LambdaExitMemStateOperator), convert<aa::LambdaExitMemStateOperator>}
-  , {typeid(aa::CallEntryMemStateOperator), convert<aa::CallEntryMemStateOperator>}
-  , {typeid(aa::CallExitMemStateOperator), convert<aa::CallExitMemStateOperator>}
-  });
 
   JLM_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
   return map[std::type_index(typeid(op))](op, arguments, builder, ctx);

@@ -158,7 +158,7 @@ convert_constantPointerNull(
 	auto & c = *llvm::cast<const llvm::ConstantPointerNull>(constant);
 
 	auto t = ConvertPointerType(c.getType(), ctx);
-	tacs.push_back(ptr_constant_null_op::create(*t));
+	tacs.push_back(ConstantPointerNullOperation::Create(*t));
 
 	return tacs.back()->result(0);
 }
