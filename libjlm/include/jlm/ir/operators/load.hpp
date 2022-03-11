@@ -144,10 +144,7 @@ public:
     size_t alignment)
     : simple_op(CreatePorts(pointerType, numStates), CreatePorts(pointerType.pointee_type(), numStates))
     , alignment_(alignment)
-  {
-    if (numStates == 0)
-      throw error("Expected at least one state.");
-  }
+  {}
 
   bool
   operator==(const operation & other) const noexcept override;
