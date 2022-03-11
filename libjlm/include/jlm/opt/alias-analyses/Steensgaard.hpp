@@ -233,7 +233,7 @@ private:
 	AnalyzeBits2ptr(const jive::simple_node & node);
 
 	void
-	AnalyzeNull(const jive::simple_node & node);
+	AnalyzeConstantPointerNull(const jive::simple_node & node);
 
 	void
 	AnalyzeUndef(const jive::simple_node & node);

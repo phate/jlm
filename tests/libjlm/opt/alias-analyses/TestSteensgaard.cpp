@@ -277,11 +277,11 @@ TestConstantPointerNull()
 		auto & lambdaOut = ptg.GetRegisterNode(test.lambda->output());
 		auto & lambdaArg = ptg.GetRegisterNode(test.lambda->fctargument(0));
 
-		auto & null = ptg.GetRegisterNode(test.null->output(0));
+		auto & constantPointerNull = ptg.GetRegisterNode(test.constantPointerNullNode->output(0));
 
 		assertTargets(lambdaOut, {&lambda});
 		assertTargets(lambdaArg, {&ptg.memunknown(), &ptg.GetExternalMemoryNode()});
-		assertTargets(null, {&ptg.memunknown(), &ptg.GetExternalMemoryNode()});
+		assertTargets(constantPointerNull, {&ptg.memunknown(), &ptg.GetExternalMemoryNode()});
 	};
 
 	ConstantPointerNullTest test;

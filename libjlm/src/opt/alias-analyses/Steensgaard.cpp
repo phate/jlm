@@ -764,21 +764,21 @@ Steensgaard::Analyze(const jive::simple_node & node)
     std::type_index
     , std::function<void(Steensgaard&, const jive::simple_node&)>> nodes
     ({
-         {typeid(alloca_op),             [](auto & s, auto & n){ s.AnalyzeAlloca(n);                }}
-       , {typeid(malloc_op),             [](auto & s, auto & n){ s.AnalyzeMalloc(n);                }}
-       , {typeid(LoadOperation),         AnalyzeLoad                                                 }
-       , {typeid(StoreOperation),        AnalyzeStore                                                }
-       , {typeid(CallOperation),         AnalyzeCall                                                 }
-       , {typeid(getelementptr_op),      [](auto & s, auto & n){ s.AnalyzeGep(n);                   }}
-       , {typeid(bitcast_op),            [](auto & s, auto & n){ s.AnalyzeBitcast(n);               }}
-       , {typeid(bits2ptr_op),           [](auto & s, auto & n){ s.AnalyzeBits2ptr(n);              }}
-       , {typeid(ptr_constant_null_op),  [](auto & s, auto & n){ s.AnalyzeNull(n);                  }}
-       , {typeid(UndefValueOperation),   [](auto & s, auto & n){ s.AnalyzeUndef(n);                 }}
-       , {typeid(Memcpy),                [](auto & s, auto & n){ s.AnalyzeMemcpy(n);                }}
-       , {typeid(ConstantArray),         [](auto & s, auto & n){ s.AnalyzeConstantArray(n);         }}
-       , {typeid(ConstantStruct),        [](auto & s, auto & n){ s.AnalyzeConstantStruct(n);        }}
-       , {typeid(ConstantAggregateZero), [](auto & s, auto & n){ s.AnalyzeConstantAggregateZero(n); }}
-       , {typeid(ExtractValue),          [](auto & s, auto & n){ s.AnalyzeExtractValue(n);          }}
+         {typeid(alloca_op),                    [](auto & s, auto & n){ s.AnalyzeAlloca(n);                }}
+       , {typeid(malloc_op),                    [](auto & s, auto & n){ s.AnalyzeMalloc(n);                }}
+       , {typeid(LoadOperation),                AnalyzeLoad                                                 }
+       , {typeid(StoreOperation),               AnalyzeStore                                                }
+       , {typeid(CallOperation),                AnalyzeCall                                                 }
+       , {typeid(getelementptr_op),             [](auto & s, auto & n){ s.AnalyzeGep(n);                   }}
+       , {typeid(bitcast_op),                   [](auto & s, auto & n){ s.AnalyzeBitcast(n);               }}
+       , {typeid(bits2ptr_op),                  [](auto & s, auto & n){ s.AnalyzeBits2ptr(n);              }}
+       , {typeid(ConstantPointerNullOperation), [](auto & s, auto & n){ s.AnalyzeConstantPointerNull(n);   }}
+       , {typeid(UndefValueOperation),          [](auto & s, auto & n){ s.AnalyzeUndef(n);                 }}
+       , {typeid(Memcpy),                       [](auto & s, auto & n){ s.AnalyzeMemcpy(n);                }}
+       , {typeid(ConstantArray),                [](auto & s, auto & n){ s.AnalyzeConstantArray(n);         }}
+       , {typeid(ConstantStruct),               [](auto & s, auto & n){ s.AnalyzeConstantStruct(n);        }}
+       , {typeid(ConstantAggregateZero),        [](auto & s, auto & n){ s.AnalyzeConstantAggregateZero(n); }}
+       , {typeid(ExtractValue),                 [](auto & s, auto & n){ s.AnalyzeExtractValue(n);          }}
      });
 
   auto & op = node.operation();
@@ -1009,9 +1009,9 @@ Steensgaard::AnalyzeExtractValue(const jive::simple_node & node)
 }
 
 void
-Steensgaard::AnalyzeNull(const jive::simple_node & node)
+Steensgaard::AnalyzeConstantPointerNull(const jive::simple_node & node)
 {
-	JLM_ASSERT(is<ptr_constant_null_op>(&node));
+	JLM_ASSERT(is<ConstantPointerNullOperation>(&node));
 
 	/*
 		FIXME: This should not point to unknown, but to a NULL memory location.

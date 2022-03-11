@@ -430,8 +430,12 @@ ConstantPointerNullTest::SetupRvsdg()
 
   auto fct = lambda::node::create(graph->root(), fcttype, "f", linkage::external_linkage);
 
-  auto cnull = ptr_constant_null_op::create(fct->subregion(), *pt);
-  auto st = StoreNode::Create(fct->fctargument(0), cnull, {fct->fctargument(1)}, 4);
+  auto constantPointerNullResult = ConstantPointerNullOperation::Create(fct->subregion(), *pt);
+  auto st = StoreNode::Create(
+    fct->fctargument(0),
+    constantPointerNullResult,
+    {fct->fctargument(1)},
+    4);
 
   fct->finalize({st[0]});
 
@@ -441,7 +445,7 @@ ConstantPointerNullTest::SetupRvsdg()
    * Assign nodes
    */
   this->lambda = fct;
-  this->null = jive::node_output::node(cnull);
+  this->constantPointerNullNode = jive::node_output::node(constantPointerNullResult);
 
   return module;
 }

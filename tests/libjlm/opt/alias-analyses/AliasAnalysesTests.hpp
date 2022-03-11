@@ -326,7 +326,7 @@ private:
 public:
 	jlm::lambda::node * lambda;
 
-	jive::node * null;
+	jive::node * constantPointerNullNode;
 };
 
 /** \brief CallTest1 class

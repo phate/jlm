@@ -417,60 +417,63 @@ public:
 	}
 };
 
-/* ptr constant */
-
-class ptr_constant_null_op final : public jive::simple_op {
+/** \brief ConstantPointerNullOperation class
+ *
+ * This operator is the Jlm equivalent of LLVM's ConstantPointerNull constant.
+ */
+class ConstantPointerNullOperation final : public jive::simple_op {
 public:
-	virtual
-	~ptr_constant_null_op() noexcept;
+  ~ConstantPointerNullOperation() noexcept override;
 
-	inline
-	ptr_constant_null_op(const jlm::ptrtype & type)
-	: simple_op({}, {type})
-	{}
+  explicit
+  ConstantPointerNullOperation(const jlm::ptrtype & pointerType)
+    : simple_op({}, {pointerType})
+  {}
 
-	virtual bool
-	operator==(const operation & other) const noexcept override;
+  bool
+  operator==(const operation & other) const noexcept override;
 
-	virtual std::string
-	debug_string() const override;
+  [[nodiscard]] std::string
+  debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
-	copy() const override;
+  [[nodiscard]] std::unique_ptr<jive::operation>
+  copy() const override;
 
-	inline const jive::valuetype &
-	pointee_type() const
-	{
-		return static_cast<const jlm::ptrtype*>(&result(0).type())->pointee_type();
-	}
+  [[nodiscard]] const ptrtype &
+  GetPointerType() const noexcept
+  {
+    return *AssertedCast<const ptrtype>(&result(0).type());
+  }
 
-	static std::unique_ptr<jlm::tac>
-	create(const jive::type & ptype)
-	{
-		auto & pt = check_type(ptype);
+  static std::unique_ptr<jlm::tac>
+  Create(const jive::type & type)
+  {
+    auto & pointerType = CheckAndExtractType(type);
 
-		jlm::ptr_constant_null_op op(pt);
-		return tac::create(op, {});
-	}
+    ConstantPointerNullOperation operation(pointerType);
+    return tac::create(operation, {});
+  }
 
-	static jive::output *
-	create(jive::region * region, const jive::type & ptype)
-	{
-		auto & pt = check_type(ptype);
+  static jive::output *
+  Create(
+    jive::region * region,
+    const jive::type & type)
+  {
+    auto & pointerType = CheckAndExtractType(type);
 
-		ptr_constant_null_op op(pt);
-		return jive::simple_node::create_normalized(region, op, {})[0];
-	}
+    ConstantPointerNullOperation operation(pointerType);
+    return jive::simple_node::create_normalized(region, operation, {})[0];
+  }
 
 private:
-	static const jlm::ptrtype &
-	check_type(const jive::type & type)
-	{
-		auto pt = dynamic_cast<const jlm::ptrtype*>(&type);
-		if (!pt) throw jlm::error("expected pointer type.");
+  static const ptrtype &
+  CheckAndExtractType(const jive::type & type)
+  {
+    if (auto pointerType = dynamic_cast<const ptrtype*>(&type))
+      return *pointerType;
 
-		return *pt;
-	}
+    throw jlm::error("expected pointer type.");
+  }
 };
 
 /* bits2ptr operator */

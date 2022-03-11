@@ -246,28 +246,27 @@ branch_op::copy() const
 	return std::unique_ptr<jive::operation>(new branch_op(*this));
 }
 
-/* ptr_constant_null operator */
-
-ptr_constant_null_op::~ptr_constant_null_op() noexcept
-{}
+ConstantPointerNullOperation::~ConstantPointerNullOperation() noexcept
+= default;
 
 bool
-ptr_constant_null_op::operator==(const operation & other) const noexcept
+ConstantPointerNullOperation::operator==(const operation & other) const noexcept
 {
-	auto op = dynamic_cast<const ptr_constant_null_op*>(&other);
-	return op && op->result(0) == result(0);
+  auto op = dynamic_cast<const ConstantPointerNullOperation*>(&other);
+  return op
+         && op->GetPointerType() == GetPointerType();
 }
 
 std::string
-ptr_constant_null_op::debug_string() const
+ConstantPointerNullOperation::debug_string() const
 {
-	return "NULLPTR";
+  return "ConstantPointerNull";
 }
 
 std::unique_ptr<jive::operation>
-ptr_constant_null_op::copy() const
+ConstantPointerNullOperation::copy() const
 {
-	return std::unique_ptr<jive::operation>(new ptr_constant_null_op(*this));
+  return std::unique_ptr<jive::operation>(new ConstantPointerNullOperation(*this));
 }
 
 /* bits2ptr operator */
