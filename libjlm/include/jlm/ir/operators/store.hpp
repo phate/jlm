@@ -95,10 +95,7 @@ public:
     CreateArgumentPorts(pointerType, numStates),
     std::vector<jive::port>(numStates, {MemoryStateType::Create()}))
     , Alignment_(alignment)
-  {
-    if (numStates == 0)
-      throw error("Expected at least one state.");
-  }
+  {}
 
   bool
   operator==(const operation & other) const noexcept override;
