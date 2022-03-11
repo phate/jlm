@@ -57,10 +57,10 @@ private:
   EncodeMalloc(const jive::simple_node &node) override;
 
   void
-  EncodeLoad(const jive::simple_node &node) override;
+  EncodeLoad(const LoadNode & loadNode) override;
 
   void
-  EncodeStore(const jive::simple_node &node) override;
+  EncodeStore(const StoreNode & storeNode) override;
 
   void
   EncodeFree(const jive::simple_node &node) override;

@@ -28,6 +28,9 @@ namespace delta { class node; }
 namespace lambda { class node; }
 namespace phi { class node; }
 
+class LoadNode;
+class StoreNode;
+
 namespace aa {
 
 class PointsToGraph;
@@ -51,10 +54,10 @@ public:
 	EncodeMalloc(const jive::simple_node & node) = 0;
 
 	virtual void
-	EncodeLoad(const jive::simple_node & node) = 0;
+	EncodeLoad(const LoadNode & loadNode) = 0;
 
 	virtual void
-	EncodeStore(const jive::simple_node & node) = 0;
+	EncodeStore(const StoreNode & storeNode) = 0;
 
 	virtual void
 	EncodeFree(const jive::simple_node & node) = 0;
