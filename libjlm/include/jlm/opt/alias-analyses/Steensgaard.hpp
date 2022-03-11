@@ -29,6 +29,9 @@ namespace delta { class node; }
 namespace lambda { class node; }
 namespace phi { class node; }
 
+class LoadNode;
+class StoreNode;
+
 namespace aa {
 
 class Location;
@@ -212,10 +215,10 @@ private:
 	AnalyzeMalloc(const jive::simple_node & node);
 
 	void
-	AnalyzeLoad(const jive::simple_node & node);
+	AnalyzeLoad(const LoadNode & loadNode);
 
 	void
-	AnalyzeStore(const jive::simple_node & node);
+	AnalyzeStore(const StoreNode & storeNode);
 
 	void
 	AnalyzeCall(const CallNode & callNode);
