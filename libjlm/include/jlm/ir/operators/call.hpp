@@ -38,8 +38,8 @@ public:
 	[[nodiscard]] const FunctionType &
 	GetFunctionType() const noexcept
 	{
-    auto pointerType = AssertedCast<const ptrtype>(&argument(0).type());
-    return *AssertedCast<const FunctionType>(&pointerType->pointee_type());
+    auto pointerType = AssertedCast<const PointerType>(&argument(0).type());
+    return *AssertedCast<const FunctionType>(&pointerType->GetElementType());
 	}
 
 	[[nodiscard]] std::unique_ptr<jive::operation>
@@ -50,10 +50,10 @@ public:
 		const variable * function,
 		const std::vector<const variable*> & arguments)
 	{
-		auto at = dynamic_cast<const ptrtype*>(&function->type());
+		auto at = dynamic_cast<const PointerType*>(&function->type());
 		if (!at) throw jlm::error("Expected pointer type.");
 
-		auto ft = dynamic_cast<const FunctionType*>(&at->pointee_type());
+		auto ft = dynamic_cast<const FunctionType*>(&at->GetElementType());
 		if (!ft) throw jlm::error("Expected function type.");
 
 		CallOperation op(*ft);
@@ -66,7 +66,7 @@ private:
 	static inline std::vector<jive::port>
 	create_srcports(const FunctionType & functionType)
 	{
-		std::vector<jive::port> ports(1, {ptrtype(functionType)});
+		std::vector<jive::port> ports(1, {PointerType(functionType)});
     for (auto & argumentType : functionType.Arguments())
 			ports.emplace_back(argumentType);
 
@@ -131,8 +131,8 @@ public:
   GetFunctionInput() const noexcept
   {
     auto function = input(0);
-    auto pointerType = AssertedCast<const ptrtype>(&function->type());
-    JLM_ASSERT(is<FunctionType>(pointerType->pointee_type()));
+    auto pointerType = AssertedCast<const PointerType>(&function->type());
+    JLM_ASSERT(is<FunctionType>(pointerType->GetElementType()));
     return function;
   }
 
@@ -244,11 +244,11 @@ private:
   [[nodiscard]] static const FunctionType &
   ExtractFunctionType(const jive::output * function)
   {
-    auto pointerType = dynamic_cast<const ptrtype*>(&function->type());
+    auto pointerType = dynamic_cast<const PointerType*>(&function->type());
     if (!pointerType)
       throw jlm::error("Expected pointer type.");
 
-    auto functionType = dynamic_cast<const FunctionType*>(&pointerType->pointee_type());
+    auto functionType = dynamic_cast<const FunctionType*>(&pointerType->GetElementType());
     if (!functionType)
       throw jlm::error("Expected function type.");
 

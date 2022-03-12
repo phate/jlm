@@ -28,7 +28,7 @@ TraceFunctionInputTest1()
 	FunctionType fcttype1(
     {&iOStateType, &memoryStateType, &loopStateType},
     {&vt, &iOStateType, &memoryStateType, &loopStateType});
-	ptrtype pt(fcttype1);
+	PointerType pt(fcttype1);
 	FunctionType fcttype2(
     {&pt, &iOStateType, &memoryStateType, &loopStateType},
     {&vt, &iOStateType, &memoryStateType, &loopStateType});
@@ -48,7 +48,7 @@ TraceFunctionInputTest1()
 
     auto one = jive::create_bitconstant(lambda->subregion(), 32, 1);
 
-    auto alloca = alloca_op::create(ptrtype(fcttype1), one, 8);
+    auto alloca = alloca_op::create(PointerType(fcttype1), one, 8);
 
     auto store = StoreNode::Create(alloca[0], lambda->fctargument(0), {alloca[1]}, 8);
 
@@ -60,7 +60,7 @@ TraceFunctionInputTest1()
 
     lambda->finalize(callResults);
 
-    graph->add_export(lambda->output(), {ptrtype(lambda->type()), "f"});
+    graph->add_export(lambda->output(), {PointerType(lambda->type()), "f"});
 
     return std::make_tuple(
       AssertedCast<CallNode>(jive::node_output::node(callResults[0])),
@@ -178,7 +178,7 @@ TraceFunctionInputTest2()
   auto g = SetupFunctionG();
   auto [f, callNode] = SetupFunctionF(g);
 
-	graph->add_export(f->output(), {ptrtype(f->type()), "f"});
+	graph->add_export(f->output(), {PointerType(f->type()), "f"});
 
 //	jive::view(graph->root(), stdout);
 
@@ -316,7 +316,7 @@ TraceFunctionInputTest3()
 
   auto g = SetupFunctionG();
   auto [f, callNode] = SetupFunctionF(g);
-	graph->add_export(f, {ptrtype(f->node()->type()), "f"});
+	graph->add_export(f, {PointerType(f->node()->type()), "f"});
 
 	jive::view(graph->root(), stdout);
 

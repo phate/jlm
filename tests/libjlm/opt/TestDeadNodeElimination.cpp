@@ -286,8 +286,8 @@ TestPhi()
 	phi::builder pb;
 	pb.begin(graph.root());
 
-	auto rv1 = pb.add_recvar(ptrtype(ft));
-	auto rv2 = pb.add_recvar(ptrtype(ft));
+	auto rv1 = pb.add_recvar(PointerType(ft));
+	auto rv2 = pb.add_recvar(PointerType(ft));
 	auto dx = pb.add_ctxvar(x);
 	auto dy = pb.add_ctxvar(y);
 

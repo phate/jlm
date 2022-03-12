@@ -23,9 +23,9 @@ public:
 
 	inline
 	getelementptr_op(
-		const jlm::ptrtype & ptype,
+		const PointerType & ptype,
 		const std::vector<jive::bittype> & btypes,
-		const jlm::ptrtype & rtype)
+		const PointerType & rtype)
 	: simple_op(create_srcports(ptype, btypes), {rtype})
 	{}
 
@@ -47,7 +47,7 @@ public:
 	const jive::type &
 	pointee_type() const noexcept
 	{
-		return static_cast<const jlm::ptrtype*>(&argument(0).type())->pointee_type();
+		return static_cast<const PointerType *>(&argument(0).type())->GetElementType();
 	}
 
 	static std::unique_ptr<jlm::tac>
@@ -56,7 +56,7 @@ public:
 		const std::vector<const variable*> & offsets,
 		const jive::type & type)
 	{
-		auto at = dynamic_cast<const jlm::ptrtype*>(&address->type());
+		auto at = dynamic_cast<const PointerType*>(&address->type());
 		if (!at) throw jlm::error("expected pointer type.");
 
 		std::vector<jive::bittype> bts;
@@ -66,7 +66,7 @@ public:
 			bts.push_back(*bt);
 		}
 
-		auto rt = dynamic_cast<const jlm::ptrtype*>(&type);
+		auto rt = dynamic_cast<const PointerType*>(&type);
 		if (!rt) throw jlm::error("expected pointer type.");
 
 		jlm::getelementptr_op op(*at, bts, *rt);
@@ -82,7 +82,7 @@ public:
 		const std::vector<jive::output*> & offsets,
 		const jive::type & rtype)
 	{
-		auto at = dynamic_cast<const jlm::ptrtype*>(&address->type());
+		auto at = dynamic_cast<const jlm::PointerType*>(&address->type());
 		if (!at) throw jlm::error("expected pointer type.");
 
 		std::vector<jive::bittype> bts;
@@ -92,7 +92,7 @@ public:
 			bts.push_back(*bt);
 		}
 
-		auto rt = dynamic_cast<const jlm::ptrtype*>(&rtype);
+		auto rt = dynamic_cast<const PointerType*>(&rtype);
 		if (!rt) throw jlm::error("expected pointer type.");
 
 		jlm::getelementptr_op op(*at, bts, *rt);
@@ -104,7 +104,7 @@ public:
 
 private:
 	static inline std::vector<jive::port>
-	create_srcports(const ptrtype & ptype, const std::vector<jive::bittype> & btypes)
+	create_srcports(const PointerType & ptype, const std::vector<jive::bittype> & btypes)
 	{
 		std::vector<jive::port> ports(1, ptype);
 		for (const auto & type : btypes)

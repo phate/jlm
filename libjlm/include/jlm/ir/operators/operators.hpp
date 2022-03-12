@@ -426,7 +426,7 @@ public:
   ~ConstantPointerNullOperation() noexcept override;
 
   explicit
-  ConstantPointerNullOperation(const jlm::ptrtype & pointerType)
+  ConstantPointerNullOperation(const PointerType & pointerType)
     : simple_op({}, {pointerType})
   {}
 
@@ -439,10 +439,10 @@ public:
   [[nodiscard]] std::unique_ptr<jive::operation>
   copy() const override;
 
-  [[nodiscard]] const ptrtype &
+  [[nodiscard]] const PointerType &
   GetPointerType() const noexcept
   {
-    return *AssertedCast<const ptrtype>(&result(0).type());
+    return *AssertedCast<const PointerType>(&result(0).type());
   }
 
   static std::unique_ptr<jlm::tac>
@@ -466,10 +466,10 @@ public:
   }
 
 private:
-  static const ptrtype &
+  static const PointerType &
   CheckAndExtractType(const jive::type & type)
   {
-    if (auto pointerType = dynamic_cast<const ptrtype*>(&type))
+    if (auto pointerType = dynamic_cast<const PointerType*>(&type))
       return *pointerType;
 
     throw jlm::error("expected pointer type.");
@@ -484,7 +484,7 @@ public:
 	~bits2ptr_op();
 
 	inline
-	bits2ptr_op(const jive::bittype & btype, const jlm::ptrtype & ptype)
+	bits2ptr_op(const jive::bittype & btype, const PointerType & ptype)
 	: unary_op(btype, ptype)
 	{}
 
@@ -497,7 +497,7 @@ public:
 		auto at = dynamic_cast<const jive::bittype*>(srctype.get());
 		if (!at) throw jlm::error("expected bitstring type.");
 
-		auto pt = dynamic_cast<const jlm::ptrtype*>(dsttype.get());
+		auto pt = dynamic_cast<const PointerType*>(dsttype.get());
 		if (!pt) throw jlm::error("expected pointer type.");
 	}
 
@@ -528,7 +528,7 @@ public:
 	inline const jive::valuetype &
 	pointee_type() const
 	{
-		return static_cast<const jlm::ptrtype*>(&result(0).type())->pointee_type();
+		return static_cast<const PointerType *>(&result(0).type())->GetElementType();
 	}
 
 	static std::unique_ptr<jlm::tac>
@@ -539,7 +539,7 @@ public:
 		auto at = dynamic_cast<const jive::bittype*>(&argument->type());
 		if (!at) throw jlm::error("expected bitstring type.");
 
-		auto pt = dynamic_cast<const jlm::ptrtype*>(&type);
+		auto pt = dynamic_cast<const PointerType*>(&type);
 		if (!pt) throw jlm::error("expected pointer type.");
 
 		jlm::bits2ptr_op op(*at, *pt);
@@ -554,7 +554,7 @@ public:
 		auto ot = dynamic_cast<const jive::bittype*>(&operand->type());
 		if (!ot) throw jlm::error("expected bitstring type.");
 
-		auto pt = dynamic_cast<const jlm::ptrtype*>(&type);
+		auto pt = dynamic_cast<const PointerType*>(&type);
 		if (!pt) throw jlm::error("expected pointer type.");
 
 		jlm::bits2ptr_op op(*ot, *pt);
@@ -570,7 +570,7 @@ public:
 	~ptr2bits_op();
 
 	inline
-	ptr2bits_op(const jlm::ptrtype & ptype, const jive::bittype & btype)
+	ptr2bits_op(const PointerType & ptype, const jive::bittype & btype)
 	: unary_op(ptype, btype)
 	{}
 
@@ -580,7 +580,7 @@ public:
 		std::unique_ptr<jive::type> dsttype)
 	: unary_op(*srctype, *dsttype)
 	{
-		auto pt = dynamic_cast<const jlm::ptrtype*>(srctype.get());
+		auto pt = dynamic_cast<const PointerType*>(srctype.get());
 		if (!pt) throw jlm::error("expected pointer type.");
 
 		auto bt = dynamic_cast<const jive::bittype*>(dsttype.get());
@@ -614,7 +614,7 @@ public:
 	inline const jive::valuetype &
 	pointee_type() const noexcept
 	{
-		return static_cast<const jlm::ptrtype*>(&argument(0).type())->pointee_type();
+		return static_cast<const PointerType *>(&argument(0).type())->GetElementType();
 	}
 
 	static std::unique_ptr<jlm::tac>
@@ -622,7 +622,7 @@ public:
 		const variable * argument,
 		const jive::type & type)
 	{
-		auto pt = dynamic_cast<const jlm::ptrtype*>(&argument->type());
+		auto pt = dynamic_cast<const PointerType*>(&argument->type());
 		if (!pt) throw jlm::error("expected pointer type.");
 
 		auto bt = dynamic_cast<const jive::bittype*>(&type);
@@ -692,7 +692,7 @@ public:
 	~ptrcmp_op();
 
 	inline
-	ptrcmp_op(const jlm::ptrtype & ptype, const jlm::cmp & cmp)
+	ptrcmp_op(const PointerType & ptype, const jlm::cmp & cmp)
 	: binary_op({ptype, ptype}, {jive::bit1})
 	, cmp_(cmp)
 	{}
@@ -726,7 +726,7 @@ public:
 	const jive::type &
 	pointee_type() const noexcept
 	{
-		return static_cast<const jlm::ptrtype*>(&argument(0).type())->pointee_type();
+		return static_cast<const PointerType *>(&argument(0).type())->GetElementType();
 	}
 
 	static std::unique_ptr<jlm::tac>
@@ -735,7 +735,7 @@ public:
 		const variable * op1,
 		const variable * op2)
 	{
-		auto pt = dynamic_cast<const jlm::ptrtype*>(&op1->type());
+		auto pt = dynamic_cast<const PointerType*>(&op1->type());
 		if (!pt) throw jlm::error("expected pointer type.");
 
 		jlm::ptrcmp_op op(*pt, cmp);
@@ -2496,7 +2496,7 @@ public:
 	~malloc_op();
 
 	malloc_op(const jive::bittype & btype)
-	: simple_op({btype}, {jlm::ptrtype(jive::bittype(8)), {MemoryStateType::Create()}})
+	: simple_op({btype}, {PointerType(jive::bittype(8)), {MemoryStateType::Create()}})
 	{}
 
 	virtual bool
@@ -2612,7 +2612,7 @@ private:
 		std::vector<jive::port> memstates(nmemstates, {MemoryStateType::Create()});
 
 		std::vector<jive::port> ports;
-		ports.push_back(ptrtype(jive::bittype(8)));
+		ports.push_back(PointerType(jive::bittype(8)));
 		ports.insert(ports.end(), memstates.begin(), memstates.end());
 		ports.push_back(iostatetype::instance());
 
@@ -2700,7 +2700,7 @@ private:
 		if (nMemoryStates == 0)
 			throw jlm::error("Number of memory states cannot be zero.");
 
-		ptrtype pt(jive::bit8);
+		PointerType pt(jive::bit8);
 
 		std::vector<jive::port> ports = {pt, pt, length, jive::bit1};
 		ports.insert(ports.end(), nMemoryStates, {MemoryStateType::Create()});

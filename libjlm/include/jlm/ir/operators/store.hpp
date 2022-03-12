@@ -88,7 +88,7 @@ public:
   ~StoreOperation() noexcept override;
 
   StoreOperation(
-    const ptrtype & pointerType,
+    const PointerType & pointerType,
     size_t numStates,
     size_t alignment)
     : simple_op(
@@ -106,10 +106,10 @@ public:
   [[nodiscard]] std::unique_ptr<jive::operation>
   copy() const override;
 
-  [[nodiscard]] const ptrtype &
+  [[nodiscard]] const PointerType &
   GetPointerType() const noexcept
   {
-    return *AssertedCast<const ptrtype>(&argument(0).type());
+    return *AssertedCast<const PointerType>(&argument(0).type());
   }
 
   [[nodiscard]] const jive::valuetype &
@@ -143,7 +143,7 @@ public:
     const variable * state,
     size_t alignment)
   {
-    auto pointerType = dynamic_cast<const ptrtype*>(&address->type());
+    auto pointerType = dynamic_cast<const PointerType*>(&address->type());
     if (!pointerType)
       throw jlm::error("expected pointer type.");
 
@@ -154,11 +154,11 @@ public:
 private:
   static std::vector<jive::port>
   CreateArgumentPorts(
-    const ptrtype & pointerType,
+    const PointerType & pointerType,
     size_t numStates)
   {
     MemoryStateType memoryStateType;
-    std::vector<jive::port> ports({pointerType, pointerType.pointee_type()});
+    std::vector<jive::port> ports({pointerType, pointerType.GetElementType()});
     std::vector<jive::port> states(numStates, {memoryStateType});
     ports.insert(ports.end(), states.begin(), states.end());
     return ports;
@@ -259,7 +259,7 @@ public:
   GetAddressInput() const noexcept
   {
     auto addressInput = input(0);
-    JLM_ASSERT(is<ptrtype>(addressInput->type()));
+    JLM_ASSERT(is<PointerType>(addressInput->type()));
     return addressInput;
   }
 
@@ -303,10 +303,10 @@ public:
   }
 
 private:
-  static const ptrtype &
+  static const PointerType &
   CheckAndConvertType(const jive::type & type)
   {
-    if (auto pointerType = dynamic_cast<const ptrtype*>(&type))
+    if (auto pointerType = dynamic_cast<const PointerType*>(&type))
       return *pointerType;
 
     throw error("Expected pointer type.");

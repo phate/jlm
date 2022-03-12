@@ -57,9 +57,10 @@ convert(const FunctionType & functionType, context & ctx)
 }
 
 static llvm::Type *
-convert(const ptrtype & type, context & ctx)
+convert(const PointerType & type, context & ctx)
 {
-	return llvm::PointerType::get(convert_type(type.pointee_type(), ctx), 0);
+  auto elementType = convert_type(type.GetElementType(), ctx);
+	return llvm::PointerType::get(elementType, 0);
 }
 
 static llvm::Type *
@@ -140,23 +141,23 @@ convert(
 llvm::Type *
 convert_type(const jive::type & type, context & ctx)
 {
-	static std::unordered_map<
-		std::type_index
-	, std::function<llvm::Type*(const jive::type&, context&)>
-	> map({
-	  {typeid(jive::bittype),      convert<jive::bittype>}
-	, {typeid(FunctionType),       convert<FunctionType>}
-	, {typeid(ptrtype),            convert<ptrtype>}
-	, {typeid(arraytype),          convert<arraytype>}
-	, {typeid(jive::ctltype),      convert<jive::ctltype>}
-	, {typeid(fptype),             convert<fptype>}
-	, {typeid(structtype),         convert<structtype>}
-	, {typeid(fixedvectortype),    convert<fixedvectortype>}
-	, {typeid(scalablevectortype), convert<scalablevectortype>}
-	});
+  static std::unordered_map<
+    std::type_index,
+    std::function<llvm::Type*(const jive::type&, context&)>
+  > map({
+          {typeid(jive::bittype),      convert<jive::bittype>},
+          {typeid(FunctionType),       convert<FunctionType>},
+          {typeid(PointerType),        convert<PointerType>},
+          {typeid(arraytype),          convert<arraytype>},
+          {typeid(jive::ctltype),      convert<jive::ctltype>},
+          {typeid(fptype),             convert<fptype>},
+          {typeid(structtype),         convert<structtype>},
+          {typeid(fixedvectortype),    convert<fixedvectortype>},
+          {typeid(scalablevectortype), convert<scalablevectortype>}
+        });
 
-	JLM_ASSERT(map.find(typeid(type)) != map.end());
-	return map[typeid(type)](type, ctx);
+  JLM_ASSERT(map.find(typeid(type)) != map.end());
+  return map[typeid(type)](type, ctx);
 }
 
 }}

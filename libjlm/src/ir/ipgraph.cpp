@@ -148,11 +148,11 @@ data_node::name() const noexcept
 	return name_;
 }
 
-const ptrtype &
+const PointerType &
 data_node::type() const noexcept
 {
-	JLM_ASSERT(dynamic_cast<const ptrtype*>(type_.get()));
-	return *static_cast<const ptrtype*>(type_.get());
+	JLM_ASSERT(dynamic_cast<const PointerType*>(type_.get()));
+	return *static_cast<const PointerType*>(type_.get());
 }
 
 const jlm::linkage &
