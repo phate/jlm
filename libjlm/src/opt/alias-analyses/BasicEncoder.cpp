@@ -286,8 +286,8 @@ public:
     const jive::output * output,
     const std::vector<jive::output*> & states)
   {
-    auto nodes = memnodes(output);
-    GetOrInsertStateMap(*output->region()).replace(nodes, states);
+    auto memoryNodes = MemoryNodes(*output);
+    GetOrInsertStateMap(*output->region()).replace(memoryNodes, states);
   }
 
   void
@@ -312,8 +312,10 @@ public:
   std::vector<jive::output*>
   states(const jive::output * output) noexcept
   {
-    auto nodes = memnodes(output);
-    return states(*output->region(), nodes);
+    auto memoryNodes = MemoryNodes(*output);
+    return memoryNodes.empty()
+           ? std::vector<jive::output*>()
+           : states(*output->region(), memoryNodes);
   }
 
   std::vector<jive::output*>
@@ -333,13 +335,12 @@ public:
   }
 
   std::vector<const PointsToGraph::MemoryNode*>
-  memnodes(const jive::output * output)
+  MemoryNodes(const jive::output & output)
   {
-    JLM_ASSERT(is<PointerType>(output->type()));
-    JLM_ASSERT(AddressMemNodeMap_.find(output) != AddressMemNodeMap_.end());
-    JLM_ASSERT(!AddressMemNodeMap_[output].empty());
+    JLM_ASSERT(is<PointerType>(output.type()));
+    JLM_ASSERT(AddressMemNodeMap_.find(&output) != AddressMemNodeMap_.end());
 
-    return AddressMemNodeMap_[output];
+    return AddressMemNodeMap_[&output];
   }
 
   static std::unique_ptr<BasicEncoder::Context>

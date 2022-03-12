@@ -1011,38 +1011,45 @@ Steensgaard::AnalyzeExtractValue(const jive::simple_node & node)
 void
 Steensgaard::AnalyzeConstantPointerNull(const jive::simple_node & node)
 {
-	JLM_ASSERT(is<ConstantPointerNullOperation>(&node));
+  JLM_ASSERT(is<ConstantPointerNullOperation>(&node));
 
-	/*
-		FIXME: This should not point to unknown, but to a NULL memory location.
-	*/
-  locationSet_.FindOrInsertRegisterLocation(node.output(0), true, true);
+  /*
+   * ConstantPointerNull cannot point to any memory location. We therefore only insert a register node for it,
+   * but let this node not point to anything.
+   */
+  locationSet_.FindOrInsertRegisterLocation(node.output(0), false, false);
 }
 
 void
 Steensgaard::AnalyzeConstantAggregateZero(const jive::simple_node & node)
 {
-	JLM_ASSERT(is<ConstantAggregateZero>(&node));
+  JLM_ASSERT(is<ConstantAggregateZero>(&node));
+  auto output = node.output(0);
 
-	/*
-		FIXME: This not point to unknown, but to a NULL memory location.
-	*/
-  locationSet_.FindOrInsertRegisterLocation(node.output(0), true, true);
+  if (!IsOrContains<PointerType>(output->type()))
+    return;
+
+  /*
+   * ConstantAggregateZero cannot point to any memory location. We therefore only insert a register node for it,
+   * but let this node not point to anything.
+   */
+  locationSet_.FindOrInsertRegisterLocation(output, false, false);
 }
 
 void
 Steensgaard::AnalyzeUndef(const jive::simple_node & node)
 {
-	JLM_ASSERT(is<UndefValueOperation>(&node));
-	auto output = node.output(0);
+  JLM_ASSERT(is<UndefValueOperation>(&node));
+  auto output = node.output(0);
 
-	if (!is<PointerType>(output->type()))
-		return;
+  if (!is<PointerType>(output->type()))
+    return;
 
-	/*
-		FIXME: Overthink whether it is correct that undef points to unknown.
-	*/
-  locationSet_.FindOrInsertRegisterLocation(node.output(0), true, true);
+  /*
+   * UndefValue cannot point to any memory location. We therefore only insert a register node for it,
+   * but let this node not point to anything.
+   */
+  locationSet_.FindOrInsertRegisterLocation(output, false, false);
 }
 
 void
@@ -1402,98 +1409,102 @@ Steensgaard::Analyze(
 }
 
 std::unique_ptr<PointsToGraph>
-Steensgaard::ConstructPointsToGraph(const LocationSet & lset)
+Steensgaard::ConstructPointsToGraph(const LocationSet & locationSets)
 {
-	auto ptg = PointsToGraph::Create();
+	auto pointsToGraph = PointsToGraph::Create();
 
 	/*
 		Create points-to graph nodes
 	*/
-	std::vector<PointsToGraph::MemoryNode*> memNodes;
-	std::unordered_map<Location*, PointsToGraph::Node*> map;
-	std::unordered_map<const disjointset<Location*>::set*, std::vector<PointsToGraph::MemoryNode*>> allocators;
-	for (auto & set : lset) {
-		for (auto & loc : set) {
-			if (auto regloc = dynamic_cast<jlm::aa::RegisterLocation*>(loc)) {
-				map[loc] = &PointsToGraph::RegisterNode::create(*ptg, regloc->output());
+	std::unordered_map<Location*, PointsToGraph::Node*> locationMap;
+	std::unordered_map<const disjointset<Location*>::set*, std::vector<PointsToGraph::MemoryNode*>> memoryNodeMap;
+	for (auto & locationSet : locationSets) {
+		for (auto & location : locationSet) {
+			if (auto registerLocation = dynamic_cast<RegisterLocation*>(location)) {
+        locationMap[location] = &PointsToGraph::RegisterNode::create(
+          *pointsToGraph,
+          registerLocation->output());
 				continue;
 			}
 
-      if (auto allocaLocation = dynamic_cast<AllocaLocation*>(loc)) {
-        auto node = &PointsToGraph::AllocatorNode::create(*ptg, &allocaLocation->Node());
-        allocators[&set].push_back(node);
-        memNodes.push_back(node);
-        map[loc] = node;
+      if (auto allocaLocation = dynamic_cast<AllocaLocation*>(location)) {
+        auto node = &PointsToGraph::AllocatorNode::create(
+          *pointsToGraph,
+          &allocaLocation->Node());
+        memoryNodeMap[&locationSet].push_back(node);
+        locationMap[location] = node;
         continue;
       }
 
-      if (auto mallocLocation = dynamic_cast<MallocLocation*>(loc)) {
-        auto node = &PointsToGraph::AllocatorNode::create(*ptg, &mallocLocation->Node());
-        allocators[&set].push_back(node);
-        memNodes.push_back(node);
-        map[loc] = node;
+      if (auto mallocLocation = dynamic_cast<MallocLocation*>(location)) {
+        auto node = &PointsToGraph::AllocatorNode::create(
+          *pointsToGraph,
+          &mallocLocation->Node());
+        memoryNodeMap[&locationSet].push_back(node);
+        locationMap[location] = node;
         continue;
       }
 
-      if (auto lambdaLocation = dynamic_cast<LambdaLocation*>(loc)) {
-        auto node = &PointsToGraph::AllocatorNode::create(*ptg, &lambdaLocation->Node());
-        allocators[&set].push_back(node);
-        memNodes.push_back(node);
-        map[loc] = node;
+      if (auto lambdaLocation = dynamic_cast<LambdaLocation*>(location)) {
+        auto node = &PointsToGraph::AllocatorNode::create(
+          *pointsToGraph,
+          &lambdaLocation->Node());
+        memoryNodeMap[&locationSet].push_back(node);
+        locationMap[location] = node;
         continue;
       }
 
-      if (auto deltaLocation = dynamic_cast<DeltaLocation*>(loc)) {
-        auto node = &PointsToGraph::AllocatorNode::create(*ptg, &deltaLocation->Node());
-        allocators[&set].push_back(node);
-        memNodes.push_back(node);
-        map[loc] = node;
+      if (auto deltaLocation = dynamic_cast<DeltaLocation*>(location)) {
+        auto node = &PointsToGraph::AllocatorNode::create(
+          *pointsToGraph,
+          &deltaLocation->Node());
+        memoryNodeMap[&locationSet].push_back(node);
+        locationMap[location] = node;
         continue;
       }
 
-			if (auto l = dynamic_cast<ImportLocation*>(loc)) {
-				auto node = &PointsToGraph::ImportNode::create(*ptg, l->argument());
-				allocators[&set].push_back(node);
-				memNodes.push_back(node);
-				map[loc] = node;
+			if (auto importLocation = dynamic_cast<ImportLocation*>(location)) {
+				auto node = &PointsToGraph::ImportNode::create(
+          *pointsToGraph,
+          importLocation->argument());
+				memoryNodeMap[&locationSet].push_back(node);
+        locationMap[location] = node;
 				continue;
 			}
 
-			if (dynamic_cast<DummyLocation*>(loc)) {
+			if (dynamic_cast<DummyLocation*>(location)) {
 				continue;
 			}
 
-			JLM_UNREACHABLE("Unhandled location node.");
+			JLM_UNREACHABLE("Unhandled location type.");
 		}
 	}
 
 	/*
 		Create points-to graph edges
 	*/
-	for (auto & set : lset) {
-		bool pointsToUnknown = lset.set(**set.begin()).value()->unknown();
-    bool pointsToExternalMemory = lset.set(**set.begin()).value()->PointsToExternalMemory();
+	for (auto & set : locationSets) {
+		bool pointsToUnknown = locationSets.set(**set.begin()).value()->unknown();
+    bool pointsToExternalMemory = locationSets.set(**set.begin()).value()->PointsToExternalMemory();
 
-		for (auto & loc : set) {
-			if (dynamic_cast<DummyLocation*>(loc))
+		for (auto & location : set) {
+			if (dynamic_cast<DummyLocation*>(location))
 				continue;
 
 			if (pointsToUnknown) {
-				map[loc]->add_edge(ptg->memunknown());
+				locationMap[location]->add_edge(pointsToGraph->memunknown());
 			}
 
       if (pointsToExternalMemory) {
-        map[loc]->add_edge(ptg->GetExternalMemoryNode());
+        locationMap[location]->add_edge(pointsToGraph->GetExternalMemoryNode());
       }
 
 			auto pt = set.value()->GetPointsTo();
-			if (pt == nullptr) {
-				map[loc]->add_edge(ptg->memunknown());
+			if (pt == nullptr)
 				continue;
-			}
 
-			auto & ptset = lset.set(*pt);
-			auto & memoryNodes = allocators[&ptset];
+			auto & pointsToSet = locationSets.set(*pt);
+			auto & memoryNodes = memoryNodeMap[&pointsToSet];
 			if (memoryNodes.empty()) {
 				/*
 					The location points to a pointsTo set that contains
@@ -1501,16 +1512,16 @@ Steensgaard::ConstructPointsToGraph(const LocationSet & lset)
 					points to. Let's be conservative and let it just point to
 					unknown.
 				*/
-				map[loc]->add_edge(ptg->memunknown());
+				locationMap[location]->add_edge(pointsToGraph->memunknown());
 				continue;
 			}
 
-			for (auto & allocator : allocators[&ptset])
-				map[loc]->add_edge(*allocator);
+			for (auto & memoryNode : memoryNodeMap[&pointsToSet])
+				locationMap[location]->add_edge(*memoryNode);
 		}
 	}
 
-	return ptg;
+	return pointsToGraph;
 }
 
 void

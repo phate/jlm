@@ -261,7 +261,7 @@ TestLoadFromUndef()
     assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 2, 1));
 
     auto load = jive::node_output::node(test.Lambda().fctresult(0)->origin());
-    assert(is<LoadOperation>(*load, 3, 3));
+    assert(is<LoadOperation>(*load, 1, 1));
 
     auto lambdaEntrySplit = input_node(*test.Lambda().fctargument(0)->begin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 2));

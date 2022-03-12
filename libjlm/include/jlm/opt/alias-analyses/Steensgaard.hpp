@@ -254,7 +254,7 @@ private:
 	AnalyzeExtractValue(const jive::simple_node & node);
 
 	static std::unique_ptr<PointsToGraph>
-	ConstructPointsToGraph(const LocationSet & lset);
+	ConstructPointsToGraph(const LocationSet & locationSets);
 
 	/** \brief Perform a recursive union of Location \p x and \p y.
 	*/
