@@ -65,14 +65,14 @@ TestStore1()
 		assertTargets(alloca_a, {&alloca_b});
 		assertTargets(alloca_b, {&alloca_c});
 		assertTargets(alloca_c, {&alloca_d});
-		assertTargets(alloca_d, {&ptg.memunknown()});
+		assertTargets(alloca_d, {});
 
 		assertTargets(palloca_a, {&alloca_a});
 		assertTargets(palloca_b, {&alloca_b});
 		assertTargets(palloca_c, {&alloca_c});
 		assertTargets(palloca_d, {&alloca_d});
 
-		assertTargets(lambda, {&ptg.memunknown()});
+		assertTargets(lambda, {});
 		assertTargets(plambda, {&lambda});
 	};
 
@@ -107,8 +107,8 @@ TestStore2()
 		auto & lambda = ptg.GetAllocatorNode(test.lambda);
 		auto & plambda = ptg.GetRegisterNode(test.lambda->output());
 
-		assertTargets(alloca_a, {&ptg.memunknown()});
-		assertTargets(alloca_b, {&ptg.memunknown()});
+		assertTargets(alloca_a, {});
+		assertTargets(alloca_b, {});
 		assertTargets(alloca_x, {&alloca_a, &alloca_b});
 		assertTargets(alloca_y, {&alloca_a, &alloca_b});
 		assertTargets(alloca_p, {&alloca_x, &alloca_y});
@@ -119,7 +119,7 @@ TestStore2()
 		assertTargets(palloca_y, {&alloca_x, &alloca_y});
 		assertTargets(palloca_p, {&alloca_p});
 
-		assertTargets(lambda, {&ptg.memunknown()});
+		assertTargets(lambda, {});
 		assertTargets(plambda, {&lambda});
 	};
 
@@ -200,7 +200,7 @@ TestLoadFromUndef()
     assert(pointsToGraph.nregnodes() == 2);
 
     auto & undefValueNode = pointsToGraph.GetRegisterNode(test.UndefValueNode()->output(0));
-    assertTargets(undefValueNode, {&pointsToGraph.memunknown(), &pointsToGraph.GetExternalMemoryNode()});
+    assertTargets(undefValueNode, {});
   };
 
   LoadFromUndefTest test;
@@ -281,7 +281,7 @@ TestConstantPointerNull()
 
 		assertTargets(lambdaOut, {&lambda});
 		assertTargets(lambdaArg, {&ptg.memunknown(), &ptg.GetExternalMemoryNode()});
-		assertTargets(constantPointerNull, {&ptg.memunknown(), &ptg.GetExternalMemoryNode()});
+		assertTargets(constantPointerNull, {});
 	};
 
 	ConstantPointerNullTest test;
