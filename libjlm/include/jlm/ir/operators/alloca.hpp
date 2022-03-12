@@ -25,7 +25,7 @@ public:
 
 	inline
 	alloca_op(
-		const jlm::ptrtype & atype,
+		const PointerType & atype,
 		const jive::bittype & btype,
 		size_t alignment)
 	: simple_op({btype}, {atype, {MemoryStateType::Create()}})
@@ -50,7 +50,7 @@ public:
 	inline const jive::valuetype &
 	value_type() const noexcept
 	{
-		return static_cast<const jlm::ptrtype*>(&result(0).type())->pointee_type();
+		return static_cast<const PointerType *>(&result(0).type())->GetElementType();
 	}
 
 	inline size_t
@@ -71,7 +71,7 @@ public:
 		auto bt = dynamic_cast<const jive::bittype*>(&size->type());
 		if (!bt) throw jlm::error("expected bits type.");
 
-		jlm::alloca_op op(jlm::ptrtype(*vt), *bt, alignment);
+		alloca_op op(PointerType(*vt), *bt, alignment);
 		return tac::create(op, {size});
 	}
 
@@ -87,7 +87,7 @@ public:
 		auto bt = dynamic_cast<const jive::bittype*>(&size->type());
 		if (!bt) throw jlm::error("expected bits type.");
 
-		jlm::alloca_op op(jlm::ptrtype(*vt), *bt, alignment);
+		alloca_op op(PointerType(*vt), *bt, alignment);
 		return jive::simple_node::create_normalized(size->region(), op, {size});
 	}
 

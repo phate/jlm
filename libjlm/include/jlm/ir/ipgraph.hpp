@@ -228,7 +228,7 @@ public:
 	const FunctionType &
 	fcttype() const noexcept
 	{
-		return *static_cast<const FunctionType*>(&type_.pointee_type());
+		return *static_cast<const FunctionType*>(&type_.GetElementType());
 	}
 
 	virtual const jlm::linkage &
@@ -278,7 +278,7 @@ public:
 	}
 
 private:
-	ptrtype type_;
+	PointerType type_;
 	std::string name_;
 	jlm::linkage linkage_;
 	attributeset attributes_;
@@ -367,7 +367,7 @@ private:
 	data_node(
 		jlm::ipgraph & clg,
 		const std::string & name,
-		const ptrtype & type,
+		const PointerType & type,
 		const jlm::linkage & linkage,
     std::string section,
 		bool constant)
@@ -380,7 +380,7 @@ private:
 	{}
 
 public:
-	virtual const ptrtype &
+	virtual const PointerType &
 	type() const noexcept override;
 
 	const std::string &
@@ -416,7 +416,7 @@ public:
 		if (!init)
 			return;
 
-		if (init->value()->type() != type().pointee_type())
+		if (init->value()->type() != type().GetElementType())
 			throw jlm::error("Invalid type.");
 
 		init_ = std::move(init);
@@ -426,7 +426,7 @@ public:
 	Create(
 		jlm::ipgraph & clg,
 		const std::string & name,
-		const jlm::ptrtype & type,
+		const PointerType & type,
 		const jlm::linkage & linkage,
     std::string section,
 		bool constant)

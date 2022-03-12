@@ -126,29 +126,27 @@ FunctionType::operator=(FunctionType && rhs) noexcept
   return *this;
 }
 
-
-/* pointer type */
-
-ptrtype::~ptrtype()
-{}
+PointerType::~PointerType() noexcept
+= default;
 
 std::string
-ptrtype::debug_string() const
+PointerType::debug_string() const
 {
-	return pointee_type().debug_string() + "*";
+  return GetElementType().debug_string() + "*";
 }
 
 bool
-ptrtype::operator==(const jive::type & other) const noexcept
+PointerType::operator==(const jive::type & other) const noexcept
 {
-	auto type = dynamic_cast<const jlm::ptrtype*>(&other);
-	return type && type->pointee_type() == pointee_type();
+  auto type = dynamic_cast<const PointerType*>(&other);
+  return type
+         && type->GetElementType() == GetElementType();
 }
 
 std::unique_ptr<jive::type>
-ptrtype::copy() const
+PointerType::copy() const
 {
-	return std::unique_ptr<jive::type>(new ptrtype(*this));
+  return std::unique_ptr<jive::type>(new PointerType(*this));
 }
 
 /* array type */

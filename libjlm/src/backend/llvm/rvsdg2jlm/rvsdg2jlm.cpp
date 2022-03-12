@@ -74,10 +74,10 @@ static const FunctionType *
 is_function_import(const jive::argument * argument)
 {
 	JLM_ASSERT(argument->region()->graph()->root() == argument->region());
-	auto at = dynamic_cast<const ptrtype*>(&argument->type());
+	auto at = dynamic_cast<const PointerType*>(&argument->type());
 	JLM_ASSERT(at != nullptr);
 
-	return dynamic_cast<const FunctionType*>(&at->pointee_type());
+	return dynamic_cast<const FunctionType*>(&at->GetElementType());
 }
 
 static std::unique_ptr<data_node_init>
@@ -545,8 +545,8 @@ convert_imports(const jive::graph & graph, ipgraph_module & im, context & ctx)
 			auto v = im.create_variable(f);
 			ctx.insert(argument, v);
 		} else {
-			JLM_ASSERT(dynamic_cast<const ptrtype*>(&argument->type()));
-			auto & type = *static_cast<const ptrtype*>(&argument->type());
+			JLM_ASSERT(dynamic_cast<const PointerType*>(&argument->type()));
+			auto & type = *static_cast<const PointerType*>(&argument->type());
 			const auto & name = import->name();
 			auto dnode = data_node::Create(
         ipg,

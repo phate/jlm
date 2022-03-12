@@ -20,7 +20,7 @@ test()
 	/* setup graph */
 
 	valuetype vt;
-	ptrtype pt(vt);
+	PointerType pt(vt);
 	RvsdgModule rm(filepath(""), "", "");
 
 	auto imp = rm.Rvsdg().add_import({vt, ""});

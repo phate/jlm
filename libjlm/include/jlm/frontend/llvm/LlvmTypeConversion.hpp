@@ -44,12 +44,12 @@ ConvertFunctionType(const llvm::FunctionType * type, context & ctx)
 	return std::unique_ptr<FunctionType>(static_cast<FunctionType*>(t.release()));
 }
 
-static inline std::unique_ptr<ptrtype>
+static inline std::unique_ptr<PointerType>
 ConvertPointerType(const llvm::PointerType * type, context & ctx)
 {
 	auto t = ConvertType(llvm::cast<llvm::Type>(type), ctx);
-	JLM_ASSERT(dynamic_cast<const ptrtype*>(t.get()));
-	return std::unique_ptr<ptrtype>(static_cast<ptrtype*>(t.release()));
+	JLM_ASSERT(dynamic_cast<const PointerType*>(t.get()));
+	return std::unique_ptr<PointerType>(static_cast<PointerType*>(t.release()));
 }
 
 }

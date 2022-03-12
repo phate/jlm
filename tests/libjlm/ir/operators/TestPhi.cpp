@@ -68,9 +68,9 @@ static int test_main()
 
   phi::builder pb;
   pb.begin(graph.root());
-  auto rv1 = pb.add_recvar(ptrtype(f0type));
-  auto rv2 = pb.add_recvar(ptrtype(f0type));
-  auto rv3 = pb.add_recvar(ptrtype(f1type));
+  auto rv1 = pb.add_recvar(PointerType(f0type));
+  auto rv2 = pb.add_recvar(PointerType(f0type));
+  auto rv3 = pb.add_recvar(PointerType(f1type));
 
   auto lambdaOutput0 = SetupEmptyLambda(pb.subregion(), "f0");
   auto lambdaOutput1 = SetupEmptyLambda(pb.subregion(), "f1");

@@ -335,7 +335,7 @@ public:
   std::vector<const PointsToGraph::MemoryNode*>
   memnodes(const jive::output * output)
   {
-    JLM_ASSERT(is<ptrtype>(output->type()));
+    JLM_ASSERT(is<PointerType>(output->type()));
     JLM_ASSERT(AddressMemNodeMap_.find(output) != AddressMemNodeMap_.end());
     JLM_ASSERT(!AddressMemNodeMap_[output].empty());
 
@@ -536,7 +536,7 @@ BasicEncoder::EncodeLoad(const LoadNode & loadNode)
 
   stateMap.replace(address, {std::next(outputs.begin()), outputs.end()});
 
-  if (is<ptrtype>(oldResult->type()))
+  if (is<PointerType>(oldResult->type()))
     stateMap.ReplaceAddress(oldResult, outputs[0]);
 }
 

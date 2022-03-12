@@ -59,7 +59,7 @@ test_multiple_origin_reduction()
 
 	MemoryStateType mt;
 	jlm::valuetype vt;
-	jlm::ptrtype pt(vt);
+	PointerType pt(vt);
 
 	jive::graph graph;
 	auto nf = LoadOperation::GetNormalForm(&graph);
@@ -169,7 +169,7 @@ test_load_store_reduction()
   using namespace jlm;
 
   valuetype vt;
-  ptrtype pt(vt);
+  PointerType pt(vt);
   MemoryStateType mt;
 
   jive::graph graph;
@@ -206,7 +206,7 @@ test_load_load_reduction()
 	using namespace jlm;
 
 	valuetype vt;
-	ptrtype pt(vt);
+	PointerType pt(vt);
 	MemoryStateType mt;
 
 	jive::graph graph;

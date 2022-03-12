@@ -494,10 +494,10 @@ public:
 	static std::unique_ptr<Location>
 	create(const jive::argument * argument)
 	{
-		JLM_ASSERT(is<ptrtype>(argument->type()));
-		auto ptr = static_cast<const ptrtype*>(&argument->type());
+		JLM_ASSERT(is<PointerType>(argument->type()));
+		auto ptr = static_cast<const PointerType*>(&argument->type());
 
-		bool pointsToUnknown = is<ptrtype>(ptr->pointee_type());
+		bool pointsToUnknown = is<PointerType>(ptr->GetElementType());
     /**
      * FIXME: We use pointsToUnknown for pointsToExternalMemory
      */
@@ -791,7 +791,7 @@ Steensgaard::Analyze(const jive::simple_node & node)
     Ensure that we really took care of all pointer-producing instructions
   */
   for (size_t n = 0; n < node.noutputs(); n++) {
-    if (jive::is<ptrtype>(node.output(n)->type()))
+    if (jive::is<PointerType>(node.output(n)->type()))
       JLM_UNREACHABLE("We should have never reached this statement.");
   }
 }
@@ -855,7 +855,7 @@ Steensgaard::AnalyzeMalloc(const jive::simple_node & node)
 void
 Steensgaard::AnalyzeLoad(const LoadNode & loadNode)
 {
-  if (!is<ptrtype>(loadNode.GetValueOutput()->type()))
+  if (!is<PointerType>(loadNode.GetValueOutput()->type()))
     return;
 
   auto & address = locationSet_.Find(loadNode.GetAddressInput()->origin());
@@ -878,7 +878,7 @@ Steensgaard::AnalyzeStore(const StoreNode & storeNode)
   auto address = storeNode.GetAddressInput()->origin();
   auto value = storeNode.GetValueInput()->origin();
 
-  if (!is<ptrtype>(value->type()))
+  if (!is<PointerType>(value->type()))
     return;
 
   auto & addressLocation = locationSet_.Find(address);
@@ -907,7 +907,7 @@ Steensgaard::AnalyzeCall(const CallNode & callNode)
 			auto callArgument = call.input(n)->origin();
 			auto lambdaArgument = lambda.fctargument(n-1);
 
-			if (!is<ptrtype>(callArgument->type()))
+			if (!is<PointerType>(callArgument->type()))
 				continue;
 
 			auto & callArgumentLocation = locationSet_.Find(callArgument);
@@ -925,7 +925,7 @@ Steensgaard::AnalyzeCall(const CallNode & callNode)
 			auto callResult = call.output(n);
 			auto lambdaResult = subregion->result(n)->origin();
 
-			if (!is<ptrtype>(callResult->type()))
+			if (!is<PointerType>(callResult->type()))
 				continue;
 
 			auto & callResultLocation = locationSet_.FindOrInsertRegisterLocation(callResult, false, false);
@@ -947,7 +947,7 @@ Steensgaard::AnalyzeCall(const CallNode & callNode)
 		/* handle call node results */
 		for (size_t n = 0; n < call.noutputs(); n++) {
 			auto callres = call.output(n);
-			if (!is<ptrtype>(callres->type()))
+			if (!is<PointerType>(callres->type()))
 				continue;
 
       locationSet_.FindOrInsertRegisterLocation(callres, true, true);
@@ -979,7 +979,7 @@ Steensgaard::AnalyzeBitcast(const jive::simple_node & node)
 	JLM_ASSERT(is<bitcast_op>(&node));
 
 	auto input = node.input(0);
-	if (!is<ptrtype>(input->type()))
+	if (!is<PointerType>(input->type()))
 		return;
 
 	auto & operand = locationSet_.Find(input->origin());
@@ -1002,7 +1002,7 @@ Steensgaard::AnalyzeExtractValue(const jive::simple_node & node)
 	JLM_ASSERT(is<ExtractValue>(&node));
 
 	auto result = node.output(0);
-	if (!is<ptrtype>(result->type()))
+	if (!is<PointerType>(result->type()))
 		return;
 
   locationSet_.FindOrInsertRegisterLocation(result, true, true);
@@ -1036,7 +1036,7 @@ Steensgaard::AnalyzeUndef(const jive::simple_node & node)
 	JLM_ASSERT(is<UndefValueOperation>(&node));
 	auto output = node.output(0);
 
-	if (!is<ptrtype>(output->type()))
+	if (!is<PointerType>(output->type()))
 		return;
 
 	/*
@@ -1133,7 +1133,7 @@ Steensgaard::Analyze(const lambda::node & lambda)
 	if (lambda.direct_calls()) {
 		/* handle context variables */
 		for (auto & cv : lambda.ctxvars()) {
-			if (!jive::is<ptrtype>(cv.type()))
+			if (!jive::is<PointerType>(cv.type()))
 				continue;
 
 			auto & origin = locationSet_.Find(cv.origin());
@@ -1143,7 +1143,7 @@ Steensgaard::Analyze(const lambda::node & lambda)
 
 		/* handle function arguments */
 		for (auto & argument : lambda.fctarguments()) {
-			if (!jive::is<ptrtype>(argument.type()))
+			if (!jive::is<PointerType>(argument.type()))
 				continue;
 
       locationSet_.FindOrInsertRegisterLocation(&argument, false, false);
@@ -1157,7 +1157,7 @@ Steensgaard::Analyze(const lambda::node & lambda)
 	} else {
 		/* handle context variables */
 		for (auto & cv : lambda.ctxvars()) {
-			if (!jive::is<ptrtype>(cv.type()))
+			if (!jive::is<PointerType>(cv.type()))
 				continue;
 
 			auto & origin = locationSet_.Find(cv.origin());
@@ -1167,7 +1167,7 @@ Steensgaard::Analyze(const lambda::node & lambda)
 
 		/* handle function arguments */
 		for (auto & argument : lambda.fctarguments()) {
-			if (!jive::is<ptrtype>(argument.type()))
+			if (!jive::is<PointerType>(argument.type()))
 				continue;
 
       locationSet_.FindOrInsertRegisterLocation(&argument, true, true);
@@ -1188,7 +1188,7 @@ Steensgaard::Analyze(const delta::node & delta)
 		Handle context variables
 	*/
 	for (auto & input : delta.ctxvars()) {
-		if (!is<ptrtype>(input.type()))
+		if (!is<PointerType>(input.type()))
 			continue;
 
 		auto & origin = locationSet_.Find(input.origin());
@@ -1214,7 +1214,7 @@ Steensgaard::Analyze(const phi::node & phi)
 {
 	/* handle context variables */
 	for (auto cv = phi.begin_cv(); cv != phi.end_cv(); cv++) {
-		if (!is<ptrtype>(cv->type()))
+		if (!is<PointerType>(cv->type()))
 			continue;
 
 		auto & origin = locationSet_.Find(cv->origin());
@@ -1224,7 +1224,7 @@ Steensgaard::Analyze(const phi::node & phi)
 
 	/* handle recursion variable arguments */
 	for (auto rv = phi.begin_rv(); rv != phi.end_rv(); rv++) {
-		if (!is<ptrtype>(rv->type()))
+		if (!is<PointerType>(rv->type()))
 			continue;
 
     locationSet_.FindOrInsertRegisterLocation(rv->argument(), false, false);
@@ -1234,7 +1234,7 @@ Steensgaard::Analyze(const phi::node & phi)
 
 	/* handle recursion variable outputs */
 	for (auto rv = phi.begin_rv(); rv != phi.end_rv(); rv++) {
-		if (!is<ptrtype>(rv->type()))
+		if (!is<PointerType>(rv->type()))
 			continue;
 
 		auto & origin = locationSet_.Find(rv->result()->origin());
@@ -1251,7 +1251,7 @@ Steensgaard::Analyze(const jive::gamma_node & node)
 {
 	/* handle entry variables */
 	for (auto ev = node.begin_entryvar(); ev != node.end_entryvar(); ev++) {
-		if (!jive::is<ptrtype>(ev->type()))
+		if (!jive::is<PointerType>(ev->type()))
 			continue;
 
 		auto & originloc = locationSet_.Find(ev->origin());
@@ -1267,7 +1267,7 @@ Steensgaard::Analyze(const jive::gamma_node & node)
 
 	/* handle exit variables */
 	for (auto ex = node.begin_exitvar(); ex != node.end_exitvar(); ex++) {
-		if (!jive::is<ptrtype>(ex->type()))
+		if (!jive::is<PointerType>(ex->type()))
 			continue;
 
 		auto & outputloc = locationSet_.FindOrInsertRegisterLocation(ex.output(), false, false);
@@ -1282,7 +1282,7 @@ void
 Steensgaard::Analyze(const jive::theta_node & theta)
 {
 	for (auto lv : theta) {
-		if (!jive::is<ptrtype>(lv->type()))
+		if (!jive::is<PointerType>(lv->type()))
 			continue;
 
 		auto & originloc = locationSet_.Find(lv->input()->origin());
@@ -1294,7 +1294,7 @@ Steensgaard::Analyze(const jive::theta_node & theta)
 	Analyze(*theta.subregion());
 
 	for (auto lv : theta) {
-		if (!jive::is<ptrtype>(lv->type()))
+		if (!jive::is<PointerType>(lv->type()))
 			continue;
 
 		auto & originloc = locationSet_.Find(lv->result()->origin());
@@ -1357,7 +1357,7 @@ Steensgaard::Analyze(const jive::graph & graph)
 		auto region = graph.root();
 		for (size_t n = 0; n < region->narguments(); n++) {
 			auto argument = region->argument(n);
-			if (!jive::is<ptrtype>(argument->type()))
+			if (!jive::is<PointerType>(argument->type()))
 				continue;
 			/* FIXME: we should not add function imports */
 			auto & imploc = lset.InsertImportLocation(argument);

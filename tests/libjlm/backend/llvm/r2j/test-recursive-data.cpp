@@ -22,7 +22,7 @@ test()
 	using namespace jlm;
 
 	valuetype vt;
-	ptrtype pt(vt);
+	PointerType pt(vt);
 
 	RvsdgModule rm(filepath(""), "", "");
 
@@ -40,7 +40,7 @@ test()
 	{
 		auto delta = delta::node::Create(
 			region,
-			vt,
+			PointerType(vt),
 			"test-delta1",
 			linkage::external_linkage,
       "",
@@ -53,7 +53,7 @@ test()
 	{
 		auto delta = delta::node::Create(
 			region,
-			vt,
+			PointerType(vt),
 			"test-delta2",
 			linkage::external_linkage,
       "",

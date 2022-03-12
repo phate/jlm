@@ -131,7 +131,7 @@ test2()
   FunctionType functionType1(
     {&vt, &iOStateType, &memoryStateType, &loopStateType},
     {&iOStateType, &memoryStateType, &loopStateType});
-	ptrtype pt(functionType1);
+	PointerType pt(functionType1);
 
 	FunctionType functionType2(
     {&pt, &iOStateType, &memoryStateType, &loopStateType},
@@ -140,7 +140,7 @@ test2()
 
 	RvsdgModule rm(filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
-	auto i = graph.add_import({ptrtype(functionType2), "i"});
+	auto i = graph.add_import({PointerType(functionType2), "i"});
 
   auto SetupF1 = [&](const FunctionType & functionType)
   {

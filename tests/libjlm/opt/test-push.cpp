@@ -106,7 +106,7 @@ test_push_theta_bottom()
 	using namespace jlm;
 
 	MemoryStateType mt;
-	jlm::ptrtype pt(vt);
+	PointerType pt(vt);
 	jive::ctltype ct(2);
 
 	jive::graph graph;

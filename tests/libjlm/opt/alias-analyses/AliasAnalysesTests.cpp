@@ -11,9 +11,9 @@ StoreTest1::SetupRvsdg()
   using namespace jlm;
 
   MemoryStateType mt;
-  auto pt = ptrtype::create(jive::bit32);
-  auto ppt = ptrtype::create(*pt);
-  auto pppt = ptrtype::create(*ppt);
+  auto pt = PointerType::Create(jive::bit32);
+  auto ppt = PointerType::Create(*pt);
+  auto pppt = PointerType::Create(*ppt);
   FunctionType fcttype({&mt}, {&mt});
 
   auto module = RvsdgModule::Create(filepath(""), "", "");
@@ -42,7 +42,7 @@ StoreTest1::SetupRvsdg()
 
   fct->finalize({c_amp_d[0]});
 
-  graph->add_export(fct->output(), {ptrtype(fct->type()), "f"});
+  graph->add_export(fct->output(), {PointerType(fct->type()), "f"});
 
   /* extract nodes */
 
@@ -64,8 +64,8 @@ StoreTest2::SetupRvsdg()
   using namespace jlm;
 
   MemoryStateType mt;
-  auto pt = ptrtype::create(jive::bit32);
-  auto ppt = ptrtype::create(*pt);
+  auto pt = PointerType::Create(jive::bit32);
+  auto ppt = PointerType::Create(*pt);
   FunctionType fcttype({&mt}, {&mt});
 
   auto module = RvsdgModule::Create(filepath(""), "", "");
@@ -97,7 +97,7 @@ StoreTest2::SetupRvsdg()
 
   fct->finalize({p_amp_y[0]});
 
-  graph->add_export(fct->output(), {ptrtype(fct->type()), "f"});
+  graph->add_export(fct->output(), {PointerType(fct->type()), "f"});
 
   /* extract nodes */
 
@@ -120,8 +120,8 @@ LoadTest1::SetupRvsdg()
   using namespace jlm;
 
   MemoryStateType mt;
-  auto pt = ptrtype::create(jive::bit32);
-  auto ppt = ptrtype::create(*pt);
+  auto pt = PointerType::Create(jive::bit32);
+  auto ppt = PointerType::Create(*pt);
   FunctionType fcttype({ppt.get(), &mt}, {&jive::bit32, &mt});
 
   auto module = RvsdgModule::Create(filepath(""), "", "");
@@ -137,7 +137,7 @@ LoadTest1::SetupRvsdg()
 
   fct->finalize(ld2);
 
-  graph->add_export(fct->output(), {ptrtype(fct->type()), "f"});
+  graph->add_export(fct->output(), {PointerType(fct->type()), "f"});
 
   /* extract nodes */
 
@@ -155,8 +155,8 @@ LoadTest2::SetupRvsdg()
   using namespace jlm;
 
   MemoryStateType mt;
-  auto pt = ptrtype::create(jive::bit32);
-  auto ppt = ptrtype::create(*pt);
+  auto pt = PointerType::Create(jive::bit32);
+  auto ppt = PointerType::Create(*pt);
   FunctionType fcttype({&mt}, {&mt});
 
   auto module = RvsdgModule::Create(filepath(""), "", "");
@@ -191,7 +191,7 @@ LoadTest2::SetupRvsdg()
 
   fct->finalize({y_star_p[0]});
 
-  graph->add_export(fct->output(), {ptrtype(fct->type()), "f"});
+  graph->add_export(fct->output(), {PointerType(fct->type()), "f"});
 
   /* extract nodes */
 
@@ -220,7 +220,7 @@ LoadFromUndefTest::SetupRvsdg()
   FunctionType functionType(
     {&memoryStateType},
     {&jive::bit32, &memoryStateType});
-  ptrtype pointerType(jive::bit32);
+  PointerType pointerType(jive::bit32);
 
   auto rvsdgModule = RvsdgModule::Create(filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
@@ -238,7 +238,7 @@ LoadFromUndefTest::SetupRvsdg()
   auto loadResults = LoadNode::Create(undefValue, {Lambda_->fctargument(0)}, 4);
 
   Lambda_->finalize(loadResults);
-  rvsdg.add_export(Lambda_->output(), {ptrtype(functionType), "f"});
+  rvsdg.add_export(Lambda_->output(), {PointerType(functionType), "f"});
 
   /*
    * Extract nodes
@@ -257,8 +257,8 @@ GetElementPtrTest::SetupRvsdg()
   jive::rcdtype rt(dcl.get());
 
   MemoryStateType mt;
-  auto pt = ptrtype::create(rt);
-  auto pbt = ptrtype::create(jive::bit32);
+  auto pt = PointerType::Create(rt);
+  auto pbt = PointerType::Create(jive::bit32);
   FunctionType fcttype({pt.get(), &mt}, {&jive::bit32, &mt});
 
   auto module = RvsdgModule::Create(filepath(""), "", "");
@@ -282,7 +282,7 @@ GetElementPtrTest::SetupRvsdg()
 
   fct->finalize({sum, ldy[1]});
 
-  graph->add_export(fct->output(), {ptrtype(fct->type()), "f"});
+  graph->add_export(fct->output(), {PointerType(fct->type()), "f"});
 
   /*
    * Assign nodes
@@ -300,8 +300,8 @@ BitCastTest::SetupRvsdg()
 {
   using namespace jlm;
 
-  auto pbt16 = ptrtype::create(jive::bit16);
-  auto pbt32 = ptrtype::create(jive::bit32);
+  auto pbt16 = PointerType::Create(jive::bit16);
+  auto pbt32 = PointerType::Create(jive::bit32);
   FunctionType fcttype({pbt32.get()}, {pbt16.get()});
 
   auto module = RvsdgModule::Create(filepath(""), "", "");
@@ -316,7 +316,7 @@ BitCastTest::SetupRvsdg()
 
   fct->finalize({cast});
 
-  graph->add_export(fct->output(), {ptrtype(fct->type()), "f"});
+  graph->add_export(fct->output(), {PointerType(fct->type()), "f"});
 
   /*
    * Assign nodes
@@ -340,7 +340,7 @@ Bits2PtrTest::SetupRvsdg()
 
   auto SetupBit2PtrFunction = [&]()
   {
-    ptrtype pt(jive::bit8);
+    PointerType pt(jive::bit8);
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
     loopstatetype loopStateType;
@@ -391,7 +391,7 @@ Bits2PtrTest::SetupRvsdg()
       {valueArgument, iOStateArgument, memoryStateArgument, loopStateArgument});
 
     lambda->finalize({callResults[1], callResults[2], callResults[3]});
-    graph->add_export(lambda->output(), {ptrtype(lambda->type()), "testfct"});
+    graph->add_export(lambda->output(), {PointerType(lambda->type()), "testfct"});
 
     return std::make_tuple(lambda, jive::node_output::node(callResults[0]));
   };
@@ -418,8 +418,8 @@ ConstantPointerNullTest::SetupRvsdg()
   using namespace jlm;
 
   MemoryStateType mt;
-  auto pt = ptrtype::create(jive::bit32);
-  auto ppt = ptrtype::create(*pt);
+  auto pt = PointerType::Create(jive::bit32);
+  auto ppt = PointerType::Create(*pt);
   FunctionType fcttype({ppt.get(), &mt}, {&mt});
 
   auto module = RvsdgModule::Create(filepath(""), "", "");
@@ -439,7 +439,7 @@ ConstantPointerNullTest::SetupRvsdg()
 
   fct->finalize({st[0]});
 
-  graph->add_export(fct->output(), {ptrtype(fct->type()), "f"});
+  graph->add_export(fct->output(), {PointerType(fct->type()), "f"});
 
   /*
    * Assign nodes
@@ -464,7 +464,7 @@ CallTest1::SetupRvsdg()
   auto SetupF = [&]()
   {
 
-    ptrtype pt(jive::bit32);
+    PointerType pt(jive::bit32);
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
     loopstatetype loopStateType;
@@ -495,7 +495,7 @@ CallTest1::SetupRvsdg()
 
   auto SetupG = [&]()
   {
-    ptrtype pt(jive::bit32);
+    PointerType pt(jive::bit32);
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
     loopstatetype loopStateType;
@@ -573,7 +573,7 @@ CallTest1::SetupRvsdg()
     auto sum = jive::bitadd_op::create(32, callFResults[0], callGResults[0]);
 
     lambda->finalize({sum, callGResults[1], callGResults[2], callGResults[3]});
-    graph->add_export(lambda->output(), {ptrtype(lambda->type()), "h"});
+    graph->add_export(lambda->output(), {PointerType(lambda->type()), "h"});
 
     auto allocaX = jive::node_output::node(x[0]);
     auto allocaY = jive::node_output::node(y[0]);
@@ -618,7 +618,7 @@ CallTest2::SetupRvsdg()
 
   auto SetupCreate = [&]()
   {
-    ptrtype pt32(jive::bit32);
+    PointerType pt32(jive::bit32);
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
     loopstatetype loopStateType;
@@ -652,8 +652,8 @@ CallTest2::SetupRvsdg()
 
   auto SetupDestroy = [&]()
   {
-    ptrtype pt8(jive::bit8);
-    ptrtype pt32(jive::bit32);
+    PointerType pt8(jive::bit8);
+    PointerType pt32(jive::bit32);
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
     loopstatetype loopStateType;
@@ -719,7 +719,7 @@ CallTest2::SetupRvsdg()
       {create2[0], destroy1[0], destroy1[1], destroy1[2]});
 
     lambda->finalize(destroy2);
-    graph->add_export(lambda->output(), {ptrtype(lambda->type()), "test"});
+    graph->add_export(lambda->output(), {PointerType(lambda->type()), "test"});
 
     auto callCreate1Node = jive::node_output::node(create1[0]);
     auto callCreate2Node = jive::node_output::node(create2[0]);
@@ -763,7 +763,7 @@ IndirectCallTest::SetupRvsdg()
   FunctionType constantFunctionType(
     {&iOStateType, &memoryStateType, &loopStateType},
     {&jive::bit32, &iOStateType, &memoryStateType, &loopStateType});
-  auto pfct = ptrtype::create(constantFunctionType);
+  auto pfct = PointerType::Create(constantFunctionType);
 
   auto module = RvsdgModule::Create(filepath(""), "", "");
   auto graph = &module->Rvsdg();
@@ -847,7 +847,7 @@ IndirectCallTest::SetupRvsdg()
     auto add = jive::bitadd_op::create(32, call_four[0], call_three[0]);
 
     auto lambdaOutput = lambda->finalize({add, call_three[1], call_three[2], call_three[3]});
-    graph->add_export(lambda->output(), {ptrtype(lambda->type()), "test"});
+    graph->add_export(lambda->output(), {PointerType(lambda->type()), "test"});
 
     return std::make_tuple(lambdaOutput, jive::node_output::node(call_three[0]), jive::node_output::node(call_four[0]));
   };
@@ -878,7 +878,7 @@ GammaTest::SetupRvsdg()
   using namespace jlm;
 
   MemoryStateType mt;
-  auto pt = ptrtype::create(jive::bit32);
+  auto pt = PointerType::Create(jive::bit32);
   FunctionType fcttype(
     {&jive::bit32, pt.get(), pt.get(), pt.get(), pt.get(), &mt},
     {&jive::bit32, &mt});
@@ -910,7 +910,7 @@ GammaTest::SetupRvsdg()
 
   fct->finalize({sum, ld2[1]});
 
-  graph->add_export(fct->output(), {ptrtype(fct->type()), "f"});
+  graph->add_export(fct->output(), {PointerType(fct->type()), "f"});
 
   /*
    * Assign nodes
@@ -927,7 +927,7 @@ ThetaTest::SetupRvsdg()
   using namespace jlm;
 
   MemoryStateType mt;
-  auto pt = ptrtype::create(jive::bit32);
+  auto pt = PointerType::Create(jive::bit32);
   FunctionType fcttype({&jive::bit32, pt.get(), &jive::bit32, &mt}, {&mt});
 
   auto module = RvsdgModule::Create(filepath(""), "", "");
@@ -961,7 +961,7 @@ ThetaTest::SetupRvsdg()
   thetanode->set_predicate(predicate);
 
   fct->finalize({s});
-  graph->add_export(fct->output(), {ptrtype(fct->type()), "f"});
+  graph->add_export(fct->output(), {PointerType(fct->type()), "f"});
 
   /*
    * Assign nodes
@@ -989,7 +989,7 @@ DeltaTest1::SetupRvsdg()
   {
     auto dfNode = delta::node::Create(
       graph->root(),
-      ptrtype(jive::bit32),
+      PointerType(jive::bit32),
       "f",
       linkage::external_linkage,
       "",
@@ -1002,7 +1002,7 @@ DeltaTest1::SetupRvsdg()
 
   auto SetupFunctionG = [&]()
   {
-    ptrtype pt(jive::bit32);
+    PointerType pt(jive::bit32);
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
     loopstatetype loopStateType;
@@ -1053,7 +1053,7 @@ DeltaTest1::SetupRvsdg()
       {cvf, iOStateArgument, st[0], loopStateArgument});
 
     auto lambdaOutput = lambda->finalize(callg);
-    graph->add_export(lambda->output(), {ptrtype(lambda->type()), "h"});
+    graph->add_export(lambda->output(), {PointerType(lambda->type()), "h"});
 
     return std::make_tuple(lambdaOutput, jive::node_output::node(callg[0]), jive::node_output::node(five));
   };
@@ -1091,7 +1091,7 @@ DeltaTest2::SetupRvsdg()
   {
     auto delta = delta::node::Create(
       graph->root(),
-      ptrtype(jive::bit32),
+      PointerType(jive::bit32),
       "d1",
       linkage::external_linkage,
       "",
@@ -1106,7 +1106,7 @@ DeltaTest2::SetupRvsdg()
   {
     auto delta = delta::node::Create(
       graph->root(),
-      ptrtype(jive::bit32),
+      PointerType(jive::bit32),
       "d2",
       linkage::external_linkage,
       "",
@@ -1173,7 +1173,7 @@ DeltaTest2::SetupRvsdg()
     st = StoreNode::Create(cvd2, b42, {callResults[1]}, 4);
 
     auto lambdaOutput = lambda->finalize(callResults);
-    graph->add_export(lambdaOutput, {ptrtype(lambda->type()), "f2"});
+    graph->add_export(lambdaOutput, {PointerType(lambda->type()), "f2"});
 
     return std::make_tuple(lambdaOutput, jive::node_output::node(callResults[0]));
   };
@@ -1264,13 +1264,13 @@ ImportTest::SetupRvsdg()
     st = StoreNode::Create(cvd2, b21, {callResults[1]}, 4);
 
     auto lambdaOutput = lambda->finalize(callResults);
-    graph->add_export(lambda->output(), {ptrtype(lambda->type()), "f2"});
+    graph->add_export(lambda->output(), {PointerType(lambda->type()), "f2"});
 
     return std::make_tuple(lambdaOutput, jive::node_output::node(callResults[0]));
   };
 
-  auto d1 = graph->add_import(impport(ptrtype(jive::bit32), "d1", linkage::external_linkage));
-  auto d2 = graph->add_import(impport(ptrtype(jive::bit32), "d2", linkage::external_linkage));
+  auto d1 = graph->add_import(impport(PointerType(jive::bit32), "d1", linkage::external_linkage));
+  auto d2 = graph->add_import(impport(PointerType(jive::bit32), "d2", linkage::external_linkage));
 
   auto f1 = SetupF1(d1);
   auto [f2, callF1] = SetupF2(f1, d1, d2);
@@ -1302,14 +1302,14 @@ PhiTest::SetupRvsdg()
 
   auto SetupFib = [&]()
   {
-    ptrtype pbit64(jive::bit64);
+    PointerType pbit64(jive::bit64);
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
     loopstatetype loopStateType;
     FunctionType functionType(
       {&jive::bit64, &pbit64, &iOStateType, &memoryStateType, &loopStateType},
       {&iOStateType, &memoryStateType, &loopStateType});
-    ptrtype pt(functionType);
+    PointerType pt(functionType);
 
     jlm::phi::builder pb;
     pb.begin(graph->root());
@@ -1387,7 +1387,7 @@ PhiTest::SetupRvsdg()
   auto SetupTestFunction = [&](phi::node * phiNode)
   {
     arraytype at(jive::bit64, 10);
-    ptrtype pbit64(jive::bit64);
+    PointerType pbit64(jive::bit64);
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
     loopstatetype loopStateType;
@@ -1418,7 +1418,7 @@ PhiTest::SetupRvsdg()
       {ten, gep, iOStateArgument, state, loopStateArgument});
 
     auto lambdaOutput = lambda->finalize(callResults);
-    graph->add_export(lambdaOutput, {ptrtype(functionType), "test"});
+    graph->add_export(lambdaOutput, {PointerType(functionType), "test"});
 
     return std::make_tuple(
       lambdaOutput,
@@ -1454,7 +1454,7 @@ ExternalMemoryTest::SetupRvsdg()
   using namespace jlm;
 
   MemoryStateType mt;
-  auto pt = ptrtype::create(jive::bit32);
+  auto pt = PointerType::Create(jive::bit32);
   FunctionType ft({pt.get(), pt.get(), &mt}, {&mt});
 
   auto module = RvsdgModule::Create(filepath(""), "", "");
@@ -1478,7 +1478,7 @@ ExternalMemoryTest::SetupRvsdg()
   auto storeTwo = StoreNode::Create(y, two, {storeOne[0]}, 4);
 
   LambdaF->finalize(storeTwo);
-  graph->add_export(LambdaF->output(), {ptrtype(LambdaF->type()), "f"});
+  graph->add_export(LambdaF->output(), {PointerType(LambdaF->type()), "f"});
 
   return module;
 }

@@ -286,7 +286,7 @@ convert(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-  auto type = convert_type(operation.GetPointerType().pointee_type(), ctx);
+  auto type = convert_type(operation.GetPointerType().GetElementType(), ctx);
 	auto loadInstruction = builder.CreateLoad(type, ctx.value(args[0]));
 	loadInstruction->setAlignment(llvm::Align(operation.GetAlignment()));
 	return loadInstruction;

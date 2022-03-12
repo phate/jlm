@@ -23,7 +23,7 @@ public:
 	~operation() override;
 
 	operation(
-		const ptrtype & type,
+		const PointerType & type,
 		const std::string & name,
 		const jlm::linkage & linkage,
     std::string section,
@@ -90,11 +90,11 @@ public:
 		return constant_;
 	}
 
-	const ptrtype &
+	const PointerType &
 	type() const noexcept
 	{
-		JLM_ASSERT(dynamic_cast<const ptrtype*>(type_.get()));
-		return *static_cast<const ptrtype*>(type_.get());
+		JLM_ASSERT(dynamic_cast<const PointerType*>(type_.get()));
+		return *static_cast<const PointerType*>(type_.get());
 	}
 
 private:
@@ -167,7 +167,7 @@ public:
 		return *static_cast<const delta::operation*>(&structural_node::operation());
 	}
 
-	const ptrtype &
+	const PointerType &
 	type() const noexcept
 	{
 		return operation().type();
@@ -252,7 +252,7 @@ public:
 	static node *
 	Create(
 		jive::region * parent,
-		const ptrtype & type,
+		const PointerType & type,
 		const std::string & name,
 		const jlm::linkage & linkage,
     std::string section,

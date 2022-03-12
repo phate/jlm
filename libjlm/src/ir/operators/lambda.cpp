@@ -200,7 +200,7 @@ node::finalize(const std::vector<jive::output*> & results)
 	for (const auto & origin : results)
 		lambda::result::create(origin);
 
-	return output::create(this, ptrtype(type()));
+	return output::create(this, PointerType(type()));
 }
 
 lambda::node *

@@ -47,7 +47,7 @@ convert_type(const jlm::FunctionType & type, context & ctx)
 }
 
 static inline llvm::PointerType *
-convert_type(const jlm::ptrtype & type, context & ctx)
+convert_type(const jlm::PointerType & type, context & ctx)
 {
 	auto t = convert_type(*static_cast<const jive::type*>(&type), ctx);
 	JLM_ASSERT(t->getTypeID() == llvm::Type::PointerTyID);

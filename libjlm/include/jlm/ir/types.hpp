@@ -149,63 +149,69 @@ private:
   std::vector<std::unique_ptr<jive::type>> ArgumentTypes_;
 };
 
-/* pointer type */
-
-class ptrtype final : public jive::valuetype {
+/** \brief PointerType class
+ *
+ * This operator is the Jlm equivalent of LLVM's PointerType class.
+ */
+class PointerType final : public jive::valuetype {
 public:
-	virtual
-	~ptrtype();
+  ~PointerType() noexcept override;
 
-	inline
-	ptrtype(const jive::valuetype & ptype)
-	: jive::valuetype()
-	, ptype_(ptype.copy())
-	{}
+  explicit
+  PointerType(const jive::valuetype & elementType)
+    : jive::valuetype()
+    , ElementType_(elementType.copy())
+  {}
 
-	inline
-	ptrtype(const jlm::ptrtype & other)
-	: jive::valuetype(other)
-	, ptype_(other.ptype_->copy())
-	{}
+  PointerType(const PointerType & other)
+    : jive::valuetype(other)
+    , ElementType_(other.ElementType_->copy())
+  {}
 
-	inline
-	ptrtype(jlm::ptrtype && other)
-	: jive::valuetype(other)
-	, ptype_(std::move(other.ptype_))
-	{}
+  PointerType(PointerType && other) noexcept
+    : jive::valuetype(other)
+    , ElementType_(std::move(other.ElementType_))
+  {}
 
-	inline ptrtype &
-	operator=(const jlm::ptrtype & other) = delete;
+  PointerType &
+  operator=(const PointerType&) = delete;
 
-	inline ptrtype &
-	operator=(jlm::ptrtype &&) = delete;
+  PointerType &
+  operator=(PointerType&&) = delete;
 
-	virtual std::string
-	debug_string() const override;
+  [[nodiscard]] std::string
+  debug_string() const override;
 
-	virtual bool
-	operator==(const jive::type & other) const noexcept override;
+  bool
+  operator==(const jive::type & other) const noexcept override;
 
-	virtual std::unique_ptr<jive::type>
-	copy() const override;
+  [[nodiscard]] std::unique_ptr<jive::type>
+  copy() const override;
 
-	inline const jive::valuetype &
-	pointee_type() const noexcept
-	{
-		return *static_cast<const jive::valuetype*>(ptype_.get());
-	}
+  [[nodiscard]] const jive::valuetype &
+  GetElementType() const noexcept
+  {
+    return *AssertedCast<const jive::valuetype>(ElementType_.get());
+  }
 
-	static std::unique_ptr<jive::type>
-	create(const jive::type & type)
-	{
-		auto vt = dynamic_cast<const jive::valuetype*>(&type);
-		if (!vt) throw jlm::error("expected value type.");
-
-		return std::unique_ptr<jive::type>(new jlm::ptrtype(*vt));
-	}
+  static std::unique_ptr<jive::type>
+  Create(const jive::type & type)
+  {
+    auto & valueType = CheckAndExtractType(type);
+    return std::unique_ptr<jive::type>(new PointerType(valueType));
+  }
 
 private:
-	std::unique_ptr<jive::type> ptype_;
+  static const jive::valuetype &
+  CheckAndExtractType(const jive::type & type)
+  {
+    if (auto valueType = dynamic_cast<const jive::valuetype*>(&type))
+      return *valueType;
+
+    throw error("Expected value type.");
+  }
+
+  std::unique_ptr<jive::type> ElementType_;
 };
 
 /* array type */
