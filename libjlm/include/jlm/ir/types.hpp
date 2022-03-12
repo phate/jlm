@@ -625,6 +625,32 @@ public:
   }
 };
 
+template <class ELEMENTYPE> static inline bool
+IsOrContains(const jive::type & type)
+{
+  if (jive::is<ELEMENTYPE>(type))
+    return true;
+
+  if (auto arrayType = dynamic_cast<const arraytype*>(&type))
+    return IsOrContains<ELEMENTYPE>(arrayType->element_type());
+
+  if (auto structType = dynamic_cast<const structtype*>(&type)) {
+    auto structDeclaration = structType->declaration();
+    for (size_t n = 0; n < structDeclaration->nelements(); n++)
+      return IsOrContains<ELEMENTYPE>(structDeclaration->element(n));
+
+    return false;
+  }
+
+  if (auto vectorType = dynamic_cast<const vectortype*>(&type))
+    return IsOrContains<ELEMENTYPE>(vectorType->type());
+
+  if (auto pointerType = dynamic_cast<const PointerType*>(&type))
+    return IsOrContains<ELEMENTYPE>(pointerType->GetElementType());
+
+  return false;
+}
+
 }
 
 #endif
