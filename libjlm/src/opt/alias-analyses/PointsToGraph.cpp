@@ -14,156 +14,132 @@
 #include <typeindex>
 #include <unordered_map>
 
-namespace jlm {
-namespace aa {
-
-/* points-to graph */
+namespace jlm::aa {
 
 PointsToGraph::PointsToGraph()
 {
-	memunknown_ = std::unique_ptr<PointsToGraph::UnknownNode>(new PointsToGraph::UnknownNode(*this));
-  ExternalMemory_ = ExternalMemoryNode::Create(*this);
+  UnknownMemoryNode_ = std::unique_ptr<PointsToGraph::UnknownNode>(new PointsToGraph::UnknownNode(*this));
+  ExternalMemoryNode_ = ExternalMemoryNode::Create(*this);
 }
 
-PointsToGraph::allocnode_range
-PointsToGraph::allocnodes()
+PointsToGraph::AllocatorNodeRange
+PointsToGraph::AllocatorNodes()
 {
-	return {allocnodes_.begin(), allocnodes_.end()};
+  return {AllocatorNodeIterator(AllocatorNodes_.begin()), AllocatorNodeIterator(AllocatorNodes_.end())};
 }
 
-PointsToGraph::allocnode_constrange
-PointsToGraph::allocnodes() const
+PointsToGraph::AllocatorNodeConstRange
+PointsToGraph::AllocatorNodes() const
 {
-	return {allocnodes_.begin(), allocnodes_.end()};
+  return {AllocatorNodeConstIterator(AllocatorNodes_.begin()), AllocatorNodeConstIterator(AllocatorNodes_.end())};
 }
 
-PointsToGraph::impnode_range
-PointsToGraph::impnodes()
+PointsToGraph::ImportNodeRange
+PointsToGraph::ImportNodes()
 {
-	return {impnodes_.begin(), impnodes_.end()};
+  return {ImportNodeIterator(ImportNodes_.begin()), ImportNodeIterator(ImportNodes_.end())};
 }
 
-PointsToGraph::impnode_constrange
-PointsToGraph::impnodes() const
+PointsToGraph::ImportNodeConstRange
+PointsToGraph::ImportNodes() const
 {
-	return {impnodes_.begin(), impnodes_.end()};
+  return {ImportNodeConstIterator(ImportNodes_.begin()), ImportNodeConstIterator(ImportNodes_.end())};
 }
 
-PointsToGraph::regnode_range
-PointsToGraph::regnodes()
+PointsToGraph::RegisterNodeRange
+PointsToGraph::RegisterNodes()
 {
-	return {regnodes_.begin(), regnodes_.end()};
+  return {RegisterNodeIterator(RegisterNodes_.begin()), RegisterNodeIterator(RegisterNodes_.end())};
 }
 
-PointsToGraph::regnode_constrange
-PointsToGraph::regnodes() const
+PointsToGraph::RegisterNodeConstRange
+PointsToGraph::RegisterNodes() const
 {
-	return {regnodes_.begin(), regnodes_.end()};
-}
-
-PointsToGraph::iterator
-PointsToGraph::begin()
-{
-	auto anodes = allocnodes();
-	auto inodes = impnodes();
-	auto rnodes = regnodes();
-	return {anodes.begin(), inodes.begin(), rnodes.begin(), anodes, inodes, rnodes};
-}
-
-PointsToGraph::constiterator
-PointsToGraph::begin() const
-{
-	auto anodes = allocnodes();
-	auto inodes = impnodes();
-	auto rnodes = regnodes();
-	return {anodes.begin(), inodes.begin(), rnodes.begin(), anodes, inodes, rnodes};
-}
-
-PointsToGraph::iterator
-PointsToGraph::end()
-{
-	auto anodes = allocnodes();
-	auto inodes = impnodes();
-	auto rnodes = regnodes();
-	return {anodes.end(), inodes.end(), rnodes.end(), anodes, inodes, rnodes};
-}
-
-PointsToGraph::constiterator
-PointsToGraph::end() const
-{
-	auto anodes = allocnodes();
-	auto inodes = impnodes();
-	auto rnodes = regnodes();
-	return {anodes.end(), inodes.end(), rnodes.end(), anodes, inodes, rnodes};
+  return {RegisterNodeConstIterator(RegisterNodes_.begin()), RegisterNodeConstIterator(RegisterNodes_.end())};
 }
 
 PointsToGraph::AllocatorNode &
-PointsToGraph::add(std::unique_ptr<PointsToGraph::AllocatorNode> node)
+PointsToGraph::AddAllocatorNode(std::unique_ptr<PointsToGraph::AllocatorNode> node)
 {
-	auto tmp = node.get();
-	allocnodes_[node->node()] = std::move(node);
+  auto tmp = node.get();
+  AllocatorNodes_[node->node()] = std::move(node);
 
-	return *tmp;
+  return *tmp;
 }
 
 PointsToGraph::RegisterNode &
-PointsToGraph::add(std::unique_ptr<PointsToGraph::RegisterNode> node)
+PointsToGraph::AddRegisterNode(std::unique_ptr<PointsToGraph::RegisterNode> node)
 {
   auto tmp = node.get();
-	regnodes_[node->output()] = std::move(node);
+  RegisterNodes_[node->output()] = std::move(node);
 
-	return *tmp;
+  return *tmp;
 }
 
 PointsToGraph::ImportNode &
-PointsToGraph::add(std::unique_ptr<PointsToGraph::ImportNode> node)
+PointsToGraph::AddImportNode(std::unique_ptr<PointsToGraph::ImportNode> node)
 {
-	auto tmp = node.get();
-	impnodes_[node->argument()] = std::move(node);
+  auto tmp = node.get();
+  ImportNodes_[node->argument()] = std::move(node);
 
-	return *tmp;
+  return *tmp;
 }
 
 std::string
-PointsToGraph::ToDot(const PointsToGraph & ptg)
+PointsToGraph::ToDot(const PointsToGraph & pointsToGraph)
 {
-	auto shape = [](const PointsToGraph::Node & node) {
-		static std::unordered_map<std::type_index, std::string> shapes({
-		  {typeid(AllocatorNode), "box"}
-	  , {typeid(ImportNode),    "box"}
-		, {typeid(RegisterNode),  "oval"}
-		, {typeid(UnknownNode),   "box"}
-    , {typeid(ExternalMemoryNode), "box"}
-		});
+  auto nodeShape = [](const PointsToGraph::Node & node) {
+    static std::unordered_map<std::type_index, std::string> shapes
+      ({
+         {typeid(AllocatorNode),      "box"},
+         {typeid(ImportNode),         "box"},
+         {typeid(RegisterNode),       "oval"},
+         {typeid(UnknownNode),        "box"},
+         {typeid(ExternalMemoryNode), "box"}
+       });
 
-		if (shapes.find(typeid(node)) != shapes.end())
-			return shapes[typeid(node)];
+    if (shapes.find(typeid(node)) != shapes.end())
+      return shapes[typeid(node)];
 
-		JLM_UNREACHABLE("Unknown points-to graph Node type.");
-	};
+    JLM_UNREACHABLE("Unknown points-to graph Node type.");
+  };
 
-	auto nodestring = [&](const PointsToGraph::Node & node) {
-		return strfmt("{ ", (intptr_t)&node, " ["
-			, "label = \"", node.debug_string(), "\" "
-			, "shape = \"", shape(node), "\"]; }\n");
-	};
+  auto nodeString = [&](const PointsToGraph::Node & node) {
+    return strfmt("{ ", (intptr_t)&node, " ["
+      , "label = \"", node.debug_string(), "\" "
+      , "nodeShape = \"", nodeShape(node), "\"]; }\n");
+  };
 
-	auto edgestring = [](const PointsToGraph::Node & node, const PointsToGraph::Node & target)
-	{
-		return strfmt((intptr_t)&node, " -> ", (intptr_t)&target, "\n");
-	};
+  auto edgeString = [](const PointsToGraph::Node & node, const PointsToGraph::Node & target)
+  {
+    return strfmt((intptr_t)&node, " -> ", (intptr_t)&target, "\n");
+  };
 
-	std::string dot("digraph PointsToGraph {\n");
-	for (auto & node : ptg) {
-		dot += nodestring(node);
-		for (auto & target : node.targets())
-			dot += edgestring(node, target);
-	}
-	dot += nodestring(ptg.memunknown());
-  dot += nodestring(ptg.GetExternalMemoryNode());
-	dot += "}\n";
+  auto printNodeAndEdges = [&](const PointsToGraph::Node & node)
+  {
+    std::string dot;
+    dot += nodeString(node);
+    for (auto & target : node.targets())
+      dot += edgeString(node, target);
 
-	return dot;
+    return dot;
+  };
+
+  std::string dot("digraph PointsToGraph {\n");
+  for (auto & registerNode : pointsToGraph.RegisterNodes())
+    dot += printNodeAndEdges(registerNode);
+
+  for (auto & allocatorNode : pointsToGraph.AllocatorNodes())
+    dot += printNodeAndEdges(allocatorNode);
+
+  for (auto & importNode : pointsToGraph.ImportNodes())
+    dot += printNodeAndEdges(importNode);
+
+  dot += nodeString(pointsToGraph.GetUnknownMemoryNode());
+  dot += nodeString(pointsToGraph.GetExternalMemoryNode());
+  dot += "}\n";
+
+  return dot;
 }
 
 /* PointsToGraph::Node */
@@ -301,4 +277,4 @@ PointsToGraph::ExternalMemoryNode::debug_string() const
   return "ExternalMemory";
 }
 
-}}
+}

@@ -33,165 +33,159 @@ namespace aa {
 *
 */
 class PointsToGraph final {
-	class constiterator;
-	class iterator;
+  class AllocatorNodeIterator;
+  class AllocatorNodeConstIterator;
+
+  class ImportNodeIterator;
+  class ImportNodeConstIterator;
+
+  class RegisterNodeIterator;
+  class RegisterNodeConstIterator;
 
 public:
-	class AllocatorNode;
-	class ImportNode;
-	class MemoryNode;
-	class Node;
-	class RegisterNode;
-	class UnknownNode;
+  class AllocatorNode;
+  class ImportNode;
+  class MemoryNode;
+  class Node;
+  class RegisterNode;
+  class UnknownNode;
   class ExternalMemoryNode;
 
-	using allocnodemap = std::unordered_map<const jive::node*, std::unique_ptr<PointsToGraph::AllocatorNode>>;
-	using impnodemap = std::unordered_map<const jive::argument*, std::unique_ptr<PointsToGraph::ImportNode>>;
-	using regnodemap = std::unordered_map<const jive::output*, std::unique_ptr<PointsToGraph::RegisterNode>>;
+  using AllocatorNodeMap = std::unordered_map<const jive::node*, std::unique_ptr<PointsToGraph::AllocatorNode>>;
+  using ImportNodeMap = std::unordered_map<const jive::argument*, std::unique_ptr<PointsToGraph::ImportNode>>;
+  using RegisterNodeMap = std::unordered_map<const jive::output*, std::unique_ptr<PointsToGraph::RegisterNode>>;
 
-	using allocnode_range = iterator_range<allocnodemap::iterator>;
-	using allocnode_constrange = iterator_range<allocnodemap::const_iterator>;
+  using AllocatorNodeRange = iterator_range<AllocatorNodeIterator>;
+  using AllocatorNodeConstRange = iterator_range<AllocatorNodeConstIterator>;
 
-	using impnode_range = iterator_range<impnodemap::iterator>;
-	using impnode_constrange = iterator_range<impnodemap::const_iterator>;
+  using ImportNodeRange = iterator_range<ImportNodeIterator>;
+  using ImportNodeConstRange = iterator_range<ImportNodeConstIterator>;
 
-	using regnode_range = iterator_range<regnodemap::iterator>;
-	using regnode_constrange = iterator_range<regnodemap::const_iterator>;
+  using RegisterNodeRange = iterator_range<RegisterNodeIterator>;
+  using RegisterNodeConstRange = iterator_range<RegisterNodeConstIterator>;
 
 private:
-	PointsToGraph();
+  PointsToGraph();
 
 public:
-	PointsToGraph(const PointsToGraph&) = delete;
+  PointsToGraph(const PointsToGraph&) = delete;
 
-	PointsToGraph(PointsToGraph&&) = delete;
+  PointsToGraph(PointsToGraph&&) = delete;
 
-	PointsToGraph &
-	operator=(const PointsToGraph&) = delete;
+  PointsToGraph &
+  operator=(const PointsToGraph&) = delete;
 
-	PointsToGraph &
-	operator=(PointsToGraph&&) = delete;
+  PointsToGraph &
+  operator=(PointsToGraph&&) = delete;
 
-	allocnode_range
-	allocnodes();
+  AllocatorNodeRange
+  AllocatorNodes();
 
-	allocnode_constrange
-	allocnodes() const;
+  AllocatorNodeConstRange
+  AllocatorNodes() const;
 
-	impnode_range
-	impnodes();
+  ImportNodeRange
+  ImportNodes();
 
-	impnode_constrange
-	impnodes() const;
+  ImportNodeConstRange
+  ImportNodes() const;
 
-	regnode_range
-	regnodes();
+  RegisterNodeRange
+  RegisterNodes();
 
-	regnode_constrange
-	regnodes() const;
+  RegisterNodeConstRange
+  RegisterNodes() const;
 
-	iterator
-	begin();
+  size_t
+  NumAllocatorNodes() const noexcept
+  {
+    return AllocatorNodes_.size();
+  }
 
-	constiterator
-	begin() const;
+  size_t
+  NumImportNodes() const noexcept
+  {
+    return ImportNodes_.size();
+  }
 
-	iterator
-	end();
+  size_t
+  NumRegisterNodes() const noexcept
+  {
+    return RegisterNodes_.size();
+  }
 
-	constiterator
-	end() const;
+  size_t
+  NumNodes() const noexcept
+  {
+    return NumAllocatorNodes() + NumImportNodes() + NumRegisterNodes();
+  }
 
-	size_t
-	nallocnodes() const noexcept
-	{
-		return allocnodes_.size();
-	}
-
-	size_t
-	nimpnodes() const noexcept
-	{
-		return impnodes_.size();
-	}
-
-	size_t
-	nregnodes() const noexcept
-	{
-		return regnodes_.size();
-	}
-
-	size_t
-	nnodes() const noexcept
-	{
-		return nallocnodes() + nimpnodes() + nregnodes();
-	}
-
-	PointsToGraph::UnknownNode &
-	memunknown() const noexcept
-	{
-		return *memunknown_;
-	}
+  PointsToGraph::UnknownNode &
+  GetUnknownMemoryNode() const noexcept
+  {
+    return *UnknownMemoryNode_;
+  }
 
   ExternalMemoryNode &
   GetExternalMemoryNode() const noexcept
   {
-    return *ExternalMemory_;
+    return *ExternalMemoryNode_;
   }
 
-	const PointsToGraph::AllocatorNode &
-	GetAllocatorNode(const jive::node * node) const
-	{
-		auto it = allocnodes_.find(node);
-		if (it == allocnodes_.end())
-			throw error("Cannot find memory node in points-to graph.");
+  const PointsToGraph::AllocatorNode &
+  GetAllocatorNode(const jive::node & node) const
+  {
+    auto it = AllocatorNodes_.find(&node);
+    if (it == AllocatorNodes_.end())
+      throw error("Cannot find memory node in points-to graph.");
 
-		return *it->second;
-	}
+    return *it->second;
+  }
 
-	const PointsToGraph::ImportNode &
-	GetImportNode(const jive::argument * argument) const
-	{
-		auto it = impnodes_.find(argument);
-		if (it == impnodes_.end())
-			throw error("Cannot find import node in points-to graph.");
+  const PointsToGraph::ImportNode &
+  GetImportNode(const jive::argument & argument) const
+  {
+    auto it = ImportNodes_.find(&argument);
+    if (it == ImportNodes_.end())
+      throw error("Cannot find import node in points-to graph.");
 
-		return *it->second;
-	}
+    return *it->second;
+  }
 
-	const PointsToGraph::RegisterNode &
-	GetRegisterNode(const jive::output * output) const
-	{
-		auto it = regnodes_.find(output);
-		if (it == regnodes_.end())
-			throw error("Cannot find register node in points-to graph.");
+  const PointsToGraph::RegisterNode &
+  GetRegisterNode(const jive::output & output) const
+  {
+    auto it = RegisterNodes_.find(&output);
+    if (it == RegisterNodes_.end())
+      throw error("Cannot find register node in points-to graph.");
 
-		return *it->second;
-	}
+    return *it->second;
+  }
 
-	PointsToGraph::AllocatorNode &
-	add(std::unique_ptr<PointsToGraph::AllocatorNode> node);
+  PointsToGraph::AllocatorNode &
+  AddAllocatorNode(std::unique_ptr<PointsToGraph::AllocatorNode> node);
 
-	PointsToGraph::RegisterNode &
-	add(std::unique_ptr<PointsToGraph::RegisterNode> node);
+  PointsToGraph::RegisterNode &
+  AddRegisterNode(std::unique_ptr<PointsToGraph::RegisterNode> node);
 
-	PointsToGraph::ImportNode &
-	add(std::unique_ptr<PointsToGraph::ImportNode> node);
+  PointsToGraph::ImportNode &
+  AddImportNode(std::unique_ptr<PointsToGraph::ImportNode> node);
 
-	static std::string
-	ToDot(const PointsToGraph & ptg);
+  static std::string
+  ToDot(const PointsToGraph & pointsToGraph);
 
-	static std::unique_ptr<PointsToGraph>
-	Create()
-	{
-		return std::unique_ptr<PointsToGraph>(new PointsToGraph());
-	}
+  static std::unique_ptr<PointsToGraph>
+  Create()
+  {
+    return std::unique_ptr<PointsToGraph>(new PointsToGraph());
+  }
 
 private:
-	impnodemap impnodes_;
-	regnodemap regnodes_;
-	allocnodemap allocnodes_;
-	std::unique_ptr<PointsToGraph::UnknownNode> memunknown_;
-  std::unique_ptr<ExternalMemoryNode> ExternalMemory_;
+  ImportNodeMap ImportNodes_;
+  RegisterNodeMap RegisterNodes_;
+  AllocatorNodeMap AllocatorNodes_;
+  std::unique_ptr<PointsToGraph::UnknownNode> UnknownMemoryNode_;
+  std::unique_ptr<ExternalMemoryNode> ExternalMemoryNode_;
 };
 
 
@@ -307,7 +301,7 @@ public:
     const jive::output * output)
 	{
 		auto node = std::unique_ptr<PointsToGraph::RegisterNode>(new RegisterNode(ptg, output));
-		return ptg.add(std::move(node));
+		return ptg.AddRegisterNode(std::move(node));
 	}
 
 private:
@@ -361,7 +355,7 @@ public:
     const jive::node * node)
 	{
 		auto n = std::unique_ptr<PointsToGraph::AllocatorNode>(new AllocatorNode(ptg, node));
-		return ptg.add(std::move(n));
+		return ptg.AddAllocatorNode(std::move(n));
 	}
 
 private:
@@ -401,7 +395,7 @@ public:
     const jive::argument * argument)
 	{
 		auto n = std::unique_ptr<PointsToGraph::ImportNode>(new ImportNode(ptg, argument));
-		return ptg.add(std::move(n));
+		return ptg.AddImportNode(std::move(n));
 	}
 
 private:
@@ -449,202 +443,383 @@ private:
   debug_string() const override;
 };
 
-/** \brief PointsTo graph node iterator
+/** \brief Points-to graph allocator node iterator
 */
-class PointsToGraph::iterator final : public std::iterator<std::forward_iterator_tag,
-	PointsToGraph::Node*, ptrdiff_t> {
+class PointsToGraph::AllocatorNodeIterator final : public std::iterator<std::forward_iterator_tag,
+  PointsToGraph::AllocatorNode*, ptrdiff_t> {
 
-	friend PointsToGraph;
+  friend PointsToGraph;
 
-	iterator(
-		allocnodemap::iterator anit,
-		impnodemap::iterator init,
-		regnodemap::iterator rnit,
-		/* FIXME: the full ranges are unnecessary here */
-		const allocnode_range & anrange,
-		const impnode_range & inrange,
-		const regnode_range & rnrange)
-	: anit_(anit)
-	, init_(init)
-	, rnit_(rnit)
-	, anrange_(anrange)
-	, inrange_(inrange)
-	, rnrange_(rnrange)
-	{}
+  explicit
+  AllocatorNodeIterator(const AllocatorNodeMap::iterator & it)
+    : it_(it)
+  {}
 
 public:
-	PointsToGraph::Node *
-	node() const noexcept
-	{
-		if (anit_ != anrange_.end())
-			return anit_->second.get();
+  [[nodiscard]] PointsToGraph::AllocatorNode *
+  AllocatorNode() const noexcept
+  {
+    return it_->second.get();
+  }
 
-		if (init_ != inrange_.end())
-			return init_->second.get();
+  PointsToGraph::AllocatorNode &
+  operator*() const
+  {
+    JLM_ASSERT(AllocatorNode() != nullptr);
+    return *AllocatorNode();
+  }
 
-		return rnit_->second.get();
-	}
+  PointsToGraph::AllocatorNode *
+  operator->() const
+  {
+    return AllocatorNode();
+  }
 
-	PointsToGraph::Node &
-	operator*() const
-	{
-		JLM_ASSERT(node() != nullptr);
-		return *node();
-	}
+  AllocatorNodeIterator &
+  operator++()
+  {
+    ++it_;
+    return *this;
+  }
 
-	PointsToGraph::Node *
-	operator->() const
-	{
-		return node();
-	}
+  AllocatorNodeIterator
+  operator++(int)
+  {
+    AllocatorNodeIterator tmp = *this;
+    ++*this;
+    return tmp;
+  }
 
-	iterator &
-	operator++()
-	{
-		if (anit_ != anrange_.end()) {
-			++anit_;
-			return *this;
-		}
+  bool
+  operator==(const AllocatorNodeIterator & other) const
+  {
+    return it_ == other.it_;
+  }
 
-		if (init_ != inrange_.end()) {
-			++init_;
-			return *this;
-		}
-
-		++rnit_;
-		return *this;
-	}
-
-	iterator
-	operator++(int)
-	{
-		iterator tmp = *this;
-		++*this;
-		return tmp;
-	}
-
-	bool
-	operator==(const iterator & other) const
-	{
-		return anit_ == other.anit_
-		    && init_ == other.init_
-		    && rnit_ == other.rnit_;
-	}
-
-	bool
-	operator!=(const iterator & other) const
-	{
-		return !operator==(other);
-	}
+  bool
+  operator!=(const AllocatorNodeIterator & other) const
+  {
+    return !operator==(other);
+  }
 
 private:
-	allocnodemap::iterator anit_;
-	impnodemap::iterator init_;
-	regnodemap::iterator rnit_;
-
-	allocnode_range anrange_;
-	impnode_range inrange_;
-	regnode_range rnrange_;
+  AllocatorNodeMap::iterator it_;
 };
 
-/** \brief PointsTo graph node const iterator
+/** \brief Points-to graph allocator node const iterator
 */
-class PointsToGraph::constiterator final : public std::iterator<std::forward_iterator_tag,
-	const PointsToGraph::Node*, ptrdiff_t> {
+class PointsToGraph::AllocatorNodeConstIterator final : public std::iterator<std::forward_iterator_tag,
+  const PointsToGraph::AllocatorNode*, ptrdiff_t> {
 
-	friend PointsToGraph;
+  friend PointsToGraph;
 
-	constiterator(
-		allocnodemap::const_iterator anit,
-		impnodemap::const_iterator init,
-		regnodemap::const_iterator rnit,
-		/* FIXME: the full ranges are unnecessary here */
-		const allocnode_constrange & anrange,
-		const impnode_constrange & inrange,
-		const regnode_constrange & rnrange)
-	: anit_(anit)
-	, init_(init)
-	, rnit_(rnit)
-	, anrange_(anrange)
-	, inrange_(inrange)
-	, rnrange_(rnrange)
-	{}
+  explicit
+  AllocatorNodeConstIterator(const AllocatorNodeMap::const_iterator & it)
+    : it_(it)
+  {}
 
 public:
-	const PointsToGraph::Node *
-	node() const noexcept
-	{
-		if (anit_ != anrange_.end())
-			return anit_->second.get();
+  [[nodiscard]] const PointsToGraph::AllocatorNode *
+  AllocatorNode() const noexcept
+  {
+    return it_->second.get();
+  }
 
-		if (init_ != inrange_.end())
-			return init_->second.get();
+  const PointsToGraph::AllocatorNode &
+  operator*() const
+  {
+    JLM_ASSERT(AllocatorNode() != nullptr);
+    return *AllocatorNode();
+  }
 
-		return rnit_->second.get();
-	}
+  const PointsToGraph::AllocatorNode *
+  operator->() const
+  {
+    return AllocatorNode();
+  }
 
-	const PointsToGraph::Node &
-	operator*() const
-	{
-		JLM_ASSERT(node() != nullptr);
-		return *node();
-	}
+  AllocatorNodeConstIterator &
+  operator++()
+  {
+    ++it_;
+    return *this;
+  }
 
-	const PointsToGraph::Node *
-	operator->() const
-	{
-		return node();
-	}
+  AllocatorNodeConstIterator
+  operator++(int)
+  {
+    AllocatorNodeConstIterator tmp = *this;
+    ++*this;
+    return tmp;
+  }
 
-	constiterator &
-	operator++()
-	{
-		if (anit_ != anrange_.end()) {
-			++anit_;
-			return *this;
-		}
+  bool
+  operator==(const AllocatorNodeConstIterator & other) const
+  {
+    return it_ == other.it_;
+  }
 
-		if (init_ != inrange_.end()) {
-			++init_;
-			return *this;
-		}
-
-		++rnit_;
-		return *this;
-	}
-
-	constiterator
-	operator++(int)
-	{
-		constiterator tmp = *this;
-		++*this;
-		return tmp;
-	}
-
-	bool
-	operator==(const constiterator & other) const
-	{
-		return anit_ == other.anit_
-		    && init_ == other.init_
-		    && rnit_ == other.rnit_;
-	}
-
-	bool
-	operator!=(const constiterator & other) const
-	{
-		return !operator==(other);
-	}
+  bool
+  operator!=(const AllocatorNodeConstIterator & other) const
+  {
+    return !operator==(other);
+  }
 
 private:
-	allocnodemap::const_iterator anit_;
-	impnodemap::const_iterator init_;
-	regnodemap::const_iterator rnit_;
-
-	allocnode_constrange anrange_;
-	impnode_constrange inrange_;
-	regnode_constrange rnrange_;
+  AllocatorNodeMap::const_iterator it_;
 };
 
+/** \brief Points-to graph import node iterator
+*/
+class PointsToGraph::ImportNodeIterator final : public std::iterator<std::forward_iterator_tag,
+  PointsToGraph::ImportNode*, ptrdiff_t> {
+
+  friend PointsToGraph;
+
+  explicit
+  ImportNodeIterator(const ImportNodeMap::iterator & it)
+    : it_(it)
+  {}
+
+public:
+  [[nodiscard]] PointsToGraph::ImportNode *
+  ImportNode() const noexcept
+  {
+    return it_->second.get();
+  }
+
+  PointsToGraph::ImportNode &
+  operator*() const
+  {
+    JLM_ASSERT(ImportNode() != nullptr);
+    return *ImportNode();
+  }
+
+  PointsToGraph::ImportNode *
+  operator->() const
+  {
+    return ImportNode();
+  }
+
+  ImportNodeIterator &
+  operator++()
+  {
+    ++it_;
+    return *this;
+  }
+
+  ImportNodeIterator
+  operator++(int)
+  {
+    ImportNodeIterator tmp = *this;
+    ++*this;
+    return tmp;
+  }
+
+  bool
+  operator==(const ImportNodeIterator & other) const
+  {
+    return it_ == other.it_;
+  }
+
+  bool
+  operator!=(const ImportNodeIterator & other) const
+  {
+    return !operator==(other);
+  }
+
+private:
+  ImportNodeMap::iterator it_;
+};
+
+/** \brief Points-to graph import node const iterator
+*/
+class PointsToGraph::ImportNodeConstIterator final : public std::iterator<std::forward_iterator_tag,
+  const PointsToGraph::ImportNode*, ptrdiff_t> {
+
+  friend PointsToGraph;
+
+  explicit
+  ImportNodeConstIterator(const ImportNodeMap::const_iterator & it)
+    : it_(it)
+  {}
+
+public:
+  [[nodiscard]] const PointsToGraph::ImportNode *
+  ImportNode() const noexcept
+  {
+    return it_->second.get();
+  }
+
+  const PointsToGraph::ImportNode &
+  operator*() const
+  {
+    JLM_ASSERT(ImportNode() != nullptr);
+    return *ImportNode();
+  }
+
+  const PointsToGraph::ImportNode *
+  operator->() const
+  {
+    return ImportNode();
+  }
+
+  ImportNodeConstIterator &
+  operator++()
+  {
+    ++it_;
+    return *this;
+  }
+
+  ImportNodeConstIterator
+  operator++(int)
+  {
+    ImportNodeConstIterator tmp = *this;
+    ++*this;
+    return tmp;
+  }
+
+  bool
+  operator==(const ImportNodeConstIterator & other) const
+  {
+    return it_ == other.it_;
+  }
+
+  bool
+  operator!=(const ImportNodeConstIterator & other) const
+  {
+    return !operator==(other);
+  }
+
+private:
+  ImportNodeMap::const_iterator it_;
+};
+
+/** \brief Points-to graph register node iterator
+*/
+class PointsToGraph::RegisterNodeIterator final : public std::iterator<std::forward_iterator_tag,
+  PointsToGraph::RegisterNode*, ptrdiff_t> {
+
+  friend PointsToGraph;
+
+  explicit
+  RegisterNodeIterator(const RegisterNodeMap::iterator & it)
+    : it_(it)
+  {}
+
+public:
+  [[nodiscard]] PointsToGraph::RegisterNode *
+  RegisterNode() const noexcept
+  {
+    return it_->second.get();
+  }
+
+  PointsToGraph::RegisterNode &
+  operator*() const
+  {
+    JLM_ASSERT(RegisterNode() != nullptr);
+    return *RegisterNode();
+  }
+
+  PointsToGraph::RegisterNode *
+  operator->() const
+  {
+    return RegisterNode();
+  }
+
+  RegisterNodeIterator &
+  operator++()
+  {
+    ++it_;
+    return *this;
+  }
+
+  RegisterNodeIterator
+  operator++(int)
+  {
+    RegisterNodeIterator tmp = *this;
+    ++*this;
+    return tmp;
+  }
+
+  bool
+  operator==(const RegisterNodeIterator & other) const
+  {
+    return it_ == other.it_;
+  }
+
+  bool
+  operator!=(const RegisterNodeIterator & other) const
+  {
+    return !operator==(other);
+  }
+
+private:
+  RegisterNodeMap::iterator it_;
+};
+
+/** \brief Points-to graph register node const iterator
+*/
+class PointsToGraph::RegisterNodeConstIterator final : public std::iterator<std::forward_iterator_tag,
+  const PointsToGraph::RegisterNode*, ptrdiff_t> {
+
+  friend PointsToGraph;
+
+  explicit
+  RegisterNodeConstIterator(const RegisterNodeMap::const_iterator & it)
+    : it_(it)
+  {}
+
+public:
+  [[nodiscard]] const PointsToGraph::RegisterNode *
+  RegisterNode() const noexcept
+  {
+    return it_->second.get();
+  }
+
+  const PointsToGraph::RegisterNode &
+  operator*() const
+  {
+    JLM_ASSERT(RegisterNode() != nullptr);
+    return *RegisterNode();
+  }
+
+  const PointsToGraph::RegisterNode *
+  operator->() const
+  {
+    return RegisterNode();
+  }
+
+  RegisterNodeConstIterator &
+  operator++()
+  {
+    ++it_;
+    return *this;
+  }
+
+  RegisterNodeConstIterator
+  operator++(int)
+  {
+    RegisterNodeConstIterator tmp = *this;
+    ++*this;
+    return tmp;
+  }
+
+  bool
+  operator==(const RegisterNodeConstIterator & other) const
+  {
+    return it_ == other.it_;
+  }
+
+  bool
+  operator!=(const RegisterNodeConstIterator & other) const
+  {
+    return !operator==(other);
+  }
+
+private:
+  RegisterNodeMap::const_iterator it_;
+};
 
 /** \brief Points-to graph edge iterator
 */

@@ -98,10 +98,10 @@ public:
   stop(const PointsToGraph & pointsToGraph)
   {
     timer_.stop();
-    numRegisterNodes_ = pointsToGraph.nregnodes();
-    numAllocatorNodes_ = pointsToGraph.nallocnodes();
-    numImportNodes_ = pointsToGraph.nimpnodes();
-    numUnknownMemorySources_ = pointsToGraph.memunknown().nsources();
+    numRegisterNodes_ = pointsToGraph.NumRegisterNodes();
+    numAllocatorNodes_ = pointsToGraph.NumAllocatorNodes();
+    numImportNodes_ = pointsToGraph.NumImportNodes();
+    numUnknownMemorySources_ = pointsToGraph.GetUnknownMemoryNode().nsources();
   }
 
   [[nodiscard]] std::string
@@ -1492,7 +1492,7 @@ Steensgaard::ConstructPointsToGraph(const LocationSet & locationSets)
 				continue;
 
 			if (pointsToUnknown) {
-				locationMap[location]->add_edge(pointsToGraph->memunknown());
+				locationMap[location]->add_edge(pointsToGraph->GetUnknownMemoryNode());
 			}
 
       if (pointsToExternalMemory) {
@@ -1512,7 +1512,7 @@ Steensgaard::ConstructPointsToGraph(const LocationSet & locationSets)
 					points to. Let's be conservative and let it just point to
 					unknown.
 				*/
-				locationMap[location]->add_edge(pointsToGraph->memunknown());
+				locationMap[location]->add_edge(pointsToGraph->GetUnknownMemoryNode());
 				continue;
 			}
 

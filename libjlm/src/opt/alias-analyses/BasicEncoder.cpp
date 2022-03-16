@@ -362,9 +362,9 @@ private:
   void
   CollectAddressMemNodes(const PointsToGraph & ptg)
   {
-    for (auto & regnode : ptg.regnodes()) {
-      auto output = regnode.first;
-      auto memNodes = PointsToGraph::RegisterNode::allocators(*regnode.second);
+    for (auto & regnode : ptg.RegisterNodes()) {
+      auto output = regnode.output();
+      auto memNodes = PointsToGraph::RegisterNode::allocators(regnode);
 
       AddressMemNodeMap_[output] = memNodes;
     }
@@ -417,11 +417,11 @@ private:
   void
   collect_memnodes(const PointsToGraph & ptg)
   {
-    for (auto & pair : ptg.allocnodes())
-      MemoryNodes_.push_back(pair.second.get());
+    for (auto & allocatorNode : ptg.AllocatorNodes())
+      MemoryNodes_.push_back(&allocatorNode);
 
-    for (auto & pair : ptg.impnodes())
-      MemoryNodes_.push_back(static_cast<const PointsToGraph::MemoryNode*>(pair.second.get()));
+    for (auto & importNode : ptg.ImportNodes())
+      MemoryNodes_.push_back(&importNode);
 
     MemoryNodes_.push_back(&ptg.GetExternalMemoryNode());
   }
@@ -445,12 +445,12 @@ BasicEncoder::UnlinkMemUnknown(PointsToGraph & ptg)
     FIXME: There should be a kind of memory nodes iterator in the points-to graph.
   */
   std::vector<PointsToGraph::Node*> memNodes;
-  for (auto & node : ptg.allocnodes())
-    memNodes.push_back(node.second.get());
-  for (auto & node : ptg.impnodes())
-    memNodes.push_back(node.second.get());
+  for (auto & node : ptg.AllocatorNodes())
+    memNodes.push_back(&node);
+  for (auto & node : ptg.ImportNodes())
+    memNodes.push_back(&node);
 
-  auto & memUnknown = ptg.memunknown();
+  auto & memUnknown = ptg.GetUnknownMemoryNode();
   while (memUnknown.nsources() != 0) {
     auto & source = *memUnknown.sources().begin();
     for (auto & memNode : memNodes)
@@ -498,7 +498,7 @@ BasicEncoder::EncodeAlloca(const jive::simple_node & node)
 {
   JLM_ASSERT(is<alloca_op>(&node));
 
-  auto & memnode = Ptg().GetAllocatorNode(&node);
+  auto & memnode = Ptg().GetAllocatorNode(node);
   Context_->StateMap().replace(&memnode, node.output(1));
 }
 
@@ -507,7 +507,7 @@ BasicEncoder::EncodeMalloc(const jive::simple_node & node)
 {
   JLM_ASSERT(is<malloc_op>(&node));
 
-  auto & mallocNode = Ptg().GetAllocatorNode(&node);
+  auto & mallocNode = Ptg().GetAllocatorNode(node);
 
   /**
    * We use a static heap model. This means that multiple invocations of an malloc
