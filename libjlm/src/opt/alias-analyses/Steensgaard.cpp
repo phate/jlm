@@ -101,7 +101,7 @@ public:
     numRegisterNodes_ = pointsToGraph.NumRegisterNodes();
     numAllocatorNodes_ = pointsToGraph.NumAllocatorNodes();
     numImportNodes_ = pointsToGraph.NumImportNodes();
-    numUnknownMemorySources_ = pointsToGraph.GetUnknownMemoryNode().nsources();
+    numUnknownMemorySources_ = pointsToGraph.GetUnknownMemoryNode().NumSources();
   }
 
   [[nodiscard]] std::string
@@ -1421,52 +1421,52 @@ Steensgaard::ConstructPointsToGraph(const LocationSet & locationSets)
 	for (auto & locationSet : locationSets) {
 		for (auto & location : locationSet) {
 			if (auto registerLocation = dynamic_cast<RegisterLocation*>(location)) {
-        locationMap[location] = &PointsToGraph::RegisterNode::create(
+        locationMap[location] = &PointsToGraph::RegisterNode::Create(
           *pointsToGraph,
-          registerLocation->output());
+          *registerLocation->output());
 				continue;
 			}
 
       if (auto allocaLocation = dynamic_cast<AllocaLocation*>(location)) {
-        auto node = &PointsToGraph::AllocatorNode::create(
+        auto node = &PointsToGraph::AllocatorNode::Create(
           *pointsToGraph,
-          &allocaLocation->Node());
+          allocaLocation->Node());
         memoryNodeMap[&locationSet].push_back(node);
         locationMap[location] = node;
         continue;
       }
 
       if (auto mallocLocation = dynamic_cast<MallocLocation*>(location)) {
-        auto node = &PointsToGraph::AllocatorNode::create(
+        auto node = &PointsToGraph::AllocatorNode::Create(
           *pointsToGraph,
-          &mallocLocation->Node());
+          mallocLocation->Node());
         memoryNodeMap[&locationSet].push_back(node);
         locationMap[location] = node;
         continue;
       }
 
       if (auto lambdaLocation = dynamic_cast<LambdaLocation*>(location)) {
-        auto node = &PointsToGraph::AllocatorNode::create(
+        auto node = &PointsToGraph::AllocatorNode::Create(
           *pointsToGraph,
-          &lambdaLocation->Node());
+          lambdaLocation->Node());
         memoryNodeMap[&locationSet].push_back(node);
         locationMap[location] = node;
         continue;
       }
 
       if (auto deltaLocation = dynamic_cast<DeltaLocation*>(location)) {
-        auto node = &PointsToGraph::AllocatorNode::create(
+        auto node = &PointsToGraph::AllocatorNode::Create(
           *pointsToGraph,
-          &deltaLocation->Node());
+          deltaLocation->Node());
         memoryNodeMap[&locationSet].push_back(node);
         locationMap[location] = node;
         continue;
       }
 
 			if (auto importLocation = dynamic_cast<ImportLocation*>(location)) {
-				auto node = &PointsToGraph::ImportNode::create(
+				auto node = &PointsToGraph::ImportNode::Create(
           *pointsToGraph,
-          importLocation->argument());
+          *importLocation->argument());
 				memoryNodeMap[&locationSet].push_back(node);
         locationMap[location] = node;
 				continue;
@@ -1492,11 +1492,11 @@ Steensgaard::ConstructPointsToGraph(const LocationSet & locationSets)
 				continue;
 
 			if (pointsToUnknown) {
-				locationMap[location]->add_edge(pointsToGraph->GetUnknownMemoryNode());
+        locationMap[location]->AddEdge(pointsToGraph->GetUnknownMemoryNode());
 			}
 
       if (pointsToExternalMemory) {
-        locationMap[location]->add_edge(pointsToGraph->GetExternalMemoryNode());
+        locationMap[location]->AddEdge(pointsToGraph->GetExternalMemoryNode());
       }
 
 			auto pt = set.value()->GetPointsTo();
@@ -1512,12 +1512,12 @@ Steensgaard::ConstructPointsToGraph(const LocationSet & locationSets)
 					points to. Let's be conservative and let it just point to
 					unknown.
 				*/
-				locationMap[location]->add_edge(pointsToGraph->GetUnknownMemoryNode());
+        locationMap[location]->AddEdge(pointsToGraph->GetUnknownMemoryNode());
 				continue;
 			}
 
 			for (auto & memoryNode : memoryNodeMap[&pointsToSet])
-				locationMap[location]->add_edge(*memoryNode);
+        locationMap[location]->AddEdge(*memoryNode);
 		}
 	}
 
