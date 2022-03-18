@@ -363,10 +363,10 @@ private:
   CollectAddressMemNodes(const PointsToGraph & ptg)
   {
     for (auto & regnode : ptg.RegisterNodes()) {
-      auto output = regnode.output();
-      auto memNodes = PointsToGraph::RegisterNode::allocators(regnode);
+      auto & output = regnode.GetOutput();
+      auto memNodes = PointsToGraph::RegisterNode::GetMemoryNodes(regnode);
 
-      AddressMemNodeMap_[output] = memNodes;
+      AddressMemNodeMap_[&output] = memNodes;
     }
   }
 
@@ -451,11 +451,11 @@ BasicEncoder::UnlinkMemUnknown(PointsToGraph & ptg)
     memNodes.push_back(&node);
 
   auto & memUnknown = ptg.GetUnknownMemoryNode();
-  while (memUnknown.nsources() != 0) {
-    auto & source = *memUnknown.sources().begin();
+  while (memUnknown.NumSources() != 0) {
+    auto & source = *memUnknown.Sources().begin();
     for (auto & memNode : memNodes)
-      source.add_edge(*dynamic_cast<PointsToGraph::MemoryNode*>(memNode));
-    source.remove_edge(memUnknown);
+      source.AddEdge(*dynamic_cast<PointsToGraph::MemoryNode *>(memNode));
+    source.RemoveEdge(memUnknown);
   }
 }
 

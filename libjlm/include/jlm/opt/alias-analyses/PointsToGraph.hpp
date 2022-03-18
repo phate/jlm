@@ -48,7 +48,7 @@ public:
   class MemoryNode;
   class Node;
   class RegisterNode;
-  class UnknownNode;
+  class UnknownMemoryNode;
   class ExternalMemoryNode;
 
   using AllocatorNodeMap = std::unordered_map<const jive::node*, std::unique_ptr<PointsToGraph::AllocatorNode>>;
@@ -120,7 +120,7 @@ public:
     return NumAllocatorNodes() + NumImportNodes() + NumRegisterNodes();
   }
 
-  PointsToGraph::UnknownNode &
+  PointsToGraph::UnknownMemoryNode &
   GetUnknownMemoryNode() const noexcept
   {
     return *UnknownMemoryNode_;
@@ -184,7 +184,7 @@ private:
   ImportNodeMap ImportNodes_;
   RegisterNodeMap RegisterNodes_;
   AllocatorNodeMap AllocatorNodes_;
-  std::unique_ptr<PointsToGraph::UnknownNode> UnknownMemoryNode_;
+  std::unique_ptr<PointsToGraph::UnknownMemoryNode> UnknownMemoryNode_;
   std::unique_ptr<ExternalMemoryNode> ExternalMemoryNode_;
 };
 
@@ -193,173 +193,170 @@ private:
 *
 */
 class PointsToGraph::Node {
-	class constiterator;
-	class iterator;
+  class ConstIterator;
+  class Iterator;
 
-	using node_range = iterator_range<PointsToGraph::Node::iterator>;
-	using node_constrange = iterator_range<PointsToGraph::Node::constiterator>;
+  using NodeRange = iterator_range<PointsToGraph::Node::Iterator>;
+  using NodeConstRange = iterator_range<PointsToGraph::Node::ConstIterator>;
 
 public:
-	virtual
-	~Node();
+  virtual
+  ~Node() noexcept;
 
   explicit
-	Node(PointsToGraph & ptg)
-	: ptg_(&ptg)
-	{}
+  Node(PointsToGraph & pointsToGraph)
+    : PointsToGraph_(&pointsToGraph)
+  {}
 
-	Node(const Node&) = delete;
+  Node(const Node&) = delete;
 
-	Node(Node&&) = delete;
+  Node(Node&&) = delete;
 
-	Node&
-	operator=(const Node&) = delete;
+  Node&
+  operator=(const Node&) = delete;
 
-	Node&
-	operator=(Node&&) = delete;
+  Node&
+  operator=(Node&&) = delete;
 
-	node_range
-	targets();
+  NodeRange
+  Targets();
 
-	node_constrange
-	targets() const;
+  NodeConstRange
+  Targets() const;
 
-	node_range
-	sources();
+  NodeRange
+  Sources();
 
-	node_constrange
-	sources() const;
+  NodeConstRange
+  Sources() const;
 
-	PointsToGraph&
-	Graph() const noexcept
-	{
-		return *ptg_;
-	}
+  PointsToGraph&
+  Graph() const noexcept
+  {
+    return *PointsToGraph_;
+  }
 
-	size_t
-	ntargets() const noexcept
-	{
-		return targets_.size();
-	}
+  size_t
+  NumTargets() const noexcept
+  {
+    return Targets_.size();
+  }
 
-	size_t
-	nsources() const noexcept
-	{
-		return sources_.size();
-	}
+  size_t
+  NumSources() const noexcept
+  {
+    return Sources_.size();
+  }
 
-	virtual std::string
-	debug_string() const = 0;
+  virtual std::string
+  DebugString() const = 0;
 
-	void
-	add_edge(PointsToGraph::MemoryNode & target);
+  void
+  AddEdge(PointsToGraph::MemoryNode & target);
 
-	void
-	remove_edge(PointsToGraph::MemoryNode & target);
+  void
+  RemoveEdge(PointsToGraph::MemoryNode & target);
 
 private:
-	PointsToGraph * ptg_;
-	std::unordered_set<PointsToGraph::Node*> targets_;
-	std::unordered_set<PointsToGraph::Node*> sources_;
+  PointsToGraph * PointsToGraph_;
+  std::unordered_set<PointsToGraph::Node*> Targets_;
+  std::unordered_set<PointsToGraph::Node*> Sources_;
 };
-
 
 /** \brief PointsTo graph register node
 *
 */
 class PointsToGraph::RegisterNode final : public PointsToGraph::Node {
 public:
-	~RegisterNode() override;
+  ~RegisterNode() noexcept override;
 
 private:
-	RegisterNode(
-    PointsToGraph & ptg,
-    const jive::output * output)
-    : Node(ptg)
-    , output_(output)
-	{}
+  RegisterNode(
+    PointsToGraph & pointsToGraph,
+    const jive::output & output)
+    : Node(pointsToGraph)
+    , Output_(&output)
+  {}
 
 public:
-	const jive::output *
-	output() const noexcept
-	{
-		return output_;
-	}
+  const jive::output &
+  GetOutput() const noexcept
+  {
+    return *Output_;
+  }
 
-	std::string
-	debug_string() const override;
+  std::string
+  DebugString() const override;
 
-	/**
-		FIXME: write documentation
-	*/
-	static std::vector<const PointsToGraph::MemoryNode*>
-	allocators(const PointsToGraph::RegisterNode & node);
+  /**
+    FIXME: write documentation
+  */
+  static std::vector<const PointsToGraph::MemoryNode*>
+  GetMemoryNodes(const PointsToGraph::RegisterNode & node);
 
-	static PointsToGraph::RegisterNode &
-	create(
-    PointsToGraph & ptg,
-    const jive::output * output)
-	{
-		auto node = std::unique_ptr<PointsToGraph::RegisterNode>(new RegisterNode(ptg, output));
-		return ptg.AddRegisterNode(std::move(node));
-	}
+  static PointsToGraph::RegisterNode &
+  Create(
+    PointsToGraph & pointsToGraph,
+    const jive::output & output)
+  {
+    auto node = std::unique_ptr<PointsToGraph::RegisterNode>(new RegisterNode(pointsToGraph, output));
+    return pointsToGraph.AddRegisterNode(std::move(node));
+  }
 
 private:
-	const jive::output * output_;
+  const jive::output * Output_;
 };
-
 
 /** \brief PointsTo graph memory node
 *
 */
 class PointsToGraph::MemoryNode : public PointsToGraph::Node {
 public:
-	~MemoryNode() override;
+  ~MemoryNode() noexcept override;
 
 protected:
   explicit
-	MemoryNode(PointsToGraph & ptg)
-	: Node(ptg)
-	{}
+  MemoryNode(PointsToGraph & pointsToGraph)
+    : Node(pointsToGraph)
+  {}
 };
-
 
 /** \brief PointsTo graph allocator node
 *
 */
 class PointsToGraph::AllocatorNode final : public PointsToGraph::MemoryNode {
 public:
-	~AllocatorNode() override;
+  ~AllocatorNode() noexcept override;
 
 private:
-	AllocatorNode(
-    PointsToGraph & ptg,
-    const jive::node * node)
-    : MemoryNode(ptg)
-    , node_(node)
-	{}
+  AllocatorNode(
+    PointsToGraph & pointsToGraph,
+    const jive::node & node)
+    : MemoryNode(pointsToGraph)
+    , Node_(&node)
+  {}
 
 public:
-	const jive::node *
-	node() const noexcept
-	{
-		return node_;
-	}
+  const jive::node &
+  GetNode() const noexcept
+  {
+    return *Node_;
+  }
 
-	std::string
-	debug_string() const override;
+  std::string
+  DebugString() const override;
 
-	static PointsToGraph::AllocatorNode &
-	create(
-    PointsToGraph & ptg,
-    const jive::node * node)
-	{
-		auto n = std::unique_ptr<PointsToGraph::AllocatorNode>(new AllocatorNode(ptg, node));
-		return ptg.AddAllocatorNode(std::move(n));
-	}
+  static PointsToGraph::AllocatorNode &
+  Create(
+    PointsToGraph & pointsToGraph,
+    const jive::node & node)
+  {
+    auto n = std::unique_ptr<PointsToGraph::AllocatorNode>(new AllocatorNode(pointsToGraph, node));
+    return pointsToGraph.AddAllocatorNode(std::move(n));
+  }
 
 private:
-	const jive::node * node_;
+  const jive::node * Node_;
 };
 
 /** \brief PointsTo graph import node
@@ -367,70 +364,79 @@ private:
 */
 class PointsToGraph::ImportNode final : public PointsToGraph::MemoryNode {
 public:
-	~ImportNode() override;
+  ~ImportNode() noexcept override;
 
 private:
-	ImportNode(
-    PointsToGraph & ptg,
-    const jive::argument * argument)
-    : MemoryNode(ptg)
-    , argument_(argument)
-	{
-		JLM_ASSERT(dynamic_cast<const jlm::impport*>(&argument->port()));
-	}
+  ImportNode(
+    PointsToGraph & pointsToGraph,
+    const jive::argument & argument)
+    : MemoryNode(pointsToGraph)
+    , Argument_(&argument)
+  {
+    JLM_ASSERT(dynamic_cast<const impport*>(&argument.port()));
+  }
 
 public:
-	const jive::argument *
-	argument() const noexcept
-	{
-		return argument_;
-	}
+  const jive::argument &
+  GetArgument() const noexcept
+  {
+    return *Argument_;
+  }
 
-	std::string
-	debug_string() const override;
+  std::string
+  DebugString() const override;
 
-	static PointsToGraph::ImportNode &
-	create(
-    PointsToGraph & ptg,
-    const jive::argument * argument)
-	{
-		auto n = std::unique_ptr<PointsToGraph::ImportNode>(new ImportNode(ptg, argument));
-		return ptg.AddImportNode(std::move(n));
-	}
+  static PointsToGraph::ImportNode &
+  Create(
+    PointsToGraph & pointsToGraph,
+    const jive::argument & argument)
+  {
+    auto n = std::unique_ptr<PointsToGraph::ImportNode>(new ImportNode(pointsToGraph, argument));
+    return pointsToGraph.AddImportNode(std::move(n));
+  }
 
 private:
-	const jive::argument * argument_;
+  const jive::argument * Argument_;
 };
 
 /** \brief PointsTo graph unknown node
 *
 */
-class PointsToGraph::UnknownNode final : public PointsToGraph::MemoryNode {
-	friend PointsToGraph;
+class PointsToGraph::UnknownMemoryNode final : public PointsToGraph::MemoryNode {
+  friend PointsToGraph;
 
 public:
-	~UnknownNode() override;
+  ~UnknownMemoryNode() noexcept override;
 
 private:
   explicit
-	UnknownNode(PointsToGraph & ptg)
-	: MemoryNode(ptg)
-	{}
+  UnknownMemoryNode(PointsToGraph & pointsToGraph)
+    : MemoryNode(pointsToGraph)
+  {}
 
-	std::string
-	debug_string() const override;
+  std::string
+  DebugString() const override;
+
+  static std::unique_ptr<UnknownMemoryNode>
+  Create(PointsToGraph & pointsToGraph)
+  {
+    return std::unique_ptr<UnknownMemoryNode>(new UnknownMemoryNode(pointsToGraph));
+  }
 };
 
+/** \brief PointsTo graph external memory node
+ *
+ */
 class PointsToGraph::ExternalMemoryNode final : public PointsToGraph::MemoryNode {
   friend PointsToGraph;
 
 public:
-  ~ExternalMemoryNode() override;
+  ~ExternalMemoryNode() noexcept override;
 
 private:
   explicit
   ExternalMemoryNode(PointsToGraph & pointsToGraph)
-  : MemoryNode(pointsToGraph)
+    : MemoryNode(pointsToGraph)
   {}
 
   static std::unique_ptr<ExternalMemoryNode>
@@ -440,7 +446,7 @@ private:
   }
 
   std::string
-  debug_string() const override;
+  DebugString() const override;
 };
 
 /** \brief Points-to graph allocator node iterator
@@ -823,127 +829,128 @@ private:
 
 /** \brief Points-to graph edge iterator
 */
-class PointsToGraph::Node::iterator final : public std::iterator<std::forward_iterator_tag,
-	PointsToGraph::Node*, ptrdiff_t> {
+class PointsToGraph::Node::Iterator final : public std::iterator<std::forward_iterator_tag,
+  PointsToGraph::Node*, ptrdiff_t> {
 
-	friend PointsToGraph::Node;
+  friend PointsToGraph::Node;
 
-	iterator(const std::unordered_set<PointsToGraph::Node*>::iterator & it)
-	: it_(it)
-	{}
+  explicit
+  Iterator(const std::unordered_set<PointsToGraph::Node*>::iterator & it)
+    : It_(it)
+  {}
 
 public:
-	PointsToGraph::Node *
-	target() const noexcept
-	{
-		return *it_;
-	}
+  [[nodiscard]] PointsToGraph::Node *
+  GetNode() const noexcept
+  {
+    return *It_;
+  }
 
-	PointsToGraph::Node &
-	operator*() const
-	{
-		JLM_ASSERT(target() != nullptr);
-		return *target();
-	}
+  PointsToGraph::Node &
+  operator*() const
+  {
+    JLM_ASSERT(GetNode() != nullptr);
+    return *GetNode();
+  }
 
-	PointsToGraph::Node *
-	operator->() const
-	{
-		return target();
-	}
+  PointsToGraph::Node *
+  operator->() const
+  {
+    return GetNode();
+  }
 
-	iterator &
-	operator++()
-	{
-		++it_;
-		return *this;
-	}
+  Iterator &
+  operator++()
+  {
+    ++It_;
+    return *this;
+  }
 
-	iterator
-	operator++(int)
-	{
-		iterator tmp = *this;
-		++*this;
-		return tmp;
-	}
+  Iterator
+  operator++(int)
+  {
+    Iterator tmp = *this;
+    ++*this;
+    return tmp;
+  }
 
-	bool
-	operator==(const iterator & other) const
-	{
-		return it_ == other.it_;
-	}
+  bool
+  operator==(const Iterator & other) const
+  {
+    return It_ == other.It_;
+  }
 
-	bool
-	operator!=(const iterator & other) const
-	{
-		return !operator==(other);
-	}
+  bool
+  operator!=(const Iterator & other) const
+  {
+    return !operator==(other);
+  }
 
 private:
-	std::unordered_set<PointsToGraph::Node*>::iterator it_;
+  std::unordered_set<PointsToGraph::Node*>::iterator It_;
 };
-
 
 /** \brief Points-to graph edge const iterator
 */
-class PointsToGraph::Node::constiterator final : public std::iterator<std::forward_iterator_tag,
-	const PointsToGraph::Node*, ptrdiff_t> {
+class PointsToGraph::Node::ConstIterator final : public std::iterator<std::forward_iterator_tag,
+  const PointsToGraph::Node*, ptrdiff_t> {
 
-	friend PointsToGraph;
+  friend PointsToGraph;
 
-	constiterator(const std::unordered_set<PointsToGraph::Node*>::const_iterator & it)
-	: it_(it)
-	{}
+  explicit
+  ConstIterator(const std::unordered_set<PointsToGraph::Node*>::const_iterator & it)
+    : It_(it)
+  {}
 
 public:
-	const PointsToGraph::Node *
-	target() const noexcept
-	{
-		return *it_;
-	}
+  [[nodiscard]] const PointsToGraph::Node *
+  GetNode() const noexcept
+  {
+    return *It_;
+  }
 
-	const PointsToGraph::Node &
-	operator*() const
-	{
-		JLM_ASSERT(target() != nullptr);
-		return *target();
-	}
+  const PointsToGraph::Node &
+  operator*() const
+  {
+    JLM_ASSERT(GetNode() != nullptr);
+    return *GetNode();
+  }
 
-	const PointsToGraph::Node *
-	operator->() const
-	{
-		return target();
-	}
+  const PointsToGraph::Node *
+  operator->() const
+  {
+    return GetNode();
+  }
 
-	constiterator &
-	operator++()
-	{
-		++it_;
-		return *this;
-	}
+  ConstIterator &
+  operator++()
+  {
+    ++It_;
+    return *this;
+  }
 
-	constiterator
-	operator++(int)
-	{
-		constiterator tmp = *this;
-		++*this;
-		return tmp;
-	}
+  ConstIterator
+  operator++(int)
+  {
+    ConstIterator tmp = *this;
+    ++*this;
+    return tmp;
+  }
 
-	bool
-	operator==(const constiterator & other) const
-	{
-		return it_ == other.it_;
-	}
+  bool
+  operator==(const ConstIterator & other) const
+  {
+    return It_ == other.It_;
+  }
 
-	bool
-	operator!=(const constiterator & other) const
-	{
-		return !operator==(other);
-	}
+  bool
+  operator!=(const ConstIterator & other) const
+  {
+    return !operator==(other);
+  }
 
 private:
-	std::unordered_set<PointsToGraph::Node*>::const_iterator it_;
+  std::unordered_set<PointsToGraph::Node*>::const_iterator It_;
 };
 
 }}

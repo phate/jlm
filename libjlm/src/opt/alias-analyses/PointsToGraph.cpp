@@ -18,7 +18,7 @@ namespace jlm::aa {
 
 PointsToGraph::PointsToGraph()
 {
-  UnknownMemoryNode_ = std::unique_ptr<PointsToGraph::UnknownNode>(new PointsToGraph::UnknownNode(*this));
+  UnknownMemoryNode_ = UnknownMemoryNode::Create(*this);
   ExternalMemoryNode_ = ExternalMemoryNode::Create(*this);
 }
 
@@ -62,7 +62,7 @@ PointsToGraph::AllocatorNode &
 PointsToGraph::AddAllocatorNode(std::unique_ptr<PointsToGraph::AllocatorNode> node)
 {
   auto tmp = node.get();
-  AllocatorNodes_[node->node()] = std::move(node);
+  AllocatorNodes_[&node->GetNode()] = std::move(node);
 
   return *tmp;
 }
@@ -71,7 +71,7 @@ PointsToGraph::RegisterNode &
 PointsToGraph::AddRegisterNode(std::unique_ptr<PointsToGraph::RegisterNode> node)
 {
   auto tmp = node.get();
-  RegisterNodes_[node->output()] = std::move(node);
+  RegisterNodes_[&node->GetOutput()] = std::move(node);
 
   return *tmp;
 }
@@ -80,7 +80,7 @@ PointsToGraph::ImportNode &
 PointsToGraph::AddImportNode(std::unique_ptr<PointsToGraph::ImportNode> node)
 {
   auto tmp = node.get();
-  ImportNodes_[node->argument()] = std::move(node);
+  ImportNodes_[&node->GetArgument()] = std::move(node);
 
   return *tmp;
 }
@@ -94,7 +94,7 @@ PointsToGraph::ToDot(const PointsToGraph & pointsToGraph)
          {typeid(AllocatorNode),      "box"},
          {typeid(ImportNode),         "box"},
          {typeid(RegisterNode),       "oval"},
-         {typeid(UnknownNode),        "box"},
+         {typeid(UnknownMemoryNode),  "box"},
          {typeid(ExternalMemoryNode), "box"}
        });
 
@@ -106,7 +106,7 @@ PointsToGraph::ToDot(const PointsToGraph & pointsToGraph)
 
   auto nodeString = [&](const PointsToGraph::Node & node) {
     return strfmt("{ ", (intptr_t)&node, " ["
-      , "label = \"", node.debug_string(), "\" "
+      , "label = \"", node.DebugString(), "\" "
       , "nodeShape = \"", nodeShape(node), "\"]; }\n");
   };
 
@@ -119,7 +119,7 @@ PointsToGraph::ToDot(const PointsToGraph & pointsToGraph)
   {
     std::string dot;
     dot += nodeString(node);
-    for (auto & target : node.targets())
+    for (auto & target : node.Targets())
       dot += edgeString(node, target);
 
     return dot;
@@ -142,137 +142,128 @@ PointsToGraph::ToDot(const PointsToGraph & pointsToGraph)
   return dot;
 }
 
-/* PointsToGraph::Node */
+PointsToGraph::Node::~Node() noexcept
+= default;
 
-PointsToGraph::Node::~Node() = default;
-
-PointsToGraph::Node::node_range
-PointsToGraph::Node::targets()
+PointsToGraph::Node::NodeRange
+PointsToGraph::Node::Targets()
 {
-	return {targets_.begin(), targets_.end()};
+  return {Iterator(Targets_.begin()), Iterator(Targets_.end())};
 }
 
-PointsToGraph::Node::node_constrange
-PointsToGraph::Node::targets() const
+PointsToGraph::Node::NodeConstRange
+PointsToGraph::Node::Targets() const
 {
-	return {targets_.begin(), targets_.end()};
+  return {ConstIterator(Targets_.begin()), ConstIterator(Targets_.end())};
 }
 
-PointsToGraph::Node::node_range
-PointsToGraph::Node::sources()
+PointsToGraph::Node::NodeRange
+PointsToGraph::Node::Sources()
 {
-	return {sources_.begin(), sources_.end()};
+  return {Iterator(Sources_.begin()), Iterator(Sources_.end())};
 }
 
-PointsToGraph::Node::node_constrange
-PointsToGraph::Node::sources() const
+PointsToGraph::Node::NodeConstRange
+PointsToGraph::Node::Sources() const
 {
-	return {sources_.begin(), sources_.end()};
-}
-
-void
-PointsToGraph::Node::add_edge(PointsToGraph::MemoryNode & target)
-{
-	if (&Graph() != &target.Graph())
-		throw jlm::error("Points-to graph nodes are not in the same graph.");
-
-	targets_.insert(&target);
-	target.sources_.insert(this);
+  return {ConstIterator(Sources_.begin()), ConstIterator(Sources_.end())};
 }
 
 void
-PointsToGraph::Node::remove_edge(PointsToGraph::MemoryNode & target)
+PointsToGraph::Node::AddEdge(PointsToGraph::MemoryNode & target)
 {
-	if (&Graph() != &target.Graph())
-		throw jlm::error("Points-to graph nodes are not in the same graph.");
+  if (&Graph() != &target.Graph())
+    throw error("Points-to graph nodes are not in the same graph.");
 
-	target.sources_.erase(this);
-	targets_.erase(&target);
+  Targets_.insert(&target);
+  target.Sources_.insert(this);
 }
 
-/* PointsToGraph::RegisterNode */
-
-PointsToGraph::RegisterNode::~RegisterNode() = default;
-
-std::string
-PointsToGraph::RegisterNode::debug_string() const
+void
+PointsToGraph::Node::RemoveEdge(PointsToGraph::MemoryNode & target)
 {
-	auto node = jive::node_output::node(output());
+  if (&Graph() != &target.Graph())
+    throw error("Points-to graph nodes are not in the same graph.");
 
-	if (node != nullptr)
-		return strfmt(node->operation().debug_string(), ":o", output()->index());
-
-	node = output()->region()->node();
-	if (node != nullptr)
-		return strfmt(node->operation().debug_string(), ":a", output()->index());
-
-	if (is_import(output())) {
-		auto port = static_cast<const jlm::impport*>(&output()->port());
-		return strfmt("import:", port->name());
-	}
-
-	return "REGNODE";
+  target.Sources_.erase(this);
+  Targets_.erase(&target);
 }
 
-std::vector<const PointsToGraph::MemoryNode*>
-PointsToGraph::RegisterNode::allocators(const PointsToGraph::RegisterNode & node)
-{
-	/*
-		FIXME: This function currently iterates through all pointstos of the RegisterNode.
-		Maybe we can be more efficient?
-	*/
-	std::vector<const PointsToGraph::MemoryNode*> memnodes;
-	for (auto & target : node.targets()) {
-		if (auto memnode = dynamic_cast<const PointsToGraph::MemoryNode*>(&target))
-			memnodes.push_back(memnode);
-	}
-
-	return memnodes;
-}
-
-/* PointsToGraph::MemoryNode class */
-
-PointsToGraph::MemoryNode::~MemoryNode() = default;
-
-/* PointsToGraph::AllocatorNode class */
-
-PointsToGraph::AllocatorNode::~AllocatorNode() = default;
-
-std::string
-PointsToGraph::AllocatorNode::debug_string() const
-{
-	return node()->operation().debug_string();
-}
-
-/* PointsToGraph::ImportNode class */
-
-PointsToGraph::ImportNode::~ImportNode() = default;
-
-std::string
-PointsToGraph::ImportNode::debug_string() const
-{
-	auto port = static_cast<const jlm::impport*>(&argument()->port());
-	return port->name();
-}
-
-/* PointsToGraph::UnknownNode class */
-
-PointsToGraph::UnknownNode::~UnknownNode() = default;
-
-std::string
-PointsToGraph::UnknownNode::debug_string() const
-{
-	return "Unknown";
-}
-
-/**
- * PointsToGraph::ExternalMemoryNode class
- */
-PointsToGraph::ExternalMemoryNode::~ExternalMemoryNode()
+PointsToGraph::RegisterNode::~RegisterNode() noexcept
 = default;
 
 std::string
-PointsToGraph::ExternalMemoryNode::debug_string() const
+PointsToGraph::RegisterNode::DebugString() const
+{
+  auto node = jive::node_output::node(&GetOutput());
+
+  if (node != nullptr)
+    return strfmt(node->operation().debug_string(), ":o", GetOutput().index());
+
+  node = GetOutput().region()->node();
+  if (node != nullptr)
+    return strfmt(node->operation().debug_string(), ":a", GetOutput().index());
+
+  if (is_import(&GetOutput())) {
+    auto port = AssertedCast<const impport>(&GetOutput().port());
+    return strfmt("import:", port->name());
+  }
+
+  return "RegisterNode";
+}
+
+std::vector<const PointsToGraph::MemoryNode*>
+PointsToGraph::RegisterNode::GetMemoryNodes(const PointsToGraph::RegisterNode & node)
+{
+  /*
+    FIXME: This function currently iterates through all pointstos of the RegisterNode.
+    Maybe we can be more efficient?
+  */
+  std::vector<const PointsToGraph::MemoryNode*> memoryNodes;
+  for (auto & target : node.Targets()) {
+    if (auto memoryNode = dynamic_cast<const PointsToGraph::MemoryNode*>(&target))
+      memoryNodes.push_back(memoryNode);
+  }
+
+  return memoryNodes;
+}
+
+PointsToGraph::MemoryNode::~MemoryNode() noexcept
+= default;
+
+PointsToGraph::AllocatorNode::~AllocatorNode() noexcept
+= default;
+
+std::string
+PointsToGraph::AllocatorNode::DebugString() const
+{
+	return GetNode().operation().debug_string();
+}
+
+PointsToGraph::ImportNode::~ImportNode() noexcept
+= default;
+
+std::string
+PointsToGraph::ImportNode::DebugString() const
+{
+	auto port = AssertedCast<const impport>(&GetArgument().port());
+	return port->name();
+}
+
+PointsToGraph::UnknownMemoryNode::~UnknownMemoryNode() noexcept
+= default;
+
+std::string
+PointsToGraph::UnknownMemoryNode::DebugString() const
+{
+	return "UnknownMemory";
+}
+
+PointsToGraph::ExternalMemoryNode::~ExternalMemoryNode() noexcept
+= default;
+
+std::string
+PointsToGraph::ExternalMemoryNode::DebugString() const
 {
   return "ExternalMemory";
 }

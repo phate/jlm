@@ -32,10 +32,10 @@ assertTargets(
 {
 	using namespace jlm::aa;
 
-	assert(node.ntargets() == targets.size());
+	assert(node.NumTargets() == targets.size());
 
 	std::unordered_set<const PointsToGraph::Node*> node_targets;
-	for (auto & target : node.targets())
+	for (auto & target : node.Targets())
 		node_targets.insert(&target);
 
 	assert(targets == node_targets);
