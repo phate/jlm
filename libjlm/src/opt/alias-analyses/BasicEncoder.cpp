@@ -415,15 +415,17 @@ public:
 
 private:
   void
-  collect_memnodes(const PointsToGraph & ptg)
+  collect_memnodes(const PointsToGraph & pointsToGraph)
   {
-    for (auto & allocatorNode : ptg.AllocatorNodes())
+    for (auto & allocaNode : pointsToGraph.AllocaNodes())
+      MemoryNodes_.push_back(&allocaNode);
+    for (auto & allocatorNode : pointsToGraph.AllocatorNodes())
       MemoryNodes_.push_back(&allocatorNode);
 
-    for (auto & importNode : ptg.ImportNodes())
+    for (auto & importNode : pointsToGraph.ImportNodes())
       MemoryNodes_.push_back(&importNode);
 
-    MemoryNodes_.push_back(&ptg.GetExternalMemoryNode());
+    MemoryNodes_.push_back(&pointsToGraph.GetExternalMemoryNode());
   }
 
   RegionalizedStateMap StateMap_;
@@ -444,17 +446,19 @@ BasicEncoder::UnlinkMemUnknown(PointsToGraph & ptg)
   /*
     FIXME: There should be a kind of memory nodes iterator in the points-to graph.
   */
-  std::vector<PointsToGraph::Node*> memNodes;
+  std::vector<PointsToGraph::Node*> memoryNodes;
+  for (auto & allocaNode : ptg.AllocaNodes())
+    memoryNodes.push_back(&allocaNode);
   for (auto & node : ptg.AllocatorNodes())
-    memNodes.push_back(&node);
+    memoryNodes.push_back(&node);
   for (auto & node : ptg.ImportNodes())
-    memNodes.push_back(&node);
+    memoryNodes.push_back(&node);
 
   auto & memUnknown = ptg.GetUnknownMemoryNode();
   while (memUnknown.NumSources() != 0) {
     auto & source = *memUnknown.Sources().begin();
-    for (auto & memNode : memNodes)
-      source.AddEdge(*dynamic_cast<PointsToGraph::MemoryNode *>(memNode));
+    for (auto & memoryNode : memoryNodes)
+      source.AddEdge(*dynamic_cast<PointsToGraph::MemoryNode *>(memoryNode));
     source.RemoveEdge(memUnknown);
   }
 }
@@ -498,8 +502,8 @@ BasicEncoder::EncodeAlloca(const jive::simple_node & node)
 {
   JLM_ASSERT(is<alloca_op>(&node));
 
-  auto & memnode = Ptg().GetAllocatorNode(node);
-  Context_->StateMap().replace(&memnode, node.output(1));
+  auto & allocaNode = Ptg().GetAllocaNode(node);
+  Context_->StateMap().replace(&allocaNode, node.output(1));
 }
 
 void

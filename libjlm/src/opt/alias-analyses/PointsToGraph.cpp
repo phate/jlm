@@ -22,6 +22,18 @@ PointsToGraph::PointsToGraph()
   ExternalMemoryNode_ = ExternalMemoryNode::Create(*this);
 }
 
+PointsToGraph::AllocaNodeRange
+PointsToGraph::AllocaNodes()
+{
+  return {AllocaNodeIterator(AllocaNodes_.begin()), AllocaNodeIterator(AllocaNodes_.end())};
+}
+
+PointsToGraph::AllocaNodeConstRange
+PointsToGraph::AllocaNodes() const
+{
+  return {AllocaNodeConstIterator(AllocaNodes_.begin()), AllocaNodeConstIterator(AllocaNodes_.end())};
+}
+
 PointsToGraph::AllocatorNodeRange
 PointsToGraph::AllocatorNodes()
 {
@@ -58,6 +70,15 @@ PointsToGraph::RegisterNodes() const
   return {RegisterNodeConstIterator(RegisterNodes_.begin()), RegisterNodeConstIterator(RegisterNodes_.end())};
 }
 
+PointsToGraph::AllocaNode &
+PointsToGraph::AddAllocaNode(std::unique_ptr<PointsToGraph::AllocaNode> node)
+{
+  auto tmp = node.get();
+  AllocaNodes_[&node->GetAllocaNode()] = std::move(node);
+
+  return *tmp;
+}
+
 PointsToGraph::AllocatorNode &
 PointsToGraph::AddAllocatorNode(std::unique_ptr<PointsToGraph::AllocatorNode> node)
 {
@@ -91,6 +112,7 @@ PointsToGraph::ToDot(const PointsToGraph & pointsToGraph)
   auto nodeShape = [](const PointsToGraph::Node & node) {
     static std::unordered_map<std::type_index, std::string> shapes
       ({
+         {typeid(AllocaNode),         "box"},
          {typeid(AllocatorNode),      "box"},
          {typeid(ImportNode),         "box"},
          {typeid(RegisterNode),       "oval"},
@@ -128,6 +150,9 @@ PointsToGraph::ToDot(const PointsToGraph & pointsToGraph)
   std::string dot("digraph PointsToGraph {\n");
   for (auto & registerNode : pointsToGraph.RegisterNodes())
     dot += printNodeAndEdges(registerNode);
+
+  for (auto & allocaNode : pointsToGraph.AllocaNodes())
+    dot += printNodeAndEdges(allocaNode);
 
   for (auto & allocatorNode : pointsToGraph.AllocatorNodes())
     dot += printNodeAndEdges(allocatorNode);
@@ -230,6 +255,15 @@ PointsToGraph::RegisterNode::GetMemoryNodes(const PointsToGraph::RegisterNode & 
 
 PointsToGraph::MemoryNode::~MemoryNode() noexcept
 = default;
+
+PointsToGraph::AllocaNode::~AllocaNode() noexcept
+= default;
+
+std::string
+PointsToGraph::AllocaNode::DebugString() const
+{
+  return GetAllocaNode().operation().debug_string();
+}
 
 PointsToGraph::AllocatorNode::~AllocatorNode() noexcept
 = default;

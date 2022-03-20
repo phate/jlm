@@ -46,13 +46,14 @@ TestStore1()
 {
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const StoreTest1 & test)
 	{
-		assert(ptg.NumAllocatorNodes() == 5);
+    assert(ptg.NumAllocaNodes() == 4);
+		assert(ptg.NumAllocatorNodes() == 1);
 		assert(ptg.NumRegisterNodes() == 5);
 
-		auto & alloca_a = ptg.GetAllocatorNode(*test.alloca_a);
-		auto & alloca_b = ptg.GetAllocatorNode(*test.alloca_b);
-		auto & alloca_c = ptg.GetAllocatorNode(*test.alloca_c);
-		auto & alloca_d = ptg.GetAllocatorNode(*test.alloca_d);
+		auto & alloca_a = ptg.GetAllocaNode(*test.alloca_a);
+		auto & alloca_b = ptg.GetAllocaNode(*test.alloca_b);
+		auto & alloca_c = ptg.GetAllocaNode(*test.alloca_c);
+		auto & alloca_d = ptg.GetAllocaNode(*test.alloca_d);
 
 		auto & palloca_a = ptg.GetRegisterNode(*test.alloca_a->output(0));
 		auto & palloca_b = ptg.GetRegisterNode(*test.alloca_b->output(0));
@@ -89,14 +90,15 @@ TestStore2()
 {
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const StoreTest2 & test)
 	{
-		assert(ptg.NumAllocatorNodes() == 6);
+    assert(ptg.NumAllocaNodes() == 5);
+		assert(ptg.NumAllocatorNodes() == 1);
 		assert(ptg.NumRegisterNodes() == 6);
 
-		auto & alloca_a = ptg.GetAllocatorNode(*test.alloca_a);
-		auto & alloca_b = ptg.GetAllocatorNode(*test.alloca_b);
-		auto & alloca_x = ptg.GetAllocatorNode(*test.alloca_x);
-		auto & alloca_y = ptg.GetAllocatorNode(*test.alloca_y);
-		auto & alloca_p = ptg.GetAllocatorNode(*test.alloca_p);
+		auto & alloca_a = ptg.GetAllocaNode(*test.alloca_a);
+		auto & alloca_b = ptg.GetAllocaNode(*test.alloca_b);
+		auto & alloca_x = ptg.GetAllocaNode(*test.alloca_x);
+		auto & alloca_y = ptg.GetAllocaNode(*test.alloca_y);
+		auto & alloca_p = ptg.GetAllocaNode(*test.alloca_p);
 
 		auto & palloca_a = ptg.GetRegisterNode(*test.alloca_a->output(0));
 		auto & palloca_b = ptg.GetRegisterNode(*test.alloca_b->output(0));
@@ -164,17 +166,18 @@ TestLoad2()
 {
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const LoadTest2 & test)
 	{
-		assert(ptg.NumAllocatorNodes() == 6);
+    assert(ptg.NumAllocaNodes() == 5);
+		assert(ptg.NumAllocatorNodes() == 1);
 		assert(ptg.NumRegisterNodes() == 8);
 
 		/*
 			We only care about the loads in this test, skipping the validation
 			for all other nodes.
 		*/
-		auto & alloca_a = ptg.GetAllocatorNode(*test.alloca_a);
-		auto & alloca_b = ptg.GetAllocatorNode(*test.alloca_b);
-		auto & alloca_x = ptg.GetAllocatorNode(*test.alloca_x);
-		auto & alloca_y = ptg.GetAllocatorNode(*test.alloca_y);
+		auto & alloca_a = ptg.GetAllocaNode(*test.alloca_a);
+		auto & alloca_b = ptg.GetAllocaNode(*test.alloca_b);
+		auto & alloca_x = ptg.GetAllocaNode(*test.alloca_x);
+		auto & alloca_y = ptg.GetAllocaNode(*test.alloca_y);
 
 		auto & pload_x = ptg.GetRegisterNode(*test.load_x->output(0));
 		auto & pload_a = ptg.GetRegisterNode(*test.load_a->output(0));
@@ -320,12 +323,13 @@ TestCall1()
 {
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const CallTest1 & test)
 	{
-		assert(ptg.NumAllocatorNodes() == 6);
+    assert(ptg.NumAllocaNodes() == 3);
+		assert(ptg.NumAllocatorNodes() == 3);
 		assert(ptg.NumRegisterNodes() == 12);
 
-		auto & alloca_x = ptg.GetAllocatorNode(*test.alloca_x);
-		auto & alloca_y = ptg.GetAllocatorNode(*test.alloca_y);
-		auto & alloca_z = ptg.GetAllocatorNode(*test.alloca_z);
+		auto & alloca_x = ptg.GetAllocaNode(*test.alloca_x);
+		auto & alloca_y = ptg.GetAllocaNode(*test.alloca_y);
+		auto & alloca_z = ptg.GetAllocaNode(*test.alloca_z);
 
 		auto & palloca_x = ptg.GetRegisterNode(*test.alloca_x->output(0));
 		auto & palloca_y = ptg.GetRegisterNode(*test.alloca_y->output(0));
@@ -672,7 +676,8 @@ TestPhi()
 {
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const PhiTest & test)
 	{
-		assert(ptg.NumAllocatorNodes() == 3);
+    assert(ptg.NumAllocaNodes() == 1);
+		assert(ptg.NumAllocatorNodes() == 2);
 		assert(ptg.NumRegisterNodes() == 16);
 
 		auto & lambda_fib = ptg.GetAllocatorNode(*test.lambda_fib);
@@ -688,7 +693,7 @@ TestPhi()
 		auto & gamma_result = ptg.GetRegisterNode(*test.gamma->subregion(0)->argument(1));
 		auto & gamma_fib = ptg.GetRegisterNode(*test.gamma->subregion(0)->argument(2));
 
-		auto & alloca = ptg.GetAllocatorNode(*test.alloca);
+		auto & alloca = ptg.GetAllocaNode(*test.alloca);
 		auto & alloca_out = ptg.GetRegisterNode(*test.alloca->output(0));
 
 		assertTargets(lambda_fib_out, {&lambda_fib});
