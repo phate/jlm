@@ -419,6 +419,10 @@ private:
   {
     for (auto & allocaNode : pointsToGraph.AllocaNodes())
       MemoryNodes_.push_back(&allocaNode);
+
+    for (auto & mallocNode : pointsToGraph.MallocNodes())
+      MemoryNodes_.push_back(&mallocNode);
+
     for (auto & allocatorNode : pointsToGraph.AllocatorNodes())
       MemoryNodes_.push_back(&allocatorNode);
 
@@ -449,6 +453,10 @@ BasicEncoder::UnlinkMemUnknown(PointsToGraph & ptg)
   std::vector<PointsToGraph::Node*> memoryNodes;
   for (auto & allocaNode : ptg.AllocaNodes())
     memoryNodes.push_back(&allocaNode);
+
+  for (auto & mallocNode : ptg.MallocNodes())
+    memoryNodes.push_back(&mallocNode);
+
   for (auto & node : ptg.AllocatorNodes())
     memoryNodes.push_back(&node);
   for (auto & node : ptg.ImportNodes())
@@ -511,7 +519,7 @@ BasicEncoder::EncodeMalloc(const jive::simple_node & node)
 {
   JLM_ASSERT(is<malloc_op>(&node));
 
-  auto & mallocNode = Ptg().GetAllocatorNode(node);
+  auto & mallocNode = Ptg().GetMallocNode(node);
 
   /**
    * We use a static heap model. This means that multiple invocations of an malloc

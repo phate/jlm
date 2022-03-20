@@ -1437,7 +1437,7 @@ Steensgaard::ConstructPointsToGraph(const LocationSet & locationSets)
       }
 
       if (auto mallocLocation = dynamic_cast<MallocLocation*>(location)) {
-        auto node = &PointsToGraph::AllocatorNode::Create(
+        auto node = &PointsToGraph::MallocNode::Create(
           *pointsToGraph,
           mallocLocation->Node());
         memoryNodeMap[&locationSet].push_back(node);
