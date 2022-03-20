@@ -383,7 +383,8 @@ TestCall2()
 {
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const CallTest2 & test)
 	{
-		assert(ptg.NumAllocatorNodes() == 4);
+		assert(ptg.NumAllocatorNodes() == 3);
+    assert(ptg.NumMallocNodes() == 1);
 		assert(ptg.NumImportNodes() == 0);
 		assert(ptg.NumRegisterNodes() == 11);
 
@@ -402,7 +403,7 @@ TestCall2()
 		auto & call_create1_out = ptg.GetRegisterNode(*test.call_create1->output(0));
 		auto & call_create2_out = ptg.GetRegisterNode(*test.call_create2->output(0));
 
-		auto & malloc = ptg.GetAllocatorNode(*test.malloc);
+		auto & malloc = ptg.GetMallocNode(*test.malloc);
 		auto & malloc_out = ptg.GetRegisterNode(*test.malloc->output(0));
 
 		assertTargets(lambda_create_out, {&lambda_create});

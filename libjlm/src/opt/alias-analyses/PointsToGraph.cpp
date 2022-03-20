@@ -34,6 +34,18 @@ PointsToGraph::AllocaNodes() const
   return {AllocaNodeConstIterator(AllocaNodes_.begin()), AllocaNodeConstIterator(AllocaNodes_.end())};
 }
 
+PointsToGraph::MallocNodeRange
+PointsToGraph::MallocNodes()
+{
+  return {MallocNodeIterator(MallocNodes_.begin()), MallocNodeIterator(MallocNodes_.end())};
+}
+
+PointsToGraph::MallocNodeConstRange
+PointsToGraph::MallocNodes() const
+{
+  return {MallocNodeConstIterator(MallocNodes_.begin()), MallocNodeConstIterator(MallocNodes_.end())};
+}
+
 PointsToGraph::AllocatorNodeRange
 PointsToGraph::AllocatorNodes()
 {
@@ -79,6 +91,15 @@ PointsToGraph::AddAllocaNode(std::unique_ptr<PointsToGraph::AllocaNode> node)
   return *tmp;
 }
 
+PointsToGraph::MallocNode &
+PointsToGraph::AddMallocNode(std::unique_ptr<PointsToGraph::MallocNode> node)
+{
+  auto tmp = node.get();
+  MallocNodes_[&node->GetMallocNode()] = std::move(node);
+
+  return *tmp;
+}
+
 PointsToGraph::AllocatorNode &
 PointsToGraph::AddAllocatorNode(std::unique_ptr<PointsToGraph::AllocatorNode> node)
 {
@@ -115,6 +136,7 @@ PointsToGraph::ToDot(const PointsToGraph & pointsToGraph)
          {typeid(AllocaNode),         "box"},
          {typeid(AllocatorNode),      "box"},
          {typeid(ImportNode),         "box"},
+         {typeid(MallocNode),         "box"},
          {typeid(RegisterNode),       "oval"},
          {typeid(UnknownMemoryNode),  "box"},
          {typeid(ExternalMemoryNode), "box"}
@@ -153,6 +175,9 @@ PointsToGraph::ToDot(const PointsToGraph & pointsToGraph)
 
   for (auto & allocaNode : pointsToGraph.AllocaNodes())
     dot += printNodeAndEdges(allocaNode);
+
+  for (auto & mallocNode : pointsToGraph.MallocNodes())
+    dot += printNodeAndEdges(mallocNode);
 
   for (auto & allocatorNode : pointsToGraph.AllocatorNodes())
     dot += printNodeAndEdges(allocatorNode);
@@ -263,6 +288,15 @@ std::string
 PointsToGraph::AllocaNode::DebugString() const
 {
   return GetAllocaNode().operation().debug_string();
+}
+
+PointsToGraph::MallocNode::~MallocNode() noexcept
+= default;
+
+std::string
+PointsToGraph::MallocNode::DebugString() const
+{
+  return GetMallocNode().operation().debug_string();
 }
 
 PointsToGraph::AllocatorNode::~AllocatorNode() noexcept

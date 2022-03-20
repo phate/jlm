@@ -8,7 +8,7 @@
 
 #include <jlm/common.hpp>
 #include <jlm/util/iterator_range.hpp>
-#include <jlm/ir/operators/alloca.hpp>
+#include <jlm/ir/operators.hpp>
 #include <jlm/ir/RvsdgModule.hpp>
 
 #include <jive/rvsdg/node.hpp>
@@ -43,6 +43,9 @@ class PointsToGraph final {
   class ImportNodeIterator;
   class ImportNodeConstIterator;
 
+  class MallocNodeIterator;
+  class MallocNodeConstIterator;
+
   class RegisterNodeIterator;
   class RegisterNodeConstIterator;
 
@@ -50,6 +53,7 @@ public:
   class AllocaNode;
   class AllocatorNode;
   class ImportNode;
+  class MallocNode;
   class MemoryNode;
   class Node;
   class RegisterNode;
@@ -59,6 +63,7 @@ public:
   using AllocaNodeMap = std::unordered_map<const jive::node*, std::unique_ptr<PointsToGraph::AllocaNode>>;
   using AllocatorNodeMap = std::unordered_map<const jive::node*, std::unique_ptr<PointsToGraph::AllocatorNode>>;
   using ImportNodeMap = std::unordered_map<const jive::argument*, std::unique_ptr<PointsToGraph::ImportNode>>;
+  using MallocNodeMap = std::unordered_map<const jive::node*, std::unique_ptr<PointsToGraph::MallocNode>>;
   using RegisterNodeMap = std::unordered_map<const jive::output*, std::unique_ptr<PointsToGraph::RegisterNode>>;
 
   using AllocaNodeRange = iterator_range<AllocaNodeIterator>;
@@ -69,6 +74,9 @@ public:
 
   using ImportNodeRange = iterator_range<ImportNodeIterator>;
   using ImportNodeConstRange = iterator_range<ImportNodeConstIterator>;
+
+  using MallocNodeRange = iterator_range<MallocNodeIterator>;
+  using MallocNodeConstRange = iterator_range<MallocNodeConstIterator>;
 
   using RegisterNodeRange = iterator_range<RegisterNodeIterator>;
   using RegisterNodeConstRange = iterator_range<RegisterNodeConstIterator>;
@@ -105,6 +113,12 @@ public:
   ImportNodeConstRange
   ImportNodes() const;
 
+  MallocNodeRange
+  MallocNodes();
+
+  MallocNodeConstRange
+  MallocNodes() const;
+
   RegisterNodeRange
   RegisterNodes();
 
@@ -130,6 +144,12 @@ public:
   }
 
   size_t
+  NumMallocNodes() const noexcept
+  {
+    return MallocNodes_.size();
+  }
+
+  size_t
   NumRegisterNodes() const noexcept
   {
     return RegisterNodes_.size();
@@ -138,7 +158,7 @@ public:
   size_t
   NumNodes() const noexcept
   {
-    return NumAllocaNodes() + NumAllocatorNodes() + NumImportNodes() + NumRegisterNodes();
+    return NumAllocaNodes() + NumAllocatorNodes() + NumImportNodes() + NumMallocNodes() + NumRegisterNodes();
   }
 
   PointsToGraph::UnknownMemoryNode &
@@ -183,6 +203,16 @@ public:
     return *it->second;
   }
 
+  const PointsToGraph::MallocNode &
+  GetMallocNode(const jive::node & node) const
+  {
+    auto it = MallocNodes_.find(&node);
+    if (it == MallocNodes_.end())
+      throw error("Cannot find malloc node in points-to graph.");
+
+    return *it->second;
+  }
+
   const PointsToGraph::RegisterNode &
   GetRegisterNode(const jive::output & output) const
   {
@@ -195,6 +225,9 @@ public:
 
   PointsToGraph::AllocaNode &
   AddAllocaNode(std::unique_ptr<PointsToGraph::AllocaNode> node);
+
+  PointsToGraph::MallocNode &
+  AddMallocNode(std::unique_ptr<PointsToGraph::MallocNode> node);
 
   PointsToGraph::AllocatorNode &
   AddAllocatorNode(std::unique_ptr<PointsToGraph::AllocatorNode> node);
@@ -217,6 +250,7 @@ public:
 private:
   AllocaNodeMap AllocaNodes_;
   ImportNodeMap ImportNodes_;
+  MallocNodeMap MallocNodes_;
   RegisterNodeMap RegisterNodes_;
   AllocatorNodeMap AllocatorNodes_;
   std::unique_ptr<PointsToGraph::UnknownMemoryNode> UnknownMemoryNode_;
@@ -394,6 +428,46 @@ public:
 
 private:
   const jive::node * AllocaNode_;
+};
+
+/** \brief PointsTo graph malloc node
+ *
+ */
+class PointsToGraph::MallocNode final : public PointsToGraph::MemoryNode {
+public:
+  ~MallocNode() noexcept override;
+
+private:
+  MallocNode(
+    PointsToGraph & pointsToGraph,
+    const jive::node & mallocNode)
+    : MemoryNode(pointsToGraph)
+    , MallocNode_(&mallocNode)
+  {
+    JLM_ASSERT(is<malloc_op>(&mallocNode));
+  }
+
+public:
+  const jive::node &
+  GetMallocNode() const noexcept
+  {
+    return *MallocNode_;
+  }
+
+  std::string
+  DebugString() const override;
+
+  static PointsToGraph::MallocNode &
+  Create(
+    PointsToGraph & pointsToGraph,
+    const jive::node & node)
+  {
+    auto n = std::unique_ptr<PointsToGraph::MallocNode>(new MallocNode(pointsToGraph, node));
+    return pointsToGraph.AddMallocNode(std::move(n));
+  }
+
+private:
+  const jive::node * MallocNode_;
 };
 
 /** \brief PointsTo graph allocator node
@@ -648,6 +722,132 @@ public:
 
 private:
   AllocaNodeMap::const_iterator it_;
+};
+
+/** \brief Points-to graph malloc node iterator
+*/
+class PointsToGraph::MallocNodeIterator final : public std::iterator<std::forward_iterator_tag,
+  PointsToGraph::MallocNode*, ptrdiff_t> {
+
+  friend PointsToGraph;
+
+  explicit
+  MallocNodeIterator(const MallocNodeMap::iterator & it)
+    : it_(it)
+  {}
+
+public:
+  [[nodiscard]] PointsToGraph::MallocNode *
+  MallocNode() const noexcept
+  {
+    return it_->second.get();
+  }
+
+  PointsToGraph::MallocNode &
+  operator*() const
+  {
+    JLM_ASSERT(MallocNode() != nullptr);
+    return *MallocNode();
+  }
+
+  PointsToGraph::MallocNode *
+  operator->() const
+  {
+    return MallocNode();
+  }
+
+  MallocNodeIterator &
+  operator++()
+  {
+    ++it_;
+    return *this;
+  }
+
+  MallocNodeIterator
+  operator++(int)
+  {
+    MallocNodeIterator tmp = *this;
+    ++*this;
+    return tmp;
+  }
+
+  bool
+  operator==(const MallocNodeIterator & other) const
+  {
+    return it_ == other.it_;
+  }
+
+  bool
+  operator!=(const MallocNodeIterator & other) const
+  {
+    return !operator==(other);
+  }
+
+private:
+  MallocNodeMap::iterator it_;
+};
+
+/** \brief Points-to graph alloca node const iterator
+*/
+class PointsToGraph::MallocNodeConstIterator final : public std::iterator<std::forward_iterator_tag,
+  const PointsToGraph::MallocNode*, ptrdiff_t> {
+
+  friend PointsToGraph;
+
+  explicit
+  MallocNodeConstIterator(const MallocNodeMap::const_iterator & it)
+    : it_(it)
+  {}
+
+public:
+  [[nodiscard]] const PointsToGraph::MallocNode *
+  MallocNode() const noexcept
+  {
+    return it_->second.get();
+  }
+
+  const PointsToGraph::MallocNode &
+  operator*() const
+  {
+    JLM_ASSERT(MallocNode() != nullptr);
+    return *MallocNode();
+  }
+
+  const PointsToGraph::MallocNode *
+  operator->() const
+  {
+    return MallocNode();
+  }
+
+  MallocNodeConstIterator &
+  operator++()
+  {
+    ++it_;
+    return *this;
+  }
+
+  MallocNodeConstIterator
+  operator++(int)
+  {
+    MallocNodeConstIterator tmp = *this;
+    ++*this;
+    return tmp;
+  }
+
+  bool
+  operator==(const MallocNodeConstIterator & other) const
+  {
+    return it_ == other.it_;
+  }
+
+  bool
+  operator!=(const MallocNodeConstIterator & other) const
+  {
+    return !operator==(other);
+  }
+
+private:
+  MallocNodeMap::const_iterator it_;
 };
 
 /** \brief Points-to graph allocator node iterator
