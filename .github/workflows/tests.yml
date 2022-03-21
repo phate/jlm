@@ -124,7 +124,7 @@ jobs:
     - name: Clone polybench
       run: git clone https://github.com/phate/polybench-jlm.git
     - name: Check polybench
-      run: make -C polybench-jlm check
+      run: make -C polybench-jlm check -j `nproc`
 
   llvm-test-suite:
     runs-on: ubuntu-20.04
