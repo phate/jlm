@@ -429,9 +429,6 @@ private:
     for (auto & mallocNode : pointsToGraph.MallocNodes())
       MemoryNodes_.push_back(&mallocNode);
 
-    for (auto & allocatorNode : pointsToGraph.AllocatorNodes())
-      MemoryNodes_.push_back(&allocatorNode);
-
     for (auto & importNode : pointsToGraph.ImportNodes())
       MemoryNodes_.push_back(&importNode);
 
@@ -469,8 +466,6 @@ BasicEncoder::UnlinkMemUnknown(PointsToGraph & ptg)
   for (auto & mallocNode : ptg.MallocNodes())
     memoryNodes.push_back(&mallocNode);
 
-  for (auto & node : ptg.AllocatorNodes())
-    memoryNodes.push_back(&node);
   for (auto & node : ptg.ImportNodes())
     memoryNodes.push_back(&node);
 
