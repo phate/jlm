@@ -47,7 +47,8 @@ TestStore1()
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const StoreTest1 & test)
 	{
     assert(ptg.NumAllocaNodes() == 4);
-		assert(ptg.NumAllocatorNodes() == 1);
+		assert(ptg.NumAllocatorNodes() == 0);
+    assert(ptg.NumLambdaNodes() == 1);
 		assert(ptg.NumRegisterNodes() == 5);
 
 		auto & alloca_a = ptg.GetAllocaNode(*test.alloca_a);
@@ -60,7 +61,7 @@ TestStore1()
 		auto & palloca_c = ptg.GetRegisterNode(*test.alloca_c->output(0));
 		auto & palloca_d = ptg.GetRegisterNode(*test.alloca_d->output(0));
 
-		auto & lambda = ptg.GetAllocatorNode(*test.lambda);
+		auto & lambda = ptg.GetLambdaNode(*test.lambda);
 		auto & plambda = ptg.GetRegisterNode(*test.lambda->output());
 
 		assertTargets(alloca_a, {&alloca_b});
@@ -91,7 +92,8 @@ TestStore2()
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const StoreTest2 & test)
 	{
     assert(ptg.NumAllocaNodes() == 5);
-		assert(ptg.NumAllocatorNodes() == 1);
+		assert(ptg.NumAllocatorNodes() == 0);
+    assert(ptg.NumLambdaNodes() == 1);
 		assert(ptg.NumRegisterNodes() == 6);
 
 		auto & alloca_a = ptg.GetAllocaNode(*test.alloca_a);
@@ -106,7 +108,7 @@ TestStore2()
 		auto & palloca_y = ptg.GetRegisterNode(*test.alloca_y->output(0));
 		auto & palloca_p = ptg.GetRegisterNode(*test.alloca_p->output(0));
 
-		auto & lambda = ptg.GetAllocatorNode(*test.lambda);
+		auto & lambda = ptg.GetLambdaNode(*test.lambda);
 		auto & plambda = ptg.GetRegisterNode(*test.lambda->output());
 
 		assertTargets(alloca_a, {});
@@ -138,12 +140,13 @@ TestLoad1()
 {
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const LoadTest1 & test)
 	{
-		assert(ptg.NumAllocatorNodes() == 1);
+		assert(ptg.NumAllocatorNodes() == 0);
+    assert(ptg.NumLambdaNodes() == 1);
 		assert(ptg.NumRegisterNodes() == 3);
 
 		auto & pload_p = ptg.GetRegisterNode(*test.load_p->output(0));
 
-		auto & lambda = ptg.GetAllocatorNode(*test.lambda);
+		auto & lambda = ptg.GetLambdaNode(*test.lambda);
 		auto & plambda = ptg.GetRegisterNode(*test.lambda->output());
 		auto & lambarg0 = ptg.GetRegisterNode(*test.lambda->subregion()->argument(0));
 
@@ -167,7 +170,8 @@ TestLoad2()
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const LoadTest2 & test)
 	{
     assert(ptg.NumAllocaNodes() == 5);
-		assert(ptg.NumAllocatorNodes() == 1);
+		assert(ptg.NumAllocatorNodes() == 0);
+    assert(ptg.NumLambdaNodes() == 1);
 		assert(ptg.NumRegisterNodes() == 8);
 
 		/*
@@ -199,7 +203,8 @@ TestLoadFromUndef()
 {
   auto ValidatePointsToGraph = [](const jlm::aa::PointsToGraph & pointsToGraph, const LoadFromUndefTest & test)
   {
-    assert(pointsToGraph.NumAllocatorNodes() == 1);
+    assert(pointsToGraph.NumAllocatorNodes() == 0);
+    assert(pointsToGraph.NumLambdaNodes() == 1);
     assert(pointsToGraph.NumRegisterNodes() == 2);
 
     auto & undefValueNode = pointsToGraph.GetRegisterNode(*test.UndefValueNode()->output(0));
@@ -219,7 +224,8 @@ TestGetElementPtr()
 {
 	auto validatePtg = [](const jlm::aa::PointsToGraph & ptg, const GetElementPtrTest & test)
 	{
-		assert(ptg.NumAllocatorNodes() == 1);
+		assert(ptg.NumAllocatorNodes() == 0);
+    assert(ptg.NumLambdaNodes() == 1);
 		assert(ptg.NumRegisterNodes() == 4);
 
 		/*
@@ -246,10 +252,11 @@ TestBitCast()
 {
 	auto validatePtg = [](const jlm::aa::PointsToGraph & ptg, const BitCastTest & test)
 	{
-		assert(ptg.NumAllocatorNodes() == 1);
+		assert(ptg.NumAllocatorNodes() == 0);
+    assert(ptg.NumLambdaNodes() == 1);
 		assert(ptg.NumRegisterNodes() == 3);
 
-		auto & lambda = ptg.GetAllocatorNode(*test.lambda);
+		auto & lambda = ptg.GetLambdaNode(*test.lambda);
 		auto & lambdaOut = ptg.GetRegisterNode(*test.lambda->output());
 		auto & lambdaArg = ptg.GetRegisterNode(*test.lambda->fctargument(0));
 
@@ -273,10 +280,11 @@ TestConstantPointerNull()
 {
 	auto validatePtg = [](const jlm::aa::PointsToGraph & ptg, const ConstantPointerNullTest & test)
 	{
-		assert(ptg.NumAllocatorNodes() == 1);
+		assert(ptg.NumAllocatorNodes() == 0);
+    assert(ptg.NumLambdaNodes() == 1);
 		assert(ptg.NumRegisterNodes() == 3);
 
-		auto & lambda = ptg.GetAllocatorNode(*test.lambda);
+		auto & lambda = ptg.GetLambdaNode(*test.lambda);
 		auto & lambdaOut = ptg.GetRegisterNode(*test.lambda->output());
 		auto & lambdaArg = ptg.GetRegisterNode(*test.lambda->fctargument(0));
 
@@ -300,7 +308,8 @@ TestBits2Ptr()
 {
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const Bits2PtrTest & test)
 	{
-		assert(ptg.NumAllocatorNodes() == 2);
+		assert(ptg.NumAllocatorNodes() == 0);
+    assert(ptg.NumLambdaNodes() == 2);
 		assert(ptg.NumRegisterNodes() == 5);
 
 		auto & call_out0 = ptg.GetRegisterNode(*test.call->output(0));
@@ -324,7 +333,8 @@ TestCall1()
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const CallTest1 & test)
 	{
     assert(ptg.NumAllocaNodes() == 3);
-		assert(ptg.NumAllocatorNodes() == 3);
+		assert(ptg.NumAllocatorNodes() == 0);
+    assert(ptg.NumLambdaNodes() == 3);
 		assert(ptg.NumRegisterNodes() == 12);
 
 		auto & alloca_x = ptg.GetAllocaNode(*test.alloca_x);
@@ -335,9 +345,9 @@ TestCall1()
 		auto & palloca_y = ptg.GetRegisterNode(*test.alloca_y->output(0));
 		auto & palloca_z = ptg.GetRegisterNode(*test.alloca_z->output(0));
 
-		auto & lambda_f = ptg.GetAllocatorNode(*test.lambda_f);
-		auto & lambda_g = ptg.GetAllocatorNode(*test.lambda_g);
-		auto & lambda_h = ptg.GetAllocatorNode(*test.lambda_h);
+		auto & lambda_f = ptg.GetLambdaNode(*test.lambda_f);
+		auto & lambda_g = ptg.GetLambdaNode(*test.lambda_g);
+		auto & lambda_h = ptg.GetLambdaNode(*test.lambda_h);
 
 		auto & plambda_f = ptg.GetRegisterNode(*test.lambda_f->output());
 		auto & plambda_g = ptg.GetRegisterNode(*test.lambda_g->output());
@@ -383,19 +393,20 @@ TestCall2()
 {
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const CallTest2 & test)
 	{
-		assert(ptg.NumAllocatorNodes() == 3);
+		assert(ptg.NumAllocatorNodes() == 0);
+    assert(ptg.NumLambdaNodes() == 3);
     assert(ptg.NumMallocNodes() == 1);
 		assert(ptg.NumImportNodes() == 0);
 		assert(ptg.NumRegisterNodes() == 11);
 
-		auto & lambda_create = ptg.GetAllocatorNode(*test.lambda_create);
+		auto & lambda_create = ptg.GetLambdaNode(*test.lambda_create);
 		auto & lambda_create_out = ptg.GetRegisterNode(*test.lambda_create->output());
 
-		auto & lambda_destroy = ptg.GetAllocatorNode(*test.lambda_destroy);
+		auto & lambda_destroy = ptg.GetLambdaNode(*test.lambda_destroy);
 		auto & lambda_destroy_out = ptg.GetRegisterNode(*test.lambda_destroy->output());
 		auto & lambda_destroy_arg = ptg.GetRegisterNode(*test.lambda_destroy->fctargument(0));
 
-		auto & lambda_test = ptg.GetAllocatorNode(*test.lambda_test);
+		auto & lambda_test = ptg.GetLambdaNode(*test.lambda_test);
 		auto & lambda_test_out = ptg.GetRegisterNode(*test.lambda_test->output());
 		auto & lambda_test_cv1 = ptg.GetRegisterNode(*test.lambda_test->cvargument(0));
 		auto & lambda_test_cv2 = ptg.GetRegisterNode(*test.lambda_test->cvargument(1));
@@ -434,21 +445,22 @@ TestIndirectCall()
 {
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const IndirectCallTest & test)
 	{
-		assert(ptg.NumAllocatorNodes() == 4);
+		assert(ptg.NumAllocatorNodes() == 0);
+    assert(ptg.NumLambdaNodes() == 4);
 		assert(ptg.NumImportNodes() == 0);
 		assert(ptg.NumRegisterNodes() == 8);
 
-		auto & lambda_three = ptg.GetAllocatorNode(*test.lambda_three);
+		auto & lambda_three = ptg.GetLambdaNode(*test.lambda_three);
 		auto & lambda_three_out = ptg.GetRegisterNode(*test.lambda_three->output());
 
-		auto & lambda_four = ptg.GetAllocatorNode(*test.lambda_four);
+		auto & lambda_four = ptg.GetLambdaNode(*test.lambda_four);
 		auto & lambda_four_out = ptg.GetRegisterNode(*test.lambda_four->output());
 
-		auto & lambda_indcall = ptg.GetAllocatorNode(*test.lambda_indcall);
+		auto & lambda_indcall = ptg.GetLambdaNode(*test.lambda_indcall);
 		auto & lambda_indcall_out = ptg.GetRegisterNode(*test.lambda_indcall->output());
 		auto & lambda_indcall_arg = ptg.GetRegisterNode(*test.lambda_indcall->fctargument(0));
 
-		auto & lambda_test = ptg.GetAllocatorNode(*test.lambda_test);
+		auto & lambda_test = ptg.GetLambdaNode(*test.lambda_test);
 		auto & lambda_test_out = ptg.GetRegisterNode(*test.lambda_test->output());
 		auto & lambda_test_cv0 = ptg.GetRegisterNode(*test.lambda_test->cvargument(0));
 		auto & lambda_test_cv1 = ptg.GetRegisterNode(*test.lambda_test->cvargument(1));
@@ -480,7 +492,8 @@ TestGamma()
 {
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const GammaTest & test)
 	{
-		assert(ptg.NumAllocatorNodes() == 1);
+		assert(ptg.NumAllocatorNodes() == 0);
+    assert(ptg.NumLambdaNodes() == 1);
 		assert(ptg.NumRegisterNodes() == 15);
 
 		for (size_t n = 1; n < 5; n++) {
@@ -515,10 +528,11 @@ TestTheta()
 {
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const ThetaTest & test)
 	{
-		assert(ptg.NumAllocatorNodes() == 1);
+		assert(ptg.NumAllocatorNodes() == 0);
+    assert(ptg.NumLambdaNodes() == 1);
 		assert(ptg.NumRegisterNodes() == 5);
 
-		auto & lambda = ptg.GetAllocatorNode(*test.lambda);
+		auto & lambda = ptg.GetLambdaNode(*test.lambda);
 		auto & lambda_arg1 = ptg.GetRegisterNode(*test.lambda->fctargument(1));
 		auto & lambda_out = ptg.GetRegisterNode(*test.lambda->output());
 
@@ -549,17 +563,18 @@ TestDelta1()
 {
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const DeltaTest1 & test)
 	{
-		assert(ptg.NumAllocatorNodes() == 3);
+		assert(ptg.NumAllocatorNodes() == 1);
+    assert(ptg.NumLambdaNodes() == 2);
 		assert(ptg.NumRegisterNodes() == 6);
 
 		auto & delta_f = ptg.GetAllocatorNode(*test.delta_f);
 		auto & pdelta_f = ptg.GetRegisterNode(*test.delta_f->output());
 
-		auto & lambda_g = ptg.GetAllocatorNode(*test.lambda_g);
+		auto & lambda_g = ptg.GetLambdaNode(*test.lambda_g);
 		auto & plambda_g = ptg.GetRegisterNode(*test.lambda_g->output());
 		auto & lambda_g_arg0 = ptg.GetRegisterNode(*test.lambda_g->fctargument(0));
 
-		auto & lambda_h = ptg.GetAllocatorNode(*test.lambda_h);
+		auto & lambda_h = ptg.GetLambdaNode(*test.lambda_h);
 		auto & plambda_h = ptg.GetRegisterNode(*test.lambda_h->output());
 		auto & lambda_h_cv0 = ptg.GetRegisterNode(*test.lambda_h->cvargument(0));
 		auto & lambda_h_cv1 = ptg.GetRegisterNode(*test.lambda_h->cvargument(1));
@@ -588,7 +603,8 @@ TestDelta2()
 {
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const DeltaTest2 & test)
 	{
-		assert(ptg.NumAllocatorNodes() == 4);
+		assert(ptg.NumAllocatorNodes() == 2);
+    assert(ptg.NumLambdaNodes() == 2);
 		assert(ptg.NumRegisterNodes() == 8);
 
 		auto & delta_d1 = ptg.GetAllocatorNode(*test.delta_d1);
@@ -597,11 +613,11 @@ TestDelta2()
 		auto & delta_d2 = ptg.GetAllocatorNode(*test.delta_d2);
 		auto & delta_d2_out = ptg.GetRegisterNode(*test.delta_d2->output());
 
-		auto & lambda_f1 = ptg.GetAllocatorNode(*test.lambda_f1);
+		auto & lambda_f1 = ptg.GetLambdaNode(*test.lambda_f1);
 		auto & lambda_f1_out = ptg.GetRegisterNode(*test.lambda_f1->output());
 		auto & lambda_f1_cvd1 = ptg.GetRegisterNode(*test.lambda_f1->cvargument(0));
 
-		auto & lambda_f2 = ptg.GetAllocatorNode(*test.lambda_f2);
+		auto & lambda_f2 = ptg.GetLambdaNode(*test.lambda_f2);
 		auto & lambda_f2_out = ptg.GetRegisterNode(*test.lambda_f2->output());
 		auto & lambda_f2_cvd1 = ptg.GetRegisterNode(*test.lambda_f2->cvargument(0));
 		auto & lambda_f2_cvd2 = ptg.GetRegisterNode(*test.lambda_f2->cvargument(1));
@@ -632,7 +648,8 @@ TestImports()
 {
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const ImportTest & test)
 	{
-		assert(ptg.NumAllocatorNodes() == 2);
+		assert(ptg.NumAllocatorNodes() == 0);
+    assert(ptg.NumLambdaNodes() == 2);
 		assert(ptg.NumImportNodes() == 2);
 		assert(ptg.NumRegisterNodes() == 8);
 
@@ -642,11 +659,11 @@ TestImports()
 		auto & d2 = ptg.GetImportNode(*test.import_d2);
 		auto & import_d2 = ptg.GetRegisterNode(*test.import_d2);
 
-		auto & lambda_f1 = ptg.GetAllocatorNode(*test.lambda_f1);
+		auto & lambda_f1 = ptg.GetLambdaNode(*test.lambda_f1);
 		auto & lambda_f1_out = ptg.GetRegisterNode(*test.lambda_f1->output());
 		auto & lambda_f1_cvd1 = ptg.GetRegisterNode(*test.lambda_f1->cvargument(0));
 
-		auto & lambda_f2 = ptg.GetAllocatorNode(*test.lambda_f2);
+		auto & lambda_f2 = ptg.GetLambdaNode(*test.lambda_f2);
 		auto & lambda_f2_out = ptg.GetRegisterNode(*test.lambda_f2->output());
 		auto & lambda_f2_cvd1 = ptg.GetRegisterNode(*test.lambda_f2->cvargument(0));
 		auto & lambda_f2_cvd2 = ptg.GetRegisterNode(*test.lambda_f2->cvargument(1));
@@ -678,14 +695,15 @@ TestPhi()
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const PhiTest & test)
 	{
     assert(ptg.NumAllocaNodes() == 1);
-		assert(ptg.NumAllocatorNodes() == 2);
+		assert(ptg.NumAllocatorNodes() == 0);
+    assert(ptg.NumLambdaNodes() == 2);
 		assert(ptg.NumRegisterNodes() == 16);
 
-		auto & lambda_fib = ptg.GetAllocatorNode(*test.lambda_fib);
+		auto & lambda_fib = ptg.GetLambdaNode(*test.lambda_fib);
 		auto & lambda_fib_out = ptg.GetRegisterNode(*test.lambda_fib->output());
 		auto & lambda_fib_arg1 = ptg.GetRegisterNode(*test.lambda_fib->fctargument(1));
 
-		auto & lambda_test = ptg.GetAllocatorNode(*test.lambda_test);
+		auto & lambda_test = ptg.GetLambdaNode(*test.lambda_test);
 		auto & lambda_test_out = ptg.GetRegisterNode(*test.lambda_test->output());
 
 		auto & phi_rv = ptg.GetRegisterNode(*test.phi->begin_rv().output());
@@ -724,7 +742,8 @@ TestExternalMemory()
 {
   auto ValidatePointsToGraph = [](const jlm::aa::PointsToGraph & pointsToGraph, const ExternalMemoryTest & test)
   {
-    assert(pointsToGraph.NumAllocatorNodes() == 1);
+    assert(pointsToGraph.NumAllocatorNodes() == 0);
+    assert(pointsToGraph.NumLambdaNodes() == 1);
     assert(pointsToGraph.NumRegisterNodes() == 3);
 
     auto & lambdaFArgument0 = pointsToGraph.GetRegisterNode(*test.LambdaF->fctargument(0));

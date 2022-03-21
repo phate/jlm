@@ -34,6 +34,18 @@ PointsToGraph::AllocaNodes() const
   return {AllocaNodeConstIterator(AllocaNodes_.begin()), AllocaNodeConstIterator(AllocaNodes_.end())};
 }
 
+PointsToGraph::LambdaNodeRange
+PointsToGraph::LambdaNodes()
+{
+  return {LambdaNodeIterator(LambdaNodes_.begin()), LambdaNodeIterator(LambdaNodes_.end())};
+}
+
+PointsToGraph::LambdaNodeConstRange
+PointsToGraph::LambdaNodes() const
+{
+  return {LambdaNodeConstIterator(LambdaNodes_.begin()), LambdaNodeConstIterator(LambdaNodes_.end())};
+}
+
 PointsToGraph::MallocNodeRange
 PointsToGraph::MallocNodes()
 {
@@ -91,6 +103,15 @@ PointsToGraph::AddAllocaNode(std::unique_ptr<PointsToGraph::AllocaNode> node)
   return *tmp;
 }
 
+PointsToGraph::LambdaNode &
+PointsToGraph::AddLambdaNode(std::unique_ptr<PointsToGraph::LambdaNode> node)
+{
+  auto tmp = node.get();
+  LambdaNodes_[&node->GetLambdaNode()] = std::move(node);
+
+  return *tmp;
+}
+
 PointsToGraph::MallocNode &
 PointsToGraph::AddMallocNode(std::unique_ptr<PointsToGraph::MallocNode> node)
 {
@@ -136,6 +157,7 @@ PointsToGraph::ToDot(const PointsToGraph & pointsToGraph)
          {typeid(AllocaNode),         "box"},
          {typeid(AllocatorNode),      "box"},
          {typeid(ImportNode),         "box"},
+         {typeid(LambdaNode),         "box"},
          {typeid(MallocNode),         "box"},
          {typeid(RegisterNode),       "oval"},
          {typeid(UnknownMemoryNode),  "box"},
@@ -175,6 +197,9 @@ PointsToGraph::ToDot(const PointsToGraph & pointsToGraph)
 
   for (auto & allocaNode : pointsToGraph.AllocaNodes())
     dot += printNodeAndEdges(allocaNode);
+
+  for (auto & lambdaNode : pointsToGraph.LambdaNodes())
+    dot += printNodeAndEdges(lambdaNode);
 
   for (auto & mallocNode : pointsToGraph.MallocNodes())
     dot += printNodeAndEdges(mallocNode);
@@ -288,6 +313,15 @@ std::string
 PointsToGraph::AllocaNode::DebugString() const
 {
   return GetAllocaNode().operation().debug_string();
+}
+
+PointsToGraph::LambdaNode::~LambdaNode() noexcept
+= default;
+
+std::string
+PointsToGraph::LambdaNode::DebugString() const
+{
+  return GetLambdaNode().operation().debug_string();
 }
 
 PointsToGraph::MallocNode::~MallocNode() noexcept
