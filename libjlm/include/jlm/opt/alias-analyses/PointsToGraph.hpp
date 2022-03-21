@@ -43,6 +43,9 @@ class PointsToGraph final {
   class ImportNodeIterator;
   class ImportNodeConstIterator;
 
+  class LambdaNodeIterator;
+  class LambdaNodeConstIterator;
+
   class MallocNodeIterator;
   class MallocNodeConstIterator;
 
@@ -53,6 +56,7 @@ public:
   class AllocaNode;
   class AllocatorNode;
   class ImportNode;
+  class LambdaNode;
   class MallocNode;
   class MemoryNode;
   class Node;
@@ -63,6 +67,7 @@ public:
   using AllocaNodeMap = std::unordered_map<const jive::node*, std::unique_ptr<PointsToGraph::AllocaNode>>;
   using AllocatorNodeMap = std::unordered_map<const jive::node*, std::unique_ptr<PointsToGraph::AllocatorNode>>;
   using ImportNodeMap = std::unordered_map<const jive::argument*, std::unique_ptr<PointsToGraph::ImportNode>>;
+  using LambdaNodeMap = std::unordered_map<const lambda::node*, std::unique_ptr<PointsToGraph::LambdaNode>>;
   using MallocNodeMap = std::unordered_map<const jive::node*, std::unique_ptr<PointsToGraph::MallocNode>>;
   using RegisterNodeMap = std::unordered_map<const jive::output*, std::unique_ptr<PointsToGraph::RegisterNode>>;
 
@@ -74,6 +79,9 @@ public:
 
   using ImportNodeRange = iterator_range<ImportNodeIterator>;
   using ImportNodeConstRange = iterator_range<ImportNodeConstIterator>;
+
+  using LambdaNodeRange = iterator_range<LambdaNodeIterator>;
+  using LambdaNodeConstRange = iterator_range<LambdaNodeConstIterator>;
 
   using MallocNodeRange = iterator_range<MallocNodeIterator>;
   using MallocNodeConstRange = iterator_range<MallocNodeConstIterator>;
@@ -113,6 +121,12 @@ public:
   ImportNodeConstRange
   ImportNodes() const;
 
+  LambdaNodeRange
+  LambdaNodes();
+
+  LambdaNodeConstRange
+  LambdaNodes() const;
+
   MallocNodeRange
   MallocNodes();
 
@@ -144,6 +158,12 @@ public:
   }
 
   size_t
+  NumLambdaNodes() const noexcept
+  {
+    return LambdaNodes_.size();
+  }
+
+  size_t
   NumMallocNodes() const noexcept
   {
     return MallocNodes_.size();
@@ -158,7 +178,12 @@ public:
   size_t
   NumNodes() const noexcept
   {
-    return NumAllocaNodes() + NumAllocatorNodes() + NumImportNodes() + NumMallocNodes() + NumRegisterNodes();
+    return NumAllocaNodes()
+           + NumAllocatorNodes()
+           + NumImportNodes()
+           + NumLambdaNodes()
+           + NumMallocNodes()
+           + NumRegisterNodes();
   }
 
   PointsToGraph::UnknownMemoryNode &
@@ -203,6 +228,16 @@ public:
     return *it->second;
   }
 
+  const PointsToGraph::LambdaNode &
+  GetLambdaNode(const lambda::node & node) const
+  {
+    auto it = LambdaNodes_.find(&node);
+    if (it == LambdaNodes_.end())
+      throw error("Cannot find lambda node in points-to graph.");
+
+    return *it->second;
+  }
+
   const PointsToGraph::MallocNode &
   GetMallocNode(const jive::node & node) const
   {
@@ -225,6 +260,9 @@ public:
 
   PointsToGraph::AllocaNode &
   AddAllocaNode(std::unique_ptr<PointsToGraph::AllocaNode> node);
+
+  PointsToGraph::LambdaNode &
+  AddLambdaNode(std::unique_ptr<PointsToGraph::LambdaNode> node);
 
   PointsToGraph::MallocNode &
   AddMallocNode(std::unique_ptr<PointsToGraph::MallocNode> node);
@@ -250,13 +288,13 @@ public:
 private:
   AllocaNodeMap AllocaNodes_;
   ImportNodeMap ImportNodes_;
+  LambdaNodeMap LambdaNodes_;
   MallocNodeMap MallocNodes_;
   RegisterNodeMap RegisterNodes_;
   AllocatorNodeMap AllocatorNodes_;
   std::unique_ptr<PointsToGraph::UnknownMemoryNode> UnknownMemoryNode_;
   std::unique_ptr<ExternalMemoryNode> ExternalMemoryNode_;
 };
-
 
 /** \brief PointsTo graph node
 *
@@ -508,6 +546,46 @@ private:
   const jive::node * Node_;
 };
 
+/** \brief PointsTo graph malloc node
+ *
+ */
+class PointsToGraph::LambdaNode final : public PointsToGraph::MemoryNode {
+public:
+  ~LambdaNode() noexcept override;
+
+private:
+  LambdaNode(
+    PointsToGraph & pointsToGraph,
+    const lambda::node & lambdaNode)
+    : MemoryNode(pointsToGraph)
+    , LambdaNode_(&lambdaNode)
+  {
+    JLM_ASSERT(is<lambda::operation>(&lambdaNode));
+  }
+
+public:
+  const lambda::node &
+  GetLambdaNode() const noexcept
+  {
+    return *LambdaNode_;
+  }
+
+  std::string
+  DebugString() const override;
+
+  static PointsToGraph::LambdaNode &
+  Create(
+    PointsToGraph & pointsToGraph,
+    const lambda::node & lambdaNode)
+  {
+    auto n = std::unique_ptr<PointsToGraph::LambdaNode>(new LambdaNode(pointsToGraph, lambdaNode));
+    return pointsToGraph.AddLambdaNode(std::move(n));
+  }
+
+private:
+  const lambda::node * LambdaNode_;
+};
+
 /** \brief PointsTo graph import node
 *
 */
@@ -722,6 +800,132 @@ public:
 
 private:
   AllocaNodeMap::const_iterator it_;
+};
+
+/** \brief Points-to graph lambda node iterator
+*/
+class PointsToGraph::LambdaNodeIterator final : public std::iterator<std::forward_iterator_tag,
+  PointsToGraph::LambdaNode*, ptrdiff_t> {
+
+  friend PointsToGraph;
+
+  explicit
+  LambdaNodeIterator(const LambdaNodeMap::iterator & it)
+    : it_(it)
+  {}
+
+public:
+  [[nodiscard]] PointsToGraph::LambdaNode *
+  LambdaNode() const noexcept
+  {
+    return it_->second.get();
+  }
+
+  PointsToGraph::LambdaNode &
+  operator*() const
+  {
+    JLM_ASSERT(LambdaNode() != nullptr);
+    return *LambdaNode();
+  }
+
+  PointsToGraph::LambdaNode *
+  operator->() const
+  {
+    return LambdaNode();
+  }
+
+  LambdaNodeIterator &
+  operator++()
+  {
+    ++it_;
+    return *this;
+  }
+
+  LambdaNodeIterator
+  operator++(int)
+  {
+    LambdaNodeIterator tmp = *this;
+    ++*this;
+    return tmp;
+  }
+
+  bool
+  operator==(const LambdaNodeIterator & other) const
+  {
+    return it_ == other.it_;
+  }
+
+  bool
+  operator!=(const LambdaNodeIterator & other) const
+  {
+    return !operator==(other);
+  }
+
+private:
+  LambdaNodeMap::iterator it_;
+};
+
+/** \brief Points-to graph lambda node const iterator
+*/
+class PointsToGraph::LambdaNodeConstIterator final : public std::iterator<std::forward_iterator_tag,
+  const PointsToGraph::LambdaNode*, ptrdiff_t> {
+
+  friend PointsToGraph;
+
+  explicit
+  LambdaNodeConstIterator(const LambdaNodeMap::const_iterator & it)
+    : it_(it)
+  {}
+
+public:
+  [[nodiscard]] const PointsToGraph::LambdaNode *
+  LambdaNode() const noexcept
+  {
+    return it_->second.get();
+  }
+
+  const PointsToGraph::LambdaNode &
+  operator*() const
+  {
+    JLM_ASSERT(LambdaNode() != nullptr);
+    return *LambdaNode();
+  }
+
+  const PointsToGraph::LambdaNode *
+  operator->() const
+  {
+    return LambdaNode();
+  }
+
+  LambdaNodeConstIterator &
+  operator++()
+  {
+    ++it_;
+    return *this;
+  }
+
+  LambdaNodeConstIterator
+  operator++(int)
+  {
+    LambdaNodeConstIterator tmp = *this;
+    ++*this;
+    return tmp;
+  }
+
+  bool
+  operator==(const LambdaNodeConstIterator & other) const
+  {
+    return it_ == other.it_;
+  }
+
+  bool
+  operator!=(const LambdaNodeConstIterator & other) const
+  {
+    return !operator==(other);
+  }
+
+private:
+  LambdaNodeMap::const_iterator it_;
 };
 
 /** \brief Points-to graph malloc node iterator
