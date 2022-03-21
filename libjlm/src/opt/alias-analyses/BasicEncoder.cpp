@@ -420,6 +420,9 @@ private:
     for (auto & allocaNode : pointsToGraph.AllocaNodes())
       MemoryNodes_.push_back(&allocaNode);
 
+    for (auto & deltaNode : pointsToGraph.DeltaNodes())
+      MemoryNodes_.push_back(&deltaNode);
+
     for (auto & lambdaNode : pointsToGraph.LambdaNodes())
       MemoryNodes_.push_back(&lambdaNode);
 
@@ -456,6 +459,9 @@ BasicEncoder::UnlinkMemUnknown(PointsToGraph & ptg)
   std::vector<PointsToGraph::Node*> memoryNodes;
   for (auto & allocaNode : ptg.AllocaNodes())
     memoryNodes.push_back(&allocaNode);
+
+  for (auto & deltaNode : ptg.DeltaNodes())
+    memoryNodes.push_back(&deltaNode);
 
   for (auto & lambdaNode : ptg.LambdaNodes())
     memoryNodes.push_back(&lambdaNode);

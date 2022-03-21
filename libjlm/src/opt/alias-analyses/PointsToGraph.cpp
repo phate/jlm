@@ -34,6 +34,18 @@ PointsToGraph::AllocaNodes() const
   return {AllocaNodeConstIterator(AllocaNodes_.begin()), AllocaNodeConstIterator(AllocaNodes_.end())};
 }
 
+PointsToGraph::DeltaNodeRange
+PointsToGraph::DeltaNodes()
+{
+  return {DeltaNodeIterator(DeltaNodes_.begin()), DeltaNodeIterator(DeltaNodes_.end())};
+}
+
+PointsToGraph::DeltaNodeConstRange
+PointsToGraph::DeltaNodes() const
+{
+  return {DeltaNodeConstIterator(DeltaNodes_.begin()), DeltaNodeConstIterator(DeltaNodes_.end())};
+}
+
 PointsToGraph::LambdaNodeRange
 PointsToGraph::LambdaNodes()
 {
@@ -103,6 +115,15 @@ PointsToGraph::AddAllocaNode(std::unique_ptr<PointsToGraph::AllocaNode> node)
   return *tmp;
 }
 
+PointsToGraph::DeltaNode &
+PointsToGraph::AddDeltaNode(std::unique_ptr<PointsToGraph::DeltaNode> node)
+{
+  auto tmp = node.get();
+  DeltaNodes_[&node->GetDeltaNode()] = std::move(node);
+
+  return *tmp;
+}
+
 PointsToGraph::LambdaNode &
 PointsToGraph::AddLambdaNode(std::unique_ptr<PointsToGraph::LambdaNode> node)
 {
@@ -156,6 +177,7 @@ PointsToGraph::ToDot(const PointsToGraph & pointsToGraph)
       ({
          {typeid(AllocaNode),         "box"},
          {typeid(AllocatorNode),      "box"},
+         {typeid(DeltaNode),          "box"},
          {typeid(ImportNode),         "box"},
          {typeid(LambdaNode),         "box"},
          {typeid(MallocNode),         "box"},
@@ -197,6 +219,9 @@ PointsToGraph::ToDot(const PointsToGraph & pointsToGraph)
 
   for (auto & allocaNode : pointsToGraph.AllocaNodes())
     dot += printNodeAndEdges(allocaNode);
+
+  for (auto & deltaNode : pointsToGraph.DeltaNodes())
+    dot += printNodeAndEdges(deltaNode);
 
   for (auto & lambdaNode : pointsToGraph.LambdaNodes())
     dot += printNodeAndEdges(lambdaNode);
@@ -313,6 +338,15 @@ std::string
 PointsToGraph::AllocaNode::DebugString() const
 {
   return GetAllocaNode().operation().debug_string();
+}
+
+PointsToGraph::DeltaNode::~DeltaNode() noexcept
+= default;
+
+std::string
+PointsToGraph::DeltaNode::DebugString() const
+{
+  return GetDeltaNode().operation().debug_string();
 }
 
 PointsToGraph::LambdaNode::~LambdaNode() noexcept
