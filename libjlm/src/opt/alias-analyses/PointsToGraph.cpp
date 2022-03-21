@@ -70,18 +70,6 @@ PointsToGraph::MallocNodes() const
   return {MallocNodeConstIterator(MallocNodes_.begin()), MallocNodeConstIterator(MallocNodes_.end())};
 }
 
-PointsToGraph::AllocatorNodeRange
-PointsToGraph::AllocatorNodes()
-{
-  return {AllocatorNodeIterator(AllocatorNodes_.begin()), AllocatorNodeIterator(AllocatorNodes_.end())};
-}
-
-PointsToGraph::AllocatorNodeConstRange
-PointsToGraph::AllocatorNodes() const
-{
-  return {AllocatorNodeConstIterator(AllocatorNodes_.begin()), AllocatorNodeConstIterator(AllocatorNodes_.end())};
-}
-
 PointsToGraph::ImportNodeRange
 PointsToGraph::ImportNodes()
 {
@@ -142,15 +130,6 @@ PointsToGraph::AddMallocNode(std::unique_ptr<PointsToGraph::MallocNode> node)
   return *tmp;
 }
 
-PointsToGraph::AllocatorNode &
-PointsToGraph::AddAllocatorNode(std::unique_ptr<PointsToGraph::AllocatorNode> node)
-{
-  auto tmp = node.get();
-  AllocatorNodes_[&node->GetNode()] = std::move(node);
-
-  return *tmp;
-}
-
 PointsToGraph::RegisterNode &
 PointsToGraph::AddRegisterNode(std::unique_ptr<PointsToGraph::RegisterNode> node)
 {
@@ -176,7 +155,6 @@ PointsToGraph::ToDot(const PointsToGraph & pointsToGraph)
     static std::unordered_map<std::type_index, std::string> shapes
       ({
          {typeid(AllocaNode),         "box"},
-         {typeid(AllocatorNode),      "box"},
          {typeid(DeltaNode),          "box"},
          {typeid(ImportNode),         "box"},
          {typeid(LambdaNode),         "box"},
@@ -214,14 +192,14 @@ PointsToGraph::ToDot(const PointsToGraph & pointsToGraph)
   };
 
   std::string dot("digraph PointsToGraph {\n");
-  for (auto & registerNode : pointsToGraph.RegisterNodes())
-    dot += printNodeAndEdges(registerNode);
-
   for (auto & allocaNode : pointsToGraph.AllocaNodes())
     dot += printNodeAndEdges(allocaNode);
 
   for (auto & deltaNode : pointsToGraph.DeltaNodes())
     dot += printNodeAndEdges(deltaNode);
+
+  for (auto & importNode : pointsToGraph.ImportNodes())
+    dot += printNodeAndEdges(importNode);
 
   for (auto & lambdaNode : pointsToGraph.LambdaNodes())
     dot += printNodeAndEdges(lambdaNode);
@@ -229,11 +207,8 @@ PointsToGraph::ToDot(const PointsToGraph & pointsToGraph)
   for (auto & mallocNode : pointsToGraph.MallocNodes())
     dot += printNodeAndEdges(mallocNode);
 
-  for (auto & allocatorNode : pointsToGraph.AllocatorNodes())
-    dot += printNodeAndEdges(allocatorNode);
-
-  for (auto & importNode : pointsToGraph.ImportNodes())
-    dot += printNodeAndEdges(importNode);
+  for (auto & registerNode : pointsToGraph.RegisterNodes())
+    dot += printNodeAndEdges(registerNode);
 
   dot += nodeString(pointsToGraph.GetUnknownMemoryNode());
   dot += nodeString(pointsToGraph.GetExternalMemoryNode());
@@ -365,15 +340,6 @@ std::string
 PointsToGraph::MallocNode::DebugString() const
 {
   return GetMallocNode().operation().debug_string();
-}
-
-PointsToGraph::AllocatorNode::~AllocatorNode() noexcept
-= default;
-
-std::string
-PointsToGraph::AllocatorNode::DebugString() const
-{
-	return GetNode().operation().debug_string();
 }
 
 PointsToGraph::ImportNode::~ImportNode() noexcept

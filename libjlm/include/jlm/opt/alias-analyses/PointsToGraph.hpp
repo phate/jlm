@@ -37,9 +37,6 @@ class PointsToGraph final {
   class AllocaNodeIterator;
   class AllocaNodeConstIterator;
 
-  class AllocatorNodeIterator;
-  class AllocatorNodeConstIterator;
-
   class DeltaNodeIterator;
   class DeltaNodeConstIterator;
 
@@ -57,7 +54,6 @@ class PointsToGraph final {
 
 public:
   class AllocaNode;
-  class AllocatorNode;
   class DeltaNode;
   class ImportNode;
   class LambdaNode;
@@ -69,7 +65,6 @@ public:
   class ExternalMemoryNode;
 
   using AllocaNodeMap = std::unordered_map<const jive::node*, std::unique_ptr<PointsToGraph::AllocaNode>>;
-  using AllocatorNodeMap = std::unordered_map<const jive::node*, std::unique_ptr<PointsToGraph::AllocatorNode>>;
   using DeltaNodeMap = std::unordered_map<const delta::node*, std::unique_ptr<PointsToGraph::DeltaNode>>;
   using ImportNodeMap = std::unordered_map<const jive::argument*, std::unique_ptr<PointsToGraph::ImportNode>>;
   using LambdaNodeMap = std::unordered_map<const lambda::node*, std::unique_ptr<PointsToGraph::LambdaNode>>;
@@ -78,9 +73,6 @@ public:
 
   using AllocaNodeRange = iterator_range<AllocaNodeIterator>;
   using AllocaNodeConstRange = iterator_range<AllocaNodeConstIterator>;
-
-  using AllocatorNodeRange = iterator_range<AllocatorNodeIterator>;
-  using AllocatorNodeConstRange = iterator_range<AllocatorNodeConstIterator>;
 
   using DeltaNodeRange = iterator_range<DeltaNodeIterator>;
   using DeltaNodeConstRange = iterator_range<DeltaNodeConstIterator>;
@@ -116,12 +108,6 @@ public:
 
   AllocaNodeConstRange
   AllocaNodes() const;
-
-  AllocatorNodeRange
-  AllocatorNodes();
-
-  AllocatorNodeConstRange
-  AllocatorNodes() const;
 
   DeltaNodeRange
   DeltaNodes();
@@ -160,12 +146,6 @@ public:
   }
 
   size_t
-  NumAllocatorNodes() const noexcept
-  {
-    return AllocatorNodes_.size();
-  }
-
-  size_t
   NumDeltaNodes() const noexcept
   {
     return DeltaNodes_.size();
@@ -199,7 +179,6 @@ public:
   NumNodes() const noexcept
   {
     return NumAllocaNodes()
-           + NumAllocatorNodes()
            + NumDeltaNodes()
            + NumImportNodes()
            + NumLambdaNodes()
@@ -225,16 +204,6 @@ public:
     auto it = AllocaNodes_.find(&node);
     if (it == AllocaNodes_.end())
       throw error("Cannot find alloca node in points-to graph.");
-
-    return *it->second;
-  }
-
-  const PointsToGraph::AllocatorNode &
-  GetAllocatorNode(const jive::node & node) const
-  {
-    auto it = AllocatorNodes_.find(&node);
-    if (it == AllocatorNodes_.end())
-      throw error("Cannot find memory node in points-to graph.");
 
     return *it->second;
   }
@@ -301,9 +270,6 @@ public:
   PointsToGraph::MallocNode &
   AddMallocNode(std::unique_ptr<PointsToGraph::MallocNode> node);
 
-  PointsToGraph::AllocatorNode &
-  AddAllocatorNode(std::unique_ptr<PointsToGraph::AllocatorNode> node);
-
   PointsToGraph::RegisterNode &
   AddRegisterNode(std::unique_ptr<PointsToGraph::RegisterNode> node);
 
@@ -326,7 +292,6 @@ private:
   LambdaNodeMap LambdaNodes_;
   MallocNodeMap MallocNodes_;
   RegisterNodeMap RegisterNodes_;
-  AllocatorNodeMap AllocatorNodes_;
   std::unique_ptr<PointsToGraph::UnknownMemoryNode> UnknownMemoryNode_;
   std::unique_ptr<ExternalMemoryNode> ExternalMemoryNode_;
 };
@@ -581,44 +546,6 @@ public:
 
 private:
   const jive::node * MallocNode_;
-};
-
-/** \brief PointsTo graph allocator node
-*
-*/
-class PointsToGraph::AllocatorNode final : public PointsToGraph::MemoryNode {
-public:
-  ~AllocatorNode() noexcept override;
-
-private:
-  AllocatorNode(
-    PointsToGraph & pointsToGraph,
-    const jive::node & node)
-    : MemoryNode(pointsToGraph)
-    , Node_(&node)
-  {}
-
-public:
-  const jive::node &
-  GetNode() const noexcept
-  {
-    return *Node_;
-  }
-
-  std::string
-  DebugString() const override;
-
-  static PointsToGraph::AllocatorNode &
-  Create(
-    PointsToGraph & pointsToGraph,
-    const jive::node & node)
-  {
-    auto n = std::unique_ptr<PointsToGraph::AllocatorNode>(new AllocatorNode(pointsToGraph, node));
-    return pointsToGraph.AddAllocatorNode(std::move(n));
-  }
-
-private:
-  const jive::node * Node_;
 };
 
 /** \brief PointsTo graph malloc node
@@ -1253,132 +1180,6 @@ public:
 
 private:
   MallocNodeMap::const_iterator it_;
-};
-
-/** \brief Points-to graph allocator node iterator
-*/
-class PointsToGraph::AllocatorNodeIterator final : public std::iterator<std::forward_iterator_tag,
-  PointsToGraph::AllocatorNode*, ptrdiff_t> {
-
-  friend PointsToGraph;
-
-  explicit
-  AllocatorNodeIterator(const AllocatorNodeMap::iterator & it)
-    : it_(it)
-  {}
-
-public:
-  [[nodiscard]] PointsToGraph::AllocatorNode *
-  AllocatorNode() const noexcept
-  {
-    return it_->second.get();
-  }
-
-  PointsToGraph::AllocatorNode &
-  operator*() const
-  {
-    JLM_ASSERT(AllocatorNode() != nullptr);
-    return *AllocatorNode();
-  }
-
-  PointsToGraph::AllocatorNode *
-  operator->() const
-  {
-    return AllocatorNode();
-  }
-
-  AllocatorNodeIterator &
-  operator++()
-  {
-    ++it_;
-    return *this;
-  }
-
-  AllocatorNodeIterator
-  operator++(int)
-  {
-    AllocatorNodeIterator tmp = *this;
-    ++*this;
-    return tmp;
-  }
-
-  bool
-  operator==(const AllocatorNodeIterator & other) const
-  {
-    return it_ == other.it_;
-  }
-
-  bool
-  operator!=(const AllocatorNodeIterator & other) const
-  {
-    return !operator==(other);
-  }
-
-private:
-  AllocatorNodeMap::iterator it_;
-};
-
-/** \brief Points-to graph allocator node const iterator
-*/
-class PointsToGraph::AllocatorNodeConstIterator final : public std::iterator<std::forward_iterator_tag,
-  const PointsToGraph::AllocatorNode*, ptrdiff_t> {
-
-  friend PointsToGraph;
-
-  explicit
-  AllocatorNodeConstIterator(const AllocatorNodeMap::const_iterator & it)
-    : it_(it)
-  {}
-
-public:
-  [[nodiscard]] const PointsToGraph::AllocatorNode *
-  AllocatorNode() const noexcept
-  {
-    return it_->second.get();
-  }
-
-  const PointsToGraph::AllocatorNode &
-  operator*() const
-  {
-    JLM_ASSERT(AllocatorNode() != nullptr);
-    return *AllocatorNode();
-  }
-
-  const PointsToGraph::AllocatorNode *
-  operator->() const
-  {
-    return AllocatorNode();
-  }
-
-  AllocatorNodeConstIterator &
-  operator++()
-  {
-    ++it_;
-    return *this;
-  }
-
-  AllocatorNodeConstIterator
-  operator++(int)
-  {
-    AllocatorNodeConstIterator tmp = *this;
-    ++*this;
-    return tmp;
-  }
-
-  bool
-  operator==(const AllocatorNodeConstIterator & other) const
-  {
-    return it_ == other.it_;
-  }
-
-  bool
-  operator!=(const AllocatorNodeConstIterator & other) const
-  {
-    return !operator==(other);
-  }
-
-private:
-  AllocatorNodeMap::const_iterator it_;
 };
 
 /** \brief Points-to graph import node iterator

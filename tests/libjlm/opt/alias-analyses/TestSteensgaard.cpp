@@ -47,7 +47,6 @@ TestStore1()
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const StoreTest1 & test)
 	{
     assert(ptg.NumAllocaNodes() == 4);
-		assert(ptg.NumAllocatorNodes() == 0);
     assert(ptg.NumLambdaNodes() == 1);
 		assert(ptg.NumRegisterNodes() == 5);
 
@@ -92,7 +91,6 @@ TestStore2()
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const StoreTest2 & test)
 	{
     assert(ptg.NumAllocaNodes() == 5);
-		assert(ptg.NumAllocatorNodes() == 0);
     assert(ptg.NumLambdaNodes() == 1);
 		assert(ptg.NumRegisterNodes() == 6);
 
@@ -140,7 +138,6 @@ TestLoad1()
 {
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const LoadTest1 & test)
 	{
-		assert(ptg.NumAllocatorNodes() == 0);
     assert(ptg.NumLambdaNodes() == 1);
 		assert(ptg.NumRegisterNodes() == 3);
 
@@ -170,7 +167,6 @@ TestLoad2()
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const LoadTest2 & test)
 	{
     assert(ptg.NumAllocaNodes() == 5);
-		assert(ptg.NumAllocatorNodes() == 0);
     assert(ptg.NumLambdaNodes() == 1);
 		assert(ptg.NumRegisterNodes() == 8);
 
@@ -203,7 +199,6 @@ TestLoadFromUndef()
 {
   auto ValidatePointsToGraph = [](const jlm::aa::PointsToGraph & pointsToGraph, const LoadFromUndefTest & test)
   {
-    assert(pointsToGraph.NumAllocatorNodes() == 0);
     assert(pointsToGraph.NumLambdaNodes() == 1);
     assert(pointsToGraph.NumRegisterNodes() == 2);
 
@@ -224,7 +219,6 @@ TestGetElementPtr()
 {
 	auto validatePtg = [](const jlm::aa::PointsToGraph & ptg, const GetElementPtrTest & test)
 	{
-		assert(ptg.NumAllocatorNodes() == 0);
     assert(ptg.NumLambdaNodes() == 1);
 		assert(ptg.NumRegisterNodes() == 4);
 
@@ -252,7 +246,6 @@ TestBitCast()
 {
 	auto validatePtg = [](const jlm::aa::PointsToGraph & ptg, const BitCastTest & test)
 	{
-		assert(ptg.NumAllocatorNodes() == 0);
     assert(ptg.NumLambdaNodes() == 1);
 		assert(ptg.NumRegisterNodes() == 3);
 
@@ -280,7 +273,6 @@ TestConstantPointerNull()
 {
 	auto validatePtg = [](const jlm::aa::PointsToGraph & ptg, const ConstantPointerNullTest & test)
 	{
-		assert(ptg.NumAllocatorNodes() == 0);
     assert(ptg.NumLambdaNodes() == 1);
 		assert(ptg.NumRegisterNodes() == 3);
 
@@ -308,7 +300,6 @@ TestBits2Ptr()
 {
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const Bits2PtrTest & test)
 	{
-		assert(ptg.NumAllocatorNodes() == 0);
     assert(ptg.NumLambdaNodes() == 2);
 		assert(ptg.NumRegisterNodes() == 5);
 
@@ -333,7 +324,6 @@ TestCall1()
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const CallTest1 & test)
 	{
     assert(ptg.NumAllocaNodes() == 3);
-		assert(ptg.NumAllocatorNodes() == 0);
     assert(ptg.NumLambdaNodes() == 3);
 		assert(ptg.NumRegisterNodes() == 12);
 
@@ -393,7 +383,6 @@ TestCall2()
 {
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const CallTest2 & test)
 	{
-		assert(ptg.NumAllocatorNodes() == 0);
     assert(ptg.NumLambdaNodes() == 3);
     assert(ptg.NumMallocNodes() == 1);
 		assert(ptg.NumImportNodes() == 0);
@@ -445,7 +434,6 @@ TestIndirectCall()
 {
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const IndirectCallTest & test)
 	{
-		assert(ptg.NumAllocatorNodes() == 0);
     assert(ptg.NumLambdaNodes() == 4);
 		assert(ptg.NumImportNodes() == 0);
 		assert(ptg.NumRegisterNodes() == 8);
@@ -492,7 +480,6 @@ TestGamma()
 {
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const GammaTest & test)
 	{
-		assert(ptg.NumAllocatorNodes() == 0);
     assert(ptg.NumLambdaNodes() == 1);
 		assert(ptg.NumRegisterNodes() == 15);
 
@@ -528,7 +515,6 @@ TestTheta()
 {
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const ThetaTest & test)
 	{
-		assert(ptg.NumAllocatorNodes() == 0);
     assert(ptg.NumLambdaNodes() == 1);
 		assert(ptg.NumRegisterNodes() == 5);
 
@@ -563,7 +549,6 @@ TestDelta1()
 {
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const DeltaTest1 & test)
 	{
-		assert(ptg.NumAllocatorNodes() == 0);
     assert(ptg.NumDeltaNodes() == 1);
     assert(ptg.NumLambdaNodes() == 2);
 		assert(ptg.NumRegisterNodes() == 6);
@@ -604,7 +589,6 @@ TestDelta2()
 {
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const DeltaTest2 & test)
 	{
-		assert(ptg.NumAllocatorNodes() == 0);
     assert(ptg.NumDeltaNodes() == 2);
     assert(ptg.NumLambdaNodes() == 2);
 		assert(ptg.NumRegisterNodes() == 8);
@@ -650,7 +634,6 @@ TestImports()
 {
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const ImportTest & test)
 	{
-		assert(ptg.NumAllocatorNodes() == 0);
     assert(ptg.NumLambdaNodes() == 2);
 		assert(ptg.NumImportNodes() == 2);
 		assert(ptg.NumRegisterNodes() == 8);
@@ -697,7 +680,6 @@ TestPhi()
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const PhiTest & test)
 	{
     assert(ptg.NumAllocaNodes() == 1);
-		assert(ptg.NumAllocatorNodes() == 0);
     assert(ptg.NumLambdaNodes() == 2);
 		assert(ptg.NumRegisterNodes() == 16);
 
@@ -744,7 +726,6 @@ TestExternalMemory()
 {
   auto ValidatePointsToGraph = [](const jlm::aa::PointsToGraph & pointsToGraph, const ExternalMemoryTest & test)
   {
-    assert(pointsToGraph.NumAllocatorNodes() == 0);
     assert(pointsToGraph.NumLambdaNodes() == 1);
     assert(pointsToGraph.NumRegisterNodes() == 3);
 

@@ -99,7 +99,6 @@ public:
   {
     timer_.stop();
     numRegisterNodes_ = pointsToGraph.NumRegisterNodes();
-    numAllocatorNodes_ = pointsToGraph.NumAllocatorNodes();
     numImportNodes_ = pointsToGraph.NumImportNodes();
     numUnknownMemorySources_ = pointsToGraph.GetUnknownMemoryNode().NumSources();
   }
