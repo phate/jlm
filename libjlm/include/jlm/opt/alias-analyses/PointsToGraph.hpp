@@ -40,6 +40,9 @@ class PointsToGraph final {
   class AllocatorNodeIterator;
   class AllocatorNodeConstIterator;
 
+  class DeltaNodeIterator;
+  class DeltaNodeConstIterator;
+
   class ImportNodeIterator;
   class ImportNodeConstIterator;
 
@@ -55,6 +58,7 @@ class PointsToGraph final {
 public:
   class AllocaNode;
   class AllocatorNode;
+  class DeltaNode;
   class ImportNode;
   class LambdaNode;
   class MallocNode;
@@ -66,6 +70,7 @@ public:
 
   using AllocaNodeMap = std::unordered_map<const jive::node*, std::unique_ptr<PointsToGraph::AllocaNode>>;
   using AllocatorNodeMap = std::unordered_map<const jive::node*, std::unique_ptr<PointsToGraph::AllocatorNode>>;
+  using DeltaNodeMap = std::unordered_map<const delta::node*, std::unique_ptr<PointsToGraph::DeltaNode>>;
   using ImportNodeMap = std::unordered_map<const jive::argument*, std::unique_ptr<PointsToGraph::ImportNode>>;
   using LambdaNodeMap = std::unordered_map<const lambda::node*, std::unique_ptr<PointsToGraph::LambdaNode>>;
   using MallocNodeMap = std::unordered_map<const jive::node*, std::unique_ptr<PointsToGraph::MallocNode>>;
@@ -76,6 +81,9 @@ public:
 
   using AllocatorNodeRange = iterator_range<AllocatorNodeIterator>;
   using AllocatorNodeConstRange = iterator_range<AllocatorNodeConstIterator>;
+
+  using DeltaNodeRange = iterator_range<DeltaNodeIterator>;
+  using DeltaNodeConstRange = iterator_range<DeltaNodeConstIterator>;
 
   using ImportNodeRange = iterator_range<ImportNodeIterator>;
   using ImportNodeConstRange = iterator_range<ImportNodeConstIterator>;
@@ -115,6 +123,12 @@ public:
   AllocatorNodeConstRange
   AllocatorNodes() const;
 
+  DeltaNodeRange
+  DeltaNodes();
+
+  DeltaNodeConstRange
+  DeltaNodes() const;
+
   ImportNodeRange
   ImportNodes();
 
@@ -152,6 +166,12 @@ public:
   }
 
   size_t
+  NumDeltaNodes() const noexcept
+  {
+    return DeltaNodes_.size();
+  }
+
+  size_t
   NumImportNodes() const noexcept
   {
     return ImportNodes_.size();
@@ -180,6 +200,7 @@ public:
   {
     return NumAllocaNodes()
            + NumAllocatorNodes()
+           + NumDeltaNodes()
            + NumImportNodes()
            + NumLambdaNodes()
            + NumMallocNodes()
@@ -214,6 +235,16 @@ public:
     auto it = AllocatorNodes_.find(&node);
     if (it == AllocatorNodes_.end())
       throw error("Cannot find memory node in points-to graph.");
+
+    return *it->second;
+  }
+
+  const PointsToGraph::DeltaNode &
+  GetDeltaNode(const delta::node & node) const
+  {
+    auto it = DeltaNodes_.find(&node);
+    if (it == DeltaNodes_.end())
+      throw error("Cannot find delta node in points-to graph.");
 
     return *it->second;
   }
@@ -261,6 +292,9 @@ public:
   PointsToGraph::AllocaNode &
   AddAllocaNode(std::unique_ptr<PointsToGraph::AllocaNode> node);
 
+  PointsToGraph::DeltaNode &
+  AddDeltaNode(std::unique_ptr<PointsToGraph::DeltaNode> node);
+
   PointsToGraph::LambdaNode &
   AddLambdaNode(std::unique_ptr<PointsToGraph::LambdaNode> node);
 
@@ -287,6 +321,7 @@ public:
 
 private:
   AllocaNodeMap AllocaNodes_;
+  DeltaNodeMap DeltaNodes_;
   ImportNodeMap ImportNodes_;
   LambdaNodeMap LambdaNodes_;
   MallocNodeMap MallocNodes_;
@@ -466,6 +501,46 @@ public:
 
 private:
   const jive::node * AllocaNode_;
+};
+
+/** \brief PointsTo graph delta node
+ *
+ */
+class PointsToGraph::DeltaNode final : public PointsToGraph::MemoryNode {
+public:
+  ~DeltaNode() noexcept override;
+
+private:
+  DeltaNode(
+    PointsToGraph & pointsToGraph,
+    const delta::node & deltaNode)
+    : MemoryNode(pointsToGraph)
+    , DeltaNode_(&deltaNode)
+  {
+    JLM_ASSERT(is<delta::operation>(&deltaNode));
+  }
+
+public:
+  const delta::node &
+  GetDeltaNode() const noexcept
+  {
+    return *DeltaNode_;
+  }
+
+  std::string
+  DebugString() const override;
+
+  static PointsToGraph::DeltaNode &
+  Create(
+    PointsToGraph & pointsToGraph,
+    const delta::node & deltaNode)
+  {
+    auto n = std::unique_ptr<PointsToGraph::DeltaNode>(new DeltaNode(pointsToGraph, deltaNode));
+    return pointsToGraph.AddDeltaNode(std::move(n));
+  }
+
+private:
+  const delta::node * DeltaNode_;
 };
 
 /** \brief PointsTo graph malloc node
@@ -800,6 +875,132 @@ public:
 
 private:
   AllocaNodeMap::const_iterator it_;
+};
+
+/** \brief Points-to graph delta node iterator
+*/
+class PointsToGraph::DeltaNodeIterator final : public std::iterator<std::forward_iterator_tag,
+  PointsToGraph::DeltaNode*, ptrdiff_t> {
+
+  friend PointsToGraph;
+
+  explicit
+  DeltaNodeIterator(const DeltaNodeMap::iterator & it)
+    : it_(it)
+  {}
+
+public:
+  [[nodiscard]] PointsToGraph::DeltaNode *
+  DeltaNode() const noexcept
+  {
+    return it_->second.get();
+  }
+
+  PointsToGraph::DeltaNode &
+  operator*() const
+  {
+    JLM_ASSERT(DeltaNode() != nullptr);
+    return *DeltaNode();
+  }
+
+  PointsToGraph::DeltaNode *
+  operator->() const
+  {
+    return DeltaNode();
+  }
+
+  DeltaNodeIterator &
+  operator++()
+  {
+    ++it_;
+    return *this;
+  }
+
+  DeltaNodeIterator
+  operator++(int)
+  {
+    DeltaNodeIterator tmp = *this;
+    ++*this;
+    return tmp;
+  }
+
+  bool
+  operator==(const DeltaNodeIterator & other) const
+  {
+    return it_ == other.it_;
+  }
+
+  bool
+  operator!=(const DeltaNodeIterator & other) const
+  {
+    return !operator==(other);
+  }
+
+private:
+  DeltaNodeMap::iterator it_;
+};
+
+/** \brief Points-to graph delta node const iterator
+*/
+class PointsToGraph::DeltaNodeConstIterator final : public std::iterator<std::forward_iterator_tag,
+  const PointsToGraph::DeltaNode*, ptrdiff_t> {
+
+  friend PointsToGraph;
+
+  explicit
+  DeltaNodeConstIterator(const DeltaNodeMap::const_iterator & it)
+    : it_(it)
+  {}
+
+public:
+  [[nodiscard]] const PointsToGraph::DeltaNode *
+  DeltaNode() const noexcept
+  {
+    return it_->second.get();
+  }
+
+  const PointsToGraph::DeltaNode &
+  operator*() const
+  {
+    JLM_ASSERT(DeltaNode() != nullptr);
+    return *DeltaNode();
+  }
+
+  const PointsToGraph::DeltaNode *
+  operator->() const
+  {
+    return DeltaNode();
+  }
+
+  DeltaNodeConstIterator &
+  operator++()
+  {
+    ++it_;
+    return *this;
+  }
+
+  DeltaNodeConstIterator
+  operator++(int)
+  {
+    DeltaNodeConstIterator tmp = *this;
+    ++*this;
+    return tmp;
+  }
+
+  bool
+  operator==(const DeltaNodeConstIterator & other) const
+  {
+    return it_ == other.it_;
+  }
+
+  bool
+  operator!=(const DeltaNodeConstIterator & other) const
+  {
+    return !operator==(other);
+  }
+
+private:
+  DeltaNodeMap::const_iterator it_;
 };
 
 /** \brief Points-to graph lambda node iterator

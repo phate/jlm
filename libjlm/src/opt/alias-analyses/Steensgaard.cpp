@@ -1455,7 +1455,7 @@ Steensgaard::ConstructPointsToGraph(const LocationSet & locationSets)
       }
 
       if (auto deltaLocation = dynamic_cast<DeltaLocation*>(location)) {
-        auto node = &PointsToGraph::AllocatorNode::Create(
+        auto node = &PointsToGraph::DeltaNode::Create(
           *pointsToGraph,
           deltaLocation->Node());
         memoryNodeMap[&locationSet].push_back(node);

@@ -563,11 +563,12 @@ TestDelta1()
 {
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const DeltaTest1 & test)
 	{
-		assert(ptg.NumAllocatorNodes() == 1);
+		assert(ptg.NumAllocatorNodes() == 0);
+    assert(ptg.NumDeltaNodes() == 1);
     assert(ptg.NumLambdaNodes() == 2);
 		assert(ptg.NumRegisterNodes() == 6);
 
-		auto & delta_f = ptg.GetAllocatorNode(*test.delta_f);
+		auto & delta_f = ptg.GetDeltaNode(*test.delta_f);
 		auto & pdelta_f = ptg.GetRegisterNode(*test.delta_f->output());
 
 		auto & lambda_g = ptg.GetLambdaNode(*test.lambda_g);
@@ -603,14 +604,15 @@ TestDelta2()
 {
 	auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const DeltaTest2 & test)
 	{
-		assert(ptg.NumAllocatorNodes() == 2);
+		assert(ptg.NumAllocatorNodes() == 0);
+    assert(ptg.NumDeltaNodes() == 2);
     assert(ptg.NumLambdaNodes() == 2);
 		assert(ptg.NumRegisterNodes() == 8);
 
-		auto & delta_d1 = ptg.GetAllocatorNode(*test.delta_d1);
+		auto & delta_d1 = ptg.GetDeltaNode(*test.delta_d1);
 		auto & delta_d1_out = ptg.GetRegisterNode(*test.delta_d1->output());
 
-		auto & delta_d2 = ptg.GetAllocatorNode(*test.delta_d2);
+		auto & delta_d2 = ptg.GetDeltaNode(*test.delta_d2);
 		auto & delta_d2_out = ptg.GetRegisterNode(*test.delta_d2->output());
 
 		auto & lambda_f1 = ptg.GetLambdaNode(*test.lambda_f1);
