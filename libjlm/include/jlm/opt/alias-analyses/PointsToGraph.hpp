@@ -34,23 +34,11 @@ namespace aa {
 *
 */
 class PointsToGraph final {
-  class AllocaNodeIterator;
-  class AllocaNodeConstIterator;
+  template<class DATATYPE, class ITERATORTYPE>
+  class NodeIterator;
 
-  class DeltaNodeIterator;
-  class DeltaNodeConstIterator;
-
-  class ImportNodeIterator;
-  class ImportNodeConstIterator;
-
-  class LambdaNodeIterator;
-  class LambdaNodeConstIterator;
-
-  class MallocNodeIterator;
-  class MallocNodeConstIterator;
-
-  class RegisterNodeIterator;
-  class RegisterNodeConstIterator;
+  template<class DATATYPE, class ITERATORTYPE>
+  class NodeConstIterator;
 
 public:
   class AllocaNode;
@@ -71,21 +59,33 @@ public:
   using MallocNodeMap = std::unordered_map<const jive::node*, std::unique_ptr<PointsToGraph::MallocNode>>;
   using RegisterNodeMap = std::unordered_map<const jive::output*, std::unique_ptr<PointsToGraph::RegisterNode>>;
 
+  using AllocaNodeIterator = NodeIterator<AllocaNode, AllocaNodeMap::iterator>;
+  using AllocaNodeConstIterator = NodeConstIterator<AllocaNode, AllocaNodeMap::const_iterator>;
   using AllocaNodeRange = iterator_range<AllocaNodeIterator>;
   using AllocaNodeConstRange = iterator_range<AllocaNodeConstIterator>;
 
+  using DeltaNodeIterator = NodeIterator<DeltaNode, DeltaNodeMap::iterator>;
+  using DeltaNodeConstIterator = NodeConstIterator<DeltaNode, DeltaNodeMap::const_iterator>;
   using DeltaNodeRange = iterator_range<DeltaNodeIterator>;
   using DeltaNodeConstRange = iterator_range<DeltaNodeConstIterator>;
 
+  using ImportNodeIterator = NodeIterator<ImportNode, ImportNodeMap::iterator>;
+  using ImportNodeConstIterator = NodeConstIterator<ImportNode, ImportNodeMap::const_iterator>;
   using ImportNodeRange = iterator_range<ImportNodeIterator>;
   using ImportNodeConstRange = iterator_range<ImportNodeConstIterator>;
 
+  using LambdaNodeIterator = NodeIterator<LambdaNode, LambdaNodeMap::iterator>;
+  using LambdaNodeConstIterator = NodeConstIterator<LambdaNode, LambdaNodeMap::const_iterator>;
   using LambdaNodeRange = iterator_range<LambdaNodeIterator>;
   using LambdaNodeConstRange = iterator_range<LambdaNodeConstIterator>;
 
+  using MallocNodeIterator = NodeIterator<MallocNode, MallocNodeMap::iterator>;
+  using MallocNodeConstIterator = NodeConstIterator<MallocNode, MallocNodeMap::const_iterator>;
   using MallocNodeRange = iterator_range<MallocNodeIterator>;
   using MallocNodeConstRange = iterator_range<MallocNodeConstIterator>;
 
+  using RegisterNodeIterator = NodeIterator<RegisterNode, RegisterNodeMap::iterator>;
+  using RegisterNodeConstIterator = NodeConstIterator<RegisterNode, RegisterNodeMap::const_iterator>;
   using RegisterNodeRange = iterator_range<RegisterNodeIterator>;
   using RegisterNodeConstRange = iterator_range<RegisterNodeConstIterator>;
 
@@ -678,760 +678,130 @@ private:
   DebugString() const override;
 };
 
-/** \brief Points-to graph alloca node iterator
+/** \brief Points-to graph node iterator
 */
-class PointsToGraph::AllocaNodeIterator final : public std::iterator<std::forward_iterator_tag,
-  PointsToGraph::AllocaNode*, ptrdiff_t> {
-
+template<class DATATYPE, class ITERATORTYPE>
+class PointsToGraph::NodeIterator final : public std::iterator<std::forward_iterator_tag, DATATYPE*, ptrdiff_t> {
   friend PointsToGraph;
 
   explicit
-  AllocaNodeIterator(const AllocaNodeMap::iterator & it)
+  NodeIterator(const ITERATORTYPE & it)
     : it_(it)
   {}
 
 public:
-  [[nodiscard]] PointsToGraph::AllocaNode *
-  AllocaNode() const noexcept
+  [[nodiscard]] DATATYPE *
+  Node() const noexcept
   {
     return it_->second.get();
   }
 
-  PointsToGraph::AllocaNode &
+  DATATYPE &
   operator*() const
   {
-    JLM_ASSERT(AllocaNode() != nullptr);
-    return *AllocaNode();
+    JLM_ASSERT(Node() != nullptr);
+    return *Node();
   }
 
-  PointsToGraph::AllocaNode *
+  DATATYPE *
   operator->() const
   {
-    return AllocaNode();
+    return Node();
   }
 
-  AllocaNodeIterator &
+  NodeIterator &
   operator++()
   {
     ++it_;
     return *this;
   }
 
-  AllocaNodeIterator
+  NodeIterator
   operator++(int)
   {
-    AllocaNodeIterator tmp = *this;
+    NodeIterator tmp = *this;
     ++*this;
     return tmp;
   }
 
   bool
-  operator==(const AllocaNodeIterator & other) const
+  operator==(const NodeIterator & other) const
   {
     return it_ == other.it_;
   }
 
   bool
-  operator!=(const AllocaNodeIterator & other) const
+  operator!=(const NodeIterator & other) const
   {
     return !operator==(other);
   }
 
 private:
-  AllocaNodeMap::iterator it_;
+  ITERATORTYPE it_;
 };
 
-/** \brief Points-to graph alloca node const iterator
+/** \brief Points-to graph node const iterator
 */
-class PointsToGraph::AllocaNodeConstIterator final : public std::iterator<std::forward_iterator_tag,
-  const PointsToGraph::AllocaNode*, ptrdiff_t> {
+template<class DATATYPE, class ITERATORTYPE>
+class PointsToGraph::NodeConstIterator final : public std::iterator<std::forward_iterator_tag,
+  const DATATYPE*, ptrdiff_t> {
 
   friend PointsToGraph;
 
   explicit
-  AllocaNodeConstIterator(const AllocaNodeMap::const_iterator & it)
+  NodeConstIterator(const ITERATORTYPE & it)
     : it_(it)
   {}
 
 public:
-  [[nodiscard]] const PointsToGraph::AllocaNode *
-  AllocaNode() const noexcept
+  [[nodiscard]] const DATATYPE *
+  Node() const noexcept
   {
     return it_->second.get();
   }
 
-  const PointsToGraph::AllocaNode &
+  const DATATYPE &
   operator*() const
   {
-    JLM_ASSERT(AllocaNode() != nullptr);
-    return *AllocaNode();
+    JLM_ASSERT(Node() != nullptr);
+    return *Node();
   }
 
-  const PointsToGraph::AllocaNode *
+  const DATATYPE *
   operator->() const
   {
-    return AllocaNode();
+    return Node();
   }
 
-  AllocaNodeConstIterator &
+  NodeConstIterator &
   operator++()
   {
     ++it_;
     return *this;
   }
 
-  AllocaNodeConstIterator
+  NodeConstIterator
   operator++(int)
   {
-    AllocaNodeConstIterator tmp = *this;
+    NodeConstIterator tmp = *this;
     ++*this;
     return tmp;
   }
 
   bool
-  operator==(const AllocaNodeConstIterator & other) const
+  operator==(const NodeConstIterator & other) const
   {
     return it_ == other.it_;
   }
 
   bool
-  operator!=(const AllocaNodeConstIterator & other) const
+  operator!=(const NodeConstIterator & other) const
   {
     return !operator==(other);
   }
 
 private:
-  AllocaNodeMap::const_iterator it_;
-};
-
-/** \brief Points-to graph delta node iterator
-*/
-class PointsToGraph::DeltaNodeIterator final : public std::iterator<std::forward_iterator_tag,
-  PointsToGraph::DeltaNode*, ptrdiff_t> {
-
-  friend PointsToGraph;
-
-  explicit
-  DeltaNodeIterator(const DeltaNodeMap::iterator & it)
-    : it_(it)
-  {}
-
-public:
-  [[nodiscard]] PointsToGraph::DeltaNode *
-  DeltaNode() const noexcept
-  {
-    return it_->second.get();
-  }
-
-  PointsToGraph::DeltaNode &
-  operator*() const
-  {
-    JLM_ASSERT(DeltaNode() != nullptr);
-    return *DeltaNode();
-  }
-
-  PointsToGraph::DeltaNode *
-  operator->() const
-  {
-    return DeltaNode();
-  }
-
-  DeltaNodeIterator &
-  operator++()
-  {
-    ++it_;
-    return *this;
-  }
-
-  DeltaNodeIterator
-  operator++(int)
-  {
-    DeltaNodeIterator tmp = *this;
-    ++*this;
-    return tmp;
-  }
-
-  bool
-  operator==(const DeltaNodeIterator & other) const
-  {
-    return it_ == other.it_;
-  }
-
-  bool
-  operator!=(const DeltaNodeIterator & other) const
-  {
-    return !operator==(other);
-  }
-
-private:
-  DeltaNodeMap::iterator it_;
-};
-
-/** \brief Points-to graph delta node const iterator
-*/
-class PointsToGraph::DeltaNodeConstIterator final : public std::iterator<std::forward_iterator_tag,
-  const PointsToGraph::DeltaNode*, ptrdiff_t> {
-
-  friend PointsToGraph;
-
-  explicit
-  DeltaNodeConstIterator(const DeltaNodeMap::const_iterator & it)
-    : it_(it)
-  {}
-
-public:
-  [[nodiscard]] const PointsToGraph::DeltaNode *
-  DeltaNode() const noexcept
-  {
-    return it_->second.get();
-  }
-
-  const PointsToGraph::DeltaNode &
-  operator*() const
-  {
-    JLM_ASSERT(DeltaNode() != nullptr);
-    return *DeltaNode();
-  }
-
-  const PointsToGraph::DeltaNode *
-  operator->() const
-  {
-    return DeltaNode();
-  }
-
-  DeltaNodeConstIterator &
-  operator++()
-  {
-    ++it_;
-    return *this;
-  }
-
-  DeltaNodeConstIterator
-  operator++(int)
-  {
-    DeltaNodeConstIterator tmp = *this;
-    ++*this;
-    return tmp;
-  }
-
-  bool
-  operator==(const DeltaNodeConstIterator & other) const
-  {
-    return it_ == other.it_;
-  }
-
-  bool
-  operator!=(const DeltaNodeConstIterator & other) const
-  {
-    return !operator==(other);
-  }
-
-private:
-  DeltaNodeMap::const_iterator it_;
-};
-
-/** \brief Points-to graph lambda node iterator
-*/
-class PointsToGraph::LambdaNodeIterator final : public std::iterator<std::forward_iterator_tag,
-  PointsToGraph::LambdaNode*, ptrdiff_t> {
-
-  friend PointsToGraph;
-
-  explicit
-  LambdaNodeIterator(const LambdaNodeMap::iterator & it)
-    : it_(it)
-  {}
-
-public:
-  [[nodiscard]] PointsToGraph::LambdaNode *
-  LambdaNode() const noexcept
-  {
-    return it_->second.get();
-  }
-
-  PointsToGraph::LambdaNode &
-  operator*() const
-  {
-    JLM_ASSERT(LambdaNode() != nullptr);
-    return *LambdaNode();
-  }
-
-  PointsToGraph::LambdaNode *
-  operator->() const
-  {
-    return LambdaNode();
-  }
-
-  LambdaNodeIterator &
-  operator++()
-  {
-    ++it_;
-    return *this;
-  }
-
-  LambdaNodeIterator
-  operator++(int)
-  {
-    LambdaNodeIterator tmp = *this;
-    ++*this;
-    return tmp;
-  }
-
-  bool
-  operator==(const LambdaNodeIterator & other) const
-  {
-    return it_ == other.it_;
-  }
-
-  bool
-  operator!=(const LambdaNodeIterator & other) const
-  {
-    return !operator==(other);
-  }
-
-private:
-  LambdaNodeMap::iterator it_;
-};
-
-/** \brief Points-to graph lambda node const iterator
-*/
-class PointsToGraph::LambdaNodeConstIterator final : public std::iterator<std::forward_iterator_tag,
-  const PointsToGraph::LambdaNode*, ptrdiff_t> {
-
-  friend PointsToGraph;
-
-  explicit
-  LambdaNodeConstIterator(const LambdaNodeMap::const_iterator & it)
-    : it_(it)
-  {}
-
-public:
-  [[nodiscard]] const PointsToGraph::LambdaNode *
-  LambdaNode() const noexcept
-  {
-    return it_->second.get();
-  }
-
-  const PointsToGraph::LambdaNode &
-  operator*() const
-  {
-    JLM_ASSERT(LambdaNode() != nullptr);
-    return *LambdaNode();
-  }
-
-  const PointsToGraph::LambdaNode *
-  operator->() const
-  {
-    return LambdaNode();
-  }
-
-  LambdaNodeConstIterator &
-  operator++()
-  {
-    ++it_;
-    return *this;
-  }
-
-  LambdaNodeConstIterator
-  operator++(int)
-  {
-    LambdaNodeConstIterator tmp = *this;
-    ++*this;
-    return tmp;
-  }
-
-  bool
-  operator==(const LambdaNodeConstIterator & other) const
-  {
-    return it_ == other.it_;
-  }
-
-  bool
-  operator!=(const LambdaNodeConstIterator & other) const
-  {
-    return !operator==(other);
-  }
-
-private:
-  LambdaNodeMap::const_iterator it_;
-};
-
-/** \brief Points-to graph malloc node iterator
-*/
-class PointsToGraph::MallocNodeIterator final : public std::iterator<std::forward_iterator_tag,
-  PointsToGraph::MallocNode*, ptrdiff_t> {
-
-  friend PointsToGraph;
-
-  explicit
-  MallocNodeIterator(const MallocNodeMap::iterator & it)
-    : it_(it)
-  {}
-
-public:
-  [[nodiscard]] PointsToGraph::MallocNode *
-  MallocNode() const noexcept
-  {
-    return it_->second.get();
-  }
-
-  PointsToGraph::MallocNode &
-  operator*() const
-  {
-    JLM_ASSERT(MallocNode() != nullptr);
-    return *MallocNode();
-  }
-
-  PointsToGraph::MallocNode *
-  operator->() const
-  {
-    return MallocNode();
-  }
-
-  MallocNodeIterator &
-  operator++()
-  {
-    ++it_;
-    return *this;
-  }
-
-  MallocNodeIterator
-  operator++(int)
-  {
-    MallocNodeIterator tmp = *this;
-    ++*this;
-    return tmp;
-  }
-
-  bool
-  operator==(const MallocNodeIterator & other) const
-  {
-    return it_ == other.it_;
-  }
-
-  bool
-  operator!=(const MallocNodeIterator & other) const
-  {
-    return !operator==(other);
-  }
-
-private:
-  MallocNodeMap::iterator it_;
-};
-
-/** \brief Points-to graph alloca node const iterator
-*/
-class PointsToGraph::MallocNodeConstIterator final : public std::iterator<std::forward_iterator_tag,
-  const PointsToGraph::MallocNode*, ptrdiff_t> {
-
-  friend PointsToGraph;
-
-  explicit
-  MallocNodeConstIterator(const MallocNodeMap::const_iterator & it)
-    : it_(it)
-  {}
-
-public:
-  [[nodiscard]] const PointsToGraph::MallocNode *
-  MallocNode() const noexcept
-  {
-    return it_->second.get();
-  }
-
-  const PointsToGraph::MallocNode &
-  operator*() const
-  {
-    JLM_ASSERT(MallocNode() != nullptr);
-    return *MallocNode();
-  }
-
-  const PointsToGraph::MallocNode *
-  operator->() const
-  {
-    return MallocNode();
-  }
-
-  MallocNodeConstIterator &
-  operator++()
-  {
-    ++it_;
-    return *this;
-  }
-
-  MallocNodeConstIterator
-  operator++(int)
-  {
-    MallocNodeConstIterator tmp = *this;
-    ++*this;
-    return tmp;
-  }
-
-  bool
-  operator==(const MallocNodeConstIterator & other) const
-  {
-    return it_ == other.it_;
-  }
-
-  bool
-  operator!=(const MallocNodeConstIterator & other) const
-  {
-    return !operator==(other);
-  }
-
-private:
-  MallocNodeMap::const_iterator it_;
-};
-
-/** \brief Points-to graph import node iterator
-*/
-class PointsToGraph::ImportNodeIterator final : public std::iterator<std::forward_iterator_tag,
-  PointsToGraph::ImportNode*, ptrdiff_t> {
-
-  friend PointsToGraph;
-
-  explicit
-  ImportNodeIterator(const ImportNodeMap::iterator & it)
-    : it_(it)
-  {}
-
-public:
-  [[nodiscard]] PointsToGraph::ImportNode *
-  ImportNode() const noexcept
-  {
-    return it_->second.get();
-  }
-
-  PointsToGraph::ImportNode &
-  operator*() const
-  {
-    JLM_ASSERT(ImportNode() != nullptr);
-    return *ImportNode();
-  }
-
-  PointsToGraph::ImportNode *
-  operator->() const
-  {
-    return ImportNode();
-  }
-
-  ImportNodeIterator &
-  operator++()
-  {
-    ++it_;
-    return *this;
-  }
-
-  ImportNodeIterator
-  operator++(int)
-  {
-    ImportNodeIterator tmp = *this;
-    ++*this;
-    return tmp;
-  }
-
-  bool
-  operator==(const ImportNodeIterator & other) const
-  {
-    return it_ == other.it_;
-  }
-
-  bool
-  operator!=(const ImportNodeIterator & other) const
-  {
-    return !operator==(other);
-  }
-
-private:
-  ImportNodeMap::iterator it_;
-};
-
-/** \brief Points-to graph import node const iterator
-*/
-class PointsToGraph::ImportNodeConstIterator final : public std::iterator<std::forward_iterator_tag,
-  const PointsToGraph::ImportNode*, ptrdiff_t> {
-
-  friend PointsToGraph;
-
-  explicit
-  ImportNodeConstIterator(const ImportNodeMap::const_iterator & it)
-    : it_(it)
-  {}
-
-public:
-  [[nodiscard]] const PointsToGraph::ImportNode *
-  ImportNode() const noexcept
-  {
-    return it_->second.get();
-  }
-
-  const PointsToGraph::ImportNode &
-  operator*() const
-  {
-    JLM_ASSERT(ImportNode() != nullptr);
-    return *ImportNode();
-  }
-
-  const PointsToGraph::ImportNode *
-  operator->() const
-  {
-    return ImportNode();
-  }
-
-  ImportNodeConstIterator &
-  operator++()
-  {
-    ++it_;
-    return *this;
-  }
-
-  ImportNodeConstIterator
-  operator++(int)
-  {
-    ImportNodeConstIterator tmp = *this;
-    ++*this;
-    return tmp;
-  }
-
-  bool
-  operator==(const ImportNodeConstIterator & other) const
-  {
-    return it_ == other.it_;
-  }
-
-  bool
-  operator!=(const ImportNodeConstIterator & other) const
-  {
-    return !operator==(other);
-  }
-
-private:
-  ImportNodeMap::const_iterator it_;
-};
-
-/** \brief Points-to graph register node iterator
-*/
-class PointsToGraph::RegisterNodeIterator final : public std::iterator<std::forward_iterator_tag,
-  PointsToGraph::RegisterNode*, ptrdiff_t> {
-
-  friend PointsToGraph;
-
-  explicit
-  RegisterNodeIterator(const RegisterNodeMap::iterator & it)
-    : it_(it)
-  {}
-
-public:
-  [[nodiscard]] PointsToGraph::RegisterNode *
-  RegisterNode() const noexcept
-  {
-    return it_->second.get();
-  }
-
-  PointsToGraph::RegisterNode &
-  operator*() const
-  {
-    JLM_ASSERT(RegisterNode() != nullptr);
-    return *RegisterNode();
-  }
-
-  PointsToGraph::RegisterNode *
-  operator->() const
-  {
-    return RegisterNode();
-  }
-
-  RegisterNodeIterator &
-  operator++()
-  {
-    ++it_;
-    return *this;
-  }
-
-  RegisterNodeIterator
-  operator++(int)
-  {
-    RegisterNodeIterator tmp = *this;
-    ++*this;
-    return tmp;
-  }
-
-  bool
-  operator==(const RegisterNodeIterator & other) const
-  {
-    return it_ == other.it_;
-  }
-
-  bool
-  operator!=(const RegisterNodeIterator & other) const
-  {
-    return !operator==(other);
-  }
-
-private:
-  RegisterNodeMap::iterator it_;
-};
-
-/** \brief Points-to graph register node const iterator
-*/
-class PointsToGraph::RegisterNodeConstIterator final : public std::iterator<std::forward_iterator_tag,
-  const PointsToGraph::RegisterNode*, ptrdiff_t> {
-
-  friend PointsToGraph;
-
-  explicit
-  RegisterNodeConstIterator(const RegisterNodeMap::const_iterator & it)
-    : it_(it)
-  {}
-
-public:
-  [[nodiscard]] const PointsToGraph::RegisterNode *
-  RegisterNode() const noexcept
-  {
-    return it_->second.get();
-  }
-
-  const PointsToGraph::RegisterNode &
-  operator*() const
-  {
-    JLM_ASSERT(RegisterNode() != nullptr);
-    return *RegisterNode();
-  }
-
-  const PointsToGraph::RegisterNode *
-  operator->() const
-  {
-    return RegisterNode();
-  }
-
-  RegisterNodeConstIterator &
-  operator++()
-  {
-    ++it_;
-    return *this;
-  }
-
-  RegisterNodeConstIterator
-  operator++(int)
-  {
-    RegisterNodeConstIterator tmp = *this;
-    ++*this;
-    return tmp;
-  }
-
-  bool
-  operator==(const RegisterNodeConstIterator & other) const
-  {
-    return it_ == other.it_;
-  }
-
-  bool
-  operator!=(const RegisterNodeConstIterator & other) const
-  {
-    return !operator==(other);
-  }
-
-private:
-  RegisterNodeMap::const_iterator it_;
+  ITERATORTYPE it_;
 };
 
 /** \brief Points-to graph edge iterator
