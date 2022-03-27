@@ -300,11 +300,20 @@ private:
 *
 */
 class PointsToGraph::Node {
-  class ConstIterator;
-  class Iterator;
+  template<class NODETYPE> class ConstIterator;
+  template<class NODETYPE> class Iterator;
 
-  using NodeRange = iterator_range<PointsToGraph::Node::Iterator>;
-  using NodeConstRange = iterator_range<PointsToGraph::Node::ConstIterator>;
+  using SourceIterator = Iterator<PointsToGraph::Node>;
+  using SourceConstIterator = ConstIterator<PointsToGraph::Node>;
+
+  using TargetIterator = Iterator<PointsToGraph::MemoryNode>;
+  using TargetConstIterator = ConstIterator<PointsToGraph::MemoryNode>;
+
+  using SourceRange = iterator_range<SourceIterator>;
+  using SourceConstRange = iterator_range<SourceConstIterator>;
+
+  using TargetRange = iterator_range<TargetIterator>;
+  using TargetConstRange = iterator_range<TargetConstIterator>;
 
 public:
   virtual
@@ -325,16 +334,16 @@ public:
   Node&
   operator=(Node&&) = delete;
 
-  NodeRange
+  TargetRange
   Targets();
 
-  NodeConstRange
+  TargetConstRange
   Targets() const;
 
-  NodeRange
+  SourceRange
   Sources();
 
-  NodeConstRange
+  SourceConstRange
   Sources() const;
 
   PointsToGraph&
@@ -366,7 +375,7 @@ public:
 
 private:
   PointsToGraph * PointsToGraph_;
-  std::unordered_set<PointsToGraph::Node*> Targets_;
+  std::unordered_set<PointsToGraph::MemoryNode*> Targets_;
   std::unordered_set<PointsToGraph::Node*> Sources_;
 };
 
@@ -806,31 +815,31 @@ private:
 
 /** \brief Points-to graph edge iterator
 */
-class PointsToGraph::Node::Iterator final : public std::iterator<std::forward_iterator_tag,
-  PointsToGraph::Node*, ptrdiff_t> {
+template <class NODETYPE>
+class PointsToGraph::Node::Iterator final : public std::iterator<std::forward_iterator_tag, NODETYPE*, ptrdiff_t> {
 
   friend PointsToGraph::Node;
 
   explicit
-  Iterator(const std::unordered_set<PointsToGraph::Node*>::iterator & it)
+  Iterator(const typename std::unordered_set<NODETYPE*>::iterator & it)
     : It_(it)
   {}
 
 public:
-  [[nodiscard]] PointsToGraph::Node *
+  [[nodiscard]] NODETYPE *
   GetNode() const noexcept
   {
     return *It_;
   }
 
-  PointsToGraph::Node &
+  NODETYPE &
   operator*() const
   {
     JLM_ASSERT(GetNode() != nullptr);
     return *GetNode();
   }
 
-  PointsToGraph::Node *
+  NODETYPE *
   operator->() const
   {
     return GetNode();
@@ -864,36 +873,37 @@ public:
   }
 
 private:
-  std::unordered_set<PointsToGraph::Node*>::iterator It_;
+  typename std::unordered_set<NODETYPE*>::iterator It_;
 };
 
 /** \brief Points-to graph edge const iterator
 */
+template <class NODETYPE>
 class PointsToGraph::Node::ConstIterator final : public std::iterator<std::forward_iterator_tag,
-  const PointsToGraph::Node*, ptrdiff_t> {
+  const NODETYPE*, ptrdiff_t> {
 
   friend PointsToGraph;
 
   explicit
-  ConstIterator(const std::unordered_set<PointsToGraph::Node*>::const_iterator & it)
+  ConstIterator(const typename std::unordered_set<NODETYPE*>::const_iterator & it)
     : It_(it)
   {}
 
 public:
-  [[nodiscard]] const PointsToGraph::Node *
+  [[nodiscard]] const NODETYPE *
   GetNode() const noexcept
   {
     return *It_;
   }
 
-  const PointsToGraph::Node &
+  const NODETYPE &
   operator*() const
   {
     JLM_ASSERT(GetNode() != nullptr);
     return *GetNode();
   }
 
-  const PointsToGraph::Node *
+  const NODETYPE *
   operator->() const
   {
     return GetNode();
@@ -927,7 +937,7 @@ public:
   }
 
 private:
-  std::unordered_set<PointsToGraph::Node*>::const_iterator It_;
+  typename std::unordered_set<NODETYPE*>::const_iterator It_;
 };
 
 }}
