@@ -220,28 +220,28 @@ PointsToGraph::ToDot(const PointsToGraph & pointsToGraph)
 PointsToGraph::Node::~Node() noexcept
 = default;
 
-PointsToGraph::Node::NodeRange
+PointsToGraph::Node::TargetRange
 PointsToGraph::Node::Targets()
 {
-  return {Iterator(Targets_.begin()), Iterator(Targets_.end())};
+  return {TargetIterator(Targets_.begin()), TargetIterator(Targets_.end())};
 }
 
-PointsToGraph::Node::NodeConstRange
+PointsToGraph::Node::TargetConstRange
 PointsToGraph::Node::Targets() const
 {
-  return {ConstIterator(Targets_.begin()), ConstIterator(Targets_.end())};
+  return {TargetConstIterator(Targets_.begin()), TargetConstIterator(Targets_.end())};
 }
 
-PointsToGraph::Node::NodeRange
+PointsToGraph::Node::SourceRange
 PointsToGraph::Node::Sources()
 {
-  return {Iterator(Sources_.begin()), Iterator(Sources_.end())};
+  return {SourceIterator(Sources_.begin()), SourceIterator(Sources_.end())};
 }
 
-PointsToGraph::Node::NodeConstRange
+PointsToGraph::Node::SourceConstRange
 PointsToGraph::Node::Sources() const
 {
-  return {ConstIterator(Sources_.begin()), ConstIterator(Sources_.end())};
+  return {SourceConstIterator(Sources_.begin()), SourceConstIterator(Sources_.end())};
 }
 
 void
