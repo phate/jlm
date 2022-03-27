@@ -360,13 +360,16 @@ private:
   }
 
   void
-  CollectAddressMemNodes(const PointsToGraph & ptg)
+  CollectAddressMemNodes(const PointsToGraph & pointsToGraph)
   {
-    for (auto & regnode : ptg.RegisterNodes()) {
-      auto & output = regnode.GetOutput();
-      auto memNodes = PointsToGraph::RegisterNode::GetMemoryNodes(regnode);
+    for (auto & registerNode : pointsToGraph.RegisterNodes()) {
+      auto & output = registerNode.GetOutput();
 
-      AddressMemNodeMap_[&output] = memNodes;
+      std::vector<const PointsToGraph::MemoryNode*> memoryNodes;
+      for (auto & memoryNode : registerNode.Targets())
+        memoryNodes.push_back(&memoryNode);
+
+      AddressMemNodeMap_[&output] = memoryNodes;
     }
   }
 

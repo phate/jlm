@@ -404,12 +404,6 @@ public:
   std::string
   DebugString() const override;
 
-  /**
-    FIXME: write documentation
-  */
-  static std::vector<const PointsToGraph::MemoryNode*>
-  GetMemoryNodes(const PointsToGraph::RegisterNode & node);
-
   static PointsToGraph::RegisterNode &
   Create(
     PointsToGraph & pointsToGraph,

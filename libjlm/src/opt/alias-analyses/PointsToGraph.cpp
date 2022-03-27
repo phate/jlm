@@ -287,22 +287,6 @@ PointsToGraph::RegisterNode::DebugString() const
   return "RegisterNode";
 }
 
-std::vector<const PointsToGraph::MemoryNode*>
-PointsToGraph::RegisterNode::GetMemoryNodes(const PointsToGraph::RegisterNode & node)
-{
-  /*
-    FIXME: This function currently iterates through all pointstos of the RegisterNode.
-    Maybe we can be more efficient?
-  */
-  std::vector<const PointsToGraph::MemoryNode*> memoryNodes;
-  for (auto & target : node.Targets()) {
-    if (auto memoryNode = dynamic_cast<const PointsToGraph::MemoryNode*>(&target))
-      memoryNodes.push_back(memoryNode);
-  }
-
-  return memoryNodes;
-}
-
 PointsToGraph::MemoryNode::~MemoryNode() noexcept
 = default;
 
