@@ -8,8 +8,7 @@
 
 #include <jlm/opt/alias-analyses/MemoryStateEncoder.hpp>
 
-namespace jlm {
-namespace aa {
+namespace jlm::aa {
 
 /** \brief BasicEncoder class
 */
@@ -20,7 +19,7 @@ public:
   ~BasicEncoder() override;
 
   explicit
-  BasicEncoder(PointsToGraph &ptg);
+  BasicEncoder(PointsToGraph &pointsToGraph);
 
   BasicEncoder(const BasicEncoder &) = delete;
 
@@ -32,29 +31,29 @@ public:
   BasicEncoder &
   operator=(BasicEncoder &&) = delete;
 
-  const PointsToGraph &
-  Ptg() const noexcept
+  [[nodiscard]] const PointsToGraph &
+  GetPointsToGraph() const noexcept
   {
-    return Ptg_;
+    return PointsToGraph_;
   }
 
   void
   Encode(
-    RvsdgModule &module,
-    const StatisticsDescriptor & sd) override;
+    RvsdgModule & rvsdgModule,
+    const StatisticsDescriptor & statisticsDescriptor) override;
 
   static void
   Encode(
-    PointsToGraph &ptg,
-    RvsdgModule &module,
-    const StatisticsDescriptor &sd);
+    PointsToGraph & pointsToGraph,
+    RvsdgModule & rvsdgModule,
+    const StatisticsDescriptor & statisticsDescriptor);
 
 private:
   void
-  EncodeAlloca(const jive::simple_node &node) override;
+  EncodeAlloca(const jive::simple_node &allocaNode) override;
 
   void
-  EncodeMalloc(const jive::simple_node &node) override;
+  EncodeMalloc(const jive::simple_node &mallocNode) override;
 
   void
   EncodeLoad(const LoadNode & loadNode) override;
@@ -63,13 +62,13 @@ private:
   EncodeStore(const StoreNode & storeNode) override;
 
   void
-  EncodeFree(const jive::simple_node &node) override;
+  EncodeFree(const jive::simple_node &freeNode) override;
 
   void
   EncodeCall(const CallNode & callNode) override;
 
   void
-  EncodeMemcpy(const jive::simple_node &node) override;
+  EncodeMemcpy(const jive::simple_node &memcpyNode) override;
 
   void
   Encode(const lambda::node &lambda) override;
@@ -87,12 +86,12 @@ private:
   Encode(jive::theta_node &theta) override;
 
   static void
-  UnlinkMemUnknown(PointsToGraph &ptg);
+  UnlinkUnknownMemoryNode(PointsToGraph &pointsToGraph);
 
-  PointsToGraph &Ptg_;
+  PointsToGraph& PointsToGraph_;
   std::unique_ptr <Context> Context_;
 };
 
-}}
+}
 
 #endif //JLM_OPT_ALIAS_ANALYSES_BASICENCODER_HPP
