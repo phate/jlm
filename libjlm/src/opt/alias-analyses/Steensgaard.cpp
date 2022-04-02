@@ -77,54 +77,73 @@ public:
   explicit
   SteensgaardPointsToGraphConstructionStatistics(jlm::filepath sourceFile)
   : Statistics(StatisticsDescriptor::StatisticsId::SteensgaardPointsToGraphConstruction)
-  , sourceFile_(std::move(sourceFile))
-  , numDisjointSets_(0)
-  , numLocations_(0)
-  , numRegisterNodes_(0)
-  , numAllocatorNodes_(0)
-  , numImportNodes_(0)
-  , numUnknownMemorySources_(0)
+  , SourceFile_(std::move(sourceFile))
+  , NumDisjointSets_(0)
+  , NumLocations_(0)
+  , NumNodes_(0)
+  , NumAllocaNodes_(0)
+  , NumDeltaNodes_(0)
+  , NumImportNodes_(0)
+  , NumLambdaNodes_(0)
+  , NumMallocNodes_(0)
+  , NumRegisterNodes_(0)
+  , NumUnknownMemorySources_(0)
   {}
 
   void
   start(const LocationSet & locationSet)
   {
-    numDisjointSets_ = locationSet.NumDisjointSets();
-    numLocations_ = locationSet.NumLocations();
-    timer_.start();
+    NumDisjointSets_ = locationSet.NumDisjointSets();
+    NumLocations_ = locationSet.NumLocations();
+    Timer_.start();
   }
 
   void
   stop(const PointsToGraph & pointsToGraph)
   {
-    timer_.stop();
-    numRegisterNodes_ = pointsToGraph.NumRegisterNodes();
-    numImportNodes_ = pointsToGraph.NumImportNodes();
-    numUnknownMemorySources_ = pointsToGraph.GetUnknownMemoryNode().NumSources();
+    Timer_.stop();
+    NumNodes_ = pointsToGraph.NumNodes();
+    NumAllocaNodes_ = pointsToGraph.NumAllocaNodes();
+    NumDeltaNodes_ = pointsToGraph.NumDeltaNodes();
+    NumImportNodes_ = pointsToGraph.NumImportNodes();
+    NumLambdaNodes_ = pointsToGraph.NumLambdaNodes();
+    NumMallocNodes_ = pointsToGraph.NumMallocNodes();
+    NumRegisterNodes_ = pointsToGraph.NumRegisterNodes();
+    NumUnknownMemorySources_ = pointsToGraph.GetUnknownMemoryNode().NumSources();
   }
 
   [[nodiscard]] std::string
   ToString() const override
   {
     return strfmt("SteensgaardPointsToGraphConstruction ",
-                  sourceFile_.to_str(), " ",
-                  "#DisjointSets:", numDisjointSets_, " ",
-                  "#Locations:", numLocations_, " ",
-                  "#RegisterNodes:", numRegisterNodes_, " ",
-                  "#AllocatorNodes:", numAllocatorNodes_, " ",
-                  "#ImportNodes:", numImportNodes_, " ",
-                  "#UnknownMemorySources:", numUnknownMemorySources_, " ",
-                  "Time[ns]:", timer_.ns());
+                  SourceFile_.to_str(), " ",
+                  "#DisjointSets:", NumDisjointSets_, " ",
+                  "#Locations:", NumLocations_, " ",
+                  "#Nodes:", NumNodes_, " ",
+                  "#AllocaNodes:", NumAllocaNodes_, " ",
+                  "#DeltaNodes:", NumDeltaNodes_, " ",
+                  "#ImportNodes:", NumImportNodes_, " ",
+                  "#LambdaNodes:", NumLambdaNodes_, " ",
+                  "#MallocNodes:", NumMallocNodes_, " ",
+                  "#RegisterNodes:", NumRegisterNodes_, " ",
+                  "#UnknownMemorySources:", NumUnknownMemorySources_, " ",
+                  "Time[ns]:", Timer_.ns());
   }
 private:
-  jlm::filepath sourceFile_;
-  size_t numDisjointSets_;
-  size_t numLocations_;
-  size_t numRegisterNodes_;
-  size_t numAllocatorNodes_;
-  size_t numImportNodes_;
-  size_t numUnknownMemorySources_;
-  jlm::timer timer_;
+  jlm::filepath SourceFile_;
+
+  size_t NumDisjointSets_;
+  size_t NumLocations_;
+
+  size_t NumNodes_;
+  size_t NumAllocaNodes_;
+  size_t NumDeltaNodes_;
+  size_t NumImportNodes_;
+  size_t NumLambdaNodes_;
+  size_t NumMallocNodes_;
+  size_t NumRegisterNodes_;
+  size_t NumUnknownMemorySources_;
+  jlm::timer Timer_;
 };
 
 /** \brief Location class
