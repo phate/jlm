@@ -66,13 +66,13 @@ public:
 	DisjointLocationSet::set_iterator
 	begin() const
 	{
-		return djset_.begin();
+		return DisjointLocationSet_.begin();
 	}
 
 	DisjointLocationSet::set_iterator
 	end() const
 	{
-		return djset_.end();
+		return DisjointLocationSet_.end();
 	}
 
   Location &
@@ -88,66 +88,66 @@ public:
   InsertDeltaLocation(const delta::node & delta);
 
 	Location &
-	InsertImportLocation(const jive::argument * argument);
+	InsertImportLocation(const jive::argument & argument);
 
 	Location &
 	InsertDummyLocation();
 
 	bool
-	contains(const jive::output * output) const noexcept;
+	Contains(const jive::output & output) const noexcept;
 
 	Location &
 	FindOrInsertRegisterLocation(
-    const jive::output * output,
-    bool unknown,
+    const jive::output & output,
+    bool pointsToUnknownMemory,
     bool pointsToExternalMemory);
 
 	const DisjointLocationSet::set &
-	set(Location & l) const
+	GetSet(Location & location) const
 	{
-		return *djset_.find(&l);
+		return *DisjointLocationSet_.find(&location);
 	}
 
   size_t
   NumDisjointSets() const noexcept
   {
-    return djset_.nsets();
+    return DisjointLocationSet_.nsets();
   }
 
   size_t
   NumLocations() const noexcept
   {
-    return djset_.nvalues();
+    return DisjointLocationSet_.nvalues();
   }
 
 	Location &
-	GetRootLocation(Location & l) const;
+	GetRootLocation(Location & location) const;
 
 	Location &
-	Find(const jive::output * output);
+	Find(const jive::output & output);
 
 	Location &
-	Merge(Location & l1, Location & l2);
+	Merge(Location & location1, Location & location2);
 
 	std::string
-	to_dot() const;
+	ToDot() const;
 
 	void
-	clear();
+	Clear();
 
 private:
 	Location &
 	InsertRegisterLocation(
-    const jive::output * output,
-    bool unknown,
+    const jive::output & output,
+    bool pointsToUnknownMemory,
     bool pointsToExternalMemory);
 
 	Location *
-	lookup(const jive::output * output);
+	Lookup(const jive::output & output);
 
-	DisjointLocationSet djset_;
-	std::vector<std::unique_ptr<Location>> locations_;
-	std::unordered_map<const jive::output*, Location*> map_;
+	DisjointLocationSet DisjointLocationSet_;
+	std::vector<std::unique_ptr<Location>> Locations_;
+	std::unordered_map<const jive::output*, Location*> LocationMap_;
 };
 
 /** \brief Steensgaard alias analysis
@@ -261,7 +261,7 @@ private:
 	void
 	join(Location & x, Location & y);
 
-	LocationSet locationSet_;
+	LocationSet LocationSet_;
 };
 
 }}
