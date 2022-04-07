@@ -176,14 +176,19 @@ public:
   }
 
   size_t
-  NumNodes() const noexcept
+  NumMemoryNodes() const noexcept
   {
     return NumAllocaNodes()
            + NumDeltaNodes()
            + NumImportNodes()
            + NumLambdaNodes()
-           + NumMallocNodes()
-           + NumRegisterNodes();
+           + NumMallocNodes();
+  }
+
+  size_t
+  NumNodes() const noexcept
+  {
+    return NumMemoryNodes() + NumRegisterNodes();
   }
 
   PointsToGraph::UnknownMemoryNode &
