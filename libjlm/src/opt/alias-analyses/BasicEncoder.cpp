@@ -58,44 +58,6 @@ private:
   jlm::filepath SourceFile_;
 };
 
-/** \brief Statistics class for basic encoder context creation
- *
- */
-class ContextCreationStatistics final : public Statistics {
-public:
-  ~ContextCreationStatistics() override = default;
-
-  explicit
-  ContextCreationStatistics(jlm::filepath sourceFile)
-  : Statistics(StatisticsDescriptor::StatisticsId::BasicEncoderContextCreation)
-  , SourceFile_(std::move(sourceFile))
-  {}
-
-  void
-  Start()
-  {
-    Timer_.start();
-  }
-
-  void
-  Stop()
-  {
-    Timer_.stop();
-  }
-
-  [[nodiscard]] std::string
-  ToString() const override
-  {
-    return strfmt("BasicEncoderContextCreation ",
-                  SourceFile_.to_str(), " ",
-                  "Time[ns]:", Timer_.ns());
-  }
-
-private:
-  jlm::timer Timer_;
-  jlm::filepath SourceFile_;
-};
-
 static jive::argument *
 GetMemoryStateArgument(const lambda::node & lambda)
 {
@@ -594,11 +556,7 @@ BasicEncoder::Encode(
   RvsdgModule & rvsdgModule,
   const StatisticsDescriptor & statisticsDescriptor)
 {
-  ContextCreationStatistics contextCreationStatistics(rvsdgModule.SourceFileName());
-  contextCreationStatistics.Start();
   Context_ = Context::Create(GetPointsToGraph());
-  contextCreationStatistics.Stop();
-  statisticsDescriptor.PrintStatistics(contextCreationStatistics);
 
   EncodingStatistics encodingStatistics(rvsdgModule.SourceFileName());
   encodingStatistics.Start(rvsdgModule.Rvsdg());
