@@ -86,6 +86,7 @@ public:
   , NumImportNodes_(0)
   , NumLambdaNodes_(0)
   , NumMallocNodes_(0)
+  , NumMemoryNodes_(0)
   , NumRegisterNodes_(0)
   , NumUnknownMemorySources_(0)
   {}
@@ -108,6 +109,7 @@ public:
     NumImportNodes_ = pointsToGraph.NumImportNodes();
     NumLambdaNodes_ = pointsToGraph.NumLambdaNodes();
     NumMallocNodes_ = pointsToGraph.NumMallocNodes();
+    NumMemoryNodes_ = pointsToGraph.NumMemoryNodes();
     NumRegisterNodes_ = pointsToGraph.NumRegisterNodes();
     NumUnknownMemorySources_ = pointsToGraph.GetUnknownMemoryNode().NumSources();
   }
@@ -125,6 +127,7 @@ public:
                   "#ImportNodes:", NumImportNodes_, " ",
                   "#LambdaNodes:", NumLambdaNodes_, " ",
                   "#MallocNodes:", NumMallocNodes_, " ",
+                  "#MemoryNodes:", NumMemoryNodes_, " ",
                   "#RegisterNodes:", NumRegisterNodes_, " ",
                   "#UnknownMemorySources:", NumUnknownMemorySources_, " ",
                   "Time[ns]:", Timer_.ns());
@@ -141,6 +144,7 @@ private:
   size_t NumImportNodes_;
   size_t NumLambdaNodes_;
   size_t NumMallocNodes_;
+  size_t NumMemoryNodes_;
   size_t NumRegisterNodes_;
   size_t NumUnknownMemorySources_;
   jlm::timer Timer_;
