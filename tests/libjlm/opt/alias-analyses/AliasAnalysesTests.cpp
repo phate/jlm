@@ -1482,3 +1482,419 @@ ExternalMemoryTest::SetupRvsdg()
 
   return module;
 }
+
+std::unique_ptr<jlm::RvsdgModule>
+EscapedMemoryTest1::SetupRvsdg()
+{
+  using namespace jlm;
+
+  auto rvsdgModule = RvsdgModule::Create(filepath(""), "", "");
+  auto rvsdg = &rvsdgModule->Rvsdg();
+
+  auto nf = rvsdg->node_normal_form(typeid(jive::operation));
+  nf->set_mutable(false);
+
+  auto SetupDeltaA = [&]()
+  {
+    auto deltaNode = delta::node::Create(
+      rvsdg->root(),
+      PointerType(jive::bit32),
+      "a",
+      linkage::external_linkage,
+      "",
+      false);
+
+    auto constant = jive::create_bitconstant(deltaNode->subregion(), 32, 1);
+
+    return  deltaNode->finalize(constant);
+  };
+
+  auto SetupDeltaB = [&]()
+  {
+    auto deltaNode = delta::node::Create(
+      rvsdg->root(),
+      PointerType(jive::bit32),
+      "b",
+      linkage::external_linkage,
+      "",
+      false);
+
+    auto constant = jive::create_bitconstant(deltaNode->subregion(), 32, 2);
+
+    return  deltaNode->finalize(constant);
+  };
+
+  auto SetupDeltaX = [&](delta::output & deltaA)
+  {
+    PointerType p32(jive::bit32);
+    PointerType pp32(static_cast<const jive::valuetype&>(p32));
+
+    auto deltaNode = delta::node::Create(
+      rvsdg->root(),
+      pp32,
+      "x",
+      linkage::external_linkage,
+      "",
+      false);
+
+    auto contextVariableA = deltaNode->add_ctxvar(&deltaA);
+
+    return  deltaNode->finalize(contextVariableA);
+  };
+
+  auto SetupDeltaY = [&](delta::output & deltaX)
+  {
+    PointerType p32(jive::bit32);
+    PointerType pp32(static_cast<const jive::valuetype&>(p32));
+    PointerType ppp32(static_cast<const jive::valuetype&>(pp32));
+
+    auto deltaNode = delta::node::Create(
+      rvsdg->root(),
+      ppp32,
+      "y",
+      linkage::external_linkage,
+      "",
+      false);
+
+    auto contextVariableX = deltaNode->add_ctxvar(&deltaX);
+
+    auto deltaOutput = deltaNode->finalize(contextVariableX);
+    rvsdg->add_export(deltaOutput, {ppp32, "y"});
+
+    return  deltaOutput;
+  };
+
+  auto SetupLambdaTest = [&](delta::output & deltaB)
+  {
+    PointerType p32(jive::bit32);
+    PointerType pp32(static_cast<const jive::valuetype&>(p32));
+    iostatetype iOStateType;
+    MemoryStateType memoryStateType;
+    loopstatetype loopStateType;
+    FunctionType functionType(
+      {&pp32, &iOStateType, &memoryStateType, &loopStateType},
+      {&jive::bit32, &iOStateType, &memoryStateType, &loopStateType});
+
+    auto lambda = lambda::node::create(
+      rvsdg->root(),
+      functionType,
+      "test",
+      linkage::external_linkage);
+    auto pointerArgument = lambda->fctargument(0);
+    auto iOStateArgument = lambda->fctargument(1);
+    auto memoryStateArgument = lambda->fctargument(2);
+    auto loopStateArgument = lambda->fctargument(3);
+
+    auto contextVariableB = lambda->add_ctxvar(&deltaB);
+
+    auto loadResults1 = LoadNode::Create(pointerArgument, {memoryStateArgument}, 4);
+    auto loadResults2 = LoadNode::Create(loadResults1[0], {loadResults1[1]}, 4);
+
+    auto five = jive::create_bitconstant(lambda->subregion(), 32, 5);
+    auto storeResults = StoreNode::Create(contextVariableB, five, {loadResults2[1]}, 4);
+
+    auto lambdaOutput = lambda->finalize({loadResults2[0], iOStateArgument, storeResults[0], loopStateArgument});
+
+    rvsdg->add_export(lambdaOutput, {PointerType(functionType), "test"});
+
+    return std::make_tuple(lambdaOutput, AssertedCast<LoadNode>(jive::node_output::node(loadResults1[0])));
+  };
+
+  auto deltaA = SetupDeltaA();
+  auto deltaB = SetupDeltaB();
+  auto deltaX = SetupDeltaX(*deltaA);
+  auto deltaY = SetupDeltaY(*deltaX);
+  auto [lambdaTest, loadNode1] = SetupLambdaTest(*deltaB);
+
+  /*
+   * Assign nodes
+   */
+  this->LambdaTest = lambdaTest->node();
+
+  this->DeltaA = deltaA->node();
+  this->DeltaB = deltaB->node();
+  this->DeltaX = deltaX->node();
+  this->DeltaY = deltaY->node();
+
+  this->LoadNode1 = loadNode1;
+
+  return rvsdgModule;
+}
+
+std::unique_ptr<jlm::RvsdgModule>
+EscapedMemoryTest2::SetupRvsdg()
+{
+  using namespace jlm;
+
+  auto rvsdgModule = RvsdgModule::Create(filepath(""), "", "");
+  auto rvsdg = &rvsdgModule->Rvsdg();
+
+  auto nf = rvsdg->node_normal_form(typeid(jive::operation));
+  nf->set_mutable(false);
+
+  auto SetupExternalFunction1Declaration = [&]()
+  {
+    PointerType p8(jive::bit8);
+    iostatetype iOStateType;
+    MemoryStateType memoryStateType;
+    loopstatetype loopStateType;
+    FunctionType functionType(
+      {&p8, &iOStateType, &memoryStateType, &loopStateType},
+      {&iOStateType, &memoryStateType, &loopStateType});
+
+    return rvsdg->add_import(impport(
+      PointerType(functionType),
+      "ExternalFunction1",
+      linkage::external_linkage));
+  };
+
+  auto SetupExternalFunction2Declaration = [&]()
+  {
+    PointerType p32(jive::bit32);
+    iostatetype iOStateType;
+    MemoryStateType memoryStateType;
+    loopstatetype loopStateType;
+    FunctionType functionType(
+      {&iOStateType, &memoryStateType, &loopStateType},
+      {&p32, &iOStateType, &memoryStateType, &loopStateType});
+
+    return rvsdg->add_import(impport(
+      PointerType(functionType),
+      "ExternalFunction2",
+      linkage::external_linkage));
+  };
+
+  auto SetupReturnAddressFunction = [&]()
+  {
+    PointerType p8(jive::bit8);
+    iostatetype iOStateType;
+    MemoryStateType memoryStateType;
+    loopstatetype loopStateType;
+    FunctionType functionType(
+      {&iOStateType, &memoryStateType, &loopStateType},
+      {&p8, &iOStateType, &memoryStateType, &loopStateType});
+
+    auto lambda = lambda::node::create(
+      rvsdg->root(),
+      functionType,
+      "ReturnAddress",
+      linkage::external_linkage);
+    auto iOStateArgument = lambda->fctargument(0);
+    auto memoryStateArgument = lambda->fctargument(1);
+    auto loopStateArgument = lambda->fctargument(2);
+
+    auto eight = jive::create_bitconstant(lambda->subregion(), 32, 8);
+
+    auto mallocResults = malloc_op::create(eight);
+    auto mergeResults = MemStateMergeOperator::Create(std::vector<jive::output *>(
+      {memoryStateArgument, mallocResults[1]}));
+
+    auto lambdaOutput = lambda->finalize({mallocResults[0], iOStateArgument, mergeResults, loopStateArgument});
+
+    rvsdg->add_export(lambdaOutput, {PointerType(functionType), "ReturnAddress"});
+
+    return std::make_tuple(
+      lambdaOutput,
+      jive::node_output::node(mallocResults[0]));
+  };
+
+  auto SetupCallExternalFunction1 = [&](jive::argument * externalFunction1Argument)
+  {
+    iostatetype iOStateType;
+    MemoryStateType memoryStateType;
+    loopstatetype loopStateType;
+    FunctionType functionType(
+      {&iOStateType, &memoryStateType, &loopStateType},
+      {&iOStateType, &memoryStateType, &loopStateType});
+
+    auto lambda = lambda::node::create(
+      rvsdg->root(),
+      functionType,
+      "CallExternalFunction1",
+      linkage::external_linkage);
+    auto iOStateArgument = lambda->fctargument(0);
+    auto memoryStateArgument = lambda->fctargument(1);
+    auto loopStateArgument = lambda->fctargument(2);
+
+    auto externalFunction1 = lambda->add_ctxvar(externalFunction1Argument);
+
+    auto eight = jive::create_bitconstant(lambda->subregion(), 32, 8);
+
+    auto mallocResults = malloc_op::create(eight);
+    auto mergeResult = MemStateMergeOperator::Create(std::vector<jive::output *>(
+      {memoryStateArgument, mallocResults[1]}));
+
+    auto callResults = CallNode::Create(
+      externalFunction1,
+      {mallocResults[0], iOStateArgument, mergeResult, loopStateArgument});
+
+    auto lambdaOutput = lambda->finalize(callResults);
+
+    rvsdg->add_export(lambdaOutput, {PointerType(functionType), "CallExternalFunction1"});
+
+    return std::make_tuple(
+      lambdaOutput,
+      AssertedCast<CallNode>(jive::node_output::node(callResults[0])),
+      jive::node_output::node(mallocResults[0]));
+  };
+
+  auto SetupCallExternalFunction2 = [&](jive::argument * externalFunction2Argument)
+  {
+    iostatetype iOStateType;
+    MemoryStateType memoryStateType;
+    loopstatetype loopStateType;
+    FunctionType functionType(
+      {&iOStateType, &memoryStateType, &loopStateType},
+      {&jive::bit32, &iOStateType, &memoryStateType, &loopStateType});
+
+    auto lambda = lambda::node::create(
+      rvsdg->root(),
+      functionType,
+      "CallExternalFunction2",
+      linkage::external_linkage);
+    auto iOStateArgument = lambda->fctargument(0);
+    auto memoryStateArgument = lambda->fctargument(1);
+    auto loopStateArgument = lambda->fctargument(2);
+
+    auto externalFunction2 = lambda->add_ctxvar(externalFunction2Argument);
+
+    auto callResults = CallNode::Create(
+      externalFunction2,
+      {iOStateArgument, memoryStateArgument, loopStateArgument});
+
+    auto loadResults = LoadNode::Create(callResults[0], {callResults[2]}, 4);
+
+    auto lambdaOutput = lambda->finalize({loadResults[0], callResults[1], loadResults[1], callResults[3]});
+
+    rvsdg->add_export(lambdaOutput, {PointerType(functionType), "CallExternalFunction2"});
+
+    return std::make_tuple(
+      lambdaOutput,
+      AssertedCast<CallNode>(jive::node_output::node(callResults[0])),
+      AssertedCast<jlm::LoadNode>(jive::node_output::node(loadResults[0])));
+  };
+
+  auto externalFunction1 = SetupExternalFunction1Declaration();
+  auto externalFunction2 = SetupExternalFunction2Declaration();
+  auto [returnAddressFunction, returnAddressMalloc] = SetupReturnAddressFunction();
+  auto [callExternalFunction1, externalFunction1Call, callExternalFunction1Malloc] = SetupCallExternalFunction1(externalFunction1);
+  auto [callExternalFunction2, externalFunction2Call, loadNode] = SetupCallExternalFunction2(externalFunction2);
+
+  /*
+   * Assign nodes
+   */
+  this->ReturnAddressFunction = returnAddressFunction->node();
+  this->CallExternalFunction1 = callExternalFunction1->node();
+  this->CallExternalFunction2 = callExternalFunction2->node();
+
+  this->ExternalFunction1Call = externalFunction1Call;
+  this->ExternalFunction2Call = externalFunction2Call;
+
+  this->ReturnAddressMalloc = returnAddressMalloc;
+  this->CallExternalFunction1Malloc = callExternalFunction1Malloc;
+
+  this->ExternalFunction1Import = externalFunction1;
+  this->ExternalFunction2Import = externalFunction2;
+
+  this->LoadNode = loadNode;
+
+  return rvsdgModule;
+}
+
+std::unique_ptr<jlm::RvsdgModule>
+EscapedMemoryTest3::SetupRvsdg()
+{
+  using namespace jlm;
+
+  auto rvsdgModule = RvsdgModule::Create(filepath(""), "", "");
+  auto rvsdg = &rvsdgModule->Rvsdg();
+
+  auto nf = rvsdg->node_normal_form(typeid(jive::operation));
+  nf->set_mutable(false);
+
+  auto SetupExternalFunctionDeclaration = [&]()
+  {
+    PointerType p32(jive::bit32);
+    iostatetype iOStateType;
+    MemoryStateType memoryStateType;
+    loopstatetype loopStateType;
+    FunctionType functionType(
+      {&iOStateType, &memoryStateType, &loopStateType},
+      {&p32, &iOStateType, &memoryStateType, &loopStateType});
+
+    return rvsdg->add_import(impport(
+      PointerType(functionType),
+      "externalFunction",
+      linkage::external_linkage));
+  };
+
+  auto SetupGlobal = [&]()
+  {
+    auto delta = delta::node::Create(
+      rvsdg->root(),
+      PointerType(jive::bit32),
+      "global",
+      linkage::external_linkage,
+      "",
+      false);
+
+    auto constant = jive::create_bitconstant(delta->subregion(), 32, 4);
+
+    auto deltaOutput = delta->finalize(constant);
+
+    rvsdg->add_export(deltaOutput, {PointerType(jive::bit32), "global"});
+
+    return deltaOutput;
+  };
+
+  auto SetupTestFunction = [&](jive::argument * externalFunctionArgument)
+  {
+    iostatetype iOStateType;
+    MemoryStateType memoryStateType;
+    loopstatetype loopStateType;
+    FunctionType functionType(
+      {&iOStateType, &memoryStateType, &loopStateType},
+      {&jive::bit32, &iOStateType, &memoryStateType, &loopStateType});
+
+    auto lambda = lambda::node::create(
+      rvsdg->root(),
+      functionType,
+      "test",
+      linkage::external_linkage);
+    auto iOStateArgument = lambda->fctargument(0);
+    auto memoryStateArgument = lambda->fctargument(1);
+    auto loopStateArgument = lambda->fctargument(2);
+
+    auto externalFunction = lambda->add_ctxvar(externalFunctionArgument);
+
+    auto callResults = CallNode::Create(
+      externalFunction,
+      {iOStateArgument, memoryStateArgument, loopStateArgument});
+
+    auto loadResults = LoadNode::Create(callResults[0], {callResults[2]}, 4);
+
+    auto lambdaOutput = lambda->finalize({loadResults[0], callResults[1], loadResults[1], callResults[3]});
+
+    rvsdg->add_export(lambdaOutput, {PointerType(functionType), "test"});
+
+    return std::make_tuple(
+      lambdaOutput,
+      AssertedCast<CallNode>(jive::node_output::node(callResults[0])),
+      AssertedCast<jlm::LoadNode>(jive::node_output::node(loadResults[0])));
+  };
+
+  auto importExternalFunction = SetupExternalFunctionDeclaration();
+  auto deltaGlobal = SetupGlobal();
+  auto [lambdaTest, callExternalFunction, loadNode] = SetupTestFunction(importExternalFunction);
+
+  /*
+   * Assign nodes
+   */
+  this->LambdaTest = lambdaTest->node();
+  this->DeltaGlobal = deltaGlobal->node();
+  this->ImportExternalFunction = importExternalFunction;
+  this->CallExternalFunction = callExternalFunction;
+  this->LoadNode = loadNode;
+
+  return rvsdgModule;
+}

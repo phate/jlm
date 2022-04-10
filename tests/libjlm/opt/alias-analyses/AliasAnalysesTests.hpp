@@ -734,3 +734,129 @@ public:
   jlm::lambda::node * LambdaF;
 
 };
+
+/** \brief EscapedMemoryTest1 class
+ *
+ * This class sets up an RVSDG representing the following code snippet:
+ *
+ * \code{.c}
+ *  static int a = 1;
+ *  static int *x = &a;
+ *  int **y = &x;
+ *
+ *  static int b = 2;
+ *
+ *  int
+ *  test(int **p)
+ *  {
+ *    b = 5;
+ *
+ *    return **p;
+ *  }
+ * \endcode
+ *
+ * It uses a single memory state to sequentialize the respective memory operations.
+ */
+class EscapedMemoryTest1 final : public AliasAnalysisTest {
+private:
+  std::unique_ptr<jlm::RvsdgModule>
+  SetupRvsdg() override;
+
+public:
+  jlm::lambda::node * LambdaTest;
+
+  jlm::delta::node * DeltaA;
+  jlm::delta::node * DeltaB;
+  jlm::delta::node * DeltaX;
+  jlm::delta::node * DeltaY;
+
+  jlm::LoadNode * LoadNode1;
+};
+
+/** \brief EscapedMemoryTest2 class
+ *
+ * This class sets up an RVSDG representing the following code snippet:
+ *
+ * \code{.c}
+ *  #include <stdlib.h>
+ *
+ *  extern void ExternalFunction1(void*);
+ *  extern int* ExternalFunction2();
+ *
+ *  void*
+ *  ReturnAddress()
+ *  {
+ *    return malloc(8);
+ *  }
+ *
+ *  void
+ *  CallExternalFunction1()
+ *  {
+ *    void* address = malloc(8);
+ *    ExternalFunction1(address);
+ *  }
+ *
+ *  int
+ *  CallExternalFunction2()
+ *  {
+ *    return *ExternalFunction2();
+ *  }
+ * \endcode
+ *
+ * It uses a single memory state to sequentialize the respective memory operations.
+ */
+class EscapedMemoryTest2 final : public AliasAnalysisTest {
+private:
+  std::unique_ptr<jlm::RvsdgModule>
+  SetupRvsdg() override;
+
+public:
+  jlm::lambda::node * ReturnAddressFunction;
+  jlm::lambda::node * CallExternalFunction1;
+  jlm::lambda::node * CallExternalFunction2;
+
+  jlm::CallNode * ExternalFunction1Call;
+  jlm::CallNode * ExternalFunction2Call;
+
+  jive::node * ReturnAddressMalloc;
+  jive::node * CallExternalFunction1Malloc;
+
+  jive::argument * ExternalFunction1Import;
+  jive::argument * ExternalFunction2Import;
+
+  jlm::LoadNode * LoadNode;
+};
+
+/** \brief EscapedMemoryTest3 class
+ *
+ * This class sets up an RVSDG representing the following code snippet:
+ *
+ * \code{.c}
+ *  extern int32_t* externalFunction();
+ *  int32_t global = 4;
+ *
+ *  int32_t
+ *  test()
+ *  {
+ *    return *externalFunction();
+ *  }
+ * \endcode
+ *
+ * It uses a single memory state to sequentialize the respective memory operations.
+ */
+class EscapedMemoryTest3 final : public AliasAnalysisTest {
+private:
+  std::unique_ptr<jlm::RvsdgModule>
+  SetupRvsdg() override;
+
+public:
+  jlm::lambda::node * LambdaTest;
+
+  jlm::delta::node * DeltaGlobal;
+
+  jive::argument * ImportExternalFunction;
+
+  jlm::CallNode * CallExternalFunction;
+
+  jlm::LoadNode * LoadNode;
+};

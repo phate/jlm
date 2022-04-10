@@ -36,6 +36,7 @@ namespace aa {
 
 class Location;
 class PointsToGraph;
+class RegisterLocation;
 
 /** \brief LocationSet class
 */
@@ -100,7 +101,8 @@ public:
 	FindOrInsertRegisterLocation(
     const jive::output & output,
     bool pointsToUnknownMemory,
-    bool pointsToExternalMemory);
+    bool pointsToExternalMemory,
+    bool pointsToEscapedMemory);
 
 	const DisjointLocationSet::set &
 	GetSet(Location & location) const
@@ -126,6 +128,9 @@ public:
 	Location &
 	Find(const jive::output & output);
 
+  RegisterLocation *
+  LookupRegisterLocation(const jive::output & output);
+
 	Location &
 	Merge(Location & location1, Location & location2);
 
@@ -136,18 +141,16 @@ public:
 	Clear();
 
 private:
-	Location &
+	RegisterLocation &
 	InsertRegisterLocation(
     const jive::output & output,
     bool pointsToUnknownMemory,
-    bool pointsToExternalMemory);
-
-	Location *
-	Lookup(const jive::output & output);
+    bool pointsToExternalMemory,
+    bool pointsToEscapedMemory);
 
 	DisjointLocationSet DisjointLocationSet_;
 	std::vector<std::unique_ptr<Location>> Locations_;
-	std::unordered_map<const jive::output*, Location*> LocationMap_;
+	std::unordered_map<const jive::output*, RegisterLocation*> LocationMap_;
 };
 
 /** \brief Steensgaard alias analysis
