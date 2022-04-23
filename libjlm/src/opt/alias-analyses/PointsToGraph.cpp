@@ -173,7 +173,7 @@ PointsToGraph::ToDot(const PointsToGraph & pointsToGraph)
   auto nodeString = [&](const PointsToGraph::Node & node) {
     return strfmt("{ ", (intptr_t)&node, " ["
       , "label = \"", node.DebugString(), "\" "
-      , "nodeShape = \"", nodeShape(node), "\"]; }\n");
+      , "shape = \"", nodeShape(node), "\"]; }\n");
   };
 
   auto edgeString = [](const PointsToGraph::Node & node, const PointsToGraph::Node & target)
