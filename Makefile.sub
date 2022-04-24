@@ -24,17 +24,17 @@ endef
 
 # Try to detect llvm-config 
 CONFIG        := $(shell command -v llvm-config 2> /dev/null)
-CONFIGVERSION := $(shell command -v llvm-config-13 2> /dev/null)
+CONFIGVERSION := $(shell command -v llvm-config-14 2> /dev/null)
 ifdef LLVMCONFIG
   $(info LLVMCONFIG specified by user)
 else ifdef CONFIGVERSION
-  $(info Found llvm-config-13)
-  LLVMCONFIG ?= llvm-config-13
+  $(info Found llvm-config-14)
+  LLVMCONFIG ?= llvm-config-14
 else ifdef CONFIG
-  $(info Found llvm-config (make sure that it is LLVM 13))
+  $(info Found llvm-config (make sure that it is LLVM 14))
   LLVMCONFIG ?= llvm-config
 else
-  $(info Did not find llvm-config or llvm-config-13 and LLVMCONFIG is not specified)
+  $(info Did not find llvm-config or llvm-config-14 and LLVMCONFIG is not specified)
 endif
 
 include $(JLM_ROOT)/libjive/Makefile.sub
