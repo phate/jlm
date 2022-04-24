@@ -171,9 +171,10 @@ convert_attribute_kind(const jlm::attribute::kind & kind)
     {attribute::kind::by_val,                           ak::ByVal},
     {attribute::kind::cold,                             ak::Cold},
     {attribute::kind::convergent,                       ak::Convergent},
+    {attribute::kind::DisableSanitizerInstrumentation,  ak::DisableSanitizerInstrumentation},
     {attribute::kind::dereferenceable,                  ak::Dereferenceable},
     {attribute::kind::dereferenceable_or_null,          ak::DereferenceableOrNull},
-		{attribute::kind::ElementType,                      ak::ElementType},
+    {attribute::kind::ElementType,                      ak::ElementType},
     {attribute::kind::Hot,                              ak::Hot},
     {attribute::kind::imm_arg,                          ak::ImmArg},
     {attribute::kind::in_alloca,                        ak::InAlloca},
@@ -200,7 +201,7 @@ convert_attribute_kind(const jlm::attribute::kind & kind)
     {attribute::kind::no_recurse,                       ak::NoRecurse},
     {attribute::kind::no_red_zone,                      ak::NoRedZone},
     {attribute::kind::no_return,                        ak::NoReturn},
-		{attribute::kind::NoSanitizeCoverage,               ak::NoSanitizeCoverage},
+    {attribute::kind::NoSanitizeCoverage,               ak::NoSanitizeCoverage},
     {attribute::kind::no_sync,                          ak::NoSync},
     {attribute::kind::NoUndef,                          ak::NoUndef},
     {attribute::kind::no_unwind,                        ak::NoUnwind},
@@ -235,7 +236,7 @@ convert_attribute_kind(const jlm::attribute::kind & kind)
     {attribute::kind::swift_error,                      ak::SwiftError},
     {attribute::kind::swift_self,                       ak::SwiftSelf},
     {attribute::kind::uwtable,                          ak::UWTable},
-		{attribute::kind::VScaleRange,                      ak::VScaleRange},
+    {attribute::kind::VScaleRange,                      ak::VScaleRange},
     {attribute::kind::will_return,                      ak::WillReturn},
     {attribute::kind::write_only,                       ak::WriteOnly},
     {attribute::kind::zext,                             ak::ZExt},
@@ -276,7 +277,7 @@ convert_attributes(const attributeset & as, context & ctx)
 		JLM_UNREACHABLE("This should have never happened!");
 	};
 
-	llvm::AttrBuilder builder;
+	llvm::AttrBuilder builder(ctx.llvm_module().getContext());
 	for (auto & attribute : as)
 		builder.addAttribute(convert_attribute(attribute, ctx));
 

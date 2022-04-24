@@ -48,7 +48,7 @@ convert_pointer_type(const llvm::Type * t, context & ctx)
 	JLM_ASSERT(t->getTypeID() == llvm::Type::PointerTyID);
 	const auto & type = llvm::cast<llvm::PointerType>(t);
 
-	auto et = ConvertType(type->getElementType(), ctx);
+	auto et = ConvertType(type->getPointerElementType(), ctx);
 	return std::unique_ptr<jive::valuetype>(new PointerType(*et));
 }
 

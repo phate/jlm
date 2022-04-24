@@ -273,7 +273,7 @@ lnkcmd::to_str() const
 
 	return strfmt(
 	  clangpath.to_str() + " "
-	, "-O0 "
+	, "-no-pie -O0 "
         , arguments
 	, ifiles
 	, "-o ", ofile_.to_str(), " "

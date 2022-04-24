@@ -31,6 +31,7 @@ public:
 	, by_val
 	, cold
 	, convergent
+	, DisableSanitizerInstrumentation
 	, dereferenceable
 	, dereferenceable_or_null
   , ElementType
