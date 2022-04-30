@@ -898,21 +898,25 @@ convert_insertelement_instruction(llvm::Instruction * i, tacsvector_t & tacs, co
 }
 
 static const variable *
-convert_fneg_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
+convert(
+  llvm::UnaryOperator * unaryOperator,
+  tacsvector_t & threeAddressCodeVector,
+  context & ctx)
 {
-	JLM_ASSERT(i->getOpcode() == llvm::Instruction::FNeg);
-	auto t = i->getType();
+  JLM_ASSERT(unaryOperator->getOpcode() == llvm::Instruction::FNeg);
 
-	auto type = ConvertType(t->isVectorTy() ? t->getScalarType() : t, ctx);
+  auto type = unaryOperator->getType();
+  auto scalarType = ConvertType(type->getScalarType(), ctx);
+  auto operand = ConvertValue(unaryOperator->getOperand(0), threeAddressCodeVector, ctx);
 
-	auto operand = ConvertValue(i->getOperand(0), tacs, ctx);
+  if (type->isVectorTy()) {
+    auto vectorType = ConvertType(type, ctx);
+    threeAddressCodeVector.push_back(vectorunary_op::create(fpneg_op(*scalarType), operand, *vectorType));
+  } else {
+    threeAddressCodeVector.push_back(fpneg_op::create(operand));
+  }
 
-	if (t->isVectorTy())
-		tacs.push_back(vectorunary_op::create(fpneg_op(*type), operand, *type));
-	else
-		tacs.push_back(fpneg_op::create(operand));
-
-	return tacs.back()->result(0);
+  return threeAddressCodeVector.back()->result(0);
 }
 
 template<class OP> static std::unique_ptr<jive::operation>
@@ -1009,7 +1013,7 @@ ConvertInstruction(
 	,	{llvm::Instruction::FMul, convert_binary_operator}
 	,	{llvm::Instruction::FDiv, convert_binary_operator}
 	,	{llvm::Instruction::FRem, convert_binary_operator}
-	,	{llvm::Instruction::FNeg, convert_fneg_instruction}
+	,	{llvm::Instruction::FNeg, convert<llvm::UnaryOperator>}
 	,	{llvm::Instruction::ICmp, convert_icmp_instruction}
 	,	{llvm::Instruction::FCmp, convert_fcmp_instruction}
 	,	{llvm::Instruction::Load, convert_load_instruction}
