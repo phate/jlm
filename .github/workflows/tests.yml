@@ -159,3 +159,19 @@ jobs:
       run: cd jlm-eval-suite && make apply-llvm-git-patch
     - name: Run llvm-test-suite
       run: cd jlm-eval-suite/llvm-test-suite && make llvm-run-opt
+
+  hls-test-suite:
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Clone jlm-test-suite
+      run: git clone https://github.com/phate/jlm-eval-suite.git
+    - name: Update submodules
+      run: make -C jlm-eval-suite submodule
+    - name: Install verilator
+      run: sudo apt install verilator
+    - name: Download CIRCT installation
+      run: wget -q -O- https://studntnu-my.sharepoint.com/:u:/g/personal/magnsj_ntnu_no/EXvoio0yy8xKnEKWJl9IlFsBOvYY5HMksaRHpuf8_tp0vQ?download=1 | tar -xz -C jlm-eval-suite/circt/
+    - name: Compile jlm
+      run: cd jlm-eval-suite && make VERILATOR_BIN=verilator_bin VERILATOR_ROOT=/usr/share/verilator/ jlm-release -j `nproc`
+    - name: Run hls-test-suite
+      run: cd jlm-eval-suite && make hls-test-run
