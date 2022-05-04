@@ -6,21 +6,21 @@ JLMPRINT_SRC = \
  
 .PHONY: jlm-print-debug
 jlm-print-debug: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG -DJLM_ENABLE_ASSERTS
-jlm-print-debug: $(JLM_ROOT)/libjive.a $(JLM_ROOT)/libjlm.a $(JLM_ROOT)/bin/jlm-print
+jlm-print-debug: $(JLM_BUILD)/libjive.a $(JLM_BUILD)/libjlm.a $(JLM_BIN)/jlm-print
 
 .PHONY: jlm-print-release
 jlm-print-release: CXXFLAGS += -O3
-jlm-print-release: $(JLM_ROOT)/libjive.a $(JLM_ROOT)/libjlm.a $(JLM_ROOT)/bin/jlm-print
+jlm-print-release: $(JLM_BUILD)/libjive.a $(JLM_BUILD)/libjlm.a $(JLM_BIN)/jlm-print
 
-$(JLM_ROOT)/bin/jlm-print: CPPFLAGS += -I$(JLM_ROOT)/libjlm/include -I$(JLM_ROOT)/libjive/include -I$(shell $(LLVMCONFIG) --includedir)
-$(JLM_ROOT)/bin/jlm-print: CXXFLAGS += --std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Wfatal-errors
-$(JLM_ROOT)/bin/jlm-print: LDFLAGS+=$(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -L$(JLM_ROOT)/ -ljlm -ljive
-$(JLM_ROOT)/bin/jlm-print: $(patsubst %.cpp, $(JLM_ROOT)/%.o, $(JLMPRINT_SRC)) $(JLM_ROOT)/libjive.a $(JLM_ROOT)/libjlm.a
-	@mkdir -p $(JLM_ROOT)/bin
+$(JLM_BIN)/jlm-print: CPPFLAGS += -I$(JLM_ROOT)/libjlm/include -I$(JLM_ROOT)/libjive/include -I$(shell $(LLVMCONFIG) --includedir)
+$(JLM_BIN)/jlm-print: CXXFLAGS += --std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Wfatal-errors
+$(JLM_BIN)/jlm-print: LDFLAGS+=$(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -L$(JLM_BUILD)/ -ljlm -ljive
+$(JLM_BIN)/jlm-print: $(patsubst %.cpp, $(JLM_BUILD)/%.o, $(JLMPRINT_SRC)) $(JLM_BUILD)/libjive.a $(JLM_BUILD)/libjlm.a
+	@mkdir -p $(JLM_BIN)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 
 .PHONY: jlmprint-clean
 jlmprint-clean:
-	@find  $(JLM_ROOT)/jlm-print/ -name "*.o" -o -name "*.la" -o -name "*.a" | grep -v external | xargs rm -rf
-	@rm -rf $(JLM_ROOT)/bin/jlm-print
+	@rm -rf $(JLM_BUILD)/jlm-print
+	@rm -rf $(JLM_BIN)/jlm-print
 

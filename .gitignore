@@ -1,11 +1,8 @@
-*.la
-*.a
-*.o
 utests.log
 ctests.log
 check.log
 /bin
-tests/test-runner
+/build
 .Makefile.override
 libjlc/include/jlc/llvmpaths.hpp
 docs/html

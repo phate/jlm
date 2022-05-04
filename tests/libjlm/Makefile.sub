@@ -1,8 +1,8 @@
-include tests/libjlm/backend/Makefile.sub
-include tests/libjlm/frontend/Makefile.sub
-include tests/libjlm/ir/Makefile.sub
-include tests/libjlm/opt/Makefile.sub
-include tests/libjlm/util/Makefile.sub
+include $(JLM_ROOT)/tests/libjlm/backend/Makefile.sub
+include $(JLM_ROOT)/tests/libjlm/frontend/Makefile.sub
+include $(JLM_ROOT)/tests/libjlm/ir/Makefile.sub
+include $(JLM_ROOT)/tests/libjlm/opt/Makefile.sub
+include $(JLM_ROOT)/tests/libjlm/util/Makefile.sub
 
 TESTS += \
 	libjlm/test-cfg-structure \

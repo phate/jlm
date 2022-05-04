@@ -1,4 +1,4 @@
-include tests/libjlm/ir/operators/Makefile.sub
+include $(JLM_ROOT)/tests/libjlm/ir/operators/Makefile.sub
 
 TESTS += \
 	libjlm/ir/test-aggregation \

@@ -1,16 +1,17 @@
-#!	/bin/bash
+#!/bin/bash
 
 if [ $# -eq 0 ] ; then
 	echo "ERROR: No file supplied."
 	exit 1
 fi
 
-root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+dir=$(dirname $2)
 
-base=$(basename $1)
-file="/tmp/${base%.*}"
+PATH=$PATH:$1/bin
 
-PATH=$PATH:${root}/../bin
-
-jlc -Wall -Werror -O3 -o ${file}-jlm $1 || exit 1
-bash -c "${file}-jlm"
+mkdir -p $1/build/$dir
+# jlc places the o-file in the same directory as the c-file
+# So to place the o-file in build then we need to copy the c-file
+cp $2 $1/build/$2
+jlc -Wall -Werror -O3 -o $1/build/$2-jlm $1/build/$2 || exit 1
+bash -c "$1/build/$2-jlm"
