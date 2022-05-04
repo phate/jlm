@@ -31,34 +31,34 @@ $(LLVMPATHSFILE):
 
 .PHONY: libjlc-debug
 libjlc-debug: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG -DJLM_ENABLE_ASSERTS
-libjlc-debug: $(JLM_ROOT)/libjlc.a
+libjlc-debug: $(JLM_BUILD)/libjlc.a
 
 .PHONY: libjlc-release
 libjlc-release: CXXFLAGS += -O3
-libjlc-release: $(JLM_ROOT)/libjlc.a
+libjlc-release: $(JLM_BUILD)/libjlc.a
 
-$(JLM_ROOT)/libjlc.a: CPPFLAGS += -I$(JLM_ROOT)/libjlc/include -I$(JLM_ROOT)/libjlm/include -I$(shell $(LLVMCONFIG) --includedir)
-$(JLM_ROOT)/libjlc.a: CXXFLAGS += --std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Wfatal-errors
-$(JLM_ROOT)/libjlc.a: $(LLVMPATHSFILE) $(patsubst %.cpp, $(JLM_ROOT)/%.la, $(LIBJLC_SRC))
+$(JLM_BUILD)/libjlc.a: CPPFLAGS += -I$(JLM_ROOT)/libjlc/include -I$(JLM_ROOT)/libjlm/include -I$(shell $(LLVMCONFIG) --includedir)
+$(JLM_BUILD)/libjlc.a: CXXFLAGS += --std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Wfatal-errors
+$(JLM_BUILD)/libjlc.a: $(LLVMPATHSFILE) $(patsubst %.cpp, $(JLM_BUILD)/%.la, $(LIBJLC_SRC))
 
 .PHONY: jlc-debug
 jlc-debug: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG -DJLM_ENABLE_ASSERTS
-jlc-debug: $(JLM_ROOT)/libjive.a $(JLM_ROOT)/libjlm.a $(JLM_ROOT)/libjlc.a $(JLM_ROOT)/bin/jlc
+jlc-debug: $(JLM_BUILD)/libjive.a $(JLM_BUILD)/libjlm.a $(JLM_BUILD)/libjlc.a $(JLM_BIN)/jlc
 
 .PHONY: jlc-release
 jlc-release: CXXFLAGS += -O3
-jlc-release: $(JLM_ROOT)/libjive.a $(JLM_ROOT)/libjlm.a $(JLM_ROOT)/libjlc.a $(JLM_ROOT)/bin/jlc
+jlc-release: $(JLM_BUILD)/libjive.a $(JLM_BUILD)/libjlm.a $(JLM_BUILD)/libjlc.a $(JLM_BIN)/jlc
 
-$(JLM_ROOT)/bin/jlc: CPPFLAGS += -I$(JLM_ROOT)/libjive/include -I$(JLM_ROOT)/libjlc/include -I$(JLM_ROOT)/libjlm/include -I$(shell $(LLVMCONFIG) --includedir)
-$(JLM_ROOT)/bin/jlc: CXXFLAGS += --std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Wfatal-errors
-$(JLM_ROOT)/bin/jlc: LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -L$(JLM_ROOT)/ -ljlc -ljlm -ljive
-$(JLM_ROOT)/bin/jlc: $(patsubst %.cpp, $(JLM_ROOT)/%.o, $(JLC_SRC)) $(JLM_ROOT)/libjive.a $(JLM_ROOT)/libjlm.a $(JLM_ROOT)/libjlc.a
-	@mkdir -p $(JLM_ROOT)/bin
+$(JLM_BIN)/jlc: CPPFLAGS += -I$(JLM_ROOT)/libjive/include -I$(JLM_ROOT)/libjlc/include -I$(JLM_ROOT)/libjlm/include -I$(shell $(LLVMCONFIG) --includedir)
+$(JLM_BIN)/jlc: CXXFLAGS += --std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Wfatal-errors
+$(JLM_BIN)/jlc: LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -L$(JLM_BUILD)/ -ljlc -ljlm -ljive
+$(JLM_BIN)/jlc: $(patsubst %.cpp, $(JLM_BUILD)/%.o, $(JLC_SRC)) $(JLM_BUILD)/libjive.a $(JLM_BUILD)/libjlm.a $(JLM_BUILD)/libjlc.a
+	@mkdir -p $(JLM_BIN)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 
 .PHONY: libjlc-clean
 libjlc-clean:
-	@find  $(JLM_ROOT)/libjlc/ -name "*.o" -o -name "*.la" -o -name "*.a" | grep -v external | xargs rm -rf
 	@rm -f $(LLVMPATHSFILE)
-	@rm -rf $(JLM_ROOT)/libjlc.a
-	@rm -rf $(JLM_ROOT)/bin/jlc
+	@rm -rf $(JLM_BULD)/libjlc
+	@rm -rf $(JLM_BULD)/libjlc.a
+	@rm -rf $(JLM_BIN)/jlc

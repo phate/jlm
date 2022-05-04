@@ -1,4 +1,4 @@
-include tests/libjive/rvsdg/traverser/Makefile.sub
+include $(JLM_ROOT)/tests/libjive/rvsdg/traverser/Makefile.sub
 
 TESTS+=\
 	libjive/rvsdg/test-binary \

@@ -7,20 +7,20 @@ JLMOPT_SRC = \
 
 .PHONY: jlm-opt-debug
 jlm-opt-debug: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG -DJLM_ENABLE_ASSERTS
-jlm-opt-debug: $(JLM_ROOT)/libjive.a $(JLM_ROOT)/libjlm.a $(JLM_ROOT)/bin/jlm-opt
+jlm-opt-debug: $(JLM_BUILD)/libjive.a $(JLM_BUILD)/libjlm.a $(JLM_BIN)/jlm-opt
 
 .PHONY: jlm-opt-release
 jlm-opt-release: CXXFLAGS += -O3
-jlm-opt-release: $(JLM_ROOT)/libjive.a $(JLM_ROOT)/libjlm.a $(JLM_ROOT)/bin/jlm-opt
+jlm-opt-release: $(JLM_BUILD)/libjive.a $(JLM_BUILD)/libjlm.a $(JLM_BIN)/jlm-opt
 
-$(JLM_ROOT)/bin/jlm-opt: CPPFLAGS += -I$(JLM_ROOT)/libjlm/include -I$(JLM_ROOT)/jlm-opt/include -I$(JLM_ROOT)/libjive/include -I$(shell $(LLVMCONFIG) --includedir)
-$(JLM_ROOT)/bin/jlm-opt: CXXFLAGS += --std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Wfatal-errors
-$(JLM_ROOT)/bin/jlm-opt: LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -L$(JLM_ROOT)/ -ljlm -ljive
-$(JLM_ROOT)/bin/jlm-opt: $(patsubst %.cpp, $(JLM_ROOT)/%.o, $(JLMOPT_SRC)) $(JLM_ROOT)/libjive.a $(JLM_ROOT)/libjlm.a
-	@mkdir -p $(JLM_ROOT)/bin
+$(JLM_BIN)/jlm-opt: CPPFLAGS += -I$(JLM_ROOT)/libjlm/include -I$(JLM_ROOT)/jlm-opt/include -I$(JLM_ROOT)/libjive/include -I$(shell $(LLVMCONFIG) --includedir)
+$(JLM_BIN)/jlm-opt: CXXFLAGS += --std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Wfatal-errors
+$(JLM_BIN)/jlm-opt: LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -L$(JLM_BUILD)/ -ljlm -ljive
+$(JLM_BIN)/jlm-opt: $(patsubst %.cpp, $(JLM_BUILD)/%.o, $(JLMOPT_SRC)) $(JLM_BUILD)/libjive.a $(JLM_BUILD)/libjlm.a
+	@mkdir -p $(JLM_BIN)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 
 .PHONY: jlmopt-clean
 jlmopt-clean:
-	@find  $(JLM_ROOT)/jlm-opt/ -name "*.o" -o -name "*.la" -o -name "*.a" | grep -v external | xargs rm -rf
-	@rm -rf $(JLM_ROOT)/bin/jlm-opt
+	@rm -rf $(JLM_BUILD)/jlm-opt
+	@rm -rf $(JLM_BIN)/jlm-opt

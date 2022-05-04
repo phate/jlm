@@ -1,4 +1,4 @@
-include tests/libjlm/opt/alias-analyses/Makefile.sub
+include $(JLM_ROOT)/tests/libjlm/opt/alias-analyses/Makefile.sub
 
 TESTS += \
 	libjlm/opt/test-cne \

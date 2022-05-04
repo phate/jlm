@@ -66,17 +66,17 @@ LIBJLM_SRC = \
 
 .PHONY: libjlm-debug
 libjlm-debug: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG -DJLM_ENABLE_ASSERTS
-libjlm-debug: $(JLM_ROOT)/libjlm.a
+libjlm-debug: $(JLM_BUILD)/libjlm.a
 
 .PHONY: libjlm-release
 libjlm-release: CXXFLAGS += -O3
-libjlm-release: $(JLM_ROOT)/libjlm.a
+libjlm-release: $(JLM_BUILD)/libjlm.a
 
-$(JLM_ROOT)/libjlm.a: CPPFLAGS += -I$(JLM_ROOT)/libjive/include -I$(shell $(LLVMCONFIG) --includedir) -I$(JLM_ROOT)/libjlm/include
-$(JLM_ROOT)/libjlm.a: CXXFLAGS += --std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Wfatal-errors
-$(JLM_ROOT)/libjlm.a: $(patsubst %.cpp, $(JLM_ROOT)/%.la, $(LIBJLM_SRC))
+$(JLM_BUILD)/libjlm.a: CPPFLAGS += -I$(JLM_ROOT)/libjive/include -I$(shell $(LLVMCONFIG) --includedir) -I$(JLM_ROOT)/libjlm/include
+$(JLM_BUILD)/libjlm.a: CXXFLAGS += --std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Wfatal-errors
+$(JLM_BUILD)/libjlm.a: $(patsubst %.cpp, $(JLM_BUILD)/%.la, $(LIBJLM_SRC))
 
 .PHONY: libjlm-clean
 libjlm-clean:
-	@find $(JLM_ROOT)/libjlm/ -name "*.o" -o -name "*.la" -o -name "*.a" | grep -v external | xargs rm -rf
-	@rm -rf $(JLM_ROOT)/libjlm.a
+	@rm -rf $(JLM_BUILD)/libjlm
+	@rm -rf $(JLM_BUILD)/libjlm.a

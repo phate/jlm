@@ -1,8 +1,8 @@
 TESTS = \
 
-include tests/libjive/Makefile.sub
-include tests/libjlm/Makefile.sub
-include tests/libjlc/Makefile.sub
+include $(JLM_ROOT)/tests/libjive/Makefile.sub
+include $(JLM_ROOT)/tests/libjlm/Makefile.sub
+include $(JLM_ROOT)/tests/libjlc/Makefile.sub
 
 TEST_SOURCES = \
 	tests/test-operation.cpp \
@@ -12,42 +12,49 @@ TEST_SOURCES = \
 	tests/libjlm/opt/alias-analyses/AliasAnalysesTests.cpp \
 	$(patsubst %, tests/%.cpp, $(TESTS))
 
-tests/test-runner: jive-debug libjlm-debug libjlc-debug
-tests/test-runner: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG -DJLM_ENABLE_ASSERTS --std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Wfatal-errors
-tests/test-runner: CPPFLAGS += -I$(JLM_ROOT)/libjlm/include -I$(JLM_ROOT)/libjlc/include -I$(JLM_ROOT)/libjive/include -I$(shell $(LLVMCONFIG) --includedir)
-tests/test-runner: LDFLAGS=-L. -ljlc -ljlm $(shell $(LLVMCONFIG) --ldflags --libs --system-libs) -ljive
-tests/test-runner: %: $(patsubst %.cpp, %.la, $(TEST_SOURCES)) $(JLM_ROOT)/libjive.a $(JLM_ROOT)/libjlm.a $(JLM_ROOT)/libjlc.a
+$(JLM_BUILD)/tests/test-runner: jive-debug libjlm-debug libjlc-debug
+$(JLM_BUILD)/tests/test-runner: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG -DJLM_ENABLE_ASSERTS --std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Wfatal-errors
+$(JLM_BUILD)/tests/test-runner: CPPFLAGS += -I$(JLM_ROOT)/tests -I$(JLM_ROOT)/libjlm/include -I$(JLM_ROOT)/libjlc/include -I$(JLM_ROOT)/libjive/include -I$(shell $(LLVMCONFIG) --includedir)
+$(JLM_BUILD)/tests/test-runner: LDFLAGS=-L$(JLM_BUILD) -ljlc -ljlm $(shell $(LLVMCONFIG) --ldflags --libs --system-libs) -ljive
+$(JLM_BUILD)/tests/test-runner: %: $(patsubst %.cpp, $(JLM_BUILD)/%.la, $(TEST_SOURCES)) $(JLM_BUILD)/libjive.a $(JLM_BUILD)/libjlm.a $(JLM_BUILD)/libjlc.a
+	mkdir -p ${dir $@}
 	$(CXX) -o $@ $(filter %.la, $^) $(LDFLAGS)
 
-$(patsubst %, tests/%.la, $(TESTS)): CPPFLAGS += -Itests -I$(shell $(LLVMCONFIG) --includedir)
+$(patsubst %, %(JLM_BUILD)/tests/%.la, $(TESTS)): CPPFLAGS += -Itests -I$(shell $(LLVMCONFIG) --includedir)
 
 TESTLOG = true
 
-check: check-utests check-ctests
+jlm-check: jlm-check-utests jlm-check-ctests
 
-check-ctests: jlc-debug jlm-opt-debug
-	@rm -rf ctests.log
+jlm-check-ctests: jlc-debug jlm-opt-debug
+	@rm -rf $(JLM_ROOT)/ctests.log
 	@FAILED_TESTS="" ; \
 	for TEST in `ls tests/c-tests`; do \
-		$(TESTLOG) -n "$$TEST: " ; if tests/test-jlc.sh tests/c-tests/$$TEST >>ctests.log 2>&1 ; then $(TESTLOG) pass ; else $(TESTLOG) FAIL ; FAILED_TESTS="$$FAILED_TESTS $$TEST" ; fi ; \
+		$(TESTLOG) -n "$$TEST: " ; if $(JLM_ROOT)/tests/test-jlc.sh ${JLM_ROOT} tests/c-tests/$$TEST >>$(JLM_ROOT)/ctests.log 2>&1 ; then $(TESTLOG) pass ; else $(TESTLOG) FAIL ; FAILED_TESTS="$$FAILED_TESTS $$TEST" ; fi ; \
 	done ; \
 	set -e ; \
 	if [ "x$$FAILED_TESTS" != x ] ; then printf '\033[0;31m%s\033[0m%s\n' "Failed c-tests:" "$$FAILED_TESTS" ; exit 1 ; else printf '\033[0;32m%s\n\033[0m' "All c-tests passed" ; fi ; \
 
-check-utests: tests/test-runner
-	@rm -rf utests.log
+jlm-check-utests: $(JLM_BUILD)/tests/test-runner
+	@rm -rf $(JLM_ROOT)/utests.log
 	@FAILED_TESTS="" ; \
 	for TEST in $(TESTS); do \
-		$(TESTLOG) -n "$$TEST: " ; if tests/test-runner $$TEST >>utests.log 2>&1 ; then $(TESTLOG) pass ; else $(TESTLOG) FAIL ; FAILED_TESTS="$$FAILED_TESTS $$TEST" ; fi ; \
+		$(TESTLOG) -n "$$TEST: " ; if $(JLM_BUILD)/tests/test-runner $$TEST >>$(JLM_ROOT)/utests.log 2>&1 ; then $(TESTLOG) pass ; else $(TESTLOG) FAIL ; FAILED_TESTS="$$FAILED_TESTS $$TEST" ; fi ; \
 	done ; \
 	set -e ; \
 	if [ "x$$FAILED_TESTS" != x ] ; then printf '\033[0;31m%s\033[0m%s\n' "Failed u-tests:" "$$FAILED_TESTS" ; exit 1 ; else printf '\033[0;32m%s\n\033[0m' "All u-tests passed" ; fi ; \
 
-valgrind-check: tests/test-runner
-	@rm -rf check.log
+jlm-valgrind-check: $(JLM_BUILD)/tests/test-runner
+	@rm -rf $(JLM_ROOT)/check.log
 	@FAILED_TESTS="" ; \
 	for TEST in $(TESTS); do \
-		$(TESTLOG) -n "$$TEST: " ; if valgrind --leak-check=full --error-exitcode=1 tests/test-runner $$TEST >>check.log 2>&1 ; then $(TESTLOG) pass ; else $(TESTLOG) FAIL ; FAILED_TESTS="$$UNEXPECTED_FAILED_TESTS $$TEST" ; fi ; \
+		$(TESTLOG) -n "$$TEST: " ; if valgrind --leak-check=full --error-exitcode=1 $(JLM_BUILD)/tests/test-runner $$TEST >>$(JLM_ROOT)/check.log 2>&1 ; then $(TESTLOG) pass ; else $(TESTLOG) FAIL ; FAILED_TESTS="$$UNEXPECTED_FAILED_TESTS $$TEST" ; fi ; \
 	done ; \
 	set -e ; \
 	if [ "x$$FAILED_TESTS" != x ] ; then printf '\033[0;31m%s\033[0m%s\n' "Failed valgrind-tests:" "$$FAILED_TESTS" ; exit 1 ; else printf '\033[0;32m%s\n\033[0m' "All valgrind-tests passed" ; fi ; \
+
+jlm-check-clean:
+	rm -rf $(JLM_BUILD)/tests
+	rm -f $(JLM_ROOT)/ctests.log
+	rm -f $(JLM_ROOT)/utests.log
+	rm -f $(JLM_ROOT)/check.log

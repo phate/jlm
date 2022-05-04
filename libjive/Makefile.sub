@@ -58,17 +58,17 @@ HEADERS = $(shell find 	$(JLM_ROOT)/libjive/include -name "*.h")
 
 .PHONY: jive-debug
 jive-debug: CXXFLAGS += -g -DJIVE_DEBUG
-jive-debug: $(JLM_ROOT)/libjive.a
+jive-debug: $(JLM_BUILD)/libjive.a
 
 .PHONY: jive-release
 jive-release: CXXFLAGS += -O3
-jive-release: $(JLM_ROOT)/libjive.a
+jive-release: $(JLM_BUILD)/libjive.a
 
-$(JLM_ROOT)/libjive.a: CXXFLAGS+= --std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Wfatal-errors
-$(JLM_ROOT)/libjive.a: CPPFLAGS+=-I$(JLM_ROOT)/libjive/include
-$(JLM_ROOT)/libjive.a: $(patsubst %.cpp, $(JLM_ROOT)/%.la, $(LIBJIVE_SRC))
+$(JLM_BUILD)/libjive.a: CXXFLAGS+= --std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Wfatal-errors
+$(JLM_BUILD)/libjive.a: CPPFLAGS+=-I$(JLM_ROOT)/libjive/include
+$(JLM_BUILD)/libjive.a: $(patsubst %.cpp, $(JLM_BUILD)/%.la, $(LIBJIVE_SRC))
 
 .PHONY: jive-clean
 jive-clean:
-	@find $(JLM_ROOT)/libjive/ -name "*.o" -o -name "*.lo" -o -name "*.la" -o -name "*.so" -o -name "*.a" | xargs rm -rf
-	@rm -rf $(JLM_ROOT)/libjive.a
+	@rm -rf $(JLM_BUILD)/libjive
+	@rm -rf $(JLM_BUILD)/libjive.a

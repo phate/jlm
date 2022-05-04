@@ -21,7 +21,6 @@ help:
 JLM_ROOT ?= .
 
 include $(JLM_ROOT)/Makefile.sub
-include $(JLM_ROOT)/tests/Makefile.sub
 
 # LLVM related variables
 CLANG_BIN=$(shell $(LLVMCONFIG) --bindir)
@@ -37,22 +36,23 @@ release: jlm-release
 .PHONY: debug
 debug: jlm-debug check
 
+.PHONY: check
+check: jlm-check
+
+.PHONY: check-ctets
+check-ctests: jlm-check-ctests
+
+.PHONY: check-utets
+check-utests: jlm-check-utests
+
+.PHONY: valgrind-check
+valgrind-check: jlm-valgrind-check
+
 .PHONY: docs
 docs: jlm-docs-build
 
-%.la: %.cpp
-	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) -o $@ $<
-
-%.o: %.cpp
-	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) -o $@ $<
-
-%.a:
-	rm -f $@
-	ar cqv $@ $^
-	ranlib $@
-
 .PHONY: clean
-clean: jive-clean jlm-clean
+clean: jlm-clean
 
 ifeq ($(shell if [ -e .Makefile.override ] ; then echo yes ; fi),yes)
 include .Makefile.override
