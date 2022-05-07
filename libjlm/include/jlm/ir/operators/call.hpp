@@ -322,16 +322,6 @@ public:
   static jive::output *
   TraceFunctionInput(const CallNode & callNode);
 
-  /**
-  * \brief Checks if a node is a direct call node.
-  *
-  * \param callNode A simple node
-  *
-  * \return The corresponding lambda node if its a direct call, otherwise NULL.
-  */
-  static lambda::node *
-  IsDirectCall(const CallNode & callNode);
-
   /** \brief Classifies a call node.
    *
    * Classifies a call node according to its call type.
