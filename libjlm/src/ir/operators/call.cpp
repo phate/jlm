@@ -240,6 +240,22 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
   }
 }
 
+std::unique_ptr<CallTypeClassifier>
+CallNode::ClassifyCall(const CallNode &callNode)
+{
+  auto output = CallNode::TraceFunctionInput(callNode);
+  auto region = output->region();
+
+  if (dynamic_cast<const lambda::output*>(output))
+    return CallTypeClassifier::CreateDirectCallClassifier(*output);
+
+  if (dynamic_cast<const jive::argument*>(output)
+  && region == region->graph()->root())
+    return CallTypeClassifier::CreateExternalCallClassifier(*output);
+
+  return CallTypeClassifier::CreateIndirectCallClassifier(*output);
+}
+
 lambda::node *
 CallNode::IsDirectCall(const CallNode & callNode)
 {

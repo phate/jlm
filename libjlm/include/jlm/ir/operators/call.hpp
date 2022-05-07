@@ -332,6 +332,16 @@ public:
   static lambda::node *
   IsDirectCall(const CallNode & callNode);
 
+  /** \brief Classifies a call node.
+   *
+   * Classifies a call node according to its call type.
+   *
+   * @param callNode A call node.
+   * @return A CallTypeClassifier.
+   */
+  static std::unique_ptr<CallTypeClassifier>
+  ClassifyCall(const CallNode & callNode);
+
 private:
   [[nodiscard]] static const FunctionType &
   ExtractFunctionType(const jive::output * function)
