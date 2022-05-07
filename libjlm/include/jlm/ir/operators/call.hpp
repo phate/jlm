@@ -8,14 +8,11 @@
 
 #include <jive/rvsdg/simple-node.hpp>
 
+#include <jlm/ir/operators/lambda.hpp>
 #include <jlm/ir/tac.hpp>
 #include <jlm/ir/types.hpp>
 
 namespace jlm {
-
-namespace lambda {
-	class node;
-}
 
 /** \brief Call operation class
  *
@@ -82,6 +79,101 @@ private:
 
 		return ports;
 	}
+};
+
+/** \brief Call node classifier
+ *
+ * The CallTypeClassifier class provides information about the call type of a call node. It currently distinguishes
+ * between three different call types:
+ * 1. Direct call - A call to a statically visible function within the module.
+ * 2. External call - A call to an imported function, i.e., a function from outside of the module.
+ * 3. Indirect call - A call to a statically not visible function.
+ */
+class CallTypeClassifier final {
+public:
+  enum class CallType {
+    DirectCall,
+    ExternalCall,
+    IndirectCall
+  };
+
+  CallTypeClassifier(
+    CallType callType,
+    jive::output & output)
+  : CallType_(callType)
+  , Output_(&output)
+  {}
+
+  /** \brief Return call type.
+   *
+   */
+  [[nodiscard]] CallType
+  GetCallType() const noexcept
+  {
+    return CallType_;
+  }
+
+  /** \brief Returns the called function.
+   *
+   * GetLambdaOutput() only returns a valid result if the call node is a direct call.
+   *
+   * @return The called function.
+   */
+  [[nodiscard]] lambda::output &
+  GetLambdaOutput() const noexcept
+  {
+    JLM_ASSERT(GetCallType() == CallType::DirectCall);
+    return *AssertedCast<lambda::output>(Output_);
+  }
+
+  /** \brief Returns the imported function.
+   *
+   * GetImport() only returns a valid result if the call is an external call.
+   *
+   * @return The imported function.
+   */
+  [[nodiscard]] jive::argument &
+  GetImport() const noexcept
+  {
+    JLM_ASSERT(GetCallType() == CallType::ExternalCall);
+    return *AssertedCast<jive::argument>(Output_);
+  }
+
+  /** \brief Return origin of a call node's function input.
+   *
+   * GetFunctionOrigin() returns the last output returned by CallNode::TraceFunctionInput().
+   *
+   * @return Traced origin of a call node's function input.
+   *
+   * @see CallNode::TraceFunctionInput(), CallNode::GetFunctionInput()
+   */
+  [[nodiscard]] jive::output &
+  GetFunctionOrigin() const noexcept
+  {
+    return *Output_;
+  }
+
+  static std::unique_ptr<CallTypeClassifier>
+  CreateDirectCallClassifier(jive::output & output)
+  {
+    return std::make_unique<CallTypeClassifier>(CallType::DirectCall, output);
+  }
+
+  static std::unique_ptr<CallTypeClassifier>
+  CreateExternalCallClassifier(jive::output & output)
+  {
+    return std::make_unique<CallTypeClassifier>(CallType::ExternalCall, output);
+  }
+
+  static std::unique_ptr<CallTypeClassifier>
+  CreateIndirectCallClassifier(jive::output & output)
+  {
+    return std::make_unique<CallTypeClassifier>(CallType::IndirectCall, output);
+  }
+
+private:
+  CallType CallType_;
+  jive::output * Output_;
 };
 
 /** \brief Call node
