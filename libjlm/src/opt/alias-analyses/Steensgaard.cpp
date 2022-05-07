@@ -972,10 +972,11 @@ Steensgaard::AnalyzeCall(const CallNode & callNode)
 		}
 	};
 
-	if (auto lambda = CallNode::IsDirectCall(callNode)) {
-		handle_direct_call(callNode, *lambda);
-		return;
-	}
+  auto callTypeClassifier = CallNode::ClassifyCall(callNode);
+  if (callTypeClassifier->GetCallType() == CallTypeClassifier::CallType::DirectCall) {
+    handle_direct_call(callNode, *callTypeClassifier->GetLambdaOutput().node());
+    return;
+  }
 
 	handle_indirect_call(callNode);
 }

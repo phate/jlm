@@ -256,15 +256,4 @@ CallNode::ClassifyCall(const CallNode &callNode)
   return CallTypeClassifier::CreateIndirectCallClassifier(*output);
 }
 
-lambda::node *
-CallNode::IsDirectCall(const CallNode & callNode)
-{
-  auto output = CallNode::TraceFunctionInput(callNode);
-
-  if (auto o = dynamic_cast<const lambda::output*>(output))
-    return o->node();
-
-  return nullptr;
-}
-
 }
