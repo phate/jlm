@@ -29,7 +29,7 @@ jlm-check: jlm-check-utests jlm-check-ctests
 jlm-check-ctests: jlc-debug jlm-opt-debug
 	@rm -rf $(JLM_ROOT)/ctests.log
 	@FAILED_TESTS="" ; \
-	for TEST in `ls tests/c-tests`; do \
+	for TEST in `ls $(JLM_ROOT)/tests/c-tests`; do \
 		$(TESTLOG) -n "$$TEST: " ; if $(JLM_ROOT)/tests/test-jlc.sh ${JLM_ROOT} tests/c-tests/$$TEST >>$(JLM_ROOT)/ctests.log 2>&1 ; then $(TESTLOG) pass ; else $(TESTLOG) FAIL ; FAILED_TESTS="$$FAILED_TESTS $$TEST" ; fi ; \
 	done ; \
 	set -e ; \
