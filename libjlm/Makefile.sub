@@ -2,86 +2,86 @@
 # See COPYING for terms of redistribution.
 
 LIBJLM_SRC = \
-	libjlm/src/common.cpp \
-	\
-	libjlm/src/backend/llvm/jlm2llvm/instruction.cpp \
-	libjlm/src/backend/llvm/jlm2llvm/jlm2llvm.cpp \
-	libjlm/src/backend/llvm/jlm2llvm/type.cpp \
-	libjlm/src/backend/llvm/rvsdg2jlm/rvsdg2jlm.cpp \
-	\
-	libjlm/src/driver/command.cpp \
-	libjlm/src/driver/passgraph.cpp \
-	\
-	libjlm/src/frontend/llvm/ControlFlowRestructuring.cpp \
-	libjlm/src/frontend/llvm/InterProceduralGraphConversion.cpp \
-	libjlm/src/frontend/llvm/LlvmInstructionConversion.cpp \
-	libjlm/src/frontend/llvm/LlvmModuleConversion.cpp \
-	libjlm/src/frontend/llvm/LlvmTypeConversion.cpp \
-	\
-	libjlm/src/ir/aggregation.cpp \
-	libjlm/src/ir/Annotation.cpp \
-	libjlm/src/ir/attribute.cpp \
-	libjlm/src/ir/basic-block.cpp \
-	libjlm/src/ir/cfg.cpp \
-	libjlm/src/ir/cfg-structure.cpp \
-	libjlm/src/ir/cfg-node.cpp \
-	libjlm/src/ir/domtree.cpp \
-	libjlm/src/ir/ipgraph.cpp \
-	libjlm/src/ir/ipgraph-module.cpp \
-	libjlm/src/ir/operators/alloca.cpp \
-	libjlm/src/ir/operators/call.cpp \
-	libjlm/src/ir/operators/delta.cpp \
-	libjlm/src/ir/operators/getelementptr.cpp \
-	libjlm/src/ir/operators/lambda.cpp \
-	libjlm/src/ir/operators/load.cpp \
-	libjlm/src/ir/operators/operators.cpp \
-	libjlm/src/ir/operators/Phi.cpp \
-	libjlm/src/ir/operators/sext.cpp \
-	libjlm/src/ir/operators/store.cpp \
-	libjlm/src/ir/print.cpp \
-	libjlm/src/ir/RvsdgModule.cpp \
-	libjlm/src/ir/ssa.cpp \
-	libjlm/src/ir/tac.cpp \
-	libjlm/src/ir/types.cpp \
-	libjlm/src/ir/variable.cpp \
-	libjlm/src/ir/hls/hls.cpp \
-	\
-	libjlm/src/opt/alias-analyses/BasicEncoder.cpp \
-	libjlm/src/opt/alias-analyses/MemoryStateEncoder.cpp \
-	libjlm/src/opt/alias-analyses/Operators.cpp \
-	libjlm/src/opt/alias-analyses/Optimization.cpp \
-	libjlm/src/opt/alias-analyses/PointsToGraph.cpp \
-	libjlm/src/opt/alias-analyses/Steensgaard.cpp \
-	libjlm/src/opt/cne.cpp \
-	libjlm/src/opt/DeadNodeElimination.cpp \
-	libjlm/src/opt/inlining.cpp \
-	libjlm/src/opt/invariance.cpp \
-	libjlm/src/opt/inversion.cpp \
-	libjlm/src/opt/optimization.cpp \
-	libjlm/src/opt/pull.cpp \
-	libjlm/src/opt/push.cpp \
-	libjlm/src/opt/reduction.cpp \
-	libjlm/src/opt/unroll.cpp \
-	\
-	libjlm/src/util/Statistics.cpp \
-	\
-	libjlm/src/backend/hls/rvsdg2rhls/add-triggers.cpp \
-	libjlm/src/backend/hls/rvsdg2rhls/gamma-conv.cpp \
-	libjlm/src/backend/hls/rvsdg2rhls/theta-conv.cpp \
-	libjlm/src/backend/hls/rvsdg2rhls/add-sinks.cpp \
-	libjlm/src/backend/hls/rvsdg2rhls/add-forks.cpp \
-	libjlm/src/backend/hls/rvsdg2rhls/check-rhls.cpp \
-	libjlm/src/backend/hls/rvsdg2rhls/rhls-dne.cpp \
-	libjlm/src/backend/hls/rvsdg2rhls/remove-unused-state.cpp \
-	libjlm/src/backend/hls/rvsdg2rhls/rvsdg2rhls.cpp \
-	libjlm/src/backend/hls/rvsdg2rhls/add-prints.cpp \
-	libjlm/src/backend/hls/rvsdg2rhls/add-buffers.cpp \
-	\
-	libjlm/src/backend/hls/rhls2firrtl/base-hls.cpp \
-	libjlm/src/backend/hls/rhls2firrtl/dot-hls.cpp \
-	libjlm/src/backend/hls/rhls2firrtl/verilator-harness-hls.cpp \
-	libjlm/src/backend/hls/rhls2firrtl/firrtl-hls.cpp \
-	libjlm/src/backend/hls/rhls2firrtl/mlirgen.cpp \
+    libjlm/src/common.cpp \
+    \
+    libjlm/src/backend/hls/rvsdg2rhls/add-triggers.cpp \
+    libjlm/src/backend/hls/rvsdg2rhls/gamma-conv.cpp \
+    libjlm/src/backend/hls/rvsdg2rhls/theta-conv.cpp \
+    libjlm/src/backend/hls/rvsdg2rhls/add-sinks.cpp \
+    libjlm/src/backend/hls/rvsdg2rhls/add-forks.cpp \
+    libjlm/src/backend/hls/rvsdg2rhls/check-rhls.cpp \
+    libjlm/src/backend/hls/rvsdg2rhls/rhls-dne.cpp \
+    libjlm/src/backend/hls/rvsdg2rhls/remove-unused-state.cpp \
+    libjlm/src/backend/hls/rvsdg2rhls/rvsdg2rhls.cpp \
+    libjlm/src/backend/hls/rvsdg2rhls/add-prints.cpp \
+    libjlm/src/backend/hls/rvsdg2rhls/add-buffers.cpp \
+    \
+    libjlm/src/backend/hls/rhls2firrtl/base-hls.cpp \
+    libjlm/src/backend/hls/rhls2firrtl/dot-hls.cpp \
+    libjlm/src/backend/hls/rhls2firrtl/verilator-harness-hls.cpp \
+    libjlm/src/backend/hls/rhls2firrtl/firrtl-hls.cpp \
+    libjlm/src/backend/hls/rhls2firrtl/mlirgen.cpp \
+    \
+    libjlm/src/backend/llvm/jlm2llvm/instruction.cpp \
+    libjlm/src/backend/llvm/jlm2llvm/jlm2llvm.cpp \
+    libjlm/src/backend/llvm/jlm2llvm/type.cpp \
+    libjlm/src/backend/llvm/rvsdg2jlm/rvsdg2jlm.cpp \
+    \
+    libjlm/src/driver/command.cpp \
+    libjlm/src/driver/passgraph.cpp \
+    \
+    libjlm/src/frontend/llvm/ControlFlowRestructuring.cpp \
+    libjlm/src/frontend/llvm/InterProceduralGraphConversion.cpp \
+    libjlm/src/frontend/llvm/LlvmInstructionConversion.cpp \
+    libjlm/src/frontend/llvm/LlvmModuleConversion.cpp \
+    libjlm/src/frontend/llvm/LlvmTypeConversion.cpp \
+    \
+    libjlm/src/ir/aggregation.cpp \
+    libjlm/src/ir/Annotation.cpp \
+    libjlm/src/ir/attribute.cpp \
+    libjlm/src/ir/basic-block.cpp \
+    libjlm/src/ir/cfg.cpp \
+    libjlm/src/ir/cfg-structure.cpp \
+    libjlm/src/ir/cfg-node.cpp \
+    libjlm/src/ir/domtree.cpp \
+    libjlm/src/ir/ipgraph.cpp \
+    libjlm/src/ir/ipgraph-module.cpp \
+    libjlm/src/ir/operators/alloca.cpp \
+    libjlm/src/ir/operators/call.cpp \
+    libjlm/src/ir/operators/delta.cpp \
+    libjlm/src/ir/operators/getelementptr.cpp \
+    libjlm/src/ir/operators/lambda.cpp \
+    libjlm/src/ir/operators/load.cpp \
+    libjlm/src/ir/operators/operators.cpp \
+    libjlm/src/ir/operators/Phi.cpp \
+    libjlm/src/ir/operators/sext.cpp \
+    libjlm/src/ir/operators/store.cpp \
+    libjlm/src/ir/print.cpp \
+    libjlm/src/ir/RvsdgModule.cpp \
+    libjlm/src/ir/ssa.cpp \
+    libjlm/src/ir/tac.cpp \
+    libjlm/src/ir/types.cpp \
+    libjlm/src/ir/variable.cpp \
+    libjlm/src/ir/hls/hls.cpp \
+    \
+    libjlm/src/opt/alias-analyses/BasicEncoder.cpp \
+    libjlm/src/opt/alias-analyses/MemoryStateEncoder.cpp \
+    libjlm/src/opt/alias-analyses/Operators.cpp \
+    libjlm/src/opt/alias-analyses/Optimization.cpp \
+    libjlm/src/opt/alias-analyses/PointsToGraph.cpp \
+    libjlm/src/opt/alias-analyses/Steensgaard.cpp \
+    libjlm/src/opt/cne.cpp \
+    libjlm/src/opt/DeadNodeElimination.cpp \
+    libjlm/src/opt/inlining.cpp \
+    libjlm/src/opt/invariance.cpp \
+    libjlm/src/opt/inversion.cpp \
+    libjlm/src/opt/optimization.cpp \
+    libjlm/src/opt/pull.cpp \
+    libjlm/src/opt/push.cpp \
+    libjlm/src/opt/reduction.cpp \
+    libjlm/src/opt/unroll.cpp \
+    \
+     libjlm/src/util/Statistics.cpp \
 
 .PHONY: libjlm-debug
 libjlm-debug: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG -DJLM_ENABLE_ASSERTS
