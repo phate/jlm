@@ -38,6 +38,27 @@ class Location;
 class PointsToGraph;
 class RegisterLocation;
 
+enum class PointsToFlags {
+  PointsToNone           = 1 << 0,
+  PointsToUnknownMemory  = 1 << 1,
+  PointsToExternalMemory = 1 << 2,
+  PointsToEscapedMemory  = 1 << 3,
+};
+
+static PointsToFlags
+operator|(PointsToFlags lhs, PointsToFlags rhs)
+{
+  typedef typename std::underlying_type<PointsToFlags>::type underlyingType;
+  return static_cast<PointsToFlags>(static_cast<underlyingType>(lhs) | static_cast<underlyingType>(rhs));
+}
+
+static PointsToFlags
+operator&(PointsToFlags lhs, PointsToFlags rhs)
+{
+  typedef typename std::underlying_type<PointsToFlags>::type underlyingType;
+  return static_cast<PointsToFlags>(static_cast<underlyingType>(lhs) & static_cast<underlyingType>(rhs));
+}
+
 /** \brief LocationSet class
 */
 class LocationSet final {
@@ -100,9 +121,7 @@ public:
 	Location &
 	FindOrInsertRegisterLocation(
     const jive::output & output,
-    bool pointsToUnknownMemory,
-    bool pointsToExternalMemory,
-    bool pointsToEscapedMemory);
+    PointsToFlags pointsToFlags);
 
 	const DisjointLocationSet::set &
 	GetSet(Location & location) const
@@ -144,9 +163,7 @@ private:
 	RegisterLocation &
 	InsertRegisterLocation(
     const jive::output & output,
-    bool pointsToUnknownMemory,
-    bool pointsToExternalMemory,
-    bool pointsToEscapedMemory);
+    PointsToFlags pointsToFlags);
 
 	DisjointLocationSet DisjointLocationSet_;
 	std::vector<std::unique_ptr<Location>> Locations_;
