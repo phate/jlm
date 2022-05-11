@@ -45,14 +45,14 @@ enum class PointsToFlags {
   PointsToEscapedMemory  = 1 << 3,
 };
 
-static PointsToFlags
+static inline PointsToFlags
 operator|(PointsToFlags lhs, PointsToFlags rhs)
 {
   typedef typename std::underlying_type<PointsToFlags>::type underlyingType;
   return static_cast<PointsToFlags>(static_cast<underlyingType>(lhs) | static_cast<underlyingType>(rhs));
 }
 
-static PointsToFlags
+static inline PointsToFlags
 operator&(PointsToFlags lhs, PointsToFlags rhs)
 {
   typedef typename std::underlying_type<PointsToFlags>::type underlyingType;
