@@ -161,13 +161,8 @@ public:
   ~Location() = default;
 
   constexpr explicit
-  Location(
-    bool pointsToUnknownMemory,
-    bool pointsToExternalMemory,
-    bool pointsToEscapedMemory)
-    : PointsToUnknownMemory_(pointsToUnknownMemory)
-    , PointsToExternalMemory_(pointsToExternalMemory)
-    , PointsToEscapedMemory_(pointsToEscapedMemory)
+  Location(PointsToFlags pointsToFlags)
+    : PointsToFlags_(pointsToFlags)
     , PointsTo_(nullptr)
   {}
 
@@ -187,19 +182,19 @@ public:
   [[nodiscard]] bool
   PointsToUnknownMemory() const noexcept
   {
-    return PointsToUnknownMemory_;
+    return (PointsToFlags_ & PointsToFlags::PointsToUnknownMemory) == PointsToFlags::PointsToUnknownMemory;
   }
 
   [[nodiscard]] bool
   PointsToExternalMemory() const noexcept
   {
-    return PointsToExternalMemory_;
+    return (PointsToFlags_ & PointsToFlags::PointsToExternalMemory) == PointsToFlags::PointsToExternalMemory;
   }
 
   [[nodiscard]] bool
   PointsToEscapedMemory() const noexcept
   {
-    return PointsToEscapedMemory_;
+    return (PointsToFlags_ & PointsToFlags::PointsToEscapedMemory) == PointsToFlags::PointsToEscapedMemory;
   }
 
   [[nodiscard]] Location *
@@ -214,22 +209,16 @@ public:
     PointsTo_ = &location;
   }
 
-  void
-  SetPointsToUnknownMemory(bool pointsToUnknownMemory) noexcept
+  [[nodiscard]] PointsToFlags
+  GetPointsToFlags() const noexcept
   {
-    PointsToUnknownMemory_ = pointsToUnknownMemory;
+    return PointsToFlags_;
   }
 
   void
-  SetPointsToExternalMemory(bool pointsToExternalMemory) noexcept
+  SetPointsToFlags(PointsToFlags pointsToFlags) noexcept
   {
-    PointsToExternalMemory_ = pointsToExternalMemory;
-  }
-
-  void
-  SetPointsToEscapedMemory(bool pointsToEscapedMemory) noexcept
-  {
-    PointsToEscapedMemory_ = pointsToEscapedMemory;
+    PointsToFlags_ = pointsToFlags;
   }
 
   template<class T> static const T &
@@ -245,9 +234,7 @@ public:
   }
 
 private:
-  bool PointsToUnknownMemory_;
-  bool PointsToExternalMemory_;
-  bool PointsToEscapedMemory_;
+  PointsToFlags PointsToFlags_;
   Location * PointsTo_;
 };
 
@@ -256,10 +243,8 @@ public:
   constexpr explicit
   RegisterLocation(
     const jive::output & output,
-    bool pointsToUnknownMemory = false,
-    bool pointsToExternalMemory = false,
-    bool pointsToEscapedMemory = false)
-    : Location(pointsToUnknownMemory, pointsToExternalMemory, pointsToEscapedMemory)
+    PointsToFlags pointsToFlags)
+    : Location(pointsToFlags)
     , IsEscapingModule_(false)
     , Output_(&output)
   {}
@@ -354,15 +339,9 @@ public:
   static std::unique_ptr<RegisterLocation>
   Create(
     const jive::output & output,
-    bool pointsToUnknownMemory,
-    bool pointsToExternalMemory,
-    bool pointsToEscapedMemory)
+    PointsToFlags pointsToFlags)
   {
-    return std::make_unique<RegisterLocation>(
-      output,
-      pointsToUnknownMemory,
-      pointsToExternalMemory,
-      pointsToEscapedMemory);
+    return std::make_unique<RegisterLocation>(output, pointsToFlags);
   }
 
 private:
@@ -378,7 +357,7 @@ class MemoryLocation : public Location {
 public:
   constexpr
   MemoryLocation()
-    : Location(false, false, false)
+    : Location(PointsToFlags::PointsToNone)
   {}
 };
 
@@ -545,10 +524,8 @@ public:
 
   ImportLocation(
     const jive::argument & argument,
-    bool pointsToUnknownMemory,
-    bool pointsToExternalMemory,
-    bool pointsToEscapedMemory)
-    : Location(pointsToUnknownMemory, pointsToExternalMemory, pointsToEscapedMemory)
+    PointsToFlags pointsToFlags)
+    : Location(pointsToFlags)
     , Argument_(argument)
   {
     JLM_ASSERT(dynamic_cast<const jlm::impport*>(&argument.port()));
@@ -575,11 +552,13 @@ public:
     /**
      * FIXME: We use pointsToUnknownMemory for pointsToExternalMemory
      */
+    auto flags =
+      PointsToFlags::PointsToUnknownMemory |
+      PointsToFlags::PointsToExternalMemory |
+      PointsToFlags::PointsToEscapedMemory;
     return std::unique_ptr<Location>(new ImportLocation(
       argument,
-      pointsToUnknownMemory,
-      pointsToUnknownMemory,
-      pointsToUnknownMemory));
+      pointsToUnknownMemory ? flags : PointsToFlags::PointsToNone));
   }
 
 private:
@@ -593,7 +572,7 @@ public:
   ~DummyLocation() override = default;
 
   DummyLocation()
-    : Location(false, false, false)
+    : Location(PointsToFlags::PointsToNone)
   {}
 
   [[nodiscard]] std::string
@@ -626,17 +605,11 @@ LocationSet::Clear()
 RegisterLocation &
 LocationSet::InsertRegisterLocation(
   const jive::output & output,
-  bool pointsToUnknownMemory,
-  bool pointsToExternalMemory,
-  bool pointsToEscapedMemory)
+  PointsToFlags pointsToFlags)
 {
   JLM_ASSERT(!Contains(output));
 
-  auto registerLocation = RegisterLocation::Create(
-    output,
-    pointsToUnknownMemory,
-    pointsToExternalMemory,
-    pointsToEscapedMemory);
+  auto registerLocation = RegisterLocation::Create(output, pointsToFlags);
   auto registerLocationPointer = registerLocation.get();
 
   LocationMap_[&output] = registerLocationPointer;
@@ -722,18 +695,12 @@ LocationSet::Contains(const jive::output & output) const noexcept
 Location &
 LocationSet::FindOrInsertRegisterLocation(
   const jive::output & output,
-  bool pointsToUnknownMemory,
-  bool pointsToExternalMemory,
-  bool pointsToEscapedMemory)
+  PointsToFlags pointsToFlags)
 {
   if (auto location = LookupRegisterLocation(output))
     return GetRootLocation(*location);
 
-  return InsertRegisterLocation(
-    output,
-    pointsToUnknownMemory,
-    pointsToExternalMemory,
-    pointsToEscapedMemory);
+  return InsertRegisterLocation(output, pointsToFlags);
 }
 
 Location &
@@ -837,12 +804,9 @@ Steensgaard::join(Location & x, Location & y)
 
     auto & rootx = LocationSet_.GetRootLocation(*x);
     auto & rooty = LocationSet_.GetRootLocation(*y);
-    rootx.SetPointsToExternalMemory(rootx.PointsToExternalMemory() || rooty.PointsToExternalMemory());
-    rooty.SetPointsToExternalMemory(rootx.PointsToExternalMemory() || rooty.PointsToExternalMemory());
-    rootx.SetPointsToUnknownMemory(rootx.PointsToUnknownMemory() || rooty.PointsToUnknownMemory());
-    rooty.SetPointsToUnknownMemory(rootx.PointsToUnknownMemory() || rooty.PointsToUnknownMemory());
-    rootx.SetPointsToEscapedMemory(rootx.PointsToEscapedMemory() || rooty.PointsToEscapedMemory());
-    rooty.SetPointsToEscapedMemory(rootx.PointsToEscapedMemory() || rooty.PointsToEscapedMemory());
+    auto flags = rootx.GetPointsToFlags() | rooty.GetPointsToFlags();
+    rootx.SetPointsToFlags(flags);
+    rooty.SetPointsToFlags(flags);
     auto & tmp = LocationSet_.Merge(rootx, rooty);
 
     if (auto root = join(rootx.GetPointsTo(), rooty.GetPointsTo()))
@@ -928,9 +892,7 @@ Steensgaard::AnalyzeAlloca(const jive::simple_node & node)
 
   auto & allocaOutputLocation = LocationSet_.FindOrInsertRegisterLocation(
     *node.output(0),
-    false,
-    false,
-    false);
+    PointsToFlags::PointsToNone);
   auto & allocaLocation = LocationSet_.InsertAllocaLocation(node);
   allocaOutputLocation.SetPointsTo(allocaLocation);
 
@@ -943,7 +905,7 @@ Steensgaard::AnalyzeAlloca(const jive::simple_node & node)
     /*
       FIXME: We should be able to do better than just pointing to unknown.
     */
-    allocaLocation.SetPointsToUnknownMemory(true);
+    allocaLocation.SetPointsToFlags(PointsToFlags::PointsToUnknownMemory);
   }
 }
 
@@ -954,9 +916,7 @@ Steensgaard::AnalyzeMalloc(const jive::simple_node & node)
 
   auto & mallocOutputLocation = LocationSet_.FindOrInsertRegisterLocation(
     *node.output(0),
-    false,
-    false,
-    false);
+    PointsToFlags::PointsToNone);
   auto & mallocLocation = LocationSet_.InsertMallocLocation(node);
   mallocOutputLocation.SetPointsTo(mallocLocation);
 }
@@ -970,9 +930,7 @@ Steensgaard::AnalyzeLoad(const LoadNode & loadNode)
   auto & address = LocationSet_.Find(*loadNode.GetAddressInput()->origin());
   auto & result = LocationSet_.FindOrInsertRegisterLocation(
     *loadNode.GetValueOutput(),
-    address.PointsToUnknownMemory(),
-    address.PointsToExternalMemory(),
-    address.PointsToEscapedMemory());
+    address.GetPointsToFlags());
 
   if (address.GetPointsTo() == nullptr) {
     address.SetPointsTo(result);
@@ -1021,13 +979,9 @@ Steensgaard::AnalyzeCall(const CallNode & callNode)
         continue;
 
       auto & callArgumentLocation = LocationSet_.Find(callArgument);
-      auto & lambdaArgumentLocation = LocationSet_.Contains(lambdaArgument)
-                                      ? LocationSet_.Find(lambdaArgument)
-                                      : LocationSet_.FindOrInsertRegisterLocation(
-                                        lambdaArgument,
-                                        false,
-                                        false,
-                                        false);
+      auto & lambdaArgumentLocation = LocationSet_.FindOrInsertRegisterLocation(
+        lambdaArgument,
+        PointsToFlags::PointsToNone);
 
       join(callArgumentLocation, lambdaArgumentLocation);
     }
@@ -1044,14 +998,10 @@ Steensgaard::AnalyzeCall(const CallNode & callNode)
 
       auto & callResultLocation = LocationSet_.FindOrInsertRegisterLocation(
         callResult,
-        false,
-        false,
-        false);
+        PointsToFlags::PointsToNone);
       auto & lambdaResultLocation = LocationSet_.FindOrInsertRegisterLocation(
         lambdaResult,
-        false,
-        false,
-        false);
+        PointsToFlags::PointsToNone);
 
       join(callResultLocation, lambdaResultLocation);
     }
@@ -1070,9 +1020,7 @@ Steensgaard::AnalyzeCall(const CallNode & callNode)
 
       auto & callArgumentLocation = LocationSet_.FindOrInsertRegisterLocation(
         callArgument,
-        false,
-        false,
-        false);
+        PointsToFlags::PointsToNone);
       auto & registerLocation = Location::CastTo<RegisterLocation>(callArgumentLocation);
       registerLocation.SetIsEscapingModule(true);
     }
@@ -1084,9 +1032,7 @@ Steensgaard::AnalyzeCall(const CallNode & callNode)
       {
         LocationSet_.FindOrInsertRegisterLocation(
           callResult,
-          false,
-          true,
-          true);
+          PointsToFlags::PointsToExternalMemory | PointsToFlags::PointsToEscapedMemory);
       }
     }
   };
@@ -1106,9 +1052,9 @@ Steensgaard::AnalyzeCall(const CallNode & callNode)
       {
         LocationSet_.FindOrInsertRegisterLocation(
           callResult,
-          true,
-          true,
-          true);
+          PointsToFlags::PointsToUnknownMemory |
+          PointsToFlags::PointsToExternalMemory |
+          PointsToFlags::PointsToEscapedMemory);
       }
     }
   };
@@ -1136,7 +1082,9 @@ Steensgaard::AnalyzeGep(const jive::simple_node & node)
   JLM_ASSERT(is<getelementptr_op>(&node));
 
   auto & base = LocationSet_.Find(*node.input(0)->origin());
-  auto & value = LocationSet_.FindOrInsertRegisterLocation(*node.output(0), false, false, false);
+  auto & value = LocationSet_.FindOrInsertRegisterLocation(
+    *node.output(0),
+    PointsToFlags::PointsToNone);
 
   join(base, value);
 }
@@ -1151,7 +1099,9 @@ Steensgaard::AnalyzeBitcast(const jive::simple_node & node)
     return;
 
   auto & operand = LocationSet_.Find(*input->origin());
-  auto & result = LocationSet_.FindOrInsertRegisterLocation(*node.output(0), false, false, false);
+  auto & result = LocationSet_.FindOrInsertRegisterLocation(
+    *node.output(0),
+    PointsToFlags::PointsToNone);
 
   join(operand, result);
 }
@@ -1163,13 +1113,11 @@ Steensgaard::AnalyzeBits2ptr(const jive::simple_node & node)
 
   LocationSet_.FindOrInsertRegisterLocation(
     *node.output(0),
-    true,
-    true,
     /*
      * The register location already points to unknown memory. Unknown memory is a superset of escaped memory and
      * therefore we can simply set escaped memory to false.
      */
-    false);
+    PointsToFlags::PointsToUnknownMemory | PointsToFlags::PointsToExternalMemory);
 }
 
 void
@@ -1184,7 +1132,9 @@ Steensgaard::AnalyzeExtractValue(const jive::simple_node & node)
   /*
    * FIXME: Have a look at this operation again to ensure that the flags add up.
    */
-  LocationSet_.FindOrInsertRegisterLocation(result, true, true, false);
+  LocationSet_.FindOrInsertRegisterLocation(
+    result,
+    PointsToFlags::PointsToUnknownMemory | PointsToFlags::PointsToExternalMemory);
 }
 
 void
@@ -1196,7 +1146,9 @@ Steensgaard::AnalyzeConstantPointerNull(const jive::simple_node & node)
    * ConstantPointerNull cannot point to any memory location. We therefore only insert a register node for it,
    * but let this node not point to anything.
    */
-  LocationSet_.FindOrInsertRegisterLocation(*node.output(0), false, false, false);
+  LocationSet_.FindOrInsertRegisterLocation(
+    *node.output(0),
+    PointsToFlags::PointsToNone);
 }
 
 void
@@ -1212,7 +1164,9 @@ Steensgaard::AnalyzeConstantAggregateZero(const jive::simple_node & node)
    * ConstantAggregateZero cannot point to any memory location. We therefore only insert a register node for it,
    * but let this node not point to anything.
    */
-  LocationSet_.FindOrInsertRegisterLocation(*output, false, false, false);
+  LocationSet_.FindOrInsertRegisterLocation(
+    *output,
+    PointsToFlags::PointsToNone);
 }
 
 void
@@ -1228,7 +1182,9 @@ Steensgaard::AnalyzeUndef(const jive::simple_node & node)
    * UndefValue cannot point to any memory location. We therefore only insert a register node for it,
    * but let this node not point to anything.
    */
-  LocationSet_.FindOrInsertRegisterLocation(*output, false, false, false);
+  LocationSet_.FindOrInsertRegisterLocation(
+    *output,
+    PointsToFlags::PointsToNone);
 }
 
 void
@@ -1241,7 +1197,9 @@ Steensgaard::AnalyzeConstantArray(const jive::simple_node & node)
 
     if (LocationSet_.Contains(*input->origin())) {
       auto & originLocation = LocationSet_.Find(*input->origin());
-      auto & outputLocation = LocationSet_.FindOrInsertRegisterLocation(*node.output(0), false, false, false);
+      auto & outputLocation = LocationSet_.FindOrInsertRegisterLocation(
+        *node.output(0),
+        PointsToFlags::PointsToNone);
       join(outputLocation, originLocation);
     }
   }
@@ -1257,7 +1215,9 @@ Steensgaard::AnalyzeConstantStruct(const jive::simple_node & node)
 
     if (LocationSet_.Contains(*input->origin())) {
       auto & originLocation = LocationSet_.Find(*input->origin());
-      auto & outputLocation = LocationSet_.FindOrInsertRegisterLocation(*node.output(0), false, false, false);
+      auto & outputLocation = LocationSet_.FindOrInsertRegisterLocation(
+        *node.output(0),
+        PointsToFlags::PointsToNone);
       join(outputLocation, originLocation);
     }
   }
@@ -1326,9 +1286,7 @@ Steensgaard::Analyze(const lambda::node & lambda)
     auto & originLocation = LocationSet_.Find(*cv.origin());
     auto & argumentLocation = LocationSet_.FindOrInsertRegisterLocation(
       *cv.argument(),
-      false,
-      false,
-      false);
+      PointsToFlags::PointsToNone);
     join(originLocation, argumentLocation);
   }
 
@@ -1340,9 +1298,7 @@ Steensgaard::Analyze(const lambda::node & lambda)
       if (jive::is<PointerType>(argument.type())) {
         LocationSet_.FindOrInsertRegisterLocation(
           argument,
-          false,
-          false,
-          false);
+          PointsToFlags::PointsToNone);
       }
     }
   } else {
@@ -1353,9 +1309,7 @@ Steensgaard::Analyze(const lambda::node & lambda)
       if (jive::is<PointerType>(argument.type()))
         LocationSet_.FindOrInsertRegisterLocation(
           argument,
-          false,
-          true,
-          true);
+          PointsToFlags::PointsToExternalMemory | PointsToFlags::PointsToEscapedMemory);
     }
   }
 
@@ -1378,9 +1332,7 @@ Steensgaard::Analyze(const lambda::node & lambda)
    */
   auto & lambdaOutputLocation = LocationSet_.FindOrInsertRegisterLocation(
     *lambda.output(),
-    false,
-    false,
-    false);
+    PointsToFlags::PointsToNone);
   auto & lambdaLocation = LocationSet_.InsertLambdaLocation(lambda);
   lambdaOutputLocation.SetPointsTo(lambdaLocation);
 }
@@ -1398,9 +1350,7 @@ Steensgaard::Analyze(const delta::node & delta)
     auto & origin = LocationSet_.Find(*input.origin());
     auto & argument = LocationSet_.FindOrInsertRegisterLocation(
       *input.arguments.first(),
-      false,
-      false,
-      false);
+      PointsToFlags::PointsToNone);
     join(origin, argument);
   }
 
@@ -1408,9 +1358,7 @@ Steensgaard::Analyze(const delta::node & delta)
 
   auto & deltaOutputLocation = LocationSet_.FindOrInsertRegisterLocation(
     *delta.output(),
-    false,
-    false,
-    false);
+    PointsToFlags::PointsToNone);
   auto & deltaLocation = LocationSet_.InsertDeltaLocation(delta);
   deltaOutputLocation.SetPointsTo(deltaLocation);
 
@@ -1432,9 +1380,7 @@ Steensgaard::Analyze(const phi::node & phi)
     auto & origin = LocationSet_.Find(*cv->origin());
     auto & argument = LocationSet_.FindOrInsertRegisterLocation(
       *cv->argument(),
-      false,
-      false,
-      false);
+      PointsToFlags::PointsToNone);
     join(origin, argument);
   }
 
@@ -1445,9 +1391,7 @@ Steensgaard::Analyze(const phi::node & phi)
 
     LocationSet_.FindOrInsertRegisterLocation(
       *rv->argument(),
-      false,
-      false,
-      false);
+      PointsToFlags::PointsToNone);
   }
 
   Analyze(*phi.subregion());
@@ -1463,9 +1407,7 @@ Steensgaard::Analyze(const phi::node & phi)
 
     auto & output = LocationSet_.FindOrInsertRegisterLocation(
       *rv.output(),
-      false,
-      false,
-      false);
+      PointsToFlags::PointsToNone);
     join(argument, output);
   }
 }
@@ -1478,14 +1420,12 @@ Steensgaard::Analyze(const jive::gamma_node & node)
     if (!jive::is<PointerType>(ev->type()))
       continue;
 
-    auto & originloc = LocationSet_.Find(*ev->origin());
+    auto & originLocation = LocationSet_.Find(*ev->origin());
     for (auto & argument : *ev) {
-      auto & argumentloc = LocationSet_.FindOrInsertRegisterLocation(
+      auto & argumentLocation = LocationSet_.FindOrInsertRegisterLocation(
         argument,
-        false,
-        false,
-        false);
-      join(argumentloc, originloc);
+        PointsToFlags::PointsToNone);
+      join(argumentLocation, originLocation);
     }
   }
 
@@ -1498,14 +1438,12 @@ Steensgaard::Analyze(const jive::gamma_node & node)
     if (!jive::is<PointerType>(ex->type()))
       continue;
 
-    auto & outputloc = LocationSet_.FindOrInsertRegisterLocation(
+    auto & outputLocation = LocationSet_.FindOrInsertRegisterLocation(
       *ex.output(),
-      false,
-      false,
-      false);
+      PointsToFlags::PointsToNone);
     for (auto & result : *ex) {
-      auto & resultloc = LocationSet_.Find(*result.origin());
-      join(outputloc, resultloc);
+      auto & resultLocation = LocationSet_.Find(*result.origin());
+      join(outputLocation, resultLocation);
     }
   }
 }
@@ -1520,9 +1458,7 @@ Steensgaard::Analyze(const jive::theta_node & theta)
     auto & originLocation = LocationSet_.Find(*thetaOutput->input()->origin());
     auto & argumentLocation = LocationSet_.FindOrInsertRegisterLocation(
       *thetaOutput->argument(),
-      false,
-      false,
-      false);
+      PointsToFlags::PointsToNone);
 
     join(argumentLocation, originLocation);
   }
@@ -1537,9 +1473,7 @@ Steensgaard::Analyze(const jive::theta_node & theta)
     auto & argumentLocation = LocationSet_.Find(*thetaOutput->argument());
     auto & outputLocation = LocationSet_.FindOrInsertRegisterLocation(
       *thetaOutput,
-      false,
-      false,
-      false);
+      PointsToFlags::PointsToNone);
 
     join(originLocation, argumentLocation);
     join(originLocation, outputLocation);
@@ -1578,8 +1512,8 @@ Steensgaard::Analyze(jive::region & region)
 
   topdown_traverser traverser(&region);
   for (auto & node : traverser) {
-    if (auto smpnode = dynamic_cast<const simple_node*>(node)) {
-      Analyze(*smpnode);
+    if (auto simpleNode = dynamic_cast<const simple_node*>(node)) {
+      Analyze(*simpleNode);
       continue;
     }
 
@@ -1598,9 +1532,11 @@ Steensgaard::Analyze(const jive::graph & graph)
       if (!jive::is<PointerType>(argument.type()))
         continue;
       /* FIXME: we should not add function imports */
-      auto & imploc = lset.InsertImportLocation(argument);
-      auto & ptr = lset.FindOrInsertRegisterLocation(argument, false, false, false);
-      ptr.SetPointsTo(imploc);
+      auto & importLocation = lset.InsertImportLocation(argument);
+      auto & importArgumentLocation = lset.FindOrInsertRegisterLocation(
+        argument,
+        PointsToFlags::PointsToNone);
+      importArgumentLocation.SetPointsTo(importLocation);
     }
   };
 
