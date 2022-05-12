@@ -8,21 +8,21 @@
 #include <jlm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/opt/alias-analyses/Steensgaard.hpp>
 
-namespace jlm {
-namespace aa {
+namespace jlm::aa {
 
-SteensgaardBasic::~SteensgaardBasic() = default;
+SteensgaardBasic::~SteensgaardBasic()
+= default;
 
 void
 SteensgaardBasic::run(
-  RvsdgModule & module,
-  const StatisticsDescriptor & sd)
+  RvsdgModule & rvsdgModule,
+  const StatisticsDescriptor & statisticsDescriptor)
 {
-	Steensgaard steensgaard;
-	auto ptg = steensgaard.Analyze(module, sd);
+  Steensgaard steensgaard;
+  auto pointsToGraph = steensgaard.Analyze(rvsdgModule, statisticsDescriptor);
 
-	BasicEncoder encoder(*ptg);
-	encoder.Encode(module, sd);
+  BasicEncoder encoder(*pointsToGraph);
+  encoder.Encode(rvsdgModule, statisticsDescriptor);
 }
 
-}}
+}
