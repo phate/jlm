@@ -8,18 +8,23 @@
 
 #include <jlm/opt/optimization.hpp>
 
-namespace jlm {
-namespace aa {
+namespace jlm::aa {
 
+/** \brief Steensgaard alias analysis with basic static encoding
+ *
+ * @see Steensgaard
+ * @see BasicEncoder
+ */
 class SteensgaardBasic final : public optimization {
 public:
-	virtual
-	~SteensgaardBasic() override;
+  ~SteensgaardBasic() override;
 
-	virtual void
-	run(RvsdgModule & module, const StatisticsDescriptor & sd) override;
+  void
+  run(
+    RvsdgModule & rvsdgModule,
+    const StatisticsDescriptor & statisticsDescriptor) override;
 };
 
-}}
+}
 
 #endif
