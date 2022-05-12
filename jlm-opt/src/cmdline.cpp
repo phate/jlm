@@ -21,38 +21,48 @@
 
 namespace jlm {
 
-enum class optimizationid {aasteensgaard, cne, dne, iln, inv, psh, red, ivt, url, pll};
+enum class OptimizationId {
+  AASteensgaardBasic,
+  cne,
+  dne,
+  iln,
+  inv,
+  psh,
+  red,
+  ivt,
+  url,
+  pll};
 
 static jlm::optimization *
-mapoptid(enum optimizationid id)
+GetOptimization(enum OptimizationId id)
 {
-	static jlm::aa::SteensgaardBasic aasteensgaard;
-	static jlm::cne cne;
-	static jlm::DeadNodeElimination dne;
-	static jlm::fctinline fctinline;
-	static jlm::ivr ivr;
-	static jlm::pullin pullin;
-	static jlm::pushout pushout;
-	static jlm::tginversion tginversion;
-	static jlm::loopunroll loopunroll(4);
-	static jlm::nodereduction nodereduction;
+  static jlm::aa::SteensgaardBasic steensgaardBasic;
+  static jlm::cne cne;
+  static jlm::DeadNodeElimination dne;
+  static jlm::fctinline fctinline;
+  static jlm::ivr ivr;
+  static jlm::pullin pullin;
+  static jlm::pushout pushout;
+  static jlm::tginversion tginversion;
+  static jlm::loopunroll loopunroll(4);
+  static jlm::nodereduction nodereduction;
 
-	static std::unordered_map<optimizationid, jlm::optimization*>
-	map({
-	  {optimizationid::aasteensgaard, &aasteensgaard}
-	, {optimizationid::cne, &cne}
-	, {optimizationid::dne, &dne}
-	, {optimizationid::iln, &fctinline}
-	, {optimizationid::inv, &ivr}
-	, {optimizationid::pll, &pullin}
-	, {optimizationid::psh, &pushout}
-	, {optimizationid::ivt, &tginversion}
-	, {optimizationid::url, &loopunroll}
-	, {optimizationid::red, &nodereduction}
-	});
+  static std::unordered_map<OptimizationId, jlm::optimization*>
+    map({
+          {OptimizationId::AASteensgaardBasic, &steensgaardBasic},
+          {OptimizationId::cne,                &cne},
+          {OptimizationId::dne,                &dne},
+          {OptimizationId::iln,                &fctinline},
+          {OptimizationId::inv,                &ivr},
+          {OptimizationId::pll,                &pullin},
+          {OptimizationId::psh,                &pushout},
+          {OptimizationId::ivt,                &tginversion},
+          {OptimizationId::url,                &loopunroll},
+          {OptimizationId::red,                &nodereduction}
+        });
 
-	JLM_ASSERT(map.find(id) != map.end());
-	return map[id];
+  JLM_ASSERT(map.find(id) != map.end());
+  return map[id];
 }
 
 void
@@ -154,20 +164,22 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 		, clEnumValN(outputformat::xml, "xml", "Output XML"))
 	, cl::desc("Select output format"));
 
-	cl::list<jlm::optimizationid> optids(
-		cl::values(
-		  clEnumValN(jlm::optimizationid::aasteensgaard,
-		    "aa-steensgaard", "Steensgaard alias analysis")
-		, clEnumValN(jlm::optimizationid::cne, "cne", "Common node elimination")
-		, clEnumValN(jlm::optimizationid::dne, "dne", "Dead node elimination")
-		, clEnumValN(jlm::optimizationid::iln, "iln", "Function inlining")
-		, clEnumValN(jlm::optimizationid::inv, "inv", "Invariant value reduction")
-		, clEnumValN(jlm::optimizationid::psh, "psh", "Node push out")
-		, clEnumValN(jlm::optimizationid::pll, "pll", "Node pull in")
-		, clEnumValN(jlm::optimizationid::red, "red", "Node reductions")
-		, clEnumValN(jlm::optimizationid::ivt, "ivt", "Theta-gamma inversion")
-		, clEnumValN(jlm::optimizationid::url, "url", "Loop unrolling"))
-	, cl::desc("Perform optimization"));
+  cl::list<jlm::OptimizationId> optids(
+    cl::values(
+      clEnumValN(
+        jlm::OptimizationId::AASteensgaardBasic,
+        "AASteensgaardBasic",
+        "Steensgaard alias analysis with basic memory state encoding.")
+      , clEnumValN(jlm::OptimizationId::cne, "cne", "Common node elimination")
+      , clEnumValN(jlm::OptimizationId::dne, "dne", "Dead node elimination")
+      , clEnumValN(jlm::OptimizationId::iln, "iln", "Function inlining")
+      , clEnumValN(jlm::OptimizationId::inv, "inv", "Invariant value reduction")
+      , clEnumValN(jlm::OptimizationId::psh, "psh", "Node push out")
+      , clEnumValN(jlm::OptimizationId::pll, "pll", "Node pull in")
+      , clEnumValN(jlm::OptimizationId::red, "red", "Node reductions")
+      , clEnumValN(jlm::OptimizationId::ivt, "ivt", "Theta-gamma inversion")
+      , clEnumValN(jlm::OptimizationId::url, "url", "Loop unrolling"))
+    , cl::desc("Perform optimization"));
 
 	cl::ParseCommandLineOptions(argc, argv);
 
@@ -179,7 +191,7 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 
 	std::vector<jlm::optimization*> optimizations;
 	for (auto & optid : optids)
-		optimizations.push_back(mapoptid(optid));
+		optimizations.push_back(GetOptimization(optid));
 
   std::unordered_set<StatisticsDescriptor::StatisticsId> printStatisticsIds(
     printStatistics.begin(), printStatistics.end());
