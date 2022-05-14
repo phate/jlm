@@ -109,4 +109,4 @@ verify()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/opt/test-invariance", verify)
+JLM_UNIT_TEST_REGISTER("libjlm/opt/TestInvariantValueRedirection", verify)
