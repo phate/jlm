@@ -73,7 +73,7 @@ LIBJLM_SRC = \
     libjlm/src/opt/cne.cpp \
     libjlm/src/opt/DeadNodeElimination.cpp \
     libjlm/src/opt/inlining.cpp \
-    libjlm/src/opt/invariance.cpp \
+    libjlm/src/opt/InvariantValueRedirection.cpp \
     libjlm/src/opt/inversion.cpp \
     libjlm/src/opt/optimization.cpp \
     libjlm/src/opt/pull.cpp \
