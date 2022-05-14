@@ -9,12 +9,11 @@
 #include <jive/view.hpp>
 #include <jive/rvsdg/control.hpp>
 #include <jive/rvsdg/gamma.hpp>
-#include <jive/rvsdg/graph.hpp>
 #include <jive/rvsdg/theta.hpp>
 
 #include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/ir/types.hpp>
-#include <jlm/opt/invariance.hpp>
+#include <jlm/opt/InvariantValueRedirection.hpp>
 #include <jlm/util/Statistics.hpp>
 
 static const jlm::StatisticsDescriptor sd;

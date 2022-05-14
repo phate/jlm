@@ -12,7 +12,7 @@
 #include <jlm/backend/hls/rvsdg2rhls/add-sinks.hpp>
 #include <jlm/backend/hls/rvsdg2rhls/add-forks.hpp>
 #include <jlm/backend/hls/rvsdg2rhls/rhls-dne.hpp>
-#include <jlm/opt/invariance.hpp>
+#include <jlm/opt/InvariantValueRedirection.hpp>
 #include <jlm/opt/inversion.hpp>
 #include <jlm/opt/cne.hpp>
 #include <jlm/backend/hls/rvsdg2rhls/check-rhls.hpp>
@@ -27,13 +27,11 @@
 
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
-#include <llvm/IRReader/IRReader.h>
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Support/SourceMgr.h>
 #include <jlm/ir/operators/call.hpp>
 #include <jlm/ir/operators/alloca.hpp>
 #include <jlm/opt/inlining.hpp>
-#include <jlm/backend/hls/rvsdg2rhls/add-buffers.hpp>
 #include <jlm/ir/operators/theta.hpp>
 #include <jlm/util/Statistics.hpp>
 #include "jlm/opt/DeadNodeElimination.hpp"

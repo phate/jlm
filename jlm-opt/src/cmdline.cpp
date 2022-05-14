@@ -9,7 +9,7 @@
 #include <jlm/opt/cne.hpp>
 #include <jlm/opt/DeadNodeElimination.hpp>
 #include <jlm/opt/inlining.hpp>
-#include <jlm/opt/invariance.hpp>
+#include <jlm/opt/InvariantValueRedirection.hpp>
 #include <jlm/opt/pull.hpp>
 #include <jlm/opt/push.hpp>
 #include <jlm/opt/inversion.hpp>

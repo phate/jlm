@@ -4,22 +4,13 @@
  */
 
 #include <jlm/ir/RvsdgModule.hpp>
-
-#include <jlm/opt/cne.hpp>
 #include <jlm/opt/inlining.hpp>
-#include <jlm/opt/invariance.hpp>
-#include <jlm/opt/inversion.hpp>
 #include <jlm/opt/optimization.hpp>
 #include <jlm/opt/pull.hpp>
-#include <jlm/opt/push.hpp>
-#include <jlm/opt/reduction.hpp>
-#include <jlm/opt/unroll.hpp>
 
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/strfmt.hpp>
 #include <jlm/util/time.hpp>
-
-#include <unordered_map>
 
 namespace jlm {
 
