@@ -24,7 +24,7 @@ public:
   = default;
 
   InvariantValueRedirectionStatistics()
-    : Statistics(StatisticsDescriptor::StatisticsId::InvariantValueReduction)
+    : Statistics(StatisticsDescriptor::StatisticsId::InvariantValueRedirection)
   {}
 
   void

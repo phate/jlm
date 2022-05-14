@@ -25,7 +25,7 @@ public:
     DataNodeToDelta,
     DeadNodeElimination,
     FunctionInlining,
-    InvariantValueReduction,
+    InvariantValueRedirection,
     JlmToRvsdgConversion,
     LoopUnrolling,
     PullNodes,
