@@ -120,7 +120,7 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
         clEnumValN(StatisticsDescriptor::StatisticsId::FunctionInlining,
                    "print-iln-stat",
                    "Write function inlining statistics to file."),
-        clEnumValN(StatisticsDescriptor::StatisticsId::InvariantValueReduction,
+        clEnumValN(StatisticsDescriptor::StatisticsId::InvariantValueRedirection,
                    "print-inv-stat",
                    "Write invariant value reduction statistics to file."),
         clEnumValN(StatisticsDescriptor::StatisticsId::JlmToRvsdgConversion,
