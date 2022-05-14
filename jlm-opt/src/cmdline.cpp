@@ -40,7 +40,7 @@ GetOptimization(enum OptimizationId id)
   static jlm::cne cne;
   static jlm::DeadNodeElimination dne;
   static jlm::fctinline fctinline;
-  static jlm::ivr ivr;
+  static jlm::InvariantValueRedirection ivr;
   static jlm::pullin pullin;
   static jlm::pushout pushout;
   static jlm::tginversion tginversion;
