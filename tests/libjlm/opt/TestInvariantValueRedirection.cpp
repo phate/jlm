@@ -16,97 +16,138 @@
 #include <jlm/opt/InvariantValueRedirection.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static const jlm::StatisticsDescriptor sd;
-
-static inline void
-test_gamma()
+static void
+RunInvariantValueRedirection(jlm::RvsdgModule & rvsdgModule)
 {
-	using namespace jlm;
-
-	jlm::valuetype vt;
-	jive::ctltype ct(2);
-
-	RvsdgModule rm(filepath(""), "", "");
-	auto & graph = rm.Rvsdg();
-	auto c = graph.add_import({ct, "c"});
-	auto x = graph.add_import({vt, "x"});
-	auto y = graph.add_import({vt, "y"});
-
-	auto gamma1 = jive::gamma_node::create(c, 2);
-	auto ev1 = gamma1->add_entryvar(c);
-	auto ev2 = gamma1->add_entryvar(x);
-	auto ev3 = gamma1->add_entryvar(y);
-
-	auto gamma2 = jive::gamma_node::create(ev1->argument(0), 2);
-	auto ev4 = gamma2->add_entryvar(ev2->argument(0));
-	auto ev5 = gamma2->add_entryvar(ev3->argument(0));
-	gamma2->add_exitvar({ev4->argument(0), ev4->argument(1)});
-	gamma2->add_exitvar({ev5->argument(0), ev5->argument(1)});
-
-	gamma1->add_exitvar({gamma2->output(0), ev2->argument(1)});
-	gamma1->add_exitvar({gamma2->output(1), ev3->argument(1)});
-
-	graph.add_export(gamma1->output(0), {gamma1->output(0)->type(), "x"});
-	graph.add_export(gamma1->output(1), {gamma1->output(1)->type(), "y"});
-
-	jive::view(graph.root(), stdout);
-	jlm::InvariantValueRedirection ivr;
-	ivr.run(rm, sd);
-	jive::view(graph.root(), stdout);
-
-	assert(graph.root()->result(0)->origin() == graph.root()->argument(1));
-	assert(graph.root()->result(1)->origin() == graph.root()->argument(2));
+  jlm::StatisticsDescriptor statisticsDescriptor;
+  jlm::InvariantValueRedirection invariantValueRedirection;
+  invariantValueRedirection.run(rvsdgModule, statisticsDescriptor);
 }
 
-static inline void
-test_theta()
+static void
+TestGamma()
 {
-	using namespace jlm;
+  auto SetupRvsdg = []()
+  {
+    using namespace jlm;
 
-	loopstatetype lt;
-	jlm::valuetype vt;
-	jive::ctltype ct(2);
+    jlm::valuetype valueType;
+    jive::ctltype controlType(2);
 
-	RvsdgModule rm(filepath(""), "", "");
-	auto & graph = rm.Rvsdg();
-	auto c = graph.add_import({ct, "c"});
-	auto x = graph.add_import({vt, "x"});
-	auto l = graph.add_import({lt, "l"});
+    auto rvsdgModule = RvsdgModule::Create(filepath(""), "", "");
+    auto & graph = rvsdgModule->Rvsdg();
+    auto c = graph.add_import({controlType, "c"});
+    auto x = graph.add_import({valueType, "x"});
+    auto y = graph.add_import({valueType, "y"});
 
-	auto theta1 = jive::theta_node::create(graph.root());
-	auto lv1 = theta1->add_loopvar(c);
-	auto lv2 = theta1->add_loopvar(x);
-	auto lv3 = theta1->add_loopvar(l);
+    auto gammaNode1 = jive::gamma_node::create(c, 2);
+    auto gammaInput1 = gammaNode1->add_entryvar(c);
+    auto gammaInput2 = gammaNode1->add_entryvar(x);
+    auto gammaInput3 = gammaNode1->add_entryvar(y);
 
-	auto theta2 = jive::theta_node::create(theta1->subregion());
-	auto t2lv1 = theta2->add_loopvar(lv1->argument());
-	theta2->add_loopvar(lv2->argument());
-	auto t2lv3 = theta2->add_loopvar(lv3->argument());
-	theta2->set_predicate(t2lv1->argument());
+    auto gammaNode2 = jive::gamma_node::create(gammaInput1->argument(0), 2);
+    auto gammaInput4 = gammaNode2->add_entryvar(gammaInput2->argument(0));
+    auto gammaInput5 = gammaNode2->add_entryvar(gammaInput3->argument(0));
+    gammaNode2->add_exitvar({gammaInput4->argument(0), gammaInput4->argument(1)});
+    gammaNode2->add_exitvar({gammaInput5->argument(0), gammaInput5->argument(1)});
 
-	lv3->result()->divert_to(t2lv3);
-	theta1->set_predicate(lv1->argument());
+    gammaNode1->add_exitvar({gammaNode2->output(0), gammaInput2->argument(1)});
+    gammaNode1->add_exitvar({gammaNode2->output(1), gammaInput3->argument(1)});
 
-	graph.add_export(lv1, {lv1->type(), "c"});
-	graph.add_export(lv2, {lv2->type(), "x"});
-	graph.add_export(lv3, {lv3->type(), "l"});
+    graph.add_export(gammaNode1->output(0), {gammaNode1->output(0)->type(), "x"});
+    graph.add_export(gammaNode1->output(1), {gammaNode1->output(1)->type(), "y"});
 
-	jive::view(graph.root(), stdout);
-	jlm::InvariantValueRedirection ivr;
-	ivr.run(rm, sd);
-	jive::view(graph.root(), stdout);
+    return rvsdgModule;
+  };
 
-	assert(graph.root()->result(0)->origin() == graph.root()->argument(0));
-	assert(graph.root()->result(1)->origin() == graph.root()->argument(1));
-	assert(graph.root()->result(2)->origin() == lv3);
+  /*
+   * Arrange
+   */
+  auto rvsdgModule = SetupRvsdg();
+  auto rootRegion = rvsdgModule->Rvsdg().root();
+
+  /*
+   * Act
+   */
+  jive::view(rootRegion, stdout);
+  RunInvariantValueRedirection(*rvsdgModule);
+  jive::view(rootRegion, stdout);
+
+  /*
+   * Assert
+   */
+  assert(rootRegion->result(0)->origin() == rootRegion->argument(1));
+  assert(rootRegion->result(1)->origin() == rootRegion->argument(2));
+}
+
+static void
+TestTheta()
+{
+  auto SetupRvsdg = []()
+  {
+    using namespace jlm;
+
+    loopstatetype loopStateType;
+    jlm::valuetype valueType;
+    jive::ctltype controlType(2);
+
+    auto rvsdgModule = RvsdgModule::Create(filepath(""), "", "");
+    auto & graph = rvsdgModule->Rvsdg();
+    auto c = graph.add_import({controlType, "c"});
+    auto x = graph.add_import({valueType, "x"});
+    auto l = graph.add_import({loopStateType, "l"});
+
+    auto thetaNode1 = jive::theta_node::create(graph.root());
+    auto thetaOutput1 = thetaNode1->add_loopvar(c);
+    auto thetaOutput2 = thetaNode1->add_loopvar(x);
+    auto thetaOutput3 = thetaNode1->add_loopvar(l);
+
+    auto thetaNode2 = jive::theta_node::create(thetaNode1->subregion());
+    auto thetaOutput4 = thetaNode2->add_loopvar(thetaOutput1->argument());
+    thetaNode2->add_loopvar(thetaOutput2->argument());
+    auto thetaOutput5 = thetaNode2->add_loopvar(thetaOutput3->argument());
+    thetaNode2->set_predicate(thetaOutput4->argument());
+
+    thetaOutput3->result()->divert_to(thetaOutput5);
+    thetaNode1->set_predicate(thetaOutput1->argument());
+
+    graph.add_export(thetaOutput1, {thetaOutput1->type(), "c"});
+    graph.add_export(thetaOutput2, {thetaOutput2->type(), "x"});
+    graph.add_export(thetaOutput3, {thetaOutput3->type(), "l"});
+
+    return std::make_tuple(
+      std::move(rvsdgModule),
+      thetaOutput3);
+  };
+
+  /*
+   * Arrange
+   */
+  auto [rvsdgModule, thetaOutput3] = SetupRvsdg();
+  auto rootRegion = rvsdgModule->Rvsdg().root();
+
+  /*
+   * Act
+   */
+  jive::view(rootRegion, stdout);
+  RunInvariantValueRedirection(*rvsdgModule);
+  jive::view(rootRegion, stdout);
+
+  /*
+   * Assert
+   */
+  assert(rootRegion->result(0)->origin() == rootRegion->argument(0));
+  assert(rootRegion->result(1)->origin() == rootRegion->argument(1));
+  assert(rootRegion->result(2)->origin() == thetaOutput3);
 }
 
 static int
-verify()
+TestInvariantValueRedirection()
 {
-	test_gamma();
-	test_theta();
-	return 0;
+  TestGamma();
+  TestTheta();
+
+  return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/opt/TestInvariantValueRedirection", verify)
+JLM_UNIT_TEST_REGISTER("libjlm/opt/TestInvariantValueRedirection", TestInvariantValueRedirection)
