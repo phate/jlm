@@ -26,12 +26,13 @@ enum class OptimizationId {
   cne,
   dne,
   iln,
-  inv,
+  InvariantValueRedirection,
   psh,
   red,
   ivt,
   url,
-  pll};
+  pll,
+};
 
 static jlm::optimization *
 GetOptimization(enum OptimizationId id)
@@ -40,7 +41,7 @@ GetOptimization(enum OptimizationId id)
   static jlm::cne cne;
   static jlm::DeadNodeElimination dne;
   static jlm::fctinline fctinline;
-  static jlm::InvariantValueRedirection ivr;
+  static jlm::InvariantValueRedirection invariantValueRedirection;
   static jlm::pullin pullin;
   static jlm::pushout pushout;
   static jlm::tginversion tginversion;
@@ -49,16 +50,16 @@ GetOptimization(enum OptimizationId id)
 
   static std::unordered_map<OptimizationId, jlm::optimization*>
     map({
-          {OptimizationId::AASteensgaardBasic, &steensgaardBasic},
-          {OptimizationId::cne,                &cne},
-          {OptimizationId::dne,                &dne},
-          {OptimizationId::iln,                &fctinline},
-          {OptimizationId::inv,                &ivr},
-          {OptimizationId::pll,                &pullin},
-          {OptimizationId::psh,                &pushout},
-          {OptimizationId::ivt,                &tginversion},
-          {OptimizationId::url,                &loopunroll},
-          {OptimizationId::red,                &nodereduction}
+          {OptimizationId::AASteensgaardBasic,        &steensgaardBasic},
+          {OptimizationId::cne,                       &cne},
+          {OptimizationId::dne,                       &dne},
+          {OptimizationId::iln,                       &fctinline},
+          {OptimizationId::InvariantValueRedirection, &invariantValueRedirection},
+          {OptimizationId::pll,                       &pullin},
+          {OptimizationId::psh,                       &pushout},
+          {OptimizationId::ivt,                       &tginversion},
+          {OptimizationId::url,                       &loopunroll},
+          {OptimizationId::red,                       &nodereduction}
         });
 
   JLM_ASSERT(map.find(id) != map.end());
@@ -121,8 +122,8 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
                    "print-iln-stat",
                    "Write function inlining statistics to file."),
         clEnumValN(StatisticsDescriptor::StatisticsId::InvariantValueRedirection,
-                   "print-inv-stat",
-                   "Write invariant value reduction statistics to file."),
+                   "printInvariantValueRedirection",
+                   "Write invariant value redirection statistics to file."),
         clEnumValN(StatisticsDescriptor::StatisticsId::JlmToRvsdgConversion,
                    "print-jlm-rvsdg-conversion",
                    "Write Jlm to RVSDG conversion statistics to file."),
@@ -172,8 +173,11 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
         "Steensgaard alias analysis with basic memory state encoding.")
       , clEnumValN(jlm::OptimizationId::cne, "cne", "Common node elimination")
       , clEnumValN(jlm::OptimizationId::dne, "dne", "Dead node elimination")
-      , clEnumValN(jlm::OptimizationId::iln, "iln", "Function inlining")
-      , clEnumValN(jlm::OptimizationId::inv, "inv", "Invariant value reduction")
+      , clEnumValN(jlm::OptimizationId::iln, "iln", "Function inlining"),
+      clEnumValN(
+        jlm::OptimizationId::InvariantValueRedirection,
+        "InvariantValueRedirection",
+        "Invariant Value Redirection")
       , clEnumValN(jlm::OptimizationId::psh, "psh", "Node push out")
       , clEnumValN(jlm::OptimizationId::pll, "pll", "Node pull in")
       , clEnumValN(jlm::OptimizationId::red, "red", "Node reductions")
