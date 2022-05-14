@@ -8,21 +8,49 @@
 
 #include <jlm/opt/optimization.hpp>
 
+namespace jive {
+class theta_node;
+}
+
 namespace jlm {
 
 class RvsdgModule;
 class StatisticsDescriptor;
 
-/**
-* \brief Invariant Value Redirection
-*/
-class ivr final : public optimization {
+/** \brief Invariant Value Redirection Optimization
+ *
+ * Invariant Value Redirection (IVR) redirects invariant edges around gamma and theta nodes. It does this by diverting
+ * all users of invariant gamma and theta outputs to the origin of the respective gamma and theta inputs. In case
+ * of nested nodes, the optimization processes the innermost nodes first to ensure that the outputs
+ * of outer nodes are correctly identified as invariant.
+ *
+ * ### Theta Nodes
+ * The output of a theta node is considered invariant if the corresponding region result is connected to the
+ * corresponding region argument. All the users of a theta output are diverted to the origin of the corresponding
+ * theta input.
+ *
+ * ### Gamma Nodes
+ * The output of a gamma node is considered invariant if all the corresponding region results are connected to the
+ * arguments of a single gamma input. All the users of a theta output are diverted to the origin of this gamma input.
+ */
+class InvariantValueRedirection final : public optimization {
 public:
-	virtual
-	~ivr();
+  ~InvariantValueRedirection() override;
 
-	virtual void
-	run(RvsdgModule & module, const StatisticsDescriptor & sd) override;
+  void
+  run(
+    RvsdgModule & rvsdgModule,
+    const StatisticsDescriptor & statisticsDescriptor) override;
+
+private:
+  static void
+  RedirectInvariantValues(jive::region & region);
+
+  static void
+  RedirectInvariantGammaOutputs(jive::gamma_node & gammaNode);
+
+  static void
+  RedirectInvariantThetaOutputs(jive::theta_node & thetaNode);
 };
 
 }

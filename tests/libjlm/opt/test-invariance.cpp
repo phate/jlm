@@ -50,7 +50,7 @@ test_gamma()
 	graph.add_export(gamma1->output(1), {gamma1->output(1)->type(), "y"});
 
 	jive::view(graph.root(), stdout);
-	jlm::ivr ivr;
+	jlm::InvariantValueRedirection ivr;
 	ivr.run(rm, sd);
 	jive::view(graph.root(), stdout);
 
@@ -92,7 +92,7 @@ test_theta()
 	graph.add_export(lv3, {lv3->type(), "l"});
 
 	jive::view(graph.root(), stdout);
-	jlm::ivr ivr;
+	jlm::InvariantValueRedirection ivr;
 	ivr.run(rm, sd);
 	jive::view(graph.root(), stdout);
 

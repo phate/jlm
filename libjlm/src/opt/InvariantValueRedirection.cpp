@@ -18,126 +18,103 @@
 
 namespace jlm {
 
-class invstat final : public Statistics {
+class InvariantValueRedirectionStatistics final : public Statistics {
 public:
-	virtual
-	~invstat()
-	{}
+  ~InvariantValueRedirectionStatistics() override
+  = default;
 
-	invstat()
-	: Statistics(StatisticsDescriptor::StatisticsId::InvariantValueReduction)
-  , nnodes_before_(0), nnodes_after_(0)
-	, ninputs_before_(0), ninputs_after_(0)
-	{}
+  InvariantValueRedirectionStatistics()
+    : Statistics(StatisticsDescriptor::StatisticsId::InvariantValueReduction)
+  {}
 
-	void
-	start(const jive::graph & graph) noexcept
-	{
-		nnodes_before_ = jive::nnodes(graph.root());
-		ninputs_before_ = jive::ninputs(graph.root());
-		timer_.start();
-	}
+  void
+  Start(const jive::graph & graph) noexcept
+  {
+    Timer_.start();
+  }
 
-	void
-	end(const jive::graph & graph) noexcept
-	{
-		nnodes_after_ = jive::nnodes(graph.root());
-		ninputs_after_ = jive::ninputs(graph.root());
-		timer_.stop();
-	}
+  void
+  Stop(const jive::graph & graph) noexcept
+  {
+    Timer_.stop();
+  }
 
-	virtual std::string
-	ToString() const override
-	{
-		return strfmt("INV ",
-			nnodes_before_, " ", nnodes_after_, " ",
-			ninputs_before_, " ", ninputs_after_, " ",
-			timer_.ns()
-		);
-	}
+  [[nodiscard]] std::string
+  ToString() const override
+  {
+    return strfmt("InvariantValueRedirection ",
+                  "Time[ns]:", Timer_.ns()
+    );
+  }
 
 private:
-	size_t nnodes_before_, nnodes_after_;
-	size_t ninputs_before_, ninputs_after_;
-	jlm::timer timer_;
+  jlm::timer Timer_;
 };
 
-static void
-invariance(jive::region * region);
-
-static void
-gamma_invariance(jive::structural_node * node)
-{
-	JLM_ASSERT(jive::is<jive::gamma_op>(node));
-	auto gamma = static_cast<jive::gamma_node*>(node);
-
-	for (size_t n = 0; n < gamma->noutputs(); n++) {
-		auto output = static_cast<jive::gamma_output*>(gamma->output(n));
-		if (auto no = is_invariant(output))
-			output->divert_users(no);
-	}
-}
-
-static void
-theta_invariance(jive::structural_node * node)
-{
-	JLM_ASSERT(jive::is<jive::theta_op>(node));
-	auto theta = static_cast<jive::theta_node*>(node);
-
-	/* FIXME: In order to also redirect state variables,
-		we need to know whether a loop terminates.*/
-
-	for (const auto & lv : *theta) {
-		if (jive::is_invariant(lv) && !jive::is<loopstatetype>(lv->argument()->type()))
-			lv->divert_users(lv->input()->origin());
-	}
-}
-
-static void
-invariance(jive::region * region)
-{
-	for (auto node : jive::topdown_traverser(region)) {
-		if (jive::is<jive::simple_op>(node))
-			continue;
-
-		JLM_ASSERT(jive::is<jive::structural_op>(node));
-		auto strnode = static_cast<jive::structural_node*>(node);
-		for (size_t n = 0; n < strnode->nsubregions(); n++)
-			invariance(strnode->subregion(n));
-
-		if (jive::is<jive::gamma_op>(node)) {
-			gamma_invariance(strnode);
-			continue;
-		}
-
-		if (jive::is<jive::theta_op>(node)) {
-			theta_invariance(strnode);
-			continue;
-		}
-	}
-}
-
-static void
-invariance(RvsdgModule & rm, const StatisticsDescriptor & sd)
-{
-	invstat stat;
-
-	stat.start(rm.Rvsdg());
-	invariance(rm.Rvsdg().root());
-	stat.end(rm.Rvsdg());
-
-  sd.PrintStatistics(stat);
-}
-
-/* ivr class */
-
-ivr::~ivr()
-{}
+InvariantValueRedirection::~InvariantValueRedirection()
+= default;
 
 void
-ivr::run(RvsdgModule & module, const StatisticsDescriptor & sd)
+InvariantValueRedirection::run(
+  RvsdgModule & rvsdgModule,
+  const StatisticsDescriptor & statisticsDescriptor)
 {
-	invariance(module, sd);
+  auto & rvsdg = rvsdgModule.Rvsdg();
+
+  InvariantValueRedirectionStatistics statistics;
+
+  statistics.Start(rvsdg);
+  RedirectInvariantValues(*rvsdg.root());
+  statistics.Stop(rvsdg);
+
+  statisticsDescriptor.PrintStatistics(statistics);
+}
+
+void
+InvariantValueRedirection::RedirectInvariantValues(jive::region & region)
+{
+  for (auto node : jive::topdown_traverser(&region)) {
+    if (jive::is<jive::simple_op>(node))
+      continue;
+
+    auto & structuralNode = *AssertedCast<jive::structural_node>(node);
+    for (size_t n = 0; n < structuralNode.nsubregions(); n++)
+      RedirectInvariantValues(*structuralNode.subregion(n));
+
+    if (auto gammaNode = dynamic_cast<jive::gamma_node*>(&structuralNode)) {
+      RedirectInvariantGammaOutputs(*gammaNode);
+      continue;
+    }
+
+    if (auto thetaNode = dynamic_cast<jive::theta_node*>(&structuralNode)) {
+      RedirectInvariantThetaOutputs(*thetaNode);
+      continue;
+    }
+  }
+}
+
+void
+InvariantValueRedirection::RedirectInvariantGammaOutputs(jive::gamma_node & gammaNode)
+{
+  for (auto it = gammaNode.begin_exitvar(); it != gammaNode.end_exitvar(); it++) {
+    auto & gammaOutput = *it;
+
+    if (auto origin = is_invariant(&gammaOutput))
+      it->divert_users(origin);
+  }
+}
+
+void
+InvariantValueRedirection::RedirectInvariantThetaOutputs(jive::theta_node & thetaNode)
+{
+  for (const auto & thetaOutput : thetaNode) {
+    /* FIXME: In order to also redirect loop state type variables, we need to know whether a loop terminates.*/
+    if (jive::is<loopstatetype>(thetaOutput->type()))
+      continue;
+
+    if (jive::is_invariant(thetaOutput))
+      thetaOutput->divert_users(thetaOutput->input()->origin());
+  }
 }
 
 }

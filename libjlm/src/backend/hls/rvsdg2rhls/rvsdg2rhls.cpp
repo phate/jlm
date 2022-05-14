@@ -41,7 +41,7 @@ pre_opt(jlm::RvsdgModule &rm) {
 	// TODO: figure out which optimizations to use here
 	jlm::DeadNodeElimination dne;
 	jlm::cne cne;
-	jlm::ivr ivr;
+	jlm::InvariantValueRedirection ivr;
 	jlm::tginversion tgi;
 	jlm::StatisticsDescriptor sd;
 	tgi.run(rm, sd);
