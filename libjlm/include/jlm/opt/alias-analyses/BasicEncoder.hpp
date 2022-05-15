@@ -10,8 +10,17 @@
 
 namespace jlm::aa {
 
-/** \brief BasicEncoder class
-*/
+/** \brief Basic memory state encoder
+ *
+ * The key idea of the basic memory state encoder is that \b all memory states are routed through \b all structural
+ * nodes irregardless of whether these states are required by any simple nodes within the structural nodes. This
+ * strategy ensures that the state of a memory location is always present for encoding while avoiding the complexity of
+ * an additional analysis for determining the required routing path of the states. The drawback is that
+ * a lot of states are routed through structural nodes where they are not needed, potentially leading to a significant
+ * runtime of the encoder for bigger RVSDGs.
+ *
+ * @see MemoryStateEncoder
+ */
 class BasicEncoder final : public MemoryStateEncoder {
 public:
   class Context;
