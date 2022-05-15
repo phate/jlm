@@ -40,12 +40,6 @@ public:
   BasicEncoder &
   operator=(BasicEncoder &&) = delete;
 
-  [[nodiscard]] const PointsToGraph &
-  GetPointsToGraph() const noexcept
-  {
-    return PointsToGraph_;
-  }
-
   void
   Encode(
     RvsdgModule & rvsdgModule,
@@ -58,6 +52,12 @@ public:
     const StatisticsDescriptor & statisticsDescriptor);
 
 private:
+  [[nodiscard]] const PointsToGraph &
+  GetPointsToGraph() const noexcept
+  {
+    return PointsToGraph_;
+  }
+
   void
   EncodeAlloca(const jive::simple_node &allocaNode) override;
 
