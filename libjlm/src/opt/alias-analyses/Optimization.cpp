@@ -10,7 +10,7 @@
 
 namespace jlm::aa {
 
-SteensgaardBasic::~SteensgaardBasic()
+SteensgaardBasic::~SteensgaardBasic() noexcept
 = default;
 
 void

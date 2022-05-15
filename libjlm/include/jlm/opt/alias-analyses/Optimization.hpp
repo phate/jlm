@@ -17,7 +17,7 @@ namespace jlm::aa {
  */
 class SteensgaardBasic final : public optimization {
 public:
-  ~SteensgaardBasic() override;
+  ~SteensgaardBasic() noexcept override;
 
   void
   run(
