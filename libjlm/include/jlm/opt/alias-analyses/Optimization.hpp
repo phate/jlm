@@ -10,7 +10,7 @@
 
 namespace jlm::aa {
 
-/** \brief Steensgaard alias analysis with basic static encoding
+/** \brief Steensgaard alias analysis with basic memory state encoding
  *
  * @see Steensgaard
  * @see BasicEncoder
