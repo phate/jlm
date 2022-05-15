@@ -564,7 +564,7 @@ BasicEncoder::Encode(
   encodingStatistics.Stop();
   statisticsDescriptor.PrintStatistics(encodingStatistics);
 
-  /**
+  /*
    * Remove all nodes that became dead throughout the encoding.
    */
   jlm::DeadNodeElimination deadNodeElimination;
