@@ -5,5 +5,6 @@ check.log
 /build
 .Makefile.override
 libjlc/include/jlc/llvmpaths.hpp
+jhls/include/jhls/toolpaths.hpp
 .idea
 docs/html
