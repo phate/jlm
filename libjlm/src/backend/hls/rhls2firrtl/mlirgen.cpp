@@ -2361,7 +2361,7 @@ jlm::hls::MLIRGenImpl::WriteModuleToFile(const circt::firrtl::FModuleOp fModuleO
 // Verifies the circuit and writes the FIRRTL to a file
 void
 jlm::hls::MLIRGenImpl::WriteCircuitToFile(const circt::firrtl::CircuitOp circuit, std::string name) {
-	// Then add the circuit to a top module
+	// Add the circuit to a top module
 	auto module = mlir::ModuleOp::create(location);
 	module.push_back(circuit);
 
@@ -2374,15 +2374,37 @@ jlm::hls::MLIRGenImpl::WriteCircuitToFile(const circt::firrtl::CircuitOp circuit
 	// Print the FIRRTL IR
 	module.print(llvm::outs());
 
+	// Write the module to file
 	std::string fileName = name + extension();
 	std::error_code EC;
-
 	llvm::raw_fd_ostream output(fileName, EC);
 	auto status = circt::firrtl::exportFIRFile(module, output);
 	if (status.failed())
-		throw std::logic_error("Exporting of firrtl failed");
+		throw jlm::error("Exporting of FIRRTL failed");
 	output.close();
 	std::cout << "\nWritten firrtl to " << fileName << "\n";
+}
+
+std::string
+jlm::hls::MLIRGenImpl::toString(const circt::firrtl::CircuitOp circuit) {
+	// Add the circuit to a top module
+	auto module = mlir::ModuleOp::create(location);
+	module.push_back(circuit);
+
+	// Verify the module
+	if (failed(mlir::verify(module))) {
+		module.emitError("module verification error");
+        throw std::logic_error("Verification of firrtl failed");
+	}
+
+	// Export FIRRTL to string
+	std::string outputString;
+	llvm::raw_string_ostream output(outputString);
+	auto status = circt::firrtl::exportFIRFile(module, output);
+	if (status.failed())
+		throw std::logic_error("Exporting of firrtl failed");
+
+	return outputString;
 }
 
 #endif //CIRCT

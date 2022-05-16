@@ -46,6 +46,7 @@ namespace jlm {
 			circt::firrtl::CircuitOp MlirGen(const jlm::lambda::node *lamdaNode);
 			void WriteModuleToFile(const circt::firrtl::FModuleOp fModuleOp, const jive::node *node);
 			void WriteCircuitToFile(const circt::firrtl::CircuitOp circuit, std::string name);
+			std::string toString(const circt::firrtl::CircuitOp circuit);
 		private:
 			// Variables
 			mlir::OpBuilder builder;
@@ -197,7 +198,7 @@ namespace jlm {
 
 			std::string get_text(jlm::RvsdgModule &rm) override {return "";}
 		public:
-			void
+			std::string
 			run(jlm::RvsdgModule &rvsdgModule) {
 				// Load the FIRRTLDialect
 				mlir::MLIRContext context;
@@ -208,7 +209,7 @@ namespace jlm {
 				auto mlirGen = MLIRGenImpl(context);
 				auto circuit = mlirGen.MlirGen(lambdaNode);
 				// Write the FIRRTL to a file
-				mlirGen.WriteCircuitToFile(circuit, "jlm_hls");
+				return mlirGen.toString(circuit);
 			}
 			private:
 		};
@@ -227,9 +228,9 @@ namespace jlm {
                         }
                         std::string get_text(jlm::RvsdgModule &rm) override {return "";}
                 public:
-                        void
+			std::string
                         run(jlm::RvsdgModule &rvsdgModule) {
-                                std::cout << "This version of jlm-hls has not been compiled with support for the CIRCT backend\n";
+				throw jlm::error("This version of jlm-hls has not been compiled with support for the CIRCT backend\n");
                         }
                         private:
                 };
