@@ -7,7 +7,7 @@
 #define JLM_JHLS_COMMAND_HPP
 
 #include <jhls/cmdline.hpp>
-#include <jlm/tooling/passgraph.hpp>
+#include <jlm/tooling/CommandGraph.hpp>
 
 #include <memory>
 #include <string>
