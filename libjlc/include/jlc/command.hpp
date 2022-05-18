@@ -7,7 +7,7 @@
 #define JLM_JLC_COMMAND_HPP
 
 #include <jlc/cmdline.hpp>
-#include <jlm/driver/passgraph.hpp>
+#include <jlm/tooling/passgraph.hpp>
 
 #include <memory>
 #include <string>

@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/driver/command.hpp>
+#include <jlm/tooling/command.hpp>
 
 namespace jlm {
 

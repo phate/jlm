@@ -3,10 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_DRIVER_PASSGRAPH_HPP
-#define JLM_DRIVER_PASSGRAPH_HPP
+#ifndef JLM_TOOLING_PASSGRAPH_HPP
+#define JLM_TOOLING_PASSGRAPH_HPP
 
-#include <jlm/driver/command.hpp>
+#include <jlm/tooling/command.hpp>
 
 #include <memory>
 #include <unordered_set>
