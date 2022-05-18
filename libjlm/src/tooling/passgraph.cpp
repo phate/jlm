@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/driver/passgraph.hpp>
+#include <jlm/tooling/passgraph.hpp>
 
 #include <deque>
 #include <functional>

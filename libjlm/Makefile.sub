@@ -27,9 +27,6 @@ LIBJLM_SRC = \
     libjlm/src/backend/llvm/jlm2llvm/type.cpp \
     libjlm/src/backend/llvm/rvsdg2jlm/rvsdg2jlm.cpp \
     \
-    libjlm/src/driver/command.cpp \
-    libjlm/src/driver/passgraph.cpp \
-    \
     libjlm/src/frontend/llvm/ControlFlowRestructuring.cpp \
     libjlm/src/frontend/llvm/InterProceduralGraphConversion.cpp \
     libjlm/src/frontend/llvm/LlvmInstructionConversion.cpp \
@@ -80,6 +77,9 @@ LIBJLM_SRC = \
     libjlm/src/opt/push.cpp \
     libjlm/src/opt/reduction.cpp \
     libjlm/src/opt/unroll.cpp \
+    \
+    libjlm/src/tooling/command.cpp \
+    libjlm/src/tooling/passgraph.cpp \
     \
      libjlm/src/util/Statistics.cpp \
 
