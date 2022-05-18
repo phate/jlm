@@ -6,7 +6,7 @@
 #ifndef JLM_TOOLING_PASSGRAPH_HPP
 #define JLM_TOOLING_PASSGRAPH_HPP
 
-#include <jlm/tooling/command.hpp>
+#include <jlm/tooling/Command.hpp>
 
 #include <memory>
 #include <unordered_set>
