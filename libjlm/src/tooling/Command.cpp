@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/tooling/command.hpp>
+#include <jlm/tooling/Command.hpp>
 
 namespace jlm {
 
