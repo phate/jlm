@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/tooling/passgraph.hpp>
+#include <jlm/tooling/CommandGraph.hpp>
 
 #include <deque>
 #include <functional>
