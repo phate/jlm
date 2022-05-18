@@ -10,18 +10,20 @@
 
 namespace jlm {
 
-/* command class */
-
-class command {
+/** \brief Command class
+ *
+ * This class represents simple commands, such as \a mkdir or \a rm, that can be executed with the Run() method.
+ */
+class Command {
 public:
-	virtual
-	~command();
+  virtual
+  ~Command();
 
-	virtual std::string
-	to_str() const = 0;
+  [[nodiscard]] virtual std::string
+  ToString() const = 0;
 
-	virtual void
-	run() const = 0;
+  virtual void
+  Run() const = 0;
 };
 
 }

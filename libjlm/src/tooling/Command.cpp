@@ -7,7 +7,7 @@
 
 namespace jlm {
 
-command::~command()
-{}
+Command::~Command()
+= default;
 
 }
