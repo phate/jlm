@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_DRIVER_COMMAND_HPP
-#define JLM_DRIVER_COMMAND_HPP
+#ifndef JLM_TOOLING_COMMAND_HPP
+#define JLM_TOOLING_COMMAND_HPP
 
 #include <string>
 
