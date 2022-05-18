@@ -20,7 +20,7 @@ generate_commands(const jlm::cmdline_options & options);
 
 /* parser command */
 
-class prscmd final : public command {
+class prscmd final : public Command {
 public:
 	virtual
 	~prscmd();
@@ -55,10 +55,10 @@ public:
 	{}
 
 	virtual std::string
-	to_str() const override;
+	ToString() const override;
 
 	virtual void
-	run() const override;
+	Run() const override;
 
 	static passgraph_node *
 	create(
@@ -116,7 +116,7 @@ private:
 
 /* optimization command */
 
-class optcmd final : public command {
+class optcmd final : public Command {
 public:
 	virtual
 	~optcmd();
@@ -131,10 +131,10 @@ public:
 	{}
 
 	virtual std::string
-	to_str() const override;
+	ToString() const override;
 
 	virtual void
-	run() const override;
+	Run() const override;
 
 	static passgraph_node *
 	create(
@@ -154,7 +154,7 @@ private:
 
 /* code generator command */
 
-class cgencmd final : public command {
+class cgencmd final : public Command {
 public:
 	virtual
 	~cgencmd();
@@ -169,10 +169,10 @@ public:
 	{}
 
 	virtual std::string
-	to_str() const override;
+	ToString() const override;
 
 	virtual void
-	run() const override;
+	Run() const override;
 
 	inline const jlm::filepath &
 	ofile() const noexcept
@@ -198,7 +198,7 @@ private:
 
 /* linker command */
 
-class lnkcmd final : public command {
+class lnkcmd final : public Command {
 public:
 	virtual
 	~lnkcmd();
@@ -217,10 +217,10 @@ public:
 	{}
 
 	virtual std::string
-	to_str() const override;
+	ToString() const override;
 
 	virtual void
-	run() const override;
+	Run() const override;
 
 	inline const jlm::filepath &
 	ofile() const noexcept
@@ -257,7 +257,7 @@ private:
 
 /* print command */
 
-class printcmd final : public command {
+class printcmd final : public Command {
 public:
 	virtual
 	~printcmd();
@@ -278,10 +278,10 @@ public:
 	operator=(printcmd&&)	= delete;
 
 	virtual std::string
-	to_str() const override;
+	ToString() const override;
 
 	virtual void
-	run() const override;
+	Run() const override;
 
 	static passgraph_node *
 	create(

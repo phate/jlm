@@ -114,7 +114,7 @@ prscmd::replace_all(std::string str, const std::string& from, const std::string&
 }
 
 std::string
-prscmd::to_str() const
+prscmd::ToString() const
 {
 	auto f = ifile_.base();
 
@@ -168,9 +168,9 @@ prscmd::to_str() const
 }
 
 void
-prscmd::run() const
+prscmd::Run() const
 {
-	if (system(to_str().c_str()))
+	if (system(ToString().c_str()))
 		exit(EXIT_FAILURE);
 }
 
@@ -186,7 +186,7 @@ optcmd::~optcmd()
 {}
 
 std::string
-optcmd::to_str() const
+optcmd::ToString() const
 {
 	auto f = ifile_.base();
 
@@ -218,9 +218,9 @@ optcmd::to_str() const
 }
 
 void
-optcmd::run() const
+optcmd::Run() const
 {
-	if (system(to_str().c_str()))
+	if (system(ToString().c_str()))
 		exit(EXIT_FAILURE);
 }
 
@@ -230,7 +230,7 @@ cgencmd::~cgencmd()
 {}
 
 std::string
-cgencmd::to_str() const
+cgencmd::ToString() const
 {
 	return strfmt(
 	  llcpath.to_str() + " "
@@ -242,9 +242,9 @@ cgencmd::to_str() const
 }
 
 void
-cgencmd::run() const
+cgencmd::Run() const
 {
-	if (system(to_str().c_str()))
+	if (system(ToString().c_str()))
 		exit(EXIT_FAILURE);
 }
 
@@ -254,7 +254,7 @@ lnkcmd::~lnkcmd()
 {}
 
 std::string
-lnkcmd::to_str() const
+lnkcmd::ToString() const
 {
 	std::string ifiles;
 	for (const auto & ifile : ifiles_)
@@ -284,9 +284,9 @@ lnkcmd::to_str() const
 }
 
 void
-lnkcmd::run() const
+lnkcmd::Run() const
 {
-	if (system(to_str().c_str()))
+	if (system(ToString().c_str()))
 		exit(EXIT_FAILURE);
 }
 
@@ -296,17 +296,17 @@ printcmd::~printcmd()
 {}
 
 std::string
-printcmd::to_str() const
+printcmd::ToString() const
 {
 	return "PRINTCMD";
 }
 
 void
-printcmd::run() const
+printcmd::Run() const
 {
 	for (const auto & node : topsort(pgraph_.get())) {
 		if (node != pgraph_->entry() && node != pgraph_->exit())
-			std::cout << node->cmd().to_str() << "\n";
+			std::cout << node->cmd().ToString() << "\n";
 	}
 }
 

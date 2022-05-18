@@ -12,31 +12,31 @@ namespace jlm {
 
 /* entry command */
 
-class entry_cmd final : public command {
+class entry_cmd final : public Command {
 public:
 	virtual std::string
-	to_str() const override
+	ToString() const override
 	{
 		return "ENTRY";
 	}
 
 	virtual void
-	run() const override
+	Run() const override
 	{}
 };
 
 /* exit command */
 
-class exit_cmd final : public command {
+class exit_cmd final : public Command {
 public:
 	virtual std::string
-	to_str() const override
+	ToString() const override
 	{
 		return "EXIT";
 	}
 
 	virtual void
-	run() const override
+	Run() const override
 	{}
 };
 
@@ -45,7 +45,7 @@ public:
 passgraph_node *
 passgraph_node::create(
 	passgraph * pgraph,
-	std::unique_ptr<command> cmd)
+	std::unique_ptr<Command> cmd)
 {
 	std::unique_ptr<passgraph_node> pgnode(new passgraph_node(pgraph, std::move(cmd)));
 	auto ptr = pgnode.get();
@@ -65,7 +65,7 @@ void
 passgraph::run() const
 {
 	for (const auto & node : topsort(this))
-		node->cmd().run();
+    node->cmd().Run();
 }
 
 /* support methods */
