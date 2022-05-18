@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_TOOLING_PASSGRAPH_HPP
-#define JLM_TOOLING_PASSGRAPH_HPP
+#ifndef JLM_TOOLING_COMMANDGRAPH_HPP
+#define JLM_TOOLING_COMMANDGRAPH_HPP
 
 #include <jlm/tooling/Command.hpp>
 
