@@ -18,7 +18,7 @@ namespace jlm {
 
 /* parser command */
 
-class prscmd final : public command {
+class prscmd final : public Command {
 public:
 	virtual
 	~prscmd();
@@ -57,13 +57,13 @@ public:
 	{}
 
 	virtual std::string
-	to_str() const override;
+	ToString() const override;
 
 	jlm::filepath
 	ofile() const;
 
 	virtual void
-	run() const override;
+	Run() const override;
 
 	static passgraph_node *
 	create(
@@ -127,7 +127,7 @@ private:
 
 /* optimization command */
 
-class optcmd final : public command {
+class optcmd final : public Command {
 public:
 	virtual
 	~optcmd();
@@ -144,10 +144,10 @@ public:
 	{}
 
 	virtual std::string
-	to_str() const override;
+	ToString() const override;
 
 	virtual void
-	run() const override;
+	Run() const override;
 
 	static passgraph_node *
 	create(
@@ -169,7 +169,7 @@ private:
 
 /* code generator command */
 
-class cgencmd final : public command {
+class cgencmd final : public Command {
 public:
 	virtual
 	~cgencmd();
@@ -188,10 +188,10 @@ public:
 	{}
 
 	virtual std::string
-	to_str() const override;
+	ToString() const override;
 
 	virtual void
-	run() const override;
+	Run() const override;
 
 	inline const jlm::filepath &
 	ofile() const noexcept
@@ -221,7 +221,7 @@ private:
 
 /* linker command */
 
-class lnkcmd final : public command {
+class lnkcmd final : public Command {
 public:
 	virtual
 	~lnkcmd();
@@ -240,10 +240,10 @@ public:
 	{}
 
 	virtual std::string
-	to_str() const override;
+	ToString() const override;
 
 	virtual void
-	run() const override;
+	Run() const override;
 
 	inline const jlm::filepath &
 	ofile() const noexcept
@@ -280,7 +280,7 @@ private:
 
 /* print command */
 
-class printcmd final : public command {
+class printcmd final : public Command {
 public:
 	virtual
 	~printcmd();
@@ -301,10 +301,10 @@ public:
 	operator=(printcmd&&)	= delete;
 
 	virtual std::string
-	to_str() const override;
+	ToString() const override;
 
 	virtual void
-	run() const override;
+	Run() const override;
 
 	static passgraph_node *
 	create(
@@ -318,7 +318,7 @@ private:
 	std::unique_ptr<passgraph> pgraph_;
 };
 
-class m2rcmd final : public command {
+class m2rcmd final : public Command {
 public:
 	virtual
 	~m2rcmd(){}
@@ -331,13 +331,13 @@ public:
 	{}
 
 	virtual std::string
-	to_str() const override;
+	ToString() const override;
 
 	jlm::filepath
 	ofile() const;
 
 	virtual void
-	run() const override;
+	Run() const override;
 
 	static passgraph_node *
 	create(
@@ -354,7 +354,7 @@ private:
 	jlm::filepath ofile_;
 };
 
-class mkdircmd final : public command {
+class mkdircmd final : public Command {
 public:
 	virtual
 	~mkdircmd(){}
@@ -365,10 +365,10 @@ public:
 	{}
 
 	virtual std::string
-	to_str() const override;
+	ToString() const override;
 
 	virtual void
-	run() const override;
+	Run() const override;
 
 	static passgraph_node *
 	create(
@@ -383,7 +383,7 @@ private:
 	jlm::filepath path_;
 };
 
-class verilatorcmd final : public command {
+class verilatorcmd final : public Command {
 public:
 	virtual
 	~verilatorcmd(){}
@@ -406,10 +406,10 @@ public:
 	{}
 
 	virtual std::string
-	to_str() const override;
+	ToString() const override;
 
 	virtual void
-	run() const override;
+	Run() const override;
 
 	inline const jlm::filepath &
 	vfile() const noexcept
@@ -460,7 +460,7 @@ private:
 	std::vector<std::string> Lpaths_;
 };
 
-class lllnkcmd final : public command {
+class lllnkcmd final : public Command {
 public:
 	virtual
 	~lllnkcmd(){}
@@ -473,10 +473,10 @@ public:
 	{}
 
 	virtual std::string
-	to_str() const override;
+	ToString() const override;
 
 	virtual void
-	run() const override;
+	Run() const override;
 
 	inline const jlm::filepath &
 	ofile() const noexcept
@@ -505,7 +505,7 @@ private:
 	std::vector<jlm::filepath> ifiles_;
 };
 
-class firrtlcmd final : public command {
+class firrtlcmd final : public Command {
 public:
 	virtual
 	~firrtlcmd(){}
@@ -518,10 +518,10 @@ public:
 	{}
 
 	virtual std::string
-	to_str() const override;
+	ToString() const override;
 
 	virtual void
-	run() const override;
+	Run() const override;
 
 	inline const jlm::filepath &
 	ofile() const noexcept
@@ -553,7 +553,7 @@ private:
 std::basic_string<char>
 gcd();
 
-class hlscmd final : public command {
+class hlscmd final : public Command {
 public:
 	virtual
 	~hlscmd(){}
@@ -568,10 +568,10 @@ public:
 	{}
 
 	virtual std::string
-	to_str() const override;
+	ToString() const override;
 
 	virtual void
-	run() const override;
+	Run() const override;
 
 	inline const jlm::filepath
 	firfile() const noexcept
@@ -614,7 +614,7 @@ private:
 	bool circt_;
 };
 
-class extractcmd final : public command {
+class extractcmd final : public Command {
 public:
 	virtual
 	~extractcmd(){}
@@ -629,10 +629,10 @@ public:
 	{}
 
 	virtual std::string
-	to_str() const override;
+	ToString() const override;
 
 	virtual void
-	run() const override;
+	Run() const override;
 
 	inline const jlm::filepath
 	functionfile() const noexcept

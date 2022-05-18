@@ -47,7 +47,7 @@ prscmd::replace_all(std::string str, const std::string& from, const std::string&
 }
 
 std::string
-prscmd::to_str() const
+prscmd::ToString() const
 {
 	auto f = ifile_.base();
 
@@ -116,9 +116,9 @@ prscmd::to_str() const
 }
 
 void
-prscmd::run() const
+prscmd::Run() const
 {
-	if (system(to_str().c_str()))
+	if (system(ToString().c_str()))
 		exit(EXIT_FAILURE);
 }
 
@@ -134,7 +134,7 @@ optcmd::~optcmd()
 {}
 
 std::string
-optcmd::to_str() const
+optcmd::ToString() const
 {
 	auto f = ifile_.base();
 
@@ -166,9 +166,9 @@ optcmd::to_str() const
 }
 
 void
-optcmd::run() const
+optcmd::Run() const
 {
-	if (system(to_str().c_str()))
+	if (system(ToString().c_str()))
 		exit(EXIT_FAILURE);
 }
 
@@ -178,7 +178,7 @@ cgencmd::~cgencmd()
 {}
 
 std::string
-cgencmd::to_str() const
+cgencmd::ToString() const
 {
 	if (hls_) {
 		return strfmt(
@@ -202,9 +202,9 @@ cgencmd::to_str() const
 }
 
 void
-cgencmd::run() const
+cgencmd::Run() const
 {
-	if (system(to_str().c_str()))
+	if (system(ToString().c_str()))
 		exit(EXIT_FAILURE);
 }
 
@@ -214,7 +214,7 @@ lnkcmd::~lnkcmd()
 {}
 
 std::string
-lnkcmd::to_str() const
+lnkcmd::ToString() const
 {
 	std::string ifiles;
 	for (const auto & ifile : ifiles_)
@@ -244,9 +244,9 @@ lnkcmd::to_str() const
 }
 
 void
-lnkcmd::run() const
+lnkcmd::Run() const
 {
-	if (system(to_str().c_str()))
+	if (system(ToString().c_str()))
 		exit(EXIT_FAILURE);
 }
 
@@ -256,24 +256,24 @@ printcmd::~printcmd()
 {}
 
 std::string
-printcmd::to_str() const
+printcmd::ToString() const
 {
 	return "PRINTCMD";
 }
 
 void
-printcmd::run() const
+printcmd::Run() const
 {
 	for (const auto & node : topsort(pgraph_.get())) {
 		if (node != pgraph_->entry() && node != pgraph_->exit())
-			std::cout << node->cmd().to_str() << "\n";
+			std::cout << node->cmd().ToString() << "\n";
 	}
 }
 
 /* HLS */
 
 std::string
-lllnkcmd::to_str() const {
+lllnkcmd::ToString() const {
 
 	auto llvm_link = clangpath.path() + "llvm-link";
 	std::string ifiles;
@@ -288,19 +288,19 @@ lllnkcmd::to_str() const {
 }
 
 void
-lllnkcmd::run() const {
-	if (system(to_str().c_str()))
+lllnkcmd::Run() const {
+	if (system(ToString().c_str()))
 		exit(EXIT_FAILURE);
 }
 
 void
-hlscmd::run() const {
-	if (system(to_str().c_str()))
+hlscmd::Run() const {
+	if (system(ToString().c_str()))
 		exit(EXIT_FAILURE);
 }
 
 std::string
-hlscmd::to_str() const {
+hlscmd::ToString() const {
 	if (circt_)
 		return strfmt(
 			      "jlm-hls"
@@ -319,31 +319,31 @@ hlscmd::to_str() const {
 }
 
 void
-extractcmd::run() const {
-	if (system(to_str().c_str()))
+extractcmd::Run() const {
+	if (system(ToString().c_str()))
 		exit(EXIT_FAILURE);
 }
 
 std::string
-extractcmd::to_str() const {
+extractcmd::ToString() const {
         return strfmt(
 		      "jlm-hls"
 		      , " --extract"
 		      , " --hls-function ", function()
 		      , " -o ", outfolder_, " "
 		      , ifile().to_str()
-		      //, " --hls-file ", ifile().to_str()
+		      //, " --hls-file ", ifile().ToString()
 		      );
 }
 
 void
-firrtlcmd::run() const {
-	if (system(to_str().c_str()))
+firrtlcmd::Run() const {
+	if (system(ToString().c_str()))
 		exit(EXIT_FAILURE);
 }
 
 std::string
-firrtlcmd::to_str() const {
+firrtlcmd::ToString() const {
 	return strfmt(
 		      firtoolpath.to_str()
 		      , " -format=fir --verilog "
@@ -353,8 +353,8 @@ firrtlcmd::to_str() const {
 }
 
 void
-verilatorcmd::run() const {
-	if (system(to_str().c_str()))
+verilatorcmd::Run() const {
+	if (system(ToString().c_str()))
 		exit(EXIT_FAILURE);
 }
 
@@ -367,7 +367,7 @@ gcd() {
 }
 
 std::string
-verilatorcmd::to_str() const {
+verilatorcmd::ToString() const {
 	std::string lfiles;
 	for (const auto & ifile : lfiles_)
 		lfiles += ifile.to_str() + " ";
@@ -429,7 +429,7 @@ m2rcmd::ofile() const
 }
 
 std::string
-m2rcmd::to_str() const
+m2rcmd::ToString() const
 {
 	auto opt = clangpath.path() + "opt";
 
@@ -442,14 +442,14 @@ m2rcmd::to_str() const
 }
 
 void
-m2rcmd::run() const
+m2rcmd::Run() const
 {
-	if (system(to_str().c_str()))
+	if (system(ToString().c_str()))
 		exit(EXIT_FAILURE);
 }
 
 std::string
-mkdircmd::to_str() const
+mkdircmd::ToString() const
 {
 	return strfmt(
 		      "mkdir "
@@ -458,7 +458,7 @@ mkdircmd::to_str() const
 }
 
 void
-mkdircmd::run() const
+mkdircmd::Run() const
 {
 	if (mkdir(path_.to_str().c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)!=0)
 		throw jlm::error("mkdir failed: "+path_.to_str());

@@ -114,7 +114,7 @@ public:
 
 private:
 	inline
-	passgraph_node(passgraph * pgraph, std::unique_ptr<command> cmd)
+	passgraph_node(passgraph * pgraph, std::unique_ptr<Command> cmd)
 	: pgraph_(pgraph)
 	, cmd_(std::move(cmd))
 	{}
@@ -136,7 +136,7 @@ public:
 		return pgraph_;
 	}
 
-	command &
+	Command &
 	cmd() const noexcept
 	{
 		return *cmd_;
@@ -200,11 +200,11 @@ public:
 	}
 
 	static passgraph_node *
-	create(passgraph * graph, std::unique_ptr<command> cmd);
+	create(passgraph * graph, std::unique_ptr<Command> cmd);
 
 private:
 	passgraph * pgraph_;
-	std::unique_ptr<command> cmd_;
+	std::unique_ptr<Command> cmd_;
 	std::unordered_set<passgraph_edge*> inedges_;
 	std::unordered_set<std::unique_ptr<passgraph_edge>> outedges_;
 };
