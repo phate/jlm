@@ -81,13 +81,8 @@ generate_commands(const jlm::cmdline_options & opts)
 	for (const auto & leave : leaves)
     leave->AddEdge(pgraph->GetExitNode());
 
-	if (opts.only_print_commands) {
-		std::unique_ptr<CommandGraph> pg(new CommandGraph());
-		auto printnode = PrintCommandsCommand::create(pg.get(), std::move(pgraph));
-    pg->GetEntryNode().AddEdge(*printnode);
-    printnode->AddEdge(pg->GetExitNode());
-		pgraph = std::move(pg);
-	}
+  if (opts.only_print_commands)
+    pgraph = PrintCommandsCommand::Create(std::move(pgraph));
 
 	return pgraph;
 }

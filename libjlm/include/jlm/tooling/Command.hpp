@@ -34,12 +34,11 @@ public:
  */
 class PrintCommandsCommand final : public Command {
 public:
-  virtual
-  ~PrintCommandsCommand();
+  ~PrintCommandsCommand() override;
 
-  PrintCommandsCommand(
-    std::unique_ptr<CommandGraph> pgraph)
-    : pgraph_(std::move(pgraph))
+  explicit
+  PrintCommandsCommand(std::unique_ptr<CommandGraph> commandGraph)
+    : CommandGraph_(std::move(commandGraph))
   {}
 
   PrintCommandsCommand(const PrintCommandsCommand&) = delete;
@@ -52,22 +51,26 @@ public:
   PrintCommandsCommand &
   operator=(PrintCommandsCommand&&)	= delete;
 
-  virtual std::string
+  [[nodiscard]] std::string
   ToString() const override;
 
-  virtual void
+  void
   Run() const override;
 
-  static CommandGraph::Node *
-  create(
-    CommandGraph * pgraph,
-    std::unique_ptr<CommandGraph> pg)
-  {
-    return &CommandGraph::Node::Create(*pgraph, std::make_unique<PrintCommandsCommand>(std::move(pg)));
-  }
+  static std::unique_ptr<CommandGraph>
+  Create(std::unique_ptr<CommandGraph> commandGraph);
 
 private:
-  std::unique_ptr<CommandGraph> pgraph_;
+  static CommandGraph::Node &
+  Create(
+    CommandGraph & commandGraph,
+    std::unique_ptr<CommandGraph> printedCommandGraph)
+  {
+    auto command = std::make_unique<PrintCommandsCommand>(std::move(printedCommandGraph));
+    return CommandGraph::Node::Create(commandGraph, std::move(command));
+  }
+
+  std::unique_ptr<CommandGraph> CommandGraph_;
 };
 
 }
