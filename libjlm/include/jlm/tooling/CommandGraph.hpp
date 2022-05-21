@@ -7,7 +7,6 @@
 #define JLM_TOOLING_COMMANDGRAPH_HPP
 
 #include <jlm/common.hpp>
-#include <jlm/tooling/Command.hpp>
 #include <jlm/util/iterator_range.hpp>
 
 #include <memory>
@@ -15,6 +14,8 @@
 #include <vector>
 
 namespace jlm {
+
+class Command;
 
 /**
  * A simple dependency graph for command execution.
@@ -118,16 +119,12 @@ class CommandGraph::Node final {
   using OutgoingEdgeConstRange = iterator_range<OutgoingEdgeConstIterator>;
 
 public:
-  ~Node()
-  = default;
+  ~Node();
 
 private:
   Node(
     const CommandGraph & commandGraph,
-    std::unique_ptr<Command> command)
-    : CommandGraph_(commandGraph)
-    , Command_(std::move(command))
-  {}
+    std::unique_ptr<Command> command);
 
 public:
   Node(const Node&) = delete;

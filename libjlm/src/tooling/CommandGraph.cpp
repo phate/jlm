@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/tooling/Command.hpp>
 #include <jlm/tooling/CommandGraph.hpp>
 
 #include <deque>
@@ -79,6 +80,16 @@ CommandGraph::Run() const
   for (auto & node : CommandGraph::SortNodesTopological(*this))
     node->GetCommand().Run();
 }
+
+CommandGraph::Node::~Node()
+= default;
+
+CommandGraph::Node::Node(
+  const CommandGraph & commandGraph,
+  std::unique_ptr<Command> command)
+  : CommandGraph_(commandGraph)
+  , Command_(std::move(command))
+{}
 
 CommandGraph::Node::IncomingEdgeConstRange
 CommandGraph::Node::IncomingEdges() const
