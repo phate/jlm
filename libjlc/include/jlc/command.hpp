@@ -7,6 +7,7 @@
 #define JLM_JLC_COMMAND_HPP
 
 #include <jlc/cmdline.hpp>
+#include <jlm/tooling/Command.hpp>
 #include <jlm/tooling/CommandGraph.hpp>
 
 #include <memory>
@@ -253,46 +254,6 @@ private:
 	std::vector<jlm::filepath> ifiles_;
 	std::vector<std::string> Lpaths_;
 	bool pthread_;
-};
-
-/* print command */
-
-class printcmd final : public Command {
-public:
-	virtual
-	~printcmd();
-
-	printcmd(
-		std::unique_ptr<CommandGraph> pgraph)
-	: pgraph_(std::move(pgraph))
-	{}
-
-	printcmd(const printcmd&) = delete;
-
-	printcmd(printcmd&&) = delete;
-
-	printcmd &
-	operator=(const printcmd&) = delete;
-
-	printcmd &
-	operator=(printcmd&&)	= delete;
-
-	virtual std::string
-	ToString() const override;
-
-	virtual void
-	Run() const override;
-
-	static CommandGraph::Node *
-	create(
-    CommandGraph * pgraph,
-    std::unique_ptr<CommandGraph> pg)
-	{
-		return &CommandGraph::Node::Create(*pgraph, std::make_unique<printcmd>(std::move(pg)));
-	}
-
-private:
-	std::unique_ptr<CommandGraph> pgraph_;
 };
 
 }
