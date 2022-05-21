@@ -11,21 +11,31 @@ Command::~Command()
 = default;
 
 PrintCommandsCommand::~PrintCommandsCommand()
-{}
+= default;
 
 std::string
 PrintCommandsCommand::ToString() const
 {
-  return "PRINTCMD";
+  return "PrintCommands";
 }
 
 void
 PrintCommandsCommand::Run() const
 {
-  for (auto & node : CommandGraph::SortNodesTopological(*pgraph_)) {
-    if (node != &pgraph_->GetEntryNode() && node != &pgraph_->GetExitNode())
+  for (auto & node : CommandGraph::SortNodesTopological(*CommandGraph_)) {
+    if (node != &CommandGraph_->GetEntryNode() && node != &CommandGraph_->GetExitNode())
       std::cout << node->GetCommand().ToString() << "\n";
   }
+}
+
+std::unique_ptr<CommandGraph>
+PrintCommandsCommand::Create(std::unique_ptr<CommandGraph> commandGraph)
+{
+  std::unique_ptr<CommandGraph> newCommandGraph(new CommandGraph());
+  auto & printCommandsNode = PrintCommandsCommand::Create(*newCommandGraph, std::move(commandGraph));
+  newCommandGraph->GetEntryNode().AddEdge(printCommandsNode);
+  printCommandsNode.AddEdge(newCommandGraph->GetExitNode());
+  return newCommandGraph;
 }
 
 }
