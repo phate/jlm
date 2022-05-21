@@ -29,25 +29,28 @@ public:
   Run() const = 0;
 };
 
-class printcmd final : public Command {
+/**
+ * The PrintCommandsCommand class prints the commands of a command graph in topological order.
+ */
+class PrintCommandsCommand final : public Command {
 public:
   virtual
-  ~printcmd();
+  ~PrintCommandsCommand();
 
-  printcmd(
+  PrintCommandsCommand(
     std::unique_ptr<CommandGraph> pgraph)
     : pgraph_(std::move(pgraph))
   {}
 
-  printcmd(const printcmd&) = delete;
+  PrintCommandsCommand(const PrintCommandsCommand&) = delete;
 
-  printcmd(printcmd&&) = delete;
+  PrintCommandsCommand(PrintCommandsCommand&&) = delete;
 
-  printcmd &
-  operator=(const printcmd&) = delete;
+  PrintCommandsCommand &
+  operator=(const PrintCommandsCommand&) = delete;
 
-  printcmd &
-  operator=(printcmd&&)	= delete;
+  PrintCommandsCommand &
+  operator=(PrintCommandsCommand&&)	= delete;
 
   virtual std::string
   ToString() const override;
@@ -60,7 +63,7 @@ public:
     CommandGraph * pgraph,
     std::unique_ptr<CommandGraph> pg)
   {
-    return &CommandGraph::Node::Create(*pgraph, std::make_unique<printcmd>(std::move(pg)));
+    return &CommandGraph::Node::Create(*pgraph, std::make_unique<PrintCommandsCommand>(std::move(pg)));
   }
 
 private:
