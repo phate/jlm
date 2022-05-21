@@ -26,8 +26,8 @@ test1()
 
 	auto pgraph = jlm::generate_commands(options);
 
-	auto node = (*pgraph->exit()->begin_inedges())->source();
-	auto cmd = dynamic_cast<const jlm::cgencmd*>(&node->cmd());
+	auto & node = (*pgraph->GetExitNode().IncomingEdges().begin()).GetSource();
+	auto cmd = dynamic_cast<const jlm::cgencmd*>(&node.GetCommand());
 	assert(cmd && cmd->ofile() == "foo.o");
 }
 
@@ -39,10 +39,10 @@ test2()
 	options.lnkofile = {"foobar"};
 
 	auto pgraph = jlm::generate_commands(options);
-	assert(pgraph->nnodes() == 3);
+	assert(pgraph->NumNodes() == 3);
 
-	auto node = (*pgraph->exit()->begin_inedges())->source();
-	auto cmd = dynamic_cast<const jlm::lnkcmd*>(&node->cmd());
+	auto & node = (*pgraph->GetExitNode().IncomingEdges().begin()).GetSource();
+	auto cmd = dynamic_cast<const jlm::lnkcmd*>(&node.GetCommand());
 	assert(cmd->ifiles()[0] == "foo.o" && cmd->ofile() == "foobar");
 }
 

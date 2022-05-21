@@ -6,7 +6,9 @@
 #ifndef JLM_TOOLING_COMMANDGRAPH_HPP
 #define JLM_TOOLING_COMMANDGRAPH_HPP
 
+#include <jlm/common.hpp>
 #include <jlm/tooling/Command.hpp>
+#include <jlm/util/iterator_range.hpp>
 
 #include <memory>
 #include <unordered_set>
@@ -14,271 +16,306 @@
 
 namespace jlm {
 
-/* passgraph edge */
-
-class passgraph_node;
-
-class passgraph_edge final {
+/**
+ * A simple dependency graph for command execution.
+ */
+class CommandGraph final {
 public:
-	passgraph_edge(
-		passgraph_node * source,
-		passgraph_node * sink)
-	: sink_(sink)
-	, source_(source)
-	{}
+  class Edge;
+  class Node;
 
-	inline passgraph_node *
-	source() const noexcept
-	{
-		return source_;
-	}
+  ~CommandGraph()
+  = default;
 
-	inline passgraph_node *
-	sink() const noexcept
-	{
-		return sink_;
-	}
+  CommandGraph();
+
+  CommandGraph(const CommandGraph&) = delete;
+
+  CommandGraph(CommandGraph&&) = delete;
+
+  CommandGraph &
+  operator=(const CommandGraph&) = delete;
+
+  CommandGraph &
+  operator=(CommandGraph&&) = delete;
+
+  Node &
+  GetEntryNode() const noexcept
+  {
+    return *EntryNode_;
+  }
+
+  Node &
+  GetExitNode() const noexcept
+  {
+    return *ExitNode_;
+  }
+
+  size_t
+  NumNodes() const noexcept
+  {
+    return Nodes_.size();
+  }
+
+  Node &
+  AddNode(std::unique_ptr<Node> node)
+  {
+    auto pointer = node.get();
+    Nodes_.insert(std::move(node));
+    return *pointer;
+  }
+
+  void
+  Run() const;
+
+  static std::vector<CommandGraph::Node*>
+  SortNodesTopological(const CommandGraph & commandGraph);
 
 private:
-	passgraph_node * sink_;
-	passgraph_node * source_;
+  Node * ExitNode_;
+  Node * EntryNode_;
+  std::unordered_set<std::unique_ptr<Node>> Nodes_;
 };
 
-/* passgraph node */
-
-class passgraph;
-
-class passgraph_node final {
-	typedef std::unordered_set<passgraph_edge*>::const_iterator const_inedge_iterator;
-
-	class const_outedge_iterator final {
-	public:
-		inline
-		const_outedge_iterator(
-			const std::unordered_set<std::unique_ptr<passgraph_edge>>::const_iterator & it)
-		: it_(it)
-		{}
-
-		inline const const_outedge_iterator &
-		operator++() noexcept
-		{
-			++it_;
-			return *this;
-		}
-
-		inline const_outedge_iterator
-		operator++(int) noexcept
-		{
-			auto tmp = *this;
-			++*this;
-			return tmp;
-		}
-
-		inline bool
-		operator==(const const_outedge_iterator & other) const noexcept
-		{
-			return it_ == other.it_;
-		}
-
-		inline bool
-		operator!=(const const_outedge_iterator &  other) const noexcept
-		{
-			return !(other == *this);
-		}
-
-		inline passgraph_edge *
-		operator->() const noexcept
-		{
-			return edge();
-		}
-
-		inline passgraph_edge &
-		operator*() const noexcept
-		{
-			return *it_->get();
-		}
-
-		inline passgraph_edge *
-		edge() const noexcept
-		{
-			return it_->get();
-		}
-
-	private:
-		std::unordered_set<std::unique_ptr<passgraph_edge>>::const_iterator it_;
-	};
-
+/**
+ * Represents a dependency between two commands in the command graph. The dependency indicates that the command
+ * represented by the GetSource() node should be executed before the command of the GetSink() node.
+ */
+class CommandGraph::Edge final {
 public:
-	~passgraph_node()
-	{}
+  Edge(
+    Node & source,
+    Node & sink)
+    : Sink_(&sink)
+    , Source_(&source)
+  {}
+
+  [[nodiscard]] Node &
+  GetSource() const noexcept
+  {
+    return *Source_;
+  }
+
+  [[nodiscard]] Node &
+  GetSink() const noexcept
+  {
+    return *Sink_;
+  }
 
 private:
-	inline
-	passgraph_node(passgraph * pgraph, std::unique_ptr<Command> cmd)
-	: pgraph_(pgraph)
-	, cmd_(std::move(cmd))
-	{}
-
-public:
-	passgraph_node(const passgraph_node&) = delete;
-
-	passgraph_node(passgraph_node&&) = delete;
-
-	passgraph_node &
-	operator=(const passgraph_node&) = delete;
-
-	passgraph_node &
-	operator=(passgraph_node&&) = delete;
-
-	passgraph *
-	pgraph() const noexcept
-	{
-		return pgraph_;
-	}
-
-	Command &
-	cmd() const noexcept
-	{
-		return *cmd_;
-	}
-
-	inline size_t
-	ninedges() const noexcept
-	{
-		return inedges_.size();
-	}
-
-	inline size_t
-	noutedges() const noexcept
-	{
-		return outedges_.size();
-	}
-
-	const_outedge_iterator
-	begin_outedges() const
-	{
-		return const_outedge_iterator(outedges_.begin());
-	}
-
-	const_outedge_iterator
-	end_outedges() const
-	{
-		return const_outedge_iterator(outedges_.end());
-	}
-
-	const_inedge_iterator
-	begin_inedges() const
-	{
-		return inedges_.begin();
-	}
-
-	const_inedge_iterator
-	end_inedges() const
-	{
-		return inedges_.end();
-	}
-
-	const_outedge_iterator
-	begin() const
-	{
-		return begin_outedges();
-	}
-
-	const_outedge_iterator
-	end() const
-	{
-		return end_outedges();
-	}
-
-	void
-	add_edge(passgraph_node * sink)
-	{
-		std::unique_ptr<passgraph_edge> outedge(new passgraph_edge(this, sink));
-		auto ptr = outedge.get();
-		outedges_.insert(std::move(outedge));
-		sink->inedges_.insert(ptr);
-	}
-
-	static passgraph_node *
-	create(passgraph * graph, std::unique_ptr<Command> cmd);
-
-private:
-	passgraph * pgraph_;
-	std::unique_ptr<Command> cmd_;
-	std::unordered_set<passgraph_edge*> inedges_;
-	std::unordered_set<std::unique_ptr<passgraph_edge>> outedges_;
+  Node * Sink_;
+  Node * Source_;
 };
 
-/* passgraph */
+/**
+ * Represents a single command in the command graph.
+ */
+class CommandGraph::Node final {
+  class IncomingEdgeConstIterator;
+  class OutgoingEdgeConstIterator;
 
-class passgraph final {
-	typedef std::unordered_set<
-		std::unique_ptr<passgraph_node>
-	>::const_iterator const_iterator;
+  using IncomingEdgeConstRange = iterator_range<IncomingEdgeConstIterator>;
+  using OutgoingEdgeConstRange = iterator_range<OutgoingEdgeConstIterator>;
 
 public:
-	~passgraph()
-	{}
-
-	passgraph();
-
-	passgraph(const passgraph&) = delete;
-
-	passgraph(passgraph&&) = delete;
-
-	passgraph &
-	operator=(const passgraph&) = delete;
-
-	passgraph &
-	operator=(passgraph&&) = delete;
-
-	inline passgraph_node *
-	entry() const noexcept
-	{
-		return entry_;
-	}
-
-	inline passgraph_node *
-	exit() const noexcept
-	{
-		return exit_;
-	}
-
-	const_iterator
-	begin() const
-	{
-		return nodes_.begin();
-	}
-
-	const_iterator
-	end() const
-	{
-		return nodes_.end();
-	}
-
-	inline size_t
-	nnodes() const noexcept
-	{
-		return nodes_.size();
-	}
-
-	inline void
-	add_node(std::unique_ptr<jlm::passgraph_node> node)
-	{
-		nodes_.insert(std::move(node));
-	}
-
-	void
-	run() const;
+  ~Node()
+  = default;
 
 private:
-	passgraph_node * exit_;
-	passgraph_node * entry_;
-	std::unordered_set<std::unique_ptr<passgraph_node>> nodes_;
+  Node(
+    const CommandGraph & commandGraph,
+    std::unique_ptr<Command> command)
+    : CommandGraph_(commandGraph)
+    , Command_(std::move(command))
+  {}
+
+public:
+  Node(const Node&) = delete;
+
+  Node(Node&&) = delete;
+
+  Node &
+  operator=(const Node&) = delete;
+
+  Node &
+  operator=(Node&&) = delete;
+
+  const CommandGraph &
+  GetCommandGraph() const noexcept
+  {
+    return CommandGraph_;
+  }
+
+  Command &
+  GetCommand() const noexcept
+  {
+    return *Command_;
+  }
+
+  size_t
+  NumIncomingEdges() const noexcept
+  {
+    return IncomingEdges_.size();
+  }
+
+  size_t
+  NumOutgoingEdges() const noexcept
+  {
+    return OutgoingEdges_.size();
+  }
+
+  IncomingEdgeConstRange
+  IncomingEdges() const;
+
+  OutgoingEdgeConstRange
+  OutgoingEdges() const;
+
+  void
+  AddEdge(Node & sink)
+  {
+    std::unique_ptr<Edge> edge(new Edge(*this, sink));
+    auto pointer = edge.get();
+    OutgoingEdges_.insert(std::move(edge));
+    sink.IncomingEdges_.insert(pointer);
+  }
+
+  static Node &
+  Create(
+    CommandGraph & commandGraph,
+    std::unique_ptr<Command> command);
+
+private:
+  const CommandGraph & CommandGraph_;
+  std::unique_ptr<Command> Command_;
+  std::unordered_set<Edge*> IncomingEdges_;
+  std::unordered_set<std::unique_ptr<Edge>> OutgoingEdges_;
 };
 
-std::vector<passgraph_node*>
-topsort(const passgraph * pgraph);
+/** \brief Command graph node incoming edge const iterator
+*/
+class CommandGraph::Node::IncomingEdgeConstIterator final : public std::iterator<std::forward_iterator_tag,
+  Edge*, ptrdiff_t> {
+
+  friend Node;
+
+  explicit
+  IncomingEdgeConstIterator(const std::unordered_set<Edge*>::const_iterator & it)
+    : it_(it)
+  {}
+
+public:
+  [[nodiscard]] const Edge *
+  GetEdge() const noexcept
+  {
+    return *it_;
+  }
+
+  const Edge &
+  operator*() const
+  {
+    JLM_ASSERT(GetEdge() != nullptr);
+    return *GetEdge();
+  }
+
+  const Edge *
+  operator->() const
+  {
+    return GetEdge();
+  }
+
+  IncomingEdgeConstIterator &
+  operator++()
+  {
+    ++it_;
+    return *this;
+  }
+
+  IncomingEdgeConstIterator
+  operator++(int)
+  {
+    IncomingEdgeConstIterator tmp = *this;
+    ++*this;
+    return tmp;
+  }
+
+  bool
+  operator==(const IncomingEdgeConstIterator & other) const
+  {
+    return it_ == other.it_;
+  }
+
+  bool
+  operator!=(const IncomingEdgeConstIterator & other) const
+  {
+    return !operator==(other);
+  }
+
+private:
+  std::unordered_set<Edge*>::const_iterator it_;
+};
+
+/** \brief Command graph node outgoing edge const iterator
+*/
+class CommandGraph::Node::OutgoingEdgeConstIterator final : public std::iterator<std::forward_iterator_tag,
+  Edge*, ptrdiff_t> {
+
+  friend Node;
+
+  explicit
+  OutgoingEdgeConstIterator(const std::unordered_set<std::unique_ptr<Edge>>::const_iterator & it)
+    : it_(it)
+  {}
+
+public:
+  [[nodiscard]] const Edge *
+  GetEdge() const noexcept
+  {
+    return it_->get();
+  }
+
+  const Edge &
+  operator*() const
+  {
+    JLM_ASSERT(GetEdge() != nullptr);
+    return *GetEdge();
+  }
+
+  const Edge *
+  operator->() const
+  {
+    return GetEdge();
+  }
+
+  OutgoingEdgeConstIterator &
+  operator++()
+  {
+    ++it_;
+    return *this;
+  }
+
+  OutgoingEdgeConstIterator
+  operator++(int)
+  {
+    OutgoingEdgeConstIterator tmp = *this;
+    ++*this;
+    return tmp;
+  }
+
+  bool
+  operator==(const OutgoingEdgeConstIterator & other) const
+  {
+    return it_ == other.it_;
+  }
+
+  bool
+  operator!=(const OutgoingEdgeConstIterator & other) const
+  {
+    return !operator==(other);
+  }
+
+private:
+  std::unordered_set<std::unique_ptr<Edge>>::const_iterator it_;
+};
 
 }
 

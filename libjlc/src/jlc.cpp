@@ -15,7 +15,7 @@ main(int argc, char ** argv)
 	parse_cmdline(argc, argv, options);
 
 	auto pgraph = generate_commands(options);
-	pgraph->run();
+  pgraph->Run();
 
 	return 0;
 }
