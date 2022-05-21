@@ -65,24 +65,24 @@ public:
 	virtual void
 	Run() const override;
 
-	static passgraph_node *
+	static CommandGraph::Node *
 	create(
-		passgraph * pgraph,
-		const jlm::filepath & ifile,
-		const jlm::filepath & dependencyFile,
-		const jlm::filepath & tmpfolder,
-		const std::vector<std::string> & Ipaths,
-		const std::vector<std::string> & Dmacros,
-		const std::vector<std::string> & Wwarnings,
-		const std::vector<std::string> & flags,
-		bool verbose,
-		bool rdynamic,
-		bool suppress,
-		bool pthread,
-		bool MD,
-		bool hls,
-		const std::string & mT,
-		const standard & std)
+    CommandGraph * pgraph,
+    const jlm::filepath & ifile,
+    const jlm::filepath & dependencyFile,
+    const jlm::filepath & tmpfolder,
+    const std::vector<std::string> & Ipaths,
+    const std::vector<std::string> & Dmacros,
+    const std::vector<std::string> & Wwarnings,
+    const std::vector<std::string> & flags,
+    bool verbose,
+    bool rdynamic,
+    bool suppress,
+    bool pthread,
+    bool MD,
+    bool hls,
+    const std::string & mT,
+    const standard & std)
 	{
 		std::unique_ptr<prscmd> cmd(new prscmd(
 			ifile,
@@ -101,7 +101,7 @@ public:
 			mT,
 			std));
 
-		return passgraph_node::create(pgraph, std::move(cmd));
+		return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
 	}
 
 private:
@@ -149,15 +149,15 @@ public:
 	virtual void
 	Run() const override;
 
-	static passgraph_node *
+	static CommandGraph::Node *
 	create(
-		passgraph * pgraph,
-		const jlm::filepath & ifile,
-		const jlm::filepath & tmpfolder,
-		const std::vector<std::string> & jlmopts,
-		const optlvl & ol)
+    CommandGraph * pgraph,
+    const jlm::filepath & ifile,
+    const jlm::filepath & tmpfolder,
+    const std::vector<std::string> & jlmopts,
+    const optlvl & ol)
 	{
-		return passgraph_node::create(pgraph, std::make_unique<optcmd>(ifile, tmpfolder, jlmopts, ol));
+		return &CommandGraph::Node::Create(*pgraph, std::make_unique<optcmd>(ifile, tmpfolder, jlmopts, ol));
 	}
 
 private:
@@ -199,16 +199,16 @@ public:
 		return ofile_;
 	}
 
-	static passgraph_node *
+	static CommandGraph::Node *
 	create(
-		passgraph * pgraph,
-		const jlm::filepath & ifile,
-		const jlm::filepath & ofile,
-		const jlm::filepath & tmpfolder,
-		const bool hls,
-		const optlvl & ol)
+    CommandGraph * pgraph,
+    const jlm::filepath & ifile,
+    const jlm::filepath & ofile,
+    const jlm::filepath & tmpfolder,
+    const bool hls,
+    const optlvl & ol)
 	{
-		return passgraph_node::create(pgraph, std::make_unique<cgencmd>(ifile, ofile, tmpfolder, hls, ol));
+		return &CommandGraph::Node::Create(*pgraph, std::make_unique<cgencmd>(ifile, ofile, tmpfolder, hls, ol));
 	}
 
 private:
@@ -257,17 +257,17 @@ public:
 		return ifiles_;
 	}
 
-	static passgraph_node *
+	static CommandGraph::Node *
 	create(
-		passgraph * pgraph,
-		const std::vector<jlm::filepath> & ifiles,
-		const jlm::filepath & ofile,
-		const std::vector<std::string> & Lpaths,
-		const std::vector<std::string> & libs,
-		bool pthread)
+    CommandGraph * pgraph,
+    const std::vector<jlm::filepath> & ifiles,
+    const jlm::filepath & ofile,
+    const std::vector<std::string> & Lpaths,
+    const std::vector<std::string> & libs,
+    bool pthread)
 	{
 		std::unique_ptr<lnkcmd> cmd(new lnkcmd(ifiles, ofile, Lpaths, libs, pthread));
-		return passgraph_node::create(pgraph, std::move(cmd));
+		return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
 	}
 
 private:
@@ -286,7 +286,7 @@ public:
 	~printcmd();
 
 	printcmd(
-		std::unique_ptr<passgraph> pgraph)
+		std::unique_ptr<CommandGraph> pgraph)
 	: pgraph_(std::move(pgraph))
 	{}
 
@@ -306,16 +306,16 @@ public:
 	virtual void
 	Run() const override;
 
-	static passgraph_node *
+	static CommandGraph::Node *
 	create(
-		passgraph * pgraph,
-		std::unique_ptr<passgraph> pg)
+    CommandGraph * pgraph,
+    std::unique_ptr<CommandGraph> pg)
 	{
-		return passgraph_node::create(pgraph, std::make_unique<printcmd>(std::move(pg)));
+		return &CommandGraph::Node::Create(*pgraph, std::make_unique<printcmd>(std::move(pg)));
 	}
 
 private:
-	std::unique_ptr<passgraph> pgraph_;
+	std::unique_ptr<CommandGraph> pgraph_;
 };
 
 class m2rcmd final : public Command {
@@ -339,14 +339,14 @@ public:
 	virtual void
 	Run() const override;
 
-	static passgraph_node *
+	static CommandGraph::Node *
 	create(
-		passgraph * pgraph,
-		const jlm::filepath & ifile,
-		const jlm::filepath & ofile)
+    CommandGraph * pgraph,
+    const jlm::filepath & ifile,
+    const jlm::filepath & ofile)
 	{
 		std::unique_ptr<m2rcmd> cmd(new m2rcmd(ifile, ofile));
-		return passgraph_node::create(pgraph, std::move(cmd));
+		return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
 	}
 
 private:
@@ -370,13 +370,13 @@ public:
 	virtual void
 	Run() const override;
 
-	static passgraph_node *
+	static CommandGraph::Node *
 	create(
-		passgraph * pgraph,
-		const jlm::filepath & path)
+    CommandGraph * pgraph,
+    const jlm::filepath & path)
 	{
 		std::unique_ptr<mkdircmd> cmd(new mkdircmd(path));
-		return passgraph_node::create(pgraph, std::move(cmd));
+		return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
 	}
 
 private:
@@ -435,19 +435,19 @@ public:
 		return lfiles_;
 	}
 
-	static passgraph_node *
+	static CommandGraph::Node *
 	create(
-		passgraph * pgraph,
-		const jlm::filepath & vfile,
-		const std::vector<jlm::filepath> & lfiles,
-		const jlm::filepath & hfile,
-		const jlm::filepath & ofile,
-		const jlm::filepath & tmpfolder,
-		const std::vector<std::string> & Lpaths,
-		const std::vector<std::string> & libs)
+    CommandGraph * pgraph,
+    const jlm::filepath & vfile,
+    const std::vector<jlm::filepath> & lfiles,
+    const jlm::filepath & hfile,
+    const jlm::filepath & ofile,
+    const jlm::filepath & tmpfolder,
+    const std::vector<std::string> & Lpaths,
+    const std::vector<std::string> & libs)
 	{
 		std::unique_ptr<verilatorcmd> cmd(new verilatorcmd(vfile, lfiles, hfile, ofile, tmpfolder, Lpaths, libs));
-		return passgraph_node::create(pgraph, std::move(cmd));
+		return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
 	}
 
 private:
@@ -490,14 +490,14 @@ public:
 		return ifiles_;
 	}
 
-	static passgraph_node *
+	static CommandGraph::Node *
 	create(
-		passgraph * pgraph,
-		const std::vector<jlm::filepath> & ifiles,
-		const jlm::filepath & ofile)
+    CommandGraph * pgraph,
+    const std::vector<jlm::filepath> & ifiles,
+    const jlm::filepath & ofile)
 	{
 		std::unique_ptr<lllnkcmd> cmd(new lllnkcmd(ifiles, ofile));
-		return passgraph_node::create(pgraph, std::move(cmd));
+		return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
 	}
 
 private:
@@ -535,14 +535,14 @@ public:
 		return ifile_;
 	}
 
-	static passgraph_node *
+	static CommandGraph::Node *
 	create(
-		passgraph * pgraph,
-		const jlm::filepath & ifile,
-		const jlm::filepath & ofile)
+    CommandGraph * pgraph,
+    const jlm::filepath & ifile,
+    const jlm::filepath & ofile)
 	{
 		std::unique_ptr<firrtlcmd> cmd(new firrtlcmd(ifile, ofile));
-		return passgraph_node::create(pgraph, std::move(cmd));
+		return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
 	}
 
 private:
@@ -597,15 +597,15 @@ public:
 		return ifile_;
 	}
 
-	static passgraph_node *
+	static CommandGraph::Node *
 	create(
-		passgraph * pgraph,
-		const jlm::filepath & ifile,
-		const std::string & outfolder,
-	        const bool &circt)
+    CommandGraph * pgraph,
+    const jlm::filepath & ifile,
+    const std::string & outfolder,
+    const bool &circt)
 	{
 		std::unique_ptr<hlscmd> cmd(new hlscmd(ifile, outfolder, circt));
-		return passgraph_node::create(pgraph, std::move(cmd));
+		return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
 	}
 
 private:
@@ -657,15 +657,15 @@ public:
 		return function_;
 	}
 
-	static passgraph_node *
+	static CommandGraph::Node *
 	create(
-		passgraph * pgraph,
-		const jlm::filepath & ifile,
-		const std::string & function,
-		const std::string & outfolder)
+    CommandGraph * pgraph,
+    const jlm::filepath & ifile,
+    const std::string & function,
+    const std::string & outfolder)
 	{
 		std::unique_ptr<extractcmd> cmd(new extractcmd(ifile, function, outfolder));
-		return passgraph_node::create(pgraph, std::move(cmd));
+		return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
 	}
 
 private:
