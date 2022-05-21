@@ -83,6 +83,27 @@ LIBJLM_SRC = \
     \
      libjlm/src/util/Statistics.cpp \
 
+TOOLINGPATHS = \
+" \
+\#ifndef JLM_TOOLING_LLVMPATHS_HPP\n \
+\#define JLM_TOOLING_LLVMPATHS_HPP\n \
+\n \
+\#include <jlm/util/file.hpp>\n \
+\n \
+namespace jlm {\n \
+\n \
+  static inline filepath clangpath(\"$(shell $(LLVMCONFIG) --bindir)/clang\");\n \
+  static inline filepath llcpath(\"$(shell $(LLVMCONFIG) --bindir)/llc\");\n \
+\n \
+}\n \
+\n \
+\#endif \
+"
+TOOLINGPATHSFILE = $(JLM_ROOT)/libjlm/include/jlm/tooling/LlvmPaths.hpp
+
+$(TOOLINGPATHSFILE):
+	@printf $(TOOLINGPATHS) > $@
+
 .PHONY: libjlm-debug
 libjlm-debug: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG -DJLM_ENABLE_ASSERTS
 libjlm-debug: $(JLM_BUILD)/libjlm.a
@@ -93,9 +114,10 @@ libjlm-release: $(JLM_BUILD)/libjlm.a
 
 $(JLM_BUILD)/libjlm.a: CPPFLAGS += -I$(JLM_ROOT)/libjive/include -I$(shell $(LLVMCONFIG) --includedir) -I$(JLM_ROOT)/libjlm/include
 $(JLM_BUILD)/libjlm.a: CXXFLAGS += --std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Wfatal-errors
-$(JLM_BUILD)/libjlm.a: $(patsubst %.cpp, $(JLM_BUILD)/%.la, $(LIBJLM_SRC))
+$(JLM_BUILD)/libjlm.a: $(TOOLINGPATHSFILE) $(patsubst %.cpp, $(JLM_BUILD)/%.la, $(LIBJLM_SRC))
 
 .PHONY: libjlm-clean
 libjlm-clean:
+	@rm -f $(TOOLINGPATHSFILE)
 	@rm -rf $(JLM_BUILD)/libjlm
 	@rm -rf $(JLM_BUILD)/libjlm.a
