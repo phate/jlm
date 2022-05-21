@@ -10,87 +10,95 @@
 
 namespace jlm {
 
-/* entry command */
-
-class entry_cmd final : public Command {
+/**
+ * This class represents a dummy command that is used for the single entry node of the command graph. Its Run() method
+ * does nothing.
+ */
+class EntryCommand final : public Command {
 public:
-	virtual std::string
-	ToString() const override
-	{
-		return "ENTRY";
-	}
+  [[nodiscard]] std::string
+  ToString() const override
+  {
+    return "Entry";
+  }
 
-	virtual void
-	Run() const override
-	{}
+  void
+  Run() const override
+  {}
 };
 
-/* exit command */
-
-class exit_cmd final : public Command {
+/**
+ * This class represents a dummy command that is used for the single exit node of the command graph. Its Run() method
+ * does nothing.
+ */
+class ExitCommand final : public Command {
 public:
-	virtual std::string
-	ToString() const override
-	{
-		return "EXIT";
-	}
+  [[nodiscard]] std::string
+  ToString() const override
+  {
+    return "Exit";
+  }
 
-	virtual void
-	Run() const override
-	{}
+  void
+  Run() const override
+  {}
 };
 
-/* passgraph node */
-
-passgraph_node *
-passgraph_node::create(
-	passgraph * pgraph,
-	std::unique_ptr<Command> cmd)
+CommandGraph::CommandGraph()
 {
-	std::unique_ptr<passgraph_node> pgnode(new passgraph_node(pgraph, std::move(cmd)));
-	auto ptr = pgnode.get();
-	pgraph->add_node(std::move(pgnode));
-	return ptr;
+  EntryNode_ = &Node::Create(*this, std::make_unique<EntryCommand>());
+  ExitNode_ = &Node::Create(*this, std::make_unique<ExitCommand>());
 }
 
-/* passgraph */
-
-passgraph::passgraph()
+std::vector<CommandGraph::Node*>
+CommandGraph::SortNodesTopological(const CommandGraph & commandGraph)
 {
-	entry_ = passgraph_node::create(this, std::make_unique<entry_cmd>());
-	exit_ = passgraph_node::create(this, std::make_unique<exit_cmd>());
+  std::vector<CommandGraph::Node*> nodes({&commandGraph.GetEntryNode()});
+  std::deque<CommandGraph::Node*> to_visit({&commandGraph.GetEntryNode()});
+  std::unordered_set<CommandGraph::Node*> visited({&commandGraph.GetEntryNode()});
+
+  while (!to_visit.empty()) {
+    auto node = to_visit.front();
+    to_visit.pop_front();
+
+    for (auto & edge : node->OutgoingEdges()) {
+      if (visited.find(&edge.GetSink()) == visited.end()) {
+        to_visit.push_back(&edge.GetSink());
+        visited.insert(&edge.GetSink());
+        nodes.push_back(&edge.GetSink());
+      }
+    }
+  }
+
+  return nodes;
 }
 
 void
-passgraph::run() const
+CommandGraph::Run() const
 {
-	for (const auto & node : topsort(this))
-    node->cmd().Run();
+  for (auto & node : CommandGraph::SortNodesTopological(*this))
+    node->GetCommand().Run();
 }
 
-/* support methods */
-
-std::vector<passgraph_node*>
-topsort(const passgraph * pgraph)
+CommandGraph::Node::IncomingEdgeConstRange
+CommandGraph::Node::IncomingEdges() const
 {
-	std::vector<passgraph_node*> nodes({pgraph->entry()});
-	std::deque<passgraph_node*> to_visit({pgraph->entry()});
-	std::unordered_set<passgraph_node*> visited({pgraph->entry()});
+  return {IncomingEdgeConstIterator(IncomingEdges_.begin()), IncomingEdgeConstIterator(IncomingEdges_.end())};
+}
 
-	while (!to_visit.empty()) {
-		auto node = to_visit.front();
-		to_visit.pop_front();
+CommandGraph::Node::OutgoingEdgeConstRange
+CommandGraph::Node::OutgoingEdges() const
+{
+  return {OutgoingEdgeConstIterator(OutgoingEdges_.begin()), OutgoingEdgeConstIterator(OutgoingEdges_.end())};
+}
 
-		for (const auto & edge : *node) {
-			if (visited.find(edge.sink()) == visited.end()) {
-				to_visit.push_back(edge.sink());
-				visited.insert(edge.sink());
-				nodes.push_back(edge.sink());
-			}
-		}
-	}
-
-	return nodes;
+CommandGraph::Node &
+CommandGraph::Node::Create(
+  CommandGraph & commandGraph,
+  std::unique_ptr<Command> command)
+{
+  std::unique_ptr<Node> node(new Node(commandGraph, std::move(command)));
+  return commandGraph.AddNode(std::move(node));
 }
 
 }

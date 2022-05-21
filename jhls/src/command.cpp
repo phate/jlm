@@ -264,9 +264,9 @@ printcmd::ToString() const
 void
 printcmd::Run() const
 {
-	for (const auto & node : topsort(pgraph_.get())) {
-		if (node != pgraph_->entry() && node != pgraph_->exit())
-			std::cout << node->cmd().ToString() << "\n";
+	for (auto & node : CommandGraph::SortNodesTopological(*pgraph_)) {
+		if (node != &pgraph_->GetEntryNode() && node != &pgraph_->GetExitNode())
+			std::cout << node->GetCommand().ToString() << "\n";
 	}
 }
 

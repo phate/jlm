@@ -12,13 +12,13 @@ namespace jlm {
 
 /* command generation */
 
-std::unique_ptr<passgraph>
+std::unique_ptr<CommandGraph>
 generate_commands(const jlm::cmdline_options & opts)
 {
-	std::unique_ptr<passgraph> pgraph(new passgraph());
+	std::unique_ptr<CommandGraph> pgraph(new CommandGraph());
 
-	std::vector<passgraph_node*> leaves;
-	std::vector<passgraph_node*> llir;
+	std::vector<CommandGraph::Node*> leaves;
+	std::vector<CommandGraph::Node*> llir;
 	std::vector<jlm::filepath> llir_files;
 
 	// Create directory in /tmp for storing temporary files
@@ -32,10 +32,10 @@ generate_commands(const jlm::cmdline_options & opts)
 	tmp_identifier += std::to_string(random());
 	jlm::filepath tmp_folder("/tmp/" + tmp_identifier + "/");
 	auto mkdir = mkdircmd::create(pgraph.get(), tmp_folder);
-	pgraph->entry()->add_edge(mkdir);
+  pgraph->GetEntryNode().AddEdge(*mkdir);
 
 	for (const auto & c : opts.compilations) {
-		passgraph_node* last = mkdir;
+		CommandGraph::Node * last = mkdir;
 
 		if (c.parse()) {
 			auto prsnode = prscmd::create(
@@ -56,14 +56,14 @@ generate_commands(const jlm::cmdline_options & opts)
 				c.Mt(),
 				opts.std);
 
-			last->add_edge(prsnode);
+      last->AddEdge(*prsnode);
 			last = prsnode;
 
 			// HLS links all files to a single IR
 			// Need to know when the IR has been generated for all input files
 			llir.push_back(prsnode);
 			llir_files.push_back(
-				dynamic_cast<prscmd*>(&prsnode->cmd())->ofile());
+				dynamic_cast<prscmd*>(&prsnode->GetCommand())->ofile());
 		}
 
 		leaves.push_back(last);
@@ -74,49 +74,49 @@ generate_commands(const jlm::cmdline_options & opts)
 	auto ll_link = lllnkcmd::create(pgraph.get(), llir_files, ll_merged);
 	// Add edges between each c.parse and the ll_link
 	for (const auto & ll : llir) {
-		ll->add_edge(ll_link);
+    ll->AddEdge(*ll_link);
 	}
 
 	// need to already run m2r here
 	jlm::filepath  ll_m2r1(tmp_folder.to_str()+"merged.m2r.ll");
 	auto m2r1 = m2rcmd::create(pgraph.get(), ll_merged, ll_m2r1);
-	ll_link->add_edge(m2r1);
+  ll_link->AddEdge(*m2r1);
 	auto extract = extractcmd::create(
 				pgraph.get(),
-				dynamic_cast<m2rcmd*>(&m2r1->cmd())->ofile(),
+				dynamic_cast<m2rcmd*>(&m2r1->GetCommand())->ofile(),
 				opts.hls_function_regex,
 				tmp_folder.to_str());
-	m2r1->add_edge(extract);
+  m2r1->AddEdge(*extract);
 	jlm::filepath  ll_m2r2(tmp_folder.to_str()+"function.m2r.ll");
 	auto m2r2 = m2rcmd::create(
 				pgraph.get(),
-				dynamic_cast<extractcmd*>(&extract->cmd())->functionfile(),
+				dynamic_cast<extractcmd*>(&extract->GetCommand())->functionfile(),
 				ll_m2r2);
-	extract->add_edge(m2r2);
+  extract->AddEdge(*m2r2);
 	// hls
 	auto hls = hlscmd::create(
 				pgraph.get(),
-				dynamic_cast<m2rcmd*>(&m2r2->cmd())->ofile(),
+				dynamic_cast<m2rcmd*>(&m2r2->GetCommand())->ofile(),
 				tmp_folder.to_str(),
 				opts.circt);
-	m2r2->add_edge(hls);
+  m2r2->AddEdge(*hls);
 
 	if (!opts.generate_firrtl) {
 		jlm::filepath verilogfile(tmp_folder.to_str()+"jlm_hls.v");
 		auto firrtl = firrtlcmd::create(
 				pgraph.get(),
-				dynamic_cast<hlscmd*>(&hls->cmd())->firfile(),
+				dynamic_cast<hlscmd*>(&hls->GetCommand())->firfile(),
 				verilogfile);
-		hls->add_edge(firrtl);
+    hls->AddEdge(*firrtl);
 		jlm::filepath asmofile(tmp_folder.to_str()+"hls.o");
 		auto asmnode = cgencmd::create(
 				pgraph.get(),
-				dynamic_cast<hlscmd*>(&hls->cmd())->llfile(),
+				dynamic_cast<hlscmd*>(&hls->GetCommand())->llfile(),
 				asmofile,
 				tmp_folder,
 				opts.hls,
 				opts.Olvl);
-		hls->add_edge(asmnode);
+    hls->AddEdge(*asmnode);
 
 		std::vector<jlm::filepath> lnkifiles;
 		for (const auto & c : opts.compilations) {
@@ -128,13 +128,13 @@ generate_commands(const jlm::cmdline_options & opts)
 				pgraph.get(),
 				verilogfile,
 				lnkifiles,
-				dynamic_cast<hlscmd*>(&hls->cmd())->harnessfile(),
+				dynamic_cast<hlscmd*>(&hls->GetCommand())->harnessfile(),
 				opts.lnkofile,
 				tmp_folder,
 				opts.libpaths,
 				opts.libs);
-		firrtl->add_edge(verinode);
-		verinode->add_edge(pgraph->exit());
+    firrtl->AddEdge(*verinode);
+    verinode->AddEdge(pgraph->GetExitNode());
 	}
 
 	std::vector<jlm::filepath> lnkifiles;
@@ -144,13 +144,13 @@ generate_commands(const jlm::cmdline_options & opts)
 	}
 
 	for (const auto & leave : leaves)
-		leave->add_edge(pgraph->exit());
+    leave->AddEdge(pgraph->GetExitNode());
 
 	if (opts.only_print_commands) {
-		std::unique_ptr<passgraph> pg(new passgraph());
+		std::unique_ptr<CommandGraph> pg(new CommandGraph());
 		auto printnode = printcmd::create(pg.get(), std::move(pgraph));
-		pg->entry()->add_edge(printnode);
-		printnode->add_edge(pg->exit());
+    pg->GetEntryNode().AddEdge(*printnode);
+    printnode->AddEdge(pg->GetExitNode());
 		pgraph = std::move(pg);
 	}
 
@@ -166,7 +166,7 @@ main(int argc, char ** argv)
 	parse_cmdline(argc, argv, options);
 
 	auto pgraph = generate_commands(options);
-	pgraph->run();
+  pgraph->Run();
 
 	return 0;
 }

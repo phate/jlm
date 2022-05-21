@@ -17,14 +17,14 @@ namespace jlm {
 
 /* command generation */
 
-std::unique_ptr<passgraph>
+std::unique_ptr<CommandGraph>
 generate_commands(const jlm::cmdline_options & opts)
 {
-	std::unique_ptr<passgraph> pgraph(new passgraph());
+	std::unique_ptr<CommandGraph> pgraph(new CommandGraph());
 
-	std::vector<passgraph_node*> leaves;
+	std::vector<CommandGraph::Node*> leaves;
 	for (const auto & c : opts.compilations) {
-		passgraph_node * last = pgraph->entry();
+		auto last = &pgraph->GetEntryNode();
 
 		if (c.parse()) {
 			auto prsnode = prscmd::create(
@@ -43,19 +43,19 @@ generate_commands(const jlm::cmdline_options & opts)
 				c.Mt(),
 				opts.std);
 
-			last->add_edge(prsnode);
+      last->AddEdge(*prsnode);
 			last = prsnode;
 		}
 
 		if (c.optimize()) {
 			auto optnode = optcmd::create(pgraph.get(), c.ifile(), opts.jlmopts, opts.Olvl);
-			last->add_edge(optnode);
+      last->AddEdge(*optnode);
 			last = optnode;
 		}
 
 		if (c.assemble()) {
 			auto asmnode = cgencmd::create(pgraph.get(), c.ifile(), c.ofile(), opts.Olvl);
-			last->add_edge(asmnode);
+      last->AddEdge(*asmnode);
 			last = asmnode;
 		}
 
@@ -72,20 +72,20 @@ generate_commands(const jlm::cmdline_options & opts)
 		auto lnknode = lnkcmd::create(pgraph.get(), lnkifiles, opts.lnkofile,
 			opts.libpaths, opts.libs, opts.pthread);
 		for (const auto & leave : leaves)
-			leave->add_edge(lnknode);
+      leave->AddEdge(*lnknode);
 
 		leaves.clear();
 		leaves.push_back(lnknode);
 	}
 
 	for (const auto & leave : leaves)
-		leave->add_edge(pgraph->exit());
+    leave->AddEdge(pgraph->GetExitNode());
 
 	if (opts.only_print_commands) {
-		std::unique_ptr<passgraph> pg(new passgraph());
+		std::unique_ptr<CommandGraph> pg(new CommandGraph());
 		auto printnode = printcmd::create(pg.get(), std::move(pgraph));
-		pg->entry()->add_edge(printnode);
-		printnode->add_edge(pg->exit());
+    pg->GetEntryNode().AddEdge(*printnode);
+    printnode->AddEdge(pg->GetExitNode());
 		pgraph = std::move(pg);
 	}
 
@@ -304,9 +304,9 @@ printcmd::ToString() const
 void
 printcmd::Run() const
 {
-	for (const auto & node : topsort(pgraph_.get())) {
-		if (node != pgraph_->entry() && node != pgraph_->exit())
-			std::cout << node->cmd().ToString() << "\n";
+	for (auto & node : CommandGraph::SortNodesTopological(*pgraph_)) {
+		if (node != &pgraph_->GetEntryNode() && node != &pgraph_->GetExitNode())
+			std::cout << node->GetCommand().ToString() << "\n";
 	}
 }
 
