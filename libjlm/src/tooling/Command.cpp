@@ -10,17 +10,17 @@ namespace jlm {
 Command::~Command()
 = default;
 
-printcmd::~printcmd()
+PrintCommandsCommand::~PrintCommandsCommand()
 {}
 
 std::string
-printcmd::ToString() const
+PrintCommandsCommand::ToString() const
 {
   return "PRINTCMD";
 }
 
 void
-printcmd::Run() const
+PrintCommandsCommand::Run() const
 {
   for (auto & node : CommandGraph::SortNodesTopological(*pgraph_)) {
     if (node != &pgraph_->GetEntryNode() && node != &pgraph_->GetExitNode())
