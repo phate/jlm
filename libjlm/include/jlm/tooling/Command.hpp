@@ -138,6 +138,70 @@ private:
   bool UsePthreads_;
 };
 
+class cgencmd final : public Command {
+public:
+  enum class OptimizationLevel {O0, O1, O2, O3};
+
+  enum class RelocationModel {
+    Static,
+    Pic
+  };
+
+  virtual
+  ~cgencmd();
+
+  cgencmd(
+    const jlm::filepath & ifile,
+    const jlm::filepath & ofile,
+    const OptimizationLevel & ol,
+    const RelocationModel & relocationModel)
+    : ol_(ol)
+    , RelocationModel_(relocationModel)
+    , ifile_(ifile)
+    , ofile_(ofile)
+  {}
+
+  virtual std::string
+  ToString() const override;
+
+  virtual void
+  Run() const override;
+
+  inline const jlm::filepath &
+  ofile() const noexcept
+  {
+    return ofile_;
+  }
+
+  static CommandGraph::Node *
+  create(
+    CommandGraph * pgraph,
+    const jlm::filepath & ifile,
+    const jlm::filepath & ofile,
+    const OptimizationLevel & ol,
+    const RelocationModel & relocationModel)
+  {
+    std::unique_ptr<cgencmd> command(new cgencmd(
+      ifile,
+      ofile,
+      ol,
+      relocationModel));
+    return &CommandGraph::Node::Create(*pgraph, std::move(command));
+  }
+
+private:
+  static std::string
+  ToString(const OptimizationLevel & optimizationLevel);
+
+  static std::string
+  ToString(const RelocationModel & relocationModel);
+
+  OptimizationLevel ol_;
+  RelocationModel RelocationModel_;
+  jlm::filepath ifile_;
+  jlm::filepath ofile_;
+};
+
 }
 
 #endif

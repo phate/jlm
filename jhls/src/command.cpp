@@ -172,42 +172,6 @@ optcmd::Run() const
 		exit(EXIT_FAILURE);
 }
 
-/* code generator command */
-
-cgencmd::~cgencmd()
-{}
-
-std::string
-cgencmd::ToString() const
-{
-	if (hls_) {
-		return strfmt(
-		llcpath.to_str() + " "
-		, "-", jlm::to_str(ol_), " "
-		, "--relocation-model=pic "
-		, "-filetype=obj "
-		, "-o ", ofile_.to_str()
-		, " ", ifile_.to_str()
-		);
-
-	}
-
-	return strfmt(
-	llcpath.to_str() + " "
-	, "-", jlm::to_str(ol_), " "
-	, "-filetype=obj "
-	, "-o ", ofile_.to_str()
-	, " ", tmpfolder_.to_str(), create_optcmd_ofile(ifile_.base())
-	);
-}
-
-void
-cgencmd::Run() const
-{
-	if (system(ToString().c_str()))
-		exit(EXIT_FAILURE);
-}
-
 /* HLS */
 
 std::string
