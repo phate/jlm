@@ -40,11 +40,11 @@ PrintCommandsCommand::Create(std::unique_ptr<CommandGraph> commandGraph)
   return newCommandGraph;
 }
 
-lnkcmd::~lnkcmd()
+ClangCommand::~ClangCommand()
 {}
 
 std::string
-lnkcmd::ToString() const
+ClangCommand::ToString() const
 {
   std::string ifiles;
   for (const auto & ifile : ifiles_)
@@ -74,7 +74,7 @@ lnkcmd::ToString() const
 }
 
 void
-lnkcmd::Run() const
+ClangCommand::Run() const
 {
   if (system(ToString().c_str()))
     exit(EXIT_FAILURE);

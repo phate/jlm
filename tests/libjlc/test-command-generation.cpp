@@ -42,7 +42,7 @@ test2()
 	assert(pgraph->NumNodes() == 3);
 
 	auto & node = (*pgraph->GetExitNode().IncomingEdges().begin()).GetSource();
-	auto cmd = dynamic_cast<const jlm::lnkcmd*>(&node.GetCommand());
+	auto cmd = dynamic_cast<const jlm::ClangCommand*>(&node.GetCommand());
 	assert(cmd->ifiles()[0] == "foo.o" && cmd->ofile() == "foobar");
 }
 
