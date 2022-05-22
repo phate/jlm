@@ -138,7 +138,10 @@ private:
   bool UsePthreads_;
 };
 
-class cgencmd final : public Command {
+/**
+ * The LlcCommand class represents the llc command line tool.
+ */
+class LlcCommand final : public Command {
 public:
   enum class OptimizationLevel {O0, O1, O2, O3};
 
@@ -148,9 +151,9 @@ public:
   };
 
   virtual
-  ~cgencmd();
+  ~LlcCommand();
 
-  cgencmd(
+  LlcCommand(
     const jlm::filepath & ifile,
     const jlm::filepath & ofile,
     const OptimizationLevel & ol,
@@ -181,7 +184,7 @@ public:
     const OptimizationLevel & ol,
     const RelocationModel & relocationModel)
   {
-    std::unique_ptr<cgencmd> command(new cgencmd(
+    std::unique_ptr<LlcCommand> command(new LlcCommand(
       ifile,
       ofile,
       ol,
