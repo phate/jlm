@@ -68,15 +68,21 @@ generate_commands(const jlm::cmdline_options & opts)
 			lnkifiles.push_back(c.ofile());
 	}
 
-	if (!lnkifiles.empty()) {
-		auto lnknode = ClangCommand::create(pgraph.get(), lnkifiles, opts.lnkofile,
-                                        opts.libpaths, opts.libs, opts.pthread);
-		for (const auto & leave : leaves)
-      leave->AddEdge(*lnknode);
+  if (!lnkifiles.empty()) {
+    auto & linkerCommandNode = ClangCommand::Create(
+      *pgraph,
+      lnkifiles,
+      opts.lnkofile,
+      opts.libpaths,
+      opts.libs,
+      opts.pthread);
 
-		leaves.clear();
-		leaves.push_back(lnknode);
-	}
+    for (const auto & leave : leaves)
+      leave->AddEdge(linkerCommandNode);
+
+    leaves.clear();
+    leaves.push_back(&linkerCommandNode);
+  }
 
 	for (const auto & leave : leaves)
     leave->AddEdge(pgraph->GetExitNode());

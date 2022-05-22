@@ -43,7 +43,7 @@ test2()
 
 	auto & node = (*pgraph->GetExitNode().IncomingEdges().begin()).GetSource();
 	auto cmd = dynamic_cast<const jlm::ClangCommand*>(&node.GetCommand());
-	assert(cmd->ifiles()[0] == "foo.o" && cmd->ofile() == "foobar");
+	assert(cmd->InputFiles()[0] == "foo.o" && cmd->OutputFile() == "foobar");
 }
 
 static int

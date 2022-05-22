@@ -79,59 +79,63 @@ private:
  */
 class ClangCommand final : public Command {
 public:
-  virtual
-  ~ClangCommand();
+  ~ClangCommand() override;
 
   ClangCommand(
-    const std::vector<jlm::filepath> & ifiles,
-    const jlm::filepath & ofile,
-    const std::vector<std::string> & Lpaths,
-    const std::vector<std::string> & libs,
-    bool pthread)
-    : ofile_(ofile)
-    , libs_(libs)
-    , ifiles_(ifiles)
-    , Lpaths_(Lpaths)
-    , pthread_(pthread)
+    std::vector<jlm::filepath> inputFiles,
+    filepath outputFile,
+    std::vector<std::string> libraryPaths,
+    std::vector<std::string> libraries,
+    bool usePthreads)
+    : OutputFile_(std::move(outputFile))
+    , Libraries_(std::move(libraries))
+    , InputFiles_(std::move(inputFiles))
+    , LibraryPaths_(std::move(libraryPaths))
+    , UsePthreads_(usePthreads)
   {}
 
-  virtual std::string
+  [[nodiscard]] std::string
   ToString() const override;
 
-  virtual void
+  void
   Run() const override;
 
-  inline const jlm::filepath &
-  ofile() const noexcept
+  [[nodiscard]] const filepath &
+  OutputFile() const noexcept
   {
-    return ofile_;
+    return OutputFile_;
   }
 
-  inline const std::vector<jlm::filepath> &
-  ifiles() const noexcept
+  [[nodiscard]] const std::vector<filepath> &
+  InputFiles() const noexcept
   {
-    return ifiles_;
+    return InputFiles_;
   }
 
-  static CommandGraph::Node *
-  create(
-    CommandGraph * pgraph,
-    const std::vector<jlm::filepath> & ifiles,
-    const jlm::filepath & ofile,
-    const std::vector<std::string> & Lpaths,
-    const std::vector<std::string> & libs,
-    bool pthread)
+  static CommandGraph::Node &
+  Create(
+    CommandGraph & commandGraph,
+    const std::vector<jlm::filepath> & inputFiles,
+    const filepath & outputFile,
+    const std::vector<std::string> & libraryPaths,
+    const std::vector<std::string> & libraries,
+    bool usePthreads)
   {
-    std::unique_ptr<ClangCommand> cmd(new ClangCommand(ifiles, ofile, Lpaths, libs, pthread));
-    return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
+    std::unique_ptr<ClangCommand> command(new ClangCommand(
+      inputFiles,
+      outputFile,
+      libraryPaths,
+      libraries,
+      usePthreads));
+    return CommandGraph::Node::Create(commandGraph, std::move(command));
   }
 
 private:
-  jlm::filepath ofile_;
-  std::vector<std::string> libs_;
-  std::vector<jlm::filepath> ifiles_;
-  std::vector<std::string> Lpaths_;
-  bool pthread_;
+  filepath OutputFile_;
+  std::vector<std::string> Libraries_;
+  std::vector<jlm::filepath> InputFiles_;
+  std::vector<std::string> LibraryPaths_;
+  bool UsePthreads_;
 };
 
 }

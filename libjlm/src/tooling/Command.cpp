@@ -41,36 +41,35 @@ PrintCommandsCommand::Create(std::unique_ptr<CommandGraph> commandGraph)
 }
 
 ClangCommand::~ClangCommand()
-{}
+= default;
 
 std::string
 ClangCommand::ToString() const
 {
-  std::string ifiles;
-  for (const auto & ifile : ifiles_)
-    ifiles += ifile.to_str() + " ";
+  std::string inputFiles;
+  for (auto & inputFile : InputFiles_)
+    inputFiles += inputFile.to_str() + " ";
 
-  std::string Lpaths;
-  for (const auto & Lpath : Lpaths_)
-    Lpaths += "-L" + Lpath + " ";
+  std::string libraryPaths;
+  for (auto & libraryPath : LibraryPaths_)
+    libraryPaths += "-L" + libraryPath + " ";
 
-  std::string libs;
-  for (const auto & lib : libs_)
-    libs += "-l" + lib + " ";
+  std::string libraries;
+  for (const auto & library : Libraries_)
+    libraries += "-l" + library + " ";
 
   std::string arguments;
-  if (pthread_)
+  if (UsePthreads_)
     arguments += "-pthread ";
 
   return strfmt(
     clangpath.to_str() + " "
     , "-no-pie -O0 "
     , arguments
-    , ifiles
-    , "-o ", ofile_.to_str(), " "
-    , Lpaths
-    , libs
-  );
+    , inputFiles
+    , "-o ", OutputFile_.to_str(), " "
+    , libraryPaths
+    , libraries);
 }
 
 void
