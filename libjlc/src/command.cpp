@@ -16,15 +16,15 @@ namespace jlm {
 
 /* command generation */
 
-static cgencmd::OptimizationLevel
+static LlcCommand::OptimizationLevel
 ToLlcCommandOptimizationLevel(optlvl optimizationLevel)
 {
-  static std::unordered_map<optlvl, cgencmd::OptimizationLevel>
+  static std::unordered_map<optlvl, LlcCommand::OptimizationLevel>
     map({
-          {optlvl::O0, cgencmd::OptimizationLevel::O0},
-          {optlvl::O1, cgencmd::OptimizationLevel::O1},
-          {optlvl::O2, cgencmd::OptimizationLevel::O2},
-          {optlvl::O3, cgencmd::OptimizationLevel::O3}
+          {optlvl::O0, LlcCommand::OptimizationLevel::O0},
+          {optlvl::O1, LlcCommand::OptimizationLevel::O1},
+          {optlvl::O2, LlcCommand::OptimizationLevel::O2},
+          {optlvl::O3, LlcCommand::OptimizationLevel::O3}
         });
 
   JLM_ASSERT(map.find(optimizationLevel) != map.end());
@@ -74,12 +74,12 @@ generate_commands(const jlm::cmdline_options & opts)
 		}
 
 		if (c.assemble()) {
-			auto asmnode = cgencmd::create(
+			auto asmnode = LlcCommand::create(
         pgraph.get(),
         "/tmp/" + create_optcmd_ofile(c.ifile().base()),
         c.ofile(),
         ToLlcCommandOptimizationLevel(opts.Olvl),
-        cgencmd::RelocationModel::Static);
+        LlcCommand::RelocationModel::Static);
       last->AddEdge(*asmnode);
 			last = asmnode;
 		}

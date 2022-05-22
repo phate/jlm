@@ -27,7 +27,7 @@ test1()
 	auto pgraph = jlm::generate_commands(options);
 
 	auto & node = (*pgraph->GetExitNode().IncomingEdges().begin()).GetSource();
-	auto cmd = dynamic_cast<const jlm::cgencmd*>(&node.GetCommand());
+	auto cmd = dynamic_cast<const jlm::LlcCommand*>(&node.GetCommand());
 	assert(cmd && cmd->ofile() == "foo.o");
 }
 

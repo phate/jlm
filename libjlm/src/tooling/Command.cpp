@@ -81,11 +81,11 @@ ClangCommand::Run() const
     exit(EXIT_FAILURE);
 }
 
-cgencmd::~cgencmd()
+LlcCommand::~LlcCommand()
 {}
 
 std::string
-cgencmd::ToString() const
+LlcCommand::ToString() const
 {
   return strfmt(
     llcpath.to_str() + " "
@@ -98,14 +98,14 @@ cgencmd::ToString() const
 }
 
 void
-cgencmd::Run() const
+LlcCommand::Run() const
 {
   if (system(ToString().c_str()))
     exit(EXIT_FAILURE);
 }
 
 std::string
-cgencmd::ToString(const OptimizationLevel & optimizationLevel)
+LlcCommand::ToString(const OptimizationLevel & optimizationLevel)
 {
   static std::unordered_map<OptimizationLevel, const char*>
     map({
@@ -120,7 +120,7 @@ cgencmd::ToString(const OptimizationLevel & optimizationLevel)
 }
 
 std::string
-cgencmd::ToString(const RelocationModel & relocationModel)
+LlcCommand::ToString(const RelocationModel & relocationModel)
 {
   static std::unordered_map<RelocationModel, const char*>
     map({
