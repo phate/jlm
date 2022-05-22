@@ -7,6 +7,7 @@
 #define JLM_TOOLING_COMMAND_HPP
 
 #include <jlm/tooling/CommandGraph.hpp>
+#include <jlm/util/file.hpp>
 
 #include <memory>
 #include <string>
@@ -71,6 +72,63 @@ private:
   }
 
   std::unique_ptr<CommandGraph> CommandGraph_;
+};
+
+class lnkcmd final : public Command {
+public:
+  virtual
+  ~lnkcmd();
+
+  lnkcmd(
+    const std::vector<jlm::filepath> & ifiles,
+    const jlm::filepath & ofile,
+    const std::vector<std::string> & Lpaths,
+    const std::vector<std::string> & libs,
+    bool pthread)
+    : ofile_(ofile)
+    , libs_(libs)
+    , ifiles_(ifiles)
+    , Lpaths_(Lpaths)
+    , pthread_(pthread)
+  {}
+
+  virtual std::string
+  ToString() const override;
+
+  virtual void
+  Run() const override;
+
+  inline const jlm::filepath &
+  ofile() const noexcept
+  {
+    return ofile_;
+  }
+
+  inline const std::vector<jlm::filepath> &
+  ifiles() const noexcept
+  {
+    return ifiles_;
+  }
+
+  static CommandGraph::Node *
+  create(
+    CommandGraph * pgraph,
+    const std::vector<jlm::filepath> & ifiles,
+    const jlm::filepath & ofile,
+    const std::vector<std::string> & Lpaths,
+    const std::vector<std::string> & libs,
+    bool pthread)
+  {
+    std::unique_ptr<lnkcmd> cmd(new lnkcmd(ifiles, ofile, Lpaths, libs, pthread));
+    return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
+  }
+
+private:
+  jlm::filepath ofile_;
+  std::vector<std::string> libs_;
+  std::vector<jlm::filepath> ifiles_;
+  std::vector<std::string> Lpaths_;
+  bool pthread_;
 };
 
 }
