@@ -1,6 +1,31 @@
 # Copyright 2019 Nico Reißmann <nico.reissmann@gmail.com>
 # See COPYING for terms of redistribution.
 
+ifdef CIRCT_PATH
+  CIRCT = 1
+  CIRCT_INC = $(shell $(LLVMCONFIG) --includedir)
+  CIRCT_LIB = $(shell $(LLVMCONFIG) --libdir)
+
+  CPPFLAGS += \
+        -DCIRCT=1 \
+        -I$(CIRCT_INC) \
+
+  LDFLAGS += \
+        -I$(CIRCT_LIB) \
+        -lMLIR \
+        -lCIRCTAnalysisTestPasses \
+        -lCIRCTDependenceAnalysis \
+        -lCIRCTExportFIRRTL \
+        -lCIRCTFIRRTL \
+        -lCIRCTFIRRTLTransforms \
+        -lCIRCTScheduling \
+        -lCIRCTSchedulingAnalysis \
+        -lCIRCTSchedulingTestPasses \
+        -lCIRCTSupport \
+        -lCIRCTTransforms \
+        -lCIRCTHW
+endif
+
 JLM_HLS_SRC = \
 	jlm-hls/src/cmdline.cpp \
 	jlm-hls/src/jlm-hls.cpp \

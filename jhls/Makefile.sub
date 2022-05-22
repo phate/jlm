@@ -7,6 +7,12 @@ JHLS_SRC = \
 	jhls/src/command.cpp \
 	jhls/src/jhls.cpp \
 
+# Default verilator for Ubuntu 22.04
+VERILATOR_BIN ?= verilator_bin
+VERILATOR_PATH ?= /usr/share/verilator
+
+FIRTOOL ?= $(CIRCT_PATH)/bin/firtool
+
 TOOLPATHS = \
 " \
 \#ifndef JLM_JHLS_TOOLPATHS_HPP\n \
@@ -18,7 +24,7 @@ namespace jlm {\n \
 \n \
   filepath firtoolpath(\"$(FIRTOOL)\");\n \
   filepath verilatorpath(\"$(VERILATOR_BIN)\");\n \
-  filepath verilatorrootpath(\"$(VERILATOR_ROOT)\");\n \
+  filepath verilatorrootpath(\"$(VERILATOR_PATH)\");\n \
 \n \
 }\n \
 \n \
