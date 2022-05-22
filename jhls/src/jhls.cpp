@@ -14,15 +14,15 @@ namespace jlm {
 
 /* command generation */
 
-static cgencmd::OptimizationLevel
+static LlcCommand::OptimizationLevel
 ToLlcCommandOptimizationLevel(optlvl optimizationLevel)
 {
-  static std::unordered_map<optlvl, cgencmd::OptimizationLevel>
+  static std::unordered_map<optlvl, LlcCommand::OptimizationLevel>
     map({
-          {optlvl::O0, cgencmd::OptimizationLevel::O0},
-          {optlvl::O1, cgencmd::OptimizationLevel::O1},
-          {optlvl::O2, cgencmd::OptimizationLevel::O2},
-          {optlvl::O3, cgencmd::OptimizationLevel::O3}
+          {optlvl::O0, LlcCommand::OptimizationLevel::O0},
+          {optlvl::O1, LlcCommand::OptimizationLevel::O1},
+          {optlvl::O2, LlcCommand::OptimizationLevel::O2},
+          {optlvl::O3, LlcCommand::OptimizationLevel::O3}
         });
 
   JLM_ASSERT(map.find(optimizationLevel) != map.end());
@@ -133,7 +133,7 @@ generate_commands(const jlm::cmdline_options & opts)
     hls->AddEdge(*firrtl);
     jlm::filepath asmofile(tmp_folder.to_str()+"hls.o");
     auto inputFile = dynamic_cast<hlscmd*>(&hls->GetCommand())->llfile();
-    auto asmnode = cgencmd::create(
+    auto asmnode = LlcCommand::create(
       pgraph.get(),
       opts.hls
       ? inputFile
@@ -141,8 +141,8 @@ generate_commands(const jlm::cmdline_options & opts)
       asmofile,
       ToLlcCommandOptimizationLevel(opts.Olvl),
       opts.hls
-      ? cgencmd::RelocationModel::Pic
-      : cgencmd::RelocationModel::Static);
+      ? LlcCommand::RelocationModel::Pic
+      : LlcCommand::RelocationModel::Static);
     hls->AddEdge(*asmnode);
 
 		std::vector<jlm::filepath> lnkifiles;
