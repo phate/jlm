@@ -11,11 +11,31 @@
 #include <functional>
 #include <iostream>
 #include <memory>
-#include <algorithm>
 
 namespace jlm {
 
 /* command generation */
+
+static cgencmd::OptimizationLevel
+ToLlcCommandOptimizationLevel(optlvl optimizationLevel)
+{
+  static std::unordered_map<optlvl, cgencmd::OptimizationLevel>
+    map({
+          {optlvl::O0, cgencmd::OptimizationLevel::O0},
+          {optlvl::O1, cgencmd::OptimizationLevel::O1},
+          {optlvl::O2, cgencmd::OptimizationLevel::O2},
+          {optlvl::O3, cgencmd::OptimizationLevel::O3}
+        });
+
+  JLM_ASSERT(map.find(optimizationLevel) != map.end());
+  return map[optimizationLevel];
+}
+
+static std::string
+create_optcmd_ofile(const std::string & ifile)
+{
+  return strfmt("tmp-", ifile, "-jlm-opt-out.ll");
+}
 
 std::unique_ptr<CommandGraph>
 generate_commands(const jlm::cmdline_options & opts)
@@ -54,7 +74,12 @@ generate_commands(const jlm::cmdline_options & opts)
 		}
 
 		if (c.assemble()) {
-			auto asmnode = cgencmd::create(pgraph.get(), c.ifile(), c.ofile(), opts.Olvl);
+			auto asmnode = cgencmd::create(
+        pgraph.get(),
+        "/tmp/" + create_optcmd_ofile(c.ifile().base()),
+        c.ofile(),
+        ToLlcCommandOptimizationLevel(opts.Olvl),
+        cgencmd::RelocationModel::Static);
       last->AddEdge(*asmnode);
 			last = asmnode;
 		}
@@ -177,12 +202,6 @@ prscmd::Run() const
 
 /* optimization command */
 
-static std::string
-create_optcmd_ofile(const std::string & ifile)
-{
-	return strfmt("tmp-", ifile, "-jlm-opt-out.ll");
-}
-
 optcmd::~optcmd()
 {}
 
@@ -220,30 +239,6 @@ optcmd::ToString() const
 
 void
 optcmd::Run() const
-{
-	if (system(ToString().c_str()))
-		exit(EXIT_FAILURE);
-}
-
-/* code generator command */
-
-cgencmd::~cgencmd()
-{}
-
-std::string
-cgencmd::ToString() const
-{
-	return strfmt(
-	  llcpath.to_str() + " "
-	, "-", jlm::to_str(ol_), " "
-	, "-filetype=obj "
-	, "-o ", ofile_.to_str()
-	, " /tmp/", create_optcmd_ofile(ifile_.base())
-	);
-}
-
-void
-cgencmd::Run() const
 {
 	if (system(ToString().c_str()))
 		exit(EXIT_FAILURE);

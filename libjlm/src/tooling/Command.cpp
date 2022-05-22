@@ -7,6 +7,8 @@
 #include <jlm/tooling/LlvmPaths.hpp>
 #include <jlm/util/strfmt.hpp>
 
+#include <unordered_map>
+
 namespace jlm {
 
 Command::~Command()
@@ -77,6 +79,57 @@ ClangCommand::Run() const
 {
   if (system(ToString().c_str()))
     exit(EXIT_FAILURE);
+}
+
+cgencmd::~cgencmd()
+{}
+
+std::string
+cgencmd::ToString() const
+{
+  return strfmt(
+    llcpath.to_str() + " "
+    , "-", ToString(ol_), " "
+    , "--relocation-model=", ToString(RelocationModel_), " "
+    , "-filetype=obj "
+    , "-o ", ofile_.to_str(), " "
+    , ifile_.to_str()
+  );
+}
+
+void
+cgencmd::Run() const
+{
+  if (system(ToString().c_str()))
+    exit(EXIT_FAILURE);
+}
+
+std::string
+cgencmd::ToString(const OptimizationLevel & optimizationLevel)
+{
+  static std::unordered_map<OptimizationLevel, const char*>
+    map({
+          {OptimizationLevel::O0, "O0"},
+          {OptimizationLevel::O1, "O1"},
+          {OptimizationLevel::O2, "O2"},
+          {OptimizationLevel::O3, "O3"}
+        });
+
+  JLM_ASSERT(map.find(optimizationLevel) != map.end());
+  return map[optimizationLevel];
+}
+
+std::string
+cgencmd::ToString(const RelocationModel & relocationModel)
+{
+  static std::unordered_map<RelocationModel, const char*>
+    map({
+          {RelocationModel::Static, "static"},
+          {RelocationModel::Pic, "pic"},
+        });
+
+  JLM_ASSERT(map.find(relocationModel) != map.end());
+  return map[relocationModel];
 }
 
 }

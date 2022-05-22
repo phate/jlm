@@ -5,12 +5,35 @@
 
 #include <jhls/cmdline.hpp>
 #include <jhls/command.hpp>
+#include <jlm/util/strfmt.hpp>
 
 #include <iostream>
+#include <unordered_map>
 
 namespace jlm {
 
 /* command generation */
+
+static cgencmd::OptimizationLevel
+ToLlcCommandOptimizationLevel(optlvl optimizationLevel)
+{
+  static std::unordered_map<optlvl, cgencmd::OptimizationLevel>
+    map({
+          {optlvl::O0, cgencmd::OptimizationLevel::O0},
+          {optlvl::O1, cgencmd::OptimizationLevel::O1},
+          {optlvl::O2, cgencmd::OptimizationLevel::O2},
+          {optlvl::O3, cgencmd::OptimizationLevel::O3}
+        });
+
+  JLM_ASSERT(map.find(optimizationLevel) != map.end());
+  return map[optimizationLevel];
+}
+
+static std::string
+create_optcmd_ofile(const std::string & ifile)
+{
+  return strfmt("tmp-", ifile, "-jlm-opt-out.ll");
+}
 
 std::unique_ptr<CommandGraph>
 generate_commands(const jlm::cmdline_options & opts)
@@ -102,20 +125,24 @@ generate_commands(const jlm::cmdline_options & opts)
   m2r2->AddEdge(*hls);
 
 	if (!opts.generate_firrtl) {
-		jlm::filepath verilogfile(tmp_folder.to_str()+"jlm_hls.v");
-		auto firrtl = firrtlcmd::create(
-				pgraph.get(),
-				dynamic_cast<hlscmd*>(&hls->GetCommand())->firfile(),
-				verilogfile);
+    jlm::filepath verilogfile(tmp_folder.to_str()+"jlm_hls.v");
+    auto firrtl = firrtlcmd::create(
+      pgraph.get(),
+      dynamic_cast<hlscmd*>(&hls->GetCommand())->firfile(),
+      verilogfile);
     hls->AddEdge(*firrtl);
-		jlm::filepath asmofile(tmp_folder.to_str()+"hls.o");
-		auto asmnode = cgencmd::create(
-				pgraph.get(),
-				dynamic_cast<hlscmd*>(&hls->GetCommand())->llfile(),
-				asmofile,
-				tmp_folder,
-				opts.hls,
-				opts.Olvl);
+    jlm::filepath asmofile(tmp_folder.to_str()+"hls.o");
+    auto inputFile = dynamic_cast<hlscmd*>(&hls->GetCommand())->llfile();
+    auto asmnode = cgencmd::create(
+      pgraph.get(),
+      opts.hls
+      ? inputFile
+      : tmp_folder.to_str() + create_optcmd_ofile(inputFile.base()),
+      asmofile,
+      ToLlcCommandOptimizationLevel(opts.Olvl),
+      opts.hls
+      ? cgencmd::RelocationModel::Pic
+      : cgencmd::RelocationModel::Static);
     hls->AddEdge(*asmnode);
 
 		std::vector<jlm::filepath> lnkifiles;
