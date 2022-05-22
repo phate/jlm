@@ -69,8 +69,8 @@ generate_commands(const jlm::cmdline_options & opts)
 	}
 
 	if (!lnkifiles.empty()) {
-		auto lnknode = lnkcmd::create(pgraph.get(), lnkifiles, opts.lnkofile,
-			opts.libpaths, opts.libs, opts.pthread);
+		auto lnknode = ClangCommand::create(pgraph.get(), lnkifiles, opts.lnkofile,
+                                        opts.libpaths, opts.libs, opts.pthread);
 		for (const auto & leave : leaves)
       leave->AddEdge(*lnknode);
 

@@ -74,12 +74,15 @@ private:
   std::unique_ptr<CommandGraph> CommandGraph_;
 };
 
-class lnkcmd final : public Command {
+/**
+ * The ClangCommand class represents the clang command line tool.
+ */
+class ClangCommand final : public Command {
 public:
   virtual
-  ~lnkcmd();
+  ~ClangCommand();
 
-  lnkcmd(
+  ClangCommand(
     const std::vector<jlm::filepath> & ifiles,
     const jlm::filepath & ofile,
     const std::vector<std::string> & Lpaths,
@@ -119,7 +122,7 @@ public:
     const std::vector<std::string> & libs,
     bool pthread)
   {
-    std::unique_ptr<lnkcmd> cmd(new lnkcmd(ifiles, ofile, Lpaths, libs, pthread));
+    std::unique_ptr<ClangCommand> cmd(new ClangCommand(ifiles, ofile, Lpaths, libs, pthread));
     return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
   }
 
