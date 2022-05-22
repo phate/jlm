@@ -168,58 +168,6 @@ private:
 	optlvl ol_;
 };
 
-/* code generator command */
-
-class cgencmd final : public Command {
-public:
-	virtual
-	~cgencmd();
-
-	cgencmd(
-		const jlm::filepath & ifile,
-		const jlm::filepath & ofile,
-		const jlm::filepath & tmpfolder,
-		const bool hls,
-		const optlvl & ol)
-	: ol_(ol)
-	, ifile_(ifile)
-	, ofile_(ofile)
-	, tmpfolder_(tmpfolder)
-	, hls_(hls)
-	{}
-
-	virtual std::string
-	ToString() const override;
-
-	virtual void
-	Run() const override;
-
-	inline const jlm::filepath &
-	ofile() const noexcept
-	{
-		return ofile_;
-	}
-
-	static CommandGraph::Node *
-	create(
-    CommandGraph * pgraph,
-    const jlm::filepath & ifile,
-    const jlm::filepath & ofile,
-    const jlm::filepath & tmpfolder,
-    const bool hls,
-    const optlvl & ol)
-	{
-		return &CommandGraph::Node::Create(*pgraph, std::make_unique<cgencmd>(ifile, ofile, tmpfolder, hls, ol));
-	}
-
-private:
-	optlvl ol_;
-	jlm::filepath ifile_;
-	jlm::filepath ofile_;
-	jlm::filepath tmpfolder_;
-	bool hls_;
-};
-
 class m2rcmd final : public Command {
 public:
 	virtual
