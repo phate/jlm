@@ -133,8 +133,8 @@ generate_commands(const jlm::cmdline_options & opts)
     hls->AddEdge(*firrtl);
     jlm::filepath asmofile(tmp_folder.to_str()+"hls.o");
     auto inputFile = dynamic_cast<hlscmd*>(&hls->GetCommand())->llfile();
-    auto asmnode = LlcCommand::create(
-      pgraph.get(),
+    auto & asmnode = LlcCommand::Create(
+      *pgraph,
       opts.hls
       ? inputFile
       : tmp_folder.to_str() + create_optcmd_ofile(inputFile.base()),
@@ -143,7 +143,7 @@ generate_commands(const jlm::cmdline_options & opts)
       opts.hls
       ? LlcCommand::RelocationModel::Pic
       : LlcCommand::RelocationModel::Static);
-    hls->AddEdge(*asmnode);
+    hls->AddEdge(asmnode);
 
 		std::vector<jlm::filepath> lnkifiles;
 		for (const auto & c : opts.compilations) {
