@@ -82,18 +82,18 @@ ClangCommand::Run() const
 }
 
 LlcCommand::~LlcCommand()
-{}
+= default;
 
 std::string
 LlcCommand::ToString() const
 {
   return strfmt(
     llcpath.to_str() + " "
-    , "-", ToString(ol_), " "
+    , "-", ToString(OptimizationLevel_), " "
     , "--relocation-model=", ToString(RelocationModel_), " "
     , "-filetype=obj "
-    , "-o ", ofile_.to_str(), " "
-    , ifile_.to_str()
+    , "-o ", OutputFile_.to_str(), " "
+    , InputFile_.to_str()
   );
 }
 
