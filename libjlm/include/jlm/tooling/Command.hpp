@@ -143,53 +143,57 @@ private:
  */
 class LlcCommand final : public Command {
 public:
-  enum class OptimizationLevel {O0, O1, O2, O3};
+  enum class OptimizationLevel {
+    O0,
+    O1,
+    O2,
+    O3
+  };
 
   enum class RelocationModel {
     Static,
     Pic
   };
 
-  virtual
-  ~LlcCommand();
+  ~LlcCommand() override;
 
   LlcCommand(
-    const jlm::filepath & ifile,
-    const jlm::filepath & ofile,
-    const OptimizationLevel & ol,
+    filepath inputFile,
+    filepath outputFile,
+    const OptimizationLevel & optimizationLevel,
     const RelocationModel & relocationModel)
-    : ol_(ol)
+    : OptimizationLevel_(optimizationLevel)
     , RelocationModel_(relocationModel)
-    , ifile_(ifile)
-    , ofile_(ofile)
+    , InputFile_(std::move(inputFile))
+    , OutputFile_(std::move(outputFile))
   {}
 
-  virtual std::string
+  [[nodiscard]] std::string
   ToString() const override;
 
-  virtual void
+  void
   Run() const override;
 
-  inline const jlm::filepath &
-  ofile() const noexcept
+  [[nodiscard]] const filepath &
+  OutputFile() const noexcept
   {
-    return ofile_;
+    return OutputFile_;
   }
 
-  static CommandGraph::Node *
-  create(
-    CommandGraph * pgraph,
-    const jlm::filepath & ifile,
-    const jlm::filepath & ofile,
-    const OptimizationLevel & ol,
+  static CommandGraph::Node &
+  Create(
+    CommandGraph & commandGraph,
+    const filepath & inputFile,
+    const filepath & outputFile,
+    const OptimizationLevel & optimizationLevel,
     const RelocationModel & relocationModel)
   {
     std::unique_ptr<LlcCommand> command(new LlcCommand(
-      ifile,
-      ofile,
-      ol,
+      inputFile,
+      outputFile,
+      optimizationLevel,
       relocationModel));
-    return &CommandGraph::Node::Create(*pgraph, std::move(command));
+    return CommandGraph::Node::Create(commandGraph, std::move(command));
   }
 
 private:
@@ -199,10 +203,10 @@ private:
   static std::string
   ToString(const RelocationModel & relocationModel);
 
-  OptimizationLevel ol_;
+  OptimizationLevel OptimizationLevel_;
   RelocationModel RelocationModel_;
-  jlm::filepath ifile_;
-  jlm::filepath ofile_;
+  filepath InputFile_;
+  filepath OutputFile_;
 };
 
 }

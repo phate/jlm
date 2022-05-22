@@ -28,7 +28,7 @@ test1()
 
 	auto & node = (*pgraph->GetExitNode().IncomingEdges().begin()).GetSource();
 	auto cmd = dynamic_cast<const jlm::LlcCommand*>(&node.GetCommand());
-	assert(cmd && cmd->ofile() == "foo.o");
+	assert(cmd && cmd->OutputFile() == "foo.o");
 }
 
 static void

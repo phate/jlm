@@ -74,14 +74,14 @@ generate_commands(const jlm::cmdline_options & opts)
 		}
 
 		if (c.assemble()) {
-			auto asmnode = LlcCommand::create(
-        pgraph.get(),
+			auto & asmnode = LlcCommand::Create(
+        *pgraph,
         "/tmp/" + create_optcmd_ofile(c.ifile().base()),
         c.ofile(),
         ToLlcCommandOptimizationLevel(opts.Olvl),
         LlcCommand::RelocationModel::Static);
-      last->AddEdge(*asmnode);
-			last = asmnode;
+      last->AddEdge(asmnode);
+			last = &asmnode;
 		}
 
 		leaves.push_back(last);
