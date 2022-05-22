@@ -220,65 +220,6 @@ private:
 	bool hls_;
 };
 
-/* linker command */
-
-class lnkcmd final : public Command {
-public:
-	virtual
-	~lnkcmd();
-
-	lnkcmd(
-		const std::vector<jlm::filepath> & ifiles,
-		const jlm::filepath & ofile,
-		const std::vector<std::string> & Lpaths,
-		const std::vector<std::string> & libs,
-		bool pthread)
-	: ofile_(ofile)
-	, libs_(libs)
-	, ifiles_(ifiles)
-	, Lpaths_(Lpaths)
-	, pthread_(pthread)
-	{}
-
-	virtual std::string
-	ToString() const override;
-
-	virtual void
-	Run() const override;
-
-	inline const jlm::filepath &
-	ofile() const noexcept
-	{
-		return ofile_;
-	}
-
-	inline const std::vector<jlm::filepath> &
-	ifiles() const noexcept
-	{
-		return ifiles_;
-	}
-
-	static CommandGraph::Node *
-	create(
-    CommandGraph * pgraph,
-    const std::vector<jlm::filepath> & ifiles,
-    const jlm::filepath & ofile,
-    const std::vector<std::string> & Lpaths,
-    const std::vector<std::string> & libs,
-    bool pthread)
-	{
-		std::unique_ptr<lnkcmd> cmd(new lnkcmd(ifiles, ofile, Lpaths, libs, pthread));
-		return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
-	}
-
-private:
-	jlm::filepath ofile_;
-	std::vector<std::string> libs_;
-	std::vector<jlm::filepath> ifiles_;
-	std::vector<std::string> Lpaths_;
-	bool pthread_;
-};
-
 class m2rcmd final : public Command {
 public:
 	virtual
