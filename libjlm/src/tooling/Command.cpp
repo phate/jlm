@@ -132,11 +132,11 @@ LlcCommand::ToString(const RelocationModel & relocationModel)
   return map[relocationModel];
 }
 
-optcmd::~optcmd()
+JlmOptCommand::~JlmOptCommand()
 {}
 
 std::string
-optcmd::ToString() const
+JlmOptCommand::ToString() const
 {
   std::string optimizationArguments;
   for (auto & optimization : Optimizations_)
@@ -151,14 +151,14 @@ optcmd::ToString() const
 }
 
 void
-optcmd::Run() const
+JlmOptCommand::Run() const
 {
   if (system(ToString().c_str()))
     exit(EXIT_FAILURE);
 }
 
 std::string
-optcmd::ToString(const Optimization & optimization)
+JlmOptCommand::ToString(const Optimization & optimization)
 {
   static std::unordered_map<Optimization, const char*>
     map({
