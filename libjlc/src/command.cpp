@@ -37,6 +37,12 @@ create_optcmd_ofile(const std::string & ifile)
   return strfmt("tmp-", ifile, "-jlm-opt-out.ll");
 }
 
+static std::string
+create_prscmd_ofile(const std::string & ifile)
+{
+  return strfmt("tmp-", ifile, "-clang-out.ll");
+}
+
 std::unique_ptr<CommandGraph>
 generate_commands(const jlm::cmdline_options & opts)
 {
@@ -67,11 +73,46 @@ generate_commands(const jlm::cmdline_options & opts)
 			last = prsnode;
 		}
 
-		if (c.optimize()) {
-			auto optnode = optcmd::create(pgraph.get(), c.ifile(), opts.jlmopts, opts.Olvl);
+    if (c.optimize()) {
+      /*
+       * If a default optimization level has been specified (-O) and no specific jlm options
+       * have been specified (-J) then use a default set of optimizations.
+       */
+      std::vector<optcmd::Optimization> optimizations;
+      if (opts.jlmopts.empty() && opts.Olvl == optlvl::O3) {
+        /*
+         * Only -O3 sets default optimizations
+         */
+        optimizations = {
+          optcmd::Optimization::FunctionInlining,
+          optcmd::Optimization::InvariantValueRedirection,
+          optcmd::Optimization::NodeReduction,
+          optcmd::Optimization::DeadNodeElimination,
+          optcmd::Optimization::ThetaGammaInversion,
+          optcmd::Optimization::InvariantValueRedirection,
+          optcmd::Optimization::DeadNodeElimination,
+          optcmd::Optimization::NodePushOut,
+          optcmd::Optimization::InvariantValueRedirection,
+          optcmd::Optimization::DeadNodeElimination,
+          optcmd::Optimization::NodeReduction,
+          optcmd::Optimization::CommonNodeElimination,
+          optcmd::Optimization::DeadNodeElimination,
+          optcmd::Optimization::NodePullIn,
+          optcmd::Optimization::InvariantValueRedirection,
+          optcmd::Optimization::DeadNodeElimination,
+          optcmd::Optimization::LoopUnrolling,
+          optcmd::Optimization::InvariantValueRedirection
+        };
+      }
+
+      auto optnode = optcmd::create(
+        pgraph.get(),
+        "/tmp/" + create_prscmd_ofile(c.ifile().base()),
+        "/tmp/" + create_optcmd_ofile(c.ifile().base()),
+        optimizations);
       last->AddEdge(*optnode);
-			last = optnode;
-		}
+      last = optnode;
+    }
 
 		if (c.assemble()) {
 			auto & asmnode = LlcCommand::Create(
@@ -119,12 +160,6 @@ generate_commands(const jlm::cmdline_options & opts)
 }
 
 /* parser command */
-
-static std::string
-create_prscmd_ofile(const std::string & ifile)
-{
-	return strfmt("tmp-", ifile, "-clang-out.ll");
-}
 
 prscmd::~prscmd()
 {}
@@ -195,50 +230,6 @@ prscmd::ToString() const
 
 void
 prscmd::Run() const
-{
-	if (system(ToString().c_str()))
-		exit(EXIT_FAILURE);
-}
-
-/* optimization command */
-
-optcmd::~optcmd()
-{}
-
-std::string
-optcmd::ToString() const
-{
-	auto f = ifile_.base();
-
-	std::string jlmopts;
-	for (const auto & jlmopt : jlmopts_)
-		jlmopts += "--" + jlmopt + " ";
-
-	/*
-		If a default optimization level has been specified (-O) and no specific jlm-options 
-		have been specified (-J) then use a default set of optimizations.
-	 */
-	if (jlmopts.empty()) {
-		/*
-			Only -O3 sets default optimizations
-		*/
-		if (ol_ == optlvl::O3) {
-			jlmopts  = "--iln --InvariantValueRedirection --red --dne --ivt --InvariantValueRedirection ";
-      jlmopts += "--dne --psh --InvariantValueRedirection --dne ";
-			jlmopts += "--red --cne --dne --pll --InvariantValueRedirection --dne --url --InvariantValueRedirection ";
-		}
-	}
-
-	return strfmt(
-	  "jlm-opt "
-	, "--llvm "
-	, jlmopts
-	, "/tmp/", create_prscmd_ofile(f), " > /tmp/", create_optcmd_ofile(f)
-	);
-}
-
-void
-optcmd::Run() const
 {
 	if (system(ToString().c_str()))
 		exit(EXIT_FAILURE);

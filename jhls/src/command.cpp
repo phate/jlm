@@ -122,56 +122,6 @@ prscmd::Run() const
 		exit(EXIT_FAILURE);
 }
 
-/* optimization command */
-
-static std::string
-create_optcmd_ofile(const std::string & ifile)
-{
-	return strfmt("tmp-", ifile, "-jlm-opt-out.ll");
-}
-
-optcmd::~optcmd()
-{}
-
-std::string
-optcmd::ToString() const
-{
-	auto f = ifile_.base();
-
-	std::string jlmopts;
-	for (const auto & jlmopt : jlmopts_)
-		jlmopts += "--" + jlmopt + " ";
-
-	/*
-		If a default optimization level has been specified (-O) and no specific jlm-options 
-		have been specified (-J) then use a default set of optimizations.
-	 */
-	if (jlmopts.empty()) {
-		/*
-			Only -O3 sets default optimizations
-		*/
-		if (ol_ == optlvl::O3) {
-			jlmopts  = "--iln --inv --red --dne --ivt --inv --dne --psh --inv --dne ";
-			jlmopts += "--red --cne --dne --pll --inv --dne --url --inv ";
-		}
-	}
-
-	return strfmt(
-	  "jlm-opt "
-	, "--llvm "
-	, jlmopts
-	, tmpfolder_.to_str(), create_prscmd_ofile(f), " > "
-	, tmpfolder_.to_str(), create_optcmd_ofile(f)
-	);
-}
-
-void
-optcmd::Run() const
-{
-	if (system(ToString().c_str()))
-		exit(EXIT_FAILURE);
-}
-
 /* HLS */
 
 std::string
