@@ -279,6 +279,10 @@ public:
     Cpp14
   };
 
+  enum class ClangArgument {
+    DisableO0OptNone
+  };
+
   virtual
   ~prscmd();
 
@@ -295,9 +299,9 @@ public:
     bool suppress,
     bool pthread,
     bool MD,
-    bool hls,
     const std::string & mT,
-    const LanguageStandard & languageStandard)
+    const LanguageStandard & languageStandard,
+    std::vector<ClangArgument> clangArguments)
     : LanguageStandard_(languageStandard)
     , ifile_(ifile)
     , OutputFile_(std::move(outputFile))
@@ -310,9 +314,9 @@ public:
     , suppress_(suppress)
     , pthread_(pthread)
     , MD_(MD)
-    , hls_(hls)
     , mT_(mT)
     , dependencyFile_(dependencyFile)
+    , ClangArguments_(std::move(clangArguments))
   {}
 
   virtual std::string
@@ -339,9 +343,9 @@ public:
     bool suppress,
     bool pthread,
     bool MD,
-    bool hls,
     const std::string & mT,
-    const LanguageStandard & languageStandard)
+    const LanguageStandard & languageStandard,
+    const std::vector<ClangArgument> & clangArguments)
   {
     std::unique_ptr<prscmd> cmd(new prscmd(
       ifile,
@@ -356,9 +360,9 @@ public:
       suppress,
       pthread,
       MD,
-      hls,
       mT,
-      languageStandard));
+      languageStandard,
+      clangArguments));
 
     return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
   }
@@ -366,6 +370,9 @@ public:
 private:
   static std::string
   ToString(const LanguageStandard & languageStandard);
+
+  static std::string
+  ToString(const ClangArgument & clangArgument);
 
   static std::string
   replace_all(std::string str, const std::string& from, const std::string& to);
@@ -382,9 +389,9 @@ private:
   bool suppress_;
   bool pthread_;
   bool MD_;
-  bool hls_;
   std::string mT_;
   jlm::filepath dependencyFile_;
+  std::vector<ClangArgument> ClangArguments_;
 };
 
 }
