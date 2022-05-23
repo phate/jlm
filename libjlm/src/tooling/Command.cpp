@@ -60,19 +60,124 @@ ClangCommand::ToString() const
   for (const auto & library : Libraries_)
     libraries += "-l" + library + " ";
 
+  std::string includePaths;
+  for (auto & includePath : IncludePaths_)
+    includePaths += "-I" + includePath + " ";
+
+  std::string macroDefinitions;
+  for (auto & macroDefinition : MacroDefinitions_)
+    macroDefinitions += "-D" + macroDefinition + " ";
+
+  std::string warnings;
+  for (auto & warning : Warnings_)
+    warnings += "-W" + warning + " ";
+
+  std::string flags;
+  for (auto & flag : Flags_)
+    flags += "-f" + flag + " ";
+
   std::string arguments;
   if (UsePthreads_)
     arguments += "-pthread ";
 
-  return strfmt(
-    clangpath.to_str() + " "
-    , "-no-pie -O0 "
-    , arguments
-    , inputFiles
-    , "-o ", OutputFile_.to_str(), " "
-    , libraryPaths
-    , libraries);
+  if (Verbose_)
+    arguments += "-v ";
+
+  if (Rdynamic_)
+    arguments += "-rdynamic ";
+
+  if (Suppress_)
+    arguments += "-w ";
+
+  if (Md_) {
+    arguments += "-MD ";
+    arguments += "-MF " + DependencyFile_.to_str() + " ";
+    arguments += "-MT " + Mt_ + " ";
+  }
+
+  std::string languageStandardArgument =
+    LanguageStandard_ != LanguageStandard::Unspecified
+    ? "-std="+ToString(LanguageStandard_)+" "
+    : "";
+
+  std::string clangArguments;
+  if (!ClangArguments_.empty()) {
+    for (auto & clangArgument : ClangArguments_)
+      clangArguments += "-XClang "+ToString(clangArgument)+" ";
+  }
+
+  /*
+   * TODO: Remove LinkerCommand_ attribute and merge both paths into a single strfmt() call.
+   */
+  if (LinkerCommand_)
+  {
+    return strfmt(
+      clangpath.to_str() + " ",
+      "-no-pie -O0 ",
+      arguments,
+      inputFiles,
+      "-o ", OutputFile_.to_str(), " ",
+      libraryPaths,
+      libraries);
+  } else {
+    return strfmt(
+      clangpath.to_str() + " "
+      , arguments, " "
+      , warnings, " "
+      , flags, " "
+      , languageStandardArgument
+      , ReplaceAll(macroDefinitions, std::string("\""), std::string("\\\"")), " "
+      , includePaths, " "
+      , "-S -emit-llvm "
+      , clangArguments
+      , "-o ", OutputFile_.to_str(), " "
+      , inputFiles
+    );
+  }
 }
+
+std::string
+ClangCommand::ToString(const LanguageStandard & languageStandard)
+{
+  static std::unordered_map<LanguageStandard, const char*>
+    map({
+          {LanguageStandard::Unspecified, ""},
+          {LanguageStandard::Gnu89,       "gnu89"},
+          {LanguageStandard::Gnu99,       "gnu99"},
+          {LanguageStandard::C89,         "c89"},
+          {LanguageStandard::C99,         "c99"},
+          {LanguageStandard::C11,         "c11"},
+          {LanguageStandard::Cpp98,       "c++98"},
+          {LanguageStandard::Cpp03,       "c++03"},
+          {LanguageStandard::Cpp11,       "c++11"},
+          {LanguageStandard::Cpp14,       "c++14"}
+        });
+
+  JLM_ASSERT(map.find(languageStandard) != map.end());
+  return map[languageStandard];
+}
+
+std::string
+ClangCommand::ToString(const ClangArgument & clangArgument)
+{
+  static std::unordered_map<ClangArgument, const char*>
+    map({
+          {ClangArgument::DisableO0OptNone, "-disable-O0-optnone"},
+        });
+
+  JLM_ASSERT(map.find(clangArgument) != map.end());
+  return map[clangArgument];
+}
+std::string
+ClangCommand::ReplaceAll(std::string str, const std::string& from, const std::string& to) {
+  size_t start_pos = 0;
+  while((start_pos = str.find(from, start_pos)) != std::string::npos) {
+    str.replace(start_pos, from.length(), to);
+    start_pos += to.length();
+  }
+  return str;
+}
+
 
 void
 ClangCommand::Run() const
@@ -176,131 +281,6 @@ JlmOptCommand::ToString(const Optimization & optimization)
 
   JLM_ASSERT(map.find(optimization) != map.end());
   return map[optimization];
-}
-
-prscmd::~prscmd()
-{}
-
-jlm::filepath
-prscmd::ofile() const
-{
-  return OutputFile_;
-}
-
-std::string
-prscmd::replace_all(std::string str, const std::string& from, const std::string& to) {
-  size_t start_pos = 0;
-  while((start_pos = str.find(from, start_pos)) != std::string::npos) {
-    str.replace(start_pos, from.length(), to);
-    start_pos += to.length();
-  }
-  return str;
-}
-
-std::string
-prscmd::ToString() const
-{
-  auto f = ifile_.base();
-
-  std::string Ipaths;
-  for (const auto & Ipath : Ipaths_)
-    Ipaths += "-I" + Ipath + " ";
-
-  std::string Dmacros;
-  for (const auto & Dmacro : Dmacros_)
-    Dmacros += "-D" + Dmacro + " ";
-
-  std::string Wwarnings;
-  for (const auto & Wwarning : Wwarnings_)
-    Wwarnings += "-W" + Wwarning + " ";
-
-  std::string flags;
-  for (const auto & flag : flags_)
-    flags += "-f" + flag + " ";
-
-  std::string arguments;
-  if (verbose_)
-    arguments += "-v ";
-
-  if (rdynamic_)
-    arguments += "-rdynamic ";
-
-  if (suppress_)
-    arguments += "-w ";
-
-  if (pthread_)
-    arguments += "-pthread ";
-
-  if (MD_) {
-    arguments += "-MD ";
-    arguments += "-MF " + dependencyFile_.to_str() + " ";
-    arguments += "-MT " + mT_ + " ";
-  }
-
-  std::string languageStandardArgument =
-    LanguageStandard_ != LanguageStandard::Unspecified
-    ? "-std="+ToString(LanguageStandard_)+" "
-    : "";
-
-  std::string clangArguments;
-  if (!ClangArguments_.empty()) {
-    for (auto & clangArgument : ClangArguments_)
-      clangArguments += "-XClang "+ToString(clangArgument)+" ";
-  }
-
-  return strfmt(
-    clangpath.to_str() + " "
-    , arguments, " "
-    , Wwarnings, " "
-    , flags, " "
-    , languageStandardArgument
-    , replace_all(Dmacros, std::string("\""), std::string("\\\"")), " "
-    , Ipaths, " "
-    , "-S -emit-llvm "
-    , clangArguments
-    , "-o ", OutputFile_.to_str(), " "
-    , ifile_.to_str()
-  );
-}
-
-void
-prscmd::Run() const
-{
-  if (system(ToString().c_str()))
-    exit(EXIT_FAILURE);
-}
-
-std::string
-prscmd::ToString(const LanguageStandard & languageStandard)
-{
-  static std::unordered_map<LanguageStandard, const char*>
-    map({
-          {LanguageStandard::Unspecified, ""},
-          {LanguageStandard::Gnu89,       "gnu89"},
-          {LanguageStandard::Gnu99,       "gnu99"},
-          {LanguageStandard::C89,         "c89"},
-          {LanguageStandard::C99,         "c99"},
-          {LanguageStandard::C11,         "c11"},
-          {LanguageStandard::Cpp98,       "c++98"},
-          {LanguageStandard::Cpp03,       "c++03"},
-          {LanguageStandard::Cpp11,       "c++11"},
-          {LanguageStandard::Cpp14,       "c++14"}
-        });
-
-  JLM_ASSERT(map.find(languageStandard) != map.end());
-  return map[languageStandard];
-}
-
-std::string
-prscmd::ToString(const ClangArgument & clangArgument)
-{
-  static std::unordered_map<ClangArgument, const char*>
-    map({
-          {ClangArgument::DisableO0OptNone, "-disable-O0-optnone"},
-        });
-
-  JLM_ASSERT(map.find(clangArgument) != map.end());
-  return map[clangArgument];
 }
 
 }
