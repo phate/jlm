@@ -79,6 +79,23 @@ private:
  */
 class ClangCommand final : public Command {
 public:
+  enum class LanguageStandard {
+    Unspecified,
+    Gnu89,
+    Gnu99,
+    C89,
+    C99,
+    C11,
+    Cpp98,
+    Cpp03,
+    Cpp11,
+    Cpp14
+  };
+
+  enum class ClangArgument {
+    DisableO0OptNone
+  };
+
   ~ClangCommand() override;
 
   ClangCommand(
@@ -87,12 +104,54 @@ public:
     std::vector<std::string> libraryPaths,
     std::vector<std::string> libraries,
     bool usePthreads)
-    : OutputFile_(std::move(outputFile))
+    : InputFiles_(std::move(inputFiles))
+    , OutputFile_(std::move(outputFile))
+    , DependencyFile_("")
     , Libraries_(std::move(libraries))
-    , InputFiles_(std::move(inputFiles))
     , LibraryPaths_(std::move(libraryPaths))
     , UsePthreads_(usePthreads)
+    , Verbose_(false)
+    , Rdynamic_(false)
+    , Suppress_(false)
+    , Md_(false)
+    , LanguageStandard_(LanguageStandard::Unspecified)
+    , LinkerCommand_(true)
   {}
+
+  ClangCommand(
+    const jlm::filepath & inputFile,
+    filepath outputFile,
+    filepath dependencyFile,
+    std::vector<std::string> includePaths,
+    std::vector<std::string> macroDefinitions,
+    std::vector<std::string> warnings,
+    std::vector<std::string> flags,
+    bool verbose,
+    bool rdynamic,
+    bool suppress,
+    bool usePthreads,
+    bool mD,
+    std::string mT,
+    const LanguageStandard & languageStandard,
+    std::vector<ClangArgument> clangArguments)
+    : InputFiles_({inputFile})
+    , OutputFile_(std::move(outputFile))
+    , DependencyFile_(std::move(dependencyFile))
+    , IncludePaths_(std::move(includePaths))
+    , MacroDefinitions_(std::move(macroDefinitions))
+    , Warnings_(std::move(warnings))
+    , Flags_(std::move(flags))
+    , UsePthreads_(usePthreads)
+    , Verbose_(verbose)
+    , Rdynamic_(rdynamic)
+    , Suppress_(suppress)
+    , Md_(mD)
+    , Mt_(std::move(mT))
+    , LanguageStandard_(languageStandard)
+    , ClangArguments_(std::move(clangArguments))
+    , LinkerCommand_(false)
+  {}
+
 
   [[nodiscard]] std::string
   ToString() const override;
@@ -113,7 +172,7 @@ public:
   }
 
   static CommandGraph::Node &
-  Create(
+  CreateLinkerCommand(
     CommandGraph & commandGraph,
     const std::vector<jlm::filepath> & inputFiles,
     const filepath & outputFile,
@@ -130,12 +189,76 @@ public:
     return CommandGraph::Node::Create(commandGraph, std::move(command));
   }
 
+  static CommandGraph::Node &
+  CreateParsingCommand(
+    CommandGraph & commandGraph,
+    const filepath & inputFile,
+    const filepath & outputFile,
+    const filepath & dependencyFile,
+    const std::vector<std::string> & includePaths,
+    const std::vector<std::string> & macroDefinitions,
+    const std::vector<std::string> & warnings,
+    const std::vector<std::string> & flags,
+    bool verbose,
+    bool rdynamic,
+    bool suppress,
+    bool usePthread,
+    bool mD,
+    const std::string & mT,
+    const LanguageStandard & languageStandard,
+    const std::vector<ClangArgument> & clangArguments)
+  {
+    std::unique_ptr<ClangCommand> command(new ClangCommand(
+      inputFile,
+      outputFile,
+      dependencyFile,
+      includePaths,
+      macroDefinitions,
+      warnings,
+      flags,
+      verbose,
+      rdynamic,
+      suppress,
+      usePthread,
+      mD,
+      mT,
+      languageStandard,
+      clangArguments));
+    return CommandGraph::Node::Create(commandGraph, std::move(command));
+  }
+
 private:
+  static std::string
+  ToString(const LanguageStandard & languageStandard);
+
+  static std::string
+  ToString(const ClangArgument & clangArgument);
+
+  static std::string
+  ReplaceAll(std::string str, const std::string& from, const std::string& to);
+
+  std::vector<filepath> InputFiles_;
   filepath OutputFile_;
+  filepath DependencyFile_;
+
+  std::vector<std::string> IncludePaths_;
+  std::vector<std::string> MacroDefinitions_;
+  std::vector<std::string> Warnings_;
+  std::vector<std::string> Flags_;
   std::vector<std::string> Libraries_;
-  std::vector<jlm::filepath> InputFiles_;
   std::vector<std::string> LibraryPaths_;
+
   bool UsePthreads_;
+  bool Verbose_;
+  bool Rdynamic_;
+  bool Suppress_;
+  bool Md_;
+  std::string Mt_;
+
+  LanguageStandard LanguageStandard_;
+  std::vector<ClangArgument> ClangArguments_;
+
+  bool LinkerCommand_;
 };
 
 /**
@@ -262,136 +385,6 @@ private:
   filepath InputFile_;
   filepath OutputFile_;
   std::vector<Optimization> Optimizations_;
-};
-
-class prscmd final : public Command {
-public:
-  enum class LanguageStandard {
-    Unspecified,
-    Gnu89,
-    Gnu99,
-    C89,
-    C99,
-    C11,
-    Cpp98,
-    Cpp03,
-    Cpp11,
-    Cpp14
-  };
-
-  enum class ClangArgument {
-    DisableO0OptNone
-  };
-
-  virtual
-  ~prscmd();
-
-  prscmd(
-    const jlm::filepath & ifile,
-    filepath outputFile,
-    const jlm::filepath & dependencyFile,
-    const std::vector<std::string> & Ipaths,
-    const std::vector<std::string> & Dmacros,
-    const std::vector<std::string> & Wwarnings,
-    const std::vector<std::string> & flags,
-    bool verbose,
-    bool rdynamic,
-    bool suppress,
-    bool pthread,
-    bool MD,
-    const std::string & mT,
-    const LanguageStandard & languageStandard,
-    std::vector<ClangArgument> clangArguments)
-    : LanguageStandard_(languageStandard)
-    , ifile_(ifile)
-    , OutputFile_(std::move(outputFile))
-    , Ipaths_(Ipaths)
-    , Dmacros_(Dmacros)
-    , Wwarnings_(Wwarnings)
-    , flags_(flags)
-    , verbose_(verbose)
-    , rdynamic_(rdynamic)
-    , suppress_(suppress)
-    , pthread_(pthread)
-    , MD_(MD)
-    , mT_(mT)
-    , dependencyFile_(dependencyFile)
-    , ClangArguments_(std::move(clangArguments))
-  {}
-
-  virtual std::string
-  ToString() const override;
-
-  jlm::filepath
-  ofile() const;
-
-  virtual void
-  Run() const override;
-
-  static CommandGraph::Node *
-  create(
-    CommandGraph * pgraph,
-    const jlm::filepath & ifile,
-    const filepath & outputFile,
-    const jlm::filepath & dependencyFile,
-    const std::vector<std::string> & Ipaths,
-    const std::vector<std::string> & Dmacros,
-    const std::vector<std::string> & Wwarnings,
-    const std::vector<std::string> & flags,
-    bool verbose,
-    bool rdynamic,
-    bool suppress,
-    bool pthread,
-    bool MD,
-    const std::string & mT,
-    const LanguageStandard & languageStandard,
-    const std::vector<ClangArgument> & clangArguments)
-  {
-    std::unique_ptr<prscmd> cmd(new prscmd(
-      ifile,
-      outputFile,
-      dependencyFile,
-      Ipaths,
-      Dmacros,
-      Wwarnings,
-      flags,
-      verbose,
-      rdynamic,
-      suppress,
-      pthread,
-      MD,
-      mT,
-      languageStandard,
-      clangArguments));
-
-    return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
-  }
-
-private:
-  static std::string
-  ToString(const LanguageStandard & languageStandard);
-
-  static std::string
-  ToString(const ClangArgument & clangArgument);
-
-  static std::string
-  replace_all(std::string str, const std::string& from, const std::string& to);
-
-  LanguageStandard LanguageStandard_;
-  jlm::filepath ifile_;
-  filepath OutputFile_;
-  std::vector<std::string> Ipaths_;
-  std::vector<std::string> Dmacros_;
-  std::vector<std::string> Wwarnings_;
-  std::vector<std::string> flags_;
-  bool verbose_;
-  bool rdynamic_;
-  bool suppress_;
-  bool pthread_;
-  bool MD_;
-  std::string mT_;
-  jlm::filepath dependencyFile_;
-  std::vector<ClangArgument> ClangArguments_;
 };
 
 }

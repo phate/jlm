@@ -31,21 +31,21 @@ ToLlcCommandOptimizationLevel(optlvl optimizationLevel)
   return map[optimizationLevel];
 }
 
-static prscmd::LanguageStandard
+static ClangCommand::LanguageStandard
 ToPrscmdLanguageStandard(standard languageStandard)
 {
-  static std::unordered_map<standard, prscmd::LanguageStandard>
+  static std::unordered_map<standard, ClangCommand::LanguageStandard>
     map({
-          {standard::none,  prscmd::LanguageStandard::Unspecified},
-          {standard::gnu89, prscmd::LanguageStandard::Gnu89},
-          {standard::gnu99, prscmd::LanguageStandard::Gnu99},
-          {standard::c89,   prscmd::LanguageStandard::C89},
-          {standard::c99,   prscmd::LanguageStandard::C99},
-          {standard::c11,   prscmd::LanguageStandard::C11},
-          {standard::cpp98, prscmd::LanguageStandard::Cpp98},
-          {standard::cpp03, prscmd::LanguageStandard::Cpp03},
-          {standard::cpp11, prscmd::LanguageStandard::Cpp11},
-          {standard::cpp14, prscmd::LanguageStandard::Cpp14}
+          {standard::none,  ClangCommand::LanguageStandard::Unspecified},
+          {standard::gnu89, ClangCommand::LanguageStandard::Gnu89},
+          {standard::gnu99, ClangCommand::LanguageStandard::Gnu99},
+          {standard::c89,   ClangCommand::LanguageStandard::C89},
+          {standard::c99,   ClangCommand::LanguageStandard::C99},
+          {standard::c11,   ClangCommand::LanguageStandard::C11},
+          {standard::cpp98, ClangCommand::LanguageStandard::Cpp98},
+          {standard::cpp03, ClangCommand::LanguageStandard::Cpp03},
+          {standard::cpp11, ClangCommand::LanguageStandard::Cpp11},
+          {standard::cpp14, ClangCommand::LanguageStandard::Cpp14}
         });
 
   JLM_ASSERT(map.find(languageStandard) != map.end());
@@ -74,8 +74,8 @@ generate_commands(const jlm::cmdline_options & opts)
 		auto last = &pgraph->GetEntryNode();
 
 		if (c.parse()) {
-			auto prsnode = prscmd::create(
-				pgraph.get(),
+			auto & prsnode = ClangCommand::CreateParsingCommand(
+				*pgraph,
 				c.ifile(),
         "/tmp/" + create_prscmd_ofile(c.ifile().base()),
 				c.DependencyFile(),
@@ -92,8 +92,8 @@ generate_commands(const jlm::cmdline_options & opts)
         ToPrscmdLanguageStandard(opts.std),
         {});
 
-      last->AddEdge(*prsnode);
-			last = prsnode;
+      last->AddEdge(prsnode);
+			last = &prsnode;
 		}
 
     if (c.optimize()) {
@@ -158,7 +158,7 @@ generate_commands(const jlm::cmdline_options & opts)
 	}
 
   if (!lnkifiles.empty()) {
-    auto & linkerCommandNode = ClangCommand::Create(
+    auto & linkerCommandNode = ClangCommand::CreateLinkerCommand(
       *pgraph,
       lnkifiles,
       opts.lnkofile,
