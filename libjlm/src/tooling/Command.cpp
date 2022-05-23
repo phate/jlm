@@ -242,19 +242,10 @@ prscmd::ToString() const
     ? "-std="+ToString(LanguageStandard_)+" "
     : "";
 
-  if (hls_) {
-    return strfmt(
-      clangpath.to_str() + " "
-      , arguments, " "
-      , Wwarnings, " "
-      , flags, " "
-      , languageStandardArgument
-      , replace_all(Dmacros, std::string("\""), std::string("\\\"")), " "
-      , Ipaths, " "
-      , "-S -emit-llvm -Xclang -disable-O0-optnone "
-      , "-o ", OutputFile_.to_str(), " "
-      , ifile_.to_str()
-    );
+  std::string clangArguments;
+  if (!ClangArguments_.empty()) {
+    for (auto & clangArgument : ClangArguments_)
+      clangArguments += "-XClang "+ToString(clangArgument)+" ";
   }
 
   return strfmt(
@@ -266,6 +257,7 @@ prscmd::ToString() const
     , replace_all(Dmacros, std::string("\""), std::string("\\\"")), " "
     , Ipaths, " "
     , "-S -emit-llvm "
+    , clangArguments
     , "-o ", OutputFile_.to_str(), " "
     , ifile_.to_str()
   );
@@ -297,6 +289,18 @@ prscmd::ToString(const LanguageStandard & languageStandard)
 
   JLM_ASSERT(map.find(languageStandard) != map.end());
   return map[languageStandard];
+}
+
+std::string
+prscmd::ToString(const ClangArgument & clangArgument)
+{
+  static std::unordered_map<ClangArgument, const char*>
+    map({
+          {ClangArgument::DisableO0OptNone, "-disable-O0-optnone"},
+        });
+
+  JLM_ASSERT(map.find(clangArgument) != map.end());
+  return map[clangArgument];
 }
 
 }
