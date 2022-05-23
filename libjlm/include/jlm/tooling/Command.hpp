@@ -209,7 +209,10 @@ private:
   filepath OutputFile_;
 };
 
-class optcmd final : public Command {
+/**
+ * The JlmOptCommand class represents the jlm-opt command line tool.
+ */
+class JlmOptCommand final : public Command {
 public:
   enum class Optimization {
     AASteensgaardBasic,
@@ -225,9 +228,9 @@ public:
   };
 
   virtual
-  ~optcmd();
+  ~JlmOptCommand();
 
-  optcmd(
+  JlmOptCommand(
     const jlm::filepath & ifile,
     filepath outputFile,
     std::vector<Optimization> optimizations)
@@ -249,7 +252,7 @@ public:
     const filepath & outputFile,
     const std::vector<Optimization> & optimizations)
   {
-    return &CommandGraph::Node::Create(*pgraph, std::make_unique<optcmd>(ifile, outputFile, optimizations));
+    return &CommandGraph::Node::Create(*pgraph, std::make_unique<JlmOptCommand>(ifile, outputFile, optimizations));
   }
 
 private:

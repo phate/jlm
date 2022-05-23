@@ -78,34 +78,34 @@ generate_commands(const jlm::cmdline_options & opts)
        * If a default optimization level has been specified (-O) and no specific jlm options
        * have been specified (-J) then use a default set of optimizations.
        */
-      std::vector<optcmd::Optimization> optimizations;
+      std::vector<JlmOptCommand::Optimization> optimizations;
       if (opts.jlmopts.empty() && opts.Olvl == optlvl::O3) {
         /*
          * Only -O3 sets default optimizations
          */
         optimizations = {
-          optcmd::Optimization::FunctionInlining,
-          optcmd::Optimization::InvariantValueRedirection,
-          optcmd::Optimization::NodeReduction,
-          optcmd::Optimization::DeadNodeElimination,
-          optcmd::Optimization::ThetaGammaInversion,
-          optcmd::Optimization::InvariantValueRedirection,
-          optcmd::Optimization::DeadNodeElimination,
-          optcmd::Optimization::NodePushOut,
-          optcmd::Optimization::InvariantValueRedirection,
-          optcmd::Optimization::DeadNodeElimination,
-          optcmd::Optimization::NodeReduction,
-          optcmd::Optimization::CommonNodeElimination,
-          optcmd::Optimization::DeadNodeElimination,
-          optcmd::Optimization::NodePullIn,
-          optcmd::Optimization::InvariantValueRedirection,
-          optcmd::Optimization::DeadNodeElimination,
-          optcmd::Optimization::LoopUnrolling,
-          optcmd::Optimization::InvariantValueRedirection
+          JlmOptCommand::Optimization::FunctionInlining,
+          JlmOptCommand::Optimization::InvariantValueRedirection,
+          JlmOptCommand::Optimization::NodeReduction,
+          JlmOptCommand::Optimization::DeadNodeElimination,
+          JlmOptCommand::Optimization::ThetaGammaInversion,
+          JlmOptCommand::Optimization::InvariantValueRedirection,
+          JlmOptCommand::Optimization::DeadNodeElimination,
+          JlmOptCommand::Optimization::NodePushOut,
+          JlmOptCommand::Optimization::InvariantValueRedirection,
+          JlmOptCommand::Optimization::DeadNodeElimination,
+          JlmOptCommand::Optimization::NodeReduction,
+          JlmOptCommand::Optimization::CommonNodeElimination,
+          JlmOptCommand::Optimization::DeadNodeElimination,
+          JlmOptCommand::Optimization::NodePullIn,
+          JlmOptCommand::Optimization::InvariantValueRedirection,
+          JlmOptCommand::Optimization::DeadNodeElimination,
+          JlmOptCommand::Optimization::LoopUnrolling,
+          JlmOptCommand::Optimization::InvariantValueRedirection
         };
       }
 
-      auto optnode = optcmd::create(
+      auto optnode = JlmOptCommand::create(
         pgraph.get(),
         "/tmp/" + create_prscmd_ofile(c.ifile().base()),
         "/tmp/" + create_optcmd_ofile(c.ifile().base()),
