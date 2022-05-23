@@ -31,6 +31,27 @@ ToLlcCommandOptimizationLevel(optlvl optimizationLevel)
   return map[optimizationLevel];
 }
 
+static prscmd::LanguageStandard
+ToPrscmdLanguageStandard(standard languageStandard)
+{
+  static std::unordered_map<standard, prscmd::LanguageStandard>
+    map({
+          {standard::none,  prscmd::LanguageStandard::Unspecified},
+          {standard::gnu89, prscmd::LanguageStandard::Gnu89},
+          {standard::gnu99, prscmd::LanguageStandard::Gnu99},
+          {standard::c89,   prscmd::LanguageStandard::C89},
+          {standard::c99,   prscmd::LanguageStandard::C99},
+          {standard::c11,   prscmd::LanguageStandard::C11},
+          {standard::cpp98, prscmd::LanguageStandard::Cpp98},
+          {standard::cpp03, prscmd::LanguageStandard::Cpp03},
+          {standard::cpp11, prscmd::LanguageStandard::Cpp11},
+          {standard::cpp14, prscmd::LanguageStandard::Cpp14}
+        });
+
+  JLM_ASSERT(map.find(languageStandard) != map.end());
+  return map[languageStandard];
+}
+
 static std::string
 create_optcmd_ofile(const std::string & ifile)
 {
@@ -56,6 +77,7 @@ generate_commands(const jlm::cmdline_options & opts)
 			auto prsnode = prscmd::create(
 				pgraph.get(),
 				c.ifile(),
+        "/tmp/" + create_prscmd_ofile(c.ifile().base()),
 				c.DependencyFile(),
 				opts.includepaths,
 				opts.macros,
@@ -66,8 +88,9 @@ generate_commands(const jlm::cmdline_options & opts)
 				opts.suppress,
 				opts.pthread,
 				opts.MD,
+        false,
 				c.Mt(),
-				opts.std);
+        ToPrscmdLanguageStandard(opts.std));
 
       last->AddEdge(*prsnode);
 			last = prsnode;
@@ -157,82 +180,6 @@ generate_commands(const jlm::cmdline_options & opts)
     pgraph = PrintCommandsCommand::Create(std::move(pgraph));
 
 	return pgraph;
-}
-
-/* parser command */
-
-prscmd::~prscmd()
-{}
-
-std::string
-prscmd::replace_all(std::string str, const std::string& from, const std::string& to) {
-    size_t start_pos = 0;
-    while((start_pos = str.find(from, start_pos)) != std::string::npos) {
-        str.replace(start_pos, from.length(), to);
-        start_pos += to.length();
-    }
-    return str;
-}
-
-std::string
-prscmd::ToString() const
-{
-	auto f = ifile_.base();
-
-	std::string Ipaths;
-	for (const auto & Ipath : Ipaths_)
-		Ipaths += "-I" + Ipath + " ";
-
-	std::string Dmacros;
-	for (const auto & Dmacro : Dmacros_)
-		Dmacros += "-D" + Dmacro + " ";
-
-	std::string Wwarnings;
-	for (const auto & Wwarning : Wwarnings_)
-		Wwarnings += "-W" + Wwarning + " ";
-
-	std::string flags;
-	for (const auto & flag : flags_)
-		flags += "-f" + flag + " ";
-
-	std::string arguments;
-	if (verbose_)
-	  arguments += "-v ";
-
-	if (rdynamic_)
-	  arguments += "-rdynamic ";
-
-	if (suppress_)
-	  arguments += "-w ";
-
-	if (pthread_)
-	  arguments += "-pthread ";
-
-	if (MD_) {
-		arguments += "-MD ";
-		arguments += "-MF " + dependencyFile_.to_str() + " ";
-		arguments += "-MT " + mT_ + " ";
-	}
-
-	return strfmt(
-	  clangpath.to_str() + " "
-	, arguments, " "
-	, Wwarnings, " "
-	, flags, " "
-	, std_ != standard::none ? "-std="+jlm::to_str(std_)+" " : ""
-	, replace_all(Dmacros, std::string("\""), std::string("\\\"")), " "
-	, Ipaths, " "
-	, "-S -emit-llvm "
-	, "-o /tmp/", create_prscmd_ofile(f), " "
-	, ifile_.to_str()
-	);
-}
-
-void
-prscmd::Run() const
-{
-	if (system(ToString().c_str()))
-		exit(EXIT_FAILURE);
 }
 
 }

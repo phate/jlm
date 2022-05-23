@@ -264,6 +264,129 @@ private:
   std::vector<Optimization> Optimizations_;
 };
 
+class prscmd final : public Command {
+public:
+  enum class LanguageStandard {
+    Unspecified,
+    Gnu89,
+    Gnu99,
+    C89,
+    C99,
+    C11,
+    Cpp98,
+    Cpp03,
+    Cpp11,
+    Cpp14
+  };
+
+  virtual
+  ~prscmd();
+
+  prscmd(
+    const jlm::filepath & ifile,
+    filepath outputFile,
+    const jlm::filepath & dependencyFile,
+    const std::vector<std::string> & Ipaths,
+    const std::vector<std::string> & Dmacros,
+    const std::vector<std::string> & Wwarnings,
+    const std::vector<std::string> & flags,
+    bool verbose,
+    bool rdynamic,
+    bool suppress,
+    bool pthread,
+    bool MD,
+    bool hls,
+    const std::string & mT,
+    const LanguageStandard & languageStandard)
+    : LanguageStandard_(languageStandard)
+    , ifile_(ifile)
+    , OutputFile_(std::move(outputFile))
+    , Ipaths_(Ipaths)
+    , Dmacros_(Dmacros)
+    , Wwarnings_(Wwarnings)
+    , flags_(flags)
+    , verbose_(verbose)
+    , rdynamic_(rdynamic)
+    , suppress_(suppress)
+    , pthread_(pthread)
+    , MD_(MD)
+    , hls_(hls)
+    , mT_(mT)
+    , dependencyFile_(dependencyFile)
+  {}
+
+  virtual std::string
+  ToString() const override;
+
+  jlm::filepath
+  ofile() const;
+
+  virtual void
+  Run() const override;
+
+  static CommandGraph::Node *
+  create(
+    CommandGraph * pgraph,
+    const jlm::filepath & ifile,
+    const filepath & outputFile,
+    const jlm::filepath & dependencyFile,
+    const std::vector<std::string> & Ipaths,
+    const std::vector<std::string> & Dmacros,
+    const std::vector<std::string> & Wwarnings,
+    const std::vector<std::string> & flags,
+    bool verbose,
+    bool rdynamic,
+    bool suppress,
+    bool pthread,
+    bool MD,
+    bool hls,
+    const std::string & mT,
+    const LanguageStandard & languageStandard)
+  {
+    std::unique_ptr<prscmd> cmd(new prscmd(
+      ifile,
+      outputFile,
+      dependencyFile,
+      Ipaths,
+      Dmacros,
+      Wwarnings,
+      flags,
+      verbose,
+      rdynamic,
+      suppress,
+      pthread,
+      MD,
+      hls,
+      mT,
+      languageStandard));
+
+    return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
+  }
+
+private:
+  static std::string
+  ToString(const LanguageStandard & languageStandard);
+
+  static std::string
+  replace_all(std::string str, const std::string& from, const std::string& to);
+
+  LanguageStandard LanguageStandard_;
+  jlm::filepath ifile_;
+  filepath OutputFile_;
+  std::vector<std::string> Ipaths_;
+  std::vector<std::string> Dmacros_;
+  std::vector<std::string> Wwarnings_;
+  std::vector<std::string> flags_;
+  bool verbose_;
+  bool rdynamic_;
+  bool suppress_;
+  bool pthread_;
+  bool MD_;
+  bool hls_;
+  std::string mT_;
+  jlm::filepath dependencyFile_;
+};
+
 }
 
 #endif
