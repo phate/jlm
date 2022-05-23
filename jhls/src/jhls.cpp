@@ -102,9 +102,9 @@ generate_commands(const jlm::cmdline_options & opts)
 				opts.suppress,
 				opts.pthread,
 				opts.MD,
-				true,
 				c.Mt(),
-        ToPrscmdLanguageStandard(opts.std));
+        ToPrscmdLanguageStandard(opts.std),
+        {prscmd::ClangArgument::DisableO0OptNone});
 
       last->AddEdge(*prsnode);
 			last = prsnode;
