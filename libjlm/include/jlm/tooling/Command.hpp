@@ -227,39 +227,39 @@ public:
     ThetaGammaInversion
   };
 
-  virtual
-  ~JlmOptCommand();
+  ~JlmOptCommand() override;
 
   JlmOptCommand(
-    const jlm::filepath & ifile,
+    filepath inputFile,
     filepath outputFile,
     std::vector<Optimization> optimizations)
-    : ifile_(ifile)
+    : InputFile_(std::move(inputFile))
     , OutputFile_(std::move(outputFile))
     , Optimizations_(std::move(optimizations))
   {}
 
-  virtual std::string
+  [[nodiscard]] std::string
   ToString() const override;
 
-  virtual void
+  void
   Run() const override;
 
-  static CommandGraph::Node *
-  create(
-    CommandGraph * pgraph,
-    const jlm::filepath & ifile,
+  static CommandGraph::Node &
+  Create(
+    CommandGraph & commandGraph,
+    const filepath & inputFile,
     const filepath & outputFile,
     const std::vector<Optimization> & optimizations)
   {
-    return &CommandGraph::Node::Create(*pgraph, std::make_unique<JlmOptCommand>(ifile, outputFile, optimizations));
+    std::unique_ptr<JlmOptCommand> command(new JlmOptCommand(inputFile, outputFile, optimizations));
+    return CommandGraph::Node::Create(commandGraph, std::move(command));
   }
 
 private:
   static std::string
   ToString(const Optimization & optimization);
 
-  jlm::filepath ifile_;
+  filepath InputFile_;
   filepath OutputFile_;
   std::vector<Optimization> Optimizations_;
 };

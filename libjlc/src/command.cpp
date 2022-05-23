@@ -105,13 +105,13 @@ generate_commands(const jlm::cmdline_options & opts)
         };
       }
 
-      auto optnode = JlmOptCommand::create(
-        pgraph.get(),
+      auto & optnode = JlmOptCommand::Create(
+        *pgraph,
         "/tmp/" + create_prscmd_ofile(c.ifile().base()),
         "/tmp/" + create_optcmd_ofile(c.ifile().base()),
         optimizations);
-      last->AddEdge(*optnode);
-      last = optnode;
+      last->AddEdge(optnode);
+      last = &optnode;
     }
 
 		if (c.assemble()) {
