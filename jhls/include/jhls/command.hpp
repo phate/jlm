@@ -126,48 +126,6 @@ private:
 	jlm::filepath dependencyFile_;
 };
 
-/* optimization command */
-
-class optcmd final : public Command {
-public:
-	virtual
-	~optcmd();
-
-	optcmd(
-		const jlm::filepath & ifile,
-		const jlm::filepath & tmpfolder,
-		const std::vector<std::string> & jlmopts,
-		const optlvl & ol)
-	: ifile_(ifile)
-	, tmpfolder_(tmpfolder)
-	, jlmopts_(jlmopts)
-	, ol_(ol)
-	{}
-
-	virtual std::string
-	ToString() const override;
-
-	virtual void
-	Run() const override;
-
-	static CommandGraph::Node *
-	create(
-    CommandGraph * pgraph,
-    const jlm::filepath & ifile,
-    const jlm::filepath & tmpfolder,
-    const std::vector<std::string> & jlmopts,
-    const optlvl & ol)
-	{
-		return &CommandGraph::Node::Create(*pgraph, std::make_unique<optcmd>(ifile, tmpfolder, jlmopts, ol));
-	}
-
-private:
-	jlm::filepath ifile_;
-	jlm::filepath tmpfolder_;
-	std::vector<std::string> jlmopts_;
-	optlvl ol_;
-};
-
 class m2rcmd final : public Command {
 public:
 	virtual

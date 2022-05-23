@@ -209,6 +209,58 @@ private:
   filepath OutputFile_;
 };
 
+class optcmd final : public Command {
+public:
+  enum class Optimization {
+    AASteensgaardBasic,
+    CommonNodeElimination,
+    DeadNodeElimination,
+    FunctionInlining,
+    InvariantValueRedirection,
+    LoopUnrolling,
+    NodePullIn,
+    NodePushOut,
+    NodeReduction,
+    ThetaGammaInversion
+  };
+
+  virtual
+  ~optcmd();
+
+  optcmd(
+    const jlm::filepath & ifile,
+    filepath outputFile,
+    std::vector<Optimization> optimizations)
+    : ifile_(ifile)
+    , OutputFile_(std::move(outputFile))
+    , Optimizations_(std::move(optimizations))
+  {}
+
+  virtual std::string
+  ToString() const override;
+
+  virtual void
+  Run() const override;
+
+  static CommandGraph::Node *
+  create(
+    CommandGraph * pgraph,
+    const jlm::filepath & ifile,
+    const filepath & outputFile,
+    const std::vector<Optimization> & optimizations)
+  {
+    return &CommandGraph::Node::Create(*pgraph, std::make_unique<optcmd>(ifile, outputFile, optimizations));
+  }
+
+private:
+  static std::string
+  ToString(const Optimization & optimization);
+
+  jlm::filepath ifile_;
+  filepath OutputFile_;
+  std::vector<Optimization> Optimizations_;
+};
+
 }
 
 #endif

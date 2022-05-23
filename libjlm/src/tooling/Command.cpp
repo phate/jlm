@@ -132,4 +132,50 @@ LlcCommand::ToString(const RelocationModel & relocationModel)
   return map[relocationModel];
 }
 
+optcmd::~optcmd()
+{}
+
+std::string
+optcmd::ToString() const
+{
+  std::string optimizationArguments;
+  for (auto & optimization : Optimizations_)
+    optimizationArguments += ToString(optimization) + " ";
+
+  return strfmt(
+    "jlm-opt ",
+    "--llvm ",
+    optimizationArguments,
+    "-o ", OutputFile_.to_str(), " ",
+    ifile_.to_str());
+}
+
+void
+optcmd::Run() const
+{
+  if (system(ToString().c_str()))
+    exit(EXIT_FAILURE);
+}
+
+std::string
+optcmd::ToString(const Optimization & optimization)
+{
+  static std::unordered_map<Optimization, const char*>
+    map({
+          {Optimization::AASteensgaardBasic, "--AASteensgaardBasic"},
+          {Optimization::CommonNodeElimination, "--cne"},
+          {Optimization::DeadNodeElimination, "--dne"},
+          {Optimization::FunctionInlining, "--iln"},
+          {Optimization::InvariantValueRedirection, "--InvariantValueRedirection"},
+          {Optimization::LoopUnrolling, "--url"},
+          {Optimization::NodePullIn, "--pll"},
+          {Optimization::NodePushOut, "--psh"},
+          {Optimization::NodeReduction, "--red"},
+          {Optimization::ThetaGammaInversion, "--ivt"}
+        });
+
+  JLM_ASSERT(map.find(optimization) != map.end());
+  return map[optimization];
+}
+
 }
