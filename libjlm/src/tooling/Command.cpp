@@ -133,7 +133,7 @@ LlcCommand::ToString(const RelocationModel & relocationModel)
 }
 
 JlmOptCommand::~JlmOptCommand()
-{}
+= default;
 
 std::string
 JlmOptCommand::ToString() const
@@ -147,7 +147,7 @@ JlmOptCommand::ToString() const
     "--llvm ",
     optimizationArguments,
     "-o ", OutputFile_.to_str(), " ",
-    ifile_.to_str());
+    InputFile_.to_str());
 }
 
 void
