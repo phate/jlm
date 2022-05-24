@@ -286,7 +286,7 @@ JlmOptCommand::ToString(const Optimization & optimization)
 }
 
 std::string
-mkdircmd::ToString() const
+MkdirCommand::ToString() const
 {
   return strfmt(
     "mkdir "
@@ -295,7 +295,7 @@ mkdircmd::ToString() const
 }
 
 void
-mkdircmd::Run() const
+MkdirCommand::Run() const
 {
   if (mkdir(path_.to_str().c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)!=0)
     throw jlm::error("mkdir failed: "+path_.to_str());
