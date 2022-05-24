@@ -151,6 +151,8 @@ jobs:
       run: sudo apt-get install llvm-14-dev clang-14
     - name: Clone jlm-test-suite
       run: git clone https://github.com/phate/jlm-eval-suite.git
+    - name: Checkout commit 5cac133cac3d014da8a380445240b4ca9c52d9a8
+      run: cd jlm-eval-suite && git checkout 5cac133cac3d014da8a380445240b4ca9c52d9a8
     - name: Update submodules
       run: make -C jlm-eval-suite submodule
     - name: Install lit
@@ -165,6 +167,8 @@ jobs:
     steps:
     - name: Clone jlm-test-suite
       run: git clone https://github.com/phate/jlm-eval-suite.git
+    - name: Checkout commit 5cac133cac3d014da8a380445240b4ca9c52d9a8
+      run: cd jlm-eval-suite && git checkout 5cac133cac3d014da8a380445240b4ca9c52d9a8
     - name: Update submodules
       run: make -C jlm-eval-suite submodule
     - name: Install verilator
