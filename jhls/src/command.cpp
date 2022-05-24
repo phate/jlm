@@ -8,12 +8,9 @@
 #include <jhls/toolpaths.hpp>
 #include <jlm/util/strfmt.hpp>
 
-#include <deque>
 #include <functional>
 #include <iostream>
 #include <memory>
-#include <algorithm>
-#include <sys/stat.h>
 
 namespace jlm {
 
@@ -193,22 +190,6 @@ m2rcmd::Run() const
 {
 	if (system(ToString().c_str()))
 		exit(EXIT_FAILURE);
-}
-
-std::string
-mkdircmd::ToString() const
-{
-	return strfmt(
-		      "mkdir "
-		      , path_.to_str()
-		      );
-}
-
-void
-mkdircmd::Run() const
-{
-	if (mkdir(path_.to_str().c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)!=0)
-		throw jlm::error("mkdir failed: "+path_.to_str());
 }
 
 } // jlm

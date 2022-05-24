@@ -7,6 +7,8 @@
 #include <jlm/tooling/LlvmPaths.hpp>
 #include <jlm/util/strfmt.hpp>
 
+#include <sys/stat.h>
+
 #include <unordered_map>
 
 namespace jlm {
@@ -281,6 +283,22 @@ JlmOptCommand::ToString(const Optimization & optimization)
 
   JLM_ASSERT(map.find(optimization) != map.end());
   return map[optimization];
+}
+
+std::string
+mkdircmd::ToString() const
+{
+  return strfmt(
+    "mkdir "
+    , path_.to_str()
+  );
+}
+
+void
+mkdircmd::Run() const
+{
+  if (mkdir(path_.to_str().c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)!=0)
+    throw jlm::error("mkdir failed: "+path_.to_str());
 }
 
 }
