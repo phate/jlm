@@ -81,11 +81,11 @@ generate_commands(const jlm::cmdline_options & opts)
 	srandom((unsigned) time(nullptr) * getpid());
 	tmp_identifier += std::to_string(random());
 	jlm::filepath tmp_folder("/tmp/" + tmp_identifier + "/");
-	auto mkdir = MkdirCommand::create(pgraph.get(), tmp_folder);
-  pgraph->GetEntryNode().AddEdge(*mkdir);
+	auto & mkdir = MkdirCommand::Create(*pgraph, tmp_folder);
+  pgraph->GetEntryNode().AddEdge(mkdir);
 
 	for (const auto & c : opts.compilations) {
-		CommandGraph::Node * last = mkdir;
+		CommandGraph::Node * last = &mkdir;
 
 		if (c.parse()) {
 			auto & prsnode = ClangCommand::CreateParsingCommand(

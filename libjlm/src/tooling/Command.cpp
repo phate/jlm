@@ -285,20 +285,22 @@ JlmOptCommand::ToString(const Optimization & optimization)
   return map[optimization];
 }
 
+MkdirCommand::~MkdirCommand() noexcept
+= default;
+
 std::string
 MkdirCommand::ToString() const
 {
   return strfmt(
-    "mkdir "
-    , path_.to_str()
-  );
+    "mkdir ",
+    Path_.to_str());
 }
 
 void
 MkdirCommand::Run() const
 {
-  if (mkdir(path_.to_str().c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)!=0)
-    throw jlm::error("mkdir failed: "+path_.to_str());
+  if (mkdir(Path_.to_str().c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != 0)
+    throw error("mkdir failed: " + Path_.to_str());
 }
 
 }
