@@ -392,31 +392,30 @@ private:
  */
 class MkdirCommand final : public Command {
 public:
-  virtual
-  ~MkdirCommand(){}
+  ~MkdirCommand() noexcept override;
 
-  MkdirCommand(
-    const jlm::filepath & path)
-    : path_(path)
+  explicit
+  MkdirCommand(filepath path)
+    : Path_(std::move(path))
   {}
 
-  virtual std::string
+  [[nodiscard]] std::string
   ToString() const override;
 
-  virtual void
+  void
   Run() const override;
 
-  static CommandGraph::Node *
-  create(
-    CommandGraph * pgraph,
-    const jlm::filepath & path)
+  static CommandGraph::Node &
+  Create(
+    CommandGraph & commandGraph,
+    const filepath & path)
   {
-    std::unique_ptr<MkdirCommand> cmd(new MkdirCommand(path));
-    return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
+    std::unique_ptr<MkdirCommand> command(new MkdirCommand(path));
+    return CommandGraph::Node::Create(commandGraph, std::move(command));
   }
 
 private:
-  jlm::filepath path_;
+  filepath Path_;
 };
 
 }
