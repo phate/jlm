@@ -387,12 +387,15 @@ private:
   std::vector<Optimization> Optimizations_;
 };
 
-class mkdircmd final : public Command {
+/**
+ * The MkdirCommand class represents the mkdir command line tool.
+ */
+class MkdirCommand final : public Command {
 public:
   virtual
-  ~mkdircmd(){}
+  ~MkdirCommand(){}
 
-  mkdircmd(
+  MkdirCommand(
     const jlm::filepath & path)
     : path_(path)
   {}
@@ -408,7 +411,7 @@ public:
     CommandGraph * pgraph,
     const jlm::filepath & path)
   {
-    std::unique_ptr<mkdircmd> cmd(new mkdircmd(path));
+    std::unique_ptr<MkdirCommand> cmd(new MkdirCommand(path));
     return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
   }
 
