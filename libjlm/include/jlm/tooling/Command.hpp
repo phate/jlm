@@ -387,6 +387,35 @@ private:
   std::vector<Optimization> Optimizations_;
 };
 
+class mkdircmd final : public Command {
+public:
+  virtual
+  ~mkdircmd(){}
+
+  mkdircmd(
+    const jlm::filepath & path)
+    : path_(path)
+  {}
+
+  virtual std::string
+  ToString() const override;
+
+  virtual void
+  Run() const override;
+
+  static CommandGraph::Node *
+  create(
+    CommandGraph * pgraph,
+    const jlm::filepath & path)
+  {
+    std::unique_ptr<mkdircmd> cmd(new mkdircmd(path));
+    return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
+  }
+
+private:
+  jlm::filepath path_;
+};
+
 }
 
 #endif
