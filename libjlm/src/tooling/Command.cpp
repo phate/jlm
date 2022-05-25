@@ -103,7 +103,7 @@ ClangCommand::ToString() const
   std::string clangArguments;
   if (!ClangArguments_.empty()) {
     for (auto & clangArgument : ClangArguments_)
-      clangArguments += "-XClang "+ToString(clangArgument)+" ";
+      clangArguments += "-Xclang "+ToString(clangArgument)+" ";
   }
 
   /*
