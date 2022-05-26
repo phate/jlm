@@ -166,30 +166,4 @@ verilatorcmd::ToString() const {
 		      );
 }
 
-jlm::filepath
-m2rcmd::ofile() const
-{
-	return ofile_;
-}
-
-std::string
-m2rcmd::ToString() const
-{
-	auto opt = clangpath.path() + "opt";
-
-	return strfmt(
-		      opt + " "
-		      , "-mem2reg -S "
-		      , "-o ", ofile().to_str(), " "
-		      , ifile_.to_str()
-		      );
-}
-
-void
-m2rcmd::Run() const
-{
-	if (system(ToString().c_str()))
-		exit(EXIT_FAILURE);
-}
-
 } // jlm
