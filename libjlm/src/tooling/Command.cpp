@@ -303,22 +303,22 @@ MkdirCommand::Run() const
     throw error("mkdir failed: " + Path_.to_str());
 }
 
-jlm::filepath
-LlvmOptCommand::ofile() const
-{
-  return ofile_;
-}
+LlvmOptCommand::~LlvmOptCommand() noexcept
+= default;
 
 std::string
 LlvmOptCommand::ToString() const
 {
-  auto opt = clangpath.path() + "opt";
+  std::string optimizationArguments;
+  for (auto & optimization : Optimizations_)
+    optimizationArguments += ToString(optimization) + " ";
 
   return strfmt(
-    opt + " "
-    , "-mem2reg -S "
-    , "-o ", ofile().to_str(), " "
-    , ifile_.to_str()
+    clangpath.path() + "opt "
+    , optimizationArguments
+    , WriteLlvmAssembly_ ? "-S " : ""
+    , "-o ", OutputFile().to_str(), " "
+    , InputFile_.to_str()
   );
 }
 
@@ -327,6 +327,18 @@ LlvmOptCommand::Run() const
 {
   if (system(ToString().c_str()))
     exit(EXIT_FAILURE);
+}
+
+std::string
+LlvmOptCommand::ToString(const Optimization & optimization)
+{
+  static std::unordered_map<Optimization, const char*>
+    map({
+          {Optimization::Mem2Reg, "-mem2reg"},
+        });
+
+  JLM_ASSERT(map.find(optimization) != map.end());
+  return map[optimization];
 }
 
 }
