@@ -480,12 +480,15 @@ private:
   std::vector<Optimization> Optimizations_;
 };
 
-class lllnkcmd final : public Command {
+/**
+ * The LlvmLinkCommand class represents the llvm-link command line tool.
+ */
+class LlvmLinkCommand final : public Command {
 public:
   virtual
-  ~lllnkcmd(){}
+  ~LlvmLinkCommand(){}
 
-  lllnkcmd(
+  LlvmLinkCommand(
     const std::vector<jlm::filepath> & ifiles,
     const jlm::filepath & ofile)
     : ofile_(ofile)
@@ -516,7 +519,7 @@ public:
     const std::vector<jlm::filepath> & ifiles,
     const jlm::filepath & ofile)
   {
-    std::unique_ptr<lllnkcmd> cmd(new lllnkcmd(ifiles, ofile));
+    std::unique_ptr<LlvmLinkCommand> cmd(new LlvmLinkCommand(ifiles, ofile));
     return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
   }
 

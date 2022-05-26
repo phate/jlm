@@ -342,7 +342,7 @@ LlvmOptCommand::ToString(const Optimization & optimization)
 }
 
 std::string
-lllnkcmd::ToString() const {
+LlvmLinkCommand::ToString() const {
 
   auto llvm_link = clangpath.path() + "llvm-link";
   std::string ifiles;
@@ -357,7 +357,7 @@ lllnkcmd::ToString() const {
 }
 
 void
-lllnkcmd::Run() const {
+LlvmLinkCommand::Run() const {
   if (system(ToString().c_str()))
     exit(EXIT_FAILURE);
 }

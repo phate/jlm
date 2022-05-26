@@ -121,7 +121,7 @@ generate_commands(const jlm::cmdline_options & opts)
 
 	// link all llir into one so inlining can be done across files for HLS
 	jlm::filepath ll_merged(tmp_folder.to_str()+"merged.ll");
-	auto ll_link = lllnkcmd::create(pgraph.get(), llir_files, ll_merged);
+	auto ll_link = LlvmLinkCommand::create(pgraph.get(), llir_files, ll_merged);
 	// Add edges between each c.parse and the ll_link
 	for (const auto & ll : llir) {
     ll->AddEdge(*ll_link);
