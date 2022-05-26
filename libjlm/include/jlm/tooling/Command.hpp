@@ -606,12 +606,16 @@ private:
   bool UseCirct_;
 };
 
-class extractcmd final : public Command {
+/**
+ * The JlmHlsExtractCommand class represents the jlm-hls command line tool with the --extract command line argument
+ * provided.
+ */
+class JlmHlsExtractCommand final : public Command {
 public:
   virtual
-  ~extractcmd(){}
+  ~JlmHlsExtractCommand(){}
 
-  extractcmd(
+  JlmHlsExtractCommand(
     const jlm::filepath & ifile,
     const std::string & function,
     const std::string & outfolder)
@@ -657,7 +661,7 @@ public:
     const std::string & function,
     const std::string & outfolder)
   {
-    std::unique_ptr<extractcmd> cmd(new extractcmd(ifile, function, outfolder));
+    std::unique_ptr<JlmHlsExtractCommand> cmd(new JlmHlsExtractCommand(ifile, function, outfolder));
     return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
   }
 
