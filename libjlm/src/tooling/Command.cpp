@@ -304,13 +304,13 @@ MkdirCommand::Run() const
 }
 
 jlm::filepath
-m2rcmd::ofile() const
+LlvmOptCommand::ofile() const
 {
   return ofile_;
 }
 
 std::string
-m2rcmd::ToString() const
+LlvmOptCommand::ToString() const
 {
   auto opt = clangpath.path() + "opt";
 
@@ -323,7 +323,7 @@ m2rcmd::ToString() const
 }
 
 void
-m2rcmd::Run() const
+LlvmOptCommand::Run() const
 {
   if (system(ToString().c_str()))
     exit(EXIT_FAILURE);

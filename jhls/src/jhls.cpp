@@ -129,16 +129,16 @@ generate_commands(const jlm::cmdline_options & opts)
 
 	// need to already run m2r here
 	jlm::filepath  ll_m2r1(tmp_folder.to_str()+"merged.m2r.ll");
-	auto m2r1 = m2rcmd::create(pgraph.get(), ll_merged, ll_m2r1);
+	auto m2r1 = LlvmOptCommand::create(pgraph.get(), ll_merged, ll_m2r1);
   ll_link->AddEdge(*m2r1);
 	auto extract = extractcmd::create(
 				pgraph.get(),
-				dynamic_cast<m2rcmd*>(&m2r1->GetCommand())->ofile(),
+				dynamic_cast<LlvmOptCommand*>(&m2r1->GetCommand())->ofile(),
 				opts.hls_function_regex,
 				tmp_folder.to_str());
   m2r1->AddEdge(*extract);
 	jlm::filepath  ll_m2r2(tmp_folder.to_str()+"function.m2r.ll");
-	auto m2r2 = m2rcmd::create(
+	auto m2r2 = LlvmOptCommand::create(
 				pgraph.get(),
 				dynamic_cast<extractcmd*>(&extract->GetCommand())->functionfile(),
 				ll_m2r2);
@@ -146,7 +146,7 @@ generate_commands(const jlm::cmdline_options & opts)
 	// hls
 	auto hls = hlscmd::create(
 				pgraph.get(),
-				dynamic_cast<m2rcmd*>(&m2r2->GetCommand())->ofile(),
+				dynamic_cast<LlvmOptCommand*>(&m2r2->GetCommand())->ofile(),
 				tmp_folder.to_str(),
 				opts.circt);
   m2r2->AddEdge(*hls);
