@@ -403,20 +403,22 @@ JlmHlsExtractCommand::Run() const {
     exit(EXIT_FAILURE);
 }
 
-void
-FirtoolCommand::Run() const {
-  if (system(ToString().c_str()))
-    exit(EXIT_FAILURE);
-}
+FirtoolCommand::~FirtoolCommand() noexcept
+= default;
 
 std::string
 FirtoolCommand::ToString() const {
   return strfmt(
-    firtoolpath.to_str()
-    , " -format=fir --verilog "
-    , ifile().to_str()
-    , " > ", ofile().to_str()
-  );
+    firtoolpath.to_str(), " ",
+    " -format=fir --verilog ",
+    InputFile().to_str(),
+    " > ", OutputFile().to_str());
+}
+
+void
+FirtoolCommand::Run() const {
+  if (system(ToString().c_str()))
+    exit(EXIT_FAILURE);
 }
 
 }
