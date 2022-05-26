@@ -141,20 +141,20 @@ generate_commands(const jlm::cmdline_options & opts)
     true,
     {LlvmOptCommand::Optimization::Mem2Reg});
   ll_link.AddEdge(m2r1);
-	auto extract = JlmHlsExtractCommand::create(
-				pgraph.get(),
+	auto & extract = JlmHlsExtractCommand::Create(
+				*pgraph,
         dynamic_cast<LlvmOptCommand *>(&m2r1.GetCommand())->OutputFile(),
 				opts.hls_function_regex,
 				tmp_folder.to_str());
-  m2r1.AddEdge(*extract);
+  m2r1.AddEdge(extract);
 	jlm::filepath  ll_m2r2(tmp_folder.to_str()+"function.m2r.ll");
 	auto & m2r2 = LlvmOptCommand::Create(
 				*pgraph,
-				dynamic_cast<JlmHlsExtractCommand*>(&extract->GetCommand())->functionfile(),
+        dynamic_cast<JlmHlsExtractCommand *>(&extract.GetCommand())->HlsFunctionFile(),
 				ll_m2r2,
         true,
         {LlvmOptCommand::Optimization::Mem2Reg});
-  extract->AddEdge(m2r2);
+  extract.AddEdge(m2r2);
 	// hls
 	auto & hls = JlmHlsCommand::Create(
 				*pgraph,

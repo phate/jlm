@@ -612,63 +612,67 @@ private:
  */
 class JlmHlsExtractCommand final : public Command {
 public:
-  virtual
-  ~JlmHlsExtractCommand(){}
+  ~JlmHlsExtractCommand() noexcept override;
 
   JlmHlsExtractCommand(
-    const jlm::filepath & ifile,
-    const std::string & function,
-    const std::string & outfolder)
-    : ifile_(ifile)
-    , function_(function)
-    , outfolder_(outfolder)
+    filepath inputFile,
+    filepath outputFolder,
+    std::string hlsFunctionName)
+    : InputFile_(std::move(inputFile))
+    , OutputFolder_(std::move(outputFolder))
+    , HlsFunctionName_(std::move(hlsFunctionName))
   {}
 
-  virtual std::string
+  [[nodiscard]] std::string
   ToString() const override;
 
-  virtual void
+  void
   Run() const override;
 
-  inline const jlm::filepath
-  functionfile() const noexcept
+  [[nodiscard]] filepath
+  HlsFunctionFile() const noexcept
   {
-    return jlm::filepath(outfolder_+"jlm_hls_function.ll");
+    return OutputFolder_.to_str() + "/jlm_hls_function.ll";
   }
 
-  inline const jlm::filepath
-  llfile() const noexcept
+  [[nodiscard]] filepath
+  LlvmFile() const noexcept
   {
-    return jlm::filepath(outfolder_+"jlm_hls_rest.ll");
+    return OutputFolder_.to_str() + "/jlm_hls_rest.ll";
   }
 
-  inline const jlm::filepath &
-  ifile() const noexcept
+  [[nodiscard]] const filepath &
+  InputFile() const noexcept
   {
-    return ifile_;
+    return InputFile_;
   }
 
-  inline const std::string &
-  function() const noexcept
+  [[nodiscard]] const std::string &
+  HlsFunctionName() const noexcept
   {
-    return function_;
+    return HlsFunctionName_;
   }
 
-  static CommandGraph::Node *
-  create(
-    CommandGraph * pgraph,
-    const jlm::filepath & ifile,
-    const std::string & function,
-    const std::string & outfolder)
+  static CommandGraph::Node &
+  Create(
+    CommandGraph & commandGraph,
+    const filepath & inputFile,
+    const std::string & hlsFunctionName,
+    const filepath & outputFolder)
   {
-    std::unique_ptr<JlmHlsExtractCommand> cmd(new JlmHlsExtractCommand(ifile, function, outfolder));
-    return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
+    std::unique_ptr<JlmHlsExtractCommand> command(new JlmHlsExtractCommand(
+      inputFile,
+      outputFolder,
+      hlsFunctionName));
+    return CommandGraph::Node::Create(commandGraph, std::move(command));
   }
 
 private:
-  jlm::filepath ifile_;
-  std::string function_;
-  std::string outfolder_;
+  filepath InputFile_;
+  filepath OutputFolder_;
+
+  std::string HlsFunctionName_;
+
 };
 
 }
