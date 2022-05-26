@@ -606,6 +606,67 @@ private:
   bool UseCirct_;
 };
 
+class extractcmd final : public Command {
+public:
+  virtual
+  ~extractcmd(){}
+
+  extractcmd(
+    const jlm::filepath & ifile,
+    const std::string & function,
+    const std::string & outfolder)
+    : ifile_(ifile)
+    , function_(function)
+    , outfolder_(outfolder)
+  {}
+
+  virtual std::string
+  ToString() const override;
+
+  virtual void
+  Run() const override;
+
+  inline const jlm::filepath
+  functionfile() const noexcept
+  {
+    return jlm::filepath(outfolder_+"jlm_hls_function.ll");
+  }
+
+  inline const jlm::filepath
+  llfile() const noexcept
+  {
+    return jlm::filepath(outfolder_+"jlm_hls_rest.ll");
+  }
+
+  inline const jlm::filepath &
+  ifile() const noexcept
+  {
+    return ifile_;
+  }
+
+  inline const std::string &
+  function() const noexcept
+  {
+    return function_;
+  }
+
+  static CommandGraph::Node *
+  create(
+    CommandGraph * pgraph,
+    const jlm::filepath & ifile,
+    const std::string & function,
+    const std::string & outfolder)
+  {
+    std::unique_ptr<extractcmd> cmd(new extractcmd(ifile, function, outfolder));
+    return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
+  }
+
+private:
+  jlm::filepath ifile_;
+  std::string function_;
+  std::string outfolder_;
+};
+
 }
 
 #endif

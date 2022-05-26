@@ -15,24 +15,6 @@
 namespace jlm {
 
 void
-extractcmd::Run() const {
-	if (system(ToString().c_str()))
-		exit(EXIT_FAILURE);
-}
-
-std::string
-extractcmd::ToString() const {
-        return strfmt(
-		      "jlm-hls"
-		      , " --extract"
-		      , " --hls-function ", function()
-		      , " -o ", outfolder_, " "
-		      , ifile().to_str()
-		      //, " --hls-file ", ifile().ToString()
-		      );
-}
-
-void
 firrtlcmd::Run() const {
 	if (system(ToString().c_str()))
 		exit(EXIT_FAILURE);
