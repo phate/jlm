@@ -423,38 +423,61 @@ private:
  */
 class LlvmOptCommand final : public Command {
 public:
-  virtual
-  ~LlvmOptCommand(){}
+  enum class Optimization {
+    Mem2Reg,
+  };
+
+  ~LlvmOptCommand() noexcept override;
 
   LlvmOptCommand(
-    const jlm::filepath & ifile,
-    const jlm::filepath & ofile)
-    : ifile_(ifile),
-      ofile_(ofile)
+    filepath inputFile,
+    filepath outputFile,
+    bool writeLlvmAssembly,
+    std::vector<Optimization> optimizations)
+    : InputFile_(std::move(inputFile))
+    , OutputFile_(std::move(outputFile))
+    , WriteLlvmAssembly_(writeLlvmAssembly)
+    , Optimizations_(std::move(optimizations))
   {}
 
-  virtual std::string
+  [[nodiscard]] std::string
   ToString() const override;
 
-  jlm::filepath
-  ofile() const;
+  [[nodiscard]] const filepath &
+  OutputFile() const noexcept
+  {
+    return OutputFile_;
+  }
 
-  virtual void
+  void
   Run() const override;
 
-  static CommandGraph::Node *
-  create(
-    CommandGraph * pgraph,
-    const jlm::filepath & ifile,
-    const jlm::filepath & ofile)
+  static CommandGraph::Node &
+  Create(
+    CommandGraph & commandGraph,
+    const filepath & inputFile,
+    const filepath & outputFile,
+    bool writeLlvmAssembly,
+    const std::vector<Optimization> & optimizations)
   {
-    std::unique_ptr<LlvmOptCommand> cmd(new LlvmOptCommand(ifile, ofile));
-    return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
+    std::unique_ptr<LlvmOptCommand> command(new LlvmOptCommand(
+      inputFile,
+      outputFile,
+      writeLlvmAssembly,
+      optimizations));
+    return CommandGraph::Node::Create(commandGraph, std::move(command));
   }
 
 private:
-  jlm::filepath ifile_;
-  jlm::filepath ofile_;
+  static std::string
+  ToString(const Optimization & optimization);
+
+  filepath InputFile_;
+  filepath OutputFile_;
+
+  bool WriteLlvmAssembly_;
+
+  std::vector<Optimization> Optimizations_;
 };
 
 }
