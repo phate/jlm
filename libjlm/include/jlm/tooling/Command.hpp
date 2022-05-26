@@ -675,6 +675,51 @@ private:
 
 };
 
+class firrtlcmd final : public Command {
+public:
+  virtual
+  ~firrtlcmd(){}
+
+  firrtlcmd(
+    const jlm::filepath & ifile,
+    const jlm::filepath & ofile)
+    : ofile_(ofile)
+    , ifile_(ifile)
+  {}
+
+  virtual std::string
+  ToString() const override;
+
+  virtual void
+  Run() const override;
+
+  inline const jlm::filepath &
+  ofile() const noexcept
+  {
+    return ofile_;
+  }
+
+  inline const jlm::filepath &
+  ifile() const noexcept
+  {
+    return ifile_;
+  }
+
+  static CommandGraph::Node *
+  create(
+    CommandGraph * pgraph,
+    const jlm::filepath & ifile,
+    const jlm::filepath & ofile)
+  {
+    std::unique_ptr<firrtlcmd> cmd(new firrtlcmd(ifile, ofile));
+    return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
+  }
+
+private:
+  jlm::filepath ofile_;
+  jlm::filepath ifile_;
+};
+
 }
 
 #endif

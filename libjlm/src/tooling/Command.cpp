@@ -403,4 +403,20 @@ JlmHlsExtractCommand::Run() const {
     exit(EXIT_FAILURE);
 }
 
+void
+firrtlcmd::Run() const {
+  if (system(ToString().c_str()))
+    exit(EXIT_FAILURE);
+}
+
+std::string
+firrtlcmd::ToString() const {
+  return strfmt(
+    firtoolpath.to_str()
+    , " -format=fir --verilog "
+    , ifile().to_str()
+    , " > ", ofile().to_str()
+  );
+}
+
 }
