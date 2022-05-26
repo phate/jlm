@@ -385,13 +385,13 @@ JlmHlsCommand::Run() const {
 }
 
 void
-extractcmd::Run() const {
+JlmHlsExtractCommand::Run() const {
   if (system(ToString().c_str()))
     exit(EXIT_FAILURE);
 }
 
 std::string
-extractcmd::ToString() const {
+JlmHlsExtractCommand::ToString() const {
   return strfmt(
     "jlm-hls"
     , " --extract"
