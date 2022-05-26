@@ -384,22 +384,23 @@ JlmHlsCommand::Run() const {
     exit(EXIT_FAILURE);
 }
 
-void
-JlmHlsExtractCommand::Run() const {
-  if (system(ToString().c_str()))
-    exit(EXIT_FAILURE);
-}
+JlmHlsExtractCommand::~JlmHlsExtractCommand() noexcept
+= default;
 
 std::string
 JlmHlsExtractCommand::ToString() const {
   return strfmt(
-    "jlm-hls"
-    , " --extract"
-    , " --hls-function ", function()
-    , " -o ", outfolder_, " "
-    , ifile().to_str()
-    //, " --hls-file ", ifile().ToString()
-  );
+    "jlm-hls ",
+    "--extract ",
+    "--hls-function ", HlsFunctionName(), " ",
+    " -o ", OutputFolder_.to_str(), " "
+    , InputFile().to_str());
+}
+
+void
+JlmHlsExtractCommand::Run() const {
+  if (system(ToString().c_str()))
+    exit(EXIT_FAILURE);
 }
 
 }
