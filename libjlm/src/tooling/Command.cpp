@@ -365,4 +365,29 @@ LlvmLinkCommand::Run() const {
     exit(EXIT_FAILURE);
 }
 
+void
+hlscmd::Run() const {
+  if (system(ToString().c_str()))
+    exit(EXIT_FAILURE);
+}
+
+std::string
+hlscmd::ToString() const {
+  if (circt_)
+    return strfmt(
+      "jlm-hls"
+      , " -o ", outfolder_
+      , " --circt "
+      , ifile().to_str()
+      //, " --hls-file ", ifile().to_str()
+    );
+  else
+    return strfmt(
+      "jlm-hls"
+      , " -o ", outfolder_, " "
+      , ifile().to_str()
+      //, " --hls-file ", ifile().to_str()
+    );
+}
+
 }

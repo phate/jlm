@@ -142,67 +142,6 @@ private:
 std::basic_string<char>
 gcd();
 
-class hlscmd final : public Command {
-public:
-	virtual
-	~hlscmd(){}
-
-	hlscmd(
-		const jlm::filepath & ifile,
-		const std::string & outfolder,
-	        const bool &circt)
-	: ifile_(ifile)
-	, outfolder_(outfolder)
-	, circt_(circt)
-	{}
-
-	virtual std::string
-	ToString() const override;
-
-	virtual void
-	Run() const override;
-
-	inline const jlm::filepath
-	firfile() const noexcept
-	{
-		return jlm::filepath(outfolder_+"jlm_hls.fir");
-	}
-
-	inline const jlm::filepath
-	llfile() const noexcept
-	{
-		return jlm::filepath(outfolder_+"jlm_hls_rest.ll");
-	}
-
-	inline const jlm::filepath
-	harnessfile() const noexcept
-	{
-		return jlm::filepath(outfolder_+"jlm_hls_harness.cpp");
-	}
-
-	inline const jlm::filepath &
-	ifile() const noexcept
-	{
-		return ifile_;
-	}
-
-	static CommandGraph::Node *
-	create(
-    CommandGraph * pgraph,
-    const jlm::filepath & ifile,
-    const std::string & outfolder,
-    const bool &circt)
-	{
-		std::unique_ptr<hlscmd> cmd(new hlscmd(ifile, outfolder, circt));
-		return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
-	}
-
-private:
-	jlm::filepath ifile_;
-	std::string outfolder_;
-	bool circt_;
-};
-
 class extractcmd final : public Command {
 public:
 	virtual
