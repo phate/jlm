@@ -83,6 +83,12 @@ LIBJLM_SRC = \
     \
      libjlm/src/util/Statistics.cpp \
 
+# Default verilator for Ubuntu 22.04
+VERILATOR_BIN ?= verilator_bin
+VERILATOR_PATH ?= /usr/share/verilator
+
+FIRTOOL ?= $(CIRCT_PATH)/bin/firtool
+
 TOOLINGPATHS = \
 " \
 \#ifndef JLM_TOOLING_LLVMPATHS_HPP\n \
@@ -94,6 +100,9 @@ namespace jlm {\n \
 \n \
   static inline filepath clangpath(\"$(shell $(LLVMCONFIG) --bindir)/clang\");\n \
   static inline filepath llcpath(\"$(shell $(LLVMCONFIG) --bindir)/llc\");\n \
+  static inline filepath firtoolpath(\"$(FIRTOOL)\");\n \
+  static inline filepath verilatorpath(\"$(VERILATOR_BIN)\");\n \
+  static inline filepath verilatorrootpath(\"$(VERILATOR_ROOT)\");\n \
 \n \
 }\n \
 \n \
