@@ -165,11 +165,11 @@ generate_commands(const jlm::cmdline_options & opts)
 
 	if (!opts.generate_firrtl) {
     jlm::filepath verilogfile(tmp_folder.to_str()+"jlm_hls.v");
-    auto firrtl = FirtoolCommand::create(
-      pgraph.get(),
+    auto & firrtl = FirtoolCommand::Create(
+      *pgraph,
       dynamic_cast<JlmHlsCommand *>(&hls.GetCommand())->FirrtlFile(),
       verilogfile);
-    hls.AddEdge(*firrtl);
+    hls.AddEdge(firrtl);
     jlm::filepath asmofile(tmp_folder.to_str()+"hls.o");
     auto inputFile = dynamic_cast<JlmHlsCommand *>(&hls.GetCommand())->LlvmFile();
     auto & asmnode = LlcCommand::Create(
@@ -199,7 +199,7 @@ generate_commands(const jlm::cmdline_options & opts)
 				tmp_folder,
 				opts.libpaths,
 				opts.libs);
-    firrtl->AddEdge(*verinode);
+    firrtl.AddEdge(*verinode);
     verinode->AddEdge(pgraph->GetExitNode());
 	}
 

@@ -680,47 +680,46 @@ private:
  */
 class FirtoolCommand final : public Command {
 public:
-  virtual
-  ~FirtoolCommand(){}
+  ~FirtoolCommand() noexcept override;
 
   FirtoolCommand(
-    const jlm::filepath & ifile,
-    const jlm::filepath & ofile)
-    : ofile_(ofile)
-    , ifile_(ifile)
+    filepath inputFile,
+    filepath outputFile)
+    : OutputFile_(std::move(outputFile))
+    , InputFile_(std::move(inputFile))
   {}
 
-  virtual std::string
+  [[nodiscard]] std::string
   ToString() const override;
 
-  virtual void
+  void
   Run() const override;
 
-  inline const jlm::filepath &
-  ofile() const noexcept
+  [[nodiscard]] const filepath &
+  OutputFile() const noexcept
   {
-    return ofile_;
+    return OutputFile_;
   }
 
-  inline const jlm::filepath &
-  ifile() const noexcept
+  [[nodiscard]] const filepath &
+  InputFile() const noexcept
   {
-    return ifile_;
+    return InputFile_;
   }
 
-  static CommandGraph::Node *
-  create(
-    CommandGraph * pgraph,
-    const jlm::filepath & ifile,
-    const jlm::filepath & ofile)
+  static CommandGraph::Node &
+  Create(
+    CommandGraph & commandGraph,
+    const filepath & inputFile,
+    const filepath & outputFile)
   {
-    std::unique_ptr<FirtoolCommand> cmd(new FirtoolCommand(ifile, ofile));
-    return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
+    std::unique_ptr<FirtoolCommand> command(new FirtoolCommand(inputFile, outputFile));
+    return CommandGraph::Node::Create(commandGraph, std::move(command));
   }
 
 private:
-  jlm::filepath ofile_;
-  jlm::filepath ifile_;
+  filepath OutputFile_;
+  filepath InputFile_;
 };
 
 }
