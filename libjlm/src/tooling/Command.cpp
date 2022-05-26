@@ -366,13 +366,13 @@ LlvmLinkCommand::Run() const {
 }
 
 void
-hlscmd::Run() const {
+JlmHlsCommand::Run() const {
   if (system(ToString().c_str()))
     exit(EXIT_FAILURE);
 }
 
 std::string
-hlscmd::ToString() const {
+JlmHlsCommand::ToString() const {
   if (circt_)
     return strfmt(
       "jlm-hls"
