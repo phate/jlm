@@ -156,7 +156,7 @@ generate_commands(const jlm::cmdline_options & opts)
         {LlvmOptCommand::Optimization::Mem2Reg});
   extract->AddEdge(m2r2);
 	// hls
-	auto hls = hlscmd::create(
+	auto hls = JlmHlsCommand::create(
 				pgraph.get(),
         dynamic_cast<LlvmOptCommand *>(&m2r2.GetCommand())->OutputFile(),
 				tmp_folder.to_str(),
@@ -167,11 +167,11 @@ generate_commands(const jlm::cmdline_options & opts)
     jlm::filepath verilogfile(tmp_folder.to_str()+"jlm_hls.v");
     auto firrtl = firrtlcmd::create(
       pgraph.get(),
-      dynamic_cast<hlscmd*>(&hls->GetCommand())->firfile(),
+      dynamic_cast<JlmHlsCommand*>(&hls->GetCommand())->firfile(),
       verilogfile);
     hls->AddEdge(*firrtl);
     jlm::filepath asmofile(tmp_folder.to_str()+"hls.o");
-    auto inputFile = dynamic_cast<hlscmd*>(&hls->GetCommand())->llfile();
+    auto inputFile = dynamic_cast<JlmHlsCommand*>(&hls->GetCommand())->llfile();
     auto & asmnode = LlcCommand::Create(
       *pgraph,
       opts.hls
@@ -194,7 +194,7 @@ generate_commands(const jlm::cmdline_options & opts)
 				pgraph.get(),
 				verilogfile,
 				lnkifiles,
-				dynamic_cast<hlscmd*>(&hls->GetCommand())->harnessfile(),
+				dynamic_cast<JlmHlsCommand*>(&hls->GetCommand())->harnessfile(),
 				opts.lnkofile,
 				tmp_folder,
 				opts.libpaths,

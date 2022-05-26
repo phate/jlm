@@ -540,12 +540,15 @@ private:
   bool Verbose_;
 };
 
-class hlscmd final : public Command {
+/**
+ * The JlmHlsCommand class represents the jlm-hls command line tool.
+ */
+class JlmHlsCommand final : public Command {
 public:
   virtual
-  ~hlscmd(){}
+  ~JlmHlsCommand(){}
 
-  hlscmd(
+  JlmHlsCommand(
     const jlm::filepath & ifile,
     const std::string & outfolder,
     const bool &circt)
@@ -591,7 +594,7 @@ public:
     const std::string & outfolder,
     const bool &circt)
   {
-    std::unique_ptr<hlscmd> cmd(new hlscmd(ifile, outfolder, circt));
+    std::unique_ptr<JlmHlsCommand> cmd(new JlmHlsCommand(ifile, outfolder, circt));
     return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
   }
 
