@@ -121,10 +121,15 @@ generate_commands(const jlm::cmdline_options & opts)
 
 	// link all llir into one so inlining can be done across files for HLS
 	jlm::filepath ll_merged(tmp_folder.to_str()+"merged.ll");
-	auto ll_link = LlvmLinkCommand::create(pgraph.get(), llir_files, ll_merged);
+	auto & ll_link = LlvmLinkCommand::Create(
+    *pgraph,
+    llir_files,
+    ll_merged,
+    true,
+    true);
 	// Add edges between each c.parse and the ll_link
 	for (const auto & ll : llir) {
-    ll->AddEdge(*ll_link);
+    ll->AddEdge(ll_link);
 	}
 
 	// need to already run m2r here
@@ -135,7 +140,7 @@ generate_commands(const jlm::cmdline_options & opts)
     ll_m2r1,
     true,
     {LlvmOptCommand::Optimization::Mem2Reg});
-  ll_link->AddEdge(m2r1);
+  ll_link.AddEdge(m2r1);
 	auto extract = extractcmd::create(
 				pgraph.get(),
         dynamic_cast<LlvmOptCommand *>(&m2r1.GetCommand())->OutputFile(),
