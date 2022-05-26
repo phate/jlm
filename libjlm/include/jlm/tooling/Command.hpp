@@ -675,12 +675,15 @@ private:
 
 };
 
-class firrtlcmd final : public Command {
+/**
+ * The FirtoolCommand class represents the firtool command line tool.
+ */
+class FirtoolCommand final : public Command {
 public:
   virtual
-  ~firrtlcmd(){}
+  ~FirtoolCommand(){}
 
-  firrtlcmd(
+  FirtoolCommand(
     const jlm::filepath & ifile,
     const jlm::filepath & ofile)
     : ofile_(ofile)
@@ -711,7 +714,7 @@ public:
     const jlm::filepath & ifile,
     const jlm::filepath & ofile)
   {
-    std::unique_ptr<firrtlcmd> cmd(new firrtlcmd(ifile, ofile));
+    std::unique_ptr<FirtoolCommand> cmd(new FirtoolCommand(ifile, ofile));
     return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
   }
 

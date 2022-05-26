@@ -404,13 +404,13 @@ JlmHlsExtractCommand::Run() const {
 }
 
 void
-firrtlcmd::Run() const {
+FirtoolCommand::Run() const {
   if (system(ToString().c_str()))
     exit(EXIT_FAILURE);
 }
 
 std::string
-firrtlcmd::ToString() const {
+FirtoolCommand::ToString() const {
   return strfmt(
     firtoolpath.to_str()
     , " -format=fir --verilog "
