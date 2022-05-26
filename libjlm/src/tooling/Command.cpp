@@ -365,29 +365,23 @@ LlvmLinkCommand::Run() const {
     exit(EXIT_FAILURE);
 }
 
+JlmHlsCommand::~JlmHlsCommand() noexcept
+= default;
+
+std::string
+JlmHlsCommand::ToString() const
+{
+  return strfmt(
+    "jlm-hls ",
+    "-o ", OutputFolder_.to_str(), " ",
+    UseCirct_ ? "--circt " : "",
+    InputFile_.to_str());
+}
+
 void
 JlmHlsCommand::Run() const {
   if (system(ToString().c_str()))
     exit(EXIT_FAILURE);
-}
-
-std::string
-JlmHlsCommand::ToString() const {
-  if (circt_)
-    return strfmt(
-      "jlm-hls"
-      , " -o ", outfolder_
-      , " --circt "
-      , ifile().to_str()
-      //, " --hls-file ", ifile().to_str()
-    );
-  else
-    return strfmt(
-      "jlm-hls"
-      , " -o ", outfolder_, " "
-      , ifile().to_str()
-      //, " --hls-file ", ifile().to_str()
-    );
 }
 
 }

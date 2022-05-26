@@ -545,63 +545,65 @@ private:
  */
 class JlmHlsCommand final : public Command {
 public:
-  virtual
-  ~JlmHlsCommand(){}
+  ~JlmHlsCommand() noexcept override;
 
   JlmHlsCommand(
-    const jlm::filepath & ifile,
-    const std::string & outfolder,
-    const bool &circt)
-    : ifile_(ifile)
-    , outfolder_(outfolder)
-    , circt_(circt)
+    filepath inputFile,
+    filepath outputFolder,
+    bool useCirct)
+    : InputFile_(std::move(inputFile))
+    , OutputFolder_(std::move(outputFolder))
+    , UseCirct_(useCirct)
   {}
 
-  virtual std::string
+  [[nodiscard]] std::string
   ToString() const override;
 
-  virtual void
+  void
   Run() const override;
 
-  inline const jlm::filepath
-  firfile() const noexcept
+  [[nodiscard]] filepath
+  FirrtlFile() const noexcept
   {
-    return jlm::filepath(outfolder_+"jlm_hls.fir");
+    return OutputFolder_.to_str() + "/jlm_hls.fir";
   }
 
-  inline const jlm::filepath
-  llfile() const noexcept
+  [[nodiscard]] filepath
+  LlvmFile() const noexcept
   {
-    return jlm::filepath(outfolder_+"jlm_hls_rest.ll");
+    return OutputFolder_.to_str() + "/jlm_hls_rest.ll";
   }
 
-  inline const jlm::filepath
-  harnessfile() const noexcept
+  [[nodiscard]] filepath
+  HarnessFile() const noexcept
   {
-    return jlm::filepath(outfolder_+"jlm_hls_harness.cpp");
+    return OutputFolder_.to_str() + "/jlm_hls_harness.cpp";
   }
 
-  inline const jlm::filepath &
-  ifile() const noexcept
+  [[nodiscard]] const filepath &
+  InputFile() const noexcept
   {
-    return ifile_;
+    return InputFile_;
   }
 
-  static CommandGraph::Node *
-  create(
-    CommandGraph * pgraph,
-    const jlm::filepath & ifile,
-    const std::string & outfolder,
-    const bool &circt)
+  static CommandGraph::Node &
+  Create(
+    CommandGraph & commandGraph,
+    const filepath & inputFile,
+    const filepath & outputFolder,
+    bool useCirct)
   {
-    std::unique_ptr<JlmHlsCommand> cmd(new JlmHlsCommand(ifile, outfolder, circt));
-    return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
+    std::unique_ptr<JlmHlsCommand> command(new JlmHlsCommand(
+      inputFile,
+      outputFolder,
+      useCirct));
+    return CommandGraph::Node::Create(commandGraph, std::move(command));
   }
 
 private:
-  jlm::filepath ifile_;
-  std::string outfolder_;
-  bool circt_;
+  filepath InputFile_;
+  filepath OutputFolder_;
+  bool UseCirct_;
 };
 
 }
