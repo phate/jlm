@@ -165,7 +165,7 @@ generate_commands(const jlm::cmdline_options & opts)
 
 	if (!opts.generate_firrtl) {
     jlm::filepath verilogfile(tmp_folder.to_str()+"jlm_hls.v");
-    auto firrtl = firrtlcmd::create(
+    auto firrtl = FirtoolCommand::create(
       pgraph.get(),
       dynamic_cast<JlmHlsCommand *>(&hls.GetCommand())->FirrtlFile(),
       verilogfile);
