@@ -480,6 +480,51 @@ private:
   std::vector<Optimization> Optimizations_;
 };
 
+class lllnkcmd final : public Command {
+public:
+  virtual
+  ~lllnkcmd(){}
+
+  lllnkcmd(
+    const std::vector<jlm::filepath> & ifiles,
+    const jlm::filepath & ofile)
+    : ofile_(ofile)
+    , ifiles_(ifiles)
+  {}
+
+  virtual std::string
+  ToString() const override;
+
+  virtual void
+  Run() const override;
+
+  inline const jlm::filepath &
+  ofile() const noexcept
+  {
+    return ofile_;
+  }
+
+  inline const std::vector<jlm::filepath> &
+  ifiles() const noexcept
+  {
+    return ifiles_;
+  }
+
+  static CommandGraph::Node *
+  create(
+    CommandGraph * pgraph,
+    const std::vector<jlm::filepath> & ifiles,
+    const jlm::filepath & ofile)
+  {
+    std::unique_ptr<lllnkcmd> cmd(new lllnkcmd(ifiles, ofile));
+    return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
+  }
+
+private:
+  jlm::filepath ofile_;
+  std::vector<jlm::filepath> ifiles_;
+};
+
 }
 
 #endif

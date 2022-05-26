@@ -170,6 +170,7 @@ ClangCommand::ToString(const ClangArgument & clangArgument)
   JLM_ASSERT(map.find(clangArgument) != map.end());
   return map[clangArgument];
 }
+
 std::string
 ClangCommand::ReplaceAll(std::string str, const std::string& from, const std::string& to) {
   size_t start_pos = 0;
@@ -179,7 +180,6 @@ ClangCommand::ReplaceAll(std::string str, const std::string& from, const std::st
   }
   return str;
 }
-
 
 void
 ClangCommand::Run() const
@@ -339,6 +339,27 @@ LlvmOptCommand::ToString(const Optimization & optimization)
 
   JLM_ASSERT(map.find(optimization) != map.end());
   return map[optimization];
+}
+
+std::string
+lllnkcmd::ToString() const {
+
+  auto llvm_link = clangpath.path() + "llvm-link";
+  std::string ifiles;
+  for (const auto & ifile : ifiles_)
+    ifiles += ifile.to_str() + " ";
+  return strfmt(
+    llvm_link, " "
+    , "-S -v "
+    , "-o ", ofile_.to_str(), " "
+    , ifiles
+  );
+}
+
+void
+lllnkcmd::Run() const {
+  if (system(ToString().c_str()))
+    exit(EXIT_FAILURE);
 }
 
 }
