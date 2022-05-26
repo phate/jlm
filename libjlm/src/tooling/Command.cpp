@@ -341,19 +341,22 @@ LlvmOptCommand::ToString(const Optimization & optimization)
   return map[optimization];
 }
 
-std::string
-LlvmLinkCommand::ToString() const {
+LlvmLinkCommand::~LlvmLinkCommand() noexcept
+= default;
 
-  auto llvm_link = clangpath.path() + "llvm-link";
-  std::string ifiles;
-  for (const auto & ifile : ifiles_)
-    ifiles += ifile.to_str() + " ";
+std::string
+LlvmLinkCommand::ToString() const
+{
+  std::string inputFilesArgument;
+  for (auto & inputFile : InputFiles_)
+    inputFilesArgument += inputFile.to_str() + " ";
+
   return strfmt(
-    llvm_link, " "
-    , "-S -v "
-    , "-o ", ofile_.to_str(), " "
-    , ifiles
-  );
+    clangpath.path(), "llvm-link ",
+    WriteLlvmAssembly_ ? "-S " : "",
+    Verbose_ ? "-v " : "",
+    "-o ", OutputFile_.to_str(), " ",
+    inputFilesArgument);
 }
 
 void

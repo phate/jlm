@@ -485,47 +485,59 @@ private:
  */
 class LlvmLinkCommand final : public Command {
 public:
-  virtual
-  ~LlvmLinkCommand(){}
+  ~LlvmLinkCommand() noexcept override;
 
   LlvmLinkCommand(
-    const std::vector<jlm::filepath> & ifiles,
-    const jlm::filepath & ofile)
-    : ofile_(ofile)
-    , ifiles_(ifiles)
+    std::vector<filepath> inputFiles,
+    filepath outputFile,
+    bool writeLlvmAssembly,
+    bool verbose)
+    : OutputFile_(std::move(outputFile))
+    , InputFiles_(std::move(inputFiles))
+    , WriteLlvmAssembly_(writeLlvmAssembly)
+    , Verbose_(verbose)
   {}
 
-  virtual std::string
+  [[nodiscard]] std::string
   ToString() const override;
 
-  virtual void
+  void
   Run() const override;
 
-  inline const jlm::filepath &
-  ofile() const noexcept
+  [[nodiscard]] const filepath &
+  OutputFile() const noexcept
   {
-    return ofile_;
+    return OutputFile_;
   }
 
-  inline const std::vector<jlm::filepath> &
-  ifiles() const noexcept
+  [[nodiscard]] const std::vector<filepath> &
+  InputFiles() const noexcept
   {
-    return ifiles_;
+    return InputFiles_;
   }
 
-  static CommandGraph::Node *
-  create(
-    CommandGraph * pgraph,
-    const std::vector<jlm::filepath> & ifiles,
-    const jlm::filepath & ofile)
+  static CommandGraph::Node &
+  Create(
+    CommandGraph & commandGraph,
+    const std::vector<filepath> & inputFiles,
+    const filepath & outputFile,
+    bool writeLlvmAssembly,
+    bool verbose)
   {
-    std::unique_ptr<LlvmLinkCommand> cmd(new LlvmLinkCommand(ifiles, ofile));
-    return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
+    std::unique_ptr<LlvmLinkCommand> command(new LlvmLinkCommand(
+      inputFiles,
+      outputFile,
+      writeLlvmAssembly,
+      verbose));
+    return CommandGraph::Node::Create(commandGraph, std::move(command));
   }
 
 private:
-  jlm::filepath ofile_;
-  std::vector<jlm::filepath> ifiles_;
+  filepath OutputFile_;
+  std::vector<filepath> InputFiles_;
+
+  bool WriteLlvmAssembly_;
+  bool Verbose_;
 };
 
 }
