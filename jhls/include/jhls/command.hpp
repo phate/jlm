@@ -17,42 +17,6 @@
 
 namespace jlm {
 
-class m2rcmd final : public Command {
-public:
-	virtual
-	~m2rcmd(){}
-
-	m2rcmd(
-		const jlm::filepath & ifile,
-		const jlm::filepath & ofile)
-	: ifile_(ifile),
-	  ofile_(ofile)
-	{}
-
-	virtual std::string
-	ToString() const override;
-
-	jlm::filepath
-	ofile() const;
-
-	virtual void
-	Run() const override;
-
-	static CommandGraph::Node *
-	create(
-    CommandGraph * pgraph,
-    const jlm::filepath & ifile,
-    const jlm::filepath & ofile)
-	{
-		std::unique_ptr<m2rcmd> cmd(new m2rcmd(ifile, ofile));
-		return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
-	}
-
-private:
-	jlm::filepath ifile_;
-	jlm::filepath ofile_;
-};
-
 class verilatorcmd final : public Command {
 public:
 	virtual
