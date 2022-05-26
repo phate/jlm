@@ -418,12 +418,15 @@ private:
   filepath Path_;
 };
 
-class m2rcmd final : public Command {
+/**
+ * The LlvmOptCommand class represents the LLVM opt command line tool.
+ */
+class LlvmOptCommand final : public Command {
 public:
   virtual
-  ~m2rcmd(){}
+  ~LlvmOptCommand(){}
 
-  m2rcmd(
+  LlvmOptCommand(
     const jlm::filepath & ifile,
     const jlm::filepath & ofile)
     : ifile_(ifile),
@@ -445,7 +448,7 @@ public:
     const jlm::filepath & ifile,
     const jlm::filepath & ofile)
   {
-    std::unique_ptr<m2rcmd> cmd(new m2rcmd(ifile, ofile));
+    std::unique_ptr<LlvmOptCommand> cmd(new LlvmOptCommand(ifile, ofile));
     return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
   }
 
