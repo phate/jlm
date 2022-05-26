@@ -14,29 +14,6 @@
 
 namespace jlm {
 
-/* HLS */
-
-std::string
-lllnkcmd::ToString() const {
-
-	auto llvm_link = clangpath.path() + "llvm-link";
-	std::string ifiles;
-	for (const auto & ifile : ifiles_)
-		ifiles += ifile.to_str() + " ";
-	return strfmt(
-			llvm_link, " "
-			, "-S -v "
-			, "-o ", ofile_.to_str(), " "
-			, ifiles
-	);
-}
-
-void
-lllnkcmd::Run() const {
-	if (system(ToString().c_str()))
-		exit(EXIT_FAILURE);
-}
-
 void
 hlscmd::Run() const {
 	if (system(ToString().c_str()))
