@@ -7,12 +7,10 @@ JHLS_SRC = \
 
 .PHONY: jhls-debug
 jhls-debug: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG -DJLM_ENABLE_ASSERTS
-jhls-debug: $(LLVMPATHSFILE)
 jhls-debug: $(JLM_BUILD)/libjlm.a $(JLM_BIN)/jhls
 
 .PHONY: jhls-release
 jhls-release: CXXFLAGS += -O3
-jhls-release: $(LLVMPATHSFILE)
 jhls-release: $(JLM_BUILD)/libjlm.a $(JLM_BIN)/jhls
 
 $(JLM_BIN)/jhls: CPPFLAGS += -I$(JLM_ROOT)/jhls/include -I$(JLM_ROOT)/libjlc/include -I$(JLM_ROOT)/libjlm/include -I$(shell $(LLVMCONFIG) --includedir)

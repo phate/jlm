@@ -4,7 +4,6 @@
  */
 
 #include <jlc/command.hpp>
-#include <jlc/llvmpaths.hpp>
 #include <jlm/util/strfmt.hpp>
 
 #include <deque>
