@@ -4,6 +4,6 @@ check.log
 /bin
 /build
 .Makefile.override
-libjlm/include/jlm/tooling/LlvmPaths.hpp
+libjlm/include/jlm/tooling/CommandPaths.hpp
 .idea
 docs/html

@@ -4,7 +4,7 @@
  */
 
 #include <jlm/tooling/Command.hpp>
-#include <jlm/tooling/LlvmPaths.hpp>
+#include <jlm/tooling/CommandPaths.hpp>
 #include <jlm/util/strfmt.hpp>
 
 #include <sys/stat.h>
