@@ -78,4 +78,3 @@ jlm-clean:
 	@rm -f $(JLM_ROOT)/check.log
 	@rm -f $(LLVMPATHSFILE)
 	@rm -f $(TOOLINGPATHSFILE)
-	@rm -f $(TOOLPATHSFILE)
