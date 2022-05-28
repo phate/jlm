@@ -4,8 +4,10 @@
  */
 
 #include <jhls/cmdline.hpp>
-#include <jhls/command.hpp>
+#include <jlm/tooling/Command.hpp>
 #include <jlm/util/strfmt.hpp>
+
+#include <unistd.h>
 
 #include <iostream>
 #include <unordered_map>
