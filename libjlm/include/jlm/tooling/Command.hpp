@@ -722,12 +722,15 @@ private:
   filepath InputFile_;
 };
 
-class verilatorcmd final : public Command {
+/**
+ * The VerilatorCommand class represents the verilator command line tool.
+ */
+class VerilatorCommand final : public Command {
 public:
   virtual
-  ~verilatorcmd(){}
+  ~VerilatorCommand(){}
 
-  verilatorcmd(
+  VerilatorCommand(
     const jlm::filepath & vfile,
     const std::vector<jlm::filepath> & lfiles,
     const jlm::filepath & hfile,
@@ -785,7 +788,7 @@ public:
     const std::vector<std::string> & Lpaths,
     const std::vector<std::string> & libs)
   {
-    std::unique_ptr<verilatorcmd> cmd(new verilatorcmd(vfile, lfiles, hfile, ofile, tmpfolder, Lpaths, libs));
+    std::unique_ptr<VerilatorCommand> cmd(new VerilatorCommand(vfile, lfiles, hfile, ofile, tmpfolder, Lpaths, libs));
     return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
   }
 

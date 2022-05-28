@@ -432,7 +432,7 @@ gcd() {
 }
 
 std::string
-verilatorcmd::ToString() const {
+VerilatorCommand::ToString() const {
   std::string lfiles;
   for (const auto & ifile : lfiles_)
     lfiles += ifile.to_str() + " ";
@@ -488,7 +488,7 @@ verilatorcmd::ToString() const {
 }
 
 void
-verilatorcmd::Run() const {
+VerilatorCommand::Run() const {
   if (system(ToString().c_str()))
     exit(EXIT_FAILURE);
 }
