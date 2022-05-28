@@ -422,69 +422,70 @@ FirtoolCommand::Run() const {
     exit(EXIT_FAILURE);
 }
 
-
-static std::string
-gcd() {
-  char tmp[256];
-  getcwd(tmp, 256);
-  auto cd = std::string(tmp);
-  return cd;
-}
+VerilatorCommand::~VerilatorCommand() noexcept
+= default;
 
 std::string
-VerilatorCommand::ToString() const {
-  std::string lfiles;
-  for (const auto & ifile : lfiles_)
-    lfiles += ifile.to_str() + " ";
+VerilatorCommand::ToString() const
+{
+  auto gcd = []() {
+    char tmp[256];
+    getcwd(tmp, 256);
+    auto cd = std::string(tmp);
+    return cd;
+  };
 
-  std::string Lpaths;
-  for (const auto & Lpath : Lpaths_)
-    Lpaths += "-L" + Lpath + " ";
+  std::string objectFiles;
+  for (auto & objectFile : ObjectFiles_)
+    objectFiles += objectFile.to_str() + " ";
 
-  std::string libs;
-  for (const auto & lib : libs_)
-    libs += "-l" + lib + " ";
+  std::string libraryPaths;
+  for (auto & libraryPath : LibraryPaths_)
+    libraryPaths += "-L" + libraryPath + " ";
+
+  std::string libraries;
+  for (const auto & library : Libraries_)
+    libraries += "-l" + library + " ";
 
   std::string cflags;
-//	if(!libs.empty()||!Lpaths.empty()){
-  cflags = " -CFLAGS \"" + libs + Lpaths + " -fPIC\"";
-//	}
+  cflags = " -CFLAGS \"" + libraries + libraryPaths + " -fPIC\"";
 
-  std::string ofile = ofile_.to_str();
-  if(ofile.at(0)!='/'){
-    ofile = gcd() + "/" + ofile;
+  std::string outputFile = OutputFile_.to_str();
+  if(outputFile.at(0) != '/'){
+    outputFile = gcd() + "/" + outputFile;
   }
+
   std::string verilator_root;
-  if(verilatorrootpath.to_str().size()){
+  if(!verilatorrootpath.to_str().empty()){
     verilator_root = strfmt(
       "VERILATOR_ROOT="
       , verilatorrootpath.to_str()
       , " "
     );
   }
+
   return strfmt(
-    verilator_root
-    ,verilatorpath.to_str()
-    , " --cc"
-    , " --build"
-    , " --exe"
+    verilator_root,
+    verilatorpath.to_str(),
+    " --cc",
+    " --build",
+    " --exe",
 #ifndef HLS_USE_VCD
-    , " --trace-fst"
+    " --trace-fst",
 #else
-    , " --trace"
+    " --trace",
 #endif
-    , " -Wno-WIDTH" //divisions otherwise cause errors
-    , " -j"
-    , " -Mdir ", tmpfolder_.to_str(), "verilator/"
-    , " -MAKEFLAGS CXX=g++"
-    , " -CFLAGS -g" // TODO: switch for this
-    , " --assert"
-    , cflags
-    , " -o ", ofile
-    , " ", vfile().to_str()
-    , " ", hfile().to_str()
-    , " ", lfiles
-  );
+    " -Wno-WIDTH", //divisions otherwise cause errors
+    " -j",
+    " -Mdir ", TempFolder_.to_str(), "verilator/",
+    " -MAKEFLAGS CXX=g++",
+    " -CFLAGS -g", // TODO: switch for this
+    " --assert",
+    cflags,
+    " -o ", outputFile,
+    " ", VerilogFile().to_str(),
+    " ", HarnessFile().to_str(),
+    " ", objectFiles);
 }
 
 void
