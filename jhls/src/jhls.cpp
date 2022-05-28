@@ -190,8 +190,8 @@ generate_commands(const jlm::cmdline_options & opts)
 				lnkifiles.push_back(c.ofile());
 		}
 		lnkifiles.push_back(asmofile);
-		auto verinode = VerilatorCommand::create(
-				pgraph.get(),
+		auto & verinode = VerilatorCommand::Create(
+				*pgraph,
 				verilogfile,
 				lnkifiles,
         dynamic_cast<JlmHlsCommand *>(&hls.GetCommand())->HarnessFile(),
@@ -199,8 +199,8 @@ generate_commands(const jlm::cmdline_options & opts)
 				tmp_folder,
 				opts.libpaths,
 				opts.libs);
-    firrtl.AddEdge(*verinode);
-    verinode->AddEdge(pgraph->GetExitNode());
+    firrtl.AddEdge(verinode);
+    verinode.AddEdge(pgraph->GetExitNode());
 	}
 
 	std::vector<jlm::filepath> lnkifiles;

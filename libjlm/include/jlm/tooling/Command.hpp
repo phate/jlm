@@ -727,79 +727,85 @@ private:
  */
 class VerilatorCommand final : public Command {
 public:
-  virtual
-  ~VerilatorCommand(){}
+  ~VerilatorCommand() noexcept override;
 
   VerilatorCommand(
-    const jlm::filepath & vfile,
-    const std::vector<jlm::filepath> & lfiles,
-    const jlm::filepath & hfile,
-    const jlm::filepath & ofile,
-    const jlm::filepath & tmpfolder,
-    const std::vector<std::string> & Lpaths,
-    const std::vector<std::string> & libs)
-    : ofile_(ofile)
-    , vfile_(vfile)
-    , hfile_(hfile)
-    , tmpfolder_(tmpfolder)
-    , libs_(libs)
-    , lfiles_(lfiles)
-    , Lpaths_(Lpaths)
+    filepath verilogFile,
+    std::vector<jlm::filepath> objectFiles,
+    filepath harnessFile,
+    filepath outputFile,
+    filepath tempFolder,
+    std::vector<std::string> libraryPaths,
+    std::vector<std::string> libraries)
+    : OutputFile_(std::move(outputFile))
+    , VerilogFile_(std::move(verilogFile))
+    , HarnessFile_(std::move(harnessFile))
+    , TempFolder_(std::move(tempFolder))
+    , Libraries_(std::move(libraries))
+    , ObjectFiles_(std::move(objectFiles))
+    , LibraryPaths_(std::move(libraryPaths))
   {}
 
-  virtual std::string
+  [[nodiscard]] std::string
   ToString() const override;
 
-  virtual void
+  void
   Run() const override;
 
-  inline const jlm::filepath &
-  vfile() const noexcept
+  [[nodiscard]] const filepath &
+  VerilogFile() const noexcept
   {
-    return vfile_;
+    return VerilogFile_;
   }
 
-  inline const jlm::filepath &
-  hfile() const noexcept
+  [[nodiscard]] const filepath &
+  HarnessFile() const noexcept
   {
-    return hfile_;
+    return HarnessFile_;
   }
 
-  inline const jlm::filepath &
-  ofile() const noexcept
+  [[nodiscard]] const filepath &
+  OutputFile() const noexcept
   {
-    return ofile_;
+    return OutputFile_;
   }
 
-  inline const std::vector<jlm::filepath> &
-  lfiles() const noexcept
+  [[nodiscard]] const std::vector<jlm::filepath> &
+  ObjectFiles() const noexcept
   {
-    return lfiles_;
+    return ObjectFiles_;
   }
 
-  static CommandGraph::Node *
-  create(
-    CommandGraph * pgraph,
-    const jlm::filepath & vfile,
-    const std::vector<jlm::filepath> & lfiles,
-    const jlm::filepath & hfile,
-    const jlm::filepath & ofile,
-    const jlm::filepath & tmpfolder,
-    const std::vector<std::string> & Lpaths,
-    const std::vector<std::string> & libs)
+  static CommandGraph::Node &
+  Create(
+    CommandGraph & commandGraph,
+    const filepath & verilogFile,
+    const std::vector<filepath> & objectFiles,
+    const filepath & harnessFile,
+    const filepath & outputFile,
+    const filepath & tempFolder,
+    const std::vector<std::string> & libraryPaths,
+    const std::vector<std::string> & libraries)
   {
-    std::unique_ptr<VerilatorCommand> cmd(new VerilatorCommand(vfile, lfiles, hfile, ofile, tmpfolder, Lpaths, libs));
-    return &CommandGraph::Node::Create(*pgraph, std::move(cmd));
+    std::unique_ptr<VerilatorCommand> command(new VerilatorCommand(
+      verilogFile,
+      objectFiles,
+      harnessFile,
+      outputFile,
+      tempFolder,
+      libraryPaths,
+      libraries));
+    return CommandGraph::Node::Create(commandGraph, std::move(command));
   }
 
 private:
-  jlm::filepath ofile_;
-  jlm::filepath vfile_;
-  jlm::filepath hfile_;
-  jlm::filepath tmpfolder_;
-  std::vector<std::string> libs_;
-  std::vector<jlm::filepath> lfiles_;
-  std::vector<std::string> Lpaths_;
+  filepath OutputFile_;
+  jlm::filepath VerilogFile_;
+  jlm::filepath HarnessFile_;
+  jlm::filepath TempFolder_;
+  std::vector<std::string> Libraries_;
+  std::vector<jlm::filepath> ObjectFiles_;
+  std::vector<std::string> LibraryPaths_;
 };
 
 }
