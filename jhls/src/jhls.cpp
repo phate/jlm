@@ -190,7 +190,7 @@ generate_commands(const jlm::cmdline_options & opts)
 				lnkifiles.push_back(c.ofile());
 		}
 		lnkifiles.push_back(asmofile);
-		auto verinode = verilatorcmd::create(
+		auto verinode = VerilatorCommand::create(
 				pgraph.get(),
 				verilogfile,
 				lnkifiles,
