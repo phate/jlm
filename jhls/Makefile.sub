@@ -1,47 +1,18 @@
 # Copyright 2022 Magnus Sjaladner <work@sjalander.com>
 # See COPYING for terms of redistribution.
 
-
 JHLS_SRC = \
 	jhls/src/cmdline.cpp \
 	jhls/src/jhls.cpp \
 
-# Default verilator for Ubuntu 22.04
-VERILATOR_BIN ?= verilator_bin
-VERILATOR_PATH ?= /usr/share/verilator
-
-FIRTOOL ?= $(CIRCT_PATH)/bin/firtool
-
-TOOLPATHS = \
-" \
-\#ifndef JLM_JHLS_TOOLPATHS_HPP\n \
-\#define JLM_JHLS_TOOLPATHS_HPP\n \
-\n \
-\#include <jlm/util/file.hpp>\n \
-\n \
-namespace jlm {\n \
-\n \
-  filepath firtoolpath(\"$(FIRTOOL)\");\n \
-  filepath verilatorpath(\"$(VERILATOR_BIN)\");\n \
-  filepath verilatorrootpath(\"$(VERILATOR_PATH)\");\n \
-\n \
-}\n \
-\n \
-\#endif \
-"
-TOOLPATHSFILE = $(JLM_ROOT)/jhls/include/jhls/toolpaths.hpp
-
-$(TOOLPATHSFILE):
-	@printf $(TOOLPATHS) > $@
-
 .PHONY: jhls-debug
 jhls-debug: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG -DJLM_ENABLE_ASSERTS
-jhls-debug: $(TOOLPATHSFILE) $(LLVMPATHSFILE)
+jhls-debug: $(LLVMPATHSFILE)
 jhls-debug: $(JLM_BUILD)/libjlm.a $(JLM_BIN)/jhls
 
 .PHONY: jhls-release
 jhls-release: CXXFLAGS += -O3
-jhls-release: $(TOOLPATHSFILE) $(LLVMPATHSFILE)
+jhls-release: $(LLVMPATHSFILE)
 jhls-release: $(JLM_BUILD)/libjlm.a $(JLM_BIN)/jhls
 
 $(JLM_BIN)/jhls: CPPFLAGS += -I$(JLM_ROOT)/jhls/include -I$(JLM_ROOT)/libjlc/include -I$(JLM_ROOT)/libjlm/include -I$(shell $(LLVMCONFIG) --includedir)
@@ -51,9 +22,7 @@ $(JLM_BIN)/jhls: $(patsubst %.cpp, $(JLM_BUILD)/%.o, $(JHLS_SRC)) $(JLM_BUILD)/l
 	@mkdir -p $(JLM_BIN)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $^ -o $@ $(LDFLAGS)
 
-
 .PHONY: jhls-clean
 jhls-clean:
 	@rm -rf $(JLM_BUILD)/jhls
-	@rm -f $(TOOLPATHSFILE)
 	@rm -rf $(JLM_BIN)/jhls
