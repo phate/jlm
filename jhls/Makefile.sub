@@ -4,7 +4,6 @@
 
 JHLS_SRC = \
 	jhls/src/cmdline.cpp \
-	jhls/src/command.cpp \
 	jhls/src/jhls.cpp \
 
 # Default verilator for Ubuntu 22.04
