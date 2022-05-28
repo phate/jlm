@@ -76,4 +76,4 @@ jlm-clean:
 	@rm -f $(JLM_ROOT)/utests.log
 	@rm -f $(JLM_ROOT)/ctests.log
 	@rm -f $(JLM_ROOT)/check.log
-	@rm -f $(TOOLINGPATHSFILE)
+	@rm -f $(COMMANDPATHSFILE)
