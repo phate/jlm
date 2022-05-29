@@ -6,9 +6,9 @@
 #ifndef JLM_JLC_COMMAND_HPP
 #define JLM_JLC_COMMAND_HPP
 
-#include <jlc/cmdline.hpp>
 #include <jlm/tooling/Command.hpp>
 #include <jlm/tooling/CommandGraph.hpp>
+#include <jlm/tooling/CommandLine.hpp>
 
 #include <memory>
 #include <string>

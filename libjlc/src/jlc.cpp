@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlc/cmdline.hpp>
 #include <jlc/command.hpp>
+#include <jlm/tooling/CommandLine.hpp>
 
 int
 main(int argc, char ** argv)
