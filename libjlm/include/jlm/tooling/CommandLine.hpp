@@ -187,6 +187,20 @@ private:
   const std::string Mt_;
 };
 
+/**
+ * Interface for the command line parser of a Jlm command line tool.
+ */
+class CommandLineParser {
+public:
+  virtual
+  ~CommandLineParser() noexcept;
+
+  CommandLineParser()
+  = default;
+
+  virtual const CommandLineOptions &
+  ParseCommandLineArguments(int argc, char ** argv) = 0;
+};
 
 }
 

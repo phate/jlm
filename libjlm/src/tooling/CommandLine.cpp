@@ -76,4 +76,7 @@ JlcCommandLineOptions::Reset() noexcept
   Compilations_.clear();
 }
 
+CommandLineParser::~CommandLineParser() noexcept
+= default;
+
 }
