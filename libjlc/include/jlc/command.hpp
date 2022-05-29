@@ -17,7 +17,7 @@
 namespace jlm {
 
 std::unique_ptr<CommandGraph>
-generate_commands(const jlm::cmdline_options & options);
+generate_commands(const JlcCommandLineOptions & commandLineOptions);
 
 }
 

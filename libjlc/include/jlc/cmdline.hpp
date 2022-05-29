@@ -15,7 +15,7 @@
 namespace jlm {
 
 void
-parse_cmdline(int argc, char ** argv, cmdline_options & options);
+parse_cmdline(int argc, char ** argv, JlcCommandLineOptions & options);
 
 }
 

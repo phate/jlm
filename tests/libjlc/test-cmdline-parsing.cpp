@@ -13,7 +13,7 @@
 static void
 parse_cmdline(
 	const std::vector<std::string> & args,
-	jlm::cmdline_options & options)
+	jlm::JlcCommandLineOptions & commandLineOptions)
 {
 	std::vector<char*> array;
 	for (const auto & arg : args) {
@@ -22,7 +22,7 @@ parse_cmdline(
 		array.back()[arg.size()] = '\0';
 	}
 
-	jlm::parse_cmdline(array.size(), &array[0], options);
+	jlm::parse_cmdline(array.size(), &array[0], commandLineOptions);
 
 	for (const auto & ptr : array)
 		delete[] ptr;
@@ -31,52 +31,52 @@ parse_cmdline(
 static void
 test1()
 {
-	jlm::cmdline_options options;
-	parse_cmdline({"jlc", "-c", "-o", "foo.o", "foo.c"}, options);
+	jlm::JlcCommandLineOptions commandLineOptions;
+	parse_cmdline({"jlc", "-c", "-o", "foo.o", "foo.c"}, commandLineOptions);
 
-	assert(options.compilations.size() == 1);
+	assert(commandLineOptions.Compilations_.size() == 1);
 
-	auto & c = options.compilations[0];
-	assert(c.link() == false);
-	assert(c.ofile() == "foo.o");
+	auto & c = commandLineOptions.Compilations_[0];
+	assert(c.RequiresLinking() == false);
+	assert(c.OutputFile() == "foo.o");
 }
 
 static void
 test2()
 {
-	jlm::cmdline_options options;
-	parse_cmdline({"jlc", "-o", "foobar", "/tmp/f1.o"}, options);
+	jlm::JlcCommandLineOptions commandLineOptions;
+	parse_cmdline({"jlc", "-o", "foobar", "/tmp/f1.o"}, commandLineOptions);
 
-	assert(options.compilations.size() == 1);
-	assert(options.lnkofile == "foobar");
+	assert(commandLineOptions.Compilations_.size() == 1);
+	assert(commandLineOptions.OutputFile_ == "foobar");
 
-	auto & c = options.compilations[0];
-	assert(c.parse() == false);
-	assert(c.optimize() == false);
-	assert(c.assemble() == false);
-	assert(c.link() == true);
+	auto & c = commandLineOptions.Compilations_[0];
+	assert(c.RequiresParsing() == false);
+	assert(c.RequiresOptimization() == false);
+	assert(c.RequiresAssembly() == false);
+	assert(c.RequiresLinking() == true);
 }
 
 static void
 test3()
 {
-	jlm::cmdline_options options;
-	parse_cmdline({"jlc", "-O", "foobar.c"}, options);
+	jlm::JlcCommandLineOptions commandLineOptions;
+	parse_cmdline({"jlc", "-O", "foobar.c"}, commandLineOptions);
 
-	assert(options.Olvl == jlm::optlvl::O0);
+	assert(commandLineOptions.OptimizationLevel_ == jlm::JlcCommandLineOptions::OptimizationLevel::O0);
 }
 
 static void
 test4()
 {
-	jlm::cmdline_options options;
-	parse_cmdline({"jlc", "foobar.c", "-c"}, options);
+	jlm::JlcCommandLineOptions commandLineOptions;
+	parse_cmdline({"jlc", "foobar.c", "-c"}, commandLineOptions);
 
-	assert(options.compilations.size() == 1);
+	assert(commandLineOptions.Compilations_.size() == 1);
 
-	auto & c = options.compilations[0];
-	assert(c.link() == false);
-	assert(c.ofile() == "foobar.o");
+	auto & c = commandLineOptions.Compilations_[0];
+	assert(c.RequiresLinking() == false);
+	assert(c.OutputFile() == "foobar.o");
 }
 
 static int
