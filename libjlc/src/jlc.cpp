@@ -6,16 +6,14 @@
 #include <jlc/cmdline.hpp>
 #include <jlc/command.hpp>
 
-#include <iostream>
-
 int
 main(int argc, char ** argv)
 {
-	jlm::JlcCommandLineOptions commandLineOptions;
-	parse_cmdline(argc, argv, commandLineOptions);
+  jlm::JlcCommandLineParser commandLineParser;
+  auto & commandLineOptions = commandLineParser.ParseCommandLineArguments(argc, argv);
 
-	auto pgraph = generate_commands(commandLineOptions);
+  auto pgraph = generate_commands(commandLineOptions);
   pgraph->Run();
 
-	return 0;
+  return 0;
 }
