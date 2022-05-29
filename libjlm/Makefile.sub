@@ -80,6 +80,7 @@ LIBJLM_SRC = \
     \
     libjlm/src/tooling/Command.cpp \
     libjlm/src/tooling/CommandGraph.cpp \
+    libjlm/src/tooling/CommandLine.cpp \
     \
      libjlm/src/util/Statistics.cpp \
 
