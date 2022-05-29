@@ -202,6 +202,38 @@ public:
   ParseCommandLineArguments(int argc, char ** argv) = 0;
 };
 
+/**
+ * Command line parser for \a jlc command line tool.
+ */
+class JlcCommandLineParser final : public CommandLineParser {
+public:
+  ~JlcCommandLineParser() noexcept override;
+
+  const JlcCommandLineOptions &
+  ParseCommandLineArguments(int argc, char ** argv) override;
+
+private:
+  static bool
+  IsObjectFile(const filepath & file)
+  {
+    return file.suffix() == "o";
+  }
+
+  static filepath
+  ToObjectFile(const filepath & file)
+  {
+    return {file.path() + file.base() + ".o"};
+  }
+
+  static filepath
+  ToDependencyFile(const filepath & file)
+  {
+    return {file.path() + file.base() + ".d"};
+  }
+
+  JlcCommandLineOptions CommandLineOptions_;
+};
+
 }
 
 #endif //JLM_TOOLING_COMMANDLINE_HPP
