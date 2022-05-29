@@ -5,10 +5,10 @@
 
 #include <test-registry.hpp>
 
-#include <jlc/cmdline.hpp>
 #include <jlc/command.hpp>
+#include <jlm/tooling/CommandLine.hpp>
 
-#include <assert.h>
+#include <cassert>
 
 static void
 test1()

@@ -2,7 +2,6 @@
 # See COPYING for terms of redistribution.
 
 LIBJLC_SRC = \
-	libjlc/src/cmdline.cpp \
 	libjlc/src/command.cpp \
 
 JLC_SRC = \

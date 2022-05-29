@@ -5,34 +5,36 @@
 
 #include <test-registry.hpp>
 
-#include <jlc/cmdline.hpp>
+#include <jlm/tooling/CommandLine.hpp>
 
-#include <assert.h>
-#include <string.h>
+#include <cassert>
+#include <cstring>
 
-static void
-parse_cmdline(
-	const std::vector<std::string> & args,
-	jlm::JlcCommandLineOptions & commandLineOptions)
+static const jlm::JlcCommandLineOptions &
+ParseCommandLineArguments(const std::vector<std::string> & commandLineArguments)
 {
 	std::vector<char*> array;
-	for (const auto & arg : args) {
-		array.push_back(new char[arg.size()+1]);
-		strncpy(array.back(), arg.data(), arg.size());
-		array.back()[arg.size()] = '\0';
+	for (const auto & commandLineArgument : commandLineArguments) {
+		array.push_back(new char[commandLineArgument.size() + 1]);
+		strncpy(array.back(), commandLineArgument.data(), commandLineArgument.size());
+		array.back()[commandLineArgument.size()] = '\0';
 	}
 
-	jlm::parse_cmdline(array.size(), &array[0], commandLineOptions);
+  static jlm::JlcCommandLineParser commandLineParser;
+  auto & commandLineOptions = commandLineParser.ParseCommandLineArguments(
+    static_cast<int>(array.size()),
+    &array[0]);
 
 	for (const auto & ptr : array)
 		delete[] ptr;
+
+  return commandLineOptions;
 }
 
 static void
 test1()
 {
-	jlm::JlcCommandLineOptions commandLineOptions;
-	parse_cmdline({"jlc", "-c", "-o", "foo.o", "foo.c"}, commandLineOptions);
+  auto & commandLineOptions = ParseCommandLineArguments({"jlc", "-c", "-o", "foo.o", "foo.c"});
 
 	assert(commandLineOptions.Compilations_.size() == 1);
 
@@ -44,8 +46,7 @@ test1()
 static void
 test2()
 {
-	jlm::JlcCommandLineOptions commandLineOptions;
-	parse_cmdline({"jlc", "-o", "foobar", "/tmp/f1.o"}, commandLineOptions);
+  auto & commandLineOptions = ParseCommandLineArguments({"jlc", "-o", "foobar", "/tmp/f1.o"});
 
 	assert(commandLineOptions.Compilations_.size() == 1);
 	assert(commandLineOptions.OutputFile_ == "foobar");
@@ -60,8 +61,7 @@ test2()
 static void
 test3()
 {
-	jlm::JlcCommandLineOptions commandLineOptions;
-	parse_cmdline({"jlc", "-O", "foobar.c"}, commandLineOptions);
+  auto & commandLineOptions = ParseCommandLineArguments({"jlc", "-O", "foobar.c"});
 
 	assert(commandLineOptions.OptimizationLevel_ == jlm::JlcCommandLineOptions::OptimizationLevel::O0);
 }
@@ -69,8 +69,7 @@ test3()
 static void
 test4()
 {
-	jlm::JlcCommandLineOptions commandLineOptions;
-	parse_cmdline({"jlc", "foobar.c", "-c"}, commandLineOptions);
+  auto & commandLineOptions = ParseCommandLineArguments({"jlc", "foobar.c", "-c"});
 
 	assert(commandLineOptions.Compilations_.size() == 1);
 
