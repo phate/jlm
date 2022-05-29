@@ -31,139 +31,162 @@ public:
   Reset() noexcept = 0;
 };
 
-enum class optlvl {O0, O1, O2, O3};
-
-std::string
-to_str(const optlvl & ol);
-
-enum class standard {none, gnu89, gnu99, c89, c90, c99, c11, cpp98, cpp03, cpp11, cpp14};
-
-std::string
-to_str(const standard & std);
-
-class compilation {
+class JlcCommandLineOptions final : public CommandLineOptions {
 public:
-  compilation(
-    const jlm::filepath & ifile,
-    const jlm::filepath & dependencyFile,
-    const jlm::filepath & ofile,
-    const std::string & mT,
-    bool parse,
-    bool optimize,
-    bool assemble,
-    bool link)
-    : link_(link)
-    , parse_(parse)
-    , optimize_(optimize)
-    , assemble_(assemble)
-    , ifile_(ifile)
-    , ofile_(ofile)
-    , dependencyFile_(dependencyFile)
-    , mT_(mT)
+  class Compilation;
+
+  enum class OptimizationLevel {
+    O0,
+    O1,
+    O2,
+    O3,
+  };
+
+  enum class LanguageStandard {
+    None,
+    Gnu89,
+    Gnu99,
+    C89,
+    C99,
+    C11,
+    Cpp98,
+    Cpp03,
+    Cpp11,
+    Cpp14,
+  };
+
+  JlcCommandLineOptions()
+    : OnlyPrintCommands_(false)
+    , GenerateDebugInformation_(false)
+    , Verbose_(false)
+    , Rdynamic_(false)
+    , Suppress_(false)
+    , UsePthreads_(false)
+    , Md_(false)
+    , OptimizationLevel_(OptimizationLevel::O0)
+    , LanguageStandard_(LanguageStandard::None)
+    , OutputFile_("a.out")
   {}
 
-  const jlm::filepath &
-  ifile() const noexcept
+  static std::string
+  ToString(const OptimizationLevel & optimizationLevel);
+
+  static std::string
+  ToString(const LanguageStandard & languageStandard);
+
+  void
+  Reset() noexcept override;
+
+  bool OnlyPrintCommands_;
+  bool GenerateDebugInformation_;
+  bool Verbose_;
+  bool Rdynamic_;
+  bool Suppress_;
+  bool UsePthreads_;
+
+  bool Md_;
+
+  OptimizationLevel OptimizationLevel_;
+  LanguageStandard LanguageStandard_;
+
+  filepath OutputFile_;
+  std::vector<std::string> Libraries_;
+  std::vector<std::string> MacroDefinitions_;
+  std::vector<std::string> LibraryPaths_;
+  std::vector<std::string> Warnings_;
+  std::vector<std::string> IncludePaths_;
+  std::vector<std::string> Flags_;
+  std::vector<std::string> JlmOptOptimizations_;
+
+  std::vector<Compilation> Compilations_;
+};
+
+class JlcCommandLineOptions::Compilation {
+public:
+  Compilation(
+    filepath inputFile,
+    filepath dependencyFile,
+    filepath outputFile,
+    std::string mT,
+    bool requiresParsing,
+    bool requiresOptimization,
+    bool requiresAssembly,
+    bool requiresLinking)
+    : RequiresLinking_(requiresLinking)
+    , RequiresParsing_(requiresParsing)
+    , RequiresOptimization_(requiresOptimization)
+    , RequiresAssembly_(requiresAssembly)
+    , InputFile_(std::move(inputFile))
+    , OutputFile_(std::move(outputFile))
+    , DependencyFile_(std::move(dependencyFile))
+    , Mt_(std::move(mT))
+  {}
+
+  [[nodiscard]] const filepath &
+  InputFile() const noexcept
   {
-    return ifile_;
+    return InputFile_;
   }
 
-  const jlm::filepath &
+  [[nodiscard]] const filepath &
   DependencyFile() const noexcept
   {
-    return dependencyFile_;
+    return DependencyFile_;
   }
 
-  const jlm::filepath &
-  ofile() const noexcept
+  [[nodiscard]] const filepath &
+  OutputFile() const noexcept
   {
-    return ofile_;
+    return OutputFile_;
   }
 
-  const std::string &
+  [[nodiscard]] const std::string &
   Mt() const noexcept
   {
-    return mT_;
+    return Mt_;
   }
 
   void
-  set_ofile(const jlm::filepath & ofile)
+  SetOutputFile(const filepath & outputFile)
   {
-    ofile_ = ofile;
+    OutputFile_ = outputFile;
   }
 
-  bool
-  parse() const noexcept
+  [[nodiscard]] bool
+  RequiresParsing() const noexcept
   {
-    return parse_;
+    return RequiresParsing_;
   }
 
-  bool
-  optimize() const noexcept
+  [[nodiscard]] bool
+  RequiresOptimization() const noexcept
   {
-    return optimize_;
+    return RequiresOptimization_;
   }
 
-  bool
-  assemble() const noexcept
+  [[nodiscard]] bool
+  RequiresAssembly() const noexcept
   {
-    return assemble_;
+    return RequiresAssembly_;
   }
 
-  bool
-  link() const noexcept
+  [[nodiscard]] bool
+  RequiresLinking() const noexcept
   {
-    return link_;
+    return RequiresLinking_;
   }
 
 private:
-  bool link_;
-  bool parse_;
-  bool optimize_;
-  bool assemble_;
-  jlm::filepath ifile_;
-  jlm::filepath ofile_;
-  jlm::filepath dependencyFile_;
-  const std::string mT_;
+  bool RequiresLinking_;
+  bool RequiresParsing_;
+  bool RequiresOptimization_;
+  bool RequiresAssembly_;
+  filepath InputFile_;
+  filepath OutputFile_;
+  filepath DependencyFile_;
+  const std::string Mt_;
 };
 
-class cmdline_options {
-public:
-  cmdline_options()
-    : only_print_commands(false)
-    , generate_debug_information(false)
-    , verbose(false)
-    , rdynamic(false)
-    , suppress(false)
-    , pthread(false)
-    , MD(false)
-    , Olvl(optlvl::O0)
-    , std(standard::none)
-    , lnkofile("a.out")
-  {}
-
-  bool only_print_commands;
-  bool generate_debug_information;
-  bool verbose;
-  bool rdynamic;
-  bool suppress;
-  bool pthread;
-
-  bool MD;
-
-  optlvl Olvl;
-  standard std;
-  jlm::filepath lnkofile;
-  std::vector<std::string> libs;
-  std::vector<std::string> macros;
-  std::vector<std::string> libpaths;
-  std::vector<std::string> warnings;
-  std::vector<std::string> includepaths;
-  std::vector<std::string> flags;
-  std::vector<std::string> jlmopts;
-
-  std::vector<compilation> compilations;
-};
 
 }
 

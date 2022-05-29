@@ -11,10 +11,10 @@
 int
 main(int argc, char ** argv)
 {
-	jlm::cmdline_options options;
-	parse_cmdline(argc, argv, options);
+	jlm::JlcCommandLineOptions commandLineOptions;
+	parse_cmdline(argc, argv, commandLineOptions);
 
-	auto pgraph = generate_commands(options);
+	auto pgraph = generate_commands(commandLineOptions);
   pgraph->Run();
 
 	return 0;

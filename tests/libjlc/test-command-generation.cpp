@@ -13,8 +13,8 @@
 static void
 test1()
 {
-	jlm::cmdline_options options;
-	options.compilations.push_back({
+	jlm::JlcCommandLineOptions commandLineOptions;
+	commandLineOptions.Compilations_.push_back({
 		{"foo.c"},
 		{"foo.d"},
 		{"foo.o"},
@@ -24,7 +24,7 @@ test1()
 		true,
 		false});
 
-	auto pgraph = jlm::generate_commands(options);
+	auto pgraph = jlm::generate_commands(commandLineOptions);
 
 	auto & node = (*pgraph->GetExitNode().IncomingEdges().begin()).GetSource();
 	auto cmd = dynamic_cast<const jlm::LlcCommand*>(&node.GetCommand());
@@ -34,11 +34,19 @@ test1()
 static void
 test2()
 {
-	jlm::cmdline_options options;
-	options.compilations.push_back({{"foo.o"}, {""}, {"foo.o"}, "foo.o", false, false, false, true});
-	options.lnkofile = {"foobar"};
+	jlm::JlcCommandLineOptions commandLineOptions;
+	commandLineOptions.Compilations_.push_back({
+    {"foo.o"},
+    {""},
+    {"foo.o"},
+    "foo.o",
+    false,
+    false,
+    false,
+    true});
+  commandLineOptions.OutputFile_ = {"foobar"};
 
-	auto pgraph = jlm::generate_commands(options);
+	auto pgraph = jlm::generate_commands(commandLineOptions);
 	assert(pgraph->NumNodes() == 3);
 
 	auto & node = (*pgraph->GetExitNode().IncomingEdges().begin()).GetSource();

@@ -34,7 +34,7 @@ ToDependencyFile(const jlm::filepath & f)
 }
 
 void
-parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
+parse_cmdline(int argc, char ** argv, JlcCommandLineOptions & options)
 {
 	using namespace llvm;
 
@@ -164,17 +164,24 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 
 	/* Process parsed options */
 
-	static std::unordered_map<std::string, jlm::optlvl> Olvlmap({
-	  {"0", optlvl::O0}, {"1", optlvl::O1}
-	, {"2", optlvl::O2}, {"3", optlvl::O3}}
-	);
+	static std::unordered_map<std::string, jlm::JlcCommandLineOptions::OptimizationLevel> Olvlmap({
+	  {"0", JlcCommandLineOptions::OptimizationLevel::O0},
+    {"1", JlcCommandLineOptions::OptimizationLevel::O1},
+    {"2", JlcCommandLineOptions::OptimizationLevel::O2},
+    {"3", JlcCommandLineOptions::OptimizationLevel::O3}
+  });
 
-	static std::unordered_map<std::string, standard> stdmap({
-	  {"gnu89", standard::gnu89}, {"gnu99", standard::gnu99}
-	, {"c89", standard::c89}, {"c90", standard::c99}
-	, {"c99", standard::c99}, {"c11", standard::c11}
-	, {"c++98", standard::cpp98}, {"c++03", standard::cpp03}
-	, {"c++11", standard::cpp11}, {"c++14", standard::cpp14}
+	static std::unordered_map<std::string, jlm::JlcCommandLineOptions::LanguageStandard> stdmap({
+	  {"gnu89", jlm::JlcCommandLineOptions::LanguageStandard::Gnu89},
+    {"gnu99", jlm::JlcCommandLineOptions::LanguageStandard::Gnu99},
+    {"c89",   jlm::JlcCommandLineOptions::LanguageStandard::C89},
+    {"c90",   jlm::JlcCommandLineOptions::LanguageStandard::C99},
+    {"c99",   jlm::JlcCommandLineOptions::LanguageStandard::C99},
+    {"c11",   jlm::JlcCommandLineOptions::LanguageStandard::C11},
+    {"c++98", jlm::JlcCommandLineOptions::LanguageStandard::Cpp98},
+    {"c++03", jlm::JlcCommandLineOptions::LanguageStandard::Cpp03},
+    {"c++11", jlm::JlcCommandLineOptions::LanguageStandard::Cpp11},
+    {"c++14", jlm::JlcCommandLineOptions::LanguageStandard::Cpp14}
 	});
 
 	if (!optlvl.empty()) {
@@ -183,7 +190,7 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 			std::cerr << "Unknown optimization level.\n";
 			exit(EXIT_FAILURE);
 		}
-		options.Olvl = olvl->second;
+		options.OptimizationLevel_ = olvl->second;
 	}
 
 	if (!std.empty()) {
@@ -192,7 +199,7 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 			std::cerr << "Unknown language standard.\n";
 			exit(EXIT_FAILURE);
 		}
-		options.std = stdit->second;
+		options.LanguageStandard_ = stdit->second;
 	}
 
 	if (ifiles.empty()) {
@@ -205,25 +212,25 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 		exit(EXIT_FAILURE);
 	}
 
-	options.libs = libs;
-	options.macros = Dmacros;
-	options.libpaths = libpaths;
-	options.warnings = Wwarnings;
-	options.includepaths = includepaths;
-	options.only_print_commands = print_commands;
-	options.generate_debug_information = generate_debug_information;
-	options.flags = flags;
-	options.jlmopts = jlmopts;
-	options.verbose = verbose;
-	options.rdynamic = rdynamic;
-	options.suppress = suppress;
-	options.pthread = pthread;
-	options.MD = MD;
+	options.Libraries_ = libs;
+	options.MacroDefinitions_ = Dmacros;
+	options.LibraryPaths_ = libpaths;
+	options.Warnings_ = Wwarnings;
+	options.IncludePaths_ = includepaths;
+	options.OnlyPrintCommands_ = print_commands;
+	options.GenerateDebugInformation_ = generate_debug_information;
+	options.Flags_ = flags;
+	options.JlmOptOptimizations_ = jlmopts;
+	options.Verbose_ = verbose;
+	options.Rdynamic_ = rdynamic;
+	options.Suppress_ = suppress;
+	options.UsePthreads_ = pthread;
+	options.Md_ = MD;
 
 	for (const auto & ifile : ifiles) {
 		if (is_objfile(ifile)) {
 			/* FIXME: print a warning like clang if no_linking is true */
-			options.compilations.push_back({
+			options.Compilations_.push_back({
 				ifile,
 				jlm::filepath(""),
 				ifile,
@@ -236,7 +243,7 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 			continue;
 		}
 
-		options.compilations.push_back({
+		options.Compilations_.push_back({
 			ifile,
 			MF.empty() ? ToDependencyFile(ifile) : jlm::filepath(MF),
 			to_objfile(ifile),
@@ -249,10 +256,10 @@ parse_cmdline(int argc, char ** argv, jlm::cmdline_options & options)
 
 	if (!ofilepath.empty()) {
 		if (no_linking) {
-			JLM_ASSERT(options.compilations.size() == 1);
-			options.compilations[0].set_ofile(ofilepath);
+			JLM_ASSERT(options.Compilations_.size() == 1);
+      options.Compilations_[0].SetOutputFile(ofilepath);
 		} else {
-			options.lnkofile = jlm::filepath(ofilepath);
+			options.OutputFile_ = jlm::filepath(ofilepath);
 		}
 	}
 }
