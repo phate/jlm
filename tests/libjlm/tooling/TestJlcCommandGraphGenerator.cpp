@@ -63,4 +63,4 @@ test()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/tooling/test-command-generation", test)
+JLM_UNIT_TEST_REGISTER("libjlm/tooling/TestJlcCommandGraphGenerator", test)
