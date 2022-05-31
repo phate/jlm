@@ -3,9 +3,9 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include "test-registry.hpp"
 
-#include <jlm/tooling/CommandLine.hpp>
+#include "jlm/tooling/CommandLine.hpp"
 
 #include <cassert>
 #include <cstring>
@@ -89,4 +89,4 @@ test()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlc/test-cmdline-parsing", test)
+JLM_UNIT_TEST_REGISTER("libjlm/tooling/test-cmdline-parsing", test)

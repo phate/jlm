@@ -3,10 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
+#include "test-registry.hpp"
 
-#include <jlc/command.hpp>
-#include <jlm/tooling/CommandLine.hpp>
+#include "jlc/command.hpp"
+#include "jlm/tooling/CommandLine.hpp"
 
 #include <cassert>
 
@@ -63,4 +63,4 @@ test()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlc/test-command-generation", test)
+JLM_UNIT_TEST_REGISTER("libjlm/tooling/test-command-generation", test)

@@ -2,7 +2,6 @@ TESTS = \
 
 include $(JLM_ROOT)/tests/libjive/Makefile.sub
 include $(JLM_ROOT)/tests/libjlm/Makefile.sub
-include $(JLM_ROOT)/tests/libjlc/Makefile.sub
 
 TEST_SOURCES = \
 	tests/test-operation.cpp \
