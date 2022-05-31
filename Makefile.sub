@@ -52,7 +52,7 @@ $(JLM_BUILD)/%.a:
 
 include $(JLM_ROOT)/libjive/Makefile.sub
 include $(JLM_ROOT)/libjlm/Makefile.sub
-include $(JLM_ROOT)/libjlc/Makefile.sub
+include $(JLM_ROOT)/jlc/Makefile.sub
 include $(JLM_ROOT)/jlm-print/Makefile.sub
 include $(JLM_ROOT)/jlm-opt/Makefile.sub
 include $(JLM_ROOT)/jlm-hls/Makefile.sub
