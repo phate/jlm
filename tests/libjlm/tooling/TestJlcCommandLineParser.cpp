@@ -5,7 +5,7 @@
 
 #include "test-registry.hpp"
 
-#include "jlm/tooling/CommandLine.hpp"
+#include <jlm/tooling/CommandLine.hpp>
 
 #include <cassert>
 #include <cstring>
@@ -13,80 +13,124 @@
 static const jlm::JlcCommandLineOptions &
 ParseCommandLineArguments(const std::vector<std::string> & commandLineArguments)
 {
-	std::vector<char*> array;
-	for (const auto & commandLineArgument : commandLineArguments) {
-		array.push_back(new char[commandLineArgument.size() + 1]);
-		strncpy(array.back(), commandLineArgument.data(), commandLineArgument.size());
-		array.back()[commandLineArgument.size()] = '\0';
-	}
+  std::vector<char*> array;
+  for (const auto & commandLineArgument : commandLineArguments) {
+    array.push_back(new char[commandLineArgument.size() + 1]);
+    strncpy(array.back(), commandLineArgument.data(), commandLineArgument.size());
+    array.back()[commandLineArgument.size()] = '\0';
+  }
 
   static jlm::JlcCommandLineParser commandLineParser;
   auto & commandLineOptions = commandLineParser.ParseCommandLineArguments(
     static_cast<int>(array.size()),
     &array[0]);
 
-	for (const auto & ptr : array)
-		delete[] ptr;
+  for (const auto & ptr : array)
+    delete[] ptr;
 
   return commandLineOptions;
 }
 
 static void
-test1()
+Test1()
 {
-  auto & commandLineOptions = ParseCommandLineArguments({"jlc", "-c", "-o", "foo.o", "foo.c"});
+  /*
+   * Arrange
+   */
+  std::vector<std::string> commandLineArguments({"jlc", "-c", "-o", "foo.o", "foo.c"});
 
-	assert(commandLineOptions.Compilations_.size() == 1);
+  /*
+   * Act
+   */
+  auto & commandLineOptions = ParseCommandLineArguments(commandLineArguments);
 
-	auto & c = commandLineOptions.Compilations_[0];
-	assert(c.RequiresLinking() == false);
-	assert(c.OutputFile() == "foo.o");
+  /*
+   * Assert
+   */
+  assert(commandLineOptions.Compilations_.size() == 1);
+  auto & compilation = commandLineOptions.Compilations_[0];
+
+  assert(compilation.RequiresLinking() == false);
+  assert(compilation.OutputFile() == "foo.o");
 }
 
 static void
-test2()
+Test2()
 {
-  auto & commandLineOptions = ParseCommandLineArguments({"jlc", "-o", "foobar", "/tmp/f1.o"});
+  /*
+   * Arrange
+   */
+  std::vector<std::string> commandLineArguments({"jlc", "-o", "foobar", "/tmp/f1.o"});
 
-	assert(commandLineOptions.Compilations_.size() == 1);
-	assert(commandLineOptions.OutputFile_ == "foobar");
+  /*
+   * Act
+   */
+  auto & commandLineOptions = ParseCommandLineArguments(commandLineArguments);
 
-	auto & c = commandLineOptions.Compilations_[0];
-	assert(c.RequiresParsing() == false);
-	assert(c.RequiresOptimization() == false);
-	assert(c.RequiresAssembly() == false);
-	assert(c.RequiresLinking() == true);
+  /*
+   * Assert
+   */
+  assert(commandLineOptions.Compilations_.size() == 1);
+  assert(commandLineOptions.OutputFile_ == "foobar");
+
+  auto & compilation = commandLineOptions.Compilations_[0];
+  assert(compilation.RequiresParsing() == false);
+  assert(compilation.RequiresOptimization() == false);
+  assert(compilation.RequiresAssembly() == false);
+  assert(compilation.RequiresLinking() == true);
 }
 
 static void
-test3()
+Test3()
 {
-  auto & commandLineOptions = ParseCommandLineArguments({"jlc", "-O", "foobar.c"});
+  /*
+   * Arrange
+   */
+  std::vector<std::string> commandLineArguments({"jlc", "-O", "foobar.c"});
 
-	assert(commandLineOptions.OptimizationLevel_ == jlm::JlcCommandLineOptions::OptimizationLevel::O0);
+  /*
+   * Act
+   */
+  auto & commandLineOptions = ParseCommandLineArguments(commandLineArguments);
+
+  /*
+   * Assert
+   */
+  assert(commandLineOptions.OptimizationLevel_ == jlm::JlcCommandLineOptions::OptimizationLevel::O0);
 }
 
 static void
-test4()
+Test4()
 {
-  auto & commandLineOptions = ParseCommandLineArguments({"jlc", "foobar.c", "-c"});
+  /*
+   * Arrange
+   */
+  std::vector<std::string> commandLineArguments({"jlc", "foobar.c", "-c"});
 
-	assert(commandLineOptions.Compilations_.size() == 1);
+  /*
+   * Act
+   */
+  auto & commandLineOptions = ParseCommandLineArguments(commandLineArguments);
 
-	auto & c = commandLineOptions.Compilations_[0];
-	assert(c.RequiresLinking() == false);
-	assert(c.OutputFile() == "foobar.o");
+  /*
+   * Assert
+   */
+  assert(commandLineOptions.Compilations_.size() == 1);
+
+  auto & compilation = commandLineOptions.Compilations_[0];
+  assert(compilation.RequiresLinking() == false);
+  assert(compilation.OutputFile() == "foobar.o");
 }
 
 static int
-test()
+Test()
 {
-	test1();
-	test2();
-	test3();
-	test4();
+  Test1();
+  Test2();
+  Test3();
+  Test4();
 
-	return 0;
+  return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/tooling/TestJlcCommandLineParser", test)
+JLM_UNIT_TEST_REGISTER("libjlm/tooling/TestJlcCommandLineParser", Test)
