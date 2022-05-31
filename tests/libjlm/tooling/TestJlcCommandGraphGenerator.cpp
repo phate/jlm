@@ -5,62 +5,86 @@
 
 #include "test-registry.hpp"
 
-#include "jlc/command.hpp"
-#include "jlm/tooling/CommandLine.hpp"
+#include <jlm/tooling/Command.hpp>
+#include <jlm/tooling/CommandLine.hpp>
+#include <jlm/tooling/CommandGraphGenerator.hpp>
 
 #include <cassert>
 
 static void
-test1()
+Test1()
 {
-	jlm::JlcCommandLineOptions commandLineOptions;
-	commandLineOptions.Compilations_.push_back({
-		{"foo.c"},
-		{"foo.d"},
-		{"foo.o"},
-		"foo.o",
-		true,
-		true,
-		true,
-		false});
+  using namespace jlm;
 
-	auto pgraph = jlm::generate_commands(commandLineOptions);
+  /*
+   * Arrange
+   */
+  JlcCommandLineOptions commandLineOptions;
+  commandLineOptions.Compilations_.push_back({
+                                               {"foo.c"},
+                                               {"foo.d"},
+                                               {"foo.o"},
+                                               "foo.o",
+                                               true,
+                                               true,
+                                               true,
+                                               false});
 
-	auto & node = (*pgraph->GetExitNode().IncomingEdges().begin()).GetSource();
-	auto cmd = dynamic_cast<const jlm::LlcCommand*>(&node.GetCommand());
-	assert(cmd && cmd->OutputFile() == "foo.o");
+  /*
+   * Act
+   */
+  auto commandGraph = JlcCommandGraphGenerator::Generate(commandLineOptions);
+
+  /*
+   * Assert
+   */
+  auto & commandNode = (*commandGraph->GetExitNode().IncomingEdges().begin()).GetSource();
+  auto command = dynamic_cast<const LlcCommand*>(&commandNode.GetCommand());
+  assert(command && command->OutputFile() == "foo.o");
 }
 
 static void
-test2()
+Test2()
 {
-	jlm::JlcCommandLineOptions commandLineOptions;
-	commandLineOptions.Compilations_.push_back({
-    {"foo.o"},
-    {""},
-    {"foo.o"},
-    "foo.o",
-    false,
-    false,
-    false,
-    true});
+  using namespace jlm;
+
+  /*
+   * Arrange
+   */
+  jlm::JlcCommandLineOptions commandLineOptions;
+  commandLineOptions.Compilations_.push_back({
+                                               {"foo.o"},
+                                               {""},
+                                               {"foo.o"},
+                                               "foo.o",
+                                               false,
+                                               false,
+                                               false,
+                                               true});
   commandLineOptions.OutputFile_ = {"foobar"};
 
-	auto pgraph = jlm::generate_commands(commandLineOptions);
-	assert(pgraph->NumNodes() == 3);
+  /*
+   * Act
+   */
+  auto commandGraph = JlcCommandGraphGenerator::Generate(commandLineOptions);
 
-	auto & node = (*pgraph->GetExitNode().IncomingEdges().begin()).GetSource();
-	auto cmd = dynamic_cast<const jlm::ClangCommand*>(&node.GetCommand());
-	assert(cmd->InputFiles()[0] == "foo.o" && cmd->OutputFile() == "foobar");
+  /*
+   * Assert
+   */
+  assert(commandGraph->NumNodes() == 3);
+
+  auto & commandNode = (*commandGraph->GetExitNode().IncomingEdges().begin()).GetSource();
+  auto command = dynamic_cast<const ClangCommand*>(&commandNode.GetCommand());
+  assert(command->InputFiles()[0] == "foo.o" && command->OutputFile() == "foobar");
 }
 
 static int
-test()
+Test()
 {
-	test1();
-	test2();
+  Test1();
+  Test2();
 
-	return 0;
+  return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/tooling/TestJlcCommandGraphGenerator", test)
+JLM_UNIT_TEST_REGISTER("libjlm/tooling/TestJlcCommandGraphGenerator", Test)
