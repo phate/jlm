@@ -1,0 +1,3 @@
+TESTS += \
+	libjlm/tooling/test-cmdline-parsing \
+	libjlm/tooling/test-command-generation \
