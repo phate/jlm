@@ -6,6 +6,7 @@
 #ifndef JLM_TOOLING_COMMANDGRAPHGENERATOR_HPP
 #define JLM_TOOLING_COMMANDGRAPHGENERATOR_HPP
 
+#include <jlm/tooling/Command.hpp>
 #include <jlm/tooling/CommandLine.hpp>
 
 #include <memory>

@@ -2,7 +2,7 @@
 # See COPYING for terms of redistribution.
 
 JLC_SRC = \
-	libjlc/src/jlc.cpp \
+	jlc/jlc.cpp \
 
 .PHONY: jlc-debug
 jlc-debug: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG -DJLM_ENABLE_ASSERTS

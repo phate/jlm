@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlc/command.hpp>
 #include <jlm/tooling/CommandGraphGenerator.hpp>
 #include <jlm/tooling/CommandLine.hpp>
 
