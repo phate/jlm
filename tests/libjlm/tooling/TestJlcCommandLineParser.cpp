@@ -89,4 +89,4 @@ test()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/tooling/test-cmdline-parsing", test)
+JLM_UNIT_TEST_REGISTER("libjlm/tooling/TestJlcCommandLineParser", test)
