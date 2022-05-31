@@ -17,9 +17,6 @@ echo "jlm-opt-release        Compile jlm optimizer in release mode"
 echo ""
 echo "libjlm-debug           Compile jlm library in debug mode"
 echo "libjlm-release         Compile jlm library in release mode"
-echo ""
-echo "libjlc-debug           Compile jlc library in debug mode"
-echo "libjlc-release         Compile jlc library in release mode"
 endef
 
 # Try to detect llvm-config 
@@ -64,10 +61,10 @@ include $(JLM_ROOT)/docs/Makefile.sub
 include $(JLM_ROOT)/tests/Makefile.sub
 
 .PHONY: jlm-debug
-jlm-debug: libjlm-debug libjlc-debug jlm-print-debug jlm-opt-debug jlm-hls-debug jlc-debug jhls-debug
+jlm-debug: libjlm-debug jlm-print-debug jlm-opt-debug jlm-hls-debug jlc-debug jhls-debug
 
 .PHONY: jlm-release
-jlm-release: libjlm-release libjlc-release jlm-print-release jlm-opt-release jlm-hls-release jlc-release jhls-release
+jlm-release: libjlm-release jlm-print-release jlm-opt-release jlm-hls-release jlc-release jhls-release
 
 .PHONY: jlm-clean
 jlm-clean:
