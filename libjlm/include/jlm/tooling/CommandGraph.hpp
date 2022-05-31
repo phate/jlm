@@ -72,6 +72,12 @@ public:
   static std::vector<CommandGraph::Node*>
   SortNodesTopological(const CommandGraph & commandGraph);
 
+  static std::unique_ptr<CommandGraph>
+  Create()
+  {
+    return std::make_unique<CommandGraph>();
+  }
+
 private:
   Node * ExitNode_;
   Node * EntryNode_;
