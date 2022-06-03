@@ -18,9 +18,9 @@ class optimization;
 
 enum class outputformat {llvm, xml};
 
-class cmdline_options {
+class JlmOptCommandLineOptions {
 public:
-	cmdline_options()
+	JlmOptCommandLineOptions()
 	: ifile("")
 	, ofile("")
 	, format(outputformat::llvm)
@@ -34,7 +34,7 @@ public:
 };
 
 void
-parse_cmdline(int argc, char ** argv, cmdline_options & options);
+parse_cmdline(int argc, char ** argv, JlmOptCommandLineOptions & options);
 
 }
 
