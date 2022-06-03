@@ -2,8 +2,7 @@
 # See COPYING for terms of redistribution.
 
 JLMOPT_SRC = \
-	jlm-opt/src/cmdline.cpp \
-	jlm-opt/src/jlm-opt.cpp \
+	jlm-opt/jlm-opt.cpp \
 
 .PHONY: jlm-opt-debug
 jlm-opt-debug: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG -DJLM_ENABLE_ASSERTS
