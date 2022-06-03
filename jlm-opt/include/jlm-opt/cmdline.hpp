@@ -16,21 +16,24 @@ namespace jlm {
 
 class optimization;
 
-enum class outputformat {llvm, xml};
-
 class JlmOptCommandLineOptions {
 public:
+  enum class OutputFormat {
+    Llvm,
+    Xml
+  };
+
 	JlmOptCommandLineOptions()
-	: ifile("")
-	, ofile("")
-	, format(outputformat::llvm)
+	: InputFile_("")
+	, OutputFile_("")
+	, OutputFormat_(OutputFormat::Llvm)
 	{}
 
-	jlm::filepath ifile;
-	jlm::filepath ofile;
-	outputformat format;
-	StatisticsDescriptor sd;
-	std::vector<jlm::optimization*> optimizations;
+	filepath InputFile_;
+	filepath OutputFile_;
+	OutputFormat OutputFormat_;
+	StatisticsDescriptor StatisticsDescriptor_;
+	std::vector<optimization*> Optimizations_;
 };
 
 void

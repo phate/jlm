@@ -34,7 +34,7 @@ enum class OptimizationId {
   pll,
 };
 
-static jlm::optimization *
+static optimization *
 GetOptimization(enum OptimizationId id)
 {
   static jlm::aa::SteensgaardBasic steensgaardBasic;
@@ -89,7 +89,7 @@ parse_cmdline(int argc, char ** argv, jlm::JlmOptCommandLineOptions & options)
 	, cl::desc("Write output to <file>")
 	, cl::value_desc("file"));
 
-	std::string desc("Write stats to <file>. Default is " + options.sd.filepath().to_str() + ".");
+	std::string desc("Write stats to <file>. Default is " + options.StatisticsDescriptor_.filepath().to_str() + ".");
 	cl::opt<std::string> sfile(
 	  "s"
 	, cl::desc(desc)
@@ -159,11 +159,11 @@ parse_cmdline(int argc, char ** argv, jlm::JlmOptCommandLineOptions & options)
                    "Write theta-gamma inversion statistics to file.")),
     cl::desc("Write statistics"));
 
-	cl::opt<outputformat> format(
-	  cl::values(
-		  clEnumValN(outputformat::llvm, "llvm", "Output LLVM IR [default]")
-		, clEnumValN(outputformat::xml, "xml", "Output XML"))
-	, cl::desc("Select output format"));
+  cl::opt<JlmOptCommandLineOptions::OutputFormat> format(
+    cl::values(
+      clEnumValN(JlmOptCommandLineOptions::OutputFormat::Llvm, "llvm", "Output LLVM IR [default]"),
+      clEnumValN(JlmOptCommandLineOptions::OutputFormat::Xml, "xml", "Output XML")),
+    cl::desc("Select output OutputFormat_"));
 
   cl::list<jlm::OptimizationId> optids(
     cl::values(
@@ -188,10 +188,10 @@ parse_cmdline(int argc, char ** argv, jlm::JlmOptCommandLineOptions & options)
 	cl::ParseCommandLineOptions(argc, argv);
 
 	if (!ofile.empty())
-		options.ofile = ofile;
+		options.OutputFile_ = ofile;
 
 	if (!sfile.empty())
-		options.sd.set_file(sfile);
+		options.StatisticsDescriptor_.set_file(sfile);
 
 	std::vector<jlm::optimization*> optimizations;
 	for (auto & optid : optids)
@@ -200,10 +200,10 @@ parse_cmdline(int argc, char ** argv, jlm::JlmOptCommandLineOptions & options)
   std::unordered_set<StatisticsDescriptor::StatisticsId> printStatisticsIds(
     printStatistics.begin(), printStatistics.end());
 
-	options.ifile = ifile;
-	options.format = format;
-	options.optimizations = optimizations;
-  options.sd.SetPrintStatisticsIds(printStatisticsIds);
+	options.InputFile_ = ifile;
+	options.OutputFormat_ = format;
+	options.Optimizations_ = optimizations;
+  options.StatisticsDescriptor_.SetPrintStatisticsIds(printStatisticsIds);
 }
 
 }

@@ -85,21 +85,22 @@ static void
 print(
 	const jlm::RvsdgModule & rm,
 	const jlm::filepath & fp,
-	const jlm::outputformat & format,
+	const jlm::JlmOptCommandLineOptions::OutputFormat & format,
 	const jlm::StatisticsDescriptor & sd)
 {
-	using namespace jlm;
+  using namespace jlm;
 
-	static std::unordered_map<
-		jlm::outputformat,
-		std::function<void(const RvsdgModule&, const filepath&, const StatisticsDescriptor&)>
-	> formatters({
-		{outputformat::xml,  print_as_xml}
-	, {outputformat::llvm, print_as_llvm}
-	});
+  static std::unordered_map<
+    jlm::JlmOptCommandLineOptions::OutputFormat,
+    std::function<void(const RvsdgModule&, const filepath&, const StatisticsDescriptor&)>
+  > formatters(
+    {
+      {JlmOptCommandLineOptions::OutputFormat::Xml,  print_as_xml},
+      {JlmOptCommandLineOptions::OutputFormat::Llvm, print_as_llvm}
+    });
 
-	JLM_ASSERT(formatters.find(format) != formatters.end());
-	formatters[format](rm, fp, sd);
+  JLM_ASSERT(formatters.find(format) != formatters.end());
+  formatters[format](rm, fp, sd);
 }
 
 int
@@ -109,16 +110,16 @@ main(int argc, char ** argv)
 	parse_cmdline(argc, argv, flags);
 
 	llvm::LLVMContext ctx;
-	auto llvm_module = parse_llvm_file(argv[0], flags.ifile, ctx);
+	auto llvm_module = parse_llvm_file(argv[0], flags.InputFile_, ctx);
 
 	auto jlm_module = construct_jlm_module(*llvm_module);
 
 	llvm_module.reset();
-	auto rvsdgModule = jlm::ConvertInterProceduralGraphModule(*jlm_module, flags.sd);
+	auto rvsdgModule = jlm::ConvertInterProceduralGraphModule(*jlm_module, flags.StatisticsDescriptor_);
 
-	optimize(*rvsdgModule, flags.sd, flags.optimizations);
+	optimize(*rvsdgModule, flags.StatisticsDescriptor_, flags.Optimizations_);
 
-	print(*rvsdgModule, flags.ofile, flags.format, flags.sd);
+	print(*rvsdgModule, flags.OutputFile_, flags.OutputFormat_, flags.StatisticsDescriptor_);
 
 	return 0;
 }
