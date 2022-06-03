@@ -106,20 +106,31 @@ print(
 int
 main(int argc, char ** argv)
 {
-	jlm::JlmOptCommandLineOptions flags;
-	parse_cmdline(argc, argv, flags);
+  auto & commandLineOptions = jlm::JlmOptCommandLineParser::Parse(argc, argv);
 
-	llvm::LLVMContext ctx;
-	auto llvm_module = parse_llvm_file(argv[0], flags.InputFile_, ctx);
+  llvm::LLVMContext llvmContext;
+  auto llvmModule = parse_llvm_file(
+    argv[0],
+    commandLineOptions.InputFile_,
+    llvmContext);
 
-	auto jlm_module = construct_jlm_module(*llvm_module);
+  auto interProceduralGraphModule = construct_jlm_module(*llvmModule);
+  llvmModule.reset();
 
-	llvm_module.reset();
-	auto rvsdgModule = jlm::ConvertInterProceduralGraphModule(*jlm_module, flags.StatisticsDescriptor_);
+  auto rvsdgModule = jlm::ConvertInterProceduralGraphModule(
+    *interProceduralGraphModule,
+    commandLineOptions.StatisticsDescriptor_);
 
-	optimize(*rvsdgModule, flags.StatisticsDescriptor_, flags.Optimizations_);
+  optimize(
+    *rvsdgModule,
+    commandLineOptions.StatisticsDescriptor_,
+    commandLineOptions.Optimizations_);
 
-	print(*rvsdgModule, flags.OutputFile_, flags.OutputFormat_, flags.StatisticsDescriptor_);
+  print(
+    *rvsdgModule,
+    commandLineOptions.OutputFile_,
+    commandLineOptions.OutputFormat_,
+    commandLineOptions.StatisticsDescriptor_);
 
-	return 0;
+  return 0;
 }
