@@ -263,6 +263,39 @@ private:
   JlcCommandLineOptions CommandLineOptions_;
 };
 
+/**
+ * Command line parser for \a jlm-opt command line tool.
+ */
+class JlmOptCommandLineParser final : public CommandLineParser {
+public:
+  enum class OptimizationId {
+    AASteensgaardBasic,
+    cne,
+    dne,
+    iln,
+    InvariantValueRedirection,
+    psh,
+    red,
+    ivt,
+    url,
+    pll,
+  };
+
+  ~JlmOptCommandLineParser() noexcept override;
+
+  const JlmOptCommandLineOptions &
+  ParseCommandLineArguments(int argc, char ** argv) override;
+
+  static const JlmOptCommandLineOptions &
+  Parse(int argc, char ** argv);
+
+private:
+  static optimization *
+  GetOptimization(enum OptimizationId optimizationId);
+
+  JlmOptCommandLineOptions CommandLineOptions_;
+};
+
 }
 
 #endif //JLM_TOOLING_COMMANDLINE_HPP
