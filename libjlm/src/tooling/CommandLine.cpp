@@ -78,6 +78,16 @@ JlcCommandLineOptions::Reset() noexcept
   Compilations_.clear();
 }
 
+void
+JlmOptCommandLineOptions::Reset() noexcept
+{
+  InputFile_ = filepath("");
+  OutputFile_ = filepath("");
+  OutputFormat_ = OutputFormat::Llvm;
+  StatisticsDescriptor_ = StatisticsDescriptor();
+  Optimizations_.clear();
+}
+
 CommandLineParser::~CommandLineParser() noexcept
 = default;
 

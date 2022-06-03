@@ -7,6 +7,7 @@
 #define JLM_TOOLING_COMMANDLINE_HPP
 
 #include <jlm/util/file.hpp>
+#include <jlm/util/Statistics.hpp>
 
 #include <vector>
 
@@ -185,6 +186,34 @@ private:
   filepath OutputFile_;
   filepath DependencyFile_;
   const std::string Mt_;
+};
+
+class optimization;
+
+/**
+ * Command line options for the jlm-opt command line tool.
+ */
+class JlmOptCommandLineOptions final : public CommandLineOptions {
+public:
+  enum class OutputFormat {
+    Llvm,
+    Xml
+  };
+
+  JlmOptCommandLineOptions()
+    : InputFile_("")
+    , OutputFile_("")
+    , OutputFormat_(OutputFormat::Llvm)
+  {}
+
+  void
+  Reset() noexcept override;
+
+  filepath InputFile_;
+  filepath OutputFile_;
+  OutputFormat OutputFormat_;
+  StatisticsDescriptor StatisticsDescriptor_;
+  std::vector<optimization*> Optimizations_;
 };
 
 /**
