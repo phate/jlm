@@ -3,8 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jive/view.hpp>
-
 #include <jlm/backend/llvm/jlm2llvm/jlm2llvm.hpp>
 #include <jlm/backend/llvm/rvsdg2jlm/rvsdg2jlm.hpp>
 #include <jlm/backend/hls/rvsdg2rhls/rvsdg2rhls.hpp>
@@ -15,9 +13,8 @@
 #include <jlm/frontend/llvm/InterProceduralGraphConversion.hpp>
 #include <jlm/frontend/llvm/LlvmModuleConversion.hpp>
 #include <jlm/ir/RvsdgModule.hpp>
+#include <jlm/tooling/CommandLine.hpp>
 #include <jlm/util/Statistics.hpp>
-
-#include <jlm-hls/cmdline.hpp>
 
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
