@@ -191,7 +191,7 @@ private:
 class optimization;
 
 /**
- * Command line options for the jlm-opt command line tool.
+ * Command line options for the \a jlm-opt command line tool.
  */
 class JlmOptCommandLineOptions final : public CommandLineOptions {
 public:
@@ -214,6 +214,35 @@ public:
   OutputFormat OutputFormat_;
   StatisticsDescriptor StatisticsDescriptor_;
   std::vector<optimization*> Optimizations_;
+};
+
+/**
+ * Command line options for the \a jlm-hls command line tool.
+ */
+class JlmHlsCommandLineOptions final : public CommandLineOptions {
+public:
+  enum class OutputFormat {
+    Firrtl,
+    Dot
+  };
+
+  JlmHlsCommandLineOptions()
+    : InputFile_("")
+    , OutputFolder_("")
+    , OutputFormat_(OutputFormat::Firrtl)
+    , ExtractHlsFunction_(false)
+    , UseCirct_(false)
+  {}
+
+  void
+  Reset() noexcept override;
+
+  filepath InputFile_;
+  filepath OutputFolder_;
+  OutputFormat OutputFormat_;
+  std::string HlsFunction_;
+  bool ExtractHlsFunction_;
+  bool UseCirct_;
 };
 
 /**
