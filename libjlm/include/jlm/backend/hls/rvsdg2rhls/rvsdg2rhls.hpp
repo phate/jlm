@@ -26,7 +26,7 @@ namespace jlm{
 		dump_ref(jlm::RvsdgModule &rhls);
 
         std::unique_ptr<RvsdgModule>
-        split_hls_function(RvsdgModule &rm, std::string &function_name);
+        split_hls_function(RvsdgModule &rm, const std::string &function_name);
     }
 }
 #endif //JLM_BACKEND_HLS_RVSDG2RHLS_RVSDG2RHLS_HPP

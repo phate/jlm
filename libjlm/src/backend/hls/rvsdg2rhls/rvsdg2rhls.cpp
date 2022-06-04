@@ -53,7 +53,7 @@ pre_opt(jlm::RvsdgModule &rm) {
 namespace jlm {
 
 	bool
-	function_match(lambda::node *ln, std::string &function_name) {
+	function_match(lambda::node *ln, const std::string &function_name) {
 		const std::regex fn_regex(function_name);
 		if (std::regex_match(ln->name(), fn_regex)) {// TODO: handle C++ name mangling
 			return true;
@@ -218,7 +218,7 @@ namespace jlm {
 }
 
 std::unique_ptr<jlm::RvsdgModule>
-jlm::hls::split_hls_function(jlm::RvsdgModule &rm, std::string &function_name) {
+jlm::hls::split_hls_function(jlm::RvsdgModule &rm, const std::string &function_name) {
     // TODO: use a different datastructure for rhls?
     // create a copy of rm
     auto rhls = jlm::RvsdgModule::Create(rm.SourceFileName(), rm.TargetTriple(), rm.DataLayout());
