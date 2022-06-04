@@ -54,13 +54,12 @@ llvmToFile(
 int
 main(int argc, char ** argv)
 {
-	jlm::JlmHlsCommandLineOptions flags;
-	parse_cmdline(argc, argv, flags);
+  auto & commandLineOptions = jlm::JlmHlsCommandLineParser::Parse(argc, argv);
 
 	llvm::LLVMContext ctx;
 	llvm::SMDiagnostic err;
-	auto llvmModule = llvm::parseIRFile(flags.InputFile_.to_str(), err, ctx);
-	llvmModule->setSourceFileName(flags.OutputFolder_.path() + "/jlm_hls");
+	auto llvmModule = llvm::parseIRFile(commandLineOptions.InputFile_.to_str(), err, ctx);
+	llvmModule->setSourceFileName(commandLineOptions.OutputFolder_.path() + "/jlm_hls");
 	if (!llvmModule) {
 		err.print(argv[0], llvm::errs());
 		exit(1);
@@ -73,25 +72,25 @@ main(int argc, char ** argv)
 					*jlmModule,
 					sd);
 
-	if (flags.ExtractHlsFunction_) {
+	if (commandLineOptions.ExtractHlsFunction_) {
 		auto hlsFunction = jlm::hls::split_hls_function(
 					*rvsdgModule,
-					flags.HlsFunction_);
+					commandLineOptions.HlsFunction_);
 
 		llvmToFile(
 			*rvsdgModule,
-      flags.OutputFolder_.path() + "/jlm_hls_rest.ll");
+      commandLineOptions.OutputFolder_.path() + "/jlm_hls_rest.ll");
 		llvmToFile(
 			*hlsFunction,
-      flags.OutputFolder_.path() + "/jlm_hls_function.ll");
+      commandLineOptions.OutputFolder_.path() + "/jlm_hls_function.ll");
 		return 0;
 	}
 
-	if (flags.OutputFormat_ == jlm::JlmHlsCommandLineOptions::OutputFormat::Firrtl) {
+	if (commandLineOptions.OutputFormat_ == jlm::JlmHlsCommandLineOptions::OutputFormat::Firrtl) {
 		jlm::hls::rvsdg2rhls(*rvsdgModule);
 
 		std::string output;
-		if (flags.UseCirct_) {
+		if (commandLineOptions.UseCirct_) {
 			jlm::hls::MLIRGen hls;
 			output = hls.run(*rvsdgModule);
 		} else {
@@ -100,19 +99,19 @@ main(int argc, char ** argv)
 		}
 		stringToFile(
 			output,
-      flags.OutputFolder_.path() + "/jlm_hls.fir");
+      commandLineOptions.OutputFolder_.path() + "/jlm_hls.fir");
 
 		jlm::hls::VerilatorHarnessHLS vhls;
 		stringToFile(
 			vhls.run(*rvsdgModule),
-      flags.OutputFolder_.path() + "/jlm_hls_harness.cpp");
-	} else if (flags.OutputFormat_ == jlm::JlmHlsCommandLineOptions::OutputFormat::Dot) {
+      commandLineOptions.OutputFolder_.path() + "/jlm_hls_harness.cpp");
+	} else if (commandLineOptions.OutputFormat_ == jlm::JlmHlsCommandLineOptions::OutputFormat::Dot) {
 		jlm::hls::rvsdg2rhls(*rvsdgModule);
 
 		jlm::hls::DotHLS dhls;
 		stringToFile(
 			dhls.run(*rvsdgModule),
-      flags.OutputFolder_.path() + "/jlm_hls.dot");
+      commandLineOptions.OutputFolder_.path() + "/jlm_hls.dot");
 	} else {
 		JLM_UNREACHABLE("Format not supported.\n");
 	}
