@@ -325,6 +325,23 @@ private:
   JlmOptCommandLineOptions CommandLineOptions_;
 };
 
+/**
+ * Command line parser for \a jlm-hls command line tool.
+ */
+class JlmHlsCommandLineParser final : public CommandLineParser {
+public:
+  ~JlmHlsCommandLineParser() noexcept override;
+
+  const JlmHlsCommandLineOptions &
+  ParseCommandLineArguments(int argc, char ** argv) override;
+
+  static const JlmHlsCommandLineOptions &
+  Parse(int argc, char ** argv);
+
+private:
+  JlmHlsCommandLineOptions CommandLineOptions_;
+};
+
 }
 
 #endif //JLM_TOOLING_COMMANDLINE_HPP

@@ -590,4 +590,85 @@ JlmOptCommandLineParser::Parse(int argc, char ** argv)
   return parser.ParseCommandLineArguments(argc, argv);
 }
 
+JlmHlsCommandLineParser::~JlmHlsCommandLineParser() noexcept
+= default;
+
+const JlmHlsCommandLineOptions &
+JlmHlsCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
+{
+  CommandLineOptions_.Reset();
+
+  using namespace llvm;
+
+  /*
+    FIXME: The command line parser setup is currently redone
+    for every invocation of parse_cmdline. We should be able
+    to do it only once and then reset the parser on every
+    invocation of parse_cmdline.
+  */
+
+  cl::TopLevelSubCommand->reset();
+
+  cl::opt<std::string> inputFile(
+    cl::Positional,
+    cl::desc("<input>"));
+
+  cl::opt<std::string> outputFolder(
+    "o",
+    cl::desc("Write output to <folder>"),
+    cl::value_desc("folder"));
+
+  cl::opt<std::string> hlsFunction(
+    "hls-function",
+    cl::Prefix,
+    cl::desc("Function that should be accelerated"),
+    cl::value_desc("hls-function"));
+
+  cl::opt<bool> extractHlsFunction(
+    "extract",
+    cl::Prefix,
+    cl::desc("Extracts function specified by hls-function"));
+
+  cl::opt<bool> useCirct(
+    "circt",
+    cl::Prefix,
+    cl::desc("Use CIRCT to generate FIRRTL"));
+
+  cl::opt<JlmHlsCommandLineOptions::OutputFormat> format(
+    cl::values(
+      clEnumValN(
+        JlmHlsCommandLineOptions::OutputFormat::Firrtl,
+        "fir",
+        "Output FIRRTL [default]"),
+      clEnumValN(
+        JlmHlsCommandLineOptions::OutputFormat::Dot,
+        "dot",
+        "Output DOT graph")),
+    cl::desc("Select output format"));
+
+  cl::ParseCommandLineOptions(argc, argv);
+
+  if (outputFolder.empty())
+    throw jlm::error("jlm-hls no output directory provided, i.e, -o.\n");
+
+  if (extractHlsFunction && hlsFunction.empty())
+    throw jlm::error("jlm-hls: --hls-function is not specified.\n         which is required for --extract\n");
+
+  CommandLineOptions_.InputFile_ = inputFile;
+  CommandLineOptions_.HlsFunction_ = std::move(hlsFunction);
+  CommandLineOptions_.OutputFolder_ = outputFolder;
+  CommandLineOptions_.ExtractHlsFunction_ = extractHlsFunction;
+  CommandLineOptions_.UseCirct_ = useCirct;
+  CommandLineOptions_.OutputFormat_ = format;
+
+  return CommandLineOptions_;
+}
+
+const JlmHlsCommandLineOptions &
+JlmHlsCommandLineParser::Parse(int argc, char ** argv)
+{
+  static JlmHlsCommandLineParser parser;
+  return parser.ParseCommandLineArguments(argc, argv);
+}
+
 }
