@@ -99,6 +99,17 @@ JlmOptCommandLineOptions::Reset() noexcept
   Optimizations_.clear();
 }
 
+void
+JlmHlsCommandLineOptions::Reset() noexcept
+{
+  InputFile_ = filepath("");
+  OutputFolder_ = filepath("");
+  OutputFormat_ = OutputFormat::Firrtl;
+  HlsFunction_ = "";
+  ExtractHlsFunction_ = false;
+  UseCirct_ = false;
+}
+
 CommandLineParser::~CommandLineParser() noexcept
 = default;
 
