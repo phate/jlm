@@ -59,8 +59,8 @@ main(int argc, char ** argv)
 
 	llvm::LLVMContext ctx;
 	llvm::SMDiagnostic err;
-	auto llvmModule = llvm::parseIRFile(flags.inputFile.to_str(), err, ctx);
-	llvmModule->setSourceFileName(flags.outputFolder.path() + "/jlm_hls");
+	auto llvmModule = llvm::parseIRFile(flags.InputFile_.to_str(), err, ctx);
+	llvmModule->setSourceFileName(flags.OutputFolder_.path() + "/jlm_hls");
 	if (!llvmModule) {
 		err.print(argv[0], llvm::errs());
 		exit(1);
@@ -73,25 +73,25 @@ main(int argc, char ** argv)
 					*jlmModule,
 					sd);
 
-	if (flags.extractHlsFunction) {
+	if (flags.ExtractHlsFunction_) {
 		auto hlsFunction = jlm::hls::split_hls_function(
 					*rvsdgModule,
-					flags.hlsFunction);
+					flags.HlsFunction_);
 
 		llvmToFile(
 			*rvsdgModule,
-			flags.outputFolder.path() + "/jlm_hls_rest.ll");
+      flags.OutputFolder_.path() + "/jlm_hls_rest.ll");
 		llvmToFile(
 			*hlsFunction,
-			flags.outputFolder.path() + "/jlm_hls_function.ll");
+      flags.OutputFolder_.path() + "/jlm_hls_function.ll");
 		return 0;
 	}
 
-	if (flags.format == jlm::OutputFormat::firrtl) {
+	if (flags.OutputFormat_ == jlm::JlmHlsCommandLineOptions::OutputFormat::Firrtl) {
 		jlm::hls::rvsdg2rhls(*rvsdgModule);
 
 		std::string output;
-		if (flags.useCirct) {
+		if (flags.UseCirct_) {
 			jlm::hls::MLIRGen hls;
 			output = hls.run(*rvsdgModule);
 		} else {
@@ -100,19 +100,19 @@ main(int argc, char ** argv)
 		}
 		stringToFile(
 			output,
-			flags.outputFolder.path() + "/jlm_hls.fir");
+      flags.OutputFolder_.path() + "/jlm_hls.fir");
 
 		jlm::hls::VerilatorHarnessHLS vhls;
 		stringToFile(
 			vhls.run(*rvsdgModule),
-			flags.outputFolder.path() + "/jlm_hls_harness.cpp");
-	} else if (flags.format == jlm::OutputFormat::dot) {
+      flags.OutputFolder_.path() + "/jlm_hls_harness.cpp");
+	} else if (flags.OutputFormat_ == jlm::JlmHlsCommandLineOptions::OutputFormat::Dot) {
 		jlm::hls::rvsdg2rhls(*rvsdgModule);
 
 		jlm::hls::DotHLS dhls;
 		stringToFile(
 			dhls.run(*rvsdgModule),
-			flags.outputFolder.path() + "/jlm_hls.dot");
+      flags.OutputFolder_.path() + "/jlm_hls.dot");
 	} else {
 		JLM_UNREACHABLE("Format not supported.\n");
 	}
