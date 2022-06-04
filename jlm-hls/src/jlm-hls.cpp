@@ -54,7 +54,7 @@ llvmToFile(
 int
 main(int argc, char ** argv)
 {
-	jlm::cmdline_options flags;
+	jlm::JlmHlsCommandLineOptions flags;
 	parse_cmdline(argc, argv, flags);
 
 	llvm::LLVMContext ctx;

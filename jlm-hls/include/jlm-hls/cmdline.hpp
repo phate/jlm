@@ -12,9 +12,9 @@ namespace jlm {
 
 enum class OutputFormat {firrtl, dot};
 
-class cmdline_options {
+class JlmHlsCommandLineOptions {
 public:
-	cmdline_options()
+	JlmHlsCommandLineOptions()
 	: inputFile("")
 	, outputFolder("")
 	, format(OutputFormat::firrtl)
@@ -29,7 +29,7 @@ public:
 };
 
 void
-parse_cmdline(int argc, char ** argv, cmdline_options & options);
+parse_cmdline(int argc, char ** argv, JlmHlsCommandLineOptions & options);
 
 }
 
