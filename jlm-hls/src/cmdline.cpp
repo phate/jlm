@@ -48,11 +48,17 @@ parse_cmdline(int argc, char ** argv, jlm::JlmHlsCommandLineOptions & options)
 	, cl::Prefix
 	, cl::desc("Use CIRCT to generate FIRRTL"));
 
-	cl::opt<OutputFormat> format(
-		cl::values(
-		  clEnumValN(OutputFormat::firrtl, "fir", "Output FIRRTL [default]")
-		, clEnumValN(OutputFormat::dot, "dot", "Output DOT graph"))
-	, cl::desc("Select output format"));
+  cl::opt<JlmHlsCommandLineOptions::OutputFormat> format(
+    cl::values(
+      clEnumValN(
+        JlmHlsCommandLineOptions::OutputFormat::Firrtl,
+        "fir",
+        "Output FIRRTL [default]"),
+      clEnumValN(
+        JlmHlsCommandLineOptions::OutputFormat::Dot,
+        "dot",
+        "Output DOT graph")),
+    cl::desc("Select output format"));
 
 	cl::ParseCommandLineOptions(argc, argv);
 
@@ -61,15 +67,15 @@ parse_cmdline(int argc, char ** argv, jlm::JlmHlsCommandLineOptions & options)
 	}
 
 	if (extractHlsFunction && hlsFunction.empty()) {
-		throw jlm::error("jlm-hls: --hls-function is not specifided.\n         which is required for --extract\n");
+		throw jlm::error("jlm-hls: --hls-function is not specified.\n         which is required for --extract\n");
 	}
 
-	options.inputFile = inputFile;
-	options.hlsFunction = hlsFunction;
-	options.outputFolder = outputFolder;
-	options.extractHlsFunction = extractHlsFunction;
-	options.useCirct = useCirct;
-	options.format = format;
+	options.InputFile_ = inputFile;
+	options.HlsFunction_ = std::move(hlsFunction);
+	options.OutputFolder_ = outputFolder;
+	options.ExtractHlsFunction_ = extractHlsFunction;
+	options.UseCirct_ = useCirct;
+	options.OutputFormat_ = format;
 }
 
 } // jlm

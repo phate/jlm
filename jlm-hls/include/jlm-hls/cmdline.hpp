@@ -10,22 +10,27 @@
 
 namespace jlm {
 
-enum class OutputFormat {firrtl, dot};
-
 class JlmHlsCommandLineOptions {
 public:
-	JlmHlsCommandLineOptions()
-	: inputFile("")
-	, outputFolder("")
-	, format(OutputFormat::firrtl)
-	{}
+  enum class OutputFormat {
+    Firrtl,
+    Dot
+  };
 
-	jlm::filepath inputFile;
-	jlm::filepath outputFolder;
-	OutputFormat format;
-	std::string hlsFunction;
-	bool extractHlsFunction = false;
-	bool useCirct = false;
+  JlmHlsCommandLineOptions()
+    : InputFile_("")
+    , OutputFolder_("")
+    , OutputFormat_(OutputFormat::Firrtl)
+    , ExtractHlsFunction_(false)
+    , UseCirct_(false)
+  {}
+
+  filepath InputFile_;
+  filepath OutputFolder_;
+  OutputFormat OutputFormat_;
+  std::string HlsFunction_;
+  bool ExtractHlsFunction_;
+  bool UseCirct_;
 };
 
 void
