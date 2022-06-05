@@ -2,7 +2,6 @@
 # See COPYING for terms of redistribution.
 
 JHLS_SRC = \
-	jhls/src/cmdline.cpp \
 	jhls/src/jhls.cpp \
 
 .PHONY: jhls-debug
