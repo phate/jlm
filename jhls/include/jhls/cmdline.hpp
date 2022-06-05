@@ -13,143 +13,159 @@
 
 namespace jlm {
 
-enum class optlvl {O0, O1, O2, O3};
-
-std::string
-to_str(const optlvl & ol);
-
-enum class standard {none, gnu89, gnu99, c89, c90, c99, c11, cpp98, cpp03, cpp11, cpp14};
-
-std::string
-to_str(const standard & std);
-
-class compilation {
-public:
-	compilation(
-		const jlm::filepath & ifile,
-		const jlm::filepath & dependencyFile,
-		const jlm::filepath & ofile,
-		const std::string & mT,
-		bool parse,
-		bool optimize,
-		bool assemble,
-		bool link)
-	: link_(link)
-	, parse_(parse)
-	, optimize_(optimize)
-	, assemble_(assemble)
-	, ifile_(ifile)
-	, ofile_(ofile)
-	, dependencyFile_(dependencyFile)
-	, mT_(mT)
-	{}
-
-	const jlm::filepath &
-	ifile() const noexcept
-	{
-		return ifile_;
-	}
-
-	const jlm::filepath &
-	DependencyFile() const noexcept
-	{
-		return dependencyFile_;
-	}
-
-	const jlm::filepath &
-	ofile() const noexcept
-	{
-		return ofile_;
-	}
-
-	const std::string &
-	Mt() const noexcept
-	{
-		return mT_;
-	}
-
-	void
-	set_ofile(const jlm::filepath & ofile)
-	{
-		ofile_ = ofile;
-	}
-
-	bool
-	parse() const noexcept
-	{
-		return parse_;
-	}
-
-	bool
-	optimize() const noexcept
-	{
-		return optimize_;
-	}
-
-	bool
-	assemble() const noexcept
-	{
-		return assemble_;
-	}
-
-	bool
-	link() const noexcept
-	{
-		return link_;
-	}
-
-private:
-	bool link_;
-	bool parse_;
-	bool optimize_;
-	bool assemble_;
-	jlm::filepath ifile_;
-	jlm::filepath ofile_;
-	jlm::filepath dependencyFile_;
-	const std::string mT_;
-};
-
 class JhlsCommandLineOptions {
 public:
-	JhlsCommandLineOptions()
-	: only_print_commands(false)
-	, generate_debug_information(false)
-	, verbose(false)
-	, rdynamic(false)
-	, suppress(false)
-	, pthread(false)
-	, MD(false)
-	, Olvl(optlvl::O0)
-	, std(standard::none)
-	, lnkofile("a.out")
-	{}
+  class Compilation;
 
-	bool only_print_commands;
-	bool generate_debug_information;
-	bool verbose;
-	bool rdynamic;
-	bool suppress;
-	bool pthread;
-	bool generate_firrtl;
-	bool circt;
-	bool hls = false;
+  enum class OptimizationLevel {
+    O0,
+    O1,
+    O2,
+    O3
+  };
 
-	bool MD;
+  enum class LanguageStandard {
+    None,
+    Gnu89,
+    Gnu99,
+    C89,
+    C99,
+    C11,
+    Cpp98,
+    Cpp03,
+    Cpp11,
+    Cpp14
+  };
 
-	optlvl Olvl;
-	standard std;
-	jlm::filepath lnkofile;
-	std::vector<std::string> libs;
-	std::vector<std::string> macros;
-	std::vector<std::string> libpaths;
-	std::vector<std::string> warnings;
-	std::vector<std::string> includepaths;
-	std::vector<std::string> flags;
-	std::vector<std::string> jlmhls;
+  JhlsCommandLineOptions()
+    : OnlyPrintCommands_(false)
+    , GenerateDebugInformation_(false)
+    , Verbose_(false)
+    , Rdynamic_(false)
+    , Suppress_(false)
+    , UsePthreads_(false)
+    , GenerateFirrtl_(false)
+    , UseCirct_(false)
+    , Hls_(false)
+    , Md_(false)
+    , OptimizationLevel_(OptimizationLevel::O0)
+    , LanguageStandard_(LanguageStandard::None)
+    , OutputFile_("a.out")
+  {}
 
-	std::vector<compilation> compilations;
-	std::string hls_function_regex;
+  bool OnlyPrintCommands_;
+  bool GenerateDebugInformation_;
+  bool Verbose_;
+  bool Rdynamic_;
+  bool Suppress_;
+  bool UsePthreads_;
+  bool GenerateFirrtl_;
+  bool UseCirct_;
+  bool Hls_;
+
+  bool Md_;
+
+  OptimizationLevel OptimizationLevel_;
+  LanguageStandard LanguageStandard_;
+  filepath OutputFile_;
+  std::vector<std::string> Libraries_;
+  std::vector<std::string> MacroDefinitions_;
+  std::vector<std::string> LibraryPaths_;
+  std::vector<std::string> Warnings_;
+  std::vector<std::string> IncludePaths_;
+  std::vector<std::string> Flags_;
+  std::vector<std::string> JlmHls_;
+
+  std::vector<Compilation> Compilations_;
+  std::string HlsFunctionRegex_;
 };
+
+class JhlsCommandLineOptions::Compilation {
+public:
+  Compilation(
+    filepath inputFile,
+    filepath dependencyFile,
+    filepath outputFile,
+    std::string mT,
+    bool parse,
+    bool optimize,
+    bool assemble,
+    bool link)
+    : RequiresLinking_(link)
+    , RequiresParsing_(parse)
+    , RequiresOptimization_(optimize)
+    , RequiresAssembly_(assemble)
+    , InputFile_(std::move(inputFile))
+    , OutputFile_(std::move(outputFile))
+    , DependencyFile_(std::move(dependencyFile))
+    , Mt_(std::move(mT))
+  {}
+
+  [[nodiscard]] const filepath &
+  InputFile() const noexcept
+  {
+    return InputFile_;
+  }
+
+  [[nodiscard]] const filepath &
+  DependencyFile() const noexcept
+  {
+    return DependencyFile_;
+  }
+
+  [[nodiscard]] const filepath &
+  OutputFile() const noexcept
+  {
+    return OutputFile_;
+  }
+
+  [[nodiscard]] const std::string &
+  Mt() const noexcept
+  {
+    return Mt_;
+  }
+
+  void
+  SetOutputFile(const filepath & outputFile)
+  {
+    OutputFile_ = outputFile;
+  }
+
+  [[nodiscard]] bool
+  RequiresParsing() const noexcept
+  {
+    return RequiresParsing_;
+  }
+
+  [[nodiscard]] bool
+  RequiresOptimization() const noexcept
+  {
+    return RequiresOptimization_;
+  }
+
+  [[nodiscard]] bool
+  RequiresAssembly() const noexcept
+  {
+    return RequiresAssembly_;
+  }
+
+  [[nodiscard]] bool
+  RequiresLinking() const noexcept
+  {
+    return RequiresLinking_;
+  }
+
+private:
+  bool RequiresLinking_;
+  bool RequiresParsing_;
+  bool RequiresOptimization_;
+  bool RequiresAssembly_;
+  filepath InputFile_;
+  filepath OutputFile_;
+  filepath DependencyFile_;
+  const std::string Mt_;
+};
+
 
 void
 parse_cmdline(int argc, char ** argv, JhlsCommandLineOptions & options);

@@ -17,36 +17,36 @@ namespace jlm {
 /* command generation */
 
 static LlcCommand::OptimizationLevel
-ToLlcCommandOptimizationLevel(optlvl optimizationLevel)
+ToLlcCommandOptimizationLevel(const JhlsCommandLineOptions::OptimizationLevel & optimizationLevel)
 {
-  static std::unordered_map<optlvl, LlcCommand::OptimizationLevel>
-    map({
-          {optlvl::O0, LlcCommand::OptimizationLevel::O0},
-          {optlvl::O1, LlcCommand::OptimizationLevel::O1},
-          {optlvl::O2, LlcCommand::OptimizationLevel::O2},
-          {optlvl::O3, LlcCommand::OptimizationLevel::O3}
-        });
+  static std::unordered_map<JhlsCommandLineOptions::OptimizationLevel, LlcCommand::OptimizationLevel> map(
+    {
+      {JhlsCommandLineOptions::OptimizationLevel::O0, LlcCommand::OptimizationLevel::O0},
+      {JhlsCommandLineOptions::OptimizationLevel::O1, LlcCommand::OptimizationLevel::O1},
+      {JhlsCommandLineOptions::OptimizationLevel::O2, LlcCommand::OptimizationLevel::O2},
+      {JhlsCommandLineOptions::OptimizationLevel::O3, LlcCommand::OptimizationLevel::O3}
+    });
 
   JLM_ASSERT(map.find(optimizationLevel) != map.end());
   return map[optimizationLevel];
 }
 
 static ClangCommand::LanguageStandard
-ToPrscmdLanguageStandard(standard languageStandard)
+ToPrscmdLanguageStandard(const JhlsCommandLineOptions::LanguageStandard & languageStandard)
 {
-  static std::unordered_map<standard, ClangCommand::LanguageStandard>
-    map({
-          {standard::none,  ClangCommand::LanguageStandard::Unspecified},
-          {standard::gnu89, ClangCommand::LanguageStandard::Gnu89},
-          {standard::gnu99, ClangCommand::LanguageStandard::Gnu99},
-          {standard::c89,   ClangCommand::LanguageStandard::C89},
-          {standard::c99,   ClangCommand::LanguageStandard::C99},
-          {standard::c11,   ClangCommand::LanguageStandard::C11},
-          {standard::cpp98, ClangCommand::LanguageStandard::Cpp98},
-          {standard::cpp03, ClangCommand::LanguageStandard::Cpp03},
-          {standard::cpp11, ClangCommand::LanguageStandard::Cpp11},
-          {standard::cpp14, ClangCommand::LanguageStandard::Cpp14}
-        });
+  static std::unordered_map<JhlsCommandLineOptions::LanguageStandard, ClangCommand::LanguageStandard>map(
+    {
+      {JhlsCommandLineOptions::LanguageStandard::None,  ClangCommand::LanguageStandard::Unspecified},
+      {JhlsCommandLineOptions::LanguageStandard::Gnu89, ClangCommand::LanguageStandard::Gnu89},
+      {JhlsCommandLineOptions::LanguageStandard::Gnu99, ClangCommand::LanguageStandard::Gnu99},
+      {JhlsCommandLineOptions::LanguageStandard::C89,   ClangCommand::LanguageStandard::C89},
+      {JhlsCommandLineOptions::LanguageStandard::C99,   ClangCommand::LanguageStandard::C99},
+      {JhlsCommandLineOptions::LanguageStandard::C11,   ClangCommand::LanguageStandard::C11},
+      {JhlsCommandLineOptions::LanguageStandard::Cpp98, ClangCommand::LanguageStandard::Cpp98},
+      {JhlsCommandLineOptions::LanguageStandard::Cpp03, ClangCommand::LanguageStandard::Cpp03},
+      {JhlsCommandLineOptions::LanguageStandard::Cpp11, ClangCommand::LanguageStandard::Cpp11},
+      {JhlsCommandLineOptions::LanguageStandard::Cpp14, ClangCommand::LanguageStandard::Cpp14}
+    });
 
   JLM_ASSERT(map.find(languageStandard) != map.end());
   return map[languageStandard];
@@ -75,8 +75,8 @@ generate_commands(const jlm::JhlsCommandLineOptions & opts)
 
 	// Create directory in /tmp for storing temporary files
 	std::string tmp_identifier;
-	for (const auto & c : opts.compilations) {
-		tmp_identifier += c.ifile().name() + "_";
+	for (const auto & c : opts.Compilations_) {
+		tmp_identifier += c.InputFile().name() + "_";
 		if (tmp_identifier.length() > 30)
 			break;
 	}
@@ -86,26 +86,26 @@ generate_commands(const jlm::JhlsCommandLineOptions & opts)
 	auto & mkdir = MkdirCommand::Create(*pgraph, tmp_folder);
   pgraph->GetEntryNode().AddEdge(mkdir);
 
-	for (const auto & c : opts.compilations) {
+	for (const auto & c : opts.Compilations_) {
 		CommandGraph::Node * last = &mkdir;
 
-		if (c.parse()) {
+		if (c.RequiresParsing()) {
 			auto & prsnode = ClangCommand::CreateParsingCommand(
 				*pgraph,
-				c.ifile(),
-        tmp_folder.to_str() + create_prscmd_ofile(c.ifile().base()),
+        c.InputFile(),
+        tmp_folder.to_str() + create_prscmd_ofile(c.InputFile().base()),
 				c.DependencyFile(),
-				opts.includepaths,
-				opts.macros,
-				opts.warnings,
-				opts.flags,
-				opts.verbose,
-				opts.rdynamic,
-				opts.suppress,
-				opts.pthread,
-				opts.MD,
+				opts.IncludePaths_,
+				opts.MacroDefinitions_,
+				opts.Warnings_,
+				opts.Flags_,
+				opts.Verbose_,
+				opts.Rdynamic_,
+				opts.Suppress_,
+				opts.UsePthreads_,
+				opts.Md_,
 				c.Mt(),
-        ToPrscmdLanguageStandard(opts.std),
+        ToPrscmdLanguageStandard(opts.LanguageStandard_),
         {ClangCommand::ClangArgument::DisableO0OptNone});
 
       last->AddEdge(prsnode);
@@ -146,7 +146,7 @@ generate_commands(const jlm::JhlsCommandLineOptions & opts)
 	auto & extract = JlmHlsExtractCommand::Create(
 				*pgraph,
         dynamic_cast<LlvmOptCommand *>(&m2r1.GetCommand())->OutputFile(),
-				opts.hls_function_regex,
+				opts.HlsFunctionRegex_,
 				tmp_folder.to_str());
   m2r1.AddEdge(extract);
 	jlm::filepath  ll_m2r2(tmp_folder.to_str()+"function.m2r.ll");
@@ -162,10 +162,10 @@ generate_commands(const jlm::JhlsCommandLineOptions & opts)
 				*pgraph,
         dynamic_cast<LlvmOptCommand *>(&m2r2.GetCommand())->OutputFile(),
 				tmp_folder.to_str(),
-				opts.circt);
+				opts.UseCirct_);
   m2r2.AddEdge(hls);
 
-	if (!opts.generate_firrtl) {
+	if (!opts.GenerateFirrtl_) {
     jlm::filepath verilogfile(tmp_folder.to_str()+"jlm_hls.v");
     auto & firrtl = FirtoolCommand::Create(
       *pgraph,
@@ -176,20 +176,20 @@ generate_commands(const jlm::JhlsCommandLineOptions & opts)
     auto inputFile = dynamic_cast<JlmHlsCommand *>(&hls.GetCommand())->LlvmFile();
     auto & asmnode = LlcCommand::Create(
       *pgraph,
-      opts.hls
+      opts.Hls_
       ? inputFile
       : tmp_folder.to_str() + create_optcmd_ofile(inputFile.base()),
       asmofile,
-      ToLlcCommandOptimizationLevel(opts.Olvl),
-      opts.hls
+      ToLlcCommandOptimizationLevel(opts.OptimizationLevel_),
+      opts.Hls_
       ? LlcCommand::RelocationModel::Pic
       : LlcCommand::RelocationModel::Static);
     hls.AddEdge(asmnode);
 
 		std::vector<jlm::filepath> lnkifiles;
-		for (const auto & c : opts.compilations) {
-			if (c.link() && !c.parse())
-				lnkifiles.push_back(c.ofile());
+		for (const auto & c : opts.Compilations_) {
+			if (c.RequiresLinking() && !c.RequiresParsing())
+				lnkifiles.push_back(c.OutputFile());
 		}
 		lnkifiles.push_back(asmofile);
 		auto & verinode = VerilatorCommand::Create(
@@ -197,24 +197,24 @@ generate_commands(const jlm::JhlsCommandLineOptions & opts)
 				verilogfile,
 				lnkifiles,
         dynamic_cast<JlmHlsCommand *>(&hls.GetCommand())->HarnessFile(),
-				opts.lnkofile,
+				opts.OutputFile_,
 				tmp_folder,
-				opts.libpaths,
-				opts.libs);
+				opts.LibraryPaths_,
+				opts.Libraries_);
     firrtl.AddEdge(verinode);
     verinode.AddEdge(pgraph->GetExitNode());
 	}
 
 	std::vector<jlm::filepath> lnkifiles;
-	for (const auto & c : opts.compilations) {
-		if (c.link())
-			lnkifiles.push_back(c.ofile());
+	for (const auto & c : opts.Compilations_) {
+		if (c.RequiresLinking())
+			lnkifiles.push_back(c.OutputFile());
 	}
 
 	for (const auto & leave : leaves)
     leave->AddEdge(pgraph->GetExitNode());
 
-  if (opts.only_print_commands)
+  if (opts.OnlyPrintCommands_)
     pgraph = PrintCommandsCommand::Create(std::move(pgraph));
 
 	return pgraph;
