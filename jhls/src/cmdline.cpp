@@ -15,35 +15,6 @@ namespace jlm {
 
 /* cmdline_options */
 
-std::string
-to_str(const optlvl & ol)
-{
-	static std::unordered_map<optlvl, const char*> map({
-	  {optlvl::O0, "O0"}, {optlvl::O1, "O1"}
-	, {optlvl::O2, "O2"}, {optlvl::O3, "O3"}
-	});
-
-	JLM_ASSERT(map.find(ol) != map.end());
-	return map[ol];
-}
-
-std::string
-to_str(const standard & std)
-{
-	static std::unordered_map<standard, const char*> map({
-	  {standard::none, ""}
-	, {standard::gnu89, "gnu89"}, {standard::gnu99, "gnu99"}
-	, {standard::c89, "c89"}, {standard::c99, "c99"}, {standard::c11, "c11"}
-	, {standard::cpp98, "c++98"}, {standard::cpp03, "c++03"}
-	, {standard::cpp11, "c++11"}, {standard::cpp14, "c++14"}
-	});
-
-	JLM_ASSERT(map.find(std) != map.end());
-	return map[std];
-}
-
-/* cmdline parser */
-
 static bool
 is_objfile(const jlm::filepath & file)
 {
@@ -209,18 +180,26 @@ parse_cmdline(int argc, char ** argv, jlm::JhlsCommandLineOptions & options)
 
 	/* Process parsed options */
 
-	static std::unordered_map<std::string, jlm::optlvl> Olvlmap({
-	  {"0", optlvl::O0}, {"1", optlvl::O1}
-	, {"2", optlvl::O2}, {"3", optlvl::O3}}
-	);
+  static std::unordered_map<std::string, JhlsCommandLineOptions::OptimizationLevel> Olvlmap(
+    {
+      {"0", JhlsCommandLineOptions::OptimizationLevel::O0},
+      {"1", JhlsCommandLineOptions::OptimizationLevel::O1},
+      {"2", JhlsCommandLineOptions::OptimizationLevel::O2},
+      {"3", JhlsCommandLineOptions::OptimizationLevel::O3}
+    });
 
-	static std::unordered_map<std::string, standard> stdmap({
-	  {"gnu89", standard::gnu89}, {"gnu99", standard::gnu99}
-	, {"c89", standard::c89}, {"c90", standard::c99}
-	, {"c99", standard::c99}, {"c11", standard::c11}
-	, {"c++98", standard::cpp98}, {"c++03", standard::cpp03}
-	, {"c++11", standard::cpp11}, {"c++14", standard::cpp14}
-	});
+  static std::unordered_map<std::string, JhlsCommandLineOptions::LanguageStandard> stdmap(
+    {
+      {"Gnu89", JhlsCommandLineOptions::LanguageStandard::Gnu89},
+      {"Gnu99", JhlsCommandLineOptions::LanguageStandard::Gnu99},
+      {"C89", JhlsCommandLineOptions::LanguageStandard::C89},
+      {"C99", JhlsCommandLineOptions::LanguageStandard::C99},
+      {"C11", JhlsCommandLineOptions::LanguageStandard::C11},
+      {"C++98", JhlsCommandLineOptions::LanguageStandard::Cpp98},
+      {"C++03", JhlsCommandLineOptions::LanguageStandard::Cpp03},
+      {"C++11", JhlsCommandLineOptions::LanguageStandard::Cpp11},
+      {"C++14", JhlsCommandLineOptions::LanguageStandard::Cpp14}
+    });
 
 	if (!optlvl.empty()) {
 		auto olvl = Olvlmap.find(optlvl);
@@ -228,7 +207,7 @@ parse_cmdline(int argc, char ** argv, jlm::JhlsCommandLineOptions & options)
 			std::cerr << "Unknown optimization level.\n";
 			exit(EXIT_FAILURE);
 		}
-		options.Olvl = olvl->second;
+		options.OptimizationLevel_ = olvl->second;
 	}
 
 	if (!std.empty()) {
@@ -237,7 +216,7 @@ parse_cmdline(int argc, char ** argv, jlm::JhlsCommandLineOptions & options)
 			std::cerr << "Unknown language standard.\n";
 			exit(EXIT_FAILURE);
 		}
-		options.std = stdit->second;
+		options.LanguageStandard_ = stdit->second;
 	}
 
 	if (ifiles.empty()) {
@@ -251,8 +230,8 @@ parse_cmdline(int argc, char ** argv, jlm::JhlsCommandLineOptions & options)
 	}
 
 	if (!hls_function.empty()) {
-		options.hls = true;
-		options.hls_function_regex = hls_function.front();
+		options.Hls_ = true;
+		options.HlsFunctionRegex_ = hls_function.front();
 	}
 
 	if (hls_function.size() > 1) {
@@ -260,27 +239,27 @@ parse_cmdline(int argc, char ** argv, jlm::JhlsCommandLineOptions & options)
 		exit(EXIT_FAILURE);
 	}
 
-	options.libs = libs;
-	options.macros = Dmacros;
-	options.libpaths = libpaths;
-	options.warnings = Wwarnings;
-	options.includepaths = includepaths;
-	options.only_print_commands = print_commands;
-	options.generate_debug_information = generate_debug_information;
-	options.flags = flags;
-	options.jlmhls = jlmhls;
-	options.verbose = verbose;
-	options.rdynamic = rdynamic;
-	options.suppress = suppress;
-	options.pthread = pthread;
-	options.MD = MD;
-	options.generate_firrtl = generate_firrtl;
-	options.circt = circt;
+	options.Libraries_ = libs;
+	options.MacroDefinitions_ = Dmacros;
+	options.LibraryPaths_ = libpaths;
+	options.Warnings_ = Wwarnings;
+	options.IncludePaths_ = includepaths;
+	options.OnlyPrintCommands_ = print_commands;
+	options.GenerateDebugInformation_ = generate_debug_information;
+	options.Flags_ = flags;
+	options.JlmHls_ = jlmhls;
+	options.Verbose_ = verbose;
+	options.Rdynamic_ = rdynamic;
+	options.Suppress_ = suppress;
+	options.UsePthreads_ = pthread;
+	options.Md_ = MD;
+	options.GenerateFirrtl_ = generate_firrtl;
+	options.UseCirct_ = circt;
 
 	for (const auto & ifile : ifiles) {
 		if (is_objfile(ifile)) {
 			/* FIXME: print a warning like clang if no_linking is true */
-			options.compilations.push_back({
+			options.Compilations_.push_back({
 				ifile,
 				jlm::filepath(""),
 				ifile,
@@ -293,7 +272,7 @@ parse_cmdline(int argc, char ** argv, jlm::JhlsCommandLineOptions & options)
 			continue;
 		}
 
-		options.compilations.push_back({
+		options.Compilations_.push_back({
 			ifile,
 			MF.empty() ? ToDependencyFile(ifile) : jlm::filepath(MF),
 			to_objfile(ifile),
@@ -306,10 +285,10 @@ parse_cmdline(int argc, char ** argv, jlm::JhlsCommandLineOptions & options)
 
 	if (!ofilepath.empty()) {
 		if (no_linking) {
-			JLM_ASSERT(options.compilations.size() == 1);
-			options.compilations[0].set_ofile(ofilepath);
+			JLM_ASSERT(options.Compilations_.size() == 1);
+      options.Compilations_[0].SetOutputFile(ofilepath);
 		} else {
-			options.lnkofile = jlm::filepath(ofilepath);
+			options.OutputFile_ = jlm::filepath(ofilepath);
 		}
 	}
 }
