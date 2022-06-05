@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jhls/cmdline.hpp>
 #include <jlm/tooling/Command.hpp>
+#include <jlm/tooling/CommandLine.hpp>
 #include <jlm/util/strfmt.hpp>
 
 #include <unistd.h>
