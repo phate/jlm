@@ -12,7 +12,7 @@ jlm-opt-debug: $(JLM_BUILD)/libjive.a $(JLM_BUILD)/libjlm.a $(JLM_BIN)/jlm-opt
 jlm-opt-release: CXXFLAGS += -O3
 jlm-opt-release: $(JLM_BUILD)/libjive.a $(JLM_BUILD)/libjlm.a $(JLM_BIN)/jlm-opt
 
-$(JLM_BIN)/jlm-opt: CPPFLAGS += -I$(JLM_ROOT)/libjlm/include -I$(JLM_ROOT)/jlm-opt/include -I$(JLM_ROOT)/libjive/include -I$(shell $(LLVMCONFIG) --includedir)
+$(JLM_BIN)/jlm-opt: CPPFLAGS += -I$(JLM_ROOT)/libjlm/include -I$(JLM_ROOT)/libjive/include -I$(shell $(LLVMCONFIG) --includedir)
 $(JLM_BIN)/jlm-opt: CXXFLAGS += --std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Wfatal-errors
 $(JLM_BIN)/jlm-opt: LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -L$(JLM_BUILD)/ -ljlm -ljive
 $(JLM_BIN)/jlm-opt: $(patsubst %.cpp, $(JLM_BUILD)/%.o, $(JLMOPT_SRC)) $(JLM_BUILD)/libjive.a $(JLM_BUILD)/libjlm.a
