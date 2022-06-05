@@ -225,11 +225,10 @@ generate_commands(const jlm::JhlsCommandLineOptions & opts)
 int
 main(int argc, char ** argv)
 {
-	jlm::JhlsCommandLineOptions options;
-	parse_cmdline(argc, argv, options);
+  auto & commandLineOptions = jlm::JhlsCommandLineParser::Parse(argc, argv);
 
-	auto pgraph = generate_commands(options);
-  pgraph->Run();
+  auto commandGraph = generate_commands(commandLineOptions);
+  commandGraph->Run();
 
-	return 0;
+  return 0;
 }
