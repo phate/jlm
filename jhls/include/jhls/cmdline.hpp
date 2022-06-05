@@ -109,9 +109,9 @@ private:
 	const std::string mT_;
 };
 
-class cmdline_options {
+class JhlsCommandLineOptions {
 public:
-	cmdline_options()
+	JhlsCommandLineOptions()
 	: only_print_commands(false)
 	, generate_debug_information(false)
 	, verbose(false)
@@ -152,7 +152,7 @@ public:
 };
 
 void
-parse_cmdline(int argc, char ** argv, cmdline_options & options);
+parse_cmdline(int argc, char ** argv, JhlsCommandLineOptions & options);
 
 }
 
