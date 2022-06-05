@@ -41,7 +41,7 @@ public:
 };
 
 /**
- * Command graph generator for the jlc command line tool.
+ * Command graph generator for the \a jlc command line tool.
  */
 class JlcCommandGraphGenerator final : public CommandGraphGenerator<JlcCommandLineOptions> {
 public:
@@ -78,6 +78,40 @@ private:
     CommandGraph & commandGraph,
     const JlcCommandLineOptions::Compilation & compilation,
     const JlcCommandLineOptions & commandLineOptions);
+};
+
+/**
+ * Command graph generator for the \a jhls command line tool.
+ */
+class JhlsCommandGraphGenerator final : public CommandGraphGenerator<JhlsCommandLineOptions> {
+public:
+  ~JhlsCommandGraphGenerator() noexcept override;
+
+  JhlsCommandGraphGenerator()
+  = default;
+
+  [[nodiscard]] std::unique_ptr<CommandGraph>
+  GenerateCommandGraph(const JhlsCommandLineOptions & commandLineOptions) override;
+
+  [[nodiscard]] static std::unique_ptr<CommandGraph>
+  Generate(const JhlsCommandLineOptions & commandLineOptions)
+  {
+    JhlsCommandGraphGenerator commandLineGenerator;
+    return commandLineGenerator.GenerateCommandGraph(commandLineOptions);
+  }
+
+private:
+  static filepath
+  CreateParserCommandOutputFile(const filepath & inputFile);
+
+  static filepath
+  CreateJlmOptCommandOutputFile(const filepath & inputFile);
+
+  static ClangCommand::LanguageStandard
+  ConvertLanguageStandard(const JhlsCommandLineOptions::LanguageStandard & languageStandard);
+
+  static LlcCommand::OptimizationLevel
+  ConvertOptimizationLevel(const JhlsCommandLineOptions::OptimizationLevel & optimizationLevel);
 };
 
 }
