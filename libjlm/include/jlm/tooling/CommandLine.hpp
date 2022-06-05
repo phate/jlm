@@ -501,6 +501,32 @@ private:
   JlmHlsCommandLineOptions CommandLineOptions_;
 };
 
+/**
+ * Command line parser for \a jhls command line tool.
+ */
+class JhlsCommandLineParser final : public CommandLineParser {
+public:
+  ~JhlsCommandLineParser() noexcept override;
+
+  const JhlsCommandLineOptions &
+  ParseCommandLineArguments(int argc, char ** argv) override;
+
+  static const JhlsCommandLineOptions &
+  Parse(int argc, char ** arv);
+
+private:
+  static bool
+  IsObjectFile(const filepath & file);
+
+  static filepath
+  CreateObjectFileFromFile(const filepath & f);
+
+  static filepath
+  CreateDependencyFileFromFile(const filepath & f);
+
+  JhlsCommandLineOptions CommandLineOptions_;
+};
+
 }
 
 #endif //JLM_TOOLING_COMMANDLINE_HPP
