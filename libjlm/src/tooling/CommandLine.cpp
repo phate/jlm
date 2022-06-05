@@ -110,6 +110,12 @@ JlmHlsCommandLineOptions::Reset() noexcept
   UseCirct_ = false;
 }
 
+void
+JhlsCommandLineOptions::Reset() noexcept
+{
+  *this = JhlsCommandLineOptions();
+}
+
 CommandLineParser::~CommandLineParser() noexcept
 = default;
 
