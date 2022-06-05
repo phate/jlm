@@ -65,7 +65,7 @@ create_prscmd_ofile(const std::string & ifile)
 }
 
 std::unique_ptr<CommandGraph>
-generate_commands(const jlm::cmdline_options & opts)
+generate_commands(const jlm::JhlsCommandLineOptions & opts)
 {
 	std::unique_ptr<CommandGraph> pgraph(new CommandGraph());
 
@@ -225,7 +225,7 @@ generate_commands(const jlm::cmdline_options & opts)
 int
 main(int argc, char ** argv)
 {
-	jlm::cmdline_options options;
+	jlm::JhlsCommandLineOptions options;
 	parse_cmdline(argc, argv, options);
 
 	auto pgraph = generate_commands(options);
