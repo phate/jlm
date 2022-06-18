@@ -59,40 +59,49 @@ private:
   }
 
   void
-  EncodeAlloca(const jive::simple_node &allocaNode) override;
+  EncodeRegion(jive::region & region);
 
   void
-  EncodeMalloc(const jive::simple_node &mallocNode) override;
+  EncodeStructuralNode(jive::structural_node & structuralNode);
 
   void
-  EncodeLoad(const LoadNode & loadNode) override;
+  EncodeSimpleNode(const jive::simple_node & simpleNode);
 
   void
-  EncodeStore(const StoreNode & storeNode) override;
+  EncodeAlloca(const jive::simple_node & allocaNode);
 
   void
-  EncodeFree(const jive::simple_node &freeNode) override;
+  EncodeMalloc(const jive::simple_node & mallocNode);
 
   void
-  EncodeCall(const CallNode & callNode) override;
+  EncodeLoad(const LoadNode & loadNode);
 
   void
-  EncodeMemcpy(const jive::simple_node &memcpyNode) override;
+  EncodeStore(const StoreNode & storeNode);
 
   void
-  Encode(const lambda::node &lambda) override;
+  EncodeFree(const jive::simple_node & freeNode);
 
   void
-  Encode(const phi::node &phi) override;
+  EncodeCall(const CallNode & callNode);
 
   void
-  Encode(const delta::node &delta) override;
+  EncodeMemcpy(const jive::simple_node & memcpyNode);
 
   void
-  Encode(jive::gamma_node &gamma) override;
+  EncodeLambda(const lambda::node & lambda);
 
   void
-  Encode(jive::theta_node &theta) override;
+  EncodePhi(const phi::node & phi);
+
+  void
+  EncodeDelta(const delta::node & delta);
+
+  void
+  EncodeGamma(jive::gamma_node & gamma);
+
+  void
+  EncodeTheta(jive::theta_node & theta);
 
   static void
   UnlinkUnknownMemoryNode(PointsToGraph &pointsToGraph);

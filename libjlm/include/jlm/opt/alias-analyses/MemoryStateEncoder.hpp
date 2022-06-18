@@ -57,52 +57,6 @@ public:
 	Encode(
     RvsdgModule & module,
     const StatisticsDescriptor & sd) = 0;
-
-	virtual void
-	EncodeAlloca(const jive::simple_node & node) = 0;
-
-	virtual void
-	EncodeMalloc(const jive::simple_node & node) = 0;
-
-	virtual void
-	EncodeLoad(const LoadNode & loadNode) = 0;
-
-	virtual void
-	EncodeStore(const StoreNode & storeNode) = 0;
-
-	virtual void
-	EncodeFree(const jive::simple_node & node) = 0;
-
-	virtual void
-	EncodeCall(const CallNode & callNode) = 0;
-
-	virtual void
-	EncodeMemcpy(const jive::simple_node & node) = 0;
-
-	virtual void
-	Encode(const lambda::node & lambda) = 0;
-
-	virtual void
-	Encode(const phi::node & phi) = 0;
-
-	virtual void
-	Encode(const delta::node & delta) = 0;
-
-	virtual void
-	Encode(jive::gamma_node & gamma) = 0;
-
-	virtual void
-	Encode(jive::theta_node & theta) = 0;
-
-protected:
-	void
-	Encode(jive::region & region);
-
-	void
-	Encode(jive::structural_node & node);
-
-	void
-	Encode(const jive::simple_node & node);
 };
 
 }}

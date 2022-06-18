@@ -13,6 +13,8 @@
 #include <jlm/util/strfmt.hpp>
 #include <jlm/util/time.hpp>
 
+#include <jive/rvsdg/traverser.hpp>
+
 namespace jlm::aa {
 
 /** \brief Statistics class for basic encoder encoding
@@ -560,7 +562,7 @@ BasicEncoder::Encode(
 
   EncodingStatistics encodingStatistics(rvsdgModule.SourceFileName());
   encodingStatistics.Start(rvsdgModule.Rvsdg());
-  MemoryStateEncoder::Encode(*rvsdgModule.Rvsdg().root());
+  EncodeRegion(*rvsdgModule.Rvsdg().root());
   encodingStatistics.Stop();
   statisticsDescriptor.PrintStatistics(encodingStatistics);
 
@@ -569,6 +571,81 @@ BasicEncoder::Encode(
    */
   jlm::DeadNodeElimination deadNodeElimination;
   deadNodeElimination.run(rvsdgModule, statisticsDescriptor);
+}
+
+void
+BasicEncoder::EncodeRegion(jive::region & region)
+{
+  using namespace jive;
+
+  jive::topdown_traverser traverser(&region);
+  for (auto & node : traverser) {
+    if (auto simpleNode = dynamic_cast<const simple_node*>(node)) {
+      EncodeSimpleNode(*simpleNode);
+      continue;
+    }
+
+    auto structuralNode = AssertedCast<structural_node>(node);
+    EncodeStructuralNode(*structuralNode);
+  }
+}
+
+void
+BasicEncoder::EncodeStructuralNode(jive::structural_node & structuralNode)
+{
+  auto encodeLambda = [](auto & be, auto & n){ be.EncodeLambda(*AssertedCast<lambda::node>(&n));    };
+  auto encodeDelta  = [](auto & be, auto & n){ be.EncodeDelta(*AssertedCast<delta::node>(&n));      };
+  auto encodePhi    = [](auto & be, auto & n){ be.EncodePhi(*AssertedCast<phi::node>(&n));          };
+  auto encodeGamma  = [](auto & be, auto & n){ be.EncodeGamma(*AssertedCast<jive::gamma_node>(&n)); };
+  auto encodeTheta  = [](auto & be, auto & n){ be.EncodeTheta(*AssertedCast<jive::theta_node>(&n)); };
+
+  static std::unordered_map<
+    std::type_index,
+    std::function<void(BasicEncoder&, jive::structural_node&)>
+  > nodes
+    ({
+         {typeid(lambda::operation), encodeLambda }
+       , {typeid(delta::operation),  encodeDelta  }
+       , {typeid(phi::operation),    encodePhi    }
+       , {typeid(jive::gamma_op),    encodeGamma  }
+       , {typeid(jive::theta_op),    encodeTheta  }
+     });
+
+  auto & operation = structuralNode.operation();
+  JLM_ASSERT(nodes.find(typeid(operation)) != nodes.end());
+  nodes[typeid(operation)](*this, structuralNode);
+}
+
+void
+BasicEncoder::EncodeSimpleNode(const jive::simple_node & be)
+{
+  auto EncodeAlloca = [](auto & be, auto & node){ be.EncodeAlloca(node); };
+  auto EncodeMalloc = [](auto & be, auto & node){ be.EncodeMalloc(node); };
+  auto EncodeCall   = [](auto & be, auto & node){ be.EncodeCall(*AssertedCast<const CallNode>(&node)); };
+  auto EncodeLoad   = [](auto & be, auto & node){ be.EncodeLoad(*AssertedCast<const LoadNode>(&node)); };
+  auto EncodeStore  = [](auto & be, auto & node){ be.EncodeStore(*AssertedCast<const StoreNode>(&node)); };
+  auto EncodeFree   = [](auto & be, auto & node){ be.EncodeFree(node); };
+  auto EncodeMemcpy = [](auto & be, auto & node){ be.EncodeMemcpy(node); };
+
+  static std::unordered_map<
+    std::type_index
+    , std::function<void(BasicEncoder&, const jive::simple_node&)>
+  > nodes
+    ({
+       {typeid(alloca_op),      EncodeAlloca},
+       {typeid(malloc_op),      EncodeMalloc},
+       {typeid(LoadOperation),  EncodeLoad},
+       {typeid(StoreOperation), EncodeStore},
+       {typeid(CallOperation),  EncodeCall},
+       {typeid(free_op),        EncodeFree},
+       {typeid(Memcpy),         EncodeMemcpy}
+     });
+
+  auto & operation = be.operation();
+  if (nodes.find(typeid(operation)) == nodes.end())
+    return;
+
+  nodes[typeid(operation)](*this, be);
 }
 
 void
@@ -709,7 +786,7 @@ BasicEncoder::EncodeMemcpy(const jive::simple_node & memcpyNode)
 }
 
 void
-BasicEncoder::Encode(const lambda::node & lambda)
+BasicEncoder::EncodeLambda(const lambda::node & lambda)
 {
   auto EncodeEntry = [this](const lambda::node & lambda)
   {
@@ -738,24 +815,24 @@ BasicEncoder::Encode(const lambda::node & lambda)
   };
 
   EncodeEntry(lambda);
-  MemoryStateEncoder::Encode(*lambda.subregion());
+  EncodeRegion(*lambda.subregion());
   EncodeExit(lambda);
 }
 
 void
-BasicEncoder::Encode(const phi::node & phi)
+BasicEncoder::EncodePhi(const phi::node & phi)
 {
-  MemoryStateEncoder::Encode(*phi.subregion());
+  EncodeRegion(*phi.subregion());
 }
 
 void
-BasicEncoder::Encode(const delta::node & delta)
+BasicEncoder::EncodeDelta(const delta::node & delta)
 {
   /* Nothing needs to be done */
 }
 
 void
-BasicEncoder::Encode(jive::gamma_node & gamma)
+BasicEncoder::EncodeGamma(jive::gamma_node & gamma)
 {
   auto EncodeEntry = [this](jive::gamma_node & gamma)
   {
@@ -799,7 +876,7 @@ BasicEncoder::Encode(jive::gamma_node & gamma)
   EncodeEntry(gamma);
 
   for (size_t n = 0; n < gamma.nsubregions(); n++)
-    MemoryStateEncoder::Encode(*gamma.subregion(n));
+    EncodeRegion(*gamma.subregion(n));
 
   EncodeExit(gamma);
 
@@ -808,7 +885,7 @@ BasicEncoder::Encode(jive::gamma_node & gamma)
 }
 
 void
-BasicEncoder::Encode(jive::theta_node & theta)
+BasicEncoder::EncodeTheta(jive::theta_node & theta)
 {
   auto EncodeEntry = [this](jive::theta_node & theta)
   {
@@ -852,7 +929,7 @@ BasicEncoder::Encode(jive::theta_node & theta)
   Context_->GetRegionalizedStateMap().PushRegion(*theta.subregion());
 
   auto thetaStateOutputs = EncodeEntry(theta);
-  MemoryStateEncoder::Encode(*theta.subregion());
+  EncodeRegion(*theta.subregion());
   EncodeExit(theta, thetaStateOutputs);
 
   Context_->GetRegionalizedStateMap().PopRegion(*theta.subregion());
