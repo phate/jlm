@@ -401,8 +401,8 @@ TestCall2()
     auto & lambda_test_cv1 = ptg.GetRegisterNode(*test.lambda_test->cvargument(0));
     auto & lambda_test_cv2 = ptg.GetRegisterNode(*test.lambda_test->cvargument(1));
 
-    auto & call_create1_out = ptg.GetRegisterNode(*test.call_create1->output(0));
-    auto & call_create2_out = ptg.GetRegisterNode(*test.call_create2->output(0));
+    auto & call_create1_out = ptg.GetRegisterNode(*test.CallCreate1().output(0));
+    auto & call_create2_out = ptg.GetRegisterNode(*test.CallCreate2().output(0));
 
     auto & malloc = ptg.GetMallocNode(*test.malloc);
     auto & malloc_out = ptg.GetRegisterNode(*test.malloc->output(0));

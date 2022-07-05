@@ -578,8 +578,8 @@ CallTest1::SetupRvsdg()
     auto allocaX = jive::node_output::node(x[0]);
     auto allocaY = jive::node_output::node(y[0]);
     auto allocaZ = jive::node_output::node(z[0]);
-    auto callF = jive::node_output::node(callFResults[0]);
-    auto callG = jive::node_output::node(callGResults[0]);
+    auto callF = AssertedCast<CallNode>(jive::node_output::node(callFResults[0]));
+    auto callG = AssertedCast<CallNode>(jive::node_output::node(callGResults[0]));
 
     return std::make_tuple(lambda, allocaX, allocaY, allocaZ, callF, callG);
   };
@@ -599,8 +599,8 @@ CallTest1::SetupRvsdg()
   this->alloca_y = allocaY;
   this->alloca_z = allocaZ;
 
-  this->callF = callF;
-  this->callG = callG;
+  this->CallF_ = callF;
+  this->CallG_ = callG;
 
   return module;
 }
@@ -721,10 +721,10 @@ CallTest2::SetupRvsdg()
     lambda->finalize(destroy2);
     graph->add_export(lambda->output(), {PointerType(lambda->type()), "test"});
 
-    auto callCreate1Node = jive::node_output::node(create1[0]);
-    auto callCreate2Node = jive::node_output::node(create2[0]);
-    auto callDestroy1Node = jive::node_output::node(destroy1[0]);
-    auto callDestroy2Node = jive::node_output::node(destroy2[0]);
+    auto callCreate1Node = AssertedCast<CallNode>(jive::node_output::node(create1[0]));
+    auto callCreate2Node = AssertedCast<CallNode>(jive::node_output::node(create2[0]));
+    auto callDestroy1Node = AssertedCast<CallNode>(jive::node_output::node(destroy1[0]));
+    auto callDestroy2Node = AssertedCast<CallNode>(jive::node_output::node(destroy2[0]));
 
     return std::make_tuple(lambda, callCreate1Node, callCreate2Node, callDestroy1Node, callDestroy2Node);
   };
@@ -743,11 +743,11 @@ CallTest2::SetupRvsdg()
   this->malloc = mallocNode;
   this->free = freeNode;
 
-  this->call_create1 = callCreate1;
-  this->call_create2 = callCreate2;
+  this->CallCreate1_ = callCreate1;
+  this->CallCreate2_ = callCreate2;
 
-  this->call_destroy1 = callCreate1;
-  this->call_destroy2 = callCreate2;
+  this->CallDestroy1_ = callCreate1;
+  this->CallDestroy2_ = callCreate2;
 
   return module;
 }
@@ -812,7 +812,9 @@ IndirectCallTest::SetupRvsdg()
 
     auto lambdaOutput = lambda->finalize(call);
 
-    return std::make_tuple(lambdaOutput, jive::node_output::node(call[0]));
+    return std::make_tuple(
+      lambdaOutput,
+      AssertedCast<CallNode>(jive::node_output::node(call[0])));
   };
 
   auto SetupTestFunction = [&](
@@ -849,7 +851,10 @@ IndirectCallTest::SetupRvsdg()
     auto lambdaOutput = lambda->finalize({add, call_three[1], call_three[2], call_three[3]});
     graph->add_export(lambda->output(), {PointerType(lambda->type()), "test"});
 
-    return std::make_tuple(lambdaOutput, jive::node_output::node(call_three[0]), jive::node_output::node(call_four[0]));
+    return std::make_tuple(
+      lambdaOutput,
+      AssertedCast<CallNode>(jive::node_output::node(call_three[0])),
+      AssertedCast<CallNode>(jive::node_output::node(call_four[0])));
   };
 
   auto fctfour = SetupConstantFunction(4);
@@ -865,9 +870,9 @@ IndirectCallTest::SetupRvsdg()
   this->lambda_indcall = fctindcall->node();
   this->lambda_test = fcttest->node();
 
-  this->call_fctindcall = callIndirectFunction;
-  this->call_fctthree = callFunctionThree;
-  this->call_fctfour = callFunctionFour;
+  this->CallIndcall_ = callIndirectFunction;
+  this->CallThree_ = callFunctionThree;
+  this->CallFour_ = callFunctionFour;
 
   return module;
 }
@@ -1055,7 +1060,10 @@ DeltaTest1::SetupRvsdg()
     auto lambdaOutput = lambda->finalize(callg);
     graph->add_export(lambda->output(), {PointerType(lambda->type()), "h"});
 
-    return std::make_tuple(lambdaOutput, jive::node_output::node(callg[0]), jive::node_output::node(five));
+    return std::make_tuple(
+      lambdaOutput,
+      AssertedCast<CallNode>(jive::node_output::node(callg[0])),
+      jive::node_output::node(five));
   };
 
   auto f = SetupGlobalF();
@@ -1070,7 +1078,7 @@ DeltaTest1::SetupRvsdg()
 
   this->delta_f = f->node();
 
-  this->call_g = callFunctionG;
+  this->CallG_ = callFunctionG;
   this->constantFive = constantFive;
 
   return module;
@@ -1175,7 +1183,9 @@ DeltaTest2::SetupRvsdg()
     auto lambdaOutput = lambda->finalize(callResults);
     graph->add_export(lambdaOutput, {PointerType(lambda->type()), "f2"});
 
-    return std::make_tuple(lambdaOutput, jive::node_output::node(callResults[0]));
+    return std::make_tuple(
+      lambdaOutput,
+      AssertedCast<CallNode>(jive::node_output::node(callResults[0])));
   };
 
   auto d1 = SetupD1();
@@ -1192,7 +1202,7 @@ DeltaTest2::SetupRvsdg()
   this->delta_d1 = d1->node();
   this->delta_d2 = d2->node();
 
-  this->call_f1 = callF1;
+  this->CallF1_ = callF1;
 
   return module;
 }
@@ -1266,7 +1276,9 @@ ImportTest::SetupRvsdg()
     auto lambdaOutput = lambda->finalize(callResults);
     graph->add_export(lambda->output(), {PointerType(lambda->type()), "f2"});
 
-    return std::make_tuple(lambdaOutput, jive::node_output::node(callResults[0]));
+    return std::make_tuple(
+      lambdaOutput,
+      AssertedCast<CallNode>(jive::node_output::node(callResults[0])));
   };
 
   auto d1 = graph->add_import(impport(PointerType(jive::bit32), "d1", linkage::external_linkage));
@@ -1281,7 +1293,7 @@ ImportTest::SetupRvsdg()
   this->lambda_f1 = f1->node();
   this->lambda_f2 = f2->node();
 
-  this->call_f1 = callF1;
+  this->CallF1_ = callF1;
 
   this->import_d1 = d1;
   this->import_d2 = d2;
@@ -1380,8 +1392,8 @@ PhiTest::SetupRvsdg()
       phiNode,
       lambdaOutput,
       gammaNode,
-      jive::node_output::node(callfibm1Results[0]),
-      jive::node_output::node(callfibm2Results[0]));
+      AssertedCast<CallNode>(jive::node_output::node(callfibm1Results[0])),
+      AssertedCast<CallNode>(jive::node_output::node(callfibm2Results[0])));
   };
 
   auto SetupTestFunction = [&](phi::node * phiNode)
@@ -1422,7 +1434,7 @@ PhiTest::SetupRvsdg()
 
     return std::make_tuple(
       lambdaOutput,
-      jive::node_output::node(callResults[0]),
+      AssertedCast<CallNode>(jive::node_output::node(callResults[0])),
       jive::node_output::node(allocaResults[0]));
   };
 
@@ -1438,10 +1450,10 @@ PhiTest::SetupRvsdg()
   this->gamma = gammaNode;
   this->phi = phiNode;
 
-  this->callfibm1 = callFib1;
-  this->callfibm2 = callFib2;
+  this->CallFibm1_ = callFib1;
+  this->CallFibm2_ = callFib2;
 
-  this->callfib = callFib;
+  this->CallFib_ = callFib;
 
   this->alloca = alloca;
 
