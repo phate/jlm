@@ -6,6 +6,7 @@
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/types.hpp>
 #include <jlm/opt/alias-analyses/BasicEncoder.hpp>
+#include <jlm/opt/alias-analyses/BasicMemoryNodeProvider.hpp>
 #include <jlm/opt/alias-analyses/Operators.hpp>
 #include <jlm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/opt/DeadNodeElimination.hpp>
@@ -100,8 +101,8 @@ GetMemoryStateResult(const lambda::node & lambda)
 class MemoryNodeCache final {
 private:
   explicit
-  MemoryNodeCache(const PointsToGraph & pointsToGraph)
-  : PointsToGraph_(&pointsToGraph)
+  MemoryNodeCache(const MemoryNodeProvider & memoryNodeProvider)
+  : MemoryNodeProvider_(memoryNodeProvider)
   {}
 
 public:
@@ -129,7 +130,7 @@ public:
     if (Contains(output))
       return MemoryNodeMap_[&output];
 
-    auto memoryNodes = CollectMemoryNodes(output);
+    auto memoryNodes = MemoryNodeProvider_.GetOutputNodes(output);
 
     /*
      * There is no need to cache the memory nodes, if the address is only once used.
@@ -150,30 +151,17 @@ public:
     JLM_ASSERT(!Contains(oldAddress));
     JLM_ASSERT(!Contains(newAddress));
 
-    MemoryNodeMap_[&newAddress] = CollectMemoryNodes(oldAddress);
+    MemoryNodeMap_[&newAddress] = MemoryNodeProvider_.GetOutputNodes(oldAddress);
   }
 
   static std::unique_ptr<MemoryNodeCache>
-  Create(const PointsToGraph & pointsToGraph)
+  Create(const MemoryNodeProvider & memoryNodeProvider)
   {
-    return std::unique_ptr<MemoryNodeCache>(new MemoryNodeCache(pointsToGraph));
+    return std::unique_ptr<MemoryNodeCache>(new MemoryNodeCache(memoryNodeProvider));
   }
 
 private:
-  std::vector<const PointsToGraph::MemoryNode*>
-  CollectMemoryNodes(const jive::output & output) const
-  {
-    JLM_ASSERT(is<PointerType>(output.type()));
-    auto & registerNode = PointsToGraph_->GetRegisterNode(output);
-
-    std::vector<const PointsToGraph::MemoryNode*> memoryNodes;
-    for (auto & memoryNode : registerNode.Targets())
-      memoryNodes.push_back(&memoryNode);
-
-    return memoryNodes;
-  }
-
-  const PointsToGraph * PointsToGraph_;
+  const MemoryNodeProvider & MemoryNodeProvider_;
   std::unordered_map<const jive::output*, std::vector<const PointsToGraph::MemoryNode*>> MemoryNodeMap_;
 };
 
@@ -284,8 +272,8 @@ public:
   }
 
   explicit
-  RegionalizedStateMap(const PointsToGraph & pointsToGraph)
-  : PointsToGraph_(&pointsToGraph)
+  RegionalizedStateMap(const MemoryNodeProvider & memoryNodeProvider)
+  : MemoryNodeProvider_(memoryNodeProvider)
   {}
 
   RegionalizedStateMap(const RegionalizedStateMap&) = delete;
@@ -400,7 +388,7 @@ public:
     JLM_ASSERT(MemoryNodeCacheMaps_.find(&region) == MemoryNodeCacheMaps_.end());
 
     StateMaps_[&region] = StateMap::Create();
-    MemoryNodeCacheMaps_[&region] = MemoryNodeCache::Create(*PointsToGraph_);
+    MemoryNodeCacheMaps_[&region] = MemoryNodeCache::Create(MemoryNodeProvider_);
   }
 
   void
@@ -414,9 +402,9 @@ public:
   }
 
   static std::unique_ptr<BasicEncoder::Context>
-  Create(const PointsToGraph & pointsToGraph)
+  Create(const MemoryNodeProvider & memoryNodeProvider)
   {
-    return std::make_unique<BasicEncoder::Context>(pointsToGraph);
+    return std::make_unique<BasicEncoder::Context>(memoryNodeProvider);
   }
 
 private:
@@ -438,7 +426,7 @@ private:
   std::unordered_map<const jive::region*, std::unique_ptr<StateMap>> StateMaps_;
   std::unordered_map<const jive::region*, std::unique_ptr<MemoryNodeCache>> MemoryNodeCacheMaps_;
 
-  const PointsToGraph * PointsToGraph_;
+  const MemoryNodeProvider & MemoryNodeProvider_;
 };
 
 /** \brief Context for the basic encoder
@@ -446,11 +434,10 @@ private:
 class BasicEncoder::Context final {
 public:
   explicit
-  Context(const PointsToGraph & pointsToGraph)
-    : RegionalizedStateMap_(pointsToGraph)
-  {
-    CollectMemoryNodes(pointsToGraph);
-  }
+  Context(const MemoryNodeProvider & memoryNodeProvider)
+    : RegionalizedStateMap_(memoryNodeProvider)
+    , MemoryNodeProvider_(memoryNodeProvider)
+  {}
 
   Context(const Context&) = delete;
 
@@ -468,42 +455,21 @@ public:
     return RegionalizedStateMap_;
   }
 
-  const std::vector<const PointsToGraph::MemoryNode*> &
-  GetMemoryNodes()
+  const MemoryNodeProvider &
+  GetMemoryNodeProvider() const noexcept
   {
-    return MemoryNodes_;
+    return MemoryNodeProvider_;
   }
 
   static std::unique_ptr<BasicEncoder::Context>
-  Create(const PointsToGraph & pointsToGraph)
+  Create(const MemoryNodeProvider & memoryNodeProvider)
   {
-    return std::make_unique<Context>(pointsToGraph);
+    return std::make_unique<Context>(memoryNodeProvider);
   }
 
 private:
-  void
-  CollectMemoryNodes(const PointsToGraph & pointsToGraph)
-  {
-    for (auto & allocaNode : pointsToGraph.AllocaNodes())
-      MemoryNodes_.push_back(&allocaNode);
-
-    for (auto & deltaNode : pointsToGraph.DeltaNodes())
-      MemoryNodes_.push_back(&deltaNode);
-
-    for (auto & lambdaNode : pointsToGraph.LambdaNodes())
-      MemoryNodes_.push_back(&lambdaNode);
-
-    for (auto & mallocNode : pointsToGraph.MallocNodes())
-      MemoryNodes_.push_back(&mallocNode);
-
-    for (auto & importNode : pointsToGraph.ImportNodes())
-      MemoryNodes_.push_back(&importNode);
-
-    MemoryNodes_.push_back(&pointsToGraph.GetExternalMemoryNode());
-  }
-
   RegionalizedStateMap RegionalizedStateMap_;
-  std::vector<const PointsToGraph::MemoryNode*> MemoryNodes_;
+  const MemoryNodeProvider & MemoryNodeProvider_;
 };
 
 BasicEncoder::~BasicEncoder()
@@ -558,7 +524,8 @@ BasicEncoder::Encode(
   RvsdgModule & rvsdgModule,
   const StatisticsDescriptor & statisticsDescriptor)
 {
-  Context_ = Context::Create(GetPointsToGraph());
+  jlm::aa::BasicMemoryNodeProvider basicMemoryNodeProvider(GetPointsToGraph());
+  Context_ = Context::Create(basicMemoryNodeProvider);
 
   EncodingStatistics encodingStatistics(rvsdgModule.SourceFileName());
   encodingStatistics.Start(rvsdgModule.Rvsdg());
@@ -739,7 +706,7 @@ BasicEncoder::EncodeCall(const CallNode & callNode)
   auto EncodeEntry = [this](const CallNode & callNode)
   {
     auto region = callNode.region();
-    auto & memoryNodes = Context_->GetMemoryNodes();
+    auto & memoryNodes = Context_->GetMemoryNodeProvider().GetCallEntryNodes(callNode);
 
     auto states = Context_->GetRegionalizedStateMap().GetStates(*region, memoryNodes);
     auto state = CallEntryMemStateOperator::Create(region, states);
@@ -748,7 +715,7 @@ BasicEncoder::EncodeCall(const CallNode & callNode)
 
   auto EncodeExit = [this](const CallNode & callNode)
   {
-    auto & memoryNodes = Context_->GetMemoryNodes();
+    auto & memoryNodes = Context_->GetMemoryNodeProvider().GetCallExitNodes(callNode);
 
     auto states = CallExitMemStateOperator::Create(callNode.GetMemoryStateOutput(), memoryNodes.size());
     Context_->GetRegionalizedStateMap().ReplaceStates(memoryNodes, states);
@@ -791,7 +758,7 @@ BasicEncoder::EncodeLambda(const lambda::node & lambda)
   auto EncodeEntry = [this](const lambda::node & lambda)
   {
     auto memoryStateArgument = GetMemoryStateArgument(lambda);
-    auto & memoryNodes = Context_->GetMemoryNodes();
+    auto & memoryNodes = Context_->GetMemoryNodeProvider().GetLambdaEntryNodes(lambda);
     auto & stateMap = Context_->GetRegionalizedStateMap();
 
     stateMap.PushRegion(*lambda.subregion());
@@ -803,7 +770,7 @@ BasicEncoder::EncodeLambda(const lambda::node & lambda)
   auto EncodeExit = [this](const lambda::node & lambda)
   {
     auto subregion = lambda.subregion();
-    auto & memoryNodes = Context_->GetMemoryNodes();
+    auto & memoryNodes = Context_->GetMemoryNodeProvider().GetLambdaExitNodes(lambda);
     auto & stateMap = Context_->GetRegionalizedStateMap();
     auto memoryStateResult = GetMemoryStateResult(lambda);
 
@@ -838,7 +805,7 @@ BasicEncoder::EncodeGamma(jive::gamma_node & gamma)
   {
     auto region = gamma.region();
     auto & stateMap = Context_->GetRegionalizedStateMap();
-    auto & memoryNodes = Context_->GetMemoryNodes();
+    auto memoryNodes = Context_->GetMemoryNodeProvider().GetGammaEntryNodes(gamma);
 
     auto states = stateMap.GetStates(*region, memoryNodes);
     for (size_t n = 0; n < states.size(); n++) {
@@ -854,7 +821,7 @@ BasicEncoder::EncodeGamma(jive::gamma_node & gamma)
   auto EncodeExit = [this](jive::gamma_node & gamma)
   {
     auto & stateMap = Context_->GetRegionalizedStateMap();
-    auto & memoryNodes = Context_->GetMemoryNodes();
+    auto memoryNodes = Context_->GetMemoryNodeProvider().GetGammaExitNodes(gamma);
 
     for (auto & memoryNode : memoryNodes) {
       std::vector<jive::output*> states;
@@ -891,7 +858,7 @@ BasicEncoder::EncodeTheta(jive::theta_node & theta)
   {
     auto region = theta.region();
     auto & stateMap = Context_->GetRegionalizedStateMap();
-    auto & memoryNodes = Context_->GetMemoryNodes();
+    auto & memoryNodes = Context_->GetMemoryNodeProvider().GetThetaEntryExitNodes(theta);
 
     std::vector<jive::theta_output*> thetaStateOutputs;
     auto states = stateMap.GetStates(*region, memoryNodes);
@@ -913,7 +880,7 @@ BasicEncoder::EncodeTheta(jive::theta_node & theta)
   {
     auto subregion = theta.subregion();
     auto & stateMap = Context_->GetRegionalizedStateMap();
-    auto & memoryNodes = Context_->GetMemoryNodes();
+    auto & memoryNodes = Context_->GetMemoryNodeProvider().GetThetaEntryExitNodes(theta);
 
     JLM_ASSERT(memoryNodes.size() == thetaStateOutputs.size());
     for (size_t n = 0; n < thetaStateOutputs.size(); n++) {
