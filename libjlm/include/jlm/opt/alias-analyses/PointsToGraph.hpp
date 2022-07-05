@@ -182,7 +182,8 @@ public:
            + NumDeltaNodes()
            + NumImportNodes()
            + NumLambdaNodes()
-           + NumMallocNodes();
+           + NumMallocNodes()
+           + 1; //External memory node
   }
 
   size_t
