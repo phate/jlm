@@ -363,6 +363,18 @@ private:
 	SetupRvsdg() override;
 
 public:
+  [[nodiscard]] const jlm::CallNode &
+  CallF() const noexcept
+  {
+    return *CallF_;
+  }
+
+  [[nodiscard]] const jlm::CallNode &
+  CallG() const noexcept
+  {
+    return *CallG_;
+  }
+
 	jlm::lambda::node * lambda_f;
 	jlm::lambda::node * lambda_g;
 	jlm::lambda::node * lambda_h;
@@ -371,8 +383,9 @@ public:
 	jive::node * alloca_y;
 	jive::node * alloca_z;
 
-  jive::node * callF;
-  jive::node * callG;
+private:
+  jlm::CallNode * CallF_;
+  jlm::CallNode * CallG_;
 };
 
 /** \brief CallTest2 class
@@ -407,11 +420,31 @@ public:
 * operations within each function.
 */
 class CallTest2 final : public AliasAnalysisTest {
-private:
-	std::unique_ptr<jlm::RvsdgModule>
-	SetupRvsdg() override;
-
 public:
+  [[nodiscard]] const jlm::CallNode &
+  CallCreate1() const noexcept
+  {
+    return *CallCreate1_;
+  }
+
+  [[nodiscard]] const jlm::CallNode &
+  CallCreate2() const noexcept
+  {
+    return *CallCreate2_;
+  }
+
+  [[nodiscard]] const jlm::CallNode &
+  CallDestroy1() const noexcept
+  {
+    return *CallDestroy1_;
+  }
+
+  [[nodiscard]] const jlm::CallNode &
+  CallDestroy2() const noexcept
+  {
+    return *CallDestroy2_;
+  }
+
 	jlm::lambda::node * lambda_create;
 	jlm::lambda::node * lambda_destroy;
 	jlm::lambda::node * lambda_test;
@@ -419,11 +452,15 @@ public:
 	jive::node * malloc;
 	jive::node * free;
 
-	jive::node * call_create1;
-	jive::node * call_create2;
+private:
+  std::unique_ptr<jlm::RvsdgModule>
+  SetupRvsdg() override;
 
-	jive::node * call_destroy1;
-	jive::node * call_destroy2;
+	jlm::CallNode * CallCreate1_;
+	jlm::CallNode * CallCreate2_;
+
+	jlm::CallNode * CallDestroy1_;
+	jlm::CallNode * CallDestroy2_;
 };
 
 /** \brief IndirectCallTest class
@@ -452,7 +489,7 @@ public:
 *	  uint32_t
 *	  test()
 *	  {
-*	    return call(&four) + call(&three);
+*	    return indcall(&four) + indcall(&three);
 *	  }
 *	\endcode
 *
@@ -460,19 +497,37 @@ public:
 * operations within each function.
 */
 class IndirectCallTest final : public AliasAnalysisTest {
-private:
-	std::unique_ptr<jlm::RvsdgModule>
-	SetupRvsdg() override;
-
 public:
+  [[nodiscard]] const jlm::CallNode &
+  CallIndcall() const noexcept
+  {
+    return *CallIndcall_;
+  }
+
+  [[nodiscard]] const jlm::CallNode &
+  CallThree() const noexcept
+  {
+    return *CallThree_;
+  }
+
+  [[nodiscard]] const jlm::CallNode &
+  CallFour() const noexcept
+  {
+    return *CallFour_;
+  }
+
 	jlm::lambda::node * lambda_three;
 	jlm::lambda::node * lambda_four;
 	jlm::lambda::node * lambda_indcall;
 	jlm::lambda::node * lambda_test;
 
-	jive::node * call_fctindcall;
-	jive::node * call_fctthree;
-	jive::node * call_fctfour;
+private:
+  std::unique_ptr<jlm::RvsdgModule>
+  SetupRvsdg() override;
+
+	jlm::CallNode * CallIndcall_;
+	jlm::CallNode * CallThree_;
+	jlm::CallNode * CallFour_;
 };
 
 /** \brief GammaTest class
@@ -561,18 +616,25 @@ public:
 * operations.
 */
 class DeltaTest1 final : public AliasAnalysisTest {
-private:
-	std::unique_ptr<jlm::RvsdgModule>
-	SetupRvsdg() override;
-
 public:
+  [[nodiscard]] const jlm::CallNode &
+  CallG() const noexcept
+  {
+    return *CallG_;
+  }
+
 	jlm::lambda::node * lambda_g;
 	jlm::lambda::node * lambda_h;
 
 	jlm::delta::node * delta_f;
 
-	jive::node * call_g;
   jive::node * constantFive;
+
+private:
+  std::unique_ptr<jlm::RvsdgModule>
+  SetupRvsdg() override;
+
+  jlm::CallNode * CallG_;
 };
 
 /** \brief DeltaTest2 class
@@ -602,18 +664,24 @@ public:
 * operations.
 */
 class DeltaTest2 final : public AliasAnalysisTest {
-private:
-	std::unique_ptr<jlm::RvsdgModule>
-	SetupRvsdg() override;
-
 public:
+  [[nodiscard]] const jlm::CallNode &
+  CallF1() const noexcept
+  {
+    return *CallF1_;
+  }
+
 	jlm::lambda::node * lambda_f1;
 	jlm::lambda::node * lambda_f2;
 
 	jlm::delta::node * delta_d1;
 	jlm::delta::node * delta_d2;
 
-	jive::node * call_f1;
+private:
+  std::unique_ptr<jlm::RvsdgModule>
+  SetupRvsdg() override;
+
+	jlm::CallNode * CallF1_;
 };
 
 /** \brief ImportTest class
@@ -643,18 +711,24 @@ public:
 * operations.
 */
 class ImportTest final : public AliasAnalysisTest {
-private:
-	std::unique_ptr<jlm::RvsdgModule>
-	SetupRvsdg() override;
-
 public:
+  [[nodiscard]] const jlm::CallNode &
+  CallF1() const noexcept
+  {
+    return *CallF1_;
+  }
+
 	jlm::lambda::node * lambda_f1;
 	jlm::lambda::node * lambda_f2;
 
-	jive::node * call_f1;
-
 	jive::argument * import_d1;
 	jive::argument * import_d2;
+
+private:
+  std::unique_ptr<jlm::RvsdgModule>
+  SetupRvsdg() override;
+
+  jlm::CallNode * CallF1_;
 };
 
 /** \brief PhiTest class
@@ -689,11 +763,25 @@ public:
 * operations.
 */
 class PhiTest final : public AliasAnalysisTest {
-private:
-	std::unique_ptr<jlm::RvsdgModule>
-	SetupRvsdg() override;
-
 public:
+  [[nodiscard]] const jlm::CallNode &
+  CallFib() const noexcept
+  {
+    return *CallFib_;
+  }
+
+  [[nodiscard]] const jlm::CallNode &
+  CallFibm1() const noexcept
+  {
+    return *CallFibm1_;
+  }
+
+  [[nodiscard]] const jlm::CallNode &
+  CallFibm2() const noexcept
+  {
+    return *CallFibm2_;
+  }
+
 	jlm::lambda::node * lambda_fib;
 	jlm::lambda::node * lambda_test;
 
@@ -701,12 +789,16 @@ public:
 
 	jlm::phi::node * phi;
 
-	jive::node * callfibm1;
-	jive::node * callfibm2;
-
-	jive::node * callfib;
-
 	jive::node * alloca;
+
+private:
+  std::unique_ptr<jlm::RvsdgModule>
+  SetupRvsdg() override;
+
+  jlm::CallNode * CallFibm1_;
+  jlm::CallNode * CallFibm2_;
+
+  jlm::CallNode * CallFib_;
 };
 
 /** \brief ExternalMemoryTest class

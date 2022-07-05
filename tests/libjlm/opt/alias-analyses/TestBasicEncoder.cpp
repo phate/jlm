@@ -321,14 +321,14 @@ TestCall1()
 
 		/* validate h */
     {
-      auto callEntryMerge = jive::node_output::node(test.callF->input(4)->origin());
-      auto callExitSplit = input_node(*test.callF->output(2)->begin());
+      auto callEntryMerge = jive::node_output::node(test.CallF().input(4)->origin());
+      auto callExitSplit = input_node(*test.CallF().output(2)->begin());
 
       assert(is<aa::CallEntryMemStateOperator>(*callEntryMerge, 7, 1));
       assert(is<aa::CallExitMemStateOperator>(*callExitSplit, 1, 7));
 
-      callEntryMerge = jive::node_output::node(test.callG->input(4)->origin());
-      callExitSplit = input_node(*test.callG->output(2)->begin());
+      callEntryMerge = jive::node_output::node(test.CallG().input(4)->origin());
+      callExitSplit = input_node(*test.CallG().output(2)->begin());
 
       assert(is<aa::CallEntryMemStateOperator>(*callEntryMerge, 7, 1));
       assert(is<aa::CallExitMemStateOperator>(*callExitSplit, 1, 7));
