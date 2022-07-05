@@ -62,6 +62,7 @@ LIBJLM_SRC = \
     libjlm/src/ir/hls/hls.cpp \
     \
     libjlm/src/opt/alias-analyses/BasicEncoder.cpp \
+    libjlm/src/opt/alias-analyses/BasicMemoryNodeProvider.cpp \
     libjlm/src/opt/alias-analyses/MemoryStateEncoder.cpp \
     libjlm/src/opt/alias-analyses/MemoryNodeProvider.cpp \
     libjlm/src/opt/alias-analyses/Operators.cpp \
