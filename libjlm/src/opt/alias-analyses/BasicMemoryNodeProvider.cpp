@@ -9,9 +9,15 @@ namespace jlm::aa
 {
 
 BasicMemoryNodeProvider::BasicMemoryNodeProvider(const PointsToGraph & pointsToGraph)
-  : PointsToGraph_(&pointsToGraph)
+  : PointsToGraph_(pointsToGraph)
 {
   CollectMemoryNodes(pointsToGraph);
+}
+
+const PointsToGraph &
+BasicMemoryNodeProvider::GetPointsToGraph() const noexcept
+{
+  return PointsToGraph_;
 }
 
 const std::vector<const PointsToGraph::MemoryNode*> &
@@ -42,7 +48,7 @@ std::vector<const PointsToGraph::MemoryNode*>
 BasicMemoryNodeProvider::GetOutputNodes(const jive::output & output) const
 {
   JLM_ASSERT(is<PointerType>(output.type()));
-  auto & registerNode = PointsToGraph_->GetRegisterNode(output);
+  auto & registerNode = PointsToGraph_.GetRegisterNode(output);
 
   std::vector<const PointsToGraph::MemoryNode*> memoryNodes;
   for (auto & memoryNode : registerNode.Targets())

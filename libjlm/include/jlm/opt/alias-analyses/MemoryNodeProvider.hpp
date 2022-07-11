@@ -17,6 +17,9 @@ public:
   virtual
   ~MemoryNodeProvider() noexcept;
 
+  [[nodiscard]] virtual const PointsToGraph &
+  GetPointsToGraph() const noexcept = 0;
+
   [[nodiscard]] virtual const std::vector<const PointsToGraph::MemoryNode*> &
   GetRegionEntryNodes(const jive::region & region) const = 0;
 
