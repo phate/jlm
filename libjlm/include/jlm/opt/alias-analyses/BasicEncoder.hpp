@@ -103,9 +103,6 @@ private:
   void
   EncodeTheta(jive::theta_node & theta);
 
-  static void
-  UnlinkUnknownMemoryNode(PointsToGraph &pointsToGraph);
-
   PointsToGraph& PointsToGraph_;
   std::unique_ptr <Context> Context_;
 };
