@@ -26,6 +26,9 @@ public:
   BasicMemoryNodeProvider &
   operator=(BasicMemoryNodeProvider&&) = delete;
 
+  [[nodiscard]] const PointsToGraph &
+  GetPointsToGraph() const noexcept override;
+
   [[nodiscard]] const std::vector<const PointsToGraph::MemoryNode*> &
   GetRegionEntryNodes(const jive::region & region) const override;
 
@@ -45,7 +48,7 @@ private:
   void
   CollectMemoryNodes(const PointsToGraph & pointsToGraph);
 
-  const PointsToGraph * PointsToGraph_;
+  const PointsToGraph & PointsToGraph_;
 
   std::vector<const PointsToGraph::MemoryNode*> MemoryNodes_;
 };
