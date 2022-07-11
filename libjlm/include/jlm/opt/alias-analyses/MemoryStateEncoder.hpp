@@ -33,7 +33,7 @@ class StoreNode;
 
 namespace aa {
 
-class PointsToGraph;
+class MemoryNodeProvider;
 
 /** \brief Memory State Encoder Interface
  *
@@ -48,15 +48,77 @@ class PointsToGraph;
  * touching on the same memory locations is preserved, while rendering operations independent that are not operating on
  * the same memory locations.
  */
-class MemoryStateEncoder {
+class MemoryStateEncoder final {
 public:
-	virtual
-	~MemoryStateEncoder();
+  class Context;
 
-	virtual void
-	Encode(
-    RvsdgModule & module,
-    const StatisticsDescriptor & sd) = 0;
+  ~MemoryStateEncoder() noexcept;
+
+  MemoryStateEncoder();
+
+  MemoryStateEncoder(const MemoryStateEncoder &) = delete;
+
+  MemoryStateEncoder(MemoryStateEncoder &&) = delete;
+
+  MemoryStateEncoder &
+  operator=(const MemoryStateEncoder &) = delete;
+
+  MemoryStateEncoder &
+  operator=(MemoryStateEncoder &&) = delete;
+
+  void
+  Encode(
+    RvsdgModule & rvsdgModule,
+    const MemoryNodeProvider & memoryNodeProvider,
+    const StatisticsDescriptor & statisticsDescriptor);
+
+private:
+  void
+  EncodeRegion(jive::region & region);
+
+  void
+  EncodeStructuralNode(jive::structural_node & structuralNode);
+
+  void
+  EncodeSimpleNode(const jive::simple_node & simpleNode);
+
+  void
+  EncodeAlloca(const jive::simple_node & allocaNode);
+
+  void
+  EncodeMalloc(const jive::simple_node & mallocNode);
+
+  void
+  EncodeLoad(const LoadNode & loadNode);
+
+  void
+  EncodeStore(const StoreNode & storeNode);
+
+  void
+  EncodeFree(const jive::simple_node & freeNode);
+
+  void
+  EncodeCall(const CallNode & callNode);
+
+  void
+  EncodeMemcpy(const jive::simple_node & memcpyNode);
+
+  void
+  EncodeLambda(const lambda::node & lambda);
+
+  void
+  EncodePhi(const phi::node & phi);
+
+  void
+  EncodeDelta(const delta::node & delta);
+
+  void
+  EncodeGamma(jive::gamma_node & gamma);
+
+  void
+  EncodeTheta(jive::theta_node & theta);
+
+  std::unique_ptr <Context> Context_;
 };
 
 }}
