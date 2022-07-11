@@ -9,8 +9,8 @@
 
 #include <jive/view.hpp>
 
-#include <jlm/opt/alias-analyses/BasicEncoder.hpp>
 #include <jlm/opt/alias-analyses/BasicMemoryNodeProvider.hpp>
+#include <jlm/opt/alias-analyses/MemoryStateEncoder.hpp>
 #include <jlm/opt/alias-analyses/Operators.hpp>
 #include <jlm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/opt/alias-analyses/Steensgaard.hpp>
@@ -66,7 +66,9 @@ RunBasicEncoder(
   StatisticsDescriptor sd;
   UnlinkUnknownMemoryNode(pointsToGraph);
   aa::BasicMemoryNodeProvider basicMemoryNodeProvider(pointsToGraph);
-  aa::BasicEncoder::Encode(module, basicMemoryNodeProvider, sd);
+
+  aa::MemoryStateEncoder encoder;
+  encoder.Encode(module, basicMemoryNodeProvider, sd);
 }
 
 template <class OP> static bool
@@ -740,4 +742,4 @@ test()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/opt/alias-analyses/TestBasicEncoder", test)
+JLM_UNIT_TEST_REGISTER("libjlm/opt/alias-analyses/TestMemoryStateEncoder", test)

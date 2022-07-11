@@ -9,7 +9,6 @@
 
 #include <jive/view.hpp>
 
-#include <jlm/opt/alias-analyses/BasicEncoder.hpp>
 #include <jlm/opt/alias-analyses/BasicMemoryNodeProvider.hpp>
 #include <jlm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/opt/alias-analyses/Steensgaard.hpp>
