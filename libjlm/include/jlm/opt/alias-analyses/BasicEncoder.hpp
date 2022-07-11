@@ -10,6 +10,8 @@
 
 namespace jlm::aa {
 
+class MemoryNodeProvider;
+
 /** \brief Basic memory state encoder
  *
  * The key idea of the basic memory state encoder is that \b all memory states are routed through \b all structural
@@ -28,7 +30,7 @@ public:
   ~BasicEncoder() override;
 
   explicit
-  BasicEncoder(PointsToGraph &pointsToGraph);
+  BasicEncoder(const MemoryNodeProvider & memoryNodeProvider);
 
   BasicEncoder(const BasicEncoder &) = delete;
 
@@ -47,17 +49,11 @@ public:
 
   static void
   Encode(
-    PointsToGraph & pointsToGraph,
     RvsdgModule & rvsdgModule,
+    const MemoryNodeProvider & memoryNodeProvider,
     const StatisticsDescriptor & statisticsDescriptor);
 
 private:
-  [[nodiscard]] const PointsToGraph &
-  GetPointsToGraph() const noexcept
-  {
-    return PointsToGraph_;
-  }
-
   void
   EncodeRegion(jive::region & region);
 
@@ -103,8 +99,8 @@ private:
   void
   EncodeTheta(jive::theta_node & theta);
 
-  PointsToGraph& PointsToGraph_;
   std::unique_ptr <Context> Context_;
+  const MemoryNodeProvider & MemoryNodeProvider_;
 };
 
 }

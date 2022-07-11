@@ -475,17 +475,17 @@ private:
 BasicEncoder::~BasicEncoder()
 = default;
 
-BasicEncoder::BasicEncoder(PointsToGraph & pointsToGraph)
-  : PointsToGraph_(pointsToGraph)
+BasicEncoder::BasicEncoder(const MemoryNodeProvider & memoryNodeProvider)
+  : MemoryNodeProvider_(memoryNodeProvider)
 {}
 
 void
 BasicEncoder::Encode(
-  PointsToGraph & pointsToGraph,
   RvsdgModule & rvsdgModule,
+  const MemoryNodeProvider & memoryNodeProvider,
   const StatisticsDescriptor & statisticsDescriptor)
 {
-  BasicEncoder encoder(pointsToGraph);
+  BasicEncoder encoder(memoryNodeProvider);
   encoder.Encode(rvsdgModule, statisticsDescriptor);
 }
 
@@ -494,8 +494,7 @@ BasicEncoder::Encode(
   RvsdgModule & rvsdgModule,
   const StatisticsDescriptor & statisticsDescriptor)
 {
-  jlm::aa::BasicMemoryNodeProvider basicMemoryNodeProvider(GetPointsToGraph());
-  Context_ = Context::Create(basicMemoryNodeProvider);
+  Context_ = Context::Create(MemoryNodeProvider_);
 
   EncodingStatistics encodingStatistics(rvsdgModule.SourceFileName());
   encodingStatistics.Start(rvsdgModule.Rvsdg());
@@ -591,7 +590,7 @@ BasicEncoder::EncodeAlloca(const jive::simple_node & allocaNode)
   JLM_ASSERT(is<alloca_op>(&allocaNode));
   auto & stateMap = Context_->GetRegionalizedStateMap();
 
-  auto & allocaMemoryNode = GetPointsToGraph().GetAllocaNode(allocaNode);
+  auto & allocaMemoryNode = Context_->GetMemoryNodeProvider().GetPointsToGraph().GetAllocaNode(allocaNode);
   stateMap.ReplaceState(allocaMemoryNode, *allocaNode.output(1));
 }
 
@@ -601,7 +600,7 @@ BasicEncoder::EncodeMalloc(const jive::simple_node & mallocNode)
   JLM_ASSERT(is<malloc_op>(&mallocNode));
   auto & stateMap = Context_->GetRegionalizedStateMap();
 
-  auto & mallocMemoryNode = GetPointsToGraph().GetMallocNode(mallocNode);
+  auto & mallocMemoryNode = Context_->GetMemoryNodeProvider().GetPointsToGraph().GetMallocNode(mallocNode);
 
   /**
    * We use a static heap model. This means that multiple invocations of an malloc

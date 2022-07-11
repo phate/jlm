@@ -10,6 +10,7 @@
 #include <jive/view.hpp>
 
 #include <jlm/opt/alias-analyses/BasicEncoder.hpp>
+#include <jlm/opt/alias-analyses/BasicMemoryNodeProvider.hpp>
 #include <jlm/opt/alias-analyses/Operators.hpp>
 #include <jlm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/opt/alias-analyses/Steensgaard.hpp>
@@ -28,6 +29,34 @@ run_steensgaard(jlm::RvsdgModule & module)
 }
 
 static void
+UnlinkUnknownMemoryNode(jlm::aa::PointsToGraph & pointsToGraph)
+{
+  std::vector<jlm::aa::PointsToGraph::Node*> memoryNodes;
+  for (auto & allocaNode : pointsToGraph.AllocaNodes())
+    memoryNodes.push_back(&allocaNode);
+
+  for (auto & deltaNode : pointsToGraph.DeltaNodes())
+    memoryNodes.push_back(&deltaNode);
+
+  for (auto & lambdaNode : pointsToGraph.LambdaNodes())
+    memoryNodes.push_back(&lambdaNode);
+
+  for (auto & mallocNode : pointsToGraph.MallocNodes())
+    memoryNodes.push_back(&mallocNode);
+
+  for (auto & node : pointsToGraph.ImportNodes())
+    memoryNodes.push_back(&node);
+
+  auto & unknownMemoryNode = pointsToGraph.GetUnknownMemoryNode();
+  while (unknownMemoryNode.NumSources() != 0) {
+    auto & source = *unknownMemoryNode.Sources().begin();
+    for (auto & memoryNode : memoryNodes)
+      source.AddEdge(*dynamic_cast<jlm::aa::PointsToGraph::MemoryNode *>(memoryNode));
+    source.RemoveEdge(unknownMemoryNode);
+  }
+};
+
+static void
 RunBasicEncoder(
   jlm::aa::PointsToGraph & pointsToGraph,
   jlm::RvsdgModule & module)
@@ -35,7 +64,9 @@ RunBasicEncoder(
   using namespace jlm;
 
   StatisticsDescriptor sd;
-  aa::BasicEncoder::Encode(pointsToGraph, module, sd);
+  UnlinkUnknownMemoryNode(pointsToGraph);
+  aa::BasicMemoryNodeProvider basicMemoryNodeProvider(pointsToGraph);
+  aa::BasicEncoder::Encode(module, basicMemoryNodeProvider, sd);
 }
 
 template <class OP> static bool

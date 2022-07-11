@@ -4,6 +4,7 @@
  */
 
 #include <jlm/opt/alias-analyses/BasicEncoder.hpp>
+#include <jlm/opt/alias-analyses/BasicMemoryNodeProvider.hpp>
 #include <jlm/opt/alias-analyses/Optimization.hpp>
 #include <jlm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/opt/alias-analyses/Steensgaard.hpp>
@@ -49,7 +50,9 @@ SteensgaardBasic::run(
   auto pointsToGraph = steensgaard.Analyze(rvsdgModule, statisticsDescriptor);
   UnlinkUnknownMemoryNode(*pointsToGraph);
 
-  BasicEncoder encoder(*pointsToGraph);
+  BasicMemoryNodeProvider basicMemoryNodeProvider(*pointsToGraph);
+
+  BasicEncoder encoder(basicMemoryNodeProvider);
   encoder.Encode(rvsdgModule, statisticsDescriptor);
 }
 
