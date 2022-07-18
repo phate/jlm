@@ -105,7 +105,7 @@ namespace jlm {\n \
   static inline filepath llcpath(\"$(shell $(LLVMCONFIG) --bindir)/llc\");\n \
   static inline filepath firtoolpath(\"$(FIRTOOL)\");\n \
   static inline filepath verilatorpath(\"$(VERILATOR_BIN)\");\n \
-  static inline filepath verilatorrootpath(\"$(VERILATOR_ROOT)\");\n \
+  static inline filepath verilatorrootpath(\"$(VERILATOR_PATH)\");\n \
 \n \
 }\n \
 \n \
