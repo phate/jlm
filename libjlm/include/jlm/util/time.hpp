@@ -34,8 +34,8 @@ public:
 	}
 
 private:
-	std::chrono::time_point<std::chrono::system_clock> start_;
-	std::chrono::time_point<std::chrono::system_clock> end_;
+	std::chrono::time_point<std::chrono::high_resolution_clock> start_;
+	std::chrono::time_point<std::chrono::high_resolution_clock> end_;
 };
 
 }
