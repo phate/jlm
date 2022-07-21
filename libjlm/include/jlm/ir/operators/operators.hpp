@@ -637,49 +637,65 @@ public:
 
 class ConstantDataArray final : public jive::simple_op {
 public:
-	virtual
-	~ConstantDataArray();
+  virtual
+  ~ConstantDataArray();
 
-	ConstantDataArray(const jive::valuetype & type, size_t size)
-	: simple_op(std::vector<jive::port>(size, type), {jlm::arraytype(type, size)})
-	{
-		if (size == 0)
-			throw jlm::error("size equals zero.");
-	}
+  ConstantDataArray(const jive::valuetype & type, size_t size)
+    : simple_op(std::vector<jive::port>(size, type), {jlm::arraytype(type, size)})
+  {
+    if (size == 0)
+      throw jlm::error("size equals zero.");
+  }
 
-	virtual bool
-	operator==(const jive::operation & other) const noexcept override;
+  virtual bool
+  operator==(const jive::operation & other) const noexcept override;
 
-	virtual std::string
-	debug_string() const override;
+  virtual std::string
+  debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
-	copy() const override;
+  virtual std::unique_ptr<jive::operation>
+  copy() const override;
 
-	size_t
-	size() const noexcept
-	{
-		return static_cast<const arraytype*>(&result(0).type())->nelements();
-	}
+  size_t
+  size() const noexcept
+  {
+    return static_cast<const arraytype*>(&result(0).type())->nelements();
+  }
 
-	const jive::valuetype &
-	type() const noexcept
-	{
-		return static_cast<const arraytype*>(&result(0).type())->element_type();
-	}
+  const jive::valuetype &
+  type() const noexcept
+  {
+    return static_cast<const arraytype*>(&result(0).type())->element_type();
+  }
 
-	static std::unique_ptr<jlm::tac>
-	create(const std::vector<const variable*> & elements)
-	{
-		if (elements.size() == 0)
-			throw jlm::error("expected at least one element.");
+  static std::unique_ptr<jlm::tac>
+  create(const std::vector<const variable*> & elements)
+  {
+    if (elements.size() == 0)
+      throw jlm::error("expected at least one element.");
 
-		auto vt = dynamic_cast<const jive::valuetype*>(&elements[0]->type());
-		if (!vt) throw jlm::error("expected value type.");
+    auto vt = dynamic_cast<const jive::valuetype*>(&elements[0]->type());
+    if (!vt) throw jlm::error("expected value type.");
 
-		ConstantDataArray op(*vt, elements.size());
-		return tac::create(op, elements);
-	}
+    ConstantDataArray op(*vt, elements.size());
+    return tac::create(op, elements);
+  }
+
+  static jive::output *
+  Create(const std::vector<jive::output*> & elements)
+  {
+    if (elements.empty())
+      throw error("Expected at least one element.");
+
+    auto valueType = dynamic_cast<const jive::valuetype*>(&elements[0]->type());
+    if (!valueType)
+    {
+      throw error("Expected value type.");
+    }
+
+    ConstantDataArray operation(*valueType, elements.size());
+    return jive::simple_node::create_normalized(elements[0]->region(), operation, elements)[0];
+  }
 };
 
 /* pointer compare operator */
