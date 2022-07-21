@@ -1819,34 +1819,43 @@ public:
 
 class ConstantAggregateZero final : public jive::simple_op {
 public:
-	virtual
-	~ConstantAggregateZero();
+  virtual
+  ~ConstantAggregateZero();
 
-	ConstantAggregateZero(const jive::type & type)
-	: simple_op({}, {type})
-	{
-		auto st = dynamic_cast<const structtype*>(&type);
-		auto at = dynamic_cast<const arraytype*>(&type);
-		auto vt = dynamic_cast<const vectortype*>(&type);
-		if (!st && !at && !vt)
-			throw jlm::error("expected array, struct, or vector type.\n");
-	}
+  ConstantAggregateZero(const jive::type & type)
+    : simple_op({}, {type})
+  {
+    auto st = dynamic_cast<const structtype*>(&type);
+    auto at = dynamic_cast<const arraytype*>(&type);
+    auto vt = dynamic_cast<const vectortype*>(&type);
+    if (!st && !at && !vt)
+      throw jlm::error("expected array, struct, or vector type.\n");
+  }
 
-	virtual bool
-	operator==(const operation & other) const noexcept override;
+  virtual bool
+  operator==(const operation & other) const noexcept override;
 
-	virtual std::string
-	debug_string() const override;
+  virtual std::string
+  debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
-	copy() const override;
+  virtual std::unique_ptr<jive::operation>
+  copy() const override;
 
-	static std::unique_ptr<jlm::tac>
-	create(const jive::type & type)
-	{
-		ConstantAggregateZero op(type);
-		return tac::create(op, {});
-	}
+  static std::unique_ptr<jlm::tac>
+  create(const jive::type & type)
+  {
+    ConstantAggregateZero op(type);
+    return tac::create(op, {});
+  }
+
+  static jive::output *
+  Create(
+    jive::region & region,
+    const jive::type & type)
+  {
+    ConstantAggregateZero operation(type);
+    return jive::simple_node::create_normalized(&region, operation, {})[0];
+  }
 };
 
 /* extractelement operator */
