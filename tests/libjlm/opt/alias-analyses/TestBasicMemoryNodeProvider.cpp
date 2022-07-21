@@ -760,6 +760,67 @@ TestPhi()
   ValidateProvider(test, basicMemoryNodeProvider, *pointsToGraph);
 }
 
+static void
+TestMemcpy()
+{
+  /*
+   * Arrange
+   */
+  auto ValidateProvider = [](
+    const MemcpyTest & test,
+    const jlm::aa::BasicMemoryNodeProvider & basicMemoryNodeProvider,
+    const jlm::aa::PointsToGraph & pointsToGraph)
+  {
+    /*
+     * Validate function f
+     */
+    {
+      auto numLambdaEntryNodes = basicMemoryNodeProvider.GetLambdaEntryNodes(test.LambdaF()).size();
+      auto numLambdaExitNodes = basicMemoryNodeProvider.GetLambdaExitNodes(test.LambdaF()).size();
+
+      assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
+      assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
+    }
+
+    /*
+     * Validate function g
+     */
+    {
+      auto numLambdaEntryNodes = basicMemoryNodeProvider.GetLambdaEntryNodes(test.LambdaG()).size();
+      auto numLambdaExitNodes = basicMemoryNodeProvider.GetLambdaExitNodes(test.LambdaG()).size();
+      auto numCallFEntryNodes = basicMemoryNodeProvider.GetCallEntryNodes(test.CallF()).size();
+      auto numCallFExitNodes = basicMemoryNodeProvider.GetCallExitNodes(test.CallF()).size();
+
+      auto numMemcpyDestNodes = basicMemoryNodeProvider.GetOutputNodes(*test.Memcpy().input(0)->origin()).size();
+      auto numMemcpySrcNodes = basicMemoryNodeProvider.GetOutputNodes(*test.Memcpy().input(1)->origin()).size();
+
+      assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
+      assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
+      assert(numCallFEntryNodes == pointsToGraph.NumMemoryNodes());
+      assert(numCallFExitNodes == pointsToGraph.NumMemoryNodes());
+      assert(numMemcpyDestNodes == 1);
+      assert(numMemcpySrcNodes == 1);
+    }
+  };
+
+  MemcpyTest test;
+//	jive::view(test.graph().root(), stdout);
+
+  auto pointsToGraph = RunSteensgaard(test.module());
+  // std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
+
+  /*
+   * Act
+   */
+  jlm::aa::BasicMemoryNodeProvider basicMemoryNodeProvider(*pointsToGraph);
+
+  /*
+   * Assert
+   */
+  ValidateProvider(test, basicMemoryNodeProvider, *pointsToGraph);
+}
+
+
 static int
 test()
 {
@@ -783,6 +844,8 @@ test()
   TestImports();
 
   TestPhi();
+
+  TestMemcpy();
 
   return 0;
 }
