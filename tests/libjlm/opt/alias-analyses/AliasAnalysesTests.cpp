@@ -1910,3 +1910,172 @@ EscapedMemoryTest3::SetupRvsdg()
 
   return rvsdgModule;
 }
+
+std::unique_ptr<jlm::RvsdgModule>
+MemcpyTest::SetupRvsdg()
+{
+  using namespace jlm;
+
+  auto rvsdgModule = RvsdgModule::Create(filepath(""), "", "");
+  auto rvsdg = &rvsdgModule->Rvsdg();
+
+  auto nf = rvsdg->node_normal_form(typeid(jive::operation));
+  nf->set_mutable(false);
+
+  auto SetupLocalArray = [&]()
+  {
+    arraytype arrayType(jive::bit32, 5);
+
+    auto delta = delta::node::Create(
+      rvsdg->root(),
+      PointerType(arrayType),
+      "localArray",
+      linkage::external_linkage,
+      "",
+      false);
+
+    auto zero = jive::create_bitconstant(delta->subregion(), 32, 0);
+    auto one = jive::create_bitconstant(delta->subregion(), 32, 1);
+    auto two = jive::create_bitconstant(delta->subregion(), 32, 2);
+    auto three = jive::create_bitconstant(delta->subregion(), 32, 3);
+    auto four = jive::create_bitconstant(delta->subregion(), 32, 4);
+
+    auto constantDataArray = ConstantDataArray::Create({zero, one, two, three, four});
+
+    auto deltaOutput = delta->finalize(constantDataArray);
+
+    rvsdg->add_export(deltaOutput, {PointerType(arrayType), "localArray"});
+
+    return deltaOutput;
+  };
+
+  auto SetupGlobalArray = [&]()
+  {
+    arraytype arrayType(jive::bit32, 5);
+
+    auto delta = delta::node::Create(
+      rvsdg->root(),
+      PointerType(arrayType),
+      "globalArray",
+      linkage::external_linkage,
+      "",
+      false);
+
+      auto constantAggregateZero = ConstantAggregateZero::Create(*delta->subregion(), arrayType);
+
+      auto deltaOutput = delta->finalize(constantAggregateZero);
+
+      rvsdg->add_export(deltaOutput, {PointerType(arrayType), "globalArray"});
+
+      return deltaOutput;
+  };
+
+  auto SetupFunctionF = [&](delta::output & globalArray)
+  {
+    iostatetype iOStateType;
+    MemoryStateType memoryStateType;
+    loopstatetype loopStateType;
+    FunctionType functionType(
+      {&iOStateType, &memoryStateType, &loopStateType},
+      {&jive::bit32, &iOStateType, &memoryStateType, &loopStateType});
+
+    auto lambda = lambda::node::create(
+      rvsdg->root(),
+      functionType,
+      "f",
+      linkage::external_linkage);
+    auto iOStateArgument = lambda->fctargument(0);
+    auto memoryStateArgument = lambda->fctargument(1);
+    auto loopStateArgument = lambda->fctargument(2);
+
+    auto globalArrayArgument = lambda->add_ctxvar(&globalArray);
+
+    auto zero = jive::create_bitconstant(lambda->subregion(), 32, 0);
+    auto two = jive::create_bitconstant(lambda->subregion(), 32, 2);
+    auto six = jive::create_bitconstant(lambda->subregion(), 32, 6);
+
+    auto gep = getelementptr_op::create(
+      globalArrayArgument,
+      {zero, two},
+      PointerType(jive::bit32));
+
+    auto storeResults = StoreNode::Create(gep, six, {memoryStateArgument}, 8);
+
+    auto loadResults = LoadNode::Create(gep, {storeResults[0]}, 8);
+
+    auto lambdaOutput = lambda->finalize({loadResults[0], iOStateArgument, loadResults[1], loopStateArgument});
+
+    rvsdg->add_export(lambdaOutput, {PointerType(functionType), "f"});
+
+    return lambdaOutput;
+  };
+
+  auto SetupFunctionG = [&](
+    delta::output & localArray,
+    delta::output & globalArray,
+    lambda::output & lambdaF)
+  {
+    iostatetype iOStateType;
+    MemoryStateType memoryStateType;
+    loopstatetype loopStateType;
+    FunctionType functionType(
+      {&iOStateType, &memoryStateType, &loopStateType},
+      {&jive::bit32, &iOStateType, &memoryStateType, &loopStateType});
+
+    auto lambda = lambda::node::create(
+      rvsdg->root(),
+      functionType,
+      "g",
+      linkage::external_linkage);
+    auto iOStateArgument = lambda->fctargument(0);
+    auto memoryStateArgument = lambda->fctargument(1);
+    auto loopStateArgument = lambda->fctargument(2);
+
+    auto localArrayArgument = lambda->add_ctxvar(&localArray);
+    auto globalArrayArgument = lambda->add_ctxvar(&globalArray);
+    auto functionFArgument = lambda->add_ctxvar(&lambdaF);
+
+    auto bcLocalArray = bitcast_op::create(localArrayArgument, PointerType(jive::bit8));
+    auto bcGlobalArray = bitcast_op::create(globalArrayArgument, PointerType(jive::bit8));
+
+    auto zero = jive::create_bitconstant(lambda->subregion(), 1, 0);
+    auto twenty = jive::create_bitconstant(lambda->subregion(), 32, 20);
+
+    auto memcpyResults = Memcpy::create(
+      bcGlobalArray,
+      bcLocalArray,
+      twenty,
+      zero,
+      {memoryStateArgument});
+
+    auto callResults = CallNode::Create(
+      functionFArgument,
+      {iOStateArgument, memcpyResults[0], loopStateArgument});
+
+    auto lambdaOutput = lambda->finalize(callResults);
+
+    rvsdg->add_export(lambdaOutput, {PointerType(functionType), "g"});
+
+    return std::make_tuple(
+      lambdaOutput,
+      AssertedCast<CallNode>(jive::node_output::node(callResults[0])),
+      jive::node_output::node(memcpyResults[0]));
+  };
+
+  auto localArray = SetupLocalArray();
+  auto globalArray = SetupGlobalArray();
+  auto lambdaF = SetupFunctionF(*globalArray);
+  auto [lambdaG, callF, memcpyNode] = SetupFunctionG(*localArray, *globalArray, *lambdaF);
+
+  /*
+   * Assign nodes
+   */
+  this->LambdaF_ = lambdaF->node();
+  this->LambdaG_ = lambdaG->node();
+  this->LocalArray_ = localArray->node();
+  this->GlobalArray_ = globalArray->node();
+  this->CallF_ = callF;
+  this->Memcpy_ = memcpyNode;
+
+  return rvsdgModule;
+}

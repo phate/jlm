@@ -952,3 +952,84 @@ public:
 
   jlm::LoadNode * LoadNode;
 };
+
+/** \brief MemcpyTest class
+ *
+ * This class sets up an RVSDG representing the following code snippet:
+ *
+ * \code{.c}
+ *  #include <string.h>
+ *
+ *  int globalArray[5];
+ *
+ *  int
+ *  f()
+ *  {
+ *    globalArray[2] = 6;
+ *    return globalArray[2];
+ *  }
+ *
+ *  int
+ *  g()
+ *  {
+ *    int array[5] = {0, 1, 2, 3 , 4};
+ *    memcpy(globalArray, array, sizeof(int)*5);
+ *    return f();
+ *  }
+ * \endcode
+ *
+ * It uses a single memory state to sequentialize the respective memory operations.
+ */
+class MemcpyTest final : public AliasAnalysisTest
+{
+public:
+  [[nodiscard]] const jlm::lambda::node &
+  LambdaF() const noexcept
+  {
+    return *LambdaF_;
+  }
+
+  [[nodiscard]] const jlm::lambda::node &
+  LambdaG() const noexcept
+  {
+    return *LambdaG_;
+  }
+
+  [[nodiscard]] const jlm::delta::node &
+  LocalArray() const noexcept
+  {
+    return *LocalArray_;
+  }
+
+  [[nodiscard]] const jlm::delta::node &
+  GlobalArray() const noexcept
+  {
+    return *GlobalArray_;
+  }
+
+  [[nodiscard]] const jlm::CallNode &
+  CallF() const noexcept
+  {
+    return *CallF_;
+  }
+
+  [[nodiscard]] const jive::node &
+  Memcpy() const noexcept
+  {
+    return *Memcpy_;
+  }
+
+private:
+  std::unique_ptr<jlm::RvsdgModule>
+  SetupRvsdg() override;
+
+  jlm::lambda::node * LambdaF_;
+  jlm::lambda::node * LambdaG_;
+
+  jlm::delta::node * LocalArray_;
+  jlm::delta::node * GlobalArray_;
+
+  jlm::CallNode * CallF_;
+
+  jive::node * Memcpy_;
+};
