@@ -78,11 +78,51 @@ Test2()
   assert(command->InputFiles()[0] == "foo.o" && command->OutputFile() == "foobar");
 }
 
+static void
+TestJlmOptOptimizations()
+{
+  using namespace jlm;
+
+  /*
+   * Arrange
+   */
+  jlm::JlcCommandLineOptions commandLineOptions;
+  commandLineOptions.Compilations_.push_back({
+                                               {"foo.o"},
+                                               {""},
+                                               {"foo.o"},
+                                               "foo.o",
+                                               true,
+                                               true,
+                                               true,
+                                               true});
+  commandLineOptions.OutputFile_ = {"foobar"};
+  commandLineOptions.JlmOptOptimizations_.push_back("cne");
+  commandLineOptions.JlmOptOptimizations_.push_back("dne");
+
+  /*
+   * Act
+   */
+  auto commandGraph = JlcCommandGraphGenerator::Generate(commandLineOptions);
+
+  /*
+   * Assert
+   */
+  auto & clangCommandNode = (*commandGraph->GetEntryNode().OutgoingEdges().begin()).GetSink();
+  auto & jlmOptCommandNode = (clangCommandNode.OutgoingEdges().begin())->GetSink();
+  auto command = dynamic_cast<const jlm::JlmOptCommand*>(&jlmOptCommandNode.GetCommand());
+  auto optimizations = command->Optimizations();
+  assert(optimizations.size() == 2);
+  assert(optimizations[0] == jlm::JlmOptCommand::Optimization::CommonNodeElimination && \
+         optimizations[1] == jlm::JlmOptCommand::Optimization::DeadNodeElimination);
+}
+
 static int
 Test()
 {
   Test1();
   Test2();
+  TestJlmOptOptimizations();
 
   return 0;
 }
