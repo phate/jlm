@@ -378,6 +378,8 @@ public:
     return CommandGraph::Node::Create(commandGraph, std::move(command));
   }
 
+  const std::vector<Optimization> &Optimizations() const noexcept { return Optimizations_; }
+
 private:
   static std::string
   ToString(const Optimization & optimization);

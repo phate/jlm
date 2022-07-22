@@ -122,6 +122,26 @@ Test4()
   assert(compilation.OutputFile() == "foobar.o");
 }
 
+static void
+TestJlmOptOptimizations()
+{
+  /*
+   * Arrange
+   */
+  std::vector<std::string> commandLineArguments({"jlc", "foobar.c", "-Jcne", "-Jdne"});
+
+  /*
+   * Act
+   */
+  auto & commandLineOptions = ParseCommandLineArguments(commandLineArguments);
+
+  /*
+   * Assert
+   */
+  assert(commandLineOptions.JlmOptOptimizations_[0].compare("cne") == 0 && \
+         commandLineOptions.JlmOptOptimizations_[1].compare("dne") == 0);
+}
+
 static int
 Test()
 {
@@ -129,6 +149,7 @@ Test()
   Test2();
   Test3();
   Test4();
+  TestJlmOptOptimizations();
 
   return 0;
 }
