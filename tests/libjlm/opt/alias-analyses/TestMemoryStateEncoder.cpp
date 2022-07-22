@@ -715,6 +715,82 @@ TestPhi()
 	ValidateRvsdg(test);
 }
 
+static void
+TestMemcpy()
+{
+  /*
+   * Arrange
+   */
+  auto ValidateRvsdg = [](const MemcpyTest & test)
+  {
+    using namespace jlm;
+
+    /*
+     * Validate function f
+     */
+    {
+      auto lambdaExitMerge = jive::node_output::node(test.LambdaF().fctresult(2)->origin());
+      assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 5, 1));
+
+      auto load = jive::node_output::node(test.LambdaF().fctresult(0)->origin());
+      assert(is<LoadOperation>(*load, 2, 2));
+
+      auto store = jive::node_output::node(load->input(1)->origin());
+      assert(is<StoreOperation>(*store, 3, 1));
+
+      auto lambdaEntrySplit = jive::node_output::node(store->input(2)->origin());
+      assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 5));
+    }
+
+    /*
+     * Validate function g
+     */
+    {
+      auto lambdaExitMerge = jive::node_output::node(test.LambdaG().fctresult(2)->origin());
+      assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 5, 1));
+
+      auto callExitSplit = jive::node_output::node(lambdaExitMerge->input(0)->origin());
+      assert(is<aa::CallExitMemStateOperator>(*callExitSplit, 1, 5));
+
+      auto call = jive::node_output::node(callExitSplit->input(0)->origin());
+      assert(is<CallOperation>(*call, 4, 4));
+
+      auto callEntryMerge = jive::node_output::node(call->input(2)->origin());
+      assert(is<aa::CallEntryMemStateOperator>(*callEntryMerge, 5, 1));
+
+      jive::node * memcpy = nullptr;
+      for (size_t n = 0; n < callEntryMerge->ninputs(); n++)
+      {
+        auto node = jive::node_output::node(callEntryMerge->input(n)->origin());
+        if (is<Memcpy>(node))
+          memcpy = node;
+      }
+      assert(memcpy != nullptr);
+      assert(is<Memcpy>(*memcpy, 6, 2));
+
+      auto lambdaEntrySplit = jive::node_output::node(memcpy->input(5)->origin());
+      assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 5));
+    }
+  };
+
+  MemcpyTest test;
+//	jive::view(test.graph().root(), stdout);
+
+  auto pointsToGraph = run_steensgaard(test.module());
+  // std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
+
+  /*
+   * Act
+   */
+  RunBasicEncoder(*pointsToGraph, test.module());
+  jive::view(test.graph().root(), stdout);
+
+  /*
+   * Assert
+   */
+  ValidateRvsdg(test);
+}
+
 static int
 test()
 {
@@ -738,6 +814,8 @@ test()
 	TestImports();
 
 	TestPhi();
+
+  TestMemcpy();
 
 	return 0;
 }

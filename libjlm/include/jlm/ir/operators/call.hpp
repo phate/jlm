@@ -279,7 +279,7 @@ public:
   static std::vector<jive::output*>
   Create(
     jive::output * function,
-    std::vector<jive::output*> arguments)
+    const std::vector<jive::output*> & arguments)
   {
     auto functionType = ExtractFunctionType(function);
     CheckFunctionType(functionType);

@@ -847,6 +847,45 @@ TestEscapedMemory3()
   ValidatePointsToGraph(*pointsToGraph, test);
 }
 
+static void
+TestMemcpy()
+{
+  /*
+   * Arrange
+   */
+  auto ValidatePointsToGraph = [](
+    const jlm::aa::PointsToGraph & pointsToGraph,
+    const MemcpyTest & test)
+  {
+    assert(pointsToGraph.NumDeltaNodes() == 2);
+    assert(pointsToGraph.NumLambdaNodes() == 2);
+    assert(pointsToGraph.NumRegisterNodes() == 11);
+
+    auto localArray = &pointsToGraph.GetDeltaNode(test.LocalArray());
+    auto globalArray = &pointsToGraph.GetDeltaNode(test.GlobalArray());
+
+    auto & memCpyDest = pointsToGraph.GetRegisterNode(*test.Memcpy().input(0)->origin());
+    auto & memCpySrc = pointsToGraph.GetRegisterNode(*test.Memcpy().input(1)->origin());
+
+    assertTargets(memCpyDest, {globalArray});
+    assertTargets(memCpySrc, {localArray});
+  };
+
+  MemcpyTest test;
+  // jive::view(test.graph().root(), stdout);
+
+  /*
+   * Act
+   */
+  auto pointsToGraph = RunSteensgaard(test.module());
+  // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
+
+  /*
+   * Assert
+   */
+  ValidatePointsToGraph(*pointsToGraph, test);
+}
+
 static int
 test()
 {
@@ -884,6 +923,8 @@ test()
   TestEscapedMemory1();
   TestEscapedMemory2();
   TestEscapedMemory3();
+
+  TestMemcpy();
 
   return 0;
 }
