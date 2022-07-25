@@ -1675,8 +1675,11 @@ Steensgaard::ConstructPointsToGraph(const LocationSet & locationSets)
   /*
    * Create points-to graph nodes
    */
-  for (auto & locationSet : locationSets) {
-    for (auto & location : locationSet) {
+  for (auto & locationSet : locationSets)
+  {
+    memoryNodeMap[&locationSet] = {};
+    for (auto & location : locationSet)
+    {
       /*
        * We can ignore dummy nodes. They only exist for structural purposes and have no equivalent in the RVSDG.
        */
