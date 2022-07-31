@@ -1,4 +1,4 @@
 TESTS += \
 	libjlm/util/test-disjointset \
 	libjlm/util/test-file \
-	libjlm/util/TestStdUnorderedSetHashSet \
+	libjlm/util/TestHashSet \

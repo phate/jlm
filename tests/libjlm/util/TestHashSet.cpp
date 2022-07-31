@@ -13,7 +13,7 @@
 static void
 TestInt()
 {
-  jlm::StdUnorderedSetHashSet<int> hashSet({0, 1, 2, 3, 4, 5, 6, 7});
+  jlm::HashSet<int> hashSet({0, 1, 2, 3, 4, 5, 6, 7});
 
   assert(hashSet.Size());
   assert(hashSet.Contains(3));
@@ -27,6 +27,18 @@ TestInt()
   assert(!hashSet.Contains(1));
   assert(!hashSet.Remove(1));
 
+  int sum = 0;
+  for (auto & item : hashSet.Items())
+    sum += item;
+  assert(sum == (0+2+3+4+5+6+7+8));
+
+  jlm::HashSet<int> hashSet2({8, 9});
+  hashSet.UnionWith(hashSet2);
+  assert(hashSet.Size() == 9);
+
+  auto numRemoved = hashSet.RemoveWhere([](int n) -> bool { return n % 2 != 0; });
+  assert(numRemoved == 4);
+
   hashSet.Clear();
   assert(hashSet.Size() == 0);
 }
@@ -34,7 +46,7 @@ TestInt()
 static void
 TestUniquePointer()
 {
-  jlm::StdUnorderedSetHashSet<std::unique_ptr<int>> hashSet;
+  jlm::HashSet<std::unique_ptr<int>> hashSet;
 
   hashSet.Insert(std::make_unique<int>(0));
   assert(hashSet.Size() == 1);
@@ -47,7 +59,7 @@ TestUniquePointer()
 }
 
 static int
-TestStdUnorderedSetHashSet()
+TestHashSet()
 {
   TestInt();
   TestUniquePointer();
@@ -55,4 +67,4 @@ TestStdUnorderedSetHashSet()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/util/TestStdUnorderedSetHashSet", TestStdUnorderedSetHashSet)
+JLM_UNIT_TEST_REGISTER("libjlm/util/TestHashSet", TestHashSet)
