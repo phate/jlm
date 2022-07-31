@@ -609,13 +609,13 @@ public:
   : jive::statetype()
   {}
 
-  std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   bool
   operator==(const jive::type & other) const noexcept override;
 
-  std::unique_ptr<jive::type>
+  [[nodiscard]] std::unique_ptr<jive::type>
   copy() const override;
 
   static std::unique_ptr<MemoryStateType>
