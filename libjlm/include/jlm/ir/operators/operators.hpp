@@ -2430,7 +2430,8 @@ private:
 
 class MemStateOperator : public jive::simple_op {
 public:
-	MemStateOperator(size_t noperands, size_t nresults)
+	MemStateOperator(
+    size_t noperands, size_t nresults)
 	: simple_op(create_portvector(noperands), create_portvector(nresults))
 	{}
 
@@ -2438,7 +2439,7 @@ private:
 	static std::vector<jive::port>
 	create_portvector(size_t size)
 	{
-		return {size, jive::port(MemoryStateType::Create())};
+		return {size, jive::port(MemoryStateType::CreateEntireMemoryStateType())};
 	}
 };
 
@@ -2521,7 +2522,7 @@ public:
 	~malloc_op();
 
 	malloc_op(const jive::bittype & btype)
-	: simple_op({btype}, {PointerType(jive::bittype(8)), {MemoryStateType::Create()}})
+	: simple_op({btype}, {PointerType(jive::bittype(8)), {MemoryStateType::CreateEntireMemoryStateType()}})
 	{}
 
 	virtual bool
@@ -2634,7 +2635,7 @@ private:
 	static std::vector<jive::port>
 	create_operand_portvector(size_t nmemstates)
 	{
-		std::vector<jive::port> memstates(nmemstates, {MemoryStateType::Create()});
+		std::vector<jive::port> memstates(nmemstates, {MemoryStateType::CreateEntireMemoryStateType()});
 
 		std::vector<jive::port> ports;
 		ports.push_back(PointerType(jive::bittype(8)));
@@ -2647,7 +2648,7 @@ private:
 	static std::vector<jive::port>
 	create_result_portvector(size_t nmemstates)
 	{
-		std::vector<jive::port> ports(nmemstates, {MemoryStateType::Create()});
+		std::vector<jive::port> ports(nmemstates, {MemoryStateType::CreateEntireMemoryStateType()});
 		ports.push_back(iostatetype::instance());
 
 		return ports;
@@ -2728,7 +2729,7 @@ private:
 		PointerType pt(jive::bit8);
 
 		std::vector<jive::port> ports = {pt, pt, length, jive::bit1};
-		ports.insert(ports.end(), nMemoryStates, {MemoryStateType::Create()});
+		ports.insert(ports.end(), nMemoryStates, {MemoryStateType::CreateEntireMemoryStateType()});
 
 		return ports;
 	}
@@ -2736,7 +2737,7 @@ private:
 	static std::vector<jive::port>
 	CreateResultPorts(size_t nMemoryStates)
 	{
-		return std::vector<jive::port>(nMemoryStates, {MemoryStateType::Create()});
+		return std::vector<jive::port>(nMemoryStates, {MemoryStateType::CreateEntireMemoryStateType()});
 	}
 };
 

@@ -368,13 +368,15 @@ MemoryStateType::~MemoryStateType() noexcept
 std::string
 MemoryStateType::debug_string() const
 {
-  return "mem";
+  return strfmt("mem[", Identifier_.DebugString(), "]");
 }
 
 bool
 MemoryStateType::operator==(const jive::type &other) const noexcept
 {
-  return jive::is<MemoryStateType>(other);
+  auto type = dynamic_cast<const MemoryStateType*>(&other);
+  return type
+         && Identifier_ == type->Identifier_;
 }
 
 std::unique_ptr<jive::type>

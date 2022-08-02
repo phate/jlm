@@ -11,6 +11,7 @@
 
 #include <jlm/common.hpp>
 #include <jlm/util/iterator_range.hpp>
+#include <jlm/util/strfmt.hpp>
 
 #include <vector>
 
@@ -602,12 +603,79 @@ public:
  */
 class MemoryStateType final : public jive::statetype {
 public:
-  ~MemoryStateType() noexcept override;
+  class Identifier
+  {
+  public:
+    Identifier()
+    = delete;
 
-  constexpr
-  MemoryStateType() noexcept
-  : jive::statetype()
-  {}
+    Identifier(const Identifier& other)
+    = default;
+
+    Identifier(Identifier && other) noexcept
+    = default;
+
+    Identifier&
+    operator=(const Identifier& other)
+    = default;
+
+    Identifier&
+    operator=(Identifier && other) noexcept
+    = default;
+
+    bool
+    operator==(const Identifier & other) const noexcept
+    {
+      return Identifier_ == other.Identifier_;
+    }
+
+    bool
+    operator!=(const Identifier & other) const noexcept
+    {
+      return !operator==(other);
+    }
+
+    [[nodiscard]] std::string
+    DebugString() const noexcept
+    {
+      return strfmt(Identifier_);
+    }
+
+    static Identifier
+    Create() noexcept
+    {
+      return Identifier(CreateNewId());
+    }
+
+    static Identifier
+    GetEntireMemoryIdentifier()
+    {
+      return Identifier(GetEntireMemoryId());
+    };
+
+  private:
+    static uint64_t
+    CreateNewId() noexcept
+    {
+      static uint64_t identifier = 1;
+      return identifier++;
+    }
+
+    static uint64_t
+    GetEntireMemoryId()
+    {
+      return 0;
+    }
+
+    constexpr explicit
+    Identifier(uint64_t identifier) noexcept
+      : Identifier_(identifier)
+    {}
+
+    uint64_t Identifier_;
+  };
+
+  ~MemoryStateType() noexcept override;
 
   [[nodiscard]] std::string
   debug_string() const override;
@@ -618,11 +686,33 @@ public:
   [[nodiscard]] std::unique_ptr<jive::type>
   copy() const override;
 
-  static std::unique_ptr<MemoryStateType>
-  Create()
+  [[nodiscard]] const Identifier&
+  GetIdentifier() const noexcept
   {
-    return std::make_unique<MemoryStateType>();
+    return Identifier_;
   }
+
+  static std::unique_ptr<MemoryStateType>
+  Create(const MemoryStateType::Identifier & identifier)
+  {
+    return std::unique_ptr<MemoryStateType>(new MemoryStateType(identifier));
+  }
+
+  static std::unique_ptr<MemoryStateType>
+  CreateEntireMemoryStateType()
+  {
+    auto identifier = Identifier::GetEntireMemoryIdentifier();
+    return std::unique_ptr<MemoryStateType>(new MemoryStateType(identifier));
+  }
+
+private:
+  constexpr explicit
+  MemoryStateType(const Identifier & identifier) noexcept
+    : jive::statetype()
+    , Identifier_(identifier)
+  {}
+
+  Identifier Identifier_;
 };
 
 template <class ELEMENTYPE> static inline bool

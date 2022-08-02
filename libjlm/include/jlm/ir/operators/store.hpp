@@ -93,7 +93,7 @@ public:
     size_t alignment)
     : simple_op(
     CreateArgumentPorts(pointerType, numStates),
-    std::vector<jive::port>(numStates, {MemoryStateType::Create()}))
+    std::vector<jive::port>(numStates, {MemoryStateType::CreateEntireMemoryStateType()}))
     , Alignment_(alignment)
   {}
 
@@ -157,9 +157,9 @@ private:
     const PointerType & pointerType,
     size_t numStates)
   {
-    MemoryStateType memoryStateType;
+    auto memoryStateType = MemoryStateType::CreateEntireMemoryStateType();
     std::vector<jive::port> ports({pointerType, pointerType.GetElementType()});
-    std::vector<jive::port> states(numStates, {memoryStateType});
+    std::vector<jive::port> states(numStates, {*memoryStateType});
     ports.insert(ports.end(), states.begin(), states.end());
     return ports;
   }
