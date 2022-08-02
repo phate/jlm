@@ -224,9 +224,11 @@ node::copy(jive::region * region, jive::substitution_map & smap) const
 		subregionmap.insert(cv.argument(), newcv);
 	}
 
-	/* collect function arguments */
-	for (size_t n = 0; n < nfctarguments(); n++)
-		subregionmap.insert(fctargument(n), lambda->fctargument(n));
+    /* collect function arguments */
+    for (size_t n = 0; n < nfctarguments(); n++){
+        lambda->fctargument(n)->set_attributes(fctargument(n)->attributes());
+        subregionmap.insert(fctargument(n), lambda->fctargument(n));
+    }
 
 	/* copy subregion */
 	subregion()->copy(lambda->subregion(), subregionmap, false, false);
