@@ -168,8 +168,72 @@ private:
 
 /** \brief Hash map for mapping points-to graph memory nodes to RVSDG memory states.
 */
-class StateMap final {
+class StateMap final
+{
 public:
+  /**
+   * Represents the pairing of a points-to graph's memory node and a memory state.
+   */
+  class MemoryNodeStatePair final
+  {
+    friend StateMap;
+
+    MemoryNodeStatePair(
+      const PointsToGraph::MemoryNode & memoryNode,
+      jive::output & state)
+      : MemoryNode_(&memoryNode)
+      , State_(&state)
+    {
+      JLM_ASSERT(is<MemoryStateType>(state.type()));
+    }
+
+  public:
+    [[nodiscard]] const PointsToGraph::MemoryNode &
+    MemoryNode() const noexcept
+    {
+      return *MemoryNode_;
+    }
+
+    [[nodiscard]] jive::output &
+    State() const noexcept
+    {
+      return *State_;
+    }
+
+    void
+    ReplaceState(jive::output & state) noexcept
+    {
+      JLM_ASSERT(State_->region() == state.region());
+      JLM_ASSERT(is<MemoryStateType>(state.type()));
+
+      State_ = &state;
+    }
+
+    static void
+    ReplaceStates(
+      const std::vector<MemoryNodeStatePair*> & memoryNodeStatePairs,
+      const std::vector<jive::output*> & states)
+    {
+      JLM_ASSERT(memoryNodeStatePairs.size() == states.size());
+      for (size_t n = 0; n < memoryNodeStatePairs.size(); n++)
+        memoryNodeStatePairs[n]->ReplaceState(*states[n]);
+    }
+
+    static std::vector<jive::output*>
+    States(const std::vector<MemoryNodeStatePair*> & memoryNodeStatePairs)
+    {
+      std::vector<jive::output*> states;
+      for (auto & memoryNodeStatePair : memoryNodeStatePairs)
+        states.push_back(memoryNodeStatePair->State_);
+
+      return states;
+    }
+
+  private:
+    const PointsToGraph::MemoryNode * MemoryNode_;
+    jive::output * State_;
+  };
+
   StateMap() = default;
 
   StateMap(const StateMap&) = delete;
@@ -188,22 +252,22 @@ public:
     return states_.find(&memoryNode) != states_.end();
   }
 
-  jive::output *
-  GetState(const PointsToGraph::MemoryNode & memoryNode) const noexcept
+  MemoryNodeStatePair*
+  GetState(const PointsToGraph::MemoryNode & memoryNode) noexcept
   {
     JLM_ASSERT(Contains(memoryNode));
-    return states_.at(&memoryNode);
+    return &states_.at(&memoryNode);
   }
 
-  std::vector<jive::output*>
-  GetStates(const std::vector<const PointsToGraph::MemoryNode*> & memoryNodes) const
+  std::vector<MemoryNodeStatePair*>
+  GetStates(const std::vector<const PointsToGraph::MemoryNode*> & memoryNodes)
   {
-    std::vector<jive::output*> states;
-    states.reserve(memoryNodes.size());
+    std::vector<MemoryNodeStatePair*> memoryNodeStatePairs;
+    memoryNodeStatePairs.reserve(memoryNodes.size());
     for (auto & memoryNode : memoryNodes)
-      states.push_back(GetState(*memoryNode));
+      memoryNodeStatePairs.push_back(GetState(*memoryNode));
 
-    return states;
+    return memoryNodeStatePairs;
   }
 
   void
@@ -212,41 +276,9 @@ public:
     jive::output & state)
   {
     JLM_ASSERT(!Contains(memoryNode));
-    JLM_ASSERT(is<MemoryStateType>(state.type()));
 
-    states_[&memoryNode] = &state;
-  }
-
-  void
-  InsertStates(
-    const std::vector<const PointsToGraph::MemoryNode*> & memoryNodes,
-    const std::vector<jive::output*> & states)
-  {
-    JLM_ASSERT(memoryNodes.size() == states.size());
-
-    for (size_t n = 0; n < memoryNodes.size(); n++)
-      InsertState(*memoryNodes[n], *states[n]);
-  }
-
-  void
-  ReplaceState(
-    const PointsToGraph::MemoryNode & memoryNode,
-    jive::output & state)
-  {
-    JLM_ASSERT(Contains(memoryNode));
-    JLM_ASSERT(is<MemoryStateType>(state.type()));
-
-    states_[&memoryNode] = &state;
-  }
-
-  void
-  ReplaceStates(
-    const std::vector<const PointsToGraph::MemoryNode*> & memoryNodes,
-    const std::vector<jive::output*> & states)
-  {
-    JLM_ASSERT(memoryNodes.size() == states.size());
-    for (size_t n = 0; n < memoryNodes.size(); n++)
-      ReplaceState(*memoryNodes[n], *states[n]);
+    auto pair = std::make_pair<const PointsToGraph::MemoryNode*, MemoryNodeStatePair>(&memoryNode, {memoryNode, state});
+    states_.insert(pair);
   }
 
   static std::unique_ptr<StateMap>
@@ -256,7 +288,7 @@ public:
   }
 
 private:
-  std::unordered_map<const PointsToGraph::MemoryNode*, jive::output*> states_;
+  std::unordered_map<const PointsToGraph::MemoryNode*, MemoryNodeStatePair> states_;
 };
 
 /** \brief Hash map for mapping Rvsdg regions to StateMap class instances.
@@ -287,31 +319,12 @@ public:
   RegionalizedStateMap &
   operator=(RegionalizedStateMap&&) = delete;
 
-  bool
-  Contains(
-    const jive::region & region,
-    const PointsToGraph::MemoryNode & memoryNode)
-  {
-    return GetStateMap(region).Contains(memoryNode);
-  }
-
   void
   InsertState(
     const PointsToGraph::MemoryNode & memoryNode,
     jive::output & state)
   {
     GetStateMap(*state.region()).InsertState(memoryNode, state);
-  }
-
-  void
-  InsertStates(
-    const std::vector<const PointsToGraph::MemoryNode*> & memoryNodes,
-    const std::vector<jive::output*> & states)
-  {
-    JLM_ASSERT(memoryNodes.size() == states.size());
-    JLM_ASSERT(!memoryNodes.empty());
-
-    GetStateMap(*states[0]->region()).InsertStates(memoryNodes, states);
   }
 
   void
@@ -322,44 +335,16 @@ public:
     GetMemoryNodeCache(*oldAddress.region()).ReplaceAddress(oldAddress, newAddress);
   }
 
-  void
-  ReplaceStates(
-    const jive::output & output,
-    const std::vector<jive::output*> & states)
-  {
-    auto memoryNodes = GetMemoryNodes(output);
-    GetStateMap(*output.region()).ReplaceStates(memoryNodes, states);
-  }
-
-  void
-  ReplaceState(
-    const PointsToGraph::MemoryNode & memoryNode,
-    jive::output & state)
-  {
-    GetStateMap(*state.region()).ReplaceState(memoryNode, state);
-  }
-
-  void
-  ReplaceStates(
-    const std::vector<const PointsToGraph::MemoryNode*> & memoryNodes,
-    const std::vector<jive::output*> & states)
-  {
-    JLM_ASSERT(memoryNodes.size() == states.size());
-    JLM_ASSERT(!memoryNodes.empty());
-
-    GetStateMap(*states[0]->region()).ReplaceStates(memoryNodes, states);
-  }
-
-  std::vector<jive::output*>
+  std::vector<StateMap::MemoryNodeStatePair*>
   GetStates(const jive::output & output) noexcept
   {
     auto memoryNodes = GetMemoryNodes(output);
     return memoryNodes.empty()
-           ? std::vector<jive::output*>()
+           ? std::vector<StateMap::MemoryNodeStatePair*>()
            : GetStates(*output.region(), memoryNodes);
   }
 
-  std::vector<jive::output*>
+  std::vector<StateMap::MemoryNodeStatePair*>
   GetStates(
     const jive::region & region,
     const std::vector<const PointsToGraph::MemoryNode*> & memoryNodes)
@@ -367,12 +352,12 @@ public:
     return GetStateMap(region).GetStates(memoryNodes);
   }
 
-  jive::output *
+  StateMap::MemoryNodeStatePair*
   GetState(
     const jive::region & region,
     const PointsToGraph::MemoryNode & memoryNode)
   {
-    return GetStates(region, {&memoryNode})[0];
+    return GetStateMap(region).GetState(memoryNode);
   }
 
   std::vector<const PointsToGraph::MemoryNode*>
@@ -582,7 +567,8 @@ MemoryStateEncoder::EncodeAlloca(const jive::simple_node & allocaNode)
   auto & stateMap = Context_->GetRegionalizedStateMap();
 
   auto & allocaMemoryNode = Context_->GetMemoryNodeProvider().GetPointsToGraph().GetAllocaNode(allocaNode);
-  stateMap.ReplaceState(allocaMemoryNode, *allocaNode.output(1));
+  auto memoryNodeStatePair = stateMap.GetState(*allocaNode.region(), allocaMemoryNode);
+  memoryNodeStatePair->ReplaceState(*allocaNode.output(1));
 }
 
 void
@@ -599,11 +585,10 @@ MemoryStateEncoder::EncodeMalloc(const jive::simple_node & mallocNode)
    * merge the previous and the current state to ensure that the previous state
    * is not just simply replaced and therefore "lost".
    */
-  auto routedState = stateMap.GetState(*mallocNode.region(), mallocMemoryNode);
+  auto memoryNodeStatePair = stateMap.GetState(*mallocNode.region(), mallocMemoryNode);
   auto mallocState = mallocNode.output(1);
-  auto mergedState = MemStateMergeOperator::Create({mallocState, routedState});
-
-  stateMap.ReplaceState(mallocMemoryNode, *mergedState);
+  auto mergedState = MemStateMergeOperator::Create({mallocState, &memoryNodeStatePair->State()});
+  memoryNodeStatePair->ReplaceState(*mergedState);
 }
 
 void
@@ -613,13 +598,16 @@ MemoryStateEncoder::EncodeLoad(const LoadNode & loadNode)
   auto & stateMap = Context_->GetRegionalizedStateMap();
 
   auto address = loadNode.GetAddressInput()->origin();
-  auto instates = stateMap.GetStates(*address);
+  auto memoryNodeStatePairs = stateMap.GetStates(*address);
   auto oldResult = loadNode.GetValueOutput();
+  auto inStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
 
-  auto outputs = LoadNode::Create(address, instates, loadOperation.GetAlignment());
+  auto outputs = LoadNode::Create(address, inStates, loadOperation.GetAlignment());
   oldResult->divert_users(outputs[0]);
 
-  stateMap.ReplaceStates(*address, {std::next(outputs.begin()), outputs.end()});
+  StateMap::MemoryNodeStatePair::ReplaceStates(
+    memoryNodeStatePairs,
+    {std::next(outputs.begin()), outputs.end()});
 
   if (is<PointerType>(oldResult->type()))
     stateMap.ReplaceAddress(*oldResult, *outputs[0]);
@@ -633,7 +621,8 @@ MemoryStateEncoder::EncodeStore(const StoreNode & storeNode)
 
   auto address = storeNode.GetAddressInput()->origin();
   auto value = storeNode.GetValueInput()->origin();
-  auto inStates = stateMap.GetStates(*address);
+  auto memoryNodeStatePairs = stateMap.GetStates(*address);
+  auto inStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
 
   auto outStates = StoreNode::Create(
     address,
@@ -641,7 +630,7 @@ MemoryStateEncoder::EncodeStore(const StoreNode & storeNode)
     inStates,
     storeOperation.GetAlignment());
 
-  stateMap.ReplaceStates(*address, outStates);
+  StateMap::MemoryNodeStatePair::ReplaceStates(memoryNodeStatePairs, outStates);
 }
 
 void
@@ -652,12 +641,15 @@ MemoryStateEncoder::EncodeFree(const jive::simple_node & freeNode)
 
   auto address = freeNode.input(0)->origin();
   auto iostate = freeNode.input(freeNode.ninputs() - 1)->origin();
-  auto instates = stateMap.GetStates(*address);
+  auto memoryNodeStatePairs = stateMap.GetStates(*address);
+  auto inStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
 
-  auto outputs = free_op::create(address, instates, iostate);
+  auto outputs = free_op::create(address, inStates, iostate);
   freeNode.output(freeNode.noutputs() - 1)->divert_users(outputs.back());
 
-  stateMap.ReplaceStates(*address, {outputs.begin(), std::prev(outputs.end())});
+  StateMap::MemoryNodeStatePair::ReplaceStates(
+    memoryNodeStatePairs,
+    {outputs.begin(), std::prev(outputs.end())});
 }
 
 void
@@ -668,17 +660,20 @@ MemoryStateEncoder::EncodeCall(const CallNode & callNode)
     auto region = callNode.region();
     auto & memoryNodes = Context_->GetMemoryNodeProvider().GetCallEntryNodes(callNode);
 
-    auto states = Context_->GetRegionalizedStateMap().GetStates(*region, memoryNodes);
+    auto memoryNodeStatePairs = Context_->GetRegionalizedStateMap().GetStates(*region, memoryNodes);
+    auto states = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
     auto state = CallEntryMemStateOperator::Create(region, states);
     callNode.GetMemoryStateInput()->divert_to(state);
   };
 
   auto EncodeExit = [this](const CallNode & callNode)
   {
+    auto & stateMap = Context_->GetRegionalizedStateMap();
     auto & memoryNodes = Context_->GetMemoryNodeProvider().GetCallExitNodes(callNode);
 
     auto states = CallExitMemStateOperator::Create(callNode.GetMemoryStateOutput(), memoryNodes.size());
-    Context_->GetRegionalizedStateMap().ReplaceStates(memoryNodes, states);
+    auto memoryNodeStatePairs = stateMap.GetStates(*callNode.region(), memoryNodes);
+    StateMap::MemoryNodeStatePair::ReplaceStates(memoryNodeStatePairs, states);
   };
 
   EncodeEntry(callNode);
@@ -696,20 +691,23 @@ MemoryStateEncoder::EncodeMemcpy(const jive::simple_node & memcpyNode)
   auto length = memcpyNode.input(2)->origin();
   auto isVolatile = memcpyNode.input(3)->origin();
 
-  auto destinationStates = stateMap.GetStates(*destination);
-  auto sourceStates = stateMap.GetStates(*source);
+  auto destMemoryNodeStatePairs = stateMap.GetStates(*destination);
+  auto srcMemoryNodeStatePairs = stateMap.GetStates(*source);
 
-  auto inStates = destinationStates;
-  inStates.insert(inStates.end(), sourceStates.begin(), sourceStates.end());
+  auto inStates = StateMap::MemoryNodeStatePair::States(destMemoryNodeStatePairs);
+  auto srcStates = StateMap::MemoryNodeStatePair::States(srcMemoryNodeStatePairs);
+  inStates.insert(inStates.end(), srcStates.begin(), srcStates.end());
 
   auto outStates = Memcpy::create(destination, source, length, isVolatile, inStates);
 
-  auto begin = outStates.begin();
-  auto end = std::next(outStates.begin(), (ssize_t)destinationStates.size());
-  stateMap.ReplaceStates(*destination, {begin, end});
+  auto end = std::next(outStates.begin(), (ssize_t)destMemoryNodeStatePairs.size());
+  StateMap::MemoryNodeStatePair::ReplaceStates(
+    destMemoryNodeStatePairs,
+    {outStates.begin(), std::next(outStates.begin(), (ssize_t)destMemoryNodeStatePairs.size())});
 
-  JLM_ASSERT((size_t)std::distance(end, outStates.end()) == sourceStates.size());
-  stateMap.ReplaceStates(*source, {end, outStates.end()});
+  JLM_ASSERT((size_t)std::distance(end, outStates.end()) == srcMemoryNodeStatePairs.size());
+  StateMap::MemoryNodeStatePair::ReplaceStates(
+    srcMemoryNodeStatePairs, {end, outStates.end()});
 }
 
 void
@@ -724,7 +722,9 @@ MemoryStateEncoder::EncodeLambda(const lambda::node & lambda)
     stateMap.PushRegion(*lambda.subregion());
 
     auto states = LambdaEntryMemStateOperator::Create(memoryStateArgument, memoryNodes.size());
-    stateMap.InsertStates(memoryNodes, states);
+
+    for (size_t n = 0; n < memoryNodes.size(); n++)
+      stateMap.InsertState(*memoryNodes[n], *states[n]);
   };
 
   auto EncodeExit = [this](const lambda::node & lambda)
@@ -734,7 +734,8 @@ MemoryStateEncoder::EncodeLambda(const lambda::node & lambda)
     auto & stateMap = Context_->GetRegionalizedStateMap();
     auto memoryStateResult = GetMemoryStateResult(lambda);
 
-    auto states = stateMap.GetStates(*subregion, memoryNodes);
+    auto memoryNodeStatePairs = stateMap.GetStates(*subregion, memoryNodes);
+    auto states = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
     auto mergedState = LambdaExitMemStateOperator::Create(subregion, states);
     memoryStateResult->divert_to(mergedState);
 
@@ -767,14 +768,11 @@ MemoryStateEncoder::EncodeGamma(jive::gamma_node & gamma)
     auto & stateMap = Context_->GetRegionalizedStateMap();
     auto memoryNodes = Context_->GetMemoryNodeProvider().GetGammaEntryNodes(gamma);
 
-    auto states = stateMap.GetStates(*region, memoryNodes);
-    for (size_t n = 0; n < states.size(); n++) {
-      auto state = states[n];
-      auto memoryNode = memoryNodes[n];
-
-      auto gammaInput = gamma.add_entryvar(state);
+    auto memoryNodeStatePairs = stateMap.GetStates(*region, memoryNodes);
+    for (auto & memoryNodeStatePair : memoryNodeStatePairs) {
+      auto gammaInput = gamma.add_entryvar(&memoryNodeStatePair->State());
       for (auto & argument : *gammaInput)
-        stateMap.InsertState(*memoryNode, argument);
+        stateMap.InsertState(memoryNodeStatePair->MemoryNode(), argument);
     }
   };
 
@@ -782,18 +780,20 @@ MemoryStateEncoder::EncodeGamma(jive::gamma_node & gamma)
   {
     auto & stateMap = Context_->GetRegionalizedStateMap();
     auto memoryNodes = Context_->GetMemoryNodeProvider().GetGammaExitNodes(gamma);
+    auto memoryNodeStatePairs = stateMap.GetStates(*gamma.region(), memoryNodes);
 
-    for (auto & memoryNode : memoryNodes) {
+    for (auto & memoryNodeStatePair : memoryNodeStatePairs)
+    {
       std::vector<jive::output*> states;
       for (size_t n = 0; n < gamma.nsubregions(); n++) {
         auto subregion = gamma.subregion(n);
 
-        auto state = stateMap.GetState(*subregion, *memoryNode);
-        states.push_back(state);
+        auto & state = stateMap.GetState(*subregion, memoryNodeStatePair->MemoryNode())->State();
+        states.push_back(&state);
       }
 
       auto state = gamma.add_exitvar(states);
-      stateMap.ReplaceState(*memoryNode, *state);
+      memoryNodeStatePair->ReplaceState(*state);
     }
   };
 
@@ -821,13 +821,11 @@ MemoryStateEncoder::EncodeTheta(jive::theta_node & theta)
     auto & memoryNodes = Context_->GetMemoryNodeProvider().GetThetaEntryExitNodes(theta);
 
     std::vector<jive::theta_output*> thetaStateOutputs;
-    auto states = stateMap.GetStates(*region, memoryNodes);
-    for (size_t n = 0; n < states.size(); n++) {
-      auto state = states[n];
-      auto memoryNode = memoryNodes[n];
-
-      auto thetaStateOutput = theta.add_loopvar(state);
-      stateMap.InsertState(*memoryNode, *thetaStateOutput->argument());
+    auto memoryNodeStatePairs = stateMap.GetStates(*region, memoryNodes);
+    for (auto & memoryNodeStatePair : memoryNodeStatePairs)
+    {
+      auto thetaStateOutput = theta.add_loopvar(&memoryNodeStatePair->State());
+      stateMap.InsertState(memoryNodeStatePair->MemoryNode(), *thetaStateOutput->argument());
       thetaStateOutputs.push_back(thetaStateOutput);
     }
 
@@ -841,15 +839,19 @@ MemoryStateEncoder::EncodeTheta(jive::theta_node & theta)
     auto subregion = theta.subregion();
     auto & stateMap = Context_->GetRegionalizedStateMap();
     auto & memoryNodes = Context_->GetMemoryNodeProvider().GetThetaEntryExitNodes(theta);
+    auto memoryNodeStatePairs = stateMap.GetStates(*theta.region(), memoryNodes);
 
-    JLM_ASSERT(memoryNodes.size() == thetaStateOutputs.size());
-    for (size_t n = 0; n < thetaStateOutputs.size(); n++) {
-      auto thetaOutput = thetaStateOutputs[n];
-      auto memoryNode = memoryNodes[n];
+    JLM_ASSERT(memoryNodeStatePairs.size() == thetaStateOutputs.size());
+    for (size_t n = 0; n < thetaStateOutputs.size(); n++)
+    {
+      auto thetaStateOutput = thetaStateOutputs[n];
+      auto & memoryNodeStatePair = memoryNodeStatePairs[n];
+      auto & memoryNode = memoryNodeStatePair->MemoryNode();
+      JLM_ASSERT(thetaStateOutput->input()->origin() == &memoryNodeStatePair->State());
 
-      auto state = stateMap.GetState(*subregion, *memoryNode);
-      thetaOutput->result()->divert_to(state);
-      stateMap.ReplaceState(*memoryNode, *thetaOutput);
+      auto & subregionState = stateMap.GetState(*subregion, memoryNode)->State();
+      thetaStateOutput->result()->divert_to(&subregionState);
+      memoryNodeStatePair->ReplaceState(*thetaStateOutput);
     }
   };
 
