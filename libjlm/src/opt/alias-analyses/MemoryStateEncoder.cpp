@@ -123,7 +123,7 @@ public:
     return MemoryNodeMap_.find(&output) != MemoryNodeMap_.end();
   }
 
-  std::vector<const PointsToGraph::MemoryNode*>
+  HashSet<const PointsToGraph::MemoryNode*>
   GetMemoryNodes(const jive::output & output)
   {
     JLM_ASSERT(is<PointerType>(output.type()));
@@ -163,7 +163,7 @@ public:
 
 private:
   const MemoryNodeProvider & MemoryNodeProvider_;
-  std::unordered_map<const jive::output*, std::vector<const PointsToGraph::MemoryNode*>> MemoryNodeMap_;
+  std::unordered_map<const jive::output*, HashSet<const PointsToGraph::MemoryNode*>> MemoryNodeMap_;
 };
 
 /** \brief Hash map for mapping points-to graph memory nodes to RVSDG memory states.
@@ -260,11 +260,10 @@ public:
   }
 
   std::vector<MemoryNodeStatePair*>
-  GetStates(const std::vector<const PointsToGraph::MemoryNode*> & memoryNodes)
+  GetStates(const HashSet<const PointsToGraph::MemoryNode*> & memoryNodes)
   {
     std::vector<MemoryNodeStatePair*> memoryNodeStatePairs;
-    memoryNodeStatePairs.reserve(memoryNodes.size());
-    for (auto & memoryNode : memoryNodes)
+    for (auto & memoryNode : memoryNodes.Items())
       memoryNodeStatePairs.push_back(GetState(*memoryNode));
 
     return memoryNodeStatePairs;
@@ -339,7 +338,7 @@ public:
   GetStates(const jive::output & output) noexcept
   {
     auto memoryNodes = GetMemoryNodes(output);
-    return memoryNodes.empty()
+    return memoryNodes.Size() == 0
            ? std::vector<StateMap::MemoryNodeStatePair*>()
            : GetStates(*output.region(), memoryNodes);
   }
@@ -347,7 +346,7 @@ public:
   std::vector<StateMap::MemoryNodeStatePair*>
   GetStates(
     const jive::region & region,
-    const std::vector<const PointsToGraph::MemoryNode*> & memoryNodes)
+    const HashSet<const PointsToGraph::MemoryNode*> & memoryNodes)
   {
     return GetStateMap(region).GetStates(memoryNodes);
   }
@@ -360,7 +359,7 @@ public:
     return GetStateMap(region).GetState(memoryNode);
   }
 
-  std::vector<const PointsToGraph::MemoryNode*>
+  HashSet<const PointsToGraph::MemoryNode*>
   GetMemoryNodes(const jive::output & output)
   {
     auto & memoryNodeCache = GetMemoryNodeCache(*output.region());
@@ -671,7 +670,7 @@ MemoryStateEncoder::EncodeCall(const CallNode & callNode)
     auto & stateMap = Context_->GetRegionalizedStateMap();
     auto & memoryNodes = Context_->GetMemoryNodeProvider().GetCallExitNodes(callNode);
 
-    auto states = CallExitMemStateOperator::Create(callNode.GetMemoryStateOutput(), memoryNodes.size());
+    auto states = CallExitMemStateOperator::Create(callNode.GetMemoryStateOutput(), memoryNodes.Size());
     auto memoryNodeStatePairs = stateMap.GetStates(*callNode.region(), memoryNodes);
     StateMap::MemoryNodeStatePair::ReplaceStates(memoryNodeStatePairs, states);
   };
@@ -721,10 +720,11 @@ MemoryStateEncoder::EncodeLambda(const lambda::node & lambda)
 
     stateMap.PushRegion(*lambda.subregion());
 
-    auto states = LambdaEntryMemStateOperator::Create(memoryStateArgument, memoryNodes.size());
+    auto states = LambdaEntryMemStateOperator::Create(memoryStateArgument, memoryNodes.Size());
 
-    for (size_t n = 0; n < memoryNodes.size(); n++)
-      stateMap.InsertState(*memoryNodes[n], *states[n]);
+    size_t n = 0;
+    for (auto & memoryNode : memoryNodes.Items())
+      stateMap.InsertState(*memoryNode, *states[n++]);
   };
 
   auto EncodeExit = [this](const lambda::node & lambda)

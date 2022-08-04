@@ -41,19 +41,19 @@ public:
   [[nodiscard]] const PointsToGraph &
   GetPointsToGraph() const noexcept override;
 
-  [[nodiscard]] const std::vector<const PointsToGraph::MemoryNode*> &
+  [[nodiscard]] const HashSet<const PointsToGraph::MemoryNode*> &
   GetRegionEntryNodes(const jive::region & region) const override;
 
-  [[nodiscard]] const std::vector<const PointsToGraph::MemoryNode*> &
+  [[nodiscard]] const HashSet<const PointsToGraph::MemoryNode*> &
   GetRegionExitNodes(const jive::region & region) const override;
 
-  [[nodiscard]] const std::vector<const PointsToGraph::MemoryNode*> &
+  [[nodiscard]] const HashSet<const PointsToGraph::MemoryNode*> &
   GetCallEntryNodes(const CallNode & callNode) const override;
 
-  [[nodiscard]] const std::vector<const PointsToGraph::MemoryNode*> &
+  [[nodiscard]] const HashSet<const PointsToGraph::MemoryNode*> &
   GetCallExitNodes(const CallNode & callNode) const override;
 
-  [[nodiscard]] std::vector<const PointsToGraph::MemoryNode*>
+  [[nodiscard]] HashSet<const PointsToGraph::MemoryNode*>
   GetOutputNodes(const jive::output & output) const override;
 
 private:
@@ -62,7 +62,7 @@ private:
 
   const PointsToGraph & PointsToGraph_;
 
-  std::vector<const PointsToGraph::MemoryNode*> MemoryNodes_;
+  HashSet<const PointsToGraph::MemoryNode*> MemoryNodes_;
 };
 
 }
