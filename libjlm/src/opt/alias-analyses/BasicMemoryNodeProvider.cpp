@@ -20,39 +20,39 @@ BasicMemoryNodeProvider::GetPointsToGraph() const noexcept
   return PointsToGraph_;
 }
 
-const std::vector<const PointsToGraph::MemoryNode*> &
+const HashSet<const PointsToGraph::MemoryNode*> &
 BasicMemoryNodeProvider::GetRegionEntryNodes(const jive::region&) const
 {
   return MemoryNodes_;
 }
 
-const std::vector<const PointsToGraph::MemoryNode*> &
+const HashSet<const PointsToGraph::MemoryNode*> &
 BasicMemoryNodeProvider::GetRegionExitNodes(const jive::region&) const
 {
   return MemoryNodes_;
 }
 
-const std::vector<const PointsToGraph::MemoryNode*> &
+const HashSet<const PointsToGraph::MemoryNode*> &
 BasicMemoryNodeProvider::GetCallEntryNodes(const CallNode&) const
 {
   return MemoryNodes_;
 }
 
-const std::vector<const PointsToGraph::MemoryNode*> &
+const HashSet<const PointsToGraph::MemoryNode*> &
 BasicMemoryNodeProvider::GetCallExitNodes(const CallNode&) const
 {
   return MemoryNodes_;
 }
 
-std::vector<const PointsToGraph::MemoryNode*>
+HashSet<const PointsToGraph::MemoryNode*>
 BasicMemoryNodeProvider::GetOutputNodes(const jive::output & output) const
 {
   JLM_ASSERT(is<PointerType>(output.type()));
   auto & registerNode = PointsToGraph_.GetRegisterNode(output);
 
-  std::vector<const PointsToGraph::MemoryNode*> memoryNodes;
+  HashSet<const PointsToGraph::MemoryNode*> memoryNodes;
   for (auto & memoryNode : registerNode.Targets())
-    memoryNodes.push_back(&memoryNode);
+    memoryNodes.Insert(&memoryNode);
 
   return memoryNodes;
 }
@@ -61,21 +61,21 @@ void
 BasicMemoryNodeProvider::CollectMemoryNodes(const PointsToGraph & pointsToGraph)
 {
   for (auto & allocaNode : pointsToGraph.AllocaNodes())
-    MemoryNodes_.push_back(&allocaNode);
+    MemoryNodes_.Insert(&allocaNode);
 
   for (auto & deltaNode : pointsToGraph.DeltaNodes())
-    MemoryNodes_.push_back(&deltaNode);
+    MemoryNodes_.Insert(&deltaNode);
 
   for (auto & lambdaNode : pointsToGraph.LambdaNodes())
-    MemoryNodes_.push_back(&lambdaNode);
+    MemoryNodes_.Insert(&lambdaNode);
 
   for (auto & mallocNode : pointsToGraph.MallocNodes())
-    MemoryNodes_.push_back(&mallocNode);
+    MemoryNodes_.Insert(&mallocNode);
 
   for (auto & importNode : pointsToGraph.ImportNodes())
-    MemoryNodes_.push_back(&importNode);
+    MemoryNodes_.Insert(&importNode);
 
-  MemoryNodes_.push_back(&pointsToGraph.GetExternalMemoryNode());
+  MemoryNodes_.Insert(&pointsToGraph.GetExternalMemoryNode());
 }
 
 }
