@@ -13,11 +13,26 @@ namespace jlm::aa {
 /** \brief Steensgaard alias analysis with basic memory state encoding
  *
  * @see Steensgaard
- * @see BasicEncoder
+ * @see BasicMemoryNodeProvider
  */
 class SteensgaardBasic final : public optimization {
 public:
   ~SteensgaardBasic() noexcept override;
+
+  void
+  run(
+    RvsdgModule & rvsdgModule,
+    const StatisticsDescriptor & statisticsDescriptor) override;
+};
+
+/** \brief Steensgaard alias analysis with region-aware memory state encoding
+ *
+ * @see Steensgaard
+ * @see RegionAwareMemoryNodeProvider
+ */
+class SteensgaardRegionAware final : public optimization {
+public:
+  ~SteensgaardRegionAware() noexcept override;
 
   void
   run(

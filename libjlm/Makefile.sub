@@ -67,6 +67,7 @@ LIBJLM_SRC = \
     libjlm/src/opt/alias-analyses/Operators.cpp \
     libjlm/src/opt/alias-analyses/Optimization.cpp \
     libjlm/src/opt/alias-analyses/PointsToGraph.cpp \
+    libjlm/src/opt/alias-analyses/RegionAwareMemoryNodeProvider.cpp \
     libjlm/src/opt/alias-analyses/Steensgaard.cpp \
     libjlm/src/opt/cne.cpp \
     libjlm/src/opt/DeadNodeElimination.cpp \
