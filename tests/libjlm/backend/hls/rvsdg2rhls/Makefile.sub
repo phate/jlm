@@ -1,0 +1,3 @@
+TESTS += \
+	libjlm/backend/hls/rvsdg2rhls/TestGamma \
+	libjlm/backend/hls/rvsdg2rhls/TestTheta \
