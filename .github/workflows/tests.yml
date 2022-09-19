@@ -95,7 +95,35 @@ jobs:
       run: sudo apt-get install llvm-14-dev clang-14
     - name: Install valgrind
       run: sudo apt-get install valgrind
-    - name: Valgrind Check 
+    - name: Valgrind Check
+      run: make -C ${{ github.workspace }} valgrind-check
+
+  valgrind-22-04:
+    runs-on: ubuntu-22.04
+    needs: build
+    steps:
+    - name: Cache
+      uses: actions/cache@v2.1.4
+      with:
+        path: ${{ github.workspace }}/*
+        key: ${{ runner.os }}-${{ github.sha }}-jlm
+    - name: Add jlc to PATH
+      run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
+    - name: Get key used for LLVM packages
+      run: wget https://apt.llvm.org/llvm-snapshot.gpg.key
+    - name: Add the key to apt
+      run: sudo apt-key add llvm-snapshot.gpg.key
+    - name: Add deb URL to sources.list
+      run: sudo sh -c 'echo "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-14 main" >> /etc/apt/sources.list'
+    - name: Add deb-src URL to sources.list
+      run: sudo sh -c 'echo "deb-src http://apt.llvm.org/focal/ llvm-toolchain-focal-14 main" >> /etc/apt/sources.list'
+    - name: Update the list of packages
+      run: sudo apt-get update
+    - name: Install dependencies (LLVM)
+      run: sudo apt-get install llvm-14-dev clang-14
+    - name: Install valgrind
+      run: sudo apt-get install valgrind
+    - name: Valgrind Check
       run: make -C ${{ github.workspace }} valgrind-check
 
   polybench:
