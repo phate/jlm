@@ -113,6 +113,32 @@ public:
     return CallType_;
   }
 
+  /** \brief Determines whether call is a direct call.
+   *
+   * @return True if call is a direct call, otherwise false.
+   */
+  [[nodiscard]] bool
+  IsDirectCall() const noexcept
+  {
+    return GetCallType() == CallType::DirectCall;
+  }
+
+  /** \brief Determines whether call is an external call.
+   *
+   * @return True if call is an external call, otherwise false.
+   */
+  [[nodiscard]] bool
+  IsExternalCall() const noexcept
+  {
+    return GetCallType() == CallType::ExternalCall;
+  }
+
+  [[nodiscard]] bool
+  IsIndirectCall() const noexcept
+  {
+    return GetCallType() == CallType::IndirectCall;
+  }
+
   /** \brief Returns the called function.
    *
    * GetLambdaOutput() only returns a valid result if the call node is a direct call.
