@@ -660,7 +660,7 @@ private:
 *   }
 * \endcode
 *
-* It uses a signle memory state to sequentialize the respective memory
+* It uses a single memory state to sequentialize the respective memory
 * operations.
 */
 class DeltaTest2 final : public AliasAnalysisTest {
@@ -736,7 +736,7 @@ private:
 *	This function sets up an RVSDG representing the following code snippet:
 *
 * \code{.c}
-*	  void
+*	  static void
 *	  fib(uint64_t n, uint64_t result[])
 *	  {
 *	    if (n < 2) {
@@ -972,8 +972,8 @@ public:
  *  int
  *  g()
  *  {
- *    int array[5] = {0, 1, 2, 3 , 4};
- *    memcpy(globalArray, array, sizeof(int)*5);
+ *    int localArray[5] = {0, 1, 2, 3 , 4};
+ *    memcpy(globalArray, localArray, sizeof(int)*5);
  *    return f();
  *  }
  * \endcode
