@@ -9,6 +9,7 @@
 #include <jive/rvsdg/simple-node.hpp>
 
 #include <jlm/ir/operators/lambda.hpp>
+#include <jlm/ir/operators/Phi.hpp>
 #include <jlm/ir/tac.hpp>
 #include <jlm/ir/types.hpp>
 
@@ -83,17 +84,29 @@ private:
 
 /** \brief Call node classifier
  *
- * The CallTypeClassifier class provides information about the call type of a call node. It currently distinguishes
- * between three different call types:
- * 1. Direct call - A call to a statically visible function within the module.
- * 2. External call - A call to an imported function, i.e., a function from outside of the module.
- * 3. Indirect call - A call to a statically not visible function.
+ * The CallTypeClassifier class provides information about the call type of a call node.
  */
 class CallTypeClassifier final {
 public:
   enum class CallType {
-    DirectCall,
+    /**
+     * A call to a statically visible function within the module that is not part of a mutual recursive call chain.
+     */
+    NonRecursiveDirectCall,
+
+    /**
+     * A call to a statically visible function within the module that is part of a mutual recursive call chain.
+     */
+    RecursiveDirectCall,
+
+    /**
+     * A call to an imported function, i.e., a function from outside of the module.
+     */
     ExternalCall,
+
+    /**
+     * A call to a statically not visible function.
+     */
     IndirectCall
   };
 
@@ -113,14 +126,24 @@ public:
     return CallType_;
   }
 
-  /** \brief Determines whether call is a direct call.
+  /** \brief Determines whether call is a non-recursive direct call.
    *
-   * @return True if call is a direct call, otherwise false.
+   * @return True if call is a non-recursive direct call, otherwise false.
    */
   [[nodiscard]] bool
-  IsDirectCall() const noexcept
+  IsNonRecursiveDirectCall() const noexcept
   {
-    return GetCallType() == CallType::DirectCall;
+    return GetCallType() == CallType::NonRecursiveDirectCall;
+  }
+
+  /** \brief Determines whether call is a recursive direct call.
+   *
+   * @return True if call is a recursive direct call, otherwise false.
+   */
+  [[nodiscard]] bool
+  IsRecursiveDirectCall() const noexcept
+  {
+    return GetCallType() == CallType::RecursiveDirectCall;
   }
 
   /** \brief Determines whether call is an external call.
@@ -133,6 +156,10 @@ public:
     return GetCallType() == CallType::ExternalCall;
   }
 
+  /** \brief Determines whether call is an indirect call.
+   *
+   * @return True if call is an indirect call, otherwise false.
+   */
   [[nodiscard]] bool
   IsIndirectCall() const noexcept
   {
@@ -141,15 +168,26 @@ public:
 
   /** \brief Returns the called function.
    *
-   * GetLambdaOutput() only returns a valid result if the call node is a direct call.
+   * GetLambdaOutput() only returns a valid result if the call node is a (non-)recursive direct call.
    *
    * @return The called function.
    */
   [[nodiscard]] lambda::output &
   GetLambdaOutput() const noexcept
   {
-    JLM_ASSERT(GetCallType() == CallType::DirectCall);
-    return *AssertedCast<lambda::output>(Output_);
+    if (GetCallType() == CallType::NonRecursiveDirectCall)
+    {
+      return *AssertedCast<lambda::output>(Output_);
+    }
+
+    JLM_ASSERT(GetCallType() == CallType::RecursiveDirectCall);
+    auto argument = AssertedCast<jive::argument>(Output_);
+    /*
+     * FIXME: This assumes that all recursion variables where added before the dependencies. It
+     * would be better if we did not use the index for retrieving the result, but instead
+     * explicitly encoded it in an phi_argument.
+     */
+    return *AssertedCast<lambda::output>(argument->region()->result(argument->index())->origin());
   }
 
   /** \brief Returns the imported function.
@@ -180,15 +218,23 @@ public:
   }
 
   static std::unique_ptr<CallTypeClassifier>
-  CreateDirectCallClassifier(jive::output & output)
+  CreateNonRecursiveDirectCallClassifier(lambda::output & output)
   {
-    return std::make_unique<CallTypeClassifier>(CallType::DirectCall, output);
+    return std::make_unique<CallTypeClassifier>(CallType::NonRecursiveDirectCall, output);
   }
 
   static std::unique_ptr<CallTypeClassifier>
-  CreateExternalCallClassifier(jive::output & output)
+  CreateRecursiveDirectCallClassifier(jive::argument & output)
   {
-    return std::make_unique<CallTypeClassifier>(CallType::ExternalCall, output);
+    JLM_ASSERT(is_phi_recvar_argument(&output));
+    return std::make_unique<CallTypeClassifier>(CallType::RecursiveDirectCall, output);
+  }
+
+  static std::unique_ptr<CallTypeClassifier>
+  CreateExternalCallClassifier(jive::argument & argument)
+  {
+    JLM_ASSERT(argument.region() == argument.region()->graph()->root());
+    return std::make_unique<CallTypeClassifier>(CallType::ExternalCall, argument);
   }
 
   static std::unique_ptr<CallTypeClassifier>

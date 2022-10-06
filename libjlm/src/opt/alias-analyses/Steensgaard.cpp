@@ -1062,7 +1062,8 @@ Steensgaard::AnalyzeCall(const CallNode & callNode)
   auto callTypeClassifier = CallNode::ClassifyCall(callNode);
   switch (callTypeClassifier->GetCallType())
   {
-    case CallTypeClassifier::CallType::DirectCall:
+    case CallTypeClassifier::CallType::NonRecursiveDirectCall:
+    case CallTypeClassifier::CallType::RecursiveDirectCall:
       AnalyzeDirectCall(callNode, *callTypeClassifier->GetLambdaOutput().node());
       break;
     case CallTypeClassifier::CallType::ExternalCall:
