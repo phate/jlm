@@ -176,8 +176,13 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
     if (is<jive::simple_op>(jive::node_output::node(origin)))
       return origin;
 
+    if (is_phi_recvar_argument(origin))
+    {
+      return origin;
+    }
+
     if (is<lambda::cvargument>(origin)) {
-      auto argument = static_cast<const jive::argument*>(origin);
+      auto argument = AssertedCast<const jive::argument>(origin);
       origin = argument->input()->origin();
       continue;
     }
@@ -215,19 +220,8 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
     }
 
     if (is_phi_cv(origin)) {
-      auto argument = static_cast<const jive::argument*>(origin);
+      auto argument = AssertedCast<const jive::argument>(origin);
       origin = argument->input()->origin();
-      continue;
-    }
-
-    if (is_phi_recvar_argument(origin)) {
-      auto argument = static_cast<const jive::argument*>(origin);
-      /*
-        FIXME: This assumes that all recursion variables where added before the dependencies. It
-        would be better if we did not use the index for retrieving the result, but instead
-        explicitly encoded it in an phi_argument.
-      */
-      origin = argument->region()->result(argument->index())->origin();
       continue;
     }
 
@@ -244,14 +238,24 @@ std::unique_ptr<CallTypeClassifier>
 CallNode::ClassifyCall(const CallNode &callNode)
 {
   auto output = CallNode::TraceFunctionInput(callNode);
-  auto region = output->region();
 
-  if (dynamic_cast<const lambda::output*>(output))
-    return CallTypeClassifier::CreateDirectCallClassifier(*output);
+  if (auto lambdaOutput = dynamic_cast<lambda::output*>(output))
+  {
+    return CallTypeClassifier::CreateNonRecursiveDirectCallClassifier(*lambdaOutput);
+  }
 
-  if (dynamic_cast<const jive::argument*>(output)
-  && region == region->graph()->root())
-    return CallTypeClassifier::CreateExternalCallClassifier(*output);
+  if (auto argument = dynamic_cast<jive::argument*>(output))
+  {
+    if (is_phi_recvar_argument(argument))
+    {
+      return CallTypeClassifier::CreateRecursiveDirectCallClassifier(*argument);
+    }
+
+    if (argument->region() == argument->region()->graph()->root())
+    {
+      return CallTypeClassifier::CreateExternalCallClassifier(*argument);
+    }
+  }
 
   return CallTypeClassifier::CreateIndirectCallClassifier(*output);
 }

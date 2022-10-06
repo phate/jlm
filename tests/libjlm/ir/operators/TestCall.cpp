@@ -10,11 +10,10 @@
 #include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/ir/operators.hpp>
 
-#include <jive/rvsdg/theta.hpp>
 #include <jive/view.hpp>
 
 static void
-TraceFunctionInputTest1()
+TestCallTypeClassifierIndirectCall()
 {
 	using namespace jlm;
 
@@ -72,16 +71,17 @@ TraceFunctionInputTest1()
   /*
    * Act
    */
-  auto tracedOutput = CallNode::TraceFunctionInput(*callNode);
+  auto callTypeClassifier = CallNode::ClassifyCall(*callNode);
 
   /*
    * Assert
    */
-	assert(loadOutput == tracedOutput);
+  assert(callTypeClassifier->IsIndirectCall());
+	assert(loadOutput == &callTypeClassifier->GetFunctionOrigin());
 }
 
 static void
-TraceFunctionInputTest2()
+TestCallTypeClassifierNonRecursiveDirectCall()
 {
   /*
    * Arrange
@@ -183,14 +183,15 @@ TraceFunctionInputTest2()
 //	jive::view(graph->root(), stdout);
 
 	// Act
-	auto tracedOutput = CallNode::TraceFunctionInput(*callNode);
+  auto callTypeClassifier = CallNode::ClassifyCall(*callNode);
 
 	// Assert
-	assert(tracedOutput == g);
+  assert(callTypeClassifier->IsNonRecursiveDirectCall());
+	assert(&callTypeClassifier->GetLambdaOutput() == g);
 }
 
 static void
-TraceFunctionInputTest3()
+TestCallTypeClassifierNonRecursiveDirectCallTheta()
 {
 	using namespace jlm;
 
@@ -323,21 +324,138 @@ TraceFunctionInputTest3()
 	/*
 	 * Act
 	 */
-	auto tracedOutput = CallNode::TraceFunctionInput(*callNode);
+  auto callTypeClassifier = CallNode::ClassifyCall(*callNode);
 
 	/*
 	 * Assert
 	 */
-	assert(tracedOutput == g);
+  assert(callTypeClassifier->IsNonRecursiveDirectCall());
+  assert(&callTypeClassifier->GetLambdaOutput() == g);
+}
 
+static void
+TestCallTypeClassifierRecursiveDirectCall()
+{
+  /*
+   * Arrange
+   */
+  using namespace jlm;
+
+  auto module = RvsdgModule::Create(filepath(""), "", "");
+  auto graph = &module->Rvsdg();
+
+  auto nf = graph->node_normal_form(typeid(jive::operation));
+  nf->set_mutable(false);
+
+  auto SetupFib = [&]()
+  {
+    PointerType pbit64(jive::bit64);
+    iostatetype iOStateType;
+    MemoryStateType memoryStateType;
+    loopstatetype loopStateType;
+    FunctionType functionType(
+      {&jive::bit64, &pbit64, &iOStateType, &memoryStateType, &loopStateType},
+      {&iOStateType, &memoryStateType, &loopStateType});
+    PointerType pt(functionType);
+
+    jlm::phi::builder pb;
+    pb.begin(graph->root());
+    auto fibrv = pb.add_recvar(pt);
+
+    auto lambda = lambda::node::create(
+      pb.subregion(),
+      functionType,
+      "fib",
+      linkage::external_linkage);
+    auto valueArgument = lambda->fctargument(0);
+    auto pointerArgument = lambda->fctargument(1);
+    auto iOStateArgument = lambda->fctargument(2);
+    auto memoryStateArgument = lambda->fctargument(3);
+    auto loopStateArgument = lambda->fctargument(4);
+    auto ctxVarFib = lambda->add_ctxvar(fibrv->argument());
+
+    auto two = jive::create_bitconstant(lambda->subregion(), 64, 2);
+    auto bitult = jive::bitult_op::create(64, valueArgument, two);
+    auto predicate = jive::match(1, {{0, 1}}, 0, 2, bitult);
+
+    auto gammaNode = jive::gamma_node::create(predicate, 2);
+    auto nev = gammaNode->add_entryvar(valueArgument);
+    auto resultev = gammaNode->add_entryvar(pointerArgument);
+    auto fibev = gammaNode->add_entryvar(ctxVarFib);
+    auto gIIoState = gammaNode->add_entryvar(iOStateArgument);
+    auto gIMemoryState = gammaNode->add_entryvar(memoryStateArgument);
+    auto gILoopState = gammaNode->add_entryvar(loopStateArgument);
+
+    /* gamma subregion 0 */
+    auto one = jive::create_bitconstant(gammaNode->subregion(0), 64, 1);
+    auto nm1 = jive::bitsub_op::create(64, nev->argument(0), one);
+    auto callfibm1Results = CallNode::Create(
+      fibev->argument(0),
+      {nm1, resultev->argument(0), gIIoState->argument(0), gIMemoryState->argument(0), gILoopState->argument(0)});
+
+    two = jive::create_bitconstant(gammaNode->subregion(0), 64, 2);
+    auto nm2 = jive::bitsub_op::create(64, nev->argument(0), two);
+    auto callfibm2Results = CallNode::Create(
+      fibev->argument(0),
+      {nm2, resultev->argument(0), callfibm1Results[0], callfibm1Results[1], callfibm1Results[2]});
+
+    auto gepnm1 = getelementptr_op::create(resultev->argument(0), {nm1}, pbit64);
+    auto ldnm1 = LoadNode::Create(gepnm1, {callfibm2Results[1]}, 8);
+
+    auto gepnm2 = getelementptr_op::create(resultev->argument(0), {nm2}, pbit64);
+    auto ldnm2 = LoadNode::Create(gepnm2, {ldnm1[1]}, 8);
+
+    auto sum = jive::bitadd_op::create(64, ldnm1[0], ldnm2[0]);
+
+    /* gamma subregion 1 */
+    /* Nothing needs to be done */
+
+    auto sumex = gammaNode->add_exitvar({sum, nev->argument(1)});
+    auto gOIoState = gammaNode->add_exitvar({callfibm2Results[0], gIIoState->argument(1)});
+    auto gOMemoryState = gammaNode->add_exitvar({ldnm2[1], gIMemoryState->argument(1)});
+    auto gOLoopState = gammaNode->add_exitvar({callfibm2Results[2], gILoopState->argument(1)});
+
+    auto gepn = getelementptr_op::create(pointerArgument, {valueArgument}, pbit64);
+    auto store = StoreNode::Create(gepn, sumex, {gOMemoryState}, 8);
+
+    auto lambdaOutput = lambda->finalize({gOIoState, store[0], gOLoopState});
+
+    fibrv->result()->divert_to(lambdaOutput);
+    pb.end();
+
+    graph->add_export(fibrv, {pt, "fib"});
+
+    return std::make_tuple(
+      lambdaOutput,
+      AssertedCast<CallNode>(jive::node_output::node(callfibm1Results[0])),
+      AssertedCast<CallNode>(jive::node_output::node(callfibm2Results[0])));
+  };
+
+  auto [fibfct, callFib1, callFib2] = SetupFib();
+
+  /*
+   * Act
+   */
+  auto callTypeClassifier1 = CallNode::ClassifyCall(*callFib1);
+  auto callTypeClassifier2 = CallNode::ClassifyCall(*callFib2);
+
+  /*
+   * Assert
+   */
+  assert(callTypeClassifier1->IsRecursiveDirectCall());
+  assert(&callTypeClassifier1->GetLambdaOutput() == fibfct);
+
+  assert(callTypeClassifier2->IsRecursiveDirectCall());
+  assert(&callTypeClassifier2->GetLambdaOutput() == fibfct);
 }
 
 static int
 Test()
 {
-  TraceFunctionInputTest1();
-  TraceFunctionInputTest2();
-  TraceFunctionInputTest3();
+  TestCallTypeClassifierIndirectCall();
+  TestCallTypeClassifierNonRecursiveDirectCall();
+  TestCallTypeClassifierNonRecursiveDirectCallTheta();
+  TestCallTypeClassifierRecursiveDirectCall();
 
 	return 0;
 }
