@@ -130,7 +130,7 @@ perform_control_constant_reduction(std::unordered_set<jive::structural_output*> 
 			continue;
 
 		size_t defalt = 0;
-		size_t nalternatives;
+		size_t nalternatives = 0;
 		std::unordered_map<uint64_t, uint64_t> new_mapping;
 		for (size_t n = 0; n < xv->nresults(); n++) {
 			auto origin = static_cast<node_output*>(xv->result(n)->origin());

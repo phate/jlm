@@ -550,9 +550,8 @@ public:
   Lookup(const aggnode & aggregationNode) const noexcept
   {
     JLM_ASSERT(Contains(aggregationNode));
-    auto & demandSet = *Map_.find(&aggregationNode)->second;
-    JLM_ASSERT(dynamic_cast<const T*>(&demandSet));
-    return *static_cast<T*>(&demandSet);
+    auto & demandSet = Map_.find(&aggregationNode)->second;
+    return *AssertedCast<T>(demandSet.get());
   }
 
   void

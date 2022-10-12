@@ -5,7 +5,7 @@ JLMPRINT_SRC = \
 	jlm-print/jlm-print.cpp \
  
 .PHONY: jlm-print-debug
-jlm-print-debug: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG -DJLM_ENABLE_ASSERTS
+jlm-print-debug: CXXFLAGS += $(CXXFLAGS_DEBUG)
 jlm-print-debug: $(JLM_BUILD)/libjive.a $(JLM_BUILD)/libjlm.a $(JLM_BIN)/jlm-print
 
 .PHONY: jlm-print-release
@@ -13,7 +13,6 @@ jlm-print-release: CXXFLAGS += -O3
 jlm-print-release: $(JLM_BUILD)/libjive.a $(JLM_BUILD)/libjlm.a $(JLM_BIN)/jlm-print
 
 $(JLM_BIN)/jlm-print: CPPFLAGS += -I$(JLM_ROOT)/libjlm/include -I$(JLM_ROOT)/libjive/include -I$(shell $(LLVMCONFIG) --includedir)
-$(JLM_BIN)/jlm-print: CXXFLAGS += --std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Wfatal-errors
 $(JLM_BIN)/jlm-print: LDFLAGS+=$(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -L$(JLM_BUILD)/ -ljlm -ljive
 $(JLM_BIN)/jlm-print: $(patsubst %.cpp, $(JLM_BUILD)/%.o, $(JLMPRINT_SRC)) $(JLM_BUILD)/libjive.a $(JLM_BUILD)/libjlm.a
 	@mkdir -p $(JLM_BIN)
