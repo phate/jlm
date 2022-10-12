@@ -117,7 +117,7 @@ $(COMMANDPATHSFILE):
 	@printf $(COMMANDPATHS) > $@
 
 .PHONY: libjlm-debug
-libjlm-debug: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG -DJLM_ENABLE_ASSERTS
+libjlm-debug: CXXFLAGS += $(CXXDEBUG)
 libjlm-debug: $(JLM_BUILD)/libjlm.a
 
 .PHONY: libjlm-release
@@ -125,7 +125,6 @@ libjlm-release: CXXFLAGS += -O3
 libjlm-release: $(JLM_BUILD)/libjlm.a
 
 $(JLM_BUILD)/libjlm.a: CPPFLAGS += -I$(JLM_ROOT)/libjive/include -I$(shell $(LLVMCONFIG) --includedir) -I$(JLM_ROOT)/libjlm/include
-$(JLM_BUILD)/libjlm.a: CXXFLAGS += --std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Wfatal-errors
 $(JLM_BUILD)/libjlm.a: $(COMMANDPATHSFILE) $(patsubst %.cpp, $(JLM_BUILD)/%.la, $(LIBJLM_SRC))
 
 .PHONY: libjlm-clean

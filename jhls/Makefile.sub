@@ -5,7 +5,7 @@ JHLS_SRC = \
 	jhls/jhls.cpp \
 
 .PHONY: jhls-debug
-jhls-debug: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG -DJLM_ENABLE_ASSERTS
+jhls-debug: CXXFLAGS += $(CXXDEBUG)
 jhls-debug: $(JLM_BUILD)/libjive.a $(JLM_BUILD)/libjlm.a $(JLM_BIN)/jhls
 
 .PHONY: jhls-release
@@ -13,7 +13,6 @@ jhls-release: CXXFLAGS += -O3
 jhls-release: $(JLM_BUILD)/libjive.a $(JLM_BUILD)/libjlm.a $(JLM_BIN)/jhls
 
 $(JLM_BIN)/jhls: CPPFLAGS += -I$(JLM_ROOT)/libjlm/include -I$(JLM_ROOT)/libjive/include -I$(shell $(LLVMCONFIG) --includedir)
-$(JLM_BIN)/jhls: CXXFLAGS += --std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Wfatal-errors
 $(JLM_BIN)/jhls: LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -L$(JLM_BUILD)/ -ljlm -ljive
 $(JLM_BIN)/jhls: $(patsubst %.cpp, $(JLM_BUILD)/%.o, $(JHLS_SRC)) $(JLM_BUILD)/libjive.a $(JLM_BUILD)/libjlm.a
 	@mkdir -p $(JLM_BIN)
