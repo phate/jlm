@@ -12,7 +12,7 @@ TEST_SOURCES = \
 	$(patsubst %, tests/%.cpp, $(TESTS))
 
 $(JLM_BUILD)/tests/test-runner: jive-debug libjlm-debug
-$(JLM_BUILD)/tests/test-runner: CXXFLAGS += -g -DJIVE_DEBUG -DJLM_DEBUG -DJLM_ENABLE_ASSERTS --std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Wfatal-errors
+$(JLM_BUILD)/tests/test-runner: CXXFLAGS += $(CXXFLAGS_DEBUG)
 $(JLM_BUILD)/tests/test-runner: CPPFLAGS += -I$(JLM_ROOT)/tests -I$(JLM_ROOT)/libjlm/include -I$(JLM_ROOT)/libjive/include -I$(shell $(LLVMCONFIG) --includedir)
 $(JLM_BUILD)/tests/test-runner: LDFLAGS=-L$(JLM_BUILD) -ljlm $(shell $(LLVMCONFIG) --ldflags --libs --system-libs) -ljive
 $(JLM_BUILD)/tests/test-runner: %: $(patsubst %.cpp, $(JLM_BUILD)/%.la, $(TEST_SOURCES)) $(JLM_BUILD)/libjive.a $(JLM_BUILD)/libjlm.a

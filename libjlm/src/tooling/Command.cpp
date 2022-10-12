@@ -8,8 +8,8 @@
 #include <jlm/util/strfmt.hpp>
 
 #include <sys/stat.h>
-#include <unistd.h>
 
+#include <filesystem>
 #include <unordered_map>
 
 namespace jlm {
@@ -428,13 +428,6 @@ VerilatorCommand::~VerilatorCommand() noexcept
 std::string
 VerilatorCommand::ToString() const
 {
-  auto gcd = []() {
-    char tmp[256];
-    getcwd(tmp, 256);
-    auto cd = std::string(tmp);
-    return cd;
-  };
-
   std::string objectFiles;
   for (auto & objectFile : ObjectFiles_)
     objectFiles += objectFile.to_str() + " ";
@@ -452,7 +445,7 @@ VerilatorCommand::ToString() const
 
   std::string outputFile = OutputFile_.to_str();
   if(outputFile.at(0) != '/'){
-    outputFile = gcd() + "/" + outputFile;
+    outputFile = std::filesystem::current_path() / outputFile;
   }
 
   std::string verilator_root;

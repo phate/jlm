@@ -37,6 +37,9 @@ endif
 JLM_BIN = $(JLM_ROOT)/bin
 JLM_BUILD = $(JLM_ROOT)/build
 
+CXXFLAGS ?= --std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Werror -Wfatal-errors
+CXXFLAGS_DEBUG ?= -g -DJIVE_DEBUG -DJLM_DEBUG -DJLM_ENABLE_ASSERTS
+
 $(JLM_BUILD)/%.la: $(JLM_ROOT)/%.cpp
 	@mkdir -p ${dir $@}
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) -o $@ $<
