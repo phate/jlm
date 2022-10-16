@@ -54,4 +54,4 @@ test_main()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjive/rvsdg/test-regionmismatch", test_main)
+JLM_UNIT_TEST_REGISTER("libjive/rvsdg/TestRegion", test_main)
