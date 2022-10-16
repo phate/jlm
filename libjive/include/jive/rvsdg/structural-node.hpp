@@ -162,24 +162,42 @@ structural_node::output(size_t index) const noexcept
 	return static_cast<structural_output*>(node::output(index));
 }
 
-/* other functions */
-
-template <class T> static inline bool
-contains(const jive::region * region, bool recursive)
+/**
+ * Checks if an operation is contained within the given \p region. If \p checkSubregions is true, then the subregions
+ * of all contained structural nodes are recursively checked as well.
+ * @tparam Operation The operation to check for.
+ * @param region The region to check.
+ * @param checkSubregions If true, then the subregions of all contained structural nodes will be checked as well.
+ * @return True, if the operation is found. Otherwise, false.
+ */
+template <class Operation> static inline bool
+contains(const jive::region * region, bool checkSubregions)
 {
-	for (const auto & node : region->nodes) {
-		if (is<T>(&node))
-			return true;
+  for (auto & node : region->nodes)
+  {
+    if (is<Operation>(&node))
+    {
+      return true;
+    }
 
+    if (!checkSubregions)
+    {
+      continue;
+    }
 
-		auto structnode = dynamic_cast<const jive::structural_node*>(&node);
-		if (recursive && structnode) {
-			for (size_t n = 0; n < structnode->nsubregions(); n++)
-				return contains<T>(structnode->subregion(n), recursive);
-		}
-	}
+    if (auto structuralNode = dynamic_cast<const jive::structural_node*>(&node))
+    {
+      for (size_t n = 0; n < structuralNode->nsubregions(); n++)
+      {
+        if (contains<Operation>(structuralNode->subregion(n), checkSubregions))
+        {
+          return true;
+        }
+      }
+    }
+  }
 
-	return false;
+  return false;
 }
 
 }

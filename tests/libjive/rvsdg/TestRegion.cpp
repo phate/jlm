@@ -68,11 +68,42 @@ TestResultNodeMismatch()
   assert(outputErrorHandlerCalled);
 }
 
+/**
+ * Test jive::contains().
+ */
+static void
+TestContainsMethod()
+{
+  using namespace jlm;
+
+  valuetype vt;
+
+  jive::graph graph;
+  auto import = graph.add_import({vt, "import"});
+
+  auto structuralNode1 = structural_node::create(graph.root(), 1);
+  auto structuralInput1 = jive::structural_input::create(structuralNode1, import, vt);
+  auto regionArgument1 = jive::argument::create(structuralNode1->subregion(0), structuralInput1, vt);
+  unary_op::create(structuralNode1->subregion(0), {vt}, regionArgument1, {vt});
+
+  auto structuralNode2 = jlm::structural_node::create(graph.root(), 1);
+  auto structuralInput2 = jive::structural_input::create(structuralNode2, import, vt);
+  auto regionArgument2 = jive::argument::create(structuralNode2->subregion(0), structuralInput2, vt);
+  binary_op::create({vt}, {vt}, regionArgument2, regionArgument2);
+
+  assert(jive::contains<structural_op>(graph.root(), false));
+  assert(jive::contains<unary_op>(graph.root(), true));
+  assert(jive::contains<binary_op>(graph.root(), true));
+  assert(!jive::contains<test_op>(graph.root(), true));
+}
+
 static int
 Test()
 {
   TestArgumentNodeMismatch();
   TestResultNodeMismatch();
+
+  TestContainsMethod();
 
   return 0;
 }
