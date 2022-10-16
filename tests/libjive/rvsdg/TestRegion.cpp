@@ -7,51 +7,74 @@
 #include "test-operation.hpp"
 #include "test-types.hpp"
 
-#include <assert.h>
+#include <cassert>
 
-#include <jive/rvsdg.hpp>
-
-static int
-test_main()
+/**
+ * Test check for adding argument to input of wrong structural node.
+ */
+static void
+TestArgumentNodeMismatch()
 {
-	using namespace jive;
+  using namespace jive;
 
-	jlm::valuetype vt;
+  jlm::valuetype vt;
 
-	jive::graph graph;
-	auto import1 = graph.add_import({vt, "import1"});
+  jive::graph graph;
+  auto import = graph.add_import({vt, "import"});
 
-	auto n1 = jlm::structural_node::create(graph.root(), 1);
-	auto n2 = jlm::structural_node::create(graph.root(), 2);
+  auto structuralNode1 = jlm::structural_node::create(graph.root(), 1);
+  auto structuralNode2 = jlm::structural_node::create(graph.root(), 2);
 
-	/* Test type error check for adding argument to wrong input */
+  auto structuralInput = structural_input::create(structuralNode1, import, vt);
 
-	auto structi1 = structural_input::create(n1, import1, vt);
+  bool inputErrorHandlerCalled = false;
+  try {
+    argument::create(structuralNode2->subregion(0), structuralInput, vt);
+  } catch (jive::compiler_error & e) {
+    inputErrorHandlerCalled = true;
+  }
 
-	bool input_error_handler_called = false;
-	try {
-		argument::create(n2->subregion(0), structi1, vt);
-	} catch (jive::compiler_error & e) {
-		input_error_handler_called = true;
-	}
-
-	assert(input_error_handler_called);
-
-	/* Test type error check for adding result to wrong output */
-
-	auto argument = argument::create(n1->subregion(0), structi1, vt);
-	auto structo1 = structural_output::create(n1, vt);
-
-	bool output_error_handler_called = false;
-	try {
-		result::create(n2->subregion(0), argument, structo1, vt);
-	} catch (jive::compiler_error & e) {
-		output_error_handler_called = true;
-	}
-
-	assert(output_error_handler_called);
-
-	return 0;
+  assert(inputErrorHandlerCalled);
 }
 
-JLM_UNIT_TEST_REGISTER("libjive/rvsdg/TestRegion", test_main)
+/**
+ * Test check for adding result to output of wrong structural node.
+ */
+static void
+TestResultNodeMismatch()
+{
+  using namespace jive;
+
+  jlm::valuetype vt;
+
+  jive::graph graph;
+  auto import = graph.add_import({vt, "import"});
+
+  auto structuralNode1 = jlm::structural_node::create(graph.root(), 1);
+  auto structuralNode2 = jlm::structural_node::create(graph.root(), 2);
+
+  auto structuralInput = structural_input::create(structuralNode1, import, vt);
+
+  auto argument = argument::create(structuralNode1->subregion(0), structuralInput, vt);
+  auto structuralOutput = structural_output::create(structuralNode1, vt);
+
+  bool outputErrorHandlerCalled = false;
+  try {
+    result::create(structuralNode2->subregion(0), argument, structuralOutput, vt);
+  } catch (jive::compiler_error & e) {
+    outputErrorHandlerCalled = true;
+  }
+
+  assert(outputErrorHandlerCalled);
+}
+
+static int
+Test()
+{
+  TestArgumentNodeMismatch();
+  TestResultNodeMismatch();
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER("libjive/rvsdg/TestRegion", Test)
