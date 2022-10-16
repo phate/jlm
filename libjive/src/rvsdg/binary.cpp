@@ -422,7 +422,7 @@ flattened_binary_op::reduce(
 		}
 	}
 
-	JIVE_DEBUG_ASSERT(!contains<flattened_binary_op>(region, true));
+	JIVE_DEBUG_ASSERT(!region::Contains<flattened_binary_op>(*region, true));
 }
 
 }

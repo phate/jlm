@@ -37,7 +37,7 @@ test_flattened_binary_reduction()
 		graph.prune();
 
 		jive::view(graph, stdout);
-		assert(graph.root()->nnodes() == 1 && contains<flattened_binary_op>(graph.root(), false));
+		assert(graph.root()->nnodes() == 1 && region::Contains<flattened_binary_op>(*graph.root(), false));
 
 		flattened_binary_op::reduce(&graph, jive::flattened_binary_op::reduction::parallel);
 		jive::view(graph, stdout);
@@ -70,7 +70,7 @@ test_flattened_binary_reduction()
 		graph.prune();
 
 		jive::view(graph, stdout);
-		assert(graph.root()->nnodes() == 1 && contains<flattened_binary_op>(graph.root(), false));
+		assert(graph.root()->nnodes() == 1 && region::Contains<flattened_binary_op>(*graph.root(), false));
 
 		flattened_binary_op::reduce(&graph, jive::flattened_binary_op::reduction::linear);
 		jive::view(graph, stdout);

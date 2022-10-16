@@ -267,6 +267,17 @@ public:
 	void
 	normalize(bool recursive);
 
+  /**
+ * Checks if an operation is contained within the given \p region. If \p checkSubregions is true, then the subregions
+ * of all contained structural nodes are recursively checked as well.
+ * @tparam Operation The operation to check for.
+ * @param region The region to check.
+ * @param checkSubregions If true, then the subregions of all contained structural nodes will be checked as well.
+ * @return True, if the operation is found. Otherwise, false.
+ */
+  template <class Operation> static inline bool
+  Contains(const jive::region & region, bool checkSubregions);
+
 	region_nodes_list nodes;
 
 	region_top_node_list top_nodes;
