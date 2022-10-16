@@ -112,7 +112,7 @@ test1()
   /*
    * Assert
    */
-	assert(!jive::contains<jlm::CallOperation>(graph.root(), true));
+	assert(!jive::region::Contains<jlm::CallOperation>(*graph.root(), true));
 }
 
 static void

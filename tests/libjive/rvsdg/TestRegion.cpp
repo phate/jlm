@@ -69,7 +69,7 @@ TestResultNodeMismatch()
 }
 
 /**
- * Test jive::contains().
+ * Test region::Contains().
  */
 static void
 TestContainsMethod()
@@ -91,10 +91,10 @@ TestContainsMethod()
   auto regionArgument2 = jive::argument::create(structuralNode2->subregion(0), structuralInput2, vt);
   binary_op::create({vt}, {vt}, regionArgument2, regionArgument2);
 
-  assert(jive::contains<structural_op>(graph.root(), false));
-  assert(jive::contains<unary_op>(graph.root(), true));
-  assert(jive::contains<binary_op>(graph.root(), true));
-  assert(!jive::contains<test_op>(graph.root(), true));
+  assert(jive::region::Contains<structural_op>(*graph.root(), false));
+  assert(jive::region::Contains<unary_op>(*graph.root(), true));
+  assert(jive::region::Contains<binary_op>(*graph.root(), true));
+  assert(!jive::region::Contains<test_op>(*graph.root(), true));
 }
 
 static int

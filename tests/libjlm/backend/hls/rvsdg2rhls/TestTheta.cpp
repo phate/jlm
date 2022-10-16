@@ -63,7 +63,7 @@ TestUnknownBoundaries()
 	// the root of the graph
 	auto root = rm.Rvsdg().root();
 	auto newLambda = dynamic_cast<const jlm::lambda::node *>(root->nodes.begin().ptr());
-	assert(jive::contains<jlm::hls::loop_op>(newLambda->subregion(), true));
+	assert(jive::region::Contains<jlm::hls::loop_op>(*newLambda->subregion(), true));
 }
 
 static int
