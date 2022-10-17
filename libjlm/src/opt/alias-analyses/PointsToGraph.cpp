@@ -22,6 +22,13 @@ PointsToGraph::PointsToGraph()
   ExternalMemoryNode_ = ExternalMemoryNode::Create(*this);
 }
 
+void
+PointsToGraph::AddEscapedMemoryNode(PointsToGraph::MemoryNode & memoryNode)
+{
+  JLM_ASSERT(&memoryNode.Graph() == this);
+  EscapedMemoryNodes_.Insert(&memoryNode);
+}
+
 PointsToGraph::AllocaNodeRange
 PointsToGraph::AllocaNodes()
 {
