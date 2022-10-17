@@ -7,9 +7,10 @@
 #define JLM_OPT_ALIAS_ANALYSES_POINTSTOGRAPH_HPP
 
 #include <jlm/common.hpp>
-#include <jlm/util/iterator_range.hpp>
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/RvsdgModule.hpp>
+#include <jlm/util/HashSet.hpp>
+#include <jlm/util/iterator_range.hpp>
 
 #include <jive/rvsdg/node.hpp>
 
@@ -264,6 +265,19 @@ public:
     return *it->second;
   }
 
+  /**
+   * Returns all memory nodes that are marked as escaped from the module.
+   *
+   * @return A set with all escaped memory nodes.
+   *
+   * @see PointsToGraph::MemoryNode::EscapesModule()
+   */
+  const HashSet<const PointsToGraph::MemoryNode*> &
+  GetEscapedMemoryNodes() const noexcept
+  {
+    return EscapedMemoryNodes_;
+  }
+
   PointsToGraph::AllocaNode &
   AddAllocaNode(std::unique_ptr<PointsToGraph::AllocaNode> node);
 
@@ -292,6 +306,14 @@ public:
   }
 
 private:
+  void
+  AddEscapedMemoryNode(PointsToGraph::MemoryNode & memoryNode);
+
+  /**
+   * All memory nodes that escape from the module.
+   */
+  HashSet<const PointsToGraph::MemoryNode*> EscapedMemoryNodes_;
+
   AllocaNodeMap AllocaNodes_;
   DeltaNodeMap DeltaNodes_;
   ImportNodeMap ImportNodes_;
@@ -429,6 +451,15 @@ private:
 class PointsToGraph::MemoryNode : public PointsToGraph::Node {
 public:
   ~MemoryNode() noexcept override;
+
+  /**
+   * Marks this memory node as escaping the module.
+   */
+  void
+  EscapesModule()
+  {
+    Graph().AddEscapedMemoryNode(*this);
+  }
 
 protected:
   explicit
