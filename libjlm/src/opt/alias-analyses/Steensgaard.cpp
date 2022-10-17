@@ -1657,7 +1657,11 @@ Steensgaard::ConstructPointsToGraph(const LocationSet & locationSets)
 
       auto & set = locationSets.GetSet(*moduleEscapingLocation);
       auto & memoryNodes = memoryNodeMap.at(&set);
-      escapedMemoryNodes.insert(memoryNodes.begin(), memoryNodes.end());
+      for (auto & memoryNode : memoryNodes)
+      {
+        memoryNode->EscapesModule();
+        escapedMemoryNodes.insert(memoryNode);
+      }
 
 
       auto pointsToLocation = set.value()->GetPointsTo();
