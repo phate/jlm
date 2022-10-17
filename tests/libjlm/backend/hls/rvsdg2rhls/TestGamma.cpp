@@ -10,7 +10,7 @@
 #include <jive/rvsdg/gamma.hpp>
 #include <jive/view.hpp>
 
-#include <jlm/backend/hls/rvsdg2rhls/rvsdg2rhls.hpp>
+#include <jlm/backend/hls/rvsdg2rhls/gamma-conv.hpp>
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/hls/hls.hpp>
 #include <jlm/ir/RvsdgModule.hpp>
@@ -45,16 +45,12 @@ TestWithMatch()
 
 	/* Convert graph to RHLS */
 
-	hls::rvsdg2rhls(rm);
+	hls::gamma_conv(rm);
 	jive::view(rm.Rvsdg(), stdout);
 
 	/* Verify output */
 
-	// The lambda node has been replaced so need to start from
-	// the root of the graph
-	auto root = rm.Rvsdg().root();
-	auto newLambda = dynamic_cast<const jlm::lambda::node *>(root->nodes.begin().ptr());
-	assert(jive::region::Contains<jlm::hls::mux_op>(*newLambda->subregion(), true));
+	assert(jive::region::Contains<jlm::hls::mux_op>(*lambda->subregion(), true));
 }
 
 static void
@@ -87,16 +83,12 @@ TestWithoutMatch()
 
 	/* Convert graph to RHLS */
 
-	hls::rvsdg2rhls(rm);
+	hls::gamma_conv(rm);
 	jive::view(rm.Rvsdg(), stdout);
 
 	/* Verify output */
 
-	// The lambda node has been replaced so need to start from
-	// the root of the graph
-	auto root = rm.Rvsdg().root();
-	auto newLambda = dynamic_cast<const jlm::lambda::node *>(root->nodes.begin().ptr());
-	assert(jive::region::Contains<jlm::hls::mux_op>(*newLambda->subregion(), true));
+	assert(jive::region::Contains<jlm::hls::mux_op>(*lambda->subregion(), true));
 }
 
 static int

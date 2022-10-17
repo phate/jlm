@@ -8,7 +8,7 @@
 #include <jive/view.hpp>
 #include <jive/rvsdg/theta.hpp>
 
-#include <jlm/backend/hls/rvsdg2rhls/rvsdg2rhls.hpp>
+#include <jlm/backend/hls/rvsdg2rhls/theta-conv.hpp>
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/hls/hls.hpp>
 #include <jlm/ir/RvsdgModule.hpp>
@@ -54,16 +54,16 @@ TestUnknownBoundaries()
 
 	/* Convert graph to RHLS */
 
-	hls::rvsdg2rhls(rm);
+	hls::theta_conv(theta);
 	jive::view(rm.Rvsdg(), stdout);
+
 
 	/* Verify graph */
 
-	// The lambda node has been replaced so need to start from
-	// the root of the graph
-	auto root = rm.Rvsdg().root();
-	auto newLambda = dynamic_cast<const jlm::lambda::node *>(root->nodes.begin().ptr());
-	assert(jive::region::Contains<jlm::hls::loop_op>(*newLambda->subregion(), true));
+	assert(jive::region::Contains<jlm::hls::loop_op>(*lambda->subregion(), true));
+	assert(jive::region::Contains<jlm::hls::predicate_buffer_op>(*lambda->subregion(), true));
+	assert(jive::region::Contains<jlm::hls::branch_op>(*lambda->subregion(), true));
+	assert(jive::region::Contains<jlm::hls::mux_op>(*lambda->subregion(), true));
 }
 
 static int
