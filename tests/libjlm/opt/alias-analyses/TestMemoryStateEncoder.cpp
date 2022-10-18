@@ -429,7 +429,7 @@ TestCall2()
 static void
 TestIndirectCall()
 {
-	auto validate_rvsdg = [](const IndirectCallTest & test)
+	auto validate_rvsdg = [](const IndirectCallTest1 & test)
 	{
 		using namespace jlm;
 
@@ -483,7 +483,7 @@ TestIndirectCall()
 		}
 	};
 
-	IndirectCallTest test;
+	IndirectCallTest1 test;
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = run_steensgaard(test.module());

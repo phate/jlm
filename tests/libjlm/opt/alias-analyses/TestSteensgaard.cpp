@@ -472,7 +472,7 @@ TestCall2()
 static void
 TestIndirectCall()
 {
-  auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const IndirectCallTest & test)
+  auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const IndirectCallTest1 & test)
   {
     assert(ptg.NumLambdaNodes() == 4);
     assert(ptg.NumImportNodes() == 0);
@@ -510,7 +510,7 @@ TestIndirectCall()
     assert(ptg.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
   };
 
-  IndirectCallTest test;
+  IndirectCallTest1 test;
 //	jive::view(test.graph().root(), stdout);
 
   auto ptg = RunSteensgaard(test.module());
