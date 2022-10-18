@@ -519,6 +519,38 @@ TestIndirectCall()
 }
 
 static void
+TestIndirectCall2()
+{
+
+  auto validatePointsToGraph = [](
+    const jlm::aa::PointsToGraph & pointsToGraph,
+    const IndirectCallTest2 & test)
+  {
+    assert(pointsToGraph.NumAllocaNodes() == 3);
+    assert(pointsToGraph.NumLambdaNodes() == 7);
+    assert(pointsToGraph.NumDeltaNodes() == 2);
+    assert(pointsToGraph.NumRegisterNodes() == 24);
+
+    auto & lambdaThree = pointsToGraph.GetLambdaNode(test.GetLambdaThree());
+    auto & lambdaThreeOutput = pointsToGraph.GetRegisterNode(*test.GetLambdaThree().output());
+
+    auto & lambdaFour = pointsToGraph.GetLambdaNode(test.GetLambdaFour());
+    auto & lambdaFourOutput = pointsToGraph.GetRegisterNode(*test.GetLambdaFour().output());
+
+    assertTargets(lambdaThreeOutput, {&lambdaThree, &lambdaFour});
+    assertTargets(lambdaFourOutput, {&lambdaThree, &lambdaFour});
+  };
+
+  IndirectCallTest2 test;
+	// jive::view(test.graph().root(), stdout);
+
+  auto pointsToGraph = RunSteensgaard(test.module());
+	// std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
+
+  validatePointsToGraph(*pointsToGraph, test);
+}
+
+static void
 TestGamma()
 {
   auto ValidatePointsToGraph = [](const jlm::aa::PointsToGraph & pointsToGraph, const GammaTest & test)
@@ -1001,6 +1033,7 @@ test()
   TestCall1();
   TestCall2();
   TestIndirectCall();
+  TestIndirectCall2();
 
   TestGamma();
 
