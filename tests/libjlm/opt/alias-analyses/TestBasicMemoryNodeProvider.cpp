@@ -368,7 +368,7 @@ TestIndirectCall()
    * Arrange
    */
   auto ValidateProvider = [](
-    const IndirectCallTest & test,
+    const IndirectCallTest1 & test,
     const jlm::aa::BasicMemoryNodeProvider & basicMemoryNodeProvider,
     const jlm::aa::PointsToGraph & pointsToGraph)
   {
@@ -435,7 +435,7 @@ TestIndirectCall()
     }
   };
 
-  IndirectCallTest test;
+  IndirectCallTest1 test;
 //	jive::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());

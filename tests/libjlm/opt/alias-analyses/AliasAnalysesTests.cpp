@@ -753,7 +753,7 @@ CallTest2::SetupRvsdg()
 }
 
 std::unique_ptr<jlm::RvsdgModule>
-IndirectCallTest::SetupRvsdg()
+IndirectCallTest1::SetupRvsdg()
 {
   using namespace jlm;
 

@@ -463,7 +463,7 @@ private:
 	jlm::CallNode * CallDestroy2_;
 };
 
-/** \brief IndirectCallTest class
+/** \brief IndirectCallTest1 class
 *
 * This function sets up an RVSDG representing the following function:
 *
@@ -496,7 +496,7 @@ private:
 *	It uses a single memory state to sequentialize the respective memory
 * operations within each function.
 */
-class IndirectCallTest final : public AliasAnalysisTest {
+class IndirectCallTest1 final : public AliasAnalysisTest {
 public:
   [[nodiscard]] const jlm::CallNode &
   CallIndcall() const noexcept
