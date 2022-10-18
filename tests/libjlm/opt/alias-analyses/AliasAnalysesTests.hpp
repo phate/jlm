@@ -530,6 +530,206 @@ private:
 	jlm::CallNode * CallFour_;
 };
 
+/** \brief IndirectCallTest2 class
+ *
+ * This function sets up an RVSDG representing the following program:
+ *
+ * \code{.c}
+ *   static int32_t g1 = 1;
+ *   static int32_t g2 = 2;
+ *
+ *   static int32_t
+ *   three()
+ *   {
+ *     return 3;
+ *   }
+ *
+ *   static int32_t
+ *   four()
+ *   {
+ *     return 4;
+ *   }
+ *
+ *   static int32_t
+ *   i(int32_t(*f)())
+ *   {
+ *     return f();
+ *   }
+ *
+ *   static int32_t
+ *   x(int32_t * p)
+ *   {
+ *     *p = 5;
+ *     return i(&three);
+ *   }
+ *
+ *   static int32_t
+ *   y(int32_t * p)
+ *   {
+ *     *p = 6;
+ *     return i(&four);
+ *   }
+ *
+ *   int32_t
+ *   test()
+ *   {
+ *     int32_t px;
+ *     int32_t py;
+ *     int32_t sum = x(&px) + y(&py);
+ *     sum += g1 + g2;
+ *
+ *     return sum + px + py;
+ *   }
+ *
+ *   int32_t
+ *   test2()
+ *   {
+ *     int32_t pz;
+ *     return x(&pz);
+ *   }
+ * \endcode
+ *
+ * It uses a single memory state to sequentialize the respective memory
+ * operations within each function.
+ */
+class IndirectCallTest2 final : public AliasAnalysisTest {
+public:
+  [[nodiscard]] jlm::delta::node &
+  GetDeltaG1() const noexcept
+  {
+    return *DeltaG1_;
+  }
+
+  [[nodiscard]] jlm::delta::node &
+  GetDeltaG2() const noexcept
+  {
+    return *DeltaG2_;
+  }
+
+  [[nodiscard]] jlm::lambda::node &
+  GetLambdaThree() const noexcept
+  {
+    return *LambdaThree_;
+  }
+
+  [[nodiscard]] jlm::lambda::node &
+  GetLambdaFour() const noexcept
+  {
+    return *LambdaFour_;
+  }
+
+  [[nodiscard]] jlm::lambda::node &
+  GetLambdaI() const noexcept
+  {
+    return *LambdaI_;
+  }
+
+  [[nodiscard]] jlm::lambda::node &
+  GetLambdaX() const noexcept
+  {
+    return *LambdaX_;
+  }
+
+  [[nodiscard]] jlm::lambda::node &
+  GetLambdaY() const noexcept
+  {
+    return *LambdaY_;
+  }
+
+  [[nodiscard]] jlm::lambda::node &
+  GetLambdaTest() const noexcept
+  {
+    return *LambdaTest_;
+  }
+
+  [[nodiscard]] jlm::lambda::node &
+  GetLambdaTest2() const noexcept
+  {
+    return *LambdaTest2_;
+  }
+
+  [[nodiscard]] jlm::CallNode &
+  GetIndirectCall() const noexcept
+  {
+    return *IndirectCall_;
+  }
+
+  [[nodiscard]] jlm::CallNode &
+  GetCallIWithThree() const noexcept
+  {
+    return *CallIWithThree_;
+  }
+
+  [[nodiscard]] jlm::CallNode &
+  GetCallIWithFour() const noexcept
+  {
+    return *CallIWithFour_;
+  }
+
+  [[nodiscard]] jlm::CallNode &
+  GetTestCallX() const noexcept
+  {
+    return *TestCallX_;
+  }
+
+  [[nodiscard]] jlm::CallNode &
+  GetTest2CallX() const noexcept
+  {
+    return *Test2CallX_;
+  }
+
+  [[nodiscard]] jlm::CallNode &
+  GetCallY() const noexcept
+  {
+    return *CallY_;
+  }
+
+  [[nodiscard]] jive::simple_node &
+  GetAllocaPx() const noexcept
+  {
+    return *AllocaPx_;
+  }
+
+  [[nodiscard]] jive::simple_node &
+  GetAllocaPy() const noexcept
+  {
+    return *AllocaPy_;
+  }
+
+  [[nodiscard]] jive::simple_node &
+  GetAllocaPz() const noexcept
+  {
+    return *AllocaPz_;
+  }
+
+
+private:
+  std::unique_ptr<jlm::RvsdgModule>
+  SetupRvsdg() override;
+
+  jlm::delta::node * DeltaG1_;
+  jlm::delta::node * DeltaG2_;
+
+  jlm::lambda::node * LambdaThree_;
+  jlm::lambda::node * LambdaFour_;
+  jlm::lambda::node * LambdaI_;
+  jlm::lambda::node * LambdaX_;
+  jlm::lambda::node * LambdaY_;
+  jlm::lambda::node * LambdaTest_;
+  jlm::lambda::node * LambdaTest2_;
+
+  jlm::CallNode * IndirectCall_;
+  jlm::CallNode * CallIWithThree_;
+  jlm::CallNode * CallIWithFour_;
+  jlm::CallNode * TestCallX_;
+  jlm::CallNode * Test2CallX_;
+  jlm::CallNode * CallY_;
+
+  jive::simple_node * AllocaPx_;
+  jive::simple_node * AllocaPy_;
+  jive::simple_node * AllocaPz_;
+};
+
 /** \brief GammaTest class
 *
 * This function sets up an RVSDG representing the following function:
