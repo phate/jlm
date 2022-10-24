@@ -187,6 +187,14 @@ public:
 		return index_;
 	}
 
+  /**
+   * Checks if the region is the RVSDG root region.
+   *
+   * @return Returns true if it is the root region, otherwise false.
+   */
+  [[nodiscard]] bool
+  IsRootRegion() const noexcept;
+
 	/* \brief Append \p argument to the region
 	*
 	* Multiple invocations of append_argument for the same argument are undefined.
