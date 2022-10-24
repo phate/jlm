@@ -58,11 +58,28 @@ TestUniquePointer()
   assert(hashSet.Size() == 0);
 }
 
+static void
+TestIsSubsetOf()
+{
+  jlm::HashSet<int> set12({1, 2});
+  jlm::HashSet<int> set123({1, 2, 3});
+  jlm::HashSet<int> set1234({1, 2, 3, 4});
+
+  assert(set12.IsSubsetOf(set12));
+  assert(set12.IsSubsetOf(set123));
+  assert(set12.IsSubsetOf(set1234));
+  assert(!set123.IsSubsetOf(set12));
+  assert(set123.IsSubsetOf(set1234));
+  assert(!set1234.IsSubsetOf(set12));
+  assert(!set1234.IsSubsetOf(set123));
+}
+
 static int
 TestHashSet()
 {
   TestInt();
   TestUniquePointer();
+  TestIsSubsetOf();
 
   return 0;
 }
