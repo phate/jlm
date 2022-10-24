@@ -97,6 +97,20 @@ TestContainsMethod()
   assert(!jive::region::Contains<test_op>(*graph.root(), true));
 }
 
+/**
+ * Test region::IsRootRegion().
+ */
+static void
+TestIsRootRegion()
+{
+  jive::graph graph;
+
+  auto structuralNode = jlm::structural_node::create(graph.root(), 1);
+
+  assert(graph.root()->IsRootRegion());
+  assert(!structuralNode->subregion(0)->IsRootRegion());
+}
+
 static int
 Test()
 {
@@ -104,6 +118,7 @@ Test()
   TestResultNodeMismatch();
 
   TestContainsMethod();
+  TestIsRootRegion();
 
   return 0;
 }

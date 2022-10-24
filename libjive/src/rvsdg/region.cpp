@@ -273,6 +273,12 @@ region::normalize(bool recursive)
 	}
 }
 
+bool
+region::IsRootRegion() const noexcept
+{
+  return this->graph()->root() == this;
+}
+
 size_t
 nnodes(const jive::region * region) noexcept
 {
