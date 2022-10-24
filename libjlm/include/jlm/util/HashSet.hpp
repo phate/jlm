@@ -136,6 +136,31 @@ public:
   }
 
   /**
+   * Determines whether a HashSet object is a subset of \p other.
+   *
+   * @param other The HashSet to compare to the collection.
+   * @return Returns true if the collection is a subset of \p other or equal to \p other, otherwise false.
+   */
+  bool
+  IsSubsetOf(const HashSet<ItemType> & other) const noexcept
+  {
+    if (Size() > other.Size())
+    {
+      return false;
+    }
+
+    for (auto & item : other.Items())
+    {
+      if (!other.Contains(item))
+      {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
    * Get the number of items contained in the set.
    *
    * @return The number of items contained in the set.
