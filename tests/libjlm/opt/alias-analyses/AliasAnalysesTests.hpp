@@ -1001,6 +1001,228 @@ private:
   jlm::CallNode * CallFib_;
 };
 
+/** \brief PhiTest2 class
+ *
+ * This function sets up an RVSDG representing the following code snippet:
+ *
+ * \code{.c}
+ *  static int32_t
+ *  a(int32_t*);
+ *
+ *  static int32_t
+ *  b(int32_t*);
+ *
+ *  static int32_t
+ *  c(int32_t*);
+ *
+ *  static int32_t
+ *  d(int32_t*);
+ *
+ *  static int32_t
+ *  eight()
+ *  {
+ *    return 8;
+ *  }
+ *
+ *  static int32_t
+ *  i(int32_t(*f)())
+ *  {
+ *    return f();
+ *  }
+ *
+ *  static int32_t
+ *  a(int32_t * x)
+ *  {
+ *    *x = 1;
+ *    int32_t pa;
+ *    return b(&pa) + d(&pa);
+ *  }
+ *
+ *  static int32_t
+ *  b(int32_t * x)
+ *  {
+ *    *x = 2;
+ *    int32_t pb;
+ *    return i(&eight) + c(&pb);
+ *  }
+ *
+ *  static int32_t
+ *  c(int32_t * x)
+ *  {
+ *    *x = 3;
+ *    int32_t pc;
+ *    return a(&pc) + *x;
+ *  }
+ *
+ *  static int32_t
+ *  d(int32_t * x)
+ *  {
+ *    *x = 4;
+ *    int32_t pd;
+ *    return a(&pd);
+ *  }
+ *
+ *  int32_t
+ *  test()
+ *  {
+ *    int32_t pTest;
+ *    return a(&pTest);
+ *  }
+ * \endcode
+ *
+ * It uses a single memory state to sequentialize the respective memory operations.
+ */
+class PhiTest2 final : public AliasAnalysisTest
+{
+public:
+  [[nodiscard]] jlm::lambda::node &
+  GetLambdaEight() const noexcept
+  {
+    return *LambdaEight_;
+  }
+
+  [[nodiscard]] jlm::lambda::node &
+  GetLambdaI() const noexcept
+  {
+    return *LambdaI_;
+  }
+
+  [[nodiscard]] jlm::lambda::node &
+  GetLambdaA() const noexcept
+  {
+    return *LambdaA_;
+  }
+
+  [[nodiscard]] jlm::lambda::node &
+  GetLambdaB() const noexcept
+  {
+    return *LambdaB_;
+  }
+
+  [[nodiscard]] jlm::lambda::node &
+  GetLambdaC() const noexcept
+  {
+    return *LambdaC_;
+  }
+
+  [[nodiscard]] jlm::lambda::node &
+  GetLambdaD() const noexcept
+  {
+    return *LambdaD_;
+  }
+
+  [[nodiscard]] jlm::lambda::node &
+  GetLambdaTest() const noexcept
+  {
+    return *LambdaTest_;
+  }
+
+  [[nodiscard]] jlm::CallNode &
+  GetCallAFromTest() const noexcept
+  {
+    return *CallAFromTest_;
+  }
+
+  [[nodiscard]] jlm::CallNode &
+  GetCallAFromC() const noexcept
+  {
+    return *CallAFromC_;
+  }
+
+  [[nodiscard]] jlm::CallNode &
+  GetCallAFromD() const noexcept
+  {
+    return *CallAFromD_;
+  }
+
+  [[nodiscard]] jlm::CallNode &
+  GetCallB() const noexcept
+  {
+    return *CallB_;
+  }
+
+  [[nodiscard]] jlm::CallNode &
+  GetCallC() const noexcept
+  {
+    return *CallC_;
+  }
+
+  [[nodiscard]] jlm::CallNode &
+  GetCallD() const noexcept
+  {
+    return *CallD_;
+  }
+
+  [[nodiscard]] jlm::CallNode &
+  GetCallI() const noexcept
+  {
+    return *CallI_;
+  }
+
+  [[nodiscard]] jlm::CallNode &
+  GetIndirectCall() const noexcept
+  {
+    return *IndirectCall_;
+  }
+
+  [[nodiscard]] jive::simple_node &
+  GetPTestAlloca() const noexcept
+  {
+    return *PTestAlloca_;
+  }
+
+  [[nodiscard]] jive::simple_node &
+  GetPaAlloca() const noexcept
+  {
+    return *PaAlloca_;
+  }
+
+  [[nodiscard]] jive::simple_node &
+  GetPbAlloca() const noexcept
+  {
+    return *PbAlloca_;
+  }
+
+  [[nodiscard]] jive::simple_node &
+  GetPcAlloca() const noexcept
+  {
+    return *PcAlloca_;
+  }
+
+  [[nodiscard]] jive::simple_node &
+  GetPdAlloca() const noexcept
+  {
+    return *PdAlloca_;
+  }
+
+private:
+  std::unique_ptr<jlm::RvsdgModule>
+  SetupRvsdg() override;
+
+  jlm::lambda::node * LambdaEight_;
+  jlm::lambda::node * LambdaI_;
+  jlm::lambda::node * LambdaA_;
+  jlm::lambda::node * LambdaB_;
+  jlm::lambda::node * LambdaC_;
+  jlm::lambda::node * LambdaD_;
+  jlm::lambda::node * LambdaTest_;
+
+  jlm::CallNode * CallAFromTest_;
+  jlm::CallNode * CallAFromC_;
+  jlm::CallNode * CallAFromD_;
+  jlm::CallNode * CallB_;
+  jlm::CallNode * CallC_;
+  jlm::CallNode * CallD_;
+  jlm::CallNode * CallI_;
+  jlm::CallNode * IndirectCall_;
+
+  jive::simple_node * PTestAlloca_;
+  jive::simple_node * PaAlloca_;
+  jive::simple_node * PbAlloca_;
+  jive::simple_node * PcAlloca_;
+  jive::simple_node * PdAlloca_;
+};
+
 /** \brief ExternalMemoryTest class
  *
  * This function sets up an RVSDG representing the following code snippet:
