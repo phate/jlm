@@ -931,7 +931,7 @@ private:
   jlm::CallNode * CallF1_;
 };
 
-/** \brief PhiTest class
+/** \brief PhiTest1 class
 *
 *	This function sets up an RVSDG representing the following code snippet:
 *
@@ -962,7 +962,7 @@ private:
 * It uses a single memory state to sequentialize the respective memory
 * operations.
 */
-class PhiTest final : public AliasAnalysisTest {
+class PhiTest1 final : public AliasAnalysisTest {
 public:
   [[nodiscard]] const jlm::CallNode &
   CallFib() const noexcept

@@ -694,13 +694,13 @@ TestImports()
 }
 
 static void
-TestPhi()
+TestPhi1()
 {
   /*
    * Arrange
    */
   auto ValidateProvider = [](
-    const PhiTest & test,
+    const PhiTest1 & test,
     const jlm::aa::BasicMemoryNodeProvider & basicMemoryNodeProvider,
     const jlm::aa::PointsToGraph & pointsToGraph)
   {
@@ -743,7 +743,7 @@ TestPhi()
     }
   };
 
-  PhiTest test;
+  PhiTest1 test;
 //	jive::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
@@ -843,7 +843,7 @@ test()
 
   TestImports();
 
-  TestPhi();
+  TestPhi1();
 
   TestMemcpy();
 

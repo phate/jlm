@@ -1567,7 +1567,7 @@ ImportTest::SetupRvsdg()
 }
 
 std::unique_ptr<jlm::RvsdgModule>
-PhiTest::SetupRvsdg()
+PhiTest1::SetupRvsdg()
 {
   using namespace jlm;
 
