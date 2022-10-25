@@ -676,9 +676,9 @@ TestImports()
 }
 
 static void
-TestPhi()
+TestPhi1()
 {
-	auto ValidateRvsdg = [](const PhiTest & test)
+	auto ValidateRvsdg = [](const PhiTest1 & test)
 	{
 		using namespace jlm;
 
@@ -704,7 +704,7 @@ TestPhi()
     assert(load2->input(1)->origin()->index() == arrayStateIndex);
   };
 
-	PhiTest test;
+	PhiTest1 test;
 //	jive::view(test.graph().root(), stdout);
 
 	auto ptg = run_steensgaard(test.module());
@@ -813,7 +813,7 @@ test()
 
 	TestImports();
 
-	TestPhi();
+	TestPhi1();
 
   TestMemcpy();
 

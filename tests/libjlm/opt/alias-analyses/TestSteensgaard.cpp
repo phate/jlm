@@ -767,9 +767,9 @@ TestImports()
 }
 
 static void
-TestPhi()
+TestPhi1()
 {
-  auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const PhiTest & test)
+  auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const PhiTest1 & test)
   {
     assert(ptg.NumAllocaNodes() == 1);
     assert(ptg.NumLambdaNodes() == 2);
@@ -808,7 +808,7 @@ TestPhi()
     assert(ptg.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
   };
 
-  PhiTest test;
+  PhiTest1 test;
 //	jive::view(test.graph().root(), stdout);
 
   auto ptg = RunSteensgaard(test.module());
@@ -1044,7 +1044,7 @@ test()
 
   TestImports();
 
-  TestPhi();
+  TestPhi1();
 
   TestExternalMemory();
 
