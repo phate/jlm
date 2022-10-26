@@ -529,6 +529,23 @@ public:
 		return node_;
 	}
 
+  /**
+   * Returns the associated node if \p input is a jive::node_input, otherwise null.
+   *
+   * @param input A jive::input
+   * @return Returns a jive::node or null.
+   *
+   * @see jive::node_input::node()
+   */
+  [[nodiscard]] static jive::node *
+  node(const jive::input & input)
+  {
+    auto nodeInput = dynamic_cast<const node_input*>(&input);
+    return nodeInput != nullptr
+           ? nodeInput->node()
+           : nullptr;
+  }
+
 private:
 	jive::node * node_;
 };
