@@ -72,10 +72,10 @@ ValidateTest(std::function<void(const Test&)> validateEncoding)
 
   UnlinkUnknownMemoryNode(*pointsToGraph);
 
-  Provider provider(*pointsToGraph);
+  auto provider = Provider::Create(rvsdgModule, *pointsToGraph);
 
   jlm::aa::MemoryStateEncoder encoder;
-  encoder.Encode(rvsdgModule, provider, statisticsDescriptor);
+  encoder.Encode(rvsdgModule, *provider, statisticsDescriptor);
 
   validateEncoding(test);
 }

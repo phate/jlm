@@ -24,10 +24,10 @@ namespace jlm::aa
  * @see MemoryStateEncoder
  */
 class BasicMemoryNodeProvider final : public MemoryNodeProvider {
-public:
   explicit
   BasicMemoryNodeProvider(const PointsToGraph & pointsToGraph);
 
+public:
   BasicMemoryNodeProvider(const BasicMemoryNodeProvider&) = delete;
 
   BasicMemoryNodeProvider(BasicMemoryNodeProvider&&) = delete;
@@ -37,6 +37,9 @@ public:
 
   BasicMemoryNodeProvider &
   operator=(BasicMemoryNodeProvider&&) = delete;
+
+  void
+  ProvisionMemoryNodes(const RvsdgModule & rvsdgModule) override;
 
   [[nodiscard]] const PointsToGraph &
   GetPointsToGraph() const noexcept override;
@@ -56,10 +59,20 @@ public:
   [[nodiscard]] HashSet<const PointsToGraph::MemoryNode*>
   GetOutputNodes(const jive::output & output) const override;
 
-private:
-  void
-  CollectMemoryNodes(const PointsToGraph & pointsToGraph);
+  /**
+   * Creates a BasicMemoryNodeProvider and calls the ProvisionMemoryNodes() method.
+   *
+   * @param rvsdgModule The RVSDG module on which the provision should be performed.
+   * @param pointsToGraph The PointsToGraph corresponding to the RVSDG module.
+   *
+   * @return A new instance of BasicMemoryNodeProvider.
+   */
+  static std::unique_ptr<BasicMemoryNodeProvider>
+  Create(
+    const RvsdgModule & rvsdgModule,
+    const PointsToGraph & pointsToGraph);
 
+private:
   const PointsToGraph & PointsToGraph_;
 
   HashSet<const PointsToGraph::MemoryNode*> MemoryNodes_;

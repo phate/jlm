@@ -53,12 +53,12 @@ TestStore1()
   /*
    * Act
    */
-  jlm::aa::BasicMemoryNodeProvider basicMemoryNodeProvider(*pointsToGraph);
+  auto provider = jlm::aa::BasicMemoryNodeProvider::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, basicMemoryNodeProvider, *pointsToGraph);
+  ValidateProvider(test, *provider, *pointsToGraph);
 }
 
 static void
@@ -88,12 +88,12 @@ TestStore2()
   /*
    * Act
    */
-  jlm::aa::BasicMemoryNodeProvider basicMemoryNodeProvider(*pointsToGraph);
+  auto provider = jlm::aa::BasicMemoryNodeProvider::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, basicMemoryNodeProvider, *pointsToGraph);
+  ValidateProvider(test, *provider, *pointsToGraph);
 }
 
 static void
@@ -123,13 +123,12 @@ TestLoad1()
   /*
    * Act
    */
-  jlm::aa::BasicMemoryNodeProvider basicMemoryNodeProvider(*pointsToGraph);
-
+  auto provider = jlm::aa::BasicMemoryNodeProvider::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, basicMemoryNodeProvider, *pointsToGraph);
+  ValidateProvider(test, *provider, *pointsToGraph);
 }
 
 static void
@@ -158,12 +157,12 @@ TestLoad2()
   /*
    * Act
    */
-  jlm::aa::BasicMemoryNodeProvider basicMemoryNodeProvider(*pointsToGraph);
+  auto provider = jlm::aa::BasicMemoryNodeProvider::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, basicMemoryNodeProvider, *pointsToGraph);
+  ValidateProvider(test, *provider, *pointsToGraph);
 }
 
 static void
@@ -193,12 +192,12 @@ TestLoadFromUndef()
   /*
    * Act
    */
-  jlm::aa::BasicMemoryNodeProvider basicMemoryNodeProvider(*pointsToGraph);
+  auto provider = jlm::aa::BasicMemoryNodeProvider::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, basicMemoryNodeProvider, *pointsToGraph);
+  ValidateProvider(test, *provider, *pointsToGraph);
 }
 
 static void
@@ -267,12 +266,12 @@ TestCall1()
   /*
    * Act
    */
-  jlm::aa::BasicMemoryNodeProvider basicMemoryNodeProvider(*pointsToGraph);
+  auto provider = jlm::aa::BasicMemoryNodeProvider::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, basicMemoryNodeProvider, *pointsToGraph);
+  ValidateProvider(test, *provider, *pointsToGraph);
 }
 
 static void
@@ -353,12 +352,12 @@ TestCall2()
   /*
    * Act
    */
-  jlm::aa::BasicMemoryNodeProvider basicMemoryNodeProvider(*pointsToGraph);
+  auto provider = jlm::aa::BasicMemoryNodeProvider::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, basicMemoryNodeProvider, *pointsToGraph);
+  ValidateProvider(test, *provider, *pointsToGraph);
 }
 
 static void
@@ -444,12 +443,12 @@ TestIndirectCall()
   /*
    * Act
    */
-  jlm::aa::BasicMemoryNodeProvider basicMemoryNodeProvider(*pointsToGraph);
+  auto provider = jlm::aa::BasicMemoryNodeProvider::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, basicMemoryNodeProvider, *pointsToGraph);
+  ValidateProvider(test, *provider, *pointsToGraph);
 }
 
 static void
@@ -483,12 +482,12 @@ TestGamma()
   /*
    * Act
    */
-  jlm::aa::BasicMemoryNodeProvider basicMemoryNodeProvider(*pointsToGraph);
+  auto provider = jlm::aa::BasicMemoryNodeProvider::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, basicMemoryNodeProvider, *pointsToGraph);
+  ValidateProvider(test, *provider, *pointsToGraph);
 }
 
 static void
@@ -520,12 +519,12 @@ TestTheta()
   /*
    * Act
    */
-  jlm::aa::BasicMemoryNodeProvider basicMemoryNodeProvider(*pointsToGraph);
+  auto provider = jlm::aa::BasicMemoryNodeProvider::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, basicMemoryNodeProvider, *pointsToGraph);
+  ValidateProvider(test, *provider, *pointsToGraph);
 }
 
 static void
@@ -575,12 +574,12 @@ TestDelta1()
   /*
    * Act
    */
-  jlm::aa::BasicMemoryNodeProvider basicMemoryNodeProvider(*pointsToGraph);
+  auto provider = jlm::aa::BasicMemoryNodeProvider::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, basicMemoryNodeProvider, *pointsToGraph);
+  ValidateProvider(test, *provider, *pointsToGraph);
 }
 
 static void
@@ -630,12 +629,12 @@ TestDelta2()
   /*
    * Act
    */
-  jlm::aa::BasicMemoryNodeProvider basicMemoryNodeProvider(*pointsToGraph);
+  auto provider = jlm::aa::BasicMemoryNodeProvider::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, basicMemoryNodeProvider, *pointsToGraph);
+  ValidateProvider(test, *provider, *pointsToGraph);
 }
 
 static void
@@ -685,12 +684,12 @@ TestImports()
   /*
    * Act
    */
-  jlm::aa::BasicMemoryNodeProvider basicMemoryNodeProvider(*pointsToGraph);
+  auto provider = jlm::aa::BasicMemoryNodeProvider::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, basicMemoryNodeProvider, *pointsToGraph);
+  ValidateProvider(test, *provider, *pointsToGraph);
 }
 
 static void
@@ -752,12 +751,12 @@ TestPhi1()
   /*
    * Act
    */
-  jlm::aa::BasicMemoryNodeProvider basicMemoryNodeProvider(*pointsToGraph);
+  auto provider = jlm::aa::BasicMemoryNodeProvider::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, basicMemoryNodeProvider, *pointsToGraph);
+  ValidateProvider(test, *provider, *pointsToGraph);
 }
 
 static void
@@ -812,12 +811,12 @@ TestMemcpy()
   /*
    * Act
    */
-  jlm::aa::BasicMemoryNodeProvider basicMemoryNodeProvider(*pointsToGraph);
+  auto provider = jlm::aa::BasicMemoryNodeProvider::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, basicMemoryNodeProvider, *pointsToGraph);
+  ValidateProvider(test, *provider, *pointsToGraph);
 }
 
 
