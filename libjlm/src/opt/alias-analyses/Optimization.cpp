@@ -50,10 +50,10 @@ SteensgaardBasic::run(
   auto pointsToGraph = steensgaard.Analyze(rvsdgModule, statisticsDescriptor);
   UnlinkUnknownMemoryNode(*pointsToGraph);
 
-  BasicMemoryNodeProvider basicMemoryNodeProvider(*pointsToGraph);
+  auto provider = BasicMemoryNodeProvider::Create(rvsdgModule, *pointsToGraph);
 
   MemoryStateEncoder encoder;
-  encoder.Encode(rvsdgModule, basicMemoryNodeProvider, statisticsDescriptor);
+  encoder.Encode(rvsdgModule, *provider, statisticsDescriptor);
 }
 
 }

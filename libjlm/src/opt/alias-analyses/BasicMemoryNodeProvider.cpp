@@ -10,8 +10,38 @@ namespace jlm::aa
 
 BasicMemoryNodeProvider::BasicMemoryNodeProvider(const PointsToGraph & pointsToGraph)
   : PointsToGraph_(pointsToGraph)
+{}
+
+void
+BasicMemoryNodeProvider::ProvisionMemoryNodes(const RvsdgModule&)
 {
-  CollectMemoryNodes(pointsToGraph);
+  for (auto & allocaNode : PointsToGraph_.AllocaNodes())
+    MemoryNodes_.Insert(&allocaNode);
+
+  for (auto & deltaNode : PointsToGraph_.DeltaNodes())
+    MemoryNodes_.Insert(&deltaNode);
+
+  for (auto & lambdaNode : PointsToGraph_.LambdaNodes())
+    MemoryNodes_.Insert(&lambdaNode);
+
+  for (auto & mallocNode : PointsToGraph_.MallocNodes())
+    MemoryNodes_.Insert(&mallocNode);
+
+  for (auto & importNode : PointsToGraph_.ImportNodes())
+    MemoryNodes_.Insert(&importNode);
+
+  MemoryNodes_.Insert(&PointsToGraph_.GetExternalMemoryNode());
+}
+
+std::unique_ptr<BasicMemoryNodeProvider>
+BasicMemoryNodeProvider::Create(
+  const RvsdgModule & rvsdgModule,
+  const PointsToGraph & pointsToGraph)
+{
+  std::unique_ptr<BasicMemoryNodeProvider> provider(new BasicMemoryNodeProvider(pointsToGraph));
+  provider->ProvisionMemoryNodes(rvsdgModule);
+
+  return provider;
 }
 
 const PointsToGraph &
@@ -55,27 +85,6 @@ BasicMemoryNodeProvider::GetOutputNodes(const jive::output & output) const
     memoryNodes.Insert(&memoryNode);
 
   return memoryNodes;
-}
-
-void
-BasicMemoryNodeProvider::CollectMemoryNodes(const PointsToGraph & pointsToGraph)
-{
-  for (auto & allocaNode : pointsToGraph.AllocaNodes())
-    MemoryNodes_.Insert(&allocaNode);
-
-  for (auto & deltaNode : pointsToGraph.DeltaNodes())
-    MemoryNodes_.Insert(&deltaNode);
-
-  for (auto & lambdaNode : pointsToGraph.LambdaNodes())
-    MemoryNodes_.Insert(&lambdaNode);
-
-  for (auto & mallocNode : pointsToGraph.MallocNodes())
-    MemoryNodes_.Insert(&mallocNode);
-
-  for (auto & importNode : pointsToGraph.ImportNodes())
-    MemoryNodes_.Insert(&importNode);
-
-  MemoryNodes_.Insert(&pointsToGraph.GetExternalMemoryNode());
 }
 
 }
