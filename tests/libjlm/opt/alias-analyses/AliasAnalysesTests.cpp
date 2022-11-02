@@ -771,12 +771,12 @@ IndirectCallTest1::SetupRvsdg()
   auto nf = graph->node_normal_form(typeid(jive::operation));
   nf->set_mutable(false);
 
-  auto SetupConstantFunction = [&](size_t n)
+  auto SetupConstantFunction = [&](ssize_t n, const std::string & name)
   {
     auto lambda = lambda::node::create(
       graph->root(),
       constantFunctionType,
-      "four",
+      name,
       linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
@@ -857,8 +857,8 @@ IndirectCallTest1::SetupRvsdg()
       AssertedCast<CallNode>(jive::node_output::node(call_four[0])));
   };
 
-  auto fctfour = SetupConstantFunction(4);
-  auto fctthree = SetupConstantFunction(3);
+  auto fctfour = SetupConstantFunction(4, "four");
+  auto fctthree = SetupConstantFunction(3, "three");
   auto [fctindcall, callIndirectFunction] = SetupIndirectCallFunction();
   auto [fcttest, callFunctionThree, callFunctionFour] = SetupTestFunction(fctindcall, fctthree, fctfour);
 
