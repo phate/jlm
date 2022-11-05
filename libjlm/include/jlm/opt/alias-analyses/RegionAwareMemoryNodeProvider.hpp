@@ -57,7 +57,9 @@ public:
   operator=(RegionAwareMemoryNodeProvider &&) = delete;
 
   void
-  ProvisionMemoryNodes(const RvsdgModule & rvsdgModule) override;
+  ProvisionMemoryNodes(
+    const RvsdgModule & rvsdgModule,
+    StatisticsCollector & statisticsCollector) override;
 
   [[nodiscard]] const PointsToGraph &
   GetPointsToGraph() const noexcept override;
@@ -76,6 +78,21 @@ public:
 
   [[nodiscard]] HashSet<const PointsToGraph::MemoryNode*>
   GetOutputNodes(const jive::output & output) const override;
+
+  /**
+   * Creates a RegionAwareMemoryNodeProvider and calls the ProvisionMemoryNodes() method.
+   *
+   * @param rvsdgModule The RVSDG module on which the provision should be performed.
+   * @param pointsToGraph The PointsToGraph corresponding to the RVSDG module.
+   * @param statisticsCollector The statistics collector for collecting pass statistics.
+   *
+   * @return A new instance of RegionAwareMemoryNodeProvider.
+   */
+  static std::unique_ptr<RegionAwareMemoryNodeProvider>
+  Create(
+    const RvsdgModule & rvsdgModule,
+    const PointsToGraph & pointsToGraph,
+    StatisticsCollector & statisticsCollector);
 
   /**
    * Creates a RegionAwareMemoryNodeProvider and calls the ProvisionMemoryNodes() method.

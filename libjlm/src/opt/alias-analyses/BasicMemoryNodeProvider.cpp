@@ -4,6 +4,7 @@
  */
 
 #include <jlm/opt/alias-analyses/BasicMemoryNodeProvider.hpp>
+#include <jlm/util/Statistics.hpp>
 
 namespace jlm::aa
 {
@@ -13,7 +14,9 @@ BasicMemoryNodeProvider::BasicMemoryNodeProvider(const PointsToGraph & pointsToG
 {}
 
 void
-BasicMemoryNodeProvider::ProvisionMemoryNodes(const RvsdgModule&)
+BasicMemoryNodeProvider::ProvisionMemoryNodes(
+  const RvsdgModule&,
+  StatisticsCollector&)
 {
   for (auto & allocaNode : PointsToGraph_.AllocaNodes())
     MemoryNodes_.Insert(&allocaNode);
@@ -36,12 +39,22 @@ BasicMemoryNodeProvider::ProvisionMemoryNodes(const RvsdgModule&)
 std::unique_ptr<BasicMemoryNodeProvider>
 BasicMemoryNodeProvider::Create(
   const RvsdgModule & rvsdgModule,
-  const PointsToGraph & pointsToGraph)
+  const PointsToGraph & pointsToGraph,
+  StatisticsCollector & statisticsCollector)
 {
   std::unique_ptr<BasicMemoryNodeProvider> provider(new BasicMemoryNodeProvider(pointsToGraph));
-  provider->ProvisionMemoryNodes(rvsdgModule);
+  provider->ProvisionMemoryNodes(rvsdgModule, statisticsCollector);
 
   return provider;
+}
+
+std::unique_ptr<BasicMemoryNodeProvider>
+BasicMemoryNodeProvider::Create(
+  const RvsdgModule & rvsdgModule,
+  const PointsToGraph & pointsToGraph)
+{
+  StatisticsCollector statisticsCollector;
+  return Create(rvsdgModule, pointsToGraph, statisticsCollector);
 }
 
 const PointsToGraph &

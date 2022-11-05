@@ -11,6 +11,10 @@
 
 #include <vector>
 
+namespace jlm {
+class StatisticsCollector;
+}
+
 namespace jlm::aa {
 
 class MemoryNodeProvider {
@@ -24,9 +28,12 @@ public:
    * can be used to retrieve the entry or exit nodes.
    *
    * @param rvsdgModule The RVSDG module on which the memory node provision should be performed.
+   * @param statisticsCollector The statistics collector for collecting pass statistics.
    */
   virtual void
-  ProvisionMemoryNodes(const RvsdgModule & rvsdgModule) = 0;
+  ProvisionMemoryNodes(
+    const RvsdgModule & rvsdgModule,
+    StatisticsCollector & statisticsCollector) = 0;
 
   [[nodiscard]] virtual const PointsToGraph &
   GetPointsToGraph() const noexcept = 0;

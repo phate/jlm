@@ -9,6 +9,7 @@
 #include <jlm/ir/operators/store.hpp>
 #include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
+#include <jlm/util/Statistics.hpp>
 
 #include <jive/rvsdg/traverser.hpp>
 
@@ -374,7 +375,9 @@ RegionAwareMemoryNodeProvider::RegionAwareMemoryNodeProvider(const PointsToGraph
 {}
 
 void
-RegionAwareMemoryNodeProvider::ProvisionMemoryNodes(const jlm::RvsdgModule & rvsdgModule)
+RegionAwareMemoryNodeProvider::ProvisionMemoryNodes(
+  const jlm::RvsdgModule & rvsdgModule,
+  StatisticsCollector & statisticsCollector)
 {
   AnnotateRegion(*rvsdgModule.Rvsdg().root());
   Propagate(rvsdgModule);
@@ -386,12 +389,22 @@ RegionAwareMemoryNodeProvider::ProvisionMemoryNodes(const jlm::RvsdgModule & rvs
 std::unique_ptr<RegionAwareMemoryNodeProvider>
 RegionAwareMemoryNodeProvider::Create(
   const RvsdgModule & rvsdgModule,
-  const PointsToGraph & pointsToGraph)
+  const PointsToGraph & pointsToGraph,
+  StatisticsCollector & statisticsCollector)
 {
   std::unique_ptr<RegionAwareMemoryNodeProvider> provider(new RegionAwareMemoryNodeProvider(pointsToGraph));
-  provider->ProvisionMemoryNodes(rvsdgModule);
+  provider->ProvisionMemoryNodes(rvsdgModule, statisticsCollector);
 
   return provider;
+}
+
+std::unique_ptr<RegionAwareMemoryNodeProvider>
+RegionAwareMemoryNodeProvider::Create(
+  const RvsdgModule & rvsdgModule,
+  const PointsToGraph & pointsToGraph)
+{
+  StatisticsCollector statisticsCollector;
+  return Create(rvsdgModule, pointsToGraph, statisticsCollector);
 }
 
 const PointsToGraph &
