@@ -13,7 +13,6 @@
 #include <jlm/opt/inversion.hpp>
 #include <jlm/opt/unroll.hpp>
 #include <jlm/opt/reduction.hpp>
-#include <jlm/opt/optimization.hpp>
 #include <jlm/tooling/CommandLine.hpp>
 
 #include <llvm/Support/CommandLine.h>
@@ -366,6 +365,7 @@ optimization *
 JlmOptCommandLineParser::GetOptimization(enum OptimizationId id)
 {
   static aa::SteensgaardBasic steensgaardBasic;
+  static aa::SteensgaardRegionAware steensgaardRegionAware;
   static cne commonNodeElimination;
   static DeadNodeElimination deadNodeElimination;
   static fctinline functionInlining;
@@ -379,6 +379,7 @@ JlmOptCommandLineParser::GetOptimization(enum OptimizationId id)
   static std::unordered_map<OptimizationId, jlm::optimization*> map(
     {
       {OptimizationId::AASteensgaardBasic,        &steensgaardBasic},
+      {OptimizationId::AASteensgaardRegionAware,  &steensgaardRegionAware},
       {OptimizationId::cne,                       &commonNodeElimination},
       {OptimizationId::dne,                       &deadNodeElimination},
       {OptimizationId::iln,                       &functionInlining},
@@ -528,6 +529,10 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
         OptimizationId::AASteensgaardBasic,
         "AASteensgaardBasic",
         "Steensgaard alias analysis with basic memory state encoding."),
+      clEnumValN(
+        OptimizationId::AASteensgaardRegionAware,
+        "AASteensgaardRegionAware",
+        "Steensgaard alias analysis with region-aware memory state encoding."),
       clEnumValN(
         OptimizationId::cne,
         "cne",
