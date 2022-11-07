@@ -280,6 +280,24 @@ region::IsRootRegion() const noexcept
 }
 
 size_t
+region::NumRegions(const jive::region & region) noexcept
+{
+  size_t numRegions = 1;
+  for (auto & node : region.nodes)
+  {
+    if (auto structuralNode = dynamic_cast<const jive::structural_node*>(&node))
+    {
+      for (size_t n = 0; n < structuralNode->nsubregions(); n++)
+      {
+        numRegions += NumRegions(*structuralNode->subregion(n));
+      }
+    }
+  }
+
+  return numRegions;
+}
+
+size_t
 nnodes(const jive::region * region) noexcept
 {
 	size_t n = region->nnodes();
