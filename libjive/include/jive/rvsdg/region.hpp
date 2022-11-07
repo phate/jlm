@@ -286,6 +286,16 @@ public:
   template <class Operation> static inline bool
   Contains(const jive::region & region, bool checkSubregions);
 
+  /**
+   * Counts the number of (sub-)regions contained within \p region. The count includes \p region, i.e., if \p region
+   * does not contain any structural nodes and therefore no subregions, then the count is one.
+   *
+   * @param region The region for which to count the contained (sub-)regions.
+   * @return The number of (sub-)regions.
+   */
+  [[nodiscard]] static size_t
+  NumRegions(const jive::region & region) noexcept;
+
 	region_nodes_list nodes;
 
 	region_top_node_list top_nodes;

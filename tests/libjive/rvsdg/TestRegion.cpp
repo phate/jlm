@@ -111,6 +111,30 @@ TestIsRootRegion()
   assert(!structuralNode->subregion(0)->IsRootRegion());
 }
 
+/**
+ * Test region::NumRegions()
+ */
+static void
+TestNumRegions()
+{
+  using namespace jive;
+
+  {
+    jive::graph graph;
+
+    assert(region::NumRegions(*graph.root()) == 1);
+  }
+
+  {
+    jive::graph graph;
+    auto structuralNode = jlm::structural_node::create(graph.root(), 4);
+    jlm::structural_node::create(structuralNode->subregion(0), 2);
+    jlm::structural_node::create(structuralNode->subregion(3), 5);
+
+    assert(region::NumRegions(*graph.root()) == 1+4+2+5);
+  }
+}
+
 static int
 Test()
 {
@@ -119,6 +143,7 @@ Test()
 
   TestContainsMethod();
   TestIsRootRegion();
+  TestNumRegions();
 
   return 0;
 }
