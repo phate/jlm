@@ -450,11 +450,11 @@ private:
 	filepath SourceFileName_;
 };
 
-class StatisticsCollector final
+class InterProceduralGraphToRvsdgStatisticsCollector final
 {
 public:
   explicit
-  StatisticsCollector(
+  InterProceduralGraphToRvsdgStatisticsCollector(
     const StatisticsDescriptor & statisticsDescriptor,
     filepath sourceFileName)
   : SourceFileName_(std::move(sourceFileName))
@@ -968,7 +968,7 @@ static void
 RestructureControlFlowGraph(
   jlm::cfg & controlFlowGraph,
   const std::string & functionName,
-  StatisticsCollector & statisticsCollector)
+  InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
   auto restructureControlFlowGraph = [](jlm::cfg * controlFlowGraph)
   {
@@ -986,7 +986,7 @@ static std::unique_ptr<aggnode>
 AggregateControlFlowGraph(
   jlm::cfg & controlFlowGraph,
   const std::string & functionName,
-  StatisticsCollector & statisticsCollector)
+  InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
   auto aggregateControlFlowGraph = [](jlm::cfg & controlFlowGraph)
   {
@@ -1008,7 +1008,7 @@ static std::unique_ptr<AnnotationMap>
 AnnotateAggregationTree(
   const aggnode & aggregationTreeRoot,
   const std::string & functionName,
-  StatisticsCollector & statisticsCollector)
+  InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
   auto demandMap = statisticsCollector.CollectAnnotationStatistics(
     Annotate,
@@ -1027,7 +1027,7 @@ ConvertAggregationTreeToLambda(
   const FunctionType & functionType,
   const linkage & functionLinkage,
   const attributeset & functionAttributes,
-  StatisticsCollector & statisticsCollector)
+  InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
   auto lambdaNode = lambda::node::create(
     &scopedVariableMap.GetTopRegion(),
@@ -1052,7 +1052,7 @@ static jive::output *
 ConvertControlFlowGraph(
   const function_node & functionNode,
   RegionalizedVariableMap & regionalizedVariableMap,
-  StatisticsCollector & statisticsCollector)
+  InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
   auto & functionName = functionNode.name();
 	auto & controlFlowGraph = *functionNode.cfg();
@@ -1093,7 +1093,7 @@ static jive::output *
 ConvertFunctionNode(
   const function_node & functionNode,
   RegionalizedVariableMap & regionalizedVariableMap,
-  StatisticsCollector & statisticsCollector)
+  InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
   auto & region = regionalizedVariableMap.GetTopRegion();
 
@@ -1126,7 +1126,7 @@ static jive::output *
 ConvertDataNode(
   const data_node & dataNode,
   RegionalizedVariableMap & regionalizedVariableMap,
-  StatisticsCollector & statisticsCollector)
+  InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
   auto dataNodeInitialization = dataNode.initialization();
 
@@ -1187,7 +1187,7 @@ static jive::output *
 ConvertInterProceduralGraphNode(
   const ipgraph_node & ipgNode,
   RegionalizedVariableMap & regionalizedVariableMap,
-  StatisticsCollector & statisticsCollector)
+  InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
 	if (auto functionNode = dynamic_cast<const function_node*>(&ipgNode))
 		return ConvertFunctionNode(*functionNode, regionalizedVariableMap, statisticsCollector);
@@ -1203,7 +1203,7 @@ ConvertStronglyConnectedComponent(
   const std::unordered_set<const jlm::ipgraph_node*> & stronglyConnectedComponent,
   jive::graph & graph,
   RegionalizedVariableMap & regionalizedVariableMap,
-  StatisticsCollector & statisticsCollector)
+  InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
 	auto & interProceduralGraphModule = regionalizedVariableMap.GetInterProceduralGraphModule();
 
@@ -1280,7 +1280,7 @@ ConvertStronglyConnectedComponent(
 static std::unique_ptr<RvsdgModule>
 ConvertInterProceduralGraphModule(
   const ipgraph_module & interProceduralGraphModule,
-  StatisticsCollector & statisticsCollector)
+  InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
 	auto rvsdgModule = RvsdgModule::Create(
     interProceduralGraphModule.source_filename(),
@@ -1312,7 +1312,7 @@ ConvertInterProceduralGraphModule(
   const ipgraph_module & interProceduralGraphModule,
   const StatisticsDescriptor & statisticsDescriptor)
 {
-  StatisticsCollector statisticsCollector(
+  InterProceduralGraphToRvsdgStatisticsCollector statisticsCollector(
     statisticsDescriptor,
     interProceduralGraphModule.source_filename());
 
