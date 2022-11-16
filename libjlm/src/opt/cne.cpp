@@ -24,7 +24,7 @@ public:
 	{}
 
 	cnestat()
-	: Statistics(StatisticsDescriptor::StatisticsId::CommonNodeElimination)
+	: Statistics(Statistics::Id::CommonNodeElimination)
   , nnodes_before_(0), nnodes_after_(0)
 	, ninputs_before_(0), ninputs_after_(0)
 	{}

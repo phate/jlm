@@ -22,7 +22,7 @@ public:
 	{}
 
 	redstat()
-	: Statistics(StatisticsDescriptor::StatisticsId::ReduceNodes)
+	: Statistics(Statistics::Id::ReduceNodes)
   , nnodes_before_(0), nnodes_after_(0)
 	, ninputs_before_(0), ninputs_after_(0)
 	{}

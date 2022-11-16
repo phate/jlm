@@ -24,7 +24,7 @@ public:
 	{}
 
 	ilnstat()
-	: Statistics(StatisticsDescriptor::StatisticsId::FunctionInlining)
+	: Statistics(Statistics::Id::FunctionInlining)
   , nnodes_before_(0)
   , nnodes_after_(0)
 	{}

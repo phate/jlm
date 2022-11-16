@@ -30,7 +30,7 @@ public:
 	{}
 
 	unrollstat()
-	: Statistics(StatisticsDescriptor::StatisticsId::LoopUnrolling)
+	: Statistics(Statistics::Id::LoopUnrolling)
   , nnodes_before_(0), nnodes_after_(0)
 	{}
 

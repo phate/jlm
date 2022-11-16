@@ -29,7 +29,7 @@ public:
 
   explicit
   EncodingStatistics(jlm::filepath sourceFile)
-    : Statistics(StatisticsDescriptor::StatisticsId::BasicEncoderEncoding)
+    : Statistics(Statistics::Id::BasicEncoderEncoding)
     , NumNodesBefore_(0)
     , SourceFile_(std::move(sourceFile))
   {}

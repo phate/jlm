@@ -31,7 +31,7 @@ public:
 	{}
 
 	rvsdg_destruction_stat(const jlm::filepath & filename)
-	: Statistics(StatisticsDescriptor::StatisticsId::RvsdgDestruction)
+	: Statistics(Statistics::Id::RvsdgDestruction)
   , ntacs_(0)
 	, nnodes_(0)
 	, filename_(filename)

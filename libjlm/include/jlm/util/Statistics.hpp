@@ -7,16 +7,16 @@
 #define JLM_UTIL_STATISTICS_HPP
 
 #include <jlm/util/file.hpp>
-
-#include <unordered_set>
+#include <jlm/util/HashSet.hpp>
 
 namespace jlm {
 
-class Statistics;
-
-class StatisticsDescriptor final {
+/**
+ * \brief Statistics Interface
+ */
+class Statistics {
 public:
-  enum class StatisticsId {
+  enum class Id {
     Aggregation,
     Annotation,
     BasicEncoderEncoding,
@@ -39,93 +39,98 @@ public:
     ThetaGammaInversion
   };
 
-	StatisticsDescriptor()
-	: StatisticsDescriptor(
-    std::string("/tmp/jlm-stats.log"),
-    {})
-	{}
+  virtual
+  ~Statistics();
 
   explicit
-  StatisticsDescriptor(std::unordered_set<StatisticsId> printStatistics)
-  : StatisticsDescriptor(
-    std::string("tmp/jlm-stats.log"),
-    std::move(printStatistics))
+  Statistics(const Statistics::Id & statisticsId)
+    : StatisticsId_(statisticsId)
   {}
 
-	StatisticsDescriptor(
+  [[nodiscard]] Statistics::Id
+  GetId() const noexcept
+  {
+    return StatisticsId_;
+  }
+
+  [[nodiscard]] virtual std::string
+  ToString() const = 0;
+
+private:
+  Statistics::Id StatisticsId_;
+};
+
+class StatisticsDescriptor final {
+public:
+  StatisticsDescriptor()
+    : StatisticsDescriptor(
+    std::string("/tmp/jlm-stats.log"),
+    {})
+  {}
+
+  explicit
+  StatisticsDescriptor(HashSet<Statistics::Id> demandedStatistics)
+    : StatisticsDescriptor(
+    std::string("tmp/jlm-stats.log"),
+    std::move(demandedStatistics))
+  {}
+
+  StatisticsDescriptor(
     const jlm::filepath & path,
-    std::unordered_set<StatisticsId> printStatistics)
-	: file_(path)
-  , printStatistics_(std::move(printStatistics))
-	{
-		file_.open("a");
-	}
+    HashSet<Statistics::Id> demandedStatistics)
+    : File_(path)
+    , DemandedStatistics_(std::move(demandedStatistics))
+  {
+    File_.open("a");
+  }
 
 
-	const jlm::filepath &
-	filepath() const noexcept
-	{
-		return file_.path();
-	}
-
-	void
-	set_file(const jlm::filepath & path) noexcept
-	{
-		file_ = jlm::file(path);
-		file_.open("a");
-	}
+  const jlm::filepath &
+  GetFilePath() const noexcept
+  {
+    return File_.path();
+  }
 
   void
-  SetPrintStatisticsIds(std::unordered_set<StatisticsId> printStatistics)
+  SetFilePath(const jlm::filepath & path) noexcept
   {
-    printStatistics_ = std::move(printStatistics);
+    File_ = jlm::file(path);
+    File_.open("a");
+  }
+
+  void
+  SetDemandedStatistics(HashSet<Statistics::Id> printStatistics)
+  {
+    DemandedStatistics_ = std::move(printStatistics);
   }
 
   /** \brief Prints statistics to file.
    *
    * Prints \p statistics to the statistics file iff the \p statistics'
-   * StatisticsId was set with SetPrintStatisticsIds().
+   * StatisticsId was set with SetDemandedStatistics().
    *
    * @param statistics The statistics that is printed.
    *
-   * @see SetPrintStatisticsIds()
-   * @see IsPrintable()
+   * @see SetDemandedStatistics()
+   * @see IsDemanded()
    */
-	void
-	PrintStatistics(const Statistics & statistics) const noexcept;
+  void
+  PrintStatistics(const Statistics & statistics) const noexcept;
 
+  /** \brief Checks if a statistics is demanded.
+   *
+   * @param id The Id of the statistics.
+   * @return True if a statistics is demanded, otherwise false.
+   */
   bool
-  IsPrintable(StatisticsId id) const
+  IsDemanded(Statistics::Id id) const
   {
-    return printStatistics_.find(id) != printStatistics_.end();
+    return DemandedStatistics_.Contains(id);
   }
 
 private:
-	jlm::file file_;
-  std::unordered_set<StatisticsId> printStatistics_;
-};
-
-class Statistics {
-public:
-  virtual
-  ~Statistics();
-
-  explicit
-  Statistics(const StatisticsDescriptor::StatisticsId & statisticsId)
-  : StatisticsId_(statisticsId)
-  {}
-
-  StatisticsDescriptor::StatisticsId
-  GetStatisticsId() const noexcept
-  {
-    return StatisticsId_;
-  }
-
-  virtual std::string
-  ToString() const = 0;
-
-private:
-  StatisticsDescriptor::StatisticsId StatisticsId_;
+  jlm::file File_;
+  HashSet<Statistics::Id> DemandedStatistics_;
 };
 
 }

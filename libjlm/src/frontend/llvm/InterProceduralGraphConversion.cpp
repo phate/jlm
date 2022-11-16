@@ -142,7 +142,7 @@ public:
 	ControlFlowRestructuringStatistics(
     filepath sourceFileName,
     std::string functionName)
-	: Statistics(StatisticsDescriptor::StatisticsId::ControlFlowRecovery)
+	: Statistics(Statistics::Id::ControlFlowRecovery)
   , NumNodes_(0)
 	, FunctionName_(std::move(functionName))
 	, SourceFileName_(std::move(sourceFileName))
@@ -196,7 +196,7 @@ public:
 	AggregationStatistics(
     filepath sourceFileName,
     std::string functionName)
-	: Statistics(StatisticsDescriptor::StatisticsId::Aggregation)
+	: Statistics(Statistics::Id::Aggregation)
   , NumNodes_(0)
 	, FunctionName_(std::move(functionName))
 	, SourceFileName_(std::move(sourceFileName))
@@ -250,7 +250,7 @@ public:
 	AnnotationStatistics(
     filepath sourceFileName,
     std::string functionName)
-	: Statistics(StatisticsDescriptor::StatisticsId::Annotation)
+	: Statistics(Statistics::Id::Annotation)
   , NumThreeAddressCodes_(0)
 	, FunctionName_(std::move(functionName))
 	, SourceFileName_(std::move(sourceFileName))
@@ -304,7 +304,7 @@ public:
 	AggregationTreeToLambdaStatistics(
     filepath sourceFileName,
     std::string functionName)
-	: Statistics(StatisticsDescriptor::StatisticsId::JlmToRvsdgConversion)
+	: Statistics(Statistics::Id::JlmToRvsdgConversion)
   , FunctionName_(std::move(functionName))
 	, SourceFileName_(std::move(sourceFileName))
 	{}
@@ -354,7 +354,7 @@ public:
   DataNodeToDeltaStatistics(
     filepath sourceFileName,
     std::string dataNodeName)
-  : Statistics(StatisticsDescriptor::StatisticsId::DataNodeToDelta)
+  : Statistics(Statistics::Id::DataNodeToDelta)
   , NumInitializationThreeAddressCodes_(0)
   , DataNodeName_(std::move(dataNodeName))
   , SourceFileName_(std::move(sourceFileName))
@@ -407,7 +407,7 @@ public:
 
   explicit
 	InterProceduralGraphToRvsdgStatistics(filepath sourceFileName)
-	: Statistics(StatisticsDescriptor::StatisticsId::RvsdgConstruction)
+	: Statistics(Statistics::Id::RvsdgConstruction)
   , NumThreeAddressCodes_(0)
 	, NumRvsdgNodes_(0)
 	, SourceFileName_(std::move(sourceFileName))
@@ -468,7 +468,7 @@ public:
     std::string functionName)
   {
     auto & statistics = Create<ControlFlowRestructuringStatistics>(std::move(functionName));
-    if (!StatisticsDescriptor_.IsPrintable(statistics.GetStatisticsId())) {
+    if (!StatisticsDescriptor_.IsDemanded(statistics.GetId())) {
       restructureControlFlowGraph(&cfg);
       return;
     }
@@ -485,7 +485,7 @@ public:
     std::string functionName)
   {
     auto & statistics = Create<AggregationStatistics>(std::move(functionName));
-    if (!StatisticsDescriptor_.IsPrintable(statistics.GetStatisticsId()))
+    if (!StatisticsDescriptor_.IsDemanded(statistics.GetId()))
       return aggregateControlFlowGraph(cfg);
 
     statistics.Start(cfg);
@@ -502,7 +502,7 @@ public:
     std::string functionName)
   {
     auto & statistics = Create<AnnotationStatistics>(std::move(functionName));
-    if (!StatisticsDescriptor_.IsPrintable(statistics.GetStatisticsId()))
+    if (!StatisticsDescriptor_.IsDemanded(statistics.GetId()))
       return annotateAggregationTree(aggregationTreeRoot);
 
     statistics.Start(aggregationTreeRoot);
@@ -518,7 +518,7 @@ public:
     std::string functionName)
   {
     auto & statistics = Create<AggregationTreeToLambdaStatistics>(std::move(functionName));
-    if (!StatisticsDescriptor_.IsPrintable(statistics.GetStatisticsId()))
+    if (!StatisticsDescriptor_.IsDemanded(statistics.GetId()))
       return convertAggregationTreeToLambda();
 
     statistics.Start();
@@ -533,7 +533,7 @@ public:
     size_t NumInitializationThreeAddressCodes)
   {
     auto & statistics = Create<DataNodeToDeltaStatistics>(std::move(dataNodeName));
-    if (!StatisticsDescriptor_.IsPrintable(statistics.GetStatisticsId()))
+    if (!StatisticsDescriptor_.IsDemanded(statistics.GetId()))
       return convertDataNodeToDelta();
 
     statistics.Start(NumInitializationThreeAddressCodes);
@@ -549,7 +549,7 @@ public:
     const ipgraph_module & interProceduralGraphModule)
   {
     auto & statistics = CreateInterProceduralGraphToRvsdgStatistics();
-    if (!StatisticsDescriptor_.IsPrintable(statistics.GetStatisticsId()))
+    if (!StatisticsDescriptor_.IsDemanded(statistics.GetId()))
       return convertInterProceduralGraphModule(interProceduralGraphModule);
 
     statistics.Start(interProceduralGraphModule);
