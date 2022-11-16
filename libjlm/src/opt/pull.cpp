@@ -23,7 +23,7 @@ public:
 	{}
 
 	pullstat()
-	: Statistics(StatisticsDescriptor::StatisticsId::PullNodes)
+	: Statistics(Statistics::Id::PullNodes)
   , ninputs_before_(0), ninputs_after_(0)
 	{}
 

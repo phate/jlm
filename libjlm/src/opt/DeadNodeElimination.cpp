@@ -32,7 +32,7 @@ public:
 	~Statistics() override = default;
 
 	Statistics()
-	: jlm::Statistics(StatisticsDescriptor::StatisticsId::DeadNodeElimination)
+	: jlm::Statistics(Statistics::Id::DeadNodeElimination)
   , numNodesBefore_(0), numNodesAfter_(0)
 	, numInputsBefore_(0), numInputsAfter_(0)
 	{}

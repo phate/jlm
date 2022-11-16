@@ -33,7 +33,7 @@ public:
 
   explicit
   SteensgaardAnalysisStatistics(jlm::filepath sourceFile)
-    : Statistics(StatisticsDescriptor::StatisticsId::SteensgaardAnalysis)
+    : Statistics(Statistics::Id::SteensgaardAnalysis)
     , NumNodesBefore_(0)
     , SourceFile_(std::move(sourceFile))
   {}
@@ -76,7 +76,7 @@ public:
 
   explicit
   SteensgaardPointsToGraphConstructionStatistics(jlm::filepath sourceFile)
-    : Statistics(StatisticsDescriptor::StatisticsId::SteensgaardPointsToGraphConstruction)
+    : Statistics(Statistics::Id::SteensgaardPointsToGraphConstruction)
     , SourceFile_(std::move(sourceFile))
     , NumDisjointSets_(0)
     , NumLocations_(0)

@@ -26,7 +26,7 @@ public:
 	{}
 
 	ivtstat()
-	: Statistics(StatisticsDescriptor::StatisticsId::ThetaGammaInversion)
+	: Statistics(Statistics::Id::ThetaGammaInversion)
   , nnodes_before_(0), nnodes_after_(0)
 	, ninputs_before_(0), ninputs_after_(0)
 	{}

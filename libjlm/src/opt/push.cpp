@@ -26,7 +26,7 @@ public:
 	{}
 
 	pushstat()
-	: Statistics(StatisticsDescriptor::StatisticsId::PushNodes)
+	: Statistics(Statistics::Id::PushNodes)
   , ninputs_before_(0), ninputs_after_(0)
 	{}
 

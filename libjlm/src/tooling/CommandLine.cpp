@@ -422,90 +422,90 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
   cl::opt<std::string> statisticFile(
     "s",
     cl::desc("Write stats to <file>. Default is "
-             + CommandLineOptions_.StatisticsDescriptor_.filepath().to_str()
+             + CommandLineOptions_.StatisticsDescriptor_.GetFilePath().to_str()
              + "."),
     cl::value_desc("file"));
 
-  cl::list<StatisticsDescriptor::StatisticsId> printStatistics(
+  cl::list<Statistics::Id> printStatistics(
     cl::values(
       clEnumValN(
-        StatisticsDescriptor::StatisticsId::Aggregation,
+        Statistics::Id::Aggregation,
         "print-aggregation-time",
         "Write aggregation statistics to file."),
       clEnumValN(
-        StatisticsDescriptor::StatisticsId::Annotation,
+        Statistics::Id::Annotation,
         "print-annotation-time",
         "Write annotation statistics to file."),
       clEnumValN(
-        StatisticsDescriptor::StatisticsId::BasicEncoderEncoding,
+        Statistics::Id::BasicEncoderEncoding,
         "print-basicencoder-encoding",
         "Write encoding statistics of basic encoder to file."),
       clEnumValN(
-        StatisticsDescriptor::StatisticsId::CommonNodeElimination,
+        Statistics::Id::CommonNodeElimination,
         "print-cne-stat",
         "Write common node elimination statistics to file."),
       clEnumValN(
-        StatisticsDescriptor::StatisticsId::ControlFlowRecovery,
+        Statistics::Id::ControlFlowRecovery,
         "print-cfr-time",
         "Write control flow recovery statistics to file."),
       clEnumValN(
-        StatisticsDescriptor::StatisticsId::DataNodeToDelta,
+        Statistics::Id::DataNodeToDelta,
         "printDataNodeToDelta",
         "Write data node to delta node conversion statistics to file."),
       clEnumValN(
-        StatisticsDescriptor::StatisticsId::DeadNodeElimination,
+        Statistics::Id::DeadNodeElimination,
         "print-dne-stat",
         "Write dead node elimination statistics to file."),
       clEnumValN(
-        StatisticsDescriptor::StatisticsId::FunctionInlining,
+        Statistics::Id::FunctionInlining,
         "print-iln-stat",
         "Write function inlining statistics to file."),
       clEnumValN(
-        StatisticsDescriptor::StatisticsId::InvariantValueRedirection,
+        Statistics::Id::InvariantValueRedirection,
         "printInvariantValueRedirection",
         "Write invariant value redirection statistics to file."),
       clEnumValN(
-        StatisticsDescriptor::StatisticsId::JlmToRvsdgConversion,
+        Statistics::Id::JlmToRvsdgConversion,
         "print-jlm-rvsdg-conversion",
         "Write Jlm to RVSDG conversion statistics to file."),
       clEnumValN(
-        StatisticsDescriptor::StatisticsId::LoopUnrolling,
+        Statistics::Id::LoopUnrolling,
         "print-unroll-stat",
         "Write loop unrolling statistics to file."),
       clEnumValN(
-        StatisticsDescriptor::StatisticsId::PullNodes,
+        Statistics::Id::PullNodes,
         "print-pull-stat",
         "Write node pull statistics to file."),
       clEnumValN(
-        StatisticsDescriptor::StatisticsId::PushNodes,
+        Statistics::Id::PushNodes,
         "print-push-stat",
         "Write node push statistics to file."),
       clEnumValN(
-        StatisticsDescriptor::StatisticsId::ReduceNodes,
+        Statistics::Id::ReduceNodes,
         "print-reduction-stat",
         "Write node reduction statistics to file."),
       clEnumValN(
-        StatisticsDescriptor::StatisticsId::RvsdgConstruction,
+        Statistics::Id::RvsdgConstruction,
         "print-rvsdg-construction",
         "Write RVSDG construction statistics to file."),
       clEnumValN(
-        StatisticsDescriptor::StatisticsId::RvsdgDestruction,
+        Statistics::Id::RvsdgDestruction,
         "print-rvsdg-destruction",
         "Write RVSDG destruction statistics to file."),
       clEnumValN(
-        StatisticsDescriptor::StatisticsId::RvsdgOptimization,
+        Statistics::Id::RvsdgOptimization,
         "print-rvsdg-optimization",
         "Write RVSDG optimization statistics to file."),
       clEnumValN(
-        StatisticsDescriptor::StatisticsId::SteensgaardAnalysis,
+        Statistics::Id::SteensgaardAnalysis,
         "print-steensgaard-analysis",
         "Write Steensgaard analysis statistics to file."),
       clEnumValN(
-        StatisticsDescriptor::StatisticsId::SteensgaardPointsToGraphConstruction,
+        Statistics::Id::SteensgaardPointsToGraphConstruction,
         "print-steensgaard-pointstograph-construction",
         "Write Steensgaard PointsTo Graph construction statistics to file."),
       clEnumValN(
-        StatisticsDescriptor::StatisticsId::ThetaGammaInversion,
+        Statistics::Id::ThetaGammaInversion,
         "print-ivt-stat",
         "Write theta-gamma inversion statistics to file.")),
     cl::desc("Write statistics"));
@@ -572,19 +572,18 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
     CommandLineOptions_.OutputFile_ = outputFile;
 
   if (!statisticFile.empty())
-    CommandLineOptions_.StatisticsDescriptor_.set_file(statisticFile);
+    CommandLineOptions_.StatisticsDescriptor_.SetFilePath(statisticFile);
 
   std::vector<jlm::optimization*> optimizations;
   for (auto & optimizationId : optimizationIds)
     optimizations.push_back(GetOptimization(optimizationId));
 
-  std::unordered_set<StatisticsDescriptor::StatisticsId> printStatisticsIds(
-    printStatistics.begin(), printStatistics.end());
+  HashSet<Statistics::Id> printStatisticsIds({printStatistics.begin(), printStatistics.end()});
 
   CommandLineOptions_.InputFile_ = inputFile;
   CommandLineOptions_.OutputFormat_ = outputFormat;
   CommandLineOptions_.Optimizations_ = optimizations;
-  CommandLineOptions_.StatisticsDescriptor_.SetPrintStatisticsIds(printStatisticsIds);
+  CommandLineOptions_.StatisticsDescriptor_.SetDemandedStatistics(printStatisticsIds);
 
   return CommandLineOptions_;
 }
