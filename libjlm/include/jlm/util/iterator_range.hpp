@@ -6,6 +6,8 @@
 #ifndef JLM_UTIL_ITERATOR_RANGE_HPP
 #define JLM_UTIL_ITERATOR_RANGE_HPP
 
+#include <utility>
+
 namespace jlm {
 
 /** \brief Iterator Range
