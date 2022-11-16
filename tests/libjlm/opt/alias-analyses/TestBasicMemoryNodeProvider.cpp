@@ -22,8 +22,8 @@ RunSteensgaard(const jlm::RvsdgModule & module)
   using namespace jlm;
 
   aa::Steensgaard stgd;
-  StatisticsDescriptor sd;
-  return stgd.Analyze(module, sd);
+  StatisticsCollector statisticsCollector;
+  return stgd.Analyze(module, statisticsCollector);
 }
 
 static void

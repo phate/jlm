@@ -4,12 +4,9 @@
  */
 
 #include <jlm/ir/operators.hpp>
-#include <jlm/ir/operators/call.hpp>
-#include <jlm/ir/types.hpp>
 #include <jlm/opt/alias-analyses/MemoryStateEncoder.hpp>
 #include <jlm/opt/alias-analyses/MemoryNodeProvider.hpp>
 #include <jlm/opt/alias-analyses/Operators.hpp>
-#include <jlm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/opt/DeadNodeElimination.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
@@ -54,6 +51,12 @@ public:
                   SourceFile_.to_str(), " ",
                   "#RvsdgNodes:", NumNodesBefore_, " ",
                   "Time[ns]:", Timer_.ns());
+  }
+
+  static std::unique_ptr<EncodingStatistics>
+  Create(const jlm::filepath & sourceFile)
+  {
+    return std::make_unique<EncodingStatistics>(sourceFile);
   }
 
 private:
@@ -467,21 +470,22 @@ void
 MemoryStateEncoder::Encode(
   RvsdgModule & rvsdgModule,
   const MemoryNodeProvider & memoryNodeProvider,
-  const StatisticsDescriptor & statisticsDescriptor)
+  StatisticsCollector & statisticsCollector)
 {
   Context_ = Context::Create(memoryNodeProvider);
+  auto statistics = EncodingStatistics::Create(rvsdgModule.SourceFileName());
 
-  EncodingStatistics encodingStatistics(rvsdgModule.SourceFileName());
-  encodingStatistics.Start(rvsdgModule.Rvsdg());
+  statistics->Start(rvsdgModule.Rvsdg());
   EncodeRegion(*rvsdgModule.Rvsdg().root());
-  encodingStatistics.Stop();
-  statisticsDescriptor.PrintStatistics(encodingStatistics);
+  statistics->Stop();
+
+  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
   /*
    * Remove all nodes that became dead throughout the encoding.
    */
   jlm::DeadNodeElimination deadNodeElimination;
-  deadNodeElimination.run(rvsdgModule, statisticsDescriptor);
+  deadNodeElimination.run(rvsdgModule, statisticsCollector);
 }
 
 void

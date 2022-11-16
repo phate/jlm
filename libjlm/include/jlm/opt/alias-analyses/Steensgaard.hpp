@@ -195,7 +195,7 @@ public:
 	std::unique_ptr<PointsToGraph>
 	Analyze(
     const RvsdgModule & module,
-    const StatisticsDescriptor & sd) override;
+    StatisticsCollector & statisticsCollector) override;
 
 private:
 	void

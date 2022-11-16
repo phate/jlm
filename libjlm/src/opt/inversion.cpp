@@ -9,12 +9,8 @@
 #include <jlm/opt/inversion.hpp>
 #include <jlm/opt/pull.hpp>
 #include <jlm/util/Statistics.hpp>
-#include <jlm/util/strfmt.hpp>
 #include <jlm/util/time.hpp>
 
-#include <jive/rvsdg/gamma.hpp>
-#include <jive/rvsdg/substitution.hpp>
-#include <jive/rvsdg/theta.hpp>
 #include <jive/rvsdg/traverser.hpp>
 
 namespace jlm {
@@ -56,6 +52,12 @@ public:
 			timer_.ns()
 		);
 	}
+
+  static std::unique_ptr<ivtstat>
+  Create()
+  {
+    return std::make_unique<ivtstat>();
+  }
 
 private:
 	size_t nnodes_before_, nnodes_after_;
@@ -295,15 +297,17 @@ invert(jive::region * region)
 }
 
 static void
-invert(RvsdgModule & rm, const StatisticsDescriptor & sd)
+invert(
+  RvsdgModule & rm,
+  StatisticsCollector & statisticsCollector)
 {
-	ivtstat stat;
+	auto statistics = ivtstat::Create();
 
-	stat.start(rm.Rvsdg());
+	statistics->start(rm.Rvsdg());
 	invert(rm.Rvsdg().root());
-	stat.end(rm.Rvsdg());
+	statistics->end(rm.Rvsdg());
 
-  sd.PrintStatistics(stat);
+  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
 
 /* tginversion */
@@ -312,9 +316,11 @@ tginversion::~tginversion()
 {}
 
 void
-tginversion::run(RvsdgModule & module, const StatisticsDescriptor & sd)
+tginversion::run(
+  RvsdgModule & module,
+  StatisticsCollector & statisticsCollector)
 {
-	invert(module, sd);
+	invert(module, statisticsCollector);
 }
 
 }

@@ -4,7 +4,6 @@
  */
 
 #include <jive/rvsdg/gamma.hpp>
-#include <jive/rvsdg/graph.hpp>
 #include <jive/rvsdg/theta.hpp>
 #include <jive/rvsdg/traverser.hpp>
 
@@ -14,7 +13,6 @@
 #include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/RvsdgModule.hpp>
-#include <jlm/ir/tac.hpp>
 #include <jlm/backend/llvm/rvsdg2jlm/context.hpp>
 #include <jlm/backend/llvm/rvsdg2jlm/rvsdg2jlm.hpp>
 #include <jlm/util/Statistics.hpp>
@@ -60,6 +58,12 @@ public:
 			timer_.ns()
 		);
 	}
+
+  static std::unique_ptr<rvsdg_destruction_stat>
+  Create(const jlm::filepath & sourceFile)
+  {
+    return std::make_unique<rvsdg_destruction_stat>(sourceFile);
+  }
 
 private:
 	size_t ntacs_;
@@ -574,15 +578,17 @@ convert_rvsdg(const RvsdgModule & rm)
 }
 
 std::unique_ptr<ipgraph_module>
-rvsdg2jlm(const RvsdgModule & rm, const StatisticsDescriptor & sd)
+rvsdg2jlm(
+  const RvsdgModule & rm,
+  StatisticsCollector & statisticsCollector)
 {
-	rvsdg_destruction_stat stat(rm.SourceFileName());
+	auto statistics = rvsdg_destruction_stat::Create(rm.SourceFileName());
 
-	stat.start(rm.Rvsdg());
+	statistics->start(rm.Rvsdg());
 	auto im = convert_rvsdg(rm);
-	stat.end(*im);
+	statistics->end(*im);
 
-  sd.PrintStatistics(stat);
+  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
 	return im;
 }

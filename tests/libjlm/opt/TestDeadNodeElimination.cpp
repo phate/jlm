@@ -21,9 +21,9 @@
 static void
 RunDeadNodeElimination(jlm::RvsdgModule & rvsdgModule)
 {
-  jlm::StatisticsDescriptor statisticsDescriptor;
+  jlm::StatisticsCollector statisticsCollector;
   jlm::DeadNodeElimination deadNodeElimination;
-  deadNodeElimination.run(rvsdgModule, statisticsDescriptor);
+  deadNodeElimination.run(rvsdgModule, statisticsCollector);
 }
 
 static void

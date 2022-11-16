@@ -12,7 +12,6 @@
 #include <jlm/util/strfmt.hpp>
 #include <jlm/util/time.hpp>
 
-#include <jive/rvsdg/gamma.hpp>
 #include <jive/rvsdg/theta.hpp>
 #include <jive/rvsdg/traverser.hpp>
 
@@ -47,6 +46,12 @@ public:
     );
   }
 
+  static std::unique_ptr<InvariantValueRedirectionStatistics>
+  Create()
+  {
+    return std::make_unique<InvariantValueRedirectionStatistics>();
+  }
+
 private:
   jlm::timer Timer_;
 };
@@ -57,17 +62,16 @@ InvariantValueRedirection::~InvariantValueRedirection()
 void
 InvariantValueRedirection::run(
   RvsdgModule & rvsdgModule,
-  const StatisticsDescriptor & statisticsDescriptor)
+  StatisticsCollector & statisticsCollector)
 {
   auto & rvsdg = rvsdgModule.Rvsdg();
+  auto statistics = InvariantValueRedirectionStatistics::Create();
 
-  InvariantValueRedirectionStatistics statistics;
-
-  statistics.Start(rvsdg);
+  statistics->Start(rvsdg);
   RedirectInvariantValues(*rvsdg.root());
-  statistics.Stop(rvsdg);
+  statistics->Stop(rvsdg);
 
-  statisticsDescriptor.PrintStatistics(statistics);
+  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
 
 void

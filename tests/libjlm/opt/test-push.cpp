@@ -19,7 +19,7 @@
 
 static const jlm::statetype st;
 static const jlm::valuetype vt;
-static const jlm::StatisticsDescriptor sd;
+static jlm::StatisticsCollector statisticsCollector;
 
 static inline void
 test_gamma()
@@ -49,7 +49,7 @@ test_gamma()
 
 //	jive::view(graph.root(), stdout);
 	jlm::pushout pushout;
-	pushout.run(rm, sd);
+	pushout.run(rm, statisticsCollector);
 //	jive::view(graph.root(), stdout);
 
 	assert(graph.root()->nodes.size() == 3);
@@ -94,7 +94,7 @@ test_theta()
 
 //	jive::view(graph.root(), stdout);
 	jlm::pushout pushout;
-	pushout.run(rm, sd);
+	pushout.run(rm, statisticsCollector);
 //	jive::view(graph.root(), stdout);
 
 	assert(graph.root()->nodes.size() == 3);

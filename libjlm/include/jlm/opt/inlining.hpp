@@ -12,7 +12,6 @@
 namespace jlm {
 
 class RvsdgModule;
-class StatisticsDescriptor;
 
 /**
 * \brief Function Inlining
@@ -23,7 +22,9 @@ public:
 	~fctinline();
 
 	virtual void
-	run(RvsdgModule & module, const StatisticsDescriptor & sd) override;
+	run(
+    RvsdgModule & module,
+    StatisticsCollector & statisticsCollector) override;
 };
 
 jive::output *

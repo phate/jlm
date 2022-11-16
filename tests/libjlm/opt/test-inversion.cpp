@@ -17,7 +17,7 @@
 #include <jlm/util/Statistics.hpp>
 
 static const jlm::valuetype vt;
-static const jlm::StatisticsDescriptor sd;
+static jlm::StatisticsCollector statisticsCollector;
 
 static inline void
 test1()
@@ -61,7 +61,7 @@ test1()
 
 //	jive::view(graph.root(), stdout);
 	jlm::tginversion tginversion;
-	tginversion.run(rm, sd);
+	tginversion.run(rm, statisticsCollector);
 //	jive::view(graph.root(), stdout);
 
 	assert(jive::is<jive::gamma_op>(jive::node_output::node(ex1->origin())));
@@ -105,7 +105,7 @@ test2()
 
 //	jive::view(graph.root(), stdout);
 	jlm::tginversion tginversion;
-	tginversion.run(rm, sd);
+	tginversion.run(rm, statisticsCollector);
 //	jive::view(graph.root(), stdout);
 
 	assert(jive::is<jive::gamma_op>(jive::node_output::node(ex->origin())));

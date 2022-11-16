@@ -57,6 +57,12 @@ public:
 		);
 	}
 
+  static std::unique_ptr<unrollstat>
+  Create()
+  {
+    return std::make_unique<unrollstat>();
+  }
+
 private:
 	size_t nnodes_before_, nnodes_after_;
 	jlm::timer timer_;
@@ -525,19 +531,21 @@ loopunroll::~loopunroll()
 {}
 
 void
-loopunroll::run(RvsdgModule & module, const StatisticsDescriptor & sd)
+loopunroll::run(
+  RvsdgModule & module,
+  StatisticsCollector & statisticsCollector)
 {
-	if (factor_ < 2)
-		return;
+  if (factor_ < 2)
+    return;
 
-	unrollstat stat;
+  auto & graph = module.Rvsdg();
+  auto statistics = unrollstat::Create();
 
-	stat.start(module.Rvsdg());
-	jive::graph & graph = module.Rvsdg();
-	unroll(graph.root(), factor_);
-	stat.end(module.Rvsdg());
+  statistics->start(module.Rvsdg());
+  unroll(graph.root(), factor_);
+  statistics->end(module.Rvsdg());
 
-  sd.PrintStatistics(stat);
+  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
 
 }

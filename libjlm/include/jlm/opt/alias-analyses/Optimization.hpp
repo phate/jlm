@@ -22,7 +22,7 @@ public:
   void
   run(
     RvsdgModule & rvsdgModule,
-    const StatisticsDescriptor & statisticsDescriptor) override;
+    StatisticsCollector & statisticsCollector) override;
 };
 
 /** \brief Steensgaard alias analysis with region-aware memory state encoding
@@ -37,7 +37,7 @@ public:
   void
   run(
     RvsdgModule & rvsdgModule,
-    const StatisticsDescriptor & statisticsDescriptor) override;
+    StatisticsCollector & statisticsCollector) override;
 };
 
 }

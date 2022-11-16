@@ -49,7 +49,6 @@ public:
 	bool r2jdot;
 	bool r2j_ipg_dot;
 	std::string file;
-	jlm::StatisticsDescriptor sd;
 	std::string l2jdot_function;
 	std::string r2jdot_function;
 };
@@ -172,6 +171,8 @@ main (int argc, char ** argv)
 		exit(1);
 	}
 
+  jlm::StatisticsCollector statisticsCollector;
+
 	/* LLVM to JLM pass */
 	auto jm = jlm::ConvertLlvmModule(*lm);
 	if (flags.l2j)
@@ -181,11 +182,11 @@ main (int argc, char ** argv)
 	if (flags.l2j_ipg_dot)
 		jlm::print_dot(jm->ipgraph(), stdout);
 
-	auto rvsdgModule = jlm::ConvertInterProceduralGraphModule(*jm, flags.sd);
+	auto rvsdgModule = jlm::ConvertInterProceduralGraphModule(*jm, statisticsCollector);
 	if (flags.j2r) jive::view(rvsdgModule->Rvsdg().root(), stdout);
 	if (flags.j2rx) jive::view_xml(rvsdgModule->Rvsdg().root(), stdout);
 
-	jm = jlm::rvsdg2jlm::rvsdg2jlm(*rvsdgModule, flags.sd);
+	jm = jlm::rvsdg2jlm::rvsdg2jlm(*rvsdgModule, statisticsCollector);
 	if (flags.r2j)
 		jlm::print(*jm, stdout);
 	if (flags.r2jdot)

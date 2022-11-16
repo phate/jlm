@@ -4,7 +4,6 @@
  */
 
 #include <jive/rvsdg/graph.hpp>
-#include <jive/rvsdg/node.hpp>
 #include <jive/rvsdg/structural-node.hpp>
 #include <jive/rvsdg/traverser.hpp>
 
@@ -58,6 +57,12 @@ public:
                   SourceFile_.to_str(), " ",
                   "#RvsdgNodes:", NumNodesBefore_, " ",
                   "Time[ns]:", Timer_.ns());
+  }
+
+  static std::unique_ptr<SteensgaardAnalysisStatistics>
+  Create(const jlm::filepath & sourceFile)
+  {
+    return std::make_unique<SteensgaardAnalysisStatistics>(sourceFile);
   }
 
 private:
@@ -131,6 +136,12 @@ public:
                   "#RegisterNodes:", NumRegisterNodes_, " ",
                   "#UnknownMemorySources:", NumUnknownMemorySources_, " ",
                   "Time[ns]:", Timer_.ns());
+  }
+
+  static std::unique_ptr<SteensgaardPointsToGraphConstructionStatistics>
+  Create(const jlm::filepath & sourceFile)
+  {
+    return std::make_unique<SteensgaardPointsToGraphConstructionStatistics>(sourceFile);
   }
 
 private:
@@ -1560,30 +1571,30 @@ Steensgaard::Analyze(const jive::graph & graph)
 std::unique_ptr<PointsToGraph>
 Steensgaard::Analyze(
   const RvsdgModule & module,
-  const StatisticsDescriptor & sd)
+  StatisticsCollector & statisticsCollector)
 {
   ResetState();
+  auto steensgaardStatistics = SteensgaardAnalysisStatistics::Create(module.SourceFileName());
+  auto ptgConstructionStatistics = SteensgaardPointsToGraphConstructionStatistics::Create(module.SourceFileName());
 
   /**
    * Perform Steensgaard analysis
    */
-  SteensgaardAnalysisStatistics steensgaardStatistics(module.SourceFileName());
-  steensgaardStatistics.Start(module.Rvsdg());
+  steensgaardStatistics->Start(module.Rvsdg());
   Analyze(module.Rvsdg());
 	// std::cout << LocationSet_.ToDot() << std::flush;
-  steensgaardStatistics.Stop();
-  sd.PrintStatistics(steensgaardStatistics);
-
+  steensgaardStatistics->Stop();
 
   /**
    * Construct PointsTo graph
    */
-  SteensgaardPointsToGraphConstructionStatistics ptgConstructionStatistics(module.SourceFileName());
-  ptgConstructionStatistics.Start(LocationSet_);
+  ptgConstructionStatistics->Start(LocationSet_);
   auto pointsToGraph = ConstructPointsToGraph(LocationSet_);
 //	std::cout << PointsToGraph::ToDot(*pointsToGraph) << std::flush;
-  ptgConstructionStatistics.Stop(*pointsToGraph);
-  sd.PrintStatistics(ptgConstructionStatistics);
+  ptgConstructionStatistics->Stop(*pointsToGraph);
+
+  statisticsCollector.CollectDemandedStatistics(std::move(steensgaardStatistics));
+  statisticsCollector.CollectDemandedStatistics(std::move(ptgConstructionStatistics));
 
   return pointsToGraph;
 }

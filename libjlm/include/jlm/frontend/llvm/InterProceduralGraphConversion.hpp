@@ -12,10 +12,12 @@ namespace jlm {
 
 class ipgraph_module;
 class RvsdgModule;
-class StatisticsDescriptor;
+class StatisticsCollector;
 
 std::unique_ptr<RvsdgModule>
-ConvertInterProceduralGraphModule(const ipgraph_module & im, const StatisticsDescriptor & sd);
+ConvertInterProceduralGraphModule(
+  const ipgraph_module & im,
+  StatisticsCollector & statisticsCollector);
 
 }
 

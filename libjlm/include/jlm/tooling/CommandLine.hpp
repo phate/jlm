@@ -212,7 +212,7 @@ public:
   filepath InputFile_;
   filepath OutputFile_;
   OutputFormat OutputFormat_;
-  StatisticsDescriptor StatisticsDescriptor_;
+  StatisticsCollectorSettings StatisticsCollectorSettings_;
   std::vector<optimization*> Optimizations_;
 };
 

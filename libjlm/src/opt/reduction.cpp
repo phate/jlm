@@ -53,6 +53,12 @@ public:
 		);
 	}
 
+  static std::unique_ptr<redstat>
+  Create()
+  {
+    return std::make_unique<redstat>();
+  }
+
 private:
 	size_t nnodes_before_, nnodes_after_;
 	size_t ninputs_before_, ninputs_after_;
@@ -120,12 +126,14 @@ enable_binary_reductions(jive::graph & graph)
 }
 
 static void
-reduce(RvsdgModule & rm, const StatisticsDescriptor & sd)
+reduce(
+  RvsdgModule & rm,
+  StatisticsCollector & statisticsCollector)
 {
 	auto & graph = rm.Rvsdg();
+  auto statistics = redstat::Create();
 
-	redstat stat;
-	stat.start(graph);
+	statistics->start(graph);
 
 	enable_mux_reductions(graph);
 	enable_store_reductions(graph);
@@ -135,9 +143,9 @@ reduce(RvsdgModule & rm, const StatisticsDescriptor & sd)
 	enable_binary_reductions(graph);
 
 	graph.normalize();
-	stat.end(graph);
+	statistics->end(graph);
 
-  sd.PrintStatistics(stat);
+  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
 
 /* nodereduction class */
@@ -146,9 +154,11 @@ nodereduction::~nodereduction()
 {}
 
 void
-nodereduction::run(RvsdgModule & module, const StatisticsDescriptor & sd)
+nodereduction::run(
+  RvsdgModule & module,
+  StatisticsCollector & statisticsCollector)
 {
-	reduce(module, sd);
+	reduce(module, statisticsCollector);
 }
 
 }

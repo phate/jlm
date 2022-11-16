@@ -29,7 +29,6 @@ class node;
 namespace phi { class node; }
 
 class RvsdgModule;
-class StatisticsDescriptor;
 
 /** \brief Dead Node Elimination Optimization
  *
@@ -121,7 +120,7 @@ public:
 	void
 	run(
     RvsdgModule & module,
-    const StatisticsDescriptor & sd) override;
+    StatisticsCollector & statisticsCollector) override;
 
 private:
   void

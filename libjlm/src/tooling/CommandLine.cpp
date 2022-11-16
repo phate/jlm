@@ -95,7 +95,7 @@ JlmOptCommandLineOptions::Reset() noexcept
   InputFile_ = filepath("");
   OutputFile_ = filepath("");
   OutputFormat_ = OutputFormat::Llvm;
-  StatisticsDescriptor_ = StatisticsDescriptor();
+  StatisticsCollectorSettings_ = StatisticsCollectorSettings();
   Optimizations_.clear();
 }
 
@@ -422,7 +422,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
   cl::opt<std::string> statisticFile(
     "s",
     cl::desc("Write stats to <file>. Default is "
-             + CommandLineOptions_.StatisticsDescriptor_.GetFilePath().to_str()
+             + CommandLineOptions_.StatisticsCollectorSettings_.GetFilePath().to_str()
              + "."),
     cl::value_desc("file"));
 
@@ -572,7 +572,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
     CommandLineOptions_.OutputFile_ = outputFile;
 
   if (!statisticFile.empty())
-    CommandLineOptions_.StatisticsDescriptor_.SetFilePath(statisticFile);
+    CommandLineOptions_.StatisticsCollectorSettings_.SetFilePath(statisticFile);
 
   std::vector<jlm::optimization*> optimizations;
   for (auto & optimizationId : optimizationIds)
@@ -583,7 +583,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
   CommandLineOptions_.InputFile_ = inputFile;
   CommandLineOptions_.OutputFormat_ = outputFormat;
   CommandLineOptions_.Optimizations_ = optimizations;
-  CommandLineOptions_.StatisticsDescriptor_.SetDemandedStatistics(printStatisticsIds);
+  CommandLineOptions_.StatisticsCollectorSettings_.SetDemandedStatistics(printStatisticsIds);
 
   return CommandLineOptions_;
 }

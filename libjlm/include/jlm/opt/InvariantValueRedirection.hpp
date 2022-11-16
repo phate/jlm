@@ -15,7 +15,6 @@ class theta_node;
 namespace jlm {
 
 class RvsdgModule;
-class StatisticsDescriptor;
 
 /** \brief Invariant Value Redirection Optimization
  *
@@ -40,7 +39,7 @@ public:
   void
   run(
     RvsdgModule & rvsdgModule,
-    const StatisticsDescriptor & statisticsDescriptor) override;
+    StatisticsCollector & statisticsCollector) override;
 
 private:
   static void

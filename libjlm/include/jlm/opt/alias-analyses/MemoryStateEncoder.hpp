@@ -22,7 +22,7 @@ namespace jlm {
 
 class CallNode;
 class RvsdgModule;
-class StatisticsDescriptor;
+class StatisticsCollector;
 
 namespace delta { class node; }
 namespace lambda { class node; }
@@ -35,7 +35,7 @@ namespace aa {
 
 class MemoryNodeProvider;
 
-/** \brief Memory State Encoder Interface
+/** \brief Memory State Encoder
  *
  * A memory state encoder encodes a points-to graph in the RVSDG. The basic idea is that there exists a one-to-one
  * correspondence between memory nodes in the points-to graph and memory states in the RVSDG, i.e., for each memory
@@ -70,7 +70,7 @@ public:
   Encode(
     RvsdgModule & rvsdgModule,
     const MemoryNodeProvider & memoryNodeProvider,
-    const StatisticsDescriptor & statisticsDescriptor);
+    StatisticsCollector & statisticsCollector);
 
 private:
   void

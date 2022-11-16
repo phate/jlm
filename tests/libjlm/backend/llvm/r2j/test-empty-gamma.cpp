@@ -46,8 +46,8 @@ test_with_match()
 
 	jive::view(rm.Rvsdg(), stdout);
 
-	StatisticsDescriptor sd;
-	auto module = rvsdg2jlm::rvsdg2jlm(rm, sd);
+	StatisticsCollector statisticsCollector;
+	auto module = rvsdg2jlm::rvsdg2jlm(rm, statisticsCollector);
 	jlm::print(*module, stdout);
 
 	/* verify output */
@@ -90,8 +90,8 @@ test_without_match()
 
 	jive::view(rm.Rvsdg(), stdout);
 
-	StatisticsDescriptor sd;
-	auto module = rvsdg2jlm::rvsdg2jlm(rm, sd);
+	StatisticsCollector statisticsCollector;
+	auto module = rvsdg2jlm::rvsdg2jlm(rm, statisticsCollector);
 	jlm::print(*module, stdout);
 
 	/* verify output */
@@ -135,8 +135,8 @@ test_gamma3()
 
 	jive::view(rm.Rvsdg(), stdout);
 
-	StatisticsDescriptor sd;
-	auto module = rvsdg2jlm::rvsdg2jlm(rm, sd);
+	StatisticsCollector statisticsCollector;
+	auto module = rvsdg2jlm::rvsdg2jlm(rm, statisticsCollector);
 	jlm::print(*module, stdout);
 
 	/* verify output */

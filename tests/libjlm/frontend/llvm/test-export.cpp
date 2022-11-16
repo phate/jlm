@@ -35,8 +35,8 @@ test()
 	im.create_global_value(d);
 	im.create_variable(f);
 
-	StatisticsDescriptor sd;
-	auto rvsdgModule = ConvertInterProceduralGraphModule(im, sd);
+	StatisticsCollector statisticsCollector;
+	auto rvsdgModule = ConvertInterProceduralGraphModule(im, statisticsCollector);
 
 	jive::view(rvsdgModule->Rvsdg(), stdout);
 

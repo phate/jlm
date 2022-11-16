@@ -65,10 +65,10 @@ ValidateTest(std::function<void(const Test&)> validateEncoding)
   auto & rvsdgModule = test.module();
   jive::view(rvsdgModule.Rvsdg().root(), stdout);
 
-  jlm::StatisticsDescriptor statisticsDescriptor;
+  jlm::StatisticsCollector statisticsCollector;
 
   Analysis aliasAnalysis;
-  auto pointsToGraph = aliasAnalysis.Analyze(rvsdgModule, statisticsDescriptor);
+  auto pointsToGraph = aliasAnalysis.Analyze(rvsdgModule, statisticsCollector);
   std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
 
   UnlinkUnknownMemoryNode(*pointsToGraph);
@@ -76,7 +76,7 @@ ValidateTest(std::function<void(const Test&)> validateEncoding)
   auto provider = Provider::Create(rvsdgModule, *pointsToGraph);
 
   jlm::aa::MemoryStateEncoder encoder;
-  encoder.Encode(rvsdgModule, *provider, statisticsDescriptor);
+  encoder.Encode(rvsdgModule, *provider, statisticsCollector);
   jive::view(rvsdgModule.Rvsdg().root(), stdout);
 
   validateEncoding(test);

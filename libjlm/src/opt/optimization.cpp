@@ -6,7 +6,6 @@
 #include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/opt/inlining.hpp>
 #include <jlm/opt/optimization.hpp>
-#include <jlm/opt/pull.hpp>
 
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/strfmt.hpp>
@@ -55,6 +54,12 @@ public:
 			nnodes_before_, " ", nnodes_after_, " ", timer_.ns());
 	}
 
+  static std::unique_ptr<optimization_stat>
+  Create(const jlm::filepath & sourceFile)
+  {
+    return std::make_unique<optimization_stat>(sourceFile);
+  }
+
 private:
 	jlm::timer timer_;
 	jlm::filepath filename_;
@@ -64,17 +69,17 @@ private:
 void
 optimize(
   RvsdgModule & rm,
-  const StatisticsDescriptor & sd,
+  StatisticsCollector & statisticsCollector,
   const std::vector<optimization*> & opts)
 {
-	optimization_stat stat(rm.SourceFileName());
+	auto statistics = optimization_stat::Create(rm.SourceFileName());
 
-	stat.start(rm.Rvsdg());
+	statistics->start(rm.Rvsdg());
 	for (const auto & opt : opts)
-		opt->run(rm, sd);
-	stat.end(rm.Rvsdg());
+		opt->run(rm, statisticsCollector);
+	statistics->end(rm.Rvsdg());
 
-  sd.PrintStatistics(stat);
+  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
 
 }

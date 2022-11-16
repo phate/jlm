@@ -18,7 +18,6 @@ class theta_node;
 namespace jlm {
 
 class RvsdgModule;
-class StatisticsDescriptor;
 
 /**
 * \brief Node Push-Out Optimization
@@ -29,7 +28,9 @@ public:
 	~pushout();
 
 	virtual void
-	run(RvsdgModule & module, const StatisticsDescriptor & sd) override;
+	run(
+    RvsdgModule & module,
+    StatisticsCollector & statisticsCollector) override;
 };
 
 void

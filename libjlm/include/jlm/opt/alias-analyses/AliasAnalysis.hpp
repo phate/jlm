@@ -11,7 +11,7 @@
 namespace jlm {
 
 class RvsdgModule;
-class StatisticsDescriptor;
+class StatisticsCollector;
 
 namespace aa {
 
@@ -29,14 +29,14 @@ public:
 	  * \brief Analyze RVSDG module
 	  *
 	  * \param module RVSDG module the analysis is performed on.
-	  * \param sd Statistics descriptor for printing analysis statistics.
+	  * \param statisticsCollector Statistics collector for collecting analysis statistics.
 	  *
 	  * \return A PointsTo graph.
 	  */
 	virtual std::unique_ptr<PointsToGraph>
 	Analyze(
     const RvsdgModule & module,
-    const StatisticsDescriptor & sd) = 0;
+    StatisticsCollector & statisticsCollector) = 0;
 };
 
 }}
