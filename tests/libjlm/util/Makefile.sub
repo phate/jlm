@@ -2,3 +2,4 @@ TESTS += \
 	libjlm/util/test-disjointset \
 	libjlm/util/test-file \
 	libjlm/util/TestHashSet \
+	libjlm/util/TestStatistics \

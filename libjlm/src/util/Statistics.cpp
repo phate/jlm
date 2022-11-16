@@ -17,4 +17,21 @@ StatisticsDescriptor::PrintStatistics(const Statistics & statistics) const noexc
     fprintf(File_.fd(), "%s\n", statistics.ToString().c_str());
 }
 
+void
+StatisticsCollector::PrintStatistics() const
+{
+  if (NumCollectedStatistics() == 0)
+    return;
+
+  jlm::file file(GetSettings().GetFilePath());
+  file.open("a");
+
+  for (auto & statistics : CollectedStatistics())
+  {
+    fprintf(file.fd(), "%s\n", statistics.ToString().c_str());
+  }
+
+  file.close();
+}
+
 }
