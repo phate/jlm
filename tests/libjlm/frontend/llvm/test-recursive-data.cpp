@@ -62,8 +62,8 @@ test()
 	d1->set_initialization(std::make_unique<data_node_init>(std::move(tvec1)));
 	d2->set_initialization(std::make_unique<data_node_init>(std::move(tvec2)));
 
-	StatisticsDescriptor sd;
-	auto rvsdgModule = ConvertInterProceduralGraphModule(im, sd);
+	StatisticsCollector statisticsCollector;
+	auto rvsdgModule = ConvertInterProceduralGraphModule(im, statisticsCollector);
 
 	jive::view(rvsdgModule->Rvsdg(), stdout);
 

@@ -11,7 +11,7 @@
 namespace jlm {
 
 class RvsdgModule;
-class StatisticsDescriptor;
+class StatisticsCollector;
 
 /**
 * \brief Optimization pass interface
@@ -26,13 +26,15 @@ public:
 	*
 	* This method is expected to be called multiple times. An
 	* implementation is required to reset the objects' internal state
-	* to ensure correct behavior after every incovation.
+	* to ensure correct behavior after every invocation.
 	*
 	* \param module RVSDG module the optimization is performed on.
-	* \param sd     A stats descriptor for collecting optimization statistics.
+	* \param statisticsCollector Statistics collector for collecting optimization statistics.
 	*/
 	virtual void
-	run(RvsdgModule & module, const StatisticsDescriptor & sd) = 0;
+	run(
+    RvsdgModule & module,
+    StatisticsCollector & statisticsCollector) = 0;
 };
 
 /*
@@ -40,7 +42,7 @@ public:
 */
 void
 optimize(RvsdgModule & rm,
-         const StatisticsDescriptor & sd,
+         StatisticsCollector & statisticsCollector,
          const std::vector<optimization*> & opts);
 
 }

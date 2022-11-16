@@ -16,7 +16,7 @@
 #include <jlm/opt/inlining.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static const jlm::StatisticsDescriptor sd;
+static jlm::StatisticsCollector statisticsCollector;
 
 static void
 test1()
@@ -106,7 +106,7 @@ test1()
    * Act
    */
 	jlm::fctinline fctinline;
-	fctinline.run(rm, sd);
+	fctinline.run(rm, statisticsCollector);
 //	jive::view(graph.root(), stdout);
 
   /*
@@ -190,7 +190,7 @@ test2()
    * Act
    */
 	jlm::fctinline fctinline;
-	fctinline.run(rm, sd);
+	fctinline.run(rm, statisticsCollector);
 	jive::view(graph.root(), stdout);
 
   /*

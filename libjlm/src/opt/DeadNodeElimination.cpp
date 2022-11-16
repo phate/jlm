@@ -10,9 +10,6 @@
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 
-#include <jive/rvsdg/gamma.hpp>
-#include <jive/rvsdg/theta.hpp>
-
 namespace jlm {
 
 static bool
@@ -78,6 +75,12 @@ public:
 		);
 	}
 
+  static std::unique_ptr<Statistics>
+  Create()
+  {
+    return std::make_unique<Statistics>();
+  }
+
 private:
 	size_t numNodesBefore_;
   size_t numNodesAfter_;
@@ -101,22 +104,22 @@ DeadNodeElimination::run(jive::region & region)
 void
 DeadNodeElimination::run(
   RvsdgModule & module,
-  const StatisticsDescriptor & sd)
+  StatisticsCollector & statisticsCollector)
 {
   auto & graph = module.Rvsdg();
 
   ResetState();
 
-  Statistics statistics;
-  statistics.StartMarkStatistics(graph);
+  auto statistics = Statistics::Create();
+  statistics->StartMarkStatistics(graph);
   Mark(*graph.root());
-  statistics.StopMarkStatistics();
+  statistics->StopMarkStatistics();
 
-  statistics.StartSweepStatistics();
+  statistics->StartSweepStatistics();
   Sweep(graph);
-  statistics.StopSweepStatistics(graph);
+  statistics->StopSweepStatistics(graph);
 
-  sd.PrintStatistics(statistics);
+  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
 
 void

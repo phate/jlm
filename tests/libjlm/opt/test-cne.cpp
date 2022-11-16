@@ -19,7 +19,7 @@
 #include <jlm/opt/cne.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static const jlm::StatisticsDescriptor sd;
+static jlm::StatisticsCollector statisticsCollector;
 
 static inline void
 test_simple()
@@ -57,7 +57,7 @@ test_simple()
 
 //	jive::view(graph.root(), stdout);
 	jlm::cne cne;
-	cne.run(rm, sd);
+	cne.run(rm, statisticsCollector);
 //	jive::view(graph.root(), stdout);
 
 	assert(graph.root()->result(0)->origin() == graph.root()->result(1)->origin());
@@ -112,7 +112,7 @@ test_gamma()
 
 //	jive::view(graph.root(), stdout);
 	jlm::cne cne;
-	cne.run(rm, sd);
+	cne.run(rm, statisticsCollector);
 //	jive::view(graph.root(), stdout);
 
 	auto subregion0 = gamma->subregion(0);
@@ -169,7 +169,7 @@ test_theta()
 
 //	jive::view(graph.root(), stdout);
 	jlm::cne cne;
-	cne.run(rm, sd);
+	cne.run(rm, statisticsCollector);
 //	jive::view(graph.root(), stdout);
 
 	auto un1 = jive::node_output::node(u1);
@@ -219,7 +219,7 @@ test_theta2()
 
 //	jive::view(graph, stdout);
 	jlm::cne cne;
-	cne.run(rm, sd);
+	cne.run(rm, statisticsCollector);
 //	jive::view(graph, stdout);
 
 	assert(lv2->result()->origin() == u1);
@@ -274,7 +274,7 @@ test_theta3()
 
 //	jive::view(graph, stdout);
 	jlm::cne cne;
-	cne.run(rm, sd);
+	cne.run(rm, statisticsCollector);
 //	jive::view(graph, stdout);
 
 	assert(r1->result(2)->origin() == r1->result(4)->origin());
@@ -330,7 +330,7 @@ test_theta4()
 
 //	jive::view(graph, stdout);
 	jlm::cne cne;
-	cne.run(rm, sd);
+	cne.run(rm, statisticsCollector);
 //	jive::view(graph, stdout);
 
 	assert(ex1->origin() != ex2->origin());
@@ -376,7 +376,7 @@ test_theta5()
 
 //	jive::view(graph, stdout);
 	jlm::cne cne;
-	cne.run(rm, sd);
+	cne.run(rm, statisticsCollector);
 //	jive::view(graph, stdout);
 
 	assert(ex1->origin() == ex2->origin());
@@ -413,7 +413,7 @@ test_lambda()
 
 //	jive::view(graph.root(), stdout);
 	jlm::cne cne;
-	cne.run(rm, sd);
+	cne.run(rm, statisticsCollector);
 //	jive::view(graph.root(), stdout);
 
 	auto bn1 = jive::node_output::node(b1);
@@ -463,7 +463,7 @@ test_phi()
 
 //	jive::view(graph.root(), stdout);
 	jlm::cne cne;
-	cne.run(rm, sd);
+	cne.run(rm, statisticsCollector);
 //	jive::view(graph.root(), stdout);
 
 	assert(f1->node()->input(0)->origin() == f2->node()->input(0)->origin());

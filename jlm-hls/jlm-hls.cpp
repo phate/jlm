@@ -40,8 +40,8 @@ llvmToFile(
 	std::string fileName)
 {
 	llvm::LLVMContext ctx;
-	jlm::StatisticsDescriptor sd;
-	auto jm = jlm::rvsdg2jlm::rvsdg2jlm(module, sd);
+	jlm::StatisticsCollector statisticsCollector;
+	auto jm = jlm::rvsdg2jlm::rvsdg2jlm(module, statisticsCollector);
 	auto lm = jlm::jlm2llvm::convert(*jm, ctx);
 	std::error_code EC;
 	llvm::raw_fd_ostream os(fileName, EC);
@@ -64,10 +64,10 @@ main(int argc, char ** argv)
 
 	/* LLVM to JLM pass */
 	auto jlmModule = jlm::ConvertLlvmModule(*llvmModule);
-	jlm::StatisticsDescriptor sd;
+	jlm::StatisticsCollector statisticsCollector;
 	auto rvsdgModule = jlm::ConvertInterProceduralGraphModule(
-					*jlmModule,
-					sd);
+    *jlmModule,
+    statisticsCollector);
 
 	if (commandLineOptions.ExtractHlsFunction_) {
 		auto hlsFunction = jlm::hls::split_hls_function(

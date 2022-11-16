@@ -43,11 +43,11 @@ pre_opt(jlm::RvsdgModule &rm) {
 	jlm::cne cne;
 	jlm::InvariantValueRedirection ivr;
 	jlm::tginversion tgi;
-	jlm::StatisticsDescriptor sd;
-	tgi.run(rm, sd);
-	dne.run(rm, sd);
-	cne.run(rm, sd);
-	ivr.run(rm, sd);
+	jlm::StatisticsCollector statisticsCollector;
+	tgi.run(rm, statisticsCollector);
+	dne.run(rm, statisticsCollector);
+	cne.run(rm, statisticsCollector);
+	ivr.run(rm, statisticsCollector);
 }
 
 namespace jlm {
@@ -309,8 +309,8 @@ jlm::hls::dump_ref(jlm::RvsdgModule &rhls) {
 		std::cout << "impport " << imp->name() << ": " << imp->type().debug_string() << "\n";
 	}
 	llvm::LLVMContext ctx;
-	StatisticsDescriptor sd;
-	auto jm2 = rvsdg2jlm::rvsdg2jlm(*reference, sd);
+	StatisticsCollector statisticsCollector;
+	auto jm2 = rvsdg2jlm::rvsdg2jlm(*reference, statisticsCollector);
 	auto lm2 = jlm2llvm::convert(*jm2, ctx);
 	std::error_code EC;
 	llvm::raw_fd_ostream os(reference->SourceFileName().base() + ".ref.ll", EC);

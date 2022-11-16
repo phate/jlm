@@ -8,11 +8,8 @@
 #include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/opt/push.hpp>
 #include <jlm/util/Statistics.hpp>
-#include <jlm/util/strfmt.hpp>
 #include <jlm/util/time.hpp>
 
-#include <jive/rvsdg/gamma.hpp>
-#include <jive/rvsdg/theta.hpp>
 #include <jive/rvsdg/traverser.hpp>
 
 #include <deque>
@@ -52,6 +49,12 @@ public:
 			timer_.ns()
 		);
 	}
+
+  static std::unique_ptr<pushstat>
+  Create()
+  {
+    return std::make_unique<pushstat>();
+  }
 
 private:
 	size_t ninputs_before_, ninputs_after_;
@@ -402,15 +405,17 @@ push(jive::region * region)
 }
 
 static void
-push(RvsdgModule & rm, const StatisticsDescriptor & sd)
+push(
+  RvsdgModule & rm,
+  StatisticsCollector & statisticsCollector)
 {
-	pushstat stat;
+	auto statistics = pushstat::Create();
 
-	stat.start(rm.Rvsdg());
+	statistics->start(rm.Rvsdg());
 	push(rm.Rvsdg().root());
-	stat.end(rm.Rvsdg());
+	statistics->end(rm.Rvsdg());
 
-  sd.PrintStatistics(stat);
+  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
 
 /* pushout class */
@@ -419,9 +424,11 @@ pushout::~pushout()
 {}
 
 void
-pushout::run(RvsdgModule & module, const StatisticsDescriptor & sd)
+pushout::run(
+  RvsdgModule & module,
+  StatisticsCollector & statisticsCollector)
 {
-	push(module, sd);
+	push(module, statisticsCollector);
 }
 
 }

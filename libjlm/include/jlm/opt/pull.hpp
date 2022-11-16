@@ -18,7 +18,6 @@ namespace jive {
 namespace jlm {
 
 class RvsdgModule;
-class StatisticsDescriptor;
 
 /**
 * \brief Node Pull-In Optimization
@@ -29,7 +28,9 @@ public:
 	~pullin();
 
 	virtual void
-	run(RvsdgModule & module, const StatisticsDescriptor & sd) override;
+	run(
+    RvsdgModule & module,
+    StatisticsCollector & statisticsCollector) override;
 };
 
 void

@@ -19,9 +19,9 @@
 static void
 RunInvariantValueRedirection(jlm::RvsdgModule & rvsdgModule)
 {
-  jlm::StatisticsDescriptor statisticsDescriptor;
+  jlm::StatisticsCollector statisticsCollector;
   jlm::InvariantValueRedirection invariantValueRedirection;
-  invariantValueRedirection.run(rvsdgModule, statisticsDescriptor);
+  invariantValueRedirection.run(rvsdgModule, statisticsCollector);
 }
 
 static void

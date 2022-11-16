@@ -455,10 +455,10 @@ class InterProceduralGraphToRvsdgStatisticsCollector final
 public:
   explicit
   InterProceduralGraphToRvsdgStatisticsCollector(
-    const StatisticsDescriptor & statisticsDescriptor,
+    StatisticsCollector & statisticsCollector,
     filepath sourceFileName)
   : SourceFileName_(std::move(sourceFileName))
-  , StatisticsDescriptor_(statisticsDescriptor)
+  , StatisticsCollector_(statisticsCollector)
   {}
 
   void
@@ -467,15 +467,18 @@ public:
     jlm::cfg & cfg,
     std::string functionName)
   {
-    auto & statistics = Create<ControlFlowRestructuringStatistics>(std::move(functionName));
-    if (!StatisticsDescriptor_.IsDemanded(statistics.GetId())) {
+    auto statistics = ControlFlowRestructuringStatistics::Create(SourceFileName_, std::move(functionName));
+
+    if (!StatisticsCollector_.GetSettings().IsDemanded(statistics->GetId())) {
       restructureControlFlowGraph(&cfg);
       return;
     }
 
-    statistics.Start(cfg);
+    statistics->Start(cfg);
     restructureControlFlowGraph(&cfg);
-    statistics.End();
+    statistics->End();
+
+    StatisticsCollector_.CollectDemandedStatistics(std::move(statistics));
   }
 
   std::unique_ptr<aggnode>
@@ -484,13 +487,16 @@ public:
     jlm::cfg & cfg,
     std::string functionName)
   {
-    auto & statistics = Create<AggregationStatistics>(std::move(functionName));
-    if (!StatisticsDescriptor_.IsDemanded(statistics.GetId()))
+    auto statistics = AggregationStatistics::Create(SourceFileName_, std::move(functionName));
+
+    if (!StatisticsCollector_.GetSettings().IsDemanded(statistics->GetId()))
       return aggregateControlFlowGraph(cfg);
 
-    statistics.Start(cfg);
+    statistics->Start(cfg);
     auto aggregationTreeRoot = aggregateControlFlowGraph(cfg);
-    statistics.End();
+    statistics->End();
+
+    StatisticsCollector_.CollectDemandedStatistics(std::move(statistics));
 
     return aggregationTreeRoot;
   }
@@ -501,13 +507,16 @@ public:
     const aggnode & aggregationTreeRoot,
     std::string functionName)
   {
-    auto & statistics = Create<AnnotationStatistics>(std::move(functionName));
-    if (!StatisticsDescriptor_.IsDemanded(statistics.GetId()))
+    auto statistics = AnnotationStatistics::Create(SourceFileName_, std::move(functionName));
+
+    if (!StatisticsCollector_.GetSettings().IsDemanded(statistics->GetId()))
       return annotateAggregationTree(aggregationTreeRoot);
 
-    statistics.Start(aggregationTreeRoot);
+    statistics->Start(aggregationTreeRoot);
     auto demandMap = annotateAggregationTree(aggregationTreeRoot);
-    statistics.End();
+    statistics->End();
+
+    StatisticsCollector_.CollectDemandedStatistics(std::move(statistics));
 
     return demandMap;
   }
@@ -517,13 +526,16 @@ public:
     const std::function<void()> & convertAggregationTreeToLambda,
     std::string functionName)
   {
-    auto & statistics = Create<AggregationTreeToLambdaStatistics>(std::move(functionName));
-    if (!StatisticsDescriptor_.IsDemanded(statistics.GetId()))
+    auto statistics = AggregationTreeToLambdaStatistics::Create(SourceFileName_, std::move(functionName));
+
+    if (!StatisticsCollector_.GetSettings().IsDemanded(statistics->GetId()))
       return convertAggregationTreeToLambda();
 
-    statistics.Start();
+    statistics->Start();
     convertAggregationTreeToLambda();
-    statistics.End();
+    statistics->End();
+
+    StatisticsCollector_.CollectDemandedStatistics(std::move(statistics));
   }
 
   jive::output *
@@ -532,13 +544,16 @@ public:
     std::string dataNodeName,
     size_t NumInitializationThreeAddressCodes)
   {
-    auto & statistics = Create<DataNodeToDeltaStatistics>(std::move(dataNodeName));
-    if (!StatisticsDescriptor_.IsDemanded(statistics.GetId()))
+    auto statistics = DataNodeToDeltaStatistics::Create(SourceFileName_, std::move(dataNodeName));
+
+    if (!StatisticsCollector_.GetSettings().IsDemanded(statistics->GetId()))
       return convertDataNodeToDelta();
 
-    statistics.Start(NumInitializationThreeAddressCodes);
+    statistics->Start(NumInitializationThreeAddressCodes);
     auto output = convertDataNodeToDelta();
-    statistics.End();
+    statistics->End();
+
+    StatisticsCollector_.CollectDemandedStatistics(std::move(statistics));
 
     return output;
   }
@@ -548,52 +563,23 @@ public:
     const std::function<std::unique_ptr<RvsdgModule>(const ipgraph_module&)> & convertInterProceduralGraphModule,
     const ipgraph_module & interProceduralGraphModule)
   {
-    auto & statistics = CreateInterProceduralGraphToRvsdgStatistics();
-    if (!StatisticsDescriptor_.IsDemanded(statistics.GetId()))
+    auto statistics = InterProceduralGraphToRvsdgStatistics::Create(SourceFileName_);
+
+    if (!StatisticsCollector_.GetSettings().IsDemanded(statistics->GetId()))
       return convertInterProceduralGraphModule(interProceduralGraphModule);
 
-    statistics.Start(interProceduralGraphModule);
+    statistics->Start(interProceduralGraphModule);
     auto rvsdgModule = convertInterProceduralGraphModule(interProceduralGraphModule);
-    statistics.End(rvsdgModule->Rvsdg());
+    statistics->End(rvsdgModule->Rvsdg());
+
+    StatisticsCollector_.CollectDemandedStatistics(std::move(statistics));
 
     return rvsdgModule;
   }
 
-  void
-  PrintStatistics() const noexcept
-  {
-    for (auto & statistics : Statistics_)
-      StatisticsDescriptor_.PrintStatistics(*statistics);
-  }
-
 private:
-  template<class T> T &
-  Create(std::string functionName)
-  {
-    auto statistics = T::Create(
-      SourceFileName_,
-      std::move(functionName));
-
-    auto tmp = statistics.get();
-    Statistics_.push_back(std::move(statistics));
-
-    return *tmp;
-  }
-
-  InterProceduralGraphToRvsdgStatistics &
-  CreateInterProceduralGraphToRvsdgStatistics()
-  {
-    auto statistics = InterProceduralGraphToRvsdgStatistics::Create(SourceFileName_);
-
-    auto tmp = statistics.get();
-    Statistics_.push_back(std::move(statistics));
-
-    return *tmp;
-  }
-
   const filepath SourceFileName_;
-  std::vector<std::unique_ptr<Statistics>> Statistics_;
-  const StatisticsDescriptor & StatisticsDescriptor_;
+  StatisticsCollector & StatisticsCollector_;
 };
 
 static bool
@@ -1310,22 +1296,22 @@ ConvertInterProceduralGraphModule(
 std::unique_ptr<RvsdgModule>
 ConvertInterProceduralGraphModule(
   const ipgraph_module & interProceduralGraphModule,
-  const StatisticsDescriptor & statisticsDescriptor)
+  StatisticsCollector & statisticsCollector)
 {
-  InterProceduralGraphToRvsdgStatisticsCollector statisticsCollector(
-    statisticsDescriptor,
+  InterProceduralGraphToRvsdgStatisticsCollector interProceduralGraphToRvsdgStatisticsCollector(
+    statisticsCollector,
     interProceduralGraphModule.source_filename());
 
   auto convertInterProceduralGraphModule = [&](const ipgraph_module & interProceduralGraphModule)
   {
-    return ConvertInterProceduralGraphModule(interProceduralGraphModule, statisticsCollector);
+    return ConvertInterProceduralGraphModule(
+      interProceduralGraphModule,
+      interProceduralGraphToRvsdgStatisticsCollector);
   };
 
-  auto rvsdgModule = statisticsCollector.CollectInterProceduralGraphToRvsdgStatistics(
+  auto rvsdgModule = interProceduralGraphToRvsdgStatisticsCollector.CollectInterProceduralGraphToRvsdgStatistics(
     convertInterProceduralGraphModule,
     interProceduralGraphModule);
-
-  statisticsCollector.PrintStatistics();
 
   return rvsdgModule;
 }

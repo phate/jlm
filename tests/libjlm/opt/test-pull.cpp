@@ -16,7 +16,7 @@
 #include <jlm/util/Statistics.hpp>
 
 static const jlm::valuetype vt;
-static const jlm::StatisticsDescriptor sd;
+static jlm::StatisticsCollector statisticsCollector;
 
 static inline void
 test_pullin_top()
@@ -118,7 +118,7 @@ test_pull()
 
 	jive::view(graph, stdout);
 	jlm::pullin pullin;
-	pullin.run(rm, sd);
+	pullin.run(rm, statisticsCollector);
 	graph.prune();
 	jive::view(graph, stdout);
 

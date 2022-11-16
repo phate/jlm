@@ -21,7 +21,7 @@
 #include <jlm/opt/unroll.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static const jlm::StatisticsDescriptor sd;
+static jlm::StatisticsCollector statisticsCollector;
 
 static size_t
 nthetas(jive::region * region)
@@ -260,7 +260,7 @@ test_unknown_boundaries()
 
 //	jive::view(graph, stdout);
 	jlm::loopunroll loopunroll(2);
-	loopunroll.run(rm, sd);
+	loopunroll.run(rm, statisticsCollector);
 //	jive::view(graph, stdout);
 
 	auto node = jive::node_output::node(ex1->origin());
@@ -270,7 +270,7 @@ test_unknown_boundaries()
 
 	/* Create cleaner output */
 	jlm::DeadNodeElimination dne;
-	dne.run(rm, sd);
+	dne.run(rm, statisticsCollector);
 //	jive::view(graph, stdout);
 }
 
@@ -357,7 +357,7 @@ test_nested_theta()
 	
 //	jive::view(graph, stdout);
 	jlm::loopunroll loopunroll(4);
-	loopunroll.run(rm, sd);
+	loopunroll.run(rm, statisticsCollector);
 	/*
 		The outher theta should contain two inner thetas
 	*/

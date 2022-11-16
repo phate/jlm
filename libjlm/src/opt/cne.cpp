@@ -10,9 +10,6 @@
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 
-#include <jive/rvsdg/gamma.hpp>
-#include <jive/rvsdg/simple-node.hpp>
-#include <jive/rvsdg/theta.hpp>
 #include <jive/rvsdg/traverser.hpp>
 
 namespace jlm {
@@ -66,6 +63,12 @@ public:
 			marktimer_.ns(), " ", diverttimer_.ns()
 		);
 	}
+
+  static std::unique_ptr<cnestat>
+  Create()
+  {
+    return std::make_unique<cnestat>();
+  }
 
 private:
 	size_t nnodes_before_, nnodes_after_;
@@ -550,22 +553,24 @@ divert(jive::region * region, cnectx & ctx)
 }
 
 static void
-cne(RvsdgModule & rm, const StatisticsDescriptor & sd)
+cne(
+  RvsdgModule & rm,
+  StatisticsCollector & statisticsCollector)
 {
 	auto & graph = rm.Rvsdg();
 
 	cnectx ctx;
-	cnestat stat;
+	auto statistics = cnestat::Create();
 
-	stat.start_mark_stat(graph);
+	statistics->start_mark_stat(graph);
 	mark(graph.root(), ctx);
-	stat.end_mark_stat();
+	statistics->end_mark_stat();
 
-	stat.start_divert_stat();
+	statistics->start_divert_stat();
 	divert(graph.root(), ctx);
-	stat.end_divert_stat(graph);
+	statistics->end_divert_stat(graph);
 
-  sd.PrintStatistics(stat);
+  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
 
 /* cne class */
@@ -574,9 +579,11 @@ cne::~cne()
 {}
 
 void
-cne::run(RvsdgModule & module, const StatisticsDescriptor & sd)
+cne::run(
+  RvsdgModule & module,
+  StatisticsCollector & statisticsCollector)
 {
-	jlm::cne(module, sd);
+	jlm::cne(module, statisticsCollector);
 }
 
 }

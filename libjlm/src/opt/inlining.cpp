@@ -10,9 +10,6 @@
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 
-#include <jive/rvsdg/gamma.hpp>
-#include <jive/rvsdg/substitution.hpp>
-#include <jive/rvsdg/theta.hpp>
 #include <jive/rvsdg/traverser.hpp>
 
 namespace jlm {
@@ -48,6 +45,12 @@ public:
 	{
 		return strfmt("ILN ", nnodes_before_, " ", nnodes_after_, " ", timer_.ns());
 	}
+
+  static std::unique_ptr<ilnstat>
+  Create()
+  {
+    return std::make_unique<ilnstat>();
+  }
 
 private:
 	size_t nnodes_before_, nnodes_after_;
@@ -159,16 +162,18 @@ inlining(jive::graph & graph)
 }
 
 static void
-inlining(RvsdgModule & rm, const StatisticsDescriptor & sd)
+inlining(
+  RvsdgModule & rm,
+  StatisticsCollector & statisticsCollector)
 {
 	auto & graph = rm.Rvsdg();
+	auto statistics = ilnstat::Create();
 
-	ilnstat stat;
-	stat.start(graph);
+	statistics->start(graph);
 	inlining(graph);
-	stat.stop(graph);
+	statistics->stop(graph);
 
-  sd.PrintStatistics(stat);
+  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
 
 /* fctinline class */
@@ -177,9 +182,11 @@ fctinline::~fctinline()
 {}
 
 void
-fctinline::run(RvsdgModule & module, const StatisticsDescriptor & sd)
+fctinline::run(
+  RvsdgModule & module,
+  StatisticsCollector & statisticsCollector)
 {
-	inlining(module, sd);
+	inlining(module, statisticsCollector);
 }
 
 }

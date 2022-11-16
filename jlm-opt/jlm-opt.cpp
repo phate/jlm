@@ -49,7 +49,7 @@ static void
 print_as_xml(
 	const jlm::RvsdgModule & rm,
 	const jlm::filepath & fp,
-	const jlm::StatisticsDescriptor&)
+	jlm::StatisticsCollector&)
 {
 	auto fd = fp == "" ? stdout : fopen(fp.to_str().c_str(), "w");
 
@@ -63,9 +63,9 @@ static void
 print_as_llvm(
 	const jlm::RvsdgModule & rm,
 	const jlm::filepath & fp,
-	const jlm::StatisticsDescriptor & sd)
+	jlm::StatisticsCollector & statisticsCollector)
 {
-	auto jlm_module = jlm::rvsdg2jlm::rvsdg2jlm(rm, sd);
+	auto jlm_module = jlm::rvsdg2jlm::rvsdg2jlm(rm, statisticsCollector);
 
 	llvm::LLVMContext ctx;
 	auto llvm_module = jlm::jlm2llvm::convert(*jlm_module, ctx);
@@ -85,13 +85,13 @@ print(
 	const jlm::RvsdgModule & rm,
 	const jlm::filepath & fp,
 	const jlm::JlmOptCommandLineOptions::OutputFormat & format,
-	const jlm::StatisticsDescriptor & sd)
+	jlm::StatisticsCollector & statisticsCollector)
 {
   using namespace jlm;
 
   static std::unordered_map<
     jlm::JlmOptCommandLineOptions::OutputFormat,
-    std::function<void(const RvsdgModule&, const filepath&, const StatisticsDescriptor&)>
+    std::function<void(const RvsdgModule&, const filepath&, StatisticsCollector&)>
   > formatters(
     {
       {JlmOptCommandLineOptions::OutputFormat::Xml,  print_as_xml},
@@ -99,13 +99,15 @@ print(
     });
 
   JLM_ASSERT(formatters.find(format) != formatters.end());
-  formatters[format](rm, fp, sd);
+  formatters[format](rm, fp, statisticsCollector);
 }
 
 int
 main(int argc, char ** argv)
 {
   auto & commandLineOptions = jlm::JlmOptCommandLineParser::Parse(argc, argv);
+
+  jlm::StatisticsCollector statisticsCollector(commandLineOptions.StatisticsCollectorSettings_);
 
   llvm::LLVMContext llvmContext;
   auto llvmModule = parse_llvm_file(
@@ -118,18 +120,20 @@ main(int argc, char ** argv)
 
   auto rvsdgModule = jlm::ConvertInterProceduralGraphModule(
     *interProceduralGraphModule,
-    commandLineOptions.StatisticsDescriptor_);
+    statisticsCollector);
 
   optimize(
     *rvsdgModule,
-    commandLineOptions.StatisticsDescriptor_,
+    statisticsCollector,
     commandLineOptions.Optimizations_);
 
   print(
     *rvsdgModule,
     commandLineOptions.OutputFile_,
     commandLineOptions.OutputFormat_,
-    commandLineOptions.StatisticsDescriptor_);
+    statisticsCollector);
+
+  statisticsCollector.PrintStatistics();
 
   return 0;
 }

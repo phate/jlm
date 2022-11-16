@@ -11,7 +11,6 @@
 namespace jlm {
 
 class RvsdgModule;
-class StatisticsDescriptor;
 
 /**
 * \brief Common Node Elimination
@@ -22,7 +21,9 @@ public:
 	~cne();
 
 	virtual void
-	run(RvsdgModule & module, const StatisticsDescriptor & sd) override;
+	run(
+    RvsdgModule & module,
+    StatisticsCollector & statisticsCollector) override;
 };
 
 }

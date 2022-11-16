@@ -11,7 +11,6 @@
 #include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/opt/pull.hpp>
 #include <jlm/util/Statistics.hpp>
-#include <jlm/util/strfmt.hpp>
 #include <jlm/util/time.hpp>
 
 namespace jlm {
@@ -49,6 +48,12 @@ public:
 			timer_.ns()
 		);
 	}
+
+  static std::unique_ptr<pullstat>
+  Create()
+  {
+    return std::make_unique<pullstat>();
+  }
 
 private:
 	size_t ninputs_before_, ninputs_after_;
@@ -277,15 +282,17 @@ pull(jive::region * region)
 }
 
 static void
-pull(RvsdgModule & rm, const StatisticsDescriptor & sd)
+pull(
+  RvsdgModule & rm,
+  StatisticsCollector & statisticsCollector)
 {
-	pullstat stat;
+	auto statistics = pullstat::Create();
 
-	stat.start(rm.Rvsdg());
+	statistics->start(rm.Rvsdg());
 	pull(rm.Rvsdg().root());
-	stat.end(rm.Rvsdg());
+	statistics->end(rm.Rvsdg());
 
-  sd.PrintStatistics(stat);
+  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
 
 /* pullin class */
@@ -294,9 +301,11 @@ pullin::~pullin()
 {}
 
 void
-pullin::run(RvsdgModule & module, const StatisticsDescriptor & sd)
+pullin::run(
+  RvsdgModule & module,
+  StatisticsCollector & statisticsCollector)
 {
-	pull(module, sd);
+	pull(module, statisticsCollector);
 }
 
 }
