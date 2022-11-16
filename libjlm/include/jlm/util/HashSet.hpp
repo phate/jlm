@@ -92,6 +92,11 @@ public:
     : Set_(initializerList)
   {}
 
+  explicit
+  HashSet(const std::unordered_set<ItemType> & other)
+    : Set_(other)
+  {}
+
   HashSet(const HashSet & other)
     : Set_(other.Set_)
   {}
