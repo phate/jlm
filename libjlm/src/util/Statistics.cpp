@@ -11,13 +11,6 @@ Statistics::~Statistics()
 = default;
 
 void
-StatisticsDescriptor::PrintStatistics(const Statistics & statistics) const noexcept
-{
-  if (IsDemanded(statistics.GetId()))
-    fprintf(File_.fd(), "%s\n", statistics.ToString().c_str());
-}
-
-void
 StatisticsCollector::PrintStatistics() const
 {
   if (NumCollectedStatistics() == 0)
