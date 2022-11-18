@@ -162,25 +162,25 @@ jobs:
     - name: Run llvm-test-suite
       run: cd jlm-eval-suite/llvm-test-suite && make llvm-run-opt
 
-#  hls-test-suite:
-#    runs-on: ubuntu-22.04
-#    steps:
-#    - uses: actions/checkout@v2
-#    - name: Clone jlm-test-suite
-#      run: git clone https://github.com/phate/jlm-eval-suite.git
-#    - name: Checkout commit 6ecd6fc9d3d1207cdc3f9f39eae859c352c91772
-#      run: cd jlm-eval-suite && git checkout 6ecd6fc9d3d1207cdc3f9f39eae859c352c91772
-#    - name: Update submodules
-#      run: make -C jlm-eval-suite submodule
-#    - name: Download CIRCT installation
-#      run: wget -q -O- https://studntnu-my.sharepoint.com/:u:/g/personal/magnsj_ntnu_no/EXvoio0yy8xKnEKWJl9IlFsBOvYY5HMksaRHpuf8_tp0vQ?download=1 | tar -xz -C jlm-eval-suite/circt/
-#    - name: Compile jlm
-#      run: make CIRCT_PATH=$(pwd)/jlm-eval-suite/circt/local LLVMCONFIG=$(pwd)/jlm-eval-suite/circt/local/bin/llvm-config release -j `nproc`
-#    - name: Run unit and C tests
-#      run: make LLVMCONFIG=$(pwd)/jlm-eval-suite/circt/local/bin/llvm-config LD_LIBRARY_PATH=$(pwd)/jlm-eval-suite/circt/local/lib/ check -j `nproc`
-#    - name: Place bin directory to where it is expected by jlm-eval-suite
-#      run: ln -s ${{ github.workspace }}/bin jlm-eval-suite/jlm/bin
-#    - name: Install verilator
-#      run: sudo apt-get install verilator
-#    - name: Run hls-test-suite
-#      run: cd jlm-eval-suite && make hls-test-run
+  hls-test-suite:
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Clone jlm-test-suite
+      run: git clone https://github.com/phate/jlm-eval-suite.git
+    - name: Checkout commit 6ecd6fc9d3d1207cdc3f9f39eae859c352c91772
+      run: cd jlm-eval-suite && git checkout 6ecd6fc9d3d1207cdc3f9f39eae859c352c91772
+    - name: Update submodules
+      run: make -C jlm-eval-suite submodule
+    - name: Download CIRCT installation
+      run: wget -q -O- https://1drv.ms/u/s!AlWj8oOWSHFjd2VxwHfgnCnqZHw?e=7DEdSk?download=1 | tar -xJ -C jlm-eval-suite/circt/
+    - name: Compile jlm
+      run: make CIRCT_PATH=$(pwd)/jlm-eval-suite/circt/local LLVMCONFIG=$(pwd)/jlm-eval-suite/circt/local/bin/llvm-config release -j `nproc`
+    - name: Run unit and C tests
+      run: make LLVMCONFIG=$(pwd)/jlm-eval-suite/circt/local/bin/llvm-config LD_LIBRARY_PATH=$(pwd)/jlm-eval-suite/circt/local/lib/ check -j `nproc`
+    - name: Place bin directory to where it is expected by jlm-eval-suite
+      run: ln -s ${{ github.workspace }}/bin jlm-eval-suite/jlm/bin
+    - name: Install verilator
+      run: sudo apt-get install verilator
+    - name: Run hls-test-suite
+      run: cd jlm-eval-suite && make hls-test-run
