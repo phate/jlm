@@ -168,10 +168,6 @@ jobs:
     - uses: actions/checkout@v2
     - name: Clone jlm-test-suite
       run: git clone https://github.com/phate/jlm-eval-suite.git
-    - name: Checkout commit 6ecd6fc9d3d1207cdc3f9f39eae859c352c91772
-      run: cd jlm-eval-suite && git checkout 6ecd6fc9d3d1207cdc3f9f39eae859c352c91772
-    - name: Update submodules
-      run: make -C jlm-eval-suite submodule
     - name: Download CIRCT installation
       run: wget -q -O- 'https://onedrive.live.com/download?cid=6371489683F2A355&resid=6371489683F2A355%21121&authkey=AOl_Mh2Qy44x2vQ' | tar -xJ -C jlm-eval-suite/circt/
     - name: Compile jlm
