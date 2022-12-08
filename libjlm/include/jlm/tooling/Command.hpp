@@ -338,7 +338,7 @@ private:
 class JlmOptCommand final : public Command {
 public:
   enum class Optimization {
-    AASteensgaardBasic,
+    AASteensgaardAgnostic,
     CommonNodeElimination,
     DeadNodeElimination,
     FunctionInlining,

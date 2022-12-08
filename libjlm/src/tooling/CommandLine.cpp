@@ -364,7 +364,7 @@ JlmOptCommandLineParser::~JlmOptCommandLineParser() noexcept
 optimization *
 JlmOptCommandLineParser::GetOptimization(enum OptimizationId id)
 {
-  static aa::SteensgaardBasic steensgaardBasic;
+  static aa::SteensgaardAgnostic steensgaardAgnostic;
   static aa::SteensgaardRegionAware steensgaardRegionAware;
   static cne commonNodeElimination;
   static DeadNodeElimination deadNodeElimination;
@@ -378,7 +378,7 @@ JlmOptCommandLineParser::GetOptimization(enum OptimizationId id)
 
   static std::unordered_map<OptimizationId, jlm::optimization*> map(
     {
-      {OptimizationId::AASteensgaardBasic,        &steensgaardBasic},
+      {OptimizationId::AASteensgaardAgnostic,     &steensgaardAgnostic},
       {OptimizationId::AASteensgaardRegionAware,  &steensgaardRegionAware},
       {OptimizationId::cne,                       &commonNodeElimination},
       {OptimizationId::dne,                       &deadNodeElimination},
@@ -530,9 +530,9 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
   cl::list<OptimizationId> optimizationIds(
     cl::values(
       clEnumValN(
-        OptimizationId::AASteensgaardBasic,
-        "AASteensgaardBasic",
-        "Steensgaard alias analysis with basic memory state encoding."),
+        OptimizationId::AASteensgaardAgnostic,
+        "AASteensgaardAgnostic",
+        "Steensgaard alias analysis with agnostic memory state encoding."),
       clEnumValN(
         OptimizationId::AASteensgaardRegionAware,
         "AASteensgaardRegionAware",

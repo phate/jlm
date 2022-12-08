@@ -270,16 +270,16 @@ JlmOptCommand::ToString(const Optimization & optimization)
 {
   static std::unordered_map<Optimization, const char*>
     map({
-          {Optimization::AASteensgaardBasic, "--AASteensgaardBasic"},
-          {Optimization::CommonNodeElimination, "--cne"},
-          {Optimization::DeadNodeElimination, "--dne"},
-          {Optimization::FunctionInlining, "--iln"},
+          {Optimization::AASteensgaardAgnostic,     "--AASteensgaardAgnostic"},
+          {Optimization::CommonNodeElimination,     "--cne"},
+          {Optimization::DeadNodeElimination,       "--dne"},
+          {Optimization::FunctionInlining,          "--iln"},
           {Optimization::InvariantValueRedirection, "--InvariantValueRedirection"},
-          {Optimization::LoopUnrolling, "--url"},
-          {Optimization::NodePullIn, "--pll"},
-          {Optimization::NodePushOut, "--psh"},
-          {Optimization::NodeReduction, "--red"},
-          {Optimization::ThetaGammaInversion, "--ivt"}
+          {Optimization::LoopUnrolling,             "--url"},
+          {Optimization::NodePullIn,                "--pll"},
+          {Optimization::NodePushOut,               "--psh"},
+          {Optimization::NodeReduction,             "--red"},
+          {Optimization::ThetaGammaInversion,       "--ivt"}
         });
 
   JLM_ASSERT(map.find(optimization) != map.end());

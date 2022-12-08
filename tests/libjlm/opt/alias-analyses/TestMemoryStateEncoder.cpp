@@ -9,12 +9,11 @@
 
 #include <jive/view.hpp>
 
-#include <jlm/opt/alias-analyses/BasicMemoryNodeProvider.hpp>
+#include <jlm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp>
 #include <jlm/opt/alias-analyses/MemoryStateEncoder.hpp>
 #include <jlm/opt/alias-analyses/Operators.hpp>
 #include <jlm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
 #include <jlm/opt/alias-analyses/Steensgaard.hpp>
-#include <jlm/util/Statistics.hpp>
 
 #include <iostream>
 
@@ -94,7 +93,7 @@ is(
 }
 
 static void
-ValidateStoreTest1SteensgaardBasic(const StoreTest1 & test)
+ValidateStoreTest1SteensgaardAgnostic(const StoreTest1 & test)
 {
   using namespace jlm;
 
@@ -160,7 +159,7 @@ ValidateStoreTest1SteensgaardRegionAware(const StoreTest1 & test)
 }
 
 static void
-ValidateStoreTest2SteensgaardBasic(const StoreTest2 & test)
+ValidateStoreTest2SteensgaardAgnostic(const StoreTest2 & test)
 {
   using namespace jlm;
 
@@ -240,7 +239,7 @@ ValidateStoreTest2SteensgaardRegionAware(const StoreTest2 & test)
 }
 
 static void
-ValidateLoadTest1SteensgaardBasic(const LoadTest1 & test)
+ValidateLoadTest1SteensgaardAgnostic(const LoadTest1 & test)
 {
   using namespace jlm;
 
@@ -288,7 +287,7 @@ ValidateLoadTest1SteensgaardRegionAware(const LoadTest1 & test)
 }
 
 static void
-ValidateLoadTest2SteensgaardBasic(const LoadTest2 & test)
+ValidateLoadTest2SteensgaardAgnostic(const LoadTest2 & test)
 {
   using namespace jlm;
 
@@ -385,7 +384,7 @@ ValidateLoadTest2SteensgaardRegionAware(const LoadTest2 & test)
 }
 
 static void
-ValidateLoadFromUndefSteensgaardBasic(const LoadFromUndefTest & test)
+ValidateLoadFromUndefSteensgaardAgnostic(const LoadFromUndefTest & test)
 {
   using namespace jlm;
 
@@ -416,7 +415,7 @@ ValidateLoadFromUndefSteensgaardRegionAware(const LoadFromUndefTest & test)
 }
 
 static void
-ValidateCallTest1SteensgaardBasic(const CallTest1 & test)
+ValidateCallTest1SteensgaardAgnostic(const CallTest1 & test)
 {
   using namespace jlm;
 
@@ -526,7 +525,7 @@ ValidateCallTest1SteensgaardRegionAware(const CallTest1 & test)
 }
 
 static void
-ValidateCallTest2SteensgaardBasic(const CallTest2 & test)
+ValidateCallTest2SteensgaardAgnostic(const CallTest2 & test)
 {
   using namespace jlm;
 
@@ -594,7 +593,7 @@ ValidateCallTest2SteensgaardRegionAware(const CallTest2 & test)
 }
 
 static void
-ValidateIndirectCallTest1SteensgaardBasic(const IndirectCallTest1 & test)
+ValidateIndirectCallTest1SteensgaardAgnostic(const IndirectCallTest1 & test)
 {
   using namespace jlm;
 
@@ -704,7 +703,7 @@ ValidateIndirectCallTest1SteensgaardRegionAware(const IndirectCallTest1 & test)
 }
 
 static void
-ValidateGammaTestSteensgaardBasic(const GammaTest & test)
+ValidateGammaTestSteensgaardAgnostic(const GammaTest & test)
 {
   using namespace jlm;
 
@@ -740,7 +739,7 @@ ValidateGammaTestSteensgaardRegionAware(const GammaTest & test)
 }
 
 static void
-ValidateThetaTestSteensgaardBasic(const ThetaTest & test)
+ValidateThetaTestSteensgaardAgnostic(const ThetaTest & test)
 {
   using namespace jlm;
 
@@ -786,7 +785,7 @@ ValidateThetaTestSteensgaardRegionAware(const ThetaTest & test)
 }
 
 static void
-ValidateDeltaTest1SteensgaardBasic(const DeltaTest1 & test)
+ValidateDeltaTest1SteensgaardAgnostic(const DeltaTest1 & test)
 {
   using namespace jlm;
 
@@ -828,7 +827,7 @@ ValidateDeltaTest1SteensgaardRegionAware(const DeltaTest1 & test)
 }
 
 static void
-ValidateDeltaTest2SteensgaardBasic(const DeltaTest2 & test)
+ValidateDeltaTest2SteensgaardAgnostic(const DeltaTest2 & test)
 {
   using namespace jlm;
 
@@ -903,7 +902,7 @@ ValidateDeltaTest2SteensgaardRegionAware(const DeltaTest2 & test)
 }
 
 static void
-ValidateImportTestSteensgaardBasic(const ImportTest & test)
+ValidateImportTestSteensgaardAgnostic(const ImportTest & test)
 {
   using namespace jlm;
 
@@ -978,7 +977,7 @@ ValidateImportTestSteensgaardRegionAware(const ImportTest & test)
 }
 
 static void
-ValidatePhiTestSteensgaardBasic(const PhiTest1 & test)
+ValidatePhiTestSteensgaardAgnostic(const PhiTest1 & test)
 {
   using namespace jlm;
 
@@ -1032,7 +1031,7 @@ ValidatePhiTestSteensgaardRegionAware(const PhiTest1 & test)
 }
 
 static void
-ValidateMemcpySteensgaardBasic(const MemcpyTest & test)
+ValidateMemcpySteensgaardAgnostic(const MemcpyTest & test)
 {
   using namespace jlm;
 
@@ -1138,53 +1137,65 @@ test()
 {
   using namespace jlm::aa;
 
-  ValidateTest<StoreTest1, Steensgaard, BasicMemoryNodeProvider>(ValidateStoreTest1SteensgaardBasic);
+  ValidateTest<StoreTest1, Steensgaard, AgnosticMemoryNodeProvider>(ValidateStoreTest1SteensgaardAgnostic);
   ValidateTest<StoreTest1, Steensgaard, RegionAwareMemoryNodeProvider>(ValidateStoreTest1SteensgaardRegionAware);
 
-  ValidateTest<StoreTest2, Steensgaard, BasicMemoryNodeProvider>(ValidateStoreTest2SteensgaardBasic);
+  ValidateTest<StoreTest2, Steensgaard, AgnosticMemoryNodeProvider>(ValidateStoreTest2SteensgaardAgnostic);
   ValidateTest<StoreTest2, Steensgaard, RegionAwareMemoryNodeProvider>(ValidateStoreTest2SteensgaardRegionAware);
 
-  ValidateTest<LoadTest1, Steensgaard, BasicMemoryNodeProvider>(ValidateLoadTest1SteensgaardBasic);
+  ValidateTest<LoadTest1, Steensgaard, AgnosticMemoryNodeProvider>(ValidateLoadTest1SteensgaardAgnostic);
   ValidateTest<LoadTest1, Steensgaard, RegionAwareMemoryNodeProvider>(ValidateLoadTest1SteensgaardRegionAware);
 
-  ValidateTest<LoadTest2, Steensgaard, BasicMemoryNodeProvider>(ValidateLoadTest2SteensgaardBasic);
+  ValidateTest<LoadTest2, Steensgaard, AgnosticMemoryNodeProvider>(ValidateLoadTest2SteensgaardAgnostic);
   ValidateTest<LoadTest2, Steensgaard, RegionAwareMemoryNodeProvider>(ValidateLoadTest2SteensgaardRegionAware);
 
-  ValidateTest<LoadFromUndefTest, Steensgaard, BasicMemoryNodeProvider>(ValidateLoadFromUndefSteensgaardBasic);
-  ValidateTest<LoadFromUndefTest, Steensgaard, RegionAwareMemoryNodeProvider>(ValidateLoadFromUndefSteensgaardRegionAware);
+  ValidateTest<
+    LoadFromUndefTest,
+    Steensgaard,
+    AgnosticMemoryNodeProvider
+  >(ValidateLoadFromUndefSteensgaardAgnostic);
+  ValidateTest<
+    LoadFromUndefTest,
+    Steensgaard,
+    RegionAwareMemoryNodeProvider
+  >(ValidateLoadFromUndefSteensgaardRegionAware);
 
-  ValidateTest<CallTest1, Steensgaard, BasicMemoryNodeProvider>(ValidateCallTest1SteensgaardBasic);
+  ValidateTest<CallTest1, Steensgaard, AgnosticMemoryNodeProvider>(ValidateCallTest1SteensgaardAgnostic);
   ValidateTest<CallTest1, Steensgaard, RegionAwareMemoryNodeProvider>(ValidateCallTest1SteensgaardRegionAware);
 
-  ValidateTest<CallTest2, Steensgaard, BasicMemoryNodeProvider>(ValidateCallTest2SteensgaardBasic);
+  ValidateTest<CallTest2, Steensgaard, AgnosticMemoryNodeProvider>(ValidateCallTest2SteensgaardAgnostic);
   ValidateTest<CallTest2, Steensgaard, RegionAwareMemoryNodeProvider>(ValidateCallTest2SteensgaardRegionAware);
 
-  ValidateTest<IndirectCallTest1, Steensgaard, BasicMemoryNodeProvider>(ValidateIndirectCallTest1SteensgaardBasic);
+  ValidateTest<
+    IndirectCallTest1,
+    Steensgaard,
+    AgnosticMemoryNodeProvider
+  >(ValidateIndirectCallTest1SteensgaardAgnostic);
   ValidateTest<
     IndirectCallTest1,
     Steensgaard,
     RegionAwareMemoryNodeProvider
   >(ValidateIndirectCallTest1SteensgaardRegionAware);
 
-  ValidateTest<GammaTest, Steensgaard, BasicMemoryNodeProvider>(ValidateGammaTestSteensgaardBasic);
+  ValidateTest<GammaTest, Steensgaard, AgnosticMemoryNodeProvider>(ValidateGammaTestSteensgaardAgnostic);
   ValidateTest<GammaTest, Steensgaard, RegionAwareMemoryNodeProvider>(ValidateGammaTestSteensgaardRegionAware);
 
-  ValidateTest<ThetaTest, Steensgaard, BasicMemoryNodeProvider>(ValidateThetaTestSteensgaardBasic);
+  ValidateTest<ThetaTest, Steensgaard, AgnosticMemoryNodeProvider>(ValidateThetaTestSteensgaardAgnostic);
   ValidateTest<ThetaTest, Steensgaard, RegionAwareMemoryNodeProvider>(ValidateThetaTestSteensgaardRegionAware);
 
-  ValidateTest<DeltaTest1, Steensgaard, BasicMemoryNodeProvider>(ValidateDeltaTest1SteensgaardBasic);
+  ValidateTest<DeltaTest1, Steensgaard, AgnosticMemoryNodeProvider>(ValidateDeltaTest1SteensgaardAgnostic);
   ValidateTest<DeltaTest1, Steensgaard, RegionAwareMemoryNodeProvider>(ValidateDeltaTest1SteensgaardRegionAware);
 
-  ValidateTest<DeltaTest2, Steensgaard, BasicMemoryNodeProvider>(ValidateDeltaTest2SteensgaardBasic);
+  ValidateTest<DeltaTest2, Steensgaard, AgnosticMemoryNodeProvider>(ValidateDeltaTest2SteensgaardAgnostic);
   ValidateTest<DeltaTest2, Steensgaard, RegionAwareMemoryNodeProvider>(ValidateDeltaTest2SteensgaardRegionAware);
 
-  ValidateTest<ImportTest, Steensgaard, BasicMemoryNodeProvider>(ValidateImportTestSteensgaardBasic);
+  ValidateTest<ImportTest, Steensgaard, AgnosticMemoryNodeProvider>(ValidateImportTestSteensgaardAgnostic);
   ValidateTest<ImportTest, Steensgaard, RegionAwareMemoryNodeProvider>(ValidateImportTestSteensgaardRegionAware);
 
-  ValidateTest<PhiTest1, Steensgaard, BasicMemoryNodeProvider>(ValidatePhiTestSteensgaardBasic);
+  ValidateTest<PhiTest1, Steensgaard, AgnosticMemoryNodeProvider>(ValidatePhiTestSteensgaardAgnostic);
   ValidateTest<PhiTest1, Steensgaard, RegionAwareMemoryNodeProvider>(ValidatePhiTestSteensgaardRegionAware);
 
-  ValidateTest<MemcpyTest, Steensgaard, BasicMemoryNodeProvider>(ValidateMemcpySteensgaardBasic);
+  ValidateTest<MemcpyTest, Steensgaard, AgnosticMemoryNodeProvider>(ValidateMemcpySteensgaardAgnostic);
   ValidateTest<MemcpyTest, Steensgaard, RegionAwareMemoryNodeProvider>(ValidateMemcpySteensgaardRegionAware);
 
   return 0;
