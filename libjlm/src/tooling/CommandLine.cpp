@@ -474,6 +474,10 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
         "print-unroll-stat",
         "Write loop unrolling statistics to file."),
       clEnumValN(
+        Statistics::Id::MemoryNodeProvisioning,
+        "print-memory-node-provisioning",
+        "Write memory node provisioning statistics to file."),
+      clEnumValN(
         Statistics::Id::PullNodes,
         "print-pull-stat",
         "Write node pull statistics to file."),
