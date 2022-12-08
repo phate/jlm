@@ -118,7 +118,7 @@ JlcCommandGraphGenerator::GenerateCommandGraph(const JlcCommandLineOptions & com
       if (!commandLineOptions.JlmOptOptimizations_.empty()) {
         static std::unordered_map<std::string, JlmOptCommand::Optimization>map(
         {
-          {"AASteensgaardBasic", JlmOptCommand::Optimization::AASteensgaardBasic},
+          {"AASteensgaardAgnostic", JlmOptCommand::Optimization::AASteensgaardAgnostic},
           {"cne", JlmOptCommand::Optimization::CommonNodeElimination},
           {"dne", JlmOptCommand::Optimization::DeadNodeElimination},
           {"iln", JlmOptCommand::Optimization::FunctionInlining},

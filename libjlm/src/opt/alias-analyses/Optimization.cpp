@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/opt/alias-analyses/BasicMemoryNodeProvider.hpp>
+#include <jlm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp>
 #include <jlm/opt/alias-analyses/MemoryStateEncoder.hpp>
 #include <jlm/opt/alias-analyses/Optimization.hpp>
 #include <jlm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
@@ -42,11 +42,11 @@ UnlinkUnknownMemoryNode(PointsToGraph & pointsToGraph)
   }
 }
 
-SteensgaardBasic::~SteensgaardBasic() noexcept
+SteensgaardAgnostic::~SteensgaardAgnostic() noexcept
 = default;
 
 void
-SteensgaardBasic::run(
+SteensgaardAgnostic::run(
   RvsdgModule & rvsdgModule,
   StatisticsCollector & statisticsCollector)
 {
@@ -54,7 +54,7 @@ SteensgaardBasic::run(
   auto pointsToGraph = steensgaard.Analyze(rvsdgModule, statisticsCollector);
   UnlinkUnknownMemoryNode(*pointsToGraph);
 
-  auto provider = BasicMemoryNodeProvider::Create(rvsdgModule, *pointsToGraph, statisticsCollector);
+  auto provider = AgnosticMemoryNodeProvider::Create(rvsdgModule, *pointsToGraph, statisticsCollector);
 
   MemoryStateEncoder encoder;
   encoder.Encode(rvsdgModule, *provider, statisticsCollector);

@@ -457,7 +457,7 @@ private:
 class JlmOptCommandLineParser final : public CommandLineParser {
 public:
   enum class OptimizationId {
-    AASteensgaardBasic,
+    AASteensgaardAgnostic,
     AASteensgaardRegionAware,
     cne,
     dne,

@@ -1,5 +1,5 @@
 TESTS += \
-	libjlm/opt/alias-analyses/TestBasicMemoryNodeProvider \
+	libjlm/opt/alias-analyses/TestAgnosticMemoryNodeProvider \
 	libjlm/opt/alias-analyses/TestMemoryStateEncoder \
 	libjlm/opt/alias-analyses/TestRegionAwareMemoryNodeProvider \
 	libjlm/opt/alias-analyses/TestSteensgaard \

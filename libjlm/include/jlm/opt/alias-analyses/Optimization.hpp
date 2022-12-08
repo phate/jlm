@@ -10,14 +10,14 @@
 
 namespace jlm::aa {
 
-/** \brief Steensgaard alias analysis with basic memory state encoding
+/** \brief Steensgaard alias analysis with agnostic memory state encoding
  *
  * @see Steensgaard
- * @see BasicMemoryNodeProvider
+ * @see AgnosticMemoryNodeProvider
  */
-class SteensgaardBasic final : public optimization {
+class SteensgaardAgnostic final : public optimization {
 public:
-  ~SteensgaardBasic() noexcept override;
+  ~SteensgaardAgnostic() noexcept override;
 
   void
   run(

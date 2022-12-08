@@ -3,18 +3,18 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/opt/alias-analyses/BasicMemoryNodeProvider.hpp>
+#include <jlm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp>
 #include <jlm/util/Statistics.hpp>
 
 namespace jlm::aa
 {
 
-BasicMemoryNodeProvider::BasicMemoryNodeProvider(const PointsToGraph & pointsToGraph)
+AgnosticMemoryNodeProvider::AgnosticMemoryNodeProvider(const PointsToGraph & pointsToGraph)
   : PointsToGraph_(pointsToGraph)
 {}
 
 void
-BasicMemoryNodeProvider::ProvisionMemoryNodes(
+AgnosticMemoryNodeProvider::ProvisionMemoryNodes(
   const RvsdgModule&,
   StatisticsCollector&)
 {
@@ -36,20 +36,20 @@ BasicMemoryNodeProvider::ProvisionMemoryNodes(
   MemoryNodes_.Insert(&PointsToGraph_.GetExternalMemoryNode());
 }
 
-std::unique_ptr<BasicMemoryNodeProvider>
-BasicMemoryNodeProvider::Create(
+std::unique_ptr<AgnosticMemoryNodeProvider>
+AgnosticMemoryNodeProvider::Create(
   const RvsdgModule & rvsdgModule,
   const PointsToGraph & pointsToGraph,
   StatisticsCollector & statisticsCollector)
 {
-  std::unique_ptr<BasicMemoryNodeProvider> provider(new BasicMemoryNodeProvider(pointsToGraph));
+  std::unique_ptr<AgnosticMemoryNodeProvider> provider(new AgnosticMemoryNodeProvider(pointsToGraph));
   provider->ProvisionMemoryNodes(rvsdgModule, statisticsCollector);
 
   return provider;
 }
 
-std::unique_ptr<BasicMemoryNodeProvider>
-BasicMemoryNodeProvider::Create(
+std::unique_ptr<AgnosticMemoryNodeProvider>
+AgnosticMemoryNodeProvider::Create(
   const RvsdgModule & rvsdgModule,
   const PointsToGraph & pointsToGraph)
 {
@@ -58,37 +58,37 @@ BasicMemoryNodeProvider::Create(
 }
 
 const PointsToGraph &
-BasicMemoryNodeProvider::GetPointsToGraph() const noexcept
+AgnosticMemoryNodeProvider::GetPointsToGraph() const noexcept
 {
   return PointsToGraph_;
 }
 
 const HashSet<const PointsToGraph::MemoryNode*> &
-BasicMemoryNodeProvider::GetRegionEntryNodes(const jive::region&) const
+AgnosticMemoryNodeProvider::GetRegionEntryNodes(const jive::region&) const
 {
   return MemoryNodes_;
 }
 
 const HashSet<const PointsToGraph::MemoryNode*> &
-BasicMemoryNodeProvider::GetRegionExitNodes(const jive::region&) const
+AgnosticMemoryNodeProvider::GetRegionExitNodes(const jive::region&) const
 {
   return MemoryNodes_;
 }
 
 const HashSet<const PointsToGraph::MemoryNode*> &
-BasicMemoryNodeProvider::GetCallEntryNodes(const CallNode&) const
+AgnosticMemoryNodeProvider::GetCallEntryNodes(const CallNode&) const
 {
   return MemoryNodes_;
 }
 
 const HashSet<const PointsToGraph::MemoryNode*> &
-BasicMemoryNodeProvider::GetCallExitNodes(const CallNode&) const
+AgnosticMemoryNodeProvider::GetCallExitNodes(const CallNode&) const
 {
   return MemoryNodes_;
 }
 
 HashSet<const PointsToGraph::MemoryNode*>
-BasicMemoryNodeProvider::GetOutputNodes(const jive::output & output) const
+AgnosticMemoryNodeProvider::GetOutputNodes(const jive::output & output) const
 {
   JLM_ASSERT(is<PointerType>(output.type()));
   auto & registerNode = PointsToGraph_.GetRegisterNode(output);
