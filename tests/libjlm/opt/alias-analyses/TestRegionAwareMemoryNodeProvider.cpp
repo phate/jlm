@@ -1426,6 +1426,49 @@ TestEscapedMemory3()
   ValidateProvider(test, *provider, *pointsToGraph);
 }
 
+static void
+TestStatistics()
+{
+  /*
+   * Arrange
+   */
+  LoadTest1 test;
+  jlm::filepath filePath("/tmp/TestDisabledStatistics");
+  std::remove(filePath.to_str().c_str());
+
+  auto pointsToGraph = RunSteensgaard(test.module());
+
+  jlm::StatisticsCollectorSettings statisticsCollectorSettings(
+    filePath,
+    {jlm::Statistics::Id::MemoryNodeProvisioning});
+  jlm::StatisticsCollector statisticsCollector(statisticsCollectorSettings);
+
+  /*
+   * Act
+   */
+  auto provider = jlm::aa::RegionAwareMemoryNodeProvider::Create(
+    test.module(),
+    *pointsToGraph,
+    statisticsCollector);
+
+  /*
+   * Assert
+   */
+  assert(statisticsCollector.NumCollectedStatistics() == 1);
+
+  auto & memoryNodeProvisioningStatistics = dynamic_cast<const jlm::aa::RegionAwareMemoryNodeProvider::Statistics&>(
+    *statisticsCollector.CollectedStatistics().begin());
+
+  assert(memoryNodeProvisioningStatistics.NumRvsdgNodes() == 3);
+  assert(memoryNodeProvisioningStatistics.NumRvsdgRegions() == 2);
+  assert(memoryNodeProvisioningStatistics.NumPointsToGraphMemoryNodes() == 2);
+
+  assert(memoryNodeProvisioningStatistics.GetAnnotationStatisticsTime() != 0);
+  assert(memoryNodeProvisioningStatistics.GetPropagationPass1Time() != 0);
+  assert(memoryNodeProvisioningStatistics.GetPropagationPass2Time() != 0);
+  assert(memoryNodeProvisioningStatistics.GetResolveUnknownMemoryNodeReferencesTime() != 0);
+}
+
 static int
 TestRegionAwareMemoryNodeProvider()
 {
@@ -1459,6 +1502,8 @@ TestRegionAwareMemoryNodeProvider()
   TestEscapedMemory3();
 
   TestMemcpy();
+
+  TestStatistics();
 
   return 0;
 }

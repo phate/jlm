@@ -30,6 +30,7 @@ public:
     InvariantValueRedirection,
     JlmToRvsdgConversion,
     LoopUnrolling,
+    MemoryNodeProvisioning,
     PullNodes,
     PushNodes,
     ReduceNodes,

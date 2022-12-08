@@ -9,7 +9,6 @@
 #include <jlm/ir/operators/store.hpp>
 #include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
-#include <jlm/util/Statistics.hpp>
 
 #include <jive/rvsdg/traverser.hpp>
 
@@ -379,11 +378,25 @@ RegionAwareMemoryNodeProvider::ProvisionMemoryNodes(
   const jlm::RvsdgModule & rvsdgModule,
   StatisticsCollector & statisticsCollector)
 {
-  AnnotateRegion(*rvsdgModule.Rvsdg().root());
-  Propagate(rvsdgModule);
+  auto statistics = Statistics::Create(statisticsCollector, rvsdgModule, GetPointsToGraph());
 
-  ResolveUnknownMemoryNodeReferences(rvsdgModule);
+  statistics->StartAnnotationStatistics();
+  AnnotateRegion(*rvsdgModule.Rvsdg().root());
+  statistics->StopAnnotationStatistics();
+
+  statistics->StartPropagationPass1Statistics();
   Propagate(rvsdgModule);
+  statistics->StopPropagationPass1Statistics();
+
+  statistics->StartResolveUnknownMemoryNodeReferencesStatistics();
+  ResolveUnknownMemoryNodeReferences(rvsdgModule);
+  statistics->StopResolveUnknownMemoryNodeReferencesStatistics();
+
+  statistics->StartPropagationPass2Statistics();
+  Propagate(rvsdgModule);
+  statistics->StopPropagationPass2Statistics();
+
+  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
 
 std::unique_ptr<RegionAwareMemoryNodeProvider>

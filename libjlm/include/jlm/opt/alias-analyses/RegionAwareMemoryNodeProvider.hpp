@@ -8,6 +8,8 @@
 
 #include <jlm/opt/alias-analyses/MemoryNodeProvider.hpp>
 #include <jlm/opt/alias-analyses/PointsToGraph.hpp>
+#include <jlm/util/Statistics.hpp>
+#include <jlm/util/time.hpp>
 
 namespace jlm::aa {
 
@@ -39,6 +41,8 @@ class RegionAwareMemoryNodeProvider final : public MemoryNodeProvider {
   class Context;
 
 public:
+  class Statistics;
+
   ~RegionAwareMemoryNodeProvider() noexcept override;
 
 private:
@@ -221,6 +225,197 @@ private:
 
   std::unique_ptr<Context> Context_;
   const PointsToGraph & PointsToGraph_;
+};
+
+/** \brief Region-aware memory node provider statistics
+ *
+ * The statistics collected when running the region-aware memory node provider.
+ *
+ * @see RegionAwareMemoryNodeProvider
+ */
+class RegionAwareMemoryNodeProvider::Statistics final : public jlm::Statistics {
+public:
+  ~Statistics() override = default;
+
+  explicit
+  Statistics(
+    const StatisticsCollector & statisticsCollector,
+    const RvsdgModule & rvsdgModule,
+    const PointsToGraph & pointsToGraph)
+    : jlm::Statistics(Statistics::Id::MemoryNodeProvisioning)
+    , NumRvsdgNodes_(0)
+    , NumRvsdgRegions_(0)
+    , NumPointsToGraphMemoryNodes_(0)
+    , StatisticsCollector_(statisticsCollector)
+  {
+    if (!IsDemanded())
+      return;
+
+    NumRvsdgNodes_ = jive::nnodes(rvsdgModule.Rvsdg().root());
+    NumRvsdgRegions_ = jive::region::NumRegions(*rvsdgModule.Rvsdg().root());
+    NumPointsToGraphMemoryNodes_ = pointsToGraph.NumMemoryNodes();
+  }
+
+  [[nodiscard]] size_t
+  NumRvsdgNodes() const noexcept
+  {
+    return NumRvsdgNodes_;
+  }
+
+  [[nodiscard]] size_t
+  NumRvsdgRegions() const noexcept
+  {
+    return NumRvsdgRegions_;
+  }
+
+  [[nodiscard]] size_t
+  NumPointsToGraphMemoryNodes() const noexcept
+  {
+    return NumPointsToGraphMemoryNodes_;
+  }
+
+  [[nodiscard]] size_t
+  GetAnnotationStatisticsTime() const noexcept
+  {
+    return AnnotationTimer_.ns();
+  }
+
+  [[nodiscard]] size_t
+  GetPropagationPass1Time() const noexcept
+  {
+    return PropagationPass1Timer_.ns();
+  }
+
+  [[nodiscard]] size_t
+  GetPropagationPass2Time() const noexcept
+  {
+    return PropagationPass2Timer_.ns();
+  }
+
+  [[nodiscard]] size_t
+  GetResolveUnknownMemoryNodeReferencesTime() const noexcept
+  {
+    return ResolveUnknownMemoryReferencesTimer_.ns();
+  }
+
+  void
+  StartAnnotationStatistics() noexcept
+  {
+    if (!IsDemanded())
+      return;
+
+    AnnotationTimer_.start();
+  }
+
+  void
+  StopAnnotationStatistics() noexcept
+  {
+    if (!IsDemanded())
+      return;
+
+    AnnotationTimer_.stop();
+  }
+
+  void
+  StartPropagationPass1Statistics() noexcept
+  {
+    if (!IsDemanded())
+      return;
+
+    PropagationPass1Timer_.start();
+  }
+
+  void
+  StopPropagationPass1Statistics() noexcept
+  {
+    if (!IsDemanded())
+      return;
+
+    PropagationPass1Timer_.stop();
+  }
+
+  void
+  StartResolveUnknownMemoryNodeReferencesStatistics() noexcept
+  {
+    if (!IsDemanded())
+      return;
+
+    ResolveUnknownMemoryReferencesTimer_.start();
+  }
+
+  void
+  StopResolveUnknownMemoryNodeReferencesStatistics() noexcept
+  {
+    if (!IsDemanded())
+      return;
+
+    ResolveUnknownMemoryReferencesTimer_.stop();
+  }
+
+  void
+  StartPropagationPass2Statistics() noexcept
+  {
+    if (!IsDemanded())
+      return;
+
+    PropagationPass2Timer_.start();
+  }
+
+  void
+  StopPropagationPass2Statistics() noexcept
+  {
+    if (!IsDemanded())
+      return;
+
+    PropagationPass2Timer_.stop();
+  }
+
+  [[nodiscard]] std::string
+  ToString() const override
+  {
+    return strfmt(
+      "RegionAwareMemoryNodeProvision ",
+      "#RvsdgNodes:", NumRvsdgNodes_, " ",
+      "#RvsdgRegions:", NumRvsdgRegions_, " ",
+      "#PointsToGraphMemoryNodes:", NumPointsToGraphMemoryNodes_, " ",
+      "AnnotationTime[ns]:", AnnotationTimer_.ns(), " ",
+      "PropagationPass1Time[ns]:", PropagationPass1Timer_.ns(), " ",
+      "ResolveUnknownMemoryNodeReferences[ns]:", ResolveUnknownMemoryReferencesTimer_.ns(), " ",
+      "PropagationPass2Time[ns]:", PropagationPass2Timer_.ns(), " "
+    );
+  }
+
+  static std::unique_ptr<Statistics>
+  Create(
+    const StatisticsCollector & statisticsCollector,
+    const RvsdgModule & rvsdgModule,
+    const PointsToGraph & pointsToGraph)
+  {
+    return std::make_unique<Statistics>(statisticsCollector, rvsdgModule, pointsToGraph);
+  }
+
+private:
+  /**
+   * Checks if the pass statistics are demanded.
+   *
+   * @return True if the pass statistic is demanded, otherwise false.
+   */
+  [[nodiscard]] bool
+  IsDemanded() const noexcept
+  {
+    return StatisticsCollector_.GetSettings().IsDemanded(GetId());
+  }
+
+  size_t NumRvsdgNodes_;
+  size_t NumRvsdgRegions_;
+  size_t NumPointsToGraphMemoryNodes_;
+
+  jlm::timer AnnotationTimer_;
+  jlm::timer PropagationPass1Timer_;
+  jlm::timer ResolveUnknownMemoryReferencesTimer_;
+  jlm::timer PropagationPass2Timer_;
+
+  const StatisticsCollector & StatisticsCollector_;
 };
 
 }
