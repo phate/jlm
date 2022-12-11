@@ -208,6 +208,19 @@ public:
   }
 
   /**
+   * Checks if the pass statistics is demanded.
+   *
+   * @param statistics The statistics to check whether it is demanded.
+   *
+   * @return True if \p statistics is demanded, otherwise false.
+   */
+  [[nodiscard]] bool
+  IsDemanded(const Statistics & statistics) const noexcept
+  {
+    return GetSettings().IsDemanded(statistics.GetId());
+  }
+
+  /**
    * Add \p statistics to collected statistics. A statistics is only added if it is demanded.
    *
    * @param statistics The statistics to collect.
