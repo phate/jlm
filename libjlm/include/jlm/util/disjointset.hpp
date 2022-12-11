@@ -21,21 +21,23 @@ public:
 	class set;
 
 private:
-	class member_iterator final : public std::iterator<std::forward_iterator_tag,
-		const T, ptrdiff_t> {
+  class member_iterator final
+  {
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = const T;
+    using difference_type = std::ptrdiff_t;
+    using pointer = const T*;
+    using reference = const T&;
 
+  private:
 			friend class disjointset::set;
-
-			using super = std::iterator<std::forward_iterator_tag, const T, ptrdiff_t>;
 
 			member_iterator(const set * node)
 			: node_(node)
 			{}
 
 		public:
-			using pointer = typename super::pointer;
-			using reference = typename super::reference;
-
 			reference
 			operator*() const
 			{
@@ -176,12 +178,17 @@ public:
 			mutable const set * parent_;
 	};
 
-	class set_iterator final : public std::iterator<std::forward_iterator_tag,
-		const set*, ptrdiff_t> {
+  class set_iterator final
+  {
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = const set*;
+    using difference_type = ptrdiff_t;
+    using pointer = const set**;
+    using reference = const set*&;
 
+  private:
 			friend class disjointset;
-
-			using super = std::iterator<std::forward_iterator_tag, const set*, ptrdiff_t>;
 
 			set_iterator(const typename std::unordered_set<const set*>::const_iterator & it)
 			: it_(it)

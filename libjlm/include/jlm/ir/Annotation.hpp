@@ -21,8 +21,15 @@ class variable;
 
 class VariableSet final {
 
-  class ConstIterator final : public std::iterator<std::forward_iterator_tag, const jlm::variable*, ptrdiff_t> {
+  class ConstIterator final
+  {
   public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = const jlm::variable*;
+    using difference_type = std::ptrdiff_t;
+    using pointer = const jlm::variable**;
+    using reference = const jlm::variable*&;
+
     explicit
     ConstIterator(const std::unordered_set<const jlm::variable*>::const_iterator & it)
       : It_(it)

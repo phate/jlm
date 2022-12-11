@@ -40,9 +40,16 @@ class rvoutput;
 class node final : public jive::structural_node {
   friend phi::builder;
 
-  class cvconstiterator final : public std::iterator<std::forward_iterator_tag,
-    const cvinput*, ptrdiff_t> {
+  class cvconstiterator final
+  {
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = const cvinput*;
+    using difference_type = std::ptrdiff_t;
+    using pointer = const cvinput**;
+    using reference = const cvinput*&;
 
+  private:
     friend phi::node;
 
     cvconstiterator(const cvinput * input)
@@ -96,9 +103,16 @@ class node final : public jive::structural_node {
     const cvinput * input_;
   };
 
-  class cviterator final : public std::iterator<std::forward_iterator_tag,
-    cvinput*, ptrdiff_t> {
+  class cviterator final
+  {
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = cvinput*;
+    using difference_type = std::ptrdiff_t;
+    using pointer = cvinput**;
+    using reference = cvinput*&;
 
+  private:
     friend phi::node;
 
     cviterator(cvinput * input)
@@ -152,8 +166,14 @@ class node final : public jive::structural_node {
     cvinput * input_;
   };
 
-  class rvconstiterator final : public std::iterator<std::forward_iterator_tag,
-    const rvoutput*, ptrdiff_t> {
+  class rvconstiterator final
+  {
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = const rvoutput*;
+    using difference_type = std::ptrdiff_t;
+    using pointer = const rvoutput**;
+    using reference = const rvoutput*&;
 
     friend phi::node;
 
@@ -208,9 +228,16 @@ class node final : public jive::structural_node {
     const rvoutput * output_;
   };
 
-  class rviterator final : public std::iterator<std::forward_iterator_tag,
-    rvoutput*, ptrdiff_t> {
+  class rviterator final
+  {
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = rvoutput*;
+    using difference_type = std::ptrdiff_t;
+    using pointer = rvoutput**;
+    using reference = rvoutput*&;
 
+  private:
     friend phi::node;
 
     rviterator(rvoutput * output)

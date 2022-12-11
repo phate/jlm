@@ -382,8 +382,16 @@ private:
 
 /** \brief Attribute set const iterator
 */
-class attributeset::constiterator final : public std::iterator<std::forward_iterator_tag,
-	const attribute*, ptrdiff_t> {
+class attributeset::constiterator final
+{
+public:
+  using iterator_category = std::forward_iterator_tag;
+  using value_type = const attribute*;
+  using difference_type = std::ptrdiff_t;
+  using pointer = const attribute**;
+  using reference = const attribute*&;
+
+private:
 	friend ::jlm::attributeset;
 
 private:
