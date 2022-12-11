@@ -127,12 +127,16 @@ private:
 class RegionAwareMemoryNodeProvider::Context final {
   using RegionSummaryMap = std::unordered_map<const jive::region*, std::unique_ptr<RegionSummary>>;
 
-  class RegionSummaryConstIterator final : public std::iterator<
-    std::forward_iterator_tag,
-    const RegionSummary*,
-    ptrdiff_t
-  > {
+  class RegionSummaryConstIterator final
+  {
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = const RegionSummary*;
+    using difference_type = std::ptrdiff_t;
+    using pointer = const RegionSummary**;
+    using reference = const RegionSummary*&;
 
+  private:
     friend Context;
 
     explicit

@@ -22,8 +22,16 @@ namespace jlm
 template<typename ItemType>
 class HashSet
 {
-  class ItemConstIterator final : std::iterator<std::forward_iterator_tag, ItemType, std::ptrdiff_t>
+  class ItemConstIterator final
   {
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = ItemType;
+    using difference_type = std::ptrdiff_t;
+    using pointer = ItemType*;
+    using reference = ItemType&;
+
+  private:
     friend HashSet;
 
     explicit

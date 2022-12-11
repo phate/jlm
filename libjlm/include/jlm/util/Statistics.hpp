@@ -117,9 +117,16 @@ private:
  * Collects and prints statistics.
  */
 class StatisticsCollector final {
-  class StatisticsIterator final : public std::iterator<std::forward_iterator_tag,
-    const Statistics*, ptrdiff_t> {
+  class StatisticsIterator final
+  {
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = const Statistics*;
+    using difference_type = std::ptrdiff_t;
+    using pointer = const Statistics**;
+    using reference = const Statistics*&;
 
+  private:
     friend StatisticsCollector;
 
     explicit

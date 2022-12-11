@@ -21,8 +21,15 @@ namespace jlm {
  */
 class FunctionType final : public jive::valuetype {
 
-  class TypeConstIterator final : public std::iterator<std::forward_iterator_tag, jive::type*, ptrdiff_t> {
+  class TypeConstIterator final
+  {
   public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = jive::type*;
+    using difference_type = std::ptrdiff_t;
+    using pointer = jive::type**;
+    using reference = jive::type*&;
+
     explicit
     TypeConstIterator(const std::vector<std::unique_ptr<jive::type>>::const_iterator & it)
       : It_(it)

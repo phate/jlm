@@ -305,10 +305,15 @@ private:
 	std::vector<jlm::argument*> arguments_;
 };
 
-class entryaggnode::constiterator final : public std::iterator<
-	std::forward_iterator_tag, const jlm::argument*, ptrdiff_t>
+class entryaggnode::constiterator final
 {
 public:
+  using iterator_category = std::forward_iterator_tag;
+  using value_type = const jlm::argument*;
+  using difference_type = std::ptrdiff_t;
+  using pointer = const jlm::argument**;
+  using reference = const jlm::argument*&;
+
 	constexpr
 	constiterator(const std::vector<jlm::argument*>::const_iterator & it)
 	: it_(it)
