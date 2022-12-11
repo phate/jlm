@@ -4,7 +4,6 @@
  */
 
 #include <jlm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp>
-#include <jlm/util/Statistics.hpp>
 
 namespace jlm::aa
 {
@@ -16,8 +15,11 @@ AgnosticMemoryNodeProvider::AgnosticMemoryNodeProvider(const PointsToGraph & poi
 void
 AgnosticMemoryNodeProvider::ProvisionMemoryNodes(
   const RvsdgModule&,
-  StatisticsCollector&)
+  StatisticsCollector& statisticsCollector)
 {
+  auto statistics = Statistics::Create(statisticsCollector, PointsToGraph_);
+
+  statistics->StartCollecting();
   for (auto & allocaNode : PointsToGraph_.AllocaNodes())
     MemoryNodes_.Insert(&allocaNode);
 
@@ -34,6 +36,9 @@ AgnosticMemoryNodeProvider::ProvisionMemoryNodes(
     MemoryNodes_.Insert(&importNode);
 
   MemoryNodes_.Insert(&PointsToGraph_.GetExternalMemoryNode());
+  statistics->StopCollecting();
+
+  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
 
 std::unique_ptr<AgnosticMemoryNodeProvider>
