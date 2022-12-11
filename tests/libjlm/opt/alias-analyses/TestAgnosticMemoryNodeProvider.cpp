@@ -818,6 +818,40 @@ TestMemcpy()
   ValidateProvider(test, *provider, *pointsToGraph);
 }
 
+static void
+TestStatistics()
+{
+  /*
+   * Arrange
+   */
+  LoadTest1 test;
+  jlm::filepath filePath("/tmp/TestStatistics");
+  auto pointsToGraph = RunSteensgaard(test.module());
+
+  jlm::StatisticsCollectorSettings statisticsCollectorSettings(
+    filePath,
+    {jlm::Statistics::Id::MemoryNodeProvisioning});
+  jlm::StatisticsCollector statisticsCollector(statisticsCollectorSettings);
+
+  /*
+   * Act
+   */
+  auto provider = jlm::aa::AgnosticMemoryNodeProvider::Create(
+    test.module(),
+    *pointsToGraph,
+    statisticsCollector);
+
+  /*
+   * Assert
+   */
+  assert(statisticsCollector.NumCollectedStatistics() == 1);
+
+  auto & statistics = dynamic_cast<const jlm::aa::AgnosticMemoryNodeProvider::Statistics&>(
+    *statisticsCollector.CollectedStatistics().begin());
+
+  assert(statistics.NumPointsToGraphMemoryNodes() == 2);
+  assert(statistics.GetTime() != 0);
+}
 
 static int
 test()
@@ -844,6 +878,8 @@ test()
   TestPhi1();
 
   TestMemcpy();
+
+  TestStatistics();
 
   return 0;
 }

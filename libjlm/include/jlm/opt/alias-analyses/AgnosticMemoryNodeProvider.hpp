@@ -7,6 +7,8 @@
 #define JLM_OPT_ALIAS_ANALYSES_AGNOSTICMEMORYNODEPROVIDER_HPP
 
 #include <jlm/opt/alias-analyses/MemoryNodeProvider.hpp>
+#include <jlm/util/Statistics.hpp>
+#include <jlm/util/time.hpp>
 
 namespace jlm::aa
 {
@@ -28,6 +30,8 @@ class AgnosticMemoryNodeProvider final : public MemoryNodeProvider {
   AgnosticMemoryNodeProvider(const PointsToGraph & pointsToGraph);
 
 public:
+  class Statistics;
+
   AgnosticMemoryNodeProvider(const AgnosticMemoryNodeProvider&) = delete;
 
   AgnosticMemoryNodeProvider(AgnosticMemoryNodeProvider&&) = delete;
@@ -93,6 +97,82 @@ private:
   const PointsToGraph & PointsToGraph_;
 
   HashSet<const PointsToGraph::MemoryNode*> MemoryNodes_;
+};
+
+/** \brief Agnostic memory node provider statistics
+ *
+ * The statistics collected when running the agnostic memory node provider.
+ *
+ * @See AgnosticMemoryNodeProvider
+ */
+class AgnosticMemoryNodeProvider::Statistics final : public jlm::Statistics
+{
+public:
+  Statistics(
+    const StatisticsCollector & statisticsCollector,
+    const PointsToGraph & pointsToGraph)
+    : jlm::Statistics(Statistics::Id::MemoryNodeProvisioning)
+    , NumPointsToGraphMemoryNodes_(0)
+    , StatisticsCollector_(statisticsCollector)
+  {
+    if (!StatisticsCollector_.IsDemanded(*this))
+      return;
+
+    NumPointsToGraphMemoryNodes_ = pointsToGraph.NumMemoryNodes();
+  }
+
+  [[nodiscard]] size_t
+  NumPointsToGraphMemoryNodes() const noexcept
+  {
+    return NumPointsToGraphMemoryNodes_;
+  }
+
+  [[nodiscard]] size_t
+  GetTime() const noexcept
+  {
+    return Timer_.ns();
+  }
+
+  void
+  StartCollecting() noexcept
+  {
+    if (!StatisticsCollector_.IsDemanded(*this))
+      return;
+
+    Timer_.start();
+  }
+
+  void
+  StopCollecting() noexcept
+  {
+    if (!StatisticsCollector_.IsDemanded(*this))
+      return;
+
+    Timer_.stop();
+  }
+
+  [[nodiscard]] std::string
+  ToString() const override
+  {
+    return strfmt(
+      "AgnosticMemoryNodeProvision ",
+      "#PointsToGraphMemoryNodes:", NumPointsToGraphMemoryNodes_, " ",
+      "Time[ns]:", Timer_.ns()
+      );
+  }
+
+  static std::unique_ptr<Statistics>
+  Create(
+    const StatisticsCollector & statisticsCollector,
+    const PointsToGraph & pointsToGraph)
+  {
+    return std::make_unique<Statistics>(statisticsCollector, pointsToGraph);
+  }
+
+private:
+  jlm::timer Timer_;
+  size_t NumPointsToGraphMemoryNodes_;
+  const StatisticsCollector & StatisticsCollector_;
 };
 
 }
