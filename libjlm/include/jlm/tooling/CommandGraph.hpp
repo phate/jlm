@@ -196,9 +196,16 @@ private:
 
 /** \brief Command graph node incoming edge const iterator
 */
-class CommandGraph::Node::IncomingEdgeConstIterator final : public std::iterator<std::forward_iterator_tag,
-  Edge*, ptrdiff_t> {
+class CommandGraph::Node::IncomingEdgeConstIterator final
+{
+public:
+  using iterator_category = std::forward_iterator_tag;
+  using value_type = Edge*;
+  using difference_type = std::ptrdiff_t;
+  using pointer = Edge**;
+  using reference = Edge*&;
 
+private:
   friend Node;
 
   explicit
@@ -259,9 +266,16 @@ private:
 
 /** \brief Command graph node outgoing edge const iterator
 */
-class CommandGraph::Node::OutgoingEdgeConstIterator final : public std::iterator<std::forward_iterator_tag,
-  Edge*, ptrdiff_t> {
+class CommandGraph::Node::OutgoingEdgeConstIterator final
+{
+public:
+  using iterator_category = std::forward_iterator_tag;
+  using value_type = Edge*;
+  using difference_type = std::ptrdiff_t;
+  using pointer = Edge**;
+  using reference = Edge*&;
 
+private:
   friend Node;
 
   explicit

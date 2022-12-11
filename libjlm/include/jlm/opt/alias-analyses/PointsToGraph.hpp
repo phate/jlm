@@ -721,7 +721,16 @@ private:
 /** \brief Points-to graph node iterator
 */
 template<class DATATYPE, class ITERATORTYPE>
-class PointsToGraph::NodeIterator final : public std::iterator<std::forward_iterator_tag, DATATYPE*, ptrdiff_t> {
+class PointsToGraph::NodeIterator final
+{
+public:
+  using iterator_category = std::forward_iterator_tag;
+  using value_type = DATATYPE*;
+  using difference_type = std::ptrdiff_t;
+  using pointer = DATATYPE**;
+  using reference = DATATYPE*&;
+
+private:
   friend PointsToGraph;
 
   explicit
@@ -783,9 +792,16 @@ private:
 /** \brief Points-to graph node const iterator
 */
 template<class DATATYPE, class ITERATORTYPE>
-class PointsToGraph::NodeConstIterator final : public std::iterator<std::forward_iterator_tag,
-  const DATATYPE*, ptrdiff_t> {
+class PointsToGraph::NodeConstIterator final
+{
+public:
+  using iterator_category = std::forward_iterator_tag;
+  using value_type = const DATATYPE*;
+  using difference_type = std::ptrdiff_t;
+  using pointer = const DATATYPE**;
+  using reference = const DATATYPE*&;
 
+private:
   friend PointsToGraph;
 
   explicit
@@ -847,8 +863,16 @@ private:
 /** \brief Points-to graph edge iterator
 */
 template <class NODETYPE>
-class PointsToGraph::Node::Iterator final : public std::iterator<std::forward_iterator_tag, NODETYPE*, ptrdiff_t> {
+class PointsToGraph::Node::Iterator final
+{
+public:
+  using iterator_category = std::forward_iterator_tag;
+  using value_type = NODETYPE*;
+  using difference_type = std::ptrdiff_t;
+  using pointer = NODETYPE**;
+  using reference = NODETYPE*&;
 
+private:
   friend PointsToGraph::Node;
 
   explicit
@@ -910,9 +934,16 @@ private:
 /** \brief Points-to graph edge const iterator
 */
 template <class NODETYPE>
-class PointsToGraph::Node::ConstIterator final : public std::iterator<std::forward_iterator_tag,
-  const NODETYPE*, ptrdiff_t> {
+class PointsToGraph::Node::ConstIterator final
+{
+public:
+  using itearator_category = std::forward_iterator_tag;
+  using value_type = const NODETYPE*;
+  using difference_type = std::ptrdiff_t;
+  using pointer = const NODETYPE**;
+  using reference = const NODETYPE*&;
 
+private:
   friend PointsToGraph;
 
   explicit

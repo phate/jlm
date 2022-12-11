@@ -52,9 +52,17 @@ private:
 
 /** \brief Strongly Connected Component Iterator
 */
-class scc::constiterator final : public std::iterator<std::forward_iterator_tag, cfg_node*,
-	ptrdiff_t> {
-	friend ::jlm::scc;
+class scc::constiterator final
+{
+public:
+  using iterator_category = std::forward_iterator_tag;
+  using value_type = cfg_node*;
+  using difference_type = std::ptrdiff_t;
+  using pointer = cfg_node**;
+  using reference = cfg_node*&;
+
+private:
+  friend ::jlm::scc;
 
 private:
 	constiterator(const std::unordered_set<cfg_node*>::const_iterator & it)

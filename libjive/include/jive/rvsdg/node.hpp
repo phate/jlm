@@ -98,8 +98,16 @@ public:
 		port_ = port.copy();
 	}
 
-	template <class T>
-	class iterator : public std::iterator<std::forward_iterator_tag, T*, ptrdiff_t> {
+  template <class T>
+  class iterator
+  {
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = T*;
+    using difference_type = std::ptrdiff_t;
+    using pointer = T**;
+    using reference = T*&;
+
 		static_assert(std::is_base_of<jive::input, T>::value,
 			"Template parameter T must be derived from jive::input.");
 
@@ -171,7 +179,15 @@ public:
 	};
 
 	template <class T>
-	class constiterator : public std::iterator<std::forward_iterator_tag, const T*, ptrdiff_t> {
+	class constiterator
+	{
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = const T*;
+    using difference_type = std::ptrdiff_t;
+    using pointer = const T**;
+    using reference = const T*&;
+
 		static_assert(std::is_base_of<jive::input, T>::value,
 			"Template parameter T must be derived from jive::input.");
 
@@ -348,8 +364,16 @@ public:
 		port_ = port.copy();
 	}
 
-	template <class T>
-	class iterator : public std::iterator<std::forward_iterator_tag, T*, ptrdiff_t> {
+  template <class T>
+  class iterator
+  {
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = T*;
+    using difference_type = std::ptrdiff_t;
+    using pointer = T**;
+    using rerefence = T*&;
+
 		static_assert(std::is_base_of<jive::output, T>::value,
 			"Template parameter T must be derived from jive::output.");
 
@@ -421,7 +445,15 @@ public:
 	};
 
 	template <class T>
-	class constiterator : public std::iterator<std::forward_iterator_tag, const T*, ptrdiff_t> {
+  class constiterator
+  {
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = const T*;
+    using difference_type = std::ptrdiff_t;
+    using pointer = const T**;
+    using reference = const T*&;
+
 		static_assert(std::is_base_of<jive::output, T>::value,
 			"Template parameter T must be derived from jive::output.");
 
