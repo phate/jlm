@@ -526,42 +526,6 @@ RegionAwareMemoryNodeProvider::Create(
   return Create(rvsdgModule, pointsToGraph, statisticsCollector);
 }
 
-const PointsToGraph &
-RegionAwareMemoryNodeProvider::GetPointsToGraph() const noexcept
-{
-  JLM_UNREACHABLE("Deprecated: To be removed.");
-}
-
-const HashSet<const PointsToGraph::MemoryNode*> &
-RegionAwareMemoryNodeProvider::GetRegionEntryNodes(const jive::region & region) const
-{
-  JLM_UNREACHABLE("Deprecated: To be removed.");
-}
-
-const HashSet<const PointsToGraph::MemoryNode*> &
-RegionAwareMemoryNodeProvider::GetRegionExitNodes(const jive::region & region) const
-{
-  JLM_UNREACHABLE("Deprecated: To be removed.");
-}
-
-[[nodiscard]] const HashSet<const PointsToGraph::MemoryNode*> &
-RegionAwareMemoryNodeProvider::GetCallEntryNodes(const CallNode & callNode) const
-{
-  JLM_UNREACHABLE("Deprecated: To be removed.");
-}
-
-[[nodiscard]] const HashSet<const PointsToGraph::MemoryNode*> &
-RegionAwareMemoryNodeProvider::GetCallExitNodes(const CallNode & callNode) const
-{
-  JLM_UNREACHABLE("Deprecated: To be removed.");
-}
-
-[[nodiscard]] HashSet<const PointsToGraph::MemoryNode*>
-RegionAwareMemoryNodeProvider::GetOutputNodes(const jive::output & output) const
-{
-  JLM_UNREACHABLE("Deprecated: To be removed.");
-}
-
 void
 RegionAwareMemoryNodeProvider::AnnotateRegion(jive::region & region)
 {

@@ -64,24 +64,6 @@ public:
     const PointsToGraph & pointsToGraph,
     StatisticsCollector & statisticsCollector) override;
 
-  [[nodiscard]] const PointsToGraph &
-  GetPointsToGraph() const noexcept override;
-
-  [[nodiscard]] const HashSet<const PointsToGraph::MemoryNode*> &
-  GetRegionEntryNodes(const jive::region & region) const override;
-
-  [[nodiscard]] const HashSet<const PointsToGraph::MemoryNode*> &
-  GetRegionExitNodes(const jive::region & region) const override;
-
-  [[nodiscard]] const HashSet<const PointsToGraph::MemoryNode*> &
-  GetCallEntryNodes(const CallNode & callNode) const override;
-
-  [[nodiscard]] const HashSet<const PointsToGraph::MemoryNode*> &
-  GetCallExitNodes(const CallNode & callNode) const override;
-
-  [[nodiscard]] HashSet<const PointsToGraph::MemoryNode*>
-  GetOutputNodes(const jive::output & output) const override;
-
   /**
    * Creates a RegionAwareMemoryNodeProvider and calls the ProvisionMemoryNodes() method.
    *
