@@ -124,7 +124,10 @@ private:
   HashSet<const jive::structural_node*> StructuralNodes_;
 };
 
-class RegionAwareMemoryNodeProvider::Context final {
+/** \brief Memory node provisioning of region-aware memory node provider
+ *
+ */
+class RegionAwareMemoryNodeProvisioning final : public MemoryNodeProvisioning {
   using RegionSummaryMap = std::unordered_map<const jive::region*, std::unique_ptr<RegionSummary>>;
 
   class RegionSummaryConstIterator final
@@ -137,7 +140,7 @@ class RegionAwareMemoryNodeProvider::Context final {
     using reference = const RegionSummary*&;
 
   private:
-    friend Context;
+    friend RegionAwareMemoryNodeProvisioning;
 
     explicit
     RegionSummaryConstIterator(const RegionSummaryMap::const_iterator & it)
@@ -198,18 +201,109 @@ class RegionAwareMemoryNodeProvider::Context final {
   using RegionSummaryConstRange = iterator_range<RegionSummaryConstIterator>;
 
 public:
-  Context()
-  = default;
+  explicit
+  RegionAwareMemoryNodeProvisioning(const PointsToGraph & pointsToGraph)
+    : PointsToGraph_(pointsToGraph)
+  {}
 
-  Context(const Context&) = delete;
+  RegionAwareMemoryNodeProvisioning(const RegionAwareMemoryNodeProvisioning&) = delete;
 
-  Context(Context&&) = delete;
+  RegionAwareMemoryNodeProvisioning(RegionAwareMemoryNodeProvisioning&&) = delete;
 
-  Context &
-  operator=(const Context&) = delete;
+  RegionAwareMemoryNodeProvisioning &
+  operator=(const RegionAwareMemoryNodeProvisioning&) = delete;
 
-  Context &
-  operator=(Context&&) = delete;
+  RegionAwareMemoryNodeProvisioning &
+  operator=(RegionAwareMemoryNodeProvisioning&&) = delete;
+
+  [[nodiscard]] const PointsToGraph &
+  GetPointsToGraph() const noexcept override
+  {
+    return PointsToGraph_;
+  }
+
+  [[nodiscard]] const HashSet<const PointsToGraph::MemoryNode*> &
+  GetRegionEntryNodes(const jive::region & region) const override
+  {
+    auto & regionSummary = GetRegionSummary(region);
+    return regionSummary.GetMemoryNodes();
+  }
+
+  [[nodiscard]] const HashSet<const PointsToGraph::MemoryNode*> &
+  GetRegionExitNodes(const jive::region & region) const override
+  {
+    auto & regionSummary = GetRegionSummary(region);
+    return regionSummary.GetMemoryNodes();
+  }
+
+  [[nodiscard]] const HashSet<const PointsToGraph::MemoryNode*> &
+  GetCallEntryNodes(const CallNode & callNode) const override
+  {
+    auto callTypeClassifier = CallNode::ClassifyCall(callNode);
+
+    if (callTypeClassifier->IsNonRecursiveDirectCall())
+    {
+      auto & lambdaNode = *callTypeClassifier->GetLambdaOutput().node();
+      return GetLambdaEntryNodes(lambdaNode);
+    }
+    else if (callTypeClassifier->IsRecursiveDirectCall())
+    {
+      auto & lambdaNode = *callTypeClassifier->GetLambdaOutput().node();
+      return GetLambdaEntryNodes(lambdaNode);
+    }
+    else if (callTypeClassifier->IsExternalCall())
+    {
+      auto & import = callTypeClassifier->GetImport();
+      return GetExternalFunctionNodes(import);
+    }
+    else if (callTypeClassifier->IsIndirectCall())
+    {
+      return GetIndirectCallNodes(callNode);
+    }
+
+    JLM_UNREACHABLE("Unhandled call type.");
+  }
+
+  [[nodiscard]] const HashSet<const PointsToGraph::MemoryNode*> &
+  GetCallExitNodes(const CallNode & callNode) const override
+  {
+    auto callTypeClassifier = CallNode::ClassifyCall(callNode);
+
+    if (callTypeClassifier->IsNonRecursiveDirectCall())
+    {
+      auto & lambdaNode = *callTypeClassifier->GetLambdaOutput().node();
+      return GetLambdaExitNodes(lambdaNode);
+    }
+    else if (callTypeClassifier->IsRecursiveDirectCall())
+    {
+      auto & lambdaNode = *callTypeClassifier->GetLambdaOutput().node();
+      return GetLambdaExitNodes(lambdaNode);
+    }
+    else if (callTypeClassifier->IsExternalCall())
+    {
+      auto & import = callTypeClassifier->GetImport();
+      return GetExternalFunctionNodes(import);
+    }
+    else if (callTypeClassifier->IsIndirectCall())
+    {
+      return GetIndirectCallNodes(callNode);
+    }
+
+    JLM_UNREACHABLE("Unhandled call type!");
+  }
+
+  [[nodiscard]] HashSet<const PointsToGraph::MemoryNode*>
+  GetOutputNodes(const jive::output & output) const override
+  {
+    JLM_ASSERT(is<PointerType>(output.type()));
+    auto & registerNode = PointsToGraph_.GetRegisterNode(output);
+
+    HashSet<const PointsToGraph::MemoryNode*> memoryNodes;
+    for (auto & memoryNode : registerNode.Targets())
+      memoryNodes.Insert(&memoryNode);
+
+    return memoryNodes;
+  }
 
   RegionSummaryConstRange
   GetRegionSummaries() const
@@ -264,10 +358,10 @@ public:
     ExternalFunctionNodes_[&import] = std::move(memoryNodes);
   }
 
-  static std::unique_ptr<Context>
-  Create()
+  static std::unique_ptr<RegionAwareMemoryNodeProvisioning>
+  Create(const PointsToGraph & pointsToGraph)
   {
-    return std::make_unique<Context>();
+    return std::make_unique<RegionAwareMemoryNodeProvisioning>(pointsToGraph);
   }
 
   /**
@@ -285,21 +379,21 @@ public:
    * 4. The collection of unknown memory reference nodes of a lambda region should be contained in the collection of
    * memory nodes of the regions of all direct calls to this lambda.
    *
-   * @param context \see Context
+   * @param provisioning \see RegionAwareMemoryNodeProvisioning
    * @return Returns true if all invariants are fulfilled, otherwise false.
    */
   static bool
-  CheckInvariants(const Context & context)
+  CheckInvariants(const RegionAwareMemoryNodeProvisioning & provisioning)
   {
     auto CheckInvariantsCall = [&](auto & callNode)
     {
-      auto & regionSummary = context.GetRegionSummary(*callNode.region());
+      auto & regionSummary = provisioning.GetRegionSummary(*callNode.region());
       auto & regionMemoryNodes = regionSummary.GetMemoryNodes();
       auto & regionUnknownMemoryNodeReferences = regionSummary.GetUnknownMemoryNodeReferences();
 
       auto callTypeClassifier = CallNode::ClassifyCall(callNode);
       auto & lambdaRegion = *callTypeClassifier->GetLambdaOutput().node()->subregion();
-      auto & lambdaRegionSummary = context.GetRegionSummary(lambdaRegion);
+      auto & lambdaRegionSummary = provisioning.GetRegionSummary(lambdaRegion);
       auto & lambdaRegionMemoryNodes = lambdaRegionSummary.GetMemoryNodes();
       auto & lambdaRegionUnknownMemoryNodeReferences = lambdaRegionSummary.GetUnknownMemoryNodeReferences();
 
@@ -309,14 +403,14 @@ public:
 
     auto CheckInvariantsStructuralNode = [&](auto & structuralNode)
     {
-      auto & regionSummary = context.GetRegionSummary(*structuralNode.region());
+      auto & regionSummary = provisioning.GetRegionSummary(*structuralNode.region());
       auto & regionMemoryNodes = regionSummary.GetMemoryNodes();
       auto & regionUnknownMemoryNodeReferences = regionSummary.GetUnknownMemoryNodeReferences();
 
       for (size_t n = 0; n < structuralNode.nsubregions(); n++)
       {
         auto & subregion = *structuralNode.subregion(n);
-        auto & subregionSummary = context.GetRegionSummary(subregion);
+        auto & subregionSummary = provisioning.GetRegionSummary(subregion);
         auto & subregionMemoryNodes = subregionSummary.GetMemoryNodes();
         auto & subregionUnknownMemoryNodeReferences = subregionSummary.GetUnknownMemoryNodeReferences();
 
@@ -330,7 +424,7 @@ public:
       return true;
     };
 
-    for (auto & regionSummary : context.GetRegionSummaries())
+    for (auto & regionSummary : provisioning.GetRegionSummaries())
     {
       for (auto & structuralNode : regionSummary.GetStructuralNodes().Items())
       {
@@ -361,7 +455,21 @@ public:
   }
 
 private:
+  [[nodiscard]] const HashSet<const PointsToGraph::MemoryNode*> &
+  GetIndirectCallNodes(const CallNode & callNode) const
+  {
+    /*
+     * We have no idea about the function of an indirect call. This means that we have to be conservative and
+     * sequentialize this indirect call with respect to all memory references that came before and after it. These
+     * references should have been routed through the region the indirect call node lives in. Thus, we can just use
+     * here the memory nodes of the region of the indirect call node.
+     */
+    auto & regionSummary = GetRegionSummary(*callNode.region());
+    return regionSummary.GetMemoryNodes();
+  }
+
   RegionSummaryMap RegionSummaries_;
+  const PointsToGraph & PointsToGraph_;
   std::unordered_map<const jive::argument*, HashSet<const PointsToGraph::MemoryNode*>> ExternalFunctionNodes_;
 };
 
@@ -369,8 +477,7 @@ RegionAwareMemoryNodeProvider::~RegionAwareMemoryNodeProvider() noexcept
 = default;
 
 RegionAwareMemoryNodeProvider::RegionAwareMemoryNodeProvider(const PointsToGraph & pointsToGraph)
-  : Context_(Context::Create())
-  , PointsToGraph_(pointsToGraph)
+  : Provisioning_(RegionAwareMemoryNodeProvisioning::Create(pointsToGraph))
 {}
 
 void
@@ -423,90 +530,37 @@ RegionAwareMemoryNodeProvider::Create(
 const PointsToGraph &
 RegionAwareMemoryNodeProvider::GetPointsToGraph() const noexcept
 {
-  return PointsToGraph_;
+  return Provisioning_->GetPointsToGraph();
 }
 
 const HashSet<const PointsToGraph::MemoryNode*> &
-RegionAwareMemoryNodeProvider::GetRegionEntryNodes(const jive::region &region) const
+RegionAwareMemoryNodeProvider::GetRegionEntryNodes(const jive::region & region) const
 {
-  auto & regionSummary = Context_->GetRegionSummary(region);
-  return regionSummary.GetMemoryNodes();
+  return Provisioning_->GetRegionEntryNodes(region);
 }
 
 const HashSet<const PointsToGraph::MemoryNode*> &
 RegionAwareMemoryNodeProvider::GetRegionExitNodes(const jive::region & region) const
 {
-  auto & regionSummary = Context_->GetRegionSummary(region);
-  return regionSummary.GetMemoryNodes();
+  return Provisioning_->GetRegionExitNodes(region);
 }
 
 [[nodiscard]] const HashSet<const PointsToGraph::MemoryNode*> &
 RegionAwareMemoryNodeProvider::GetCallEntryNodes(const CallNode & callNode) const
 {
-  auto callTypeClassifier = CallNode::ClassifyCall(callNode);
-
-  if (callTypeClassifier->IsNonRecursiveDirectCall())
-  {
-    auto & lambdaNode = *callTypeClassifier->GetLambdaOutput().node();
-    return GetLambdaEntryNodes(lambdaNode);
-  }
-  else if (callTypeClassifier->IsRecursiveDirectCall())
-  {
-    auto & lambdaNode = *callTypeClassifier->GetLambdaOutput().node();
-    return GetLambdaEntryNodes(lambdaNode);
-  }
-  else if (callTypeClassifier->IsExternalCall())
-  {
-    auto & import = callTypeClassifier->GetImport();
-    return Context_->GetExternalFunctionNodes(import);
-  }
-  else if (callTypeClassifier->IsIndirectCall())
-  {
-    return GetIndirectCallNodes(callNode);
-  }
-
-  JLM_UNREACHABLE("Unhandled call type.");
+  return Provisioning_->GetCallEntryNodes(callNode);
 }
 
 [[nodiscard]] const HashSet<const PointsToGraph::MemoryNode*> &
 RegionAwareMemoryNodeProvider::GetCallExitNodes(const CallNode & callNode) const
 {
-  auto callTypeClassifier = CallNode::ClassifyCall(callNode);
-
-  if (callTypeClassifier->IsNonRecursiveDirectCall())
-  {
-    auto & lambdaNode = *callTypeClassifier->GetLambdaOutput().node();
-    return GetLambdaExitNodes(lambdaNode);
-  }
-  else if (callTypeClassifier->IsRecursiveDirectCall())
-  {
-    auto & lambdaNode = *callTypeClassifier->GetLambdaOutput().node();
-    return GetLambdaExitNodes(lambdaNode);
-  }
-  else if (callTypeClassifier->IsExternalCall())
-  {
-    auto & import = callTypeClassifier->GetImport();
-    return Context_->GetExternalFunctionNodes(import);
-  }
-  else if (callTypeClassifier->IsIndirectCall())
-  {
-    return GetIndirectCallNodes(callNode);
-  }
-
-  JLM_UNREACHABLE("Unhandled call type!");
+  return Provisioning_->GetCallExitNodes(callNode);
 }
 
 [[nodiscard]] HashSet<const PointsToGraph::MemoryNode*>
 RegionAwareMemoryNodeProvider::GetOutputNodes(const jive::output & output) const
 {
-  JLM_ASSERT(is<PointerType>(output.type()));
-  auto & registerNode = PointsToGraph_.GetRegisterNode(output);
-
-  HashSet<const PointsToGraph::MemoryNode*> memoryNodes;
-  for (auto & memoryNode : registerNode.Targets())
-    memoryNodes.Insert(&memoryNode);
-
-  return memoryNodes;
+  return Provisioning_->GetOutputNodes(output);
 }
 
 void
@@ -522,7 +576,7 @@ RegionAwareMemoryNodeProvider::AnnotateRegion(jive::region & region)
   RegionSummary * regionSummary = nullptr;
   if (shouldCreateRegionSummary(region))
   {
-    regionSummary = &Context_->AddRegionSummary(RegionSummary::Create(region));
+    regionSummary = &Provisioning_->AddRegionSummary(RegionSummary::Create(region));
   }
 
   for (auto & node : region.nodes)
@@ -604,7 +658,7 @@ void
 RegionAwareMemoryNodeProvider::AnnotateLoad(const jlm::LoadNode & loadNode)
 {
   auto memoryNodes = GetOutputNodes(*loadNode.GetAddressInput()->origin());
-  auto & regionSummary = Context_->GetRegionSummary(*loadNode.region());
+  auto & regionSummary = Provisioning_->GetRegionSummary(*loadNode.region());
   regionSummary.AddMemoryNodes(memoryNodes);
 }
 
@@ -612,7 +666,7 @@ void
 RegionAwareMemoryNodeProvider::AnnotateStore(const jlm::StoreNode & storeNode)
 {
   auto memoryNodes = GetOutputNodes(*storeNode.GetAddressInput()->origin());
-  auto & regionSummary = Context_->GetRegionSummary(*storeNode.region());
+  auto & regionSummary = Provisioning_->GetRegionSummary(*storeNode.region());
   regionSummary.AddMemoryNodes(memoryNodes);
 }
 
@@ -622,7 +676,7 @@ RegionAwareMemoryNodeProvider::AnnotateAlloca(const jive::simple_node & allocaNo
   JLM_ASSERT(jive::is<alloca_op>(allocaNode.operation()));
 
   auto & memoryNode = GetPointsToGraph().GetAllocaNode(allocaNode);
-  auto & regionSummary = Context_->GetRegionSummary(*allocaNode.region());
+  auto & regionSummary = Provisioning_->GetRegionSummary(*allocaNode.region());
   regionSummary.AddMemoryNodes({&memoryNode});
 }
 
@@ -632,7 +686,7 @@ RegionAwareMemoryNodeProvider::AnnotateMalloc(const jive::simple_node & mallocNo
   JLM_ASSERT(jive::is<malloc_op>(mallocNode.operation()));
 
   auto & memoryNode = GetPointsToGraph().GetMallocNode(mallocNode);
-  auto & regionSummary = Context_->GetRegionSummary(*mallocNode.region());
+  auto & regionSummary = Provisioning_->GetRegionSummary(*mallocNode.region());
   regionSummary.AddMemoryNodes({&memoryNode});
 }
 
@@ -642,7 +696,7 @@ RegionAwareMemoryNodeProvider::AnnotateFree(const jive::simple_node & freeNode)
   JLM_ASSERT(jive::is<free_op>(freeNode.operation()));
 
   auto memoryNodes = GetOutputNodes(*freeNode.input(0)->origin());
-  auto & regionSummary = Context_->GetRegionSummary(*freeNode.region());
+  auto & regionSummary = Provisioning_->GetRegionSummary(*freeNode.region());
   regionSummary.AddMemoryNodes(memoryNodes);
 }
 
@@ -653,38 +707,40 @@ RegionAwareMemoryNodeProvider::AnnotateCall(const CallNode & callNode)
   {
     JLM_ASSERT(callTypeClassifier.GetCallType()  == CallTypeClassifier::CallType::NonRecursiveDirectCall);
 
-    auto & regionSummary = provider.Context_->GetRegionSummary(*callNode.region());
+    auto & regionSummary = provider.Provisioning_->GetRegionSummary(*callNode.region());
     regionSummary.AddNonRecursiveDirectCall(callNode);
   };
   auto annotateRecursiveDirectCall = [](auto & provider, auto & callNode, auto & callTypeClassifier)
   {
     JLM_ASSERT(callTypeClassifier.GetCallType() == CallTypeClassifier::CallType::RecursiveDirectCall);
 
-    auto & regionSummary = provider.Context_->GetRegionSummary(*callNode.region());
+    auto & regionSummary = provider.Provisioning_->GetRegionSummary(*callNode.region());
     regionSummary.AddRecursiveDirectCall(callNode);
   };
   auto annotateExternalCall = [](auto & provider, auto & callNode, auto & callTypeClassifier)
   {
     JLM_ASSERT(callTypeClassifier.GetCallType() == CallTypeClassifier::CallType::ExternalCall);
 
+    auto & pointsToGraph = provider.Provisioning_->GetPointsToGraph();
+
     HashSet<const PointsToGraph::MemoryNode*> memoryNodes;
-    memoryNodes.UnionWith(provider.PointsToGraph_.GetEscapedMemoryNodes());
-    memoryNodes.Insert(&provider.PointsToGraph_.GetExternalMemoryNode());
+    memoryNodes.UnionWith(pointsToGraph.GetEscapedMemoryNodes());
+    memoryNodes.Insert(&pointsToGraph.GetExternalMemoryNode());
 
     auto & import = callTypeClassifier.GetImport();
-    auto & regionSummary = provider.Context_->GetRegionSummary(*callNode.region());
+    auto & regionSummary = provider.Provisioning_->GetRegionSummary(*callNode.region());
     regionSummary.AddMemoryNodes(memoryNodes);
-    if (!provider.Context_->ContainsExternalFunctionNodes(import))
+    if (!provider.Provisioning_->ContainsExternalFunctionNodes(import))
     {
-      provider.Context_->AddExternalFunctionNodes(import, memoryNodes);
+      provider.Provisioning_->AddExternalFunctionNodes(import, memoryNodes);
     }
   };
   auto annotateIndirectCall = [](auto & provider, auto & callNode, auto & callTypeClassifier)
   {
     JLM_ASSERT(callTypeClassifier.GetCallType() == CallTypeClassifier::CallType::IndirectCall);
 
-    auto & regionSummary = provider.Context_->GetRegionSummary(*callNode.region());
-    regionSummary.AddMemoryNodes({&provider.PointsToGraph_.GetExternalMemoryNode()});
+    auto & regionSummary = provider.Provisioning_->GetRegionSummary(*callNode.region());
+    regionSummary.AddMemoryNodes({&provider.Provisioning_->GetPointsToGraph().GetExternalMemoryNode()});
     regionSummary.AddUnknownMemoryNodeReferences({&callNode});
   };
 
@@ -709,7 +765,7 @@ RegionAwareMemoryNodeProvider::AnnotateMemcpy(const jive::simple_node & memcpyNo
 {
   JLM_ASSERT(jive::is<Memcpy>(memcpyNode.operation()));
 
-  auto & regionSummary = Context_->GetRegionSummary(*memcpyNode.region());
+  auto & regionSummary = Provisioning_->GetRegionSummary(*memcpyNode.region());
 
   auto dstNodes = GetOutputNodes(*memcpyNode.input(0)->origin());
   regionSummary.AddMemoryNodes(dstNodes);
@@ -762,7 +818,7 @@ RegionAwareMemoryNodeProvider::Propagate(const jlm::RvsdgModule & rvsdgModule)
     }
   }
 
-  JLM_ASSERT(Context::CheckInvariants(*Context_));
+  JLM_ASSERT(RegionAwareMemoryNodeProvisioning::CheckInvariants(*Provisioning_));
 }
 
 void
@@ -777,7 +833,7 @@ RegionAwareMemoryNodeProvider::PropagatePhi(const phi::node & phiNode)
     const HashSet<const PointsToGraph::MemoryNode*> & memoryNodes,
     const HashSet<const jive::simple_node*> & unknownMemoryNodeReferences)
   {
-    auto & regionSummary = Context_->GetRegionSummary(region);
+    auto & regionSummary = Provisioning_->GetRegionSummary(region);
     for (auto structuralNode : regionSummary.GetStructuralNodes().Items())
     {
       for (size_t n = 0; n < structuralNode->nsubregions(); n++)
@@ -785,7 +841,7 @@ RegionAwareMemoryNodeProvider::PropagatePhi(const phi::node & phiNode)
         auto & subregion = *structuralNode->subregion(n);
         assignAndPropagateMemoryNodes(subregion, memoryNodes, unknownMemoryNodeReferences);
 
-        auto & subregionSummary = Context_->GetRegionSummary(subregion);
+        auto & subregionSummary = Provisioning_->GetRegionSummary(subregion);
         if (subregionSummary.GetRecursiveCalls().Size() != 0)
         {
           subregionSummary.AddMemoryNodes(memoryNodes);
@@ -805,7 +861,7 @@ RegionAwareMemoryNodeProvider::PropagatePhi(const phi::node & phiNode)
   HashSet<const jive::simple_node*> unknownMemoryNodeReferences;
   for (auto & lambdaNode : lambdaNodes)
   {
-    auto & regionSummary = Context_->GetRegionSummary(*lambdaNode->subregion());
+    auto & regionSummary = Provisioning_->GetRegionSummary(*lambdaNode->subregion());
     memoryNodes.UnionWith(regionSummary.GetMemoryNodes());
     unknownMemoryNodeReferences.UnionWith(regionSummary.GetUnknownMemoryNodeReferences());
   }
@@ -816,7 +872,7 @@ RegionAwareMemoryNodeProvider::PropagatePhi(const phi::node & phiNode)
 void
 RegionAwareMemoryNodeProvider::PropagateRegion(const jive::region & region)
 {
-  auto & regionSummary = Context_->GetRegionSummary(region);
+  auto & regionSummary = Provisioning_->GetRegionSummary(region);
   for (auto & structuralNode : regionSummary.GetStructuralNodes().Items())
   {
     for (size_t n = 0; n < structuralNode->nsubregions(); n++)
@@ -824,7 +880,7 @@ RegionAwareMemoryNodeProvider::PropagateRegion(const jive::region & region)
       auto & subregion = *structuralNode->subregion(n);
       PropagateRegion(subregion);
 
-      auto & subregionSummary = Context_->GetRegionSummary(subregion);
+      auto & subregionSummary = Provisioning_->GetRegionSummary(subregion);
       RegionSummary::Propagate(regionSummary, subregionSummary);
     }
   }
@@ -833,7 +889,7 @@ RegionAwareMemoryNodeProvider::PropagateRegion(const jive::region & region)
   {
     auto callTypeClassifier = CallNode::ClassifyCall(*callNode);
     auto & lambdaRegion = *callTypeClassifier->GetLambdaOutput().node()->subregion();
-    auto & lambdaRegionSummary = Context_->GetRegionSummary(lambdaRegion);
+    auto & lambdaRegionSummary = Provisioning_->GetRegionSummary(lambdaRegion);
 
     RegionSummary::Propagate(regionSummary, lambdaRegionSummary);
   }
@@ -844,12 +900,12 @@ RegionAwareMemoryNodeProvider::ResolveUnknownMemoryNodeReferences(const jlm::Rvs
 {
   auto ResolveLambda = [&](const lambda::node & lambda)
   {
-    auto & lambdaRegionSummary = Context_->GetRegionSummary(*lambda.subregion());
+    auto & lambdaRegionSummary = Provisioning_->GetRegionSummary(*lambda.subregion());
 
     for (auto node : lambdaRegionSummary.GetUnknownMemoryNodeReferences().Items())
     {
       auto & nodeRegion = *node->region();
-      auto & nodeRegionSummary = Context_->GetRegionSummary(nodeRegion);
+      auto & nodeRegionSummary = Provisioning_->GetRegionSummary(nodeRegion);
       nodeRegionSummary.AddMemoryNodes(lambdaRegionSummary.GetMemoryNodes());
     }
   };
@@ -880,19 +936,6 @@ RegionAwareMemoryNodeProvider::ResolveUnknownMemoryNodeReferences(const jlm::Rvs
       JLM_UNREACHABLE("Unhandled node type!");
     }
   }
-}
-
-const HashSet<const PointsToGraph::MemoryNode*> &
-RegionAwareMemoryNodeProvider::GetIndirectCallNodes(const jlm::CallNode & callNode) const
-{
-  /*
-   * We have no idea about the function of an indirect call. This means that we have to be conservative and
-   * sequentialize this indirect call with respect to all memory references that came before and after it. These
-   * references should have been routed through the region the indirect call node lives in. Thus, we can just use
-   * here the memory nodes of the region of the indirect call node.
-   */
-  auto & regionSummary = Context_->GetRegionSummary(*callNode.region());
-  return regionSummary.GetMemoryNodes();
 }
 
 std::vector<const lambda::node*>

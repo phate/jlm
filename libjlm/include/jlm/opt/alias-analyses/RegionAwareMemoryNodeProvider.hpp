@@ -13,6 +13,8 @@
 
 namespace jlm::aa {
 
+class RegionAwareMemoryNodeProvisioning;
+
 /** \brief Region-aware memory node provider
  *
  * The key idea of the region-aware memory node provider is to only provide memory locations for a structural node that
@@ -37,9 +39,8 @@ namespace jlm::aa {
  * @see MemoryNodeProvider
  * @see MemoryStateEncoder
  */
-class RegionAwareMemoryNodeProvider final : public MemoryNodeProvider {
-  class Context;
-
+class RegionAwareMemoryNodeProvider final : public MemoryNodeProvider
+{
 public:
   class Statistics;
 
@@ -197,9 +198,6 @@ private:
   void
   ResolveUnknownMemoryNodeReferences(const RvsdgModule & rvsdgModule);
 
-  [[nodiscard]] const HashSet<const PointsToGraph::MemoryNode*> &
-  GetIndirectCallNodes(const CallNode & callNode) const;
-
   /**
    * Extracts all lambda nodes from a phi node.
    *
@@ -223,8 +221,7 @@ private:
   static std::vector<const jive::node*>
   ExtractRvsdgTailNodes(const RvsdgModule & rvsdgModule);
 
-  std::unique_ptr<Context> Context_;
-  const PointsToGraph & PointsToGraph_;
+  std::unique_ptr<RegionAwareMemoryNodeProvisioning> Provisioning_;
 };
 
 /** \brief Region-aware memory node provider statistics
