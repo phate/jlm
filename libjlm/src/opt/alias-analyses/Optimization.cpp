@@ -54,10 +54,10 @@ SteensgaardAgnostic::run(
   auto pointsToGraph = steensgaard.Analyze(rvsdgModule, statisticsCollector);
   UnlinkUnknownMemoryNode(*pointsToGraph);
 
-  auto provider = AgnosticMemoryNodeProvider::Create(rvsdgModule, *pointsToGraph, statisticsCollector);
+  auto provisioning = AgnosticMemoryNodeProvider::Create(rvsdgModule, *pointsToGraph, statisticsCollector);
 
   MemoryStateEncoder encoder;
-  encoder.Encode(rvsdgModule, *provider, statisticsCollector);
+  encoder.Encode(rvsdgModule, *provisioning, statisticsCollector);
 }
 
 SteensgaardRegionAware::~SteensgaardRegionAware() noexcept
@@ -72,10 +72,10 @@ SteensgaardRegionAware::run(
   auto pointsToGraph = steensgaard.Analyze(rvsdgModule, statisticsCollector);
   UnlinkUnknownMemoryNode(*pointsToGraph);
 
-  auto provider = RegionAwareMemoryNodeProvider::Create(rvsdgModule, *pointsToGraph, statisticsCollector);
+  auto provisioning = RegionAwareMemoryNodeProvider::Create(rvsdgModule, *pointsToGraph, statisticsCollector);
 
   MemoryStateEncoder encoder;
-  encoder.Encode(rvsdgModule, *provider, statisticsCollector);
+  encoder.Encode(rvsdgModule, *provisioning, statisticsCollector);
 }
 
 }

@@ -72,10 +72,10 @@ ValidateTest(std::function<void(const Test&)> validateEncoding)
 
   UnlinkUnknownMemoryNode(*pointsToGraph);
 
-  auto provider = Provider::Create(rvsdgModule, *pointsToGraph);
+  auto provisioning = Provider::Create(rvsdgModule, *pointsToGraph);
 
   jlm::aa::MemoryStateEncoder encoder;
-  encoder.Encode(rvsdgModule, *provider, statisticsCollector);
+  encoder.Encode(rvsdgModule, *provisioning, statisticsCollector);
   jive::view(rvsdgModule.Rvsdg().root(), stdout);
 
   validateEncoding(test);

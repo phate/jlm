@@ -13,6 +13,10 @@ namespace jlm::aa
  */
 class AgnosticMemoryNodeProvisioning final : public MemoryNodeProvisioning
 {
+public:
+  ~AgnosticMemoryNodeProvisioning() noexcept override = default;
+
+private:
   explicit
   AgnosticMemoryNodeProvisioning(const PointsToGraph & pointsToGraph)
     : PointsToGraph_(pointsToGraph)
@@ -93,13 +97,13 @@ private:
 AgnosticMemoryNodeProvider::~AgnosticMemoryNodeProvider()
 = default;
 
-void
+std::unique_ptr<MemoryNodeProvisioning>
 AgnosticMemoryNodeProvider::ProvisionMemoryNodes(
   const RvsdgModule&,
   const PointsToGraph & pointsToGraph,
   StatisticsCollector& statisticsCollector)
 {
-  Provisioning_ = AgnosticMemoryNodeProvisioning::Create(pointsToGraph);
+  auto provisioning = AgnosticMemoryNodeProvisioning::Create(pointsToGraph);
 
   auto statistics = Statistics::Create(statisticsCollector, pointsToGraph);
 
@@ -121,25 +125,25 @@ AgnosticMemoryNodeProvider::ProvisionMemoryNodes(
     memoryNodes.Insert(&importNode);
 
   memoryNodes.Insert(&pointsToGraph.GetExternalMemoryNode());
-  Provisioning_->SetMemoryNodes(std::move(memoryNodes));
+  provisioning->SetMemoryNodes(std::move(memoryNodes));
   statistics->StopCollecting();
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
+
+  return provisioning;
 }
 
-std::unique_ptr<AgnosticMemoryNodeProvider>
+std::unique_ptr<MemoryNodeProvisioning>
 AgnosticMemoryNodeProvider::Create(
   const RvsdgModule & rvsdgModule,
   const PointsToGraph & pointsToGraph,
   StatisticsCollector & statisticsCollector)
 {
-  std::unique_ptr<AgnosticMemoryNodeProvider> provider(new AgnosticMemoryNodeProvider());
-  provider->ProvisionMemoryNodes(rvsdgModule, pointsToGraph, statisticsCollector);
-
-  return provider;
+  AgnosticMemoryNodeProvider provider;
+  return provider.ProvisionMemoryNodes(rvsdgModule, pointsToGraph, statisticsCollector);
 }
 
-std::unique_ptr<AgnosticMemoryNodeProvider>
+std::unique_ptr<MemoryNodeProvisioning>
 AgnosticMemoryNodeProvider::Create(
   const RvsdgModule & rvsdgModule,
   const PointsToGraph & pointsToGraph)
@@ -151,44 +155,37 @@ AgnosticMemoryNodeProvider::Create(
 const PointsToGraph &
 AgnosticMemoryNodeProvider::GetPointsToGraph() const noexcept
 {
-  return Provisioning_->GetPointsToGraph();
+  JLM_UNREACHABLE("Deprecated: To be removed.");
 }
 
 const HashSet<const PointsToGraph::MemoryNode*> &
 AgnosticMemoryNodeProvider::GetRegionEntryNodes(const jive::region & region) const
 {
-  return Provisioning_->GetRegionEntryNodes(region);
+  JLM_UNREACHABLE("Deprecated: To be removed.");
 }
 
 const HashSet<const PointsToGraph::MemoryNode*> &
 AgnosticMemoryNodeProvider::GetRegionExitNodes(const jive::region & region) const
 {
-  return Provisioning_->GetRegionExitNodes(region);
+  JLM_UNREACHABLE("Deprecated: To be removed.");
 }
 
 const HashSet<const PointsToGraph::MemoryNode*> &
 AgnosticMemoryNodeProvider::GetCallEntryNodes(const CallNode & callNode) const
 {
-  return Provisioning_->GetCallEntryNodes(callNode);
+  JLM_UNREACHABLE("Deprecated: To be removed.");
 }
 
 const HashSet<const PointsToGraph::MemoryNode*> &
 AgnosticMemoryNodeProvider::GetCallExitNodes(const CallNode & callNode) const
 {
-  return Provisioning_->GetCallExitNodes(callNode);
+  JLM_UNREACHABLE("Deprecated: To be removed.");
 }
 
 HashSet<const PointsToGraph::MemoryNode*>
 AgnosticMemoryNodeProvider::GetOutputNodes(const jive::output & output) const
 {
-  JLM_ASSERT(is<PointerType>(output.type()));
-  auto & registerNode = Provisioning_->GetPointsToGraph().GetRegisterNode(output);
-
-  HashSet<const PointsToGraph::MemoryNode*> memoryNodes;
-  for (auto & memoryNode : registerNode.Targets())
-    memoryNodes.Insert(&memoryNode);
-
-  return memoryNodes;
+  JLM_UNREACHABLE("Deprecated: To be removed.");
 }
 
 }

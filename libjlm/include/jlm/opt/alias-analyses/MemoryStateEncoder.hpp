@@ -33,7 +33,7 @@ class StoreNode;
 
 namespace aa {
 
-class MemoryNodeProvider;
+class MemoryNodeProvisioning;
 
 /** \brief Memory State Encoder
  *
@@ -69,7 +69,7 @@ public:
   void
   Encode(
     RvsdgModule & rvsdgModule,
-    const MemoryNodeProvider & memoryNodeProvider,
+    const MemoryNodeProvisioning & provisioning,
     StatisticsCollector & statisticsCollector);
 
 private:
