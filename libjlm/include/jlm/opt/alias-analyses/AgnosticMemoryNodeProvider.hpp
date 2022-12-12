@@ -13,8 +13,6 @@
 namespace jlm::aa
 {
 
-class AgnosticMemoryNodeProvisioning;
-
 /** \brief Agnostic memory node provider
  *
  * The key idea of the agnostic memory node provider is that \b all memory states are routed through \b all
