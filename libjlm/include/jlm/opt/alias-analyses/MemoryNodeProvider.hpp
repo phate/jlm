@@ -17,24 +17,12 @@ class StatisticsCollector;
 
 namespace jlm::aa {
 
-class MemoryNodeProvider {
+/** \brief Memory Node Provisioning
+ *
+ * Contains the memory nodes that are required at the entry and exit of a region, and for call nodes.
+ */
+class MemoryNodeProvisioning {
 public:
-  virtual
-  ~MemoryNodeProvider() noexcept;
-
-  /**
-   * Computes the memory nodes that are required at the entry and exit of of a region as well as call node. This method
-   * needs to be called before GetRegionEntryNodes(), GetRegionExitNodes(), GetCallEntryNodes(), or GetCallExitNodes()
-   * can be used to retrieve the entry or exit nodes.
-   *
-   * @param rvsdgModule The RVSDG module on which the memory node provision should be performed.
-   * @param statisticsCollector The statistics collector for collecting pass statistics.
-   */
-  virtual void
-  ProvisionMemoryNodes(
-    const RvsdgModule & rvsdgModule,
-    StatisticsCollector & statisticsCollector) = 0;
-
   [[nodiscard]] virtual const PointsToGraph &
   GetPointsToGraph() const noexcept = 0;
 
@@ -99,6 +87,23 @@ public:
 
     return allMemoryNodes;
   }
+};
+
+class MemoryNodeProvider : public MemoryNodeProvisioning {
+public:
+  virtual
+  ~MemoryNodeProvider() noexcept;
+
+  /**
+   * Computes the memory nodes that are required at the entry and exit of of a region as well as call node.
+   *
+   * @param rvsdgModule The RVSDG module on which the memory node provision should be performed.
+   * @param statisticsCollector The statistics collector for collecting pass statistics.
+   */
+  virtual void
+  ProvisionMemoryNodes(
+    const RvsdgModule & rvsdgModule,
+    StatisticsCollector & statisticsCollector) = 0;
 };
 
 }
