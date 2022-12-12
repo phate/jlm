@@ -13,6 +13,8 @@
 namespace jlm::aa
 {
 
+class AgnosticMemoryNodeProvisioning;
+
 /** \brief Agnostic memory node provider
  *
  * The key idea of the agnostic memory node provider is that \b all memory states are routed through \b all
@@ -30,6 +32,8 @@ class AgnosticMemoryNodeProvider final : public MemoryNodeProvider {
   AgnosticMemoryNodeProvider(const PointsToGraph & pointsToGraph);
 
 public:
+  ~AgnosticMemoryNodeProvider() override;
+
   class Statistics;
 
   AgnosticMemoryNodeProvider(const AgnosticMemoryNodeProvider&) = delete;
@@ -94,9 +98,7 @@ public:
     const PointsToGraph & pointsToGraph);
 
 private:
-  const PointsToGraph & PointsToGraph_;
-
-  HashSet<const PointsToGraph::MemoryNode*> MemoryNodes_;
+  std::unique_ptr<AgnosticMemoryNodeProvisioning> Provisioning_;
 };
 
 /** \brief Agnostic memory node provider statistics
