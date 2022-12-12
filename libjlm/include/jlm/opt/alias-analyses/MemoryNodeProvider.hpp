@@ -98,11 +98,13 @@ public:
    * Computes the memory nodes that are required at the entry and exit of of a region as well as call node.
    *
    * @param rvsdgModule The RVSDG module on which the memory node provision should be performed.
+   * @param pointsToGraph The points-to graph corresponding to \p rvsdgModule.
    * @param statisticsCollector The statistics collector for collecting pass statistics.
    */
   virtual void
   ProvisionMemoryNodes(
     const RvsdgModule & rvsdgModule,
+    const PointsToGraph & pointsToGraph,
     StatisticsCollector & statisticsCollector) = 0;
 };
 
