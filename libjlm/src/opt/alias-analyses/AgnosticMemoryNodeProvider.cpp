@@ -152,40 +152,4 @@ AgnosticMemoryNodeProvider::Create(
   return Create(rvsdgModule, pointsToGraph, statisticsCollector);
 }
 
-const PointsToGraph &
-AgnosticMemoryNodeProvider::GetPointsToGraph() const noexcept
-{
-  JLM_UNREACHABLE("Deprecated: To be removed.");
-}
-
-const HashSet<const PointsToGraph::MemoryNode*> &
-AgnosticMemoryNodeProvider::GetRegionEntryNodes(const jive::region & region) const
-{
-  JLM_UNREACHABLE("Deprecated: To be removed.");
-}
-
-const HashSet<const PointsToGraph::MemoryNode*> &
-AgnosticMemoryNodeProvider::GetRegionExitNodes(const jive::region & region) const
-{
-  JLM_UNREACHABLE("Deprecated: To be removed.");
-}
-
-const HashSet<const PointsToGraph::MemoryNode*> &
-AgnosticMemoryNodeProvider::GetCallEntryNodes(const CallNode & callNode) const
-{
-  JLM_UNREACHABLE("Deprecated: To be removed.");
-}
-
-const HashSet<const PointsToGraph::MemoryNode*> &
-AgnosticMemoryNodeProvider::GetCallExitNodes(const CallNode & callNode) const
-{
-  JLM_UNREACHABLE("Deprecated: To be removed.");
-}
-
-HashSet<const PointsToGraph::MemoryNode*>
-AgnosticMemoryNodeProvider::GetOutputNodes(const jive::output & output) const
-{
-  JLM_UNREACHABLE("Deprecated: To be removed.");
-}
-
 }

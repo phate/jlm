@@ -92,7 +92,7 @@ public:
   }
 };
 
-class MemoryNodeProvider : public MemoryNodeProvisioning {
+class MemoryNodeProvider {
 public:
   virtual
   ~MemoryNodeProvider() noexcept;
