@@ -17,9 +17,11 @@ public:
   ~AgnosticMemoryNodeProvisioning() noexcept override = default;
 
 private:
-  explicit
-  AgnosticMemoryNodeProvisioning(const PointsToGraph & pointsToGraph)
+  AgnosticMemoryNodeProvisioning(
+    const PointsToGraph & pointsToGraph,
+    HashSet<const PointsToGraph::MemoryNode*> memoryNodes)
     : PointsToGraph_(pointsToGraph)
+    , MemoryNodes_(std::move(memoryNodes))
   {}
 
 public:
@@ -76,17 +78,14 @@ public:
     return memoryNodes;
   }
 
-  void
-  SetMemoryNodes(HashSet<const PointsToGraph::MemoryNode*> memoryNodes)
-  {
-    MemoryNodes_ = std::move(memoryNodes);
-  }
-
   static std::unique_ptr<AgnosticMemoryNodeProvisioning>
-  Create(const PointsToGraph & pointsToGraph)
+  Create(
+    const PointsToGraph & pointsToGraph,
+    HashSet<const PointsToGraph::MemoryNode*> memoryNodes)
   {
-    return std::unique_ptr<AgnosticMemoryNodeProvisioning>(
-      new AgnosticMemoryNodeProvisioning(pointsToGraph));
+    return std::unique_ptr<AgnosticMemoryNodeProvisioning>(new AgnosticMemoryNodeProvisioning(
+      pointsToGraph,
+      std::move(memoryNodes)));
   }
 
 private:
@@ -103,11 +102,9 @@ AgnosticMemoryNodeProvider::ProvisionMemoryNodes(
   const PointsToGraph & pointsToGraph,
   StatisticsCollector& statisticsCollector)
 {
-  auto provisioning = AgnosticMemoryNodeProvisioning::Create(pointsToGraph);
-
   auto statistics = Statistics::Create(statisticsCollector, pointsToGraph);
-
   statistics->StartCollecting();
+
   HashSet<const PointsToGraph::MemoryNode*> memoryNodes;
   for (auto & allocaNode : pointsToGraph.AllocaNodes())
     memoryNodes.Insert(&allocaNode);
@@ -125,9 +122,10 @@ AgnosticMemoryNodeProvider::ProvisionMemoryNodes(
     memoryNodes.Insert(&importNode);
 
   memoryNodes.Insert(&pointsToGraph.GetExternalMemoryNode());
-  provisioning->SetMemoryNodes(std::move(memoryNodes));
-  statistics->StopCollecting();
 
+  auto provisioning = AgnosticMemoryNodeProvisioning::Create(pointsToGraph, std::move(memoryNodes));
+
+  statistics->StopCollecting();
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
   return provisioning;
