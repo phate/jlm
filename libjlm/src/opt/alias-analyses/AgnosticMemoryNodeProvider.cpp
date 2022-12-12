@@ -90,19 +90,16 @@ private:
   HashSet<const PointsToGraph::MemoryNode*> MemoryNodes_;
 };
 
-AgnosticMemoryNodeProvider::AgnosticMemoryNodeProvider(const PointsToGraph & pointsToGraph)
-  : Provisioning_(AgnosticMemoryNodeProvisioning::Create(pointsToGraph))
-{}
-
 AgnosticMemoryNodeProvider::~AgnosticMemoryNodeProvider()
 = default;
 
 void
 AgnosticMemoryNodeProvider::ProvisionMemoryNodes(
   const RvsdgModule&,
+  const PointsToGraph & pointsToGraph,
   StatisticsCollector& statisticsCollector)
 {
-  auto & pointsToGraph = Provisioning_->GetPointsToGraph();
+  Provisioning_ = AgnosticMemoryNodeProvisioning::Create(pointsToGraph);
 
   auto statistics = Statistics::Create(statisticsCollector, pointsToGraph);
 
@@ -136,8 +133,8 @@ AgnosticMemoryNodeProvider::Create(
   const PointsToGraph & pointsToGraph,
   StatisticsCollector & statisticsCollector)
 {
-  std::unique_ptr<AgnosticMemoryNodeProvider> provider(new AgnosticMemoryNodeProvider(pointsToGraph));
-  provider->ProvisionMemoryNodes(rvsdgModule, statisticsCollector);
+  std::unique_ptr<AgnosticMemoryNodeProvider> provider(new AgnosticMemoryNodeProvider());
+  provider->ProvisionMemoryNodes(rvsdgModule, pointsToGraph, statisticsCollector);
 
   return provider;
 }

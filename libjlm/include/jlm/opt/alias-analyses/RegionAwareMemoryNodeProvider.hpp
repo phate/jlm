@@ -46,11 +46,8 @@ public:
 
   ~RegionAwareMemoryNodeProvider() noexcept override;
 
-private:
-  explicit
-  RegionAwareMemoryNodeProvider(const PointsToGraph & pointsToGraph);
+  RegionAwareMemoryNodeProvider() = default;
 
-public:
   RegionAwareMemoryNodeProvider(const RegionAwareMemoryNodeProvider &) = delete;
 
   RegionAwareMemoryNodeProvider(RegionAwareMemoryNodeProvider &&) = delete;
@@ -64,6 +61,7 @@ public:
   void
   ProvisionMemoryNodes(
     const RvsdgModule & rvsdgModule,
+    const PointsToGraph & pointsToGraph,
     StatisticsCollector & statisticsCollector) override;
 
   [[nodiscard]] const PointsToGraph &

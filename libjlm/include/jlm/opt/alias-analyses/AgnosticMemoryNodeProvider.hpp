@@ -27,14 +27,14 @@ class AgnosticMemoryNodeProvisioning;
  * @see MemoryNodeProvider
  * @see MemoryStateEncoder
  */
-class AgnosticMemoryNodeProvider final : public MemoryNodeProvider {
-  explicit
-  AgnosticMemoryNodeProvider(const PointsToGraph & pointsToGraph);
-
+class AgnosticMemoryNodeProvider final : public MemoryNodeProvider
+{
 public:
+  class Statistics;
+
   ~AgnosticMemoryNodeProvider() override;
 
-  class Statistics;
+  AgnosticMemoryNodeProvider() = default;
 
   AgnosticMemoryNodeProvider(const AgnosticMemoryNodeProvider&) = delete;
 
@@ -49,6 +49,7 @@ public:
   void
   ProvisionMemoryNodes(
     const RvsdgModule & rvsdgModule,
+    const PointsToGraph & pointsToGraph,
     StatisticsCollector & statisticsCollector) override;
 
   [[nodiscard]] const PointsToGraph &

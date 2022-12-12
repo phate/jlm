@@ -476,15 +476,14 @@ private:
 RegionAwareMemoryNodeProvider::~RegionAwareMemoryNodeProvider() noexcept
 = default;
 
-RegionAwareMemoryNodeProvider::RegionAwareMemoryNodeProvider(const PointsToGraph & pointsToGraph)
-  : Provisioning_(RegionAwareMemoryNodeProvisioning::Create(pointsToGraph))
-{}
-
 void
 RegionAwareMemoryNodeProvider::ProvisionMemoryNodes(
   const jlm::RvsdgModule & rvsdgModule,
+  const PointsToGraph & pointsToGraph,
   StatisticsCollector & statisticsCollector)
 {
+  Provisioning_ = RegionAwareMemoryNodeProvisioning::Create(pointsToGraph);
+
   auto statistics = Statistics::Create(statisticsCollector, rvsdgModule, GetPointsToGraph());
 
   statistics->StartAnnotationStatistics();
@@ -512,8 +511,8 @@ RegionAwareMemoryNodeProvider::Create(
   const PointsToGraph & pointsToGraph,
   StatisticsCollector & statisticsCollector)
 {
-  std::unique_ptr<RegionAwareMemoryNodeProvider> provider(new RegionAwareMemoryNodeProvider(pointsToGraph));
-  provider->ProvisionMemoryNodes(rvsdgModule, statisticsCollector);
+  std::unique_ptr<RegionAwareMemoryNodeProvider> provider(new RegionAwareMemoryNodeProvider());
+  provider->ProvisionMemoryNodes(rvsdgModule, pointsToGraph, statisticsCollector);
 
   return provider;
 }
