@@ -23,6 +23,9 @@ namespace jlm::aa {
  */
 class MemoryNodeProvisioning {
 public:
+  virtual
+  ~MemoryNodeProvisioning() noexcept;
+
   [[nodiscard]] virtual const PointsToGraph &
   GetPointsToGraph() const noexcept = 0;
 
@@ -100,8 +103,10 @@ public:
    * @param rvsdgModule The RVSDG module on which the memory node provision should be performed.
    * @param pointsToGraph The points-to graph corresponding to \p rvsdgModule.
    * @param statisticsCollector The statistics collector for collecting pass statistics.
+   *
+   * @return An instance of MemoryNodeProvisioning.
    */
-  virtual void
+  virtual std::unique_ptr<MemoryNodeProvisioning>
   ProvisionMemoryNodes(
     const RvsdgModule & rvsdgModule,
     const PointsToGraph & pointsToGraph,

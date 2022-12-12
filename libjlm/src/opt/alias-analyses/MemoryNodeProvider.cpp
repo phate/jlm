@@ -8,6 +8,9 @@
 namespace jlm::aa
 {
 
+MemoryNodeProvisioning::~MemoryNodeProvisioning() noexcept
+= default;
+
 MemoryNodeProvider::~MemoryNodeProvider() noexcept
 = default;
 

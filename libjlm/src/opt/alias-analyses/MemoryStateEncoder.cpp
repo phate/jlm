@@ -105,8 +105,8 @@ GetMemoryStateResult(const lambda::node & lambda)
 class MemoryNodeCache final {
 private:
   explicit
-  MemoryNodeCache(const MemoryNodeProvider & memoryNodeProvider)
-    : MemoryNodeProvider_(memoryNodeProvider)
+  MemoryNodeCache(const MemoryNodeProvisioning & memoryNodeProvisioning)
+    : MemoryNodeProvisioning_(memoryNodeProvisioning)
   {}
 
 public:
@@ -134,7 +134,7 @@ public:
     if (Contains(output))
       return MemoryNodeMap_[&output];
 
-    auto memoryNodes = MemoryNodeProvider_.GetOutputNodes(output);
+    auto memoryNodes = MemoryNodeProvisioning_.GetOutputNodes(output);
 
     /*
      * There is no need to cache the memory nodes, if the address is only once used.
@@ -155,17 +155,17 @@ public:
     JLM_ASSERT(!Contains(oldAddress));
     JLM_ASSERT(!Contains(newAddress));
 
-    MemoryNodeMap_[&newAddress] = MemoryNodeProvider_.GetOutputNodes(oldAddress);
+    MemoryNodeMap_[&newAddress] = MemoryNodeProvisioning_.GetOutputNodes(oldAddress);
   }
 
   static std::unique_ptr<MemoryNodeCache>
-  Create(const MemoryNodeProvider & memoryNodeProvider)
+  Create(const MemoryNodeProvisioning & memoryNodeProvisioning)
   {
-    return std::unique_ptr<MemoryNodeCache>(new MemoryNodeCache(memoryNodeProvider));
+    return std::unique_ptr<MemoryNodeCache>(new MemoryNodeCache(memoryNodeProvisioning));
   }
 
 private:
-  const MemoryNodeProvider & MemoryNodeProvider_;
+  const MemoryNodeProvisioning & MemoryNodeProvisioning_;
   std::unordered_map<const jive::output*, HashSet<const PointsToGraph::MemoryNode*>> MemoryNodeMap_;
 };
 
@@ -307,8 +307,8 @@ public:
   }
 
   explicit
-  RegionalizedStateMap(const MemoryNodeProvider & memoryNodeProvider)
-    : MemoryNodeProvider_(memoryNodeProvider)
+  RegionalizedStateMap(const MemoryNodeProvisioning & provisioning)
+    : MemoryNodeProvisioning_(provisioning)
   {}
 
   RegionalizedStateMap(const RegionalizedStateMap&) = delete;
@@ -376,7 +376,7 @@ public:
     JLM_ASSERT(MemoryNodeCacheMaps_.find(&region) == MemoryNodeCacheMaps_.end());
 
     StateMaps_[&region] = StateMap::Create();
-    MemoryNodeCacheMaps_[&region] = MemoryNodeCache::Create(MemoryNodeProvider_);
+    MemoryNodeCacheMaps_[&region] = MemoryNodeCache::Create(MemoryNodeProvisioning_);
   }
 
   void
@@ -389,14 +389,7 @@ public:
     MemoryNodeCacheMaps_.erase(&region);
   }
 
-  static std::unique_ptr<MemoryStateEncoder::Context>
-  Create(const MemoryNodeProvider & memoryNodeProvider)
-  {
-    return std::make_unique<MemoryStateEncoder::Context>(memoryNodeProvider);
-  }
-
 private:
-
   StateMap &
   GetStateMap(const jive::region & region) const noexcept
   {
@@ -414,7 +407,7 @@ private:
   std::unordered_map<const jive::region*, std::unique_ptr<StateMap>> StateMaps_;
   std::unordered_map<const jive::region*, std::unique_ptr<MemoryNodeCache>> MemoryNodeCacheMaps_;
 
-  const MemoryNodeProvider & MemoryNodeProvider_;
+  const MemoryNodeProvisioning & MemoryNodeProvisioning_;
 };
 
 /** \brief Context for the memory state encoder
@@ -422,9 +415,9 @@ private:
 class MemoryStateEncoder::Context final {
 public:
   explicit
-  Context(const MemoryNodeProvider & memoryNodeProvider)
-    : RegionalizedStateMap_(memoryNodeProvider)
-    , MemoryNodeProvider_(memoryNodeProvider)
+  Context(const MemoryNodeProvisioning & provisioning)
+    : RegionalizedStateMap_(provisioning)
+    , Provisioning_(provisioning)
   {}
 
   Context(const Context&) = delete;
@@ -443,21 +436,21 @@ public:
     return RegionalizedStateMap_;
   }
 
-  const MemoryNodeProvider &
-  GetMemoryNodeProvider() const noexcept
+  const MemoryNodeProvisioning &
+  GetMemoryNodeProvisioning() const noexcept
   {
-    return MemoryNodeProvider_;
+    return Provisioning_;
   }
 
   static std::unique_ptr<MemoryStateEncoder::Context>
-  Create(const MemoryNodeProvider & memoryNodeProvider)
+  Create(const MemoryNodeProvisioning & provisioning)
   {
-    return std::make_unique<Context>(memoryNodeProvider);
+    return std::make_unique<Context>(provisioning);
   }
 
 private:
   RegionalizedStateMap RegionalizedStateMap_;
-  const MemoryNodeProvider & MemoryNodeProvider_;
+  const MemoryNodeProvisioning & Provisioning_;
 };
 
 MemoryStateEncoder::~MemoryStateEncoder() noexcept
@@ -469,10 +462,10 @@ MemoryStateEncoder::MemoryStateEncoder()
 void
 MemoryStateEncoder::Encode(
   RvsdgModule & rvsdgModule,
-  const MemoryNodeProvider & memoryNodeProvider,
+  const MemoryNodeProvisioning & provisioning,
   StatisticsCollector & statisticsCollector)
 {
-  Context_ = Context::Create(memoryNodeProvider);
+  Context_ = Context::Create(provisioning);
   auto statistics = EncodingStatistics::Create(rvsdgModule.SourceFileName());
 
   statistics->Start(rvsdgModule.Rvsdg());
@@ -569,7 +562,7 @@ MemoryStateEncoder::EncodeAlloca(const jive::simple_node & allocaNode)
   JLM_ASSERT(is<alloca_op>(&allocaNode));
   auto & stateMap = Context_->GetRegionalizedStateMap();
 
-  auto & allocaMemoryNode = Context_->GetMemoryNodeProvider().GetPointsToGraph().GetAllocaNode(allocaNode);
+  auto & allocaMemoryNode = Context_->GetMemoryNodeProvisioning().GetPointsToGraph().GetAllocaNode(allocaNode);
   auto memoryNodeStatePair = stateMap.GetState(*allocaNode.region(), allocaMemoryNode);
   memoryNodeStatePair->ReplaceState(*allocaNode.output(1));
 }
@@ -580,7 +573,7 @@ MemoryStateEncoder::EncodeMalloc(const jive::simple_node & mallocNode)
   JLM_ASSERT(is<malloc_op>(&mallocNode));
   auto & stateMap = Context_->GetRegionalizedStateMap();
 
-  auto & mallocMemoryNode = Context_->GetMemoryNodeProvider().GetPointsToGraph().GetMallocNode(mallocNode);
+  auto & mallocMemoryNode = Context_->GetMemoryNodeProvisioning().GetPointsToGraph().GetMallocNode(mallocNode);
 
   /**
    * We use a static heap model. This means that multiple invocations of an malloc
@@ -661,7 +654,7 @@ MemoryStateEncoder::EncodeCall(const CallNode & callNode)
   auto EncodeEntry = [this](const CallNode & callNode)
   {
     auto region = callNode.region();
-    auto & memoryNodes = Context_->GetMemoryNodeProvider().GetCallEntryNodes(callNode);
+    auto & memoryNodes = Context_->GetMemoryNodeProvisioning().GetCallEntryNodes(callNode);
 
     auto memoryNodeStatePairs = Context_->GetRegionalizedStateMap().GetStates(*region, memoryNodes);
     auto states = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
@@ -672,7 +665,7 @@ MemoryStateEncoder::EncodeCall(const CallNode & callNode)
   auto EncodeExit = [this](const CallNode & callNode)
   {
     auto & stateMap = Context_->GetRegionalizedStateMap();
-    auto & memoryNodes = Context_->GetMemoryNodeProvider().GetCallExitNodes(callNode);
+    auto & memoryNodes = Context_->GetMemoryNodeProvisioning().GetCallExitNodes(callNode);
 
     auto states = CallExitMemStateOperator::Create(callNode.GetMemoryStateOutput(), memoryNodes.Size());
     auto memoryNodeStatePairs = stateMap.GetStates(*callNode.region(), memoryNodes);
@@ -719,7 +712,7 @@ MemoryStateEncoder::EncodeLambda(const lambda::node & lambda)
   auto EncodeEntry = [this](const lambda::node & lambda)
   {
     auto memoryStateArgument = GetMemoryStateArgument(lambda);
-    auto & memoryNodes = Context_->GetMemoryNodeProvider().GetLambdaEntryNodes(lambda);
+    auto & memoryNodes = Context_->GetMemoryNodeProvisioning().GetLambdaEntryNodes(lambda);
     auto & stateMap = Context_->GetRegionalizedStateMap();
 
     stateMap.PushRegion(*lambda.subregion());
@@ -734,7 +727,7 @@ MemoryStateEncoder::EncodeLambda(const lambda::node & lambda)
   auto EncodeExit = [this](const lambda::node & lambda)
   {
     auto subregion = lambda.subregion();
-    auto & memoryNodes = Context_->GetMemoryNodeProvider().GetLambdaExitNodes(lambda);
+    auto & memoryNodes = Context_->GetMemoryNodeProvisioning().GetLambdaExitNodes(lambda);
     auto & stateMap = Context_->GetRegionalizedStateMap();
     auto memoryStateResult = GetMemoryStateResult(lambda);
 
@@ -770,7 +763,7 @@ MemoryStateEncoder::EncodeGamma(jive::gamma_node & gamma)
   {
     auto region = gamma.region();
     auto & stateMap = Context_->GetRegionalizedStateMap();
-    auto memoryNodes = Context_->GetMemoryNodeProvider().GetGammaEntryNodes(gamma);
+    auto memoryNodes = Context_->GetMemoryNodeProvisioning().GetGammaEntryNodes(gamma);
 
     auto memoryNodeStatePairs = stateMap.GetStates(*region, memoryNodes);
     for (auto & memoryNodeStatePair : memoryNodeStatePairs) {
@@ -783,7 +776,7 @@ MemoryStateEncoder::EncodeGamma(jive::gamma_node & gamma)
   auto EncodeExit = [this](jive::gamma_node & gamma)
   {
     auto & stateMap = Context_->GetRegionalizedStateMap();
-    auto memoryNodes = Context_->GetMemoryNodeProvider().GetGammaExitNodes(gamma);
+    auto memoryNodes = Context_->GetMemoryNodeProvisioning().GetGammaExitNodes(gamma);
     auto memoryNodeStatePairs = stateMap.GetStates(*gamma.region(), memoryNodes);
 
     for (auto & memoryNodeStatePair : memoryNodeStatePairs)
@@ -822,7 +815,7 @@ MemoryStateEncoder::EncodeTheta(jive::theta_node & theta)
   {
     auto region = theta.region();
     auto & stateMap = Context_->GetRegionalizedStateMap();
-    auto & memoryNodes = Context_->GetMemoryNodeProvider().GetThetaEntryExitNodes(theta);
+    auto & memoryNodes = Context_->GetMemoryNodeProvisioning().GetThetaEntryExitNodes(theta);
 
     std::vector<jive::theta_output*> thetaStateOutputs;
     auto memoryNodeStatePairs = stateMap.GetStates(*region, memoryNodes);
@@ -842,7 +835,7 @@ MemoryStateEncoder::EncodeTheta(jive::theta_node & theta)
   {
     auto subregion = theta.subregion();
     auto & stateMap = Context_->GetRegionalizedStateMap();
-    auto & memoryNodes = Context_->GetMemoryNodeProvider().GetThetaEntryExitNodes(theta);
+    auto & memoryNodes = Context_->GetMemoryNodeProvisioning().GetThetaEntryExitNodes(theta);
     auto memoryNodeStatePairs = stateMap.GetStates(*theta.region(), memoryNodes);
 
     JLM_ASSERT(memoryNodeStatePairs.size() == thetaStateOutputs.size());

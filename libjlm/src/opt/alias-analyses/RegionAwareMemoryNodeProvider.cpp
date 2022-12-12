@@ -476,7 +476,7 @@ private:
 RegionAwareMemoryNodeProvider::~RegionAwareMemoryNodeProvider() noexcept
 = default;
 
-void
+std::unique_ptr<MemoryNodeProvisioning>
 RegionAwareMemoryNodeProvider::ProvisionMemoryNodes(
   const jlm::RvsdgModule & rvsdgModule,
   const PointsToGraph & pointsToGraph,
@@ -484,7 +484,7 @@ RegionAwareMemoryNodeProvider::ProvisionMemoryNodes(
 {
   Provisioning_ = RegionAwareMemoryNodeProvisioning::Create(pointsToGraph);
 
-  auto statistics = Statistics::Create(statisticsCollector, rvsdgModule, GetPointsToGraph());
+  auto statistics = Statistics::Create(statisticsCollector, rvsdgModule, pointsToGraph);
 
   statistics->StartAnnotationStatistics();
   AnnotateRegion(*rvsdgModule.Rvsdg().root());
@@ -503,21 +503,21 @@ RegionAwareMemoryNodeProvider::ProvisionMemoryNodes(
   statistics->StopPropagationPass2Statistics();
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
+
+  return std::unique_ptr<MemoryNodeProvisioning>(Provisioning_.release());
 }
 
-std::unique_ptr<RegionAwareMemoryNodeProvider>
+std::unique_ptr<MemoryNodeProvisioning>
 RegionAwareMemoryNodeProvider::Create(
   const RvsdgModule & rvsdgModule,
   const PointsToGraph & pointsToGraph,
   StatisticsCollector & statisticsCollector)
 {
-  std::unique_ptr<RegionAwareMemoryNodeProvider> provider(new RegionAwareMemoryNodeProvider());
-  provider->ProvisionMemoryNodes(rvsdgModule, pointsToGraph, statisticsCollector);
-
-  return provider;
+  RegionAwareMemoryNodeProvider provider;
+  return provider.ProvisionMemoryNodes(rvsdgModule, pointsToGraph, statisticsCollector);
 }
 
-std::unique_ptr<RegionAwareMemoryNodeProvider>
+std::unique_ptr<MemoryNodeProvisioning>
 RegionAwareMemoryNodeProvider::Create(
   const RvsdgModule & rvsdgModule,
   const PointsToGraph & pointsToGraph)
@@ -529,37 +529,37 @@ RegionAwareMemoryNodeProvider::Create(
 const PointsToGraph &
 RegionAwareMemoryNodeProvider::GetPointsToGraph() const noexcept
 {
-  return Provisioning_->GetPointsToGraph();
+  JLM_UNREACHABLE("Deprecated: To be removed.");
 }
 
 const HashSet<const PointsToGraph::MemoryNode*> &
 RegionAwareMemoryNodeProvider::GetRegionEntryNodes(const jive::region & region) const
 {
-  return Provisioning_->GetRegionEntryNodes(region);
+  JLM_UNREACHABLE("Deprecated: To be removed.");
 }
 
 const HashSet<const PointsToGraph::MemoryNode*> &
 RegionAwareMemoryNodeProvider::GetRegionExitNodes(const jive::region & region) const
 {
-  return Provisioning_->GetRegionExitNodes(region);
+  JLM_UNREACHABLE("Deprecated: To be removed.");
 }
 
 [[nodiscard]] const HashSet<const PointsToGraph::MemoryNode*> &
 RegionAwareMemoryNodeProvider::GetCallEntryNodes(const CallNode & callNode) const
 {
-  return Provisioning_->GetCallEntryNodes(callNode);
+  JLM_UNREACHABLE("Deprecated: To be removed.");
 }
 
 [[nodiscard]] const HashSet<const PointsToGraph::MemoryNode*> &
 RegionAwareMemoryNodeProvider::GetCallExitNodes(const CallNode & callNode) const
 {
-  return Provisioning_->GetCallExitNodes(callNode);
+  JLM_UNREACHABLE("Deprecated: To be removed.");
 }
 
 [[nodiscard]] HashSet<const PointsToGraph::MemoryNode*>
 RegionAwareMemoryNodeProvider::GetOutputNodes(const jive::output & output) const
 {
-  return Provisioning_->GetOutputNodes(output);
+  JLM_UNREACHABLE("Deprecated: To be removed.");
 }
 
 void
@@ -656,7 +656,7 @@ RegionAwareMemoryNodeProvider::AnnotateSimpleNode(const jive::simple_node & simp
 void
 RegionAwareMemoryNodeProvider::AnnotateLoad(const jlm::LoadNode & loadNode)
 {
-  auto memoryNodes = GetOutputNodes(*loadNode.GetAddressInput()->origin());
+  auto memoryNodes = Provisioning_->GetOutputNodes(*loadNode.GetAddressInput()->origin());
   auto & regionSummary = Provisioning_->GetRegionSummary(*loadNode.region());
   regionSummary.AddMemoryNodes(memoryNodes);
 }
@@ -664,7 +664,7 @@ RegionAwareMemoryNodeProvider::AnnotateLoad(const jlm::LoadNode & loadNode)
 void
 RegionAwareMemoryNodeProvider::AnnotateStore(const jlm::StoreNode & storeNode)
 {
-  auto memoryNodes = GetOutputNodes(*storeNode.GetAddressInput()->origin());
+  auto memoryNodes = Provisioning_->GetOutputNodes(*storeNode.GetAddressInput()->origin());
   auto & regionSummary = Provisioning_->GetRegionSummary(*storeNode.region());
   regionSummary.AddMemoryNodes(memoryNodes);
 }
@@ -674,7 +674,7 @@ RegionAwareMemoryNodeProvider::AnnotateAlloca(const jive::simple_node & allocaNo
 {
   JLM_ASSERT(jive::is<alloca_op>(allocaNode.operation()));
 
-  auto & memoryNode = GetPointsToGraph().GetAllocaNode(allocaNode);
+  auto & memoryNode = Provisioning_->GetPointsToGraph().GetAllocaNode(allocaNode);
   auto & regionSummary = Provisioning_->GetRegionSummary(*allocaNode.region());
   regionSummary.AddMemoryNodes({&memoryNode});
 }
@@ -684,7 +684,7 @@ RegionAwareMemoryNodeProvider::AnnotateMalloc(const jive::simple_node & mallocNo
 {
   JLM_ASSERT(jive::is<malloc_op>(mallocNode.operation()));
 
-  auto & memoryNode = GetPointsToGraph().GetMallocNode(mallocNode);
+  auto & memoryNode = Provisioning_->GetPointsToGraph().GetMallocNode(mallocNode);
   auto & regionSummary = Provisioning_->GetRegionSummary(*mallocNode.region());
   regionSummary.AddMemoryNodes({&memoryNode});
 }
@@ -694,7 +694,7 @@ RegionAwareMemoryNodeProvider::AnnotateFree(const jive::simple_node & freeNode)
 {
   JLM_ASSERT(jive::is<free_op>(freeNode.operation()));
 
-  auto memoryNodes = GetOutputNodes(*freeNode.input(0)->origin());
+  auto memoryNodes = Provisioning_->GetOutputNodes(*freeNode.input(0)->origin());
   auto & regionSummary = Provisioning_->GetRegionSummary(*freeNode.region());
   regionSummary.AddMemoryNodes(memoryNodes);
 }
@@ -766,10 +766,10 @@ RegionAwareMemoryNodeProvider::AnnotateMemcpy(const jive::simple_node & memcpyNo
 
   auto & regionSummary = Provisioning_->GetRegionSummary(*memcpyNode.region());
 
-  auto dstNodes = GetOutputNodes(*memcpyNode.input(0)->origin());
+  auto dstNodes = Provisioning_->GetOutputNodes(*memcpyNode.input(0)->origin());
   regionSummary.AddMemoryNodes(dstNodes);
 
-  auto srcNodes = GetOutputNodes(*memcpyNode.input(1)->origin());
+  auto srcNodes = Provisioning_->GetOutputNodes(*memcpyNode.input(1)->origin());
   regionSummary.AddMemoryNodes(srcNodes);
 }
 

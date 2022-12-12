@@ -46,7 +46,7 @@ public:
   AgnosticMemoryNodeProvider &
   operator=(AgnosticMemoryNodeProvider&&) = delete;
 
-  void
+  std::unique_ptr<MemoryNodeProvisioning>
   ProvisionMemoryNodes(
     const RvsdgModule & rvsdgModule,
     const PointsToGraph & pointsToGraph,
@@ -77,9 +77,9 @@ public:
    * @param pointsToGraph The PointsToGraph corresponding to the RVSDG module.
    * @param statisticsCollector The statistics collector for collecting pass statistics.
    *
-   * @return A new instance of AgnosticMemoryNodeProvider.
+   * @return A new instance of MemoryNodeProvisioning.
    */
-  static std::unique_ptr<AgnosticMemoryNodeProvider>
+  static std::unique_ptr<MemoryNodeProvisioning>
   Create(
     const RvsdgModule & rvsdgModule,
     const PointsToGraph & pointsToGraph,
@@ -91,15 +91,12 @@ public:
    * @param rvsdgModule The RVSDG module on which the provision should be performed.
    * @param pointsToGraph The PointsToGraph corresponding to the RVSDG module.
    *
-   * @return A new instance of AgnosticMemoryNodeProvider.
+   * @return A new instance of MemoryNodeProvisioning.
    */
-  static std::unique_ptr<AgnosticMemoryNodeProvider>
+  static std::unique_ptr<MemoryNodeProvisioning>
   Create(
     const RvsdgModule & rvsdgModule,
     const PointsToGraph & pointsToGraph);
-
-private:
-  std::unique_ptr<AgnosticMemoryNodeProvisioning> Provisioning_;
 };
 
 /** \brief Agnostic memory node provider statistics
