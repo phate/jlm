@@ -91,6 +91,35 @@ private:
 	tracker tracker_;
 };
 
+/** \brief TopDown Traverser
+ *
+ * The topdown traverser visits a regions' nodes starting at the nodes with the lowest depth to the nodes with the
+ * highest depth, i.e. from the topmost nodes to the nodes at the bottom. The traverser guarantees that newly created
+ * nodes are never visited iff the created nodes replace already traversed nodes, including the current node under
+ * inspection, and iff the edges of the inputs of the newly created nodes originate from already traversed nodes.
+ * Otherwise, newly created nodes might also be traversed. The main usage of the topdown traverser is for
+ * replacing subgraphs in the already visited part of a region.
+ *
+ * The topdown traverser associates three distinct states with any node in the region throughout traversal:
+ *
+ * 1. <b>ahead</b>: Nodes that have not been visited yet and are not yet marked for visitation.
+ * 2. <b>frontier</b>: Nodes that are marked for visitation.
+ * 3. <b>behind</b>: Nodes that were already visited.
+ *
+ * All nodes are by default in state <em>ahead</em>. The topdown_traverser() constructor associates the
+ * <em>frontier</em> state with the top-most nodes in the region, <em>i.e.</em>, all nodes that have no inputs or
+ * only region arguments as origins. The next() method can then be used to traverse these <em>frontier</em> nodes.
+ * Before a <em>frontier</em> node is returned by next(), it is marked as <em>behind</em> and all nodes that depend on
+ * its outputs are transferred from the <em>ahead</em> state to state <em>frontier</em>. The repeated invocation of
+ * next() traverses all nodes in the region.
+ *
+ * A newly created node is marked as <em>behind</em> iff all the nodes' predecessors are marked as behind. Otherwise,
+ * it is marked as <em>frontier</em>.
+ *
+ * An alternative to traversing all nodes using next() is the utilization of begin() and end().
+ *
+ * @see node::depth()
+ */
 class topdown_traverser final {
 public:
 	~topdown_traverser() noexcept;
