@@ -712,6 +712,9 @@ MemoryStateEncoder::EncodeLambda(const lambda::node & lambda)
   auto EncodeEntry = [this](const lambda::node & lambda)
   {
     auto memoryStateArgument = GetMemoryStateArgument(lambda);
+    JLM_ASSERT(memoryStateArgument->nusers() == 1);
+    auto memoryStateArgumentUser = *memoryStateArgument->begin();
+
     auto & memoryNodes = Context_->GetMemoryNodeProvisioning().GetLambdaEntryNodes(lambda);
     auto & stateMap = Context_->GetRegionalizedStateMap();
 
@@ -722,6 +725,25 @@ MemoryStateEncoder::EncodeLambda(const lambda::node & lambda)
     size_t n = 0;
     for (auto & memoryNode : memoryNodes.Items())
       stateMap.InsertState(*memoryNode, *states[n++]);
+
+    if (!states.empty())
+    {
+      /*
+       * This additional MemStateMergeOperator node makes all other nodes in the function that consume the memory state
+       * dependent on this node and therefore transitively on the LambdaEntryMemStateOperator. This ensures that the
+       * LambdaEntryMemStateOperator is always visited before all other memory state consuming nodes:
+       *
+       * ... := LAMBDA[f]
+       *   [..., a1, ...]
+       *     o1, ..., ox := LambdaEntryMemStateOperator a1
+       *     oy = MemStateMergeOperator o1, ..., ox
+       *     ....
+       *
+       * No other memory state consuming node aside from the LambdaEntryMemStateOperator should now consume a1.
+       */
+      auto state = MemStateMergeOperator::Create(states);
+      memoryStateArgumentUser->divert_to(state);
+    }
   };
 
   auto EncodeExit = [this](const lambda::node & lambda)
