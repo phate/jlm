@@ -1473,6 +1473,131 @@ DeltaTest2::SetupRvsdg()
 }
 
 std::unique_ptr<jlm::RvsdgModule>
+DeltaTest3::SetupRvsdg()
+{
+  using namespace jlm;
+
+  auto module = RvsdgModule::Create(filepath(""), "", "");
+  auto graph = &module->Rvsdg();
+
+  auto nf = graph->node_normal_form(typeid(jive::operation));
+  nf->set_mutable(false);
+
+  auto SetupG1 = [&]()
+  {
+    auto delta = delta::node::Create(
+      graph->root(),
+      PointerType(jive::bit32),
+      "g1",
+      linkage::external_linkage,
+      "",
+      false);
+
+    auto constant = jive::create_bitconstant(delta->subregion(), 32, 1);
+
+    return delta->finalize(constant);
+  };
+
+  auto SetupG2 = [&](delta::output & g1)
+  {
+    PointerType pointerType(jive::bit32);
+
+    auto delta = delta::node::Create(
+      graph->root(),
+      PointerType(static_cast<jive::valuetype&>(pointerType)),
+      "g2",
+      linkage::external_linkage,
+      "",
+      false);
+
+    auto g1Argument = delta->add_ctxvar(&g1);
+
+    return delta->finalize(g1Argument);
+  };
+
+  auto SetupF = [&](
+    delta::output & g1,
+    delta::output & g2)
+  {
+    iostatetype iOStateType;
+    MemoryStateType memoryStateType;
+    loopstatetype loopStateType;
+    FunctionType functionType(
+      {&iOStateType, &memoryStateType, &loopStateType},
+      {&jive::bit16, &iOStateType, &memoryStateType, &loopStateType});
+
+    auto lambda = lambda::node::create(
+      graph->root(),
+      functionType,
+      "f",
+      linkage::external_linkage);
+    auto iOStateArgument = lambda->fctargument(0);
+    auto memoryStateArgument = lambda->fctargument(1);
+    auto loopStateArgument = lambda->fctargument(2);
+    auto g1CtxVar = lambda->add_ctxvar(&g1);
+    auto g2CtxVar = lambda->add_ctxvar(&g2);
+
+    auto loadResults = LoadNode::Create(g2CtxVar, {memoryStateArgument}, 8);
+    auto storeResults = StoreNode::Create(g2CtxVar, loadResults[0], {loadResults[1]}, 8);
+
+    loadResults = LoadNode::Create(g1CtxVar, storeResults, 8);
+    auto truncResult = trunc_op::create(16, loadResults[0]);
+
+    return lambda->finalize({truncResult, iOStateArgument, loadResults[1], loopStateArgument});
+  };
+
+  auto SetupTest = [&](lambda::output & lambdaF)
+  {
+    iostatetype iOStateType;
+    MemoryStateType memoryStateType;
+    loopstatetype loopStateType;
+    FunctionType functionType(
+      {&iOStateType, &memoryStateType, &loopStateType},
+      {&iOStateType, &memoryStateType, &loopStateType});
+
+    auto lambda = lambda::node::create(
+      graph->root(),
+      functionType,
+      "test",
+      linkage::external_linkage);
+    auto iOStateArgument = lambda->fctargument(0);
+    auto memoryStateArgument = lambda->fctargument(1);
+    auto loopStateArgument = lambda->fctargument(2);
+
+    auto lambdaFArgument = lambda->add_ctxvar(&lambdaF);
+
+    auto callResults = CallNode::Create(
+      lambdaFArgument,
+      {iOStateArgument, memoryStateArgument, loopStateArgument});
+
+    auto lambdaOutput = lambda->finalize({callResults[1], callResults[2], callResults[3]});
+    graph->add_export(lambdaOutput, {PointerType(lambda->type()), "test"});
+
+    return std::make_tuple(
+      lambdaOutput,
+      AssertedCast<CallNode>(jive::node_output::node(callResults[0])));
+  };
+
+  auto g1 = SetupG1();
+  auto g2 = SetupG2(*g1);
+  auto f = SetupF(*g1, *g2);
+  auto [test, callF] = SetupTest(*f);
+
+  /*
+   * Assign nodes
+   */
+  this->LambdaF_ = f->node();
+  this->LambdaTest_ = test->node();
+
+  this->DeltaG1_ = g1->node();
+  this->DeltaG2_ = g2->node();
+
+  this->CallF_ = callF;
+
+  return module;
+}
+
+std::unique_ptr<jlm::RvsdgModule>
 ImportTest::SetupRvsdg()
 {
   using namespace jlm;

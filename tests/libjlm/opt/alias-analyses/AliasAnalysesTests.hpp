@@ -884,6 +884,77 @@ private:
 	jlm::CallNode * CallF1_;
 };
 
+/** \brief DeltaTest3 class
+*
+*	This function sets up an RVSDG representing the following function:
+*
+* \code{.c}
+*   static int32_t g1 = 1L;
+*   static int32_t *g2 = &g1;
+*
+*   static int16_t
+*   f()
+*   {
+*     g2 = g2;
+*     return g1;
+*   }
+*
+*   int16_t
+*   test()
+*   {
+*     return f();
+*   }
+* \endcode
+*
+* It uses a single memory state to sequentialize the respective memory
+* operations.
+*/
+class DeltaTest3 final : public AliasAnalysisTest
+{
+public:
+  [[nodiscard]] const jlm::lambda::node &
+  LambdaF() const noexcept
+  {
+    return *LambdaF_;
+  }
+
+  [[nodiscard]] const jlm::lambda::node &
+  LambdaTest() const noexcept
+  {
+    return *LambdaTest_;
+  }
+
+  [[nodiscard]] const jlm::delta::node &
+  DeltaG1() const noexcept
+  {
+    return *DeltaG1_;
+  }
+
+  [[nodiscard]] const jlm::delta::node &
+  DeltaG2() const noexcept
+  {
+    return *DeltaG2_;
+  }
+
+  [[nodiscard]] const jlm::CallNode &
+  CallF() const noexcept
+  {
+    return *CallF_;
+  }
+
+private:
+  std::unique_ptr<jlm::RvsdgModule>
+  SetupRvsdg() override;
+
+  jlm::lambda::node * LambdaF_;
+  jlm::lambda::node * LambdaTest_;
+
+  jlm::delta::node * DeltaG1_;
+  jlm::delta::node * DeltaG2_;
+
+  jlm::CallNode * CallF_;
+};
+
 /** \brief ImportTest class
 *
 *	This function sets up an RVSDG representing the following function:
