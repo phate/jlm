@@ -902,6 +902,90 @@ ValidateDeltaTest2SteensgaardRegionAware(const DeltaTest2 & test)
 }
 
 static void
+ValidateDeltaTest3SteensgaardAgnostic(const DeltaTest3 & test)
+{
+  using namespace jlm;
+
+  /* validate f() */
+  {
+    assert(test.LambdaF().subregion()->nnodes() == 6);
+
+    auto lambdaExitMerge = jive::node_output::node(test.LambdaF().fctresult(2)->origin());
+    assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 5, 1));
+
+    auto truncNode = jive::node_output::node(test.LambdaF().fctresult(0)->origin());
+    assert(is<trunc_op>(*truncNode, 1, 1));
+
+    auto loadG1Node = jive::node_output::node(truncNode->input(0)->origin());
+    assert(is<LoadOperation>(*loadG1Node, 2, 2));
+
+    auto lambdaEntrySplit = jive::node_output::node(loadG1Node->input(1)->origin());
+    assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 5));
+
+    jive::node * storeG2Node = nullptr;
+    for (size_t n = 0; n < lambdaExitMerge->ninputs(); n++)
+    {
+      auto input = lambdaExitMerge->input(n);
+      auto node = jive::node_output::node(input->origin());
+      if (is<StoreOperation>(node))
+      {
+        storeG2Node = node;
+        break;
+      }
+    }
+    assert(storeG2Node != nullptr);
+
+    auto loadG2Node = jive::node_output::node(storeG2Node->input(2)->origin());
+    assert(is<LoadOperation>(*loadG2Node, 2, 2));
+
+    auto node = jive::node_output::node(loadG2Node->input(1)->origin());
+    assert(node == lambdaEntrySplit);
+  }
+}
+
+static void
+ValidateDeltaTest3SteensgaardRegionAware(const DeltaTest3 & test)
+{
+  using namespace jlm;
+
+  /* validate f() */
+  {
+    assert(test.LambdaF().subregion()->nnodes() == 6);
+
+    auto lambdaExitMerge = jive::node_output::node(test.LambdaF().fctresult(2)->origin());
+    assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 2, 1));
+
+    auto truncNode = jive::node_output::node(test.LambdaF().fctresult(0)->origin());
+    assert(is<trunc_op>(*truncNode, 1, 1));
+
+    auto loadG1Node = jive::node_output::node(truncNode->input(0)->origin());
+    assert(is<LoadOperation>(*loadG1Node, 2, 2));
+
+    auto lambdaEntrySplit = jive::node_output::node(loadG1Node->input(1)->origin());
+    assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 2));
+
+    jive::node * storeG2Node = nullptr;
+    for (size_t n = 0; n < lambdaExitMerge->ninputs(); n++)
+    {
+      auto input = lambdaExitMerge->input(n);
+      auto node = jive::node_output::node(input->origin());
+      if (is<StoreOperation>(node))
+      {
+        storeG2Node = node;
+        break;
+      }
+    }
+    assert(storeG2Node != nullptr);
+
+    auto loadG2Node = jive::node_output::node(storeG2Node->input(2)->origin());
+    assert(is<LoadOperation>(*loadG2Node, 2, 2));
+
+    auto node = jive::node_output::node(loadG2Node->input(1)->origin());
+    assert(node == lambdaEntrySplit);
+  }
+}
+
+static void
 ValidateImportTestSteensgaardAgnostic(const ImportTest & test)
 {
   using namespace jlm;
@@ -1188,6 +1272,9 @@ test()
 
   ValidateTest<DeltaTest2, Steensgaard, AgnosticMemoryNodeProvider>(ValidateDeltaTest2SteensgaardAgnostic);
   ValidateTest<DeltaTest2, Steensgaard, RegionAwareMemoryNodeProvider>(ValidateDeltaTest2SteensgaardRegionAware);
+
+  ValidateTest<DeltaTest3, Steensgaard, AgnosticMemoryNodeProvider>(ValidateDeltaTest3SteensgaardAgnostic);
+  ValidateTest<DeltaTest3, Steensgaard, RegionAwareMemoryNodeProvider>(ValidateDeltaTest3SteensgaardRegionAware);
 
   ValidateTest<ImportTest, Steensgaard, AgnosticMemoryNodeProvider>(ValidateImportTestSteensgaardAgnostic);
   ValidateTest<ImportTest, Steensgaard, RegionAwareMemoryNodeProvider>(ValidateImportTestSteensgaardRegionAware);
