@@ -98,4 +98,4 @@ test()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/ir/operators/test-lambda", test)
+JLM_UNIT_TEST_REGISTER("libjlm/ir/operators/TestLambda", test)
