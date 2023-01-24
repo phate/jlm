@@ -2,5 +2,5 @@ TESTS += \
 	libjlm/ir/operators/TestCall \
 	libjlm/ir/operators/test-ConstantFP \
 	libjlm/ir/operators/test-delta \
-	libjlm/ir/operators/test-lambda \
+	libjlm/ir/operators/TestLambda \
 	libjlm/ir/operators/TestPhi \
