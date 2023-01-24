@@ -11,91 +11,108 @@
 #include <jlm/ir/operators/lambda.hpp>
 
 static void
-test_argument_iterators()
+TestArgumentIterators()
 {
-	using namespace jlm;
+  using namespace jlm;
 
-	valuetype vt;
-	RvsdgModule rm(filepath(""), "", "");
+  valuetype vt;
+  RvsdgModule rvsdgModule(filepath(""), "", "");
 
-	{
-		FunctionType ft({&vt}, {&vt});
+  {
+    FunctionType functionType({&vt}, {&vt});
 
-		auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage, {});
-		lambda->finalize({lambda->fctargument(0)});
+    auto lambda = lambda::node::create(
+      rvsdgModule.Rvsdg().root(),
+      functionType,
+      "f",
+      linkage::external_linkage);
+    lambda->finalize({lambda->fctargument(0)});
 
-		std::vector<jive::argument*> args;
-		for (auto & argument : lambda->fctarguments())
-			args.push_back(&argument);
+    std::vector<jive::argument*> functionArguments;
+    for (auto & argument : lambda->fctarguments())
+      functionArguments.push_back(&argument);
 
-		assert(args.size() == 1 && args[0] == lambda->fctargument(0));
-	}
+    assert(functionArguments.size() == 1
+           && functionArguments[0] == lambda->fctargument(0));
+  }
 
-	{
-		FunctionType ft({}, {&vt});
+  {
+    FunctionType functionType({}, {&vt});
 
-		auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage, {});
+    auto lambda = lambda::node::create(
+      rvsdgModule.Rvsdg().root(),
+      functionType,
+      "f",
+      linkage::external_linkage);
 
-		auto nullary = create_testop(lambda->subregion(), {}, {&vt});
+    auto nullaryNode = create_testop(lambda->subregion(), {}, {&vt});
 
-		lambda->finalize({nullary});
+    lambda->finalize({nullaryNode});
 
-		assert(lambda->nfctarguments() == 0);
-	}
+    assert(lambda->nfctarguments() == 0);
+  }
 
-	{
-		auto i = rm.Rvsdg().add_import({vt, ""});
+  {
+    auto rvsdgImport = rvsdgModule.Rvsdg().add_import({vt, ""});
 
-		FunctionType ft({&vt, &vt, &vt}, {&vt, &vt});
+    FunctionType functionType({&vt, &vt, &vt}, {&vt, &vt});
 
-		auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage, {});
+    auto lambda = lambda::node::create(
+      rvsdgModule.Rvsdg().root(),
+      functionType,
+      "f",
+      linkage::external_linkage);
 
-		auto cv = lambda->add_ctxvar(i);
+    auto cv = lambda->add_ctxvar(rvsdgImport);
 
-		lambda->finalize({lambda->fctargument(0), cv});
+    lambda->finalize({lambda->fctargument(0), cv});
 
-		std::vector<jive::argument*> args;
-		for (auto & argument : lambda->fctarguments())
-			args.push_back(&argument);
+    std::vector<jive::argument*> functionArguments;
+    for (auto & argument : lambda->fctarguments())
+      functionArguments.push_back(&argument);
 
-		assert(args.size() == 3);
-		assert(args[0] == lambda->fctargument(0));
-		assert(args[1] == lambda->fctargument(1));
-		assert(args[2] == lambda->fctargument(2));
-	}
+    assert(functionArguments.size() == 3);
+    assert(functionArguments[0] == lambda->fctargument(0));
+    assert(functionArguments[1] == lambda->fctargument(1));
+    assert(functionArguments[2] == lambda->fctargument(2));
+  }
 }
 
 static void
-test_invalid_operand_region()
+TestInvalidOperandRegion()
 {
-	using namespace jlm;
+  using namespace jlm;
 
-	valuetype vt;
-	FunctionType fcttype({}, {&vt});
+  valuetype vt;
+  FunctionType functionType({}, {&vt});
 
-	auto module = RvsdgModule::Create(filepath(""), "", "");
-	auto graph = &module->Rvsdg();
+  auto rvsdgModule = RvsdgModule::Create(filepath(""), "", "");
+  auto rvsdg = &rvsdgModule->Rvsdg();
 
-	auto fct1 = lambda::node::create(graph->root(), fcttype, "fct1", linkage::external_linkage);
-	auto result = create_testop(graph->root(), {}, {&vt})[0];
+  auto lambdaNode = lambda::node::create(
+    rvsdg->root(),
+    functionType,
+    "f",
+    linkage::external_linkage);
+  auto result = create_testop(rvsdg->root(), {}, {&vt})[0];
 
-	bool invalid_region_error_caught = false;
-	try {
-		fct1->finalize({result});
-	} catch (jlm::error&) {
-		invalid_region_error_caught = true;
-	}
+  bool invalidRegionErrorCaught = false;
+  try {
+    lambdaNode->finalize({result});
+  } catch (jlm::error&) {
+    invalidRegionErrorCaught = true;
+  }
 
-	assert(invalid_region_error_caught);
+  assert(invalidRegionErrorCaught);
 }
 
 static int
-test()
+Test()
 {
-	test_argument_iterators();
-	test_invalid_operand_region();
+  TestArgumentIterators();
+  TestInvalidOperandRegion();
 
-	return 0;
+  return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/ir/operators/TestLambda", test)
+JLM_UNIT_TEST_REGISTER("libjlm/ir/operators/TestLambda", Test)
