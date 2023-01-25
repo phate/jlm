@@ -374,8 +374,8 @@ TestIndirectCall()
      * Validate function four
      */
     {
-      auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda_four).Size();
-      auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda_four).Size();
+      auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaFour()).Size();
+      auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaFour()).Size();
 
       assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
       assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
@@ -385,8 +385,8 @@ TestIndirectCall()
      * Validate function three
      */
     {
-      auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda_three).Size();
-      auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda_three).Size();
+      auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaThree()).Size();
+      auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaThree()).Size();
 
       assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
       assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
@@ -396,8 +396,8 @@ TestIndirectCall()
      * Validate function indcall
      */
     {
-      auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda_indcall).Size();
-      auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda_indcall).Size();
+      auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaIndcall()).Size();
+      auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaIndcall()).Size();
 
       assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
       assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
@@ -413,8 +413,8 @@ TestIndirectCall()
      * Validate function test
      */
     {
-      auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda_test).Size();
-      auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda_test).Size();
+      auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaTest()).Size();
+      auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaTest()).Size();
 
       assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
       assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());

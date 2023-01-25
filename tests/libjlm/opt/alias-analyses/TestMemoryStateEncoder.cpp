@@ -599,9 +599,9 @@ ValidateIndirectCallTest1SteensgaardAgnostic(const IndirectCallTest1 & test)
 
   /* validate indcall function */
   {
-    assert(test.lambda_indcall->subregion()->nnodes() == 5);
+    assert(test.GetLambdaIndcall().subregion()->nnodes() == 5);
 
-    auto lambda_exit_mux = jive::node_output::node(test.lambda_indcall->fctresult(2)->origin());
+    auto lambda_exit_mux = jive::node_output::node(test.GetLambdaIndcall().fctresult(2)->origin());
     assert(is<aa::LambdaExitMemStateOperator>(*lambda_exit_mux, 5, 1));
 
     auto call_exit_mux = jive::node_output::node(lambda_exit_mux->input(0)->origin());
@@ -619,9 +619,9 @@ ValidateIndirectCallTest1SteensgaardAgnostic(const IndirectCallTest1 & test)
 
   /* validate test function */
   {
-    assert(test.lambda_test->subregion()->nnodes() == 9);
+    assert(test.GetLambdaTest().subregion()->nnodes() == 9);
 
-    auto lambda_exit_mux = jive::node_output::node(test.lambda_test->fctresult(2)->origin());
+    auto lambda_exit_mux = jive::node_output::node(test.GetLambdaTest().fctresult(2)->origin());
     assert(is<aa::LambdaExitMemStateOperator>(*lambda_exit_mux, 5, 1));
 
     auto call_exit_mux = jive::node_output::node(lambda_exit_mux->input(0)->origin());
@@ -654,9 +654,9 @@ ValidateIndirectCallTest1SteensgaardRegionAware(const IndirectCallTest1 & test)
 
   /* validate indcall function */
   {
-    assert(test.lambda_indcall->subregion()->nnodes() == 5);
+    assert(test.GetLambdaIndcall().subregion()->nnodes() == 5);
 
-    auto lambdaExitMerge = jive::node_output::node(test.lambda_indcall->fctresult(2)->origin());
+    auto lambdaExitMerge = jive::node_output::node(test.GetLambdaIndcall().fctresult(2)->origin());
     assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 1, 1));
 
     auto callExitSplit = jive::node_output::node(lambdaExitMerge->input(0)->origin());
@@ -674,9 +674,9 @@ ValidateIndirectCallTest1SteensgaardRegionAware(const IndirectCallTest1 & test)
 
   /* validate test function */
   {
-    assert(test.lambda_test->subregion()->nnodes() == 9);
+    assert(test.GetLambdaTest().subregion()->nnodes() == 9);
 
-    auto lambdaExitMerge = jive::node_output::node(test.lambda_test->fctresult(2)->origin());
+    auto lambdaExitMerge = jive::node_output::node(test.GetLambdaTest().fctresult(2)->origin());
     assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 1, 1));
 
     auto callExitSplit = jive::node_output::node(lambdaExitMerge->input(0)->origin());

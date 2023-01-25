@@ -435,10 +435,10 @@ TestIndirectCall()
      * Validate function four
      */
     {
-      auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda_four);
+      auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaFour());
       AssertMemoryNodes(lambdaEntryNodes, {});
 
-      auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda_four);
+      auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaFour());
       AssertMemoryNodes(lambdaExitNodes, {});
     }
 
@@ -446,10 +446,10 @@ TestIndirectCall()
      * Validate function three
      */
     {
-      auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda_three);
+      auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaThree());
       AssertMemoryNodes(lambdaEntryNodes, {});
 
-      auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda_three);
+      auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaThree());
       AssertMemoryNodes(lambdaExitNodes, {});
     }
 
@@ -457,7 +457,7 @@ TestIndirectCall()
      * Validate function indcall
      */
     {
-      auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda_indcall);
+      auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaIndcall());
       AssertMemoryNodes(lambdaEntryNodes, {&externalMemoryNode});
 
       auto & callEntryNodes = provisioning.GetCallEntryNodes(test.CallIndcall());
@@ -466,7 +466,7 @@ TestIndirectCall()
       auto & callExitNodes = provisioning.GetCallExitNodes(test.CallIndcall());
       AssertMemoryNodes(callExitNodes, {&externalMemoryNode});
 
-      auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda_indcall);
+      auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaIndcall());
       AssertMemoryNodes(lambdaExitNodes, {&externalMemoryNode});
     }
 
@@ -474,7 +474,7 @@ TestIndirectCall()
      * Validate function test
      */
     {
-      auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda_test);
+      auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaTest());
       AssertMemoryNodes(lambdaEntryNodes, {&externalMemoryNode});
 
       auto & callFourEntryNodes = provisioning.GetCallEntryNodes(test.CallFour());
@@ -489,7 +489,7 @@ TestIndirectCall()
       auto & callThreeExitNodes = provisioning.GetCallExitNodes(test.CallThree());
       AssertMemoryNodes(callThreeExitNodes, {&externalMemoryNode});
 
-      auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda_test);
+      auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaTest());
       AssertMemoryNodes(lambdaExitNodes, {&externalMemoryNode});
     }
   };

@@ -865,10 +865,10 @@ IndirectCallTest1::SetupRvsdg()
   /*
    * Assign
    */
-  this->lambda_three = fctthree->node();
-  this->lambda_four = fctfour->node();
-  this->lambda_indcall = fctindcall->node();
-  this->lambda_test = fcttest->node();
+  this->LambdaThree_ = fctthree->node();
+  this->LambdaFour_ = fctfour->node();
+  this->LambdaIndcall_ = fctindcall->node();
+  this->LambdaTest_ = fcttest->node();
 
   this->CallIndcall_ = callIndirectFunction;
   this->CallThree_ = callFunctionThree;

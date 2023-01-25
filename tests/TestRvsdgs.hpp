@@ -516,10 +516,29 @@ public:
     return *CallFour_;
   }
 
-	jlm::lambda::node * lambda_three;
-	jlm::lambda::node * lambda_four;
-	jlm::lambda::node * lambda_indcall;
-	jlm::lambda::node * lambda_test;
+  [[nodiscard]] const jlm::lambda::node &
+  GetLambdaThree() const noexcept
+  {
+    return *LambdaThree_;
+  }
+
+  [[nodiscard]] const jlm::lambda::node &
+  GetLambdaFour() const noexcept
+  {
+    return *LambdaFour_;
+  }
+
+  [[nodiscard]] const jlm::lambda::node &
+  GetLambdaIndcall() const noexcept
+  {
+    return *LambdaIndcall_;
+  }
+
+  [[nodiscard]] const jlm::lambda::node &
+  GetLambdaTest() const noexcept
+  {
+    return *LambdaTest_;
+  }
 
 private:
   std::unique_ptr<jlm::RvsdgModule>
@@ -528,6 +547,11 @@ private:
 	jlm::CallNode * CallIndcall_;
 	jlm::CallNode * CallThree_;
 	jlm::CallNode * CallFour_;
+
+  jlm::lambda::node * LambdaThree_;
+  jlm::lambda::node * LambdaFour_;
+  jlm::lambda::node * LambdaIndcall_;
+  jlm::lambda::node * LambdaTest_;
 };
 
 /** \brief IndirectCallTest2 class
