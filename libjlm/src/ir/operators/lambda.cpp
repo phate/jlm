@@ -244,18 +244,6 @@ node::copy(jive::region * region, jive::substitution_map & smap) const
   return lambda;
 }
 
-/*
-	FIXME: This function should be in jive.
-*/
-static jive::node *
-input_node(const jive::input * input)
-{
-  using namespace jive;
-
-  auto i = dynamic_cast<const jive::node_input*>(input);
-  return i ? i->node() : nullptr;
-}
-
 bool
 node::direct_calls(std::vector<jive::simple_node*> * calls) const
 {
