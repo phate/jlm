@@ -49,8 +49,8 @@ template <class Test, class Analysis, class Provider> static void
 ValidateTest(std::function<void(const Test&)> validateEncoding)
 {
   static_assert(
-    std::is_base_of<AliasAnalysisTest, Test>::value,
-    "Test should be derived from AliasAnalysisTest class.");
+    std::is_base_of<RvsdgTest, Test>::value,
+    "Test should be derived from RvsdgTest class.");
 
   static_assert(
     std::is_base_of<jlm::aa::AliasAnalysis, Analysis>::value,

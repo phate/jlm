@@ -9,9 +9,9 @@
 #include <jlm/ir/operators.hpp>
 
 /**
-* \brief AliasAnalysisTest class
+* \brief RvsdgTest class
 */
-class AliasAnalysisTest {
+class RvsdgTest {
 public:
 	jlm::RvsdgModule &
 	module()
@@ -59,7 +59,7 @@ private:
 * It uses a single memory state to sequentialize the respective memory
 * operations.
 */
-class StoreTest1 final : public AliasAnalysisTest {
+class StoreTest1 final : public RvsdgTest {
 private:
 	std::unique_ptr<jlm::RvsdgModule>
 	SetupRvsdg() override;
@@ -96,7 +96,7 @@ public:
 * It uses a single memory state to sequentialize the respective memory
 * operations.
 */
-class StoreTest2 final : public AliasAnalysisTest {
+class StoreTest2 final : public RvsdgTest {
 private:
 	std::unique_ptr<jlm::RvsdgModule>
 	SetupRvsdg() override;
@@ -129,7 +129,7 @@ public:
 * It uses a single memory state to sequentialize the respective memory
 * operations.
 */
-class LoadTest1 final : public AliasAnalysisTest {
+class LoadTest1 final : public RvsdgTest {
 private:
 	std::unique_ptr<jlm::RvsdgModule>
 	SetupRvsdg() override;
@@ -162,7 +162,7 @@ public:
 * It uses a single memory state to sequentialize the respective memory
 * operations.
 */
-class LoadTest2 final : public AliasAnalysisTest {
+class LoadTest2 final : public RvsdgTest {
 private:
 	std::unique_ptr<jlm::RvsdgModule>
 	SetupRvsdg() override;
@@ -197,7 +197,7 @@ public:
 * It uses a single memory state to sequentialize the respective memory
 * operations.
 */
-class LoadFromUndefTest final : public AliasAnalysisTest {
+class LoadFromUndefTest final : public RvsdgTest {
 private:
   std::unique_ptr<jlm::RvsdgModule>
   SetupRvsdg() override;
@@ -239,7 +239,7 @@ private:
 * It uses a single memory state to sequentialize the respective memory
 * operations.
 */
-class GetElementPtrTest final : public AliasAnalysisTest {
+class GetElementPtrTest final : public RvsdgTest {
 private:
 	std::unique_ptr<jlm::RvsdgModule>
 	SetupRvsdg() override;
@@ -262,7 +262,7 @@ public:
 *   }
 * \endcode
 */
-class BitCastTest final : public AliasAnalysisTest {
+class BitCastTest final : public RvsdgTest {
 private:
 	std::unique_ptr<jlm::RvsdgModule>
 	SetupRvsdg() override;
@@ -293,7 +293,7 @@ public:
 *
 * It uses a single memory state to sequentialize the respective memory operations.
 */
-class Bits2PtrTest final : public AliasAnalysisTest {
+class Bits2PtrTest final : public RvsdgTest {
 private:
   std::unique_ptr<jlm::RvsdgModule>
 	SetupRvsdg() override;
@@ -318,7 +318,7 @@ public:
 *   }
 * \endcode
 */
-class ConstantPointerNullTest final : public AliasAnalysisTest {
+class ConstantPointerNullTest final : public RvsdgTest {
 private:
 	std::unique_ptr<jlm::RvsdgModule>
 	SetupRvsdg() override;
@@ -357,7 +357,7 @@ public:
 * It uses a single memory state to sequentialize the respective memory
 * operations within each function.
 */
-class CallTest1 final : public AliasAnalysisTest {
+class CallTest1 final : public RvsdgTest {
 private:
 	std::unique_ptr<jlm::RvsdgModule>
 	SetupRvsdg() override;
@@ -419,7 +419,7 @@ private:
 * It uses a single memory state to sequentialize the respective memory
 * operations within each function.
 */
-class CallTest2 final : public AliasAnalysisTest {
+class CallTest2 final : public RvsdgTest {
 public:
   [[nodiscard]] const jlm::CallNode &
   CallCreate1() const noexcept
@@ -496,7 +496,7 @@ private:
 *	It uses a single memory state to sequentialize the respective memory
 * operations within each function.
 */
-class IndirectCallTest1 final : public AliasAnalysisTest {
+class IndirectCallTest1 final : public RvsdgTest {
 public:
   [[nodiscard]] const jlm::CallNode &
   CallIndcall() const noexcept
@@ -592,7 +592,7 @@ private:
  * It uses a single memory state to sequentialize the respective memory
  * operations within each function.
  */
-class IndirectCallTest2 final : public AliasAnalysisTest {
+class IndirectCallTest2 final : public RvsdgTest {
 public:
   [[nodiscard]] jlm::delta::node &
   GetDeltaG1() const noexcept
@@ -752,7 +752,7 @@ private:
 * It uses a single memory state to sequentialize the respective memory
 * operations.
 */
-class GammaTest final : public AliasAnalysisTest {
+class GammaTest final : public RvsdgTest {
 private:
 	std::unique_ptr<jlm::RvsdgModule>
 	SetupRvsdg() override;
@@ -780,7 +780,7 @@ public:
 * It uses a single memory state to sequentialize the respective memory
 * operations.
 */
-class ThetaTest final : public AliasAnalysisTest {
+class ThetaTest final : public RvsdgTest {
 private:
 	std::unique_ptr<jlm::RvsdgModule>
 	SetupRvsdg() override;
@@ -815,7 +815,7 @@ public:
 * It uses a single memory state to sequentialize the respective memory
 * operations.
 */
-class DeltaTest1 final : public AliasAnalysisTest {
+class DeltaTest1 final : public RvsdgTest {
 public:
   [[nodiscard]] const jlm::CallNode &
   CallG() const noexcept
@@ -863,7 +863,7 @@ private:
 * It uses a single memory state to sequentialize the respective memory
 * operations.
 */
-class DeltaTest2 final : public AliasAnalysisTest {
+class DeltaTest2 final : public RvsdgTest {
 public:
   [[nodiscard]] const jlm::CallNode &
   CallF1() const noexcept
@@ -909,7 +909,7 @@ private:
 * It uses a single memory state to sequentialize the respective memory
 * operations.
 */
-class DeltaTest3 final : public AliasAnalysisTest
+class DeltaTest3 final : public RvsdgTest
 {
 public:
   [[nodiscard]] const jlm::lambda::node &
@@ -981,7 +981,7 @@ private:
 * It uses a single memory state to sequentialize the respective memory
 * operations.
 */
-class ImportTest final : public AliasAnalysisTest {
+class ImportTest final : public RvsdgTest {
 public:
   [[nodiscard]] const jlm::CallNode &
   CallF1() const noexcept
@@ -1033,7 +1033,7 @@ private:
 * It uses a single memory state to sequentialize the respective memory
 * operations.
 */
-class PhiTest1 final : public AliasAnalysisTest {
+class PhiTest1 final : public RvsdgTest {
 public:
   [[nodiscard]] const jlm::CallNode &
   CallFib() const noexcept
@@ -1143,7 +1143,7 @@ private:
  *
  * It uses a single memory state to sequentialize the respective memory operations.
  */
-class PhiTest2 final : public AliasAnalysisTest
+class PhiTest2 final : public RvsdgTest
 {
 public:
   [[nodiscard]] jlm::lambda::node &
@@ -1310,7 +1310,7 @@ private:
  * It uses a single memory state to sequentialize the respective memory
  * operations.
  */
-class ExternalMemoryTest final : public AliasAnalysisTest {
+class ExternalMemoryTest final : public RvsdgTest {
 private:
   std::unique_ptr<jlm::RvsdgModule>
   SetupRvsdg() override;
@@ -1342,7 +1342,7 @@ public:
  *
  * It uses a single memory state to sequentialize the respective memory operations.
  */
-class EscapedMemoryTest1 final : public AliasAnalysisTest {
+class EscapedMemoryTest1 final : public RvsdgTest {
 private:
   std::unique_ptr<jlm::RvsdgModule>
   SetupRvsdg() override;
@@ -1390,7 +1390,7 @@ public:
  *
  * It uses a single memory state to sequentialize the respective memory operations.
  */
-class EscapedMemoryTest2 final : public AliasAnalysisTest {
+class EscapedMemoryTest2 final : public RvsdgTest {
 private:
   std::unique_ptr<jlm::RvsdgModule>
   SetupRvsdg() override;
@@ -1429,7 +1429,7 @@ public:
  *
  * It uses a single memory state to sequentialize the respective memory operations.
  */
-class EscapedMemoryTest3 final : public AliasAnalysisTest {
+class EscapedMemoryTest3 final : public RvsdgTest {
 private:
   std::unique_ptr<jlm::RvsdgModule>
   SetupRvsdg() override;
@@ -1473,7 +1473,7 @@ public:
  *
  * It uses a single memory state to sequentialize the respective memory operations.
  */
-class MemcpyTest final : public AliasAnalysisTest
+class MemcpyTest final : public RvsdgTest
 {
 public:
   [[nodiscard]] const jlm::lambda::node &
