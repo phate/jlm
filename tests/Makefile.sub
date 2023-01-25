@@ -4,11 +4,11 @@ include $(JLM_ROOT)/tests/libjive/Makefile.sub
 include $(JLM_ROOT)/tests/libjlm/Makefile.sub
 
 TEST_SOURCES = \
+	tests/AliasAnalysesTests.cpp \
 	tests/test-operation.cpp \
 	tests/test-registry.cpp \
 	tests/test-runner.cpp \
 	tests/test-types.cpp \
-	tests/libjlm/opt/alias-analyses/AliasAnalysesTests.cpp \
 	$(patsubst %, tests/%.cpp, $(TESTS))
 
 $(JLM_BUILD)/tests/test-runner: jive-debug libjlm-debug
