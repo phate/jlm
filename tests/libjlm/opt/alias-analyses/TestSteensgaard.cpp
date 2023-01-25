@@ -478,21 +478,21 @@ TestIndirectCall()
     assert(ptg.NumImportNodes() == 0);
     assert(ptg.NumRegisterNodes() == 8);
 
-    auto & lambda_three = ptg.GetLambdaNode(*test.lambda_three);
-    auto & lambda_three_out = ptg.GetRegisterNode(*test.lambda_three->output());
+    auto & lambda_three = ptg.GetLambdaNode(test.GetLambdaThree());
+    auto & lambda_three_out = ptg.GetRegisterNode(*test.GetLambdaThree().output());
 
-    auto & lambda_four = ptg.GetLambdaNode(*test.lambda_four);
-    auto & lambda_four_out = ptg.GetRegisterNode(*test.lambda_four->output());
+    auto & lambda_four = ptg.GetLambdaNode(test.GetLambdaFour());
+    auto & lambda_four_out = ptg.GetRegisterNode(*test.GetLambdaFour().output());
 
-    auto & lambda_indcall = ptg.GetLambdaNode(*test.lambda_indcall);
-    auto & lambda_indcall_out = ptg.GetRegisterNode(*test.lambda_indcall->output());
-    auto & lambda_indcall_arg = ptg.GetRegisterNode(*test.lambda_indcall->fctargument(0));
+    auto & lambda_indcall = ptg.GetLambdaNode(test.GetLambdaIndcall());
+    auto & lambda_indcall_out = ptg.GetRegisterNode(*test.GetLambdaIndcall().output());
+    auto & lambda_indcall_arg = ptg.GetRegisterNode(*test.GetLambdaIndcall().fctargument(0));
 
-    auto & lambda_test = ptg.GetLambdaNode(*test.lambda_test);
-    auto & lambda_test_out = ptg.GetRegisterNode(*test.lambda_test->output());
-    auto & lambda_test_cv0 = ptg.GetRegisterNode(*test.lambda_test->cvargument(0));
-    auto & lambda_test_cv1 = ptg.GetRegisterNode(*test.lambda_test->cvargument(1));
-    auto & lambda_test_cv2 = ptg.GetRegisterNode(*test.lambda_test->cvargument(2));
+    auto & lambda_test = ptg.GetLambdaNode(test.GetLambdaTest());
+    auto & lambda_test_out = ptg.GetRegisterNode(*test.GetLambdaTest().output());
+    auto & lambda_test_cv0 = ptg.GetRegisterNode(*test.GetLambdaTest().cvargument(0));
+    auto & lambda_test_cv1 = ptg.GetRegisterNode(*test.GetLambdaTest().cvargument(1));
+    auto & lambda_test_cv2 = ptg.GetRegisterNode(*test.GetLambdaTest().cvargument(2));
 
     assertTargets(lambda_three_out, {&lambda_three, &lambda_four});
 
