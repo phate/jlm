@@ -72,6 +72,15 @@ input::divert_to(jive::output * new_origin)
 	on_input_change(this, old_origin, new_origin);
 }
 
+jive::node*
+input::GetNode(const jive::input &input) noexcept
+{
+  auto nodeInput = dynamic_cast<const jive::node_input*>(&input);
+  return nodeInput
+         ? nodeInput->node()
+         : nullptr;
+}
+
 /* output */
 
 output::~output() noexcept

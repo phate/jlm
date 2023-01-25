@@ -98,6 +98,15 @@ public:
 		port_ = port.copy();
 	}
 
+  /**
+   * Retrieve the associated node from \p input if \p input is derived from jive::node_input.
+   *
+   * @param input The input from which to retrieve the node.
+   * @return The node associated with \p input if input is derived from jive::node_input, otherwise nullptr.
+   */
+  [[nodiscard]] static jive::node *
+  GetNode(const jive::input & input) noexcept;
+
   template <class T>
   class iterator
   {
