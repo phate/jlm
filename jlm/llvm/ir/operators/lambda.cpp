@@ -323,6 +323,101 @@ node::direct_calls(std::vector<jlm::rvsdg::simple_node*> * calls) const
   return has_only_direct_calls;
 }
 
+std::unique_ptr<node::CallSummary>
+node::ComputeCallSummary() const
+{
+  std::deque<rvsdg::input*> worklist;
+  worklist.insert(worklist.end(), output()->begin(), output()->end());
+
+  std::vector<CallNode*> directCalls;
+  rvsdg::result * rvsdgExport = nullptr;
+  std::vector<rvsdg::simple_input*> otherUsers;
+
+  while (!worklist.empty()) {
+    auto input = worklist.front();
+    worklist.pop_front();
+
+    if (auto cvinput = dynamic_cast<lambda::cvinput*>(input)) {
+      auto argument = cvinput->argument();
+      worklist.insert(worklist.end(), argument->begin(), argument->end());
+      continue;
+    }
+
+    if (auto gamma_input = dynamic_cast<rvsdg::gamma_input*>(input)) {
+      for (auto & argument : *gamma_input)
+        worklist.insert(worklist.end(), argument.begin(), argument.end());
+      continue;
+    }
+
+    if (auto result = is_gamma_result(input)) {
+      auto output = result->output();
+      worklist.insert(worklist.end(), output->begin(), output->end());
+      continue;
+    }
+
+    if (auto theta_input = dynamic_cast<rvsdg::theta_input*>(input)) {
+      auto argument = theta_input->argument();
+      worklist.insert(worklist.end(), argument->begin(), argument->end());
+      continue;
+    }
+
+    if (auto result = is_theta_result(input)) {
+      auto output = result->output();
+      worklist.insert(worklist.end(), output->begin(), output->end());
+      continue;
+    }
+
+    if (auto cvinput = dynamic_cast<phi::cvinput*>(input)) {
+      auto argument = cvinput->argument();
+      worklist.insert(worklist.end(), argument->begin(), argument->end());
+      continue;
+    }
+
+    if (auto rvresult = dynamic_cast<phi::rvresult*>(input)) {
+      auto argument = rvresult->argument();
+      worklist.insert(worklist.end(), argument->begin(), argument->end());
+
+      auto output = rvresult->output();
+      worklist.insert(worklist.end(), output->begin(), output->end());
+      continue;
+    }
+
+    if (auto cvinput = dynamic_cast<delta::cvinput*>(input)) {
+      auto argument = cvinput->arguments.first();
+      worklist.insert(worklist.end(), argument->begin(), argument->end());
+      continue;
+    }
+
+    auto inputNode = rvsdg::input::GetNode(*input);
+    if (is<CallOperation>(inputNode) && input == inputNode->input(0)) {
+      directCalls.emplace_back(util::AssertedCast<CallNode>(inputNode));
+      continue;
+    }
+
+    auto result = dynamic_cast<rvsdg::result*>(input);
+    if (result != nullptr
+        && input->region() == graph()->root())
+    {
+      rvsdgExport = result;
+      continue;
+    }
+
+    auto simpleInput = dynamic_cast<rvsdg::simple_input*>(input);
+    if (simpleInput != nullptr)
+    {
+      otherUsers.emplace_back(simpleInput);
+      continue;
+    }
+
+    JLM_UNREACHABLE("This should have never happened!");
+  }
+
+  return CallSummary::Create(
+    rvsdgExport,
+    std::move(directCalls),
+    std::move(otherUsers));
+}
+
 /* lambda context variable input class */
 
 cvinput::~cvinput()
