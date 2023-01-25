@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "AliasAnalysesTests.hpp"
+#include "TestRvsdgs.hpp"
 
 std::unique_ptr<jlm::RvsdgModule>
 StoreTest1::SetupRvsdg()
