@@ -271,6 +271,7 @@ JlmOptCommand::ToString(const Optimization & optimization)
   static std::unordered_map<Optimization, const char*>
     map({
           {Optimization::AASteensgaardAgnostic,     "--AASteensgaardAgnostic"},
+          {Optimization::AASteensgaardRegionAware,  "--AASteensgaardRegionAware"},
           {Optimization::CommonNodeElimination,     "--cne"},
           {Optimization::DeadNodeElimination,       "--dne"},
           {Optimization::FunctionInlining,          "--iln"},
