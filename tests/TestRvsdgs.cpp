@@ -1143,6 +1143,93 @@ IndirectCallTest2::SetupRvsdg()
 }
 
 std::unique_ptr<jlm::RvsdgModule>
+ExternalCallTest::SetupRvsdg()
+{
+  using namespace jlm;
+
+  auto rvsdgModule = RvsdgModule::Create(filepath(""), "", "");
+  auto rvsdg = &rvsdgModule->Rvsdg();
+
+  auto nf = rvsdg->node_normal_form(typeid(jive::operation));
+  nf->set_mutable(false);
+
+  auto SetupFunctionGDeclaration = [&]()
+  {
+    PointerType p8(jive::bit8);
+    PointerType p32(jive::bit32);
+    iostatetype iOStateType;
+    MemoryStateType memoryStateType;
+    loopstatetype loopStateType;
+    FunctionType functionType(
+      {&p8, &p8, &iOStateType, &memoryStateType, &loopStateType},
+      {&p32, &iOStateType, &memoryStateType, &loopStateType});
+
+    return rvsdg->add_import(impport(
+      PointerType(functionType),
+      "g",
+      linkage::external_linkage));
+  };
+
+  auto SetupFunctionF = [&](jive::argument * functionG)
+  {
+    PointerType p8(jive::bit8);
+    PointerType p32(jive::bit32);
+    iostatetype iOStateType;
+    MemoryStateType memoryStateType;
+    loopstatetype loopStateType;
+    FunctionType functionType(
+      {&p8, &p8, &iOStateType, &memoryStateType, &loopStateType},
+      {&p32, &iOStateType, &memoryStateType, &loopStateType});
+
+    auto lambda = lambda::node::create(
+      rvsdg->root(),
+      functionType,
+      "f",
+      linkage::external_linkage);
+    auto pathArgument = lambda->fctargument(0);
+    auto modeArgument = lambda->fctargument(1);
+    auto iOStateArgument = lambda->fctargument(2);
+    auto memoryStateArgument = lambda->fctargument(3);
+    auto loopStateArgument = lambda->fctargument(4);
+
+    auto functionGCv = lambda->add_ctxvar(functionG);
+
+    auto size = jive::create_bitconstant(lambda->subregion(), 32, 4);
+
+    auto allocaPath = alloca_op::create(p8, size, 4);
+    auto allocaMode = alloca_op::create(p8, size, 4);
+
+    auto mergePath = MemStateMergeOperator::Create({allocaPath[1], memoryStateArgument});
+    auto mergeMode = MemStateMergeOperator::Create(std::vector<jive::output *>({allocaMode[1], mergePath}));
+
+    auto storePath = StoreNode::Create(allocaPath[0], pathArgument, {mergeMode}, 4);
+    auto storeMode = StoreNode::Create(allocaMode[0], modeArgument, {storePath[0]}, 4);
+
+    auto loadPath = LoadNode::Create(allocaPath[0], storeMode, 4);
+    auto loadMode = LoadNode::Create(allocaMode[0], {loadPath[1]}, 4);
+
+    auto callGResults = CallNode::Create(
+      functionGCv,
+      {loadPath[0], loadMode[0], iOStateArgument, loadMode[1], loopStateArgument});
+
+    lambda->finalize(callGResults);
+    rvsdg->add_export(lambda->output(), {PointerType(lambda->type()), "f"});
+
+    return std::make_tuple(
+      lambda,
+      AssertedCast<CallNode>(jive::node_output::node(callGResults[0])));
+  };
+
+  auto externalFunction = SetupFunctionGDeclaration();
+  auto [lambdaF, callG] = SetupFunctionF(externalFunction);
+
+  this->LambdaF_ = lambdaF;
+  this->CallG_ = callG;
+
+  return rvsdgModule;
+}
+
+std::unique_ptr<jlm::RvsdgModule>
 GammaTest::SetupRvsdg()
 {
   using namespace jlm;

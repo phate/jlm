@@ -754,6 +754,46 @@ private:
   jive::simple_node * AllocaPz_;
 };
 
+/** \brief ExternalCallTest
+ *
+ * This function sets up an RVSDG representing the following program:
+ *
+ * \code{.c}
+ *   int*
+ *   g(const char * path, const char * mode);
+ *
+ *   int*
+ *   f(const char * path, const char * mode)
+ *   {
+ *     return g(path, mode);
+ *   }
+ * \endcode
+ *
+ * It uses a single memory state to sequentialize the respective memory operations within each function.
+ */
+class ExternalCallTest final : public RvsdgTest
+{
+public:
+  [[nodiscard]] const jlm::lambda::node &
+  LambdaF() const noexcept
+  {
+    return *LambdaF_;
+  }
+
+  [[nodiscard]] const jlm::CallNode &
+  CallG() const noexcept
+  {
+    return *CallG_;
+  }
+private:
+  std::unique_ptr<jlm::RvsdgModule>
+  SetupRvsdg() override;
+
+  jlm::lambda::node * LambdaF_;
+
+  jlm::CallNode * CallG_;
+};
+
 /** \brief GammaTest class
 *
 * This function sets up an RVSDG representing the following function:
