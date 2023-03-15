@@ -1023,17 +1023,15 @@ Steensgaard::AnalyzeCall(const CallNode & callNode)
     /*
       FIXME: What about varargs
     */
-    for (size_t n = 1; n < callNode.NumArguments(); n++) {
+    for (size_t n = 1; n < callNode.NumArguments(); n++)
+    {
       auto & callArgument = *callNode.input(n)->origin();
 
-      if (!is<PointerType>(callArgument.type()))
-        continue;
-
-      auto & callArgumentLocation = LocationSet_.FindOrInsertRegisterLocation(
-        callArgument,
-        PointsToFlags::PointsToNone);
-      auto & registerLocation = Location::CastTo<RegisterLocation>(callArgumentLocation);
-      registerLocation.SetIsEscapingModule(true);
+      if (is<PointerType>(callArgument.type()))
+      {
+        auto registerLocation = LocationSet_.LookupRegisterLocation(callArgument);
+        registerLocation->SetIsEscapingModule(true);
+      }
     }
 
     for (size_t n = 0; n < callNode.NumResults(); n++) {

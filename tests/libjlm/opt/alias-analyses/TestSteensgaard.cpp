@@ -551,6 +551,40 @@ TestIndirectCall2()
 }
 
 static void
+TestExternalCall()
+{
+  auto validatePointsToGraph = [](
+    const jlm::aa::PointsToGraph & pointsToGraph,
+    const ExternalCallTest & test)
+  {
+    assert(pointsToGraph.NumAllocaNodes() == 2);
+    assert(pointsToGraph.NumLambdaNodes() == 1);
+    assert(pointsToGraph.NumImportNodes() == 1);
+    assert(pointsToGraph.NumRegisterNodes() == 10);
+
+    auto & lambdaF = pointsToGraph.GetLambdaNode(test.LambdaF());
+    auto & lambdaFArgument0 = pointsToGraph.GetRegisterNode(*test.LambdaF().fctargument(0));
+    auto & lambdaFArgument1 = pointsToGraph.GetRegisterNode(*test.LambdaF().fctargument(1));
+
+    auto & callResult = pointsToGraph.GetRegisterNode(*test.CallG().Result(0));
+
+    auto & externalMemory = pointsToGraph.GetExternalMemoryNode();
+
+    assertTargets(lambdaFArgument0, {&lambdaF, &externalMemory});
+    assertTargets(lambdaFArgument1, {&lambdaF, &externalMemory});
+    assertTargets(callResult, {&lambdaF, &externalMemory});
+  };
+
+  ExternalCallTest test;
+  // jive::view(test.graph().root(), stdout);
+
+  auto pointsToGraph = RunSteensgaard(test.module());
+  // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph) << std::flush;
+
+  validatePointsToGraph(*pointsToGraph, test);
+}
+
+static void
 TestGamma()
 {
   auto ValidatePointsToGraph = [](const jlm::aa::PointsToGraph & pointsToGraph, const GammaTest & test)
@@ -1034,6 +1068,7 @@ test()
   TestCall2();
   TestIndirectCall();
   TestIndirectCall2();
+  TestExternalCall();
 
   TestGamma();
 
