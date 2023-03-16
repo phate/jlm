@@ -347,6 +347,14 @@ public:
     return strfmt(jive::node_output::node(Output_)->operation().debug_string(), ":", index);
   }
 
+  [[nodiscard]] static bool
+  IsEscapingModule(const Location & location) noexcept
+  {
+      auto registerLocation = dynamic_cast<const RegisterLocation*>(&location);
+      return registerLocation
+             && registerLocation->IsEscapingModule();
+  }
+
   static std::unique_ptr<RegisterLocation>
   Create(
     const jive::output & output,
@@ -740,21 +748,13 @@ LocationSet::ToDot() const
 {
   auto dot_node = [](const DisjointLocationSet::set & set)
   {
-    auto IsEscapingModule = [](const Location & location)
-    {
-      if (auto registerLocation = &Location::CastTo<const RegisterLocation>(location))
-        return registerLocation->IsEscapingModule();
-
-      return false;
-    };
-
     auto rootLocation = set.value();
 
     std::string setLabel;
     for (auto & location : set) {
       auto unknownLabel = location->PointsToUnknownMemory() ? "{U}" : "";
       auto pointsToEscapedMemoryLabel = location->PointsToEscapedMemory() ? "{E}" : "";
-      auto escapesModuleLabel = IsEscapingModule(*location) ? "{EscapesModule}" : "";
+      auto escapesModuleLabel = RegisterLocation::IsEscapingModule(*location) ? "{EscapesModule}" : "";
       auto pointsToLabel = strfmt("{pt:", (intptr_t) location->GetPointsTo(), "}");
       auto locationLabel = strfmt((intptr_t)location, " : ", location->DebugString());
 
@@ -1625,13 +1625,6 @@ Steensgaard::ConstructPointsToGraph(const LocationSet & locationSets)
     JLM_UNREACHABLE("Unhandled location type.");
   };
 
-  auto IsEscapingModule = [](const Location & location)
-  {
-    auto registerLocation = dynamic_cast<const RegisterLocation*>(&location);
-    return registerLocation
-           && registerLocation->IsEscapingModule();
-  };
-
   /*
    * We marked all register locations that escape the module throughout the analysis using
    * RegisterLocation::SetIsEscapingModule(). This function uses these as starting point for computing all module
@@ -1706,7 +1699,7 @@ Steensgaard::ConstructPointsToGraph(const LocationSet & locationSets)
       if (auto memoryNode = dynamic_cast<PointsToGraph::MemoryNode*>(pointsToGraphNode))
         memoryNodeMap[&locationSet].push_back(memoryNode);
 
-      if (IsEscapingModule(*location))
+      if (RegisterLocation::IsEscapingModule(*location))
         moduleEscapingRegisterLocations.insert(AssertedCast<RegisterLocation>(location));
     }
   }
