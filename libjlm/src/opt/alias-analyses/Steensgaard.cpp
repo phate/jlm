@@ -232,18 +232,6 @@ public:
     PointsToFlags_ = pointsToFlags;
   }
 
-  template<class T> static const T &
-  CastTo(const Location & location) noexcept
-  {
-    return *dynamic_cast<const T*>(&location);
-  }
-
-  template<class T> static T &
-  CastTo(Location & location) noexcept
-  {
-    return *dynamic_cast<T*>(&location);
-  }
-
 private:
   PointsToFlags PointsToFlags_;
   Location * PointsTo_;
