@@ -1517,7 +1517,7 @@ public:
 	~ConstantStruct();
 
 	inline
-	ConstantStruct(const structtype & type)
+	ConstantStruct(const StructType & type)
 	: simple_op(create_srcports(type), {type})
 	{}
 
@@ -1530,10 +1530,10 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
-	inline const structtype &
+	const StructType &
 	type() const noexcept
 	{
-		return *static_cast<const structtype*>(&result(0).type());
+		return *static_cast<const StructType*>(&result(0).type());
 	}
 
 	static std::unique_ptr<jlm::tac>
@@ -1541,7 +1541,7 @@ public:
 		const std::vector<const variable*> & elements,
 		const jive::type & type)
 	{
-		auto rt = dynamic_cast<const structtype*>(&type);
+		auto rt = dynamic_cast<const StructType*>(&type);
 		if (!rt) throw jlm::error("expected struct type.");
 
 		ConstantStruct op(*rt);
@@ -1550,11 +1550,11 @@ public:
 
 private:
 	static inline std::vector<jive::port>
-	create_srcports(const structtype & type)
+	create_srcports(const StructType & type)
 	{
 		std::vector<jive::port> ports;
-		for (size_t n = 0; n < type.declaration()->nelements(); n++)
-			ports.push_back(type.declaration()->element(n));
+		for (size_t n = 0; n < type.GetDeclaration().nelements(); n++)
+			ports.push_back(type.GetDeclaration().element(n));
 
 		return ports;
 	}
@@ -1825,7 +1825,7 @@ public:
   ConstantAggregateZero(const jive::type & type)
     : simple_op({}, {type})
   {
-    auto st = dynamic_cast<const structtype*>(&type);
+    auto st = dynamic_cast<const StructType*>(&type);
     auto at = dynamic_cast<const arraytype*>(&type);
     auto vt = dynamic_cast<const vectortype*>(&type);
     if (!st && !at && !vt)
@@ -2347,11 +2347,11 @@ private:
 	{
 		const jive::type * type = &aggtype;
 		for (const auto & index : indices) {
-			if (auto st = dynamic_cast<const structtype*>(type)) {
-				if (index >= st->declaration()->nelements())
+			if (auto st = dynamic_cast<const StructType*>(type)) {
+				if (index >= st->GetDeclaration().nelements())
 					throw jlm::error("extractvalue index out of bound.");
 
-				type = &st->declaration()->element(index);
+				type = &st->GetDeclaration().element(index);
 			} else if (auto at = dynamic_cast<const arraytype*>(type)) {
 				if (index >= at->nelements())
 					throw jlm::error("extractvalue index out of bound.");

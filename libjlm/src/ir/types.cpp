@@ -228,31 +228,29 @@ varargtype::copy() const
 	return std::unique_ptr<jive::type>(new jlm::varargtype(*this));
 }
 
-/* struct type */
-
-structtype::~structtype()
-{}
+StructType::~StructType()
+= default;
 
 bool
-structtype::operator==(const jive::type & other) const noexcept
+StructType::operator==(const jive::type & other) const noexcept
 {
-	auto type = dynamic_cast<const structtype*>(&other);
-	return type
-	    && type->packed_ == packed_
-	    && type->name_ == name_
-	    && type->declaration_ == declaration_;
+  auto type = dynamic_cast<const StructType*>(&other);
+  return type
+         && type->IsPacked_ == IsPacked_
+         && type->Name_ == Name_
+         && &type->Declaration_ == &Declaration_;
 }
 
 std::string
-structtype::debug_string() const
+StructType::debug_string() const
 {
-	return "struct";
+  return "struct";
 }
 
 std::unique_ptr<jive::type>
-structtype::copy() const
+StructType::copy() const
 {
-	return std::unique_ptr<jive::type>(new structtype(*this));
+  return std::unique_ptr<jive::type>(new StructType(*this));
 }
 
 /* vectortype */

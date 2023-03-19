@@ -96,23 +96,23 @@ convert(const fptype & type, context & ctx)
 }
 
 static llvm::Type *
-convert(const structtype & type, context & ctx)
+convert(const StructType & type, context & ctx)
 {
-	auto decl = type.declaration();
+	auto & decl = type.GetDeclaration();
 
-	if (auto st = ctx.structtype(decl))
+	if (auto st = ctx.structtype(&decl))
 		return st;
 
 	auto st = llvm::StructType::create(ctx.llvm_module().getContext());
-	ctx.add_structtype(decl, st);
+	ctx.add_structtype(&decl, st);
 
 	std::vector<llvm::Type*> elements;
-	for (size_t n = 0; n < decl->nelements(); n++)
-		elements.push_back(convert_type(decl->element(n), ctx));
+	for (size_t n = 0; n < decl.nelements(); n++)
+		elements.push_back(convert_type(decl.element(n), ctx));
 
-	if (type.has_name())
-		st->setName(type.name());
-	st->setBody(elements, type.packed());
+	if (type.HasName())
+		st->setName(type.GetName());
+	st->setBody(elements, type.IsPacked());
 
 	return st;
 }
@@ -151,7 +151,7 @@ convert_type(const jive::type & type, context & ctx)
           {typeid(arraytype),          convert<arraytype>},
           {typeid(jive::ctltype),      convert<jive::ctltype>},
           {typeid(fptype),             convert<fptype>},
-          {typeid(structtype),         convert<structtype>},
+          {typeid(StructType),         convert<StructType>},
           {typeid(fixedvectortype),    convert<fixedvectortype>},
           {typeid(scalablevectortype), convert<scalablevectortype>}
         });

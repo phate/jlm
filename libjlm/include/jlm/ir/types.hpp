@@ -12,6 +12,7 @@
 #include <jlm/common.hpp>
 #include <jlm/util/iterator_range.hpp>
 
+#include <memory>
 #include <vector>
 
 namespace jlm {
@@ -358,80 +359,96 @@ create_varargtype()
 	return std::unique_ptr<jive::type>(new varargtype());
 }
 
-/* struct type */
-
-class structtype final : public jive::valuetype {
+/** \brief StructType class
+ *
+ * This class is the equivalent of LLVM's StructType class.
+ */
+class StructType final : public jive::valuetype {
 public:
-	virtual
-	~structtype();
+  ~StructType() override;
 
-	inline
-	structtype(
-		bool packed,
-		const jive::rcddeclaration * dcl)
-	: jive::valuetype()
-	, packed_(packed)
-	, declaration_(dcl)
-	{}
+  StructType(
+    bool isPacked,
+    const jive::rcddeclaration & declaration)
+    : jive::valuetype()
+    , IsPacked_(isPacked)
+    , Declaration_(declaration)
+  {}
 
-	inline
-	structtype(
-		const std::string & name,
-		bool packed,
-		const jive::rcddeclaration * dcl)
-	: jive::valuetype()
-	, packed_(packed)
-	, name_(name)
-	, declaration_(dcl)
-	{}
+  StructType(
+    std::string name,
+    bool isPacked,
+    const jive::rcddeclaration & declaration)
+    : jive::valuetype()
+    , IsPacked_(isPacked)
+    , Name_(std::move(name))
+    , Declaration_(declaration)
+  {}
 
-	structtype(const structtype &) = default;
+  StructType(const StructType &) = default;
 
-	structtype(structtype &&) = delete;
+  StructType(StructType &&) = delete;
 
-	structtype &
-	operator=(const structtype &) = delete;
+  StructType &
+  operator=(const StructType &) = delete;
 
-	structtype &
-	operator=(structtype &&) = delete;
+  StructType &
+  operator=(StructType &&) = delete;
 
-	inline bool
-	has_name() const noexcept
-	{
-		return !name_.empty();
-	}
+  [[nodiscard]] bool
+  HasName() const noexcept
+  {
+    return !Name_.empty();
+  }
 
-	inline const std::string &
-	name() const noexcept
-	{
-		return name_;
-	}
+  [[nodiscard]] const std::string &
+  GetName() const noexcept
+  {
+    return Name_;
+  }
 
-	inline bool
-	packed() const noexcept
-	{
-		return packed_;
-	}
+  [[nodiscard]] bool
+  IsPacked() const noexcept
+  {
+    return IsPacked_;
+  }
 
-	inline const jive::rcddeclaration *
-	declaration() const noexcept
-	{
-		return declaration_;
-	}
+  [[nodiscard]] const jive::rcddeclaration &
+  GetDeclaration() const noexcept
+  {
+    return Declaration_;
+  }
 
-	virtual bool
-	operator==(const jive::type & other) const noexcept override;
+  bool
+  operator==(const jive::type & other) const noexcept override;
 
-	virtual std::unique_ptr<jive::type>
-	copy() const override;
+  [[nodiscard]] std::unique_ptr<jive::type>
+  copy() const override;
 
-	virtual std::string
-	debug_string() const override;
+  [[nodiscard]] std::string
+  debug_string() const override;
+
+  static std::unique_ptr<StructType>
+  Create(
+    const std::string & name,
+    bool isPacked,
+    const jive::rcddeclaration & declaration)
+  {
+    return std::make_unique<StructType>(name, isPacked, declaration);
+  }
+
+  static std::unique_ptr<StructType>
+  Create(
+    bool isPacked,
+    const jive::rcddeclaration & declaration)
+  {
+    return std::make_unique<StructType>(isPacked, declaration);
+  }
 
 private:
-	bool packed_;
-	std::string name_;
-	const jive::rcddeclaration * declaration_;
+  bool IsPacked_;
+  std::string Name_;
+  const jive::rcddeclaration & Declaration_;
 };
 
 /* vector type */
@@ -641,10 +658,10 @@ IsOrContains(const jive::type & type)
   if (auto arrayType = dynamic_cast<const arraytype*>(&type))
     return IsOrContains<ELEMENTYPE>(arrayType->element_type());
 
-  if (auto structType = dynamic_cast<const structtype*>(&type)) {
-    auto structDeclaration = structType->declaration();
-    for (size_t n = 0; n < structDeclaration->nelements(); n++)
-      return IsOrContains<ELEMENTYPE>(structDeclaration->element(n));
+  if (auto structType = dynamic_cast<const StructType*>(&type)) {
+    auto & structDeclaration = structType->GetDeclaration();
+    for (size_t n = 0; n < structDeclaration.nelements(); n++)
+      return IsOrContains<ELEMENTYPE>(structDeclaration.element(n));
 
     return false;
   }

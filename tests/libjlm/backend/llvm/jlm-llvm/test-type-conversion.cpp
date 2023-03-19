@@ -9,7 +9,6 @@
 #include <jlm/backend/llvm/jlm2llvm/context.hpp>
 #include <jlm/backend/llvm/jlm2llvm/type.hpp>
 #include <jlm/ir/ipgraph-module.hpp>
-#include <jlm/ir/types.hpp>
 
 static void
 test_structtype(jlm::jlm2llvm::context & ctx)
@@ -17,7 +16,7 @@ test_structtype(jlm::jlm2llvm::context & ctx)
 	using namespace jlm;
 
 	auto decl1 = jive::rcddeclaration::create({&jive::bit8, &jive::bit32});
-	structtype st1("mystruct", false, decl1.get());
+	StructType st1("mystruct", false, *decl1);
 	auto ct = jlm2llvm::convert_type(st1, ctx);
 
 	assert(ct->getName() == "mystruct");
@@ -27,10 +26,10 @@ test_structtype(jlm::jlm2llvm::context & ctx)
 	assert(ct->getElementType(1)->isIntegerTy(32));
 
 	auto decl2 = jive::rcddeclaration::create({&jive::bit32, &jive::bit8, &jive::bit32});
-	structtype st2(true, decl2.get());
+	StructType st2(true, *decl2);
 	ct = jlm2llvm::convert_type(st2, ctx);
 
-	assert(ct->getName() == "");
+	assert(ct->getName().empty());
 	assert(ct->isPacked());
 	assert(ct->getNumElements() == 3);
 }

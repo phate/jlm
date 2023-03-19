@@ -5,8 +5,6 @@
 
 #include <jlm/common.hpp>
 #include <jlm/frontend/llvm/LlvmConversionContext.hpp>
-#include <jlm/frontend/llvm/LlvmTypeConversion.hpp>
-#include <jlm/ir/types.hpp>
 
 #include <jive/types/bitstring/type.hpp>
 
@@ -94,18 +92,18 @@ convert_fp_type(const llvm::Type * t, context & ctx)
 	return std::unique_ptr<jive::valuetype>(new jlm::fptype(map[t->getTypeID()]));
 }
 
-static inline std::unique_ptr<jive::valuetype>
+static std::unique_ptr<jive::valuetype>
 convert_struct_type(const llvm::Type * t, context & ctx)
 {
-	JLM_ASSERT(t->isStructTy());
-	auto type = static_cast<const llvm::StructType*>(t);
+  JLM_ASSERT(t->isStructTy());
+  auto type = static_cast<const llvm::StructType*>(t);
 
-	auto packed = type->isPacked();
-	auto dcl = ctx.lookup_declaration(type);
-	if (type->hasName())
-		return std::unique_ptr<jive::valuetype>(new structtype(type->getName().str(), packed, dcl));
+  auto isPacked = type->isPacked();
+  auto & declaration = *ctx.lookup_declaration(type);
 
-	return std::unique_ptr<jive::valuetype>(new structtype(packed, dcl));
+  return type->hasName()
+         ? StructType::Create(type->getName().str(), isPacked, declaration)
+         : StructType::Create(isPacked, declaration);
 }
 
 static std::unique_ptr<jive::valuetype>

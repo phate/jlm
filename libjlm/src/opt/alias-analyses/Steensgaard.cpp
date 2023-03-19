@@ -868,17 +868,17 @@ Steensgaard::AnalyzeAlloca(const jive::simple_node & node)
   std::function<bool(const jive::valuetype&)>
     IsVaListAlloca = [&](const jive::valuetype & type)
   {
-    auto structType = dynamic_cast<const structtype*>(&type);
+    auto structType = dynamic_cast<const StructType*>(&type);
 
     if (structType != nullptr
-        && structType->name() == "struct.__va_list_tag")
+        && structType->GetName() == "struct.__va_list_tag")
       return true;
 
     if (structType != nullptr) {
-      auto declaration = structType->declaration();
+      auto & declaration = structType->GetDeclaration();
 
-      for (size_t n = 0; n < declaration->nelements(); n++) {
-        if (IsVaListAlloca(declaration->element(n)))
+      for (size_t n = 0; n < declaration.nelements(); n++) {
+        if (IsVaListAlloca(declaration.element(n)))
           return true;
       }
     }
