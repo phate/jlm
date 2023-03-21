@@ -1047,6 +1047,33 @@ TestMemcpy()
   ValidatePointsToGraph(*pointsToGraph, test);
 }
 
+static void
+TestLinkedList()
+{
+  auto validatePointsToGraph = [](
+    const jlm::aa::PointsToGraph & pointsToGraph,
+    const LinkedListTest & test)
+  {
+    assert(pointsToGraph.NumAllocaNodes() == 1);
+    assert(pointsToGraph.NumDeltaNodes() == 1);
+    assert(pointsToGraph.NumLambdaNodes() == 1);
+
+    auto & allocaNode = pointsToGraph.GetAllocaNode(test.GetAlloca());
+    auto & deltaMyListNode = pointsToGraph.GetDeltaNode(test.GetDeltaMyList());
+
+    assertTargets(allocaNode, {&allocaNode, &deltaMyListNode});
+    assertTargets(deltaMyListNode, {&allocaNode, &deltaMyListNode});
+  };
+
+  LinkedListTest test;
+  // jive::view(test.graph().root(), stdout);
+
+  auto pointsToGraph = RunSteensgaard(test.module());
+  // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
+
+  validatePointsToGraph(*pointsToGraph, test);
+}
+
 static int
 test()
 {
@@ -1088,6 +1115,8 @@ test()
   TestEscapedMemory3();
 
   TestMemcpy();
+
+  TestLinkedList();
 
   return 0;
 }
