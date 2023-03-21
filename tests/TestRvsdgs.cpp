@@ -2961,3 +2961,98 @@ MemcpyTest::SetupRvsdg()
 
   return rvsdgModule;
 }
+
+std::unique_ptr<jlm::RvsdgModule>
+LinkedListTest::SetupRvsdg()
+{
+  using namespace jlm;
+
+  auto rvsdgModule = RvsdgModule::Create(filepath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  auto nf = rvsdg.node_normal_form(typeid(jive::operation));
+  nf->set_mutable(false);
+
+  auto declaration = jive::rcddeclaration::create({});
+  auto structType = StructType::Create("list", false, *declaration);
+  auto pointerType = PointerType::Create(*structType);
+  declaration->append(*pointerType);
+
+  auto SetupDeltaMyList = [&]()
+  {
+    auto delta = delta::node::Create(
+      rvsdg.root(),
+      PointerType(*static_cast<jive::valuetype*>(pointerType.get())),
+      "MyList",
+      linkage::external_linkage,
+      "",
+      false);
+
+    auto constantPointerNullResult = ConstantPointerNullOperation::Create(delta->subregion(), *pointerType);
+
+    auto deltaOutput = delta->finalize(constantPointerNullResult);
+    rvsdg.add_export(deltaOutput, {PointerType(delta->type()), "myList"});
+
+    return deltaOutput;
+  };
+
+  auto SetupFunctionNext = [&](delta::output & myList)
+  {
+    iostatetype iOStateType;
+    MemoryStateType memoryStateType;
+    loopstatetype loopStateType;
+    FunctionType functionType(
+      {&iOStateType, &memoryStateType, &loopStateType},
+      {pointerType.get(), &iOStateType, &memoryStateType, &loopStateType});
+
+    auto lambda = lambda::node::create(
+      rvsdg.root(),
+      functionType,
+      "next",
+      linkage::external_linkage);
+    auto iOStateArgument = lambda->fctargument(0);
+    auto memoryStateArgument = lambda->fctargument(1);
+    auto loopStateArgument = lambda->fctargument(2);
+
+    auto myListArgument = lambda->add_ctxvar(&myList);
+
+    auto zero = jive::create_bitconstant(lambda->subregion(), 32, 0);
+    auto size = jive::create_bitconstant(lambda->subregion(), 32, 4);
+
+    auto alloca = alloca_op::create(*pointerType, size, 4);
+    auto mergedMemoryState = MemStateMergeOperator::Create({alloca[1], memoryStateArgument});
+
+    auto load1 = LoadNode::Create(myListArgument, {mergedMemoryState}, 4);
+    auto store1 = StoreNode::Create(alloca[0], load1[0], {load1[1]}, 4);
+
+    auto load2 = LoadNode::Create(alloca[0], {store1[0]}, 4);
+    auto gep = getelementptr_op::create(
+      load2[0],
+      {zero, zero},
+      PointerType(*static_cast<jive::valuetype*>(pointerType.get())));
+
+    auto load3 = LoadNode::Create(gep, {load2[1]}, 4);
+    auto store2 = StoreNode::Create(alloca[0], load3[0], {load3[1]}, 4);
+
+    auto load4 = LoadNode::Create(alloca[0], {store2[0]}, 4);
+
+    auto lambdaOutput = lambda->finalize({load4[0], iOStateArgument, load4[1], loopStateArgument});
+    rvsdg.add_export(lambdaOutput, {PointerType(lambda->type()), "next"});
+
+    return std::make_tuple(
+      jive::node_output::node(alloca[0]),
+      lambdaOutput);
+  };
+
+  auto deltaMyList = SetupDeltaMyList();
+  auto [alloca, lambdaNext] = SetupFunctionNext(*deltaMyList);
+
+  /*
+   * Assign nodes
+   */
+  this->DeltaMyList_ = deltaMyList->node();
+  this->LambdaNext_ = lambdaNext->node();
+  this->Alloca_ = alloca;
+
+  return rvsdgModule;
+}

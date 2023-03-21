@@ -1590,3 +1590,56 @@ private:
 
   jive::node * Memcpy_;
 };
+
+/** \brief LinkedListTest class
+ *
+ * This class sets up an RVSDG representing the following code snippet:
+ *
+ * \code{.c}
+ *  struct list
+ *  {
+ *    struct list * next;
+ *  } * myList;
+ *
+ *  struct list*
+ *  next()
+ *  {
+ *    struct list * tmp = myList;
+ *    tmp = tmp->next;
+ *    return tmp;
+ *  }
+ * \endcode
+ *
+ * It uses a single memory state to sequentialize the respective memory operations.
+ */
+class LinkedListTest final : public RvsdgTest
+{
+public:
+  [[nodiscard]] const jive::node &
+  GetAlloca() const noexcept
+  {
+    return *Alloca_;
+  }
+
+  [[nodiscard]] const jlm::lambda::node &
+  GetLambdaNext() const noexcept
+  {
+    return *LambdaNext_;
+  }
+
+  [[nodiscard]] const jlm::delta::node &
+  GetDeltaMyList() const noexcept
+  {
+    return *DeltaMyList_;
+  }
+
+private:
+  std::unique_ptr<jlm::RvsdgModule>
+  SetupRvsdg() override;
+
+  jlm::delta::node * DeltaMyList_;
+
+  jlm::lambda::node * LambdaNext_;
+
+  jive::node * Alloca_;
+};
