@@ -202,11 +202,11 @@ public:
     return *AssertedCast<const jive::valuetype>(ElementType_.get());
   }
 
-  static std::unique_ptr<jive::type>
+  static std::unique_ptr<PointerType>
   Create(const jive::type & type)
   {
     auto & valueType = CheckAndExtractType(type);
-    return std::unique_ptr<jive::type>(new PointerType(valueType));
+    return std::make_unique<PointerType>(valueType);
   }
 
 private:
