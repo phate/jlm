@@ -61,11 +61,11 @@ operator&(PointsToFlags lhs, PointsToFlags rhs)
 
 /** \brief LocationSet class
 */
-class LocationSet final {
-
+class LocationSet final
+{
+public:
 	using DisjointLocationSet = typename jlm::disjointset<Location*>;
 
-public:
 	using const_iterator = std::unordered_map<
 	  const jive::output*
 	, Location*

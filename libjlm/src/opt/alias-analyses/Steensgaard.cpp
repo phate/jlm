@@ -1640,12 +1640,22 @@ Steensgaard::ConstructPointsToGraph(const LocationSet & locationSets)
     /*
      * Collect escaping memory nodes.
      */
+    HashSet<const LocationSet::DisjointLocationSet::set*> visitedSets;
     std::unordered_set<PointsToGraph::MemoryNode*> escapedMemoryNodes;
     while (!toVisit.empty()) {
       auto moduleEscapingLocation = *toVisit.begin();
       toVisit.erase(moduleEscapingLocation);
 
       auto & set = locationSets.GetSet(*moduleEscapingLocation);
+      /*
+       * Check if we already visited this set to avoid an endless loop.
+       */
+      if (visitedSets.Contains(&set))
+      {
+        continue;
+      }
+      visitedSets.Insert(&set);
+
       auto & memoryNodes = memoryNodeMap.at(&set);
       for (auto & memoryNode : memoryNodes)
       {
