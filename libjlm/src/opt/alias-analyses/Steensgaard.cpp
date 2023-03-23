@@ -1659,7 +1659,7 @@ Steensgaard::ConstructPointsToGraph(const LocationSet & locationSets)
       auto & memoryNodes = memoryNodeMap.at(&set);
       for (auto & memoryNode : memoryNodes)
       {
-        memoryNode->EscapesModule();
+        memoryNode->MarkAsModuleEscaping();
         escapedMemoryNodes.insert(memoryNode);
       }
 
