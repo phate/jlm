@@ -270,7 +270,7 @@ public:
    *
    * @return A set with all escaped memory nodes.
    *
-   * @see PointsToGraph::MemoryNode::EscapesModule()
+   * @see PointsToGraph::MemoryNode::MarkAsModuleEscaping()
    */
   const HashSet<const PointsToGraph::MemoryNode*> &
   GetEscapedMemoryNodes() const noexcept
@@ -456,7 +456,7 @@ public:
    * Marks this memory node as escaping the module.
    */
   void
-  EscapesModule()
+  MarkAsModuleEscaping()
   {
     Graph().AddEscapedMemoryNode(*this);
   }
