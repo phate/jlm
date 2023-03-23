@@ -727,12 +727,6 @@ public:
 		return cmp_;
 	}
 
-	const jive::type &
-	pointee_type() const noexcept
-	{
-		return static_cast<const PointerType *>(&argument(0).type())->GetElementType();
-	}
-
 	static std::unique_ptr<jlm::tac>
 	create(
 		const jlm::cmp & cmp,
