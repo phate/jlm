@@ -544,7 +544,7 @@ convert_load_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & c
 	auto instruction = static_cast<llvm::LoadInst*>(i);
 
 	/* FIXME: volatile */
-	auto alignment = instruction->getAlignment();
+	auto alignment = instruction->getAlign().value();
 	auto address = ConvertValue(instruction->getPointerOperand(), tacs, ctx);
   auto loadedType = ConvertType(instruction->getType(), ctx);
 
@@ -564,7 +564,7 @@ convert_store_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & 
 	auto instruction = static_cast<llvm::StoreInst*>(i);
 
 	/* FIXME: volatile */
-	auto alignment = instruction->getAlignment();
+	auto alignment = instruction->getAlign().value();
 	auto address = ConvertValue(instruction->getPointerOperand(), tacs, ctx);
 	auto value = ConvertValue(instruction->getValueOperand(), tacs, ctx);
 
@@ -837,8 +837,9 @@ convert_alloca_instruction(llvm::Instruction * instruction, tacsvector_t & tacs,
 	auto memstate = ctx.memory_state();
 	auto size = ConvertValue(i->getArraySize(), tacs, ctx);
 	auto vtype = ConvertType(i->getAllocatedType(), ctx);
+  auto alignment = i->getAlign().value();
 
-	tacs.push_back(alloca_op::create(*vtype, size, i->getAlignment()));
+	tacs.push_back(alloca_op::create(*vtype, size, alignment));
 	auto result = tacs.back()->result(0);
 	auto astate = tacs.back()->result(1);
 
