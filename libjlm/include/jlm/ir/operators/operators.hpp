@@ -525,12 +525,6 @@ public:
 		return static_cast<const jive::bittype*>(&argument(0).type())->nbits();
 	}
 
-	inline const jive::valuetype &
-	pointee_type() const
-	{
-		return static_cast<const PointerType *>(&result(0).type())->GetElementType();
-	}
-
 	static std::unique_ptr<jlm::tac>
 	create(
 		const variable * argument,
