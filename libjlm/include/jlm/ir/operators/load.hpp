@@ -139,10 +139,12 @@ public:
   ~LoadOperation() noexcept override;
 
   LoadOperation(
-    const PointerType & pointerType,
+    const jive::valuetype & loadedType,
     size_t numStates,
     size_t alignment)
-    : simple_op(CreatePorts(pointerType, numStates), CreatePorts(pointerType.GetElementType(), numStates))
+    : simple_op(
+      CreateOperandPorts(loadedType, numStates),
+      CreateResultPorts(loadedType, numStates))
     , alignment_(alignment)
   {}
 
@@ -159,6 +161,12 @@ public:
   GetPointerType() const noexcept
   {
     return *AssertedCast<const PointerType>(&argument(0).type());
+  }
+
+  [[nodiscard]] const jive::valuetype &
+  GetLoadedType() const noexcept
+  {
+    return *AssertedCast<const jive::valuetype>(&result(0).type());
   }
 
   [[nodiscard]] size_t
@@ -183,28 +191,40 @@ public:
   Create(
     const variable * address,
     const variable * state,
+    const jive::valuetype & loadedType,
     size_t alignment)
   {
-    auto & pointerType = CheckAndConvertType(address->type());
+    CheckAddressType(address->type());
 
-    LoadOperation operation(pointerType, 1, alignment);
+    LoadOperation operation(loadedType, 1, alignment);
     return tac::create(operation, {address, state});
   }
 
 private:
-  static const PointerType &
-  CheckAndConvertType(const jive::type & type)
+  static void
+  CheckAddressType(const jive::type & addressType)
   {
-    if (auto pointerType = dynamic_cast<const PointerType*>(&type))
-      return *pointerType;
-
-    throw error("Expected pointer type.");
+    if (!is<PointerType>(addressType))
+      throw error("Expected pointer type.");
   }
 
   static std::vector<jive::port>
-  CreatePorts(const jive::valuetype & valueType, size_t numStates)
+  CreateOperandPorts(
+    const jive::valuetype & loadedType,
+    size_t numStates)
   {
-    std::vector<jive::port> ports(1, {valueType});
+    std::vector<jive::port> ports(1, {PointerType(loadedType)});
+    std::vector<jive::port> states(numStates, {MemoryStateType::Create()});
+    ports.insert(ports.end(), states.begin(), states.end());
+    return ports;
+  }
+
+  static std::vector<jive::port>
+  CreateResultPorts(
+    const jive::valuetype & loadedType,
+    size_t numStates)
+  {
+    std::vector<jive::port> ports(1, {loadedType});
     std::vector<jive::port> states(numStates, {MemoryStateType::Create()});
     ports.insert(ports.end(), states.begin(), states.end());
     return ports;
@@ -318,14 +338,15 @@ public:
   Create(
     jive::output * address,
     const std::vector<jive::output*> & states,
+    const jive::valuetype & loadedType,
     size_t alignment)
   {
-    auto & pointerType = CheckAndConvertType(address->type());
+    CheckAddressType(address->type());
 
     std::vector<jive::output*> operands({address});
     operands.insert(operands.end(), states.begin(), states.end());
 
-    LoadOperation loadOperation(pointerType, states.size(), alignment);
+    LoadOperation loadOperation(loadedType, states.size(), alignment);
     return jive::outputs(new LoadNode(
       *address->region(),
       loadOperation,
@@ -345,13 +366,11 @@ public:
   }
 
 private:
-  static const PointerType &
-  CheckAndConvertType(const jive::type & type)
+  static void
+  CheckAddressType(const jive::type & addressType)
   {
-    if (auto pointerType = dynamic_cast<const PointerType*>(&type))
-      return *pointerType;
-
-    throw error("Expected pointer type.");
+    if (!is<PointerType>(addressType))
+      throw error("Expected pointer type.");
   }
 };
 

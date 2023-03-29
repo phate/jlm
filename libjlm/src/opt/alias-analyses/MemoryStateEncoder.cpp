@@ -598,7 +598,11 @@ MemoryStateEncoder::EncodeLoad(const LoadNode & loadNode)
   auto oldResult = loadNode.GetValueOutput();
   auto inStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
 
-  auto outputs = LoadNode::Create(address, inStates, loadOperation.GetAlignment());
+  auto outputs = LoadNode::Create(
+    address,
+    inStates,
+    loadOperation.GetLoadedType(),
+    loadOperation.GetAlignment());
   oldResult->divert_users(outputs[0]);
 
   StateMap::MemoryNodeStatePair::ReplaceStates(

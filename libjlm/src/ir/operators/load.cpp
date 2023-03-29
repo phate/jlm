@@ -253,7 +253,11 @@ perform_load_mux_reduction(
 {
 	auto memStateMergeNode = jive::node_output::node(operands[1]);
 
-	auto ld = LoadNode::Create(operands[0], jive::operands(memStateMergeNode), op.GetAlignment());
+	auto ld = LoadNode::Create(
+    operands[0],
+    jive::operands(memStateMergeNode),
+    op.GetLoadedType(),
+    op.GetAlignment());
 
 	std::vector<jive::output*> states = {std::next(ld.begin()), ld.end()};
 	auto mx = MemStateMergeOperator::Create(states);
@@ -278,7 +282,11 @@ perform_load_alloca_reduction(
 			otherstates.push_back(operands[n]);
 	}
 
-	auto ld = LoadNode::Create(operands[0], loadstates, op.GetAlignment());
+	auto ld = LoadNode::Create(
+    operands[0],
+    loadstates,
+    op.GetLoadedType(),
+    op.GetAlignment());
 
 	std::vector<jive::output*> results(1, ld[0]);
 	results.insert(results.end(), std::next(ld.begin()), ld.end());
@@ -303,7 +311,11 @@ perform_load_store_state_reduction(
 		else new_loadstates.push_back(state);
 	}
 
-	auto ld = LoadNode::Create(operands[0], new_loadstates, op.GetAlignment());
+	auto ld = LoadNode::Create(
+    operands[0],
+    new_loadstates,
+    op.GetLoadedType(),
+    op.GetAlignment());
 
 	results[0] = ld[0];
 	for (size_t n = 1, s = 1; n < results.size(); n++) {
@@ -332,7 +344,11 @@ perform_multiple_origin_reduction(
 		seen_state.insert(state);
 	}
 
-	auto ld = LoadNode::Create(operands[0], new_loadstates, op.GetAlignment());
+	auto ld = LoadNode::Create(
+    operands[0],
+    new_loadstates,
+    op.GetLoadedType(),
+    op.GetAlignment());
 
 	results[0] = ld[0];
 	for (size_t n = 1, s = 1; n < results.size(); n++) {
@@ -406,7 +422,11 @@ perform_load_load_state_reduction(
 	for (size_t n = 1; n < operands.size(); n++)
 		ldstates.push_back(reduce_state(n-1, operands[n], mxstates));
 
-	auto ld = LoadNode::Create(operands[0], ldstates, op.GetAlignment());
+	auto ld = LoadNode::Create(
+    operands[0],
+    ldstates,
+    op.GetLoadedType(),
+    op.GetAlignment());
 	for (size_t n = 0; n < mxstates.size(); n++) {
 		auto & states = mxstates[n];
 		if (!states.empty()) {
