@@ -210,6 +210,7 @@ private:
 		const attributeset & attributes)
 	: ipgraph_node(clg)
 	, type_(type)
+  , FunctionType_(type)
 	, name_(name)
 	, linkage_(linkage)
 	, attributes_(attributes)
@@ -228,7 +229,7 @@ public:
 	const FunctionType &
 	fcttype() const noexcept
 	{
-		return *static_cast<const FunctionType*>(&type_.GetElementType());
+		return FunctionType_;
 	}
 
 	virtual const jlm::linkage &
@@ -279,6 +280,7 @@ public:
 
 private:
 	PointerType type_;
+  FunctionType FunctionType_;
 	std::string name_;
 	jlm::linkage linkage_;
 	attributeset attributes_;

@@ -525,12 +525,6 @@ public:
 		return static_cast<const jive::bittype*>(&argument(0).type())->nbits();
 	}
 
-	inline const jive::valuetype &
-	pointee_type() const
-	{
-		return static_cast<const PointerType *>(&result(0).type())->GetElementType();
-	}
-
 	static std::unique_ptr<jlm::tac>
 	create(
 		const variable * argument,
@@ -609,12 +603,6 @@ public:
 	nbits() const noexcept
 	{
 		return static_cast<const jive::bittype*>(&result(0).type())->nbits();
-	}
-
-	inline const jive::valuetype &
-	pointee_type() const noexcept
-	{
-		return static_cast<const PointerType *>(&argument(0).type())->GetElementType();
 	}
 
 	static std::unique_ptr<jlm::tac>
@@ -737,12 +725,6 @@ public:
 	cmp() const noexcept
 	{
 		return cmp_;
-	}
-
-	const jive::type &
-	pointee_type() const noexcept
-	{
-		return static_cast<const PointerType *>(&argument(0).type())->GetElementType();
 	}
 
 	static std::unique_ptr<jlm::tac>

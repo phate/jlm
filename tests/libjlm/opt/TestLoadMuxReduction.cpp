@@ -31,7 +31,7 @@ test_load_mux_reduction()
   auto s3 = graph.add_import({mt, "s3"});
 
   auto mux = MemStateMergeOperator::Create({s1, s2, s3});
-  auto ld = LoadNode::Create(a, {mux}, 4);
+  auto ld = LoadNode::Create(a, {mux}, vt, 4);
 
   auto ex1 = graph.add_export(ld[0], {ld[0]->type(), "v"});
   auto ex2 = graph.add_export(ld[1], {ld[1]->type(), "s"});
@@ -83,7 +83,7 @@ test_load_mux_reduction2()
   auto s2 = graph.add_import({mt, "s2"});
 
   auto merge = MemStateMergeOperator::Create(std::vector<jive::output*>{s1, s2});
-  auto ld = LoadNode::Create(a, {merge, merge}, 4);
+  auto ld = LoadNode::Create(a, {merge, merge}, vt, 4);
 
   auto ex1 = graph.add_export(ld[0], {ld[0]->type(), "v"});
   auto ex2 = graph.add_export(ld[1], {ld[1]->type(), "s1"});
