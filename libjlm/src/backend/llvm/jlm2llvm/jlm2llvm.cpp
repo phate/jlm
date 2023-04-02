@@ -445,9 +445,7 @@ convert_ipgraph(const jlm::ipgraph & clg, context & ctx)
 		auto v = jm.variable(&node);
 
 		if (auto dataNode = dynamic_cast<const data_node*>(&node)) {
-			JLM_ASSERT(jive::is<PointerType>(dataNode->type()));
-			auto pt = static_cast<const PointerType*>(&dataNode->type());
-			auto type = convert_type(pt->GetElementType(), ctx);
+			auto type = convert_type(dataNode->GetValueType(), ctx);
 			auto linkage = convert_linkage(dataNode->linkage());
 
 			auto gv = new llvm::GlobalVariable(
