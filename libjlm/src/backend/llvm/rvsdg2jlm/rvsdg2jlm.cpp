@@ -452,7 +452,7 @@ convert_phi_node(const jive::node & node, context & ctx)
 			auto data = data_node::Create(
         ipg,
         d->name(),
-        PointerType(d->type()),
+        d->type(),
         d->linkage(),
         d->Section(),
 				d->constant());
@@ -496,7 +496,7 @@ convert_delta_node(const jive::node & node, context & ctx)
 	auto dnode = data_node::Create(
 		m.ipgraph(),
 		delta->name(),
-		PointerType(delta->type()),
+    delta->type(),
 		delta->linkage(),
     delta->Section(),
 		delta->constant());
@@ -555,7 +555,7 @@ convert_imports(const jive::graph & graph, ipgraph_module & im, context & ctx)
 			auto dnode = data_node::Create(
         ipg,
         name,
-        type,
+        type.GetElementType(),
         import->linkage(),
         "",
         false);

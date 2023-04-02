@@ -26,7 +26,7 @@ test()
 	auto d = data_node::Create(
     im.ipgraph(),
     "d",
-    PointerType(vt),
+    vt,
     linkage::external_linkage,
     "",
     false);

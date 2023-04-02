@@ -428,7 +428,7 @@ declare_globals(llvm::Module & lm, context & ctx)
 	{
 		auto name = gv.getName().str();
 		auto constant = gv.isConstant();
-		auto type = ConvertPointerType(gv.getType(), ctx);
+		auto type = ConvertType(gv.getValueType(), ctx);
 		auto linkage = convert_linkage(gv.getLinkage());
     auto section = gv.getSection().str();
 

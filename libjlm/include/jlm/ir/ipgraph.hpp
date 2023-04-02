@@ -369,7 +369,7 @@ private:
 	data_node(
 		jlm::ipgraph & clg,
 		const std::string & name,
-		const PointerType & type,
+		const jive::valuetype & valueType,
 		const jlm::linkage & linkage,
     std::string section,
 		bool constant)
@@ -378,12 +378,19 @@ private:
 	, name_(name)
   , Section_(std::move(section))
 	, linkage_(linkage)
-	, type_(type.copy())
+	, type_(valueType)
+  , ValueType_(valueType.copy())
 	{}
 
 public:
 	virtual const PointerType &
 	type() const noexcept override;
+
+  [[nodiscard]] const jive::valuetype &
+  GetValueType() const noexcept
+  {
+    return *AssertedCast<jive::valuetype>(ValueType_.get());
+  }
 
 	const std::string &
 	name() const noexcept override;
@@ -418,7 +425,7 @@ public:
 		if (!init)
 			return;
 
-		if (init->value()->type() != type().GetElementType())
+		if (init->value()->type() != GetValueType())
 			throw jlm::error("Invalid type.");
 
 		init_ = std::move(init);
@@ -428,12 +435,12 @@ public:
 	Create(
 		jlm::ipgraph & clg,
 		const std::string & name,
-		const PointerType & type,
+    const jive::valuetype & valueType,
 		const jlm::linkage & linkage,
     std::string section,
 		bool constant)
 	{
-		std::unique_ptr<data_node> node(new data_node(clg, name, type, linkage, std::move(section), constant));
+		std::unique_ptr<data_node> node(new data_node(clg, name, valueType, linkage, std::move(section), constant));
 		auto ptr = node.get();
 		clg.add_node(std::move(node));
 		return ptr;
@@ -444,7 +451,8 @@ private:
 	std::string name_;
   std::string Section_;
 	jlm::linkage linkage_;
-	std::unique_ptr<jive::type> type_;
+	PointerType type_;
+  std::unique_ptr<jive::type> ValueType_;
 	std::unique_ptr<data_node_init> init_;
 };
 
