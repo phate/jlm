@@ -61,18 +61,8 @@ namespace jlm {
 		return false;
 	}
 
-	inline bool
-	is_fct_ptr(jive::input *input) {
-		auto pt = dynamic_cast<const jlm::PointerType *>(&input->type());
-		if (!pt)
-			return false;
-		return dynamic_cast<const FunctionType *>(&pt->GetElementType());
-	}
-
 	const jive::output *
 	trace_call(jive::input *input) {
-		JLM_ASSERT(is_fct_ptr(input));
-
 		auto graph = input->region()->graph();
 
 		auto argument = dynamic_cast<const jive::argument *>(input->origin());
