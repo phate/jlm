@@ -27,7 +27,7 @@ test()
 	RvsdgModule rm(filepath(""), "", "");
 
 	/* setup graph */
-	auto imp = rm.Rvsdg().add_import(impport(pt, "", linkage::external_linkage));
+	auto imp = rm.Rvsdg().add_import(impport(vt, "", linkage::external_linkage));
 
 	phi::builder pb;
 	pb.begin(rm.Rvsdg().root());

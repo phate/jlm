@@ -1180,7 +1180,7 @@ ExternalCallTest::SetupRvsdg()
   auto SetupFunctionGDeclaration = [&]()
   {
     return rvsdg->add_import(impport(
-      PointerType(functionGType),
+      functionGType,
       "g",
       linkage::external_linkage));
   };
@@ -1778,8 +1778,8 @@ ImportTest::SetupRvsdg()
       AssertedCast<CallNode>(jive::node_output::node(callResults[0])));
   };
 
-  auto d1 = graph->add_import(impport(PointerType(jive::bit32), "d1", linkage::external_linkage));
-  auto d2 = graph->add_import(impport(PointerType(jive::bit32), "d2", linkage::external_linkage));
+  auto d1 = graph->add_import(impport(jive::bit32, "d1", linkage::external_linkage));
+  auto d2 = graph->add_import(impport(jive::bit32, "d2", linkage::external_linkage));
 
   auto f1 = SetupF1(d1);
   auto [f2, callF1] = SetupF2(f1, d1, d2);
@@ -2551,7 +2551,7 @@ EscapedMemoryTest2::SetupRvsdg()
   auto SetupExternalFunction1Declaration = [&]()
   {
     return rvsdg->add_import(impport(
-      PointerType(externalFunction1Type),
+      externalFunction1Type,
       "ExternalFunction1",
       linkage::external_linkage));
   };
@@ -2559,7 +2559,7 @@ EscapedMemoryTest2::SetupRvsdg()
   auto SetupExternalFunction2Declaration = [&]()
   {
     return rvsdg->add_import(impport(
-      PointerType(externalFunction2Type),
+      externalFunction2Type,
       "ExternalFunction2",
       linkage::external_linkage));
   };
@@ -2725,7 +2725,7 @@ EscapedMemoryTest3::SetupRvsdg()
   auto SetupExternalFunctionDeclaration = [&]()
   {
     return rvsdg->add_import(impport(
-      PointerType(externalFunctionType),
+      externalFunctionType,
       "externalFunction",
       linkage::external_linkage));
   };

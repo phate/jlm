@@ -1088,7 +1088,10 @@ ConvertFunctionNode(
    * import.
    */
 	if (functionNode.cfg() == nullptr) {
-		jlm::impport port(functionNode.type(), functionNode.name(), functionNode.linkage());
+		jlm::impport port(
+            functionNode.fcttype(),
+            functionNode.name(),
+            functionNode.linkage());
 		return region.graph()->add_import(port);
 	}
 
@@ -1125,7 +1128,10 @@ ConvertDataNode(
      * We have a data node without initialization. Simply add an RVSDG import.
      */
     if (!dataNodeInitialization) {
-      jlm::impport port(dataNode.type(), dataNode.name(), dataNode.linkage());
+      jlm::impport port(
+        dataNode.GetValueType(),
+        dataNode.name(),
+        dataNode.linkage());
       return region.graph()->add_import(port);
     }
 

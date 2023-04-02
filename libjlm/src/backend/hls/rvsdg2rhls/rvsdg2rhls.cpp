@@ -263,7 +263,7 @@ jlm::hls::split_hls_function(jlm::RvsdgModule &rm, const std::string &function_n
             new_ln = change_linkage(new_ln, linkage::external_linkage);
             jive::result::create(rhls->Rvsdg().root(), new_ln->output(), nullptr, new_ln->output()->type());
             // add function as input to rm and remove it
-            impport im(ln->output()->type(), ln->name(), linkage::external_linkage); //TODO: change linkage?
+            impport im(ln->type(), ln->name(), linkage::external_linkage); //TODO: change linkage?
             auto arg = rm.Rvsdg().add_import(im);
             ln->output()->divert_users(arg);
             remove(ln);

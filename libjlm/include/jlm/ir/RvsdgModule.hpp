@@ -9,6 +9,7 @@
 #include <jive/rvsdg/graph.hpp>
 
 #include <jlm/ir/linkage.hpp>
+#include <jlm/ir/types.hpp>
 #include <jlm/util/file.hpp>
 
 namespace jlm {
@@ -20,22 +21,25 @@ public:
 	virtual
 	~impport();
 
-	impport(
-		const jive::type & type
-	, const std::string & name
-	, const jlm::linkage & lnk)
-	: jive::impport(type, name)
-	, linkage_(lnk)
-	{}
+    impport(
+        const jive::valuetype & valueType,
+        const std::string & name,
+        const jlm::linkage & lnk)
+        : jive::impport(PointerType(valueType), name)
+        , linkage_(lnk)
+        , ValueType_(valueType.copy())
+    {}
 
 	impport(const impport & other)
 	: jive::impport(other)
 	, linkage_(other.linkage_)
+    , ValueType_(other.ValueType_->copy())
 	{}
 
 	impport(impport && other)
 	: jive::impport(other)
 	, linkage_(std::move(other.linkage_))
+    , ValueType_(std::move(other.ValueType_))
 	{}
 
 	impport&
@@ -50,6 +54,12 @@ public:
 		return linkage_;
 	}
 
+    [[nodiscard]] const jive::valuetype &
+    GetValueType() const noexcept
+    {
+        return *AssertedCast<jive::valuetype>(ValueType_.get());
+    }
+
 	virtual bool
 	operator==(const port&) const noexcept override;
 
@@ -58,6 +68,7 @@ public:
 
 private:
 	jlm::linkage linkage_;
+    std::unique_ptr<jive::type> ValueType_;
 };
 
 static inline bool
