@@ -84,6 +84,7 @@ test1()
 
     auto callResults = CallNode::Create(
       gammaInputF1->argument(0),
+      f1->node()->type(),
       {gammaInputValue->argument(0), gammaInputIoState->argument(0), gammaInputMemoryState->argument(0),
        gammaInputLoopState->argument(0)});
 
@@ -174,6 +175,7 @@ test2()
 
     auto callResults = CallNode::Create(
       cvi,
+      functionType2,
       {cvf1, iOStateArgument, memoryStateArgument, loopStateArgument});
 
     return lambda->finalize(callResults);

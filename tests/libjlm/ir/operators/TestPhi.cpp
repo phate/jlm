@@ -61,6 +61,7 @@ static int test_main()
 
     auto callResults = CallNode::Create(
       ctxVarF2,
+      f1type,
       {valueArgument, iOStateArgument, memoryStateArgument, loopStateArgument});
 
     return lambda->finalize(callResults);

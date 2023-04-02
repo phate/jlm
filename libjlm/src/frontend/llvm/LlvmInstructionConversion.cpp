@@ -717,7 +717,7 @@ convert_call_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 	if (IsMemcpyCall(i))
 		return convert_memcpy_call(i, tacs, ctx);
 
-	auto ftype = function_type(i);
+	auto ftype = i->getFunctionType();
 
 	auto arguments = create_arguments(i, tacs, ctx);
 	if (ftype->isVarArg())
@@ -727,7 +727,10 @@ convert_call_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 	arguments.push_back(ctx.loop_state());
 
 	auto fctvar = ConvertValue(i->getCalledOperand(), tacs, ctx);
-	auto call = CallOperation::create(fctvar, arguments);
+	auto call = CallOperation::create(
+    fctvar,
+    *ConvertFunctionType(ftype, ctx),
+    arguments);
 
 	auto result = call->result(0);
 	auto iostate = call->result(call->nresults() - 3);

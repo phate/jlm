@@ -22,10 +22,11 @@ class CallOperation final : public jive::simple_op {
 public:
 	~CallOperation() override;
 
-	explicit
-	CallOperation(const FunctionType & functionType)
-	: simple_op(create_srcports(functionType), create_dstports(functionType))
-	{}
+  explicit
+  CallOperation(const FunctionType & functionType)
+    : simple_op(create_srcports(functionType), create_dstports(functionType))
+    , FunctionType_(functionType)
+  {}
 
 	bool
  	operator==(const operation & other) const noexcept override;
@@ -36,8 +37,7 @@ public:
 	[[nodiscard]] const FunctionType &
 	GetFunctionType() const noexcept
 	{
-    auto pointerType = AssertedCast<const PointerType>(&argument(0).type());
-    return *AssertedCast<const FunctionType>(&pointerType->GetElementType());
+    return FunctionType_;
 	}
 
 	[[nodiscard]] std::unique_ptr<jive::operation>
@@ -46,15 +46,12 @@ public:
 	static std::unique_ptr<tac>
 	create(
 		const variable * function,
+    const FunctionType & functionType,
 		const std::vector<const variable*> & arguments)
 	{
-		auto at = dynamic_cast<const PointerType*>(&function->type());
-		if (!at) throw jlm::error("Expected pointer type.");
+    CheckFunctionInputType(function->type());
 
-		auto ft = dynamic_cast<const FunctionType*>(&at->GetElementType());
-		if (!ft) throw jlm::error("Expected function type.");
-
-		CallOperation op(*ft);
+		CallOperation op(functionType);
 		std::vector<const variable*> operands({function});
 		operands.insert(operands.end(), arguments.begin(), arguments.end());
 		return tac::create(op, operands);
@@ -80,6 +77,15 @@ private:
 
 		return ports;
 	}
+
+  static void
+  CheckFunctionInputType(const jive::type & type)
+  {
+    if (!is<PointerType>(type))
+      throw jlm::error("Expected pointer type.");
+  }
+
+  FunctionType FunctionType_;
 };
 
 /** \brief Call node classifier
@@ -294,10 +300,9 @@ public:
   [[nodiscard]] jive::input *
   GetFunctionInput() const noexcept
   {
-    auto function = input(0);
-    auto pointerType = AssertedCast<const PointerType>(&function->type());
-    JLM_ASSERT(is<FunctionType>(pointerType->GetElementType()));
-    return function;
+    auto functionInput = input(0);
+    JLM_ASSERT(is<PointerType>(functionInput->type()));
+    return functionInput;
   }
 
   [[nodiscard]] jive::input *
@@ -351,9 +356,10 @@ public:
   static std::vector<jive::output*>
   Create(
     jive::output * function,
+    const FunctionType & functionType,
     const std::vector<jive::output*> & arguments)
   {
-    auto functionType = ExtractFunctionType(function);
+    CheckFunctionInputType(function->type());
     CheckFunctionType(functionType);
 
     CallOperation callOperation(functionType);
@@ -405,18 +411,11 @@ public:
   ClassifyCall(const CallNode & callNode);
 
 private:
-  [[nodiscard]] static const FunctionType &
-  ExtractFunctionType(const jive::output * function)
+  static void
+  CheckFunctionInputType(const jive::type & type)
   {
-    auto pointerType = dynamic_cast<const PointerType*>(&function->type());
-    if (!pointerType)
+    if (!is<PointerType>(type))
       throw jlm::error("Expected pointer type.");
-
-    auto functionType = dynamic_cast<const FunctionType*>(&pointerType->GetElementType());
-    if (!functionType)
-      throw jlm::error("Expected function type.");
-
-    return *functionType;
   }
 
   static void

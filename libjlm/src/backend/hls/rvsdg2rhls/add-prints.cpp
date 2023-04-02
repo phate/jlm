@@ -57,7 +57,10 @@ jlm::hls::convert_prints(jlm::RvsdgModule &rm) {
 	jlm::PointerType ptr(fct);
 	impport imp(ptr, "printnode", linkage::external_linkage);
 	auto printf = graph.add_import(imp);
-	convert_prints(root, printf);
+	convert_prints(
+    root,
+    printf,
+    fct);
 }
 
 jive::output *
@@ -85,11 +88,15 @@ jlm::hls::route_to_region(jive::output * output, jive::region * region)
 }
 
 void
-jlm::hls::convert_prints(jive::region *region, jive::output * printf) {
+jlm::hls::convert_prints(
+  jive::region *region,
+  jive::output * printf,
+  const FunctionType & functionType)
+{
 	for (auto &node : jive::topdown_traverser(region)) {
 		if (auto structnode = dynamic_cast<jive::structural_node *>(node)) {
 			for (size_t n = 0; n < structnode->nsubregions(); n++) {
-				convert_prints(structnode->subregion(n), printf);
+				convert_prints(structnode->subregion(n), printf, functionType);
 			}
 		} else if (auto po = dynamic_cast<const jlm::hls::print_op *>(&(node->operation()))) {
 			auto printf_local = route_to_region(printf, region); //TODO: prevent repetition?
@@ -101,7 +108,7 @@ jlm::hls::convert_prints(jive::region *region, jive::output * printf) {
 				auto op = jlm::zext_op(bt->nbits(), 64);
 				val = jive::simple_node::create_normalized(region, op, {val})[0];
 			}
-			jlm::CallNode::Create(printf_local, {bc, val});
+			jlm::CallNode::Create(printf_local, functionType, {bc, val});
 			node->output(0)->divert_users(node->input(0)->origin());
 			jive::remove(node);
 		}

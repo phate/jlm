@@ -388,6 +388,7 @@ Bits2PtrTest::SetupRvsdg()
 
     auto callResults = CallNode::Create(
       cvbits2ptr,
+      b2p->node()->type(),
       {valueArgument, iOStateArgument, memoryStateArgument, loopStateArgument});
 
     lambda->finalize({callResults[1], callResults[2], callResults[3]});
@@ -565,9 +566,11 @@ CallTest1::SetupRvsdg()
 
     auto callFResults = CallNode::Create(
       cvf,
+      f->type(),
       {x[0], y[0], iOStateArgument, stz[0], loopStateArgument});
     auto callGResults = CallNode::Create(
       cvg,
+      g->type(),
       {z[0], z[0], callFResults[1], callFResults[2], callFResults[3]});
 
     auto sum = jive::bitadd_op::create(32, callFResults[0], callGResults[0]);
@@ -706,16 +709,20 @@ CallTest2::SetupRvsdg()
 
     auto create1 = CallNode::Create(
       create_cv,
+      lambdaCreate->type(),
       {six, iOStateArgument, memoryStateArgument, loopStateArgument});
     auto create2 = CallNode::Create(
       create_cv,
+      lambdaCreate->type(),
       {seven, create1[1], create1[2], create1[3]});
 
     auto destroy1 = CallNode::Create(
       destroy_cv,
+      lambdaDestroy->type(),
       {create1[0], create2[1], create2[2], create2[3]});
     auto destroy2 = CallNode::Create(
       destroy_cv,
+      lambdaDestroy->type(),
       {create2[0], destroy1[0], destroy1[1], destroy1[2]});
 
     lambda->finalize(destroy2);
@@ -808,6 +815,7 @@ IndirectCallTest1::SetupRvsdg()
 
     auto call = CallNode::Create(
       pointerArgument,
+      constantFunctionType,
       {iOStateArgument, memoryStateArgument, loopStateArgument});
 
     auto lambdaOutput = lambda->finalize(call);
@@ -841,9 +849,11 @@ IndirectCallTest1::SetupRvsdg()
 
     auto call_four = CallNode::Create(
       fctindcall_cv,
+      fctindcall->node()->type(),
       {fctfour_cv, iOStateArgument, memoryStateArgument, loopStateArgument});
     auto call_three = CallNode::Create(
       fctindcall_cv,
+      fctindcall->node()->type(),
       {fctthree_cv, call_four[1], call_four[2], call_four[3]});
 
     auto add = jive::bitadd_op::create(32, call_four[0], call_three[0]);
@@ -963,6 +973,7 @@ IndirectCallTest2::SetupRvsdg()
 
     auto call = CallNode::Create(
       pointerArgument,
+      constantFunctionType,
       {iOStateArgument, memoryStateArgument, loopStateArgument});
 
     auto lambdaOutput = lambda->finalize(call);
@@ -1002,6 +1013,7 @@ IndirectCallTest2::SetupRvsdg()
 
     auto call = CallNode::Create(
       functionICv,
+      functionI.node()->type(),
       {argumentFunctionCv, iOStateArgument, storeNode[0], loopStateArgument});
 
     auto lambdaOutput = lambda->finalize(call);
@@ -1045,10 +1057,12 @@ IndirectCallTest2::SetupRvsdg()
 
     auto callX = CallNode::Create(
       functionXCv,
+      functionX.node()->type(),
       {pxAlloca[0], iOStateArgument, pyMerge, loopStateArgument});
 
     auto callY = CallNode::Create(
       functionYCv,
+      functionY.node()->type(),
       {pyAlloca[0], iOStateArgument, callX[2], loopStateArgument});
 
     auto loadG1 = LoadNode::Create(globalG1Cv, {callY[2]}, jive::bit32, 4);
@@ -1094,6 +1108,7 @@ IndirectCallTest2::SetupRvsdg()
 
     auto callX = CallNode::Create(
       functionXCv,
+      functionX.node()->type(),
       {pzAlloca[0], iOStateArgument, pzMerge, loopStateArgument});
 
     auto lambdaOutput = lambda->finalize(callX);
@@ -1153,19 +1168,19 @@ ExternalCallTest::SetupRvsdg()
   auto nf = rvsdg->node_normal_form(typeid(jive::operation));
   nf->set_mutable(false);
 
+  PointerType p8(jive::bit8);
+  PointerType p32(jive::bit32);
+  iostatetype iOStateType;
+  MemoryStateType memoryStateType;
+  loopstatetype loopStateType;
+  FunctionType functionGType(
+    {&p8, &p8, &iOStateType, &memoryStateType, &loopStateType},
+    {&p32, &iOStateType, &memoryStateType, &loopStateType});
+
   auto SetupFunctionGDeclaration = [&]()
   {
-    PointerType p8(jive::bit8);
-    PointerType p32(jive::bit32);
-    iostatetype iOStateType;
-    MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
-    FunctionType functionType(
-      {&p8, &p8, &iOStateType, &memoryStateType, &loopStateType},
-      {&p32, &iOStateType, &memoryStateType, &loopStateType});
-
     return rvsdg->add_import(impport(
-      PointerType(functionType),
+      PointerType(functionGType),
       "g",
       linkage::external_linkage));
   };
@@ -1210,6 +1225,7 @@ ExternalCallTest::SetupRvsdg()
 
     auto callGResults = CallNode::Create(
       functionGCv,
+      functionGType,
       {loadPath[0], loadMode[0], iOStateArgument, loadMode[1], loopStateArgument});
 
     lambda->finalize(callGResults);
@@ -1407,6 +1423,7 @@ DeltaTest1::SetupRvsdg()
     auto st = StoreNode::Create(cvf, five, {memoryStateArgument}, 4);
     auto callg = CallNode::Create(
       cvg,
+      g->node()->type(),
       {cvf, iOStateArgument, st[0], loopStateArgument});
 
     auto lambdaOutput = lambda->finalize(callg);
@@ -1529,6 +1546,7 @@ DeltaTest2::SetupRvsdg()
     auto st = StoreNode::Create(cvd1, b5, {memoryStateArgument}, 4);
     auto callResults = CallNode::Create(
       cvf1,
+      f1->node()->type(),
       {iOStateArgument, st[0], loopStateArgument});
     st = StoreNode::Create(cvd2, b42, {callResults[1]}, 4);
 
@@ -1655,6 +1673,7 @@ DeltaTest3::SetupRvsdg()
 
     auto callResults = CallNode::Create(
       lambdaFArgument,
+      lambdaF.node()->type(),
       {iOStateArgument, memoryStateArgument, loopStateArgument});
 
     auto lambdaOutput = lambda->finalize({callResults[1], callResults[2], callResults[3]});
@@ -1747,6 +1766,7 @@ ImportTest::SetupRvsdg()
     auto st = StoreNode::Create(cvd1, b2, {memoryStateArgument}, 4);
     auto callResults = CallNode::Create(
       cvf1,
+      f1->node()->type(),
       {iOStateArgument, st[0], loopStateArgument});
     st = StoreNode::Create(cvd2, b21, {callResults[1]}, 4);
 
@@ -1789,16 +1809,17 @@ PhiTest1::SetupRvsdg()
   auto nf = graph->node_normal_form(typeid(jive::operation));
   nf->set_mutable(false);
 
+  PointerType pbit64(jive::bit64);
+  iostatetype iOStateType;
+  MemoryStateType memoryStateType;
+  loopstatetype loopStateType;
+  FunctionType fibFunctionType(
+    {&jive::bit64, &pbit64, &iOStateType, &memoryStateType, &loopStateType},
+    {&iOStateType, &memoryStateType, &loopStateType});
+
   auto SetupFib = [&]()
   {
-    PointerType pbit64(jive::bit64);
-    iostatetype iOStateType;
-    MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
-    FunctionType functionType(
-      {&jive::bit64, &pbit64, &iOStateType, &memoryStateType, &loopStateType},
-      {&iOStateType, &memoryStateType, &loopStateType});
-    PointerType pt(functionType);
+    PointerType pt(fibFunctionType);
 
     jlm::phi::builder pb;
     pb.begin(graph->root());
@@ -1806,7 +1827,7 @@ PhiTest1::SetupRvsdg()
 
     auto lambda = lambda::node::create(
       pb.subregion(),
-      functionType,
+      fibFunctionType,
       "fib",
       linkage::external_linkage);
     auto valueArgument = lambda->fctargument(0);
@@ -1833,12 +1854,14 @@ PhiTest1::SetupRvsdg()
     auto nm1 = jive::bitsub_op::create(64, nev->argument(0), one);
     auto callfibm1Results = CallNode::Create(
       fibev->argument(0),
+      fibFunctionType,
       {nm1, resultev->argument(0), gIIoState->argument(0), gIMemoryState->argument(0), gILoopState->argument(0)});
 
     two = jive::create_bitconstant(gammaNode->subregion(0), 64, 2);
     auto nm2 = jive::bitsub_op::create(64, nev->argument(0), two);
     auto callfibm2Results = CallNode::Create(
       fibev->argument(0),
+      fibFunctionType,
       {nm2, resultev->argument(0), callfibm1Results[0], callfibm1Results[1], callfibm1Results[2]});
 
     auto gepnm1 = GetElementPtrOperation::Create(resultev->argument(0), {nm1}, jive::bit64, pbit64);
@@ -1891,8 +1914,7 @@ PhiTest1::SetupRvsdg()
       linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto loopStateArgument = lambda->fctargument(2)
-      ;
+    auto loopStateArgument = lambda->fctargument(2);
     auto fibcv = lambda->add_ctxvar(phiNode->output(0));
 
     auto ten = jive::create_bitconstant(lambda->subregion(), 64, 10);
@@ -1904,6 +1926,7 @@ PhiTest1::SetupRvsdg()
 
     auto callResults = CallNode::Create(
       fibcv,
+      fibFunctionType,
       {ten, gep, iOStateArgument, state, loopStateArgument});
 
     auto lambdaOutput = lambda->finalize(callResults);
@@ -1958,6 +1981,14 @@ PhiTest2::SetupRvsdg()
     {&jive::bit32, &iOStateType, &memoryStateType, &loopStateType});
   auto pRecursiveFunctionType = PointerType::Create(recursiveFunctionType);
 
+  FunctionType functionIType(
+    {pConstantFunctionType.get(), &iOStateType, &memoryStateType, &loopStateType},
+    {&jive::bit32, &iOStateType, &memoryStateType, &loopStateType});
+
+  FunctionType recFunctionType(
+    {pointerType.get(), &iOStateType, &memoryStateType, &loopStateType},
+    {&jive::bit32, &iOStateType, &memoryStateType, &loopStateType});
+
   auto module = RvsdgModule::Create(filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
@@ -1982,16 +2013,9 @@ PhiTest2::SetupRvsdg()
 
   auto SetupI = [&]()
   {
-    iostatetype iOStateType;
-    MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
-    FunctionType functionType(
-      {pConstantFunctionType.get(), &iOStateType, &memoryStateType, &loopStateType},
-      {&jive::bit32, &iOStateType, &memoryStateType, &loopStateType});
-
     auto lambda = lambda::node::create(
       graph->root(),
-      functionType,
+      functionIType,
       "i",
       linkage::external_linkage);
     auto pointerArgument = lambda->fctargument(0);
@@ -2001,6 +2025,7 @@ PhiTest2::SetupRvsdg()
 
     auto call = CallNode::Create(
       pointerArgument,
+      constantFunctionType,
       {iOStateArgument, memoryStateArgument, loopStateArgument});
 
     auto lambdaOutput = lambda->finalize(call);
@@ -2015,15 +2040,9 @@ PhiTest2::SetupRvsdg()
     phi::rvargument & functionB,
     phi::rvargument & functionD)
   {
-    auto pointerType = PointerType::Create(jive::bit32);
-
-    FunctionType functionType(
-      {pointerType.get(), &iOStateType, &memoryStateType, &loopStateType},
-      {&jive::bit32, &iOStateType, &memoryStateType, &loopStateType});
-
     auto lambda = lambda::node::create(
       &region,
-      functionType,
+      recFunctionType,
       "a",
       linkage::external_linkage);
     auto pointerArgument = lambda->fctargument(0);
@@ -2043,10 +2062,12 @@ PhiTest2::SetupRvsdg()
 
     auto callB = CallNode::Create(
       functionBCv,
+      recFunctionType,
       {paAlloca[0], iOStateArgument, paMerge, loopStateArgument});
 
     auto callD = CallNode::Create(
       functionDCv,
+      recFunctionType,
       {paAlloca[0], callB[1], callB[2], callB[3]});
 
     auto sum = jive::bitadd_op::create(32, callB[0], callD[0]);
@@ -2066,15 +2087,9 @@ PhiTest2::SetupRvsdg()
     phi::rvargument & functionC,
     phi::cvargument & functionEight)
   {
-    auto pointerType = PointerType::Create(jive::bit32);
-
-    FunctionType functionType(
-      {pointerType.get(), &iOStateType, &memoryStateType, &loopStateType},
-      {&jive::bit32, &iOStateType, &memoryStateType, &loopStateType});
-
     auto lambda = lambda::node::create(
       &region,
-      functionType,
+      recFunctionType,
       "b",
       linkage::external_linkage);
     auto pointerArgument = lambda->fctargument(0);
@@ -2095,10 +2110,12 @@ PhiTest2::SetupRvsdg()
 
     auto callI = CallNode::Create(
       functionICv,
+      functionIType,
       {functionEightCv, iOStateArgument, pbMerge, loopStateArgument});
 
     auto callC = CallNode::Create(
       functionCCv,
+      recFunctionType,
       {pbAlloca[0], callI[1], callI[2], callI[3]});
 
     auto sum = jive::bitadd_op::create(32, callI[0], callC[0]);
@@ -2116,15 +2133,9 @@ PhiTest2::SetupRvsdg()
     jive::region & region,
     phi::rvargument & functionA)
   {
-    auto pointerType = PointerType::Create(jive::bit32);
-
-    FunctionType functionType(
-      {pointerType.get(), &iOStateType, &memoryStateType, &loopStateType},
-      {&jive::bit32, &iOStateType, &memoryStateType, &loopStateType});
-
     auto lambda = lambda::node::create(
       &region,
-      functionType,
+      recFunctionType,
       "c",
       linkage::external_linkage);
     auto xArgument = lambda->fctargument(0);
@@ -2143,6 +2154,7 @@ PhiTest2::SetupRvsdg()
 
     auto callA = CallNode::Create(
       functionACv,
+      recFunctionType,
       {pcAlloca[0], iOStateArgument, pcMerge, loopStateArgument});
 
     auto loadX = LoadNode::Create(xArgument, {callA[2]}, jive::bit32, 4);
@@ -2161,15 +2173,9 @@ PhiTest2::SetupRvsdg()
     jive::region & region,
     phi::rvargument & functionA)
   {
-    auto pointerType = PointerType::Create(jive::bit32);
-
-    FunctionType functionType(
-      {pointerType.get(), &iOStateType, &memoryStateType, &loopStateType},
-      {&jive::bit32, &iOStateType, &memoryStateType, &loopStateType});
-
     auto lambda = lambda::node::create(
       &region,
-      functionType,
+      recFunctionType,
       "d",
       linkage::external_linkage);
     auto xArgument = lambda->fctargument(0);
@@ -2187,6 +2193,7 @@ PhiTest2::SetupRvsdg()
 
     auto callA = CallNode::Create(
       functionACv,
+      recFunctionType,
       {pdAlloca[0], iOStateArgument, pdMerge, loopStateArgument});
 
     auto lambdaOutput = lambda->finalize(callA);
@@ -2278,6 +2285,7 @@ PhiTest2::SetupRvsdg()
 
     auto callA = CallNode::Create(
       functionACv,
+      recFunctionType,
       {pTestAlloca[0], iOStateArgument, pTestMerge, loopStateArgument});
 
     auto lambdaOutput = lambda->finalize(callA);
@@ -2526,34 +2534,32 @@ EscapedMemoryTest2::SetupRvsdg()
   auto nf = rvsdg->node_normal_form(typeid(jive::operation));
   nf->set_mutable(false);
 
+  PointerType p8(jive::bit8);
+  PointerType p32(jive::bit32);
+  iostatetype iOStateType;
+  MemoryStateType memoryStateType;
+  loopstatetype loopStateType;
+
+  FunctionType externalFunction1Type(
+    {&p8, &iOStateType, &memoryStateType, &loopStateType},
+    {&iOStateType, &memoryStateType, &loopStateType});
+
+  FunctionType externalFunction2Type(
+    {&iOStateType, &memoryStateType, &loopStateType},
+    {&p32, &iOStateType, &memoryStateType, &loopStateType});
+
   auto SetupExternalFunction1Declaration = [&]()
   {
-    PointerType p8(jive::bit8);
-    iostatetype iOStateType;
-    MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
-    FunctionType functionType(
-      {&p8, &iOStateType, &memoryStateType, &loopStateType},
-      {&iOStateType, &memoryStateType, &loopStateType});
-
     return rvsdg->add_import(impport(
-      PointerType(functionType),
+      PointerType(externalFunction1Type),
       "ExternalFunction1",
       linkage::external_linkage));
   };
 
   auto SetupExternalFunction2Declaration = [&]()
   {
-    PointerType p32(jive::bit32);
-    iostatetype iOStateType;
-    MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
-    FunctionType functionType(
-      {&iOStateType, &memoryStateType, &loopStateType},
-      {&p32, &iOStateType, &memoryStateType, &loopStateType});
-
     return rvsdg->add_import(impport(
-      PointerType(functionType),
+      PointerType(externalFunction2Type),
       "ExternalFunction2",
       linkage::external_linkage));
   };
@@ -2620,6 +2626,7 @@ EscapedMemoryTest2::SetupRvsdg()
 
     auto callResults = CallNode::Create(
       externalFunction1,
+      externalFunction1Type,
       {mallocResults[0], iOStateArgument, mergeResult, loopStateArgument});
 
     auto lambdaOutput = lambda->finalize(callResults);
@@ -2654,6 +2661,7 @@ EscapedMemoryTest2::SetupRvsdg()
 
     auto callResults = CallNode::Create(
       externalFunction2,
+      externalFunction2Type,
       {iOStateArgument, memoryStateArgument, loopStateArgument});
 
     auto loadResults = LoadNode::Create(callResults[0], {callResults[2]}, jive::bit32, 4);
@@ -2706,18 +2714,18 @@ EscapedMemoryTest3::SetupRvsdg()
   auto nf = rvsdg->node_normal_form(typeid(jive::operation));
   nf->set_mutable(false);
 
+  PointerType p32(jive::bit32);
+  iostatetype iOStateType;
+  MemoryStateType memoryStateType;
+  loopstatetype loopStateType;
+  FunctionType externalFunctionType(
+    {&iOStateType, &memoryStateType, &loopStateType},
+    {&p32, &iOStateType, &memoryStateType, &loopStateType});
+
   auto SetupExternalFunctionDeclaration = [&]()
   {
-    PointerType p32(jive::bit32);
-    iostatetype iOStateType;
-    MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
-    FunctionType functionType(
-      {&iOStateType, &memoryStateType, &loopStateType},
-      {&p32, &iOStateType, &memoryStateType, &loopStateType});
-
     return rvsdg->add_import(impport(
-      PointerType(functionType),
+      PointerType(externalFunctionType),
       "externalFunction",
       linkage::external_linkage));
   };
@@ -2763,6 +2771,7 @@ EscapedMemoryTest3::SetupRvsdg()
 
     auto callResults = CallNode::Create(
       externalFunction,
+      externalFunctionType,
       {iOStateArgument, memoryStateArgument, loopStateArgument});
 
     auto loadResults = LoadNode::Create(callResults[0], {callResults[2]}, jive::bit32, 4);
@@ -2931,6 +2940,7 @@ MemcpyTest::SetupRvsdg()
 
     auto callResults = CallNode::Create(
       functionFArgument,
+      lambdaF.node()->type(),
       {iOStateArgument, memcpyResults[0], loopStateArgument});
 
     auto lambdaOutput = lambda->finalize(callResults);
