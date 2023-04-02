@@ -910,7 +910,7 @@ IndirectCallTest2::SetupRvsdg()
   {
     auto delta = delta::node::Create(
       graph->root(),
-      PointerType(jive::bit32),
+      jive::bit32,
       "g1",
       linkage::external_linkage,
       "",
@@ -925,7 +925,7 @@ IndirectCallTest2::SetupRvsdg()
   {
     auto delta = delta::node::Create(
       graph->root(),
-      PointerType(jive::bit32),
+      jive::bit32,
       "g2",
       linkage::external_linkage,
       "",
@@ -1362,7 +1362,7 @@ DeltaTest1::SetupRvsdg()
   {
     auto dfNode = delta::node::Create(
       graph->root(),
-      PointerType(jive::bit32),
+      jive::bit32,
       "f",
       linkage::external_linkage,
       "",
@@ -1468,7 +1468,7 @@ DeltaTest2::SetupRvsdg()
   {
     auto delta = delta::node::Create(
       graph->root(),
-      PointerType(jive::bit32),
+      jive::bit32,
       "d1",
       linkage::external_linkage,
       "",
@@ -1483,7 +1483,7 @@ DeltaTest2::SetupRvsdg()
   {
     auto delta = delta::node::Create(
       graph->root(),
-      PointerType(jive::bit32),
+      jive::bit32,
       "d2",
       linkage::external_linkage,
       "",
@@ -1592,7 +1592,7 @@ DeltaTest3::SetupRvsdg()
   {
     auto delta = delta::node::Create(
       graph->root(),
-      PointerType(jive::bit32),
+      jive::bit32,
       "g1",
       linkage::external_linkage,
       "",
@@ -1609,7 +1609,7 @@ DeltaTest3::SetupRvsdg()
 
     auto delta = delta::node::Create(
       graph->root(),
-      PointerType(static_cast<jive::valuetype&>(pointerType)),
+      pointerType,
       "g2",
       linkage::external_linkage,
       "",
@@ -2400,7 +2400,7 @@ EscapedMemoryTest1::SetupRvsdg()
   {
     auto deltaNode = delta::node::Create(
       rvsdg->root(),
-      PointerType(jive::bit32),
+      jive::bit32,
       "a",
       linkage::external_linkage,
       "",
@@ -2415,7 +2415,7 @@ EscapedMemoryTest1::SetupRvsdg()
   {
     auto deltaNode = delta::node::Create(
       rvsdg->root(),
-      PointerType(jive::bit32),
+      jive::bit32,
       "b",
       linkage::external_linkage,
       "",
@@ -2433,7 +2433,7 @@ EscapedMemoryTest1::SetupRvsdg()
 
     auto deltaNode = delta::node::Create(
       rvsdg->root(),
-      pp32,
+      p32,
       "x",
       linkage::external_linkage,
       "",
@@ -2452,7 +2452,7 @@ EscapedMemoryTest1::SetupRvsdg()
 
     auto deltaNode = delta::node::Create(
       rvsdg->root(),
-      ppp32,
+      pp32,
       "y",
       linkage::external_linkage,
       "",
@@ -2734,7 +2734,7 @@ EscapedMemoryTest3::SetupRvsdg()
   {
     auto delta = delta::node::Create(
       rvsdg->root(),
-      PointerType(jive::bit32),
+      jive::bit32,
       "global",
       linkage::external_linkage,
       "",
@@ -2819,7 +2819,7 @@ MemcpyTest::SetupRvsdg()
   {
     auto delta = delta::node::Create(
       rvsdg->root(),
-      PointerType(arrayType),
+      arrayType,
       "localArray",
       linkage::external_linkage,
       "",
@@ -2844,7 +2844,7 @@ MemcpyTest::SetupRvsdg()
   {
     auto delta = delta::node::Create(
       rvsdg->root(),
-      PointerType(arrayType),
+      arrayType,
       "globalArray",
       linkage::external_linkage,
       "",
@@ -2991,7 +2991,7 @@ LinkedListTest::SetupRvsdg()
   {
     auto delta = delta::node::Create(
       rvsdg.root(),
-      PointerType(*static_cast<jive::valuetype*>(pointerType.get())),
+      *pointerType,
       "MyList",
       linkage::external_linkage,
       "",

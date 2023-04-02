@@ -1134,7 +1134,7 @@ ConvertDataNode(
      */
     auto deltaNode = delta::node::Create(
       &region,
-      dataNode.type(),
+      dataNode.type().GetElementType(),
       dataNode.name(),
       dataNode.linkage(),
       dataNode.Section(),

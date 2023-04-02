@@ -132,7 +132,7 @@ namespace jlm {
 				auto delta_name = jive::detail::strfmt("hls_alloca_", alloca_cnt++);
 				auto delta_type = jlm::PointerType(po->value_type());
                 std::cout << "alloca " << delta_name << ": " << po->value_type().debug_string() << "\n";
-				auto db = delta::node::Create(rr, delta_type, delta_name, linkage::external_linkage, "", false);
+				auto db = delta::node::Create(rr, po->value_type(), delta_name, linkage::external_linkage, "", false);
 				// create zero constant of allocated type
 				jive::output *cout;
 				if (auto bt = dynamic_cast<const jive::bittype *>(&po->value_type())) {

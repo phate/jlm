@@ -27,7 +27,7 @@ test()
 
 	auto delta1 = delta::node::Create(
     rm.Rvsdg().root(),
-		pt,
+    vt,
 		"test-delta1",
 		linkage::external_linkage,
     "",
@@ -37,7 +37,7 @@ test()
 
 	auto delta2 = delta::node::Create(
     rm.Rvsdg().root(),
-		pt,
+    vt,
 		"test-delta2",
 		linkage::internal_linkage,
     "",
@@ -55,11 +55,11 @@ test()
 
 	assert(delta1->linkage() == linkage::external_linkage);
 	assert(delta1->constant() == true);
-	assert(delta1->type() == pt);
+	assert(delta1->type() == vt);
 
 	assert(delta2->linkage() == linkage::internal_linkage);
 	assert(delta2->constant() == false);
-	assert(delta2->type() == pt);
+	assert(delta2->type() == vt);
 
 	return 0;
 }

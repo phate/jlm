@@ -140,7 +140,7 @@ node::finalize(jive::output * origin)
 		return output();
 	}
 
-	auto & expected = type().GetElementType();
+	auto & expected = type();
 	auto & received = origin->type();
 	if (expected != received)
 		throw jlm::error("Expected " + expected.debug_string() + ", got " + received.debug_string());

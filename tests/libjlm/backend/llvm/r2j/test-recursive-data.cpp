@@ -40,7 +40,7 @@ test()
 	{
 		auto delta = delta::node::Create(
 			region,
-			PointerType(vt),
+      vt,
 			"test-delta1",
 			linkage::external_linkage,
       "",
@@ -53,7 +53,7 @@ test()
 	{
 		auto delta = delta::node::Create(
 			region,
-			PointerType(vt),
+      vt,
 			"test-delta2",
 			linkage::external_linkage,
       "",
