@@ -300,8 +300,8 @@ std::string
 jlm::hls::VerilatorHarnessHLS::convert_to_c_type(const jive::type *type) {
 	if (auto t = dynamic_cast<const jive::bittype *>(type)) {
 		return "int" + jive::detail::strfmt(t->nbits()) + "_t";
-	} else if (auto t = dynamic_cast<const jlm::PointerType *>(type)) {
-		return convert_to_c_type(&t->GetElementType()) + "*";
+	} else if (is<PointerType>(*type)) {
+		return "void*";
 	} else if (auto t = dynamic_cast<const jlm::arraytype *>(type)) {
 		return convert_to_c_type(&t->element_type());
 	} else {
