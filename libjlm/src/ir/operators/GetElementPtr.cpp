@@ -9,13 +9,13 @@ namespace jlm {
 
 /* getelementptr operator */
 
-getelementptr_op::~getelementptr_op()
+GetElementPtrOperation::~GetElementPtrOperation()
 {}
 
 bool
-getelementptr_op::operator==(const operation & other) const noexcept
+GetElementPtrOperation::operator==(const operation & other) const noexcept
 {
-	auto op = dynamic_cast<const jlm::getelementptr_op*>(&other);
+	auto op = dynamic_cast<const jlm::GetElementPtrOperation*>(&other);
 	if (!op || op->narguments() != narguments())
 		return false;
 
@@ -28,15 +28,15 @@ getelementptr_op::operator==(const operation & other) const noexcept
 }
 
 std::string
-getelementptr_op::debug_string() const
+GetElementPtrOperation::debug_string() const
 {
 	return "GETELEMENTPTR";
 }
 
 std::unique_ptr<jive::operation>
-getelementptr_op::copy() const
+GetElementPtrOperation::copy() const
 {
-	return std::unique_ptr<jive::operation>(new getelementptr_op(*this));
+	return std::unique_ptr<jive::operation>(new GetElementPtrOperation(*this));
 }
 
 }

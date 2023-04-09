@@ -14,15 +14,16 @@
 
 namespace jlm {
 
-/* getelementptr operator */
-
-class getelementptr_op final : public jive::simple_op {
+/**
+ * This operation is the equivalent of LLVM's getelementptr instruction.
+ */
+class GetElementPtrOperation final : public jive::simple_op {
 public:
 	virtual
-	~getelementptr_op();
+	~GetElementPtrOperation();
 
 	inline
-	getelementptr_op(
+	GetElementPtrOperation(
 		const PointerType & ptype,
 		const std::vector<jive::bittype> & btypes,
 		const PointerType & rtype)
@@ -69,7 +70,7 @@ public:
 		auto rt = dynamic_cast<const PointerType*>(&type);
 		if (!rt) throw jlm::error("expected pointer type.");
 
-		jlm::getelementptr_op op(*at, bts, *rt);
+		jlm::GetElementPtrOperation op(*at, bts, *rt);
 		std::vector<const variable*> operands(1, address);
 		operands.insert(operands.end(), offsets.begin(), offsets.end());
 
@@ -95,7 +96,7 @@ public:
 		auto rt = dynamic_cast<const PointerType*>(&rtype);
 		if (!rt) throw jlm::error("expected pointer type.");
 
-		jlm::getelementptr_op op(*at, bts, *rt);
+		jlm::GetElementPtrOperation op(*at, bts, *rt);
 		std::vector<jive::output*> operands(1, address);
 		operands.insert(operands.end(), offsets.begin(), offsets.end());
 

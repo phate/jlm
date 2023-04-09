@@ -505,7 +505,7 @@ jlm::hls::jlm_sizeof(const jive::type *t) {
 
 std::string
 jlm::hls::FirrtlHLS::gep_op_to_firrtl(const jive::simple_node *n) {
-	auto o = dynamic_cast<const jlm::getelementptr_op *>(&(n->operation()));
+	auto o = dynamic_cast<const jlm::GetElementPtrOperation *>(&(n->operation()));
 	std::string result = "cvt("+data(n->input(0))+")"; // start of with base pointer
 	//TODO: support structs
 	const jive::type *pt = &o->pointee_type();
@@ -606,7 +606,7 @@ jlm::hls::FirrtlHLS::simple_op_to_firrtl(const jive::simple_node *n) {
 		return UInt(1, 0);  // TODO: Fix?
 	} else if (auto o = dynamic_cast<const jive::ctlconstant_op *>(&(n->operation()))) {
 		return UInt(ceil(log2(o->value().nalternatives())), o->value().alternative());
-	} else if (dynamic_cast<const jlm::getelementptr_op *>(&(n->operation()))) {
+	} else if (dynamic_cast<const jlm::GetElementPtrOperation *>(&(n->operation()))) {
 		return gep_op_to_firrtl(n);
 	} else {
 		throw std::logic_error(n->operation().debug_string() + " not implemented!");

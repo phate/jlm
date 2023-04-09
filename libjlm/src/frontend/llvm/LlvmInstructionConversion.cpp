@@ -596,7 +596,7 @@ convert_getelementptr_instruction(llvm::Instruction * inst, tacsvector_t & tacs,
 		indices.push_back(ConvertValue(*it, tacs, ctx));
 
 	auto type = ConvertType(i->getType(), ctx);
-	tacs.push_back(getelementptr_op::create(base, indices, *type));
+	tacs.push_back(GetElementPtrOperation::create(base, indices, *type));
 
 	return tacs.back()->result(0);
 }
