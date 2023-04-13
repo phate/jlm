@@ -2309,7 +2309,7 @@ jlm::hls::MLIRGenImpl::GetModuleName(const jive::node *node) {
 		append.append("W");
 	}
     if(auto op = dynamic_cast<const jlm::GetElementPtrOperation *>(&node->operation())){
-        const jive::type *pointeeType = &op->pointee_type();
+        const jive::type *pointeeType = &op->GetPointeeType();
         for (size_t i = 1; i < node->ninputs(); i++) {
             int bits = JlmSize(pointeeType);
             if (dynamic_cast<const jive::bittype *>(pointeeType)) {
