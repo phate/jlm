@@ -23,11 +23,25 @@ class GetElementPtrOperation final : public jive::simple_op
 public:
   ~GetElementPtrOperation() noexcept override;
 
+private:
   GetElementPtrOperation(
     const PointerType & baseAddressType,
     const std::vector<jive::bittype> & offsetTypes,
+    const jive::valuetype & pointeeType,
     const PointerType & resultType)
     : simple_op(CreateOperandPorts(baseAddressType, offsetTypes), {resultType})
+    , PointeeType_(pointeeType.copy())
+  {}
+
+public:
+  GetElementPtrOperation(const GetElementPtrOperation & other)
+  : simple_op(other)
+  , PointeeType_(other.PointeeType_->copy())
+  {}
+
+  GetElementPtrOperation(GetElementPtrOperation && other) noexcept
+  : simple_op(other)
+  , PointeeType_(std::move(other.PointeeType_))
   {}
 
   bool
@@ -42,20 +56,21 @@ public:
   [[nodiscard]] const jive::valuetype &
   GetPointeeType() const noexcept
   {
-    return AssertedCast<const PointerType>(&argument(0).type())->GetElementType();
+    return *dynamic_cast<const jive::valuetype*>(PointeeType_.get());
   }
 
   static std::unique_ptr<jlm::tac>
   Create(
     const variable * baseAddress,
     const std::vector<const variable*> & offsets,
+    const jive::valuetype & pointeeType,
     const jive::type & resultType)
   {
     auto & baseAddressType = CheckAndExtractPointerType(baseAddress->type());
     auto offsetTypes = CheckAndExtractOffsetTypes<const variable>(offsets);
     auto & checkedResultType = CheckAndExtractPointerType(resultType);
 
-    GetElementPtrOperation op(baseAddressType, offsetTypes, checkedResultType);
+    GetElementPtrOperation op(baseAddressType, offsetTypes, pointeeType, checkedResultType);
     std::vector<const variable*> operands(1, baseAddress);
     operands.insert(operands.end(), offsets.begin(), offsets.end());
 
@@ -66,13 +81,14 @@ public:
   Create(
     jive::output * baseAddress,
     const std::vector<jive::output*> & offsets,
+    const jive::valuetype & pointeeType,
     const jive::type & resultType)
   {
     auto & baseAddressType = CheckAndExtractPointerType(baseAddress->type());
     auto offsetTypes = CheckAndExtractOffsetTypes<jive::output>(offsets);
     auto & checkedResultType = CheckAndExtractPointerType(resultType);
 
-    GetElementPtrOperation op(baseAddressType, offsetTypes, checkedResultType);
+    GetElementPtrOperation op(baseAddressType, offsetTypes, pointeeType, checkedResultType);
     std::vector<jive::output*> operands(1, baseAddress);
     operands.insert(operands.end(), offsets.begin(), offsets.end());
 
@@ -122,6 +138,8 @@ private:
 
     return ports;
   }
+
+  std::unique_ptr<jive::type> PointeeType_;
 };
 
 }
