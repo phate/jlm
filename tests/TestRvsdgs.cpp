@@ -272,10 +272,10 @@ GetElementPtrTest::SetupRvsdg()
   auto zero = jive::create_bitconstant(fct->subregion(), 32, 0);
   auto one = jive::create_bitconstant(fct->subregion(), 32, 1);
 
-  auto gepx = getelementptr_op::create(fct->fctargument(0), {zero, zero}, *pbt);
+  auto gepx = GetElementPtrOperation::Create(fct->fctargument(0), {zero, zero}, rt, *pbt);
   auto ldx = LoadNode::Create(gepx, {fct->fctargument(1)}, jive::bit32, 4);
 
-  auto gepy = getelementptr_op::create(fct->fctargument(0), {zero, one}, *pbt);
+  auto gepy = GetElementPtrOperation::Create(fct->fctargument(0), {zero, one}, rt, *pbt);
   auto ldy = LoadNode::Create(gepy, {ldx[1]}, jive::bit32, 4);
 
   auto sum = jive::bitadd_op::create(32, ldx[0], ldy[0]);
@@ -1305,7 +1305,7 @@ ThetaTest::SetupRvsdg()
   auto c = thetanode->add_loopvar(fct->fctargument(2));
   auto s = thetanode->add_loopvar(fct->fctargument(3));
 
-  auto gepnode = getelementptr_op::create(a->argument(), {n->argument()}, *pt);
+  auto gepnode = GetElementPtrOperation::Create(a->argument(), {n->argument()}, jive::bit32, *pt);
   auto store = StoreNode::Create(gepnode, c->argument(), {s->argument()}, 4);
 
   auto one = jive::create_bitconstant(thetanode->subregion(), 32, 1);
@@ -1841,10 +1841,10 @@ PhiTest1::SetupRvsdg()
       fibev->argument(0),
       {nm2, resultev->argument(0), callfibm1Results[0], callfibm1Results[1], callfibm1Results[2]});
 
-    auto gepnm1 = getelementptr_op::create(resultev->argument(0), {nm1}, pbit64);
+    auto gepnm1 = GetElementPtrOperation::Create(resultev->argument(0), {nm1}, jive::bit64, pbit64);
     auto ldnm1 = LoadNode::Create(gepnm1, {callfibm2Results[1]}, jive::bit64, 8);
 
-    auto gepnm2 = getelementptr_op::create(resultev->argument(0), {nm2}, pbit64);
+    auto gepnm2 = GetElementPtrOperation::Create(resultev->argument(0), {nm2}, jive::bit64, pbit64);
     auto ldnm2 = LoadNode::Create(gepnm2, {ldnm1[1]}, jive::bit64, 8);
 
     auto sum = jive::bitadd_op::create(64, ldnm1[0], ldnm2[0]);
@@ -1857,7 +1857,7 @@ PhiTest1::SetupRvsdg()
     auto gOMemoryState = gammaNode->add_exitvar({ldnm2[1], gIMemoryState->argument(1)});
     auto gOLoopState = gammaNode->add_exitvar({callfibm2Results[2], gILoopState->argument(1)});
 
-    auto gepn = getelementptr_op::create(pointerArgument, {valueArgument}, pbit64);
+    auto gepn = GetElementPtrOperation::Create(pointerArgument, {valueArgument}, jive::bit64, pbit64);
     auto store = StoreNode::Create(gepn, sumex, {gOMemoryState}, 8);
 
     auto lambdaOutput = lambda->finalize({gOIoState, store[0], gOLoopState});
@@ -1900,7 +1900,7 @@ PhiTest1::SetupRvsdg()
     auto state = MemStateMergeOperator::Create({allocaResults[1], memoryStateArgument});
 
     auto zero = jive::create_bitconstant(lambda->subregion(), 64, 0);
-    auto gep = getelementptr_op::create(allocaResults[0], {zero, zero}, pbit64);
+    auto gep = GetElementPtrOperation::Create(allocaResults[0], {zero, zero}, at, pbit64);
 
     auto callResults = CallNode::Create(
       fibcv,
@@ -2804,10 +2804,10 @@ MemcpyTest::SetupRvsdg()
   auto nf = rvsdg->node_normal_form(typeid(jive::operation));
   nf->set_mutable(false);
 
+  arraytype arrayType(jive::bit32, 5);
+
   auto SetupLocalArray = [&]()
   {
-    arraytype arrayType(jive::bit32, 5);
-
     auto delta = delta::node::Create(
       rvsdg->root(),
       PointerType(arrayType),
@@ -2833,8 +2833,6 @@ MemcpyTest::SetupRvsdg()
 
   auto SetupGlobalArray = [&]()
   {
-    arraytype arrayType(jive::bit32, 5);
-
     auto delta = delta::node::Create(
       rvsdg->root(),
       PointerType(arrayType),
@@ -2876,9 +2874,10 @@ MemcpyTest::SetupRvsdg()
     auto two = jive::create_bitconstant(lambda->subregion(), 32, 2);
     auto six = jive::create_bitconstant(lambda->subregion(), 32, 6);
 
-    auto gep = getelementptr_op::create(
+    auto gep = GetElementPtrOperation::Create(
       globalArrayArgument,
       {zero, two},
+      arrayType,
       PointerType(jive::bit32));
 
     auto storeResults = StoreNode::Create(gep, six, {memoryStateArgument}, 8);
@@ -3026,10 +3025,11 @@ LinkedListTest::SetupRvsdg()
     auto store1 = StoreNode::Create(alloca[0], load1[0], {load1[1]}, 4);
 
     auto load2 = LoadNode::Create(alloca[0], {store1[0]}, *pointerType, 4);
-    auto gep = getelementptr_op::create(
+    auto gep = GetElementPtrOperation::Create(
       load2[0],
       {zero, zero},
-      PointerType(*static_cast<jive::valuetype*>(pointerType.get())));
+      *structType,
+      PointerType(*static_cast<jive::valuetype *>(pointerType.get())));
 
     auto load3 = LoadNode::Create(gep, {load2[1]}, *pointerType, 4);
     auto store2 = StoreNode::Create(alloca[0], load3[0], {load3[1]}, 4);

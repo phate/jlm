@@ -10,7 +10,7 @@
 #include <jlm/ir/operators/operators.hpp>
 #include <jive/types/bitstring/comparison.hpp>
 #include <jlm/ir/operators/sext.hpp>
-#include <jlm/ir/operators/getelementptr.hpp>
+#include <jlm/ir/operators/GetElementPtr.hpp>
 #include <jlm/ir/operators/load.hpp>
 #include <jlm/ir/operators/store.hpp>
 #include <jlm/ir/hls/hls.hpp>

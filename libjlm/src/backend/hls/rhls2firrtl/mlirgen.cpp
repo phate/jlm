@@ -210,13 +210,13 @@ jlm::hls::MLIRGenImpl::MlirGenSimpleNode(const jive::simple_node *node) {
 			}
 			Connect(body,outData,result);
 		}
-	} else if (auto op = dynamic_cast<const jlm::getelementptr_op *>(&(node->operation()))) {
+	} else if (auto op = dynamic_cast<const jlm::GetElementPtrOperation *>(&(node->operation()))) {
 		// Start of with base pointer
 		auto input0 = GetSubfield(body, inBundles[0], "data");
 		mlir::Value result = AddCvtOp(body, input0);
 
 		//TODO: support structs
-		const jive::type *pointeeType = &op->pointee_type();
+		const jive::type *pointeeType = &op->GetPointeeType();
 		for (size_t i = 1; i < node->ninputs(); i++) {
 			int bits = JlmSize(pointeeType);
 			if (dynamic_cast<const jive::bittype *>(pointeeType)) {
@@ -2308,8 +2308,8 @@ jlm::hls::MLIRGenImpl::GetModuleName(const jive::node *node) {
 		append.append(std::to_string(JlmSize(&node->output(i)->type())));
 		append.append("W");
 	}
-    if(auto op = dynamic_cast<const jlm::getelementptr_op *>(&node->operation())){
-        const jive::type *pointeeType = &op->pointee_type();
+    if(auto op = dynamic_cast<const jlm::GetElementPtrOperation *>(&node->operation())){
+        const jive::type *pointeeType = &op->GetPointeeType();
         for (size_t i = 1; i < node->ninputs(); i++) {
             int bits = JlmSize(pointeeType);
             if (dynamic_cast<const jive::bittype *>(pointeeType)) {

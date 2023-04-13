@@ -833,7 +833,7 @@ Steensgaard::Analyze(const jive::simple_node & node)
        , {typeid(LoadOperation),                AnalyzeLoad                                                 }
        , {typeid(StoreOperation),               AnalyzeStore                                                }
        , {typeid(CallOperation),                AnalyzeCall                                                 }
-       , {typeid(getelementptr_op),             [](auto & s, auto & n){ s.AnalyzeGep(n);                   }}
+       , {typeid(GetElementPtrOperation),       [](auto & s, auto & n){ s.AnalyzeGep(n);                   }}
        , {typeid(bitcast_op),                   [](auto & s, auto & n){ s.AnalyzeBitcast(n);               }}
        , {typeid(bits2ptr_op),                  [](auto & s, auto & n){ s.AnalyzeBits2ptr(n);              }}
        , {typeid(ConstantPointerNullOperation), [](auto & s, auto & n){ s.AnalyzeConstantPointerNull(n);   }}
@@ -1077,7 +1077,7 @@ Steensgaard::AnalyzeCall(const CallNode & callNode)
 void
 Steensgaard::AnalyzeGep(const jive::simple_node & node)
 {
-  JLM_ASSERT(is<getelementptr_op>(&node));
+  JLM_ASSERT(is<GetElementPtrOperation>(&node));
 
   auto & base = LocationSet_.Find(*node.input(0)->origin());
   auto & value = LocationSet_.FindOrInsertRegisterLocation(

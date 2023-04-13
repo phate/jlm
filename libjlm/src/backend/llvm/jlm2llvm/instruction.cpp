@@ -330,11 +330,11 @@ convert_getelementptr(
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_ASSERT(is<getelementptr_op>(op) && args.size() >= 2);
-	auto & pop = *static_cast<const getelementptr_op*>(&op);
+	JLM_ASSERT(is<GetElementPtrOperation>(op) && args.size() >= 2);
+	auto & pop = *static_cast<const GetElementPtrOperation*>(&op);
 
 	std::vector<llvm::Value*> indices;
-	auto t = convert_type(pop.pointee_type(), ctx);
+	auto t = convert_type(pop.GetPointeeType(), ctx);
 	for (size_t n = 1; n < args.size(); n++)
 		indices.push_back(ctx.value(args[n]));
 
@@ -923,7 +923,7 @@ convert_operation(
           {typeid(LoadOperation),                   convert<LoadOperation>},
           {typeid(StoreOperation),                  convert_store},
           {typeid(alloca_op),                       convert_alloca},
-          {typeid(getelementptr_op),                convert_getelementptr},
+          {typeid(GetElementPtrOperation),          convert_getelementptr},
           {typeid(ConstantDataArray),               convert<ConstantDataArray>},
           {typeid(ptrcmp_op),                       convert_ptrcmp},
           {typeid(fpcmp_op),                        convert_fpcmp},

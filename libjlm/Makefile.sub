@@ -46,7 +46,7 @@ LIBJLM_SRC = \
     libjlm/src/ir/operators/alloca.cpp \
     libjlm/src/ir/operators/call.cpp \
     libjlm/src/ir/operators/delta.cpp \
-    libjlm/src/ir/operators/getelementptr.cpp \
+    libjlm/src/ir/operators/GetElementPtr.cpp \
     libjlm/src/ir/operators/lambda.cpp \
     libjlm/src/ir/operators/load.cpp \
     libjlm/src/ir/operators/operators.cpp \
