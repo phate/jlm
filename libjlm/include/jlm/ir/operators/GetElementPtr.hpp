@@ -12,107 +12,116 @@
 #include <jlm/ir/tac.hpp>
 #include <jlm/ir/types.hpp>
 
-namespace jlm {
+namespace jlm
+{
 
 /**
- * This operation is the equivalent of LLVM's getelementptr instruction.
- */
-class GetElementPtrOperation final : public jive::simple_op {
+* This operation is the equivalent of LLVM's getelementptr instruction.
+*/
+class GetElementPtrOperation final : public jive::simple_op
+{
 public:
-	virtual
-	~GetElementPtrOperation();
+  ~GetElementPtrOperation() noexcept override;
 
-	inline
-	GetElementPtrOperation(
-		const PointerType & ptype,
-		const std::vector<jive::bittype> & btypes,
-		const PointerType & rtype)
-	: simple_op(create_srcports(ptype, btypes), {rtype})
-	{}
+  GetElementPtrOperation(
+    const PointerType & baseAddressType,
+    const std::vector<jive::bittype> & offsetTypes,
+    const PointerType & resultType)
+    : simple_op(CreateOperandPorts(baseAddressType, offsetTypes), {resultType})
+  {}
 
-	virtual bool
-	operator==(const operation & other) const noexcept override;
+  bool
+  operator==(const operation & other) const noexcept override;
 
-	virtual std::string
-	debug_string() const override;
+  [[nodiscard]] std::string
+  debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
-	copy() const override;
+  [[nodiscard]] std::unique_ptr<jive::operation>
+  copy() const override;
 
-	inline size_t
-	nindices() const noexcept
-	{
-		return narguments()-1;
-	}
+  [[nodiscard]] const jive::valuetype &
+  GetPointeeType() const noexcept
+  {
+    return AssertedCast<const PointerType>(&argument(0).type())->GetElementType();
+  }
 
-	const jive::type &
-	pointee_type() const noexcept
-	{
-		return static_cast<const PointerType *>(&argument(0).type())->GetElementType();
-	}
+  static std::unique_ptr<jlm::tac>
+  Create(
+    const variable * baseAddress,
+    const std::vector<const variable*> & offsets,
+    const jive::type & resultType)
+  {
+    auto & baseAddressType = CheckAndExtractPointerType(baseAddress->type());
+    auto offsetTypes = CheckAndExtractOffsetTypes<const variable>(offsets);
+    auto & checkedResultType = CheckAndExtractPointerType(resultType);
 
-	static std::unique_ptr<jlm::tac>
-	create(
-		const variable * address,
-		const std::vector<const variable*> & offsets,
-		const jive::type & type)
-	{
-		auto at = dynamic_cast<const PointerType*>(&address->type());
-		if (!at) throw jlm::error("expected pointer type.");
+    GetElementPtrOperation op(baseAddressType, offsetTypes, checkedResultType);
+    std::vector<const variable*> operands(1, baseAddress);
+    operands.insert(operands.end(), offsets.begin(), offsets.end());
 
-		std::vector<jive::bittype> bts;
-		for (const auto & v : offsets) {
-			auto bt = dynamic_cast<const jive::bittype*>(&v->type());
-			if (!bt) throw jlm::error("expected bitstring type.");
-			bts.push_back(*bt);
-		}
+    return tac::create(op, operands);
+  }
 
-		auto rt = dynamic_cast<const PointerType*>(&type);
-		if (!rt) throw jlm::error("expected pointer type.");
+  static jive::output *
+  Create(
+    jive::output * baseAddress,
+    const std::vector<jive::output*> & offsets,
+    const jive::type & resultType)
+  {
+    auto & baseAddressType = CheckAndExtractPointerType(baseAddress->type());
+    auto offsetTypes = CheckAndExtractOffsetTypes<jive::output>(offsets);
+    auto & checkedResultType = CheckAndExtractPointerType(resultType);
 
-		jlm::GetElementPtrOperation op(*at, bts, *rt);
-		std::vector<const variable*> operands(1, address);
-		operands.insert(operands.end(), offsets.begin(), offsets.end());
+    GetElementPtrOperation op(baseAddressType, offsetTypes, checkedResultType);
+    std::vector<jive::output*> operands(1, baseAddress);
+    operands.insert(operands.end(), offsets.begin(), offsets.end());
 
-		return tac::create(op, operands);
-	}
-
-	static jive::output *
-	create(
-		jive::output * address,
-		const std::vector<jive::output*> & offsets,
-		const jive::type & rtype)
-	{
-		auto at = dynamic_cast<const jlm::PointerType*>(&address->type());
-		if (!at) throw jlm::error("expected pointer type.");
-
-		std::vector<jive::bittype> bts;
-		for (const auto & v : offsets) {
-			auto bt = dynamic_cast<const jive::bittype*>(&v->type());
-			if (!bt) throw jlm::error("expected bitstring type.");
-			bts.push_back(*bt);
-		}
-
-		auto rt = dynamic_cast<const PointerType*>(&rtype);
-		if (!rt) throw jlm::error("expected pointer type.");
-
-		jlm::GetElementPtrOperation op(*at, bts, *rt);
-		std::vector<jive::output*> operands(1, address);
-		operands.insert(operands.end(), offsets.begin(), offsets.end());
-
-		return jive::simple_node::create_normalized(address->region(), op, operands)[0];
-	}
+    return jive::simple_node::create_normalized(baseAddress->region(), op, operands)[0];
+  }
 
 private:
-	static inline std::vector<jive::port>
-	create_srcports(const PointerType & ptype, const std::vector<jive::bittype> & btypes)
-	{
-		std::vector<jive::port> ports(1, ptype);
-		for (const auto & type : btypes)
-			ports.push_back({type});
+  static const PointerType &
+  CheckAndExtractPointerType(const jive::type & type)
+  {
+    if (auto pointerType = dynamic_cast<const PointerType*>(&type))
+    {
+      return *pointerType;
+    }
 
-		return ports;
-	}
+    throw error("Expected pointer type.");
+  }
+
+  template<class T> static std::vector<jive::bittype>
+  CheckAndExtractOffsetTypes(const std::vector<T*> & offsets)
+  {
+    std::vector<jive::bittype> offsetTypes;
+    for (const auto & offset : offsets)
+    {
+      if (auto offsetType = dynamic_cast<const jive::bittype*>(&offset->type()))
+      {
+        offsetTypes.emplace_back(*offsetType);
+        continue;
+      }
+
+      throw error("Expected bitstring type.");
+    }
+
+    return offsetTypes;
+  }
+
+  static std::vector<jive::port>
+  CreateOperandPorts(
+    const PointerType & baseAddressType,
+    const std::vector<jive::bittype> & indexTypes)
+  {
+    std::vector<jive::port> ports({baseAddressType});
+    for (const auto & type : indexTypes)
+    {
+      ports.emplace_back(type);
+    }
+
+    return ports;
+  }
 };
 
 }

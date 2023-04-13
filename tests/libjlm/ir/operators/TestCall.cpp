@@ -399,10 +399,10 @@ TestCallTypeClassifierRecursiveDirectCall()
       fibev->argument(0),
       {nm2, resultev->argument(0), callfibm1Results[0], callfibm1Results[1], callfibm1Results[2]});
 
-    auto gepnm1 = GetElementPtrOperation::create(resultev->argument(0), {nm1}, pbit64);
+    auto gepnm1 = GetElementPtrOperation::Create(resultev->argument(0), {nm1}, pbit64);
     auto ldnm1 = LoadNode::Create(gepnm1, {callfibm2Results[1]}, jive::bit64, 8);
 
-    auto gepnm2 = GetElementPtrOperation::create(resultev->argument(0), {nm2}, pbit64);
+    auto gepnm2 = GetElementPtrOperation::Create(resultev->argument(0), {nm2}, pbit64);
     auto ldnm2 = LoadNode::Create(gepnm2, {ldnm1[1]}, jive::bit64, 8);
 
     auto sum = jive::bitadd_op::create(64, ldnm1[0], ldnm2[0]);
@@ -415,7 +415,7 @@ TestCallTypeClassifierRecursiveDirectCall()
     auto gOMemoryState = gammaNode->add_exitvar({ldnm2[1], gIMemoryState->argument(1)});
     auto gOLoopState = gammaNode->add_exitvar({callfibm2Results[2], gILoopState->argument(1)});
 
-    auto gepn = GetElementPtrOperation::create(pointerArgument, {valueArgument}, pbit64);
+    auto gepn = GetElementPtrOperation::Create(pointerArgument, {valueArgument}, pbit64);
     auto store = StoreNode::Create(gepn, sumex, {gOMemoryState}, 8);
 
     auto lambdaOutput = lambda->finalize({gOIoState, store[0], gOLoopState});
