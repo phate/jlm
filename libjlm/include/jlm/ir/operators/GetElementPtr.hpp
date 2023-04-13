@@ -16,8 +16,11 @@ namespace jlm
 {
 
 /**
-* This operation is the equivalent of LLVM's getelementptr instruction.
-*/
+ * This operation is the equivalent of LLVM's getelementptr instruction.
+ *
+ * FIXME: We currently do not support vector of pointers for the baseAddress.
+ *
+ */
 class GetElementPtrOperation final : public jive::simple_op
 {
 public:
@@ -59,6 +62,19 @@ public:
     return *dynamic_cast<const jive::valuetype*>(PointeeType_.get());
   }
 
+  /**
+   * Creates a GetElementPtr three address code.
+   *
+   * FIXME: We should not explicitly hand in the resultType parameter, but rather compute it from the pointeeType and
+   * the offsets. See LLVM's GetElementPtr instruction for reference.
+   *
+   * @param baseAddress The base address for the pointer calculation.
+   * @param offsets The offsets from the base address.
+   * @param pointeeType The type the base address points to.
+   * @param resultType The result type of the operation.
+   *
+   * @return A getElementPtr three address code.
+   */
   static std::unique_ptr<jlm::tac>
   Create(
     const variable * baseAddress,
@@ -77,6 +93,19 @@ public:
     return tac::create(op, operands);
   }
 
+  /**
+   * Creates a GetElementPtr RVSDG node.
+   *
+   * FIXME: We should not explicitly hand in the resultType parameter, but rather compute it from the pointeeType and
+   * the offsets. See LLVM's GetElementPtr instruction for reference.
+   *
+   * @param baseAddress The base address for the pointer calculation.
+   * @param offsets The offsets from the base address.
+   * @param pointeeType The type the base address points to.
+   * @param resultType The result type of the operation.
+   *
+   * @return The output of the created GetElementPtr RVSDG node.
+   */
   static jive::output *
   Create(
     jive::output * baseAddress,
