@@ -216,7 +216,7 @@ jlm::hls::MLIRGenImpl::MlirGenSimpleNode(const jive::simple_node *node) {
 		mlir::Value result = AddCvtOp(body, input0);
 
 		//TODO: support structs
-		const jive::type *pointeeType = &op->pointee_type();
+		const jive::type *pointeeType = &op->GetPointeeType();
 		for (size_t i = 1; i < node->ninputs(); i++) {
 			int bits = JlmSize(pointeeType);
 			if (dynamic_cast<const jive::bittype *>(pointeeType)) {
