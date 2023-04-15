@@ -603,15 +603,6 @@ convert_getelementptr_instruction(llvm::Instruction * inst, tacsvector_t & tacs,
 	return tacs.back()->result(0);
 }
 
-static const llvm::FunctionType *
-function_type(const llvm::CallInst * i)
-{
-	auto f = i->getCalledOperand();
-	JLM_ASSERT(f->getType()->isPointerTy());
-	JLM_ASSERT(f->getType()->getContainedType(0)->isFunctionTy());
-	return llvm::cast<const llvm::FunctionType>(f->getType()->getContainedType(0));
-}
-
 static const variable *
 convert_malloc_call(const llvm::CallInst * i, tacsvector_t & tacs, context & ctx)
 {
@@ -671,9 +662,9 @@ convert_call_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 		tacsvector_t & tacs,
 		context & ctx)
 	{
-		auto ftype = function_type(i);
+    auto functionType = i->getFunctionType();
 		std::vector<const jlm::variable*> arguments;
-		for (size_t n = 0; n < ftype->getNumParams(); n++)
+		for (size_t n = 0; n < functionType->getNumParams(); n++)
 			arguments.push_back(ConvertValue(i->getArgOperand(n), tacs, ctx));
 
 		return arguments;
@@ -684,9 +675,9 @@ convert_call_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 		tacsvector_t & tacs,
 		context & ctx)
 	{
-		auto ftype = function_type(i);
+    auto functionType = i->getFunctionType();
 		std::vector<const jlm::variable*> varargs;
-		for (size_t n = ftype->getNumParams(); n < i->getNumOperands()-1; n++)
+		for (size_t n = functionType->getNumParams(); n < i->getNumOperands() - 1; n++)
 			varargs.push_back(ConvertValue(i->getArgOperand(n), tacs, ctx));
 
 		tacs.push_back(valist_op::create(varargs));
