@@ -204,14 +204,13 @@ jlm::hls::VerilatorHarnessHLS::get_text(jlm::RvsdgModule &rm) {
 		"{\n";
 	// imports
 	auto root = rm.Rvsdg().root();
-	for (size_t i = 0; i < root->narguments(); ++i) {
-		if(auto ip = dynamic_cast<const impport*>(&root->argument(i)->port())){
-			if (auto t = dynamic_cast<const jlm::PointerType *>(&ip->type())) {
-				cpp << "extern " << convert_to_c_type(&t->GetElementType()) << " " << ip->name() << ";\n";
-			} else{
-				throw error("unexpected impport type");
-			}
-		}
+	for (size_t i = 0; i < root->narguments(); ++i)
+  {
+    if (auto rvsdgImport = dynamic_cast<const impport*>(&root->argument(i)->port()))
+    {
+      JLM_ASSERT(is<PointerType>(rvsdgImport->type()));
+      cpp << "extern " << convert_to_c_type(&rvsdgImport->GetValueType()) << " " << rvsdgImport->name() << ";\n";
+    }
 	}
 	std::string return_type;
 	if (ln->type().NumResults() == 0) {

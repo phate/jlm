@@ -132,7 +132,7 @@ PointerType::~PointerType() noexcept
 std::string
 PointerType::debug_string() const
 {
-  return GetElementType().debug_string() + "*";
+  return "ptr";
 }
 
 bool

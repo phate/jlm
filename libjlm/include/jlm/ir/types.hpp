@@ -669,9 +669,6 @@ IsOrContains(const jive::type & type)
   if (auto vectorType = dynamic_cast<const vectortype*>(&type))
     return IsOrContains<ELEMENTYPE>(vectorType->type());
 
-  if (auto pointerType = dynamic_cast<const PointerType*>(&type))
-    return IsOrContains<ELEMENTYPE>(pointerType->GetElementType());
-
   return false;
 }
 
