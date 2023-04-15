@@ -57,10 +57,9 @@ convert(const FunctionType & functionType, context & ctx)
 }
 
 static llvm::Type *
-convert(const PointerType & type, context & ctx)
+convert(const PointerType&, context & ctx)
 {
-  auto elementType = convert_type(type.GetElementType(), ctx);
-	return llvm::PointerType::get(elementType, 0);
+  return llvm::PointerType::get(ctx.llvm_module().getContext(), 0);
 }
 
 static llvm::Type *

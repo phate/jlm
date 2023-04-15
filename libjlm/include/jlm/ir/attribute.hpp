@@ -21,86 +21,102 @@ namespace jlm {
 class attribute {
 public:
 	enum class kind {
-    None ///< No attributes have been set
-	, alignment
-	, alloc_size
-	, always_inline
-	, arg_mem_only
-	, builtin
-  , ByRef
-	, by_val
-	, cold
-	, convergent
-	, DisableSanitizerInstrumentation
-	, dereferenceable
-	, dereferenceable_or_null
-  , ElementType
-  , Hot
-	, imm_arg
-	, in_alloca
-	, in_reg
-	, inaccessible_mem_only
-	, inaccessible_mem_or_arg_mem_only
-	, inline_hint
-	, jump_table
-	, min_size
-  , MustProgress
-	, naked
-	, nest
-	, no_alias
-	, no_builtin
-  , NoCallback
-	, no_capture
-	, no_cf_check
-	, no_duplicate
-	, no_free
-	, no_implicit_float
-	, no_inline
-  , NoMerge
-  , NoProfile
-	, no_recurse
-	, no_red_zone
-	, no_return
-  , NoSanitizeCoverage
-	, no_sync
-  , NoUndef
-	, no_unwind
-	, non_lazy_bind
-	, non_null
-  , NullPointerIsValid
-	, opt_for_fuzzing
-	, optimize_for_size
-	, optimize_none
-  , Preallocated
-	, read_none
-	, read_only
-	, returned
-	, returns_twice
-	, sext
-	, safe_stack
-	, sanitize_address
-	, sanitize_hwaddress
-	, sanitize_mem_tag
-	, sanitize_memory
-	, sanitize_thread
-	, shadow_call_stack
-	, speculatable
-	, speculative_load_hardening
-	, stack_alignment
-	, stack_protect
-	, stack_protect_req
-	, stack_protect_strong
-	, strict_fp
-	, struct_ret
-  , SwiftAsync
-	, swift_error
-	, swift_self
-	, uwtable
-  , VScaleRange
-	, will_return
-	, write_only
-	, zext
-  , EndAttrKinds ///< Sentinel value useful for loops
+    None, ///< No attributes have been set
+
+    FirstEnumAttr,
+	  AllocAlign,
+    AllocatedPointer,
+    AlwaysInline,
+    ArgMemOnly,
+    Builtin,
+    Cold,
+    Convergent,
+    DisableSanitizerInstrumentation,
+    FnRetThunkExtern,
+    Hot,
+    ImmArg,
+    InReg,
+    InaccessibleMemOnly,
+    InaccessibleMemOrArgMemOnly,
+    InlineHint,
+    JumpTable,
+    MinSize,
+    MustProgress,
+    Naked,
+    Nest,
+    NoAlias,
+    NoBuiltin,
+    NoCallback,
+    NoCapture,
+    NoCfCheck,
+    NoDuplicate,
+    NoFree,
+    NoImplicitFloat,
+    NoInline,
+    NoMerge,
+    NoProfile,
+    NoRecurse,
+    NoRedZone,
+    NoReturn,
+    NoSanitizeBounds,
+    NoSanitizeCoverage,
+    NoSync,
+    NoUndef,
+    NoUnwind,
+    NonLazyBind,
+    NonNull,
+    NullPointerIsValid,
+    OptForFuzzing,
+    OptimizeForSize,
+    OptimizeNone,
+    PresplitCoroutine,
+	  ReadNone,
+    ReadOnly,
+    Returned,
+    ReturnsTwice,
+    SExt,
+    SafeStack,
+    SanitizeAddress,
+    SanitizeHWAddress,
+    SanitizeMemTag,
+    SanitizeMemory,
+    SanitizeThread,
+    ShadowCallStack,
+    Speculatable,
+    SpeculativeLoadHardening,
+    StackProtect,
+    StackProtectReq,
+    StackProtectStrong,
+    StrictFP,
+    SwiftAsync,
+    SwiftError,
+    SwiftSelf,
+    WillReturn,
+    WriteOnly,
+    ZExt,
+    LastEnumAttr,
+
+    FirstTypeAttr,
+    ByRef,
+    ByVal,
+    ElementType,
+    InAlloca,
+    Preallocated,
+    StructRet,
+    LastTypeAttr,
+
+    FirstIntAttr,
+    Alignment,
+    AllocKind,
+    AllocSize,
+    Dereferenceable,
+    DereferenceableOrNull,
+    StackAlignment,
+    UWTable,
+    VScaleRange,
+    LastIntAttr,
+
+    EndAttrKinds ///< Sentinel value useful for loops
 	};
 
 	virtual
@@ -287,14 +303,14 @@ public:
 	static std::unique_ptr<attribute>
 	create_byval(std::unique_ptr<jive::valuetype> type)
 	{
-		std::unique_ptr<type_attribute> ta(new type_attribute(kind::by_val, std::move(type)));
+		std::unique_ptr<type_attribute> ta(new type_attribute(kind::ByVal, std::move(type)));
 		return ta;
 	}
 
   static std::unique_ptr<attribute>
   CreateStructRetAttribute(std::unique_ptr<jive::valuetype> type)
   {
-    return std::unique_ptr<attribute>(new type_attribute(kind::struct_ret, std::move(type)));
+    return std::unique_ptr<attribute>(new type_attribute(kind::StructRet, std::move(type)));
   }
 
 private:

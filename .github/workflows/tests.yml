@@ -32,6 +32,8 @@ jobs:
       with:
         path: ${{ github.workspace }}/*
         key: ${{ runner.os }}-${{ github.sha }}-jlm
+    - name: Install dependencies (LLVM)
+      run: sudo apt-get update && sudo apt-get install llvm-15-dev clang-15
     - name: Compile jlm
       run: make jlm-release -j `nproc`
     - name: Run unit and C tests
@@ -41,6 +43,8 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v3
+    - name: Install dependencies (LLVM)
+      run: sudo apt-get update && sudo apt-get install llvm-15-dev clang-15
     - name: Compile jlm
       run: make CXX=g++ jlm-release -j `nproc`
     - name: Run unit and C tests
@@ -55,6 +59,8 @@ jobs:
       with:
         path: ${{ github.workspace }}/*
         key: ${{ runner.os }}-${{ github.sha }}-jlm
+    - name: Install dependencies (LLVM)
+      run: sudo apt-get update && sudo apt-get install llvm-15-dev clang-15
     - name: Add jlc to PATH
       run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
     - name: Install valgrind
@@ -74,7 +80,7 @@ jobs:
     - name: Add jlc to PATH
       run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
     - name: Install dependencies (LLVM)
-      run: sudo apt-get install llvm-14-dev clang-14
+      run: sudo apt-get update && sudo apt-get install llvm-15-dev clang-15
     - name: Clone polybench
       run: git clone https://github.com/phate/polybench-jlm.git
     - name: Check polybench
@@ -89,6 +95,8 @@ jobs:
       with:
         path: ${{ github.workspace }}/bin/*
         key: ${{ runner.os }}-${{ github.sha }}-jlm-bin
+    - name: Install dependencies (LLVM)
+      run: sudo apt-get update && sudo apt-get install llvm-15-dev clang-15
     - name: Add jlc to PATH
       run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
     - name: Clone jlm-test-suite
@@ -106,6 +114,8 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v3
+    - name: Install dependencies (LLVM)
+      run: sudo apt-get update && sudo apt-get install llvm-15-dev clang-15
     - name: Clone jlm-test-suite
       run: git clone https://github.com/phate/jlm-eval-suite.git
     - name: Download CIRCT installation

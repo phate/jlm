@@ -165,27 +165,12 @@ class PointerType final : public jive::valuetype {
 public:
   ~PointerType() noexcept override;
 
+  PointerType() = default;
+
   explicit
-  PointerType(const jive::valuetype & elementType)
+  PointerType(const jive::valuetype&)
     : jive::valuetype()
-    , ElementType_(elementType.copy())
   {}
-
-  PointerType(const PointerType & other)
-    : jive::valuetype(other)
-    , ElementType_(other.ElementType_->copy())
-  {}
-
-  PointerType(PointerType && other) noexcept
-    : jive::valuetype(other)
-    , ElementType_(std::move(other.ElementType_))
-  {}
-
-  PointerType &
-  operator=(const PointerType&) = delete;
-
-  PointerType &
-  operator=(PointerType&&) = delete;
 
   [[nodiscard]] std::string
   debug_string() const override;
@@ -196,10 +181,10 @@ public:
   [[nodiscard]] std::unique_ptr<jive::type>
   copy() const override;
 
-  [[nodiscard]] const jive::valuetype &
-  GetElementType() const noexcept
+  static std::unique_ptr<PointerType>
+  Create()
   {
-    return *AssertedCast<const jive::valuetype>(ElementType_.get());
+    return std::make_unique<PointerType>();
   }
 
   static std::unique_ptr<PointerType>
@@ -218,8 +203,6 @@ private:
 
     throw error("Expected value type.");
   }
-
-  std::unique_ptr<jive::type> ElementType_;
 };
 
 /* array type */
