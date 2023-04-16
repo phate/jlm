@@ -27,7 +27,7 @@ TestCallTypeClassifierIndirectCall()
 	FunctionType fcttype1(
     {&iOStateType, &memoryStateType, &loopStateType},
     {&vt, &iOStateType, &memoryStateType, &loopStateType});
-	PointerType pt(fcttype1);
+	PointerType pt;
 	FunctionType fcttype2(
     {&pt, &iOStateType, &memoryStateType, &loopStateType},
     {&vt, &iOStateType, &memoryStateType, &loopStateType});
@@ -47,11 +47,11 @@ TestCallTypeClassifierIndirectCall()
 
     auto one = jive::create_bitconstant(lambda->subregion(), 32, 1);
 
-    auto alloca = alloca_op::create(PointerType(fcttype1), one, 8);
+    auto alloca = alloca_op::create(pt, one, 8);
 
     auto store = StoreNode::Create(alloca[0], lambda->fctargument(0), {alloca[1]}, 8);
 
-    auto load = LoadNode::Create(alloca[0], store, PointerType(fcttype1), 8);
+    auto load = LoadNode::Create(alloca[0], store, pt, 8);
 
     auto callResults = CallNode::Create(
       load[0],
@@ -60,7 +60,7 @@ TestCallTypeClassifierIndirectCall()
 
     lambda->finalize(callResults);
 
-    graph->add_export(lambda->output(), {PointerType(lambda->type()), "f"});
+    graph->add_export(lambda->output(), {pt, "f"});
 
     return std::make_tuple(
       AssertedCast<CallNode>(jive::node_output::node(callResults[0])),
@@ -180,7 +180,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
   auto g = SetupFunctionG();
   auto [f, callNode] = SetupFunctionF(g);
 
-	graph->add_export(f->output(), {PointerType(f->type()), "f"});
+	graph->add_export(f->output(), {PointerType(), "f"});
 
 //	jive::view(graph->root(), stdout);
 
@@ -320,7 +320,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
 
   auto g = SetupFunctionG();
   auto [f, callNode] = SetupFunctionF(g);
-	graph->add_export(f, {PointerType(f->node()->type()), "f"});
+	graph->add_export(f, {PointerType(), "f"});
 
 	jive::view(graph->root(), stdout);
 
@@ -352,14 +352,14 @@ TestCallTypeClassifierRecursiveDirectCall()
 
   auto SetupFib = [&]()
   {
-    PointerType pbit64(jive::bit64);
+    PointerType pbit64;
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
     loopstatetype loopStateType;
     FunctionType functionType(
       {&jive::bit64, &pbit64, &iOStateType, &memoryStateType, &loopStateType},
       {&iOStateType, &memoryStateType, &loopStateType});
-    PointerType pt(functionType);
+    PointerType pt;
 
     jlm::phi::builder pb;
     pb.begin(graph->root());

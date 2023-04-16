@@ -61,7 +61,7 @@ private:
 	static inline std::vector<jive::port>
 	create_srcports(const FunctionType & functionType)
 	{
-		std::vector<jive::port> ports(1, {PointerType(functionType)});
+		std::vector<jive::port> ports(1, {PointerType()});
     for (auto & argumentType : functionType.Arguments())
 			ports.emplace_back(argumentType);
 

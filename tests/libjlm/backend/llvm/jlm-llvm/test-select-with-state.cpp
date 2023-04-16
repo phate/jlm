@@ -21,7 +21,7 @@ test()
 	using namespace jlm;
 
 	valuetype vt;
-	PointerType pt(vt);
+	PointerType pt;
 	MemoryStateType mt;
 	ipgraph_module m(filepath(""), "", "");
 

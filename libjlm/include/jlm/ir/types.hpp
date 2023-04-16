@@ -167,11 +167,6 @@ public:
 
   PointerType() = default;
 
-  explicit
-  PointerType(const jive::valuetype&)
-    : jive::valuetype()
-  {}
-
   [[nodiscard]] std::string
   debug_string() const override;
 
@@ -185,23 +180,6 @@ public:
   Create()
   {
     return std::make_unique<PointerType>();
-  }
-
-  static std::unique_ptr<PointerType>
-  Create(const jive::type & type)
-  {
-    auto & valueType = CheckAndExtractType(type);
-    return std::make_unique<PointerType>(valueType);
-  }
-
-private:
-  static const jive::valuetype &
-  CheckAndExtractType(const jive::type & type)
-  {
-    if (auto valueType = dynamic_cast<const jive::valuetype*>(&type))
-      return *valueType;
-
-    throw error("Expected value type.");
   }
 };
 

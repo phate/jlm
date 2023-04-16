@@ -209,7 +209,6 @@ private:
 		const jlm::linkage & linkage,
 		const attributeset & attributes)
 	: ipgraph_node(clg)
-	, type_(type)
   , FunctionType_(type)
 	, name_(name)
 	, linkage_(linkage)
@@ -279,7 +278,6 @@ public:
 	}
 
 private:
-	PointerType type_;
   FunctionType FunctionType_;
 	std::string name_;
 	jlm::linkage linkage_;
@@ -378,7 +376,6 @@ private:
 	, name_(name)
   , Section_(std::move(section))
 	, linkage_(linkage)
-	, type_(valueType)
   , ValueType_(valueType.copy())
 	{}
 
@@ -451,7 +448,6 @@ private:
 	std::string name_;
   std::string Section_;
 	jlm::linkage linkage_;
-	PointerType type_;
   std::unique_ptr<jive::type> ValueType_;
 	std::unique_ptr<data_node_init> init_;
 };

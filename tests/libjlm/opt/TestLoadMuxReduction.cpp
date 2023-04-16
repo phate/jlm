@@ -17,7 +17,7 @@ test_load_mux_reduction()
   using namespace jlm;
 
   jlm::valuetype vt;
-  PointerType pt(vt);
+  PointerType pt;
   MemoryStateType mt;
 
   jive::graph graph;
@@ -70,7 +70,7 @@ test_load_mux_reduction2()
   using namespace jlm;
 
   jlm::valuetype vt;
-  PointerType pt(vt);
+  PointerType pt;
   MemoryStateType mt;
 
   jive::graph graph;

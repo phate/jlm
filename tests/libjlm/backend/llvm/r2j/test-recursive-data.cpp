@@ -22,7 +22,7 @@ test()
 	using namespace jlm;
 
 	valuetype vt;
-	PointerType pt(vt);
+	PointerType pt;
 
 	RvsdgModule rm(filepath(""), "", "");
 

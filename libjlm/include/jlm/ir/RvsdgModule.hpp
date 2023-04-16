@@ -25,7 +25,7 @@ public:
         const jive::valuetype & valueType,
         const std::string & name,
         const jlm::linkage & lnk)
-        : jive::impport(PointerType(valueType), name)
+        : jive::impport(PointerType(), name)
         , linkage_(lnk)
         , ValueType_(valueType.copy())
     {}

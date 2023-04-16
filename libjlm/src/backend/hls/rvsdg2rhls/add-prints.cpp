@@ -54,7 +54,6 @@ jlm::hls::convert_prints(jlm::RvsdgModule &rm) {
 	auto root = graph.root();
 	//TODO: make this less hacky by using the correct state types
 	FunctionType fct({&jive::bit64, &jive::bit64}, {loopstatetype::create().get()});
-	jlm::PointerType ptr(fct);
 	impport imp(fct, "printnode", linkage::external_linkage);
 	auto printf = graph.add_import(imp);
 	convert_prints(

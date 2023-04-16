@@ -164,10 +164,8 @@ private:
     const jive::valuetype & storedType,
     size_t numStates)
   {
-    PointerType pointerType(storedType);
-    MemoryStateType memoryStateType;
-    std::vector<jive::port> ports({pointerType, storedType});
-    std::vector<jive::port> states(numStates, {memoryStateType});
+    std::vector<jive::port> ports({PointerType(), storedType});
+    std::vector<jive::port> states(numStates, {MemoryStateType()});
     ports.insert(ports.end(), states.begin(), states.end());
     return ports;
   }

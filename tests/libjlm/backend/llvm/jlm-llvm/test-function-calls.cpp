@@ -22,7 +22,7 @@ test_malloc()
 		using namespace jlm;
 
 		MemoryStateType mt;
-		PointerType pt(jive::bit8);
+		PointerType pt;
 		auto im = ipgraph_module::create(filepath(""), "", "");
 
 		auto cfg = cfg::create(*im);
@@ -73,7 +73,7 @@ test_free()
 
 		iostatetype iot;
 		MemoryStateType mt;
-		PointerType pt(jive::bit8);
+		PointerType pt;
 
 		auto ipgmod = ipgraph_module::create(filepath(""), "", "");
 

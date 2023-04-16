@@ -150,7 +150,7 @@ node::finalize(jive::output * origin)
 
 	delta::result::create(origin);
 
-	return output::create(this, PointerType(type()));
+	return output::create(this, PointerType());
 }
 
 /* delta context variable input class */
