@@ -24,7 +24,7 @@ public:
     None, ///< No attributes have been set
 
     FirstEnumAttr,
-	  AllocAlign,
+    AllocAlign,
     AllocatedPointer,
     AlwaysInline,
     ArgMemOnly,
@@ -70,7 +70,7 @@ public:
     OptimizeForSize,
     OptimizeNone,
     PresplitCoroutine,
-	  ReadNone,
+    ReadNone,
     ReadOnly,
     Returned,
     ReturnsTwice,
