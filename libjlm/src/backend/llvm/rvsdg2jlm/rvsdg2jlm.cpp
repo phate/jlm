@@ -492,20 +492,20 @@ convert_phi_node(const jive::node & node, context & ctx)
 static inline void
 convert_delta_node(const jive::node & node, context & ctx)
 {
-	JLM_ASSERT(is<delta::operation>(&node));
-	auto delta = static_cast<const delta::node*>(&node);
-	auto & m = ctx.module();
+  JLM_ASSERT(is<delta::operation>(&node));
+  auto delta = static_cast<const delta::node*>(&node);
+  auto & m = ctx.module();
 
-	auto dnode = data_node::Create(
-		m.ipgraph(),
-		delta->name(),
+  auto dnode = data_node::Create(
+    m.ipgraph(),
+    delta->name(),
     delta->type(),
-		delta->linkage(),
+    delta->linkage(),
     delta->Section(),
-		delta->constant());
-	dnode->set_initialization(create_initialization(delta, ctx));
-	auto v = m.create_global_value(dnode);
-	ctx.insert(delta->output(), v);
+    delta->constant());
+  dnode->set_initialization(create_initialization(delta, ctx));
+  auto v = m.create_global_value(dnode);
+  ctx.insert(delta->output(), v);
 }
 
 static inline void
