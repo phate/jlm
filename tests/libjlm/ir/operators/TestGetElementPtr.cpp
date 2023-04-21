@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Nico Reißmann <nico.reissmann@gmail.com>
+ * Copyright 2023 Nico Reißmann <nico.reissmann@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
