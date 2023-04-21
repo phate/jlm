@@ -243,7 +243,7 @@ jlm::hls::split_hls_function(jlm::RvsdgModule &rm, const std::string &function_n
                     smap.insert(ln->input(i)->origin(), arg);
                     // add export for delta to rm
                     // TODO: check if not already exported and maybe adjust linkage?
-                    rm.Rvsdg().add_export(odn->output(), {odn->type(), odn->name()});
+                    rm.Rvsdg().add_export(odn->output(), {odn->output()->type(), odn->name()});
                 } else {
                     throw jlm::error("Unsupported node type: " + orig_node->operation().debug_string());
                 }
