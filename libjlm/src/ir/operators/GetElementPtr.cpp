@@ -15,8 +15,10 @@ bool
 GetElementPtrOperation::operator==(const operation & other) const noexcept
 {
   auto operation = dynamic_cast<const GetElementPtrOperation*>(&other);
-  if (!operation
-      || operation->narguments() != narguments())
+
+  if (operation == nullptr
+      || GetPointeeType() != operation->GetPointeeType()
+      || narguments() != operation->narguments())
   {
     return false;
   }
@@ -29,7 +31,7 @@ GetElementPtrOperation::operator==(const operation & other) const noexcept
     }
   }
 
-  return operation->result(0) == result(0);
+  return true;
 }
 
 std::string
