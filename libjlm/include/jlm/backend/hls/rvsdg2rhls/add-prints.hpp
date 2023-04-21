@@ -20,7 +20,10 @@ namespace jlm{
 		convert_prints(jlm::RvsdgModule &rm);
 
 		void
-		convert_prints(jive::region *region, jive::output * printf);
+		convert_prints(
+      jive::region *region,
+      jive::output * printf,
+      const FunctionType & functionType);
 
 		jive::output *
 		route_to_region(jive::output * output, jive::region * region);

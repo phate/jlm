@@ -84,6 +84,7 @@ test1()
 
     auto callResults = CallNode::Create(
       gammaInputF1->argument(0),
+      f1->node()->type(),
       {gammaInputValue->argument(0), gammaInputIoState->argument(0), gammaInputMemoryState->argument(0),
        gammaInputLoopState->argument(0)});
 
@@ -131,7 +132,7 @@ test2()
   FunctionType functionType1(
     {&vt, &iOStateType, &memoryStateType, &loopStateType},
     {&iOStateType, &memoryStateType, &loopStateType});
-	PointerType pt(functionType1);
+	PointerType pt;
 
 	FunctionType functionType2(
     {&pt, &iOStateType, &memoryStateType, &loopStateType},
@@ -140,7 +141,7 @@ test2()
 
 	RvsdgModule rm(filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
-	auto i = graph.add_import({PointerType(functionType2), "i"});
+	auto i = graph.add_import({pt, "i"});
 
   auto SetupF1 = [&](const FunctionType & functionType)
   {
@@ -174,6 +175,7 @@ test2()
 
     auto callResults = CallNode::Create(
       cvi,
+      functionType2,
       {cvf1, iOStateArgument, memoryStateArgument, loopStateArgument});
 
     return lambda->finalize(callResults);

@@ -77,11 +77,14 @@ namespace rvsdg2jlm {
 static const FunctionType *
 is_function_import(const jive::argument * argument)
 {
-	JLM_ASSERT(argument->region()->graph()->root() == argument->region());
-	auto at = dynamic_cast<const PointerType*>(&argument->type());
-	JLM_ASSERT(at != nullptr);
+    JLM_ASSERT(argument->region()->graph()->root() == argument->region());
 
-	return dynamic_cast<const FunctionType*>(&at->GetElementType());
+    if (auto rvsdgImport = dynamic_cast<const impport*>(&argument->port()))
+    {
+        return dynamic_cast<const FunctionType*>(&rvsdgImport->GetValueType());
+    }
+
+    return nullptr;
 }
 
 static std::unique_ptr<data_node_init>
@@ -489,20 +492,20 @@ convert_phi_node(const jive::node & node, context & ctx)
 static inline void
 convert_delta_node(const jive::node & node, context & ctx)
 {
-	JLM_ASSERT(is<delta::operation>(&node));
-	auto delta = static_cast<const delta::node*>(&node);
-	auto & m = ctx.module();
+  JLM_ASSERT(is<delta::operation>(&node));
+  auto delta = static_cast<const delta::node*>(&node);
+  auto & m = ctx.module();
 
-	auto dnode = data_node::Create(
-		m.ipgraph(),
-		delta->name(),
-		delta->type(),
-		delta->linkage(),
+  auto dnode = data_node::Create(
+    m.ipgraph(),
+    delta->name(),
+    delta->type(),
+    delta->linkage(),
     delta->Section(),
-		delta->constant());
-	dnode->set_initialization(create_initialization(delta, ctx));
-	auto v = m.create_global_value(dnode);
-	ctx.insert(delta->output(), v);
+    delta->constant());
+  dnode->set_initialization(create_initialization(delta, ctx));
+  auto v = m.create_global_value(dnode);
+  ctx.insert(delta->output(), v);
 }
 
 static inline void
@@ -549,18 +552,15 @@ convert_imports(const jive::graph & graph, ipgraph_module & im, context & ctx)
 			auto v = im.create_variable(f);
 			ctx.insert(argument, v);
 		} else {
-			JLM_ASSERT(dynamic_cast<const PointerType*>(&argument->type()));
-			auto & type = *static_cast<const PointerType*>(&argument->type());
-			const auto & name = import->name();
-			auto dnode = data_node::Create(
-        ipg,
-        name,
-        type,
-        import->linkage(),
-        "",
-        false);
-			auto v = im.create_global_value(dnode);
-			ctx.insert(argument, v);
+            auto dnode = data_node::Create(
+                    ipg,
+                    import->name(),
+                    import->GetValueType(),
+                    import->linkage(),
+                    "",
+                    false);
+            auto v = im.create_global_value(dnode);
+            ctx.insert(argument, v);
 		}
 	}
 }

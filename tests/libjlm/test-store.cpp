@@ -21,7 +21,7 @@ test_store_mux_reduction()
 	using namespace jlm;
 
 	jlm::valuetype vt;
-	PointerType pt(vt);
+	PointerType pt;
 	MemoryStateType mt;
 
 	jive::graph graph;
@@ -67,7 +67,7 @@ test_multiple_origin_reduction()
 	using namespace jlm;
 
 	jlm::valuetype vt;
-	PointerType pt(vt);
+	PointerType pt;
 	MemoryStateType mt;
 
 	jive::graph graph;
@@ -148,7 +148,7 @@ test_store_store_reduction()
 	using namespace jlm;
 
 	valuetype vt;
-	PointerType pt(vt);
+	PointerType pt;
 	MemoryStateType mt;
 
 	jive::graph graph;

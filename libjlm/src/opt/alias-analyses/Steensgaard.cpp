@@ -553,9 +553,8 @@ public:
   static std::unique_ptr<Location>
   Create(const jive::argument & argument)
   {
-    auto pointerType = AssertedCast<const PointerType>(&argument.type());
-
-    bool pointsToUnknownMemory = is<PointerType>(pointerType->GetElementType());
+    auto & rvsdgImport = *AssertedCast<const impport>(&argument.port());
+    bool pointsToUnknownMemory = is<PointerType>(rvsdgImport.GetValueType());
     /**
      * FIXME: We use pointsToUnknownMemory for pointsToExternalMemory
      */

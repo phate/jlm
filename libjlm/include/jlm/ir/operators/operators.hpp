@@ -2503,7 +2503,7 @@ public:
 	~malloc_op();
 
 	malloc_op(const jive::bittype & btype)
-	: simple_op({btype}, {PointerType(jive::bittype(8)), {MemoryStateType::Create()}})
+	: simple_op({btype}, {PointerType(), {MemoryStateType::Create()}})
 	{}
 
 	virtual bool
@@ -2618,8 +2618,7 @@ private:
 	{
 		std::vector<jive::port> memstates(nmemstates, {MemoryStateType::Create()});
 
-		std::vector<jive::port> ports;
-		ports.push_back(PointerType(jive::bittype(8)));
+		std::vector<jive::port> ports({PointerType()});
 		ports.insert(ports.end(), memstates.begin(), memstates.end());
 		ports.push_back(iostatetype::instance());
 
@@ -2707,9 +2706,8 @@ private:
 		if (nMemoryStates == 0)
 			throw jlm::error("Number of memory states cannot be zero.");
 
-		PointerType pt(jive::bit8);
-
-		std::vector<jive::port> ports = {pt, pt, length, jive::bit1};
+    PointerType pointerType;
+		std::vector<jive::port> ports = {pointerType, pointerType, length, jive::bit1};
 		ports.insert(ports.end(), nMemoryStates, {MemoryStateType::Create()});
 
 		return ports;

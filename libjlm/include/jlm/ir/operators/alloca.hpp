@@ -28,7 +28,7 @@ public:
     const jive::valuetype & allocatedType,
     const jive::bittype & btype,
     size_t alignment)
-    : simple_op({btype}, {PointerType(allocatedType), {MemoryStateType::Create()}})
+    : simple_op({btype}, {PointerType(), {MemoryStateType::Create()}})
     , alignment_(alignment)
     , AllocatedType_(allocatedType.copy())
   {}

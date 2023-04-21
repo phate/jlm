@@ -108,7 +108,8 @@ function_node::name() const noexcept
 const jive::type &
 function_node::type() const noexcept
 {
-	return type_;
+  static PointerType pointerType;
+	return pointerType;
 }
 
 const jlm::linkage &
@@ -151,8 +152,8 @@ data_node::name() const noexcept
 const PointerType &
 data_node::type() const noexcept
 {
-	JLM_ASSERT(dynamic_cast<const PointerType*>(type_.get()));
-	return *static_cast<const PointerType*>(type_.get());
+  static PointerType pointerType;
+  return pointerType;
 }
 
 const jlm::linkage &

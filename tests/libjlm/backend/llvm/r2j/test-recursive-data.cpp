@@ -22,12 +22,12 @@ test()
 	using namespace jlm;
 
 	valuetype vt;
-	PointerType pt(vt);
+	PointerType pt;
 
 	RvsdgModule rm(filepath(""), "", "");
 
 	/* setup graph */
-	auto imp = rm.Rvsdg().add_import(impport(pt, "", linkage::external_linkage));
+	auto imp = rm.Rvsdg().add_import(impport(vt, "", linkage::external_linkage));
 
 	phi::builder pb;
 	pb.begin(rm.Rvsdg().root());
@@ -40,7 +40,7 @@ test()
 	{
 		auto delta = delta::node::Create(
 			region,
-			PointerType(vt),
+      vt,
 			"test-delta1",
 			linkage::external_linkage,
       "",
@@ -53,7 +53,7 @@ test()
 	{
 		auto delta = delta::node::Create(
 			region,
-			PointerType(vt),
+      vt,
 			"test-delta2",
 			linkage::external_linkage,
       "",

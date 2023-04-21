@@ -125,21 +125,9 @@ CallOperation::~CallOperation()
 bool
 CallOperation::operator==(const operation & other) const noexcept
 {
-	auto op = dynamic_cast<const CallOperation*>(&other);
-	if (!op || op->narguments() != narguments() || op->nresults() != nresults())
-		return false;
-
-	for (size_t n = 0; n < narguments(); n++) {
-		if (op->argument(n) != argument(n))
-			return false;
-	}
-
-	for (size_t n = 0; n < nresults(); n++) {
-		if (op->result(n) != result(n))
-			return false;
-	}
-
-	return true;
+  auto callOperation = dynamic_cast<const CallOperation*>(&other);
+  return callOperation
+         && FunctionType_ == callOperation->FunctionType_;
 }
 
 std::string

@@ -544,7 +544,7 @@ convert_load_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & c
 	auto instruction = static_cast<llvm::LoadInst*>(i);
 
 	/* FIXME: volatile */
-	auto alignment = instruction->getAlignment();
+	auto alignment = instruction->getAlign().value();
 	auto address = ConvertValue(instruction->getPointerOperand(), tacs, ctx);
   auto loadedType = ConvertType(instruction->getType(), ctx);
 
@@ -564,7 +564,7 @@ convert_store_instruction(llvm::Instruction * i, tacsvector_t & tacs, context & 
 	auto instruction = static_cast<llvm::StoreInst*>(i);
 
 	/* FIXME: volatile */
-	auto alignment = instruction->getAlignment();
+	auto alignment = instruction->getAlign().value();
 	auto address = ConvertValue(instruction->getPointerOperand(), tacs, ctx);
 	auto value = ConvertValue(instruction->getValueOperand(), tacs, ctx);
 
@@ -601,15 +601,6 @@ convert_getelementptr_instruction(llvm::Instruction * inst, tacsvector_t & tacs,
 	tacs.push_back(GetElementPtrOperation::Create(base, indices, *pointeeType, *resultType));
 
 	return tacs.back()->result(0);
-}
-
-static const llvm::FunctionType *
-function_type(const llvm::CallInst * i)
-{
-	auto f = i->getCalledOperand();
-	JLM_ASSERT(f->getType()->isPointerTy());
-	JLM_ASSERT(f->getType()->getContainedType(0)->isFunctionTy());
-	return llvm::cast<const llvm::FunctionType>(f->getType()->getContainedType(0));
 }
 
 static const variable *
@@ -671,9 +662,9 @@ convert_call_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 		tacsvector_t & tacs,
 		context & ctx)
 	{
-		auto ftype = function_type(i);
+    auto functionType = i->getFunctionType();
 		std::vector<const jlm::variable*> arguments;
-		for (size_t n = 0; n < ftype->getNumParams(); n++)
+		for (size_t n = 0; n < functionType->getNumParams(); n++)
 			arguments.push_back(ConvertValue(i->getArgOperand(n), tacs, ctx));
 
 		return arguments;
@@ -684,9 +675,9 @@ convert_call_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 		tacsvector_t & tacs,
 		context & ctx)
 	{
-		auto ftype = function_type(i);
+    auto functionType = i->getFunctionType();
 		std::vector<const jlm::variable*> varargs;
-		for (size_t n = ftype->getNumParams(); n < i->getNumOperands()-1; n++)
+		for (size_t n = functionType->getNumParams(); n < i->getNumOperands() - 1; n++)
 			varargs.push_back(ConvertValue(i->getArgOperand(n), tacs, ctx));
 
 		tacs.push_back(valist_op::create(varargs));
@@ -717,7 +708,7 @@ convert_call_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 	if (IsMemcpyCall(i))
 		return convert_memcpy_call(i, tacs, ctx);
 
-	auto ftype = function_type(i);
+	auto ftype = i->getFunctionType();
 
 	auto arguments = create_arguments(i, tacs, ctx);
 	if (ftype->isVarArg())
@@ -727,7 +718,10 @@ convert_call_instruction(llvm::Instruction * instruction, tacsvector_t & tacs, c
 	arguments.push_back(ctx.loop_state());
 
 	auto fctvar = ConvertValue(i->getCalledOperand(), tacs, ctx);
-	auto call = CallOperation::create(fctvar, arguments);
+	auto call = CallOperation::create(
+    fctvar,
+    *ConvertFunctionType(ftype, ctx),
+    arguments);
 
 	auto result = call->result(0);
 	auto iostate = call->result(call->nresults() - 3);
@@ -834,8 +828,9 @@ convert_alloca_instruction(llvm::Instruction * instruction, tacsvector_t & tacs,
 	auto memstate = ctx.memory_state();
 	auto size = ConvertValue(i->getArraySize(), tacs, ctx);
 	auto vtype = ConvertType(i->getAllocatedType(), ctx);
+  auto alignment = i->getAlign().value();
 
-	tacs.push_back(alloca_op::create(*vtype, size, i->getAlignment()));
+	tacs.push_back(alloca_op::create(*vtype, size, alignment));
 	auto result = tacs.back()->result(0);
 	auto astate = tacs.back()->result(1);
 

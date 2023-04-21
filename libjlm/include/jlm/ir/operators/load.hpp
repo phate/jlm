@@ -143,7 +143,7 @@ public:
     size_t numStates,
     size_t alignment)
     : simple_op(
-      CreateOperandPorts(loadedType, numStates),
+      CreateOperandPorts(numStates),
       CreateResultPorts(loadedType, numStates))
     , alignment_(alignment)
   {}
@@ -209,11 +209,9 @@ private:
   }
 
   static std::vector<jive::port>
-  CreateOperandPorts(
-    const jive::valuetype & loadedType,
-    size_t numStates)
+  CreateOperandPorts(size_t numStates)
   {
-    std::vector<jive::port> ports(1, {PointerType(loadedType)});
+    std::vector<jive::port> ports(1, {PointerType()});
     std::vector<jive::port> states(numStates, {MemoryStateType::Create()});
     ports.insert(ports.end(), states.begin(), states.end());
     return ports;

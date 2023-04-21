@@ -132,15 +132,13 @@ PointerType::~PointerType() noexcept
 std::string
 PointerType::debug_string() const
 {
-  return GetElementType().debug_string() + "*";
+  return "ptr";
 }
 
 bool
 PointerType::operator==(const jive::type & other) const noexcept
 {
-  auto type = dynamic_cast<const PointerType*>(&other);
-  return type
-         && type->GetElementType() == GetElementType();
+  return jive::is<PointerType>(other);
 }
 
 std::unique_ptr<jive::type>

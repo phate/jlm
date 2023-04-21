@@ -27,7 +27,7 @@ TestCallTypeClassifierIndirectCall()
 	FunctionType fcttype1(
     {&iOStateType, &memoryStateType, &loopStateType},
     {&vt, &iOStateType, &memoryStateType, &loopStateType});
-	PointerType pt(fcttype1);
+	PointerType pt;
 	FunctionType fcttype2(
     {&pt, &iOStateType, &memoryStateType, &loopStateType},
     {&vt, &iOStateType, &memoryStateType, &loopStateType});
@@ -47,19 +47,20 @@ TestCallTypeClassifierIndirectCall()
 
     auto one = jive::create_bitconstant(lambda->subregion(), 32, 1);
 
-    auto alloca = alloca_op::create(PointerType(fcttype1), one, 8);
+    auto alloca = alloca_op::create(pt, one, 8);
 
     auto store = StoreNode::Create(alloca[0], lambda->fctargument(0), {alloca[1]}, 8);
 
-    auto load = LoadNode::Create(alloca[0], store, PointerType(fcttype1), 8);
+    auto load = LoadNode::Create(alloca[0], store, pt, 8);
 
     auto callResults = CallNode::Create(
       load[0],
+      fcttype1,
       {iOStateArgument, memoryStateArgument, loopStateArgument});
 
     lambda->finalize(callResults);
 
-    graph->add_export(lambda->output(), {PointerType(lambda->type()), "f"});
+    graph->add_export(lambda->output(), {pt, "f"});
 
     return std::make_tuple(
       AssertedCast<CallNode>(jive::node_output::node(callResults[0])),
@@ -94,20 +95,20 @@ TestCallTypeClassifierNonRecursiveDirectCall()
 	auto nf = graph->node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
+  valuetype vt;
+  iostatetype iOStateType;
+  MemoryStateType memoryStateType;
+  loopstatetype loopStateType;
+
+  FunctionType functionTypeG(
+    {&iOStateType, &memoryStateType, &loopStateType},
+    {&vt, &iOStateType, &memoryStateType, &loopStateType});
+
   auto SetupFunctionG = [&]()
   {
-    valuetype vt;
-    iostatetype iOStateType;
-    MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
-
-    FunctionType functionType(
-      {&iOStateType, &memoryStateType, &loopStateType},
-      {&vt, &iOStateType, &memoryStateType, &loopStateType});
-
     auto lambda = lambda::node::create(
       graph->root(),
-      functionType,
+      functionTypeG,
       "g",
       linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
@@ -166,6 +167,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
 
     auto callResults = CallNode::Create(
       functionG,
+      functionTypeG,
       {iOStateArgument, memoryStateArgument, loopStateArgument});
 
     lambda->finalize(callResults);
@@ -178,7 +180,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
   auto g = SetupFunctionG();
   auto [f, callNode] = SetupFunctionF(g);
 
-	graph->add_export(f->output(), {PointerType(f->type()), "f"});
+	graph->add_export(f->output(), {PointerType(), "f"});
 
 //	jive::view(graph->root(), stdout);
 
@@ -204,20 +206,20 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
 	auto nf = graph->node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
+  valuetype vt;
+  iostatetype iOStateType;
+  MemoryStateType memoryStateType;
+  loopstatetype loopStateType;
+
+  FunctionType functionTypeG(
+    {&iOStateType, &memoryStateType, &loopStateType},
+    {&vt, &iOStateType, &memoryStateType, &loopStateType});
+
   auto SetupFunctionG = [&]()
   {
-    valuetype vt;
-    iostatetype iOStateType;
-    MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
-
-    FunctionType functionType(
-      {&iOStateType, &memoryStateType, &loopStateType},
-      {&vt, &iOStateType, &memoryStateType, &loopStateType});
-
     auto lambda = lambda::node::create(
       graph->root(),
-      functionType,
+      functionTypeG,
       "g",
       linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
@@ -265,6 +267,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
 
       auto callResults = CallNode::Create(
         functionG,
+        functionTypeG,
         {thetaOutputIoState->argument(), thetaOutputMemoryState->argument(), innerLoopState});
 
       thetaOutputG->result()->divert_to(functionG);
@@ -317,7 +320,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
 
   auto g = SetupFunctionG();
   auto [f, callNode] = SetupFunctionF(g);
-	graph->add_export(f, {PointerType(f->node()->type()), "f"});
+	graph->add_export(f, {PointerType(), "f"});
 
 	jive::view(graph->root(), stdout);
 
@@ -349,14 +352,14 @@ TestCallTypeClassifierRecursiveDirectCall()
 
   auto SetupFib = [&]()
   {
-    PointerType pbit64(jive::bit64);
+    PointerType pbit64;
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
     loopstatetype loopStateType;
     FunctionType functionType(
       {&jive::bit64, &pbit64, &iOStateType, &memoryStateType, &loopStateType},
       {&iOStateType, &memoryStateType, &loopStateType});
-    PointerType pt(functionType);
+    PointerType pt;
 
     jlm::phi::builder pb;
     pb.begin(graph->root());
@@ -391,12 +394,14 @@ TestCallTypeClassifierRecursiveDirectCall()
     auto nm1 = jive::bitsub_op::create(64, nev->argument(0), one);
     auto callfibm1Results = CallNode::Create(
       fibev->argument(0),
+      functionType,
       {nm1, resultev->argument(0), gIIoState->argument(0), gIMemoryState->argument(0), gILoopState->argument(0)});
 
     two = jive::create_bitconstant(gammaNode->subregion(0), 64, 2);
     auto nm2 = jive::bitsub_op::create(64, nev->argument(0), two);
     auto callfibm2Results = CallNode::Create(
       fibev->argument(0),
+      functionType,
       {nm2, resultev->argument(0), callfibm1Results[0], callfibm1Results[1], callfibm1Results[2]});
 
     auto gepnm1 = GetElementPtrOperation::Create(
