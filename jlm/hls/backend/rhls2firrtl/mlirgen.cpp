@@ -19,7 +19,7 @@ jlm::hls::MLIRGenImpl::MlirGenSimpleNode(const jive::simple_node *node) {
 	// Create the module and its input/output ports
 	auto module = nodeToModule(node);
 	// Get the body of the module such that we can add contents to the module
-	auto body = module.getBody();
+	auto body = module.getBodyBlock();
 
 	llvm::SmallVector<mlir::Value> inBundles;
 
@@ -42,37 +42,49 @@ jlm::hls::MLIRGenImpl::MlirGenSimpleNode(const jive::simple_node *node) {
 		auto input1 = GetSubfield(body, inBundles[1], "data");
 		auto op = AddAddOp(body, input0, input1);
 		// Connect the op to the output data
-		PartialConnect(body, outData, op);
+		int outSize = JlmSize(&node->output(0)->type());
+		auto slice = AddBitsOp(body, op, outSize - 1, 0);
+		Connect(body, outData, slice);
 	} else if (dynamic_cast<const jive::bitsub_op *>(&(node->operation()))) {
 		auto input0 = GetSubfield(body, inBundles[0], "data");
 		auto input1 = GetSubfield(body, inBundles[1], "data");
 		auto op = AddSubOp(body, input0, input1);
 		// Connect the op to the output data
-		PartialConnect(body, outData, op);
+		int outSize = JlmSize(&node->output(0)->type());
+		auto slice = AddBitsOp(body, op, outSize - 1, 0);
+		Connect(body, outData, slice);
 	} else if (dynamic_cast<const jive::bitand_op *>(&(node->operation()))) {
 		auto input0 = GetSubfield(body, inBundles[0], "data");
 		auto input1 = GetSubfield(body, inBundles[1], "data");
 		auto op = AddAndOp(body, input0, input1);
 		// Connect the op to the output data
-		PartialConnect(body, outData, op);
+		int outSize = JlmSize(&node->output(0)->type());
+		auto slice = AddBitsOp(body, op, outSize - 1, 0);
+		Connect(body, outData, slice);
 	} else if (dynamic_cast<const jive::bitxor_op *>(&(node->operation()))) {
 		auto input0 = GetSubfield(body, inBundles[0], "data");
 		auto input1 = GetSubfield(body, inBundles[1], "data");
 		auto op = AddXorOp(body, input0, input1);
 		// Connect the op to the output data
-		PartialConnect(body, outData, op);
+		int outSize = JlmSize(&node->output(0)->type());
+		auto slice = AddBitsOp(body, op, outSize - 1, 0);
+		Connect(body, outData, slice);
 	} else if (dynamic_cast<const jive::bitor_op *>(&(node->operation()))) {
 		auto input0 = GetSubfield(body, inBundles[0], "data");
 		auto input1 = GetSubfield(body, inBundles[1], "data");
 		auto op = AddOrOp(body, input0, input1);
 		// Connect the op to the output data
-		PartialConnect(body, outData, op);
+		int outSize = JlmSize(&node->output(0)->type());
+		auto slice = AddBitsOp(body, op, outSize - 1, 0);
+		Connect(body, outData, slice);
 	} else if (dynamic_cast<const jive::bitmul_op *>(&(node->operation()))) {
 		auto input0 = GetSubfield(body, inBundles[0], "data");
 		auto input1 = GetSubfield(body, inBundles[1], "data");
 		auto op = AddMulOp(body, input0, input1);
 		// Connect the op to the output data
-		PartialConnect(body, outData, op);
+		int outSize = JlmSize(&node->output(0)->type());
+		auto slice = AddBitsOp(body, op, outSize - 1, 0);
+		Connect(body, outData, slice);
 	} else if (dynamic_cast<const jive::bitsdiv_op *>(&(node->operation()))) {
 		auto input0 = GetSubfield(body, inBundles[0], "data");
 		auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -81,7 +93,9 @@ jlm::hls::MLIRGenImpl::MlirGenSimpleNode(const jive::simple_node *node) {
 		auto divOp = AddDivOp(body, sIntOp0, sIntOp1);
 		auto uIntOp = AddAsUIntOp(body, divOp);
 		// Connect the op to the output data
-		PartialConnect(body, outData, uIntOp);
+		int outSize = JlmSize(&node->output(0)->type());
+		auto slice = AddBitsOp(body, uIntOp, outSize - 1, 0);
+		Connect(body, outData, slice);
 	} else if (dynamic_cast<const jive::bitshr_op *>(&(node->operation()))) {
 		auto input0 = GetSubfield(body, inBundles[0], "data");
 		auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -271,7 +285,7 @@ circt::firrtl::FModuleOp
 jlm::hls::MLIRGenImpl::MlirGenSink(const jive::simple_node *node) {
 	// Create the module and its input/output ports
 	auto module = nodeToModule(node);
-	auto body = module.getBody();
+	auto body = module.getBodyBlock();
 
 	// Create a constant of UInt<1>(1)
 	auto intType= GetIntType(1);
@@ -295,7 +309,7 @@ circt::firrtl::FModuleOp
 jlm::hls::MLIRGenImpl::MlirGenFork(const jive::simple_node *node) {
 	// Create the module and its input/output ports
 	auto module = nodeToModule(node);
-	auto body = module.getBody();
+	auto body = module.getBodyBlock();
 
 	// Input signals
 	auto inBundle = GetInPort(module, 0);
@@ -333,12 +347,12 @@ jlm::hls::MLIRGenImpl::MlirGenFork(const jive::simple_node *node) {
 		auto portValid = GetSubfield(body, port, "valid");
 		auto portData = GetSubfield(body, port, "data");
 
-		auto notFiredReg = AddNotOp(body, firedReg);
+		auto notFiredReg = AddNotOp(body, firedReg.getResult());
 		auto andOp = AddAndOp(body, inValid, notFiredReg);
 		Connect(body, portValid, andOp);
 		Connect(body, portData, inData);
 
-		auto orOp = AddOrOp(body, portReady, firedReg);
+		auto orOp = AddOrOp(body, portReady, firedReg.getResult());
 	        prevAnd = AddAndOp(body, prevAnd, orOp);
 
 		// Conditions needed for the when statements
@@ -356,12 +370,12 @@ jlm::hls::MLIRGenImpl::MlirGenFork(const jive::simple_node *node) {
 	for (size_t i=0; i<node->noutputs(); i++) {
 		auto nestedWhen = AddWhenOp(thenBody, whenConditions[i], false);
 		auto nestedBody = nestedWhen.getThenBodyBuilder().getBlock();
-		Connect(nestedBody, firedRegs[i], oneBitValue);
+		Connect(nestedBody, firedRegs[i].getResult(), oneBitValue);
 	}
 	// Else region
 	auto elseBody = whenOp.getElseBodyBuilder().getBlock();
 	for (size_t i=0; i<node->noutputs(); i++) {
-		Connect(elseBody, firedRegs[i], zeroBitValue);
+		Connect(elseBody, firedRegs[i].getResult(), zeroBitValue);
 	}
 
 	return module;
@@ -371,7 +385,7 @@ circt::firrtl::FModuleOp
 jlm::hls::MLIRGenImpl::MlirGenMem(const jive::simple_node *node) {
 	// Create the module and its input/output ports
 	auto module = nodeToModule(node, true);
-	auto body = module.getBody();
+	auto body = module.getBodyBlock();
 
 	// Check if it's a load or store operation
 	bool store = dynamic_cast<const jlm::StoreOperation *>(&(node->operation()));
@@ -467,14 +481,14 @@ jlm::hls::MLIRGenImpl::MlirGenMem(const jive::simple_node *node) {
 					builder.getStringAttr("sent_reg"));
 	body->push_back(sentReg);
 
-	mlir::Value canRequest = AddNotOp(body, sentReg);
+	mlir::Value canRequest = AddNotOp(body, sentReg.getResult());
 	canRequest = AddAndOp(body, canRequest, inValid0);
 	canRequest = AddAndOp(body, canRequest, inValid1);
 	if (store) {
 		canRequest = AddAndOp(body, canRequest, inValid2);
 	}
 	for (size_t i = 0; i < node->noutputs(); i++) {
-		canRequest = AddAndOp(body, canRequest, AddNotOp(body, oValidRegs[i]));
+		canRequest = AddAndOp(body, canRequest, AddNotOp(body, oValidRegs[i].getResult()));
 	}
 
 	// Block until all inputs and no outputs are valid
@@ -505,26 +519,26 @@ jlm::hls::MLIRGenImpl::MlirGenMem(const jive::simple_node *node) {
 	// mem_req fire
 	auto whenReqFireOp = AddWhenOp(body, memReqReady, false);
 	auto whenReqFireBody = whenReqFireOp.getThenBodyBuilder().getBlock();
-	Connect(whenReqFireBody, sentReg, oneBitValue);
+	Connect(whenReqFireBody, sentReg.getResult(), oneBitValue);
 	if (store) {
-		Connect(whenReqFireBody, oValidRegs[0], oneBitValue);
-		Connect(whenReqFireBody, oDataRegs[0], inData2);
+		Connect(whenReqFireBody, oValidRegs[0].getResult(), oneBitValue);
+		Connect(whenReqFireBody, oDataRegs[0].getResult(), inData2);
 	} else {
-		Connect(whenReqFireBody, oValidRegs[1], oneBitValue);
-		Connect(whenReqFireBody, oDataRegs[1], inData1);
+		Connect(whenReqFireBody, oValidRegs[1].getResult(), oneBitValue);
+		Connect(whenReqFireBody, oDataRegs[1].getResult(), inData1);
 	}
 
 	// mem_res fire
-	auto whenResFireOp = AddWhenOp(body, AddAndOp(body, sentReg, memResValid), false);
+	auto whenResFireOp = AddWhenOp(body, AddAndOp(body, sentReg.getResult(), memResValid), false);
 	auto whenResFireBody = whenResFireOp.getThenBodyBuilder().getBlock();
-	Connect(whenResFireBody, sentReg, zeroBitValue);
+	Connect(whenResFireBody, sentReg.getResult(), zeroBitValue);
 	if (!store) {
-		Connect(whenResFireBody, oValidRegs[0], oneBitValue);
+		Connect(whenResFireBody, oValidRegs[0].getResult(), oneBitValue);
 		if(bitWidth!=64){
 			auto bitsOp = AddBitsOp(whenResFireBody, memResData, bitWidth-1, 0);
-			Connect(whenResFireBody, oDataRegs[0], bitsOp);
+			Connect(whenResFireBody, oDataRegs[0].getResult(), bitsOp);
 		} else{
-			Connect(whenResFireBody, oDataRegs[0], memResData);
+			Connect(whenResFireBody, oDataRegs[0].getResult(), memResData);
 		}
 	}
 
@@ -535,13 +549,13 @@ jlm::hls::MLIRGenImpl::MlirGenMem(const jive::simple_node *node) {
 		Connect(body, inReady2, memReqReady);
 	}
 
-	Connect(body, outValid0, oValidRegs[0]);
-	Connect(body, outData0, oDataRegs[0]);
+	Connect(body, outValid0, oValidRegs[0].getResult());
+	Connect(body, outData0, oDataRegs[0].getResult());
 	auto andOp = AddAndOp(body, outReady0, outValid0);
 	Connect(
 		// When o0 fires
 		AddWhenOp(body, andOp, false).getThenBodyBuilder().getBlock(),
-		oValidRegs[0], zeroBitValue
+		oValidRegs[0].getResult(), zeroBitValue
 		);
 	if (!store) {
         auto outBundle1 = GetOutPort(module, 1);
@@ -549,13 +563,13 @@ jlm::hls::MLIRGenImpl::MlirGenMem(const jive::simple_node *node) {
         auto outValid1 = GetSubfield(body, outBundle1, "valid");
         auto outData1  = GetSubfield(body, outBundle1, "data");
 
-		Connect(body, outValid1, oValidRegs[1]);
-		Connect(body, outData1, oDataRegs[1]);
+		Connect(body, outValid1, oValidRegs[1].getResult());
+		Connect(body, outData1, oDataRegs[1].getResult());
 		auto andOp = AddAndOp(body, outReady1, outValid1);
 		Connect(
 			// When o1 fires
 			AddWhenOp(body, andOp, false).getThenBodyBuilder().getBlock(),
-			oValidRegs[1], zeroBitValue
+			oValidRegs[1].getResult(), zeroBitValue
 			);
 	}
 
@@ -566,7 +580,7 @@ circt::firrtl::FModuleOp
 jlm::hls::MLIRGenImpl::MlirGenTrigger(const jive::simple_node *node) {
 	// Create the module and its input/output ports
 	auto module = nodeToModule(node);
-	auto body = module.getBody();
+	auto body = module.getBodyBlock();
 
 	// Input signals
 	auto inBundle0 = GetInPort(module, 0);
@@ -599,7 +613,7 @@ circt::firrtl::FModuleOp
 jlm::hls::MLIRGenImpl::MlirGenPrint(const jive::simple_node *node) {
 	// Create the module and its input/output ports
 	auto module = nodeToModule(node);
-	auto body = module.getBody();
+	auto body = module.getBodyBlock();
 
 	auto clock = GetClockSignal(module);
 	auto reset = GetResetSignal(module);
@@ -629,7 +643,7 @@ circt::firrtl::FModuleOp
 jlm::hls::MLIRGenImpl::MlirGenPredicationBuffer(const jive::simple_node *node) {
 	// Create the module and its input/output ports
 	auto module = nodeToModule(node);
-	auto body = module.getBody();
+	auto body = module.getBodyBlock();
 
 	auto clock = GetClockSignal(module);
 	auto reset = GetResetSignal(module);
@@ -666,25 +680,25 @@ jlm::hls::MLIRGenImpl::MlirGenPredicationBuffer(const jive::simple_node *node) {
 	auto outValid = GetSubfield(body, outBundle, "valid");
 	auto outData = GetSubfield(body, outBundle, "data");
 
-	auto orOp = AddOrOp(body, validReg, inValid);
+	auto orOp = AddOrOp(body, validReg.getResult(), inValid);
 	Connect(body, outValid, orOp);
-	auto muxOp = AddMuxOp(body, validReg, dataReg, inData);
+	auto muxOp = AddMuxOp(body, validReg.getResult(), dataReg.getResult(), inData);
 	Connect(body, outData, muxOp);
-	auto notOp = AddNotOp(body, validReg);
+	auto notOp = AddNotOp(body, validReg.getResult());
 	Connect(body, inReady, notOp);
 
 	// When
 	auto condition = AddAndOp(body, inValid, inReady);
 	auto whenOp = AddWhenOp(body, condition, false);
 	auto thenBody = whenOp.getThenBodyBuilder().getBlock();
-	Connect(thenBody, validReg, oneBitValue);
-	Connect(thenBody, dataReg, inData);
+	Connect(thenBody, validReg.getResult(), oneBitValue);
+	Connect(thenBody, dataReg.getResult(), inData);
 
 	// When
 	condition = AddAndOp(body, outValid, outReady);
 	whenOp = AddWhenOp(body, condition, false);
 	thenBody = whenOp.getThenBodyBuilder().getBlock();
-	Connect(thenBody, validReg, zeroBitValue);
+	Connect(thenBody, validReg.getResult(), zeroBitValue);
 
 	return module;
 }
@@ -693,7 +707,7 @@ circt::firrtl::FModuleOp
 jlm::hls::MLIRGenImpl::MlirGenBuffer(const jive::simple_node *node) {
 	// Create the module and its input/output ports
 	auto module = nodeToModule(node);
-	auto body = module.getBody();
+	auto body = module.getBodyBlock();
 
 	auto op = dynamic_cast<const hls::buffer_op *>(&(node->operation()));
 	auto capacity = op->capacity;
@@ -738,8 +752,8 @@ jlm::hls::MLIRGenImpl::MlirGenBuffer(const jive::simple_node *node) {
 	// Resource waste as the registers will constantly be set to zero
 	// This simplifies the code below but might waste resources unless
 	// the tools are clever anough to replace it with a constant
-	Connect(body, validRegs[capacity], zeroBitValue);
-	Connect(body, dataRegs[capacity], zeroValue);
+	Connect(body, validRegs[capacity].getResult(), zeroBitValue);
+	Connect(body, dataRegs[capacity].getResult(), zeroValue);
 
 	// Add wires
 	llvm::SmallVector<circt::firrtl::WireOp> shiftWires;
@@ -764,58 +778,58 @@ jlm::hls::MLIRGenImpl::MlirGenBuffer(const jive::simple_node *node) {
 	auto outData = GetSubfield(body, outBundle, "data");
 
 	// Connect out to buf0
-	Connect(body, outValid, validRegs[0]);
-	Connect(body, outData, dataRegs[0]);
+	Connect(body, outValid, validRegs[0].getResult());
+	Connect(body, outData, dataRegs[0].getResult());
 	auto andOp = AddAndOp(body, outReady, outValid);
-	Connect(body, shiftWires[0], andOp);
+	Connect(body, shiftWires[0].getResult(), andOp);
 	if (op->pass_through) {
-		auto notOp = AddNotOp(body, validRegs[0]);
+		auto notOp = AddNotOp(body, validRegs[0].getResult());
 		andOp = AddAndOp(body, notOp, outReady);
-		Connect(body, consumedWires[0], andOp);
+		Connect(body, consumedWires[0].getResult(), andOp);
 		auto whenOp = AddWhenOp(body, notOp, false);
 		auto thenBody = whenOp.getThenBodyBuilder().getBlock();
 		Connect(thenBody, outData, inData);
 	} else {
-		Connect(body, consumedWires[0], zeroBitValue);
+		Connect(body, consumedWires[0].getResult(), zeroBitValue);
 	}
 
 	// The buffer is ready if the last one is empty
-	auto notOp = AddNotOp(body, validRegs[capacity-1]);
+	auto notOp = AddNotOp(body, validRegs[capacity-1].getResult());
 	Connect(body, inReady, notOp);
 
 	andOp = AddAndOp(body, inReady, inValid);
 	for (size_t i = 0; i < capacity; ++i) {
-		Connect(body, consumedWires[i+1], consumedWires[i]);
-		Connect(body, shiftWires[i+1], zeroBitValue);
+		Connect(body, consumedWires[i+1].getResult(), consumedWires[i].getResult());
+		Connect(body, shiftWires[i+1].getResult(), zeroBitValue);
 
 		// When valid reg
-		auto whenOp = AddWhenOp(body, shiftWires[i], false);
+		auto whenOp = AddWhenOp(body, shiftWires[i].getResult(), false);
 		auto thenBody = whenOp.getThenBodyBuilder().getBlock();
-		Connect(thenBody, validRegs[i], zeroBitValue);
+		Connect(thenBody, validRegs[i].getResult(), zeroBitValue);
 
 		// When will be empty
-		auto notOp = AddNotOp(body, validRegs[i]);
-		auto condition = AddOrOp(body, shiftWires[i], notOp);
+		auto notOp = AddNotOp(body, validRegs[i].getResult());
+		auto condition = AddOrOp(body, shiftWires[i].getResult(), notOp);
 		whenOp = AddWhenOp(body, condition, false);
 		thenBody = whenOp.getThenBodyBuilder().getBlock();
 		// Create the condition needed in nested when
-		notOp = AddNotOp(thenBody, consumedWires[i]);
+		notOp = AddNotOp(thenBody, consumedWires[i].getResult());
 		auto elseCondition = AddAndOp(thenBody, andOp, notOp);
 
 		// Nested when valid reg
-		whenOp = AddWhenOp(thenBody, validRegs[i+1], true);
+		whenOp = AddWhenOp(thenBody, validRegs[i+1].getResult(), true);
 		thenBody = whenOp.getThenBodyBuilder().getBlock();
-		Connect(thenBody, validRegs[i], oneBitValue);
-		Connect(thenBody, dataRegs[i], dataRegs[i+1]);
-		Connect(thenBody, shiftWires[i+1], oneBitValue);
+		Connect(thenBody, validRegs[i].getResult(), oneBitValue);
+		Connect(thenBody, dataRegs[i].getResult(), dataRegs[i+1].getResult());
+		Connect(thenBody, shiftWires[i+1].getResult(), oneBitValue);
 
 		// Nested else in available
 		auto elseBody = whenOp.getElseBodyBuilder().getBlock();
 		auto nestedWhen = AddWhenOp(elseBody, elseCondition, false);
 		thenBody = nestedWhen.getThenBodyBuilder().getBlock();
-		Connect(thenBody, consumedWires[i+1], oneBitValue);
-		Connect(thenBody, validRegs[i], oneBitValue);
-		Connect(thenBody, dataRegs[i], inData);
+		Connect(thenBody, consumedWires[i+1].getResult(), oneBitValue);
+		Connect(thenBody, validRegs[i].getResult(), oneBitValue);
+		Connect(thenBody, dataRegs[i].getResult(), inData);
 	}
 
 	return module;
@@ -825,7 +839,7 @@ circt::firrtl::FModuleOp
 jlm::hls::MLIRGenImpl::MlirGenDMux(const jive::simple_node *node) {
 	// Create the module and its input/output ports
 	auto module = nodeToModule(node);
-	auto body = module.getBody();
+	auto body = module.getBodyBlock();
 
 	auto zeroBitValue = GetConstant(body, 1, 0);
 	auto oneBitValue  = GetConstant(body, 1, 1);
@@ -866,15 +880,15 @@ jlm::hls::MLIRGenImpl::MlirGenDMux(const jive::simple_node *node) {
 				builder.getStringAttr(regName));
 		body->push_back(reg);
 		discardRegs.push_back(reg);
-		anyDiscardReg = AddOrOp(body, anyDiscardReg, reg);
+		anyDiscardReg = AddOrOp(body, anyDiscardReg, reg.getResult());
 
 		std::string wireName("i");
 		wireName.append(std::to_string(i));
 		wireName.append("_discard");
 		auto wire = AddWireOp(body, wireName, 1);
 	        discardWires.push_back(wire);
-		Connect(body, wire, reg);
-		Connect(body, reg, wire);
+		Connect(body, wire.getResult(), reg.getResult());
+		Connect(body, reg.getResult(), wire.getResult());
 	}
 	auto notAnyDiscardReg = AddNotOp(body, anyDiscardReg);
 
@@ -886,7 +900,7 @@ jlm::hls::MLIRGenImpl::MlirGenDMux(const jive::simple_node *node) {
 				zeroBitValue,
 				builder.getStringAttr("processed_reg"));
 	body->push_back(processedReg);
-	auto notProcessedReg = AddNotOp(body, processedReg);
+	auto notProcessedReg = AddNotOp(body, processedReg.getResult());
 
 	for (size_t i=1; i<inputs; i++) {
 		auto inBundle = GetInPort(module, i);
@@ -894,19 +908,19 @@ jlm::hls::MLIRGenImpl::MlirGenDMux(const jive::simple_node *node) {
 		auto inValid = GetSubfield(body, inBundle, "valid");
 		auto inData  = GetSubfield(body, inBundle, "data");
 
-		Connect(body, inReady, discardWires[i-1]);
+		Connect(body, inReady, discardWires[i-1].getResult());
 
 		// First when
 		auto andOp = AddAndOp(body, inReady, inValid);
 		auto whenOp = AddWhenOp(body, andOp, false);
 		auto thenBody = whenOp.getThenBodyBuilder().getBlock();
-		Connect(thenBody, discardRegs[i-1], zeroBitValue);
+		Connect(thenBody, discardRegs[i-1].getResult(), zeroBitValue);
 
 		// Second when
 		auto constant = GetConstant(body, 64, i-1);
 		auto eqOp = AddEqOp(body, inData0, constant);
 		auto andOp0 = AddAndOp(body, inValid0, eqOp);
-		auto andOp1 = AddAndOp(body, notAnyDiscardReg, andOp0);
+		auto andOp1 = AddAndOp(body, notAnyDiscardReg.getResult(), andOp0);
 		whenOp = AddWhenOp(body, andOp1, false);
 		thenBody = whenOp.getThenBodyBuilder().getBlock();
 		Connect(thenBody, outValid, inValid);
@@ -916,12 +930,12 @@ jlm::hls::MLIRGenImpl::MlirGenDMux(const jive::simple_node *node) {
 		Connect(thenBody, inReady0, andOp2);
 
 		// Nested when
-		whenOp = AddWhenOp(thenBody, notProcessedReg, false);
+		whenOp = AddWhenOp(thenBody, notProcessedReg.getResult(), false);
 		thenBody = whenOp.getThenBodyBuilder().getBlock();
-		Connect(thenBody, processedReg, oneBitValue);
+		Connect(thenBody, processedReg.getResult(), oneBitValue);
 		for (size_t j = 1; j < inputs; ++j) {
 			if (i != j) {
-				Connect(thenBody, discardWires[j-1], oneBitValue);
+				Connect(thenBody, discardWires[j-1].getResult(), oneBitValue);
 			}
 		}
 	}
@@ -929,7 +943,7 @@ jlm::hls::MLIRGenImpl::MlirGenDMux(const jive::simple_node *node) {
 	auto andOp = AddAndOp(body, outValid, outReady);
 	auto whenOp = AddWhenOp(body, andOp, false);
 	auto thenBody = whenOp.getThenBodyBuilder().getBlock();
-	Connect(thenBody, processedReg, zeroBitValue);
+	Connect(thenBody, processedReg.getResult(), zeroBitValue);
 
 	return module;
 }
@@ -938,7 +952,7 @@ circt::firrtl::FModuleOp
 jlm::hls::MLIRGenImpl::MlirGenNDMux(const jive::simple_node *node) {
 	// Create the module and its input/output ports
 	auto module = nodeToModule(node);
-	auto body = module.getBody();
+	auto body = module.getBodyBlock();
 
 	auto inputs = node->ninputs();
 	auto outBundle = GetOutPort(module, 0);
@@ -983,7 +997,7 @@ circt::firrtl::FModuleOp
 jlm::hls::MLIRGenImpl::MlirGenBranch(const jive::simple_node *node) {
 	// Create the module and its input/output ports
 	auto module = nodeToModule(node);
-	auto body = module.getBody();
+	auto body = module.getBodyBlock();
 
 	auto zeroBitValue = GetConstant(body, 1, 0);
 
@@ -1153,9 +1167,9 @@ jlm::hls::MLIRGenImpl::MlirGen(jive::region *subRegion, mlir::Block *circuitBody
 	// Create a name for the module
 	auto moduleName = builder.getStringAttr("subregion_mod");
 	// Now when we have all the port information we can create the module
-	auto module = builder.create<circt::firrtl::FModuleOp>(location, moduleName, ports);
+	auto module = builder.create<circt::firrtl::FModuleOp>(location, moduleName, conventionAttr, ports);
 	// Get the body of the module such that we can add contents to the module
-	auto body = module.getBody();
+	auto body = module.getBodyBlock();
 
 	// Initialize the signals of mem_req
 	InitializeMemReq(module);
@@ -1226,14 +1240,7 @@ jlm::hls::MLIRGenImpl::MlirGen(jive::region *subRegion, mlir::Block *circuitBody
 
 				auto sourcePort = sourceNode->getResult(sourceIndex);
 				auto sinkPort = sinkNode->getResult(i+2);
-
-				// If the source is a load operation then its output will be
-				// 64 bits wide. The default width of operations is 32 bits so
-				// the port widths will differ and cause errors.
-				if (dynamic_cast<const jlm::LoadOperation *>(&(source->operation())))
-					PartialConnect(body, sinkPort, sourcePort);
-				else
-					Connect(body, sinkPort, sourcePort);
+				Connect(body, sinkPort, sourcePort);
 			} else if (auto o = dynamic_cast<jive::argument *>(origin)) {
 				auto origin = TraceArgument(o);
 				if (auto o = dynamic_cast<jive::argument *>(origin)) {
@@ -1258,14 +1265,7 @@ jlm::hls::MLIRGenImpl::MlirGen(jive::region *subRegion, mlir::Block *circuitBody
 					auto sourceNode = instances[source];
 					auto sourcePort = sourceNode->getResult(sourceIndex);
 					auto sinkPort = sinkNode->getResult(i+2);
-
-					// If the source is a load operation then its output will be
-					// 64 bits wide. The default width of operations is 32 bits so
-					// the port widths will differ and cause errors.
-					if (dynamic_cast<const jlm::LoadOperation *>(&(source->operation())))
-						PartialConnect(body, sinkPort, sourcePort);
-					else
-						Connect(body, sinkPort, sourcePort);
+					Connect(body, sinkPort, sourcePort);
 				} else {
 					throw std::logic_error("Unsupported output");
 				}
@@ -1400,7 +1400,7 @@ jlm::hls::MLIRGenImpl::MlirGen(const jlm::lambda::node *lambdaNode) {
 	// Create the top level FIRRTL circuit
 	auto circuit = builder.create<circt::firrtl::CircuitOp>(location, moduleName);
 	// The body will be populated with a list of modules
-	auto circuitBody = circuit.getBody();
+	auto circuitBody = circuit.getBodyBlock();
 
 	// Get the region of the function
 	auto subRegion = lambdaNode->subregion();
@@ -1429,12 +1429,12 @@ jlm::hls::MLIRGenImpl::MlirGen(const jlm::lambda::node *lambdaNode) {
 						GetIntType(&subRegion->argument(i)->type()))
 					 );
 	}
-	auto inputType = circt::firrtl::BundleType::get(inputElements, builder.getContext());
+	auto inputType = circt::firrtl::BundleType::get(builder.getContext(), inputElements);
 	struct circt::firrtl::PortInfo iBundle = {
 		builder.getStringAttr("i"),
 		inputType,
 		circt::firrtl::Direction::In,
-		{builder.getStringAttr("")},
+		{},
 		location,
 	};
 	ports.push_back(iBundle);
@@ -1453,12 +1453,12 @@ jlm::hls::MLIRGenImpl::MlirGen(const jlm::lambda::node *lambdaNode) {
 					 );
 
 	}
-	auto outputType = circt::firrtl::BundleType::get(outputElements, builder.getContext());
+	auto outputType = circt::firrtl::BundleType::get(builder.getContext(), outputElements);
 	struct circt::firrtl::PortInfo oBundle = {
 		builder.getStringAttr("o"),
 		outputType,
 		circt::firrtl::Direction::Out,
-		{builder.getStringAttr("")},
+		{},
 		location,
 	};
 	ports.push_back(oBundle);
@@ -1469,9 +1469,9 @@ jlm::hls::MLIRGenImpl::MlirGen(const jlm::lambda::node *lambdaNode) {
 
 	// Now when we have all the port information we can create the module
 	// The same name is used for the circuit and main module
-	auto module = builder.create<circt::firrtl::FModuleOp>(location, moduleName, ports);
+	auto module = builder.create<circt::firrtl::FModuleOp>(location, moduleName, conventionAttr, ports);
 	// Get the body of the module such that we can add contents to the module
-	auto body = module.getBody();
+	auto body = module.getBodyBlock();
 
 	// Initialize the signals of mem_req
 	InitializeMemReq(module);
@@ -1527,9 +1527,9 @@ jlm::hls::MLIRGenImpl::MlirGen(const jlm::lambda::node *lambdaNode) {
 
 		auto port = instance.getResult(i+2);
 		auto portValid = GetSubfield(body, port, "valid");
-		Connect(body, portValid, validReg);
+		Connect(body, portValid, validReg.getResult());
 		auto portData = GetSubfield(body, port, "data");
-		Connect(body, portData, dataReg);
+		Connect(body, portData, dataReg.getResult());
 
 		// When statement
 		auto portReady = GetSubfield(body, port, "ready");
@@ -1539,7 +1539,7 @@ jlm::hls::MLIRGenImpl::MlirGen(const jlm::lambda::node *lambdaNode) {
 		// getThenBlock() cause an error during commpilation
 		// So we first get the builder and then its associated body
 		auto thenBody = whenOp.getThenBodyBuilder().getBlock();
-		Connect(thenBody, validReg, zeroBitValue);
+		Connect(thenBody, validReg.getResult(), zeroBitValue);
 	}
 
 	// Output registers
@@ -1585,7 +1585,7 @@ jlm::hls::MLIRGenImpl::MlirGen(const jlm::lambda::node *lambdaNode) {
 		auto notValidReg = builder.create<circt::firrtl::NotPrimOp>(
 				location,
 				circt::firrtl::IntType::get(builder.getContext(), false, 1),
-				validReg);
+				validReg.getResult());
 		body->push_back(notValidReg);
 		Connect(body, portReady, notValidReg);
 
@@ -1598,8 +1598,8 @@ jlm::hls::MLIRGenImpl::MlirGen(const jlm::lambda::node *lambdaNode) {
 		// getThenBlock() cause an error during commpilation
 		// So we first get the builder and then its associated body
 		auto thenBody = whenOp.getThenBodyBuilder().getBlock();
-		Connect(thenBody, validReg, oneBitValue);
-		Connect(thenBody, dataReg, portData);
+		Connect(thenBody, validReg.getResult(), oneBitValue);
+		Connect(thenBody, dataReg.getResult(), portData);
 	}
 
 	// Create the ready signal for the input bundle
@@ -1608,7 +1608,7 @@ jlm::hls::MLIRGenImpl::MlirGen(const jlm::lambda::node *lambdaNode) {
 		auto notReg = builder.create<circt::firrtl::NotPrimOp>(
 				location,
 				circt::firrtl::IntType::get(builder.getContext(), false, 1),
-				inputValidRegs[i]);
+				inputValidRegs[i].getResult());
 		body->push_back(notReg);
 		auto andOp = AddAndOp(body, notReg, prevAnd);
 		prevAnd = andOp;
@@ -1620,7 +1620,7 @@ jlm::hls::MLIRGenImpl::MlirGen(const jlm::lambda::node *lambdaNode) {
 	// Create the valid signal for the output bundle
 	prevAnd = oneBitValue;
 	for (size_t i=0; i<outputValidRegs.size(); i++) {
-		auto andOp = AddAndOp(body, outputValidRegs[i], prevAnd);
+		auto andOp = AddAndOp(body, outputValidRegs[i].getResult(), prevAnd);
 		prevAnd = andOp;
 	}
 	auto outBundle = body->getArgument(3);
@@ -1630,7 +1630,7 @@ jlm::hls::MLIRGenImpl::MlirGen(const jlm::lambda::node *lambdaNode) {
 	// Connect output data signals
 	for (size_t i=0; i<outputDataRegs.size(); i++) {
 		auto outData = GetSubfield(body, outBundle, 2+i);
-		Connect(body, outData, outputDataRegs[i]);
+		Connect(body, outData, outputDataRegs[i].getResult());
 	}
 
 	// Input when statement
@@ -1642,9 +1642,9 @@ jlm::hls::MLIRGenImpl::MlirGen(const jlm::lambda::node *lambdaNode) {
 	// So we first get the builder and then its associated body
 	auto thenBody = whenOp.getThenBodyBuilder().getBlock();
 	for (size_t i=0; i<inputValidRegs.size(); i++) {
-		Connect(thenBody, inputValidRegs[i], oneBitValue);
+		Connect(thenBody, inputValidRegs[i].getResult(), oneBitValue);
 		auto inData = GetSubfield(thenBody, inBundle, 2+i);
-		Connect(thenBody, inputDataRegs[i], inData);
+		Connect(thenBody, inputDataRegs[i].getResult(), inData);
 	}
 
 	// Output when statement
@@ -1655,7 +1655,7 @@ jlm::hls::MLIRGenImpl::MlirGen(const jlm::lambda::node *lambdaNode) {
 	// So we first get the builder and then its associated body
 	thenBody = whenOp.getThenBodyBuilder().getBlock();
 	for (size_t i=0; i<outputValidRegs.size(); i++) {
-		Connect(thenBody, outputValidRegs[i], zeroBitValue);
+		Connect(thenBody, outputValidRegs[i].getResult(), zeroBitValue);
 	}
 
 	// Connect the memory ports
@@ -1717,7 +1717,7 @@ jlm::hls::MLIRGenImpl::AddClockPort(llvm::SmallVector<circt::firrtl::PortInfo> *
 		builder.getStringAttr("clk"),
 		circt::firrtl::ClockType::get(builder.getContext()),
 		circt::firrtl::Direction::In,
-		{builder.getStringAttr("")},
+		{},
 		location,
 	};
 	ports->push_back(port);
@@ -1730,7 +1730,7 @@ jlm::hls::MLIRGenImpl::AddResetPort(llvm::SmallVector<circt::firrtl::PortInfo> *
 		builder.getStringAttr("reset"),
 		circt::firrtl::IntType::get(builder.getContext(), false, 1),
 		circt::firrtl::Direction::In,
-		{builder.getStringAttr("")},
+		{},
 		location,
 	};
 	ports->push_back(port);
@@ -1768,12 +1768,12 @@ jlm::hls::MLIRGenImpl::AddMemReqPort(llvm::SmallVector<circt::firrtl::PortInfo> 
 								    false, 3))
 			       );
 
-	auto memType = circt::firrtl::BundleType::get(memReqElements, builder.getContext());
+	auto memType = circt::firrtl::BundleType::get(builder.getContext(), memReqElements);
 	struct circt::firrtl::PortInfo memBundle = {
 		builder.getStringAttr("mem_req"),
 		memType,
 		circt::firrtl::Direction::Out,
-		{builder.getStringAttr("")},
+		{},
 		location,
 	};
 	ports->push_back(memBundle);
@@ -1792,12 +1792,12 @@ jlm::hls::MLIRGenImpl::AddMemResPort(llvm::SmallVector<circt::firrtl::PortInfo> 
 								    false, 64))
 			       );
 
-	auto memResType = circt::firrtl::BundleType::get(memResElements, builder.getContext());
+	auto memResType = circt::firrtl::BundleType::get(builder.getContext(), memResElements);
 	struct circt::firrtl::PortInfo memResBundle = {
 		builder.getStringAttr("mem_res"),
 		memResType,
 		circt::firrtl::Direction::In,
-		{builder.getStringAttr("")},
+		{},
 		location,
 	};
 	ports->push_back(memResBundle);
@@ -1808,7 +1808,7 @@ jlm::hls::MLIRGenImpl::AddBundlePort(
 			llvm::SmallVector<circt::firrtl::PortInfo> *ports,
 			circt::firrtl::Direction direction,
 			std::string name,
-			circt::firrtl::FIRRTLType type) {
+			circt::firrtl::FIRRTLBaseType type) {
 	using BundleElement = circt::firrtl::BundleType::BundleElement;
 
 	llvm::SmallVector<BundleElement> elements;
@@ -1819,12 +1819,12 @@ jlm::hls::MLIRGenImpl::AddBundlePort(
 					false,
 					type));
 
-	auto bundleType = circt::firrtl::BundleType::get(elements, builder.getContext());
+	auto bundleType = circt::firrtl::BundleType::get(builder.getContext(), elements);
 	struct circt::firrtl::PortInfo bundle = {
 		builder.getStringAttr(name),
 		bundleType,
 		direction,
-		{builder.getStringAttr("")},
+		{},
 		location,
 	};
 	ports->push_back(bundle);
@@ -1867,14 +1867,6 @@ jlm::hls::MLIRGenImpl::GetOutPort(circt::firrtl::FModuleOp& module, size_t portN
 void
 jlm::hls::MLIRGenImpl::Connect(mlir::Block *body, mlir::Value sink, mlir::Value source) {
 	body->push_back(builder.create<circt::firrtl::ConnectOp>(
-				location,
-				sink,
-				source));
-}
-
-void
-jlm::hls::MLIRGenImpl::PartialConnect(mlir::Block *body, mlir::Value sink, mlir::Value source) {
-	body->push_back(builder.create<circt::firrtl::PartialConnectOp>(
 				location,
 				sink,
 				source));
@@ -2212,7 +2204,7 @@ jlm::hls::MLIRGenImpl::GetValidElement() {
 void
 jlm::hls::MLIRGenImpl::InitializeMemReq(circt::firrtl::FModuleOp module) {
 	mlir::BlockArgument mem = GetPort(module, "mem_req");
-	mlir::Block *body = module.getBody();
+	mlir::Block *body = module.getBodyBlock();
 
 	auto zeroBitValue = GetConstant(body, 1, 0);
 	auto invalid1 = GetInvalid(body, 1);
@@ -2272,7 +2264,7 @@ jlm::hls::MLIRGenImpl::nodeToModule(const jive::simple_node *node, bool mem) {
 	auto nodeName = GetModuleName(node);
 	mlir::StringAttr name = builder.getStringAttr(nodeName);
 	// Create the module
-	return builder.create<circt::firrtl::FModuleOp>(location, name, ports);
+	return builder.create<circt::firrtl::FModuleOp>(location, name, conventionAttr, ports);
 }
 
 //
@@ -2352,7 +2344,7 @@ jlm::hls::MLIRGenImpl::WriteModuleToFile(const circt::firrtl::FModuleOp fModuleO
 
 	// Adde the fModuleOp to a circuit
 	auto circuit = builder.create<circt::firrtl::CircuitOp>(location, moduleName);
-	auto body = circuit.getBody();
+	auto body = circuit.getBodyBlock();
 	body->push_back(fModuleOp);
 
 	WriteCircuitToFile(circuit, name);
