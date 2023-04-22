@@ -5,6 +5,8 @@
 
 #include <jlm/hls/backend/rhls2firrtl/firrtl-hls.hpp>
 
+#include <math.h>
+
 bool
 jlm::hls::is_identity_mapping(const jive::match_op &op) {
 	for (const auto &pair : op) {
