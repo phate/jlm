@@ -336,7 +336,7 @@ LlvmOptCommand::ToString(const Optimization & optimization)
 {
   static std::unordered_map<Optimization, const char*>
     map({
-          {Optimization::Mem2Reg, "-mem2reg"},
+          {Optimization::Mem2Reg, "-passes=mem2reg"},
         });
 
   JLM_ASSERT(map.find(optimization) != map.end());
