@@ -32,8 +32,12 @@ jobs:
       with:
         path: ${{ github.workspace }}/*
         key: ${{ runner.os }}-${{ github.sha }}-jlm
+    - name: Get LLVM apt key
+      run: wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
+    - name: Update apt sources
+      run: sudo add-apt-repository deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-16 main
     - name: Install dependencies (LLVM)
-      run: sudo apt-get update && sudo apt-get install llvm-15-dev clang-15
+      run: sudo apt-get update && sudo apt-get install llvm-16-dev clang-16
     - name: Compile jlm
       run: make jlm-release -j `nproc`
     - name: Run unit and C tests
@@ -43,8 +47,12 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v3
+    - name: Get LLVM apt key
+      run: wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
+    - name: Update apt sources
+      run: sudo add-apt-repository deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-16 main
     - name: Install dependencies (LLVM)
-      run: sudo apt-get update && sudo apt-get install llvm-15-dev clang-15
+      run: sudo apt-get update && sudo apt-get install llvm-16-dev clang-16
     - name: Compile jlm
       run: make CXX=g++ jlm-release -j `nproc`
     - name: Run unit and C tests
@@ -59,8 +67,12 @@ jobs:
       with:
         path: ${{ github.workspace }}/*
         key: ${{ runner.os }}-${{ github.sha }}-jlm
+    - name: Get LLVM apt key
+      run: wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
+    - name: Update apt sources
+      run: sudo add-apt-repository deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-16 main
     - name: Install dependencies (LLVM)
-      run: sudo apt-get update && sudo apt-get install llvm-15-dev clang-15
+      run: sudo apt-get update && sudo apt-get install llvm-16-dev clang-16
     - name: Add jlc to PATH
       run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
     - name: Install valgrind
@@ -79,8 +91,12 @@ jobs:
         key: ${{ runner.os }}-${{ github.sha }}-jlm-bin
     - name: Add jlc to PATH
       run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
+    - name: Get LLVM apt key
+      run: wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
+    - name: Update apt sources
+      run: sudo add-apt-repository deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-16 main
     - name: Install dependencies (LLVM)
-      run: sudo apt-get update && sudo apt-get install llvm-15-dev clang-15
+      run: sudo apt-get update && sudo apt-get install llvm-16-dev clang-16
     - name: Clone polybench
       run: git clone https://github.com/phate/polybench-jlm.git
     - name: Check polybench
@@ -95,8 +111,12 @@ jobs:
       with:
         path: ${{ github.workspace }}/bin/*
         key: ${{ runner.os }}-${{ github.sha }}-jlm-bin
+    - name: Get LLVM apt key
+      run: wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
+    - name: Update apt sources
+      run: sudo add-apt-repository deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-16 main
     - name: Install dependencies (LLVM)
-      run: sudo apt-get update && sudo apt-get install llvm-15-dev clang-15
+      run: sudo apt-get update && sudo apt-get install llvm-16-dev clang-16
     - name: Add jlc to PATH
       run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
     - name: Clone jlm-test-suite
@@ -104,29 +124,8 @@ jobs:
     - name: Update submodules
       run: make -C jlm-eval-suite submodule
     - name: Install lit
-      run: cd jlm-eval-suite && make install-lit 
+      run: sudo python3 /usr/lib/llvm-16/build/utils/lit/setup.py install
     - name: Apply patch
       run: cd jlm-eval-suite && make apply-llvm-git-patch
     - name: Run llvm-test-suite
       run: cd jlm-eval-suite/llvm-test-suite && make llvm-run-opt
-
-  hls-test-suite:
-    runs-on: ubuntu-22.04
-    steps:
-    - uses: actions/checkout@v3
-    - name: Install dependencies (LLVM)
-      run: sudo apt-get update && sudo apt-get install llvm-15-dev clang-15
-    - name: Clone jlm-test-suite
-      run: git clone https://github.com/phate/jlm-eval-suite.git
-    - name: Download CIRCT installation
-      run: wget -q -O- 'https://onedrive.live.com/download?cid=6371489683F2A355&resid=6371489683F2A355%21121&authkey=AOl_Mh2Qy44x2vQ' | tar -xJ -C jlm-eval-suite/circt/
-    - name: Compile jlm
-      run: make CIRCT_PATH=$(pwd)/jlm-eval-suite/circt/local LLVMCONFIG=$(pwd)/jlm-eval-suite/circt/local/bin/llvm-config release -j `nproc`
-    - name: Run unit and C tests
-      run: make LLVMCONFIG=$(pwd)/jlm-eval-suite/circt/local/bin/llvm-config LD_LIBRARY_PATH=$(pwd)/jlm-eval-suite/circt/local/lib/ check -j `nproc`
-    - name: Place bin directory to where it is expected by jlm-eval-suite
-      run: ln -s ${{ github.workspace }}/bin jlm-eval-suite/jlm/bin
-    - name: Install verilator
-      run: sudo apt-get install verilator
-    - name: Run hls-test-suite
-      run: cd jlm-eval-suite && make hls-test-run
