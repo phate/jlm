@@ -8,10 +8,10 @@ ifdef CIRCT_PATH
 
   CPPFLAGS += \
         -DCIRCT=1 \
-        -I$(CIRCT_INC) \
+        -I$(CIRCT_PATH)/include \
 
   LDFLAGS += \
-        -I$(CIRCT_LIB) \
+        -L$(CIRCT_PATH)/lib \
         -lMLIR \
         -lCIRCTAnalysisTestPasses \
         -lCIRCTDependenceAnalysis \
@@ -20,7 +20,7 @@ ifdef CIRCT_PATH
         -lCIRCTFIRRTLTransforms \
         -lCIRCTScheduling \
         -lCIRCTSchedulingAnalysis \
-        -lCIRCTSchedulingTestPasses \
+        -lCIRCTSeq \
         -lCIRCTSupport \
         -lCIRCTTransforms \
         -lCIRCTHW

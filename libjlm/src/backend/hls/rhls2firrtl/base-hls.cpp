@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <math.h>
 #include <algorithm>
 #include <jlm/ir/hls/hls.hpp>
 #include <jlm/ir/operators/lambda.hpp>
