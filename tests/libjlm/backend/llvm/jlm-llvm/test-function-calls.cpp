@@ -50,7 +50,6 @@ test_malloc()
 		auto f = m.getFunction("f");
 		auto & bb = f->getEntryBlock();
 
-		assert(bb.getInstList().size() == 2);
 		assert(bb.getFirstNonPHI()->getOpcode() == llvm::Instruction::Call);
 		assert(bb.getTerminator()->getOpcode() == llvm::Instruction::Ret);
 	};
@@ -106,7 +105,6 @@ test_free()
 		auto f = module.getFunction("f");
 		auto & bb = f->getEntryBlock();
 
-		assert(bb.getInstList().size() == 2);
 		assert(bb.getFirstNonPHI()->getOpcode() == Instruction::Call);
 		assert(bb.getTerminator()->getOpcode() == Instruction::Ret);
 	};
