@@ -9,9 +9,6 @@ echo ""
 echo "jlc-debug              Compile jlc compiler in debug mode"
 echo "jlc-release            Compile jlc compiler in release mode"
 echo ""
-echo "jlm-print-debug        Compile jlm printer in debug mode"
-echo "jlm-print-release      Compile jlm printer in release mode"
-echo ""
 echo "jlm-opt-debug          Compile jlm optimizer in debug mode"
 echo "jlm-opt-release        Compile jlm optimizer in release mode"
 echo ""
@@ -58,7 +55,6 @@ $(JLM_BUILD)/%.a:
 include $(JLM_ROOT)/libjive/Makefile.sub
 include $(JLM_ROOT)/libjlm/Makefile.sub
 include $(JLM_ROOT)/jlc/Makefile.sub
-include $(JLM_ROOT)/jlm-print/Makefile.sub
 include $(JLM_ROOT)/jlm-opt/Makefile.sub
 include $(JLM_ROOT)/jlm-hls/Makefile.sub
 include $(JLM_ROOT)/jhls/Makefile.sub
@@ -66,10 +62,10 @@ include $(JLM_ROOT)/docs/Makefile.sub
 include $(JLM_ROOT)/tests/Makefile.sub
 
 .PHONY: jlm-debug
-jlm-debug: libjlm-debug jlm-print-debug jlm-opt-debug jlm-hls-debug jlc-debug jhls-debug
+jlm-debug: libjlm-debug jlm-opt-debug jlm-hls-debug jlc-debug jhls-debug
 
 .PHONY: jlm-release
-jlm-release: libjlm-release jlm-print-release jlm-opt-release jlm-hls-release jlc-release jhls-release
+jlm-release: libjlm-release jlm-opt-release jlm-hls-release jlc-release jhls-release
 
 .PHONY: jlm-clean
 jlm-clean:
