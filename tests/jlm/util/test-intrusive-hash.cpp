@@ -132,4 +132,4 @@ static int test_main(void)
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjive/util/test-intrusive-hash", test_main)
+JLM_UNIT_TEST_REGISTER("jlm/util/test-intrusive-hash", test_main)

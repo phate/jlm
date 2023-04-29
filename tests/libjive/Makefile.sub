@@ -1,3 +1,2 @@
 include $(JLM_ROOT)/tests/libjive/rvsdg/Makefile.sub
 include $(JLM_ROOT)/tests/libjive/types/Makefile.sub
-include $(JLM_ROOT)/tests/libjive/util/Makefile.sub

@@ -136,4 +136,4 @@ static int test_main(void)
 
 }
 
-JLM_UNIT_TEST_REGISTER("libjive/util/test-intrusive-list", test_main)
+JLM_UNIT_TEST_REGISTER("jlm/util/test-intrusive-list", test_main)

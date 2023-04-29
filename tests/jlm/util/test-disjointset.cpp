@@ -66,4 +66,4 @@ test()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/util/test-disjointset", test)
+JLM_UNIT_TEST_REGISTER("jlm/util/test-disjointset", test)

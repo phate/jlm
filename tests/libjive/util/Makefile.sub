@@ -1,3 +1,0 @@
-TESTS += \
-	libjive/util/test-intrusive-hash \
-	libjive/util/test-intrusive-list \
