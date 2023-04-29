@@ -8,15 +8,9 @@
 
 #include <string.h>
 
-#include <jive/common.hpp>
-
-#include <jive/rvsdg/graph.hpp>
 #include <jive/rvsdg/reduction-helpers.hpp>
-#include <jive/rvsdg/region.hpp>
-#include <jive/rvsdg/simple-normal-form.hpp>
 #include <jive/types/bitstring/constant.hpp>
 #include <jive/types/bitstring/slice.hpp>
-#include <jive/types/bitstring/type.hpp>
 
 jive::output *
 jive_bitconcat(const std::vector<jive::output*> & operands)

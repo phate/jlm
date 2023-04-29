@@ -6,9 +6,6 @@
 
 #include <jive/types/bitstring/arithmetic.hpp>
 #include <jive/types/bitstring/constant.hpp>
-#include <jive/rvsdg/graph.hpp>
-#include <jive/rvsdg/region.hpp>
-#include <jive/util/strfmt.hpp>
 
 namespace jive {
 

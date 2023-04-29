@@ -7,10 +7,11 @@
 #ifndef JIVE_RVSDG_NULLARY_HPP
 #define JIVE_RVSDG_NULLARY_HPP
 
-#include <jive/common.hpp>
 #include <jive/rvsdg/node-normal-form.hpp>
 #include <jive/rvsdg/node.hpp>
 #include <jive/rvsdg/simple-node.hpp>
+
+#include <jlm/util/common.hpp>
 
 namespace jive {
 

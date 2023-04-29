@@ -13,10 +13,11 @@
 #include <unordered_set>
 #include <utility>
 
-#include <jive/common.hpp>
 #include <jive/rvsdg/operation.hpp>
-#include <jive/util/intrusive-list.hpp>
-#include <jive/util/strfmt.hpp>
+
+#include <jlm/util/common.hpp>
+#include <jlm/util/intrusive-list.hpp>
+#include <jlm/util/strfmt.hpp>
 
 namespace jive {
 namespace base {

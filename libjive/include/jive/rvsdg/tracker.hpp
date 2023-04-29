@@ -12,7 +12,7 @@
 
 #include <unordered_map>
 
-#include <jive/util/callbacks.hpp>
+#include <jlm/util/callbacks.hpp>
 
 namespace jive {
 

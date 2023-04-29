@@ -6,14 +6,9 @@
 
 #include <jive/types/bitstring/slice.hpp>
 
-#include <jive/common.hpp>
-
-#include <jive/rvsdg/graph.hpp>
-#include <jive/rvsdg/region.hpp>
 #include <jive/types/bitstring/arithmetic.hpp>
 #include <jive/types/bitstring/concat.hpp>
 #include <jive/types/bitstring/constant.hpp>
-#include <jive/types/bitstring/type.hpp>
 
 namespace jive {
 

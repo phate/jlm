@@ -10,8 +10,9 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include <jive/common.hpp>
 #include <jive/rvsdg/node.hpp>
+
+#include <jlm/util/common.hpp>
 
 namespace jive {
 

@@ -6,7 +6,8 @@
 #include "test-registry.hpp"
 
 #include <assert.h>
-#include <jive/util/intrusive-hash.hpp>
+
+#include <jlm/util/intrusive-hash.hpp>
 
 struct my_item {
 	my_item(int k, int v)

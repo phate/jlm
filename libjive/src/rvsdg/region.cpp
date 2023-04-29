@@ -4,12 +4,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jive/common.hpp>
-
 #include <jive/rvsdg/graph.hpp>
 #include <jive/rvsdg/notifiers.hpp>
-#include <jive/rvsdg/simple-node.hpp>
-#include <jive/rvsdg/region.hpp>
 #include <jive/rvsdg/structural-node.hpp>
 #include <jive/rvsdg/substitution.hpp>
 #include <jive/rvsdg/traverser.hpp>

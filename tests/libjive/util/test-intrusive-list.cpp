@@ -6,7 +6,8 @@
 #include "test-registry.hpp"
 
 #include <assert.h>
-#include <jive/util/intrusive-list.hpp>
+
+#include <jlm/util/intrusive-list.hpp>
 
 namespace {
 

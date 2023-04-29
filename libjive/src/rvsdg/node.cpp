@@ -4,10 +4,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <string.h>
-
-#include <jive/common.hpp>
-
 #include <jive/rvsdg/node-normal-form.hpp>
 #include <jive/rvsdg/notifiers.hpp>
 #include <jive/rvsdg/region.hpp>

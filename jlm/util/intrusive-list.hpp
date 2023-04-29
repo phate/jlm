@@ -4,8 +4,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JIVE_UTIL_INTRUSIVE_LIST_HPP
-#define JIVE_UTIL_INTRUSIVE_LIST_HPP
+#ifndef JLM_UTIL_INTRUSIVE_LIST_HPP
+#define JLM_UTIL_INTRUSIVE_LIST_HPP
 
 #include <iterator>
 #include <memory>

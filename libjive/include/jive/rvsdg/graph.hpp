@@ -12,11 +12,12 @@
 
 #include <typeindex>
 
-#include <jive/common.hpp>
 #include <jive/rvsdg/node-normal-form.hpp>
 #include <jive/rvsdg/node.hpp>
 #include <jive/rvsdg/region.hpp>
 #include <jive/rvsdg/tracker.hpp>
+
+#include <jlm/util/common.hpp>
 
 namespace jive {
 
