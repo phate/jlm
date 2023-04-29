@@ -3,15 +3,14 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/common.hpp>
 #include <jlm/frontend/llvm/LlvmConversionContext.hpp>
 #include <jlm/frontend/llvm/LlvmInstructionConversion.hpp>
 #include <jlm/frontend/llvm/LlvmTypeConversion.hpp>
-
 #include <jlm/ir/basic-block.hpp>
 #include <jlm/ir/ipgraph.hpp>
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/tac.hpp>
+#include <jlm/util/common.hpp>
 
 #include <jive/types/bitstring.hpp>
 #include <jive/types/record.hpp>

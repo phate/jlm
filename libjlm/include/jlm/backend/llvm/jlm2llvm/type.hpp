@@ -10,8 +10,8 @@
 #include <jive/types/record.hpp>
 #include <jive/rvsdg/control.hpp>
 
-#include <jlm/common.hpp>
 #include <jlm/ir/types.hpp>
+#include <jlm/util/common.hpp>
 
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Type.h>

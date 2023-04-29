@@ -6,19 +6,15 @@
 #include <jive/types/bitstring/arithmetic.hpp>
 #include <jive/types/bitstring/comparison.hpp>
 #include <jive/types/bitstring/constant.hpp>
-#include <jive/rvsdg/binary.hpp>
 #include <jive/rvsdg/gamma.hpp>
-#include <jive/rvsdg/structural-node.hpp>
 #include <jive/rvsdg/substitution.hpp>
 #include <jive/rvsdg/theta.hpp>
 #include <jive/rvsdg/traverser.hpp>
 
-#include <jlm/common.hpp>
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/opt/unroll.hpp>
 #include <jlm/util/Statistics.hpp>
-#include <jlm/util/strfmt.hpp>
 #include <jlm/util/time.hpp>
 
 namespace jlm {

@@ -6,7 +6,7 @@
 #ifndef JLM_UTIL_FILE_HPP
 #define JLM_UTIL_FILE_HPP
 
-#include <jlm/common.hpp>
+#include <jlm/util/common.hpp>
 
 #include <string>
 

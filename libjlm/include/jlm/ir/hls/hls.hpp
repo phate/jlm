@@ -9,8 +9,9 @@
 #include <jive/rvsdg/operation.hpp>
 #include <jive/rvsdg/control.hpp>
 #include <jive/rvsdg/structural-node.hpp>
-#include <jlm/common.hpp>
 #include <jive/rvsdg/substitution.hpp>
+
+#include <jlm/util/common.hpp>
 
 namespace jlm {
 	namespace hls {

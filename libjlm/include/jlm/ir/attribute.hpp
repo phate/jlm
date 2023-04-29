@@ -6,7 +6,7 @@
 #ifndef JLM_IR_ATTRIBUTE_HPP
 #define JLM_IR_ATTRIBUTE_HPP
 
-#include <jlm/common.hpp>
+#include <jlm/util/common.hpp>
 
 #include <jive/rvsdg/type.hpp>
 

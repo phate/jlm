@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_COMMON_HPP
-#define JLM_COMMON_HPP
+#ifndef JLM_UTIL_COMMON_HPP
+#define JLM_UTIL_COMMON_HPP
 
 #include <assert.h>
 

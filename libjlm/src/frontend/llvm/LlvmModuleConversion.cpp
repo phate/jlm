@@ -3,19 +3,11 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/common.hpp>
-#include <jlm/ir/attribute.hpp>
-#include <jlm/ir/basic-block.hpp>
-#include <jlm/ir/cfg.hpp>
-#include <jlm/ir/cfg-structure.hpp>
-#include <jlm/ir/cfg-node.hpp>
-#include <jlm/ir/ipgraph.hpp>
-#include <jlm/ir/ipgraph-module.hpp>
-#include <jlm/ir/operators/operators.hpp>
 #include <jlm/frontend/llvm/LlvmConversionContext.hpp>
 #include <jlm/frontend/llvm/LlvmInstructionConversion.hpp>
 #include <jlm/frontend/llvm/LlvmModuleConversion.hpp>
-#include <jlm/frontend/llvm/LlvmTypeConversion.hpp>
+#include <jlm/ir/cfg-structure.hpp>
+#include <jlm/ir/operators/operators.hpp>
 
 #include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/IR/BasicBlock.h>

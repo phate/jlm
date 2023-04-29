@@ -2,8 +2,6 @@
 # See COPYING for terms of redistribution.
 
 LIBJLM_SRC = \
-    libjlm/src/common.cpp \
-    \
     libjlm/src/backend/hls/rvsdg2rhls/add-triggers.cpp \
     libjlm/src/backend/hls/rvsdg2rhls/gamma-conv.cpp \
     libjlm/src/backend/hls/rvsdg2rhls/theta-conv.cpp \
@@ -84,8 +82,6 @@ LIBJLM_SRC = \
     libjlm/src/tooling/CommandGraph.cpp \
     libjlm/src/tooling/CommandGraphGenerator.cpp \
     libjlm/src/tooling/CommandLine.cpp \
-    \
-     libjlm/src/util/Statistics.cpp \
 
 # Default verilator for Ubuntu 22.04
 VERILATOR_BIN ?= verilator_bin
@@ -125,7 +121,7 @@ libjlm-debug: $(JLM_BUILD)/libjlm.a
 libjlm-release: CXXFLAGS += -O3
 libjlm-release: $(JLM_BUILD)/libjlm.a
 
-$(JLM_BUILD)/libjlm.a: CPPFLAGS += -I$(JLM_ROOT)/libjive/include -I$(shell $(LLVMCONFIG) --includedir) -I$(JLM_ROOT)/libjlm/include
+$(JLM_BUILD)/libjlm.a: CPPFLAGS += -I$(JLM_ROOT) -I$(JLM_ROOT)/libjive/include -I$(shell $(LLVMCONFIG) --includedir) -I$(JLM_ROOT)/libjlm/include
 $(JLM_BUILD)/libjlm.a: $(COMMANDPATHSFILE) $(patsubst %.cpp, $(JLM_BUILD)/%.la, $(LIBJLM_SRC))
 
 .PHONY: libjlm-clean

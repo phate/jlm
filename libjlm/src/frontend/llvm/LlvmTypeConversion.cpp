@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/common.hpp>
 #include <jlm/frontend/llvm/LlvmConversionContext.hpp>
 
 #include <jive/types/bitstring/type.hpp>

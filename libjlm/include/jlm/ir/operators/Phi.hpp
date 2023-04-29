@@ -12,7 +12,7 @@
 #include <jive/rvsdg/region.hpp>
 #include <jive/rvsdg/structural-node.hpp>
 
-#include <jlm/common.hpp>
+#include <jlm/util/common.hpp>
 
 namespace jlm {
 namespace phi {

@@ -6,7 +6,7 @@
 #ifndef JLM_IR_DOMTREE_HPP
 #define JLM_IR_DOMTREE_HPP
 
-#include <jlm/common.hpp>
+#include <jlm/util/common.hpp>
 
 #include <memory>
 #include <vector>

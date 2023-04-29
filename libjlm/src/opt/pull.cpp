@@ -6,7 +6,6 @@
 #include <jive/rvsdg/gamma.hpp>
 #include <jive/rvsdg/traverser.hpp>
 
-#include <jlm/common.hpp>
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/opt/pull.hpp>
