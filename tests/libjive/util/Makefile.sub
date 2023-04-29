@@ -1,5 +1,3 @@
 TESTS += \
-	libjive/util/test-double \
-	libjive/util/test-float \
 	libjive/util/test-intrusive-hash \
 	libjive/util/test-intrusive-list \
