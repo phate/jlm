@@ -92,4 +92,4 @@ test_main()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjive/rvsdg/test-binary", test_main)
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-binary", test_main)

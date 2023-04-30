@@ -33,4 +33,4 @@ static int test_main(void)
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjive/rvsdg/test-typemismatch", test_main)
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-typemismatch", test_main)

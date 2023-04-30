@@ -120,4 +120,4 @@ test_nodes()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjive/rvsdg/test-nodes", test_nodes)
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-nodes", test_nodes)

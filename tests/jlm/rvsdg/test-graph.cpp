@@ -133,4 +133,4 @@ test_graph(void)
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjive/rvsdg/test-graph", test_graph)
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-graph", test_graph)

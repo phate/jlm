@@ -1,3 +1,0 @@
-TESTS+=\
-	libjive/rvsdg/traverser/test-bottomup \
-	libjive/rvsdg/traverser/test-topdown \

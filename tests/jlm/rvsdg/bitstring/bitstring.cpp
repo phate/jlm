@@ -1444,4 +1444,4 @@ RunTests()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjive/types/bitstring", RunTests);
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/bitstring/bitstring", RunTests);

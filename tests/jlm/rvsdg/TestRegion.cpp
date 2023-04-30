@@ -148,4 +148,4 @@ Test()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjive/rvsdg/TestRegion", Test)
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/TestRegion", Test)

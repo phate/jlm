@@ -1,0 +1,14 @@
+include $(JLM_ROOT)/tests/jlm/rvsdg/bitstring/Makefile.sub
+
+TESTS+=\
+	jlm/rvsdg/test-binary \
+	jlm/rvsdg/test-bottomup \
+	jlm/rvsdg/test-cse \
+	jlm/rvsdg/test-gamma \
+	jlm/rvsdg/test-graph \
+	jlm/rvsdg/test-nodes \
+	jlm/rvsdg/test-statemux \
+	jlm/rvsdg/test-theta \
+	jlm/rvsdg/test-topdown \
+	jlm/rvsdg/test-typemismatch \
+	jlm/rvsdg/TestRegion \

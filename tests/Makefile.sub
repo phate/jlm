@@ -1,7 +1,7 @@
 TESTS = \
 
+include $(JLM_ROOT)/tests/jlm/rvsdg/Makefile.sub
 include $(JLM_ROOT)/tests/jlm/util/Makefile.sub
-include $(JLM_ROOT)/tests/libjive/Makefile.sub
 include $(JLM_ROOT)/tests/libjlm/Makefile.sub
 
 TEST_SOURCES = \

@@ -186,4 +186,4 @@ test_main(void)
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjive/rvsdg/traverser/test-topdown", test_main)
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-topdown", test_main)

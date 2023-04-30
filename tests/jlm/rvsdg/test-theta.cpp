@@ -49,4 +49,4 @@ test_main()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjive/rvsdg/test-theta", test_main)
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-theta", test_main)
