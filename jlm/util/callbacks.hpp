@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JIVE_UTIL_CALLBACKS_HPP
-#define JIVE_UTIL_CALLBACKS_HPP
+#ifndef JLM_UTIL_CALLBACKS_HPP
+#define JLM_UTIL_CALLBACKS_HPP
 
 #include <atomic>
 #include <functional>

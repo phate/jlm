@@ -6,9 +6,9 @@
 #ifndef JLM_OPT_ALIAS_ANALYSES_POINTSTOGRAPH_HPP
 #define JLM_OPT_ALIAS_ANALYSES_POINTSTOGRAPH_HPP
 
-#include <jlm/common.hpp>
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/RvsdgModule.hpp>
+#include <jlm/util/common.hpp>
 #include <jlm/util/HashSet.hpp>
 #include <jlm/util/iterator_range.hpp>
 

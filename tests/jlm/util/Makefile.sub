@@ -1,0 +1,7 @@
+TESTS += \
+    jlm/util/test-disjointset \
+    jlm/util/test-file \
+    jlm/util/test-intrusive-hash \
+    jlm/util/test-intrusive-list \
+    jlm/util/TestHashSet \
+    jlm/util/TestStatistics \

@@ -4,18 +4,9 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <algorithm>
-#include <stdio.h>
-#include <string.h>
-
-#include <jive/common.hpp>
 #include <jive/rvsdg/control.hpp>
 #include <jive/rvsdg/gamma.hpp>
-#include <jive/rvsdg/graph.hpp>
-#include <jive/rvsdg/region.hpp>
 #include <jive/rvsdg/substitution.hpp>
-#include <jive/rvsdg/traverser.hpp>
-#include <jive/util/strfmt.hpp>
 
 namespace jive {
 

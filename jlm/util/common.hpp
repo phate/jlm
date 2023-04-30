@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_COMMON_HPP
-#define JLM_COMMON_HPP
+#ifndef JLM_UTIL_COMMON_HPP
+#define JLM_UTIL_COMMON_HPP
 
 #include <assert.h>
 
@@ -58,6 +58,42 @@ public:
 	error(const std::string & msg)
 	: std::runtime_error(msg)
 	{}
+};
+
+}
+
+#define JIVE_ASSERT(x) assert(x)
+
+#ifdef JIVE_DEBUG
+#	define JIVE_DEBUG_ASSERT(x) assert(x)
+#else
+#	define JIVE_DEBUG_ASSERT(x) (void)(x)
+#endif
+
+namespace jive {
+
+class compiler_error : public std::runtime_error {
+public:
+  virtual ~compiler_error() noexcept;
+
+  inline compiler_error(const std::string & arg)
+    : std::runtime_error(arg)
+  {
+  }
+};
+
+class type_error : public compiler_error {
+public:
+  virtual ~type_error() noexcept;
+
+  inline type_error(
+    const std::string & expected_type,
+    const std::string & received_type)
+    : compiler_error(
+    "Type error - expected : " + expected_type +
+    ", received : " + received_type)
+  {
+  }
 };
 
 }

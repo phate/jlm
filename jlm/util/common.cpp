@@ -1,9 +1,16 @@
 /*
- * Copyright 2014 Helge Bahmann <hcb@chaoticmind.net>
+ * Copyright 2018 Nico Reißmann <nico.reissmann@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
-#include <jive/common.hpp>
+#include <jlm/util/common.hpp>
+
+namespace jlm {
+
+error::~error()
+{}
+
+}
 
 namespace jive {
 

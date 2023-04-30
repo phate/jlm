@@ -7,10 +7,11 @@
 #ifndef JIVE_RVSDG_BINARY_HPP
 #define JIVE_RVSDG_BINARY_HPP
 
-#include <jive/common.hpp>
 #include <jive/rvsdg/graph.hpp>
 #include <jive/rvsdg/operation.hpp>
 #include <jive/rvsdg/simple-normal-form.hpp>
+
+#include <jlm/util/common.hpp>
 
 typedef size_t jive_binop_reduction_path_t;
 

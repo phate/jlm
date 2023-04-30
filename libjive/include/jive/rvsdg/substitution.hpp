@@ -7,7 +7,7 @@
 #ifndef JIVE_RVSDG_SUBSTITUTION_HPP
 #define JIVE_RVSDG_SUBSTITUTION_HPP
 
-#include <jive/common.hpp>
+#include <jlm/util/common.hpp>
 
 #include <unordered_map>
 

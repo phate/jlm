@@ -84,4 +84,4 @@ TestHashSet()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/util/TestHashSet", TestHashSet)
+JLM_UNIT_TEST_REGISTER("jlm/util/TestHashSet", TestHashSet)

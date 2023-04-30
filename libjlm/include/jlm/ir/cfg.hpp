@@ -5,12 +5,12 @@
 #ifndef JLM_IR_CFG_H
 #define JLM_IR_CFG_H
 
-#include <jlm/common.hpp>
 #include <jlm/ir/attribute.hpp>
 #include <jlm/ir/basic-block.hpp>
 #include <jlm/ir/cfg-node.hpp>
 #include <jlm/ir/types.hpp>
 #include <jlm/ir/variable.hpp>
+#include <jlm/util/common.hpp>
 
 #include <jive/rvsdg/operation.hpp>
 

@@ -7,7 +7,6 @@
 #include <jive/rvsdg/theta.hpp>
 #include <jive/rvsdg/traverser.hpp>
 
-#include <jlm/common.hpp>
 #include <jlm/ir/basic-block.hpp>
 #include <jlm/ir/cfg-structure.hpp>
 #include <jlm/ir/ipgraph-module.hpp>
@@ -15,6 +14,7 @@
 #include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/backend/llvm/rvsdg2jlm/context.hpp>
 #include <jlm/backend/llvm/rvsdg2jlm/rvsdg2jlm.hpp>
+#include <jlm/util/common.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 

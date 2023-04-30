@@ -4,23 +4,14 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/common.hpp>
 #include <jlm/ir/basic-block.hpp>
-#include <jlm/ir/cfg.hpp>
 #include <jlm/ir/cfg-structure.hpp>
-#include <jlm/ir/cfg-node.hpp>
 #include <jlm/ir/ipgraph.hpp>
 #include <jlm/ir/operators/operators.hpp>
-#include <jlm/ir/tac.hpp>
 
 #include <algorithm>
 #include <deque>
-#include <sstream>
 #include <unordered_map>
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <sstream>
 
 namespace jlm {
 

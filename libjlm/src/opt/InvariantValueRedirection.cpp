@@ -3,10 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/common.hpp>
 #include <jlm/ir/operators/gamma.hpp>
 #include <jlm/ir/RvsdgModule.hpp>
-#include <jlm/ir/types.hpp>
 #include <jlm/opt/InvariantValueRedirection.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/strfmt.hpp>

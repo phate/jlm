@@ -14,8 +14,8 @@
 #include <unordered_set>
 #include <vector>
 
-#include <jive/common.hpp>
-#include <jive/util/intrusive-hash.hpp>
+#include <jlm/util/common.hpp>
+#include <jlm/util/intrusive-hash.hpp>
 
 /* normal forms */
 

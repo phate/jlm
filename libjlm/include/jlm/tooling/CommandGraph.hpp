@@ -6,7 +6,7 @@
 #ifndef JLM_TOOLING_COMMANDGRAPH_HPP
 #define JLM_TOOLING_COMMANDGRAPH_HPP
 
-#include <jlm/common.hpp>
+#include <jlm/util/common.hpp>
 #include <jlm/util/iterator_range.hpp>
 
 #include <memory>

@@ -6,7 +6,7 @@
 #ifndef JIVE_RVSDG_NOTIFIERS_HPP
 #define JIVE_RVSDG_NOTIFIERS_HPP
 
-#include <jive/util/callbacks.hpp>
+#include <jlm/util/callbacks.hpp>
 
 namespace jive {
 

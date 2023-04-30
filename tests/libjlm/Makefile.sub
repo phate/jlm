@@ -3,7 +3,6 @@ include $(JLM_ROOT)/tests/libjlm/frontend/Makefile.sub
 include $(JLM_ROOT)/tests/libjlm/ir/Makefile.sub
 include $(JLM_ROOT)/tests/libjlm/opt/Makefile.sub
 include $(JLM_ROOT)/tests/libjlm/tooling/Makefile.sub
-include $(JLM_ROOT)/tests/libjlm/util/Makefile.sub
 
 TESTS += \
 	libjlm/test-cfg-structure \

@@ -6,7 +6,8 @@
 #include "test-registry.hpp"
 
 #include <assert.h>
-#include <jive/util/intrusive-hash.hpp>
+
+#include <jlm/util/intrusive-hash.hpp>
 
 struct my_item {
 	my_item(int k, int v)
@@ -131,4 +132,4 @@ static int test_main(void)
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjive/util/test-intrusive-hash", test_main)
+JLM_UNIT_TEST_REGISTER("jlm/util/test-intrusive-hash", test_main)

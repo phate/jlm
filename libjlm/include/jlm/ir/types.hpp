@@ -9,7 +9,7 @@
 #include <jive/types/record.hpp>
 #include <jive/rvsdg/type.hpp>
 
-#include <jlm/common.hpp>
+#include <jlm/util/common.hpp>
 #include <jlm/util/iterator_range.hpp>
 
 #include <memory>

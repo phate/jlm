@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/common.hpp>
 #include <jlm/ir/operators/alloca.hpp>
 #include <jlm/ir/operators/lambda.hpp>
 #include <jlm/ir/operators/store.hpp>

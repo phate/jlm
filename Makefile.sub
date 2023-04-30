@@ -52,6 +52,7 @@ $(JLM_BUILD)/%.a:
 	ar cqv $@ $^
 	ranlib $@
 
+include $(JLM_ROOT)/jlm/util/Makefile.sub
 include $(JLM_ROOT)/libjive/Makefile.sub
 include $(JLM_ROOT)/libjlm/Makefile.sub
 include $(JLM_ROOT)/jlc/Makefile.sub
@@ -62,10 +63,10 @@ include $(JLM_ROOT)/docs/Makefile.sub
 include $(JLM_ROOT)/tests/Makefile.sub
 
 .PHONY: jlm-debug
-jlm-debug: libjlm-debug jlm-opt-debug jlm-hls-debug jlc-debug jhls-debug
+jlm-debug: libutil-debug libjlm-debug jlm-opt-debug jlm-hls-debug jlc-debug jhls-debug
 
 .PHONY: jlm-release
-jlm-release: libjlm-release jlm-opt-release jlm-hls-release jlc-release jhls-release
+jlm-release: libutil-release libjlm-release jlm-opt-release jlm-hls-release jlc-release jhls-release
 
 .PHONY: jlm-clean
 jlm-clean:

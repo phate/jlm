@@ -1,0 +1,23 @@
+# Copyright 2023 Nico Reißmann <nico.reissmann@gmail.com>
+# See COPYING for terms of redistribution.
+
+LIBUTIL_SRC = \
+	jlm/util/callbacks.cpp \
+	jlm/util/common.cpp \
+	jlm/util/Statistics.cpp \
+
+.PHONY: libutil-debug
+libutil-debug: CXXFLAGS += $(CXXFLAGS_DEBUG)
+libutil-debug: $(JLM_BUILD)/libutil.a
+
+.PHONY: libutil-release
+libutil-release: CXXFLAGS += -O3
+libutil-release: $(JLM_BUILD)/libutil.a
+
+$(JLM_BUILD)/libutil.a: CPPFLAGS += -I$(JLM_ROOT)
+$(JLM_BUILD)/libutil.a : $(patsubst %.cpp, $(JLM_BUILD)/%.la, $(LIBUTIL_SRC))
+
+.PHONY: libutil-clean
+libutil-clean:
+	@rm -rf $(JLM_BUILD)/libjlm
+	@rm -rf $(JLM_BUILD)/libutil.a

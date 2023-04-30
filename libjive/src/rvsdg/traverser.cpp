@@ -4,16 +4,9 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jive/common.hpp>
 #include <jive/rvsdg/graph.hpp>
 #include <jive/rvsdg/notifiers.hpp>
-#include <jive/rvsdg/region.hpp>
-#include <jive/rvsdg/simple-node.hpp>
-#include <jive/rvsdg/tracker.hpp>
 #include <jive/rvsdg/traverser.hpp>
-#include <jive/rvsdg/type.hpp>
-
-#include <string.h>
 
 using namespace std::placeholders;
 

@@ -7,7 +7,7 @@
 #ifndef JIVE_TYPES_BITSTRING_VALUE_REPRESENTATION_HPP
 #define JIVE_TYPES_BITSTRING_VALUE_REPRESENTATION_HPP
 
-#include <jive/common.hpp>
+#include <jlm/util/common.hpp>
 
 #include <cstdint>
 #include <cstring>

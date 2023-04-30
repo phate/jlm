@@ -4,11 +4,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <stdio.h>
-
 #include <jive/rvsdg/graph.hpp>
 #include <jive/rvsdg/substitution.hpp>
-#include <jive/util/strfmt.hpp>
 
 #include <jlm/ir/operators/Phi.hpp>
 

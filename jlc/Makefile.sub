@@ -12,9 +12,9 @@ jlc-debug: $(JLM_BUILD)/libjive.a $(JLM_BUILD)/libjlm.a $(JLM_BIN)/jlc
 jlc-release: CXXFLAGS += -O3
 jlc-release: $(JLM_BUILD)/libjive.a $(JLM_BUILD)/libjlm.a $(JLM_BIN)/jlc
 
-$(JLM_BIN)/jlc: CPPFLAGS += -I$(JLM_ROOT)/libjive/include -I$(JLM_ROOT)/libjlm/include -I$(shell $(LLVMCONFIG) --includedir)
-$(JLM_BIN)/jlc: LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -L$(JLM_BUILD)/ -ljlm -ljive
-$(JLM_BIN)/jlc: $(patsubst %.cpp, $(JLM_BUILD)/%.o, $(JLC_SRC)) $(JLM_BUILD)/libjive.a $(JLM_BUILD)/libjlm.a
+$(JLM_BIN)/jlc: CPPFLAGS += -I$(JLM_ROOT) -I$(JLM_ROOT)/libjive/include -I$(JLM_ROOT)/libjlm/include -I$(shell $(LLVMCONFIG) --includedir)
+$(JLM_BIN)/jlc: LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -L$(JLM_BUILD)/ -ljlm -ljive -lutil
+$(JLM_BIN)/jlc: $(patsubst %.cpp, $(JLM_BUILD)/%.o, $(JLC_SRC)) $(JLM_BUILD)/libjive.a $(JLM_BUILD)/libjlm.a $(JLM_BUILD)/libutil.a
 	@mkdir -p $(JLM_BIN)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 

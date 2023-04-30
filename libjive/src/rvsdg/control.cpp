@@ -4,15 +4,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <stdio.h>
-#include <string.h>
-
-#include <jive/common.hpp>
 #include <jive/types/bitstring/constant.hpp>
-#include <jive/types/bitstring/type.hpp>
 #include <jive/rvsdg/control.hpp>
-#include <jive/rvsdg/graph.hpp>
-#include <jive/rvsdg/region.hpp>
 
 namespace jive {
 

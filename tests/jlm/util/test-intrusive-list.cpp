@@ -6,7 +6,8 @@
 #include "test-registry.hpp"
 
 #include <assert.h>
-#include <jive/util/intrusive-list.hpp>
+
+#include <jlm/util/intrusive-list.hpp>
 
 namespace {
 
@@ -135,4 +136,4 @@ static int test_main(void)
 
 }
 
-JLM_UNIT_TEST_REGISTER("libjive/util/test-intrusive-list", test_main)
+JLM_UNIT_TEST_REGISTER("jlm/util/test-intrusive-list", test_main)

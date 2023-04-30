@@ -111,4 +111,4 @@ TestStatistics()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/util/TestStatistics", TestStatistics)
+JLM_UNIT_TEST_REGISTER("jlm/util/TestStatistics", TestStatistics)

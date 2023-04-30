@@ -9,8 +9,8 @@
 #include <jive/rvsdg/theta.hpp>
 #include <jive/types/bitstring.hpp>
 
-#include <jlm/common.hpp>
 #include <jlm/opt/optimization.hpp>
+#include <jlm/util/common.hpp>
 
 namespace jive {
 	class bitvalue_repr;

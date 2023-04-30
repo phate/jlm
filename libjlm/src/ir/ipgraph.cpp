@@ -4,12 +4,6 @@
  */
 
 #include <jlm/ir/ipgraph.hpp>
-#include <jlm/ir/cfg.hpp>
-#include <jlm/ir/tac.hpp>
-
-#include <jive/common.hpp>
-
-#include <stdio.h>
 
 #include <algorithm>
 

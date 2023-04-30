@@ -4,15 +4,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/common.hpp>
 #include <jlm/ir/basic-block.hpp>
-#include <jlm/ir/cfg.hpp>
-#include <jlm/ir/cfg-node.hpp>
 #include <jlm/ir/ipgraph.hpp>
-
-#include <string.h>
-
-#include <algorithm>
 
 namespace jlm {
 

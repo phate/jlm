@@ -7,8 +7,9 @@
 #ifndef JIVE_TYPES_BITSTRING_TYPE_HPP
 #define JIVE_TYPES_BITSTRING_TYPE_HPP
 
-#include <jive/common.hpp>
 #include <jive/rvsdg/type.hpp>
+
+#include <jlm/util/common.hpp>
 
 namespace jive {
 

@@ -4,7 +4,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jive/common.hpp>
 #include <jive/rvsdg/graph.hpp>
 #include <jive/rvsdg/node.hpp>
 #include <jive/rvsdg/region.hpp>

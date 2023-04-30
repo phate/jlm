@@ -11,7 +11,8 @@
 #include <jive/rvsdg/nullary.hpp>
 #include <jive/rvsdg/unary.hpp>
 #include <jive/types/bitstring/type.hpp>
-#include <jive/util/strfmt.hpp>
+
+#include <jlm/util/strfmt.hpp>
 
 #include <unordered_map>
 

@@ -6,7 +6,7 @@
 #ifndef JLM_IR_CFG_NODE_H
 #define JLM_IR_CFG_NODE_H
 
-#include <jlm/common.hpp>
+#include <jlm/util/common.hpp>
 #include <jlm/util/iterator_range.hpp>
 
 #include <memory>

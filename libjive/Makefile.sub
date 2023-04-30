@@ -10,7 +10,6 @@ endef
 
 # RVSDG core
 LIBJIVE_SRC = \
-	libjive/src/common.cpp \
 	libjive/src/rvsdg/binary.cpp \
 	libjive/src/rvsdg/control.cpp \
 	libjive/src/rvsdg/gamma.cpp \
@@ -34,7 +33,6 @@ LIBJIVE_SRC = \
 
 # visualization
 LIBJIVE_SRC += \
-	libjive/src/util/callbacks.cpp \
 	libjive/src/view.cpp \
 
 # bitstrings
@@ -64,7 +62,7 @@ jive-debug: $(JLM_BUILD)/libjive.a
 jive-release: CXXFLAGS += -O3
 jive-release: $(JLM_BUILD)/libjive.a
 
-$(JLM_BUILD)/libjive.a: CPPFLAGS+=-I$(JLM_ROOT)/libjive/include
+$(JLM_BUILD)/libjive.a: CPPFLAGS+=-I$(JLM_ROOT) -I$(JLM_ROOT)/libjive/include
 $(JLM_BUILD)/libjive.a: $(patsubst %.cpp, $(JLM_BUILD)/%.la, $(LIBJIVE_SRC))
 
 .PHONY: jive-clean

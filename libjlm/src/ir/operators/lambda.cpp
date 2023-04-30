@@ -3,13 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/common.hpp>
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/RvsdgModule.hpp>
-#include <jlm/util/strfmt.hpp>
-
-#include <jive/rvsdg/gamma.hpp>
-#include <jive/rvsdg/theta.hpp>
 
 #include <deque>
 

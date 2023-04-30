@@ -6,7 +6,7 @@
 #ifndef JLM_UTIL_DISJOINTSET_HPP
 #define JLM_UTIL_DISJOINTSET_HPP
 
-#include <jlm/common.hpp>
+#include <jlm/util/common.hpp>
 
 #include <memory>
 #include <unordered_map>

@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/common.hpp>
 #include <jlm/ir/types.hpp>
 #include <jlm/util/strfmt.hpp>
 

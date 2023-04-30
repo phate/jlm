@@ -6,7 +6,7 @@
 #ifndef JLM_BACKEND_LLVM_JLM2LLVM_CONTEXT_HPP
 #define JLM_BACKEND_LLVM_JLM2LLVM_CONTEXT_HPP
 
-#include <jlm/common.hpp>
+#include <jlm/util/common.hpp>
 
 #include <jive/types/record.hpp>
 
