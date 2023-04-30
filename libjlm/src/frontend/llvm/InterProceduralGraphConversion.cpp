@@ -5,27 +5,17 @@
 
 #include <jlm/frontend/llvm/ControlFlowRestructuring.hpp>
 #include <jlm/frontend/llvm/InterProceduralGraphConversion.hpp>
-
 #include <jlm/ir/aggregation.hpp>
 #include <jlm/ir/Annotation.hpp>
-#include <jlm/ir/basic-block.hpp>
 #include <jlm/ir/cfg-structure.hpp>
 #include <jlm/ir/ipgraph.hpp>
 #include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/ir/ssa.hpp>
-#include <jlm/ir/tac.hpp>
-
+#include <jlm/rvsdg/binary.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
-
-#include <jive/types/bitstring/type.hpp>
-#include <jive/rvsdg/binary.hpp>
-#include <jive/rvsdg/control.hpp>
-#include <jive/rvsdg/gamma.hpp>
-#include <jive/rvsdg/region.hpp>
-#include <jive/rvsdg/theta.hpp>
 
 #include <stack>
 

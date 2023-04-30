@@ -7,7 +7,7 @@
 #include <test-types.hpp>
 #include <test-registry.hpp>
 
-#include <jive/view.hpp>
+#include <jlm/rvsdg/view.hpp>
 
 #include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/ir/operators/delta.hpp>

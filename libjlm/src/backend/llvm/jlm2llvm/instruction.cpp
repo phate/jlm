@@ -3,9 +3,9 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jive/types/bitstring.hpp>
-#include <jive/rvsdg/control.hpp>
-#include <jive/rvsdg/statemux.hpp>
+#include <jlm/rvsdg/bitstring.hpp>
+#include <jlm/rvsdg/control.hpp>
+#include <jlm/rvsdg/statemux.hpp>
 
 #include <jlm/ir/cfg-node.hpp>
 #include <jlm/ir/ipgraph-module.hpp>

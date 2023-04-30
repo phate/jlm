@@ -3,11 +3,11 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/backend/hls/rvsdg2rhls/check-rhls.hpp"
+#include <jlm/backend/hls/rvsdg2rhls/check-rhls.hpp>
+#include <jlm/backend/hls/rvsdg2rhls/rvsdg2rhls.hpp>
 #include <jlm/ir/hls/hls.hpp>
 #include <jlm/ir/operators/lambda.hpp>
-#include <jive/rvsdg/traverser.hpp>
-#include <jlm/backend/hls/rvsdg2rhls/rvsdg2rhls.hpp>
+#include <jlm/rvsdg/traverser.hpp>
 
 void
 jlm::hls::check_rhls(jive::region *sr) {

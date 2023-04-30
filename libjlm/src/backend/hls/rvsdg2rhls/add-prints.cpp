@@ -3,15 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/backend/hls/rvsdg2rhls/add-prints.hpp>
 #include <jlm/ir/hls/hls.hpp>
-#include <jive/rvsdg/traverser.hpp>
-#include <jlm/ir/operators/load.hpp>
-#include <jlm/ir/operators/store.hpp>
-#include <jlm/ir/operators/call.hpp>
-#include <jive/rvsdg/gamma.hpp>
-#include <jive/rvsdg/theta.hpp>
 #include <jlm/ir/operators.hpp>
-#include "jlm/backend/hls/rvsdg2rhls/add-prints.hpp"
+#include <jlm/rvsdg/traverser.hpp>
 
 void
 jlm::hls::add_prints(jive::region *region) {

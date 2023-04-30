@@ -7,13 +7,9 @@
 
 #include <test-registry.hpp>
 
-#include <jive/view.hpp>
-
 #include <jlm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/opt/alias-analyses/Steensgaard.hpp>
 #include <jlm/util/Statistics.hpp>
-
-#include <iostream>
 
 static std::unique_ptr<jlm::aa::PointsToGraph>
 RunSteensgaard(jlm::RvsdgModule & module)

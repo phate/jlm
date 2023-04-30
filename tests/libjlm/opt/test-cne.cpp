@@ -7,11 +7,9 @@
 #include "test-registry.hpp"
 #include "test-types.hpp"
 
-#include <jive/view.hpp>
-#include <jive/rvsdg/control.hpp>
-#include <jive/rvsdg/gamma.hpp>
-#include <jive/rvsdg/graph.hpp>
-#include <jive/rvsdg/theta.hpp>
+#include <jlm/rvsdg/control.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/theta.hpp>
 
 #include <jlm/ir/operators/lambda.hpp>
 #include <jlm/ir/operators/Phi.hpp>

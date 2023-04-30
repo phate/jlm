@@ -6,11 +6,10 @@
 #ifndef JLM_IR_OPERATORS_DELTA_HPP
 #define JLM_IR_OPERATORS_DELTA_HPP
 
-#include <jive/rvsdg/region.hpp>
-#include <jive/rvsdg/structural-node.hpp>
-
 #include <jlm/ir/types.hpp>
 #include <jlm/ir/variable.hpp>
+#include <jlm/rvsdg/region.hpp>
+#include <jlm/rvsdg/structural-node.hpp>
 #include <jlm/util/iterator_range.hpp>
 
 namespace jlm {

@@ -6,15 +6,15 @@
 #ifndef JLM_BACKEND_HLS_RHLS2FIRRTL_MLIRGEN_HPP
 #define JLM_BACKEND_HLS_RHLS2FIRRTL_MLIRGEN_HPP
 
-#include <jive/types/bitstring/type.hpp>
-#include <jlm/ir/operators/operators.hpp>
-#include <jive/types/bitstring/comparison.hpp>
-#include <jlm/ir/operators/sext.hpp>
+#include <jlm/ir/hls/hls.hpp>
 #include <jlm/ir/operators/GetElementPtr.hpp>
 #include <jlm/ir/operators/load.hpp>
+#include <jlm/ir/operators/operators.hpp>
+#include <jlm/ir/operators/sext.hpp>
 #include <jlm/ir/operators/store.hpp>
-#include <jlm/ir/hls/hls.hpp>
-#include <jive/rvsdg/traverser.hpp>
+#include <jlm/rvsdg/bitstring/comparison.hpp>
+#include <jlm/rvsdg/bitstring/type.hpp>
+#include <jlm/rvsdg/traverser.hpp>
 
 #include "base-hls.hpp"
 

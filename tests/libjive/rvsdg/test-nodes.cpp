@@ -7,10 +7,7 @@
 #include "test-operation.hpp"
 #include "test-types.hpp"
 
-#include <jive/rvsdg/graph.hpp>
-#include <jive/rvsdg/structural-node.hpp>
-#include <jive/rvsdg/substitution.hpp>
-#include <jive/view.hpp>
+#include <jlm/rvsdg/view.hpp>
 
 static void
 test_node_copy(void)

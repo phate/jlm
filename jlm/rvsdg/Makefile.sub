@@ -1,0 +1,63 @@
+define HELP_TEXT_JIVE
+echo ""
+echo "Rvsdg Make Targets"
+echo "--------------------------------------------------------------------------------"
+echo "rvsdg-debug             Compiles rvsdg library in debug mode"
+echo "rvsdg-debug-check       Compiles rvsdg library in debug mode and runs tests"
+echo "rvsdg-release           Compiles rvsdg library in release mode"
+echo "rvsdg-clean             Cleans all build files and libraries"
+endef
+
+# RVSDG core
+LIBRVSDG_SRC = \
+	jlm/rvsdg/binary.cpp \
+	jlm/rvsdg/control.cpp \
+	jlm/rvsdg/gamma.cpp \
+	jlm/rvsdg/graph.cpp \
+	jlm/rvsdg/node-normal-form.cpp \
+	jlm/rvsdg/node.cpp \
+	jlm/rvsdg/notifiers.cpp \
+	jlm/rvsdg/nullary.cpp \
+	jlm/rvsdg/operation.cpp \
+	jlm/rvsdg/record.cpp \
+	jlm/rvsdg/region.cpp \
+	jlm/rvsdg/simple-normal-form.cpp \
+	jlm/rvsdg/simple-node.cpp \
+	jlm/rvsdg/statemux.cpp \
+	jlm/rvsdg/structural-normal-form.cpp \
+	jlm/rvsdg/structural-node.cpp \
+	jlm/rvsdg/theta.cpp \
+	jlm/rvsdg/tracker.cpp \
+	jlm/rvsdg/traverser.cpp \
+	jlm/rvsdg/type.cpp \
+	jlm/rvsdg/unary.cpp \
+	jlm/rvsdg/view.cpp \
+	\
+	jlm/rvsdg/bitstring/arithmetic.cpp \
+	jlm/rvsdg/bitstring/bitoperation-classes.cpp \
+	jlm/rvsdg/bitstring/comparison.cpp \
+	jlm/rvsdg/bitstring/concat.cpp \
+	jlm/rvsdg/bitstring/constant.cpp \
+	jlm/rvsdg/bitstring/slice.cpp \
+	jlm/rvsdg/bitstring/type.cpp \
+	jlm/rvsdg/bitstring/value-representation.cpp \
+
+SOURCES += $(LIBRVSDG_SRC)
+
+HEADERS = $(shell find 	$(JLM_ROOT)/jlm/rvsdg -name "*.h")
+
+.PHONY: rvsdg-debug
+rvsdg-debug: CXXFLAGS += -g -DJIVE_DEBUG
+rvsdg-debug: $(JLM_BUILD)/librvsdg.a
+
+.PHONY: rvsdg-release
+rvsdg-release: CXXFLAGS += -O3
+rvsdg-release: $(JLM_BUILD)/librvsdg.a
+
+$(JLM_BUILD)/librvsdg.a: CPPFLAGS+=-I$(JLM_ROOT)
+$(JLM_BUILD)/librvsdg.a: $(patsubst %.cpp, $(JLM_BUILD)/%.la, $(LIBRVSDG_SRC))
+
+.PHONY: rvsdg-clean
+rvsdg-clean:
+	@rm -rf $(JLM_BUILD)/jlm/rvsdg
+	@rm -rf $(JLM_BUILD)/librvsdg.a

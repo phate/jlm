@@ -6,12 +6,11 @@
 #ifndef JLM_IR_OPERATORS_STORE_HPP
 #define JLM_IR_OPERATORS_STORE_HPP
 
-#include <jive/rvsdg/graph.hpp>
-#include <jive/rvsdg/simple-normal-form.hpp>
-#include <jive/rvsdg/simple-node.hpp>
-
 #include <jlm/ir/tac.hpp>
 #include <jlm/ir/types.hpp>
+#include <jlm/rvsdg/graph.hpp>
+#include <jlm/rvsdg/simple-normal-form.hpp>
+#include <jlm/rvsdg/simple-node.hpp>
 
 namespace jlm {
 

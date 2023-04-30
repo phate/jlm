@@ -7,11 +7,10 @@
 #include "test-operation.hpp"
 #include "test-types.hpp"
 
-#include <jive/view.hpp>
+#include <jlm/rvsdg/view.hpp>
 
 #include <jlm/frontend/llvm/InterProceduralGraphConversion.hpp>
 #include <jlm/ir/ipgraph-module.hpp>
-#include <jlm/ir/print.hpp>
 #include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/util/Statistics.hpp>
 

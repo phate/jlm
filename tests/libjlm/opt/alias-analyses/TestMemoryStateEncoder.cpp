@@ -7,7 +7,7 @@
 
 #include <test-registry.hpp>
 
-#include <jive/view.hpp>
+#include <jlm/rvsdg/view.hpp>
 
 #include <jlm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp>
 #include <jlm/opt/alias-analyses/MemoryStateEncoder.hpp>

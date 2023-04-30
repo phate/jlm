@@ -11,9 +11,7 @@
 #include <assert.h>
 #include <stdio.h>
 
-#include <jive/rvsdg.hpp>
-#include <jive/rvsdg/structural-node.hpp>
-#include <jive/view.hpp>
+#include <jlm/rvsdg/view.hpp>
 
 static bool
 region_contains_node(const jive::region * region, const jive::node * n)

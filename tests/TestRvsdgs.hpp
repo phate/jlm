@@ -3,10 +3,9 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jive/rvsdg/theta.hpp>
-
 #include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/ir/operators.hpp>
+#include <jlm/rvsdg/theta.hpp>
 
 /**
 * \brief RvsdgTest class

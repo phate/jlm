@@ -7,12 +7,9 @@
 #include "test-operation.hpp"
 #include "test-types.hpp"
 
-#include <jive/rvsdg/control.hpp>
-#include <jive/rvsdg/gamma.hpp>
-#include <jive/rvsdg/graph.hpp>
-#include <jive/rvsdg/substitution.hpp>
-#include <jive/types/bitstring/type.hpp>
-#include <jive/view.hpp>
+#include <jlm/rvsdg/control.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/view.hpp>
 
 static void
 test_gamma(void)

@@ -7,11 +7,7 @@
 #include "test-operation.hpp"
 #include "test-types.hpp"
 
-#include <jive/rvsdg/binary.hpp>
-#include <jive/rvsdg/graph.hpp>
-#include <jive/rvsdg/region.hpp>
-#include <jive/rvsdg/structural-node.hpp>
-#include <jive/view.hpp>
+#include <jlm/rvsdg/view.hpp>
 
 static void
 test_flattened_binary_reduction()

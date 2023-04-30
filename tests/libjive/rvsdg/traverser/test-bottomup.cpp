@@ -7,8 +7,7 @@
 #include "test-operation.hpp"
 #include "test-types.hpp"
 
-#include <jive/rvsdg/graph.hpp>
-#include <jive/rvsdg/traverser.hpp>
+#include <jlm/rvsdg/traverser.hpp>
 
 static void
 test_initialization()

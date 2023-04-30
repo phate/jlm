@@ -10,9 +10,8 @@
 
 #include <assert.h>
 
-#include <jive/rvsdg.hpp>
-#include <jive/rvsdg/statemux.hpp>
-#include <jive/view.hpp>
+#include <jlm/rvsdg/statemux.hpp>
+#include <jlm/rvsdg/view.hpp>
 
 
 static void

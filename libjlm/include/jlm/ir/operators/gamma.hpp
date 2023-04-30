@@ -6,7 +6,7 @@
 #ifndef JLM_IR_OPERATORS_GAMMA_HPP
 #define JLM_IR_OPERATORS_GAMMA_HPP
 
-#include <jive/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/gamma.hpp>
 
 namespace jlm {
 

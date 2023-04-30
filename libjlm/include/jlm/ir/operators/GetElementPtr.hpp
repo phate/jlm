@@ -6,11 +6,10 @@
 #ifndef JLM_IR_OPERATORS_GETELEMENTPTR_HPP
 #define JLM_IR_OPERATORS_GETELEMENTPTR_HPP
 
-#include <jive/types/bitstring/type.hpp>
-#include <jive/rvsdg/simple-node.hpp>
-
 #include <jlm/ir/tac.hpp>
 #include <jlm/ir/types.hpp>
+#include <jlm/rvsdg/bitstring/type.hpp>
+#include <jlm/rvsdg/simple-node.hpp>
 
 namespace jlm
 {

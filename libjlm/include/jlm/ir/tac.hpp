@@ -7,9 +7,8 @@
 #define JLM_IR_TAC_H
 
 #include <jlm/ir/variable.hpp>
+#include <jlm/rvsdg/operation.hpp>
 #include <jlm/util/common.hpp>
-
-#include <jive/rvsdg/operation.hpp>
 
 #include <list>
 #include <memory>

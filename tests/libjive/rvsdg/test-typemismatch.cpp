@@ -10,10 +10,6 @@
 
 #include <assert.h>
 
-#include <jive/rvsdg.hpp>
-#include <jive/view.hpp>
-
-
 static int test_main(void)
 {
 	using namespace jive;

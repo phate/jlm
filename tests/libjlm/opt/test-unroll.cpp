@@ -6,15 +6,12 @@
 #include "test-operation.hpp"
 #include "test-registry.hpp"
 
-#include <jive/types/bitstring/arithmetic.hpp>
-#include <jive/types/bitstring/constant.hpp>
-#include <jive/types/bitstring/comparison.hpp>
-#include <jive/view.hpp>
-#include <jive/rvsdg/gamma.hpp>
-#include <jive/rvsdg/graph.hpp>
-#include <jive/rvsdg/simple-node.hpp>
-#include <jive/rvsdg/theta.hpp>
-#include <jive/rvsdg/traverser.hpp>
+#include <jlm/rvsdg/bitstring/arithmetic.hpp>
+#include <jlm/rvsdg/bitstring/constant.hpp>
+#include <jlm/rvsdg/bitstring/comparison.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/theta.hpp>
+#include <jlm/rvsdg/traverser.hpp>
 
 #include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/opt/DeadNodeElimination.hpp>

@@ -37,9 +37,9 @@ jlm-hls-debug: $(JLM_BUILD)/libjive.a $(JLM_BUILD)/libjlm.a $(JLM_BIN)/jlm-hls
 jlm-hls-release: CXXFLAGS += -O3
 jlm-hls-release: $(JLM_BUILD)/libjive.a $(JLM_BUILD)/libjlm.a $(JLM_BIN)/jlm-hls
 
-$(JLM_BIN)/jlm-hls: CPPFLAGS += -I$(JLM_ROOT) -I$(JLM_ROOT)/libjlm/include -I$(JLM_ROOT)/libjive/include -I$(shell $(LLVMCONFIG) --includedir)
-$(JLM_BIN)/jlm-hls: LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -L$(JLM_BUILD)/ -ljlm -ljive -lutil
-$(JLM_BIN)/jlm-hls: $(patsubst %.cpp, $(JLM_BUILD)/%.o, $(JLM_HLS_SRC)) $(JLM_BUILD)/libjive.a $(JLM_BUILD)/libjlm.a $(JLM_BUILD)/libutil.a
+$(JLM_BIN)/jlm-hls: CPPFLAGS += -I$(JLM_ROOT) -I$(JLM_ROOT)/libjlm/include -I$(shell $(LLVMCONFIG) --includedir)
+$(JLM_BIN)/jlm-hls: LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -L$(JLM_BUILD)/ -ljlm -lrvsdg -lutil
+$(JLM_BIN)/jlm-hls: $(patsubst %.cpp, $(JLM_BUILD)/%.o, $(JLM_HLS_SRC)) $(JLM_BUILD)/librvsdg.a $(JLM_BUILD)/libjlm.a $(JLM_BUILD)/libutil.a
 	@mkdir -p $(JLM_BIN)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 

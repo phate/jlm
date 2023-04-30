@@ -7,11 +7,10 @@
 #ifndef JLM_IR_OPERATORS_PHI_HPP
 #define JLM_IR_OPERATORS_PHI_HPP
 
-#include <jive/rvsdg/graph.hpp>
-#include <jive/rvsdg/node.hpp>
-#include <jive/rvsdg/region.hpp>
-#include <jive/rvsdg/structural-node.hpp>
-
+#include <jlm/rvsdg/graph.hpp>
+#include <jlm/rvsdg/node.hpp>
+#include <jlm/rvsdg/region.hpp>
+#include <jlm/rvsdg/structural-node.hpp>
 #include <jlm/util/common.hpp>
 
 namespace jlm {

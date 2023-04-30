@@ -3,12 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jive/rvsdg/control.hpp>
+#include <jlm/rvsdg/control.hpp>
 
 #include <jlm/ir/basic-block.hpp>
-#include <jlm/ir/cfg.hpp>
 #include <jlm/ir/cfg-structure.hpp>
-#include <jlm/ir/cfg-node.hpp>
 #include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/operators/operators.hpp>
 

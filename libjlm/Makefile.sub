@@ -121,7 +121,7 @@ libjlm-debug: $(JLM_BUILD)/libjlm.a
 libjlm-release: CXXFLAGS += -O3
 libjlm-release: $(JLM_BUILD)/libjlm.a
 
-$(JLM_BUILD)/libjlm.a: CPPFLAGS += -I$(JLM_ROOT) -I$(JLM_ROOT)/libjive/include -I$(shell $(LLVMCONFIG) --includedir) -I$(JLM_ROOT)/libjlm/include
+$(JLM_BUILD)/libjlm.a: CPPFLAGS += -I$(JLM_ROOT) -I$(shell $(LLVMCONFIG) --includedir) -I$(JLM_ROOT)/libjlm/include
 $(JLM_BUILD)/libjlm.a: $(COMMANDPATHSFILE) $(patsubst %.cpp, $(JLM_BUILD)/%.la, $(LIBJLM_SRC))
 
 .PHONY: libjlm-clean

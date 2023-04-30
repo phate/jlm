@@ -7,10 +7,9 @@
 #include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/opt/inversion.hpp>
 #include <jlm/opt/pull.hpp>
+#include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
-
-#include <jive/rvsdg/traverser.hpp>
 
 namespace jlm {
 

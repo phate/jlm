@@ -7,13 +7,9 @@
 #include "test-registry.hpp"
 #include "test-types.hpp"
 
-#include <jive/view.hpp>
+#include <jlm/rvsdg/view.hpp>
 
 #include <jlm/ir/operators/call.hpp>
-#include <jlm/ir/operators/lambda.hpp>
-#include <jlm/ir/operators/Phi.hpp>
-#include <jlm/ir/types.hpp>
-
 
 static int test_main()
 {

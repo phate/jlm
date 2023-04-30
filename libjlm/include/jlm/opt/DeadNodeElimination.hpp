@@ -7,9 +7,8 @@
 #define JLM_OPT_DEADNODEELIMINATION_HPP
 
 #include <jlm/opt/optimization.hpp>
-
-#include <jive/rvsdg/simple-node.hpp>
-#include <jive/rvsdg/structural-node.hpp>
+#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/structural-node.hpp>
 
 namespace jive {
 class gamma_node;

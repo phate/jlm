@@ -7,10 +7,6 @@
 #include "test-operation.hpp"
 #include "test-types.hpp"
 
-#include <jive/rvsdg/graph.hpp>
-#include <jive/rvsdg/simple-normal-form.hpp>
-#include <jive/view.hpp>
-
 static int
 test_main()
 {

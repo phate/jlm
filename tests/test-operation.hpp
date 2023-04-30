@@ -6,14 +6,14 @@
 #ifndef TESTS_TEST_OPERATION_HPP
 #define TESTS_TEST_OPERATION_HPP
 
-#include <jive/rvsdg/binary.hpp>
-#include <jive/rvsdg/node.hpp>
-#include <jive/rvsdg/operation.hpp>
-#include <jive/rvsdg/simple-node.hpp>
-#include <jive/rvsdg/structural-node.hpp>
-#include <jive/rvsdg/substitution.hpp>
-#include <jive/rvsdg/type.hpp>
-#include <jive/rvsdg/unary.hpp>
+#include <jlm/rvsdg/binary.hpp>
+#include <jlm/rvsdg/node.hpp>
+#include <jlm/rvsdg/operation.hpp>
+#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/structural-node.hpp>
+#include <jlm/rvsdg/substitution.hpp>
+#include <jlm/rvsdg/type.hpp>
+#include <jlm/rvsdg/unary.hpp>
 
 #include <jlm/ir/tac.hpp>
 

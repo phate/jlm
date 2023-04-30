@@ -3,38 +3,35 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/backend/hls/rvsdg2rhls/rvsdg2rhls.hpp>
-#include <jive/rvsdg/substitution.hpp>
-#include <jlm/backend/hls/rvsdg2rhls/remove-unused-state.hpp>
-#include <jlm/backend/hls/rvsdg2rhls/add-triggers.hpp>
-#include <jlm/backend/hls/rvsdg2rhls/gamma-conv.hpp>
-#include <jlm/backend/hls/rvsdg2rhls/theta-conv.hpp>
-#include <jlm/backend/hls/rvsdg2rhls/add-sinks.hpp>
 #include <jlm/backend/hls/rvsdg2rhls/add-forks.hpp>
+#include <jlm/backend/hls/rvsdg2rhls/add-prints.hpp>
+#include <jlm/backend/hls/rvsdg2rhls/add-sinks.hpp>
+#include <jlm/backend/hls/rvsdg2rhls/add-triggers.hpp>
+#include <jlm/backend/hls/rvsdg2rhls/check-rhls.hpp>
+#include <jlm/backend/hls/rvsdg2rhls/gamma-conv.hpp>
+#include <jlm/backend/hls/rvsdg2rhls/remove-unused-state.hpp>
 #include <jlm/backend/hls/rvsdg2rhls/rhls-dne.hpp>
+#include <jlm/backend/hls/rvsdg2rhls/rvsdg2rhls.hpp>
+#include <jlm/backend/hls/rvsdg2rhls/theta-conv.hpp>
+#include <jlm/backend/llvm/jlm2llvm/jlm2llvm.hpp>
+#include <jlm/backend/llvm/rvsdg2jlm/rvsdg2jlm.hpp>
+#include <jlm/ir/operators/alloca.hpp>
+#include <jlm/ir/operators/call.hpp>
+#include <jlm/ir/operators/delta.hpp>
+#include <jlm/opt/cne.hpp>
+#include <jlm/opt/DeadNodeElimination.hpp>
+#include <jlm/opt/inlining.hpp>
 #include <jlm/opt/InvariantValueRedirection.hpp>
 #include <jlm/opt/inversion.hpp>
-#include <jlm/opt/cne.hpp>
-#include <jlm/backend/hls/rvsdg2rhls/check-rhls.hpp>
-#include <jlm/ir/RvsdgModule.hpp>
-#include <jive/rvsdg/traverser.hpp>
-#include <jlm/ir/operators/delta.hpp>
-#include <jlm/backend/hls/rvsdg2rhls/add-prints.hpp>
-#include <jlm/backend/llvm/rvsdg2jlm/rvsdg2jlm.hpp>
-#include <jlm/backend/llvm/jlm2llvm/jlm2llvm.hpp>
-
-#include <regex>
+#include <jlm/rvsdg/traverser.hpp>
+#include <jlm/util/Statistics.hpp>
 
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Support/SourceMgr.h>
-#include <jlm/ir/operators/call.hpp>
-#include <jlm/ir/operators/alloca.hpp>
-#include <jlm/opt/inlining.hpp>
-#include <jlm/ir/operators/theta.hpp>
-#include <jlm/util/Statistics.hpp>
-#include "jlm/opt/DeadNodeElimination.hpp"
+
+#include <regex>
 
 void
 pre_opt(jlm::RvsdgModule &rm) {

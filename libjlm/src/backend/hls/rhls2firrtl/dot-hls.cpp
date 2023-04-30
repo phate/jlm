@@ -3,12 +3,12 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/ir/operators/lambda.hpp>
-#include <algorithm>
+#include <jlm/backend/hls/rhls2firrtl/dot-hls.hpp>
 #include <jlm/backend/hls/rvsdg2rhls/rvsdg2rhls.hpp>
+#include <jlm/rvsdg/traverser.hpp>
+
+#include <algorithm>
 #include <set>
-#include <jive/rvsdg/traverser.hpp>
-#include "jlm/backend/hls/rhls2firrtl/dot-hls.hpp"
 
 std::string
 jlm::hls::DotHLS::extension() {

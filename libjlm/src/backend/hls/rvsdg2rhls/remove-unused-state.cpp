@@ -3,9 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/backend/hls/rvsdg2rhls/remove-unused-state.hpp"
-#include <jive/rvsdg/traverser.hpp>
-#include <jive/view.hpp>
+#include <jlm/backend/hls/rvsdg2rhls/remove-unused-state.hpp>
+#include <jlm/rvsdg/traverser.hpp>
 
 void
 jlm::hls::remove_unused_state(jive::region *region, bool can_remove_arguments) {

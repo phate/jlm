@@ -6,9 +6,9 @@
 #include "test-registry.hpp"
 #include "test-types.hpp"
 
-#include <jive/rvsdg/graph.hpp>
-#include <jive/rvsdg/theta.hpp>
-#include <jive/view.hpp>
+#include <jlm/rvsdg/graph.hpp>
+#include <jlm/rvsdg/theta.hpp>
+#include <jlm/rvsdg/view.hpp>
 
 static int
 test_main()

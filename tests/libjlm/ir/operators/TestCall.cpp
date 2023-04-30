@@ -10,7 +10,7 @@
 #include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/ir/operators.hpp>
 
-#include <jive/view.hpp>
+#include <jlm/rvsdg/view.hpp>
 
 static void
 TestCallTypeClassifierIndirectCall()

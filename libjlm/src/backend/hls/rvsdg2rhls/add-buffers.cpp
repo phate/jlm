@@ -3,10 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/ir/hls/hls.hpp>
-#include <jive/rvsdg/traverser.hpp>
+#include <jlm/backend/hls/rvsdg2rhls/add-buffers.hpp>
 #include <jlm/backend/hls/rvsdg2rhls/rvsdg2rhls.hpp>
-#include "jlm/backend/hls/rvsdg2rhls/add-buffers.hpp"
+#include <jlm/ir/hls/hls.hpp>
+#include <jlm/rvsdg/traverser.hpp>
 
 void
 jlm::hls::add_buffers(jive::region *region, bool pass_through) {

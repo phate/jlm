@@ -6,11 +6,10 @@
 #ifndef JLM_IR_HLS_HLS_HPP
 #define JLM_IR_HLS_HLS_HPP
 
-#include <jive/rvsdg/operation.hpp>
-#include <jive/rvsdg/control.hpp>
-#include <jive/rvsdg/structural-node.hpp>
-#include <jive/rvsdg/substitution.hpp>
-
+#include <jlm/rvsdg/operation.hpp>
+#include <jlm/rvsdg/control.hpp>
+#include <jlm/rvsdg/structural-node.hpp>
+#include <jlm/rvsdg/substitution.hpp>
 #include <jlm/util/common.hpp>
 
 namespace jlm {

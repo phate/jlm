@@ -52,8 +52,8 @@ $(JLM_BUILD)/%.a:
 	ar cqv $@ $^
 	ranlib $@
 
+include $(JLM_ROOT)/jlm/rvsdg/Makefile.sub
 include $(JLM_ROOT)/jlm/util/Makefile.sub
-include $(JLM_ROOT)/libjive/Makefile.sub
 include $(JLM_ROOT)/libjlm/Makefile.sub
 include $(JLM_ROOT)/jlc/Makefile.sub
 include $(JLM_ROOT)/jlm-opt/Makefile.sub
