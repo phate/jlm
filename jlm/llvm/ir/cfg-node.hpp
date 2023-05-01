@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_LLVM_IR_CFG_NODE_H
-#define JLM_LLVM_IR_CFG_NODE_H
+#ifndef JLM_LLVM_IR_CFG_NODE_HPP
+#define JLM_LLVM_IR_CFG_NODE_HPP
 
 #include <jlm/util/common.hpp>
 #include <jlm/util/iterator_range.hpp>

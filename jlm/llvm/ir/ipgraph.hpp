@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_LLVM_IR_IPGRAPH_H
-#define JLM_LLVM_IR_IPGRAPH_H
+#ifndef JLM_LLVM_IR_IPGRAPH_HPP
+#define JLM_LLVM_IR_IPGRAPH_HPP
 
 #include <jlm/llvm/ir/cfg.hpp>
 #include <jlm/llvm/ir/tac.hpp>
