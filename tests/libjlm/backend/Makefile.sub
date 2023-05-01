@@ -1,2 +1,1 @@
-include $(JLM_ROOT)/tests/libjlm/backend/llvm/Makefile.sub
 include $(JLM_ROOT)/tests/libjlm/backend/hls/Makefile.sub

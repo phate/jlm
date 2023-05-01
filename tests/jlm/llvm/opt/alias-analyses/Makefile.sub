@@ -1,0 +1,5 @@
+TESTS += \
+	jlm/llvm/opt/alias-analyses/TestAgnosticMemoryNodeProvider \
+	jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder \
+	jlm/llvm/opt/alias-analyses/TestRegionAwareMemoryNodeProvider \
+	jlm/llvm/opt/alias-analyses/TestSteensgaard \

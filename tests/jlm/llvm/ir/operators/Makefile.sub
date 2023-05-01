@@ -1,0 +1,10 @@
+TESTS += \
+	jlm/llvm/ir/operators/TestCall \
+	jlm/llvm/ir/operators/test-ConstantFP \
+	jlm/llvm/ir/operators/test-delta \
+	jlm/llvm/ir/operators/TestGetElementPtr \
+	jlm/llvm/ir/operators/TestLambda \
+	jlm/llvm/ir/operators/test-load \
+	jlm/llvm/ir/operators/TestPhi \
+	jlm/llvm/ir/operators/test-sext \
+	jlm/llvm/ir/operators/test-store \

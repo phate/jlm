@@ -1,9 +1,0 @@
-TESTS += \
-    libjlm/frontend/llvm/TestAttributeConversion \
-	libjlm/frontend/llvm/test-endless-loop \
-	libjlm/frontend/llvm/test-export \
-	libjlm/frontend/llvm/TestFNeg \
-	libjlm/frontend/llvm/test-function-call \
-	libjlm/frontend/llvm/test-recursive-data \
-	libjlm/frontend/llvm/test-restructuring \
-	libjlm/frontend/llvm/test-select \

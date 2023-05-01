@@ -1,7 +1,0 @@
-TESTS += \
-	libjlm/ir/operators/TestCall \
-	libjlm/ir/operators/test-ConstantFP \
-	libjlm/ir/operators/test-delta \
-	libjlm/ir/operators/TestGetElementPtr \
-	libjlm/ir/operators/TestLambda \
-	libjlm/ir/operators/TestPhi \

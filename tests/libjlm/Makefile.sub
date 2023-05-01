@@ -1,11 +1,1 @@
 include $(JLM_ROOT)/tests/libjlm/backend/Makefile.sub
-include $(JLM_ROOT)/tests/libjlm/frontend/Makefile.sub
-include $(JLM_ROOT)/tests/libjlm/ir/Makefile.sub
-include $(JLM_ROOT)/tests/libjlm/opt/Makefile.sub
-include $(JLM_ROOT)/tests/libjlm/tooling/Makefile.sub
-
-TESTS += \
-	libjlm/test-cfg-structure \
-	libjlm/test-load \
-	libjlm/test-sext \
-	libjlm/test-store \
