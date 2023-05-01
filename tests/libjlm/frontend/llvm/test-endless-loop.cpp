@@ -6,8 +6,8 @@
 #include <test-registry.hpp>
 #include <test-util.hpp>
 
-#include <jlm/frontend/llvm/LlvmModuleConversion.hpp>
-#include <jlm/ir/print.hpp>
+#include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
+#include <jlm/llvm/ir/print.hpp>
 
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/IRBuilder.h>

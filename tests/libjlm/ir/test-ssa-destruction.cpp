@@ -7,12 +7,11 @@
 #include "test-registry.hpp"
 #include "test-types.hpp"
 
-#include <jlm/ir/basic-block.hpp>
-#include <jlm/ir/cfg.hpp>
-#include <jlm/ir/ipgraph-module.hpp>
-#include <jlm/ir/operators/operators.hpp>
-#include <jlm/ir/ssa.hpp>
-#include <jlm/ir/print.hpp>
+#include <jlm/llvm/ir/basic-block.hpp>
+#include <jlm/llvm/ir/ipgraph-module.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/ssa.hpp>
+#include <jlm/llvm/ir/print.hpp>
 
 static inline void
 test_two_phis()

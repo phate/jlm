@@ -9,7 +9,7 @@
 
 #include <jlm/rvsdg/view.hpp>
 
-#include <jlm/ir/operators/call.hpp>
+#include <jlm/llvm/ir/operators/call.hpp>
 
 static int test_main()
 {

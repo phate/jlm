@@ -6,8 +6,8 @@
 #ifndef JLM_BACKEND_HLS_RVSDG2RHLS_ADD_BUFFERS_HPP
 #define JLM_BACKEND_HLS_RVSDG2RHLS_ADD_BUFFERS_HPP
 
+#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/region.hpp>
-#include <jlm/ir/RvsdgModule.hpp>
 
 namespace jlm{
 	namespace hls{

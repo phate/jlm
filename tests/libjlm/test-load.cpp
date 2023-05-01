@@ -9,10 +9,10 @@
 #include <jlm/rvsdg/statemux.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-#include <jlm/ir/operators/alloca.hpp>
-#include <jlm/ir/operators/load.hpp>
-#include <jlm/ir/operators/operators.hpp>
-#include <jlm/ir/operators/store.hpp>
+#include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/load.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/operators/store.hpp>
 
 static inline void
 test_load_alloca_reduction()

@@ -11,9 +11,9 @@
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-#include <jlm/ir/operators.hpp>
-#include <jlm/ir/RvsdgModule.hpp>
-#include <jlm/opt/inlining.hpp>
+#include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/opt/inlining.hpp>
 #include <jlm/util/Statistics.hpp>
 
 static jlm::StatisticsCollector statisticsCollector;

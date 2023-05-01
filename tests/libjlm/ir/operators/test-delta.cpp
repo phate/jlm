@@ -9,8 +9,8 @@
 
 #include <jlm/rvsdg/view.hpp>
 
-#include <jlm/ir/RvsdgModule.hpp>
-#include <jlm/ir/operators/delta.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/ir/operators/delta.hpp>
 
 static int
 test()

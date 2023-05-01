@@ -7,11 +7,11 @@
 #define JLM_BACKEND_HLS_RHLS2FIRRTL_MLIRGEN_HPP
 
 #include <jlm/ir/hls/hls.hpp>
-#include <jlm/ir/operators/GetElementPtr.hpp>
-#include <jlm/ir/operators/load.hpp>
-#include <jlm/ir/operators/operators.hpp>
-#include <jlm/ir/operators/sext.hpp>
-#include <jlm/ir/operators/store.hpp>
+#include <jlm/llvm/ir/operators/GetElementPtr.hpp>
+#include <jlm/llvm/ir/operators/load.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/operators/sext.hpp>
+#include <jlm/llvm/ir/operators/store.hpp>
 #include <jlm/rvsdg/bitstring/comparison.hpp>
 #include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/rvsdg/traverser.hpp>

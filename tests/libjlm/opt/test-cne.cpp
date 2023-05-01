@@ -11,10 +11,10 @@
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
-#include <jlm/ir/operators/lambda.hpp>
-#include <jlm/ir/operators/Phi.hpp>
-#include <jlm/ir/RvsdgModule.hpp>
-#include <jlm/opt/cne.hpp>
+#include <jlm/llvm/ir/operators/lambda.hpp>
+#include <jlm/llvm/ir/operators/Phi.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/opt/cne.hpp>
 #include <jlm/util/Statistics.hpp>
 
 static jlm::StatisticsCollector statisticsCollector;

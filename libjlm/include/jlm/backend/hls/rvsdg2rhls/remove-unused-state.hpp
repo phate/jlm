@@ -6,8 +6,8 @@
 #ifndef JLM_BACKEND_HLS_RVSDG2RHLS_REMOVE_UNUSED_STATE_HPP
 #define JLM_BACKEND_HLS_RVSDG2RHLS_REMOVE_UNUSED_STATE_HPP
 
-#include <jlm/ir/operators/lambda.hpp>
-#include <jlm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/ir/operators/lambda.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 

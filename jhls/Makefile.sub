@@ -6,15 +6,15 @@ JHLS_SRC = \
 
 .PHONY: jhls-debug
 jhls-debug: CXXFLAGS += $(CXXFLAGS_DEBUG)
-jhls-debug: $(JLM_BUILD)/libjive.a $(JLM_BUILD)/libjlm.a $(JLM_BIN)/jhls
+jhls-debug: $(JLM_BUILD)/libjlm.a $(JLM_BIN)/jhls
 
 .PHONY: jhls-release
 jhls-release: CXXFLAGS += -O3
-jhls-release: $(JLM_BUILD)/libjive.a $(JLM_BUILD)/libjlm.a $(JLM_BIN)/jhls
+jhls-release: $(JLM_BUILD)/libjlm.a $(JLM_BIN)/jhls
 
 $(JLM_BIN)/jhls: CPPFLAGS += -I$(JLM_ROOT) -I$(JLM_ROOT)/libjlm/include -I$(shell $(LLVMCONFIG) --includedir)
-$(JLM_BIN)/jhls: LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -L$(JLM_BUILD)/ -ljlm -lrvsdg -lutil
-$(JLM_BIN)/jhls: $(patsubst %.cpp, $(JLM_BUILD)/%.o, $(JHLS_SRC)) $(JLM_BUILD)/librvsdg.a $(JLM_BUILD)/libjlm.a $(JLM_BUILD)/libutil.a
+$(JLM_BIN)/jhls: LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -L$(JLM_BUILD)/ -ljlm -lllvm -lrvsdg -lutil
+$(JLM_BIN)/jhls: $(patsubst %.cpp, $(JLM_BUILD)/%.o, $(JHLS_SRC)) $(JLM_BUILD)/librvsdg.a $(JLM_BUILD)/libjlm.a $(JLM_BUILD)/libllvm.a $(JLM_BUILD)/libutil.a
 	@mkdir -p $(JLM_BIN)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $^ -o $@ $(LDFLAGS)
 

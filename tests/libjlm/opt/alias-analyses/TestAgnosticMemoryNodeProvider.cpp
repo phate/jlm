@@ -9,8 +9,8 @@
 
 #include <jlm/rvsdg/view.hpp>
 
-#include <jlm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp>
-#include <jlm/opt/alias-analyses/Steensgaard.hpp>
+#include <jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
 #include <jlm/util/Statistics.hpp>
 
 #include <iostream>

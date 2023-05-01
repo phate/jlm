@@ -7,8 +7,8 @@
 #include <test-registry.hpp>
 #include <test-types.hpp>
 
-#include <jlm/ir/RvsdgModule.hpp>
-#include <jlm/ir/operators/lambda.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/ir/operators/lambda.hpp>
 
 static void
 TestArgumentIterators()

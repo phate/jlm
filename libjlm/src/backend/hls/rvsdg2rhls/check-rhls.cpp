@@ -6,7 +6,7 @@
 #include <jlm/backend/hls/rvsdg2rhls/check-rhls.hpp>
 #include <jlm/backend/hls/rvsdg2rhls/rvsdg2rhls.hpp>
 #include <jlm/ir/hls/hls.hpp>
-#include <jlm/ir/operators/lambda.hpp>
+#include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
 void

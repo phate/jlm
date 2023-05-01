@@ -7,8 +7,8 @@
 
 #include <test-registry.hpp>
 
-#include <jlm/opt/alias-analyses/PointsToGraph.hpp>
-#include <jlm/opt/alias-analyses/Steensgaard.hpp>
+#include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
+#include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
 #include <jlm/util/Statistics.hpp>
 
 static std::unique_ptr<jlm::aa::PointsToGraph>

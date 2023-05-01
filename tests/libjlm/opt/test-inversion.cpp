@@ -10,8 +10,8 @@
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
-#include <jlm/ir/RvsdgModule.hpp>
-#include <jlm/opt/inversion.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/opt/inversion.hpp>
 #include <jlm/util/Statistics.hpp>
 
 static const jlm::valuetype vt;

@@ -5,8 +5,8 @@
 
 #include "test-registry.hpp"
 
-#include <jlm/ir/cfg.hpp>
-#include <jlm/ir/ipgraph-module.hpp>
+#include <jlm/llvm/ir/cfg.hpp>
+#include <jlm/llvm/ir/ipgraph-module.hpp>
 
 #include <assert.h>
 

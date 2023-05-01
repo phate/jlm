@@ -7,12 +7,12 @@
 #include <test-registry.hpp>
 #include <test-types.hpp>
 
-#include <jlm/ir/aggregation.hpp>
-#include <jlm/ir/Annotation.hpp>
-#include <jlm/ir/basic-block.hpp>
-#include <jlm/ir/ipgraph-module.hpp>
-#include <jlm/ir/operators/operators.hpp>
-#include <jlm/ir/print.hpp>
+#include <jlm/llvm/ir/aggregation.hpp>
+#include <jlm/llvm/ir/Annotation.hpp>
+#include <jlm/llvm/ir/basic-block.hpp>
+#include <jlm/llvm/ir/ipgraph-module.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/print.hpp>
 
 static void
 TestBasicBlockAnnotation()

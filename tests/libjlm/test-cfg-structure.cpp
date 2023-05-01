@@ -7,11 +7,10 @@
 #include "test-registry.hpp"
 #include "test-types.hpp"
 
-#include <jlm/ir/basic-block.hpp>
-#include <jlm/ir/cfg.hpp>
-#include <jlm/ir/cfg-structure.hpp>
-#include <jlm/ir/ipgraph-module.hpp>
-#include <jlm/ir/print.hpp>
+#include <jlm/llvm/ir/basic-block.hpp>
+#include <jlm/llvm/ir/cfg-structure.hpp>
+#include <jlm/llvm/ir/ipgraph-module.hpp>
+#include <jlm/llvm/ir/print.hpp>
 
 #include <assert.h>
 

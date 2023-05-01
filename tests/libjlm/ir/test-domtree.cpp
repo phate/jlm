@@ -5,9 +5,9 @@
 
 #include "test-registry.hpp"
 
-#include <jlm/ir/cfg.hpp>
-#include <jlm/ir/domtree.hpp>
-#include <jlm/ir/ipgraph-module.hpp>
+#include <jlm/llvm/ir/cfg.hpp>
+#include <jlm/llvm/ir/domtree.hpp>
+#include <jlm/llvm/ir/ipgraph-module.hpp>
 
 #include <unordered_set>
 

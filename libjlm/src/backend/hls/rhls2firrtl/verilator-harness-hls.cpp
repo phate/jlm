@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/ir/operators/delta.hpp>
-#include "jlm/backend/hls/rhls2firrtl/verilator-harness-hls.hpp"
+#include <jlm/llvm/ir/operators/delta.hpp>
+#include <jlm/backend/hls/rhls2firrtl/verilator-harness-hls.hpp>
 
 std::string
 jlm::hls::VerilatorHarnessHLS::get_text(jlm::RvsdgModule &rm) {

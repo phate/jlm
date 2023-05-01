@@ -6,9 +6,9 @@
 #include <test-registry.hpp>
 #include <test-util.hpp>
 
-#include <jlm/backend/llvm/jlm2llvm/context.hpp>
-#include <jlm/backend/llvm/jlm2llvm/type.hpp>
-#include <jlm/ir/ipgraph-module.hpp>
+#include <jlm/llvm/backend/jlm2llvm/context.hpp>
+#include <jlm/llvm/backend/jlm2llvm/type.hpp>
+#include <jlm/llvm/ir/ipgraph-module.hpp>
 
 static void
 test_structtype(jlm::jlm2llvm::context & ctx)

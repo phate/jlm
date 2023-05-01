@@ -10,8 +10,8 @@
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 
-#include <jlm/ir/RvsdgModule.hpp>
-#include <jlm/opt/pull.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/opt/pull.hpp>
 #include <jlm/util/Statistics.hpp>
 
 static const jlm::valuetype vt;

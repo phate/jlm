@@ -6,8 +6,8 @@
 #ifndef JLM_BACKEND_HLS_RVSDG2RHLS_RVSDG2RHLS_HPP
 #define JLM_BACKEND_HLS_RVSDG2RHLS_RVSDG2RHLS_HPP
 
-#include <jlm/ir/operators/operators.hpp>
-#include <jlm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/node.hpp>
 

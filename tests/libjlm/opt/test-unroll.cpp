@@ -13,9 +13,9 @@
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
-#include <jlm/ir/RvsdgModule.hpp>
-#include <jlm/opt/DeadNodeElimination.hpp>
-#include <jlm/opt/unroll.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/opt/DeadNodeElimination.hpp>
+#include <jlm/llvm/opt/unroll.hpp>
 #include <jlm/util/Statistics.hpp>
 
 static jlm::StatisticsCollector statisticsCollector;

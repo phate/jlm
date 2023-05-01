@@ -8,8 +8,8 @@
 #include <jlm/rvsdg/bitstring/arithmetic.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-#include <jlm/ir/operators/operators.hpp>
-#include <jlm/ir/operators/sext.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/operators/sext.hpp>
 
 static inline void
 test_bitunary_reduction()

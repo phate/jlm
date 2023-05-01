@@ -5,10 +5,10 @@
 
 #include <test-registry.hpp>
 
-#include <jlm/ir/cfg-structure.hpp>
-#include <jlm/ir/ipgraph-module.hpp>
-#include <jlm/ir/operators/operators.hpp>
-#include <jlm/ir/print.hpp>
+#include <jlm/llvm/ir/cfg-structure.hpp>
+#include <jlm/llvm/ir/ipgraph-module.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/print.hpp>
 
 static int
 test()

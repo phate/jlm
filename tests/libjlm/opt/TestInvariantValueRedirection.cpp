@@ -11,8 +11,8 @@
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-#include <jlm/ir/RvsdgModule.hpp>
-#include <jlm/opt/InvariantValueRedirection.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/opt/InvariantValueRedirection.hpp>
 #include <jlm/util/Statistics.hpp>
 
 static void

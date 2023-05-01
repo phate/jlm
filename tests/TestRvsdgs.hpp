@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/ir/RvsdgModule.hpp>
-#include <jlm/ir/operators.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/ir/operators.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
 /**

@@ -11,7 +11,7 @@
 #include <jlm/rvsdg/view.hpp>
 
 #include <jlm/backend/hls/rvsdg2rhls/gamma-conv.hpp>
-#include <jlm/ir/operators.hpp>
+#include <jlm/llvm/ir/operators.hpp>
 #include <jlm/ir/hls/hls.hpp>
 
 static void

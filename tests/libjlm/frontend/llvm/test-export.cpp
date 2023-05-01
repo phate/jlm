@@ -8,9 +8,9 @@
 
 #include <jlm/rvsdg/view.hpp>
 
-#include <jlm/frontend/llvm/InterProceduralGraphConversion.hpp>
-#include <jlm/ir/ipgraph-module.hpp>
-#include <jlm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/frontend/InterProceduralGraphConversion.hpp>
+#include <jlm/llvm/ir/ipgraph-module.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/util/Statistics.hpp>
 
 static int

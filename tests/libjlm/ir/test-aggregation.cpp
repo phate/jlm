@@ -5,11 +5,9 @@
 
 #include "test-registry.hpp"
 
-#include <jlm/ir/aggregation.hpp>
-#include <jlm/ir/basic-block.hpp>
-#include <jlm/ir/cfg.hpp>
-#include <jlm/ir/ipgraph-module.hpp>
-#include <jlm/ir/print.hpp>
+#include <jlm/llvm/ir/aggregation.hpp>
+#include <jlm/llvm/ir/ipgraph-module.hpp>
+#include <jlm/llvm/ir/print.hpp>
 
 static bool
 is_entry(const jlm::aggnode * node)

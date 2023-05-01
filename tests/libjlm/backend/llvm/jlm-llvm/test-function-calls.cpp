@@ -5,15 +5,14 @@
 #include "test-registry.hpp"
 #include "test-util.hpp"
 
-#include <jlm/ir/ipgraph-module.hpp>
-#include <jlm/ir/operators.hpp>
-#include <jlm/ir/print.hpp>
-#include <jlm/backend/llvm/jlm2llvm/jlm2llvm.hpp>
+#include <jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp>
+#include <jlm/llvm/ir/ipgraph-module.hpp>
+#include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/ir/print.hpp>
 
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
-#include <llvm/Support/raw_os_ostream.h>
 
 static void
 test_malloc()

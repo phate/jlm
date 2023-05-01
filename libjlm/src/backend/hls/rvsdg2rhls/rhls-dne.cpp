@@ -4,7 +4,7 @@
  */
 
 #include <jlm/backend/hls/rvsdg2rhls/rhls-dne.hpp>
-#include <jlm/ir/operators/lambda.hpp>
+#include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
 bool

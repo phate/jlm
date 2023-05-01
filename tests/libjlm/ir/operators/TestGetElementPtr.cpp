@@ -5,7 +5,7 @@
 
 #include <test-registry.hpp>
 
-#include <jlm/ir/operators/GetElementPtr.hpp>
+#include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 
 static void
 TestOperationEquality()

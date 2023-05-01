@@ -9,11 +9,11 @@
 
 #include <jlm/rvsdg/view.hpp>
 
-#include <jlm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp>
-#include <jlm/opt/alias-analyses/MemoryStateEncoder.hpp>
-#include <jlm/opt/alias-analyses/Operators.hpp>
-#include <jlm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
-#include <jlm/opt/alias-analyses/Steensgaard.hpp>
+#include <jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/MemoryStateEncoder.hpp>
+#include <jlm/llvm/opt/alias-analyses/Operators.hpp>
+#include <jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
 
 #include <iostream>
 

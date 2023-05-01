@@ -15,7 +15,7 @@
 #include <jlm/rvsdg/type.hpp>
 #include <jlm/rvsdg/unary.hpp>
 
-#include <jlm/ir/tac.hpp>
+#include <jlm/llvm/ir/tac.hpp>
 
 namespace jlm {
 

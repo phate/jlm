@@ -5,9 +5,9 @@
 
 #include "test-registry.hpp"
 
-#include <jlm/tooling/Command.hpp>
-#include <jlm/tooling/CommandLine.hpp>
-#include <jlm/tooling/CommandGraphGenerator.hpp>
+#include <jlm/llvm/tooling/Command.hpp>
+#include <jlm/llvm/tooling/CommandLine.hpp>
+#include <jlm/llvm/tooling/CommandGraphGenerator.hpp>
 
 #include <cassert>
 

@@ -3,18 +3,16 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/backend/llvm/jlm2llvm/jlm2llvm.hpp>
-#include <jlm/backend/llvm/rvsdg2jlm/rvsdg2jlm.hpp>
+#include <jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp>
+#include <jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.hpp>
 #include <jlm/backend/hls/rvsdg2rhls/rvsdg2rhls.hpp>
 #include <jlm/backend/hls/rhls2firrtl/dot-hls.hpp>
 #include <jlm/backend/hls/rhls2firrtl/firrtl-hls.hpp>
 #include <jlm/backend/hls/rhls2firrtl/mlirgen.hpp>
 #include <jlm/backend/hls/rhls2firrtl/verilator-harness-hls.hpp>
-#include <jlm/frontend/llvm/InterProceduralGraphConversion.hpp>
-#include <jlm/frontend/llvm/LlvmModuleConversion.hpp>
-#include <jlm/ir/RvsdgModule.hpp>
-#include <jlm/tooling/CommandLine.hpp>
-#include <jlm/util/Statistics.hpp>
+#include <jlm/llvm/frontend/InterProceduralGraphConversion.hpp>
+#include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
+#include <jlm/llvm/tooling/CommandLine.hpp>
 
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
