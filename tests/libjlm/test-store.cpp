@@ -6,14 +6,13 @@
 #include <test-registry.hpp>
 #include <test-types.hpp>
 
-#include <jive/types/bitstring/type.hpp>
-#include <jive/view.hpp>
-#include <jive/rvsdg/graph.hpp>
+#include <jlm/rvsdg/bitstring/type.hpp>
+#include <jlm/rvsdg/graph.hpp>
+#include <jlm/rvsdg/view.hpp>
 
 #include <jlm/ir/operators/alloca.hpp>
 #include <jlm/ir/operators/operators.hpp>
 #include <jlm/ir/operators/store.hpp>
-#include <jlm/ir/types.hpp>
 
 static inline void
 test_store_mux_reduction()

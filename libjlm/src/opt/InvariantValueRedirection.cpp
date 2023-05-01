@@ -6,12 +6,10 @@
 #include <jlm/ir/operators/gamma.hpp>
 #include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/opt/InvariantValueRedirection.hpp>
+#include <jlm/rvsdg/theta.hpp>
+#include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
-#include <jlm/util/strfmt.hpp>
 #include <jlm/util/time.hpp>
-
-#include <jive/rvsdg/theta.hpp>
-#include <jive/rvsdg/traverser.hpp>
 
 namespace jlm {
 

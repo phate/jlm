@@ -6,10 +6,9 @@
 #ifndef JLM_IR_OPERATORS_SEXT_HPP
 #define JLM_IR_OPERATORS_SEXT_HPP
 
-#include <jive/types/bitstring.hpp>
-#include <jive/rvsdg/unary.hpp>
-
 #include <jlm/ir/tac.hpp>
+#include <jlm/rvsdg/bitstring.hpp>
+#include <jlm/rvsdg/unary.hpp>
 
 namespace jlm {
 

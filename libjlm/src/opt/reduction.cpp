@@ -3,13 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jive/rvsdg/binary.hpp>
-#include <jive/rvsdg/gamma.hpp>
-#include <jive/rvsdg/statemux.hpp>
-
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/opt/reduction.hpp>
+#include <jlm/rvsdg/statemux.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 

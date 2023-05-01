@@ -4,8 +4,7 @@
  */
 
 #include <jlm/ir/operators/delta.hpp>
-
-#include <jive/rvsdg/substitution.hpp>
+#include <jlm/rvsdg/substitution.hpp>
 
 namespace jlm {
 namespace delta {

@@ -4,8 +4,7 @@
  */
 
 #include <jlm/frontend/llvm/LlvmConversionContext.hpp>
-
-#include <jive/types/bitstring/type.hpp>
+#include <jlm/rvsdg/bitstring/type.hpp>
 
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Type.h>

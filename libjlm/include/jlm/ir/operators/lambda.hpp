@@ -9,10 +9,10 @@
 #include <jlm/ir/attribute.hpp>
 #include <jlm/ir/linkage.hpp>
 #include <jlm/ir/types.hpp>
+#include <jlm/rvsdg/structural-node.hpp>
+#include <jlm/rvsdg/substitution.hpp>
 #include <jlm/util/iterator_range.hpp>
 
-#include <jive/rvsdg/structural-node.hpp>
-#include <jive/rvsdg/substitution.hpp>
 #include <utility>
 
 namespace jlm::lambda {

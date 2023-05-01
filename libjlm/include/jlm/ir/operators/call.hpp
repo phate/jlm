@@ -6,12 +6,11 @@
 #ifndef JLM_IR_OPERATORS_CALL_HPP
 #define JLM_IR_OPERATORS_CALL_HPP
 
-#include <jive/rvsdg/simple-node.hpp>
-
 #include <jlm/ir/operators/lambda.hpp>
 #include <jlm/ir/operators/Phi.hpp>
 #include <jlm/ir/tac.hpp>
 #include <jlm/ir/types.hpp>
+#include <jlm/rvsdg/simple-node.hpp>
 
 namespace jlm {
 

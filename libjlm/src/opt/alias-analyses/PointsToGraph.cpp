@@ -6,10 +6,6 @@
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/opt/alias-analyses/PointsToGraph.hpp>
-#include <jlm/util/strfmt.hpp>
-
-#include <jive/rvsdg/node.hpp>
-#include <jive/rvsdg/structural-node.hpp>
 
 #include <typeindex>
 #include <unordered_map>

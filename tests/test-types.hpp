@@ -6,7 +6,7 @@
 #ifndef TEST_TEST_TYPES_HPP
 #define TEST_TEST_TYPES_HPP
 
-#include <jive/rvsdg/type.hpp>
+#include <jlm/rvsdg/type.hpp>
 
 namespace jlm {
 

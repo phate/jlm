@@ -7,7 +7,7 @@
 #define JLM_BACKEND_HLS_RHLS2FIRRTL_VERILATOR_HARNESS_HLS_HPP
 
 
-#include <jive/types/bitstring/type.hpp>
+#include <jlm/rvsdg/bitstring/type.hpp>
 #include "base-hls.hpp"
 
 namespace jlm {

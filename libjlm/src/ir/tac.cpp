@@ -5,8 +5,6 @@
 
 #include <jlm/ir/tac.hpp>
 
-#include <jive/rvsdg/type.hpp>
-
 #include <sstream>
 
 namespace jlm {

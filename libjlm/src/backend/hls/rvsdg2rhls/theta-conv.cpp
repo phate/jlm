@@ -3,10 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jive/rvsdg/substitution.hpp>
+#include <jlm/backend/hls/rvsdg2rhls/theta-conv.hpp>
 #include <jlm/ir/hls/hls.hpp>
-#include <jive/rvsdg/traverser.hpp>
-#include "jlm/backend/hls/rvsdg2rhls/theta-conv.hpp"
+#include <jlm/rvsdg/substitution.hpp>
+#include <jlm/rvsdg/traverser.hpp>
 
 void
 jlm::hls::theta_conv(jive::theta_node *theta) {

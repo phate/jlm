@@ -4,10 +4,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jive/rvsdg/graph.hpp>
-#include <jive/rvsdg/substitution.hpp>
-
 #include <jlm/ir/operators/Phi.hpp>
+#include <jlm/rvsdg/substitution.hpp>
 
 namespace jlm {
 namespace phi {

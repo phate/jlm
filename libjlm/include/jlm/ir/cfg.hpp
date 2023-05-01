@@ -10,9 +10,8 @@
 #include <jlm/ir/cfg-node.hpp>
 #include <jlm/ir/types.hpp>
 #include <jlm/ir/variable.hpp>
+#include <jlm/rvsdg/operation.hpp>
 #include <jlm/util/common.hpp>
-
-#include <jive/rvsdg/operation.hpp>
 
 namespace jive {
 	class type;

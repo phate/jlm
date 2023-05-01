@@ -4,11 +4,9 @@
  */
 
 #include <jlm/ir/operators/operators.hpp>
-
-#include <jive/types/bitstring/constant.hpp>
+#include <jlm/rvsdg/bitstring/constant.hpp>
 
 #include <llvm/ADT/SmallVector.h>
-#include <llvm/Support/raw_ostream.h>
 
 namespace jlm {
 

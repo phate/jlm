@@ -4,15 +4,9 @@
  */
 
 #include <jlm/ir/basic-block.hpp>
-#include <jlm/ir/cfg.hpp>
 #include <jlm/ir/cfg-structure.hpp>
-#include <jlm/ir/cfg-node.hpp>
 #include <jlm/ir/operators/operators.hpp>
 
-#include <jive/rvsdg/control.hpp>
-
-#include <algorithm>
-#include <cmath>
 #include <deque>
 #include <unordered_map>
 #include <unordered_set>

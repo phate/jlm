@@ -7,13 +7,12 @@
 #include "test-registry.hpp"
 #include "test-types.hpp"
 
-#include <jive/view.hpp>
-#include <jive/rvsdg/gamma.hpp>
-#include <jive/rvsdg/theta.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/theta.hpp>
+#include <jlm/rvsdg/view.hpp>
 
 #include <jlm/ir/operators/store.hpp>
 #include <jlm/ir/RvsdgModule.hpp>
-#include <jlm/ir/types.hpp>
 #include <jlm/opt/push.hpp>
 #include <jlm/util/Statistics.hpp>
 

@@ -6,9 +6,8 @@
 #ifndef JLM_FRONTEND_LLVM_LLVMTYPECONVERSION_HPP
 #define JLM_FRONTEND_LLVM_LLVMTYPECONVERSION_HPP
 
-#include <jive/types/record.hpp>
-
 #include <jlm/ir/types.hpp>
+#include <jlm/rvsdg/record.hpp>
 
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Type.h>

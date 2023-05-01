@@ -6,18 +6,17 @@
 #ifndef JLM_IR_OPERATORS_OPERATORS_HPP
 #define JLM_IR_OPERATORS_OPERATORS_HPP
 
-#include <jive/types/bitstring/type.hpp>
-#include <jive/types/record.hpp>
-#include <jive/rvsdg/binary.hpp>
-#include <jive/rvsdg/control.hpp>
-#include <jive/rvsdg/nullary.hpp>
-#include <jive/rvsdg/simple-node.hpp>
-#include <jive/rvsdg/type.hpp>
-#include <jive/rvsdg/unary.hpp>
-
 #include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/tac.hpp>
 #include <jlm/ir/types.hpp>
+#include <jlm/rvsdg/bitstring/type.hpp>
+#include <jlm/rvsdg/binary.hpp>
+#include <jlm/rvsdg/control.hpp>
+#include <jlm/rvsdg/nullary.hpp>
+#include <jlm/rvsdg/record.hpp>
+#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/type.hpp>
+#include <jlm/rvsdg/unary.hpp>
 
 #include <llvm/ADT/APFloat.h>
 

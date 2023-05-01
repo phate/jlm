@@ -9,9 +9,6 @@
 
 #include <jlm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
 #include <jlm/opt/alias-analyses/Steensgaard.hpp>
-#include <jlm/util/Statistics.hpp>
-
-#include <jive/view.hpp>
 
 static std::unique_ptr<jlm::aa::PointsToGraph>
 RunSteensgaard(jlm::RvsdgModule & rvsdgModule)

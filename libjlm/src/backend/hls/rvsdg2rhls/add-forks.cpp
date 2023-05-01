@@ -3,9 +3,9 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/backend/hls/rvsdg2rhls/add-forks.hpp>
 #include <jlm/ir/hls/hls.hpp>
-#include <jive/rvsdg/traverser.hpp>
-#include "jlm/backend/hls/rvsdg2rhls/add-forks.hpp"
+#include <jlm/rvsdg/traverser.hpp>
 
 void
 jlm::hls::add_forks(jive::region *region) {

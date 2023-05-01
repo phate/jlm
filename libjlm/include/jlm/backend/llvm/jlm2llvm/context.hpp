@@ -6,9 +6,8 @@
 #ifndef JLM_BACKEND_LLVM_JLM2LLVM_CONTEXT_HPP
 #define JLM_BACKEND_LLVM_JLM2LLVM_CONTEXT_HPP
 
+#include <jlm/rvsdg/record.hpp>
 #include <jlm/util/common.hpp>
-
-#include <jive/types/record.hpp>
 
 #include <memory>
 #include <unordered_map>

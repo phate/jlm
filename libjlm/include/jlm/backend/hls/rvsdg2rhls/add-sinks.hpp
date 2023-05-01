@@ -6,8 +6,8 @@
 #ifndef JLM_BACKEND_HLS_RVSDG2RHLS_ADD_SINKS_HPP
 #define JLM_BACKEND_HLS_RVSDG2RHLS_ADD_SINKS_HPP
 
-#include <jive/rvsdg/region.hpp>
 #include <jlm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/region.hpp>
 
 namespace jlm{
 	namespace hls{

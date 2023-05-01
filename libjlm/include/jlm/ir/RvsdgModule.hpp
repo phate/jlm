@@ -6,10 +6,9 @@
 #ifndef JLM_IR_RVSDGMODULE_HPP
 #define JLM_IR_RVSDGMODULE_HPP
 
-#include <jive/rvsdg/graph.hpp>
-
 #include <jlm/ir/linkage.hpp>
 #include <jlm/ir/types.hpp>
+#include <jlm/rvsdg/graph.hpp>
 #include <jlm/util/file.hpp>
 
 namespace jlm {

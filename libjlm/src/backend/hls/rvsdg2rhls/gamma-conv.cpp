@@ -3,11 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/backend/hls/rvsdg2rhls/gamma-conv.hpp"
-#include <jive/rvsdg/substitution.hpp>
+#include <jlm/backend/hls/rvsdg2rhls/gamma-conv.hpp>
 #include <jlm/ir/hls/hls.hpp>
-#include <jive/rvsdg/theta.hpp>
-#include <jive/rvsdg/traverser.hpp>
+#include <jlm/rvsdg/theta.hpp>
+#include <jlm/rvsdg/traverser.hpp>
 
 void
 jlm::hls::gamma_conv(jlm::RvsdgModule &rm, bool allow_speculation) {

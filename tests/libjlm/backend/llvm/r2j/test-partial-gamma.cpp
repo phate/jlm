@@ -7,9 +7,9 @@
 #include "test-registry.hpp"
 #include "test-types.hpp"
 
-#include <jive/rvsdg/control.hpp>
-#include <jive/rvsdg/gamma.hpp>
-#include <jive/view.hpp>
+#include <jlm/rvsdg/control.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/view.hpp>
 
 #include <jlm/backend/llvm/rvsdg2jlm/rvsdg2jlm.hpp>
 #include <jlm/ir/cfg-structure.hpp>

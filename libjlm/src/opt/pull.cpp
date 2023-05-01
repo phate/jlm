@@ -3,12 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jive/rvsdg/gamma.hpp>
-#include <jive/rvsdg/traverser.hpp>
-
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/opt/pull.hpp>
+#include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 

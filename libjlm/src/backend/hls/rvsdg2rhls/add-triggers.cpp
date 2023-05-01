@@ -3,13 +3,13 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/backend/hls/rvsdg2rhls/add-triggers.hpp"
-#include <jlm/ir/hls/hls.hpp>
-#include <jive/rvsdg/gamma.hpp>
-#include <jive/rvsdg/theta.hpp>
-#include <jive/rvsdg/traverser.hpp>
+#include <jlm/backend/hls/rvsdg2rhls/add-triggers.hpp>
 #include <jlm/backend/hls/rvsdg2rhls/rvsdg2rhls.hpp>
-#include <jive/view.hpp>
+#include <jlm/ir/hls/hls.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/theta.hpp>
+#include <jlm/rvsdg/traverser.hpp>
+#include <jlm/rvsdg/view.hpp>
 
 jive::output *
 jlm::hls::get_trigger(jive::region *region) {

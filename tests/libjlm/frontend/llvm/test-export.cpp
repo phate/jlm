@@ -6,7 +6,7 @@
 #include "test-registry.hpp"
 #include "test-types.hpp"
 
-#include <jive/view.hpp>
+#include <jlm/rvsdg/view.hpp>
 
 #include <jlm/frontend/llvm/InterProceduralGraphConversion.hpp>
 #include <jlm/ir/ipgraph-module.hpp>

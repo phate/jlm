@@ -1,0 +1,2 @@
+TESTS+=\
+	jlm/rvsdg/bitstring/bitstring \

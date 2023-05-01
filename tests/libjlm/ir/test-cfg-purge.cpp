@@ -10,8 +10,6 @@
 #include <jlm/ir/operators/operators.hpp>
 #include <jlm/ir/print.hpp>
 
-#include <jive/rvsdg/control.hpp>
-
 static int
 test()
 {

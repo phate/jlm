@@ -6,8 +6,8 @@
 #include <test-registry.hpp>
 #include <test-types.hpp>
 
-#include <jive/view.hpp>
-#include <jive/rvsdg/statemux.hpp>
+#include <jlm/rvsdg/statemux.hpp>
+#include <jlm/rvsdg/view.hpp>
 
 #include <jlm/ir/operators/alloca.hpp>
 #include <jlm/ir/operators/load.hpp>

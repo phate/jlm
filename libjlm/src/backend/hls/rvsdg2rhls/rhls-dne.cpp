@@ -3,9 +3,9 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/backend/hls/rvsdg2rhls/rhls-dne.hpp>
 #include <jlm/ir/operators/lambda.hpp>
-#include <jive/rvsdg/traverser.hpp>
-#include "jlm/backend/hls/rvsdg2rhls/rhls-dne.hpp"
+#include <jlm/rvsdg/traverser.hpp>
 
 bool
 jlm::hls::remove_unused_loop_outputs(hls::loop_node *ln) {

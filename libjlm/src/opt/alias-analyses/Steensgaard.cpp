@@ -3,17 +3,12 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jive/rvsdg/graph.hpp>
-#include <jive/rvsdg/structural-node.hpp>
-#include <jive/rvsdg/traverser.hpp>
-
 #include <jlm/ir/RvsdgModule.hpp>
-#include <jlm/ir/types.hpp>
 #include <jlm/ir/operators.hpp>
 #include <jlm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/opt/alias-analyses/Steensgaard.hpp>
+#include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
-#include <jlm/util/strfmt.hpp>
 #include <jlm/util/time.hpp>
 
 /*

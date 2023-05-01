@@ -6,11 +6,10 @@
 #ifndef JLM_BACKEND_LLVM_JLM2LLVM_TYPE_HPP
 #define JLM_BACKEND_LLVM_JLM2LLVM_TYPE_HPP
 
-#include <jive/types/bitstring/type.hpp>
-#include <jive/types/record.hpp>
-#include <jive/rvsdg/control.hpp>
-
 #include <jlm/ir/types.hpp>
+#include <jlm/rvsdg/bitstring/type.hpp>
+#include <jlm/rvsdg/control.hpp>
+#include <jlm/rvsdg/record.hpp>
 #include <jlm/util/common.hpp>
 
 #include <llvm/IR/DerivedTypes.h>

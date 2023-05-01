@@ -6,6 +6,9 @@
 #ifndef JLM_BACKEND_LLVM_RVSDG2JLM_CONTEXT_HPP
 #define JLM_BACKEND_LLVM_RVSDG2JLM_CONTEXT_HPP
 
+#include <jlm/ir/basic-block.hpp>
+#include <jlm/rvsdg/node.hpp>
+
 namespace jlm {
 
 class cfg_node;

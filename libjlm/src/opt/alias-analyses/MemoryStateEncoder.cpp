@@ -8,10 +8,9 @@
 #include <jlm/opt/alias-analyses/MemoryNodeProvider.hpp>
 #include <jlm/opt/alias-analyses/Operators.hpp>
 #include <jlm/opt/DeadNodeElimination.hpp>
+#include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
-
-#include <jive/rvsdg/traverser.hpp>
 
 namespace jlm::aa {
 

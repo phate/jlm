@@ -9,7 +9,7 @@
 #include <jlm/ir/operators/load.hpp>
 #include <jlm/ir/operators/operators.hpp>
 
-#include <jive/view.hpp>
+#include <jlm/rvsdg/view.hpp>
 
 static void
 test_load_mux_reduction()

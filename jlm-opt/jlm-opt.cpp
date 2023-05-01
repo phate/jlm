@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jive/view.hpp>
+#include <jlm/rvsdg/view.hpp>
 
 #include <jlm/backend/llvm/jlm2llvm/jlm2llvm.hpp>
 #include <jlm/backend/llvm/rvsdg2jlm/rvsdg2jlm.hpp>

@@ -8,11 +8,10 @@
 
 #include <jlm/ir/operators.hpp>
 #include <jlm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/node.hpp>
 #include <jlm/util/common.hpp>
 #include <jlm/util/HashSet.hpp>
 #include <jlm/util/iterator_range.hpp>
-
-#include <jive/rvsdg/node.hpp>
 
 #include <memory>
 #include <string>

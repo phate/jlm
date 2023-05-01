@@ -6,9 +6,8 @@
 #ifndef JLM_IR_TYPES_HPP
 #define JLM_IR_TYPES_HPP
 
-#include <jive/types/record.hpp>
-#include <jive/rvsdg/type.hpp>
-
+#include <jlm/rvsdg/record.hpp>
+#include <jlm/rvsdg/type.hpp>
 #include <jlm/util/common.hpp>
 #include <jlm/util/iterator_range.hpp>
 

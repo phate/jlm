@@ -3,12 +3,11 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jive/rvsdg/graph.hpp>
-#include <jive/rvsdg/statemux.hpp>
-
 #include <jlm/ir/operators/alloca.hpp>
 #include <jlm/ir/operators/operators.hpp>
 #include <jlm/ir/operators/store.hpp>
+#include <jlm/rvsdg/graph.hpp>
+#include <jlm/rvsdg/statemux.hpp>
 
 namespace jlm {
 

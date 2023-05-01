@@ -6,10 +6,10 @@
 #ifndef JLM_BACKEND_HLS_RVSDG2RHLS_REMOVE_UNUSED_STATE_HPP
 #define JLM_BACKEND_HLS_RVSDG2RHLS_REMOVE_UNUSED_STATE_HPP
 
-#include <jive/rvsdg/region.hpp>
-#include <jive/rvsdg/gamma.hpp>
 #include <jlm/ir/operators/lambda.hpp>
 #include <jlm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/region.hpp>
+#include <jlm/rvsdg/gamma.hpp>
 
 namespace jlm {
 	namespace hls {

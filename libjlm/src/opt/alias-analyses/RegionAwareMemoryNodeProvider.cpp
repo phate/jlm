@@ -8,8 +8,7 @@
 #include <jlm/ir/operators/store.hpp>
 #include <jlm/ir/RvsdgModule.hpp>
 #include <jlm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
-
-#include <jive/rvsdg/traverser.hpp>
+#include <jlm/rvsdg/traverser.hpp>
 
 #include <typeindex>
 

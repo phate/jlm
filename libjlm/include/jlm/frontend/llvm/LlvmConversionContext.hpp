@@ -10,8 +10,8 @@
 #include <jlm/ir/cfg-node.hpp>
 #include <jlm/ir/ipgraph-module.hpp>
 #include <jlm/ir/tac.hpp>
+#include <jlm/rvsdg/record.hpp>
 
-#include <jive/types/record.hpp>
 #include <llvm/IR/DerivedTypes.h>
 
 #include <unordered_map>
