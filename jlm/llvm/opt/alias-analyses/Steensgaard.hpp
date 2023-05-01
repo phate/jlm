@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_OPT_ALIAS_ANALYSES_STEENSGAARD_HPP
-#define JLM_OPT_ALIAS_ANALYSES_STEENSGAARD_HPP
+#ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_STEENSGAARD_HPP
+#define JLM_LLVM_OPT_ALIAS_ANALYSES_STEENSGAARD_HPP
 
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
 #include <jlm/util/disjointset.hpp>

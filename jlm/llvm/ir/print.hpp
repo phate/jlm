@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_JLM_IR_PRINT_HPP
-#define JLM_JLM_IR_PRINT_HPP
+#ifndef JLM_JLM_LLVM_IR_PRINT_HPP
+#define JLM_JLM_LLVM_IR_PRINT_HPP
 
 /* FIXME: I would rather like to forward declare AnnotationMap and demand_set */
 #include <jlm/llvm/ir/Annotation.hpp>

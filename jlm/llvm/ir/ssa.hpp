@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_IR_SSA_HPP
-#define JLM_IR_SSA_HPP
+#ifndef JLM_LLVM_IR_SSA_HPP
+#define JLM_LLVM_IR_SSA_HPP
 
 namespace jlm {
 

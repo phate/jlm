@@ -2,8 +2,8 @@
  * Copyright 2013 2014 2015 Nico Reißmann <nico.reissmann@gmail.com>
  * See COPYING for terms of redistribution.
  */
-#ifndef JLM_IR_CFG_H
-#define JLM_IR_CFG_H
+#ifndef JLM_LLVM_IR_CFG_H
+#define JLM_LLVM_IR_CFG_H
 
 #include <jlm/llvm/ir/attribute.hpp>
 #include <jlm/llvm/ir/basic-block.hpp>

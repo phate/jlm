@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_OPT_UNROLL_HPP
-#define JLM_OPT_UNROLL_HPP
+#ifndef JLM_LLVM_OPT_UNROLL_HPP
+#define JLM_LLVM_OPT_UNROLL_HPP
 
 #include <jlm/llvm/opt/optimization.hpp>
 #include <jlm/rvsdg/bitstring.hpp>

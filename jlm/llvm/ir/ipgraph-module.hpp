@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_IR_IPGRAPH_MODULE_HPP
-#define JLM_IR_IPGRAPH_MODULE_HPP
+#ifndef JLM_LLVM_IR_IPGRAPH_MODULE_HPP
+#define JLM_LLVM_IR_IPGRAPH_MODULE_HPP
 
 #include <jlm/llvm/ir/basic-block.hpp>
 #include <jlm/llvm/ir/ipgraph.hpp>

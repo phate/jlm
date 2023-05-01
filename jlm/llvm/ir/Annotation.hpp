@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_IR_ANNOTATION_HPP
-#define JLM_IR_ANNOTATION_HPP
+#ifndef JLM_LLVM_IR_ANNOTATION_HPP
+#define JLM_LLVM_IR_ANNOTATION_HPP
 
 #include <jlm/util/common.hpp>
 #include <jlm/util/iterator_range.hpp>

@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_BACKEND_LLVM_JLM2LLVM_JLM2LLVM_HPP
-#define JLM_BACKEND_LLVM_JLM2LLVM_JLM2LLVM_HPP
+#ifndef JLM_LLVM_BACKEND_JLM2LLVM_JLM2LLVM_HPP
+#define JLM_LLVM_BACKEND_JLM2LLVM_JLM2LLVM_HPP
 
 #include <jlm/llvm/ir/attribute.hpp>
 

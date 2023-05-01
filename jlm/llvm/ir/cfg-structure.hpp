@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_IR_CFG_STRUCTURE_HPP
-#define JLM_IR_CFG_STRUCTURE_HPP
+#ifndef JLM_LLVM_IR_CFG_STRUCTURE_HPP
+#define JLM_LLVM_IR_CFG_STRUCTURE_HPP
 
 #include <jlm/util/iterator_range.hpp>
 

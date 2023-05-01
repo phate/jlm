@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_IR_OPERATORS_THETA_HPP
-#define JLM_IR_OPERATORS_THETA_HPP
+#ifndef JLM_LLVM_IR_OPERATORS_THETA_HPP
+#define JLM_LLVM_IR_OPERATORS_THETA_HPP
 
 #include <jlm/rvsdg/theta.hpp>
 

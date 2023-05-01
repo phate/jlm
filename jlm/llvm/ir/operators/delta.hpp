@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_IR_OPERATORS_DELTA_HPP
-#define JLM_IR_OPERATORS_DELTA_HPP
+#ifndef JLM_LLVM_IR_OPERATORS_DELTA_HPP
+#define JLM_LLVM_IR_OPERATORS_DELTA_HPP
 
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/llvm/ir/variable.hpp>

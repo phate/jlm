@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_OPT_CNE_HPP
-#define JLM_OPT_CNE_HPP
+#ifndef JLM_LLVM_OPT_CNE_HPP
+#define JLM_LLVM_OPT_CNE_HPP
 
 #include <jlm/llvm/opt/optimization.hpp>
 

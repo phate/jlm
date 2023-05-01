@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_IR_OPERATORS_HPP
-#define JLM_IR_OPERATORS_HPP
+#ifndef JLM_LLVM_IR_OPERATORS_HPP
+#define JLM_LLVM_IR_OPERATORS_HPP
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>

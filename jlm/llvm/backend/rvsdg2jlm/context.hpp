@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_BACKEND_LLVM_RVSDG2JLM_CONTEXT_HPP
-#define JLM_BACKEND_LLVM_RVSDG2JLM_CONTEXT_HPP
+#ifndef JLM_LLVM_BACKEND_RVSDG2JLM_CONTEXT_HPP
+#define JLM_LLVM_BACKEND_RVSDG2JLM_CONTEXT_HPP
 
 #include <jlm/llvm/ir/basic-block.hpp>
 #include <jlm/rvsdg/node.hpp>

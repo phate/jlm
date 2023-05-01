@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_IR_OPERATORS_LAMBDA_HPP
-#define JLM_IR_OPERATORS_LAMBDA_HPP
+#ifndef JLM_LLVM_IR_OPERATORS_LAMBDA_HPP
+#define JLM_LLVM_IR_OPERATORS_LAMBDA_HPP
 
 #include <jlm/llvm/ir/attribute.hpp>
 #include <jlm/llvm/ir/linkage.hpp>

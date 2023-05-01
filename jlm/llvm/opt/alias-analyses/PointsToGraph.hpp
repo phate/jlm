@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_OPT_ALIAS_ANALYSES_POINTSTOGRAPH_HPP
-#define JLM_OPT_ALIAS_ANALYSES_POINTSTOGRAPH_HPP
+#ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_POINTSTOGRAPH_HPP
+#define JLM_LLVM_OPT_ALIAS_ANALYSES_POINTSTOGRAPH_HPP
 
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>

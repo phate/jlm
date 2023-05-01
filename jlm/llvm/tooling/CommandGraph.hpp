@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_TOOLING_COMMANDGRAPH_HPP
-#define JLM_TOOLING_COMMANDGRAPH_HPP
+#ifndef JLM_LLVM_TOOLING_COMMANDGRAPH_HPP
+#define JLM_LLVM_TOOLING_COMMANDGRAPH_HPP
 
 #include <jlm/util/common.hpp>
 #include <jlm/util/iterator_range.hpp>

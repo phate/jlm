@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_IR_LINKAGE_HPP
-#define JLM_IR_LINKAGE_HPP
+#ifndef JLM_LLVM_IR_LINKAGE_HPP
+#define JLM_LLVM_IR_LINKAGE_HPP
 
 namespace jlm {
 

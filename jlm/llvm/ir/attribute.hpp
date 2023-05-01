@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_IR_ATTRIBUTE_HPP
-#define JLM_IR_ATTRIBUTE_HPP
+#ifndef JLM_LLVM_IR_ATTRIBUTE_HPP
+#define JLM_LLVM_IR_ATTRIBUTE_HPP
 
 #include <jlm/rvsdg/type.hpp>
 #include <jlm/util/common.hpp>

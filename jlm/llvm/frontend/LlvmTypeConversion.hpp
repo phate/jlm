@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_FRONTEND_LLVM_LLVMTYPECONVERSION_HPP
-#define JLM_FRONTEND_LLVM_LLVMTYPECONVERSION_HPP
+#ifndef JLM_LLVM_FRONTEND_LLVMTYPECONVERSION_HPP
+#define JLM_LLVM_FRONTEND_LLVMTYPECONVERSION_HPP
 
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/record.hpp>

@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_IR_VARIABLE_HPP
-#define JLM_IR_VARIABLE_HPP
+#ifndef JLM_LLVM_IR_VARIABLE_HPP
+#define JLM_LLVM_IR_VARIABLE_HPP
 
 #include <jlm/llvm/ir/linkage.hpp>
 #include <jlm/rvsdg/type.hpp>

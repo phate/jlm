@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_IR_TYPES_HPP
-#define JLM_IR_TYPES_HPP
+#ifndef JLM_LLVM_IR_TYPES_HPP
+#define JLM_LLVM_IR_TYPES_HPP
 
 #include <jlm/rvsdg/record.hpp>
 #include <jlm/rvsdg/type.hpp>

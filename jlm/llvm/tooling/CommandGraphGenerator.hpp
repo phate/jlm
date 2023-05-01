@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_TOOLING_COMMANDGRAPHGENERATOR_HPP
-#define JLM_TOOLING_COMMANDGRAPHGENERATOR_HPP
+#ifndef JLM_LLVM_TOOLING_COMMANDGRAPHGENERATOR_HPP
+#define JLM_LLVM_TOOLING_COMMANDGRAPHGENERATOR_HPP
 
 #include <jlm/llvm/tooling/Command.hpp>
 #include <jlm/llvm/tooling/CommandLine.hpp>
@@ -116,4 +116,4 @@ private:
 
 }
 
-#endif //JLM_TOOLING_COMMANDGRAPHGENERATOR_HPP
+#endif //JLM_LLVM_TOOLING_COMMANDGRAPHGENERATOR_HPP
