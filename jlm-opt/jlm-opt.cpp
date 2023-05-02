@@ -5,15 +5,15 @@
 
 #include <jlm/rvsdg/view.hpp>
 
-#include <jlm/backend/llvm/jlm2llvm/jlm2llvm.hpp>
-#include <jlm/backend/llvm/rvsdg2jlm/rvsdg2jlm.hpp>
-#include <jlm/frontend/llvm/InterProceduralGraphConversion.hpp>
-#include <jlm/frontend/llvm/LlvmModuleConversion.hpp>
-#include <jlm/ir/ipgraph-module.hpp>
-#include <jlm/ir/operators.hpp>
-#include <jlm/ir/RvsdgModule.hpp>
-#include <jlm/opt/optimization.hpp>
-#include <jlm/tooling/CommandLine.hpp>
+#include <jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp>
+#include <jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.hpp>
+#include <jlm/llvm/frontend/InterProceduralGraphConversion.hpp>
+#include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
+#include <jlm/llvm/ir/ipgraph-module.hpp>
+#include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/opt/optimization.hpp>
+#include <jlm/llvm/tooling/CommandLine.hpp>
 
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>

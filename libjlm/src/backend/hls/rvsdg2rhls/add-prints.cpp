@@ -5,7 +5,7 @@
 
 #include <jlm/backend/hls/rvsdg2rhls/add-prints.hpp>
 #include <jlm/ir/hls/hls.hpp>
-#include <jlm/ir/operators.hpp>
+#include <jlm/llvm/ir/operators.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
 void

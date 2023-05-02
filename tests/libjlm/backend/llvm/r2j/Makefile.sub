@@ -1,4 +1,0 @@
-TESTS += \
-	libjlm/backend/llvm/r2j/test-empty-gamma \
-	libjlm/backend/llvm/r2j/test-partial-gamma \
-	libjlm/backend/llvm/r2j/test-recursive-data \

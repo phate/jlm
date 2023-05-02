@@ -6,8 +6,8 @@
 #ifndef JLM_LIBJLM_SRC_BACKEND_HLS_RVSDG2RHLS_ADD_TRIGGERS_HPP
 #define JLM_LIBJLM_SRC_BACKEND_HLS_RVSDG2RHLS_ADD_TRIGGERS_HPP
 
-#include <jlm/ir/operators/lambda.hpp>
-#include <jlm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/ir/operators/lambda.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/region.hpp>
 
 namespace jlm {

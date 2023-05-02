@@ -6,7 +6,7 @@
 #ifndef JLM_BACKEND_HLS_RVSDG2RHLS_THETA_CONV_HPP
 #define JLM_BACKEND_HLS_RVSDG2RHLS_THETA_CONV_HPP
 
-#include <jlm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
 namespace jlm{

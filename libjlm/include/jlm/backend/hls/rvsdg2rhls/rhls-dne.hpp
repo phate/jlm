@@ -6,7 +6,7 @@
 #ifndef JLM_BACKEND_HLS_RVSDG2RHLS_RHLS_DNE_HPP
 #define JLM_BACKEND_HLS_RVSDG2RHLS_RHLS_DNE_HPP
 
-#include <jlm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/ir/hls/hls.hpp>
 
 namespace jlm {

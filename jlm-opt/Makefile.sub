@@ -6,15 +6,15 @@ JLMOPT_SRC = \
 
 .PHONY: jlm-opt-debug
 jlm-opt-debug: CXXFLAGS += $(CXXFLAGS_DEBUG)
-jlm-opt-debug: $(JLM_BUILD)/libjive.a $(JLM_BUILD)/libjlm.a $(JLM_BIN)/jlm-opt
+jlm-opt-debug: $(JLM_BUILD)/libjlm.a $(JLM_BIN)/jlm-opt
 
 .PHONY: jlm-opt-release
 jlm-opt-release: CXXFLAGS += -O3
-jlm-opt-release: $(JLM_BUILD)/libjive.a $(JLM_BUILD)/libjlm.a $(JLM_BIN)/jlm-opt
+jlm-opt-release: $(JLM_BUILD)/libjlm.a $(JLM_BIN)/jlm-opt
 
 $(JLM_BIN)/jlm-opt: CPPFLAGS += -I$(JLM_ROOT) -I$(JLM_ROOT)/libjlm/include -I$(shell $(LLVMCONFIG) --includedir)
-$(JLM_BIN)/jlm-opt: LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -L$(JLM_BUILD)/ -ljlm -lrvsdg -lutil
-$(JLM_BIN)/jlm-opt: $(patsubst %.cpp, $(JLM_BUILD)/%.o, $(JLMOPT_SRC)) $(JLM_BUILD)/librvsdg.a $(JLM_BUILD)/libjlm.a $(JLM_BUILD)/libutil.a
+$(JLM_BIN)/jlm-opt: LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -L$(JLM_BUILD)/ -lllvm -lrvsdg -lutil
+$(JLM_BIN)/jlm-opt: $(patsubst %.cpp, $(JLM_BUILD)/%.o, $(JLMOPT_SRC)) $(JLM_BUILD)/librvsdg.a $(JLM_BUILD)/libllvm.a $(JLM_BUILD)/libutil.a
 	@mkdir -p $(JLM_BIN)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 

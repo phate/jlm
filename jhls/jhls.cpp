@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/tooling/CommandLine.hpp>
-#include <jlm/tooling/CommandGraphGenerator.hpp>
+#include <jlm/llvm/tooling/CommandLine.hpp>
+#include <jlm/llvm/tooling/CommandGraphGenerator.hpp>
 
 int
 main(int argc, char ** argv)

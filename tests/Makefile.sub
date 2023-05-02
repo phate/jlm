@@ -1,5 +1,6 @@
 TESTS = \
 
+include $(JLM_ROOT)/tests/jlm/llvm/Makefile.sub
 include $(JLM_ROOT)/tests/jlm/rvsdg/Makefile.sub
 include $(JLM_ROOT)/tests/jlm/util/Makefile.sub
 include $(JLM_ROOT)/tests/libjlm/Makefile.sub
@@ -15,8 +16,8 @@ TEST_SOURCES = \
 $(JLM_BUILD)/tests/test-runner: rvsdg-debug libjlm-debug
 $(JLM_BUILD)/tests/test-runner: CXXFLAGS += $(CXXFLAGS_DEBUG)
 $(JLM_BUILD)/tests/test-runner: CPPFLAGS += -I$(JLM_ROOT)/tests -I$(JLM_ROOT) -I$(JLM_ROOT)/libjlm/include -I$(shell $(LLVMCONFIG) --includedir)
-$(JLM_BUILD)/tests/test-runner: LDFLAGS=-L$(JLM_BUILD) -ljlm $(shell $(LLVMCONFIG) --ldflags --libs --system-libs) -lrvsdg -lutil
-$(JLM_BUILD)/tests/test-runner: %: $(patsubst %.cpp, $(JLM_BUILD)/%.la, $(TEST_SOURCES)) $(JLM_BUILD)/librvsdg.a $(JLM_BUILD)/libjlm.a $(JLM_BUILD)/libutil.a
+$(JLM_BUILD)/tests/test-runner: LDFLAGS=-L$(JLM_BUILD) -ljlm $(shell $(LLVMCONFIG) --ldflags --libs --system-libs) -lllvm -lrvsdg -lutil
+$(JLM_BUILD)/tests/test-runner: %: $(patsubst %.cpp, $(JLM_BUILD)/%.la, $(TEST_SOURCES)) $(JLM_BUILD)/librvsdg.a $(JLM_BUILD)/libjlm.a $(JLM_BUILD)/libllvm.a $(JLM_BUILD)/libutil.a
 	mkdir -p ${dir $@}
 	$(CXX) -o $@ $(filter %.la, $^) $(LDFLAGS)
 

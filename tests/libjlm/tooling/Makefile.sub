@@ -1,3 +1,0 @@
-TESTS += \
-	libjlm/tooling/TestJlcCommandGraphGenerator \
-	libjlm/tooling/TestJlcCommandLineParser \

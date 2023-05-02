@@ -1,0 +1,14 @@
+include $(JLM_ROOT)/tests/jlm/llvm/ir/operators/Makefile.sub
+
+TESTS += \
+	jlm/llvm/ir/test-aggregation \
+	jlm/llvm/ir/test-cfg \
+	jlm/llvm/ir/test-cfg-node \
+	jlm/llvm/ir/test-cfg-orderings \
+	jlm/llvm/ir/test-cfg-prune \
+	jlm/llvm/ir/test-cfg-purge \
+	jlm/llvm/ir/test-cfg-structure \
+	jlm/llvm/ir/test-cfg-validity \
+	jlm/llvm/ir/test-domtree \
+	jlm/llvm/ir/test-ssa-destruction \
+	jlm/llvm/ir/TestAnnotation \

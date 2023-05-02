@@ -1,0 +1,12 @@
+include $(JLM_ROOT)/tests/jlm/llvm/opt/alias-analyses/Makefile.sub
+
+TESTS += \
+	jlm/llvm/opt/test-cne \
+	jlm/llvm/opt/TestDeadNodeElimination \
+	jlm/llvm/opt/test-inlining \
+	jlm/llvm/opt/TestInvariantValueRedirection \
+	jlm/llvm/opt/test-inversion \
+	jlm/llvm/opt/TestLoadMuxReduction \
+	jlm/llvm/opt/test-pull \
+	jlm/llvm/opt/test-push \
+	jlm/llvm/opt/test-unroll \

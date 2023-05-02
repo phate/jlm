@@ -1,0 +1,106 @@
+# Copyright 2019 Nico Reißmann <nico.reissmann@gmail.com>
+# See COPYING for terms of redistribution.
+
+LIBLLVM_SRC = \
+    jlm/llvm/backend/jlm2llvm/instruction.cpp \
+    jlm/llvm/backend/jlm2llvm/jlm2llvm.cpp \
+    jlm/llvm/backend/jlm2llvm/type.cpp \
+    jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.cpp \
+    \
+    jlm/llvm/frontend/ControlFlowRestructuring.cpp \
+    jlm/llvm/frontend/InterProceduralGraphConversion.cpp \
+    jlm/llvm/frontend/LlvmInstructionConversion.cpp \
+    jlm/llvm/frontend/LlvmModuleConversion.cpp \
+    jlm/llvm/frontend/LlvmTypeConversion.cpp \
+    \
+    jlm/llvm/ir/aggregation.cpp \
+    jlm/llvm/ir/Annotation.cpp \
+    jlm/llvm/ir/attribute.cpp \
+    jlm/llvm/ir/basic-block.cpp \
+    jlm/llvm/ir/cfg.cpp \
+    jlm/llvm/ir/cfg-structure.cpp \
+    jlm/llvm/ir/cfg-node.cpp \
+    jlm/llvm/ir/domtree.cpp \
+    jlm/llvm/ir/ipgraph.cpp \
+    jlm/llvm/ir/ipgraph-module.cpp \
+    jlm/llvm/ir/operators/alloca.cpp \
+    jlm/llvm/ir/operators/call.cpp \
+    jlm/llvm/ir/operators/delta.cpp \
+    jlm/llvm/ir/operators/GetElementPtr.cpp \
+    jlm/llvm/ir/operators/lambda.cpp \
+    jlm/llvm/ir/operators/load.cpp \
+    jlm/llvm/ir/operators/operators.cpp \
+    jlm/llvm/ir/operators/Phi.cpp \
+    jlm/llvm/ir/operators/sext.cpp \
+    jlm/llvm/ir/operators/store.cpp \
+    jlm/llvm/ir/print.cpp \
+    jlm/llvm/ir/RvsdgModule.cpp \
+    jlm/llvm/ir/ssa.cpp \
+    jlm/llvm/ir/tac.cpp \
+    jlm/llvm/ir/types.cpp \
+    jlm/llvm/ir/variable.cpp \
+    \
+    jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.cpp \
+    jlm/llvm/opt/alias-analyses/MemoryStateEncoder.cpp \
+    jlm/llvm/opt/alias-analyses/MemoryNodeProvider.cpp \
+    jlm/llvm/opt/alias-analyses/Operators.cpp \
+    jlm/llvm/opt/alias-analyses/Optimization.cpp \
+    jlm/llvm/opt/alias-analyses/PointsToGraph.cpp \
+    jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.cpp \
+    jlm/llvm/opt/alias-analyses/Steensgaard.cpp \
+    jlm/llvm/opt/cne.cpp \
+    jlm/llvm/opt/DeadNodeElimination.cpp \
+    jlm/llvm/opt/inlining.cpp \
+    jlm/llvm/opt/InvariantValueRedirection.cpp \
+    jlm/llvm/opt/inversion.cpp \
+    jlm/llvm/opt/optimization.cpp \
+    jlm/llvm/opt/pull.cpp \
+    jlm/llvm/opt/push.cpp \
+    jlm/llvm/opt/reduction.cpp \
+    jlm/llvm/opt/unroll.cpp \
+    \
+    jlm/llvm/tooling/Command.cpp \
+    jlm/llvm/tooling/CommandGraph.cpp \
+    jlm/llvm/tooling/CommandGraphGenerator.cpp \
+    jlm/llvm/tooling/CommandLine.cpp \
+
+COMMANDPATHS = \
+" \
+\#ifndef JLM_TOOLING_COMMANDPATHS_HPP\n \
+\#define JLM_TOOLING_COMMANDPATHS_HPP\n \
+\n \
+\#include <jlm/util/file.hpp>\n \
+\n \
+namespace jlm {\n \
+\n \
+  static inline filepath clangpath(\"$(shell $(LLVMCONFIG) --bindir)/clang\");\n \
+  static inline filepath llcpath(\"$(shell $(LLVMCONFIG) --bindir)/llc\");\n \
+  static inline filepath firtoolpath(\"$(FIRTOOL)\");\n \
+  static inline filepath verilatorpath(\"$(VERILATOR_BIN)\");\n \
+  static inline filepath verilatorrootpath(\"$(VERILATOR_PATH)\");\n \
+\n \
+}\n \
+\n \
+\#endif \
+"
+COMMANDPATHSFILE = $(JLM_ROOT)/jlm/llvm/tooling/CommandPaths.hpp
+
+$(COMMANDPATHSFILE):
+	@printf $(COMMANDPATHS) > $@
+
+.PHONY: libllvm-debug
+libllvm-debug: CXXFLAGS += $(CXXFLAGS_DEBUG)
+libllvm-debug: $(JLM_BUILD)/libllvm.a
+
+.PHONY: libllvm-release
+libllvm-release: CXXFLAGS += -O3
+libllvm-release: $(JLM_BUILD)/libllvm.a
+
+$(JLM_BUILD)/libllvm.a: CPPFLAGS += -I$(JLM_ROOT) -I$(shell $(LLVMCONFIG) --includedir)
+$(JLM_BUILD)/libllvm.a: $(COMMANDPATHSFILE) $(patsubst %.cpp, $(JLM_BUILD)/%.la, $(LIBLLVM_SRC))
+
+.PHONY: libllvm-clean
+libllvm-clean:
+	@rm -f $(COMMANDPATHSFILE)
+	@rm -rf $(JLM_BUILD)/jlm/llvm
+	@rm -rf $(JLM_BUILD)/libllvm.a

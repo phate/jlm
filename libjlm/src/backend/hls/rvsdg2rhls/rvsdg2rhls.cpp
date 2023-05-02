@@ -13,16 +13,16 @@
 #include <jlm/backend/hls/rvsdg2rhls/rhls-dne.hpp>
 #include <jlm/backend/hls/rvsdg2rhls/rvsdg2rhls.hpp>
 #include <jlm/backend/hls/rvsdg2rhls/theta-conv.hpp>
-#include <jlm/backend/llvm/jlm2llvm/jlm2llvm.hpp>
-#include <jlm/backend/llvm/rvsdg2jlm/rvsdg2jlm.hpp>
-#include <jlm/ir/operators/alloca.hpp>
-#include <jlm/ir/operators/call.hpp>
-#include <jlm/ir/operators/delta.hpp>
-#include <jlm/opt/cne.hpp>
-#include <jlm/opt/DeadNodeElimination.hpp>
-#include <jlm/opt/inlining.hpp>
-#include <jlm/opt/InvariantValueRedirection.hpp>
-#include <jlm/opt/inversion.hpp>
+#include <jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp>
+#include <jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.hpp>
+#include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/call.hpp>
+#include <jlm/llvm/ir/operators/delta.hpp>
+#include <jlm/llvm/opt/cne.hpp>
+#include <jlm/llvm/opt/DeadNodeElimination.hpp>
+#include <jlm/llvm/opt/inlining.hpp>
+#include <jlm/llvm/opt/InvariantValueRedirection.hpp>
+#include <jlm/llvm/opt/inversion.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 

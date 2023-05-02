@@ -20,98 +20,13 @@ LIBJLM_SRC = \
     libjlm/src/backend/hls/rhls2firrtl/firrtl-hls.cpp \
     libjlm/src/backend/hls/rhls2firrtl/mlirgen.cpp \
     \
-    libjlm/src/backend/llvm/jlm2llvm/instruction.cpp \
-    libjlm/src/backend/llvm/jlm2llvm/jlm2llvm.cpp \
-    libjlm/src/backend/llvm/jlm2llvm/type.cpp \
-    libjlm/src/backend/llvm/rvsdg2jlm/rvsdg2jlm.cpp \
-    \
-    libjlm/src/frontend/llvm/ControlFlowRestructuring.cpp \
-    libjlm/src/frontend/llvm/InterProceduralGraphConversion.cpp \
-    libjlm/src/frontend/llvm/LlvmInstructionConversion.cpp \
-    libjlm/src/frontend/llvm/LlvmModuleConversion.cpp \
-    libjlm/src/frontend/llvm/LlvmTypeConversion.cpp \
-    \
-    libjlm/src/ir/aggregation.cpp \
-    libjlm/src/ir/Annotation.cpp \
-    libjlm/src/ir/attribute.cpp \
-    libjlm/src/ir/basic-block.cpp \
-    libjlm/src/ir/cfg.cpp \
-    libjlm/src/ir/cfg-structure.cpp \
-    libjlm/src/ir/cfg-node.cpp \
-    libjlm/src/ir/domtree.cpp \
-    libjlm/src/ir/ipgraph.cpp \
-    libjlm/src/ir/ipgraph-module.cpp \
-    libjlm/src/ir/operators/alloca.cpp \
-    libjlm/src/ir/operators/call.cpp \
-    libjlm/src/ir/operators/delta.cpp \
-    libjlm/src/ir/operators/GetElementPtr.cpp \
-    libjlm/src/ir/operators/lambda.cpp \
-    libjlm/src/ir/operators/load.cpp \
-    libjlm/src/ir/operators/operators.cpp \
-    libjlm/src/ir/operators/Phi.cpp \
-    libjlm/src/ir/operators/sext.cpp \
-    libjlm/src/ir/operators/store.cpp \
-    libjlm/src/ir/print.cpp \
-    libjlm/src/ir/RvsdgModule.cpp \
-    libjlm/src/ir/ssa.cpp \
-    libjlm/src/ir/tac.cpp \
-    libjlm/src/ir/types.cpp \
-    libjlm/src/ir/variable.cpp \
     libjlm/src/ir/hls/hls.cpp \
-    \
-    libjlm/src/opt/alias-analyses/AgnosticMemoryNodeProvider.cpp \
-    libjlm/src/opt/alias-analyses/MemoryStateEncoder.cpp \
-    libjlm/src/opt/alias-analyses/MemoryNodeProvider.cpp \
-    libjlm/src/opt/alias-analyses/Operators.cpp \
-    libjlm/src/opt/alias-analyses/Optimization.cpp \
-    libjlm/src/opt/alias-analyses/PointsToGraph.cpp \
-    libjlm/src/opt/alias-analyses/RegionAwareMemoryNodeProvider.cpp \
-    libjlm/src/opt/alias-analyses/Steensgaard.cpp \
-    libjlm/src/opt/cne.cpp \
-    libjlm/src/opt/DeadNodeElimination.cpp \
-    libjlm/src/opt/inlining.cpp \
-    libjlm/src/opt/InvariantValueRedirection.cpp \
-    libjlm/src/opt/inversion.cpp \
-    libjlm/src/opt/optimization.cpp \
-    libjlm/src/opt/pull.cpp \
-    libjlm/src/opt/push.cpp \
-    libjlm/src/opt/reduction.cpp \
-    libjlm/src/opt/unroll.cpp \
-    \
-    libjlm/src/tooling/Command.cpp \
-    libjlm/src/tooling/CommandGraph.cpp \
-    libjlm/src/tooling/CommandGraphGenerator.cpp \
-    libjlm/src/tooling/CommandLine.cpp \
 
 # Default verilator for Ubuntu 22.04
 VERILATOR_BIN ?= verilator_bin
 VERILATOR_PATH ?= /usr/share/verilator
 
 FIRTOOL ?= $(CIRCT_PATH)/bin/firtool
-
-COMMANDPATHS = \
-" \
-\#ifndef JLM_TOOLING_COMMANDPATHS_HPP\n \
-\#define JLM_TOOLING_COMMANDPATHS_HPP\n \
-\n \
-\#include <jlm/util/file.hpp>\n \
-\n \
-namespace jlm {\n \
-\n \
-  static inline filepath clangpath(\"$(shell $(LLVMCONFIG) --bindir)/clang\");\n \
-  static inline filepath llcpath(\"$(shell $(LLVMCONFIG) --bindir)/llc\");\n \
-  static inline filepath firtoolpath(\"$(FIRTOOL)\");\n \
-  static inline filepath verilatorpath(\"$(VERILATOR_BIN)\");\n \
-  static inline filepath verilatorrootpath(\"$(VERILATOR_PATH)\");\n \
-\n \
-}\n \
-\n \
-\#endif \
-"
-COMMANDPATHSFILE = $(JLM_ROOT)/libjlm/include/jlm/tooling/CommandPaths.hpp
-
-$(COMMANDPATHSFILE):
-	@printf $(COMMANDPATHS) > $@
 
 .PHONY: libjlm-debug
 libjlm-debug: CXXFLAGS += $(CXXFLAGS_DEBUG)
@@ -122,10 +37,9 @@ libjlm-release: CXXFLAGS += -O3
 libjlm-release: $(JLM_BUILD)/libjlm.a
 
 $(JLM_BUILD)/libjlm.a: CPPFLAGS += -I$(JLM_ROOT) -I$(shell $(LLVMCONFIG) --includedir) -I$(JLM_ROOT)/libjlm/include
-$(JLM_BUILD)/libjlm.a: $(COMMANDPATHSFILE) $(patsubst %.cpp, $(JLM_BUILD)/%.la, $(LIBJLM_SRC))
+$(JLM_BUILD)/libjlm.a: $(patsubst %.cpp, $(JLM_BUILD)/%.la, $(LIBJLM_SRC))
 
 .PHONY: libjlm-clean
 libjlm-clean:
-	@rm -f $(COMMANDPATHSFILE)
 	@rm -rf $(JLM_BUILD)/libjlm
 	@rm -rf $(JLM_BUILD)/libjlm.a

@@ -1,0 +1,5 @@
+include $(JLM_ROOT)/tests/jlm/llvm/backend/Makefile.sub
+include $(JLM_ROOT)/tests/jlm/llvm/frontend/Makefile.sub
+include $(JLM_ROOT)/tests/jlm/llvm/ir/Makefile.sub
+include $(JLM_ROOT)/tests/jlm/llvm/opt/Makefile.sub
+include $(JLM_ROOT)/tests/jlm/llvm/tooling/Makefile.sub

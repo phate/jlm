@@ -1,0 +1,6 @@
+TESTS += \
+    jlm/llvm/backend/llvm/jlm-llvm/TestAttributeConversion \
+    jlm/llvm/backend/llvm/jlm-llvm/test-bitconstant \
+    jlm/llvm/backend/llvm/jlm-llvm/test-function-calls \
+    jlm/llvm/backend/llvm/jlm-llvm/test-select-with-state \
+    jlm/llvm/backend/llvm/jlm-llvm/test-type-conversion \
