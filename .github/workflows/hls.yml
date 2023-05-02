@@ -1,0 +1,92 @@
+name: HLS
+
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  hls-test-suite:
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: '0'
+
+    # --------
+    # Install dependencies
+    # --------
+
+    - name: Get LLVM apt key
+      run: wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+    - name: Update apt sources
+      run: sudo add-apt-repository deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-16 main
+    - name: Install dependencies (LLVM-16, MLIR-16, Clang-16, and ninja)
+      run: sudo apt-get install llvm-16-dev libmlir-16-dev mlir-16-tools clang-16 ninja-build
+    - name: Place MLIRlib in system folder
+      run: sudo ln -s /usr/lib/llvm-16/lib/libMLIR.so.16 /usr/lib/x86_64-linux-gnu/ && sudo ln -s /usr/lib/llvm-16/lib/libMLIR.so.16 /usr/lib/x86_64-linux-gnu/libMLIR.so
+    - name: Instal llvm-lit
+      run: sudo python3 /usr/lib/llvm-16/build/utils/lit/setup.py install
+
+    # --------
+    # Restore CIRCT from cache and build if it's not in there
+    # --------
+
+    # Clone jlm-eval-suite
+    - name: Clone jlm-test-suite
+      run: git clone https://github.com/EECS-NTNU/jlm-eval-suite.git
+
+    # Extract the CIRCT submodule hash for use in the cache key
+    - name: Checkout CIRCT
+      run: |
+        cd jlm-eval-suite
+        make submodule-circt
+    - name: Get CIRCT hash
+      id: get-circt-hash
+      run: |
+        cd jlm-eval-suite
+        echo "::set-output name=hash::$(git rev-parse @:./circt)"
+
+    # Get the hash for this worflow
+    - name: Get workflow spec hash
+      id: get-workflow-hash
+      run: echo "::set-output name=hash::$(md5sum $GITHUB_WORKSPACE/.github/workflows/hls.yml | awk '{print $1}')"
+
+    # Try to fetch CIRCT from the cache
+    - name: Cache CIRCT
+      id: cache-circt
+      uses: actions/cache@v2
+      with:
+        path: |
+          jlm-eval-suite/circt/local
+        key: ${{ runner.os }}-circt-${{ steps.get-circt-hash.outputs.hash }}-${{ steps.get-workflow-hash.outputs.hash }}
+
+    # Build CIRCT if we didn't hit in the cache
+    - name: Rebuild and Install CIRCT
+      if: steps.cache-circt.outputs.cache-hit != 'true'
+      run: |
+        cd jlm-eval-suite
+        make circt-build
+
+    # --------
+    # Compile MLIR version of jlm
+    # --------
+
+    - name: Checkout the mlir branch
+      run: git checkout mlir
+    - name: Rebase the mlir branch on master
+      run: git rebase origin/master
+    - name: Compile jlm
+      run: make CIRCT_PATH=$(pwd)/jlm-eval-suite/circt/local jlm-release -j `nproc`
+    - name: Place the bin directory to where it is expected by jlm-eval-suite
+      run: ln -s ${{ github.workspace }}/bin jlm-eval-suite/jlm/bin
+
+    # --------
+    # Run HLS test suite
+    # --------
+
+    - name: Install verilator
+      run: sudo apt-get install verilator
+    - name: Run hls-test-suite
+      run: |
+        cd jlm-eval-suite
+        make hls-test-run
