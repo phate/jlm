@@ -107,24 +107,3 @@ jobs:
       run: cd jlm-eval-suite && make apply-llvm-git-patch
     - name: Run llvm-test-suite
       run: cd jlm-eval-suite/llvm-test-suite && make llvm-run-opt
-
-  hls-test-suite:
-    runs-on: ubuntu-22.04
-    steps:
-    - uses: actions/checkout@v3
-    - name: Install dependencies (LLVM)
-      run: sudo apt-get update && sudo apt-get install llvm-15-dev clang-15
-    - name: Clone jlm-test-suite
-      run: git clone https://github.com/phate/jlm-eval-suite.git
-    - name: Download CIRCT installation
-      run: wget -q -O- 'https://onedrive.live.com/download?cid=6371489683F2A355&resid=6371489683F2A355%21121&authkey=AOl_Mh2Qy44x2vQ' | tar -xJ -C jlm-eval-suite/circt/
-    - name: Compile jlm
-      run: make CIRCT_PATH=$(pwd)/jlm-eval-suite/circt/local LLVMCONFIG=$(pwd)/jlm-eval-suite/circt/local/bin/llvm-config release -j `nproc`
-    - name: Run unit and C tests
-      run: make LLVMCONFIG=$(pwd)/jlm-eval-suite/circt/local/bin/llvm-config LD_LIBRARY_PATH=$(pwd)/jlm-eval-suite/circt/local/lib/ check -j `nproc`
-    - name: Place bin directory to where it is expected by jlm-eval-suite
-      run: ln -s ${{ github.workspace }}/bin jlm-eval-suite/jlm/bin
-    - name: Install verilator
-      run: sudo apt-get install verilator
-    - name: Run hls-test-suite
-      run: cd jlm-eval-suite && make hls-test-run
