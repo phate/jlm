@@ -97,4 +97,4 @@ Test()
 	return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("libjlm/backend/hls/rvsdg2rhls/TestGamma", Test)
+JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/TestGamma", Test)

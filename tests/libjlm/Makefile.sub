@@ -1,1 +1,0 @@
-include $(JLM_ROOT)/tests/libjlm/backend/Makefile.sub
