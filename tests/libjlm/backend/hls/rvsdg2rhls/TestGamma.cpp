@@ -7,12 +7,10 @@
 #include "test-registry.hpp"
 #include "test-types.hpp"
 
-#include <jlm/rvsdg/gamma.hpp>
-#include <jlm/rvsdg/view.hpp>
-
-#include <jlm/backend/hls/rvsdg2rhls/gamma-conv.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/gamma-conv.hpp>
+#include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/operators.hpp>
-#include <jlm/ir/hls/hls.hpp>
+#include <jlm/rvsdg/view.hpp>
 
 static void
 TestWithMatch()

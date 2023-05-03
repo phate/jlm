@@ -5,12 +5,10 @@
 
 #include "test-registry.hpp"
 
-#include <jlm/rvsdg/theta.hpp>
-#include <jlm/rvsdg/view.hpp>
-
-#include <jlm/backend/hls/rvsdg2rhls/theta-conv.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/theta-conv.hpp>
+#include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/operators.hpp>
-#include <jlm/ir/hls/hls.hpp>
+#include <jlm/rvsdg/view.hpp>
 
 static inline void
 TestUnknownBoundaries()
