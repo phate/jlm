@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_BACKEND_HLS_RVSDG2RHLS_RHLS_DNE_HPP
-#define JLM_BACKEND_HLS_RVSDG2RHLS_RHLS_DNE_HPP
+#ifndef JLM_HLS_BACKEND_RVSDG2RHLS_RHLS_DNE_HPP
+#define JLM_HLS_BACKEND_RVSDG2RHLS_RHLS_DNE_HPP
 
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
@@ -25,4 +25,4 @@ namespace jlm {
 		dne(jlm::RvsdgModule &rm);
 	}
 }
-#endif //JLM_BACKEND_HLS_RVSDG2RHLS_RHLS_DNE_HPP
+#endif //JLM_HLS_BACKEND_RVSDG2RHLS_RHLS_DNE_HPP

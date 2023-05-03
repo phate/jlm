@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_BACKEND_HLS_RHLS2FIRRTL_MLIRGEN_HPP
-#define JLM_BACKEND_HLS_RHLS2FIRRTL_MLIRGEN_HPP
+#ifndef JLM_HLS_BACKEND_RHLS2FIRRTL_MLIRGEN_HPP
+#define JLM_HLS_BACKEND_RHLS2FIRRTL_MLIRGEN_HPP
 
 #include <jlm/hls/backend/rhls2firrtl/base-hls.hpp>
 #include <jlm/hls/ir/hls.hpp>
@@ -238,4 +238,4 @@ namespace jlm {
  
 #endif //CIRCT
 
-#endif // JLM_BACKEND_HLS_RHLS2FIRRTL_MLIRGEN_HPP
+#endif // JLM_HLS_BACKEND_RHLS2FIRRTL_MLIRGEN_HPP

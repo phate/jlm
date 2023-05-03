@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_BACKEND_HLS_RVSDG2RHLS_RVSDG2RHLS_HPP
-#define JLM_BACKEND_HLS_RVSDG2RHLS_RVSDG2RHLS_HPP
+#ifndef JLM_HLS_BACKEND_RVSDG2RHLS_RVSDG2RHLS_HPP
+#define JLM_HLS_BACKEND_RVSDG2RHLS_RVSDG2RHLS_HPP
 
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
@@ -29,4 +29,4 @@ namespace jlm{
         split_hls_function(RvsdgModule &rm, const std::string &function_name);
     }
 }
-#endif //JLM_BACKEND_HLS_RVSDG2RHLS_RVSDG2RHLS_HPP
+#endif //JLM_HLS_BACKEND_RVSDG2RHLS_RVSDG2RHLS_HPP

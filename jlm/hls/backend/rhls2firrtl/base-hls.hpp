@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_BACKEND_HLS_RHLS2FIRRTL_BASE_HLS_HPP
-#define JLM_BACKEND_HLS_RHLS2FIRRTL_BASE_HLS_HPP
+#ifndef JLM_HLS_BACKEND_RHLS2FIRRTL_BASE_HLS_HPP
+#define JLM_HLS_BACKEND_RHLS2FIRRTL_BASE_HLS_HPP
 
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
@@ -63,4 +63,4 @@ namespace jlm {
 }
 
 
-#endif //JLM_BACKEND_HLS_RHLS2FIRRTL_BASE_HLS_HPP
+#endif //JLM_HLS_BACKEND_RHLS2FIRRTL_BASE_HLS_HPP

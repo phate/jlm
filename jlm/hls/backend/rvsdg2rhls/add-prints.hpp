@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_BACKEND_HLS_RVSDG2RHLS_ADD_PRINTS_HPP
-#define JLM_BACKEND_HLS_RVSDG2RHLS_ADD_PRINTS_HPP
+#ifndef JLM_HLS_BACKEND_RVSDG2RHLS_ADD_PRINTS_HPP
+#define JLM_HLS_BACKEND_RVSDG2RHLS_ADD_PRINTS_HPP
 
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/region.hpp>
@@ -31,4 +31,4 @@ namespace jlm{
 	}
 }
 
-#endif //JLM_BACKEND_HLS_RVSDG2RHLS_ADD_PRINTS_HPP
+#endif //JLM_HLS_BACKEND_RVSDG2RHLS_ADD_PRINTS_HPP

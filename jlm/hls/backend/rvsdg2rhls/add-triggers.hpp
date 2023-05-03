@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_LIBJLM_SRC_BACKEND_HLS_RVSDG2RHLS_ADD_TRIGGERS_HPP
-#define JLM_LIBJLM_SRC_BACKEND_HLS_RVSDG2RHLS_ADD_TRIGGERS_HPP
+#ifndef JLM_HLS_BACKEND_RVSDG2RHLS_ADD_TRIGGERS_HPP
+#define JLM_HLS_BACKEND_RVSDG2RHLS_ADD_TRIGGERS_HPP
 
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
@@ -26,4 +26,4 @@ namespace jlm {
 		add_triggers(jlm::RvsdgModule &rm);
 	}
 }
-#endif //JLM_LIBJLM_SRC_BACKEND_HLS_RVSDG2RHLS_ADD_TRIGGERS_HPP
+#endif //JLM_HLS_BACKEND_RVSDG2RHLS_ADD_TRIGGERS_HPP

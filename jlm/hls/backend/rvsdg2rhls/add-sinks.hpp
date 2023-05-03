@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_BACKEND_HLS_RVSDG2RHLS_ADD_SINKS_HPP
-#define JLM_BACKEND_HLS_RVSDG2RHLS_ADD_SINKS_HPP
+#ifndef JLM_HLS_BACKEND_RVSDG2RHLS_ADD_SINKS_HPP
+#define JLM_HLS_BACKEND_RVSDG2RHLS_ADD_SINKS_HPP
 
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/region.hpp>
@@ -18,4 +18,4 @@ namespace jlm{
 		add_sinks(jlm::RvsdgModule &rm);
 	}
 }
-#endif //JLM_BACKEND_HLS_RVSDG2RHLS_ADD_SINKS_HPP
+#endif //JLM_HLS_BACKEND_RVSDG2RHLS_ADD_SINKS_HPP

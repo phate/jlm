@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_BACKEND_HLS_RVSDG2RHLS_GAMMA_CONV_HPP
-#define JLM_BACKEND_HLS_RVSDG2RHLS_GAMMA_CONV_HPP
+#ifndef JLM_HLS_BACKEND_RVSDG2RHLS_GAMMA_CONV_HPP
+#define JLM_HLS_BACKEND_RVSDG2RHLS_GAMMA_CONV_HPP
 
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/gamma.hpp>
@@ -25,4 +25,4 @@ namespace jlm{
 		gamma_conv(jlm::RvsdgModule &rm, bool allow_speculation=true);
 	}
 }
-#endif //JLM_BACKEND_HLS_RVSDG2RHLS_GAMMA_CONV_HPP
+#endif //JLM_HLS_BACKEND_RVSDG2RHLS_GAMMA_CONV_HPP

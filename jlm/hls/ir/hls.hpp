@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_IR_HLS_HLS_HPP
-#define JLM_IR_HLS_HLS_HPP
+#ifndef JLM_HLS_IR_HLS_HPP
+#define JLM_HLS_IR_HLS_HPP
 
 #include <jlm/rvsdg/operation.hpp>
 #include <jlm/rvsdg/control.hpp>
@@ -558,4 +558,4 @@ namespace jlm {
 		};
 	}
 }
-#endif //JLM_IR_HLS_HLS_HPP
+#endif //JLM_HLS_IR_HLS_HPP

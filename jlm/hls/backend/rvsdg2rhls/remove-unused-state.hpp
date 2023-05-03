@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_BACKEND_HLS_RVSDG2RHLS_REMOVE_UNUSED_STATE_HPP
-#define JLM_BACKEND_HLS_RVSDG2RHLS_REMOVE_UNUSED_STATE_HPP
+#ifndef JLM_HLS_BACKEND_RVSDG2RHLS_REMOVE_UNUSED_STATE_HPP
+#define JLM_HLS_BACKEND_RVSDG2RHLS_REMOVE_UNUSED_STATE_HPP
 
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
@@ -36,4 +36,4 @@ namespace jlm {
 		remove_unused_state(jive::region *region, bool can_remove_arguments = true);
 	}
 }
-#endif //JLM_BACKEND_HLS_RVSDG2RHLS_REMOVE_UNUSED_STATE_HPP
+#endif //JLM_HLS_BACKEND_RVSDG2RHLS_REMOVE_UNUSED_STATE_HPP
