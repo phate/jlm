@@ -127,4 +127,4 @@ Test()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/tooling/TestJlcCommandGraphGenerator", Test)
+JLM_UNIT_TEST_REGISTER("jlm/tooling/TestJlcCommandGraphGenerator", Test)

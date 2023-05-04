@@ -154,4 +154,4 @@ Test()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/tooling/TestJlcCommandLineParser", Test)
+JLM_UNIT_TEST_REGISTER("jlm/tooling/TestJlcCommandLineParser", Test)
