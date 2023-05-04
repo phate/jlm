@@ -13,8 +13,8 @@ jhls-release: CXXFLAGS += -O3
 jhls-release: $(JLM_BIN)/jhls
 
 $(JLM_BIN)/jhls: CPPFLAGS += -I$(JLM_ROOT) -I$(shell $(LLVMCONFIG) --includedir)
-$(JLM_BIN)/jhls: LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -L$(JLM_BUILD)/ -lhls -lllvm -lrvsdg -lutil
-$(JLM_BIN)/jhls: $(patsubst %.cpp, $(JLM_BUILD)/%.o, $(JHLS_SRC)) $(JLM_BUILD)/librvsdg.a $(JLM_BUILD)/libhls.a $(JLM_BUILD)/libllvm.a $(JLM_BUILD)/libutil.a
+$(JLM_BIN)/jhls: LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -L$(JLM_BUILD)/ -ltooling -lhls -lllvm -lrvsdg -lutil
+$(JLM_BIN)/jhls: $(patsubst %.cpp, $(JLM_BUILD)/%.o, $(JHLS_SRC)) $(JLM_BUILD)/libtooling.a $(JLM_BUILD)/librvsdg.a $(JLM_BUILD)/libhls.a $(JLM_BUILD)/libllvm.a $(JLM_BUILD)/libutil.a
 	@mkdir -p $(JLM_BIN)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $^ -o $@ $(LDFLAGS)
 

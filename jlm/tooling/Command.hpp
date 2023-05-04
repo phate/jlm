@@ -6,7 +6,7 @@
 #ifndef JLM_LLVM_TOOLING_COMMAND_HPP
 #define JLM_LLVM_TOOLING_COMMAND_HPP
 
-#include <jlm/llvm/tooling/CommandGraph.hpp>
+#include <jlm/tooling/CommandGraph.hpp>
 #include <jlm/util/file.hpp>
 
 #include <memory>

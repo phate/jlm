@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/tooling/Command.hpp>
-#include <jlm/llvm/tooling/CommandPaths.hpp>
+#include <jlm/tooling/Command.hpp>
+#include <jlm/tooling/CommandPaths.hpp>
 #include <jlm/util/strfmt.hpp>
 
 #include <sys/stat.h>

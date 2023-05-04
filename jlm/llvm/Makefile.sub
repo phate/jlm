@@ -58,35 +58,6 @@ LIBLLVM_SRC = \
     jlm/llvm/opt/push.cpp \
     jlm/llvm/opt/reduction.cpp \
     jlm/llvm/opt/unroll.cpp \
-    \
-    jlm/llvm/tooling/Command.cpp \
-    jlm/llvm/tooling/CommandGraph.cpp \
-    jlm/llvm/tooling/CommandGraphGenerator.cpp \
-    jlm/llvm/tooling/CommandLine.cpp \
-
-COMMANDPATHS = \
-" \
-\#ifndef JLM_TOOLING_COMMANDPATHS_HPP\n \
-\#define JLM_TOOLING_COMMANDPATHS_HPP\n \
-\n \
-\#include <jlm/util/file.hpp>\n \
-\n \
-namespace jlm {\n \
-\n \
-  static inline filepath clangpath(\"$(shell $(LLVMCONFIG) --bindir)/clang\");\n \
-  static inline filepath llcpath(\"$(shell $(LLVMCONFIG) --bindir)/llc\");\n \
-  static inline filepath firtoolpath(\"$(FIRTOOL)\");\n \
-  static inline filepath verilatorpath(\"$(VERILATOR_BIN)\");\n \
-  static inline filepath verilatorrootpath(\"$(VERILATOR_PATH)\");\n \
-\n \
-}\n \
-\n \
-\#endif \
-"
-COMMANDPATHSFILE = $(JLM_ROOT)/jlm/llvm/tooling/CommandPaths.hpp
-
-$(COMMANDPATHSFILE):
-	@printf $(COMMANDPATHS) > $@
 
 .PHONY: libllvm-debug
 libllvm-debug: CXXFLAGS += $(CXXFLAGS_DEBUG)
@@ -97,10 +68,9 @@ libllvm-release: CXXFLAGS += -O3
 libllvm-release: $(JLM_BUILD)/libllvm.a
 
 $(JLM_BUILD)/libllvm.a: CPPFLAGS += -I$(JLM_ROOT) -I$(shell $(LLVMCONFIG) --includedir)
-$(JLM_BUILD)/libllvm.a: $(COMMANDPATHSFILE) $(patsubst %.cpp, $(JLM_BUILD)/%.la, $(LIBLLVM_SRC))
+$(JLM_BUILD)/libllvm.a: $(patsubst %.cpp, $(JLM_BUILD)/%.la, $(LIBLLVM_SRC))
 
 .PHONY: libllvm-clean
 libllvm-clean:
-	@rm -f $(COMMANDPATHSFILE)
 	@rm -rf $(JLM_BUILD)/jlm/llvm
 	@rm -rf $(JLM_BUILD)/libllvm.a

@@ -5,7 +5,7 @@
 
 #include "test-registry.hpp"
 
-#include <jlm/llvm/tooling/CommandLine.hpp>
+#include <jlm/tooling/CommandLine.hpp>
 
 #include <cassert>
 #include <cstring>

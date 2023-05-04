@@ -6,8 +6,8 @@
 #ifndef JLM_LLVM_TOOLING_COMMANDGRAPHGENERATOR_HPP
 #define JLM_LLVM_TOOLING_COMMANDGRAPHGENERATOR_HPP
 
-#include <jlm/llvm/tooling/Command.hpp>
-#include <jlm/llvm/tooling/CommandLine.hpp>
+#include <jlm/tooling/Command.hpp>
+#include <jlm/tooling/CommandLine.hpp>
 
 #include <memory>
 

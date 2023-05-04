@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/tooling/Command.hpp>
+#include <jlm/tooling/Command.hpp>
 
 #include <deque>
 #include <functional>

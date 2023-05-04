@@ -1,0 +1,55 @@
+# Copyright 2019 Nico Reißmann <nico.reissmann@gmail.com>
+# See COPYING for terms of redistribution.
+
+LIBTOOLING_SRC = \
+    jlm/tooling/Command.cpp \
+    jlm/tooling/CommandGraph.cpp \
+    jlm/tooling/CommandGraphGenerator.cpp \
+    jlm/tooling/CommandLine.cpp \
+
+# Default verilator for Ubuntu 22.04
+VERILATOR_BIN ?= verilator_bin
+VERILATOR_PATH ?= /usr/share/verilator
+
+FIRTOOL ?= $(CIRCT_PATH)/bin/firtool
+
+COMMANDPATHS = \
+" \
+\#ifndef JLM_TOOLING_COMMANDPATHS_HPP\n \
+\#define JLM_TOOLING_COMMANDPATHS_HPP\n \
+\n \
+\#include <jlm/util/file.hpp>\n \
+\n \
+namespace jlm {\n \
+\n \
+  static inline filepath clangpath(\"$(shell $(LLVMCONFIG) --bindir)/clang\");\n \
+  static inline filepath llcpath(\"$(shell $(LLVMCONFIG) --bindir)/llc\");\n \
+  static inline filepath firtoolpath(\"$(FIRTOOL)\");\n \
+  static inline filepath verilatorpath(\"$(VERILATOR_BIN)\");\n \
+  static inline filepath verilatorrootpath(\"$(VERILATOR_PATH)\");\n \
+\n \
+}\n \
+\n \
+\#endif \
+"
+COMMANDPATHSFILE = $(JLM_ROOT)/jlm/tooling/CommandPaths.hpp
+
+$(COMMANDPATHSFILE):
+	@printf $(COMMANDPATHS) > $@
+
+.PHONY: libtooling-debug
+libtooling-debug: CXXFLAGS += $(CXXFLAGS_DEBUG)
+libtooling-debug: $(JLM_BUILD)/libtooling.a
+
+.PHONY: libtooling-release
+libtooling-release: CXXFLAGS += -O3
+libtooling-release: $(JLM_BUILD)/libtooling.a
+
+$(JLM_BUILD)/libtooling.a: CPPFLAGS += -I$(JLM_ROOT)
+$(JLM_BUILD)/libtooling.a: $(COMMANDPATHSFILE) $(patsubst %.cpp, $(JLM_BUILD)/%.la, $(LIBTOOLING_SRC))
+
+.PHONY: libtooling-clean
+libtooling-clean:
+	@rm -f $(COMMANDPATHSFILE)
+	@rm -rf $(JLM_BUILD)/jlm/tooling
+	@rm -rf $(JLM_BUILD)/libtooling.a

@@ -13,7 +13,7 @@
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/optimization.hpp>
-#include <jlm/llvm/tooling/CommandLine.hpp>
+#include <jlm/tooling/CommandLine.hpp>
 
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
