@@ -1,0 +1,45 @@
+# Copyright 2019 Nico Reißmann <nico.reissmann@gmail.com>
+# See COPYING for terms of redistribution.
+
+LIBHLS_SRC = \
+    jlm/hls/backend/rvsdg2rhls/add-triggers.cpp \
+    jlm/hls/backend/rvsdg2rhls/gamma-conv.cpp \
+    jlm/hls/backend/rvsdg2rhls/theta-conv.cpp \
+    jlm/hls/backend/rvsdg2rhls/add-sinks.cpp \
+    jlm/hls/backend/rvsdg2rhls/add-forks.cpp \
+    jlm/hls/backend/rvsdg2rhls/check-rhls.cpp \
+    jlm/hls/backend/rvsdg2rhls/rhls-dne.cpp \
+    jlm/hls/backend/rvsdg2rhls/remove-unused-state.cpp \
+    jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.cpp \
+    jlm/hls/backend/rvsdg2rhls/add-prints.cpp \
+    jlm/hls/backend/rvsdg2rhls/add-buffers.cpp \
+    \
+    jlm/hls/backend/rhls2firrtl/base-hls.cpp \
+    jlm/hls/backend/rhls2firrtl/dot-hls.cpp \
+    jlm/hls/backend/rhls2firrtl/verilator-harness-hls.cpp \
+    jlm/hls/backend/rhls2firrtl/firrtl-hls.cpp \
+    jlm/hls/backend/rhls2firrtl/mlirgen.cpp \
+    \
+    jlm/hls/ir/hls.cpp \
+
+# Default verilator for Ubuntu 22.04
+VERILATOR_BIN ?= verilator_bin
+VERILATOR_PATH ?= /usr/share/verilator
+
+FIRTOOL ?= $(CIRCT_PATH)/bin/firtool
+
+.PHONY: libhls-debug
+libhls-debug: CXXFLAGS += $(CXXFLAGS_DEBUG)
+libhls-debug: $(JLM_BUILD)/libhls.a
+
+.PHONY: libhls-release
+libhls-release: CXXFLAGS += -O3
+libhls-release: $(JLM_BUILD)/libhls.a
+
+$(JLM_BUILD)/libhls.a: CPPFLAGS += -I$(JLM_ROOT) -I$(shell $(LLVMCONFIG) --includedir)
+$(JLM_BUILD)/libhls.a: $(patsubst %.cpp, $(JLM_BUILD)/%.la, $(LIBHLS_SRC))
+
+.PHONY: libhls-clean
+libhls-clean:
+	@rm -rf $(JLM_BUILD)/jlm/hls
+	@rm -rf $(JLM_BUILD)/libhls.a

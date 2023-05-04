@@ -1,3 +1,4 @@
+include $(JLM_ROOT)/tests/jlm/hls/Makefile.sub
 include $(JLM_ROOT)/tests/jlm/llvm/Makefile.sub
 include $(JLM_ROOT)/tests/jlm/rvsdg/Makefile.sub
 include $(JLM_ROOT)/tests/jlm/util/Makefile.sub

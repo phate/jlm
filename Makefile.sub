@@ -11,9 +11,6 @@ echo "jlc-release            Compile jlc compiler in release mode"
 echo ""
 echo "jlm-opt-debug          Compile jlm optimizer in debug mode"
 echo "jlm-opt-release        Compile jlm optimizer in release mode"
-echo ""
-echo "libjlm-debug           Compile jlm library in debug mode"
-echo "libjlm-release         Compile jlm library in release mode"
 endef
 
 # Try to detect llvm-config 
@@ -52,10 +49,10 @@ $(JLM_BUILD)/%.a:
 	ar cqv $@ $^
 	ranlib $@
 
+include $(JLM_ROOT)/jlm/hls/Makefile.sub
 include $(JLM_ROOT)/jlm/llvm/Makefile.sub
 include $(JLM_ROOT)/jlm/rvsdg/Makefile.sub
 include $(JLM_ROOT)/jlm/util/Makefile.sub
-include $(JLM_ROOT)/libjlm/Makefile.sub
 include $(JLM_ROOT)/jlc/Makefile.sub
 include $(JLM_ROOT)/jlm-opt/Makefile.sub
 include $(JLM_ROOT)/jlm-hls/Makefile.sub
@@ -64,10 +61,10 @@ include $(JLM_ROOT)/docs/Makefile.sub
 include $(JLM_ROOT)/tests/Makefile.sub
 
 .PHONY: jlm-debug
-jlm-debug: libutil-debug libjlm-debug jlm-opt-debug jlm-hls-debug jlc-debug jhls-debug
+jlm-debug: libutil-debug libhls-debug jlm-opt-debug jlm-hls-debug jlc-debug jhls-debug
 
 .PHONY: jlm-release
-jlm-release: libutil-release libjlm-release jlm-opt-release jlm-hls-release jlc-release jhls-release
+jlm-release: libutil-release libhls-release jlm-opt-release jlm-hls-release jlc-release jhls-release
 
 .PHONY: jlm-clean
 jlm-clean:

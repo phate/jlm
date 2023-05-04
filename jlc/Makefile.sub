@@ -6,14 +6,14 @@ JLC_SRC = \
 
 .PHONY: jlc-debug
 jlc-debug: CXXFLAGS += $(CXXFLAGS_DEBUG)
-jlc-debug: $(JLM_BUILD)/libjlm.a $(JLM_BIN)/jlc
+jlc-debug: $(JLM_BIN)/jlc
 
 .PHONY: jlc-release
 jlc-release: CXXFLAGS += -O3
-jlc-release: $(JLM_BUILD)/libjlm.a $(JLM_BIN)/jlc
+jlc-release: $(JLM_BIN)/jlc
 
-$(JLM_BIN)/jlc: CPPFLAGS += -I$(JLM_ROOT) -I$(JLM_ROOT)/libjlm/include -I$(shell $(LLVMCONFIG) --includedir)
-$(JLM_BIN)/jlc: LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -L$(JLM_BUILD)/ -ljlm -lllvm -lrvsdg -lutil
+$(JLM_BIN)/jlc: CPPFLAGS += -I$(JLM_ROOT) -I$(shell $(LLVMCONFIG) --includedir)
+$(JLM_BIN)/jlc: LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -L$(JLM_BUILD)/ -lllvm -lrvsdg -lutil
 $(JLM_BIN)/jlc: $(patsubst %.cpp, $(JLM_BUILD)/%.o, $(JLC_SRC)) $(JLM_BUILD)/librvsdg.a $(JLM_BUILD)/libllvm.a $(JLM_BUILD)/libutil.a
 	@mkdir -p $(JLM_BIN)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
