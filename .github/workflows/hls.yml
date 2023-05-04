@@ -74,7 +74,10 @@ jobs:
     - name: Checkout the mlir branch
       run: git checkout mlir
     - name: Rebase the mlir branch on master
-      run: git rebase origin/master
+      run: |
+        git config user.email "Rebase might need a user"
+        git config user.name "Rebase might need a user"
+        git rebase origin/master
     - name: Compile jlm
       run: make CIRCT_PATH=$(pwd)/jlm-eval-suite/circt/local jlm-release -j `nproc`
     - name: Place the bin directory to where it is expected by jlm-eval-suite
