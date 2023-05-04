@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_LLVM_TOOLING_COMMANDLINE_HPP
-#define JLM_LLVM_TOOLING_COMMANDLINE_HPP
+#ifndef JLM_TOOLING_COMMANDLINE_HPP
+#define JLM_TOOLING_COMMANDLINE_HPP
 
 #include <jlm/util/file.hpp>
 #include <jlm/util/Statistics.hpp>
@@ -530,4 +530,4 @@ private:
 
 }
 
-#endif //JLM_LLVM_TOOLING_COMMANDLINE_HPP
+#endif //JLM_TOOLING_COMMANDLINE_HPP
