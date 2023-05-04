@@ -13,7 +13,7 @@
 #include <jlm/llvm/opt/inversion.hpp>
 #include <jlm/llvm/opt/unroll.hpp>
 #include <jlm/llvm/opt/reduction.hpp>
-#include <jlm/llvm/tooling/CommandLine.hpp>
+#include <jlm/tooling/CommandLine.hpp>
 
 #include <llvm/Support/CommandLine.h>
 

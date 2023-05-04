@@ -13,8 +13,8 @@ jlm-opt-release: CXXFLAGS += -O3
 jlm-opt-release: $(JLM_BIN)/jlm-opt
 
 $(JLM_BIN)/jlm-opt: CPPFLAGS += -I$(JLM_ROOT) -I$(shell $(LLVMCONFIG) --includedir)
-$(JLM_BIN)/jlm-opt: LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -L$(JLM_BUILD)/ -lllvm -lrvsdg -lutil
-$(JLM_BIN)/jlm-opt: $(patsubst %.cpp, $(JLM_BUILD)/%.o, $(JLMOPT_SRC)) $(JLM_BUILD)/librvsdg.a $(JLM_BUILD)/libllvm.a $(JLM_BUILD)/libutil.a
+$(JLM_BIN)/jlm-opt: LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -L$(JLM_BUILD)/ -ltooling -lllvm -lrvsdg -lutil
+$(JLM_BIN)/jlm-opt: $(patsubst %.cpp, $(JLM_BUILD)/%.o, $(JLMOPT_SRC)) $(JLM_BUILD)/libtooling.a $(JLM_BUILD)/librvsdg.a $(JLM_BUILD)/libllvm.a $(JLM_BUILD)/libutil.a
 	@mkdir -p $(JLM_BIN)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 

@@ -5,7 +5,7 @@
 
 #include "test-registry.hpp"
 
-#include <jlm/llvm/tooling/CommandLine.hpp>
+#include <jlm/tooling/CommandLine.hpp>
 
 #include <cassert>
 #include <cstring>
@@ -154,4 +154,4 @@ Test()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/tooling/TestJlcCommandLineParser", Test)
+JLM_UNIT_TEST_REGISTER("jlm/tooling/TestJlcCommandLineParser", Test)

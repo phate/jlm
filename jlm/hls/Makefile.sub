@@ -22,12 +22,6 @@ LIBHLS_SRC = \
     \
     jlm/hls/ir/hls.cpp \
 
-# Default verilator for Ubuntu 22.04
-VERILATOR_BIN ?= verilator_bin
-VERILATOR_PATH ?= /usr/share/verilator
-
-FIRTOOL ?= $(CIRCT_PATH)/bin/firtool
-
 .PHONY: libhls-debug
 libhls-debug: CXXFLAGS += $(CXXFLAGS_DEBUG)
 libhls-debug: $(JLM_BUILD)/libhls.a

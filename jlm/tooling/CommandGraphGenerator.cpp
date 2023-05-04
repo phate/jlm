@@ -3,9 +3,9 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/tooling/Command.hpp>
-#include <jlm/llvm/tooling/CommandGraph.hpp>
-#include <jlm/llvm/tooling/CommandGraphGenerator.hpp>
+#include <jlm/tooling/Command.hpp>
+#include <jlm/tooling/CommandGraph.hpp>
+#include <jlm/tooling/CommandGraphGenerator.hpp>
 #include <jlm/util/strfmt.hpp>
 
 #include <unordered_map>

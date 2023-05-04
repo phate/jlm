@@ -12,7 +12,7 @@
 #include <jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.hpp>
 #include <jlm/llvm/frontend/InterProceduralGraphConversion.hpp>
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
-#include <jlm/llvm/tooling/CommandLine.hpp>
+#include <jlm/tooling/CommandLine.hpp>
 
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
