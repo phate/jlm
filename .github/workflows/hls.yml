@@ -44,12 +44,7 @@ jobs:
       id: get-circt-hash
       run: |
         cd jlm-eval-suite
-        echo "::set-output name=hash::$(git rev-parse @:./circt)"
-
-    # Get the hash for this worflow
-    - name: Get workflow spec hash
-      id: get-workflow-hash
-      run: echo "::set-output name=hash::$(md5sum $GITHUB_WORKSPACE/.github/workflows/hls.yml | awk '{print $1}')"
+        echo "hash=$(git rev-parse @:./circt)" >> $GITHUB_OUTPUT
 
     # Try to fetch CIRCT from the cache
     - name: Cache CIRCT
@@ -58,7 +53,7 @@ jobs:
       with:
         path: |
           jlm-eval-suite/circt/local
-        key: ${{ runner.os }}-circt-${{ steps.get-circt-hash.outputs.hash }}-${{ steps.get-workflow-hash.outputs.hash }}
+        key: ${{ runner.os }}-circt-${{ steps.get-circt-hash.outputs.hash }}
 
     # Build CIRCT if we didn't hit in the cache
     - name: Rebuild and Install CIRCT
