@@ -294,7 +294,7 @@ namespace jlm {
 
 			std::string
 			debug_string() const override {
-				return jive::detail::strfmt("HLS_BUF_",(pass_through ? "P_": ""),capacity);
+				return strfmt("HLS_BUF_",(pass_through ? "P_": ""),capacity);
 			}
 
 			std::unique_ptr<jive::operation>
@@ -413,7 +413,7 @@ namespace jlm {
 
 			std::string
 			debug_string() const override {
-				return jive::detail::strfmt("HLS_PRINT_", _id);
+				return strfmt("HLS_PRINT_", _id);
 			}
 
 			size_t

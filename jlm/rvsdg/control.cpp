@@ -30,7 +30,7 @@ ctltype::ctltype(size_t nalternatives)
 std::string
 ctltype::debug_string() const
 {
-	return detail::strfmt("ctl(", nalternatives_, ")");
+	return strfmt("ctl(", nalternatives_, ")");
 }
 
 bool
@@ -110,8 +110,8 @@ match_op::debug_string() const
 {
 	std::string str("[");
 	for (const auto & pair : mapping_)
-		str += detail::strfmt(pair.first, " -> ", pair.second, ", ");
-	str += detail::strfmt(default_alternative_, "]");
+		str += strfmt(pair.first, " -> ", pair.second, ", ");
+	str += strfmt(default_alternative_, "]");
 
 	return "MATCH" + str;
 }

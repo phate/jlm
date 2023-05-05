@@ -41,7 +41,7 @@ input::input(
 std::string
 input::debug_string() const
 {
-	return detail::strfmt(index());
+	return strfmt(index());
 }
 
 void
@@ -95,7 +95,7 @@ output::output(
 std::string
 output::debug_string() const
 {
-	return detail::strfmt(index());
+	return strfmt(index());
 }
 
 void

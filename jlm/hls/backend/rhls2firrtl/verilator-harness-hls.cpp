@@ -298,7 +298,7 @@ jlm::hls::VerilatorHarnessHLS::get_text(jlm::RvsdgModule &rm) {
 std::string
 jlm::hls::VerilatorHarnessHLS::convert_to_c_type(const jive::type *type) {
 	if (auto t = dynamic_cast<const jive::bittype *>(type)) {
-		return "int" + jive::detail::strfmt(t->nbits()) + "_t";
+		return "int" + strfmt(t->nbits()) + "_t";
 	} else if (is<PointerType>(*type)) {
 		return "void*";
 	} else if (auto t = dynamic_cast<const jlm::arraytype *>(type)) {
@@ -311,7 +311,7 @@ jlm::hls::VerilatorHarnessHLS::convert_to_c_type(const jive::type *type) {
 std::string
 jlm::hls::VerilatorHarnessHLS::convert_to_c_type_postfix(const jive::type *type) {
 	if (auto t = dynamic_cast<const jlm::arraytype *>(type)) {
-		return jive::detail::strfmt("[", t->nelements(), "]", convert_to_c_type(&t->element_type()));
+		return strfmt("[", t->nelements(), "]", convert_to_c_type(&t->element_type()));
 	} else {
 		return "";
 	}

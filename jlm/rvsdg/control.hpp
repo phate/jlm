@@ -101,7 +101,7 @@ struct ctltype_of_value {
 struct ctlformat_value {
 	std::string operator()(const ctlvalue_repr & repr) const
 	{
-		return jive::detail::strfmt("CTL(", repr.alternative(), ")");
+		return strfmt("CTL(", repr.alternative(), ")");
 	}
 };
 

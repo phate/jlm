@@ -51,7 +51,7 @@ simple_node::simple_node(
 	: node(op.copy(), region)
 {
 	if (operation().narguments() != operands.size())
-		throw jive::compiler_error(jive::detail::strfmt("Argument error - expected ",
+		throw jive::compiler_error(strfmt("Argument error - expected ",
 			operation().narguments(), ", received ", operands.size(), " arguments."));
 
 	for (size_t n = 0; n < operation().narguments(); n++) {
