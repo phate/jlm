@@ -30,7 +30,7 @@ input::input(
 , port_(port.copy())
 {
 	if (region != origin->region())
-		throw jive::compiler_error("Invalid operand region.");
+		throw jlm::error("Invalid operand region.");
 
 	if (port.type() != origin->type())
 		throw jlm::type_error(port.type().debug_string(), origin->type().debug_string());
@@ -54,7 +54,7 @@ input::divert_to(jive::output * new_origin)
 		throw jlm::type_error(type().debug_string(), new_origin->type().debug_string());
 
 	if (region() != new_origin->region())
-		throw jive::compiler_error("Invalid operand region.");
+		throw jlm::error("Invalid operand region.");
 
 	auto old_origin = origin();
 	old_origin->remove_user(this);

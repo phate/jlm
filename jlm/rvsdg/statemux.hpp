@@ -99,10 +99,10 @@ create_state_mux(
 	size_t nresults)
 {
 	if (operands.empty())
-		throw jive::compiler_error("Insufficient number of operands.");
+		throw jlm::error("Insufficient number of operands.");
 
 	auto st = dynamic_cast<const jive::statetype*>(&type);
-	if (!st) throw jive::compiler_error("Expected state type.");
+	if (!st) throw jlm::error("Expected state type.");
 
 	auto region = operands.front()->region();
 	jive::mux_op op(*st, operands.size(), nresults);

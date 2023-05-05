@@ -24,7 +24,7 @@ ctltype::ctltype(size_t nalternatives)
 , nalternatives_(nalternatives)
 {
 	if (nalternatives == 0)
-		throw compiler_error("Alternatives of a control type must be non-zero.");
+		throw jlm::error("Alternatives of a control type must be non-zero.");
 }
 
 std::string
@@ -55,7 +55,7 @@ ctlvalue_repr::ctlvalue_repr(size_t alternative, size_t nalternatives)
 , nalternatives_(nalternatives)
 {
 	if (alternative >= nalternatives)
-		throw compiler_error("Alternative is bigger than the number of possible alternatives.");
+		throw jlm::error("Alternative is bigger than the number of possible alternatives.");
 }
 
 /* match operator */

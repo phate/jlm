@@ -79,7 +79,7 @@ namespace jlm {
 			auto arg = dynamic_cast<const jive::argument *>(result);
 			auto ip = dynamic_cast<const impport *>(&arg->port());
 			if(ip){
-				throw jive::compiler_error("can not inline external function "+ip->name());
+				throw jlm::error("can not inline external function " + ip->name());
 			}
 		}
 		JLM_ASSERT(so);

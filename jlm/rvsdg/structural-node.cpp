@@ -61,7 +61,7 @@ structural_node::structural_node(
 : node(op.copy(), region)
 {
 	if (nsubregions == 0)
-		throw compiler_error("Number of subregions must be greater than zero.");
+		throw jlm::error("Number of subregions must be greater than zero.");
 
 	for (size_t n = 0; n < nsubregions; n++)
 		subregions_.emplace_back(std::unique_ptr<jive::region>(new jive::region(this, n)));
@@ -73,7 +73,7 @@ structural_input *
 structural_node::append_input(std::unique_ptr<structural_input> input)
 {
 	if (input->node() != this)
-		throw compiler_error("Appending input to wrong node.");
+		throw jlm::error("Appending input to wrong node.");
 
 	auto index = input->index();
 	JIVE_DEBUG_ASSERT(index == 0);
@@ -89,7 +89,7 @@ structural_output *
 structural_node::append_output(std::unique_ptr<structural_output> output)
 {
 	if (output->node() != this)
-		throw compiler_error("Appending output to wrong node.");
+		throw jlm::error("Appending output to wrong node.");
 
 	auto index = output->index();
 	JIVE_DEBUG_ASSERT(index == 0);

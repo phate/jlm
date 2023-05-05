@@ -133,7 +133,7 @@ public:
 				I cannot make this method abstract due to the return value of operator++(int).
 				This is the best I could come up with as a workaround.
 			*/
-			throw compiler_error("This method must be overloaded.");
+			throw jlm::error("This method must be overloaded.");
 		}
 
 	public:
@@ -213,7 +213,7 @@ public:
 				I cannot make this method abstract due to the return value of operator++(int).
 				This is the best I could come up with as a workaround.
 			*/
-			throw compiler_error("This method must be overloaded.");
+			throw jlm::error("This method must be overloaded.");
 		}
 
 	public:
@@ -399,7 +399,7 @@ public:
 				I cannot make this method abstract due to the return value of operator++(int).
 				This is the best I could come up with as a workaround.
 			*/
-			throw compiler_error("This method must be overloaded.");
+			throw jlm::error("This method must be overloaded.");
 		}
 
 	public:
@@ -479,7 +479,7 @@ public:
 				I cannot make this method abstract due to the return value of operator++(int).
 				This is the best I could come up with as a workaround.
 			*/
-			throw compiler_error("This method must be overloaded.");
+			throw jlm::error("This method must be overloaded.");
 		}
 
 	public:

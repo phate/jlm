@@ -41,7 +41,7 @@ public:
 	lookup(const output & original) const
 	{
 		if (!contains(original))
-			throw compiler_error("Output not in substitution map.");
+			throw jlm::error("Output not in substitution map.");
 
 		return *output_map_.find(&original)->second;
 	}
@@ -50,7 +50,7 @@ public:
 	lookup(const region & original) const
 	{
 		if (!contains(original))
-			throw compiler_error("Region not in substitution map.");
+			throw jlm::error("Region not in substitution map.");
 
 		return *region_map_.find(&original)->second;
 	}
@@ -59,7 +59,7 @@ public:
 	lookup(const structural_input & original) const
 	{
 		if (!contains(original))
-			throw compiler_error("Structural input not in substitution map.");
+			throw jlm::error("Structural input not in substitution map.");
 
 		return *structinput_map_.find(&original)->second;
 	}
