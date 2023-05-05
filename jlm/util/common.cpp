@@ -10,15 +10,14 @@ namespace jlm {
 error::~error()
 {}
 
+type_error::~type_error() noexcept
+= default;
+
 }
 
 namespace jive {
 
 compiler_error::~compiler_error() noexcept
-{
-}
-
-type_error::~type_error() noexcept
 {
 }
 

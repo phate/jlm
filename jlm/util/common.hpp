@@ -60,6 +60,18 @@ public:
 	{}
 };
 
+class type_error : public error
+{
+public:
+  ~type_error() noexcept override;
+
+  type_error(
+    const std::string & expected_type,
+    const std::string & received_type)
+    : error("Type error - expected : " + expected_type + ", received : " + received_type)
+  {}
+};
+
 }
 
 #define JIVE_ASSERT(x) assert(x)
@@ -78,20 +90,6 @@ public:
 
   inline compiler_error(const std::string & arg)
     : std::runtime_error(arg)
-  {
-  }
-};
-
-class type_error : public compiler_error {
-public:
-  virtual ~type_error() noexcept;
-
-  inline type_error(
-    const std::string & expected_type,
-    const std::string & received_type)
-    : compiler_error(
-    "Type error - expected : " + expected_type +
-    ", received : " + received_type)
   {
   }
 };
