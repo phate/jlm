@@ -421,7 +421,7 @@ convert_linkage(const llvm::GlobalValue::LinkageTypes & linkage)
 	, {llvm::GlobalValue::CommonLinkage, jlm::linkage::common_linkage}
 	});
 
-	JIVE_DEBUG_ASSERT(map.find(linkage) != map.end());
+	JLM_ASSERT(map.find(linkage) != map.end());
 	return map[linkage];
 }
 

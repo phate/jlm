@@ -39,7 +39,7 @@ public:
 	inline jive::region *
 	subregion(size_t index) const noexcept
 	{
-		JIVE_DEBUG_ASSERT(index < nsubregions());
+		JLM_ASSERT(index < nsubregions());
 		return subregions_[index].get();
 	}
 

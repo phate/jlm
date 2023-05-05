@@ -55,7 +55,7 @@ expport::copy() const
 
 graph::~graph()
 {
-	JIVE_DEBUG_ASSERT(!has_active_trackers(this));
+	JLM_ASSERT(!has_active_trackers(this));
 
 	delete root_;
 }

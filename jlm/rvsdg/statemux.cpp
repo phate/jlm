@@ -82,7 +82,7 @@ perform_mux_mux_reduction(
 	const jive::node * muxnode,
 	const std::vector<jive::output*> & old_operands)
 {
-	JIVE_DEBUG_ASSERT(is_mux_op(muxnode->operation()));
+	JLM_ASSERT(is_mux_op(muxnode->operation()));
 
 	bool reduced = false;
 	std::vector<jive::output*> new_operands;
@@ -119,7 +119,7 @@ mux_normal_form::mux_normal_form(
 bool
 mux_normal_form::normalize_node(jive::node * node) const
 {
-	JIVE_DEBUG_ASSERT(dynamic_cast<const jive::mux_op*>(&node->operation()));
+	JLM_ASSERT(dynamic_cast<const jive::mux_op*>(&node->operation()));
 	auto op = static_cast<const jive::mux_op*>(&node->operation());
 
 	if (!get_mutable())
@@ -147,7 +147,7 @@ mux_normal_form::normalized_create(
 	const jive::simple_op & op,
 	const std::vector<jive::output*> & operands) const
 {
-	JIVE_DEBUG_ASSERT(dynamic_cast<const jive::mux_op*>(&op));
+	JLM_ASSERT(dynamic_cast<const jive::mux_op*>(&op));
 	auto mop = static_cast<const jive::mux_op*>(&op);
 
 	if (!get_mutable())

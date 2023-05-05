@@ -163,8 +163,8 @@ private:
 		bitvalue_repr & quotient,
 		bitvalue_repr & remainder) const
 	{
-		JIVE_DEBUG_ASSERT(quotient == 0);
-		JIVE_DEBUG_ASSERT(remainder == 0);
+		JLM_ASSERT(quotient == 0);
+		JLM_ASSERT(remainder == 0);
 
 		if (divisor.nbits() != nbits())
 			throw jlm::error("Unequal number of bits.");
@@ -188,7 +188,7 @@ private:
 	inline void
 	mul(const bitvalue_repr & factor1, const bitvalue_repr & factor2, bitvalue_repr & product) const
 	{
-		JIVE_DEBUG_ASSERT(product.nbits() == factor1.nbits() + factor2.nbits());
+		JLM_ASSERT(product.nbits() == factor1.nbits() + factor2.nbits());
 
 		for (size_t i = 0; i < factor1.nbits(); i++) {
 			char c = '0';
@@ -225,14 +225,14 @@ public:
 	inline char &
 	operator[](size_t n)
 	{
-		JIVE_DEBUG_ASSERT(n < nbits());
+		JLM_ASSERT(n < nbits());
 		return data_[n];
 	}
 
 	inline const char &
 	operator[](size_t n) const
 	{
-		JIVE_DEBUG_ASSERT(n < nbits());
+		JLM_ASSERT(n < nbits());
 		return data_[n];
 	}
 

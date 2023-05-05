@@ -537,7 +537,7 @@ namespace jlm {
 			inline jive::result *
 			predicate() const noexcept {
 				auto result = subregion()->result(0);
-				JIVE_DEBUG_ASSERT(dynamic_cast<const jive::ctltype *>(&result->type()));
+				JLM_ASSERT(dynamic_cast<const jive::ctltype *>(&result->type()));
 				return result;
 			}
 

@@ -233,7 +233,7 @@ public:
 	inline size_t
 	nentryvars() const noexcept
 	{
-		JIVE_DEBUG_ASSERT(node::ninputs() != 0);
+		JLM_ASSERT(node::ninputs() != 0);
 		return node::ninputs()-1;
 	}
 
@@ -346,9 +346,9 @@ public:
 	inline jive::argument *
 	argument(size_t n) const noexcept
 	{
-		JIVE_DEBUG_ASSERT(n < narguments());
+		JLM_ASSERT(n < narguments());
 		auto argument = node()->subregion(n)->argument(index()-1);
-		JIVE_DEBUG_ASSERT(argument->input() == this);
+		JLM_ASSERT(argument->input() == this);
 		return argument;
 	}
 };
@@ -415,9 +415,9 @@ public:
 	inline jive::result *
 	result(size_t n) const noexcept
 	{
-		JIVE_DEBUG_ASSERT(n < nresults());
+		JLM_ASSERT(n < nresults());
 		auto result = node()->subregion(n)->result(index());
-		JIVE_DEBUG_ASSERT(result->output() == this);
+		JLM_ASSERT(result->output() == this);
 		return result;
 	}
 };

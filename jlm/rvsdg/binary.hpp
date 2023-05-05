@@ -158,7 +158,7 @@ public:
 	: simple_op(std::vector<jive::port>(narguments, op->argument(0)), {op->result(0)})
 	, op_(std::move(op))
 	{
-		JIVE_DEBUG_ASSERT(op_->is_associative());
+		JLM_ASSERT(op_->is_associative());
 	}
 
 	inline
@@ -168,7 +168,7 @@ public:
 	: simple_op(std::vector<jive::port>(narguments, op.argument(0)), {op.result(0)})
 	, op_(std::unique_ptr<binary_op>(static_cast<binary_op*>(op.copy().release())))
 	{
-		JIVE_DEBUG_ASSERT(op_->is_associative());
+		JLM_ASSERT(op_->is_associative());
 	}
 
 	virtual bool

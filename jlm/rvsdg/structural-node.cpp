@@ -14,7 +14,7 @@ namespace jive {
 
 structural_input::~structural_input() noexcept
 {
-	JIVE_DEBUG_ASSERT(arguments.empty());
+	JLM_ASSERT(arguments.empty());
 
 	on_input_destroy(this);
 }
@@ -32,7 +32,7 @@ structural_input::structural_input(
 
 structural_output::~structural_output() noexcept
 {
-	JIVE_DEBUG_ASSERT(results.empty());
+	JLM_ASSERT(results.empty());
 
 	on_output_destroy(this);
 }
@@ -76,7 +76,7 @@ structural_node::append_input(std::unique_ptr<structural_input> input)
 		throw jlm::error("Appending input to wrong node.");
 
 	auto index = input->index();
-	JIVE_DEBUG_ASSERT(index == 0);
+	JLM_ASSERT(index == 0);
 	if (index != 0
 	|| (index == 0 && ninputs() > 0 && this->input(0) == input.get()))
 		return this->input(index);
@@ -92,7 +92,7 @@ structural_node::append_output(std::unique_ptr<structural_output> output)
 		throw jlm::error("Appending output to wrong node.");
 
 	auto index = output->index();
-	JIVE_DEBUG_ASSERT(index == 0);
+	JLM_ASSERT(index == 0);
 	if (index != 0
 	|| (index == 0 && noutputs() > 0 && this->output(0) == output.get()))
 		return this->output(index);

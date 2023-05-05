@@ -116,7 +116,7 @@ is_ctlconstant_op(const jive::operation & op) noexcept
 static inline const ctlconstant_op &
 to_ctlconstant_op(const jive::operation & op) noexcept
 {
-	JIVE_DEBUG_ASSERT(is_ctlconstant_op(op));
+	JLM_ASSERT(is_ctlconstant_op(op));
 	return *static_cast<const ctlconstant_op*>(&op);
 }
 
@@ -211,7 +211,7 @@ extern template class domain_const_op<ctltype, ctlvalue_repr, ctlformat_value, c
 static inline const match_op &
 to_match_op(const jive::operation & op) noexcept
 {
-	JIVE_DEBUG_ASSERT(is<match_op>(op));
+	JLM_ASSERT(is<match_op>(op));
 	return *static_cast<const match_op*>(&op);
 }
 

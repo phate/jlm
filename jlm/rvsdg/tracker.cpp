@@ -119,7 +119,7 @@ public:
 				bottom_depth_--;
 		}
 
-		JIVE_DEBUG_ASSERT(top_depth_ <= bottom_depth_);
+		JLM_ASSERT(top_depth_ <= bottom_depth_);
 	}
 
 	inline tracker_nodestate *
@@ -216,7 +216,7 @@ tracker::set_nodestate(jive::node * node, size_t state)
 jive::node *
 tracker::peek_top(size_t state) const
 {
-	JIVE_DEBUG_ASSERT(state < states_.size());
+	JLM_ASSERT(state < states_.size());
 
 	auto nodestate = states_[state]->pop_top();
 	if (nodestate) {
@@ -230,7 +230,7 @@ tracker::peek_top(size_t state) const
 jive::node *
 tracker::peek_bottom(size_t state) const
 {
-	JIVE_DEBUG_ASSERT(state < states_.size());
+	JLM_ASSERT(state < states_.size());
 
 	auto nodestate = states_[state]->pop_bottom();
 	if (nodestate) {

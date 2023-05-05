@@ -94,7 +94,7 @@ simple_node::copy(jive::region * region, jive::substitution_map & smap) const
 
 	auto node = copy(region, operands);
 
-	JIVE_DEBUG_ASSERT(node->noutputs() == noutputs());
+	JLM_ASSERT(node->noutputs() == noutputs());
 	for (size_t n = 0; n < node->noutputs(); n++)
 		smap.insert(output(n), node->output(n));
 

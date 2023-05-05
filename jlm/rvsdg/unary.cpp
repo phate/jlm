@@ -54,7 +54,7 @@ unary_normal_form::normalized_create(
 	const jive::simple_op & op,
 	const std::vector<jive::output*> & arguments) const
 {
-	JIVE_DEBUG_ASSERT(arguments.size() == 1);
+	JLM_ASSERT(arguments.size() == 1);
 
 	if (get_mutable() && get_reducible()) {
 		const auto & un_op = static_cast<const jive::unary_op&>(op);

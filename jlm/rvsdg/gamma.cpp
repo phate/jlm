@@ -161,7 +161,7 @@ gamma_normal_form::gamma_normal_form(
 bool
 gamma_normal_form::normalize_node(jive::node * node_) const
 {
-	JIVE_DEBUG_ASSERT(dynamic_cast<const jive::gamma_node*>(node_));
+	JLM_ASSERT(dynamic_cast<const jive::gamma_node*>(node_));
 	auto node = static_cast<jive::gamma_node*>(node_);
 
 	if (!get_mutable())

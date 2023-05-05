@@ -351,7 +351,7 @@ convert_node(const jive::node * node)
 	if (auto n = dynamic_cast<const structural_node*>(node))
 		return convert_structural_node(n);
 
-	JIVE_ASSERT(0);
+	JLM_ASSERT(0);
 	return "";
 }
 

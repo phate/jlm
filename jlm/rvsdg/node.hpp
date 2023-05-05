@@ -146,7 +146,7 @@ public:
 		T &
 		operator*()
 		{
-			JIVE_DEBUG_ASSERT(value_ != nullptr);
+			JLM_ASSERT(value_ != nullptr);
 			return *value_;
 		}
 
@@ -226,7 +226,7 @@ public:
 		const T &
 		operator*()
 		{
-			JIVE_DEBUG_ASSERT(value_ != nullptr);
+			JLM_ASSERT(value_ != nullptr);
 			return *value_;
 		}
 
@@ -412,7 +412,7 @@ public:
 		T &
 		operator*()
 		{
-			JIVE_DEBUG_ASSERT(value_ != nullptr);
+			JLM_ASSERT(value_ != nullptr);
 			return *value_;
 		}
 
@@ -492,7 +492,7 @@ public:
 		const T &
 		operator*()
 		{
-			JIVE_DEBUG_ASSERT(value_ != nullptr);
+			JLM_ASSERT(value_ != nullptr);
 			return *value_;
 		}
 
@@ -675,7 +675,7 @@ public:
 	node_input *
 	input(size_t index) const noexcept
 	{
-		JIVE_DEBUG_ASSERT(index < ninputs());
+		JLM_ASSERT(index < ninputs());
 		return inputs_[index].get();
 	}
 
@@ -688,7 +688,7 @@ public:
 	node_output *
 	output(size_t index) const noexcept
 	{
-		JIVE_DEBUG_ASSERT(index < noutputs());
+		JLM_ASSERT(index < noutputs());
 		return outputs_[index].get();
 	}
 
@@ -815,7 +815,7 @@ divert_users(
 	jive::node * node,
 	const std::vector<jive::output*> & outputs)
 {
-	JIVE_DEBUG_ASSERT(node->noutputs() == outputs.size());
+	JLM_ASSERT(node->noutputs() == outputs.size());
 
 	for (size_t n = 0; n < outputs.size(); n++)
 		node->output(n)->divert_users(outputs[n]);
