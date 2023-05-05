@@ -74,12 +74,4 @@ public:
 
 }
 
-#define JIVE_ASSERT(x) assert(x)
-
-#ifdef JIVE_DEBUG
-#	define JIVE_DEBUG_ASSERT(x) assert(x)
-#else
-#	define JIVE_DEBUG_ASSERT(x) (void)(x)
-#endif
-
 #endif
