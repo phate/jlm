@@ -1,0 +1,4 @@
+include $(JLM_ROOT)/tools/jhls/Makefile.sub
+include $(JLM_ROOT)/tools/jlc/Makefile.sub
+include $(JLM_ROOT)/tools/jlm-hls/Makefile.sub
+include $(JLM_ROOT)/tools/jlm-opt/Makefile.sub

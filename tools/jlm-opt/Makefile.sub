@@ -2,7 +2,7 @@
 # See COPYING for terms of redistribution.
 
 JLMOPT_SRC = \
-	jlm-opt/jlm-opt.cpp \
+	tools/jlm-opt/jlm-opt.cpp \
 
 .PHONY: jlm-opt-debug
 jlm-opt-debug: CXXFLAGS += $(CXXFLAGS_DEBUG)
@@ -20,5 +20,5 @@ $(JLM_BIN)/jlm-opt: $(patsubst %.cpp, $(JLM_BUILD)/%.o, $(JLMOPT_SRC)) $(JLM_BUI
 
 .PHONY: jlmopt-clean
 jlmopt-clean:
-	@rm -rf $(JLM_BUILD)/jlm-opt
+	@rm -rf $(JLM_BUILD)/tools/jlm-opt
 	@rm -rf $(JLM_BIN)/jlm-opt
