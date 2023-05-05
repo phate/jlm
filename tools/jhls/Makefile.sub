@@ -2,7 +2,7 @@
 # See COPYING for terms of redistribution.
 
 JHLS_SRC = \
-	jhls/jhls.cpp \
+	tools/jhls/jhls.cpp \
 
 .PHONY: jhls-debug
 jhls-debug: CXXFLAGS += $(CXXFLAGS_DEBUG)
@@ -20,5 +20,5 @@ $(JLM_BIN)/jhls: $(patsubst %.cpp, $(JLM_BUILD)/%.o, $(JHLS_SRC)) $(JLM_BUILD)/l
 
 .PHONY: jhls-clean
 jhls-clean:
-	@rm -rf $(JLM_BUILD)/jhls
+	@rm -rf $(JLM_BUILD)/tools/jhls
 	@rm -rf $(JLM_BIN)/jhls

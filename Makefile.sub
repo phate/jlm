@@ -54,10 +54,7 @@ include $(JLM_ROOT)/jlm/llvm/Makefile.sub
 include $(JLM_ROOT)/jlm/rvsdg/Makefile.sub
 include $(JLM_ROOT)/jlm/tooling/Makefile.sub
 include $(JLM_ROOT)/jlm/util/Makefile.sub
-include $(JLM_ROOT)/jlc/Makefile.sub
-include $(JLM_ROOT)/jlm-opt/Makefile.sub
-include $(JLM_ROOT)/jlm-hls/Makefile.sub
-include $(JLM_ROOT)/jhls/Makefile.sub
+include $(JLM_ROOT)/tools/Makefile.sub
 include $(JLM_ROOT)/docs/Makefile.sub
 include $(JLM_ROOT)/tests/Makefile.sub
 

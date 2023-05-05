@@ -2,7 +2,7 @@
 # See COPYING for terms of redistribution.
 
 JLC_SRC = \
-	jlc/jlc.cpp \
+	tools/jlc/jlc.cpp \
 
 .PHONY: jlc-debug
 jlc-debug: CXXFLAGS += $(CXXFLAGS_DEBUG)
@@ -20,4 +20,5 @@ $(JLM_BIN)/jlc: $(patsubst %.cpp, $(JLM_BUILD)/%.o, $(JLC_SRC)) $(JLM_BUILD)/lib
 
 .PHONY: jlc-clean
 jlc-clean:
+	@rm -rf $(JLM_BUILD)/tools/jlc
 	@rm -rf $(JLM_BIN)/jlc
