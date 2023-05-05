@@ -47,7 +47,7 @@ SOURCES += $(LIBRVSDG_SRC)
 HEADERS = $(shell find 	$(JLM_ROOT)/jlm/rvsdg -name "*.h")
 
 .PHONY: rvsdg-debug
-rvsdg-debug: CXXFLAGS += -g -DJIVE_DEBUG
+rvsdg-debug: CXXFLAGS += -g
 rvsdg-debug: $(JLM_BUILD)/librvsdg.a
 
 .PHONY: rvsdg-release
