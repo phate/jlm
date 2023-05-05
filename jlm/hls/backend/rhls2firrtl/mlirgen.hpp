@@ -23,7 +23,6 @@
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/BuiltinTypes.h"
 #include "mlir/IR/Verifier.h"
-#include "mlir/Translation.h"
 
 #include "circt/Dialect/FIRRTL/FIREmitter.h"
 #include "circt/Dialect/FIRRTL/FIRRTLDialect.h"
@@ -52,6 +51,7 @@ namespace jlm {
 			// We don't have any locations (i.e., the originating line in the
 			// source file) in RVSDG, so we set all operations to unkown
 			mlir::Location location = builder.getUnknownLoc();
+			circt::firrtl::ConventionAttr conventionAttr = circt::firrtl::ConventionAttr::get(builder.getContext(), Convention::Internal);
 			std::unordered_map<std::string, circt::firrtl::FModuleOp> modules;
 			// FIRRTL generating functions
 			std::unordered_map<jive::simple_node *, circt::firrtl::InstanceOp>
@@ -80,7 +80,7 @@ namespace jlm {
 					llvm::SmallVector<circt::firrtl::PortInfo> *ports,
 					circt::firrtl::Direction direction,
 					std::string name,
-					circt::firrtl::FIRRTLType type);
+					circt::firrtl::FIRRTLBaseType type);
 			circt::firrtl::SubfieldOp GetSubfield(
 					mlir::Block *body,
 					mlir::Value value,
@@ -93,7 +93,6 @@ namespace jlm {
 			mlir::BlockArgument GetInPort(circt::firrtl::FModuleOp &module, size_t portNr);
 			mlir::BlockArgument GetOutPort(circt::firrtl::FModuleOp &module, size_t portNr);
 			void Connect(mlir::Block *body, mlir::Value sink, mlir::Value source);
-			void PartialConnect(mlir::Block *body, mlir::Value sink, mlir::Value source);
 			// Primary operations
 			circt::firrtl::BitsPrimOp AddBitsOp(mlir::Block *body,
 							mlir::Value value,
@@ -186,7 +185,6 @@ namespace jlm {
 			circt::firrtl::IntType GetIntType(const jive::type *type, int extend = 0);
 			std::string GetModuleName(const jive::node *node);
 			bool IsIdentityMapping(const jive::match_op &op);
-
 		};
 
 		class MLIRGen : public BaseHLS {
