@@ -16,7 +16,6 @@ help:
 	@echo "debug                  Alias for jlm-debug and check"
 	@echo "docs                   Generate doxygen documentation."
 	@echo "clean                  Alias for jlm-clean"
-	@$(HELP_TEXT_JIVE)
 
 JLM_ROOT ?= .
 

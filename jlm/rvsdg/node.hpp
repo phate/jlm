@@ -93,7 +93,7 @@ public:
 	replace(const jive::port & port)
 	{
 		if (port_->type() != port.type())
-			throw type_error(port_->type().debug_string(), port.type().debug_string());
+			throw jlm::type_error(port_->type().debug_string(), port.type().debug_string());
 
 		port_ = port.copy();
 	}
@@ -133,7 +133,7 @@ public:
 				I cannot make this method abstract due to the return value of operator++(int).
 				This is the best I could come up with as a workaround.
 			*/
-			throw compiler_error("This method must be overloaded.");
+			throw jlm::error("This method must be overloaded.");
 		}
 
 	public:
@@ -146,7 +146,7 @@ public:
 		T &
 		operator*()
 		{
-			JIVE_DEBUG_ASSERT(value_ != nullptr);
+			JLM_ASSERT(value_ != nullptr);
 			return *value_;
 		}
 
@@ -213,7 +213,7 @@ public:
 				I cannot make this method abstract due to the return value of operator++(int).
 				This is the best I could come up with as a workaround.
 			*/
-			throw compiler_error("This method must be overloaded.");
+			throw jlm::error("This method must be overloaded.");
 		}
 
 	public:
@@ -226,7 +226,7 @@ public:
 		const T &
 		operator*()
 		{
-			JIVE_DEBUG_ASSERT(value_ != nullptr);
+			JLM_ASSERT(value_ != nullptr);
 			return *value_;
 		}
 
@@ -368,7 +368,7 @@ public:
 	replace(const jive::port & port)
 	{
 		if (port_->type() != port.type())
-			throw type_error(port_->type().debug_string(), port.type().debug_string());
+			throw jlm::type_error(port_->type().debug_string(), port.type().debug_string());
 
 		port_ = port.copy();
 	}
@@ -399,7 +399,7 @@ public:
 				I cannot make this method abstract due to the return value of operator++(int).
 				This is the best I could come up with as a workaround.
 			*/
-			throw compiler_error("This method must be overloaded.");
+			throw jlm::error("This method must be overloaded.");
 		}
 
 	public:
@@ -412,7 +412,7 @@ public:
 		T &
 		operator*()
 		{
-			JIVE_DEBUG_ASSERT(value_ != nullptr);
+			JLM_ASSERT(value_ != nullptr);
 			return *value_;
 		}
 
@@ -479,7 +479,7 @@ public:
 				I cannot make this method abstract due to the return value of operator++(int).
 				This is the best I could come up with as a workaround.
 			*/
-			throw compiler_error("This method must be overloaded.");
+			throw jlm::error("This method must be overloaded.");
 		}
 
 	public:
@@ -492,7 +492,7 @@ public:
 		const T &
 		operator*()
 		{
-			JIVE_DEBUG_ASSERT(value_ != nullptr);
+			JLM_ASSERT(value_ != nullptr);
 			return *value_;
 		}
 
@@ -675,7 +675,7 @@ public:
 	node_input *
 	input(size_t index) const noexcept
 	{
-		JIVE_DEBUG_ASSERT(index < ninputs());
+		JLM_ASSERT(index < ninputs());
 		return inputs_[index].get();
 	}
 
@@ -688,7 +688,7 @@ public:
 	node_output *
 	output(size_t index) const noexcept
 	{
-		JIVE_DEBUG_ASSERT(index < noutputs());
+		JLM_ASSERT(index < noutputs());
 		return outputs_[index].get();
 	}
 
@@ -815,7 +815,7 @@ divert_users(
 	jive::node * node,
 	const std::vector<jive::output*> & outputs)
 {
-	JIVE_DEBUG_ASSERT(node->noutputs() == outputs.size());
+	JLM_ASSERT(node->noutputs() == outputs.size());
 
 	for (size_t n = 0; n < outputs.size(); n++)
 		node->output(n)->divert_users(outputs[n]);

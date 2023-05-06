@@ -31,10 +31,10 @@ public:
 	bitvalue_repr(size_t nbits, int64_t value)
 	{
 		if (nbits == 0)
-			throw compiler_error("Number of bits is zero.");
+			throw jlm::error("Number of bits is zero.");
 
 		if (nbits < 64 && (value >> nbits) != 0 && (value >> nbits != -1))
-			throw compiler_error("Value cannot be represented with the given number of bits.");
+			throw jlm::error("Value cannot be represented with the given number of bits.");
 
 		for (size_t n = 0; n < nbits; ++n) {
 			data_.push_back('0' + (value & 1));
@@ -46,11 +46,11 @@ public:
 	bitvalue_repr(const char * s)
 	{
 		if (strlen(s) == 0)
-			throw compiler_error("Number of bits is zero.");
+			throw jlm::error("Number of bits is zero.");
 
 		for (size_t n = 0; n < strlen(s); n++) {
 			if (s[n] != '0' && s[n] != '1' && s[n] != 'X' && s[n] != 'D')
-				throw compiler_error("Not a valid bit.");
+				throw jlm::error("Not a valid bit.");
 			data_.push_back(s[n]);
 		}
 	}
@@ -163,17 +163,17 @@ private:
 		bitvalue_repr & quotient,
 		bitvalue_repr & remainder) const
 	{
-		JIVE_DEBUG_ASSERT(quotient == 0);
-		JIVE_DEBUG_ASSERT(remainder == 0);
+		JLM_ASSERT(quotient == 0);
+		JLM_ASSERT(remainder == 0);
 
 		if (divisor.nbits() != nbits())
-			throw compiler_error("Unequal number of bits.");
+			throw jlm::error("Unequal number of bits.");
 
 		/*
 			FIXME: This should check whether divisor is zero, not whether nbits() is zero.
 		*/
 		if (divisor.nbits() == 0)
-			throw compiler_error("Division by zero.");
+			throw jlm::error("Division by zero.");
 
 		for (size_t n = 0; n < nbits(); n++) {
 			remainder = remainder.shl(1);
@@ -188,7 +188,7 @@ private:
 	inline void
 	mul(const bitvalue_repr & factor1, const bitvalue_repr & factor2, bitvalue_repr & product) const
 	{
-		JIVE_DEBUG_ASSERT(product.nbits() == factor1.nbits() + factor2.nbits());
+		JLM_ASSERT(product.nbits() == factor1.nbits() + factor2.nbits());
 
 		for (size_t i = 0; i < factor1.nbits(); i++) {
 			char c = '0';
@@ -225,14 +225,14 @@ public:
 	inline char &
 	operator[](size_t n)
 	{
-		JIVE_DEBUG_ASSERT(n < nbits());
+		JLM_ASSERT(n < nbits());
 		return data_[n];
 	}
 
 	inline const char &
 	operator[](size_t n) const
 	{
-		JIVE_DEBUG_ASSERT(n < nbits());
+		JLM_ASSERT(n < nbits());
 		return data_[n];
 	}
 
@@ -326,7 +326,7 @@ public:
 	slice(size_t low, size_t high) const
 	{
 		if (high <= low || high > nbits()) {
-			throw compiler_error("Slice is out of bound.");
+			throw jlm::error("Slice is out of bound.");
 		}
 
 		return bitvalue_repr(std::string(&data_[low], high - low).c_str());
@@ -372,7 +372,7 @@ public:
 	ult(const bitvalue_repr & other) const
 	{
 		if (nbits() != other.nbits())
-			throw compiler_error("Unequal number of bits.");
+			throw jlm::error("Unequal number of bits.");
 
 		char v = land(lnot(data_[0]), other[0]);
 		for (size_t n = 1; n < nbits(); n++)
@@ -394,7 +394,7 @@ public:
 	ule(const bitvalue_repr & other) const
 	{
 		if (nbits() != other.nbits())
-			throw compiler_error("Unequal number of bits.");
+			throw jlm::error("Unequal number of bits.");
 
 		char v = '1';
 		for (size_t n = 0; n < nbits(); n++)
@@ -416,7 +416,7 @@ public:
 	ne(const bitvalue_repr & other) const
 	{
 		if (nbits() != other.nbits())
-			throw compiler_error("Unequal number of bits.");
+			throw jlm::error("Unequal number of bits.");
 
 		char v = '0';
 		for (size_t n = 0; n < nbits(); n++)
@@ -458,7 +458,7 @@ public:
 	add(const bitvalue_repr & other) const
 	{
 		if (nbits() != other.nbits())
-			throw compiler_error("Unequal number of bits.");
+			throw jlm::error("Unequal number of bits.");
 
 		char c = '0';
 		bitvalue_repr sum = repeat(nbits(), 'X');
@@ -474,7 +474,7 @@ public:
 	land(const bitvalue_repr & other) const
 	{
 		if (nbits() != other.nbits())
-			throw compiler_error("Unequal number of bits.");
+			throw jlm::error("Unequal number of bits.");
 
 		bitvalue_repr result = repeat(nbits(), 'X');
 		for (size_t n = 0; n < nbits(); n++)
@@ -487,7 +487,7 @@ public:
 	lor(const bitvalue_repr & other) const
 	{
 		if (nbits() != other.nbits())
-			throw compiler_error("Unequal number of bits.");
+			throw jlm::error("Unequal number of bits.");
 
 		bitvalue_repr result = repeat(nbits(), 'X');
 		for (size_t n = 0; n < nbits(); n++)
@@ -500,7 +500,7 @@ public:
 	lxor(const bitvalue_repr & other) const
 	{
 		if (nbits() != other.nbits())
-			throw compiler_error("Unequal number of bits.");
+			throw jlm::error("Unequal number of bits.");
 
 		bitvalue_repr result = repeat(nbits(), 'X');
 		for (size_t n = 0; n < nbits(); n++)
@@ -632,7 +632,7 @@ public:
 	mul(const bitvalue_repr & other) const
 	{
 		if (nbits() != other.nbits())
-			throw compiler_error("Unequal number of bits.");
+			throw jlm::error("Unequal number of bits.");
 
 		bitvalue_repr product(2*nbits(), 0);
 		mul(*this, other, product);
@@ -643,7 +643,7 @@ public:
 	umulh(const bitvalue_repr & other) const
 	{
 		if (nbits() != other.nbits())
-			throw compiler_error("Unequal number of bits.");
+			throw jlm::error("Unequal number of bits.");
 
 		bitvalue_repr product(4*nbits(), 0);
 		bitvalue_repr factor1 = this->zext(nbits());
@@ -656,7 +656,7 @@ public:
 	smulh(const bitvalue_repr & other) const
 	{
 		if (nbits() != other.nbits())
-			throw compiler_error("Unequal number of bits.");
+			throw jlm::error("Unequal number of bits.");
 
 		bitvalue_repr product(4*nbits(), 0);
 		bitvalue_repr factor1 = this->sext(nbits());

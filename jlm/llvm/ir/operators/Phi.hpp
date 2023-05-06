@@ -65,7 +65,7 @@ class node final : public jive::structural_node {
     const cvinput &
     operator*() const
     {
-      JIVE_DEBUG_ASSERT(input_ != nullptr);
+      JLM_ASSERT(input_ != nullptr);
       return *input_;
     }
 
@@ -128,7 +128,7 @@ class node final : public jive::structural_node {
     cvinput &
     operator*() const
     {
-      JIVE_DEBUG_ASSERT(input_ != nullptr);
+      JLM_ASSERT(input_ != nullptr);
       return *input_;
     }
 
@@ -190,7 +190,7 @@ class node final : public jive::structural_node {
     const rvoutput &
     operator*() const
     {
-      JIVE_DEBUG_ASSERT(output_ != nullptr);
+      JLM_ASSERT(output_ != nullptr);
       return *output_;
     }
 
@@ -253,7 +253,7 @@ class node final : public jive::structural_node {
     rvoutput &
     operator*() const
     {
-      JIVE_DEBUG_ASSERT(output_ != nullptr);
+      JLM_ASSERT(output_ != nullptr);
       return *output_;
     }
 
@@ -588,7 +588,7 @@ public:
   rvoutput *
   output() const noexcept
   {
-    JIVE_DEBUG_ASSERT(output_ != nullptr);
+    JLM_ASSERT(output_ != nullptr);
     return output_;
   }
 
@@ -713,7 +713,7 @@ node::cvconstiterator::operator++()
 
   auto node = input_->node();
   auto index = input_->index();
-  JIVE_DEBUG_ASSERT(node->ninputs() != 0);
+  JLM_ASSERT(node->ninputs() != 0);
   input_ = node->ninputs()-1 == index ? nullptr : node->input(index+1);
 
   return *this;
@@ -727,7 +727,7 @@ node::cviterator::operator++()
 
   auto node = input_->node();
   auto index = input_->index();
-  JIVE_DEBUG_ASSERT(node->ninputs() != 0);
+  JLM_ASSERT(node->ninputs() != 0);
   input_ = node->ninputs()-1 == index ? nullptr : node->input(index+1);
 
   return *this;
@@ -741,7 +741,7 @@ node::rvconstiterator::operator++()
 
   auto index = output_->index();
   auto node = output_->node();
-  JIVE_DEBUG_ASSERT(node->noutputs() != 0);
+  JLM_ASSERT(node->noutputs() != 0);
   output_ = node->noutputs()-1 == index ? nullptr : node->output(index+1);
 
   return *this;
@@ -755,7 +755,7 @@ node::rviterator::operator++()
 
   auto index = output_->index();
   auto node = output_->node();
-  JIVE_DEBUG_ASSERT(node->noutputs() != 0);
+  JLM_ASSERT(node->noutputs() != 0);
   output_ = node->noutputs()-1 == index ? nullptr : node->output(index+1);
 
   return *this;
@@ -764,7 +764,7 @@ node::rviterator::operator++()
 inline cvargument *
 cvinput::argument() const noexcept
 {
-  JIVE_DEBUG_ASSERT(arguments.size() == 1);
+  JLM_ASSERT(arguments.size() == 1);
   return static_cast<cvargument*>(arguments.first());
 }
 
@@ -774,7 +774,7 @@ rvoutput::create(
   rvargument * argument,
   const jive::port & port)
 {
-  JIVE_DEBUG_ASSERT(argument->type() == port.type());
+  JLM_ASSERT(argument->type() == port.type());
   auto output = std::unique_ptr<rvoutput>(new rvoutput(node, argument, port));
   return static_cast<rvoutput*>(node->append_output(std::move(output)));
 }
@@ -782,14 +782,14 @@ rvoutput::create(
 inline rvresult *
 rvoutput::result() const noexcept
 {
-  JIVE_DEBUG_ASSERT(results.size() == 1);
+  JLM_ASSERT(results.size() == 1);
   return static_cast<rvresult*>(results.first());
 }
 
 inline void
 rvoutput::set_rvorigin(jive::output * origin)
 {
-  JIVE_DEBUG_ASSERT(result()->origin() == argument());
+  JLM_ASSERT(result()->origin() == argument());
   result()->divert_to(origin);
 }
 

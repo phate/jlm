@@ -30,10 +30,10 @@ input::input(
 , port_(port.copy())
 {
 	if (region != origin->region())
-		throw jive::compiler_error("Invalid operand region.");
+		throw jlm::error("Invalid operand region.");
 
 	if (port.type() != origin->type())
-		throw jive::type_error(port.type().debug_string(), origin->type().debug_string());
+		throw jlm::type_error(port.type().debug_string(), origin->type().debug_string());
 
 	origin->add_user(this);
 }
@@ -41,7 +41,7 @@ input::input(
 std::string
 input::debug_string() const
 {
-	return detail::strfmt(index());
+	return strfmt(index());
 }
 
 void
@@ -51,10 +51,10 @@ input::divert_to(jive::output * new_origin)
 		return;
 
 	if (type() != new_origin->type())
-		throw jive::type_error(type().debug_string(), new_origin->type().debug_string());
+		throw jlm::type_error(type().debug_string(), new_origin->type().debug_string());
 
 	if (region() != new_origin->region())
-		throw jive::compiler_error("Invalid operand region.");
+		throw jlm::error("Invalid operand region.");
 
 	auto old_origin = origin();
 	old_origin->remove_user(this);
@@ -81,7 +81,7 @@ input::GetNode(const jive::input &input) noexcept
 
 output::~output() noexcept
 {
-	JIVE_DEBUG_ASSERT(nusers() == 0);
+	JLM_ASSERT(nusers() == 0);
 }
 
 output::output(
@@ -95,13 +95,13 @@ output::output(
 std::string
 output::debug_string() const
 {
-	return detail::strfmt(index());
+	return strfmt(index());
 }
 
 void
 output::remove_user(jive::input * user)
 {
-	JIVE_DEBUG_ASSERT(users_.find(user) != users_.end());
+	JLM_ASSERT(users_.find(user) != users_.end());
 
 	users_.erase(user);
 
@@ -114,7 +114,7 @@ output::remove_user(jive::input * user)
 void
 output::add_user(jive::input * user)
 {
-	JIVE_DEBUG_ASSERT(users_.find(user) == users_.end());
+	JLM_ASSERT(users_.find(user) == users_.end());
 
 	if (auto node = node_output::node(this)) {
 		if (!node->has_users())
@@ -195,7 +195,7 @@ node::add_input(std::unique_ptr<node_input> input)
 	auto producer = node_output::node(input->origin());
 
 	if (ninputs() == 0) {
-		JIVE_DEBUG_ASSERT(depth() == 0);
+		JLM_ASSERT(depth() == 0);
 		region()->top_nodes.erase(this);
 	}
 
@@ -212,7 +212,7 @@ node::add_input(std::unique_ptr<node_input> input)
 void
 node::remove_input(size_t index)
 {
-	JIVE_DEBUG_ASSERT(index < ninputs());
+	JLM_ASSERT(index < ninputs());
 	auto producer = node_output::node(input(index)->origin());
 
 	/* remove input */
@@ -225,7 +225,7 @@ node::remove_input(size_t index)
 	/* recompute depth */
 	if (producer) {
 		auto pdepth = producer->depth();
-		JIVE_DEBUG_ASSERT(pdepth < depth());
+		JLM_ASSERT(pdepth < depth());
 		if (pdepth != depth()-1)
 			return;
 	}
@@ -233,7 +233,7 @@ node::remove_input(size_t index)
 
 	/* add to region's top nodes */
 	if (ninputs() == 0) {
-		JIVE_DEBUG_ASSERT(depth() == 0);
+		JLM_ASSERT(depth() == 0);
 		region()->top_nodes.push_back(this);
 	}
 }
@@ -241,7 +241,7 @@ node::remove_input(size_t index)
 void
 node::remove_output(size_t index)
 {
-	JIVE_DEBUG_ASSERT(index < noutputs());
+	JLM_ASSERT(index < noutputs());
 
 	for (size_t n = index; n < noutputs()-1; n++) {
 		outputs_[n] = std::move(outputs_[n+1]);
@@ -300,7 +300,7 @@ producer(const jive::output * output) noexcept
 	if (auto node = node_output::node(output))
 		return node;
 
-	JIVE_DEBUG_ASSERT(dynamic_cast<const jive::argument*>(output));
+	JLM_ASSERT(dynamic_cast<const jive::argument*>(output));
 	auto argument = static_cast<const jive::argument*>(output);
 
 	if (!argument->input())

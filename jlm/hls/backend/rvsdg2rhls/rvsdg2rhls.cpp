@@ -79,7 +79,7 @@ namespace jlm {
 			auto arg = dynamic_cast<const jive::argument *>(result);
 			auto ip = dynamic_cast<const impport *>(&arg->port());
 			if(ip){
-				throw jive::compiler_error("can not inline external function "+ip->name());
+				throw jlm::error("can not inline external function " + ip->name());
 			}
 		}
 		JLM_ASSERT(so);
@@ -116,7 +116,7 @@ namespace jlm {
 				}
 			} else if (auto po = dynamic_cast<const jlm::alloca_op *>(&(node->operation()))) {
 				auto rr = region->graph()->root();
-				auto delta_name = jive::detail::strfmt("hls_alloca_", alloca_cnt++);
+				auto delta_name = strfmt("hls_alloca_", alloca_cnt++);
         PointerType delta_type;
         std::cout << "alloca " << delta_name << ": " << po->value_type().debug_string() << "\n";
 				auto db = delta::node::Create(rr, po->value_type(), delta_name, linkage::external_linkage, "", false);

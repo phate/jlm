@@ -29,7 +29,7 @@ NAME ## _op::reduce_constant(const bitvalue_repr & arg) const \
 std::string \
 NAME ## _op::debug_string() const \
 { \
-	return jive::detail::strfmt(#DEBUG_STRING, type().nbits()); \
+	return strfmt(#DEBUG_STRING, type().nbits()); \
 } \
 \
 std::unique_ptr<jive::operation> \
@@ -72,7 +72,7 @@ NAME ## _op::flags() const noexcept \
 std::string \
 NAME ## _op::debug_string() const \
 { \
-	return jive::detail::strfmt(#DEBUG_STRING, type().nbits()); \
+	return strfmt(#DEBUG_STRING, type().nbits()); \
 } \
 \
 std::unique_ptr<jive::operation> \

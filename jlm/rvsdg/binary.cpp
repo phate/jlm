@@ -130,7 +130,7 @@ binary_normal_form::normalize_node(jive::node * node, const binary_op & op) cons
 		if (new_args.size() > 2)
 			tmp_op.reset(new flattened_binary_op(op, new_args.size()));
 
-		JIVE_DEBUG_ASSERT(new_args.size() >= 2);
+		JLM_ASSERT(new_args.size() >= 2);
 		const auto & new_op = tmp_op ? *tmp_op : static_cast<const simple_op&>(op);
 		divert_users(node, simple_node::create_normalized(node->region(), new_op, new_args));
 		remove(node);
@@ -320,7 +320,7 @@ flattened_binary_op::operator==(const operation & other) const noexcept
 std::string
 flattened_binary_op::debug_string() const
 {
-	return detail::strfmt("FLATTENED[", op_->debug_string(),"]");
+	return strfmt("FLATTENED[", op_->debug_string(),"]");
 }
 
 std::unique_ptr<jive::operation>
@@ -341,9 +341,9 @@ reduce_parallel(
 	const binary_op & op,
 	const std::vector<jive::output*> & operands)
 {
-	JIVE_DEBUG_ASSERT(operands.size() > 1);
+	JLM_ASSERT(operands.size() > 1);
 	auto region = operands.front()->region();
-	JIVE_DEBUG_ASSERT(binary_op::normal_form(region->graph())->get_flatten() == false);
+	JLM_ASSERT(binary_op::normal_form(region->graph())->get_flatten() == false);
 
 	std::deque<jive::output*> worklist(operands.begin(), operands.end());
 	while (worklist.size() > 1) {
@@ -356,7 +356,7 @@ reduce_parallel(
 		worklist.push_back(output);
 	}
 
-	JIVE_DEBUG_ASSERT(worklist.size() == 1);
+	JLM_ASSERT(worklist.size() == 1);
 	return worklist.front();
 }
 
@@ -365,9 +365,9 @@ reduce_linear(
 	const binary_op & op,
 	const std::vector<jive::output*> & operands)
 {
-	JIVE_DEBUG_ASSERT(operands.size() > 1);
+	JLM_ASSERT(operands.size() > 1);
 	auto region = operands.front()->region();
-	JIVE_DEBUG_ASSERT(binary_op::normal_form(region->graph())->get_flatten() == false);
+	JLM_ASSERT(binary_op::normal_form(region->graph())->get_flatten() == false);
 
 	std::deque<jive::output*> worklist(operands.begin(), operands.end());
 	while (worklist.size() > 1) {
@@ -380,7 +380,7 @@ reduce_linear(
 		worklist.push_front(output);
 	}
 
-	JIVE_DEBUG_ASSERT(worklist.size() == 1);
+	JLM_ASSERT(worklist.size() == 1);
 	return worklist.front();
 }
 
@@ -389,7 +389,7 @@ flattened_binary_op::reduce(
 	const flattened_binary_op::reduction & reduction,
 	const std::vector<jive::output*> & operands) const
 {
-	JIVE_DEBUG_ASSERT(operands.size() > 1);
+	JLM_ASSERT(operands.size() > 1);
 	auto graph = operands[0]->region()->graph();
 
 	static std::unordered_map<
@@ -401,7 +401,7 @@ flattened_binary_op::reduce(
 	});
 
 	binary_op::normal_form(graph)->set_flatten(false);
-	JIVE_DEBUG_ASSERT(map.find(reduction) != map.end());
+	JLM_ASSERT(map.find(reduction) != map.end());
 	return map[reduction](bin_operation(), operands);
 }
 
@@ -422,7 +422,7 @@ flattened_binary_op::reduce(
 		}
 	}
 
-	JIVE_DEBUG_ASSERT(!region::Contains<flattened_binary_op>(*region, true));
+	JLM_ASSERT(!region::Contains<flattened_binary_op>(*region, true));
 }
 
 }

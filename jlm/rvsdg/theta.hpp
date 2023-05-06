@@ -114,7 +114,7 @@ public:
 	predicate() const noexcept
 	{
 		auto result = subregion()->result(0);
-		JIVE_DEBUG_ASSERT(dynamic_cast<const ctltype*>(&result->type()));
+		JLM_ASSERT(dynamic_cast<const ctltype*>(&result->type()));
 		return result;
 	}
 
@@ -131,7 +131,7 @@ public:
 	inline size_t
 	nloopvars() const noexcept
 	{
-		JIVE_DEBUG_ASSERT(ninputs() == noutputs());
+		JLM_ASSERT(ninputs() == noutputs());
 		return ninputs();
 	}
 
@@ -198,7 +198,7 @@ public:
 	inline jive::argument *
 	argument() const noexcept
 	{
-		JIVE_DEBUG_ASSERT(arguments.size() == 1);
+		JLM_ASSERT(arguments.size() == 1);
 		return arguments.first();
 	}
 
@@ -261,7 +261,7 @@ public:
 	inline jive::result *
 	result() const noexcept
 	{
-		JIVE_DEBUG_ASSERT(results.size() == 1);
+		JLM_ASSERT(results.size() == 1);
 		return results.first();
 	}
 

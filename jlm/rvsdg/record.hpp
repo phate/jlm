@@ -41,7 +41,7 @@ public:
 	const valuetype &
 	element(size_t index) const noexcept
 	{
-		JIVE_DEBUG_ASSERT(index < nelements());
+		JLM_ASSERT(index < nelements());
 		return *static_cast<const valuetype*>(types_[index].get());
 	}
 

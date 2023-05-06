@@ -26,7 +26,7 @@ static inline std::string
 create_port_name(const jive::output * port, std::unordered_map<output*, std::string> & map)
 {
 	std::string name = dynamic_cast<const jive::argument*>(port) ? "a" : "o";
-	name += jive::detail::strfmt(map.size());
+	name += strfmt(map.size());
 	return name;
 }
 
@@ -71,7 +71,7 @@ region_header(const jive::region * region, std::unordered_map<output*, std::stri
 
 		header += pname;
 		if (argument->input())
-			header += detail::strfmt(" <= ", map[argument->input()->origin()]);
+			header += strfmt(" <= ", map[argument->input()->origin()]);
 
 		if (n < region->narguments()-1)
 			header += ", ";
@@ -160,7 +160,7 @@ region_tree(const jive::region * region)
 		std::string subtree;
 		if (region->node()) {
 			if (region->node()->nsubregions() != 1) {
-				subtree += std::string(depth, '-') + detail::strfmt(region) + "\n";
+				subtree += std::string(depth, '-') + strfmt(region) + "\n";
 				depth += 1;
 			}
 		} else {
@@ -207,25 +207,25 @@ xml_footer()
 static inline std::string
 id(const jive::output * port)
 {
-	return detail::strfmt("o", (intptr_t)port);
+	return strfmt("o", (intptr_t)port);
 }
 
 static inline std::string
 id(const jive::input * port)
 {
-	return detail::strfmt("i", (intptr_t)port);
+	return strfmt("i", (intptr_t)port);
 }
 
 static inline std::string
 id(const jive::node * node)
 {
-	return detail::strfmt("n", (intptr_t)node);
+	return strfmt("n", (intptr_t)node);
 }
 
 static inline std::string
 id(const jive::region * region)
 {
-	return detail::strfmt("r", (intptr_t)region);
+	return strfmt("r", (intptr_t)region);
 }
 
 static inline std::string
@@ -351,7 +351,7 @@ convert_node(const jive::node * node)
 	if (auto n = dynamic_cast<const structural_node*>(node))
 		return convert_structural_node(n);
 
-	JIVE_ASSERT(0);
+	JLM_ASSERT(0);
 	return "";
 }
 

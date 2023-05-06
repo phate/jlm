@@ -1,14 +1,3 @@
-define HELP_TEXT_JIVE
-echo ""
-echo "Rvsdg Make Targets"
-echo "--------------------------------------------------------------------------------"
-echo "rvsdg-debug             Compiles rvsdg library in debug mode"
-echo "rvsdg-debug-check       Compiles rvsdg library in debug mode and runs tests"
-echo "rvsdg-release           Compiles rvsdg library in release mode"
-echo "rvsdg-clean             Cleans all build files and libraries"
-endef
-
-# RVSDG core
 LIBRVSDG_SRC = \
 	jlm/rvsdg/binary.cpp \
 	jlm/rvsdg/control.cpp \
@@ -47,7 +36,7 @@ SOURCES += $(LIBRVSDG_SRC)
 HEADERS = $(shell find 	$(JLM_ROOT)/jlm/rvsdg -name "*.h")
 
 .PHONY: rvsdg-debug
-rvsdg-debug: CXXFLAGS += -g -DJIVE_DEBUG
+rvsdg-debug: CXXFLAGS += -g
 rvsdg-debug: $(JLM_BUILD)/librvsdg.a
 
 .PHONY: rvsdg-release

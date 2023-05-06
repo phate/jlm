@@ -24,7 +24,7 @@ static int test_main(void)
 	bool error_handler_called = false;
 	try {
 		jlm::test_op::Create(graph.root(), {&value_type}, {n1->output(0)}, {});
-	} catch (jive::type_error & e) {
+	} catch (jlm::type_error & e) {
 		error_handler_called = true;
 	}
 	

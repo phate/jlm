@@ -60,40 +60,16 @@ public:
 	{}
 };
 
-}
-
-#define JIVE_ASSERT(x) assert(x)
-
-#ifdef JIVE_DEBUG
-#	define JIVE_DEBUG_ASSERT(x) assert(x)
-#else
-#	define JIVE_DEBUG_ASSERT(x) (void)(x)
-#endif
-
-namespace jive {
-
-class compiler_error : public std::runtime_error {
+class type_error : public error
+{
 public:
-  virtual ~compiler_error() noexcept;
+  ~type_error() noexcept override;
 
-  inline compiler_error(const std::string & arg)
-    : std::runtime_error(arg)
-  {
-  }
-};
-
-class type_error : public compiler_error {
-public:
-  virtual ~type_error() noexcept;
-
-  inline type_error(
+  type_error(
     const std::string & expected_type,
     const std::string & received_type)
-    : compiler_error(
-    "Type error - expected : " + expected_type +
-    ", received : " + received_type)
-  {
-  }
+    : error("Type error - expected : " + expected_type + ", received : " + received_type)
+  {}
 };
 
 }

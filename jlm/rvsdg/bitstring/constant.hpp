@@ -31,7 +31,7 @@ struct format_value {
 	operator()(const bitvalue_repr & repr) const
 	{
 		if (repr.is_known() && repr.nbits() <= 64)
-			return detail::strfmt("BITS", repr.nbits(), "(", repr.to_uint(), ")");
+			return strfmt("BITS", repr.nbits(), "(", repr.to_uint(), ")");
 
 		return repr.str();
 	}

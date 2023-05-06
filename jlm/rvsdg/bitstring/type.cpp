@@ -17,7 +17,7 @@ bittype::~bittype() noexcept
 std::string
 bittype::debug_string() const
 {
-	return detail::strfmt("bit", nbits());
+	return strfmt("bit", nbits());
 }
 
 bool

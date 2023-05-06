@@ -31,7 +31,7 @@ argument::argument(
 {
 	if (input) {
 		if (input->node() != region->node())
-			throw compiler_error("Argument cannot be added to input.");
+			throw jlm::error("Argument cannot be added to input.");
 
 		input->arguments.push_back(this);
 	}
@@ -68,7 +68,7 @@ result::result(
 {
 	if (output) {
 		if (output->node() != region->node())
-			throw compiler_error("Result cannot be added to output.");
+			throw jlm::error("Result cannot be added to output.");
 
 		output->results.push_back(this);
 	}
@@ -96,9 +96,9 @@ region::~region()
 		remove_result(results_.size()-1);
 
 	prune(false);
-	JIVE_DEBUG_ASSERT(nodes.empty());
-	JIVE_DEBUG_ASSERT(top_nodes.empty());
-	JIVE_DEBUG_ASSERT(bottom_nodes.empty());
+	JLM_ASSERT(nodes.empty());
+	JLM_ASSERT(top_nodes.empty());
+	JLM_ASSERT(bottom_nodes.empty());
 
 	while (arguments_.size())
 		remove_argument(arguments_.size()-1);
@@ -126,10 +126,10 @@ void
 region::append_argument(jive::argument * argument)
 {
 	if (argument->region() != this)
-		throw jive::compiler_error("Appending argument to wrong region.");
+		throw jlm::error("Appending argument to wrong region.");
 
 	auto index = argument->index();
-	JIVE_DEBUG_ASSERT(index == 0);
+	JLM_ASSERT(index == 0);
 	if (index != 0
 	|| (index == 0 && narguments() > 0 && this->argument(0) == argument))
 		return;
@@ -142,7 +142,7 @@ region::append_argument(jive::argument * argument)
 void
 region::remove_argument(size_t index)
 {
-	JIVE_DEBUG_ASSERT(index < narguments());
+	JLM_ASSERT(index < narguments());
 	jive::argument * argument = arguments_[index];
 
 	delete argument;
@@ -157,14 +157,14 @@ void
 region::append_result(jive::result * result)
 {
 	if (result->region() != this)
-		throw jive::compiler_error("Appending result to wrong region.");
+		throw jlm::error("Appending result to wrong region.");
 
 	/*
 		Check if result was already appended to this region. This check
 		relies on the fact that an unappended result has an index of zero.
 	*/
 	auto index = result->index();
-	JIVE_DEBUG_ASSERT(index == 0);
+	JLM_ASSERT(index == 0);
 	if (index != 0 || (index == 0 && nresults() > 0 && this->result(0) == result))
 		return;
 
@@ -176,7 +176,7 @@ region::append_result(jive::result * result)
 void
 region::remove_result(size_t index)
 {
-	JIVE_DEBUG_ASSERT(index < results_.size());
+	JLM_ASSERT(index < results_.size());
 	jive::result * result = results_[index];
 
 	delete result;
@@ -205,7 +205,7 @@ region::copy(
 	/* order nodes top-down */
 	std::vector<std::vector<const jive::node*>> context(nnodes());
 	for (const auto & node : nodes) {
-		JIVE_DEBUG_ASSERT(node.depth() < context.size());
+		JLM_ASSERT(node.depth() < context.size());
 		context[node.depth()].push_back(&node);
 	}
 
@@ -221,7 +221,7 @@ region::copy(
 	/* copy nodes */
 	for (size_t n = 0; n < context.size(); n++) {
 		for (const auto node : context[n]) {
-			JIVE_ASSERT(target == smap.lookup(node->region()));
+			JLM_ASSERT(target == smap.lookup(node->region()));
 			node->copy(target, smap);
 		}
 	}

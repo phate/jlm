@@ -60,7 +60,7 @@ simple_op::narguments() const noexcept
 const jive::port &
 simple_op::argument(size_t index) const noexcept
 {
-	JIVE_DEBUG_ASSERT(index < narguments());
+	JLM_ASSERT(index < narguments());
 	return operands_[index];
 }
 
@@ -73,7 +73,7 @@ simple_op::nresults() const noexcept
 const jive::port &
 simple_op::result(size_t index) const noexcept
 {
-	JIVE_DEBUG_ASSERT(index < nresults());
+	JLM_ASSERT(index < nresults());
 	return results_[index];
 }
 

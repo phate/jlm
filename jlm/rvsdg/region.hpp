@@ -214,7 +214,7 @@ public:
 	inline jive::argument *
 	argument(size_t index) const noexcept
 	{
-		JIVE_DEBUG_ASSERT(index < narguments());
+		JLM_ASSERT(index < narguments());
 		return arguments_[index];
 	}
 
@@ -237,7 +237,7 @@ public:
 	inline jive::result *
 	result(size_t index) const noexcept
 	{
-		JIVE_DEBUG_ASSERT(index < nresults());
+		JLM_ASSERT(index < nresults());
 		return results_[index];
 	}
 

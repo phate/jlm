@@ -60,7 +60,7 @@ simple_normal_form::normalize_node(jive::node * node) const
 
 	if (get_cse()) {
 		auto new_node = node_cse(node->region(), node->operation(), operands(node));
-		JIVE_DEBUG_ASSERT(new_node);
+		JLM_ASSERT(new_node);
 		if (new_node != node) {
 			divert_users(node, outputs(new_node));
 			remove(node);
