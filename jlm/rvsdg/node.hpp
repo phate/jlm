@@ -93,7 +93,7 @@ public:
 	replace(const jive::port & port)
 	{
 		if (port_->type() != port.type())
-			throw jlm::type_error(port_->type().debug_string(), port.type().debug_string());
+			throw jlm::util::type_error(port_->type().debug_string(), port.type().debug_string());
 
 		port_ = port.copy();
 	}
@@ -133,7 +133,7 @@ public:
 				I cannot make this method abstract due to the return value of operator++(int).
 				This is the best I could come up with as a workaround.
 			*/
-			throw jlm::error("This method must be overloaded.");
+			throw jlm::util::error("This method must be overloaded.");
 		}
 
 	public:
@@ -213,7 +213,7 @@ public:
 				I cannot make this method abstract due to the return value of operator++(int).
 				This is the best I could come up with as a workaround.
 			*/
-			throw jlm::error("This method must be overloaded.");
+			throw jlm::util::error("This method must be overloaded.");
 		}
 
 	public:
@@ -368,7 +368,7 @@ public:
 	replace(const jive::port & port)
 	{
 		if (port_->type() != port.type())
-			throw jlm::type_error(port_->type().debug_string(), port.type().debug_string());
+			throw jlm::util::type_error(port_->type().debug_string(), port.type().debug_string());
 
 		port_ = port.copy();
 	}
@@ -399,7 +399,7 @@ public:
 				I cannot make this method abstract due to the return value of operator++(int).
 				This is the best I could come up with as a workaround.
 			*/
-			throw jlm::error("This method must be overloaded.");
+			throw jlm::util::error("This method must be overloaded.");
 		}
 
 	public:
@@ -479,7 +479,7 @@ public:
 				I cannot make this method abstract due to the return value of operator++(int).
 				This is the best I could come up with as a workaround.
 			*/
-			throw jlm::error("This method must be overloaded.");
+			throw jlm::util::error("This method must be overloaded.");
 		}
 
 	public:
@@ -755,30 +755,30 @@ public:
 	}
 
 private:
-	jive::detail::intrusive_list_anchor<
+	jlm::util::intrusive_list_anchor<
 		jive::node
 	> region_node_list_anchor_;
 
-	jive::detail::intrusive_list_anchor<
+	jlm::util::intrusive_list_anchor<
 		jive::node
 	> region_top_node_list_anchor_;
 
-	jive::detail::intrusive_list_anchor<
+	jlm::util::intrusive_list_anchor<
 		jive::node
 	> region_bottom_node_list_anchor_;
 
 public:
-	typedef jive::detail::intrusive_list_accessor<
+	typedef jlm::util::intrusive_list_accessor<
 		jive::node,
 		&jive::node::region_node_list_anchor_
 	> region_node_list_accessor;
 
-	typedef jive::detail::intrusive_list_accessor<
+	typedef jlm::util::intrusive_list_accessor<
 		jive::node,
 		&jive::node::region_top_node_list_anchor_
 	> region_top_node_list_accessor;
 
-	typedef jive::detail::intrusive_list_accessor<
+	typedef jlm::util::intrusive_list_accessor<
 		jive::node,
 		&jive::node::region_bottom_node_list_anchor_
 	> region_bottom_node_list_accessor;

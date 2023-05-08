@@ -17,7 +17,7 @@ operation::~operation()
 std::string
 operation::debug_string() const
 {
-	return strfmt("DELTA[", name(), "]");
+	return util::strfmt("DELTA[", name(), "]");
 }
 
 std::unique_ptr<jive::operation>
@@ -142,10 +142,10 @@ node::finalize(jive::output * origin)
 	auto & expected = type();
 	auto & received = origin->type();
 	if (expected != received)
-		throw jlm::error("Expected " + expected.debug_string() + ", got " + received.debug_string());
+		throw util::error("Expected " + expected.debug_string() + ", got " + received.debug_string());
 
 	if (origin->region() != subregion())
-		throw jlm::error("Invalid operand region.");
+		throw util::error("Invalid operand region.");
 
 	delta::result::create(origin);
 

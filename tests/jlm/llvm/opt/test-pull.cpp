@@ -15,7 +15,7 @@
 #include <jlm/util/Statistics.hpp>
 
 static const jlm::valuetype vt;
-static jlm::StatisticsCollector statisticsCollector;
+static jlm::util::StatisticsCollector statisticsCollector;
 
 static inline void
 test_pullin_top()
@@ -27,7 +27,7 @@ test_pullin_top()
 	jlm::test_op bop({&vt, &vt}, {&vt});
 	jlm::test_op cop({&ct, &vt}, {&ct});
 
-	RvsdgModule rm(filepath(""), "", "");
+	RvsdgModule rm(util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 
 	auto c = graph.add_import({ct, "c"});
@@ -90,7 +90,7 @@ test_pull()
 {
 	using namespace jlm;
 
-	RvsdgModule rm(filepath(""), "", "");
+	RvsdgModule rm(util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 
 	auto p = graph.add_import({jive::ctl2, ""});

@@ -48,7 +48,7 @@ public:
   ProvisionMemoryNodes(
     const RvsdgModule & rvsdgModule,
     const PointsToGraph & pointsToGraph,
-    StatisticsCollector & statisticsCollector) override;
+    util::StatisticsCollector & statisticsCollector) override;
 
   /**
    * Creates a AgnosticMemoryNodeProvider and calls the ProvisionMemoryNodes() method.
@@ -63,7 +63,7 @@ public:
   Create(
     const RvsdgModule & rvsdgModule,
     const PointsToGraph & pointsToGraph,
-    StatisticsCollector & statisticsCollector);
+    util::StatisticsCollector & statisticsCollector);
 
   /**
    * Creates a AgnosticMemoryNodeProvider and calls the ProvisionMemoryNodes() method.
@@ -85,13 +85,13 @@ public:
  *
  * @See AgnosticMemoryNodeProvider
  */
-class AgnosticMemoryNodeProvider::Statistics final : public jlm::Statistics
+class AgnosticMemoryNodeProvider::Statistics final : public util::Statistics
 {
 public:
   Statistics(
-    const StatisticsCollector & statisticsCollector,
+    const util::StatisticsCollector & statisticsCollector,
     const PointsToGraph & pointsToGraph)
-    : jlm::Statistics(Statistics::Id::MemoryNodeProvisioning)
+    : util::Statistics(Statistics::Id::MemoryNodeProvisioning)
     , NumPointsToGraphMemoryNodes_(0)
     , StatisticsCollector_(statisticsCollector)
   {
@@ -134,7 +134,7 @@ public:
   [[nodiscard]] std::string
   ToString() const override
   {
-    return strfmt(
+    return util::strfmt(
       "AgnosticMemoryNodeProvision ",
       "#PointsToGraphMemoryNodes:", NumPointsToGraphMemoryNodes_, " ",
       "Time[ns]:", Timer_.ns()
@@ -143,16 +143,16 @@ public:
 
   static std::unique_ptr<Statistics>
   Create(
-    const StatisticsCollector & statisticsCollector,
+    const util::StatisticsCollector & statisticsCollector,
     const PointsToGraph & pointsToGraph)
   {
     return std::make_unique<Statistics>(statisticsCollector, pointsToGraph);
   }
 
 private:
-  jlm::timer Timer_;
+  util::timer Timer_;
   size_t NumPointsToGraphMemoryNodes_;
-  const StatisticsCollector & StatisticsCollector_;
+  const util::StatisticsCollector & StatisticsCollector_;
 };
 
 }

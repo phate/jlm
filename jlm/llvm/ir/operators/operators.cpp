@@ -27,7 +27,7 @@ phi_op::debug_string() const
 {
 	std::string str("[");
 	for (size_t n = 0; n < narguments(); n++) {
-		str += strfmt(node(n));
+		str += util::strfmt(node(n));
 		if (n != narguments()-1)
 			str += ", ";
 	}
@@ -435,7 +435,7 @@ zext_op::operator==(const operation & other) const noexcept
 std::string
 zext_op::debug_string() const
 {
-	return strfmt("ZEXT[", nsrcbits(), " -> ", ndstbits(), "]");
+	return util::strfmt("ZEXT[", nsrcbits(), " -> ", ndstbits(), "]");
 }
 
 std::unique_ptr<jive::operation>
@@ -808,7 +808,7 @@ bitcast_op::operator==(const operation & other) const noexcept
 std::string
 bitcast_op::debug_string() const
 {
-	return strfmt("BITCAST[", argument(0).type().debug_string(),
+	return util::strfmt("BITCAST[", argument(0).type().debug_string(),
 		" -> ", result(0).type().debug_string(), "]");
 }
 
@@ -874,7 +874,7 @@ trunc_op::operator==(const operation & other) const noexcept
 std::string
 trunc_op::debug_string() const
 {
-	return strfmt("TRUNC[", nsrcbits(), " -> ", ndstbits(), "]");
+	return util::strfmt("TRUNC[", nsrcbits(), " -> ", ndstbits(), "]");
 }
 
 std::unique_ptr<jive::operation>
@@ -1148,7 +1148,7 @@ vectorunary_op::operator==(const jive::operation & other) const noexcept
 std::string
 vectorunary_op::debug_string() const
 {
-	return strfmt("VEC", operation().debug_string());
+	return util::strfmt("VEC", operation().debug_string());
 }
 
 std::unique_ptr<jive::operation>
@@ -1172,7 +1172,7 @@ vectorbinary_op::operator==(const jive::operation & other) const noexcept
 std::string
 vectorbinary_op::debug_string() const
 {
-	return strfmt("VEC", operation().debug_string());
+	return util::strfmt("VEC", operation().debug_string());
 }
 
 std::unique_ptr<jive::operation>

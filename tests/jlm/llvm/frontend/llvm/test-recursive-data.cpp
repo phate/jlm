@@ -20,7 +20,7 @@ test()
 	using namespace jlm;
 
 	valuetype vt;
-	ipgraph_module im(filepath(""), "", "");
+	ipgraph_module im(util::filepath(""), "", "");
 
 	auto d0 = data_node::Create(
     im.ipgraph(),
@@ -61,7 +61,7 @@ test()
 	d1->set_initialization(std::make_unique<data_node_init>(std::move(tvec1)));
 	d2->set_initialization(std::make_unique<data_node_init>(std::move(tvec2)));
 
-	StatisticsCollector statisticsCollector;
+	util::StatisticsCollector statisticsCollector;
 	auto rvsdgModule = ConvertInterProceduralGraphModule(im, statisticsCollector);
 
 	jive::view(rvsdgModule->Rvsdg(), stdout);

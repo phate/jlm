@@ -90,7 +90,7 @@ public:
   OptimizationLevel OptimizationLevel_;
   LanguageStandard LanguageStandard_;
 
-  filepath OutputFile_;
+  util::filepath OutputFile_;
   std::vector<std::string> Libraries_;
   std::vector<std::string> MacroDefinitions_;
   std::vector<std::string> LibraryPaths_;
@@ -105,9 +105,9 @@ public:
 class JlcCommandLineOptions::Compilation {
 public:
   Compilation(
-    filepath inputFile,
-    filepath dependencyFile,
-    filepath outputFile,
+    util::filepath inputFile,
+    util::filepath dependencyFile,
+    util::filepath outputFile,
     std::string mT,
     bool requiresParsing,
     bool requiresOptimization,
@@ -123,19 +123,19 @@ public:
     , Mt_(std::move(mT))
   {}
 
-  [[nodiscard]] const filepath &
+  [[nodiscard]] const util::filepath &
   InputFile() const noexcept
   {
     return InputFile_;
   }
 
-  [[nodiscard]] const filepath &
+  [[nodiscard]] const util::filepath &
   DependencyFile() const noexcept
   {
     return DependencyFile_;
   }
 
-  [[nodiscard]] const filepath &
+  [[nodiscard]] const util::filepath &
   OutputFile() const noexcept
   {
     return OutputFile_;
@@ -148,7 +148,7 @@ public:
   }
 
   void
-  SetOutputFile(const filepath & outputFile)
+  SetOutputFile(const util::filepath & outputFile)
   {
     OutputFile_ = outputFile;
   }
@@ -182,9 +182,9 @@ private:
   bool RequiresParsing_;
   bool RequiresOptimization_;
   bool RequiresAssembly_;
-  filepath InputFile_;
-  filepath OutputFile_;
-  filepath DependencyFile_;
+  util::filepath InputFile_;
+  util::filepath OutputFile_;
+  util::filepath DependencyFile_;
   const std::string Mt_;
 };
 
@@ -209,10 +209,10 @@ public:
   void
   Reset() noexcept override;
 
-  filepath InputFile_;
-  filepath OutputFile_;
+  util::filepath InputFile_;
+  util::filepath OutputFile_;
   OutputFormat OutputFormat_;
-  StatisticsCollectorSettings StatisticsCollectorSettings_;
+  util::StatisticsCollectorSettings StatisticsCollectorSettings_;
   std::vector<optimization*> Optimizations_;
 };
 
@@ -237,8 +237,8 @@ public:
   void
   Reset() noexcept override;
 
-  filepath InputFile_;
-  filepath OutputFolder_;
+  util::filepath InputFile_;
+  util::filepath OutputFolder_;
   OutputFormat OutputFormat_;
   std::string HlsFunction_;
   bool ExtractHlsFunction_;
@@ -305,7 +305,7 @@ public:
 
   OptimizationLevel OptimizationLevel_;
   LanguageStandard LanguageStandard_;
-  filepath OutputFile_;
+  util::filepath OutputFile_;
   std::vector<std::string> Libraries_;
   std::vector<std::string> MacroDefinitions_;
   std::vector<std::string> LibraryPaths_;
@@ -321,9 +321,9 @@ public:
 class JhlsCommandLineOptions::Compilation {
 public:
   Compilation(
-    filepath inputFile,
-    filepath dependencyFile,
-    filepath outputFile,
+    util::filepath inputFile,
+    util::filepath dependencyFile,
+    util::filepath outputFile,
     std::string mT,
     bool parse,
     bool optimize,
@@ -339,19 +339,19 @@ public:
     , Mt_(std::move(mT))
   {}
 
-  [[nodiscard]] const filepath &
+  [[nodiscard]] const util::filepath &
   InputFile() const noexcept
   {
     return InputFile_;
   }
 
-  [[nodiscard]] const filepath &
+  [[nodiscard]] const util::filepath &
   DependencyFile() const noexcept
   {
     return DependencyFile_;
   }
 
-  [[nodiscard]] const filepath &
+  [[nodiscard]] const util::filepath &
   OutputFile() const noexcept
   {
     return OutputFile_;
@@ -364,7 +364,7 @@ public:
   }
 
   void
-  SetOutputFile(const filepath & outputFile)
+  SetOutputFile(const util::filepath & outputFile)
   {
     OutputFile_ = outputFile;
   }
@@ -398,9 +398,9 @@ private:
   bool RequiresParsing_;
   bool RequiresOptimization_;
   bool RequiresAssembly_;
-  filepath InputFile_;
-  filepath OutputFile_;
-  filepath DependencyFile_;
+  util::filepath InputFile_;
+  util::filepath OutputFile_;
+  util::filepath DependencyFile_;
   const std::string Mt_;
 };
 
@@ -431,19 +431,19 @@ public:
 
 private:
   static bool
-  IsObjectFile(const filepath & file)
+  IsObjectFile(const util::filepath & file)
   {
     return file.suffix() == "o";
   }
 
-  static filepath
-  ToObjectFile(const filepath & file)
+  static util::filepath
+  ToObjectFile(const util::filepath & file)
   {
     return {file.path() + file.base() + ".o"};
   }
 
-  static filepath
-  ToDependencyFile(const filepath & file)
+  static util::filepath
+  ToDependencyFile(const util::filepath & file)
   {
     return {file.path() + file.base() + ".d"};
   }
@@ -517,13 +517,13 @@ public:
 
 private:
   static bool
-  IsObjectFile(const filepath & file);
+  IsObjectFile(const util::filepath & file);
 
-  static filepath
-  CreateObjectFileFromFile(const filepath & f);
+  static util::filepath
+  CreateObjectFileFromFile(const util::filepath & f);
 
-  static filepath
-  CreateDependencyFileFromFile(const filepath & f);
+  static util::filepath
+  CreateDependencyFileFromFile(const util::filepath & f);
 
   JhlsCommandLineOptions CommandLineOptions_;
 };

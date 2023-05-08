@@ -26,7 +26,7 @@
 static std::unique_ptr<llvm::Module>
 parse_llvm_file(
 	const char * executable,
-	const jlm::filepath & file,
+	const jlm::util::filepath & file,
 	llvm::LLVMContext & ctx)
 {
 	llvm::SMDiagnostic d;
@@ -48,8 +48,8 @@ construct_jlm_module(llvm::Module & module)
 static void
 print_as_xml(
 	const jlm::RvsdgModule & rm,
-	const jlm::filepath & fp,
-	jlm::StatisticsCollector&)
+	const jlm::util::filepath & fp,
+	jlm::util::StatisticsCollector&)
 {
 	auto fd = fp == "" ? stdout : fopen(fp.to_str().c_str(), "w");
 
@@ -62,8 +62,8 @@ print_as_xml(
 static void
 print_as_llvm(
 	const jlm::RvsdgModule & rm,
-	const jlm::filepath & fp,
-	jlm::StatisticsCollector & statisticsCollector)
+	const jlm::util::filepath & fp,
+	jlm::util::StatisticsCollector & statisticsCollector)
 {
 	auto jlm_module = jlm::rvsdg2jlm::rvsdg2jlm(rm, statisticsCollector);
 
@@ -83,15 +83,15 @@ print_as_llvm(
 static void
 print(
 	const jlm::RvsdgModule & rm,
-	const jlm::filepath & fp,
+	const jlm::util::filepath & fp,
 	const jlm::JlmOptCommandLineOptions::OutputFormat & format,
-	jlm::StatisticsCollector & statisticsCollector)
+	jlm::util::StatisticsCollector & statisticsCollector)
 {
   using namespace jlm;
 
   static std::unordered_map<
     jlm::JlmOptCommandLineOptions::OutputFormat,
-    std::function<void(const RvsdgModule&, const filepath&, StatisticsCollector&)>
+    std::function<void(const RvsdgModule&, const jlm::util::filepath&, jlm::util::StatisticsCollector&)>
   > formatters(
     {
       {JlmOptCommandLineOptions::OutputFormat::Xml,  print_as_xml},
@@ -107,7 +107,7 @@ main(int argc, char ** argv)
 {
   auto & commandLineOptions = jlm::JlmOptCommandLineParser::Parse(argc, argv);
 
-  jlm::StatisticsCollector statisticsCollector(commandLineOptions.StatisticsCollectorSettings_);
+  jlm::util::StatisticsCollector statisticsCollector(commandLineOptions.StatisticsCollectorSettings_);
 
   llvm::LLVMContext llvmContext;
   auto llvmModule = parse_llvm_file(

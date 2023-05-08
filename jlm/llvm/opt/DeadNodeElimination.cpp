@@ -23,12 +23,12 @@ is_phi_argument(const jive::output * output)
 /** \brief Dead Node Elimination statistics class
  *
  */
-class DeadNodeElimination::Statistics final : public jlm::Statistics {
+class DeadNodeElimination::Statistics final : public util::Statistics {
 public:
 	~Statistics() override = default;
 
 	Statistics()
-	: jlm::Statistics(Statistics::Id::DeadNodeElimination)
+	: util::Statistics(Statistics::Id::DeadNodeElimination)
   , numNodesBefore_(0), numNodesAfter_(0)
 	, numInputsBefore_(0), numInputsAfter_(0)
 	{}
@@ -64,7 +64,7 @@ public:
 	[[nodiscard]] std::string
 	ToString() const override
 	{
-		return strfmt("DeadNodeElimination ",
+		return util::strfmt("DeadNodeElimination ",
                   "#RvsdgNodesBeforeDNE:", numNodesBefore_, " ",
                   "#RvsdgNodesAfterDNE:", numNodesAfter_, " ",
                   "#RvsdgInputsBeforeDNE:", numInputsBefore_, " ",
@@ -85,8 +85,8 @@ private:
   size_t numNodesAfter_;
 	size_t numInputsBefore_;
   size_t numInputsAfter_;
-	jlm::timer markTimer_;
-  jlm::timer sweepTimer_;
+	util::timer markTimer_;
+  util::timer sweepTimer_;
 };
 
 DeadNodeElimination::~DeadNodeElimination()
@@ -103,7 +103,7 @@ DeadNodeElimination::run(jive::region & region)
 void
 DeadNodeElimination::run(
   RvsdgModule & module,
-  StatisticsCollector & statisticsCollector)
+  util::StatisticsCollector & statisticsCollector)
 {
   auto & graph = module.Rvsdg();
 

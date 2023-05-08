@@ -12,7 +12,7 @@
 
 namespace jlm {
 
-class pullstat final : public Statistics {
+class pullstat final : public util::Statistics {
 public:
 	virtual
 	~pullstat()
@@ -40,7 +40,7 @@ public:
 	virtual std::string
 	ToString() const override
 	{
-		return strfmt("PULL ",
+		return util::strfmt("PULL ",
 			ninputs_before_, " ", ninputs_after_, " ",
 			timer_.ns()
 		);
@@ -54,7 +54,7 @@ public:
 
 private:
 	size_t ninputs_before_, ninputs_after_;
-	jlm::timer timer_;
+	util::timer timer_;
 };
 
 static bool
@@ -281,7 +281,7 @@ pull(jive::region * region)
 static void
 pull(
   RvsdgModule & rm,
-  StatisticsCollector & statisticsCollector)
+  util::StatisticsCollector & statisticsCollector)
 {
 	auto statistics = pullstat::Create();
 
@@ -300,7 +300,7 @@ pullin::~pullin()
 void
 pullin::run(
   RvsdgModule & module,
-  StatisticsCollector & statisticsCollector)
+  util::StatisticsCollector & statisticsCollector)
 {
 	pull(module, statisticsCollector);
 }

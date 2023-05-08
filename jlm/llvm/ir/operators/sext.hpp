@@ -24,7 +24,7 @@ public:
 	: unary_op({otype}, {rtype})
 	{
 		if (otype.nbits() >= rtype.nbits())
-			throw jlm::error("expected operand's #bits to be smaller than results's #bits.");
+			throw util::error("expected operand's #bits to be smaller than results's #bits.");
 	}
 
 	inline
@@ -34,13 +34,13 @@ public:
 	: unary_op(*srctype, *dsttype)
 	{
 		auto ot = dynamic_cast<const jive::bittype*>(srctype.get());
-		if (!ot) throw jlm::error("expected bits type.");
+		if (!ot) throw util::error("expected bits type.");
 
 		auto rt = dynamic_cast<const jive::bittype*>(dsttype.get());
-		if (!rt) throw jlm::error("expected bits type.");
+		if (!rt) throw util::error("expected bits type.");
 
 		if (ot->nbits() >= rt->nbits())
-			throw jlm::error("expected operand's #bits to be smaller than results's #bits.");
+			throw util::error("expected operand's #bits to be smaller than results's #bits.");
 	}
 
 	virtual bool
@@ -78,10 +78,10 @@ public:
 		const jive::type & type)
 	{
 		auto ot = dynamic_cast<const jive::bittype*>(&operand->type());
-		if (!ot) throw jlm::error("expected bits type.");
+		if (!ot) throw util::error("expected bits type.");
 
 		auto rt = dynamic_cast<const jive::bittype*>(&type);
-		if (!rt) throw jlm::error("expected bits type.");
+		if (!rt) throw util::error("expected bits type.");
 
 		sext_op op(*ot, *rt);
 		return tac::create(op, {operand});
@@ -93,7 +93,7 @@ public:
 		jive::output * operand)
 	{
 		auto ot = dynamic_cast<const jive::bittype*>(&operand->type());
-		if (!ot) throw jlm::error("expected bits type.");
+		if (!ot) throw util::error("expected bits type.");
 
 		sext_op op(*ot, jive::bittype(ndstbits));
 		return jive::simple_node::create_normalized(operand->region(), op, {operand})[0];

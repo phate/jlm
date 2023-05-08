@@ -103,7 +103,7 @@ namespace jlm {
 
 			static std::string
 			UInt(size_t width, size_t value) {
-				return strfmt("UInt<", width, ">(", value, ")");
+				return util::strfmt("UInt<", width, ">(", value, ")");
 			}
 
 			static std::string

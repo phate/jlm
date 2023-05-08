@@ -28,7 +28,7 @@ test()
 	jive::bittype bt1(1);
 	FunctionType ft({&bt1, &vt}, {&vt});
 
-	RvsdgModule rm(filepath(""), "", "");
+	RvsdgModule rm(util::filepath(""), "", "");
 
 	auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage);
 
@@ -44,7 +44,7 @@ test()
 
 	jive::view(rm.Rvsdg(), stdout);
 
-	StatisticsCollector statisticsCollector;
+	util::StatisticsCollector statisticsCollector;
 	auto module = rvsdg2jlm::rvsdg2jlm(rm, statisticsCollector);
 	auto & ipg = module->ipgraph();
 	assert(ipg.nnodes() == 1);

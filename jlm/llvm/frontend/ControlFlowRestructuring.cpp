@@ -73,7 +73,7 @@ create_pvariable(
 	const jive::ctltype & type)
 {
 	static size_t c = 0;
-	auto name = strfmt("#p", c++, "#");
+	auto name = util::strfmt("#p", c++, "#");
 	return bb.insert_before_branch(UndefValueOperation::Create(type, name))->result(0);
 }
 
@@ -83,7 +83,7 @@ create_qvariable(
 	const jive::ctltype & type)
 {
 	static size_t c = 0;
-	auto name = strfmt("#q", c++, "#");
+	auto name = util::strfmt("#q", c++, "#");
 	return bb.append_last(UndefValueOperation::Create(type, name))->result(0);
 }
 
@@ -93,7 +93,7 @@ create_tvariable(
 	const jive::ctltype & type)
 {
 	static size_t c = 0;
-	auto name = strfmt("#q", c++, "#");
+	auto name = util::strfmt("#q", c++, "#");
 	return bb.insert_before_branch(UndefValueOperation::Create(type, name))->result(0);
 }
 
@@ -101,7 +101,7 @@ static const tacvariable *
 create_rvariable(basic_block & bb)
 {
 	static size_t c = 0;
-	auto name = strfmt("#r", c++, "#");
+	auto name = util::strfmt("#r", c++, "#");
 
 	jive::ctltype type(2);
 	return bb.append_last(UndefValueOperation::Create(type, name))->result(0);

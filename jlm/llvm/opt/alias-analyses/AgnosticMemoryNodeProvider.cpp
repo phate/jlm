@@ -19,7 +19,7 @@ public:
 private:
   AgnosticMemoryNodeProvisioning(
     const PointsToGraph & pointsToGraph,
-    HashSet<const PointsToGraph::MemoryNode*> memoryNodes)
+    util::HashSet<const PointsToGraph::MemoryNode*> memoryNodes)
     : PointsToGraph_(pointsToGraph)
     , MemoryNodes_(std::move(memoryNodes))
   {}
@@ -41,37 +41,37 @@ public:
     return PointsToGraph_;
   }
 
-  [[nodiscard]] const HashSet<const PointsToGraph::MemoryNode*> &
+  [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode*> &
   GetRegionEntryNodes(const jive::region & region) const override
   {
     return MemoryNodes_;
   }
 
-  [[nodiscard]] const HashSet<const PointsToGraph::MemoryNode*> &
+  [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode*> &
   GetRegionExitNodes(const jive::region & region) const override
   {
     return MemoryNodes_;
   }
 
-  [[nodiscard]] const HashSet<const PointsToGraph::MemoryNode*> &
+  [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode*> &
   GetCallEntryNodes(const CallNode & callNode) const override
   {
     return MemoryNodes_;
   }
 
-  [[nodiscard]] const HashSet<const PointsToGraph::MemoryNode*> &
+  [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode*> &
   GetCallExitNodes(const CallNode & callNode) const override
   {
     return MemoryNodes_;
   }
 
-  [[nodiscard]] HashSet<const PointsToGraph::MemoryNode*>
+  [[nodiscard]] util::HashSet<const PointsToGraph::MemoryNode*>
   GetOutputNodes(const jive::output & output) const override
   {
     JLM_ASSERT(is<PointerType>(output.type()));
     auto & registerNode = PointsToGraph_.GetRegisterNode(output);
 
-    HashSet<const PointsToGraph::MemoryNode*> memoryNodes;
+    util::HashSet<const PointsToGraph::MemoryNode*> memoryNodes;
     for (auto & memoryNode : registerNode.Targets())
       memoryNodes.Insert(&memoryNode);
 
@@ -81,7 +81,7 @@ public:
   static std::unique_ptr<AgnosticMemoryNodeProvisioning>
   Create(
     const PointsToGraph & pointsToGraph,
-    HashSet<const PointsToGraph::MemoryNode*> memoryNodes)
+    util::HashSet<const PointsToGraph::MemoryNode*> memoryNodes)
   {
     return std::unique_ptr<AgnosticMemoryNodeProvisioning>(new AgnosticMemoryNodeProvisioning(
       pointsToGraph,
@@ -90,7 +90,7 @@ public:
 
 private:
   const PointsToGraph & PointsToGraph_;
-  HashSet<const PointsToGraph::MemoryNode*> MemoryNodes_;
+  util::HashSet<const PointsToGraph::MemoryNode*> MemoryNodes_;
 };
 
 AgnosticMemoryNodeProvider::~AgnosticMemoryNodeProvider()
@@ -100,12 +100,12 @@ std::unique_ptr<MemoryNodeProvisioning>
 AgnosticMemoryNodeProvider::ProvisionMemoryNodes(
   const RvsdgModule&,
   const PointsToGraph & pointsToGraph,
-  StatisticsCollector& statisticsCollector)
+  util::StatisticsCollector& statisticsCollector)
 {
   auto statistics = Statistics::Create(statisticsCollector, pointsToGraph);
   statistics->StartCollecting();
 
-  HashSet<const PointsToGraph::MemoryNode*> memoryNodes;
+  util::HashSet<const PointsToGraph::MemoryNode*> memoryNodes;
   for (auto & allocaNode : pointsToGraph.AllocaNodes())
     memoryNodes.Insert(&allocaNode);
 
@@ -135,7 +135,7 @@ std::unique_ptr<MemoryNodeProvisioning>
 AgnosticMemoryNodeProvider::Create(
   const RvsdgModule & rvsdgModule,
   const PointsToGraph & pointsToGraph,
-  StatisticsCollector & statisticsCollector)
+  util::StatisticsCollector & statisticsCollector)
 {
   AgnosticMemoryNodeProvider provider;
   return provider.ProvisionMemoryNodes(rvsdgModule, pointsToGraph, statisticsCollector);
@@ -146,7 +146,7 @@ AgnosticMemoryNodeProvider::Create(
   const RvsdgModule & rvsdgModule,
   const PointsToGraph & pointsToGraph)
 {
-  StatisticsCollector statisticsCollector;
+  util::StatisticsCollector statisticsCollector;
   return Create(rvsdgModule, pointsToGraph, statisticsCollector);
 }
 

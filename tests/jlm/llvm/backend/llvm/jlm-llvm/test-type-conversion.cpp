@@ -42,7 +42,7 @@ test()
 	llvm::LLVMContext ctx;
 	llvm::Module lm("module", ctx);
 
-	ipgraph_module im(filepath(""), "", "");
+	ipgraph_module im(util::filepath(""), "", "");
 	jlm2llvm::context jctx(im, lm);
 
 	test_structtype(jctx);

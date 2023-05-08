@@ -114,7 +114,7 @@ jlm::hls::gamma_can_be_spec(jive::gamma_node *gamma) {
 					return false;
 				}
 			} else if (dynamic_cast<jive::structural_node *>(node)) {
-				throw jlm::error("Unexpected structural node: " + node->operation().debug_string());
+				throw util::error("Unexpected structural node: " + node->operation().debug_string());
 			}
 		}
 	}

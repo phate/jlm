@@ -20,7 +20,7 @@
 static void
 RunDeadNodeElimination(jlm::RvsdgModule & rvsdgModule)
 {
-  jlm::StatisticsCollector statisticsCollector;
+  jlm::util::StatisticsCollector statisticsCollector;
   jlm::DeadNodeElimination deadNodeElimination;
   deadNodeElimination.run(rvsdgModule, statisticsCollector);
 }
@@ -30,7 +30,7 @@ TestRoot()
 {
 	using namespace jlm;
 
-	RvsdgModule rm(filepath(""), "", "");
+	RvsdgModule rm(util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 	graph.add_import({jlm::valuetype(), "x"});
 	auto y = graph.add_import({jlm::valuetype(), "y"});
@@ -51,7 +51,7 @@ TestGamma()
 	jlm::valuetype vt;
 	jive::ctltype ct(2);
 
-	RvsdgModule rm(filepath(""), "", "");
+	RvsdgModule rm(util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 	auto c = graph.add_import({ct, "c"});
 	auto x = graph.add_import({vt, "x"});
@@ -90,7 +90,7 @@ TestGamma2()
 	jlm::valuetype vt;
 	jive::ctltype ct(2);
 
-	RvsdgModule rm(filepath(""), "", "");
+	RvsdgModule rm(util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 	auto c = graph.add_import({ct, "c"});
 	auto x = graph.add_import({vt, "x"});
@@ -120,7 +120,7 @@ TestTheta()
 	jlm::valuetype vt;
 	jive::ctltype ct(2);
 
-	RvsdgModule rm(filepath(""), "", "");
+	RvsdgModule rm(util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 	auto x = graph.add_import({vt, "x"});
 	auto y = graph.add_import({vt, "y"});
@@ -163,7 +163,7 @@ TestNestedTheta()
 	jlm::valuetype vt;
 	jive::ctltype ct(2);
 
-	RvsdgModule rm(filepath(""), "", "");
+	RvsdgModule rm(util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 	auto c = graph.add_import({ct, "c"});
 	auto x = graph.add_import({vt, "x"});
@@ -207,7 +207,7 @@ TestEvolvingTheta()
 	jlm::valuetype vt;
 	jive::ctltype ct(2);
 
-	RvsdgModule rm(filepath(""), "", "");
+	RvsdgModule rm(util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 	auto c = graph.add_import({ct, "c"});
 	auto x1 = graph.add_import({vt, "x1"});
@@ -245,7 +245,7 @@ TestLambda()
 
 	jlm::valuetype vt;
 
-	RvsdgModule rm(filepath(""), "", "");
+	RvsdgModule rm(util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 	auto x = graph.add_import({vt, "x"});
 	auto y = graph.add_import({vt, "y"});
@@ -277,7 +277,7 @@ TestPhi()
 	jlm::valuetype vt;
 	FunctionType ft({&vt}, {&vt});
 
-	RvsdgModule rm(filepath(""), "", "");
+	RvsdgModule rm(util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 	auto x = graph.add_import({vt, "x"});
 	auto y = graph.add_import({vt, "y"});

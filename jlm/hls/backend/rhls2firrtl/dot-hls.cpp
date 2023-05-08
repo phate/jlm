@@ -195,7 +195,7 @@ jlm::hls::DotHLS::loop_to_dot(hls::loop_node *ln) {
 		} else if (auto ln = dynamic_cast<hls::loop_node *>(node)) {
 			dot << loop_to_dot(ln);
 		} else {
-			throw jlm::error("Unimplemented op (unexpected structural node) : " + node->operation().debug_string());
+			throw jlm::util::error("Unimplemented op (unexpected structural node) : " + node->operation().debug_string());
 		}
 	}
 
@@ -252,7 +252,7 @@ jlm::hls::DotHLS::prepare_loop_out_port(hls::loop_node *ln) {
 		} else if (auto oln = dynamic_cast<hls::loop_node *>(node)) {
 			prepare_loop_out_port(oln);
 		} else {
-			throw jlm::error(
+			throw jlm::util::error(
 					"Unimplemented op (unexpected structural node) : " + node->operation().debug_string());
 		}
 	}
@@ -312,7 +312,7 @@ jlm::hls::DotHLS::subregion_to_dot(jive::region *sr) {
 			prepare_loop_out_port(ln);
 			dot << loop_to_dot(ln);
 		} else {
-			throw jlm::error(
+			throw jlm::util::error(
 					"Unimplemented op (unexpected structural node) : " + node->operation().debug_string());
 		}
 	}

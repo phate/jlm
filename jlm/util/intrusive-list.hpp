@@ -27,9 +27,9 @@
  * class X {
  * private:
  *   int num;
- *   jive::detail::intrusive_list_anchor<X> num_list_anchor;
+ *   jlm::util::intrusive_list_anchor<X> num_list_anchor;
  * public:
- *   typedef jive::detail::intrusive_list_accessor<
+ *   typedef jlm::util::intrusive_list_accessor<
  *     X,                  // element type
  *     &X::num_list_anchor // anchor member
  *   > num_list_accessor;
@@ -37,7 +37,7 @@
  *
  * an intrusive_list data structure can be declared in the following way:
  *
- * typedef jive::detail::intrusive_list<
+ * typedef jlm::util::intrusive_list<
  *   X,
  *   X::num_list_accessor
  * > num_list;
@@ -82,8 +82,8 @@
  *   all elements will be deleted on destruction of the owner_intrusive_list
  */
 
-namespace jive {
-namespace detail {
+namespace jlm::util
+{
 
 template<
 	typename ElementType,
@@ -762,7 +762,6 @@ private:
 	internal_list_type internal_list_;
 };
 
-}
 }
 
 #endif

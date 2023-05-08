@@ -64,7 +64,7 @@ ValidateTest(std::function<void(const Test&)> validateEncoding)
   auto & rvsdgModule = test.module();
   jive::view(rvsdgModule.Rvsdg().root(), stdout);
 
-  jlm::StatisticsCollector statisticsCollector;
+  jlm::util::StatisticsCollector statisticsCollector;
 
   Analysis aliasAnalysis;
   auto pointsToGraph = aliasAnalysis.Analyze(rvsdgModule, statisticsCollector);
@@ -748,7 +748,7 @@ ValidateThetaTestSteensgaardAgnostic(const ThetaTest & test)
   auto lambda_exit_mux = jive::node_output::node(test.lambda->fctresult(0)->origin());
   assert(is<aa::LambdaExitMemStateOperator>(*lambda_exit_mux, 2, 1));
 
-  auto thetaOutput = AssertedCast<jive::theta_output>(lambda_exit_mux->input(0)->origin());
+  auto thetaOutput = util::AssertedCast<jive::theta_output>(lambda_exit_mux->input(0)->origin());
   auto theta = jive::node_output::node(thetaOutput);
   assert(theta == test.theta);
 
@@ -771,7 +771,7 @@ ValidateThetaTestSteensgaardRegionAware(const ThetaTest & test)
   auto lambdaExitMerge = jive::node_output::node(test.lambda->fctresult(0)->origin());
   assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 2, 1));
 
-  auto thetaOutput = AssertedCast<jive::theta_output>(lambdaExitMerge->input(0)->origin());
+  auto thetaOutput = util::AssertedCast<jive::theta_output>(lambdaExitMerge->input(0)->origin());
   auto theta = jive::node_output::node(thetaOutput);
   assert(theta == test.theta);
 

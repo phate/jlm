@@ -27,7 +27,7 @@ bitslice_op::operator==(const operation & other) const noexcept
 std::string
 bitslice_op::debug_string() const
 {
-	return strfmt("SLICE[", low(), ":", high(), ")");
+	return jlm::util::strfmt("SLICE[", low(), ":", high(), ")");
 }
 
 jive_unop_reduction_path_t

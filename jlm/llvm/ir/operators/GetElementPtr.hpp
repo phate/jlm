@@ -126,7 +126,7 @@ private:
   {
     if (!is<PointerType>(type))
     {
-      throw error("Expected pointer type.");
+      throw util::error("Expected pointer type.");
     }
   }
 
@@ -142,7 +142,7 @@ private:
         continue;
       }
 
-      throw error("Expected bitstring type.");
+      throw util::error("Expected bitstring type.");
     }
 
     return offsetTypes;

@@ -21,12 +21,12 @@ namespace jlm::aa {
 /** \brief Steensgaard analysis statistics class
  *
  */
-class SteensgaardAnalysisStatistics final : public Statistics {
+class SteensgaardAnalysisStatistics final : public util::Statistics {
 public:
   ~SteensgaardAnalysisStatistics() override = default;
 
   explicit
-  SteensgaardAnalysisStatistics(jlm::filepath sourceFile)
+  SteensgaardAnalysisStatistics(util::filepath sourceFile)
     : Statistics(Statistics::Id::SteensgaardAnalysis)
     , NumNodesBefore_(0)
     , SourceFile_(std::move(sourceFile))
@@ -48,35 +48,35 @@ public:
   [[nodiscard]] std::string
   ToString() const override
   {
-    return strfmt("SteensgaardAnalysis ",
+    return util::strfmt("SteensgaardAnalysis ",
                   SourceFile_.to_str(), " ",
                   "#RvsdgNodes:", NumNodesBefore_, " ",
                   "Time[ns]:", Timer_.ns());
   }
 
   static std::unique_ptr<SteensgaardAnalysisStatistics>
-  Create(const jlm::filepath & sourceFile)
+  Create(const util::filepath & sourceFile)
   {
     return std::make_unique<SteensgaardAnalysisStatistics>(sourceFile);
   }
 
 private:
   size_t NumNodesBefore_;
-  jlm::filepath SourceFile_;
+  util::filepath SourceFile_;
 
-  jlm::timer Timer_;
+  util::timer Timer_;
 };
 
 /** \brief Steensgaard PointsTo graph construction statistics class
  *
  */
-class SteensgaardPointsToGraphConstructionStatistics final : public Statistics {
+class SteensgaardPointsToGraphConstructionStatistics final : public util::Statistics {
 public:
   ~SteensgaardPointsToGraphConstructionStatistics() override = default;
 
   explicit
-  SteensgaardPointsToGraphConstructionStatistics(jlm::filepath sourceFile)
-    : Statistics(Statistics::Id::SteensgaardPointsToGraphConstruction)
+  SteensgaardPointsToGraphConstructionStatistics(util::filepath sourceFile)
+    : Statistics(util::Statistics::Id::SteensgaardPointsToGraphConstruction)
     , SourceFile_(std::move(sourceFile))
     , NumDisjointSets_(0)
     , NumLocations_(0)
@@ -117,7 +117,7 @@ public:
   [[nodiscard]] std::string
   ToString() const override
   {
-    return strfmt("SteensgaardPointsToGraphConstruction ",
+    return util::strfmt("SteensgaardPointsToGraphConstruction ",
                   SourceFile_.to_str(), " ",
                   "#DisjointSets:", NumDisjointSets_, " ",
                   "#Locations:", NumLocations_, " ",
@@ -134,13 +134,13 @@ public:
   }
 
   static std::unique_ptr<SteensgaardPointsToGraphConstructionStatistics>
-  Create(const jlm::filepath & sourceFile)
+  Create(const util::filepath & sourceFile)
   {
     return std::make_unique<SteensgaardPointsToGraphConstructionStatistics>(sourceFile);
   }
 
 private:
-  jlm::filepath SourceFile_;
+  util::filepath SourceFile_;
 
   size_t NumDisjointSets_;
   size_t NumLocations_;
@@ -154,7 +154,7 @@ private:
   size_t NumMemoryNodes_;
   size_t NumRegisterNodes_;
   size_t NumUnknownMemorySources_;
-  jlm::timer Timer_;
+  util::timer Timer_;
 };
 
 /** \brief Location class
@@ -274,60 +274,60 @@ public:
     if (jive::is<jive::simple_op>(node)) {
       auto nodestr = node->operation().debug_string();
       auto outputstr = Output_->type().debug_string();
-      return strfmt(nodestr, ":", index, "[" + outputstr + "]");
+      return util::strfmt(nodestr, ":", index, "[" + outputstr + "]");
     }
 
     if (is<lambda::cvargument>(Output_)) {
       auto dbgstr = Output_->region()->node()->operation().debug_string();
-      return strfmt(dbgstr, ":cv:", index);
+      return util::strfmt(dbgstr, ":cv:", index);
     }
 
     if (is<lambda::fctargument>(Output_)) {
       auto dbgstr = Output_->region()->node()->operation().debug_string();
-      return strfmt(dbgstr, ":arg:", index);
+      return util::strfmt(dbgstr, ":arg:", index);
     }
 
     if (is<delta::cvargument>(Output_)) {
       auto dbgstr = Output_->region()->node()->operation().debug_string();
-      return strfmt(dbgstr, ":cv:", index);
+      return util::strfmt(dbgstr, ":cv:", index);
     }
 
     if (is_gamma_argument(Output_)) {
       auto dbgstr = Output_->region()->node()->operation().debug_string();
-      return strfmt(dbgstr, ":arg", index);
+      return util::strfmt(dbgstr, ":arg", index);
     }
 
     if (is_theta_argument(Output_)) {
       auto dbgstr = Output_->region()->node()->operation().debug_string();
-      return strfmt(dbgstr, ":arg", index);
+      return util::strfmt(dbgstr, ":arg", index);
     }
 
     if (is_theta_output(Output_)) {
       auto dbgstr = jive::node_output::node(Output_)->operation().debug_string();
-      return strfmt(dbgstr, ":out", index);
+      return util::strfmt(dbgstr, ":out", index);
     }
 
     if (is_gamma_output(Output_)) {
       auto dbgstr = jive::node_output::node(Output_)->operation().debug_string();
-      return strfmt(dbgstr, ":out", index);
+      return util::strfmt(dbgstr, ":out", index);
     }
 
     if (is_import(Output_)) {
-      auto import = AssertedCast<const jive::impport>(&Output_->port());
-      return strfmt("imp:", import->name());
+      auto import = util::AssertedCast<const jive::impport>(&Output_->port());
+      return util::strfmt("imp:", import->name());
     }
 
     if (is<phi::rvargument>(Output_)) {
       auto dbgstr = Output_->region()->node()->operation().debug_string();
-      return strfmt(dbgstr, ":rvarg", index);
+      return util::strfmt(dbgstr, ":rvarg", index);
     }
 
     if (is<phi::cvargument>(Output_)) {
       auto dbgstr = Output_->region()->node()->operation().debug_string();
-      return strfmt(dbgstr, ":cvarg", index);
+      return util::strfmt(dbgstr, ":cvarg", index);
     }
 
-    return strfmt(jive::node_output::node(Output_)->operation().debug_string(), ":", index);
+    return util::strfmt(jive::node_output::node(Output_)->operation().debug_string(), ":", index);
   }
 
   [[nodiscard]] static bool
@@ -548,7 +548,7 @@ public:
   static std::unique_ptr<Location>
   Create(const jive::argument & argument)
   {
-    auto & rvsdgImport = *AssertedCast<const impport>(&argument.port());
+    auto & rvsdgImport = *util::AssertedCast<const impport>(&argument.port());
     bool pointsToUnknownMemory = is<PointerType>(rvsdgImport.GetValueType());
     /**
      * FIXME: We use pointsToUnknownMemory for pointsToExternalMemory
@@ -737,26 +737,26 @@ LocationSet::ToDot() const
       auto unknownLabel = location->PointsToUnknownMemory() ? "{U}" : "";
       auto pointsToEscapedMemoryLabel = location->PointsToEscapedMemory() ? "{E}" : "";
       auto escapesModuleLabel = RegisterLocation::IsEscapingModule(*location) ? "{EscapesModule}" : "";
-      auto pointsToLabel = strfmt("{pt:", (intptr_t) location->GetPointsTo(), "}");
-      auto locationLabel = strfmt((intptr_t)location, " : ", location->DebugString());
+      auto pointsToLabel = util::strfmt("{pt:", (intptr_t) location->GetPointsTo(), "}");
+      auto locationLabel = util::strfmt((intptr_t)location, " : ", location->DebugString());
 
       setLabel += location == rootLocation
-        ? strfmt("*",
+        ? util::strfmt("*",
                  locationLabel,
                  unknownLabel,
                  pointsToEscapedMemoryLabel,
                  escapesModuleLabel,
                  pointsToLabel,
                  "*\\n")
-        : strfmt(locationLabel, escapesModuleLabel, "\\n");
+        : util::strfmt(locationLabel, escapesModuleLabel, "\\n");
     }
 
-    return strfmt("{ ", (intptr_t)&set, " [label = \"", setLabel, "\"]; }");
+    return util::strfmt("{ ", (intptr_t)&set, " [label = \"", setLabel, "\"]; }");
   };
 
   auto dot_edge = [&](const DisjointLocationSet::set & set, const DisjointLocationSet::set & pointsToSet)
   {
-    return strfmt((intptr_t)&set, " -> ", (intptr_t)&pointsToSet);
+    return util::strfmt((intptr_t)&set, " -> ", (intptr_t)&pointsToSet);
   };
 
   std::string str;
@@ -814,9 +814,9 @@ Steensgaard::join(Location & x, Location & y)
 void
 Steensgaard::Analyze(const jive::simple_node & node)
 {
-  auto AnalyzeCall  = [](auto & s, auto & n) { s.AnalyzeCall(*AssertedCast<const CallNode>(&n)); };
-  auto AnalyzeLoad  = [](auto & s, auto & n) { s.AnalyzeLoad(*AssertedCast<const LoadNode>(&n)); };
-  auto AnalyzeStore = [](auto & s, auto & n) { s.AnalyzeStore(*AssertedCast<const StoreNode>(&n)); };
+  auto AnalyzeCall  = [](auto & s, auto & n) { s.AnalyzeCall(*util::AssertedCast<const CallNode>(&n)); };
+  auto AnalyzeLoad  = [](auto & s, auto & n) { s.AnalyzeLoad(*util::AssertedCast<const LoadNode>(&n)); };
+  auto AnalyzeStore = [](auto & s, auto & n) { s.AnalyzeStore(*util::AssertedCast<const StoreNode>(&n)); };
 
   static std::unordered_map<
     std::type_index
@@ -1509,7 +1509,7 @@ Steensgaard::Analyze(jive::region & region)
       continue;
     }
 
-    Analyze(*AssertedCast<const structural_node>(node));
+    Analyze(*util::AssertedCast<const structural_node>(node));
   }
 }
 
@@ -1551,7 +1551,7 @@ Steensgaard::Analyze(const jive::graph & graph)
 std::unique_ptr<PointsToGraph>
 Steensgaard::Analyze(
   const RvsdgModule & module,
-  StatisticsCollector & statisticsCollector)
+  util::StatisticsCollector & statisticsCollector)
 {
   ResetState();
   auto steensgaardStatistics = SteensgaardAnalysisStatistics::Create(module.SourceFileName());
@@ -1615,7 +1615,7 @@ Steensgaard::ConstructPointsToGraph(const LocationSet & locationSets)
   auto FindModuleEscapingMemoryNodes = [](
     std::unordered_set<RegisterLocation*> & moduleEscapingRegisterLocations,
     const LocationSet & locationSets,
-    const std::unordered_map<const disjointset<Location*>::set*, std::vector<PointsToGraph::MemoryNode*>> & memoryNodeMap)
+    const std::unordered_map<const util::disjointset<Location*>::set*, std::vector<PointsToGraph::MemoryNode*>> & memoryNodeMap)
   {
     /*
      * Initialize our working set.
@@ -1634,7 +1634,7 @@ Steensgaard::ConstructPointsToGraph(const LocationSet & locationSets)
     /*
      * Collect escaping memory nodes.
      */
-    HashSet<const LocationSet::DisjointLocationSet::set*> visitedSets;
+    util::HashSet<const LocationSet::DisjointLocationSet::set*> visitedSets;
     std::unordered_set<PointsToGraph::MemoryNode*> escapedMemoryNodes;
     while (!toVisit.empty()) {
       auto moduleEscapingLocation = *toVisit.begin();
@@ -1668,7 +1668,7 @@ Steensgaard::ConstructPointsToGraph(const LocationSet & locationSets)
 
 
   std::unordered_map<const Location*, PointsToGraph::Node*> locationMap;
-  std::unordered_map<const disjointset<Location*>::set*, std::vector<PointsToGraph::MemoryNode*>> memoryNodeMap;
+  std::unordered_map<const util::disjointset<Location*>::set*, std::vector<PointsToGraph::MemoryNode*>> memoryNodeMap;
   std::unordered_set<RegisterLocation*> moduleEscapingRegisterLocations;
 
   /*
@@ -1692,7 +1692,7 @@ Steensgaard::ConstructPointsToGraph(const LocationSet & locationSets)
         memoryNodeMap[&locationSet].push_back(memoryNode);
 
       if (RegisterLocation::IsEscapingModule(*location))
-        moduleEscapingRegisterLocations.insert(AssertedCast<RegisterLocation>(location));
+        moduleEscapingRegisterLocations.insert(util::AssertedCast<RegisterLocation>(location));
     }
   }
 

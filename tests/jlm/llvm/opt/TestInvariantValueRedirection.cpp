@@ -18,7 +18,7 @@
 static void
 RunInvariantValueRedirection(jlm::RvsdgModule & rvsdgModule)
 {
-  jlm::StatisticsCollector statisticsCollector;
+  jlm::util::StatisticsCollector statisticsCollector;
   jlm::InvariantValueRedirection invariantValueRedirection;
   invariantValueRedirection.run(rvsdgModule, statisticsCollector);
 }
@@ -33,7 +33,7 @@ TestGamma()
     jlm::valuetype valueType;
     jive::ctltype controlType(2);
 
-    auto rvsdgModule = RvsdgModule::Create(filepath(""), "", "");
+    auto rvsdgModule = RvsdgModule::Create(util::filepath(""), "", "");
     auto & graph = rvsdgModule->Rvsdg();
     auto c = graph.add_import({controlType, "c"});
     auto x = graph.add_import({valueType, "x"});
@@ -90,7 +90,7 @@ TestTheta()
     jlm::valuetype valueType;
     jive::ctltype controlType(2);
 
-    auto rvsdgModule = RvsdgModule::Create(filepath(""), "", "");
+    auto rvsdgModule = RvsdgModule::Create(util::filepath(""), "", "");
     auto & graph = rvsdgModule->Rvsdg();
     auto c = graph.add_import({controlType, "c"});
     auto x = graph.add_import({valueType, "x"});

@@ -40,7 +40,7 @@ bit ## NAME ## _op::flags() const noexcept \
 std::string \
 bit ## NAME ## _op::debug_string() const \
 { \
-	return strfmt(#DEBUG_STRING, type().nbits()); \
+	return jlm::util::strfmt(#DEBUG_STRING, type().nbits()); \
 } \
 \
 std::unique_ptr<jive::operation> \

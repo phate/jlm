@@ -18,13 +18,13 @@
 
 namespace jlm {
 
-class rvsdg_destruction_stat final : public Statistics {
+class rvsdg_destruction_stat final : public util::Statistics {
 public:
 	virtual
 	~rvsdg_destruction_stat()
 	{}
 
-	rvsdg_destruction_stat(const jlm::filepath & filename)
+	rvsdg_destruction_stat(const util::filepath & filename)
 	: Statistics(Statistics::Id::RvsdgDestruction)
   , ntacs_(0)
 	, nnodes_(0)
@@ -48,7 +48,7 @@ public:
 	virtual std::string
 	ToString() const override
 	{
-		return strfmt("RVSDGDESTRUCTION ",
+		return util::strfmt("RVSDGDESTRUCTION ",
 			filename_.to_str(), " ",
 			nnodes_, " ", ntacs_, " ",
 			timer_.ns()
@@ -56,7 +56,7 @@ public:
 	}
 
   static std::unique_ptr<rvsdg_destruction_stat>
-  Create(const jlm::filepath & sourceFile)
+  Create(const util::filepath & sourceFile)
   {
     return std::make_unique<rvsdg_destruction_stat>(sourceFile);
   }
@@ -64,8 +64,8 @@ public:
 private:
 	size_t ntacs_;
 	size_t nnodes_;
-	jlm::timer timer_;
-	jlm::filepath filename_;
+	util::timer timer_;
+	util::filepath filename_;
 };
 
 namespace rvsdg2jlm {
@@ -576,7 +576,7 @@ convert_rvsdg(const RvsdgModule & rm)
 std::unique_ptr<ipgraph_module>
 rvsdg2jlm(
   const RvsdgModule & rm,
-  StatisticsCollector & statisticsCollector)
+  util::StatisticsCollector & statisticsCollector)
 {
 	auto statistics = rvsdg_destruction_stat::Create(rm.SourceFileName());
 

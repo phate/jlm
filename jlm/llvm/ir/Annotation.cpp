@@ -37,7 +37,7 @@ EntryAnnotationSet::~EntryAnnotationSet() noexcept
 std::string
 EntryAnnotationSet::DebugString() const noexcept
 {
-  return strfmt("ReadSet:", ReadSet().DebugString(), " ",
+  return util::strfmt("ReadSet:", ReadSet().DebugString(), " ",
                 "AllWriteSet:", AllWriteSet().DebugString(), " ",
                 "FullWriteSet:", FullWriteSet().DebugString(), " ",
                 "TopSet:", TopSet_.DebugString(), " ");
@@ -58,7 +58,7 @@ ExitAnnotationSet::~ExitAnnotationSet() noexcept
 std::string
 ExitAnnotationSet::DebugString() const noexcept
 {
-  return strfmt("ReadSet:", ReadSet().DebugString(), " ",
+  return util::strfmt("ReadSet:", ReadSet().DebugString(), " ",
                 "AllWriteSet:", AllWriteSet().DebugString(), " ",
                 "FullWriteSet:", FullWriteSet().DebugString(), " ");
 }
@@ -77,7 +77,7 @@ BasicBlockAnnotationSet::~BasicBlockAnnotationSet() noexcept
 std::string
 BasicBlockAnnotationSet::DebugString() const noexcept
 {
-  return strfmt("ReadSet:", ReadSet().DebugString(), " ",
+  return util::strfmt("ReadSet:", ReadSet().DebugString(), " ",
                 "AllWriteSet:", AllWriteSet().DebugString(), " ",
                 "FullWriteSet:", FullWriteSet().DebugString(), " ");
 }
@@ -96,7 +96,7 @@ LinearAnnotationSet::~LinearAnnotationSet() noexcept
 std::string
 LinearAnnotationSet::DebugString() const noexcept
 {
-  return strfmt("ReadSet:", ReadSet().DebugString(), " ",
+  return util::strfmt("ReadSet:", ReadSet().DebugString(), " ",
                 "AllWriteSet:", AllWriteSet().DebugString(), " ",
                 "FullWriteSet:", FullWriteSet().DebugString(), " ");
 }
@@ -115,7 +115,7 @@ BranchAnnotationSet::~BranchAnnotationSet() noexcept
 std::string
 BranchAnnotationSet::DebugString() const noexcept
 {
-  return strfmt("ReadSet:", ReadSet().DebugString(), " ",
+  return util::strfmt("ReadSet:", ReadSet().DebugString(), " ",
                 "AllWriteSet:", AllWriteSet().DebugString(), " ",
                 "FullWriteSet:", FullWriteSet().DebugString(), " ",
                 "TopSet:", InputVariables().DebugString(), " ",
@@ -138,7 +138,7 @@ LoopAnnotationSet::~LoopAnnotationSet() noexcept
 std::string
 LoopAnnotationSet::DebugString() const noexcept
 {
-  return strfmt("ReadSet:", ReadSet().DebugString(), " ",
+  return util::strfmt("ReadSet:", ReadSet().DebugString(), " ",
                 "AllWriteSet:", AllWriteSet().DebugString(), " ",
                 "FullWriteSet:", FullWriteSet().DebugString(), " ",
                 "LoopVariables:", LoopVariables_.DebugString(), " ");

@@ -5,7 +5,8 @@
 
 #include <jlm/util/callbacks.hpp>
 
-namespace jive {
+namespace jlm::util
+{
 
 callback::callback_impl::~callback_impl() noexcept {}
 

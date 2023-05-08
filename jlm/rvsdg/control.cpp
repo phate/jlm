@@ -24,13 +24,13 @@ ctltype::ctltype(size_t nalternatives)
 , nalternatives_(nalternatives)
 {
 	if (nalternatives == 0)
-		throw jlm::error("Alternatives of a control type must be non-zero.");
+		throw jlm::util::error("Alternatives of a control type must be non-zero.");
 }
 
 std::string
 ctltype::debug_string() const
 {
-	return strfmt("ctl(", nalternatives_, ")");
+	return jlm::util::strfmt("ctl(", nalternatives_, ")");
 }
 
 bool
@@ -55,7 +55,7 @@ ctlvalue_repr::ctlvalue_repr(size_t alternative, size_t nalternatives)
 , nalternatives_(nalternatives)
 {
 	if (alternative >= nalternatives)
-		throw jlm::error("Alternative is bigger than the number of possible alternatives.");
+		throw jlm::util::error("Alternative is bigger than the number of possible alternatives.");
 }
 
 /* match operator */
@@ -110,8 +110,8 @@ match_op::debug_string() const
 {
 	std::string str("[");
 	for (const auto & pair : mapping_)
-		str += strfmt(pair.first, " -> ", pair.second, ", ");
-	str += strfmt(default_alternative_, "]");
+		str += jlm::util::strfmt(pair.first, " -> ", pair.second, ", ");
+	str += jlm::util::strfmt(default_alternative_, "]");
 
 	return "MATCH" + str;
 }

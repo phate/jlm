@@ -170,7 +170,7 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
     }
 
     if (is<lambda::cvargument>(origin)) {
-      auto argument = AssertedCast<const jive::argument>(origin);
+      auto argument = util::AssertedCast<const jive::argument>(origin);
       origin = argument->input()->origin();
       continue;
     }
@@ -208,7 +208,7 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
     }
 
     if (is_phi_cv(origin)) {
-      auto argument = AssertedCast<const jive::argument>(origin);
+      auto argument = util::AssertedCast<const jive::argument>(origin);
       origin = argument->input()->origin();
       continue;
     }

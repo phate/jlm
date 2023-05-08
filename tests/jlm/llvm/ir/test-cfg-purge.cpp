@@ -15,7 +15,7 @@ test()
 {
 	using namespace jlm;
 
-	ipgraph_module module(filepath(""), "", "");
+	ipgraph_module module(util::filepath(""), "", "");
 
 	jlm::cfg cfg(module);
 	auto bb0 = basic_block::create(cfg);

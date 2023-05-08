@@ -15,14 +15,14 @@
 #include <jlm/util/Statistics.hpp>
 
 static const jlm::valuetype vt;
-static jlm::StatisticsCollector statisticsCollector;
+static jlm::util::StatisticsCollector statisticsCollector;
 
 static inline void
 test1()
 {
 	using namespace jlm;
 
-	RvsdgModule rm(filepath(""), "", "");
+	RvsdgModule rm(util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 
 	auto x = graph.add_import({vt, "x"});
@@ -72,7 +72,7 @@ test2()
 {
 	using namespace jlm;
 
-	RvsdgModule rm(filepath(""), "", "");
+	RvsdgModule rm(util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 
 	auto x = graph.add_import({vt, "x"});

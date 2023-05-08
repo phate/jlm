@@ -17,7 +17,7 @@ test()
 
 	/* setup cfg */
 
-	ipgraph_module im(filepath(""), "", "");
+	ipgraph_module im(util::filepath(""), "", "");
 
 	jlm::cfg cfg(im);
 	auto bb0 = basic_block::create(cfg);

@@ -85,11 +85,11 @@ jlm::hls::dne(jlm::RvsdgModule &rm) {
 	auto &graph = rm.Rvsdg();
 	auto root = graph.root();
 	if (root->nodes.size() != 1) {
-		throw jlm::error("Root should have only one node now");
+		throw util::error("Root should have only one node now");
 	}
 	auto ln = dynamic_cast<const jlm::lambda::node *>(root->nodes.begin().ptr());
 	if (!ln) {
-		throw jlm::error("Node needs to be a lambda");
+		throw util::error("Node needs to be a lambda");
 	}
 	dne(ln->subregion());
 }

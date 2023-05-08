@@ -24,7 +24,7 @@ test()
 	valuetype vt;
 	PointerType pt;
 
-	RvsdgModule rm(filepath(""), "", "");
+	RvsdgModule rm(util::filepath(""), "", "");
 
 	/* setup graph */
 	auto imp = rm.Rvsdg().add_import(impport(vt, "", linkage::external_linkage));
@@ -71,7 +71,7 @@ test()
 
 	jive::view(rm.Rvsdg(), stdout);
 
-	StatisticsCollector statisticsCollector;
+	util::StatisticsCollector statisticsCollector;
 	auto module = rvsdg2jlm::rvsdg2jlm(rm, statisticsCollector);
 	jlm::print(*module, stdout);
 

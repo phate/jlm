@@ -99,8 +99,8 @@ public:
   ~ClangCommand() override;
 
   ClangCommand(
-    std::vector<jlm::filepath> inputFiles,
-    filepath outputFile,
+    std::vector<util::filepath> inputFiles,
+    util::filepath outputFile,
     std::vector<std::string> libraryPaths,
     std::vector<std::string> libraries,
     bool usePthreads)
@@ -119,9 +119,9 @@ public:
   {}
 
   ClangCommand(
-    const jlm::filepath & inputFile,
-    filepath outputFile,
-    filepath dependencyFile,
+    const util::filepath & inputFile,
+    util::filepath outputFile,
+    util::filepath dependencyFile,
     std::vector<std::string> includePaths,
     std::vector<std::string> macroDefinitions,
     std::vector<std::string> warnings,
@@ -159,13 +159,13 @@ public:
   void
   Run() const override;
 
-  [[nodiscard]] const filepath &
+  [[nodiscard]] const util::filepath &
   OutputFile() const noexcept
   {
     return OutputFile_;
   }
 
-  [[nodiscard]] const std::vector<filepath> &
+  [[nodiscard]] const std::vector<util::filepath> &
   InputFiles() const noexcept
   {
     return InputFiles_;
@@ -174,8 +174,8 @@ public:
   static CommandGraph::Node &
   CreateLinkerCommand(
     CommandGraph & commandGraph,
-    const std::vector<jlm::filepath> & inputFiles,
-    const filepath & outputFile,
+    const std::vector<util::filepath> & inputFiles,
+    const util::filepath & outputFile,
     const std::vector<std::string> & libraryPaths,
     const std::vector<std::string> & libraries,
     bool usePthreads)
@@ -192,9 +192,9 @@ public:
   static CommandGraph::Node &
   CreateParsingCommand(
     CommandGraph & commandGraph,
-    const filepath & inputFile,
-    const filepath & outputFile,
-    const filepath & dependencyFile,
+    const util::filepath & inputFile,
+    const util::filepath & outputFile,
+    const util::filepath & dependencyFile,
     const std::vector<std::string> & includePaths,
     const std::vector<std::string> & macroDefinitions,
     const std::vector<std::string> & warnings,
@@ -237,9 +237,9 @@ private:
   static std::string
   ReplaceAll(std::string str, const std::string& from, const std::string& to);
 
-  std::vector<filepath> InputFiles_;
-  filepath OutputFile_;
-  filepath DependencyFile_;
+  std::vector<util::filepath> InputFiles_;
+  util::filepath OutputFile_;
+  util::filepath DependencyFile_;
 
   std::vector<std::string> IncludePaths_;
   std::vector<std::string> MacroDefinitions_;
@@ -281,8 +281,8 @@ public:
   ~LlcCommand() override;
 
   LlcCommand(
-    filepath inputFile,
-    filepath outputFile,
+    util::filepath inputFile,
+    util::filepath outputFile,
     const OptimizationLevel & optimizationLevel,
     const RelocationModel & relocationModel)
     : OptimizationLevel_(optimizationLevel)
@@ -297,7 +297,7 @@ public:
   void
   Run() const override;
 
-  [[nodiscard]] const filepath &
+  [[nodiscard]] const util::filepath &
   OutputFile() const noexcept
   {
     return OutputFile_;
@@ -306,8 +306,8 @@ public:
   static CommandGraph::Node &
   Create(
     CommandGraph & commandGraph,
-    const filepath & inputFile,
-    const filepath & outputFile,
+    const util::filepath & inputFile,
+    const util::filepath & outputFile,
     const OptimizationLevel & optimizationLevel,
     const RelocationModel & relocationModel)
   {
@@ -328,8 +328,8 @@ private:
 
   OptimizationLevel OptimizationLevel_;
   RelocationModel RelocationModel_;
-  filepath InputFile_;
-  filepath OutputFile_;
+  util::filepath InputFile_;
+  util::filepath OutputFile_;
 };
 
 /**
@@ -354,8 +354,8 @@ public:
   ~JlmOptCommand() override;
 
   JlmOptCommand(
-    filepath inputFile,
-    filepath outputFile,
+    util::filepath inputFile,
+    util::filepath outputFile,
     std::vector<Optimization> optimizations)
     : InputFile_(std::move(inputFile))
     , OutputFile_(std::move(outputFile))
@@ -371,8 +371,8 @@ public:
   static CommandGraph::Node &
   Create(
     CommandGraph & commandGraph,
-    const filepath & inputFile,
-    const filepath & outputFile,
+    const util::filepath & inputFile,
+    const util::filepath & outputFile,
     const std::vector<Optimization> & optimizations)
   {
     std::unique_ptr<JlmOptCommand> command(new JlmOptCommand(inputFile, outputFile, optimizations));
@@ -385,8 +385,8 @@ private:
   static std::string
   ToString(const Optimization & optimization);
 
-  filepath InputFile_;
-  filepath OutputFile_;
+  util::filepath InputFile_;
+  util::filepath OutputFile_;
   std::vector<Optimization> Optimizations_;
 };
 
@@ -398,7 +398,7 @@ public:
   ~MkdirCommand() noexcept override;
 
   explicit
-  MkdirCommand(filepath path)
+  MkdirCommand(util::filepath path)
     : Path_(std::move(path))
   {}
 
@@ -411,14 +411,14 @@ public:
   static CommandGraph::Node &
   Create(
     CommandGraph & commandGraph,
-    const filepath & path)
+    const util::filepath & path)
   {
     std::unique_ptr<MkdirCommand> command(new MkdirCommand(path));
     return CommandGraph::Node::Create(commandGraph, std::move(command));
   }
 
 private:
-  filepath Path_;
+  util::filepath Path_;
 };
 
 /**
@@ -433,8 +433,8 @@ public:
   ~LlvmOptCommand() noexcept override;
 
   LlvmOptCommand(
-    filepath inputFile,
-    filepath outputFile,
+    util::filepath inputFile,
+    util::filepath outputFile,
     bool writeLlvmAssembly,
     std::vector<Optimization> optimizations)
     : InputFile_(std::move(inputFile))
@@ -446,7 +446,7 @@ public:
   [[nodiscard]] std::string
   ToString() const override;
 
-  [[nodiscard]] const filepath &
+  [[nodiscard]] const util::filepath &
   OutputFile() const noexcept
   {
     return OutputFile_;
@@ -458,8 +458,8 @@ public:
   static CommandGraph::Node &
   Create(
     CommandGraph & commandGraph,
-    const filepath & inputFile,
-    const filepath & outputFile,
+    const util::filepath & inputFile,
+    const util::filepath & outputFile,
     bool writeLlvmAssembly,
     const std::vector<Optimization> & optimizations)
   {
@@ -475,8 +475,8 @@ private:
   static std::string
   ToString(const Optimization & optimization);
 
-  filepath InputFile_;
-  filepath OutputFile_;
+  util::filepath InputFile_;
+  util::filepath OutputFile_;
 
   bool WriteLlvmAssembly_;
 
@@ -491,8 +491,8 @@ public:
   ~LlvmLinkCommand() noexcept override;
 
   LlvmLinkCommand(
-    std::vector<filepath> inputFiles,
-    filepath outputFile,
+    std::vector<util::filepath> inputFiles,
+    util::filepath outputFile,
     bool writeLlvmAssembly,
     bool verbose)
     : OutputFile_(std::move(outputFile))
@@ -507,13 +507,13 @@ public:
   void
   Run() const override;
 
-  [[nodiscard]] const filepath &
+  [[nodiscard]] const util::filepath &
   OutputFile() const noexcept
   {
     return OutputFile_;
   }
 
-  [[nodiscard]] const std::vector<filepath> &
+  [[nodiscard]] const std::vector<util::filepath> &
   InputFiles() const noexcept
   {
     return InputFiles_;
@@ -522,8 +522,8 @@ public:
   static CommandGraph::Node &
   Create(
     CommandGraph & commandGraph,
-    const std::vector<filepath> & inputFiles,
-    const filepath & outputFile,
+    const std::vector<util::filepath> & inputFiles,
+    const util::filepath & outputFile,
     bool writeLlvmAssembly,
     bool verbose)
   {
@@ -536,8 +536,8 @@ public:
   }
 
 private:
-  filepath OutputFile_;
-  std::vector<filepath> InputFiles_;
+  util::filepath OutputFile_;
+  std::vector<util::filepath> InputFiles_;
 
   bool WriteLlvmAssembly_;
   bool Verbose_;
@@ -551,8 +551,8 @@ public:
   ~JlmHlsCommand() noexcept override;
 
   JlmHlsCommand(
-    filepath inputFile,
-    filepath outputFolder,
+    util::filepath inputFile,
+    util::filepath outputFolder,
     bool useCirct)
     : InputFile_(std::move(inputFile))
     , OutputFolder_(std::move(outputFolder))
@@ -565,25 +565,25 @@ public:
   void
   Run() const override;
 
-  [[nodiscard]] filepath
+  [[nodiscard]] util::filepath
   FirrtlFile() const noexcept
   {
     return OutputFolder_.to_str() + "/jlm_hls.fir";
   }
 
-  [[nodiscard]] filepath
+  [[nodiscard]] util::filepath
   LlvmFile() const noexcept
   {
     return OutputFolder_.to_str() + "/jlm_hls_rest.ll";
   }
 
-  [[nodiscard]] filepath
+  [[nodiscard]] util::filepath
   HarnessFile() const noexcept
   {
     return OutputFolder_.to_str() + "/jlm_hls_harness.cpp";
   }
 
-  [[nodiscard]] const filepath &
+  [[nodiscard]] const util::filepath &
   InputFile() const noexcept
   {
     return InputFile_;
@@ -592,8 +592,8 @@ public:
   static CommandGraph::Node &
   Create(
     CommandGraph & commandGraph,
-    const filepath & inputFile,
-    const filepath & outputFolder,
+    const util::filepath & inputFile,
+    const util::filepath & outputFolder,
     bool useCirct)
   {
     std::unique_ptr<JlmHlsCommand> command(new JlmHlsCommand(
@@ -604,8 +604,8 @@ public:
   }
 
 private:
-  filepath InputFile_;
-  filepath OutputFolder_;
+  util::filepath InputFile_;
+  util::filepath OutputFolder_;
   bool UseCirct_;
 };
 
@@ -618,8 +618,8 @@ public:
   ~JlmHlsExtractCommand() noexcept override;
 
   JlmHlsExtractCommand(
-    filepath inputFile,
-    filepath outputFolder,
+    util::filepath inputFile,
+    util::filepath outputFolder,
     std::string hlsFunctionName)
     : InputFile_(std::move(inputFile))
     , OutputFolder_(std::move(outputFolder))
@@ -632,19 +632,19 @@ public:
   void
   Run() const override;
 
-  [[nodiscard]] filepath
+  [[nodiscard]] util::filepath
   HlsFunctionFile() const noexcept
   {
     return OutputFolder_.to_str() + "/jlm_hls_function.ll";
   }
 
-  [[nodiscard]] filepath
+  [[nodiscard]] util::filepath
   LlvmFile() const noexcept
   {
     return OutputFolder_.to_str() + "/jlm_hls_rest.ll";
   }
 
-  [[nodiscard]] const filepath &
+  [[nodiscard]] const util::filepath &
   InputFile() const noexcept
   {
     return InputFile_;
@@ -659,9 +659,9 @@ public:
   static CommandGraph::Node &
   Create(
     CommandGraph & commandGraph,
-    const filepath & inputFile,
+    const util::filepath & inputFile,
     const std::string & hlsFunctionName,
-    const filepath & outputFolder)
+    const util::filepath & outputFolder)
   {
     std::unique_ptr<JlmHlsExtractCommand> command(new JlmHlsExtractCommand(
       inputFile,
@@ -671,8 +671,8 @@ public:
   }
 
 private:
-  filepath InputFile_;
-  filepath OutputFolder_;
+  util::filepath InputFile_;
+  util::filepath OutputFolder_;
 
   std::string HlsFunctionName_;
 
@@ -686,8 +686,8 @@ public:
   ~FirtoolCommand() noexcept override;
 
   FirtoolCommand(
-    filepath inputFile,
-    filepath outputFile)
+    util::filepath inputFile,
+    util::filepath outputFile)
     : OutputFile_(std::move(outputFile))
     , InputFile_(std::move(inputFile))
   {}
@@ -698,13 +698,13 @@ public:
   void
   Run() const override;
 
-  [[nodiscard]] const filepath &
+  [[nodiscard]] const util::filepath &
   OutputFile() const noexcept
   {
     return OutputFile_;
   }
 
-  [[nodiscard]] const filepath &
+  [[nodiscard]] const util::filepath &
   InputFile() const noexcept
   {
     return InputFile_;
@@ -713,16 +713,16 @@ public:
   static CommandGraph::Node &
   Create(
     CommandGraph & commandGraph,
-    const filepath & inputFile,
-    const filepath & outputFile)
+    const util::filepath & inputFile,
+    const util::filepath & outputFile)
   {
     std::unique_ptr<FirtoolCommand> command(new FirtoolCommand(inputFile, outputFile));
     return CommandGraph::Node::Create(commandGraph, std::move(command));
   }
 
 private:
-  filepath OutputFile_;
-  filepath InputFile_;
+  util::filepath OutputFile_;
+  util::filepath InputFile_;
 };
 
 /**
@@ -733,11 +733,11 @@ public:
   ~VerilatorCommand() noexcept override;
 
   VerilatorCommand(
-    filepath verilogFile,
-    std::vector<jlm::filepath> objectFiles,
-    filepath harnessFile,
-    filepath outputFile,
-    filepath tempFolder,
+    util::filepath verilogFile,
+    std::vector<util::filepath> objectFiles,
+    util::filepath harnessFile,
+    util::filepath outputFile,
+    util::filepath tempFolder,
     std::vector<std::string> libraryPaths,
     std::vector<std::string> libraries)
     : OutputFile_(std::move(outputFile))
@@ -755,25 +755,25 @@ public:
   void
   Run() const override;
 
-  [[nodiscard]] const filepath &
+  [[nodiscard]] const util::filepath &
   VerilogFile() const noexcept
   {
     return VerilogFile_;
   }
 
-  [[nodiscard]] const filepath &
+  [[nodiscard]] const util::filepath &
   HarnessFile() const noexcept
   {
     return HarnessFile_;
   }
 
-  [[nodiscard]] const filepath &
+  [[nodiscard]] const util::filepath &
   OutputFile() const noexcept
   {
     return OutputFile_;
   }
 
-  [[nodiscard]] const std::vector<jlm::filepath> &
+  [[nodiscard]] const std::vector<util::filepath> &
   ObjectFiles() const noexcept
   {
     return ObjectFiles_;
@@ -782,11 +782,11 @@ public:
   static CommandGraph::Node &
   Create(
     CommandGraph & commandGraph,
-    const filepath & verilogFile,
-    const std::vector<filepath> & objectFiles,
-    const filepath & harnessFile,
-    const filepath & outputFile,
-    const filepath & tempFolder,
+    const util::filepath & verilogFile,
+    const std::vector<util::filepath> & objectFiles,
+    const util::filepath & harnessFile,
+    const util::filepath & outputFile,
+    const util::filepath & tempFolder,
     const std::vector<std::string> & libraryPaths,
     const std::vector<std::string> & libraries)
   {
@@ -802,12 +802,12 @@ public:
   }
 
 private:
-  filepath OutputFile_;
-  jlm::filepath VerilogFile_;
-  jlm::filepath HarnessFile_;
-  jlm::filepath TempFolder_;
+  util::filepath OutputFile_;
+  util::filepath VerilogFile_;
+  util::filepath HarnessFile_;
+  util::filepath TempFolder_;
   std::vector<std::string> Libraries_;
-  std::vector<jlm::filepath> ObjectFiles_;
+  std::vector<util::filepath> ObjectFiles_;
   std::vector<std::string> LibraryPaths_;
 };
 

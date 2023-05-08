@@ -47,7 +47,7 @@ cfg::remove_node(cfg::iterator & nodeit)
 
 	for (auto & inedge : nodeit->inedges()) {
 		if (inedge->source() != nodeit.node())
-			throw jlm::error("cannot remove node. It has still incoming edges.");
+			throw util::error("cannot remove node. It has still incoming edges.");
 	}
 
 	nodeit->remove_outedges();

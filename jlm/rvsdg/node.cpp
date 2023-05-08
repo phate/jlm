@@ -30,10 +30,10 @@ input::input(
 , port_(port.copy())
 {
 	if (region != origin->region())
-		throw jlm::error("Invalid operand region.");
+		throw jlm::util::error("Invalid operand region.");
 
 	if (port.type() != origin->type())
-		throw jlm::type_error(port.type().debug_string(), origin->type().debug_string());
+		throw jlm::util::type_error(port.type().debug_string(), origin->type().debug_string());
 
 	origin->add_user(this);
 }
@@ -41,7 +41,7 @@ input::input(
 std::string
 input::debug_string() const
 {
-	return strfmt(index());
+	return jlm::util::strfmt(index());
 }
 
 void
@@ -51,10 +51,10 @@ input::divert_to(jive::output * new_origin)
 		return;
 
 	if (type() != new_origin->type())
-		throw jlm::type_error(type().debug_string(), new_origin->type().debug_string());
+		throw jlm::util::type_error(type().debug_string(), new_origin->type().debug_string());
 
 	if (region() != new_origin->region())
-		throw jlm::error("Invalid operand region.");
+		throw jlm::util::error("Invalid operand region.");
 
 	auto old_origin = origin();
 	old_origin->remove_user(this);
@@ -95,7 +95,7 @@ output::output(
 std::string
 output::debug_string() const
 {
-	return strfmt(index());
+	return jlm::util::strfmt(index());
 }
 
 void

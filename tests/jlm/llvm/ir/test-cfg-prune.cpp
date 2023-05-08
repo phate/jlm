@@ -23,7 +23,7 @@ test()
 
 	/* setup cfg */
 
-	ipgraph_module im(filepath(""), "", "");
+	ipgraph_module im(util::filepath(""), "", "");
 
 	jlm::cfg cfg(im);
 	auto arg = cfg.entry()->append_argument(argument::create("arg", vt));

@@ -33,7 +33,7 @@ struct my_accessor {
 	void set_next(my_item * item, my_item * next) const noexcept { item->hash_chain.next = next; }
 };
 
-typedef jive::detail::intrusive_hash<
+typedef jlm::util::intrusive_hash<
 	int,
 	my_item,
 	my_accessor> my_hash;
@@ -48,14 +48,14 @@ struct my_stritem {
 
 	std::string key;
 	std::string value;
-	jive::detail::intrusive_hash_anchor<my_stritem> hash_chain;
+	jlm::util::intrusive_hash_anchor<my_stritem> hash_chain;
 	
-	typedef jive::detail::intrusive_hash_accessor<
+	typedef jlm::util::intrusive_hash_accessor<
 		std::string, my_stritem,
 		&my_stritem::key, &my_stritem::hash_chain> hash_accessor;
 };
 
-typedef jive::detail::intrusive_hash<
+typedef jlm::util::intrusive_hash<
 	std::string,
 	my_stritem,
 	my_stritem::hash_accessor> my_strhash;

@@ -30,9 +30,9 @@
  * class X {
  * private:
  *   int num;
- *   jive::detail::intrusive_hash_anchor<X> num_hash_anchor;
+ *   jlm::util::intrusive_hash_anchor<X> num_hash_anchor;
  * public:
- *   typedef jive::detail::intrusive_hash_accessor<
+ *   typedef jlm::util::intrusive_hash_accessor<
  *     int,                // key type
  *     X,                  // element type
  *     &X::num,            // key member
@@ -42,7 +42,7 @@
  *
  * an intrusive_hash data structure can be declared in the following way:
  *
- * typedef jive::detail::intrusive_hash<
+ * typedef jlm::util::intrusive_hash<
  *   int,
  *   X,
  *   X::num_hash_accessor
@@ -89,8 +89,8 @@
  *   a std::unique_ptr to it
  */
 
-namespace jive {
-namespace detail {
+namespace jlm::util
+{
 
 // FIXME: for some weird reason, std::equal_to does not specify noexcept, so
 // define our own equality comparison operator here
@@ -771,7 +771,6 @@ private:
 	internal_hash_type internal_hash_;
 };
 
-}
 }
 
 #endif

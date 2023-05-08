@@ -41,7 +41,7 @@ TestBasicBlockAnnotation()
     return std::make_tuple(std::move(root), v0, v1, v2);
   };
 
-  ipgraph_module module(filepath(""), "", "");
+  ipgraph_module module(util::filepath(""), "", "");
   auto [aggregationTreeRoot, v0, v1, v2] = SetupAggregationTree(module);
 
   /*
@@ -92,7 +92,7 @@ TestLinearSubgraphAnnotation()
     return std::make_tuple(std::move(root), v1, v2);
   };
 
-	ipgraph_module module(filepath(""), "", "");
+	ipgraph_module module(util::filepath(""), "", "");
   jlm::argument argument("argument", valuetype());
 	auto [aggregationTreeRoot, v1, v2] = SetupAggregationTree(module, argument);
 
@@ -176,7 +176,7 @@ TestBranchAnnotation()
 	valuetype vt;
 	test_op op({&vt}, {&vt});
 
-	ipgraph_module module(filepath(""), "", "");
+	ipgraph_module module(util::filepath(""), "", "");
   auto [aggregationTreeRoot, argument, v1, v2, v3, v4] = SetupAggregationTree(module);
 
   /*
@@ -237,7 +237,7 @@ TestLoopAnnotation()
     return std::make_tuple(std::move(root), v1, v2, v3, v4);
   };
 
-  ipgraph_module module(filepath(""), "", "");
+  ipgraph_module module(util::filepath(""), "", "");
   auto [aggregationTreeRoot, v1, v2, v3, v4] = SetupAggregationTree(module);
 
   /*
@@ -306,7 +306,7 @@ TestBranchInLoopAnnotation()
     return std::make_tuple(std::move(root), v1, v2, v3, v4);
   };
 
-  ipgraph_module module(filepath(""), "", "");
+  ipgraph_module module(util::filepath(""), "", "");
   auto [aggregationTreeRoot, v1, v2, v3, v4] = SetupAggregationTree(module);
 
   /*
@@ -362,7 +362,7 @@ TestAssignmentAnnotation()
     return std::make_tuple(std::move(root), v1 , v2);
   };
 
-  ipgraph_module module(filepath(""), "", "");
+  ipgraph_module module(util::filepath(""), "", "");
   auto [aggregationTreeRoot, v1, v2] = SetupAggregationTree(module);
 
   /*
@@ -423,7 +423,7 @@ TestBranchPassByAnnotation()
     return std::make_tuple(std::move(root), v1, v2, v3);
   };
 
-  ipgraph_module module(filepath(""), "", "");
+  ipgraph_module module(util::filepath(""), "", "");
   auto [aggregationTreeRoot, v1, v2, v3] = SetupAggregationTree(module);
 
   /*

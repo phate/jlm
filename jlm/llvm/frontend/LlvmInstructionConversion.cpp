@@ -1018,7 +1018,7 @@ ConvertInstruction(
 	});
 
 	if (map.find(i->getOpcode()) == map.end())
-		JLM_UNREACHABLE(strfmt(i->getOpcodeName(), " is not supported.").c_str());
+		JLM_UNREACHABLE(util::strfmt(i->getOpcodeName(), " is not supported.").c_str());
 
 	return map[i->getOpcode()](i, tacs, ctx);
 }

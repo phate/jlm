@@ -14,7 +14,7 @@ StoreTest1::SetupRvsdg()
   PointerType pointerType;
   FunctionType fcttype({&mt}, {&mt});
 
-  auto module = RvsdgModule::Create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -65,7 +65,7 @@ StoreTest2::SetupRvsdg()
   PointerType pointerType;
   FunctionType fcttype({&mt}, {&mt});
 
-  auto module = RvsdgModule::Create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -120,7 +120,7 @@ LoadTest1::SetupRvsdg()
   PointerType pointerType;
   FunctionType fcttype({&pointerType, &mt}, {&jive::bit32, &mt});
 
-  auto module = RvsdgModule::Create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -154,7 +154,7 @@ LoadTest2::SetupRvsdg()
   PointerType pointerType;
   FunctionType fcttype({&mt}, {&mt});
 
-  auto module = RvsdgModule::Create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -217,7 +217,7 @@ LoadFromUndefTest::SetupRvsdg()
     {&jive::bit32, &memoryStateType});
   PointerType pointerType;
 
-  auto rvsdgModule = RvsdgModule::Create(filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto nf = rvsdg.node_normal_form(typeid(jive::operation));
@@ -255,7 +255,7 @@ GetElementPtrTest::SetupRvsdg()
   PointerType pointerType;
   FunctionType fcttype({&pointerType, &mt}, {&jive::bit32, &mt});
 
-  auto module = RvsdgModule::Create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -297,7 +297,7 @@ BitCastTest::SetupRvsdg()
   PointerType pointerType;
   FunctionType fcttype({&pointerType}, {&pointerType});
 
-  auto module = RvsdgModule::Create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -325,7 +325,7 @@ Bits2PtrTest::SetupRvsdg()
 {
   using namespace jlm;
 
-  auto module = RvsdgModule::Create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -415,7 +415,7 @@ ConstantPointerNullTest::SetupRvsdg()
   PointerType pointerType;
   FunctionType fcttype({&pointerType, &mt}, {&mt});
 
-  auto module = RvsdgModule::Create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -448,7 +448,7 @@ CallTest1::SetupRvsdg()
 {
   using namespace jlm;
 
-  auto module = RvsdgModule::Create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -573,8 +573,8 @@ CallTest1::SetupRvsdg()
     auto allocaX = jive::node_output::node(x[0]);
     auto allocaY = jive::node_output::node(y[0]);
     auto allocaZ = jive::node_output::node(z[0]);
-    auto callF = AssertedCast<CallNode>(jive::node_output::node(callFResults[0]));
-    auto callG = AssertedCast<CallNode>(jive::node_output::node(callGResults[0]));
+    auto callF = util::AssertedCast<CallNode>(jive::node_output::node(callFResults[0]));
+    auto callG = util::AssertedCast<CallNode>(jive::node_output::node(callGResults[0]));
 
     return std::make_tuple(lambda, allocaX, allocaY, allocaZ, callF, callG);
   };
@@ -605,7 +605,7 @@ CallTest2::SetupRvsdg()
 {
   using namespace jlm;
 
-  auto module = RvsdgModule::Create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -719,10 +719,10 @@ CallTest2::SetupRvsdg()
     lambda->finalize(destroy2);
     graph->add_export(lambda->output(), {PointerType(), "test"});
 
-    auto callCreate1Node = AssertedCast<CallNode>(jive::node_output::node(create1[0]));
-    auto callCreate2Node = AssertedCast<CallNode>(jive::node_output::node(create2[0]));
-    auto callDestroy1Node = AssertedCast<CallNode>(jive::node_output::node(destroy1[0]));
-    auto callDestroy2Node = AssertedCast<CallNode>(jive::node_output::node(destroy2[0]));
+    auto callCreate1Node = util::AssertedCast<CallNode>(jive::node_output::node(create1[0]));
+    auto callCreate2Node = util::AssertedCast<CallNode>(jive::node_output::node(create2[0]));
+    auto callDestroy1Node = util::AssertedCast<CallNode>(jive::node_output::node(destroy1[0]));
+    auto callDestroy2Node = util::AssertedCast<CallNode>(jive::node_output::node(destroy2[0]));
 
     return std::make_tuple(lambda, callCreate1Node, callCreate2Node, callDestroy1Node, callDestroy2Node);
   };
@@ -763,7 +763,7 @@ IndirectCallTest1::SetupRvsdg()
     {&jive::bit32, &iOStateType, &memoryStateType, &loopStateType});
   PointerType pointerType;
 
-  auto module = RvsdgModule::Create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -813,7 +813,7 @@ IndirectCallTest1::SetupRvsdg()
 
     return std::make_tuple(
       lambdaOutput,
-      AssertedCast<CallNode>(jive::node_output::node(call[0])));
+      util::AssertedCast<CallNode>(jive::node_output::node(call[0])));
   };
 
   auto SetupTestFunction = [&](
@@ -854,8 +854,8 @@ IndirectCallTest1::SetupRvsdg()
 
     return std::make_tuple(
       lambdaOutput,
-      AssertedCast<CallNode>(jive::node_output::node(call_three[0])),
-      AssertedCast<CallNode>(jive::node_output::node(call_four[0])));
+      util::AssertedCast<CallNode>(jive::node_output::node(call_three[0])),
+      util::AssertedCast<CallNode>(jive::node_output::node(call_four[0])));
   };
 
   auto fctfour = SetupConstantFunction(4, "four");
@@ -891,7 +891,7 @@ IndirectCallTest2::SetupRvsdg()
     {&jive::bit32, &iOStateType, &memoryStateType, &loopStateType});
   PointerType pointerType;
 
-  auto module = RvsdgModule::Create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -971,7 +971,7 @@ IndirectCallTest2::SetupRvsdg()
 
     return std::make_tuple(
       lambdaOutput,
-      AssertedCast<CallNode>(jive::node_output::node(call[0])));
+      util::AssertedCast<CallNode>(jive::node_output::node(call[0])));
   };
 
   auto SetupIndirectCallFunction = [&](
@@ -1011,7 +1011,7 @@ IndirectCallTest2::SetupRvsdg()
 
     return std::make_tuple(
       lambdaOutput,
-      AssertedCast<CallNode>(jive::node_output::node(call[0])));
+      util::AssertedCast<CallNode>(jive::node_output::node(call[0])));
   };
 
   auto SetupTestFunction = [&](
@@ -1068,10 +1068,10 @@ IndirectCallTest2::SetupRvsdg()
 
     return std::make_tuple(
       lambdaOutput,
-      AssertedCast<CallNode>(jive::node_output::node(callX[0])),
-      AssertedCast<CallNode>(jive::node_output::node(callY[0])),
-      AssertedCast<jive::simple_node>(jive::node_output::node(pxAlloca[0])),
-      AssertedCast<jive::simple_node>(jive::node_output::node(pyAlloca[0])));
+      util::AssertedCast<CallNode>(jive::node_output::node(callX[0])),
+      util::AssertedCast<CallNode>(jive::node_output::node(callY[0])),
+      util::AssertedCast<jive::simple_node>(jive::node_output::node(pxAlloca[0])),
+      util::AssertedCast<jive::simple_node>(jive::node_output::node(pyAlloca[0])));
   };
 
   auto SetupTest2Function = [&](
@@ -1107,8 +1107,8 @@ IndirectCallTest2::SetupRvsdg()
 
     return std::make_tuple(
       lambdaOutput,
-      AssertedCast<CallNode>(jive::node_output::node(callX[0])),
-      AssertedCast<jive::simple_node>(jive::node_output::node(pzAlloca[0])));
+      util::AssertedCast<CallNode>(jive::node_output::node(callX[0])),
+      util::AssertedCast<jive::simple_node>(jive::node_output::node(pzAlloca[0])));
   };
 
   auto deltaG1 = SetupG1();
@@ -1153,7 +1153,7 @@ ExternalCallTest::SetupRvsdg()
 {
   using namespace jlm;
 
-  auto rvsdgModule = RvsdgModule::Create(filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(util::filepath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
   auto nf = rvsdg->node_normal_form(typeid(jive::operation));
@@ -1222,7 +1222,7 @@ ExternalCallTest::SetupRvsdg()
 
     return std::make_tuple(
       lambda,
-      AssertedCast<CallNode>(jive::node_output::node(callGResults[0])));
+      util::AssertedCast<CallNode>(jive::node_output::node(callGResults[0])));
   };
 
   auto externalFunction = SetupFunctionGDeclaration();
@@ -1245,7 +1245,7 @@ GammaTest::SetupRvsdg()
     {&jive::bit32, &pt, &pt, &pt, &pt, &mt},
     {&jive::bit32, &mt});
 
-  auto module = RvsdgModule::Create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -1292,7 +1292,7 @@ ThetaTest::SetupRvsdg()
   PointerType pointerType;
   FunctionType fcttype({&jive::bit32, &pointerType, &jive::bit32, &mt}, {&mt});
 
-  auto module = RvsdgModule::Create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -1340,7 +1340,7 @@ DeltaTest1::SetupRvsdg()
 {
   using namespace jlm;
 
-  auto module = RvsdgModule::Create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -1420,7 +1420,7 @@ DeltaTest1::SetupRvsdg()
 
     return std::make_tuple(
       lambdaOutput,
-      AssertedCast<CallNode>(jive::node_output::node(callg[0])),
+      util::AssertedCast<CallNode>(jive::node_output::node(callg[0])),
       jive::node_output::node(five));
   };
 
@@ -1447,7 +1447,7 @@ DeltaTest2::SetupRvsdg()
 {
   using namespace jlm;
 
-  auto module = RvsdgModule::Create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -1544,7 +1544,7 @@ DeltaTest2::SetupRvsdg()
 
     return std::make_tuple(
       lambdaOutput,
-      AssertedCast<CallNode>(jive::node_output::node(callResults[0])));
+      util::AssertedCast<CallNode>(jive::node_output::node(callResults[0])));
   };
 
   auto d1 = SetupD1();
@@ -1571,7 +1571,7 @@ DeltaTest3::SetupRvsdg()
 {
   using namespace jlm;
 
-  auto module = RvsdgModule::Create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -1670,7 +1670,7 @@ DeltaTest3::SetupRvsdg()
 
     return std::make_tuple(
       lambdaOutput,
-      AssertedCast<CallNode>(jive::node_output::node(callResults[0])));
+      util::AssertedCast<CallNode>(jive::node_output::node(callResults[0])));
   };
 
   auto g1 = SetupG1();
@@ -1697,7 +1697,7 @@ ImportTest::SetupRvsdg()
 {
   using namespace jlm;
 
-  auto module = RvsdgModule::Create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -1764,7 +1764,7 @@ ImportTest::SetupRvsdg()
 
     return std::make_tuple(
       lambdaOutput,
-      AssertedCast<CallNode>(jive::node_output::node(callResults[0])));
+      util::AssertedCast<CallNode>(jive::node_output::node(callResults[0])));
   };
 
   auto d1 = graph->add_import(impport(jive::bit32, "d1", linkage::external_linkage));
@@ -1792,7 +1792,7 @@ PhiTest1::SetupRvsdg()
 {
   using namespace jlm;
 
-  auto module = RvsdgModule::Create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -1881,8 +1881,8 @@ PhiTest1::SetupRvsdg()
       phiNode,
       lambdaOutput,
       gammaNode,
-      AssertedCast<CallNode>(jive::node_output::node(callfibm1Results[0])),
-      AssertedCast<CallNode>(jive::node_output::node(callfibm2Results[0])));
+      util::AssertedCast<CallNode>(jive::node_output::node(callfibm1Results[0])),
+      util::AssertedCast<CallNode>(jive::node_output::node(callfibm2Results[0])));
   };
 
   auto SetupTestFunction = [&](phi::node * phiNode)
@@ -1923,7 +1923,7 @@ PhiTest1::SetupRvsdg()
 
     return std::make_tuple(
       lambdaOutput,
-      AssertedCast<CallNode>(jive::node_output::node(callResults[0])),
+      util::AssertedCast<CallNode>(jive::node_output::node(callResults[0])),
       jive::node_output::node(allocaResults[0]));
   };
 
@@ -1976,7 +1976,7 @@ PhiTest2::SetupRvsdg()
     {&pointerType, &iOStateType, &memoryStateType, &loopStateType},
     {&jive::bit32, &iOStateType, &memoryStateType, &loopStateType});
 
-  auto module = RvsdgModule::Create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -2019,7 +2019,7 @@ PhiTest2::SetupRvsdg()
 
     return std::make_tuple(
       lambdaOutput,
-      AssertedCast<CallNode>(jive::node_output::node(call[0])));
+      util::AssertedCast<CallNode>(jive::node_output::node(call[0])));
   };
 
   auto SetupA = [&](
@@ -2063,9 +2063,9 @@ PhiTest2::SetupRvsdg()
 
     return std::make_tuple(
       lambdaOutput,
-      AssertedCast<CallNode>(jive::node_output::node(callB[0])),
-      AssertedCast<CallNode>(jive::node_output::node(callD[0])),
-      AssertedCast<jive::simple_node>(jive::node_output::node(paAlloca[0])));
+      util::AssertedCast<CallNode>(jive::node_output::node(callB[0])),
+      util::AssertedCast<CallNode>(jive::node_output::node(callD[0])),
+      util::AssertedCast<jive::simple_node>(jive::node_output::node(paAlloca[0])));
   };
 
   auto SetupB = [&](
@@ -2111,9 +2111,9 @@ PhiTest2::SetupRvsdg()
 
     return std::make_tuple(
       lambdaOutput,
-      AssertedCast<CallNode>(jive::node_output::node(callI[0])),
-      AssertedCast<CallNode>(jive::node_output::node(callC[0])),
-      AssertedCast<jive::simple_node>(jive::node_output::node(pbAlloca[0])));
+      util::AssertedCast<CallNode>(jive::node_output::node(callI[0])),
+      util::AssertedCast<CallNode>(jive::node_output::node(callC[0])),
+      util::AssertedCast<jive::simple_node>(jive::node_output::node(pbAlloca[0])));
   };
 
   auto SetupC = [&](
@@ -2152,8 +2152,8 @@ PhiTest2::SetupRvsdg()
 
     return std::make_tuple(
       lambdaOutput,
-      AssertedCast<CallNode>(jive::node_output::node(callA[0])),
-      AssertedCast<jive::simple_node>(jive::node_output::node(pcAlloca[0])));
+      util::AssertedCast<CallNode>(jive::node_output::node(callA[0])),
+      util::AssertedCast<jive::simple_node>(jive::node_output::node(pcAlloca[0])));
   };
 
   auto SetupD = [&](
@@ -2187,8 +2187,8 @@ PhiTest2::SetupRvsdg()
 
     return std::make_tuple(
       lambdaOutput,
-      AssertedCast<CallNode>(jive::node_output::node(callA[0])),
-      AssertedCast<jive::simple_node>(jive::node_output::node(pdAlloca[0])));
+      util::AssertedCast<CallNode>(jive::node_output::node(callA[0])),
+      util::AssertedCast<jive::simple_node>(jive::node_output::node(pdAlloca[0])));
   };
 
   auto SetupPhi = [&](
@@ -2280,8 +2280,8 @@ PhiTest2::SetupRvsdg()
 
     return std::make_tuple(
       lambdaOutput,
-      AssertedCast<CallNode>(jive::node_output::node(callA[0])),
-      AssertedCast<jive::simple_node>(jive::node_output::node(pTestAlloca[0])));
+      util::AssertedCast<CallNode>(jive::node_output::node(callA[0])),
+      util::AssertedCast<jive::simple_node>(jive::node_output::node(pTestAlloca[0])));
   };
 
   auto lambdaEight = SetupEight();
@@ -2313,10 +2313,10 @@ PhiTest2::SetupRvsdg()
    */
   this->LambdaEight_ = lambdaEight->node();
   this->LambdaI_ = lambdaI->node();
-  this->LambdaA_ = AssertedCast<lambda::node>(jive::node_output::node(lambdaA->result()->origin()));
-  this->LambdaB_ = AssertedCast<lambda::node>(jive::node_output::node(lambdaB->result()->origin()));
-  this->LambdaC_ = AssertedCast<lambda::node>(jive::node_output::node(lambdaC->result()->origin()));
-  this->LambdaD_ = AssertedCast<lambda::node>(jive::node_output::node(lambdaD->result()->origin()));
+  this->LambdaA_ = util::AssertedCast<lambda::node>(jive::node_output::node(lambdaA->result()->origin()));
+  this->LambdaB_ = util::AssertedCast<lambda::node>(jive::node_output::node(lambdaB->result()->origin()));
+  this->LambdaC_ = util::AssertedCast<lambda::node>(jive::node_output::node(lambdaC->result()->origin()));
+  this->LambdaD_ = util::AssertedCast<lambda::node>(jive::node_output::node(lambdaD->result()->origin()));
   this->LambdaTest_ = lambdaTest->node();
 
   this->CallAFromTest_ = callAFromTest;
@@ -2346,7 +2346,7 @@ ExternalMemoryTest::SetupRvsdg()
   PointerType pointerType;
   FunctionType ft({&pointerType, &pointerType, &mt}, {&mt});
 
-  auto module = RvsdgModule::Create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -2377,7 +2377,7 @@ EscapedMemoryTest1::SetupRvsdg()
 {
   using namespace jlm;
 
-  auto rvsdgModule = RvsdgModule::Create(filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(util::filepath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
   auto nf = rvsdg->node_normal_form(typeid(jive::operation));
@@ -2482,7 +2482,7 @@ EscapedMemoryTest1::SetupRvsdg()
 
     rvsdg->add_export(lambdaOutput, {pointerType, "test"});
 
-    return std::make_tuple(lambdaOutput, AssertedCast<LoadNode>(jive::node_output::node(loadResults1[0])));
+    return std::make_tuple(lambdaOutput, util::AssertedCast<LoadNode>(jive::node_output::node(loadResults1[0])));
   };
 
   auto deltaA = SetupDeltaA();
@@ -2511,7 +2511,7 @@ EscapedMemoryTest2::SetupRvsdg()
 {
   using namespace jlm;
 
-  auto rvsdgModule = RvsdgModule::Create(filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(util::filepath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
   auto nf = rvsdg->node_normal_form(typeid(jive::operation));
@@ -2617,7 +2617,7 @@ EscapedMemoryTest2::SetupRvsdg()
 
     return std::make_tuple(
       lambdaOutput,
-      AssertedCast<CallNode>(jive::node_output::node(callResults[0])),
+      util::AssertedCast<CallNode>(jive::node_output::node(callResults[0])),
       jive::node_output::node(mallocResults[0]));
   };
 
@@ -2654,8 +2654,8 @@ EscapedMemoryTest2::SetupRvsdg()
 
     return std::make_tuple(
       lambdaOutput,
-      AssertedCast<CallNode>(jive::node_output::node(callResults[0])),
-      AssertedCast<jlm::LoadNode>(jive::node_output::node(loadResults[0])));
+      util::AssertedCast<CallNode>(jive::node_output::node(callResults[0])),
+      util::AssertedCast<jlm::LoadNode>(jive::node_output::node(loadResults[0])));
   };
 
   auto externalFunction1 = SetupExternalFunction1Declaration();
@@ -2690,7 +2690,7 @@ EscapedMemoryTest3::SetupRvsdg()
 {
   using namespace jlm;
 
-  auto rvsdgModule = RvsdgModule::Create(filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(util::filepath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
   auto nf = rvsdg->node_normal_form(typeid(jive::operation));
@@ -2764,8 +2764,8 @@ EscapedMemoryTest3::SetupRvsdg()
 
     return std::make_tuple(
       lambdaOutput,
-      AssertedCast<CallNode>(jive::node_output::node(callResults[0])),
-      AssertedCast<jlm::LoadNode>(jive::node_output::node(loadResults[0])));
+      util::AssertedCast<CallNode>(jive::node_output::node(callResults[0])),
+      util::AssertedCast<jlm::LoadNode>(jive::node_output::node(loadResults[0])));
   };
 
   auto importExternalFunction = SetupExternalFunctionDeclaration();
@@ -2789,7 +2789,7 @@ MemcpyTest::SetupRvsdg()
 {
   using namespace jlm;
 
-  auto rvsdgModule = RvsdgModule::Create(filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(util::filepath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
   auto nf = rvsdg->node_normal_form(typeid(jive::operation));
@@ -2931,7 +2931,7 @@ MemcpyTest::SetupRvsdg()
 
     return std::make_tuple(
       lambdaOutput,
-      AssertedCast<CallNode>(jive::node_output::node(callResults[0])),
+      util::AssertedCast<CallNode>(jive::node_output::node(callResults[0])),
       jive::node_output::node(memcpyResults[0]));
   };
 
@@ -2958,7 +2958,7 @@ LinkedListTest::SetupRvsdg()
 {
   using namespace jlm;
 
-  auto rvsdgModule = RvsdgModule::Create(filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto nf = rvsdg.node_normal_form(typeid(jive::operation));

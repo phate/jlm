@@ -5,7 +5,8 @@
 
 #include <jlm/util/common.hpp>
 
-namespace jlm {
+namespace jlm::util
+{
 
 error::~error()
 {}

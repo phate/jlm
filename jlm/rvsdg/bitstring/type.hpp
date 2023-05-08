@@ -24,7 +24,7 @@ public:
 	: nbits_(nbits)
 	{
 		if (nbits == 0)
-			throw jlm::error("Number of bits must be greater than zero.");
+			throw jlm::util::error("Number of bits must be greater than zero.");
 	}
 
 	inline size_t

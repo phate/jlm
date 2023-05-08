@@ -85,7 +85,7 @@ sext_op::operator==(const operation & other) const noexcept
 std::string
 sext_op::debug_string() const
 {
-	return strfmt("SEXT[", nsrcbits(), " -> ", ndstbits(), "]");
+	return util::strfmt("SEXT[", nsrcbits(), " -> ", ndstbits(), "]");
 }
 
 std::unique_ptr<jive::operation>

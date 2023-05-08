@@ -20,13 +20,13 @@ optimization::~optimization()
 
 /* optimization_stat class */
 
-class optimization_stat final : public Statistics {
+class optimization_stat final : public util::Statistics {
 public:
 	virtual
 	~optimization_stat()
 	{}
 
-	optimization_stat(const jlm::filepath & filename)
+	optimization_stat(const util::filepath & filename)
 	: Statistics(Statistics::Id::RvsdgOptimization)
   , filename_(filename)
 	, nnodes_before_(0)
@@ -50,26 +50,26 @@ public:
 	virtual std::string
 	ToString() const override
 	{
-		return strfmt("RVSDGOPTIMIZATION ", filename_.to_str(), " ",
+		return util::strfmt("RVSDGOPTIMIZATION ", filename_.to_str(), " ",
 			nnodes_before_, " ", nnodes_after_, " ", timer_.ns());
 	}
 
   static std::unique_ptr<optimization_stat>
-  Create(const jlm::filepath & sourceFile)
+  Create(const util::filepath & sourceFile)
   {
     return std::make_unique<optimization_stat>(sourceFile);
   }
 
 private:
-	jlm::timer timer_;
-	jlm::filepath filename_;
+	util::timer timer_;
+	util::filepath filename_;
 	size_t nnodes_before_, nnodes_after_;
 };
 
 void
 optimize(
   RvsdgModule & rm,
-  StatisticsCollector & statisticsCollector,
+  util::StatisticsCollector & statisticsCollector,
   const std::vector<optimization*> & opts)
 {
 	auto statistics = optimization_stat::Create(rm.SourceFileName());

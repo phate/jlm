@@ -7,21 +7,21 @@
 
 namespace jive {
 
-notifier<jive::region*> on_region_create;
-notifier<jive::region*> on_region_destroy;
+jlm::util::notifier<jive::region*> on_region_create;
+jlm::util::notifier<jive::region*> on_region_destroy;
 
-notifier<jive::node*> on_node_create;
-notifier<jive::node*> on_node_destroy;
-notifier<jive::node*, size_t> on_node_depth_change;
+jlm::util::notifier<jive::node*> on_node_create;
+jlm::util::notifier<jive::node*> on_node_destroy;
+jlm::util::notifier<jive::node*, size_t> on_node_depth_change;
 
-notifier<jive::input*> on_input_create;
-notifier<jive::input*,
+jlm::util::notifier<jive::input*> on_input_create;
+jlm::util::notifier<jive::input*,
 	jive::output*,	/* old */
 	jive::output*		/* new */
 > on_input_change;
-notifier<jive::input*> on_input_destroy;
+jlm::util::notifier<jive::input*> on_input_destroy;
 
-notifier<jive::output*> on_output_create;
-notifier<jive::output*> on_output_destroy;
+jlm::util::notifier<jive::output*> on_output_create;
+jlm::util::notifier<jive::output*> on_output_destroy;
 
 }

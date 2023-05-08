@@ -18,7 +18,7 @@
 
 static const jlm::statetype st;
 static const jlm::valuetype vt;
-static jlm::StatisticsCollector statisticsCollector;
+static jlm::util::StatisticsCollector statisticsCollector;
 
 static inline void
 test_gamma()
@@ -27,7 +27,7 @@ test_gamma()
 
 	jive::ctltype ct(2);
 
-	RvsdgModule rm(filepath(""), "", "");
+	RvsdgModule rm(util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 
 	auto c = graph.add_import({ct, "c"});
@@ -65,7 +65,7 @@ test_theta()
 	jlm::test_op bop({&vt, &vt}, {&vt});
 	jlm::test_op sop({&vt, &st}, {&st});
 
-	RvsdgModule rm(filepath(""), "", "");
+	RvsdgModule rm(util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 
 	auto c = graph.add_import({ct, "c"});

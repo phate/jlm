@@ -26,7 +26,7 @@ test()
 
 	jive::bitvalue_repr vr(bs);
 
-	ipgraph_module im(filepath(""), "", "");
+	ipgraph_module im(util::filepath(""), "", "");
 
 	auto cfg = cfg::create(im);
 	auto bb = basic_block::create(*cfg);

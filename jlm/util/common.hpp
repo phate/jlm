@@ -40,7 +40,8 @@ unreachable(const char * msg, const char * file, unsigned line)
 
 #define JLM_UNREACHABLE(msg) jlm::unreachable(msg, __FILE__, __LINE__)
 
-namespace jlm {
+namespace jlm::util
+{
 
 template <class To, class From> static inline To *
 AssertedCast(From * value)

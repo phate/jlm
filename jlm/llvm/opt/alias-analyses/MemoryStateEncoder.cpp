@@ -18,13 +18,13 @@ namespace jlm::aa {
 /** \brief Statistics class for memory state encoder encoding
  *
  */
-class EncodingStatistics final : public Statistics {
+class EncodingStatistics final : public util::Statistics {
 public:
   ~EncodingStatistics() override
   = default;
 
   explicit
-  EncodingStatistics(jlm::filepath sourceFile)
+  EncodingStatistics(util::filepath sourceFile)
     : Statistics(Statistics::Id::BasicEncoderEncoding)
     , NumNodesBefore_(0)
     , SourceFile_(std::move(sourceFile))
@@ -46,22 +46,22 @@ public:
   [[nodiscard]] std::string
   ToString() const override
   {
-    return strfmt("BasicEncoderEncoding ",
+    return util::strfmt("BasicEncoderEncoding ",
                   SourceFile_.to_str(), " ",
                   "#RvsdgNodes:", NumNodesBefore_, " ",
                   "Time[ns]:", Timer_.ns());
   }
 
   static std::unique_ptr<EncodingStatistics>
-  Create(const jlm::filepath & sourceFile)
+  Create(const util::filepath & sourceFile)
   {
     return std::make_unique<EncodingStatistics>(sourceFile);
   }
 
 private:
-  jlm::timer Timer_;
+  util::timer Timer_;
   size_t NumNodesBefore_;
-  jlm::filepath SourceFile_;
+  util::filepath SourceFile_;
 };
 
 static jive::argument *
@@ -125,7 +125,7 @@ public:
     return MemoryNodeMap_.find(&output) != MemoryNodeMap_.end();
   }
 
-  HashSet<const PointsToGraph::MemoryNode*>
+  util::HashSet<const PointsToGraph::MemoryNode*>
   GetMemoryNodes(const jive::output & output)
   {
     JLM_ASSERT(is<PointerType>(output.type()));
@@ -165,7 +165,7 @@ public:
 
 private:
   const MemoryNodeProvisioning & MemoryNodeProvisioning_;
-  std::unordered_map<const jive::output*, HashSet<const PointsToGraph::MemoryNode*>> MemoryNodeMap_;
+  std::unordered_map<const jive::output*, util::HashSet<const PointsToGraph::MemoryNode*>> MemoryNodeMap_;
 };
 
 /** \brief Hash map for mapping points-to graph memory nodes to RVSDG memory states.
@@ -262,7 +262,7 @@ public:
   }
 
   std::vector<MemoryNodeStatePair*>
-  GetStates(const HashSet<const PointsToGraph::MemoryNode*> & memoryNodes)
+  GetStates(const util::HashSet<const PointsToGraph::MemoryNode*> & memoryNodes)
   {
     std::vector<MemoryNodeStatePair*> memoryNodeStatePairs;
     for (auto & memoryNode : memoryNodes.Items())
@@ -348,7 +348,7 @@ public:
   std::vector<StateMap::MemoryNodeStatePair*>
   GetStates(
     const jive::region & region,
-    const HashSet<const PointsToGraph::MemoryNode*> & memoryNodes)
+    const util::HashSet<const PointsToGraph::MemoryNode*> & memoryNodes)
   {
     return GetStateMap(region).GetStates(memoryNodes);
   }
@@ -361,7 +361,7 @@ public:
     return GetStateMap(region).GetState(memoryNode);
   }
 
-  HashSet<const PointsToGraph::MemoryNode*>
+  util::HashSet<const PointsToGraph::MemoryNode*>
   GetMemoryNodes(const jive::output & output)
   {
     auto & memoryNodeCache = GetMemoryNodeCache(*output.region());
@@ -462,7 +462,7 @@ void
 MemoryStateEncoder::Encode(
   RvsdgModule & rvsdgModule,
   const MemoryNodeProvisioning & provisioning,
-  StatisticsCollector & statisticsCollector)
+  util::StatisticsCollector & statisticsCollector)
 {
   Context_ = Context::Create(provisioning);
   auto statistics = EncodingStatistics::Create(rvsdgModule.SourceFileName());
@@ -492,7 +492,7 @@ MemoryStateEncoder::EncodeRegion(jive::region & region)
       continue;
     }
 
-    auto structuralNode = AssertedCast<structural_node>(node);
+    auto structuralNode = util::AssertedCast<structural_node>(node);
     EncodeStructuralNode(*structuralNode);
   }
 }
@@ -500,11 +500,11 @@ MemoryStateEncoder::EncodeRegion(jive::region & region)
 void
 MemoryStateEncoder::EncodeStructuralNode(jive::structural_node & structuralNode)
 {
-  auto encodeLambda = [](auto & be, auto & n){ be.EncodeLambda(*AssertedCast<lambda::node>(&n));    };
-  auto encodeDelta  = [](auto & be, auto & n){ be.EncodeDelta(*AssertedCast<delta::node>(&n));      };
-  auto encodePhi    = [](auto & be, auto & n){ be.EncodePhi(*AssertedCast<phi::node>(&n));          };
-  auto encodeGamma  = [](auto & be, auto & n){ be.EncodeGamma(*AssertedCast<jive::gamma_node>(&n)); };
-  auto encodeTheta  = [](auto & be, auto & n){ be.EncodeTheta(*AssertedCast<jive::theta_node>(&n)); };
+  auto encodeLambda = [](auto & be, auto & n){ be.EncodeLambda(*util::AssertedCast<lambda::node>(&n));    };
+  auto encodeDelta  = [](auto & be, auto & n){ be.EncodeDelta(*util::AssertedCast<delta::node>(&n));      };
+  auto encodePhi    = [](auto & be, auto & n){ be.EncodePhi(*util::AssertedCast<phi::node>(&n));          };
+  auto encodeGamma  = [](auto & be, auto & n){ be.EncodeGamma(*util::AssertedCast<jive::gamma_node>(&n)); };
+  auto encodeTheta  = [](auto & be, auto & n){ be.EncodeTheta(*util::AssertedCast<jive::theta_node>(&n)); };
 
   static std::unordered_map<
     std::type_index,
@@ -528,9 +528,9 @@ MemoryStateEncoder::EncodeSimpleNode(const jive::simple_node & be)
 {
   auto EncodeAlloca = [](auto & be, auto & node){ be.EncodeAlloca(node); };
   auto EncodeMalloc = [](auto & be, auto & node){ be.EncodeMalloc(node); };
-  auto EncodeCall   = [](auto & be, auto & node){ be.EncodeCall(*AssertedCast<const CallNode>(&node)); };
-  auto EncodeLoad   = [](auto & be, auto & node){ be.EncodeLoad(*AssertedCast<const LoadNode>(&node)); };
-  auto EncodeStore  = [](auto & be, auto & node){ be.EncodeStore(*AssertedCast<const StoreNode>(&node)); };
+  auto EncodeCall   = [](auto & be, auto & node){ be.EncodeCall(*util::AssertedCast<const CallNode>(&node)); };
+  auto EncodeLoad   = [](auto & be, auto & node){ be.EncodeLoad(*util::AssertedCast<const LoadNode>(&node)); };
+  auto EncodeStore  = [](auto & be, auto & node){ be.EncodeStore(*util::AssertedCast<const StoreNode>(&node)); };
   auto EncodeFree   = [](auto & be, auto & node){ be.EncodeFree(node); };
   auto EncodeMemcpy = [](auto & be, auto & node){ be.EncodeMemcpy(node); };
 

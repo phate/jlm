@@ -16,7 +16,7 @@
 #include <jlm/llvm/opt/inlining.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static jlm::StatisticsCollector statisticsCollector;
+static jlm::util::StatisticsCollector statisticsCollector;
 
 static void
 test1()
@@ -26,7 +26,7 @@ test1()
   /**
    * Arrange
    */
-	RvsdgModule rm(filepath(""), "", "");
+	RvsdgModule rm(util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 	auto i = graph.add_import({jlm::valuetype(), "i"});
 
@@ -139,7 +139,7 @@ test2()
     {&iOStateType, &memoryStateType, &loopStateType});
 
 
-	RvsdgModule rm(filepath(""), "", "");
+	RvsdgModule rm(util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 	auto i = graph.add_import({pt, "i"});
 

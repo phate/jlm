@@ -15,22 +15,22 @@ class node;
 class output;
 class region;
 
-extern notifier<jive::region*> on_region_create;
-extern notifier<jive::region*> on_region_destroy;
+extern jlm::util::notifier<jive::region*> on_region_create;
+extern jlm::util::notifier<jive::region*> on_region_destroy;
 
-extern notifier<jive::node*> on_node_create;
-extern notifier<jive::node*> on_node_destroy;
-extern notifier<jive::node*, size_t> on_node_depth_change;
+extern jlm::util::notifier<jive::node*> on_node_create;
+extern jlm::util::notifier<jive::node*> on_node_destroy;
+extern jlm::util::notifier<jive::node*, size_t> on_node_depth_change;
 
-extern notifier<jive::input*> on_input_create;
-extern notifier<jive::input*,
+extern jlm::util::notifier<jive::input*> on_input_create;
+extern jlm::util::notifier<jive::input*,
 	jive::output*,	/* old */
 	jive::output*		/* new */
 > on_input_change;
-extern notifier<jive::input*> on_input_destroy;
+extern jlm::util::notifier<jive::input*> on_input_destroy;
 
-extern notifier<jive::output*> on_output_create;
-extern notifier<jive::output*> on_output_destroy;
+extern jlm::util::notifier<jive::output*> on_output_create;
+extern jlm::util::notifier<jive::output*> on_output_destroy;
 
 }
 

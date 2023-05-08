@@ -18,7 +18,7 @@
 #include <jlm/llvm/opt/unroll.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static jlm::StatisticsCollector statisticsCollector;
+static jlm::util::StatisticsCollector statisticsCollector;
 
 static size_t
 nthetas(jive::region * region)
@@ -234,7 +234,7 @@ test_unknown_boundaries()
 	jive::bittype bt(32);
 	jlm::test_op op({&bt}, {&bt});
 
-	RvsdgModule rm(filepath(""), "", "");
+	RvsdgModule rm(util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 
 	auto x = graph.add_import({bt, "x"});
@@ -286,7 +286,7 @@ find_thetas(jive::region * region)
 static inline void
 test_nested_theta()
 {
-	jlm::RvsdgModule rm(jlm::filepath(""), "", "");
+	jlm::RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 
 	auto nf = graph.node_normal_form(typeid(jive::operation));

@@ -13,7 +13,7 @@
 static void
 TestInt()
 {
-  jlm::HashSet<int> hashSet({0, 1, 2, 3, 4, 5, 6, 7});
+  jlm::util::HashSet<int> hashSet({0, 1, 2, 3, 4, 5, 6, 7});
 
   assert(hashSet.Size());
   assert(hashSet.Contains(3));
@@ -32,7 +32,7 @@ TestInt()
     sum += item;
   assert(sum == (0+2+3+4+5+6+7+8));
 
-  jlm::HashSet<int> hashSet2({8, 9});
+  jlm::util::HashSet<int> hashSet2({8, 9});
   hashSet.UnionWith(hashSet2);
   assert(hashSet.Size() == 9);
 
@@ -46,7 +46,7 @@ TestInt()
 static void
 TestUniquePointer()
 {
-  jlm::HashSet<std::unique_ptr<int>> hashSet;
+  jlm::util::HashSet<std::unique_ptr<int>> hashSet;
 
   hashSet.Insert(std::make_unique<int>(0));
   assert(hashSet.Size() == 1);
@@ -61,9 +61,9 @@ TestUniquePointer()
 static void
 TestIsSubsetOf()
 {
-  jlm::HashSet<int> set12({1, 2});
-  jlm::HashSet<int> set123({1, 2, 3});
-  jlm::HashSet<int> set1234({1, 2, 3, 4});
+  jlm::util::HashSet<int> set12({1, 2});
+  jlm::util::HashSet<int> set123({1, 2, 3});
+  jlm::util::HashSet<int> set1234({1, 2, 3, 4});
 
   assert(set12.IsSubsetOf(set12));
   assert(set12.IsSubsetOf(set123));

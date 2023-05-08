@@ -21,7 +21,7 @@ TestWithMatch()
 	jive::bittype bt1(1);
 	FunctionType ft({&bt1, &vt, &vt}, {&vt});
 
-	RvsdgModule rm(filepath(""), "", "");
+	RvsdgModule rm(util::filepath(""), "", "");
 	auto nf = rm.Rvsdg().node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
@@ -60,7 +60,7 @@ TestWithoutMatch()
 	jive::bittype bt1(1);
 	FunctionType ft({&ctl2, &vt, &vt}, {&vt});
 
-	RvsdgModule rm(filepath(""), "", "");
+	RvsdgModule rm(util::filepath(""), "", "");
 	auto nf = rm.Rvsdg().node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 

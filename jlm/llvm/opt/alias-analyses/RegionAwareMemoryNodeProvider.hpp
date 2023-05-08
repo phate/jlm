@@ -62,7 +62,7 @@ public:
   ProvisionMemoryNodes(
     const RvsdgModule & rvsdgModule,
     const PointsToGraph & pointsToGraph,
-    StatisticsCollector & statisticsCollector) override;
+    util::StatisticsCollector & statisticsCollector) override;
 
   /**
    * Creates a RegionAwareMemoryNodeProvider and calls the ProvisionMemoryNodes() method.
@@ -77,7 +77,7 @@ public:
   Create(
     const RvsdgModule & rvsdgModule,
     const PointsToGraph & pointsToGraph,
-    StatisticsCollector & statisticsCollector);
+    util::StatisticsCollector & statisticsCollector);
 
   /**
    * Creates a RegionAwareMemoryNodeProvider and calls the ProvisionMemoryNodes() method.
@@ -210,16 +210,16 @@ private:
  *
  * @see RegionAwareMemoryNodeProvider
  */
-class RegionAwareMemoryNodeProvider::Statistics final : public jlm::Statistics {
+class RegionAwareMemoryNodeProvider::Statistics final : public util::Statistics {
 public:
   ~Statistics() override = default;
 
   explicit
   Statistics(
-    const StatisticsCollector & statisticsCollector,
+    const util::StatisticsCollector & statisticsCollector,
     const RvsdgModule & rvsdgModule,
     const PointsToGraph & pointsToGraph)
-    : jlm::Statistics(Statistics::Id::MemoryNodeProvisioning)
+    : util::Statistics(Statistics::Id::MemoryNodeProvisioning)
     , NumRvsdgNodes_(0)
     , NumRvsdgRegions_(0)
     , NumPointsToGraphMemoryNodes_(0)
@@ -350,7 +350,7 @@ public:
   [[nodiscard]] std::string
   ToString() const override
   {
-    return strfmt(
+    return util::strfmt(
       "RegionAwareMemoryNodeProvision ",
       "#RvsdgNodes:", NumRvsdgNodes_, " ",
       "#RvsdgRegions:", NumRvsdgRegions_, " ",
@@ -364,7 +364,7 @@ public:
 
   static std::unique_ptr<Statistics>
   Create(
-    const StatisticsCollector & statisticsCollector,
+    const util::StatisticsCollector & statisticsCollector,
     const RvsdgModule & rvsdgModule,
     const PointsToGraph & pointsToGraph)
   {
@@ -387,12 +387,12 @@ private:
   size_t NumRvsdgRegions_;
   size_t NumPointsToGraphMemoryNodes_;
 
-  jlm::timer AnnotationTimer_;
-  jlm::timer PropagationPass1Timer_;
-  jlm::timer ResolveUnknownMemoryReferencesTimer_;
-  jlm::timer PropagationPass2Timer_;
+  util::timer AnnotationTimer_;
+  util::timer PropagationPass1Timer_;
+  util::timer ResolveUnknownMemoryReferencesTimer_;
+  util::timer PropagationPass2Timer_;
 
-  const StatisticsCollector & StatisticsCollector_;
+  const util::StatisticsCollector & StatisticsCollector_;
 };
 
 }

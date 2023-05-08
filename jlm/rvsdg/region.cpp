@@ -31,7 +31,7 @@ argument::argument(
 {
 	if (input) {
 		if (input->node() != region->node())
-			throw jlm::error("Argument cannot be added to input.");
+			throw jlm::util::error("Argument cannot be added to input.");
 
 		input->arguments.push_back(this);
 	}
@@ -68,7 +68,7 @@ result::result(
 {
 	if (output) {
 		if (output->node() != region->node())
-			throw jlm::error("Result cannot be added to output.");
+			throw jlm::util::error("Result cannot be added to output.");
 
 		output->results.push_back(this);
 	}
@@ -126,7 +126,7 @@ void
 region::append_argument(jive::argument * argument)
 {
 	if (argument->region() != this)
-		throw jlm::error("Appending argument to wrong region.");
+		throw jlm::util::error("Appending argument to wrong region.");
 
 	auto index = argument->index();
 	JLM_ASSERT(index == 0);
@@ -157,7 +157,7 @@ void
 region::append_result(jive::result * result)
 {
 	if (result->region() != this)
-		throw jlm::error("Appending result to wrong region.");
+		throw jlm::util::error("Appending result to wrong region.");
 
 	/*
 		Check if result was already appended to this region. This check

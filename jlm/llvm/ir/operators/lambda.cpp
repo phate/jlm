@@ -18,7 +18,7 @@ operation::~operation()
 std::string
 operation::debug_string() const
 {
-  return strfmt("LAMBDA[", name(), "]");
+  return util::strfmt("LAMBDA[", name(), "]");
 }
 
 bool
@@ -118,19 +118,19 @@ node::fctresults() const
 cvinput *
 node::input(size_t n) const noexcept
 {
-  return AssertedCast<cvinput>(structural_node::input(n));
+  return util::AssertedCast<cvinput>(structural_node::input(n));
 }
 
 lambda::output *
 node::output() const noexcept
 {
-  return AssertedCast<lambda::output>(structural_node::output(0));
+  return util::AssertedCast<lambda::output>(structural_node::output(0));
 }
 
 lambda::fctargument *
 node::fctargument(size_t n) const noexcept
 {
-  return AssertedCast<lambda::fctargument>(subregion()->argument(n));
+  return util::AssertedCast<lambda::fctargument>(subregion()->argument(n));
 }
 
 lambda::cvargument *
@@ -142,7 +142,7 @@ node::cvargument(size_t n) const noexcept
 lambda::result *
 node::fctresult(size_t n) const noexcept
 {
-  return AssertedCast<lambda::result>(subregion()->result(n));
+  return util::AssertedCast<lambda::result>(subregion()->result(n));
 }
 
 cvargument *
@@ -179,16 +179,16 @@ node::finalize(const std::vector<jive::output*> & results)
   }
 
   if (type().NumResults() != results.size())
-    throw jlm::error("Incorrect number of results.");
+    throw util::error("Incorrect number of results.");
 
   for (size_t n = 0; n < results.size(); n++) {
     auto & expected = type().ResultType(n);
     auto & received = results[n]->type();
     if (results[n]->type() != type().ResultType(n))
-      throw jlm::error("Expected " + expected.debug_string() + ", got " + received.debug_string());
+      throw util::error("Expected " + expected.debug_string() + ", got " + received.debug_string());
 
     if (results[n]->region() != subregion())
-      throw jlm::error("Invalid operand region.");
+      throw util::error("Invalid operand region.");
   }
 
   for (const auto & origin : results)
@@ -202,7 +202,7 @@ node::copy(
   jive::region * region,
   const std::vector<jive::output*> & operands) const
 {
-  return AssertedCast<lambda::node>(jive::node::copy(region, operands));
+  return util::AssertedCast<lambda::node>(jive::node::copy(region, operands));
 }
 
 lambda::node *
@@ -304,7 +304,7 @@ node::direct_calls(std::vector<jive::simple_node*> * calls) const
     auto node = jive::input::GetNode(*input);
     if (is<CallOperation>(node) && input == node->input(0)) {
       if (calls != nullptr)
-        calls->push_back(AssertedCast<jive::simple_node>(node));
+        calls->push_back(util::AssertedCast<jive::simple_node>(node));
       continue;
     }
 
@@ -330,7 +330,7 @@ cvinput::~cvinput()
 cvargument *
 cvinput::argument() const noexcept
 {
-  return AssertedCast<cvargument>(arguments.first());
+  return util::AssertedCast<cvargument>(arguments.first());
 }
 
 /* lambda output class */

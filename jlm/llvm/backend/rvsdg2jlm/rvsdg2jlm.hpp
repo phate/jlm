@@ -16,16 +16,20 @@ class graph;
 
 namespace jlm {
 
+namespace util
+{
+class StatisticsCollector;
+}
+
 class ipgraph_module;
 class RvsdgModule;
-class StatisticsCollector;
 
 namespace rvsdg2jlm {
 
 std::unique_ptr<ipgraph_module>
 rvsdg2jlm(
   const RvsdgModule & rm,
-  StatisticsCollector & statisticsCollector);
+  util::StatisticsCollector & statisticsCollector);
 
 }}
 

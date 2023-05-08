@@ -92,7 +92,7 @@ public:
 	[[nodiscard]] const jive::valuetype &
 	type() const noexcept
 	{
-    return *AssertedCast<jive::valuetype>(type_.get());
+    return *util::AssertedCast<jive::valuetype>(type_.get());
 	}
 
 private:
@@ -133,8 +133,8 @@ class node final : public jive::structural_node {
 	class cviterator;
 	class cvconstiterator;
 
-	using ctxvar_range = iterator_range<cviterator>;
-	using ctxvar_constrange = iterator_range<cvconstiterator>;
+	using ctxvar_range = util::iterator_range<cviterator>;
+	using ctxvar_constrange = util::iterator_range<cvconstiterator>;
 
 public:
 	~node() override;

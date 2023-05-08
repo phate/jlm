@@ -29,7 +29,7 @@ public:
 	virtual void
 	run(
     RvsdgModule & module,
-    StatisticsCollector & statisticsCollector) override;
+    util::StatisticsCollector & statisticsCollector) override;
 };
 
 void

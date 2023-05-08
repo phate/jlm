@@ -156,14 +156,14 @@ class node final : public jive::structural_node
   class fctresiterator;
   class fctresconstiterator;
 
-  using fctargument_range = iterator_range<fctargiterator>;
-  using fctargument_constrange = iterator_range<fctargconstiterator>;
+  using fctargument_range = util::iterator_range<fctargiterator>;
+  using fctargument_constrange = util::iterator_range<fctargconstiterator>;
 
-  using ctxvar_range = iterator_range<cviterator>;
-  using ctxvar_constrange = iterator_range<cvconstiterator>;
+  using ctxvar_range = util::iterator_range<cviterator>;
+  using ctxvar_constrange = util::iterator_range<cvconstiterator>;
 
-  using fctresult_range = iterator_range<fctresiterator>;
-  using fctresult_constrange = iterator_range<fctresconstiterator>;
+  using fctresult_range = util::iterator_range<fctresiterator>;
+  using fctresult_constrange = util::iterator_range<fctresconstiterator>;
 
 public:
   ~node() override;
@@ -203,7 +203,7 @@ public:
   [[nodiscard]] const lambda::operation &
   operation() const noexcept
   {
-    return *AssertedCast<const lambda::operation>(&structural_node::operation());
+    return *util::AssertedCast<const lambda::operation>(&structural_node::operation());
   }
 
   [[nodiscard]] const FunctionType &
@@ -361,7 +361,7 @@ private:
     jive::output * origin)
   {
     auto input = std::unique_ptr<cvinput>(new cvinput(node, origin));
-    return AssertedCast<cvinput>(node->append_input(std::move(input)));
+    return util::AssertedCast<cvinput>(node->append_input(std::move(input)));
   }
 
 public:
@@ -371,7 +371,7 @@ public:
   [[nodiscard]] lambda::node *
   node() const noexcept
   {
-    return AssertedCast<lambda::node>(structural_input::node());
+    return util::AssertedCast<lambda::node>(structural_input::node());
   }
 };
 
@@ -439,14 +439,14 @@ private:
     const jive::port & port)
   {
     auto output = std::unique_ptr<lambda::output>(new lambda::output(node, port));
-    return AssertedCast<lambda::output>(node->append_output(std::move(output)));
+    return util::AssertedCast<lambda::output>(node->append_output(std::move(output)));
   }
 
 public:
   lambda::node *
   node() const noexcept
   {
-    return AssertedCast<lambda::node>(structural_output::node());
+    return util::AssertedCast<lambda::node>(structural_output::node());
   }
 };
 
@@ -512,7 +512,7 @@ class node::fctargiterator final : public jive::output::iterator<lambda::fctargu
   next() const override
   {
     auto index = value()->index();
-    auto lambda = AssertedCast<lambda::node>(value()->region()->node());
+    auto lambda = util::AssertedCast<lambda::node>(value()->region()->node());
 
     /*
       This assumes that all function arguments were added to the lambda region
@@ -539,7 +539,7 @@ class node::fctargconstiterator final : public jive::output::constiterator<lambd
   next() const override
   {
     auto index = value()->index();
-    auto lambda = AssertedCast<lambda::node>(value()->region()->node());
+    auto lambda = util::AssertedCast<lambda::node>(value()->region()->node());
 
     /*
       This assumes that all function arguments were added to the lambda region
@@ -581,7 +581,7 @@ public:
   cvinput *
   input() const noexcept
   {
-    return AssertedCast<cvinput>(jive::argument::input());
+    return util::AssertedCast<cvinput>(jive::argument::input());
   }
 };
 
@@ -612,7 +612,7 @@ public:
   lambda::output *
   output() const noexcept
   {
-    return AssertedCast<lambda::output>(jive::result::output());
+    return util::AssertedCast<lambda::output>(jive::result::output());
   }
 };
 
@@ -631,7 +631,7 @@ class node::fctresiterator final : public jive::input::iterator<lambda::result>
   next() const override
   {
     auto index = value()->index();
-    auto lambda = AssertedCast<lambda::node>(value()->region()->node());
+    auto lambda = util::AssertedCast<lambda::node>(value()->region()->node());
 
     return lambda->nfctresults() > index+1
            ? lambda->fctresult(index+1)
@@ -654,7 +654,7 @@ class node::fctresconstiterator final : public jive::input::constiterator<lambda
   next() const override
   {
     auto index = value()->index();
-    auto lambda = AssertedCast<lambda::node>(value()->region()->node());
+    auto lambda = util::AssertedCast<lambda::node>(value()->region()->node());
 
     return lambda->nfctresults() > index+1
            ? lambda->fctresult(index+1)

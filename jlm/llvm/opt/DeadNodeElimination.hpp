@@ -119,7 +119,7 @@ public:
 	void
 	run(
     RvsdgModule & module,
-    StatisticsCollector & statisticsCollector) override;
+    util::StatisticsCollector & statisticsCollector) override;
 
 private:
   void

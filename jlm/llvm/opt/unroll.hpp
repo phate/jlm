@@ -43,7 +43,7 @@ public:
 	virtual void
 	run(
     RvsdgModule & module,
-    StatisticsCollector & statisticsCollector) override;
+    util::StatisticsCollector & statisticsCollector) override;
 
 private:
 	size_t factor_;

@@ -10,8 +10,13 @@
 
 namespace jlm {
 
-class RvsdgModule;
+namespace util
+{
 class StatisticsCollector;
+}
+
+class RvsdgModule;
+
 
 namespace aa {
 
@@ -36,7 +41,7 @@ public:
 	virtual std::unique_ptr<PointsToGraph>
 	Analyze(
     const RvsdgModule & module,
-    StatisticsCollector & statisticsCollector) = 0;
+    util::StatisticsCollector & statisticsCollector) = 0;
 };
 
 }}

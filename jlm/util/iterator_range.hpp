@@ -8,7 +8,8 @@
 
 #include <utility>
 
-namespace jlm {
+namespace jlm::util
+{
 
 /** \brief Iterator Range
 *

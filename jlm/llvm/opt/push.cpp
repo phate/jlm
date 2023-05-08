@@ -14,7 +14,7 @@
 
 namespace jlm {
 
-class pushstat final : public Statistics {
+class pushstat final : public util::Statistics {
 public:
 	virtual
 	~pushstat()
@@ -42,7 +42,7 @@ public:
 	virtual std::string
 	ToString() const override
 	{
-		return strfmt("PUSH ",
+		return util::strfmt("PUSH ",
 			ninputs_before_, " ", ninputs_after_, " ",
 			timer_.ns()
 		);
@@ -56,7 +56,7 @@ public:
 
 private:
 	size_t ninputs_before_, ninputs_after_;
-	jlm::timer timer_;
+	util::timer timer_;
 };
 
 class worklist {
@@ -405,7 +405,7 @@ push(jive::region * region)
 static void
 push(
   RvsdgModule & rm,
-  StatisticsCollector & statisticsCollector)
+  util::StatisticsCollector & statisticsCollector)
 {
 	auto statistics = pushstat::Create();
 
@@ -424,7 +424,7 @@ pushout::~pushout()
 void
 pushout::run(
   RvsdgModule & module,
-  StatisticsCollector & statisticsCollector)
+  util::StatisticsCollector & statisticsCollector)
 {
 	push(module, statisticsCollector);
 }

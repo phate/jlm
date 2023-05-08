@@ -11,7 +11,8 @@
 
 #include <vector>
 
-namespace jlm {
+namespace jlm::util
+{
 class StatisticsCollector;
 }
 
@@ -29,34 +30,34 @@ public:
   [[nodiscard]] virtual const PointsToGraph &
   GetPointsToGraph() const noexcept = 0;
 
-  [[nodiscard]] virtual const HashSet<const PointsToGraph::MemoryNode*> &
+  [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode*> &
   GetRegionEntryNodes(const jive::region & region) const = 0;
 
-  [[nodiscard]] virtual const HashSet<const PointsToGraph::MemoryNode*> &
+  [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode*> &
   GetRegionExitNodes(const jive::region & region) const = 0;
 
-  [[nodiscard]] virtual const HashSet<const PointsToGraph::MemoryNode*> &
+  [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode*> &
   GetCallEntryNodes(const CallNode & callNode) const = 0;
 
-  [[nodiscard]] virtual const HashSet<const PointsToGraph::MemoryNode*> &
+  [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode*> &
   GetCallExitNodes(const CallNode & callNode) const = 0;
 
-  [[nodiscard]] virtual HashSet<const PointsToGraph::MemoryNode*>
+  [[nodiscard]] virtual util::HashSet<const PointsToGraph::MemoryNode*>
   GetOutputNodes(const jive::output & output) const = 0;
 
-  [[nodiscard]] virtual const HashSet<const PointsToGraph::MemoryNode*> &
+  [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode*> &
   GetLambdaEntryNodes(const lambda::node & lambdaNode) const
   {
     return GetRegionEntryNodes(*lambdaNode.subregion());
   }
 
-  [[nodiscard]] virtual const HashSet<const PointsToGraph::MemoryNode*> &
+  [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode*> &
   GetLambdaExitNodes(const lambda::node & lambdaNode) const
   {
     return GetRegionExitNodes(*lambdaNode.subregion());
   }
 
-  [[nodiscard]] virtual const HashSet<const PointsToGraph::MemoryNode*> &
+  [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode*> &
   GetThetaEntryExitNodes(const jive::theta_node & thetaNode) const
   {
     auto & entryNodes = GetRegionEntryNodes(*thetaNode.subregion());
@@ -65,10 +66,10 @@ public:
     return entryNodes;
   }
 
-  [[nodiscard]] virtual HashSet<const PointsToGraph::MemoryNode*>
+  [[nodiscard]] virtual util::HashSet<const PointsToGraph::MemoryNode*>
   GetGammaEntryNodes(const jive::gamma_node & gammaNode) const
   {
-    HashSet<const PointsToGraph::MemoryNode*> allMemoryNodes;
+    util::HashSet<const PointsToGraph::MemoryNode*> allMemoryNodes;
     for (size_t n = 0; n < gammaNode.nsubregions(); n++) {
       auto & subregion = *gammaNode.subregion(n);
       auto & memoryNodes = GetRegionEntryNodes(subregion);
@@ -78,10 +79,10 @@ public:
     return allMemoryNodes;
   }
 
-  [[nodiscard]] virtual HashSet<const PointsToGraph::MemoryNode*>
+  [[nodiscard]] virtual util::HashSet<const PointsToGraph::MemoryNode*>
   GetGammaExitNodes(const jive::gamma_node & gammaNode) const
   {
-    HashSet<const PointsToGraph::MemoryNode*> allMemoryNodes;
+    util::HashSet<const PointsToGraph::MemoryNode*> allMemoryNodes;
     for (size_t n = 0; n < gammaNode.nsubregions(); n++) {
       auto & subregion = *gammaNode.subregion(n);
       auto & memoryNodes = GetRegionExitNodes(subregion);
@@ -110,7 +111,7 @@ public:
   ProvisionMemoryNodes(
     const RvsdgModule & rvsdgModule,
     const PointsToGraph & pointsToGraph,
-    StatisticsCollector & statisticsCollector) = 0;
+    util::StatisticsCollector & statisticsCollector) = 0;
 };
 
 }

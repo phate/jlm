@@ -13,7 +13,7 @@
 
 namespace jlm {
 
-class InvariantValueRedirectionStatistics final : public Statistics {
+class InvariantValueRedirectionStatistics final : public util::Statistics {
 public:
   ~InvariantValueRedirectionStatistics() override
   = default;
@@ -37,7 +37,7 @@ public:
   [[nodiscard]] std::string
   ToString() const override
   {
-    return strfmt("InvariantValueRedirection ",
+    return util::strfmt("InvariantValueRedirection ",
                   "Time[ns]:", Timer_.ns()
     );
   }
@@ -49,7 +49,7 @@ public:
   }
 
 private:
-  jlm::timer Timer_;
+  util::timer Timer_;
 };
 
 InvariantValueRedirection::~InvariantValueRedirection()
@@ -58,7 +58,7 @@ InvariantValueRedirection::~InvariantValueRedirection()
 void
 InvariantValueRedirection::run(
   RvsdgModule & rvsdgModule,
-  StatisticsCollector & statisticsCollector)
+  util::StatisticsCollector & statisticsCollector)
 {
   auto & rvsdg = rvsdgModule.Rvsdg();
   auto statistics = InvariantValueRedirectionStatistics::Create();
@@ -77,7 +77,7 @@ InvariantValueRedirection::RedirectInvariantValues(jive::region & region)
     if (jive::is<jive::simple_op>(node))
       continue;
 
-    auto & structuralNode = *AssertedCast<jive::structural_node>(node);
+    auto & structuralNode = *util::AssertedCast<jive::structural_node>(node);
     for (size_t n = 0; n < structuralNode.nsubregions(); n++)
       RedirectInvariantValues(*structuralNode.subregion(n));
 

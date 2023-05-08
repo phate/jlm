@@ -42,7 +42,7 @@ test()
 {
 	using namespace jlm;
 
-	ipgraph_module im(filepath(""), "", "");
+	ipgraph_module im(util::filepath(""), "", "");
 
 	/* setup cfg */
 

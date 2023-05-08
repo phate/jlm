@@ -95,7 +95,7 @@ test_linear_reduction()
 		}
 	};
 
-	ipgraph_module module(filepath(""), "", "");
+	ipgraph_module module(util::filepath(""), "", "");
 	auto cfg = setup_cfg(module);
 
 	auto root = jlm::aggregate(*cfg);
@@ -146,7 +146,7 @@ test_loop_reduction()
 		}
 	};
 
-	ipgraph_module module(filepath(""), "", "");
+	ipgraph_module module(util::filepath(""), "", "");
 	auto cfg = setup_cfg(module);
 
 	auto root = jlm::aggregate(*cfg);
@@ -214,7 +214,7 @@ test_branch_reduction()
 		}
 	};
 
-	ipgraph_module module(filepath(""), "", "");
+	ipgraph_module module(util::filepath(""), "", "");
 	auto cfg = setup_cfg(module);
 
 	auto root = jlm::aggregate(*cfg);
@@ -291,7 +291,7 @@ test_branch_loop_reduction()
 		}
 	};
 
-	ipgraph_module module(filepath(""), "", "");
+	ipgraph_module module(util::filepath(""), "", "");
 	auto cfg = setup_cfg(module);
 
 	auto root = jlm::aggregate(*cfg);
@@ -358,7 +358,7 @@ test_loop_branch_reduction()
 		}
 	};
 
-	ipgraph_module module(filepath(""), "", "");
+	ipgraph_module module(util::filepath(""), "", "");
 	auto cfg = setup_cfg(module);
 
 	auto root = jlm::aggregate(*cfg);
@@ -419,7 +419,7 @@ test_ifthen_reduction()
 		}
 	};
 
-	ipgraph_module module(filepath(""), "", "");
+	ipgraph_module module(util::filepath(""), "", "");
 	auto cfg = setup_cfg(module);
 
 	auto root = jlm::aggregate(*cfg);
@@ -478,7 +478,7 @@ test_branch_and_loop()
 		}
 	};
 
-	ipgraph_module module(filepath(""), "", "");
+	ipgraph_module module(util::filepath(""), "", "");
 	auto cfg = setup_cfg(module);
 
 	auto root = jlm::aggregate(*cfg);
