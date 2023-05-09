@@ -64,7 +64,7 @@ bitslice_op::reduce_operand(
 	
 	if (path == jive_unop_reduction_narrow) {
 		auto op = static_cast<const bitslice_op&>(node->operation());
-		return jive_bitslice(node->input(0)->origin(), low() + op.low(), high() + op.low());
+		return jive::bitslice(node->input(0)->origin(), low() + op.low(), high() + op.low());
 	}
 	
 	if (path == jive_unop_reduction_constant) {
@@ -84,7 +84,7 @@ bitslice_op::reduce_operand(
 			if (base < high() && pos > low()) {
 				size_t slice_low = (low() > base) ? (low() - base) : 0;
 				size_t slice_high = (high() < pos) ? (high() - base) : (pos - base);
-				argument = jive_bitslice(argument, slice_low, slice_high);
+				argument = jive::bitslice(argument, slice_low, slice_high);
 				arguments.push_back(argument);
 			}
 		}
@@ -101,12 +101,12 @@ bitslice_op::copy() const
 	return std::unique_ptr<jive::operation>(new bitslice_op(*this));
 }
 
+jive::output *
+bitslice(jive::output * argument, size_t low, size_t high)
+{
+  auto & type = dynamic_cast<const jive::bittype&>(argument->type());
+  jive::bitslice_op op(type, low, high);
+  return jive::simple_node::create_normalized(argument->region(), op, {argument})[0];
 }
 
-jive::output *
-jive_bitslice(jive::output * argument, size_t low, size_t high)
-{
-	auto & type = dynamic_cast<const jive::bittype&>(argument->type());
-	jive::bitslice_op op(type, low, high);
-	return jive::simple_node::create_normalized(argument->region(), op, {argument})[0];
 }

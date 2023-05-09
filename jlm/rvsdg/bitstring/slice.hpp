@@ -67,19 +67,19 @@ private:
 	size_t low_;
 };
 
-}
-
 /**
 	\brief Create bitslice
 	\param operand Input value
 	\param low Low bit
 	\param high High bit
 	\returns Bitstring value representing slice
-	
+
 	Convenience function that either creates a new slice or
 	returns the output handle of an existing slice.
 */
 jive::output *
-jive_bitslice(jive::output * operand, size_t low, size_t high);
+bitslice(jive::output * operand, size_t low, size_t high);
+
+}
 
 #endif
