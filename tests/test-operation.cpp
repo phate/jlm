@@ -61,17 +61,17 @@ binary_op::operator==(const jive::operation & other) const noexcept
 	    && op->result(0) == result(0);
 }
 
-jive_binop_reduction_path_t
+jive::binop_reduction_path_t
 binary_op::can_reduce_operand_pair(
 	const jive::output * op1,
 	const jive::output * op2) const noexcept
 {
-	return jive_binop_reduction_none;
+	return jive::binop_reduction_none;
 }
 
 jive::output *
 binary_op::reduce_operand_pair(
-	jive_binop_reduction_path_t path,
+	jive::binop_reduction_path_t path,
 	jive::output * op1,
 	jive::output * op2) const
 {

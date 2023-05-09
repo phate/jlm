@@ -28,14 +28,14 @@ public:
 	virtual bool
 	operator==(const jive::operation & other) const noexcept override;
 
-	virtual jive_binop_reduction_path_t
+	virtual binop_reduction_path_t
 	can_reduce_operand_pair(
 		const jive::output * arg1,
 		const jive::output * arg2) const noexcept override;
 
 	virtual jive::output *
 	reduce_operand_pair(
-		jive_binop_reduction_path_t path,
+		binop_reduction_path_t path,
 		jive::output * arg1,
 		jive::output * arg2) const override;
 

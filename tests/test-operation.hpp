@@ -103,7 +103,7 @@ public:
 	virtual bool
 	operator==(const jive::operation & other) const noexcept override;
 
-	virtual jive_binop_reduction_path_t
+	virtual jive::binop_reduction_path_t
 	can_reduce_operand_pair(
 		const jive::output * op1,
 		const jive::output * op2) const noexcept override;

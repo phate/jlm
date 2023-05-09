@@ -29,8 +29,8 @@ reduce_operands(const jive::binary_op & op, std::vector<jive::output*> args)
 			std::move(args),
 			[&op](jive::output * arg1, jive::output * arg2)
 			{
-				jive_binop_reduction_path_t reduction = op.can_reduce_operand_pair(arg1, arg2);
-				return reduction != jive_binop_reduction_none
+				binop_reduction_path_t reduction = op.can_reduce_operand_pair(arg1, arg2);
+				return reduction != binop_reduction_none
 					? op.reduce_operand_pair(reduction, arg1, arg2)
 					: nullptr;
 			});
@@ -39,8 +39,8 @@ reduce_operands(const jive::binary_op & op, std::vector<jive::output*> args)
 			std::move(args),
 			[&op](jive::output * arg1, jive::output * arg2)
 			{
-				jive_binop_reduction_path_t reduction = op.can_reduce_operand_pair(arg1, arg2);
-				return reduction != jive_binop_reduction_none
+				binop_reduction_path_t reduction = op.can_reduce_operand_pair(arg1, arg2);
+				return reduction != binop_reduction_none
 					? op.reduce_operand_pair(reduction, arg1, arg2)
 					: nullptr;
 			});

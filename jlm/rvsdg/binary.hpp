@@ -12,9 +12,9 @@
 #include <jlm/rvsdg/simple-normal-form.hpp>
 #include <jlm/util/common.hpp>
 
-typedef size_t jive_binop_reduction_path_t;
-
 namespace jive {
+
+typedef size_t binop_reduction_path_t;
 
 class binary_op;
 
@@ -118,14 +118,14 @@ public:
 	: simple_op(operands, {result})
 	{}
 
-	virtual jive_binop_reduction_path_t
+	virtual binop_reduction_path_t
 	can_reduce_operand_pair(
 		const jive::output * op1,
 		const jive::output * op2) const noexcept = 0;
 
 	virtual jive::output *
 	reduce_operand_pair(
-		jive_binop_reduction_path_t path,
+		binop_reduction_path_t path,
 		jive::output * op1,
 		jive::output * op2) const = 0;
 
@@ -243,22 +243,22 @@ binary_op::is_commutative() const noexcept
 	return static_cast<int>(flags() & binary_op::flags::commutative);
 }
 
-}
-
-static const jive_binop_reduction_path_t jive_binop_reduction_none = 0;
+static const binop_reduction_path_t binop_reduction_none = 0;
 /* both operands are constants */
-static const jive_binop_reduction_path_t jive_binop_reduction_constants = 1;
+static const binop_reduction_path_t binop_reduction_constants = 1;
 /* can merge both operands into single (using some "simpler" operator) */
-static const jive_binop_reduction_path_t jive_binop_reduction_merge = 2;
+static const binop_reduction_path_t binop_reduction_merge = 2;
 /* part of left operand can be folded into right */
-static const jive_binop_reduction_path_t jive_binop_reduction_lfold = 3;
+static const binop_reduction_path_t binop_reduction_lfold = 3;
 /* part of right operand can be folded into left */
-static const jive_binop_reduction_path_t jive_binop_reduction_rfold = 4;
+static const binop_reduction_path_t binop_reduction_rfold = 4;
 /* left operand is neutral element */
-static const jive_binop_reduction_path_t jive_binop_reduction_lneutral = 5;
+static const binop_reduction_path_t binop_reduction_lneutral = 5;
 /* right operand is neutral element */
-static const jive_binop_reduction_path_t jive_binop_reduction_rneutral = 6;
+static const binop_reduction_path_t binop_reduction_rneutral = 6;
 /* both operands have common form which can be factored over op */
-static const jive_binop_reduction_path_t jive_binop_reduction_factor = 7;
+static const binop_reduction_path_t binop_reduction_factor = 7;
+
+}
 
 #endif

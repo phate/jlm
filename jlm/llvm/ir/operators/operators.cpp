@@ -401,17 +401,17 @@ ptrcmp_op::copy() const
 	return std::unique_ptr<jive::operation>(new ptrcmp_op(*this));
 }
 
-jive_binop_reduction_path_t
+jive::binop_reduction_path_t
 ptrcmp_op::can_reduce_operand_pair(
 	const jive::output * op1,
 	const jive::output * op2) const noexcept
 {
-	return jive_binop_reduction_none;
+	return jive::binop_reduction_none;
 }
 
 jive::output *
 ptrcmp_op::reduce_operand_pair(
-	jive_binop_reduction_path_t path,
+	jive::binop_reduction_path_t path,
 	jive::output * op1,
 	jive::output * op2) const
 {
@@ -535,17 +535,17 @@ fpcmp_op::copy() const
 	return std::unique_ptr<jive::operation>(new jlm::fpcmp_op(*this));
 }
 
-jive_binop_reduction_path_t
+jive::binop_reduction_path_t
 fpcmp_op::can_reduce_operand_pair(
 	const jive::output * op1,
 	const jive::output * op2) const noexcept
 {
-	return jive_binop_reduction_none;
+	return jive::binop_reduction_none;
 }
 
 jive::output *
 fpcmp_op::reduce_operand_pair(
-	jive_binop_reduction_path_t path,
+	jive::binop_reduction_path_t path,
 	jive::output * op1,
 	jive::output * op2) const
 {
@@ -628,17 +628,17 @@ fpbin_op::copy() const
 	return std::unique_ptr<jive::operation>(new jlm::fpbin_op(*this));
 }
 
-jive_binop_reduction_path_t
+jive::binop_reduction_path_t
 fpbin_op::can_reduce_operand_pair(
 	const jive::output * op1,
 	const jive::output * op2) const noexcept
 {
-	return jive_binop_reduction_none;
+	return jive::binop_reduction_none;
 }
 
 jive::output *
 fpbin_op::reduce_operand_pair(
-	jive_binop_reduction_path_t path,
+	jive::binop_reduction_path_t path,
 	jive::output * op1,
 	jive::output * op2) const
 {

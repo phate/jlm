@@ -259,7 +259,7 @@ bitconcat_op::operator==(const jive::operation & other) const noexcept
 	return true;
 }
 
-jive_binop_reduction_path_t
+binop_reduction_path_t
 bitconcat_op::can_reduce_operand_pair(
 	const jive::output * arg1,
 	const jive::output * arg2) const noexcept
@@ -268,13 +268,13 @@ bitconcat_op::can_reduce_operand_pair(
 	auto node2 = node_output::node(arg2);
 
 	if (!node1 || !node2)
-		return jive_binop_reduction_none;
+		return binop_reduction_none;
 
 	auto arg1_constant = is<bitconstant_op>(node1);
 	auto arg2_constant = is<bitconstant_op>(node2);
 
 	if (arg1_constant && arg2_constant) {
-		return jive_binop_reduction_constants;
+		return binop_reduction_constants;
 	}
 
 	auto arg1_slice = dynamic_cast<const bitslice_op*>(&node1->operation());
@@ -285,25 +285,25 @@ bitconcat_op::can_reduce_operand_pair(
 		auto origin2 = node2->input(0)->origin();
 
 		if (origin1 == origin2 && arg1_slice->high() == arg2_slice->low()) {
-			return jive_binop_reduction_merge;
+			return binop_reduction_merge;
 		}
 
 		/* FIXME: support sign bit */
 	}
 
-	return jive_binop_reduction_none;
+	return binop_reduction_none;
 }
 
 jive::output *
 bitconcat_op::reduce_operand_pair(
-	jive_binop_reduction_path_t path,
+	binop_reduction_path_t path,
 	jive::output * arg1,
 	jive::output * arg2) const
 {
 	auto node1 = static_cast<node_output*>(arg1)->node();
 	auto node2 = static_cast<node_output*>(arg2)->node();
 
-	if (path == jive_binop_reduction_constants) {
+	if (path == binop_reduction_constants) {
 		auto & arg1_constant = static_cast<const bitconstant_op&>(node1->operation());
 		auto & arg2_constant = static_cast<const bitconstant_op&>(node2->operation());
 
@@ -318,7 +318,7 @@ bitconcat_op::reduce_operand_pair(
 		return create_bitconstant(arg1->region(), &bits[0]);
 	}
 
-	if (path == jive_binop_reduction_merge) {
+	if (path == binop_reduction_merge) {
 		auto arg1_slice = static_cast<const bitslice_op*>(&node1->operation());
 		auto arg2_slice = static_cast<const bitslice_op*>(&node2->operation());
 		return jive::bitslice(node1->input(0)->origin(), arg1_slice->low(), arg2_slice->high());

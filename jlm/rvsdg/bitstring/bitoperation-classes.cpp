@@ -14,7 +14,7 @@ namespace jive {
 bitunary_op::~bitunary_op() noexcept
 {}
 
-jive_binop_reduction_path_t
+binop_reduction_path_t
 bitunary_op::can_reduce_operand(
 	const jive::output * arg) const noexcept
 {
@@ -43,24 +43,24 @@ bitunary_op::reduce_operand(
 bitbinary_op::~bitbinary_op() noexcept
 {}
 
-jive_binop_reduction_path_t
+binop_reduction_path_t
 bitbinary_op::can_reduce_operand_pair(
 	const jive::output * arg1,
 	const jive::output * arg2) const noexcept
 {
 	if (is<bitconstant_op>(producer(arg1)) && is<bitconstant_op>(producer(arg2)))
-		return jive_binop_reduction_constants;
+		return binop_reduction_constants;
 
-	return jive_binop_reduction_none;
+	return binop_reduction_none;
 }
 
 jive::output *
 bitbinary_op::reduce_operand_pair(
-	jive_binop_reduction_path_t path,
+	binop_reduction_path_t path,
 	jive::output * arg1,
 	jive::output * arg2) const
 {
-	if (path == jive_binop_reduction_constants) {
+	if (path == binop_reduction_constants) {
 		auto & c1 = static_cast<const bitconstant_op&>(producer(arg1)->operation());
 		auto & c2 = static_cast<const bitconstant_op&>(producer(arg2)->operation());
 		return create_bitconstant(arg1->region(), reduce_constants(c1.value(), c2.value()));
@@ -74,7 +74,7 @@ bitbinary_op::reduce_operand_pair(
 bitcompare_op::~bitcompare_op() noexcept
 {}
 
-jive_binop_reduction_path_t
+binop_reduction_path_t
 bitcompare_op::can_reduce_operand_pair(
 	const jive::output * arg1,
 	const jive::output * arg2) const noexcept
@@ -96,15 +96,15 @@ bitcompare_op::can_reduce_operand_pair(
 		case compare_result::static_true:
 			return 2;
 		case compare_result::undecidable:
-			return jive_binop_reduction_none;
+			return binop_reduction_none;
 	}
 	
-	return jive_binop_reduction_none;
+	return binop_reduction_none;
 }
 
 jive::output *
 bitcompare_op::reduce_operand_pair(
-	jive_binop_reduction_path_t path,
+	binop_reduction_path_t path,
 	jive::output * arg1,
 	jive::output * arg2) const
 {
