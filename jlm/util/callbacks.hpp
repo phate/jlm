@@ -10,7 +10,8 @@
 #include <functional>
 #include <memory>
 
-namespace jive {
+namespace jlm::util
+{
 
 class callback final {
 public:

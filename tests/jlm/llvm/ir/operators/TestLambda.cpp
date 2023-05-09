@@ -16,7 +16,7 @@ TestArgumentIterators()
   using namespace jlm;
 
   valuetype vt;
-  RvsdgModule rvsdgModule(filepath(""), "", "");
+  RvsdgModule rvsdgModule(util::filepath(""), "", "");
 
   {
     FunctionType functionType({&vt}, {&vt});
@@ -86,7 +86,7 @@ TestInvalidOperandRegion()
   valuetype vt;
   FunctionType functionType({}, {&vt});
 
-  auto rvsdgModule = RvsdgModule::Create(filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(util::filepath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
   auto lambdaNode = lambda::node::create(
@@ -99,7 +99,7 @@ TestInvalidOperandRegion()
   bool invalidRegionErrorCaught = false;
   try {
     lambdaNode->finalize({result});
-  } catch (jlm::error&) {
+  } catch (util::error&) {
     invalidRegionErrorCaught = true;
   }
 

@@ -23,7 +23,7 @@ test()
 	valuetype vt;
 	PointerType pt;
 	MemoryStateType mt;
-	ipgraph_module m(filepath(""), "", "");
+	ipgraph_module m(util::filepath(""), "", "");
 
 	std::unique_ptr<jlm::cfg> cfg(new jlm::cfg(m));
 	auto bb = basic_block::create(*cfg);

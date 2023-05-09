@@ -227,7 +227,7 @@ namespace jlm {
                 public:
 			std::string
                         run(jlm::RvsdgModule &rvsdgModule) {
-				throw jlm::error("This version of jlm-hls has not been compiled with support for the CIRCT backend\n");
+				throw util::error("This version of jlm-hls has not been compiled with support for the CIRCT backend\n");
                         }
                         private:
                 };

@@ -20,7 +20,7 @@ test_straightening()
 	using namespace jlm;
 
 	jlm::valuetype vt;
-	ipgraph_module module(filepath(""), "", "");
+	ipgraph_module module(util::filepath(""), "", "");
 
 	jlm::cfg cfg(module);
 	auto bb1 = basic_block::create(cfg);
@@ -54,7 +54,7 @@ test_is_structured()
 {
 	using namespace jlm;
 
-	ipgraph_module module(filepath(""), "", "");
+	ipgraph_module module(util::filepath(""), "", "");
 
 	jlm::cfg cfg(module);
 	auto split = basic_block::create(cfg);

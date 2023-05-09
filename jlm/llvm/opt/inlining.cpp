@@ -12,7 +12,7 @@
 
 namespace jlm {
 
-class ilnstat final : public Statistics {
+class ilnstat final : public util::Statistics {
 public:
 	virtual
 	~ilnstat()
@@ -41,7 +41,7 @@ public:
 	virtual std::string
 	ToString() const override
 	{
-		return strfmt("ILN ", nnodes_before_, " ", nnodes_after_, " ", timer_.ns());
+		return util::strfmt("ILN ", nnodes_before_, " ", nnodes_after_, " ", timer_.ns());
 	}
 
   static std::unique_ptr<ilnstat>
@@ -52,7 +52,7 @@ public:
 
 private:
 	size_t nnodes_before_, nnodes_after_;
-	jlm::timer timer_;
+	util::timer timer_;
 };
 
 jive::output *
@@ -162,7 +162,7 @@ inlining(jive::graph & graph)
 static void
 inlining(
   RvsdgModule & rm,
-  StatisticsCollector & statisticsCollector)
+  util::StatisticsCollector & statisticsCollector)
 {
 	auto & graph = rm.Rvsdg();
 	auto statistics = ilnstat::Create();
@@ -182,7 +182,7 @@ fctinline::~fctinline()
 void
 fctinline::run(
   RvsdgModule & module,
-  StatisticsCollector & statisticsCollector)
+  util::StatisticsCollector & statisticsCollector)
 {
 	inlining(module, statisticsCollector);
 }

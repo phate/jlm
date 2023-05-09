@@ -17,12 +17,12 @@ struct my_item {
 	inline ~my_item() { if (p) { *p = 0; } }
 
 	int * p;
-	jive::detail::intrusive_list_anchor<my_item> anchor;
-	typedef jive::detail::intrusive_list_accessor<my_item, &my_item::anchor> accessor;
+	jlm::util::intrusive_list_anchor<my_item> anchor;
+	typedef jlm::util::intrusive_list_accessor<my_item, &my_item::anchor> accessor;
 };
 
-typedef jive::detail::intrusive_list<my_item, my_item::accessor> my_list;
-typedef jive::detail::owner_intrusive_list<my_item, my_item::accessor> my_owner_list;
+typedef jlm::util::intrusive_list<my_item, my_item::accessor> my_list;
+typedef jlm::util::owner_intrusive_list<my_item, my_item::accessor> my_owner_list;
 
 static void test_simple_list(void)
 {

@@ -21,7 +21,7 @@ test()
 
 	valuetype vt;
 	PointerType pt;
-	RvsdgModule rm(filepath(""), "", "");
+	RvsdgModule rm(util::filepath(""), "", "");
 
 	auto imp = rm.Rvsdg().add_import({vt, ""});
 

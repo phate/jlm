@@ -19,7 +19,7 @@ test_two_phis()
 	using namespace jlm;
 
 	jlm::valuetype vt;
-	ipgraph_module module(filepath(""), "", "");
+	ipgraph_module module(util::filepath(""), "", "");
 
 	jlm::cfg cfg(module);
 	auto bb1 = basic_block::create(cfg);

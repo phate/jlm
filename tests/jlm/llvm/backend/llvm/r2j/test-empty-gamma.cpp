@@ -27,7 +27,7 @@ test_with_match()
 	jive::bittype bt1(1);
 	FunctionType ft({&bt1, &vt, &vt}, {&vt});
 
-	RvsdgModule rm(filepath(""), "", "");
+	RvsdgModule rm(util::filepath(""), "", "");
 	auto nf = rm.Rvsdg().node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
@@ -46,7 +46,7 @@ test_with_match()
 
 	jive::view(rm.Rvsdg(), stdout);
 
-	StatisticsCollector statisticsCollector;
+	util::StatisticsCollector statisticsCollector;
 	auto module = rvsdg2jlm::rvsdg2jlm(rm, statisticsCollector);
 	jlm::print(*module, stdout);
 
@@ -72,7 +72,7 @@ test_without_match()
 	jive::bittype bt1(1);
 	FunctionType ft({&ctl2, &vt, &vt}, {&vt});
 
-	RvsdgModule rm(filepath(""), "", "");
+	RvsdgModule rm(util::filepath(""), "", "");
 	auto nf = rm.Rvsdg().node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
@@ -90,7 +90,7 @@ test_without_match()
 
 	jive::view(rm.Rvsdg(), stdout);
 
-	StatisticsCollector statisticsCollector;
+	util::StatisticsCollector statisticsCollector;
 	auto module = rvsdg2jlm::rvsdg2jlm(rm, statisticsCollector);
 	jlm::print(*module, stdout);
 
@@ -115,7 +115,7 @@ test_gamma3()
 	jlm::valuetype vt;
 	FunctionType ft({&jive::bit32, &vt, &vt}, {&vt});
 
-	RvsdgModule rm(filepath(""), "", "");
+	RvsdgModule rm(util::filepath(""), "", "");
 	auto nf = rm.Rvsdg().node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 
@@ -135,7 +135,7 @@ test_gamma3()
 
 	jive::view(rm.Rvsdg(), stdout);
 
-	StatisticsCollector statisticsCollector;
+	util::StatisticsCollector statisticsCollector;
 	auto module = rvsdg2jlm::rvsdg2jlm(rm, statisticsCollector);
 	jlm::print(*module, stdout);
 

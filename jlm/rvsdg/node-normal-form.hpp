@@ -129,7 +129,7 @@ private:
 	std::unordered_set<node_normal_form*> subclasses_;
 };
 
-typedef jive::detail::owner_intrusive_hash<
+typedef jlm::util::owner_intrusive_hash<
 	std::type_index,
 	jive::node_normal_form,
 	jive::node_normal_form::opclass_hash_accessor> node_normal_form_hash;

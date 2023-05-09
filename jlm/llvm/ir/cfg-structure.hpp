@@ -128,8 +128,8 @@ class sccstructure final {
 	using cfg_edge_constiterator = std::unordered_set<cfg_edge*>::const_iterator;
 	using cfg_node_constiterator = std::unordered_set<cfg_node*>::const_iterator;
 
-	using edge_iterator_range = iterator_range<cfg_edge_constiterator>;
-	using node_iterator_range = iterator_range<cfg_node_constiterator>;
+	using edge_iterator_range = util::iterator_range<cfg_edge_constiterator>;
+	using node_iterator_range = util::iterator_range<cfg_node_constiterator>;
 
 public:
 	size_t

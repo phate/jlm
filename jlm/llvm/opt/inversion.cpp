@@ -13,7 +13,7 @@
 
 namespace jlm {
 
-class ivtstat final : public Statistics {
+class ivtstat final : public util::Statistics {
 public:
 	virtual
 	~ivtstat()
@@ -44,7 +44,7 @@ public:
 	virtual std::string
 	ToString() const override
 	{
-		return strfmt("IVT ",
+		return util::strfmt("IVT ",
 			nnodes_before_, " ", nnodes_after_, " ",
 			ninputs_before_, " ", ninputs_after_, " ",
 			timer_.ns()
@@ -60,7 +60,7 @@ public:
 private:
 	size_t nnodes_before_, nnodes_after_;
 	size_t ninputs_before_, ninputs_after_;
-	jlm::timer timer_;
+	util::timer timer_;
 };
 
 static jive::gamma_node *
@@ -297,7 +297,7 @@ invert(jive::region * region)
 static void
 invert(
   RvsdgModule & rm,
-  StatisticsCollector & statisticsCollector)
+  util::StatisticsCollector & statisticsCollector)
 {
 	auto statistics = ivtstat::Create();
 
@@ -316,7 +316,7 @@ tginversion::~tginversion()
 void
 tginversion::run(
   RvsdgModule & module,
-  StatisticsCollector & statisticsCollector)
+  util::StatisticsCollector & statisticsCollector)
 {
 	invert(module, statisticsCollector);
 }

@@ -10,8 +10,12 @@
 
 namespace jlm {
 
-class RvsdgModule;
+namespace util
+{
 class StatisticsCollector;
+}
+
+class RvsdgModule;
 
 /**
 * \brief Optimization pass interface
@@ -34,7 +38,7 @@ public:
 	virtual void
 	run(
     RvsdgModule & module,
-    StatisticsCollector & statisticsCollector) = 0;
+    util::StatisticsCollector & statisticsCollector) = 0;
 };
 
 /*
@@ -42,7 +46,7 @@ public:
 */
 void
 optimize(RvsdgModule & rm,
-         StatisticsCollector & statisticsCollector,
+         util::StatisticsCollector & statisticsCollector,
          const std::vector<optimization*> & opts);
 
 }

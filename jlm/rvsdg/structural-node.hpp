@@ -73,7 +73,7 @@ private:
 
 /* structural input class */
 
-typedef jive::detail::intrusive_list<
+typedef jlm::util::intrusive_list<
 	jive::argument,
 	jive::argument::structural_input_accessor
 > argument_list;
@@ -112,7 +112,7 @@ public:
 
 /* structural output class */
 
-typedef jive::detail::intrusive_list<
+typedef jlm::util::intrusive_list<
 	jive::result,
 	jive::result::structural_output_accessor
 > result_list;

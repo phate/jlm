@@ -18,16 +18,16 @@ namespace jlm
 JlcCommandGraphGenerator::~JlcCommandGraphGenerator() noexcept
 = default;
 
-filepath
-JlcCommandGraphGenerator::CreateJlmOptCommandOutputFile(const filepath & inputFile)
+util::filepath
+JlcCommandGraphGenerator::CreateJlmOptCommandOutputFile(const util::filepath & inputFile)
 {
-  return strfmt("/tmp/tmp-", inputFile.base(), "-jlm-opt-out.ll");
+  return util::strfmt("/tmp/tmp-", inputFile.base(), "-jlm-opt-out.ll");
 }
 
-filepath
-JlcCommandGraphGenerator::CreateParserCommandOutputFile(const filepath & inputFile)
+util::filepath
+JlcCommandGraphGenerator::CreateParserCommandOutputFile(const util::filepath & inputFile)
 {
-  return strfmt("/tmp/tmp-", inputFile.base(), "-clang-out.ll");
+  return util::strfmt("/tmp/tmp-", inputFile.base(), "-clang-out.ll");
 }
 
 ClangCommand::LanguageStandard
@@ -191,7 +191,7 @@ JlcCommandGraphGenerator::GenerateCommandGraph(const JlcCommandLineOptions & com
     leafNodes.push_back(lastNode);
   }
 
-  std::vector<filepath> linkerInputFiles;
+  std::vector<util::filepath> linkerInputFiles;
   for (auto & compilation: commandLineOptions.Compilations_)
   {
     if (compilation.RequiresLinking())
@@ -227,14 +227,14 @@ JlcCommandGraphGenerator::GenerateCommandGraph(const JlcCommandLineOptions & com
 JhlsCommandGraphGenerator::~JhlsCommandGraphGenerator() noexcept
 = default;
 
-filepath
-JhlsCommandGraphGenerator::CreateParserCommandOutputFile(const filepath & inputFile)
+util::filepath
+JhlsCommandGraphGenerator::CreateParserCommandOutputFile(const util::filepath & inputFile)
 {
   return {"tmp-" + inputFile.base() + "-clang-out.ll"};
 }
 
-filepath
-JhlsCommandGraphGenerator::CreateJlmOptCommandOutputFile(const filepath & inputFile)
+util::filepath
+JhlsCommandGraphGenerator::CreateJlmOptCommandOutputFile(const util::filepath & inputFile)
 {
   return {"tmp-" + inputFile.base() + "-jlm-opt-out.ll"};
 }
@@ -282,7 +282,7 @@ JhlsCommandGraphGenerator::GenerateCommandGraph(const JhlsCommandLineOptions & c
 
   std::vector<CommandGraph::Node*> leaves;
   std::vector<CommandGraph::Node*> llir;
-  std::vector<jlm::filepath> llir_files;
+  std::vector<util::filepath> llir_files;
 
   // Create directory in /tmp for storing temporary files
   std::string tmp_identifier;
@@ -293,7 +293,7 @@ JhlsCommandGraphGenerator::GenerateCommandGraph(const JhlsCommandLineOptions & c
   }
   srandom((unsigned) time(nullptr) * getpid());
   tmp_identifier += std::to_string(random());
-  jlm::filepath tmp_folder("/tmp/" + tmp_identifier + "/");
+  util::filepath tmp_folder("/tmp/" + tmp_identifier + "/");
   auto & mkdir = MkdirCommand::Create(*commandGraph, tmp_folder);
   commandGraph->GetEntryNode().AddEdge(mkdir);
 
@@ -333,7 +333,7 @@ JhlsCommandGraphGenerator::GenerateCommandGraph(const JhlsCommandLineOptions & c
   }
 
   // link all llir into one so inlining can be done across files for HLS
-  jlm::filepath ll_merged(tmp_folder.to_str()+"merged.ll");
+  util::filepath ll_merged(tmp_folder.to_str()+"merged.ll");
   auto & ll_link = LlvmLinkCommand::Create(
     *commandGraph,
     llir_files,
@@ -346,7 +346,7 @@ JhlsCommandGraphGenerator::GenerateCommandGraph(const JhlsCommandLineOptions & c
   }
 
   // need to already run m2r here
-  jlm::filepath  ll_m2r1(tmp_folder.to_str()+"merged.m2r.ll");
+  util::filepath  ll_m2r1(tmp_folder.to_str()+"merged.m2r.ll");
   auto & m2r1 = LlvmOptCommand::Create(
     *commandGraph,
     ll_merged,
@@ -360,7 +360,7 @@ JhlsCommandGraphGenerator::GenerateCommandGraph(const JhlsCommandLineOptions & c
     commandLineOptions.HlsFunctionRegex_,
     tmp_folder.to_str());
   m2r1.AddEdge(extract);
-  jlm::filepath  ll_m2r2(tmp_folder.to_str()+"function.m2r.ll");
+  util::filepath  ll_m2r2(tmp_folder.to_str()+"function.m2r.ll");
   auto & m2r2 = LlvmOptCommand::Create(
     *commandGraph,
     dynamic_cast<JlmHlsExtractCommand *>(&extract.GetCommand())->HlsFunctionFile(),
@@ -377,13 +377,13 @@ JhlsCommandGraphGenerator::GenerateCommandGraph(const JhlsCommandLineOptions & c
   m2r2.AddEdge(hls);
 
   if (!commandLineOptions.GenerateFirrtl_) {
-    jlm::filepath verilogfile(tmp_folder.to_str()+"jlm_hls.v");
+    util::filepath verilogfile(tmp_folder.to_str()+"jlm_hls.v");
     auto & firrtl = FirtoolCommand::Create(
       *commandGraph,
       dynamic_cast<JlmHlsCommand *>(&hls.GetCommand())->FirrtlFile(),
       verilogfile);
     hls.AddEdge(firrtl);
-    filepath assemblyFile(tmp_folder.to_str() + "hls.o");
+    util::filepath assemblyFile(tmp_folder.to_str() + "hls.o");
     auto inputFile = dynamic_cast<JlmHlsCommand *>(&hls.GetCommand())->LlvmFile();
     auto & asmnode = LlcCommand::Create(
       *commandGraph,
@@ -397,7 +397,7 @@ JhlsCommandGraphGenerator::GenerateCommandGraph(const JhlsCommandLineOptions & c
       : LlcCommand::RelocationModel::Static);
     hls.AddEdge(asmnode);
 
-    std::vector<jlm::filepath> lnkifiles;
+    std::vector<util::filepath> lnkifiles;
     for (const auto & compilation : commandLineOptions.Compilations_) {
       if (compilation.RequiresLinking() && !compilation.RequiresParsing())
         lnkifiles.push_back(compilation.OutputFile());
@@ -416,7 +416,7 @@ JhlsCommandGraphGenerator::GenerateCommandGraph(const JhlsCommandLineOptions & c
     verilatorCommandNode.AddEdge(commandGraph->GetExitNode());
   }
 
-  std::vector<jlm::filepath> lnkifiles;
+  std::vector<util::filepath> lnkifiles;
   for (const auto & c : commandLineOptions.Compilations_) {
     if (c.RequiresLinking())
       lnkifiles.push_back(c.OutputFile());

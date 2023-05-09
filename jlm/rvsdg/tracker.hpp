@@ -73,7 +73,7 @@ private:
 	/* FIXME: need RAII idiom for state reservation */
 	std::vector<std::unique_ptr<tracker_depth_state>> states_;
 
-	callback depth_callback_, destroy_callback_;
+	jlm::util::callback depth_callback_, destroy_callback_;
 
 	std::unordered_map<jive::node*, std::unique_ptr<jive::tracker_nodestate>> nodestates_;
 };

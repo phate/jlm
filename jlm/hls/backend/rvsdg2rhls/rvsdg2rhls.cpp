@@ -40,7 +40,7 @@ pre_opt(jlm::RvsdgModule &rm) {
 	jlm::cne cne;
 	jlm::InvariantValueRedirection ivr;
 	jlm::tginversion tgi;
-	jlm::StatisticsCollector statisticsCollector;
+	jlm::util::StatisticsCollector statisticsCollector;
 	tgi.run(rm, statisticsCollector);
 	dne.run(rm, statisticsCollector);
 	cne.run(rm, statisticsCollector);
@@ -79,7 +79,7 @@ namespace jlm {
 			auto arg = dynamic_cast<const jive::argument *>(result);
 			auto ip = dynamic_cast<const impport *>(&arg->port());
 			if(ip){
-				throw jlm::error("can not inline external function " + ip->name());
+				throw jlm::util::error("can not inline external function " + ip->name());
 			}
 		}
 		JLM_ASSERT(so);
@@ -116,7 +116,7 @@ namespace jlm {
 				}
 			} else if (auto po = dynamic_cast<const jlm::alloca_op *>(&(node->operation()))) {
 				auto rr = region->graph()->root();
-				auto delta_name = strfmt("hls_alloca_", alloca_cnt++);
+				auto delta_name = jlm::util::strfmt("hls_alloca_", alloca_cnt++);
         PointerType delta_type;
         std::cout << "alloca " << delta_name << ": " << po->value_type().debug_string() << "\n";
 				auto db = delta::node::Create(rr, po->value_type(), delta_name, linkage::external_linkage, "", false);
@@ -224,7 +224,7 @@ jlm::hls::split_hls_function(jlm::RvsdgModule &rm, const std::string &function_n
             for (size_t i = 0; i < ln->ninputs(); ++i) {
                 auto orig_node = dynamic_cast<jive::node_output *>(ln->input(i)->origin())->node();
                 if (auto oln = dynamic_cast<lambda::node *>(orig_node)) {
-                    throw jlm::error("Inlining of function " + oln->name() + " not supported");
+                    throw jlm::util::error("Inlining of function " + oln->name() + " not supported");
                 } else if (auto odn = dynamic_cast<delta::node *>(orig_node)) {
                     // modify name to not contain .
                     if (odn->name().find('.') != std::string::npos) {
@@ -242,7 +242,7 @@ jlm::hls::split_hls_function(jlm::RvsdgModule &rm, const std::string &function_n
                     // TODO: check if not already exported and maybe adjust linkage?
                     rm.Rvsdg().add_export(odn->output(), {odn->output()->type(), odn->name()});
                 } else {
-                    throw jlm::error("Unsupported node type: " + orig_node->operation().debug_string());
+                    throw jlm::util::error("Unsupported node type: " + orig_node->operation().debug_string());
                 }
             }
             // copy function into rhls
@@ -258,7 +258,7 @@ jlm::hls::split_hls_function(jlm::RvsdgModule &rm, const std::string &function_n
             return rhls;
         }
     }
-    throw jlm::error("HLS function " + function_name + " not found");
+    throw jlm::util::error("HLS function " + function_name + " not found");
 }
 
 void
@@ -296,7 +296,7 @@ jlm::hls::dump_ref(jlm::RvsdgModule &rhls) {
 		std::cout << "impport " << imp->name() << ": " << imp->type().debug_string() << "\n";
 	}
 	llvm::LLVMContext ctx;
-	StatisticsCollector statisticsCollector;
+	jlm::util::StatisticsCollector statisticsCollector;
 	auto jm2 = rvsdg2jlm::rvsdg2jlm(*reference, statisticsCollector);
 	auto lm2 = jlm2llvm::convert(*jm2, ctx);
 	std::error_code EC;

@@ -20,9 +20,13 @@ class theta_node;
 
 namespace jlm {
 
+namespace util
+{
+class StatisticsCollector;
+}
+
 class CallNode;
 class RvsdgModule;
-class StatisticsCollector;
 
 namespace delta { class node; }
 namespace lambda { class node; }
@@ -70,7 +74,7 @@ public:
   Encode(
     RvsdgModule & rvsdgModule,
     const MemoryNodeProvisioning & provisioning,
-    StatisticsCollector & statisticsCollector);
+    util::StatisticsCollector & statisticsCollector);
 
 private:
   void

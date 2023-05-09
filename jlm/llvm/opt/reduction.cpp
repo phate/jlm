@@ -12,7 +12,7 @@
 
 namespace jlm {
 
-class redstat final : public Statistics {
+class redstat final : public util::Statistics {
 public:
 	virtual
 	~redstat()
@@ -43,7 +43,7 @@ public:
 	virtual std::string
 	ToString() const override
 	{
-		return strfmt("RED ",
+		return util::strfmt("RED ",
 			nnodes_before_, " ", nnodes_after_, " ",
 			ninputs_before_, " ", ninputs_after_, " ",
 			timer_.ns()
@@ -59,7 +59,7 @@ public:
 private:
 	size_t nnodes_before_, nnodes_after_;
 	size_t ninputs_before_, ninputs_after_;
-	jlm::timer timer_;
+	util::timer timer_;
 };
 
 static void
@@ -125,7 +125,7 @@ enable_binary_reductions(jive::graph & graph)
 static void
 reduce(
   RvsdgModule & rm,
-  StatisticsCollector & statisticsCollector)
+  util::StatisticsCollector & statisticsCollector)
 {
 	auto & graph = rm.Rvsdg();
   auto statistics = redstat::Create();
@@ -153,7 +153,7 @@ nodereduction::~nodereduction()
 void
 nodereduction::run(
   RvsdgModule & module,
-  StatisticsCollector & statisticsCollector)
+  util::StatisticsCollector & statisticsCollector)
 {
 	reduce(module, statisticsCollector);
 }

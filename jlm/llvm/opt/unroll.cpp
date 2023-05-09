@@ -12,7 +12,7 @@
 
 namespace jlm {
 
-class unrollstat final : public Statistics {
+class unrollstat final : public util::Statistics {
 public:
 	virtual
 	~unrollstat()
@@ -40,7 +40,7 @@ public:
 	virtual std::string
 	ToString() const override
 	{
-		return strfmt("UNROLL ",
+		return util::strfmt("UNROLL ",
 			nnodes_before_, " ", nnodes_after_, " ",
 			timer_.ns()
 		);
@@ -54,7 +54,7 @@ public:
 
 private:
 	size_t nnodes_before_, nnodes_after_;
-	jlm::timer timer_;
+	util::timer timer_;
 };
 
 /* helper functions */
@@ -522,7 +522,7 @@ loopunroll::~loopunroll()
 void
 loopunroll::run(
   RvsdgModule & module,
-  StatisticsCollector & statisticsCollector)
+  util::StatisticsCollector & statisticsCollector)
 {
   if (factor_ < 2)
     return;

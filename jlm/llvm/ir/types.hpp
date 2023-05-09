@@ -86,8 +86,8 @@ class FunctionType final : public jive::valuetype {
     std::vector<std::unique_ptr<jive::type>>::const_iterator It_;
   };
 
-  using ArgumentConstRange = iterator_range<TypeConstIterator>;
-  using ResultConstRange = iterator_range<TypeConstIterator>;
+  using ArgumentConstRange = util::iterator_range<TypeConstIterator>;
+  using ResultConstRange = util::iterator_range<TypeConstIterator>;
 
 public:
   ~FunctionType() noexcept override;
@@ -246,7 +246,7 @@ static inline std::unique_ptr<jive::type>
 create_arraytype(const jive::type & type, size_t nelements)
 {
 	auto vt = dynamic_cast<const jive::valuetype*>(&type);
-	if (!vt) throw jlm::error("expected value type.");
+	if (!vt) throw util::error("expected value type.");
 
 	return std::unique_ptr<jive::type>(new arraytype(*vt, nelements));
 }

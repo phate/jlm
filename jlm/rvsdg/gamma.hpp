@@ -471,7 +471,7 @@ inline jive::gamma_output *
 gamma_node::add_exitvar(const std::vector<jive::output*> & values)
 {
 	if (values.size() != nsubregions())
-		throw jlm::error("Incorrect number of values.");
+		throw jlm::util::error("Incorrect number of values.");
 
 	const auto & port = values[0]->port();
 	node::add_output(std::unique_ptr<node_output>(new gamma_output(this, port)));

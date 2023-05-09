@@ -189,7 +189,7 @@ private:
 		static size_t c = 0;
 		std::vector<std::string> names;
 		for (size_t n = 0; n < nnames; n++)
-			names.push_back(strfmt("tv", c++));
+			names.push_back(util::strfmt("tv", c++));
 
 		return names;
 	}

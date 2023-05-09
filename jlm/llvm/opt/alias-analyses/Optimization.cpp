@@ -48,7 +48,7 @@ SteensgaardAgnostic::~SteensgaardAgnostic() noexcept
 void
 SteensgaardAgnostic::run(
   RvsdgModule & rvsdgModule,
-  StatisticsCollector & statisticsCollector)
+  util::StatisticsCollector & statisticsCollector)
 {
   Steensgaard steensgaard;
   auto pointsToGraph = steensgaard.Analyze(rvsdgModule, statisticsCollector);
@@ -66,7 +66,7 @@ SteensgaardRegionAware::~SteensgaardRegionAware() noexcept
 void
 SteensgaardRegionAware::run(
   RvsdgModule & rvsdgModule,
-  StatisticsCollector & statisticsCollector)
+  util::StatisticsCollector & statisticsCollector)
 {
   Steensgaard steensgaard;
   auto pointsToGraph = steensgaard.Analyze(rvsdgModule, statisticsCollector);

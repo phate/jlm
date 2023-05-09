@@ -63,7 +63,7 @@ node::copy(
   jive::substitution_map subregionmap;
   for (auto it = begin_cv(); it != end_cv(); it++) {
     auto origin = smap.lookup(it->origin());
-    if (!origin) throw jlm::error("Operand not provided by susbtitution map.");
+    if (!origin) throw util::error("Operand not provided by susbtitution map.");
 
     auto newcv = pb.add_ctxvar(origin);
     subregionmap.insert(it->argument(), newcv);
@@ -113,7 +113,7 @@ builder::end()
 
   for (auto it = node_->begin_rv(); it != node_->end_rv(); it++) {
     if (it->result()->origin() == it->argument())
-      throw jlm::error("Recursion variable not properly set.");
+      throw util::error("Recursion variable not properly set.");
   }
 
   auto node = node_;

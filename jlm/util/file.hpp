@@ -10,7 +10,8 @@
 
 #include <string>
 
-namespace jlm {
+namespace jlm::util
+{
 
 class filepath final {
 public:
@@ -144,7 +145,7 @@ public:
 	}
 
 	inline bool
-	operator==(const jlm::filepath & other) const noexcept
+	operator==(const filepath & other) const noexcept
 	{
 		return path_ == other.path_;
 	}
@@ -209,7 +210,7 @@ public:
 	open(const char * mode)
 	{
 		fd_ = fopen(path_.to_str().c_str(), mode);
-		if (!fd_) throw jlm::error("Cannot open file " + path_.to_str());
+		if (!fd_) throw error("Cannot open file " + path_.to_str());
 	}
 
 	bool
@@ -224,7 +225,7 @@ public:
 		return fd_;
 	}
 
-	const jlm::filepath &
+	const filepath &
 	path() const noexcept
 	{
 		return path_;
@@ -232,7 +233,7 @@ public:
 
 private:
 	FILE * fd_;
-	jlm::filepath path_;
+	filepath path_;
 };
 
 }

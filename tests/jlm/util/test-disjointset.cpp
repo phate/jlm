@@ -11,7 +11,7 @@
 #include <iostream>
 
 static void
-print(const jlm::disjointset<int>::set & set)
+print(const jlm::util::disjointset<int>::set & set)
 {
 	std::cout << "{";
 	for (auto & member : set)
@@ -20,7 +20,7 @@ print(const jlm::disjointset<int>::set & set)
 }
 
 static void
-print(const jlm::disjointset<int> & djset)
+print(const jlm::util::disjointset<int> & djset)
 {
 	for (auto & set : djset)
 		print(set);
@@ -33,7 +33,7 @@ test()
 {
 	using namespace jlm;
 
-	disjointset<int> djset({1, 2, 3, 4 , 5});
+	jlm::util::disjointset<int> djset({1, 2, 3, 4 , 5});
 	print(djset);
 	assert(djset.nvalues() == 5 && djset.nsets() == 5);
 

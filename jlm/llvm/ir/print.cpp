@@ -82,7 +82,7 @@ emit_tac(const jlm::tac & tac)
 static inline std::string
 emit_label(const jlm::cfg_node * node)
 {
-	return strfmt(node);
+	return util::strfmt(node);
 }
 
 static inline std::string
@@ -268,7 +268,7 @@ emit_header(const jlm::cfg_node & node)
 	if (is<exit_node>(&node))
 		return "EXIT";
 
-	return strfmt(&node);
+	return util::strfmt(&node);
 }
 
 static inline std::string
@@ -296,21 +296,21 @@ to_dot(const jlm::cfg & cfg)
 	std::string dot("digraph cfg {\n");
 
 	/* emit entry node */
-	dot += strfmt("{ rank = source; ", (intptr_t)entry, "[shape=box, label = \"",
+	dot += util::strfmt("{ rank = source; ", (intptr_t)entry, "[shape=box, label = \"",
 		emit_node(*entry), "\"]; }\n");
-	dot += strfmt((intptr_t)entry, " -> ", (intptr_t)entry->outedge(0)->sink(), "[label=\"0\"];\n");
+	dot += util::strfmt((intptr_t)entry, " -> ", (intptr_t)entry->outedge(0)->sink(), "[label=\"0\"];\n");
 
 
 	/* emit exit node */
-	dot += strfmt("{ rank = sink; ", (intptr_t)exit, "[shape=box, label = \"",
+	dot += util::strfmt("{ rank = sink; ", (intptr_t)exit, "[shape=box, label = \"",
 		emit_node(*exit), "\"]; }\n");
 
 	for (const auto & node : cfg) {
-		dot += strfmt("{", (intptr_t)&node);
-		dot += strfmt("[shape = box, label = \"", emit_node(node), "\"]; }\n");
+		dot += util::strfmt("{", (intptr_t)&node);
+		dot += util::strfmt("[shape = box, label = \"", emit_node(node), "\"]; }\n");
 		for (auto it = node.begin_outedges(); it != node.end_outedges(); it++) {
-			dot += strfmt((intptr_t)it->source(), " -> ", (intptr_t)it->sink());
-			dot += strfmt("[label = \"", it->index(), "\"];\n");
+			dot += util::strfmt((intptr_t)it->source(), " -> ", (intptr_t)it->sink());
+			dot += util::strfmt("[label = \"", it->index(), "\"];\n");
 		}
 	}
 	dot += "}\n";
@@ -323,11 +323,11 @@ to_dot(const jlm::ipgraph & clg)
 {
 	std::string dot("digraph clg {\n");
 	for (const auto & node : clg) {
-		dot += strfmt((intptr_t)&node);
-		dot += strfmt("[label = \"", node.name(), "\"];\n");
+		dot += util::strfmt((intptr_t)&node);
+		dot += util::strfmt("[label = \"", node.name(), "\"];\n");
 
 		for (const auto & call : node)
-			dot += strfmt((intptr_t)&node, " -> ", (intptr_t)call, ";\n");
+			dot += util::strfmt((intptr_t)&node, " -> ", (intptr_t)call, ";\n");
 	}
 	dot += "}\n";
 

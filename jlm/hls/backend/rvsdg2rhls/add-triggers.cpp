@@ -90,7 +90,7 @@ jlm::hls::add_triggers(jive::region *region) {
 					add_triggers(gn->subregion(i));
 				}
 			} else {
-				throw jlm::error("Unexpected node type: " + node->operation().debug_string());
+				throw jlm::util::error("Unexpected node type: " + node->operation().debug_string());
 			}
 		} else if (auto sn = dynamic_cast<jive::simple_node *>(node)) {
 			assert(trigger != nullptr);
@@ -103,7 +103,7 @@ jlm::hls::add_triggers(jive::region *region) {
 				}
 			}
 		} else {
-			throw jlm::error("Unexpected node type: " + node->operation().debug_string());
+			throw jlm::util::error("Unexpected node type: " + node->operation().debug_string());
 		}
 	}
 }

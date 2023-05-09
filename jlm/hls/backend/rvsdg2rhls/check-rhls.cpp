@@ -16,23 +16,23 @@ jlm::hls::check_rhls(jive::region *sr) {
 			if (auto ln = dynamic_cast<hls::loop_node *>(node)) {
 				check_rhls(ln->subregion());
 			} else {
-				throw jlm::error("There should be only simple nodes and loop nodes");
+				throw jlm::util::error("There should be only simple nodes and loop nodes");
 			}
 		}
 		for (size_t i = 0; i < node->noutputs(); i++) {
 			if (node->output(i)->nusers() == 0) {
-				throw jlm::error("Output has no users");
+				throw jlm::util::error("Output has no users");
 			} else if (node->output(i)->nusers() > 1) {
-				throw jlm::error("Output has more than one user");
+				throw jlm::util::error("Output has more than one user");
 			}
 		}
 		if (is_constant(node)) {
 			if (node->noutputs() != 1) {
-				throw jlm::error("Constant should have one output");
+				throw jlm::util::error("Constant should have one output");
 			}
 			auto user_in = dynamic_cast<jive::node_input *>(*node->output(0)->begin());
 			if (!user_in || !jive::is<hls::trigger_op>(user_in->node())) {
-				throw jlm::error("Constant has to be gated by a trigger");
+				throw jlm::util::error("Constant has to be gated by a trigger");
 			}
 		}
 	}
@@ -43,11 +43,11 @@ jlm::hls::check_rhls(jlm::RvsdgModule &rm) {
 	auto &graph = rm.Rvsdg();
 	auto root = graph.root();
 	if (root->nodes.size() != 1) {
-		throw jlm::error("Root should have only one node now");
+		throw jlm::util::error("Root should have only one node now");
 	}
 	auto ln = dynamic_cast<const jlm::lambda::node *>(root->nodes.begin().ptr());
 	if (!ln) {
-		throw jlm::error("Node needs to be a lambda");
+		throw jlm::util::error("Node needs to be a lambda");
 	}
 	check_rhls(ln->subregion());
 }

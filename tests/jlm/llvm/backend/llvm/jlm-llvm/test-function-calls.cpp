@@ -22,7 +22,7 @@ test_malloc()
 
 		MemoryStateType mt;
 		PointerType pt;
-		auto im = ipgraph_module::create(filepath(""), "", "");
+		auto im = ipgraph_module::create(util::filepath(""), "", "");
 
 		auto cfg = cfg::create(*im);
 		auto bb = basic_block::create(*cfg);
@@ -74,7 +74,7 @@ test_free()
 		MemoryStateType mt;
 		PointerType pt;
 
-		auto ipgmod = ipgraph_module::create(filepath(""), "", "");
+		auto ipgmod = ipgraph_module::create(util::filepath(""), "", "");
 
 		FunctionType ft({&pt, &mt, &iot}, {&mt, &iot});
 		auto f = function_node::create(ipgmod->ipgraph(), "f", ft, linkage::external_linkage);

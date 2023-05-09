@@ -21,7 +21,7 @@ test()
 	valuetype vt;
 	FunctionType ft({&vt}, {&vt});
 
-	ipgraph_module im(filepath(""), "", "");
+	ipgraph_module im(util::filepath(""), "", "");
 
 	auto d = data_node::Create(
     im.ipgraph(),
@@ -35,7 +35,7 @@ test()
 	im.create_global_value(d);
 	im.create_variable(f);
 
-	StatisticsCollector statisticsCollector;
+	util::StatisticsCollector statisticsCollector;
 	auto rvsdgModule = ConvertInterProceduralGraphModule(im, statisticsCollector);
 
 	jive::view(rvsdgModule->Rvsdg(), stdout);

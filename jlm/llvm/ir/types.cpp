@@ -153,7 +153,7 @@ arraytype::~arraytype()
 std::string
 arraytype::debug_string() const
 {
-	return strfmt("[ ", nelements(), " x ", type_->debug_string(), " ]");
+	return util::strfmt("[ ", nelements(), " x ", type_->debug_string(), " ]");
 }
 
 bool
@@ -274,7 +274,7 @@ fixedvectortype::operator==(const jive::type & other) const noexcept
 std::string
 fixedvectortype::debug_string() const
 {
-	return strfmt("fixedvector[", type().debug_string(), ":", size(), "]");
+	return util::strfmt("fixedvector[", type().debug_string(), ":", size(), "]");
 }
 
 std::unique_ptr<jive::type>
@@ -298,7 +298,7 @@ scalablevectortype::operator==(const jive::type & other) const noexcept
 std::string
 scalablevectortype::debug_string() const
 {
-	return strfmt("scalablevector[", type().debug_string(), ":", size(), "]");
+	return util::strfmt("scalablevector[", type().debug_string(), ":", size(), "]");
 }
 
 std::unique_ptr<jive::type>

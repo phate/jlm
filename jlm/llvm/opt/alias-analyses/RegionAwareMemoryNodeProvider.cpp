@@ -31,44 +31,44 @@ public:
   RegionSummary &
   operator=(RegionSummary&&) = delete;
 
-  const HashSet<const PointsToGraph::MemoryNode*> &
+  const util::HashSet<const PointsToGraph::MemoryNode*> &
   GetMemoryNodes() const
   {
     return MemoryNodes_;
   }
 
-  [[nodiscard]] const HashSet<const jive::simple_node*> &
+  [[nodiscard]] const util::HashSet<const jive::simple_node*> &
   GetUnknownMemoryNodeReferences() const noexcept
   {
     return UnknownMemoryNodeReferences_;
   }
 
-  const HashSet<const CallNode*> &
+  const util::HashSet<const CallNode*> &
   GetNonRecursiveCalls() const
   {
     return NonRecursiveCalls_;
   }
 
-  const HashSet<const CallNode*> &
+  const util::HashSet<const CallNode*> &
   GetRecursiveCalls() const
   {
     return RecursiveCalls_;
   }
 
-  const HashSet<const jive::structural_node*> &
+  const util::HashSet<const jive::structural_node*> &
   GetStructuralNodes() const
   {
     return StructuralNodes_;
   }
 
   void
-  AddMemoryNodes(const HashSet<const PointsToGraph::MemoryNode*> & memoryNodes)
+  AddMemoryNodes(const util::HashSet<const PointsToGraph::MemoryNode*> & memoryNodes)
   {
     MemoryNodes_.UnionWith(memoryNodes);
   }
 
   void
-  AddUnknownMemoryNodeReferences(const HashSet<const jive::simple_node*> & nodes)
+  AddUnknownMemoryNodeReferences(const util::HashSet<const jive::simple_node*> & nodes)
   {
     UnknownMemoryNodeReferences_.UnionWith(nodes);
   }
@@ -114,12 +114,12 @@ public:
 
 private:
   const jive::region * Region_;
-  HashSet<const PointsToGraph::MemoryNode*> MemoryNodes_;
-  HashSet<const jive::simple_node*> UnknownMemoryNodeReferences_;
+  util::HashSet<const PointsToGraph::MemoryNode*> MemoryNodes_;
+  util::HashSet<const jive::simple_node*> UnknownMemoryNodeReferences_;
 
-  HashSet<const CallNode*> RecursiveCalls_;
-  HashSet<const CallNode*> NonRecursiveCalls_;
-  HashSet<const jive::structural_node*> StructuralNodes_;
+  util::HashSet<const CallNode*> RecursiveCalls_;
+  util::HashSet<const CallNode*> NonRecursiveCalls_;
+  util::HashSet<const jive::structural_node*> StructuralNodes_;
 };
 
 /** \brief Memory node provisioning of region-aware memory node provider
@@ -196,7 +196,7 @@ class RegionAwareMemoryNodeProvisioning final : public MemoryNodeProvisioning {
     RegionSummaryMap::const_iterator  it_;
   };
 
-  using RegionSummaryConstRange = iterator_range<RegionSummaryConstIterator>;
+  using RegionSummaryConstRange = util::iterator_range<RegionSummaryConstIterator>;
 
 public:
   explicit
@@ -220,21 +220,21 @@ public:
     return PointsToGraph_;
   }
 
-  [[nodiscard]] const HashSet<const PointsToGraph::MemoryNode*> &
+  [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode*> &
   GetRegionEntryNodes(const jive::region & region) const override
   {
     auto & regionSummary = GetRegionSummary(region);
     return regionSummary.GetMemoryNodes();
   }
 
-  [[nodiscard]] const HashSet<const PointsToGraph::MemoryNode*> &
+  [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode*> &
   GetRegionExitNodes(const jive::region & region) const override
   {
     auto & regionSummary = GetRegionSummary(region);
     return regionSummary.GetMemoryNodes();
   }
 
-  [[nodiscard]] const HashSet<const PointsToGraph::MemoryNode*> &
+  [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode*> &
   GetCallEntryNodes(const CallNode & callNode) const override
   {
     auto callTypeClassifier = CallNode::ClassifyCall(callNode);
@@ -262,7 +262,7 @@ public:
     JLM_UNREACHABLE("Unhandled call type.");
   }
 
-  [[nodiscard]] const HashSet<const PointsToGraph::MemoryNode*> &
+  [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode*> &
   GetCallExitNodes(const CallNode & callNode) const override
   {
     auto callTypeClassifier = CallNode::ClassifyCall(callNode);
@@ -290,13 +290,13 @@ public:
     JLM_UNREACHABLE("Unhandled call type!");
   }
 
-  [[nodiscard]] HashSet<const PointsToGraph::MemoryNode*>
+  [[nodiscard]] util::HashSet<const PointsToGraph::MemoryNode*>
   GetOutputNodes(const jive::output & output) const override
   {
     JLM_ASSERT(is<PointerType>(output.type()));
     auto & registerNode = PointsToGraph_.GetRegisterNode(output);
 
-    HashSet<const PointsToGraph::MemoryNode*> memoryNodes;
+    util::HashSet<const PointsToGraph::MemoryNode*> memoryNodes;
     for (auto & memoryNode : registerNode.Targets())
       memoryNodes.Insert(&memoryNode);
 
@@ -328,7 +328,7 @@ public:
     return *RegionSummaries_.find(&region)->second;
   }
 
-  const HashSet<const PointsToGraph::MemoryNode*> &
+  const util::HashSet<const PointsToGraph::MemoryNode*> &
   GetExternalFunctionNodes(const jive::argument & import) const
   {
     JLM_ASSERT(ContainsExternalFunctionNodes(import));
@@ -350,7 +350,7 @@ public:
   void
   AddExternalFunctionNodes(
     const jive::argument & import,
-    HashSet<const PointsToGraph::MemoryNode*> memoryNodes)
+    util::HashSet<const PointsToGraph::MemoryNode*> memoryNodes)
   {
     JLM_ASSERT(!ContainsExternalFunctionNodes(import));
     ExternalFunctionNodes_[&import] = std::move(memoryNodes);
@@ -453,7 +453,7 @@ public:
   }
 
 private:
-  [[nodiscard]] const HashSet<const PointsToGraph::MemoryNode*> &
+  [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode*> &
   GetIndirectCallNodes(const CallNode & callNode) const
   {
     /*
@@ -468,7 +468,7 @@ private:
 
   RegionSummaryMap RegionSummaries_;
   const PointsToGraph & PointsToGraph_;
-  std::unordered_map<const jive::argument*, HashSet<const PointsToGraph::MemoryNode*>> ExternalFunctionNodes_;
+  std::unordered_map<const jive::argument*, util::HashSet<const PointsToGraph::MemoryNode*>> ExternalFunctionNodes_;
 };
 
 RegionAwareMemoryNodeProvider::~RegionAwareMemoryNodeProvider() noexcept
@@ -478,7 +478,7 @@ std::unique_ptr<MemoryNodeProvisioning>
 RegionAwareMemoryNodeProvider::ProvisionMemoryNodes(
   const jlm::RvsdgModule & rvsdgModule,
   const PointsToGraph & pointsToGraph,
-  StatisticsCollector & statisticsCollector)
+  util::StatisticsCollector & statisticsCollector)
 {
   Provisioning_ = RegionAwareMemoryNodeProvisioning::Create(pointsToGraph);
 
@@ -509,7 +509,7 @@ std::unique_ptr<MemoryNodeProvisioning>
 RegionAwareMemoryNodeProvider::Create(
   const RvsdgModule & rvsdgModule,
   const PointsToGraph & pointsToGraph,
-  StatisticsCollector & statisticsCollector)
+  util::StatisticsCollector & statisticsCollector)
 {
   RegionAwareMemoryNodeProvider provider;
   return provider.ProvisionMemoryNodes(rvsdgModule, pointsToGraph, statisticsCollector);
@@ -520,7 +520,7 @@ RegionAwareMemoryNodeProvider::Create(
   const RvsdgModule & rvsdgModule,
   const PointsToGraph & pointsToGraph)
 {
-  StatisticsCollector statisticsCollector;
+  util::StatisticsCollector statisticsCollector;
   return Create(rvsdgModule, pointsToGraph, statisticsCollector);
 }
 
@@ -567,11 +567,11 @@ RegionAwareMemoryNodeProvider::AnnotateSimpleNode(const jive::simple_node & simp
 {
   auto annotateLoad = [](auto & provider, auto & simpleNode)
   {
-    provider.AnnotateLoad(*AssertedCast<const LoadNode>(&simpleNode));
+    provider.AnnotateLoad(*util::AssertedCast<const LoadNode>(&simpleNode));
   };
   auto annotateStore = [](auto & provider, auto & simpleNode)
   {
-    provider.AnnotateStore(*AssertedCast<const StoreNode>(&simpleNode));
+    provider.AnnotateStore(*util::AssertedCast<const StoreNode>(&simpleNode));
   };
   auto annotateAlloca = [](auto & provider, auto & simpleNode)
   {
@@ -587,7 +587,7 @@ RegionAwareMemoryNodeProvider::AnnotateSimpleNode(const jive::simple_node & simp
   };
   auto annotateCall = [](auto & provider, auto & simpleNode)
   {
-    provider.AnnotateCall(*AssertedCast<const CallNode>(&simpleNode));
+    provider.AnnotateCall(*util::AssertedCast<const CallNode>(&simpleNode));
   };
   auto annotateMemcpy = [](auto & provider, auto & simpleNode)
   {
@@ -684,7 +684,7 @@ RegionAwareMemoryNodeProvider::AnnotateCall(const CallNode & callNode)
 
     auto & pointsToGraph = provider.Provisioning_->GetPointsToGraph();
 
-    HashSet<const PointsToGraph::MemoryNode*> memoryNodes;
+    util::HashSet<const PointsToGraph::MemoryNode*> memoryNodes;
     memoryNodes.UnionWith(pointsToGraph.GetEscapedMemoryNodes());
     memoryNodes.Insert(&pointsToGraph.GetExternalMemoryNode());
 
@@ -787,12 +787,12 @@ RegionAwareMemoryNodeProvider::PropagatePhi(const phi::node & phiNode)
 {
   std::function<void(
     const jive::region&,
-    const HashSet<const PointsToGraph::MemoryNode*>&,
-    const HashSet<const jive::simple_node*>&
+    const util::HashSet<const PointsToGraph::MemoryNode*>&,
+    const util::HashSet<const jive::simple_node*>&
   )> assignAndPropagateMemoryNodes = [&](
     const jive::region & region,
-    const HashSet<const PointsToGraph::MemoryNode*> & memoryNodes,
-    const HashSet<const jive::simple_node*> & unknownMemoryNodeReferences)
+    const util::HashSet<const PointsToGraph::MemoryNode*> & memoryNodes,
+    const util::HashSet<const jive::simple_node*> & unknownMemoryNodeReferences)
   {
     auto & regionSummary = Provisioning_->GetRegionSummary(region);
     for (auto structuralNode : regionSummary.GetStructuralNodes().Items())
@@ -818,8 +818,8 @@ RegionAwareMemoryNodeProvider::PropagatePhi(const phi::node & phiNode)
 
   auto lambdaNodes = ExtractLambdaNodes(phiNode);
 
-  HashSet<const PointsToGraph::MemoryNode*> memoryNodes;
-  HashSet<const jive::simple_node*> unknownMemoryNodeReferences;
+  util::HashSet<const PointsToGraph::MemoryNode*> memoryNodes;
+  util::HashSet<const jive::simple_node*> unknownMemoryNodeReferences;
   for (auto & lambdaNode : lambdaNodes)
   {
     auto & regionSummary = Provisioning_->GetRegionSummary(*lambdaNode->subregion());

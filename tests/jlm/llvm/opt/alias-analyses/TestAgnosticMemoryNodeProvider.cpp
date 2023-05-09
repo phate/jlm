@@ -21,7 +21,7 @@ RunSteensgaard(const jlm::RvsdgModule & module)
   using namespace jlm;
 
   aa::Steensgaard stgd;
-  StatisticsCollector statisticsCollector;
+  util::StatisticsCollector statisticsCollector;
   return stgd.Analyze(module, statisticsCollector);
 }
 
@@ -825,13 +825,13 @@ TestStatistics()
    * Arrange
    */
   LoadTest1 test;
-  jlm::filepath filePath("/tmp/TestStatistics");
+  jlm::util::filepath filePath("/tmp/TestStatistics");
   auto pointsToGraph = RunSteensgaard(test.module());
 
-  jlm::StatisticsCollectorSettings statisticsCollectorSettings(
+  jlm::util::StatisticsCollectorSettings statisticsCollectorSettings(
     filePath,
-    {jlm::Statistics::Id::MemoryNodeProvisioning});
-  jlm::StatisticsCollector statisticsCollector(statisticsCollectorSettings);
+    {jlm::util::Statistics::Id::MemoryNodeProvisioning});
+  jlm::util::StatisticsCollector statisticsCollector(statisticsCollectorSettings);
 
   /*
    * Act

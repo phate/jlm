@@ -16,14 +16,14 @@ RunSteensgaard(jlm::RvsdgModule & rvsdgModule)
   using namespace jlm;
 
   aa::Steensgaard steensgaard;
-  StatisticsCollector statisticsCollector;
+  util::StatisticsCollector statisticsCollector;
   return steensgaard.Analyze(rvsdgModule, statisticsCollector);
 }
 
 static void
 AssertMemoryNodes(
-  const jlm::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> & receivedMemoryNodes,
-  const jlm::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> & expectedMemoryNodes)
+  const jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> & receivedMemoryNodes,
+  const jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> & expectedMemoryNodes)
 {
   assert(receivedMemoryNodes == expectedMemoryNodes);
 }
@@ -44,7 +44,7 @@ TestStore1()
     auto & allocaCMemoryNode = pointsToGraph.GetAllocaNode(*test.alloca_c);
     auto & allocaDMemoryNode = pointsToGraph.GetAllocaNode(*test.alloca_d);
 
-    jlm::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes(
+    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes(
       {
         &allocaAMemoryNode,
         &allocaBMemoryNode,
@@ -93,7 +93,7 @@ TestStore2()
     auto & allocaXMemoryNode = pointsToGraph.GetAllocaNode(*test.alloca_x);
     auto & allocaYMemoryNode = pointsToGraph.GetAllocaNode(*test.alloca_y);
 
-    jlm::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes(
+    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes(
       {
         &allocaAMemoryNode,
         &allocaBMemoryNode,
@@ -181,7 +181,7 @@ TestLoad2()
     auto & allocaXMemoryNode = pointsToGraph.GetAllocaNode(*test.alloca_x);
     auto & allocaYMemoryNode = pointsToGraph.GetAllocaNode(*test.alloca_y);
 
-    jlm::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes(
+    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes(
       {
         &allocaAMemoryNode,
         &allocaBMemoryNode,
@@ -528,7 +528,7 @@ TestIndirectCall2()
 
     auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
 
-    jlm::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes(
+    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes(
       {
         &deltaG1MemoryNode,
         &deltaG2MemoryNode,
@@ -1011,7 +1011,7 @@ TestPhi2()
 
     auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
 
-    jlm::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes(
+    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes(
       {
         &pTestAllocaMemoryNode,
         &paAllocaMemoryNode,
@@ -1242,7 +1242,7 @@ TestEscapedMemory1()
     auto & deltaYMemoryNode = pointsToGraph.GetDeltaNode(*test.DeltaY);
     auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
 
-    jlm::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes({
+    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes({
       &lambdaMemoryNode,
       &deltaAMemoryNode,
       &deltaBMemoryNode,
@@ -1309,7 +1309,7 @@ TestEscapedMemory2()
      * Validate CallExternalFunction1 function
      */
     {
-      jlm::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes({
+      jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes({
         &returnAddressMallocMemoryNode,
         &callExternalFunction1MallocMemoryNode,
         &returnAddressLambdaMemoryNode,
@@ -1334,7 +1334,7 @@ TestEscapedMemory2()
      * Validate CallExternalFunction2 function
      */
     {
-      jlm::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes({
+      jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes({
         &returnAddressMallocMemoryNode,
         &callExternalFunction1MallocMemoryNode,
         &returnAddressLambdaMemoryNode,
@@ -1388,7 +1388,7 @@ TestEscapedMemory3()
     auto & deltaMemoryNode = pointsToGraph.GetDeltaNode(*test.DeltaGlobal);
     auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
 
-    jlm::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes({
+    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes({
       &lambdaMemoryNode,
       &deltaMemoryNode,
       &externalMemoryNode});
@@ -1430,15 +1430,15 @@ TestStatistics()
    * Arrange
    */
   LoadTest1 test;
-  jlm::filepath filePath("/tmp/TestDisabledStatistics");
+  jlm::util::filepath filePath("/tmp/TestDisabledStatistics");
   std::remove(filePath.to_str().c_str());
 
   auto pointsToGraph = RunSteensgaard(test.module());
 
-  jlm::StatisticsCollectorSettings statisticsCollectorSettings(
+  jlm::util::StatisticsCollectorSettings statisticsCollectorSettings(
     filePath,
-    {jlm::Statistics::Id::MemoryNodeProvisioning});
-  jlm::StatisticsCollector statisticsCollector(statisticsCollectorSettings);
+    {jlm::util::Statistics::Id::MemoryNodeProvisioning});
+  jlm::util::StatisticsCollector statisticsCollector(statisticsCollectorSettings);
 
   /*
    * Act

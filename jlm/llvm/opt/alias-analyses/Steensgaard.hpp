@@ -64,7 +64,7 @@ operator&(PointsToFlags lhs, PointsToFlags rhs)
 class LocationSet final
 {
 public:
-	using DisjointLocationSet = typename jlm::disjointset<Location*>;
+	using DisjointLocationSet = typename util::disjointset<Location*>;
 
 	using const_iterator = std::unordered_map<
 	  const jive::output*
@@ -195,7 +195,7 @@ public:
 	std::unique_ptr<PointsToGraph>
 	Analyze(
     const RvsdgModule & module,
-    StatisticsCollector & statisticsCollector) override;
+    util::StatisticsCollector & statisticsCollector) override;
 
 private:
 	void

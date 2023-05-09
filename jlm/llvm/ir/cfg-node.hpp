@@ -51,8 +51,8 @@ class cfg_node {
 	typedef std::unordered_set<cfg_edge*>::iterator inedge_iterator;
 	typedef std::unordered_set<cfg_edge*>::const_iterator const_inedge_iterator;
 
-	using inedge_iterator_range = iterator_range<inedge_iterator>;
-	using constinedge_iterator_range = iterator_range<const_inedge_iterator>;
+	using inedge_iterator_range = util::iterator_range<inedge_iterator>;
+	using constinedge_iterator_range = util::iterator_range<const_inedge_iterator>;
 
 	class const_outedge_iterator final {
 	public:

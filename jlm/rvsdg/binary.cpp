@@ -320,7 +320,7 @@ flattened_binary_op::operator==(const operation & other) const noexcept
 std::string
 flattened_binary_op::debug_string() const
 {
-	return strfmt("FLATTENED[", op_->debug_string(),"]");
+	return jlm::util::strfmt("FLATTENED[", op_->debug_string(),"]");
 }
 
 std::unique_ptr<jive::operation>

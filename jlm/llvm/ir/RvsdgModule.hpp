@@ -56,7 +56,7 @@ public:
     [[nodiscard]] const jive::valuetype &
     GetValueType() const noexcept
     {
-        return *AssertedCast<jive::valuetype>(ValueType_.get());
+        return *util::AssertedCast<jive::valuetype>(ValueType_.get());
     }
 
 	virtual bool
@@ -94,7 +94,7 @@ is_export(const jive::input * input)
 class RvsdgModule final {
 public:
 	RvsdgModule(
-		jlm::filepath sourceFileName,
+		util::filepath sourceFileName,
 		std::string targetTriple,
 		std::string dataLayout)
 	: DataLayout_(std::move(dataLayout))
@@ -124,7 +124,7 @@ public:
 		return Rvsdg_;
 	}
 
-	const jlm::filepath &
+	const util::filepath &
 	SourceFileName() const noexcept
 	{
 		return SourceFileName_;
@@ -144,7 +144,7 @@ public:
 
 	static std::unique_ptr<RvsdgModule>
 	Create(
-		const jlm::filepath & sourceFileName,
+		const util::filepath & sourceFileName,
 		const std::string & targetTriple,
 		const std::string & dataLayout)
 	{
@@ -155,7 +155,7 @@ private:
 	jive::graph Rvsdg_;
 	std::string DataLayout_;
 	std::string TargetTriple_;
-	const jlm::filepath SourceFileName_;
+	const util::filepath SourceFileName_;
 };
 
 }

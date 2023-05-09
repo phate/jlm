@@ -114,7 +114,7 @@ ClangCommand::ToString() const
    */
   if (LinkerCommand_)
   {
-    return strfmt(
+    return util::strfmt(
       clangpath.to_str() + " ",
       "-no-pie -O0 ",
       arguments,
@@ -123,7 +123,7 @@ ClangCommand::ToString() const
       libraryPaths,
       libraries);
   } else {
-    return strfmt(
+    return util::strfmt(
       clangpath.to_str() + " "
       , arguments, " "
       , warnings, " "
@@ -195,7 +195,7 @@ LlcCommand::~LlcCommand()
 std::string
 LlcCommand::ToString() const
 {
-  return strfmt(
+  return util::strfmt(
     llcpath.to_str() + " "
     , "-", ToString(OptimizationLevel_), " "
     , "--relocation-model=", ToString(RelocationModel_), " "
@@ -250,7 +250,7 @@ JlmOptCommand::ToString() const
   for (auto & optimization : Optimizations_)
     optimizationArguments += ToString(optimization) + " ";
 
-  return strfmt(
+  return util::strfmt(
     "jlm-opt ",
     "--llvm ",
     optimizationArguments,
@@ -293,7 +293,7 @@ MkdirCommand::~MkdirCommand() noexcept
 std::string
 MkdirCommand::ToString() const
 {
-  return strfmt(
+  return util::strfmt(
     "mkdir ",
     Path_.to_str());
 }
@@ -302,7 +302,7 @@ void
 MkdirCommand::Run() const
 {
   if (mkdir(Path_.to_str().c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != 0)
-    throw error("mkdir failed: " + Path_.to_str());
+    throw util::error("mkdir failed: " + Path_.to_str());
 }
 
 LlvmOptCommand::~LlvmOptCommand() noexcept
@@ -315,7 +315,7 @@ LlvmOptCommand::ToString() const
   for (auto & optimization : Optimizations_)
     optimizationArguments += ToString(optimization) + " ";
 
-  return strfmt(
+  return util::strfmt(
     clangpath.path() + "opt "
     , optimizationArguments
     , WriteLlvmAssembly_ ? "-S " : ""
@@ -353,7 +353,7 @@ LlvmLinkCommand::ToString() const
   for (auto & inputFile : InputFiles_)
     inputFilesArgument += inputFile.to_str() + " ";
 
-  return strfmt(
+  return util::strfmt(
     clangpath.path(), "llvm-link ",
     WriteLlvmAssembly_ ? "-S " : "",
     Verbose_ ? "-v " : "",
@@ -373,7 +373,7 @@ JlmHlsCommand::~JlmHlsCommand() noexcept
 std::string
 JlmHlsCommand::ToString() const
 {
-  return strfmt(
+  return util::strfmt(
     "jlm-hls ",
     "-o ", OutputFolder_.to_str(), " ",
     UseCirct_ ? "--circt " : "",
@@ -391,7 +391,7 @@ JlmHlsExtractCommand::~JlmHlsExtractCommand() noexcept
 
 std::string
 JlmHlsExtractCommand::ToString() const {
-  return strfmt(
+  return util::strfmt(
     "jlm-hls ",
     "--extract ",
     "--hls-function ", HlsFunctionName(), " ",
@@ -410,7 +410,7 @@ FirtoolCommand::~FirtoolCommand() noexcept
 
 std::string
 FirtoolCommand::ToString() const {
-  return strfmt(
+  return util::strfmt(
     firtoolpath.to_str(), " ",
     " -format=fir --verilog ",
     InputFile().to_str(),
@@ -451,14 +451,14 @@ VerilatorCommand::ToString() const
 
   std::string verilator_root;
   if(!verilatorrootpath.to_str().empty()){
-    verilator_root = strfmt(
+    verilator_root = util::strfmt(
       "VERILATOR_ROOT="
       , verilatorrootpath.to_str()
       , " "
     );
   }
 
-  return strfmt(
+  return util::strfmt(
     verilator_root,
     verilatorpath.to_str(),
     " --cc",

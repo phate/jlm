@@ -8,7 +8,8 @@
 
 #include <chrono>
 
-namespace jlm {
+namespace jlm::util
+{
 
 class timer final {
 public:

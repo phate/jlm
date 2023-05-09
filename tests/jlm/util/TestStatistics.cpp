@@ -11,13 +11,13 @@
 #include <memory>
 #include <sstream>
 
-class MyTestStatistics final : public jlm::Statistics {
+class MyTestStatistics final : public jlm::util::Statistics {
 public:
   explicit
   MyTestStatistics(
-    jlm::Statistics::Id id,
+    jlm::util::Statistics::Id id,
     std::string text)
-    : jlm::Statistics(id)
+    : jlm::util::Statistics(id)
     , Text_(std::move(text))
   {}
 
@@ -34,17 +34,18 @@ private:
 void
 TestStatisticsCollection()
 {
+  using namespace jlm::util;
   /*
    * Arrange
    */
-  std::unique_ptr<jlm::Statistics> testStatistics1(new MyTestStatistics(jlm::Statistics::Id::Aggregation, ""));
-  std::unique_ptr<jlm::Statistics> testStatistics2(new MyTestStatistics(jlm::Statistics::Id::LoopUnrolling, ""));
+  std::unique_ptr<Statistics> testStatistics1(new MyTestStatistics(Statistics::Id::Aggregation, ""));
+  std::unique_ptr<Statistics> testStatistics2(new MyTestStatistics(Statistics::Id::LoopUnrolling, ""));
 
-  jlm::StatisticsCollectorSettings settings(
-    jlm::filepath(""),
-    {jlm::Statistics::Id::Aggregation});
+  StatisticsCollectorSettings settings(
+    filepath(""),
+    {Statistics::Id::Aggregation});
 
-  jlm::StatisticsCollector collector(std::move(settings));
+  StatisticsCollector collector(std::move(settings));
 
   /*
    * Act
@@ -65,10 +66,11 @@ TestStatisticsCollection()
 void
 TestStatisticsPrinting()
 {
+  using namespace jlm::util;
   /*
    * Arrange
    */
-  jlm::filepath filePath("/tmp/TestStatistics");
+  filepath filePath("/tmp/TestStatistics");
 
   /*
    * Ensure file is not around from last test run.
@@ -76,15 +78,15 @@ TestStatisticsPrinting()
   std::remove(filePath.to_str().c_str());
 
   std::string myText("MyTestStatistics");
-  std::unique_ptr<jlm::Statistics> testStatistics(new MyTestStatistics(
-    jlm::Statistics::Id::Aggregation,
+  std::unique_ptr<Statistics> testStatistics(new MyTestStatistics(
+    Statistics::Id::Aggregation,
     myText));
 
-  jlm::StatisticsCollectorSettings settings(
+  StatisticsCollectorSettings settings(
     filePath,
-    {jlm::Statistics::Id::Aggregation});
+    {Statistics::Id::Aggregation});
 
-  jlm::StatisticsCollector collector(std::move(settings));
+  StatisticsCollector collector(std::move(settings));
   collector.CollectDemandedStatistics(std::move(testStatistics));
 
   /*

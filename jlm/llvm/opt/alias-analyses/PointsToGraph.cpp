@@ -174,14 +174,14 @@ PointsToGraph::ToDot(const PointsToGraph & pointsToGraph)
   };
 
   auto nodeString = [&](const PointsToGraph::Node & node) {
-    return strfmt("{ ", (intptr_t)&node, " ["
+    return util::strfmt("{ ", (intptr_t)&node, " ["
       , "label = \"", node.DebugString(), "\" "
       , "shape = \"", nodeShape(node), "\"]; }\n");
   };
 
   auto edgeString = [](const PointsToGraph::Node & node, const PointsToGraph::Node & target)
   {
-    return strfmt((intptr_t)&node, " -> ", (intptr_t)&target, "\n");
+    return util::strfmt((intptr_t)&node, " -> ", (intptr_t)&target, "\n");
   };
 
   auto printNodeAndEdges = [&](const PointsToGraph::Node & node)
@@ -251,7 +251,7 @@ void
 PointsToGraph::Node::AddEdge(PointsToGraph::MemoryNode & target)
 {
   if (&Graph() != &target.Graph())
-    throw error("Points-to graph nodes are not in the same graph.");
+    throw util::error("Points-to graph nodes are not in the same graph.");
 
   Targets_.insert(&target);
   target.Sources_.insert(this);
@@ -261,7 +261,7 @@ void
 PointsToGraph::Node::RemoveEdge(PointsToGraph::MemoryNode & target)
 {
   if (&Graph() != &target.Graph())
-    throw error("Points-to graph nodes are not in the same graph.");
+    throw util::error("Points-to graph nodes are not in the same graph.");
 
   target.Sources_.erase(this);
   Targets_.erase(&target);
@@ -276,15 +276,15 @@ PointsToGraph::RegisterNode::DebugString() const
   auto node = jive::node_output::node(&GetOutput());
 
   if (node != nullptr)
-    return strfmt(node->operation().debug_string(), ":o", GetOutput().index());
+    return util::strfmt(node->operation().debug_string(), ":o", GetOutput().index());
 
   node = GetOutput().region()->node();
   if (node != nullptr)
-    return strfmt(node->operation().debug_string(), ":a", GetOutput().index());
+    return util::strfmt(node->operation().debug_string(), ":a", GetOutput().index());
 
   if (is_import(&GetOutput())) {
-    auto port = AssertedCast<const impport>(&GetOutput().port());
-    return strfmt("import:", port->name());
+    auto port = util::AssertedCast<const impport>(&GetOutput().port());
+    return util::strfmt("import:", port->name());
   }
 
   return "RegisterNode";
@@ -335,7 +335,7 @@ PointsToGraph::ImportNode::~ImportNode() noexcept
 std::string
 PointsToGraph::ImportNode::DebugString() const
 {
-	auto port = AssertedCast<const impport>(&GetArgument().port());
+	auto port = util::AssertedCast<const impport>(&GetArgument().port());
 	return port->name();
 }
 

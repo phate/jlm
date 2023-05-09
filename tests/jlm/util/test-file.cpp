@@ -12,7 +12,7 @@
 static int
 test()
 {
-	jlm::filepath f("/tmp/archive.tar.gz");
+	jlm::util::filepath f("/tmp/archive.tar.gz");
 
 	assert(f.name() == "archive.tar.gz");
 	assert(f.base() == "archive");

@@ -30,7 +30,7 @@ TestArgumentNodeMismatch()
   bool inputErrorHandlerCalled = false;
   try {
     argument::create(structuralNode2->subregion(0), structuralInput, vt);
-  } catch (jlm::error & e) {
+  } catch (jlm::util::error & e) {
     inputErrorHandlerCalled = true;
   }
 
@@ -61,7 +61,7 @@ TestResultNodeMismatch()
   bool outputErrorHandlerCalled = false;
   try {
     result::create(structuralNode2->subregion(0), argument, structuralOutput, vt);
-  } catch (jlm::error & e) {
+  } catch (jlm::util::error & e) {
     outputErrorHandlerCalled = true;
   }
 

@@ -32,7 +32,7 @@ TestCallTypeClassifierIndirectCall()
     {&pt, &iOStateType, &memoryStateType, &loopStateType},
     {&vt, &iOStateType, &memoryStateType, &loopStateType});
 
-	auto module = RvsdgModule::Create(filepath(""), "", "");
+	auto module = RvsdgModule::Create(util::filepath(""), "", "");
 	auto graph = &module->Rvsdg();
 
 	auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -63,7 +63,7 @@ TestCallTypeClassifierIndirectCall()
     graph->add_export(lambda->output(), {pt, "f"});
 
     return std::make_tuple(
-      AssertedCast<CallNode>(jive::node_output::node(callResults[0])),
+      util::AssertedCast<CallNode>(jive::node_output::node(callResults[0])),
       load[0]);
   };
 
@@ -89,7 +89,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
    */
 	using namespace jlm;
 
-	auto module = RvsdgModule::Create(filepath(""), "", "");
+	auto module = RvsdgModule::Create(util::filepath(""), "", "");
 	auto graph = &module->Rvsdg();
 
 	auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -174,7 +174,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
 
     return std::make_tuple(
       lambda,
-      AssertedCast<CallNode>(jive::node_output::node(callResults[0])));
+      util::AssertedCast<CallNode>(jive::node_output::node(callResults[0])));
   };
 
   auto g = SetupFunctionG();
@@ -200,7 +200,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
 	/*
 	 * Arrange
 	 */
-	auto module = RvsdgModule::Create(filepath(""), "", "");
+	auto module = RvsdgModule::Create(util::filepath(""), "", "");
 	auto graph = &module->Rvsdg();
 
 	auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -281,7 +281,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
         thetaOutputIoState,
         thetaOutputMemoryState,
         thetaOutputLoopState,
-        AssertedCast<CallNode>(jive::node_output::node(callResults[0])));
+        util::AssertedCast<CallNode>(jive::node_output::node(callResults[0])));
     };
 
     valuetype vt;
@@ -344,7 +344,7 @@ TestCallTypeClassifierRecursiveDirectCall()
    */
   using namespace jlm;
 
-  auto module = RvsdgModule::Create(filepath(""), "", "");
+  auto module = RvsdgModule::Create(util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jive::operation));
@@ -444,8 +444,8 @@ TestCallTypeClassifierRecursiveDirectCall()
 
     return std::make_tuple(
       lambdaOutput,
-      AssertedCast<CallNode>(jive::node_output::node(callfibm1Results[0])),
-      AssertedCast<CallNode>(jive::node_output::node(callfibm2Results[0])));
+      util::AssertedCast<CallNode>(jive::node_output::node(callfibm1Results[0])),
+      util::AssertedCast<CallNode>(jive::node_output::node(callfibm2Results[0])));
   };
 
   auto [fibfct, callFib1, callFib2] = SetupFib();

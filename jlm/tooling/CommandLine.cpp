@@ -76,7 +76,7 @@ JlcCommandLineOptions::Reset() noexcept
   OptimizationLevel_ = OptimizationLevel::O0;
   LanguageStandard_ = LanguageStandard::None;
 
-  OutputFile_ = filepath("a.out");
+  OutputFile_ = util::filepath("a.out");
   Libraries_.clear();
   MacroDefinitions_.clear();
   LibraryPaths_.clear();
@@ -91,18 +91,18 @@ JlcCommandLineOptions::Reset() noexcept
 void
 JlmOptCommandLineOptions::Reset() noexcept
 {
-  InputFile_ = filepath("");
-  OutputFile_ = filepath("");
+  InputFile_ = util::filepath("");
+  OutputFile_ = util::filepath("");
   OutputFormat_ = OutputFormat::Llvm;
-  StatisticsCollectorSettings_ = StatisticsCollectorSettings();
+  StatisticsCollectorSettings_ = util::StatisticsCollectorSettings();
   Optimizations_.clear();
 }
 
 void
 JlmHlsCommandLineOptions::Reset() noexcept
 {
-  InputFile_ = filepath("");
-  OutputFolder_ = filepath("");
+  InputFile_ = util::filepath("");
+  OutputFolder_ = util::filepath("");
   OutputFormat_ = OutputFormat::Firrtl;
   HlsFunction_ = "";
   ExtractHlsFunction_ = false;
@@ -324,7 +324,7 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
       /* FIXME: print a warning like clang if noLinking is true */
       CommandLineOptions_.Compilations_.push_back({
                                                     inputFile,
-                                                    jlm::filepath(""),
+                                                    util::filepath(""),
                                                     inputFile,
                                                     "",
                                                     false,
@@ -337,7 +337,7 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
 
     CommandLineOptions_.Compilations_.push_back({
                                                   inputFile,
-                                                  mF.empty() ? ToDependencyFile(inputFile) : jlm::filepath(mF),
+                                                  mF.empty() ? ToDependencyFile(inputFile) : util::filepath(mF),
                                                   ToObjectFile(inputFile),
                                                   mT.empty() ? ToObjectFile(inputFile).name() : mT,
                                                   true,
@@ -351,7 +351,7 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
       JLM_ASSERT(CommandLineOptions_.Compilations_.size() == 1);
       CommandLineOptions_.Compilations_[0].SetOutputFile(outputFile);
     } else {
-      CommandLineOptions_.OutputFile_ = filepath(outputFile);
+      CommandLineOptions_.OutputFile_ = util::filepath(outputFile);
     }
   }
 
@@ -427,90 +427,90 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
              + "."),
     cl::value_desc("file"));
 
-  cl::list<Statistics::Id> printStatistics(
+  cl::list<util::Statistics::Id> printStatistics(
     cl::values(
       clEnumValN(
-        Statistics::Id::Aggregation,
+        util::Statistics::Id::Aggregation,
         "print-aggregation-time",
         "Write aggregation statistics to file."),
       clEnumValN(
-        Statistics::Id::Annotation,
+        util::Statistics::Id::Annotation,
         "print-annotation-time",
         "Write annotation statistics to file."),
       clEnumValN(
-        Statistics::Id::BasicEncoderEncoding,
+        util::Statistics::Id::BasicEncoderEncoding,
         "print-basicencoder-encoding",
         "Write encoding statistics of basic encoder to file."),
       clEnumValN(
-        Statistics::Id::CommonNodeElimination,
+        util::Statistics::Id::CommonNodeElimination,
         "print-cne-stat",
         "Write common node elimination statistics to file."),
       clEnumValN(
-        Statistics::Id::ControlFlowRecovery,
+        util::Statistics::Id::ControlFlowRecovery,
         "print-cfr-time",
         "Write control flow recovery statistics to file."),
       clEnumValN(
-        Statistics::Id::DataNodeToDelta,
+        util::Statistics::Id::DataNodeToDelta,
         "printDataNodeToDelta",
         "Write data node to delta node conversion statistics to file."),
       clEnumValN(
-        Statistics::Id::DeadNodeElimination,
+        util::Statistics::Id::DeadNodeElimination,
         "print-dne-stat",
         "Write dead node elimination statistics to file."),
       clEnumValN(
-        Statistics::Id::FunctionInlining,
+        util::Statistics::Id::FunctionInlining,
         "print-iln-stat",
         "Write function inlining statistics to file."),
       clEnumValN(
-        Statistics::Id::InvariantValueRedirection,
+        util::Statistics::Id::InvariantValueRedirection,
         "printInvariantValueRedirection",
         "Write invariant value redirection statistics to file."),
       clEnumValN(
-        Statistics::Id::JlmToRvsdgConversion,
+        util::Statistics::Id::JlmToRvsdgConversion,
         "print-jlm-rvsdg-conversion",
         "Write Jlm to RVSDG conversion statistics to file."),
       clEnumValN(
-        Statistics::Id::LoopUnrolling,
+        util::Statistics::Id::LoopUnrolling,
         "print-unroll-stat",
         "Write loop unrolling statistics to file."),
       clEnumValN(
-        Statistics::Id::MemoryNodeProvisioning,
+        util::Statistics::Id::MemoryNodeProvisioning,
         "print-memory-node-provisioning",
         "Write memory node provisioning statistics to file."),
       clEnumValN(
-        Statistics::Id::PullNodes,
+        util::Statistics::Id::PullNodes,
         "print-pull-stat",
         "Write node pull statistics to file."),
       clEnumValN(
-        Statistics::Id::PushNodes,
+        util::Statistics::Id::PushNodes,
         "print-push-stat",
         "Write node push statistics to file."),
       clEnumValN(
-        Statistics::Id::ReduceNodes,
+        util::Statistics::Id::ReduceNodes,
         "print-reduction-stat",
         "Write node reduction statistics to file."),
       clEnumValN(
-        Statistics::Id::RvsdgConstruction,
+        util::Statistics::Id::RvsdgConstruction,
         "print-rvsdg-construction",
         "Write RVSDG construction statistics to file."),
       clEnumValN(
-        Statistics::Id::RvsdgDestruction,
+        util::Statistics::Id::RvsdgDestruction,
         "print-rvsdg-destruction",
         "Write RVSDG destruction statistics to file."),
       clEnumValN(
-        Statistics::Id::RvsdgOptimization,
+        util::Statistics::Id::RvsdgOptimization,
         "print-rvsdg-optimization",
         "Write RVSDG optimization statistics to file."),
       clEnumValN(
-        Statistics::Id::SteensgaardAnalysis,
+        util::Statistics::Id::SteensgaardAnalysis,
         "print-steensgaard-analysis",
         "Write Steensgaard analysis statistics to file."),
       clEnumValN(
-        Statistics::Id::SteensgaardPointsToGraphConstruction,
+        util::Statistics::Id::SteensgaardPointsToGraphConstruction,
         "print-steensgaard-pointstograph-construction",
         "Write Steensgaard PointsTo Graph construction statistics to file."),
       clEnumValN(
-        Statistics::Id::ThetaGammaInversion,
+        util::Statistics::Id::ThetaGammaInversion,
         "print-ivt-stat",
         "Write theta-gamma inversion statistics to file.")),
     cl::desc("Write statistics"));
@@ -587,7 +587,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
   for (auto & optimizationId : optimizationIds)
     optimizations.push_back(GetOptimization(optimizationId));
 
-  HashSet<Statistics::Id> printStatisticsIds({printStatistics.begin(), printStatistics.end()});
+  util::HashSet<util::Statistics::Id> printStatisticsIds({printStatistics.begin(), printStatistics.end()});
 
   CommandLineOptions_.InputFile_ = inputFile;
   CommandLineOptions_.OutputFormat_ = outputFormat;
@@ -663,10 +663,10 @@ JlmHlsCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
   cl::ParseCommandLineOptions(argc, argv);
 
   if (outputFolder.empty())
-    throw jlm::error("jlm-hls no output directory provided, i.e, -o.\n");
+    throw jlm::util::error("jlm-hls no output directory provided, i.e, -o.\n");
 
   if (extractHlsFunction && hlsFunction.empty())
-    throw jlm::error("jlm-hls: --hls-function is not specified.\n         which is required for --extract\n");
+    throw jlm::util::error("jlm-hls: --hls-function is not specified.\n         which is required for --extract\n");
 
   CommandLineOptions_.InputFile_ = inputFile;
   CommandLineOptions_.HlsFunction_ = std::move(hlsFunction);
@@ -918,7 +918,7 @@ JhlsCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
       /* FIXME: print a warning like clang if noLinking is true */
       CommandLineOptions_.Compilations_.push_back({
                                                     inputFile,
-                                                    filepath(""),
+                                                    util::filepath(""),
                                                     inputFile,
                                                     "",
                                                     false,
@@ -931,7 +931,7 @@ JhlsCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
 
     CommandLineOptions_.Compilations_.push_back({
                                                   inputFile,
-                                                  mF.empty() ? CreateDependencyFileFromFile(inputFile) : filepath(mF),
+                                                  mF.empty() ? CreateDependencyFileFromFile(inputFile) : util::filepath(mF),
                                                   CreateObjectFileFromFile(inputFile),
                                                   mT.empty() ? CreateObjectFileFromFile(inputFile).name() : mT,
                                                   true,
@@ -945,7 +945,7 @@ JhlsCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
       JLM_ASSERT(CommandLineOptions_.Compilations_.size() == 1);
       CommandLineOptions_.Compilations_[0].SetOutputFile(outputFile);
     } else {
-      CommandLineOptions_.OutputFile_ = jlm::filepath(outputFile);
+      CommandLineOptions_.OutputFile_ = util::filepath(outputFile);
     }
   }
 
@@ -953,19 +953,19 @@ JhlsCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
 }
 
 bool
-JhlsCommandLineParser::IsObjectFile(const filepath & file)
+JhlsCommandLineParser::IsObjectFile(const util::filepath & file)
 {
   return file.suffix() == "o";
 }
 
-filepath
-JhlsCommandLineParser::CreateObjectFileFromFile(const filepath & f)
+util::filepath
+JhlsCommandLineParser::CreateObjectFileFromFile(const util::filepath & f)
 {
   return {f.path() + f.base() + ".o"};
 }
 
-filepath
-JhlsCommandLineParser::CreateDependencyFileFromFile(const filepath & f)
+util::filepath
+JhlsCommandLineParser::CreateDependencyFileFromFile(const util::filepath & f)
 {
   return {f.path() + f.base() + ".d"};
 }

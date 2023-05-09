@@ -85,7 +85,7 @@ class VariableSet final {
     std::unordered_set<const jlm::variable*>::const_iterator It_;
   };
 
-  using ConstRange = iterator_range<ConstIterator>;
+  using ConstRange = util::iterator_range<ConstIterator>;
 
 public:
   VariableSet()
@@ -558,7 +558,7 @@ public:
   {
     JLM_ASSERT(Contains(aggregationNode));
     auto & demandSet = Map_.find(&aggregationNode)->second;
-    return *AssertedCast<T>(demandSet.get());
+    return *util::AssertedCast<T>(demandSet.get());
   }
 
   void

@@ -11,7 +11,8 @@
 
 #include <memory>
 
-namespace jlm {
+namespace jlm::util
+{
 
 /**
  * \brief Statistics Interface
@@ -73,7 +74,7 @@ public:
   {}
 
   StatisticsCollectorSettings(
-    jlm::filepath filePath,
+    filepath filePath,
     HashSet<Statistics::Id> demandedStatistics)
     : FilePath_(std::move(filePath))
     , DemandedStatistics_(std::move(demandedStatistics))
@@ -90,14 +91,14 @@ public:
     return DemandedStatistics_.Contains(id);
   }
 
-  const jlm::filepath &
+  const filepath &
   GetFilePath() const noexcept
   {
     return FilePath_;
   }
 
   void
-  SetFilePath(jlm::filepath filePath)
+  SetFilePath(filepath filePath)
   {
     FilePath_ = std::move(filePath);
   }
@@ -109,7 +110,7 @@ public:
   }
 
 private:
-  jlm::filepath FilePath_;
+  filepath FilePath_;
   HashSet<Statistics::Id> DemandedStatistics_;
 };
 

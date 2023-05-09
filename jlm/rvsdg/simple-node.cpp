@@ -51,7 +51,7 @@ simple_node::simple_node(
 	: node(op.copy(), region)
 {
 	if (operation().narguments() != operands.size())
-		throw jlm::error(strfmt("Argument error - expected ",
+		throw jlm::util::error(jlm::util::strfmt("Argument error - expected ",
                              operation().narguments(), ", received ", operands.size(), " arguments."));
 
 	for (size_t n = 0; n < operation().narguments(); n++) {
@@ -84,7 +84,7 @@ simple_node::copy(jive::region * region, jive::substitution_map & smap) const
 
 		if (operand == nullptr) {
 			if (region != this->region())
-				throw jlm::error("Node operand not in substitution map.");
+				throw jlm::util::error("Node operand not in substitution map.");
 
 			operand = origin;
 		}

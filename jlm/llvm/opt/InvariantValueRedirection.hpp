@@ -39,7 +39,7 @@ public:
   void
   run(
     RvsdgModule & rvsdgModule,
-    StatisticsCollector & statisticsCollector) override;
+    util::StatisticsCollector & statisticsCollector) override;
 
 private:
   static void

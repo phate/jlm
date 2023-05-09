@@ -25,12 +25,12 @@ class structural_output;
 class substitution_map;
 
 class argument : public output {
-	jive::detail::intrusive_list_anchor<
+	jlm::util::intrusive_list_anchor<
 		jive::argument
 	> structural_input_anchor_;
 
 public:
-	typedef jive::detail::intrusive_list_accessor<
+	typedef jlm::util::intrusive_list_accessor<
 		jive::argument,
 		&jive::argument::structural_input_anchor_
 	> structural_input_accessor;
@@ -72,12 +72,12 @@ private:
 };
 
 class result : public input {
-	jive::detail::intrusive_list_anchor<
+	jlm::util::intrusive_list_anchor<
 		jive::result
 	> structural_output_anchor_;
 
 public:
-	typedef jive::detail::intrusive_list_accessor<
+	typedef jlm::util::intrusive_list_accessor<
 		jive::result,
 		&jive::result::structural_output_anchor_
 	> structural_output_accessor;
@@ -121,17 +121,17 @@ private:
 };
 
 class region {
-	typedef jive::detail::intrusive_list<
+	typedef jlm::util::intrusive_list<
 		jive::node,
 		jive::node::region_node_list_accessor
 	> region_nodes_list;
 
-	typedef jive::detail::intrusive_list<
+	typedef jlm::util::intrusive_list<
 		jive::node,
 		jive::node::region_top_node_list_accessor
 	> region_top_node_list;
 
-	typedef jive::detail::intrusive_list<
+	typedef jlm::util::intrusive_list<
 		jive::node,
 		jive::node::region_bottom_node_list_accessor
 	> region_bottom_node_list;

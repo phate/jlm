@@ -18,7 +18,7 @@ TestUnknownBoundaries()
 	auto b32 = jive::bit32;
 	FunctionType ft({&b32, &b32, &b32}, {&b32, &b32, &b32});
 
-	RvsdgModule rm(filepath(""), "", "");
+	RvsdgModule rm(util::filepath(""), "", "");
 	auto nf = rm.Rvsdg().node_normal_form(typeid(jive::operation));
 	nf->set_mutable(false);
 

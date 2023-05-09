@@ -11,7 +11,7 @@
 #include <functional>
 #include <unordered_set>
 
-namespace jlm
+namespace jlm::util
 {
 
 /**

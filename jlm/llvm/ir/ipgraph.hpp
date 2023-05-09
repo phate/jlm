@@ -318,11 +318,11 @@ public:
 	: tacs_(std::move(tacs))
 	{
 		if (tacs_.empty())
-			throw jlm::error("Initialization cannot be empty.");
+			throw util::error("Initialization cannot be empty.");
 
 		auto & tac = tacs_.back();
 		if (tac->nresults() != 1)
-			throw jlm::error("Last TAC of initialization needs exactly one result.");
+			throw util::error("Last TAC of initialization needs exactly one result.");
 
 		value_ = tac->result(0);
 	}
@@ -386,7 +386,7 @@ public:
   [[nodiscard]] const jive::valuetype &
   GetValueType() const noexcept
   {
-    return *AssertedCast<jive::valuetype>(ValueType_.get());
+    return *util::AssertedCast<jive::valuetype>(ValueType_.get());
   }
 
 	const std::string &
@@ -423,7 +423,7 @@ public:
 			return;
 
 		if (init->value()->type() != GetValueType())
-			throw jlm::error("Invalid type.");
+			throw util::error("Invalid type.");
 
 		init_ = std::move(init);
 	}

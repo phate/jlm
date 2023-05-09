@@ -65,7 +65,7 @@ public:
 
 	inline
 	ipgraph_module(
-		const jlm::filepath & source_filename,
+		const util::filepath & source_filename,
 		const std::string & target_triple,
 		const std::string & data_layout) noexcept
 	: data_layout_(data_layout)
@@ -121,7 +121,7 @@ public:
 	create_variable(const jive::type & type)
 	{
 		static uint64_t c = 0;
-		auto v = std::make_unique<jlm::variable>(type, strfmt("v", c++));
+		auto v = std::make_unique<jlm::variable>(type, util::strfmt("v", c++));
 		auto pv = v.get();
 		variables_.insert(std::move(v));
 		return pv;
@@ -146,7 +146,7 @@ public:
 		return it != functions_.end() ? it->second : nullptr;
 	}
 
-	const jlm::filepath &
+	const util::filepath &
 	source_filename() const noexcept
 	{
 		return source_filename_;
@@ -166,7 +166,7 @@ public:
 
 	static std::unique_ptr<ipgraph_module>
 	create(
-		const jlm::filepath & source_filename,
+		const util::filepath & source_filename,
 		const std::string & target_triple,
 		const std::string & data_layout)
 	{
@@ -177,7 +177,7 @@ private:
 	jlm::ipgraph clg_;
 	std::string data_layout_;
 	std::string target_triple_;
-	const jlm::filepath source_filename_;
+	const util::filepath source_filename_;
 	std::unordered_set<const jlm::gblvalue*> globals_;
 	std::unordered_set<std::unique_ptr<jlm::variable>> variables_;
 	std::unordered_map<const ipgraph_node*, const jlm::variable*> functions_;

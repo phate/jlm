@@ -2316,7 +2316,8 @@ jlm::hls::MLIRGenImpl::GetModuleName(const jive::node *node) {
             append.append(std::to_string(bytes));
         }
     }
-	auto name = strfmt("op_", node->operation().debug_string() + append);
+
+	auto name = jlm::util::strfmt("op_", node->operation().debug_string() + append);
 	// Remove characters that are not valid in firrtl module names
 	std::replace_if(name.begin(), name.end(), isForbiddenChar, '_');
 	return name;

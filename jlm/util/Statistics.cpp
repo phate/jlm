@@ -5,7 +5,8 @@
 
 #include <jlm/util/Statistics.hpp>
 
-namespace jlm {
+namespace jlm::util
+{
 
 Statistics::~Statistics()
 = default;
@@ -16,7 +17,7 @@ StatisticsCollector::PrintStatistics() const
   if (NumCollectedStatistics() == 0)
     return;
 
-  jlm::file file(GetSettings().GetFilePath());
+  util::file file(GetSettings().GetFilePath());
   file.open("a");
 
   for (auto & statistics : CollectedStatistics())

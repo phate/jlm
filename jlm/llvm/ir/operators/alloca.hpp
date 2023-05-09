@@ -62,7 +62,7 @@ public:
 	inline const jive::valuetype &
 	value_type() const noexcept
 	{
-		return *AssertedCast<const jive::valuetype>(AllocatedType_.get());
+		return *util::AssertedCast<const jive::valuetype>(AllocatedType_.get());
 	}
 
 	inline size_t
@@ -78,7 +78,7 @@ public:
 		size_t alignment)
 	{
 		auto bt = dynamic_cast<const jive::bittype*>(&size->type());
-		if (!bt) throw jlm::error("expected bits type.");
+		if (!bt) throw util::error("expected bits type.");
 
 		alloca_op op(allocatedType, *bt, alignment);
 		return tac::create(op, {size});
@@ -91,7 +91,7 @@ public:
 		size_t alignment)
 	{
 		auto bt = dynamic_cast<const jive::bittype*>(&size->type());
-		if (!bt) throw jlm::error("expected bits type.");
+		if (!bt) throw util::error("expected bits type.");
 
 		alloca_op op(allocatedType, *bt, alignment);
 		return jive::simple_node::create_normalized(size->region(), op, {size});

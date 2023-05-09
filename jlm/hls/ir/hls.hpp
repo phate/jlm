@@ -50,7 +50,7 @@ namespace jlm {
 			) {
 				auto ctl = dynamic_cast<const jive::ctltype *>(&predicate.type());
 				if (!ctl)
-					throw jlm::error("Predicate needs to be a ctltype.");
+					throw util::error("Predicate needs to be a ctltype.");
 
 				auto region = predicate.region();
 				branch_op op(ctl->nalternatives(), value.type(), loop);
@@ -130,7 +130,7 @@ namespace jlm {
 					const std::vector<jive::output *> &alternatives
 			) {
 				if (alternatives.empty())
-					throw jlm::error("Insufficient number of operands.");
+					throw util::error("Insufficient number of operands.");
 
 
 				auto region = alternatives.front()->region();
@@ -175,12 +175,12 @@ namespace jlm {
 					bool loop=false
 			) {
 				if (alternatives.empty())
-					throw jlm::error("Insufficient number of operands.");
+					throw util::error("Insufficient number of operands.");
 				auto ctl = dynamic_cast<const jive::ctltype *>(&predicate.type());
 				if (!ctl)
-					throw jlm::error("Predicate needs to be a ctltype.");
+					throw util::error("Predicate needs to be a ctltype.");
 				if (alternatives.size() != ctl->nalternatives())
-					throw jlm::error("Alternatives and predicate do not match.");
+					throw util::error("Alternatives and predicate do not match.");
 
 
 				auto region = predicate.region();
@@ -269,7 +269,7 @@ namespace jlm {
 				auto region = predicate.region();
 				auto ctl = dynamic_cast<const jive::ctltype *>(&predicate.type());
 				if (!ctl)
-					throw jlm::error("Predicate needs to be a ctltype.");
+					throw util::error("Predicate needs to be a ctltype.");
 				predicate_buffer_op op(*ctl);
 				return jive::simple_node::create_normalized(region, op, {&predicate});
 			}
@@ -294,7 +294,7 @@ namespace jlm {
 
 			std::string
 			debug_string() const override {
-				return strfmt("HLS_BUF_",(pass_through ? "P_": ""),capacity);
+				return util::strfmt("HLS_BUF_",(pass_through ? "P_": ""),capacity);
 			}
 
 			std::unique_ptr<jive::operation>
@@ -380,7 +380,7 @@ namespace jlm {
 					jive::output &value
 			) {
 				if (tg.type() != trigger)
-					throw jlm::error("Trigger needs to be a triggertype.");
+					throw util::error("Trigger needs to be a triggertype.");
 
 				auto region = value.region();
 				trigger_op op(value.type());
@@ -413,7 +413,7 @@ namespace jlm {
 
 			std::string
 			debug_string() const override {
-				return strfmt("HLS_PRINT_", _id);
+				return util::strfmt("HLS_PRINT_", _id);
 			}
 
 			size_t

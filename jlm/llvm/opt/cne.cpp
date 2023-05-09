@@ -12,7 +12,7 @@
 
 namespace jlm {
 
-class cnestat final : public Statistics {
+class cnestat final : public util::Statistics {
 public:
 	virtual
 	~cnestat()
@@ -55,7 +55,7 @@ public:
 	virtual std::string
 	ToString() const override
 	{
-		return strfmt("CNE ",
+		return util::strfmt("CNE ",
 			nnodes_before_, " ", nnodes_after_, " ",
 			ninputs_before_, " ", ninputs_after_, " ",
 			marktimer_.ns(), " ", diverttimer_.ns()
@@ -71,7 +71,7 @@ public:
 private:
 	size_t nnodes_before_, nnodes_after_;
 	size_t ninputs_before_, ninputs_after_;
-	jlm::timer marktimer_, diverttimer_;
+	util::timer marktimer_, diverttimer_;
 };
 
 
@@ -553,7 +553,7 @@ divert(jive::region * region, cnectx & ctx)
 static void
 cne(
   RvsdgModule & rm,
-  StatisticsCollector & statisticsCollector)
+  util::StatisticsCollector & statisticsCollector)
 {
 	auto & graph = rm.Rvsdg();
 
@@ -579,7 +579,7 @@ cne::~cne()
 void
 cne::run(
   RvsdgModule & module,
-  StatisticsCollector & statisticsCollector)
+  util::StatisticsCollector & statisticsCollector)
 {
 	jlm::cne(module, statisticsCollector);
 }

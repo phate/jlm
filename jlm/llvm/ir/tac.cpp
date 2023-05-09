@@ -30,11 +30,11 @@ check_operands(
 	const std::vector<const variable*> & operands)
 {
 	if (operands.size() != operation.narguments())
-		throw jlm::error("invalid number of operands.");
+		throw util::error("invalid number of operands.");
 
 	for (size_t n = 0; n < operands.size(); n++) {
 		if (operands[n]->type() != operation.argument(n).type())
-			throw jlm::error("invalid type.");
+			throw util::error("invalid type.");
 	}
 }
 
@@ -44,11 +44,11 @@ check_results(
 	const std::vector<std::unique_ptr<tacvariable>> & results)
 {
 	if (results.size() != operation.nresults())
-		throw jlm::error("invalid number of variables.");
+		throw util::error("invalid number of variables.");
 
 	for (size_t n = 0; n < results.size(); n++) {
 		if (results[n]->type() != operation.result(n).type())
-			throw jlm::error("invalid type.");
+			throw util::error("invalid type.");
 	}
 }
 
@@ -74,7 +74,7 @@ tac::tac(
 	check_operands(operation, operands);
 
 	if (names.size() != operation.nresults())
-		throw jlm::error("Invalid number of result names.");
+		throw util::error("Invalid number of result names.");
 
 	create_results(operation, names);
 }

@@ -347,7 +347,7 @@ convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 		if (node == cfg.entry() || node == cfg.exit())
 			continue;
 
-		auto bb = llvm::BasicBlock::Create(f.getContext(), strfmt("bb", &node), &f);
+		auto bb = llvm::BasicBlock::Create(f.getContext(), util::strfmt("bb", &node), &f);
 		ctx.insert(node, bb);
 	}
 

@@ -108,13 +108,13 @@ public:
   [[nodiscard]] const PointerType &
   GetPointerType() const noexcept
   {
-    return *AssertedCast<const PointerType>(&argument(0).type());
+    return *util::AssertedCast<const PointerType>(&argument(0).type());
   }
 
   [[nodiscard]] const jive::valuetype &
   GetStoredType() const noexcept
   {
-    return *AssertedCast<const jive::valuetype>(&argument(1).type());
+    return *util::AssertedCast<const jive::valuetype>(&argument(1).type());
   }
 
   [[nodiscard]] size_t
@@ -132,7 +132,7 @@ public:
   static jlm::store_normal_form *
   GetNormalForm(jive::graph * graph) noexcept
   {
-    return AssertedCast<jlm::store_normal_form>(graph->node_normal_form(typeid(StoreOperation)));
+    return util::AssertedCast<jlm::store_normal_form>(graph->node_normal_form(typeid(StoreOperation)));
   }
 
   static std::unique_ptr<jlm::tac>
@@ -155,7 +155,7 @@ private:
     if (auto storedType = dynamic_cast<const jive::valuetype*>(&type))
       return *storedType;
 
-    throw error("Expected ValueType");
+    throw util::error("Expected ValueType");
   }
 
   static std::vector<jive::port>
@@ -217,8 +217,8 @@ private:
     }
   };
 
-  using MemoryStateInputRange = iterator_range<MemoryStateInputIterator>;
-  using MemoryStateOutputRange = iterator_range<MemoryStateOutputIterator>;
+  using MemoryStateInputRange = util::iterator_range<MemoryStateInputIterator>;
+  using MemoryStateOutputRange = util::iterator_range<MemoryStateOutputIterator>;
 
   StoreNode(
     jive::region & region,
@@ -231,7 +231,7 @@ public:
   [[nodiscard]] const StoreOperation&
   GetOperation() const noexcept
   {
-    return *AssertedCast<const StoreOperation>(&operation());
+    return *util::AssertedCast<const StoreOperation>(&operation());
   }
 
   [[nodiscard]] MemoryStateInputRange
@@ -314,7 +314,7 @@ private:
     if (auto storedType = dynamic_cast<const jive::valuetype*>(&type))
       return *storedType;
 
-    throw error("Expected ValueType.");
+    throw util::error("Expected ValueType.");
   }
 };
 

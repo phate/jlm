@@ -153,7 +153,7 @@ private:
 
 	jive::region * region_;
 	traversal_tracker tracker_;
-	std::vector<callback> callbacks_;
+	std::vector<jlm::util::callback> callbacks_;
 };
 
 class bottomup_traverser final {
@@ -189,7 +189,7 @@ private:
 
 	jive::region * region_;
 	traversal_tracker tracker_;
-	std::vector<callback> callbacks_;
+	std::vector<jlm::util::callback> callbacks_;
 	traversal_nodestate new_node_state_;
 };
 
