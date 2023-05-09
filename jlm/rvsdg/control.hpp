@@ -215,21 +215,21 @@ to_match_op(const jive::operation & op) noexcept
 	return *static_cast<const match_op*>(&op);
 }
 
-}
-
 jive::output *
-jive_control_constant(jive::region * region, size_t nalternatives, size_t alternative);
+control_constant(jive::region * region, size_t nalternatives, size_t alternative);
 
 static inline jive::output *
-jive_control_false(jive::region * region)
+control_false(jive::region * region)
 {
-	return jive_control_constant(region, 2, 0);
+  return control_constant(region, 2, 0);
 }
 
 static inline jive::output *
-jive_control_true(jive::region * region)
+control_true(jive::region * region)
 {
-	return jive_control_constant(region, 2, 1);
+  return control_constant(region, 2, 1);
+}
+
 }
 
 #endif

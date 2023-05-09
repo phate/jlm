@@ -64,7 +64,7 @@ test_predicate_reduction(void)
 	auto v1 = graph.add_import({bit32, ""});
 	auto v2 = graph.add_import({bit32, ""});
 
-	auto pred = jive_control_constant(graph.root(), 3, 1);
+	auto pred = jive::control_constant(graph.root(), 3, 1);
 
 	auto gamma = gamma_node::create(pred, 3);
 	auto ev0 = gamma->add_entryvar(v0);
@@ -123,11 +123,11 @@ test_control_constant_reduction()
 
 	auto gamma = gamma_node::create(c, 2);
 
-	auto t = jive_control_true(gamma->subregion(0));
-	auto f = jive_control_false(gamma->subregion(1));
+	auto t = jive::control_true(gamma->subregion(0));
+	auto f = jive::control_false(gamma->subregion(1));
 
-	auto n0 = jive_control_constant(gamma->subregion(0), 3, 0);
-	auto n1 = jive_control_constant(gamma->subregion(1), 3, 1);
+	auto n0 = jive::control_constant(gamma->subregion(0), 3, 0);
+	auto n1 = jive::control_constant(gamma->subregion(1), 3, 1);
 
 	auto xv1 = gamma->add_exitvar({t, f});
 	auto xv2 = gamma->add_exitvar({n0, n1});
@@ -161,10 +161,10 @@ test_control_constant_reduction2()
 
 	auto gamma = gamma_node::create(c, 4);
 
-	auto t1 = jive_control_true(gamma->subregion(0));
-	auto t2 = jive_control_true(gamma->subregion(1));
-	auto t3 = jive_control_true(gamma->subregion(2));
-	auto f = jive_control_false(gamma->subregion(3));
+	auto t1 = jive::control_true(gamma->subregion(0));
+	auto t2 = jive::control_true(gamma->subregion(1));
+	auto t3 = jive::control_true(gamma->subregion(2));
+	auto f = jive::control_false(gamma->subregion(3));
 
 	auto xv = gamma->add_exitvar({t1, t2, t3, f});
 

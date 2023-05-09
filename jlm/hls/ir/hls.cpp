@@ -83,7 +83,7 @@ jlm::hls::backedge_argument *jlm::hls::loop_node::add_backedge(const jive::type 
 jlm::hls::loop_node *jlm::hls::loop_node::create(jive::region *parent, bool init) {
     auto ln = new loop_node(parent);
     if (init) {
-        auto predicate = jive_control_false(ln->subregion());
+        auto predicate = jive::control_false(ln->subregion());
         auto pred_arg = ln->add_backedge(jive::ctltype(2));
         pred_arg->result()->divert_to(predicate);
         ln->_predicate_buffer = hls::predicate_buffer_op::create(*pred_arg)[0];

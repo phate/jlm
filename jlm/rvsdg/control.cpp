@@ -98,7 +98,7 @@ match_op::reduce_operand(jive_unop_reduction_path_t path, jive::output * arg) co
 {
 	if (path == jive_unop_reduction_constant) {
 		auto op = static_cast<const bitconstant_op&>(producer(arg)->operation());
-		return jive_control_constant(arg->region(), nalternatives(),
+		return jive::control_constant(arg->region(), nalternatives(),
 			alternative(op.value().to_uint()));
 	}
 
@@ -134,11 +134,11 @@ match(
 	return simple_node::create_normalized(operand->region(), op, {operand})[0];
 }
 
+jive::output *
+control_constant(jive::region * region, size_t nalternatives, size_t alternative)
+{
+  jive::ctlconstant_op op({alternative, nalternatives});
+  return jive::simple_node::create_normalized(region, op, {})[0];
 }
 
-jive::output *
-jive_control_constant(jive::region * region, size_t nalternatives, size_t alternative)
-{
-	jive::ctlconstant_op op({alternative, nalternatives});
-	return jive::simple_node::create_normalized(region, op, {})[0];
 }

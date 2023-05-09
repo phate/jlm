@@ -93,7 +93,7 @@ private:
 	theta_node(jive::region * parent)
 	: structural_node(jive::theta_op(), parent, 1)
 	{
-		auto predicate = jive_control_false(subregion());
+		auto predicate = jive::control_false(subregion());
 		result::create(subregion(), predicate, nullptr, ctltype(2));
 	}
 

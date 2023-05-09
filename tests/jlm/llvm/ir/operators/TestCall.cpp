@@ -133,7 +133,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
       auto innerTheta = jive::theta_node::create(outerTheta->subregion());
       auto itf = innerTheta->add_loopvar(otf->argument());
 
-      auto predicate = jive_control_false(innerTheta->subregion());
+      auto predicate = jive::control_false(innerTheta->subregion());
       auto gamma = jive::gamma_node::create(predicate, 2);
       auto ev = gamma->add_entryvar(itf->argument());
       auto xv = gamma->add_exitvar({ev->argument(0), ev->argument(1)});
