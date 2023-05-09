@@ -11,24 +11,25 @@
 
 #include <string.h>
 
-namespace jive {
-
-jive::output *
-bitconcat(const std::vector<jive::output*> & operands)
+namespace jlm::rvsdg
 {
-  std::vector<jive::bittype> types;
+
+jlm::rvsdg::output *
+bitconcat(const std::vector<jlm::rvsdg::output*> & operands)
+{
+  std::vector<jlm::rvsdg::bittype> types;
   for (const auto operand : operands)
-    types.push_back(dynamic_cast<const jive::bittype&>(operand->type()));
+    types.push_back(dynamic_cast<const jlm::rvsdg::bittype&>(operand->type()));
 
   auto region = operands[0]->region();
-  jive::bitconcat_op op(std::move(types));
-  return jive::simple_node::create_normalized(region, op, {operands.begin(), operands.end()})[0];
+  jlm::rvsdg::bitconcat_op op(std::move(types));
+  return jlm::rvsdg::simple_node::create_normalized(region, op, {operands.begin(), operands.end()})[0];
 }
 
 namespace {
 
-jive::output *
-concat_reduce_arg_pair(jive::output * arg1, jive::output * arg2)
+jlm::rvsdg::output *
+concat_reduce_arg_pair(jlm::rvsdg::output * arg1, jlm::rvsdg::output * arg2)
 {
 	auto node1 = node_output::node(arg1);
 	auto node2 = node_output::node(arg2);
@@ -55,14 +56,14 @@ concat_reduce_arg_pair(jive::output * arg1, jive::output * arg2)
 	if (arg1_slice && arg2_slice && arg1_slice->high() == arg2_slice->low() &&
 		node1->input(0)->origin() == node2->input(0)->origin()) {
 		/* FIXME: support sign bit */
-		return jive::bitslice(node1->input(0)->origin(), arg1_slice->low(), arg2_slice->high());
+		return jlm::rvsdg::bitslice(node1->input(0)->origin(), arg1_slice->low(), arg2_slice->high());
 	}
 
 	return nullptr;
 }
 
 std::vector<bittype>
-types_from_arguments(const std::vector<jive::output*> & args)
+types_from_arguments(const std::vector<jlm::rvsdg::output*> & args)
 {
 	std::vector<bittype> types;
 	for (const auto arg : args) {
@@ -79,8 +80,8 @@ public:
 	~concat_normal_form() noexcept;
 
 	concat_normal_form(
-		jive::node_normal_form * parent,
-		jive::graph * graph)
+		jlm::rvsdg::node_normal_form * parent,
+		jlm::rvsdg::graph * graph)
 		: simple_normal_form(typeid(bitconcat_op), parent, graph)
 		, enable_reducible_(true)
 		, enable_flatten_(true)
@@ -88,20 +89,20 @@ public:
 	}
 
 	virtual bool
-	normalize_node(jive::node * node) const override
+	normalize_node(jlm::rvsdg::node * node) const override
 	{
 		if (!get_mutable()) {
 			return true;
 		}
 
 		auto args = operands(node);
-		std::vector<jive::output*> new_args;
+		std::vector<jlm::rvsdg::output*> new_args;
 
 		/* possibly expand associative */
 		if (get_flatten()) {
 			new_args = base::detail::associative_flatten(
 				args,
-				[](jive::output * arg) {
+				[](jlm::rvsdg::output * arg) {
 					// FIXME: switch to comparing operator, not just typeid, after
 					// converting "concat" to not be a binary operator anymore
 					return is<bitconcat_op>(node_output::node(arg));
@@ -132,19 +133,19 @@ public:
 		return simple_normal_form::normalize_node(node);
 	}
 
-	virtual std::vector<jive::output*>
+	virtual std::vector<jlm::rvsdg::output*>
 	normalized_create(
-		jive::region * region,
-		const jive::simple_op & op,
-		const std::vector<jive::output*> & arguments) const override
+		jlm::rvsdg::region * region,
+		const jlm::rvsdg::simple_op & op,
+		const std::vector<jlm::rvsdg::output*> & arguments) const override
 	{
-		std::vector<jive::output*> new_args;
+		std::vector<jlm::rvsdg::output*> new_args;
 
 		/* possibly expand associative */
 		if (get_mutable() && get_flatten()) {
 			new_args = base::detail::associative_flatten(
 				arguments,
-				[](jive::output * arg) {
+				[](jlm::rvsdg::output * arg) {
 					// FIXME: switch to comparing operator, not just typeid, after
 					// converting "concat" to not be a binary operator anymore
 					return is<bitconcat_op>(node_output::node(arg));
@@ -209,8 +210,8 @@ concat_normal_form::~concat_normal_form() noexcept
 static node_normal_form *
 get_default_normal_form(
 	const std::type_info & operator_class,
-	jive::node_normal_form * parent,
-	jive::graph * graph)
+	jlm::rvsdg::node_normal_form * parent,
+	jlm::rvsdg::graph * graph)
 {
 	return new concat_normal_form(parent, graph);
 }
@@ -218,7 +219,7 @@ get_default_normal_form(
 static void  __attribute__((constructor))
 register_node_normal_form(void)
 {
-	jive::node_normal_form::register_factory(typeid(jive::bitconcat_op), get_default_normal_form);
+	jlm::rvsdg::node_normal_form::register_factory(typeid(jlm::rvsdg::bitconcat_op), get_default_normal_form);
 }
 
 bittype
@@ -231,10 +232,10 @@ bitconcat_op::aggregate_arguments(const std::vector<bittype> & types) noexcept
 	return bittype(total);
 }
 
-std::vector<jive::port>
+std::vector<jlm::rvsdg::port>
 bitconcat_op::to_ports(const std::vector<bittype> & types)
 {
-	std::vector<jive::port> ports;
+	std::vector<jlm::rvsdg::port> ports;
 	for (const auto & type : types)
 		ports.push_back({type});
 
@@ -245,9 +246,9 @@ bitconcat_op::~bitconcat_op() noexcept
 {}
 
 bool
-bitconcat_op::operator==(const jive::operation & other) const noexcept
+bitconcat_op::operator==(const jlm::rvsdg::operation & other) const noexcept
 {
-	auto op = dynamic_cast<const jive::bitconcat_op*>(&other);
+	auto op = dynamic_cast<const jlm::rvsdg::bitconcat_op*>(&other);
 	if (!op || op->narguments() != narguments())
 		return false;
 
@@ -261,8 +262,8 @@ bitconcat_op::operator==(const jive::operation & other) const noexcept
 
 binop_reduction_path_t
 bitconcat_op::can_reduce_operand_pair(
-	const jive::output * arg1,
-	const jive::output * arg2) const noexcept
+	const jlm::rvsdg::output * arg1,
+	const jlm::rvsdg::output * arg2) const noexcept
 {
 	auto node1 = node_output::node(arg1);
 	auto node2 = node_output::node(arg2);
@@ -294,11 +295,11 @@ bitconcat_op::can_reduce_operand_pair(
 	return binop_reduction_none;
 }
 
-jive::output *
+jlm::rvsdg::output *
 bitconcat_op::reduce_operand_pair(
 	binop_reduction_path_t path,
-	jive::output * arg1,
-	jive::output * arg2) const
+	jlm::rvsdg::output * arg1,
+	jlm::rvsdg::output * arg2) const
 {
 	auto node1 = static_cast<node_output*>(arg1)->node();
 	auto node2 = static_cast<node_output*>(arg2)->node();
@@ -321,7 +322,7 @@ bitconcat_op::reduce_operand_pair(
 	if (path == binop_reduction_merge) {
 		auto arg1_slice = static_cast<const bitslice_op*>(&node1->operation());
 		auto arg2_slice = static_cast<const bitslice_op*>(&node2->operation());
-		return jive::bitslice(node1->input(0)->origin(), arg1_slice->low(), arg2_slice->high());
+		return jlm::rvsdg::bitslice(node1->input(0)->origin(), arg1_slice->low(), arg2_slice->high());
 
 		/* FIXME: support sign bit */
 	}
@@ -329,7 +330,7 @@ bitconcat_op::reduce_operand_pair(
 	return NULL;
 }
 
-enum jive::binary_op::flags
+enum jlm::rvsdg::binary_op::flags
 bitconcat_op::flags() const noexcept
 {
 	return binary_op::flags::associative;
@@ -341,10 +342,10 @@ bitconcat_op::debug_string() const
 	return "BITCONCAT";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<jlm::rvsdg::operation>
 bitconcat_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new bitconcat_op(*this));
+	return std::unique_ptr<jlm::rvsdg::operation>(new bitconcat_op(*this));
 }
 
 }

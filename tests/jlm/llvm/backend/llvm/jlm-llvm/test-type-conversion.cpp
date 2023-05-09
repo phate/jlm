@@ -15,7 +15,7 @@ test_structtype(jlm::jlm2llvm::context & ctx)
 {
 	using namespace jlm;
 
-	auto decl1 = jive::rcddeclaration::create({&jive::bit8, &jive::bit32});
+	auto decl1 = jlm::rvsdg::rcddeclaration::create({&jlm::rvsdg::bit8, &jlm::rvsdg::bit32});
 	StructType st1("mystruct", false, *decl1);
 	auto ct = jlm2llvm::convert_type(st1, ctx);
 
@@ -25,7 +25,7 @@ test_structtype(jlm::jlm2llvm::context & ctx)
 	assert(ct->getElementType(0)->isIntegerTy(8));
 	assert(ct->getElementType(1)->isIntegerTy(32));
 
-	auto decl2 = jive::rcddeclaration::create({&jive::bit32, &jive::bit8, &jive::bit32});
+	auto decl2 = jlm::rvsdg::rcddeclaration::create({&jlm::rvsdg::bit32, &jlm::rvsdg::bit8, &jlm::rvsdg::bit32});
 	StructType st2(true, *decl2);
 	ct = jlm2llvm::convert_type(st2, ctx);
 

@@ -12,16 +12,16 @@ TestOperationEquality()
 {
   using namespace jlm;
 
-  arraytype arrayType(jive::bit8, 11);
+  arraytype arrayType(jlm::rvsdg::bit8, 11);
 
-  auto declaration1 = jive::rcddeclaration::create({&jive::bit64, &jive::bit64});
-  auto declaration2 = jive::rcddeclaration::create({&arrayType, &jive::bit32});
+  auto declaration1 = jlm::rvsdg::rcddeclaration::create({&jlm::rvsdg::bit64, &jlm::rvsdg::bit64});
+  auto declaration2 = jlm::rvsdg::rcddeclaration::create({&arrayType, &jlm::rvsdg::bit32});
 
   StructType structType1(false, *declaration1);
   StructType structType2("myStructType", false, *declaration2);
 
-  GetElementPtrOperation operation1({jive::bit32, jive::bit32}, structType1);
-  GetElementPtrOperation operation2({jive::bit32, jive::bit32}, structType2);
+  GetElementPtrOperation operation1({jlm::rvsdg::bit32, jlm::rvsdg::bit32}, structType1);
+  GetElementPtrOperation operation2({jlm::rvsdg::bit32, jlm::rvsdg::bit32}, structType2);
 
   assert(operation1 != operation2);
 }

@@ -21,16 +21,16 @@ test()
 
 	using namespace jlm;
 
-	jive::bittype bt65(65);
+	jlm::rvsdg::bittype bt65(65);
 	FunctionType ft({}, {&bt65});
 
-	jive::bitvalue_repr vr(bs);
+	jlm::rvsdg::bitvalue_repr vr(bs);
 
 	ipgraph_module im(util::filepath(""), "", "");
 
 	auto cfg = cfg::create(im);
 	auto bb = basic_block::create(*cfg);
-	bb->append_last(tac::create(jive::bitconstant_op(vr), {}));
+	bb->append_last(tac::create(jlm::rvsdg::bitconstant_op(vr), {}));
 	auto c = bb->last()->result(0);
 
 	cfg->exit()->divert_inedges(bb);

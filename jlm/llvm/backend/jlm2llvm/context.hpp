@@ -12,11 +12,6 @@
 #include <memory>
 #include <unordered_map>
 
-namespace jive {
-namespace rcd {
-	class declaration;
-}}
-
 namespace llvm {
 
 class BasicBlock;
@@ -111,7 +106,7 @@ public:
 	}
 
 	inline llvm::StructType *
-	structtype(const jive::rcddeclaration * dcl)
+	structtype(const rvsdg::rcddeclaration * dcl)
 	{
 		auto it = structtypes_.find(dcl);
 		return it != structtypes_.end() ? it->second : nullptr;
@@ -119,7 +114,7 @@ public:
 
 	inline void
 	add_structtype(
-		const jive::rcddeclaration * dcl,
+		const rvsdg::rcddeclaration * dcl,
 		llvm::StructType * type)
 	{
 		JLM_ASSERT(structtypes_.find(dcl) == structtypes_.end());
@@ -131,7 +126,7 @@ private:
 	ipgraph_module & im_;
 	std::unordered_map<const jlm::variable*, llvm::Value*> variables_;
 	std::unordered_map<const jlm::cfg_node*, llvm::BasicBlock*> nodes_;
-	std::unordered_map<const jive::rcddeclaration*, llvm::StructType*> structtypes_;
+	std::unordered_map<const rvsdg::rcddeclaration*, llvm::StructType*> structtypes_;
 };
 
 }}

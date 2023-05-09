@@ -62,7 +62,7 @@ ValidateTest(std::function<void(const Test&)> validateEncoding)
 
   Test test;
   auto & rvsdgModule = test.module();
-  jive::view(rvsdgModule.Rvsdg().root(), stdout);
+  jlm::rvsdg::view(rvsdgModule.Rvsdg().root(), stdout);
 
   jlm::util::StatisticsCollector statisticsCollector;
 
@@ -76,18 +76,18 @@ ValidateTest(std::function<void(const Test&)> validateEncoding)
 
   jlm::aa::MemoryStateEncoder encoder;
   encoder.Encode(rvsdgModule, *provisioning, statisticsCollector);
-  jive::view(rvsdgModule.Rvsdg().root(), stdout);
+  jlm::rvsdg::view(rvsdgModule.Rvsdg().root(), stdout);
 
   validateEncoding(test);
 }
 
 template <class OP> static bool
 is(
-  const jive::node & node,
+  const jlm::rvsdg::node & node,
   size_t numInputs,
   size_t numOutputs)
 {
-  return jive::is<OP>(&node)
+  return jlm::rvsdg::is<OP>(&node)
          && node.ninputs() == numInputs
          && node.noutputs() == numOutputs;
 }
@@ -99,7 +99,7 @@ ValidateStoreTest1SteensgaardAgnostic(const StoreTest1 & test)
 
   assert(test.lambda->subregion()->nnodes() == 10);
 
-  auto lambdaExitMerge = jive::node_output::node(test.lambda->fctresult(0)->origin());
+  auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.lambda->fctresult(0)->origin());
   assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 6, 1));
 
   assert(test.alloca_d->output(1)->nusers() == 1);
@@ -132,7 +132,7 @@ ValidateStoreTest1SteensgaardRegionAware(const StoreTest1 & test)
 
   assert(test.lambda->subregion()->nnodes() == 9);
 
-  auto lambdaExitMerge = jive::node_output::node(test.lambda->fctresult(0)->origin());
+  auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.lambda->fctresult(0)->origin());
   assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 4, 1));
 
   assert(test.alloca_d->output(1)->nusers() == 1);
@@ -165,7 +165,7 @@ ValidateStoreTest2SteensgaardAgnostic(const StoreTest2 & test)
 
   assert(test.lambda->subregion()->nnodes() == 12);
 
-  auto lambdaExitMerge = jive::node_output::node(test.lambda->fctresult(0)->origin());
+  auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.lambda->fctresult(0)->origin());
   assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 7, 1));
 
   assert(test.alloca_a->output(1)->nusers() == 1);
@@ -184,8 +184,8 @@ ValidateStoreTest2SteensgaardAgnostic(const StoreTest2 & test)
   auto storeB = input_node(*test.alloca_b->output(0)->begin());
   assert(is<StoreOperation>(*storeB, 4, 2));
   assert(storeB->input(0)->origin() == test.alloca_y->output(0));
-  assert(jive::node_output::node(storeB->input(2)->origin()) == storeA);
-  assert(jive::node_output::node(storeB->input(3)->origin()) == storeA);
+  assert(jlm::rvsdg::node_output::node(storeB->input(2)->origin()) == storeA);
+  assert(jlm::rvsdg::node_output::node(storeB->input(3)->origin()) == storeA);
 
   auto storeX = input_node(*test.alloca_p->output(1)->begin());
   assert(is<StoreOperation>(*storeX, 3, 1));
@@ -205,7 +205,7 @@ ValidateStoreTest2SteensgaardRegionAware(const StoreTest2 & test)
 
   assert(test.lambda->subregion()->nnodes() == 11);
 
-  auto lambdaExitMerge = jive::node_output::node(test.lambda->fctresult(0)->origin());
+  auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.lambda->fctresult(0)->origin());
   assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 5, 1));
 
   assert(test.alloca_a->output(1)->nusers() == 1);
@@ -224,8 +224,8 @@ ValidateStoreTest2SteensgaardRegionAware(const StoreTest2 & test)
   auto storeB = input_node(*test.alloca_b->output(0)->begin());
   assert(is<StoreOperation>(*storeB, 4, 2));
   assert(storeB->input(0)->origin() == test.alloca_y->output(0));
-  assert(jive::node_output::node(storeB->input(2)->origin()) == storeA);
-  assert(jive::node_output::node(storeB->input(3)->origin()) == storeA);
+  assert(jlm::rvsdg::node_output::node(storeB->input(2)->origin()) == storeA);
+  assert(jlm::rvsdg::node_output::node(storeB->input(3)->origin()) == storeA);
 
   auto storeX = input_node(*test.alloca_p->output(1)->begin());
   assert(is<StoreOperation>(*storeX, 3, 1));
@@ -245,21 +245,21 @@ ValidateLoadTest1SteensgaardAgnostic(const LoadTest1 & test)
 
   assert(test.lambda->subregion()->nnodes() == 4);
 
-  auto lambdaExitMerge = jive::node_output::node(test.lambda->fctresult(1)->origin());
+  auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.lambda->fctresult(1)->origin());
   assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 2, 1));
 
   auto lambdaEntrySplit = input_node(*test.lambda->fctargument(1)->begin());
   assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 2));
 
-  auto loadA = jive::node_output::node(test.lambda->fctresult(0)->origin());
-  auto loadX = jive::node_output::node(loadA->input(0)->origin());
+  auto loadA = jlm::rvsdg::node_output::node(test.lambda->fctresult(0)->origin());
+  auto loadX = jlm::rvsdg::node_output::node(loadA->input(0)->origin());
 
   assert(is<LoadOperation>(*loadA, 3, 3));
-  assert(jive::node_output::node(loadA->input(1)->origin()) == loadX);
+  assert(jlm::rvsdg::node_output::node(loadA->input(1)->origin()) == loadX);
 
   assert(is<LoadOperation>(*loadX, 3, 3));
   assert(loadX->input(0)->origin() == test.lambda->fctargument(0));
-  assert(jive::node_output::node(loadX->input(1)->origin()) == lambdaEntrySplit);
+  assert(jlm::rvsdg::node_output::node(loadX->input(1)->origin()) == lambdaEntrySplit);
 }
 
 static void
@@ -269,21 +269,21 @@ ValidateLoadTest1SteensgaardRegionAware(const LoadTest1 & test)
 
   assert(test.lambda->subregion()->nnodes() == 4);
 
-  auto lambdaExitMerge = jive::node_output::node(test.lambda->fctresult(1)->origin());
+  auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.lambda->fctresult(1)->origin());
   assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 2, 1));
 
   auto lambdaEntrySplit = input_node(*test.lambda->fctargument(1)->begin());
   assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 2));
 
-  auto loadA = jive::node_output::node(test.lambda->fctresult(0)->origin());
-  auto loadX = jive::node_output::node(loadA->input(0)->origin());
+  auto loadA = jlm::rvsdg::node_output::node(test.lambda->fctresult(0)->origin());
+  auto loadX = jlm::rvsdg::node_output::node(loadA->input(0)->origin());
 
   assert(is<LoadOperation>(*loadA, 3, 3));
-  assert(jive::node_output::node(loadA->input(1)->origin()) == loadX);
+  assert(jlm::rvsdg::node_output::node(loadA->input(1)->origin()) == loadX);
 
   assert(is<LoadOperation>(*loadX, 3, 3));
   assert(loadX->input(0)->origin() == test.lambda->fctargument(0));
-  assert(jive::node_output::node(loadX->input(1)->origin()) == lambdaEntrySplit);
+  assert(jlm::rvsdg::node_output::node(loadX->input(1)->origin()) == lambdaEntrySplit);
 }
 
 static void
@@ -293,7 +293,7 @@ ValidateLoadTest2SteensgaardAgnostic(const LoadTest2 & test)
 
   assert(test.lambda->subregion()->nnodes() == 14);
 
-  auto lambdaExitMerge = jive::node_output::node(test.lambda->fctresult(0)->origin());
+  auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.lambda->fctresult(0)->origin());
   assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 7, 1));
 
   assert(test.alloca_a->output(1)->nusers() == 1);
@@ -312,8 +312,8 @@ ValidateLoadTest2SteensgaardAgnostic(const LoadTest2 & test)
   auto storeB = input_node(*test.alloca_b->output(0)->begin());
   assert(is<StoreOperation>(*storeB, 4, 2));
   assert(storeB->input(0)->origin() == test.alloca_y->output(0));
-  assert(jive::node_output::node(storeB->input(2)->origin()) == storeA);
-  assert(jive::node_output::node(storeB->input(3)->origin()) == storeA);
+  assert(jlm::rvsdg::node_output::node(storeB->input(2)->origin()) == storeA);
+  assert(jlm::rvsdg::node_output::node(storeB->input(3)->origin()) == storeA);
 
   auto storeX = input_node(*test.alloca_p->output(1)->begin());
   assert(is<StoreOperation>(*storeX, 3, 1));
@@ -326,14 +326,14 @@ ValidateLoadTest2SteensgaardAgnostic(const LoadTest2 & test)
 
   auto loadXY = input_node(*loadP->output(0)->begin());
   assert(is<LoadOperation>(*loadXY, 3, 3));
-  assert(jive::node_output::node(loadXY->input(1)->origin()) == storeB);
-  assert(jive::node_output::node(loadXY->input(2)->origin()) == storeB);
+  assert(jlm::rvsdg::node_output::node(loadXY->input(1)->origin()) == storeB);
+  assert(jlm::rvsdg::node_output::node(loadXY->input(2)->origin()) == storeB);
 
   auto storeY = input_node(*loadXY->output(0)->begin());
   assert(is<StoreOperation>(*storeY, 4, 2));
   assert(storeY->input(0)->origin() == test.alloca_y->output(0));
-  assert(jive::node_output::node(storeY->input(2)->origin()) == loadXY);
-  assert(jive::node_output::node(storeY->input(3)->origin()) == loadXY);
+  assert(jlm::rvsdg::node_output::node(storeY->input(2)->origin()) == loadXY);
+  assert(jlm::rvsdg::node_output::node(storeY->input(3)->origin()) == loadXY);
 }
 
 static void
@@ -343,7 +343,7 @@ ValidateLoadTest2SteensgaardRegionAware(const LoadTest2 & test)
 
   assert(test.lambda->subregion()->nnodes() == 13);
 
-  auto lambdaExitMerge = jive::node_output::node(test.lambda->fctresult(0)->origin());
+  auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.lambda->fctresult(0)->origin());
   assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 5, 1));
 
   assert(test.alloca_a->output(1)->nusers() == 1);
@@ -359,8 +359,8 @@ ValidateLoadTest2SteensgaardRegionAware(const LoadTest2 & test)
   auto storeB = input_node(*test.alloca_b->output(0)->begin());
   assert(is<StoreOperation>(*storeB, 4, 2));
   assert(storeB->input(0)->origin() == test.alloca_y->output(0));
-  assert(jive::node_output::node(storeB->input(2)->origin()) == storeA);
-  assert(jive::node_output::node(storeB->input(3)->origin()) == storeA);
+  assert(jlm::rvsdg::node_output::node(storeB->input(2)->origin()) == storeA);
+  assert(jlm::rvsdg::node_output::node(storeB->input(3)->origin()) == storeA);
 
   auto storeX = input_node(*test.alloca_p->output(1)->begin());
   assert(is<StoreOperation>(*storeX, 3, 1));
@@ -373,14 +373,14 @@ ValidateLoadTest2SteensgaardRegionAware(const LoadTest2 & test)
 
   auto loadXY = input_node(*loadP->output(0)->begin());
   assert(is<LoadOperation>(*loadXY, 3, 3));
-  assert(jive::node_output::node(loadXY->input(1)->origin()) == storeB);
-  assert(jive::node_output::node(loadXY->input(2)->origin()) == storeB);
+  assert(jlm::rvsdg::node_output::node(loadXY->input(1)->origin()) == storeB);
+  assert(jlm::rvsdg::node_output::node(loadXY->input(2)->origin()) == storeB);
 
   auto storeY = input_node(*loadXY->output(0)->begin());
   assert(is<StoreOperation>(*storeY, 4, 2));
   assert(storeY->input(0)->origin() == test.alloca_y->output(0));
-  assert(jive::node_output::node(storeY->input(2)->origin()) == loadXY);
-  assert(jive::node_output::node(storeY->input(3)->origin()) == loadXY);
+  assert(jlm::rvsdg::node_output::node(storeY->input(2)->origin()) == loadXY);
+  assert(jlm::rvsdg::node_output::node(storeY->input(3)->origin()) == loadXY);
 }
 
 static void
@@ -390,10 +390,10 @@ ValidateLoadFromUndefSteensgaardAgnostic(const LoadFromUndefTest & test)
 
   assert(test.Lambda().subregion()->nnodes() == 4);
 
-  auto lambdaExitMerge = jive::node_output::node(test.Lambda().fctresult(1)->origin());
+  auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.Lambda().fctresult(1)->origin());
   assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 2, 1));
 
-  auto load = jive::node_output::node(test.Lambda().fctresult(0)->origin());
+  auto load = jlm::rvsdg::node_output::node(test.Lambda().fctresult(0)->origin());
   assert(is<LoadOperation>(*load, 1, 1));
 
   auto lambdaEntrySplit = input_node(*test.Lambda().fctargument(0)->begin());
@@ -407,10 +407,10 @@ ValidateLoadFromUndefSteensgaardRegionAware(const LoadFromUndefTest & test)
 
   assert(test.Lambda().subregion()->nnodes() == 3);
 
-  auto lambdaExitMerge = jive::node_output::node(test.Lambda().fctresult(1)->origin());
+  auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.Lambda().fctresult(1)->origin());
   assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 0, 1));
 
-  auto load = jive::node_output::node(test.Lambda().fctresult(0)->origin());
+  auto load = jlm::rvsdg::node_output::node(test.Lambda().fctresult(0)->origin());
   assert(is<LoadOperation>(*load, 1, 1));
 }
 
@@ -422,7 +422,7 @@ ValidateCallTest1SteensgaardAgnostic(const CallTest1 & test)
   /* validate f */
   {
     auto lambdaEntrySplit = input_node(*test.lambda_f->fctargument(3)->begin());
-    auto lambdaExitMerge = jive::node_output::node(test.lambda_f->fctresult(2)->origin());
+    auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.lambda_f->fctresult(2)->origin());
     auto loadX = input_node(*test.lambda_f->fctargument(0)->begin());
     auto loadY = input_node(*test.lambda_f->fctargument(1)->begin());
 
@@ -430,16 +430,16 @@ ValidateCallTest1SteensgaardAgnostic(const CallTest1 & test)
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 7));
 
     assert(is<LoadOperation>(*loadX, 2, 2));
-    assert(jive::node_output::node(loadX->input(1)->origin()) == lambdaEntrySplit);
+    assert(jlm::rvsdg::node_output::node(loadX->input(1)->origin()) == lambdaEntrySplit);
 
     assert(is<LoadOperation>(*loadY, 2, 2));
-    assert(jive::node_output::node(loadY->input(1)->origin()) == lambdaEntrySplit);
+    assert(jlm::rvsdg::node_output::node(loadY->input(1)->origin()) == lambdaEntrySplit);
   }
 
   /* validate g */
   {
     auto lambdaEntrySplit = input_node(*test.lambda_g->fctargument(3)->begin());
-    auto lambdaExitMerge = jive::node_output::node(test.lambda_g->fctresult(2)->origin());
+    auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.lambda_g->fctresult(2)->origin());
     auto loadX = input_node(*test.lambda_g->fctargument(0)->begin());
     auto loadY = input_node(*test.lambda_g->fctargument(1)->begin());
 
@@ -447,21 +447,21 @@ ValidateCallTest1SteensgaardAgnostic(const CallTest1 & test)
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 7));
 
     assert(is<LoadOperation>(*loadX, 2, 2));
-    assert(jive::node_output::node(loadX->input(1)->origin()) == lambdaEntrySplit);
+    assert(jlm::rvsdg::node_output::node(loadX->input(1)->origin()) == lambdaEntrySplit);
 
     assert(is<LoadOperation>(*loadY, 2, 2));
-    assert(jive::node_output::node(loadY->input(1)->origin()) == loadX);
+    assert(jlm::rvsdg::node_output::node(loadY->input(1)->origin()) == loadX);
   }
 
   /* validate h */
   {
-    auto callEntryMerge = jive::node_output::node(test.CallF().input(4)->origin());
+    auto callEntryMerge = jlm::rvsdg::node_output::node(test.CallF().input(4)->origin());
     auto callExitSplit = input_node(*test.CallF().output(2)->begin());
 
     assert(is<aa::CallEntryMemStateOperator>(*callEntryMerge, 7, 1));
     assert(is<aa::CallExitMemStateOperator>(*callExitSplit, 1, 7));
 
-    callEntryMerge = jive::node_output::node(test.CallG().input(4)->origin());
+    callEntryMerge = jlm::rvsdg::node_output::node(test.CallG().input(4)->origin());
     callExitSplit = input_node(*test.CallG().output(2)->begin());
 
     assert(is<aa::CallEntryMemStateOperator>(*callEntryMerge, 7, 1));
@@ -477,7 +477,7 @@ ValidateCallTest1SteensgaardRegionAware(const CallTest1 & test)
   /* validate f */
   {
     auto lambdaEntrySplit = input_node(*test.lambda_f->fctargument(3)->begin());
-    auto lambdaExitMerge = jive::node_output::node(test.lambda_f->fctresult(2)->origin());
+    auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.lambda_f->fctresult(2)->origin());
     auto loadX = input_node(*test.lambda_f->fctargument(0)->begin());
     auto loadY = input_node(*test.lambda_f->fctargument(1)->begin());
 
@@ -485,16 +485,16 @@ ValidateCallTest1SteensgaardRegionAware(const CallTest1 & test)
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 2));
 
     assert(is<LoadOperation>(*loadX, 2, 2));
-    assert(jive::node_output::node(loadX->input(1)->origin()) == lambdaEntrySplit);
+    assert(jlm::rvsdg::node_output::node(loadX->input(1)->origin()) == lambdaEntrySplit);
 
     assert(is<LoadOperation>(*loadY, 2, 2));
-    assert(jive::node_output::node(loadY->input(1)->origin()) == lambdaEntrySplit);
+    assert(jlm::rvsdg::node_output::node(loadY->input(1)->origin()) == lambdaEntrySplit);
   }
 
   /* validate g */
   {
     auto lambdaEntrySplit = input_node(*test.lambda_g->fctargument(3)->begin());
-    auto lambdaExitMerge = jive::node_output::node(test.lambda_g->fctresult(2)->origin());
+    auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.lambda_g->fctresult(2)->origin());
     auto loadX = input_node(*test.lambda_g->fctargument(0)->begin());
     auto loadY = input_node(*test.lambda_g->fctargument(1)->begin());
 
@@ -502,21 +502,21 @@ ValidateCallTest1SteensgaardRegionAware(const CallTest1 & test)
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 1));
 
     assert(is<LoadOperation>(*loadX, 2, 2));
-    assert(jive::node_output::node(loadX->input(1)->origin()) == lambdaEntrySplit);
+    assert(jlm::rvsdg::node_output::node(loadX->input(1)->origin()) == lambdaEntrySplit);
 
     assert(is<LoadOperation>(*loadY, 2, 2));
-    assert(jive::node_output::node(loadY->input(1)->origin()) == loadX);
+    assert(jlm::rvsdg::node_output::node(loadY->input(1)->origin()) == loadX);
   }
 
   /* validate h */
   {
-    auto callEntryMerge = jive::node_output::node(test.CallF().input(4)->origin());
+    auto callEntryMerge = jlm::rvsdg::node_output::node(test.CallF().input(4)->origin());
     auto callExitSplit = input_node(*test.CallF().output(2)->begin());
 
     assert(is<aa::CallEntryMemStateOperator>(*callEntryMerge, 2, 1));
     assert(is<aa::CallExitMemStateOperator>(*callExitSplit, 1, 2));
 
-    callEntryMerge = jive::node_output::node(test.CallG().input(4)->origin());
+    callEntryMerge = jlm::rvsdg::node_output::node(test.CallG().input(4)->origin());
     callExitSplit = input_node(*test.CallG().output(2)->begin());
 
     assert(is<aa::CallEntryMemStateOperator>(*callEntryMerge, 1, 1));
@@ -536,7 +536,7 @@ ValidateCallTest2SteensgaardAgnostic(const CallTest2 & test)
     auto stateMerge = input_node(*test.malloc->output(1)->begin());
     assert(is<MemStateMergeOperator>(*stateMerge, 2, 1));
 
-    auto lambdaEntrySplit = jive::node_output::node(stateMerge->input(1)->origin());
+    auto lambdaEntrySplit = jlm::rvsdg::node_output::node(stateMerge->input(1)->origin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 5));
 
     auto lambdaExitMerge = input_node(*stateMerge->output(0)->begin());
@@ -570,7 +570,7 @@ ValidateCallTest2SteensgaardRegionAware(const CallTest2 & test)
     auto stateMerge = input_node(*test.malloc->output(1)->begin());
     assert(is<MemStateMergeOperator>(*stateMerge, 2, 1));
 
-    auto lambdaEntrySplit = jive::node_output::node(stateMerge->input(1)->origin());
+    auto lambdaEntrySplit = jlm::rvsdg::node_output::node(stateMerge->input(1)->origin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 1));
 
     auto lambdaExitMerge = input_node(*stateMerge->output(0)->begin());
@@ -601,19 +601,19 @@ ValidateIndirectCallTest1SteensgaardAgnostic(const IndirectCallTest1 & test)
   {
     assert(test.GetLambdaIndcall().subregion()->nnodes() == 5);
 
-    auto lambda_exit_mux = jive::node_output::node(test.GetLambdaIndcall().fctresult(2)->origin());
+    auto lambda_exit_mux = jlm::rvsdg::node_output::node(test.GetLambdaIndcall().fctresult(2)->origin());
     assert(is<aa::LambdaExitMemStateOperator>(*lambda_exit_mux, 5, 1));
 
-    auto call_exit_mux = jive::node_output::node(lambda_exit_mux->input(0)->origin());
+    auto call_exit_mux = jlm::rvsdg::node_output::node(lambda_exit_mux->input(0)->origin());
     assert(is<aa::CallExitMemStateOperator>(*call_exit_mux, 1, 5));
 
-    auto call = jive::node_output::node(call_exit_mux->input(0)->origin());
+    auto call = jlm::rvsdg::node_output::node(call_exit_mux->input(0)->origin());
     assert(is<CallOperation>(*call, 4, 4));
 
-    auto call_entry_mux = jive::node_output::node(call->input(2)->origin());
+    auto call_entry_mux = jlm::rvsdg::node_output::node(call->input(2)->origin());
     assert(is<aa::CallEntryMemStateOperator>(*call_entry_mux, 5, 1));
 
-    auto lambda_entry_mux = jive::node_output::node(call_entry_mux->input(2)->origin());
+    auto lambda_entry_mux = jlm::rvsdg::node_output::node(call_entry_mux->input(2)->origin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambda_entry_mux, 1, 5));
   }
 
@@ -621,28 +621,28 @@ ValidateIndirectCallTest1SteensgaardAgnostic(const IndirectCallTest1 & test)
   {
     assert(test.GetLambdaTest().subregion()->nnodes() == 9);
 
-    auto lambda_exit_mux = jive::node_output::node(test.GetLambdaTest().fctresult(2)->origin());
+    auto lambda_exit_mux = jlm::rvsdg::node_output::node(test.GetLambdaTest().fctresult(2)->origin());
     assert(is<aa::LambdaExitMemStateOperator>(*lambda_exit_mux, 5, 1));
 
-    auto call_exit_mux = jive::node_output::node(lambda_exit_mux->input(0)->origin());
+    auto call_exit_mux = jlm::rvsdg::node_output::node(lambda_exit_mux->input(0)->origin());
     assert(is<aa::CallExitMemStateOperator>(*call_exit_mux, 1, 5));
 
-    auto call = jive::node_output::node(call_exit_mux->input(0)->origin());
+    auto call = jlm::rvsdg::node_output::node(call_exit_mux->input(0)->origin());
     assert(is<CallOperation>(*call, 5, 4));
 
-    auto call_entry_mux = jive::node_output::node(call->input(3)->origin());
+    auto call_entry_mux = jlm::rvsdg::node_output::node(call->input(3)->origin());
     assert(is<aa::CallEntryMemStateOperator>(*call_entry_mux, 5, 1));
 
-    call_exit_mux = jive::node_output::node(call_entry_mux->input(0)->origin());
+    call_exit_mux = jlm::rvsdg::node_output::node(call_entry_mux->input(0)->origin());
     assert(is<aa::CallExitMemStateOperator>(*call_exit_mux, 1, 5));
 
-    call = jive::node_output::node(call_exit_mux->input(0)->origin());
+    call = jlm::rvsdg::node_output::node(call_exit_mux->input(0)->origin());
     assert(is<CallOperation>(*call, 5, 4));
 
-    call_entry_mux = jive::node_output::node(call->input(3)->origin());
+    call_entry_mux = jlm::rvsdg::node_output::node(call->input(3)->origin());
     assert(is<aa::CallEntryMemStateOperator>(*call_entry_mux, 5, 1));
 
-    auto lambda_entry_mux = jive::node_output::node(call_entry_mux->input(2)->origin());
+    auto lambda_entry_mux = jlm::rvsdg::node_output::node(call_entry_mux->input(2)->origin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambda_entry_mux, 1, 5));
   }
 }
@@ -656,19 +656,19 @@ ValidateIndirectCallTest1SteensgaardRegionAware(const IndirectCallTest1 & test)
   {
     assert(test.GetLambdaIndcall().subregion()->nnodes() == 5);
 
-    auto lambdaExitMerge = jive::node_output::node(test.GetLambdaIndcall().fctresult(2)->origin());
+    auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.GetLambdaIndcall().fctresult(2)->origin());
     assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 1, 1));
 
-    auto callExitSplit = jive::node_output::node(lambdaExitMerge->input(0)->origin());
+    auto callExitSplit = jlm::rvsdg::node_output::node(lambdaExitMerge->input(0)->origin());
     assert(is<aa::CallExitMemStateOperator>(*callExitSplit, 1, 1));
 
-    auto call = jive::node_output::node(callExitSplit->input(0)->origin());
+    auto call = jlm::rvsdg::node_output::node(callExitSplit->input(0)->origin());
     assert(is<CallOperation>(*call, 4, 4));
 
-    auto callEntryMerge = jive::node_output::node(call->input(2)->origin());
+    auto callEntryMerge = jlm::rvsdg::node_output::node(call->input(2)->origin());
     assert(is<aa::CallEntryMemStateOperator>(*callEntryMerge, 1, 1));
 
-    auto lambdaEntrySplit = jive::node_output::node(callEntryMerge->input(0)->origin());
+    auto lambdaEntrySplit = jlm::rvsdg::node_output::node(callEntryMerge->input(0)->origin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 1));
   }
 
@@ -676,28 +676,28 @@ ValidateIndirectCallTest1SteensgaardRegionAware(const IndirectCallTest1 & test)
   {
     assert(test.GetLambdaTest().subregion()->nnodes() == 9);
 
-    auto lambdaExitMerge = jive::node_output::node(test.GetLambdaTest().fctresult(2)->origin());
+    auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.GetLambdaTest().fctresult(2)->origin());
     assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 1, 1));
 
-    auto callExitSplit = jive::node_output::node(lambdaExitMerge->input(0)->origin());
+    auto callExitSplit = jlm::rvsdg::node_output::node(lambdaExitMerge->input(0)->origin());
     assert(is<aa::CallExitMemStateOperator>(*callExitSplit, 1, 1));
 
-    auto call = jive::node_output::node(callExitSplit->input(0)->origin());
+    auto call = jlm::rvsdg::node_output::node(callExitSplit->input(0)->origin());
     assert(is<CallOperation>(*call, 5, 4));
 
-    auto callEntryMerge = jive::node_output::node(call->input(3)->origin());
+    auto callEntryMerge = jlm::rvsdg::node_output::node(call->input(3)->origin());
     assert(is<aa::CallEntryMemStateOperator>(*callEntryMerge, 1, 1));
 
-    callExitSplit = jive::node_output::node(callEntryMerge->input(0)->origin());
+    callExitSplit = jlm::rvsdg::node_output::node(callEntryMerge->input(0)->origin());
     assert(is<aa::CallExitMemStateOperator>(*callExitSplit, 1, 1));
 
-    call = jive::node_output::node(callExitSplit->input(0)->origin());
+    call = jlm::rvsdg::node_output::node(callExitSplit->input(0)->origin());
     assert(is<CallOperation>(*call, 5, 4));
 
-    callEntryMerge = jive::node_output::node(call->input(3)->origin());
+    callEntryMerge = jlm::rvsdg::node_output::node(call->input(3)->origin());
     assert(is<aa::CallEntryMemStateOperator>(*callEntryMerge, 1, 1));
 
-    auto lambdaEntrySplit = jive::node_output::node(callEntryMerge->input(0)->origin());
+    auto lambdaEntrySplit = jlm::rvsdg::node_output::node(callEntryMerge->input(0)->origin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 1));
   }
 }
@@ -707,16 +707,16 @@ ValidateGammaTestSteensgaardAgnostic(const GammaTest & test)
 {
   using namespace jlm;
 
-  auto lambdaExitMerge = jive::node_output::node(test.lambda->fctresult(1)->origin());
+  auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.lambda->fctresult(1)->origin());
   assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 2, 1));
 
-  auto loadTmp2 = jive::node_output::node(lambdaExitMerge->input(0)->origin());
+  auto loadTmp2 = jlm::rvsdg::node_output::node(lambdaExitMerge->input(0)->origin());
   assert(is<LoadOperation>(*loadTmp2, 3, 3));
 
-  auto loadTmp1 = jive::node_output::node(loadTmp2->input(1)->origin());
+  auto loadTmp1 = jlm::rvsdg::node_output::node(loadTmp2->input(1)->origin());
   assert(is<LoadOperation>(*loadTmp1, 3, 3));
 
-  auto gamma = jive::node_output::node(loadTmp1->input(1)->origin());
+  auto gamma = jlm::rvsdg::node_output::node(loadTmp1->input(1)->origin());
   assert(gamma == test.gamma);
 }
 
@@ -725,16 +725,16 @@ ValidateGammaTestSteensgaardRegionAware(const GammaTest & test)
 {
   using namespace jlm;
 
-  auto lambdaExitMerge = jive::node_output::node(test.lambda->fctresult(1)->origin());
+  auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.lambda->fctresult(1)->origin());
   assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 2, 1));
 
-  auto loadTmp2 = jive::node_output::node(lambdaExitMerge->input(0)->origin());
+  auto loadTmp2 = jlm::rvsdg::node_output::node(lambdaExitMerge->input(0)->origin());
   assert(is<LoadOperation>(*loadTmp2, 3, 3));
 
-  auto loadTmp1 = jive::node_output::node(loadTmp2->input(1)->origin());
+  auto loadTmp1 = jlm::rvsdg::node_output::node(loadTmp2->input(1)->origin());
   assert(is<LoadOperation>(*loadTmp1, 3, 3));
 
-  auto lambdaEntrySplit = jive::node_output::node(loadTmp1->input(1)->origin());
+  auto lambdaEntrySplit = jlm::rvsdg::node_output::node(loadTmp1->input(1)->origin());
   assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 2));
 }
 
@@ -745,19 +745,19 @@ ValidateThetaTestSteensgaardAgnostic(const ThetaTest & test)
 
   assert(test.lambda->subregion()->nnodes() == 4);
 
-  auto lambda_exit_mux = jive::node_output::node(test.lambda->fctresult(0)->origin());
+  auto lambda_exit_mux = jlm::rvsdg::node_output::node(test.lambda->fctresult(0)->origin());
   assert(is<aa::LambdaExitMemStateOperator>(*lambda_exit_mux, 2, 1));
 
-  auto thetaOutput = util::AssertedCast<jive::theta_output>(lambda_exit_mux->input(0)->origin());
-  auto theta = jive::node_output::node(thetaOutput);
+  auto thetaOutput = util::AssertedCast<jlm::rvsdg::theta_output>(lambda_exit_mux->input(0)->origin());
+  auto theta = jlm::rvsdg::node_output::node(thetaOutput);
   assert(theta == test.theta);
 
   auto storeStateOutput = thetaOutput->result()->origin();
-  auto store = jive::node_output::node(storeStateOutput);
+  auto store = jlm::rvsdg::node_output::node(storeStateOutput);
   assert(is<StoreOperation>(*store, 4, 2));
   assert(store->input(storeStateOutput->index()+2)->origin() == thetaOutput->argument());
 
-  auto lambda_entry_mux = jive::node_output::node(thetaOutput->input()->origin());
+  auto lambda_entry_mux = jlm::rvsdg::node_output::node(thetaOutput->input()->origin());
   assert(is<aa::LambdaEntryMemStateOperator>(*lambda_entry_mux, 1, 2));
 }
 
@@ -768,19 +768,19 @@ ValidateThetaTestSteensgaardRegionAware(const ThetaTest & test)
 
   assert(test.lambda->subregion()->nnodes() == 4);
 
-  auto lambdaExitMerge = jive::node_output::node(test.lambda->fctresult(0)->origin());
+  auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.lambda->fctresult(0)->origin());
   assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 2, 1));
 
-  auto thetaOutput = util::AssertedCast<jive::theta_output>(lambdaExitMerge->input(0)->origin());
-  auto theta = jive::node_output::node(thetaOutput);
+  auto thetaOutput = util::AssertedCast<jlm::rvsdg::theta_output>(lambdaExitMerge->input(0)->origin());
+  auto theta = jlm::rvsdg::node_output::node(thetaOutput);
   assert(theta == test.theta);
 
   auto storeStateOutput = thetaOutput->result()->origin();
-  auto store = jive::node_output::node(storeStateOutput);
+  auto store = jlm::rvsdg::node_output::node(storeStateOutput);
   assert(is<StoreOperation>(*store, 4, 2));
   assert(store->input(storeStateOutput->index()+2)->origin() == thetaOutput->argument());
 
-  auto lambdaEntrySplit = jive::node_output::node(thetaOutput->input()->origin());
+  auto lambdaEntrySplit = jlm::rvsdg::node_output::node(thetaOutput->input()->origin());
   assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 2));
 }
 
@@ -796,7 +796,7 @@ ValidateDeltaTest1SteensgaardAgnostic(const DeltaTest1 & test)
 
   auto storeF = input_node(*test.constantFive->output(0)->begin());
   assert(is<StoreOperation>(*storeF, 3, 1));
-  assert(jive::node_output::node(storeF->input(2)->origin()) == lambdaEntrySplit);
+  assert(jlm::rvsdg::node_output::node(storeF->input(2)->origin()) == lambdaEntrySplit);
 
   auto deltaStateIndex = storeF->input(2)->origin()->index();
 
@@ -817,7 +817,7 @@ ValidateDeltaTest1SteensgaardRegionAware(const DeltaTest1 & test)
 
   auto storeF = input_node(*test.constantFive->output(0)->begin());
   assert(is<StoreOperation>(*storeF, 3, 1));
-  assert(jive::node_output::node(storeF->input(2)->origin()) == lambdaEntrySplit);
+  assert(jlm::rvsdg::node_output::node(storeF->input(2)->origin()) == lambdaEntrySplit);
 
   auto deltaStateIndex = storeF->input(2)->origin()->index();
 
@@ -838,7 +838,7 @@ ValidateDeltaTest2SteensgaardAgnostic(const DeltaTest2 & test)
 
   auto storeD1InF2 = input_node(*test.lambda_f2->cvargument(0)->begin());
   assert(is<StoreOperation>(*storeD1InF2, 3, 1));
-  assert(jive::node_output::node(storeD1InF2->input(2)->origin()) == lambdaEntrySplit);
+  assert(jlm::rvsdg::node_output::node(storeD1InF2->input(2)->origin()) == lambdaEntrySplit);
 
   auto d1StateIndex = storeD1InF2->input(2)->origin()->index();
 
@@ -862,13 +862,13 @@ ValidateDeltaTest2SteensgaardRegionAware(const DeltaTest2 & test)
   {
     assert(test.lambda_f1->subregion()->nnodes() == 4);
 
-    auto lambdaExitMerge = jive::node_output::node(test.lambda_f1->fctresult(1)->origin());
+    auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.lambda_f1->fctresult(1)->origin());
     assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 1, 1));
 
-    auto storeNode = jive::node_output::node(lambdaExitMerge->input(0)->origin());
+    auto storeNode = jlm::rvsdg::node_output::node(lambdaExitMerge->input(0)->origin());
     assert(is<StoreOperation>(*storeNode, 3, 1));
 
-    auto lambdaEntrySplit = jive::node_output::node(storeNode->input(2)->origin());
+    auto lambdaEntrySplit = jlm::rvsdg::node_output::node(storeNode->input(2)->origin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 1));
   }
 
@@ -881,11 +881,11 @@ ValidateDeltaTest2SteensgaardRegionAware(const DeltaTest2 & test)
 
     auto storeD1 = input_node(*test.lambda_f2->cvargument(0)->begin());
     assert(is<StoreOperation>(*storeD1, 3, 1));
-    assert(jive::node_output::node(storeD1->input(2)->origin()) == lambdaEntrySplit);
+    assert(jlm::rvsdg::node_output::node(storeD1->input(2)->origin()) == lambdaEntrySplit);
 
     auto storeD2 = input_node(*test.lambda_f2->cvargument(1)->begin());
     assert(is<StoreOperation>(*storeD2, 3, 1));
-    assert(jive::node_output::node(storeD2->input(2)->origin()) == lambdaEntrySplit);
+    assert(jlm::rvsdg::node_output::node(storeD2->input(2)->origin()) == lambdaEntrySplit);
 
     auto callEntryMerge = input_node(*storeD1->output(0)->begin());
     assert(is<aa::CallEntryMemStateOperator>(*callEntryMerge, 1, 1));
@@ -910,23 +910,23 @@ ValidateDeltaTest3SteensgaardAgnostic(const DeltaTest3 & test)
   {
     assert(test.LambdaF().subregion()->nnodes() == 6);
 
-    auto lambdaExitMerge = jive::node_output::node(test.LambdaF().fctresult(2)->origin());
+    auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.LambdaF().fctresult(2)->origin());
     assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 5, 1));
 
-    auto truncNode = jive::node_output::node(test.LambdaF().fctresult(0)->origin());
+    auto truncNode = jlm::rvsdg::node_output::node(test.LambdaF().fctresult(0)->origin());
     assert(is<trunc_op>(*truncNode, 1, 1));
 
-    auto loadG1Node = jive::node_output::node(truncNode->input(0)->origin());
+    auto loadG1Node = jlm::rvsdg::node_output::node(truncNode->input(0)->origin());
     assert(is<LoadOperation>(*loadG1Node, 2, 2));
 
-    auto lambdaEntrySplit = jive::node_output::node(loadG1Node->input(1)->origin());
+    auto lambdaEntrySplit = jlm::rvsdg::node_output::node(loadG1Node->input(1)->origin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 5));
 
-    jive::node * storeG2Node = nullptr;
+    jlm::rvsdg::node * storeG2Node = nullptr;
     for (size_t n = 0; n < lambdaExitMerge->ninputs(); n++)
     {
       auto input = lambdaExitMerge->input(n);
-      auto node = jive::node_output::node(input->origin());
+      auto node = jlm::rvsdg::node_output::node(input->origin());
       if (is<StoreOperation>(node))
       {
         storeG2Node = node;
@@ -935,10 +935,10 @@ ValidateDeltaTest3SteensgaardAgnostic(const DeltaTest3 & test)
     }
     assert(storeG2Node != nullptr);
 
-    auto loadG2Node = jive::node_output::node(storeG2Node->input(2)->origin());
+    auto loadG2Node = jlm::rvsdg::node_output::node(storeG2Node->input(2)->origin());
     assert(is<LoadOperation>(*loadG2Node, 2, 2));
 
-    auto node = jive::node_output::node(loadG2Node->input(1)->origin());
+    auto node = jlm::rvsdg::node_output::node(loadG2Node->input(1)->origin());
     assert(node == lambdaEntrySplit);
   }
 }
@@ -952,23 +952,23 @@ ValidateDeltaTest3SteensgaardRegionAware(const DeltaTest3 & test)
   {
     assert(test.LambdaF().subregion()->nnodes() == 6);
 
-    auto lambdaExitMerge = jive::node_output::node(test.LambdaF().fctresult(2)->origin());
+    auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.LambdaF().fctresult(2)->origin());
     assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 2, 1));
 
-    auto truncNode = jive::node_output::node(test.LambdaF().fctresult(0)->origin());
+    auto truncNode = jlm::rvsdg::node_output::node(test.LambdaF().fctresult(0)->origin());
     assert(is<trunc_op>(*truncNode, 1, 1));
 
-    auto loadG1Node = jive::node_output::node(truncNode->input(0)->origin());
+    auto loadG1Node = jlm::rvsdg::node_output::node(truncNode->input(0)->origin());
     assert(is<LoadOperation>(*loadG1Node, 2, 2));
 
-    auto lambdaEntrySplit = jive::node_output::node(loadG1Node->input(1)->origin());
+    auto lambdaEntrySplit = jlm::rvsdg::node_output::node(loadG1Node->input(1)->origin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 2));
 
-    jive::node * storeG2Node = nullptr;
+    jlm::rvsdg::node * storeG2Node = nullptr;
     for (size_t n = 0; n < lambdaExitMerge->ninputs(); n++)
     {
       auto input = lambdaExitMerge->input(n);
-      auto node = jive::node_output::node(input->origin());
+      auto node = jlm::rvsdg::node_output::node(input->origin());
       if (is<StoreOperation>(node))
       {
         storeG2Node = node;
@@ -977,10 +977,10 @@ ValidateDeltaTest3SteensgaardRegionAware(const DeltaTest3 & test)
     }
     assert(storeG2Node != nullptr);
 
-    auto loadG2Node = jive::node_output::node(storeG2Node->input(2)->origin());
+    auto loadG2Node = jlm::rvsdg::node_output::node(storeG2Node->input(2)->origin());
     assert(is<LoadOperation>(*loadG2Node, 2, 2));
 
-    auto node = jive::node_output::node(loadG2Node->input(1)->origin());
+    auto node = jlm::rvsdg::node_output::node(loadG2Node->input(1)->origin());
     assert(node == lambdaEntrySplit);
   }
 }
@@ -997,7 +997,7 @@ ValidateImportTestSteensgaardAgnostic(const ImportTest & test)
 
   auto storeD1InF2 = input_node(*test.lambda_f2->cvargument(0)->begin());
   assert(is<StoreOperation>(*storeD1InF2, 3, 1));
-  assert(jive::node_output::node(storeD1InF2->input(2)->origin()) == lambdaEntrySplit);
+  assert(jlm::rvsdg::node_output::node(storeD1InF2->input(2)->origin()) == lambdaEntrySplit);
 
   auto d1StateIndex = storeD1InF2->input(2)->origin()->index();
 
@@ -1021,13 +1021,13 @@ ValidateImportTestSteensgaardRegionAware(const ImportTest & test)
   {
     assert(test.lambda_f1->subregion()->nnodes() == 4);
 
-    auto lambdaExitMerge = jive::node_output::node(test.lambda_f1->fctresult(1)->origin());
+    auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.lambda_f1->fctresult(1)->origin());
     assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 1, 1));
 
-    auto storeNode = jive::node_output::node(lambdaExitMerge->input(0)->origin());
+    auto storeNode = jlm::rvsdg::node_output::node(lambdaExitMerge->input(0)->origin());
     assert(is<StoreOperation>(*storeNode, 3, 1));
 
-    auto lambdaEntrySplit = jive::node_output::node(storeNode->input(2)->origin());
+    auto lambdaEntrySplit = jlm::rvsdg::node_output::node(storeNode->input(2)->origin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 1));
   }
 
@@ -1040,11 +1040,11 @@ ValidateImportTestSteensgaardRegionAware(const ImportTest & test)
 
     auto storeD1 = input_node(*test.lambda_f2->cvargument(0)->begin());
     assert(is<StoreOperation>(*storeD1, 3, 1));
-    assert(jive::node_output::node(storeD1->input(2)->origin()) == lambdaEntrySplit);
+    assert(jlm::rvsdg::node_output::node(storeD1->input(2)->origin()) == lambdaEntrySplit);
 
     auto storeD2 = input_node(*test.lambda_f2->cvargument(1)->begin());
     assert(is<StoreOperation>(*storeD2, 3, 1));
-    assert(jive::node_output::node(storeD2->input(2)->origin()) == lambdaEntrySplit);
+    assert(jlm::rvsdg::node_output::node(storeD2->input(2)->origin()) == lambdaEntrySplit);
 
     auto callEntryMerge = input_node(*storeD1->output(0)->begin());
     assert(is<aa::CallEntryMemStateOperator>(*callEntryMerge, 1, 1));
@@ -1067,21 +1067,21 @@ ValidatePhiTestSteensgaardAgnostic(const PhiTest1 & test)
 
   auto arrayStateIndex = (*test.alloca->output(1)->begin())->index();
 
-  auto lambdaExitMerge = jive::node_output::node(test.lambda_fib->fctresult(1)->origin());
+  auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.lambda_fib->fctresult(1)->origin());
   assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 4, 1));
 
-  auto store = jive::node_output::node(lambdaExitMerge->input(arrayStateIndex)->origin());
+  auto store = jlm::rvsdg::node_output::node(lambdaExitMerge->input(arrayStateIndex)->origin());
   assert(is<StoreOperation>(*store, 3, 1));
 
-  auto gamma = jive::node_output::node(store->input(2)->origin());
+  auto gamma = jlm::rvsdg::node_output::node(store->input(2)->origin());
   assert(gamma == test.gamma);
 
   auto gammaStateIndex = store->input(2)->origin()->index();
 
-  auto load1 = jive::node_output::node(test.gamma->exitvar(gammaStateIndex)->result(0)->origin());
+  auto load1 = jlm::rvsdg::node_output::node(test.gamma->exitvar(gammaStateIndex)->result(0)->origin());
   assert(is<LoadOperation>(*load1, 2, 2));
 
-  auto load2 = jive::node_output::node(load1->input(1)->origin());
+  auto load2 = jlm::rvsdg::node_output::node(load1->input(1)->origin());
   assert(is<LoadOperation>(*load2, 2, 2));
 
   assert(load2->input(1)->origin()->index() == arrayStateIndex);
@@ -1094,21 +1094,21 @@ ValidatePhiTestSteensgaardRegionAware(const PhiTest1 & test)
 
   auto arrayStateIndex = (*test.alloca->output(1)->begin())->index();
 
-  auto lambdaExitMerge = jive::node_output::node(test.lambda_fib->fctresult(1)->origin());
+  auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.lambda_fib->fctresult(1)->origin());
   assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 1, 1));
 
-  auto store = jive::node_output::node(lambdaExitMerge->input(arrayStateIndex)->origin());
+  auto store = jlm::rvsdg::node_output::node(lambdaExitMerge->input(arrayStateIndex)->origin());
   assert(is<StoreOperation>(*store, 3, 1));
 
-  auto gamma = jive::node_output::node(store->input(2)->origin());
+  auto gamma = jlm::rvsdg::node_output::node(store->input(2)->origin());
   assert(gamma == test.gamma);
 
   auto gammaStateIndex = store->input(2)->origin()->index();
 
-  auto load1 = jive::node_output::node(test.gamma->exitvar(gammaStateIndex)->result(0)->origin());
+  auto load1 = jlm::rvsdg::node_output::node(test.gamma->exitvar(gammaStateIndex)->result(0)->origin());
   assert(is<LoadOperation>(*load1, 2, 2));
 
-  auto load2 = jive::node_output::node(load1->input(1)->origin());
+  auto load2 = jlm::rvsdg::node_output::node(load1->input(1)->origin());
   assert(is<LoadOperation>(*load2, 2, 2));
 
   assert(load2->input(1)->origin()->index() == arrayStateIndex);
@@ -1123,16 +1123,16 @@ ValidateMemcpySteensgaardAgnostic(const MemcpyTest & test)
    * Validate function f
    */
   {
-    auto lambdaExitMerge = jive::node_output::node(test.LambdaF().fctresult(2)->origin());
+    auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.LambdaF().fctresult(2)->origin());
     assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 5, 1));
 
-    auto load = jive::node_output::node(test.LambdaF().fctresult(0)->origin());
+    auto load = jlm::rvsdg::node_output::node(test.LambdaF().fctresult(0)->origin());
     assert(is<LoadOperation>(*load, 2, 2));
 
-    auto store = jive::node_output::node(load->input(1)->origin());
+    auto store = jlm::rvsdg::node_output::node(load->input(1)->origin());
     assert(is<StoreOperation>(*store, 3, 1));
 
-    auto lambdaEntrySplit = jive::node_output::node(store->input(2)->origin());
+    auto lambdaEntrySplit = jlm::rvsdg::node_output::node(store->input(2)->origin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 5));
   }
 
@@ -1140,29 +1140,29 @@ ValidateMemcpySteensgaardAgnostic(const MemcpyTest & test)
    * Validate function g
    */
   {
-    auto lambdaExitMerge = jive::node_output::node(test.LambdaG().fctresult(2)->origin());
+    auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.LambdaG().fctresult(2)->origin());
     assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 5, 1));
 
-    auto callExitSplit = jive::node_output::node(lambdaExitMerge->input(0)->origin());
+    auto callExitSplit = jlm::rvsdg::node_output::node(lambdaExitMerge->input(0)->origin());
     assert(is<aa::CallExitMemStateOperator>(*callExitSplit, 1, 5));
 
-    auto call = jive::node_output::node(callExitSplit->input(0)->origin());
+    auto call = jlm::rvsdg::node_output::node(callExitSplit->input(0)->origin());
     assert(is<CallOperation>(*call, 4, 4));
 
-    auto callEntryMerge = jive::node_output::node(call->input(2)->origin());
+    auto callEntryMerge = jlm::rvsdg::node_output::node(call->input(2)->origin());
     assert(is<aa::CallEntryMemStateOperator>(*callEntryMerge, 5, 1));
 
-    jive::node * memcpy = nullptr;
+    jlm::rvsdg::node * memcpy = nullptr;
     for (size_t n = 0; n < callEntryMerge->ninputs(); n++)
     {
-      auto node = jive::node_output::node(callEntryMerge->input(n)->origin());
+      auto node = jlm::rvsdg::node_output::node(callEntryMerge->input(n)->origin());
       if (is<Memcpy>(node))
         memcpy = node;
     }
     assert(memcpy != nullptr);
     assert(is<Memcpy>(*memcpy, 6, 2));
 
-    auto lambdaEntrySplit = jive::node_output::node(memcpy->input(5)->origin());
+    auto lambdaEntrySplit = jlm::rvsdg::node_output::node(memcpy->input(5)->origin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 5));
   }
 }
@@ -1176,16 +1176,16 @@ ValidateMemcpySteensgaardRegionAware(const MemcpyTest & test)
    * Validate function f
    */
   {
-    auto lambdaExitMerge = jive::node_output::node(test.LambdaF().fctresult(2)->origin());
+    auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.LambdaF().fctresult(2)->origin());
     assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 1, 1));
 
-    auto load = jive::node_output::node(test.LambdaF().fctresult(0)->origin());
+    auto load = jlm::rvsdg::node_output::node(test.LambdaF().fctresult(0)->origin());
     assert(is<LoadOperation>(*load, 2, 2));
 
-    auto store = jive::node_output::node(load->input(1)->origin());
+    auto store = jlm::rvsdg::node_output::node(load->input(1)->origin());
     assert(is<StoreOperation>(*store, 3, 1));
 
-    auto lambdaEntrySplit = jive::node_output::node(store->input(2)->origin());
+    auto lambdaEntrySplit = jlm::rvsdg::node_output::node(store->input(2)->origin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 1));
   }
 
@@ -1196,23 +1196,23 @@ ValidateMemcpySteensgaardRegionAware(const MemcpyTest & test)
     auto callNode = input_node(*test.LambdaG().cvargument(2)->begin());
     assert(is<CallOperation>(*callNode, 4, 4));
 
-    auto callEntryMerge = jive::node_output::node(callNode->input(2)->origin());
+    auto callEntryMerge = jlm::rvsdg::node_output::node(callNode->input(2)->origin());
     assert(is<aa::CallEntryMemStateOperator>(*callEntryMerge, 1, 1));
 
     auto callExitSplit = input_node(*callNode->output(2)->begin());
     assert(is<aa::CallExitMemStateOperator>(*callExitSplit, 1, 1));
 
-    auto memcpyNode = jive::node_output::node(callEntryMerge->input(0)->origin());
+    auto memcpyNode = jlm::rvsdg::node_output::node(callEntryMerge->input(0)->origin());
     assert(is<Memcpy>(*memcpyNode, 6, 2));
 
-    auto lambdaEntrySplit = jive::node_output::node(memcpyNode->input(4)->origin());
+    auto lambdaEntrySplit = jlm::rvsdg::node_output::node(memcpyNode->input(4)->origin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 2));
-    assert(jive::node_output::node(memcpyNode->input(5)->origin()) == lambdaEntrySplit);
+    assert(jlm::rvsdg::node_output::node(memcpyNode->input(5)->origin()) == lambdaEntrySplit);
 
     auto lambdaExitMerge = input_node(*callExitSplit->output(0)->begin());
     assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 2, 1));
-    assert(jive::node_output::node(lambdaExitMerge->input(0)->origin()) == memcpyNode
-           || jive::node_output::node(lambdaExitMerge->input(1)->origin()) == memcpyNode);
+    assert(jlm::rvsdg::node_output::node(lambdaExitMerge->input(0)->origin()) == memcpyNode
+           || jlm::rvsdg::node_output::node(lambdaExitMerge->input(1)->origin()) == memcpyNode);
   }
 }
 

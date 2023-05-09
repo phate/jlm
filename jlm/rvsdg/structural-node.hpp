@@ -9,7 +9,8 @@
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/region.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 /* structural node */
 
@@ -25,8 +26,8 @@ public:
 protected:
 	structural_node(
 		/* FIXME: use move semantics instead of copy semantics for op */
-		const jive::structural_op & op,
-		jive::region * region,
+		const jlm::rvsdg::structural_op & op,
+		jlm::rvsdg::region * region,
 		size_t nsubregions);
 
 public:
@@ -36,17 +37,17 @@ public:
 		return subregions_.size();
 	}
 
-	inline jive::region *
+	inline jlm::rvsdg::region *
 	subregion(size_t index) const noexcept
 	{
 		JLM_ASSERT(index < nsubregions());
 		return subregions_[index].get();
 	}
 
-	inline jive::structural_input *
+	inline jlm::rvsdg::structural_input *
 	input(size_t index) const noexcept;
 
-	inline jive::structural_output *
+	inline jlm::rvsdg::structural_output *
 	output(size_t index) const noexcept;
 
 	structural_input *
@@ -68,14 +69,14 @@ public:
 	}
 
 private:
-	std::vector<std::unique_ptr<jive::region>> subregions_;
+	std::vector<std::unique_ptr<jlm::rvsdg::region>> subregions_;
 };
 
 /* structural input class */
 
 typedef jlm::util::intrusive_list<
-	jive::argument,
-	jive::argument::structural_input_accessor
+	jlm::rvsdg::argument,
+	jlm::rvsdg::argument::structural_input_accessor
 > argument_list;
 
 class structural_input : public node_input {
@@ -86,16 +87,16 @@ public:
 
 protected:
 	structural_input(
-		jive::structural_node * node,
-		jive::output * origin,
-		const jive::port & port);
+		jlm::rvsdg::structural_node * node,
+		jlm::rvsdg::output * origin,
+		const jlm::rvsdg::port & port);
 
 public:
 	static structural_input *
 	create(
 		structural_node * node,
-		jive::output * origin,
-		const jive::port & port)
+		jlm::rvsdg::output * origin,
+		const jlm::rvsdg::port & port)
 	{
 		auto input = std::unique_ptr<structural_input>(new structural_input(node, origin, port));
 		return node->append_input(std::move(input));
@@ -113,8 +114,8 @@ public:
 /* structural output class */
 
 typedef jlm::util::intrusive_list<
-	jive::result,
-	jive::result::structural_output_accessor
+	jlm::rvsdg::result,
+	jlm::rvsdg::result::structural_output_accessor
 > result_list;
 
 class structural_output : public node_output {
@@ -126,14 +127,14 @@ public:
 
 protected:
 	structural_output(
-		jive::structural_node * node,
-		const jive::port & port);
+		jlm::rvsdg::structural_node * node,
+		const jlm::rvsdg::port & port);
 
 public:
 	static structural_output *
 	create(
 		structural_node * node,
-		const jive::port & port)
+		const jlm::rvsdg::port & port)
 	{
 		auto output = std::unique_ptr<structural_output>(new structural_output(node, port));
 		return node->append_output(std::move(output));
@@ -150,20 +151,20 @@ public:
 
 /* structural node method definitions */
 
-inline jive::structural_input *
+inline jlm::rvsdg::structural_input *
 structural_node::input(size_t index) const noexcept
 {
 	return static_cast<structural_input*>(node::input(index));
 }
 
-inline jive::structural_output *
+inline jlm::rvsdg::structural_output *
 structural_node::output(size_t index) const noexcept
 {
 	return static_cast<structural_output*>(node::output(index));
 }
 
 template <class Operation> bool
-region::Contains(const jive::region & region, bool checkSubregions)
+region::Contains(const jlm::rvsdg::region & region, bool checkSubregions)
 {
   for (auto & node : region.nodes)
   {
@@ -177,7 +178,7 @@ region::Contains(const jive::region & region, bool checkSubregions)
       continue;
     }
 
-    if (auto structuralNode = dynamic_cast<const jive::structural_node*>(&node))
+    if (auto structuralNode = dynamic_cast<const jlm::rvsdg::structural_node*>(&node))
     {
       for (size_t n = 0; n < structuralNode->nsubregions(); n++)
       {

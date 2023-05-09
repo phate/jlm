@@ -14,13 +14,6 @@
 #include <memory>
 #include <vector>
 
-namespace jive {
-
-namespace base {
-	class type;
-}
-}
-
 namespace jlm {
 
 class tac;
@@ -34,7 +27,7 @@ public:
 
 	tacvariable(
 		jlm::tac * tac,
-		const jive::type & type,
+		const jlm::rvsdg::type & type,
 		const std::string & name)
 	: variable(type, name)
 	, tac_(tac)
@@ -49,7 +42,7 @@ public:
 	static std::unique_ptr<tacvariable>
 	create(
 		jlm::tac * tac,
-		const jive::type & type,
+		const jlm::rvsdg::type & type,
 		const std::string & name)
 	{
 		return std::make_unique<tacvariable>(tac, type, name);
@@ -68,16 +61,16 @@ public:
 	{}
 
 	tac(
-		const jive::simple_op & operation,
+		const jlm::rvsdg::simple_op & operation,
 		const std::vector<const variable*> & operands);
 
 	tac(
-		const jive::simple_op & operation,
+		const jlm::rvsdg::simple_op & operation,
 		const std::vector<const variable*> & operands,
 		const std::vector<std::string> & names);
 
 	tac(
-		const jive::simple_op & operation,
+		const jlm::rvsdg::simple_op & operation,
 		const std::vector<const variable*> & operands,
 		std::vector<std::unique_ptr<tacvariable>> results);
 
@@ -91,10 +84,10 @@ public:
 	tac &
 	operator=(jlm::tac &&) = delete;
 
-	inline const jive::simple_op &
+	inline const jlm::rvsdg::simple_op &
 	operation() const noexcept
 	{
-		return *static_cast<const jive::simple_op*>(operation_.get());
+		return *static_cast<const jlm::rvsdg::simple_op*>(operation_.get());
 	}
 
 	inline size_t
@@ -135,17 +128,17 @@ public:
 
 	void
 	replace(
-		const jive::simple_op & operation,
+		const jlm::rvsdg::simple_op & operation,
 		const std::vector<const variable*> & operands);
 
 	void
 	convert(
-		const jive::simple_op & operation,
+		const jlm::rvsdg::simple_op & operation,
 		const std::vector<const variable*> & operands);
 
 	static std::unique_ptr<jlm::tac>
 	create(
-		const jive::simple_op & operation,
+		const jlm::rvsdg::simple_op & operation,
 		const std::vector<const variable*> & operands)
 	{
 		return std::make_unique<jlm::tac>(operation, operands);
@@ -153,7 +146,7 @@ public:
 
 	static std::unique_ptr<jlm::tac>
 	create(
-		const jive::simple_op & operation,
+		const jlm::rvsdg::simple_op & operation,
 		const std::vector<const variable*> & operands,
 		const std::vector<std::string> & names)
 	{
@@ -162,7 +155,7 @@ public:
 
 	static std::unique_ptr<jlm::tac>
 	create(
-		const jive::simple_op & operation,
+		const jlm::rvsdg::simple_op & operation,
 		const std::vector<const variable*> & operands,
 		std::vector<std::unique_ptr<tacvariable>> results)
 	{
@@ -172,7 +165,7 @@ public:
 private:
 	void
 	create_results(
-		const jive::simple_op & operation,
+		const jlm::rvsdg::simple_op & operation,
 		const std::vector<std::string> & names)
 	{
 		JLM_ASSERT(names.size() == operation.nresults());
@@ -195,7 +188,7 @@ private:
 	}
 
 	std::vector<const variable*> operands_;
-	std::unique_ptr<jive::operation> operation_;
+	std::unique_ptr<jlm::rvsdg::operation> operation_;
 	std::vector<std::unique_ptr<tacvariable>> results_;
 };
 

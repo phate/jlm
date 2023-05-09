@@ -13,7 +13,8 @@
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/util/common.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 class node;
 class simple_node;
@@ -26,13 +27,13 @@ class substitution_map;
 
 class argument : public output {
 	jlm::util::intrusive_list_anchor<
-		jive::argument
+		jlm::rvsdg::argument
 	> structural_input_anchor_;
 
 public:
 	typedef jlm::util::intrusive_list_accessor<
-		jive::argument,
-		&jive::argument::structural_input_anchor_
+		jlm::rvsdg::argument,
+		&jlm::rvsdg::argument::structural_input_anchor_
 	> structural_input_accessor;
 
 	virtual
@@ -40,9 +41,9 @@ public:
 
 protected:
 	argument(
-		jive::region * region,
-		jive::structural_input * input,
-		const jive::port & port);
+		jlm::rvsdg::region * region,
+		jlm::rvsdg::structural_input * input,
+		const jlm::rvsdg::port & port);
 
 	argument(const argument &) = delete;
 
@@ -55,31 +56,31 @@ protected:
 	operator=(argument &&) = delete;
 
 public:
-	inline jive::structural_input *
+	inline jlm::rvsdg::structural_input *
 	input() const noexcept
 	{
 		return input_;
 	}
 
-	static jive::argument *
+	static jlm::rvsdg::argument *
 	create(
-		jive::region * region,
+		jlm::rvsdg::region * region,
 		structural_input * input,
-		const jive::port & port);
+		const jlm::rvsdg::port & port);
 
 private:
-	jive::structural_input * input_;
+	jlm::rvsdg::structural_input * input_;
 };
 
 class result : public input {
 	jlm::util::intrusive_list_anchor<
-		jive::result
+		jlm::rvsdg::result
 	> structural_output_anchor_;
 
 public:
 	typedef jlm::util::intrusive_list_accessor<
-		jive::result,
-		&jive::result::structural_output_anchor_
+		jlm::rvsdg::result,
+		&jlm::rvsdg::result::structural_output_anchor_
 	> structural_output_accessor;
 
 	virtual
@@ -87,10 +88,10 @@ public:
 
 protected:
 	result(
-		jive::region * region,
-		jive::output * origin,
-		jive::structural_output * output,
-		const jive::port & port);
+		jlm::rvsdg::region * region,
+		jlm::rvsdg::output * origin,
+		jlm::rvsdg::structural_output * output,
+		const jlm::rvsdg::port & port);
 
 	result(const result &) = delete;
 
@@ -103,46 +104,46 @@ protected:
 	operator=(result &&) = delete;
 
 public:
-	inline jive::structural_output *
+	inline jlm::rvsdg::structural_output *
 	output() const noexcept
 	{
 		return output_;
 	}
 
-	static jive::result *
+	static jlm::rvsdg::result *
 	create(
-		jive::region * region,
-		jive::output * origin,
-		jive::structural_output * output,
-		const jive::port & port);
+		jlm::rvsdg::region * region,
+		jlm::rvsdg::output * origin,
+		jlm::rvsdg::structural_output * output,
+		const jlm::rvsdg::port & port);
 
 private:
-	jive::structural_output * output_;
+	jlm::rvsdg::structural_output * output_;
 };
 
 class region {
 	typedef jlm::util::intrusive_list<
-		jive::node,
-		jive::node::region_node_list_accessor
+		jlm::rvsdg::node,
+		jlm::rvsdg::node::region_node_list_accessor
 	> region_nodes_list;
 
 	typedef jlm::util::intrusive_list<
-		jive::node,
-		jive::node::region_top_node_list_accessor
+		jlm::rvsdg::node,
+		jlm::rvsdg::node::region_top_node_list_accessor
 	> region_top_node_list;
 
 	typedef jlm::util::intrusive_list<
-		jive::node,
-		jive::node::region_bottom_node_list_accessor
+		jlm::rvsdg::node,
+		jlm::rvsdg::node::region_bottom_node_list_accessor
 	> region_bottom_node_list;
 
 public:
 	~region();
 
-	region(jive::region * parent, jive::graph * graph);
+	region(jlm::rvsdg::region * parent, jlm::rvsdg::graph * graph);
 
 	region(
-		jive::structural_node * node,
+		jlm::rvsdg::structural_node * node,
 		size_t index);
 
 	inline region_nodes_list::iterator
@@ -169,13 +170,13 @@ public:
 		return nodes.end();
 	}
 
-	inline jive::graph *
+	inline jlm::rvsdg::graph *
 	graph() const noexcept
 	{
 		return graph_;
 	}
 
-	inline jive::structural_node *
+	inline jlm::rvsdg::structural_node *
 	node() const noexcept
 	{
 		return node_;
@@ -200,7 +201,7 @@ public:
 	* Multiple invocations of append_argument for the same argument are undefined.
 	*/
 	void
-	append_argument(jive::argument * argument);
+	append_argument(jlm::rvsdg::argument * argument);
 
 	void
 	remove_argument(size_t index);
@@ -211,7 +212,7 @@ public:
 		return arguments_.size();
 	}
 
-	inline jive::argument *
+	inline jlm::rvsdg::argument *
 	argument(size_t index) const noexcept
 	{
 		JLM_ASSERT(index < narguments());
@@ -223,7 +224,7 @@ public:
 	* Multiple invocations of append_result for the same result are undefined.
 	*/
 	void
-	append_result(jive::result * result);
+	append_result(jlm::rvsdg::result * result);
 
 	void
 	remove_result(size_t index);
@@ -234,7 +235,7 @@ public:
 		return results_.size();
 	}
 
-	inline jive::result *
+	inline jlm::rvsdg::result *
 	result(size_t index) const noexcept
 	{
 		JLM_ASSERT(index < nresults());
@@ -248,7 +249,7 @@ public:
 	}
 
 	void
-	remove_node(jive::node * node);
+	remove_node(jlm::rvsdg::node * node);
 
 	/**
 		\brief Copy a region with substitutions
@@ -284,7 +285,7 @@ public:
  * @return True, if the operation is found. Otherwise, false.
  */
   template <class Operation> static inline bool
-  Contains(const jive::region & region, bool checkSubregions);
+  Contains(const jlm::rvsdg::region & region, bool checkSubregions);
 
   /**
    * Counts the number of (sub-)regions contained within \p region. The count includes \p region, i.e., if \p region
@@ -294,7 +295,7 @@ public:
    * @return The number of (sub-)regions.
    */
   [[nodiscard]] static size_t
-  NumRegions(const jive::region & region) noexcept;
+  NumRegions(const jlm::rvsdg::region & region) noexcept;
 
 	region_nodes_list nodes;
 
@@ -304,29 +305,29 @@ public:
 
 private:
 	size_t index_;
-	jive::graph * graph_;
-	jive::structural_node * node_;
-	std::vector<jive::result*> results_;
-	std::vector<jive::argument*> arguments_;
+	jlm::rvsdg::graph * graph_;
+	jlm::rvsdg::structural_node * node_;
+	std::vector<jlm::rvsdg::result*> results_;
+	std::vector<jlm::rvsdg::argument*> arguments_;
 };
 
 static inline void
-remove(jive::node * node)
+remove(jlm::rvsdg::node * node)
 {
 	return node->region()->remove_node(node);
 }
 
 size_t
-nnodes(const jive::region * region) noexcept;
+nnodes(const jlm::rvsdg::region * region) noexcept;
 
 size_t
-nstructnodes(const jive::region * region) noexcept;
+nstructnodes(const jlm::rvsdg::region * region) noexcept;
 
 size_t
-nsimpnodes(const jive::region * region) noexcept;
+nsimpnodes(const jlm::rvsdg::region * region) noexcept;
 
 size_t
-ninputs(const jive::region * region) noexcept;
+ninputs(const jlm::rvsdg::region * region) noexcept;
 
 } //namespace
 

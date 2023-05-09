@@ -34,17 +34,17 @@ public:
 	{}
 
 	void
-	start(const jive::graph & graph) noexcept
+	start(const jlm::rvsdg::graph & graph) noexcept
 	{
-		nnodes_before_ = jive::nnodes(graph.root());
+		nnodes_before_ = jlm::rvsdg::nnodes(graph.root());
 		timer_.start();
 	}
 
 	void
-	end(const jive::graph & graph) noexcept
+	end(const jlm::rvsdg::graph & graph) noexcept
 	{
 		timer_.stop();
-		nnodes_after_ = jive::nnodes(graph.root());
+		nnodes_after_ = jlm::rvsdg::nnodes(graph.root());
 	}
 
 	virtual std::string

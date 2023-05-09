@@ -11,7 +11,8 @@
 
 #include <unordered_map>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 class output;
 class region;
@@ -64,49 +65,49 @@ public:
 		return *structinput_map_.find(&original)->second;
 	}
 
-	inline jive::output *
-	lookup(const jive::output * original) const noexcept
+	inline jlm::rvsdg::output *
+	lookup(const jlm::rvsdg::output * original) const noexcept
 	{
 		auto i = output_map_.find(original);
 		return i != output_map_.end() ? i->second : nullptr;
 	}
 
-	inline jive::region *
-	lookup(const jive::region * original) const noexcept
+	inline jlm::rvsdg::region *
+	lookup(const jlm::rvsdg::region * original) const noexcept
 	{
 		auto i = region_map_.find(original);
 		return i != region_map_.end() ? i->second : nullptr;
 	}
 
-	inline jive::structural_input *
-	lookup(const jive::structural_input * original) const noexcept
+	inline jlm::rvsdg::structural_input *
+	lookup(const jlm::rvsdg::structural_input * original) const noexcept
 	{
 		auto i = structinput_map_.find(original);
 		return i != structinput_map_.end() ? i->second : nullptr;
 	}
 
 	inline void
-	insert(const jive::output * original, jive::output * substitute)
+	insert(const jlm::rvsdg::output * original, jlm::rvsdg::output * substitute)
 	{
 		output_map_[original] = substitute;
 	}
 
 	inline void
-	insert(const jive::region * original, jive::region * substitute)
+	insert(const jlm::rvsdg::region * original, jlm::rvsdg::region * substitute)
 	{
 		region_map_[original] = substitute;
 	}
 
 	inline void
-	insert(const jive::structural_input * original, jive::structural_input * substitute)
+	insert(const jlm::rvsdg::structural_input * original, jlm::rvsdg::structural_input * substitute)
 	{
 		structinput_map_[original] = substitute;
 	}
 
 private:
-	std::unordered_map<const jive::region*, jive::region*> region_map_;
-	std::unordered_map<const jive::output*, jive::output*> output_map_;
-	std::unordered_map<const jive::structural_input*, jive::structural_input*> structinput_map_;
+	std::unordered_map<const jlm::rvsdg::region*, jlm::rvsdg::region*> region_map_;
+	std::unordered_map<const jlm::rvsdg::output*, jlm::rvsdg::output*> output_map_;
+	std::unordered_map<const jlm::rvsdg::structural_input*, jlm::rvsdg::structural_input*> structinput_map_;
 };
 
 }

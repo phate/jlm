@@ -12,9 +12,9 @@
 namespace jlm {
 
 static bool
-is_phi_argument(const jive::output * output)
+is_phi_argument(const jlm::rvsdg::output * output)
 {
-  auto argument = dynamic_cast<const jive::argument*>(output);
+  auto argument = dynamic_cast<const jlm::rvsdg::argument*>(output);
   return argument
          && argument->region()->node()
          && is<phi::operation>(argument->region()->node());
@@ -34,10 +34,10 @@ public:
 	{}
 
 	void
-	StartMarkStatistics(const jive::graph & graph) noexcept
+	StartMarkStatistics(const jlm::rvsdg::graph & graph) noexcept
 	{
-    numNodesBefore_ = jive::nnodes(graph.root());
-    numInputsBefore_ = jive::ninputs(graph.root());
+    numNodesBefore_ = jlm::rvsdg::nnodes(graph.root());
+    numInputsBefore_ = jlm::rvsdg::ninputs(graph.root());
 		markTimer_.start();
 	}
 
@@ -54,11 +54,11 @@ public:
 	}
 
 	void
-	StopSweepStatistics(const jive::graph & graph) noexcept
+	StopSweepStatistics(const jlm::rvsdg::graph & graph) noexcept
 	{
     sweepTimer_.stop();
-    numNodesAfter_ = jive::nnodes(graph.root());
-    numInputsAfter_ = jive::ninputs(graph.root());
+    numNodesAfter_ = jlm::rvsdg::nnodes(graph.root());
+    numInputsAfter_ = jlm::rvsdg::ninputs(graph.root());
 	}
 
 	[[nodiscard]] std::string
@@ -93,7 +93,7 @@ DeadNodeElimination::~DeadNodeElimination()
 = default;
 
 void
-DeadNodeElimination::run(jive::region & region)
+DeadNodeElimination::run(jlm::rvsdg::region & region)
 {
   ResetState();
 	Mark(region);
@@ -128,14 +128,14 @@ DeadNodeElimination::ResetState()
 }
 
 void
-DeadNodeElimination::Mark(const jive::region & region)
+DeadNodeElimination::Mark(const jlm::rvsdg::region & region)
 {
   for (size_t n = 0; n < region.nresults(); n++)
     Mark(*region.result(n)->origin());
 }
 
 void
-DeadNodeElimination::Mark(const jive::output & output)
+DeadNodeElimination::Mark(const jlm::rvsdg::output & output)
 {
   if (context_.IsAlive(output))
     return;
@@ -165,7 +165,7 @@ DeadNodeElimination::Mark(const jive::output & output)
   }
 
   if (auto thetaArgument = is_theta_argument(&output)) {
-    auto thetaInput = static_cast<const jive::theta_input*>(thetaArgument->input());
+    auto thetaInput = static_cast<const jlm::rvsdg::theta_input*>(thetaArgument->input());
     Mark(*thetaInput->output());
     Mark(*thetaInput->origin());
     return;
@@ -186,13 +186,13 @@ DeadNodeElimination::Mark(const jive::output & output)
   }
 
   if (is_phi_output(&output)) {
-    auto soutput = static_cast<const jive::structural_output*>(&output);
+    auto soutput = static_cast<const jlm::rvsdg::structural_output*>(&output);
     Mark(*soutput->results.first()->origin());
     return;
   }
 
   if (is_phi_argument(&output)) {
-    auto argument = static_cast<const jive::argument*>(&output);
+    auto argument = static_cast<const jlm::rvsdg::argument*>(&output);
     if (argument->input()) Mark(*argument->input()->origin());
     else Mark(*argument->region()->result(argument->index())->origin());
     return;
@@ -208,7 +208,7 @@ DeadNodeElimination::Mark(const jive::output & output)
     return;
   }
 
-  if (auto simpleOutput = dynamic_cast<const jive::simple_output*>(&output)) {
+  if (auto simpleOutput = dynamic_cast<const jlm::rvsdg::simple_output*>(&output)) {
     auto node = simpleOutput->node();
     for (size_t n = 0; n < node->ninputs(); n++)
       Mark(*node->input(n)->origin());
@@ -219,7 +219,7 @@ DeadNodeElimination::Mark(const jive::output & output)
 }
 
 void
-DeadNodeElimination::Sweep(jive::graph & graph) const
+DeadNodeElimination::Sweep(jlm::rvsdg::graph & graph) const
 {
   Sweep(*graph.root());
 
@@ -233,11 +233,11 @@ DeadNodeElimination::Sweep(jive::graph & graph) const
 }
 
 void
-DeadNodeElimination::Sweep(jive::region & region) const
+DeadNodeElimination::Sweep(jlm::rvsdg::region & region) const
 {
   region.prune(false);
 
-  std::vector<std::vector<jive::node*>> nodesTopDown(region.nnodes());
+  std::vector<std::vector<jlm::rvsdg::node*>> nodesTopDown(region.nnodes());
   for (auto & node : region.nodes)
     nodesTopDown[node.depth()].push_back(&node);
 
@@ -248,7 +248,7 @@ DeadNodeElimination::Sweep(jive::region & region) const
         continue;
       }
 
-      if (auto structuralNode = dynamic_cast<jive::structural_node*>(node))
+      if (auto structuralNode = dynamic_cast<jlm::rvsdg::structural_node*>(node))
         Sweep(*structuralNode);
     }
   }
@@ -257,14 +257,14 @@ DeadNodeElimination::Sweep(jive::region & region) const
 }
 
 void
-DeadNodeElimination::Sweep(jive::structural_node & node) const
+DeadNodeElimination::Sweep(jlm::rvsdg::structural_node & node) const
 {
   static std::unordered_map<
     std::type_index,
-    std::function<void(const DeadNodeElimination&, jive::structural_node&)>
+    std::function<void(const DeadNodeElimination&, jlm::rvsdg::structural_node&)>
   > map({
-    {typeid(jive::gamma_op),       [](auto & d, auto & n){ d.SweepGamma(*static_cast<jive::gamma_node*>(&n)); }},
-    {typeid(jive::theta_op),       [](auto & d, auto & n){ d.SweepTheta(*static_cast<jive::theta_node*>(&n)); }},
+    {typeid(jlm::rvsdg::gamma_op),       [](auto & d, auto & n){ d.SweepGamma(*static_cast<jlm::rvsdg::gamma_node*>(&n)); }},
+    {typeid(jlm::rvsdg::theta_op),       [](auto & d, auto & n){ d.SweepTheta(*static_cast<jlm::rvsdg::theta_node*>(&n)); }},
     {typeid(lambda::operation),    [](auto & d, auto & n){ d.SweepLambda(*static_cast<lambda::node*>(&n));    }},
     {typeid(phi::operation),       [](auto & d, auto & n){ d.SweepPhi(*static_cast<phi::node*>(&n));          }},
     {typeid(delta::operation),     [](auto & d, auto & n){ d.SweepDelta(*static_cast<delta::node*>(&n));      }}
@@ -276,7 +276,7 @@ DeadNodeElimination::Sweep(jive::structural_node & node) const
 }
 
 void
-DeadNodeElimination::SweepGamma(jive::gamma_node & gammaNode) const
+DeadNodeElimination::SweepGamma(jlm::rvsdg::gamma_node & gammaNode) const
 {
   /**
    * Remove dead outputs and results
@@ -318,7 +318,7 @@ DeadNodeElimination::SweepGamma(jive::gamma_node & gammaNode) const
 }
 
 void
-DeadNodeElimination::SweepTheta(jive::theta_node & thetaNode) const
+DeadNodeElimination::SweepTheta(jlm::rvsdg::theta_node & thetaNode) const
 {
   auto subregion = thetaNode.subregion();
 

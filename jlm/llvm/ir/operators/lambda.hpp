@@ -21,7 +21,7 @@ namespace jlm::lambda {
 *
 * A lambda operation determines a lambda's name and \ref FunctionType "function type".
 */
-class operation final : public jive::structural_op
+class operation final : public jlm::rvsdg::structural_op
 {
 public:
   ~operation() override;
@@ -106,9 +106,9 @@ public:
   debug_string() const override;
 
   bool
-  operator==(const jive::operation & other) const noexcept override;
+  operator==(const jlm::rvsdg::operation & other) const noexcept override;
 
-  [[nodiscard]] std::unique_ptr<jive::operation>
+  [[nodiscard]] std::unique_ptr<jlm::rvsdg::operation>
   copy() const override;
 
 private:
@@ -145,7 +145,7 @@ class result;
 *   auto output = lambda->finalize(...);
 * \endcode
 */
-class node final : public jive::structural_node
+class node final : public jlm::rvsdg::structural_node
 {
   class cviterator;
   class cvconstiterator;
@@ -170,7 +170,7 @@ public:
 
 private:
   node(
-    jive::region * parent,
+    jlm::rvsdg::region * parent,
     lambda::operation && op)
     : structural_node(op, parent, 1)
   {}
@@ -194,7 +194,7 @@ public:
   [[nodiscard]] fctresult_constrange
   fctresults() const;
 
-  [[nodiscard]] jive::region *
+  [[nodiscard]] jlm::rvsdg::region *
   subregion() const noexcept
   {
     return structural_node::subregion(0);
@@ -255,7 +255,7 @@ public:
   * \return The context variable argument from the lambda region.
   */
   lambda::cvargument *
-  add_ctxvar(jive::output * origin);
+  add_ctxvar(jlm::rvsdg::output * origin);
 
   [[nodiscard]] cvinput *
   input(size_t n) const noexcept;
@@ -274,13 +274,13 @@ public:
 
   lambda::node *
   copy(
-    jive::region * region,
-    const std::vector<jive::output*> & operands) const override;
+    jlm::rvsdg::region * region,
+    const std::vector<jlm::rvsdg::output*> & operands) const override;
 
   lambda::node *
   copy(
-    jive::region * region,
-    jive::substitution_map & smap) const override;
+    jlm::rvsdg::region * region,
+    jlm::rvsdg::substitution_map & smap) const override;
 
   /**
   * Creates a lambda node in the region \p parent with the function type \p type and name \p name.
@@ -298,7 +298,7 @@ public:
   */
   static node *
   create(
-    jive::region * parent,
+    jlm::rvsdg::region * parent,
     const FunctionType & type,
     const std::string & name,
     const jlm::linkage & linkage,
@@ -309,7 +309,7 @@ public:
   */
   static node *
   create(
-    jive::region * parent,
+    jlm::rvsdg::region * parent,
     const FunctionType & type,
     const std::string & name,
     const jlm::linkage & linkage)
@@ -325,7 +325,7 @@ public:
   * \return The output of the lambda node.
   */
   lambda::output *
-  finalize(const std::vector<jive::output*> & results);
+  finalize(const std::vector<jlm::rvsdg::output*> & results);
 
   /**
   * Retrieves all direct calls of a lambda node.
@@ -336,12 +336,12 @@ public:
   * \return True if the lambda has only direct calls, otherwise False.
   */
   bool
-  direct_calls(std::vector<jive::simple_node*> * calls = nullptr) const;
+  direct_calls(std::vector<jlm::rvsdg::simple_node*> * calls = nullptr) const;
 };
 
 /** \brief Lambda context variable input
 */
-class cvinput final : public jive::structural_input
+class cvinput final : public jlm::rvsdg::structural_input
 {
   friend ::jlm::lambda::node;
 
@@ -351,14 +351,14 @@ public:
 private:
   cvinput(
     lambda::node * node,
-    jive::output * origin)
+    jlm::rvsdg::output * origin)
     : structural_input(node, origin, origin->port())
   {}
 
   static cvinput *
   create(
     lambda::node * node,
-    jive::output * origin)
+    jlm::rvsdg::output * origin)
   {
     auto input = std::unique_ptr<cvinput>(new cvinput(node, origin));
     return util::AssertedCast<cvinput>(node->append_input(std::move(input)));
@@ -377,13 +377,13 @@ public:
 
 /** \brief Lambda context variable iterator
 */
-class node::cviterator final : public jive::input::iterator<cvinput>
+class node::cviterator final : public jlm::rvsdg::input::iterator<cvinput>
 {
   friend ::jlm::lambda::node;
 
   constexpr explicit
   cviterator(cvinput * input)
-    : jive::input::iterator<cvinput>(input)
+    : jlm::rvsdg::input::iterator<cvinput>(input)
   {}
 
   [[nodiscard]] cvinput *
@@ -398,13 +398,13 @@ class node::cviterator final : public jive::input::iterator<cvinput>
 
 /** \brief Lambda context variable const iterator
 */
-class node::cvconstiterator final : public jive::input::constiterator<cvinput>
+class node::cvconstiterator final : public jlm::rvsdg::input::constiterator<cvinput>
 {
   friend ::jlm::lambda::node;
 
   constexpr explicit
   cvconstiterator(const cvinput * input)
-    : jive::input::constiterator<cvinput>(input)
+    : jlm::rvsdg::input::constiterator<cvinput>(input)
   {}
 
   [[nodiscard]] const cvinput *
@@ -419,7 +419,7 @@ class node::cvconstiterator final : public jive::input::constiterator<cvinput>
 
 /** \brief Lambda output
 */
-class output final : public jive::structural_output
+class output final : public jlm::rvsdg::structural_output
 {
   friend ::jlm::lambda::node;
 
@@ -429,14 +429,14 @@ public:
 private:
   output(
     lambda::node * node,
-    const jive::port & port)
+    const jlm::rvsdg::port & port)
     : structural_output(node, port)
   {}
 
   static output *
   create(
     lambda::node * node,
-    const jive::port & port)
+    const jlm::rvsdg::port & port)
   {
     auto output = std::unique_ptr<lambda::output>(new lambda::output(node, port));
     return util::AssertedCast<lambda::output>(node->append_output(std::move(output)));
@@ -452,7 +452,7 @@ public:
 
 /** \brief Lambda function argument
 */
-class fctargument final : public jive::argument
+class fctargument final : public jlm::rvsdg::argument
 {
   friend ::jlm::lambda::node;
 
@@ -479,15 +479,15 @@ public:
 
 private:
   fctargument(
-    jive::region * region,
-    const jive::type & type)
-    : jive::argument(region, nullptr, type)
+    jlm::rvsdg::region * region,
+    const jlm::rvsdg::type & type)
+    : jlm::rvsdg::argument(region, nullptr, type)
   {}
 
   static fctargument *
   create(
-    jive::region * region,
-    const jive::type & type)
+    jlm::rvsdg::region * region,
+    const jlm::rvsdg::type & type)
   {
     auto argument = new fctargument(region, type);
     region->append_argument(argument);
@@ -499,13 +499,13 @@ private:
 
 /** \brief Lambda function argument iterator
 */
-class node::fctargiterator final : public jive::output::iterator<lambda::fctargument>
+class node::fctargiterator final : public jlm::rvsdg::output::iterator<lambda::fctargument>
 {
   friend ::jlm::lambda::node;
 
   constexpr explicit
   fctargiterator(lambda::fctargument * argument)
-    : jive::output::iterator<lambda::fctargument>(argument)
+    : jlm::rvsdg::output::iterator<lambda::fctargument>(argument)
   {}
 
   [[nodiscard]] lambda::fctargument *
@@ -526,13 +526,13 @@ class node::fctargiterator final : public jive::output::iterator<lambda::fctargu
 
 /** \brief Lambda function argument const iterator
 */
-class node::fctargconstiterator final : public jive::output::constiterator<lambda::fctargument>
+class node::fctargconstiterator final : public jlm::rvsdg::output::constiterator<lambda::fctargument>
 {
   friend ::jlm::lambda::node;
 
   constexpr explicit
   fctargconstiterator(const lambda::fctargument * argument)
-    : jive::output::constiterator<lambda::fctargument>(argument)
+    : jlm::rvsdg::output::constiterator<lambda::fctargument>(argument)
   {}
 
   [[nodiscard]] const lambda::fctargument *
@@ -553,7 +553,7 @@ class node::fctargconstiterator final : public jive::output::constiterator<lambd
 
 /** \brief Lambda context variable argument
 */
-class cvargument final : public jive::argument
+class cvargument final : public jlm::rvsdg::argument
 {
   friend ::jlm::lambda::node;
 
@@ -562,14 +562,14 @@ public:
 
 private:
   cvargument(
-    jive::region * region,
+    jlm::rvsdg::region * region,
     cvinput * input)
-    : jive::argument(region, input, input->port())
+    : jlm::rvsdg::argument(region, input, input->port())
   {}
 
   static cvargument *
   create(
-    jive::region * region,
+    jlm::rvsdg::region * region,
     lambda::cvinput * input)
   {
     auto argument = new cvargument(region, input);
@@ -581,13 +581,13 @@ public:
   cvinput *
   input() const noexcept
   {
-    return util::AssertedCast<cvinput>(jive::argument::input());
+    return util::AssertedCast<cvinput>(jlm::rvsdg::argument::input());
   }
 };
 
 /** \brief Lambda result
 */
-class result final : public jive::result
+class result final : public jlm::rvsdg::result
 {
   friend ::jlm::lambda::node;
 
@@ -596,12 +596,12 @@ public:
 
 private:
   explicit
-  result(jive::output * origin)
-    : jive::result(origin->region(), origin, nullptr, origin->port())
+  result(jlm::rvsdg::output * origin)
+    : jlm::rvsdg::result(origin->region(), origin, nullptr, origin->port())
   {}
 
   static result *
-  create(jive::output * origin)
+  create(jlm::rvsdg::output * origin)
   {
     auto result = new lambda::result(origin);
     origin->region()->append_result(result);
@@ -612,19 +612,19 @@ public:
   lambda::output *
   output() const noexcept
   {
-    return util::AssertedCast<lambda::output>(jive::result::output());
+    return util::AssertedCast<lambda::output>(jlm::rvsdg::result::output());
   }
 };
 
 /** \brief Lambda result iterator
 */
-class node::fctresiterator final : public jive::input::iterator<lambda::result>
+class node::fctresiterator final : public jlm::rvsdg::input::iterator<lambda::result>
 {
   friend ::jlm::lambda::node;
 
   constexpr explicit
   fctresiterator(lambda::result * result)
-    : jive::input::iterator<lambda::result>(result)
+    : jlm::rvsdg::input::iterator<lambda::result>(result)
   {}
 
   [[nodiscard]] lambda::result *
@@ -641,13 +641,13 @@ class node::fctresiterator final : public jive::input::iterator<lambda::result>
 
 /** \brief Lambda result const iterator
 */
-class node::fctresconstiterator final : public jive::input::constiterator<lambda::result>
+class node::fctresconstiterator final : public jlm::rvsdg::input::constiterator<lambda::result>
 {
   friend ::jlm::lambda::node;
 
   constexpr explicit
   fctresconstiterator(const lambda::result * result)
-    : jive::input::constiterator<lambda::result>(result)
+    : jlm::rvsdg::input::constiterator<lambda::result>(result)
   {}
 
   [[nodiscard]] const lambda::result *
@@ -668,7 +668,7 @@ static inline bool
 is_exported(const jlm::lambda::node & lambda)
 {
   for (auto & user : *lambda.output()) {
-    if (dynamic_cast<const jive::expport*>(&user->port()))
+    if (dynamic_cast<const jlm::rvsdg::expport*>(&user->port()))
       return true;
   }
 

@@ -10,9 +10,9 @@
 #include <jlm/rvsdg/traverser.hpp>
 
 void
-jlm::hls::check_rhls(jive::region *sr) {
-	for (auto &node : jive::topdown_traverser(sr)) {
-		if (dynamic_cast<jive::structural_node *>(node)) {
+jlm::hls::check_rhls(jlm::rvsdg::region *sr) {
+	for (auto &node : jlm::rvsdg::topdown_traverser(sr)) {
+		if (dynamic_cast<jlm::rvsdg::structural_node *>(node)) {
 			if (auto ln = dynamic_cast<hls::loop_node *>(node)) {
 				check_rhls(ln->subregion());
 			} else {
@@ -30,8 +30,8 @@ jlm::hls::check_rhls(jive::region *sr) {
 			if (node->noutputs() != 1) {
 				throw jlm::util::error("Constant should have one output");
 			}
-			auto user_in = dynamic_cast<jive::node_input *>(*node->output(0)->begin());
-			if (!user_in || !jive::is<hls::trigger_op>(user_in->node())) {
+			auto user_in = dynamic_cast<jlm::rvsdg::node_input *>(*node->output(0)->begin());
+			if (!user_in || !jlm::rvsdg::is<hls::trigger_op>(user_in->node())) {
 				throw jlm::util::error("Constant has to be gated by a trigger");
 			}
 		}

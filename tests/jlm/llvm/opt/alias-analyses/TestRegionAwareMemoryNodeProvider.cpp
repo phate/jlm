@@ -60,7 +60,7 @@ TestStore1()
   };
 
   StoreTest1 test;
-  // jive::view(test.graph().root(), stdout);
+  // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
@@ -110,7 +110,7 @@ TestStore2()
   };
 
   StoreTest2 test;
-  // jive::view(test.graph().root(), stdout);
+  // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
@@ -148,7 +148,7 @@ TestLoad1()
   };
 
   LoadTest1 test;
-  // jive::view(test.graph().root(), stdout);
+  // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
@@ -198,7 +198,7 @@ TestLoad2()
   };
 
   LoadTest2 test;
-  // jive::view(test.graph().root(), stdout);
+  // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
@@ -233,7 +233,7 @@ TestLoadFromUndef()
   };
 
   LoadFromUndefTest test;
-  // jive::view(test.graph().root(), stdout);
+  // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
@@ -311,7 +311,7 @@ TestCall1()
   };
 
   CallTest1 test;
-//	jive::view(test.graph().root(), stdout);
+//	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
@@ -399,7 +399,7 @@ TestCall2()
   };
 
   CallTest2 test;
-//	jive::view(test.graph().root(), stdout);
+//	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
@@ -492,7 +492,7 @@ TestIndirectCall()
   };
 
   IndirectCallTest1 test;
-//	jive::view(test.graph().root(), stdout);
+//	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
 //	std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
@@ -641,7 +641,7 @@ TestIndirectCall2()
   };
 
   IndirectCallTest2 test;
-//	jive::view(test.graph().root(), stdout);
+//	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
 //	std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
@@ -685,7 +685,7 @@ TestGamma()
   };
 
   GammaTest test;
-  // jive::view(test.graph().root(), stdout);
+  // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
@@ -726,7 +726,7 @@ TestTheta()
   };
 
   ThetaTest test;
-//	jive::view(test.graph().root(), stdout);
+//	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
 //	std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
@@ -785,7 +785,7 @@ TestDelta1()
   };
 
   DeltaTest1 test;
-  // jive::view(test.graph().root(), stdout);
+  // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
@@ -845,7 +845,7 @@ TestDelta2()
   };
 
   DeltaTest2 test;
-//	jive::view(test.graph().root(), stdout);
+//	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
@@ -905,7 +905,7 @@ TestImports()
   };
 
   ImportTest test;
-//	jive::view(test.graph().root(), stdout);
+//	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
@@ -976,7 +976,7 @@ TestPhi1()
   };
 
   PhiTest1 test;
-	// jive::view(test.graph().root(), stdout);
+	// jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
@@ -1148,7 +1148,7 @@ TestPhi2()
   };
 
   PhiTest2 test;
-  // jive::view(test.graph().root(), stdout);
+  // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
@@ -1208,7 +1208,7 @@ TestMemcpy()
   };
 
   MemcpyTest test;
-//	jive::view(test.graph().root(), stdout);
+//	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
@@ -1258,7 +1258,7 @@ TestEscapedMemory1()
   };
 
   EscapedMemoryTest1 test;
-//	jive::view(test.graph().root(), stdout);
+//	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
@@ -1357,7 +1357,7 @@ TestEscapedMemory2()
   };
 
   EscapedMemoryTest2 test;
-//	jive::view(test.graph().root(), stdout);
+//	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
@@ -1407,7 +1407,7 @@ TestEscapedMemory3()
   };
 
   EscapedMemoryTest3 test;
-//	jive::view(test.graph().root(), stdout);
+//	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);

@@ -64,7 +64,7 @@ test()
 	util::StatisticsCollector statisticsCollector;
 	auto rvsdgModule = ConvertInterProceduralGraphModule(im, statisticsCollector);
 
-	jive::view(rvsdgModule->Rvsdg(), stdout);
+	jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
 
 	return 0;
 }

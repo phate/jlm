@@ -25,16 +25,16 @@ public:
 	{}
 
 	void
-	start(const jive::graph & graph)
+	start(const jlm::rvsdg::graph & graph)
 	{
-		nnodes_before_ = jive::nnodes(graph.root());
+		nnodes_before_ = jlm::rvsdg::nnodes(graph.root());
 		timer_.start();
 	}
 
 	void
-	stop(const jive::graph & graph)
+	stop(const jlm::rvsdg::graph & graph)
 	{
-		nnodes_after_ = jive::nnodes(graph.root());
+		nnodes_after_ = jlm::rvsdg::nnodes(graph.root());
 		timer_.stop();
 	}
 
@@ -55,12 +55,12 @@ private:
 	util::timer timer_;
 };
 
-jive::output *
-find_producer(jive::input * input)
+jlm::rvsdg::output *
+find_producer(jlm::rvsdg::input * input)
 {
 	auto graph = input->region()->graph();
 
-	auto argument = dynamic_cast<jive::argument*>(input->origin());
+	auto argument = dynamic_cast<jlm::rvsdg::argument*>(input->origin());
 	if (argument == nullptr)
 		return input->origin();
 
@@ -71,8 +71,8 @@ find_producer(jive::input * input)
 	return find_producer(argument->input());
 }
 
-static jive::output *
-route_to_region(jive::output * output, jive::region * region)
+static jlm::rvsdg::output *
+route_to_region(jlm::rvsdg::output * output, jlm::rvsdg::region * region)
 {
 	JLM_ASSERT(region != nullptr);
 
@@ -81,10 +81,10 @@ route_to_region(jive::output * output, jive::region * region)
 
 	output = route_to_region(output, region->node()->region());
 
-	if (auto gamma = dynamic_cast<jive::gamma_node*>(region->node())) {
+	if (auto gamma = dynamic_cast<jlm::rvsdg::gamma_node*>(region->node())) {
 		gamma->add_entryvar(output);
 		output = region->argument(region->narguments()-1);
-	} else if (auto theta = dynamic_cast<jive::theta_node*>(region->node())) {
+	} else if (auto theta = dynamic_cast<jlm::rvsdg::theta_node*>(region->node())) {
 		output = theta->add_loopvar(output)->argument();
 	} else if (auto lambda = dynamic_cast<lambda::node*>(region->node())) {
 		output = lambda->add_ctxvar(output);
@@ -97,13 +97,13 @@ route_to_region(jive::output * output, jive::region * region)
 	return output;
 }
 
-static std::vector<jive::output*>
-route_dependencies(const lambda::node * lambda, const jive::simple_node * apply)
+static std::vector<jlm::rvsdg::output*>
+route_dependencies(const lambda::node * lambda, const jlm::rvsdg::simple_node * apply)
 {
 	JLM_ASSERT(is<CallOperation>(apply));
 
 	/* collect origins of dependencies */
-	std::vector<jive::output*> deps;
+	std::vector<jlm::rvsdg::output*> deps;
 	for (size_t n = 0; n < lambda->ninputs(); n++)
 		deps.push_back(find_producer(lambda->input(n)));
 
@@ -115,14 +115,14 @@ route_dependencies(const lambda::node * lambda, const jive::simple_node * apply)
 }
 
 void
-inlineCall(jive::simple_node * call, const lambda::node * lambda)
+inlineCall(jlm::rvsdg::simple_node * call, const lambda::node * lambda)
 {
 	JLM_ASSERT(is<CallOperation>(call));
 
 	auto deps = route_dependencies(lambda, call);
 	JLM_ASSERT(lambda->ncvarguments() == deps.size());
 
-	jive::substitution_map smap;
+	jlm::rvsdg::substitution_map smap;
 	for (size_t n = 1; n < call->ninputs(); n++) {
 		auto argument = lambda->fctargument(n-1);
 		smap.insert(argument, call->input(n)->origin());
@@ -141,17 +141,17 @@ inlineCall(jive::simple_node * call, const lambda::node * lambda)
 }
 
 static void
-inlining(jive::graph & graph)
+inlining(jlm::rvsdg::graph & graph)
 {
 	auto root = graph.root();
 
-	for (auto node : jive::topdown_traverser(root)) {
+	for (auto node : jlm::rvsdg::topdown_traverser(root)) {
 		if (!is<lambda::operation>(node))
 			continue;
 
 		auto lambda = static_cast<const lambda::node*>(node);
 
-		std::vector<jive::simple_node*> calls;
+		std::vector<jlm::rvsdg::simple_node*> calls;
 		bool onlyDirectCalls = lambda->direct_calls(&calls);
 
 		if (onlyDirectCalls && calls.size() == 1)

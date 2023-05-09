@@ -24,19 +24,19 @@ test_with_match()
 	using namespace jlm;
 
 	jlm::valuetype vt;
-	jive::bittype bt1(1);
+	jlm::rvsdg::bittype bt1(1);
 	FunctionType ft({&bt1, &vt, &vt}, {&vt});
 
 	RvsdgModule rm(util::filepath(""), "", "");
-	auto nf = rm.Rvsdg().node_normal_form(typeid(jive::operation));
+	auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
 	nf->set_mutable(false);
 
 	/* setup graph */
 
 	auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage);
 
-	auto match = jive::match(1, {{0, 0}}, 1, 2, lambda->fctargument(0));
-	auto gamma = jive::gamma_node::create(match, 2);
+	auto match = jlm::rvsdg::match(1, {{0, 0}}, 1, 2, lambda->fctargument(0));
+	auto gamma = jlm::rvsdg::gamma_node::create(match, 2);
 	auto ev1 = gamma->add_entryvar(lambda->fctargument(1));
 	auto ev2 = gamma->add_entryvar(lambda->fctargument(2));
 	auto ex = gamma->add_exitvar({ev1->argument(0), ev2->argument(1)});
@@ -44,7 +44,7 @@ test_with_match()
 	auto f = lambda->finalize({ex});
   rm.Rvsdg().add_export(f, {f->type(), ""});
 
-	jive::view(rm.Rvsdg(), stdout);
+	jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
 	util::StatisticsCollector statisticsCollector;
 	auto module = rvsdg2jlm::rvsdg2jlm(rm, statisticsCollector);
@@ -59,7 +59,7 @@ test_with_match()
 	assert(cfg->nnodes() == 1);
 	auto node = cfg->entry()->outedge(0)->sink();
 	auto bb = dynamic_cast<const basic_block*>(node);
-	assert(jive::is<jlm::select_op>(bb->tacs().last()->operation()));
+	assert(jlm::rvsdg::is<jlm::select_op>(bb->tacs().last()->operation()));
 }
 
 static void
@@ -68,19 +68,19 @@ test_without_match()
 	using namespace jlm;
 
 	jlm::valuetype vt;
-	jive::ctltype ctl2(2);
-	jive::bittype bt1(1);
+	jlm::rvsdg::ctltype ctl2(2);
+	jlm::rvsdg::bittype bt1(1);
 	FunctionType ft({&ctl2, &vt, &vt}, {&vt});
 
 	RvsdgModule rm(util::filepath(""), "", "");
-	auto nf = rm.Rvsdg().node_normal_form(typeid(jive::operation));
+	auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
 	nf->set_mutable(false);
 
 	/* setup graph */
 
 	auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage);
 
-	auto gamma = jive::gamma_node::create(lambda->fctargument(0), 2);
+	auto gamma = jlm::rvsdg::gamma_node::create(lambda->fctargument(0), 2);
 	auto ev1 = gamma->add_entryvar(lambda->fctargument(1));
 	auto ev2 = gamma->add_entryvar(lambda->fctargument(2));
 	auto ex = gamma->add_exitvar({ev1->argument(0), ev2->argument(1)});
@@ -88,7 +88,7 @@ test_without_match()
 	auto f = lambda->finalize({ex});
   rm.Rvsdg().add_export(f, {f->type(), ""});
 
-	jive::view(rm.Rvsdg(), stdout);
+	jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
 	util::StatisticsCollector statisticsCollector;
 	auto module = rvsdg2jlm::rvsdg2jlm(rm, statisticsCollector);
@@ -103,8 +103,8 @@ test_without_match()
 	assert(cfg->nnodes() == 1);
 	auto node = cfg->entry()->outedge(0)->sink();
 	auto bb = dynamic_cast<const basic_block*>(node);
-	assert(jive::is<jlm::ctl2bits_op>(bb->tacs().first()->operation()));
-	assert(jive::is<jlm::select_op>(bb->tacs().last()->operation()));
+	assert(jlm::rvsdg::is<jlm::ctl2bits_op>(bb->tacs().first()->operation()));
+	assert(jlm::rvsdg::is<jlm::select_op>(bb->tacs().last()->operation()));
 }
 
 static void
@@ -113,19 +113,19 @@ test_gamma3()
 	using namespace jlm;
 
 	jlm::valuetype vt;
-	FunctionType ft({&jive::bit32, &vt, &vt}, {&vt});
+	FunctionType ft({&jlm::rvsdg::bit32, &vt, &vt}, {&vt});
 
 	RvsdgModule rm(util::filepath(""), "", "");
-	auto nf = rm.Rvsdg().node_normal_form(typeid(jive::operation));
+	auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
 	nf->set_mutable(false);
 
 	/* setup graph */
 
 	auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage);
 
-	auto match = jive::match(32, {{0, 0}, {1, 1}}, 2, 3, lambda->fctargument(0));
+	auto match = jlm::rvsdg::match(32, {{0, 0}, {1, 1}}, 2, 3, lambda->fctargument(0));
 
-	auto gamma = jive::gamma_node::create(match, 3);
+	auto gamma = jlm::rvsdg::gamma_node::create(match, 3);
 	auto ev1 = gamma->add_entryvar(lambda->fctargument(1));
 	auto ev2 = gamma->add_entryvar(lambda->fctargument(2));
 	auto ex = gamma->add_exitvar({ev1->argument(0), ev1->argument(1), ev2->argument(2)});
@@ -133,7 +133,7 @@ test_gamma3()
 	auto f = lambda->finalize({ex});
   rm.Rvsdg().add_export(f, {f->type(), ""});
 
-	jive::view(rm.Rvsdg(), stdout);
+	jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
 	util::StatisticsCollector statisticsCollector;
 	auto module = rvsdg2jlm::rvsdg2jlm(rm, statisticsCollector);

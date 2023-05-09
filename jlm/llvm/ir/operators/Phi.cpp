@@ -21,10 +21,10 @@ operation::debug_string() const
   return "PHI";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<jlm::rvsdg::operation>
 operation::copy() const
 {
-  return std::unique_ptr<jive::operation>(new phi::operation(*this));
+  return std::unique_ptr<jlm::rvsdg::operation>(new phi::operation(*this));
 }
 
 /* phi node class */
@@ -45,7 +45,7 @@ node::output(size_t n) const noexcept
 }
 
 cvargument *
-node::add_ctxvar(jive::output * origin)
+node::add_ctxvar(jlm::rvsdg::output * origin)
 {
   auto input = cvinput::create(this, origin, origin->type());
   return cvargument::create(subregion(), input, origin->type());
@@ -53,14 +53,14 @@ node::add_ctxvar(jive::output * origin)
 
 phi::node *
 node::copy(
-  jive::region * region,
-  jive::substitution_map & smap) const
+  jlm::rvsdg::region * region,
+  jlm::rvsdg::substitution_map & smap) const
 {
   phi::builder pb;
   pb.begin(region);
 
   /* add context variables */
-  jive::substitution_map subregionmap;
+  jlm::rvsdg::substitution_map subregionmap;
   for (auto it = begin_cv(); it != end_cv(); it++) {
     auto origin = smap.lookup(it->origin());
     if (!origin) throw util::error("Operand not provided by susbtitution map.");
@@ -92,7 +92,7 @@ node::copy(
 /* phi builder class */
 
 rvoutput *
-builder::add_recvar(const jive::type & type)
+builder::add_recvar(const jlm::rvsdg::type & type)
 {
   if (!node_)
     return nullptr;

@@ -11,7 +11,7 @@ using namespace std::placeholders;
 
 namespace {
 
-typedef std::unordered_set<const jive::graph*> tracker_set;
+typedef std::unordered_set<const jlm::rvsdg::graph*> tracker_set;
 
 tracker_set *
 active_trackers()
@@ -24,23 +24,24 @@ active_trackers()
 }
 
 void
-register_tracker(const jive::tracker * tracker)
+register_tracker(const jlm::rvsdg::tracker * tracker)
 {
 	active_trackers()->insert(tracker->graph());
 }
 
 void
-unregister_tracker(const jive::tracker * tracker)
+unregister_tracker(const jlm::rvsdg::tracker * tracker)
 {
 	active_trackers()->erase(tracker->graph());
 }
 
 }
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 bool
-has_active_trackers(const jive::graph * graph)
+has_active_trackers(const jlm::rvsdg::graph * graph)
 {
 	auto at = active_trackers();
 	return at->find(graph) != at->end();
@@ -159,7 +160,7 @@ tracker::~tracker() noexcept
 	unregister_tracker(this);
 }
 
-tracker::tracker(jive::graph * graph, size_t nstates)
+tracker::tracker(jlm::rvsdg::graph * graph, size_t nstates)
 	: graph_(graph)
 	, states_(nstates)
 {
@@ -174,7 +175,7 @@ tracker::tracker(jive::graph * graph, size_t nstates)
 }
 
 void
-tracker::node_depth_change(jive::node * node, size_t old_depth)
+tracker::node_depth_change(jlm::rvsdg::node * node, size_t old_depth)
 {
 	auto nstate = nodestate(node);
 	if (nstate->state() < states_.size()) {
@@ -184,7 +185,7 @@ tracker::node_depth_change(jive::node * node, size_t old_depth)
 }
 
 void
-tracker::node_destroy(jive::node * node)
+tracker::node_destroy(jlm::rvsdg::node * node)
 {
 	auto nstate = nodestate(node);
 	if (nstate->state() < states_.size())
@@ -194,13 +195,13 @@ tracker::node_destroy(jive::node * node)
 }
 
 ssize_t
-tracker::get_nodestate(jive::node * node)
+tracker::get_nodestate(jlm::rvsdg::node * node)
 {
 	return nodestate(node)->state();
 }
 
 void
-tracker::set_nodestate(jive::node * node, size_t state)
+tracker::set_nodestate(jlm::rvsdg::node * node, size_t state)
 {
 	auto nstate = nodestate(node);
 	if (nstate->state() != state) {
@@ -213,7 +214,7 @@ tracker::set_nodestate(jive::node * node, size_t state)
 	}
 }
 
-jive::node *
+jlm::rvsdg::node *
 tracker::peek_top(size_t state) const
 {
 	JLM_ASSERT(state < states_.size());
@@ -227,7 +228,7 @@ tracker::peek_top(size_t state) const
 	return nullptr;
 }
 
-jive::node *
+jlm::rvsdg::node *
 tracker::peek_bottom(size_t state) const
 {
 	JLM_ASSERT(state < states_.size());
@@ -241,14 +242,14 @@ tracker::peek_bottom(size_t state) const
 	return nullptr;
 }
 
-jive::tracker_nodestate *
-tracker::nodestate(jive::node * node)
+jlm::rvsdg::tracker_nodestate *
+tracker::nodestate(jlm::rvsdg::node * node)
 {
 	auto it = nodestates_.find(node);
 	if (it != nodestates_.end())
 		return it->second.get();
 
-	nodestates_[node] = std::make_unique<jive::tracker_nodestate>(node);
+	nodestates_[node] = std::make_unique<jlm::rvsdg::tracker_nodestate>(node);
 	return nodestates_[node].get();
 }
 

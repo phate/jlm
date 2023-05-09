@@ -11,7 +11,8 @@
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/simple-normal-form.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 class simple_op;
 class simple_input;
@@ -26,40 +27,40 @@ public:
 
 protected:
 	simple_node(
-		jive::region * region,
-		const jive::simple_op & op,
-		const std::vector<jive::output*> & operands);
+		jlm::rvsdg::region * region,
+		const jlm::rvsdg::simple_op & op,
+		const std::vector<jlm::rvsdg::output*> & operands);
 
 public:
-	jive::simple_input *
+	jlm::rvsdg::simple_input *
 	input(size_t index) const noexcept;
 
-	jive::simple_output *
+	jlm::rvsdg::simple_output *
 	output(size_t index) const noexcept;
 
-	const jive::simple_op &
+	const jlm::rvsdg::simple_op &
 	operation() const noexcept;
 
-	virtual jive::node *
-	copy(jive::region * region, const std::vector<jive::output*> & operands) const override;
+	virtual jlm::rvsdg::node *
+	copy(jlm::rvsdg::region * region, const std::vector<jlm::rvsdg::output*> & operands) const override;
 
-	virtual jive::node *
-	copy(jive::region * region, jive::substitution_map & smap) const override;
+	virtual jlm::rvsdg::node *
+	copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const override;
 
-	static inline jive::simple_node *
+	static inline jlm::rvsdg::simple_node *
 	create(
-		jive::region * region,
-		const jive::simple_op & op,
-		const std::vector<jive::output*> & operands)
+		jlm::rvsdg::region * region,
+		const jlm::rvsdg::simple_op & op,
+		const std::vector<jlm::rvsdg::output*> & operands)
 	{
 		return new simple_node(region, op, operands);
 	}
 
-	static inline std::vector<jive::output*>
+	static inline std::vector<jlm::rvsdg::output*>
 	create_normalized(
-		jive::region * region,
-		const jive::simple_op & op,
-		const std::vector<jive::output*> & operands)
+		jlm::rvsdg::region * region,
+		const jlm::rvsdg::simple_op & op,
+		const std::vector<jlm::rvsdg::output*> & operands)
 	{
 		auto nf = static_cast<simple_normal_form*>(region->graph()->node_normal_form(typeid(op)));
 		return nf->normalized_create(region, op, operands);
@@ -69,7 +70,7 @@ public:
 /* inputs */
 
 class simple_input final : public node_input {
-	friend jive::output;
+	friend jlm::rvsdg::output;
 
 public:
 	virtual
@@ -77,8 +78,8 @@ public:
 
 	simple_input(
 		simple_node * node,
-		jive::output * origin,
-		const jive::port & port);
+		jlm::rvsdg::output * origin,
+		const jlm::rvsdg::port & port);
 
 public:
 	simple_node *
@@ -91,15 +92,15 @@ public:
 /* outputs */
 
 class simple_output final : public node_output {
-	friend jive::simple_input;
+	friend jlm::rvsdg::simple_input;
 
 public:
 	virtual
 	~simple_output() noexcept;
 
 	simple_output(
-		jive::simple_node * node,
-		const jive::port & port);
+		jlm::rvsdg::simple_node * node,
+		const jlm::rvsdg::port & port);
 
 public:
 	simple_node *
@@ -111,19 +112,19 @@ public:
 
 /* simple node method definitions */
 
-inline jive::simple_input *
+inline jlm::rvsdg::simple_input *
 simple_node::input(size_t index) const noexcept
 {
 	return static_cast<simple_input*>(node::input(index));
 }
 
-inline jive::simple_output *
+inline jlm::rvsdg::simple_output *
 simple_node::output(size_t index) const noexcept
 {
 	return static_cast<simple_output*>(node::output(index));
 }
 
-inline const jive::simple_op &
+inline const jlm::rvsdg::simple_op &
 simple_node::operation() const noexcept
 {
 	return *static_cast<const simple_op*>(&node::operation());

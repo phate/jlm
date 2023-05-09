@@ -10,7 +10,8 @@
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 /* argument */
 
@@ -23,9 +24,9 @@ argument::~argument() noexcept
 }
 
 argument::argument(
-	jive::region * region,
-	jive::structural_input * input,
-	const jive::port & port)
+	jlm::rvsdg::region * region,
+	jlm::rvsdg::structural_input * input,
+	const jlm::rvsdg::port & port)
 : output(region, port)
 , input_(input)
 {
@@ -37,13 +38,13 @@ argument::argument(
 	}
 }
 
-jive::argument *
+jlm::rvsdg::argument *
 argument::create(
-	jive::region * region,
+	jlm::rvsdg::region * region,
 	structural_input * input,
-	const jive::port & port)
+	const jlm::rvsdg::port & port)
 {
-	auto argument = new jive::argument(region, input, port);
+	auto argument = new jlm::rvsdg::argument(region, input, port);
 	region->append_argument(argument);
 	return argument;
 }
@@ -59,10 +60,10 @@ result::~result() noexcept
 }
 
 result::result(
-	jive::region * region,
-	jive::output * origin,
-	jive::structural_output * output,
-	const jive::port & port)
+	jlm::rvsdg::region * region,
+	jlm::rvsdg::output * origin,
+	jlm::rvsdg::structural_output * output,
+	const jlm::rvsdg::port & port)
 : input(origin, region, port)
 , output_(output)
 {
@@ -74,14 +75,14 @@ result::result(
 	}
 }
 
-jive::result *
+jlm::rvsdg::result *
 result::create(
-	jive::region * region,
-	jive::output * origin,
-	jive::structural_output * output,
-	const jive::port & port)
+	jlm::rvsdg::region * region,
+	jlm::rvsdg::output * origin,
+	jlm::rvsdg::structural_output * output,
+	const jlm::rvsdg::port & port)
 {
-	auto result = new jive::result(region, origin, output, port);
+	auto result = new jlm::rvsdg::result(region, origin, output, port);
 	region->append_result(result);
 	return result;
 }
@@ -104,7 +105,7 @@ region::~region()
 		remove_argument(arguments_.size()-1);
 }
 
-region::region(jive::region * parent, jive::graph * graph)
+region::region(jlm::rvsdg::region * parent, jlm::rvsdg::graph * graph)
 	: index_(0)
 	, graph_(graph)
 	, node_(nullptr)
@@ -113,7 +114,7 @@ region::region(jive::region * parent, jive::graph * graph)
 }
 
 region::region(
-	jive::structural_node * node,
+	jlm::rvsdg::structural_node * node,
 	size_t index)
 : index_(index)
 , graph_(node->graph())
@@ -123,7 +124,7 @@ region::region(
 }
 
 void
-region::append_argument(jive::argument * argument)
+region::append_argument(jlm::rvsdg::argument * argument)
 {
 	if (argument->region() != this)
 		throw jlm::util::error("Appending argument to wrong region.");
@@ -143,7 +144,7 @@ void
 region::remove_argument(size_t index)
 {
 	JLM_ASSERT(index < narguments());
-	jive::argument * argument = arguments_[index];
+	jlm::rvsdg::argument * argument = arguments_[index];
 
 	delete argument;
 	for (size_t n = index; n < arguments_.size()-1; n++) {
@@ -154,7 +155,7 @@ region::remove_argument(size_t index)
 }
 
 void
-region::append_result(jive::result * result)
+region::append_result(jlm::rvsdg::result * result)
 {
 	if (result->region() != this)
 		throw jlm::util::error("Appending result to wrong region.");
@@ -177,7 +178,7 @@ void
 region::remove_result(size_t index)
 {
 	JLM_ASSERT(index < results_.size());
-	jive::result * result = results_[index];
+	jlm::rvsdg::result * result = results_[index];
 
 	delete result;
 	for (size_t n = index; n < results_.size()-1; n++) {
@@ -188,7 +189,7 @@ region::remove_result(size_t index)
 }
 
 void
-region::remove_node(jive::node * node)
+region::remove_node(jlm::rvsdg::node * node)
 {
 	delete node;
 }
@@ -203,7 +204,7 @@ region::copy(
 	smap.insert(this, target);
 
 	/* order nodes top-down */
-	std::vector<std::vector<const jive::node*>> context(nnodes());
+	std::vector<std::vector<const jlm::rvsdg::node*>> context(nnodes());
 	for (const auto & node : nodes) {
 		JLM_ASSERT(node.depth() < context.size());
 		context[node.depth()].push_back(&node);
@@ -232,7 +233,7 @@ region::copy(
 			auto origin = smap.lookup(result(n)->origin());
 			if (!origin) origin = result(n)->origin();
 
-			auto output = dynamic_cast<jive::structural_output*>(smap.lookup(result(n)->output()));
+			auto output = dynamic_cast<jlm::rvsdg::structural_output*>(smap.lookup(result(n)->output()));
 			result::create(target, origin, output, result(n)->port());
 		}
 	}
@@ -248,7 +249,7 @@ region::prune(bool recursive)
 		return;
 
 	for (const auto & node : nodes) {
-		if (auto snode = dynamic_cast<const jive::structural_node*>(&node)) {
+		if (auto snode = dynamic_cast<const jlm::rvsdg::structural_node*>(&node)) {
 			for (size_t n = 0; n < snode->nsubregions(); n++)
 				snode->subregion(n)->prune(recursive);
 		}
@@ -258,8 +259,8 @@ region::prune(bool recursive)
 void
 region::normalize(bool recursive)
 {
-	for (auto node : jive::topdown_traverser(this)) {
-		if (auto structnode = dynamic_cast<const jive::structural_node*>(node)) {
+	for (auto node : jlm::rvsdg::topdown_traverser(this)) {
+		if (auto structnode = dynamic_cast<const jlm::rvsdg::structural_node*>(node)) {
 			for (size_t n = 0; n < structnode->nsubregions(); n++)
 				structnode->subregion(n)->normalize(recursive);
 		}
@@ -276,12 +277,12 @@ region::IsRootRegion() const noexcept
 }
 
 size_t
-region::NumRegions(const jive::region & region) noexcept
+region::NumRegions(const jlm::rvsdg::region & region) noexcept
 {
   size_t numRegions = 1;
   for (auto & node : region.nodes)
   {
-    if (auto structuralNode = dynamic_cast<const jive::structural_node*>(&node))
+    if (auto structuralNode = dynamic_cast<const jlm::rvsdg::structural_node*>(&node))
     {
       for (size_t n = 0; n < structuralNode->nsubregions(); n++)
       {
@@ -294,11 +295,11 @@ region::NumRegions(const jive::region & region) noexcept
 }
 
 size_t
-nnodes(const jive::region * region) noexcept
+nnodes(const jlm::rvsdg::region * region) noexcept
 {
 	size_t n = region->nnodes();
 	for (const auto & node : region->nodes) {
-		if (auto snode = dynamic_cast<const jive::structural_node*>(&node)) {
+		if (auto snode = dynamic_cast<const jlm::rvsdg::structural_node*>(&node)) {
 			for (size_t r = 0; r < snode->nsubregions(); r++)
 				n += nnodes(snode->subregion(r));
 		}
@@ -308,11 +309,11 @@ nnodes(const jive::region * region) noexcept
 }
 
 size_t
-nstructnodes(const jive::region * region) noexcept
+nstructnodes(const jlm::rvsdg::region * region) noexcept
 {
 	size_t n = 0;
 	for (const auto & node : region->nodes) {
-		if (auto snode = dynamic_cast<const jive::structural_node*>(&node)) {
+		if (auto snode = dynamic_cast<const jlm::rvsdg::structural_node*>(&node)) {
 			for (size_t r = 0; r < snode->nsubregions(); r++)
 				n += nstructnodes(snode->subregion(r));
 			n += 1;
@@ -323,11 +324,11 @@ nstructnodes(const jive::region * region) noexcept
 }
 
 size_t
-nsimpnodes(const jive::region * region) noexcept
+nsimpnodes(const jlm::rvsdg::region * region) noexcept
 {
 	size_t n = 0;
 	for (const auto & node : region->nodes) {
-		if (auto snode = dynamic_cast<const jive::structural_node*>(&node)) {
+		if (auto snode = dynamic_cast<const jlm::rvsdg::structural_node*>(&node)) {
 			for (size_t r = 0; r < snode->nsubregions(); r++)
 				n += nsimpnodes(snode->subregion(r));
 		} else {
@@ -339,11 +340,11 @@ nsimpnodes(const jive::region * region) noexcept
 }
 
 size_t
-ninputs(const jive::region * region) noexcept
+ninputs(const jlm::rvsdg::region * region) noexcept
 {
 	size_t n = region->nresults();
 	for (const auto & node : region->nodes) {
-		if (auto snode = dynamic_cast<const jive::structural_node*>(&node)) {
+		if (auto snode = dynamic_cast<const jlm::rvsdg::structural_node*>(&node)) {
 			for (size_t r = 0; r < snode->nsubregions(); r++)
 				n += ninputs(snode->subregion(r));
 		}

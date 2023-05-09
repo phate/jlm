@@ -28,7 +28,7 @@ TestArgumentIterators()
       linkage::external_linkage);
     lambda->finalize({lambda->fctargument(0)});
 
-    std::vector<jive::argument*> functionArguments;
+    std::vector<jlm::rvsdg::argument*> functionArguments;
     for (auto & argument : lambda->fctarguments())
       functionArguments.push_back(&argument);
 
@@ -67,7 +67,7 @@ TestArgumentIterators()
 
     lambda->finalize({lambda->fctargument(0), cv});
 
-    std::vector<jive::argument*> functionArguments;
+    std::vector<jlm::rvsdg::argument*> functionArguments;
     for (auto & argument : lambda->fctarguments())
       functionArguments.push_back(&argument);
 

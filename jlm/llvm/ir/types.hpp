@@ -19,37 +19,37 @@ namespace jlm {
 /** \brief Function type class
  *
  */
-class FunctionType final : public jive::valuetype {
+class FunctionType final : public jlm::rvsdg::valuetype {
 
   class TypeConstIterator final
   {
   public:
     using iterator_category = std::forward_iterator_tag;
-    using value_type = jive::type*;
+    using value_type = jlm::rvsdg::type*;
     using difference_type = std::ptrdiff_t;
-    using pointer = jive::type**;
-    using reference = jive::type*&;
+    using pointer = jlm::rvsdg::type**;
+    using reference = jlm::rvsdg::type*&;
 
     explicit
-    TypeConstIterator(const std::vector<std::unique_ptr<jive::type>>::const_iterator & it)
+    TypeConstIterator(const std::vector<std::unique_ptr<jlm::rvsdg::type>>::const_iterator & it)
       : It_(it)
     {}
 
   public:
-    jive::type *
+    jlm::rvsdg::type *
     type() const noexcept
     {
       return It_->get();
     }
 
-    jive::type &
+    jlm::rvsdg::type &
     operator*() const
     {
       JLM_ASSERT(type() != nullptr);
       return *type();
     }
 
-    jive::type *
+    jlm::rvsdg::type *
     operator->() const
     {
       return type();
@@ -83,7 +83,7 @@ class FunctionType final : public jive::valuetype {
     }
 
   private:
-    std::vector<std::unique_ptr<jive::type>>::const_iterator It_;
+    std::vector<std::unique_ptr<jlm::rvsdg::type>>::const_iterator It_;
   };
 
   using ArgumentConstRange = util::iterator_range<TypeConstIterator>;
@@ -93,12 +93,12 @@ public:
   ~FunctionType() noexcept override;
 
   FunctionType(
-    const std::vector<const jive::type*> & argumentTypes,
-    const std::vector<const jive::type*> & resultTypes);
+    const std::vector<const jlm::rvsdg::type*> & argumentTypes,
+    const std::vector<const jlm::rvsdg::type*> & resultTypes);
 
   FunctionType(
-    std::vector<std::unique_ptr<jive::type>> argumentTypes,
-    std::vector<std::unique_ptr<jive::type>> resultTypes);
+    std::vector<std::unique_ptr<jlm::rvsdg::type>> argumentTypes,
+    std::vector<std::unique_ptr<jlm::rvsdg::type>> resultTypes);
 
   FunctionType(const FunctionType & other);
 
@@ -128,14 +128,14 @@ public:
     return ArgumentTypes_.size();
   }
 
-  const jive::type &
+  const jlm::rvsdg::type &
   ResultType(size_t index) const noexcept
   {
     JLM_ASSERT(index < ResultTypes_.size());
     return *ResultTypes_[index];
   }
 
-  const jive::type &
+  const jlm::rvsdg::type &
   ArgumentType(size_t index) const noexcept
   {
     JLM_ASSERT(index < ArgumentTypes_.size());
@@ -146,21 +146,21 @@ public:
   debug_string() const override;
 
   bool
-  operator==(const jive::type & other) const noexcept override;
+  operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-  std::unique_ptr<jive::type>
+  std::unique_ptr<jlm::rvsdg::type>
   copy() const override;
 
 private:
-  std::vector<std::unique_ptr<jive::type>> ResultTypes_;
-  std::vector<std::unique_ptr<jive::type>> ArgumentTypes_;
+  std::vector<std::unique_ptr<jlm::rvsdg::type>> ResultTypes_;
+  std::vector<std::unique_ptr<jlm::rvsdg::type>> ArgumentTypes_;
 };
 
 /** \brief PointerType class
  *
  * This operator is the Jlm equivalent of LLVM's PointerType class.
  */
-class PointerType final : public jive::valuetype {
+class PointerType final : public jlm::rvsdg::valuetype {
 public:
   ~PointerType() noexcept override;
 
@@ -170,9 +170,9 @@ public:
   debug_string() const override;
 
   bool
-  operator==(const jive::type & other) const noexcept override;
+  operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-  [[nodiscard]] std::unique_ptr<jive::type>
+  [[nodiscard]] std::unique_ptr<jlm::rvsdg::type>
   copy() const override;
 
   static std::unique_ptr<PointerType>
@@ -184,28 +184,28 @@ public:
 
 /* array type */
 
-class arraytype final : public jive::valuetype {
+class arraytype final : public jlm::rvsdg::valuetype {
 public:
 	virtual
 	~arraytype();
 
 	inline
-	arraytype(const jive::valuetype & type, size_t nelements)
-	: jive::valuetype()
+	arraytype(const jlm::rvsdg::valuetype & type, size_t nelements)
+	: jlm::rvsdg::valuetype()
 	, nelements_(nelements)
 	, type_(type.copy())
 	{}
 
 	inline
 	arraytype(const jlm::arraytype & other)
-	: jive::valuetype(other)
+	: jlm::rvsdg::valuetype(other)
 	, nelements_(other.nelements_)
 	, type_(other.type_->copy())
 	{}
 
 	inline
 	arraytype(jlm::arraytype && other)
-	: jive::valuetype(other)
+	: jlm::rvsdg::valuetype(other)
 	, nelements_(other.nelements_)
 	, type_(std::move(other.type_))
 	{}
@@ -220,9 +220,9 @@ public:
 	debug_string() const override;
 
 	virtual bool
-	operator==(const jive::type & other) const noexcept override;
+	operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-	virtual std::unique_ptr<jive::type>
+	virtual std::unique_ptr<jlm::rvsdg::type>
 	copy() const override;
 
 	inline size_t
@@ -231,38 +231,38 @@ public:
 		return nelements_;
 	}
 
-	inline const jive::valuetype &
+	inline const jlm::rvsdg::valuetype &
 	element_type() const noexcept
 	{
-		return *static_cast<const jive::valuetype*>(type_.get());
+		return *static_cast<const jlm::rvsdg::valuetype*>(type_.get());
 	}
 
 private:
 	size_t nelements_;
-	std::unique_ptr<jive::type> type_;
+	std::unique_ptr<jlm::rvsdg::type> type_;
 };
 
-static inline std::unique_ptr<jive::type>
-create_arraytype(const jive::type & type, size_t nelements)
+static inline std::unique_ptr<jlm::rvsdg::type>
+create_arraytype(const jlm::rvsdg::type & type, size_t nelements)
 {
-	auto vt = dynamic_cast<const jive::valuetype*>(&type);
+	auto vt = dynamic_cast<const jlm::rvsdg::valuetype*>(&type);
 	if (!vt) throw util::error("expected value type.");
 
-	return std::unique_ptr<jive::type>(new arraytype(*vt, nelements));
+	return std::unique_ptr<jlm::rvsdg::type>(new arraytype(*vt, nelements));
 }
 
 /* floating point type */
 
 enum class fpsize {half, flt, dbl, x86fp80};
 
-class fptype final : public jive::valuetype {
+class fptype final : public jlm::rvsdg::valuetype {
 public:
 	virtual
 	~fptype();
 
 	inline
 	fptype(const fpsize & size)
-	: jive::valuetype()
+	: jlm::rvsdg::valuetype()
 	, size_(size)
 	{}
 
@@ -270,9 +270,9 @@ public:
 	debug_string() const override;
 
 	virtual bool
-	operator==(const jive::type & other) const noexcept override;
+	operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-	virtual std::unique_ptr<jive::type>
+	virtual std::unique_ptr<jlm::rvsdg::type>
 	copy() const override;
 
 	inline const jlm::fpsize &
@@ -287,20 +287,20 @@ private:
 
 /* vararg type */
 
-class varargtype final : public jive::statetype {
+class varargtype final : public jlm::rvsdg::statetype {
 public:
 	virtual
 	~varargtype();
 
 	inline constexpr
 	varargtype()
-	: jive::statetype()
+	: jlm::rvsdg::statetype()
 	{}
 
 	virtual bool
-	operator==(const jive::type & other) const noexcept override;
+	operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-	virtual std::unique_ptr<jive::type>
+	virtual std::unique_ptr<jlm::rvsdg::type>
 	copy() const override;
 
 	virtual std::string
@@ -308,29 +308,29 @@ public:
 };
 
 static inline bool
-is_varargtype(const jive::type & type)
+is_varargtype(const jlm::rvsdg::type & type)
 {
 	return dynamic_cast<const jlm::varargtype*>(&type) != nullptr;
 }
 
-static inline std::unique_ptr<jive::type>
+static inline std::unique_ptr<jlm::rvsdg::type>
 create_varargtype()
 {
-	return std::unique_ptr<jive::type>(new varargtype());
+	return std::unique_ptr<jlm::rvsdg::type>(new varargtype());
 }
 
 /** \brief StructType class
  *
  * This class is the equivalent of LLVM's StructType class.
  */
-class StructType final : public jive::valuetype {
+class StructType final : public jlm::rvsdg::valuetype {
 public:
   ~StructType() override;
 
   StructType(
     bool isPacked,
-    const jive::rcddeclaration & declaration)
-    : jive::valuetype()
+    const jlm::rvsdg::rcddeclaration & declaration)
+    : jlm::rvsdg::valuetype()
     , IsPacked_(isPacked)
     , Declaration_(declaration)
   {}
@@ -338,8 +338,8 @@ public:
   StructType(
     std::string name,
     bool isPacked,
-    const jive::rcddeclaration & declaration)
-    : jive::valuetype()
+    const jlm::rvsdg::rcddeclaration & declaration)
+    : jlm::rvsdg::valuetype()
     , IsPacked_(isPacked)
     , Name_(std::move(name))
     , Declaration_(declaration)
@@ -373,16 +373,16 @@ public:
     return IsPacked_;
   }
 
-  [[nodiscard]] const jive::rcddeclaration &
+  [[nodiscard]] const jlm::rvsdg::rcddeclaration &
   GetDeclaration() const noexcept
   {
     return Declaration_;
   }
 
   bool
-  operator==(const jive::type & other) const noexcept override;
+  operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-  [[nodiscard]] std::unique_ptr<jive::type>
+  [[nodiscard]] std::unique_ptr<jlm::rvsdg::type>
   copy() const override;
 
   [[nodiscard]] std::string
@@ -392,7 +392,7 @@ public:
   Create(
     const std::string & name,
     bool isPacked,
-    const jive::rcddeclaration & declaration)
+    const jlm::rvsdg::rcddeclaration & declaration)
   {
     return std::make_unique<StructType>(name, isPacked, declaration);
   }
@@ -400,7 +400,7 @@ public:
   static std::unique_ptr<StructType>
   Create(
     bool isPacked,
-    const jive::rcddeclaration & declaration)
+    const jlm::rvsdg::rcddeclaration & declaration)
   {
     return std::make_unique<StructType>(isPacked, declaration);
   }
@@ -408,15 +408,15 @@ public:
 private:
   bool IsPacked_;
   std::string Name_;
-  const jive::rcddeclaration & Declaration_;
+  const jlm::rvsdg::rcddeclaration & Declaration_;
 };
 
 /* vector type */
 
-class vectortype : public jive::valuetype {
+class vectortype : public jlm::rvsdg::valuetype {
 public:
 	vectortype(
-		const jive::valuetype & type,
+		const jlm::rvsdg::valuetype & type,
 		size_t size)
 	: size_(size)
 	, type_(type.copy())
@@ -457,7 +457,7 @@ public:
 	}
 
 	virtual bool
-	operator==(const jive::type & other) const noexcept override;
+	operator==(const jlm::rvsdg::type & other) const noexcept override;
 
 	size_t
 	size() const noexcept
@@ -465,15 +465,15 @@ public:
 		return size_;
 	}
 
-	const jive::valuetype &
+	const jlm::rvsdg::valuetype &
 	type() const noexcept
 	{
-		return *static_cast<const jive::valuetype*>(type_.get());
+		return *static_cast<const jlm::rvsdg::valuetype*>(type_.get());
 	}
 
 private:
 	size_t size_;
-	std::unique_ptr<jive::type> type_;
+	std::unique_ptr<jlm::rvsdg::type> type_;
 };
 
 class fixedvectortype final : public vectortype {
@@ -481,15 +481,15 @@ public:
 	~fixedvectortype() override;
 
 	fixedvectortype(
-		const jive::valuetype & type,
+		const jlm::rvsdg::valuetype & type,
 		size_t size)
 	: vectortype(type, size)
 	{}
 
 	virtual bool
-	operator==(const jive::type & other) const noexcept override;
+	operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-	virtual std::unique_ptr<jive::type>
+	virtual std::unique_ptr<jlm::rvsdg::type>
 	copy() const override;
 
 	virtual std::string
@@ -501,15 +501,15 @@ public:
 	~scalablevectortype() override;
 
 	scalablevectortype(
-		const jive::valuetype & type,
+		const jlm::rvsdg::valuetype & type,
 		size_t size)
 	: vectortype(type, size)
 	{}
 
 	virtual bool
-	operator==(const jive::type & other) const noexcept override;
+	operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-	virtual std::unique_ptr<jive::type>
+	virtual std::unique_ptr<jlm::rvsdg::type>
 	copy() const override;
 
 	virtual std::string
@@ -518,7 +518,7 @@ public:
 
 /* loop state type */
 
-class loopstatetype final : public jive::statetype {
+class loopstatetype final : public jlm::rvsdg::statetype {
 public:
 	virtual
 	~loopstatetype();
@@ -529,18 +529,18 @@ public:
 	{}
 
 	virtual bool
-	operator==(const jive::type & other) const noexcept override;
+	operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-	virtual std::unique_ptr<jive::type>
+	virtual std::unique_ptr<jlm::rvsdg::type>
 	copy() const override;
 
 	virtual std::string
 	debug_string() const override;
 
-	static std::unique_ptr<jive::type>
+	static std::unique_ptr<jlm::rvsdg::type>
 	create()
 	{
-		return std::unique_ptr<jive::type>(new loopstatetype());
+		return std::unique_ptr<jlm::rvsdg::type>(new loopstatetype());
 	}
 };
 
@@ -548,7 +548,7 @@ public:
 *
 * This type is used for state edges that sequentialize input/output operations.
 */
-class iostatetype final : public jive::statetype {
+class iostatetype final : public jlm::rvsdg::statetype {
 public:
 	~iostatetype() override;
 
@@ -557,15 +557,15 @@ public:
 	{}
 
 	virtual bool
-	operator==(const jive::type & other) const noexcept override;
+	operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-	virtual std::unique_ptr<jive::type>
+	virtual std::unique_ptr<jlm::rvsdg::type>
 	copy() const override;
 
 	virtual std::string
 	debug_string() const override;
 
-	static std::unique_ptr<jive::type>
+	static std::unique_ptr<jlm::rvsdg::type>
 	create()
 	{
 		return std::make_unique<iostatetype>();
@@ -584,22 +584,22 @@ public:
  * Represents the type of abstract memory locations and is used in state edges for sequentialiazing memory operations,
  * such as load and store operations.
  */
-class MemoryStateType final : public jive::statetype {
+class MemoryStateType final : public jlm::rvsdg::statetype {
 public:
   ~MemoryStateType() noexcept override;
 
   constexpr
   MemoryStateType() noexcept
-  : jive::statetype()
+  : jlm::rvsdg::statetype()
   {}
 
   std::string
   debug_string() const override;
 
   bool
-  operator==(const jive::type & other) const noexcept override;
+  operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-  std::unique_ptr<jive::type>
+  std::unique_ptr<jlm::rvsdg::type>
   copy() const override;
 
   static std::unique_ptr<MemoryStateType>
@@ -610,9 +610,9 @@ public:
 };
 
 template <class ELEMENTYPE> static inline bool
-IsOrContains(const jive::type & type)
+IsOrContains(const jlm::rvsdg::type & type)
 {
-  if (jive::is<ELEMENTYPE>(type))
+  if (jlm::rvsdg::is<ELEMENTYPE>(type))
     return true;
 
   if (auto arrayType = dynamic_cast<const arraytype*>(&type))

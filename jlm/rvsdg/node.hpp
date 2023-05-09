@@ -18,7 +18,8 @@
 #include <jlm/util/intrusive-list.hpp>
 #include <jlm/util/strfmt.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 namespace base {
 	class type;
 }
@@ -31,17 +32,17 @@ class substitution_map;
 /* inputs */
 
 class input {
-	friend jive::node;
-	friend jive::region;
+	friend jlm::rvsdg::node;
+	friend jlm::rvsdg::region;
 
 public:
 	virtual
 	~input() noexcept;
 
 	input(
-		jive::output * origin,
-		jive::region * region,
-		const jive::port & port);
+		jlm::rvsdg::output * origin,
+		jlm::rvsdg::region * region,
+		const jlm::rvsdg::port & port);
 
 	input(const input &) = delete;
 
@@ -59,28 +60,28 @@ public:
 		return index_;
 	}
 
-	jive::output *
+	jlm::rvsdg::output *
 	origin() const noexcept
 	{
 		return origin_;
 	}
 
 	void
-	divert_to(jive::output * new_origin);
+	divert_to(jlm::rvsdg::output * new_origin);
 
-	inline const jive::type &
+	inline const jlm::rvsdg::type &
 	type() const noexcept
 	{
 		return port_->type();
 	}
 
-	inline jive::region *
+	inline jlm::rvsdg::region *
 	region() const noexcept
 	{
 		return region_;
 	}
 
-	inline const jive::port &
+	inline const jlm::rvsdg::port &
 	port() const noexcept
 	{
 		return *port_;
@@ -90,7 +91,7 @@ public:
 	debug_string() const;
 
 	inline void
-	replace(const jive::port & port)
+	replace(const jlm::rvsdg::port & port)
 	{
 		if (port_->type() != port.type())
 			throw jlm::util::type_error(port_->type().debug_string(), port.type().debug_string());
@@ -99,13 +100,13 @@ public:
 	}
 
   /**
-   * Retrieve the associated node from \p input if \p input is derived from jive::node_input.
+   * Retrieve the associated node from \p input if \p input is derived from jlm::rvsdg::node_input.
    *
    * @param input The input from which to retrieve the node.
-   * @return The node associated with \p input if input is derived from jive::node_input, otherwise nullptr.
+   * @return The node associated with \p input if input is derived from jlm::rvsdg::node_input, otherwise nullptr.
    */
-  [[nodiscard]] static jive::node *
-  GetNode(const jive::input & input) noexcept;
+  [[nodiscard]] static jlm::rvsdg::node *
+  GetNode(const jlm::rvsdg::input & input) noexcept;
 
   template <class T>
   class iterator
@@ -117,8 +118,8 @@ public:
     using pointer = T**;
     using reference = T*&;
 
-		static_assert(std::is_base_of<jive::input, T>::value,
-			"Template parameter T must be derived from jive::input.");
+		static_assert(std::is_base_of<jlm::rvsdg::input, T>::value,
+			"Template parameter T must be derived from jlm::rvsdg::input.");
 
 	protected:
 		constexpr
@@ -197,8 +198,8 @@ public:
     using pointer = const T**;
     using reference = const T*&;
 
-		static_assert(std::is_base_of<jive::input, T>::value,
-			"Template parameter T must be derived from jive::input.");
+		static_assert(std::is_base_of<jlm::rvsdg::input, T>::value,
+			"Template parameter T must be derived from jlm::rvsdg::input.");
 
 	protected:
 		constexpr
@@ -269,16 +270,16 @@ public:
 
 private:
 	size_t index_;
-	jive::output * origin_;
-	jive::region * region_;
-	std::unique_ptr<jive::port> port_;
+	jlm::rvsdg::output * origin_;
+	jlm::rvsdg::region * region_;
+	std::unique_ptr<jlm::rvsdg::port> port_;
 };
 
 template <class T> static inline bool
-is(const jive::input & input) noexcept
+is(const jlm::rvsdg::input & input) noexcept
 {
-	static_assert(std::is_base_of<jive::input, T>::value,
-		"Template parameter T must be derived from jive::input.");
+	static_assert(std::is_base_of<jlm::rvsdg::input, T>::value,
+		"Template parameter T must be derived from jlm::rvsdg::input.");
 
 	return dynamic_cast<const T*>(&input) != nullptr;
 }
@@ -287,17 +288,17 @@ is(const jive::input & input) noexcept
 
 class output {
 	friend input;
-	friend jive::node;
-	friend jive::region;
+	friend jlm::rvsdg::node;
+	friend jlm::rvsdg::region;
 
-	typedef std::unordered_set<jive::input*>::const_iterator user_iterator;
+	typedef std::unordered_set<jlm::rvsdg::input*>::const_iterator user_iterator;
 public:
 	virtual
 	~output() noexcept;
 
 	output(
-		jive::region * region,
-		const jive::port & port);
+		jlm::rvsdg::region * region,
+		const jlm::rvsdg::port & port);
 
 	output(const output &) = delete;
 
@@ -322,7 +323,7 @@ public:
 	}
 
 	inline void
-	divert_users(jive::output * new_origin)
+	divert_users(jlm::rvsdg::output * new_origin)
 	{
 		if (this == new_origin)
 			return;
@@ -343,19 +344,19 @@ public:
 		return users_.end();
 	}
 
-	inline const jive::type &
+	inline const jlm::rvsdg::type &
 	type() const noexcept
 	{
 		return port_->type();
 	}
 
-	inline jive::region *
+	inline jlm::rvsdg::region *
 	region() const noexcept
 	{
 		return region_;
 	}
 
-	inline const jive::port &
+	inline const jlm::rvsdg::port &
 	port() const noexcept
 	{
 		return *port_;
@@ -365,7 +366,7 @@ public:
 	debug_string() const;
 
 	inline void
-	replace(const jive::port & port)
+	replace(const jlm::rvsdg::port & port)
 	{
 		if (port_->type() != port.type())
 			throw jlm::util::type_error(port_->type().debug_string(), port.type().debug_string());
@@ -383,8 +384,8 @@ public:
     using pointer = T**;
     using rerefence = T*&;
 
-		static_assert(std::is_base_of<jive::output, T>::value,
-			"Template parameter T must be derived from jive::output.");
+		static_assert(std::is_base_of<jlm::rvsdg::output, T>::value,
+			"Template parameter T must be derived from jlm::rvsdg::output.");
 
 	protected:
 		constexpr
@@ -463,8 +464,8 @@ public:
     using pointer = const T**;
     using reference = const T*&;
 
-		static_assert(std::is_base_of<jive::output, T>::value,
-			"Template parameter T must be derived from jive::output.");
+		static_assert(std::is_base_of<jlm::rvsdg::output, T>::value,
+			"Template parameter T must be derived from jlm::rvsdg::output.");
 
 	protected:
 		constexpr
@@ -535,51 +536,51 @@ public:
 
 private:
 	void
-	remove_user(jive::input * user);
+	remove_user(jlm::rvsdg::input * user);
 
 	void
-	add_user(jive::input * user);
+	add_user(jlm::rvsdg::input * user);
 
 	size_t index_;
-	jive::region * region_;
-	std::unique_ptr<jive::port> port_;
-	std::unordered_set<jive::input*> users_;
+	jlm::rvsdg::region * region_;
+	std::unique_ptr<jlm::rvsdg::port> port_;
+	std::unordered_set<jlm::rvsdg::input*> users_;
 };
 
 template <class T> static inline bool
-is(const jive::output * output) noexcept
+is(const jlm::rvsdg::output * output) noexcept
 {
-	static_assert(std::is_base_of<jive::output, T>::value,
-		"Template parameter T must be derived from jive::output.");
+	static_assert(std::is_base_of<jlm::rvsdg::output, T>::value,
+		"Template parameter T must be derived from jlm::rvsdg::output.");
 
 	return dynamic_cast<const T*>(output) != nullptr;
 }
 
 /* node_input class */
 
-class node_input : public jive::input {
+class node_input : public jlm::rvsdg::input {
 public:
 	node_input(
-		jive::output * origin,
-		jive::node * node,
-		const jive::port & port);
+		jlm::rvsdg::output * origin,
+		jlm::rvsdg::node * node,
+		const jlm::rvsdg::port & port);
 
-	jive::node *
+	jlm::rvsdg::node *
 	node() const noexcept
 	{
 		return node_;
 	}
 
   /**
-   * Returns the associated node if \p input is a jive::node_input, otherwise null.
+   * Returns the associated node if \p input is a jlm::rvsdg::node_input, otherwise null.
    *
-   * @param input A jive::input
-   * @return Returns a jive::node or null.
+   * @param input A jlm::rvsdg::input
+   * @return Returns a jlm::rvsdg::node or null.
    *
-   * @see jive::node_input::node()
+   * @see jlm::rvsdg::node_input::node()
    */
-  [[nodiscard]] static jive::node *
-  node(const jive::input & input)
+  [[nodiscard]] static jlm::rvsdg::node *
+  node(const jlm::rvsdg::input & input)
   {
     auto nodeInput = dynamic_cast<const node_input*>(&input);
     return nodeInput != nullptr
@@ -588,32 +589,32 @@ public:
   }
 
 private:
-	jive::node * node_;
+	jlm::rvsdg::node * node_;
 };
 
 /* node_output class */
 
-class node_output : public jive::output {
+class node_output : public jlm::rvsdg::output {
 public:
 	node_output(
-		jive::node * node,
-		const jive::port & port);
+		jlm::rvsdg::node * node,
+		const jlm::rvsdg::port & port);
 
-	jive::node *
+	jlm::rvsdg::node *
 	node() const noexcept
 	{
 		return node_;
 	}
 
-	static jive::node *
-	node(const jive::output * output)
+	static jlm::rvsdg::node *
+	node(const jlm::rvsdg::output * output)
 	{
 		auto no = dynamic_cast<const node_output*>(output);
 		return no != nullptr ? no->node() : nullptr;
 	}
 
 private:
-	jive::node * node_;
+	jlm::rvsdg::node * node_;
 };
 
 /* node class */
@@ -623,9 +624,9 @@ public:
 	virtual
 	~node();
 
-	node(std::unique_ptr<jive::operation> op, jive::region * region);
+	node(std::unique_ptr<jlm::rvsdg::operation> op, jlm::rvsdg::region * region);
 
-	inline const jive::operation &
+	inline const jlm::rvsdg::operation &
 	operation() const noexcept
 	{
 		return *operation_;
@@ -714,20 +715,20 @@ protected:
 	remove_output(size_t index);
 
 public:
-	inline jive::graph *
+	inline jlm::rvsdg::graph *
 	graph() const noexcept
 	{
 		return graph_;
 	}
 
-	inline jive::region *
+	inline jlm::rvsdg::region *
 	region() const noexcept
 	{
 		return region_;
 	}
 
-	virtual jive::node *
-	copy(jive::region * region, const std::vector<jive::output*> & operands) const;
+	virtual jlm::rvsdg::node *
+	copy(jlm::rvsdg::region * region, const std::vector<jlm::rvsdg::output*> & operands) const;
 
 	/**
 		\brief Copy a node with substitutions
@@ -745,8 +746,8 @@ public:
 		corresponding outputs of the newly created node in
 		subsequent \ref copy operations.
 	*/
-	virtual jive::node *
-	copy(jive::region * region, jive::substitution_map & smap) const = 0;
+	virtual jlm::rvsdg::node *
+	copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const = 0;
 
 	inline size_t
 	depth() const noexcept
@@ -756,55 +757,55 @@ public:
 
 private:
 	jlm::util::intrusive_list_anchor<
-		jive::node
+		jlm::rvsdg::node
 	> region_node_list_anchor_;
 
 	jlm::util::intrusive_list_anchor<
-		jive::node
+		jlm::rvsdg::node
 	> region_top_node_list_anchor_;
 
 	jlm::util::intrusive_list_anchor<
-		jive::node
+		jlm::rvsdg::node
 	> region_bottom_node_list_anchor_;
 
 public:
 	typedef jlm::util::intrusive_list_accessor<
-		jive::node,
-		&jive::node::region_node_list_anchor_
+		jlm::rvsdg::node,
+		&jlm::rvsdg::node::region_node_list_anchor_
 	> region_node_list_accessor;
 
 	typedef jlm::util::intrusive_list_accessor<
-		jive::node,
-		&jive::node::region_top_node_list_anchor_
+		jlm::rvsdg::node,
+		&jlm::rvsdg::node::region_top_node_list_anchor_
 	> region_top_node_list_accessor;
 
 	typedef jlm::util::intrusive_list_accessor<
-		jive::node,
-		&jive::node::region_bottom_node_list_anchor_
+		jlm::rvsdg::node,
+		&jlm::rvsdg::node::region_bottom_node_list_anchor_
 	> region_bottom_node_list_accessor;
 
 private:
 	size_t depth_;
-	jive::graph * graph_;
-	jive::region * region_;
-	std::unique_ptr<jive::operation> operation_;
+	jlm::rvsdg::graph * graph_;
+	jlm::rvsdg::region * region_;
+	std::unique_ptr<jlm::rvsdg::operation> operation_;
 	std::vector<std::unique_ptr<node_input>> inputs_;
 	std::vector<std::unique_ptr<node_output>> outputs_;
 };
 
-static inline std::vector<jive::output*>
-operands(const jive::node * node)
+static inline std::vector<jlm::rvsdg::output*>
+operands(const jlm::rvsdg::node * node)
 {
-	std::vector<jive::output*> operands;
+	std::vector<jlm::rvsdg::output*> operands;
 	for (size_t n = 0; n < node->ninputs(); n++)
 		operands.push_back(node->input(n)->origin());
 	return operands;
 }
 
-static inline std::vector<jive::output*>
-outputs(const jive::node * node)
+static inline std::vector<jlm::rvsdg::output*>
+outputs(const jlm::rvsdg::node * node)
 {
-	std::vector<jive::output*> outputs;
+	std::vector<jlm::rvsdg::output*> outputs;
 	for (size_t n = 0; n < node->noutputs(); n++)
 		outputs.push_back(node->output(n));
 	return outputs;
@@ -812,8 +813,8 @@ outputs(const jive::node * node)
 
 static inline void
 divert_users(
-	jive::node * node,
-	const std::vector<jive::output*> & outputs)
+	jlm::rvsdg::node * node,
+	const std::vector<jlm::rvsdg::output*> & outputs)
 {
 	JLM_ASSERT(node->noutputs() == outputs.size());
 
@@ -822,7 +823,7 @@ divert_users(
 }
 
 template <class T> static inline bool
-is(const jive::node * node) noexcept
+is(const jlm::rvsdg::node * node) noexcept
 {
 	if (!node)
 		return false;
@@ -830,11 +831,11 @@ is(const jive::node * node) noexcept
 	return is<T>(node->operation());
 }
 
-jive::node *
-producer(const jive::output * output) noexcept;
+jlm::rvsdg::node *
+producer(const jlm::rvsdg::output * output) noexcept;
 
 bool
-normalize(jive::node * node);
+normalize(jlm::rvsdg::node * node);
 
 }
 

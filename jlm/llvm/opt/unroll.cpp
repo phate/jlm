@@ -24,16 +24,16 @@ public:
 	{}
 
 	void
-	start(const jive::graph & graph) noexcept
+	start(const jlm::rvsdg::graph & graph) noexcept
 	{
-		nnodes_before_ = jive::nnodes(graph.root());
+		nnodes_before_ = jlm::rvsdg::nnodes(graph.root());
 		timer_.start();
 	}
 
 	void
-	end(const jive::graph & graph) noexcept
+	end(const jlm::rvsdg::graph & graph) noexcept
 	{
-		nnodes_after_ = jive::nnodes(graph.root());
+		nnodes_after_ = jlm::rvsdg::nnodes(graph.root());
 		timer_.stop();
 	}
 
@@ -60,41 +60,41 @@ private:
 /* helper functions */
 
 static bool
-is_eqcmp(const jive::operation & op)
+is_eqcmp(const jlm::rvsdg::operation & op)
 {
-	return dynamic_cast<const jive::bituge_op*>(&op)
-	    || dynamic_cast<const jive::bitsge_op*>(&op)
-	    || dynamic_cast<const jive::bitule_op*>(&op)
-	    || dynamic_cast<const jive::bitsle_op*>(&op);
+	return dynamic_cast<const jlm::rvsdg::bituge_op*>(&op)
+	    || dynamic_cast<const jlm::rvsdg::bitsge_op*>(&op)
+	    || dynamic_cast<const jlm::rvsdg::bitule_op*>(&op)
+	    || dynamic_cast<const jlm::rvsdg::bitsle_op*>(&op);
 }
 
 /* unrollinfo methods */
 
 static bool
-is_theta_invariant(const jive::output * output)
+is_theta_invariant(const jlm::rvsdg::output * output)
 {
-	JLM_ASSERT(jive::is<jive::theta_op>(output->region()->node()));
+	JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::theta_op>(output->region()->node()));
 
-	if (jive::is<jive::bitconstant_op>(jive::node_output::node(output)))
+	if (jlm::rvsdg::is<jlm::rvsdg::bitconstant_op>(jlm::rvsdg::node_output::node(output)))
 		return true;
 
-	auto argument = dynamic_cast<const jive::argument*>(output);
+	auto argument = dynamic_cast<const jlm::rvsdg::argument*>(output);
 	if (!argument)
 		return false;
 
-	return is_invariant(static_cast<const jive::theta_input*>(argument->input()));
+	return is_invariant(static_cast<const jlm::rvsdg::theta_input*>(argument->input()));
 }
 
-static jive::argument *
-push_from_theta(jive::output * output)
+static jlm::rvsdg::argument *
+push_from_theta(jlm::rvsdg::output * output)
 {
-	auto argument = dynamic_cast<jive::argument*>(output);
+	auto argument = dynamic_cast<jlm::rvsdg::argument*>(output);
 	if (argument) return argument;
 
-	auto tmp = jive::node_output::node(output);
-	JLM_ASSERT(jive::is<jive::bitconstant_op>(tmp));
-	JLM_ASSERT(jive::is<jive::theta_op>(tmp->region()->node()));
-	auto theta = static_cast<jive::theta_node*>(tmp->region()->node());
+	auto tmp = jlm::rvsdg::node_output::node(output);
+	JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::bitconstant_op>(tmp));
+	JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::theta_op>(tmp->region()->node()));
+	auto theta = static_cast<jlm::rvsdg::theta_node*>(tmp->region()->node());
 
 	auto node = tmp->copy(theta->region(), {});
 	auto lv = theta->add_loopvar(node->output(0));
@@ -104,21 +104,21 @@ push_from_theta(jive::output * output)
 }
 
 static bool
-is_idv(jive::input * input)
+is_idv(jlm::rvsdg::input * input)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
 	auto node = input_node(input);
 	JLM_ASSERT(is<bitadd_op>(node) || is<bitsub_op>(node));
 
-	auto a = dynamic_cast<jive::argument*>(input->origin());
+	auto a = dynamic_cast<jlm::rvsdg::argument*>(input->origin());
 	if (!a) return false;
 
 	auto tinput = static_cast<const theta_input*>(a->input());
-	return jive::node_output::node(tinput->result()->origin()) == node;
+	return jlm::rvsdg::node_output::node(tinput->result()->origin()) == node;
 }
 
-std::unique_ptr<jive::bitvalue_repr>
+std::unique_ptr<jlm::rvsdg::bitvalue_repr>
 unrollinfo::niterations() const noexcept
 {
 	if (!is_known() || step_value() == 0)
@@ -138,19 +138,19 @@ unrollinfo::niterations() const noexcept
 	if (range.umod(step) != 0)
 		return nullptr;
 
-	return std::make_unique<jive::bitvalue_repr>(range.udiv(step));
+	return std::make_unique<jlm::rvsdg::bitvalue_repr>(range.udiv(step));
 }
 
 std::unique_ptr<unrollinfo>
-unrollinfo::create(jive::theta_node * theta)
+unrollinfo::create(jlm::rvsdg::theta_node * theta)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	auto matchnode = jive::node_output::node(theta->predicate()->origin());
+	auto matchnode = jlm::rvsdg::node_output::node(theta->predicate()->origin());
 	if (!is<match_op>(matchnode))
 		return nullptr;
 
-	auto cmpnode = jive::node_output::node(matchnode->input(0)->origin());
+	auto cmpnode = jlm::rvsdg::node_output::node(matchnode->input(0)->origin());
 	if (!is<bitcompare_op>(cmpnode))
 		return nullptr;
 
@@ -159,7 +159,7 @@ unrollinfo::create(jive::theta_node * theta)
 	auto end = is_theta_invariant(o0) ? o0 : (is_theta_invariant(o1) ? o1 : nullptr);
 	if (!end) return nullptr;
 
-	auto armnode = jive::node_output::node((end == o0 ? o1 : o0));
+	auto armnode = jlm::rvsdg::node_output::node((end == o0 ? o1 : o0));
 	if (!is<bitadd_op>(armnode) && !is<bitsub_op>(armnode))
 		return nullptr;
 	if (armnode->ninputs() != 2)
@@ -170,7 +170,7 @@ unrollinfo::create(jive::theta_node * theta)
 	if (!is_idv(i0) && !is_idv(i1))
 		return nullptr;
 
-	auto idv = static_cast<jive::argument*>(is_idv(i0) ? i0->origin() : i1->origin());
+	auto idv = static_cast<jlm::rvsdg::argument*>(is_idv(i0) ? i0->origin() : i1->origin());
 
 	auto step = idv == i0->origin() ? i1->origin() : i0->origin();
 	if (!is_theta_invariant(step))
@@ -185,14 +185,14 @@ unrollinfo::create(jive::theta_node * theta)
 
 static void
 unroll_body(
-	const jive::theta_node * theta,
-	jive::region * target,
-	jive::substitution_map & smap,
+	const jlm::rvsdg::theta_node * theta,
+	jlm::rvsdg::region * target,
+	jlm::rvsdg::substitution_map & smap,
 	size_t factor)
 {
 	for (size_t n = 0; n < factor-1; n++) {
 		theta->subregion()->copy(target, smap, false, false);
-		jive::substitution_map tmap;
+		jlm::rvsdg::substitution_map tmap;
 		for (const auto & olv : *theta)
 			tmap.insert(olv->argument(), smap.lookup(olv->result()->origin()));
 		smap = tmap;
@@ -207,10 +207,10 @@ unroll_body(
 */
 static void
 copy_body_and_unroll(
-	const jive::theta_node * theta,
+	const jlm::rvsdg::theta_node * theta,
 	size_t factor)
 {
-	jive::substitution_map smap;
+	jlm::rvsdg::substitution_map smap;
 	for (const auto & olv : *theta)
 		smap.insert(olv->argument(), olv->input()->origin());
 
@@ -226,12 +226,12 @@ copy_body_and_unroll(
 static void
 unroll_theta(
 	const unrollinfo & ui,
-	jive::substitution_map & smap,
+	jlm::rvsdg::substitution_map & smap,
 	size_t factor)
 {
 	auto theta = ui.theta();
 	auto remainder = ui.remainder(factor);
-	auto unrolled_theta = jive::theta_node::create(theta->region());
+	auto unrolled_theta = jlm::rvsdg::theta_node::create(theta->region());
 
 
 	for (const auto & olv : *theta) {
@@ -255,7 +255,7 @@ unroll_theta(
 			to a multiple of the step value.
 		*/
 		auto cmpnode = ui.cmpnode();
-		auto cmp = jive::node_output::node(smap.lookup(cmpnode->output(0)));
+		auto cmp = jlm::rvsdg::node_output::node(smap.lookup(cmpnode->output(0)));
 		auto input = cmp->input(0)->origin() == smap.lookup(ui.end()) ? cmp->input(0) : cmp->input(1);
 		JLM_ASSERT(input->origin() == smap.lookup(ui.end()));
 
@@ -263,7 +263,7 @@ unroll_theta(
 		auto end = remainder.mul(sv);
 		auto ev = ui.is_additive() ? ui.end_value()->sub(end) : ui.end_value()->add(end);
 
-		auto c = jive::create_bitconstant(unrolled_theta->subregion(), ev);
+		auto c = jlm::rvsdg::create_bitconstant(unrolled_theta->subregion(), ev);
 		input->divert_to(c);
 	}
 }
@@ -274,7 +274,7 @@ unroll_theta(
 static void
 add_remainder(
 	const unrollinfo & ui,
-	jive::substitution_map & smap,
+	jlm::rvsdg::substitution_map & smap,
 	size_t factor)
 {
 	auto theta = ui.theta();
@@ -332,7 +332,7 @@ unroll_known_theta(const unrollinfo & ui, size_t factor)
 	/*
 		Unroll the theta
 	*/
-	jive::substitution_map smap;
+	jlm::rvsdg::substitution_map smap;
 	unroll_theta(ui, smap, factor);
 
 	/*
@@ -341,7 +341,7 @@ unroll_known_theta(const unrollinfo & ui, size_t factor)
 	add_remainder(ui, smap, factor);
 }
 
-static jive::output *
+static jlm::rvsdg::output *
 create_unrolled_gamma_predicate(
 	const unrollinfo & ui,
 	size_t factor)
@@ -351,27 +351,27 @@ create_unrolled_gamma_predicate(
 	auto step = ui.step()->input()->origin();
 	auto end = ui.end()->input()->origin();
 
-	auto uf = jive::create_bitconstant(region, nbits, factor);
-	auto mul = jive::bitmul_op::create(nbits, step, uf);
-	auto arm = jive::simple_node::create_normalized(region, ui.armoperation(), {ui.init(), mul})[0];
+	auto uf = jlm::rvsdg::create_bitconstant(region, nbits, factor);
+	auto mul = jlm::rvsdg::bitmul_op::create(nbits, step, uf);
+	auto arm = jlm::rvsdg::simple_node::create_normalized(region, ui.armoperation(), {ui.init(), mul})[0];
 	/* FIXME: order of operands */
-	auto cmp = jive::simple_node::create_normalized(region, ui.cmpoperation(), {arm, end})[0];
-	auto pred = jive::match(1, {{1, 1}}, 0, 2, cmp);
+	auto cmp = jlm::rvsdg::simple_node::create_normalized(region, ui.cmpoperation(), {arm, end})[0];
+	auto pred = jlm::rvsdg::match(1, {{1, 1}}, 0, 2, cmp);
 
 	return pred;
 }
 
-static jive::output *
+static jlm::rvsdg::output *
 create_unrolled_theta_predicate(
-	jive::region * target,
-	const jive::substitution_map & smap,
+	jlm::rvsdg::region * target,
+	const jlm::rvsdg::substitution_map & smap,
 	const unrollinfo & ui,
 	size_t factor)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
 	auto region = smap.lookup(ui.cmpnode()->output(0))->region();
-	auto cmpnode = jive::node_output::node(smap.lookup(ui.cmpnode()->output(0)));
+	auto cmpnode = jlm::rvsdg::node_output::node(smap.lookup(ui.cmpnode()->output(0)));
 	auto step = smap.lookup(ui.step());
 	auto end = smap.lookup(ui.end());
 	auto nbits = ui.nbits();
@@ -391,9 +391,9 @@ create_unrolled_theta_predicate(
 	return pred;
 }
 
-static jive::output *
+static jlm::rvsdg::output *
 create_residual_gamma_predicate(
-	const jive::substitution_map & smap,
+	const jlm::rvsdg::substitution_map & smap,
 	const unrollinfo & ui)
 {
 	auto region = ui.theta()->region();
@@ -401,8 +401,8 @@ create_residual_gamma_predicate(
 	auto end = ui.end()->input()->origin();
 
 	/* FIXME: order of operands */
-	auto cmp = jive::simple_node::create_normalized(region, ui.cmpoperation(), {idv, end})[0];
-	auto pred = jive::match(1, {{1, 1}}, 0, 2, cmp);
+	auto cmp = jlm::rvsdg::simple_node::create_normalized(region, ui.cmpoperation(), {idv, end})[0];
+	auto pred = jlm::rvsdg::match(1, {{1, 1}}, 0, 2, cmp);
 
 	return pred;
 }
@@ -413,13 +413,13 @@ unroll_unknown_theta(const unrollinfo & ui, size_t factor)
 	auto otheta = ui.theta();
 
 	/* handle gamma with unrolled loop */
-	jive::substitution_map smap;
+	jlm::rvsdg::substitution_map smap;
 	{
 		auto pred = create_unrolled_gamma_predicate(ui, factor);
-		auto ngamma = jive::gamma_node::create(pred, 2);
-		auto ntheta = jive::theta_node::create(ngamma->subregion(1));
+		auto ngamma = jlm::rvsdg::gamma_node::create(pred, 2);
+		auto ntheta = jlm::rvsdg::theta_node::create(ngamma->subregion(1));
 
-		jive::substitution_map rmap[2];
+		jlm::rvsdg::substitution_map rmap[2];
 		for (const auto & olv : *otheta) {
 			auto ev = ngamma->add_entryvar(olv->input()->origin());
 			auto nlv = ntheta->add_loopvar(ev->argument(1));
@@ -447,10 +447,10 @@ unroll_unknown_theta(const unrollinfo & ui, size_t factor)
 	/* handle gamma for residual iterations */
 	{
 		auto pred = create_residual_gamma_predicate(smap, ui);
-		auto ngamma = jive::gamma_node::create(pred, 2);
-		auto ntheta = jive::theta_node::create(ngamma->subregion(1));
+		auto ngamma = jlm::rvsdg::gamma_node::create(pred, 2);
+		auto ntheta = jlm::rvsdg::theta_node::create(ngamma->subregion(1));
 
-		jive::substitution_map rmap[2];
+		jlm::rvsdg::substitution_map rmap[2];
 		for (const auto & olv : *otheta) {
 			auto ev = ngamma->add_entryvar(smap.lookup(olv));
 			auto nlv = ntheta->add_loopvar(ev->argument(1));
@@ -474,7 +474,7 @@ unroll_unknown_theta(const unrollinfo & ui, size_t factor)
 }
 
 void
-unroll(jive::theta_node * otheta, size_t factor)
+unroll(jlm::rvsdg::theta_node * otheta, size_t factor)
 {
 	if (factor < 2)
 		return;
@@ -482,7 +482,7 @@ unroll(jive::theta_node * otheta, size_t factor)
 	auto ui = unrollinfo::create(otheta);
 	if (!ui) return;
 
-	auto nf = otheta->graph()->node_normal_form(typeid(jive::operation));
+	auto nf = otheta->graph()->node_normal_form(typeid(jlm::rvsdg::operation));
 	nf->set_mutable(false);
 
 	if (ui->is_known() && ui->niterations())
@@ -494,17 +494,17 @@ unroll(jive::theta_node * otheta, size_t factor)
 }
 
 static bool
-unroll(jive::region * region, size_t factor)
+unroll(jlm::rvsdg::region * region, size_t factor)
 {
 	bool unrolled = false;
-	for (auto & node : jive::topdown_traverser(region)) {
-		if (auto structnode = dynamic_cast<jive::structural_node*>(node)) {
+	for (auto & node : jlm::rvsdg::topdown_traverser(region)) {
+		if (auto structnode = dynamic_cast<jlm::rvsdg::structural_node*>(node)) {
 			for (size_t n = 0; n < structnode->nsubregions(); n++)
 				unrolled = unroll(structnode->subregion(n), factor);
 
 			/* Try to unroll if an inner loop hasn't already been found */
 			if (!unrolled) {
-				if (auto theta = dynamic_cast<jive::theta_node*>(node)) {
+				if (auto theta = dynamic_cast<jlm::rvsdg::theta_node*>(node)) {
 					unroll(theta, factor);
 					unrolled = true;
 				}

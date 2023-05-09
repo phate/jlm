@@ -7,7 +7,8 @@
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/statemux.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 /* mux operator */
 
@@ -29,18 +30,18 @@ mux_op::debug_string() const
 	return "STATEMUX";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<jlm::rvsdg::operation>
 mux_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new mux_op(*this));
+	return std::unique_ptr<jlm::rvsdg::operation>(new mux_op(*this));
 }
 
 /* mux normal form */
 
-static jive::node *
-is_mux_mux_reducible(const std::vector<jive::output*> & ops)
+static jlm::rvsdg::node *
+is_mux_mux_reducible(const std::vector<jlm::rvsdg::output*> & ops)
 {
-	std::unordered_set<jive::output*> operands(ops.begin(), ops.end());
+	std::unordered_set<jlm::rvsdg::output*> operands(ops.begin(), ops.end());
 
 	for (const auto & operand : operands) {
 		auto node = node_output::node(operand);
@@ -61,40 +62,40 @@ is_mux_mux_reducible(const std::vector<jive::output*> & ops)
 }
 
 static bool
-is_multiple_origin_reducible(const std::vector<jive::output*> & operands)
+is_multiple_origin_reducible(const std::vector<jlm::rvsdg::output*> & operands)
 {
-	std::unordered_set<jive::output*> set(operands.begin(), operands.end());
+	std::unordered_set<jlm::rvsdg::output*> set(operands.begin(), operands.end());
 	return set.size() != operands.size();
 }
 
-static std::vector<jive::output*>
+static std::vector<jlm::rvsdg::output*>
 perform_multiple_origin_reduction(
-	const jive::mux_op & op,
-	const std::vector<jive::output*> & operands)
+	const jlm::rvsdg::mux_op & op,
+	const std::vector<jlm::rvsdg::output*> & operands)
 {
-	std::unordered_set<jive::output*> set(operands.begin(), operands.end());
+	std::unordered_set<jlm::rvsdg::output*> set(operands.begin(), operands.end());
 	return create_state_mux(op.result(0).type(), {set.begin(), set.end()}, op.nresults());
 }
 
-static std::vector<jive::output*>
+static std::vector<jlm::rvsdg::output*>
 perform_mux_mux_reduction(
-	const jive::mux_op & op,
-	const jive::node * muxnode,
-	const std::vector<jive::output*> & old_operands)
+	const jlm::rvsdg::mux_op & op,
+	const jlm::rvsdg::node * muxnode,
+	const std::vector<jlm::rvsdg::output*> & old_operands)
 {
 	JLM_ASSERT(is_mux_op(muxnode->operation()));
 
 	bool reduced = false;
-	std::vector<jive::output*> new_operands;
+	std::vector<jlm::rvsdg::output*> new_operands;
 	for (const auto & operand : old_operands) {
-		if (jive::node_output::node(operand) == muxnode && !reduced) {
+		if (jlm::rvsdg::node_output::node(operand) == muxnode && !reduced) {
 			reduced = true;
 			auto tmp = operands(muxnode);
 			new_operands.insert(new_operands.end(), tmp.begin(), tmp.end());
 			continue;
 		}
 
-		if (jive::node_output::node(operand) != muxnode)
+		if (jlm::rvsdg::node_output::node(operand) != muxnode)
 			new_operands.push_back(operand);
 	}
 
@@ -106,8 +107,8 @@ mux_normal_form::~mux_normal_form() noexcept
 
 mux_normal_form::mux_normal_form(
 	const std::type_info & opclass,
-	jive::node_normal_form * parent,
-	jive::graph * graph) noexcept
+	jlm::rvsdg::node_normal_form * parent,
+	jlm::rvsdg::graph * graph) noexcept
 : simple_normal_form(opclass, parent, graph)
 , enable_mux_mux_(false)
 , enable_multiple_origin_(false)
@@ -117,10 +118,10 @@ mux_normal_form::mux_normal_form(
 }
 
 bool
-mux_normal_form::normalize_node(jive::node * node) const
+mux_normal_form::normalize_node(jlm::rvsdg::node * node) const
 {
-	JLM_ASSERT(dynamic_cast<const jive::mux_op*>(&node->operation()));
-	auto op = static_cast<const jive::mux_op*>(&node->operation());
+	JLM_ASSERT(dynamic_cast<const jlm::rvsdg::mux_op*>(&node->operation()));
+	auto op = static_cast<const jlm::rvsdg::mux_op*>(&node->operation());
 
 	if (!get_mutable())
 		return true;
@@ -141,14 +142,14 @@ mux_normal_form::normalize_node(jive::node * node) const
 	return simple_normal_form::normalize_node(node);
 }
 
-std::vector<jive::output*>
+std::vector<jlm::rvsdg::output*>
 mux_normal_form::normalized_create(
-	jive::region * region,
-	const jive::simple_op & op,
-	const std::vector<jive::output*> & operands) const
+	jlm::rvsdg::region * region,
+	const jlm::rvsdg::simple_op & op,
+	const std::vector<jlm::rvsdg::output*> & operands) const
 {
-	JLM_ASSERT(dynamic_cast<const jive::mux_op*>(&op));
-	auto mop = static_cast<const jive::mux_op*>(&op);
+	JLM_ASSERT(dynamic_cast<const jlm::rvsdg::mux_op*>(&op));
+	auto mop = static_cast<const jlm::rvsdg::mux_op*>(&op);
 
 	if (!get_mutable())
 		return simple_normal_form::normalized_create(region, op, operands);
@@ -193,19 +194,19 @@ mux_normal_form::set_multiple_origin_reducible(bool enable)
 
 namespace {
 
-static jive::node_normal_form *
+static jlm::rvsdg::node_normal_form *
 create_mux_normal_form(
 	const std::type_info & opclass,
-	jive::node_normal_form * parent,
-	jive::graph * graph)
+	jlm::rvsdg::node_normal_form * parent,
+	jlm::rvsdg::graph * graph)
 {
-	return new jive::mux_normal_form(opclass, parent, graph);
+	return new jlm::rvsdg::mux_normal_form(opclass, parent, graph);
 }
 
 static void __attribute__((constructor))
 register_node_normal_form(void)
 {
-	jive::node_normal_form::register_factory(typeid(jive::mux_op), create_mux_normal_form);
+	jlm::rvsdg::node_normal_form::register_factory(typeid(jlm::rvsdg::mux_op), create_mux_normal_form);
 }
 
 }

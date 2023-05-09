@@ -26,14 +26,14 @@ class cfg_node;
 
 /* phi operator */
 
-class phi_op final : public jive::simple_op {
+class phi_op final : public jlm::rvsdg::simple_op {
 public:
 	virtual
 	~phi_op() noexcept;
 
 	inline
-	phi_op(const std::vector<jlm::cfg_node*> & nodes, const jive::type & type)
-	: jive::simple_op(std::vector<jive::port>(nodes.size(), {type}), {type})
+	phi_op(const std::vector<jlm::cfg_node*> & nodes, const jlm::rvsdg::type & type)
+	: jlm::rvsdg::simple_op(std::vector<jlm::rvsdg::port>(nodes.size(), {type}), {type})
 	, nodes_(nodes)
 	{}
 
@@ -51,10 +51,10 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
-	inline const jive::type &
+	inline const jlm::rvsdg::type &
 	type() const noexcept
 	{
 		return result(0).type();
@@ -70,7 +70,7 @@ public:
 	static std::unique_ptr<jlm::tac>
 	create(
 		const std::vector<std::pair<const variable*,cfg_node*>> & arguments,
-		const jive::type & type)
+		const jlm::rvsdg::type & type)
 	{
 		std::vector<cfg_node*> nodes;
 		std::vector<const variable*> operands;
@@ -89,13 +89,13 @@ private:
 
 /* assignment operator */
 
-class assignment_op final : public jive::simple_op {
+class assignment_op final : public jlm::rvsdg::simple_op {
 public:
 	virtual
 	~assignment_op() noexcept;
 
 	inline
-	assignment_op(const jive::type & type)
+	assignment_op(const jlm::rvsdg::type & type)
 	: simple_op({type, type}, {})
 	{}
 
@@ -109,7 +109,7 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
 	static std::unique_ptr<jlm::tac>
@@ -124,13 +124,13 @@ public:
 
 /* select operator */
 
-class select_op final : public jive::simple_op {
+class select_op final : public jlm::rvsdg::simple_op {
 public:
 	virtual
 	~select_op() noexcept;
 
-	select_op(const jive::type & type)
-	: jive::simple_op({jive::bit1, type, type}, {type})
+	select_op(const jlm::rvsdg::type & type)
+	: jlm::rvsdg::simple_op({jlm::rvsdg::bit1, type, type}, {type})
 	{}
 
 	virtual bool
@@ -139,10 +139,10 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
-	const jive::type &
+	const jlm::rvsdg::type &
 	type() const noexcept
 	{
 		return result(0).type();
@@ -161,7 +161,7 @@ public:
 
 /* vector select operator */
 
-class vectorselect_op final : public jive::simple_op {
+class vectorselect_op final : public jlm::rvsdg::simple_op {
 public:
 	virtual
 	~vectorselect_op() noexcept;
@@ -170,7 +170,7 @@ private:
 	vectorselect_op(
 		const vectortype & pt,
 		const vectortype & vt)
-	: jive::simple_op({pt, vt, vt}, {vt})
+	: jlm::rvsdg::simple_op({pt, vt, vt}, {vt})
 	{}
 
 public:
@@ -180,10 +180,10 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
-	const jive::type &
+	const jlm::rvsdg::type &
 	type() const noexcept
 	{
 		return result(0).type();
@@ -218,7 +218,7 @@ private:
         const variable * f)
     {
         auto fvt = static_cast<const T*>(&t->type());
-        T pt(jive::bit1, fvt->size());
+        T pt(jlm::rvsdg::bit1, fvt->size());
         T vt(fvt->type(), fvt->size());
         vectorselect_op op(pt, vt);
         return tac::create(op, {p, t, f});
@@ -227,26 +227,26 @@ private:
 
 /* fp2ui operator */
 
-class fp2ui_op final : public jive::unary_op {
+class fp2ui_op final : public jlm::rvsdg::unary_op {
 public:
 	virtual
 	~fp2ui_op() noexcept;
 
 	inline
-	fp2ui_op(const fpsize & size, const jive::bittype & type)
-	: jive::unary_op(fptype(size), type)
+	fp2ui_op(const fpsize & size, const jlm::rvsdg::bittype & type)
+	: jlm::rvsdg::unary_op(fptype(size), type)
 	{}
 
 	inline
 	fp2ui_op(
-		std::unique_ptr<jive::type> srctype,
-		std::unique_ptr<jive::type> dsttype)
+		std::unique_ptr<jlm::rvsdg::type> srctype,
+		std::unique_ptr<jlm::rvsdg::type> dsttype)
 	: unary_op(*srctype, *dsttype)
 	{
 		auto st = dynamic_cast<const fptype*>(srctype.get());
 		if (!st) throw util::error("expected floating point type.");
 
-		auto dt = dynamic_cast<const jive::bittype*>(dsttype.get());
+		auto dt = dynamic_cast<const jlm::rvsdg::bittype*>(dsttype.get());
 		if (!dt) throw util::error("expected bitstring type.");
 	}
 
@@ -256,27 +256,27 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
-	jive::unop_reduction_path_t
+	jlm::rvsdg::unop_reduction_path_t
 	can_reduce_operand(
-		const jive::output * output) const noexcept override;
+		const jlm::rvsdg::output * output) const noexcept override;
 
-	jive::output *
+	jlm::rvsdg::output *
 	reduce_operand(
-		jive::unop_reduction_path_t path,
-		jive::output * output) const override;
+		jlm::rvsdg::unop_reduction_path_t path,
+		jlm::rvsdg::output * output) const override;
 
 	static std::unique_ptr<jlm::tac>
 	create(
 		const variable * operand,
-		const jive::type & type)
+		const jlm::rvsdg::type & type)
 	{
 		auto st = dynamic_cast<const fptype*>(&operand->type());
 		if (!st) throw util::error("expected floating point type.");
 
-		auto dt = dynamic_cast<const jive::bittype*>(&type);
+		auto dt = dynamic_cast<const jlm::rvsdg::bittype*>(&type);
 		if (!dt) throw util::error("expected bitstring type.");
 
 		fp2ui_op op(st->size(), *dt);
@@ -286,26 +286,26 @@ public:
 
 /* fp2si operator */
 
-class fp2si_op final : public jive::unary_op {
+class fp2si_op final : public jlm::rvsdg::unary_op {
 public:
 	virtual
 	~fp2si_op() noexcept;
 
 	inline
-	fp2si_op(const fpsize & size, const jive::bittype & type)
-	: jive::unary_op({fptype(size)}, {type})
+	fp2si_op(const fpsize & size, const jlm::rvsdg::bittype & type)
+	: jlm::rvsdg::unary_op({fptype(size)}, {type})
 	{}
 
 	inline
 	fp2si_op(
-		std::unique_ptr<jive::type> srctype,
-		std::unique_ptr<jive::type> dsttype)
-	: jive::unary_op({*srctype}, {*dsttype})
+		std::unique_ptr<jlm::rvsdg::type> srctype,
+		std::unique_ptr<jlm::rvsdg::type> dsttype)
+	: jlm::rvsdg::unary_op({*srctype}, {*dsttype})
 	{
 		auto st = dynamic_cast<const fptype*>(srctype.get());
 		if (!st) throw util::error("expected floating point type.");
 
-		auto dt = dynamic_cast<const jive::bittype*>(dsttype.get());
+		auto dt = dynamic_cast<const jlm::rvsdg::bittype*>(dsttype.get());
 		if (!dt) throw util::error("expected bitstring type.");
 	}
 
@@ -315,27 +315,27 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
-	jive::unop_reduction_path_t
+	jlm::rvsdg::unop_reduction_path_t
 	can_reduce_operand(
-		const jive::output * output) const noexcept override;
+		const jlm::rvsdg::output * output) const noexcept override;
 
-	jive::output *
+	jlm::rvsdg::output *
 	reduce_operand(
-		jive::unop_reduction_path_t path,
-		jive::output * output) const override;
+		jlm::rvsdg::unop_reduction_path_t path,
+		jlm::rvsdg::output * output) const override;
 
 	static std::unique_ptr<jlm::tac>
 	create(
 		const variable * operand,
-		const jive::type & type)
+		const jlm::rvsdg::type & type)
 	{
 		auto st = dynamic_cast<const fptype*>(&operand->type());
 		if (!st) throw util::error("expected floating point type.");
 
-		auto dt = dynamic_cast<const jive::bittype*>(&type);
+		auto dt = dynamic_cast<const jlm::rvsdg::bittype*>(&type);
 		if (!dt) throw util::error("expected bitstring type.");
 
 		fp2si_op op(st->size(), *dt);
@@ -345,14 +345,14 @@ public:
 
 /* ctl2bits operator */
 
-class ctl2bits_op final : public jive::simple_op {
+class ctl2bits_op final : public jlm::rvsdg::simple_op {
 public:
 	virtual
 	~ctl2bits_op() noexcept;
 
 	inline
-	ctl2bits_op(const jive::ctltype & srctype, const jive::bittype & dsttype)
-	: jive::simple_op({srctype}, {dsttype})
+	ctl2bits_op(const jlm::rvsdg::ctltype & srctype, const jlm::rvsdg::bittype & dsttype)
+	: jlm::rvsdg::simple_op({srctype}, {dsttype})
 	{}
 
 	virtual bool
@@ -361,18 +361,18 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
 	static std::unique_ptr<jlm::tac>
 	create(
 		const variable * operand,
-		const jive::type & type)
+		const jlm::rvsdg::type & type)
 	{
-		auto st = dynamic_cast<const jive::ctltype*>(&operand->type());
+		auto st = dynamic_cast<const jlm::rvsdg::ctltype*>(&operand->type());
 		if (!st) throw util::error("expected control type.");
 
-		auto dt = dynamic_cast<const jive::bittype*>(&type);
+		auto dt = dynamic_cast<const jlm::rvsdg::bittype*>(&type);
 		if (!dt) throw util::error("expected bitstring type.");
 
 		ctl2bits_op op(*st, *dt);
@@ -382,14 +382,14 @@ public:
 
 /* branch operator */
 
-class branch_op final : public jive::simple_op {
+class branch_op final : public jlm::rvsdg::simple_op {
 public:
 	virtual
 	~branch_op() noexcept;
 
 	inline
-	branch_op(const jive::ctltype & type)
-	: jive::simple_op({type}, {})
+	branch_op(const jlm::rvsdg::ctltype & type)
+	: jlm::rvsdg::simple_op({type}, {})
 	{}
 
 	virtual bool
@@ -398,19 +398,19 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
 	inline size_t
 	nalternatives() const noexcept
 	{
-		return static_cast<const jive::ctltype*>(&argument(0).type())->nalternatives();
+		return static_cast<const jlm::rvsdg::ctltype*>(&argument(0).type())->nalternatives();
 	}
 
 	static std::unique_ptr<jlm::tac>
 	create(size_t nalternatives, const variable * operand)
 	{
-		jive::ctltype type(nalternatives);
+		jlm::rvsdg::ctltype type(nalternatives);
 		branch_op op(type);
 		return tac::create(op, {operand});
 	}
@@ -420,7 +420,7 @@ public:
  *
  * This operator is the Jlm equivalent of LLVM's ConstantPointerNull constant.
  */
-class ConstantPointerNullOperation final : public jive::simple_op {
+class ConstantPointerNullOperation final : public jlm::rvsdg::simple_op {
 public:
   ~ConstantPointerNullOperation() noexcept override;
 
@@ -435,7 +435,7 @@ public:
   [[nodiscard]] std::string
   debug_string() const override;
 
-  [[nodiscard]] std::unique_ptr<jive::operation>
+  [[nodiscard]] std::unique_ptr<jlm::rvsdg::operation>
   copy() const override;
 
   [[nodiscard]] const PointerType &
@@ -445,7 +445,7 @@ public:
   }
 
   static std::unique_ptr<jlm::tac>
-  Create(const jive::type & type)
+  Create(const jlm::rvsdg::type & type)
   {
     auto & pointerType = CheckAndExtractType(type);
 
@@ -453,20 +453,20 @@ public:
     return tac::create(operation, {});
   }
 
-  static jive::output *
+  static jlm::rvsdg::output *
   Create(
-    jive::region * region,
-    const jive::type & type)
+    jlm::rvsdg::region * region,
+    const jlm::rvsdg::type & type)
   {
     auto & pointerType = CheckAndExtractType(type);
 
     ConstantPointerNullOperation operation(pointerType);
-    return jive::simple_node::create_normalized(region, operation, {})[0];
+    return jlm::rvsdg::simple_node::create_normalized(region, operation, {})[0];
   }
 
 private:
   static const PointerType &
-  CheckAndExtractType(const jive::type & type)
+  CheckAndExtractType(const jlm::rvsdg::type & type)
   {
     if (auto pointerType = dynamic_cast<const PointerType*>(&type))
       return *pointerType;
@@ -477,23 +477,23 @@ private:
 
 /* bits2ptr operator */
 
-class bits2ptr_op final : public jive::unary_op {
+class bits2ptr_op final : public jlm::rvsdg::unary_op {
 public:
 	virtual
 	~bits2ptr_op();
 
 	inline
-	bits2ptr_op(const jive::bittype & btype, const PointerType & ptype)
+	bits2ptr_op(const jlm::rvsdg::bittype & btype, const PointerType & ptype)
 	: unary_op(btype, ptype)
 	{}
 
 	inline
 	bits2ptr_op(
-		std::unique_ptr<jive::type> srctype,
-		std::unique_ptr<jive::type> dsttype)
+		std::unique_ptr<jlm::rvsdg::type> srctype,
+		std::unique_ptr<jlm::rvsdg::type> dsttype)
 	: unary_op(*srctype, *dsttype)
 	{
-		auto at = dynamic_cast<const jive::bittype*>(srctype.get());
+		auto at = dynamic_cast<const jlm::rvsdg::bittype*>(srctype.get());
 		if (!at) throw util::error("expected bitstring type.");
 
 		auto pt = dynamic_cast<const PointerType*>(dsttype.get());
@@ -506,30 +506,30 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
-	jive::unop_reduction_path_t
+	jlm::rvsdg::unop_reduction_path_t
 	can_reduce_operand(
-		const jive::output * output) const noexcept override;
+		const jlm::rvsdg::output * output) const noexcept override;
 
-	jive::output *
+	jlm::rvsdg::output *
 	reduce_operand(
-		jive::unop_reduction_path_t path,
-		jive::output * output) const override;
+		jlm::rvsdg::unop_reduction_path_t path,
+		jlm::rvsdg::output * output) const override;
 
 	inline size_t
 	nbits() const noexcept
 	{
-		return static_cast<const jive::bittype*>(&argument(0).type())->nbits();
+		return static_cast<const jlm::rvsdg::bittype*>(&argument(0).type())->nbits();
 	}
 
 	static std::unique_ptr<jlm::tac>
 	create(
 		const variable * argument,
-		const jive::type & type)
+		const jlm::rvsdg::type & type)
 	{
-		auto at = dynamic_cast<const jive::bittype*>(&argument->type());
+		auto at = dynamic_cast<const jlm::rvsdg::bittype*>(&argument->type());
 		if (!at) throw util::error("expected bitstring type.");
 
 		auto pt = dynamic_cast<const PointerType*>(&type);
@@ -539,44 +539,44 @@ public:
 		return tac::create(op, {argument});
 	}
 
-	static jive::output *
+	static jlm::rvsdg::output *
 	create(
-		jive::output * operand,
-		const jive::type & type)
+		jlm::rvsdg::output * operand,
+		const jlm::rvsdg::type & type)
 	{
-		auto ot = dynamic_cast<const jive::bittype*>(&operand->type());
+		auto ot = dynamic_cast<const jlm::rvsdg::bittype*>(&operand->type());
 		if (!ot) throw util::error("expected bitstring type.");
 
 		auto pt = dynamic_cast<const PointerType*>(&type);
 		if (!pt) throw util::error("expected pointer type.");
 
 		jlm::bits2ptr_op op(*ot, *pt);
-		return jive::simple_node::create_normalized(operand->region(), op, {operand})[0];
+		return jlm::rvsdg::simple_node::create_normalized(operand->region(), op, {operand})[0];
 	}
 };
 
 /* ptr2bits operator */
 
-class ptr2bits_op final : public jive::unary_op {
+class ptr2bits_op final : public jlm::rvsdg::unary_op {
 public:
 	virtual
 	~ptr2bits_op();
 
 	inline
-	ptr2bits_op(const PointerType & ptype, const jive::bittype & btype)
+	ptr2bits_op(const PointerType & ptype, const jlm::rvsdg::bittype & btype)
 	: unary_op(ptype, btype)
 	{}
 
 	inline
 	ptr2bits_op(
-		std::unique_ptr<jive::type> srctype,
-		std::unique_ptr<jive::type> dsttype)
+		std::unique_ptr<jlm::rvsdg::type> srctype,
+		std::unique_ptr<jlm::rvsdg::type> dsttype)
 	: unary_op(*srctype, *dsttype)
 	{
 		auto pt = dynamic_cast<const PointerType*>(srctype.get());
 		if (!pt) throw util::error("expected pointer type.");
 
-		auto bt = dynamic_cast<const jive::bittype*>(dsttype.get());
+		auto bt = dynamic_cast<const jlm::rvsdg::bittype*>(dsttype.get());
 		if (!bt) throw util::error("expected bitstring type.");
 	}
 
@@ -586,33 +586,33 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
-	jive::unop_reduction_path_t
+	jlm::rvsdg::unop_reduction_path_t
 	can_reduce_operand(
-		const jive::output * output) const noexcept override;
+		const jlm::rvsdg::output * output) const noexcept override;
 
-	jive::output *
+	jlm::rvsdg::output *
 	reduce_operand(
-		jive::unop_reduction_path_t path,
-		jive::output * output) const override;
+		jlm::rvsdg::unop_reduction_path_t path,
+		jlm::rvsdg::output * output) const override;
 
 	inline size_t
 	nbits() const noexcept
 	{
-		return static_cast<const jive::bittype*>(&result(0).type())->nbits();
+		return static_cast<const jlm::rvsdg::bittype*>(&result(0).type())->nbits();
 	}
 
 	static std::unique_ptr<jlm::tac>
 	create(
 		const variable * argument,
-		const jive::type & type)
+		const jlm::rvsdg::type & type)
 	{
 		auto pt = dynamic_cast<const PointerType*>(&argument->type());
 		if (!pt) throw util::error("expected pointer type.");
 
-		auto bt = dynamic_cast<const jive::bittype*>(&type);
+		auto bt = dynamic_cast<const jlm::rvsdg::bittype*>(&type);
 		if (!bt) throw util::error("expected bitstring type.");
 
 		jlm::ptr2bits_op op(*pt, *bt);
@@ -622,25 +622,25 @@ public:
 
 /* Constant Data Array operator */
 
-class ConstantDataArray final : public jive::simple_op {
+class ConstantDataArray final : public jlm::rvsdg::simple_op {
 public:
   virtual
   ~ConstantDataArray();
 
-  ConstantDataArray(const jive::valuetype & type, size_t size)
-    : simple_op(std::vector<jive::port>(size, type), {jlm::arraytype(type, size)})
+  ConstantDataArray(const jlm::rvsdg::valuetype & type, size_t size)
+    : simple_op(std::vector<jlm::rvsdg::port>(size, type), {jlm::arraytype(type, size)})
   {
     if (size == 0)
       throw util::error("size equals zero.");
   }
 
   virtual bool
-  operator==(const jive::operation & other) const noexcept override;
+  operator==(const jlm::rvsdg::operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jive::operation>
+  virtual std::unique_ptr<jlm::rvsdg::operation>
   copy() const override;
 
   size_t
@@ -649,7 +649,7 @@ public:
     return static_cast<const arraytype*>(&result(0).type())->nelements();
   }
 
-  const jive::valuetype &
+  const jlm::rvsdg::valuetype &
   type() const noexcept
   {
     return static_cast<const arraytype*>(&result(0).type())->element_type();
@@ -661,27 +661,27 @@ public:
     if (elements.size() == 0)
       throw util::error("expected at least one element.");
 
-    auto vt = dynamic_cast<const jive::valuetype*>(&elements[0]->type());
+    auto vt = dynamic_cast<const jlm::rvsdg::valuetype*>(&elements[0]->type());
     if (!vt) throw util::error("expected value type.");
 
     ConstantDataArray op(*vt, elements.size());
     return tac::create(op, elements);
   }
 
-  static jive::output *
-  Create(const std::vector<jive::output*> & elements)
+  static jlm::rvsdg::output *
+  Create(const std::vector<jlm::rvsdg::output*> & elements)
   {
     if (elements.empty())
       throw util::error("Expected at least one element.");
 
-    auto valueType = dynamic_cast<const jive::valuetype*>(&elements[0]->type());
+    auto valueType = dynamic_cast<const jlm::rvsdg::valuetype*>(&elements[0]->type());
     if (!valueType)
     {
       throw util::error("Expected value type.");
     }
 
     ConstantDataArray operation(*valueType, elements.size());
-    return jive::simple_node::create_normalized(elements[0]->region(), operation, elements)[0];
+    return jlm::rvsdg::simple_node::create_normalized(elements[0]->region(), operation, elements)[0];
   }
 };
 
@@ -689,14 +689,14 @@ public:
 
 enum class cmp {eq, ne, gt, ge, lt, le};
 
-class ptrcmp_op final : public jive::binary_op {
+class ptrcmp_op final : public jlm::rvsdg::binary_op {
 public:
 	virtual
 	~ptrcmp_op();
 
 	inline
 	ptrcmp_op(const PointerType & ptype, const jlm::cmp & cmp)
-	: binary_op({ptype, ptype}, {jive::bit1})
+	: binary_op({ptype, ptype}, {jlm::rvsdg::bit1})
 	, cmp_(cmp)
 	{}
 
@@ -706,19 +706,19 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
-	virtual jive::binop_reduction_path_t
+	virtual jlm::rvsdg::binop_reduction_path_t
 	can_reduce_operand_pair(
-		const jive::output * op1,
-		const jive::output * op2) const noexcept override;
+		const jlm::rvsdg::output * op1,
+		const jlm::rvsdg::output * op2) const noexcept override;
 
-	virtual jive::output *
+	virtual jlm::rvsdg::output *
 	reduce_operand_pair(
-		jive::binop_reduction_path_t path,
-		jive::output * op1,
-		jive::output * op2) const override;
+		jlm::rvsdg::binop_reduction_path_t path,
+		jlm::rvsdg::output * op1,
+		jlm::rvsdg::output * op2) const override;
 
 	inline jlm::cmp
 	cmp() const noexcept
@@ -745,14 +745,14 @@ private:
 
 /* zext operator */
 
-class zext_op final : public jive::unary_op {
+class zext_op final : public jlm::rvsdg::unary_op {
 public:
 	virtual
 	~zext_op();
 
 	inline
 	zext_op(size_t nsrcbits, size_t ndstbits)
-	: unary_op({jive::bittype(nsrcbits)}, {jive::bittype(ndstbits)})
+	: unary_op({jlm::rvsdg::bittype(nsrcbits)}, {jlm::rvsdg::bittype(ndstbits)})
 	{
 		if (ndstbits < nsrcbits)
 			throw util::error("# destination bits must be greater than # source bits.");
@@ -760,14 +760,14 @@ public:
 
 	inline
 	zext_op(
-		std::unique_ptr<jive::type> srctype,
-		std::unique_ptr<jive::type> dsttype)
+		std::unique_ptr<jlm::rvsdg::type> srctype,
+		std::unique_ptr<jlm::rvsdg::type> dsttype)
 	: unary_op(*srctype, *dsttype)
 	{
-		auto st = dynamic_cast<const jive::bittype*>(srctype.get());
+		auto st = dynamic_cast<const jlm::rvsdg::bittype*>(srctype.get());
 		if (!st) throw util::error("expected bitstring type.");
 
-		auto dt = dynamic_cast<const jive::bittype*>(dsttype.get());
+		auto dt = dynamic_cast<const jlm::rvsdg::bittype*>(dsttype.get());
 		if (!dt) throw util::error("expected bitstring type.");
 
 		if (dt->nbits() < st->nbits())
@@ -780,38 +780,38 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
-	virtual jive::unop_reduction_path_t
-	can_reduce_operand(const jive::output * operand) const noexcept override;
+	virtual jlm::rvsdg::unop_reduction_path_t
+	can_reduce_operand(const jlm::rvsdg::output * operand) const noexcept override;
 
-	virtual jive::output *
+	virtual jlm::rvsdg::output *
 	reduce_operand(
-		jive::unop_reduction_path_t path,
-		jive::output * operand) const override;
+		jlm::rvsdg::unop_reduction_path_t path,
+		jlm::rvsdg::output * operand) const override;
 
 	inline size_t
 	nsrcbits() const noexcept
 	{
-		return static_cast<const jive::bittype*>(&argument(0).type())->nbits();
+		return static_cast<const jlm::rvsdg::bittype*>(&argument(0).type())->nbits();
 	}
 
 	inline size_t
 	ndstbits() const noexcept
 	{
-		return static_cast<const jive::bittype*>(&result(0).type())->nbits();
+		return static_cast<const jlm::rvsdg::bittype*>(&result(0).type())->nbits();
 	}
 
 	static std::unique_ptr<jlm::tac>
 	create(
 		const variable * operand,
-		const jive::type & type)
+		const jlm::rvsdg::type & type)
 	{
-		auto st = dynamic_cast<const jive::bittype*>(&operand->type());
+		auto st = dynamic_cast<const jlm::rvsdg::bittype*>(&operand->type());
 		if (!st) throw util::error("expected bitstring type.");
 
-		auto dt = dynamic_cast<const jive::bittype*>(&type);
+		auto dt = dynamic_cast<const jlm::rvsdg::bittype*>(&type);
 		if (!dt) throw util::error("expected bitstring type.");
 
 		jlm::zext_op op(st->nbits(), dt->nbits());
@@ -821,7 +821,7 @@ public:
 
 /* floating point constant operator */
 
-class ConstantFP final : public jive::simple_op {
+class ConstantFP final : public jlm::rvsdg::simple_op {
 public:
 	virtual
 	~ConstantFP();
@@ -838,7 +838,7 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
 	inline const llvm::APFloat &
@@ -856,7 +856,7 @@ public:
 	static std::unique_ptr<jlm::tac>
 	create(
 		const llvm::APFloat & constant,
-		const jive::type & type)
+		const jlm::rvsdg::type & type)
 	{
 		auto ft = dynamic_cast<const jlm::fptype*>(&type);
 		if (!ft) throw util::error("expected floating point type.");
@@ -877,14 +877,14 @@ enum class fpcmp {
 	TRUE, FALSE, oeq, ogt, oge, olt, ole, one, ord, ueq, ugt, uge, ult, ule, une, uno
 };
 
-class fpcmp_op final : public jive::binary_op {
+class fpcmp_op final : public jlm::rvsdg::binary_op {
 public:
 	virtual
 	~fpcmp_op();
 
 	inline
 	fpcmp_op(const jlm::fpcmp & cmp, const jlm::fpsize & size)
-	: binary_op({fptype(size), fptype(size)}, {jive::bit1})
+	: binary_op({fptype(size), fptype(size)}, {jlm::rvsdg::bit1})
 	, cmp_(cmp)
 	{}
 
@@ -894,19 +894,19 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
-	jive::binop_reduction_path_t
+	jlm::rvsdg::binop_reduction_path_t
 	can_reduce_operand_pair(
-		const jive::output * op1,
-		const jive::output * op2) const noexcept override;
+		const jlm::rvsdg::output * op1,
+		const jlm::rvsdg::output * op2) const noexcept override;
 
-	jive::output *
+	jlm::rvsdg::output *
 	reduce_operand_pair(
-		jive::binop_reduction_path_t path,
-		jive::output * op1,
-		jive::output * op2) const override;
+		jlm::rvsdg::binop_reduction_path_t path,
+		jlm::rvsdg::output * op1,
+		jlm::rvsdg::output * op2) const override;
 
 	inline const jlm::fpcmp &
 	cmp() const noexcept
@@ -941,12 +941,12 @@ private:
  *
  * This operator is the Jlm equivalent of LLVM's UndefValue constant.
  */
-class UndefValueOperation final : public jive::simple_op {
+class UndefValueOperation final : public jlm::rvsdg::simple_op {
 public:
   ~UndefValueOperation() noexcept override;
 
   explicit
-  UndefValueOperation(const jive::type & type)
+  UndefValueOperation(const jlm::rvsdg::type & type)
     : simple_op({}, {type})
   {}
 
@@ -964,26 +964,26 @@ public:
   [[nodiscard]] std::string
   debug_string() const override;
 
-  [[nodiscard]] std::unique_ptr<jive::operation>
+  [[nodiscard]] std::unique_ptr<jlm::rvsdg::operation>
   copy() const override;
 
-  [[nodiscard]] const jive::type &
+  [[nodiscard]] const jlm::rvsdg::type &
   GetType() const noexcept
   {
     return result(0).type();
   }
 
-  static jive::output *
+  static jlm::rvsdg::output *
   Create(
-    jive::region & region,
-    const jive::type & type)
+    jlm::rvsdg::region & region,
+    const jlm::rvsdg::type & type)
   {
     UndefValueOperation operation(type);
-    return jive::simple_node::create_normalized(&region, operation, {})[0];
+    return jlm::rvsdg::simple_node::create_normalized(&region, operation, {})[0];
   }
 
   static std::unique_ptr<jlm::tac>
-  Create(const jive::type & type)
+  Create(const jlm::rvsdg::type & type)
   {
     UndefValueOperation operation(type);
     return tac::create(operation, {});
@@ -991,7 +991,7 @@ public:
 
   static std::unique_ptr<jlm::tac>
   Create(
-    const jive::type & type,
+    const jlm::rvsdg::type & type,
     const std::string & name)
   {
     UndefValueOperation operation(type);
@@ -1015,13 +1015,13 @@ public:
  *
  * This operator is the Jlm equivalent of LLVM's PoisonValue constant.
  */
-class PoisonValueOperation final : public jive::simple_op {
+class PoisonValueOperation final : public jlm::rvsdg::simple_op {
 public:
   ~PoisonValueOperation() noexcept override;
 
   explicit
-  PoisonValueOperation(const jive::valuetype & type)
-  : jive::simple_op({}, {type})
+  PoisonValueOperation(const jlm::rvsdg::valuetype & type)
+  : jlm::rvsdg::simple_op({}, {type})
   {}
 
   PoisonValueOperation(const PoisonValueOperation&)
@@ -1041,19 +1041,19 @@ public:
   std::string
   debug_string() const override;
 
-  std::unique_ptr<jive::operation>
+  std::unique_ptr<jlm::rvsdg::operation>
   copy() const override;
 
-  const jive::valuetype &
+  const jlm::rvsdg::valuetype &
   GetType() const noexcept
   {
     auto & type = result(0).type();
-    JLM_ASSERT(dynamic_cast<const jive::valuetype*>(&type));
-    return *static_cast<const jive::valuetype*>(&type);
+    JLM_ASSERT(dynamic_cast<const jlm::rvsdg::valuetype*>(&type));
+    return *static_cast<const jlm::rvsdg::valuetype*>(&type);
   }
 
   static std::unique_ptr<jlm::tac>
-  Create(const jive::type & type)
+  Create(const jlm::rvsdg::type & type)
   {
     auto & valueType = CheckAndConvertType(type);
 
@@ -1061,20 +1061,20 @@ public:
     return tac::create(operation, {});
   }
 
-  static jive::output *
-  Create(jive::region * region, const jive::type & type)
+  static jlm::rvsdg::output *
+  Create(jlm::rvsdg::region * region, const jlm::rvsdg::type & type)
   {
     auto & valueType = CheckAndConvertType(type);
 
     PoisonValueOperation operation(valueType);
-    return jive::simple_node::create_normalized(region, operation, {})[0];
+    return jlm::rvsdg::simple_node::create_normalized(region, operation, {})[0];
   }
 
 private:
-  static const jive::valuetype &
-  CheckAndConvertType(const jive::type & type)
+  static const jlm::rvsdg::valuetype &
+  CheckAndConvertType(const jlm::rvsdg::type & type)
   {
-    if (auto valueType = dynamic_cast<const jive::valuetype*>(&type))
+    if (auto valueType = dynamic_cast<const jlm::rvsdg::valuetype*>(&type))
       return *valueType;
 
     throw util::error("Expected value type.");
@@ -1085,7 +1085,7 @@ private:
 
 enum class fpop {add, sub, mul, div, mod};
 
-class fpbin_op final : public jive::binary_op {
+class fpbin_op final : public jlm::rvsdg::binary_op {
 public:
 	virtual
 	~fpbin_op();
@@ -1102,19 +1102,19 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
-	jive::binop_reduction_path_t
+	jlm::rvsdg::binop_reduction_path_t
 	can_reduce_operand_pair(
-		const jive::output * op1,
-		const jive::output * op2) const noexcept override;
+		const jlm::rvsdg::output * op1,
+		const jlm::rvsdg::output * op2) const noexcept override;
 
-	jive::output *
+	jlm::rvsdg::output *
 	reduce_operand_pair(
-		jive::binop_reduction_path_t path,
-		jive::output * op1,
-		jive::output * op2) const override;
+		jlm::rvsdg::binop_reduction_path_t path,
+		jlm::rvsdg::output * op1,
+		jlm::rvsdg::output * op2) const override;
 
 	inline const jlm::fpop &
 	fpop() const noexcept
@@ -1147,7 +1147,7 @@ private:
 
 /* fpext operator */
 
-class fpext_op final : public jive::unary_op {
+class fpext_op final : public jlm::rvsdg::unary_op {
 public:
 	virtual
 	~fpext_op();
@@ -1162,8 +1162,8 @@ public:
 
 	inline
 	fpext_op(
-		std::unique_ptr<jive::type> srctype,
-		std::unique_ptr<jive::type> dsttype)
+		std::unique_ptr<jlm::rvsdg::type> srctype,
+		std::unique_ptr<jlm::rvsdg::type> dsttype)
 	: unary_op(*srctype, *dsttype)
 	{
 		auto st = dynamic_cast<const jlm::fptype*>(srctype.get());
@@ -1182,17 +1182,17 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
-	jive::unop_reduction_path_t
+	jlm::rvsdg::unop_reduction_path_t
 	can_reduce_operand(
-		const jive::output * output) const noexcept override;
+		const jlm::rvsdg::output * output) const noexcept override;
 
-	jive::output *
+	jlm::rvsdg::output *
 	reduce_operand(
-		jive::unop_reduction_path_t path,
-		jive::output * output) const override;
+		jlm::rvsdg::unop_reduction_path_t path,
+		jlm::rvsdg::output * output) const override;
 
 	inline const jlm::fpsize &
 	srcsize() const noexcept
@@ -1209,7 +1209,7 @@ public:
 	static std::unique_ptr<jlm::tac>
 	create(
 		const variable * operand,
-		const jive::type & type)
+		const jlm::rvsdg::type & type)
 	{
 		auto st = dynamic_cast<const jlm::fptype*>(&operand->type());
 		if (!st) throw util::error("expected floating point type.");
@@ -1224,7 +1224,7 @@ public:
 
 /* fpneg operator */
 
-class fpneg_op final : public jive::unary_op {
+class fpneg_op final : public jlm::rvsdg::unary_op {
 public:
 	~fpneg_op() override;
 
@@ -1232,7 +1232,7 @@ public:
 	: unary_op(fptype(size), fptype(size))
 	{}
 
-	fpneg_op(const jive::type & type)
+	fpneg_op(const jlm::rvsdg::type & type)
 	: unary_op(type, type)
 	{
 		auto st = dynamic_cast<const jlm::fptype*>(&type);
@@ -1245,17 +1245,17 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
-	jive::unop_reduction_path_t
+	jlm::rvsdg::unop_reduction_path_t
 	can_reduce_operand(
-		const jive::output * output) const noexcept override;
+		const jlm::rvsdg::output * output) const noexcept override;
 
-	jive::output *
+	jlm::rvsdg::output *
 	reduce_operand(
-		jive::unop_reduction_path_t path,
-		jive::output * output) const override;
+		jlm::rvsdg::unop_reduction_path_t path,
+		jlm::rvsdg::output * output) const override;
 
 	const jlm::fpsize &
 	size() const noexcept
@@ -1276,7 +1276,7 @@ public:
 
 /* fptrunc operator */
 
-class fptrunc_op final : public jive::unary_op {
+class fptrunc_op final : public jlm::rvsdg::unary_op {
 public:
 	virtual
 	~fptrunc_op();
@@ -1293,8 +1293,8 @@ public:
 
 	inline
 	fptrunc_op(
-		std::unique_ptr<jive::type> srctype,
-		std::unique_ptr<jive::type> dsttype)
+		std::unique_ptr<jlm::rvsdg::type> srctype,
+		std::unique_ptr<jlm::rvsdg::type> dsttype)
 	: unary_op(*srctype, *dsttype)
 	{
 		auto st = dynamic_cast<const fptype*>(srctype.get());
@@ -1315,17 +1315,17 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
-	jive::unop_reduction_path_t
+	jlm::rvsdg::unop_reduction_path_t
 	can_reduce_operand(
-		const jive::output * output) const noexcept override;
+		const jlm::rvsdg::output * output) const noexcept override;
 
-	jive::output *
+	jlm::rvsdg::output *
 	reduce_operand(
-		jive::unop_reduction_path_t path,
-		jive::output * output) const override;
+		jlm::rvsdg::unop_reduction_path_t path,
+		jlm::rvsdg::output * output) const override;
 
 	inline const fpsize &
 	srcsize() const noexcept
@@ -1342,7 +1342,7 @@ public:
 	static std::unique_ptr<jlm::tac>
 	create(
 		const variable * operand,
-		const jive::type & type)
+		const jlm::rvsdg::type & type)
 	{
 		auto st = dynamic_cast<const fptype*>(&operand->type());
 		if (!st) throw util::error("expected floating point type.");
@@ -1357,13 +1357,13 @@ public:
 
 /* valist operator */
 
-class valist_op final : public jive::simple_op {
+class valist_op final : public jlm::rvsdg::simple_op {
 public:
 	virtual
 	~valist_op();
 
 	inline
-	valist_op(std::vector<std::unique_ptr<jive::type>> types)
+	valist_op(std::vector<std::unique_ptr<jlm::rvsdg::type>> types)
 	: simple_op(create_srcports(std::move(types)), {varargtype()})
 	{}
 
@@ -1381,13 +1381,13 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
 	static std::unique_ptr<jlm::tac>
 	create(const std::vector<const variable*> & arguments)
 	{
-		std::vector<std::unique_ptr<jive::type>> operands;
+		std::vector<std::unique_ptr<jlm::rvsdg::type>> operands;
 		for (const auto & argument : arguments)
 			operands.push_back(argument->type().copy());
 
@@ -1396,12 +1396,12 @@ public:
 	}
 
 private:
-	static inline std::vector<jive::port>
-	create_srcports(std::vector<std::unique_ptr<jive::type>> types)
+	static inline std::vector<jlm::rvsdg::port>
+	create_srcports(std::vector<std::unique_ptr<jlm::rvsdg::type>> types)
 	{
-		std::vector<jive::port> ports;
+		std::vector<jlm::rvsdg::port> ports;
 		for (const auto & type : types)
-			ports.push_back(jive::port(*type));
+			ports.push_back(jlm::rvsdg::port(*type));
 
 		return ports;
 	}
@@ -1409,20 +1409,20 @@ private:
 
 /* bitcast operator */
 
-class bitcast_op final : public jive::unary_op {
+class bitcast_op final : public jlm::rvsdg::unary_op {
 public:
 	virtual
 	~bitcast_op();
 
 	inline
-	bitcast_op(const jive::valuetype & srctype, const jive::valuetype & dsttype)
+	bitcast_op(const jlm::rvsdg::valuetype & srctype, const jlm::rvsdg::valuetype & dsttype)
 	: unary_op(srctype, dsttype)
 	{}
 
 	inline
 	bitcast_op(
-		std::unique_ptr<jive::type> srctype,
-		std::unique_ptr<jive::type> dsttype)
+		std::unique_ptr<jlm::rvsdg::type> srctype,
+		std::unique_ptr<jlm::rvsdg::type> dsttype)
 	: unary_op(*srctype, *dsttype)
 	{
 		check_types(*srctype, *dsttype);
@@ -1430,13 +1430,13 @@ public:
 
 	bitcast_op(const bitcast_op &) = default;
 
-	bitcast_op(jive::operation &&) = delete;
+	bitcast_op(jlm::rvsdg::operation &&) = delete;
 
 	bitcast_op &
-	operator=(const jive::operation &) = delete;
+	operator=(const jlm::rvsdg::operation &) = delete;
 
 	bitcast_op &
-	operator=(jive::operation &&) = delete;
+	operator=(jlm::rvsdg::operation &&) = delete;
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
@@ -1444,22 +1444,22 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
-	jive::unop_reduction_path_t
+	jlm::rvsdg::unop_reduction_path_t
 	can_reduce_operand(
-		const jive::output * output) const noexcept override;
+		const jlm::rvsdg::output * output) const noexcept override;
 
-	jive::output *
+	jlm::rvsdg::output *
 	reduce_operand(
-		jive::unop_reduction_path_t path,
-		jive::output * output) const override;
+		jlm::rvsdg::unop_reduction_path_t path,
+		jlm::rvsdg::output * output) const override;
 
 	static std::unique_ptr<jlm::tac>
 	create(
 		const variable * operand,
-		const jive::type & type)
+		const jlm::rvsdg::type & type)
 	{
 		auto pair = check_types(operand->type(), type);
 
@@ -1467,23 +1467,23 @@ public:
 		return tac::create(op, {operand});
 	}
 
-	static jive::output *
-	create(jive::output * operand, const jive::type & rtype)
+	static jlm::rvsdg::output *
+	create(jlm::rvsdg::output * operand, const jlm::rvsdg::type & rtype)
 	{
 		auto pair = check_types(operand->type(), rtype);
 
 		bitcast_op op(*pair.first, *pair.second);
-		return jive::simple_node::create_normalized(operand->region(), op, {operand})[0];
+		return jlm::rvsdg::simple_node::create_normalized(operand->region(), op, {operand})[0];
 	}
 
 private:
-	static std::pair<const jive::valuetype*, const jive::valuetype*>
-	check_types(const jive::type & otype, const jive::type & rtype)
+	static std::pair<const jlm::rvsdg::valuetype*, const jlm::rvsdg::valuetype*>
+	check_types(const jlm::rvsdg::type & otype, const jlm::rvsdg::type & rtype)
 	{
-		auto ot = dynamic_cast<const jive::valuetype*>(&otype);
+		auto ot = dynamic_cast<const jlm::rvsdg::valuetype*>(&otype);
 		if (!ot) throw util::error("expected value type.");
 
-		auto rt = dynamic_cast<const jive::valuetype*>(&rtype);
+		auto rt = dynamic_cast<const jlm::rvsdg::valuetype*>(&rtype);
 		if (!rt) throw util::error("expected value type.");
 
 		return std::make_pair(ot, rt);
@@ -1492,7 +1492,7 @@ private:
 
 /* ConstantStruct operator */
 
-class ConstantStruct final : public jive::simple_op {
+class ConstantStruct final : public jlm::rvsdg::simple_op {
 public:
 	virtual
 	~ConstantStruct();
@@ -1508,7 +1508,7 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
 	const StructType &
@@ -1520,7 +1520,7 @@ public:
 	static std::unique_ptr<jlm::tac>
 	create(
 		const std::vector<const variable*> & elements,
-		const jive::type & type)
+		const jlm::rvsdg::type & type)
 	{
 		auto rt = dynamic_cast<const StructType*>(&type);
 		if (!rt) throw util::error("expected struct type.");
@@ -1530,10 +1530,10 @@ public:
 	}
 
 private:
-	static inline std::vector<jive::port>
+	static inline std::vector<jlm::rvsdg::port>
 	create_srcports(const StructType & type)
 	{
-		std::vector<jive::port> ports;
+		std::vector<jlm::rvsdg::port> ports;
 		for (size_t n = 0; n < type.GetDeclaration().nelements(); n++)
 			ports.push_back(type.GetDeclaration().element(n));
 
@@ -1543,13 +1543,13 @@ private:
 
 /* trunc operator */
 
-class trunc_op final : public jive::unary_op {
+class trunc_op final : public jlm::rvsdg::unary_op {
 public:
 	virtual
 	~trunc_op();
 
 	inline
-	trunc_op(const jive::bittype & otype, const jive::bittype & rtype)
+	trunc_op(const jlm::rvsdg::bittype & otype, const jlm::rvsdg::bittype & rtype)
 	: unary_op(otype, rtype)
 	{
 		if (otype.nbits() < rtype.nbits())
@@ -1558,14 +1558,14 @@ public:
 
 	inline
 	trunc_op(
-		std::unique_ptr<jive::type> optype,
-		std::unique_ptr<jive::type> restype)
+		std::unique_ptr<jlm::rvsdg::type> optype,
+		std::unique_ptr<jlm::rvsdg::type> restype)
 	: unary_op(*optype, *restype)
 	{
-		auto ot = dynamic_cast<const jive::bittype*>(optype.get());
+		auto ot = dynamic_cast<const jlm::rvsdg::bittype*>(optype.get());
 		if (!ot) throw util::error("expected bits type.");
 
-		auto rt = dynamic_cast<const jive::bittype*>(restype.get());
+		auto rt = dynamic_cast<const jlm::rvsdg::bittype*>(restype.get());
 		if (!rt) throw util::error("expected bits type.");
 
 		if (ot->nbits() < rt->nbits())
@@ -1578,77 +1578,77 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
-	virtual jive::unop_reduction_path_t
-	can_reduce_operand(const jive::output * operand) const noexcept override;
+	virtual jlm::rvsdg::unop_reduction_path_t
+	can_reduce_operand(const jlm::rvsdg::output * operand) const noexcept override;
 
-	virtual jive::output *
+	virtual jlm::rvsdg::output *
 	reduce_operand(
-		jive::unop_reduction_path_t path,
-		jive::output * operand) const override;
+		jlm::rvsdg::unop_reduction_path_t path,
+		jlm::rvsdg::output * operand) const override;
 
 	inline size_t
 	nsrcbits() const noexcept
 	{
-		return static_cast<const jive::bittype*>(&argument(0).type())->nbits();
+		return static_cast<const jlm::rvsdg::bittype*>(&argument(0).type())->nbits();
 	}
 
 	inline size_t
 	ndstbits() const noexcept
 	{
-		return static_cast<const jive::bittype*>(&result(0).type())->nbits();
+		return static_cast<const jlm::rvsdg::bittype*>(&result(0).type())->nbits();
 	}
 
 	static std::unique_ptr<jlm::tac>
 	create(
 		const variable * operand,
-		const jive::type & type)
+		const jlm::rvsdg::type & type)
 	{
-		auto ot = dynamic_cast<const jive::bittype*>(&operand->type());
+		auto ot = dynamic_cast<const jlm::rvsdg::bittype*>(&operand->type());
 		if (!ot) throw util::error("expected bits type.");
 
-		auto rt = dynamic_cast<const jive::bittype*>(&type);
+		auto rt = dynamic_cast<const jlm::rvsdg::bittype*>(&type);
 		if (!rt) throw util::error("expected bits type.");
 
 		trunc_op op(*ot, *rt);
 		return tac::create(op, {operand});
 	}
 
-	static jive::output *
+	static jlm::rvsdg::output *
 	create(
 		size_t ndstbits,
-		jive::output * operand)
+		jlm::rvsdg::output * operand)
 	{
-		auto ot = dynamic_cast<const jive::bittype*>(&operand->type());
+		auto ot = dynamic_cast<const jlm::rvsdg::bittype*>(&operand->type());
 		if (!ot) throw util::error("expected bits type.");
 
-		trunc_op op(*ot, jive::bittype(ndstbits));
-		return jive::simple_node::create_normalized(operand->region(), op, {operand})[0];
+		trunc_op op(*ot, jlm::rvsdg::bittype(ndstbits));
+		return jlm::rvsdg::simple_node::create_normalized(operand->region(), op, {operand})[0];
 	}
 };
 
 
 /* uitofp operator */
 
-class uitofp_op final : public jive::unary_op {
+class uitofp_op final : public jlm::rvsdg::unary_op {
 public:
 	virtual
 	~uitofp_op();
 
 	inline
-	uitofp_op(const jive::bittype & srctype, const jlm::fptype & dsttype)
+	uitofp_op(const jlm::rvsdg::bittype & srctype, const jlm::fptype & dsttype)
 	: unary_op(srctype, dsttype)
 	{}
 
 	inline
 	uitofp_op(
-		std::unique_ptr<jive::type> optype,
-		std::unique_ptr<jive::type> restype)
+		std::unique_ptr<jlm::rvsdg::type> optype,
+		std::unique_ptr<jlm::rvsdg::type> restype)
 	: unary_op(*optype, *restype)
 	{
-		auto st = dynamic_cast<const jive::bittype*>(optype.get());
+		auto st = dynamic_cast<const jlm::rvsdg::bittype*>(optype.get());
 		if (!st) throw util::error("expected bits type.");
 
 		auto rt = dynamic_cast<const jlm::fptype*>(restype.get());
@@ -1661,23 +1661,23 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
-	virtual jive::unop_reduction_path_t
-	can_reduce_operand(const jive::output * operand) const noexcept override;
+	virtual jlm::rvsdg::unop_reduction_path_t
+	can_reduce_operand(const jlm::rvsdg::output * operand) const noexcept override;
 
-	virtual jive::output *
+	virtual jlm::rvsdg::output *
 	reduce_operand(
-		jive::unop_reduction_path_t path,
-		jive::output * operand) const override;
+		jlm::rvsdg::unop_reduction_path_t path,
+		jlm::rvsdg::output * operand) const override;
 
 	static std::unique_ptr<jlm::tac>
 	create(
 		const variable * operand,
-		const jive::type & type)
+		const jlm::rvsdg::type & type)
 	{
-		auto st = dynamic_cast<const jive::bittype*>(&operand->type());
+		auto st = dynamic_cast<const jlm::rvsdg::bittype*>(&operand->type());
 		if (!st) throw util::error("expected bits type.");
 
 		auto rt = dynamic_cast<const jlm::fptype*>(&type);
@@ -1690,23 +1690,23 @@ public:
 
 /* sitofp operator */
 
-class sitofp_op final : public jive::unary_op {
+class sitofp_op final : public jlm::rvsdg::unary_op {
 public:
 	virtual
 	~sitofp_op();
 
 	inline
-	sitofp_op(const jive::bittype & srctype, const jlm::fptype & dsttype)
+	sitofp_op(const jlm::rvsdg::bittype & srctype, const jlm::fptype & dsttype)
 	: unary_op(srctype, dsttype)
 	{}
 
 	inline
 	sitofp_op(
-		std::unique_ptr<jive::type> srctype,
-		std::unique_ptr<jive::type> dsttype)
+		std::unique_ptr<jlm::rvsdg::type> srctype,
+		std::unique_ptr<jlm::rvsdg::type> dsttype)
 	: unary_op(*srctype, *dsttype)
 	{
-		auto st = dynamic_cast<const jive::bittype*>(srctype.get());
+		auto st = dynamic_cast<const jlm::rvsdg::bittype*>(srctype.get());
 		if (!st) throw util::error("expected bits type.");
 
 		auto rt = dynamic_cast<const jlm::fptype*>(dsttype.get());
@@ -1719,24 +1719,24 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
-	jive::unop_reduction_path_t
+	jlm::rvsdg::unop_reduction_path_t
 	can_reduce_operand(
-		const jive::output * output) const noexcept override;
+		const jlm::rvsdg::output * output) const noexcept override;
 
-	jive::output *
+	jlm::rvsdg::output *
 	reduce_operand(
-		jive::unop_reduction_path_t path,
-		jive::output * output) const override;
+		jlm::rvsdg::unop_reduction_path_t path,
+		jlm::rvsdg::output * output) const override;
 
 	static std::unique_ptr<jlm::tac>
 	create(
 		const variable * operand,
-		const jive::type & type)
+		const jlm::rvsdg::type & type)
 	{
-		auto st = dynamic_cast<const jive::bittype*>(&operand->type());
+		auto st = dynamic_cast<const jlm::rvsdg::bittype*>(&operand->type());
 		if (!st) throw util::error("expected bits type.");
 
 		auto rt = dynamic_cast<const jlm::fptype*>(&type);
@@ -1749,13 +1749,13 @@ public:
 
 /* ConstantArray */
 
-class ConstantArray final : public jive::simple_op {
+class ConstantArray final : public jlm::rvsdg::simple_op {
 public:
 	virtual
 	~ConstantArray();
 
-	ConstantArray(const jive::valuetype & type, size_t size)
-	: jive::simple_op(std::vector<jive::port>(size, type), {arraytype(type, size)})
+	ConstantArray(const jlm::rvsdg::valuetype & type, size_t size)
+	: jlm::rvsdg::simple_op(std::vector<jlm::rvsdg::port>(size, type), {arraytype(type, size)})
 	{
 		if (size == 0)
 			throw util::error("size equals zero.\n");
@@ -1767,7 +1767,7 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
 	size_t
@@ -1776,7 +1776,7 @@ public:
 		return static_cast<const arraytype*>(&result(0).type())->nelements();
 	}
 
-	const jive::valuetype &
+	const jlm::rvsdg::valuetype &
 	type() const noexcept
 	{
 		return static_cast<const arraytype*>(&result(0).type())->element_type();
@@ -1788,7 +1788,7 @@ public:
 		if (elements.size() == 0)
 			throw util::error("expected at least one element.\n");
 
-		auto vt = dynamic_cast<const jive::valuetype*>(&elements[0]->type());
+		auto vt = dynamic_cast<const jlm::rvsdg::valuetype*>(&elements[0]->type());
 		if (!vt) throw util::error("expected value type.\n");
 
 		ConstantArray op(*vt, elements.size());
@@ -1798,12 +1798,12 @@ public:
 
 /* ConstantAggregateZero operator */
 
-class ConstantAggregateZero final : public jive::simple_op {
+class ConstantAggregateZero final : public jlm::rvsdg::simple_op {
 public:
   virtual
   ~ConstantAggregateZero();
 
-  ConstantAggregateZero(const jive::type & type)
+  ConstantAggregateZero(const jlm::rvsdg::type & type)
     : simple_op({}, {type})
   {
     auto st = dynamic_cast<const StructType*>(&type);
@@ -1819,29 +1819,29 @@ public:
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jive::operation>
+  virtual std::unique_ptr<jlm::rvsdg::operation>
   copy() const override;
 
   static std::unique_ptr<jlm::tac>
-  create(const jive::type & type)
+  create(const jlm::rvsdg::type & type)
   {
     ConstantAggregateZero op(type);
     return tac::create(op, {});
   }
 
-  static jive::output *
+  static jlm::rvsdg::output *
   Create(
-    jive::region & region,
-    const jive::type & type)
+    jlm::rvsdg::region & region,
+    const jlm::rvsdg::type & type)
   {
     ConstantAggregateZero operation(type);
-    return jive::simple_node::create_normalized(&region, operation, {})[0];
+    return jlm::rvsdg::simple_node::create_normalized(&region, operation, {})[0];
   }
 };
 
 /* extractelement operator */
 
-class extractelement_op final : public jive::simple_op {
+class extractelement_op final : public jlm::rvsdg::simple_op {
 public:
 	virtual
 	~extractelement_op();
@@ -1849,7 +1849,7 @@ public:
 	inline
 	extractelement_op(
 		const vectortype & vtype,
-		const jive::bittype & btype)
+		const jlm::rvsdg::bittype & btype)
 	: simple_op({vtype, btype}, {vtype.type()})
 	{}
 
@@ -1859,7 +1859,7 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
 	static inline std::unique_ptr<jlm::tac>
@@ -1870,7 +1870,7 @@ public:
 		auto vt = dynamic_cast<const vectortype*>(&vector->type());
 		if (!vt) throw util::error("expected vector type.");
 
-		auto bt = dynamic_cast<const jive::bittype*>(&index->type());
+		auto bt = dynamic_cast<const jlm::rvsdg::bittype*>(&index->type());
 		if (!bt) throw util::error("expected bit type.");
 
 		extractelement_op op(*vt, *bt);
@@ -1880,7 +1880,7 @@ public:
 
 /* shufflevector operator */
 
-class shufflevector_op final : public jive::simple_op {
+class shufflevector_op final : public jlm::rvsdg::simple_op {
 public:
 	~shufflevector_op() override;
 
@@ -1904,7 +1904,7 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
     const llvm::ArrayRef<int>
@@ -1947,7 +1947,7 @@ private:
 
 /* constantvector operator */
 
-class constantvector_op final : public jive::simple_op {
+class constantvector_op final : public jlm::rvsdg::simple_op {
 public:
 	virtual
 	~constantvector_op();
@@ -1955,7 +1955,7 @@ public:
 	inline
 	constantvector_op(
 		const vectortype & vt)
-	: simple_op(std::vector<jive::port>(vt.size(), {vt.type()}), {vt})
+	: simple_op(std::vector<jlm::rvsdg::port>(vt.size(), {vt.type()}), {vt})
 	{}
 
 	virtual bool
@@ -1964,13 +1964,13 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
 	static inline std::unique_ptr<jlm::tac>
 	create(
 		const std::vector<const variable*> & operands,
-		const jive::type & type)
+		const jlm::rvsdg::type & type)
 	{
 		auto vt = dynamic_cast<const vectortype*>(&type);
 		if (!vt) throw util::error("expected vector type.");
@@ -1982,7 +1982,7 @@ public:
 
 /* insertelement operator */
 
-class insertelement_op final : public jive::simple_op {
+class insertelement_op final : public jlm::rvsdg::simple_op {
 public:
 	virtual
 	~insertelement_op();
@@ -1990,8 +1990,8 @@ public:
 	inline
 	insertelement_op(
 		const vectortype & vectype,
-		const jive::valuetype & vtype,
-		const jive::bittype & btype)
+		const jlm::rvsdg::valuetype & vtype,
+		const jlm::rvsdg::bittype & btype)
 	: simple_op({vectype, vtype, btype}, {vectype})
 	{
 		if (vectype.type() != vtype) {
@@ -2007,7 +2007,7 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
 	static inline std::unique_ptr<jlm::tac>
@@ -2019,10 +2019,10 @@ public:
 		auto vct = dynamic_cast<const vectortype*>(&vector->type());
 		if (!vct) throw util::error("expected vector type.");
 
-		auto vt = dynamic_cast<const jive::valuetype*>(&value->type());
+		auto vt = dynamic_cast<const jlm::rvsdg::valuetype*>(&value->type());
 		if (!vt) throw util::error("expected value type.");
 
-		auto bt = dynamic_cast<const jive::bittype*>(&index->type());
+		auto bt = dynamic_cast<const jlm::rvsdg::bittype*>(&index->type());
 		if (!bt) throw util::error("expected bit type.");
 
 		insertelement_op op(*vct, *vt, *bt);
@@ -2032,14 +2032,14 @@ public:
 
 /* vectorunary operator */
 
-class vectorunary_op final : public jive::simple_op {
+class vectorunary_op final : public jlm::rvsdg::simple_op {
 public:
 	virtual
 	~vectorunary_op();
 
 	inline
 	vectorunary_op(
-		const jive::unary_op & op,
+		const jlm::rvsdg::unary_op & op,
 		const vectortype & operand,
 		const vectortype & result)
 	: simple_op({operand}, {result})
@@ -2088,26 +2088,26 @@ public:
 		return *this;
 	}
 
-	inline const jive::unary_op &
+	inline const jlm::rvsdg::unary_op &
 	operation() const noexcept
 	{
-		return *static_cast<const jive::unary_op*>(op_.get());
+		return *static_cast<const jlm::rvsdg::unary_op*>(op_.get());
 	}
 
 	virtual bool
-	operator==(const jive::operation & other) const noexcept override;
+	operator==(const jlm::rvsdg::operation & other) const noexcept override;
 
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
 	static inline std::unique_ptr<jlm::tac>
 	create(
-		const jive::unary_op & unop,
+		const jlm::rvsdg::unary_op & unop,
 		const jlm::variable * operand,
-		const jive::type & type)
+		const jlm::rvsdg::type & type)
 	{
 		auto vct1 = dynamic_cast<const vectortype*>(&operand->type());
 		auto vct2 = dynamic_cast<const vectortype*>(&type);
@@ -2118,19 +2118,19 @@ public:
 	}
 
 private:
-	std::unique_ptr<jive::operation> op_;
+	std::unique_ptr<jlm::rvsdg::operation> op_;
 };
 
 /* vectorbinary operator */
 
-class vectorbinary_op final : public jive::simple_op {
+class vectorbinary_op final : public jlm::rvsdg::simple_op {
 public:
 	virtual
 	~vectorbinary_op();
 
 	inline
 	vectorbinary_op(
-		const jive::binary_op & binop,
+		const jlm::rvsdg::binary_op & binop,
 		const vectortype & op1,
 		const vectortype & op2,
 		const vectortype & result)
@@ -2183,27 +2183,27 @@ public:
 		return *this;
 	}
 
-	inline const jive::binary_op &
+	inline const jlm::rvsdg::binary_op &
 	operation() const noexcept
 	{
-		return *static_cast<const jive::binary_op*>(op_.get());
+		return *static_cast<const jlm::rvsdg::binary_op*>(op_.get());
 	}
 
 	virtual bool
-	operator==(const jive::operation & other) const noexcept override;
+	operator==(const jlm::rvsdg::operation & other) const noexcept override;
 
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
 	static inline std::unique_ptr<jlm::tac>
 	create(
-		const jive::binary_op & binop,
+		const jlm::rvsdg::binary_op & binop,
 		const jlm::variable * op1,
 		const jlm::variable * op2,
-		const jive::type & type)
+		const jlm::rvsdg::type & type)
 	{
 		auto vct1 = dynamic_cast<const vectortype*>(&op1->type());
 		auto vct2 = dynamic_cast<const vectortype*>(&op2->type());
@@ -2215,18 +2215,18 @@ public:
 	}
 
 private:
-	std::unique_ptr<jive::operation> op_;
+	std::unique_ptr<jlm::rvsdg::operation> op_;
 };
 
 /* constant data vector operator */
 
-class constant_data_vector_op final : public jive::simple_op {
+class constant_data_vector_op final : public jlm::rvsdg::simple_op {
 public:
 	~constant_data_vector_op() override;
 
 private:
 	constant_data_vector_op(const vectortype & vt)
-	: simple_op(std::vector<jive::port>(vt.size(), vt.type()), {vt})
+	: simple_op(std::vector<jlm::rvsdg::port>(vt.size(), vt.type()), {vt})
 	{}
 
 public:
@@ -2236,7 +2236,7 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
 	size_t
@@ -2245,7 +2245,7 @@ public:
 		return static_cast<const vectortype*>(&result(0).type())->size();
 	}
 
-	const jive::valuetype &
+	const jlm::rvsdg::valuetype &
 	type() const noexcept
 	{
 		return static_cast<const vectortype*>(&result(0).type())->type();
@@ -2257,7 +2257,7 @@ public:
         if (elements.empty())
             throw util::error("Expected at least one element.");
 
-        auto vt = dynamic_cast<const jive::valuetype*>(&elements[0]->type());
+        auto vt = dynamic_cast<const jlm::rvsdg::valuetype*>(&elements[0]->type());
         if (!vt) throw util::error("Expected value type.");
 
         constant_data_vector_op op(fixedvectortype(*vt, elements.size()));
@@ -2267,7 +2267,7 @@ public:
 
 /* ExtractValue operator */
 
-class ExtractValue final : public jive::simple_op {
+class ExtractValue final : public jlm::rvsdg::simple_op {
 	typedef std::vector<unsigned>::const_iterator const_iterator;
 public:
 	virtual
@@ -2275,7 +2275,7 @@ public:
 
 	inline
 	ExtractValue(
-		const jive::type & aggtype,
+		const jlm::rvsdg::type & aggtype,
 		const std::vector<unsigned> & indices)
 	: simple_op({aggtype}, {dsttype(aggtype, indices)})
 	, indices_(indices)
@@ -2290,7 +2290,7 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
 	const_iterator
@@ -2305,10 +2305,10 @@ public:
 		return indices_.end();
 	}
 
-	const jive::valuetype &
+	const jlm::rvsdg::valuetype &
 	type() const noexcept
 	{
-		return *static_cast<const jive::valuetype*>(&argument(0).type());
+		return *static_cast<const jlm::rvsdg::valuetype*>(&argument(0).type());
 	}
 
 	static inline std::unique_ptr<jlm::tac>
@@ -2321,12 +2321,12 @@ public:
 	}
 
 private:
-	static inline jive::port
+	static inline jlm::rvsdg::port
 	dsttype(
-		const jive::type & aggtype,
+		const jlm::rvsdg::type & aggtype,
 		const std::vector<unsigned> & indices)
 	{
-		const jive::type * type = &aggtype;
+		const jlm::rvsdg::type * type = &aggtype;
 		for (const auto & index : indices) {
 			if (auto st = dynamic_cast<const StructType*>(type)) {
 				if (index >= st->GetDeclaration().nelements())
@@ -2350,7 +2350,7 @@ private:
 
 /* loop state mux operator */
 
-class loopstatemux_op final : public jive::simple_op {
+class loopstatemux_op final : public jlm::rvsdg::simple_op {
 public:
 	virtual
 	~loopstatemux_op();
@@ -2365,12 +2365,12 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
-	static std::vector<jive::output*>
+	static std::vector<jlm::rvsdg::output*>
 	create(
-		const std::vector<jive::output*> & operands,
+		const std::vector<jlm::rvsdg::output*> & operands,
 		size_t nresults)
 	{
 		if (operands.empty())
@@ -2378,48 +2378,48 @@ public:
 
 		auto region = operands.front()->region();
 		loopstatemux_op op(operands.size(), nresults);
-		return jive::simple_node::create_normalized(region, op, operands);
+		return jlm::rvsdg::simple_node::create_normalized(region, op, operands);
 	}
 
-	static std::vector<jive::output*>
-	create_split(jive::output * operand, size_t nresults)
+	static std::vector<jlm::rvsdg::output*>
+	create_split(jlm::rvsdg::output * operand, size_t nresults)
 	{
 		loopstatemux_op op(1, nresults);
-		return jive::simple_node::create_normalized(operand->region(), op, {operand});
+		return jlm::rvsdg::simple_node::create_normalized(operand->region(), op, {operand});
 	}
 
-	static jive::output *
-	create_merge(const std::vector<jive::output*> & operands)
+	static jlm::rvsdg::output *
+	create_merge(const std::vector<jlm::rvsdg::output*> & operands)
 	{
 		if (operands.empty())
 			throw util::error("Insufficient number of operands.");
 
 		loopstatemux_op op(operands.size(), 1);
 		auto region = operands.front()->region();
-		return jive::simple_node::create_normalized(region, op, operands)[0];
+		return jlm::rvsdg::simple_node::create_normalized(region, op, operands)[0];
 	}
 
 private:
-	static std::vector<jive::port>
+	static std::vector<jlm::rvsdg::port>
 	create_portvector(size_t size)
 	{
-		return std::vector<jive::port>(size, loopstatetype());
+		return std::vector<jlm::rvsdg::port>(size, loopstatetype());
 	}
 };
 
 /* MemState operator */
 
-class MemStateOperator : public jive::simple_op {
+class MemStateOperator : public jlm::rvsdg::simple_op {
 public:
 	MemStateOperator(size_t noperands, size_t nresults)
 	: simple_op(create_portvector(noperands), create_portvector(nresults))
 	{}
 
 private:
-	static std::vector<jive::port>
+	static std::vector<jlm::rvsdg::port>
 	create_portvector(size_t size)
 	{
-		return {size, jive::port(MemoryStateType::Create())};
+		return {size, jlm::rvsdg::port(MemoryStateType::Create())};
 	}
 };
 
@@ -2439,18 +2439,18 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
-	static jive::output *
-	Create(const std::vector<jive::output*> & operands)
+	static jlm::rvsdg::output *
+	Create(const std::vector<jlm::rvsdg::output*> & operands)
 	{
 		if (operands.empty())
 			throw util::error("Insufficient number of operands.");
 
 		MemStateMergeOperator op(operands.size());
 		auto region = operands.front()->region();
-		return jive::simple_node::create_normalized(region, op, operands)[0];
+		return jlm::rvsdg::simple_node::create_normalized(region, op, operands)[0];
 	}
 
 	static std::unique_ptr<tac>
@@ -2480,28 +2480,28 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
-	static std::vector<jive::output*>
-	Create(jive::output * operand, size_t nresults)
+	static std::vector<jlm::rvsdg::output*>
+	Create(jlm::rvsdg::output * operand, size_t nresults)
 	{
 		if (nresults == 0)
 			throw util::error("Insufficient number of results.");
 
 		MemStateSplitOperator op(nresults);
-		return jive::simple_node::create_normalized(operand->region(), op, {operand});
+		return jlm::rvsdg::simple_node::create_normalized(operand->region(), op, {operand});
 	}
 };
 
 /* malloc operator */
 
-class malloc_op final : public jive::simple_op {
+class malloc_op final : public jlm::rvsdg::simple_op {
 public:
 	virtual
 	~malloc_op();
 
-	malloc_op(const jive::bittype & btype)
+	malloc_op(const jlm::rvsdg::bittype & btype)
 	: simple_op({btype}, {PointerType(), {MemoryStateType::Create()}})
 	{}
 
@@ -2511,13 +2511,13 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
-	const jive::bittype &
+	const jlm::rvsdg::bittype &
 	size_type() const noexcept
 	{
-		return *static_cast<const jive::bittype*>(&argument(0).type());
+		return *static_cast<const jlm::rvsdg::bittype*>(&argument(0).type());
 	}
 
 	FunctionType
@@ -2530,27 +2530,27 @@ public:
 	static std::unique_ptr<jlm::tac>
 	create(const variable * size)
 	{
-		auto bt = dynamic_cast<const jive::bittype*>(&size->type());
+		auto bt = dynamic_cast<const jlm::rvsdg::bittype*>(&size->type());
 		if (!bt) throw util::error("expected bits type.");
 
 		jlm::malloc_op op(*bt);
 		return tac::create(op, {size});
 	}
 
-	static std::vector<jive::output*>
-	create(jive::output * size)
+	static std::vector<jlm::rvsdg::output*>
+	create(jlm::rvsdg::output * size)
 	{
-		auto bt = dynamic_cast<const jive::bittype*>(&size->type());
+		auto bt = dynamic_cast<const jlm::rvsdg::bittype*>(&size->type());
 		if (!bt) throw util::error("expected bits type.");
 
 		jlm::malloc_op op(*bt);
-		return jive::simple_node::create_normalized(size->region(), op, {size});
+		return jlm::rvsdg::simple_node::create_normalized(size->region(), op, {size});
 	}
 };
 
 /* free operator */
 
-class free_op final : public jive::simple_op {
+class free_op final : public jlm::rvsdg::simple_op {
 public:
 	virtual
 	~free_op();
@@ -2565,7 +2565,7 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
 	const FunctionType
@@ -2593,41 +2593,41 @@ public:
 		return tac::create(op, operands);
 	}
 
-	static std::vector<jive::output*>
+	static std::vector<jlm::rvsdg::output*>
 	create(
-		jive::output * pointer,
-		const std::vector<jive::output*> & memstates,
-		jive::output * iostate)
+		jlm::rvsdg::output * pointer,
+		const std::vector<jlm::rvsdg::output*> & memstates,
+		jlm::rvsdg::output * iostate)
 	{
 		if (memstates.empty())
 			throw util::error("Number of memory states cannot be zero.");
 
-		std::vector<jive::output*> operands;
+		std::vector<jlm::rvsdg::output*> operands;
 		operands.push_back(pointer);
 		operands.insert(operands.end(), memstates.begin(), memstates.end());
 		operands.push_back(iostate);
 
 		free_op op(memstates.size());
-		return jive::simple_node::create_normalized(pointer->region(), op, operands);
+		return jlm::rvsdg::simple_node::create_normalized(pointer->region(), op, operands);
 	}
 
 private:
-	static std::vector<jive::port>
+	static std::vector<jlm::rvsdg::port>
 	create_operand_portvector(size_t nmemstates)
 	{
-		std::vector<jive::port> memstates(nmemstates, {MemoryStateType::Create()});
+		std::vector<jlm::rvsdg::port> memstates(nmemstates, {MemoryStateType::Create()});
 
-		std::vector<jive::port> ports({PointerType()});
+		std::vector<jlm::rvsdg::port> ports({PointerType()});
 		ports.insert(ports.end(), memstates.begin(), memstates.end());
 		ports.push_back(iostatetype::instance());
 
 		return ports;
 	}
 
-	static std::vector<jive::port>
+	static std::vector<jlm::rvsdg::port>
 	create_result_portvector(size_t nmemstates)
 	{
-		std::vector<jive::port> ports(nmemstates, {MemoryStateType::Create()});
+		std::vector<jlm::rvsdg::port> ports(nmemstates, {MemoryStateType::Create()});
 		ports.push_back(iostatetype::instance());
 
 		return ports;
@@ -2636,14 +2636,14 @@ private:
 
 /* memcpy operation */
 
-class Memcpy final : public jive::simple_op {
+class Memcpy final : public jlm::rvsdg::simple_op {
 public:
 	virtual
 	~Memcpy();
 
 	Memcpy(
-		const std::vector<jive::port> & operandPorts,
-		const std::vector<jive::port> & resultPorts)
+		const std::vector<jlm::rvsdg::port> & operandPorts,
+		const std::vector<jlm::rvsdg::port> & resultPorts)
 	: simple_op(operandPorts, resultPorts)
 	{}
 
@@ -2653,7 +2653,7 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
 	static std::unique_ptr<jlm::tac>
@@ -2674,58 +2674,58 @@ public:
 		return tac::create(op, operands);
 	}
 
-	static std::vector<jive::output*>
+	static std::vector<jlm::rvsdg::output*>
 	create(
-		jive::output * destination,
-		jive::output * source,
-		jive::output * length,
-		jive::output * isVolatile,
-		const std::vector<jive::output*> & memoryStates)
+		jlm::rvsdg::output * destination,
+		jlm::rvsdg::output * source,
+		jlm::rvsdg::output * length,
+		jlm::rvsdg::output * isVolatile,
+		const std::vector<jlm::rvsdg::output*> & memoryStates)
 	{
 		auto operandPorts = CheckAndCreateOperandPorts(length->type(), memoryStates.size());
 		auto resultPorts = CreateResultPorts(memoryStates.size());
 
-		std::vector<jive::output*> operands = {destination, source, length, isVolatile};
+		std::vector<jlm::rvsdg::output*> operands = {destination, source, length, isVolatile};
 		operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
 		Memcpy op(operandPorts, resultPorts);
-		return jive::simple_node::create_normalized(destination->region(), op, operands);
+		return jlm::rvsdg::simple_node::create_normalized(destination->region(), op, operands);
 	}
 
 private:
-	static std::vector<jive::port>
+	static std::vector<jlm::rvsdg::port>
 	CheckAndCreateOperandPorts(
-		const jive::type & length,
+		const jlm::rvsdg::type & length,
 		size_t nMemoryStates)
 	{
-		if (length != jive::bit32
-		&& length != jive::bit64)
+		if (length != jlm::rvsdg::bit32
+		&& length != jlm::rvsdg::bit64)
 			throw util::error("Expected 32 bit or 64 bit integer type.");
 
 		if (nMemoryStates == 0)
 			throw util::error("Number of memory states cannot be zero.");
 
     PointerType pointerType;
-		std::vector<jive::port> ports = {pointerType, pointerType, length, jive::bit1};
+		std::vector<jlm::rvsdg::port> ports = {pointerType, pointerType, length, jlm::rvsdg::bit1};
 		ports.insert(ports.end(), nMemoryStates, {MemoryStateType::Create()});
 
 		return ports;
 	}
 
-	static std::vector<jive::port>
+	static std::vector<jlm::rvsdg::port>
 	CreateResultPorts(size_t nMemoryStates)
 	{
-		return std::vector<jive::port>(nMemoryStates, {MemoryStateType::Create()});
+		return std::vector<jlm::rvsdg::port>(nMemoryStates, {MemoryStateType::Create()});
 	}
 };
 
 /*
-	FIXME: This function should be in jive and not in jlm.
+	FIXME: This function should be in librvsdg and not in libllvm.
 */
-static inline jive::node *
-input_node(const jive::input * input)
+static inline jlm::rvsdg::node *
+input_node(const jlm::rvsdg::input * input)
 {
-	auto ni = dynamic_cast<const jive::node_input*>(input);
+	auto ni = dynamic_cast<const jlm::rvsdg::node_input*>(input);
 	return ni != nullptr ? ni->node() : nullptr;
 }
 

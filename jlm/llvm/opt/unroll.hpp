@@ -11,10 +11,6 @@
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/util/common.hpp>
 
-namespace jive {
-	class bitvalue_repr;
-}
-
 namespace jlm {
 
 class RvsdgModule;
@@ -59,11 +55,11 @@ public:
 private:
 	inline
 	unrollinfo(
-		jive::node * cmpnode,
-		jive::node * armnode,
-		jive::argument * idv,
-		jive::argument * step,
-		jive::argument * end)
+		jlm::rvsdg::node * cmpnode,
+		jlm::rvsdg::node * armnode,
+		jlm::rvsdg::argument * idv,
+		jlm::rvsdg::argument * step,
+		jlm::rvsdg::argument * end)
 	: end_(end)
 	, step_(step)
 	, cmpnode_(cmpnode)
@@ -82,12 +78,12 @@ public:
 	unrollinfo &
 	operator=(unrollinfo&&) = delete;
 
-	inline jive::theta_node *
+	inline jlm::rvsdg::theta_node *
 	theta() const noexcept
 	{
 		auto node = idv()->region()->node();
-		JLM_ASSERT(jive::is<jive::theta_op>(node));
-		return static_cast<jive::theta_node*>(node);
+		JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::theta_op>(node));
+		return static_cast<jlm::rvsdg::theta_node*>(node);
 	}
 
 	inline bool
@@ -114,70 +110,70 @@ public:
 		return has_known_init() && has_known_step() && has_known_end();
 	}
 
-	std::unique_ptr<jive::bitvalue_repr>
+	std::unique_ptr<jlm::rvsdg::bitvalue_repr>
 	niterations() const noexcept;
 
-	inline jive::node *
+	inline jlm::rvsdg::node *
 	cmpnode() const noexcept
 	{
 		return cmpnode_;
 	}
 
-	inline const jive::simple_op &
+	inline const jlm::rvsdg::simple_op &
 	cmpoperation() const noexcept
 	{
-		return *static_cast<const jive::simple_op*>(&cmpnode()->operation());
+		return *static_cast<const jlm::rvsdg::simple_op*>(&cmpnode()->operation());
 	}
 
-	inline jive::node *
+	inline jlm::rvsdg::node *
 	armnode() const noexcept
 	{
 		return armnode_;
 	}
 
-	inline const jive::simple_op &
+	inline const jlm::rvsdg::simple_op &
 	armoperation() const noexcept
 	{
-		return *static_cast<const jive::simple_op*>(&armnode()->operation());
+		return *static_cast<const jlm::rvsdg::simple_op*>(&armnode()->operation());
 	}
 
-	inline jive::argument *
+	inline jlm::rvsdg::argument *
 	idv() const noexcept
 	{
 		return idv_;
 	}
 
-	inline jive::output *
+	inline jlm::rvsdg::output *
 	init() const noexcept
 	{
 		return idv()->input()->origin();
 	}
 
-	inline const jive::bitvalue_repr *
+	inline const jlm::rvsdg::bitvalue_repr *
 	init_value() const noexcept
 	{
 		return value(init());
 	}
 
-	inline jive::argument *
+	inline jlm::rvsdg::argument *
 	step() const noexcept
 	{
 		return step_;
 	}
 
-	inline const jive::bitvalue_repr *
+	inline const jlm::rvsdg::bitvalue_repr *
 	step_value() const noexcept
 	{
 		return value(step());
 	}
 
-	inline jive::argument *
+	inline jlm::rvsdg::argument *
 	end() const noexcept
 	{
 		return end_;
 	}
 
-	inline const jive::bitvalue_repr *
+	inline const jlm::rvsdg::bitvalue_repr *
 	end_value() const noexcept
 	{
 		return value(end());
@@ -186,57 +182,57 @@ public:
 	inline bool
 	is_additive() const noexcept
 	{
-		return jive::is<jive::bitadd_op>(armnode());
+		return jlm::rvsdg::is<jlm::rvsdg::bitadd_op>(armnode());
 	}
 
 	inline bool
 	is_subtractive() const noexcept
 	{
-		return jive::is<jive::bitsub_op>(armnode());
+		return jlm::rvsdg::is<jlm::rvsdg::bitsub_op>(armnode());
 	}
 
 	inline size_t
 	nbits() const noexcept
 	{
-		JLM_ASSERT(dynamic_cast<const jive::bitcompare_op*>(&cmpnode()->operation()));
-		return static_cast<const jive::bitcompare_op*>(&cmpnode()->operation())->type().nbits();
+		JLM_ASSERT(dynamic_cast<const jlm::rvsdg::bitcompare_op*>(&cmpnode()->operation()));
+		return static_cast<const jlm::rvsdg::bitcompare_op*>(&cmpnode()->operation())->type().nbits();
 	}
 
-	inline jive::bitvalue_repr
+	inline jlm::rvsdg::bitvalue_repr
 	remainder(size_t factor) const noexcept
 	{
 	  return niterations()->umod({nbits(), (int64_t)factor});
 	}
 
 	static std::unique_ptr<unrollinfo>
-	create(jive::theta_node * theta);
+	create(jlm::rvsdg::theta_node * theta);
 
 private:
 	inline bool
-	is_known(jive::output * output) const noexcept
+	is_known(jlm::rvsdg::output * output) const noexcept
 	{
 		auto p = producer(output);
 		if (!p) return false;
 
-		auto op = dynamic_cast<const jive::bitconstant_op*>(&p->operation());
+		auto op = dynamic_cast<const jlm::rvsdg::bitconstant_op*>(&p->operation());
 		return op && op->value().is_known();
 	}
 
-	inline const jive::bitvalue_repr *
-	value(jive::output * output) const noexcept
+	inline const jlm::rvsdg::bitvalue_repr *
+	value(jlm::rvsdg::output * output) const noexcept
 	{
 		if (!is_known(output))
 			return nullptr;
 
 		auto p = producer(output);
-		return &static_cast<const jive::bitconstant_op*>(&p->operation())->value();
+		return &static_cast<const jlm::rvsdg::bitconstant_op*>(&p->operation())->value();
 	}
 
-	jive::argument * end_;
-	jive::argument * step_;
-	jive::node * cmpnode_;
-	jive::node * armnode_;
-	jive::argument * idv_;
+	jlm::rvsdg::argument * end_;
+	jlm::rvsdg::argument * step_;
+	jlm::rvsdg::node * cmpnode_;
+	jlm::rvsdg::node * armnode_;
+	jlm::rvsdg::argument * idv_;
 };
 
 
@@ -248,7 +244,7 @@ private:
 * body is duplicated in the unrolled loop.
 */
 void
-unroll(jive::theta_node * node, size_t factor);
+unroll(jlm::rvsdg::theta_node * node, size_t factor);
 
 }
 

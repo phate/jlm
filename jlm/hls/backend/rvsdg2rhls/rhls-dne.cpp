@@ -59,12 +59,12 @@ jlm::hls::remove_unused_loop_inputs(hls::loop_node *ln) {
 }
 
 bool
-jlm::hls::dne(jive::region *sr) {
+jlm::hls::dne(jlm::rvsdg::region *sr) {
 	bool any_changed = false;
 	bool changed;
 	do {
 		changed = false;
-		for (auto &node : jive::bottomup_traverser(sr)) {
+		for (auto &node : jlm::rvsdg::bottomup_traverser(sr)) {
 			if (!node->has_users()) {
 				remove(node);
 				changed = true;

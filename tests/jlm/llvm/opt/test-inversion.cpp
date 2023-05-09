@@ -29,17 +29,17 @@ test1()
 	auto y = graph.add_import({vt, "y"});
 	auto z = graph.add_import({vt, "z"});
 
-	auto theta = jive::theta_node::create(graph.root());
+	auto theta = jlm::rvsdg::theta_node::create(graph.root());
 
 	auto lvx = theta->add_loopvar(x);
 	auto lvy = theta->add_loopvar(y);
 	theta->add_loopvar(z);
 
 	auto a = jlm::create_testop(theta->subregion(), {lvx->argument(), lvy->argument()},
-		{&jive::bit1})[0];
-	auto predicate = jive::match(1, {{1, 0}}, 1, 2, a);
+		{&jlm::rvsdg::bit1})[0];
+	auto predicate = jlm::rvsdg::match(1, {{1, 0}}, 1, 2, a);
 
-	auto gamma = jive::gamma_node::create(predicate, 2);
+	auto gamma = jlm::rvsdg::gamma_node::create(predicate, 2);
 
 	auto evx = gamma->add_entryvar(lvx->argument());
 	auto evy = gamma->add_entryvar(lvy->argument());
@@ -57,14 +57,14 @@ test1()
 	auto ex2 = graph.add_export(theta->output(1), {theta->output(1)->type(), "y"});
 	auto ex3 = graph.add_export(theta->output(2), {theta->output(2)->type(), "z"});
 
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 	jlm::tginversion tginversion;
 	tginversion.run(rm, statisticsCollector);
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 
-	assert(jive::is<jive::gamma_op>(jive::node_output::node(ex1->origin())));
-	assert(jive::is<jive::gamma_op>(jive::node_output::node(ex2->origin())));
-	assert(jive::is<jive::gamma_op>(jive::node_output::node(ex3->origin())));
+	assert(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(jlm::rvsdg::node_output::node(ex1->origin())));
+	assert(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(jlm::rvsdg::node_output::node(ex2->origin())));
+	assert(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(jlm::rvsdg::node_output::node(ex3->origin())));
 }
 
 static inline void
@@ -77,15 +77,15 @@ test2()
 
 	auto x = graph.add_import({vt, "x"});
 
-	auto theta = jive::theta_node::create(graph.root());
+	auto theta = jlm::rvsdg::theta_node::create(graph.root());
 
 	auto lv1 = theta->add_loopvar(x);
 
-	auto n1 = jlm::create_testop(theta->subregion(), {lv1->argument()}, {&jive::bit1})[0];
+	auto n1 = jlm::create_testop(theta->subregion(), {lv1->argument()}, {&jlm::rvsdg::bit1})[0];
 	auto n2 = jlm::create_testop(theta->subregion(), {lv1->argument()}, {&vt})[0];
-	auto predicate = jive::match(1, {{1, 0}}, 1, 2, n1);
+	auto predicate = jlm::rvsdg::match(1, {{1, 0}}, 1, 2, n1);
 
-	auto gamma = jive::gamma_node::create(predicate, 2);
+	auto gamma = jlm::rvsdg::gamma_node::create(predicate, 2);
 
 	auto ev1 = gamma->add_entryvar(n1);
 	auto ev2 = gamma->add_entryvar(lv1->argument());
@@ -101,12 +101,12 @@ test2()
 
 	auto ex = graph.add_export(theta->output(0), {theta->output(0)->type(), "x"});
 
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 	jlm::tginversion tginversion;
 	tginversion.run(rm, statisticsCollector);
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 
-	assert(jive::is<jive::gamma_op>(jive::node_output::node(ex->origin())));
+	assert(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(jlm::rvsdg::node_output::node(ex->origin())));
 }
 
 static int

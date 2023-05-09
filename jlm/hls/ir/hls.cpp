@@ -5,11 +5,11 @@
 
 #include <jlm/hls/ir/hls.hpp>
 
-jive::structural_output *jlm::hls::loop_node::add_loopvar(jive::output *origin, jive::output **buffer) {
-    auto input = jive::structural_input::create(this, origin, origin->type());
-    auto output = jive::structural_output::create(this, origin->type());
+jlm::rvsdg::structural_output *jlm::hls::loop_node::add_loopvar(jlm::rvsdg::output *origin, jlm::rvsdg::output **buffer) {
+    auto input = jlm::rvsdg::structural_input::create(this, origin, origin->type());
+    auto output = jlm::rvsdg::structural_output::create(this, origin->type());
 
-    auto argument_in = jive::argument::create(subregion(), input, origin->type());
+    auto argument_in = jlm::rvsdg::argument::create(subregion(), input, origin->type());
     auto argument_loop = add_backedge(origin->type());
 
     auto mux = hls::mux_op::create(*predicate_buffer(), {argument_in, argument_loop}, false, true)[0];
@@ -18,29 +18,29 @@ jive::structural_output *jlm::hls::loop_node::add_loopvar(jive::output *origin, 
     if (buffer != nullptr) {
         *buffer = buf;
     }
-    jive::result::create(subregion(), branch[0], output, origin->type());
+    jlm::rvsdg::result::create(subregion(), branch[0], output, origin->type());
     auto result_loop = argument_loop->result();
     result_loop->divert_to(branch[1]);
     return output;
 }
 
-jlm::hls::loop_node *jlm::hls::loop_node::copy(jive::region *region, jive::substitution_map &smap) const {
-    auto nf = graph()->node_normal_form(typeid(jive::operation));
+jlm::hls::loop_node *jlm::hls::loop_node::copy(jlm::rvsdg::region *region, jlm::rvsdg::substitution_map &smap) const {
+    auto nf = graph()->node_normal_form(typeid(jlm::rvsdg::operation));
     nf->set_mutable(false);
 
-    jive::substitution_map rmap;
+    jlm::rvsdg::substitution_map rmap;
     auto loop = create(region, false);
 
     for (size_t i = 0; i < ninputs(); ++i) {
         auto in_origin = smap.lookup(input(i)->origin());
-        auto inp = jive::structural_input::create(loop, in_origin, in_origin->type());
+        auto inp = jlm::rvsdg::structural_input::create(loop, in_origin, in_origin->type());
         rmap.insert(input(i), loop->input(i));
         auto oarg = input(i)->arguments.begin().ptr();
-        auto narg = jive::argument::create(loop->subregion(), inp, oarg->port());
+        auto narg = jlm::rvsdg::argument::create(loop->subregion(), inp, oarg->port());
         rmap.insert(oarg, narg);
     }
     for (size_t i = 0; i < noutputs(); ++i) {
-        auto out = jive::structural_output::create(loop, output(i)->type());
+        auto out = jlm::rvsdg::structural_output::create(loop, output(i)->type());
         rmap.insert(output(i), out);
         smap.insert(output(i), out);
     }
@@ -66,13 +66,13 @@ jlm::hls::loop_node *jlm::hls::loop_node::copy(jive::region *region, jive::subst
         auto outp = output(i);
         auto res = outp->results.begin().ptr();
         auto origin = rmap.lookup(res->origin());
-        jive::result::create(loop->subregion(), origin, loop->output(i), res->port());
+        jlm::rvsdg::result::create(loop->subregion(), origin, loop->output(i), res->port());
     }
     nf->set_mutable(true);
     return loop;
 }
 
-jlm::hls::backedge_argument *jlm::hls::loop_node::add_backedge(const jive::type &type) {
+jlm::hls::backedge_argument *jlm::hls::loop_node::add_backedge(const jlm::rvsdg::type &type) {
     auto argument_loop = backedge_argument::create(subregion(), type);
     auto result_loop = backedge_result::create(argument_loop);
     argument_loop->result_ = result_loop;
@@ -80,19 +80,19 @@ jlm::hls::backedge_argument *jlm::hls::loop_node::add_backedge(const jive::type 
     return argument_loop;
 }
 
-jlm::hls::loop_node *jlm::hls::loop_node::create(jive::region *parent, bool init) {
+jlm::hls::loop_node *jlm::hls::loop_node::create(jlm::rvsdg::region *parent, bool init) {
     auto ln = new loop_node(parent);
     if (init) {
-        auto predicate = jive::control_false(ln->subregion());
-        auto pred_arg = ln->add_backedge(jive::ctltype(2));
+        auto predicate = jlm::rvsdg::control_false(ln->subregion());
+        auto pred_arg = ln->add_backedge(jlm::rvsdg::ctltype(2));
         pred_arg->result()->divert_to(predicate);
         ln->_predicate_buffer = hls::predicate_buffer_op::create(*pred_arg)[0];
     }
     return ln;
 }
 
-void jlm::hls::loop_node::set_predicate(jive::output *p) {
-    auto node = jive::node_output::node(predicate()->origin());
+void jlm::hls::loop_node::set_predicate(jlm::rvsdg::output *p) {
+    auto node = jlm::rvsdg::node_output::node(predicate()->origin());
     predicate()->origin()->divert_users(p);
     if (node && !node->has_users())
         remove(node);

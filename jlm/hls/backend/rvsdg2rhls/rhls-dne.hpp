@@ -19,7 +19,7 @@ namespace jlm {
 
 
 		bool
-		dne(jive::region *sr);
+		dne(jlm::rvsdg::region *sr);
 
 		void
 		dne(jlm::RvsdgModule &rm);

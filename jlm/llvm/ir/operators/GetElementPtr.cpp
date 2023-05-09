@@ -40,10 +40,10 @@ GetElementPtrOperation::debug_string() const
   return "GetElementPtr";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<jlm::rvsdg::operation>
 GetElementPtrOperation::copy() const
 {
-  return std::unique_ptr<jive::operation>(new GetElementPtrOperation(*this));
+  return std::unique_ptr<jlm::rvsdg::operation>(new GetElementPtrOperation(*this));
 }
 
 }

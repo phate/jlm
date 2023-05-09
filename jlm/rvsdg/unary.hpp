@@ -12,7 +12,8 @@
 #include <jlm/rvsdg/simple-normal-form.hpp>
 #include <jlm/util/common.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 typedef size_t unop_reduction_path_t;
 
@@ -23,17 +24,17 @@ public:
 
 	unary_normal_form(
 		const std::type_info & operator_class,
-		jive::node_normal_form * parent,
-		jive::graph * graph);
+		jlm::rvsdg::node_normal_form * parent,
+		jlm::rvsdg::graph * graph);
 
 	virtual bool
-	normalize_node(jive::node * node) const override;
+	normalize_node(jlm::rvsdg::node * node) const override;
 
-	virtual std::vector<jive::output*>
+	virtual std::vector<jlm::rvsdg::output*>
 	normalized_create(
-		jive::region * region,
-		const jive::simple_op & op,
-		const std::vector<jive::output*> & arguments) const override;
+		jlm::rvsdg::region * region,
+		const jlm::rvsdg::simple_op & op,
+		const std::vector<jlm::rvsdg::output*> & arguments) const override;
 
 	virtual void
 	set_reducible(bool enable);
@@ -56,23 +57,23 @@ public:
 
 	inline
 	unary_op(
-		const jive::port & operand,
-		const jive::port & result)
+		const jlm::rvsdg::port & operand,
+		const jlm::rvsdg::port & result)
 	: simple_op({operand}, {result})
 	{}
 
 	virtual unop_reduction_path_t
-	can_reduce_operand(const jive::output * arg) const noexcept = 0;
+	can_reduce_operand(const jlm::rvsdg::output * arg) const noexcept = 0;
 
-	virtual jive::output *
+	virtual jlm::rvsdg::output *
 	reduce_operand(
 		unop_reduction_path_t path,
-		jive::output * arg) const = 0;
+		jlm::rvsdg::output * arg) const = 0;
 
-	static jive::unary_normal_form *
-	normal_form(jive::graph * graph) noexcept
+	static jlm::rvsdg::unary_normal_form *
+	normal_form(jlm::rvsdg::graph * graph) noexcept
 	{
-		return static_cast<jive::unary_normal_form*>(graph->node_normal_form(typeid(unary_op)));
+		return static_cast<jlm::rvsdg::unary_normal_form*>(graph->node_normal_form(typeid(unary_op)));
 	}
 };
 

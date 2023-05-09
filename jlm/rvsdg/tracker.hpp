@@ -14,7 +14,8 @@
 
 #include <jlm/util/callbacks.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 static const size_t tracker_nodestate_none = (size_t) -1;
 
@@ -25,7 +26,7 @@ class tracker_depth_state;
 class tracker_nodestate;
 
 bool
-has_active_trackers(const jive::graph * graph);
+has_active_trackers(const jlm::rvsdg::graph * graph);
 
 /* Track states of nodes within the graph. Each node can logically be in
  * one of the numbered states, plus another "initial" state. All nodes are
@@ -34,55 +35,55 @@ struct tracker {
 public:
 	~tracker() noexcept;
 	
-	tracker(jive::graph * graph, size_t nstates);
+	tracker(jlm::rvsdg::graph * graph, size_t nstates);
 
 	/* get state of the node */
 	ssize_t
-	get_nodestate(jive::node * node);
+	get_nodestate(jlm::rvsdg::node * node);
 
 	/* set state of the node */
 	void
-	set_nodestate(jive::node * node, size_t state);
+	set_nodestate(jlm::rvsdg::node * node, size_t state);
 
 	/* get one of the top nodes for the given state */
-	jive::node *
+	jlm::rvsdg::node *
 	peek_top(size_t state) const;
 
 	/* get one of the bottom nodes for the given state */
-	jive::node *
+	jlm::rvsdg::node *
 	peek_bottom(size_t state) const;
 
-	inline jive::graph *
+	inline jlm::rvsdg::graph *
 	graph() const noexcept
 	{
 		return graph_;
 	}
 
 private:
-	jive::tracker_nodestate *
-	nodestate(jive::node * node);
+	jlm::rvsdg::tracker_nodestate *
+	nodestate(jlm::rvsdg::node * node);
 
 	void
-	node_depth_change(jive::node * node, size_t old_depth);
+	node_depth_change(jlm::rvsdg::node * node, size_t old_depth);
 
 	void
-	node_destroy(jive::node * node);
+	node_destroy(jlm::rvsdg::node * node);
 
-	jive::graph * graph_;
+	jlm::rvsdg::graph * graph_;
 
 	/* FIXME: need RAII idiom for state reservation */
 	std::vector<std::unique_ptr<tracker_depth_state>> states_;
 
 	jlm::util::callback depth_callback_, destroy_callback_;
 
-	std::unordered_map<jive::node*, std::unique_ptr<jive::tracker_nodestate>> nodestates_;
+	std::unordered_map<jlm::rvsdg::node*, std::unique_ptr<jlm::rvsdg::tracker_nodestate>> nodestates_;
 };
 
 class tracker_nodestate {
 	friend tracker;
 public:
 	inline
-	tracker_nodestate(jive::node * node)
+	tracker_nodestate(jlm::rvsdg::node * node)
 	: state_(tracker_nodestate_none)
 	, node_(node)
 	{}
@@ -97,7 +98,7 @@ public:
 	tracker_nodestate &
 	operator=(tracker_nodestate&&) = delete;
 
-	inline jive::node *
+	inline jlm::rvsdg::node *
 	node() const noexcept
 	{
 		return node_;
@@ -111,7 +112,7 @@ public:
 
 private:
 	size_t state_;
-	jive::node * node_;
+	jlm::rvsdg::node * node_;
 };
 
 }

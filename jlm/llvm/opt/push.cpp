@@ -26,16 +26,16 @@ public:
 	{}
 
 	void
-	start(const jive::graph & graph) noexcept
+	start(const jlm::rvsdg::graph & graph) noexcept
 	{
-		ninputs_before_ = jive::ninputs(graph.root());
+		ninputs_before_ = jlm::rvsdg::ninputs(graph.root());
 		timer_.start();
 	}
 
 	void
-	end(const jive::graph & graph) noexcept
+	end(const jlm::rvsdg::graph & graph) noexcept
 	{
-		ninputs_after_ = jive::ninputs(graph.root());
+		ninputs_after_ = jlm::rvsdg::ninputs(graph.root());
 		timer_.stop();
 	}
 
@@ -62,7 +62,7 @@ private:
 class worklist {
 public:
 	inline void
-	push_back(jive::node * node) noexcept
+	push_back(jlm::rvsdg::node * node) noexcept
 	{
 		if (set_.find(node) != set_.end())
 			return;
@@ -71,7 +71,7 @@ public:
 		set_.insert(node);
 	}
 
-	inline jive::node *
+	inline jlm::rvsdg::node *
 	pop_front() noexcept
 	{
 		JLM_ASSERT(!empty());
@@ -89,38 +89,38 @@ public:
 	}
 
 private:
-	std::deque<jive::node*> queue_;
-	std::unordered_set<jive::node*> set_;
+	std::deque<jlm::rvsdg::node*> queue_;
+	std::unordered_set<jlm::rvsdg::node*> set_;
 };
 
 static bool
-has_side_effects(const jive::node * node)
+has_side_effects(const jlm::rvsdg::node * node)
 {
 	for (size_t n = 0; n < node->noutputs(); n++) {
-		if (dynamic_cast<const jive::statetype*>(&node->output(n)->type()))
+		if (dynamic_cast<const jlm::rvsdg::statetype*>(&node->output(n)->type()))
 			return true;
 	}
 
 	return false;
 }
 
-static std::vector<jive::argument*>
-copy_from_gamma(jive::node * node, size_t r)
+static std::vector<jlm::rvsdg::argument*>
+copy_from_gamma(jlm::rvsdg::node * node, size_t r)
 {
-	JLM_ASSERT(jive::is<jive::gamma_op>(node->region()->node()));
+	JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(node->region()->node()));
 	JLM_ASSERT(node->depth() == 0);
 
 	auto target = node->region()->node()->region();
-	auto gamma = static_cast<jive::gamma_node*>(node->region()->node());
+	auto gamma = static_cast<jlm::rvsdg::gamma_node*>(node->region()->node());
 
-	std::vector<jive::output*> operands;
+	std::vector<jlm::rvsdg::output*> operands;
 	for (size_t n = 0; n < node->ninputs(); n++) {
-		JLM_ASSERT(dynamic_cast<const jive::argument*>(node->input(n)->origin()));
-		auto argument = static_cast<const jive::argument*>(node->input(n)->origin());
+		JLM_ASSERT(dynamic_cast<const jlm::rvsdg::argument*>(node->input(n)->origin()));
+		auto argument = static_cast<const jlm::rvsdg::argument*>(node->input(n)->origin());
 		operands.push_back(argument->input()->origin());
 	}
 
-	std::vector<jive::argument*> arguments;
+	std::vector<jlm::rvsdg::argument*> arguments;
 	auto copy = node->copy(target, operands);
 	for (size_t n = 0; n < copy->noutputs(); n++) {
 		auto ev = gamma->add_entryvar(copy->output(n));
@@ -131,23 +131,23 @@ copy_from_gamma(jive::node * node, size_t r)
 	return arguments;
 }
 
-static std::vector<jive::argument*>
-copy_from_theta(jive::node * node)
+static std::vector<jlm::rvsdg::argument*>
+copy_from_theta(jlm::rvsdg::node * node)
 {
-	JLM_ASSERT(jive::is<jive::theta_op>(node->region()->node()));
+	JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::theta_op>(node->region()->node()));
 	JLM_ASSERT(node->depth() == 0);
 
 	auto target = node->region()->node()->region();
-	auto theta = static_cast<jive::theta_node*>(node->region()->node());
+	auto theta = static_cast<jlm::rvsdg::theta_node*>(node->region()->node());
 
-	std::vector<jive::output*> operands;
+	std::vector<jlm::rvsdg::output*> operands;
 	for (size_t n = 0; n < node->ninputs(); n++) {
-		JLM_ASSERT(dynamic_cast<const jive::argument*>(node->input(n)->origin()));
-		auto argument = static_cast<const jive::argument*>(node->input(n)->origin());
+		JLM_ASSERT(dynamic_cast<const jlm::rvsdg::argument*>(node->input(n)->origin()));
+		auto argument = static_cast<const jlm::rvsdg::argument*>(node->input(n)->origin());
 		operands.push_back(argument->input()->origin());
 	}
 
-	std::vector<jive::argument*> arguments;
+	std::vector<jlm::rvsdg::argument*> arguments;
 	auto copy = node->copy(target, operands);
 	for (size_t n = 0; n < copy->noutputs(); n++) {
 		auto lv = theta->add_loopvar(copy->output(n));
@@ -159,7 +159,7 @@ copy_from_theta(jive::node * node)
 }
 
 static bool
-is_gamma_top_pushable(const jive::node * node)
+is_gamma_top_pushable(const jlm::rvsdg::node * node)
 {
 	/*
 		FIXME: This is techically not fully correct. It is
@@ -173,7 +173,7 @@ is_gamma_top_pushable(const jive::node * node)
 }
 
 void
-push(jive::gamma_node * gamma)
+push(jlm::rvsdg::gamma_node * gamma)
 {
 	for (size_t r = 0; r < gamma->nsubregions(); r++) {
 		auto region = gamma->subregion(r);
@@ -218,15 +218,15 @@ push(jive::gamma_node * gamma)
 
 static bool
 is_theta_invariant(
-	const jive::node * node,
-	const std::unordered_set<jive::argument*> & invariants)
+	const jlm::rvsdg::node * node,
+	const std::unordered_set<jlm::rvsdg::argument*> & invariants)
 {
-	JLM_ASSERT(jive::is<jive::theta_op>(node->region()->node()));
+	JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::theta_op>(node->region()->node()));
 	JLM_ASSERT(node->depth() == 0);
 
 	for (size_t n = 0; n < node->ninputs(); n++) {
-		JLM_ASSERT(dynamic_cast<const jive::argument*>(node->input(n)->origin()));
-		auto argument = static_cast<jive::argument*>(node->input(n)->origin());
+		JLM_ASSERT(dynamic_cast<const jlm::rvsdg::argument*>(node->input(n)->origin()));
+		auto argument = static_cast<jlm::rvsdg::argument*>(node->input(n)->origin());
 		if (invariants.find(argument) == invariants.end())
 			return false;
 	}
@@ -235,7 +235,7 @@ is_theta_invariant(
 }
 
 void
-push_top(jive::theta_node * theta)
+push_top(jlm::rvsdg::theta_node * theta)
 {
 	auto subregion = theta->subregion();
 
@@ -246,7 +246,7 @@ push_top(jive::theta_node * theta)
 	}
 
 	/* collect loop invariant arguments */
-	std::unordered_set<jive::argument*> invariants;
+	std::unordered_set<jlm::rvsdg::argument*> invariants;
 	for (const auto & lv : *theta) {
 		if (lv->result()->origin() == lv->argument())
 			invariants.insert(lv->argument());
@@ -286,24 +286,24 @@ push_top(jive::theta_node * theta)
 }
 
 static bool
-is_invariant(const jive::argument * argument)
+is_invariant(const jlm::rvsdg::argument * argument)
 {
-	JLM_ASSERT(jive::is<jive::theta_op>(argument->region()->node()));
+	JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::theta_op>(argument->region()->node()));
 	return argument->region()->result(argument->index()+1)->origin() == argument;
 }
 
 static bool
-is_movable_store(jive::node * node)
+is_movable_store(jlm::rvsdg::node * node)
 {
-	JLM_ASSERT(jive::is<jive::theta_op>(node->region()->node()));
-	JLM_ASSERT(jive::is<StoreOperation>(node));
+	JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::theta_op>(node->region()->node()));
+	JLM_ASSERT(jlm::rvsdg::is<StoreOperation>(node));
 
-	auto address = dynamic_cast<jive::argument*>(node->input(0)->origin());
+	auto address = dynamic_cast<jlm::rvsdg::argument*>(node->input(0)->origin());
 	if (!address || !is_invariant(address) || address->nusers() != 2)
 		return false;
 
 	for (size_t n = 2; n < node->ninputs(); n++) {
-		auto argument = dynamic_cast<jive::argument*>(node->input(n)->origin());
+		auto argument = dynamic_cast<jlm::rvsdg::argument*>(node->input(n)->origin());
 		if (!argument || argument->nusers() > 1)
 			return false;
 	}
@@ -313,7 +313,7 @@ is_movable_store(jive::node * node)
 		if (output->nusers() != 1)
 			return false;
 
-		if (!dynamic_cast<jive::result*>(*output->begin()))
+		if (!dynamic_cast<jlm::rvsdg::result*>(*output->begin()))
 			return false;
 	}
 
@@ -321,13 +321,13 @@ is_movable_store(jive::node * node)
 }
 
 static void
-pushout_store(jive::node * storenode)
+pushout_store(jlm::rvsdg::node * storenode)
 {
-	JLM_ASSERT(jive::is<jive::theta_op>(storenode->region()->node()));
-	JLM_ASSERT(jive::is<StoreOperation>(storenode) && is_movable_store(storenode));
-	auto theta = static_cast<jive::theta_node*>(storenode->region()->node());
+	JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::theta_op>(storenode->region()->node()));
+	JLM_ASSERT(jlm::rvsdg::is<StoreOperation>(storenode) && is_movable_store(storenode));
+	auto theta = static_cast<jlm::rvsdg::theta_node*>(storenode->region()->node());
 	auto storeop = static_cast<const jlm::StoreOperation*>(&storenode->operation());
-	auto oaddress = static_cast<jive::argument*>(storenode->input(0)->origin());
+	auto oaddress = static_cast<jlm::rvsdg::argument*>(storenode->input(0)->origin());
 	auto ovalue = storenode->input(1)->origin();
 
 	/* insert new value for store */
@@ -335,11 +335,11 @@ pushout_store(jive::node * storenode)
 	nvalue->result()->divert_to(ovalue);
 
 	/* collect store operands */
-	std::vector<jive::output*> states;
+	std::vector<jlm::rvsdg::output*> states;
 	auto address = oaddress->input()->origin();
 	for (size_t n = 0; n < storenode->noutputs(); n++) {
 		JLM_ASSERT(storenode->output(n)->nusers() == 1);
-		auto result = static_cast<jive::result*>(*storenode->output(n)->begin());
+		auto result = static_cast<jlm::rvsdg::result*>(*storenode->output(n)->begin());
 		result->divert_to(storenode->input(n+2)->origin());
 		states.push_back(result->output());
 	}
@@ -347,9 +347,9 @@ pushout_store(jive::node * storenode)
 	/* create new store and redirect theta output users */
 	auto nstates = StoreNode::Create(address, nvalue, states, storeop->GetAlignment());
 	for (size_t n = 0; n < states.size(); n++) {
-		std::unordered_set<jive::input*> users;
+		std::unordered_set<jlm::rvsdg::input*> users;
 		for (const auto & user : *states[n]) {
-			if (input_node(user) != jive::node_output::node(nstates[0]))
+			if (input_node(user) != jlm::rvsdg::node_output::node(nstates[0]))
 				users.insert(user);
 		}
 
@@ -361,11 +361,11 @@ pushout_store(jive::node * storenode)
 }
 
 void
-push_bottom(jive::theta_node * theta)
+push_bottom(jlm::rvsdg::theta_node * theta)
 {
 	for (const auto & lv : *theta) {
-		auto storenode = jive::node_output::node(lv->result()->origin());
-		if (jive::is<StoreOperation>(storenode) && is_movable_store(storenode)) {
+		auto storenode = jlm::rvsdg::node_output::node(lv->result()->origin());
+		if (jlm::rvsdg::is<StoreOperation>(storenode) && is_movable_store(storenode)) {
 			pushout_store(storenode);
 			break;
 		}
@@ -373,7 +373,7 @@ push_bottom(jive::theta_node * theta)
 }
 
 void
-push(jive::theta_node * theta)
+push(jlm::rvsdg::theta_node * theta)
 {
 	bool done = false;
 	while (!done) {
@@ -386,18 +386,18 @@ push(jive::theta_node * theta)
 }
 
 static void
-push(jive::region * region)
+push(jlm::rvsdg::region * region)
 {
-	for (auto node : jive::topdown_traverser(region)) {
-		if (auto strnode = dynamic_cast<const jive::structural_node*>(node)) {
+	for (auto node : jlm::rvsdg::topdown_traverser(region)) {
+		if (auto strnode = dynamic_cast<const jlm::rvsdg::structural_node*>(node)) {
 			for (size_t n = 0; n < strnode->nsubregions(); n++)
 				push(strnode->subregion(n));
 		}
 
-		if (auto gamma = dynamic_cast<jive::gamma_node*>(node))
+		if (auto gamma = dynamic_cast<jlm::rvsdg::gamma_node*>(node))
 			push(gamma);
 
-		if (auto theta = dynamic_cast<jive::theta_node*>(node))
+		if (auto theta = dynamic_cast<jlm::rvsdg::theta_node*>(node))
 			push(theta);
 	}
 }

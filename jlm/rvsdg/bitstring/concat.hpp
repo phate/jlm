@@ -13,9 +13,10 @@
 
 #include <vector>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
-class bitconcat_op final : public jive::binary_op {
+class bitconcat_op final : public jlm::rvsdg::binary_op {
 public:
 	virtual
 	~bitconcat_op() noexcept;
@@ -26,38 +27,38 @@ public:
 	{}
 
 	virtual bool
-	operator==(const jive::operation & other) const noexcept override;
+	operator==(const jlm::rvsdg::operation & other) const noexcept override;
 
 	virtual binop_reduction_path_t
 	can_reduce_operand_pair(
-		const jive::output * arg1,
-		const jive::output * arg2) const noexcept override;
+		const jlm::rvsdg::output * arg1,
+		const jlm::rvsdg::output * arg2) const noexcept override;
 
-	virtual jive::output *
+	virtual jlm::rvsdg::output *
 	reduce_operand_pair(
 		binop_reduction_path_t path,
-		jive::output * arg1,
-		jive::output * arg2) const override;
+		jlm::rvsdg::output * arg1,
+		jlm::rvsdg::output * arg2) const override;
 
-	virtual enum jive::binary_op::flags
+	virtual enum jlm::rvsdg::binary_op::flags
 	flags() const noexcept override;
 
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
 private:
 	static bittype
 	aggregate_arguments(const std::vector<bittype> & types) noexcept;
 
-	static std::vector<jive::port>
+	static std::vector<jlm::rvsdg::port>
 	to_ports(const std::vector<bittype> & types);
 };
 
-jive::output *
-bitconcat(const std::vector<jive::output*> & operands);
+jlm::rvsdg::output *
+bitconcat(const std::vector<jlm::rvsdg::output*> & operands);
 
 }
 

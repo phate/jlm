@@ -13,7 +13,8 @@
 #include <string>
 #include <vector>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 class graph;
 class node;
@@ -30,9 +31,9 @@ public:
 	virtual
 	~port();
 
-	port(const jive::type & type);
+	port(const jlm::rvsdg::type & type);
 
-	port(std::unique_ptr<jive::type> type);
+	port(std::unique_ptr<jlm::rvsdg::type> type);
 
 	inline
 	port(const port & other)
@@ -75,7 +76,7 @@ public:
 		return !(*this == other);
 	}
 
-	inline const jive::type &
+	inline const jlm::rvsdg::type &
 	type() const noexcept
 	{
 		return *type_;
@@ -85,7 +86,7 @@ public:
 	copy() const;
 
 private:
-	std::unique_ptr<jive::type> type_;
+	std::unique_ptr<jlm::rvsdg::type> type_;
 };
 
 /* operation */
@@ -100,7 +101,7 @@ public:
 	virtual std::string
 	debug_string() const = 0;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const = 0;
 
 	inline bool
@@ -109,15 +110,15 @@ public:
 		return ! (*this == other);
 	}
 
-	static jive::node_normal_form *
-	normal_form(jive::graph * graph) noexcept;
+	static jlm::rvsdg::node_normal_form *
+	normal_form(jlm::rvsdg::graph * graph) noexcept;
 };
 
 template <class T> static inline bool
-is(const jive::operation & operation) noexcept
+is(const jlm::rvsdg::operation & operation) noexcept
 {
-	static_assert(std::is_base_of<jive::operation, T>::value,
-		"Template parameter T must be derived from jive::operation.");
+	static_assert(std::is_base_of<jlm::rvsdg::operation, T>::value,
+		"Template parameter T must be derived from jlm::rvsdg::operation.");
 
 	return dynamic_cast<const T*>(&operation) != nullptr;
 }
@@ -131,8 +132,8 @@ public:
 
 	inline
 	simple_op(
-		const std::vector<jive::port> & operands,
-		const std::vector<jive::port> & results)
+		const std::vector<jlm::rvsdg::port> & operands,
+		const std::vector<jlm::rvsdg::port> & results)
 	: results_(results)
 	, operands_(operands)
 	{}
@@ -140,21 +141,21 @@ public:
 	size_t
 	narguments() const noexcept;
 
-	const jive::port &
+	const jlm::rvsdg::port &
 	argument(size_t index) const noexcept;
 
 	size_t
 	nresults() const noexcept;
 
-	const jive::port &
+	const jlm::rvsdg::port &
 	result(size_t index) const noexcept;
 
-	static jive::simple_normal_form *
-	normal_form(jive::graph * graph) noexcept;
+	static jlm::rvsdg::simple_normal_form *
+	normal_form(jlm::rvsdg::graph * graph) noexcept;
 
 private:
-	std::vector<jive::port> results_;
-	std::vector<jive::port> operands_;
+	std::vector<jlm::rvsdg::port> results_;
+	std::vector<jlm::rvsdg::port> operands_;
 };
 
 /* structural operation */
@@ -164,8 +165,8 @@ public:
 	virtual bool
 	operator==(const operation & other) const noexcept override;
 
-	static jive::structural_normal_form *
-	normal_form(jive::graph * graph) noexcept;
+	static jlm::rvsdg::structural_normal_form *
+	normal_form(jlm::rvsdg::graph * graph) noexcept;
 };
 
 }

@@ -8,7 +8,8 @@
 
 #include <stdexcept>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 uint64_t
 bitvalue_repr::to_uint() const

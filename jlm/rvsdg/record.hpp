@@ -11,7 +11,8 @@
 #include <jlm/rvsdg/type.hpp>
 #include <jlm/rvsdg/unary.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 /* declaration */
 
@@ -46,7 +47,7 @@ public:
 	}
 
 	void
-	append(const jive::valuetype & type)
+	append(const jlm::rvsdg::valuetype & type)
 	{
 		types_.push_back(type.copy());
 	}
@@ -68,15 +69,15 @@ public:
 	}
 
 private:
-	std::vector<std::unique_ptr<jive::type>> types_;
+	std::vector<std::unique_ptr<jlm::rvsdg::type>> types_;
 };
 
 void
-unregister_rcddeclarations(const jive::graph * graph);
+unregister_rcddeclarations(const jlm::rvsdg::graph * graph);
 
 /* record type */
 
-class rcdtype final : public jive::valuetype {
+class rcdtype final : public jlm::rvsdg::valuetype {
 public:
 	virtual
 	~rcdtype() noexcept;
@@ -96,9 +97,9 @@ public:
 	std::string debug_string() const override;
 
 	virtual bool
-	operator==(const jive::type & type) const noexcept override;
+	operator==(const jlm::rvsdg::type & type) const noexcept override;
 
-	virtual std::unique_ptr<jive::type>
+	virtual std::unique_ptr<jlm::rvsdg::type>
 	copy() const override;
 
 private:

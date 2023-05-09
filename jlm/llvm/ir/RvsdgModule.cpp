@@ -22,7 +22,7 @@ impport::operator==(const port & other) const noexcept
 	    && p->linkage() == linkage();
 }
 
-std::unique_ptr<jive::port>
+std::unique_ptr<jlm::rvsdg::port>
 impport::copy() const
 {
 	return std::unique_ptr<port>(new impport(*this));

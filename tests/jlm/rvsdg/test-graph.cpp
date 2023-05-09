@@ -14,7 +14,7 @@
 #include <jlm/rvsdg/view.hpp>
 
 static bool
-region_contains_node(const jive::region * region, const jive::node * n)
+region_contains_node(const jlm::rvsdg::region * region, const jlm::rvsdg::node * n)
 {
 	for (const auto & node : region->nodes) {
 		if (&node == n)
@@ -27,11 +27,11 @@ region_contains_node(const jive::region * region, const jive::node * n)
 static int
 test_recursive_prune()
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
 	jlm::valuetype t;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 	auto imp = graph.add_import({t, "i"});
 
 	auto n1 = jlm::test_op::create(graph.root(), {imp}, {&t});
@@ -50,9 +50,9 @@ test_recursive_prune()
 	graph.add_export(n2->output(0), {n2->output(0)->type(), "n2"});
 	graph.add_export(o1, {o1->type(), "n3"});
 
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 	graph.prune();
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(!region_contains_node(graph.root(), n1));
 	assert(region_contains_node(graph.root(), n2));
@@ -69,15 +69,15 @@ JLM_UNIT_TEST_REGISTER("rvsdg/test-graph_prune", test_recursive_prune)
 static int
 test_empty_graph_pruning(void)
 {
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	graph.prune();
 
 	assert(graph.root()->nnodes() == 0);
 
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	return 0;
 }
@@ -87,11 +87,11 @@ JLM_UNIT_TEST_REGISTER("rvsdg/test-empty_graph_pruning", test_empty_graph_prunin
 static int
 test_prune_replace(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
 	jlm::valuetype type;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 	auto n1 = jlm::test_op::create(graph.root(), {}, {&type});
 	auto n2 = jlm::test_op::create(graph.root(), {n1->output(0)}, {&type});
 	auto n3 = jlm::test_op::create(graph.root(), {n2->output(0)}, {&type});
@@ -116,11 +116,11 @@ JLM_UNIT_TEST_REGISTER("rvsdg/test-prune-replace", test_prune_replace)
 static int
 test_graph(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
 	jlm::valuetype type;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 	
 	auto n1 = jlm::test_op::create(graph.root(), {}, {&type});
 	assert(n1);

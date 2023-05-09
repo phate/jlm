@@ -15,11 +15,11 @@
 static void
 TestArgumentNodeMismatch()
 {
-  using namespace jive;
+  using namespace jlm::rvsdg;
 
   jlm::valuetype vt;
 
-  jive::graph graph;
+  jlm::rvsdg::graph graph;
   auto import = graph.add_import({vt, "import"});
 
   auto structuralNode1 = jlm::structural_node::create(graph.root(), 1);
@@ -43,11 +43,11 @@ TestArgumentNodeMismatch()
 static void
 TestResultNodeMismatch()
 {
-  using namespace jive;
+  using namespace jlm::rvsdg;
 
   jlm::valuetype vt;
 
-  jive::graph graph;
+  jlm::rvsdg::graph graph;
   auto import = graph.add_import({vt, "import"});
 
   auto structuralNode1 = jlm::structural_node::create(graph.root(), 1);
@@ -78,23 +78,23 @@ TestContainsMethod()
 
   valuetype vt;
 
-  jive::graph graph;
+  jlm::rvsdg::graph graph;
   auto import = graph.add_import({vt, "import"});
 
   auto structuralNode1 = structural_node::create(graph.root(), 1);
-  auto structuralInput1 = jive::structural_input::create(structuralNode1, import, vt);
-  auto regionArgument1 = jive::argument::create(structuralNode1->subregion(0), structuralInput1, vt);
+  auto structuralInput1 = jlm::rvsdg::structural_input::create(structuralNode1, import, vt);
+  auto regionArgument1 = jlm::rvsdg::argument::create(structuralNode1->subregion(0), structuralInput1, vt);
   unary_op::create(structuralNode1->subregion(0), {vt}, regionArgument1, {vt});
 
   auto structuralNode2 = jlm::structural_node::create(graph.root(), 1);
-  auto structuralInput2 = jive::structural_input::create(structuralNode2, import, vt);
-  auto regionArgument2 = jive::argument::create(structuralNode2->subregion(0), structuralInput2, vt);
+  auto structuralInput2 = jlm::rvsdg::structural_input::create(structuralNode2, import, vt);
+  auto regionArgument2 = jlm::rvsdg::argument::create(structuralNode2->subregion(0), structuralInput2, vt);
   binary_op::create({vt}, {vt}, regionArgument2, regionArgument2);
 
-  assert(jive::region::Contains<structural_op>(*graph.root(), false));
-  assert(jive::region::Contains<unary_op>(*graph.root(), true));
-  assert(jive::region::Contains<binary_op>(*graph.root(), true));
-  assert(!jive::region::Contains<test_op>(*graph.root(), true));
+  assert(jlm::rvsdg::region::Contains<structural_op>(*graph.root(), false));
+  assert(jlm::rvsdg::region::Contains<unary_op>(*graph.root(), true));
+  assert(jlm::rvsdg::region::Contains<binary_op>(*graph.root(), true));
+  assert(!jlm::rvsdg::region::Contains<test_op>(*graph.root(), true));
 }
 
 /**
@@ -103,7 +103,7 @@ TestContainsMethod()
 static void
 TestIsRootRegion()
 {
-  jive::graph graph;
+  jlm::rvsdg::graph graph;
 
   auto structuralNode = jlm::structural_node::create(graph.root(), 1);
 
@@ -117,16 +117,16 @@ TestIsRootRegion()
 static void
 TestNumRegions()
 {
-  using namespace jive;
+  using namespace jlm::rvsdg;
 
   {
-    jive::graph graph;
+    jlm::rvsdg::graph graph;
 
     assert(region::NumRegions(*graph.root()) == 1);
   }
 
   {
-    jive::graph graph;
+    jlm::rvsdg::graph graph;
     auto structuralNode = jlm::structural_node::create(graph.root(), 4);
     jlm::structural_node::create(structuralNode->subregion(0), 2);
     jlm::structural_node::create(structuralNode->subregion(3), 5);

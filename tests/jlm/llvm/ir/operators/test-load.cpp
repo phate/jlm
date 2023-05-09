@@ -20,9 +20,9 @@ test_load_alloca_reduction()
 	using namespace jlm;
 
 	MemoryStateType mt;
-	jive::bittype bt(32);
+	jlm::rvsdg::bittype bt(32);
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 	auto nf = LoadOperation::GetNormalForm(&graph);
 	nf->set_mutable(false);
 	nf->set_load_alloca_reducible(false);
@@ -31,22 +31,22 @@ test_load_alloca_reduction()
 
 	auto alloca1 = alloca_op::create(bt, size, 4);
 	auto alloca2 = alloca_op::create(bt, size, 4);
-	auto mux = jive::create_state_mux(mt, {alloca1[1]}, 1);
+	auto mux = jlm::rvsdg::create_state_mux(mt, {alloca1[1]}, 1);
 	auto value = LoadNode::Create(alloca1[0], {alloca1[1], alloca2[1], mux[0]}, bt, 4)[0];
 
 	auto ex = graph.add_export(value, {value->type(), "l"});
 
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 
 	nf->set_mutable(true);
 	nf->set_load_alloca_reducible(true);
 	graph.normalize();
 	graph.prune();
 
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 
-	auto node = jive::node_output::node(ex->origin());
-	assert(jive::is<LoadOperation>(node));
+	auto node = jlm::rvsdg::node_output::node(ex->origin());
+	assert(jlm::rvsdg::is<LoadOperation>(node));
 	assert(node->ninputs() == 3);
 	assert(node->input(1)->origin() == alloca1[1]);
 	assert(node->input(2)->origin() == mux[0]);
@@ -61,7 +61,7 @@ test_multiple_origin_reduction()
 	jlm::valuetype vt;
 	PointerType pt;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 	auto nf = LoadOperation::GetNormalForm(&graph);
 	nf->set_mutable(false);
 	nf->set_multiple_origin_reducible(false);
@@ -73,15 +73,15 @@ test_multiple_origin_reduction()
 
 	auto ex = graph.add_export(load, {load->type(), "l"});
 
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 
 	nf->set_mutable(true);
 	nf->set_multiple_origin_reducible(true);
 	graph.normalize();
 
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 
-	auto node = jive::node_output::node(ex->origin());
+	auto node = jlm::rvsdg::node_output::node(ex->origin());
 	assert(is<LoadOperation>(node));
 	assert(node->ninputs() == 2);
 }
@@ -91,9 +91,9 @@ test_load_store_state_reduction()
 {
 	using namespace jlm;
 
-	jive::bittype bt(32);
+	jlm::rvsdg::bittype bt(32);
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 	auto nf = LoadOperation::GetNormalForm(&graph);
 	nf->set_mutable(false);
 	nf->set_load_store_state_reducible(false);
@@ -111,20 +111,20 @@ test_load_store_state_reduction()
 	auto ex1 = graph.add_export(value1, {value1->type(), "l1"});
 	auto ex2 = graph.add_export(value2, {value2->type(), "l2"});
 
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 
 	nf->set_mutable(true);
 	nf->set_load_store_state_reducible(true);
 	graph.normalize();
 	graph.prune();
 
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 
-	auto node = jive::node_output::node(ex1->origin());
+	auto node = jlm::rvsdg::node_output::node(ex1->origin());
 	assert(is<LoadOperation>(node));
 	assert(node->ninputs() == 2);
 
-	node = jive::node_output::node(ex2->origin());
+	node = jlm::rvsdg::node_output::node(ex2->origin());
 	assert(is<LoadOperation>(node));
 	assert(node->ninputs() == 2);
 }
@@ -135,9 +135,9 @@ test_load_store_alloca_reduction()
 	using namespace jlm;
 
 	MemoryStateType mt;
-	jive::bittype bt(32);
+	jlm::rvsdg::bittype bt(32);
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 	auto nf = LoadOperation::GetNormalForm(&graph);
 	nf->set_mutable(false);
 	nf->set_load_store_alloca_reducible(false);
@@ -151,13 +151,13 @@ test_load_store_alloca_reduction()
 	auto value = graph.add_export(load[0], {load[0]->type(), "l"});
 	auto rstate = graph.add_export(load[1], {mt, "s"});
 
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 
 	nf->set_mutable(true);
 	nf->set_load_store_alloca_reducible(true);
 	graph.normalize();
 
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(value->origin() == graph.root()->argument(0));
 	assert(rstate->origin() == alloca[1]);
@@ -172,7 +172,7 @@ test_load_store_reduction()
   PointerType pt;
   MemoryStateType mt;
 
-  jive::graph graph;
+  jlm::rvsdg::graph graph;
   auto nf = LoadOperation::GetNormalForm(&graph);
   nf->set_mutable(false);
   nf->set_load_store_reducible(false);
@@ -187,13 +187,13 @@ test_load_store_reduction()
   auto x1 = graph.add_export(load[0], {load[0]->type(), "value"});
   auto x2 = graph.add_export(load[1], {load[1]->type(), "state"});
 
-  // jive::view(graph.root(), stdout);
+  // jlm::rvsdg::view(graph.root(), stdout);
 
   nf->set_mutable(true);
   nf->set_load_store_reducible(true);
   graph.normalize();
 
-  // jive::view(graph.root(), stdout);
+  // jlm::rvsdg::view(graph.root(), stdout);
 
   assert(graph.root()->nnodes() == 1);
   assert(x1->origin() == v);
@@ -209,7 +209,7 @@ test_load_load_reduction()
 	PointerType pt;
 	MemoryStateType mt;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 	auto nf = LoadOperation::GetNormalForm(&graph);
 	nf->set_mutable(false);
 
@@ -231,26 +231,26 @@ test_load_load_reduction()
 	auto x2 = graph.add_export(ld3[2], {mt, "s"});
 	auto x3 = graph.add_export(ld3[3], {mt, "s"});
 
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	nf->set_mutable(true);
 	nf->set_load_load_state_reducible(true);
 	graph.normalize();
 	graph.prune();
 
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(graph.root()->nnodes() == 6);
 
-	auto ld = jive::node_output::node(x1->origin());
+	auto ld = jlm::rvsdg::node_output::node(x1->origin());
 	assert(is<LoadOperation>(ld));
 
-	auto mx1 = jive::node_output::node(x2->origin());
+	auto mx1 = jlm::rvsdg::node_output::node(x2->origin());
 	assert(is<MemStateMergeOperator>(mx1) && mx1->ninputs() == 2);
 	assert(mx1->input(0)->origin() == ld1[1] || mx1->input(0)->origin() == ld->output(2));
 	assert(mx1->input(1)->origin() == ld1[1] || mx1->input(1)->origin() == ld->output(2));
 
-	auto mx2 = jive::node_output::node(x3->origin());
+	auto mx2 = jlm::rvsdg::node_output::node(x3->origin());
 	assert(is<MemStateMergeOperator>(mx2) && mx2->ninputs() == 2);
 	assert(mx2->input(0)->origin() == ld2[1] || mx2->input(0)->origin() == ld->output(3));
 	assert(mx2->input(1)->origin() == ld2[1] || mx2->input(1)->origin() == ld->output(3));

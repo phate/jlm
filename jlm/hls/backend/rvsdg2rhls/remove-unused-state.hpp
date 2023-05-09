@@ -15,25 +15,25 @@ namespace jlm {
 	namespace hls {
 
 		bool
-		is_passthrough(const jive::argument *arg);
+		is_passthrough(const jlm::rvsdg::argument *arg);
 
 		bool
-		is_passthrough(const jive::result *res);
+		is_passthrough(const jlm::rvsdg::result *res);
 
 		jlm::lambda::node *
 		remove_lambda_passthrough(jlm::lambda::node *ln);
 
 		void
-		remove_region_passthrough(const jive::argument *arg);
+		remove_region_passthrough(const jlm::rvsdg::argument *arg);
 
 		void
-		remove_gamma_passthrough(jive::gamma_node *gn);
+		remove_gamma_passthrough(jlm::rvsdg::gamma_node *gn);
 
 		void
 		remove_unused_state(jlm::RvsdgModule &rm);
 
 		void
-		remove_unused_state(jive::region *region, bool can_remove_arguments = true);
+		remove_unused_state(jlm::rvsdg::region *region, bool can_remove_arguments = true);
 	}
 }
 #endif //JLM_HLS_BACKEND_RVSDG2RHLS_REMOVE_UNUSED_STATE_HPP

@@ -6,7 +6,8 @@
 
 #include <jlm/rvsdg/bitstring/comparison.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 #define DEFINE_BITCOMPARISON_OPERATION(NAME, FLAGS, DEBUG_STRING) \
 bit ## NAME ## _op::~bit ## NAME ## _op() noexcept \
@@ -43,10 +44,10 @@ bit ## NAME ## _op::debug_string() const \
 	return jlm::util::strfmt(#DEBUG_STRING, type().nbits()); \
 } \
 \
-std::unique_ptr<jive::operation> \
+std::unique_ptr<jlm::rvsdg::operation> \
 bit ## NAME ## _op::copy() const \
 { \
-	return std::unique_ptr<jive::operation>(new bit ## NAME ## _op(*this)); \
+	return std::unique_ptr<jlm::rvsdg::operation>(new bit ## NAME ## _op(*this)); \
 } \
 \
 std::unique_ptr<bitcompare_op> \

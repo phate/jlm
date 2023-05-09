@@ -15,9 +15,9 @@
 
 static int types_bitstring_arithmetic_test_bitand(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 
 	auto s0 = graph.add_import({bittype(32), "s0"});
 	auto s1 = graph.add_import({bittype(32), "s1"});
@@ -32,7 +32,7 @@ static int types_bitstring_arithmetic_test_bitand(void)
 	graph.add_export(and1, {and1->type(), "dummy"});
 
 	graph.prune();
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(node_output::node(and0)->operation() == bitand_op(32));
 	assert(node_output::node(and1)->operation() == int_constant_op(32, +1));
@@ -42,9 +42,9 @@ static int types_bitstring_arithmetic_test_bitand(void)
 
 static int types_bitstring_arithmetic_test_bitashr(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 
 	auto s0 = graph.add_import({bittype(32), "s0"});
 	auto s1 = graph.add_import({bittype(32), "s1"});
@@ -67,7 +67,7 @@ static int types_bitstring_arithmetic_test_bitashr(void)
 	graph.add_export(ashr4, {ashr4->type(), "dummy"});
 
 	graph.prune();
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(node_output::node(ashr0)->operation() == bitashr_op(32));
 	assert(node_output::node(ashr1)->operation() == int_constant_op(32, 4));
@@ -80,9 +80,9 @@ static int types_bitstring_arithmetic_test_bitashr(void)
 
 static int types_bitstring_arithmetic_test_bitdifference(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 
 	auto s0 = graph.add_import({bittype(32), "s0"});
 	auto s1 = graph.add_import({bittype(32), "s1"});
@@ -93,7 +93,7 @@ static int types_bitstring_arithmetic_test_bitdifference(void)
 
 	graph.normalize();
 	graph.prune();
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(node_output::node(diff)->operation() == bitsub_op(32));
 
@@ -102,9 +102,9 @@ static int types_bitstring_arithmetic_test_bitdifference(void)
 
 static int types_bitstring_arithmetic_test_bitnegate(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 
 	auto s0 = graph.add_import({bittype(32), "s0"});
 	auto c0 = create_bitconstant(graph.root(), 32, 3);
@@ -118,7 +118,7 @@ static int types_bitstring_arithmetic_test_bitnegate(void)
 	graph.add_export(neg2, {neg2->type(), "dummy"});
 
 	graph.prune();
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(node_output::node(neg0)->operation() == bitneg_op(32));
 	assert(node_output::node(neg1)->operation() == int_constant_op(32, -3));
@@ -129,9 +129,9 @@ static int types_bitstring_arithmetic_test_bitnegate(void)
 
 static int types_bitstring_arithmetic_test_bitnot(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 
 	auto s0 = graph.add_import({bittype(32), "s0"});
 	auto c0 = create_bitconstant(graph.root(), 32, 3);
@@ -145,7 +145,7 @@ static int types_bitstring_arithmetic_test_bitnot(void)
 	graph.add_export(not2, {not2->type(), "dummy"});
 
 	graph.prune();
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(node_output::node(not0)->operation() == bitnot_op(32));
 	assert(node_output::node(not1)->operation() == int_constant_op(32, -4));
@@ -156,9 +156,9 @@ static int types_bitstring_arithmetic_test_bitnot(void)
 
 static int types_bitstring_arithmetic_test_bitor(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 
 	auto s0 = graph.add_import({bittype(32), "s0"});
 	auto s1 = graph.add_import({bittype(32), "s1"});
@@ -173,7 +173,7 @@ static int types_bitstring_arithmetic_test_bitor(void)
 	graph.add_export(or1, {or1->type(), "dummy"});
 
 	graph.prune();
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(node_output::node(or0)->operation() == bitor_op(32));
 	assert(node_output::node(or1)->operation() == uint_constant_op(32, 7));
@@ -183,9 +183,9 @@ static int types_bitstring_arithmetic_test_bitor(void)
 
 static int types_bitstring_arithmetic_test_bitproduct(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 
 	auto s0 = graph.add_import({bittype(32), "s0"});
 	auto s1 = graph.add_import({bittype(32), "s1"});
@@ -201,7 +201,7 @@ static int types_bitstring_arithmetic_test_bitproduct(void)
 
 	graph.normalize();
 	graph.prune();
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(node_output::node(product0)->operation() == bitmul_op(32));
 	assert(node_output::node(product1)->operation() == uint_constant_op(32, 15));
@@ -211,9 +211,9 @@ static int types_bitstring_arithmetic_test_bitproduct(void)
 
 static int types_bitstring_arithmetic_test_bitshiproduct(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 
 	auto s0 = graph.add_import({bittype(32), "s0"});
 	auto s1 = graph.add_import({bittype(32), "s1"});
@@ -224,7 +224,7 @@ static int types_bitstring_arithmetic_test_bitshiproduct(void)
 
 	graph.normalize();
 	graph.prune();
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(node_output::node(shiproduct)->operation() == bitsmulh_op(32));
 
@@ -233,9 +233,9 @@ static int types_bitstring_arithmetic_test_bitshiproduct(void)
 
 static int types_bitstring_arithmetic_test_bitshl(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 
 	auto s0 = graph.add_import({bittype(32), "s0"});
 	auto s1 = graph.add_import({bittype(32), "s1"});
@@ -253,7 +253,7 @@ static int types_bitstring_arithmetic_test_bitshl(void)
 	graph.add_export(shl2, {shl2->type(), "dummy"});
 
 	graph.prune();
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(node_output::node(shl0)->operation() == bitshl_op(32));
 	assert(node_output::node(shl1)->operation() == uint_constant_op(32, 64));
@@ -264,9 +264,9 @@ static int types_bitstring_arithmetic_test_bitshl(void)
 
 static int types_bitstring_arithmetic_test_bitshr(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 
 	auto s0 = graph.add_import({bittype(32), "s0"});
 	auto s1 = graph.add_import({bittype(32), "s1"});
@@ -284,7 +284,7 @@ static int types_bitstring_arithmetic_test_bitshr(void)
 	graph.add_export(shr2, {shr2->type(), "dummy"});
 
 	graph.prune();
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 	
 	assert(node_output::node(shr0)->operation() == bitshr_op(32));
 	assert(node_output::node(shr1)->operation() == uint_constant_op(32, 4));
@@ -295,9 +295,9 @@ static int types_bitstring_arithmetic_test_bitshr(void)
 
 static int types_bitstring_arithmetic_test_bitsmod(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 
 	auto s0 = graph.add_import({bittype(32), "s0"});
 	auto s1 = graph.add_import({bittype(32), "s1"});
@@ -313,7 +313,7 @@ static int types_bitstring_arithmetic_test_bitsmod(void)
 
 	graph.normalize();
 	graph.prune();
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(node_output::node(smod0)->operation() == bitsmod_op(32));
 	assert(node_output::node(smod1)->operation() == int_constant_op(32, -1));
@@ -323,9 +323,9 @@ static int types_bitstring_arithmetic_test_bitsmod(void)
 
 static int types_bitstring_arithmetic_test_bitsquotient(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 
 	auto s0 = graph.add_import({bittype(32), "s0"});
 	auto s1 = graph.add_import({bittype(32), "s1"});
@@ -341,7 +341,7 @@ static int types_bitstring_arithmetic_test_bitsquotient(void)
 
 	graph.normalize();
 	graph.prune();
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(node_output::node(squot0)->operation() == bitsdiv_op(32));
 	assert(node_output::node(squot1)->operation() == int_constant_op(32, -2));
@@ -351,9 +351,9 @@ static int types_bitstring_arithmetic_test_bitsquotient(void)
 
 static int types_bitstring_arithmetic_test_bitsum(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 
 	auto s0 = graph.add_import({bittype(32), "s0"});
 	auto s1 = graph.add_import({bittype(32), "s1"});
@@ -369,7 +369,7 @@ static int types_bitstring_arithmetic_test_bitsum(void)
 
 	graph.normalize();
 	graph.prune();
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(node_output::node(sum0)->operation() == bitadd_op(32));
 	assert(node_output::node(sum1)->operation() == int_constant_op(32, 8));
@@ -379,9 +379,9 @@ static int types_bitstring_arithmetic_test_bitsum(void)
 
 static int types_bitstring_arithmetic_test_bituhiproduct(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 
 	auto s0 = graph.add_import({bittype(32), "s0"});
 	auto s1 = graph.add_import({bittype(32), "s1"});
@@ -392,7 +392,7 @@ static int types_bitstring_arithmetic_test_bituhiproduct(void)
 
 	graph.normalize();
 	graph.prune();
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(node_output::node(uhiproduct)->operation() == bitumulh_op(32));
 
@@ -401,9 +401,9 @@ static int types_bitstring_arithmetic_test_bituhiproduct(void)
 
 static int types_bitstring_arithmetic_test_bitumod(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 
 	auto s0 = graph.add_import({bittype(32), "s0"});
 	auto s1 = graph.add_import({bittype(32), "s1"});
@@ -419,7 +419,7 @@ static int types_bitstring_arithmetic_test_bitumod(void)
 
 	graph.normalize();
 	graph.prune();
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(node_output::node(umod0)->operation() == bitumod_op(32));
 	assert(node_output::node(umod1)->operation() == int_constant_op(32, 1));
@@ -429,9 +429,9 @@ static int types_bitstring_arithmetic_test_bitumod(void)
 
 static int types_bitstring_arithmetic_test_bituquotient(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 
 	auto s0 = graph.add_import({bittype(32), "s0"});
 	auto s1 = graph.add_import({bittype(32), "s1"});
@@ -447,7 +447,7 @@ static int types_bitstring_arithmetic_test_bituquotient(void)
 
 	graph.normalize();
 	graph.prune();
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(node_output::node(uquot0)->operation() == bitudiv_op(32));
 	assert(node_output::node(uquot1)->operation() == int_constant_op(32, 2));
@@ -457,9 +457,9 @@ static int types_bitstring_arithmetic_test_bituquotient(void)
 
 static int types_bitstring_arithmetic_test_bitxor(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 
 	auto s0 = graph.add_import({bittype(32), "s0"});
 	auto s1 = graph.add_import({bittype(32), "s1"});
@@ -474,7 +474,7 @@ static int types_bitstring_arithmetic_test_bitxor(void)
 	graph.add_export(xor1, {xor1->type(), "dummy"});
 
 	graph.prune();
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(node_output::node(xor0)->operation() == bitxor_op(32));
 	assert(node_output::node(xor1)->operation() == int_constant_op(32, 6));
@@ -483,26 +483,26 @@ static int types_bitstring_arithmetic_test_bitxor(void)
 }
 
 static inline void
-expect_static_true(jive::output * port)
+expect_static_true(jlm::rvsdg::output * port)
 {
-	auto node = jive::node_output::node(port);
-	auto op = dynamic_cast<const jive::bitconstant_op*>(&node->operation());
+	auto node = jlm::rvsdg::node_output::node(port);
+	auto op = dynamic_cast<const jlm::rvsdg::bitconstant_op*>(&node->operation());
 	assert(op && op->value().nbits() == 1 && op->value().str() == "1");
 }
 
 static inline void
-expect_static_false(jive::output * port)
+expect_static_false(jlm::rvsdg::output * port)
 {
-	auto node = jive::node_output::node(port);
-	auto op = dynamic_cast<const jive::bitconstant_op*>(&node->operation());
+	auto node = jlm::rvsdg::node_output::node(port);
+	auto op = dynamic_cast<const jlm::rvsdg::bitconstant_op*>(&node->operation());
 	assert(op && op->value().nbits() == 1 && op->value().str() == "0");
 }
 
 static int types_bitstring_comparison_test_bitequal(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 
 	auto s0 = graph.add_import({bittype(32), "s0"});
 	auto s1 = graph.add_import({bittype(32), "s1"});
@@ -521,7 +521,7 @@ static int types_bitstring_comparison_test_bitequal(void)
 	graph.add_export(equal3, {equal3->type(), "dummy"});
 	
 	graph.prune();
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(node_output::node(equal0)->operation() == biteq_op(32));
 	expect_static_true(equal1);
@@ -533,9 +533,9 @@ static int types_bitstring_comparison_test_bitequal(void)
 
 static int types_bitstring_comparison_test_bitnotequal(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 
 	auto s0 = graph.add_import({bittype(32), "s0"});
 	auto s1 = graph.add_import({bittype(32), "s1"});
@@ -554,7 +554,7 @@ static int types_bitstring_comparison_test_bitnotequal(void)
 	graph.add_export(nequal3, {nequal3->type(), "dummy"});
 	
 	graph.prune();
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(node_output::node(nequal0)->operation() == bitne_op(32));
 	expect_static_false(nequal1);
@@ -566,9 +566,9 @@ static int types_bitstring_comparison_test_bitnotequal(void)
 
 static int types_bitstring_comparison_test_bitsgreater(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 
 	auto s0 = graph.add_import({bittype(32), "s0"});
 	auto s1 = graph.add_import({bittype(32), "s1"});
@@ -590,7 +590,7 @@ static int types_bitstring_comparison_test_bitsgreater(void)
 	graph.add_export(sgreater4, {sgreater4->type(), "dummy"});
 
 	graph.prune();
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(node_output::node(sgreater0)->operation() == bitsgt_op(32));
 	expect_static_false(sgreater1);
@@ -603,9 +603,9 @@ static int types_bitstring_comparison_test_bitsgreater(void)
 
 static int types_bitstring_comparison_test_bitsgreatereq(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 
 	auto s0 = graph.add_import({bittype(32), "s0"});
 	auto s1 = graph.add_import({bittype(32), "s1"});
@@ -629,7 +629,7 @@ static int types_bitstring_comparison_test_bitsgreatereq(void)
 	graph.add_export(sgreatereq5, {sgreatereq5->type(), "dummy"});
 
 	graph.prune();
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(node_output::node(sgreatereq0)->operation() == bitsge_op(32));
 	expect_static_false(sgreatereq1);
@@ -643,9 +643,9 @@ static int types_bitstring_comparison_test_bitsgreatereq(void)
 
 static int types_bitstring_comparison_test_bitsless(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 
 	auto s0 = graph.add_import({bittype(32), "s0"});
 	auto s1 = graph.add_import({bittype(32), "s1"});
@@ -667,7 +667,7 @@ static int types_bitstring_comparison_test_bitsless(void)
 	graph.add_export(sless4, {sless4->type(), "dummy"});
 
 	graph.prune();
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(node_output::node(sless0)->operation() == bitslt_op(32));
 	expect_static_true(sless1);
@@ -680,9 +680,9 @@ static int types_bitstring_comparison_test_bitsless(void)
 
 static int types_bitstring_comparison_test_bitslesseq(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 
 	auto s0 = graph.add_import({bittype(32), "s0"});
 	auto s1 = graph.add_import({bittype(32), "s1"});
@@ -706,7 +706,7 @@ static int types_bitstring_comparison_test_bitslesseq(void)
 	graph.add_export(slesseq5, {slesseq5->type(), "dummy"});
 
 	graph.prune();
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(node_output::node(slesseq0)->operation() == bitsle_op(32));
 	expect_static_true(slesseq1);
@@ -720,9 +720,9 @@ static int types_bitstring_comparison_test_bitslesseq(void)
 
 static int types_bitstring_comparison_test_bitugreater(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 
 	auto s0 = graph.add_import({bittype(32), "s0"});
 	auto s1 = graph.add_import({bittype(32), "s1"});
@@ -744,7 +744,7 @@ static int types_bitstring_comparison_test_bitugreater(void)
 	graph.add_export(ugreater4, {ugreater4->type(), "dummy"});
 
 	graph.prune();
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(node_output::node(ugreater0)->operation() == bitugt_op(32));
 	expect_static_false(ugreater1);
@@ -757,9 +757,9 @@ static int types_bitstring_comparison_test_bitugreater(void)
 
 static int types_bitstring_comparison_test_bitugreatereq(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 
 	auto s0 = graph.add_import({bittype(32), "s0"});
 	auto s1 = graph.add_import({bittype(32), "s1"});
@@ -783,7 +783,7 @@ static int types_bitstring_comparison_test_bitugreatereq(void)
 	graph.add_export(ugreatereq5, {ugreatereq5->type(), "dummy"});
 
 	graph.prune();
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(node_output::node(ugreatereq0)->operation() == bituge_op(32));
 	expect_static_false(ugreatereq1);
@@ -797,9 +797,9 @@ static int types_bitstring_comparison_test_bitugreatereq(void)
 
 static int types_bitstring_comparison_test_bituless(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 
 	auto s0 = graph.add_import({bittype(32), "s0"});
 	auto s1 = graph.add_import({bittype(32), "s1"});
@@ -821,7 +821,7 @@ static int types_bitstring_comparison_test_bituless(void)
 	graph.add_export(uless4, {uless4->type(), "dummy"});
 
 	graph.prune();
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(node_output::node(uless0)->operation() == bitult_op(32));
 	expect_static_true(uless1);
@@ -834,9 +834,9 @@ static int types_bitstring_comparison_test_bituless(void)
 
 static int types_bitstring_comparison_test_bitulesseq(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 
 	auto s0 = graph.add_import({bittype(32), "s0"});
 	auto s1 = graph.add_import({bittype(32), "s1"});
@@ -860,7 +860,7 @@ static int types_bitstring_comparison_test_bitulesseq(void)
 	graph.add_export(ulesseq5, {ulesseq5->type(), "dummy"});
 
 	graph.prune();
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(node_output::node(ulesseq0)->operation() == bitule_op(32));
 	expect_static_true(ulesseq1);
@@ -884,9 +884,9 @@ static int types_bitstring_comparison_test_bitulesseq(void)
 
 static int types_bitstring_test_constant(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 
 	auto b1 = node_output::node(create_bitconstant(graph.root(), "00110011"));
 	auto b2 = node_output::node(create_bitconstant(graph.root(), 8, 204));
@@ -912,16 +912,16 @@ static int types_bitstring_test_constant(void)
 	auto minus_one_128 = node_output::node(create_bitconstant(graph.root(), MONE_64 MONE_64));
 	assert(minus_one_128->operation() == int_constant_op(128, -1));
 
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	return 0;
 }
 
 static int types_bitstring_test_normalize(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 
 	bittype bits32(32);
 	auto imp = graph.add_import({bits32, "imp"});
@@ -959,24 +959,24 @@ static int types_bitstring_test_normalize(void)
 	assert(node_output::node(op1)->operation() == int_constant_op(32, 3 + 4));
 	assert(op2 == imp);
 
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	return 0;
 }
 
 static void
-assert_constant(jive::output * bitstr, size_t nbits, const char bits[])
+assert_constant(jlm::rvsdg::output * bitstr, size_t nbits, const char bits[])
 {
-	auto node = jive::node_output::node(bitstr);
-	auto op = dynamic_cast<const jive::bitconstant_op &>(node->operation());
-	assert(op.value() == jive::bitvalue_repr(std::string(bits, nbits).c_str()));
+	auto node = jlm::rvsdg::node_output::node(bitstr);
+	auto op = dynamic_cast<const jlm::rvsdg::bitconstant_op &>(node->operation());
+	assert(op.value() == jlm::rvsdg::bitvalue_repr(std::string(bits, nbits).c_str()));
 }
 
 static int types_bitstring_test_reduction(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 
 	auto a = create_bitconstant(graph.root(), "1100");
 	auto b = create_bitconstant(graph.root(), "1010");
@@ -986,7 +986,7 @@ static int types_bitstring_test_reduction(void)
 	assert_constant(bitxor_op::create(4, a, b), 4, "0110");
 	assert_constant(bitadd_op::create(4, a, b), 4, "0001");
 	assert_constant(bitmul_op::create(4, a, b), 4, "1111");
-	assert_constant(jive::bitconcat({a, b}), 8, "11001010");
+	assert_constant(jlm::rvsdg::bitconcat({a, b}), 8, "11001010");
 	assert_constant(bitneg_op::create(4, a), 4, "1011");
 	assert_constant(bitneg_op::create(4, b), 4, "1101");
 	
@@ -996,8 +996,8 @@ static int types_bitstring_test_reduction(void)
 	auto y = graph.add_import({bittype(16), "y"});
 	
 	{
-		auto concat = jive::bitconcat({x, y});
-		auto node = node_output::node(jive::bitslice(concat, 8, 24));
+		auto concat = jlm::rvsdg::bitconcat({x, y});
+		auto node = node_output::node(jlm::rvsdg::bitslice(concat, 8, 24));
 		auto o0 = dynamic_cast<node_output*>(node->input(0)->origin());
 		auto o1 = dynamic_cast<node_output*>(node->input(1)->origin());
 		assert(dynamic_cast<const bitconcat_op*>(&node->operation()));
@@ -1016,9 +1016,9 @@ static int types_bitstring_test_reduction(void)
 	}
 	
 	{
-		auto slice1 = jive::bitslice(x, 0, 8);
-		auto slice2 = jive::bitslice(x, 8, 16);
-		auto concat = jive::bitconcat({slice1, slice2});
+		auto slice1 = jlm::rvsdg::bitslice(x, 0, 8);
+		auto slice2 = jlm::rvsdg::bitslice(x, 8, 16);
+		auto concat = jlm::rvsdg::bitconcat({slice1, slice2});
 		assert(concat == x);
 	}
 
@@ -1027,9 +1027,9 @@ static int types_bitstring_test_reduction(void)
 
 static int types_bitstring_test_slice_concat(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 	
 	auto base_const1 = create_bitconstant(graph.root(), "00110111");
 	auto base_const2 = create_bitconstant(graph.root(), "11001000");
@@ -1040,7 +1040,7 @@ static int types_bitstring_test_slice_concat(void)
 	
 	{
 		/* slice of constant */
-		auto a = node_output::node(jive::bitslice(base_const1, 2, 6));
+		auto a = node_output::node(jlm::rvsdg::bitslice(base_const1, 2, 6));
 		
 		auto & op = dynamic_cast<const bitconstant_op&>(a->operation());
 		assert(op.value() == bitvalue_repr("1101"));
@@ -1048,8 +1048,8 @@ static int types_bitstring_test_slice_concat(void)
 	
 	{
 		/* slice of slice */
-		auto a = jive::bitslice(base_x, 2, 6);
-		auto b = node_output::node(jive::bitslice(a, 1, 3));
+		auto a = jlm::rvsdg::bitslice(base_x, 2, 6);
+		auto b = node_output::node(jlm::rvsdg::bitslice(a, 1, 3));
 
 		assert(dynamic_cast<const bitslice_op*>(&b->operation()));
 		const bitslice_op * attrs;
@@ -1059,15 +1059,15 @@ static int types_bitstring_test_slice_concat(void)
 	
 	{
 		/* slice of full node */
-		auto a = jive::bitslice(base_x, 0, 8);
+		auto a = jlm::rvsdg::bitslice(base_x, 0, 8);
 		
 		assert(a == base_x);
 	}
 	
 	{
 		/* slice of concat */
-		auto a = jive::bitconcat({base_x, base_y});
-		auto b = jive::bitslice(a, 0, 8);
+		auto a = jlm::rvsdg::bitconcat({base_x, base_y});
+		auto b = jlm::rvsdg::bitslice(a, 0, 8);
 		
 		assert(static_cast<const bittype*>(&b->type())->nbits() == 8);
 		
@@ -1076,8 +1076,8 @@ static int types_bitstring_test_slice_concat(void)
 	
 	{
 		/* concat flattening */
-		auto a = jive::bitconcat({base_x, base_y});
-		auto b = node_output::node(jive::bitconcat({a, base_z}));
+		auto a = jlm::rvsdg::bitconcat({base_x, base_y});
+		auto b = node_output::node(jlm::rvsdg::bitconcat({a, base_z}));
 		
 		assert(dynamic_cast<const bitconcat_op*>(&b->operation()));
 		assert(b->ninputs() == 3);
@@ -1088,23 +1088,23 @@ static int types_bitstring_test_slice_concat(void)
 	
 	{
 		/* concat of single node */
-		auto a = jive::bitconcat({base_x});
+		auto a = jlm::rvsdg::bitconcat({base_x});
 		
 		assert(a==base_x);
 	}
 	
 	{
 		/* concat of slices */
-		auto a = jive::bitslice(base_x, 0, 4);
-		auto b = jive::bitslice(base_x, 4, 8);
-		auto c = jive::bitconcat({a, b});
+		auto a = jlm::rvsdg::bitslice(base_x, 0, 4);
+		auto b = jlm::rvsdg::bitslice(base_x, 4, 8);
+		auto c = jlm::rvsdg::bitconcat({a, b});
 		
 		assert(c==base_x);
 	}
 	
 	{
 		/* concat of constants */
-		auto a = node_output::node(jive::bitconcat({base_const1, base_const2}));
+		auto a = node_output::node(jlm::rvsdg::bitconcat({base_const1, base_const2}));
 		
 		auto & op = dynamic_cast<const bitconstant_op&>(a->operation());
 		assert(op.value() == bitvalue_repr("0011011111001000"));
@@ -1115,12 +1115,12 @@ static int types_bitstring_test_slice_concat(void)
 		auto b = create_bitconstant(graph.root(), "00110111");
 		assert(b == base_const1);
 		
-		auto c = jive::bitslice(base_x, 2, 6);
-		auto d = jive::bitslice(base_x, 2, 6);
+		auto c = jlm::rvsdg::bitslice(base_x, 2, 6);
+		auto d = jlm::rvsdg::bitslice(base_x, 2, 6);
 		assert(c == d);
 		
-		auto e = jive::bitconcat({base_x, base_y});
-		auto f = jive::bitconcat({base_x, base_y});
+		auto e = jlm::rvsdg::bitconcat({base_x, base_y});
+		auto f = jlm::rvsdg::bitconcat({base_x, base_y});
 		assert(e == f);
 	}
 	
@@ -1340,7 +1340,7 @@ static char uless[10][10] = {
 static int
 types_bitstring_test_value_representation()
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
 	for (size_t r = 0; r < 10; r++) {
 		assert(bitvalue_repr(bs[r]).lnot() == bitstring_not[r]);

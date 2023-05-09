@@ -31,17 +31,17 @@ public:
   std::string
   debug_string() const override;
 
-  std::unique_ptr<jive::operation>
+  std::unique_ptr<jlm::rvsdg::operation>
   copy() const override;
 
-  static std::vector<jive::output*>
+  static std::vector<jlm::rvsdg::output*>
   Create(
-    jive::output * output,
+    jlm::rvsdg::output * output,
     size_t nresults)
   {
     auto region = output->region();
     LambdaEntryMemStateOperator op(nresults);
-    return jive::simple_node::create_normalized(region, op, {output});
+    return jlm::rvsdg::simple_node::create_normalized(region, op, {output});
   }
 };
 
@@ -65,16 +65,16 @@ public:
   std::string
   debug_string() const override;
 
-  std::unique_ptr<jive::operation>
+  std::unique_ptr<jlm::rvsdg::operation>
   copy() const override;
 
-  static jive::output *
+  static jlm::rvsdg::output *
   Create(
-    jive::region * region,
-    const std::vector<jive::output*> & operands)
+    jlm::rvsdg::region * region,
+    const std::vector<jlm::rvsdg::output*> & operands)
   {
     LambdaExitMemStateOperator op(operands.size());
-    return jive::simple_node::create_normalized(region, op, operands)[0];
+    return jlm::rvsdg::simple_node::create_normalized(region, op, operands)[0];
   }
 };
 
@@ -98,16 +98,16 @@ public:
   std::string
   debug_string() const override;
 
-  std::unique_ptr<jive::operation>
+  std::unique_ptr<jlm::rvsdg::operation>
   copy() const override;
 
-  static jive::output *
+  static jlm::rvsdg::output *
   Create(
-    jive::region * region,
-    const std::vector<jive::output*> & operands)
+    jlm::rvsdg::region * region,
+    const std::vector<jlm::rvsdg::output*> & operands)
   {
     CallEntryMemStateOperator op(operands.size());
-    return jive::simple_node::create_normalized(region, op, operands)[0];
+    return jlm::rvsdg::simple_node::create_normalized(region, op, operands)[0];
   }
 };
 
@@ -131,17 +131,17 @@ public:
   std::string
   debug_string() const override;
 
-  std::unique_ptr<jive::operation>
+  std::unique_ptr<jlm::rvsdg::operation>
   copy() const override;
 
-  static std::vector<jive::output*>
+  static std::vector<jlm::rvsdg::output*>
   Create(
-    jive::output * output,
+    jlm::rvsdg::output * output,
     size_t nresults)
   {
     auto region = output->region();
     CallExitMemStateOperator op(nresults);
-    return jive::simple_node::create_normalized(region, op, {output});
+    return jlm::rvsdg::simple_node::create_normalized(region, op, {output});
   }
 };
 

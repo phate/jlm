@@ -29,7 +29,7 @@ public:
     return Map_.find(v) != Map_.end();
   }
 
-  jive::output *
+  rvsdg::output *
   lookup(const variable * v) const
   {
     JLM_ASSERT(contains(v));
@@ -37,14 +37,14 @@ public:
   }
 
   void
-  insert(const variable * v, jive::output * o)
+  insert(const variable * v, rvsdg::output * o)
   {
     JLM_ASSERT(v->type() == o->type());
     Map_[v] = o;
   }
 
 private:
-  std::unordered_map<const variable*, jive::output*> Map_;
+  std::unordered_map<const variable*, rvsdg::output*> Map_;
 };
 
 class RegionalizedVariableMap final {
@@ -57,7 +57,7 @@ public:
 
   RegionalizedVariableMap(
     const ipgraph_module & interProceduralGraphModule,
-    jive::region & region)
+    rvsdg::region & region)
     : InterProceduralGraphModule_(interProceduralGraphModule)
   {
     PushRegion(region);
@@ -84,14 +84,14 @@ public:
     return VariableMap(NumRegions() - 1);
   }
 
-  jive::region &
+  rvsdg::region &
   GetRegion(size_t n) noexcept
   {
     JLM_ASSERT(n < NumRegions());
     return *RegionStack_[n];
   }
 
-  jive::region &
+  rvsdg::region &
   GetTopRegion() noexcept
   {
     JLM_ASSERT(NumRegions() > 0);
@@ -99,7 +99,7 @@ public:
   }
 
   void
-  PushRegion(jive::region & region)
+  PushRegion(rvsdg::region & region)
   {
     VariableMapStack_.push_back(std::make_unique<jlm::VariableMap>());
     RegionStack_.push_back(&region);
@@ -121,7 +121,7 @@ public:
 private:
   const ipgraph_module & InterProceduralGraphModule_;
   std::vector<std::unique_ptr<jlm::VariableMap>> VariableMapStack_;
-  std::vector<jive::region*> RegionStack_;
+  std::vector<rvsdg::region*> RegionStack_;
 };
 
 class ControlFlowRestructuringStatistics final : public util::Statistics {
@@ -411,10 +411,10 @@ public:
 	}
 
 	void
-	End(const jive::graph & graph) noexcept
+	End(const rvsdg::graph & graph) noexcept
 	{
 		Timer_.stop();
-		NumRvsdgNodes_ = jive::nnodes(graph.root());
+		NumRvsdgNodes_ = rvsdg::nnodes(graph.root());
 	}
 
 	std::string
@@ -528,9 +528,9 @@ public:
     StatisticsCollector_.CollectDemandedStatistics(std::move(statistics));
   }
 
-  jive::output *
+  rvsdg::output *
   CollectDataNodeToDeltaStatistics(
-    const std::function<jive::output*()> & convertDataNodeToDelta,
+    const std::function<rvsdg::output*()> & convertDataNodeToDelta,
     std::string dataNodeName,
     size_t NumInitializationThreeAddressCodes)
   {
@@ -582,7 +582,7 @@ requiresExport(const ipgraph_node & ipgNode)
 static void
 ConvertAssignment(
   const jlm::tac & threeAddressCode,
-  jive::region & region,
+  rvsdg::region & region,
   jlm::VariableMap & variableMap)
 {
 	JLM_ASSERT(is<assignment_op>(threeAddressCode.operation()));
@@ -595,17 +595,17 @@ ConvertAssignment(
 static void
 ConvertSelect(
   const jlm::tac & threeAddressCode,
-  jive::region & region,
+  rvsdg::region & region,
   jlm::VariableMap & variableMap)
 {
 	JLM_ASSERT(is<select_op>(threeAddressCode.operation()));
 	JLM_ASSERT(threeAddressCode.noperands() == 3 && threeAddressCode.nresults() == 1);
 
-	auto op = jive::match_op(1, {{1, 1}}, 0, 2);
+	auto op = rvsdg::match_op(1, {{1, 1}}, 0, 2);
 	auto p = variableMap.lookup(threeAddressCode.operand(0));
-	auto predicate = jive::simple_node::create_normalized(&region, op, {p})[0];
+	auto predicate = rvsdg::simple_node::create_normalized(&region, op, {p})[0];
 
-	auto gamma = jive::gamma_node::create(predicate, 2);
+	auto gamma = rvsdg::gamma_node::create(predicate, 2);
 	auto ev1 = gamma->add_entryvar(variableMap.lookup(threeAddressCode.operand(2)));
 	auto ev2 = gamma->add_entryvar(variableMap.lookup(threeAddressCode.operand(1)));
 	auto ex = gamma->add_exitvar({ev1->argument(0), ev2->argument(1)});
@@ -615,7 +615,7 @@ ConvertSelect(
 static void
 ConvertBranch(
   const jlm::tac & threeAddressCode,
-  jive::region & region,
+  rvsdg::region & region,
   jlm::VariableMap & variableMap)
 {
 	JLM_ASSERT(is<branch_op>(threeAddressCode.operation()));
@@ -627,10 +627,10 @@ ConvertBranch(
 template<class NODE, class OPERATION> static void
 Convert(
   const jlm::tac & threeAddressCode,
-  jive::region & region,
+  rvsdg::region & region,
   jlm::VariableMap & variableMap)
 {
-  std::vector<jive::output*> operands;
+  std::vector<rvsdg::output*> operands;
   for (size_t n = 0; n < threeAddressCode.noperands(); n++) {
     auto operand = threeAddressCode.operand(n);
     operands.push_back(variableMap.lookup(operand));
@@ -649,12 +649,12 @@ Convert(
 static void
 ConvertThreeAddressCode(
   const jlm::tac & threeAddressCode,
-  jive::region & region,
+  rvsdg::region & region,
   jlm::VariableMap & variableMap)
 {
 	static std::unordered_map<
 		std::type_index,
-		std::function<void(const jlm::tac&, jive::region&, jlm::VariableMap&)>
+		std::function<void(const jlm::tac&, rvsdg::region&, jlm::VariableMap&)>
 	> map({
 	  {typeid(assignment_op),  ConvertAssignment}
 	, {typeid(select_op),      ConvertSelect}
@@ -668,12 +668,12 @@ ConvertThreeAddressCode(
 	if (map.find(typeid(op)) != map.end())
 		return map[typeid(op)](threeAddressCode, region, variableMap);
 
-	std::vector<jive::output*> operands;
+	std::vector<rvsdg::output*> operands;
 	for (size_t n = 0; n < threeAddressCode.noperands(); n++)
 		operands.push_back(variableMap.lookup(threeAddressCode.operand(n)));
 
-  auto & simpleOperation = static_cast<const jive::simple_op&>(threeAddressCode.operation());
-	auto results = jive::simple_node::create_normalized(&region, simpleOperation, operands);
+  auto & simpleOperation = static_cast<const rvsdg::simple_op&>(threeAddressCode.operation());
+	auto results = rvsdg::simple_node::create_normalized(&region, simpleOperation, operands);
 
 	JLM_ASSERT(results.size() == threeAddressCode.nresults());
 	for (size_t n = 0; n < threeAddressCode.nresults(); n++)
@@ -683,7 +683,7 @@ ConvertThreeAddressCode(
 static void
 ConvertBasicBlock(
   const taclist & basicBlock,
-  jive::region & region,
+  rvsdg::region & region,
   jlm::VariableMap & variableMap)
 {
 	for (const auto & threeAddressCode: basicBlock)
@@ -743,7 +743,7 @@ Convert(
   lambda::node & lambdaNode,
   RegionalizedVariableMap & regionalizedVariableMap)
 {
-	std::vector<jive::output*> results;
+	std::vector<rvsdg::output*> results;
 	for (const auto & result : exitAggregationNode) {
 		JLM_ASSERT(regionalizedVariableMap.GetTopVariableMap().contains(result));
 		results.push_back(regionalizedVariableMap.GetTopVariableMap().lookup(result));
@@ -796,20 +796,20 @@ Convert(
 	JLM_ASSERT(is<branch_op>(sb.last()->operation()));
 	auto predicate = regionalizedVariableMap.GetTopVariableMap().lookup(sb.last()->operand(0));
 
-	auto gamma = jive::gamma_node::create(predicate, branchAggregationNode.nchildren());
+	auto gamma = rvsdg::gamma_node::create(predicate, branchAggregationNode.nchildren());
 
 	/*
 	 * Add gamma inputs.
 	 */
 	auto & demandSet = demandMap.Lookup<BranchAnnotationSet>(branchAggregationNode);
-	std::unordered_map<const variable*, jive::gamma_input*> gammaInputMap;
+	std::unordered_map<const variable*, rvsdg::gamma_input*> gammaInputMap;
 	for (auto & v : demandSet.InputVariables().Variables())
     gammaInputMap[&v] = gamma->add_entryvar(regionalizedVariableMap.GetTopVariableMap().lookup(&v));
 
 	/*
 	 * Convert subregions.
 	 */
-	std::unordered_map<const variable*, std::vector<jive::output*>> xvmap;
+	std::unordered_map<const variable*, std::vector<rvsdg::output*>> xvmap;
 	JLM_ASSERT(gamma->nsubregions() == branchAggregationNode.nchildren());
 	for (size_t n = 0; n < gamma->nsubregions(); n++) {
     regionalizedVariableMap.PushRegion(*gamma->subregion(n));
@@ -841,7 +841,7 @@ Convert(
 {
   auto & parentRegion = regionalizedVariableMap.GetTopRegion();
 
-	auto theta = jive::theta_node::create(&parentRegion);
+	auto theta = rvsdg::theta_node::create(&parentRegion);
 
   regionalizedVariableMap.PushRegion(*theta->subregion());
 	auto & thetaVariableMap = regionalizedVariableMap.GetTopVariableMap();
@@ -851,9 +851,9 @@ Convert(
 	 * Add loop variables
 	 */
 	auto & demandSet = demandMap.Lookup<LoopAnnotationSet>(loopAggregationNode);
-	std::unordered_map<const variable*, jive::theta_output*> thetaOutputMap;
+	std::unordered_map<const variable*, rvsdg::theta_output*> thetaOutputMap;
 	for (auto & v : demandSet.LoopVariables().Variables()) {
-		jive::output * value = nullptr;
+		rvsdg::output * value = nullptr;
 		if (!outerVariableMap.contains(&v)) {
 			value = UndefValueOperation::Create(parentRegion, v.type());
 			outerVariableMap.insert(&v, value);
@@ -1024,7 +1024,7 @@ ConvertAggregationTreeToLambda(
   return lambdaNode->output();
 }
 
-static jive::output *
+static rvsdg::output *
 ConvertControlFlowGraph(
   const function_node & functionNode,
   RegionalizedVariableMap & regionalizedVariableMap,
@@ -1065,7 +1065,7 @@ ConvertControlFlowGraph(
 	return lambdaOutput;
 }
 
-static jive::output *
+static rvsdg::output *
 ConvertFunctionNode(
   const function_node & functionNode,
   RegionalizedVariableMap & regionalizedVariableMap,
@@ -1088,10 +1088,10 @@ ConvertFunctionNode(
 	return ConvertControlFlowGraph(functionNode, regionalizedVariableMap, statisticsCollector);
 }
 
-static jive::output *
+static rvsdg::output *
 ConvertDataNodeInitialization(
   const data_node_init & init,
-  jive::region & region,
+  rvsdg::region & region,
   RegionalizedVariableMap & regionalizedVariableMap)
 {
 	auto & variableMap = regionalizedVariableMap.GetTopVariableMap();
@@ -1101,7 +1101,7 @@ ConvertDataNodeInitialization(
 	return variableMap.lookup(init.value());
 }
 
-static jive::output *
+static rvsdg::output *
 ConvertDataNode(
   const data_node & dataNode,
   RegionalizedVariableMap & regionalizedVariableMap,
@@ -1109,7 +1109,7 @@ ConvertDataNode(
 {
   auto dataNodeInitialization = dataNode.initialization();
 
-  auto convertDataNodeToDeltaNode = [&]() -> jive::output*
+  auto convertDataNodeToDeltaNode = [&]() -> rvsdg::output*
   {
     auto & interProceduralGraphModule = regionalizedVariableMap.GetInterProceduralGraphModule();
     auto & region = regionalizedVariableMap.GetTopRegion();
@@ -1165,7 +1165,7 @@ ConvertDataNode(
 	return deltaOutput;
 }
 
-static jive::output *
+static rvsdg::output *
 ConvertInterProceduralGraphNode(
   const ipgraph_node & ipgNode,
   RegionalizedVariableMap & regionalizedVariableMap,
@@ -1183,7 +1183,7 @@ ConvertInterProceduralGraphNode(
 static void
 ConvertStronglyConnectedComponent(
   const std::unordered_set<const jlm::ipgraph_node*> & stronglyConnectedComponent,
-  jive::graph & graph,
+  rvsdg::graph & graph,
   RegionalizedVariableMap & regionalizedVariableMap,
   InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
@@ -1270,11 +1270,11 @@ ConvertInterProceduralGraphModule(
     interProceduralGraphModule.data_layout());
 	auto graph = &rvsdgModule->Rvsdg();
 
-	auto nf = graph->node_normal_form(typeid(jive::operation));
+	auto nf = graph->node_normal_form(typeid(rvsdg::operation));
 	nf->set_mutable(false);
 
 	/* FIXME: we currently cannot handle flattened_binary_op in jlm2llvm pass */
-	jive::binary_op::normal_form(graph)->set_flatten(false);
+	rvsdg::binary_op::normal_form(graph)->set_flatten(false);
 
 	RegionalizedVariableMap regionalizedVariableMap(interProceduralGraphModule, *graph->root());
 

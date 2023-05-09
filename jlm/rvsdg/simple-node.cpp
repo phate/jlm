@@ -8,7 +8,8 @@
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 /* inputs */
 
@@ -18,17 +19,17 @@ simple_input::~simple_input() noexcept
 }
 
 simple_input::simple_input(
-	jive::simple_node * node,
-	jive::output * origin,
-	const jive::port & port)
+	jlm::rvsdg::simple_node * node,
+	jlm::rvsdg::output * origin,
+	const jlm::rvsdg::port & port)
 : node_input(origin, node, port)
 {}
 
 /* outputs */
 
 simple_output::simple_output(
-	jive::simple_node * node,
-	const jive::port & port)
+	jlm::rvsdg::simple_node * node,
+	const jlm::rvsdg::port & port)
 : node_output(node, port)
 {}
 
@@ -45,9 +46,9 @@ simple_node::~simple_node()
 }
 
 simple_node::simple_node(
-	jive::region * region,
-	const jive::simple_op & op,
-	const std::vector<jive::output*> & operands)
+	jlm::rvsdg::region * region,
+	const jlm::rvsdg::simple_op & op,
+	const std::vector<jlm::rvsdg::output*> & operands)
 	: node(op.copy(), region)
 {
 	if (operation().narguments() != operands.size())
@@ -66,18 +67,18 @@ simple_node::simple_node(
 	on_node_create(this);
 }
 
-jive::node *
-simple_node::copy(jive::region * region, const std::vector<jive::output*> & operands) const
+jlm::rvsdg::node *
+simple_node::copy(jlm::rvsdg::region * region, const std::vector<jlm::rvsdg::output*> & operands) const
 {
 	auto node = create(region, *static_cast<const simple_op*>(&operation()), operands);
 	graph()->mark_denormalized();
 	return node;
 }
 
-jive::node *
-simple_node::copy(jive::region * region, jive::substitution_map & smap) const
+jlm::rvsdg::node *
+simple_node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const
 {
-	std::vector<jive::output*> operands;
+	std::vector<jlm::rvsdg::output*> operands;
 	for (size_t n = 0; n < ninputs(); n++) {
 		auto origin = input(n)->origin();
 		auto operand = smap.lookup(origin);

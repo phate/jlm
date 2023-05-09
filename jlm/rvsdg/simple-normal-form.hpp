@@ -8,7 +8,8 @@
 
 #include <jlm/rvsdg/node-normal-form.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 class simple_op;
 
@@ -19,17 +20,17 @@ public:
 
 	simple_normal_form(
 		const std::type_info & operator_class,
-		jive::node_normal_form * parent,
-		jive::graph * graph) noexcept;
+		jlm::rvsdg::node_normal_form * parent,
+		jlm::rvsdg::graph * graph) noexcept;
 
 	virtual bool
-	normalize_node(jive::node * node) const override;
+	normalize_node(jlm::rvsdg::node * node) const override;
 
-	virtual std::vector<jive::output*>
+	virtual std::vector<jlm::rvsdg::output*>
 	normalized_create(
-		jive::region * region,
-		const jive::simple_op & op,
-		const std::vector<jive::output*> & arguments) const;
+		jlm::rvsdg::region * region,
+		const jlm::rvsdg::simple_op & op,
+		const std::vector<jlm::rvsdg::output*> & arguments) const;
 
 	virtual void
 	set_cse(bool enable);

@@ -8,16 +8,6 @@
 
 #include <memory>
 
-namespace jive {
-
-class gamma_node;
-class region;
-class simple_node;
-class structural_node;
-class theta_node;
-
-}
-
 namespace jlm {
 
 namespace util
@@ -78,19 +68,19 @@ public:
 
 private:
   void
-  EncodeRegion(jive::region & region);
+  EncodeRegion(jlm::rvsdg::region & region);
 
   void
-  EncodeStructuralNode(jive::structural_node & structuralNode);
+  EncodeStructuralNode(jlm::rvsdg::structural_node & structuralNode);
 
   void
-  EncodeSimpleNode(const jive::simple_node & simpleNode);
+  EncodeSimpleNode(const jlm::rvsdg::simple_node & simpleNode);
 
   void
-  EncodeAlloca(const jive::simple_node & allocaNode);
+  EncodeAlloca(const jlm::rvsdg::simple_node & allocaNode);
 
   void
-  EncodeMalloc(const jive::simple_node & mallocNode);
+  EncodeMalloc(const jlm::rvsdg::simple_node & mallocNode);
 
   void
   EncodeLoad(const LoadNode & loadNode);
@@ -99,13 +89,13 @@ private:
   EncodeStore(const StoreNode & storeNode);
 
   void
-  EncodeFree(const jive::simple_node & freeNode);
+  EncodeFree(const jlm::rvsdg::simple_node & freeNode);
 
   void
   EncodeCall(const CallNode & callNode);
 
   void
-  EncodeMemcpy(const jive::simple_node & memcpyNode);
+  EncodeMemcpy(const jlm::rvsdg::simple_node & memcpyNode);
 
   void
   EncodeLambda(const lambda::node & lambda);
@@ -117,10 +107,10 @@ private:
   EncodeDelta(const delta::node & delta);
 
   void
-  EncodeGamma(jive::gamma_node & gamma);
+  EncodeGamma(jlm::rvsdg::gamma_node & gamma);
 
   void
-  EncodeTheta(jive::theta_node & theta);
+  EncodeTheta(jlm::rvsdg::theta_node & theta);
 
   std::unique_ptr <Context> Context_;
 };

@@ -8,7 +8,8 @@
 #include <jlm/rvsdg/structural-node.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 /* structural input */
 
@@ -20,9 +21,9 @@ structural_input::~structural_input() noexcept
 }
 
 structural_input::structural_input(
-	jive::structural_node * node,
-	jive::output * origin,
-	const jive::port & port)
+	jlm::rvsdg::structural_node * node,
+	jlm::rvsdg::output * origin,
+	const jlm::rvsdg::port & port)
 : node_input(origin, node, port)
 {
 	on_input_create(this);
@@ -38,8 +39,8 @@ structural_output::~structural_output() noexcept
 }
 
 structural_output::structural_output(
-	jive::structural_node * node,
-	const jive::port & port)
+	jlm::rvsdg::structural_node * node,
+	const jlm::rvsdg::port & port)
 : node_output(node, port)
 {
 	on_output_create(this);
@@ -55,8 +56,8 @@ structural_node::~structural_node()
 }
 
 structural_node::structural_node(
-	const jive::structural_op & op,
-	jive::region * region,
+	const jlm::rvsdg::structural_op & op,
+	jlm::rvsdg::region * region,
 	size_t nsubregions)
 : node(op.copy(), region)
 {
@@ -64,7 +65,7 @@ structural_node::structural_node(
 		throw jlm::util::error("Number of subregions must be greater than zero.");
 
 	for (size_t n = 0; n < nsubregions; n++)
-		subregions_.emplace_back(std::unique_ptr<jive::region>(new jive::region(this, n)));
+		subregions_.emplace_back(std::unique_ptr<jlm::rvsdg::region>(new jlm::rvsdg::region(this, n)));
 
 	on_node_create(this);
 }

@@ -12,7 +12,8 @@
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/util/common.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 class output;
 
@@ -25,7 +26,7 @@ public:
 	~nullary_op() noexcept;
 
 	inline
-	nullary_op(const jive::port & result)
+	nullary_op(const jlm::rvsdg::port & result)
 	: simple_op({}, {result})
 	{}
 };
@@ -94,14 +95,14 @@ public:
 		return value_;
 	}
 
-	virtual std::unique_ptr<jive::operation> copy() const override
+	virtual std::unique_ptr<jlm::rvsdg::operation> copy() const override
 	{
-		return std::unique_ptr<jive::operation>(new domain_const_op(*this));
+		return std::unique_ptr<jlm::rvsdg::operation>(new domain_const_op(*this));
 	}
 
-	static inline jive::output *
+	static inline jlm::rvsdg::output *
 	create(
-		jive::region * region,
+		jlm::rvsdg::region * region,
 		const value_repr & vr)
 	{
 		domain_const_op op(vr);

@@ -12,7 +12,8 @@
 #include <jlm/rvsdg/simple-normal-form.hpp>
 #include <jlm/util/common.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 typedef size_t binop_reduction_path_t;
 
@@ -25,17 +26,17 @@ public:
 
 	binary_normal_form(
 		const std::type_info & operator_class,
-		jive::node_normal_form * parent,
-		jive::graph * graph);
+		jlm::rvsdg::node_normal_form * parent,
+		jlm::rvsdg::graph * graph);
 
 	virtual bool
-	normalize_node(jive::node * node) const override;
+	normalize_node(jlm::rvsdg::node * node) const override;
 
-	virtual std::vector<jive::output*>
+	virtual std::vector<jlm::rvsdg::output*>
 	normalized_create(
-		jive::region * region,
-		const jive::simple_op & op,
-		const std::vector<jive::output*> & arguments) const override;
+		jlm::rvsdg::region * region,
+		const jlm::rvsdg::simple_op & op,
+		const std::vector<jlm::rvsdg::output*> & arguments) const override;
 
 	virtual void
 	set_reducible(bool enable);
@@ -64,7 +65,7 @@ public:
 
 private:
 	bool
-	normalize_node(jive::node * node, const binary_op & op) const;
+	normalize_node(jlm::rvsdg::node * node, const binary_op & op) const;
 
 	bool enable_reducible_;
 	bool enable_reorder_;
@@ -82,17 +83,17 @@ public:
 
 	flattened_binary_normal_form(
 		const std::type_info & operator_class,
-		jive::node_normal_form * parent,
-		jive::graph * graph);
+		jlm::rvsdg::node_normal_form * parent,
+		jlm::rvsdg::graph * graph);
 
 	virtual bool
-	normalize_node(jive::node * node) const override;
+	normalize_node(jlm::rvsdg::node * node) const override;
 
-	virtual std::vector<jive::output*>
+	virtual std::vector<jlm::rvsdg::output*>
 	normalized_create(
-		jive::region * region,
-		const jive::simple_op & op,
-		const std::vector<jive::output*> & arguments) const override;
+		jlm::rvsdg::region * region,
+		const jlm::rvsdg::simple_op & op,
+		const std::vector<jlm::rvsdg::output*> & arguments) const override;
 };
 
 /**
@@ -113,23 +114,23 @@ public:
 
 	inline
 	binary_op(
-		const std::vector<jive::port> & operands,
-		const jive::port & result)
+		const std::vector<jlm::rvsdg::port> & operands,
+		const jlm::rvsdg::port & result)
 	: simple_op(operands, {result})
 	{}
 
 	virtual binop_reduction_path_t
 	can_reduce_operand_pair(
-		const jive::output * op1,
-		const jive::output * op2) const noexcept = 0;
+		const jlm::rvsdg::output * op1,
+		const jlm::rvsdg::output * op2) const noexcept = 0;
 
-	virtual jive::output *
+	virtual jlm::rvsdg::output *
 	reduce_operand_pair(
 		binop_reduction_path_t path,
-		jive::output * op1,
-		jive::output * op2) const = 0;
+		jlm::rvsdg::output * op1,
+		jlm::rvsdg::output * op2) const = 0;
 
-	virtual jive::binary_op::flags
+	virtual jlm::rvsdg::binary_op::flags
 	flags() const noexcept;
 
 	inline bool
@@ -138,10 +139,10 @@ public:
 	inline bool
 	is_commutative() const noexcept;
 
-	static jive::binary_normal_form *
-	normal_form(jive::graph * graph) noexcept
+	static jlm::rvsdg::binary_normal_form *
+	normal_form(jlm::rvsdg::graph * graph) noexcept
 	{
-		return static_cast<jive::binary_normal_form*>(graph->node_normal_form(typeid(binary_op)));
+		return static_cast<jlm::rvsdg::binary_normal_form*>(graph->node_normal_form(typeid(binary_op)));
 	}
 };
 
@@ -155,7 +156,7 @@ public:
 	flattened_binary_op(
 		std::unique_ptr<binary_op> op,
 		size_t narguments) noexcept
-	: simple_op(std::vector<jive::port>(narguments, op->argument(0)), {op->result(0)})
+	: simple_op(std::vector<jlm::rvsdg::port>(narguments, op->argument(0)), {op->result(0)})
 	, op_(std::move(op))
 	{
 		JLM_ASSERT(op_->is_associative());
@@ -165,7 +166,7 @@ public:
 	flattened_binary_op(
 		const binary_op & op,
 		size_t narguments)
-	: simple_op(std::vector<jive::port>(narguments, op.argument(0)), {op.result(0)})
+	: simple_op(std::vector<jlm::rvsdg::port>(narguments, op.argument(0)), {op.result(0)})
 	, op_(std::unique_ptr<binary_op>(static_cast<binary_op*>(op.copy().release())))
 	{
 		JLM_ASSERT(op_->is_associative());
@@ -177,7 +178,7 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
 	inline const binary_op &
@@ -186,26 +187,26 @@ public:
 		return *op_;
 	}
 
-	static jive::flattened_binary_normal_form *
-	normal_form(jive::graph * graph) noexcept
+	static jlm::rvsdg::flattened_binary_normal_form *
+	normal_form(jlm::rvsdg::graph * graph) noexcept
 	{
 		return static_cast<flattened_binary_normal_form*>(
 			graph->node_normal_form(typeid(flattened_binary_op)));
 	}
 
-	jive::output *
+	jlm::rvsdg::output *
 	reduce(
 		const flattened_binary_op::reduction & reduction,
-		const std::vector<jive::output*> & operands) const;
+		const std::vector<jlm::rvsdg::output*> & operands) const;
 
 	static void
 	reduce(
-		jive::region * region,
+		jlm::rvsdg::region * region,
 		const flattened_binary_op::reduction & reduction);
 
 	static inline void
 	reduce(
-		jive::graph * graph,
+		jlm::rvsdg::graph * graph,
 		const flattened_binary_op::reduction & reduction)
 	{
 		reduce(graph->root(), reduction);

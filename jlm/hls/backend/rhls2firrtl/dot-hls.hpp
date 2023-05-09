@@ -21,16 +21,16 @@ namespace jlm {
 
 		private:
 			std::string
-			argument_to_dot(jive::argument *port);
+			argument_to_dot(jlm::rvsdg::argument *port);
 
 			std::string
-			result_to_dot(jive::result *port);
+			result_to_dot(jlm::rvsdg::result *port);
 
 			std::string
-			node_to_dot(const jive::node *node);
+			node_to_dot(const jlm::rvsdg::node *node);
 
 			std::string
-			edge(std::string src, std::string snk, const jive::type &type, bool back = false);
+			edge(std::string src, std::string snk, const jlm::rvsdg::type &type, bool back = false);
 
 			std::string
 			loop_to_dot(hls::loop_node *ln);
@@ -39,7 +39,7 @@ namespace jlm {
 			prepare_loop_out_port(hls::loop_node *ln);
 
 			std::string
-			subregion_to_dot(jive::region *sr);
+			subregion_to_dot(jlm::rvsdg::region *sr);
 
 			int loop_ctr = 0;
 		};

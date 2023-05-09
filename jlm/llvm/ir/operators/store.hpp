@@ -16,24 +16,24 @@ namespace jlm {
 
 /* store normal form */
 
-class store_normal_form final : public jive::simple_normal_form {
+class store_normal_form final : public jlm::rvsdg::simple_normal_form {
 public:
 	virtual
 	~store_normal_form();
 
 	store_normal_form(
 		const std::type_info & opclass,
-		jive::node_normal_form * parent,
-		jive::graph * graph) noexcept;
+		jlm::rvsdg::node_normal_form * parent,
+		jlm::rvsdg::graph * graph) noexcept;
 
 	virtual bool
-	normalize_node(jive::node * node) const override;
+	normalize_node(jlm::rvsdg::node * node) const override;
 
-	virtual std::vector<jive::output*>
+	virtual std::vector<jlm::rvsdg::output*>
 	normalized_create(
-		jive::region * region,
-		const jive::simple_op & op,
-		const std::vector<jive::output*> & operands) const override;
+		jlm::rvsdg::region * region,
+		const jlm::rvsdg::simple_op & op,
+		const std::vector<jlm::rvsdg::output*> & operands) const override;
 
 	virtual void
 	set_store_mux_reducible(bool enable);
@@ -82,17 +82,17 @@ private:
  *
  * This operator is the Jlm equivalent of LLVM's store instruction.
  */
-class StoreOperation final : public jive::simple_op {
+class StoreOperation final : public jlm::rvsdg::simple_op {
 public:
   ~StoreOperation() noexcept override;
 
   StoreOperation(
-    const jive::valuetype & storedType,
+    const jlm::rvsdg::valuetype & storedType,
     size_t numStates,
     size_t alignment)
     : simple_op(
       CreateOperandPorts(storedType, numStates),
-      std::vector<jive::port>(numStates, {MemoryStateType::Create()}))
+      std::vector<jlm::rvsdg::port>(numStates, {MemoryStateType::Create()}))
     , Alignment_(alignment)
   {}
 
@@ -102,7 +102,7 @@ public:
   [[nodiscard]] std::string
   debug_string() const override;
 
-  [[nodiscard]] std::unique_ptr<jive::operation>
+  [[nodiscard]] std::unique_ptr<jlm::rvsdg::operation>
   copy() const override;
 
   [[nodiscard]] const PointerType &
@@ -111,10 +111,10 @@ public:
     return *util::AssertedCast<const PointerType>(&argument(0).type());
   }
 
-  [[nodiscard]] const jive::valuetype &
+  [[nodiscard]] const jlm::rvsdg::valuetype &
   GetStoredType() const noexcept
   {
-    return *util::AssertedCast<const jive::valuetype>(&argument(1).type());
+    return *util::AssertedCast<const jlm::rvsdg::valuetype>(&argument(1).type());
   }
 
   [[nodiscard]] size_t
@@ -130,7 +130,7 @@ public:
   }
 
   static jlm::store_normal_form *
-  GetNormalForm(jive::graph * graph) noexcept
+  GetNormalForm(jlm::rvsdg::graph * graph) noexcept
   {
     return util::AssertedCast<jlm::store_normal_form>(graph->node_normal_form(typeid(StoreOperation)));
   }
@@ -149,22 +149,22 @@ public:
   }
 
 private:
-  static const jive::valuetype &
-  CheckAndExtractStoredType(const jive::type & type)
+  static const jlm::rvsdg::valuetype &
+  CheckAndExtractStoredType(const jlm::rvsdg::type & type)
   {
-    if (auto storedType = dynamic_cast<const jive::valuetype*>(&type))
+    if (auto storedType = dynamic_cast<const jlm::rvsdg::valuetype*>(&type))
       return *storedType;
 
     throw util::error("Expected ValueType");
   }
 
-  static std::vector<jive::port>
+  static std::vector<jlm::rvsdg::port>
   CreateOperandPorts(
-    const jive::valuetype & storedType,
+    const jlm::rvsdg::valuetype & storedType,
     size_t numStates)
   {
-    std::vector<jive::port> ports({PointerType(), storedType});
-    std::vector<jive::port> states(numStates, {MemoryStateType()});
+    std::vector<jlm::rvsdg::port> ports({PointerType(), storedType});
+    std::vector<jlm::rvsdg::port> states(numStates, {MemoryStateType()});
     ports.insert(ports.end(), states.begin(), states.end());
     return ports;
   }
@@ -175,17 +175,17 @@ private:
 /** \brief StoreNode class
  *
  */
-class StoreNode final : public jive::simple_node {
+class StoreNode final : public jlm::rvsdg::simple_node {
 private:
-  class MemoryStateInputIterator final : public jive::input::iterator<jive::simple_input> {
+  class MemoryStateInputIterator final : public jlm::rvsdg::input::iterator<jlm::rvsdg::simple_input> {
     friend StoreNode;
 
     constexpr explicit
-    MemoryStateInputIterator(jive::simple_input * input)
-      : jive::input::iterator<jive::simple_input>(input)
+    MemoryStateInputIterator(jlm::rvsdg::simple_input * input)
+      : jlm::rvsdg::input::iterator<jlm::rvsdg::simple_input>(input)
     {}
 
-    [[nodiscard]] jive::simple_input *
+    [[nodiscard]] jlm::rvsdg::simple_input *
     next() const override
     {
       auto index = value()->index();
@@ -197,15 +197,15 @@ private:
     }
   };
 
-  class MemoryStateOutputIterator final : public jive::output::iterator<jive::simple_output> {
+  class MemoryStateOutputIterator final : public jlm::rvsdg::output::iterator<jlm::rvsdg::simple_output> {
     friend StoreNode;
 
     constexpr explicit
-    MemoryStateOutputIterator(jive::simple_output * output)
-      : jive::output::iterator<jive::simple_output>(output)
+    MemoryStateOutputIterator(jlm::rvsdg::simple_output * output)
+      : jlm::rvsdg::output::iterator<jlm::rvsdg::simple_output>(output)
     {}
 
-    [[nodiscard]] jive::simple_output *
+    [[nodiscard]] jlm::rvsdg::simple_output *
     next() const override
     {
       auto index = value()->index();
@@ -221,9 +221,9 @@ private:
   using MemoryStateOutputRange = util::iterator_range<MemoryStateOutputIterator>;
 
   StoreNode(
-    jive::region & region,
+    jlm::rvsdg::region & region,
     const StoreOperation & operation,
-    const std::vector<jive::output*> & operands)
+    const std::vector<jlm::rvsdg::output*> & operands)
     : simple_node(&region, operation, operands)
   {}
 
@@ -260,7 +260,7 @@ public:
     return GetOperation().GetAlignment();
   }
 
-  [[nodiscard]] jive::input *
+  [[nodiscard]] jlm::rvsdg::input *
   GetAddressInput() const noexcept
   {
     auto addressInput = input(0);
@@ -268,50 +268,50 @@ public:
     return addressInput;
   }
 
-  [[nodiscard]] jive::input *
+  [[nodiscard]] jlm::rvsdg::input *
   GetValueInput() const noexcept
   {
     auto valueInput = input(1);
-    JLM_ASSERT(is<jive::valuetype>(valueInput->type()));
+    JLM_ASSERT(is<jlm::rvsdg::valuetype>(valueInput->type()));
     return valueInput;
   }
 
-  static std::vector<jive::output*>
+  static std::vector<jlm::rvsdg::output*>
   Create(
-    jive::output * address,
-    jive::output * value,
-    const std::vector<jive::output*> & states,
+    jlm::rvsdg::output * address,
+    jlm::rvsdg::output * value,
+    const std::vector<jlm::rvsdg::output*> & states,
     size_t alignment)
   {
     auto & storedType = CheckAndExtractStoredType(value->type());
 
-    std::vector<jive::output*> operands({address, value});
+    std::vector<jlm::rvsdg::output*> operands({address, value});
     operands.insert(operands.end(), states.begin(), states.end());
 
     StoreOperation storeOperation(storedType, states.size(), alignment);
-    return jive::outputs(new StoreNode(
+    return jlm::rvsdg::outputs(new StoreNode(
       *address->region(),
       storeOperation,
       operands));
   }
 
-  static std::vector<jive::output*>
+  static std::vector<jlm::rvsdg::output*>
   Create(
-    jive::region & region,
+    jlm::rvsdg::region & region,
     const StoreOperation & storeOperation,
-    const std::vector<jive::output*> & operands)
+    const std::vector<jlm::rvsdg::output*> & operands)
   {
-    return jive::outputs(new StoreNode(
+    return jlm::rvsdg::outputs(new StoreNode(
       region,
       storeOperation,
       operands));
   }
 
 private:
-  static const jive::valuetype &
-  CheckAndExtractStoredType(const jive::type & type)
+  static const jlm::rvsdg::valuetype &
+  CheckAndExtractStoredType(const jlm::rvsdg::type & type)
   {
-    if (auto storedType = dynamic_cast<const jive::valuetype*>(&type))
+    if (auto storedType = dynamic_cast<const jlm::rvsdg::valuetype*>(&type))
       return *storedType;
 
     throw util::error("Expected ValueType.");

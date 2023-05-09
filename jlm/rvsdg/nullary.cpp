@@ -7,7 +7,8 @@
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/nullary.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 class nullary_normal_form final : public simple_normal_form {
 public:
@@ -18,8 +19,8 @@ public:
 
 	nullary_normal_form(
 		const std::type_info & operator_class,
-		jive::node_normal_form * parent,
-		jive::graph * graph)
+		jlm::rvsdg::node_normal_form * parent,
+		jlm::rvsdg::graph * graph)
 		: simple_normal_form(operator_class, parent, graph)
 	{
 	}
@@ -34,20 +35,20 @@ nullary_op::~nullary_op() noexcept
 
 namespace {
 
-jive::node_normal_form *
-jive_nullary_operation_get_default_normal_form_(
+jlm::rvsdg::node_normal_form *
+nullary_operation_get_default_normal_form_(
 	const std::type_info & operator_class,
-	jive::node_normal_form * parent,
-	jive::graph * graph)
+	jlm::rvsdg::node_normal_form * parent,
+	jlm::rvsdg::graph * graph)
 {
-	return new jive::nullary_normal_form(operator_class, parent, graph);
+	return new jlm::rvsdg::nullary_normal_form(operator_class, parent, graph);
 }
 
 static void  __attribute__((constructor))
 register_node_normal_form(void)
 {
-	jive::node_normal_form::register_factory(
-		typeid(jive::nullary_op), jive_nullary_operation_get_default_normal_form_);
+	jlm::rvsdg::node_normal_form::register_factory(
+		typeid(jlm::rvsdg::nullary_op), nullary_operation_get_default_normal_form_);
 }
 
 }

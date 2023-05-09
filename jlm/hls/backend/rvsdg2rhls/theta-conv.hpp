@@ -11,10 +11,10 @@
 
 namespace jlm{
 	namespace hls{
-		void theta_conv(jive::theta_node *theta);
+		void theta_conv(jlm::rvsdg::theta_node *theta);
 
 		void
-		theta_conv(jive::region *region);
+		theta_conv(jlm::rvsdg::region *region);
 
 		void
 		theta_conv(jlm::RvsdgModule &rm);

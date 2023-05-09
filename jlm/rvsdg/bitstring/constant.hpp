@@ -16,7 +16,8 @@
 #include <jlm/rvsdg/nullary.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 struct type_of_value {
 	bittype
@@ -54,27 +55,27 @@ int_constant_op(size_t nbits, int64_t value)
 // declare explicit instantiation
 extern template class domain_const_op<bittype, bitvalue_repr, format_value, type_of_value>;
 
-static inline jive::output *
-create_bitconstant(jive::region * region, const bitvalue_repr & vr)
+static inline jlm::rvsdg::output *
+create_bitconstant(jlm::rvsdg::region * region, const bitvalue_repr & vr)
 {
 	return simple_node::create_normalized(region, bitconstant_op(vr), {})[0];
 }
 
-static inline jive::output *
-create_bitconstant(jive::region * region, size_t nbits, int64_t value)
+static inline jlm::rvsdg::output *
+create_bitconstant(jlm::rvsdg::region * region, size_t nbits, int64_t value)
 {
 	return create_bitconstant(region, {nbits, value});
 }
 
-static inline jive::output *
-create_bitconstant_undefined(jive::region * region, size_t nbits)
+static inline jlm::rvsdg::output *
+create_bitconstant_undefined(jlm::rvsdg::region * region, size_t nbits)
 {
 	std::string s(nbits, 'X');
 	return create_bitconstant(region, bitvalue_repr(s.c_str()));
 }
 
-static inline jive::output *
-create_bitconstant_defined(jive::region * region, size_t nbits)
+static inline jlm::rvsdg::output *
+create_bitconstant_defined(jlm::rvsdg::region * region, size_t nbits)
 {
 	std::string s(nbits, 'D');
 	return create_bitconstant(region, bitvalue_repr(s.c_str()));

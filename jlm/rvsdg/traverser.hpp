@@ -10,20 +10,21 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 namespace detail {
 
 template<typename T>
 class traverser_iterator {
 public:
 	typedef std::input_iterator_tag iterator_category;
-	typedef jive::node * value_type;
+	typedef jlm::rvsdg::node * value_type;
 	typedef ssize_t difference_type;
 	typedef value_type * pointer;
 	typedef value_type & reference;
 
 	constexpr
-	traverser_iterator(T * traverser = nullptr, jive::node * node = nullptr) noexcept
+	traverser_iterator(T * traverser = nullptr, jlm::rvsdg::node * node = nullptr) noexcept
 		: traverser_(traverser)
 		, node_(node)
 	{
@@ -58,7 +59,7 @@ public:
 
 private:
 	T * traverser_;
-	jive::node * node_;
+	jlm::rvsdg::node * node_;
 };
 
 }
@@ -73,18 +74,18 @@ enum class traversal_nodestate {
 class traversal_tracker final {
 public:
 	inline
-	traversal_tracker(jive::graph * graph);
+	traversal_tracker(jlm::rvsdg::graph * graph);
 	
 	inline traversal_nodestate
-	get_nodestate(jive::node * node);
+	get_nodestate(jlm::rvsdg::node * node);
 	
 	inline void
-	set_nodestate(jive::node * node, traversal_nodestate state);
+	set_nodestate(jlm::rvsdg::node * node, traversal_nodestate state);
 	
-	inline jive::node *
+	inline jlm::rvsdg::node *
 	peek_top();
 	
-	inline jive::node *
+	inline jlm::rvsdg::node *
 	peek_bottom();
 
 private:
@@ -125,33 +126,33 @@ public:
 	~topdown_traverser() noexcept;
 
 	explicit
-	topdown_traverser(jive::region * region);
+	topdown_traverser(jlm::rvsdg::region * region);
 
-	jive::node *
+	jlm::rvsdg::node *
 	next();
 
-	inline jive::region *
+	inline jlm::rvsdg::region *
 	region() const noexcept
 	{
 		return region_;
 	}
 
 	typedef detail::traverser_iterator<topdown_traverser> iterator;
-	typedef jive::node * value_type;
+	typedef jlm::rvsdg::node * value_type;
 	inline iterator begin() { return iterator(this, next()); }
 	inline iterator end() { return iterator(this, nullptr); }
 
 private:
 	bool
-	predecessors_visited(const jive::node * node) noexcept;
+	predecessors_visited(const jlm::rvsdg::node * node) noexcept;
 
 	void
-	node_create(jive::node * node);
+	node_create(jlm::rvsdg::node * node);
 
 	void
 	input_change(input * in, output * old_origin, output * new_origin);
 
-	jive::region * region_;
+	jlm::rvsdg::region * region_;
 	traversal_tracker tracker_;
 	std::vector<jlm::util::callback> callbacks_;
 };
@@ -161,33 +162,33 @@ public:
 	~bottomup_traverser() noexcept;
 
 	explicit
-	bottomup_traverser(jive::region * region, bool revisit = false);
+	bottomup_traverser(jlm::rvsdg::region * region, bool revisit = false);
 
-	jive::node *
+	jlm::rvsdg::node *
 	next();
 
-	inline jive::region *
+	inline jlm::rvsdg::region *
 	region() const noexcept
 	{
 		return region_;
 	}
 
 	typedef detail::traverser_iterator<bottomup_traverser> iterator;
-	typedef jive::node * value_type;
+	typedef jlm::rvsdg::node * value_type;
 	inline iterator begin() { return iterator(this, next()); }
 	inline iterator end() { return iterator(this, nullptr); }
 
 private:
 	void
-	node_create(jive::node * node);
+	node_create(jlm::rvsdg::node * node);
 
 	void
-	node_destroy(jive::node * node);
+	node_destroy(jlm::rvsdg::node * node);
 
 	void
 	input_change(input * in, output * old_origin, output * new_origin);
 
-	jive::region * region_;
+	jlm::rvsdg::region * region_;
 	traversal_tracker tracker_;
 	std::vector<jlm::util::callback> callbacks_;
 	traversal_nodestate new_node_state_;
@@ -195,32 +196,32 @@ private:
 
 /* traversal tracker implementation */
 
-traversal_tracker::traversal_tracker(jive::graph * graph)
+traversal_tracker::traversal_tracker(jlm::rvsdg::graph * graph)
 	: tracker_(graph, 2)
 {
 }
 
 traversal_nodestate
-traversal_tracker::get_nodestate(jive::node * node)
+traversal_tracker::get_nodestate(jlm::rvsdg::node * node)
 {
 	return static_cast<traversal_nodestate>(tracker_.get_nodestate(node));
 }
 
 void
 traversal_tracker::set_nodestate(
-	jive::node * node,
+	jlm::rvsdg::node * node,
 	traversal_nodestate state)
 {
 	tracker_.set_nodestate(node, static_cast<size_t>(state));
 }
 
-jive::node *
+jlm::rvsdg::node *
 traversal_tracker::peek_top()
 {
 	return tracker_.peek_top(static_cast<size_t>(traversal_nodestate::frontier));
 }
 
-jive::node *
+jlm::rvsdg::node *
 traversal_tracker::peek_bottom()
 {
 	return tracker_.peek_bottom(static_cast<size_t>(traversal_nodestate::frontier));

@@ -15,7 +15,7 @@ namespace jlm {
 namespace jlm2llvm {
 
 static llvm::Type *
-convert(const jive::bittype & type, context & ctx)
+convert(const rvsdg::bittype & type, context & ctx)
 {
 	return llvm::Type::getIntNTy(ctx.llvm_module().getContext(), type.nbits());
 }
@@ -30,16 +30,16 @@ convert(const FunctionType & functionType, context & ctx)
 	bool isvararg = false;
 	std::vector<Type*> argumentTypes;
   for (auto & argumentType : functionType.Arguments()) {
-		if (jive::is<varargtype>(argumentType)) {
+		if (rvsdg::is<varargtype>(argumentType)) {
 			isvararg = true;
 			continue;
 		}
 
-		if (jive::is<iostatetype>(argumentType))
+		if (rvsdg::is<iostatetype>(argumentType))
 			continue;
-		if (jive::is<MemoryStateType>(argumentType))
+		if (rvsdg::is<MemoryStateType>(argumentType))
 			continue;
-		if (jive::is<loopstatetype>(argumentType))
+		if (rvsdg::is<loopstatetype>(argumentType))
 			continue;
 
 		argumentTypes.push_back(convert_type(argumentType, ctx));
@@ -50,7 +50,7 @@ convert(const FunctionType & functionType, context & ctx)
 		a return value, or (statetype, statetype, ...) if the function returns void.
 	*/
 	auto resultType = Type::getVoidTy(lctx);
-	if (functionType.NumResults() > 0 && jive::is<jive::valuetype>(functionType.ResultType(0)))
+	if (functionType.NumResults() > 0 && rvsdg::is<rvsdg::valuetype>(functionType.ResultType(0)))
 		resultType = convert_type(functionType.ResultType(0), ctx);
 
 	return llvm::FunctionType::get(resultType, argumentTypes, isvararg);
@@ -69,7 +69,7 @@ convert(const arraytype & type, context & ctx)
 }
 
 static llvm::Type *
-convert(const jive::ctltype & type, context & ctx)
+convert(const rvsdg::ctltype & type, context & ctx)
 {
 	if (type.nalternatives() == 2)
 		return llvm::Type::getInt1Ty(ctx.llvm_module().getContext());
@@ -130,25 +130,25 @@ convert(const scalablevectortype & type, context & ctx)
 
 template<class T> static llvm::Type *
 convert(
-	const jive::type & type,
+	const rvsdg::type & type,
 	context & ctx)
 {
-	JLM_ASSERT(jive::is<T>(type));
+	JLM_ASSERT(rvsdg::is<T>(type));
 	return convert(*static_cast<const T*>(&type), ctx);
 }
 
 llvm::Type *
-convert_type(const jive::type & type, context & ctx)
+convert_type(const rvsdg::type & type, context & ctx)
 {
   static std::unordered_map<
     std::type_index,
-    std::function<llvm::Type*(const jive::type&, context&)>
+    std::function<llvm::Type*(const rvsdg::type&, context&)>
   > map({
-          {typeid(jive::bittype),      convert<jive::bittype>},
+          {typeid(rvsdg::bittype),      convert<rvsdg::bittype>},
           {typeid(FunctionType),       convert<FunctionType>},
           {typeid(PointerType),        convert<PointerType>},
           {typeid(arraytype),          convert<arraytype>},
-          {typeid(jive::ctltype),      convert<jive::ctltype>},
+          {typeid(rvsdg::ctltype),      convert<rvsdg::ctltype>},
           {typeid(fptype),             convert<fptype>},
           {typeid(StructType),         convert<StructType>},
           {typeid(fixedvectortype),    convert<fixedvectortype>},

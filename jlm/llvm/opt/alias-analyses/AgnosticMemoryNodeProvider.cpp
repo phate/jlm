@@ -42,13 +42,13 @@ public:
   }
 
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode*> &
-  GetRegionEntryNodes(const jive::region & region) const override
+  GetRegionEntryNodes(const rvsdg::region & region) const override
   {
     return MemoryNodes_;
   }
 
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode*> &
-  GetRegionExitNodes(const jive::region & region) const override
+  GetRegionExitNodes(const rvsdg::region & region) const override
   {
     return MemoryNodes_;
   }
@@ -66,7 +66,7 @@ public:
   }
 
   [[nodiscard]] util::HashSet<const PointsToGraph::MemoryNode*>
-  GetOutputNodes(const jive::output & output) const override
+  GetOutputNodes(const rvsdg::output & output) const override
   {
     JLM_ASSERT(is<PointerType>(output.type()));
     auto & registerNode = PointsToGraph_.GetRegisterNode(output);

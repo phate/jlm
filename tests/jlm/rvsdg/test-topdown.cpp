@@ -14,7 +14,7 @@ test_initialization()
 {
 	jlm::valuetype vtype;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 	auto i = graph.add_import({vtype, "i"});
 
 	auto constant = jlm::test_op::create(graph.root(), {}, {&vtype});
@@ -28,7 +28,7 @@ test_initialization()
 	bool unary_visited = false;
 	bool binary_visited = false;
 	bool constant_visited = false;
-	for (const auto & node : jive::topdown_traverser(graph.root())) {
+	for (const auto & node : jlm::rvsdg::topdown_traverser(graph.root())) {
 		if (node == unary) unary_visited = true;
 		if (node == constant) constant_visited = true;
 		if (node == binary && unary_visited) binary_visited = true;
@@ -42,7 +42,7 @@ test_initialization()
 static void
 test_basic_traversal()
 {
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 	jlm::valuetype type;
 
 	auto n1 = jlm::test_op::create(graph.root(), {}, {&type, &type});
@@ -51,8 +51,8 @@ test_basic_traversal()
 	graph.add_export(n2->output(0), {n2->output(0)->type(), "dummy"});
 
 	{
-		jive::node * tmp;
-		jive::topdown_traverser trav(graph.root());
+		jlm::rvsdg::node * tmp;
+		jlm::rvsdg::topdown_traverser trav(graph.root());
 
 		tmp = trav.next();
 		assert(tmp == n1);
@@ -68,7 +68,7 @@ test_basic_traversal()
 static void
 test_order_enforcement_traversal()
 {
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 	jlm::valuetype type;
 
 	auto n1 = jlm::test_op::create(graph.root(), {}, {&type, &type});
@@ -76,8 +76,8 @@ test_order_enforcement_traversal()
 	auto n3 = jlm::test_op::create(graph.root(), {n2->output(0),n1->output(1)}, {&type});
 
 	{
-		jive::node * tmp;
-		jive::topdown_traverser trav(graph.root());
+		jlm::rvsdg::node * tmp;
+		jlm::rvsdg::topdown_traverser trav(graph.root());
 
 		tmp = trav.next();
 		assert(tmp == n1);
@@ -95,7 +95,7 @@ test_order_enforcement_traversal()
 static void
 test_traversal_insertion()
 {
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 	jlm::valuetype type;
 
 	auto n1 = jlm::test_op::create(graph.root(), {}, {&type, &type});
@@ -104,8 +104,8 @@ test_traversal_insertion()
 	graph.add_export(n2->output(0), {n2->output(0)->type(), "dummy"});
 
 	{
-		jive::node * node;
-		jive::topdown_traverser trav(graph.root());
+		jlm::rvsdg::node * node;
+		jlm::rvsdg::topdown_traverser trav(graph.root());
 
 		node = trav.next();
 		assert(node == n1);
@@ -144,12 +144,12 @@ test_traversal_insertion()
 static void
 test_mutable_traverse()
 {
-	auto test = [](jive::graph * graph, jive::node * n1, jive::node * n2, jive::node * n3) {
+	auto test = [](jlm::rvsdg::graph * graph, jlm::rvsdg::node * n1, jlm::rvsdg::node * n2, jlm::rvsdg::node * n3) {
 		bool seen_n1 = false;
 		bool seen_n2 = false;
 		bool seen_n3 = false;
 
-		for (const auto & tmp : jive::topdown_traverser(graph->root())) {
+		for (const auto & tmp : jlm::rvsdg::topdown_traverser(graph->root())) {
 			seen_n1 = seen_n1 || (tmp == n1);
 			seen_n2 = seen_n2 || (tmp == n2);
 			seen_n3 = seen_n3 || (tmp == n3);
@@ -164,7 +164,7 @@ test_mutable_traverse()
 		assert(seen_n3);
 	};
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 	jlm::valuetype type;
 	auto n1 = jlm::test_op::create(graph.root(), {}, {&type});
 	auto n2 = jlm::test_op::create(graph.root(), {}, {&type});

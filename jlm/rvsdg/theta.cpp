@@ -7,7 +7,8 @@
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 /* theta operation */
 
@@ -20,10 +21,10 @@ theta_op::debug_string() const
 	return "THETA";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<jlm::rvsdg::operation>
 theta_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new theta_op(*this));
+	return std::unique_ptr<jlm::rvsdg::operation>(new theta_op(*this));
 }
 
 /* theta input */
@@ -65,8 +66,8 @@ theta_node::loopvar_iterator::operator++() noexcept
 	return *this;
 }
 
-jive::theta_output *
-theta_node::add_loopvar(jive::output * origin)
+jlm::rvsdg::theta_output *
+theta_node::add_loopvar(jlm::rvsdg::output * origin)
 {
 	node::add_input(std::unique_ptr<node_input>(new theta_input(this, origin, origin->type())));
 	node::add_output(std::unique_ptr<node_output>(new theta_output(this, origin->type())));
@@ -81,13 +82,13 @@ theta_node::add_loopvar(jive::output * origin)
 	return output;
 }
 
-jive::theta_node *
-theta_node::copy(jive::region * region, jive::substitution_map & smap) const
+jlm::rvsdg::theta_node *
+theta_node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const
 {
-	auto nf = graph()->node_normal_form(typeid(jive::operation));
+	auto nf = graph()->node_normal_form(typeid(jlm::rvsdg::operation));
 	nf->set_mutable(false);
 
-	jive::substitution_map rmap;
+	jlm::rvsdg::substitution_map rmap;
 	auto theta = create(region);
 
 	/* add loop variables */

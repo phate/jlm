@@ -17,7 +17,7 @@ namespace jlm {
 /** \brief Call operation class
  *
  */
-class CallOperation final : public jive::simple_op {
+class CallOperation final : public jlm::rvsdg::simple_op {
 public:
 	~CallOperation() override;
 
@@ -39,7 +39,7 @@ public:
     return FunctionType_;
 	}
 
-	[[nodiscard]] std::unique_ptr<jive::operation>
+	[[nodiscard]] std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
 	static std::unique_ptr<tac>
@@ -57,20 +57,20 @@ public:
 	}
 
 private:
-	static inline std::vector<jive::port>
+	static inline std::vector<jlm::rvsdg::port>
 	create_srcports(const FunctionType & functionType)
 	{
-		std::vector<jive::port> ports(1, {PointerType()});
+		std::vector<jlm::rvsdg::port> ports(1, {PointerType()});
     for (auto & argumentType : functionType.Arguments())
 			ports.emplace_back(argumentType);
 
 		return ports;
 	}
 
-	static inline std::vector<jive::port>
+	static inline std::vector<jlm::rvsdg::port>
 	create_dstports(const FunctionType & functionType)
 	{
-		std::vector<jive::port> ports;
+		std::vector<jlm::rvsdg::port> ports;
     for (auto & resultType : functionType.Results())
 			ports.emplace_back(resultType);
 
@@ -78,7 +78,7 @@ private:
 	}
 
   static void
-  CheckFunctionInputType(const jive::type & type)
+  CheckFunctionInputType(const jlm::rvsdg::type & type)
   {
     if (!is<PointerType>(type))
       throw util::error("Expected pointer type.");
@@ -117,7 +117,7 @@ public:
 
   CallTypeClassifier(
     CallType callType,
-    jive::output & output)
+    jlm::rvsdg::output & output)
   : CallType_(callType)
   , Output_(&output)
   {}
@@ -186,7 +186,7 @@ public:
     }
 
     JLM_ASSERT(GetCallType() == CallType::RecursiveDirectCall);
-    auto argument = util::AssertedCast<jive::argument>(Output_);
+    auto argument = util::AssertedCast<jlm::rvsdg::argument>(Output_);
     /*
      * FIXME: This assumes that all recursion variables where added before the dependencies. It
      * would be better if we did not use the index for retrieving the result, but instead
@@ -201,11 +201,11 @@ public:
    *
    * @return The imported function.
    */
-  [[nodiscard]] jive::argument &
+  [[nodiscard]] jlm::rvsdg::argument &
   GetImport() const noexcept
   {
     JLM_ASSERT(GetCallType() == CallType::ExternalCall);
-    return *util::AssertedCast<jive::argument>(Output_);
+    return *util::AssertedCast<jlm::rvsdg::argument>(Output_);
   }
 
   /** \brief Return origin of a call node's function input.
@@ -216,7 +216,7 @@ public:
    *
    * @see CallNode::TraceFunctionInput(), CallNode::GetFunctionInput()
    */
-  [[nodiscard]] jive::output &
+  [[nodiscard]] jlm::rvsdg::output &
   GetFunctionOrigin() const noexcept
   {
     return *Output_;
@@ -229,39 +229,39 @@ public:
   }
 
   static std::unique_ptr<CallTypeClassifier>
-  CreateRecursiveDirectCallClassifier(jive::argument & output)
+  CreateRecursiveDirectCallClassifier(jlm::rvsdg::argument & output)
   {
     JLM_ASSERT(is_phi_recvar_argument(&output));
     return std::make_unique<CallTypeClassifier>(CallType::RecursiveDirectCall, output);
   }
 
   static std::unique_ptr<CallTypeClassifier>
-  CreateExternalCallClassifier(jive::argument & argument)
+  CreateExternalCallClassifier(jlm::rvsdg::argument & argument)
   {
     JLM_ASSERT(argument.region() == argument.region()->graph()->root());
     return std::make_unique<CallTypeClassifier>(CallType::ExternalCall, argument);
   }
 
   static std::unique_ptr<CallTypeClassifier>
-  CreateIndirectCallClassifier(jive::output & output)
+  CreateIndirectCallClassifier(jlm::rvsdg::output & output)
   {
     return std::make_unique<CallTypeClassifier>(CallType::IndirectCall, output);
   }
 
 private:
   CallType CallType_;
-  jive::output * Output_;
+  jlm::rvsdg::output * Output_;
 };
 
 /** \brief Call node
  *
  */
-class CallNode final : public jive::simple_node {
+class CallNode final : public jlm::rvsdg::simple_node {
 private:
   CallNode(
-    jive::region & region,
+    jlm::rvsdg::region & region,
     const CallOperation & operation,
-    const std::vector<jive::output*> & operands)
+    const std::vector<jlm::rvsdg::output*> & operands)
     : simple_node(&region, operation, operands)
   {}
 
@@ -278,7 +278,7 @@ public:
     return ninputs()-1;
   }
 
-  [[nodiscard]] jive::input *
+  [[nodiscard]] jlm::rvsdg::input *
   Argument(size_t n) const
   {
     return input(n);
@@ -290,13 +290,13 @@ public:
     return noutputs();
   }
 
-  [[nodiscard]] jive::output *
+  [[nodiscard]] jlm::rvsdg::output *
   Result(size_t n) const noexcept
   {
     return output(n);
   }
 
-  [[nodiscard]] jive::input *
+  [[nodiscard]] jlm::rvsdg::input *
   GetFunctionInput() const noexcept
   {
     auto functionInput = input(0);
@@ -304,7 +304,7 @@ public:
     return functionInput;
   }
 
-  [[nodiscard]] jive::input *
+  [[nodiscard]] jlm::rvsdg::input *
   GetIoStateInput() const noexcept
   {
     auto iOState = input(ninputs()-3);
@@ -312,7 +312,7 @@ public:
     return iOState;
   }
 
-  [[nodiscard]] jive::input *
+  [[nodiscard]] jlm::rvsdg::input *
   GetMemoryStateInput() const noexcept
   {
     auto memoryState = input(ninputs()-2);
@@ -320,7 +320,7 @@ public:
     return memoryState;
   }
 
-  [[nodiscard]] jive::input *
+  [[nodiscard]] jlm::rvsdg::input *
   GetLoopStateInput() const noexcept
   {
     auto loopState = input(ninputs()-1);
@@ -328,7 +328,7 @@ public:
     return loopState;
   }
 
-  [[nodiscard]] jive::output *
+  [[nodiscard]] jlm::rvsdg::output *
   GetIoStateOutput() const noexcept
   {
     auto iOState = output(noutputs()-3);
@@ -336,7 +336,7 @@ public:
     return iOState;
   }
 
-  [[nodiscard]] jive::output *
+  [[nodiscard]] jlm::rvsdg::output *
   GetMemoryStateOutput() const noexcept
   {
     auto memoryState = output(noutputs()-2);
@@ -344,7 +344,7 @@ public:
     return memoryState;
   }
 
-  [[nodiscard]] jive::output *
+  [[nodiscard]] jlm::rvsdg::output *
   GetLoopStateOutput() const noexcept
   {
     auto loopState = output(noutputs()-1);
@@ -352,34 +352,34 @@ public:
     return loopState;
   }
 
-  static std::vector<jive::output*>
+  static std::vector<jlm::rvsdg::output*>
   Create(
-    jive::output * function,
+    jlm::rvsdg::output * function,
     const FunctionType & functionType,
-    const std::vector<jive::output*> & arguments)
+    const std::vector<jlm::rvsdg::output*> & arguments)
   {
     CheckFunctionInputType(function->type());
     CheckFunctionType(functionType);
 
     CallOperation callOperation(functionType);
-    std::vector<jive::output*> operands({function});
+    std::vector<jlm::rvsdg::output*> operands({function});
     operands.insert(operands.end(), arguments.begin(), arguments.end());
 
-    return jive::outputs(new CallNode(
+    return jlm::rvsdg::outputs(new CallNode(
       *function->region(),
       callOperation,
       operands));
   }
 
-  static std::vector<jive::output*>
+  static std::vector<jlm::rvsdg::output*>
   Create(
-    jive::region & region,
+    jlm::rvsdg::region & region,
     const CallOperation & callOperation,
-    const std::vector<jive::output*> & operands)
+    const std::vector<jlm::rvsdg::output*> & operands)
   {
     CheckFunctionType(callOperation.GetFunctionType());
 
-    return jive::outputs(new CallNode(
+    return jlm::rvsdg::outputs(new CallNode(
       region,
       callOperation,
       operands));
@@ -396,7 +396,7 @@ public:
   *
   * \return The traced output.
   */
-  static jive::output *
+  static jlm::rvsdg::output *
   TraceFunctionInput(const CallNode & callNode);
 
   /** \brief Classifies a call node.
@@ -411,7 +411,7 @@ public:
 
 private:
   static void
-  CheckFunctionInputType(const jive::type & type)
+  CheckFunctionInputType(const jlm::rvsdg::type & type)
   {
     if (!is<PointerType>(type))
       throw util::error("Expected pointer type.");

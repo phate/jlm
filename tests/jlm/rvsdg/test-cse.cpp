@@ -10,11 +10,11 @@
 static int
 test_main()
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
 	jlm::valuetype t;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 	auto i = graph.add_import({t, "i"});
 
 	auto o1 = jlm::test_op::create(graph.root(), {}, {&t})->output(0);
@@ -23,7 +23,7 @@ test_main()
 	auto e1 = graph.add_export(o1, {o1->type(), "o1"});
 	auto e2 = graph.add_export(o2, {o2->type(), "o2"});
 
-	auto nf = dynamic_cast<jive::simple_normal_form*>(graph.node_normal_form(
+	auto nf = dynamic_cast<jlm::rvsdg::simple_normal_form*>(graph.node_normal_form(
 		typeid(jlm::test_op)));
 	nf->set_mutable(false);
 

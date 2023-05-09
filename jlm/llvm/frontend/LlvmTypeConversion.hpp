@@ -14,12 +14,6 @@
 
 #include <memory>
 
-namespace jive {
-namespace base {
-	class type;
-}
-}
-
 namespace llvm {
 	class ArrayType;
 	class Type;
@@ -32,7 +26,7 @@ class context;
 jlm::fpsize
 ExtractFloatingPointSize(const llvm::Type * type);
 
-std::unique_ptr<jive::valuetype>
+std::unique_ptr<rvsdg::valuetype>
 ConvertType(const llvm::Type * type, context & ctx);
 
 static inline std::unique_ptr<FunctionType>

@@ -10,13 +10,7 @@
 #include <jlm/llvm/ir/cfg-node.hpp>
 #include <jlm/llvm/ir/tac.hpp>
 
-namespace jive {
-	class operation;
-}
-
 namespace jlm {
-
-class expr;
 
 /* basic block */
 

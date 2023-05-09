@@ -18,14 +18,14 @@ namespace phi {
 
 /* phi operation class  */
 
-class operation final : public jive::structural_op {
+class operation final : public jlm::rvsdg::structural_op {
 public:
   ~operation() override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jive::operation>
+  virtual std::unique_ptr<jlm::rvsdg::operation>
   copy() const override;
 };
 
@@ -36,7 +36,7 @@ class cvargument;
 class cvinput;
 class rvoutput;
 
-class node final : public jive::structural_node {
+class node final : public jlm::rvsdg::structural_node {
   friend phi::builder;
 
   class cvconstiterator final
@@ -295,14 +295,14 @@ public:
 
 private:
   node(
-    jive::region * parent,
+    jlm::rvsdg::region * parent,
     const phi::operation & op)
     : structural_node(op, parent, 1)
   {}
 
   static phi::node *
   create(
-    jive::region * parent,
+    jlm::rvsdg::region * parent,
     const phi::operation & op)
   {
     return new phi::node(parent, op);
@@ -369,7 +369,7 @@ public:
     return rviterator(nullptr);
   }
 
-  jive::region *
+  jlm::rvsdg::region *
   subregion() const noexcept
   {
     return structural_node::subregion(0);
@@ -378,11 +378,11 @@ public:
   const phi::operation &
   operation() const noexcept
   {
-    return *static_cast<const phi::operation*>(&jive::node::operation());
+    return *static_cast<const phi::operation*>(&jlm::rvsdg::node::operation());
   }
 
   cvargument *
-  add_ctxvar(jive::output * origin);
+  add_ctxvar(jlm::rvsdg::output * origin);
 
   cvinput *
   input(size_t n) const noexcept;
@@ -391,7 +391,7 @@ public:
   output(size_t n) const noexcept;
 
   virtual phi::node *
-  copy(jive::region * region, jive::substitution_map & smap) const override;
+  copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const override;
 };
 
 /* phi builder class */
@@ -405,14 +405,14 @@ public:
     : node_(nullptr)
   {}
 
-  jive::region *
+  jlm::rvsdg::region *
   subregion() const noexcept
   {
     return node_ ? node_->subregion() : nullptr;
   }
 
   void
-  begin(jive::region * parent)
+  begin(jlm::rvsdg::region * parent)
   {
     if (node_)
       return;
@@ -421,7 +421,7 @@ public:
   }
 
   phi::cvargument *
-  add_ctxvar(jive::output * origin)
+  add_ctxvar(jlm::rvsdg::output * origin)
   {
     if (!node_)
       return nullptr;
@@ -430,7 +430,7 @@ public:
   }
 
   phi::rvoutput *
-  add_recvar(const jive::type & type);
+  add_recvar(const jlm::rvsdg::type & type);
 
   phi::node *
   end();
@@ -441,7 +441,7 @@ private:
 
 /* phi context variable input class */
 
-class cvinput final : public jive::structural_input {
+class cvinput final : public jlm::rvsdg::structural_input {
   friend phi::node;
 
 public:
@@ -450,8 +450,8 @@ public:
 private:
   cvinput(
     phi::node * node,
-    jive::output * origin,
-    const jive::port & port)
+    jlm::rvsdg::output * origin,
+    const jlm::rvsdg::port & port)
     : structural_input(node, origin, port)
   {}
 
@@ -468,8 +468,8 @@ private:
   static cvinput *
   create(
     phi::node * node,
-    jive::output * origin,
-    const jive::port & port)
+    jlm::rvsdg::output * origin,
+    const jlm::rvsdg::port & port)
   {
     auto input = std::unique_ptr<cvinput>(new cvinput(node, origin, port));
     return static_cast<cvinput*>(node->append_input(std::move(input)));
@@ -491,7 +491,7 @@ public:
 class rvargument;
 class rvresult;
 
-class rvoutput final : public jive::structural_output {
+class rvoutput final : public jlm::rvsdg::structural_output {
   friend phi::builder;
 
 public:
@@ -501,7 +501,7 @@ private:
   rvoutput(
     phi::node * node,
     rvargument * argument,
-    const jive::port & port)
+    const jlm::rvsdg::port & port)
     : structural_output(node, port)
     , argument_(argument)
   {}
@@ -520,7 +520,7 @@ private:
   create(
     phi::node * node,
     rvargument * argument,
-    const jive::port & port);
+    const jlm::rvsdg::port & port);
 
 public:
   rvargument *
@@ -533,7 +533,7 @@ public:
   result() const noexcept;
 
   void
-  set_rvorigin(jive::output * origin);
+  set_rvorigin(jlm::rvsdg::output * origin);
 
   phi::node *
   node() const noexcept
@@ -549,7 +549,7 @@ private:
 
 class rvresult;
 
-class rvargument final : public jive::argument {
+class rvargument final : public jlm::rvsdg::argument {
   friend phi::builder;
   friend phi::rvoutput;
 
@@ -558,8 +558,8 @@ public:
 
 private:
   rvargument(
-    jive::region * region,
-    const jive::port & port)
+    jlm::rvsdg::region * region,
+    const jlm::rvsdg::port & port)
     : argument(region, nullptr, port)
     , output_(nullptr)
   {}
@@ -576,8 +576,8 @@ private:
 
   static rvargument *
   create(
-    jive::region * region,
-    const jive::port & port)
+    jlm::rvsdg::region * region,
+    const jlm::rvsdg::port & port)
   {
     auto argument = new rvargument(region, port);
     region->append_argument(argument);
@@ -607,7 +607,7 @@ private:
 class cvinput;
 class node;
 
-class cvargument final : public jive::argument {
+class cvargument final : public jlm::rvsdg::argument {
   friend phi::node;
 
 public:
@@ -615,10 +615,10 @@ public:
 
 private:
   cvargument(
-    jive::region * region,
+    jlm::rvsdg::region * region,
     phi::cvinput * input,
-    const jive::port & port)
-    : jive::argument(region, input, port)
+    const jlm::rvsdg::port & port)
+    : jlm::rvsdg::argument(region, input, port)
   {}
 
   cvargument(const cvargument&) = delete;
@@ -633,9 +633,9 @@ private:
 
   static cvargument *
   create(
-    jive::region * region,
+    jlm::rvsdg::region * region,
     phi::cvinput * input,
-    const jive::port & port)
+    const jlm::rvsdg::port & port)
   {
     auto argument = new cvargument(region, input, port);
     region->append_argument(argument);
@@ -652,7 +652,7 @@ public:
 
 /* phi recursion variable result class */
 
-class rvresult final : public jive::result {
+class rvresult final : public jlm::rvsdg::result {
   friend phi::builder;
 
 public:
@@ -660,11 +660,11 @@ public:
 
 private:
   rvresult(
-    jive::region * region,
-    jive::output * origin,
+    jlm::rvsdg::region * region,
+    jlm::rvsdg::output * origin,
     rvoutput * output,
-    const jive::port & port)
-    : jive::result(region, origin, output, port)
+    const jlm::rvsdg::port & port)
+    : jlm::rvsdg::result(region, origin, output, port)
   {}
 
   rvresult(const rvresult&) = delete;
@@ -679,10 +679,10 @@ private:
 
   static rvresult *
   create(
-    jive::region * region,
-    jive::output * origin,
+    jlm::rvsdg::region * region,
+    jlm::rvsdg::output * origin,
     rvoutput * output,
-    const jive::port & port)
+    const jlm::rvsdg::port & port)
   {
     auto result = new rvresult(region, origin, output, port);
     region->append_result(result);
@@ -772,7 +772,7 @@ inline rvoutput *
 rvoutput::create(
   phi::node * node,
   rvargument * argument,
-  const jive::port & port)
+  const jlm::rvsdg::port & port)
 {
   JLM_ASSERT(argument->type() == port.type());
   auto output = std::unique_ptr<rvoutput>(new rvoutput(node, argument, port));
@@ -787,7 +787,7 @@ rvoutput::result() const noexcept
 }
 
 inline void
-rvoutput::set_rvorigin(jive::output * origin)
+rvoutput::set_rvorigin(jlm::rvsdg::output * origin)
 {
   JLM_ASSERT(result()->origin() == argument());
   result()->divert_to(origin);
@@ -796,49 +796,49 @@ rvoutput::set_rvorigin(jive::output * origin)
 }
 
 /*
-	FIXME: This should be defined in jive.
+	FIXME: This should be defined in librvsdg.
 */
 static inline bool
-is_phi_output(const jive::output * output)
+is_phi_output(const jlm::rvsdg::output * output)
 {
-  using namespace jive;
+  using namespace jlm::rvsdg;
 
   return is<phi::operation>(node_output::node(output));
 }
 
 /*
-	FIXME: This should be defined in jive.
+	FIXME: This should be defined in librvsdg.
 */
 static inline bool
-is_phi_cv(const jive::output * output)
+is_phi_cv(const jlm::rvsdg::output * output)
 {
-  using namespace jive;
+  using namespace jlm::rvsdg;
 
-  auto a = dynamic_cast<const jive::argument*>(output);
+  auto a = dynamic_cast<const jlm::rvsdg::argument*>(output);
   return a
          && is<phi::operation>(a->region()->node())
          && a->input() != nullptr;
 }
 
 static inline bool
-is_phi_recvar_argument(const jive::output * output)
+is_phi_recvar_argument(const jlm::rvsdg::output * output)
 {
-  using namespace jive;
+  using namespace jlm::rvsdg;
 
-  auto a = dynamic_cast<const jive::argument*>(output);
+  auto a = dynamic_cast<const jlm::rvsdg::argument*>(output);
   return a
          && is<phi::operation>(a->region()->node())
          && a->input() == nullptr;
 }
 
 /*
-	FIXME: This should be defined in jive.
+	FIXME: This should be defined in librvsdg.
 */
-static inline jive::result *
-phi_result(const jive::output * output)
+static inline jlm::rvsdg::result *
+phi_result(const jlm::rvsdg::output * output)
 {
   JLM_ASSERT(is_phi_output(output));
-  auto result = jive::node_output::node(output)->region()->result(output->index());
+  auto result = jlm::rvsdg::node_output::node(output)->region()->result(output->index());
   JLM_ASSERT(result->output() == output);
   return result;
 }

@@ -12,14 +12,14 @@
 static void
 test_flattened_binary_reduction()
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
 	jlm::valuetype vt;
 	jlm::binary_op op(vt, vt, binary_op::flags::associative);
 
 	/* test paralell reduction */
 	{
-		jive::graph graph;
+		jlm::rvsdg::graph graph;
 		auto i0 = graph.add_import({vt, ""});
 		auto i1 = graph.add_import({vt, ""});
 		auto i2 = graph.add_import({vt, ""});
@@ -32,11 +32,11 @@ test_flattened_binary_reduction()
 		auto ex = graph.add_export(o3, {o3->type(), ""});
 		graph.prune();
 
-		jive::view(graph, stdout);
+		jlm::rvsdg::view(graph, stdout);
 		assert(graph.root()->nnodes() == 1 && region::Contains<flattened_binary_op>(*graph.root(), false));
 
-		flattened_binary_op::reduce(&graph, jive::flattened_binary_op::reduction::parallel);
-		jive::view(graph, stdout);
+		flattened_binary_op::reduce(&graph, jlm::rvsdg::flattened_binary_op::reduction::parallel);
+		jlm::rvsdg::view(graph, stdout);
 
 		assert(graph.root()->nnodes() == 3);
 
@@ -52,7 +52,7 @@ test_flattened_binary_reduction()
 
 	/* test linear reduction */
 	{
-		jive::graph graph;
+		jlm::rvsdg::graph graph;
 		auto i0 = graph.add_import({vt, ""});
 		auto i1 = graph.add_import({vt, ""});
 		auto i2 = graph.add_import({vt, ""});
@@ -65,11 +65,11 @@ test_flattened_binary_reduction()
 		auto ex = graph.add_export(o3, {o3->type(), ""});
 		graph.prune();
 
-		jive::view(graph, stdout);
+		jlm::rvsdg::view(graph, stdout);
 		assert(graph.root()->nnodes() == 1 && region::Contains<flattened_binary_op>(*graph.root(), false));
 
-		flattened_binary_op::reduce(&graph, jive::flattened_binary_op::reduction::linear);
-		jive::view(graph, stdout);
+		flattened_binary_op::reduce(&graph, jlm::rvsdg::flattened_binary_op::reduction::linear);
+		jlm::rvsdg::view(graph, stdout);
 
 		assert(graph.root()->nnodes() == 3);
 

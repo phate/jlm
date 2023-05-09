@@ -31,7 +31,7 @@ TestGamma()
     using namespace jlm;
 
     jlm::valuetype valueType;
-    jive::ctltype controlType(2);
+    jlm::rvsdg::ctltype controlType(2);
 
     auto rvsdgModule = RvsdgModule::Create(util::filepath(""), "", "");
     auto & graph = rvsdgModule->Rvsdg();
@@ -39,12 +39,12 @@ TestGamma()
     auto x = graph.add_import({valueType, "x"});
     auto y = graph.add_import({valueType, "y"});
 
-    auto gammaNode1 = jive::gamma_node::create(c, 2);
+    auto gammaNode1 = jlm::rvsdg::gamma_node::create(c, 2);
     auto gammaInput1 = gammaNode1->add_entryvar(c);
     auto gammaInput2 = gammaNode1->add_entryvar(x);
     auto gammaInput3 = gammaNode1->add_entryvar(y);
 
-    auto gammaNode2 = jive::gamma_node::create(gammaInput1->argument(0), 2);
+    auto gammaNode2 = jlm::rvsdg::gamma_node::create(gammaInput1->argument(0), 2);
     auto gammaInput4 = gammaNode2->add_entryvar(gammaInput2->argument(0));
     auto gammaInput5 = gammaNode2->add_entryvar(gammaInput3->argument(0));
     gammaNode2->add_exitvar({gammaInput4->argument(0), gammaInput4->argument(1)});
@@ -68,9 +68,9 @@ TestGamma()
   /*
    * Act
    */
-  jive::view(rootRegion, stdout);
+  jlm::rvsdg::view(rootRegion, stdout);
   RunInvariantValueRedirection(*rvsdgModule);
-  jive::view(rootRegion, stdout);
+  jlm::rvsdg::view(rootRegion, stdout);
 
   /*
    * Assert
@@ -88,7 +88,7 @@ TestTheta()
 
     loopstatetype loopStateType;
     jlm::valuetype valueType;
-    jive::ctltype controlType(2);
+    jlm::rvsdg::ctltype controlType(2);
 
     auto rvsdgModule = RvsdgModule::Create(util::filepath(""), "", "");
     auto & graph = rvsdgModule->Rvsdg();
@@ -96,12 +96,12 @@ TestTheta()
     auto x = graph.add_import({valueType, "x"});
     auto l = graph.add_import({loopStateType, "l"});
 
-    auto thetaNode1 = jive::theta_node::create(graph.root());
+    auto thetaNode1 = jlm::rvsdg::theta_node::create(graph.root());
     auto thetaOutput1 = thetaNode1->add_loopvar(c);
     auto thetaOutput2 = thetaNode1->add_loopvar(x);
     auto thetaOutput3 = thetaNode1->add_loopvar(l);
 
-    auto thetaNode2 = jive::theta_node::create(thetaNode1->subregion());
+    auto thetaNode2 = jlm::rvsdg::theta_node::create(thetaNode1->subregion());
     auto thetaOutput4 = thetaNode2->add_loopvar(thetaOutput1->argument());
     thetaNode2->add_loopvar(thetaOutput2->argument());
     auto thetaOutput5 = thetaNode2->add_loopvar(thetaOutput3->argument());
@@ -128,9 +128,9 @@ TestTheta()
   /*
    * Act
    */
-  jive::view(rootRegion, stdout);
+  jlm::rvsdg::view(rootRegion, stdout);
   RunInvariantValueRedirection(*rvsdgModule);
-  jive::view(rootRegion, stdout);
+  jlm::rvsdg::view(rootRegion, stdout);
 
   /*
    * Assert

@@ -17,7 +17,7 @@ namespace jlm::aa {
 class RegionSummary final {
 public:
   explicit
-  RegionSummary(const jive::region & region)
+  RegionSummary(const jlm::rvsdg::region & region)
   : Region_(&region)
   {}
 
@@ -37,7 +37,7 @@ public:
     return MemoryNodes_;
   }
 
-  [[nodiscard]] const util::HashSet<const jive::simple_node*> &
+  [[nodiscard]] const util::HashSet<const jlm::rvsdg::simple_node*> &
   GetUnknownMemoryNodeReferences() const noexcept
   {
     return UnknownMemoryNodeReferences_;
@@ -55,7 +55,7 @@ public:
     return RecursiveCalls_;
   }
 
-  const util::HashSet<const jive::structural_node*> &
+  const util::HashSet<const jlm::rvsdg::structural_node*> &
   GetStructuralNodes() const
   {
     return StructuralNodes_;
@@ -68,7 +68,7 @@ public:
   }
 
   void
-  AddUnknownMemoryNodeReferences(const util::HashSet<const jive::simple_node*> & nodes)
+  AddUnknownMemoryNodeReferences(const util::HashSet<const jlm::rvsdg::simple_node*> & nodes)
   {
     UnknownMemoryNodeReferences_.UnionWith(nodes);
   }
@@ -88,12 +88,12 @@ public:
   }
 
   void
-  AddStructuralNode(const jive::structural_node & structuralNode)
+  AddStructuralNode(const jlm::rvsdg::structural_node & structuralNode)
   {
     StructuralNodes_.Insert(&structuralNode);
   }
 
-  [[nodiscard]] const jive::region &
+  [[nodiscard]] const jlm::rvsdg::region &
   GetRegion() const noexcept
   {
     return *Region_;
@@ -107,26 +107,26 @@ public:
   }
 
   static std::unique_ptr<RegionSummary>
-  Create(const jive::region & region)
+  Create(const jlm::rvsdg::region & region)
   {
     return std::make_unique<RegionSummary>(region);
   }
 
 private:
-  const jive::region * Region_;
+  const jlm::rvsdg::region * Region_;
   util::HashSet<const PointsToGraph::MemoryNode*> MemoryNodes_;
-  util::HashSet<const jive::simple_node*> UnknownMemoryNodeReferences_;
+  util::HashSet<const jlm::rvsdg::simple_node*> UnknownMemoryNodeReferences_;
 
   util::HashSet<const CallNode*> RecursiveCalls_;
   util::HashSet<const CallNode*> NonRecursiveCalls_;
-  util::HashSet<const jive::structural_node*> StructuralNodes_;
+  util::HashSet<const jlm::rvsdg::structural_node*> StructuralNodes_;
 };
 
 /** \brief Memory node provisioning of region-aware memory node provider
  *
  */
 class RegionAwareMemoryNodeProvisioning final : public MemoryNodeProvisioning {
-  using RegionSummaryMap = std::unordered_map<const jive::region*, std::unique_ptr<RegionSummary>>;
+  using RegionSummaryMap = std::unordered_map<const jlm::rvsdg::region*, std::unique_ptr<RegionSummary>>;
 
   class RegionSummaryConstIterator final
   {
@@ -221,14 +221,14 @@ public:
   }
 
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode*> &
-  GetRegionEntryNodes(const jive::region & region) const override
+  GetRegionEntryNodes(const jlm::rvsdg::region & region) const override
   {
     auto & regionSummary = GetRegionSummary(region);
     return regionSummary.GetMemoryNodes();
   }
 
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode*> &
-  GetRegionExitNodes(const jive::region & region) const override
+  GetRegionExitNodes(const jlm::rvsdg::region & region) const override
   {
     auto & regionSummary = GetRegionSummary(region);
     return regionSummary.GetMemoryNodes();
@@ -291,7 +291,7 @@ public:
   }
 
   [[nodiscard]] util::HashSet<const PointsToGraph::MemoryNode*>
-  GetOutputNodes(const jive::output & output) const override
+  GetOutputNodes(const jlm::rvsdg::output & output) const override
   {
     JLM_ASSERT(is<PointerType>(output.type()));
     auto & registerNode = PointsToGraph_.GetRegisterNode(output);
@@ -310,26 +310,26 @@ public:
   }
 
   [[nodiscard]] bool
-  ContainsRegionSummary(const jive::region & region) const
+  ContainsRegionSummary(const jlm::rvsdg::region & region) const
   {
     return RegionSummaries_.find(&region) != RegionSummaries_.end();
   }
 
   bool
-  ContainsExternalFunctionNodes(const jive::argument & import) const
+  ContainsExternalFunctionNodes(const jlm::rvsdg::argument & import) const
   {
     return ExternalFunctionNodes_.find(&import) != ExternalFunctionNodes_.end();
   }
 
   [[nodiscard]] RegionSummary &
-  GetRegionSummary(const jive::region & region) const
+  GetRegionSummary(const jlm::rvsdg::region & region) const
   {
     JLM_ASSERT(ContainsRegionSummary(region));
     return *RegionSummaries_.find(&region)->second;
   }
 
   const util::HashSet<const PointsToGraph::MemoryNode*> &
-  GetExternalFunctionNodes(const jive::argument & import) const
+  GetExternalFunctionNodes(const jlm::rvsdg::argument & import) const
   {
     JLM_ASSERT(ContainsExternalFunctionNodes(import));
 
@@ -349,7 +349,7 @@ public:
 
   void
   AddExternalFunctionNodes(
-    const jive::argument & import,
+    const jlm::rvsdg::argument & import,
     util::HashSet<const PointsToGraph::MemoryNode*> memoryNodes)
   {
     JLM_ASSERT(!ContainsExternalFunctionNodes(import));
@@ -468,7 +468,7 @@ private:
 
   RegionSummaryMap RegionSummaries_;
   const PointsToGraph & PointsToGraph_;
-  std::unordered_map<const jive::argument*, util::HashSet<const PointsToGraph::MemoryNode*>> ExternalFunctionNodes_;
+  std::unordered_map<const jlm::rvsdg::argument*, util::HashSet<const PointsToGraph::MemoryNode*>> ExternalFunctionNodes_;
 };
 
 RegionAwareMemoryNodeProvider::~RegionAwareMemoryNodeProvider() noexcept
@@ -525,13 +525,13 @@ RegionAwareMemoryNodeProvider::Create(
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateRegion(jive::region & region)
+RegionAwareMemoryNodeProvider::AnnotateRegion(jlm::rvsdg::region & region)
 {
   auto shouldCreateRegionSummary = [](auto & region)
   {
     return !region.IsRootRegion()
-           && !jive::is<phi_op>(region.node())
-           && !jive::is<delta::operation>(region.node());
+           && !jlm::rvsdg::is<phi_op>(region.node())
+           && !jlm::rvsdg::is<delta::operation>(region.node());
   };
 
   RegionSummary * regionSummary = nullptr;
@@ -542,7 +542,7 @@ RegionAwareMemoryNodeProvider::AnnotateRegion(jive::region & region)
 
   for (auto & node : region.nodes)
   {
-    if (auto structuralNode = dynamic_cast<const jive::structural_node*>(&node))
+    if (auto structuralNode = dynamic_cast<const jlm::rvsdg::structural_node*>(&node))
     {
       if (regionSummary)
       {
@@ -551,7 +551,7 @@ RegionAwareMemoryNodeProvider::AnnotateRegion(jive::region & region)
 
       AnnotateStructuralNode(*structuralNode);
     }
-    else if (auto simpleNode = dynamic_cast<const jive::simple_node*>(&node))
+    else if (auto simpleNode = dynamic_cast<const jlm::rvsdg::simple_node*>(&node))
     {
       AnnotateSimpleNode(*simpleNode);
     }
@@ -563,7 +563,7 @@ RegionAwareMemoryNodeProvider::AnnotateRegion(jive::region & region)
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateSimpleNode(const jive::simple_node & simpleNode)
+RegionAwareMemoryNodeProvider::AnnotateSimpleNode(const jlm::rvsdg::simple_node & simpleNode)
 {
   auto annotateLoad = [](auto & provider, auto & simpleNode)
   {
@@ -596,7 +596,7 @@ RegionAwareMemoryNodeProvider::AnnotateSimpleNode(const jive::simple_node & simp
 
   static std::unordered_map<
     std::type_index,
-    std::function<void(RegionAwareMemoryNodeProvider&, const jive::simple_node&)>
+    std::function<void(RegionAwareMemoryNodeProvider&, const jlm::rvsdg::simple_node&)>
   > nodes
     ({
        {typeid(LoadOperation),  annotateLoad},
@@ -632,9 +632,9 @@ RegionAwareMemoryNodeProvider::AnnotateStore(const jlm::StoreNode & storeNode)
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateAlloca(const jive::simple_node & allocaNode)
+RegionAwareMemoryNodeProvider::AnnotateAlloca(const jlm::rvsdg::simple_node & allocaNode)
 {
-  JLM_ASSERT(jive::is<alloca_op>(allocaNode.operation()));
+  JLM_ASSERT(jlm::rvsdg::is<alloca_op>(allocaNode.operation()));
 
   auto & memoryNode = Provisioning_->GetPointsToGraph().GetAllocaNode(allocaNode);
   auto & regionSummary = Provisioning_->GetRegionSummary(*allocaNode.region());
@@ -642,9 +642,9 @@ RegionAwareMemoryNodeProvider::AnnotateAlloca(const jive::simple_node & allocaNo
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateMalloc(const jive::simple_node & mallocNode)
+RegionAwareMemoryNodeProvider::AnnotateMalloc(const jlm::rvsdg::simple_node & mallocNode)
 {
-  JLM_ASSERT(jive::is<malloc_op>(mallocNode.operation()));
+  JLM_ASSERT(jlm::rvsdg::is<malloc_op>(mallocNode.operation()));
 
   auto & memoryNode = Provisioning_->GetPointsToGraph().GetMallocNode(mallocNode);
   auto & regionSummary = Provisioning_->GetRegionSummary(*mallocNode.region());
@@ -652,9 +652,9 @@ RegionAwareMemoryNodeProvider::AnnotateMalloc(const jive::simple_node & mallocNo
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateFree(const jive::simple_node & freeNode)
+RegionAwareMemoryNodeProvider::AnnotateFree(const jlm::rvsdg::simple_node & freeNode)
 {
-  JLM_ASSERT(jive::is<free_op>(freeNode.operation()));
+  JLM_ASSERT(jlm::rvsdg::is<free_op>(freeNode.operation()));
 
   auto memoryNodes = Provisioning_->GetOutputNodes(*freeNode.input(0)->origin());
   auto & regionSummary = Provisioning_->GetRegionSummary(*freeNode.region());
@@ -722,9 +722,9 @@ RegionAwareMemoryNodeProvider::AnnotateCall(const CallNode & callNode)
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateMemcpy(const jive::simple_node & memcpyNode)
+RegionAwareMemoryNodeProvider::AnnotateMemcpy(const jlm::rvsdg::simple_node & memcpyNode)
 {
-  JLM_ASSERT(jive::is<Memcpy>(memcpyNode.operation()));
+  JLM_ASSERT(jlm::rvsdg::is<Memcpy>(memcpyNode.operation()));
 
   auto & regionSummary = Provisioning_->GetRegionSummary(*memcpyNode.region());
 
@@ -736,9 +736,9 @@ RegionAwareMemoryNodeProvider::AnnotateMemcpy(const jive::simple_node & memcpyNo
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateStructuralNode(const jive::structural_node & structuralNode)
+RegionAwareMemoryNodeProvider::AnnotateStructuralNode(const jlm::rvsdg::structural_node & structuralNode)
 {
-  if (jive::is<delta::operation>(&structuralNode))
+  if (jlm::rvsdg::is<delta::operation>(&structuralNode))
   {
     /*
      * Nothing needs to be done for delta nodes.
@@ -755,7 +755,7 @@ RegionAwareMemoryNodeProvider::AnnotateStructuralNode(const jive::structural_nod
 void
 RegionAwareMemoryNodeProvider::Propagate(const jlm::RvsdgModule & rvsdgModule)
 {
-  jive::topdown_traverser traverser(rvsdgModule.Rvsdg().root());
+  jlm::rvsdg::topdown_traverser traverser(rvsdgModule.Rvsdg().root());
   for (auto & node : traverser)
   {
     if (auto lambdaNode = dynamic_cast<const lambda::node*>(node))
@@ -786,13 +786,13 @@ void
 RegionAwareMemoryNodeProvider::PropagatePhi(const phi::node & phiNode)
 {
   std::function<void(
-    const jive::region&,
+    const jlm::rvsdg::region&,
     const util::HashSet<const PointsToGraph::MemoryNode*>&,
-    const util::HashSet<const jive::simple_node*>&
+    const util::HashSet<const jlm::rvsdg::simple_node*>&
   )> assignAndPropagateMemoryNodes = [&](
-    const jive::region & region,
+    const jlm::rvsdg::region & region,
     const util::HashSet<const PointsToGraph::MemoryNode*> & memoryNodes,
-    const util::HashSet<const jive::simple_node*> & unknownMemoryNodeReferences)
+    const util::HashSet<const jlm::rvsdg::simple_node*> & unknownMemoryNodeReferences)
   {
     auto & regionSummary = Provisioning_->GetRegionSummary(region);
     for (auto structuralNode : regionSummary.GetStructuralNodes().Items())
@@ -819,7 +819,7 @@ RegionAwareMemoryNodeProvider::PropagatePhi(const phi::node & phiNode)
   auto lambdaNodes = ExtractLambdaNodes(phiNode);
 
   util::HashSet<const PointsToGraph::MemoryNode*> memoryNodes;
-  util::HashSet<const jive::simple_node*> unknownMemoryNodeReferences;
+  util::HashSet<const jlm::rvsdg::simple_node*> unknownMemoryNodeReferences;
   for (auto & lambdaNode : lambdaNodes)
   {
     auto & regionSummary = Provisioning_->GetRegionSummary(*lambdaNode->subregion());
@@ -831,7 +831,7 @@ RegionAwareMemoryNodeProvider::PropagatePhi(const phi::node & phiNode)
 }
 
 void
-RegionAwareMemoryNodeProvider::PropagateRegion(const jive::region & region)
+RegionAwareMemoryNodeProvider::PropagateRegion(const jlm::rvsdg::region & region)
 {
   auto & regionSummary = Provisioning_->GetRegionSummary(region);
   for (auto & structuralNode : regionSummary.GetStructuralNodes().Items())
@@ -925,19 +925,19 @@ RegionAwareMemoryNodeProvider::ExtractLambdaNodes(const phi::node & phiNode)
   return lambdaNodes;
 }
 
-std::vector<const jive::node*>
+std::vector<const jlm::rvsdg::node*>
 RegionAwareMemoryNodeProvider::ExtractRvsdgTailNodes(const jlm::RvsdgModule & rvsdgModule)
 {
-  auto IsOnlyExported = [](const jive::output & output)
+  auto IsOnlyExported = [](const jlm::rvsdg::output & output)
   {
-    auto IsRootRegionExport = [](const jive::input * input)
+    auto IsRootRegionExport = [](const jlm::rvsdg::input * input)
     {
       if (!input->region()->IsRootRegion())
       {
         return false;
       }
 
-      if (jive::node_input::node(*input))
+      if (jlm::rvsdg::node_input::node(*input))
       {
         return false;
       }
@@ -953,7 +953,7 @@ RegionAwareMemoryNodeProvider::ExtractRvsdgTailNodes(const jlm::RvsdgModule & rv
 
   auto & rootRegion = *rvsdgModule.Rvsdg().root();
 
-  std::vector<const jive::node*> nodes;
+  std::vector<const jlm::rvsdg::node*> nodes;
   for (auto & node : rootRegion.bottom_nodes)
   {
       nodes.push_back(&node);
@@ -964,7 +964,7 @@ RegionAwareMemoryNodeProvider::ExtractRvsdgTailNodes(const jlm::RvsdgModule & rv
     auto output = rootRegion.result(n)->origin();
     if (IsOnlyExported(*output))
     {
-      nodes.push_back(jive::node_output::node(output));
+      nodes.push_back(jlm::rvsdg::node_output::node(output));
     }
   }
 

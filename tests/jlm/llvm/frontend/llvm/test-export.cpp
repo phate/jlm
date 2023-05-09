@@ -38,7 +38,7 @@ test()
 	util::StatisticsCollector statisticsCollector;
 	auto rvsdgModule = ConvertInterProceduralGraphModule(im, statisticsCollector);
 
-	jive::view(rvsdgModule->Rvsdg(), stdout);
+	jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
 
 	/*
 		We should have no exports in the RVSDG. The data and function

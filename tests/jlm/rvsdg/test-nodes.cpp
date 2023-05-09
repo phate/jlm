@@ -12,12 +12,12 @@
 static void
 test_node_copy(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
 	jlm::statetype stype;
 	jlm::valuetype vtype;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 	auto s = graph.add_import({stype, ""});
 	auto v = graph.add_import({vtype, ""});
 
@@ -36,7 +36,7 @@ test_node_copy(void)
 	result::create(n1->subregion(0), n2->output(0), o1, stype);
 	result::create(n1->subregion(0), n3->output(0), o2, vtype);
 
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	/* copy first into second region with arguments and results */
 	substitution_map smap;
@@ -44,7 +44,7 @@ test_node_copy(void)
 	smap.insert(o1, o1); smap.insert(o2, o2);
 	n1->subregion(0)->copy(n1->subregion(1), smap, true, true);
 
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	auto r2 = n1->subregion(1);
 	assert(r2->narguments() == 2);
@@ -58,7 +58,7 @@ test_node_copy(void)
 	assert(r2->nnodes() == 2);
 
 	/* copy second into third region only with arguments */
-	jive::substitution_map smap2;
+	jlm::rvsdg::substitution_map smap2;
 	auto a3 = argument::create(n1->subregion(2), i1, stype);
 	auto a4 = argument::create(n1->subregion(2), i2, vtype);
 	smap2.insert(r2->argument(0), a3);
@@ -67,7 +67,7 @@ test_node_copy(void)
 	smap2.insert(o1, o1); smap2.insert(o2, o2);
 	n1->subregion(1)->copy(n1->subregion(2), smap2, false, true);
 
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	auto r3 = n1->subregion(2);
 	assert(r3->nresults() == 2);
@@ -77,11 +77,11 @@ test_node_copy(void)
 	assert(r3->nnodes() == 2);
 
 	/* copy structural node */
-	jive::substitution_map smap3;
+	jlm::rvsdg::substitution_map smap3;
 	smap3.insert(s, s); smap3.insert(v, v);
 	n1->copy(graph.root(), smap3);
 
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(graph.root()->nnodes() == 2);
 }
@@ -91,7 +91,7 @@ test_node_depth()
 {
 	jlm::valuetype vt;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 	auto x = graph.add_import({vt, "x"});
 
 	auto null = jlm::test_op::create(graph.root(), {}, {&vt});
@@ -100,7 +100,7 @@ test_node_depth()
 
 	graph.add_export(un->output(0), {un->output(0)->type(), "x"});
 
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(null->depth() == 0);
 	assert(bin->depth() == 1);

@@ -12,26 +12,26 @@ namespace jlm {
  * Support functions
  */
 
-using InvariantOutputMap = std::unordered_map<const jive::output*, jive::input*>;
+using InvariantOutputMap = std::unordered_map<const rvsdg::output*, rvsdg::input*>;
 
-static jive::input *
+static rvsdg::input *
 invariantInput(
-  const jive::output & output,
+  const rvsdg::output & output,
   InvariantOutputMap & invariantOutputs);
 
-static jive::structural_input *
+static rvsdg::structural_input *
 invariantInput(
-  const jive::gamma_output & output,
+  const rvsdg::gamma_output & output,
   InvariantOutputMap & invariantOutputs)
 {
   size_t n;
-  jive::structural_input * input = nullptr;
+  rvsdg::structural_input * input = nullptr;
   for (n = 0; n < output.nresults(); n++) {
     auto origin = output.result(n)->origin();
 
     bool resultIsInvariant = false;
     while (true) {
-      if (auto argument = dynamic_cast<const jive::argument*>(origin)) {
+      if (auto argument = dynamic_cast<const rvsdg::argument*>(origin)) {
         resultIsInvariant = true;
         input = argument->input();
         break;
@@ -58,9 +58,9 @@ invariantInput(
   return nullptr;
 }
 
-static jive::theta_input *
+static rvsdg::theta_input *
 invariantInput(
-  const jive::theta_output & output,
+  const rvsdg::theta_output & output,
   InvariantOutputMap & invariantOutputs)
 {
   auto origin = output.result()->origin();
@@ -83,9 +83,9 @@ invariantInput(
   return nullptr;
 }
 
-static jive::input *
+static rvsdg::input *
 invariantInput(
-  const jive::output & output,
+  const rvsdg::output & output,
   InvariantOutputMap & invariantOutputs)
 {
   /*
@@ -94,22 +94,22 @@ invariantInput(
   if (invariantOutputs.find(&output) != invariantOutputs.end())
     return invariantOutputs[&output];
 
-  if (auto thetaOutput = dynamic_cast<const jive::theta_output*>(&output))
+  if (auto thetaOutput = dynamic_cast<const rvsdg::theta_output*>(&output))
     return invariantInput(*thetaOutput, invariantOutputs);
 
   if (auto thetaArgument = is_theta_argument(&output)) {
-    auto thetaInput = static_cast<const jive::theta_input*>(thetaArgument->input());
+    auto thetaInput = static_cast<const rvsdg::theta_input*>(thetaArgument->input());
     return invariantInput(*thetaInput->output(), invariantOutputs);
   }
 
-  if (auto gammaOutput = dynamic_cast<const jive::gamma_output*>(&output))
+  if (auto gammaOutput = dynamic_cast<const rvsdg::gamma_output*>(&output))
     return invariantInput(*gammaOutput, invariantOutputs);
 
   return nullptr;
 }
 
-static jive::input *
-invariantInput(const jive::output & output)
+static rvsdg::input *
+invariantInput(const rvsdg::output & output)
 {
   InvariantOutputMap invariantOutputs;
   return invariantInput(output, invariantOutputs);
@@ -136,17 +136,17 @@ CallOperation::debug_string() const
 	return "CALL";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 CallOperation::copy() const
 {
-	return std::unique_ptr<jive::operation>(new CallOperation(*this));
+	return std::unique_ptr<rvsdg::operation>(new CallOperation(*this));
 }
 
 /**
  * CallNode class
  */
 
-jive::output *
+rvsdg::output *
 CallNode::TraceFunctionInput(const CallNode & callNode)
 {
   auto origin = callNode.GetFunctionInput()->origin();
@@ -161,7 +161,7 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
     if (is_import(origin))
       return origin;
 
-    if (is<jive::simple_op>(jive::node_output::node(origin)))
+    if (is<rvsdg::simple_op>(rvsdg::node_output::node(origin)))
       return origin;
 
     if (is_phi_recvar_argument(origin))
@@ -170,7 +170,7 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
     }
 
     if (is<lambda::cvargument>(origin)) {
-      auto argument = util::AssertedCast<const jive::argument>(origin);
+      auto argument = util::AssertedCast<const rvsdg::argument>(origin);
       origin = argument->input()->origin();
       continue;
     }
@@ -208,7 +208,7 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
     }
 
     if (is_phi_cv(origin)) {
-      auto argument = util::AssertedCast<const jive::argument>(origin);
+      auto argument = util::AssertedCast<const rvsdg::argument>(origin);
       origin = argument->input()->origin();
       continue;
     }
@@ -232,7 +232,7 @@ CallNode::ClassifyCall(const CallNode &callNode)
     return CallTypeClassifier::CreateNonRecursiveDirectCallClassifier(*lambdaOutput);
   }
 
-  if (auto argument = dynamic_cast<jive::argument*>(output))
+  if (auto argument = dynamic_cast<rvsdg::argument*>(output))
   {
     if (is_phi_recvar_argument(argument))
     {

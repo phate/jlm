@@ -8,12 +8,6 @@
 
 #include <memory>
 
-namespace jive {
-
-class graph;
-
-}
-
 namespace jlm {
 
 namespace util

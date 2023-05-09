@@ -11,7 +11,7 @@
 namespace jlm {
 	namespace hls {
 		void
-		check_rhls(jive::region *sr);
+		check_rhls(jlm::rvsdg::region *sr);
 
 		void
 		check_rhls(jlm::RvsdgModule &rm);

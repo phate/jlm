@@ -10,43 +10,43 @@
 
 namespace jlm {
 
-class valuetype final : public jive::valuetype {
+class valuetype final : public rvsdg::valuetype {
 public:
 	virtual
 	~valuetype();
 
 	inline constexpr
 	valuetype() noexcept
-	: jive::valuetype()
+	: rvsdg::valuetype()
 	{}
 
 	virtual std::string
 	debug_string() const override;
 
 	virtual bool
-	operator==(const jive::type & other) const noexcept override;
+	operator==(const rvsdg::type & other) const noexcept override;
 
-	virtual std::unique_ptr<jive::type>
+	virtual std::unique_ptr<rvsdg::type>
 	copy() const override;
 };
 
-class statetype final : public jive::statetype {
+class statetype final : public rvsdg::statetype {
 public:
 	virtual
 	~statetype();
 
 	inline constexpr
 	statetype() noexcept
-	: jive::statetype()
+	: rvsdg::statetype()
 	{}
 
 	virtual std::string
 	debug_string() const override;
 
 	virtual bool
-	operator==(const jive::type & other) const noexcept override;
+	operator==(const rvsdg::type & other) const noexcept override;
 
-	virtual std::unique_ptr<jive::type>
+	virtual std::unique_ptr<rvsdg::type>
 	copy() const override;
 };
 
