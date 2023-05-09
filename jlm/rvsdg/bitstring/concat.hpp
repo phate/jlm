@@ -56,9 +56,9 @@ private:
 	to_ports(const std::vector<bittype> & types);
 };
 
-}
-
 jive::output *
-jive_bitconcat(const std::vector<jive::output*> & operands);
+bitconcat(const std::vector<jive::output*> & operands);
+
+}
 
 #endif

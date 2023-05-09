@@ -986,7 +986,7 @@ static int types_bitstring_test_reduction(void)
 	assert_constant(bitxor_op::create(4, a, b), 4, "0110");
 	assert_constant(bitadd_op::create(4, a, b), 4, "0001");
 	assert_constant(bitmul_op::create(4, a, b), 4, "1111");
-	assert_constant(jive_bitconcat({a, b}), 8, "11001010");
+	assert_constant(jive::bitconcat({a, b}), 8, "11001010");
 	assert_constant(bitneg_op::create(4, a), 4, "1011");
 	assert_constant(bitneg_op::create(4, b), 4, "1101");
 	
@@ -996,7 +996,7 @@ static int types_bitstring_test_reduction(void)
 	auto y = graph.add_import({bittype(16), "y"});
 	
 	{
-		auto concat = jive_bitconcat({x, y});
+		auto concat = jive::bitconcat({x, y});
 		auto node = node_output::node(jive_bitslice(concat, 8, 24));
 		auto o0 = dynamic_cast<node_output*>(node->input(0)->origin());
 		auto o1 = dynamic_cast<node_output*>(node->input(1)->origin());
@@ -1018,7 +1018,7 @@ static int types_bitstring_test_reduction(void)
 	{
 		auto slice1 = jive_bitslice(x, 0, 8);
 		auto slice2 = jive_bitslice(x, 8, 16);
-		auto concat = jive_bitconcat({slice1, slice2});
+		auto concat = jive::bitconcat({slice1, slice2});
 		assert(concat == x);
 	}
 
@@ -1066,7 +1066,7 @@ static int types_bitstring_test_slice_concat(void)
 	
 	{
 		/* slice of concat */
-		auto a = jive_bitconcat({base_x, base_y});
+		auto a = jive::bitconcat({base_x, base_y});
 		auto b = jive_bitslice(a, 0, 8);
 		
 		assert(static_cast<const bittype*>(&b->type())->nbits() == 8);
@@ -1076,8 +1076,8 @@ static int types_bitstring_test_slice_concat(void)
 	
 	{
 		/* concat flattening */
-		auto a = jive_bitconcat({base_x, base_y});
-		auto b = node_output::node(jive_bitconcat({a, base_z}));
+		auto a = jive::bitconcat({base_x, base_y});
+		auto b = node_output::node(jive::bitconcat({a, base_z}));
 		
 		assert(dynamic_cast<const bitconcat_op*>(&b->operation()));
 		assert(b->ninputs() == 3);
@@ -1088,7 +1088,7 @@ static int types_bitstring_test_slice_concat(void)
 	
 	{
 		/* concat of single node */
-		auto a = jive_bitconcat({base_x});
+		auto a = jive::bitconcat({base_x});
 		
 		assert(a==base_x);
 	}
@@ -1097,14 +1097,14 @@ static int types_bitstring_test_slice_concat(void)
 		/* concat of slices */
 		auto a = jive_bitslice(base_x, 0, 4);
 		auto b = jive_bitslice(base_x, 4, 8);
-		auto c = jive_bitconcat({a, b});
+		auto c = jive::bitconcat({a, b});
 		
 		assert(c==base_x);
 	}
 	
 	{
 		/* concat of constants */
-		auto a = node_output::node(jive_bitconcat({base_const1, base_const2}));
+		auto a = node_output::node(jive::bitconcat({base_const1, base_const2}));
 		
 		auto & op = dynamic_cast<const bitconstant_op&>(a->operation());
 		assert(op.value() == bitvalue_repr("0011011111001000"));
@@ -1119,8 +1119,8 @@ static int types_bitstring_test_slice_concat(void)
 		auto d = jive_bitslice(base_x, 2, 6);
 		assert(c == d);
 		
-		auto e = jive_bitconcat({base_x, base_y});
-		auto f = jive_bitconcat({base_x, base_y});
+		auto e = jive::bitconcat({base_x, base_y});
+		auto f = jive::bitconcat({base_x, base_y});
 		assert(e == f);
 	}
 	

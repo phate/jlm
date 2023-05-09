@@ -11,19 +11,19 @@
 
 #include <string.h>
 
-jive::output *
-jive_bitconcat(const std::vector<jive::output*> & operands)
-{
-	std::vector<jive::bittype> types;
-	for (const auto operand : operands)
-		types.push_back(dynamic_cast<const jive::bittype&>(operand->type()));
-
-	auto region = operands[0]->region();
-	jive::bitconcat_op op(std::move(types));
-	return jive::simple_node::create_normalized(region, op, {operands.begin(), operands.end()})[0];
-}
-
 namespace jive {
+
+jive::output *
+bitconcat(const std::vector<jive::output*> & operands)
+{
+  std::vector<jive::bittype> types;
+  for (const auto operand : operands)
+    types.push_back(dynamic_cast<const jive::bittype&>(operand->type()));
+
+  auto region = operands[0]->region();
+  jive::bitconcat_op op(std::move(types));
+  return jive::simple_node::create_normalized(region, op, {operands.begin(), operands.end()})[0];
+}
 
 namespace {
 

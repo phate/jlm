@@ -89,7 +89,7 @@ bitslice_op::reduce_operand(
 			}
 		}
 		
-		return jive_bitconcat(arguments);
+		return jive::bitconcat(arguments);
 	}
 	
 	return nullptr;
