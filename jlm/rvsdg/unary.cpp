@@ -37,8 +37,8 @@ unary_normal_form::normalize_node(jive::node * node) const
 
 	if (get_reducible()) {
 		auto tmp = node->input(0)->origin();
-		jive_unop_reduction_path_t reduction = op.can_reduce_operand(tmp);
-		if (reduction != jive_unop_reduction_none) {
+		unop_reduction_path_t reduction = op.can_reduce_operand(tmp);
+		if (reduction != unop_reduction_none) {
 			divert_users(node, {op.reduce_operand(reduction, tmp)});
 			remove(node);
 			return false;
@@ -59,8 +59,8 @@ unary_normal_form::normalized_create(
 	if (get_mutable() && get_reducible()) {
 		const auto & un_op = static_cast<const jive::unary_op&>(op);
 
-		jive_unop_reduction_path_t reduction = un_op.can_reduce_operand(arguments[0]);
-		if (reduction != jive_unop_reduction_none) {
+		unop_reduction_path_t reduction = un_op.can_reduce_operand(arguments[0]);
+		if (reduction != unop_reduction_none) {
 			return {un_op.reduce_operand(reduction, arguments[0])};
 		}
 	}

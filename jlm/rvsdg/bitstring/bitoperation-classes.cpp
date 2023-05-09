@@ -14,22 +14,22 @@ namespace jive {
 bitunary_op::~bitunary_op() noexcept
 {}
 
-binop_reduction_path_t
+unop_reduction_path_t
 bitunary_op::can_reduce_operand(
 	const jive::output * arg) const noexcept
 {
 	if (is<bitconstant_op>(producer(arg)))
-		return jive_unop_reduction_constant;
+		return unop_reduction_constant;
 
-	return jive_unop_reduction_none;
+	return unop_reduction_none;
 }
 
 jive::output *
 bitunary_op::reduce_operand(
-	jive_unop_reduction_path_t path,
+	unop_reduction_path_t path,
 	jive::output * arg) const
 {
-	if (path == jive_unop_reduction_constant) {
+	if (path == unop_reduction_constant) {
 		auto p = producer(arg);
 		auto & c = static_cast<const bitconstant_op&>(p->operation());
 		return create_bitconstant(p->region(), reduce_constant(c.value()));

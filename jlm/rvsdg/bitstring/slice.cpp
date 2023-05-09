@@ -30,50 +30,50 @@ bitslice_op::debug_string() const
 	return jlm::util::strfmt("SLICE[", low(), ":", high(), ")");
 }
 
-jive_unop_reduction_path_t
+unop_reduction_path_t
 bitslice_op::can_reduce_operand(const jive::output * arg) const noexcept
 {
 	auto node = node_output::node(arg);
 	auto & arg_type = *dynamic_cast<const bittype*>(&arg->type());
 
 	if ((low() == 0) && (high() == arg_type.nbits()))
-		return jive_unop_reduction_idempotent;
+		return unop_reduction_idempotent;
 
 	if (is<bitslice_op>(node))
-		return jive_unop_reduction_narrow;
+		return unop_reduction_narrow;
 
 	if (is<bitconstant_op>(node))
-		return jive_unop_reduction_constant;
+		return unop_reduction_constant;
 
 	if (is<bitconcat_op>(node))
-		return jive_unop_reduction_distribute;
+		return unop_reduction_distribute;
 	
-	return jive_unop_reduction_none;
+	return unop_reduction_none;
 }
 
 jive::output *
 bitslice_op::reduce_operand(
-	jive_unop_reduction_path_t path,
+	unop_reduction_path_t path,
 	jive::output * arg) const
 {
-	if (path == jive_unop_reduction_idempotent) {
+	if (path == unop_reduction_idempotent) {
 		return arg;
 	}
 
 	auto node = static_cast<node_output*>(arg)->node();
 	
-	if (path == jive_unop_reduction_narrow) {
+	if (path == unop_reduction_narrow) {
 		auto op = static_cast<const bitslice_op&>(node->operation());
 		return jive::bitslice(node->input(0)->origin(), low() + op.low(), high() + op.low());
 	}
 	
-	if (path == jive_unop_reduction_constant) {
+	if (path == unop_reduction_constant) {
 		auto op = static_cast<const bitconstant_op&>(node->operation());
 		std::string s(&op.value()[0]+low(), high()-low());
 		return create_bitconstant(arg->region(), s.c_str());
 	}
 	
-	if (path == jive_unop_reduction_distribute) {
+	if (path == unop_reduction_distribute) {
 		size_t pos = 0, n;
 		std::vector<jive::output*> arguments;
 		for (n = 0; n < node->ninputs(); n++) {

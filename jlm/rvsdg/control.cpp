@@ -84,19 +84,19 @@ match_op::operator==(const operation & other) const noexcept
 	    && op->nalternatives() == nalternatives();
 }
 
-jive_unop_reduction_path_t
+unop_reduction_path_t
 match_op::can_reduce_operand(const jive::output * arg) const noexcept
 {
 	if (is<bitconstant_op>(producer(arg)))
-		return jive_unop_reduction_constant;
+		return unop_reduction_constant;
 
-	return jive_unop_reduction_none;
+	return unop_reduction_none;
 }
 
 jive::output *
-match_op::reduce_operand(jive_unop_reduction_path_t path, jive::output * arg) const
+match_op::reduce_operand(unop_reduction_path_t path, jive::output * arg) const
 {
-	if (path == jive_unop_reduction_constant) {
+	if (path == unop_reduction_constant) {
 		auto op = static_cast<const bitconstant_op&>(producer(arg)->operation());
 		return jive::control_constant(arg->region(), nalternatives(),
 			alternative(op.value().to_uint()));

@@ -10,8 +10,8 @@ namespace jlm {
 
 /* sext operation */
 
-static const jive_unop_reduction_path_t sext_reduction_bitunary = 128;
-static const jive_unop_reduction_path_t sext_reduction_bitbinary = 129;
+static const jive::unop_reduction_path_t sext_reduction_bitunary = 128;
+static const jive::unop_reduction_path_t sext_reduction_bitbinary = 129;
 
 static bool
 is_bitunary_reducible(const jive::output * operand)
@@ -94,11 +94,11 @@ sext_op::copy() const
 	return std::unique_ptr<jive::operation>(new sext_op(*this));
 }
 
-jive_unop_reduction_path_t
+jive::unop_reduction_path_t
 sext_op::can_reduce_operand(const jive::output * operand) const noexcept
 {
 	if (jive::is<jive::bitconstant_op>(producer(operand)))
-		return jive_unop_reduction_constant;
+		return jive::unop_reduction_constant;
 
 	if (is_bitunary_reducible(operand))
 		return sext_reduction_bitunary;
@@ -107,17 +107,17 @@ sext_op::can_reduce_operand(const jive::output * operand) const noexcept
 		return sext_reduction_bitbinary;
 
 	if (is_inverse_reducible(*this, operand))
-		return jive_unop_reduction_inverse;
+		return jive::unop_reduction_inverse;
 
-	return jive_unop_reduction_none;
+	return jive::unop_reduction_none;
 }
 
 jive::output *
 sext_op::reduce_operand(
-	jive_unop_reduction_path_t path,
+	jive::unop_reduction_path_t path,
 	jive::output * operand) const
 {
-	if (path == jive_unop_reduction_constant) {
+	if (path == jive::unop_reduction_constant) {
 		auto c = static_cast<const jive::bitconstant_op*>(&producer(operand)->operation());
 		return create_bitconstant(operand->region(), c->value().sext(ndstbits()-nsrcbits()));
 	}
@@ -128,7 +128,7 @@ sext_op::reduce_operand(
 	if (path == sext_reduction_bitbinary)
 		return perform_bitbinary_reduction(*this, operand);
 
-	if (path == jive_unop_reduction_inverse)
+	if (path == jive::unop_reduction_inverse)
 		return perform_inverse_reduction(*this, operand);
 
 	return nullptr;

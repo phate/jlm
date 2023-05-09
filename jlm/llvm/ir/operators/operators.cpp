@@ -140,15 +140,15 @@ fp2ui_op::copy() const
 	return std::unique_ptr<jive::operation>(new fp2ui_op(*this));
 }
 
-jive_unop_reduction_path_t
+jive::unop_reduction_path_t
 fp2ui_op::can_reduce_operand(const jive::output * operand) const noexcept
 {
-	return jive_unop_reduction_none;
+	return jive::unop_reduction_none;
 }
 
 jive::output *
 fp2ui_op::reduce_operand(
-	jive_unop_reduction_path_t path,
+	jive::unop_reduction_path_t path,
 	jive::output * operand) const
 {
 	JLM_UNREACHABLE("Not implemented");
@@ -180,15 +180,15 @@ fp2si_op::copy() const
 	return std::unique_ptr<jive::operation>(new fp2si_op(*this));
 }
 
-jive_unop_reduction_path_t
+jive::unop_reduction_path_t
 fp2si_op::can_reduce_operand(const jive::output * operand) const noexcept
 {
-	return jive_unop_reduction_none;
+	return jive::unop_reduction_none;
 }
 
 jive::output *
 fp2si_op::reduce_operand(
-	jive_unop_reduction_path_t path,
+	jive::unop_reduction_path_t path,
 	jive::output * operand) const
 {
 	JLM_UNREACHABLE("Not implemented!");
@@ -293,15 +293,15 @@ bits2ptr_op::copy() const
 	return std::unique_ptr<jive::operation>(new jlm::bits2ptr_op(*this));
 }
 
-jive_unop_reduction_path_t
+jive::unop_reduction_path_t
 bits2ptr_op::can_reduce_operand(const jive::output * operand) const noexcept
 {
-	return jive_unop_reduction_none;
+	return jive::unop_reduction_none;
 }
 
 jive::output *
 bits2ptr_op::reduce_operand(
-	jive_unop_reduction_path_t path,
+	jive::unop_reduction_path_t path,
 	jive::output * operand) const
 {
 	JLM_UNREACHABLE("Not implemented!");
@@ -333,15 +333,15 @@ ptr2bits_op::copy() const
 	return std::unique_ptr<jive::operation>(new jlm::ptr2bits_op(*this));
 }
 
-jive_unop_reduction_path_t
+jive::unop_reduction_path_t
 ptr2bits_op::can_reduce_operand(const jive::output * operand) const noexcept
 {
-	return jive_unop_reduction_none;
+	return jive::unop_reduction_none;
 }
 
 jive::output *
 ptr2bits_op::reduce_operand(
-	jive_unop_reduction_path_t path,
+	jive::unop_reduction_path_t path,
 	jive::output * operand) const
 {
 	JLM_UNREACHABLE("Not implemented!");
@@ -444,21 +444,21 @@ zext_op::copy() const
 	return std::unique_ptr<jive::operation>(new zext_op(*this));
 }
 
-jive_unop_reduction_path_t
+jive::unop_reduction_path_t
 zext_op::can_reduce_operand(const jive::output * operand) const noexcept
 {
 	if (jive::is<jive::bitconstant_op>(producer(operand)))
-		return jive_unop_reduction_constant;
+		return jive::unop_reduction_constant;
 
-	return jive_unop_reduction_none;
+	return jive::unop_reduction_none;
 }
 
 jive::output *
 zext_op::reduce_operand(
-	jive_unop_reduction_path_t path,
+	jive::unop_reduction_path_t path,
 	jive::output * operand) const
 {
-	if (path == jive_unop_reduction_constant) {
+	if (path == jive::unop_reduction_constant) {
 		auto c = static_cast<const jive::bitconstant_op*>(&producer(operand)->operation());
 		return create_bitconstant(jive::node_output::node(operand)->region(),
 			c->value().zext(ndstbits()-nsrcbits()));
@@ -669,15 +669,15 @@ fpext_op::copy() const
 	return std::unique_ptr<jive::operation>(new jlm::fpext_op(*this));
 }
 
-jive_unop_reduction_path_t
+jive::unop_reduction_path_t
 fpext_op::can_reduce_operand(const jive::output * operand) const noexcept
 {
-	return jive_unop_reduction_none;
+	return jive::unop_reduction_none;
 }
 
 jive::output *
 fpext_op::reduce_operand(
-	jive_unop_reduction_path_t path,
+	jive::unop_reduction_path_t path,
 	jive::output * operand) const
 {
 	JLM_UNREACHABLE("Not implemented!");
@@ -707,15 +707,15 @@ fpneg_op::copy() const
 	return std::unique_ptr<jive::operation>(new jlm::fpneg_op(*this));
 }
 
-jive_unop_reduction_path_t
+jive::unop_reduction_path_t
 fpneg_op::can_reduce_operand(const jive::output * operand) const noexcept
 {
-	return jive_unop_reduction_none;
+	return jive::unop_reduction_none;
 }
 
 jive::output *
 fpneg_op::reduce_operand(
-	jive_unop_reduction_path_t path,
+	jive::unop_reduction_path_t path,
 	jive::output * operand) const
 {
 	JLM_UNREACHABLE("Not implemented!");
@@ -745,15 +745,15 @@ fptrunc_op::copy() const
 	return std::unique_ptr<jive::operation>(new fptrunc_op(*this));
 }
 
-jive_unop_reduction_path_t
+jive::unop_reduction_path_t
 fptrunc_op::can_reduce_operand(const jive::output * operand) const noexcept
 {
-	return jive_unop_reduction_none;
+	return jive::unop_reduction_none;
 }
 
 jive::output *
 fptrunc_op::reduce_operand(
-	jive_unop_reduction_path_t path,
+	jive::unop_reduction_path_t path,
 	jive::output * operand) const
 {
 	JLM_UNREACHABLE("Not implemented!");
@@ -818,15 +818,15 @@ bitcast_op::copy() const
 	return std::unique_ptr<jive::operation>(new bitcast_op(*this));
 }
 
-jive_unop_reduction_path_t
+jive::unop_reduction_path_t
 bitcast_op::can_reduce_operand(const jive::output * operand) const noexcept
 {
-	return jive_unop_reduction_none;
+	return jive::unop_reduction_none;
 }
 
 jive::output *
 bitcast_op::reduce_operand(
-	jive_unop_reduction_path_t path,
+	jive::unop_reduction_path_t path,
 	jive::output * operand) const
 {
 	JLM_UNREACHABLE("Not implemented!");
@@ -883,15 +883,15 @@ trunc_op::copy() const
 	return std::unique_ptr<jive::operation>(new trunc_op(*this));
 }
 
-jive_unop_reduction_path_t
+jive::unop_reduction_path_t
 trunc_op::can_reduce_operand(const jive::output * operand) const noexcept
 {
-	return jive_unop_reduction_none;
+	return jive::unop_reduction_none;
 }
 
 jive::output *
 trunc_op::reduce_operand(
-	jive_unop_reduction_path_t path,
+	jive::unop_reduction_path_t path,
 	jive::output * operand) const
 {
 	JLM_UNREACHABLE("Not implemented!");
@@ -924,16 +924,16 @@ uitofp_op::copy() const
 	return std::make_unique<uitofp_op>(*this);
 }
 
-jive_unop_reduction_path_t
+jive::unop_reduction_path_t
 uitofp_op::can_reduce_operand(
 	const jive::output * operand) const noexcept
 {
-	return jive_unop_reduction_none;
+	return jive::unop_reduction_none;
 }
 
 jive::output *
 uitofp_op::reduce_operand(
-	jive_unop_reduction_path_t path,
+	jive::unop_reduction_path_t path,
 	jive::output * operand) const
 {
 	JLM_UNREACHABLE("Not implemented!");
@@ -965,15 +965,15 @@ sitofp_op::copy() const
 	return std::make_unique<sitofp_op>(*this);
 }
 
-jive_unop_reduction_path_t
+jive::unop_reduction_path_t
 sitofp_op::can_reduce_operand(const jive::output * operand) const noexcept
 {
-	return jive_unop_reduction_none;
+	return jive::unop_reduction_none;
 }
 
 jive::output *
 sitofp_op::reduce_operand(
-	jive_unop_reduction_path_t path,
+	jive::unop_reduction_path_t path,
 	jive::output * operand) const
 {
 	JLM_UNREACHABLE("Not implemented!");

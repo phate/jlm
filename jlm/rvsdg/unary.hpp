@@ -12,9 +12,9 @@
 #include <jlm/rvsdg/simple-normal-form.hpp>
 #include <jlm/util/common.hpp>
 
-typedef size_t jive_unop_reduction_path_t;
-
 namespace jive {
+
+typedef size_t unop_reduction_path_t;
 
 class unary_normal_form final : public simple_normal_form {
 public:
@@ -61,12 +61,12 @@ public:
 	: simple_op({operand}, {result})
 	{}
 
-	virtual jive_unop_reduction_path_t
+	virtual unop_reduction_path_t
 	can_reduce_operand(const jive::output * arg) const noexcept = 0;
 
 	virtual jive::output *
 	reduce_operand(
-		jive_unop_reduction_path_t path,
+		unop_reduction_path_t path,
 		jive::output * arg) const = 0;
 
 	static jive::unary_normal_form *
@@ -76,18 +76,18 @@ public:
 	}
 };
 
-}
-
-static const jive_unop_reduction_path_t jive_unop_reduction_none = 0;
+static const unop_reduction_path_t unop_reduction_none = 0;
 /* operation is applied to constant, compute immediately */
-static const jive_unop_reduction_path_t jive_unop_reduction_constant = 1;
+static const unop_reduction_path_t unop_reduction_constant = 1;
 /* operation does not change input operand */
-static const jive_unop_reduction_path_t jive_unop_reduction_idempotent = 2;
+static const unop_reduction_path_t unop_reduction_idempotent = 2;
 /* operation is applied on inverse operation, can eliminate */
-static const jive_unop_reduction_path_t jive_unop_reduction_inverse = 4;
+static const unop_reduction_path_t unop_reduction_inverse = 4;
 /* operation "supersedes" immediately preceding operation */
-static const jive_unop_reduction_path_t jive_unop_reduction_narrow = 5;
+static const unop_reduction_path_t unop_reduction_narrow = 5;
 /* operation can be distributed into operands of preceding operation */
-static const jive_unop_reduction_path_t jive_unop_reduction_distribute = 6;
+static const unop_reduction_path_t unop_reduction_distribute = 6;
+
+}
 
 #endif

@@ -21,15 +21,15 @@ unary_op::operator==(const jive::operation & other) const noexcept
 	    && op->result(0) == result(0);
 }
 
-jive_unop_reduction_path_t
+jive::unop_reduction_path_t
 unary_op::can_reduce_operand(const jive::output * operand) const noexcept
 {
-	return jive_unop_reduction_none;
+	return jive::unop_reduction_none;
 }
 
 jive::output *
 unary_op::reduce_operand(
-	jive_unop_reduction_path_t path,
+	jive::unop_reduction_path_t path,
 	jive::output * operand) const
 {
 	return nullptr;

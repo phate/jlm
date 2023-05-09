@@ -259,13 +259,13 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
-	jive_unop_reduction_path_t
+	jive::unop_reduction_path_t
 	can_reduce_operand(
 		const jive::output * output) const noexcept override;
 
 	jive::output *
 	reduce_operand(
-		jive_unop_reduction_path_t path,
+		jive::unop_reduction_path_t path,
 		jive::output * output) const override;
 
 	static std::unique_ptr<jlm::tac>
@@ -318,13 +318,13 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
-	jive_unop_reduction_path_t
+	jive::unop_reduction_path_t
 	can_reduce_operand(
 		const jive::output * output) const noexcept override;
 
 	jive::output *
 	reduce_operand(
-		jive_unop_reduction_path_t path,
+		jive::unop_reduction_path_t path,
 		jive::output * output) const override;
 
 	static std::unique_ptr<jlm::tac>
@@ -509,13 +509,13 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
-	jive_unop_reduction_path_t
+	jive::unop_reduction_path_t
 	can_reduce_operand(
 		const jive::output * output) const noexcept override;
 
 	jive::output *
 	reduce_operand(
-		jive_unop_reduction_path_t path,
+		jive::unop_reduction_path_t path,
 		jive::output * output) const override;
 
 	inline size_t
@@ -589,13 +589,13 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
-	jive_unop_reduction_path_t
+	jive::unop_reduction_path_t
 	can_reduce_operand(
 		const jive::output * output) const noexcept override;
 
 	jive::output *
 	reduce_operand(
-		jive_unop_reduction_path_t path,
+		jive::unop_reduction_path_t path,
 		jive::output * output) const override;
 
 	inline size_t
@@ -783,12 +783,12 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
-	virtual jive_unop_reduction_path_t
+	virtual jive::unop_reduction_path_t
 	can_reduce_operand(const jive::output * operand) const noexcept override;
 
 	virtual jive::output *
 	reduce_operand(
-		jive_unop_reduction_path_t path,
+		jive::unop_reduction_path_t path,
 		jive::output * operand) const override;
 
 	inline size_t
@@ -1185,13 +1185,13 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
-	jive_unop_reduction_path_t
+	jive::unop_reduction_path_t
 	can_reduce_operand(
 		const jive::output * output) const noexcept override;
 
 	jive::output *
 	reduce_operand(
-		jive_unop_reduction_path_t path,
+		jive::unop_reduction_path_t path,
 		jive::output * output) const override;
 
 	inline const jlm::fpsize &
@@ -1248,13 +1248,13 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
-	jive_unop_reduction_path_t
+	jive::unop_reduction_path_t
 	can_reduce_operand(
 		const jive::output * output) const noexcept override;
 
 	jive::output *
 	reduce_operand(
-		jive_unop_reduction_path_t path,
+		jive::unop_reduction_path_t path,
 		jive::output * output) const override;
 
 	const jlm::fpsize &
@@ -1318,13 +1318,13 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
-	jive_unop_reduction_path_t
+	jive::unop_reduction_path_t
 	can_reduce_operand(
 		const jive::output * output) const noexcept override;
 
 	jive::output *
 	reduce_operand(
-		jive_unop_reduction_path_t path,
+		jive::unop_reduction_path_t path,
 		jive::output * output) const override;
 
 	inline const fpsize &
@@ -1447,13 +1447,13 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
-	jive_unop_reduction_path_t
+	jive::unop_reduction_path_t
 	can_reduce_operand(
 		const jive::output * output) const noexcept override;
 
 	jive::output *
 	reduce_operand(
-		jive_unop_reduction_path_t path,
+		jive::unop_reduction_path_t path,
 		jive::output * output) const override;
 
 	static std::unique_ptr<jlm::tac>
@@ -1581,12 +1581,12 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
-	virtual jive_unop_reduction_path_t
+	virtual jive::unop_reduction_path_t
 	can_reduce_operand(const jive::output * operand) const noexcept override;
 
 	virtual jive::output *
 	reduce_operand(
-		jive_unop_reduction_path_t path,
+		jive::unop_reduction_path_t path,
 		jive::output * operand) const override;
 
 	inline size_t
@@ -1664,12 +1664,12 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
-	virtual jive_unop_reduction_path_t
+	virtual jive::unop_reduction_path_t
 	can_reduce_operand(const jive::output * operand) const noexcept override;
 
 	virtual jive::output *
 	reduce_operand(
-		jive_unop_reduction_path_t path,
+		jive::unop_reduction_path_t path,
 		jive::output * operand) const override;
 
 	static std::unique_ptr<jlm::tac>
@@ -1722,13 +1722,13 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
-	jive_unop_reduction_path_t
+	jive::unop_reduction_path_t
 	can_reduce_operand(
 		const jive::output * output) const noexcept override;
 
 	jive::output *
 	reduce_operand(
-		jive_unop_reduction_path_t path,
+		jive::unop_reduction_path_t path,
 		jive::output * output) const override;
 
 	static std::unique_ptr<jlm::tac>

@@ -52,12 +52,12 @@ public:
 	virtual std::unique_ptr<jive::operation>
 	copy() const override;
 
-	virtual jive_unop_reduction_path_t
+	virtual jive::unop_reduction_path_t
 	can_reduce_operand(const jive::output * operand) const noexcept override;
 
 	virtual jive::output *
 	reduce_operand(
-		jive_unop_reduction_path_t path,
+		jive::unop_reduction_path_t path,
 		jive::output * operand) const override;
 
 	inline size_t
