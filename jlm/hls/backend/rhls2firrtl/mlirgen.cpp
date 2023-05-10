@@ -509,7 +509,7 @@ jlm::hls::MLIRGenImpl::MlirGenMem(const jlm::rvsdg::simple_node *node) {
 		} else if (dynamic_cast<const jlm::PointerType *>(&node->output(0)->type())) {
 			bitWidth = 64;
 		} else {
-			throw jlm::error("unknown width for mem request");
+			throw jlm::util::error("unknown width for mem request");
 		}
 	}
 
@@ -1095,7 +1095,7 @@ jlm::hls::MLIRGenImpl::MlirGen(hls::loop_node *loopNode, mlir::Block *body, mlir
 			auto inst = MlirGen(oln, body, circuitBody);
 			instances.merge(inst);
 		} else {
-			throw jlm::error("Unimplemented op (unexpected structural node) : " +
+			throw jlm::util::error("Unimplemented op (unexpected structural node) : " +
 					 node->operation().debug_string());
 		}
 	}
@@ -1190,7 +1190,7 @@ jlm::hls::MLIRGenImpl::MlirGen(jlm::rvsdg::region *subRegion, mlir::Block *circu
 			auto inst = MlirGen(oln, body, circuitBody);
 			instances.merge(inst);
 		} else {
-			throw jlm::error("Unimplemented op (unexpected structural node) : " +
+			throw jlm::util::error("Unimplemented op (unexpected structural node) : " +
 					 node->operation().debug_string());
 		}
 	}
@@ -2373,7 +2373,7 @@ jlm::hls::MLIRGenImpl::WriteCircuitToFile(const circt::firrtl::CircuitOp circuit
 	llvm::raw_fd_ostream output(fileName, EC);
 	auto status = circt::firrtl::exportFIRFile(module, output);
 	if (status.failed())
-		throw jlm::error("Exporting of FIRRTL failed");
+		throw jlm::util::error("Exporting of FIRRTL failed");
 	output.close();
 	std::cout << "\nWritten firrtl to " << fileName << "\n";
 }
