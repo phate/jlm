@@ -16,9 +16,9 @@ FunctionType::~FunctionType() noexcept
 = default;
 
 FunctionType::FunctionType(
-  const std::vector<const jive::type*> & argumentTypes,
-  const std::vector<const jive::type*> & resultTypes)
-  : jive::valuetype()
+  const std::vector<const jlm::rvsdg::type*> & argumentTypes,
+  const std::vector<const jlm::rvsdg::type*> & resultTypes)
+  : jlm::rvsdg::valuetype()
 {
   for (auto & type : argumentTypes)
     ArgumentTypes_.emplace_back(type->copy());
@@ -28,15 +28,15 @@ FunctionType::FunctionType(
 }
 
 FunctionType::FunctionType(
-  std::vector<std::unique_ptr<jive::type>> argumentTypes,
-  std::vector<std::unique_ptr<jive::type>> resultTypes)
-  : jive::valuetype()
+  std::vector<std::unique_ptr<jlm::rvsdg::type>> argumentTypes,
+  std::vector<std::unique_ptr<jlm::rvsdg::type>> resultTypes)
+  : jlm::rvsdg::valuetype()
   , ResultTypes_(std::move(resultTypes))
   , ArgumentTypes_(std::move(argumentTypes))
 {}
 
 FunctionType::FunctionType(const FunctionType & rhs)
-  : jive::valuetype(rhs)
+  : jlm::rvsdg::valuetype(rhs)
 {
   for (auto & type : rhs.ArgumentTypes_)
     ArgumentTypes_.push_back(type->copy());
@@ -46,7 +46,7 @@ FunctionType::FunctionType(const FunctionType & rhs)
 }
 
 FunctionType::FunctionType(FunctionType && other) noexcept
-  : jive::valuetype(other)
+  : jlm::rvsdg::valuetype(other)
   , ResultTypes_(std::move(other.ResultTypes_))
   , ArgumentTypes_(std::move(other.ArgumentTypes_))
 {}
@@ -70,7 +70,7 @@ FunctionType::debug_string() const
 }
 
 bool
-FunctionType::operator==(const jive::type & _other) const noexcept
+FunctionType::operator==(const jlm::rvsdg::type & _other) const noexcept
 {
   auto other = dynamic_cast<const FunctionType*>(&_other);
   if (other == nullptr)
@@ -95,10 +95,10 @@ FunctionType::operator==(const jive::type & _other) const noexcept
   return true;
 }
 
-std::unique_ptr<jive::type>
+std::unique_ptr<jlm::rvsdg::type>
 FunctionType::copy() const
 {
-  return std::unique_ptr<jive::type>(new FunctionType(*this));
+  return std::unique_ptr<jlm::rvsdg::type>(new FunctionType(*this));
 }
 
 FunctionType &
@@ -134,15 +134,15 @@ PointerType::debug_string() const
 }
 
 bool
-PointerType::operator==(const jive::type & other) const noexcept
+PointerType::operator==(const jlm::rvsdg::type & other) const noexcept
 {
-  return jive::is<PointerType>(other);
+  return jlm::rvsdg::is<PointerType>(other);
 }
 
-std::unique_ptr<jive::type>
+std::unique_ptr<jlm::rvsdg::type>
 PointerType::copy() const
 {
-  return std::unique_ptr<jive::type>(new PointerType(*this));
+  return std::unique_ptr<jlm::rvsdg::type>(new PointerType(*this));
 }
 
 /* array type */
@@ -157,16 +157,16 @@ arraytype::debug_string() const
 }
 
 bool
-arraytype::operator==(const jive::type & other) const noexcept
+arraytype::operator==(const jlm::rvsdg::type & other) const noexcept
 {
 	auto type = dynamic_cast<const jlm::arraytype*>(&other);
 	return type && type->element_type() == element_type() && type->nelements() == nelements();
 }
 
-std::unique_ptr<jive::type>
+std::unique_ptr<jlm::rvsdg::type>
 arraytype::copy() const
 {
-	return std::unique_ptr<jive::type>(new arraytype(*this));
+	return std::unique_ptr<jlm::rvsdg::type>(new arraytype(*this));
 }
 
 /* floating point type */
@@ -189,16 +189,16 @@ fptype::debug_string() const
 }
 
 bool
-fptype::operator==(const jive::type & other) const noexcept
+fptype::operator==(const jlm::rvsdg::type & other) const noexcept
 {
 	auto type = dynamic_cast<const jlm::fptype*>(&other);
 	return type && type->size() == size();
 }
 
-std::unique_ptr<jive::type>
+std::unique_ptr<jlm::rvsdg::type>
 fptype::copy() const
 {
-	return std::unique_ptr<jive::type>(new fptype(*this));
+	return std::unique_ptr<jlm::rvsdg::type>(new fptype(*this));
 }
 
 /* vararg type */
@@ -207,7 +207,7 @@ varargtype::~varargtype()
 {}
 
 bool
-varargtype::operator==(const jive::type & other) const noexcept
+varargtype::operator==(const jlm::rvsdg::type & other) const noexcept
 {
 	return dynamic_cast<const jlm::varargtype*>(&other) != nullptr;
 }
@@ -218,17 +218,17 @@ varargtype::debug_string() const
 	return "vararg";
 }
 
-std::unique_ptr<jive::type>
+std::unique_ptr<jlm::rvsdg::type>
 varargtype::copy() const
 {
-	return std::unique_ptr<jive::type>(new jlm::varargtype(*this));
+	return std::unique_ptr<jlm::rvsdg::type>(new jlm::varargtype(*this));
 }
 
 StructType::~StructType()
 = default;
 
 bool
-StructType::operator==(const jive::type & other) const noexcept
+StructType::operator==(const jlm::rvsdg::type & other) const noexcept
 {
   auto type = dynamic_cast<const StructType*>(&other);
   return type
@@ -243,16 +243,16 @@ StructType::debug_string() const
   return "struct";
 }
 
-std::unique_ptr<jive::type>
+std::unique_ptr<jlm::rvsdg::type>
 StructType::copy() const
 {
-  return std::unique_ptr<jive::type>(new StructType(*this));
+  return std::unique_ptr<jlm::rvsdg::type>(new StructType(*this));
 }
 
 /* vectortype */
 
 bool
-vectortype::operator==(const jive::type & other) const noexcept
+vectortype::operator==(const jlm::rvsdg::type & other) const noexcept
 {
 	auto type = dynamic_cast<const vectortype*>(&other);
 	return type
@@ -266,7 +266,7 @@ fixedvectortype::~fixedvectortype()
 {}
 
 bool
-fixedvectortype::operator==(const jive::type & other) const noexcept
+fixedvectortype::operator==(const jlm::rvsdg::type & other) const noexcept
 {
 	return vectortype::operator==(other);
 }
@@ -277,10 +277,10 @@ fixedvectortype::debug_string() const
 	return util::strfmt("fixedvector[", type().debug_string(), ":", size(), "]");
 }
 
-std::unique_ptr<jive::type>
+std::unique_ptr<jlm::rvsdg::type>
 fixedvectortype::copy() const
 {
-	return std::unique_ptr<jive::type>(new fixedvectortype(*this));
+	return std::unique_ptr<jlm::rvsdg::type>(new fixedvectortype(*this));
 }
 
 
@@ -290,7 +290,7 @@ scalablevectortype::~scalablevectortype()
 {}
 
 bool
-scalablevectortype::operator==(const jive::type & other) const noexcept
+scalablevectortype::operator==(const jlm::rvsdg::type & other) const noexcept
 {
 	return vectortype::operator==(other);
 }
@@ -301,10 +301,10 @@ scalablevectortype::debug_string() const
 	return util::strfmt("scalablevector[", type().debug_string(), ":", size(), "]");
 }
 
-std::unique_ptr<jive::type>
+std::unique_ptr<jlm::rvsdg::type>
 scalablevectortype::copy() const
 {
-	return std::unique_ptr<jive::type>(new scalablevectortype(*this));
+	return std::unique_ptr<jlm::rvsdg::type>(new scalablevectortype(*this));
 }
 
 /* loop state type */
@@ -313,7 +313,7 @@ loopstatetype::~loopstatetype()
 {}
 
 bool
-loopstatetype::operator==(const jive::type & other) const noexcept
+loopstatetype::operator==(const jlm::rvsdg::type & other) const noexcept
 {
 	return dynamic_cast<const loopstatetype*>(&other) != nullptr;
 }
@@ -324,10 +324,10 @@ loopstatetype::debug_string() const
 	return "loopstate";
 }
 
-std::unique_ptr<jive::type>
+std::unique_ptr<jlm::rvsdg::type>
 loopstatetype::copy() const
 {
-	return std::unique_ptr<jive::type>(new loopstatetype(*this));
+	return std::unique_ptr<jlm::rvsdg::type>(new loopstatetype(*this));
 }
 
 /* I/O state type */
@@ -336,9 +336,9 @@ iostatetype::~iostatetype()
 {}
 
 bool
-iostatetype::operator==(const jive::type & other) const noexcept
+iostatetype::operator==(const jlm::rvsdg::type & other) const noexcept
 {
-	return jive::is<iostatetype>(other);
+	return jlm::rvsdg::is<iostatetype>(other);
 }
 
 std::string
@@ -347,10 +347,10 @@ iostatetype::debug_string() const
 	return "iostate";
 }
 
-std::unique_ptr<jive::type>
+std::unique_ptr<jlm::rvsdg::type>
 iostatetype::copy() const
 {
-	return std::unique_ptr<jive::type>(new iostatetype(*this));
+	return std::unique_ptr<jlm::rvsdg::type>(new iostatetype(*this));
 }
 
 /**
@@ -366,15 +366,15 @@ MemoryStateType::debug_string() const
 }
 
 bool
-MemoryStateType::operator==(const jive::type &other) const noexcept
+MemoryStateType::operator==(const jlm::rvsdg::type &other) const noexcept
 {
-  return jive::is<MemoryStateType>(other);
+  return jlm::rvsdg::is<MemoryStateType>(other);
 }
 
-std::unique_ptr<jive::type>
+std::unique_ptr<jlm::rvsdg::type>
 MemoryStateType::copy() const
 {
-  return std::unique_ptr<jive::type>(new MemoryStateType(*this));
+  return std::unique_ptr<jlm::rvsdg::type>(new MemoryStateType(*this));
 }
 
 }

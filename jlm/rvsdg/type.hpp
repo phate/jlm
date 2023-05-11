@@ -10,7 +10,8 @@
 #include <memory>
 #include <string>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 class type {
 public:
@@ -24,10 +25,10 @@ protected:
 
 public:
 	virtual bool
-	operator==(const jive::type & other) const noexcept = 0;
+	operator==(const jlm::rvsdg::type & other) const noexcept = 0;
 
 	inline bool
-	operator!=(const jive::type & other) const noexcept
+	operator!=(const jlm::rvsdg::type & other) const noexcept
 	{
 		return !(*this == other);
 	}
@@ -39,7 +40,7 @@ public:
 	debug_string() const = 0;
 };
 
-class valuetype : public jive::type {
+class valuetype : public jlm::rvsdg::type {
 public:
 	virtual
 	~valuetype() noexcept;
@@ -47,11 +48,11 @@ public:
 protected:
 	inline constexpr
 	valuetype() noexcept
-	: jive::type()
+	: jlm::rvsdg::type()
 	{}
 };
 
-class statetype : public jive::type {
+class statetype : public jlm::rvsdg::type {
 public:
 	virtual
 	~statetype() noexcept;
@@ -59,15 +60,15 @@ public:
 protected:
 	inline constexpr
 	statetype() noexcept
-	: jive::type()
+	: jlm::rvsdg::type()
 	{}
 };
 
 template <class T> static inline bool
-is(const jive::type & type) noexcept
+is(const jlm::rvsdg::type & type) noexcept
 {
-	static_assert(std::is_base_of<jive::type, T>::value,
-		"Template parameter T must be derived from jive::type.");
+	static_assert(std::is_base_of<jlm::rvsdg::type, T>::value,
+		"Template parameter T must be derived from jlm::rvsdg::type.");
 
 	return dynamic_cast<const T*>(&type) != nullptr;
 }

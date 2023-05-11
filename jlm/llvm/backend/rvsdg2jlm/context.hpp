@@ -43,7 +43,7 @@ public:
 	}
 
 	inline void
-	insert(const jive::output * port, const jlm::variable * v)
+	insert(const rvsdg::output * port, const jlm::variable * v)
 	{
 		JLM_ASSERT(ports_.find(port) == ports_.end());
 		JLM_ASSERT(port->type() == v->type());
@@ -51,7 +51,7 @@ public:
 	}
 
 	inline const jlm::variable *
-	variable(const jive::output * port)
+	variable(const rvsdg::output * port)
 	{
 		auto it = ports_.find(port);
 		JLM_ASSERT(it != ports_.end());
@@ -86,7 +86,7 @@ private:
 	jlm::cfg * cfg_;
 	ipgraph_module & module_;
 	basic_block * lpbb_;
-	std::unordered_map<const jive::output*, const jlm::variable*> ports_;
+	std::unordered_map<const rvsdg::output*, const jlm::variable*> ports_;
 };
 
 }}

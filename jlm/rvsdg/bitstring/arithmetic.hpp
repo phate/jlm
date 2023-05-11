@@ -9,7 +9,8 @@
 #include <jlm/rvsdg/bitstring/bitoperation-classes.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 #define DECLARE_BITUNARY_OPERATION(NAME) \
 class NAME ## _op final : public bitunary_op { \
@@ -31,14 +32,14 @@ public: \
 	virtual std::string \
 	debug_string() const override; \
 \
-	virtual std::unique_ptr<jive::operation> \
+	virtual std::unique_ptr<operation> \
 	copy() const override; \
 \
 	virtual std::unique_ptr<bitunary_op> \
 	create(size_t nbits) const override; \
 \
-	static inline jive::output * \
-	create(size_t nbits, jive::output * op) \
+	static inline output * \
+	create(size_t nbits, output * op) \
 	{ \
 		return simple_node::create_normalized(op->region(), NAME ## _op(nbits), {op})[0]; \
 	} \
@@ -58,7 +59,7 @@ public: \
 	virtual bool \
 	operator==(const operation & other) const noexcept override; \
 \
-	virtual enum jive::binary_op::flags \
+	virtual enum binary_op::flags \
 	flags() const noexcept override; \
 \
 	virtual bitvalue_repr \
@@ -69,14 +70,14 @@ public: \
 	virtual std::string \
 	debug_string() const override; \
 \
-	virtual std::unique_ptr<jive::operation> \
+	virtual std::unique_ptr<operation> \
 	copy() const override; \
 \
 	virtual std::unique_ptr<bitbinary_op> \
 	create(size_t nbits) const override; \
 \
-	static inline jive::output * \
-	create(size_t nbits, jive::output * op1, jive::output * op2) \
+	static inline output * \
+	create(size_t nbits, output * op1, output * op2) \
 	{ \
 		return simple_node::create_normalized(op1->region(), NAME ## _op(nbits), {op1, op2})[0]; \
 	} \

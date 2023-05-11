@@ -13,14 +13,14 @@
 namespace jlm {
 	namespace hls {
 
-		jive::output *
-		get_trigger(jive::region *region);
+		rvsdg::output *
+		get_trigger(rvsdg::region *region);
 
 		jlm::lambda::node *
-		add_lambda_argument(jlm::lambda::node *ln, const jive::type *type);
+		add_lambda_argument(jlm::lambda::node *ln, const rvsdg::type *type);
 
 		void
-		add_triggers(jive::region *region);
+		add_triggers(rvsdg::region *region);
 
 		void
 		add_triggers(jlm::RvsdgModule &rm);

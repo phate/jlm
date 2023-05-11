@@ -17,12 +17,12 @@ namespace delta {
 
 /** \brief Delta operation
 */
-class operation final : public jive::structural_op {
+class operation final : public rvsdg::structural_op {
 public:
 	~operation() override;
 
 	operation(
-		const jive::valuetype & type,
+		const rvsdg::valuetype & type,
 		const std::string & name,
 		const jlm::linkage & linkage,
     std::string section,
@@ -59,11 +59,11 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<rvsdg::operation>
 	copy() const override;
 
 	virtual bool
-	operator==(const jive::operation & other) const noexcept override;
+	operator==(const rvsdg::operation & other) const noexcept override;
 
 	const std::string &
 	name() const noexcept
@@ -89,10 +89,10 @@ public:
 		return constant_;
 	}
 
-	[[nodiscard]] const jive::valuetype &
+	[[nodiscard]] const rvsdg::valuetype &
 	type() const noexcept
 	{
-    return *util::AssertedCast<jive::valuetype>(type_.get());
+    return *util::AssertedCast<rvsdg::valuetype>(type_.get());
 	}
 
 private:
@@ -100,7 +100,7 @@ private:
 	std::string name_;
   std::string Section_;
 	jlm::linkage linkage_;
-	std::unique_ptr<jive::type> type_;
+	std::unique_ptr<rvsdg::type> type_;
 };
 
 class cvargument;
@@ -129,7 +129,7 @@ class result;
 *   auto output = delta->finalize(...);
 * \endcode
 */
-class node final : public jive::structural_node {
+class node final : public rvsdg::structural_node {
 	class cviterator;
 	class cvconstiterator;
 
@@ -141,7 +141,7 @@ public:
 
 private:
 	node(
-		jive::region * parent,
+		rvsdg::region * parent,
 		delta::operation && op)
 	: structural_node(op, parent, 1)
 	{}
@@ -153,7 +153,7 @@ public:
 	ctxvar_constrange
 	ctxvars() const;
 
-	jive::region *
+	rvsdg::region *
 	subregion() const noexcept
 	{
 		return structural_node::subregion(0);
@@ -165,7 +165,7 @@ public:
 		return *static_cast<const delta::operation*>(&structural_node::operation());
 	}
 
-	[[nodiscard]] const jive::valuetype &
+	[[nodiscard]] const rvsdg::valuetype &
 	type() const noexcept
 	{
 		return operation().type();
@@ -208,7 +208,7 @@ public:
 	* \return The context variable argument from the delta region.
 	*/
 	delta::cvargument *
-	add_ctxvar(jive::output * origin);
+	add_ctxvar(rvsdg::output * origin);
 
 	cvinput *
 	input(size_t n) const noexcept;
@@ -224,13 +224,13 @@ public:
 
 	virtual delta::node *
 	copy(
-		jive::region * region,
-		const std::vector<jive::output*> & operands) const override;
+		rvsdg::region * region,
+		const std::vector<rvsdg::output*> & operands) const override;
 
 	virtual delta::node *
 	copy(
-		jive::region * region,
-		jive::substitution_map & smap) const override;
+		rvsdg::region * region,
+		rvsdg::substitution_map & smap) const override;
 
 	/**
 	* Creates a delta node in the region \p parent with the pointer type \p type and name \p name.
@@ -249,8 +249,8 @@ public:
 	*/
 	static node *
 	Create(
-		jive::region * parent,
-    const jive::valuetype & type,
+		rvsdg::region * parent,
+    const rvsdg::valuetype & type,
 		const std::string & name,
 		const jlm::linkage & linkage,
     std::string section,
@@ -268,12 +268,12 @@ public:
 	* \return The output of the delta node.
 	*/
 	delta::output *
-	finalize(jive::output * result);
+	finalize(rvsdg::output * result);
 };
 
 /** \brief Delta context variable input
 */
-class cvinput final : public jive::structural_input {
+class cvinput final : public rvsdg::structural_input {
 	friend ::jlm::delta::node;
 
 public:
@@ -282,14 +282,14 @@ public:
 private:
 	cvinput(
 		delta::node * node,
-		jive::output * origin)
+		rvsdg::output * origin)
 	: structural_input(node, origin, origin->port())
 	{}
 
 	static cvinput *
 	create(
 		delta::node * node,
-		jive::output * origin)
+		rvsdg::output * origin)
 	{
 		auto input = std::unique_ptr<cvinput>(new cvinput(node, origin));
 		return static_cast<cvinput*>(node->append_input(std::move(input)));
@@ -308,12 +308,12 @@ public:
 
 /** \brief Delta context variable iterator
 */
-class node::cviterator final : public jive::input::iterator<cvinput> {
+class node::cviterator final : public rvsdg::input::iterator<cvinput> {
 	friend ::jlm::delta::node;
 
 	constexpr
 	cviterator(cvinput * input)
-	: jive::input::iterator<cvinput>(input)
+	: rvsdg::input::iterator<cvinput>(input)
 	{}
 
 	virtual cvinput *
@@ -328,12 +328,12 @@ class node::cviterator final : public jive::input::iterator<cvinput> {
 
 /** \brief Delta context variable const iterator
 */
-class node::cvconstiterator final : public jive::input::constiterator<cvinput> {
+class node::cvconstiterator final : public rvsdg::input::constiterator<cvinput> {
 	friend ::jlm::delta::node;
 
 	constexpr
 	cvconstiterator(const cvinput * input)
-	: jive::input::constiterator<cvinput>(input)
+	: rvsdg::input::constiterator<cvinput>(input)
 	{}
 
 	virtual const cvinput *
@@ -348,7 +348,7 @@ class node::cvconstiterator final : public jive::input::constiterator<cvinput> {
 
 /** \brief Delta output
 */
-class output final : public jive::structural_output {
+class output final : public rvsdg::structural_output {
 	friend ::jlm::delta::node;
 
 public:
@@ -357,14 +357,14 @@ public:
 private:
 	output(
 		delta::node * node,
-		const jive::port & port)
+		const rvsdg::port & port)
 	: structural_output(node, port)
 	{}
 
 	static output *
 	create(
 		delta::node * node,
-		const jive::port & port)
+		const rvsdg::port & port)
 	{
 		auto output = std::unique_ptr<delta::output>(new delta::output(node, port));
 		return static_cast<delta::output*>(node->append_output(std::move(output)));
@@ -380,7 +380,7 @@ public:
 
 /** \brief Delta context variable argument
 */
-class cvargument final : public jive::argument {
+class cvargument final : public rvsdg::argument {
 	friend ::jlm::delta::node;
 
 public:
@@ -388,14 +388,14 @@ public:
 
 private:
 	cvargument(
-		jive::region * region,
+		rvsdg::region * region,
 		cvinput * input)
-	: jive::argument(region, input, input->port())
+	: rvsdg::argument(region, input, input->port())
 	{}
 
 	static cvargument *
 	create(
-		jive::region * region,
+		rvsdg::region * region,
 		delta::cvinput * input)
 	{
 		auto argument = new cvargument(region, input);
@@ -407,25 +407,25 @@ public:
 	cvinput *
 	input() const noexcept
 	{
-		return static_cast<cvinput*>(jive::argument::input());
+		return static_cast<cvinput*>(rvsdg::argument::input());
 	}
 };
 
 /** \brief Delta result
 */
-class result final : public jive::result {
+class result final : public rvsdg::result {
 	friend ::jlm::delta::node;
 
 public:
 	~result() override;
 
 private:
-	result(jive::output * origin)
-	: jive::result(origin->region(), origin, nullptr, origin->port())
+	result(rvsdg::output * origin)
+	: rvsdg::result(origin->region(), origin, nullptr, origin->port())
 	{}
 
 	static result *
-	create(jive::output * origin)
+	create(rvsdg::output * origin)
 	{
 		auto result = new delta::result(origin);
 		origin->region()->append_result(result);
@@ -436,7 +436,7 @@ public:
 	delta::output *
 	output() const noexcept
 	{
-		return static_cast<delta::output*>(jive::result::output());
+		return static_cast<delta::output*>(rvsdg::result::output());
 	}
 };
 

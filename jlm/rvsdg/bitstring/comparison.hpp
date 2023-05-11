@@ -10,7 +10,8 @@
 #include <jlm/rvsdg/bitstring/bitoperation-classes.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 #define DECLARE_BITCOMPARISON_OPERATION(NAME) \
 class NAME ## _op final : public bitcompare_op { \
@@ -26,7 +27,7 @@ public: \
 	virtual bool \
 	operator==(const operation & other) const noexcept override; \
 \
-	virtual enum jive::binary_op::flags \
+	virtual enum jlm::rvsdg::binary_op::flags \
 	flags() const noexcept override; \
 \
 	virtual compare_result \
@@ -37,14 +38,14 @@ public: \
 	virtual std::string \
 	debug_string() const override; \
 \
-	virtual std::unique_ptr<jive::operation> \
+	virtual std::unique_ptr<jlm::rvsdg::operation> \
 	copy() const override; \
 \
 	virtual std::unique_ptr<bitcompare_op> \
 	create(size_t nbits) const override; \
 \
-	static inline jive::output * \
-	create(size_t nbits, jive::output * op1, jive::output * op2) \
+	static inline jlm::rvsdg::output * \
+	create(size_t nbits, jlm::rvsdg::output * op1, jlm::rvsdg::output * op2) \
 	{ \
 		return simple_node::create_normalized(op1->region(), NAME ## _op(nbits), {op1, op2})[0]; \
 	} \

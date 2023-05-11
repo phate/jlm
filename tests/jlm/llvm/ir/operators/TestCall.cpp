@@ -35,7 +35,7 @@ TestCallTypeClassifierIndirectCall()
 	auto module = RvsdgModule::Create(util::filepath(""), "", "");
 	auto graph = &module->Rvsdg();
 
-	auto nf = graph->node_normal_form(typeid(jive::operation));
+	auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
 	nf->set_mutable(false);
 
   auto SetupFunction = [&]()
@@ -45,7 +45,7 @@ TestCallTypeClassifierIndirectCall()
     auto memoryStateArgument = lambda->fctargument(2);
     auto loopStateArgument = lambda->fctargument(3);
 
-    auto one = jive::create_bitconstant(lambda->subregion(), 32, 1);
+    auto one = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 1);
 
     auto alloca = alloca_op::create(pt, one, 8);
 
@@ -63,7 +63,7 @@ TestCallTypeClassifierIndirectCall()
     graph->add_export(lambda->output(), {pt, "f"});
 
     return std::make_tuple(
-      util::AssertedCast<CallNode>(jive::node_output::node(callResults[0])),
+      util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callResults[0])),
       load[0]);
   };
 
@@ -92,7 +92,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
 	auto module = RvsdgModule::Create(util::filepath(""), "", "");
 	auto graph = &module->Rvsdg();
 
-	auto nf = graph->node_normal_form(typeid(jive::operation));
+	auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
 	nf->set_mutable(false);
 
   valuetype vt;
@@ -125,16 +125,16 @@ TestCallTypeClassifierNonRecursiveDirectCall()
 
   auto SetupFunctionF = [&](lambda::output * g)
   {
-    auto SetupOuterTheta = [](jive::region * region, jive::argument * functionG)
+    auto SetupOuterTheta = [](jlm::rvsdg::region * region, jlm::rvsdg::argument * functionG)
     {
-      auto outerTheta = jive::theta_node::create(region);
+      auto outerTheta = jlm::rvsdg::theta_node::create(region);
       auto otf = outerTheta->add_loopvar(functionG);
 
-      auto innerTheta = jive::theta_node::create(outerTheta->subregion());
+      auto innerTheta = jlm::rvsdg::theta_node::create(outerTheta->subregion());
       auto itf = innerTheta->add_loopvar(otf->argument());
 
-      auto predicate = jive_control_false(innerTheta->subregion());
-      auto gamma = jive::gamma_node::create(predicate, 2);
+      auto predicate = jlm::rvsdg::control_false(innerTheta->subregion());
+      auto gamma = jlm::rvsdg::gamma_node::create(predicate, 2);
       auto ev = gamma->add_entryvar(itf->argument());
       auto xv = gamma->add_exitvar({ev->argument(0), ev->argument(1)});
 
@@ -174,7 +174,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
 
     return std::make_tuple(
       lambda,
-      util::AssertedCast<CallNode>(jive::node_output::node(callResults[0])));
+      util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callResults[0])));
   };
 
   auto g = SetupFunctionG();
@@ -182,7 +182,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
 
 	graph->add_export(f->output(), {PointerType(), "f"});
 
-//	jive::view(graph->root(), stdout);
+//	jlm::rvsdg::view(graph->root(), stdout);
 
 	// Act
   auto callTypeClassifier = CallNode::ClassifyCall(*callNode);
@@ -203,7 +203,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
 	auto module = RvsdgModule::Create(util::filepath(""), "", "");
 	auto graph = &module->Rvsdg();
 
-	auto nf = graph->node_normal_form(typeid(jive::operation));
+	auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
 	nf->set_mutable(false);
 
   valuetype vt;
@@ -234,26 +234,26 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
   auto SetupFunctionF = [&](lambda::output * g)
   {
     auto SetupOuterTheta = [&](
-      jive::region * region,
-      jive::argument * g,
-      jive::output * value,
-      jive::output * iOState,
-      jive::output * memoryState,
-      jive::output * loopState)
+      jlm::rvsdg::region * region,
+      jlm::rvsdg::argument * g,
+      jlm::rvsdg::output * value,
+      jlm::rvsdg::output * iOState,
+      jlm::rvsdg::output * memoryState,
+      jlm::rvsdg::output * loopState)
     {
       auto SetupInnerTheta = [&](
-        jive::region * region,
-        jive::argument * g,
-        jive::argument * loopState)
+        jlm::rvsdg::region * region,
+        jlm::rvsdg::argument * g,
+        jlm::rvsdg::argument * loopState)
       {
-        auto innerTheta = jive::theta_node::create(region);
+        auto innerTheta = jlm::rvsdg::theta_node::create(region);
         auto thetaOutputG = innerTheta->add_loopvar(g);
         auto thetaOutputLoopState = innerTheta->add_loopvar(loopState);
 
         return std::make_tuple(thetaOutputG, thetaOutputLoopState);
       };
 
-      auto outerTheta = jive::theta_node::create(region);
+      auto outerTheta = jlm::rvsdg::theta_node::create(region);
       auto thetaOutputG = outerTheta->add_loopvar(g);
       auto thetaOutputValue = outerTheta->add_loopvar(value);
       auto thetaOutputIoState = outerTheta->add_loopvar(iOState);
@@ -281,7 +281,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
         thetaOutputIoState,
         thetaOutputMemoryState,
         thetaOutputLoopState,
-        util::AssertedCast<CallNode>(jive::node_output::node(callResults[0])));
+        util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callResults[0])));
     };
 
     valuetype vt;
@@ -322,7 +322,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
   auto [f, callNode] = SetupFunctionF(g);
 	graph->add_export(f, {PointerType(), "f"});
 
-	jive::view(graph->root(), stdout);
+	jlm::rvsdg::view(graph->root(), stdout);
 
 	/*
 	 * Act
@@ -347,7 +347,7 @@ TestCallTypeClassifierRecursiveDirectCall()
   auto module = RvsdgModule::Create(util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jive::operation));
+  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);
 
   auto SetupFib = [&]()
@@ -357,7 +357,7 @@ TestCallTypeClassifierRecursiveDirectCall()
     MemoryStateType memoryStateType;
     loopstatetype loopStateType;
     FunctionType functionType(
-      {&jive::bit64, &pbit64, &iOStateType, &memoryStateType, &loopStateType},
+      {&jlm::rvsdg::bit64, &pbit64, &iOStateType, &memoryStateType, &loopStateType},
       {&iOStateType, &memoryStateType, &loopStateType});
     PointerType pt;
 
@@ -377,11 +377,11 @@ TestCallTypeClassifierRecursiveDirectCall()
     auto loopStateArgument = lambda->fctargument(4);
     auto ctxVarFib = lambda->add_ctxvar(fibrv->argument());
 
-    auto two = jive::create_bitconstant(lambda->subregion(), 64, 2);
-    auto bitult = jive::bitult_op::create(64, valueArgument, two);
-    auto predicate = jive::match(1, {{0, 1}}, 0, 2, bitult);
+    auto two = jlm::rvsdg::create_bitconstant(lambda->subregion(), 64, 2);
+    auto bitult = jlm::rvsdg::bitult_op::create(64, valueArgument, two);
+    auto predicate = jlm::rvsdg::match(1, {{0, 1}}, 0, 2, bitult);
 
-    auto gammaNode = jive::gamma_node::create(predicate, 2);
+    auto gammaNode = jlm::rvsdg::gamma_node::create(predicate, 2);
     auto nev = gammaNode->add_entryvar(valueArgument);
     auto resultev = gammaNode->add_entryvar(pointerArgument);
     auto fibev = gammaNode->add_entryvar(ctxVarFib);
@@ -390,15 +390,15 @@ TestCallTypeClassifierRecursiveDirectCall()
     auto gILoopState = gammaNode->add_entryvar(loopStateArgument);
 
     /* gamma subregion 0 */
-    auto one = jive::create_bitconstant(gammaNode->subregion(0), 64, 1);
-    auto nm1 = jive::bitsub_op::create(64, nev->argument(0), one);
+    auto one = jlm::rvsdg::create_bitconstant(gammaNode->subregion(0), 64, 1);
+    auto nm1 = jlm::rvsdg::bitsub_op::create(64, nev->argument(0), one);
     auto callfibm1Results = CallNode::Create(
       fibev->argument(0),
       functionType,
       {nm1, resultev->argument(0), gIIoState->argument(0), gIMemoryState->argument(0), gILoopState->argument(0)});
 
-    two = jive::create_bitconstant(gammaNode->subregion(0), 64, 2);
-    auto nm2 = jive::bitsub_op::create(64, nev->argument(0), two);
+    two = jlm::rvsdg::create_bitconstant(gammaNode->subregion(0), 64, 2);
+    auto nm2 = jlm::rvsdg::bitsub_op::create(64, nev->argument(0), two);
     auto callfibm2Results = CallNode::Create(
       fibev->argument(0),
       functionType,
@@ -407,18 +407,18 @@ TestCallTypeClassifierRecursiveDirectCall()
     auto gepnm1 = GetElementPtrOperation::Create(
       resultev->argument(0),
       {nm1},
-      jive::bit64,
+      jlm::rvsdg::bit64,
       pbit64);
-    auto ldnm1 = LoadNode::Create(gepnm1, {callfibm2Results[1]}, jive::bit64, 8);
+    auto ldnm1 = LoadNode::Create(gepnm1, {callfibm2Results[1]}, jlm::rvsdg::bit64, 8);
 
     auto gepnm2 = GetElementPtrOperation::Create(
       resultev->argument(0),
       {nm2},
-      jive::bit64,
+      jlm::rvsdg::bit64,
       pbit64);
-    auto ldnm2 = LoadNode::Create(gepnm2, {ldnm1[1]}, jive::bit64, 8);
+    auto ldnm2 = LoadNode::Create(gepnm2, {ldnm1[1]}, jlm::rvsdg::bit64, 8);
 
-    auto sum = jive::bitadd_op::create(64, ldnm1[0], ldnm2[0]);
+    auto sum = jlm::rvsdg::bitadd_op::create(64, ldnm1[0], ldnm2[0]);
 
     /* gamma subregion 1 */
     /* Nothing needs to be done */
@@ -431,7 +431,7 @@ TestCallTypeClassifierRecursiveDirectCall()
     auto gepn = GetElementPtrOperation::Create(
       pointerArgument,
       {valueArgument},
-      jive::bit64,
+      jlm::rvsdg::bit64,
       pbit64);
     auto store = StoreNode::Create(gepn, sumex, {gOMemoryState}, 8);
 
@@ -444,8 +444,8 @@ TestCallTypeClassifierRecursiveDirectCall()
 
     return std::make_tuple(
       lambdaOutput,
-      util::AssertedCast<CallNode>(jive::node_output::node(callfibm1Results[0])),
-      util::AssertedCast<CallNode>(jive::node_output::node(callfibm2Results[0])));
+      util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callfibm1Results[0])),
+      util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callfibm2Results[0])));
   };
 
   auto [fibfct, callFib1, callFib2] = SetupFib();

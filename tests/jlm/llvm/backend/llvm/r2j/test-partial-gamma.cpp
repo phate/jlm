@@ -25,15 +25,15 @@ test()
 	using namespace jlm;
 
 	jlm::valuetype vt;
-	jive::bittype bt1(1);
+	jlm::rvsdg::bittype bt1(1);
 	FunctionType ft({&bt1, &vt}, {&vt});
 
 	RvsdgModule rm(util::filepath(""), "", "");
 
 	auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage);
 
-	auto match = jive::match(1, {{0, 0}}, 1, 2, lambda->fctargument(0));
-	auto gamma = jive::gamma_node::create(match, 2);
+	auto match = jlm::rvsdg::match(1, {{0, 0}}, 1, 2, lambda->fctargument(0));
+	auto gamma = jlm::rvsdg::gamma_node::create(match, 2);
 	auto ev = gamma->add_entryvar(lambda->fctargument(1));
 	auto output = jlm::create_testop(gamma->subregion(1), {ev->argument(1)}, {&vt})[0];
 	auto ex = gamma->add_exitvar({ev->argument(0), output});
@@ -42,7 +42,7 @@ test()
 
   rm.Rvsdg().add_export(f, {f->type(), ""});
 
-	jive::view(rm.Rvsdg(), stdout);
+	jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
 	util::StatisticsCollector statisticsCollector;
 	auto module = rvsdg2jlm::rvsdg2jlm(rm, statisticsCollector);

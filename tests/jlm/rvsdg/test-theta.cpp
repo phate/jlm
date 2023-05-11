@@ -13,16 +13,16 @@
 static int
 test_main()
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 	jlm::valuetype t;
 
 	auto imp1 = graph.add_import({ctl2, "imp1"});
 	auto imp2 = graph.add_import({t, "imp2"});
 	auto imp3 = graph.add_import({t, "imp3"});
 
-	auto theta = jive::theta_node::create(graph.root());
+	auto theta = jlm::rvsdg::theta_node::create(graph.root());
 
 	auto lv1 = theta->add_loopvar(imp1);
 	auto lv2 = theta->add_loopvar(imp2);
@@ -33,8 +33,8 @@ test_main()
 	theta->set_predicate(lv1->argument());
 
 	graph.add_export(theta->output(0), {theta->output(0)->type(), "exp"});
-	auto theta2 = static_cast<jive::structural_node*>(theta)->copy(graph.root(), {imp1, imp2, imp3});
-	jive::view(graph.root(), stdout);
+	auto theta2 = static_cast<jlm::rvsdg::structural_node*>(theta)->copy(graph.root(), {imp1, imp2, imp3});
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(lv1->node() == theta);
 	assert(lv2->node() == theta);
@@ -44,7 +44,7 @@ test_main()
 	assert(theta->nloopvars() == 3);
 	assert((*theta->begin())->result() == theta->subregion()->result(1));
 
-	assert(dynamic_cast<const jive::theta_node*>(theta2));
+	assert(dynamic_cast<const jlm::rvsdg::theta_node*>(theta2));
 
 	return 0;
 }

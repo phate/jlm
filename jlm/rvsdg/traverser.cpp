@@ -12,11 +12,12 @@ using namespace std::placeholders;
 
 /* top down traverser */
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 topdown_traverser::~topdown_traverser() noexcept {}
 
-topdown_traverser::topdown_traverser(jive::region * region)
+topdown_traverser::topdown_traverser(jlm::rvsdg::region * region)
 	: region_(region)
 	, tracker_(region->graph())
 {
@@ -44,7 +45,7 @@ topdown_traverser::topdown_traverser(jive::region * region)
 }
 
 bool
-topdown_traverser::predecessors_visited(const jive::node * node) noexcept
+topdown_traverser::predecessors_visited(const jlm::rvsdg::node * node) noexcept
 {
 	for (size_t n = 0; n < node->ninputs(); n++) {
 		auto predecessor = node_output::node(node->input(n)->origin());
@@ -58,10 +59,10 @@ topdown_traverser::predecessors_visited(const jive::node * node) noexcept
 	return true;
 }
 
-jive::node *
+jlm::rvsdg::node *
 topdown_traverser::next()
 {
-	jive::node * node = tracker_.peek_top();
+	jlm::rvsdg::node * node = tracker_.peek_top();
 	if (!node) return nullptr;
 
 	tracker_.set_nodestate(node, traversal_nodestate::behind);
@@ -80,7 +81,7 @@ topdown_traverser::next()
 }
 
 void
-topdown_traverser::node_create(jive::node * node)
+topdown_traverser::node_create(jlm::rvsdg::node * node)
 {
 	if (node->region() != region())
 		return;
@@ -114,7 +115,7 @@ topdown_traverser::input_change(input * in, output * old_origin, output * new_or
 
 bottomup_traverser::~bottomup_traverser() noexcept {}
 
-bottomup_traverser::bottomup_traverser(jive::region * region, bool revisit)
+bottomup_traverser::bottomup_traverser(jlm::rvsdg::region * region, bool revisit)
 	: region_(region)
 	, tracker_(region->graph())
 	, new_node_state_(revisit ? traversal_nodestate::frontier : traversal_nodestate::behind)
@@ -136,7 +137,7 @@ bottomup_traverser::bottomup_traverser(jive::region * region, bool revisit)
 		std::bind(&bottomup_traverser::input_change, this, _1, _2, _3)));
 }
 
-jive::node *
+jlm::rvsdg::node *
 bottomup_traverser::next()
 {
 	auto node = tracker_.peek_bottom();
@@ -152,7 +153,7 @@ bottomup_traverser::next()
 }
 
 void
-bottomup_traverser::node_create(jive::node * node)
+bottomup_traverser::node_create(jlm::rvsdg::node * node)
 {
 	if (node->region() != region())
 		return;
@@ -161,7 +162,7 @@ bottomup_traverser::node_create(jive::node * node)
 }
 
 void
-bottomup_traverser::node_destroy(jive::node * node)
+bottomup_traverser::node_destroy(jlm::rvsdg::node * node)
 {
 	if (node->region() != region())
 		return;

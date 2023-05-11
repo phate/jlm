@@ -8,26 +8,27 @@
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 /* gamma normal form */
 
 static bool
-is_predicate_reducible(const jive::gamma_node * gamma)
+is_predicate_reducible(const jlm::rvsdg::gamma_node * gamma)
 {
 	auto constant = node_output::node(gamma->predicate()->origin());
 	return constant && is_ctlconstant_op(constant->operation());
 }
 
 static void
-perform_predicate_reduction(jive::gamma_node * gamma)
+perform_predicate_reduction(jlm::rvsdg::gamma_node * gamma)
 {
 	auto origin = gamma->predicate()->origin();
 	auto constant = static_cast<node_output*>(origin)->node();
 	auto cop = static_cast<const ctlconstant_op*>(&constant->operation());
 	auto alternative = cop->value().alternative();
 
-	jive::substitution_map smap;
+	jlm::rvsdg::substitution_map smap;
 	for (auto it = gamma->begin_entryvar(); it != gamma->end_entryvar(); it++)
 		smap.insert(it->argument(alternative), it->origin());
 
@@ -40,17 +41,17 @@ perform_predicate_reduction(jive::gamma_node * gamma)
 }
 
 static bool
-perform_invariant_reduction(jive::gamma_node * gamma)
+perform_invariant_reduction(jlm::rvsdg::gamma_node * gamma)
 {
 	bool was_normalized = true;
 	for (auto it = gamma->begin_exitvar(); it != gamma->end_exitvar(); it++) {
-		auto argument = dynamic_cast<const jive::argument*>(it->result(0)->origin());
+		auto argument = dynamic_cast<const jlm::rvsdg::argument*>(it->result(0)->origin());
 		if (!argument) continue;
 
 		size_t n;
 		auto input = argument->input();
 		for (n = 1; n < it->nresults(); n++) {
-			auto argument = dynamic_cast<const jive::argument*>(it->result(n)->origin());
+			auto argument = dynamic_cast<const jlm::rvsdg::argument*>(it->result(n)->origin());
 			if (!argument && argument->input() != input)
 				break;
 		}
@@ -64,8 +65,8 @@ perform_invariant_reduction(jive::gamma_node * gamma)
 	return was_normalized;
 }
 
-static std::unordered_set<jive::structural_output*>
-is_control_constant_reducible(jive::gamma_node * gamma)
+static std::unordered_set<jlm::rvsdg::structural_output*>
+is_control_constant_reducible(jlm::rvsdg::gamma_node * gamma)
 {
 	/* check gamma predicate */
 	auto match = node_output::node(gamma->predicate()->origin());
@@ -73,7 +74,7 @@ is_control_constant_reducible(jive::gamma_node * gamma)
 		return {};
 
 	/* check number of alternatives */
-	auto match_op = static_cast<const jive::match_op*>(&match->operation());
+	auto match_op = static_cast<const jlm::rvsdg::match_op*>(&match->operation());
 	std::unordered_set<uint64_t> set({match_op->default_alternative()});
 	for (const auto & pair : *match_op)
 		set.insert(pair.second);
@@ -82,7 +83,7 @@ is_control_constant_reducible(jive::gamma_node * gamma)
 		return {};
 
 	/* check for constants */
-	std::unordered_set<jive::structural_output*> outputs;
+	std::unordered_set<jlm::rvsdg::structural_output*> outputs;
 	for (auto it = gamma->begin_exitvar(); it != gamma->end_exitvar(); it++) {
 		if (!is_ctltype(it->type()))
 			continue;
@@ -93,7 +94,7 @@ is_control_constant_reducible(jive::gamma_node * gamma)
 			if (!is<ctlconstant_op>(node))
 				break;
 
-			auto op = static_cast<const jive::ctlconstant_op*>(&node->operation());
+			auto op = static_cast<const jlm::rvsdg::ctlconstant_op*>(&node->operation());
 			if (op->value().nalternatives() != 2)
 				break;
 		}
@@ -105,9 +106,9 @@ is_control_constant_reducible(jive::gamma_node * gamma)
 }
 
 static void
-perform_control_constant_reduction(std::unordered_set<jive::structural_output*> & outputs)
+perform_control_constant_reduction(std::unordered_set<jlm::rvsdg::structural_output*> & outputs)
 {
-	auto gamma = static_cast<jive::gamma_node*>((*outputs.begin())->node());
+	auto gamma = static_cast<jlm::rvsdg::gamma_node*>((*outputs.begin())->node());
 	auto origin = static_cast<node_output*>(gamma->predicate()->origin());
 	auto match = origin->node();
 	auto & match_op = to_match_op(match->operation());
@@ -134,7 +135,7 @@ perform_control_constant_reduction(std::unordered_set<jive::structural_output*> 
 		}
 
 		auto origin = match->input(0)->origin();
-		auto m = jive::match(match_op.nbits(), new_mapping, defalt, nalternatives, origin);
+		auto m = jlm::rvsdg::match(match_op.nbits(), new_mapping, defalt, nalternatives, origin);
 		xv->divert_users(m);
 	}
 }
@@ -144,8 +145,8 @@ gamma_normal_form::~gamma_normal_form() noexcept
 
 gamma_normal_form::gamma_normal_form(
 	const std::type_info & operator_class,
-	jive::node_normal_form * parent,
-	jive::graph * graph) noexcept
+	jlm::rvsdg::node_normal_form * parent,
+	jlm::rvsdg::graph * graph) noexcept
 : structural_normal_form(operator_class, parent, graph)
 , enable_predicate_reduction_(false)
 , enable_invariant_reduction_(false)
@@ -159,10 +160,10 @@ gamma_normal_form::gamma_normal_form(
 }
 
 bool
-gamma_normal_form::normalize_node(jive::node * node_) const
+gamma_normal_form::normalize_node(jlm::rvsdg::node * node_) const
 {
-	JLM_ASSERT(dynamic_cast<const jive::gamma_node*>(node_));
-	auto node = static_cast<jive::gamma_node*>(node_);
+	JLM_ASSERT(dynamic_cast<const jlm::rvsdg::gamma_node*>(node_));
+	auto node = static_cast<jlm::rvsdg::gamma_node*>(node_);
 
 	if (!get_mutable())
 		return true;
@@ -240,10 +241,10 @@ gamma_op::debug_string() const
 	return "GAMMA";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<jlm::rvsdg::operation>
 gamma_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new gamma_op(*this));
+	return std::unique_ptr<jlm::rvsdg::operation>(new gamma_op(*this));
 }
 
 bool
@@ -281,7 +282,7 @@ gamma_node::entryvar_iterator::operator++() noexcept
 		return *this;
 	}
 
-	input_ = static_cast<jive::gamma_input*>(node->input(++index));
+	input_ = static_cast<jlm::rvsdg::gamma_input*>(node->input(++index));
 	return *this;
 }
 
@@ -302,13 +303,13 @@ gamma_node::exitvar_iterator::operator++() noexcept
 	return *this;
 }
 
-jive::gamma_node *
-gamma_node::copy(jive::region * region, jive::substitution_map & smap) const
+jlm::rvsdg::gamma_node *
+gamma_node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const
 {
 	auto gamma = create(smap.lookup(predicate()->origin()), nsubregions());
 
 	/* add entry variables to new gamma */
-	std::vector<jive::substitution_map> rmap(nsubregions());
+	std::vector<jlm::rvsdg::substitution_map> rmap(nsubregions());
 	for (auto oev = begin_entryvar(); oev != end_entryvar(); oev++) {
 		auto nev = gamma->add_entryvar(smap.lookup(oev->origin()));
 		for (size_t n = 0; n < nev->narguments(); n++)
@@ -321,7 +322,7 @@ gamma_node::copy(jive::region * region, jive::substitution_map & smap) const
 
 	/* add exit variables to new gamma */
 	for (auto oex = begin_exitvar(); oex != end_exitvar(); oex++) {
-		std::vector<jive::output*> operands;
+		std::vector<jlm::rvsdg::output*> operands;
 		for (size_t n = 0; n < oex->nresults(); n++)
 			operands.push_back(rmap[n].lookup(oex->result(n)->origin()));
 		auto nex = gamma->add_exitvar(operands);
@@ -333,20 +334,18 @@ gamma_node::copy(jive::region * region, jive::substitution_map & smap) const
 
 }
 
-jive::node_normal_form *
-jive_gamma_node_get_default_normal_form_(
+jlm::rvsdg::node_normal_form *
+gamma_node_get_default_normal_form_(
 	const std::type_info & operator_class,
-	jive::node_normal_form * parent,
-	jive::graph * graph)
+	jlm::rvsdg::node_normal_form * parent,
+	jlm::rvsdg::graph * graph)
 {
-	jive::gamma_normal_form * normal_form = new jive::gamma_normal_form(
-		operator_class, parent, graph);
-	return normal_form;
+	return new jlm::rvsdg::gamma_normal_form(operator_class, parent, graph);
 }
 
 static void  __attribute__((constructor))
 register_node_normal_form(void)
 {
-	jive::node_normal_form::register_factory(
-		typeid(jive::gamma_op), jive_gamma_node_get_default_normal_form_);
+	jlm::rvsdg::node_normal_form::register_factory(
+		typeid(jlm::rvsdg::gamma_op), gamma_node_get_default_normal_form_);
 }

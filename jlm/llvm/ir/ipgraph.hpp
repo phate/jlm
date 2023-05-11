@@ -181,7 +181,7 @@ public:
 	virtual const std::string &
 	name() const noexcept = 0;
 
-	virtual const jive::type &
+	virtual const jlm::rvsdg::type &
 	type() const noexcept = 0;
 
 	virtual const jlm::linkage &
@@ -222,7 +222,7 @@ public:
 		return cfg_.get();
 	}
 
-	virtual const jive::type &
+	virtual const jlm::rvsdg::type &
 	type() const noexcept override;
 
 	const FunctionType &
@@ -367,7 +367,7 @@ private:
 	data_node(
 		jlm::ipgraph & clg,
 		const std::string & name,
-		const jive::valuetype & valueType,
+		const jlm::rvsdg::valuetype & valueType,
 		const jlm::linkage & linkage,
     std::string section,
 		bool constant)
@@ -383,10 +383,10 @@ public:
 	virtual const PointerType &
 	type() const noexcept override;
 
-  [[nodiscard]] const jive::valuetype &
+  [[nodiscard]] const jlm::rvsdg::valuetype &
   GetValueType() const noexcept
   {
-    return *util::AssertedCast<jive::valuetype>(ValueType_.get());
+    return *util::AssertedCast<jlm::rvsdg::valuetype>(ValueType_.get());
   }
 
 	const std::string &
@@ -432,7 +432,7 @@ public:
 	Create(
 		jlm::ipgraph & clg,
 		const std::string & name,
-    const jive::valuetype & valueType,
+    const jlm::rvsdg::valuetype & valueType,
 		const jlm::linkage & linkage,
     std::string section,
 		bool constant)
@@ -448,7 +448,7 @@ private:
 	std::string name_;
   std::string Section_;
 	jlm::linkage linkage_;
-  std::unique_ptr<jive::type> ValueType_;
+  std::unique_ptr<jlm::rvsdg::type> ValueType_;
 	std::unique_ptr<data_node_init> init_;
 };
 

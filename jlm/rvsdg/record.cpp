@@ -6,7 +6,8 @@
 
 #include <jlm/rvsdg/record.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 /* record type */
 
@@ -20,17 +21,17 @@ rcdtype::debug_string() const
 }
 
 bool
-rcdtype::operator==(const jive::type & other) const noexcept
+rcdtype::operator==(const jlm::rvsdg::type & other) const noexcept
 {
 	auto type = dynamic_cast<const rcdtype*>(&other);
 	return type != nullptr
 	    && declaration() == type->declaration();
 }
 
-std::unique_ptr<jive::type>
+std::unique_ptr<jlm::rvsdg::type>
 rcdtype::copy() const
 {
-	return std::unique_ptr<jive::type>(new rcdtype(*this));
+	return std::unique_ptr<jlm::rvsdg::type>(new rcdtype(*this));
 }
 
 }

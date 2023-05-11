@@ -36,9 +36,9 @@ TestRoot()
 	auto y = graph.add_import({jlm::valuetype(), "y"});
 	graph.add_export(y, {y->type(), "z"});
 
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
   RunDeadNodeElimination(rm);
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(graph.root()->narguments() == 1);
 }
@@ -49,7 +49,7 @@ TestGamma()
 	using namespace jlm;
 
 	jlm::valuetype vt;
-	jive::ctltype ct(2);
+	jlm::rvsdg::ctltype ct(2);
 
 	RvsdgModule rm(util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
@@ -57,7 +57,7 @@ TestGamma()
 	auto x = graph.add_import({vt, "x"});
 	auto y = graph.add_import({vt, "y"});
 
-	auto gamma = jive::gamma_node::create(c, 2);
+	auto gamma = jlm::rvsdg::gamma_node::create(c, 2);
 	auto ev1 = gamma->add_entryvar(x);
 	auto ev2 = gamma->add_entryvar(y);
 	auto ev3 = gamma->add_entryvar(x);
@@ -71,9 +71,9 @@ TestGamma()
 	graph.add_export(gamma->output(0), {gamma->output(0)->type(), "z"});
 	graph.add_export(gamma->output(2), {gamma->output(2)->type(), "w"});
 
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
   RunDeadNodeElimination(rm);
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(gamma->noutputs() == 2);
 	assert(gamma->subregion(1)->nodes.empty());
@@ -88,14 +88,14 @@ TestGamma2()
 	using namespace jlm;
 
 	jlm::valuetype vt;
-	jive::ctltype ct(2);
+	jlm::rvsdg::ctltype ct(2);
 
 	RvsdgModule rm(util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 	auto c = graph.add_import({ct, "c"});
 	auto x = graph.add_import({vt, "x"});
 
-	auto gamma = jive::gamma_node::create(c, 2);
+	auto gamma = jlm::rvsdg::gamma_node::create(c, 2);
 	gamma->add_entryvar(x);
 
 	auto n1 = jlm::create_testop(gamma->subregion(0), {}, {&vt})[0];
@@ -105,9 +105,9 @@ TestGamma2()
 
 	graph.add_export(gamma->output(0), {gamma->output(0)->type(), "x"});
 
-//	jive::view(graph, stdout);
+//	jlm::rvsdg::view(graph, stdout);
   RunDeadNodeElimination(rm);
-//	jive::view(graph, stdout);
+//	jlm::rvsdg::view(graph, stdout);
 
 	assert(graph.root()->narguments() == 1);
 }
@@ -118,7 +118,7 @@ TestTheta()
 	using namespace jlm;
 
 	jlm::valuetype vt;
-	jive::ctltype ct(2);
+	jlm::rvsdg::ctltype ct(2);
 
 	RvsdgModule rm(util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
@@ -126,7 +126,7 @@ TestTheta()
 	auto y = graph.add_import({vt, "y"});
 	auto z = graph.add_import({vt, "z"});
 
-	auto theta = jive::theta_node::create(graph.root());
+	auto theta = jlm::rvsdg::theta_node::create(graph.root());
 
 	auto lv1 = theta->add_loopvar(x);
 	auto lv2 = theta->add_loopvar(y);
@@ -146,9 +146,9 @@ TestTheta()
 	graph.add_export(theta->output(0), {theta->output(0)->type(), "a"});
 	graph.add_export(theta->output(3), {theta->output(0)->type(), "b"});
 
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
   RunDeadNodeElimination(rm);
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(theta->noutputs() == 3);
 	assert(theta->subregion()->nodes.size() == 1);
@@ -161,7 +161,7 @@ TestNestedTheta()
 	using namespace jlm;
 
 	jlm::valuetype vt;
-	jive::ctltype ct(2);
+	jlm::rvsdg::ctltype ct(2);
 
 	RvsdgModule rm(util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
@@ -169,13 +169,13 @@ TestNestedTheta()
 	auto x = graph.add_import({vt, "x"});
 	auto y = graph.add_import({vt, "y"});
 
-	auto otheta = jive::theta_node::create(graph.root());
+	auto otheta = jlm::rvsdg::theta_node::create(graph.root());
 
 	auto lvo1 = otheta->add_loopvar(c);
 	auto lvo2 = otheta->add_loopvar(x);
 	auto lvo3 = otheta->add_loopvar(y);
 
-	auto itheta = jive::theta_node::create(otheta->subregion());
+	auto itheta = jlm::rvsdg::theta_node::create(otheta->subregion());
 
 	auto lvi1 = itheta->add_loopvar(lvo1->argument());
 	auto lvi2 = itheta->add_loopvar(lvo2->argument());
@@ -192,9 +192,9 @@ TestNestedTheta()
 
 	graph.add_export(otheta->output(2), {otheta->output(2)->type(), "y"});
 
-//	jive::view(graph, stdout);
+//	jlm::rvsdg::view(graph, stdout);
   RunDeadNodeElimination(rm);
-//	jive::view(graph, stdout);
+//	jlm::rvsdg::view(graph, stdout);
 
 	assert(otheta->noutputs() == 3);
 }
@@ -205,7 +205,7 @@ TestEvolvingTheta()
 	using namespace jlm;
 
 	jlm::valuetype vt;
-	jive::ctltype ct(2);
+	jlm::rvsdg::ctltype ct(2);
 
 	RvsdgModule rm(util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
@@ -215,7 +215,7 @@ TestEvolvingTheta()
 	auto x3 = graph.add_import({vt, "x3"});
 	auto x4 = graph.add_import({vt, "x4"});
 
-	auto theta = jive::theta_node::create(graph.root());
+	auto theta = jlm::rvsdg::theta_node::create(graph.root());
 
 	auto lv0 = theta->add_loopvar(c);
 	auto lv1 = theta->add_loopvar(x1);
@@ -231,9 +231,9 @@ TestEvolvingTheta()
 
 	graph.add_export(lv1, {lv1->type(), "x1"});
 
-//	jive::view(graph, stdout);
+//	jlm::rvsdg::view(graph, stdout);
   RunDeadNodeElimination(rm);
-//	jive::view(graph, stdout);
+//	jlm::rvsdg::view(graph, stdout);
 
 	assert(theta->noutputs() == 5);
 }
@@ -261,9 +261,9 @@ TestLambda()
 
 	graph.add_export(output, {output->type(), "f"});
 
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
   RunDeadNodeElimination(rm);
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(lambda->subregion()->nodes.empty());
 	assert(graph.root()->narguments() == 1);
@@ -306,9 +306,9 @@ TestPhi()
 
 	graph.add_export(phi->output(0), {phi->output(0)->type(), "f1"});
 
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
   RunDeadNodeElimination(rm);
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 }
 
 static int

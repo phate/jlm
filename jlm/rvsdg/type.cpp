@@ -6,7 +6,8 @@
 
 #include <jlm/rvsdg/type.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 type::~type() noexcept
 {}

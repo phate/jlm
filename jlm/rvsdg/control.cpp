@@ -7,7 +7,8 @@
 #include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/control.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 /* control constant */
 
@@ -20,7 +21,7 @@ ctltype::~ctltype() noexcept
 {}
 
 ctltype::ctltype(size_t nalternatives)
-: jive::statetype()
+: jlm::rvsdg::statetype()
 , nalternatives_(nalternatives)
 {
 	if (nalternatives == 0)
@@ -34,16 +35,16 @@ ctltype::debug_string() const
 }
 
 bool
-ctltype::operator==(const jive::type & other) const noexcept
+ctltype::operator==(const jlm::rvsdg::type & other) const noexcept
 {
 	auto type = dynamic_cast<const ctltype*>(&other);
 	return type && type->nalternatives_ == nalternatives_;
 }
 
-std::unique_ptr<jive::type>
+std::unique_ptr<jlm::rvsdg::type>
 ctltype::copy() const
 {
-	return std::unique_ptr<jive::type>(new ctltype(*this));
+	return std::unique_ptr<jlm::rvsdg::type>(new ctltype(*this));
 }
 
 const ctltype ctl2(2);
@@ -68,7 +69,7 @@ match_op::match_op(
 	const std::unordered_map<uint64_t, uint64_t> & mapping,
 	uint64_t default_alternative,
 	size_t nalternatives)
-: jive::unary_op(bittype(nbits), ctltype(nalternatives))
+: jlm::rvsdg::unary_op(bittype(nbits), ctltype(nalternatives))
 , default_alternative_(default_alternative)
 , mapping_(mapping)
 {}
@@ -84,21 +85,21 @@ match_op::operator==(const operation & other) const noexcept
 	    && op->nalternatives() == nalternatives();
 }
 
-jive_unop_reduction_path_t
-match_op::can_reduce_operand(const jive::output * arg) const noexcept
+unop_reduction_path_t
+match_op::can_reduce_operand(const jlm::rvsdg::output * arg) const noexcept
 {
 	if (is<bitconstant_op>(producer(arg)))
-		return jive_unop_reduction_constant;
+		return unop_reduction_constant;
 
-	return jive_unop_reduction_none;
+	return unop_reduction_none;
 }
 
-jive::output *
-match_op::reduce_operand(jive_unop_reduction_path_t path, jive::output * arg) const
+jlm::rvsdg::output *
+match_op::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::output * arg) const
 {
-	if (path == jive_unop_reduction_constant) {
+	if (path == unop_reduction_constant) {
 		auto op = static_cast<const bitconstant_op&>(producer(arg)->operation());
-		return jive_control_constant(arg->region(), nalternatives(),
+		return jlm::rvsdg::control_constant(arg->region(), nalternatives(),
 			alternative(op.value().to_uint()));
 	}
 
@@ -116,29 +117,29 @@ match_op::debug_string() const
 	return "MATCH" + str;
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<jlm::rvsdg::operation>
 match_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new match_op(*this));
+	return std::unique_ptr<jlm::rvsdg::operation>(new match_op(*this));
 }
 
-jive::output *
+jlm::rvsdg::output *
 match(
 	size_t nbits,
 	const std::unordered_map<uint64_t, uint64_t> & mapping,
 	uint64_t default_alternative,
 	size_t nalternatives,
-	jive::output * operand)
+	jlm::rvsdg::output * operand)
 {
 	match_op op(nbits, mapping, default_alternative, nalternatives);
 	return simple_node::create_normalized(operand->region(), op, {operand})[0];
 }
 
+jlm::rvsdg::output *
+control_constant(jlm::rvsdg::region * region, size_t nalternatives, size_t alternative)
+{
+  jlm::rvsdg::ctlconstant_op op({alternative, nalternatives});
+  return jlm::rvsdg::simple_node::create_normalized(region, op, {})[0];
 }
 
-jive::output *
-jive_control_constant(jive::region * region, size_t nalternatives, size_t alternative)
-{
-	jive::ctlconstant_op op({alternative, nalternatives});
-	return jive::simple_node::create_normalized(region, op, {})[0];
 }

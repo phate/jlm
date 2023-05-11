@@ -13,7 +13,7 @@ unary_op::~unary_op() noexcept
 {}
 
 bool
-unary_op::operator==(const jive::operation & other) const noexcept
+unary_op::operator==(const rvsdg::operation & other) const noexcept
 {
 	auto op = dynamic_cast<const unary_op*>(&other);
 	return op
@@ -21,16 +21,16 @@ unary_op::operator==(const jive::operation & other) const noexcept
 	    && op->result(0) == result(0);
 }
 
-jive_unop_reduction_path_t
-unary_op::can_reduce_operand(const jive::output * operand) const noexcept
+rvsdg::unop_reduction_path_t
+unary_op::can_reduce_operand(const rvsdg::output * operand) const noexcept
 {
-	return jive_unop_reduction_none;
+	return rvsdg::unop_reduction_none;
 }
 
-jive::output *
+rvsdg::output *
 unary_op::reduce_operand(
-	jive_unop_reduction_path_t path,
-	jive::output * operand) const
+	rvsdg::unop_reduction_path_t path,
+	rvsdg::output * operand) const
 {
 	return nullptr;
 }
@@ -41,10 +41,10 @@ unary_op::debug_string() const
 	return "UNARY_TEST_NODE";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 unary_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new unary_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new unary_op(*this));
 }
 
 /* binary operation */
@@ -53,7 +53,7 @@ binary_op::~binary_op() noexcept
 {}
 
 bool
-binary_op::operator==(const jive::operation & other) const noexcept
+binary_op::operator==(const rvsdg::operation & other) const noexcept
 {
 	auto op = dynamic_cast<const binary_op*>(&other);
 	return op
@@ -61,24 +61,24 @@ binary_op::operator==(const jive::operation & other) const noexcept
 	    && op->result(0) == result(0);
 }
 
-jive_binop_reduction_path_t
+rvsdg::binop_reduction_path_t
 binary_op::can_reduce_operand_pair(
-	const jive::output * op1,
-	const jive::output * op2) const noexcept
+	const rvsdg::output * op1,
+	const rvsdg::output * op2) const noexcept
 {
-	return jive_binop_reduction_none;
+	return rvsdg::binop_reduction_none;
 }
 
-jive::output *
+rvsdg::output *
 binary_op::reduce_operand_pair(
-	jive_binop_reduction_path_t path,
-	jive::output * op1,
-	jive::output * op2) const
+	rvsdg::binop_reduction_path_t path,
+	rvsdg::output * op1,
+	rvsdg::output * op2) const
 {
 	return nullptr;
 }
 
-enum jive::binary_op::flags
+enum rvsdg::binary_op::flags
 binary_op::flags() const noexcept
 {
 	return flags_;
@@ -90,10 +90,10 @@ binary_op::debug_string() const
 	return "BINARY_TEST_OP";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 binary_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new binary_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new binary_op(*this));
 }
 
 test_op::~test_op()
@@ -127,7 +127,7 @@ test_op::debug_string() const
 	return "test_op";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 test_op::copy() const
 {
 	return std::unique_ptr<operation>(new test_op(*this));
@@ -144,10 +144,10 @@ structural_op::debug_string() const
 	return "STRUCTURAL_TEST_NODE";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 structural_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new structural_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new structural_op(*this));
 }
 
 /* structural_node class */
@@ -156,7 +156,7 @@ structural_node::~structural_node()
 {}
 
 structural_node *
-structural_node::copy(jive::region * parent, jive::substitution_map & smap) const
+structural_node::copy(rvsdg::region * parent, rvsdg::substitution_map & smap) const
 {
 	graph()->mark_denormalized();
 	auto node = structural_node::create(parent, nsubregions());
@@ -165,13 +165,13 @@ structural_node::copy(jive::region * parent, jive::substitution_map & smap) cons
 	for (size_t n = 0; n < ninputs(); n++) {
 		auto origin = smap.lookup(input(n)->origin());
 		auto neworigin = origin ? origin : input(n)->origin();
-		auto new_input = jive::structural_input::create(node, neworigin, input(n)->port());
+		auto new_input = rvsdg::structural_input::create(node, neworigin, input(n)->port());
 		smap.insert(input(n), new_input);
 	}
 
 	/* copy outputs */
 	for (size_t n = 0; n < noutputs(); n++) {
-		auto new_output = jive::structural_output::create(node, output(n)->port());
+		auto new_output = rvsdg::structural_output::create(node, output(n)->port());
 		smap.insert(output(n), new_output);
 	}
 

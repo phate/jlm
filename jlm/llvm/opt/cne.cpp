@@ -25,10 +25,10 @@ public:
 	{}
 
 	void
-	start_mark_stat(const jive::graph & graph) noexcept
+	start_mark_stat(const jlm::rvsdg::graph & graph) noexcept
 	{
-		nnodes_before_ = jive::nnodes(graph.root());
-		ninputs_before_ = jive::ninputs(graph.root());
+		nnodes_before_ = jlm::rvsdg::nnodes(graph.root());
+		ninputs_before_ = jlm::rvsdg::ninputs(graph.root());
 		marktimer_.start();
 	}
 
@@ -45,10 +45,10 @@ public:
 	}
 
 	void
-	end_divert_stat(const jive::graph & graph) noexcept
+	end_divert_stat(const jlm::rvsdg::graph & graph) noexcept
 	{
-		nnodes_after_ = jive::nnodes(graph.root());
-		ninputs_after_ = jive::ninputs(graph.root());
+		nnodes_after_ = jlm::rvsdg::nnodes(graph.root());
+		ninputs_after_ = jlm::rvsdg::ninputs(graph.root());
 		diverttimer_.stop();
 	}
 
@@ -75,12 +75,12 @@ private:
 };
 
 
-typedef std::unordered_set<jive::output*> congruence_set;
+typedef std::unordered_set<jlm::rvsdg::output*> congruence_set;
 
 class cnectx {
 public:
 	inline void
-	mark(jive::output * o1, jive::output * o2)
+	mark(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2)
 	{
 		auto s1 = set(o1);
 		auto s2 = set(o2);
@@ -100,7 +100,7 @@ public:
 	}
 
 	inline void
-	mark(const jive::node * n1, const jive::node * n2)
+	mark(const jlm::rvsdg::node * n1, const jlm::rvsdg::node * n2)
 	{
 		JLM_ASSERT(n1->noutputs() == n2->noutputs());
 
@@ -109,7 +109,7 @@ public:
 	}
 
 	inline bool
-	congruent(jive::output * o1, jive::output * o2) const noexcept
+	congruent(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2) const noexcept
 	{
 		if (o1 == o2)
 			return true;
@@ -122,13 +122,13 @@ public:
 	}
 
 	inline bool
-	congruent(const jive::input * i1, const jive::input * i2) const noexcept
+	congruent(const jlm::rvsdg::input * i1, const jlm::rvsdg::input * i2) const noexcept
 	{
 		return congruent(i1->origin(), i2->origin());
 	}
 
 	congruence_set *
-	set(jive::output * output) noexcept
+	set(jlm::rvsdg::output * output) noexcept
 	{
 		if (outputs_.find(output) == outputs_.end()) {
 			std::unique_ptr<congruence_set> set(new congruence_set({output}));
@@ -141,13 +141,13 @@ public:
 
 private:
 	std::unordered_set<std::unique_ptr<congruence_set>> sets_;
-	std::unordered_map<const jive::output*, congruence_set*> outputs_;
+	std::unordered_map<const jlm::rvsdg::output*, congruence_set*> outputs_;
 };
 
 class vset {
 public:
 	void
-	insert(const jive::output * o1, const jive::output * o2)
+	insert(const jlm::rvsdg::output * o1, const jlm::rvsdg::output * o2)
 	{
 		auto it = sets_.find(o1);
 		if (it != sets_.end())
@@ -163,7 +163,7 @@ public:
 	}
 
 	bool
-	visited(const jive::output * o1, const jive::output * o2) const
+	visited(const jlm::rvsdg::output * o1, const jlm::rvsdg::output * o2) const
 	{
 		auto it = sets_.find(o1);
 		if (it == sets_.end())
@@ -174,8 +174,8 @@ public:
 
 private:
 	std::unordered_map<
-		const jive::output*,
-		std::unordered_set<const jive::output*>
+		const jlm::rvsdg::output*,
+		std::unordered_set<const jlm::rvsdg::output*>
 	> sets_;
 };
 
@@ -183,8 +183,8 @@ private:
 
 static bool
 congruent(
-	jive::output * o1,
-	jive::output * o2,
+	jlm::rvsdg::output * o1,
+	jlm::rvsdg::output * o2,
 	vset & vs,
 	cnectx & ctx)
 {
@@ -196,8 +196,8 @@ congruent(
 
 	if (is_theta_argument(o1) && is_theta_argument(o2)) {
 		JLM_ASSERT(o1->region()->node() == o2->region()->node());
-		auto a1 = static_cast<jive::argument*>(o1);
-		auto a2 = static_cast<jive::argument*>(o2);
+		auto a1 = static_cast<jlm::rvsdg::argument*>(o1);
+		auto a2 = static_cast<jlm::rvsdg::argument*>(o2);
 		vs.insert(a1, a2);
 		auto i1 = a1->input(), i2 = a2->input();
 		if (!congruent(a1->input()->origin(), a2->input()->origin(), vs, ctx))
@@ -208,20 +208,20 @@ congruent(
 		return congruent(output1, output2, vs, ctx);
 	}
 
-	auto n1 = jive::node_output::node(o1);
-	auto n2 = jive::node_output::node(o2);
-	if (jive::is<jive::theta_op>(n1) && jive::is<jive::theta_op>(n2) && n1 == n2) {
-		auto so1 = static_cast<jive::structural_output*>(o1);
-		auto so2 = static_cast<jive::structural_output*>(o2);
+	auto n1 = jlm::rvsdg::node_output::node(o1);
+	auto n2 = jlm::rvsdg::node_output::node(o2);
+	if (jlm::rvsdg::is<jlm::rvsdg::theta_op>(n1) && jlm::rvsdg::is<jlm::rvsdg::theta_op>(n2) && n1 == n2) {
+		auto so1 = static_cast<jlm::rvsdg::structural_output*>(o1);
+		auto so2 = static_cast<jlm::rvsdg::structural_output*>(o2);
 		vs.insert(o1, o2);
 		auto r1 = so1->results.first();
 		auto r2 = so2->results.first();
 		return congruent(r1->origin(), r2->origin(), vs, ctx);
 	}
 
-	if (jive::is<jive::gamma_op>(n1) && n1 == n2) {
-		auto so1 = static_cast<jive::structural_output*>(o1);
-		auto so2 = static_cast<jive::structural_output*>(o2);
+	if (jlm::rvsdg::is<jlm::rvsdg::gamma_op>(n1) && n1 == n2) {
+		auto so1 = static_cast<jlm::rvsdg::structural_output*>(o1);
+		auto so2 = static_cast<jlm::rvsdg::structural_output*>(o2);
 		auto r1 = so1->results.begin();
 		auto r2 = so2->results.begin();
 		for (; r1 != so1->results.end(); r1++, r2++) {
@@ -234,13 +234,13 @@ congruent(
 
 	if (is_gamma_argument(o1) && is_gamma_argument(o2)) {
 		JLM_ASSERT(o1->region()->node() == o2->region()->node());
-		auto a1 = static_cast<jive::argument*>(o1);
-		auto a2 = static_cast<jive::argument*>(o2);
+		auto a1 = static_cast<jlm::rvsdg::argument*>(o1);
+		auto a2 = static_cast<jlm::rvsdg::argument*>(o2);
 		return congruent(a1->input()->origin(), a2->input()->origin(), vs, ctx);
 	}
 
-	if (jive::is<jive::simple_op>(n1)
-	&& jive::is<jive::simple_op>(n2)
+	if (jlm::rvsdg::is<jlm::rvsdg::simple_op>(n1)
+	&& jlm::rvsdg::is<jlm::rvsdg::simple_op>(n2)
 	&& n1->operation() == n2->operation()
 	&& n1->ninputs() == n2->ninputs()
 	&& o1->index() == o2->index()) {
@@ -257,7 +257,7 @@ congruent(
 }
 
 static bool
-congruent(jive::output * o1, jive::output * o2, cnectx & ctx)
+congruent(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2, cnectx & ctx)
 {
 	vset vs;
 	return congruent(o1, o2, vs, ctx);
@@ -265,8 +265,8 @@ congruent(jive::output * o1, jive::output * o2, cnectx & ctx)
 
 static void
 mark_arguments(
-	jive::structural_input * i1,
-	jive::structural_input * i2,
+	jlm::rvsdg::structural_input * i1,
+	jlm::rvsdg::structural_input * i2,
 	cnectx & ctx)
 {
 	JLM_ASSERT(i1->node() && i1->node() == i2->node());
@@ -282,12 +282,12 @@ mark_arguments(
 }
 
 static void
-mark(jive::region*, cnectx&);
+mark(jlm::rvsdg::region*, cnectx&);
 
 static void
-mark_gamma(const jive::structural_node * node, cnectx & ctx)
+mark_gamma(const jlm::rvsdg::structural_node * node, cnectx & ctx)
 {
-	JLM_ASSERT(jive::is<jive::gamma_op>(node->operation()));
+	JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(node->operation()));
 
 	/* mark entry variables */
 	for (size_t i1 = 1; i1 < node->ninputs(); i1++) {
@@ -308,10 +308,10 @@ mark_gamma(const jive::structural_node * node, cnectx & ctx)
 }
 
 static void
-mark_theta(const jive::structural_node * node, cnectx & ctx)
+mark_theta(const jlm::rvsdg::structural_node * node, cnectx & ctx)
 {
-	JLM_ASSERT(jive::is<jive::theta_op>(node));
-	auto theta = static_cast<const jive::theta_node*>(node);
+	JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::theta_op>(node));
+	auto theta = static_cast<const jlm::rvsdg::theta_node*>(node);
 
 	/* mark loop variables */
 	for (size_t i1 = 0; i1 < theta->ninputs(); i1++) {
@@ -329,9 +329,9 @@ mark_theta(const jive::structural_node * node, cnectx & ctx)
 }
 
 static void
-mark_lambda(const jive::structural_node * node, cnectx & ctx)
+mark_lambda(const jlm::rvsdg::structural_node * node, cnectx & ctx)
 {
-	JLM_ASSERT(jive::is<lambda::operation>(node));
+	JLM_ASSERT(jlm::rvsdg::is<lambda::operation>(node));
 
 	/* mark dependencies */
 	for (size_t i1 = 0; i1 < node->ninputs(); i1++) {
@@ -347,7 +347,7 @@ mark_lambda(const jive::structural_node * node, cnectx & ctx)
 }
 
 static void
-mark_phi(const jive::structural_node * node, cnectx & ctx)
+mark_phi(const jlm::rvsdg::structural_node * node, cnectx & ctx)
 {
 	JLM_ASSERT(is<phi::operation>(node));
 
@@ -365,20 +365,20 @@ mark_phi(const jive::structural_node * node, cnectx & ctx)
 }
 
 static void
-mark_delta(const jive::structural_node * node, cnectx & ctx)
+mark_delta(const jlm::rvsdg::structural_node * node, cnectx & ctx)
 {
-	JLM_ASSERT(jive::is<delta::operation>(node));
+	JLM_ASSERT(jlm::rvsdg::is<delta::operation>(node));
 }
 
 static void
-mark(const jive::structural_node * node, cnectx & ctx)
+mark(const jlm::rvsdg::structural_node * node, cnectx & ctx)
 {
 	static std::unordered_map<
 		std::type_index
-	, void(*)(const jive::structural_node*, cnectx&)
+	, void(*)(const jlm::rvsdg::structural_node*, cnectx&)
 	> map({
-	  {std::type_index(typeid(jive::gamma_op)), mark_gamma}
-	, {std::type_index(typeid(jive::theta_op)), mark_theta}
+	  {std::type_index(typeid(jlm::rvsdg::gamma_op)), mark_gamma}
+	, {std::type_index(typeid(jlm::rvsdg::theta_op)), mark_theta}
 	, {typeid(lambda::operation), mark_lambda}
 	, {typeid(phi::operation), mark_phi}
 	, {typeid(delta::operation), mark_delta}
@@ -390,7 +390,7 @@ mark(const jive::structural_node * node, cnectx & ctx)
 }
 
 static void
-mark(const jive::simple_node * node, cnectx & ctx)
+mark(const jlm::rvsdg::simple_node * node, cnectx & ctx)
 {
 	if (node->ninputs() == 0) {
 		for (const auto & other : node->region()->top_nodes) {
@@ -405,7 +405,7 @@ mark(const jive::simple_node * node, cnectx & ctx)
 	auto set = ctx.set(node->input(0)->origin());
 	for (const auto & origin : *set) {
 		for (const auto & user : *origin) {
-			auto ni = dynamic_cast<const jive::node_input*>(user);
+			auto ni = dynamic_cast<const jlm::rvsdg::node_input*>(user);
 			auto other = ni ? ni->node() : nullptr;
 			if (!other
 			|| other == node
@@ -425,20 +425,20 @@ mark(const jive::simple_node * node, cnectx & ctx)
 }
 
 static void
-mark(jive::region * region, cnectx & ctx)
+mark(jlm::rvsdg::region * region, cnectx & ctx)
 {
-	for (const auto & node : jive::topdown_traverser(region)) {
-		if (auto simple = dynamic_cast<const jive::simple_node*>(node))
+	for (const auto & node : jlm::rvsdg::topdown_traverser(region)) {
+		if (auto simple = dynamic_cast<const jlm::rvsdg::simple_node*>(node))
 			mark(simple, ctx);
 		else
-			mark(static_cast<const jive::structural_node*>(node), ctx);
+			mark(static_cast<const jlm::rvsdg::structural_node*>(node), ctx);
 	}
 }
 
 /* divert phase */
 
 static void
-divert_users(jive::output * output, cnectx & ctx)
+divert_users(jlm::rvsdg::output * output, cnectx & ctx)
 {
 	auto set = ctx.set(output);
 	for (auto & other : *set)
@@ -447,27 +447,27 @@ divert_users(jive::output * output, cnectx & ctx)
 }
 
 static void
-divert_outputs(jive::node * node, cnectx & ctx)
+divert_outputs(jlm::rvsdg::node * node, cnectx & ctx)
 {
 	for (size_t n = 0; n < node->noutputs(); n++)
 		divert_users(node->output(n), ctx);
 }
 
 static void
-divert_arguments(jive::region * region, cnectx & ctx)
+divert_arguments(jlm::rvsdg::region * region, cnectx & ctx)
 {
 	for (size_t n = 0; n < region->narguments(); n++)
 		divert_users(region->argument(n), ctx);
 }
 
 static void
-divert(jive::region*, cnectx&);
+divert(jlm::rvsdg::region*, cnectx&);
 
 static void
-divert_gamma(jive::structural_node * node, cnectx & ctx)
+divert_gamma(jlm::rvsdg::structural_node * node, cnectx & ctx)
 {
-	JLM_ASSERT(jive::is<jive::gamma_op>(node));
-	auto gamma = static_cast<jive::gamma_node*>(node);
+	JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(node));
+	auto gamma = static_cast<jlm::rvsdg::gamma_node*>(node);
 
 	for (auto ev = gamma->begin_entryvar(); ev != gamma->end_entryvar(); ev++) {
 		for (size_t n = 0; n < ev->narguments(); n++)
@@ -481,10 +481,10 @@ divert_gamma(jive::structural_node * node, cnectx & ctx)
 }
 
 static void
-divert_theta(jive::structural_node * node, cnectx & ctx)
+divert_theta(jlm::rvsdg::structural_node * node, cnectx & ctx)
 {
-	JLM_ASSERT(jive::is<jive::theta_op>(node));
-	auto theta = static_cast<jive::theta_node*>(node);
+	JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::theta_op>(node));
+	auto theta = static_cast<jlm::rvsdg::theta_node*>(node);
 	auto subregion = node->subregion(0);
 
 	for (const auto & lv : *theta) {
@@ -497,16 +497,16 @@ divert_theta(jive::structural_node * node, cnectx & ctx)
 }
 
 static void
-divert_lambda(jive::structural_node * node, cnectx & ctx)
+divert_lambda(jlm::rvsdg::structural_node * node, cnectx & ctx)
 {
-	JLM_ASSERT(jive::is<lambda::operation>(node));
+	JLM_ASSERT(jlm::rvsdg::is<lambda::operation>(node));
 
 	divert_arguments(node->subregion(0), ctx);
 	divert(node->subregion(0), ctx);
 }
 
 static void
-divert_phi(jive::structural_node * node, cnectx & ctx)
+divert_phi(jlm::rvsdg::structural_node * node, cnectx & ctx)
 {
 	JLM_ASSERT(is<phi::operation>(node));
 
@@ -515,20 +515,20 @@ divert_phi(jive::structural_node * node, cnectx & ctx)
 }
 
 static void
-divert_delta(jive::structural_node * node, cnectx & ctx)
+divert_delta(jlm::rvsdg::structural_node * node, cnectx & ctx)
 {
-	JLM_ASSERT(jive::is<delta::operation>(node));
+	JLM_ASSERT(jlm::rvsdg::is<delta::operation>(node));
 }
 
 static void
-divert(jive::structural_node * node, cnectx & ctx)
+divert(jlm::rvsdg::structural_node * node, cnectx & ctx)
 {
 	static std::unordered_map<
 		std::type_index,
-		void(*)(jive::structural_node*, cnectx&)
+		void(*)(jlm::rvsdg::structural_node*, cnectx&)
 	> map({
-	  {std::type_index(typeid(jive::gamma_op)), divert_gamma}
-	, {std::type_index(typeid(jive::theta_op)), divert_theta}
+	  {std::type_index(typeid(jlm::rvsdg::gamma_op)), divert_gamma}
+	, {std::type_index(typeid(jlm::rvsdg::theta_op)), divert_theta}
 	, {typeid(lambda::operation), divert_lambda}
 	, {typeid(phi::operation),divert_phi}
 	, {typeid(delta::operation), divert_delta}
@@ -540,13 +540,13 @@ divert(jive::structural_node * node, cnectx & ctx)
 }
 
 static void
-divert(jive::region * region, cnectx & ctx)
+divert(jlm::rvsdg::region * region, cnectx & ctx)
 {
-	for (const auto & node : jive::topdown_traverser(region)) {
-		if (auto simple = dynamic_cast<jive::simple_node*>(node))
+	for (const auto & node : jlm::rvsdg::topdown_traverser(region)) {
+		if (auto simple = dynamic_cast<jlm::rvsdg::simple_node*>(node))
 			divert_outputs(simple, ctx);
 		else
-			divert(static_cast<jive::structural_node*>(node), ctx);
+			divert(static_cast<jlm::rvsdg::structural_node*>(node), ctx);
 	}
 }
 

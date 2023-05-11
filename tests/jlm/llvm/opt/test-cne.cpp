@@ -28,7 +28,7 @@ test_simple()
 
 	RvsdgModule rm(util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
-	auto nf = graph.node_normal_form(typeid(jive::operation));
+	auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
 	nf->set_mutable(false);
 
 	auto x = graph.add_import({vt, "x"});
@@ -53,10 +53,10 @@ test_simple()
 	graph.add_export(b3, {n2->type(), "b3"});
 	graph.add_export(b4, {n2->type(), "b4"});
 
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 	jlm::cne cne;
 	cne.run(rm, statisticsCollector);
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(graph.root()->result(0)->origin() == graph.root()->result(1)->origin());
 	assert(graph.root()->result(3)->origin() == graph.root()->result(4)->origin());
@@ -69,11 +69,11 @@ test_gamma()
 	using namespace jlm;
 
 	jlm::valuetype vt;
-	jive::ctltype ct(2);
+	jlm::rvsdg::ctltype ct(2);
 
 	RvsdgModule rm(util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
-	auto nf = graph.node_normal_form(typeid(jive::operation));
+	auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
 	nf->set_mutable(false);
 
 	auto c = graph.add_import({ct, "c"});
@@ -84,7 +84,7 @@ test_gamma()
 	auto u1 = jlm::create_testop(graph.root(), {x}, {&vt})[0];
 	auto u2 = jlm::create_testop(graph.root(), {x}, {&vt})[0];
 
-	auto gamma = jive::gamma_node::create(c, 2);
+	auto gamma = jlm::rvsdg::gamma_node::create(c, 2);
 
 	auto ev1 = gamma->add_entryvar(u1);
 	auto ev2 = gamma->add_entryvar(u2);
@@ -108,10 +108,10 @@ test_gamma()
 	graph.add_export(gamma->output(1), {gamma->output(1)->type(), "x2"});
 	graph.add_export(gamma->output(2), {gamma->output(2)->type(), "y"});
 
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 	jlm::cne cne;
 	cne.run(rm, statisticsCollector);
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 
 	auto subregion0 = gamma->subregion(0);
 	auto subregion1 = gamma->subregion(1);
@@ -122,8 +122,8 @@ test_gamma()
 	assert(subregion1->result(0)->origin() == subregion1->result(1)->origin());
 	assert(graph.root()->result(0)->origin() == graph.root()->result(1)->origin());
 
-	auto argument0 = dynamic_cast<const jive::argument*>(subregion0->result(6)->origin());
-	auto argument1 = dynamic_cast<const jive::argument*>(subregion1->result(6)->origin());
+	auto argument0 = dynamic_cast<const jlm::rvsdg::argument*>(subregion0->result(6)->origin());
+	auto argument1 = dynamic_cast<const jlm::rvsdg::argument*>(subregion1->result(6)->origin());
 	assert(argument0->input() == argument1->input());
 }
 
@@ -133,17 +133,17 @@ test_theta()
 	using namespace jlm;
 
 	jlm::valuetype vt;
-	jive::ctltype ct(2);
+	jlm::rvsdg::ctltype ct(2);
 
 	RvsdgModule rm(util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
-	auto nf = graph.node_normal_form(typeid(jive::operation));
+	auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
 	nf->set_mutable(false);
 
 	auto c = graph.add_import({ct, "c"});
 	auto x = graph.add_import({vt, "x"});
 
-	auto theta = jive::theta_node::create(graph.root());
+	auto theta = jlm::rvsdg::theta_node::create(graph.root());
 	auto region = theta->subregion();
 
 	auto lv1 = theta->add_loopvar(c);
@@ -165,14 +165,14 @@ test_theta()
 	graph.add_export(theta->output(2), {theta->output(2)->type(), "lv3"});
 	graph.add_export(theta->output(3), {theta->output(3)->type(), "lv4"});
 
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 	jlm::cne cne;
 	cne.run(rm, statisticsCollector);
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 
-	auto un1 = jive::node_output::node(u1);
-	auto un2 = jive::node_output::node(u2);
-	auto bn1 = jive::node_output::node(b1);
+	auto un1 = jlm::rvsdg::node_output::node(u1);
+	auto un2 = jlm::rvsdg::node_output::node(u2);
+	auto bn1 = jlm::rvsdg::node_output::node(b1);
 	assert(un1->input(0)->origin() == un2->input(0)->origin());
 	assert(bn1->input(0)->origin() == un1->input(0)->origin());
 	assert(bn1->input(1)->origin() == region->argument(3));
@@ -186,17 +186,17 @@ test_theta2()
 	using namespace jlm;
 
 	jlm::valuetype vt;
-	jive::ctltype ct(2);
+	jlm::rvsdg::ctltype ct(2);
 
 	RvsdgModule rm(util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
-	auto nf = graph.node_normal_form(typeid(jive::operation));
+	auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
 	nf->set_mutable(false);
 
 	auto c = graph.add_import({ct, "c"});
 	auto x = graph.add_import({vt, "x"});
 
-	auto theta = jive::theta_node::create(graph.root());
+	auto theta = jlm::rvsdg::theta_node::create(graph.root());
 	auto region = theta->subregion();
 
 	auto lv1 = theta->add_loopvar(c);
@@ -215,10 +215,10 @@ test_theta2()
 	graph.add_export(theta->output(1), {theta->output(1)->type(), "lv2"});
 	graph.add_export(theta->output(2), {theta->output(2)->type(), "lv3"});
 
-//	jive::view(graph, stdout);
+//	jlm::rvsdg::view(graph, stdout);
 	jlm::cne cne;
 	cne.run(rm, statisticsCollector);
-//	jive::view(graph, stdout);
+//	jlm::rvsdg::view(graph, stdout);
 
 	assert(lv2->result()->origin() == u1);
 	assert(lv2->argument()->nusers() != 0 && lv3->argument()->nusers() != 0);
@@ -230,17 +230,17 @@ test_theta3()
 	using namespace jlm;
 
 	jlm::valuetype vt;
-	jive::ctltype ct(2);
+	jlm::rvsdg::ctltype ct(2);
 
 	RvsdgModule rm(util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
-	auto nf = graph.node_normal_form(typeid(jive::operation));
+	auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
 	nf->set_mutable(false);
 
 	auto c = graph.add_import({ct, "c"});
 	auto x = graph.add_import({vt, "x"});
 
-	auto theta1 = jive::theta_node::create(graph.root());
+	auto theta1 = jlm::rvsdg::theta_node::create(graph.root());
 	auto r1 = theta1->subregion();
 
 	auto lv1 = theta1->add_loopvar(c);
@@ -248,7 +248,7 @@ test_theta3()
 	auto lv3 = theta1->add_loopvar(x);
 	auto lv4 = theta1->add_loopvar(x);
 
-	auto theta2 = jive::theta_node::create(r1);
+	auto theta2 = jlm::rvsdg::theta_node::create(r1);
 	auto r2 = theta2->subregion();
 	auto p = theta2->add_loopvar(lv1->argument());
 	theta2->add_loopvar(lv2->argument());
@@ -270,10 +270,10 @@ test_theta3()
 	graph.add_export(theta1->output(2), {theta1->output(2)->type(), "lv3"});
 	graph.add_export(theta1->output(3), {theta1->output(3)->type(), "lv4"});
 
-//	jive::view(graph, stdout);
+//	jlm::rvsdg::view(graph, stdout);
 	jlm::cne cne;
 	cne.run(rm, statisticsCollector);
-//	jive::view(graph, stdout);
+//	jlm::rvsdg::view(graph, stdout);
 
 	assert(r1->result(2)->origin() == r1->result(4)->origin());
 	assert(u1->input(0)->origin() == u2->input(0)->origin());
@@ -289,18 +289,18 @@ test_theta4()
 	using namespace jlm;
 
 	jlm::valuetype vt;
-	jive::ctltype ct(2);
+	jlm::rvsdg::ctltype ct(2);
 
 	RvsdgModule rm(util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
-	auto nf = graph.node_normal_form(typeid(jive::operation));
+	auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
 	nf->set_mutable(false);
 
 	auto c = graph.add_import({ct, "c"});
 	auto x = graph.add_import({vt, "x"});
 	auto y = graph.add_import({vt, "y"});
 
-	auto theta = jive::theta_node::create(graph.root());
+	auto theta = jlm::rvsdg::theta_node::create(graph.root());
 	auto region = theta->subregion();
 
 	auto lv1 = theta->add_loopvar(c);
@@ -326,10 +326,10 @@ test_theta4()
 	graph.add_export(theta->output(3), {theta->output(3)->type(), "lv4"});
 	graph.add_export(theta->output(4), {theta->output(4)->type(), "lv5"});
 
-//	jive::view(graph, stdout);
+//	jlm::rvsdg::view(graph, stdout);
 	jlm::cne cne;
 	cne.run(rm, statisticsCollector);
-//	jive::view(graph, stdout);
+//	jlm::rvsdg::view(graph, stdout);
 
 	assert(ex1->origin() != ex2->origin());
 	assert(lv2->argument()->nusers() != 0 && lv3->argument()->nusers() != 0);
@@ -342,18 +342,18 @@ test_theta5()
 	using namespace jlm;
 
 	jlm::valuetype vt;
-	jive::ctltype ct(2);
+	jlm::rvsdg::ctltype ct(2);
 
 	RvsdgModule rm(util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
-	auto nf = graph.node_normal_form(typeid(jive::operation));
+	auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
 	nf->set_mutable(false);
 
 	auto c = graph.add_import({ct, "c"});
 	auto x = graph.add_import({vt, "x"});
 	auto y = graph.add_import({vt, "y"});
 
-	auto theta = jive::theta_node::create(graph.root());
+	auto theta = jlm::rvsdg::theta_node::create(graph.root());
 	auto region = theta->subregion();
 
 	auto lv0 = theta->add_loopvar(c);
@@ -372,10 +372,10 @@ test_theta5()
 	auto ex3 = graph.add_export(theta->output(3), {theta->output(3)->type(), "lv3"});
 	auto ex4 = graph.add_export(theta->output(4), {theta->output(4)->type(), "lv4"});
 
-//	jive::view(graph, stdout);
+//	jlm::rvsdg::view(graph, stdout);
 	jlm::cne cne;
 	cne.run(rm, statisticsCollector);
-//	jive::view(graph, stdout);
+//	jlm::rvsdg::view(graph, stdout);
 
 	assert(ex1->origin() == ex2->origin());
 	assert(ex3->origin() == ex4->origin());
@@ -393,7 +393,7 @@ test_lambda()
 
 	RvsdgModule rm(util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
-	auto nf = graph.node_normal_form(typeid(jive::operation));
+	auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
 	nf->set_mutable(false);
 
 	auto x = graph.add_import({vt, "x"});
@@ -409,12 +409,12 @@ test_lambda()
 
 	graph.add_export(output, {output->type(), "f"});
 
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 	jlm::cne cne;
 	cne.run(rm, statisticsCollector);
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 
-	auto bn1 = jive::node_output::node(b1);
+	auto bn1 = jlm::rvsdg::node_output::node(b1);
 	assert(bn1->input(0)->origin() == bn1->input(1)->origin());
 }
 
@@ -428,7 +428,7 @@ test_phi()
 
 	RvsdgModule rm(util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
-	auto nf = graph.node_normal_form(typeid(jive::operation));
+	auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
 	nf->set_mutable(false);
 
 	auto x = graph.add_import({vt, "x"});
@@ -459,10 +459,10 @@ test_phi()
 	graph.add_export(phi->output(0), {phi->output(0)->type(), "f1"});
 	graph.add_export(phi->output(1), {phi->output(1)->type(), "f2"});
 
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 	jlm::cne cne;
 	cne.run(rm, statisticsCollector);
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(f1->node()->input(0)->origin() == f2->node()->input(0)->origin());
 }

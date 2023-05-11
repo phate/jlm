@@ -25,18 +25,18 @@ public:
 	{}
 
 	void
-	start(const jive::graph & graph) noexcept
+	start(const jlm::rvsdg::graph & graph) noexcept
 	{
-		nnodes_before_ = jive::nnodes(graph.root());
-		ninputs_before_ = jive::ninputs(graph.root());
+		nnodes_before_ = jlm::rvsdg::nnodes(graph.root());
+		ninputs_before_ = jlm::rvsdg::ninputs(graph.root());
 		timer_.start();
 	}
 
 	void
-	end(const jive::graph & graph) noexcept
+	end(const jlm::rvsdg::graph & graph) noexcept
 	{
-		nnodes_after_ = jive::nnodes(graph.root());
-		ninputs_after_ = jive::ninputs(graph.root());
+		nnodes_after_ = jlm::rvsdg::nnodes(graph.root());
+		ninputs_after_ = jlm::rvsdg::ninputs(graph.root());
 		timer_.stop();
 	}
 
@@ -63,17 +63,17 @@ private:
 };
 
 static void
-enable_mux_reductions(jive::graph & graph)
+enable_mux_reductions(jlm::rvsdg::graph & graph)
 {
-	auto nf = graph.node_normal_form(typeid(jive::mux_op));
-	auto mnf = static_cast<jive::mux_normal_form*>(nf);
+	auto nf = graph.node_normal_form(typeid(jlm::rvsdg::mux_op));
+	auto mnf = static_cast<jlm::rvsdg::mux_normal_form*>(nf);
 	mnf->set_mutable(true);
 	mnf->set_mux_mux_reducible(true);
 	mnf->set_multiple_origin_reducible(true);
 }
 
 static void
-enable_store_reductions(jive::graph & graph)
+enable_store_reductions(jlm::rvsdg::graph & graph)
 {
 	auto nf = StoreOperation::GetNormalForm(&graph);
 	nf->set_mutable(true);
@@ -84,7 +84,7 @@ enable_store_reductions(jive::graph & graph)
 }
 
 static void
-enable_load_reductions(jive::graph & graph)
+enable_load_reductions(jlm::rvsdg::graph & graph)
 {
 	auto nf = LoadOperation::GetNormalForm(&graph);
 	nf->set_mutable(true);
@@ -98,26 +98,26 @@ enable_load_reductions(jive::graph & graph)
 }
 
 static void
-enable_gamma_reductions(jive::graph & graph)
+enable_gamma_reductions(jlm::rvsdg::graph & graph)
 {
-	auto nf = jive::gamma_op::normal_form(&graph);
+	auto nf = jlm::rvsdg::gamma_op::normal_form(&graph);
 	nf->set_mutable(true);
 	nf->set_predicate_reduction(true);
 	nf->set_control_constant_reduction(true);
 }
 
 static void
-enable_unary_reductions(jive::graph & graph)
+enable_unary_reductions(jlm::rvsdg::graph & graph)
 {
-	auto nf = jive::unary_op::normal_form(&graph);
+	auto nf = jlm::rvsdg::unary_op::normal_form(&graph);
 	nf->set_mutable(true);
 	nf->set_reducible(true);
 }
 
 static void
-enable_binary_reductions(jive::graph & graph)
+enable_binary_reductions(jlm::rvsdg::graph & graph)
 {
-	auto nf = jive::binary_op::normal_form(&graph);
+	auto nf = jlm::rvsdg::binary_op::normal_form(&graph);
 	nf->set_mutable(true);
 	nf->set_reducible(true);
 }

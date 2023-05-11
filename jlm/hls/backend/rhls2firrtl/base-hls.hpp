@@ -32,26 +32,26 @@ namespace jlm {
 			extension() = 0;
 
 		protected:
-			std::unordered_map<const jive::node *, std::string> node_map;
-			std::unordered_map<jive::output *, std::string> output_map;
+			std::unordered_map<const jlm::rvsdg::node *, std::string> node_map;
+			std::unordered_map<jlm::rvsdg::output *, std::string> output_map;
 
 			std::string
-			get_node_name(const jive::node *node);
+			get_node_name(const jlm::rvsdg::node *node);
 
 			static std::string
-			get_port_name(jive::input *port);
+			get_port_name(jlm::rvsdg::input *port);
 
 			static std::string
-			get_port_name(jive::output *port);
+			get_port_name(jlm::rvsdg::output *port);
 
 			const jlm::lambda::node *
 			get_hls_lambda(jlm::RvsdgModule &rm);
 
 			int
-			JlmSize(const jive::type *type);
+			JlmSize(const jlm::rvsdg::type *type);
 
 			void
-			create_node_names(jive::region *r);
+			create_node_names(jlm::rvsdg::region *r);
 
 			virtual std::string
 			get_text(jlm::RvsdgModule &rm) = 0;

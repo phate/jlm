@@ -13,10 +13,6 @@
 #include <jlm/rvsdg/operation.hpp>
 #include <jlm/util/common.hpp>
 
-namespace jive {
-	class type;
-}
-
 namespace jlm {
 
 class clg_node;
@@ -32,7 +28,7 @@ public:
 
 	argument(
 		const std::string & name,
-		const jive::type & type,
+		const jlm::rvsdg::type & type,
 		const attributeset & attributes)
 	: variable(*type.copy(), name)
 	, attributes_(attributes)
@@ -40,13 +36,13 @@ public:
 
 	argument(
 		const std::string & name,
-		const jive::type & type)
+		const jlm::rvsdg::type & type)
 	: variable(*type.copy(), name)
 	{}
 
 	argument(
 		const std::string & name,
-		std::unique_ptr<jive::type> type,
+		std::unique_ptr<jlm::rvsdg::type> type,
 		const attributeset & attributes)
 	: variable(std::move(type), name)
 	, attributes_(attributes)
@@ -73,7 +69,7 @@ public:
 	static std::unique_ptr<argument>
 	create(
 		const std::string & name,
-		const jive::type & type,
+		const jlm::rvsdg::type & type,
 		const attributeset & attributes)
 	{
 		return std::make_unique<argument>(name, type, attributes);
@@ -82,7 +78,7 @@ public:
 	static std::unique_ptr<argument>
 	create(
 		const std::string & name,
-		std::unique_ptr<jive::type> type,
+		std::unique_ptr<jlm::rvsdg::type> type,
 		const attributeset & attributes)
 	{
 		return std::make_unique<argument>(name, std::move(type), attributes);
@@ -91,7 +87,7 @@ public:
 	static std::unique_ptr<argument>
 	create(
 		const std::string & name,
-		const jive::type & type)
+		const jlm::rvsdg::type & type)
 	{
 		return create(name, type, {});
 	}
@@ -384,11 +380,11 @@ public:
 	FunctionType
 	fcttype() const
 	{
-		std::vector<const jive::type*> arguments;
+		std::vector<const jlm::rvsdg::type*> arguments;
 		for (size_t n = 0; n < entry()->narguments(); n++)
 			arguments.push_back(&entry()->argument(n)->type());
 
-		std::vector<const jive::type*> results;
+		std::vector<const jlm::rvsdg::type*> results;
 		for (size_t n = 0; n < exit()->nresults(); n++)
 			results.push_back(&exit()->result(n)->type());
 

@@ -7,7 +7,8 @@
 #include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/rvsdg/graph.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 /* bistring type */
 
@@ -21,16 +22,16 @@ bittype::debug_string() const
 }
 
 bool
-bittype::operator==(const jive::type & other) const noexcept
+bittype::operator==(const jlm::rvsdg::type & other) const noexcept
 {
 	auto type = dynamic_cast<const bittype*>(&other);
 	return type != nullptr && this->nbits() == type->nbits();
 }
 
-std::unique_ptr<jive::type>
+std::unique_ptr<jlm::rvsdg::type>
 bittype::copy() const
 {
-	return std::unique_ptr<jive::type>(new bittype(*this));
+	return std::unique_ptr<jlm::rvsdg::type>(new bittype(*this));
 }
 
 const bittype bit1(1);

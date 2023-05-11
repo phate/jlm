@@ -99,7 +99,7 @@ function_node::name() const noexcept
 	return name_;
 }
 
-const jive::type &
+const jlm::rvsdg::type &
 function_node::type() const noexcept
 {
   static PointerType pointerType;

@@ -273,7 +273,7 @@ PointsToGraph::RegisterNode::~RegisterNode() noexcept
 std::string
 PointsToGraph::RegisterNode::DebugString() const
 {
-  auto node = jive::node_output::node(&GetOutput());
+  auto node = jlm::rvsdg::node_output::node(&GetOutput());
 
   if (node != nullptr)
     return util::strfmt(node->operation().debug_string(), ":o", GetOutput().index());

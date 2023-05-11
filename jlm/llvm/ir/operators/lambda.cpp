@@ -22,7 +22,7 @@ operation::debug_string() const
 }
 
 bool
-operation::operator==(const jive::operation & other) const noexcept
+operation::operator==(const jlm::rvsdg::operation & other) const noexcept
 {
   auto op = dynamic_cast<const lambda::operation*>(&other);
   return op
@@ -32,10 +32,10 @@ operation::operator==(const jive::operation & other) const noexcept
          && op->attributes() == attributes();
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<jlm::rvsdg::operation>
 operation::copy() const
 {
-  return std::unique_ptr<jive::operation>(new operation(*this));
+  return std::unique_ptr<jlm::rvsdg::operation>(new operation(*this));
 }
 
 /* lambda node class */
@@ -146,7 +146,7 @@ node::fctresult(size_t n) const noexcept
 }
 
 cvargument *
-node::add_ctxvar(jive::output * origin)
+node::add_ctxvar(jlm::rvsdg::output * origin)
 {
   auto input = cvinput::create(this, origin);
   return cvargument::create(subregion(), input);
@@ -154,7 +154,7 @@ node::add_ctxvar(jive::output * origin)
 
 lambda::node *
 node::create(
-  jive::region * parent,
+  jlm::rvsdg::region * parent,
   const FunctionType & type,
   const std::string & name,
   const jlm::linkage & linkage,
@@ -170,7 +170,7 @@ node::create(
 }
 
 lambda::output *
-node::finalize(const std::vector<jive::output*> & results)
+node::finalize(const std::vector<jlm::rvsdg::output*> & results)
 {
   /* check if finalized was already called */
   if (noutputs() > 0) {
@@ -199,19 +199,19 @@ node::finalize(const std::vector<jive::output*> & results)
 
 lambda::node *
 node::copy(
-  jive::region * region,
-  const std::vector<jive::output*> & operands) const
+  jlm::rvsdg::region * region,
+  const std::vector<jlm::rvsdg::output*> & operands) const
 {
-  return util::AssertedCast<lambda::node>(jive::node::copy(region, operands));
+  return util::AssertedCast<lambda::node>(jlm::rvsdg::node::copy(region, operands));
 }
 
 lambda::node *
-node::copy(jive::region * region, jive::substitution_map & smap) const
+node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const
 {
   auto lambda = create(region, type(), name(), linkage(), attributes());
 
   /* add context variables */
-  jive::substitution_map subregionmap;
+  jlm::rvsdg::substitution_map subregionmap;
   for (auto & cv : ctxvars()) {
     auto origin = smap.lookup(cv.origin());
     auto newcv = lambda->add_ctxvar(origin);
@@ -228,7 +228,7 @@ node::copy(jive::region * region, jive::substitution_map & smap) const
   subregion()->copy(lambda->subregion(), subregionmap, false, false);
 
   /* collect function results */
-  std::vector<jive::output*> results;
+  std::vector<jlm::rvsdg::output*> results;
   for (auto & result : fctresults())
     results.push_back(subregionmap.lookup(result.origin()));
 
@@ -240,9 +240,9 @@ node::copy(jive::region * region, jive::substitution_map & smap) const
 }
 
 bool
-node::direct_calls(std::vector<jive::simple_node*> * calls) const
+node::direct_calls(std::vector<jlm::rvsdg::simple_node*> * calls) const
 {
-  std::deque<jive::input*> worklist;
+  std::deque<jlm::rvsdg::input*> worklist;
   worklist.insert(worklist.end(), output()->begin(), output()->end());
 
   bool has_only_direct_calls = true;
@@ -256,7 +256,7 @@ node::direct_calls(std::vector<jive::simple_node*> * calls) const
       continue;
     }
 
-    if (auto gamma_input = dynamic_cast<jive::gamma_input*>(input)) {
+    if (auto gamma_input = dynamic_cast<jlm::rvsdg::gamma_input*>(input)) {
       for (auto & argument : *gamma_input)
         worklist.insert(worklist.end(), argument.begin(), argument.end());
       continue;
@@ -268,7 +268,7 @@ node::direct_calls(std::vector<jive::simple_node*> * calls) const
       continue;
     }
 
-    if (auto theta_input = dynamic_cast<jive::theta_input*>(input)) {
+    if (auto theta_input = dynamic_cast<jlm::rvsdg::theta_input*>(input)) {
       auto argument = theta_input->argument();
       worklist.insert(worklist.end(), argument->begin(), argument->end());
       continue;
@@ -301,14 +301,14 @@ node::direct_calls(std::vector<jive::simple_node*> * calls) const
       continue;
     }
 
-    auto node = jive::input::GetNode(*input);
+    auto node = jlm::rvsdg::input::GetNode(*input);
     if (is<CallOperation>(node) && input == node->input(0)) {
       if (calls != nullptr)
-        calls->push_back(util::AssertedCast<jive::simple_node>(node));
+        calls->push_back(util::AssertedCast<jlm::rvsdg::simple_node>(node));
       continue;
     }
 
-    if (is_export(input) || is<jive::simple_op>(node)) {
+    if (is_export(input) || is<jlm::rvsdg::simple_op>(node)) {
       if (calls == nullptr)
         return false;
 

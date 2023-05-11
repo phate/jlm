@@ -18,12 +18,6 @@
 #include <unordered_map>
 #include <unordered_set>
 
-namespace jive {
-	class argument;
-	class node;
-	class output;
-}
-
 namespace jlm {
 
 class RvsdgModule;
@@ -52,12 +46,12 @@ public:
   class UnknownMemoryNode;
   class ExternalMemoryNode;
 
-  using AllocaNodeMap = std::unordered_map<const jive::node*, std::unique_ptr<PointsToGraph::AllocaNode>>;
+  using AllocaNodeMap = std::unordered_map<const jlm::rvsdg::node*, std::unique_ptr<PointsToGraph::AllocaNode>>;
   using DeltaNodeMap = std::unordered_map<const delta::node*, std::unique_ptr<PointsToGraph::DeltaNode>>;
-  using ImportNodeMap = std::unordered_map<const jive::argument*, std::unique_ptr<PointsToGraph::ImportNode>>;
+  using ImportNodeMap = std::unordered_map<const jlm::rvsdg::argument*, std::unique_ptr<PointsToGraph::ImportNode>>;
   using LambdaNodeMap = std::unordered_map<const lambda::node*, std::unique_ptr<PointsToGraph::LambdaNode>>;
-  using MallocNodeMap = std::unordered_map<const jive::node*, std::unique_ptr<PointsToGraph::MallocNode>>;
-  using RegisterNodeMap = std::unordered_map<const jive::output*, std::unique_ptr<PointsToGraph::RegisterNode>>;
+  using MallocNodeMap = std::unordered_map<const jlm::rvsdg::node*, std::unique_ptr<PointsToGraph::MallocNode>>;
+  using RegisterNodeMap = std::unordered_map<const jlm::rvsdg::output*, std::unique_ptr<PointsToGraph::RegisterNode>>;
 
   using AllocaNodeIterator = NodeIterator<AllocaNode, AllocaNodeMap::iterator>;
   using AllocaNodeConstIterator = NodeConstIterator<AllocaNode, AllocaNodeMap::const_iterator>;
@@ -205,7 +199,7 @@ public:
   }
 
   const PointsToGraph::AllocaNode &
-  GetAllocaNode(const jive::node & node) const
+  GetAllocaNode(const jlm::rvsdg::node & node) const
   {
     auto it = AllocaNodes_.find(&node);
     if (it == AllocaNodes_.end())
@@ -225,7 +219,7 @@ public:
   }
 
   const PointsToGraph::ImportNode &
-  GetImportNode(const jive::argument & argument) const
+  GetImportNode(const jlm::rvsdg::argument & argument) const
   {
     auto it = ImportNodes_.find(&argument);
     if (it == ImportNodes_.end())
@@ -245,7 +239,7 @@ public:
   }
 
   const PointsToGraph::MallocNode &
-  GetMallocNode(const jive::node & node) const
+  GetMallocNode(const jlm::rvsdg::node & node) const
   {
     auto it = MallocNodes_.find(&node);
     if (it == MallocNodes_.end())
@@ -255,7 +249,7 @@ public:
   }
 
   const PointsToGraph::RegisterNode &
-  GetRegisterNode(const jive::output & output) const
+  GetRegisterNode(const jlm::rvsdg::output & output) const
   {
     auto it = RegisterNodes_.find(&output);
     if (it == RegisterNodes_.end())
@@ -416,13 +410,13 @@ public:
 private:
   RegisterNode(
     PointsToGraph & pointsToGraph,
-    const jive::output & output)
+    const jlm::rvsdg::output & output)
     : Node(pointsToGraph)
     , Output_(&output)
   {}
 
 public:
-  const jive::output &
+  const jlm::rvsdg::output &
   GetOutput() const noexcept
   {
     return *Output_;
@@ -434,14 +428,14 @@ public:
   static PointsToGraph::RegisterNode &
   Create(
     PointsToGraph & pointsToGraph,
-    const jive::output & output)
+    const jlm::rvsdg::output & output)
   {
     auto node = std::unique_ptr<PointsToGraph::RegisterNode>(new RegisterNode(pointsToGraph, output));
     return pointsToGraph.AddRegisterNode(std::move(node));
   }
 
 private:
-  const jive::output * Output_;
+  const jlm::rvsdg::output * Output_;
 };
 
 /** \brief PointsTo graph memory node
@@ -477,7 +471,7 @@ public:
 private:
   AllocaNode(
     PointsToGraph & pointsToGraph,
-  const jive::node & allocaNode)
+  const jlm::rvsdg::node & allocaNode)
   : MemoryNode(pointsToGraph)
   , AllocaNode_(&allocaNode)
   {
@@ -485,7 +479,7 @@ private:
   }
 
 public:
-  const jive::node &
+  const jlm::rvsdg::node &
   GetAllocaNode() const noexcept
   {
     return *AllocaNode_;
@@ -497,14 +491,14 @@ public:
   static PointsToGraph::AllocaNode &
   Create(
     PointsToGraph & pointsToGraph,
-    const jive::node & node)
+    const jlm::rvsdg::node & node)
   {
     auto n = std::unique_ptr<PointsToGraph::AllocaNode>(new AllocaNode(pointsToGraph, node));
     return pointsToGraph.AddAllocaNode(std::move(n));
   }
 
 private:
-  const jive::node * AllocaNode_;
+  const jlm::rvsdg::node * AllocaNode_;
 };
 
 /** \brief PointsTo graph delta node
@@ -557,7 +551,7 @@ public:
 private:
   MallocNode(
     PointsToGraph & pointsToGraph,
-    const jive::node & mallocNode)
+    const jlm::rvsdg::node & mallocNode)
     : MemoryNode(pointsToGraph)
     , MallocNode_(&mallocNode)
   {
@@ -565,7 +559,7 @@ private:
   }
 
 public:
-  const jive::node &
+  const jlm::rvsdg::node &
   GetMallocNode() const noexcept
   {
     return *MallocNode_;
@@ -577,14 +571,14 @@ public:
   static PointsToGraph::MallocNode &
   Create(
     PointsToGraph & pointsToGraph,
-    const jive::node & node)
+    const jlm::rvsdg::node & node)
   {
     auto n = std::unique_ptr<PointsToGraph::MallocNode>(new MallocNode(pointsToGraph, node));
     return pointsToGraph.AddMallocNode(std::move(n));
   }
 
 private:
-  const jive::node * MallocNode_;
+  const jlm::rvsdg::node * MallocNode_;
 };
 
 /** \brief PointsTo graph malloc node
@@ -637,7 +631,7 @@ public:
 private:
   ImportNode(
     PointsToGraph & pointsToGraph,
-    const jive::argument & argument)
+    const jlm::rvsdg::argument & argument)
     : MemoryNode(pointsToGraph)
     , Argument_(&argument)
   {
@@ -645,7 +639,7 @@ private:
   }
 
 public:
-  const jive::argument &
+  const jlm::rvsdg::argument &
   GetArgument() const noexcept
   {
     return *Argument_;
@@ -657,14 +651,14 @@ public:
   static PointsToGraph::ImportNode &
   Create(
     PointsToGraph & pointsToGraph,
-    const jive::argument & argument)
+    const jlm::rvsdg::argument & argument)
   {
     auto n = std::unique_ptr<PointsToGraph::ImportNode>(new ImportNode(pointsToGraph, argument));
     return pointsToGraph.AddImportNode(std::move(n));
   }
 
 private:
-  const jive::argument * Argument_;
+  const jlm::rvsdg::argument * Argument_;
 };
 
 /** \brief PointsTo graph unknown node

@@ -12,14 +12,14 @@
 namespace jlm{
 	namespace hls{
 
-		bool gamma_can_be_spec(jive::gamma_node *gamma);
+		bool gamma_can_be_spec(jlm::rvsdg::gamma_node *gamma);
 
-		void gamma_conv_nonspec(jive::gamma_node *gamma);
+		void gamma_conv_nonspec(jlm::rvsdg::gamma_node *gamma);
 
-		void gamma_conv_spec(jive::gamma_node *gamma);
+		void gamma_conv_spec(jlm::rvsdg::gamma_node *gamma);
 
 		void
-		gamma_conv(jive::region *region, bool allow_speculation=true);
+		gamma_conv(jlm::rvsdg::region *region, bool allow_speculation=true);
 
 		void
 		gamma_conv(jlm::RvsdgModule &rm, bool allow_speculation=true);

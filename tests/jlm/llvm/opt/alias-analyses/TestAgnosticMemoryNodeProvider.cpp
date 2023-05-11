@@ -44,7 +44,7 @@ TestStore1()
   };
 
   StoreTest1 test;
-  // jive::view(test.graph().root(), stdout);
+  // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
@@ -79,7 +79,7 @@ TestStore2()
   };
 
   StoreTest2 test;
-  // jive::view(test.graph().root(), stdout);
+  // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
@@ -114,7 +114,7 @@ TestLoad1()
   };
 
   LoadTest1 test;
-  // jive::view(test.graph().root(), stdout);
+  // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph= RunSteensgaard(test.module());
   // std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
@@ -149,7 +149,7 @@ TestLoad2()
   };
 
   LoadTest2 test;
-  // jive::view(test.graph().root(), stdout);
+  // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
 
@@ -183,7 +183,7 @@ TestLoadFromUndef()
   };
 
   LoadFromUndefTest test;
-  // jive::view(test.graph().root(), stdout);
+  // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
@@ -257,7 +257,7 @@ TestCall1()
   };
 
   CallTest1 test;
-//	jive::view(test.graph().root(), stdout);
+//	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
@@ -343,7 +343,7 @@ TestCall2()
   };
 
   CallTest2 test;
-//	jive::view(test.graph().root(), stdout);
+//	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
@@ -434,7 +434,7 @@ TestIndirectCall()
   };
 
   IndirectCallTest1 test;
-//	jive::view(test.graph().root(), stdout);
+//	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
 //	std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
@@ -473,7 +473,7 @@ TestGamma()
   };
 
   GammaTest test;
-  // jive::view(test.graph().root(), stdout);
+  // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
@@ -510,7 +510,7 @@ TestTheta()
   };
 
   ThetaTest test;
-//	jive::view(test.graph().root(), stdout);
+//	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
 //	std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
@@ -565,7 +565,7 @@ TestDelta1()
   };
 
   DeltaTest1 test;
-  // jive::view(test.graph().root(), stdout);
+  // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
@@ -620,7 +620,7 @@ TestDelta2()
   };
 
   DeltaTest2 test;
-//	jive::view(test.graph().root(), stdout);
+//	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
@@ -675,7 +675,7 @@ TestImports()
   };
 
   ImportTest test;
-//	jive::view(test.graph().root(), stdout);
+//	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::aa::PointsToGraph::ToDot(*ptg);
@@ -742,7 +742,7 @@ TestPhi1()
   };
 
   PhiTest1 test;
-//	jive::view(test.graph().root(), stdout);
+//	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
@@ -802,7 +802,7 @@ TestMemcpy()
   };
 
   MemcpyTest test;
-//	jive::view(test.graph().root(), stdout);
+//	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);

@@ -9,7 +9,8 @@
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 /* impport */
 
@@ -62,19 +63,19 @@ graph::~graph()
 
 graph::graph()
 	: normalized_(false)
-	, root_(new jive::region(nullptr, this))
+	, root_(new jlm::rvsdg::region(nullptr, this))
 {}
 
-std::unique_ptr<jive::graph>
+std::unique_ptr<jlm::rvsdg::graph>
 graph::copy() const
 {
-	jive::substitution_map smap;
-	std::unique_ptr<jive::graph> graph(new jive::graph());
+	jlm::rvsdg::substitution_map smap;
+	std::unique_ptr<jlm::rvsdg::graph> graph(new jlm::rvsdg::graph());
 	root()->copy(graph->root(), smap, true, true);
 	return graph;
 }
 
-jive::node_normal_form *
+jlm::rvsdg::node_normal_form *
 graph::node_normal_form(const std::type_info & type) noexcept
 {
 	auto i = node_normal_forms_.find(std::type_index(type));
@@ -84,10 +85,10 @@ graph::node_normal_form(const std::type_info & type) noexcept
 	const auto cinfo = dynamic_cast<const abi::__si_class_type_info *>(&type);
 	auto parent_normal_form = cinfo ? node_normal_form(*cinfo->__base_type) : nullptr;
 
-	std::unique_ptr<jive::node_normal_form> nf(
-		jive::node_normal_form::create(type, parent_normal_form, this));
+	std::unique_ptr<jlm::rvsdg::node_normal_form> nf(
+		jlm::rvsdg::node_normal_form::create(type, parent_normal_form, this));
 
-	jive::node_normal_form * result = nf.get();
+	jlm::rvsdg::node_normal_form * result = nf.get();
 	node_normal_forms_.insert(std::move(nf));
 
 	return result;

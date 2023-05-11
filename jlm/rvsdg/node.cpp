@@ -11,7 +11,8 @@
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 /* input */
 
@@ -21,9 +22,9 @@ input::~input() noexcept
 }
 
 input::input(
-	jive::output * origin,
-	jive::region * region,
-	const jive::port & port)
+	jlm::rvsdg::output * origin,
+	jlm::rvsdg::region * region,
+	const jlm::rvsdg::port & port)
 : index_(0)
 , origin_(origin)
 , region_(region)
@@ -45,7 +46,7 @@ input::debug_string() const
 }
 
 void
-input::divert_to(jive::output * new_origin)
+input::divert_to(jlm::rvsdg::output * new_origin)
 {
 	if (origin() == new_origin)
 		return;
@@ -68,10 +69,10 @@ input::divert_to(jive::output * new_origin)
 	on_input_change(this, old_origin, new_origin);
 }
 
-jive::node*
-input::GetNode(const jive::input &input) noexcept
+jlm::rvsdg::node*
+input::GetNode(const jlm::rvsdg::input &input) noexcept
 {
-  auto nodeInput = dynamic_cast<const jive::node_input*>(&input);
+  auto nodeInput = dynamic_cast<const jlm::rvsdg::node_input*>(&input);
   return nodeInput
          ? nodeInput->node()
          : nullptr;
@@ -85,8 +86,8 @@ output::~output() noexcept
 }
 
 output::output(
-	jive::region * region,
-	const jive::port & port)
+	jlm::rvsdg::region * region,
+	const jlm::rvsdg::port & port)
 : index_(0)
 , region_(region)
 , port_(port.copy())
@@ -99,7 +100,7 @@ output::debug_string() const
 }
 
 void
-output::remove_user(jive::input * user)
+output::remove_user(jlm::rvsdg::input * user)
 {
 	JLM_ASSERT(users_.find(user) != users_.end());
 
@@ -112,7 +113,7 @@ output::remove_user(jive::input * user)
 }
 
 void
-output::add_user(jive::input * user)
+output::add_user(jlm::rvsdg::input * user)
 {
 	JLM_ASSERT(users_.find(user) == users_.end());
 
@@ -123,50 +124,49 @@ output::add_user(jive::input * user)
 	users_.insert(user);
 }
 
-}	//jive namespace
+}
 
-jive::node_normal_form *
-jive_node_get_default_normal_form_(
+jlm::rvsdg::node_normal_form *
+node_get_default_normal_form_(
 	const std::type_info & operator_class,
-	jive::node_normal_form * parent,
-	jive::graph * graph)
+	jlm::rvsdg::node_normal_form * parent,
+	jlm::rvsdg::graph * graph)
 {
-	jive::node_normal_form * normal_form = new jive::node_normal_form(
-		operator_class, parent, graph);
-	return normal_form;
+	return new jlm::rvsdg::node_normal_form(operator_class, parent, graph);
 }
 
 static void  __attribute__((constructor))
 register_node_normal_form(void)
 {
-	jive::node_normal_form::register_factory(
-		typeid(jive::operation), jive_node_get_default_normal_form_);
+	jlm::rvsdg::node_normal_form::register_factory(
+		typeid(jlm::rvsdg::operation), node_get_default_normal_form_);
 }
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 /* node_input  class */
 
 node_input::node_input(
-	jive::output * origin,
-	jive::node * node,
-	const jive::port & port)
-: jive::input(origin, node->region(), port)
+	jlm::rvsdg::output * origin,
+	jlm::rvsdg::node * node,
+	const jlm::rvsdg::port & port)
+: jlm::rvsdg::input(origin, node->region(), port)
 , node_(node)
 {}
 
 /* node_output class */
 
 node_output::node_output(
-	jive::node * node,
-	const jive::port & port)
-: jive::output(node->region(), port)
+	jlm::rvsdg::node * node,
+	const jlm::rvsdg::port & port)
+: jlm::rvsdg::output(node->region(), port)
 , node_(node)
 {}
 
 /* node class */
 
-node::node(std::unique_ptr<jive::operation> op, jive::region * region)
+node::node(std::unique_ptr<jlm::rvsdg::operation> op, jlm::rvsdg::region * region)
 	: depth_(0)
 	, graph_(region->graph())
 	, region_(region)
@@ -282,8 +282,8 @@ node::recompute_depth() noexcept
 	}
 }
 
-jive::node *
-node::copy(jive::region * region, const std::vector<jive::output*> & operands) const
+jlm::rvsdg::node *
+node::copy(jlm::rvsdg::region * region, const std::vector<jlm::rvsdg::output*> & operands) const
 {
 	substitution_map smap;
 
@@ -294,14 +294,14 @@ node::copy(jive::region * region, const std::vector<jive::output*> & operands) c
 	return copy(region, smap);
 }
 
-jive::node *
-producer(const jive::output * output) noexcept
+jlm::rvsdg::node *
+producer(const jlm::rvsdg::output * output) noexcept
 {
 	if (auto node = node_output::node(output))
 		return node;
 
-	JLM_ASSERT(dynamic_cast<const jive::argument*>(output));
-	auto argument = static_cast<const jive::argument*>(output);
+	JLM_ASSERT(dynamic_cast<const jlm::rvsdg::argument*>(output));
+	auto argument = static_cast<const jlm::rvsdg::argument*>(output);
 
 	if (!argument->input())
 		return nullptr;
@@ -314,7 +314,7 @@ producer(const jive::output * output) noexcept
 }
 
 bool
-normalize(jive::node * node)
+normalize(jlm::rvsdg::node * node)
 {
 	const auto & op = node->operation();
 	auto nf = node->graph()->node_normal_form(typeid(op));

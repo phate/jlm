@@ -290,7 +290,7 @@ EnsureSingleInEdgeToExitNode(jlm::cfg & cfg)
 
 				auto basicBlock = basic_block::create(cfg);
 
-				jive::ctlconstant_op op(jive::ctlvalue_repr(1, 2));
+				rvsdg::ctlconstant_op op(rvsdg::ctlvalue_repr(1, 2));
 				auto operand = basicBlock->append_last(tac::create(op, {}))->result(0);
 				basicBlock->append_last(branch_op::create(2, operand));
 

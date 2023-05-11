@@ -33,9 +33,9 @@ public:
   {}
 
   void
-  Start(const jive::graph & graph) noexcept
+  Start(const jlm::rvsdg::graph & graph) noexcept
   {
-    NumNodesBefore_ = jive::nnodes(graph.root());
+    NumNodesBefore_ = jlm::rvsdg::nnodes(graph.root());
     Timer_.start();
   }
 
@@ -236,14 +236,14 @@ class RegisterLocation final : public Location {
 public:
   constexpr explicit
   RegisterLocation(
-    const jive::output & output,
+    const jlm::rvsdg::output & output,
     PointsToFlags pointsToFlags)
     : Location(pointsToFlags)
     , IsEscapingModule_(false)
     , Output_(&output)
   {}
 
-  [[nodiscard]] const jive::output &
+  [[nodiscard]] const jlm::rvsdg::output &
   GetOutput() const noexcept
   {
     return *Output_;
@@ -268,10 +268,10 @@ public:
   [[nodiscard]] std::string
   DebugString() const noexcept override
   {
-    auto node = jive::node_output::node(Output_);
+    auto node = jlm::rvsdg::node_output::node(Output_);
     auto index = Output_->index();
 
-    if (jive::is<jive::simple_op>(node)) {
+    if (jlm::rvsdg::is<jlm::rvsdg::simple_op>(node)) {
       auto nodestr = node->operation().debug_string();
       auto outputstr = Output_->type().debug_string();
       return util::strfmt(nodestr, ":", index, "[" + outputstr + "]");
@@ -303,17 +303,17 @@ public:
     }
 
     if (is_theta_output(Output_)) {
-      auto dbgstr = jive::node_output::node(Output_)->operation().debug_string();
+      auto dbgstr = jlm::rvsdg::node_output::node(Output_)->operation().debug_string();
       return util::strfmt(dbgstr, ":out", index);
     }
 
     if (is_gamma_output(Output_)) {
-      auto dbgstr = jive::node_output::node(Output_)->operation().debug_string();
+      auto dbgstr = jlm::rvsdg::node_output::node(Output_)->operation().debug_string();
       return util::strfmt(dbgstr, ":out", index);
     }
 
     if (is_import(Output_)) {
-      auto import = util::AssertedCast<const jive::impport>(&Output_->port());
+      auto import = util::AssertedCast<const jlm::rvsdg::impport>(&Output_->port());
       return util::strfmt("imp:", import->name());
     }
 
@@ -327,7 +327,7 @@ public:
       return util::strfmt(dbgstr, ":cvarg", index);
     }
 
-    return util::strfmt(jive::node_output::node(Output_)->operation().debug_string(), ":", index);
+    return util::strfmt(jlm::rvsdg::node_output::node(Output_)->operation().debug_string(), ":", index);
   }
 
   [[nodiscard]] static bool
@@ -340,7 +340,7 @@ public:
 
   static std::unique_ptr<RegisterLocation>
   Create(
-    const jive::output & output,
+    const jlm::rvsdg::output & output,
     PointsToFlags pointsToFlags)
   {
     return std::make_unique<RegisterLocation>(output, pointsToFlags);
@@ -348,7 +348,7 @@ public:
 
 private:
   bool IsEscapingModule_;
-  const jive::output * Output_;
+  const jlm::rvsdg::output * Output_;
 };
 
 /** \brief MemoryLocation class
@@ -372,7 +372,7 @@ class AllocaLocation final : public MemoryLocation {
   ~AllocaLocation() override = default;
 
   constexpr explicit
-  AllocaLocation(const jive::node & node)
+  AllocaLocation(const jlm::rvsdg::node & node)
     : MemoryLocation()
     , Node_(node)
   {
@@ -380,7 +380,7 @@ class AllocaLocation final : public MemoryLocation {
   }
 
 public:
-  [[nodiscard]] const jive::node &
+  [[nodiscard]] const jlm::rvsdg::node &
   GetNode() const noexcept
   {
     return Node_;
@@ -393,13 +393,13 @@ public:
   }
 
   static std::unique_ptr<Location>
-  Create(const jive::node & node)
+  Create(const jlm::rvsdg::node & node)
   {
     return std::unique_ptr<Location>(new AllocaLocation(node));
   }
 
 private:
-  const jive::node & Node_;
+  const jlm::rvsdg::node & Node_;
 };
 
 /** \brief MallocLocation class
@@ -411,7 +411,7 @@ class MallocLocation final : public MemoryLocation {
   ~MallocLocation() override = default;
 
   constexpr explicit
-  MallocLocation(const jive::node & node)
+  MallocLocation(const jlm::rvsdg::node & node)
     : MemoryLocation()
     , Node_(node)
   {
@@ -419,7 +419,7 @@ class MallocLocation final : public MemoryLocation {
   }
 
 public:
-  [[nodiscard]] const jive::node &
+  [[nodiscard]] const jlm::rvsdg::node &
   GetNode() const noexcept
   {
     return Node_;
@@ -432,13 +432,13 @@ public:
   }
 
   static std::unique_ptr<Location>
-  Create(const jive::node & node)
+  Create(const jlm::rvsdg::node & node)
   {
     return std::unique_ptr<Location>(new MallocLocation(node));
   }
 
 private:
-  const jive::node & Node_;
+  const jlm::rvsdg::node & Node_;
 };
 
 /** \brief LambdaLocation class
@@ -525,7 +525,7 @@ public:
   ~ImportLocation() override = default;
 
   ImportLocation(
-    const jive::argument & argument,
+    const jlm::rvsdg::argument & argument,
     PointsToFlags pointsToFlags)
     : Location(pointsToFlags)
     , Argument_(argument)
@@ -533,7 +533,7 @@ public:
     JLM_ASSERT(dynamic_cast<const jlm::impport*>(&argument.port()));
   }
 
-  [[nodiscard]] const jive::argument &
+  [[nodiscard]] const jlm::rvsdg::argument &
   GetArgument() const noexcept
   {
     return Argument_;
@@ -546,7 +546,7 @@ public:
   }
 
   static std::unique_ptr<Location>
-  Create(const jive::argument & argument)
+  Create(const jlm::rvsdg::argument & argument)
   {
     auto & rvsdgImport = *util::AssertedCast<const impport>(&argument.port());
     bool pointsToUnknownMemory = is<PointerType>(rvsdgImport.GetValueType());
@@ -563,7 +563,7 @@ public:
   }
 
 private:
-  const jive::argument & Argument_;
+  const jlm::rvsdg::argument & Argument_;
 };
 
 /** \brief FIXME: write documentation
@@ -605,7 +605,7 @@ LocationSet::Clear()
 
 RegisterLocation &
 LocationSet::InsertRegisterLocation(
-  const jive::output & output,
+  const jlm::rvsdg::output & output,
   PointsToFlags pointsToFlags)
 {
   JLM_ASSERT(!Contains(output));
@@ -621,7 +621,7 @@ LocationSet::InsertRegisterLocation(
 }
 
 Location &
-LocationSet::InsertAllocaLocation(const jive::node & node)
+LocationSet::InsertAllocaLocation(const jlm::rvsdg::node & node)
 {
   Locations_.push_back(AllocaLocation::Create(node));
   auto location = Locations_.back().get();
@@ -631,7 +631,7 @@ LocationSet::InsertAllocaLocation(const jive::node & node)
 }
 
 Location &
-LocationSet::InsertMallocLocation(const jive::node & node)
+LocationSet::InsertMallocLocation(const jlm::rvsdg::node & node)
 {
   Locations_.push_back(MallocLocation::Create(node));
   auto location = Locations_.back().get();
@@ -671,7 +671,7 @@ LocationSet::InsertDummyLocation()
 }
 
 Location &
-LocationSet::InsertImportLocation(const jive::argument & argument)
+LocationSet::InsertImportLocation(const jlm::rvsdg::argument & argument)
 {
   Locations_.push_back(ImportLocation::Create(argument));
   auto location = Locations_.back().get();
@@ -681,21 +681,21 @@ LocationSet::InsertImportLocation(const jive::argument & argument)
 }
 
 RegisterLocation *
-LocationSet::LookupRegisterLocation(const jive::output & output)
+LocationSet::LookupRegisterLocation(const jlm::rvsdg::output & output)
 {
   auto it = LocationMap_.find(&output);
   return it == LocationMap_.end() ? nullptr : it->second;
 }
 
 bool
-LocationSet::Contains(const jive::output & output) const noexcept
+LocationSet::Contains(const jlm::rvsdg::output & output) const noexcept
 {
   return LocationMap_.find(&output) != LocationMap_.end();
 }
 
 Location &
 LocationSet::FindOrInsertRegisterLocation(
-  const jive::output & output,
+  const jlm::rvsdg::output & output,
   PointsToFlags pointsToFlags)
 {
   if (auto location = LookupRegisterLocation(output))
@@ -711,7 +711,7 @@ LocationSet::GetRootLocation(Location & l) const
 }
 
 Location &
-LocationSet::Find(const jive::output & output)
+LocationSet::Find(const jlm::rvsdg::output & output)
 {
   auto location = LookupRegisterLocation(output);
   JLM_ASSERT(location != nullptr);
@@ -812,7 +812,7 @@ Steensgaard::join(Location & x, Location & y)
 }
 
 void
-Steensgaard::Analyze(const jive::simple_node & node)
+Steensgaard::Analyze(const jlm::rvsdg::simple_node & node)
 {
   auto AnalyzeCall  = [](auto & s, auto & n) { s.AnalyzeCall(*util::AssertedCast<const CallNode>(&n)); };
   auto AnalyzeLoad  = [](auto & s, auto & n) { s.AnalyzeLoad(*util::AssertedCast<const LoadNode>(&n)); };
@@ -820,7 +820,7 @@ Steensgaard::Analyze(const jive::simple_node & node)
 
   static std::unordered_map<
     std::type_index
-    , std::function<void(Steensgaard&, const jive::simple_node&)>> nodes
+    , std::function<void(Steensgaard&, const jlm::rvsdg::simple_node&)>> nodes
     ({
          {typeid(alloca_op),                    [](auto & s, auto & n){ s.AnalyzeAlloca(n);                }}
        , {typeid(malloc_op),                    [](auto & s, auto & n){ s.AnalyzeMalloc(n);                }}
@@ -849,18 +849,18 @@ Steensgaard::Analyze(const jive::simple_node & node)
     Ensure that we really took care of all pointer-producing instructions
   */
   for (size_t n = 0; n < node.noutputs(); n++) {
-    if (jive::is<PointerType>(node.output(n)->type()))
+    if (jlm::rvsdg::is<PointerType>(node.output(n)->type()))
       JLM_UNREACHABLE("We should have never reached this statement.");
   }
 }
 
 void
-Steensgaard::AnalyzeAlloca(const jive::simple_node & node)
+Steensgaard::AnalyzeAlloca(const jlm::rvsdg::simple_node & node)
 {
   JLM_ASSERT(is<alloca_op>(&node));
 
-  std::function<bool(const jive::valuetype&)>
-    IsVaListAlloca = [&](const jive::valuetype & type)
+  std::function<bool(const jlm::rvsdg::valuetype&)>
+    IsVaListAlloca = [&](const jlm::rvsdg::valuetype & type)
   {
     auto structType = dynamic_cast<const StructType*>(&type);
 
@@ -903,7 +903,7 @@ Steensgaard::AnalyzeAlloca(const jive::simple_node & node)
 }
 
 void
-Steensgaard::AnalyzeMalloc(const jive::simple_node & node)
+Steensgaard::AnalyzeMalloc(const jlm::rvsdg::simple_node & node)
 {
   JLM_ASSERT(is<malloc_op>(&node));
 
@@ -1069,7 +1069,7 @@ Steensgaard::AnalyzeCall(const CallNode & callNode)
 }
 
 void
-Steensgaard::AnalyzeGep(const jive::simple_node & node)
+Steensgaard::AnalyzeGep(const jlm::rvsdg::simple_node & node)
 {
   JLM_ASSERT(is<GetElementPtrOperation>(&node));
 
@@ -1082,7 +1082,7 @@ Steensgaard::AnalyzeGep(const jive::simple_node & node)
 }
 
 void
-Steensgaard::AnalyzeBitcast(const jive::simple_node & node)
+Steensgaard::AnalyzeBitcast(const jlm::rvsdg::simple_node & node)
 {
   JLM_ASSERT(is<bitcast_op>(&node));
 
@@ -1099,7 +1099,7 @@ Steensgaard::AnalyzeBitcast(const jive::simple_node & node)
 }
 
 void
-Steensgaard::AnalyzeBits2ptr(const jive::simple_node & node)
+Steensgaard::AnalyzeBits2ptr(const jlm::rvsdg::simple_node & node)
 {
   JLM_ASSERT(is<bits2ptr_op>(&node));
 
@@ -1113,7 +1113,7 @@ Steensgaard::AnalyzeBits2ptr(const jive::simple_node & node)
 }
 
 void
-Steensgaard::AnalyzeExtractValue(const jive::simple_node & node)
+Steensgaard::AnalyzeExtractValue(const jlm::rvsdg::simple_node & node)
 {
   JLM_ASSERT(is<ExtractValue>(&node));
 
@@ -1130,7 +1130,7 @@ Steensgaard::AnalyzeExtractValue(const jive::simple_node & node)
 }
 
 void
-Steensgaard::AnalyzeConstantPointerNull(const jive::simple_node & node)
+Steensgaard::AnalyzeConstantPointerNull(const jlm::rvsdg::simple_node & node)
 {
   JLM_ASSERT(is<ConstantPointerNullOperation>(&node));
 
@@ -1144,7 +1144,7 @@ Steensgaard::AnalyzeConstantPointerNull(const jive::simple_node & node)
 }
 
 void
-Steensgaard::AnalyzeConstantAggregateZero(const jive::simple_node & node)
+Steensgaard::AnalyzeConstantAggregateZero(const jlm::rvsdg::simple_node & node)
 {
   JLM_ASSERT(is<ConstantAggregateZero>(&node));
   auto output = node.output(0);
@@ -1162,7 +1162,7 @@ Steensgaard::AnalyzeConstantAggregateZero(const jive::simple_node & node)
 }
 
 void
-Steensgaard::AnalyzeUndef(const jive::simple_node & node)
+Steensgaard::AnalyzeUndef(const jlm::rvsdg::simple_node & node)
 {
   JLM_ASSERT(is<UndefValueOperation>(&node));
   auto output = node.output(0);
@@ -1180,7 +1180,7 @@ Steensgaard::AnalyzeUndef(const jive::simple_node & node)
 }
 
 void
-Steensgaard::AnalyzeConstantArray(const jive::simple_node & node)
+Steensgaard::AnalyzeConstantArray(const jlm::rvsdg::simple_node & node)
 {
   JLM_ASSERT(is<ConstantArray>(&node));
 
@@ -1198,7 +1198,7 @@ Steensgaard::AnalyzeConstantArray(const jive::simple_node & node)
 }
 
 void
-Steensgaard::AnalyzeConstantStruct(const jive::simple_node & node)
+Steensgaard::AnalyzeConstantStruct(const jlm::rvsdg::simple_node & node)
 {
   JLM_ASSERT(is<ConstantStruct>(&node));
 
@@ -1216,7 +1216,7 @@ Steensgaard::AnalyzeConstantStruct(const jive::simple_node & node)
 }
 
 void
-Steensgaard::AnalyzeMemcpy(const jive::simple_node & node)
+Steensgaard::AnalyzeMemcpy(const jlm::rvsdg::simple_node & node)
 {
   JLM_ASSERT(is<Memcpy>(&node));
 
@@ -1272,7 +1272,7 @@ Steensgaard::Analyze(const lambda::node & lambda)
    * Handle context variables
    */
   for (auto & cv : lambda.ctxvars()) {
-    if (!jive::is<PointerType>(cv.type()))
+    if (!jlm::rvsdg::is<PointerType>(cv.type()))
       continue;
 
     auto & originLocation = LocationSet_.Find(*cv.origin());
@@ -1287,7 +1287,7 @@ Steensgaard::Analyze(const lambda::node & lambda)
    */
   if (lambda.direct_calls()) {
     for (auto & argument : lambda.fctarguments()) {
-      if (jive::is<PointerType>(argument.type())) {
+      if (jlm::rvsdg::is<PointerType>(argument.type())) {
         LocationSet_.FindOrInsertRegisterLocation(
           argument,
           PointsToFlags::PointsToNone);
@@ -1298,7 +1298,7 @@ Steensgaard::Analyze(const lambda::node & lambda)
      * FIXME: We also end up in this case when the lambda has only direct calls, but is exported.
      */
     for (auto & argument : lambda.fctarguments()) {
-      if (jive::is<PointerType>(argument.type()))
+      if (jlm::rvsdg::is<PointerType>(argument.type()))
         LocationSet_.FindOrInsertRegisterLocation(
           argument,
           PointsToFlags::PointsToExternalMemory | PointsToFlags::PointsToEscapedMemory);
@@ -1311,7 +1311,7 @@ Steensgaard::Analyze(const lambda::node & lambda)
    * Handle function results
    */
   for (auto & result : lambda.fctresults()) {
-    if (jive::is<PointerType>(result.type())) {
+    if (jlm::rvsdg::is<PointerType>(result.type())) {
       auto registerLocation = LocationSet_.LookupRegisterLocation(*result.origin());
 
       if (is_exported(lambda))
@@ -1405,11 +1405,11 @@ Steensgaard::Analyze(const phi::node & phi)
 }
 
 void
-Steensgaard::Analyze(const jive::gamma_node & node)
+Steensgaard::Analyze(const jlm::rvsdg::gamma_node & node)
 {
   /* handle entry variables */
   for (auto ev = node.begin_entryvar(); ev != node.end_entryvar(); ev++) {
-    if (!jive::is<PointerType>(ev->type()))
+    if (!jlm::rvsdg::is<PointerType>(ev->type()))
       continue;
 
     auto & originLocation = LocationSet_.Find(*ev->origin());
@@ -1427,7 +1427,7 @@ Steensgaard::Analyze(const jive::gamma_node & node)
 
   /* handle exit variables */
   for (auto ex = node.begin_exitvar(); ex != node.end_exitvar(); ex++) {
-    if (!jive::is<PointerType>(ex->type()))
+    if (!jlm::rvsdg::is<PointerType>(ex->type()))
       continue;
 
     auto & outputLocation = LocationSet_.FindOrInsertRegisterLocation(
@@ -1441,10 +1441,10 @@ Steensgaard::Analyze(const jive::gamma_node & node)
 }
 
 void
-Steensgaard::Analyze(const jive::theta_node & theta)
+Steensgaard::Analyze(const jlm::rvsdg::theta_node & theta)
 {
   for (auto thetaOutput : theta) {
-    if (!jive::is<PointerType>(thetaOutput->type()))
+    if (!jlm::rvsdg::is<PointerType>(thetaOutput->type()))
       continue;
 
     auto & originLocation = LocationSet_.Find(*thetaOutput->input()->origin());
@@ -1458,7 +1458,7 @@ Steensgaard::Analyze(const jive::theta_node & theta)
   Analyze(*theta.subregion());
 
   for (auto thetaOutput : theta) {
-    if (!jive::is<PointerType>(thetaOutput->type()))
+    if (!jlm::rvsdg::is<PointerType>(thetaOutput->type()))
       continue;
 
     auto & originLocation = LocationSet_.Find(*thetaOutput->result()->origin());
@@ -1473,22 +1473,22 @@ Steensgaard::Analyze(const jive::theta_node & theta)
 }
 
 void
-Steensgaard::Analyze(const jive::structural_node & node)
+Steensgaard::Analyze(const jlm::rvsdg::structural_node & node)
 {
   auto analyzeLambda = [](auto& s, auto& n){s.Analyze(*static_cast<const lambda::node*>(&n));    };
   auto analyzeDelta  = [](auto& s, auto& n){s.Analyze(*static_cast<const delta::node*>(&n));     };
-  auto analyzeGamma  = [](auto& s, auto& n){s.Analyze(*static_cast<const jive::gamma_node*>(&n));};
-  auto analyzeTheta  = [](auto& s, auto& n){s.Analyze(*static_cast<const jive::theta_node*>(&n));};
+  auto analyzeGamma  = [](auto& s, auto& n){s.Analyze(*static_cast<const jlm::rvsdg::gamma_node*>(&n));};
+  auto analyzeTheta  = [](auto& s, auto& n){s.Analyze(*static_cast<const jlm::rvsdg::theta_node*>(&n));};
   auto analyzePhi    = [](auto& s, auto& n){s.Analyze(*static_cast<const phi::node*>(&n));       };
 
   static std::unordered_map<
     std::type_index
-    , std::function<void(Steensgaard&, const jive::structural_node&)>> nodes
+    , std::function<void(Steensgaard&, const jlm::rvsdg::structural_node&)>> nodes
     ({
          {typeid(lambda::operation), analyzeLambda }
        , {typeid(delta::operation),  analyzeDelta  }
-       , {typeid(jive::gamma_op),    analyzeGamma  }
-       , {typeid(jive::theta_op),    analyzeTheta  }
+       , {typeid(jlm::rvsdg::gamma_op),    analyzeGamma  }
+       , {typeid(jlm::rvsdg::theta_op),    analyzeTheta  }
        , {typeid(phi::operation),    analyzePhi    }
      });
 
@@ -1498,9 +1498,9 @@ Steensgaard::Analyze(const jive::structural_node & node)
 }
 
 void
-Steensgaard::Analyze(jive::region & region)
+Steensgaard::Analyze(jlm::rvsdg::region & region)
 {
-  using namespace jive;
+  using namespace jlm::rvsdg;
 
   topdown_traverser traverser(&region);
   for (auto & node : traverser) {
@@ -1514,14 +1514,14 @@ Steensgaard::Analyze(jive::region & region)
 }
 
 void
-Steensgaard::Analyze(const jive::graph & graph)
+Steensgaard::Analyze(const jlm::rvsdg::graph & graph)
 {
-  auto add_imports = [](const jive::graph & graph, LocationSet & lset)
+  auto add_imports = [](const jlm::rvsdg::graph & graph, LocationSet & lset)
   {
     auto region = graph.root();
     for (size_t n = 0; n < region->narguments(); n++) {
       auto & argument = *region->argument(n);
-      if (!jive::is<PointerType>(argument.type()))
+      if (!jlm::rvsdg::is<PointerType>(argument.type()))
         continue;
       /* FIXME: we should not add function imports */
       auto & importLocation = lset.InsertImportLocation(argument);
@@ -1532,7 +1532,7 @@ Steensgaard::Analyze(const jive::graph & graph)
     }
   };
 
-  auto MarkExportsAsEscaping = [](const jive::graph & graph, LocationSet & locationSet)
+  auto MarkExportsAsEscaping = [](const jlm::rvsdg::graph & graph, LocationSet & locationSet)
   {
     auto rootRegion = graph.root();
 

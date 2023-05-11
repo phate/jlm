@@ -109,7 +109,7 @@ public:
 	}
 
 	inline jlm::variable *
-	create_variable(const jive::type & type, const std::string & name)
+	create_variable(const jlm::rvsdg::type & type, const std::string & name)
 	{
 		auto v = std::make_unique<jlm::variable>(type, name);
 		auto pv = v.get();
@@ -118,7 +118,7 @@ public:
 	}
 
 	inline jlm::variable *
-	create_variable(const jive::type & type)
+	create_variable(const jlm::rvsdg::type & type)
 	{
 		static uint64_t c = 0;
 		auto v = std::make_unique<jlm::variable>(type, util::strfmt("v", c++));

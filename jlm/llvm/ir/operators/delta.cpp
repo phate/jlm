@@ -20,14 +20,14 @@ operation::debug_string() const
 	return util::strfmt("DELTA[", name(), "]");
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<jlm::rvsdg::operation>
 operation::copy() const
 {
-	return std::unique_ptr<jive::operation>(new delta::operation(*this));
+	return std::unique_ptr<jlm::rvsdg::operation>(new delta::operation(*this));
 }
 
 bool
-operation::operator==(const jive::operation & other) const noexcept
+operation::operator==(const jlm::rvsdg::operation & other) const noexcept
 {
 	auto op = dynamic_cast<const delta::operation*>(&other);
 	return op
@@ -45,14 +45,14 @@ node::~node()
 
 delta::node *
 node::copy(
-	jive::region * region,
-	const std::vector<jive::output*> & operands) const
+	jlm::rvsdg::region * region,
+	const std::vector<jlm::rvsdg::output*> & operands) const
 {
-	return static_cast<delta::node*>(jive::node::copy(region, operands));
+	return static_cast<delta::node*>(jlm::rvsdg::node::copy(region, operands));
 }
 
 delta::node *
-node::copy(jive::region * region, jive::substitution_map & smap) const
+node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const
 {
 	auto delta = Create(
     region,
@@ -63,7 +63,7 @@ node::copy(jive::region * region, jive::substitution_map & smap) const
     constant());
 
 	/* add context variables */
-	jive::substitution_map subregionmap;
+	jlm::rvsdg::substitution_map subregionmap;
 	for (auto & cv : ctxvars()) {
 		auto origin = smap.lookup(cv.origin());
 		auto newcv = delta->add_ctxvar(origin);
@@ -106,7 +106,7 @@ node::ctxvars() const
 }
 
 cvargument *
-node::add_ctxvar(jive::output * origin)
+node::add_ctxvar(jlm::rvsdg::output * origin)
 {
 	auto input = cvinput::create(this, origin);
 	return cvargument::create(subregion(), input);
@@ -131,7 +131,7 @@ node::result() const noexcept
 }
 
 delta::output *
-node::finalize(jive::output * origin)
+node::finalize(jlm::rvsdg::output * origin)
 {
 	/* check if finalized was already called */
 	if (noutputs() > 0) {

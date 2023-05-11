@@ -8,18 +8,19 @@
 #include <jlm/rvsdg/simple-normal-form.hpp>
 #include <jlm/rvsdg/structural-normal-form.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 /* port */
 
 port::~port()
 {}
 
-port::port(const jive::type & type)
+port::port(const jlm::rvsdg::type & type)
 : port(type.copy())
 {}
 
-port::port(std::unique_ptr<jive::type> type)
+port::port(std::unique_ptr<jlm::rvsdg::type> type)
 : type_(std::move(type))
 {}
 
@@ -40,8 +41,8 @@ port::copy() const
 operation::~operation() noexcept
 {}
 
-jive::node_normal_form *
-operation::normal_form(jive::graph * graph) noexcept
+jlm::rvsdg::node_normal_form *
+operation::normal_form(jlm::rvsdg::graph * graph) noexcept
 {
 	return graph->node_normal_form(typeid(operation));
 }
@@ -57,7 +58,7 @@ simple_op::narguments() const noexcept
 	return operands_.size();
 }
 
-const jive::port &
+const jlm::rvsdg::port &
 simple_op::argument(size_t index) const noexcept
 {
 	JLM_ASSERT(index < narguments());
@@ -70,17 +71,17 @@ simple_op::nresults() const noexcept
 	return results_.size();
 }
 
-const jive::port &
+const jlm::rvsdg::port &
 simple_op::result(size_t index) const noexcept
 {
 	JLM_ASSERT(index < nresults());
 	return results_[index];
 }
 
-jive::simple_normal_form *
-simple_op::normal_form(jive::graph * graph) noexcept
+jlm::rvsdg::simple_normal_form *
+simple_op::normal_form(jlm::rvsdg::graph * graph) noexcept
 {
-	return static_cast<jive::simple_normal_form*>(graph->node_normal_form(typeid(simple_op)));
+	return static_cast<jlm::rvsdg::simple_normal_form*>(graph->node_normal_form(typeid(simple_op)));
 }
 
 /* structural operation */
@@ -91,8 +92,8 @@ structural_op::operator==(const operation & other) const noexcept
 	return typeid(*this) == typeid(other);
 }
 
-jive::structural_normal_form *
-structural_op::normal_form(jive::graph * graph) noexcept
+jlm::rvsdg::structural_normal_form *
+structural_op::normal_form(jlm::rvsdg::graph * graph) noexcept
 {
 	return static_cast<structural_normal_form*>(graph->node_normal_form(typeid(structural_op)));
 }

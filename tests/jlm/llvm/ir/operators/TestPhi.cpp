@@ -15,7 +15,7 @@ static int test_main()
 {
   using namespace jlm;
 
-  jive::graph graph;
+  jlm::rvsdg::graph graph;
 
   jlm::valuetype vtype;
   iostatetype iOStateType;
@@ -28,7 +28,7 @@ static int test_main()
     {&vtype, &iOStateType, &memoryStateType, &loopStateType},
     {&vtype, &iOStateType, &memoryStateType, &loopStateType});
 
-  auto SetupEmptyLambda = [&](jive::region * region, const std::string & name)
+  auto SetupEmptyLambda = [&](jlm::rvsdg::region * region, const std::string & name)
   {
     auto lambda = lambda::node::create(
       region,
@@ -42,7 +42,7 @@ static int test_main()
     return lambda->finalize({iOStateArgument, memoryStateArgument, loopStateArgument});
   };
 
-  auto SetupF2 = [&](jive::region * region, jive::argument * f2)
+  auto SetupF2 = [&](jlm::rvsdg::region * region, jlm::rvsdg::argument * f2)
   {
     auto lambda = lambda::node::create(
       region,
@@ -83,7 +83,7 @@ static int test_main()
   graph.normalize();
   graph.prune();
 
-  jive::view(graph.root(), stderr);
+  jlm::rvsdg::view(graph.root(), stderr);
 
   return 0;
 }

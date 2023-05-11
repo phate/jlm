@@ -8,15 +8,15 @@
 #include <jlm/rvsdg/traverser.hpp>
 
 void
-jlm::hls::theta_conv(jive::theta_node *theta) {
-	jive::substitution_map smap;
+jlm::hls::theta_conv(jlm::rvsdg::theta_node *theta) {
+	jlm::rvsdg::substitution_map smap;
 
 	auto loop = hls::loop_node::create(theta->region());
-	std::vector<jive::input *> branches;
+	std::vector<jlm::rvsdg::input *> branches;
 
 	// add loopvars and populate the smap
 	for (size_t i = 0; i < theta->ninputs(); i++) {
-		jive::output *buffer;
+		jlm::rvsdg::output *buffer;
 		loop->add_loopvar(theta->input(i)->origin(), &buffer);
 		smap.insert(theta->input(i)->argument(), buffer);
 		// buffer out is only used by branch
@@ -39,10 +39,10 @@ jlm::hls::theta_conv(jive::theta_node *theta) {
 }
 
 void
-jlm::hls::theta_conv(jive::region *region) {
-	for (auto &node : jive::topdown_traverser(region)) {
-		if (auto structnode = dynamic_cast<jive::structural_node *>(node)) {
-			if (auto theta = dynamic_cast<jive::theta_node *>(node)) {
+jlm::hls::theta_conv(jlm::rvsdg::region *region) {
+	for (auto &node : jlm::rvsdg::topdown_traverser(region)) {
+		if (auto structnode = dynamic_cast<jlm::rvsdg::structural_node *>(node)) {
+			if (auto theta = dynamic_cast<jlm::rvsdg::theta_node *>(node)) {
 				theta_conv(theta->subregion());
 				theta_conv(theta);
 //                        theta_conv(region);

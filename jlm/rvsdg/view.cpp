@@ -8,11 +8,12 @@
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 static std::string
 region_to_string(
-	const jive::region * region,
+	const jlm::rvsdg::region * region,
 	size_t depth,
 	std::unordered_map<output*, std::string> &);
 
@@ -23,16 +24,16 @@ indent(size_t depth)
 }
 
 static inline std::string
-create_port_name(const jive::output * port, std::unordered_map<output*, std::string> & map)
+create_port_name(const jlm::rvsdg::output * port, std::unordered_map<output*, std::string> & map)
 {
-	std::string name = dynamic_cast<const jive::argument*>(port) ? "a" : "o";
+	std::string name = dynamic_cast<const jlm::rvsdg::argument*>(port) ? "a" : "o";
 	name += jlm::util::strfmt(map.size());
 	return name;
 }
 
 static inline std::string
 node_to_string(
-	const jive::node * node,
+	const jlm::rvsdg::node * node,
 	size_t depth,
 	std::unordered_map<output*, std::string> & map)
 {
@@ -52,7 +53,7 @@ node_to_string(
 	}
 	s += "\n";
 
-	if (auto snode = dynamic_cast<const jive::structural_node*>(node)) {
+	if (auto snode = dynamic_cast<const jlm::rvsdg::structural_node*>(node)) {
 		for (size_t n = 0; n < snode->nsubregions(); n++)
 			s += region_to_string(snode->subregion(n), depth+1, map);
 	}
@@ -61,7 +62,7 @@ node_to_string(
 }
 
 static inline std::string
-region_header(const jive::region * region, std::unordered_map<output*, std::string> & map)
+region_header(const jlm::rvsdg::region * region, std::unordered_map<output*, std::string> & map)
 {
 	std::string header("[");
 	for (size_t n = 0; n < region->narguments(); n++) {
@@ -83,11 +84,11 @@ region_header(const jive::region * region, std::unordered_map<output*, std::stri
 
 static inline std::string
 region_body(
-	const jive::region * region,
+	const jlm::rvsdg::region * region,
 	size_t depth,
 	std::unordered_map<output*, std::string> & map)
 {
-	std::vector<std::vector<const jive::node*>> context;
+	std::vector<std::vector<const jlm::rvsdg::node*>> context;
 	for (const auto & node : region->nodes) {
 		if (node.depth() >= context.size())
 			context.resize(node.depth()+1);
@@ -104,7 +105,7 @@ region_body(
 }
 
 static inline std::string
-region_footer(const jive::region * region, std::unordered_map<output*, std::string> & map)
+region_footer(const jlm::rvsdg::region * region, std::unordered_map<output*, std::string> & map)
 {
 	std::string footer("}[");
 	for (size_t n = 0; n < region->nresults(); n++) {
@@ -125,7 +126,7 @@ region_footer(const jive::region * region, std::unordered_map<output*, std::stri
 
 static inline std::string
 region_to_string(
-	const jive::region * region,
+	const jlm::rvsdg::region * region,
 	size_t depth,
 	std::unordered_map<output*, std::string> & map)
 {
@@ -137,24 +138,24 @@ region_to_string(
 }
 
 std::string
-view(const jive::region * region)
+view(const jlm::rvsdg::region * region)
 {
 	std::unordered_map<output*, std::string> map;
 	return region_to_string(region, 0, map);
 }
 
 void
-view(const jive::region * region, FILE * out)
+view(const jlm::rvsdg::region * region, FILE * out)
 {
 	fputs(view(region).c_str(), out);
 	fflush(out);
 }
 
 std::string
-region_tree(const jive::region * region)
+region_tree(const jlm::rvsdg::region * region)
 {
-	std::function<std::string(const jive::region *, size_t)> f = [&] (
-		const jive::region * region,
+	std::function<std::string(const jlm::rvsdg::region *, size_t)> f = [&] (
+		const jlm::rvsdg::region * region,
 		size_t depth
 	) {
 		std::string subtree;
@@ -169,7 +170,7 @@ region_tree(const jive::region * region)
 		}
 
 		for (const auto & node : region->nodes) {
-			if (auto snode = dynamic_cast<const jive::structural_node*>(&node)) {
+			if (auto snode = dynamic_cast<const jlm::rvsdg::structural_node*>(&node)) {
 				subtree += std::string(depth, '-') + snode->operation().debug_string() + "\n";
 				for (size_t n = 0; n < snode->nsubregions(); n++)
 					subtree += f(snode->subregion(n), depth+1);
@@ -183,7 +184,7 @@ region_tree(const jive::region * region)
 }
 
 void
-region_tree(const jive::region * region, FILE * out)
+region_tree(const jlm::rvsdg::region * region, FILE * out)
 {
 	fputs(region_tree(region).c_str(), out);
 	fflush(out);
@@ -205,25 +206,25 @@ xml_footer()
 }
 
 static inline std::string
-id(const jive::output * port)
+id(const jlm::rvsdg::output * port)
 {
 	return jlm::util::strfmt("o", (intptr_t)port);
 }
 
 static inline std::string
-id(const jive::input * port)
+id(const jlm::rvsdg::input * port)
 {
 	return jlm::util::strfmt("i", (intptr_t)port);
 }
 
 static inline std::string
-id(const jive::node * node)
+id(const jlm::rvsdg::node * node)
 {
 	return jlm::util::strfmt("n", (intptr_t)node);
 }
 
 static inline std::string
-id(const jive::region * region)
+id(const jlm::rvsdg::region * region)
 {
 	return jlm::util::strfmt("r", (intptr_t)region);
 }
@@ -283,22 +284,22 @@ edge_tag(const std::string & srcid, const std::string & dstid)
 }
 
 static inline std::string
-type(const jive::node * n)
+type(const jlm::rvsdg::node * n)
 {
-	if (dynamic_cast<const jive::gamma_op*>(&n->operation()))
+	if (dynamic_cast<const jlm::rvsdg::gamma_op*>(&n->operation()))
 		return "gamma";
 
-	if (dynamic_cast<const jive::theta_op*>(&n->operation()))
+	if (dynamic_cast<const jlm::rvsdg::theta_op*>(&n->operation()))
 		return "theta";
 
 	return "";
 }
 
 static std::string
-convert_region(const jive::region * region);
+convert_region(const jlm::rvsdg::region * region);
 
 static inline std::string
-convert_simple_node(const jive::simple_node * node)
+convert_simple_node(const jlm::rvsdg::simple_node * node)
 {
 	std::string s;
 
@@ -319,7 +320,7 @@ convert_simple_node(const jive::simple_node * node)
 }
 
 static inline std::string
-convert_structural_node(const jive::structural_node * node)
+convert_structural_node(const jlm::rvsdg::structural_node * node)
 {
 	std::string s;
 	s += node_starttag(id(node), "", type(node));
@@ -343,7 +344,7 @@ convert_structural_node(const jive::structural_node * node)
 }
 
 static inline std::string
-convert_node(const jive::node * node)
+convert_node(const jlm::rvsdg::node * node)
 {
 	if (auto n = dynamic_cast<const simple_node*>(node))
 		return convert_simple_node(n);
@@ -356,7 +357,7 @@ convert_node(const jive::node * node)
 }
 
 static inline std::string
-convert_region(const jive::region * region)
+convert_region(const jlm::rvsdg::region * region)
 {
 	std::string s;
 	s += region_starttag(id(region));
@@ -382,7 +383,7 @@ convert_region(const jive::region * region)
 }
 
 std::string
-to_xml(const jive::region * region)
+to_xml(const jlm::rvsdg::region * region)
 {
 	std::string s;
 	s += xml_header();
@@ -394,7 +395,7 @@ to_xml(const jive::region * region)
 }
 
 void
-view_xml(const jive::region * region, FILE * out)
+view_xml(const jlm::rvsdg::region * region, FILE * out)
 {
 	fputs(to_xml(region).c_str(), out);
 	fflush(out);

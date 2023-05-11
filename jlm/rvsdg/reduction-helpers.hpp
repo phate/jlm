@@ -10,7 +10,8 @@
 
 #include <jlm/rvsdg/node.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 namespace base {
 namespace detail {
 
@@ -136,15 +137,15 @@ associative_test_flatten(const Container & args, const FlattenTester& flatten_te
 /* Replace each argument of "args" with the arguments of its defining node
  * for each where "flatten_tester" returns true. */
 template<typename FlattenTester>
-std::vector<jive::output*>
-associative_flatten(std::vector<jive::output*> args, const FlattenTester& flatten_tester)
+std::vector<jlm::rvsdg::output*>
+associative_flatten(std::vector<jlm::rvsdg::output*> args, const FlattenTester& flatten_tester)
 {
 	size_t n = 0;
 	while (n < args.size()) {
 		if (flatten_tester(args[n])) {
 			auto arg = args[n];
 			JLM_ASSERT(is<node_output>(arg));
-			auto sub_args = jive::operands(node_output::node(arg));
+			auto sub_args = jlm::rvsdg::operands(node_output::node(arg));
 			args[n] = sub_args[0];
 			args.insert(args.begin() + n + 1, sub_args.begin() + 1, sub_args.end());
 		} else {

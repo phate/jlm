@@ -21,26 +21,26 @@
 static jlm::util::StatisticsCollector statisticsCollector;
 
 static size_t
-nthetas(jive::region * region)
+nthetas(jlm::rvsdg::region * region)
 {
 	size_t n = 0;
 	for (const auto & node : region->nodes) {
-		if (jive::is<jive::theta_op>(&node))
+		if (jlm::rvsdg::is<jlm::rvsdg::theta_op>(&node))
 			n++;
 	}
 
 	return n;
 }
 
-static jive::theta_node *
+static jlm::rvsdg::theta_node *
 create_theta(
-	const jive::bitcompare_op & cop,
-	const jive::bitbinary_op & aop,
-	jive::output * init,
-	jive::output * step,
-	jive::output * end)
+	const jlm::rvsdg::bitcompare_op & cop,
+	const jlm::rvsdg::bitbinary_op & aop,
+	jlm::rvsdg::output * init,
+	jlm::rvsdg::output * step,
+	jlm::rvsdg::output * end)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
 	auto graph = init->region()->graph();
 
@@ -52,7 +52,7 @@ create_theta(
 
 	auto arm = simple_node::create_normalized(subregion, aop, {idv->argument(), lvs->argument()})[0];
 	auto cmp = simple_node::create_normalized(subregion, cop, {arm, lve->argument()})[0];
-	auto match = jive::match(1, {{1, 1}}, 0, 2, cmp);
+	auto match = jlm::rvsdg::match(1, {{1, 1}}, 0, 2, cmp);
 
 	idv->result()->divert_to(arm);
 	theta->set_predicate(match);
@@ -63,19 +63,19 @@ create_theta(
 static inline void
 test_unrollinfo()
 {
-	jive::bittype bt32(32);
-	jive::bitslt_op slt(bt32);
-	jive::bitult_op ult(bt32);
-	jive::bitule_op ule(bt32);
-	jive::bitugt_op ugt(bt32);
-	jive::bitsge_op sge(bt32);
-	jive::biteq_op eq(bt32);
+	jlm::rvsdg::bittype bt32(32);
+	jlm::rvsdg::bitslt_op slt(bt32);
+	jlm::rvsdg::bitult_op ult(bt32);
+	jlm::rvsdg::bitule_op ule(bt32);
+	jlm::rvsdg::bitugt_op ugt(bt32);
+	jlm::rvsdg::bitsge_op sge(bt32);
+	jlm::rvsdg::biteq_op eq(bt32);
 
-	jive::bitadd_op add(32);
-	jive::bitsub_op sub(32);
+	jlm::rvsdg::bitadd_op add(32);
+	jlm::rvsdg::bitsub_op sub(32);
 
 	{
-		jive::graph graph;
+		jlm::rvsdg::graph graph;
 		auto x = graph.add_import({bt32, "x"});
 		auto theta = create_theta(slt, add, x, x, x);
 		auto ui = jlm::unrollinfo::create(theta);
@@ -90,20 +90,20 @@ test_unrollinfo()
 	}
 
 	{
-		jive::graph graph;
-		auto nf = graph.node_normal_form(typeid(jive::operation));
+		jlm::rvsdg::graph graph;
+		auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
 		nf->set_mutable(false);
 
-		auto init0 = jive::create_bitconstant(graph.root(), 32, 0);
-		auto init1 = jive::create_bitconstant(graph.root(), 32, 1);
-		auto initm1 = jive::create_bitconstant(graph.root(), 32, 0xFFFFFFFF);
+		auto init0 = jlm::rvsdg::create_bitconstant(graph.root(), 32, 0);
+		auto init1 = jlm::rvsdg::create_bitconstant(graph.root(), 32, 1);
+		auto initm1 = jlm::rvsdg::create_bitconstant(graph.root(), 32, 0xFFFFFFFF);
 
-		auto step1 = jive::create_bitconstant(graph.root(), 32, 1);
-		auto step0 = jive::create_bitconstant(graph.root(), 32, 0);
-		auto stepm1 = jive::create_bitconstant(graph.root(), 32, 0xFFFFFFFF);
-		auto step2 = jive::create_bitconstant(graph.root(), 32, 2);
+		auto step1 = jlm::rvsdg::create_bitconstant(graph.root(), 32, 1);
+		auto step0 = jlm::rvsdg::create_bitconstant(graph.root(), 32, 0);
+		auto stepm1 = jlm::rvsdg::create_bitconstant(graph.root(), 32, 0xFFFFFFFF);
+		auto step2 = jlm::rvsdg::create_bitconstant(graph.root(), 32, 2);
 
-		auto end100 = jive::create_bitconstant(graph.root(), 32, 100);
+		auto end100 = jlm::rvsdg::create_bitconstant(graph.root(), 32, 100);
 
 		auto theta = create_theta(ult, add, init0, step1, end100);
 		auto ui = jlm::unrollinfo::create(theta);
@@ -138,24 +138,24 @@ test_unrollinfo()
 static inline void
 test_known_boundaries()
 {
-	jive::bitult_op ult(32);
-	jive::bitsgt_op sgt(32);
-	jive::bitadd_op add(32);
-	jive::bitsub_op sub(32);
+	jlm::rvsdg::bitult_op ult(32);
+	jlm::rvsdg::bitsgt_op sgt(32);
+	jlm::rvsdg::bitadd_op add(32);
+	jlm::rvsdg::bitsub_op sub(32);
 
 	{
-		jive::graph graph;
-		auto nf = graph.node_normal_form(typeid(jive::operation));
+		jlm::rvsdg::graph graph;
+		auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
 		nf->set_mutable(false);
 
-		auto init = jive::create_bitconstant(graph.root(), 32, 0);
-		auto step = jive::create_bitconstant(graph.root(), 32, 1);
-		auto end = jive::create_bitconstant(graph.root(), 32, 4);
+		auto init = jlm::rvsdg::create_bitconstant(graph.root(), 32, 0);
+		auto step = jlm::rvsdg::create_bitconstant(graph.root(), 32, 1);
+		auto end = jlm::rvsdg::create_bitconstant(graph.root(), 32, 4);
 
 		auto theta = create_theta(ult, add, init, step, end);
-//		jive::view(graph, stdout);
+//		jlm::rvsdg::view(graph, stdout);
 		jlm::unroll(theta, 4);
-//		jive::view(graph, stdout);
+//		jlm::rvsdg::view(graph, stdout);
 		/*
 			The unroll factor is greater than or equal the number of iterations.
 			The loop should be fully unrolled and the theta removed.
@@ -164,18 +164,18 @@ test_known_boundaries()
 	}
 
 	{
-		jive::graph graph;
-		auto nf = graph.node_normal_form(typeid(jive::operation));
+		jlm::rvsdg::graph graph;
+		auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
 		nf->set_mutable(false);
 
-		auto init = jive::create_bitconstant(graph.root(), 32, 0);
-		auto step = jive::create_bitconstant(graph.root(), 32, 1);
-		auto end = jive::create_bitconstant(graph.root(), 32, 100);
+		auto init = jlm::rvsdg::create_bitconstant(graph.root(), 32, 0);
+		auto step = jlm::rvsdg::create_bitconstant(graph.root(), 32, 1);
+		auto end = jlm::rvsdg::create_bitconstant(graph.root(), 32, 100);
 
 		auto theta = create_theta(ult, add, init, step, end);
-//		jive::view(graph, stdout);
+//		jlm::rvsdg::view(graph, stdout);
 		jlm::unroll(theta, 2);
-//		jive::view(graph, stdout);
+//		jlm::rvsdg::view(graph, stdout);
 		/*
 			The unroll factor is a multiple of the number of iterations.
 			We should only find one (unrolled) theta.
@@ -184,18 +184,18 @@ test_known_boundaries()
 	}
 
 	{
-		jive::graph graph;
-		auto nf = graph.node_normal_form(typeid(jive::operation));
+		jlm::rvsdg::graph graph;
+		auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
 		nf->set_mutable(false);
 
-		auto init = jive::create_bitconstant(graph.root(), 32, 0);
-		auto step = jive::create_bitconstant(graph.root(), 32, 1);
-		auto end = jive::create_bitconstant(graph.root(), 32, 100);
+		auto init = jlm::rvsdg::create_bitconstant(graph.root(), 32, 0);
+		auto step = jlm::rvsdg::create_bitconstant(graph.root(), 32, 1);
+		auto end = jlm::rvsdg::create_bitconstant(graph.root(), 32, 100);
 
 		auto theta = create_theta(ult, add, init, step, end);
-//		jive::view(graph, stdout);
+//		jlm::rvsdg::view(graph, stdout);
 		jlm::unroll(theta, 3);
-//		jive::view(graph, stdout);
+//		jlm::rvsdg::view(graph, stdout);
 		/*
 			The unroll factor is NOT a multiple of the number of iterations
 			and we have one remaining iteration. We should find only the
@@ -205,18 +205,18 @@ test_known_boundaries()
 	}
 
 	{
-		jive::graph graph;
-		auto nf = graph.node_normal_form(typeid(jive::operation));
+		jlm::rvsdg::graph graph;
+		auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
 		nf->set_mutable(false);
 
-		auto init = jive::create_bitconstant(graph.root(), 32, 100);
-		auto step = jive::create_bitconstant(graph.root(), 32, -1);
-		auto end = jive::create_bitconstant(graph.root(), 32, 0);
+		auto init = jlm::rvsdg::create_bitconstant(graph.root(), 32, 100);
+		auto step = jlm::rvsdg::create_bitconstant(graph.root(), 32, -1);
+		auto end = jlm::rvsdg::create_bitconstant(graph.root(), 32, 0);
 
 		auto theta = create_theta(sgt, sub, init, step, end);
-//		jive::view(graph, stdout);
+//		jlm::rvsdg::view(graph, stdout);
 		jlm::unroll(theta, 6);
-//		jive::view(graph, stdout);
+//		jlm::rvsdg::view(graph, stdout);
 		/*
 			The unroll factor is NOT a multiple of the number of iterations
 			and we have four remaining iterations. We should find two thetas:
@@ -231,7 +231,7 @@ test_unknown_boundaries()
 {
 	using namespace jlm;
 
-	jive::bittype bt(32);
+	jlm::rvsdg::bittype bt(32);
 	jlm::test_op op({&bt}, {&bt});
 
 	RvsdgModule rm(util::filepath(""), "", "");
@@ -240,14 +240,14 @@ test_unknown_boundaries()
 	auto x = graph.add_import({bt, "x"});
 	auto y = graph.add_import({bt, "y"});
 
-	auto theta = jive::theta_node::create(graph.root());
+	auto theta = jlm::rvsdg::theta_node::create(graph.root());
 	auto lv1 = theta->add_loopvar(x);
 	auto lv2 = theta->add_loopvar(y);
 
-	auto one = jive::create_bitconstant(theta->subregion(), 32, 1);
-	auto add = jive::bitadd_op::create(32, lv1->argument(), one);
-	auto cmp = jive::bitult_op::create(32, add, lv2->argument());
-	auto match = jive::match(1, {{1, 0}}, 1, 2, cmp);
+	auto one = jlm::rvsdg::create_bitconstant(theta->subregion(), 32, 1);
+	auto add = jlm::rvsdg::bitadd_op::create(32, lv1->argument(), one);
+	auto cmp = jlm::rvsdg::bitult_op::create(32, add, lv2->argument());
+	auto match = jlm::rvsdg::match(1, {{1, 0}}, 1, 2, cmp);
 
 	lv1->result()->divert_to(add);
 
@@ -255,28 +255,28 @@ test_unknown_boundaries()
 
 	auto ex1 = graph.add_export(lv1, {lv1->type(), "x"});
 
-//	jive::view(graph, stdout);
+//	jlm::rvsdg::view(graph, stdout);
 	jlm::loopunroll loopunroll(2);
 	loopunroll.run(rm, statisticsCollector);
-//	jive::view(graph, stdout);
+//	jlm::rvsdg::view(graph, stdout);
 
-	auto node = jive::node_output::node(ex1->origin());
-	assert(jive::is<jive::gamma_op>(node));
-	node = jive::node_output::node(node->input(1)->origin());
-	assert(jive::is<jive::gamma_op>(node));
+	auto node = jlm::rvsdg::node_output::node(ex1->origin());
+	assert(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(node));
+	node = jlm::rvsdg::node_output::node(node->input(1)->origin());
+	assert(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(node));
 
 	/* Create cleaner output */
 	jlm::DeadNodeElimination dne;
 	dne.run(rm, statisticsCollector);
-//	jive::view(graph, stdout);
+//	jlm::rvsdg::view(graph, stdout);
 }
 
-static std::vector<jive::theta_node*>
-find_thetas(jive::region * region)
+static std::vector<jlm::rvsdg::theta_node*>
+find_thetas(jlm::rvsdg::region * region)
 {
-	std::vector<jive::theta_node*> thetas;
-	for (auto & node : jive::topdown_traverser(region)) {
-		if (auto theta = dynamic_cast<jive::theta_node*>(node))
+	std::vector<jlm::rvsdg::theta_node*> thetas;
+	for (auto & node : jlm::rvsdg::topdown_traverser(region)) {
+		if (auto theta = dynamic_cast<jlm::rvsdg::theta_node*>(node))
 			thetas.push_back(theta);
 	}
 
@@ -289,70 +289,70 @@ test_nested_theta()
 	jlm::RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 
-	auto nf = graph.node_normal_form(typeid(jive::operation));
+	auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
 	nf->set_mutable(false);
 
-	auto init = jive::create_bitconstant(graph.root(), 32, 0);
-	auto step = jive::create_bitconstant(graph.root(), 32, 1);
-	auto end = jive::create_bitconstant(graph.root(), 32, 97);
+	auto init = jlm::rvsdg::create_bitconstant(graph.root(), 32, 0);
+	auto step = jlm::rvsdg::create_bitconstant(graph.root(), 32, 1);
+	auto end = jlm::rvsdg::create_bitconstant(graph.root(), 32, 97);
 
 	/* Outer loop */
-	auto otheta = jive::theta_node::create(graph.root());
+	auto otheta = jlm::rvsdg::theta_node::create(graph.root());
 
 	auto lvo_init = otheta->add_loopvar(init);
 	auto lvo_step = otheta->add_loopvar(step);
 	auto lvo_end = otheta->add_loopvar(end);
 
-	auto add = jive::bitadd_op::create(32, lvo_init->argument(), lvo_step->argument());
-	auto compare = jive::bitult_op::create(32, add, lvo_end->argument());
-	auto match = jive::match(1, {{1, 1}}, 0, 2, compare);
+	auto add = jlm::rvsdg::bitadd_op::create(32, lvo_init->argument(), lvo_step->argument());
+	auto compare = jlm::rvsdg::bitult_op::create(32, add, lvo_end->argument());
+	auto match = jlm::rvsdg::match(1, {{1, 1}}, 0, 2, compare);
 	otheta->set_predicate(match);
 	lvo_init->result()->divert_to(add);
 
 	/* First inner loop in the original loop */
-	auto inner_theta = jive::theta_node::create(otheta->subregion());
+	auto inner_theta = jlm::rvsdg::theta_node::create(otheta->subregion());
 
-	auto inner_init = jive::create_bitconstant(otheta->subregion(), 32, 0);
+	auto inner_init = jlm::rvsdg::create_bitconstant(otheta->subregion(), 32, 0);
 	auto lvi_init = inner_theta->add_loopvar(inner_init);
 	auto lvi_step = inner_theta->add_loopvar(lvo_step->argument());
 	auto lvi_end = inner_theta->add_loopvar(lvo_end->argument());
 
-	auto inner_add = jive::bitadd_op::create(32, lvi_init->argument(), lvi_step->argument());
-	auto inner_compare = jive::bitult_op::create(32, inner_add, lvi_end->argument());
-	auto inner_match = jive::match(1, {{1, 1}}, 0, 2, inner_compare);
+	auto inner_add = jlm::rvsdg::bitadd_op::create(32, lvi_init->argument(), lvi_step->argument());
+	auto inner_compare = jlm::rvsdg::bitult_op::create(32, inner_add, lvi_end->argument());
+	auto inner_match = jlm::rvsdg::match(1, {{1, 1}}, 0, 2, inner_compare);
 	inner_theta->set_predicate(inner_match);
 	lvi_init->result()->divert_to(inner_add);
 
 	/* Nested inner loop */
-	auto inner_nested_theta = jive::theta_node::create(inner_theta->subregion());
+	auto inner_nested_theta = jlm::rvsdg::theta_node::create(inner_theta->subregion());
 
-	auto inner_nested_init = jive::create_bitconstant(inner_theta->subregion(), 32, 0);
+	auto inner_nested_init = jlm::rvsdg::create_bitconstant(inner_theta->subregion(), 32, 0);
 	auto lvi_nested_init = inner_nested_theta->add_loopvar(inner_nested_init);
 	auto lvi_nested_step = inner_nested_theta->add_loopvar(lvi_step->argument());
 	auto lvi_nested_end = inner_nested_theta->add_loopvar(lvi_end->argument());
 
-	auto inner_nested_add = jive::bitadd_op::create(32, lvi_nested_init->argument(), lvi_nested_step->argument());
-	auto inner_nested_compare = jive::bitult_op::create(32, inner_nested_add, lvi_nested_end->argument());
-	auto inner_nested_match = jive::match(1, {{1, 1}}, 0, 2, inner_nested_compare);
+	auto inner_nested_add = jlm::rvsdg::bitadd_op::create(32, lvi_nested_init->argument(), lvi_nested_step->argument());
+	auto inner_nested_compare = jlm::rvsdg::bitult_op::create(32, inner_nested_add, lvi_nested_end->argument());
+	auto inner_nested_match = jlm::rvsdg::match(1, {{1, 1}}, 0, 2, inner_nested_compare);
 	inner_nested_theta->set_predicate(inner_nested_match);
 	lvi_nested_init->result()->divert_to(inner_nested_add);
 	
 	/* Second inner loop in the original loop */
-	auto inner2_theta = jive::theta_node::create(otheta->subregion());
+	auto inner2_theta = jlm::rvsdg::theta_node::create(otheta->subregion());
 
-	auto inner2_init = jive::create_bitconstant(otheta->subregion(), 32, 0);
+	auto inner2_init = jlm::rvsdg::create_bitconstant(otheta->subregion(), 32, 0);
 	auto lvi2_init = inner2_theta->add_loopvar(inner2_init);
 	auto lvi2_step = inner2_theta->add_loopvar(lvo_step->argument());
 	auto lvi2_end = inner2_theta->add_loopvar(lvo_end->argument());
 
-	auto inner2_add = jive::bitadd_op::create(32, lvi2_init->argument(), lvi2_step->argument());
-	auto inner2_compare = jive::bitult_op::create(32, inner2_add, lvi2_end->argument());
-	auto inner2_match = jive::match(1, {{1, 1}}, 0, 2, inner2_compare);
+	auto inner2_add = jlm::rvsdg::bitadd_op::create(32, lvi2_init->argument(), lvi2_step->argument());
+	auto inner2_compare = jlm::rvsdg::bitult_op::create(32, inner2_add, lvi2_end->argument());
+	auto inner2_match = jlm::rvsdg::match(1, {{1, 1}}, 0, 2, inner2_compare);
 	inner2_theta->set_predicate(inner2_match);
 	lvi2_init->result()->divert_to(inner2_add);
 
 	
-//	jive::view(graph, stdout);
+//	jlm::rvsdg::view(graph, stdout);
 	jlm::loopunroll loopunroll(4);
 	loopunroll.run(rm, statisticsCollector);
 	/*
@@ -397,9 +397,9 @@ test_nested_theta()
 	*/
 	thetas = find_thetas(otheta->subregion());
 	assert(thetas.size() == 2 && thetas[1]->subregion()->nnodes() >= 7);
-//	jive::view(graph, stdout);
+//	jlm::rvsdg::view(graph, stdout);
 	jlm::unroll(otheta, 4);
-//	jive::view(graph, stdout);
+//	jlm::rvsdg::view(graph, stdout);
 	/*
 		After unrolling the outher theta four times it should
 		now contain 8 thetas.

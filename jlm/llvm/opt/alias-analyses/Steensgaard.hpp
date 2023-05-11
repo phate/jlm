@@ -11,18 +11,6 @@
 
 #include <string>
 
-namespace jive {
-	class argument;
-	class gamma_node;
-	class graph;
-	class node;
-	class output;
-	class region;
-	class simple_node;
-	class structural_node;
-	class theta_node;
-}
-
 namespace jlm {
 
 namespace delta { class node; }
@@ -67,7 +55,7 @@ public:
 	using DisjointLocationSet = typename util::disjointset<Location*>;
 
 	using const_iterator = std::unordered_map<
-	  const jive::output*
+	  const jlm::rvsdg::output*
 	, Location*
 	>::const_iterator;
 
@@ -98,10 +86,10 @@ public:
 	}
 
   Location &
-  InsertAllocaLocation(const jive::node & node);
+  InsertAllocaLocation(const jlm::rvsdg::node & node);
 
   Location &
-  InsertMallocLocation(const jive::node & node);
+  InsertMallocLocation(const jlm::rvsdg::node & node);
 
   Location &
   InsertLambdaLocation(const lambda::node & lambda);
@@ -110,17 +98,17 @@ public:
   InsertDeltaLocation(const delta::node & delta);
 
 	Location &
-	InsertImportLocation(const jive::argument & argument);
+	InsertImportLocation(const jlm::rvsdg::argument & argument);
 
 	Location &
 	InsertDummyLocation();
 
 	bool
-	Contains(const jive::output & output) const noexcept;
+	Contains(const jlm::rvsdg::output & output) const noexcept;
 
 	Location &
 	FindOrInsertRegisterLocation(
-    const jive::output & output,
+    const jlm::rvsdg::output & output,
     PointsToFlags pointsToFlags);
 
 	const DisjointLocationSet::set &
@@ -145,10 +133,10 @@ public:
 	GetRootLocation(Location & location) const;
 
 	Location &
-	Find(const jive::output & output);
+	Find(const jlm::rvsdg::output & output);
 
   RegisterLocation *
-  LookupRegisterLocation(const jive::output & output);
+  LookupRegisterLocation(const jlm::rvsdg::output & output);
 
 	Location &
 	Merge(Location & location1, Location & location2);
@@ -162,12 +150,12 @@ public:
 private:
 	RegisterLocation &
 	InsertRegisterLocation(
-    const jive::output & output,
+    const jlm::rvsdg::output & output,
     PointsToFlags pointsToFlags);
 
 	DisjointLocationSet DisjointLocationSet_;
 	std::vector<std::unique_ptr<Location>> Locations_;
-	std::unordered_map<const jive::output*, RegisterLocation*> LocationMap_;
+	std::unordered_map<const jlm::rvsdg::output*, RegisterLocation*> LocationMap_;
 };
 
 /** \brief Steensgaard alias analysis
@@ -202,10 +190,10 @@ private:
 	ResetState();
 
 	void
-	Analyze(const jive::graph & graph);
+	Analyze(const jlm::rvsdg::graph & graph);
 
 	void
-	Analyze(jive::region & region);
+	Analyze(jlm::rvsdg::region & region);
 
 	void
 	Analyze(const lambda::node & node);
@@ -217,22 +205,22 @@ private:
 	Analyze(const phi::node & node);
 
 	void
-	Analyze(const jive::gamma_node & node);
+	Analyze(const jlm::rvsdg::gamma_node & node);
 
 	void
-	Analyze(const jive::theta_node & node);
+	Analyze(const jlm::rvsdg::theta_node & node);
 
 	void
-	Analyze(const jive::simple_node & node);
+	Analyze(const jlm::rvsdg::simple_node & node);
 
 	void
-	Analyze(const jive::structural_node & node);
+	Analyze(const jlm::rvsdg::structural_node & node);
 
 	void
-	AnalyzeAlloca(const jive::simple_node & node);
+	AnalyzeAlloca(const jlm::rvsdg::simple_node & node);
 
 	void
-	AnalyzeMalloc(const jive::simple_node & node);
+	AnalyzeMalloc(const jlm::rvsdg::simple_node & node);
 
 	void
 	AnalyzeLoad(const LoadNode & loadNode);
@@ -244,34 +232,34 @@ private:
 	AnalyzeCall(const CallNode & callNode);
 
 	void
-	AnalyzeGep(const jive::simple_node & node);
+	AnalyzeGep(const jlm::rvsdg::simple_node & node);
 
 	void
-	AnalyzeBitcast(const jive::simple_node & node);
+	AnalyzeBitcast(const jlm::rvsdg::simple_node & node);
 
 	void
-	AnalyzeBits2ptr(const jive::simple_node & node);
+	AnalyzeBits2ptr(const jlm::rvsdg::simple_node & node);
 
 	void
-	AnalyzeConstantPointerNull(const jive::simple_node & node);
+	AnalyzeConstantPointerNull(const jlm::rvsdg::simple_node & node);
 
 	void
-	AnalyzeUndef(const jive::simple_node & node);
+	AnalyzeUndef(const jlm::rvsdg::simple_node & node);
 
 	void
-	AnalyzeMemcpy(const jive::simple_node & node);
+	AnalyzeMemcpy(const jlm::rvsdg::simple_node & node);
 
 	void
-	AnalyzeConstantArray(const jive::simple_node & node);
+	AnalyzeConstantArray(const jlm::rvsdg::simple_node & node);
 
 	void
-	AnalyzeConstantStruct(const jive::simple_node & node);
+	AnalyzeConstantStruct(const jlm::rvsdg::simple_node & node);
 
 	void
-	AnalyzeConstantAggregateZero(const jive::simple_node & node);
+	AnalyzeConstantAggregateZero(const jlm::rvsdg::simple_node & node);
 
 	void
-	AnalyzeExtractValue(const jive::simple_node & node);
+	AnalyzeExtractValue(const jlm::rvsdg::simple_node & node);
 
 	static std::unique_ptr<PointsToGraph>
 	ConstructPointsToGraph(const LocationSet & locationSets);

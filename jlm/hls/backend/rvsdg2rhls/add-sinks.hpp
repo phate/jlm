@@ -12,7 +12,7 @@
 namespace jlm{
 	namespace hls{
 		void
-		add_sinks(jive::region *region);
+		add_sinks(rvsdg::region *region);
 
 		void
 		add_sinks(jlm::RvsdgModule &rm);

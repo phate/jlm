@@ -11,7 +11,8 @@
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 /* theta operation */
 
@@ -22,7 +23,7 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 };
 
@@ -36,7 +37,7 @@ public:
 	class loopvar_iterator {
 	public:
 		inline constexpr
-		loopvar_iterator(jive::theta_output * output) noexcept
+		loopvar_iterator(jlm::rvsdg::theta_output * output) noexcept
 		: output_(output)
 		{}
 
@@ -75,14 +76,14 @@ public:
 			return &output_;
 		}
 
-		inline jive::theta_output *
+		inline jlm::rvsdg::theta_output *
 		output() const noexcept
 		{
 			return output_;
 		}
 
 	private:
-		jive::theta_output * output_;
+		jlm::rvsdg::theta_output * output_;
 	};
 
 	virtual
@@ -90,27 +91,27 @@ public:
 
 private:
 	inline
-	theta_node(jive::region * parent)
-	: structural_node(jive::theta_op(), parent, 1)
+	theta_node(jlm::rvsdg::region * parent)
+	: structural_node(jlm::rvsdg::theta_op(), parent, 1)
 	{
-		auto predicate = jive_control_false(subregion());
+		auto predicate = jlm::rvsdg::control_false(subregion());
 		result::create(subregion(), predicate, nullptr, ctltype(2));
 	}
 
 public:
-	static jive::theta_node *
-	create(jive::region * parent)
+	static jlm::rvsdg::theta_node *
+	create(jlm::rvsdg::region * parent)
 	{
-		return new jive::theta_node(parent);
+		return new jlm::rvsdg::theta_node(parent);
 	}
 
-	inline jive::region *
+	inline jlm::rvsdg::region *
 	subregion() const noexcept
 	{
 		return structural_node::subregion(0);
 	}
 
-	inline jive::result *
+	inline jlm::rvsdg::result *
 	predicate() const noexcept
 	{
 		auto result = subregion()->result(0);
@@ -119,7 +120,7 @@ public:
 	}
 
 	inline void
-	set_predicate(jive::output * p)
+	set_predicate(jlm::rvsdg::output * p)
 	{
 		auto node = node_output::node(predicate()->origin());
 
@@ -156,11 +157,11 @@ public:
 	theta_output *
 	output(size_t index) const noexcept;
 
-	jive::theta_output *
-	add_loopvar(jive::output * origin);
+	jlm::rvsdg::theta_output *
+	add_loopvar(jlm::rvsdg::output * origin);
 
-	virtual jive::theta_node *
-	copy(jive::region * region, jive::substitution_map & smap) const override;
+	virtual jlm::rvsdg::theta_node *
+	copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const override;
 };
 
 /* theta input */
@@ -176,8 +177,8 @@ private:
 	inline
 	theta_input(
 		theta_node * node,
-		jive::output * origin,
-		const jive::port & port)
+		jlm::rvsdg::output * origin,
+		const jlm::rvsdg::port & port)
 	: structural_input(node, origin, port)
 	, output_(nullptr)
 	{}
@@ -189,34 +190,34 @@ public:
 		return static_cast<theta_node*>(structural_input::node());
 	}
 
-	inline jive::theta_output *
+	inline jlm::rvsdg::theta_output *
 	output() const noexcept
 	{
 		return output_;
 	}
 
-	inline jive::argument *
+	inline jlm::rvsdg::argument *
 	argument() const noexcept
 	{
 		JLM_ASSERT(arguments.size() == 1);
 		return arguments.first();
 	}
 
-	jive::result *
+	jlm::rvsdg::result *
 	result() const noexcept;
 
 private:
-	jive::theta_output * output_;
+	jlm::rvsdg::theta_output * output_;
 };
 
 static inline bool
-is_theta_input(const jive::input * input) noexcept
+is_theta_input(const jlm::rvsdg::input * input) noexcept
 {
-	return dynamic_cast<const jive::theta_input*>(input) != nullptr;
+	return dynamic_cast<const jlm::rvsdg::theta_input*>(input) != nullptr;
 }
 
 static inline bool
-is_invariant(const jive::theta_input * input) noexcept
+is_invariant(const jlm::rvsdg::theta_input * input) noexcept
 {
 	return input->result()->origin() == input->argument();
 }
@@ -234,7 +235,7 @@ private:
 	inline
 	theta_output(
 		theta_node * node,
-		const jive::port & port)
+		const jlm::rvsdg::port & port)
 	: structural_output(node, port)
 	, input_(nullptr)
 	{}
@@ -246,19 +247,19 @@ public:
 		return static_cast<theta_node*>(structural_output::node());
 	}
 
-	inline jive::theta_input *
+	inline jlm::rvsdg::theta_input *
 	input() const noexcept
 	{
 		return input_;
 	}
 
-	inline jive::argument *
+	inline jlm::rvsdg::argument *
 	argument() const noexcept
 	{
 		return input_->argument();
 	}
 
-	inline jive::result *
+	inline jlm::rvsdg::result *
 	result() const noexcept
 	{
 		JLM_ASSERT(results.size() == 1);
@@ -266,30 +267,30 @@ public:
 	}
 
 private:
-	jive::theta_input * input_;
+	jlm::rvsdg::theta_input * input_;
 };
 
 static inline bool
-is_theta_output(const jive::theta_output * output) noexcept
+is_theta_output(const jlm::rvsdg::theta_output * output) noexcept
 {
-	return dynamic_cast<const jive::theta_output*>(output) != nullptr;
+	return dynamic_cast<const jlm::rvsdg::theta_output*>(output) != nullptr;
 }
 
 static inline bool
-is_invariant(const jive::theta_output * output) noexcept
+is_invariant(const jlm::rvsdg::theta_output * output) noexcept
 {
 	return output->result()->origin() == output->argument();
 }
 
 /* theta node method definitions */
 
-inline jive::theta_input *
+inline jlm::rvsdg::theta_input *
 theta_node::input(size_t index) const noexcept
 {
 	return static_cast<theta_input*>(node::input(index));
 }
 
-inline jive::theta_output *
+inline jlm::rvsdg::theta_output *
 theta_node::output(size_t index) const noexcept
 {
 	return static_cast<theta_output*>(node::output(index));
@@ -297,7 +298,7 @@ theta_node::output(size_t index) const noexcept
 
 /* theta input method definitions */
 
-inline jive::result *
+inline jlm::rvsdg::result *
 theta_input::result() const noexcept
 {
 	return output_->result();

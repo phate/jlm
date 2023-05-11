@@ -31,10 +31,10 @@ public:
   GetPointsToGraph() const noexcept = 0;
 
   [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode*> &
-  GetRegionEntryNodes(const jive::region & region) const = 0;
+  GetRegionEntryNodes(const jlm::rvsdg::region & region) const = 0;
 
   [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode*> &
-  GetRegionExitNodes(const jive::region & region) const = 0;
+  GetRegionExitNodes(const jlm::rvsdg::region & region) const = 0;
 
   [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode*> &
   GetCallEntryNodes(const CallNode & callNode) const = 0;
@@ -43,7 +43,7 @@ public:
   GetCallExitNodes(const CallNode & callNode) const = 0;
 
   [[nodiscard]] virtual util::HashSet<const PointsToGraph::MemoryNode*>
-  GetOutputNodes(const jive::output & output) const = 0;
+  GetOutputNodes(const jlm::rvsdg::output & output) const = 0;
 
   [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode*> &
   GetLambdaEntryNodes(const lambda::node & lambdaNode) const
@@ -58,7 +58,7 @@ public:
   }
 
   [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode*> &
-  GetThetaEntryExitNodes(const jive::theta_node & thetaNode) const
+  GetThetaEntryExitNodes(const jlm::rvsdg::theta_node & thetaNode) const
   {
     auto & entryNodes = GetRegionEntryNodes(*thetaNode.subregion());
     auto & exitNodes = GetRegionExitNodes(*thetaNode.subregion());
@@ -67,7 +67,7 @@ public:
   }
 
   [[nodiscard]] virtual util::HashSet<const PointsToGraph::MemoryNode*>
-  GetGammaEntryNodes(const jive::gamma_node & gammaNode) const
+  GetGammaEntryNodes(const jlm::rvsdg::gamma_node & gammaNode) const
   {
     util::HashSet<const PointsToGraph::MemoryNode*> allMemoryNodes;
     for (size_t n = 0; n < gammaNode.nsubregions(); n++) {
@@ -80,7 +80,7 @@ public:
   }
 
   [[nodiscard]] virtual util::HashSet<const PointsToGraph::MemoryNode*>
-  GetGammaExitNodes(const jive::gamma_node & gammaNode) const
+  GetGammaExitNodes(const jlm::rvsdg::gamma_node & gammaNode) const
   {
     util::HashSet<const PointsToGraph::MemoryNode*> allMemoryNodes;
     for (size_t n = 0; n < gammaNode.nsubregions(); n++) {

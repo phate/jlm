@@ -7,7 +7,8 @@
 #include <jlm/rvsdg/bitstring/arithmetic.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 #define DEFINE_BITUNARY_OPERATION(NAME, REDUCTION, DEBUG_STRING) \
 NAME ## _op::~NAME ## _op() noexcept \
@@ -32,10 +33,10 @@ NAME ## _op::debug_string() const \
 	return jlm::util::strfmt(#DEBUG_STRING, type().nbits()); \
 } \
 \
-std::unique_ptr<jive::operation> \
+std::unique_ptr<operation> \
 NAME ## _op::copy() const \
 { \
-	return std::unique_ptr<jive::operation>(new NAME ## _op(*this)); \
+	return std::unique_ptr<operation>(new NAME ## _op(*this)); \
 } \
 \
 std::unique_ptr<bitunary_op> \
@@ -75,10 +76,10 @@ NAME ## _op::debug_string() const \
 	return jlm::util::strfmt(#DEBUG_STRING, type().nbits()); \
 } \
 \
-std::unique_ptr<jive::operation> \
+std::unique_ptr<operation> \
 NAME ## _op::copy() const \
 { \
-	return std::unique_ptr<jive::operation>(new NAME ## _op(*this)); \
+	return std::unique_ptr<operation>(new NAME ## _op(*this)); \
 } \
 \
 std::unique_ptr<bitbinary_op> \

@@ -11,33 +11,34 @@
 
 #include <string>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 class region;
 
 void
-view(const jive::region * region, FILE * out);
+view(const jlm::rvsdg::region * region, FILE * out);
 
 static inline void
-view(const jive::graph & graph, FILE * out)
+view(const jlm::rvsdg::graph & graph, FILE * out)
 {
 	return view(graph.root(), out);
 }
 
 std::string
-view(const jive::region * region);
+view(const jlm::rvsdg::region * region);
 
 std::string
-region_tree(const jive::region * region);
+region_tree(const jlm::rvsdg::region * region);
 
 void
-region_tree(const jive::region * region, FILE * out);
+region_tree(const jlm::rvsdg::region * region, FILE * out);
 
 std::string
-to_xml(const jive::region * region);
+to_xml(const jlm::rvsdg::region * region);
 
 void
-view_xml(const jive::region * region, FILE * out);
+view_xml(const jlm::rvsdg::region * region, FILE * out);
 
 }
 

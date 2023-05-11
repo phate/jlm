@@ -19,7 +19,8 @@
 
 /* normal forms */
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 class graph;
 class node;
@@ -35,8 +36,8 @@ public:
 	inline
 	node_normal_form(
 		const std::type_info & operator_class,
-		jive::node_normal_form * parent,
-		jive::graph * graph) noexcept
+		jlm::rvsdg::node_normal_form * parent,
+		jlm::rvsdg::graph * graph) noexcept
 		: operator_class_(operator_class)
 		, parent_(parent)
 		, graph_(graph)
@@ -49,11 +50,11 @@ public:
 	}
 
 	virtual bool
-	normalize_node(jive::node * node) const;
+	normalize_node(jlm::rvsdg::node * node) const;
 
 	inline node_normal_form *
 	parent() const noexcept { return parent_; }
-	inline jive::graph *
+	inline jlm::rvsdg::graph *
 	graph() const noexcept { return graph_; }
 
 	virtual void
@@ -64,16 +65,16 @@ public:
 	static void
 	register_factory(
 		const std::type_info & type,
-		jive::node_normal_form *(*fn)(
+		jlm::rvsdg::node_normal_form *(*fn)(
 			const std::type_info & operator_class,
-			jive::node_normal_form * parent,
-			jive::graph * graph));
+			jlm::rvsdg::node_normal_form * parent,
+			jlm::rvsdg::graph * graph));
 
 	static node_normal_form *
 	create(
 		const std::type_info & operator_class,
-		jive::node_normal_form * parent,
-		jive::graph * graph);
+		jlm::rvsdg::node_normal_form * parent,
+		jlm::rvsdg::graph * graph);
 
 	class opclass_hash_accessor {
 	public:
@@ -118,7 +119,7 @@ protected:
 private:
 	const std::type_info & operator_class_;
 	node_normal_form * parent_;
-	jive::graph * graph_;
+	jlm::rvsdg::graph * graph_;
 
 	struct {
 		node_normal_form * prev;
@@ -131,8 +132,8 @@ private:
 
 typedef jlm::util::owner_intrusive_hash<
 	std::type_index,
-	jive::node_normal_form,
-	jive::node_normal_form::opclass_hash_accessor> node_normal_form_hash;
+	jlm::rvsdg::node_normal_form,
+	jlm::rvsdg::node_normal_form::opclass_hash_accessor> node_normal_form_hash;
 
 }
 

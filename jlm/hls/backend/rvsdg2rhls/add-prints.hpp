@@ -12,7 +12,7 @@
 namespace jlm{
 	namespace hls{
 		void
-		add_prints(jive::region *region);
+		add_prints(rvsdg::region *region);
 
 		void
 		add_prints(jlm::RvsdgModule &rm);
@@ -22,12 +22,12 @@ namespace jlm{
 
 		void
 		convert_prints(
-      jive::region *region,
-      jive::output * printf,
+      rvsdg::region *region,
+      rvsdg::output * printf,
       const FunctionType & functionType);
 
-		jive::output *
-		route_to_region(jive::output * output, jive::region * region);
+		rvsdg::output *
+		route_to_region(rvsdg::output * output, rvsdg::region * region);
 	}
 }
 

@@ -19,7 +19,8 @@
 
 #include <jlm/util/common.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 /* impport class */
 
@@ -29,7 +30,7 @@ public:
 	~impport();
 
 	impport(
-		const jive::type & type,
+		const jlm::rvsdg::type & type,
 		const std::string & name)
 	: port(type)
 	, name_(name)
@@ -75,7 +76,7 @@ public:
 	~expport();
 
 	expport(
-		const jive::type & type,
+		const jlm::rvsdg::type & type,
 		const std::string & name)
 	: port(type)
 	, name_(name)
@@ -121,7 +122,7 @@ public:
 
 	graph();
 
-	inline jive::region *
+	inline jlm::rvsdg::region *
 	root() const noexcept
 	{
 		return root_;
@@ -140,20 +141,20 @@ public:
 		normalized_ = true;
 	}
 
-	std::unique_ptr<jive::graph>
+	std::unique_ptr<jlm::rvsdg::graph>
 	copy() const;
 
-	jive::node_normal_form *
+	jlm::rvsdg::node_normal_form *
 	node_normal_form(const std::type_info & type) noexcept;
 
-	inline jive::argument *
+	inline jlm::rvsdg::argument *
 	add_import(const impport & port)
 	{
 		return argument::create(root(), nullptr, port);
 	}
 
-	inline jive::input *
-	add_export(jive::output * operand, const expport & port)
+	inline jlm::rvsdg::input *
+	add_export(jlm::rvsdg::output * operand, const expport & port)
 	{
 		return result::create(root(), operand, nullptr, port);
 	}
@@ -166,8 +167,8 @@ public:
 
 private:
 	bool normalized_;
-	jive::region * root_;
-	jive::node_normal_form_hash node_normal_forms_;
+	jlm::rvsdg::region * root_;
+	jlm::rvsdg::node_normal_form_hash node_normal_forms_;
 };
 
 }

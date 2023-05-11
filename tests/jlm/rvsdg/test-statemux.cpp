@@ -17,13 +17,13 @@
 static void
 test_mux_mux_reduction()
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
 	jlm::statetype st;
 
-	jive::graph graph;
-	auto nf = graph.node_normal_form(typeid(jive::mux_op));
-	auto mnf = static_cast<jive::mux_normal_form*>(nf);
+	jlm::rvsdg::graph graph;
+	auto nf = graph.node_normal_form(typeid(jlm::rvsdg::mux_op));
+	auto mnf = static_cast<jlm::rvsdg::mux_normal_form*>(nf);
 	mnf->set_mutable(false);
 	mnf->set_mux_mux_reducible(false);
 
@@ -31,20 +31,20 @@ test_mux_mux_reduction()
 	auto y = graph.add_import({st, "y"});
 	auto z = graph.add_import({st, "z"});
 
-	auto mux1 = jive::create_state_merge(st, {x, y});
-	auto mux2 = jive::create_state_split(st, z, 2);
-	auto mux3 = jive::create_state_merge(st, {mux1, mux2[0], mux2[1], z});
+	auto mux1 = jlm::rvsdg::create_state_merge(st, {x, y});
+	auto mux2 = jlm::rvsdg::create_state_split(st, z, 2);
+	auto mux3 = jlm::rvsdg::create_state_merge(st, {mux1, mux2[0], mux2[1], z});
 
 	auto ex = graph.add_export(mux3, {mux3->type(), "m"});
 
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 
 	mnf->set_mutable(true);
 	mnf->set_mux_mux_reducible(true);
 	graph.normalize();
 	graph.prune();
 
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 
 	auto node = node_output::node(ex->origin());
 	assert(node->ninputs() == 4);
@@ -57,18 +57,18 @@ test_mux_mux_reduction()
 static void
 test_multiple_origin_reduction()
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
 	jlm::statetype st;
 
-	jive::graph graph;
-	auto nf = graph.node_normal_form(typeid(jive::mux_op));
-	auto mnf = static_cast<jive::mux_normal_form*>(nf);
+	jlm::rvsdg::graph graph;
+	auto nf = graph.node_normal_form(typeid(jlm::rvsdg::mux_op));
+	auto mnf = static_cast<jlm::rvsdg::mux_normal_form*>(nf);
 	mnf->set_mutable(false);
 	mnf->set_multiple_origin_reducible(false);
 
 	auto x = graph.add_import({st, "x"});
-	auto mux1 = jive::create_state_merge(st, {x, x});
+	auto mux1 = jlm::rvsdg::create_state_merge(st, {x, x});
 	auto ex = graph.add_export(mux1, {mux1->type(), "m"});
 
 	view(graph.root(), stdout);

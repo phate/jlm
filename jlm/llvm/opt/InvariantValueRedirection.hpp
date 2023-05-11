@@ -8,11 +8,13 @@
 
 #include <jlm/llvm/opt/optimization.hpp>
 
-namespace jive {
+namespace jlm
+{
+
+namespace rvsdg
+{
 class theta_node;
 }
-
-namespace jlm {
 
 class RvsdgModule;
 
@@ -43,13 +45,13 @@ public:
 
 private:
   static void
-  RedirectInvariantValues(jive::region & region);
+  RedirectInvariantValues(jlm::rvsdg::region & region);
 
   static void
-  RedirectInvariantGammaOutputs(jive::gamma_node & gammaNode);
+  RedirectInvariantGammaOutputs(jlm::rvsdg::gamma_node & gammaNode);
 
   static void
-  RedirectInvariantThetaOutputs(jive::theta_node & thetaNode);
+  RedirectInvariantThetaOutputs(jlm::rvsdg::theta_node & thetaNode);
 };
 
 }

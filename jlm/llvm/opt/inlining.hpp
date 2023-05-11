@@ -27,11 +27,11 @@ public:
     util::StatisticsCollector & statisticsCollector) override;
 };
 
-jive::output *
-find_producer(jive::input * input);
+jlm::rvsdg::output *
+find_producer(jlm::rvsdg::input * input);
 
 void
-inlineCall(jive::simple_node * call, const lambda::node * lambda);
+inlineCall(jlm::rvsdg::simple_node * call, const lambda::node * lambda);
 
 }
 

@@ -12,7 +12,8 @@
 #include <jlm/rvsdg/structural-node.hpp>
 #include <jlm/rvsdg/structural-normal-form.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 /* gamma normal form */
 
@@ -23,11 +24,11 @@ public:
 
 	gamma_normal_form(
 		const std::type_info & operator_class,
-		jive::node_normal_form * parent,
-		jive::graph * graph) noexcept;
+		jlm::rvsdg::node_normal_form * parent,
+		jlm::rvsdg::graph * graph) noexcept;
 
 	virtual bool
-	normalize_node(jive::node * node) const override;
+	normalize_node(jlm::rvsdg::node * node) const override;
 
 	virtual void
 	set_predicate_reduction(bool enable);
@@ -87,16 +88,16 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
 	virtual bool
 	operator==(const operation & other) const noexcept override;
 
-	static jive::gamma_normal_form *
-	normal_form(jive::graph * graph) noexcept
+	static jlm::rvsdg::gamma_normal_form *
+	normal_form(jlm::rvsdg::graph * graph) noexcept
 	{
-		return static_cast<jive::gamma_normal_form*>(graph->node_normal_form(typeid(gamma_op)));
+		return static_cast<jlm::rvsdg::gamma_normal_form*>(graph->node_normal_form(typeid(gamma_op)));
 	}
 
 private:
@@ -108,22 +109,22 @@ private:
 class gamma_input;
 class gamma_output;
 
-class gamma_node : public jive::structural_node {
+class gamma_node : public jlm::rvsdg::structural_node {
 public:
 	virtual
 	~gamma_node();
 
 private:
-	gamma_node(jive::output * predicate, size_t nalternatives);
+	gamma_node(jlm::rvsdg::output * predicate, size_t nalternatives);
 
 	class entryvar_iterator {
 	public:
 		inline constexpr
-		entryvar_iterator(jive::gamma_input * input) noexcept
+		entryvar_iterator(jlm::rvsdg::gamma_input * input) noexcept
 		: input_(input)
 		{}
 
-		inline jive::gamma_input *
+		inline jlm::rvsdg::gamma_input *
 		input() const noexcept
 		{
 			return input_;
@@ -152,30 +153,30 @@ private:
 			return !(*this == other);
 		}
 
-		inline jive::gamma_input &
+		inline jlm::rvsdg::gamma_input &
 		operator*() noexcept
 		{
 			return *input_;
 		}
 
-		inline jive::gamma_input *
+		inline jlm::rvsdg::gamma_input *
 		operator->() noexcept
 		{
 			return input_;
 		}
 
 	private:
-		jive::gamma_input * input_;
+		jlm::rvsdg::gamma_input * input_;
 	};
 
 	class exitvar_iterator {
 	public:
 		inline constexpr
-		exitvar_iterator(jive::gamma_output * output) noexcept
+		exitvar_iterator(jlm::rvsdg::gamma_output * output) noexcept
 		: output_(output)
 		{}
 
-		inline jive::gamma_output *
+		inline jlm::rvsdg::gamma_output *
 		output() const noexcept
 		{
 			return output_;
@@ -217,17 +218,17 @@ private:
 		}
 
 	private:
-		jive::gamma_output * output_;
+		jlm::rvsdg::gamma_output * output_;
 	};
 
 public:
-	static jive::gamma_node *
-	create(jive::output * predicate, size_t nalternatives)
+	static jlm::rvsdg::gamma_node *
+	create(jlm::rvsdg::output * predicate, size_t nalternatives)
 	{
-		return new jive::gamma_node(predicate, nalternatives);
+		return new jlm::rvsdg::gamma_node(predicate, nalternatives);
 	}
 
-	jive::gamma_input *
+	jlm::rvsdg::gamma_input *
 	predicate() const noexcept;
 
 	inline size_t
@@ -243,10 +244,10 @@ public:
 		return node::noutputs();
 	}
 
-	jive::gamma_input *
+	jlm::rvsdg::gamma_input *
 	entryvar(size_t index) const noexcept;
 
-	jive::gamma_output *
+	jlm::rvsdg::gamma_output *
 	exitvar(size_t index) const noexcept;
 
 	inline gamma_node::entryvar_iterator
@@ -279,14 +280,14 @@ public:
 		return exitvar_iterator(nullptr);
 	}
 
-	jive::gamma_input *
-	add_entryvar(jive::output * origin);
+	jlm::rvsdg::gamma_input *
+	add_entryvar(jlm::rvsdg::output * origin);
 
-	jive::gamma_output *
-	add_exitvar(const std::vector<jive::output*> & values);
+	jlm::rvsdg::gamma_output *
+	add_exitvar(const std::vector<jlm::rvsdg::output*> & values);
 
-	virtual jive::gamma_node *
-	copy(jive::region * region, jive::substitution_map & smap) const override;
+	virtual jlm::rvsdg::gamma_node *
+	copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const override;
 };
 
 /* gamma input */
@@ -301,8 +302,8 @@ private:
 	inline
 	gamma_input(
 		gamma_node * node,
-		jive::output * origin,
-		const jive::port & port)
+		jlm::rvsdg::output * origin,
+		const jlm::rvsdg::port & port)
 	: structural_input(node, origin, port)
 	{}
 
@@ -343,7 +344,7 @@ public:
 		return arguments.size();
 	}
 
-	inline jive::argument *
+	inline jlm::rvsdg::argument *
 	argument(size_t n) const noexcept
 	{
 		JLM_ASSERT(n < narguments());
@@ -354,9 +355,9 @@ public:
 };
 
 static inline bool
-is_gamma_input(const jive::input * input) noexcept
+is_gamma_input(const jlm::rvsdg::input * input) noexcept
 {
-	return dynamic_cast<const jive::gamma_input*>(input) != nullptr;
+	return dynamic_cast<const jlm::rvsdg::gamma_input*>(input) != nullptr;
 }
 
 /* gamma output */
@@ -371,7 +372,7 @@ private:
 	inline
 	gamma_output(
 		gamma_node * node,
-		const jive::port & port)
+		const jlm::rvsdg::port & port)
 	: structural_output(node, port)
 	{}
 
@@ -412,7 +413,7 @@ public:
 		return results.size();
 	}
 
-	inline jive::result *
+	inline jlm::rvsdg::result *
 	result(size_t n) const noexcept
 	{
 		JLM_ASSERT(n < nresults());
@@ -423,40 +424,40 @@ public:
 };
 
 static inline bool
-is_gamma_output(const jive::input * input) noexcept
+is_gamma_output(const jlm::rvsdg::input * input) noexcept
 {
-	return dynamic_cast<const jive::gamma_input*>(input) != nullptr;
+	return dynamic_cast<const jlm::rvsdg::gamma_input*>(input) != nullptr;
 }
 
 /* gamma node method definitions */
 
 inline
-gamma_node::gamma_node(jive::output * predicate, size_t nalternatives)
-: structural_node(jive::gamma_op(nalternatives), predicate->region(), nalternatives)
+gamma_node::gamma_node(jlm::rvsdg::output * predicate, size_t nalternatives)
+: structural_node(jlm::rvsdg::gamma_op(nalternatives), predicate->region(), nalternatives)
 {
 	node::add_input(std::unique_ptr<node_input>(
 		new gamma_input(this, predicate, ctltype(nalternatives))));
 }
-inline jive::gamma_input *
+inline jlm::rvsdg::gamma_input *
 gamma_node::predicate() const noexcept
 {
-	return static_cast<jive::gamma_input*>(structural_node::input(0));
+	return static_cast<jlm::rvsdg::gamma_input*>(structural_node::input(0));
 }
 
-inline jive::gamma_input *
+inline jlm::rvsdg::gamma_input *
 gamma_node::entryvar(size_t index) const noexcept
 {
 	return static_cast<gamma_input*>(node::input(index+1));
 }
 
-inline jive::gamma_output *
+inline jlm::rvsdg::gamma_output *
 gamma_node::exitvar(size_t index) const noexcept
 {
 	return static_cast<gamma_output*>(node::output(index));
 }
 
-inline jive::gamma_input *
-gamma_node::add_entryvar(jive::output * origin)
+inline jlm::rvsdg::gamma_input *
+gamma_node::add_entryvar(jlm::rvsdg::output * origin)
 {
 	node::add_input(std::unique_ptr<node_input>(
 		new gamma_input(this, origin, origin->type())));
@@ -464,11 +465,11 @@ gamma_node::add_entryvar(jive::output * origin)
 	for (size_t n = 0; n < nsubregions(); n++)
 		argument::create(subregion(n), input(ninputs()-1), origin->type());
 
-	return static_cast<jive::gamma_input*>(input(ninputs()-1));
+	return static_cast<jlm::rvsdg::gamma_input*>(input(ninputs()-1));
 }
 
-inline jive::gamma_output *
-gamma_node::add_exitvar(const std::vector<jive::output*> & values)
+inline jlm::rvsdg::gamma_output *
+gamma_node::add_exitvar(const std::vector<jlm::rvsdg::output*> & values)
 {
 	if (values.size() != nsubregions())
 		throw jlm::util::error("Incorrect number of values.");

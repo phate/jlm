@@ -29,10 +29,10 @@ LoadOperation::debug_string() const
 	return "LOAD";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 LoadOperation::copy() const
 {
-	return std::unique_ptr<jive::operation>(new LoadOperation(*this));
+	return std::unique_ptr<rvsdg::operation>(new LoadOperation(*this));
 }
 
 /* load normal form */
@@ -47,11 +47,11 @@ LoadOperation::copy() const
   FIXME: The reduction can be generalized: A load node can have multiple operands from different merge nodes.
 */
 static bool
-is_load_mux_reducible(const std::vector<jive::output*> & operands)
+is_load_mux_reducible(const std::vector<rvsdg::output*> & operands)
 {
 	JLM_ASSERT(operands.size() >= 2);
 
-	auto memStateMergeNode = jive::node_output::node(operands[1]);
+	auto memStateMergeNode = rvsdg::node_output::node(operands[1]);
 	if (!is<MemStateMergeOperator>(memStateMergeNode))
 		return false;
 
@@ -74,16 +74,16 @@ is_load_mux_reducible(const std::vector<jive::output*> & operands)
 	v sl1 sl3 = load_op a1 s1 s3
 */
 static bool
-is_load_alloca_reducible(const std::vector<jive::output*> & operands)
+is_load_alloca_reducible(const std::vector<rvsdg::output*> & operands)
 {
 	auto address = operands[0];
 
-	auto allocanode = jive::node_output::node(address);
+	auto allocanode = rvsdg::node_output::node(address);
 	if (!is<alloca_op>(allocanode))
 		return false;
 
 	for (size_t n = 1; n < operands.size(); n++) {
-		auto node = jive::node_output::node(operands[n]);
+		auto node = rvsdg::node_output::node(operands[n]);
 		if (is<alloca_op>(node) && node != allocanode)
 			return true;
 	}
@@ -99,7 +99,7 @@ is_load_alloca_reducible(const std::vector<jive::output*> & operands)
 	v s
 */
 static bool
-is_load_store_alloca_reducible(const std::vector<jive::output*> & operands)
+is_load_store_alloca_reducible(const std::vector<rvsdg::output*> & operands)
 {
 	if (operands.size() != 2)
 		return false;
@@ -107,11 +107,11 @@ is_load_store_alloca_reducible(const std::vector<jive::output*> & operands)
 	auto address = operands[0];
 	auto state = operands[1];
 
-	auto alloca = jive::node_output::node(address);
+	auto alloca = rvsdg::node_output::node(address);
 	if (!is<alloca_op>(alloca))
 		return false;
 
-	auto store = jive::node_output::node(state);
+	auto store = rvsdg::node_output::node(state);
 	if (!is<StoreOperation>(store))
 		return false;
 
@@ -134,11 +134,11 @@ is_load_store_alloca_reducible(const std::vector<jive::output*> & operands)
 }
 
 static bool
-is_reducible_state(const jive::output * state, const jive::node * loadalloca)
+is_reducible_state(const rvsdg::output * state, const rvsdg::node * loadalloca)
 {
-	if (is<StoreOperation>(jive::node_output::node(state))) {
-		auto storenode = jive::node_output::node(state);
-		auto addressnode = jive::node_output::node(storenode->input(0)->origin());
+	if (is<StoreOperation>(rvsdg::node_output::node(state))) {
+		auto storenode = rvsdg::node_output::node(state);
+		auto addressnode = rvsdg::node_output::node(storenode->input(0)->origin());
 		if (is<alloca_op>(addressnode) && addressnode != loadalloca)
 			return true;
 	}
@@ -159,14 +159,14 @@ is_reducible_state(const jive::output * state, const jive::node * loadalloca)
 static bool
 is_load_store_state_reducible(
 	const LoadOperation & op,
-	const std::vector<jive::output*> & operands)
+	const std::vector<rvsdg::output*> & operands)
 {
 	auto address = operands[0];
 
 	if (operands.size() == 2)
 		return false;
 
-	auto allocanode = jive::node_output::node(address);
+	auto allocanode = rvsdg::node_output::node(address);
 	if (!is<alloca_op>(allocanode))
 		return false;
 
@@ -186,20 +186,20 @@ is_load_store_state_reducible(
 	v so1 = load_op a si1
 */
 static bool
-is_multiple_origin_reducible(const std::vector<jive::output*> & operands)
+is_multiple_origin_reducible(const std::vector<rvsdg::output*> & operands)
 {
-	std::unordered_set<jive::output*> states(std::next(operands.begin()), operands.end());
+	std::unordered_set<rvsdg::output*> states(std::next(operands.begin()), operands.end());
 	return states.size() != operands.size()-1;
 }
 
 static bool
 is_load_store_reducible(
 	const LoadOperation & op,
-	const std::vector<jive::output*> & operands)
+	const std::vector<rvsdg::output*> & operands)
 {
 	JLM_ASSERT(operands.size() > 1);
 
-	auto storenode = jive::node_output::node(operands[1]);
+	auto storenode = rvsdg::node_output::node(operands[1]);
 	if (!is<StoreOperation>(storenode))
 		return false;
 
@@ -212,7 +212,7 @@ is_load_store_reducible(
 		return false;
 
 	for (size_t n = 1; n < operands.size(); n++) {
-		if (jive::node_output::node(operands[n]) != storenode)
+		if (rvsdg::node_output::node(operands[n]) != storenode)
 			return false;
 	}
 
@@ -220,60 +220,60 @@ is_load_store_reducible(
 	return true;
 }
 
-static std::vector<jive::output*>
+static std::vector<rvsdg::output*>
 perform_load_store_reduction(
 	const LoadOperation & op,
-	const std::vector<jive::output*> & operands)
+	const std::vector<rvsdg::output*> & operands)
 {
-	auto storenode = jive::node_output::node(operands[1]);
+	auto storenode = rvsdg::node_output::node(operands[1]);
 
-	std::vector<jive::output*> results(1, storenode->input(1)->origin());
+	std::vector<rvsdg::output*> results(1, storenode->input(1)->origin());
 	results.insert(results.end(), std::next(operands.begin()), operands.end());
 
 	return results;
 }
 
-static std::vector<jive::output*>
+static std::vector<rvsdg::output*>
 perform_load_store_alloca_reduction(
 	const LoadOperation & op,
-	const std::vector<jive::output*> & operands)
+	const std::vector<rvsdg::output*> & operands)
 {
-	auto allocanode = jive::node_output::node(operands[0]);
-	auto storenode = jive::node_output::node(operands[1]);
+	auto allocanode = rvsdg::node_output::node(operands[0]);
+	auto storenode = rvsdg::node_output::node(operands[1]);
 
 	return {storenode->input(1)->origin(), allocanode->output(1)};
 }
 
-static std::vector<jive::output*>
+static std::vector<rvsdg::output*>
 perform_load_mux_reduction(
 	const LoadOperation & op,
-	const std::vector<jive::output*> & operands)
+	const std::vector<rvsdg::output*> & operands)
 {
-	auto memStateMergeNode = jive::node_output::node(operands[1]);
+	auto memStateMergeNode = rvsdg::node_output::node(operands[1]);
 
 	auto ld = LoadNode::Create(
     operands[0],
-    jive::operands(memStateMergeNode),
+    rvsdg::operands(memStateMergeNode),
     op.GetLoadedType(),
     op.GetAlignment());
 
-	std::vector<jive::output*> states = {std::next(ld.begin()), ld.end()};
+	std::vector<rvsdg::output*> states = {std::next(ld.begin()), ld.end()};
 	auto mx = MemStateMergeOperator::Create(states);
 
 	return {ld[0], mx};
 }
 
-static std::vector<jive::output*>
+static std::vector<rvsdg::output*>
 perform_load_alloca_reduction(
 	const LoadOperation & op,
-	const std::vector<jive::output*> & operands)
+	const std::vector<rvsdg::output*> & operands)
 {
-	auto allocanode = jive::node_output::node(operands[0]);
+	auto allocanode = rvsdg::node_output::node(operands[0]);
 
-	std::vector<jive::output*> loadstates;
-	std::vector<jive::output*> otherstates;
+	std::vector<rvsdg::output*> loadstates;
+	std::vector<rvsdg::output*> otherstates;
 	for (size_t n = 1; n < operands.size(); n++) {
-		auto node = jive::node_output::node(operands[n]);
+		auto node = rvsdg::node_output::node(operands[n]);
 		if (!is<alloca_op>(node) || node == allocanode)
 			loadstates.push_back(operands[n]);
 		else
@@ -286,22 +286,22 @@ perform_load_alloca_reduction(
     op.GetLoadedType(),
     op.GetAlignment());
 
-	std::vector<jive::output*> results(1, ld[0]);
+	std::vector<rvsdg::output*> results(1, ld[0]);
 	results.insert(results.end(), std::next(ld.begin()), ld.end());
 	results.insert(results.end(), otherstates.begin(), otherstates.end());
 	return results;
 }
 
-static std::vector<jive::output*>
+static std::vector<rvsdg::output*>
 perform_load_store_state_reduction(
 	const LoadOperation & op,
-	const std::vector<jive::output*> & operands)
+	const std::vector<rvsdg::output*> & operands)
 {
 	auto address = operands[0];
-	auto allocanode = jive::node_output::node(address);
+	auto allocanode = rvsdg::node_output::node(address);
 
-	std::vector<jive::output*> new_loadstates;
-	std::vector<jive::output*> results(operands.size(), nullptr);
+	std::vector<rvsdg::output*> new_loadstates;
+	std::vector<rvsdg::output*> results(operands.size(), nullptr);
 	for (size_t n = 1; n < operands.size(); n++) {
 		auto state = operands[n];
 		if (is_reducible_state(state, allocanode))
@@ -324,14 +324,14 @@ perform_load_store_state_reduction(
 	return results;
 }
 
-static std::vector<jive::output*>
+static std::vector<rvsdg::output*>
 perform_multiple_origin_reduction(
 	const LoadOperation & op,
-	const std::vector<jive::output*> & operands)
+	const std::vector<rvsdg::output*> & operands)
 {
-	std::vector<jive::output*> new_loadstates;
-	std::unordered_set<jive::output*> seen_state;
-	std::vector<jive::output*> results(operands.size(), nullptr);
+	std::vector<rvsdg::output*> new_loadstates;
+	std::unordered_set<rvsdg::output*> seen_state;
+	std::vector<rvsdg::output*> results(operands.size(), nullptr);
 	for (size_t n = 1; n < operands.size(); n++) {
 		auto state = operands[n];
 		if (seen_state.find(state) != seen_state.end())
@@ -367,28 +367,28 @@ perform_multiple_origin_reduction(
 	_ so3 = load_op _ si1
 */
 static bool
-is_load_load_state_reducible(const std::vector<jive::output*> & operands)
+is_load_load_state_reducible(const std::vector<rvsdg::output*> & operands)
 {
 	JLM_ASSERT(operands.size() >= 2);
 
 	for (size_t n = 1; n < operands.size(); n++) {
-		if (is<LoadOperation>(jive::node_output::node(operands[n])))
+		if (is<LoadOperation>(rvsdg::node_output::node(operands[n])))
 			return true;
 	}
 
 	return false;
 }
 
-static std::vector<jive::output*>
+static std::vector<rvsdg::output*>
 perform_load_load_state_reduction(
 	const LoadOperation & op,
-	const std::vector<jive::output*> & operands)
+	const std::vector<rvsdg::output*> & operands)
 {
 	size_t nstates = operands.size()-1;
 
-	auto load_state_input = [](jive::output * result)
+	auto load_state_input = [](rvsdg::output * result)
 	{
-		auto ld = jive::node_output::node(result);
+		auto ld = rvsdg::node_output::node(result);
 		JLM_ASSERT(is<LoadOperation>(ld));
 
 		/*
@@ -403,20 +403,20 @@ perform_load_load_state_reduction(
 		JLM_UNREACHABLE("This should have never happened!");
 	};
 
-	std::function<jive::output*(size_t, jive::output*, std::vector<std::vector<jive::output*>>&)>
-	reduce_state = [&](size_t index, jive::output * operand, auto & mxstates)
+	std::function<rvsdg::output*(size_t, rvsdg::output*, std::vector<std::vector<rvsdg::output*>>&)>
+	reduce_state = [&](size_t index, rvsdg::output * operand, auto & mxstates)
 	{
-		JLM_ASSERT(jive::is<jive::statetype>(operand->type()));
+		JLM_ASSERT(rvsdg::is<rvsdg::statetype>(operand->type()));
 
-		if (!is<LoadOperation>(jive::node_output::node(operand)))
+		if (!is<LoadOperation>(rvsdg::node_output::node(operand)))
 			return operand;
 
 		mxstates[index].push_back(operand);
 		return reduce_state(index, load_state_input(operand)->origin(), mxstates);
 	};
 
-	std::vector<jive::output*> ldstates;
-	std::vector<std::vector<jive::output*>> mxstates(nstates);
+	std::vector<rvsdg::output*> ldstates;
+	std::vector<std::vector<rvsdg::output*>> mxstates(nstates);
 	for (size_t n = 1; n < operands.size(); n++)
 		ldstates.push_back(reduce_state(n-1, operands[n], mxstates));
 
@@ -441,8 +441,8 @@ load_normal_form::~load_normal_form()
 
 load_normal_form::load_normal_form(
 	const std::type_info & opclass,
-	jive::node_normal_form * parent,
-	jive::graph * graph) noexcept
+	rvsdg::node_normal_form * parent,
+	rvsdg::graph * graph) noexcept
 : simple_normal_form(opclass, parent, graph)
 , enable_load_mux_(false)
 , enable_load_store_(false)
@@ -454,11 +454,11 @@ load_normal_form::load_normal_form(
 {}
 
 bool
-load_normal_form::normalize_node(jive::node * node) const
+load_normal_form::normalize_node(rvsdg::node * node) const
 {
 	JLM_ASSERT(is<LoadOperation>(node->operation()));
 	auto op = static_cast<const LoadOperation*>(&node->operation());
-	auto operands = jive::operands(node);
+	auto operands = rvsdg::operands(node);
 
 	if (!get_mutable())
 		return true;
@@ -508,11 +508,11 @@ load_normal_form::normalize_node(jive::node * node) const
 	return simple_normal_form::normalize_node(node);
 }
 
-std::vector<jive::output*>
+std::vector<rvsdg::output*>
 load_normal_form::normalized_create(
-	jive::region * region,
-	const jive::simple_op & op,
-	const std::vector<jive::output*> & operands) const
+	rvsdg::region * region,
+	const rvsdg::simple_op & op,
+	const std::vector<rvsdg::output*> & operands) const
 {
 	JLM_ASSERT(is<LoadOperation>(op));
 	auto lop = static_cast<const LoadOperation*>(&op);
@@ -548,11 +548,11 @@ load_normal_form::normalized_create(
 
 namespace {
 
-static jive::node_normal_form *
+static jlm::rvsdg::node_normal_form *
 create_load_normal_form(
 	const std::type_info & opclass,
-	jive::node_normal_form * parent,
-	jive::graph * graph)
+	jlm::rvsdg::node_normal_form * parent,
+	jlm::rvsdg::graph * graph)
 {
 	return new jlm::load_normal_form(opclass, parent, graph);
 }
@@ -560,7 +560,7 @@ create_load_normal_form(
 static void __attribute__((constructor))
 register_normal_form()
 {
-	jive::node_normal_form::register_factory(typeid(jlm::LoadOperation), create_load_normal_form);
+	jlm::rvsdg::node_normal_form::register_factory(typeid(jlm::LoadOperation), create_load_normal_form);
 }
 
 }

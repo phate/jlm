@@ -217,7 +217,7 @@ jlm::hls::VerilatorHarnessHLS::get_text(jlm::RvsdgModule &rm) {
 		return_type = "void";
 	} else {
 		auto type = &ln->type().ResultType(0);
-		if (dynamic_cast<const jive::statetype *>(type)) {
+		if (dynamic_cast<const jlm::rvsdg::statetype *>(type)) {
 			return_type = "void";
 		} else {
 			return_type = convert_to_c_type(type);
@@ -225,7 +225,7 @@ jlm::hls::VerilatorHarnessHLS::get_text(jlm::RvsdgModule &rm) {
 	}
 	cpp << return_type << " " << function_name << "(\n";
 	for (size_t i = 0; i < ln->type().NumArguments(); ++i) {
-		if (dynamic_cast<const jive::statetype *>(&ln->type().ArgumentType(i))) {
+		if (dynamic_cast<const jlm::rvsdg::statetype *>(&ln->type().ArgumentType(i))) {
 			continue;
 		}
 		if (i != 0) {
@@ -241,7 +241,7 @@ jlm::hls::VerilatorHarnessHLS::get_text(jlm::RvsdgModule &rm) {
 		   "		verilator_init(0, NULL);\n"
 		   "	}\n";
 	for (size_t i = 0; i < ln->type().NumArguments(); ++i) {
-		if (dynamic_cast<const jive::statetype *>(&ln->type().ArgumentType(i))) {
+		if (dynamic_cast<const jlm::rvsdg::statetype *>(&ln->type().ArgumentType(i))) {
 			continue;
 		}
 		cpp << "    top->i_data" << i << " = (uint64_t) a" << i << ";\n";
@@ -249,7 +249,7 @@ jlm::hls::VerilatorHarnessHLS::get_text(jlm::RvsdgModule &rm) {
 	for (size_t i = 0; i < ln->ncvarguments(); ++i) {
 		size_t ix = ln->cvargument(i)->input()->argument()->index();
 		std::string name;
-		if(auto a = dynamic_cast<jive::argument *>(ln->input(i)->origin())){
+		if(auto a = dynamic_cast<jlm::rvsdg::argument *>(ln->input(i)->origin())){
 			if(auto ip = dynamic_cast<const impport*>(&a->port())){
 				name = ip->name();
 			}
@@ -288,7 +288,7 @@ jlm::hls::VerilatorHarnessHLS::get_text(jlm::RvsdgModule &rm) {
 		"        exit(-1);\n"
 		"    }\n"
 		"    std::cout << \"finished - took \" << (main_time - start) << \"cycles\\n\";\n";
-	if (ln->type().NumResults() && !dynamic_cast<const jive::statetype *>(&ln->type().ResultType(0))) {
+	if (ln->type().NumResults() && !dynamic_cast<const jlm::rvsdg::statetype *>(&ln->type().ResultType(0))) {
 		cpp << "    return top->o_data0;\n";
 	}
 	cpp << "}\n}\n";
@@ -296,8 +296,8 @@ jlm::hls::VerilatorHarnessHLS::get_text(jlm::RvsdgModule &rm) {
 }
 
 std::string
-jlm::hls::VerilatorHarnessHLS::convert_to_c_type(const jive::type *type) {
-	if (auto t = dynamic_cast<const jive::bittype *>(type)) {
+jlm::hls::VerilatorHarnessHLS::convert_to_c_type(const jlm::rvsdg::type *type) {
+	if (auto t = dynamic_cast<const jlm::rvsdg::bittype *>(type)) {
 		return "int" + util::strfmt(t->nbits()) + "_t";
 	} else if (is<PointerType>(*type)) {
 		return "void*";
@@ -309,7 +309,7 @@ jlm::hls::VerilatorHarnessHLS::convert_to_c_type(const jive::type *type) {
 }
 
 std::string
-jlm::hls::VerilatorHarnessHLS::convert_to_c_type_postfix(const jive::type *type) {
+jlm::hls::VerilatorHarnessHLS::convert_to_c_type_postfix(const jlm::rvsdg::type *type) {
 	if (auto t = dynamic_cast<const jlm::arraytype *>(type)) {
 		return util::strfmt("[", t->nelements(), "]", convert_to_c_type(&t->element_type()));
 	} else {

@@ -7,29 +7,30 @@
 #include <jlm/rvsdg/bitstring/bitoperation-classes.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 /* bitunary operation */
 
 bitunary_op::~bitunary_op() noexcept
 {}
 
-jive_binop_reduction_path_t
+unop_reduction_path_t
 bitunary_op::can_reduce_operand(
-	const jive::output * arg) const noexcept
+	const jlm::rvsdg::output * arg) const noexcept
 {
 	if (is<bitconstant_op>(producer(arg)))
-		return jive_unop_reduction_constant;
+		return unop_reduction_constant;
 
-	return jive_unop_reduction_none;
+	return unop_reduction_none;
 }
 
-jive::output *
+jlm::rvsdg::output *
 bitunary_op::reduce_operand(
-	jive_unop_reduction_path_t path,
-	jive::output * arg) const
+	unop_reduction_path_t path,
+	jlm::rvsdg::output * arg) const
 {
-	if (path == jive_unop_reduction_constant) {
+	if (path == unop_reduction_constant) {
 		auto p = producer(arg);
 		auto & c = static_cast<const bitconstant_op&>(p->operation());
 		return create_bitconstant(p->region(), reduce_constant(c.value()));
@@ -43,24 +44,24 @@ bitunary_op::reduce_operand(
 bitbinary_op::~bitbinary_op() noexcept
 {}
 
-jive_binop_reduction_path_t
+binop_reduction_path_t
 bitbinary_op::can_reduce_operand_pair(
-	const jive::output * arg1,
-	const jive::output * arg2) const noexcept
+	const jlm::rvsdg::output * arg1,
+	const jlm::rvsdg::output * arg2) const noexcept
 {
 	if (is<bitconstant_op>(producer(arg1)) && is<bitconstant_op>(producer(arg2)))
-		return jive_binop_reduction_constants;
+		return binop_reduction_constants;
 
-	return jive_binop_reduction_none;
+	return binop_reduction_none;
 }
 
-jive::output *
+jlm::rvsdg::output *
 bitbinary_op::reduce_operand_pair(
-	jive_binop_reduction_path_t path,
-	jive::output * arg1,
-	jive::output * arg2) const
+	binop_reduction_path_t path,
+	jlm::rvsdg::output * arg1,
+	jlm::rvsdg::output * arg2) const
 {
-	if (path == jive_binop_reduction_constants) {
+	if (path == binop_reduction_constants) {
 		auto & c1 = static_cast<const bitconstant_op&>(producer(arg1)->operation());
 		auto & c2 = static_cast<const bitconstant_op&>(producer(arg2)->operation());
 		return create_bitconstant(arg1->region(), reduce_constants(c1.value(), c2.value()));
@@ -74,10 +75,10 @@ bitbinary_op::reduce_operand_pair(
 bitcompare_op::~bitcompare_op() noexcept
 {}
 
-jive_binop_reduction_path_t
+binop_reduction_path_t
 bitcompare_op::can_reduce_operand_pair(
-	const jive::output * arg1,
-	const jive::output * arg2) const noexcept
+	const jlm::rvsdg::output * arg1,
+	const jlm::rvsdg::output * arg2) const noexcept
 {
 	auto p = producer(arg1);
 	const bitconstant_op * c1_op = nullptr;
@@ -96,17 +97,17 @@ bitcompare_op::can_reduce_operand_pair(
 		case compare_result::static_true:
 			return 2;
 		case compare_result::undecidable:
-			return jive_binop_reduction_none;
+			return binop_reduction_none;
 	}
 	
-	return jive_binop_reduction_none;
+	return binop_reduction_none;
 }
 
-jive::output *
+jlm::rvsdg::output *
 bitcompare_op::reduce_operand_pair(
-	jive_binop_reduction_path_t path,
-	jive::output * arg1,
-	jive::output * arg2) const
+	binop_reduction_path_t path,
+	jlm::rvsdg::output * arg1,
+	jlm::rvsdg::output * arg2) const
 {
 	if (path == 1) {
 		return create_bitconstant(arg1->region(), "0");

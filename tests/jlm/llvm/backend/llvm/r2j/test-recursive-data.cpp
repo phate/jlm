@@ -36,7 +36,7 @@ test()
 	auto r2 = pb.add_recvar(pt);
 	auto dep = pb.add_ctxvar(imp);
 
-	jive::output * delta1, * delta2;
+	jlm::rvsdg::output * delta1, * delta2;
 	{
 		auto delta = delta::node::Create(
 			region,
@@ -69,7 +69,7 @@ test()
 	auto phi = pb.end();
   rm.Rvsdg().add_export(phi->output(0), {phi->output(0)->type(), ""});
 
-	jive::view(rm.Rvsdg(), stdout);
+	jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
 	util::StatisticsCollector statisticsCollector;
 	auto module = rvsdg2jlm::rvsdg2jlm(rm, statisticsCollector);

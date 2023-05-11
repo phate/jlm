@@ -17,15 +17,15 @@ namespace jlm {
 
 /* alloca operator */
 
-class alloca_op final : public jive::simple_op {
+class alloca_op final : public rvsdg::simple_op {
 public:
 	virtual
 	~alloca_op() noexcept;
 
   inline
   alloca_op(
-    const jive::valuetype & allocatedType,
-    const jive::bittype & btype,
+    const rvsdg::valuetype & allocatedType,
+    const rvsdg::bittype & btype,
     size_t alignment)
     : simple_op({btype}, {PointerType(), {MemoryStateType::Create()}})
     , alignment_(alignment)
@@ -50,19 +50,19 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<rvsdg::operation>
 	copy() const override;
 
-	inline const jive::bittype &
+	inline const rvsdg::bittype &
 	size_type() const noexcept
 	{
-		return *static_cast<const jive::bittype*>(&argument(0).type());
+		return *static_cast<const rvsdg::bittype*>(&argument(0).type());
 	}
 
-	inline const jive::valuetype &
+	inline const rvsdg::valuetype &
 	value_type() const noexcept
 	{
-		return *util::AssertedCast<const jive::valuetype>(AllocatedType_.get());
+		return *util::AssertedCast<const rvsdg::valuetype>(AllocatedType_.get());
 	}
 
 	inline size_t
@@ -73,33 +73,33 @@ public:
 
 	static std::unique_ptr<jlm::tac>
 	create(
-		const jive::valuetype & allocatedType,
+		const rvsdg::valuetype & allocatedType,
 		const variable * size,
 		size_t alignment)
 	{
-		auto bt = dynamic_cast<const jive::bittype*>(&size->type());
+		auto bt = dynamic_cast<const rvsdg::bittype*>(&size->type());
 		if (!bt) throw util::error("expected bits type.");
 
 		alloca_op op(allocatedType, *bt, alignment);
 		return tac::create(op, {size});
 	}
 
-	static std::vector<jive::output*>
+	static std::vector<rvsdg::output*>
 	create(
-		const jive::valuetype & allocatedType,
-		jive::output * size,
+		const rvsdg::valuetype & allocatedType,
+		rvsdg::output * size,
 		size_t alignment)
 	{
-		auto bt = dynamic_cast<const jive::bittype*>(&size->type());
+		auto bt = dynamic_cast<const rvsdg::bittype*>(&size->type());
 		if (!bt) throw util::error("expected bits type.");
 
 		alloca_op op(allocatedType, *bt, alignment);
-		return jive::simple_node::create_normalized(size->region(), op, {size});
+		return rvsdg::simple_node::create_normalized(size->region(), op, {size});
 	}
 
 private:
 	size_t alignment_;
-  std::unique_ptr<jive::type> AllocatedType_;
+  std::unique_ptr<rvsdg::type> AllocatedType_;
 };
 
 }

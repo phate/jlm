@@ -6,23 +6,23 @@
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 
-static jive::node *
+static jlm::rvsdg::node *
 node_cse(
-	jive::region * region,
-	const jive::operation & op,
-	const std::vector<jive::output*> & arguments)
+	jlm::rvsdg::region * region,
+	const jlm::rvsdg::operation & op,
+	const std::vector<jlm::rvsdg::output*> & arguments)
 {
-	auto cse_test = [&](const jive::node * node)
+	auto cse_test = [&](const jlm::rvsdg::node * node)
 	{
-		return node->operation() == op && arguments == jive::operands(node);
+		return node->operation() == op && arguments == jlm::rvsdg::operands(node);
 	};
 
 	if (!arguments.empty()) {
 		for (const auto & user : *arguments[0]) {
-			if (!jive::is<jive::node_input>(*user))
+			if (!jlm::rvsdg::is<jlm::rvsdg::node_input>(*user))
 				continue;
 
-			auto node = static_cast<jive::node_input*>(user)->node();
+			auto node = static_cast<jlm::rvsdg::node_input*>(user)->node();
 			if (cse_test(node))
 				return node;
 		}
@@ -36,15 +36,16 @@ node_cse(
 	return nullptr;
 }
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 simple_normal_form::~simple_normal_form() noexcept
 {}
 
 simple_normal_form::simple_normal_form(
 	const std::type_info & operator_class,
-	jive::node_normal_form * parent,
-	jive::graph * graph) noexcept
+	jlm::rvsdg::node_normal_form * parent,
+	jlm::rvsdg::graph * graph) noexcept
 	: node_normal_form(operator_class, parent, graph)
 	, enable_cse_(true)
 {
@@ -53,7 +54,7 @@ simple_normal_form::simple_normal_form(
 }
 
 bool
-simple_normal_form::normalize_node(jive::node * node) const
+simple_normal_form::normalize_node(jlm::rvsdg::node * node) const
 {
 	if (!get_mutable())
 		return true;
@@ -71,13 +72,13 @@ simple_normal_form::normalize_node(jive::node * node) const
 	return true;
 }
 
-std::vector<jive::output*>
+std::vector<jlm::rvsdg::output*>
 simple_normal_form::normalized_create(
-	jive::region * region,
-	const jive::simple_op & op,
-	const std::vector<jive::output*> & arguments) const
+	jlm::rvsdg::region * region,
+	const jlm::rvsdg::simple_op & op,
+	const std::vector<jlm::rvsdg::output*> & arguments) const
 {
-	jive::node * node = nullptr;
+	jlm::rvsdg::node * node = nullptr;
 	if (get_mutable() && get_cse())
 		node = node_cse(region, op, arguments);
 	if (!node)
@@ -101,17 +102,17 @@ simple_normal_form::set_cse(bool enable)
 
 }
 
-static jive::node_normal_form *
+static jlm::rvsdg::node_normal_form *
 get_default_normal_form(
 	const std::type_info & operator_class,
-	jive::node_normal_form * parent,
-	jive::graph * graph)
+	jlm::rvsdg::node_normal_form * parent,
+	jlm::rvsdg::graph * graph)
 {
-	return new jive::simple_normal_form(operator_class, parent, graph);
+	return new jlm::rvsdg::simple_normal_form(operator_class, parent, graph);
 }
 
 static void __attribute__((constructor))
 register_node_normal_form(void)
 {
-	jive::node_normal_form::register_factory(typeid(jive::simple_op), get_default_normal_form);
+	jlm::rvsdg::node_normal_form::register_factory(typeid(jlm::rvsdg::simple_op), get_default_normal_form);
 }

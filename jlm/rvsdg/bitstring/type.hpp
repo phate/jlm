@@ -10,11 +10,12 @@
 #include <jlm/rvsdg/type.hpp>
 #include <jlm/util/common.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 /* bitstring type */
 
-class bittype final : public jive::valuetype {
+class bittype final : public jlm::rvsdg::valuetype {
 public:
 	virtual
 	~bittype() noexcept;
@@ -37,9 +38,9 @@ public:
 	debug_string() const override;
 
 	virtual bool
-	operator==(const jive::type & other) const noexcept override;
+	operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-	virtual std::unique_ptr<jive::type>
+	virtual std::unique_ptr<jlm::rvsdg::type>
 	copy() const override;
 
 private:

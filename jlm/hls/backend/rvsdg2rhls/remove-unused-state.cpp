@@ -7,11 +7,11 @@
 #include <jlm/rvsdg/traverser.hpp>
 
 void
-jlm::hls::remove_unused_state(jive::region *region, bool can_remove_arguments) {
+jlm::hls::remove_unused_state(jlm::rvsdg::region *region, bool can_remove_arguments) {
 	// process children first so that unnecessary users get removed
-	for (auto &node : jive::topdown_traverser(region)) {
-		if (auto structnode = dynamic_cast<jive::structural_node *>(node)) {
-			if (auto gn = dynamic_cast<jive::gamma_node *>(node)) {
+	for (auto &node : jlm::rvsdg::topdown_traverser(region)) {
+		if (auto structnode = dynamic_cast<jlm::rvsdg::structural_node *>(node)) {
+			if (auto gn = dynamic_cast<jlm::rvsdg::gamma_node *>(node)) {
 				// process subnodes first
 				for (size_t n = 0; n < gn->nsubregions(); n++) {
 					remove_unused_state(gn->subregion(n), false);
@@ -45,20 +45,20 @@ jlm::hls::remove_unused_state(jlm::RvsdgModule &rm) {
 }
 
 void
-jlm::hls::remove_gamma_passthrough(jive::gamma_node *gn) {// remove inputs in reverse
+jlm::hls::remove_gamma_passthrough(jlm::rvsdg::gamma_node *gn) {// remove inputs in reverse
 	for (int i = gn->nentryvars() - 1; i >= 0; --i) {
 		bool can_remove = true;
 		size_t res_index = 0;
 		auto arg = gn->subregion(0)->argument(i);
 		if(arg->nusers()==1){
-			auto res = dynamic_cast<jive::result *>(*arg->begin());
+			auto res = dynamic_cast<jlm::rvsdg::result *>(*arg->begin());
 			res_index = res?res->index():res_index;
 		}
 		for (size_t n = 0; n < gn->nsubregions(); n++) {
 			auto sr = gn->subregion(n);
 			can_remove &= is_passthrough(sr->argument(i)) &&
 			// check that all subregions pass through to the same result
-			dynamic_cast<jive::result *>(*sr->argument(i)->begin())->index() == res_index;
+			dynamic_cast<jlm::rvsdg::result *>(*sr->argument(i)->begin())->index() == res_index;
 		}
 		if (can_remove) {
 			auto origin = gn->entryvar(i)->origin();
@@ -84,7 +84,7 @@ jlm::hls::remove_gamma_passthrough(jive::gamma_node *gn) {// remove inputs in re
 jlm::lambda::node *
 jlm::hls::remove_lambda_passthrough(jlm::lambda::node *ln) {
 	auto old_fcttype = ln->type();
-	std::vector<const jive::type *> new_argument_types;
+	std::vector<const jlm::rvsdg::type *> new_argument_types;
 	for (size_t i = 0; i < old_fcttype.NumArguments(); ++i) {
 		auto arg = ln->subregion()->argument(i);
 		auto argtype = &old_fcttype.ArgumentType(i);
@@ -93,7 +93,7 @@ jlm::hls::remove_lambda_passthrough(jlm::lambda::node *ln) {
 			new_argument_types.push_back(argtype);
 		}
 	}
-	std::vector<const jive::type *> new_result_types;
+	std::vector<const jlm::rvsdg::type *> new_result_types;
 	for (size_t i = 0; i < old_fcttype.NumResults(); ++i) {
 		auto res = ln->subregion()->result(i);
 		auto restype = &old_fcttype.ResultType(i);
@@ -106,7 +106,7 @@ jlm::hls::remove_lambda_passthrough(jlm::lambda::node *ln) {
 	auto new_lambda = jlm::lambda::node::create(ln->region(), new_fcttype, ln->name(), ln->linkage(),
 												ln->attributes());
 
-	jive::substitution_map smap;
+	jlm::rvsdg::substitution_map smap;
 	for (size_t i = 0; i < ln->ncvarguments(); ++i) {
 		// copy over cvarguments
 		smap.insert(ln->cvargument(i), new_lambda->add_ctxvar(ln->cvargument(i)->input()->origin()));
@@ -121,7 +121,7 @@ jlm::hls::remove_lambda_passthrough(jlm::lambda::node *ln) {
 	}
 	ln->subregion()->copy(new_lambda->subregion(), smap, false, false);
 
-	std::vector<jive::output *> new_results;
+	std::vector<jlm::rvsdg::output *> new_results;
 	for (size_t i = 0; i < ln->nfctresults(); ++i) {
 		auto res = ln->fctresult(i);
 		if (!is_passthrough(res)) {
@@ -138,13 +138,13 @@ jlm::hls::remove_lambda_passthrough(jlm::lambda::node *ln) {
 	JLM_ASSERT(ln->output()->nusers()==1);
 	ln->region()->remove_result((*ln->output()->begin())->index());
 	remove(ln);
-	jive::result::create(new_lambda->region(), new_out, nullptr, new_out->type());
+	jlm::rvsdg::result::create(new_lambda->region(), new_out, nullptr, new_out->type());
 	return new_lambda;
 }
 
 void
-jlm::hls::remove_region_passthrough(const jive::argument *arg) {
-	auto res = dynamic_cast<jive::result *>(*arg->begin());
+jlm::hls::remove_region_passthrough(const jlm::rvsdg::argument *arg) {
+	auto res = dynamic_cast<jlm::rvsdg::result *>(*arg->begin());
 	auto origin = arg->input()->origin();
 	// divert users of output to origin of input
 	arg->region()->node()->output(res->output()->index())->divert_users(origin);
@@ -156,8 +156,8 @@ jlm::hls::remove_region_passthrough(const jive::argument *arg) {
 }
 
 bool
-jlm::hls::is_passthrough(const jive::result *res) {
-	auto arg = dynamic_cast<jive::argument *>(res->origin());
+jlm::hls::is_passthrough(const jlm::rvsdg::result *res) {
+	auto arg = dynamic_cast<jlm::rvsdg::argument *>(res->origin());
 	if (arg) {
 		return true;
 	}
@@ -165,9 +165,9 @@ jlm::hls::is_passthrough(const jive::result *res) {
 }
 
 bool
-jlm::hls::is_passthrough(const jive::argument *arg) {
+jlm::hls::is_passthrough(const jlm::rvsdg::argument *arg) {
 	if (arg->nusers() == 1) {
-		auto res = dynamic_cast<jive::result *>(*arg->begin());
+		auto res = dynamic_cast<jlm::rvsdg::result *>(*arg->begin());
 		// used only by a result
 		if (res) {
 			return true;

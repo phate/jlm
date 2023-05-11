@@ -25,7 +25,7 @@ test_gamma()
 {
 	using namespace jlm;
 
-	jive::ctltype ct(2);
+	jlm::rvsdg::ctltype ct(2);
 
 	RvsdgModule rm(util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
@@ -34,7 +34,7 @@ test_gamma()
 	auto x = graph.add_import({vt, "x"});
 	auto s = graph.add_import({st, "s"});
 
-	auto gamma = jive::gamma_node::create(c, 2);
+	auto gamma = jlm::rvsdg::gamma_node::create(c, 2);
 	auto evx = gamma->add_entryvar(x);
 	auto evs = gamma->add_entryvar(s);
 
@@ -46,10 +46,10 @@ test_gamma()
 
 	graph.add_export(gamma->output(0), {gamma->output(0)->type(), "x"});
 
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 	jlm::pushout pushout;
 	pushout.run(rm, statisticsCollector);
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(graph.root()->nodes.size() == 3);
 }
@@ -59,7 +59,7 @@ test_theta()
 {
 	using namespace jlm;
 
-	jive::ctltype ct(2);
+	jlm::rvsdg::ctltype ct(2);
 
 	jlm::test_op nop({}, {&vt});
 	jlm::test_op bop({&vt, &vt}, {&vt});
@@ -72,7 +72,7 @@ test_theta()
 	auto x = graph.add_import({vt, "x"});
 	auto s = graph.add_import({st, "s"});
 
-	auto theta = jive::theta_node::create(graph.root());
+	auto theta = jlm::rvsdg::theta_node::create(graph.root());
 
 	auto lv1 = theta->add_loopvar(c);
 	auto lv2 = theta->add_loopvar(x);
@@ -91,10 +91,10 @@ test_theta()
 
 	graph.add_export(theta->output(0), {theta->output(0)->type(), "c"});
 
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 	jlm::pushout pushout;
 	pushout.run(rm, statisticsCollector);
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(graph.root()->nodes.size() == 3);
 }
@@ -106,15 +106,15 @@ test_push_theta_bottom()
 
 	MemoryStateType mt;
 	PointerType pt;
-	jive::ctltype ct(2);
+	jlm::rvsdg::ctltype ct(2);
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 	auto c = graph.add_import({ct, "c"});
 	auto a = graph.add_import({pt, "a"});
 	auto v = graph.add_import({vt, "v"});
 	auto s = graph.add_import({mt, "s"});
 
-	auto theta = jive::theta_node::create(graph.root());
+	auto theta = jlm::rvsdg::theta_node::create(graph.root());
 
 	auto lvc = theta->add_loopvar(c);
 	auto lva = theta->add_loopvar(a);
@@ -128,15 +128,15 @@ test_push_theta_bottom()
 
 	auto ex = graph.add_export(lvs, {lvs->type(), "s"});
 
-	jive::view(graph, stdout);
+	jlm::rvsdg::view(graph, stdout);
 	jlm::push_bottom(theta);
-	jive::view(graph, stdout);
+	jlm::rvsdg::view(graph, stdout);
 
-	auto storenode = jive::node_output::node(ex->origin());
-	assert(jive::is<jlm::StoreOperation>(storenode));
+	auto storenode = jlm::rvsdg::node_output::node(ex->origin());
+	assert(jlm::rvsdg::is<jlm::StoreOperation>(storenode));
 	assert(storenode->input(0)->origin() == a);
-	assert(jive::is<jive::theta_op>(jive::node_output::node(storenode->input(1)->origin())));
-	assert(jive::is<jive::theta_op>(jive::node_output::node(storenode->input(2)->origin())));
+	assert(jlm::rvsdg::is<jlm::rvsdg::theta_op>(jlm::rvsdg::node_output::node(storenode->input(1)->origin())));
+	assert(jlm::rvsdg::is<jlm::rvsdg::theta_op>(jlm::rvsdg::node_output::node(storenode->input(2)->origin())));
 }
 
 static int

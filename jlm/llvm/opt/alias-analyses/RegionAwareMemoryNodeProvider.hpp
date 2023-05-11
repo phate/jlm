@@ -104,13 +104,13 @@ private:
    * @param region The to be annotated region.
    */
   void
-  AnnotateRegion(jive::region & region);
+  AnnotateRegion(jlm::rvsdg::region & region);
 
   void
-  AnnotateSimpleNode(const jive::simple_node & provider);
+  AnnotateSimpleNode(const jlm::rvsdg::simple_node & provider);
 
   void
-  AnnotateStructuralNode(const jive::structural_node & structuralNode);
+  AnnotateStructuralNode(const jlm::rvsdg::structural_node & structuralNode);
 
   void
   AnnotateLoad(const LoadNode & loadNode);
@@ -119,19 +119,19 @@ private:
   AnnotateStore(const StoreNode & storeNode);
 
   void
-  AnnotateAlloca(const jive::simple_node & allocaNode);
+  AnnotateAlloca(const jlm::rvsdg::simple_node & allocaNode);
 
   void
-  AnnotateMalloc(const jive::simple_node & mallocNode);
+  AnnotateMalloc(const jlm::rvsdg::simple_node & mallocNode);
 
   void
-  AnnotateFree(const jive::simple_node & freeNode);
+  AnnotateFree(const jlm::rvsdg::simple_node & freeNode);
 
   void
   AnnotateCall(const CallNode & callNode);
 
   void
-  AnnotateMemcpy(const jive::simple_node & memcpyNode);
+  AnnotateMemcpy(const jlm::rvsdg::simple_node & memcpyNode);
 
   /**
    *  Propagates the utilized memory locations and simple RVSDG nodes that reference unknown memory locations through
@@ -156,7 +156,7 @@ private:
   Propagate(const RvsdgModule & rvsdgModule);
 
   void
-  PropagateRegion(const jive::region & region);
+  PropagateRegion(const jlm::rvsdg::region & region);
 
   void
   PropagatePhi(const phi::node & phiNode);
@@ -198,7 +198,7 @@ private:
    * @param rvsdgModule The RVSDG module from which to extract the tail nodes.
    * @return A vector of tail nodes.
    */
-  static std::vector<const jive::node*>
+  static std::vector<const jlm::rvsdg::node*>
   ExtractRvsdgTailNodes(const RvsdgModule & rvsdgModule);
 
   std::unique_ptr<RegionAwareMemoryNodeProvisioning> Provisioning_;
@@ -228,8 +228,8 @@ public:
     if (!IsDemanded())
       return;
 
-    NumRvsdgNodes_ = jive::nnodes(rvsdgModule.Rvsdg().root());
-    NumRvsdgRegions_ = jive::region::NumRegions(*rvsdgModule.Rvsdg().root());
+    NumRvsdgNodes_ = jlm::rvsdg::nnodes(rvsdgModule.Rvsdg().root());
+    NumRvsdgRegions_ = jlm::rvsdg::region::NumRegions(*rvsdgModule.Rvsdg().root());
     NumPointsToGraphMemoryNodes_ = pointsToGraph.NumMemoryNodes();
   }
 

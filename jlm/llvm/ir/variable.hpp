@@ -23,13 +23,13 @@ public:
 	~variable() noexcept;
 
 	inline
-	variable(const jive::type & type, const std::string & name)
+	variable(const jlm::rvsdg::type & type, const std::string & name)
 	: name_(name)
 	, type_(type.copy())
 	{}
 
 	variable(
-		std::unique_ptr<jive::type> type,
+		std::unique_ptr<jlm::rvsdg::type> type,
 		const std::string & name)
 	: name_(name)
 	, type_(std::move(type))
@@ -61,7 +61,7 @@ public:
 		return name_;
 	}
 
-	inline const jive::type &
+	inline const jlm::rvsdg::type &
 	type() const noexcept
 	{
 		return *type_;
@@ -69,7 +69,7 @@ public:
 
 private:
 	std::string name_;
-	std::unique_ptr<jive::type> type_;
+	std::unique_ptr<jlm::rvsdg::type> type_;
 };
 
 template <class T> static inline bool
@@ -90,7 +90,7 @@ public:
 
 	inline
 	gblvariable(
-		const jive::type & type,
+		const jlm::rvsdg::type & type,
 		const std::string & name)
 	: variable(type, name)
 	{}

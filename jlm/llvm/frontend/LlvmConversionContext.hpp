@@ -193,17 +193,17 @@ public:
 		vmap_[value] = variable;
 	}
 
-	inline const jive::rcddeclaration *
+	inline const rvsdg::rcddeclaration *
 	lookup_declaration(const llvm::StructType * type)
 	{
 		/* FIXME: They live as long as jlm is alive. */
-		static std::vector<std::unique_ptr<jive::rcddeclaration>> dcls;
+		static std::vector<std::unique_ptr<rvsdg::rcddeclaration>> dcls;
 
 		auto it = declarations_.find(type);
 		if (it != declarations_.end())
 			return it->second;
 
-		auto dcl = jive::rcddeclaration::create();
+		auto dcl = rvsdg::rcddeclaration::create();
 		declarations_[type] = dcl.get();
 		for (size_t n = 0; n < type->getNumElements(); n++)
 			dcl->append(*ConvertType(type->getElementType(n), *this));
@@ -241,7 +241,7 @@ private:
 	std::unordered_map<const llvm::Value*, const jlm::variable*> vmap_;
 	std::unordered_map<
 		const llvm::StructType*,
-		const jive::rcddeclaration*> declarations_;
+		const rvsdg::rcddeclaration*> declarations_;
 };
 
 }

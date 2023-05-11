@@ -8,10 +8,6 @@
 
 #include <string>
 
-namespace jive {
-	class graph;
-}
-
 namespace jlm {
 
 class module;

@@ -14,7 +14,8 @@
 #include <string>
 #include <vector>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 /**
  Value representation used for compile-time evaluation of bitstring

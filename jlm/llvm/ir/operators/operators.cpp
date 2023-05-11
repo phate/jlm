@@ -36,10 +36,10 @@ phi_op::debug_string() const
 	return "PHI" + str;
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 phi_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new phi_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new phi_op(*this));
 }
 
 /* assignment operator */
@@ -60,10 +60,10 @@ assignment_op::debug_string() const
 	return "ASSIGN";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 assignment_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new assignment_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new assignment_op(*this));
 }
 
 /* select operator */
@@ -84,10 +84,10 @@ select_op::debug_string() const
 	return "SELECT";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 select_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new select_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new select_op(*this));
 }
 
 /* vectorselect operator */
@@ -108,10 +108,10 @@ vectorselect_op::debug_string() const
 	return "VECTORSELECT";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 vectorselect_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new vectorselect_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new vectorselect_op(*this));
 }
 
 /* fp2ui operator */
@@ -134,22 +134,22 @@ fp2ui_op::debug_string() const
 	return "FP2UI";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 fp2ui_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new fp2ui_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new fp2ui_op(*this));
 }
 
-jive_unop_reduction_path_t
-fp2ui_op::can_reduce_operand(const jive::output * operand) const noexcept
+rvsdg::unop_reduction_path_t
+fp2ui_op::can_reduce_operand(const rvsdg::output * operand) const noexcept
 {
-	return jive_unop_reduction_none;
+	return rvsdg::unop_reduction_none;
 }
 
-jive::output *
+rvsdg::output *
 fp2ui_op::reduce_operand(
-	jive_unop_reduction_path_t path,
-	jive::output * operand) const
+	rvsdg::unop_reduction_path_t path,
+	rvsdg::output * operand) const
 {
 	JLM_UNREACHABLE("Not implemented");
 }
@@ -174,22 +174,22 @@ fp2si_op::debug_string() const
 	return "FP2UI";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 fp2si_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new fp2si_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new fp2si_op(*this));
 }
 
-jive_unop_reduction_path_t
-fp2si_op::can_reduce_operand(const jive::output * operand) const noexcept
+rvsdg::unop_reduction_path_t
+fp2si_op::can_reduce_operand(const rvsdg::output * operand) const noexcept
 {
-	return jive_unop_reduction_none;
+	return rvsdg::unop_reduction_none;
 }
 
-jive::output *
+rvsdg::output *
 fp2si_op::reduce_operand(
-	jive_unop_reduction_path_t path,
-	jive::output * operand) const
+	rvsdg::unop_reduction_path_t path,
+	rvsdg::output * operand) const
 {
 	JLM_UNREACHABLE("Not implemented!");
 }
@@ -214,10 +214,10 @@ ctl2bits_op::debug_string() const
 	return "CTL2BITS";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 ctl2bits_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new ctl2bits_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new ctl2bits_op(*this));
 }
 
 /* branch operator */
@@ -238,10 +238,10 @@ branch_op::debug_string() const
 	return "BRANCH";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 branch_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new branch_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new branch_op(*this));
 }
 
 ConstantPointerNullOperation::~ConstantPointerNullOperation() noexcept
@@ -261,10 +261,10 @@ ConstantPointerNullOperation::debug_string() const
   return "ConstantPointerNull";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 ConstantPointerNullOperation::copy() const
 {
-  return std::unique_ptr<jive::operation>(new ConstantPointerNullOperation(*this));
+  return std::unique_ptr<rvsdg::operation>(new ConstantPointerNullOperation(*this));
 }
 
 /* bits2ptr operator */
@@ -287,22 +287,22 @@ bits2ptr_op::debug_string() const
 	return "BITS2PTR";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 bits2ptr_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new jlm::bits2ptr_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new jlm::bits2ptr_op(*this));
 }
 
-jive_unop_reduction_path_t
-bits2ptr_op::can_reduce_operand(const jive::output * operand) const noexcept
+rvsdg::unop_reduction_path_t
+bits2ptr_op::can_reduce_operand(const rvsdg::output * operand) const noexcept
 {
-	return jive_unop_reduction_none;
+	return rvsdg::unop_reduction_none;
 }
 
-jive::output *
+rvsdg::output *
 bits2ptr_op::reduce_operand(
-	jive_unop_reduction_path_t path,
-	jive::output * operand) const
+	rvsdg::unop_reduction_path_t path,
+	rvsdg::output * operand) const
 {
 	JLM_UNREACHABLE("Not implemented!");
 }
@@ -327,22 +327,22 @@ ptr2bits_op::debug_string() const
 	return "PTR2BITS";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 ptr2bits_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new jlm::ptr2bits_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new jlm::ptr2bits_op(*this));
 }
 
-jive_unop_reduction_path_t
-ptr2bits_op::can_reduce_operand(const jive::output * operand) const noexcept
+rvsdg::unop_reduction_path_t
+ptr2bits_op::can_reduce_operand(const rvsdg::output * operand) const noexcept
 {
-	return jive_unop_reduction_none;
+	return rvsdg::unop_reduction_none;
 }
 
-jive::output *
+rvsdg::output *
 ptr2bits_op::reduce_operand(
-	jive_unop_reduction_path_t path,
-	jive::output * operand) const
+	rvsdg::unop_reduction_path_t path,
+	rvsdg::output * operand) const
 {
 	JLM_UNREACHABLE("Not implemented!");
 }
@@ -352,7 +352,7 @@ ConstantDataArray::~ConstantDataArray()
 {}
 
 bool
-ConstantDataArray::operator==(const jive::operation & other) const noexcept
+ConstantDataArray::operator==(const rvsdg::operation & other) const noexcept
 {
 	auto op = dynamic_cast<const ConstantDataArray*>(&other);
 	return op
@@ -365,10 +365,10 @@ ConstantDataArray::debug_string() const
 	return "ConstantDataArray";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 ConstantDataArray::copy() const
 {
-	return std::unique_ptr<jive::operation>(new ConstantDataArray(*this));
+	return std::unique_ptr<rvsdg::operation>(new ConstantDataArray(*this));
 }
 
 /* pointer compare operator */
@@ -395,25 +395,25 @@ ptrcmp_op::debug_string() const
 	return "PTRCMP " + map[cmp()];
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 ptrcmp_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new ptrcmp_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new ptrcmp_op(*this));
 }
 
-jive_binop_reduction_path_t
+rvsdg::binop_reduction_path_t
 ptrcmp_op::can_reduce_operand_pair(
-	const jive::output * op1,
-	const jive::output * op2) const noexcept
+	const rvsdg::output * op1,
+	const rvsdg::output * op2) const noexcept
 {
-	return jive_binop_reduction_none;
+	return rvsdg::binop_reduction_none;
 }
 
-jive::output *
+rvsdg::output *
 ptrcmp_op::reduce_operand_pair(
-	jive_binop_reduction_path_t path,
-	jive::output * op1,
-	jive::output * op2) const
+	rvsdg::binop_reduction_path_t path,
+	rvsdg::output * op1,
+	rvsdg::output * op2) const
 {
 	JLM_UNREACHABLE("Not implemented!");
 }
@@ -438,29 +438,29 @@ zext_op::debug_string() const
 	return util::strfmt("ZEXT[", nsrcbits(), " -> ", ndstbits(), "]");
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 zext_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new zext_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new zext_op(*this));
 }
 
-jive_unop_reduction_path_t
-zext_op::can_reduce_operand(const jive::output * operand) const noexcept
+rvsdg::unop_reduction_path_t
+zext_op::can_reduce_operand(const rvsdg::output * operand) const noexcept
 {
-	if (jive::is<jive::bitconstant_op>(producer(operand)))
-		return jive_unop_reduction_constant;
+	if (rvsdg::is<rvsdg::bitconstant_op>(producer(operand)))
+		return rvsdg::unop_reduction_constant;
 
-	return jive_unop_reduction_none;
+	return rvsdg::unop_reduction_none;
 }
 
-jive::output *
+rvsdg::output *
 zext_op::reduce_operand(
-	jive_unop_reduction_path_t path,
-	jive::output * operand) const
+	rvsdg::unop_reduction_path_t path,
+	rvsdg::output * operand) const
 {
-	if (path == jive_unop_reduction_constant) {
-		auto c = static_cast<const jive::bitconstant_op*>(&producer(operand)->operation());
-		return create_bitconstant(jive::node_output::node(operand)->region(),
+	if (path == rvsdg::unop_reduction_constant) {
+		auto c = static_cast<const rvsdg::bitconstant_op*>(&producer(operand)->operation());
+		return create_bitconstant(rvsdg::node_output::node(operand)->region(),
 			c->value().zext(ndstbits()-nsrcbits()));
 	}
 
@@ -495,10 +495,10 @@ ConstantFP::debug_string() const
 	return s;
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 ConstantFP::copy() const
 {
-	return std::unique_ptr<jive::operation>(new ConstantFP(*this));
+	return std::unique_ptr<rvsdg::operation>(new ConstantFP(*this));
 }
 
 /* floating point comparison operator */
@@ -529,25 +529,25 @@ fpcmp_op::debug_string() const
 	return "FPCMP " + map[cmp()];
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 fpcmp_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new jlm::fpcmp_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new jlm::fpcmp_op(*this));
 }
 
-jive_binop_reduction_path_t
+rvsdg::binop_reduction_path_t
 fpcmp_op::can_reduce_operand_pair(
-	const jive::output * op1,
-	const jive::output * op2) const noexcept
+	const rvsdg::output * op1,
+	const rvsdg::output * op2) const noexcept
 {
-	return jive_binop_reduction_none;
+	return rvsdg::binop_reduction_none;
 }
 
-jive::output *
+rvsdg::output *
 fpcmp_op::reduce_operand_pair(
-	jive_binop_reduction_path_t path,
-	jive::output * op1,
-	jive::output * op2) const
+	rvsdg::binop_reduction_path_t path,
+	rvsdg::output * op1,
+	rvsdg::output * op2) const
 {
 	JLM_UNREACHABLE("Not implemented!");
 }
@@ -569,10 +569,10 @@ UndefValueOperation::debug_string() const
 	return "undef";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 UndefValueOperation::copy() const
 {
-	return std::unique_ptr<jive::operation>(new UndefValueOperation(*this));
+	return std::unique_ptr<rvsdg::operation>(new UndefValueOperation(*this));
 }
 
 PoisonValueOperation::~PoisonValueOperation() noexcept
@@ -592,10 +592,10 @@ PoisonValueOperation::debug_string() const
   return "poison";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 PoisonValueOperation::copy() const
 {
-  return std::unique_ptr<jive::operation>(new PoisonValueOperation(*this));
+  return std::unique_ptr<rvsdg::operation>(new PoisonValueOperation(*this));
 }
 
 /* floating point arithmetic operator */
@@ -622,25 +622,25 @@ fpbin_op::debug_string() const
 	return "FPOP " + map[fpop()];
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 fpbin_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new jlm::fpbin_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new jlm::fpbin_op(*this));
 }
 
-jive_binop_reduction_path_t
+rvsdg::binop_reduction_path_t
 fpbin_op::can_reduce_operand_pair(
-	const jive::output * op1,
-	const jive::output * op2) const noexcept
+	const rvsdg::output * op1,
+	const rvsdg::output * op2) const noexcept
 {
-	return jive_binop_reduction_none;
+	return rvsdg::binop_reduction_none;
 }
 
-jive::output *
+rvsdg::output *
 fpbin_op::reduce_operand_pair(
-	jive_binop_reduction_path_t path,
-	jive::output * op1,
-	jive::output * op2) const
+	rvsdg::binop_reduction_path_t path,
+	rvsdg::output * op1,
+	rvsdg::output * op2) const
 {
 	JLM_UNREACHABLE("Not implemented!");
 }
@@ -663,22 +663,22 @@ fpext_op::debug_string() const
 	return "fpext";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 fpext_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new jlm::fpext_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new jlm::fpext_op(*this));
 }
 
-jive_unop_reduction_path_t
-fpext_op::can_reduce_operand(const jive::output * operand) const noexcept
+rvsdg::unop_reduction_path_t
+fpext_op::can_reduce_operand(const rvsdg::output * operand) const noexcept
 {
-	return jive_unop_reduction_none;
+	return rvsdg::unop_reduction_none;
 }
 
-jive::output *
+rvsdg::output *
 fpext_op::reduce_operand(
-	jive_unop_reduction_path_t path,
-	jive::output * operand) const
+	rvsdg::unop_reduction_path_t path,
+	rvsdg::output * operand) const
 {
 	JLM_UNREACHABLE("Not implemented!");
 }
@@ -701,22 +701,22 @@ fpneg_op::debug_string() const
 	return "fpneg";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 fpneg_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new jlm::fpneg_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new jlm::fpneg_op(*this));
 }
 
-jive_unop_reduction_path_t
-fpneg_op::can_reduce_operand(const jive::output * operand) const noexcept
+rvsdg::unop_reduction_path_t
+fpneg_op::can_reduce_operand(const rvsdg::output * operand) const noexcept
 {
-	return jive_unop_reduction_none;
+	return rvsdg::unop_reduction_none;
 }
 
-jive::output *
+rvsdg::output *
 fpneg_op::reduce_operand(
-	jive_unop_reduction_path_t path,
-	jive::output * operand) const
+	rvsdg::unop_reduction_path_t path,
+	rvsdg::output * operand) const
 {
 	JLM_UNREACHABLE("Not implemented!");
 }
@@ -739,22 +739,22 @@ fptrunc_op::debug_string() const
 	return "fptrunc";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 fptrunc_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new fptrunc_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new fptrunc_op(*this));
 }
 
-jive_unop_reduction_path_t
-fptrunc_op::can_reduce_operand(const jive::output * operand) const noexcept
+rvsdg::unop_reduction_path_t
+fptrunc_op::can_reduce_operand(const rvsdg::output * operand) const noexcept
 {
-	return jive_unop_reduction_none;
+	return rvsdg::unop_reduction_none;
 }
 
-jive::output *
+rvsdg::output *
 fptrunc_op::reduce_operand(
-	jive_unop_reduction_path_t path,
-	jive::output * operand) const
+	rvsdg::unop_reduction_path_t path,
+	rvsdg::output * operand) const
 {
 	JLM_UNREACHABLE("Not implemented!");
 }
@@ -785,10 +785,10 @@ valist_op::debug_string() const
 	return "VALIST";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 valist_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new jlm::valist_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new jlm::valist_op(*this));
 }
 
 /* bitcast operator */
@@ -812,22 +812,22 @@ bitcast_op::debug_string() const
 		" -> ", result(0).type().debug_string(), "]");
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 bitcast_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new bitcast_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new bitcast_op(*this));
 }
 
-jive_unop_reduction_path_t
-bitcast_op::can_reduce_operand(const jive::output * operand) const noexcept
+rvsdg::unop_reduction_path_t
+bitcast_op::can_reduce_operand(const rvsdg::output * operand) const noexcept
 {
-	return jive_unop_reduction_none;
+	return rvsdg::unop_reduction_none;
 }
 
-jive::output *
+rvsdg::output *
 bitcast_op::reduce_operand(
-	jive_unop_reduction_path_t path,
-	jive::output * operand) const
+	rvsdg::unop_reduction_path_t path,
+	rvsdg::output * operand) const
 {
 	JLM_UNREACHABLE("Not implemented!");
 }
@@ -851,10 +851,10 @@ ConstantStruct::debug_string() const
 	return "ConstantStruct";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 ConstantStruct::copy() const
 {
-	return std::unique_ptr<jive::operation>(new ConstantStruct(*this));
+	return std::unique_ptr<rvsdg::operation>(new ConstantStruct(*this));
 }
 
 /* trunc operator */
@@ -877,22 +877,22 @@ trunc_op::debug_string() const
 	return util::strfmt("TRUNC[", nsrcbits(), " -> ", ndstbits(), "]");
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 trunc_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new trunc_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new trunc_op(*this));
 }
 
-jive_unop_reduction_path_t
-trunc_op::can_reduce_operand(const jive::output * operand) const noexcept
+rvsdg::unop_reduction_path_t
+trunc_op::can_reduce_operand(const rvsdg::output * operand) const noexcept
 {
-	return jive_unop_reduction_none;
+	return rvsdg::unop_reduction_none;
 }
 
-jive::output *
+rvsdg::output *
 trunc_op::reduce_operand(
-	jive_unop_reduction_path_t path,
-	jive::output * operand) const
+	rvsdg::unop_reduction_path_t path,
+	rvsdg::output * operand) const
 {
 	JLM_UNREACHABLE("Not implemented!");
 }
@@ -918,23 +918,23 @@ uitofp_op::debug_string() const
 	return "UITOFP";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 uitofp_op::copy() const
 {
 	return std::make_unique<uitofp_op>(*this);
 }
 
-jive_unop_reduction_path_t
+rvsdg::unop_reduction_path_t
 uitofp_op::can_reduce_operand(
-	const jive::output * operand) const noexcept
+	const rvsdg::output * operand) const noexcept
 {
-	return jive_unop_reduction_none;
+	return rvsdg::unop_reduction_none;
 }
 
-jive::output *
+rvsdg::output *
 uitofp_op::reduce_operand(
-	jive_unop_reduction_path_t path,
-	jive::output * operand) const
+	rvsdg::unop_reduction_path_t path,
+	rvsdg::output * operand) const
 {
 	JLM_UNREACHABLE("Not implemented!");
 }
@@ -959,22 +959,22 @@ sitofp_op::debug_string() const
 	return "SITOFP";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 sitofp_op::copy() const
 {
 	return std::make_unique<sitofp_op>(*this);
 }
 
-jive_unop_reduction_path_t
-sitofp_op::can_reduce_operand(const jive::output * operand) const noexcept
+rvsdg::unop_reduction_path_t
+sitofp_op::can_reduce_operand(const rvsdg::output * operand) const noexcept
 {
-	return jive_unop_reduction_none;
+	return rvsdg::unop_reduction_none;
 }
 
-jive::output *
+rvsdg::output *
 sitofp_op::reduce_operand(
-	jive_unop_reduction_path_t path,
-	jive::output * operand) const
+	rvsdg::unop_reduction_path_t path,
+	rvsdg::output * operand) const
 {
 	JLM_UNREACHABLE("Not implemented!");
 }
@@ -998,10 +998,10 @@ ConstantArray::debug_string() const
 	return "ConstantArray";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 ConstantArray::copy() const
 {
-	return std::unique_ptr<jive::operation>(new ConstantArray(*this));
+	return std::unique_ptr<rvsdg::operation>(new ConstantArray(*this));
 }
 
 /* ConstantAggregateZero operator */
@@ -1023,10 +1023,10 @@ ConstantAggregateZero::debug_string() const
 	return "ConstantAggregateZero";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 ConstantAggregateZero::copy() const
 {
-	return std::unique_ptr<jive::operation>(new ConstantAggregateZero(*this));
+	return std::unique_ptr<rvsdg::operation>(new ConstantAggregateZero(*this));
 }
 
 /* extractelement operator */
@@ -1049,10 +1049,10 @@ extractelement_op::debug_string() const
 	return "EXTRACTELEMENT";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 extractelement_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new extractelement_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new extractelement_op(*this));
 }
 
 /* shufflevector operator */
@@ -1075,10 +1075,10 @@ shufflevector_op::debug_string() const
 	return "SHUFFLEVECTOR";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 shufflevector_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new shufflevector_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new shufflevector_op(*this));
 }
 
 /* constantvector operator */
@@ -1100,10 +1100,10 @@ constantvector_op::debug_string() const
 	return "CONSTANTVECTOR";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 constantvector_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new constantvector_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new constantvector_op(*this));
 }
 
 /* insertelement operator */
@@ -1127,10 +1127,10 @@ insertelement_op::debug_string() const
 	return "INSERTELEMENT";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 insertelement_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new insertelement_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new insertelement_op(*this));
 }
 
 /* vectorunary operator */
@@ -1139,7 +1139,7 @@ vectorunary_op::~vectorunary_op()
 {}
 
 bool
-vectorunary_op::operator==(const jive::operation & other) const noexcept
+vectorunary_op::operator==(const rvsdg::operation & other) const noexcept
 {
 	auto op = dynamic_cast<const vectorunary_op*>(&other);
 	return op && op->operation() == operation();
@@ -1151,10 +1151,10 @@ vectorunary_op::debug_string() const
 	return util::strfmt("VEC", operation().debug_string());
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 vectorunary_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new vectorunary_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new vectorunary_op(*this));
 }
 
 /* vectorbinary operator */
@@ -1163,7 +1163,7 @@ vectorbinary_op::~vectorbinary_op()
 {}
 
 bool
-vectorbinary_op::operator==(const jive::operation & other) const noexcept
+vectorbinary_op::operator==(const rvsdg::operation & other) const noexcept
 {
 	auto op = dynamic_cast<const vectorbinary_op*>(&other);
 	return op && op->operation() == operation();
@@ -1175,10 +1175,10 @@ vectorbinary_op::debug_string() const
 	return util::strfmt("VEC", operation().debug_string());
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 vectorbinary_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new vectorbinary_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new vectorbinary_op(*this));
 }
 
 /* const data vector operator */
@@ -1187,7 +1187,7 @@ constant_data_vector_op::~constant_data_vector_op()
 {}
 
 bool
-constant_data_vector_op::operator==(const jive::operation & other) const noexcept
+constant_data_vector_op::operator==(const rvsdg::operation & other) const noexcept
 {
 	auto op = dynamic_cast<const constant_data_vector_op*>(&other);
 	return op && op->result(0) == result(0);
@@ -1199,10 +1199,10 @@ constant_data_vector_op::debug_string() const
 	return "CONSTANTDATAVECTOR";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 constant_data_vector_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new constant_data_vector_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new constant_data_vector_op(*this));
 }
 
 /* extractvalue operator */
@@ -1211,7 +1211,7 @@ ExtractValue::~ExtractValue()
 {}
 
 bool
-ExtractValue::operator==(const jive::operation & other) const noexcept
+ExtractValue::operator==(const rvsdg::operation & other) const noexcept
 {
 	auto op = dynamic_cast<const ExtractValue*>(&other);
 	return op
@@ -1225,10 +1225,10 @@ ExtractValue::debug_string() const
 	return "ExtractValue";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 ExtractValue::copy() const
 {
-	return std::unique_ptr<jive::operation>(new ExtractValue(*this));
+	return std::unique_ptr<rvsdg::operation>(new ExtractValue(*this));
 }
 
 /* loop state mux operator */
@@ -1237,7 +1237,7 @@ loopstatemux_op::~loopstatemux_op()
 {}
 
 bool
-loopstatemux_op::operator==(const jive::operation & other) const noexcept
+loopstatemux_op::operator==(const rvsdg::operation & other) const noexcept
 {
 	return dynamic_cast<const loopstatemux_op*>(&other) != nullptr;
 }
@@ -1248,10 +1248,10 @@ loopstatemux_op::debug_string() const
 	return "LOOPSTATEMUX";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 loopstatemux_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new loopstatemux_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new loopstatemux_op(*this));
 }
 
 /* MemStateMerge operator */
@@ -1260,7 +1260,7 @@ MemStateMergeOperator::~MemStateMergeOperator()
 {}
 
 bool
-MemStateMergeOperator::operator==(const jive::operation & other) const noexcept
+MemStateMergeOperator::operator==(const rvsdg::operation & other) const noexcept
 {
 	return is<MemStateMergeOperator>(other);
 }
@@ -1271,10 +1271,10 @@ MemStateMergeOperator::debug_string() const
 	return "MemStateMerge";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 MemStateMergeOperator::copy() const
 {
-	return std::unique_ptr<jive::operation>(new MemStateMergeOperator(*this));
+	return std::unique_ptr<rvsdg::operation>(new MemStateMergeOperator(*this));
 }
 
 /* MemStateSplit operator */
@@ -1283,7 +1283,7 @@ MemStateSplitOperator::~MemStateSplitOperator()
 {}
 
 bool
-MemStateSplitOperator::operator==(const jive::operation & other) const noexcept
+MemStateSplitOperator::operator==(const rvsdg::operation & other) const noexcept
 {
 	return is<MemStateSplitOperator>(other);
 }
@@ -1294,10 +1294,10 @@ MemStateSplitOperator::debug_string() const
 	return "MemStateSplit";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 MemStateSplitOperator::copy() const
 {
-	return std::unique_ptr<jive::operation>(new MemStateSplitOperator(*this));
+	return std::unique_ptr<rvsdg::operation>(new MemStateSplitOperator(*this));
 }
 
 /* malloc operator */
@@ -1320,10 +1320,10 @@ malloc_op::debug_string() const
 	return "MALLOC";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 malloc_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new malloc_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new malloc_op(*this));
 }
 
 /* free operator */
@@ -1346,10 +1346,10 @@ free_op::debug_string() const
 	return "FREE";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 free_op::copy() const
 {
-	return std::unique_ptr<jive::operation>(new free_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new free_op(*this));
 }
 
 /* memcpy operator */
@@ -1372,10 +1372,10 @@ Memcpy::debug_string() const
 	return "Memcpy";
 }
 
-std::unique_ptr<jive::operation>
+std::unique_ptr<rvsdg::operation>
 Memcpy::copy() const
 {
-	return std::unique_ptr<jive::operation>(new Memcpy(*this));
+	return std::unique_ptr<rvsdg::operation>(new Memcpy(*this));
 }
 
 }

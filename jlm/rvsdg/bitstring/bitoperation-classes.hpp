@@ -12,11 +12,12 @@
 #include <jlm/rvsdg/bitstring/value-representation.hpp>
 #include <jlm/rvsdg/unary.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 /* Represents a unary operation on a bitstring of a specific width,
  * produces another bitstring of the same width. */
-class bitunary_op : public jive::unary_op {
+class bitunary_op : public jlm::rvsdg::unary_op {
 public:
 	virtual
 	~bitunary_op() noexcept;
@@ -33,14 +34,14 @@ public:
 	}
 
 	/* reduction methods */
-	virtual jive_unop_reduction_path_t
+	virtual unop_reduction_path_t
 	can_reduce_operand(
-		const jive::output * arg) const noexcept override;
+		const jlm::rvsdg::output * arg) const noexcept override;
 
-	virtual jive::output *
+	virtual jlm::rvsdg::output *
 	reduce_operand(
-		jive_unop_reduction_path_t path,
-		jive::output * arg) const override;
+		unop_reduction_path_t path,
+		jlm::rvsdg::output * arg) const override;
 
 	virtual bitvalue_repr
 	reduce_constant(
@@ -53,27 +54,27 @@ public:
 /* Represents a binary operation (possibly normalized n-ary if associative)
  * on a bitstring of a specific width, produces another bitstring of the
  * same width. */
-class bitbinary_op : public jive::binary_op {
+class bitbinary_op : public jlm::rvsdg::binary_op {
 public:
 	virtual
 	~bitbinary_op() noexcept;
 
 	inline
 	bitbinary_op(const bittype & type, size_t arity = 2) noexcept
-	: binary_op(std::vector<jive::port>(arity, {type}), type)
+	: binary_op(std::vector<jlm::rvsdg::port>(arity, {type}), type)
 	{}
 
 	/* reduction methods */
-	virtual jive_binop_reduction_path_t
+	virtual binop_reduction_path_t
 	can_reduce_operand_pair(
-		const jive::output * arg1,
-		const jive::output * arg2) const noexcept override;
+		const jlm::rvsdg::output * arg1,
+		const jlm::rvsdg::output * arg2) const noexcept override;
 
-	virtual jive::output *
+	virtual jlm::rvsdg::output *
 	reduce_operand_pair(
-		jive_binop_reduction_path_t path,
-		jive::output * arg1,
-		jive::output * arg2) const override;
+		binop_reduction_path_t path,
+		jlm::rvsdg::output * arg1,
+		jlm::rvsdg::output * arg2) const override;
 
 	virtual bitvalue_repr
 	reduce_constants(
@@ -96,7 +97,7 @@ enum class compare_result {
 	static_false
 };
 
-class bitcompare_op : public jive::binary_op {
+class bitcompare_op : public jlm::rvsdg::binary_op {
 public:
 	virtual
 	~bitcompare_op() noexcept;
@@ -106,16 +107,16 @@ public:
 	: binary_op({type, type}, bit1)
 	{}
 
-	virtual jive_binop_reduction_path_t
+	virtual binop_reduction_path_t
 	can_reduce_operand_pair(
-		const jive::output * arg1,
-		const jive::output * arg2) const noexcept override;
+		const jlm::rvsdg::output * arg1,
+		const jlm::rvsdg::output * arg2) const noexcept override;
 
-	virtual jive::output *
+	virtual jlm::rvsdg::output *
 	reduce_operand_pair(
-		jive_binop_reduction_path_t path,
-		jive::output * arg1,
-		jive::output * arg2) const override;
+		binop_reduction_path_t path,
+		jlm::rvsdg::output * arg1,
+		jlm::rvsdg::output * arg2) const override;
 
 	virtual compare_result
 	reduce_constants(

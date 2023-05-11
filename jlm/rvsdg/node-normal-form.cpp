@@ -9,14 +9,15 @@
 
 #include <jlm/rvsdg/graph.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 node_normal_form::~node_normal_form() noexcept
 {
 }
 
 bool
-node_normal_form::normalize_node(jive::node * node) const
+node_normal_form::normalize_node(jlm::rvsdg::node * node) const
 {
 	return true;
 }
@@ -37,10 +38,10 @@ node_normal_form::set_mutable(bool enable)
 
 namespace {
 
-typedef jive::node_normal_form *(*create_node_normal_form_functor)(
+typedef jlm::rvsdg::node_normal_form *(*create_node_normal_form_functor)(
 	const std::type_info & operator_class,
-	jive::node_normal_form * parent,
-	jive::graph * graph);
+	jlm::rvsdg::node_normal_form * parent,
+	jlm::rvsdg::graph * graph);
 
 typedef std::unordered_map<std::type_index, create_node_normal_form_functor>
 	node_normal_form_registry;
@@ -71,10 +72,10 @@ lookup_factory_functor(const std::type_info * info)
 void
 node_normal_form::register_factory(
 	const std::type_info & operator_class,
-	jive::node_normal_form *(*fn)(
+	jlm::rvsdg::node_normal_form *(*fn)(
 		const std::type_info & operator_class,
-		jive::node_normal_form * parent,
-		jive::graph * graph))
+		jlm::rvsdg::node_normal_form * parent,
+		jlm::rvsdg::graph * graph))
 {
 	if (!registry) {
 		registry.reset(new node_normal_form_registry());
@@ -86,8 +87,8 @@ node_normal_form::register_factory(
 node_normal_form *
 node_normal_form::create(
 	const std::type_info & operator_class,
-	jive::node_normal_form * parent,
-	jive::graph * graph)
+	jlm::rvsdg::node_normal_form * parent,
+	jlm::rvsdg::graph * graph)
 {
 	return lookup_factory_functor(&operator_class)(operator_class, parent, graph);
 }

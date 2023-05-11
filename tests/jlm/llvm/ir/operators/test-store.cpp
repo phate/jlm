@@ -23,7 +23,7 @@ test_store_mux_reduction()
 	PointerType pt;
 	MemoryStateType mt;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 	auto nf = graph.node_normal_form(typeid(StoreOperation));
 	auto snf = static_cast<jlm::store_normal_form*>(nf);
 	snf->set_mutable(false);
@@ -40,24 +40,24 @@ test_store_mux_reduction()
 
 	auto ex = graph.add_export(state[0], {state[0]->type(), "s"});
 
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 
 	snf->set_mutable(true);
 	snf->set_store_mux_reducible(true);
 	graph.normalize();
 	graph.prune();
 
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 
-	auto muxnode= jive::node_output::node(ex->origin());
+	auto muxnode= jlm::rvsdg::node_output::node(ex->origin());
 	assert(is<MemStateMergeOperator>(muxnode));
 	assert(muxnode->ninputs() == 3);
-	auto n0 = jive::node_output::node(muxnode->input(0)->origin());
-	auto n1 = jive::node_output::node(muxnode->input(1)->origin());
-	auto n2 = jive::node_output::node(muxnode->input(2)->origin());
-	assert(jive::is<StoreOperation>(n0->operation()));
-	assert(jive::is<StoreOperation>(n1->operation()));
-	assert(jive::is<StoreOperation>(n2->operation()));
+	auto n0 = jlm::rvsdg::node_output::node(muxnode->input(0)->origin());
+	auto n1 = jlm::rvsdg::node_output::node(muxnode->input(1)->origin());
+	auto n2 = jlm::rvsdg::node_output::node(muxnode->input(2)->origin());
+	assert(jlm::rvsdg::is<StoreOperation>(n0->operation()));
+	assert(jlm::rvsdg::is<StoreOperation>(n1->operation()));
+	assert(jlm::rvsdg::is<StoreOperation>(n2->operation()));
 }
 
 static inline void
@@ -69,7 +69,7 @@ test_multiple_origin_reduction()
 	PointerType pt;
 	MemoryStateType mt;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 	auto nf = graph.node_normal_form(typeid(StoreOperation));
 	auto snf = static_cast<jlm::store_normal_form*>(nf);
 	snf->set_mutable(false);
@@ -83,17 +83,17 @@ test_multiple_origin_reduction()
 
 	auto ex = graph.add_export(states[0], {states[0]->type(), "s"});
 
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 
 	snf->set_mutable(true);
 	snf->set_multiple_origin_reducible(true);
 	graph.normalize();
 	graph.prune();
 
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 
-	auto node = jive::node_output::node(ex->origin());
-	assert(jive::is<StoreOperation>(node->operation()) && node->ninputs() == 3);
+	auto node = jlm::rvsdg::node_output::node(ex->origin());
+	assert(jlm::rvsdg::is<StoreOperation>(node->operation()) && node->ninputs() == 3);
 }
 
 static inline void
@@ -103,9 +103,9 @@ test_store_alloca_reduction()
 
 	jlm::valuetype vt;
 	MemoryStateType mt;
-	jive::bittype bt(32);
+	jlm::rvsdg::bittype bt(32);
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 	auto nf = graph.node_normal_form(typeid(StoreOperation));
 	auto snf = static_cast<jlm::store_normal_form*>(nf);
 	snf->set_mutable(false);
@@ -124,14 +124,14 @@ test_store_alloca_reduction()
 	graph.add_export(states2[1], {states2[1]->type(), "s2"});
 	graph.add_export(states2[2], {states2[2]->type(), "s3"});
 
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 
 	snf->set_mutable(true);
 	snf->set_store_alloca_reducible(true);
 	graph.normalize();
 	graph.prune();
 
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 
 	bool has_add_import = false;
 	for (size_t n = 0; n < graph.root()->nresults(); n++) {
@@ -150,7 +150,7 @@ test_store_store_reduction()
 	PointerType pt;
 	MemoryStateType mt;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 	auto a = graph.add_import({pt, "address"});
 	auto v1 = graph.add_import({vt, "value"});
 	auto v2 = graph.add_import({vt, "value"});
@@ -161,17 +161,17 @@ test_store_store_reduction()
 
 	auto ex = graph.add_export(s2, {s2->type(), "state"});
 
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	auto nf = StoreOperation::GetNormalForm(&graph);
 	nf->set_store_store_reducible(true);
 	graph.normalize();
 	graph.prune();
 
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	assert(graph.root()->nnodes() == 1);
-	assert(jive::node_output::node(ex->origin())->input(1)->origin() == v2);
+	assert(jlm::rvsdg::node_output::node(ex->origin())->input(1)->origin() == v2);
 }
 
 static int

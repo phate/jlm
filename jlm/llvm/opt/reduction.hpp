@@ -10,8 +10,6 @@
 
 namespace jlm {
 
-class rvsdg;
-
 /**
 * \brief Node Reduction Optimization
 */

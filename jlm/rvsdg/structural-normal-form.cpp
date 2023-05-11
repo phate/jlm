@@ -6,31 +6,32 @@
 #include <jlm/rvsdg/operation.hpp>
 #include <jlm/rvsdg/structural-normal-form.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 structural_normal_form::~structural_normal_form() noexcept
 {}
 
 structural_normal_form::structural_normal_form(
 	const std::type_info & operator_class,
-	jive::node_normal_form * parent,
-	jive::graph * graph) noexcept
+	jlm::rvsdg::node_normal_form * parent,
+	jlm::rvsdg::graph * graph) noexcept
 	: node_normal_form(operator_class, parent, graph)
 {}
 
 }
 
-static jive::node_normal_form *
+static jlm::rvsdg::node_normal_form *
 get_default_normal_form(
 	const std::type_info & operator_class,
-	jive::node_normal_form * parent,
-	jive::graph * graph)
+	jlm::rvsdg::node_normal_form * parent,
+	jlm::rvsdg::graph * graph)
 {
-	return new jive::structural_normal_form(operator_class, parent, graph);
+	return new jlm::rvsdg::structural_normal_form(operator_class, parent, graph);
 }
 
 static void __attribute__((constructor))
 register_node_normal_form(void)
 {
-	jive::node_normal_form::register_factory(typeid(jive::structural_op), get_default_normal_form);
+	jlm::rvsdg::node_normal_form::register_factory(typeid(jlm::rvsdg::structural_op), get_default_normal_form);
 }

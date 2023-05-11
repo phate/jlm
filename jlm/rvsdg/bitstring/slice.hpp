@@ -11,9 +11,10 @@
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/unary.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
-class bitslice_op : public jive::unary_op {
+class bitslice_op : public jlm::rvsdg::unary_op {
 public:
 	virtual
 	~bitslice_op() noexcept;
@@ -33,14 +34,14 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual jive_unop_reduction_path_t
+	virtual unop_reduction_path_t
 	can_reduce_operand(
-		const jive::output * arg) const noexcept override;
+		const jlm::rvsdg::output * arg) const noexcept override;
 
-	virtual jive::output *
+	virtual jlm::rvsdg::output *
 	reduce_operand(
-		jive_unop_reduction_path_t path,
-		jive::output * arg) const override;
+		unop_reduction_path_t path,
+		jlm::rvsdg::output * arg) const override;
 
 	inline size_t
 	low() const noexcept
@@ -54,7 +55,7 @@ public:
 		return low_ + static_cast<const bittype*>(&result(0).type())->nbits();
 	}
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
 	inline const type &
@@ -67,19 +68,19 @@ private:
 	size_t low_;
 };
 
-}
-
 /**
 	\brief Create bitslice
 	\param operand Input value
 	\param low Low bit
 	\param high High bit
 	\returns Bitstring value representing slice
-	
+
 	Convenience function that either creates a new slice or
 	returns the output handle of an existing slice.
 */
-jive::output *
-jive_bitslice(jive::output * operand, size_t low, size_t high);
+jlm::rvsdg::output *
+bitslice(jlm::rvsdg::output * operand, size_t low, size_t high);
+
+}
 
 #endif

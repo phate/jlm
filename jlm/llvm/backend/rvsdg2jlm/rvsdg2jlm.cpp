@@ -32,9 +32,9 @@ public:
 	{}
 
 	void
-	start(const jive::graph & graph) noexcept
+	start(const rvsdg::graph & graph) noexcept
 	{
-		nnodes_ = jive::nnodes(graph.root());
+		nnodes_ = rvsdg::nnodes(graph.root());
 		timer_.start();
 	}
 
@@ -71,7 +71,7 @@ private:
 namespace rvsdg2jlm {
 
 static const FunctionType *
-is_function_import(const jive::argument * argument)
+is_function_import(const rvsdg::argument * argument)
 {
     JLM_ASSERT(argument->region()->graph()->root() == argument->region());
 
@@ -102,7 +102,7 @@ create_initialization(const delta::node * delta, context & ctx)
 
 
 	tacsvector_t tacs;
-	for (const auto & node : jive::topdown_traverser(delta->subregion())) {
+	for (const auto & node : rvsdg::topdown_traverser(delta->subregion())) {
 		JLM_ASSERT(node->noutputs() == 1);
 		auto output = node->output(0);
 
@@ -112,7 +112,7 @@ create_initialization(const delta::node * delta, context & ctx)
 			operands.push_back(ctx.variable(node->input(n)->origin()));
 
 		/* convert node to tac */
-		auto & op = *static_cast<const jive::simple_op*>(&node->operation());
+		auto & op = *static_cast<const rvsdg::simple_op*>(&node->operation());
 		tacs.push_back(tac::create(op, operands));
 		ctx.insert(output, tacs.back()->result(0));
 	}
@@ -121,16 +121,16 @@ create_initialization(const delta::node * delta, context & ctx)
 }
 
 static void
-convert_node(const jive::node & node, context & ctx);
+convert_node(const rvsdg::node & node, context & ctx);
 
 static inline void
-convert_region(jive::region & region, context & ctx)
+convert_region(rvsdg::region & region, context & ctx)
 {
 	auto entry = basic_block::create(*ctx.cfg());
 	ctx.lpbb()->add_outedge(entry);
 	ctx.set_lpbb(entry);
 
-	for (const auto & node : jive::topdown_traverser(&region))
+	for (const auto & node : rvsdg::topdown_traverser(&region))
 		convert_node(*node, ctx);
 
 	auto exit = basic_block::create(*ctx.cfg());
@@ -177,15 +177,15 @@ create_cfg(const lambda::node & lambda, context & ctx)
 }
 
 static inline void
-convert_simple_node(const jive::node & node, context & ctx)
+convert_simple_node(const rvsdg::node & node, context & ctx)
 {
-	JLM_ASSERT(dynamic_cast<const jive::simple_op*>(&node.operation()));
+	JLM_ASSERT(dynamic_cast<const rvsdg::simple_op*>(&node.operation()));
 
 	std::vector<const variable*> operands;
 	for (size_t n = 0; n < node.ninputs(); n++)
 		operands.push_back(ctx.variable(node.input(n)->origin()));
 
-	auto & op = *static_cast<const jive::simple_op*>(&node.operation());
+	auto & op = *static_cast<const rvsdg::simple_op*>(&node.operation());
 	ctx.lpbb()->append_last(tac::create(op, operands));
 
 	for (size_t n = 0; n < node.noutputs(); n++)
@@ -193,7 +193,7 @@ convert_simple_node(const jive::node & node, context & ctx)
 }
 
 static void
-convert_empty_gamma_node(const jive::gamma_node * gamma, context & ctx)
+convert_empty_gamma_node(const rvsdg::gamma_node * gamma, context & ctx)
 {
 	JLM_ASSERT(gamma->nsubregions() == 2);
 	JLM_ASSERT(gamma->subregion(0)->nnodes() == 0 && gamma->subregion(1)->nnodes() == 0);
@@ -209,8 +209,8 @@ convert_empty_gamma_node(const jive::gamma_node * gamma, context & ctx)
 	for (size_t n = 0; n < gamma->noutputs(); n++) {
 		auto output = gamma->output(n);
 
-		auto a0 = static_cast<const jive::argument*>(gamma->subregion(0)->result(n)->origin());
-		auto a1 = static_cast<const jive::argument*>(gamma->subregion(1)->result(n)->origin());
+		auto a0 = static_cast<const rvsdg::argument*>(gamma->subregion(0)->result(n)->origin());
+		auto a1 = static_cast<const rvsdg::argument*>(gamma->subregion(1)->result(n)->origin());
 		auto o0 = a0->input()->origin();
 		auto o1 = a1->input()->origin();
 
@@ -220,9 +220,9 @@ convert_empty_gamma_node(const jive::gamma_node * gamma, context & ctx)
 			continue;
 		}
 
-		auto matchnode = jive::node_output::node(predicate);
-		if (is<jive::match_op>(matchnode)) {
-			auto matchop = static_cast<const jive::match_op*>(&matchnode->operation());
+		auto matchnode = rvsdg::node_output::node(predicate);
+		if (is<rvsdg::match_op>(matchnode)) {
+			auto matchop = static_cast<const rvsdg::match_op*>(&matchnode->operation());
 			auto d = matchop->default_alternative();
 			auto c = ctx.variable(matchnode->input(0)->origin());
 			auto t = d == 0 ? ctx.variable(o1) : ctx.variable(o0);
@@ -231,7 +231,7 @@ convert_empty_gamma_node(const jive::gamma_node * gamma, context & ctx)
 		} else {
 			auto vo0 = ctx.variable(o0);
 			auto vo1 = ctx.variable(o1);
-			bb->append_last(ctl2bits_op::create(ctx.variable(predicate), jive::bittype(1)));
+			bb->append_last(ctl2bits_op::create(ctx.variable(predicate), rvsdg::bittype(1)));
 			bb->append_last(select_op::create(bb->last()->result(0), vo0, vo1));
 		}
 
@@ -242,10 +242,10 @@ convert_empty_gamma_node(const jive::gamma_node * gamma, context & ctx)
 }
 
 static inline void
-convert_gamma_node(const jive::node & node, context & ctx)
+convert_gamma_node(const rvsdg::node & node, context & ctx)
 {
-	JLM_ASSERT(is<jive::gamma_op>(&node));
-	auto gamma = static_cast<const jive::gamma_node*>(&node);
+	JLM_ASSERT(is<rvsdg::gamma_op>(&node));
+	auto gamma = static_cast<const rvsdg::gamma_node*>(&node);
 	auto nalternatives = gamma->nsubregions();
 	auto predicate = gamma->predicate()->origin();
 	auto cfg = ctx.cfg();
@@ -292,8 +292,8 @@ convert_gamma_node(const jive::node & node, context & ctx)
 		auto output = gamma->output(n);
 
 		bool invariant = true;
-		auto matchnode = jive::node_output::node(predicate);
-		bool select = (gamma->nsubregions() == 2) && is<jive::match_op>(matchnode);
+		auto matchnode = rvsdg::node_output::node(predicate);
+		bool select = (gamma->nsubregions() == 2) && is<rvsdg::match_op>(matchnode);
 		std::vector<std::pair<const variable*, cfg_node*>> arguments;
 		for (size_t r = 0; r < gamma->nsubregions(); r++) {
 			auto origin = gamma->subregion(r)->result(n)->origin();
@@ -301,7 +301,7 @@ convert_gamma_node(const jive::node & node, context & ctx)
 			auto v = ctx.variable(origin);
 			arguments.push_back(std::make_pair(v, phi_nodes[r]));
 			invariant &= (v == ctx.variable(gamma->subregion(0)->result(n)->origin()));
-			auto tmp = jive::node_output::node(origin);
+			auto tmp = rvsdg::node_output::node(origin);
 			select &= (tmp == nullptr && origin->region()->node() == &node);
 		}
 
@@ -313,8 +313,8 @@ convert_gamma_node(const jive::node & node, context & ctx)
 
 		if (select) {
 			/* use select instead of phi */
-			auto matchnode = jive::node_output::node(predicate);
-			auto matchop = static_cast<const jive::match_op*>(&matchnode->operation());
+			auto matchnode = rvsdg::node_output::node(predicate);
+			auto matchop = static_cast<const rvsdg::match_op*>(&matchnode->operation());
 			auto d = matchop->default_alternative();
 			auto c = ctx.variable(matchnode->input(0)->origin());
 			auto t = d == 0 ? arguments[1].first : arguments[0].first;
@@ -333,12 +333,12 @@ convert_gamma_node(const jive::node & node, context & ctx)
 }
 
 static inline bool
-phi_needed(const jive::input * i, const jlm::variable * v)
+phi_needed(const rvsdg::input * i, const jlm::variable * v)
 {
 	auto node = input_node(i);
-	JLM_ASSERT(is<jive::theta_op>(node));
-	auto theta = static_cast<const jive::structural_node*>(node);
-	auto input = static_cast<const jive::structural_input*>(i);
+	JLM_ASSERT(is<rvsdg::theta_op>(node));
+	auto theta = static_cast<const rvsdg::structural_node*>(node);
+	auto input = static_cast<const rvsdg::structural_input*>(i);
 	auto output = theta->output(input->index());
 
 	/* FIXME: solely decide on the input instead of using the variable */
@@ -355,10 +355,10 @@ phi_needed(const jive::input * i, const jlm::variable * v)
 }
 
 static inline void
-convert_theta_node(const jive::node & node, context & ctx)
+convert_theta_node(const rvsdg::node & node, context & ctx)
 {
-	JLM_ASSERT(is<jive::theta_op>(&node));
-	auto subregion = static_cast<const jive::structural_node*>(&node)->subregion(0);
+	JLM_ASSERT(is<rvsdg::theta_op>(&node));
+	auto subregion = static_cast<const rvsdg::structural_node*>(&node)->subregion(0);
 	auto predicate = subregion->result(0)->origin();
 
 	auto pre_entry = ctx.lpbb();
@@ -406,7 +406,7 @@ convert_theta_node(const jive::node & node, context & ctx)
 }
 
 static inline void
-convert_lambda_node(const jive::node & node, context & ctx)
+convert_lambda_node(const rvsdg::node & node, context & ctx)
 {
 	JLM_ASSERT(is<lambda::operation>(&node));
 	auto lambda = static_cast<const lambda::node*>(&node);
@@ -422,10 +422,10 @@ convert_lambda_node(const jive::node & node, context & ctx)
 }
 
 static inline void
-convert_phi_node(const jive::node & node, context & ctx)
+convert_phi_node(const rvsdg::node & node, context & ctx)
 {
-	JLM_ASSERT(jive::is<phi::operation>(&node));
-	auto phi = static_cast<const jive::structural_node*>(&node);
+	JLM_ASSERT(rvsdg::is<phi::operation>(&node));
+	auto phi = static_cast<const rvsdg::structural_node*>(&node);
 	auto subregion = phi->subregion(0);
 	auto & module = ctx.module();
 	auto & ipg = module.ipgraph();
@@ -439,7 +439,7 @@ convert_phi_node(const jive::node & node, context & ctx)
 	/* forward declare all functions and globals */
 	for (size_t n = 0; n < subregion->nresults(); n++) {
 		JLM_ASSERT(subregion->argument(n)->input() == nullptr);
-		auto node = jive::node_output::node(subregion->result(n)->origin());
+		auto node = rvsdg::node_output::node(subregion->result(n)->origin());
 
 		if (auto lambda = dynamic_cast<const lambda::node*>(node)) {
 			auto f = function_node::create(ipg, lambda->name(), lambda->type(), lambda->linkage(),
@@ -463,7 +463,7 @@ convert_phi_node(const jive::node & node, context & ctx)
 	for (size_t n = 0; n < subregion->nresults(); n++) {
 		JLM_ASSERT(subregion->argument(n)->input() == nullptr);
 		auto result = subregion->result(n);
-		auto node = jive::node_output::node(result->origin());
+		auto node = rvsdg::node_output::node(result->origin());
 
 		if (auto lambda = dynamic_cast<const lambda::node*>(node)) {
 			auto v = static_cast<const fctvariable*>(ctx.variable(subregion->argument(n)));
@@ -486,7 +486,7 @@ convert_phi_node(const jive::node & node, context & ctx)
 }
 
 static inline void
-convert_delta_node(const jive::node & node, context & ctx)
+convert_delta_node(const rvsdg::node & node, context & ctx)
 {
   JLM_ASSERT(is<delta::operation>(&node));
   auto delta = static_cast<const delta::node*>(&node);
@@ -505,20 +505,20 @@ convert_delta_node(const jive::node & node, context & ctx)
 }
 
 static inline void
-convert_node(const jive::node & node, context & ctx)
+convert_node(const rvsdg::node & node, context & ctx)
 {
 	static std::unordered_map<
 	  std::type_index
-	, std::function<void(const jive::node & node, context & ctx)
+	, std::function<void(const rvsdg::node & node, context & ctx)
 	>> map({
 	  {typeid(lambda::operation), convert_lambda_node}
-	, {std::type_index(typeid(jive::gamma_op)), convert_gamma_node}
-	, {std::type_index(typeid(jive::theta_op)), convert_theta_node}
+	, {std::type_index(typeid(rvsdg::gamma_op)), convert_gamma_node}
+	, {std::type_index(typeid(rvsdg::theta_op)), convert_theta_node}
 	, {typeid(phi::operation), convert_phi_node}
 	, {typeid(delta::operation), convert_delta_node}
 	});
 
-	if (dynamic_cast<const jive::simple_op*>(&node.operation())) {
+	if (dynamic_cast<const rvsdg::simple_op*>(&node.operation())) {
 		convert_simple_node(node, ctx);
 		return;
 	}
@@ -529,14 +529,14 @@ convert_node(const jive::node & node, context & ctx)
 }
 
 static void
-convert_nodes(const jive::graph & graph, context & ctx)
+convert_nodes(const rvsdg::graph & graph, context & ctx)
 {
-	for (const auto & node : jive::topdown_traverser(graph.root()))
+	for (const auto & node : rvsdg::topdown_traverser(graph.root()))
 		convert_node(*node, ctx);
 }
 
 static void
-convert_imports(const jive::graph & graph, ipgraph_module & im, context & ctx)
+convert_imports(const rvsdg::graph & graph, ipgraph_module & im, context & ctx)
 {
 	auto & ipg = im.ipgraph();
 

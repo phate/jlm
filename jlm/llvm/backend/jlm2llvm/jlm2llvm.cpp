@@ -38,7 +38,7 @@ has_return_value(const jlm::cfg & cfg)
 {
 	for (size_t n=0; n < cfg.exit()->nresults(); n++) {
 		auto result = cfg.exit()->result(n);
-		if (jive::is<jive::valuetype>(result->type()))
+		if (rvsdg::is<rvsdg::valuetype>(result->type()))
 			return true;
 	}
 
@@ -60,7 +60,7 @@ create_return(const cfg_node * node, context & ctx)
 	}
 
 	auto result = cfg.exit()->result(0);
-	JLM_ASSERT(jive::is<jive::valuetype>(result->type()));
+	JLM_ASSERT(rvsdg::is<rvsdg::valuetype>(result->type()));
 	builder.CreateRet(ctx.value(result));
 }
 
@@ -105,14 +105,14 @@ create_switch(const cfg_node * node, context & ctx)
 	auto condition = ctx.value(branch->operand(0));
 	auto match = get_match(branch);
 
-	if (is<jive::match_op>(match)) {
+	if (is<rvsdg::match_op>(match)) {
 		JLM_ASSERT(match->result(0) == branch->operand(0));
-		auto mop = static_cast<const jive::match_op*>(&match->operation());
+		auto mop = static_cast<const rvsdg::match_op*>(&match->operation());
 
 		auto defbb = ctx.basic_block(node->outedge(mop->default_alternative())->sink());
 		auto sw = builder.CreateSwitch(condition, defbb);
 		for (const auto & alt : *mop) {
-			auto & type = *static_cast<const jive::bittype*>(&mop->argument(0).type());
+			auto & type = *static_cast<const rvsdg::bittype*>(&mop->argument(0).type());
 			auto value = llvm::ConstantInt::get(convert_type(type, ctx), alt.first);
 			sw->addCase(value, ctx.basic_block(node->outedge(alt.second)->sink()));
 		}
@@ -316,7 +316,7 @@ convert_attributes(const jlm::function_node & f, context & ctx)
 	for (size_t n = 0; n < f.cfg()->entry()->narguments(); n++) {
 		auto argument = f.cfg()->entry()->argument(n);
 
-		if (jive::is<jive::statetype>(argument->type()))
+		if (rvsdg::is<rvsdg::statetype>(argument->type()))
 			continue;
 
 		argsets.push_back(convert_attributes(argument->attributes(), ctx));
@@ -383,11 +383,11 @@ convert_cfg(jlm::cfg & cfg, llvm::Function & f, context & ctx)
 			if (!is<phi_op>(tac->operation()))
 				continue;
 
-			if (jive::is<iostatetype>(tac->result(0)->type()))
+			if (rvsdg::is<iostatetype>(tac->result(0)->type()))
 				continue;
-			if (jive::is<MemoryStateType>(tac->result(0)->type()))
+			if (rvsdg::is<MemoryStateType>(tac->result(0)->type()))
 				continue;
-			if (jive::is<loopstatetype>(tac->result(0)->type()))
+			if (rvsdg::is<loopstatetype>(tac->result(0)->type()))
 				continue;
 
 			JLM_ASSERT(node->ninedges() == tac->noperands());

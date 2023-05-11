@@ -11,7 +11,8 @@
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/simple-normal-form.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 /* mux normal form */
 
@@ -22,17 +23,17 @@ public:
 
 	mux_normal_form(
 	const std::type_info & opclass,
-	jive::node_normal_form * parent,
-	jive::graph * graph) noexcept;
+	jlm::rvsdg::node_normal_form * parent,
+	jlm::rvsdg::graph * graph) noexcept;
 
 	virtual bool
-	normalize_node(jive::node * node) const override;
+	normalize_node(jlm::rvsdg::node * node) const override;
 
-	virtual std::vector<jive::output*>
+	virtual std::vector<jlm::rvsdg::output*>
 	normalized_create(
-		jive::region * region,
-		const jive::simple_op & op,
-		const std::vector<jive::output*> & arguments) const override;
+		jlm::rvsdg::region * region,
+		const jlm::rvsdg::simple_op & op,
+		const std::vector<jlm::rvsdg::output*> & arguments) const override;
 
 	virtual void
 	set_mux_mux_reducible(bool enable);
@@ -66,8 +67,8 @@ public:
 
 	inline
 	mux_op(const statetype & type, size_t narguments, size_t nresults)
-	: simple_op(std::vector<jive::port>(narguments, {type}),
-			std::vector<jive::port>(nresults, {type}))
+	: simple_op(std::vector<jlm::rvsdg::port>(narguments, {type}),
+			std::vector<jlm::rvsdg::port>(nresults, {type}))
 	{}
 
 	virtual bool
@@ -76,51 +77,51 @@ public:
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
-	static jive::mux_normal_form *
-	normal_form(jive::graph * graph) noexcept
+	static jlm::rvsdg::mux_normal_form *
+	normal_form(jlm::rvsdg::graph * graph) noexcept
 	{
-		return static_cast<jive::mux_normal_form*>(graph->node_normal_form(typeid(mux_op)));
+		return static_cast<jlm::rvsdg::mux_normal_form*>(graph->node_normal_form(typeid(mux_op)));
 	}
 };
 
 static inline bool
-is_mux_op(const jive::operation & op)
+is_mux_op(const jlm::rvsdg::operation & op)
 {
-	return dynamic_cast<const jive::mux_op*>(&op) != nullptr;
+	return dynamic_cast<const jlm::rvsdg::mux_op*>(&op) != nullptr;
 }
 
-static inline std::vector<jive::output*>
+static inline std::vector<jlm::rvsdg::output*>
 create_state_mux(
-	const jive::type & type,
-	const std::vector<jive::output*> & operands,
+	const jlm::rvsdg::type & type,
+	const std::vector<jlm::rvsdg::output*> & operands,
 	size_t nresults)
 {
 	if (operands.empty())
 		throw jlm::util::error("Insufficient number of operands.");
 
-	auto st = dynamic_cast<const jive::statetype*>(&type);
+	auto st = dynamic_cast<const jlm::rvsdg::statetype*>(&type);
 	if (!st) throw jlm::util::error("Expected state type.");
 
 	auto region = operands.front()->region();
-	jive::mux_op op(*st, operands.size(), nresults);
+	jlm::rvsdg::mux_op op(*st, operands.size(), nresults);
 	return simple_node::create_normalized(region, op, operands);
 }
 
-static inline jive::output *
+static inline jlm::rvsdg::output *
 create_state_merge(
-	const jive::type & type,
-	const std::vector<jive::output*> & operands)
+	const jlm::rvsdg::type & type,
+	const std::vector<jlm::rvsdg::output*> & operands)
 {
 	return create_state_mux(type, operands, 1)[0];
 }
 
-static inline std::vector<jive::output*>
+static inline std::vector<jlm::rvsdg::output*>
 create_state_split(
-	const jive::type & type,
-	jive::output * operand,
+	const jlm::rvsdg::type & type,
+	jlm::rvsdg::output * operand,
 	size_t nresults)
 {
 	return create_state_mux(type, {operand}, nresults);

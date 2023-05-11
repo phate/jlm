@@ -14,11 +14,11 @@
 static void
 test_gamma(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
 	bittype bit2(2);
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 	auto cmp = graph.add_import({bit2, ""});
 	auto v0 = graph.add_import({bit32, ""});
 	auto v1 = graph.add_import({bit32, ""});
@@ -35,7 +35,7 @@ test_gamma(void)
 
 	graph.add_export(gamma->output(0), {gamma->output(0)->type(), "dummy"});
 
-	assert(gamma && gamma->operation() == jive::gamma_op(3));
+	assert(gamma && gamma->operation() == jlm::rvsdg::gamma_op(3));
 
 	/* test gamma copy */
 
@@ -53,9 +53,9 @@ test_gamma(void)
 static void
 test_predicate_reduction(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 	gamma_op::normal_form(&graph)->set_predicate_reduction(true);
 
 	bittype bits2(2);
@@ -64,7 +64,7 @@ test_predicate_reduction(void)
 	auto v1 = graph.add_import({bit32, ""});
 	auto v2 = graph.add_import({bit32, ""});
 
-	auto pred = jive_control_constant(graph.root(), 3, 1);
+	auto pred = jlm::rvsdg::control_constant(graph.root(), 3, 1);
 
 	auto gamma = gamma_node::create(pred, 3);
 	auto ev0 = gamma->add_entryvar(v0);
@@ -75,7 +75,7 @@ test_predicate_reduction(void)
 	auto r = graph.add_export(gamma->output(0), {gamma->output(0)->type(), ""});
 
 	graph.normalize();
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 	assert(r->origin() == v1);
 
 	graph.prune();
@@ -85,24 +85,24 @@ test_predicate_reduction(void)
 static void
 test_invariant_reduction(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
 	jlm::valuetype vtype;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 	gamma_op::normal_form(&graph)->set_invariant_reduction(true);
 
 	auto pred = graph.add_import({ctl2, ""});
 	auto v = graph.add_import({vtype, ""});
 
-	auto gamma = jive::gamma_node::create(pred, 2);
+	auto gamma = jlm::rvsdg::gamma_node::create(pred, 2);
 	auto ev = gamma->add_entryvar(v);
 	gamma->add_exitvar({ev->argument(0), ev->argument(1)});
 
 	auto r = graph.add_export(gamma->output(0), {gamma->output(0)->type(), ""});
 
 	graph.normalize();
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 	assert(r->origin() == v);
 
 	graph.prune();
@@ -112,9 +112,9 @@ test_invariant_reduction(void)
 static void
 test_control_constant_reduction()
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 	gamma_op::normal_form(&graph)->set_control_constant_reduction(true);
 
 	auto x = graph.add_import({bit1, "x"});
@@ -123,11 +123,11 @@ test_control_constant_reduction()
 
 	auto gamma = gamma_node::create(c, 2);
 
-	auto t = jive_control_true(gamma->subregion(0));
-	auto f = jive_control_false(gamma->subregion(1));
+	auto t = jlm::rvsdg::control_true(gamma->subregion(0));
+	auto f = jlm::rvsdg::control_false(gamma->subregion(1));
 
-	auto n0 = jive_control_constant(gamma->subregion(0), 3, 0);
-	auto n1 = jive_control_constant(gamma->subregion(1), 3, 1);
+	auto n0 = jlm::rvsdg::control_constant(gamma->subregion(0), 3, 0);
+	auto n1 = jlm::rvsdg::control_constant(gamma->subregion(1), 3, 1);
 
 	auto xv1 = gamma->add_exitvar({t, f});
 	auto xv2 = gamma->add_exitvar({n0, n1});
@@ -135,9 +135,9 @@ test_control_constant_reduction()
 	auto ex1 = graph.add_export(xv1, {xv1->type(), ""});
 	auto ex2 = graph.add_export(xv2, {xv2->type(), ""});
 
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 	graph.normalize();
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	auto match = node_output::node(ex1->origin());
 	assert(match && is<match_op>(match->operation()));
@@ -150,9 +150,9 @@ test_control_constant_reduction()
 static void
 test_control_constant_reduction2()
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 	gamma_op::normal_form(&graph)->set_control_constant_reduction(true);
 
 	auto import = graph.add_import({bittype(2), "import"});
@@ -161,18 +161,18 @@ test_control_constant_reduction2()
 
 	auto gamma = gamma_node::create(c, 4);
 
-	auto t1 = jive_control_true(gamma->subregion(0));
-	auto t2 = jive_control_true(gamma->subregion(1));
-	auto t3 = jive_control_true(gamma->subregion(2));
-	auto f = jive_control_false(gamma->subregion(3));
+	auto t1 = jlm::rvsdg::control_true(gamma->subregion(0));
+	auto t2 = jlm::rvsdg::control_true(gamma->subregion(1));
+	auto t3 = jlm::rvsdg::control_true(gamma->subregion(2));
+	auto f = jlm::rvsdg::control_false(gamma->subregion(3));
 
 	auto xv = gamma->add_exitvar({t1, t2, t3, f});
 
 	auto ex = graph.add_export(xv, {xv->type(), ""});
 
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 	graph.normalize();
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
 	auto match = node_output::node(ex->origin());
 	assert(is<match_op>(match));

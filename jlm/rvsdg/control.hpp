@@ -17,11 +17,12 @@
 
 #include <inttypes.h>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 /* control type */
 
-class ctltype final : public jive::statetype {
+class ctltype final : public jlm::rvsdg::statetype {
 public:
 	virtual
 	~ctltype() noexcept;
@@ -32,9 +33,9 @@ public:
 	debug_string() const override;
 
 	virtual bool
-	operator==(const jive::type & other) const noexcept override;
+	operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-	virtual std::unique_ptr<jive::type>
+	virtual std::unique_ptr<jlm::rvsdg::type>
 	copy() const override;
 
 	inline size_t
@@ -48,7 +49,7 @@ private:
 };
 
 static inline bool
-is_ctltype(const jive::type & type) noexcept
+is_ctltype(const jlm::rvsdg::type & type) noexcept
 {
 	return dynamic_cast<const ctltype*>(&type) != nullptr;
 }
@@ -108,13 +109,13 @@ struct ctlformat_value {
 typedef domain_const_op<ctltype, ctlvalue_repr, ctlformat_value, ctltype_of_value> ctlconstant_op;
 
 static inline bool
-is_ctlconstant_op(const jive::operation & op) noexcept
+is_ctlconstant_op(const jlm::rvsdg::operation & op) noexcept
 {
 	return dynamic_cast<const ctlconstant_op*>(&op) != nullptr;
 }
 
 static inline const ctlconstant_op &
-to_ctlconstant_op(const jive::operation & op) noexcept
+to_ctlconstant_op(const jlm::rvsdg::operation & op) noexcept
 {
 	JLM_ASSERT(is_ctlconstant_op(op));
 	return *static_cast<const ctlconstant_op*>(&op);
@@ -122,7 +123,7 @@ to_ctlconstant_op(const jive::operation & op) noexcept
 
 /* match operator */
 
-class match_op final : public jive::unary_op {
+class match_op final : public jlm::rvsdg::unary_op {
 	typedef std::unordered_map<uint64_t,uint64_t>::const_iterator const_iterator;
 
 public:
@@ -138,16 +139,16 @@ public:
 	virtual bool
 	operator==(const operation & other) const noexcept override;
 
-	virtual jive_unop_reduction_path_t
-	can_reduce_operand(const jive::output * arg) const noexcept override;
+	virtual unop_reduction_path_t
+	can_reduce_operand(const jlm::rvsdg::output * arg) const noexcept override;
 
-	virtual jive::output *
-	reduce_operand(jive_unop_reduction_path_t path, jive::output * arg) const override;
+	virtual jlm::rvsdg::output *
+	reduce_operand(unop_reduction_path_t path, jlm::rvsdg::output * arg) const override;
 
 	virtual std::string
 	debug_string() const override;
 
-	virtual std::unique_ptr<jive::operation>
+	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
 	inline uint64_t
@@ -195,13 +196,13 @@ private:
 	std::unordered_map<uint64_t, uint64_t> mapping_;
 };
 
-jive::output *
+jlm::rvsdg::output *
 match(
 	size_t nbits,
 	const std::unordered_map<uint64_t, uint64_t> & mapping,
 	uint64_t default_alternative,
 	size_t nalternatives,
-	jive::output * operand);
+	jlm::rvsdg::output * operand);
 
 extern const ctltype ctl2;
 
@@ -209,27 +210,27 @@ extern const ctltype ctl2;
 extern template class domain_const_op<ctltype, ctlvalue_repr, ctlformat_value, ctltype_of_value>;
 
 static inline const match_op &
-to_match_op(const jive::operation & op) noexcept
+to_match_op(const jlm::rvsdg::operation & op) noexcept
 {
 	JLM_ASSERT(is<match_op>(op));
 	return *static_cast<const match_op*>(&op);
 }
 
+jlm::rvsdg::output *
+control_constant(jlm::rvsdg::region * region, size_t nalternatives, size_t alternative);
+
+static inline jlm::rvsdg::output *
+control_false(jlm::rvsdg::region * region)
+{
+  return control_constant(region, 2, 0);
 }
 
-jive::output *
-jive_control_constant(jive::region * region, size_t nalternatives, size_t alternative);
-
-static inline jive::output *
-jive_control_false(jive::region * region)
+static inline jlm::rvsdg::output *
+control_true(jlm::rvsdg::region * region)
 {
-	return jive_control_constant(region, 2, 0);
+  return control_constant(region, 2, 1);
 }
 
-static inline jive::output *
-jive_control_true(jive::region * region)
-{
-	return jive_control_constant(region, 2, 1);
 }
 
 #endif

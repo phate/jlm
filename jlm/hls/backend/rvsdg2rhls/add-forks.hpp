@@ -12,7 +12,7 @@
 namespace jlm{
 	namespace hls{
 		void
-		add_forks(jive::region *region);
+		add_forks(rvsdg::region *region);
 
 		void
 		add_forks(jlm::RvsdgModule &rm);

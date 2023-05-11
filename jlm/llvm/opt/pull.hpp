@@ -9,11 +9,6 @@
 #include <jlm/llvm/opt/optimization.hpp>
 #include <jlm/rvsdg/graph.hpp>
 
-namespace jive {
-	class gamma_node;
-	class region;
-}
-
 namespace jlm {
 
 class RvsdgModule;
@@ -33,17 +28,17 @@ public:
 };
 
 void
-pullin_top(jive::gamma_node * gamma);
+pullin_top(jlm::rvsdg::gamma_node * gamma);
 
 void
-pullin_bottom(jive::gamma_node * gamma);
+pullin_bottom(jlm::rvsdg::gamma_node * gamma);
 
 
 void
-pull(jive::gamma_node * gamma);
+pull(jlm::rvsdg::gamma_node * gamma);
 
 void
-pull(jive::region * region);
+pull(jlm::rvsdg::region * region);
 
 }
 

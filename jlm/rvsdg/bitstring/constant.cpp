@@ -6,7 +6,8 @@
 
 #include <jlm/rvsdg/bitstring/constant.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 // explicit instantiation
 template class domain_const_op<bittype, bitvalue_repr, format_value, type_of_value>;

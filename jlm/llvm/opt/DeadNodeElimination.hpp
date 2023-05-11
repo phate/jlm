@@ -10,12 +10,6 @@
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
 
-namespace jive {
-class gamma_node;
-
-class theta_node;
-}
-
 namespace jlm {
 
 namespace delta {
@@ -23,6 +17,12 @@ class node;
 }
 namespace lambda {
 class node;
+}
+
+namespace rvsdg
+{
+class gamma_node;
+class theta_node;
 }
 
 namespace phi { class node; }
@@ -63,9 +63,9 @@ class DeadNodeElimination final : public optimization {
   class Context final {
   public:
     void
-    MarkAlive(const jive::output & output)
+    MarkAlive(const jlm::rvsdg::output & output)
     {
-      if (auto simpleOutput = dynamic_cast<const jive::simple_output*>(&output)) {
+      if (auto simpleOutput = dynamic_cast<const jlm::rvsdg::simple_output*>(&output)) {
           simpleNodes_.insert(simpleOutput->node());
           return;
       }
@@ -74,18 +74,18 @@ class DeadNodeElimination final : public optimization {
     }
 
     bool
-    IsAlive(const jive::output & output) const noexcept
+    IsAlive(const jlm::rvsdg::output & output) const noexcept
     {
-      if (auto simpleOutput = dynamic_cast<const jive::simple_output*>(&output))
+      if (auto simpleOutput = dynamic_cast<const jlm::rvsdg::simple_output*>(&output))
         return simpleNodes_.find(simpleOutput->node()) != simpleNodes_.end();
 
       return outputs_.find(&output) != outputs_.end();
     }
 
     bool
-    IsAlive(const jive::node & node) const noexcept
+    IsAlive(const jlm::rvsdg::node & node) const noexcept
     {
-      if (auto simpleNode = dynamic_cast<const jive::simple_node*>(&node))
+      if (auto simpleNode = dynamic_cast<const jlm::rvsdg::simple_node*>(&node))
         return simpleNodes_.find(simpleNode) != simpleNodes_.end();
 
       for (size_t n = 0; n < node.noutputs(); n++) {
@@ -104,8 +104,8 @@ class DeadNodeElimination final : public optimization {
     }
 
   private:
-    std::unordered_set<const jive::simple_node*> simpleNodes_;
-    std::unordered_set<const jive::output*> outputs_;
+    std::unordered_set<const jlm::rvsdg::simple_node*> simpleNodes_;
+    std::unordered_set<const jlm::rvsdg::output*> outputs_;
   };
 
   class Statistics;
@@ -114,7 +114,7 @@ public:
 	~DeadNodeElimination() override;
 
 	void
-	run(jive::region & region);
+	run(jlm::rvsdg::region & region);
 
 	void
 	run(
@@ -126,25 +126,25 @@ private:
   ResetState();
 
   void
-  Mark(const jive::region & region);
+  Mark(const jlm::rvsdg::region & region);
 
   void
-  Mark(const jive::output & output);
+  Mark(const jlm::rvsdg::output & output);
 
   void
-  Sweep(jive::graph & graph) const;
+  Sweep(jlm::rvsdg::graph & graph) const;
 
   void
-  Sweep(jive::region & region) const;
+  Sweep(jlm::rvsdg::region & region) const;
 
   void
-  Sweep(jive::structural_node & node) const;
+  Sweep(jlm::rvsdg::structural_node & node) const;
 
   void
-  SweepGamma(jive::gamma_node & gammaNode) const;
+  SweepGamma(jlm::rvsdg::gamma_node & gammaNode) const;
 
   void
-  SweepTheta(jive::theta_node & thetaNode) const;
+  SweepTheta(jlm::rvsdg::theta_node & thetaNode) const;
 
   void
   SweepLambda(lambda::node & lambdaNode) const;

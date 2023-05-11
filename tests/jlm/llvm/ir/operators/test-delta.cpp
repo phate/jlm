@@ -47,7 +47,7 @@ test()
   rm.Rvsdg().add_export(d1, {d1->type(), ""});
   rm.Rvsdg().add_export(d2, {d2->type(), ""});
 
-	jive::view(rm.Rvsdg(), stdout);
+	jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
 	/* verify graph */
 

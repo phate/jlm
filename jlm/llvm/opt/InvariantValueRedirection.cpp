@@ -23,13 +23,13 @@ public:
   {}
 
   void
-  Start(const jive::graph & graph) noexcept
+  Start(const jlm::rvsdg::graph & graph) noexcept
   {
     Timer_.start();
   }
 
   void
-  Stop(const jive::graph & graph) noexcept
+  Stop(const jlm::rvsdg::graph & graph) noexcept
   {
     Timer_.stop();
   }
@@ -71,22 +71,22 @@ InvariantValueRedirection::run(
 }
 
 void
-InvariantValueRedirection::RedirectInvariantValues(jive::region & region)
+InvariantValueRedirection::RedirectInvariantValues(jlm::rvsdg::region & region)
 {
-  for (auto node : jive::topdown_traverser(&region)) {
-    if (jive::is<jive::simple_op>(node))
+  for (auto node : jlm::rvsdg::topdown_traverser(&region)) {
+    if (jlm::rvsdg::is<jlm::rvsdg::simple_op>(node))
       continue;
 
-    auto & structuralNode = *util::AssertedCast<jive::structural_node>(node);
+    auto & structuralNode = *util::AssertedCast<jlm::rvsdg::structural_node>(node);
     for (size_t n = 0; n < structuralNode.nsubregions(); n++)
       RedirectInvariantValues(*structuralNode.subregion(n));
 
-    if (auto gammaNode = dynamic_cast<jive::gamma_node*>(&structuralNode)) {
+    if (auto gammaNode = dynamic_cast<jlm::rvsdg::gamma_node*>(&structuralNode)) {
       RedirectInvariantGammaOutputs(*gammaNode);
       continue;
     }
 
-    if (auto thetaNode = dynamic_cast<jive::theta_node*>(&structuralNode)) {
+    if (auto thetaNode = dynamic_cast<jlm::rvsdg::theta_node*>(&structuralNode)) {
       RedirectInvariantThetaOutputs(*thetaNode);
       continue;
     }
@@ -94,7 +94,7 @@ InvariantValueRedirection::RedirectInvariantValues(jive::region & region)
 }
 
 void
-InvariantValueRedirection::RedirectInvariantGammaOutputs(jive::gamma_node & gammaNode)
+InvariantValueRedirection::RedirectInvariantGammaOutputs(jlm::rvsdg::gamma_node & gammaNode)
 {
   for (auto it = gammaNode.begin_exitvar(); it != gammaNode.end_exitvar(); it++) {
     auto & gammaOutput = *it;
@@ -105,14 +105,14 @@ InvariantValueRedirection::RedirectInvariantGammaOutputs(jive::gamma_node & gamm
 }
 
 void
-InvariantValueRedirection::RedirectInvariantThetaOutputs(jive::theta_node & thetaNode)
+InvariantValueRedirection::RedirectInvariantThetaOutputs(jlm::rvsdg::theta_node & thetaNode)
 {
   for (const auto & thetaOutput : thetaNode) {
     /* FIXME: In order to also redirect loop state type variables, we need to know whether a loop terminates.*/
-    if (jive::is<loopstatetype>(thetaOutput->type()))
+    if (jlm::rvsdg::is<loopstatetype>(thetaOutput->type()))
       continue;
 
-    if (jive::is_invariant(thetaOutput))
+    if (jlm::rvsdg::is_invariant(thetaOutput))
       thetaOutput->divert_users(thetaOutput->input()->origin());
   }
 }

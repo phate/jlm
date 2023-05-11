@@ -58,7 +58,7 @@ test1()
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
     loopstatetype loopStateType;
-    jive::ctltype ct(2);
+    jlm::rvsdg::ctltype ct(2);
     FunctionType functionType(
       {&ct, &vt, &iOStateType, &memoryStateType, &loopStateType},
       {&vt, &iOStateType, &memoryStateType, &loopStateType});
@@ -75,7 +75,7 @@ test1()
     auto memoryStateArgument = lambda->fctargument(3);
     auto loopStateArgument = lambda->fctargument(4);
 
-    auto gamma = jive::gamma_node::create(controlArgument, 2);
+    auto gamma = jlm::rvsdg::gamma_node::create(controlArgument, 2);
     auto gammaInputF1 = gamma->add_entryvar(d);
     auto gammaInputValue = gamma->add_entryvar(valueArgument);
     auto gammaInputIoState = gamma->add_entryvar(iOStateArgument);
@@ -101,19 +101,19 @@ test1()
 
 	graph.add_export(f2, {f2->type(), "f2"});
 
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 
   /*
    * Act
    */
 	jlm::fctinline fctinline;
 	fctinline.run(rm, statisticsCollector);
-//	jive::view(graph.root(), stdout);
+//	jlm::rvsdg::view(graph.root(), stdout);
 
   /*
    * Assert
    */
-	assert(!jive::region::Contains<jlm::CallOperation>(*graph.root(), true));
+	assert(!jlm::rvsdg::region::Contains<jlm::CallOperation>(*graph.root(), true));
 }
 
 static void
@@ -186,21 +186,21 @@ test2()
 
 	graph.add_export(f2, {f2->type(), "f2"});
 
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
   /*
    * Act
    */
 	jlm::fctinline fctinline;
 	fctinline.run(rm, statisticsCollector);
-	jive::view(graph.root(), stdout);
+	jlm::rvsdg::view(graph.root(), stdout);
 
   /*
    * Assert
    *
    * Function f1 should not have been inlined.
    */
-	assert(is<CallOperation>(jive::node_output::node(f2->node()->fctresult(0)->origin())));
+	assert(is<CallOperation>(jlm::rvsdg::node_output::node(f2->node()->fctresult(0)->origin())));
 }
 
 static int

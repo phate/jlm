@@ -23,14 +23,14 @@ namespace jlm2llvm {
 
 llvm::Value *
 convert_operation(
-	const jive::simple_op & op,
+	const rvsdg::simple_op & op,
 	const std::vector<const variable*> & arguments,
 	llvm::IRBuilder<> & builder,
 	context & ctx);
 
 static inline llvm::Value *
 convert_assignment(
-	const jive::simple_op & op,
+	const rvsdg::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -41,27 +41,27 @@ convert_assignment(
 
 static inline llvm::Value *
 convert_bitsbinary(
-	const jive::simple_op & op,
+	const rvsdg::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_ASSERT(dynamic_cast<const jive::bitbinary_op*>(&op));
+	JLM_ASSERT(dynamic_cast<const rvsdg::bitbinary_op*>(&op));
 
 	static std::unordered_map<std::type_index, llvm::Instruction::BinaryOps> map({
-	  {typeid(jive::bitadd_op), llvm::Instruction::Add}
-	, {typeid(jive::bitand_op), llvm::Instruction::And}
-	, {typeid(jive::bitashr_op), llvm::Instruction::AShr}
-	, {typeid(jive::bitsub_op), llvm::Instruction::Sub}
-	, {typeid(jive::bitudiv_op), llvm::Instruction::UDiv}
-	, {typeid(jive::bitsdiv_op), llvm::Instruction::SDiv}
-	, {typeid(jive::bitumod_op), llvm::Instruction::URem}
-	, {typeid(jive::bitsmod_op), llvm::Instruction::SRem}
-	, {typeid(jive::bitshl_op), llvm::Instruction::Shl}
-	, {typeid(jive::bitshr_op), llvm::Instruction::LShr}
-	, {typeid(jive::bitor_op), llvm::Instruction::Or}
-	, {typeid(jive::bitxor_op), llvm::Instruction::Xor}
-	, {typeid(jive::bitmul_op), llvm::Instruction::Mul}
+	  {typeid(rvsdg::bitadd_op), llvm::Instruction::Add}
+	, {typeid(rvsdg::bitand_op), llvm::Instruction::And}
+	, {typeid(rvsdg::bitashr_op), llvm::Instruction::AShr}
+	, {typeid(rvsdg::bitsub_op), llvm::Instruction::Sub}
+	, {typeid(rvsdg::bitudiv_op), llvm::Instruction::UDiv}
+	, {typeid(rvsdg::bitsdiv_op), llvm::Instruction::SDiv}
+	, {typeid(rvsdg::bitumod_op), llvm::Instruction::URem}
+	, {typeid(rvsdg::bitsmod_op), llvm::Instruction::SRem}
+	, {typeid(rvsdg::bitshl_op), llvm::Instruction::Shl}
+	, {typeid(rvsdg::bitshr_op), llvm::Instruction::LShr}
+	, {typeid(rvsdg::bitor_op), llvm::Instruction::Or}
+	, {typeid(rvsdg::bitxor_op), llvm::Instruction::Xor}
+	, {typeid(rvsdg::bitmul_op), llvm::Instruction::Mul}
 	});
 
 	auto op1 = ctx.value(args[0]);
@@ -72,24 +72,24 @@ convert_bitsbinary(
 
 static inline llvm::Value *
 convert_bitscompare(
-	const jive::simple_op & op,
+	const rvsdg::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_ASSERT(dynamic_cast<const jive::bitcompare_op*>(&op));
+	JLM_ASSERT(dynamic_cast<const rvsdg::bitcompare_op*>(&op));
 
 	static std::unordered_map<std::type_index, llvm::CmpInst::Predicate> map({
-	  {typeid(jive::biteq_op), llvm::CmpInst::ICMP_EQ}
-	, {typeid(jive::bitne_op), llvm::CmpInst::ICMP_NE}
-	, {typeid(jive::bitugt_op), llvm::CmpInst::ICMP_UGT}
-	, {typeid(jive::bituge_op), llvm::CmpInst::ICMP_UGE}
-	, {typeid(jive::bitult_op), llvm::CmpInst::ICMP_ULT}
-	, {typeid(jive::bitule_op), llvm::CmpInst::ICMP_ULE}
-	, {typeid(jive::bitsgt_op), llvm::CmpInst::ICMP_SGT}
-	, {typeid(jive::bitsge_op), llvm::CmpInst::ICMP_SGE}
-	, {typeid(jive::bitslt_op), llvm::CmpInst::ICMP_SLT}
-	, {typeid(jive::bitsle_op), llvm::CmpInst::ICMP_SLE}
+	  {typeid(rvsdg::biteq_op), llvm::CmpInst::ICMP_EQ}
+	, {typeid(rvsdg::bitne_op), llvm::CmpInst::ICMP_NE}
+	, {typeid(rvsdg::bitugt_op), llvm::CmpInst::ICMP_UGT}
+	, {typeid(rvsdg::bituge_op), llvm::CmpInst::ICMP_UGE}
+	, {typeid(rvsdg::bitult_op), llvm::CmpInst::ICMP_ULT}
+	, {typeid(rvsdg::bitule_op), llvm::CmpInst::ICMP_ULE}
+	, {typeid(rvsdg::bitsgt_op), llvm::CmpInst::ICMP_SGT}
+	, {typeid(rvsdg::bitsge_op), llvm::CmpInst::ICMP_SGE}
+	, {typeid(rvsdg::bitslt_op), llvm::CmpInst::ICMP_SLT}
+	, {typeid(rvsdg::bitsle_op), llvm::CmpInst::ICMP_SLE}
 	});
 
 	auto op1 = ctx.value(args[0]);
@@ -99,7 +99,7 @@ convert_bitscompare(
 }
 
 static llvm::APInt
-convert_bitvalue_repr(const jive::bitvalue_repr & vr)
+convert_bitvalue_repr(const rvsdg::bitvalue_repr & vr)
 {
 	JLM_ASSERT(vr.is_defined());
 
@@ -111,13 +111,13 @@ convert_bitvalue_repr(const jive::bitvalue_repr & vr)
 
 static inline llvm::Value *
 convert_bitconstant(
-	const jive::simple_op & op,
+	const rvsdg::simple_op & op,
 	const std::vector<const variable*> &,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_ASSERT(dynamic_cast<const jive::bitconstant_op*>(&op));
-	auto value = static_cast<const jive::bitconstant_op*>(&op)->value();
+	JLM_ASSERT(dynamic_cast<const rvsdg::bitconstant_op*>(&op));
+	auto value = static_cast<const rvsdg::bitconstant_op*>(&op)->value();
 
 	auto type = llvm::IntegerType::get(builder.getContext(), value.nbits());
 
@@ -129,13 +129,13 @@ convert_bitconstant(
 
 static inline llvm::Value *
 convert_ctlconstant(
-	const jive::simple_op & op,
+	const rvsdg::simple_op & op,
 	const std::vector<const variable*> &,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
 	JLM_ASSERT(is_ctlconstant_op(op));
-	auto & cop = *static_cast<const jive::ctlconstant_op*>(&op);
+	auto & cop = *static_cast<const rvsdg::ctlconstant_op*>(&op);
 
 	size_t nbits = cop.value().nalternatives() == 2 ? 1 : 32;
 	auto type = llvm::IntegerType::get(builder.getContext(), nbits);
@@ -154,7 +154,7 @@ convert(
 
 static inline llvm::Value *
 convert_undef(
-	const jive::simple_op & op,
+	const rvsdg::simple_op & op,
 	const std::vector<const variable*> &,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -186,14 +186,14 @@ convert(
 	for (size_t n = 1; n < args.size(); n++) {
 		auto argument = args[n];
 
-		if (jive::is<iostatetype>(argument->type()))
+		if (rvsdg::is<iostatetype>(argument->type()))
 			continue;
-		if (jive::is<MemoryStateType>(argument->type()))
+		if (rvsdg::is<MemoryStateType>(argument->type()))
 			continue;
-		if (jive::is<loopstatetype>(argument->type()))
+		if (rvsdg::is<loopstatetype>(argument->type()))
 			continue;
 
-		if (jive::is<varargtype>(argument->type())) {
+		if (rvsdg::is<varargtype>(argument->type())) {
 			JLM_ASSERT(is<tacvariable>(argument));
 			auto valist = dynamic_cast<const jlm::tacvariable*>(argument)->tac();
 			JLM_ASSERT(is<valist_op>(valist->operation()));
@@ -210,7 +210,7 @@ convert(
 }
 
 static inline bool
-is_identity_mapping(const jive::match_op & op)
+is_identity_mapping(const rvsdg::match_op & op)
 {
 	for (const auto & pair : op) {
 		if (pair.first != pair.second)
@@ -222,13 +222,13 @@ is_identity_mapping(const jive::match_op & op)
 
 static inline llvm::Value *
 convert_match(
-	const jive::simple_op & op,
+	const rvsdg::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
-	JLM_ASSERT(is<jive::match_op>(op));
-	auto mop = static_cast<const jive::match_op*>(&op);
+	JLM_ASSERT(is<rvsdg::match_op>(op));
+	auto mop = static_cast<const rvsdg::match_op*>(&op);
 
 	if (is_identity_mapping(*mop))
 		return ctx.value(args[0]);
@@ -246,7 +246,7 @@ convert_match(
 
 static inline llvm::Value *
 convert_branch(
-	const jive::simple_op & op,
+	const rvsdg::simple_op & op,
 	const std::vector<const variable*> &,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -257,7 +257,7 @@ convert_branch(
 
 static inline llvm::Value *
 convert_phi(
-	const jive::simple_op & op,
+	const rvsdg::simple_op & op,
 	const std::vector<const variable*> &,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -265,11 +265,11 @@ convert_phi(
 	JLM_ASSERT(is<phi_op>(op));
 	auto & phi = *static_cast<const jlm::phi_op*>(&op);
 
-	if (jive::is<iostatetype>(phi.type()))
+	if (rvsdg::is<iostatetype>(phi.type()))
 		return nullptr;
-	if (jive::is<MemoryStateType>(phi.type()))
+	if (rvsdg::is<MemoryStateType>(phi.type()))
 		return nullptr;
-	if (jive::is<loopstatetype>(phi.type()))
+	if (rvsdg::is<loopstatetype>(phi.type()))
 		return nullptr;
 
 	auto t = convert_type(phi.type(), ctx);
@@ -291,7 +291,7 @@ convert(
 
 static inline llvm::Value *
 convert_store(
-	const jive::simple_op & op,
+	const rvsdg::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -306,7 +306,7 @@ convert_store(
 
 static inline llvm::Value *
 convert_alloca(
-	const jive::simple_op & op,
+	const rvsdg::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -322,7 +322,7 @@ convert_alloca(
 
 static inline llvm::Value *
 convert_getelementptr(
-	const jive::simple_op & op,
+	const rvsdg::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -377,7 +377,7 @@ convert(
 {
 	JLM_ASSERT(is<ConstantDataArray>(op));
 
-	if (auto bt = dynamic_cast<const jive::bittype*>(&op.type())) {
+	if (auto bt = dynamic_cast<const rvsdg::bittype*>(&op.type())) {
 		if (bt->nbits() == 8) {
 			auto data = get_bitdata<uint8_t>(operands, ctx);
 			return llvm::ConstantDataArray::get(builder.getContext(), data);
@@ -446,7 +446,7 @@ convert(
 
 static inline llvm::Value *
 convert_ptrcmp(
-	const jive::simple_op & op,
+	const rvsdg::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -468,7 +468,7 @@ convert_ptrcmp(
 
 static inline llvm::Value *
 convert_fpcmp(
-	const jive::simple_op & op,
+	const rvsdg::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -495,7 +495,7 @@ convert_fpcmp(
 
 static inline llvm::Value *
 convert_fpbin(
-	const jive::simple_op & op,
+	const rvsdg::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -517,7 +517,7 @@ convert_fpbin(
 
 static llvm::Value *
 convert_fpneg(
-	const jive::simple_op & op,
+	const rvsdg::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -529,7 +529,7 @@ convert_fpneg(
 
 static inline llvm::Value *
 convert_valist(
-	const jive::simple_op & op,
+	const rvsdg::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -566,7 +566,7 @@ convert(
 
 static inline llvm::Value *
 convert_select(
-	const jive::simple_op & op,
+	const rvsdg::simple_op & op,
 	const std::vector<const variable*> & operands,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -574,7 +574,7 @@ convert_select(
 	JLM_ASSERT(is<select_op>(op));
 	auto & select = *static_cast<const jlm::select_op*>(&op);
 
-	if (jive::is<jive::statetype>(select.type()))
+	if (rvsdg::is<rvsdg::statetype>(select.type()))
 		return nullptr;
 
 	auto c = ctx.value(operands[0]);
@@ -585,7 +585,7 @@ convert_select(
 
 static inline llvm::Value *
 convert_ctl2bits(
-	const jive::simple_op & op,
+	const rvsdg::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -596,7 +596,7 @@ convert_ctl2bits(
 
 static llvm::Value *
 convert_constantvector(
-	const jive::simple_op & op,
+	const rvsdg::simple_op & op,
 	const std::vector<const variable*> & operands,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -612,7 +612,7 @@ convert_constantvector(
 
 static llvm::Value *
 convert_constantdatavector(
-	const jive::simple_op & op,
+	const rvsdg::simple_op & op,
 	const std::vector<const variable*> & operands,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -620,7 +620,7 @@ convert_constantdatavector(
 	JLM_ASSERT(is<constant_data_vector_op>(op));
 	auto & cop = *static_cast<const constant_data_vector_op*>(&op);
 
-	if (auto bt = dynamic_cast<const jive::bittype*>(&cop.type())) {
+	if (auto bt = dynamic_cast<const rvsdg::bittype*>(&cop.type())) {
 		if (bt->nbits() == 8) {
 			auto data = get_bitdata<uint8_t>(operands, ctx);
 			return llvm::ConstantDataVector::get(builder.getContext(), data);
@@ -657,7 +657,7 @@ convert_constantdatavector(
 
 static llvm::Value *
 convert_extractelement(
-	const jive::simple_op & op,
+	const rvsdg::simple_op & op,
 	const std::vector<const variable*> & args,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -680,7 +680,7 @@ convert(
 
 static llvm::Value *
 convert_insertelement(
-	const jive::simple_op & op,
+	const rvsdg::simple_op & op,
 	const std::vector<const variable*> & operands,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -695,7 +695,7 @@ convert_insertelement(
 
 static llvm::Value *
 convert_vectorunary(
-	const jive::simple_op & op,
+	const rvsdg::simple_op & op,
 	const std::vector<const variable*> & operands,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -707,7 +707,7 @@ convert_vectorunary(
 
 static llvm::Value *
 convert_vectorbinary(
-	const jive::simple_op & op,
+	const rvsdg::simple_op & op,
 	const std::vector<const variable*> & operands,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -732,13 +732,13 @@ convert(
 
 template<llvm::Instruction::CastOps OPCODE> static llvm::Value *
 convert_cast(
-	const jive::simple_op & op,
+	const rvsdg::simple_op & op,
 	const std::vector<const variable*> & operands,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
 {
 	JLM_ASSERT(llvm::Instruction::isCast(OPCODE));
-	auto & dsttype = *static_cast<const jive::valuetype*>(&op.result(0).type());
+	auto & dsttype = *static_cast<const rvsdg::valuetype*>(&op.result(0).type());
 	auto operand = operands[0];
 
     if (auto vt = dynamic_cast<const fixedvectortype*>(&operand->type()))
@@ -882,7 +882,7 @@ convert(
 
 template<class OP> static llvm::Value *
 convert(
-	const jive::simple_op & op,
+	const rvsdg::simple_op & op,
 	const std::vector<const variable*> & operands,
 	llvm::IRBuilder<> & builder,
 	context & ctx)
@@ -893,27 +893,27 @@ convert(
 
 llvm::Value *
 convert_operation(
-  const jive::simple_op & op,
+  const rvsdg::simple_op & op,
   const std::vector<const variable*> & arguments,
   llvm::IRBuilder<> & builder,
   context & ctx)
 {
-  if (dynamic_cast<const jive::bitbinary_op*>(&op))
+  if (dynamic_cast<const rvsdg::bitbinary_op*>(&op))
     return convert_bitsbinary(op, arguments, builder, ctx);
 
-  if (dynamic_cast<const jive::bitcompare_op*>(&op))
+  if (dynamic_cast<const rvsdg::bitcompare_op*>(&op))
     return convert_bitscompare(op, arguments, builder, ctx);
 
   static std::unordered_map<
     std::type_index
-    , llvm::Value*(*)(const jive::simple_op &, const std::vector<const variable*> &, llvm::IRBuilder<> &, context & ctx)
+    , llvm::Value*(*)(const rvsdg::simple_op &, const std::vector<const variable*> &, llvm::IRBuilder<> &, context & ctx)
   > map({
-          {typeid(jive::bitconstant_op),            convert_bitconstant},
-          {typeid(jive::ctlconstant_op),            convert_ctlconstant},
+          {typeid(rvsdg::bitconstant_op),            convert_bitconstant},
+          {typeid(rvsdg::ctlconstant_op),            convert_ctlconstant},
           {typeid(ConstantFP),                      convert<ConstantFP>},
           {typeid(UndefValueOperation),             convert_undef},
           {typeid(PoisonValueOperation),            convert<PoisonValueOperation>},
-          {typeid(jive::match_op),                  convert_match},
+          {typeid(rvsdg::match_op),                  convert_match},
           {typeid(assignment_op),                   convert_assignment},
           {typeid(branch_op),                       convert_branch},
           {typeid(phi_op),                          convert_phi},

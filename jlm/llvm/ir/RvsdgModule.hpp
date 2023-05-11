@@ -15,28 +15,28 @@ namespace jlm {
 
 /* impport class */
 
-class impport final : public jive::impport {
+class impport final : public jlm::rvsdg::impport {
 public:
 	virtual
 	~impport();
 
     impport(
-        const jive::valuetype & valueType,
+        const jlm::rvsdg::valuetype & valueType,
         const std::string & name,
         const jlm::linkage & lnk)
-        : jive::impport(PointerType(), name)
+        : jlm::rvsdg::impport(PointerType(), name)
         , linkage_(lnk)
         , ValueType_(valueType.copy())
     {}
 
 	impport(const impport & other)
-	: jive::impport(other)
+	: jlm::rvsdg::impport(other)
 	, linkage_(other.linkage_)
     , ValueType_(other.ValueType_->copy())
 	{}
 
 	impport(impport && other)
-	: jive::impport(other)
+	: jlm::rvsdg::impport(other)
 	, linkage_(std::move(other.linkage_))
     , ValueType_(std::move(other.ValueType_))
 	{}
@@ -53,10 +53,10 @@ public:
 		return linkage_;
 	}
 
-    [[nodiscard]] const jive::valuetype &
+    [[nodiscard]] const jlm::rvsdg::valuetype &
     GetValueType() const noexcept
     {
-        return *util::AssertedCast<jive::valuetype>(ValueType_.get());
+        return *util::AssertedCast<jlm::rvsdg::valuetype>(ValueType_.get());
     }
 
 	virtual bool
@@ -67,24 +67,24 @@ public:
 
 private:
 	jlm::linkage linkage_;
-    std::unique_ptr<jive::type> ValueType_;
+    std::unique_ptr<jlm::rvsdg::type> ValueType_;
 };
 
 static inline bool
-is_import(const jive::output * output)
+is_import(const jlm::rvsdg::output * output)
 {
 	auto graph = output->region()->graph();
 
-	auto argument = dynamic_cast<const jive::argument*>(output);
+	auto argument = dynamic_cast<const jlm::rvsdg::argument*>(output);
 	return argument && argument->region() == graph->root();
 }
 
 static inline bool
-is_export(const jive::input * input)
+is_export(const jlm::rvsdg::input * input)
 {
 	auto graph = input->region()->graph();
 
-	auto result = dynamic_cast<const jive::result*>(input);
+	auto result = dynamic_cast<const jlm::rvsdg::result*>(input);
 	return result && result->region() == graph->root();
 }
 
@@ -112,13 +112,13 @@ public:
 	RvsdgModule &
 	operator=(RvsdgModule &&) = delete;
 
-	jive::graph &
+	jlm::rvsdg::graph &
   Rvsdg() noexcept
 	{
 		return Rvsdg_;
 	}
 
-	const jive::graph &
+	const jlm::rvsdg::graph &
   Rvsdg() const noexcept
 	{
 		return Rvsdg_;
@@ -152,7 +152,7 @@ public:
 	}
 
 private:
-	jive::graph Rvsdg_;
+	jlm::rvsdg::graph Rvsdg_;
 	std::string DataLayout_;
 	std::string TargetTriple_;
 	const util::filepath SourceFileName_;

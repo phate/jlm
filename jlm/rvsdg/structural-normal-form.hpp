@@ -8,7 +8,8 @@
 
 #include <jlm/rvsdg/node-normal-form.hpp>
 
-namespace jive {
+namespace jlm::rvsdg
+{
 
 class structural_normal_form : public node_normal_form {
 public:
@@ -17,8 +18,8 @@ public:
 
 	structural_normal_form(
 		const std::type_info & operator_class,
-		jive::node_normal_form * parent,
-		jive::graph * graph) noexcept;
+		jlm::rvsdg::node_normal_form * parent,
+		jlm::rvsdg::graph * graph) noexcept;
 };
 
 }

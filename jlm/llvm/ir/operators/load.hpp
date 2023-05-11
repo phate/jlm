@@ -16,24 +16,24 @@ namespace jlm {
 
 /* load normal form */
 
-class load_normal_form final : public jive::simple_normal_form {
+class load_normal_form final : public rvsdg::simple_normal_form {
 public:
 	virtual
 	~load_normal_form();
 
 	load_normal_form(
 		const std::type_info & opclass,
-		jive::node_normal_form * parent,
-		jive::graph * graph) noexcept;
+		rvsdg::node_normal_form * parent,
+		rvsdg::graph * graph) noexcept;
 
 	virtual bool
-	normalize_node(jive::node * node) const override;
+	normalize_node(rvsdg::node * node) const override;
 
-	virtual std::vector<jive::output*>
+	virtual std::vector<rvsdg::output*>
 	normalized_create(
-		jive::region * region,
-		const jive::simple_op & op,
-		const std::vector<jive::output*> & operands) const override;
+		rvsdg::region * region,
+		const rvsdg::simple_op & op,
+		const std::vector<rvsdg::output*> & operands) const override;
 
 	inline void
 	set_load_mux_reducible(bool enable) noexcept
@@ -133,12 +133,12 @@ private:
  *
  * This operator is the Jlm equivalent of LLVM's load instruction.
  */
-class LoadOperation final : public jive::simple_op {
+class LoadOperation final : public rvsdg::simple_op {
 public:
   ~LoadOperation() noexcept override;
 
   LoadOperation(
-    const jive::valuetype & loadedType,
+    const rvsdg::valuetype & loadedType,
     size_t numStates,
     size_t alignment)
     : simple_op(
@@ -153,7 +153,7 @@ public:
   [[nodiscard]] std::string
   debug_string() const override;
 
-  [[nodiscard]] std::unique_ptr<jive::operation>
+  [[nodiscard]] std::unique_ptr<rvsdg::operation>
   copy() const override;
 
   [[nodiscard]] const PointerType &
@@ -162,10 +162,10 @@ public:
     return *util::AssertedCast<const PointerType>(&argument(0).type());
   }
 
-  [[nodiscard]] const jive::valuetype &
+  [[nodiscard]] const rvsdg::valuetype &
   GetLoadedType() const noexcept
   {
-    return *util::AssertedCast<const jive::valuetype>(&result(0).type());
+    return *util::AssertedCast<const rvsdg::valuetype>(&result(0).type());
   }
 
   [[nodiscard]] size_t
@@ -181,7 +181,7 @@ public:
   }
 
   static jlm::load_normal_form *
-  GetNormalForm(jive::graph * graph) noexcept
+  GetNormalForm(rvsdg::graph * graph) noexcept
   {
     return util::AssertedCast<load_normal_form>(graph->node_normal_form(typeid(LoadOperation)));
   }
@@ -190,7 +190,7 @@ public:
   Create(
     const variable * address,
     const variable * state,
-    const jive::valuetype & loadedType,
+    const rvsdg::valuetype & loadedType,
     size_t alignment)
   {
     CheckAddressType(address->type());
@@ -201,28 +201,28 @@ public:
 
 private:
   static void
-  CheckAddressType(const jive::type & addressType)
+  CheckAddressType(const rvsdg::type & addressType)
   {
     if (!is<PointerType>(addressType))
       throw util::error("Expected pointer type.");
   }
 
-  static std::vector<jive::port>
+  static std::vector<rvsdg::port>
   CreateOperandPorts(size_t numStates)
   {
-    std::vector<jive::port> ports(1, {PointerType()});
-    std::vector<jive::port> states(numStates, {MemoryStateType::Create()});
+    std::vector<rvsdg::port> ports(1, {PointerType()});
+    std::vector<rvsdg::port> states(numStates, {MemoryStateType::Create()});
     ports.insert(ports.end(), states.begin(), states.end());
     return ports;
   }
 
-  static std::vector<jive::port>
+  static std::vector<rvsdg::port>
   CreateResultPorts(
-    const jive::valuetype & loadedType,
+    const rvsdg::valuetype & loadedType,
     size_t numStates)
   {
-    std::vector<jive::port> ports(1, {loadedType});
-    std::vector<jive::port> states(numStates, {MemoryStateType::Create()});
+    std::vector<rvsdg::port> ports(1, {loadedType});
+    std::vector<rvsdg::port> states(numStates, {MemoryStateType::Create()});
     ports.insert(ports.end(), states.begin(), states.end());
     return ports;
   }
@@ -230,17 +230,17 @@ private:
   size_t alignment_;
 };
 
-class LoadNode final : public jive::simple_node {
+class LoadNode final : public rvsdg::simple_node {
 private:
-  class MemoryStateInputIterator final : public jive::input::iterator<jive::simple_input> {
+  class MemoryStateInputIterator final : public rvsdg::input::iterator<rvsdg::simple_input> {
     friend LoadNode;
 
     constexpr explicit
-    MemoryStateInputIterator(jive::simple_input * input)
-      : jive::input::iterator<jive::simple_input>(input)
+    MemoryStateInputIterator(rvsdg::simple_input * input)
+      : rvsdg::input::iterator<rvsdg::simple_input>(input)
     {}
 
-    [[nodiscard]] jive::simple_input *
+    [[nodiscard]] rvsdg::simple_input *
     next() const override
     {
       auto index = value()->index();
@@ -252,15 +252,15 @@ private:
     }
   };
 
-  class MemoryStateOutputIterator final : public jive::output::iterator<jive::simple_output> {
+  class MemoryStateOutputIterator final : public rvsdg::output::iterator<rvsdg::simple_output> {
     friend LoadNode;
 
     constexpr explicit
-    MemoryStateOutputIterator(jive::simple_output * output)
-      : jive::output::iterator<jive::simple_output>(output)
+    MemoryStateOutputIterator(rvsdg::simple_output * output)
+      : rvsdg::output::iterator<rvsdg::simple_output>(output)
     {}
 
-    [[nodiscard]] jive::simple_output *
+    [[nodiscard]] rvsdg::simple_output *
     next() const override
     {
       auto index = value()->index();
@@ -276,9 +276,9 @@ private:
   using MemoryStateOutputRange = util::iterator_range<MemoryStateOutputIterator>;
 
   LoadNode(
-    jive::region & region,
+    rvsdg::region & region,
     const LoadOperation & operation,
-    const std::vector<jive::output*> & operands)
+    const std::vector<rvsdg::output*> & operands)
     : simple_node(&region, operation, operands)
   {}
 
@@ -315,7 +315,7 @@ public:
     return GetOperation().GetAlignment();
   }
 
-  [[nodiscard]] jive::input *
+  [[nodiscard]] rvsdg::input *
   GetAddressInput() const noexcept
   {
     auto addressInput = input(0);
@@ -323,40 +323,40 @@ public:
     return addressInput;
   }
 
-  [[nodiscard]] jive::output *
+  [[nodiscard]] rvsdg::output *
   GetValueOutput() const noexcept
   {
     auto valueOutput = output(0);
-    JLM_ASSERT(is<jive::valuetype>(valueOutput->type()));
+    JLM_ASSERT(is<rvsdg::valuetype>(valueOutput->type()));
     return valueOutput;
   }
 
-  static std::vector<jive::output*>
+  static std::vector<rvsdg::output*>
   Create(
-    jive::output * address,
-    const std::vector<jive::output*> & states,
-    const jive::valuetype & loadedType,
+    rvsdg::output * address,
+    const std::vector<rvsdg::output*> & states,
+    const rvsdg::valuetype & loadedType,
     size_t alignment)
   {
     CheckAddressType(address->type());
 
-    std::vector<jive::output*> operands({address});
+    std::vector<rvsdg::output*> operands({address});
     operands.insert(operands.end(), states.begin(), states.end());
 
     LoadOperation loadOperation(loadedType, states.size(), alignment);
-    return jive::outputs(new LoadNode(
+    return rvsdg::outputs(new LoadNode(
       *address->region(),
       loadOperation,
       operands));
   }
 
-  static std::vector<jive::output*>
+  static std::vector<rvsdg::output*>
   Create(
-    jive::region & region,
+    rvsdg::region & region,
     const LoadOperation & loadOperation,
-    const std::vector<jive::output*> & operands)
+    const std::vector<rvsdg::output*> & operands)
   {
-    return jive::outputs(new LoadNode(
+    return rvsdg::outputs(new LoadNode(
       region,
       loadOperation,
       operands));
@@ -364,7 +364,7 @@ public:
 
 private:
   static void
-  CheckAddressType(const jive::type & addressType)
+  CheckAddressType(const rvsdg::type & addressType)
   {
     if (!is<PointerType>(addressType))
       throw util::error("Expected pointer type.");

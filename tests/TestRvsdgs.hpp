@@ -21,7 +21,7 @@ public:
 		return *module_;
 	}
 
-	const jive::graph &
+	const jlm::rvsdg::graph &
 	graph()
 	{
 		return module().Rvsdg();
@@ -66,12 +66,12 @@ private:
 public:
 	jlm::lambda::node * lambda;
 
-	jive::node * size;
+	jlm::rvsdg::node * size;
 
-	jive::node * alloca_a;
-	jive::node * alloca_b;
-	jive::node * alloca_c;
-	jive::node * alloca_d;
+	jlm::rvsdg::node * alloca_a;
+	jlm::rvsdg::node * alloca_b;
+	jlm::rvsdg::node * alloca_c;
+	jlm::rvsdg::node * alloca_d;
 };
 
 /** \brief StoreTest2 class
@@ -103,13 +103,13 @@ private:
 public:
 	jlm::lambda::node * lambda;
 
-	jive::node * size;
+	jlm::rvsdg::node * size;
 
-	jive::node * alloca_a;
-	jive::node * alloca_b;
-	jive::node * alloca_x;
-	jive::node * alloca_y;
-	jive::node * alloca_p;
+	jlm::rvsdg::node * alloca_a;
+	jlm::rvsdg::node * alloca_b;
+	jlm::rvsdg::node * alloca_x;
+	jlm::rvsdg::node * alloca_y;
+	jlm::rvsdg::node * alloca_p;
 };
 
 /** \brief LoadTest1 class
@@ -136,8 +136,8 @@ private:
 public:
 	jlm::lambda::node * lambda;
 
-	jive::node * load_p;
-	jive::node * load_x;
+	jlm::rvsdg::node * load_p;
+	jlm::rvsdg::node * load_x;
 };
 
 /** \brief LoadTest2 class
@@ -169,16 +169,16 @@ private:
 public:
 	jlm::lambda::node * lambda;
 
-	jive::node * size;
+	jlm::rvsdg::node * size;
 
-	jive::node * alloca_a;
-	jive::node * alloca_b;
-	jive::node * alloca_x;
-	jive::node * alloca_y;
-	jive::node * alloca_p;
+	jlm::rvsdg::node * alloca_a;
+	jlm::rvsdg::node * alloca_b;
+	jlm::rvsdg::node * alloca_x;
+	jlm::rvsdg::node * alloca_y;
+	jlm::rvsdg::node * alloca_p;
 
-	jive::node * load_x;
-	jive::node * load_a;
+	jlm::rvsdg::node * load_x;
+	jlm::rvsdg::node * load_a;
 };
 
 /** \brief LoadFromUndefTest class
@@ -208,7 +208,7 @@ public:
     return *Lambda_;
   }
 
-  [[nodiscard]] const jive::node *
+  [[nodiscard]] const jlm::rvsdg::node *
   UndefValueNode() const noexcept
   {
     return UndefValueNode_;
@@ -216,7 +216,7 @@ public:
 
 private:
   jlm::lambda::node * Lambda_;
-  jive::node * UndefValueNode_;
+  jlm::rvsdg::node * UndefValueNode_;
 };
 
 /** \brief GetElementPtrTest class
@@ -246,8 +246,8 @@ private:
 public:
 	jlm::lambda::node * lambda;
 
-	jive::node * getElementPtrX;
-	jive::node * getElementPtrY;
+	jlm::rvsdg::node * getElementPtrX;
+	jlm::rvsdg::node * getElementPtrY;
 };
 
 /** \brief BitCastTest class
@@ -269,7 +269,7 @@ private:
 public:
 	jlm::lambda::node * lambda;
 
-	jive::node * bitCast;
+	jlm::rvsdg::node * bitCast;
 };
 
 /** \brief Bits2PtrTest class
@@ -301,9 +301,9 @@ public:
 	jlm::lambda::node * lambda_bits2ptr;
 	jlm::lambda::node * lambda_test;
 
-	jive::node * bits2ptr;
+	jlm::rvsdg::node * bits2ptr;
 
-	jive::node * call;
+	jlm::rvsdg::node * call;
 };
 
 /** \brief ConstantPointerNullTest class
@@ -325,7 +325,7 @@ private:
 public:
 	jlm::lambda::node * lambda;
 
-	jive::node * constantPointerNullNode;
+	jlm::rvsdg::node * constantPointerNullNode;
 };
 
 /** \brief CallTest1 class
@@ -378,9 +378,9 @@ public:
 	jlm::lambda::node * lambda_g;
 	jlm::lambda::node * lambda_h;
 
-	jive::node * alloca_x;
-	jive::node * alloca_y;
-	jive::node * alloca_z;
+	jlm::rvsdg::node * alloca_x;
+	jlm::rvsdg::node * alloca_y;
+	jlm::rvsdg::node * alloca_z;
 
 private:
   jlm::CallNode * CallF_;
@@ -448,8 +448,8 @@ public:
 	jlm::lambda::node * lambda_destroy;
 	jlm::lambda::node * lambda_test;
 
-	jive::node * malloc;
-	jive::node * free;
+	jlm::rvsdg::node * malloc;
+	jlm::rvsdg::node * free;
 
 private:
   std::unique_ptr<jlm::RvsdgModule>
@@ -707,19 +707,19 @@ public:
     return *CallY_;
   }
 
-  [[nodiscard]] jive::simple_node &
+  [[nodiscard]] jlm::rvsdg::simple_node &
   GetAllocaPx() const noexcept
   {
     return *AllocaPx_;
   }
 
-  [[nodiscard]] jive::simple_node &
+  [[nodiscard]] jlm::rvsdg::simple_node &
   GetAllocaPy() const noexcept
   {
     return *AllocaPy_;
   }
 
-  [[nodiscard]] jive::simple_node &
+  [[nodiscard]] jlm::rvsdg::simple_node &
   GetAllocaPz() const noexcept
   {
     return *AllocaPz_;
@@ -748,9 +748,9 @@ private:
   jlm::CallNode * Test2CallX_;
   jlm::CallNode * CallY_;
 
-  jive::simple_node * AllocaPx_;
-  jive::simple_node * AllocaPy_;
-  jive::simple_node * AllocaPz_;
+  jlm::rvsdg::simple_node * AllocaPx_;
+  jlm::rvsdg::simple_node * AllocaPy_;
+  jlm::rvsdg::simple_node * AllocaPz_;
 };
 
 /** \brief ExternalCallTest
@@ -823,7 +823,7 @@ private:
 public:
 	jlm::lambda::node * lambda;
 
-	jive::gamma_node * gamma;
+	jlm::rvsdg::gamma_node * gamma;
 };
 
 /** \brief ThetaTest class
@@ -850,8 +850,8 @@ private:
 
 public:
 	jlm::lambda::node * lambda;
-	jive::theta_node * theta;
-	jive::node * gep;
+	jlm::rvsdg::theta_node * theta;
+	jlm::rvsdg::node * gep;
 };
 
 /** \brief DeltaTest1 class
@@ -891,7 +891,7 @@ public:
 
 	jlm::delta::node * delta_f;
 
-  jive::node * constantFive;
+  jlm::rvsdg::node * constantFive;
 
 private:
   std::unique_ptr<jlm::RvsdgModule>
@@ -1055,8 +1055,8 @@ public:
 	jlm::lambda::node * lambda_f1;
 	jlm::lambda::node * lambda_f2;
 
-	jive::argument * import_d1;
-	jive::argument * import_d2;
+	jlm::rvsdg::argument * import_d1;
+	jlm::rvsdg::argument * import_d2;
 
 private:
   std::unique_ptr<jlm::RvsdgModule>
@@ -1119,11 +1119,11 @@ public:
 	jlm::lambda::node * lambda_fib;
 	jlm::lambda::node * lambda_test;
 
-	jive::gamma_node * gamma;
+	jlm::rvsdg::gamma_node * gamma;
 
 	jlm::phi::node * phi;
 
-	jive::node * alloca;
+	jlm::rvsdg::node * alloca;
 
 private:
   std::unique_ptr<jlm::RvsdgModule>
@@ -1299,31 +1299,31 @@ public:
     return *IndirectCall_;
   }
 
-  [[nodiscard]] jive::simple_node &
+  [[nodiscard]] jlm::rvsdg::simple_node &
   GetPTestAlloca() const noexcept
   {
     return *PTestAlloca_;
   }
 
-  [[nodiscard]] jive::simple_node &
+  [[nodiscard]] jlm::rvsdg::simple_node &
   GetPaAlloca() const noexcept
   {
     return *PaAlloca_;
   }
 
-  [[nodiscard]] jive::simple_node &
+  [[nodiscard]] jlm::rvsdg::simple_node &
   GetPbAlloca() const noexcept
   {
     return *PbAlloca_;
   }
 
-  [[nodiscard]] jive::simple_node &
+  [[nodiscard]] jlm::rvsdg::simple_node &
   GetPcAlloca() const noexcept
   {
     return *PcAlloca_;
   }
 
-  [[nodiscard]] jive::simple_node &
+  [[nodiscard]] jlm::rvsdg::simple_node &
   GetPdAlloca() const noexcept
   {
     return *PdAlloca_;
@@ -1350,11 +1350,11 @@ private:
   jlm::CallNode * CallI_;
   jlm::CallNode * IndirectCall_;
 
-  jive::simple_node * PTestAlloca_;
-  jive::simple_node * PaAlloca_;
-  jive::simple_node * PbAlloca_;
-  jive::simple_node * PcAlloca_;
-  jive::simple_node * PdAlloca_;
+  jlm::rvsdg::simple_node * PTestAlloca_;
+  jlm::rvsdg::simple_node * PaAlloca_;
+  jlm::rvsdg::simple_node * PbAlloca_;
+  jlm::rvsdg::simple_node * PcAlloca_;
+  jlm::rvsdg::simple_node * PdAlloca_;
 };
 
 /** \brief ExternalMemoryTest class
@@ -1466,11 +1466,11 @@ public:
   jlm::CallNode * ExternalFunction1Call;
   jlm::CallNode * ExternalFunction2Call;
 
-  jive::node * ReturnAddressMalloc;
-  jive::node * CallExternalFunction1Malloc;
+  jlm::rvsdg::node * ReturnAddressMalloc;
+  jlm::rvsdg::node * CallExternalFunction1Malloc;
 
-  jive::argument * ExternalFunction1Import;
-  jive::argument * ExternalFunction2Import;
+  jlm::rvsdg::argument * ExternalFunction1Import;
+  jlm::rvsdg::argument * ExternalFunction2Import;
 
   jlm::LoadNode * LoadNode;
 };
@@ -1502,7 +1502,7 @@ public:
 
   jlm::delta::node * DeltaGlobal;
 
-  jive::argument * ImportExternalFunction;
+  jlm::rvsdg::argument * ImportExternalFunction;
 
   jlm::CallNode * CallExternalFunction;
 
@@ -1569,7 +1569,7 @@ public:
     return *CallF_;
   }
 
-  [[nodiscard]] const jive::node &
+  [[nodiscard]] const jlm::rvsdg::node &
   Memcpy() const noexcept
   {
     return *Memcpy_;
@@ -1587,7 +1587,7 @@ private:
 
   jlm::CallNode * CallF_;
 
-  jive::node * Memcpy_;
+  jlm::rvsdg::node * Memcpy_;
 };
 
 /** \brief LinkedListTest class
@@ -1614,7 +1614,7 @@ private:
 class LinkedListTest final : public RvsdgTest
 {
 public:
-  [[nodiscard]] const jive::node &
+  [[nodiscard]] const jlm::rvsdg::node &
   GetAlloca() const noexcept
   {
     return *Alloca_;
@@ -1640,5 +1640,5 @@ private:
 
   jlm::lambda::node * LambdaNext_;
 
-  jive::node * Alloca_;
+  jlm::rvsdg::node * Alloca_;
 };

@@ -42,7 +42,7 @@ namespace jlm {
 			std::string get_text(jlm::RvsdgModule &rvsdgModule) override {return "MLIR/FIRRTL generator";}
 			MLIRGenImpl(mlir::MLIRContext &context) : builder(&context) {}
 			circt::firrtl::CircuitOp MlirGen(const jlm::lambda::node *lamdaNode);
-			void WriteModuleToFile(const circt::firrtl::FModuleOp fModuleOp, const jive::node *node);
+			void WriteModuleToFile(const circt::firrtl::FModuleOp fModuleOp, const jlm::rvsdg::node *node);
 			void WriteCircuitToFile(const circt::firrtl::CircuitOp circuit, std::string name);
 			std::string toString(const circt::firrtl::CircuitOp circuit);
 		private:
@@ -54,22 +54,22 @@ namespace jlm {
 			circt::firrtl::ConventionAttr conventionAttr = circt::firrtl::ConventionAttr::get(builder.getContext(), Convention::Internal);
 			std::unordered_map<std::string, circt::firrtl::FModuleOp> modules;
 			// FIRRTL generating functions
-			std::unordered_map<jive::simple_node *, circt::firrtl::InstanceOp>
+			std::unordered_map<jlm::rvsdg::simple_node *, circt::firrtl::InstanceOp>
 			MlirGen(hls::loop_node *loopNode, mlir::Block *body, mlir::Block *circuitBody);
-			circt::firrtl::FModuleOp MlirGen(jive::region *subRegion, mlir::Block *circuitBody);
-			circt::firrtl::FModuleOp MlirGen(const jive::simple_node *node);
+			circt::firrtl::FModuleOp MlirGen(jlm::rvsdg::region *subRegion, mlir::Block *circuitBody);
+			circt::firrtl::FModuleOp MlirGen(const jlm::rvsdg::simple_node *node);
 			// Operations
-			circt::firrtl::FModuleOp MlirGenSink(const jive::simple_node *node);
-			circt::firrtl::FModuleOp MlirGenFork(const jive::simple_node *node);
-			circt::firrtl::FModuleOp MlirGenMem(const jive::simple_node *node);
-			circt::firrtl::FModuleOp MlirGenTrigger(const jive::simple_node *node);
-			circt::firrtl::FModuleOp MlirGenPrint(const jive::simple_node *node);
-			circt::firrtl::FModuleOp MlirGenPredicationBuffer(const jive::simple_node *node);
-			circt::firrtl::FModuleOp MlirGenBuffer(const jive::simple_node *node);
-			circt::firrtl::FModuleOp MlirGenDMux(const jive::simple_node *node);
-			circt::firrtl::FModuleOp MlirGenNDMux(const jive::simple_node *node);
-			circt::firrtl::FModuleOp MlirGenBranch(const jive::simple_node *node);
-			circt::firrtl::FModuleOp MlirGenSimpleNode(const jive::simple_node *node);
+			circt::firrtl::FModuleOp MlirGenSink(const jlm::rvsdg::simple_node *node);
+			circt::firrtl::FModuleOp MlirGenFork(const jlm::rvsdg::simple_node *node);
+			circt::firrtl::FModuleOp MlirGenMem(const jlm::rvsdg::simple_node *node);
+			circt::firrtl::FModuleOp MlirGenTrigger(const jlm::rvsdg::simple_node *node);
+			circt::firrtl::FModuleOp MlirGenPrint(const jlm::rvsdg::simple_node *node);
+			circt::firrtl::FModuleOp MlirGenPredicationBuffer(const jlm::rvsdg::simple_node *node);
+			circt::firrtl::FModuleOp MlirGenBuffer(const jlm::rvsdg::simple_node *node);
+			circt::firrtl::FModuleOp MlirGenDMux(const jlm::rvsdg::simple_node *node);
+			circt::firrtl::FModuleOp MlirGenNDMux(const jlm::rvsdg::simple_node *node);
+			circt::firrtl::FModuleOp MlirGenBranch(const jlm::rvsdg::simple_node *node);
+			circt::firrtl::FModuleOp MlirGenSimpleNode(const jlm::rvsdg::simple_node *node);
 
 			// Helper functions
 			void AddClockPort(llvm::SmallVector<circt::firrtl::PortInfo> *ports);
@@ -168,23 +168,23 @@ namespace jlm {
 							mlir::Value condition,
 							bool elseStatment);
 			circt::firrtl::InstanceOp AddInstanceOp(mlir::Block *body,
-							jive::simple_node *node);
+							jlm::rvsdg::simple_node *node);
 			circt::firrtl::ConstantOp GetConstant(mlir::Block *body, int size, int value);
 			circt::firrtl::InvalidValueOp GetInvalid(mlir::Block *body, int size);
 
-			jive::output *TraceArgument(jive::argument *arg);
-			jive::simple_output *TraceStructuralOutput(jive::structural_output *out);
+			jlm::rvsdg::output *TraceArgument(jlm::rvsdg::argument *arg);
+			jlm::rvsdg::simple_output *TraceStructuralOutput(jlm::rvsdg::structural_output *out);
 
 			void InitializeMemReq(circt::firrtl::FModuleOp module);
 			circt::firrtl::BundleType::BundleElement GetReadyElement();
 			circt::firrtl::BundleType::BundleElement GetValidElement();
 			mlir::BlockArgument GetClockSignal(circt::firrtl::FModuleOp module);
 			mlir::BlockArgument GetResetSignal(circt::firrtl::FModuleOp module);
-			circt::firrtl::FModuleOp nodeToModule(const jive::simple_node *node, bool mem=false);
+			circt::firrtl::FModuleOp nodeToModule(const jlm::rvsdg::simple_node *node, bool mem=false);
 			circt::firrtl::IntType GetIntType(int size);
-			circt::firrtl::IntType GetIntType(const jive::type *type, int extend = 0);
-			std::string GetModuleName(const jive::node *node);
-			bool IsIdentityMapping(const jive::match_op &op);
+			circt::firrtl::IntType GetIntType(const jlm::rvsdg::type *type, int extend = 0);
+			std::string GetModuleName(const jlm::rvsdg::node *node);
+			bool IsIdentityMapping(const jlm::rvsdg::match_op &op);
 		};
 
 		class MLIRGen : public BaseHLS {

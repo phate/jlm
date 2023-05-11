@@ -21,7 +21,7 @@ jlm::hls::isForbiddenChar(char c) {
 }
 
 std::string
-jlm::hls::BaseHLS::get_node_name(const jive::node *node) {
+jlm::hls::BaseHLS::get_node_name(const jlm::rvsdg::node *node) {
 	auto found = node_map.find(node);
 	if (found != node_map.end()) {
 		return found->second;
@@ -49,11 +49,11 @@ jlm::hls::BaseHLS::get_node_name(const jive::node *node) {
 }
 
 std::string
-jlm::hls::BaseHLS::get_port_name(jive::input *port) {
+jlm::hls::BaseHLS::get_port_name(jlm::rvsdg::input *port) {
 	std::string result;
-	if (dynamic_cast<const jive::node_input *>(port)) {
+	if (dynamic_cast<const jlm::rvsdg::node_input *>(port)) {
 		result += "i";
-	} else if (dynamic_cast<const jive::result *>(port)) {
+	} else if (dynamic_cast<const jlm::rvsdg::result *>(port)) {
 		result += "r";
 	} else {
 		throw std::logic_error(port->debug_string() + " not implemented!");
@@ -63,16 +63,16 @@ jlm::hls::BaseHLS::get_port_name(jive::input *port) {
 }
 
 std::string
-jlm::hls::BaseHLS::get_port_name(jive::output *port) {
+jlm::hls::BaseHLS::get_port_name(jlm::rvsdg::output *port) {
 	if (port == nullptr) {
 		throw std::logic_error("nullptr!");
 	}
 	std::string result;
-	if (dynamic_cast<const jive::argument *>(port)) {
+	if (dynamic_cast<const jlm::rvsdg::argument *>(port)) {
 		result += "a";
-	} else if (dynamic_cast<const jive::node_output *>(port)) {
+	} else if (dynamic_cast<const jlm::rvsdg::node_output *>(port)) {
 		result += "o";
-	} else if (dynamic_cast<const jive::structural_output *>(port)) {
+	} else if (dynamic_cast<const jlm::rvsdg::structural_output *>(port)) {
 		result += "so";
 	} else {
 		throw std::logic_error(port->debug_string() + " not implemented!");
@@ -82,16 +82,16 @@ jlm::hls::BaseHLS::get_port_name(jive::output *port) {
 }
 
 int
-jlm::hls::BaseHLS::JlmSize(const jive::type *type) {
-	if (auto bt = dynamic_cast<const jive::bittype *>(type)) {
+jlm::hls::BaseHLS::JlmSize(const jlm::rvsdg::type *type) {
+	if (auto bt = dynamic_cast<const jlm::rvsdg::bittype *>(type)) {
 		return bt->nbits();
 	} else if (auto at = dynamic_cast<const jlm::arraytype *>(type)) {
 		return JlmSize(&at->element_type()) * at->nelements();
 	} else if (dynamic_cast<const jlm::PointerType *>(type)) {
 		return 64;
-	} else if (auto ct = dynamic_cast<const jive::ctltype *>(type)) {
+	} else if (auto ct = dynamic_cast<const jlm::rvsdg::ctltype *>(type)) {
 		return ceil(log2(ct->nalternatives()));
-	} else if (dynamic_cast<const jive::statetype *>(type)) {
+	} else if (dynamic_cast<const jlm::rvsdg::statetype *>(type)) {
 		return 1;
 	} else {
 		throw std::logic_error("Size of '" + type->debug_string() + "' is not implemented!");
@@ -99,9 +99,9 @@ jlm::hls::BaseHLS::JlmSize(const jive::type *type) {
 }
 
 void
-jlm::hls::BaseHLS::create_node_names(jive::region *r) {
+jlm::hls::BaseHLS::create_node_names(jlm::rvsdg::region *r) {
 	for (auto &node : r->nodes) {
-		if (dynamic_cast<jive::simple_node *>(&node)) {
+		if (dynamic_cast<jlm::rvsdg::simple_node *>(&node)) {
 			get_node_name(&node);
 		} else if (auto oln = dynamic_cast<jlm::hls::loop_node *>(&node)) {
 			create_node_names(oln->subregion());

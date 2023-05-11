@@ -12,9 +12,9 @@
 
 static int test_main(void)
 {
-	using namespace jive;
+	using namespace jlm::rvsdg;
 
-	jive::graph graph;
+	jlm::rvsdg::graph graph;
 	
 	jlm::statetype type;
 	jlm::valuetype value_type;

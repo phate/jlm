@@ -24,16 +24,16 @@ public:
 	{}
 
 	void
-	start(const jive::graph & graph) noexcept
+	start(const jlm::rvsdg::graph & graph) noexcept
 	{
-		ninputs_before_ = jive::ninputs(graph.root());
+		ninputs_before_ = jlm::rvsdg::ninputs(graph.root());
 		timer_.start();
 	}
 
 	void
-	end(const jive::graph & graph) noexcept
+	end(const jlm::rvsdg::graph & graph) noexcept
 	{
-		ninputs_after_ = jive::ninputs(graph.root());
+		ninputs_after_ = jlm::rvsdg::ninputs(graph.root());
 		timer_.stop();
 	}
 
@@ -58,7 +58,7 @@ private:
 };
 
 static bool
-empty(const jive::gamma_node * gamma)
+empty(const jlm::rvsdg::gamma_node * gamma)
 {
 	for (size_t n = 0; n < gamma->nsubregions(); n++) {
 		if (gamma->subregion(n)->nnodes() != 0)
@@ -69,9 +69,9 @@ empty(const jive::gamma_node * gamma)
 }
 
 static bool
-single_successor(const jive::node * node)
+single_successor(const jlm::rvsdg::node * node)
 {
-	std::unordered_set<jive::node*> successors;
+	std::unordered_set<jlm::rvsdg::node*> successors;
 	for (size_t n = 0; n < node->noutputs(); n++) {
 		for (const auto & user : *node->output(n))
 			successors.insert(input_node(user));
@@ -81,7 +81,7 @@ single_successor(const jive::node * node)
 }
 
 static void
-remove(jive::gamma_input * input)
+remove(jlm::rvsdg::gamma_input * input)
 {
 	auto gamma = input->node();
 
@@ -91,10 +91,10 @@ remove(jive::gamma_input * input)
 }
 
 static void
-pullin_node(jive::gamma_node * gamma, jive::node * node)
+pullin_node(jlm::rvsdg::gamma_node * gamma, jlm::rvsdg::node * node)
 {
 	/* collect operands */
-	std::vector<std::vector<jive::output*>> operands(gamma->nsubregions());
+	std::vector<std::vector<jlm::rvsdg::output*>> operands(gamma->nsubregions());
 	for (size_t i = 0; i < node->ninputs(); i++) {
 		auto ev = gamma->add_entryvar(node->input(i)->origin());
 		for (size_t a = 0; a < ev->narguments(); a++)
@@ -108,8 +108,8 @@ pullin_node(jive::gamma_node * gamma, jive::node * node)
 		/* redirect outputs */
 		for (size_t o = 0; o < node->noutputs(); o++) {
 			for (const auto & user : *node->output(o)) {
-				JLM_ASSERT(dynamic_cast<jive::structural_input*>(user));
-				auto sinput = static_cast<jive::structural_input*>(user);
+				JLM_ASSERT(dynamic_cast<jlm::rvsdg::structural_input*>(user));
+				auto sinput = static_cast<jlm::rvsdg::structural_input*>(user);
 				auto argument = gamma->subregion(r)->argument(sinput->index()-1);
 				argument->divert_users(copy->output(o));
 			}
@@ -118,26 +118,26 @@ pullin_node(jive::gamma_node * gamma, jive::node * node)
 }
 
 static void
-cleanup(jive::gamma_node * gamma, jive::node * node)
+cleanup(jlm::rvsdg::gamma_node * gamma, jlm::rvsdg::node * node)
 {
 	JLM_ASSERT(single_successor(node));
 
 	/* remove entry variables and node */
 	for (size_t n = 0; n < node->noutputs(); n++) {
 		while (node->output(n)->nusers() != 0)
-			remove(static_cast<jive::gamma_input*>(*node->output(n)->begin()));
+			remove(static_cast<jlm::rvsdg::gamma_input*>(*node->output(n)->begin()));
 	}
 	remove(node);
 }
 
 void
-pullin_top(jive::gamma_node * gamma)
+pullin_top(jlm::rvsdg::gamma_node * gamma)
 {
 	/* FIXME: This is inefficient. We can do better. */
 	auto ev = gamma->begin_entryvar();
 	while (ev != gamma->end_entryvar()) {
-		auto node = jive::node_output::node(ev->origin());
-		auto tmp = jive::node_output::node(gamma->predicate()->origin());
+		auto node = jlm::rvsdg::node_output::node(ev->origin());
+		auto tmp = jlm::rvsdg::node_output::node(gamma->predicate()->origin());
 		if (node && tmp != node && single_successor(node)) {
 			pullin_node(gamma, node);
 
@@ -151,10 +151,10 @@ pullin_top(jive::gamma_node * gamma)
 }
 
 void
-pullin_bottom(jive::gamma_node * gamma)
+pullin_bottom(jlm::rvsdg::gamma_node * gamma)
 {
 	/* collect immediate successors of the gamma node */
-	std::unordered_set<jive::node*> workset;
+	std::unordered_set<jlm::rvsdg::node*> workset;
 	for (size_t n = 0; n < gamma->noutputs(); n++) {
 		auto output = gamma->output(n);
 		for (const auto & user : *output) {
@@ -169,14 +169,14 @@ pullin_bottom(jive::gamma_node * gamma)
 		workset.erase(node);
 
 		/* copy node into subregions */
-		std::vector<std::vector<jive::output*>> outputs(node->noutputs());
+		std::vector<std::vector<jlm::rvsdg::output*>> outputs(node->noutputs());
 		for (size_t r = 0; r < gamma->nsubregions(); r++) {
 			/* collect operands */
-			std::vector<jive::output*> operands;
+			std::vector<jlm::rvsdg::output*> operands;
 			for (size_t i = 0; i < node->ninputs(); i++) {
 				auto input = node->input(i);
-				if (jive::node_output::node(input->origin()) == gamma) {
-					auto output = static_cast<jive::structural_output*>(input->origin());
+				if (jlm::rvsdg::node_output::node(input->origin()) == gamma) {
+					auto output = static_cast<jlm::rvsdg::structural_output*>(input->origin());
 					operands.push_back(gamma->subregion(r)->result(output->index())->origin());
 				} else {
 					auto ev = gamma->add_entryvar(input->origin());
@@ -205,21 +205,21 @@ pullin_bottom(jive::gamma_node * gamma)
 }
 
 static size_t
-is_used_in_nsubregions(const jive::gamma_node * gamma, const jive::node * node)
+is_used_in_nsubregions(const jlm::rvsdg::gamma_node * gamma, const jlm::rvsdg::node * node)
 {
 	JLM_ASSERT(single_successor(node));
 
 	/* collect all gamma inputs */
-	std::unordered_set<const jive::gamma_input*> inputs;
+	std::unordered_set<const jlm::rvsdg::gamma_input*> inputs;
 	for (size_t n = 0; n < node->noutputs(); n++) {
 		for (const auto & user : *(node->output(n))) {
 			JLM_ASSERT(is_gamma_input(user));
-			inputs.insert(static_cast<const jive::gamma_input*>(user));
+			inputs.insert(static_cast<const jlm::rvsdg::gamma_input*>(user));
 		}
 	}
 
 	/* collect subregions where node is used */
-	std::unordered_set<jive::region*> subregions;
+	std::unordered_set<jlm::rvsdg::region*> subregions;
 	for (const auto & input : inputs) {
 		for (const auto & argument : *input) {
 			if (argument.nusers() != 0)
@@ -231,7 +231,7 @@ is_used_in_nsubregions(const jive::gamma_node * gamma, const jive::node * node)
 }
 
 void
-pull(jive::gamma_node * gamma)
+pull(jlm::rvsdg::gamma_node * gamma)
 {
 	/*
 		We don't want to pull anything into empty gammas with two subregions,
@@ -240,12 +240,12 @@ pull(jive::gamma_node * gamma)
 	if (gamma->nsubregions() == 2 && empty(gamma))
 		return;
 
-	auto prednode = jive::node_output::node(gamma->predicate()->origin());
+	auto prednode = jlm::rvsdg::node_output::node(gamma->predicate()->origin());
 
 	/* FIXME: This is inefficient. We can do better. */
 	auto ev = gamma->begin_entryvar();
 	while (ev != gamma->end_entryvar()) {
-		auto node = jive::node_output::node(ev->origin());
+		auto node = jlm::rvsdg::node_output::node(ev->origin());
 		if (!node || prednode == node || !single_successor(node)) {
 			ev++; continue;
 		}
@@ -265,11 +265,11 @@ pull(jive::gamma_node * gamma)
 }
 
 void
-pull(jive::region * region)
+pull(jlm::rvsdg::region * region)
 {
-	for (auto & node : jive::topdown_traverser(region)) {
-		if (auto structnode = dynamic_cast<jive::structural_node*>(node)) {
-			if (auto gamma = dynamic_cast<jive::gamma_node*>(node))
+	for (auto & node : jlm::rvsdg::topdown_traverser(region)) {
+		if (auto structnode = dynamic_cast<jlm::rvsdg::structural_node*>(node)) {
+			if (auto gamma = dynamic_cast<jlm::rvsdg::gamma_node*>(node))
 				pull(gamma);
 
 			for (size_t n = 0; n < structnode->nsubregions(); n++)
