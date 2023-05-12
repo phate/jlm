@@ -81,7 +81,7 @@ is_unary_op(const rvsdg::operation & op) noexcept
 static inline bool
 is_unary_node(const rvsdg::node * node) noexcept
 {
-	return is<unary_op>(node);
+	return jlm::rvsdg::is<unary_op>(node);
 }
 
 /* binary operation */
@@ -247,9 +247,9 @@ private:
 	}
 };
 
-static inline std::unique_ptr<jlm::tac>
+static inline std::unique_ptr<llvm::tac>
 create_testop_tac(
-	const std::vector<const variable*> & arguments,
+	const std::vector<const llvm::variable*> & arguments,
 	const std::vector<const rvsdg::type*> & result_types)
 {
 	std::vector<const rvsdg::type*> argument_types;
@@ -257,7 +257,7 @@ create_testop_tac(
 		argument_types.push_back(&arg->type());
 
 	test_op op(argument_types, result_types);
-	return tac::create(op, arguments);
+	return llvm::tac::create(op, arguments);
 }
 
 static inline std::vector<rvsdg::output*>

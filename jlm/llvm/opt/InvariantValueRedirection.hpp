@@ -8,13 +8,13 @@
 
 #include <jlm/llvm/opt/optimization.hpp>
 
-namespace jlm
-{
-
-namespace rvsdg
+namespace jlm::rvsdg
 {
 class theta_node;
 }
+
+namespace jlm::llvm
+{
 
 class RvsdgModule;
 
@@ -41,7 +41,7 @@ public:
   void
   run(
     RvsdgModule & rvsdgModule,
-    util::StatisticsCollector & statisticsCollector) override;
+    jlm::util::StatisticsCollector & statisticsCollector) override;
 
 private:
   static void

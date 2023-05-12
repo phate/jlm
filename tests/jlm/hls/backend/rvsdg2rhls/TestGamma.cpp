@@ -15,13 +15,13 @@
 static void
 TestWithMatch()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	jlm::valuetype vt;
 	jlm::rvsdg::bittype bt1(1);
 	FunctionType ft({&bt1, &vt, &vt}, {&vt});
 
-	RvsdgModule rm(util::filepath(""), "", "");
+	RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
 	nf->set_mutable(false);
 
@@ -42,7 +42,7 @@ TestWithMatch()
 
 	/* Convert graph to RHLS */
 
-	hls::gamma_conv(rm);
+	jlm::hls::gamma_conv(rm);
 	jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
 	/* Verify output */
@@ -53,14 +53,14 @@ TestWithMatch()
 static void
 TestWithoutMatch()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	jlm::valuetype vt;
 	jlm::rvsdg::ctltype ctl2(2);
 	jlm::rvsdg::bittype bt1(1);
 	FunctionType ft({&ctl2, &vt, &vt}, {&vt});
 
-	RvsdgModule rm(util::filepath(""), "", "");
+	RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
 	nf->set_mutable(false);
 
@@ -80,7 +80,7 @@ TestWithoutMatch()
 
 	/* Convert graph to RHLS */
 
-	hls::gamma_conv(rm);
+	jlm::hls::gamma_conv(rm);
 	jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
 	/* Verify output */

@@ -12,30 +12,31 @@ namespace llvm {
 	class Value;
 }
 
-namespace jlm  {
+namespace jlm::llvm
+{
 
 class context;
 class variable;
 
 const variable *
 ConvertValue(
-	llvm::Value * v,
+	::llvm::Value * v,
 	tacsvector_t & tacs,
 	context & ctx);
 
 const variable *
 ConvertInstruction(
-	llvm::Instruction * i,
-	std::vector<std::unique_ptr<jlm::tac>> & tacs,
+	::llvm::Instruction * i,
+	std::vector<std::unique_ptr<llvm::tac>> & tacs,
 	context & ctx);
 
-std::vector<std::unique_ptr<jlm::tac>>
-ConvertConstant(llvm::Constant * constant, context & ctx);
+std::vector<std::unique_ptr<llvm::tac>>
+ConvertConstant(::llvm::Constant * constant, context & ctx);
 
 const variable *
 ConvertConstant(
-	llvm::Constant * constant,
-	std::vector<std::unique_ptr<jlm::tac>> & tacs,
+	::llvm::Constant * constant,
+	std::vector<std::unique_ptr<llvm::tac>> & tacs,
 	context & ctx);
 
 

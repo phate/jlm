@@ -5,7 +5,8 @@
 
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 /* impport class */
 

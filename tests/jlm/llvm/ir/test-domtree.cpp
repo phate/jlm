@@ -13,9 +13,9 @@
 
 template<size_t N> static void
 check(
-	const jlm::domnode * dnode,
-	const jlm::cfg_node * node,
-	const std::unordered_set<const jlm::cfg_node*> & children)
+	const jlm::llvm::domnode * dnode,
+	const jlm::llvm::cfg_node * node,
+	const std::unordered_set<const jlm::llvm::cfg_node*> & children)
 {
 	assert(dnode->node() == node);
 	assert(dnode->nchildren() == N);
@@ -23,10 +23,10 @@ check(
 		assert(children.find(child->node()) != children.end());
 }
 
-static const jlm::domnode *
+static const jlm::llvm::domnode *
 get_child(
-	const jlm::domnode * root,
-	const jlm::cfg_node * node)
+	const jlm::llvm::domnode * root,
+	const jlm::llvm::cfg_node * node)
 {
 	for (const auto & child : *root) {
 		if (child->node() == node)
@@ -40,13 +40,13 @@ get_child(
 static int
 test()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
-	ipgraph_module im(util::filepath(""), "", "");
+	ipgraph_module im(jlm::util::filepath(""), "", "");
 
 	/* setup cfg */
 
-	jlm::cfg cfg(im);
+	jlm::llvm::cfg cfg(im);
 	auto bb1 = basic_block::create(cfg);
 	auto bb2 = basic_block::create(cfg);
 	auto bb3 = basic_block::create(cfg);

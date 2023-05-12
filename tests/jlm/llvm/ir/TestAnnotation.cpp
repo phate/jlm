@@ -17,15 +17,15 @@
 static void
 TestBasicBlockAnnotation()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
   /*
    * Arrange
    */
   auto SetupAggregationTree = [](ipgraph_module & module)
   {
-    valuetype vt;
-    test_op op({&vt}, {&vt});
+    jlm::valuetype vt;
+    jlm::test_op op({&vt}, {&vt});
 
     auto v0 = module.create_variable(vt, "v0");
 
@@ -41,7 +41,7 @@ TestBasicBlockAnnotation()
     return std::make_tuple(std::move(root), v0, v1, v2);
   };
 
-  ipgraph_module module(util::filepath(""), "", "");
+  ipgraph_module module(jlm::util::filepath(""), "", "");
   auto [aggregationTreeRoot, v0, v1, v2] = SetupAggregationTree(module);
 
   /*
@@ -59,18 +59,18 @@ TestBasicBlockAnnotation()
 static void
 TestLinearSubgraphAnnotation()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
   /*
    * Arrange
    */
-  auto SetupAggregationTree = [](ipgraph_module & module, jlm::argument & argument)
+  auto SetupAggregationTree = [](ipgraph_module & module, jlm::llvm::argument & argument)
   {
     /*
      * Setup simple linear CFG: Entry -> B1 -> B2 -> Exit
      */
-    valuetype vt;
-    test_op op({&vt}, {&vt});
+    jlm::valuetype vt;
+    jlm::test_op op({&vt}, {&vt});
 
     taclist bb1, bb2;
     bb1.append_last(tac::create(op, {&argument}));
@@ -92,8 +92,8 @@ TestLinearSubgraphAnnotation()
     return std::make_tuple(std::move(root), v1, v2);
   };
 
-	ipgraph_module module(util::filepath(""), "", "");
-  jlm::argument argument("argument", valuetype());
+	ipgraph_module module(jlm::util::filepath(""), "", "");
+  jlm::llvm::argument argument("argument", jlm::valuetype());
 	auto [aggregationTreeRoot, v1, v2] = SetupAggregationTree(module, argument);
 
   /*
@@ -132,7 +132,7 @@ TestLinearSubgraphAnnotation()
 static void
 TestBranchAnnotation()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
   /*
    * Arrange
@@ -142,8 +142,8 @@ TestBranchAnnotation()
     /*
      * Setup conditional CFG with nodes bbs, b1, b2, and edges bbs -> b1 and bbs -> b2.
      */
-    valuetype vt;
-    test_op op({&vt}, {&vt});
+    jlm::valuetype vt;
+    jlm::test_op op({&vt}, {&vt});
 
     auto argument = module.create_variable(vt, "arg");
     auto v3 = module.create_variable(vt, "v3");
@@ -173,10 +173,10 @@ TestBranchAnnotation()
     return std::make_tuple(std::move(root), argument, v1, v2, v3, v4);
   };
 
-	valuetype vt;
-	test_op op({&vt}, {&vt});
+	jlm::valuetype vt;
+	jlm::test_op op({&vt}, {&vt});
 
-	ipgraph_module module(util::filepath(""), "", "");
+	ipgraph_module module(jlm::util::filepath(""), "", "");
   auto [aggregationTreeRoot, argument, v1, v2, v3, v4] = SetupAggregationTree(module);
 
   /*
@@ -208,15 +208,15 @@ TestBranchAnnotation()
 static void
 TestLoopAnnotation()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
   /*
    * Arrange
    */
   auto SetupAggregationTree = [](ipgraph_module & module)
   {
-    valuetype vt;
-    test_op op({&vt}, {&vt});
+    jlm::valuetype vt;
+    jlm::test_op op({&vt}, {&vt});
 
     auto v1 = module.create_variable(vt, "v1");
     auto v4 = module.create_variable(vt, "v4");
@@ -237,7 +237,7 @@ TestLoopAnnotation()
     return std::make_tuple(std::move(root), v1, v2, v3, v4);
   };
 
-  ipgraph_module module(util::filepath(""), "", "");
+  ipgraph_module module(jlm::util::filepath(""), "", "");
   auto [aggregationTreeRoot, v1, v2, v3, v4] = SetupAggregationTree(module);
 
   /*
@@ -266,15 +266,15 @@ TestLoopAnnotation()
 static void
 TestBranchInLoopAnnotation()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
   /*
    * Arrange
    */
   auto SetupAggregationTree = [](ipgraph_module & module)
   {
-    valuetype vt;
-    test_op op({&vt}, {&vt});
+    jlm::valuetype vt;
+    jlm::test_op op({&vt}, {&vt});
 
     auto v1 = module.create_variable(vt, "v1");
     auto v3 = module.create_variable(vt, "v3");
@@ -306,7 +306,7 @@ TestBranchInLoopAnnotation()
     return std::make_tuple(std::move(root), v1, v2, v3, v4);
   };
 
-  ipgraph_module module(util::filepath(""), "", "");
+  ipgraph_module module(jlm::util::filepath(""), "", "");
   auto [aggregationTreeRoot, v1, v2, v3, v4] = SetupAggregationTree(module);
 
   /*
@@ -342,14 +342,14 @@ TestBranchInLoopAnnotation()
 static void
 TestAssignmentAnnotation()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
   /*
    * Arrange
    */
   auto SetupAggregationTree = [](ipgraph_module & module)
   {
-    valuetype vt;
+    jlm::valuetype vt;
 
     auto v1 = module.create_variable(vt, "v1");
     auto v2 = module.create_variable(vt, "v2");
@@ -362,7 +362,7 @@ TestAssignmentAnnotation()
     return std::make_tuple(std::move(root), v1 , v2);
   };
 
-  ipgraph_module module(util::filepath(""), "", "");
+  ipgraph_module module(jlm::util::filepath(""), "", "");
   auto [aggregationTreeRoot, v1, v2] = SetupAggregationTree(module);
 
   /*
@@ -380,15 +380,15 @@ TestAssignmentAnnotation()
 static void
 TestBranchPassByAnnotation()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
   /*
    * Arrange
    */
   auto SetupAggregationTree = [](ipgraph_module & module)
   {
-    valuetype vt;
-    test_op op({}, {&vt});
+    jlm::valuetype vt;
+    jlm::test_op op({}, {&vt});
 
     auto v3 = module.create_variable(vt, "v3");
 
@@ -423,7 +423,7 @@ TestBranchPassByAnnotation()
     return std::make_tuple(std::move(root), v1, v2, v3);
   };
 
-  ipgraph_module module(util::filepath(""), "", "");
+  ipgraph_module module(jlm::util::filepath(""), "", "");
   auto [aggregationTreeRoot, v1, v2, v3] = SetupAggregationTree(module);
 
   /*

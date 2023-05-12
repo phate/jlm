@@ -6,7 +6,8 @@
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/sext.hpp>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 /* sext operation */
 
@@ -32,7 +33,7 @@ is_inverse_reducible(const sext_op & op, const rvsdg::output * operand)
 	if (!node)
 		return false;
 
-	auto top = dynamic_cast<const jlm::trunc_op*>(&node->operation());
+	auto top = dynamic_cast<const trunc_op*>(&node->operation());
 	return top && top->nsrcbits() == op.ndstbits();
 }
 

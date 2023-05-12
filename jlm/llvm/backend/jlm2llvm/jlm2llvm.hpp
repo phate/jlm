@@ -19,21 +19,22 @@ class Module;
 
 }
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 class ipgraph_module;
 
 namespace jlm2llvm {
 
-llvm::Attribute::AttrKind
-convert_attribute_kind(const jlm::attribute::kind & kind);
+::llvm::Attribute::AttrKind
+convert_attribute_kind(const attribute::kind & kind);
 
 /*
 	FIXME: ipgraph_module should be const, but we still need to create variables to translate
 	       expressions.
 */
-std::unique_ptr<llvm::Module>
-convert(ipgraph_module & im, llvm::LLVMContext & ctx);
+std::unique_ptr<::llvm::Module>
+convert(ipgraph_module & im, ::llvm::LLVMContext & ctx);
 
 }}
 

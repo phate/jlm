@@ -85,9 +85,9 @@ int
 jlm::hls::BaseHLS::JlmSize(const jlm::rvsdg::type *type) {
 	if (auto bt = dynamic_cast<const jlm::rvsdg::bittype *>(type)) {
 		return bt->nbits();
-	} else if (auto at = dynamic_cast<const jlm::arraytype *>(type)) {
+	} else if (auto at = dynamic_cast<const llvm::arraytype *>(type)) {
 		return JlmSize(&at->element_type()) * at->nelements();
-	} else if (dynamic_cast<const jlm::PointerType *>(type)) {
+	} else if (dynamic_cast<const llvm::PointerType *>(type)) {
 		return 64;
 	} else if (auto ct = dynamic_cast<const jlm::rvsdg::ctltype *>(type)) {
 		return ceil(log2(ct->nalternatives()));
@@ -111,10 +111,10 @@ jlm::hls::BaseHLS::create_node_names(jlm::rvsdg::region *r) {
 	}
 }
 
-const jlm::lambda::node *
-jlm::hls::BaseHLS::get_hls_lambda(jlm::RvsdgModule &rm) {
+const jlm::llvm::lambda::node *
+jlm::hls::BaseHLS::get_hls_lambda(llvm::RvsdgModule &rm) {
 	auto region = rm.Rvsdg().root();
-	auto ln = dynamic_cast<const jlm::lambda::node *>(region->nodes.begin().ptr());
+	auto ln = dynamic_cast<const llvm::lambda::node *>(region->nodes.begin().ptr());
 	if (region->nnodes() == 1 && ln) {
 		return ln;
 	} else {
@@ -123,7 +123,7 @@ jlm::hls::BaseHLS::get_hls_lambda(jlm::RvsdgModule &rm) {
 }
 
 std::string
-jlm::hls::BaseHLS::get_base_file_name(const jlm::RvsdgModule &rm) {
+jlm::hls::BaseHLS::get_base_file_name(const llvm::RvsdgModule &rm) {
 	auto source_file_name = rm.SourceFileName().name();
 	auto base_file_name = source_file_name.substr(0, source_file_name.find_last_of('.'));
 	return base_file_name;

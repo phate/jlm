@@ -14,7 +14,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 class ipgraph_node;
 
@@ -140,12 +141,12 @@ public:
 
 protected:
 	inline
-	ipgraph_node(jlm::ipgraph & clg)
+	ipgraph_node(llvm::ipgraph & clg)
 	: clg_(clg)
 	{}
 
 public:
-	inline jlm::ipgraph &
+	inline llvm::ipgraph &
 	clg() const noexcept
 	{
 		return clg_;
@@ -184,14 +185,14 @@ public:
 	virtual const jlm::rvsdg::type &
 	type() const noexcept = 0;
 
-	virtual const jlm::linkage &
+	virtual const llvm::linkage &
 	linkage() const noexcept = 0;
 
 	virtual bool
 	hasBody() const noexcept = 0;
 
 private:
-	jlm::ipgraph & clg_;
+	llvm::ipgraph & clg_;
 	std::unordered_set<const ipgraph_node*> dependencies_;
 };
 
@@ -203,10 +204,10 @@ public:
 private:
 	inline
 	function_node(
-		jlm::ipgraph & clg,
+		llvm::ipgraph & clg,
 		const std::string & name,
 		const FunctionType & type,
-		const jlm::linkage & linkage,
+		const llvm::linkage & linkage,
 		const attributeset & attributes)
 	: ipgraph_node(clg)
   , FunctionType_(type)
@@ -216,7 +217,7 @@ private:
 	{}
 
 public:
-	inline jlm::cfg *
+	inline llvm::cfg *
 	cfg() const noexcept
 	{
 		return cfg_.get();
@@ -231,7 +232,7 @@ public:
 		return FunctionType_;
 	}
 
-	virtual const jlm::linkage &
+	virtual const llvm::linkage &
 	linkage() const noexcept override;
 
 	virtual const std::string &
@@ -251,14 +252,14 @@ public:
 		replaced with \p cfg.
 	**/
 	void
-	add_cfg(std::unique_ptr<jlm::cfg> cfg);
+	add_cfg(std::unique_ptr<llvm::cfg> cfg);
 
 	static inline function_node *
 	create(
-		jlm::ipgraph & ipg,
+		llvm::ipgraph & ipg,
 		const std::string & name,
 		const FunctionType & type,
-		const jlm::linkage & linkage,
+		const llvm::linkage & linkage,
 		const attributeset & attributes)
 	{
 		std::unique_ptr<function_node> node(new function_node(ipg, name, type, linkage, attributes));
@@ -269,10 +270,10 @@ public:
 
 	static function_node *
 	create(
-		jlm::ipgraph & ipg,
+		llvm::ipgraph & ipg,
 		const std::string & name,
 		const FunctionType & type,
-		const jlm::linkage & linkage)
+		const llvm::linkage & linkage)
 	{
 		return create(ipg, name, type, linkage, {});
 	}
@@ -280,9 +281,9 @@ public:
 private:
   FunctionType FunctionType_;
 	std::string name_;
-	jlm::linkage linkage_;
+	llvm::linkage linkage_;
 	attributeset attributes_;
-	std::unique_ptr<jlm::cfg> cfg_;
+	std::unique_ptr<llvm::cfg> cfg_;
 };
 
 class fctvariable final : public gblvariable {
@@ -318,11 +319,11 @@ public:
 	: tacs_(std::move(tacs))
 	{
 		if (tacs_.empty())
-			throw util::error("Initialization cannot be empty.");
+			throw jlm::util::error("Initialization cannot be empty.");
 
 		auto & tac = tacs_.back();
 		if (tac->nresults() != 1)
-			throw util::error("Last TAC of initialization needs exactly one result.");
+			throw jlm::util::error("Last TAC of initialization needs exactly one result.");
 
 		value_ = tac->result(0);
 	}
@@ -365,10 +366,10 @@ public:
 private:
 	inline
 	data_node(
-		jlm::ipgraph & clg,
+		llvm::ipgraph & clg,
 		const std::string & name,
 		const jlm::rvsdg::valuetype & valueType,
-		const jlm::linkage & linkage,
+		const llvm::linkage & linkage,
     std::string section,
 		bool constant)
 	: ipgraph_node(clg)
@@ -386,13 +387,13 @@ public:
   [[nodiscard]] const jlm::rvsdg::valuetype &
   GetValueType() const noexcept
   {
-    return *util::AssertedCast<jlm::rvsdg::valuetype>(ValueType_.get());
+    return *jlm::util::AssertedCast<jlm::rvsdg::valuetype>(ValueType_.get());
   }
 
 	const std::string &
 	name() const noexcept override;
 
-	virtual const jlm::linkage &
+	virtual const llvm::linkage &
 	linkage() const noexcept override;
 
 	virtual bool
@@ -423,17 +424,17 @@ public:
 			return;
 
 		if (init->value()->type() != GetValueType())
-			throw util::error("Invalid type.");
+			throw jlm::util::error("Invalid type.");
 
 		init_ = std::move(init);
 	}
 
 	static data_node *
 	Create(
-		jlm::ipgraph & clg,
+		llvm::ipgraph & clg,
 		const std::string & name,
     const jlm::rvsdg::valuetype & valueType,
-		const jlm::linkage & linkage,
+		const llvm::linkage & linkage,
     std::string section,
 		bool constant)
 	{
@@ -447,7 +448,7 @@ private:
 	bool constant_;
 	std::string name_;
   std::string Section_;
-	jlm::linkage linkage_;
+	llvm::linkage linkage_;
   std::unique_ptr<jlm::rvsdg::type> ValueType_;
 	std::unique_ptr<data_node_init> init_;
 };

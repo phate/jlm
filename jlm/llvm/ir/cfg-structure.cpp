@@ -10,7 +10,8 @@
 #include <algorithm>
 #include <unordered_map>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 /* scc class */
 
@@ -38,7 +39,7 @@ sccstructure::is_tcloop() const
 }
 
 std::unique_ptr<sccstructure>
-sccstructure::create(const jlm::scc & scc)
+sccstructure::create(const llvm::scc & scc)
 {
 	auto sccstruct = std::make_unique<sccstructure>();
 
@@ -75,12 +76,12 @@ sccstructure::create(const jlm::scc & scc)
 */
 static void
 strongconnect(
-	jlm::cfg_node * node,
-	jlm::cfg_node * exit,
-	std::unordered_map<jlm::cfg_node*, std::pair<size_t,size_t>> & map,
-	std::vector<jlm::cfg_node*> & node_stack,
+	cfg_node * node,
+	cfg_node * exit,
+	std::unordered_map<cfg_node*, std::pair<size_t,size_t>> & map,
+	std::vector<cfg_node*> & node_stack,
 	size_t & index,
-	std::vector<jlm::scc> & sccs)
+	std::vector<llvm::scc> & sccs)
 {
 	map.emplace(node, std::make_pair(index, index));
 	node_stack.push_back(node);
@@ -101,8 +102,8 @@ strongconnect(
 	}
 
 	if (map[node].second == map[node].first) {
-		std::unordered_set<jlm::cfg_node*> set;
-		jlm::cfg_node * w;
+		std::unordered_set<cfg_node*> set;
+		cfg_node * w;
 		do {
 			w = node_stack.back();
 			node_stack.pop_back();
@@ -110,19 +111,19 @@ strongconnect(
 		} while (w != node);
 
 		if (set.size() != 1 || (*set.begin())->has_selfloop_edge())
-			sccs.push_back(jlm::scc(set));
+			sccs.push_back(llvm::scc(set));
 	}
 }
 
-std::vector<jlm::scc>
-find_sccs(const jlm::cfg & cfg)
+std::vector<llvm::scc>
+find_sccs(const llvm::cfg & cfg)
 {
 	JLM_ASSERT(is_closed(cfg));
 
 	return find_sccs(cfg.entry(), cfg.exit());
 }
 
-std::vector<jlm::scc>
+std::vector<llvm::scc>
 find_sccs(cfg_node * entry, cfg_node * exit)
 {
 	size_t index = 0;
@@ -136,22 +137,22 @@ find_sccs(cfg_node * entry, cfg_node * exit)
 
 }
 
-static inline std::unique_ptr<jlm::cfg>
-copy_structural(const jlm::cfg & in)
+static inline std::unique_ptr<jlm::llvm::cfg>
+copy_structural(const jlm::llvm::cfg & in)
 {
 	JLM_ASSERT(is_valid(in));
 
-	std::unique_ptr<jlm::cfg> out(new jlm::cfg(in.module()));
+	std::unique_ptr<jlm::llvm::cfg> out(new jlm::llvm::cfg(in.module()));
 	out->entry()->remove_outedge(0);
 
 	/* create all nodes */
-	std::unordered_map<const jlm::cfg_node*, jlm::cfg_node*> node_map({
+	std::unordered_map<const jlm::llvm::cfg_node*, jlm::llvm::cfg_node*> node_map({
 	  {in.entry(), out->entry()}, {in.exit(), out->exit()}
 	});
 
 	for (const auto & node : in) {
-		JLM_ASSERT(jlm::is<jlm::basic_block>(&node));
-		node_map[&node] = jlm::basic_block::create(*out);
+		JLM_ASSERT(jlm::llvm::is<jlm::llvm::basic_block>(&node));
+		node_map[&node] = jlm::llvm::basic_block::create(*out);
 	}
 
 	/* establish control flow */
@@ -165,7 +166,7 @@ copy_structural(const jlm::cfg & in)
 }
 
 static inline bool
-is_loop(const jlm::cfg_node * node) noexcept
+is_loop(const jlm::llvm::cfg_node * node) noexcept
 {
 	return node->ninedges() == 2
 	    && node->noutedges() == 2
@@ -173,7 +174,7 @@ is_loop(const jlm::cfg_node * node) noexcept
 }
 
 static inline bool
-is_linear_reduction(const jlm::cfg_node * node) noexcept
+is_linear_reduction(const jlm::llvm::cfg_node * node) noexcept
 {
 	if (node->noutedges() != 1)
 		return false;
@@ -184,14 +185,14 @@ is_linear_reduction(const jlm::cfg_node * node) noexcept
 	return true;
 }
 
-static inline jlm::cfg_node *
-find_join(const jlm::cfg_node * split) noexcept
+static inline jlm::llvm::cfg_node *
+find_join(const jlm::llvm::cfg_node * split) noexcept
 {
 	JLM_ASSERT(split->noutedges() > 1);
 	auto s1 = split->outedge(0)->sink();
 	auto s2 = split->outedge(1)->sink();
 
-	jlm::cfg_node * join = nullptr;
+	jlm::llvm::cfg_node * join = nullptr;
 	if (s1->noutedges() == 1 && s1->outedge(0)->sink() == s2)
 		join = s2;
 	else if (s2->noutedges() == 1 && s2->outedge(0)->sink() == s1)
@@ -204,7 +205,7 @@ find_join(const jlm::cfg_node * split) noexcept
 }
 
 static inline bool
-is_branch(const jlm::cfg_node * split) noexcept
+is_branch(const jlm::llvm::cfg_node * split) noexcept
 {
 	if (split->noutedges() < 2)
 		return false;
@@ -228,7 +229,7 @@ is_branch(const jlm::cfg_node * split) noexcept
 }
 
 static inline bool
-is_proper_branch(const jlm::cfg_node * split) noexcept
+is_proper_branch(const jlm::llvm::cfg_node * split) noexcept
 {
 	if (split->noutedges() < 2)
 		return false;
@@ -250,7 +251,7 @@ is_proper_branch(const jlm::cfg_node * split) noexcept
 }
 
 static inline bool
-is_T1(const jlm::cfg_node * node) noexcept
+is_T1(const jlm::llvm::cfg_node * node) noexcept
 {
 	for (auto it = node->begin_outedges(); it != node->end_outedges(); it++) {
 		if (it->source() == it->sink())
@@ -261,7 +262,7 @@ is_T1(const jlm::cfg_node * node) noexcept
 }
 
 static inline bool
-is_T2(const jlm::cfg_node * node) noexcept
+is_T2(const jlm::llvm::cfg_node * node) noexcept
 {
 	if (node->ninedges() == 0)
 		return false;
@@ -277,13 +278,13 @@ is_T2(const jlm::cfg_node * node) noexcept
 
 static inline void
 reduce_loop(
-	jlm::cfg_node * node,
-	std::unordered_set<jlm::cfg_node*> & to_visit)
+	jlm::llvm::cfg_node * node,
+	std::unordered_set<jlm::llvm::cfg_node*> & to_visit)
 {
 	JLM_ASSERT(is_loop(node));
 	auto & cfg = node->cfg();
 
-	auto reduction = jlm::basic_block::create(cfg);
+	auto reduction = jlm::llvm::basic_block::create(cfg);
 	for (auto it = node->begin_outedges(); it != node->end_outedges(); it++) {
 		if (it->is_selfloop()) {
 			node->remove_outedge(it->index());
@@ -301,14 +302,14 @@ reduce_loop(
 
 static inline void
 reduce_linear(
-	jlm::cfg_node * entry,
-	std::unordered_set<jlm::cfg_node*> & to_visit)
+	jlm::llvm::cfg_node * entry,
+	std::unordered_set<jlm::llvm::cfg_node*> & to_visit)
 {
 	JLM_ASSERT(is_linear_reduction(entry));
 	auto exit = entry->outedge(0)->sink();
 	auto & cfg = entry->cfg();
 
-	auto reduction = jlm::basic_block::create(cfg);
+	auto reduction = jlm::llvm::basic_block::create(cfg);
 	entry->divert_inedges(reduction);
 	for (auto it = exit->begin_outedges(); it != exit->end_outedges(); it++)
 		reduction->add_outedge(it->sink());
@@ -321,14 +322,14 @@ reduce_linear(
 
 static inline void
 reduce_branch(
-	jlm::cfg_node * split,
-	std::unordered_set<jlm::cfg_node*> & to_visit)
+	jlm::llvm::cfg_node * split,
+	std::unordered_set<jlm::llvm::cfg_node*> & to_visit)
 {
 	JLM_ASSERT(is_branch(split));
 	auto join = find_join(split);
 	auto & cfg = split->cfg();
 
-	auto reduction = jlm::basic_block::create(cfg);
+	auto reduction = jlm::llvm::basic_block::create(cfg);
 	split->divert_inedges(reduction);
 	reduction->add_outedge(join);
 	for (auto it = split->begin_outedges(); it != split->end_outedges(); it++) {
@@ -345,13 +346,13 @@ reduce_branch(
 
 static inline void
 reduce_proper_branch(
-	jlm::cfg_node * split,
-	std::unordered_set<jlm::cfg_node*> & to_visit)
+	jlm::llvm::cfg_node * split,
+	std::unordered_set<jlm::llvm::cfg_node*> & to_visit)
 {
 	JLM_ASSERT(is_proper_branch(split));
 	auto join = split->outedge(0)->sink()->outedge(0)->sink();
 
-	auto reduction = jlm::basic_block::create(split->cfg());
+	auto reduction = jlm::llvm::basic_block::create(split->cfg());
 	split->divert_inedges(reduction);
 	join->remove_inedges();
 	reduction->add_outedge(join);
@@ -363,7 +364,7 @@ reduce_proper_branch(
 }
 
 static inline void
-reduce_T1(jlm::cfg_node * node)
+reduce_T1(jlm::llvm::cfg_node * node)
 {
 	JLM_ASSERT(is_T1(node));
 
@@ -377,8 +378,8 @@ reduce_T1(jlm::cfg_node * node)
 
 static inline void
 reduce_T2(
-	jlm::cfg_node * node,
-	std::unordered_set<jlm::cfg_node*> & to_visit)
+	jlm::llvm::cfg_node * node,
+	std::unordered_set<jlm::llvm::cfg_node*> & to_visit)
 {
 	JLM_ASSERT(is_T2(node));
 
@@ -390,8 +391,8 @@ reduce_T2(
 
 static inline bool
 reduce_proper_structured(
-	jlm::cfg_node * node,
-	std::unordered_set<jlm::cfg_node*> & to_visit)
+	jlm::llvm::cfg_node * node,
+	std::unordered_set<jlm::llvm::cfg_node*> & to_visit)
 {
 	if (is_loop(node)) {
 		reduce_loop(node, to_visit);
@@ -413,8 +414,8 @@ reduce_proper_structured(
 
 static inline bool
 reduce_structured(
-	jlm::cfg_node * node,
-	std::unordered_set<jlm::cfg_node*> & to_visit)
+	jlm::llvm::cfg_node * node,
+	std::unordered_set<jlm::llvm::cfg_node*> & to_visit)
 {
 	if (is_loop(node)) {
 		reduce_loop(node, to_visit);
@@ -436,8 +437,8 @@ reduce_structured(
 
 static inline bool
 reduce_reducible(
-	jlm::cfg_node * node,
-	std::unordered_set<jlm::cfg_node*> & to_visit)
+	jlm::llvm::cfg_node * node,
+	std::unordered_set<jlm::llvm::cfg_node*> & to_visit)
 {
 	if (is_T1(node)) {
 		reduce_T1(node);
@@ -452,7 +453,7 @@ reduce_reducible(
 	return false;
 }
 
-namespace jlm {
+namespace jlm::llvm {
 
 static bool
 has_valid_phis(const basic_block & bb)
@@ -506,7 +507,7 @@ is_valid_basic_block(const basic_block & bb)
 }
 
 static bool
-has_valid_entry(const jlm::cfg & cfg)
+has_valid_entry(const llvm::cfg & cfg)
 {
 	if (!cfg.entry()->no_predecessor())
 		return false;
@@ -518,13 +519,13 @@ has_valid_entry(const jlm::cfg & cfg)
 }
 
 static bool
-has_valid_exit(const jlm::cfg & cfg)
+has_valid_exit(const llvm::cfg & cfg)
 {
 	return cfg.exit()->no_successor();
 }
 
 bool
-is_valid(const jlm::cfg & cfg)
+is_valid(const llvm::cfg & cfg)
 {
 	if (!has_valid_entry(cfg))
 		return false;
@@ -544,7 +545,7 @@ is_valid(const jlm::cfg & cfg)
 }
 
 bool
-is_closed(const jlm::cfg & cfg)
+is_closed(const llvm::cfg & cfg)
 {
 	JLM_ASSERT(is_valid(cfg));
 
@@ -557,7 +558,7 @@ is_closed(const jlm::cfg & cfg)
 }
 
 bool
-is_linear(const jlm::cfg & cfg)
+is_linear(const llvm::cfg & cfg)
 {
 	JLM_ASSERT(is_closed(cfg));
 
@@ -571,8 +572,8 @@ is_linear(const jlm::cfg & cfg)
 
 static inline bool
 reduce(
-	const jlm::cfg & cfg,
-	const std::function<bool(jlm::cfg_node*, std::unordered_set<jlm::cfg_node*>&)> & f)
+	const llvm::cfg & cfg,
+	const std::function<bool(llvm::cfg_node*, std::unordered_set<llvm::cfg_node*>&)> & f)
 {
 	JLM_ASSERT(is_closed(cfg));
 	auto c = copy_structural(cfg);
@@ -591,25 +592,25 @@ reduce(
 }
 
 bool
-is_structured(const jlm::cfg & cfg)
+is_structured(const llvm::cfg & cfg)
 {
 	return reduce(cfg, reduce_structured);
 }
 
 bool
-is_proper_structured(const jlm::cfg & cfg)
+is_proper_structured(const llvm::cfg & cfg)
 {
 	return reduce(cfg, reduce_proper_structured);
 }
 
 bool
-is_reducible(const jlm::cfg & cfg)
+is_reducible(const llvm::cfg & cfg)
 {
 	return reduce(cfg, reduce_reducible);
 }
 
 void
-straighten(jlm::cfg & cfg)
+straighten(llvm::cfg & cfg)
 {
 	auto it = cfg.begin();
 	while (it != cfg.end()) {
@@ -626,7 +627,7 @@ straighten(jlm::cfg & cfg)
 }
 
 void
-purge(jlm::cfg & cfg)
+purge(llvm::cfg & cfg)
 {
 	JLM_ASSERT(is_valid(cfg));
 
@@ -663,7 +664,7 @@ purge(jlm::cfg & cfg)
 * @brief Find all nodes dominated by the entry node.
 */
 static std::unordered_set<const cfg_node*>
-compute_livenodes(const jlm::cfg & cfg)
+compute_livenodes(const llvm::cfg & cfg)
 {
 	std::unordered_set<const cfg_node*> visited;
 	std::unordered_set<cfg_node*> to_visit({cfg.entry()});
@@ -686,7 +687,7 @@ compute_livenodes(const jlm::cfg & cfg)
 * @brief Find all nodes that are NOT dominated by the entry node.
 */
 static std::unordered_set<cfg_node*>
-compute_deadnodes(jlm::cfg & cfg)
+compute_deadnodes(llvm::cfg & cfg)
 {
 	auto livenodes = compute_livenodes(cfg);
 
@@ -722,7 +723,7 @@ compute_live_sinks(const std::unordered_set<cfg_node*> & deadnodes)
 
 static void
 update_phi_operands(
-	jlm::tac & phitac,
+	llvm::tac & phitac,
 	const std::unordered_set<cfg_node*> & deadnodes)
 {
 	JLM_ASSERT(is<phi_op>(&phitac));
@@ -766,7 +767,7 @@ remove_deadnodes(const std::unordered_set<cfg_node*> & deadnodes)
 }
 
 void
-prune(jlm::cfg & cfg)
+prune(llvm::cfg & cfg)
 {
 	JLM_ASSERT(is_valid(cfg));
 

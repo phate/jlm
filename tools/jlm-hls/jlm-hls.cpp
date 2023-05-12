@@ -34,13 +34,13 @@ stringToFile(
 
 static void
 llvmToFile(
-	jlm::RvsdgModule &module,
+	jlm::llvm::RvsdgModule &module,
 	std::string fileName)
 {
 	llvm::LLVMContext ctx;
 	jlm::util::StatisticsCollector statisticsCollector;
-	auto jm = jlm::rvsdg2jlm::rvsdg2jlm(module, statisticsCollector);
-	auto lm = jlm::jlm2llvm::convert(*jm, ctx);
+	auto jm = jlm::llvm::rvsdg2jlm::rvsdg2jlm(module, statisticsCollector);
+	auto lm = jlm::llvm::jlm2llvm::convert(*jm, ctx);
 	std::error_code EC;
 	llvm::raw_fd_ostream os(fileName, EC);
 	lm->print(os, nullptr);
@@ -61,9 +61,9 @@ main(int argc, char ** argv)
 	}
 
 	/* LLVM to JLM pass */
-	auto jlmModule = jlm::ConvertLlvmModule(*llvmModule);
+	auto jlmModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
 	jlm::util::StatisticsCollector statisticsCollector;
-	auto rvsdgModule = jlm::ConvertInterProceduralGraphModule(
+	auto rvsdgModule = jlm::llvm::ConvertInterProceduralGraphModule(
     *jlmModule,
     statisticsCollector);
 

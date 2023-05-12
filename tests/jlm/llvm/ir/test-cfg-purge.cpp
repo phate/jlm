@@ -13,11 +13,11 @@
 static int
 test()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
-	ipgraph_module module(util::filepath(""), "", "");
+	ipgraph_module module(jlm::util::filepath(""), "", "");
 
-	jlm::cfg cfg(module);
+	jlm::llvm::cfg cfg(module);
 	auto bb0 = basic_block::create(cfg);
 	auto bb1 = basic_block::create(cfg);
 

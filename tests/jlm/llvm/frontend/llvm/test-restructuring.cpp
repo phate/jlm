@@ -15,11 +15,11 @@
 static inline void
 test_acyclic_structured()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
-	ipgraph_module module(util::filepath(""), "", "");
+	ipgraph_module module(jlm::util::filepath(""), "", "");
 
-	jlm::cfg cfg(module);
+	jlm::llvm::cfg cfg(module);
 	auto bb1 = basic_block::create(cfg);
 	auto bb2 = basic_block::create(cfg);
 	auto bb3 = basic_block::create(cfg);
@@ -45,11 +45,11 @@ test_acyclic_structured()
 static inline void
 test_acyclic_unstructured()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
-	ipgraph_module module(util::filepath(""), "", "");
+	ipgraph_module module(jlm::util::filepath(""), "", "");
 
-	jlm::cfg cfg(module);
+	jlm::llvm::cfg cfg(module);
 	auto bb1 = basic_block::create(cfg);
 	auto bb2 = basic_block::create(cfg);
 	auto bb3 = basic_block::create(cfg);
@@ -75,11 +75,11 @@ test_acyclic_unstructured()
 static inline void
 test_dowhile()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
-	ipgraph_module module(util::filepath(""), "", "");
+	ipgraph_module module(jlm::util::filepath(""), "", "");
 
-	jlm::cfg cfg(module);
+	jlm::llvm::cfg cfg(module);
 	auto bb1 = basic_block::create(cfg);
 	auto bb2 = basic_block::create(cfg);
 	auto bb3 = basic_block::create(cfg);
@@ -106,11 +106,11 @@ test_dowhile()
 static inline void
 test_while()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
-	ipgraph_module module(util::filepath(""), "", "");
+	ipgraph_module module(jlm::util::filepath(""), "", "");
 
-	jlm::cfg cfg(module);
+	jlm::llvm::cfg cfg(module);
 	auto bb1 = basic_block::create(cfg);
 	auto bb2 = basic_block::create(cfg);
 
@@ -132,11 +132,11 @@ test_while()
 static inline void
 test_irreducible()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
-	ipgraph_module module(util::filepath(""), "", "");
+	ipgraph_module module(jlm::util::filepath(""), "", "");
 
-	jlm::cfg cfg(module);
+	jlm::llvm::cfg cfg(module);
 	auto bb1 = basic_block::create(cfg);
 	auto bb2 = basic_block::create(cfg);
 	auto bb3 = basic_block::create(cfg);
@@ -164,11 +164,11 @@ test_irreducible()
 static inline void
 test_acyclic_unstructured_in_dowhile()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
-	ipgraph_module module(util::filepath(""), "", "");
+	ipgraph_module module(jlm::util::filepath(""), "", "");
 
-	jlm::cfg cfg(module);
+	jlm::llvm::cfg cfg(module);
 	auto bb1 = basic_block::create(cfg);
 	auto bb2 = basic_block::create(cfg);
 	auto bb3 = basic_block::create(cfg);
@@ -194,11 +194,11 @@ test_acyclic_unstructured_in_dowhile()
 static inline void
 test_lor_before_dowhile()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
-	ipgraph_module module(util::filepath(""), "", "");
+	ipgraph_module module(jlm::util::filepath(""), "", "");
 
-	jlm::cfg cfg(module);
+	jlm::llvm::cfg cfg(module);
 	auto bb1 = basic_block::create(cfg);
 	auto bb2 = basic_block::create(cfg);
 	auto bb3 = basic_block::create(cfg);
@@ -224,11 +224,11 @@ test_lor_before_dowhile()
 static void
 test_static_endless_loop()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
-	ipgraph_module im(util::filepath(""), "", "");
+	ipgraph_module im(jlm::util::filepath(""), "", "");
 
-	jlm::cfg cfg(im);
+	jlm::llvm::cfg cfg(im);
 	auto bb1 = basic_block::create(cfg);
 	auto bb2 = basic_block::create(cfg);
 

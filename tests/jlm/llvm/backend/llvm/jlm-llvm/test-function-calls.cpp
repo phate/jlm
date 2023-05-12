@@ -18,11 +18,11 @@ static void
 test_malloc()
 {
 	auto setup = []() {
-		using namespace jlm;
+		using namespace jlm::llvm;
 
 		MemoryStateType mt;
 		PointerType pt;
-		auto im = ipgraph_module::create(util::filepath(""), "", "");
+		auto im = ipgraph_module::create(jlm::util::filepath(""), "", "");
 
 		auto cfg = cfg::create(*im);
 		auto bb = basic_block::create(*cfg);
@@ -55,10 +55,10 @@ test_malloc()
 	};
 
 	auto im = setup();
-	jlm::print(*im, stdout);
+	print(*im, stdout);
 
 	llvm::LLVMContext ctx;
-	auto lm = jlm::jlm2llvm::convert(*im, ctx);
+	auto lm = jlm::llvm::jlm2llvm::convert(*im, ctx);
 	jlm::print(*lm);
 
 	verify(*lm);
@@ -68,13 +68,13 @@ static void
 test_free()
 {
 	auto setup = []() {
-		using namespace jlm;
+		using namespace jlm::llvm;
 
 		iostatetype iot;
 		MemoryStateType mt;
 		PointerType pt;
 
-		auto ipgmod = ipgraph_module::create(util::filepath(""), "", "");
+		auto ipgmod = ipgraph_module::create(jlm::util::filepath(""), "", "");
 
 		FunctionType ft({&pt, &mt, &iot}, {&mt, &iot});
 		auto f = function_node::create(ipgmod->ipgraph(), "f", ft, linkage::external_linkage);
@@ -111,10 +111,10 @@ test_free()
 	};
 
 	auto ipgmod = setup();
-	jlm::print(*ipgmod, stdout);
+	print(*ipgmod, stdout);
 
 	llvm::LLVMContext ctx;
-	auto llvmmod = jlm::jlm2llvm::convert(*ipgmod, ctx);
+	auto llvmmod = jlm::llvm::jlm2llvm::convert(*ipgmod, ctx);
 	jlm::print(*llvmmod);
 
 	verify(*llvmmod);

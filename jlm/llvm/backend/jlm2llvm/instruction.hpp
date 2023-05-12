@@ -12,7 +12,8 @@ class Constant;
 
 }
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 class tac;
 
@@ -21,7 +22,7 @@ namespace jlm2llvm {
 class context;
 
 void
-convert_instruction(const jlm::tac & tac, const jlm::cfg_node * node, context & ctx);
+convert_instruction(const llvm::tac & tac, const cfg_node * node, context & ctx);
 
 void
 convert_tacs(const tacsvector_t & tacs, context & ctx);

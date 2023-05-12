@@ -10,7 +10,8 @@
 #include <algorithm>
 #include <typeindex>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 std::string VariableSet::DebugString() const noexcept
 {

@@ -16,17 +16,18 @@
 */
 #include <iostream>
 
-namespace jlm::aa {
+namespace jlm::llvm::aa
+{
 
 /** \brief Steensgaard analysis statistics class
  *
  */
-class SteensgaardAnalysisStatistics final : public util::Statistics {
+class SteensgaardAnalysisStatistics final : public jlm::util::Statistics {
 public:
   ~SteensgaardAnalysisStatistics() override = default;
 
   explicit
-  SteensgaardAnalysisStatistics(util::filepath sourceFile)
+  SteensgaardAnalysisStatistics(jlm::util::filepath sourceFile)
     : Statistics(Statistics::Id::SteensgaardAnalysis)
     , NumNodesBefore_(0)
     , SourceFile_(std::move(sourceFile))
@@ -48,35 +49,35 @@ public:
   [[nodiscard]] std::string
   ToString() const override
   {
-    return util::strfmt("SteensgaardAnalysis ",
+    return jlm::util::strfmt("SteensgaardAnalysis ",
                   SourceFile_.to_str(), " ",
                   "#RvsdgNodes:", NumNodesBefore_, " ",
                   "Time[ns]:", Timer_.ns());
   }
 
   static std::unique_ptr<SteensgaardAnalysisStatistics>
-  Create(const util::filepath & sourceFile)
+  Create(const jlm::util::filepath & sourceFile)
   {
     return std::make_unique<SteensgaardAnalysisStatistics>(sourceFile);
   }
 
 private:
   size_t NumNodesBefore_;
-  util::filepath SourceFile_;
+  jlm::util::filepath SourceFile_;
 
-  util::timer Timer_;
+  jlm::util::timer Timer_;
 };
 
 /** \brief Steensgaard PointsTo graph construction statistics class
  *
  */
-class SteensgaardPointsToGraphConstructionStatistics final : public util::Statistics {
+class SteensgaardPointsToGraphConstructionStatistics final : public jlm::util::Statistics {
 public:
   ~SteensgaardPointsToGraphConstructionStatistics() override = default;
 
   explicit
-  SteensgaardPointsToGraphConstructionStatistics(util::filepath sourceFile)
-    : Statistics(util::Statistics::Id::SteensgaardPointsToGraphConstruction)
+  SteensgaardPointsToGraphConstructionStatistics(jlm::util::filepath sourceFile)
+    : Statistics(jlm::util::Statistics::Id::SteensgaardPointsToGraphConstruction)
     , SourceFile_(std::move(sourceFile))
     , NumDisjointSets_(0)
     , NumLocations_(0)
@@ -117,7 +118,7 @@ public:
   [[nodiscard]] std::string
   ToString() const override
   {
-    return util::strfmt("SteensgaardPointsToGraphConstruction ",
+    return jlm::util::strfmt("SteensgaardPointsToGraphConstruction ",
                   SourceFile_.to_str(), " ",
                   "#DisjointSets:", NumDisjointSets_, " ",
                   "#Locations:", NumLocations_, " ",
@@ -134,13 +135,13 @@ public:
   }
 
   static std::unique_ptr<SteensgaardPointsToGraphConstructionStatistics>
-  Create(const util::filepath & sourceFile)
+  Create(const jlm::util::filepath & sourceFile)
   {
     return std::make_unique<SteensgaardPointsToGraphConstructionStatistics>(sourceFile);
   }
 
 private:
-  util::filepath SourceFile_;
+  jlm::util::filepath SourceFile_;
 
   size_t NumDisjointSets_;
   size_t NumLocations_;
@@ -154,7 +155,7 @@ private:
   size_t NumMemoryNodes_;
   size_t NumRegisterNodes_;
   size_t NumUnknownMemorySources_;
-  util::timer Timer_;
+  jlm::util::timer Timer_;
 };
 
 /** \brief Location class
@@ -274,60 +275,60 @@ public:
     if (jlm::rvsdg::is<jlm::rvsdg::simple_op>(node)) {
       auto nodestr = node->operation().debug_string();
       auto outputstr = Output_->type().debug_string();
-      return util::strfmt(nodestr, ":", index, "[" + outputstr + "]");
+      return jlm::util::strfmt(nodestr, ":", index, "[" + outputstr + "]");
     }
 
     if (is<lambda::cvargument>(Output_)) {
       auto dbgstr = Output_->region()->node()->operation().debug_string();
-      return util::strfmt(dbgstr, ":cv:", index);
+      return jlm::util::strfmt(dbgstr, ":cv:", index);
     }
 
     if (is<lambda::fctargument>(Output_)) {
       auto dbgstr = Output_->region()->node()->operation().debug_string();
-      return util::strfmt(dbgstr, ":arg:", index);
+      return jlm::util::strfmt(dbgstr, ":arg:", index);
     }
 
     if (is<delta::cvargument>(Output_)) {
       auto dbgstr = Output_->region()->node()->operation().debug_string();
-      return util::strfmt(dbgstr, ":cv:", index);
+      return jlm::util::strfmt(dbgstr, ":cv:", index);
     }
 
     if (is_gamma_argument(Output_)) {
       auto dbgstr = Output_->region()->node()->operation().debug_string();
-      return util::strfmt(dbgstr, ":arg", index);
+      return jlm::util::strfmt(dbgstr, ":arg", index);
     }
 
     if (is_theta_argument(Output_)) {
       auto dbgstr = Output_->region()->node()->operation().debug_string();
-      return util::strfmt(dbgstr, ":arg", index);
+      return jlm::util::strfmt(dbgstr, ":arg", index);
     }
 
     if (is_theta_output(Output_)) {
       auto dbgstr = jlm::rvsdg::node_output::node(Output_)->operation().debug_string();
-      return util::strfmt(dbgstr, ":out", index);
+      return jlm::util::strfmt(dbgstr, ":out", index);
     }
 
     if (is_gamma_output(Output_)) {
       auto dbgstr = jlm::rvsdg::node_output::node(Output_)->operation().debug_string();
-      return util::strfmt(dbgstr, ":out", index);
+      return jlm::util::strfmt(dbgstr, ":out", index);
     }
 
     if (is_import(Output_)) {
-      auto import = util::AssertedCast<const jlm::rvsdg::impport>(&Output_->port());
-      return util::strfmt("imp:", import->name());
+      auto import = jlm::util::AssertedCast<const jlm::rvsdg::impport>(&Output_->port());
+      return jlm::util::strfmt("imp:", import->name());
     }
 
     if (is<phi::rvargument>(Output_)) {
       auto dbgstr = Output_->region()->node()->operation().debug_string();
-      return util::strfmt(dbgstr, ":rvarg", index);
+      return jlm::util::strfmt(dbgstr, ":rvarg", index);
     }
 
     if (is<phi::cvargument>(Output_)) {
       auto dbgstr = Output_->region()->node()->operation().debug_string();
-      return util::strfmt(dbgstr, ":cvarg", index);
+      return jlm::util::strfmt(dbgstr, ":cvarg", index);
     }
 
-    return util::strfmt(jlm::rvsdg::node_output::node(Output_)->operation().debug_string(), ":", index);
+    return jlm::util::strfmt(jlm::rvsdg::node_output::node(Output_)->operation().debug_string(), ":", index);
   }
 
   [[nodiscard]] static bool
@@ -530,7 +531,7 @@ public:
     : Location(pointsToFlags)
     , Argument_(argument)
   {
-    JLM_ASSERT(dynamic_cast<const jlm::impport*>(&argument.port()));
+    JLM_ASSERT(dynamic_cast<const llvm::impport*>(&argument.port()));
   }
 
   [[nodiscard]] const jlm::rvsdg::argument &
@@ -548,7 +549,7 @@ public:
   static std::unique_ptr<Location>
   Create(const jlm::rvsdg::argument & argument)
   {
-    auto & rvsdgImport = *util::AssertedCast<const impport>(&argument.port());
+    auto & rvsdgImport = *jlm::util::AssertedCast<const impport>(&argument.port());
     bool pointsToUnknownMemory = is<PointerType>(rvsdgImport.GetValueType());
     /**
      * FIXME: We use pointsToUnknownMemory for pointsToExternalMemory
@@ -737,26 +738,26 @@ LocationSet::ToDot() const
       auto unknownLabel = location->PointsToUnknownMemory() ? "{U}" : "";
       auto pointsToEscapedMemoryLabel = location->PointsToEscapedMemory() ? "{E}" : "";
       auto escapesModuleLabel = RegisterLocation::IsEscapingModule(*location) ? "{EscapesModule}" : "";
-      auto pointsToLabel = util::strfmt("{pt:", (intptr_t) location->GetPointsTo(), "}");
-      auto locationLabel = util::strfmt((intptr_t)location, " : ", location->DebugString());
+      auto pointsToLabel = jlm::util::strfmt("{pt:", (intptr_t) location->GetPointsTo(), "}");
+      auto locationLabel = jlm::util::strfmt((intptr_t)location, " : ", location->DebugString());
 
       setLabel += location == rootLocation
-        ? util::strfmt("*",
+        ? jlm::util::strfmt("*",
                  locationLabel,
                  unknownLabel,
                  pointsToEscapedMemoryLabel,
                  escapesModuleLabel,
                  pointsToLabel,
                  "*\\n")
-        : util::strfmt(locationLabel, escapesModuleLabel, "\\n");
+        : jlm::util::strfmt(locationLabel, escapesModuleLabel, "\\n");
     }
 
-    return util::strfmt("{ ", (intptr_t)&set, " [label = \"", setLabel, "\"]; }");
+    return jlm::util::strfmt("{ ", (intptr_t)&set, " [label = \"", setLabel, "\"]; }");
   };
 
   auto dot_edge = [&](const DisjointLocationSet::set & set, const DisjointLocationSet::set & pointsToSet)
   {
-    return util::strfmt((intptr_t)&set, " -> ", (intptr_t)&pointsToSet);
+    return jlm::util::strfmt((intptr_t)&set, " -> ", (intptr_t)&pointsToSet);
   };
 
   std::string str;
@@ -814,9 +815,9 @@ Steensgaard::join(Location & x, Location & y)
 void
 Steensgaard::Analyze(const jlm::rvsdg::simple_node & node)
 {
-  auto AnalyzeCall  = [](auto & s, auto & n) { s.AnalyzeCall(*util::AssertedCast<const CallNode>(&n)); };
-  auto AnalyzeLoad  = [](auto & s, auto & n) { s.AnalyzeLoad(*util::AssertedCast<const LoadNode>(&n)); };
-  auto AnalyzeStore = [](auto & s, auto & n) { s.AnalyzeStore(*util::AssertedCast<const StoreNode>(&n)); };
+  auto AnalyzeCall  = [](auto & s, auto & n) { s.AnalyzeCall(*jlm::util::AssertedCast<const CallNode>(&n)); };
+  auto AnalyzeLoad  = [](auto & s, auto & n) { s.AnalyzeLoad(*jlm::util::AssertedCast<const LoadNode>(&n)); };
+  auto AnalyzeStore = [](auto & s, auto & n) { s.AnalyzeStore(*jlm::util::AssertedCast<const StoreNode>(&n)); };
 
   static std::unordered_map<
     std::type_index
@@ -1509,7 +1510,7 @@ Steensgaard::Analyze(jlm::rvsdg::region & region)
       continue;
     }
 
-    Analyze(*util::AssertedCast<const structural_node>(node));
+    Analyze(*jlm::util::AssertedCast<const structural_node>(node));
   }
 }
 
@@ -1551,7 +1552,7 @@ Steensgaard::Analyze(const jlm::rvsdg::graph & graph)
 std::unique_ptr<PointsToGraph>
 Steensgaard::Analyze(
   const RvsdgModule & module,
-  util::StatisticsCollector & statisticsCollector)
+  jlm::util::StatisticsCollector & statisticsCollector)
 {
   ResetState();
   auto steensgaardStatistics = SteensgaardAnalysisStatistics::Create(module.SourceFileName());
@@ -1615,7 +1616,7 @@ Steensgaard::ConstructPointsToGraph(const LocationSet & locationSets)
   auto FindModuleEscapingMemoryNodes = [](
     std::unordered_set<RegisterLocation*> & moduleEscapingRegisterLocations,
     const LocationSet & locationSets,
-    const std::unordered_map<const util::disjointset<Location*>::set*, std::vector<PointsToGraph::MemoryNode*>> & memoryNodeMap)
+    const std::unordered_map<const jlm::util::disjointset<Location*>::set*, std::vector<PointsToGraph::MemoryNode*>> & memoryNodeMap)
   {
     /*
      * Initialize our working set.
@@ -1634,7 +1635,7 @@ Steensgaard::ConstructPointsToGraph(const LocationSet & locationSets)
     /*
      * Collect escaping memory nodes.
      */
-    util::HashSet<const LocationSet::DisjointLocationSet::set*> visitedSets;
+    jlm::util::HashSet<const LocationSet::DisjointLocationSet::set*> visitedSets;
     std::unordered_set<PointsToGraph::MemoryNode*> escapedMemoryNodes;
     while (!toVisit.empty()) {
       auto moduleEscapingLocation = *toVisit.begin();
@@ -1668,7 +1669,7 @@ Steensgaard::ConstructPointsToGraph(const LocationSet & locationSets)
 
 
   std::unordered_map<const Location*, PointsToGraph::Node*> locationMap;
-  std::unordered_map<const util::disjointset<Location*>::set*, std::vector<PointsToGraph::MemoryNode*>> memoryNodeMap;
+  std::unordered_map<const jlm::util::disjointset<Location*>::set*, std::vector<PointsToGraph::MemoryNode*>> memoryNodeMap;
   std::unordered_set<RegisterLocation*> moduleEscapingRegisterLocations;
 
   /*
@@ -1692,7 +1693,7 @@ Steensgaard::ConstructPointsToGraph(const LocationSet & locationSets)
         memoryNodeMap[&locationSet].push_back(memoryNode);
 
       if (RegisterLocation::IsEscapingModule(*location))
-        moduleEscapingRegisterLocations.insert(util::AssertedCast<RegisterLocation>(location));
+        moduleEscapingRegisterLocations.insert(jlm::util::AssertedCast<RegisterLocation>(location));
     }
   }
 

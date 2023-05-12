@@ -10,20 +10,20 @@
 #include <jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
 
-static std::unique_ptr<jlm::aa::PointsToGraph>
-RunSteensgaard(jlm::RvsdgModule & rvsdgModule)
+static std::unique_ptr<jlm::llvm::aa::PointsToGraph>
+RunSteensgaard(jlm::llvm::RvsdgModule & rvsdgModule)
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   aa::Steensgaard steensgaard;
-  util::StatisticsCollector statisticsCollector;
+  jlm::util::StatisticsCollector statisticsCollector;
   return steensgaard.Analyze(rvsdgModule, statisticsCollector);
 }
 
 static void
 AssertMemoryNodes(
-  const jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> & receivedMemoryNodes,
-  const jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> & expectedMemoryNodes)
+  const jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> & receivedMemoryNodes,
+  const jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> & expectedMemoryNodes)
 {
   assert(receivedMemoryNodes == expectedMemoryNodes);
 }
@@ -36,15 +36,15 @@ TestStore1()
    */
   auto ValidateProvider = [](
     const StoreTest1 & test,
-    const jlm::aa::MemoryNodeProvisioning & provisioning,
-    const jlm::aa::PointsToGraph & pointsToGraph)
+    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
+    const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
     auto & allocaAMemoryNode = pointsToGraph.GetAllocaNode(*test.alloca_a);
     auto & allocaBMemoryNode = pointsToGraph.GetAllocaNode(*test.alloca_b);
     auto & allocaCMemoryNode = pointsToGraph.GetAllocaNode(*test.alloca_c);
     auto & allocaDMemoryNode = pointsToGraph.GetAllocaNode(*test.alloca_d);
 
-    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes(
+    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes(
       {
         &allocaAMemoryNode,
         &allocaBMemoryNode,
@@ -63,12 +63,12 @@ TestStore1()
   // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
   /*
    * Act
    */
-  auto provisioning = jlm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto provisioning = jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
@@ -84,8 +84,8 @@ TestStore2()
    */
   auto ValidateProvider = [](
     const StoreTest2 & test,
-    const jlm::aa::MemoryNodeProvisioning & provisioning,
-    const jlm::aa::PointsToGraph & pointsToGraph)
+    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
+    const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
     auto & allocaAMemoryNode = pointsToGraph.GetAllocaNode(*test.alloca_a);
     auto & allocaBMemoryNode = pointsToGraph.GetAllocaNode(*test.alloca_b);
@@ -93,7 +93,7 @@ TestStore2()
     auto & allocaXMemoryNode = pointsToGraph.GetAllocaNode(*test.alloca_x);
     auto & allocaYMemoryNode = pointsToGraph.GetAllocaNode(*test.alloca_y);
 
-    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes(
+    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes(
       {
         &allocaAMemoryNode,
         &allocaBMemoryNode,
@@ -113,12 +113,12 @@ TestStore2()
   // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
   /*
    * Act
    */
-  auto provisioning = jlm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto provisioning = jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
@@ -134,8 +134,8 @@ TestLoad1()
    */
   auto ValidateProvider = [](
     const LoadTest1 & test,
-    const jlm::aa::MemoryNodeProvisioning & provisioning,
-    const jlm::aa::PointsToGraph & pointsToGraph)
+    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
+    const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
     auto & lambdaMemoryNode = pointsToGraph.GetLambdaNode(*test.lambda);
     auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
@@ -151,12 +151,12 @@ TestLoad1()
   // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
 
   /*
    * Act
    */
-  auto provisioning = jlm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto provisioning = jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
@@ -172,8 +172,8 @@ TestLoad2()
    */
   auto ValidateProvider = [](
     const LoadTest2 & test,
-    const jlm::aa::MemoryNodeProvisioning & provisioning,
-    const jlm::aa::PointsToGraph & pointsToGraph)
+    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
+    const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
     auto & allocaAMemoryNode = pointsToGraph.GetAllocaNode(*test.alloca_a);
     auto & allocaBMemoryNode = pointsToGraph.GetAllocaNode(*test.alloca_b);
@@ -181,7 +181,7 @@ TestLoad2()
     auto & allocaXMemoryNode = pointsToGraph.GetAllocaNode(*test.alloca_x);
     auto & allocaYMemoryNode = pointsToGraph.GetAllocaNode(*test.alloca_y);
 
-    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes(
+    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes(
       {
         &allocaAMemoryNode,
         &allocaBMemoryNode,
@@ -201,12 +201,12 @@ TestLoad2()
   // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
 
   /*
    * Act
    */
-  auto provisioning = jlm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto provisioning = jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
@@ -222,8 +222,8 @@ TestLoadFromUndef()
    */
   auto ValidateProvider = [](
     const LoadFromUndefTest & test,
-    const jlm::aa::MemoryNodeProvisioning & provisioning,
-    const jlm::aa::PointsToGraph & pointsToGraph)
+    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
+    const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
     auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.Lambda()).Size();
     auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(test.Lambda()).Size();
@@ -236,12 +236,12 @@ TestLoadFromUndef()
   // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
 
   /*
    * Act
    */
-  auto provisioning = jlm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto provisioning = jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
@@ -257,8 +257,8 @@ TestCall1()
    */
   auto ValidateProvider = [](
     const CallTest1 & test,
-    const jlm::aa::MemoryNodeProvisioning & provisioning,
-    const jlm::aa::PointsToGraph & pointsToGraph)
+    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
+    const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
     auto & allocaXMemoryNode = pointsToGraph.GetAllocaNode(*test.alloca_x);
     auto & allocaYMemoryNode = pointsToGraph.GetAllocaNode(*test.alloca_y);
@@ -314,12 +314,12 @@ TestCall1()
 //	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
   /*
    * Act
    */
-  auto provisioning = jlm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto provisioning = jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
@@ -335,8 +335,8 @@ TestCall2()
    */
   auto ValidateProvider = [](
     const CallTest2 & test,
-    const jlm::aa::MemoryNodeProvisioning & provisioning,
-    const jlm::aa::PointsToGraph & pointsToGraph)
+    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
+    const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
     auto & mallocMemoryNode = pointsToGraph.GetMallocNode(*test.malloc);
 
@@ -402,12 +402,12 @@ TestCall2()
 //	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
   /*
    * Act
    */
-  auto provisioning = jlm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto provisioning = jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
@@ -423,8 +423,8 @@ TestIndirectCall()
    */
   auto ValidateProvider = [](
     const IndirectCallTest1 & test,
-    const jlm::aa::MemoryNodeProvisioning & provisioning,
-    const jlm::aa::PointsToGraph & pointsToGraph)
+    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
+    const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
     auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
 
@@ -495,12 +495,12 @@ TestIndirectCall()
 //	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
-//	std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
+//	std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
   /*
    * Act
    */
-  auto provisioning = jlm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto provisioning = jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
@@ -516,8 +516,8 @@ TestIndirectCall2()
    */
   auto ValidateProvider = [](
     const IndirectCallTest2 & test,
-    const jlm::aa::MemoryNodeProvisioning & provisioning,
-    const jlm::aa::PointsToGraph & pointsToGraph)
+    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
+    const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
     auto & deltaG1MemoryNode = pointsToGraph.GetDeltaNode(test.GetDeltaG1());
     auto & deltaG2MemoryNode = pointsToGraph.GetDeltaNode(test.GetDeltaG2());
@@ -528,7 +528,7 @@ TestIndirectCall2()
 
     auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
 
-    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes(
+    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes(
       {
         &deltaG1MemoryNode,
         &deltaG2MemoryNode,
@@ -644,12 +644,12 @@ TestIndirectCall2()
 //	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
-//	std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
+//	std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
   /*
    * Act
    */
-  auto provisioning = jlm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto provisioning = jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
@@ -665,8 +665,8 @@ TestGamma()
    */
   auto ValidateProvider = [](
     const GammaTest & test,
-    const jlm::aa::MemoryNodeProvisioning & provisioning,
-    const jlm::aa::PointsToGraph & pointsToGraph)
+    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
+    const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
     auto & lambdaMemoryNode = pointsToGraph.GetLambdaNode(*test.lambda);
     auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
@@ -688,12 +688,12 @@ TestGamma()
   // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
 
   /*
    * Act
    */
-  auto provisioning = jlm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto provisioning = jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
@@ -709,8 +709,8 @@ TestTheta()
    */
   auto ValidateProvider = [](
     const ThetaTest & test,
-    const jlm::aa::MemoryNodeProvisioning & provisioning,
-    const jlm::aa::PointsToGraph & pointsToGraph)
+    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
+    const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
     auto & lambdaMemoryNode = pointsToGraph.GetLambdaNode(*test.lambda);
     auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
@@ -729,12 +729,12 @@ TestTheta()
 //	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
-//	std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
+//	std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
 
   /*
    * Act
    */
-  auto provisioning = jlm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto provisioning = jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
@@ -750,8 +750,8 @@ TestDelta1()
    */
   auto ValidateProvider = [](
     const DeltaTest1 & test,
-    const jlm::aa::MemoryNodeProvisioning & provisioning,
-    const jlm::aa::PointsToGraph & pointsToGraph)
+    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
+    const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
     auto & deltaFNode = pointsToGraph.GetDeltaNode(*test.delta_f);
 
@@ -788,12 +788,12 @@ TestDelta1()
   // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
 
   /*
    * Act
    */
-  auto provisioning = jlm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto provisioning = jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
@@ -809,8 +809,8 @@ TestDelta2()
    */
   auto ValidateProvider = [](
     const DeltaTest2 & test,
-    const jlm::aa::MemoryNodeProvisioning & provisioning,
-    const jlm::aa::PointsToGraph & pointsToGraph)
+    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
+    const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
     auto & deltaD1Node = pointsToGraph.GetDeltaNode(*test.delta_d1);
     auto & deltaD2Node = pointsToGraph.GetDeltaNode(*test.delta_d2);
@@ -848,12 +848,12 @@ TestDelta2()
 //	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
 
   /*
    * Act
    */
-  auto provisioning = jlm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto provisioning = jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
@@ -869,8 +869,8 @@ TestImports()
    */
   auto ValidateProvider = [](
     const ImportTest & test,
-    const jlm::aa::MemoryNodeProvisioning & provisioning,
-    const jlm::aa::PointsToGraph & pointsToGraph)
+    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
+    const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
     auto & importD1Node = pointsToGraph.GetImportNode(*test.import_d1);
     auto & importD2Node = pointsToGraph.GetImportNode(*test.import_d2);
@@ -908,12 +908,12 @@ TestImports()
 //	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
 
   /*
    * Act
    */
-  auto provisioning = jlm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto provisioning = jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
@@ -929,8 +929,8 @@ TestPhi1()
    */
   auto ValidateProvider = [](
     const PhiTest1 & test,
-    const jlm::aa::MemoryNodeProvisioning & provisioning,
-    const jlm::aa::PointsToGraph & pointsToGraph)
+    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
+    const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
     auto & resultAllocaNode = pointsToGraph.GetAllocaNode(*test.alloca);
 
@@ -979,12 +979,12 @@ TestPhi1()
 	// jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
 
   /*
    * Act
    */
-  auto provisioning = jlm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto provisioning = jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
@@ -1000,8 +1000,8 @@ TestPhi2()
    */
   auto ValidateProvider = [](
     const PhiTest2 & test,
-    const jlm::aa::MemoryNodeProvisioning & provisioning,
-    const jlm::aa::PointsToGraph & pointsToGraph)
+    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
+    const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
     auto & pTestAllocaMemoryNode = pointsToGraph.GetAllocaNode(test.GetPTestAlloca());
     auto & paAllocaMemoryNode = pointsToGraph.GetAllocaNode(test.GetPaAlloca());
@@ -1011,7 +1011,7 @@ TestPhi2()
 
     auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
 
-    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes(
+    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes(
       {
         &pTestAllocaMemoryNode,
         &paAllocaMemoryNode,
@@ -1151,12 +1151,12 @@ TestPhi2()
   // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
 
   /*
    * Act
    */
-  auto provisioning = jlm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto provisioning = jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
@@ -1172,8 +1172,8 @@ TestMemcpy()
    */
   auto ValidateProvider = [](
     const MemcpyTest & test,
-    const jlm::aa::MemoryNodeProvisioning & provisioning,
-    const jlm::aa::PointsToGraph & pointsToGraph)
+    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
+    const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
     auto & localArrayMemoryNode = pointsToGraph.GetDeltaNode(test.LocalArray());
     auto & globalArrayMemoryNode = pointsToGraph.GetDeltaNode(test.GlobalArray());
@@ -1211,12 +1211,12 @@ TestMemcpy()
 //	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
   /*
    * Act
    */
-  auto provisioning = jlm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto provisioning = jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
@@ -1232,8 +1232,8 @@ TestEscapedMemory1()
    */
   auto ValidateProvider = [](
     const EscapedMemoryTest1 & test,
-    const jlm::aa::MemoryNodeProvisioning & provisioning,
-    const jlm::aa::PointsToGraph & pointsToGraph)
+    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
+    const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
     auto & lambdaMemoryNode = pointsToGraph.GetLambdaNode(*test.LambdaTest);
     auto & deltaAMemoryNode = pointsToGraph.GetDeltaNode(*test.DeltaA);
@@ -1242,7 +1242,7 @@ TestEscapedMemory1()
     auto & deltaYMemoryNode = pointsToGraph.GetDeltaNode(*test.DeltaY);
     auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
 
-    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes({
+    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes({
       &lambdaMemoryNode,
       &deltaAMemoryNode,
       &deltaBMemoryNode,
@@ -1261,12 +1261,12 @@ TestEscapedMemory1()
 //	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
 
   /*
    * Act
    */
-  auto provisioning = jlm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto provisioning = jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
@@ -1282,8 +1282,8 @@ TestEscapedMemory2()
    */
   auto ValidateProvider = [](
     const EscapedMemoryTest2 & test,
-    const jlm::aa::MemoryNodeProvisioning & provisioning,
-    const jlm::aa::PointsToGraph & pointsToGraph)
+    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
+    const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
     auto & returnAddressMallocMemoryNode = pointsToGraph.GetMallocNode(*test.ReturnAddressMalloc);
     auto & callExternalFunction1MallocMemoryNode = pointsToGraph.GetMallocNode(*test.CallExternalFunction1Malloc);
@@ -1309,7 +1309,7 @@ TestEscapedMemory2()
      * Validate CallExternalFunction1 function
      */
     {
-      jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes({
+      jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes({
         &returnAddressMallocMemoryNode,
         &callExternalFunction1MallocMemoryNode,
         &returnAddressLambdaMemoryNode,
@@ -1334,7 +1334,7 @@ TestEscapedMemory2()
      * Validate CallExternalFunction2 function
      */
     {
-      jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes({
+      jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes({
         &returnAddressMallocMemoryNode,
         &callExternalFunction1MallocMemoryNode,
         &returnAddressLambdaMemoryNode,
@@ -1360,12 +1360,12 @@ TestEscapedMemory2()
 //	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
 
   /*
    * Act
    */
-  auto provisioning = jlm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto provisioning = jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
@@ -1381,14 +1381,14 @@ TestEscapedMemory3()
    */
   auto ValidateProvider = [](
     const EscapedMemoryTest3 & test,
-    const jlm::aa::MemoryNodeProvisioning & provisioning,
-    const jlm::aa::PointsToGraph & pointsToGraph)
+    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
+    const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
     auto & lambdaMemoryNode = pointsToGraph.GetLambdaNode(*test.LambdaTest);
     auto & deltaMemoryNode = pointsToGraph.GetDeltaNode(*test.DeltaGlobal);
     auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
 
-    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes({
+    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes({
       &lambdaMemoryNode,
       &deltaMemoryNode,
       &externalMemoryNode});
@@ -1410,12 +1410,12 @@ TestEscapedMemory3()
 //	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
 
   /*
    * Act
    */
-  auto provisioning = jlm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto provisioning = jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
@@ -1443,7 +1443,7 @@ TestStatistics()
   /*
    * Act
    */
-  jlm::aa::RegionAwareMemoryNodeProvider::Create(
+  jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(
     test.module(),
     *pointsToGraph,
     statisticsCollector);
@@ -1453,7 +1453,7 @@ TestStatistics()
    */
   assert(statisticsCollector.NumCollectedStatistics() == 1);
 
-  auto & memoryNodeProvisioningStatistics = dynamic_cast<const jlm::aa::RegionAwareMemoryNodeProvider::Statistics&>(
+  auto & memoryNodeProvisioningStatistics = dynamic_cast<const jlm::llvm::aa::RegionAwareMemoryNodeProvider::Statistics&>(
     *statisticsCollector.CollectedStatistics().begin());
 
   assert(memoryNodeProvisioningStatistics.NumRvsdgNodes() == 3);

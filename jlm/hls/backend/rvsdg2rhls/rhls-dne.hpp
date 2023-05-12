@@ -22,7 +22,7 @@ namespace jlm {
 		dne(jlm::rvsdg::region *sr);
 
 		void
-		dne(jlm::RvsdgModule &rm);
+		dne(llvm::RvsdgModule &rm);
 	}
 }
 #endif //JLM_HLS_BACKEND_RVSDG2RHLS_RHLS_DNE_HPP

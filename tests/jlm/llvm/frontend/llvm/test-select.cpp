@@ -17,9 +17,9 @@
 
 
 template<class OP> static bool
-contains(const jlm::ipgraph_module & module, const std::string & fctname)
+contains(const jlm::llvm::ipgraph_module & module, const std::string & fctname)
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	bool has_select = false;
 	auto cfg = dynamic_cast<const function_node*>(module.ipgraph().find("f"))->cfg();
@@ -58,10 +58,10 @@ test_scalar_select()
 	auto llmod = setup(ctx);
 	jlm::print(*llmod);
 
-	auto ipgmod = jlm::ConvertLlvmModule(*llmod);
-	jlm::print(*ipgmod, stdout);
+	auto ipgmod = jlm::llvm::ConvertLlvmModule(*llmod);
+	print(*ipgmod, stdout);
 
-	assert(contains<jlm::select_op>(*ipgmod, "f"));
+	assert(contains<jlm::llvm::select_op>(*ipgmod, "f"));
 }
 
 static void
@@ -92,10 +92,10 @@ test_vector_select()
 	auto llmod = setup(ctx);
 	jlm::print(*llmod);
 
-	auto ipgmod = jlm::ConvertLlvmModule(*llmod);
-	jlm::print(*ipgmod, stdout);
+	auto ipgmod = jlm::llvm::ConvertLlvmModule(*llmod);
+	print(*ipgmod, stdout);
 
-	assert(contains<jlm::vectorselect_op>(*ipgmod, "f"));
+	assert(contains<jlm::llvm::vectorselect_op>(*ipgmod, "f"));
 }
 
 static int

@@ -41,7 +41,7 @@ jlm::hls::add_forks(jlm::rvsdg::region *region) {
 }
 
 void
-jlm::hls::add_forks(jlm::RvsdgModule &rm) {
+jlm::hls::add_forks(llvm::RvsdgModule &rm) {
 	auto &graph = rm.Rvsdg();
 	auto root = graph.root();
 	add_forks(root);

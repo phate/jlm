@@ -19,12 +19,12 @@
 static int
 test()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
-	valuetype vt;
+	jlm::valuetype vt;
 	PointerType pt;
 
-	RvsdgModule rm(util::filepath(""), "", "");
+	RvsdgModule rm(jlm::util::filepath(""), "", "");
 
 	/* setup graph */
 	auto imp = rm.Rvsdg().add_import(impport(vt, "", linkage::external_linkage));
@@ -47,7 +47,7 @@ test()
 			false);
 		auto dep1 = delta->add_ctxvar(r2->argument());
 		auto dep2 = delta->add_ctxvar(dep);
-		delta1 = delta->finalize(create_testop(delta->subregion(), {dep1, dep2}, {&vt})[0]);
+		delta1 = delta->finalize(jlm::create_testop(delta->subregion(), {dep1, dep2}, {&vt})[0]);
 	}
 
 	{
@@ -60,7 +60,7 @@ test()
 			false);
 		auto dep1 = delta->add_ctxvar(r1->argument());
 		auto dep2 = delta->add_ctxvar(dep);
-		delta2 = delta->finalize(create_testop(delta->subregion(), {dep1, dep2}, {&vt})[0]);
+		delta2 = delta->finalize(jlm::create_testop(delta->subregion(), {dep1, dep2}, {&vt})[0]);
 	}
 
 	r1->set_rvorigin(delta1);
@@ -71,9 +71,9 @@ test()
 
 	jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
-	util::StatisticsCollector statisticsCollector;
+	jlm::util::StatisticsCollector statisticsCollector;
 	auto module = rvsdg2jlm::rvsdg2jlm(rm, statisticsCollector);
-	jlm::print(*module, stdout);
+	print(*module, stdout);
 
 	/* verify output */
 

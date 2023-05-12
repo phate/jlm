@@ -15,16 +15,16 @@ namespace jlm{
 		add_prints(rvsdg::region *region);
 
 		void
-		add_prints(jlm::RvsdgModule &rm);
+		add_prints(llvm::RvsdgModule &rm);
 
 		void
-		convert_prints(jlm::RvsdgModule &rm);
+		convert_prints(llvm::RvsdgModule &rm);
 
 		void
 		convert_prints(
       rvsdg::region *region,
       rvsdg::output * printf,
-      const FunctionType & functionType);
+      const llvm::FunctionType & functionType);
 
 		rvsdg::output *
 		route_to_region(rvsdg::output * output, rvsdg::region * region);

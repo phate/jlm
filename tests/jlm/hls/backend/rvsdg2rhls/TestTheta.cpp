@@ -13,12 +13,12 @@
 static inline void
 TestUnknownBoundaries()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	auto b32 = jlm::rvsdg::bit32;
 	FunctionType ft({&b32, &b32, &b32}, {&b32, &b32, &b32});
 
-	RvsdgModule rm(util::filepath(""), "", "");
+	RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
 	nf->set_mutable(false);
 
@@ -51,7 +51,7 @@ TestUnknownBoundaries()
 
 	/* Convert graph to RHLS */
 
-	hls::theta_conv(theta);
+	jlm::hls::theta_conv(theta);
 	jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
 

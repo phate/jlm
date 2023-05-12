@@ -78,7 +78,7 @@ test_unrollinfo()
 		jlm::rvsdg::graph graph;
 		auto x = graph.add_import({bt32, "x"});
 		auto theta = create_theta(slt, add, x, x, x);
-		auto ui = jlm::unrollinfo::create(theta);
+		auto ui = jlm::llvm::unrollinfo::create(theta);
 
 		assert(ui);
 		assert(ui->is_additive());
@@ -106,31 +106,31 @@ test_unrollinfo()
 		auto end100 = jlm::rvsdg::create_bitconstant(graph.root(), 32, 100);
 
 		auto theta = create_theta(ult, add, init0, step1, end100);
-		auto ui = jlm::unrollinfo::create(theta);
+		auto ui = jlm::llvm::unrollinfo::create(theta);
 		assert(ui && *ui->niterations() == 100);
 
 		theta = create_theta(ule, add, init0, step1, end100);
-		ui = jlm::unrollinfo::create(theta);
+		ui = jlm::llvm::unrollinfo::create(theta);
 		assert(ui && *ui->niterations() == 101);
 
 		theta = create_theta(ugt, sub, end100, stepm1, init0);
-		ui = jlm::unrollinfo::create(theta);
+		ui = jlm::llvm::unrollinfo::create(theta);
 		assert(ui && *ui->niterations() == 100);
 
 		theta = create_theta(sge, sub, end100, stepm1, init0);
-		ui = jlm::unrollinfo::create(theta);
+		ui = jlm::llvm::unrollinfo::create(theta);
 		assert(ui && *ui->niterations() == 101);
 
 		theta = create_theta(ult, add, init0, step0, end100);
-		ui = jlm::unrollinfo::create(theta);
+		ui = jlm::llvm::unrollinfo::create(theta);
 		assert(ui && !ui->niterations());
 
 		theta = create_theta(eq, add, initm1, step1, end100);
-		ui = jlm::unrollinfo::create(theta);
+		ui = jlm::llvm::unrollinfo::create(theta);
 		assert(ui && *ui->niterations() == 101);
 
 		theta = create_theta(eq, add, init1, step2, end100);
-		ui = jlm::unrollinfo::create(theta);
+		ui = jlm::llvm::unrollinfo::create(theta);
 		assert(ui && !ui->niterations());
 	}
 }
@@ -154,7 +154,7 @@ test_known_boundaries()
 
 		auto theta = create_theta(ult, add, init, step, end);
 //		jlm::rvsdg::view(graph, stdout);
-		jlm::unroll(theta, 4);
+		jlm::llvm::unroll(theta, 4);
 //		jlm::rvsdg::view(graph, stdout);
 		/*
 			The unroll factor is greater than or equal the number of iterations.
@@ -174,7 +174,7 @@ test_known_boundaries()
 
 		auto theta = create_theta(ult, add, init, step, end);
 //		jlm::rvsdg::view(graph, stdout);
-		jlm::unroll(theta, 2);
+		jlm::llvm::unroll(theta, 2);
 //		jlm::rvsdg::view(graph, stdout);
 		/*
 			The unroll factor is a multiple of the number of iterations.
@@ -194,7 +194,7 @@ test_known_boundaries()
 
 		auto theta = create_theta(ult, add, init, step, end);
 //		jlm::rvsdg::view(graph, stdout);
-		jlm::unroll(theta, 3);
+		jlm::llvm::unroll(theta, 3);
 //		jlm::rvsdg::view(graph, stdout);
 		/*
 			The unroll factor is NOT a multiple of the number of iterations
@@ -215,7 +215,7 @@ test_known_boundaries()
 
 		auto theta = create_theta(sgt, sub, init, step, end);
 //		jlm::rvsdg::view(graph, stdout);
-		jlm::unroll(theta, 6);
+		jlm::llvm::unroll(theta, 6);
 //		jlm::rvsdg::view(graph, stdout);
 		/*
 			The unroll factor is NOT a multiple of the number of iterations
@@ -229,12 +229,12 @@ test_known_boundaries()
 static inline void
 test_unknown_boundaries()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	jlm::rvsdg::bittype bt(32);
 	jlm::test_op op({&bt}, {&bt});
 
-	RvsdgModule rm(util::filepath(""), "", "");
+	RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 
 	auto x = graph.add_import({bt, "x"});
@@ -256,7 +256,7 @@ test_unknown_boundaries()
 	auto ex1 = graph.add_export(lv1, {lv1->type(), "x"});
 
 //	jlm::rvsdg::view(graph, stdout);
-	jlm::loopunroll loopunroll(2);
+	jlm::llvm::loopunroll loopunroll(2);
 	loopunroll.run(rm, statisticsCollector);
 //	jlm::rvsdg::view(graph, stdout);
 
@@ -266,7 +266,7 @@ test_unknown_boundaries()
 	assert(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(node));
 
 	/* Create cleaner output */
-	jlm::DeadNodeElimination dne;
+	DeadNodeElimination dne;
 	dne.run(rm, statisticsCollector);
 //	jlm::rvsdg::view(graph, stdout);
 }
@@ -286,7 +286,7 @@ find_thetas(jlm::rvsdg::region * region)
 static inline void
 test_nested_theta()
 {
-	jlm::RvsdgModule rm(jlm::util::filepath(""), "", "");
+	jlm::llvm::RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 
 	auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
@@ -353,7 +353,7 @@ test_nested_theta()
 
 	
 //	jlm::rvsdg::view(graph, stdout);
-	jlm::loopunroll loopunroll(4);
+	jlm::llvm::loopunroll loopunroll(4);
 	loopunroll.run(rm, statisticsCollector);
 	/*
 		The outher theta should contain two inner thetas
@@ -398,7 +398,7 @@ test_nested_theta()
 	thetas = find_thetas(otheta->subregion());
 	assert(thetas.size() == 2 && thetas[1]->subregion()->nnodes() >= 7);
 //	jlm::rvsdg::view(graph, stdout);
-	jlm::unroll(otheta, 4);
+	jlm::llvm::unroll(otheta, 4);
 //	jlm::rvsdg::view(graph, stdout);
 	/*
 		After unrolling the outher theta four times it should

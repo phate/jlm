@@ -19,14 +19,14 @@ test()
 	const char * bs = "0100000000" "0000000000" "0000000000" "0000000000" "0000000000" "0000000000" \
 		"00001";
 
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	jlm::rvsdg::bittype bt65(65);
 	FunctionType ft({}, {&bt65});
 
 	jlm::rvsdg::bitvalue_repr vr(bs);
 
-	ipgraph_module im(util::filepath(""), "", "");
+	ipgraph_module im(jlm::util::filepath(""), "", "");
 
 	auto cfg = cfg::create(im);
 	auto bb = basic_block::create(*cfg);
@@ -45,7 +45,7 @@ test()
 	llvm::LLVMContext ctx;
 	auto lm = jlm2llvm::convert(im, ctx);
 
-	print(*lm);
+	jlm::print(*lm);
 
 	return 0;
 }

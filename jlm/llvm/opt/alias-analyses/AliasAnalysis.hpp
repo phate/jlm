@@ -8,15 +8,15 @@
 
 #include <memory>
 
-namespace jlm {
-
-namespace util
+namespace jlm::util
 {
 class StatisticsCollector;
 }
 
-class RvsdgModule;
+namespace jlm::llvm
+{
 
+class RvsdgModule;
 
 namespace aa {
 
@@ -41,7 +41,7 @@ public:
 	virtual std::unique_ptr<PointsToGraph>
 	Analyze(
     const RvsdgModule & module,
-    util::StatisticsCollector & statisticsCollector) = 0;
+    jlm::util::StatisticsCollector & statisticsCollector) = 0;
 };
 
 }}

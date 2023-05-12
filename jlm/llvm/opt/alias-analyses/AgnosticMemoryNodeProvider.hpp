@@ -10,7 +10,7 @@
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 
-namespace jlm::aa
+namespace jlm::llvm::aa
 {
 
 /** \brief Agnostic memory node provider

@@ -12,7 +12,8 @@
 #include <unordered_set>
 #include <vector>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 class cfg;
 class cfg_edge;
@@ -62,7 +63,7 @@ public:
   using reference = cfg_node*&;
 
 private:
-  friend ::jlm::scc;
+  friend ::jlm::llvm::scc;
 
 private:
 	constiterator(const std::unordered_set<cfg_node*>::const_iterator & it)
@@ -128,8 +129,8 @@ class sccstructure final {
 	using cfg_edge_constiterator = std::unordered_set<cfg_edge*>::const_iterator;
 	using cfg_node_constiterator = std::unordered_set<cfg_node*>::const_iterator;
 
-	using edge_iterator_range = util::iterator_range<cfg_edge_constiterator>;
-	using node_iterator_range = util::iterator_range<cfg_node_constiterator>;
+	using edge_iterator_range = jlm::util::iterator_range<cfg_edge_constiterator>;
+	using node_iterator_range = jlm::util::iterator_range<cfg_node_constiterator>;
 
 public:
 	size_t
@@ -196,7 +197,7 @@ public:
 	* Creates a SCC structure from SCC \p scc.
 	*/
 	static std::unique_ptr<sccstructure>
-	create(const jlm::scc & scc);
+	create(const jlm::llvm::scc & scc);
 
 	/**
 	* Checks if the SCC structure is a tail-controlled loop. A tail-controlled loop is defined as an
@@ -215,19 +216,19 @@ private:
 };
 
 bool
-is_valid(const jlm::cfg & cfg);
+is_valid(const llvm::cfg & cfg);
 
 bool
-is_closed(const jlm::cfg & cfg);
+is_closed(const llvm::cfg & cfg);
 
 bool
-is_linear(const jlm::cfg & cfg);
+is_linear(const llvm::cfg & cfg);
 
 /**
 * Compute a Control Flow Graph's Strongly Connected Components.
 */
 std::vector<scc>
-find_sccs(const jlm::cfg & cfg);
+find_sccs(const llvm::cfg & cfg);
 
 /**
 * Compute all Strongly Connected Components of a single-entry/single-exit region.
@@ -237,31 +238,31 @@ std::vector<scc>
 find_sccs(cfg_node * entry, cfg_node * exit);
 
 static inline bool
-is_acyclic(const jlm::cfg & cfg)
+is_acyclic(const llvm::cfg & cfg)
 {
 	auto sccs = find_sccs(cfg);
 	return sccs.size() == 0;
 }
 
 bool
-is_structured(const jlm::cfg & cfg);
+is_structured(const llvm::cfg & cfg);
 
 bool
-is_proper_structured(const jlm::cfg & cfg);
+is_proper_structured(const llvm::cfg & cfg);
 
 bool
-is_reducible(const jlm::cfg & cfg);
+is_reducible(const llvm::cfg & cfg);
 
 void
-straighten(jlm::cfg & cfg);
+straighten(llvm::cfg & cfg);
 
 /** \brief Remove all basic blocks without instructions
 */
 void
-purge(jlm::cfg & cfg);
+purge(llvm::cfg & cfg);
 
 void
-prune(jlm::cfg & cfg);
+prune(llvm::cfg & cfg);
 
 }
 

@@ -223,10 +223,10 @@ namespace jlm {
                         extension() override {
                                 return ".fir";
                         }
-                        std::string get_text(jlm::RvsdgModule &rm) override {return "";}
+                        std::string get_text(llvm::RvsdgModule &rm) override {return "";}
                 public:
 			std::string
-                        run(jlm::RvsdgModule &rvsdgModule) {
+                        run(llvm::RvsdgModule &rvsdgModule) {
 				throw util::error("This version of jlm-hls has not been compiled with support for the CIRCT backend\n");
                         }
                         private:

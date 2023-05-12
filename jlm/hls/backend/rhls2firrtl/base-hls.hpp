@@ -20,7 +20,7 @@ namespace jlm {
 		class BaseHLS {
 		public:
 			std::string
-			run(jlm::RvsdgModule &rm) {
+			run(llvm::RvsdgModule &rm) {
 				assert(node_map.empty());
 				// ensure consistent naming across runs
 				create_node_names(get_hls_lambda(rm)->subregion());
@@ -44,8 +44,8 @@ namespace jlm {
 			static std::string
 			get_port_name(jlm::rvsdg::output *port);
 
-			const jlm::lambda::node *
-			get_hls_lambda(jlm::RvsdgModule &rm);
+			const llvm::lambda::node *
+			get_hls_lambda(llvm::RvsdgModule &rm);
 
 			int
 			JlmSize(const jlm::rvsdg::type *type);
@@ -54,10 +54,10 @@ namespace jlm {
 			create_node_names(jlm::rvsdg::region *r);
 
 			virtual std::string
-			get_text(jlm::RvsdgModule &rm) = 0;
+			get_text(llvm::RvsdgModule &rm) = 0;
 
 			static std::string
-			get_base_file_name(const RvsdgModule &rm);
+			get_base_file_name(const llvm::RvsdgModule &rm);
 		};
 	}
 }

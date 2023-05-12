@@ -7,7 +7,8 @@
 
 #include <unordered_map>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 /**
  * FunctionType class
@@ -159,7 +160,7 @@ arraytype::debug_string() const
 bool
 arraytype::operator==(const jlm::rvsdg::type & other) const noexcept
 {
-	auto type = dynamic_cast<const jlm::arraytype*>(&other);
+	auto type = dynamic_cast<const arraytype*>(&other);
 	return type && type->element_type() == element_type() && type->nelements() == nelements();
 }
 
@@ -191,7 +192,7 @@ fptype::debug_string() const
 bool
 fptype::operator==(const jlm::rvsdg::type & other) const noexcept
 {
-	auto type = dynamic_cast<const jlm::fptype*>(&other);
+	auto type = dynamic_cast<const fptype*>(&other);
 	return type && type->size() == size();
 }
 
@@ -209,7 +210,7 @@ varargtype::~varargtype()
 bool
 varargtype::operator==(const jlm::rvsdg::type & other) const noexcept
 {
-	return dynamic_cast<const jlm::varargtype*>(&other) != nullptr;
+	return dynamic_cast<const varargtype*>(&other) != nullptr;
 }
 
 std::string
@@ -221,7 +222,7 @@ varargtype::debug_string() const
 std::unique_ptr<jlm::rvsdg::type>
 varargtype::copy() const
 {
-	return std::unique_ptr<jlm::rvsdg::type>(new jlm::varargtype(*this));
+	return std::unique_ptr<jlm::rvsdg::type>(new varargtype(*this));
 }
 
 StructType::~StructType()

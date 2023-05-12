@@ -18,7 +18,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 class RvsdgModule;
 
@@ -55,33 +56,33 @@ public:
 
   using AllocaNodeIterator = NodeIterator<AllocaNode, AllocaNodeMap::iterator>;
   using AllocaNodeConstIterator = NodeConstIterator<AllocaNode, AllocaNodeMap::const_iterator>;
-  using AllocaNodeRange = util::iterator_range<AllocaNodeIterator>;
-  using AllocaNodeConstRange = util::iterator_range<AllocaNodeConstIterator>;
+  using AllocaNodeRange = jlm::util::iterator_range<AllocaNodeIterator>;
+  using AllocaNodeConstRange = jlm::util::iterator_range<AllocaNodeConstIterator>;
 
   using DeltaNodeIterator = NodeIterator<DeltaNode, DeltaNodeMap::iterator>;
   using DeltaNodeConstIterator = NodeConstIterator<DeltaNode, DeltaNodeMap::const_iterator>;
-  using DeltaNodeRange = util::iterator_range<DeltaNodeIterator>;
-  using DeltaNodeConstRange = util::iterator_range<DeltaNodeConstIterator>;
+  using DeltaNodeRange = jlm::util::iterator_range<DeltaNodeIterator>;
+  using DeltaNodeConstRange = jlm::util::iterator_range<DeltaNodeConstIterator>;
 
   using ImportNodeIterator = NodeIterator<ImportNode, ImportNodeMap::iterator>;
   using ImportNodeConstIterator = NodeConstIterator<ImportNode, ImportNodeMap::const_iterator>;
-  using ImportNodeRange = util::iterator_range<ImportNodeIterator>;
-  using ImportNodeConstRange = util::iterator_range<ImportNodeConstIterator>;
+  using ImportNodeRange = jlm::util::iterator_range<ImportNodeIterator>;
+  using ImportNodeConstRange = jlm::util::iterator_range<ImportNodeConstIterator>;
 
   using LambdaNodeIterator = NodeIterator<LambdaNode, LambdaNodeMap::iterator>;
   using LambdaNodeConstIterator = NodeConstIterator<LambdaNode, LambdaNodeMap::const_iterator>;
-  using LambdaNodeRange = util::iterator_range<LambdaNodeIterator>;
-  using LambdaNodeConstRange = util::iterator_range<LambdaNodeConstIterator>;
+  using LambdaNodeRange = jlm::util::iterator_range<LambdaNodeIterator>;
+  using LambdaNodeConstRange = jlm::util::iterator_range<LambdaNodeConstIterator>;
 
   using MallocNodeIterator = NodeIterator<MallocNode, MallocNodeMap::iterator>;
   using MallocNodeConstIterator = NodeConstIterator<MallocNode, MallocNodeMap::const_iterator>;
-  using MallocNodeRange = util::iterator_range<MallocNodeIterator>;
-  using MallocNodeConstRange = util::iterator_range<MallocNodeConstIterator>;
+  using MallocNodeRange = jlm::util::iterator_range<MallocNodeIterator>;
+  using MallocNodeConstRange = jlm::util::iterator_range<MallocNodeConstIterator>;
 
   using RegisterNodeIterator = NodeIterator<RegisterNode, RegisterNodeMap::iterator>;
   using RegisterNodeConstIterator = NodeConstIterator<RegisterNode, RegisterNodeMap::const_iterator>;
-  using RegisterNodeRange = util::iterator_range<RegisterNodeIterator>;
-  using RegisterNodeConstRange = util::iterator_range<RegisterNodeConstIterator>;
+  using RegisterNodeRange = jlm::util::iterator_range<RegisterNodeIterator>;
+  using RegisterNodeConstRange = jlm::util::iterator_range<RegisterNodeConstIterator>;
 
 private:
   PointsToGraph();
@@ -203,7 +204,7 @@ public:
   {
     auto it = AllocaNodes_.find(&node);
     if (it == AllocaNodes_.end())
-      throw util::error("Cannot find alloca node in points-to graph.");
+      throw jlm::util::error("Cannot find alloca node in points-to graph.");
 
     return *it->second;
   }
@@ -213,7 +214,7 @@ public:
   {
     auto it = DeltaNodes_.find(&node);
     if (it == DeltaNodes_.end())
-      throw util::error("Cannot find delta node in points-to graph.");
+      throw jlm::util::error("Cannot find delta node in points-to graph.");
 
     return *it->second;
   }
@@ -223,7 +224,7 @@ public:
   {
     auto it = ImportNodes_.find(&argument);
     if (it == ImportNodes_.end())
-      throw util::error("Cannot find import node in points-to graph.");
+      throw jlm::util::error("Cannot find import node in points-to graph.");
 
     return *it->second;
   }
@@ -233,7 +234,7 @@ public:
   {
     auto it = LambdaNodes_.find(&node);
     if (it == LambdaNodes_.end())
-      throw util::error("Cannot find lambda node in points-to graph.");
+      throw jlm::util::error("Cannot find lambda node in points-to graph.");
 
     return *it->second;
   }
@@ -243,7 +244,7 @@ public:
   {
     auto it = MallocNodes_.find(&node);
     if (it == MallocNodes_.end())
-      throw util::error("Cannot find malloc node in points-to graph.");
+      throw jlm::util::error("Cannot find malloc node in points-to graph.");
 
     return *it->second;
   }
@@ -253,7 +254,7 @@ public:
   {
     auto it = RegisterNodes_.find(&output);
     if (it == RegisterNodes_.end())
-      throw util::error("Cannot find register node in points-to graph.");
+      throw jlm::util::error("Cannot find register node in points-to graph.");
 
     return *it->second;
   }
@@ -265,7 +266,7 @@ public:
    *
    * @see PointsToGraph::MemoryNode::MarkAsModuleEscaping()
    */
-  const util::HashSet<const PointsToGraph::MemoryNode*> &
+  const jlm::util::HashSet<const PointsToGraph::MemoryNode*> &
   GetEscapedMemoryNodes() const noexcept
   {
     return EscapedMemoryNodes_;
@@ -305,7 +306,7 @@ private:
   /**
    * All memory nodes that escape from the module.
    */
-  util::HashSet<const PointsToGraph::MemoryNode*> EscapedMemoryNodes_;
+  jlm::util::HashSet<const PointsToGraph::MemoryNode*> EscapedMemoryNodes_;
 
   AllocaNodeMap AllocaNodes_;
   DeltaNodeMap DeltaNodes_;
@@ -330,11 +331,11 @@ class PointsToGraph::Node {
   using TargetIterator = Iterator<PointsToGraph::MemoryNode>;
   using TargetConstIterator = ConstIterator<PointsToGraph::MemoryNode>;
 
-  using SourceRange = util::iterator_range<SourceIterator>;
-  using SourceConstRange = util::iterator_range<SourceConstIterator>;
+  using SourceRange = jlm::util::iterator_range<SourceIterator>;
+  using SourceConstRange = jlm::util::iterator_range<SourceConstIterator>;
 
-  using TargetRange = util::iterator_range<TargetIterator>;
-  using TargetConstRange = util::iterator_range<TargetConstIterator>;
+  using TargetRange = jlm::util::iterator_range<TargetIterator>;
+  using TargetConstRange = jlm::util::iterator_range<TargetConstIterator>;
 
 public:
   virtual

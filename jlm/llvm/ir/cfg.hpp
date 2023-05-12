@@ -13,7 +13,8 @@
 #include <jlm/rvsdg/operation.hpp>
 #include <jlm/util/common.hpp>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 class clg_node;
 class basic_block;
@@ -55,13 +56,13 @@ public:
 	}
 
 	void
-	add(const jlm::attribute & attribute)
+	add(const llvm::attribute & attribute)
 	{
 		attributes_.insert(attribute);
 	}
 
 	void
-	add(std::unique_ptr<jlm::attribute> attribute)
+	add(std::unique_ptr<llvm::attribute> attribute)
 	{
 		attributes_.insert(std::move(attribute));
 	}
@@ -103,7 +104,7 @@ public:
 	virtual
 	~entry_node();
 
-	entry_node(jlm::cfg & cfg)
+	entry_node(llvm::cfg & cfg)
 	: cfg_node(cfg)
 	{}
 
@@ -113,24 +114,24 @@ public:
 		return arguments_.size();
 	}
 
-	const jlm::argument *
+	const llvm::argument *
 	argument(size_t index) const
 	{
 		JLM_ASSERT(index < narguments());
 		return arguments_[index].get();
 	}
 
-	jlm::argument *
-	append_argument(std::unique_ptr<jlm::argument> arg)
+	llvm::argument *
+	append_argument(std::unique_ptr<llvm::argument> arg)
 	{
 		arguments_.push_back(std::move(arg));
 		return arguments_.back().get();
 	}
 
-	std::vector<jlm::argument*>
+	std::vector<llvm::argument*>
 	arguments() const noexcept
 	{
-		std::vector<jlm::argument*> arguments;
+		std::vector<llvm::argument*> arguments;
 		for (auto & argument : arguments_)
 			arguments.push_back(argument.get());
 
@@ -138,7 +139,7 @@ public:
 	}
 
 private:
-	std::vector<std::unique_ptr<jlm::argument>> arguments_;
+	std::vector<std::unique_ptr<llvm::argument>> arguments_;
 };
 
 /* cfg exit node */
@@ -148,7 +149,7 @@ public:
 	virtual
 	~exit_node();
 
-	exit_node(jlm::cfg & cfg)
+	exit_node(llvm::cfg & cfg)
 	: cfg_node(cfg)
 	{}
 
@@ -330,13 +331,13 @@ public:
 		return iterator(nodes_.end());
 	}
 
-	inline jlm::entry_node *
+	inline llvm::entry_node *
 	entry() const noexcept
 	{
 		return entry_.get();
 	}
 
-	inline jlm::exit_node *
+	inline llvm::exit_node *
 	exit() const noexcept
 	{
 		return exit_.get();
@@ -405,10 +406,10 @@ private:
 };
 
 std::vector<cfg_node*>
-postorder(const jlm::cfg & cfg);
+postorder(const llvm::cfg & cfg);
 
 std::vector<cfg_node*>
-reverse_postorder(const jlm::cfg & cfg);
+reverse_postorder(const llvm::cfg & cfg);
 
 /** Order CFG nodes breadth-first
 *
@@ -419,10 +420,10 @@ reverse_postorder(const jlm::cfg & cfg);
 * return A vector with all CFG nodes ordered breadth-first
 */
 std::vector<cfg_node*>
-breadth_first(const jlm::cfg & cfg);
+breadth_first(const llvm::cfg & cfg);
 
 size_t
-ntacs(const jlm::cfg & cfg);
+ntacs(const llvm::cfg & cfg);
 
 }
 

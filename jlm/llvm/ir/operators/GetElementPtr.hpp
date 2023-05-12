@@ -11,7 +11,7 @@
 #include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 
-namespace jlm
+namespace jlm::llvm
 {
 
 /**
@@ -71,7 +71,7 @@ public:
    *
    * @return A getElementPtr three address code.
    */
-  static std::unique_ptr<jlm::tac>
+  static std::unique_ptr<llvm::tac>
   Create(
     const variable * baseAddress,
     const std::vector<const variable*> & offsets,
@@ -126,7 +126,7 @@ private:
   {
     if (!is<PointerType>(type))
     {
-      throw util::error("Expected pointer type.");
+      throw jlm::util::error("Expected pointer type.");
     }
   }
 
@@ -142,7 +142,7 @@ private:
         continue;
       }
 
-      throw util::error("Expected bitstring type.");
+      throw jlm::util::error("Expected bitstring type.");
     }
 
     return offsetTypes;

@@ -8,7 +8,8 @@
 
 #include <deque>
 
-namespace jlm::lambda {
+namespace jlm::llvm::lambda
+{
 
 /* lambda operation class */
 
@@ -157,7 +158,7 @@ node::create(
   jlm::rvsdg::region * parent,
   const FunctionType & type,
   const std::string & name,
-  const jlm::linkage & linkage,
+  const llvm::linkage & linkage,
   const attributeset & attributes)
 {
   lambda::operation op(type, name, linkage, attributes);

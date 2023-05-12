@@ -10,7 +10,7 @@
 static void
 TestOperationEquality()
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   arraytype arrayType(jlm::rvsdg::bit8, 11);
 

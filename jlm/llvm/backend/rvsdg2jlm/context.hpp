@@ -9,7 +9,8 @@
 #include <jlm/llvm/ir/basic-block.hpp>
 #include <jlm/rvsdg/node.hpp>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 class cfg_node;
 class ipgraph_module;
@@ -43,14 +44,14 @@ public:
 	}
 
 	inline void
-	insert(const rvsdg::output * port, const jlm::variable * v)
+	insert(const rvsdg::output * port, const llvm::variable * v)
 	{
 		JLM_ASSERT(ports_.find(port) == ports_.end());
 		JLM_ASSERT(port->type() == v->type());
 		ports_[port] = v;
 	}
 
-	inline const jlm::variable *
+	inline const llvm::variable *
 	variable(const rvsdg::output * port)
 	{
 		auto it = ports_.find(port);
@@ -70,23 +71,23 @@ public:
 		lpbb_ = lpbb;
 	}
 
-	inline jlm::cfg *
+	inline llvm::cfg *
 	cfg() const noexcept
 	{
 		return cfg_;
 	}
 
 	inline void
-	set_cfg(jlm::cfg * cfg) noexcept
+	set_cfg(llvm::cfg * cfg) noexcept
 	{
 		cfg_ = cfg;
 	}
 
 private:
-	jlm::cfg * cfg_;
+	llvm::cfg * cfg_;
 	ipgraph_module & module_;
 	basic_block * lpbb_;
-	std::unordered_map<const rvsdg::output*, const jlm::variable*> ports_;
+	std::unordered_map<const rvsdg::output*, const llvm::variable*> ports_;
 };
 
 }}

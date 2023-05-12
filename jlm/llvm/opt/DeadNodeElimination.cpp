@@ -9,7 +9,8 @@
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 static bool
 is_phi_argument(const jlm::rvsdg::output * output)
@@ -103,7 +104,7 @@ DeadNodeElimination::run(jlm::rvsdg::region & region)
 void
 DeadNodeElimination::run(
   RvsdgModule & module,
-  util::StatisticsCollector & statisticsCollector)
+  jlm::util::StatisticsCollector & statisticsCollector)
 {
   auto & graph = module.Rvsdg();
 

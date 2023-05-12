@@ -21,12 +21,12 @@ static jlm::util::StatisticsCollector statisticsCollector;
 static void
 test1()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
   /**
    * Arrange
    */
-	RvsdgModule rm(util::filepath(""), "", "");
+	RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 	auto i = graph.add_import({jlm::valuetype(), "i"});
 
@@ -47,7 +47,7 @@ test1()
       linkage::external_linkage);
     lambda->add_ctxvar(i);
 
-    auto t = test_op::create(lambda->subregion(), {lambda->fctargument(0)}, {&vt});
+    auto t = jlm::test_op::create(lambda->subregion(), {lambda->fctargument(0)}, {&vt});
 
     return lambda->finalize({t->output(0), lambda->fctargument(1), lambda->fctargument(2), lambda->fctargument(3)});
   };
@@ -106,14 +106,14 @@ test1()
   /*
    * Act
    */
-	jlm::fctinline fctinline;
+	jlm::llvm::fctinline fctinline;
 	fctinline.run(rm, statisticsCollector);
 //	jlm::rvsdg::view(graph.root(), stdout);
 
   /*
    * Assert
    */
-	assert(!jlm::rvsdg::region::Contains<jlm::CallOperation>(*graph.root(), true));
+	assert(!jlm::rvsdg::region::Contains<CallOperation>(*graph.root(), true));
 }
 
 static void
@@ -122,9 +122,9 @@ test2()
   /*
    * Arrange
    */
-	using namespace jlm;
+	using namespace jlm::llvm;
 
-	valuetype vt;
+	jlm::valuetype vt;
   iostatetype iOStateType;
   MemoryStateType memoryStateType;
   loopstatetype loopStateType;
@@ -139,7 +139,7 @@ test2()
     {&iOStateType, &memoryStateType, &loopStateType});
 
 
-	RvsdgModule rm(util::filepath(""), "", "");
+	RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 	auto i = graph.add_import({pt, "i"});
 
@@ -191,7 +191,7 @@ test2()
   /*
    * Act
    */
-	jlm::fctinline fctinline;
+	jlm::llvm::fctinline fctinline;
 	fctinline.run(rm, statisticsCollector);
 	jlm::rvsdg::view(graph.root(), stdout);
 

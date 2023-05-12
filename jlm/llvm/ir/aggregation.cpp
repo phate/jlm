@@ -13,7 +13,8 @@
 #include <deque>
 #include <unordered_map>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 /* aggnode class */
 
@@ -139,7 +140,7 @@ loopaggnode::debug_string() const
 class aggregation_map final {
 public:
 	bool
-	contains(jlm::cfg_node * node) const
+	contains(cfg_node * node) const
 	{
 		return map_.find(node) != map_.end();
 	}
@@ -165,7 +166,7 @@ public:
 	}
 
 	static std::unique_ptr<aggregation_map>
-	create(jlm::cfg & cfg)
+	create(llvm::cfg & cfg)
 	{
 		auto exit = cfg.exit();
 		auto entry = cfg.entry();
@@ -504,7 +505,7 @@ aggregate(
 }
 
 std::unique_ptr<aggnode>
-aggregate(jlm::cfg & cfg)
+aggregate(llvm::cfg & cfg)
 {
 	JLM_ASSERT(is_proper_structured(cfg));
 
@@ -515,7 +516,7 @@ aggregate(jlm::cfg & cfg)
 }
 
 size_t
-ntacs(const jlm::aggnode & root)
+ntacs(const aggnode & root)
 {
 	size_t n = 0;
 	for (auto & child : root)

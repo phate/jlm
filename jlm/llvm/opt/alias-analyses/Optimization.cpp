@@ -9,7 +9,8 @@
 #include <jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
 
-namespace jlm::aa {
+namespace jlm::llvm::aa
+{
 
 /*
  * FIXME: We should resolve the unknown memory node somewhere else. Preferably already in the alias analysis pass.
@@ -48,7 +49,7 @@ SteensgaardAgnostic::~SteensgaardAgnostic() noexcept
 void
 SteensgaardAgnostic::run(
   RvsdgModule & rvsdgModule,
-  util::StatisticsCollector & statisticsCollector)
+  jlm::util::StatisticsCollector & statisticsCollector)
 {
   Steensgaard steensgaard;
   auto pointsToGraph = steensgaard.Analyze(rvsdgModule, statisticsCollector);

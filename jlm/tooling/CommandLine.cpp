@@ -126,7 +126,7 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
 {
   CommandLineOptions_.Reset();
 
-  using namespace llvm;
+  using namespace ::llvm;
 
   /*
     FIXME: The command line parser setup is currently redone
@@ -361,22 +361,22 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
 JlmOptCommandLineParser::~JlmOptCommandLineParser() noexcept
 = default;
 
-optimization *
+llvm::optimization *
 JlmOptCommandLineParser::GetOptimization(enum OptimizationId id)
 {
-  static aa::SteensgaardAgnostic steensgaardAgnostic;
-  static aa::SteensgaardRegionAware steensgaardRegionAware;
-  static cne commonNodeElimination;
-  static DeadNodeElimination deadNodeElimination;
-  static fctinline functionInlining;
-  static InvariantValueRedirection invariantValueRedirection;
-  static pullin nodePullIn;
-  static pushout nodePushOt;
-  static tginversion thetaGammaInversion;
-  static loopunroll loopUnrolling(4);
-  static nodereduction nodeReduction;
+  static llvm::aa::SteensgaardAgnostic steensgaardAgnostic;
+  static llvm::aa::SteensgaardRegionAware steensgaardRegionAware;
+  static llvm::cne commonNodeElimination;
+  static llvm::DeadNodeElimination deadNodeElimination;
+  static llvm::fctinline functionInlining;
+  static llvm::InvariantValueRedirection invariantValueRedirection;
+  static llvm::pullin nodePullIn;
+  static llvm::pushout nodePushOt;
+  static llvm::tginversion thetaGammaInversion;
+  static llvm::loopunroll loopUnrolling(4);
+  static llvm::nodereduction nodeReduction;
 
-  static std::unordered_map<OptimizationId, jlm::optimization*> map(
+  static std::unordered_map<OptimizationId, llvm::optimization*> map(
     {
       {OptimizationId::AASteensgaardAgnostic,     &steensgaardAgnostic},
       {OptimizationId::AASteensgaardRegionAware,  &steensgaardRegionAware},
@@ -400,7 +400,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
 {
   CommandLineOptions_.Reset();
 
-  using namespace llvm;
+  using namespace ::llvm;
 
   /*
     FIXME: The command line parser setup is currently redone
@@ -429,87 +429,87 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
 
   cl::list<util::Statistics::Id> printStatistics(
     cl::values(
-      clEnumValN(
+      ::clEnumValN(
         util::Statistics::Id::Aggregation,
         "print-aggregation-time",
         "Write aggregation statistics to file."),
-      clEnumValN(
+      ::clEnumValN(
         util::Statistics::Id::Annotation,
         "print-annotation-time",
         "Write annotation statistics to file."),
-      clEnumValN(
+      ::clEnumValN(
         util::Statistics::Id::BasicEncoderEncoding,
         "print-basicencoder-encoding",
         "Write encoding statistics of basic encoder to file."),
-      clEnumValN(
+      ::clEnumValN(
         util::Statistics::Id::CommonNodeElimination,
         "print-cne-stat",
         "Write common node elimination statistics to file."),
-      clEnumValN(
+      ::clEnumValN(
         util::Statistics::Id::ControlFlowRecovery,
         "print-cfr-time",
         "Write control flow recovery statistics to file."),
-      clEnumValN(
+      ::clEnumValN(
         util::Statistics::Id::DataNodeToDelta,
         "printDataNodeToDelta",
         "Write data node to delta node conversion statistics to file."),
-      clEnumValN(
+      ::clEnumValN(
         util::Statistics::Id::DeadNodeElimination,
         "print-dne-stat",
         "Write dead node elimination statistics to file."),
-      clEnumValN(
+      ::clEnumValN(
         util::Statistics::Id::FunctionInlining,
         "print-iln-stat",
         "Write function inlining statistics to file."),
-      clEnumValN(
+      ::clEnumValN(
         util::Statistics::Id::InvariantValueRedirection,
         "printInvariantValueRedirection",
         "Write invariant value redirection statistics to file."),
-      clEnumValN(
+      ::clEnumValN(
         util::Statistics::Id::JlmToRvsdgConversion,
         "print-jlm-rvsdg-conversion",
         "Write Jlm to RVSDG conversion statistics to file."),
-      clEnumValN(
+      ::clEnumValN(
         util::Statistics::Id::LoopUnrolling,
         "print-unroll-stat",
         "Write loop unrolling statistics to file."),
-      clEnumValN(
+      ::clEnumValN(
         util::Statistics::Id::MemoryNodeProvisioning,
         "print-memory-node-provisioning",
         "Write memory node provisioning statistics to file."),
-      clEnumValN(
+      ::clEnumValN(
         util::Statistics::Id::PullNodes,
         "print-pull-stat",
         "Write node pull statistics to file."),
-      clEnumValN(
+      ::clEnumValN(
         util::Statistics::Id::PushNodes,
         "print-push-stat",
         "Write node push statistics to file."),
-      clEnumValN(
+      ::clEnumValN(
         util::Statistics::Id::ReduceNodes,
         "print-reduction-stat",
         "Write node reduction statistics to file."),
-      clEnumValN(
+      ::clEnumValN(
         util::Statistics::Id::RvsdgConstruction,
         "print-rvsdg-construction",
         "Write RVSDG construction statistics to file."),
-      clEnumValN(
+      ::clEnumValN(
         util::Statistics::Id::RvsdgDestruction,
         "print-rvsdg-destruction",
         "Write RVSDG destruction statistics to file."),
-      clEnumValN(
+      ::clEnumValN(
         util::Statistics::Id::RvsdgOptimization,
         "print-rvsdg-optimization",
         "Write RVSDG optimization statistics to file."),
-      clEnumValN(
+      ::clEnumValN(
         util::Statistics::Id::SteensgaardAnalysis,
         "print-steensgaard-analysis",
         "Write Steensgaard analysis statistics to file."),
-      clEnumValN(
+      ::clEnumValN(
         util::Statistics::Id::SteensgaardPointsToGraphConstruction,
         "print-steensgaard-pointstograph-construction",
         "Write Steensgaard PointsTo Graph construction statistics to file."),
-      clEnumValN(
+      ::clEnumValN(
         util::Statistics::Id::ThetaGammaInversion,
         "print-ivt-stat",
         "Write theta-gamma inversion statistics to file.")),
@@ -517,11 +517,11 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
 
   cl::opt<JlmOptCommandLineOptions::OutputFormat> outputFormat(
     cl::values(
-      clEnumValN(
+      ::clEnumValN(
         JlmOptCommandLineOptions::OutputFormat::Llvm,
         "llvm",
         "Output LLVM IR [default]"),
-      clEnumValN(
+      ::clEnumValN(
         JlmOptCommandLineOptions::OutputFormat::Xml,
         "xml",
         "Output XML")),
@@ -529,47 +529,47 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
 
   cl::list<OptimizationId> optimizationIds(
     cl::values(
-      clEnumValN(
+      ::clEnumValN(
         OptimizationId::AASteensgaardAgnostic,
         "AASteensgaardAgnostic",
         "Steensgaard alias analysis with agnostic memory state encoding."),
-      clEnumValN(
+      ::clEnumValN(
         OptimizationId::AASteensgaardRegionAware,
         "AASteensgaardRegionAware",
         "Steensgaard alias analysis with region-aware memory state encoding."),
-      clEnumValN(
+      ::clEnumValN(
         OptimizationId::cne,
         "cne",
         "Common node elimination"),
-      clEnumValN(
+      ::clEnumValN(
         OptimizationId::dne,
         "dne",
         "Dead node elimination"),
-      clEnumValN(
+      ::clEnumValN(
         OptimizationId::iln,
         "iln",
         "Function inlining"),
-      clEnumValN(
+      ::clEnumValN(
         OptimizationId::InvariantValueRedirection,
         "InvariantValueRedirection",
         "Invariant Value Redirection"),
-      clEnumValN(
+      ::clEnumValN(
         OptimizationId::psh,
         "psh",
         "Node push out"),
-      clEnumValN(
+      ::clEnumValN(
         OptimizationId::pll,
         "pll",
         "Node pull in"),
-      clEnumValN(
+      ::clEnumValN(
         OptimizationId::red,
         "red",
         "Node reductions"),
-      clEnumValN(
+      ::clEnumValN(
         OptimizationId::ivt,
         "ivt",
         "Theta-gamma inversion"),
-      clEnumValN(
+      ::clEnumValN(
         OptimizationId::url,
         "url",
         "Loop unrolling")),
@@ -583,7 +583,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
   if (!statisticFile.empty())
     CommandLineOptions_.StatisticsCollectorSettings_.SetFilePath(statisticFile);
 
-  std::vector<jlm::optimization*> optimizations;
+  std::vector<llvm::optimization*> optimizations;
   for (auto & optimizationId : optimizationIds)
     optimizations.push_back(GetOptimization(optimizationId));
 
@@ -612,7 +612,7 @@ JlmHlsCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
 {
   CommandLineOptions_.Reset();
 
-  using namespace llvm;
+  using namespace ::llvm;
 
   /*
     FIXME: The command line parser setup is currently redone
@@ -650,11 +650,11 @@ JlmHlsCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
 
   cl::opt<JlmHlsCommandLineOptions::OutputFormat> format(
     cl::values(
-      clEnumValN(
+      ::clEnumValN(
         JlmHlsCommandLineOptions::OutputFormat::Firrtl,
         "fir",
         "Output FIRRTL [default]"),
-      clEnumValN(
+      ::clEnumValN(
         JlmHlsCommandLineOptions::OutputFormat::Dot,
         "dot",
         "Output DOT graph")),
@@ -693,7 +693,7 @@ JhlsCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
 {
   CommandLineOptions_.Reset();
 
-  using namespace llvm;
+  using namespace ::llvm;
 
   /*
     FIXME: The command line parser setup is currently redone

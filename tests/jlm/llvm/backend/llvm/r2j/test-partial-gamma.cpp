@@ -22,13 +22,13 @@
 static int
 test()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	jlm::valuetype vt;
 	jlm::rvsdg::bittype bt1(1);
 	FunctionType ft({&bt1, &vt}, {&vt});
 
-	RvsdgModule rm(util::filepath(""), "", "");
+	RvsdgModule rm(jlm::util::filepath(""), "", "");
 
 	auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage);
 
@@ -44,13 +44,13 @@ test()
 
 	jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
-	util::StatisticsCollector statisticsCollector;
+	jlm::util::StatisticsCollector statisticsCollector;
 	auto module = rvsdg2jlm::rvsdg2jlm(rm, statisticsCollector);
 	auto & ipg = module->ipgraph();
 	assert(ipg.nnodes() == 1);
 
-	auto cfg = dynamic_cast<const jlm::function_node&>(*ipg.begin()).cfg();
-	jlm::print_ascii(*cfg, stdout);
+	auto cfg = dynamic_cast<const function_node&>(*ipg.begin()).cfg();
+	print_ascii(*cfg, stdout);
 
 	assert(!is_proper_structured(*cfg));
 	assert(is_structured(*cfg));

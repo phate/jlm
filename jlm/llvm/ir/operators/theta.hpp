@@ -8,7 +8,8 @@
 
 #include <jlm/rvsdg/theta.hpp>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 /*
 	FIXME: This should be defined in librvsdg.

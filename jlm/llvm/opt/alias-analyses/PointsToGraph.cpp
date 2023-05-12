@@ -10,7 +10,8 @@
 #include <typeindex>
 #include <unordered_map>
 
-namespace jlm::aa {
+namespace jlm::llvm::aa
+{
 
 PointsToGraph::PointsToGraph()
 {

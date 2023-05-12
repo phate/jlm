@@ -7,7 +7,8 @@
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/store.hpp>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 StoreOperation::~StoreOperation() noexcept
 = default;
@@ -184,7 +185,7 @@ bool
 store_normal_form::normalize_node(jlm::rvsdg::node * node) const
 {
 	JLM_ASSERT(is<StoreOperation>(node->operation()));
-	auto op = static_cast<const jlm::StoreOperation*>(&node->operation());
+	auto op = static_cast<const StoreOperation*>(&node->operation());
 	auto operands = jlm::rvsdg::operands(node);
 
 	if (!get_mutable())
@@ -238,7 +239,7 @@ store_normal_form::normalized_create(
 	const std::vector<jlm::rvsdg::output*> & ops) const
 {
 	JLM_ASSERT(is<StoreOperation>(op));
-	auto sop = static_cast<const jlm::StoreOperation*>(&op);
+	auto sop = static_cast<const StoreOperation*>(&op);
 
 	if (!get_mutable())
 		return simple_normal_form::normalized_create(region, op, ops);
@@ -318,13 +319,13 @@ create_store_normal_form(
 	jlm::rvsdg::node_normal_form * parent,
 	jlm::rvsdg::graph * graph)
 {
-	return new jlm::store_normal_form(opclass, parent, graph);
+	return new jlm::llvm::store_normal_form(opclass, parent, graph);
 }
 
 static void __attribute__((constructor))
 register_normal_form()
 {
-	jlm::rvsdg::node_normal_form::register_factory(typeid(jlm::StoreOperation), create_store_normal_form);
+	jlm::rvsdg::node_normal_form::register_factory(typeid(jlm::llvm::StoreOperation), create_store_normal_form);
 }
 
 }

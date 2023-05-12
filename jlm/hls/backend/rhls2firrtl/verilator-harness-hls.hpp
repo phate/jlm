@@ -18,7 +18,7 @@ namespace jlm {
 			}
 
 			std::string
-			get_text(jlm::RvsdgModule &rm) override;
+			get_text(llvm::RvsdgModule &rm) override;
 
 		private:
 			std::string

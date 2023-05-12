@@ -39,15 +39,15 @@ parse_llvm_file(
 	return module;
 }
 
-static std::unique_ptr<jlm::ipgraph_module>
+static std::unique_ptr<jlm::llvm::ipgraph_module>
 construct_jlm_module(llvm::Module & module)
 {
-	return jlm::ConvertLlvmModule(module);
+	return jlm::llvm::ConvertLlvmModule(module);
 }
 
 static void
 print_as_xml(
-	const jlm::RvsdgModule & rm,
+	const jlm::llvm::RvsdgModule & rm,
 	const jlm::util::filepath & fp,
 	jlm::util::StatisticsCollector&)
 {
@@ -61,14 +61,14 @@ print_as_xml(
 
 static void
 print_as_llvm(
-	const jlm::RvsdgModule & rm,
+	const jlm::llvm::RvsdgModule & rm,
 	const jlm::util::filepath & fp,
 	jlm::util::StatisticsCollector & statisticsCollector)
 {
-	auto jlm_module = jlm::rvsdg2jlm::rvsdg2jlm(rm, statisticsCollector);
+	auto jlm_module = jlm::llvm::rvsdg2jlm::rvsdg2jlm(rm, statisticsCollector);
 
 	llvm::LLVMContext ctx;
-	auto llvm_module = jlm::jlm2llvm::convert(*jlm_module, ctx);
+	auto llvm_module = jlm::llvm::jlm2llvm::convert(*jlm_module, ctx);
 
 	if (fp == "") {
 		llvm::raw_os_ostream os(std::cout);
@@ -82,7 +82,7 @@ print_as_llvm(
 
 static void
 print(
-	const jlm::RvsdgModule & rm,
+	const jlm::llvm::RvsdgModule & rm,
 	const jlm::util::filepath & fp,
 	const jlm::JlmOptCommandLineOptions::OutputFormat & format,
 	jlm::util::StatisticsCollector & statisticsCollector)
@@ -91,7 +91,7 @@ print(
 
   static std::unordered_map<
     jlm::JlmOptCommandLineOptions::OutputFormat,
-    std::function<void(const RvsdgModule&, const jlm::util::filepath&, jlm::util::StatisticsCollector&)>
+    std::function<void(const jlm::llvm::RvsdgModule&, const jlm::util::filepath&, jlm::util::StatisticsCollector&)>
   > formatters(
     {
       {JlmOptCommandLineOptions::OutputFormat::Xml,  print_as_xml},
@@ -118,7 +118,7 @@ main(int argc, char ** argv)
   auto interProceduralGraphModule = construct_jlm_module(*llvmModule);
   llvmModule.reset();
 
-  auto rvsdgModule = jlm::ConvertInterProceduralGraphModule(
+  auto rvsdgModule = jlm::llvm::ConvertInterProceduralGraphModule(
     *interProceduralGraphModule,
     statisticsCollector);
 

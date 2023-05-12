@@ -13,12 +13,13 @@
 
 #include <deque>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 /* string converters */
 
 static std::string
-emit_tac(const jlm::tac &);
+emit_tac(const llvm::tac &);
 
 static std::string
 emit_tacs(const tacsvector_t & tacs)
@@ -31,10 +32,10 @@ emit_tacs(const tacsvector_t & tacs)
 }
 
 static inline std::string
-emit_entry(const jlm::cfg_node * node)
+emit_entry(const cfg_node * node)
 {
 	JLM_ASSERT(is<entry_node>(node));
-	auto & en = *static_cast<const jlm::entry_node*>(node);
+	auto & en = *static_cast<const entry_node*>(node);
 
 	std::string str;
 	for (size_t n = 0; n < en.narguments(); n++)
@@ -44,10 +45,10 @@ emit_entry(const jlm::cfg_node * node)
 }
 
 static inline std::string
-emit_exit(const jlm::cfg_node * node)
+emit_exit(const cfg_node * node)
 {
 	JLM_ASSERT(is<exit_node>(node));
-	auto & xn = *static_cast<const jlm::exit_node*>(node);
+	auto & xn = *static_cast<const exit_node*>(node);
 
 	std::string str;
 	for (size_t n = 0; n < xn.nresults(); n++)
@@ -57,7 +58,7 @@ emit_exit(const jlm::cfg_node * node)
 }
 
 static inline std::string
-emit_tac(const jlm::tac & tac)
+emit_tac(const llvm::tac & tac)
 {
 	/* convert results */
 	std::string results;
@@ -80,13 +81,13 @@ emit_tac(const jlm::tac & tac)
 }
 
 static inline std::string
-emit_label(const jlm::cfg_node * node)
+emit_label(const cfg_node * node)
 {
 	return util::strfmt(node);
 }
 
 static inline std::string
-emit_targets(const jlm::cfg_node * node)
+emit_targets(const cfg_node * node)
 {
 	size_t n = 0;
 	std::string str("[");
@@ -101,7 +102,7 @@ emit_targets(const jlm::cfg_node * node)
 }
 
 static inline std::string
-emit_basic_block(const jlm::cfg_node * node)
+emit_basic_block(const cfg_node * node)
 {
 	JLM_ASSERT(is<basic_block>(node));
 	auto & tacs = static_cast<const basic_block*>(node)->tacs();
@@ -126,7 +127,7 @@ emit_basic_block(const jlm::cfg_node * node)
 }
 
 std::string
-to_str(const jlm::cfg & cfg)
+to_str(const llvm::cfg & cfg)
 {
 	static
 	std::unordered_map<std::type_index, std::string(*)(const cfg_node*)> map({
@@ -149,7 +150,7 @@ to_str(const jlm::cfg & cfg)
 }
 
 static std::string
-emit_function_node(const jlm::ipgraph_node & clg_node)
+emit_function_node(const ipgraph_node & clg_node)
 {
 	JLM_ASSERT(dynamic_cast<const function_node*>(&clg_node));
 	auto & node = *static_cast<const function_node*>(&clg_node);
@@ -181,7 +182,7 @@ emit_function_node(const jlm::ipgraph_node & clg_node)
 }
 
 static std::string
-emit_data_node(const jlm::ipgraph_node & clg_node)
+emit_data_node(const ipgraph_node & clg_node)
 {
 	JLM_ASSERT(dynamic_cast<const data_node*>(&clg_node));
 	auto & node = *static_cast<const data_node*>(&clg_node);
@@ -195,11 +196,11 @@ emit_data_node(const jlm::ipgraph_node & clg_node)
 }
 
 std::string
-to_str(const jlm::ipgraph & clg)
+to_str(const ipgraph & clg)
 {
 	static std::unordered_map<
 		std::type_index,
-		std::function<std::string(const jlm::ipgraph_node&)>
+		std::function<std::string(const ipgraph_node&)>
 	> map({
 		{typeid(function_node), emit_function_node}
 	, {typeid(data_node), emit_data_node}
@@ -217,10 +218,10 @@ to_str(const jlm::ipgraph & clg)
 /* dot converters */
 
 static inline std::string
-emit_entry_dot(const jlm::cfg_node & node)
+emit_entry_dot(const cfg_node & node)
 {
 	JLM_ASSERT(is<entry_node>(&node));
-	auto en = static_cast<const jlm::entry_node*>(&node);
+	auto en = static_cast<const entry_node*>(&node);
 
 	std::string str;
 	for (size_t n = 0; n < en->narguments(); n++) {
@@ -232,10 +233,10 @@ emit_entry_dot(const jlm::cfg_node & node)
 }
 
 static inline std::string
-emit_exit_dot(const jlm::cfg_node & node)
+emit_exit_dot(const cfg_node & node)
 {
 	JLM_ASSERT(is<exit_node>(&node));
-	auto xn = static_cast<const jlm::exit_node*>(&node);
+	auto xn = static_cast<const exit_node*>(&node);
 
 	std::string str;
 	for (size_t n = 0; n < xn->nresults(); n++) {
@@ -260,7 +261,7 @@ emit_basic_block(const cfg_node & node)
 }
 
 static inline std::string
-emit_header(const jlm::cfg_node & node)
+emit_header(const cfg_node & node)
 {
 	if (is<entry_node>(&node))
 		return "ENTRY";
@@ -272,7 +273,7 @@ emit_header(const jlm::cfg_node & node)
 }
 
 static inline std::string
-emit_node(const jlm::cfg_node & node)
+emit_node(const cfg_node & node)
 {
 	static
 	std::unordered_map<std::type_index, std::string(*)(const cfg_node &)> map({
@@ -288,7 +289,7 @@ emit_node(const jlm::cfg_node & node)
 }
 
 std::string
-to_dot(const jlm::cfg & cfg)
+to_dot(const llvm::cfg & cfg)
 {
 	auto entry = cfg.entry();
 	auto exit = cfg.exit();
@@ -319,7 +320,7 @@ to_dot(const jlm::cfg & cfg)
 }
 
 std::string
-to_dot(const jlm::ipgraph & clg)
+to_dot(const ipgraph & clg)
 {
 	std::string dot("digraph clg {\n");
 	for (const auto & node : clg) {

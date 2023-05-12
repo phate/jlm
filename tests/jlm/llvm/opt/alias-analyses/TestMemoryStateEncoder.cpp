@@ -18,9 +18,9 @@
 #include <iostream>
 
 static void
-UnlinkUnknownMemoryNode(jlm::aa::PointsToGraph & pointsToGraph)
+UnlinkUnknownMemoryNode(jlm::llvm::aa::PointsToGraph & pointsToGraph)
 {
-  std::vector<jlm::aa::PointsToGraph::Node*> memoryNodes;
+  std::vector<jlm::llvm::aa::PointsToGraph::Node*> memoryNodes;
   for (auto & allocaNode : pointsToGraph.AllocaNodes())
     memoryNodes.push_back(&allocaNode);
 
@@ -40,7 +40,7 @@ UnlinkUnknownMemoryNode(jlm::aa::PointsToGraph & pointsToGraph)
   while (unknownMemoryNode.NumSources() != 0) {
     auto & source = *unknownMemoryNode.Sources().begin();
     for (auto & memoryNode : memoryNodes)
-      source.AddEdge(*dynamic_cast<jlm::aa::PointsToGraph::MemoryNode *>(memoryNode));
+      source.AddEdge(*dynamic_cast<jlm::llvm::aa::PointsToGraph::MemoryNode *>(memoryNode));
     source.RemoveEdge(unknownMemoryNode);
   }
 };
@@ -53,11 +53,11 @@ ValidateTest(std::function<void(const Test&)> validateEncoding)
     "Test should be derived from RvsdgTest class.");
 
   static_assert(
-    std::is_base_of<jlm::aa::AliasAnalysis, Analysis>::value,
+    std::is_base_of<jlm::llvm::aa::AliasAnalysis, Analysis>::value,
     "Analysis should be derived from AliasAnalysis class.");
 
   static_assert(
-    std::is_base_of<jlm::aa::MemoryNodeProvider, Provider>::value,
+    std::is_base_of<jlm::llvm::aa::MemoryNodeProvider, Provider>::value,
     "Provider should be derived from MemoryNodeProvider class.");
 
   Test test;
@@ -68,13 +68,13 @@ ValidateTest(std::function<void(const Test&)> validateEncoding)
 
   Analysis aliasAnalysis;
   auto pointsToGraph = aliasAnalysis.Analyze(rvsdgModule, statisticsCollector);
-  std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
+  std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
 
   UnlinkUnknownMemoryNode(*pointsToGraph);
 
   auto provisioning = Provider::Create(rvsdgModule, *pointsToGraph);
 
-  jlm::aa::MemoryStateEncoder encoder;
+  jlm::llvm::aa::MemoryStateEncoder encoder;
   encoder.Encode(rvsdgModule, *provisioning, statisticsCollector);
   jlm::rvsdg::view(rvsdgModule.Rvsdg().root(), stdout);
 
@@ -95,7 +95,7 @@ is(
 static void
 ValidateStoreTest1SteensgaardAgnostic(const StoreTest1 & test)
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   assert(test.lambda->subregion()->nnodes() == 10);
 
@@ -128,7 +128,7 @@ ValidateStoreTest1SteensgaardAgnostic(const StoreTest1 & test)
 static void
 ValidateStoreTest1SteensgaardRegionAware(const StoreTest1 & test)
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   assert(test.lambda->subregion()->nnodes() == 9);
 
@@ -161,7 +161,7 @@ ValidateStoreTest1SteensgaardRegionAware(const StoreTest1 & test)
 static void
 ValidateStoreTest2SteensgaardAgnostic(const StoreTest2 & test)
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   assert(test.lambda->subregion()->nnodes() == 12);
 
@@ -201,7 +201,7 @@ ValidateStoreTest2SteensgaardAgnostic(const StoreTest2 & test)
 static void
 ValidateStoreTest2SteensgaardRegionAware(const StoreTest2 & test)
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   assert(test.lambda->subregion()->nnodes() == 11);
 
@@ -241,7 +241,7 @@ ValidateStoreTest2SteensgaardRegionAware(const StoreTest2 & test)
 static void
 ValidateLoadTest1SteensgaardAgnostic(const LoadTest1 & test)
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   assert(test.lambda->subregion()->nnodes() == 4);
 
@@ -265,7 +265,7 @@ ValidateLoadTest1SteensgaardAgnostic(const LoadTest1 & test)
 static void
 ValidateLoadTest1SteensgaardRegionAware(const LoadTest1 & test)
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   assert(test.lambda->subregion()->nnodes() == 4);
 
@@ -289,7 +289,7 @@ ValidateLoadTest1SteensgaardRegionAware(const LoadTest1 & test)
 static void
 ValidateLoadTest2SteensgaardAgnostic(const LoadTest2 & test)
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   assert(test.lambda->subregion()->nnodes() == 14);
 
@@ -339,7 +339,7 @@ ValidateLoadTest2SteensgaardAgnostic(const LoadTest2 & test)
 static void
 ValidateLoadTest2SteensgaardRegionAware(const LoadTest2 & test)
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   assert(test.lambda->subregion()->nnodes() == 13);
 
@@ -386,7 +386,7 @@ ValidateLoadTest2SteensgaardRegionAware(const LoadTest2 & test)
 static void
 ValidateLoadFromUndefSteensgaardAgnostic(const LoadFromUndefTest & test)
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   assert(test.Lambda().subregion()->nnodes() == 4);
 
@@ -403,7 +403,7 @@ ValidateLoadFromUndefSteensgaardAgnostic(const LoadFromUndefTest & test)
 static void
 ValidateLoadFromUndefSteensgaardRegionAware(const LoadFromUndefTest & test)
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   assert(test.Lambda().subregion()->nnodes() == 3);
 
@@ -417,7 +417,7 @@ ValidateLoadFromUndefSteensgaardRegionAware(const LoadFromUndefTest & test)
 static void
 ValidateCallTest1SteensgaardAgnostic(const CallTest1 & test)
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   /* validate f */
   {
@@ -472,7 +472,7 @@ ValidateCallTest1SteensgaardAgnostic(const CallTest1 & test)
 static void
 ValidateCallTest1SteensgaardRegionAware(const CallTest1 & test)
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   /* validate f */
   {
@@ -527,7 +527,7 @@ ValidateCallTest1SteensgaardRegionAware(const CallTest1 & test)
 static void
 ValidateCallTest2SteensgaardAgnostic(const CallTest2 & test)
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   /* validate create function */
   {
@@ -561,7 +561,7 @@ ValidateCallTest2SteensgaardAgnostic(const CallTest2 & test)
 static void
 ValidateCallTest2SteensgaardRegionAware(const CallTest2 & test)
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   /* validate create function */
   {
@@ -595,7 +595,7 @@ ValidateCallTest2SteensgaardRegionAware(const CallTest2 & test)
 static void
 ValidateIndirectCallTest1SteensgaardAgnostic(const IndirectCallTest1 & test)
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   /* validate indcall function */
   {
@@ -650,7 +650,7 @@ ValidateIndirectCallTest1SteensgaardAgnostic(const IndirectCallTest1 & test)
 static void
 ValidateIndirectCallTest1SteensgaardRegionAware(const IndirectCallTest1 & test)
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   /* validate indcall function */
   {
@@ -705,7 +705,7 @@ ValidateIndirectCallTest1SteensgaardRegionAware(const IndirectCallTest1 & test)
 static void
 ValidateGammaTestSteensgaardAgnostic(const GammaTest & test)
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.lambda->fctresult(1)->origin());
   assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 2, 1));
@@ -723,7 +723,7 @@ ValidateGammaTestSteensgaardAgnostic(const GammaTest & test)
 static void
 ValidateGammaTestSteensgaardRegionAware(const GammaTest & test)
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.lambda->fctresult(1)->origin());
   assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 2, 1));
@@ -741,14 +741,14 @@ ValidateGammaTestSteensgaardRegionAware(const GammaTest & test)
 static void
 ValidateThetaTestSteensgaardAgnostic(const ThetaTest & test)
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   assert(test.lambda->subregion()->nnodes() == 4);
 
   auto lambda_exit_mux = jlm::rvsdg::node_output::node(test.lambda->fctresult(0)->origin());
   assert(is<aa::LambdaExitMemStateOperator>(*lambda_exit_mux, 2, 1));
 
-  auto thetaOutput = util::AssertedCast<jlm::rvsdg::theta_output>(lambda_exit_mux->input(0)->origin());
+  auto thetaOutput = jlm::util::AssertedCast<jlm::rvsdg::theta_output>(lambda_exit_mux->input(0)->origin());
   auto theta = jlm::rvsdg::node_output::node(thetaOutput);
   assert(theta == test.theta);
 
@@ -764,14 +764,14 @@ ValidateThetaTestSteensgaardAgnostic(const ThetaTest & test)
 static void
 ValidateThetaTestSteensgaardRegionAware(const ThetaTest & test)
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   assert(test.lambda->subregion()->nnodes() == 4);
 
   auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.lambda->fctresult(0)->origin());
   assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 2, 1));
 
-  auto thetaOutput = util::AssertedCast<jlm::rvsdg::theta_output>(lambdaExitMerge->input(0)->origin());
+  auto thetaOutput = jlm::util::AssertedCast<jlm::rvsdg::theta_output>(lambdaExitMerge->input(0)->origin());
   auto theta = jlm::rvsdg::node_output::node(thetaOutput);
   assert(theta == test.theta);
 
@@ -787,7 +787,7 @@ ValidateThetaTestSteensgaardRegionAware(const ThetaTest & test)
 static void
 ValidateDeltaTest1SteensgaardAgnostic(const DeltaTest1 & test)
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   assert(test.lambda_h->subregion()->nnodes() == 7);
 
@@ -808,7 +808,7 @@ ValidateDeltaTest1SteensgaardAgnostic(const DeltaTest1 & test)
 static void
 ValidateDeltaTest1SteensgaardRegionAware(const DeltaTest1 & test)
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   assert(test.lambda_h->subregion()->nnodes() == 7);
 
@@ -829,7 +829,7 @@ ValidateDeltaTest1SteensgaardRegionAware(const DeltaTest1 & test)
 static void
 ValidateDeltaTest2SteensgaardAgnostic(const DeltaTest2 & test)
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   assert(test.lambda_f2->subregion()->nnodes() == 9);
 
@@ -856,7 +856,7 @@ ValidateDeltaTest2SteensgaardAgnostic(const DeltaTest2 & test)
 static void
 ValidateDeltaTest2SteensgaardRegionAware(const DeltaTest2 & test)
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   /* Validate f1() */
   {
@@ -904,7 +904,7 @@ ValidateDeltaTest2SteensgaardRegionAware(const DeltaTest2 & test)
 static void
 ValidateDeltaTest3SteensgaardAgnostic(const DeltaTest3 & test)
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   /* validate f() */
   {
@@ -946,7 +946,7 @@ ValidateDeltaTest3SteensgaardAgnostic(const DeltaTest3 & test)
 static void
 ValidateDeltaTest3SteensgaardRegionAware(const DeltaTest3 & test)
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   /* validate f() */
   {
@@ -988,7 +988,7 @@ ValidateDeltaTest3SteensgaardRegionAware(const DeltaTest3 & test)
 static void
 ValidateImportTestSteensgaardAgnostic(const ImportTest & test)
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   assert(test.lambda_f2->subregion()->nnodes() == 9);
 
@@ -1015,7 +1015,7 @@ ValidateImportTestSteensgaardAgnostic(const ImportTest & test)
 static void
 ValidateImportTestSteensgaardRegionAware(const ImportTest & test)
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   /* Validate f1() */
   {
@@ -1063,7 +1063,7 @@ ValidateImportTestSteensgaardRegionAware(const ImportTest & test)
 static void
 ValidatePhiTestSteensgaardAgnostic(const PhiTest1 & test)
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   auto arrayStateIndex = (*test.alloca->output(1)->begin())->index();
 
@@ -1090,7 +1090,7 @@ ValidatePhiTestSteensgaardAgnostic(const PhiTest1 & test)
 static void
 ValidatePhiTestSteensgaardRegionAware(const PhiTest1 & test)
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   auto arrayStateIndex = (*test.alloca->output(1)->begin())->index();
 
@@ -1117,7 +1117,7 @@ ValidatePhiTestSteensgaardRegionAware(const PhiTest1 & test)
 static void
 ValidateMemcpySteensgaardAgnostic(const MemcpyTest & test)
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   /*
    * Validate function f
@@ -1170,7 +1170,7 @@ ValidateMemcpySteensgaardAgnostic(const MemcpyTest & test)
 static void
 ValidateMemcpySteensgaardRegionAware(const MemcpyTest & test)
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   /*
    * Validate function f
@@ -1219,7 +1219,7 @@ ValidateMemcpySteensgaardRegionAware(const MemcpyTest & test)
 static int
 test()
 {
-  using namespace jlm::aa;
+  using namespace jlm::llvm::aa;
 
   ValidateTest<StoreTest1, Steensgaard, AgnosticMemoryNodeProvider>(ValidateStoreTest1SteensgaardAgnostic);
   ValidateTest<StoreTest1, Steensgaard, RegionAwareMemoryNodeProvider>(ValidateStoreTest1SteensgaardRegionAware);

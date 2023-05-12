@@ -15,21 +15,21 @@
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/Module.h>
 
-namespace jlm
+namespace jlm::llvm
 {
 
-static std::vector<llvm::PHINode*>
-convert_instructions(llvm::Function & function, context & ctx)
+static std::vector<::llvm::PHINode*>
+convert_instructions(::llvm::Function & function, context & ctx)
 {
-	std::vector<llvm::PHINode*> phis;
-	llvm::ReversePostOrderTraversal<llvm::Function*> rpotraverser(&function);
+	std::vector<::llvm::PHINode*> phis;
+	::llvm::ReversePostOrderTraversal<::llvm::Function*> rpotraverser(&function);
 	for (auto & bb : rpotraverser) {
 		for (auto & instruction : *bb) {
 			tacsvector_t tacs;
 			if (auto result = ConvertInstruction(&instruction, tacs, ctx))
 				ctx.insert_value(&instruction, result);
 
-			if (auto phi = llvm::dyn_cast<llvm::PHINode>(&instruction)) {
+			if (auto phi = ::llvm::dyn_cast<::llvm::PHINode>(&instruction)) {
 				phis.push_back(phi);
 				ctx.get(bb)->append_first(tacs);
 			} else {
@@ -42,7 +42,7 @@ convert_instructions(llvm::Function & function, context & ctx)
 }
 
 static void
-patch_phi_operands(const std::vector<llvm::PHINode*> & phis, context & ctx)
+patch_phi_operands(const std::vector<::llvm::PHINode*> & phis, context & ctx)
 {
 	for (const auto & phi : phis) {
 		std::vector<cfg_node*> nodes;
@@ -61,10 +61,10 @@ patch_phi_operands(const std::vector<llvm::PHINode*> & phis, context & ctx)
 }
 
 static basic_block_map
-convert_basic_blocks(llvm::Function & f, jlm::cfg & cfg)
+convert_basic_blocks(::llvm::Function & f, llvm::cfg & cfg)
 {
 	basic_block_map bbmap;
-	llvm::ReversePostOrderTraversal<llvm::Function*> rpotraverser(&f);
+	::llvm::ReversePostOrderTraversal<::llvm::Function*> rpotraverser(&f);
 	for (auto & bb : rpotraverser)
 			bbmap.insert(bb, basic_block::create(cfg));
 
@@ -72,11 +72,11 @@ convert_basic_blocks(llvm::Function & f, jlm::cfg & cfg)
 }
 
 attribute::kind
-ConvertAttributeKind(const llvm::Attribute::AttrKind & kind)
+ConvertAttributeKind(const ::llvm::Attribute::AttrKind & kind)
 {
-  typedef llvm::Attribute::AttrKind ak;
+  typedef ::llvm::Attribute::AttrKind ak;
 
-  static std::unordered_map<llvm::Attribute::AttrKind, attribute::kind> map({
+  static std::unordered_map<::llvm::Attribute::AttrKind, attribute::kind> map({
     {ak::None,                            attribute::kind::None},
     {ak::FirstEnumAttr,                   attribute::kind::FirstEnumAttr},
     {ak::AllocAlign,                      attribute::kind::AllocAlign},
@@ -175,19 +175,19 @@ ConvertAttributeKind(const llvm::Attribute::AttrKind & kind)
   return map[kind];
 }
 
-static std::unique_ptr<jlm::attribute>
-convert_attribute(const llvm::Attribute & attribute, context & ctx)
+static std::unique_ptr<llvm::attribute>
+convert_attribute(const ::llvm::Attribute & attribute, context & ctx)
 {
-	auto convert_type_attribute = [](const llvm::Attribute & attribute, context & ctx)
+	auto convert_type_attribute = [](const ::llvm::Attribute & attribute, context & ctx)
 	{
 		JLM_ASSERT(attribute.isTypeAttribute());
 
-		if (attribute.getKindAsEnum() == llvm::Attribute::AttrKind::ByVal) {
+		if (attribute.getKindAsEnum() == ::llvm::Attribute::AttrKind::ByVal) {
 			auto type = ConvertType(attribute.getValueAsType(), ctx);
 			return type_attribute::create_byval(std::move(type));
 		}
 
-    if (attribute.getKindAsEnum() == llvm::Attribute::AttrKind::StructRet) {
+    if (attribute.getKindAsEnum() == ::llvm::Attribute::AttrKind::StructRet) {
       auto type = ConvertType(attribute.getValueAsType(), ctx);
       return type_attribute::CreateStructRetAttribute(std::move(type));
     }
@@ -195,13 +195,13 @@ convert_attribute(const llvm::Attribute & attribute, context & ctx)
 		JLM_UNREACHABLE("Unhandled attribute");
 	};
 
-	auto convert_string_attribute = [](const llvm::Attribute & attribute)
+	auto convert_string_attribute = [](const ::llvm::Attribute & attribute)
 	{
 		JLM_ASSERT(attribute.isStringAttribute());
 		return string_attribute::create(attribute.getKindAsString().str(), attribute.getValueAsString().str());
 	};
 
-	auto convert_enum_attribute = [](const llvm::Attribute & attribute)
+	auto convert_enum_attribute = [](const ::llvm::Attribute & attribute)
 	{
 		JLM_ASSERT(attribute.isEnumAttribute());
 
@@ -209,7 +209,7 @@ convert_attribute(const llvm::Attribute & attribute, context & ctx)
 		return enum_attribute::create(kind);
 	};
 
-	auto convert_int_attribute = [](const llvm::Attribute & attribute)
+	auto convert_int_attribute = [](const ::llvm::Attribute & attribute)
 	{
 		JLM_ASSERT(attribute.isIntAttribute());
 
@@ -234,7 +234,7 @@ convert_attribute(const llvm::Attribute & attribute, context & ctx)
 }
 
 static attributeset
-convert_attributes(const llvm::AttributeSet & as, context & ctx)
+convert_attributes(const ::llvm::AttributeSet & as, context & ctx)
 {
 	attributeset attributes;
 	for (auto & attribute : as)
@@ -243,8 +243,8 @@ convert_attributes(const llvm::AttributeSet & as, context & ctx)
 	return attributes;
 }
 
-static std::unique_ptr<jlm::argument>
-convert_argument(const llvm::Argument & argument, context & ctx)
+static std::unique_ptr<llvm::argument>
+convert_argument(const ::llvm::Argument & argument, context & ctx)
 {
 	auto function = argument.getParent();
 	auto name = argument.getName().str();
@@ -252,11 +252,11 @@ convert_argument(const llvm::Argument & argument, context & ctx)
 	auto attributes = convert_attributes(function->getAttributes().getParamAttrs(
 		argument.getArgNo()), ctx);
 
-	return jlm::argument::create(name, *type, attributes);
+	return llvm::argument::create(name, *type, attributes);
 }
 
 static void
-EnsureSingleInEdgeToExitNode(jlm::cfg & cfg)
+EnsureSingleInEdgeToExitNode(llvm::cfg & cfg)
 {
 	auto exitNode = cfg.exit();
 
@@ -315,12 +315,12 @@ EnsureSingleInEdgeToExitNode(jlm::cfg & cfg)
 	basicBlock->add_outedge(exitNode);
 }
 
-static std::unique_ptr<jlm::cfg>
-create_cfg(llvm::Function & f, context & ctx)
+static std::unique_ptr<llvm::cfg>
+create_cfg(::llvm::Function & f, context & ctx)
 {
 	auto node = static_cast<const fctvariable*>(ctx.lookup_value(&f))->function();
 
-	auto add_arguments = [](const llvm::Function & f, jlm::cfg & cfg, context & ctx)
+	auto add_arguments = [](const ::llvm::Function & f, llvm::cfg & cfg, context & ctx)
 	{
 		auto node = static_cast<const fctvariable*>(ctx.lookup_value(&f))->function();
 
@@ -392,7 +392,7 @@ create_cfg(llvm::Function & f, context & ctx)
 }
 
 static void
-convert_function(llvm::Function & function, context & ctx)
+convert_function(::llvm::Function & function, context & ctx)
 {
 	if (function.isDeclaration())
 		return;
@@ -404,21 +404,21 @@ convert_function(llvm::Function & function, context & ctx)
 	ctx.set_node(nullptr);
 }
 
-static const jlm::linkage &
-convert_linkage(const llvm::GlobalValue::LinkageTypes & linkage)
+static const llvm::linkage &
+convert_linkage(const ::llvm::GlobalValue::LinkageTypes & linkage)
 {
-	static std::unordered_map<llvm::GlobalValue::LinkageTypes, jlm::linkage> map({
-	  {llvm::GlobalValue::ExternalLinkage, jlm::linkage::external_linkage}
-	, {llvm::GlobalValue::AvailableExternallyLinkage, jlm::linkage::available_externally_linkage}
-	, {llvm::GlobalValue::LinkOnceAnyLinkage, jlm::linkage::link_once_any_linkage}
-	, {llvm::GlobalValue::LinkOnceODRLinkage, jlm::linkage::link_once_odr_linkage}
-	, {llvm::GlobalValue::WeakAnyLinkage, jlm::linkage::weak_any_linkage}
-	, {llvm::GlobalValue::WeakODRLinkage, jlm::linkage::weak_odr_linkage}
-	, {llvm::GlobalValue::AppendingLinkage, jlm::linkage::appending_linkage}
-	, {llvm::GlobalValue::InternalLinkage, jlm::linkage::internal_linkage}
-	, {llvm::GlobalValue::PrivateLinkage, jlm::linkage::private_linkage}
-	, {llvm::GlobalValue::ExternalWeakLinkage, jlm::linkage::external_weak_linkage}
-	, {llvm::GlobalValue::CommonLinkage, jlm::linkage::common_linkage}
+	static std::unordered_map<::llvm::GlobalValue::LinkageTypes, llvm::linkage> map({
+	  {::llvm::GlobalValue::ExternalLinkage, llvm::linkage::external_linkage}
+	, {::llvm::GlobalValue::AvailableExternallyLinkage, llvm::linkage::available_externally_linkage}
+	, {::llvm::GlobalValue::LinkOnceAnyLinkage, llvm::linkage::link_once_any_linkage}
+	, {::llvm::GlobalValue::LinkOnceODRLinkage, llvm::linkage::link_once_odr_linkage}
+	, {::llvm::GlobalValue::WeakAnyLinkage, llvm::linkage::weak_any_linkage}
+	, {::llvm::GlobalValue::WeakODRLinkage, llvm::linkage::weak_odr_linkage}
+	, {::llvm::GlobalValue::AppendingLinkage, llvm::linkage::appending_linkage}
+	, {::llvm::GlobalValue::InternalLinkage, llvm::linkage::internal_linkage}
+	, {::llvm::GlobalValue::PrivateLinkage, llvm::linkage::private_linkage}
+	, {::llvm::GlobalValue::ExternalWeakLinkage, llvm::linkage::external_weak_linkage}
+	, {::llvm::GlobalValue::CommonLinkage, llvm::linkage::common_linkage}
 	});
 
 	JLM_ASSERT(map.find(linkage) != map.end());
@@ -426,9 +426,9 @@ convert_linkage(const llvm::GlobalValue::LinkageTypes & linkage)
 }
 
 static void
-declare_globals(llvm::Module & lm, context & ctx)
+declare_globals(::llvm::Module & lm, context & ctx)
 {
-	auto create_data_node = [](const llvm::GlobalVariable & gv, context & ctx)
+	auto create_data_node = [](const ::llvm::GlobalVariable & gv, context & ctx)
 	{
 		auto name = gv.getName().str();
 		auto constant = gv.isConstant();
@@ -445,7 +445,7 @@ declare_globals(llvm::Module & lm, context & ctx)
       constant);
 	};
 
-	auto create_function_node = [](const llvm::Function & f, context & ctx)
+	auto create_function_node = [](const ::llvm::Function & f, context & ctx)
 	{
 		auto name = f.getName().str();
 		auto linkage = convert_linkage(f.getLinkage());
@@ -468,7 +468,7 @@ declare_globals(llvm::Module & lm, context & ctx)
 }
 
 static std::unique_ptr<data_node_init>
-create_initialization(llvm::GlobalVariable & gv, context & ctx)
+create_initialization(::llvm::GlobalVariable & gv, context & ctx)
 {
 	if (!gv.hasInitializer())
 		return nullptr;
@@ -482,7 +482,7 @@ create_initialization(llvm::GlobalVariable & gv, context & ctx)
 }
 
 static void
-convert_global_value(llvm::GlobalVariable & gv, context & ctx)
+convert_global_value(::llvm::GlobalVariable & gv, context & ctx)
 {
 	auto v = static_cast<const gblvalue*>(ctx.lookup_value(&gv));
 
@@ -492,7 +492,7 @@ convert_global_value(llvm::GlobalVariable & gv, context & ctx)
 }
 
 static void
-convert_globals(llvm::Module & lm, context & ctx)
+convert_globals(::llvm::Module & lm, context & ctx)
 {
 	for (auto & gv : lm.getGlobalList())
 		convert_global_value(gv, ctx);
@@ -502,7 +502,7 @@ convert_globals(llvm::Module & lm, context & ctx)
 }
 
 std::unique_ptr<ipgraph_module>
-ConvertLlvmModule(llvm::Module & m)
+ConvertLlvmModule(::llvm::Module & m)
 {
 	util::filepath fp(m.getSourceFileName());
 	auto im = ipgraph_module::create(fp, m.getTargetTriple(), m.getDataLayoutStr());

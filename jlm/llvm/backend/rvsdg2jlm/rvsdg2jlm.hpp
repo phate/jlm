@@ -8,12 +8,13 @@
 
 #include <memory>
 
-namespace jlm {
-
-namespace util
+namespace jlm::util
 {
 class StatisticsCollector;
 }
+
+namespace jlm::llvm
+{
 
 class ipgraph_module;
 class RvsdgModule;
@@ -23,7 +24,7 @@ namespace rvsdg2jlm {
 std::unique_ptr<ipgraph_module>
 rvsdg2jlm(
   const RvsdgModule & rm,
-  util::StatisticsCollector & statisticsCollector);
+  jlm::util::StatisticsCollector & statisticsCollector);
 
 }}
 

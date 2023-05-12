@@ -6,18 +6,19 @@
 #ifndef JLM_LLVM_FRONTEND_CONTROLFLOWRESTRUCTURING_HPP
 #define JLM_LLVM_FRONTEND_CONTROLFLOWRESTRUCTURING_HPP
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 class cfg;
 
 void
-RestructureLoops(jlm::cfg * cfg);
+RestructureLoops(llvm::cfg * cfg);
 
 void
-RestructureBranches(jlm::cfg * cfg);
+RestructureBranches(llvm::cfg * cfg);
 
 void
-RestructureControlFlow(jlm::cfg * cfg);
+RestructureControlFlow(llvm::cfg * cfg);
 
 }
 

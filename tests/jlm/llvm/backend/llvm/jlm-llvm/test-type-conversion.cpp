@@ -11,9 +11,9 @@
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 
 static void
-test_structtype(jlm::jlm2llvm::context & ctx)
+test_structtype(jlm::llvm::jlm2llvm::context & ctx)
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	auto decl1 = jlm::rvsdg::rcddeclaration::create({&jlm::rvsdg::bit8, &jlm::rvsdg::bit32});
 	StructType st1("mystruct", false, *decl1);
@@ -37,12 +37,12 @@ test_structtype(jlm::jlm2llvm::context & ctx)
 static int
 test()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	llvm::LLVMContext ctx;
 	llvm::Module lm("module", ctx);
 
-	ipgraph_module im(util::filepath(""), "", "");
+	ipgraph_module im(jlm::util::filepath(""), "", "");
 	jlm2llvm::context jctx(im, lm);
 
 	test_structtype(jctx);

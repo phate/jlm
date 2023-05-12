@@ -8,7 +8,8 @@
 
 #include <jlm/llvm/opt/optimization.hpp>
 
-namespace jlm::aa {
+namespace jlm::llvm::aa
+{
 
 /** \brief Steensgaard alias analysis with agnostic memory state encoding
  *
@@ -22,7 +23,7 @@ public:
   void
   run(
     RvsdgModule & rvsdgModule,
-    util::StatisticsCollector & statisticsCollector) override;
+    jlm::util::StatisticsCollector & statisticsCollector) override;
 };
 
 /** \brief Steensgaard alias analysis with region-aware memory state encoding
@@ -37,7 +38,7 @@ public:
   void
   run(
     RvsdgModule & rvsdgModule,
-    util::StatisticsCollector & statisticsCollector) override;
+    jlm::util::StatisticsCollector & statisticsCollector) override;
 };
 
 }

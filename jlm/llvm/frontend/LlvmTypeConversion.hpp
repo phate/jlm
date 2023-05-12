@@ -19,28 +19,29 @@ namespace llvm {
 	class Type;
 }
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 class context;
 
-jlm::fpsize
-ExtractFloatingPointSize(const llvm::Type * type);
+fpsize
+ExtractFloatingPointSize(const ::llvm::Type * type);
 
 std::unique_ptr<rvsdg::valuetype>
-ConvertType(const llvm::Type * type, context & ctx);
+ConvertType(const ::llvm::Type * type, context & ctx);
 
 static inline std::unique_ptr<FunctionType>
-ConvertFunctionType(const llvm::FunctionType * type, context & ctx)
+ConvertFunctionType(const ::llvm::FunctionType * type, context & ctx)
 {
-	auto t = ConvertType(llvm::cast<llvm::Type>(type), ctx);
+	auto t = ConvertType(::llvm::cast<::llvm::Type>(type), ctx);
 	JLM_ASSERT(dynamic_cast<const FunctionType*>(t.get()));
 	return std::unique_ptr<FunctionType>(static_cast<FunctionType*>(t.release()));
 }
 
 static inline std::unique_ptr<PointerType>
-ConvertPointerType(const llvm::PointerType * type, context & ctx)
+ConvertPointerType(const ::llvm::PointerType * type, context & ctx)
 {
-	auto t = ConvertType(llvm::cast<llvm::Type>(type), ctx);
+	auto t = ConvertType(::llvm::cast<::llvm::Type>(type), ctx);
 	JLM_ASSERT(dynamic_cast<const PointerType*>(t.get()));
 	return std::unique_ptr<PointerType>(static_cast<PointerType*>(t.release()));
 }

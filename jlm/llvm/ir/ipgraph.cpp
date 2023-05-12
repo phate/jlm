@@ -11,11 +11,11 @@
 
 static void
 strongconnect(
-	const jlm::ipgraph_node * node,
-	std::unordered_map<const jlm::ipgraph_node*, std::pair<size_t,size_t>> & map,
-	std::vector<const jlm::ipgraph_node*> & node_stack,
+	const jlm::llvm::ipgraph_node * node,
+	std::unordered_map<const jlm::llvm::ipgraph_node*, std::pair<size_t,size_t>> & map,
+	std::vector<const jlm::llvm::ipgraph_node*> & node_stack,
 	size_t & index,
-	std::vector<std::unordered_set<const jlm::ipgraph_node*>> & sccs)
+	std::vector<std::unordered_set<const jlm::llvm::ipgraph_node*>> & sccs)
 {
 	map.emplace(node, std::make_pair(index, index));
 	node_stack.push_back(node);
@@ -33,8 +33,8 @@ strongconnect(
 	}
 
 	if (map[node].second == map[node].first) {
-		std::unordered_set<const jlm::ipgraph_node*> scc;
-		const jlm::ipgraph_node * w;
+		std::unordered_set<const jlm::llvm::ipgraph_node*> scc;
+		const jlm::llvm::ipgraph_node * w;
 		do {
 			w = node_stack.back();
 			node_stack.pop_back();
@@ -45,7 +45,8 @@ strongconnect(
 	}
 }
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 /* ipgraph */
 
@@ -106,7 +107,7 @@ function_node::type() const noexcept
 	return pointerType;
 }
 
-const jlm::linkage &
+const llvm::linkage &
 function_node::linkage() const noexcept
 {
 	return linkage_;
@@ -119,7 +120,7 @@ function_node::hasBody() const noexcept
 }
 
 void
-function_node::add_cfg(std::unique_ptr<jlm::cfg> cfg)
+function_node::add_cfg(std::unique_ptr<llvm::cfg> cfg)
 {
 	if (cfg->fcttype() != fcttype())
 		throw util::error("CFG does not match the function node's type.");
@@ -150,7 +151,7 @@ data_node::type() const noexcept
   return pointerType;
 }
 
-const jlm::linkage &
+const llvm::linkage &
 data_node::linkage() const noexcept
 {
 	return linkage_;

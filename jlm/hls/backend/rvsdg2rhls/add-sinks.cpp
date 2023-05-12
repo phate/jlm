@@ -32,7 +32,7 @@ jlm::hls::add_sinks(jlm::rvsdg::region *region) {
 }
 
 void
-jlm::hls::add_sinks(jlm::RvsdgModule &rm) {
+jlm::hls::add_sinks(llvm::RvsdgModule &rm) {
 	auto &graph = rm.Rvsdg();
 	auto root = graph.root();
 	add_sinks(root);

@@ -11,7 +11,8 @@
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 
-namespace jlm::aa {
+namespace jlm::llvm::aa
+{
 
 class RegionAwareMemoryNodeProvisioning;
 
@@ -62,7 +63,7 @@ public:
   ProvisionMemoryNodes(
     const RvsdgModule & rvsdgModule,
     const PointsToGraph & pointsToGraph,
-    util::StatisticsCollector & statisticsCollector) override;
+    jlm::util::StatisticsCollector & statisticsCollector) override;
 
   /**
    * Creates a RegionAwareMemoryNodeProvider and calls the ProvisionMemoryNodes() method.
@@ -77,7 +78,7 @@ public:
   Create(
     const RvsdgModule & rvsdgModule,
     const PointsToGraph & pointsToGraph,
-    util::StatisticsCollector & statisticsCollector);
+    jlm::util::StatisticsCollector & statisticsCollector);
 
   /**
    * Creates a RegionAwareMemoryNodeProvider and calls the ProvisionMemoryNodes() method.
@@ -210,7 +211,7 @@ private:
  *
  * @see RegionAwareMemoryNodeProvider
  */
-class RegionAwareMemoryNodeProvider::Statistics final : public util::Statistics {
+class RegionAwareMemoryNodeProvider::Statistics final : public jlm::util::Statistics {
 public:
   ~Statistics() override = default;
 
@@ -219,7 +220,7 @@ public:
     const util::StatisticsCollector & statisticsCollector,
     const RvsdgModule & rvsdgModule,
     const PointsToGraph & pointsToGraph)
-    : util::Statistics(Statistics::Id::MemoryNodeProvisioning)
+    : jlm::util::Statistics(Statistics::Id::MemoryNodeProvisioning)
     , NumRvsdgNodes_(0)
     , NumRvsdgRegions_(0)
     , NumPointsToGraphMemoryNodes_(0)

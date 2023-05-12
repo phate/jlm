@@ -17,7 +17,7 @@
 static inline void
 test_load_alloca_reduction()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	MemoryStateType mt;
 	jlm::rvsdg::bittype bt(32);
@@ -55,7 +55,7 @@ test_load_alloca_reduction()
 static inline void
 test_multiple_origin_reduction()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	MemoryStateType mt;
 	jlm::valuetype vt;
@@ -89,7 +89,7 @@ test_multiple_origin_reduction()
 static inline void
 test_load_store_state_reduction()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	jlm::rvsdg::bittype bt(32);
 
@@ -132,7 +132,7 @@ test_load_store_state_reduction()
 static inline void
 test_load_store_alloca_reduction()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	MemoryStateType mt;
 	jlm::rvsdg::bittype bt(32);
@@ -166,9 +166,9 @@ test_load_store_alloca_reduction()
 static inline void
 test_load_store_reduction()
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
-  valuetype vt;
+  jlm::valuetype vt;
   PointerType pt;
   MemoryStateType mt;
 
@@ -203,9 +203,9 @@ test_load_store_reduction()
 static void
 test_load_load_reduction()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
-	valuetype vt;
+	jlm::valuetype vt;
 	PointerType pt;
 	MemoryStateType mt;
 

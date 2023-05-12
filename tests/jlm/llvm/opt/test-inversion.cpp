@@ -20,9 +20,9 @@ static jlm::util::StatisticsCollector statisticsCollector;
 static inline void
 test1()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
-	RvsdgModule rm(util::filepath(""), "", "");
+	RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 
 	auto x = graph.add_import({vt, "x"});
@@ -58,7 +58,7 @@ test1()
 	auto ex3 = graph.add_export(theta->output(2), {theta->output(2)->type(), "z"});
 
 //	jlm::rvsdg::view(graph.root(), stdout);
-	jlm::tginversion tginversion;
+	jlm::llvm::tginversion tginversion;
 	tginversion.run(rm, statisticsCollector);
 //	jlm::rvsdg::view(graph.root(), stdout);
 
@@ -70,9 +70,9 @@ test1()
 static inline void
 test2()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
-	RvsdgModule rm(util::filepath(""), "", "");
+	RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 
 	auto x = graph.add_import({vt, "x"});
@@ -102,7 +102,7 @@ test2()
 	auto ex = graph.add_export(theta->output(0), {theta->output(0)->type(), "x"});
 
 //	jlm::rvsdg::view(graph.root(), stdout);
-	jlm::tginversion tginversion;
+	jlm::llvm::tginversion tginversion;
 	tginversion.run(rm, statisticsCollector);
 //	jlm::rvsdg::view(graph.root(), stdout);
 

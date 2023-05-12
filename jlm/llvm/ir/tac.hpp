@@ -14,7 +14,8 @@
 #include <memory>
 #include <vector>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 class tac;
 
@@ -26,14 +27,14 @@ public:
 	~tacvariable();
 
 	tacvariable(
-		jlm::tac * tac,
+		llvm::tac * tac,
 		const jlm::rvsdg::type & type,
 		const std::string & name)
 	: variable(type, name)
 	, tac_(tac)
 	{}
 
-	inline jlm::tac *
+	inline llvm::tac *
 	tac() const noexcept
 	{
 		return tac_;
@@ -41,7 +42,7 @@ public:
 
 	static std::unique_ptr<tacvariable>
 	create(
-		jlm::tac * tac,
+		llvm::tac * tac,
 		const jlm::rvsdg::type & type,
 		const std::string & name)
 	{
@@ -49,7 +50,7 @@ public:
 	}
 
 private:
-	jlm::tac * tac_;
+	llvm::tac * tac_;
 };
 
 /* tac */
@@ -74,15 +75,15 @@ public:
 		const std::vector<const variable*> & operands,
 		std::vector<std::unique_ptr<tacvariable>> results);
 
-	tac(const jlm::tac &) = delete;
+	tac(const llvm::tac &) = delete;
 
-	tac(jlm::tac &&) = delete;
-
-	tac &
-	operator=(const jlm::tac &) = delete;
+	tac(llvm::tac &&) = delete;
 
 	tac &
-	operator=(jlm::tac &&) = delete;
+	operator=(const llvm::tac &) = delete;
+
+	tac &
+	operator=(llvm::tac &&) = delete;
 
 	inline const jlm::rvsdg::simple_op &
 	operation() const noexcept
@@ -136,30 +137,30 @@ public:
 		const jlm::rvsdg::simple_op & operation,
 		const std::vector<const variable*> & operands);
 
-	static std::unique_ptr<jlm::tac>
+	static std::unique_ptr<llvm::tac>
 	create(
 		const jlm::rvsdg::simple_op & operation,
 		const std::vector<const variable*> & operands)
 	{
-		return std::make_unique<jlm::tac>(operation, operands);
+		return std::make_unique<llvm::tac>(operation, operands);
 	}
 
-	static std::unique_ptr<jlm::tac>
+	static std::unique_ptr<llvm::tac>
 	create(
 		const jlm::rvsdg::simple_op & operation,
 		const std::vector<const variable*> & operands,
 		const std::vector<std::string> & names)
 	{
-		return std::make_unique<jlm::tac>(operation, operands, names);
+		return std::make_unique<llvm::tac>(operation, operands, names);
 	}
 
-	static std::unique_ptr<jlm::tac>
+	static std::unique_ptr<llvm::tac>
 	create(
 		const jlm::rvsdg::simple_op & operation,
 		const std::vector<const variable*> & operands,
 		std::vector<std::unique_ptr<tacvariable>> results)
 	{
-		return std::make_unique<jlm::tac>(operation, operands, std::move(results));
+		return std::make_unique<llvm::tac>(operation, operands, std::move(results));
 	}
 
 private:
@@ -182,7 +183,7 @@ private:
 		static size_t c = 0;
 		std::vector<std::string> names;
 		for (size_t n = 0; n < nnames; n++)
-			names.push_back(util::strfmt("tv", c++));
+			names.push_back(jlm::util::strfmt("tv", c++));
 
 		return names;
 	}
@@ -193,7 +194,7 @@ private:
 };
 
 template <class T> static inline bool
-is(const jlm::tac * tac)
+is(const llvm::tac * tac)
 {
 	return tac && is<T>(tac->operation());
 }
@@ -201,7 +202,7 @@ is(const jlm::tac * tac)
 /* FIXME: Replace all occurences of tacsvector_t with taclist
 	and then remove tacsvector_t.
 */
-typedef std::vector<std::unique_ptr<jlm::tac>> tacsvector_t;
+typedef std::vector<std::unique_ptr<llvm::tac>> tacsvector_t;
 
 /* taclist */
 
@@ -265,7 +266,7 @@ public:
 	}
 
 	inline tac *
-	insert_before(const const_iterator & it, std::unique_ptr<jlm::tac> tac)
+	insert_before(const const_iterator & it, std::unique_ptr<llvm::tac> tac)
 	{
 		return *tacs_.insert(it, tac.release());
 	}
@@ -277,13 +278,13 @@ public:
 	}
 
 	inline void
-	append_last(std::unique_ptr<jlm::tac> tac)
+	append_last(std::unique_ptr<llvm::tac> tac)
 	{
 		tacs_.push_back(tac.release());
 	}
 
 	inline void
-	append_first(std::unique_ptr<jlm::tac> tac)
+	append_first(std::unique_ptr<llvm::tac> tac)
 	{
 		tacs_.push_front(tac.release());
 	}

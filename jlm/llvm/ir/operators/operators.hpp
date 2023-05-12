@@ -20,7 +20,8 @@
 
 #include <llvm/ADT/APFloat.h>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 class cfg_node;
 
@@ -32,7 +33,7 @@ public:
 	~phi_op() noexcept;
 
 	inline
-	phi_op(const std::vector<jlm::cfg_node*> & nodes, const jlm::rvsdg::type & type)
+	phi_op(const std::vector<llvm::cfg_node*> & nodes, const jlm::rvsdg::type & type)
 	: jlm::rvsdg::simple_op(std::vector<jlm::rvsdg::port>(nodes.size(), {type}), {type})
 	, nodes_(nodes)
 	{}
@@ -67,7 +68,7 @@ public:
 		return nodes_[n];
 	}
 
-	static std::unique_ptr<jlm::tac>
+	static std::unique_ptr<llvm::tac>
 	create(
 		const std::vector<std::pair<const variable*,cfg_node*>> & arguments,
 		const jlm::rvsdg::type & type)
@@ -112,11 +113,11 @@ public:
 	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
-	static std::unique_ptr<jlm::tac>
+	static std::unique_ptr<llvm::tac>
 	create(const variable * rhs, const variable * lhs)
 	{
 		if (rhs->type() != lhs->type())
-			throw util::error("LHS and RHS of assignment must have same type.");
+			throw jlm::util::error("LHS and RHS of assignment must have same type.");
 
 		return tac::create(assignment_op(rhs->type()), {lhs, rhs});
 	}
@@ -148,11 +149,11 @@ public:
 		return result(0).type();
 	}
 
-	static std::unique_ptr<jlm::tac>
+	static std::unique_ptr<llvm::tac>
 	create(
-		const jlm::variable * p,
-		const jlm::variable * t,
-		const jlm::variable * f)
+		const llvm::variable * p,
+		const llvm::variable * t,
+		const llvm::variable * f)
 	{
 		select_op op(t->type());
 		return tac::create(op, {p, t, f});
@@ -195,7 +196,7 @@ public:
 		return dynamic_cast<const vectortype*>(&type())->size();
 	}
 
-	static std::unique_ptr<jlm::tac>
+	static std::unique_ptr<llvm::tac>
 	create(
 		const variable * p,
 		const variable * t,
@@ -207,7 +208,7 @@ public:
         if (is<scalablevectortype>(p->type()) && is<scalablevectortype>(t->type()))
             return createVectorSelectTac<scalablevectortype>(p, t, f);
 
-        throw util::error("Expected vector types as operands.");
+        throw jlm::util::error("Expected vector types as operands.");
 	}
 
 private:
@@ -244,10 +245,10 @@ public:
 	: unary_op(*srctype, *dsttype)
 	{
 		auto st = dynamic_cast<const fptype*>(srctype.get());
-		if (!st) throw util::error("expected floating point type.");
+		if (!st) throw jlm::util::error("expected floating point type.");
 
 		auto dt = dynamic_cast<const jlm::rvsdg::bittype*>(dsttype.get());
-		if (!dt) throw util::error("expected bitstring type.");
+		if (!dt) throw jlm::util::error("expected bitstring type.");
 	}
 
 	virtual bool
@@ -268,16 +269,16 @@ public:
 		jlm::rvsdg::unop_reduction_path_t path,
 		jlm::rvsdg::output * output) const override;
 
-	static std::unique_ptr<jlm::tac>
+	static std::unique_ptr<llvm::tac>
 	create(
 		const variable * operand,
 		const jlm::rvsdg::type & type)
 	{
 		auto st = dynamic_cast<const fptype*>(&operand->type());
-		if (!st) throw util::error("expected floating point type.");
+		if (!st) throw jlm::util::error("expected floating point type.");
 
 		auto dt = dynamic_cast<const jlm::rvsdg::bittype*>(&type);
-		if (!dt) throw util::error("expected bitstring type.");
+		if (!dt) throw jlm::util::error("expected bitstring type.");
 
 		fp2ui_op op(st->size(), *dt);
 		return tac::create(op, {operand});
@@ -303,10 +304,10 @@ public:
 	: jlm::rvsdg::unary_op({*srctype}, {*dsttype})
 	{
 		auto st = dynamic_cast<const fptype*>(srctype.get());
-		if (!st) throw util::error("expected floating point type.");
+		if (!st) throw jlm::util::error("expected floating point type.");
 
 		auto dt = dynamic_cast<const jlm::rvsdg::bittype*>(dsttype.get());
-		if (!dt) throw util::error("expected bitstring type.");
+		if (!dt) throw jlm::util::error("expected bitstring type.");
 	}
 
 	virtual bool
@@ -327,16 +328,16 @@ public:
 		jlm::rvsdg::unop_reduction_path_t path,
 		jlm::rvsdg::output * output) const override;
 
-	static std::unique_ptr<jlm::tac>
+	static std::unique_ptr<llvm::tac>
 	create(
 		const variable * operand,
 		const jlm::rvsdg::type & type)
 	{
 		auto st = dynamic_cast<const fptype*>(&operand->type());
-		if (!st) throw util::error("expected floating point type.");
+		if (!st) throw jlm::util::error("expected floating point type.");
 
 		auto dt = dynamic_cast<const jlm::rvsdg::bittype*>(&type);
-		if (!dt) throw util::error("expected bitstring type.");
+		if (!dt) throw jlm::util::error("expected bitstring type.");
 
 		fp2si_op op(st->size(), *dt);
 		return tac::create(op, {operand});
@@ -364,16 +365,16 @@ public:
 	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
-	static std::unique_ptr<jlm::tac>
+	static std::unique_ptr<llvm::tac>
 	create(
 		const variable * operand,
 		const jlm::rvsdg::type & type)
 	{
 		auto st = dynamic_cast<const jlm::rvsdg::ctltype*>(&operand->type());
-		if (!st) throw util::error("expected control type.");
+		if (!st) throw jlm::util::error("expected control type.");
 
 		auto dt = dynamic_cast<const jlm::rvsdg::bittype*>(&type);
-		if (!dt) throw util::error("expected bitstring type.");
+		if (!dt) throw jlm::util::error("expected bitstring type.");
 
 		ctl2bits_op op(*st, *dt);
 		return tac::create(op, {operand});
@@ -407,7 +408,7 @@ public:
 		return static_cast<const jlm::rvsdg::ctltype*>(&argument(0).type())->nalternatives();
 	}
 
-	static std::unique_ptr<jlm::tac>
+	static std::unique_ptr<llvm::tac>
 	create(size_t nalternatives, const variable * operand)
 	{
 		jlm::rvsdg::ctltype type(nalternatives);
@@ -441,10 +442,10 @@ public:
   [[nodiscard]] const PointerType &
   GetPointerType() const noexcept
   {
-    return *util::AssertedCast<const PointerType>(&result(0).type());
+    return *jlm::util::AssertedCast<const PointerType>(&result(0).type());
   }
 
-  static std::unique_ptr<jlm::tac>
+  static std::unique_ptr<llvm::tac>
   Create(const jlm::rvsdg::type & type)
   {
     auto & pointerType = CheckAndExtractType(type);
@@ -471,7 +472,7 @@ private:
     if (auto pointerType = dynamic_cast<const PointerType*>(&type))
       return *pointerType;
 
-    throw util::error("expected pointer type.");
+    throw jlm::util::error("expected pointer type.");
   }
 };
 
@@ -494,10 +495,10 @@ public:
 	: unary_op(*srctype, *dsttype)
 	{
 		auto at = dynamic_cast<const jlm::rvsdg::bittype*>(srctype.get());
-		if (!at) throw util::error("expected bitstring type.");
+		if (!at) throw jlm::util::error("expected bitstring type.");
 
 		auto pt = dynamic_cast<const PointerType*>(dsttype.get());
-		if (!pt) throw util::error("expected pointer type.");
+		if (!pt) throw jlm::util::error("expected pointer type.");
 	}
 
 	virtual bool
@@ -524,18 +525,18 @@ public:
 		return static_cast<const jlm::rvsdg::bittype*>(&argument(0).type())->nbits();
 	}
 
-	static std::unique_ptr<jlm::tac>
+	static std::unique_ptr<llvm::tac>
 	create(
 		const variable * argument,
 		const jlm::rvsdg::type & type)
 	{
 		auto at = dynamic_cast<const jlm::rvsdg::bittype*>(&argument->type());
-		if (!at) throw util::error("expected bitstring type.");
+		if (!at) throw jlm::util::error("expected bitstring type.");
 
 		auto pt = dynamic_cast<const PointerType*>(&type);
-		if (!pt) throw util::error("expected pointer type.");
+		if (!pt) throw jlm::util::error("expected pointer type.");
 
-		jlm::bits2ptr_op op(*at, *pt);
+		bits2ptr_op op(*at, *pt);
 		return tac::create(op, {argument});
 	}
 
@@ -545,12 +546,12 @@ public:
 		const jlm::rvsdg::type & type)
 	{
 		auto ot = dynamic_cast<const jlm::rvsdg::bittype*>(&operand->type());
-		if (!ot) throw util::error("expected bitstring type.");
+		if (!ot) throw jlm::util::error("expected bitstring type.");
 
 		auto pt = dynamic_cast<const PointerType*>(&type);
-		if (!pt) throw util::error("expected pointer type.");
+		if (!pt) throw jlm::util::error("expected pointer type.");
 
-		jlm::bits2ptr_op op(*ot, *pt);
+		bits2ptr_op op(*ot, *pt);
 		return jlm::rvsdg::simple_node::create_normalized(operand->region(), op, {operand})[0];
 	}
 };
@@ -574,10 +575,10 @@ public:
 	: unary_op(*srctype, *dsttype)
 	{
 		auto pt = dynamic_cast<const PointerType*>(srctype.get());
-		if (!pt) throw util::error("expected pointer type.");
+		if (!pt) throw jlm::util::error("expected pointer type.");
 
 		auto bt = dynamic_cast<const jlm::rvsdg::bittype*>(dsttype.get());
-		if (!bt) throw util::error("expected bitstring type.");
+		if (!bt) throw jlm::util::error("expected bitstring type.");
 	}
 
 	virtual bool
@@ -604,18 +605,18 @@ public:
 		return static_cast<const jlm::rvsdg::bittype*>(&result(0).type())->nbits();
 	}
 
-	static std::unique_ptr<jlm::tac>
+	static std::unique_ptr<llvm::tac>
 	create(
 		const variable * argument,
 		const jlm::rvsdg::type & type)
 	{
 		auto pt = dynamic_cast<const PointerType*>(&argument->type());
-		if (!pt) throw util::error("expected pointer type.");
+		if (!pt) throw jlm::util::error("expected pointer type.");
 
 		auto bt = dynamic_cast<const jlm::rvsdg::bittype*>(&type);
-		if (!bt) throw util::error("expected bitstring type.");
+		if (!bt) throw jlm::util::error("expected bitstring type.");
 
-		jlm::ptr2bits_op op(*pt, *bt);
+		ptr2bits_op op(*pt, *bt);
 		return tac::create(op, {argument});
 	}
 };
@@ -628,10 +629,10 @@ public:
   ~ConstantDataArray();
 
   ConstantDataArray(const jlm::rvsdg::valuetype & type, size_t size)
-    : simple_op(std::vector<jlm::rvsdg::port>(size, type), {jlm::arraytype(type, size)})
+    : simple_op(std::vector<jlm::rvsdg::port>(size, type), {arraytype(type, size)})
   {
     if (size == 0)
-      throw util::error("size equals zero.");
+      throw jlm::util::error("size equals zero.");
   }
 
   virtual bool
@@ -655,14 +656,14 @@ public:
     return static_cast<const arraytype*>(&result(0).type())->element_type();
   }
 
-  static std::unique_ptr<jlm::tac>
+  static std::unique_ptr<llvm::tac>
   create(const std::vector<const variable*> & elements)
   {
     if (elements.size() == 0)
-      throw util::error("expected at least one element.");
+      throw jlm::util::error("expected at least one element.");
 
     auto vt = dynamic_cast<const jlm::rvsdg::valuetype*>(&elements[0]->type());
-    if (!vt) throw util::error("expected value type.");
+    if (!vt) throw jlm::util::error("expected value type.");
 
     ConstantDataArray op(*vt, elements.size());
     return tac::create(op, elements);
@@ -672,12 +673,12 @@ public:
   Create(const std::vector<jlm::rvsdg::output*> & elements)
   {
     if (elements.empty())
-      throw util::error("Expected at least one element.");
+      throw jlm::util::error("Expected at least one element.");
 
     auto valueType = dynamic_cast<const jlm::rvsdg::valuetype*>(&elements[0]->type());
     if (!valueType)
     {
-      throw util::error("Expected value type.");
+      throw jlm::util::error("Expected value type.");
     }
 
     ConstantDataArray operation(*valueType, elements.size());
@@ -695,7 +696,7 @@ public:
 	~ptrcmp_op();
 
 	inline
-	ptrcmp_op(const PointerType & ptype, const jlm::cmp & cmp)
+	ptrcmp_op(const PointerType & ptype, const llvm::cmp & cmp)
 	: binary_op({ptype, ptype}, {jlm::rvsdg::bit1})
 	, cmp_(cmp)
 	{}
@@ -720,27 +721,27 @@ public:
 		jlm::rvsdg::output * op1,
 		jlm::rvsdg::output * op2) const override;
 
-	inline jlm::cmp
+	inline llvm::cmp
 	cmp() const noexcept
 	{
 		return cmp_;
 	}
 
-	static std::unique_ptr<jlm::tac>
+	static std::unique_ptr<llvm::tac>
 	create(
-		const jlm::cmp & cmp,
+		const llvm::cmp & cmp,
 		const variable * op1,
 		const variable * op2)
 	{
 		auto pt = dynamic_cast<const PointerType*>(&op1->type());
-		if (!pt) throw util::error("expected pointer type.");
+		if (!pt) throw jlm::util::error("expected pointer type.");
 
-		jlm::ptrcmp_op op(*pt, cmp);
+		ptrcmp_op op(*pt, cmp);
 		return tac::create(op, {op1, op2});
 	}
 
 private:
-	jlm::cmp cmp_;
+	llvm::cmp cmp_;
 };
 
 /* zext operator */
@@ -755,7 +756,7 @@ public:
 	: unary_op({jlm::rvsdg::bittype(nsrcbits)}, {jlm::rvsdg::bittype(ndstbits)})
 	{
 		if (ndstbits < nsrcbits)
-			throw util::error("# destination bits must be greater than # source bits.");
+			throw jlm::util::error("# destination bits must be greater than # source bits.");
 	}
 
 	inline
@@ -765,13 +766,13 @@ public:
 	: unary_op(*srctype, *dsttype)
 	{
 		auto st = dynamic_cast<const jlm::rvsdg::bittype*>(srctype.get());
-		if (!st) throw util::error("expected bitstring type.");
+		if (!st) throw jlm::util::error("expected bitstring type.");
 
 		auto dt = dynamic_cast<const jlm::rvsdg::bittype*>(dsttype.get());
-		if (!dt) throw util::error("expected bitstring type.");
+		if (!dt) throw jlm::util::error("expected bitstring type.");
 
 		if (dt->nbits() < st->nbits())
-			throw util::error("# destination bits must be greater than # source bits.");
+			throw jlm::util::error("# destination bits must be greater than # source bits.");
 	}
 
 	virtual bool
@@ -803,18 +804,18 @@ public:
 		return static_cast<const jlm::rvsdg::bittype*>(&result(0).type())->nbits();
 	}
 
-	static std::unique_ptr<jlm::tac>
+	static std::unique_ptr<llvm::tac>
 	create(
 		const variable * operand,
 		const jlm::rvsdg::type & type)
 	{
 		auto st = dynamic_cast<const jlm::rvsdg::bittype*>(&operand->type());
-		if (!st) throw util::error("expected bitstring type.");
+		if (!st) throw jlm::util::error("expected bitstring type.");
 
 		auto dt = dynamic_cast<const jlm::rvsdg::bittype*>(&type);
-		if (!dt) throw util::error("expected bitstring type.");
+		if (!dt) throw jlm::util::error("expected bitstring type.");
 
-		jlm::zext_op op(st->nbits(), dt->nbits());
+		zext_op op(st->nbits(), dt->nbits());
 		return tac::create(op, {operand});
 	}
 };
@@ -827,7 +828,7 @@ public:
 	~ConstantFP();
 
 	inline
-	ConstantFP(const jlm::fpsize & size, const llvm::APFloat & constant)
+	ConstantFP(const fpsize & size, const ::llvm::APFloat & constant)
 	: simple_op({}, {fptype(size)})
 	, constant_(constant)
 	{}
@@ -841,7 +842,7 @@ public:
 	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
-	inline const llvm::APFloat &
+	inline const ::llvm::APFloat &
 	constant() const noexcept
 	{
 		return constant_;
@@ -850,25 +851,25 @@ public:
 	inline const fpsize &
 	size() const noexcept
 	{
-		return static_cast<const jlm::fptype*>(&result(0).type())->size();
+		return static_cast<const fptype*>(&result(0).type())->size();
 	}
 
-	static std::unique_ptr<jlm::tac>
+	static std::unique_ptr<llvm::tac>
 	create(
-		const llvm::APFloat & constant,
+		const ::llvm::APFloat & constant,
 		const jlm::rvsdg::type & type)
 	{
-		auto ft = dynamic_cast<const jlm::fptype*>(&type);
-		if (!ft) throw util::error("expected floating point type.");
+		auto ft = dynamic_cast<const fptype*>(&type);
+		if (!ft) throw jlm::util::error("expected floating point type.");
 
-		jlm::ConstantFP op(ft->size(), constant);
+		ConstantFP op(ft->size(), constant);
 		return tac::create(op, {});
 	}
 
 private:
 	/* FIXME: I would not like to use the APFloat here,
 	   but I don't have a replacement right now. */
-	llvm::APFloat constant_;
+	::llvm::APFloat constant_;
 };
 
 /* floating point comparison operator */
@@ -883,7 +884,7 @@ public:
 	~fpcmp_op();
 
 	inline
-	fpcmp_op(const jlm::fpcmp & cmp, const jlm::fpsize & size)
+	fpcmp_op(const fpcmp & cmp, const fpsize & size)
 	: binary_op({fptype(size), fptype(size)}, {jlm::rvsdg::bit1})
 	, cmp_(cmp)
 	{}
@@ -908,33 +909,33 @@ public:
 		jlm::rvsdg::output * op1,
 		jlm::rvsdg::output * op2) const override;
 
-	inline const jlm::fpcmp &
+	inline const fpcmp &
 	cmp() const noexcept
 	{
 		return cmp_;
 	}
 
-	inline const jlm::fpsize &
+	inline const fpsize &
 	size() const noexcept
 	{
-		return static_cast<const jlm::fptype*>(&argument(0).type())->size();
+		return static_cast<const llvm::fptype*>(&argument(0).type())->size();
 	}
 
-	static std::unique_ptr<jlm::tac>
+	static std::unique_ptr<llvm::tac>
 	create(
-		const jlm::fpcmp & cmp,
+		const fpcmp & cmp,
 		const variable * op1,
 		const variable * op2)
 	{
-		auto ft = dynamic_cast<const jlm::fptype*>(&op1->type());
-		if (!ft) throw util::error("expected floating point type.");
+		auto ft = dynamic_cast<const fptype*>(&op1->type());
+		if (!ft) throw jlm::util::error("expected floating point type.");
 
-		jlm::fpcmp_op op(cmp, ft->size());
+		fpcmp_op op(cmp, ft->size());
 		return tac::create(op, {op1, op2});
 	}
 
 private:
-	jlm::fpcmp cmp_;
+	fpcmp cmp_;
 };
 
 /** \brief UndefValueOperation class
@@ -982,14 +983,14 @@ public:
     return jlm::rvsdg::simple_node::create_normalized(&region, operation, {})[0];
   }
 
-  static std::unique_ptr<jlm::tac>
+  static std::unique_ptr<llvm::tac>
   Create(const jlm::rvsdg::type & type)
   {
     UndefValueOperation operation(type);
     return tac::create(operation, {});
   }
 
-  static std::unique_ptr<jlm::tac>
+  static std::unique_ptr<llvm::tac>
   Create(
     const jlm::rvsdg::type & type,
     const std::string & name)
@@ -998,7 +999,7 @@ public:
     return tac::create(operation, {}, {name});
   }
 
-  static std::unique_ptr<jlm::tac>
+  static std::unique_ptr<llvm::tac>
   Create(std::unique_ptr<tacvariable> result)
   {
     auto & type = result->type();
@@ -1052,7 +1053,7 @@ public:
     return *static_cast<const jlm::rvsdg::valuetype*>(&type);
   }
 
-  static std::unique_ptr<jlm::tac>
+  static std::unique_ptr<llvm::tac>
   Create(const jlm::rvsdg::type & type)
   {
     auto & valueType = CheckAndConvertType(type);
@@ -1077,7 +1078,7 @@ private:
     if (auto valueType = dynamic_cast<const jlm::rvsdg::valuetype*>(&type))
       return *valueType;
 
-    throw util::error("Expected value type.");
+    throw jlm::util::error("Expected value type.");
   }
 };
 
@@ -1091,7 +1092,7 @@ public:
 	~fpbin_op();
 
 	inline
-	fpbin_op(const jlm::fpop & op, const jlm::fpsize & size)
+	fpbin_op(const fpop & op, const fpsize & size)
 	: binary_op({fptype(size), fptype(size)}, {fptype(size)})
 	, op_(op)
 	{}
@@ -1116,33 +1117,33 @@ public:
 		jlm::rvsdg::output * op1,
 		jlm::rvsdg::output * op2) const override;
 
-	inline const jlm::fpop &
+	inline const fpop &
 	fpop() const noexcept
 	{
 		return op_;
 	}
 
-	inline const jlm::fpsize &
+	inline const fpsize &
 	size() const noexcept
 	{
-		return static_cast<const jlm::fptype*>(&result(0).type())->size();
+		return static_cast<const fptype*>(&result(0).type())->size();
 	}
 
-	static std::unique_ptr<jlm::tac>
+	static std::unique_ptr<llvm::tac>
 	create(
-		const jlm::fpop & fpop,
+		const llvm::fpop & fpop,
 		const variable * op1,
 		const variable * op2)
 	{
-		auto ft = dynamic_cast<const jlm::fptype*>(&op1->type());
-		if (!ft) throw util::error("expected floating point type.");
+		auto ft = dynamic_cast<const fptype*>(&op1->type());
+		if (!ft) throw jlm::util::error("expected floating point type.");
 
-		jlm::fpbin_op op(fpop, ft->size());
+		fpbin_op op(fpop, ft->size());
 		return tac::create(op, {op1, op2});
 	}
 
 private:
-	jlm::fpop op_;
+	llvm::fpop op_;
 };
 
 /* fpext operator */
@@ -1153,11 +1154,11 @@ public:
 	~fpext_op();
 
 	inline
-	fpext_op(const jlm::fpsize & srcsize, const jlm::fpsize & dstsize)
+	fpext_op(const fpsize & srcsize, const fpsize & dstsize)
 	: unary_op(fptype(srcsize), fptype(dstsize))
 	{
 		if (srcsize == fpsize::flt && dstsize == fpsize::half)
-			throw util::error("destination type size must be bigger than source type size.");
+			throw jlm::util::error("destination type size must be bigger than source type size.");
 	}
 
 	inline
@@ -1166,147 +1167,14 @@ public:
 		std::unique_ptr<jlm::rvsdg::type> dsttype)
 	: unary_op(*srctype, *dsttype)
 	{
-		auto st = dynamic_cast<const jlm::fptype*>(srctype.get());
-		if (!st) throw util::error("expected floating point type.");
-
-		auto dt = dynamic_cast<const jlm::fptype*>(dsttype.get());
-		if (!dt) throw util::error("expected floating point type.");
-
-		if (st->size() == fpsize::flt && dt->size() == fpsize::half)
-			throw util::error("destination type size must be bigger than source type size.");
-	}
-
-	virtual bool
-	operator==(const operation & other) const noexcept override;
-
-	virtual std::string
-	debug_string() const override;
-
-	virtual std::unique_ptr<jlm::rvsdg::operation>
-	copy() const override;
-
-	jlm::rvsdg::unop_reduction_path_t
-	can_reduce_operand(
-		const jlm::rvsdg::output * output) const noexcept override;
-
-	jlm::rvsdg::output *
-	reduce_operand(
-		jlm::rvsdg::unop_reduction_path_t path,
-		jlm::rvsdg::output * output) const override;
-
-	inline const jlm::fpsize &
-	srcsize() const noexcept
-	{
-		return static_cast<const jlm::fptype*>(&argument(0).type())->size();
-	}
-
-	inline const jlm::fpsize &
-	dstsize() const noexcept
-	{
-		return static_cast<const jlm::fptype*>(&result(0).type())->size();
-	}
-
-	static std::unique_ptr<jlm::tac>
-	create(
-		const variable * operand,
-		const jlm::rvsdg::type & type)
-	{
-		auto st = dynamic_cast<const jlm::fptype*>(&operand->type());
-		if (!st) throw util::error("expected floating point type.");
-
-		auto dt = dynamic_cast<const jlm::fptype*>(&type);
-		if (!dt) throw util::error("expected floating point type.");
-
-		jlm::fpext_op op(st->size(), dt->size());
-		return tac::create(op, {operand});
-	}
-};
-
-/* fpneg operator */
-
-class fpneg_op final : public jlm::rvsdg::unary_op {
-public:
-	~fpneg_op() override;
-
-	fpneg_op(const jlm::fpsize & size)
-	: unary_op(fptype(size), fptype(size))
-	{}
-
-	fpneg_op(const jlm::rvsdg::type & type)
-	: unary_op(type, type)
-	{
-		auto st = dynamic_cast<const jlm::fptype*>(&type);
-		if (!st) throw util::error("expected floating point type.");
-	}
-
-	virtual bool
-	operator==(const operation & other) const noexcept override;
-
-	virtual std::string
-	debug_string() const override;
-
-	virtual std::unique_ptr<jlm::rvsdg::operation>
-	copy() const override;
-
-	jlm::rvsdg::unop_reduction_path_t
-	can_reduce_operand(
-		const jlm::rvsdg::output * output) const noexcept override;
-
-	jlm::rvsdg::output *
-	reduce_operand(
-		jlm::rvsdg::unop_reduction_path_t path,
-		jlm::rvsdg::output * output) const override;
-
-	const jlm::fpsize &
-	size() const noexcept
-	{
-		return static_cast<const jlm::fptype*>(&argument(0).type())->size();
-	}
-
-	static std::unique_ptr<jlm::tac>
-	create(const variable * operand)
-	{
-		auto type = dynamic_cast<const jlm::fptype*>(&operand->type());
-		if (!type) throw util::error("expected floating point type.");
-
-		jlm::fpneg_op op(type->size());
-		return tac::create(op, {operand});
-	}
-};
-
-/* fptrunc operator */
-
-class fptrunc_op final : public jlm::rvsdg::unary_op {
-public:
-	virtual
-	~fptrunc_op();
-
-	inline
-	fptrunc_op(const fpsize & srcsize, const fpsize & dstsize)
-	: unary_op(fptype(srcsize), fptype(dstsize))
-	{
-		if (srcsize == fpsize::half
-		|| (srcsize == fpsize::flt && dstsize != fpsize::half)
-		|| (srcsize == fpsize::dbl && dstsize == fpsize::dbl))
-			throw util::error("destination tpye size must be smaller than source size type.");
-	}
-
-	inline
-	fptrunc_op(
-		std::unique_ptr<jlm::rvsdg::type> srctype,
-		std::unique_ptr<jlm::rvsdg::type> dsttype)
-	: unary_op(*srctype, *dsttype)
-	{
 		auto st = dynamic_cast<const fptype*>(srctype.get());
-		if (!st) throw util::error("expected floating point type.");
+		if (!st) throw jlm::util::error("expected floating point type.");
 
 		auto dt = dynamic_cast<const fptype*>(dsttype.get());
-		if (!dt) throw util::error("expected floating point type.");
+		if (!dt) throw jlm::util::error("expected floating point type.");
 
-		if (st->size() == fpsize::half
-		|| (st->size() == fpsize::flt && dt->size() != fpsize::half)
-		|| (st->size() == fpsize::dbl && dt->size() == fpsize::dbl))
-			throw util::error("destination tpye size must be smaller than source size type.");
+		if (st->size() == fpsize::flt && dt->size() == fpsize::half)
+			throw jlm::util::error("destination type size must be bigger than source type size.");
 	}
 
 	virtual bool
@@ -1339,16 +1207,149 @@ public:
 		return static_cast<const fptype*>(&result(0).type())->size();
 	}
 
-	static std::unique_ptr<jlm::tac>
+	static std::unique_ptr<llvm::tac>
 	create(
 		const variable * operand,
 		const jlm::rvsdg::type & type)
 	{
 		auto st = dynamic_cast<const fptype*>(&operand->type());
-		if (!st) throw util::error("expected floating point type.");
+		if (!st) throw jlm::util::error("expected floating point type.");
 
 		auto dt = dynamic_cast<const fptype*>(&type);
-		if (!dt) throw util::error("expected floating point type.");
+		if (!dt) throw jlm::util::error("expected floating point type.");
+
+		fpext_op op(st->size(), dt->size());
+		return tac::create(op, {operand});
+	}
+};
+
+/* fpneg operator */
+
+class fpneg_op final : public jlm::rvsdg::unary_op {
+public:
+	~fpneg_op() override;
+
+	fpneg_op(const fpsize & size)
+	: unary_op(fptype(size), fptype(size))
+	{}
+
+	fpneg_op(const jlm::rvsdg::type & type)
+	: unary_op(type, type)
+	{
+		auto st = dynamic_cast<const fptype*>(&type);
+		if (!st) throw jlm::util::error("expected floating point type.");
+	}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jlm::rvsdg::operation>
+	copy() const override;
+
+	jlm::rvsdg::unop_reduction_path_t
+	can_reduce_operand(
+		const jlm::rvsdg::output * output) const noexcept override;
+
+	jlm::rvsdg::output *
+	reduce_operand(
+		jlm::rvsdg::unop_reduction_path_t path,
+		jlm::rvsdg::output * output) const override;
+
+	const fpsize &
+	size() const noexcept
+	{
+		return static_cast<const fptype*>(&argument(0).type())->size();
+	}
+
+	static std::unique_ptr<llvm::tac>
+	create(const variable * operand)
+	{
+		auto type = dynamic_cast<const fptype*>(&operand->type());
+		if (!type) throw jlm::util::error("expected floating point type.");
+
+		fpneg_op op(type->size());
+		return tac::create(op, {operand});
+	}
+};
+
+/* fptrunc operator */
+
+class fptrunc_op final : public jlm::rvsdg::unary_op {
+public:
+	virtual
+	~fptrunc_op();
+
+	inline
+	fptrunc_op(const fpsize & srcsize, const fpsize & dstsize)
+	: unary_op(fptype(srcsize), fptype(dstsize))
+	{
+		if (srcsize == fpsize::half
+		|| (srcsize == fpsize::flt && dstsize != fpsize::half)
+		|| (srcsize == fpsize::dbl && dstsize == fpsize::dbl))
+			throw jlm::util::error("destination tpye size must be smaller than source size type.");
+	}
+
+	inline
+	fptrunc_op(
+		std::unique_ptr<jlm::rvsdg::type> srctype,
+		std::unique_ptr<jlm::rvsdg::type> dsttype)
+	: unary_op(*srctype, *dsttype)
+	{
+		auto st = dynamic_cast<const fptype*>(srctype.get());
+		if (!st) throw jlm::util::error("expected floating point type.");
+
+		auto dt = dynamic_cast<const fptype*>(dsttype.get());
+		if (!dt) throw jlm::util::error("expected floating point type.");
+
+		if (st->size() == fpsize::half
+		|| (st->size() == fpsize::flt && dt->size() != fpsize::half)
+		|| (st->size() == fpsize::dbl && dt->size() == fpsize::dbl))
+			throw jlm::util::error("destination tpye size must be smaller than source size type.");
+	}
+
+	virtual bool
+	operator==(const operation & other) const noexcept override;
+
+	virtual std::string
+	debug_string() const override;
+
+	virtual std::unique_ptr<jlm::rvsdg::operation>
+	copy() const override;
+
+	jlm::rvsdg::unop_reduction_path_t
+	can_reduce_operand(
+		const jlm::rvsdg::output * output) const noexcept override;
+
+	jlm::rvsdg::output *
+	reduce_operand(
+		jlm::rvsdg::unop_reduction_path_t path,
+		jlm::rvsdg::output * output) const override;
+
+	inline const fpsize &
+	srcsize() const noexcept
+	{
+		return static_cast<const fptype*>(&argument(0).type())->size();
+	}
+
+	inline const fpsize &
+	dstsize() const noexcept
+	{
+		return static_cast<const fptype*>(&result(0).type())->size();
+	}
+
+	static std::unique_ptr<llvm::tac>
+	create(
+		const variable * operand,
+		const jlm::rvsdg::type & type)
+	{
+		auto st = dynamic_cast<const fptype*>(&operand->type());
+		if (!st) throw jlm::util::error("expected floating point type.");
+
+		auto dt = dynamic_cast<const fptype*>(&type);
+		if (!dt) throw jlm::util::error("expected floating point type.");
 
 		fptrunc_op op(st->size(), dt->size());
 		return tac::create(op, {operand});
@@ -1384,14 +1385,14 @@ public:
 	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
-	static std::unique_ptr<jlm::tac>
+	static std::unique_ptr<llvm::tac>
 	create(const std::vector<const variable*> & arguments)
 	{
 		std::vector<std::unique_ptr<jlm::rvsdg::type>> operands;
 		for (const auto & argument : arguments)
 			operands.push_back(argument->type().copy());
 
-		jlm::valist_op op(std::move(operands));
+		valist_op op(std::move(operands));
 		return tac::create(op, arguments);
 	}
 
@@ -1456,7 +1457,7 @@ public:
 		jlm::rvsdg::unop_reduction_path_t path,
 		jlm::rvsdg::output * output) const override;
 
-	static std::unique_ptr<jlm::tac>
+	static std::unique_ptr<llvm::tac>
 	create(
 		const variable * operand,
 		const jlm::rvsdg::type & type)
@@ -1481,10 +1482,10 @@ private:
 	check_types(const jlm::rvsdg::type & otype, const jlm::rvsdg::type & rtype)
 	{
 		auto ot = dynamic_cast<const jlm::rvsdg::valuetype*>(&otype);
-		if (!ot) throw util::error("expected value type.");
+		if (!ot) throw jlm::util::error("expected value type.");
 
 		auto rt = dynamic_cast<const jlm::rvsdg::valuetype*>(&rtype);
-		if (!rt) throw util::error("expected value type.");
+		if (!rt) throw jlm::util::error("expected value type.");
 
 		return std::make_pair(ot, rt);
 	}
@@ -1517,13 +1518,13 @@ public:
 		return *static_cast<const StructType*>(&result(0).type());
 	}
 
-	static std::unique_ptr<jlm::tac>
+	static std::unique_ptr<llvm::tac>
 	create(
 		const std::vector<const variable*> & elements,
 		const jlm::rvsdg::type & type)
 	{
 		auto rt = dynamic_cast<const StructType*>(&type);
-		if (!rt) throw util::error("expected struct type.");
+		if (!rt) throw jlm::util::error("expected struct type.");
 
 		ConstantStruct op(*rt);
 		return tac::create(op, elements);
@@ -1553,7 +1554,7 @@ public:
 	: unary_op(otype, rtype)
 	{
 		if (otype.nbits() < rtype.nbits())
-			throw util::error("expected operand's #bits to be larger than results' #bits.");
+			throw jlm::util::error("expected operand's #bits to be larger than results' #bits.");
 	}
 
 	inline
@@ -1563,13 +1564,13 @@ public:
 	: unary_op(*optype, *restype)
 	{
 		auto ot = dynamic_cast<const jlm::rvsdg::bittype*>(optype.get());
-		if (!ot) throw util::error("expected bits type.");
+		if (!ot) throw jlm::util::error("expected bits type.");
 
 		auto rt = dynamic_cast<const jlm::rvsdg::bittype*>(restype.get());
-		if (!rt) throw util::error("expected bits type.");
+		if (!rt) throw jlm::util::error("expected bits type.");
 
 		if (ot->nbits() < rt->nbits())
-			throw util::error("expected operand's #bits to be larger than results' #bits.");
+			throw jlm::util::error("expected operand's #bits to be larger than results' #bits.");
 	}
 
 	virtual bool
@@ -1601,16 +1602,16 @@ public:
 		return static_cast<const jlm::rvsdg::bittype*>(&result(0).type())->nbits();
 	}
 
-	static std::unique_ptr<jlm::tac>
+	static std::unique_ptr<llvm::tac>
 	create(
 		const variable * operand,
 		const jlm::rvsdg::type & type)
 	{
 		auto ot = dynamic_cast<const jlm::rvsdg::bittype*>(&operand->type());
-		if (!ot) throw util::error("expected bits type.");
+		if (!ot) throw jlm::util::error("expected bits type.");
 
 		auto rt = dynamic_cast<const jlm::rvsdg::bittype*>(&type);
-		if (!rt) throw util::error("expected bits type.");
+		if (!rt) throw jlm::util::error("expected bits type.");
 
 		trunc_op op(*ot, *rt);
 		return tac::create(op, {operand});
@@ -1622,7 +1623,7 @@ public:
 		jlm::rvsdg::output * operand)
 	{
 		auto ot = dynamic_cast<const jlm::rvsdg::bittype*>(&operand->type());
-		if (!ot) throw util::error("expected bits type.");
+		if (!ot) throw jlm::util::error("expected bits type.");
 
 		trunc_op op(*ot, jlm::rvsdg::bittype(ndstbits));
 		return jlm::rvsdg::simple_node::create_normalized(operand->region(), op, {operand})[0];
@@ -1638,7 +1639,7 @@ public:
 	~uitofp_op();
 
 	inline
-	uitofp_op(const jlm::rvsdg::bittype & srctype, const jlm::fptype & dsttype)
+	uitofp_op(const jlm::rvsdg::bittype & srctype, const fptype & dsttype)
 	: unary_op(srctype, dsttype)
 	{}
 
@@ -1649,10 +1650,10 @@ public:
 	: unary_op(*optype, *restype)
 	{
 		auto st = dynamic_cast<const jlm::rvsdg::bittype*>(optype.get());
-		if (!st) throw util::error("expected bits type.");
+		if (!st) throw jlm::util::error("expected bits type.");
 
-		auto rt = dynamic_cast<const jlm::fptype*>(restype.get());
-		if (!rt) throw util::error("expected floating point type.");
+		auto rt = dynamic_cast<const fptype*>(restype.get());
+		if (!rt) throw jlm::util::error("expected floating point type.");
 	}
 
 	virtual bool
@@ -1672,16 +1673,16 @@ public:
 		jlm::rvsdg::unop_reduction_path_t path,
 		jlm::rvsdg::output * operand) const override;
 
-	static std::unique_ptr<jlm::tac>
+	static std::unique_ptr<llvm::tac>
 	create(
 		const variable * operand,
 		const jlm::rvsdg::type & type)
 	{
 		auto st = dynamic_cast<const jlm::rvsdg::bittype*>(&operand->type());
-		if (!st) throw util::error("expected bits type.");
+		if (!st) throw jlm::util::error("expected bits type.");
 
-		auto rt = dynamic_cast<const jlm::fptype*>(&type);
-		if (!rt) throw util::error("expected floating point type.");
+		auto rt = dynamic_cast<const fptype*>(&type);
+		if (!rt) throw jlm::util::error("expected floating point type.");
 
 		uitofp_op op(*st, *rt);
 		return tac::create(op, {operand});
@@ -1696,7 +1697,7 @@ public:
 	~sitofp_op();
 
 	inline
-	sitofp_op(const jlm::rvsdg::bittype & srctype, const jlm::fptype & dsttype)
+	sitofp_op(const jlm::rvsdg::bittype & srctype, const fptype & dsttype)
 	: unary_op(srctype, dsttype)
 	{}
 
@@ -1707,10 +1708,10 @@ public:
 	: unary_op(*srctype, *dsttype)
 	{
 		auto st = dynamic_cast<const jlm::rvsdg::bittype*>(srctype.get());
-		if (!st) throw util::error("expected bits type.");
+		if (!st) throw jlm::util::error("expected bits type.");
 
-		auto rt = dynamic_cast<const jlm::fptype*>(dsttype.get());
-		if (!rt) throw util::error("expected floating point type.");
+		auto rt = dynamic_cast<const fptype*>(dsttype.get());
+		if (!rt) throw jlm::util::error("expected floating point type.");
 	}
 
 	virtual bool
@@ -1731,16 +1732,16 @@ public:
 		jlm::rvsdg::unop_reduction_path_t path,
 		jlm::rvsdg::output * output) const override;
 
-	static std::unique_ptr<jlm::tac>
+	static std::unique_ptr<llvm::tac>
 	create(
 		const variable * operand,
 		const jlm::rvsdg::type & type)
 	{
 		auto st = dynamic_cast<const jlm::rvsdg::bittype*>(&operand->type());
-		if (!st) throw util::error("expected bits type.");
+		if (!st) throw jlm::util::error("expected bits type.");
 
-		auto rt = dynamic_cast<const jlm::fptype*>(&type);
-		if (!rt) throw util::error("expected floating point type.");
+		auto rt = dynamic_cast<const fptype*>(&type);
+		if (!rt) throw jlm::util::error("expected floating point type.");
 
 		sitofp_op op(*st, *rt);
 		return tac::create(op, {operand});
@@ -1758,7 +1759,7 @@ public:
 	: jlm::rvsdg::simple_op(std::vector<jlm::rvsdg::port>(size, type), {arraytype(type, size)})
 	{
 		if (size == 0)
-			throw util::error("size equals zero.\n");
+			throw jlm::util::error("size equals zero.\n");
 	}
 
 	virtual bool
@@ -1782,14 +1783,14 @@ public:
 		return static_cast<const arraytype*>(&result(0).type())->element_type();
 	}
 
-	static std::unique_ptr<jlm::tac>
+	static std::unique_ptr<llvm::tac>
 	create(const std::vector<const variable*> & elements)
 	{
 		if (elements.size() == 0)
-			throw util::error("expected at least one element.\n");
+			throw jlm::util::error("expected at least one element.\n");
 
 		auto vt = dynamic_cast<const jlm::rvsdg::valuetype*>(&elements[0]->type());
-		if (!vt) throw util::error("expected value type.\n");
+		if (!vt) throw jlm::util::error("expected value type.\n");
 
 		ConstantArray op(*vt, elements.size());
 		return tac::create(op, elements);
@@ -1810,7 +1811,7 @@ public:
     auto at = dynamic_cast<const arraytype*>(&type);
     auto vt = dynamic_cast<const vectortype*>(&type);
     if (!st && !at && !vt)
-      throw util::error("expected array, struct, or vector type.\n");
+      throw jlm::util::error("expected array, struct, or vector type.\n");
   }
 
   virtual bool
@@ -1822,7 +1823,7 @@ public:
   virtual std::unique_ptr<jlm::rvsdg::operation>
   copy() const override;
 
-  static std::unique_ptr<jlm::tac>
+  static std::unique_ptr<llvm::tac>
   create(const jlm::rvsdg::type & type)
   {
     ConstantAggregateZero op(type);
@@ -1862,16 +1863,16 @@ public:
 	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
-	static inline std::unique_ptr<jlm::tac>
+	static inline std::unique_ptr<llvm::tac>
 	create(
-		const jlm::variable * vector,
-		const jlm::variable * index)
+		const llvm::variable * vector,
+		const llvm::variable * index)
 	{
 		auto vt = dynamic_cast<const vectortype*>(&vector->type());
-		if (!vt) throw util::error("expected vector type.");
+		if (!vt) throw jlm::util::error("expected vector type.");
 
 		auto bt = dynamic_cast<const jlm::rvsdg::bittype*>(&index->type());
-		if (!bt) throw util::error("expected bit type.");
+		if (!bt) throw jlm::util::error("expected bit type.");
 
 		extractelement_op op(*vt, *bt);
 		return tac::create(op, {vector, index});
@@ -1907,13 +1908,13 @@ public:
 	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
-    const llvm::ArrayRef<int>
+    const ::llvm::ArrayRef<int>
     Mask() const
     {
         return Mask_;
     }
 
-	static std::unique_ptr<jlm::tac>
+	static std::unique_ptr<llvm::tac>
 	create(
             const variable * v1,
             const variable * v2,
@@ -1927,7 +1928,7 @@ public:
         && is<scalablevectortype>(v2->type()))
             return CreateShuffleVectorTac<scalablevectortype>(v1, v2, mask);
 
-        throw util::error("Expected vector types as operands.");
+        throw jlm::util::error("Expected vector types as operands.");
 	}
 
 private:
@@ -1967,13 +1968,13 @@ public:
 	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
-	static inline std::unique_ptr<jlm::tac>
+	static inline std::unique_ptr<llvm::tac>
 	create(
 		const std::vector<const variable*> & operands,
 		const jlm::rvsdg::type & type)
 	{
 		auto vt = dynamic_cast<const vectortype*>(&type);
-		if (!vt) throw util::error("expected vector type.");
+		if (!vt) throw jlm::util::error("expected vector type.");
 
 		constantvector_op op(*vt);
 		return tac::create(op, operands);
@@ -1997,7 +1998,7 @@ public:
 		if (vectype.type() != vtype) {
 			auto received = vtype.debug_string();
 			auto expected = vectype.type().debug_string();
-			throw util::error(util::strfmt("expected ", expected, ", got ", received));
+			throw jlm::util::error(jlm::util::strfmt("expected ", expected, ", got ", received));
 		}
 	}
 
@@ -2010,20 +2011,20 @@ public:
 	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
-	static inline std::unique_ptr<jlm::tac>
+	static inline std::unique_ptr<llvm::tac>
 	create(
-		const jlm::variable * vector,
-		const jlm::variable * value,
-		const jlm::variable * index)
+		const llvm::variable * vector,
+		const llvm::variable * value,
+		const llvm::variable * index)
 	{
 		auto vct = dynamic_cast<const vectortype*>(&vector->type());
-		if (!vct) throw util::error("expected vector type.");
+		if (!vct) throw jlm::util::error("expected vector type.");
 
 		auto vt = dynamic_cast<const jlm::rvsdg::valuetype*>(&value->type());
-		if (!vt) throw util::error("expected value type.");
+		if (!vt) throw jlm::util::error("expected value type.");
 
 		auto bt = dynamic_cast<const jlm::rvsdg::bittype*>(&index->type());
-		if (!bt) throw util::error("expected bit type.");
+		if (!bt) throw jlm::util::error("expected bit type.");
 
 		insertelement_op op(*vct, *vt, *bt);
 		return tac::create(op, {vector, value, index});
@@ -2048,13 +2049,13 @@ public:
 		if (operand.type() != op.argument(0).type()) {
 			auto received = operand.type().debug_string();
 			auto expected = op.argument(0).type().debug_string();
-			throw util::error(util::strfmt("expected ", expected, ", got ", received));
+			throw jlm::util::error(jlm::util::strfmt("expected ", expected, ", got ", received));
 		}
 
 		if (result.type() != op.result(0).type()) {
 			auto received = result.type().debug_string();
 			auto expected = op.result(0).type().debug_string();
-			throw util::error(util::strfmt("expected ", expected, ", got ", received));
+			throw jlm::util::error(jlm::util::strfmt("expected ", expected, ", got ", received));
 		}
 	}
 
@@ -2103,15 +2104,15 @@ public:
 	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
-	static inline std::unique_ptr<jlm::tac>
+	static inline std::unique_ptr<llvm::tac>
 	create(
 		const jlm::rvsdg::unary_op & unop,
-		const jlm::variable * operand,
+		const llvm::variable * operand,
 		const jlm::rvsdg::type & type)
 	{
 		auto vct1 = dynamic_cast<const vectortype*>(&operand->type());
 		auto vct2 = dynamic_cast<const vectortype*>(&type);
-		if (!vct1 || !vct2) throw util::error("expected vector type.");
+		if (!vct1 || !vct2) throw jlm::util::error("expected vector type.");
 
 		vectorunary_op op(unop, *vct1, *vct2);
 		return tac::create(op, {operand});
@@ -2138,18 +2139,18 @@ public:
 	, op_(binop.copy())
 	{
 		if (op1 != op2)
-			throw util::error("expected the same vector types.");
+			throw jlm::util::error("expected the same vector types.");
 
 		if (op1.type() != binop.argument(0).type()) {
 			auto received = op1.type().debug_string();
 			auto expected = binop.argument(0).type().debug_string();
-			throw util::error(util::strfmt("expected ", expected, ", got ", received));
+			throw jlm::util::error(jlm::util::strfmt("expected ", expected, ", got ", received));
 		}
 
 		if (result.type() != binop.result(0).type()) {
 			auto received = result.type().debug_string();
 			auto expected = binop.result(0).type().debug_string();
-			throw util::error(util::strfmt("expected ", expected, ", got ", received));
+			throw jlm::util::error(jlm::util::strfmt("expected ", expected, ", got ", received));
 		}
 	}
 
@@ -2198,17 +2199,17 @@ public:
 	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
-	static inline std::unique_ptr<jlm::tac>
+	static inline std::unique_ptr<llvm::tac>
 	create(
 		const jlm::rvsdg::binary_op & binop,
-		const jlm::variable * op1,
-		const jlm::variable * op2,
+		const llvm::variable * op1,
+		const llvm::variable * op2,
 		const jlm::rvsdg::type & type)
 	{
 		auto vct1 = dynamic_cast<const vectortype*>(&op1->type());
 		auto vct2 = dynamic_cast<const vectortype*>(&op2->type());
 		auto vct3 = dynamic_cast<const vectortype*>(&type);
-		if (!vct1 || !vct2 || !vct3) throw util::error("expected vector type.");
+		if (!vct1 || !vct2 || !vct3) throw jlm::util::error("expected vector type.");
 
 		vectorbinary_op op(binop, *vct1, *vct2, *vct3);
 		return tac::create(op, {op1, op2});
@@ -2255,10 +2256,10 @@ public:
 	Create(const std::vector<const variable*> & elements)
 	{
         if (elements.empty())
-            throw util::error("Expected at least one element.");
+            throw jlm::util::error("Expected at least one element.");
 
         auto vt = dynamic_cast<const jlm::rvsdg::valuetype*>(&elements[0]->type());
-        if (!vt) throw util::error("Expected value type.");
+        if (!vt) throw jlm::util::error("Expected value type.");
 
         constant_data_vector_op op(fixedvectortype(*vt, elements.size()));
         return tac::create(op, elements);
@@ -2281,7 +2282,7 @@ public:
 	, indices_(indices)
 	{
 		if (indices.empty())
-			throw util::error("expected at least one index.");
+			throw jlm::util::error("expected at least one index.");
 	}
 
 	virtual bool
@@ -2311,9 +2312,9 @@ public:
 		return *static_cast<const jlm::rvsdg::valuetype*>(&argument(0).type());
 	}
 
-	static inline std::unique_ptr<jlm::tac>
+	static inline std::unique_ptr<llvm::tac>
 	create(
-		const jlm::variable * aggregate,
+		const llvm::variable * aggregate,
 		const std::vector<unsigned> & indices)
 	{
 		ExtractValue op(aggregate->type(), indices);
@@ -2330,16 +2331,16 @@ private:
 		for (const auto & index : indices) {
 			if (auto st = dynamic_cast<const StructType*>(type)) {
 				if (index >= st->GetDeclaration().nelements())
-					throw util::error("extractvalue index out of bound.");
+					throw jlm::util::error("extractvalue index out of bound.");
 
 				type = &st->GetDeclaration().element(index);
 			} else if (auto at = dynamic_cast<const arraytype*>(type)) {
 				if (index >= at->nelements())
-					throw util::error("extractvalue index out of bound.");
+					throw jlm::util::error("extractvalue index out of bound.");
 
 				type = &at->element_type();
 			} else
-				throw util::error("expected struct or array type.");
+				throw jlm::util::error("expected struct or array type.");
 		}
 
 		return {*type};
@@ -2374,7 +2375,7 @@ public:
 		size_t nresults)
 	{
 		if (operands.empty())
-			throw util::error("Insufficient number of operands.");
+			throw jlm::util::error("Insufficient number of operands.");
 
 		auto region = operands.front()->region();
 		loopstatemux_op op(operands.size(), nresults);
@@ -2392,7 +2393,7 @@ public:
 	create_merge(const std::vector<jlm::rvsdg::output*> & operands)
 	{
 		if (operands.empty())
-			throw util::error("Insufficient number of operands.");
+			throw jlm::util::error("Insufficient number of operands.");
 
 		loopstatemux_op op(operands.size(), 1);
 		auto region = operands.front()->region();
@@ -2446,7 +2447,7 @@ public:
 	Create(const std::vector<jlm::rvsdg::output*> & operands)
 	{
 		if (operands.empty())
-			throw util::error("Insufficient number of operands.");
+			throw jlm::util::error("Insufficient number of operands.");
 
 		MemStateMergeOperator op(operands.size());
 		auto region = operands.front()->region();
@@ -2457,7 +2458,7 @@ public:
 	Create(const std::vector<const variable*> & operands)
 	{
 		if (operands.empty())
-			throw util::error("Insufficient number of operands.");
+			throw jlm::util::error("Insufficient number of operands.");
 
 		MemStateMergeOperator op(operands.size());
 		return tac::create(op, operands);
@@ -2487,7 +2488,7 @@ public:
 	Create(jlm::rvsdg::output * operand, size_t nresults)
 	{
 		if (nresults == 0)
-			throw util::error("Insufficient number of results.");
+			throw jlm::util::error("Insufficient number of results.");
 
 		MemStateSplitOperator op(nresults);
 		return jlm::rvsdg::simple_node::create_normalized(operand->region(), op, {operand});
@@ -2527,13 +2528,13 @@ public:
 		return FunctionType({&argument(0).type()}, {&result(0).type(), &result(1).type()});
 	}
 
-	static std::unique_ptr<jlm::tac>
+	static std::unique_ptr<llvm::tac>
 	create(const variable * size)
 	{
 		auto bt = dynamic_cast<const jlm::rvsdg::bittype*>(&size->type());
-		if (!bt) throw util::error("expected bits type.");
+		if (!bt) throw jlm::util::error("expected bits type.");
 
-		jlm::malloc_op op(*bt);
+		malloc_op op(*bt);
 		return tac::create(op, {size});
 	}
 
@@ -2541,9 +2542,9 @@ public:
 	create(jlm::rvsdg::output * size)
 	{
 		auto bt = dynamic_cast<const jlm::rvsdg::bittype*>(&size->type());
-		if (!bt) throw util::error("expected bits type.");
+		if (!bt) throw jlm::util::error("expected bits type.");
 
-		jlm::malloc_op op(*bt);
+		malloc_op op(*bt);
 		return jlm::rvsdg::simple_node::create_normalized(size->region(), op, {size});
 	}
 };
@@ -2575,14 +2576,14 @@ public:
 		return FunctionType({&argument(0).type()}, {&result(0).type(), &result(1).type()});
 	}
 
-	static std::unique_ptr<jlm::tac>
+	static std::unique_ptr<llvm::tac>
 	create(
 		const variable * pointer,
 		const std::vector<const variable*> & memstates,
 		const variable * iostate)
 	{
 		if (memstates.empty())
-			throw util::error("Number of memory states cannot be zero.");
+			throw jlm::util::error("Number of memory states cannot be zero.");
 
 		std::vector<const variable*> operands;
 		operands.push_back(pointer);
@@ -2600,7 +2601,7 @@ public:
 		jlm::rvsdg::output * iostate)
 	{
 		if (memstates.empty())
-			throw util::error("Number of memory states cannot be zero.");
+			throw jlm::util::error("Number of memory states cannot be zero.");
 
 		std::vector<jlm::rvsdg::output*> operands;
 		operands.push_back(pointer);
@@ -2656,7 +2657,7 @@ public:
 	virtual std::unique_ptr<jlm::rvsdg::operation>
 	copy() const override;
 
-	static std::unique_ptr<jlm::tac>
+	static std::unique_ptr<llvm::tac>
 	create(
 		const variable * destination,
 		const variable * source,
@@ -2700,10 +2701,10 @@ private:
 	{
 		if (length != jlm::rvsdg::bit32
 		&& length != jlm::rvsdg::bit64)
-			throw util::error("Expected 32 bit or 64 bit integer type.");
+			throw jlm::util::error("Expected 32 bit or 64 bit integer type.");
 
 		if (nMemoryStates == 0)
-			throw util::error("Number of memory states cannot be zero.");
+			throw jlm::util::error("Number of memory states cannot be zero.");
 
     PointerType pointerType;
 		std::vector<jlm::rvsdg::port> ports = {pointerType, pointerType, length, jlm::rvsdg::bit1};

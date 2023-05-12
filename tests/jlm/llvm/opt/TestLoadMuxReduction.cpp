@@ -14,7 +14,7 @@
 static void
 test_load_mux_reduction()
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   jlm::valuetype vt;
   PointerType pt;
@@ -53,7 +53,7 @@ test_load_mux_reduction()
   assert(load->input(3)->origin() == s3);
 
   auto merge = jlm::rvsdg::node_output::node(ex2->origin());
-  assert(is<jlm::MemStateMergeOperator>(merge));
+  assert(is<MemStateMergeOperator>(merge));
   assert(merge->ninputs() == 3);
   for (size_t n = 0; n < merge->ninputs(); n++) {
     auto node = jlm::rvsdg::node_output::node(merge->input(n)->origin());
@@ -67,7 +67,7 @@ test_load_mux_reduction2()
   /*
    * Arrange
    */
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   jlm::valuetype vt;
   PointerType pt;

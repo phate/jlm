@@ -16,16 +16,16 @@
 static int
 test()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
-	valuetype vt;
-	test_op op({}, {&vt});
+	jlm::valuetype vt;
+	jlm::test_op op({}, {&vt});
 
 	/* setup cfg */
 
-	ipgraph_module im(util::filepath(""), "", "");
+	ipgraph_module im(jlm::util::filepath(""), "", "");
 
-	jlm::cfg cfg(im);
+	jlm::llvm::cfg cfg(im);
 	auto arg = cfg.entry()->append_argument(argument::create("arg", vt));
 	auto bb0 = basic_block::create(cfg);
 	auto bb1 = basic_block::create(cfg);

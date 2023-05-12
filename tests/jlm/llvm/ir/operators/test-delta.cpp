@@ -15,13 +15,13 @@
 static int
 test()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	/* setup graph */
 
-	valuetype vt;
+	jlm::valuetype vt;
 	PointerType pt;
-	RvsdgModule rm(util::filepath(""), "", "");
+	RvsdgModule rm(jlm::util::filepath(""), "", "");
 
 	auto imp = rm.Rvsdg().add_import({vt, ""});
 
@@ -33,7 +33,7 @@ test()
     "",
 		true);
 	auto dep = delta1->add_ctxvar(imp);
-	auto d1 = delta1->finalize(create_testop(delta1->subregion(), {dep}, {&vt})[0]);
+	auto d1 = delta1->finalize(jlm::create_testop(delta1->subregion(), {dep}, {&vt})[0]);
 
 	auto delta2 = delta::node::Create(
     rm.Rvsdg().root(),
@@ -42,7 +42,7 @@ test()
 		linkage::internal_linkage,
     "",
 		false);
-	auto d2 = delta2->finalize(create_testop(delta2->subregion(), {}, {&vt})[0]);
+	auto d2 = delta2->finalize(jlm::create_testop(delta2->subregion(), {}, {&vt})[0]);
 
   rm.Rvsdg().add_export(d1, {d1->type(), ""});
   rm.Rvsdg().add_export(d2, {d2->type(), ""});

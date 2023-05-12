@@ -15,7 +15,7 @@ namespace jlm{
 		add_sinks(rvsdg::region *region);
 
 		void
-		add_sinks(jlm::RvsdgModule &rm);
+		add_sinks(jlm::llvm::RvsdgModule &rm);
 	}
 }
 #endif //JLM_HLS_BACKEND_RVSDG2RHLS_ADD_SINKS_HPP

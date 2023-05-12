@@ -5,7 +5,8 @@
 
 #include <jlm/llvm/ir/attribute.hpp>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 /* attribute class */
 

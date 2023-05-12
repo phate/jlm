@@ -14,7 +14,8 @@
 #include <memory>
 #include <vector>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 /** \brief Function type class
  *
@@ -86,8 +87,8 @@ class FunctionType final : public jlm::rvsdg::valuetype {
     std::vector<std::unique_ptr<jlm::rvsdg::type>>::const_iterator It_;
   };
 
-  using ArgumentConstRange = util::iterator_range<TypeConstIterator>;
-  using ResultConstRange = util::iterator_range<TypeConstIterator>;
+  using ArgumentConstRange = jlm::util::iterator_range<TypeConstIterator>;
+  using ResultConstRange = jlm::util::iterator_range<TypeConstIterator>;
 
 public:
   ~FunctionType() noexcept override;
@@ -197,24 +198,24 @@ public:
 	{}
 
 	inline
-	arraytype(const jlm::arraytype & other)
+	arraytype(const arraytype & other)
 	: jlm::rvsdg::valuetype(other)
 	, nelements_(other.nelements_)
 	, type_(other.type_->copy())
 	{}
 
 	inline
-	arraytype(jlm::arraytype && other)
+	arraytype(arraytype && other)
 	: jlm::rvsdg::valuetype(other)
 	, nelements_(other.nelements_)
 	, type_(std::move(other.type_))
 	{}
 
 	inline arraytype &
-	operator=(const jlm::arraytype &) = delete;
+	operator=(const arraytype &) = delete;
 
 	inline arraytype &
-	operator=(jlm::arraytype &&) = delete;
+	operator=(arraytype &&) = delete;
 
 	virtual std::string
 	debug_string() const override;
@@ -246,7 +247,7 @@ static inline std::unique_ptr<jlm::rvsdg::type>
 create_arraytype(const jlm::rvsdg::type & type, size_t nelements)
 {
 	auto vt = dynamic_cast<const jlm::rvsdg::valuetype*>(&type);
-	if (!vt) throw util::error("expected value type.");
+	if (!vt) throw jlm::util::error("expected value type.");
 
 	return std::unique_ptr<jlm::rvsdg::type>(new arraytype(*vt, nelements));
 }
@@ -275,14 +276,14 @@ public:
 	virtual std::unique_ptr<jlm::rvsdg::type>
 	copy() const override;
 
-	inline const jlm::fpsize &
+	inline const fpsize &
 	size() const noexcept
 	{
 		return size_;
 	}
 
 private:
-	jlm::fpsize size_;
+	fpsize size_;
 };
 
 /* vararg type */
@@ -310,7 +311,7 @@ public:
 static inline bool
 is_varargtype(const jlm::rvsdg::type & type)
 {
-	return dynamic_cast<const jlm::varargtype*>(&type) != nullptr;
+	return dynamic_cast<const varargtype*>(&type) != nullptr;
 }
 
 static inline std::unique_ptr<jlm::rvsdg::type>

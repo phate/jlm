@@ -7,7 +7,8 @@
 
 #include <sstream>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 /* tacvariable */
 

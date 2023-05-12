@@ -10,7 +10,8 @@
 
 #include <memory>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 class cfg;
 
@@ -269,7 +270,7 @@ public:
 	virtual
 	~entryaggnode();
 
-	entryaggnode(const std::vector<jlm::argument*> & arguments)
+	entryaggnode(const std::vector<llvm::argument*> & arguments)
 	: arguments_(arguments)
 	{}
 
@@ -279,7 +280,7 @@ public:
 	constiterator
 	end() const;
 
-	const jlm::argument *
+	const llvm::argument *
 	argument(size_t index) const noexcept
 	{
 		JLM_ASSERT(index < narguments());
@@ -296,36 +297,36 @@ public:
 	debug_string() const override;
 
 	static std::unique_ptr<aggnode>
-	create(const std::vector<jlm::argument*> & arguments)
+	create(const std::vector<llvm::argument*> & arguments)
 	{
 		return std::make_unique<entryaggnode>(arguments);
 	}
 
 private:
-	std::vector<jlm::argument*> arguments_;
+	std::vector<llvm::argument*> arguments_;
 };
 
 class entryaggnode::constiterator final
 {
 public:
   using iterator_category = std::forward_iterator_tag;
-  using value_type = const jlm::argument*;
+  using value_type = const llvm::argument*;
   using difference_type = std::ptrdiff_t;
-  using pointer = const jlm::argument**;
-  using reference = const jlm::argument*&;
+  using pointer = const llvm::argument**;
+  using reference = const llvm::argument*&;
 
 	constexpr
-	constiterator(const std::vector<jlm::argument*>::const_iterator & it)
+	constiterator(const std::vector<llvm::argument*>::const_iterator & it)
 	: it_(it)
 	{}
 
-	const jlm::argument &
+	const llvm::argument &
 	operator*() const
 	{
 		return *operator->();
 	}
 
-	const jlm::argument *
+	const llvm::argument *
 	operator->() const
 	{
 		return *it_;
@@ -359,7 +360,7 @@ public:
 	}
 
 private:
-	std::vector<jlm::argument*>::const_iterator it_;
+	std::vector<llvm::argument*>::const_iterator it_;
 };
 
 /* exit node class */
@@ -424,14 +425,14 @@ public:
 	{}
 
 	inline
-	blockaggnode(jlm::taclist && bb)
+	blockaggnode(taclist && bb)
 	: bb_(std::move(bb))
 	{}
 
 	virtual std::string
 	debug_string() const override;
 
-	inline const jlm::taclist &
+	inline const taclist &
 	tacs() const noexcept
 	{
 		return bb_;
@@ -444,13 +445,13 @@ public:
 	}
 
 	static inline std::unique_ptr<aggnode>
-	create(jlm::taclist && bb)
+	create(taclist && bb)
 	{
 		return std::make_unique<blockaggnode>(std::move(bb));
 	}
 
 private:
-	jlm::taclist bb_;
+	taclist bb_;
 };
 
 /* linear node class */
@@ -563,10 +564,10 @@ public:
 * information.
 */
 std::unique_ptr<aggnode>
-aggregate(jlm::cfg & cfg);
+aggregate(llvm::cfg & cfg);
 
 size_t
-ntacs(const jlm::aggnode & root);
+ntacs(const aggnode & root);
 
 }
 

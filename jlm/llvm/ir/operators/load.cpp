@@ -8,7 +8,8 @@
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/store.hpp>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 LoadOperation::~LoadOperation() noexcept
 = default;
@@ -554,13 +555,13 @@ create_load_normal_form(
 	jlm::rvsdg::node_normal_form * parent,
 	jlm::rvsdg::graph * graph)
 {
-	return new jlm::load_normal_form(opclass, parent, graph);
+	return new jlm::llvm::load_normal_form(opclass, parent, graph);
 }
 
 static void __attribute__((constructor))
 register_normal_form()
 {
-	jlm::rvsdg::node_normal_form::register_factory(typeid(jlm::LoadOperation), create_load_normal_form);
+	jlm::rvsdg::node_normal_form::register_factory(typeid(jlm::llvm::LoadOperation), create_load_normal_form);
 }
 
 }

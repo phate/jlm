@@ -17,7 +17,7 @@ jlm::hls::remove_unused_state(jlm::rvsdg::region *region, bool can_remove_argume
 					remove_unused_state(gn->subregion(n), false);
 				}
 				remove_gamma_passthrough(gn);
-			} else if (auto ln = dynamic_cast<jlm::lambda::node *>(node)) {
+			} else if (auto ln = dynamic_cast<llvm::lambda::node *>(node)) {
 				remove_unused_state(structnode->subregion(0), false);
 				remove_lambda_passthrough(ln);
 			} else {
@@ -38,7 +38,7 @@ jlm::hls::remove_unused_state(jlm::rvsdg::region *region, bool can_remove_argume
 }
 
 void
-jlm::hls::remove_unused_state(jlm::RvsdgModule &rm) {
+jlm::hls::remove_unused_state(llvm::RvsdgModule &rm) {
 	auto &graph = rm.Rvsdg();
 	auto root = graph.root();
 	remove_unused_state(root);
@@ -81,8 +81,8 @@ jlm::hls::remove_gamma_passthrough(jlm::rvsdg::gamma_node *gn) {// remove inputs
 	}
 }
 
-jlm::lambda::node *
-jlm::hls::remove_lambda_passthrough(jlm::lambda::node *ln) {
+jlm::llvm::lambda::node *
+jlm::hls::remove_lambda_passthrough(llvm::lambda::node *ln) {
 	auto old_fcttype = ln->type();
 	std::vector<const jlm::rvsdg::type *> new_argument_types;
 	for (size_t i = 0; i < old_fcttype.NumArguments(); ++i) {
@@ -102,8 +102,8 @@ jlm::hls::remove_lambda_passthrough(jlm::lambda::node *ln) {
 			new_result_types.push_back(&old_fcttype.ResultType(i));
 		}
 	}
-	FunctionType new_fcttype(new_argument_types, new_result_types);
-	auto new_lambda = jlm::lambda::node::create(ln->region(), new_fcttype, ln->name(), ln->linkage(),
+	llvm::FunctionType new_fcttype(new_argument_types, new_result_types);
+	auto new_lambda = llvm::lambda::node::create(ln->region(), new_fcttype, ln->name(), ln->linkage(),
 												ln->attributes());
 
 	jlm::rvsdg::substitution_map smap;

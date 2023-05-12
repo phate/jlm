@@ -11,9 +11,10 @@
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
-class ivtstat final : public util::Statistics {
+class ivtstat final : public jlm::util::Statistics {
 public:
 	virtual
 	~ivtstat()
@@ -44,7 +45,7 @@ public:
 	virtual std::string
 	ToString() const override
 	{
-		return util::strfmt("IVT ",
+		return jlm::util::strfmt("IVT ",
 			nnodes_before_, " ", nnodes_after_, " ",
 			ninputs_before_, " ", ninputs_after_, " ",
 			timer_.ns()
@@ -60,7 +61,7 @@ public:
 private:
 	size_t nnodes_before_, nnodes_after_;
 	size_t ninputs_before_, ninputs_after_;
-	util::timer timer_;
+	jlm::util::timer timer_;
 };
 
 static jlm::rvsdg::gamma_node *
@@ -316,7 +317,7 @@ tginversion::~tginversion()
 void
 tginversion::run(
   RvsdgModule & module,
-  util::StatisticsCollector & statisticsCollector)
+  jlm::util::StatisticsCollector & statisticsCollector)
 {
 	invert(module, statisticsCollector);
 }

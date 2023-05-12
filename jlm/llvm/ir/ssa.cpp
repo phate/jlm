@@ -11,14 +11,15 @@
 
 #include <unordered_set>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 void
-destruct_ssa(jlm::cfg & cfg)
+destruct_ssa(llvm::cfg & cfg)
 {
 	JLM_ASSERT(is_valid(cfg));
 
-	auto collect_phi_blocks = [](jlm::cfg & cfg)
+	auto collect_phi_blocks = [](llvm::cfg & cfg)
 	{
 		std::unordered_set<basic_block*> phi_blocks;
 		for (auto & bb : cfg) {
@@ -30,7 +31,7 @@ destruct_ssa(jlm::cfg & cfg)
 	};
 
 	auto eliminate_phis = [](
-		jlm::cfg & cfg,
+		llvm::cfg & cfg,
 		const std::unordered_set<basic_block*> & phi_blocks)
 	{
 		if (phi_blocks.empty())

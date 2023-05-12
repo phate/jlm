@@ -9,7 +9,7 @@
 #include <jlm/rvsdg/traverser.hpp>
 
 void
-jlm::hls::gamma_conv(jlm::RvsdgModule &rm, bool allow_speculation) {
+jlm::hls::gamma_conv(llvm::RvsdgModule &rm, bool allow_speculation) {
 	auto &graph = rm.Rvsdg();
 	auto root = graph.root();
 	gamma_conv(root, allow_speculation);

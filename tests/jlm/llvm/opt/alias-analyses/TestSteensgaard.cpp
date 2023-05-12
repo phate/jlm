@@ -11,22 +11,22 @@
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static std::unique_ptr<jlm::aa::PointsToGraph>
-RunSteensgaard(jlm::RvsdgModule & module)
+static std::unique_ptr<jlm::llvm::aa::PointsToGraph>
+RunSteensgaard(jlm::llvm::RvsdgModule & module)
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   aa::Steensgaard steensgaard;
-  util::StatisticsCollector statisticsCollector;
+  jlm::util::StatisticsCollector statisticsCollector;
   return steensgaard.Analyze(module, statisticsCollector);
 }
 
 static void
 assertTargets(
-  const jlm::aa::PointsToGraph::Node & node,
-  const std::unordered_set<const jlm::aa::PointsToGraph::Node*> & targets)
+  const jlm::llvm::aa::PointsToGraph::Node & node,
+  const std::unordered_set<const jlm::llvm::aa::PointsToGraph::Node*> & targets)
 {
-  using namespace jlm::aa;
+  using namespace jlm::llvm::aa;
 
   assert(node.NumTargets() == targets.size());
 
@@ -40,7 +40,7 @@ assertTargets(
 static void
 TestStore1()
 {
-  auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const StoreTest1 & test)
+  auto validate_ptg = [](const jlm::llvm::aa::PointsToGraph & ptg, const StoreTest1 & test)
   {
     assert(ptg.NumAllocaNodes() == 4);
     assert(ptg.NumLambdaNodes() == 1);
@@ -72,7 +72,7 @@ TestStore1()
     assertTargets(lambda, {});
     assertTargets(plambda, {&lambda});
 
-    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambda});
+    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambda});
     assert(ptg.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
   };
 
@@ -80,14 +80,14 @@ TestStore1()
 //	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto ptg = RunSteensgaard(test.module());
-//	std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
+//	std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
   validate_ptg(*ptg, test);
 }
 
 static void
 TestStore2()
 {
-  auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const StoreTest2 & test)
+  auto validate_ptg = [](const jlm::llvm::aa::PointsToGraph & ptg, const StoreTest2 & test)
   {
     assert(ptg.NumAllocaNodes() == 5);
     assert(ptg.NumLambdaNodes() == 1);
@@ -123,7 +123,7 @@ TestStore2()
     assertTargets(lambda, {});
     assertTargets(plambda, {&lambda});
 
-    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambda});
+    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambda});
     assert(ptg.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
   };
 
@@ -131,14 +131,14 @@ TestStore2()
 //	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto ptg = RunSteensgaard(test.module());
-//	std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
+//	std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
   validate_ptg(*ptg, test);
 }
 
 static void
 TestLoad1()
 {
-  auto ValidatePointsToGraph = [](const jlm::aa::PointsToGraph & pointsToGraph, const LoadTest1 & test)
+  auto ValidatePointsToGraph = [](const jlm::llvm::aa::PointsToGraph & pointsToGraph, const LoadTest1 & test)
   {
     assert(pointsToGraph.NumLambdaNodes() == 1);
     assert(pointsToGraph.NumRegisterNodes() == 3);
@@ -154,14 +154,14 @@ TestLoad1()
     assertTargets(lambdaOutput, {&lambda});
     assertTargets(lambdaArgument0, {&lambda, &pointsToGraph.GetExternalMemoryNode()});
 
-    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambda});
+    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambda});
     assert(pointsToGraph.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
   };
 
   LoadTest1 test;
   // jlm::rvsdg::view(test.graph()->root(), stdout);
   auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
 
   ValidatePointsToGraph(*pointsToGraph, test);
 }
@@ -169,7 +169,7 @@ TestLoad1()
 static void
 TestLoad2()
 {
-  auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const LoadTest2 & test)
+  auto validate_ptg = [](const jlm::llvm::aa::PointsToGraph & ptg, const LoadTest2 & test)
   {
     assert(ptg.NumAllocaNodes() == 5);
     assert(ptg.NumLambdaNodes() == 1);
@@ -192,14 +192,14 @@ TestLoad2()
     assertTargets(pload_x, {&alloca_x, &alloca_y});
     assertTargets(pload_a, {&alloca_a, &alloca_b});
 
-    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambdaMemoryNode});
+    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambdaMemoryNode});
     assert(ptg.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
   };
 
   LoadTest2 test;
 //	jlm::rvsdg::view(test.graph()->root(), stdout);
   auto ptg = RunSteensgaard(test.module());
-//	std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
+//	std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
 
   validate_ptg(*ptg, test);
 }
@@ -207,7 +207,7 @@ TestLoad2()
 static void
 TestLoadFromUndef()
 {
-  auto ValidatePointsToGraph = [](const jlm::aa::PointsToGraph & pointsToGraph, const LoadFromUndefTest & test)
+  auto ValidatePointsToGraph = [](const jlm::llvm::aa::PointsToGraph & pointsToGraph, const LoadFromUndefTest & test)
   {
     assert(pointsToGraph.NumLambdaNodes() == 1);
     assert(pointsToGraph.NumRegisterNodes() == 2);
@@ -217,14 +217,14 @@ TestLoadFromUndef()
 
     assertTargets(undefValueNode, {});
 
-    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambdaMemoryNode});
+    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambdaMemoryNode});
     assert(pointsToGraph.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
   };
 
   LoadFromUndefTest test;
   // jlm::rvsdg::view(test.graph().root(), stdout);
   auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
 
   ValidatePointsToGraph(*pointsToGraph, test);
 }
@@ -232,7 +232,7 @@ TestLoadFromUndef()
 static void
 TestGetElementPtr()
 {
-  auto ValidatePointsToGraph = [](const jlm::aa::PointsToGraph & pointsToGraph, const GetElementPtrTest & test)
+  auto ValidatePointsToGraph = [](const jlm::llvm::aa::PointsToGraph & pointsToGraph, const GetElementPtrTest & test)
   {
     assert(pointsToGraph.NumLambdaNodes() == 1);
     assert(pointsToGraph.NumRegisterNodes() == 4);
@@ -248,7 +248,7 @@ TestGetElementPtr()
     assertTargets(gepX, {&lambda, &pointsToGraph.GetExternalMemoryNode()});
     assertTargets(gepY, {&lambda, &pointsToGraph.GetExternalMemoryNode()});
 
-    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambda});
+    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambda});
     assert(pointsToGraph.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
   };
 
@@ -256,14 +256,14 @@ TestGetElementPtr()
   // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
   ValidatePointsToGraph(*pointsToGraph, test);
 }
 
 static void
 TestBitCast()
 {
-  auto ValidatePointsToGraph = [](const jlm::aa::PointsToGraph & pointsToGraph, const BitCastTest & test)
+  auto ValidatePointsToGraph = [](const jlm::llvm::aa::PointsToGraph & pointsToGraph, const BitCastTest & test)
   {
     assert(pointsToGraph.NumLambdaNodes() == 1);
     assert(pointsToGraph.NumRegisterNodes() == 3);
@@ -278,7 +278,7 @@ TestBitCast()
     assertTargets(lambdaArg, {&lambda, &pointsToGraph.GetExternalMemoryNode()});
     assertTargets(bitCast, {&lambda, &pointsToGraph.GetExternalMemoryNode()});
 
-    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambda});
+    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambda});
     assert(pointsToGraph.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
   };
 
@@ -286,14 +286,14 @@ TestBitCast()
   // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
   ValidatePointsToGraph(*pointsToGraph, test);
 }
 
 static void
 TestConstantPointerNull()
 {
-  auto ValidatePointsToGraph = [](const jlm::aa::PointsToGraph & pointsToGraph, const ConstantPointerNullTest & test)
+  auto ValidatePointsToGraph = [](const jlm::llvm::aa::PointsToGraph & pointsToGraph, const ConstantPointerNullTest & test)
   {
     assert(pointsToGraph.NumLambdaNodes() == 1);
     assert(pointsToGraph.NumRegisterNodes() == 3);
@@ -308,7 +308,7 @@ TestConstantPointerNull()
     assertTargets(lambdaArg, {&lambda, &pointsToGraph.GetExternalMemoryNode()});
     assertTargets(constantPointerNull, {});
 
-    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambda});
+    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambda});
     assert(pointsToGraph.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
   };
 
@@ -316,14 +316,14 @@ TestConstantPointerNull()
   // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
   ValidatePointsToGraph(*pointsToGraph, test);
 }
 
 static void
 TestBits2Ptr()
 {
-  auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const Bits2PtrTest & test)
+  auto validate_ptg = [](const jlm::llvm::aa::PointsToGraph & ptg, const Bits2PtrTest & test)
   {
     assert(ptg.NumLambdaNodes() == 2);
     assert(ptg.NumRegisterNodes() == 5);
@@ -336,7 +336,7 @@ TestBits2Ptr()
 
     auto & lambdaTestMemoryNode = ptg.GetLambdaNode(*test.lambda_test);
 
-    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambdaTestMemoryNode});
+    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambdaTestMemoryNode});
     assert(ptg.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
   };
 
@@ -344,14 +344,14 @@ TestBits2Ptr()
 //	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto ptg = RunSteensgaard(test.module());
-//	std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
+//	std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
   validate_ptg(*ptg, test);
 }
 
 static void
 TestCall1()
 {
-  auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const CallTest1 & test)
+  auto validate_ptg = [](const jlm::llvm::aa::PointsToGraph & ptg, const CallTest1 & test)
   {
     assert(ptg.NumAllocaNodes() == 3);
     assert(ptg.NumLambdaNodes() == 3);
@@ -399,7 +399,7 @@ TestCall1()
     assertTargets(lambda_h_cv0, {&lambda_f});
     assertTargets(lambda_h_cv1, {&lambda_g});
 
-    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambda_h});
+    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambda_h});
     assert(ptg.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
   };
 
@@ -407,14 +407,14 @@ TestCall1()
 //	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto ptg = RunSteensgaard(test.module());
-//	std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
+//	std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
   validate_ptg(*ptg, test);
 }
 
 static void
 TestCall2()
 {
-  auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const CallTest2 & test)
+  auto validate_ptg = [](const jlm::llvm::aa::PointsToGraph & ptg, const CallTest2 & test)
   {
     assert(ptg.NumLambdaNodes() == 3);
     assert(ptg.NumMallocNodes() == 1);
@@ -453,7 +453,7 @@ TestCall2()
 
     assertTargets(malloc_out, {&malloc});
 
-    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambda_test});
+    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambda_test});
     assert(ptg.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
   };
 
@@ -461,14 +461,14 @@ TestCall2()
 //	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto ptg = RunSteensgaard(test.module());
-//	std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
+//	std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
   validate_ptg(*ptg, test);
 }
 
 static void
 TestIndirectCall()
 {
-  auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const IndirectCallTest1 & test)
+  auto validate_ptg = [](const jlm::llvm::aa::PointsToGraph & ptg, const IndirectCallTest1 & test)
   {
     assert(ptg.NumLambdaNodes() == 4);
     assert(ptg.NumImportNodes() == 0);
@@ -502,7 +502,7 @@ TestIndirectCall()
     assertTargets(lambda_test_cv1, {&lambda_three, &lambda_four});
     assertTargets(lambda_test_cv2, {&lambda_three, &lambda_four});
 
-    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambda_test});
+    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambda_test});
     assert(ptg.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
   };
 
@@ -510,7 +510,7 @@ TestIndirectCall()
 //	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto ptg = RunSteensgaard(test.module());
-//	std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
+//	std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
   validate_ptg(*ptg, test);
 }
 
@@ -519,7 +519,7 @@ TestIndirectCall2()
 {
 
   auto validatePointsToGraph = [](
-    const jlm::aa::PointsToGraph & pointsToGraph,
+    const jlm::llvm::aa::PointsToGraph & pointsToGraph,
     const IndirectCallTest2 & test)
   {
     assert(pointsToGraph.NumAllocaNodes() == 3);
@@ -541,7 +541,7 @@ TestIndirectCall2()
 	// jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
-	// std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
+	// std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
 
   validatePointsToGraph(*pointsToGraph, test);
 }
@@ -550,7 +550,7 @@ static void
 TestExternalCall()
 {
   auto validatePointsToGraph = [](
-    const jlm::aa::PointsToGraph & pointsToGraph,
+    const jlm::llvm::aa::PointsToGraph & pointsToGraph,
     const ExternalCallTest & test)
   {
     assert(pointsToGraph.NumAllocaNodes() == 2);
@@ -575,7 +575,7 @@ TestExternalCall()
   // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph) << std::flush;
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph) << std::flush;
 
   validatePointsToGraph(*pointsToGraph, test);
 }
@@ -583,7 +583,7 @@ TestExternalCall()
 static void
 TestGamma()
 {
-  auto ValidatePointsToGraph = [](const jlm::aa::PointsToGraph & pointsToGraph, const GammaTest & test)
+  auto ValidatePointsToGraph = [](const jlm::llvm::aa::PointsToGraph & pointsToGraph, const GammaTest & test)
   {
     assert(pointsToGraph.NumLambdaNodes() == 1);
     assert(pointsToGraph.NumRegisterNodes() == 15);
@@ -608,7 +608,7 @@ TestGamma()
       assertTargets(gammaOutput, {&lambda, &pointsToGraph.GetExternalMemoryNode()});
     }
 
-    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambda});
+    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambda});
     assert(pointsToGraph.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
   };
 
@@ -616,14 +616,14 @@ TestGamma()
   // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
   ValidatePointsToGraph(*pointsToGraph, test);
 }
 
 static void
 TestTheta()
 {
-  auto ValidatePointsToGraph = [](const jlm::aa::PointsToGraph & pointsToGraph, const ThetaTest & test)
+  auto ValidatePointsToGraph = [](const jlm::llvm::aa::PointsToGraph & pointsToGraph, const ThetaTest & test)
   {
     assert(pointsToGraph.NumLambdaNodes() == 1);
     assert(pointsToGraph.NumRegisterNodes() == 5);
@@ -645,7 +645,7 @@ TestTheta()
     assertTargets(thetaArgument2, {&lambda, &pointsToGraph.GetExternalMemoryNode()});
     assertTargets(thetaOutput2, {&lambda, &pointsToGraph.GetExternalMemoryNode()});
 
-    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambda});
+    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambda});
     assert(pointsToGraph.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
   };
 
@@ -653,14 +653,14 @@ TestTheta()
   // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
   ValidatePointsToGraph(*pointsToGraph, test);
 }
 
 static void
 TestDelta1()
 {
-  auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const DeltaTest1 & test)
+  auto validate_ptg = [](const jlm::llvm::aa::PointsToGraph & ptg, const DeltaTest1 & test)
   {
     assert(ptg.NumDeltaNodes() == 1);
     assert(ptg.NumLambdaNodes() == 2);
@@ -688,7 +688,7 @@ TestDelta1()
     assertTargets(lambda_h_cv0, {&delta_f});
     assertTargets(lambda_h_cv1, {&lambda_g});
 
-    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambda_h});
+    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambda_h});
     assert(ptg.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
   };
 
@@ -696,14 +696,14 @@ TestDelta1()
 //	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto ptg = RunSteensgaard(test.module());
-//	std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
+//	std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
   validate_ptg(*ptg, test);
 }
 
 static void
 TestDelta2()
 {
-  auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const DeltaTest2 & test)
+  auto validate_ptg = [](const jlm::llvm::aa::PointsToGraph & ptg, const DeltaTest2 & test)
   {
     assert(ptg.NumDeltaNodes() == 2);
     assert(ptg.NumLambdaNodes() == 2);
@@ -736,7 +736,7 @@ TestDelta2()
     assertTargets(lambda_f2_cvd2, {&delta_d2});
     assertTargets(lambda_f2_cvf1, {&lambda_f1});
 
-    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambda_f2});
+    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambda_f2});
     assert(ptg.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
   };
 
@@ -744,14 +744,14 @@ TestDelta2()
   // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto ptg = RunSteensgaard(test.module());
-  // std::cout << jlm::aa::PointsToGraph::ToDot(*ptg);
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*ptg);
   validate_ptg(*ptg, test);
 }
 
 static void
 TestImports()
 {
-  auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const ImportTest & test)
+  auto validate_ptg = [](const jlm::llvm::aa::PointsToGraph & ptg, const ImportTest & test)
   {
     assert(ptg.NumLambdaNodes() == 2);
     assert(ptg.NumImportNodes() == 2);
@@ -784,7 +784,7 @@ TestImports()
     assertTargets(lambda_f2_cvd2, {&d2});
     assertTargets(lambda_f2_cvf1, {&lambda_f1});
 
-    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambda_f2});
+    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambda_f2});
     assert(ptg.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
   };
 
@@ -792,14 +792,14 @@ TestImports()
   // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto ptg = RunSteensgaard(test.module());
-  // std::cout << jlm::aa::PointsToGraph::ToDot(*ptg);
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*ptg);
   validate_ptg(*ptg, test);
 }
 
 static void
 TestPhi1()
 {
-  auto validate_ptg = [](const jlm::aa::PointsToGraph & ptg, const PhiTest1 & test)
+  auto validate_ptg = [](const jlm::llvm::aa::PointsToGraph & ptg, const PhiTest1 & test)
   {
     assert(ptg.NumAllocaNodes() == 1);
     assert(ptg.NumLambdaNodes() == 2);
@@ -834,7 +834,7 @@ TestPhi1()
 
     assertTargets(alloca_out, {&alloca});
 
-    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambda_test});
+    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambda_test});
     assert(ptg.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
   };
 
@@ -842,14 +842,14 @@ TestPhi1()
 //	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto ptg = RunSteensgaard(test.module());
-//	std::cout << jlm::aa::PointsToGraph::ToDot(*PointsToGraph);
+//	std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
   validate_ptg(*ptg, test);
 }
 
 static void
 TestExternalMemory()
 {
-  auto ValidatePointsToGraph = [](const jlm::aa::PointsToGraph & pointsToGraph, const ExternalMemoryTest & test)
+  auto ValidatePointsToGraph = [](const jlm::llvm::aa::PointsToGraph & pointsToGraph, const ExternalMemoryTest & test)
   {
     assert(pointsToGraph.NumLambdaNodes() == 1);
     assert(pointsToGraph.NumRegisterNodes() == 3);
@@ -861,7 +861,7 @@ TestExternalMemory()
     assertTargets(lambdaFArgument0, {&lambdaF, &pointsToGraph.GetExternalMemoryNode()});
     assertTargets(lambdaFArgument1, {&lambdaF, &pointsToGraph.GetExternalMemoryNode()});
 
-    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambdaF});
+    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambdaF});
     assert(pointsToGraph.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
   };
 
@@ -869,14 +869,14 @@ TestExternalMemory()
   // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
   ValidatePointsToGraph(*pointsToGraph, test);
 }
 
 static void
 TestEscapedMemory1()
 {
-  auto ValidatePointsToGraph = [](const jlm::aa::PointsToGraph & pointsToGraph, const EscapedMemoryTest1 & test)
+  auto ValidatePointsToGraph = [](const jlm::llvm::aa::PointsToGraph & pointsToGraph, const EscapedMemoryTest1 & test)
   {
     assert(pointsToGraph.NumDeltaNodes() == 4);
     assert(pointsToGraph.NumLambdaNodes() == 1);
@@ -897,7 +897,7 @@ TestEscapedMemory1()
     assertTargets(lambdaTestCv0, {deltaB});
     assertTargets(loadNode1Output, {deltaA, deltaX, deltaY, lambdaTest, externalMemory});
 
-    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({
+    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({
       lambdaTest,
       deltaA,
       deltaX,
@@ -910,14 +910,14 @@ TestEscapedMemory1()
   // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
   ValidatePointsToGraph(*pointsToGraph, test);
 }
 
 static void
 TestEscapedMemory2()
 {
-  auto ValidatePointsToGraph = [](const jlm::aa::PointsToGraph & pointsToGraph, const EscapedMemoryTest2 & test)
+  auto ValidatePointsToGraph = [](const jlm::llvm::aa::PointsToGraph & pointsToGraph, const EscapedMemoryTest2 & test)
   {
     assert(pointsToGraph.NumImportNodes() == 2);
     assert(pointsToGraph.NumLambdaNodes() == 3);
@@ -944,7 +944,7 @@ TestEscapedMemory2()
         callExternalFunction1Malloc
       });
 
-    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({
+    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({
       returnAddressFunction,
       callExternalFunction1,
       callExternalFunction2,
@@ -958,14 +958,14 @@ TestEscapedMemory2()
   // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
   ValidatePointsToGraph(*pointsToGraph, test);
 }
 
 static void
 TestEscapedMemory3()
 {
-  auto ValidatePointsToGraph = [](const jlm::aa::PointsToGraph & pointsToGraph, const EscapedMemoryTest3 & test)
+  auto ValidatePointsToGraph = [](const jlm::llvm::aa::PointsToGraph & pointsToGraph, const EscapedMemoryTest3 & test)
   {
     assert(pointsToGraph.NumDeltaNodes() == 1);
     assert(pointsToGraph.NumImportNodes() == 1);
@@ -980,7 +980,7 @@ TestEscapedMemory3()
 
     assertTargets(callExternalFunctionResult, {lambdaTest, deltaGlobal, externalMemory});
 
-    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({lambdaTest, deltaGlobal});
+    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({lambdaTest, deltaGlobal});
     assert(pointsToGraph.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
   };
 
@@ -988,7 +988,7 @@ TestEscapedMemory3()
   // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
   ValidatePointsToGraph(*pointsToGraph, test);
 }
 
@@ -999,7 +999,7 @@ TestMemcpy()
    * Arrange
    */
   auto ValidatePointsToGraph = [](
-    const jlm::aa::PointsToGraph & pointsToGraph,
+    const jlm::llvm::aa::PointsToGraph & pointsToGraph,
     const MemcpyTest & test)
   {
     assert(pointsToGraph.NumDeltaNodes() == 2);
@@ -1018,7 +1018,7 @@ TestMemcpy()
     assertTargets(memCpyDest, {globalArray});
     assertTargets(memCpySrc, {localArray});
 
-    jlm::util::HashSet<const jlm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes(
+    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes(
       {
         globalArray,
         localArray,
@@ -1035,7 +1035,7 @@ TestMemcpy()
    * Act
    */
   auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
 
   /*
    * Assert
@@ -1047,7 +1047,7 @@ static void
 TestLinkedList()
 {
   auto validatePointsToGraph = [](
-    const jlm::aa::PointsToGraph & pointsToGraph,
+    const jlm::llvm::aa::PointsToGraph & pointsToGraph,
     const LinkedListTest & test)
   {
     assert(pointsToGraph.NumAllocaNodes() == 1);
@@ -1065,7 +1065,7 @@ TestLinkedList()
   // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
-  // std::cout << jlm::aa::PointsToGraph::ToDot(*pointsToGraph);
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
 
   validatePointsToGraph(*pointsToGraph, test);
 }

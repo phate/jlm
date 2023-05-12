@@ -18,14 +18,14 @@
 static int
 test()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
-	valuetype vt;
+	jlm::valuetype vt;
 	PointerType pt;
 	MemoryStateType mt;
-	ipgraph_module m(util::filepath(""), "", "");
+	ipgraph_module m(jlm::util::filepath(""), "", "");
 
-	std::unique_ptr<jlm::cfg> cfg(new jlm::cfg(m));
+	std::unique_ptr<jlm::llvm::cfg> cfg(new jlm::llvm::cfg(m));
 	auto bb = basic_block::create(*cfg);
 	cfg->exit()->divert_inedges(bb);
 	bb->add_outedge(cfg->exit());

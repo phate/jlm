@@ -16,10 +16,10 @@
 #include <jlm/util/Statistics.hpp>
 
 static void
-RunInvariantValueRedirection(jlm::RvsdgModule & rvsdgModule)
+RunInvariantValueRedirection(jlm::llvm::RvsdgModule & rvsdgModule)
 {
   jlm::util::StatisticsCollector statisticsCollector;
-  jlm::InvariantValueRedirection invariantValueRedirection;
+  jlm::llvm::InvariantValueRedirection invariantValueRedirection;
   invariantValueRedirection.run(rvsdgModule, statisticsCollector);
 }
 
@@ -28,12 +28,12 @@ TestGamma()
 {
   auto SetupRvsdg = []()
   {
-    using namespace jlm;
+    using namespace jlm::llvm;
 
     jlm::valuetype valueType;
     jlm::rvsdg::ctltype controlType(2);
 
-    auto rvsdgModule = RvsdgModule::Create(util::filepath(""), "", "");
+    auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
     auto & graph = rvsdgModule->Rvsdg();
     auto c = graph.add_import({controlType, "c"});
     auto x = graph.add_import({valueType, "x"});
@@ -84,13 +84,13 @@ TestTheta()
 {
   auto SetupRvsdg = []()
   {
-    using namespace jlm;
+    using namespace jlm::llvm;
 
     loopstatetype loopStateType;
     jlm::valuetype valueType;
     jlm::rvsdg::ctltype controlType(2);
 
-    auto rvsdgModule = RvsdgModule::Create(util::filepath(""), "", "");
+    auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
     auto & graph = rvsdgModule->Rvsdg();
     auto c = graph.add_import({controlType, "c"});
     auto x = graph.add_import({valueType, "x"});

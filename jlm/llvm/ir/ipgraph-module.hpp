@@ -12,7 +12,8 @@
 
 #include <jlm/util/file.hpp>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 /* global value */
 
@@ -47,16 +48,16 @@ private:
 	data_node * node_;
 };
 
-static inline std::unique_ptr<jlm::gblvalue>
+static inline std::unique_ptr<llvm::gblvalue>
 create_gblvalue(data_node * node)
 {
-	return std::make_unique<jlm::gblvalue>(node);
+	return std::make_unique<llvm::gblvalue>(node);
 }
 
 /* ipgraph module */
 
 class ipgraph_module final {
-	typedef std::unordered_set<const jlm::gblvalue*>::const_iterator const_iterator;
+	typedef std::unordered_set<const llvm::gblvalue*>::const_iterator const_iterator;
 
 public:
 	inline
@@ -65,7 +66,7 @@ public:
 
 	inline
 	ipgraph_module(
-		const util::filepath & source_filename,
+		const jlm::util::filepath & source_filename,
 		const std::string & target_triple,
 		const std::string & data_layout) noexcept
 	: data_layout_(data_layout)
@@ -73,13 +74,13 @@ public:
 	, source_filename_(source_filename)
 	{}
 
-	inline jlm::ipgraph &
+	inline llvm::ipgraph &
 	ipgraph() noexcept
 	{
 		return clg_;
 	}
 
-	inline const jlm::ipgraph &
+	inline const llvm::ipgraph &
 	ipgraph() const noexcept
 	{
 		return clg_;
@@ -97,10 +98,10 @@ public:
 		return globals_.end();
 	}
 
-	inline jlm::gblvalue *
+	inline llvm::gblvalue *
 	create_global_value(data_node * node)
 	{
-		auto v = jlm::create_gblvalue(node);
+		auto v = llvm::create_gblvalue(node);
 		auto ptr = v.get();
 		globals_.insert(ptr);
 		functions_[node] = ptr;
@@ -108,45 +109,45 @@ public:
 		return ptr;
 	}
 
-	inline jlm::variable *
+	inline variable *
 	create_variable(const jlm::rvsdg::type & type, const std::string & name)
 	{
-		auto v = std::make_unique<jlm::variable>(type, name);
+		auto v = std::make_unique<llvm::variable>(type, name);
 		auto pv = v.get();
 		variables_.insert(std::move(v));
 		return pv;
 	}
 
-	inline jlm::variable *
+	inline variable *
 	create_variable(const jlm::rvsdg::type & type)
 	{
 		static uint64_t c = 0;
-		auto v = std::make_unique<jlm::variable>(type, util::strfmt("v", c++));
+		auto v = std::make_unique<llvm::variable>(type, jlm::util::strfmt("v", c++));
 		auto pv = v.get();
 		variables_.insert(std::move(v));
 		return pv;
 	}
 
-	inline jlm::variable *
+	inline variable *
 	create_variable(function_node * node)
 	{
 		JLM_ASSERT(!variable(node));
 
-		auto v = std::unique_ptr<jlm::variable>(new fctvariable(node));
+		auto v = std::unique_ptr<llvm::variable>(new fctvariable(node));
 		auto pv = v.get();
 		functions_[node] = pv;
 		variables_.insert(std::move(v));
 		return pv;
 	}
 
-	const jlm::variable *
+	const variable *
 	variable(const ipgraph_node * node) const noexcept
 	{
 		auto it = functions_.find(node);
 		return it != functions_.end() ? it->second : nullptr;
 	}
 
-	const util::filepath &
+	const jlm::util::filepath &
 	source_filename() const noexcept
 	{
 		return source_filename_;
@@ -166,7 +167,7 @@ public:
 
 	static std::unique_ptr<ipgraph_module>
 	create(
-		const util::filepath & source_filename,
+		const jlm::util::filepath & source_filename,
 		const std::string & target_triple,
 		const std::string & data_layout)
 	{
@@ -174,13 +175,13 @@ public:
 	}
 
 private:
-	jlm::ipgraph clg_;
+	llvm::ipgraph clg_;
 	std::string data_layout_;
 	std::string target_triple_;
-	const util::filepath source_filename_;
-	std::unordered_set<const jlm::gblvalue*> globals_;
-	std::unordered_set<std::unique_ptr<jlm::variable>> variables_;
-	std::unordered_map<const ipgraph_node*, const jlm::variable*> functions_;
+	const jlm::util::filepath source_filename_;
+	std::unordered_set<const llvm::gblvalue*> globals_;
+	std::unordered_set<std::unique_ptr<llvm::variable>> variables_;
+	std::unordered_map<const ipgraph_node*, const llvm::variable*> functions_;
 };
 
 static inline size_t

@@ -16,7 +16,7 @@ jlm::hls::DotHLS::extension() {
 }
 
 std::string
-jlm::hls::DotHLS::get_text(jlm::RvsdgModule &rm) {
+jlm::hls::DotHLS::get_text(llvm::RvsdgModule &rm) {
 	return subregion_to_dot(get_hls_lambda(rm)->subregion());
 }
 

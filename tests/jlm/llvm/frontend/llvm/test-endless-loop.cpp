@@ -18,7 +18,7 @@ test()
 {
 	auto setup = [](llvm::LLVMContext & ctx)
 	{
-		using namespace llvm;
+		using namespace ::llvm;
 
 		std::unique_ptr<Module> module(new Module("module", ctx));
 
@@ -42,8 +42,8 @@ test()
 	auto llvmModule = setup(ctx);
 	jlm::print(*llvmModule);
 
-	auto ipgModule = jlm::ConvertLlvmModule(*llvmModule);
-	jlm::print(*ipgModule, stdout);
+	auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
+	print(*ipgModule, stdout);
 
 	return 0;
 }

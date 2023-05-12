@@ -12,7 +12,8 @@
 #include <jlm/rvsdg/simple-normal-form.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 /* store normal form */
 
@@ -108,13 +109,13 @@ public:
   [[nodiscard]] const PointerType &
   GetPointerType() const noexcept
   {
-    return *util::AssertedCast<const PointerType>(&argument(0).type());
+    return *jlm::util::AssertedCast<const PointerType>(&argument(0).type());
   }
 
   [[nodiscard]] const jlm::rvsdg::valuetype &
   GetStoredType() const noexcept
   {
-    return *util::AssertedCast<const jlm::rvsdg::valuetype>(&argument(1).type());
+    return *jlm::util::AssertedCast<const jlm::rvsdg::valuetype>(&argument(1).type());
   }
 
   [[nodiscard]] size_t
@@ -129,13 +130,13 @@ public:
     return Alignment_;
   }
 
-  static jlm::store_normal_form *
+  static store_normal_form *
   GetNormalForm(jlm::rvsdg::graph * graph) noexcept
   {
-    return util::AssertedCast<jlm::store_normal_form>(graph->node_normal_form(typeid(StoreOperation)));
+    return jlm::util::AssertedCast<store_normal_form>(graph->node_normal_form(typeid(StoreOperation)));
   }
 
-  static std::unique_ptr<jlm::tac>
+  static std::unique_ptr<llvm::tac>
   Create(
     const variable * address,
     const variable * value,
@@ -155,7 +156,7 @@ private:
     if (auto storedType = dynamic_cast<const jlm::rvsdg::valuetype*>(&type))
       return *storedType;
 
-    throw util::error("Expected ValueType");
+    throw jlm::util::error("Expected ValueType");
   }
 
   static std::vector<jlm::rvsdg::port>
@@ -217,8 +218,8 @@ private:
     }
   };
 
-  using MemoryStateInputRange = util::iterator_range<MemoryStateInputIterator>;
-  using MemoryStateOutputRange = util::iterator_range<MemoryStateOutputIterator>;
+  using MemoryStateInputRange = jlm::util::iterator_range<MemoryStateInputIterator>;
+  using MemoryStateOutputRange = jlm::util::iterator_range<MemoryStateOutputIterator>;
 
   StoreNode(
     jlm::rvsdg::region & region,
@@ -231,7 +232,7 @@ public:
   [[nodiscard]] const StoreOperation&
   GetOperation() const noexcept
   {
-    return *util::AssertedCast<const StoreOperation>(&operation());
+    return *jlm::util::AssertedCast<const StoreOperation>(&operation());
   }
 
   [[nodiscard]] MemoryStateInputRange
@@ -314,7 +315,7 @@ private:
     if (auto storedType = dynamic_cast<const jlm::rvsdg::valuetype*>(&type))
       return *storedType;
 
-    throw util::error("Expected ValueType.");
+    throw jlm::util::error("Expected ValueType.");
   }
 };
 

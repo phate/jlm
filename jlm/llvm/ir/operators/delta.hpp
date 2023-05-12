@@ -12,7 +12,9 @@
 #include <jlm/rvsdg/structural-node.hpp>
 #include <jlm/util/iterator_range.hpp>
 
-namespace jlm {
+namespace jlm::llvm
+{
+
 namespace delta {
 
 /** \brief Delta operation
@@ -24,7 +26,7 @@ public:
 	operation(
 		const rvsdg::valuetype & type,
 		const std::string & name,
-		const jlm::linkage & linkage,
+		const linkage & linkage,
     std::string section,
 		bool constant)
 	: constant_(constant)
@@ -77,7 +79,7 @@ public:
     return Section_;
   }
 
-	const jlm::linkage &
+	const linkage &
 	linkage() const noexcept
 	{
 		return linkage_;
@@ -92,14 +94,14 @@ public:
 	[[nodiscard]] const rvsdg::valuetype &
 	type() const noexcept
 	{
-    return *util::AssertedCast<rvsdg::valuetype>(type_.get());
+    return *jlm::util::AssertedCast<rvsdg::valuetype>(type_.get());
 	}
 
 private:
 	bool constant_;
 	std::string name_;
   std::string Section_;
-	jlm::linkage linkage_;
+	llvm::linkage linkage_;
 	std::unique_ptr<rvsdg::type> type_;
 };
 
@@ -133,8 +135,8 @@ class node final : public rvsdg::structural_node {
 	class cviterator;
 	class cvconstiterator;
 
-	using ctxvar_range = util::iterator_range<cviterator>;
-	using ctxvar_constrange = util::iterator_range<cvconstiterator>;
+	using ctxvar_range = jlm::util::iterator_range<cviterator>;
+	using ctxvar_constrange = jlm::util::iterator_range<cvconstiterator>;
 
 public:
 	~node() override;
@@ -183,7 +185,7 @@ public:
     return operation().Section();
   }
 
-	const jlm::linkage &
+	const linkage &
 	linkage() const noexcept
 	{
 		return operation().linkage();
@@ -252,7 +254,7 @@ public:
 		rvsdg::region * parent,
     const rvsdg::valuetype & type,
 		const std::string & name,
-		const jlm::linkage & linkage,
+		const llvm::linkage & linkage,
     std::string section,
 		bool constant)
 	{
@@ -274,7 +276,7 @@ public:
 /** \brief Delta context variable input
 */
 class cvinput final : public rvsdg::structural_input {
-	friend ::jlm::delta::node;
+	friend ::jlm::llvm::delta::node;
 
 public:
 	~cvinput() override;
@@ -309,7 +311,7 @@ public:
 /** \brief Delta context variable iterator
 */
 class node::cviterator final : public rvsdg::input::iterator<cvinput> {
-	friend ::jlm::delta::node;
+	friend ::jlm::llvm::delta::node;
 
 	constexpr
 	cviterator(cvinput * input)
@@ -329,7 +331,7 @@ class node::cviterator final : public rvsdg::input::iterator<cvinput> {
 /** \brief Delta context variable const iterator
 */
 class node::cvconstiterator final : public rvsdg::input::constiterator<cvinput> {
-	friend ::jlm::delta::node;
+	friend ::jlm::llvm::delta::node;
 
 	constexpr
 	cvconstiterator(const cvinput * input)
@@ -349,7 +351,7 @@ class node::cvconstiterator final : public rvsdg::input::constiterator<cvinput> 
 /** \brief Delta output
 */
 class output final : public rvsdg::structural_output {
-	friend ::jlm::delta::node;
+	friend ::jlm::llvm::delta::node;
 
 public:
 	~output() override;
@@ -381,7 +383,7 @@ public:
 /** \brief Delta context variable argument
 */
 class cvargument final : public rvsdg::argument {
-	friend ::jlm::delta::node;
+	friend ::jlm::llvm::delta::node;
 
 public:
 	~cvargument() override;
@@ -414,7 +416,7 @@ public:
 /** \brief Delta result
 */
 class result final : public rvsdg::result {
-	friend ::jlm::delta::node;
+	friend ::jlm::llvm::delta::node;
 
 public:
 	~result() override;

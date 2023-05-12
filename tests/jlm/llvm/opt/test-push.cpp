@@ -23,11 +23,11 @@ static jlm::util::StatisticsCollector statisticsCollector;
 static inline void
 test_gamma()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	jlm::rvsdg::ctltype ct(2);
 
-	RvsdgModule rm(util::filepath(""), "", "");
+	RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 
 	auto c = graph.add_import({ct, "c"});
@@ -47,7 +47,7 @@ test_gamma()
 	graph.add_export(gamma->output(0), {gamma->output(0)->type(), "x"});
 
 //	jlm::rvsdg::view(graph.root(), stdout);
-	jlm::pushout pushout;
+	jlm::llvm::pushout pushout;
 	pushout.run(rm, statisticsCollector);
 //	jlm::rvsdg::view(graph.root(), stdout);
 
@@ -57,7 +57,7 @@ test_gamma()
 static inline void
 test_theta()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	jlm::rvsdg::ctltype ct(2);
 
@@ -65,7 +65,7 @@ test_theta()
 	jlm::test_op bop({&vt, &vt}, {&vt});
 	jlm::test_op sop({&vt, &st}, {&st});
 
-	RvsdgModule rm(util::filepath(""), "", "");
+	RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 
 	auto c = graph.add_import({ct, "c"});
@@ -92,7 +92,7 @@ test_theta()
 	graph.add_export(theta->output(0), {theta->output(0)->type(), "c"});
 
 //	jlm::rvsdg::view(graph.root(), stdout);
-	jlm::pushout pushout;
+	jlm::llvm::pushout pushout;
 	pushout.run(rm, statisticsCollector);
 //	jlm::rvsdg::view(graph.root(), stdout);
 
@@ -102,7 +102,7 @@ test_theta()
 static inline void
 test_push_theta_bottom()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	MemoryStateType mt;
 	PointerType pt;
@@ -129,11 +129,11 @@ test_push_theta_bottom()
 	auto ex = graph.add_export(lvs, {lvs->type(), "s"});
 
 	jlm::rvsdg::view(graph, stdout);
-	jlm::push_bottom(theta);
+	jlm::llvm::push_bottom(theta);
 	jlm::rvsdg::view(graph, stdout);
 
 	auto storenode = jlm::rvsdg::node_output::node(ex->origin());
-	assert(jlm::rvsdg::is<jlm::StoreOperation>(storenode));
+	assert(jlm::rvsdg::is<StoreOperation>(storenode));
 	assert(storenode->input(0)->origin() == a);
 	assert(jlm::rvsdg::is<jlm::rvsdg::theta_op>(jlm::rvsdg::node_output::node(storenode->input(1)->origin())));
 	assert(jlm::rvsdg::is<jlm::rvsdg::theta_op>(jlm::rvsdg::node_output::node(storenode->input(2)->origin())));

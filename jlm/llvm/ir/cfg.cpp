@@ -13,7 +13,8 @@
 #include <deque>
 #include <unordered_map>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 /* argument */
 
@@ -70,7 +71,7 @@ cfg::remove_node(basic_block * bb)
 /* supporting functions */
 
 std::vector<cfg_node*>
-postorder(const jlm::cfg & cfg)
+postorder(const llvm::cfg & cfg)
 {
 	JLM_ASSERT(is_closed(cfg));
 
@@ -101,7 +102,7 @@ postorder(const jlm::cfg & cfg)
 }
 
 std::vector<cfg_node*>
-reverse_postorder(const jlm::cfg & cfg)
+reverse_postorder(const llvm::cfg & cfg)
 {
 	auto nodes = postorder(cfg);
 	std::reverse(nodes.begin(), nodes.end());
@@ -109,11 +110,11 @@ reverse_postorder(const jlm::cfg & cfg)
 }
 
 std::vector<cfg_node*>
-breadth_first(const jlm::cfg & cfg)
+breadth_first(const llvm::cfg & cfg)
 {
-	std::deque<jlm::cfg_node*> next({cfg.entry()});
-	std::vector<jlm::cfg_node*> nodes({cfg.entry()});
-	std::unordered_set<jlm::cfg_node*> visited({cfg.entry()});
+	std::deque<cfg_node*> next({cfg.entry()});
+	std::vector<cfg_node*> nodes({cfg.entry()});
+	std::unordered_set<cfg_node*> visited({cfg.entry()});
 	while (!next.empty()) {
 		auto node = next.front();
 		next.pop_front();
@@ -131,7 +132,7 @@ breadth_first(const jlm::cfg & cfg)
 }
 
 size_t
-ntacs(const jlm::cfg & cfg)
+ntacs(const llvm::cfg & cfg)
 {
 	size_t ntacs = 0;
 	for (auto & node : cfg) {
