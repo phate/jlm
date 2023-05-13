@@ -26,7 +26,7 @@ public:
 	operation(
 		const rvsdg::valuetype & type,
 		const std::string & name,
-		const linkage & linkage,
+		const llvm::linkage & linkage,
     std::string section,
 		bool constant)
 	: constant_(constant)
@@ -79,7 +79,7 @@ public:
     return Section_;
   }
 
-	const linkage &
+	const llvm::linkage &
 	linkage() const noexcept
 	{
 		return linkage_;
@@ -185,7 +185,7 @@ public:
     return operation().Section();
   }
 
-	const linkage &
+	const llvm::linkage &
 	linkage() const noexcept
 	{
 		return operation().linkage();
