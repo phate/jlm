@@ -109,7 +109,7 @@ public:
 		return ptr;
 	}
 
-	inline variable *
+	inline llvm::variable *
 	create_variable(const jlm::rvsdg::type & type, const std::string & name)
 	{
 		auto v = std::make_unique<llvm::variable>(type, name);
@@ -118,7 +118,7 @@ public:
 		return pv;
 	}
 
-	inline variable *
+	inline llvm::variable *
 	create_variable(const jlm::rvsdg::type & type)
 	{
 		static uint64_t c = 0;
@@ -128,7 +128,7 @@ public:
 		return pv;
 	}
 
-	inline variable *
+	inline llvm::variable *
 	create_variable(function_node * node)
 	{
 		JLM_ASSERT(!variable(node));
