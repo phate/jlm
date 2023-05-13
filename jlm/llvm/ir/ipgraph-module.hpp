@@ -140,7 +140,7 @@ public:
 		return pv;
 	}
 
-	const variable *
+	const llvm::variable *
 	variable(const ipgraph_node * node) const noexcept
 	{
 		auto it = functions_.find(node);
