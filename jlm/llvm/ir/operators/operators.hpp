@@ -1092,7 +1092,7 @@ public:
 	~fpbin_op();
 
 	inline
-	fpbin_op(const fpop & op, const fpsize & size)
+	fpbin_op(const llvm::fpop & op, const fpsize & size)
 	: binary_op({fptype(size), fptype(size)}, {fptype(size)})
 	, op_(op)
 	{}
@@ -1117,7 +1117,7 @@ public:
 		jlm::rvsdg::output * op1,
 		jlm::rvsdg::output * op2) const override;
 
-	inline const fpop &
+	inline const llvm::fpop &
 	fpop() const noexcept
 	{
 		return op_;
