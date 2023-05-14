@@ -21,7 +21,7 @@ jlm::hls::MLIRGenImpl::MlirGenSimpleNode(const jlm::rvsdg::simple_node *node) {
 	// Get the body of the module such that we can add contents to the module
 	auto body = module.getBodyBlock();
 
-	llvm::SmallVector<mlir::Value> inBundles;
+	::llvm::SmallVector<mlir::Value> inBundles;
 
 	// Get input signals
 	for (size_t i=0; i<node->ninputs(); i++) {
@@ -169,14 +169,14 @@ jlm::hls::MLIRGenImpl::MlirGenSimpleNode(const jlm::rvsdg::simple_node *node) {
 		auto op = AddLeqOp(body, sIntOp0, sIntOp1);
 		// Connect the op to the output data
 		Connect(body, outData, op);
-	} else if (dynamic_cast<const jlm::zext_op *>(&(node->operation()))) {
+	} else if (dynamic_cast<const llvm::zext_op *>(&(node->operation()))) {
 		auto input0 = GetSubfield(body, inBundles[0], "data");
 		Connect(body, outData, input0);
-	} else if (dynamic_cast<const jlm::trunc_op *>(&(node->operation()))) {
+	} else if (dynamic_cast<const llvm::trunc_op *>(&(node->operation()))) {
 		auto inData = GetSubfield(body, inBundles[0], "data");
 		int outSize = JlmSize(&node->output(0)->type());
 		Connect(body, outData, AddBitsOp(body, inData, outSize-1, 0));
-	} else if (auto op = dynamic_cast<const sext_op *>(&(node->operation()))) {
+	} else if (auto op = dynamic_cast<const llvm::sext_op *>(&(node->operation()))) {
 		auto input0 = GetSubfield(body, inBundles[0], "data");
 		auto sintOp = AddAsSIntOp(body, input0);
 		auto padOp = AddPadOp(body, sintOp, op->ndstbits());
@@ -224,7 +224,7 @@ jlm::hls::MLIRGenImpl::MlirGenSimpleNode(const jlm::rvsdg::simple_node *node) {
 			}
 			Connect(body,outData,result);
 		}
-	} else if (auto op = dynamic_cast<const jlm::GetElementPtrOperation *>(&(node->operation()))) {
+	} else if (auto op = dynamic_cast<const llvm::GetElementPtrOperation *>(&(node->operation()))) {
 		// Start of with base pointer
 		auto input0 = GetSubfield(body, inBundles[0], "data");
 		mlir::Value result = AddCvtOp(body, input0);
@@ -235,7 +235,7 @@ jlm::hls::MLIRGenImpl::MlirGenSimpleNode(const jlm::rvsdg::simple_node *node) {
 			int bits = JlmSize(pointeeType);
 			if (dynamic_cast<const jlm::rvsdg::bittype *>(pointeeType)) {
 				;
-			} else if (auto arrayType = dynamic_cast<const jlm::arraytype *>(pointeeType)) {
+			} else if (auto arrayType = dynamic_cast<const llvm::arraytype *>(pointeeType)) {
 				pointeeType = &arrayType->element_type();
 			} else {
 				throw std::logic_error(pointeeType->debug_string() + " pointer not implemented!");
@@ -251,7 +251,7 @@ jlm::hls::MLIRGenImpl::MlirGenSimpleNode(const jlm::rvsdg::simple_node *node) {
 		}
 		auto asUInt = AddAsUIntOp(body, result);
 		Connect(body, outData, AddBitsOp(body, asUInt, 63, 0));
-	} else if (dynamic_cast<const jlm::UndefValueOperation *>(&(node->operation()))) {
+	} else if (dynamic_cast<const llvm::UndefValueOperation *>(&(node->operation()))) {
 		Connect(body, outData, GetConstant(body, 1, 0));
 	} else {
 		throw std::logic_error("Simple node " + node->operation().debug_string() + " not implemented!");
@@ -292,7 +292,7 @@ jlm::hls::MLIRGenImpl::MlirGenSink(const jlm::rvsdg::simple_node *node) {
 	auto constant = builder.create<circt::firrtl::ConstantOp>(
 				location,
 				intType,
-				llvm::APInt(1, 1));
+				::llvm::APInt(1, 1));
 	body->push_back(constant);
 
 	// Get the input bundle
@@ -322,8 +322,8 @@ jlm::hls::MLIRGenImpl::MlirGenFork(const jlm::rvsdg::simple_node *node) {
 	//
 	auto clock = GetClockSignal(module);
 	auto reset = GetResetSignal(module);
-	llvm::SmallVector<circt::firrtl::RegResetOp> firedRegs;
-	llvm::SmallVector<circt::firrtl::AndPrimOp> whenConditions;
+	::llvm::SmallVector<circt::firrtl::RegResetOp> firedRegs;
+	::llvm::SmallVector<circt::firrtl::AndPrimOp> whenConditions;
 	auto oneBitValue = GetConstant(body, 1, 1);
 	auto zeroBitValue = GetConstant(body, 1, 0);
 	mlir::Value prevAnd = oneBitValue;
@@ -388,7 +388,7 @@ jlm::hls::MLIRGenImpl::MlirGenMem(const jlm::rvsdg::simple_node *node) {
 	auto body = module.getBodyBlock();
 
 	// Check if it's a load or store operation
-	bool store = dynamic_cast<const jlm::StoreOperation *>(&(node->operation()));
+	bool store = dynamic_cast<const llvm::StoreOperation *>(&(node->operation()));
 
 	InitializeMemReq(module);
 	// Input signals
@@ -442,8 +442,8 @@ jlm::hls::MLIRGenImpl::MlirGenMem(const jlm::rvsdg::simple_node *node) {
 	auto oneBitValue = GetConstant(body, 1, 1);
 
 	// Registers
-	llvm::SmallVector<circt::firrtl::RegResetOp> oValidRegs;
-	llvm::SmallVector<circt::firrtl::RegResetOp> oDataRegs;
+	::llvm::SmallVector<circt::firrtl::RegResetOp> oValidRegs;
+	::llvm::SmallVector<circt::firrtl::RegResetOp> oDataRegs;
 	for (size_t i=0; i<node->noutputs(); i++) {
 		std::string validName("o");
 		validName.append(std::to_string(i));
@@ -506,7 +506,7 @@ jlm::hls::MLIRGenImpl::MlirGenMem(const jlm::rvsdg::simple_node *node) {
 		Connect(body, memReqData, invalid);
 		if (auto bitType = dynamic_cast<const jlm::rvsdg::bittype *>(&node->output(0)->type())) {
 			bitWidth = bitType->nbits();
-		} else if (dynamic_cast<const jlm::PointerType *>(&node->output(0)->type())) {
+		} else if (dynamic_cast<const llvm::PointerType *>(&node->output(0)->type())) {
 			bitWidth = 64;
 		} else {
 			throw jlm::util::error("unknown width for mem request");
@@ -633,7 +633,7 @@ jlm::hls::MLIRGenImpl::MlirGenPrint(const jlm::rvsdg::simple_node *node) {
 	auto formatString = "print node " + std::to_string(pn->id()) + ": %x\n";
 	auto name = "print_node_" + std::to_string(pn->id());
 	auto printValue = AddPadOp(body, inData, 64);
-	llvm::SmallVector<mlir::Value> operands;
+	::llvm::SmallVector<mlir::Value> operands;
 	operands.push_back(printValue);
 	body->push_back(builder.create<circt::firrtl::PrintFOp>(location, clock, trigger, formatString, operands, name));
 	return module;
@@ -719,8 +719,8 @@ jlm::hls::MLIRGenImpl::MlirGenBuffer(const jlm::rvsdg::simple_node *node) {
 	auto oneBitValue = GetConstant(body, 1, 1);
 
 	// Registers
-	llvm::SmallVector<circt::firrtl::RegResetOp> validRegs;
-	llvm::SmallVector<circt::firrtl::RegResetOp> dataRegs;
+	::llvm::SmallVector<circt::firrtl::RegResetOp> validRegs;
+	::llvm::SmallVector<circt::firrtl::RegResetOp> dataRegs;
 	for (size_t i=0; i<=capacity; i++) {
 		std::string validName("buf");
 		validName.append(std::to_string(i));
@@ -756,8 +756,8 @@ jlm::hls::MLIRGenImpl::MlirGenBuffer(const jlm::rvsdg::simple_node *node) {
 	Connect(body, dataRegs[capacity].getResult(), zeroValue);
 
 	// Add wires
-	llvm::SmallVector<circt::firrtl::WireOp> shiftWires;
-	llvm::SmallVector<circt::firrtl::WireOp> consumedWires;
+	::llvm::SmallVector<circt::firrtl::WireOp> shiftWires;
+	::llvm::SmallVector<circt::firrtl::WireOp> consumedWires;
 	for (size_t i=0; i<=capacity; i++) {
 		std::string shiftName("shift_out");
 		shiftName.append(std::to_string(i));
@@ -864,8 +864,8 @@ jlm::hls::MLIRGenImpl::MlirGenDMux(const jlm::rvsdg::simple_node *node) {
 	// Add discard registers
 	auto clock = GetClockSignal(module);
 	auto reset = GetResetSignal(module);
-	llvm::SmallVector<circt::firrtl::RegResetOp> discardRegs;
-	llvm::SmallVector<circt::firrtl::WireOp> discardWires;
+	::llvm::SmallVector<circt::firrtl::RegResetOp> discardRegs;
+	::llvm::SmallVector<circt::firrtl::WireOp> discardWires;
 	mlir::Value anyDiscardReg = GetConstant(body, 1, 0);
 	for (size_t i=1; i<inputs; i++) {
 		std::string regName("i");
@@ -1044,9 +1044,9 @@ jlm::hls::MLIRGenImpl::MlirGen(const jlm::rvsdg::simple_node *node) {
 		return MlirGenSink(node);
 	} else if (dynamic_cast<const hls::fork_op *>(&(node->operation()))) {
 		return MlirGenFork(node);
-	} else if (dynamic_cast<const jlm::LoadOperation *>(&(node->operation()))) {
+	} else if (dynamic_cast<const llvm::LoadOperation *>(&(node->operation()))) {
 		return MlirGenMem(node);
-	} else if (dynamic_cast<const jlm::StoreOperation *>(&(node->operation()))) {
+	} else if (dynamic_cast<const llvm::StoreOperation *>(&(node->operation()))) {
 		return MlirGenMem(node);
 	} else if (dynamic_cast<const hls::predicate_buffer_op *>(&(node->operation()))) {
 		return MlirGenPredicationBuffer(node);
@@ -1139,7 +1139,7 @@ jlm::hls::MLIRGenImpl::TraceArgument(jlm::rvsdg::argument *arg) {
 circt::firrtl::FModuleOp
 jlm::hls::MLIRGenImpl::MlirGen(jlm::rvsdg::region *subRegion, mlir::Block *circuitBody) {
 	// Generate a vector with all inputs and outputs of the module
-	llvm::SmallVector<circt::firrtl::PortInfo> ports;
+	::llvm::SmallVector<circt::firrtl::PortInfo> ports;
 
 	// Clock and reset ports
 	AddClockPort(&ports);
@@ -1210,9 +1210,9 @@ jlm::hls::MLIRGenImpl::MlirGen(jlm::rvsdg::region *subRegion, mlir::Block *circu
 
 		// Memory instances will need to be connected to the main memory ports
 		// So we keep track of them to handle them later
-		if (dynamic_cast<const jlm::LoadOperation *>(&(rvsdgNode->operation()))) {
+		if (dynamic_cast<const llvm::LoadOperation *>(&(rvsdgNode->operation()))) {
 		  memInstances.insert(instance);
-		} else if (dynamic_cast<const jlm::StoreOperation *>(&(rvsdgNode->operation()))) {
+		} else if (dynamic_cast<const llvm::StoreOperation *>(&(rvsdgNode->operation()))) {
 		  memInstances.insert(instance);
 		}
 
@@ -1391,7 +1391,7 @@ jlm::hls::MLIRGenImpl::TraceStructuralOutput(jlm::rvsdg::structural_output *outp
 
 // Emit a circuit
 circt::firrtl::CircuitOp
-jlm::hls::MLIRGenImpl::MlirGen(const jlm::lambda::node *lambdaNode) {
+jlm::hls::MLIRGenImpl::MlirGen(const llvm::lambda::node *lambdaNode) {
 
     // Ensure consistent naming across runs
     create_node_names(lambdaNode->subregion());
@@ -1409,7 +1409,7 @@ jlm::hls::MLIRGenImpl::MlirGen(const jlm::lambda::node *lambdaNode) {
 	//   Add ports
 	//
 	// Generate a vector with all inputs and outputs of the module
-	llvm::SmallVector<circt::firrtl::PortInfo> ports;
+	::llvm::SmallVector<circt::firrtl::PortInfo> ports;
 
 	// Clock and reset ports
 	AddClockPort(&ports);
@@ -1417,7 +1417,7 @@ jlm::hls::MLIRGenImpl::MlirGen(const jlm::lambda::node *lambdaNode) {
 
 	// Input bundle
 	using BundleElement = circt::firrtl::BundleType::BundleElement;
-	llvm::SmallVector<BundleElement> inputElements;
+	::llvm::SmallVector<BundleElement> inputElements;
 	inputElements.push_back(GetReadyElement());
 	inputElements.push_back(GetValidElement());
 	for (size_t i = 0; i < subRegion->narguments(); ++i) {
@@ -1440,7 +1440,7 @@ jlm::hls::MLIRGenImpl::MlirGen(const jlm::lambda::node *lambdaNode) {
 	ports.push_back(iBundle);
 
 	// Output bundle
-	llvm::SmallVector<BundleElement> outputElements;
+	::llvm::SmallVector<BundleElement> outputElements;
 	outputElements.push_back(GetReadyElement());
 	outputElements.push_back(GetValidElement());
 	for (size_t i = 0; i < subRegion->nresults(); ++i) {
@@ -1496,8 +1496,8 @@ jlm::hls::MLIRGenImpl::MlirGen(const jlm::lambda::node *lambdaNode) {
 	auto zeroBitValue = GetConstant(body, 1,0);
 
 	// Input registers
-	llvm::SmallVector<circt::firrtl::RegResetOp> inputValidRegs;
-	llvm::SmallVector<circt::firrtl::RegResetOp> inputDataRegs;
+	::llvm::SmallVector<circt::firrtl::RegResetOp> inputValidRegs;
+	::llvm::SmallVector<circt::firrtl::RegResetOp> inputDataRegs;
 	for (size_t i = 0; i < subRegion->narguments(); ++i) {
 		std::string validName("i");
 		validName.append(std::to_string(i));
@@ -1547,8 +1547,8 @@ jlm::hls::MLIRGenImpl::MlirGen(const jlm::lambda::node *lambdaNode) {
 	// Need to know the number of inputs so we can calculate the
 	// correct index for outputs
 	auto numInputs = subRegion->narguments();
-	llvm::SmallVector<circt::firrtl::RegResetOp> outputValidRegs;
-	llvm::SmallVector<circt::firrtl::RegResetOp> outputDataRegs;
+	::llvm::SmallVector<circt::firrtl::RegResetOp> outputValidRegs;
+	::llvm::SmallVector<circt::firrtl::RegResetOp> outputDataRegs;
 
 	auto oneBitValue = GetConstant(body, 1, 1);
 	for (size_t i = 0; i < subRegion->nresults(); ++i) {
@@ -1712,7 +1712,7 @@ jlm::hls::MLIRGenImpl::MlirGen(const jlm::lambda::node *lambdaNode) {
 
 // Returns a PortInfo of ClockType
 void
-jlm::hls::MLIRGenImpl::AddClockPort(llvm::SmallVector<circt::firrtl::PortInfo> *ports) {
+jlm::hls::MLIRGenImpl::AddClockPort(::llvm::SmallVector<circt::firrtl::PortInfo> *ports) {
 	struct circt::firrtl::PortInfo port = {
 		builder.getStringAttr("clk"),
 		circt::firrtl::ClockType::get(builder.getContext()),
@@ -1725,7 +1725,7 @@ jlm::hls::MLIRGenImpl::AddClockPort(llvm::SmallVector<circt::firrtl::PortInfo> *
 
 // Returns a PortInfo of unsigned IntType with width of 1
 void
-jlm::hls::MLIRGenImpl::AddResetPort(llvm::SmallVector<circt::firrtl::PortInfo> *ports) {
+jlm::hls::MLIRGenImpl::AddResetPort(::llvm::SmallVector<circt::firrtl::PortInfo> *ports) {
 	struct circt::firrtl::PortInfo port = {
 		builder.getStringAttr("reset"),
 		circt::firrtl::IntType::get(builder.getContext(), false, 1),
@@ -1737,10 +1737,10 @@ jlm::hls::MLIRGenImpl::AddResetPort(llvm::SmallVector<circt::firrtl::PortInfo> *
 }
 
 void
-jlm::hls::MLIRGenImpl::AddMemReqPort(llvm::SmallVector<circt::firrtl::PortInfo> *ports) {
+jlm::hls::MLIRGenImpl::AddMemReqPort(::llvm::SmallVector<circt::firrtl::PortInfo> *ports) {
 	using BundleElement = circt::firrtl::BundleType::BundleElement;
 
-	llvm::SmallVector<BundleElement> memReqElements;
+	::llvm::SmallVector<BundleElement> memReqElements;
 	memReqElements.push_back(GetReadyElement());
 	memReqElements.push_back(GetValidElement());
 	memReqElements.push_back(BundleElement(
@@ -1780,10 +1780,10 @@ jlm::hls::MLIRGenImpl::AddMemReqPort(llvm::SmallVector<circt::firrtl::PortInfo> 
 }
 
 void
-jlm::hls::MLIRGenImpl::AddMemResPort(llvm::SmallVector<circt::firrtl::PortInfo> *ports) {
+jlm::hls::MLIRGenImpl::AddMemResPort(::llvm::SmallVector<circt::firrtl::PortInfo> *ports) {
 	using BundleElement = circt::firrtl::BundleType::BundleElement;
 
-	llvm::SmallVector<BundleElement> memResElements;
+	::llvm::SmallVector<BundleElement> memResElements;
 	memResElements.push_back(GetValidElement());
 	memResElements.push_back(BundleElement(
 					builder.getStringAttr("data"),
@@ -1805,13 +1805,13 @@ jlm::hls::MLIRGenImpl::AddMemResPort(llvm::SmallVector<circt::firrtl::PortInfo> 
 
 void
 jlm::hls::MLIRGenImpl::AddBundlePort(
-			llvm::SmallVector<circt::firrtl::PortInfo> *ports,
+			::llvm::SmallVector<circt::firrtl::PortInfo> *ports,
 			circt::firrtl::Direction direction,
 			std::string name,
 			circt::firrtl::FIRRTLBaseType type) {
 	using BundleElement = circt::firrtl::BundleType::BundleElement;
 
-	llvm::SmallVector<BundleElement> elements;
+	::llvm::SmallVector<BundleElement> elements;
 	elements.push_back(GetReadyElement());
 	elements.push_back(GetValidElement());
 	elements.push_back(BundleElement(
@@ -1838,7 +1838,7 @@ jlm::hls::MLIRGenImpl::GetSubfield(mlir::Block *body, mlir::Value value, int ind
 }
 
 circt::firrtl::SubfieldOp
-jlm::hls::MLIRGenImpl::GetSubfield(mlir::Block *body, mlir::Value value, llvm::StringRef fieldName) {
+jlm::hls::MLIRGenImpl::GetSubfield(mlir::Block *body, mlir::Value value, ::llvm::StringRef fieldName) {
 	auto subfield = builder.create<circt::firrtl::SubfieldOp>(location, value, fieldName);
 	body->push_back(subfield);
 	return subfield;
@@ -2143,7 +2143,7 @@ jlm::hls::MLIRGenImpl::GetConstant(mlir::Block *body, int size, int value) {
 	auto constant = builder.create<circt::firrtl::ConstantOp>(
 			location,
 			intType,
-			llvm::APInt(size, value));
+			::llvm::APInt(size, value));
 	body->push_back(constant);
 	return constant;
 }
@@ -2230,7 +2230,7 @@ jlm::hls::MLIRGenImpl::InitializeMemReq(circt::firrtl::FModuleOp module) {
 circt::firrtl::FModuleOp
 jlm::hls::MLIRGenImpl::nodeToModule(const jlm::rvsdg::simple_node *node, bool mem) {
 	// Generate a vector with all inputs and outputs of the module
-	llvm::SmallVector<circt::firrtl::PortInfo> ports;
+	::llvm::SmallVector<circt::firrtl::PortInfo> ports;
 
 	// Clock and reset ports
 	AddClockPort(&ports);
@@ -2300,13 +2300,13 @@ jlm::hls::MLIRGenImpl::GetModuleName(const jlm::rvsdg::node *node) {
 		append.append(std::to_string(JlmSize(&node->output(i)->type())));
 		append.append("W");
 	}
-    if(auto op = dynamic_cast<const jlm::GetElementPtrOperation *>(&node->operation())){
+    if(auto op = dynamic_cast<const llvm::GetElementPtrOperation *>(&node->operation())){
         const jlm::rvsdg::type *pointeeType = &op->GetPointeeType();
         for (size_t i = 1; i < node->ninputs(); i++) {
             int bits = JlmSize(pointeeType);
             if (dynamic_cast<const jlm::rvsdg::bittype *>(pointeeType)) {
                 ;
-            } else if (auto arrayType = dynamic_cast<const jlm::arraytype *>(pointeeType)) {
+            } else if (auto arrayType = dynamic_cast<const llvm::arraytype *>(pointeeType)) {
                 pointeeType = &arrayType->element_type();
             } else {
                 throw std::logic_error(pointeeType->debug_string() + " pointer not implemented!");
@@ -2365,12 +2365,12 @@ jlm::hls::MLIRGenImpl::WriteCircuitToFile(const circt::firrtl::CircuitOp circuit
 	}
 
 	// Print the FIRRTL IR
-	module.print(llvm::outs());
+	module.print(::llvm::outs());
 
 	// Write the module to file
 	std::string fileName = name + extension();
 	std::error_code EC;
-	llvm::raw_fd_ostream output(fileName, EC);
+	::llvm::raw_fd_ostream output(fileName, EC);
 	auto status = circt::firrtl::exportFIRFile(module, output);
 	if (status.failed())
 		throw jlm::util::error("Exporting of FIRRTL failed");
@@ -2392,7 +2392,7 @@ jlm::hls::MLIRGenImpl::toString(const circt::firrtl::CircuitOp circuit) {
 
 	// Export FIRRTL to string
 	std::string outputString;
-	llvm::raw_string_ostream output(outputString);
+	::llvm::raw_string_ostream output(outputString);
 	auto status = circt::firrtl::exportFIRFile(module, output);
 	if (status.failed())
 		throw std::logic_error("Exporting of firrtl failed");
