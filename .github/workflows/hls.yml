@@ -1,11 +1,20 @@
 name: HLS
 
 on:
+  push:
+    branches: [ master ]
   pull_request:
     branches: [ master ]
 
 jobs:
-  hls-test-suite:
+
+  # --------
+  # Since rebase often failes we compile CIRCT in a separate job.
+  # This makes it more likely that when rerunning failed jobs it's
+  # not necessary to rebuild CIRCT.
+  # --------
+
+  circt:
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v3
@@ -49,7 +58,65 @@ jobs:
     # Try to fetch CIRCT from the cache
     - name: Cache CIRCT
       id: cache-circt
-      uses: actions/cache@v2
+      uses: actions/cache@v3
+      with:
+        path: |
+          jlm-eval-suite/circt/local
+        key: ${{ runner.os }}-circt-${{ steps.get-circt-hash.outputs.hash }}
+
+    # Build CIRCT if we didn't hit in the cache
+    - name: Rebuild and Install CIRCT
+      if: steps.cache-circt.outputs.cache-hit != 'true'
+      run: |
+        cd jlm-eval-suite
+        make circt-build
+
+  hls-test-suite:
+    runs-on: ubuntu-22.04
+    needs: circt
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: '0'
+
+    # --------
+    # Install dependencies
+    # --------
+
+    - name: Get LLVM apt key
+      run: wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+    - name: Update apt sources
+      run: sudo add-apt-repository deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-16 main
+    - name: Install dependencies (LLVM-16, MLIR-16, Clang-16, and ninja)
+      run: sudo apt-get install llvm-16-dev libmlir-16-dev mlir-16-tools clang-16 ninja-build
+    - name: Place MLIRlib in system folder
+      run: sudo ln -s /usr/lib/llvm-16/lib/libMLIR.so.16 /usr/lib/x86_64-linux-gnu/ && sudo ln -s /usr/lib/llvm-16/lib/libMLIR.so.16 /usr/lib/x86_64-linux-gnu/libMLIR.so
+    - name: Instal llvm-lit
+      run: sudo python3 /usr/lib/llvm-16/build/utils/lit/setup.py install
+
+    # --------
+    # Restore CIRCT from cache and build if it's not in there
+    # --------
+
+    # Clone jlm-eval-suite
+    - name: Clone jlm-test-suite
+      run: git clone https://github.com/EECS-NTNU/jlm-eval-suite.git
+
+    # Extract the CIRCT submodule hash for use in the cache key
+    - name: Checkout CIRCT
+      run: |
+        cd jlm-eval-suite
+        make submodule-circt
+    - name: Get CIRCT hash
+      id: get-circt-hash
+      run: |
+        cd jlm-eval-suite
+        echo "hash=$(git rev-parse @:./circt)" >> $GITHUB_OUTPUT
+
+    # Try to fetch CIRCT from the cache
+    - name: Cache CIRCT
+      id: cache-circt
+      uses: actions/cache@v3
       with:
         path: |
           jlm-eval-suite/circt/local
@@ -66,6 +133,10 @@ jobs:
     # Compile MLIR version of jlm
     # --------
 
+    - name: Set temporary git config only used for this CI run
+      run: |
+       git config --global user.name "John Doe"
+       git config --global user.email johndoe@example.com
     - name: Checkout the mlir branch
       run: git checkout mlir
     - name: Rebase the mlir branch on master
