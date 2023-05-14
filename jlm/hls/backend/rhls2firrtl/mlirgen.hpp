@@ -39,7 +39,7 @@ namespace jlm {
 				return ".fir";
 				}
 		public:
-			std::string get_text(jlm::RvsdgModule &rvsdgModule) override {return "MLIR/FIRRTL generator";}
+			std::string get_text(llvm::RvsdgModule &rvsdgModule) override {return "MLIR/FIRRTL generator";}
 			MLIRGenImpl(mlir::MLIRContext &context) : builder(&context) {}
 			circt::firrtl::CircuitOp MlirGen(const jlm::lambda::node *lamdaNode);
 			void WriteModuleToFile(const circt::firrtl::FModuleOp fModuleOp, const jlm::rvsdg::node *node);
@@ -193,10 +193,10 @@ namespace jlm {
 				return ".fir";
 			}
 
-			std::string get_text(jlm::RvsdgModule &rm) override {return "";}
+			std::string get_text(llvm::RvsdgModule &rm) override {return "";}
 		public:
 			std::string
-			run(jlm::RvsdgModule &rvsdgModule) {
+			run(llvm::RvsdgModule &rvsdgModule) {
 				// Load the FIRRTLDialect
 				mlir::MLIRContext context;
 				context.getOrLoadDialect<circt::firrtl::FIRRTLDialect>();
