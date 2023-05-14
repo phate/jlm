@@ -11,7 +11,8 @@
 #include <memory>
 #include <vector>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 class cfg;
 class cfg_node;
@@ -95,7 +96,7 @@ private:
 };
 
 std::unique_ptr<domnode>
-domtree(jlm::cfg & cfg);
+domtree(llvm::cfg & cfg);
 
 }
 

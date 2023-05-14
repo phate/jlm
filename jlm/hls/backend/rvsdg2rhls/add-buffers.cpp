@@ -48,7 +48,7 @@ jlm::hls::add_buffers(jlm::rvsdg::region *region, bool pass_through) {
 }
 
 void
-jlm::hls::add_buffers(jlm::RvsdgModule &rm, bool pass_through) {
+jlm::hls::add_buffers(llvm::RvsdgModule &rm, bool pass_through) {
 	auto &graph = rm.Rvsdg();
 	auto root = graph.root();
 	add_buffers(root, pass_through);

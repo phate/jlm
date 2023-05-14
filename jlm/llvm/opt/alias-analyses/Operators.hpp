@@ -8,7 +8,9 @@
 
 #include <jlm/llvm/ir/operators.hpp>
 
-namespace jlm {
+namespace jlm::llvm
+{
+
 namespace aa {
 
 /** \brief LambdaEntryMemStateOperator class

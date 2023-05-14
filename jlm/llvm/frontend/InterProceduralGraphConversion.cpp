@@ -19,7 +19,8 @@
 
 #include <stack>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 class VariableMap final {
 public:
@@ -70,14 +71,14 @@ public:
     return VariableMapStack_.size();
   }
 
-  jlm::VariableMap &
+  llvm::VariableMap &
   VariableMap(size_t n) noexcept
   {
     JLM_ASSERT(n < NumRegions());
     return *VariableMapStack_[n];
   }
 
-  jlm::VariableMap &
+  llvm::VariableMap &
   GetTopVariableMap() noexcept
   {
     JLM_ASSERT(NumRegions() > 0);
@@ -101,7 +102,7 @@ public:
   void
   PushRegion(rvsdg::region & region)
   {
-    VariableMapStack_.push_back(std::make_unique<jlm::VariableMap>());
+    VariableMapStack_.push_back(std::make_unique<llvm::VariableMap>());
     RegionStack_.push_back(&region);
   }
 
@@ -120,17 +121,17 @@ public:
 
 private:
   const ipgraph_module & InterProceduralGraphModule_;
-  std::vector<std::unique_ptr<jlm::VariableMap>> VariableMapStack_;
+  std::vector<std::unique_ptr<llvm::VariableMap>> VariableMapStack_;
   std::vector<rvsdg::region*> RegionStack_;
 };
 
-class ControlFlowRestructuringStatistics final : public util::Statistics {
+class ControlFlowRestructuringStatistics final : public jlm::util::Statistics {
 public:
 	~ControlFlowRestructuringStatistics() override
 	= default;
 
 	ControlFlowRestructuringStatistics(
-    util::filepath sourceFileName,
+    jlm::util::filepath sourceFileName,
     std::string functionName)
 	: Statistics(Statistics::Id::ControlFlowRecovery)
   , NumNodes_(0)
@@ -139,7 +140,7 @@ public:
 	{}
 
 	void
-	Start(const jlm::cfg & cfg) noexcept
+	Start(const llvm::cfg & cfg) noexcept
 	{
 		NumNodes_ = cfg.nnodes();
 		Timer_.start();
@@ -154,7 +155,7 @@ public:
 	std::string
 	ToString() const override
 	{
-		return util::strfmt("ControlFlowRestructuring ",
+		return jlm::util::strfmt("ControlFlowRestructuring ",
                   SourceFileName_.to_str(), " ",
                   FunctionName_, " ",
                   "#Nodes:", NumNodes_, " ",
@@ -163,7 +164,7 @@ public:
 
   static std::unique_ptr<ControlFlowRestructuringStatistics>
   Create(
-    util::filepath sourceFileName,
+    jlm::util::filepath sourceFileName,
     std::string functionName)
   {
     return std::make_unique<ControlFlowRestructuringStatistics>(
@@ -173,27 +174,27 @@ public:
 
 private:
 	size_t NumNodes_;
-	util::timer Timer_;
+	jlm::util::timer Timer_;
 	std::string FunctionName_;
-	util::filepath SourceFileName_;
+	jlm::util::filepath SourceFileName_;
 };
 
-class AggregationStatistics final : public util::Statistics {
+class AggregationStatistics final : public jlm::util::Statistics {
 public:
 	~AggregationStatistics() override
 	= default;
 
 	AggregationStatistics(
-    util::filepath sourceFileName,
+    jlm::util::filepath sourceFileName,
     std::string functionName)
-	: Statistics(util::Statistics::Id::Aggregation)
+	: Statistics(jlm::util::Statistics::Id::Aggregation)
   , NumNodes_(0)
 	, FunctionName_(std::move(functionName))
 	, SourceFileName_(std::move(sourceFileName))
 	{}
 
 	void
-	Start(const jlm::cfg & cfg) noexcept
+	Start(const llvm::cfg & cfg) noexcept
 	{
 		NumNodes_ = cfg.nnodes();
 		Timer_.start();
@@ -208,7 +209,7 @@ public:
 	std::string
 	ToString() const override
 	{
-		return util::strfmt("Aggregation ",
+		return jlm::util::strfmt("Aggregation ",
                   SourceFileName_.to_str(), " ",
                   FunctionName_, " ",
                   "#Nodes:", NumNodes_, " ",
@@ -217,7 +218,7 @@ public:
 
   static std::unique_ptr<AggregationStatistics>
   Create(
-    util::filepath sourceFileName,
+    jlm::util::filepath sourceFileName,
     std::string functionName)
   {
     return std::make_unique<AggregationStatistics>(
@@ -227,20 +228,20 @@ public:
 
 private:
 	size_t NumNodes_;
-	util::timer Timer_;
+	jlm::util::timer Timer_;
 	std::string FunctionName_;
-	util::filepath SourceFileName_;
+	jlm::util::filepath SourceFileName_;
 };
 
-class AnnotationStatistics final : public util::Statistics {
+class AnnotationStatistics final : public jlm::util::Statistics {
 public:
 	~AnnotationStatistics() override
 	= default;
 
 	AnnotationStatistics(
-    util::filepath sourceFileName,
+    jlm::util::filepath sourceFileName,
     std::string functionName)
-	: Statistics(util::Statistics::Id::Annotation)
+	: Statistics(jlm::util::Statistics::Id::Annotation)
   , NumThreeAddressCodes_(0)
 	, FunctionName_(std::move(functionName))
 	, SourceFileName_(std::move(sourceFileName))
@@ -249,7 +250,7 @@ public:
 	void
 	Start(const aggnode & node) noexcept
 	{
-		NumThreeAddressCodes_ = jlm::ntacs(node);
+		NumThreeAddressCodes_ = llvm::ntacs(node);
 		Timer_.start();
 	}
 
@@ -262,7 +263,7 @@ public:
   std::string
 	ToString() const override
 	{
-		return util::strfmt("Annotation ",
+		return jlm::util::strfmt("Annotation ",
                   SourceFileName_.to_str(), " ",
                   FunctionName_, " ",
                   "#ThreeAddressCodes:", NumThreeAddressCodes_, " ",
@@ -271,7 +272,7 @@ public:
 
   static std::unique_ptr<AnnotationStatistics>
   Create(
-    util::filepath sourceFileName,
+    jlm::util::filepath sourceFileName,
     std::string functionName)
   {
     return std::make_unique<AnnotationStatistics>(
@@ -281,20 +282,20 @@ public:
 
 private:
 	size_t NumThreeAddressCodes_;
-	util::timer Timer_;
+	jlm::util::timer Timer_;
 	std::string FunctionName_;
-	util::filepath SourceFileName_;
+	jlm::util::filepath SourceFileName_;
 };
 
-class AggregationTreeToLambdaStatistics final : public util::Statistics {
+class AggregationTreeToLambdaStatistics final : public jlm::util::Statistics {
 public:
 	~AggregationTreeToLambdaStatistics() override
 	= default;
 
 	AggregationTreeToLambdaStatistics(
-    util::filepath sourceFileName,
+    jlm::util::filepath sourceFileName,
     std::string functionName)
-	: Statistics(util::Statistics::Id::JlmToRvsdgConversion)
+	: Statistics(jlm::util::Statistics::Id::JlmToRvsdgConversion)
   , FunctionName_(std::move(functionName))
 	, SourceFileName_(std::move(sourceFileName))
 	{}
@@ -314,7 +315,7 @@ public:
 	std::string
 	ToString() const override
 	{
-		return util::strfmt("ControlFlowGraphToLambda ",
+		return jlm::util::strfmt("ControlFlowGraphToLambda ",
                   SourceFileName_.to_str(), " ",
                   FunctionName_, " ",
                   "Time[ns]:", Timer_.ns());
@@ -322,7 +323,7 @@ public:
 
   static std::unique_ptr<AggregationTreeToLambdaStatistics>
   Create(
-    util::filepath sourceFileName,
+    jlm::util::filepath sourceFileName,
     std::string functionName)
   {
     return std::make_unique<AggregationTreeToLambdaStatistics>(
@@ -331,20 +332,20 @@ public:
   }
 
 private:
-	util::timer Timer_;
+	jlm::util::timer Timer_;
 	std::string FunctionName_;
-	util::filepath SourceFileName_;
+	jlm::util::filepath SourceFileName_;
 };
 
-class DataNodeToDeltaStatistics final : public util::Statistics {
+class DataNodeToDeltaStatistics final : public jlm::util::Statistics {
 public:
   ~DataNodeToDeltaStatistics() override
   = default;
 
   DataNodeToDeltaStatistics(
-    util::filepath sourceFileName,
+    jlm::util::filepath sourceFileName,
     std::string dataNodeName)
-  : Statistics(util::Statistics::Id::DataNodeToDelta)
+  : Statistics(jlm::util::Statistics::Id::DataNodeToDelta)
   , NumInitializationThreeAddressCodes_(0)
   , DataNodeName_(std::move(dataNodeName))
   , SourceFileName_(std::move(sourceFileName))
@@ -366,7 +367,7 @@ public:
   std::string
   ToString() const override
   {
-    return util::strfmt("DataNodeToDeltaStatistics ",
+    return jlm::util::strfmt("DataNodeToDeltaStatistics ",
                   SourceFileName_.to_str(), " ",
                   DataNodeName_, " ",
                   "#InitializationThreeAddressCodes:", NumInitializationThreeAddressCodes_, " ",
@@ -375,7 +376,7 @@ public:
 
   static std::unique_ptr<DataNodeToDeltaStatistics>
   Create(
-    util::filepath sourceFileName,
+    jlm::util::filepath sourceFileName,
     std::string dataNodeName)
   {
     return std::make_unique<DataNodeToDeltaStatistics>(
@@ -384,20 +385,20 @@ public:
   }
 
 private:
-  util::timer Timer_;
+  jlm::util::timer Timer_;
   size_t NumInitializationThreeAddressCodes_;
   std::string DataNodeName_;
-  util::filepath SourceFileName_;
+  jlm::util::filepath SourceFileName_;
 };
 
-class InterProceduralGraphToRvsdgStatistics final : public util::Statistics {
+class InterProceduralGraphToRvsdgStatistics final : public jlm::util::Statistics {
 public:
 	~InterProceduralGraphToRvsdgStatistics() override
 	= default;
 
   explicit
-	InterProceduralGraphToRvsdgStatistics(util::filepath sourceFileName)
-	: Statistics(util::Statistics::Id::RvsdgConstruction)
+	InterProceduralGraphToRvsdgStatistics(jlm::util::filepath sourceFileName)
+	: Statistics(jlm::util::Statistics::Id::RvsdgConstruction)
   , NumThreeAddressCodes_(0)
 	, NumRvsdgNodes_(0)
 	, SourceFileName_(std::move(sourceFileName))
@@ -406,7 +407,7 @@ public:
 	void
 	Start(const ipgraph_module & interProceduralGraphModule) noexcept
 	{
-		NumThreeAddressCodes_ = jlm::ntacs(interProceduralGraphModule);
+		NumThreeAddressCodes_ = llvm::ntacs(interProceduralGraphModule);
 		Timer_.start();
 	}
 
@@ -420,7 +421,7 @@ public:
 	std::string
 	ToString() const override
 	{
-		return util::strfmt("InterProceduralGraphToRvsdg ",
+		return jlm::util::strfmt("InterProceduralGraphToRvsdg ",
                   SourceFileName_.to_str(), " ",
                   "#ThreeAddressCodes:", NumThreeAddressCodes_, " ",
                   "#RvsdgNodes:", NumRvsdgNodes_, " ",
@@ -428,7 +429,7 @@ public:
 	}
 
   static std::unique_ptr<InterProceduralGraphToRvsdgStatistics>
-  Create(util::filepath sourceFileName)
+  Create(jlm::util::filepath sourceFileName)
   {
     return std::make_unique<InterProceduralGraphToRvsdgStatistics>(std::move(sourceFileName));
   }
@@ -436,8 +437,8 @@ public:
 private:
 	size_t NumThreeAddressCodes_;
 	size_t NumRvsdgNodes_;
-	util::timer Timer_;
-	util::filepath SourceFileName_;
+	jlm::util::timer Timer_;
+	jlm::util::filepath SourceFileName_;
 };
 
 class InterProceduralGraphToRvsdgStatisticsCollector final
@@ -445,16 +446,16 @@ class InterProceduralGraphToRvsdgStatisticsCollector final
 public:
   explicit
   InterProceduralGraphToRvsdgStatisticsCollector(
-    util::StatisticsCollector & statisticsCollector,
-    util::filepath sourceFileName)
+    jlm::util::StatisticsCollector & statisticsCollector,
+    jlm::util::filepath sourceFileName)
   : SourceFileName_(std::move(sourceFileName))
   , StatisticsCollector_(statisticsCollector)
   {}
 
   void
   CollectControlFlowRestructuringStatistics(
-    const std::function<void(jlm::cfg*)> & restructureControlFlowGraph,
-    jlm::cfg & cfg,
+    const std::function<void(llvm::cfg*)> & restructureControlFlowGraph,
+    llvm::cfg & cfg,
     std::string functionName)
   {
     auto statistics = ControlFlowRestructuringStatistics::Create(SourceFileName_, std::move(functionName));
@@ -473,8 +474,8 @@ public:
 
   std::unique_ptr<aggnode>
   CollectAggregationStatistics(
-    const std::function<std::unique_ptr<aggnode>(jlm::cfg&)> & aggregateControlFlowGraph,
-    jlm::cfg & cfg,
+    const std::function<std::unique_ptr<aggnode>(llvm::cfg&)> & aggregateControlFlowGraph,
+    llvm::cfg & cfg,
     std::string functionName)
   {
     auto statistics = AggregationStatistics::Create(SourceFileName_, std::move(functionName));
@@ -568,8 +569,8 @@ public:
   }
 
 private:
-  const util::filepath SourceFileName_;
-  util::StatisticsCollector & StatisticsCollector_;
+  const jlm::util::filepath SourceFileName_;
+  jlm::util::StatisticsCollector & StatisticsCollector_;
 };
 
 static bool
@@ -581,9 +582,9 @@ requiresExport(const ipgraph_node & ipgNode)
 
 static void
 ConvertAssignment(
-  const jlm::tac & threeAddressCode,
+  const llvm::tac & threeAddressCode,
   rvsdg::region & region,
-  jlm::VariableMap & variableMap)
+  llvm::VariableMap & variableMap)
 {
 	JLM_ASSERT(is<assignment_op>(threeAddressCode.operation()));
 
@@ -594,9 +595,9 @@ ConvertAssignment(
 
 static void
 ConvertSelect(
-  const jlm::tac & threeAddressCode,
+  const llvm::tac & threeAddressCode,
   rvsdg::region & region,
-  jlm::VariableMap & variableMap)
+  llvm::VariableMap & variableMap)
 {
 	JLM_ASSERT(is<select_op>(threeAddressCode.operation()));
 	JLM_ASSERT(threeAddressCode.noperands() == 3 && threeAddressCode.nresults() == 1);
@@ -614,9 +615,9 @@ ConvertSelect(
 
 static void
 ConvertBranch(
-  const jlm::tac & threeAddressCode,
+  const llvm::tac & threeAddressCode,
   rvsdg::region & region,
-  jlm::VariableMap & variableMap)
+  llvm::VariableMap & variableMap)
 {
 	JLM_ASSERT(is<branch_op>(threeAddressCode.operation()));
   /*
@@ -626,9 +627,9 @@ ConvertBranch(
 
 template<class NODE, class OPERATION> static void
 Convert(
-  const jlm::tac & threeAddressCode,
+  const llvm::tac & threeAddressCode,
   rvsdg::region & region,
-  jlm::VariableMap & variableMap)
+  llvm::VariableMap & variableMap)
 {
   std::vector<rvsdg::output*> operands;
   for (size_t n = 0; n < threeAddressCode.noperands(); n++) {
@@ -636,7 +637,7 @@ Convert(
     operands.push_back(variableMap.lookup(operand));
   }
 
-  auto operation = util::AssertedCast<const OPERATION>(&threeAddressCode.operation());
+  auto operation = jlm::util::AssertedCast<const OPERATION>(&threeAddressCode.operation());
   auto results = NODE::Create(region, *operation, operands);
 
   JLM_ASSERT(results.size() == threeAddressCode.nresults());
@@ -648,13 +649,13 @@ Convert(
 
 static void
 ConvertThreeAddressCode(
-  const jlm::tac & threeAddressCode,
+  const llvm::tac & threeAddressCode,
   rvsdg::region & region,
-  jlm::VariableMap & variableMap)
+  llvm::VariableMap & variableMap)
 {
 	static std::unordered_map<
 		std::type_index,
-		std::function<void(const jlm::tac&, rvsdg::region&, jlm::VariableMap&)>
+		std::function<void(const llvm::tac&, rvsdg::region&, llvm::VariableMap&)>
 	> map({
 	  {typeid(assignment_op),  ConvertAssignment}
 	, {typeid(select_op),      ConvertSelect}
@@ -684,7 +685,7 @@ static void
 ConvertBasicBlock(
   const taclist & basicBlock,
   rvsdg::region & region,
-  jlm::VariableMap & variableMap)
+  llvm::VariableMap & variableMap)
 {
 	for (const auto & threeAddressCode: basicBlock)
     ConvertThreeAddressCode(*threeAddressCode, region, variableMap);
@@ -942,11 +943,11 @@ ConvertAggregationNode(
 
 static void
 RestructureControlFlowGraph(
-  jlm::cfg & controlFlowGraph,
+  llvm::cfg & controlFlowGraph,
   const std::string & functionName,
   InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
-  auto restructureControlFlowGraph = [](jlm::cfg * controlFlowGraph)
+  auto restructureControlFlowGraph = [](llvm::cfg * controlFlowGraph)
   {
     RestructureControlFlow(controlFlowGraph);
     straighten(*controlFlowGraph);
@@ -960,11 +961,11 @@ RestructureControlFlowGraph(
 
 static std::unique_ptr<aggnode>
 AggregateControlFlowGraph(
-  jlm::cfg & controlFlowGraph,
+  llvm::cfg & controlFlowGraph,
   const std::string & functionName,
   InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
-  auto aggregateControlFlowGraph = [](jlm::cfg & controlFlowGraph)
+  auto aggregateControlFlowGraph = [](llvm::cfg & controlFlowGraph)
   {
     auto aggregationTreeRoot = aggregate(controlFlowGraph);
     aggnode::normalize(*aggregationTreeRoot);
@@ -1078,7 +1079,7 @@ ConvertFunctionNode(
    * import.
    */
 	if (functionNode.cfg() == nullptr) {
-		jlm::impport port(
+		impport port(
             functionNode.fcttype(),
             functionNode.name(),
             functionNode.linkage());
@@ -1118,7 +1119,7 @@ ConvertDataNode(
      * We have a data node without initialization. Simply add an RVSDG import.
      */
     if (!dataNodeInitialization) {
-      jlm::impport port(
+      impport port(
         dataNode.GetValueType(),
         dataNode.name(),
         dataNode.linkage());
@@ -1182,7 +1183,7 @@ ConvertInterProceduralGraphNode(
 
 static void
 ConvertStronglyConnectedComponent(
-  const std::unordered_set<const jlm::ipgraph_node*> & stronglyConnectedComponent,
+  const std::unordered_set<const ipgraph_node*> & stronglyConnectedComponent,
   rvsdg::graph & graph,
   RegionalizedVariableMap & regionalizedVariableMap,
   InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
@@ -1292,7 +1293,7 @@ ConvertInterProceduralGraphModule(
 std::unique_ptr<RvsdgModule>
 ConvertInterProceduralGraphModule(
   const ipgraph_module & interProceduralGraphModule,
-  util::StatisticsCollector & statisticsCollector)
+  jlm::util::StatisticsCollector & statisticsCollector)
 {
   InterProceduralGraphToRvsdgStatisticsCollector interProceduralGraphToRvsdgStatisticsCollector(
     statisticsCollector,

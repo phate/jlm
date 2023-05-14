@@ -24,8 +24,8 @@ jlm::hls::add_prints(jlm::rvsdg::region *region) {
 //		}
 		if( dynamic_cast<jlm::rvsdg::simple_node *>(node)
 				&& node->noutputs()==1
-				&& is<jlm::rvsdg::bittype>(node->output(0)->type())
-				&& !is<jlm::UndefValueOperation>(node)){
+				&& jlm::rvsdg::is<jlm::rvsdg::bittype>(node->output(0)->type())
+				&& !jlm::rvsdg::is<llvm::UndefValueOperation>(node)){
 			auto out = node->output(0);
 			std::vector<jlm::rvsdg::input *> old_users(out->begin(), out->end());
 			auto new_out = hls::print_op::create(*out)[0];
@@ -37,19 +37,19 @@ jlm::hls::add_prints(jlm::rvsdg::region *region) {
 }
 
 void
-jlm::hls::add_prints(jlm::RvsdgModule &rm) {
+jlm::hls::add_prints(llvm::RvsdgModule &rm) {
 	auto &graph = rm.Rvsdg();
 	auto root = graph.root();
 	add_prints(root);
 }
 
 void
-jlm::hls::convert_prints(jlm::RvsdgModule &rm) {
+jlm::hls::convert_prints(llvm::RvsdgModule &rm) {
 	auto &graph = rm.Rvsdg();
 	auto root = graph.root();
 	//TODO: make this less hacky by using the correct state types
-	FunctionType fct({&jlm::rvsdg::bit64, &jlm::rvsdg::bit64}, {loopstatetype::create().get()});
-	impport imp(fct, "printnode", linkage::external_linkage);
+	llvm::FunctionType fct({&jlm::rvsdg::bit64, &jlm::rvsdg::bit64}, {llvm::loopstatetype::create().get()});
+	llvm::impport imp(fct, "printnode", llvm::linkage::external_linkage);
 	auto printf = graph.add_import(imp);
 	convert_prints(
     root,
@@ -72,7 +72,7 @@ jlm::hls::route_to_region(jlm::rvsdg::output * output, jlm::rvsdg::region * regi
 		output = region->argument(region->narguments()-1);
 	}	else if (auto theta = dynamic_cast<jlm::rvsdg::theta_node*>(region->node())) {
 		output = theta->add_loopvar(output)->argument();
-	} else if (auto lambda = dynamic_cast<jlm::lambda::node*>(region->node())) {
+	} else if (auto lambda = dynamic_cast<llvm::lambda::node*>(region->node())) {
 		output = lambda->add_ctxvar(output);
 	} else {
 		JLM_ASSERT(0);
@@ -85,7 +85,7 @@ void
 jlm::hls::convert_prints(
   jlm::rvsdg::region *region,
   jlm::rvsdg::output * printf,
-  const FunctionType & functionType)
+  const llvm::FunctionType & functionType)
 {
 	for (auto &node : jlm::rvsdg::topdown_traverser(region)) {
 		if (auto structnode = dynamic_cast<jlm::rvsdg::structural_node *>(node)) {
@@ -99,10 +99,10 @@ jlm::hls::convert_prints(
 			if(val->type()!=jlm::rvsdg::bit64){
 				auto bt = dynamic_cast<const jlm::rvsdg::bittype*>(&val->type());
 				JLM_ASSERT(bt);
-				auto op = jlm::zext_op(bt->nbits(), 64);
+				auto op = llvm::zext_op(bt->nbits(), 64);
 				val = jlm::rvsdg::simple_node::create_normalized(region, op, {val})[0];
 			}
-			jlm::CallNode::Create(printf_local, functionType, {bc, val});
+			llvm::CallNode::Create(printf_local, functionType, {bc, val});
 			node->output(0)->divert_users(node->input(0)->origin());
 			jlm::rvsdg::remove(node);
 		}

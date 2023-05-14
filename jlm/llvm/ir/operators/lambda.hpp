@@ -15,7 +15,8 @@
 
 #include <utility>
 
-namespace jlm::lambda {
+namespace jlm::llvm::lambda
+{
 
 /** \brief Lambda operation
 *
@@ -27,10 +28,10 @@ public:
   ~operation() override;
 
   operation(
-    FunctionType type,
+    jlm::llvm::FunctionType type,
     std::string name,
-    const jlm::linkage & linkage,
-    attributeset attributes)
+    const jlm::llvm::linkage & linkage,
+    jlm::llvm::attributeset attributes)
     : type_(std::move(type))
     , name_(std::move(name))
     , linkage_(linkage)
@@ -78,7 +79,7 @@ public:
     return *this;
   }
 
-  [[nodiscard]] const FunctionType &
+  [[nodiscard]] const jlm::llvm::FunctionType &
   type() const noexcept
   {
     return type_;
@@ -90,13 +91,13 @@ public:
     return name_;
   }
 
-  [[nodiscard]] const jlm::linkage &
+  [[nodiscard]] const jlm::llvm::linkage &
   linkage() const noexcept
   {
     return linkage_;
   }
 
-  [[nodiscard]] const attributeset &
+  [[nodiscard]] const jlm::llvm::attributeset &
   attributes() const noexcept
   {
     return attributes_;
@@ -112,10 +113,10 @@ public:
   copy() const override;
 
 private:
-  FunctionType type_;
+  jlm::llvm::FunctionType type_;
   std::string name_;
-  jlm::linkage linkage_;
-  attributeset attributes_;
+  jlm::llvm::linkage linkage_;
+  jlm::llvm::attributeset attributes_;
 };
 
 class cvargument;
@@ -156,14 +157,14 @@ class node final : public jlm::rvsdg::structural_node
   class fctresiterator;
   class fctresconstiterator;
 
-  using fctargument_range = util::iterator_range<fctargiterator>;
-  using fctargument_constrange = util::iterator_range<fctargconstiterator>;
+  using fctargument_range = jlm::util::iterator_range<fctargiterator>;
+  using fctargument_constrange = jlm::util::iterator_range<fctargconstiterator>;
 
-  using ctxvar_range = util::iterator_range<cviterator>;
-  using ctxvar_constrange = util::iterator_range<cvconstiterator>;
+  using ctxvar_range = jlm::util::iterator_range<cviterator>;
+  using ctxvar_constrange = jlm::util::iterator_range<cvconstiterator>;
 
-  using fctresult_range = util::iterator_range<fctresiterator>;
-  using fctresult_constrange = util::iterator_range<fctresconstiterator>;
+  using fctresult_range = jlm::util::iterator_range<fctresiterator>;
+  using fctresult_constrange = jlm::util::iterator_range<fctresconstiterator>;
 
 public:
   ~node() override;
@@ -203,10 +204,10 @@ public:
   [[nodiscard]] const lambda::operation &
   operation() const noexcept
   {
-    return *util::AssertedCast<const lambda::operation>(&structural_node::operation());
+    return *jlm::util::AssertedCast<const lambda::operation>(&structural_node::operation());
   }
 
-  [[nodiscard]] const FunctionType &
+  [[nodiscard]] const jlm::llvm::FunctionType &
   type() const noexcept
   {
     return operation().type();
@@ -218,13 +219,13 @@ public:
     return operation().name();
   }
 
-  [[nodiscard]] const jlm::linkage &
+  [[nodiscard]] const jlm::llvm::linkage &
   linkage() const noexcept
   {
     return operation().linkage();
   }
 
-  [[nodiscard]] const attributeset &
+  [[nodiscard]] const jlm::llvm::attributeset &
   attributes() const noexcept
   {
     return operation().attributes();
@@ -299,10 +300,10 @@ public:
   static node *
   create(
     jlm::rvsdg::region * parent,
-    const FunctionType & type,
+    const jlm::llvm::FunctionType & type,
     const std::string & name,
-    const jlm::linkage & linkage,
-    const attributeset & attributes);
+    const jlm::llvm::linkage & linkage,
+    const jlm::llvm::attributeset & attributes);
 
   /**
   * See \ref create().
@@ -310,9 +311,9 @@ public:
   static node *
   create(
     jlm::rvsdg::region * parent,
-    const FunctionType & type,
+    const jlm::llvm::FunctionType & type,
     const std::string & name,
-    const jlm::linkage & linkage)
+    const jlm::llvm::linkage & linkage)
   {
     return create(parent, type, name, linkage, {});
   }
@@ -343,7 +344,7 @@ public:
 */
 class cvinput final : public jlm::rvsdg::structural_input
 {
-  friend ::jlm::lambda::node;
+  friend ::jlm::llvm::lambda::node;
 
 public:
   ~cvinput() override;
@@ -361,7 +362,7 @@ private:
     jlm::rvsdg::output * origin)
   {
     auto input = std::unique_ptr<cvinput>(new cvinput(node, origin));
-    return util::AssertedCast<cvinput>(node->append_input(std::move(input)));
+    return jlm::util::AssertedCast<cvinput>(node->append_input(std::move(input)));
   }
 
 public:
@@ -371,7 +372,7 @@ public:
   [[nodiscard]] lambda::node *
   node() const noexcept
   {
-    return util::AssertedCast<lambda::node>(structural_input::node());
+    return jlm::util::AssertedCast<lambda::node>(structural_input::node());
   }
 };
 
@@ -379,7 +380,7 @@ public:
 */
 class node::cviterator final : public jlm::rvsdg::input::iterator<cvinput>
 {
-  friend ::jlm::lambda::node;
+  friend ::jlm::llvm::lambda::node;
 
   constexpr explicit
   cviterator(cvinput * input)
@@ -400,7 +401,7 @@ class node::cviterator final : public jlm::rvsdg::input::iterator<cvinput>
 */
 class node::cvconstiterator final : public jlm::rvsdg::input::constiterator<cvinput>
 {
-  friend ::jlm::lambda::node;
+  friend ::jlm::llvm::lambda::node;
 
   constexpr explicit
   cvconstiterator(const cvinput * input)
@@ -421,7 +422,7 @@ class node::cvconstiterator final : public jlm::rvsdg::input::constiterator<cvin
 */
 class output final : public jlm::rvsdg::structural_output
 {
-  friend ::jlm::lambda::node;
+  friend ::jlm::llvm::lambda::node;
 
 public:
   ~output() override;
@@ -439,14 +440,14 @@ private:
     const jlm::rvsdg::port & port)
   {
     auto output = std::unique_ptr<lambda::output>(new lambda::output(node, port));
-    return util::AssertedCast<lambda::output>(node->append_output(std::move(output)));
+    return jlm::util::AssertedCast<lambda::output>(node->append_output(std::move(output)));
   }
 
 public:
   lambda::node *
   node() const noexcept
   {
-    return util::AssertedCast<lambda::node>(structural_output::node());
+    return jlm::util::AssertedCast<lambda::node>(structural_output::node());
   }
 };
 
@@ -454,25 +455,25 @@ public:
 */
 class fctargument final : public jlm::rvsdg::argument
 {
-  friend ::jlm::lambda::node;
+  friend ::jlm::llvm::lambda::node;
 
 public:
   ~fctargument() override;
 
-  const attributeset &
+  const jlm::llvm::attributeset &
   attributes() const noexcept
   {
     return attributes_;
   }
 
   void
-  add(const jlm::attribute & attribute)
+  add(const jlm::llvm::attribute & attribute)
   {
     attributes_.insert(attribute);
   }
 
   void
-  set_attributes(const attributeset & attributes)
+  set_attributes(const jlm::llvm::attributeset & attributes)
   {
     attributes_ = attributes;
   }
@@ -494,14 +495,14 @@ private:
     return argument;
   }
 
-  attributeset attributes_;
+  jlm::llvm::attributeset attributes_;
 };
 
 /** \brief Lambda function argument iterator
 */
 class node::fctargiterator final : public jlm::rvsdg::output::iterator<lambda::fctargument>
 {
-  friend ::jlm::lambda::node;
+  friend ::jlm::llvm::lambda::node;
 
   constexpr explicit
   fctargiterator(lambda::fctargument * argument)
@@ -512,7 +513,7 @@ class node::fctargiterator final : public jlm::rvsdg::output::iterator<lambda::f
   next() const override
   {
     auto index = value()->index();
-    auto lambda = util::AssertedCast<lambda::node>(value()->region()->node());
+    auto lambda = jlm::util::AssertedCast<lambda::node>(value()->region()->node());
 
     /*
       This assumes that all function arguments were added to the lambda region
@@ -528,7 +529,7 @@ class node::fctargiterator final : public jlm::rvsdg::output::iterator<lambda::f
 */
 class node::fctargconstiterator final : public jlm::rvsdg::output::constiterator<lambda::fctargument>
 {
-  friend ::jlm::lambda::node;
+  friend ::jlm::llvm::lambda::node;
 
   constexpr explicit
   fctargconstiterator(const lambda::fctargument * argument)
@@ -539,7 +540,7 @@ class node::fctargconstiterator final : public jlm::rvsdg::output::constiterator
   next() const override
   {
     auto index = value()->index();
-    auto lambda = util::AssertedCast<lambda::node>(value()->region()->node());
+    auto lambda = jlm::util::AssertedCast<lambda::node>(value()->region()->node());
 
     /*
       This assumes that all function arguments were added to the lambda region
@@ -555,7 +556,7 @@ class node::fctargconstiterator final : public jlm::rvsdg::output::constiterator
 */
 class cvargument final : public jlm::rvsdg::argument
 {
-  friend ::jlm::lambda::node;
+  friend ::jlm::llvm::lambda::node;
 
 public:
   ~cvargument() override;
@@ -581,7 +582,7 @@ public:
   cvinput *
   input() const noexcept
   {
-    return util::AssertedCast<cvinput>(jlm::rvsdg::argument::input());
+    return jlm::util::AssertedCast<cvinput>(jlm::rvsdg::argument::input());
   }
 };
 
@@ -589,7 +590,7 @@ public:
 */
 class result final : public jlm::rvsdg::result
 {
-  friend ::jlm::lambda::node;
+  friend ::jlm::llvm::lambda::node;
 
 public:
   ~result() override;
@@ -612,7 +613,7 @@ public:
   lambda::output *
   output() const noexcept
   {
-    return util::AssertedCast<lambda::output>(jlm::rvsdg::result::output());
+    return jlm::util::AssertedCast<lambda::output>(jlm::rvsdg::result::output());
   }
 };
 
@@ -620,7 +621,7 @@ public:
 */
 class node::fctresiterator final : public jlm::rvsdg::input::iterator<lambda::result>
 {
-  friend ::jlm::lambda::node;
+  friend ::jlm::llvm::lambda::node;
 
   constexpr explicit
   fctresiterator(lambda::result * result)
@@ -631,7 +632,7 @@ class node::fctresiterator final : public jlm::rvsdg::input::iterator<lambda::re
   next() const override
   {
     auto index = value()->index();
-    auto lambda = util::AssertedCast<lambda::node>(value()->region()->node());
+    auto lambda = jlm::util::AssertedCast<lambda::node>(value()->region()->node());
 
     return lambda->nfctresults() > index+1
            ? lambda->fctresult(index+1)
@@ -643,7 +644,7 @@ class node::fctresiterator final : public jlm::rvsdg::input::iterator<lambda::re
 */
 class node::fctresconstiterator final : public jlm::rvsdg::input::constiterator<lambda::result>
 {
-  friend ::jlm::lambda::node;
+  friend ::jlm::llvm::lambda::node;
 
   constexpr explicit
   fctresconstiterator(const lambda::result * result)
@@ -654,7 +655,7 @@ class node::fctresconstiterator final : public jlm::rvsdg::input::constiterator<
   next() const override
   {
     auto index = value()->index();
-    auto lambda = util::AssertedCast<lambda::node>(value()->region()->node());
+    auto lambda = jlm::util::AssertedCast<lambda::node>(value()->region()->node());
 
     return lambda->nfctresults() > index+1
            ? lambda->fctresult(index+1)
@@ -665,7 +666,7 @@ class node::fctresconstiterator final : public jlm::rvsdg::input::constiterator<
 }
 
 static inline bool
-is_exported(const jlm::lambda::node & lambda)
+is_exported(const jlm::llvm::lambda::node & lambda)
 {
   for (auto & user : *lambda.output()) {
     if (dynamic_cast<const jlm::rvsdg::expport*>(&user->port()))

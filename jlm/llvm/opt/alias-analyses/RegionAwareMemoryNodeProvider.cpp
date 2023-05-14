@@ -12,7 +12,8 @@
 
 #include <typeindex>
 
-namespace jlm::aa {
+namespace jlm::llvm::aa
+{
 
 class RegionSummary final {
 public:
@@ -476,7 +477,7 @@ RegionAwareMemoryNodeProvider::~RegionAwareMemoryNodeProvider() noexcept
 
 std::unique_ptr<MemoryNodeProvisioning>
 RegionAwareMemoryNodeProvider::ProvisionMemoryNodes(
-  const jlm::RvsdgModule & rvsdgModule,
+  const RvsdgModule & rvsdgModule,
   const PointsToGraph & pointsToGraph,
   util::StatisticsCollector & statisticsCollector)
 {
@@ -616,7 +617,7 @@ RegionAwareMemoryNodeProvider::AnnotateSimpleNode(const jlm::rvsdg::simple_node 
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateLoad(const jlm::LoadNode & loadNode)
+RegionAwareMemoryNodeProvider::AnnotateLoad(const LoadNode & loadNode)
 {
   auto memoryNodes = Provisioning_->GetOutputNodes(*loadNode.GetAddressInput()->origin());
   auto & regionSummary = Provisioning_->GetRegionSummary(*loadNode.region());
@@ -624,7 +625,7 @@ RegionAwareMemoryNodeProvider::AnnotateLoad(const jlm::LoadNode & loadNode)
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateStore(const jlm::StoreNode & storeNode)
+RegionAwareMemoryNodeProvider::AnnotateStore(const StoreNode & storeNode)
 {
   auto memoryNodes = Provisioning_->GetOutputNodes(*storeNode.GetAddressInput()->origin());
   auto & regionSummary = Provisioning_->GetRegionSummary(*storeNode.region());
@@ -753,7 +754,7 @@ RegionAwareMemoryNodeProvider::AnnotateStructuralNode(const jlm::rvsdg::structur
 }
 
 void
-RegionAwareMemoryNodeProvider::Propagate(const jlm::RvsdgModule & rvsdgModule)
+RegionAwareMemoryNodeProvider::Propagate(const RvsdgModule & rvsdgModule)
 {
   jlm::rvsdg::topdown_traverser traverser(rvsdgModule.Rvsdg().root());
   for (auto & node : traverser)
@@ -857,7 +858,7 @@ RegionAwareMemoryNodeProvider::PropagateRegion(const jlm::rvsdg::region & region
 }
 
 void
-RegionAwareMemoryNodeProvider::ResolveUnknownMemoryNodeReferences(const jlm::RvsdgModule & rvsdgModule)
+RegionAwareMemoryNodeProvider::ResolveUnknownMemoryNodeReferences(const RvsdgModule & rvsdgModule)
 {
   auto ResolveLambda = [&](const lambda::node & lambda)
   {
@@ -926,7 +927,7 @@ RegionAwareMemoryNodeProvider::ExtractLambdaNodes(const phi::node & phiNode)
 }
 
 std::vector<const jlm::rvsdg::node*>
-RegionAwareMemoryNodeProvider::ExtractRvsdgTailNodes(const jlm::RvsdgModule & rvsdgModule)
+RegionAwareMemoryNodeProvider::ExtractRvsdgTailNodes(const RvsdgModule & rvsdgModule)
 {
   auto IsOnlyExported = [](const jlm::rvsdg::output & output)
   {

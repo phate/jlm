@@ -5,7 +5,7 @@
 
 #include <jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp>
 
-namespace jlm::aa
+namespace jlm::llvm::aa
 {
 
 /** \brief Memory Node Provisioning of agnostic memory node provider

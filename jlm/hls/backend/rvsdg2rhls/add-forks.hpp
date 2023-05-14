@@ -15,7 +15,7 @@ namespace jlm{
 		add_forks(rvsdg::region *region);
 
 		void
-		add_forks(jlm::RvsdgModule &rm);
+		add_forks(llvm::RvsdgModule &rm);
 	}
 }
 #endif //JLM_HLS_BACKEND_RVSDG2RHLS_ADD_FORKS_HPP

@@ -17,13 +17,13 @@ test_bitunary_reduction()
 	jlm::rvsdg::bittype bt32(32);
 
 	jlm::rvsdg::graph graph;
-	auto nf = jlm::sext_op::normal_form(&graph);
+	auto nf = jlm::llvm::sext_op::normal_form(&graph);
 	nf->set_mutable(false);
 
 	auto x = graph.add_import({bt32, "x"});
 
 	auto y = jlm::rvsdg::bitnot_op::create(32, x);
-	auto z = jlm::sext_op::create(64, y);
+	auto z = jlm::llvm::sext_op::create(64, y);
 
 	auto ex = graph.add_export(z, {z->type(), "x"});
 
@@ -44,14 +44,14 @@ test_bitbinary_reduction()
 	jlm::rvsdg::bittype bt32(32);
 
 	jlm::rvsdg::graph graph;
-	auto nf = jlm::sext_op::normal_form(&graph);
+	auto nf = jlm::llvm::sext_op::normal_form(&graph);
 	nf->set_mutable(false);
 
 	auto x = graph.add_import({bt32, "x"});
 	auto y = graph.add_import({bt32, "y"});
 
 	auto z = jlm::rvsdg::bitadd_op::create(32, x, y);
-	auto w = jlm::sext_op::create(64, z);
+	auto w = jlm::llvm::sext_op::create(64, z);
 
 	auto ex = graph.add_export(w, {w->type(), "x"});
 
@@ -74,13 +74,13 @@ test_inverse_reduction()
 	jlm::rvsdg::bittype bt64(64);
 
 	jlm::rvsdg::graph graph;
-	auto nf = jlm::sext_op::normal_form(&graph);
+	auto nf = jlm::llvm::sext_op::normal_form(&graph);
 	nf->set_mutable(false);
 
 	auto x = graph.add_import({bt64, "x"});
 
-	auto y = trunc_op::create(32, x);
-	auto z = jlm::sext_op::create(64, y);
+	auto y = jlm::llvm::trunc_op::create(32, x);
+	auto z = jlm::llvm::sext_op::create(64, y);
 
 	auto ex = graph.add_export(z, {z->type(), "x"});
 

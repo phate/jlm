@@ -10,7 +10,7 @@
 static void
 test_equality()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	ConstantFP c1(fpsize::half, llvm::APFloat(0.0));
 	ConstantFP c2(fpsize::flt, llvm::APFloat(0.0));

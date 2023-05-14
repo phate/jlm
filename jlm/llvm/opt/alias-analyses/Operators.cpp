@@ -5,7 +5,9 @@
 
 #include <jlm/llvm/opt/alias-analyses/Operators.hpp>
 
-namespace jlm {
+namespace jlm::llvm
+{
+
 namespace aa {
 
 /* LambdaEntryMemStateOperator class */

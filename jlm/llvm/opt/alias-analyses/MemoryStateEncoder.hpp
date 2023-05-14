@@ -8,12 +8,13 @@
 
 #include <memory>
 
-namespace jlm {
-
-namespace util
+namespace jlm::util
 {
 class StatisticsCollector;
 }
+
+namespace jlm::llvm
+{
 
 class CallNode;
 class RvsdgModule;
@@ -64,7 +65,7 @@ public:
   Encode(
     RvsdgModule & rvsdgModule,
     const MemoryNodeProvisioning & provisioning,
-    util::StatisticsCollector & statisticsCollector);
+    jlm::util::StatisticsCollector & statisticsCollector);
 
 private:
   void

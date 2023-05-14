@@ -5,7 +5,7 @@
 
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 
-namespace jlm
+namespace jlm::llvm
 {
 
 GetElementPtrOperation::~GetElementPtrOperation() noexcept

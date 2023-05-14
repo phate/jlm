@@ -11,7 +11,8 @@
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/util/file.hpp>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 /* impport class */
 
@@ -23,7 +24,7 @@ public:
     impport(
         const jlm::rvsdg::valuetype & valueType,
         const std::string & name,
-        const jlm::linkage & lnk)
+        const linkage & lnk)
         : jlm::rvsdg::impport(PointerType(), name)
         , linkage_(lnk)
         , ValueType_(valueType.copy())
@@ -47,7 +48,7 @@ public:
 	impport&
 	operator=(impport&&) = delete;
 
-	const jlm::linkage &
+	const jlm::llvm::linkage &
 	linkage() const noexcept
 	{
 		return linkage_;
@@ -56,7 +57,7 @@ public:
     [[nodiscard]] const jlm::rvsdg::valuetype &
     GetValueType() const noexcept
     {
-        return *util::AssertedCast<jlm::rvsdg::valuetype>(ValueType_.get());
+        return *jlm::util::AssertedCast<jlm::rvsdg::valuetype>(ValueType_.get());
     }
 
 	virtual bool
@@ -66,8 +67,8 @@ public:
 	copy() const override;
 
 private:
-	jlm::linkage linkage_;
-    std::unique_ptr<jlm::rvsdg::type> ValueType_;
+	jlm::llvm::linkage linkage_;
+  std::unique_ptr<jlm::rvsdg::type> ValueType_;
 };
 
 static inline bool
@@ -94,7 +95,7 @@ is_export(const jlm::rvsdg::input * input)
 class RvsdgModule final {
 public:
 	RvsdgModule(
-		util::filepath sourceFileName,
+		jlm::util::filepath sourceFileName,
 		std::string targetTriple,
 		std::string dataLayout)
 	: DataLayout_(std::move(dataLayout))
@@ -124,7 +125,7 @@ public:
 		return Rvsdg_;
 	}
 
-	const util::filepath &
+	const jlm::util::filepath &
 	SourceFileName() const noexcept
 	{
 		return SourceFileName_;
@@ -144,7 +145,7 @@ public:
 
 	static std::unique_ptr<RvsdgModule>
 	Create(
-		const util::filepath & sourceFileName,
+		const jlm::util::filepath & sourceFileName,
 		const std::string & targetTriple,
 		const std::string & dataLayout)
 	{
@@ -155,7 +156,7 @@ private:
 	jlm::rvsdg::graph Rvsdg_;
 	std::string DataLayout_;
 	std::string TargetTriple_;
-	const util::filepath SourceFileName_;
+	const jlm::util::filepath SourceFileName_;
 };
 
 }

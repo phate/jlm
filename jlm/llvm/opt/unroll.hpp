@@ -11,7 +11,8 @@
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/util/common.hpp>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 class RvsdgModule;
 

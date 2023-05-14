@@ -12,7 +12,8 @@
 
 #include <deque>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 class pushstat final : public util::Statistics {
 public:
@@ -326,7 +327,7 @@ pushout_store(jlm::rvsdg::node * storenode)
 	JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::theta_op>(storenode->region()->node()));
 	JLM_ASSERT(jlm::rvsdg::is<StoreOperation>(storenode) && is_movable_store(storenode));
 	auto theta = static_cast<jlm::rvsdg::theta_node*>(storenode->region()->node());
-	auto storeop = static_cast<const jlm::StoreOperation*>(&storenode->operation());
+	auto storeop = static_cast<const StoreOperation*>(&storenode->operation());
 	auto oaddress = static_cast<jlm::rvsdg::argument*>(storenode->input(0)->origin());
 	auto ovalue = storenode->input(1)->origin();
 

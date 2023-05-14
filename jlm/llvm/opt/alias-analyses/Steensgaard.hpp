@@ -11,7 +11,8 @@
 
 #include <string>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 namespace delta { class node; }
 namespace lambda { class node; }
@@ -52,7 +53,7 @@ operator&(PointsToFlags lhs, PointsToFlags rhs)
 class LocationSet final
 {
 public:
-	using DisjointLocationSet = typename util::disjointset<Location*>;
+	using DisjointLocationSet = typename jlm::util::disjointset<Location*>;
 
 	using const_iterator = std::unordered_map<
 	  const jlm::rvsdg::output*
@@ -183,7 +184,7 @@ public:
 	std::unique_ptr<PointsToGraph>
 	Analyze(
     const RvsdgModule & module,
-    util::StatisticsCollector & statisticsCollector) override;
+    jlm::util::StatisticsCollector & statisticsCollector) override;
 
 private:
 	void

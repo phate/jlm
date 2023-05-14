@@ -21,7 +21,8 @@ class Value;
 
 }
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 class cfg_node;
 class ipgraph_module;
@@ -30,11 +31,11 @@ class variable;
 namespace jlm2llvm {
 
 class context final {
-	typedef std::unordered_map<const cfg_node*, llvm::BasicBlock*>::const_iterator const_iterator;
+	typedef std::unordered_map<const cfg_node*, ::llvm::BasicBlock*>::const_iterator const_iterator;
 
 public:
 	inline
-	context(ipgraph_module & im, llvm::Module & lm)
+	context(ipgraph_module & im, ::llvm::Module & lm)
 	: lm_(lm)
 	, im_(im)
 	{}
@@ -53,13 +54,13 @@ public:
 		FIXME: It should be a const reference, but we still have to create variables to translate
 		       expressions.
 	*/
-	jlm::ipgraph_module &
+	llvm::ipgraph_module &
 	module() const noexcept
 	{
 		return im_;
 	}
 
-	inline llvm::Module &
+	inline ::llvm::Module &
 	llvm_module() const noexcept
 	{
 		return lm_;
@@ -78,34 +79,34 @@ public:
 	}
 
 	inline void
-	insert(const jlm::cfg_node * node, llvm::BasicBlock * bb)
+	insert(const llvm::cfg_node * node, ::llvm::BasicBlock * bb)
 	{
 		nodes_[node] = bb;
 	}
 
 	inline void
-	insert(const jlm::variable * variable, llvm::Value * value)
+	insert(const llvm::variable * variable, ::llvm::Value * value)
 	{
 		variables_[variable] = value;
 	}
 
-	inline llvm::BasicBlock *
-	basic_block(const jlm::cfg_node * node) const noexcept
+	inline ::llvm::BasicBlock *
+	basic_block(const llvm::cfg_node * node) const noexcept
 	{
 		auto it = nodes_.find(node);
 		JLM_ASSERT(it != nodes_.end());
 		return it->second;
 	}
 
-	inline llvm::Value *
-	value(const jlm::variable * variable) const noexcept
+	inline ::llvm::Value *
+	value(const llvm::variable * variable) const noexcept
 	{
 		auto it = variables_.find(variable);
 		JLM_ASSERT(it != variables_.end());
 		return it->second;
 	}
 
-	inline llvm::StructType *
+	inline ::llvm::StructType *
 	structtype(const rvsdg::rcddeclaration * dcl)
 	{
 		auto it = structtypes_.find(dcl);
@@ -115,18 +116,18 @@ public:
 	inline void
 	add_structtype(
 		const rvsdg::rcddeclaration * dcl,
-		llvm::StructType * type)
+		::llvm::StructType * type)
 	{
 		JLM_ASSERT(structtypes_.find(dcl) == structtypes_.end());
 		structtypes_[dcl] = type;
 	}
 
 private:
-	llvm::Module & lm_;
+	::llvm::Module & lm_;
 	ipgraph_module & im_;
-	std::unordered_map<const jlm::variable*, llvm::Value*> variables_;
-	std::unordered_map<const jlm::cfg_node*, llvm::BasicBlock*> nodes_;
-	std::unordered_map<const rvsdg::rcddeclaration*, llvm::StructType*> structtypes_;
+	std::unordered_map<const llvm::variable*, ::llvm::Value*> variables_;
+	std::unordered_map<const llvm::cfg_node*, ::llvm::BasicBlock*> nodes_;
+	std::unordered_map<const rvsdg::rcddeclaration*, ::llvm::StructType*> structtypes_;
 };
 
 }}

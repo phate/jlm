@@ -11,7 +11,8 @@
 #include <jlm/util/strfmt.hpp>
 #include <jlm/util/time.hpp>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 /* optimization class */
 

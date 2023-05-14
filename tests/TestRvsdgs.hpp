@@ -12,7 +12,7 @@
 */
 class RvsdgTest {
 public:
-	jlm::RvsdgModule &
+	jlm::llvm::RvsdgModule &
 	module()
 	{
     if (module_ == nullptr)
@@ -31,10 +31,10 @@ private:
   /**
    * \brief Create RVSDG for this test.
    */
-	virtual std::unique_ptr<jlm::RvsdgModule>
+	virtual std::unique_ptr<jlm::llvm::RvsdgModule>
 	SetupRvsdg() = 0;
 
-	std::unique_ptr<jlm::RvsdgModule> module_;
+	std::unique_ptr<jlm::llvm::RvsdgModule> module_;
 };
 
 /** \brief StoreTest1 class
@@ -60,11 +60,11 @@ private:
 */
 class StoreTest1 final : public RvsdgTest {
 private:
-	std::unique_ptr<jlm::RvsdgModule>
+	std::unique_ptr<jlm::llvm::RvsdgModule>
 	SetupRvsdg() override;
 
 public:
-	jlm::lambda::node * lambda;
+	jlm::llvm::lambda::node * lambda;
 
 	jlm::rvsdg::node * size;
 
@@ -97,11 +97,11 @@ public:
 */
 class StoreTest2 final : public RvsdgTest {
 private:
-	std::unique_ptr<jlm::RvsdgModule>
+	std::unique_ptr<jlm::llvm::RvsdgModule>
 	SetupRvsdg() override;
 
 public:
-	jlm::lambda::node * lambda;
+	jlm::llvm::lambda::node * lambda;
 
 	jlm::rvsdg::node * size;
 
@@ -130,11 +130,11 @@ public:
 */
 class LoadTest1 final : public RvsdgTest {
 private:
-	std::unique_ptr<jlm::RvsdgModule>
+	std::unique_ptr<jlm::llvm::RvsdgModule>
 	SetupRvsdg() override;
 
 public:
-	jlm::lambda::node * lambda;
+	jlm::llvm::lambda::node * lambda;
 
 	jlm::rvsdg::node * load_p;
 	jlm::rvsdg::node * load_x;
@@ -163,11 +163,11 @@ public:
 */
 class LoadTest2 final : public RvsdgTest {
 private:
-	std::unique_ptr<jlm::RvsdgModule>
+	std::unique_ptr<jlm::llvm::RvsdgModule>
 	SetupRvsdg() override;
 
 public:
-	jlm::lambda::node * lambda;
+	jlm::llvm::lambda::node * lambda;
 
 	jlm::rvsdg::node * size;
 
@@ -198,11 +198,11 @@ public:
 */
 class LoadFromUndefTest final : public RvsdgTest {
 private:
-  std::unique_ptr<jlm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
 public:
-  [[nodiscard]] const jlm::lambda::node &
+  [[nodiscard]] const jlm::llvm::lambda::node &
   Lambda() const noexcept
   {
     return *Lambda_;
@@ -215,7 +215,7 @@ public:
   }
 
 private:
-  jlm::lambda::node * Lambda_;
+  jlm::llvm::lambda::node * Lambda_;
   jlm::rvsdg::node * UndefValueNode_;
 };
 
@@ -240,11 +240,11 @@ private:
 */
 class GetElementPtrTest final : public RvsdgTest {
 private:
-	std::unique_ptr<jlm::RvsdgModule>
+	std::unique_ptr<jlm::llvm::RvsdgModule>
 	SetupRvsdg() override;
 
 public:
-	jlm::lambda::node * lambda;
+	jlm::llvm::lambda::node * lambda;
 
 	jlm::rvsdg::node * getElementPtrX;
 	jlm::rvsdg::node * getElementPtrY;
@@ -263,11 +263,11 @@ public:
 */
 class BitCastTest final : public RvsdgTest {
 private:
-	std::unique_ptr<jlm::RvsdgModule>
+	std::unique_ptr<jlm::llvm::RvsdgModule>
 	SetupRvsdg() override;
 
 public:
-	jlm::lambda::node * lambda;
+	jlm::llvm::lambda::node * lambda;
 
 	jlm::rvsdg::node * bitCast;
 };
@@ -294,12 +294,12 @@ public:
 */
 class Bits2PtrTest final : public RvsdgTest {
 private:
-  std::unique_ptr<jlm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::RvsdgModule>
 	SetupRvsdg() override;
 
 public:
-	jlm::lambda::node * lambda_bits2ptr;
-	jlm::lambda::node * lambda_test;
+	jlm::llvm::lambda::node * lambda_bits2ptr;
+	jlm::llvm::lambda::node * lambda_test;
 
 	jlm::rvsdg::node * bits2ptr;
 
@@ -319,11 +319,11 @@ public:
 */
 class ConstantPointerNullTest final : public RvsdgTest {
 private:
-	std::unique_ptr<jlm::RvsdgModule>
+	std::unique_ptr<jlm::llvm::RvsdgModule>
 	SetupRvsdg() override;
 
 public:
-	jlm::lambda::node * lambda;
+	jlm::llvm::lambda::node * lambda;
 
 	jlm::rvsdg::node * constantPointerNullNode;
 };
@@ -358,33 +358,33 @@ public:
 */
 class CallTest1 final : public RvsdgTest {
 private:
-	std::unique_ptr<jlm::RvsdgModule>
+	std::unique_ptr<jlm::llvm::RvsdgModule>
 	SetupRvsdg() override;
 
 public:
-  [[nodiscard]] const jlm::CallNode &
+  [[nodiscard]] const jlm::llvm::CallNode &
   CallF() const noexcept
   {
     return *CallF_;
   }
 
-  [[nodiscard]] const jlm::CallNode &
+  [[nodiscard]] const jlm::llvm::CallNode &
   CallG() const noexcept
   {
     return *CallG_;
   }
 
-	jlm::lambda::node * lambda_f;
-	jlm::lambda::node * lambda_g;
-	jlm::lambda::node * lambda_h;
+	jlm::llvm::lambda::node * lambda_f;
+	jlm::llvm::lambda::node * lambda_g;
+	jlm::llvm::lambda::node * lambda_h;
 
 	jlm::rvsdg::node * alloca_x;
 	jlm::rvsdg::node * alloca_y;
 	jlm::rvsdg::node * alloca_z;
 
 private:
-  jlm::CallNode * CallF_;
-  jlm::CallNode * CallG_;
+  jlm::llvm::CallNode * CallF_;
+  jlm::llvm::CallNode * CallG_;
 };
 
 /** \brief CallTest2 class
@@ -420,46 +420,46 @@ private:
 */
 class CallTest2 final : public RvsdgTest {
 public:
-  [[nodiscard]] const jlm::CallNode &
+  [[nodiscard]] const jlm::llvm::CallNode &
   CallCreate1() const noexcept
   {
     return *CallCreate1_;
   }
 
-  [[nodiscard]] const jlm::CallNode &
+  [[nodiscard]] const jlm::llvm::CallNode &
   CallCreate2() const noexcept
   {
     return *CallCreate2_;
   }
 
-  [[nodiscard]] const jlm::CallNode &
+  [[nodiscard]] const jlm::llvm::CallNode &
   CallDestroy1() const noexcept
   {
     return *CallDestroy1_;
   }
 
-  [[nodiscard]] const jlm::CallNode &
+  [[nodiscard]] const jlm::llvm::CallNode &
   CallDestroy2() const noexcept
   {
     return *CallDestroy2_;
   }
 
-	jlm::lambda::node * lambda_create;
-	jlm::lambda::node * lambda_destroy;
-	jlm::lambda::node * lambda_test;
+	jlm::llvm::lambda::node * lambda_create;
+	jlm::llvm::lambda::node * lambda_destroy;
+	jlm::llvm::lambda::node * lambda_test;
 
 	jlm::rvsdg::node * malloc;
 	jlm::rvsdg::node * free;
 
 private:
-  std::unique_ptr<jlm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
-	jlm::CallNode * CallCreate1_;
-	jlm::CallNode * CallCreate2_;
+	jlm::llvm::CallNode * CallCreate1_;
+	jlm::llvm::CallNode * CallCreate2_;
 
-	jlm::CallNode * CallDestroy1_;
-	jlm::CallNode * CallDestroy2_;
+	jlm::llvm::CallNode * CallDestroy1_;
+	jlm::llvm::CallNode * CallDestroy2_;
 };
 
 /** \brief IndirectCallTest1 class
@@ -497,60 +497,60 @@ private:
 */
 class IndirectCallTest1 final : public RvsdgTest {
 public:
-  [[nodiscard]] const jlm::CallNode &
+  [[nodiscard]] const jlm::llvm::CallNode &
   CallIndcall() const noexcept
   {
     return *CallIndcall_;
   }
 
-  [[nodiscard]] const jlm::CallNode &
+  [[nodiscard]] const jlm::llvm::CallNode &
   CallThree() const noexcept
   {
     return *CallThree_;
   }
 
-  [[nodiscard]] const jlm::CallNode &
+  [[nodiscard]] const jlm::llvm::CallNode &
   CallFour() const noexcept
   {
     return *CallFour_;
   }
 
-  [[nodiscard]] const jlm::lambda::node &
+  [[nodiscard]] const jlm::llvm::lambda::node &
   GetLambdaThree() const noexcept
   {
     return *LambdaThree_;
   }
 
-  [[nodiscard]] const jlm::lambda::node &
+  [[nodiscard]] const jlm::llvm::lambda::node &
   GetLambdaFour() const noexcept
   {
     return *LambdaFour_;
   }
 
-  [[nodiscard]] const jlm::lambda::node &
+  [[nodiscard]] const jlm::llvm::lambda::node &
   GetLambdaIndcall() const noexcept
   {
     return *LambdaIndcall_;
   }
 
-  [[nodiscard]] const jlm::lambda::node &
+  [[nodiscard]] const jlm::llvm::lambda::node &
   GetLambdaTest() const noexcept
   {
     return *LambdaTest_;
   }
 
 private:
-  std::unique_ptr<jlm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
-	jlm::CallNode * CallIndcall_;
-	jlm::CallNode * CallThree_;
-	jlm::CallNode * CallFour_;
+	jlm::llvm::CallNode * CallIndcall_;
+	jlm::llvm::CallNode * CallThree_;
+	jlm::llvm::CallNode * CallFour_;
 
-  jlm::lambda::node * LambdaThree_;
-  jlm::lambda::node * LambdaFour_;
-  jlm::lambda::node * LambdaIndcall_;
-  jlm::lambda::node * LambdaTest_;
+  jlm::llvm::lambda::node * LambdaThree_;
+  jlm::llvm::lambda::node * LambdaFour_;
+  jlm::llvm::lambda::node * LambdaIndcall_;
+  jlm::llvm::lambda::node * LambdaTest_;
 };
 
 /** \brief IndirectCallTest2 class
@@ -617,91 +617,91 @@ private:
  */
 class IndirectCallTest2 final : public RvsdgTest {
 public:
-  [[nodiscard]] jlm::delta::node &
+  [[nodiscard]] jlm::llvm::delta::node &
   GetDeltaG1() const noexcept
   {
     return *DeltaG1_;
   }
 
-  [[nodiscard]] jlm::delta::node &
+  [[nodiscard]] jlm::llvm::delta::node &
   GetDeltaG2() const noexcept
   {
     return *DeltaG2_;
   }
 
-  [[nodiscard]] jlm::lambda::node &
+  [[nodiscard]] jlm::llvm::lambda::node &
   GetLambdaThree() const noexcept
   {
     return *LambdaThree_;
   }
 
-  [[nodiscard]] jlm::lambda::node &
+  [[nodiscard]] jlm::llvm::lambda::node &
   GetLambdaFour() const noexcept
   {
     return *LambdaFour_;
   }
 
-  [[nodiscard]] jlm::lambda::node &
+  [[nodiscard]] jlm::llvm::lambda::node &
   GetLambdaI() const noexcept
   {
     return *LambdaI_;
   }
 
-  [[nodiscard]] jlm::lambda::node &
+  [[nodiscard]] jlm::llvm::lambda::node &
   GetLambdaX() const noexcept
   {
     return *LambdaX_;
   }
 
-  [[nodiscard]] jlm::lambda::node &
+  [[nodiscard]] jlm::llvm::lambda::node &
   GetLambdaY() const noexcept
   {
     return *LambdaY_;
   }
 
-  [[nodiscard]] jlm::lambda::node &
+  [[nodiscard]] jlm::llvm::lambda::node &
   GetLambdaTest() const noexcept
   {
     return *LambdaTest_;
   }
 
-  [[nodiscard]] jlm::lambda::node &
+  [[nodiscard]] jlm::llvm::lambda::node &
   GetLambdaTest2() const noexcept
   {
     return *LambdaTest2_;
   }
 
-  [[nodiscard]] jlm::CallNode &
+  [[nodiscard]] jlm::llvm::CallNode &
   GetIndirectCall() const noexcept
   {
     return *IndirectCall_;
   }
 
-  [[nodiscard]] jlm::CallNode &
+  [[nodiscard]] jlm::llvm::CallNode &
   GetCallIWithThree() const noexcept
   {
     return *CallIWithThree_;
   }
 
-  [[nodiscard]] jlm::CallNode &
+  [[nodiscard]] jlm::llvm::CallNode &
   GetCallIWithFour() const noexcept
   {
     return *CallIWithFour_;
   }
 
-  [[nodiscard]] jlm::CallNode &
+  [[nodiscard]] jlm::llvm::CallNode &
   GetTestCallX() const noexcept
   {
     return *TestCallX_;
   }
 
-  [[nodiscard]] jlm::CallNode &
+  [[nodiscard]] jlm::llvm::CallNode &
   GetTest2CallX() const noexcept
   {
     return *Test2CallX_;
   }
 
-  [[nodiscard]] jlm::CallNode &
+  [[nodiscard]] jlm::llvm::CallNode &
   GetCallY() const noexcept
   {
     return *CallY_;
@@ -727,26 +727,26 @@ public:
 
 
 private:
-  std::unique_ptr<jlm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
-  jlm::delta::node * DeltaG1_;
-  jlm::delta::node * DeltaG2_;
+  jlm::llvm::delta::node * DeltaG1_;
+  jlm::llvm::delta::node * DeltaG2_;
 
-  jlm::lambda::node * LambdaThree_;
-  jlm::lambda::node * LambdaFour_;
-  jlm::lambda::node * LambdaI_;
-  jlm::lambda::node * LambdaX_;
-  jlm::lambda::node * LambdaY_;
-  jlm::lambda::node * LambdaTest_;
-  jlm::lambda::node * LambdaTest2_;
+  jlm::llvm::lambda::node * LambdaThree_;
+  jlm::llvm::lambda::node * LambdaFour_;
+  jlm::llvm::lambda::node * LambdaI_;
+  jlm::llvm::lambda::node * LambdaX_;
+  jlm::llvm::lambda::node * LambdaY_;
+  jlm::llvm::lambda::node * LambdaTest_;
+  jlm::llvm::lambda::node * LambdaTest2_;
 
-  jlm::CallNode * IndirectCall_;
-  jlm::CallNode * CallIWithThree_;
-  jlm::CallNode * CallIWithFour_;
-  jlm::CallNode * TestCallX_;
-  jlm::CallNode * Test2CallX_;
-  jlm::CallNode * CallY_;
+  jlm::llvm::CallNode * IndirectCall_;
+  jlm::llvm::CallNode * CallIWithThree_;
+  jlm::llvm::CallNode * CallIWithFour_;
+  jlm::llvm::CallNode * TestCallX_;
+  jlm::llvm::CallNode * Test2CallX_;
+  jlm::llvm::CallNode * CallY_;
 
   jlm::rvsdg::simple_node * AllocaPx_;
   jlm::rvsdg::simple_node * AllocaPy_;
@@ -773,24 +773,24 @@ private:
 class ExternalCallTest final : public RvsdgTest
 {
 public:
-  [[nodiscard]] const jlm::lambda::node &
+  [[nodiscard]] const jlm::llvm::lambda::node &
   LambdaF() const noexcept
   {
     return *LambdaF_;
   }
 
-  [[nodiscard]] const jlm::CallNode &
+  [[nodiscard]] const jlm::llvm::CallNode &
   CallG() const noexcept
   {
     return *CallG_;
   }
 private:
-  std::unique_ptr<jlm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
-  jlm::lambda::node * LambdaF_;
+  jlm::llvm::lambda::node * LambdaF_;
 
-  jlm::CallNode * CallG_;
+  jlm::llvm::CallNode * CallG_;
 };
 
 /** \brief GammaTest class
@@ -817,11 +817,11 @@ private:
 */
 class GammaTest final : public RvsdgTest {
 private:
-	std::unique_ptr<jlm::RvsdgModule>
+	std::unique_ptr<jlm::llvm::RvsdgModule>
 	SetupRvsdg() override;
 
 public:
-	jlm::lambda::node * lambda;
+	jlm::llvm::lambda::node * lambda;
 
 	jlm::rvsdg::gamma_node * gamma;
 };
@@ -845,11 +845,11 @@ public:
 */
 class ThetaTest final : public RvsdgTest {
 private:
-	std::unique_ptr<jlm::RvsdgModule>
+	std::unique_ptr<jlm::llvm::RvsdgModule>
 	SetupRvsdg() override;
 
 public:
-	jlm::lambda::node * lambda;
+	jlm::llvm::lambda::node * lambda;
 	jlm::rvsdg::theta_node * theta;
 	jlm::rvsdg::node * gep;
 };
@@ -880,24 +880,24 @@ public:
 */
 class DeltaTest1 final : public RvsdgTest {
 public:
-  [[nodiscard]] const jlm::CallNode &
+  [[nodiscard]] const jlm::llvm::CallNode &
   CallG() const noexcept
   {
     return *CallG_;
   }
 
-	jlm::lambda::node * lambda_g;
-	jlm::lambda::node * lambda_h;
+	jlm::llvm::lambda::node * lambda_g;
+	jlm::llvm::lambda::node * lambda_h;
 
-	jlm::delta::node * delta_f;
+	jlm::llvm::delta::node * delta_f;
 
   jlm::rvsdg::node * constantFive;
 
 private:
-  std::unique_ptr<jlm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
-  jlm::CallNode * CallG_;
+  jlm::llvm::CallNode * CallG_;
 };
 
 /** \brief DeltaTest2 class
@@ -928,23 +928,23 @@ private:
 */
 class DeltaTest2 final : public RvsdgTest {
 public:
-  [[nodiscard]] const jlm::CallNode &
+  [[nodiscard]] const jlm::llvm::CallNode &
   CallF1() const noexcept
   {
     return *CallF1_;
   }
 
-	jlm::lambda::node * lambda_f1;
-	jlm::lambda::node * lambda_f2;
+	jlm::llvm::lambda::node * lambda_f1;
+	jlm::llvm::lambda::node * lambda_f2;
 
-	jlm::delta::node * delta_d1;
-	jlm::delta::node * delta_d2;
+	jlm::llvm::delta::node * delta_d1;
+	jlm::llvm::delta::node * delta_d2;
 
 private:
-  std::unique_ptr<jlm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
-	jlm::CallNode * CallF1_;
+	jlm::llvm::CallNode * CallF1_;
 };
 
 /** \brief DeltaTest3 class
@@ -975,47 +975,47 @@ private:
 class DeltaTest3 final : public RvsdgTest
 {
 public:
-  [[nodiscard]] const jlm::lambda::node &
+  [[nodiscard]] const jlm::llvm::lambda::node &
   LambdaF() const noexcept
   {
     return *LambdaF_;
   }
 
-  [[nodiscard]] const jlm::lambda::node &
+  [[nodiscard]] const jlm::llvm::lambda::node &
   LambdaTest() const noexcept
   {
     return *LambdaTest_;
   }
 
-  [[nodiscard]] const jlm::delta::node &
+  [[nodiscard]] const jlm::llvm::delta::node &
   DeltaG1() const noexcept
   {
     return *DeltaG1_;
   }
 
-  [[nodiscard]] const jlm::delta::node &
+  [[nodiscard]] const jlm::llvm::delta::node &
   DeltaG2() const noexcept
   {
     return *DeltaG2_;
   }
 
-  [[nodiscard]] const jlm::CallNode &
+  [[nodiscard]] const jlm::llvm::CallNode &
   CallF() const noexcept
   {
     return *CallF_;
   }
 
 private:
-  std::unique_ptr<jlm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
-  jlm::lambda::node * LambdaF_;
-  jlm::lambda::node * LambdaTest_;
+  jlm::llvm::lambda::node * LambdaF_;
+  jlm::llvm::lambda::node * LambdaTest_;
 
-  jlm::delta::node * DeltaG1_;
-  jlm::delta::node * DeltaG2_;
+  jlm::llvm::delta::node * DeltaG1_;
+  jlm::llvm::delta::node * DeltaG2_;
 
-  jlm::CallNode * CallF_;
+  jlm::llvm::CallNode * CallF_;
 };
 
 /** \brief ImportTest class
@@ -1046,23 +1046,23 @@ private:
 */
 class ImportTest final : public RvsdgTest {
 public:
-  [[nodiscard]] const jlm::CallNode &
+  [[nodiscard]] const jlm::llvm::CallNode &
   CallF1() const noexcept
   {
     return *CallF1_;
   }
 
-	jlm::lambda::node * lambda_f1;
-	jlm::lambda::node * lambda_f2;
+	jlm::llvm::lambda::node * lambda_f1;
+	jlm::llvm::lambda::node * lambda_f2;
 
 	jlm::rvsdg::argument * import_d1;
 	jlm::rvsdg::argument * import_d2;
 
 private:
-  std::unique_ptr<jlm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
-  jlm::CallNode * CallF1_;
+  jlm::llvm::CallNode * CallF1_;
 };
 
 /** \brief PhiTest1 class
@@ -1098,41 +1098,41 @@ private:
 */
 class PhiTest1 final : public RvsdgTest {
 public:
-  [[nodiscard]] const jlm::CallNode &
+  [[nodiscard]] const jlm::llvm::CallNode &
   CallFib() const noexcept
   {
     return *CallFib_;
   }
 
-  [[nodiscard]] const jlm::CallNode &
+  [[nodiscard]] const jlm::llvm::CallNode &
   CallFibm1() const noexcept
   {
     return *CallFibm1_;
   }
 
-  [[nodiscard]] const jlm::CallNode &
+  [[nodiscard]] const jlm::llvm::CallNode &
   CallFibm2() const noexcept
   {
     return *CallFibm2_;
   }
 
-	jlm::lambda::node * lambda_fib;
-	jlm::lambda::node * lambda_test;
+	jlm::llvm::lambda::node * lambda_fib;
+	jlm::llvm::lambda::node * lambda_test;
 
 	jlm::rvsdg::gamma_node * gamma;
 
-	jlm::phi::node * phi;
+	jlm::llvm::phi::node * phi;
 
 	jlm::rvsdg::node * alloca;
 
 private:
-  std::unique_ptr<jlm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
-  jlm::CallNode * CallFibm1_;
-  jlm::CallNode * CallFibm2_;
+  jlm::llvm::CallNode * CallFibm1_;
+  jlm::llvm::CallNode * CallFibm2_;
 
-  jlm::CallNode * CallFib_;
+  jlm::llvm::CallNode * CallFib_;
 };
 
 /** \brief PhiTest2 class
@@ -1209,91 +1209,91 @@ private:
 class PhiTest2 final : public RvsdgTest
 {
 public:
-  [[nodiscard]] jlm::lambda::node &
+  [[nodiscard]] jlm::llvm::lambda::node &
   GetLambdaEight() const noexcept
   {
     return *LambdaEight_;
   }
 
-  [[nodiscard]] jlm::lambda::node &
+  [[nodiscard]] jlm::llvm::lambda::node &
   GetLambdaI() const noexcept
   {
     return *LambdaI_;
   }
 
-  [[nodiscard]] jlm::lambda::node &
+  [[nodiscard]] jlm::llvm::lambda::node &
   GetLambdaA() const noexcept
   {
     return *LambdaA_;
   }
 
-  [[nodiscard]] jlm::lambda::node &
+  [[nodiscard]] jlm::llvm::lambda::node &
   GetLambdaB() const noexcept
   {
     return *LambdaB_;
   }
 
-  [[nodiscard]] jlm::lambda::node &
+  [[nodiscard]] jlm::llvm::lambda::node &
   GetLambdaC() const noexcept
   {
     return *LambdaC_;
   }
 
-  [[nodiscard]] jlm::lambda::node &
+  [[nodiscard]] jlm::llvm::lambda::node &
   GetLambdaD() const noexcept
   {
     return *LambdaD_;
   }
 
-  [[nodiscard]] jlm::lambda::node &
+  [[nodiscard]] jlm::llvm::lambda::node &
   GetLambdaTest() const noexcept
   {
     return *LambdaTest_;
   }
 
-  [[nodiscard]] jlm::CallNode &
+  [[nodiscard]] jlm::llvm::CallNode &
   GetCallAFromTest() const noexcept
   {
     return *CallAFromTest_;
   }
 
-  [[nodiscard]] jlm::CallNode &
+  [[nodiscard]] jlm::llvm::CallNode &
   GetCallAFromC() const noexcept
   {
     return *CallAFromC_;
   }
 
-  [[nodiscard]] jlm::CallNode &
+  [[nodiscard]] jlm::llvm::CallNode &
   GetCallAFromD() const noexcept
   {
     return *CallAFromD_;
   }
 
-  [[nodiscard]] jlm::CallNode &
+  [[nodiscard]] jlm::llvm::CallNode &
   GetCallB() const noexcept
   {
     return *CallB_;
   }
 
-  [[nodiscard]] jlm::CallNode &
+  [[nodiscard]] jlm::llvm::CallNode &
   GetCallC() const noexcept
   {
     return *CallC_;
   }
 
-  [[nodiscard]] jlm::CallNode &
+  [[nodiscard]] jlm::llvm::CallNode &
   GetCallD() const noexcept
   {
     return *CallD_;
   }
 
-  [[nodiscard]] jlm::CallNode &
+  [[nodiscard]] jlm::llvm::CallNode &
   GetCallI() const noexcept
   {
     return *CallI_;
   }
 
-  [[nodiscard]] jlm::CallNode &
+  [[nodiscard]] jlm::llvm::CallNode &
   GetIndirectCall() const noexcept
   {
     return *IndirectCall_;
@@ -1330,25 +1330,25 @@ public:
   }
 
 private:
-  std::unique_ptr<jlm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
-  jlm::lambda::node * LambdaEight_;
-  jlm::lambda::node * LambdaI_;
-  jlm::lambda::node * LambdaA_;
-  jlm::lambda::node * LambdaB_;
-  jlm::lambda::node * LambdaC_;
-  jlm::lambda::node * LambdaD_;
-  jlm::lambda::node * LambdaTest_;
+  jlm::llvm::lambda::node * LambdaEight_;
+  jlm::llvm::lambda::node * LambdaI_;
+  jlm::llvm::lambda::node * LambdaA_;
+  jlm::llvm::lambda::node * LambdaB_;
+  jlm::llvm::lambda::node * LambdaC_;
+  jlm::llvm::lambda::node * LambdaD_;
+  jlm::llvm::lambda::node * LambdaTest_;
 
-  jlm::CallNode * CallAFromTest_;
-  jlm::CallNode * CallAFromC_;
-  jlm::CallNode * CallAFromD_;
-  jlm::CallNode * CallB_;
-  jlm::CallNode * CallC_;
-  jlm::CallNode * CallD_;
-  jlm::CallNode * CallI_;
-  jlm::CallNode * IndirectCall_;
+  jlm::llvm::CallNode * CallAFromTest_;
+  jlm::llvm::CallNode * CallAFromC_;
+  jlm::llvm::CallNode * CallAFromD_;
+  jlm::llvm::CallNode * CallB_;
+  jlm::llvm::CallNode * CallC_;
+  jlm::llvm::CallNode * CallD_;
+  jlm::llvm::CallNode * CallI_;
+  jlm::llvm::CallNode * IndirectCall_;
 
   jlm::rvsdg::simple_node * PTestAlloca_;
   jlm::rvsdg::simple_node * PaAlloca_;
@@ -1375,11 +1375,11 @@ private:
  */
 class ExternalMemoryTest final : public RvsdgTest {
 private:
-  std::unique_ptr<jlm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
 public:
-  jlm::lambda::node * LambdaF;
+  jlm::llvm::lambda::node * LambdaF;
 
 };
 
@@ -1407,18 +1407,18 @@ public:
  */
 class EscapedMemoryTest1 final : public RvsdgTest {
 private:
-  std::unique_ptr<jlm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
 public:
-  jlm::lambda::node * LambdaTest;
+  jlm::llvm::lambda::node * LambdaTest;
 
-  jlm::delta::node * DeltaA;
-  jlm::delta::node * DeltaB;
-  jlm::delta::node * DeltaX;
-  jlm::delta::node * DeltaY;
+  jlm::llvm::delta::node * DeltaA;
+  jlm::llvm::delta::node * DeltaB;
+  jlm::llvm::delta::node * DeltaX;
+  jlm::llvm::delta::node * DeltaY;
 
-  jlm::LoadNode * LoadNode1;
+  jlm::llvm::LoadNode * LoadNode1;
 };
 
 /** \brief EscapedMemoryTest2 class
@@ -1455,16 +1455,16 @@ public:
  */
 class EscapedMemoryTest2 final : public RvsdgTest {
 private:
-  std::unique_ptr<jlm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
 public:
-  jlm::lambda::node * ReturnAddressFunction;
-  jlm::lambda::node * CallExternalFunction1;
-  jlm::lambda::node * CallExternalFunction2;
+  jlm::llvm::lambda::node * ReturnAddressFunction;
+  jlm::llvm::lambda::node * CallExternalFunction1;
+  jlm::llvm::lambda::node * CallExternalFunction2;
 
-  jlm::CallNode * ExternalFunction1Call;
-  jlm::CallNode * ExternalFunction2Call;
+  jlm::llvm::CallNode * ExternalFunction1Call;
+  jlm::llvm::CallNode * ExternalFunction2Call;
 
   jlm::rvsdg::node * ReturnAddressMalloc;
   jlm::rvsdg::node * CallExternalFunction1Malloc;
@@ -1472,7 +1472,7 @@ public:
   jlm::rvsdg::argument * ExternalFunction1Import;
   jlm::rvsdg::argument * ExternalFunction2Import;
 
-  jlm::LoadNode * LoadNode;
+  jlm::llvm::LoadNode * LoadNode;
 };
 
 /** \brief EscapedMemoryTest3 class
@@ -1494,19 +1494,19 @@ public:
  */
 class EscapedMemoryTest3 final : public RvsdgTest {
 private:
-  std::unique_ptr<jlm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
 public:
-  jlm::lambda::node * LambdaTest;
+  jlm::llvm::lambda::node * LambdaTest;
 
-  jlm::delta::node * DeltaGlobal;
+  jlm::llvm::delta::node * DeltaGlobal;
 
   jlm::rvsdg::argument * ImportExternalFunction;
 
-  jlm::CallNode * CallExternalFunction;
+  jlm::llvm::CallNode * CallExternalFunction;
 
-  jlm::LoadNode * LoadNode;
+  jlm::llvm::LoadNode * LoadNode;
 };
 
 /** \brief MemcpyTest class
@@ -1539,31 +1539,31 @@ public:
 class MemcpyTest final : public RvsdgTest
 {
 public:
-  [[nodiscard]] const jlm::lambda::node &
+  [[nodiscard]] const jlm::llvm::lambda::node &
   LambdaF() const noexcept
   {
     return *LambdaF_;
   }
 
-  [[nodiscard]] const jlm::lambda::node &
+  [[nodiscard]] const jlm::llvm::lambda::node &
   LambdaG() const noexcept
   {
     return *LambdaG_;
   }
 
-  [[nodiscard]] const jlm::delta::node &
+  [[nodiscard]] const jlm::llvm::delta::node &
   LocalArray() const noexcept
   {
     return *LocalArray_;
   }
 
-  [[nodiscard]] const jlm::delta::node &
+  [[nodiscard]] const jlm::llvm::delta::node &
   GlobalArray() const noexcept
   {
     return *GlobalArray_;
   }
 
-  [[nodiscard]] const jlm::CallNode &
+  [[nodiscard]] const jlm::llvm::CallNode &
   CallF() const noexcept
   {
     return *CallF_;
@@ -1576,16 +1576,16 @@ public:
   }
 
 private:
-  std::unique_ptr<jlm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
-  jlm::lambda::node * LambdaF_;
-  jlm::lambda::node * LambdaG_;
+  jlm::llvm::lambda::node * LambdaF_;
+  jlm::llvm::lambda::node * LambdaG_;
 
-  jlm::delta::node * LocalArray_;
-  jlm::delta::node * GlobalArray_;
+  jlm::llvm::delta::node * LocalArray_;
+  jlm::llvm::delta::node * GlobalArray_;
 
-  jlm::CallNode * CallF_;
+  jlm::llvm::CallNode * CallF_;
 
   jlm::rvsdg::node * Memcpy_;
 };
@@ -1620,25 +1620,25 @@ public:
     return *Alloca_;
   }
 
-  [[nodiscard]] const jlm::lambda::node &
+  [[nodiscard]] const jlm::llvm::lambda::node &
   GetLambdaNext() const noexcept
   {
     return *LambdaNext_;
   }
 
-  [[nodiscard]] const jlm::delta::node &
+  [[nodiscard]] const jlm::llvm::delta::node &
   GetDeltaMyList() const noexcept
   {
     return *DeltaMyList_;
   }
 
 private:
-  std::unique_ptr<jlm::RvsdgModule>
+  std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
-  jlm::delta::node * DeltaMyList_;
+  jlm::llvm::delta::node * DeltaMyList_;
 
-  jlm::lambda::node * LambdaNext_;
+  jlm::llvm::lambda::node * LambdaNext_;
 
   jlm::rvsdg::node * Alloca_;
 };

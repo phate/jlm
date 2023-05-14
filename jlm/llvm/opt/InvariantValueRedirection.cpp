@@ -11,7 +11,8 @@
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 class InvariantValueRedirectionStatistics final : public util::Statistics {
 public:

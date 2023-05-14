@@ -21,8 +21,8 @@ jlm::hls::get_trigger(jlm::rvsdg::region *region) {
 	return nullptr;
 }
 
-jlm::lambda::node *
-jlm::hls::add_lambda_argument(jlm::lambda::node *ln, const jlm::rvsdg::type *type) {
+jlm::llvm::lambda::node *
+jlm::hls::add_lambda_argument(llvm::lambda::node *ln, const jlm::rvsdg::type *type) {
 	auto old_fcttype = ln->type();
 	std::vector<const jlm::rvsdg::type *> new_argument_types;
 	for (size_t i = 0; i < old_fcttype.NumArguments(); ++i) {
@@ -33,8 +33,8 @@ jlm::hls::add_lambda_argument(jlm::lambda::node *ln, const jlm::rvsdg::type *typ
 	for (size_t i = 0; i < old_fcttype.NumResults(); ++i) {
 		new_result_types.push_back(&old_fcttype.ResultType(i));
 	}
-	FunctionType new_fcttype(new_argument_types, new_result_types);
-	auto new_lambda = jlm::lambda::node::create(ln->region(), new_fcttype, ln->name(), ln->linkage(),
+	llvm::FunctionType new_fcttype(new_argument_types, new_result_types);
+	auto new_lambda = llvm::lambda::node::create(ln->region(), new_fcttype, ln->name(), ln->linkage(),
 												ln->attributes());
 
 	jlm::rvsdg::substitution_map smap;
@@ -71,7 +71,7 @@ jlm::hls::add_triggers(jlm::rvsdg::region *region) {
 	auto trigger = get_trigger(region);
 	for (auto &node : jlm::rvsdg::topdown_traverser(region)) {
 		if (dynamic_cast<jlm::rvsdg::structural_node *>(node)) {
-			if (auto ln = dynamic_cast<jlm::lambda::node *>(node)) {
+			if (auto ln = dynamic_cast<llvm::lambda::node *>(node)) {
 				// check here in order not to process removed and re-added node twice
 				if (!get_trigger(ln->subregion())) {
 					auto new_lambda = add_lambda_argument(ln, &(hls::trigger));
@@ -109,7 +109,7 @@ jlm::hls::add_triggers(jlm::rvsdg::region *region) {
 }
 
 void
-jlm::hls::add_triggers(jlm::RvsdgModule &rm) {
+jlm::hls::add_triggers(llvm::RvsdgModule &rm) {
 	auto &graph = rm.Rvsdg();
 	auto root = graph.root();
 	add_triggers(root);

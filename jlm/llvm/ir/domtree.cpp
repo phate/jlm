@@ -9,7 +9,8 @@
 
 #include <unordered_map>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 /* domnode class */
 
@@ -83,7 +84,7 @@ intersect(cfg_node * b1, cfg_node * b2,
 	Keith D. Cooper et. al. - A Simple, Fast Dominance Algorithm
 */
 std::unique_ptr<domnode>
-domtree(jlm::cfg & cfg)
+domtree(llvm::cfg & cfg)
 {
 	JLM_ASSERT(is_closed(cfg));
 

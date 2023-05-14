@@ -17,7 +17,7 @@
 static inline void
 test_store_mux_reduction()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	jlm::valuetype vt;
 	PointerType pt;
@@ -25,7 +25,7 @@ test_store_mux_reduction()
 
 	jlm::rvsdg::graph graph;
 	auto nf = graph.node_normal_form(typeid(StoreOperation));
-	auto snf = static_cast<jlm::store_normal_form*>(nf);
+	auto snf = static_cast<jlm::llvm::store_normal_form*>(nf);
 	snf->set_mutable(false);
 	snf->set_store_mux_reducible(false);
 
@@ -63,7 +63,7 @@ test_store_mux_reduction()
 static inline void
 test_multiple_origin_reduction()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	jlm::valuetype vt;
 	PointerType pt;
@@ -71,7 +71,7 @@ test_multiple_origin_reduction()
 
 	jlm::rvsdg::graph graph;
 	auto nf = graph.node_normal_form(typeid(StoreOperation));
-	auto snf = static_cast<jlm::store_normal_form*>(nf);
+	auto snf = static_cast<jlm::llvm::store_normal_form*>(nf);
 	snf->set_mutable(false);
 	snf->set_multiple_origin_reducible(false);
 
@@ -99,7 +99,7 @@ test_multiple_origin_reduction()
 static inline void
 test_store_alloca_reduction()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	jlm::valuetype vt;
 	MemoryStateType mt;
@@ -107,7 +107,7 @@ test_store_alloca_reduction()
 
 	jlm::rvsdg::graph graph;
 	auto nf = graph.node_normal_form(typeid(StoreOperation));
-	auto snf = static_cast<jlm::store_normal_form*>(nf);
+	auto snf = static_cast<jlm::llvm::store_normal_form*>(nf);
 	snf->set_mutable(false);
 	snf->set_store_alloca_reducible(false);
 
@@ -144,9 +144,9 @@ test_store_alloca_reduction()
 static inline void
 test_store_store_reduction()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
-	valuetype vt;
+	jlm::valuetype vt;
 	PointerType pt;
 	MemoryStateType mt;
 

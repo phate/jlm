@@ -6,6 +6,7 @@
 #ifndef JLM_TOOLING_COMMANDLINE_HPP
 #define JLM_TOOLING_COMMANDLINE_HPP
 
+#include <jlm/llvm/opt/optimization.hpp>
 #include <jlm/util/file.hpp>
 #include <jlm/util/Statistics.hpp>
 
@@ -213,7 +214,7 @@ public:
   util::filepath OutputFile_;
   OutputFormat OutputFormat_;
   util::StatisticsCollectorSettings StatisticsCollectorSettings_;
-  std::vector<optimization*> Optimizations_;
+  std::vector<jlm::llvm::optimization*> Optimizations_;
 };
 
 /**
@@ -479,7 +480,7 @@ public:
   Parse(int argc, char ** argv);
 
 private:
-  static optimization *
+  static llvm::optimization *
   GetOptimization(enum OptimizationId optimizationId);
 
   JlmOptCommandLineOptions CommandLineOptions_;

@@ -15,7 +15,8 @@
 #include <vector>
 
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 class basic_block;
 class cfg;
@@ -51,8 +52,8 @@ class cfg_node {
 	typedef std::unordered_set<cfg_edge*>::iterator inedge_iterator;
 	typedef std::unordered_set<cfg_edge*>::const_iterator const_inedge_iterator;
 
-	using inedge_iterator_range = util::iterator_range<inedge_iterator>;
-	using constinedge_iterator_range = util::iterator_range<const_inedge_iterator>;
+	using inedge_iterator_range = jlm::util::iterator_range<inedge_iterator>;
+	using constinedge_iterator_range = jlm::util::iterator_range<const_inedge_iterator>;
 
 	class const_outedge_iterator final {
 	public:
@@ -110,12 +111,12 @@ public:
 
 protected:
 	inline
-	cfg_node(jlm::cfg & cfg)
+	cfg_node(llvm::cfg & cfg)
 	: cfg_(cfg)
 	{}
 
 public:
-	jlm::cfg &
+	llvm::cfg &
 	cfg() const noexcept
 	{
 		return cfg_;
@@ -184,7 +185,7 @@ public:
 	}
 
 	inline void
-	divert_inedges(jlm::cfg_node * new_successor)
+	divert_inedges(llvm::cfg_node * new_successor)
 	{
 		if (this == new_successor)
 			return;
@@ -210,7 +211,7 @@ public:
 	bool has_selfloop_edge() const noexcept;
 
 private:
-	jlm::cfg & cfg_;
+	llvm::cfg & cfg_;
 	std::vector<std::unique_ptr<cfg_edge>> outedges_;
 	std::unordered_set<cfg_edge*> inedges_;
 

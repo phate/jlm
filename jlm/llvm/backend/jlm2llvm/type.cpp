@@ -11,24 +11,24 @@
 #include <typeindex>
 #include <unordered_map>
 
-namespace jlm {
+namespace jlm::llvm
+{
+
 namespace jlm2llvm {
 
-static llvm::Type *
+static ::llvm::Type *
 convert(const rvsdg::bittype & type, context & ctx)
 {
-	return llvm::Type::getIntNTy(ctx.llvm_module().getContext(), type.nbits());
+	return ::llvm::Type::getIntNTy(ctx.llvm_module().getContext(), type.nbits());
 }
 
-static llvm::Type *
+static ::llvm::Type *
 convert(const FunctionType & functionType, context & ctx)
 {
 	auto & lctx = ctx.llvm_module().getContext();
 
-	using namespace llvm;
-
 	bool isvararg = false;
-	std::vector<Type*> argumentTypes;
+	std::vector<::llvm::Type*> argumentTypes;
   for (auto & argumentType : functionType.Arguments()) {
 		if (rvsdg::is<varargtype>(argumentType)) {
 			isvararg = true;
@@ -49,52 +49,52 @@ convert(const FunctionType & functionType, context & ctx)
 		The return type can either be (valuetype, statetype, statetype, ...) if the function has
 		a return value, or (statetype, statetype, ...) if the function returns void.
 	*/
-	auto resultType = Type::getVoidTy(lctx);
+	auto resultType = ::llvm::Type::getVoidTy(lctx);
 	if (functionType.NumResults() > 0 && rvsdg::is<rvsdg::valuetype>(functionType.ResultType(0)))
 		resultType = convert_type(functionType.ResultType(0), ctx);
 
-	return llvm::FunctionType::get(resultType, argumentTypes, isvararg);
+	return ::llvm::FunctionType::get(resultType, argumentTypes, isvararg);
 }
 
-static llvm::Type *
+static ::llvm::Type *
 convert(const PointerType&, context & ctx)
 {
-  return llvm::PointerType::get(ctx.llvm_module().getContext(), 0);
+  return ::llvm::PointerType::get(ctx.llvm_module().getContext(), 0);
 }
 
-static llvm::Type *
+static ::llvm::Type *
 convert(const arraytype & type, context & ctx)
 {
-	return llvm::ArrayType::get(convert_type(type.element_type(), ctx), type.nelements());
+	return ::llvm::ArrayType::get(convert_type(type.element_type(), ctx), type.nelements());
 }
 
-static llvm::Type *
+static ::llvm::Type *
 convert(const rvsdg::ctltype & type, context & ctx)
 {
 	if (type.nalternatives() == 2)
-		return llvm::Type::getInt1Ty(ctx.llvm_module().getContext());
+		return ::llvm::Type::getInt1Ty(ctx.llvm_module().getContext());
 
-	return llvm::Type::getInt32Ty(ctx.llvm_module().getContext());
+	return ::llvm::Type::getInt32Ty(ctx.llvm_module().getContext());
 }
 
-static llvm::Type *
+static ::llvm::Type *
 convert(const fptype & type, context & ctx)
 {
 	static std::unordered_map<
 		fpsize
-	, llvm::Type*(*)(llvm::LLVMContext&)
+	, ::llvm::Type*(*)(::llvm::LLVMContext&)
 	> map({
-	  {fpsize::half,    llvm::Type::getHalfTy}
-	, {fpsize::flt,     llvm::Type::getFloatTy}
-	, {fpsize::dbl,     llvm::Type::getDoubleTy}
-	, {fpsize::x86fp80, llvm::Type::getX86_FP80Ty}
+	  {fpsize::half,    ::llvm::Type::getHalfTy}
+	, {fpsize::flt,     ::llvm::Type::getFloatTy}
+	, {fpsize::dbl,     ::llvm::Type::getDoubleTy}
+	, {fpsize::x86fp80, ::llvm::Type::getX86_FP80Ty}
 	});
 
 	JLM_ASSERT(map.find(type.size()) != map.end());
 	return map[type.size()](ctx.llvm_module().getContext());
 }
 
-static llvm::Type *
+static ::llvm::Type *
 convert(const StructType & type, context & ctx)
 {
 	auto & decl = type.GetDeclaration();
@@ -102,10 +102,10 @@ convert(const StructType & type, context & ctx)
 	if (auto st = ctx.structtype(&decl))
 		return st;
 
-	auto st = llvm::StructType::create(ctx.llvm_module().getContext());
+	auto st = ::llvm::StructType::create(ctx.llvm_module().getContext());
 	ctx.add_structtype(&decl, st);
 
-	std::vector<llvm::Type*> elements;
+	std::vector<::llvm::Type*> elements;
 	for (size_t n = 0; n < decl.nelements(); n++)
 		elements.push_back(convert_type(decl.element(n), ctx));
 
@@ -116,19 +116,19 @@ convert(const StructType & type, context & ctx)
 	return st;
 }
 
-static llvm::Type *
+static ::llvm::Type *
 convert(const fixedvectortype & type, context & ctx)
 {
-    return llvm::VectorType::get(convert_type(type.type(), ctx), type.size(), false);
+    return ::llvm::VectorType::get(convert_type(type.type(), ctx), type.size(), false);
 }
 
-static llvm::Type *
+static ::llvm::Type *
 convert(const scalablevectortype & type, context & ctx)
 {
-    return llvm::VectorType::get(convert_type(type.type(), ctx), type.size(), true);
+    return ::llvm::VectorType::get(convert_type(type.type(), ctx), type.size(), true);
 }
 
-template<class T> static llvm::Type *
+template<class T> static ::llvm::Type *
 convert(
 	const rvsdg::type & type,
 	context & ctx)
@@ -137,12 +137,12 @@ convert(
 	return convert(*static_cast<const T*>(&type), ctx);
 }
 
-llvm::Type *
+::llvm::Type *
 convert_type(const rvsdg::type & type, context & ctx)
 {
   static std::unordered_map<
     std::type_index,
-    std::function<llvm::Type*(const rvsdg::type&, context&)>
+    std::function<::llvm::Type*(const rvsdg::type&, context&)>
   > map({
           {typeid(rvsdg::bittype),      convert<rvsdg::bittype>},
           {typeid(FunctionType),       convert<FunctionType>},

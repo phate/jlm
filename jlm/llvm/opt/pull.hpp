@@ -9,7 +9,8 @@
 #include <jlm/llvm/opt/optimization.hpp>
 #include <jlm/rvsdg/graph.hpp>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 class RvsdgModule;
 

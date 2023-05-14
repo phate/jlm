@@ -9,7 +9,8 @@
 #include <jlm/llvm/opt/optimization.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 class RvsdgModule;
 
@@ -24,7 +25,7 @@ public:
 	virtual void
 	run(
     RvsdgModule & module,
-    util::StatisticsCollector & statisticsCollector) override;
+    jlm::util::StatisticsCollector & statisticsCollector) override;
 };
 
 jlm::rvsdg::output *

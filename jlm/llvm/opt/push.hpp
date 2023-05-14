@@ -8,7 +8,8 @@
 
 #include <jlm/llvm/opt/optimization.hpp>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 namespace rvsdg
 {

@@ -11,18 +11,19 @@
 
 #include <map>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
-jlm::fpsize
-ExtractFloatingPointSize(const llvm::Type * type)
+fpsize
+ExtractFloatingPointSize(const ::llvm::Type * type)
 {
 	JLM_ASSERT(type->isFloatingPointTy());
 
-	static std::unordered_map<const llvm::Type::TypeID, jlm::fpsize> map({
-	  {llvm::Type::HalfTyID, fpsize::half}
-	, {llvm::Type::FloatTyID, fpsize::flt}
-	, {llvm::Type::DoubleTyID, fpsize::dbl}
-	, {llvm::Type::X86_FP80TyID, fpsize::x86fp80}
+	static std::unordered_map<const ::llvm::Type::TypeID, llvm::fpsize> map({
+	  {::llvm::Type::HalfTyID, fpsize::half}
+	, {::llvm::Type::FloatTyID, fpsize::flt}
+	, {::llvm::Type::DoubleTyID, fpsize::dbl}
+	, {::llvm::Type::X86_FP80TyID, fpsize::x86fp80}
 	});
 
 	JLM_ASSERT(map.find(type->getTypeID()) != map.end());
@@ -30,26 +31,26 @@ ExtractFloatingPointSize(const llvm::Type * type)
 }
 
 static std::unique_ptr<rvsdg::valuetype>
-convert_integer_type(const llvm::Type * t, context & ctx)
+convert_integer_type(const ::llvm::Type * t, context & ctx)
 {
-	JLM_ASSERT(t->getTypeID() == llvm::Type::IntegerTyID);
-	const llvm::IntegerType * type = static_cast<const llvm::IntegerType*>(t);
+	JLM_ASSERT(t->getTypeID() == ::llvm::Type::IntegerTyID);
+	auto * type = static_cast<const ::llvm::IntegerType*>(t);
 
 	return std::unique_ptr<rvsdg::valuetype>(new rvsdg::bittype(type->getBitWidth()));
 }
 
 static std::unique_ptr<rvsdg::valuetype>
-convert_pointer_type(const llvm::Type * t, context&)
+convert_pointer_type(const ::llvm::Type * t, context&)
 {
-	JLM_ASSERT(t->getTypeID() == llvm::Type::PointerTyID);
+	JLM_ASSERT(t->getTypeID() == ::llvm::Type::PointerTyID);
   return PointerType::Create();
 }
 
 static std::unique_ptr<rvsdg::valuetype>
-convert_function_type(const llvm::Type * t, context & ctx)
+convert_function_type(const ::llvm::Type * t, context & ctx)
 {
-	JLM_ASSERT(t->getTypeID() == llvm::Type::FunctionTyID);
-	auto type = llvm::cast<const llvm::FunctionType>(t);
+	JLM_ASSERT(t->getTypeID() == ::llvm::Type::FunctionTyID);
+	auto type = ::llvm::cast<const ::llvm::FunctionType>(t);
 
 	/* arguments */
 	std::vector<std::unique_ptr<rvsdg::type>> argumentTypes;
@@ -62,7 +63,7 @@ convert_function_type(const llvm::Type * t, context & ctx)
 
 	/* results */
 	std::vector<std::unique_ptr<rvsdg::type>> resultTypes;
-	if (type->getReturnType()->getTypeID() != llvm::Type::VoidTyID)
+	if (type->getReturnType()->getTypeID() != ::llvm::Type::VoidTyID)
 		resultTypes.push_back(ConvertType(type->getReturnType(), ctx));
 	resultTypes.push_back(iostatetype::create());
 	resultTypes.push_back(MemoryStateType::Create());
@@ -74,24 +75,24 @@ convert_function_type(const llvm::Type * t, context & ctx)
 }
 
 static inline std::unique_ptr<rvsdg::valuetype>
-convert_fp_type(const llvm::Type * t, context & ctx)
+convert_fp_type(const ::llvm::Type * t, context & ctx)
 {
-	static std::unordered_map<llvm::Type::TypeID, jlm::fpsize> map({
-	  {llvm::Type::HalfTyID, fpsize::half}
-	, {llvm::Type::FloatTyID, fpsize::flt}
-	, {llvm::Type::DoubleTyID, fpsize::dbl}
-	, {llvm::Type::X86_FP80TyID, fpsize::x86fp80}
+	static std::unordered_map<::llvm::Type::TypeID, fpsize> map({
+	  {::llvm::Type::HalfTyID, fpsize::half}
+	, {::llvm::Type::FloatTyID, fpsize::flt}
+	, {::llvm::Type::DoubleTyID, fpsize::dbl}
+	, {::llvm::Type::X86_FP80TyID, fpsize::x86fp80}
 	});
 
 	JLM_ASSERT(map.find(t->getTypeID()) != map.end());
-	return std::unique_ptr<rvsdg::valuetype>(new jlm::fptype(map[t->getTypeID()]));
+	return std::unique_ptr<rvsdg::valuetype>(new fptype(map[t->getTypeID()]));
 }
 
 static std::unique_ptr<rvsdg::valuetype>
-convert_struct_type(const llvm::Type * t, context & ctx)
+convert_struct_type(const ::llvm::Type * t, context & ctx)
 {
   JLM_ASSERT(t->isStructTy());
-  auto type = static_cast<const llvm::StructType*>(t);
+  auto type = static_cast<const ::llvm::StructType*>(t);
 
   auto isPacked = type->isPacked();
   auto & declaration = *ctx.lookup_declaration(type);
@@ -102,47 +103,51 @@ convert_struct_type(const llvm::Type * t, context & ctx)
 }
 
 static std::unique_ptr<rvsdg::valuetype>
-convert_array_type(const llvm::Type * t, context & ctx)
+convert_array_type(const ::llvm::Type * t, context & ctx)
 {
 	JLM_ASSERT(t->isArrayTy());
 	auto etype = ConvertType(t->getArrayElementType(), ctx);
-	return std::unique_ptr<rvsdg::valuetype>(new jlm::arraytype(*etype, t->getArrayNumElements()));
+	return std::unique_ptr<rvsdg::valuetype>(new arraytype(*etype, t->getArrayNumElements()));
 }
 
 static std::unique_ptr<rvsdg::valuetype>
-convert_fixed_vector_type(const llvm::Type * t, context & ctx)
+convert_fixed_vector_type(const ::llvm::Type * t, context & ctx)
 {
-	JLM_ASSERT(t->getTypeID() == llvm::Type::FixedVectorTyID);
+	JLM_ASSERT(t->getTypeID() == ::llvm::Type::FixedVectorTyID);
 	auto type = ConvertType(t->getScalarType(), ctx);
-	return std::unique_ptr<rvsdg::valuetype>(new jlm::fixedvectortype(*type, llvm::cast<llvm::FixedVectorType>(t)->getNumElements()));
+	return std::unique_ptr<rvsdg::valuetype>(new fixedvectortype(
+    *type,
+    ::llvm::cast<::llvm::FixedVectorType>(t)->getNumElements()));
 }
 
 static std::unique_ptr<rvsdg::valuetype>
-convert_scalable_vector_type(const llvm::Type * t, context & ctx)
+convert_scalable_vector_type(const ::llvm::Type * t, context & ctx)
 {
-	JLM_ASSERT(t->getTypeID() == llvm::Type::ScalableVectorTyID);
+	JLM_ASSERT(t->getTypeID() == ::llvm::Type::ScalableVectorTyID);
 	auto type = ConvertType(t->getScalarType(), ctx);
-	return std::unique_ptr<rvsdg::valuetype>(new jlm::scalablevectortype(*type, llvm::cast<llvm::ScalableVectorType>(t)->getMinNumElements()));
+	return std::unique_ptr<rvsdg::valuetype>(new scalablevectortype(
+    *type,
+    ::llvm::cast<::llvm::ScalableVectorType>(t)->getMinNumElements()));
 }
 
 std::unique_ptr<rvsdg::valuetype>
-ConvertType(const llvm::Type * t, context & ctx)
+ConvertType(const ::llvm::Type * t, context & ctx)
 {
 	static std::unordered_map<
-	  llvm::Type::TypeID
-	, std::function<std::unique_ptr<rvsdg::valuetype>(const llvm::Type *, context &)>
+	  ::llvm::Type::TypeID
+	, std::function<std::unique_ptr<rvsdg::valuetype>(const ::llvm::Type *, context &)>
 	> map({
-	  {llvm::Type::IntegerTyID, convert_integer_type}
-	, {llvm::Type::PointerTyID, convert_pointer_type}
-	, {llvm::Type::FunctionTyID, convert_function_type}
-	, {llvm::Type::HalfTyID, convert_fp_type}
-	, {llvm::Type::FloatTyID, convert_fp_type}
-	, {llvm::Type::DoubleTyID, convert_fp_type}
-	, {llvm::Type::X86_FP80TyID, convert_fp_type}
-	, {llvm::Type::StructTyID, convert_struct_type}
-	, {llvm::Type::ArrayTyID, convert_array_type}
-	, {llvm::Type::FixedVectorTyID, convert_fixed_vector_type}
-	, {llvm::Type::ScalableVectorTyID, convert_scalable_vector_type}
+	  {::llvm::Type::IntegerTyID, convert_integer_type}
+	, {::llvm::Type::PointerTyID, convert_pointer_type}
+	, {::llvm::Type::FunctionTyID, convert_function_type}
+	, {::llvm::Type::HalfTyID, convert_fp_type}
+	, {::llvm::Type::FloatTyID, convert_fp_type}
+	, {::llvm::Type::DoubleTyID, convert_fp_type}
+	, {::llvm::Type::X86_FP80TyID, convert_fp_type}
+	, {::llvm::Type::StructTyID, convert_struct_type}
+	, {::llvm::Type::ArrayTyID, convert_array_type}
+	, {::llvm::Type::FixedVectorTyID, convert_fixed_vector_type}
+	, {::llvm::Type::ScalableVectorTyID, convert_scalable_vector_type}
 	});
 
 	JLM_ASSERT(map.find(t->getTypeID()) != map.end());

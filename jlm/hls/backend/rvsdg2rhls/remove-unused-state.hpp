@@ -20,8 +20,8 @@ namespace jlm {
 		bool
 		is_passthrough(const jlm::rvsdg::result *res);
 
-		jlm::lambda::node *
-		remove_lambda_passthrough(jlm::lambda::node *ln);
+		llvm::lambda::node *
+		remove_lambda_passthrough(llvm::lambda::node *ln);
 
 		void
 		remove_region_passthrough(const jlm::rvsdg::argument *arg);
@@ -30,7 +30,7 @@ namespace jlm {
 		remove_gamma_passthrough(jlm::rvsdg::gamma_node *gn);
 
 		void
-		remove_unused_state(jlm::RvsdgModule &rm);
+		remove_unused_state(llvm::RvsdgModule &rm);
 
 		void
 		remove_unused_state(jlm::rvsdg::region *region, bool can_remove_arguments = true);

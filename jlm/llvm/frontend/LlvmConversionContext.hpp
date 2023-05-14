@@ -22,7 +22,8 @@ namespace llvm {
 	class Value;
 }
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 class cfg;
 class cfg_node;
@@ -33,7 +34,7 @@ class variable;
 class basic_block_map final {
 public:
 	inline bool
-	has(const llvm::BasicBlock * bb) const noexcept
+	has(const ::llvm::BasicBlock * bb) const noexcept
 	{
 		return llvm2jlm_.find(bb) != llvm2jlm_.end();
 	}
@@ -45,13 +46,13 @@ public:
 	}
 
 	inline basic_block *
-	get(const llvm::BasicBlock * bb) const noexcept
+	get(const ::llvm::BasicBlock * bb) const noexcept
 	{
 		JLM_ASSERT(has(bb));
 		return llvm2jlm_.find(bb)->second;
 	}
 
-	inline const llvm::BasicBlock *
+	inline const ::llvm::BasicBlock *
 	get(const basic_block * bb) const noexcept
 	{
 		JLM_ASSERT(has(bb));
@@ -59,7 +60,7 @@ public:
 	}
 
 	inline void
-	insert(const llvm::BasicBlock * bb1, basic_block * bb2)
+	insert(const ::llvm::BasicBlock * bb1, basic_block * bb2)
 	{
 		JLM_ASSERT(!has(bb1));
 		JLM_ASSERT(!has(bb2));
@@ -68,20 +69,20 @@ public:
 	}
 
 	basic_block *
-	operator[](const llvm::BasicBlock * bb) const
+	operator[](const ::llvm::BasicBlock * bb) const
 	{
 		return get(bb);
 	}
 
-	const llvm::BasicBlock *
+	const ::llvm::BasicBlock *
 	operator[](const basic_block * bb) const
 	{
 		return get(bb);
 	}
 
 private:
-	std::unordered_map<const llvm::BasicBlock*, basic_block*> llvm2jlm_;
-	std::unordered_map<const basic_block*, const llvm::BasicBlock*> jlm2llvm_;
+	std::unordered_map<const ::llvm::BasicBlock*, basic_block*> llvm2jlm_;
+	std::unordered_map<const basic_block*, const ::llvm::BasicBlock*> jlm2llvm_;
 };
 
 class context final {
@@ -95,56 +96,56 @@ public:
 	, memory_state_(nullptr)
 	{}
 
-	const jlm::variable *
+	const llvm::variable *
 	result() const noexcept
 	{
 		return result_;
 	}
 
 	inline void
-	set_result(const jlm::variable * result)
+	set_result(const llvm::variable * result)
 	{
 		result_ = result;
 	}
 
-	jlm::variable *
+	llvm::variable *
 	iostate() const noexcept
 	{
 		return iostate_;
 	}
 
 	void
-	set_iostate(jlm::variable * state)
+	set_iostate(llvm::variable * state)
 	{
 		iostate_ = state;
 	}
 
-	inline jlm::variable *
+	inline llvm::variable *
 	memory_state() const noexcept
 	{
 		return memory_state_;
 	}
 
 	inline void
-	set_memory_state(jlm::variable * state)
+	set_memory_state(llvm::variable * state)
 	{
 		memory_state_ = state;
 	}
 
-	jlm::variable *
+	llvm::variable *
 	loop_state() const noexcept
 	{
 		return loop_state_;
 	}
 
 	void
-	set_loop_state(jlm::variable * state)
+	set_loop_state(llvm::variable * state)
 	{
 		loop_state_ = state;
 	}
 
 	inline bool
-	has(const llvm::BasicBlock * bb) const noexcept
+	has(const ::llvm::BasicBlock * bb) const noexcept
 	{
 		return bbmap_.has(bb);
 	}
@@ -156,12 +157,12 @@ public:
 	}
 
 	inline basic_block *
-	get(const llvm::BasicBlock * bb) const noexcept
+	get(const ::llvm::BasicBlock * bb) const noexcept
 	{
 		return bbmap_.get(bb);
 	}
 
-	inline const llvm::BasicBlock *
+	inline const ::llvm::BasicBlock *
 	get(const basic_block * bb) const noexcept
 	{
 		return bbmap_.get(bb);
@@ -174,27 +175,27 @@ public:
 	}
 
 	inline bool
-	has_value(const llvm::Value * value) const noexcept
+	has_value(const ::llvm::Value * value) const noexcept
 	{
 		return vmap_.find(value) != vmap_.end();
 	}
 
-	inline const jlm::variable *
-	lookup_value(const llvm::Value * value) const noexcept
+	inline const llvm::variable *
+	lookup_value(const ::llvm::Value * value) const noexcept
 	{
 		JLM_ASSERT(has_value(value));
 		return vmap_.find(value)->second;
 	}
 
 	inline void
-	insert_value(const llvm::Value * value, const jlm::variable * variable)
+	insert_value(const ::llvm::Value * value, const llvm::variable * variable)
 	{
 		JLM_ASSERT(!has_value(value));
 		vmap_[value] = variable;
 	}
 
 	inline const rvsdg::rcddeclaration *
-	lookup_declaration(const llvm::StructType * type)
+	lookup_declaration(const ::llvm::StructType * type)
 	{
 		/* FIXME: They live as long as jlm is alive. */
 		static std::vector<std::unique_ptr<rvsdg::rcddeclaration>> dcls;
@@ -234,13 +235,13 @@ private:
 	ipgraph_module & module_;
 	basic_block_map bbmap_;
 	ipgraph_node * node_;
-	const jlm::variable * result_;
-	jlm::variable * iostate_;
-	jlm::variable * loop_state_;
-	jlm::variable * memory_state_;
-	std::unordered_map<const llvm::Value*, const jlm::variable*> vmap_;
+	const llvm::variable * result_;
+	llvm::variable * iostate_;
+	llvm::variable * loop_state_;
+	llvm::variable * memory_state_;
+	std::unordered_map<const ::llvm::Value*, const llvm::variable*> vmap_;
 	std::unordered_map<
-		const llvm::StructType*,
+		const ::llvm::StructType*,
 		const rvsdg::rcddeclaration*> declarations_;
 };
 

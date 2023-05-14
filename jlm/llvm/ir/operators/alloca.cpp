@@ -5,7 +5,8 @@
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 /* alloca operator */
 

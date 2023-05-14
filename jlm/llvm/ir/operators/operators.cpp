@@ -8,7 +8,8 @@
 
 #include <llvm/ADT/SmallVector.h>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 /* phi operator */
 
@@ -275,7 +276,7 @@ bits2ptr_op::~bits2ptr_op()
 bool
 bits2ptr_op::operator==(const operation & other) const noexcept
 {
-	auto op = dynamic_cast<const jlm::bits2ptr_op*>(&other);
+	auto op = dynamic_cast<const bits2ptr_op*>(&other);
 	return op
 	    && op->argument(0) == argument(0)
 	    && op->result(0) == result(0);
@@ -290,7 +291,7 @@ bits2ptr_op::debug_string() const
 std::unique_ptr<rvsdg::operation>
 bits2ptr_op::copy() const
 {
-	return std::unique_ptr<rvsdg::operation>(new jlm::bits2ptr_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new bits2ptr_op(*this));
 }
 
 rvsdg::unop_reduction_path_t
@@ -315,7 +316,7 @@ ptr2bits_op::~ptr2bits_op()
 bool
 ptr2bits_op::operator==(const operation & other) const noexcept
 {
-	auto op = dynamic_cast<const jlm::ptr2bits_op*>(&other);
+	auto op = dynamic_cast<const ptr2bits_op*>(&other);
 	return op
 	    && op->argument(0) == argument(0)
 	    && op->result(0) == result(0);
@@ -330,7 +331,7 @@ ptr2bits_op::debug_string() const
 std::unique_ptr<rvsdg::operation>
 ptr2bits_op::copy() const
 {
-	return std::unique_ptr<rvsdg::operation>(new jlm::ptr2bits_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new ptr2bits_op(*this));
 }
 
 rvsdg::unop_reduction_path_t
@@ -379,14 +380,14 @@ ptrcmp_op::~ptrcmp_op()
 bool
 ptrcmp_op::operator==(const operation & other) const noexcept
 {
-	auto op = dynamic_cast<const jlm::ptrcmp_op*>(&other);
+	auto op = dynamic_cast<const ptrcmp_op*>(&other);
 	return op && op->argument(0) == argument(0) && op->cmp_ == cmp_;
 }
 
 std::string
 ptrcmp_op::debug_string() const
 {
-	static std::unordered_map<jlm::cmp, std::string> map({
+	static std::unordered_map<llvm::cmp, std::string> map({
 		{cmp::eq, "eq"}, {cmp::ne, "ne"}, {cmp::gt, "gt"}
 	, {cmp::ge, "ge"}, {cmp::lt, "lt"}, {cmp::le, "le"}
 	});
@@ -426,7 +427,7 @@ zext_op::~zext_op()
 bool
 zext_op::operator==(const operation & other) const noexcept
 {
-	auto op = dynamic_cast<const jlm::zext_op*>(&other);
+	auto op = dynamic_cast<const zext_op*>(&other);
 	return op
 	    && op->argument(0) == argument(0)
 	    && op->result(0) == result(0);
@@ -484,7 +485,7 @@ ConstantFP::operator==(const operation & other) const noexcept
 std::string
 ConstantFP::debug_string() const
 {
-	llvm::SmallVector<char, 32> v;
+	::llvm::SmallVector<char, 32> v;
 	constant().toString(v, 32, 0);
 
 	std::string s("FP(");
@@ -509,7 +510,7 @@ fpcmp_op::~fpcmp_op()
 bool
 fpcmp_op::operator==(const operation & other) const noexcept
 {
-	auto op = dynamic_cast<const jlm::fpcmp_op*>(&other);
+	auto op = dynamic_cast<const fpcmp_op*>(&other);
 	return op
 	    && op->argument(0) == argument(0)
 	    && op->cmp_ == cmp_;
@@ -532,7 +533,7 @@ fpcmp_op::debug_string() const
 std::unique_ptr<rvsdg::operation>
 fpcmp_op::copy() const
 {
-	return std::unique_ptr<rvsdg::operation>(new jlm::fpcmp_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new fpcmp_op(*this));
 }
 
 rvsdg::binop_reduction_path_t
@@ -606,14 +607,14 @@ fpbin_op::~fpbin_op()
 bool
 fpbin_op::operator==(const operation & other) const noexcept
 {
-	auto op = dynamic_cast<const jlm::fpbin_op*>(&other);
+	auto op = dynamic_cast<const fpbin_op*>(&other);
 	return op && op->fpop() == fpop() && op->size() == size();
 }
 
 std::string
 fpbin_op::debug_string() const
 {
-	static std::unordered_map<jlm::fpop, std::string> map({
+	static std::unordered_map<llvm::fpop, std::string> map({
 		{fpop::add, "add"}, {fpop::sub, "sub"}, {fpop::mul, "mul"}
 	, {fpop::div, "div"}, {fpop::mod, "mod"}
 	});
@@ -625,7 +626,7 @@ fpbin_op::debug_string() const
 std::unique_ptr<rvsdg::operation>
 fpbin_op::copy() const
 {
-	return std::unique_ptr<rvsdg::operation>(new jlm::fpbin_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new fpbin_op(*this));
 }
 
 rvsdg::binop_reduction_path_t
@@ -653,7 +654,7 @@ fpext_op::~fpext_op()
 bool
 fpext_op::operator==(const operation & other) const noexcept
 {
-	auto op = dynamic_cast<const jlm::fpext_op*>(&other);
+	auto op = dynamic_cast<const fpext_op*>(&other);
 	return op && op->srcsize() == srcsize() && op->dstsize() == dstsize();
 }
 
@@ -666,7 +667,7 @@ fpext_op::debug_string() const
 std::unique_ptr<rvsdg::operation>
 fpext_op::copy() const
 {
-	return std::unique_ptr<rvsdg::operation>(new jlm::fpext_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new fpext_op(*this));
 }
 
 rvsdg::unop_reduction_path_t
@@ -691,7 +692,7 @@ fpneg_op::~fpneg_op()
 bool
 fpneg_op::operator==(const operation & other) const noexcept
 {
-	auto op = dynamic_cast<const jlm::fpneg_op*>(&other);
+	auto op = dynamic_cast<const fpneg_op*>(&other);
 	return op && op->size() == size();
 }
 
@@ -704,7 +705,7 @@ fpneg_op::debug_string() const
 std::unique_ptr<rvsdg::operation>
 fpneg_op::copy() const
 {
-	return std::unique_ptr<rvsdg::operation>(new jlm::fpneg_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new fpneg_op(*this));
 }
 
 rvsdg::unop_reduction_path_t
@@ -767,7 +768,7 @@ valist_op::~valist_op()
 bool
 valist_op::operator==(const operation & other) const noexcept
 {
-	auto op = dynamic_cast<const jlm::valist_op*>(&other);
+	auto op = dynamic_cast<const valist_op*>(&other);
 	if (!op || op->narguments() != narguments())
 		return false;
 
@@ -788,7 +789,7 @@ valist_op::debug_string() const
 std::unique_ptr<rvsdg::operation>
 valist_op::copy() const
 {
-	return std::unique_ptr<rvsdg::operation>(new jlm::valist_op(*this));
+	return std::unique_ptr<rvsdg::operation>(new valist_op(*this));
 }
 
 /* bitcast operator */

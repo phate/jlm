@@ -13,7 +13,8 @@
 #include <memory>
 #include <sstream>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 /* variable */
 
@@ -73,9 +74,9 @@ private:
 };
 
 template <class T> static inline bool
-is(const jlm::variable * variable) noexcept
+is(const llvm::variable * variable) noexcept
 {
-	static_assert(std::is_base_of<jlm::variable, T>::value,
+	static_assert(std::is_base_of<llvm::variable, T>::value,
 		"Template parameter T must be derived from jlm::variable.");
 
 	return dynamic_cast<const T*>(variable) != nullptr;

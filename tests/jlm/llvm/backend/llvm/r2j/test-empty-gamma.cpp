@@ -21,13 +21,13 @@
 static void
 test_with_match()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	jlm::valuetype vt;
 	jlm::rvsdg::bittype bt1(1);
 	FunctionType ft({&bt1, &vt, &vt}, {&vt});
 
-	RvsdgModule rm(util::filepath(""), "", "");
+	RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
 	nf->set_mutable(false);
 
@@ -46,33 +46,33 @@ test_with_match()
 
 	jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
-	util::StatisticsCollector statisticsCollector;
+	jlm::util::StatisticsCollector statisticsCollector;
 	auto module = rvsdg2jlm::rvsdg2jlm(rm, statisticsCollector);
-	jlm::print(*module, stdout);
+	print(*module, stdout);
 
 	/* verify output */
 
 	auto & ipg = module->ipgraph();
 	assert(ipg.nnodes() == 1);
 
-	auto cfg = dynamic_cast<const jlm::function_node&>(*ipg.begin()).cfg();
+	auto cfg = dynamic_cast<const function_node&>(*ipg.begin()).cfg();
 	assert(cfg->nnodes() == 1);
 	auto node = cfg->entry()->outedge(0)->sink();
 	auto bb = dynamic_cast<const basic_block*>(node);
-	assert(jlm::rvsdg::is<jlm::select_op>(bb->tacs().last()->operation()));
+	assert(jlm::rvsdg::is<select_op>(bb->tacs().last()->operation()));
 }
 
 static void
 test_without_match()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	jlm::valuetype vt;
 	jlm::rvsdg::ctltype ctl2(2);
 	jlm::rvsdg::bittype bt1(1);
 	FunctionType ft({&ctl2, &vt, &vt}, {&vt});
 
-	RvsdgModule rm(util::filepath(""), "", "");
+	RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
 	nf->set_mutable(false);
 
@@ -90,32 +90,32 @@ test_without_match()
 
 	jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
-	util::StatisticsCollector statisticsCollector;
+	jlm::util::StatisticsCollector statisticsCollector;
 	auto module = rvsdg2jlm::rvsdg2jlm(rm, statisticsCollector);
-	jlm::print(*module, stdout);
+	print(*module, stdout);
 
 	/* verify output */
 
 	auto & ipg = module->ipgraph();
 	assert(ipg.nnodes() == 1);
 
-	auto cfg = dynamic_cast<const jlm::function_node&>(*ipg.begin()).cfg();
+	auto cfg = dynamic_cast<const function_node&>(*ipg.begin()).cfg();
 	assert(cfg->nnodes() == 1);
 	auto node = cfg->entry()->outedge(0)->sink();
 	auto bb = dynamic_cast<const basic_block*>(node);
-	assert(jlm::rvsdg::is<jlm::ctl2bits_op>(bb->tacs().first()->operation()));
-	assert(jlm::rvsdg::is<jlm::select_op>(bb->tacs().last()->operation()));
+	assert(jlm::rvsdg::is<ctl2bits_op>(bb->tacs().first()->operation()));
+	assert(jlm::rvsdg::is<select_op>(bb->tacs().last()->operation()));
 }
 
 static void
 test_gamma3()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	jlm::valuetype vt;
 	FunctionType ft({&jlm::rvsdg::bit32, &vt, &vt}, {&vt});
 
-	RvsdgModule rm(util::filepath(""), "", "");
+	RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
 	nf->set_mutable(false);
 
@@ -135,16 +135,16 @@ test_gamma3()
 
 	jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
-	util::StatisticsCollector statisticsCollector;
+	jlm::util::StatisticsCollector statisticsCollector;
 	auto module = rvsdg2jlm::rvsdg2jlm(rm, statisticsCollector);
-	jlm::print(*module, stdout);
+	print(*module, stdout);
 
 	/* verify output */
 
 	auto & ipg = module->ipgraph();
 	assert(ipg.nnodes() == 1);
 
-	auto cfg = dynamic_cast<const jlm::function_node&>(*ipg.begin()).cfg();
+	auto cfg = dynamic_cast<const function_node&>(*ipg.begin()).cfg();
 	assert(is_closed(*cfg));
 }
 

@@ -7,7 +7,7 @@
 #include <jlm/llvm/ir/operators/delta.hpp>
 
 std::string
-jlm::hls::VerilatorHarnessHLS::get_text(jlm::RvsdgModule &rm) {
+jlm::hls::VerilatorHarnessHLS::get_text(llvm::RvsdgModule &rm) {
 	std::ostringstream cpp;
 	auto ln = get_hls_lambda(rm);
 	auto function_name = ln->name();
@@ -206,9 +206,9 @@ jlm::hls::VerilatorHarnessHLS::get_text(jlm::RvsdgModule &rm) {
 	auto root = rm.Rvsdg().root();
 	for (size_t i = 0; i < root->narguments(); ++i)
   {
-    if (auto rvsdgImport = dynamic_cast<const impport*>(&root->argument(i)->port()))
+    if (auto rvsdgImport = dynamic_cast<const llvm::impport*>(&root->argument(i)->port()))
     {
-      JLM_ASSERT(is<PointerType>(rvsdgImport->type()));
+      JLM_ASSERT(jlm::rvsdg::is<llvm::PointerType>(rvsdgImport->type()));
       cpp << "extern " << convert_to_c_type(&rvsdgImport->GetValueType()) << " " << rvsdgImport->name() << ";\n";
     }
 	}
@@ -250,7 +250,7 @@ jlm::hls::VerilatorHarnessHLS::get_text(jlm::RvsdgModule &rm) {
 		size_t ix = ln->cvargument(i)->input()->argument()->index();
 		std::string name;
 		if(auto a = dynamic_cast<jlm::rvsdg::argument *>(ln->input(i)->origin())){
-			if(auto ip = dynamic_cast<const impport*>(&a->port())){
+			if(auto ip = dynamic_cast<const llvm::impport*>(&a->port())){
 				name = ip->name();
 			}
 		} else{
@@ -299,9 +299,9 @@ std::string
 jlm::hls::VerilatorHarnessHLS::convert_to_c_type(const jlm::rvsdg::type *type) {
 	if (auto t = dynamic_cast<const jlm::rvsdg::bittype *>(type)) {
 		return "int" + util::strfmt(t->nbits()) + "_t";
-	} else if (is<PointerType>(*type)) {
+	} else if (jlm::rvsdg::is<llvm::PointerType>(*type)) {
 		return "void*";
-	} else if (auto t = dynamic_cast<const jlm::arraytype *>(type)) {
+	} else if (auto t = dynamic_cast<const llvm::arraytype *>(type)) {
 		return convert_to_c_type(&t->element_type());
 	} else {
 		throw std::logic_error(type->debug_string() + " not implemented!");
@@ -310,7 +310,7 @@ jlm::hls::VerilatorHarnessHLS::convert_to_c_type(const jlm::rvsdg::type *type) {
 
 std::string
 jlm::hls::VerilatorHarnessHLS::convert_to_c_type_postfix(const jlm::rvsdg::type *type) {
-	if (auto t = dynamic_cast<const jlm::arraytype *>(type)) {
+	if (auto t = dynamic_cast<const llvm::arraytype *>(type)) {
 		return util::strfmt("[", t->nelements(), "]", convert_to_c_type(&t->element_type()));
 	} else {
 		return "";

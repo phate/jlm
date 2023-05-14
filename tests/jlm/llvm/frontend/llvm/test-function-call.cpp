@@ -41,10 +41,10 @@ test_function_call()
 		return module;
 	};
 
-	auto verify = [](const jlm::ipgraph_module & module) {
-		using namespace jlm;
+	auto verify = [](const jlm::llvm::ipgraph_module & module) {
+		using namespace jlm::llvm;
 
-		jlm::cfg * cfg = nullptr;
+		jlm::llvm::cfg * cfg = nullptr;
 		for (auto & node : module.ipgraph()) {
 			if (node.name() == "caller") {
 				cfg = dynamic_cast<const function_node&>(node).cfg();
@@ -61,8 +61,8 @@ test_function_call()
 	auto llmod = setup(ctx);
 	jlm::print(*llmod);
 
-	auto ipgmod = jlm::ConvertLlvmModule(*llmod);
-	jlm::print(*ipgmod, stdout);
+	auto ipgmod = jlm::llvm::ConvertLlvmModule(*llmod);
+	print(*ipgmod, stdout);
 
 	verify(*ipgmod);
 }
@@ -95,13 +95,13 @@ test_malloc_call()
 		return module;
 	};
 
-	auto verify = [](const jlm::ipgraph_module & module) {
-		using namespace jlm;
+	auto verify = [](const jlm::llvm::ipgraph_module & module) {
+		using namespace jlm::llvm;
 
-		jlm::cfg * cfg = nullptr;
+		jlm::llvm::cfg * cfg = nullptr;
 		for (auto & node : module.ipgraph()) {
 			if (node.name() == "caller") {
-				cfg = dynamic_cast<const function_node&>(node).cfg();
+				cfg = dynamic_cast<const jlm::llvm::function_node&>(node).cfg();
 				break;
 			}
 		}
@@ -115,8 +115,8 @@ test_malloc_call()
 	auto llmod = setup(ctx);
 	jlm::print(*llmod);
 
-	auto ipgmod = jlm::ConvertLlvmModule(*llmod);
-	jlm::print(*ipgmod, stdout);
+	auto ipgmod = jlm::llvm::ConvertLlvmModule(*llmod);
+	print(*ipgmod, stdout);
 
 	verify(*ipgmod);
 }
@@ -147,10 +147,10 @@ test_free_call()
 		return module;
 	};
 
-	auto verify = [](const jlm::ipgraph_module & module) {
-		using namespace jlm;
+	auto verify = [](const jlm::llvm::ipgraph_module & module) {
+		using namespace jlm::llvm;
 
-		jlm::cfg * cfg = nullptr;
+		jlm::llvm::cfg * cfg = nullptr;
 		for (auto & node : module.ipgraph()) {
 			if (node.name() == "caller") {
 				cfg = dynamic_cast<const function_node&>(node).cfg();
@@ -167,8 +167,8 @@ test_free_call()
 	auto llvmmod = setup(ctx);
 	jlm::print(*llvmmod);
 
-	auto ipgmod = jlm::ConvertLlvmModule(*llvmmod);
-	jlm::print(*ipgmod, stdout);
+	auto ipgmod = jlm::llvm::ConvertLlvmModule(*llvmmod);
+	print(*ipgmod, stdout);
 
 	verify(*ipgmod);
 }

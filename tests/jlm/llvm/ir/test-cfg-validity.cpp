@@ -15,13 +15,13 @@
 static void
 test_single_operand_phi()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
-	valuetype vt;
+	jlm::valuetype vt;
 
-	ipgraph_module im(util::filepath(""), "", "");
+	ipgraph_module im(jlm::util::filepath(""), "", "");
 
-	jlm::cfg cfg(im);
+	jlm::llvm::cfg cfg(im);
 	auto arg = cfg.entry()->append_argument(argument::create("arg", vt));
 
 	auto bb0 = basic_block::create(cfg);

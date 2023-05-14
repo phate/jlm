@@ -6,7 +6,9 @@
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 
-namespace jlm {
+namespace jlm::llvm
+{
+
 namespace delta {
 
 /* delta operator */

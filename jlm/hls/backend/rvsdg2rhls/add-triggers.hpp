@@ -16,14 +16,14 @@ namespace jlm {
 		rvsdg::output *
 		get_trigger(rvsdg::region *region);
 
-		jlm::lambda::node *
-		add_lambda_argument(jlm::lambda::node *ln, const rvsdg::type *type);
+		llvm::lambda::node *
+		add_lambda_argument(llvm::lambda::node *ln, const rvsdg::type *type);
 
 		void
 		add_triggers(rvsdg::region *region);
 
 		void
-		add_triggers(jlm::RvsdgModule &rm);
+		add_triggers(llvm::RvsdgModule &rm);
 	}
 }
 #endif //JLM_HLS_BACKEND_RVSDG2RHLS_ADD_TRIGGERS_HPP

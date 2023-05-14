@@ -20,14 +20,14 @@ static jlm::util::StatisticsCollector statisticsCollector;
 static inline void
 test_pullin_top()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	jlm::rvsdg::ctltype ct(2);
 	jlm::test_op uop({&vt}, {&vt});
 	jlm::test_op bop({&vt, &vt}, {&vt});
 	jlm::test_op cop({&ct, &vt}, {&ct});
 
-	RvsdgModule rm(util::filepath(""), "", "");
+	RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 
 	auto c = graph.add_import({ct, "c"});
@@ -49,7 +49,7 @@ test_pullin_top()
 	graph.add_export(n2, {n2->type(), "y"});
 
 //	jlm::rvsdg::view(graph, stdout);
-	jlm::pullin_top(gamma);
+	pullin_top(gamma);
 //	jlm::rvsdg::view(graph, stdout);
 
 	assert(gamma->subregion(0)->nnodes() == 2);
@@ -77,7 +77,7 @@ test_pullin_bottom()
 	auto xp = graph.add_export(b2, {b2->type(), "x"});
 
 //	jlm::rvsdg::view(graph, stdout);
-	jlm::pullin_bottom(gamma);
+	jlm::llvm::pullin_bottom(gamma);
 //	jlm::rvsdg::view(graph, stdout);
 
 	assert(jlm::rvsdg::node_output::node(xp->origin()) == gamma);
@@ -88,9 +88,9 @@ test_pullin_bottom()
 static void
 test_pull()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
-	RvsdgModule rm(util::filepath(""), "", "");
+	RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 
 	auto p = graph.add_import({jlm::rvsdg::ctl2, ""});
@@ -116,7 +116,7 @@ test_pull()
 	graph.add_export(g1xv, {g1xv->type(), ""});
 
 	jlm::rvsdg::view(graph, stdout);
-	jlm::pullin pullin;
+	jlm::llvm::pullin pullin;
 	pullin.run(rm, statisticsCollector);
 	graph.prune();
 	jlm::rvsdg::view(graph, stdout);

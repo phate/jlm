@@ -8,12 +8,13 @@
 
 #include <vector>
 
-namespace jlm {
-
-namespace util
+namespace jlm::util
 {
 class StatisticsCollector;
 }
+
+namespace jlm::llvm
+{
 
 class RvsdgModule;
 
@@ -38,7 +39,7 @@ public:
 	virtual void
 	run(
     RvsdgModule & module,
-    util::StatisticsCollector & statisticsCollector) = 0;
+    jlm::util::StatisticsCollector & statisticsCollector) = 0;
 };
 
 /*
@@ -46,7 +47,7 @@ public:
 */
 void
 optimize(RvsdgModule & rm,
-         util::StatisticsCollector & statisticsCollector,
+         jlm::util::StatisticsCollector & statisticsCollector,
          const std::vector<optimization*> & opts);
 
 }

@@ -16,15 +16,16 @@ namespace llvm {
 	class Module;
 }
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 class ipgraph_module;
 
 attribute::kind
-ConvertAttributeKind(const llvm::Attribute::AttrKind & kind);
+ConvertAttributeKind(const ::llvm::Attribute::AttrKind & kind);
 
 std::unique_ptr<ipgraph_module>
-ConvertLlvmModule(llvm::Module & module);
+ConvertLlvmModule(::llvm::Module & module);
 
 }
 

@@ -10,19 +10,20 @@
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
 
-namespace jlm {
+namespace jlm::rvsdg
+{
+class gamma_node;
+class theta_node;
+}
+
+namespace jlm::llvm
+{
 
 namespace delta {
 class node;
 }
 namespace lambda {
 class node;
-}
-
-namespace rvsdg
-{
-class gamma_node;
-class theta_node;
 }
 
 namespace phi { class node; }
@@ -119,7 +120,7 @@ public:
 	void
 	run(
     RvsdgModule & module,
-    util::StatisticsCollector & statisticsCollector) override;
+    jlm::util::StatisticsCollector & statisticsCollector) override;
 
 private:
   void
@@ -141,10 +142,10 @@ private:
   Sweep(jlm::rvsdg::structural_node & node) const;
 
   void
-  SweepGamma(jlm::rvsdg::gamma_node & gammaNode) const;
+  SweepGamma(rvsdg::gamma_node & gammaNode) const;
 
   void
-  SweepTheta(jlm::rvsdg::theta_node & thetaNode) const;
+  SweepTheta(rvsdg::theta_node & thetaNode) const;
 
   void
   SweepLambda(lambda::node & lambdaNode) const;

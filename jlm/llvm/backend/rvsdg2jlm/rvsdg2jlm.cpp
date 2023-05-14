@@ -16,15 +16,16 @@
 
 #include <deque>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
-class rvsdg_destruction_stat final : public util::Statistics {
+class rvsdg_destruction_stat final : public jlm::util::Statistics {
 public:
 	virtual
 	~rvsdg_destruction_stat()
 	{}
 
-	rvsdg_destruction_stat(const util::filepath & filename)
+	rvsdg_destruction_stat(const jlm::util::filepath & filename)
 	: Statistics(Statistics::Id::RvsdgDestruction)
   , ntacs_(0)
 	, nnodes_(0)
@@ -41,14 +42,14 @@ public:
 	void
 	end(const ipgraph_module & im)
 	{
-		ntacs_ = jlm::ntacs(im);
+		ntacs_ = llvm::ntacs(im);
 		timer_.stop();
 	}
 
 	virtual std::string
 	ToString() const override
 	{
-		return util::strfmt("RVSDGDESTRUCTION ",
+		return jlm::util::strfmt("RVSDGDESTRUCTION ",
 			filename_.to_str(), " ",
 			nnodes_, " ", ntacs_, " ",
 			timer_.ns()
@@ -56,7 +57,7 @@ public:
 	}
 
   static std::unique_ptr<rvsdg_destruction_stat>
-  Create(const util::filepath & sourceFile)
+  Create(const jlm::util::filepath & sourceFile)
   {
     return std::make_unique<rvsdg_destruction_stat>(sourceFile);
   }
@@ -64,8 +65,8 @@ public:
 private:
 	size_t ntacs_;
 	size_t nnodes_;
-	util::timer timer_;
-	util::filepath filename_;
+	jlm::util::timer timer_;
+	jlm::util::filepath filename_;
 };
 
 namespace rvsdg2jlm {
@@ -138,11 +139,11 @@ convert_region(rvsdg::region & region, context & ctx)
 	ctx.set_lpbb(exit);
 }
 
-static inline std::unique_ptr<jlm::cfg>
+static inline std::unique_ptr<llvm::cfg>
 create_cfg(const lambda::node & lambda, context & ctx)
 {
 	JLM_ASSERT(ctx.lpbb() == nullptr);
-	std::unique_ptr<jlm::cfg> cfg(new jlm::cfg(ctx.module()));
+	std::unique_ptr<llvm::cfg> cfg(new llvm::cfg(ctx.module()));
 	auto entry = basic_block::create(*cfg);
 	cfg->exit()->divert_inedges(entry);
 	ctx.set_lpbb(entry);
@@ -150,7 +151,7 @@ create_cfg(const lambda::node & lambda, context & ctx)
 
 	/* add arguments */
 	for (auto & fctarg : lambda.fctarguments()) {
-		auto argument = jlm::argument::create("", fctarg.type(), fctarg.attributes());
+		auto argument = llvm::argument::create("", fctarg.type(), fctarg.attributes());
 		auto v = cfg->entry()->append_argument(std::move(argument));
 		ctx.insert(&fctarg, v);
 	}
@@ -333,7 +334,7 @@ convert_gamma_node(const rvsdg::node & node, context & ctx)
 }
 
 static inline bool
-phi_needed(const rvsdg::input * i, const jlm::variable * v)
+phi_needed(const rvsdg::input * i, const llvm::variable * v)
 {
 	auto node = input_node(i);
 	JLM_ASSERT(is<rvsdg::theta_op>(node));
@@ -367,7 +368,7 @@ convert_theta_node(const rvsdg::node & node, context & ctx)
 	ctx.set_lpbb(entry);
 
 	/* create phi nodes and add arguments to context */
-	std::deque<jlm::tac*> phis;
+	std::deque<llvm::tac*> phis;
 	for (size_t n = 0; n < subregion->narguments(); n++) {
 		auto argument = subregion->argument(n);
 		auto v = ctx.variable(argument->input()->origin());
@@ -542,7 +543,7 @@ convert_imports(const rvsdg::graph & graph, ipgraph_module & im, context & ctx)
 
 	for (size_t n = 0; n < graph.root()->narguments(); n++) {
 		auto argument = graph.root()->argument(n);
-		auto import = static_cast<const jlm::impport*>(&argument->port());
+		auto import = static_cast<const llvm::impport*>(&argument->port());
 		if (auto ftype = is_function_import(argument)) {
 			auto f = function_node::create(ipg, import->name(), *ftype, import->linkage());
 			auto v = im.create_variable(f);
@@ -576,7 +577,7 @@ convert_rvsdg(const RvsdgModule & rm)
 std::unique_ptr<ipgraph_module>
 rvsdg2jlm(
   const RvsdgModule & rm,
-  util::StatisticsCollector & statisticsCollector)
+  jlm::util::StatisticsCollector & statisticsCollector)
 {
 	auto statistics = rvsdg_destruction_stat::Create(rm.SourceFileName());
 

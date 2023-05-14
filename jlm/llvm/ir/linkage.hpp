@@ -6,7 +6,8 @@
 #ifndef JLM_LLVM_IR_LINKAGE_HPP
 #define JLM_LLVM_IR_LINKAGE_HPP
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 enum class linkage {
 	  external_linkage

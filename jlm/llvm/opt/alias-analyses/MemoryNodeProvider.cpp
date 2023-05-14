@@ -5,7 +5,7 @@
 
 #include <jlm/llvm/opt/alias-analyses/MemoryNodeProvider.hpp>
 
-namespace jlm::aa
+namespace jlm::llvm::aa
 {
 
 MemoryNodeProvisioning::~MemoryNodeProvisioning() noexcept

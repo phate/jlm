@@ -5,7 +5,8 @@
 
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 gblvalue::~gblvalue()
 {}

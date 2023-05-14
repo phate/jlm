@@ -12,7 +12,8 @@
 #include <jlm/rvsdg/simple-normal-form.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 /* load normal form */
 
@@ -159,13 +160,13 @@ public:
   [[nodiscard]] const PointerType &
   GetPointerType() const noexcept
   {
-    return *util::AssertedCast<const PointerType>(&argument(0).type());
+    return *jlm::util::AssertedCast<const PointerType>(&argument(0).type());
   }
 
   [[nodiscard]] const rvsdg::valuetype &
   GetLoadedType() const noexcept
   {
-    return *util::AssertedCast<const rvsdg::valuetype>(&result(0).type());
+    return *jlm::util::AssertedCast<const rvsdg::valuetype>(&result(0).type());
   }
 
   [[nodiscard]] size_t
@@ -180,13 +181,13 @@ public:
     return alignment_;
   }
 
-  static jlm::load_normal_form *
+  static load_normal_form *
   GetNormalForm(rvsdg::graph * graph) noexcept
   {
-    return util::AssertedCast<load_normal_form>(graph->node_normal_form(typeid(LoadOperation)));
+    return jlm::util::AssertedCast<load_normal_form>(graph->node_normal_form(typeid(LoadOperation)));
   }
 
-  static std::unique_ptr<jlm::tac>
+  static std::unique_ptr<llvm::tac>
   Create(
     const variable * address,
     const variable * state,
@@ -204,7 +205,7 @@ private:
   CheckAddressType(const rvsdg::type & addressType)
   {
     if (!is<PointerType>(addressType))
-      throw util::error("Expected pointer type.");
+      throw jlm::util::error("Expected pointer type.");
   }
 
   static std::vector<rvsdg::port>
@@ -272,8 +273,8 @@ private:
     }
   };
 
-  using MemoryStateInputRange = util::iterator_range<MemoryStateInputIterator>;
-  using MemoryStateOutputRange = util::iterator_range<MemoryStateOutputIterator>;
+  using MemoryStateInputRange = jlm::util::iterator_range<MemoryStateInputIterator>;
+  using MemoryStateOutputRange = jlm::util::iterator_range<MemoryStateOutputIterator>;
 
   LoadNode(
     rvsdg::region & region,
@@ -286,7 +287,7 @@ public:
   [[nodiscard]] const LoadOperation&
   GetOperation() const noexcept
   {
-    return *util::AssertedCast<const LoadOperation>(&operation());
+    return *jlm::util::AssertedCast<const LoadOperation>(&operation());
   }
 
   [[nodiscard]] MemoryStateInputRange
@@ -367,7 +368,7 @@ private:
   CheckAddressType(const rvsdg::type & addressType)
   {
     if (!is<PointerType>(addressType))
-      throw util::error("Expected pointer type.");
+      throw jlm::util::error("Expected pointer type.");
   }
 };
 

@@ -17,12 +17,12 @@
 static void
 test_straightening()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	jlm::valuetype vt;
-	ipgraph_module module(util::filepath(""), "", "");
+	ipgraph_module module(jlm::util::filepath(""), "", "");
 
-	jlm::cfg cfg(module);
+	jlm::llvm::cfg cfg(module);
 	auto bb1 = basic_block::create(cfg);
 	auto bb2 = basic_block::create(cfg);
 	auto bb3 = basic_block::create(cfg);
@@ -33,9 +33,9 @@ test_straightening()
 	bb3->add_outedge(cfg.exit());
 
 	auto arg = cfg.entry()->append_argument(argument::create("arg", vt));
-	bb1->append_last(create_testop_tac({arg}, {&vt}));
-	bb2->append_last(create_testop_tac({arg}, {&vt}));
-	bb3->append_last(create_testop_tac({arg}, {&vt}));
+	bb1->append_last(jlm::create_testop_tac({arg}, {&vt}));
+	bb2->append_last(jlm::create_testop_tac({arg}, {&vt}));
+	bb3->append_last(jlm::create_testop_tac({arg}, {&vt}));
 
 	auto bb3_last = static_cast<const basic_block*>(bb3)->tacs().last();
 	straighten(cfg);
@@ -52,11 +52,11 @@ test_straightening()
 static void
 test_is_structured()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
-	ipgraph_module module(util::filepath(""), "", "");
+	ipgraph_module module(jlm::util::filepath(""), "", "");
 
-	jlm::cfg cfg(module);
+	jlm::llvm::cfg cfg(module);
 	auto split = basic_block::create(cfg);
 	auto bb = basic_block::create(cfg);
 	auto join = basic_block::create(cfg);
@@ -67,7 +67,7 @@ test_is_structured()
 	bb->add_outedge(join);
 	join->add_outedge(cfg.exit());
 
-	jlm::print_ascii(cfg, stdout);
+	print_ascii(cfg, stdout);
 	assert(is_structured(cfg));
 }
 

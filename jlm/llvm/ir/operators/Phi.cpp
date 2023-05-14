@@ -7,7 +7,9 @@
 #include <jlm/llvm/ir/operators/Phi.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 
-namespace jlm {
+namespace jlm::llvm
+{
+
 namespace phi {
 
 /* phi operation class */

@@ -10,7 +10,8 @@
 #include <jlm/llvm/ir/cfg-node.hpp>
 #include <jlm/llvm/ir/tac.hpp>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 /* basic block */
 
@@ -20,7 +21,7 @@ public:
 	~basic_block();
 
 private:
-	basic_block(jlm::cfg & cfg)
+	basic_block(llvm::cfg & cfg)
 	: cfg_node(cfg)
 	{}
 
@@ -101,8 +102,8 @@ public:
 		tacs_.drop_last();
 	}
 
-	jlm::tac *
-	append_first(std::unique_ptr<jlm::tac> tac)
+	llvm::tac *
+	append_first(std::unique_ptr<llvm::tac> tac)
 	{
 		tacs_.append_first(std::move(tac));
 		return tacs_.first();
@@ -122,8 +123,8 @@ public:
 		tacs_.append_first(tl);
 	}
 
-	jlm::tac *
-	append_last(std::unique_ptr<jlm::tac> tac)
+	llvm::tac *
+	append_last(std::unique_ptr<llvm::tac> tac)
 	{
 		tacs_.append_last(std::move(tac));
 		return tacs_.last();
@@ -137,10 +138,10 @@ public:
 		tacs.clear();
 	}
 
-	jlm::tac *
+	llvm::tac *
 	insert_before(
 		const taclist::const_iterator & it,
-		std::unique_ptr<jlm::tac> tac)
+		std::unique_ptr<llvm::tac> tac)
 	{
 		return tacs_.insert_before(it, std::move(tac));
 	}
@@ -155,14 +156,14 @@ public:
 		tv.clear();
 	}
 
-	jlm::tac *
-	insert_before_branch(std::unique_ptr<jlm::tac> tac);
+	llvm::tac *
+	insert_before_branch(std::unique_ptr<llvm::tac> tac);
 
 	void
 	insert_before_branch(tacsvector_t & tv);
 
 	static basic_block *
-	create(jlm::cfg & cfg);
+	create(llvm::cfg & cfg);
 
 private:
 	taclist tacs_;

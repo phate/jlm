@@ -18,19 +18,19 @@
 #include <jlm/util/Statistics.hpp>
 
 static void
-RunDeadNodeElimination(jlm::RvsdgModule & rvsdgModule)
+RunDeadNodeElimination(jlm::llvm::RvsdgModule & rvsdgModule)
 {
   jlm::util::StatisticsCollector statisticsCollector;
-  jlm::DeadNodeElimination deadNodeElimination;
+  jlm::llvm::DeadNodeElimination deadNodeElimination;
   deadNodeElimination.run(rvsdgModule, statisticsCollector);
 }
 
 static void
 TestRoot()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
-	RvsdgModule rm(util::filepath(""), "", "");
+	RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 	graph.add_import({jlm::valuetype(), "x"});
 	auto y = graph.add_import({jlm::valuetype(), "y"});
@@ -46,12 +46,12 @@ TestRoot()
 static void
 TestGamma()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	jlm::valuetype vt;
 	jlm::rvsdg::ctltype ct(2);
 
-	RvsdgModule rm(util::filepath(""), "", "");
+	RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 	auto c = graph.add_import({ct, "c"});
 	auto x = graph.add_import({vt, "x"});
@@ -85,12 +85,12 @@ TestGamma()
 static void
 TestGamma2()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	jlm::valuetype vt;
 	jlm::rvsdg::ctltype ct(2);
 
-	RvsdgModule rm(util::filepath(""), "", "");
+	RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 	auto c = graph.add_import({ct, "c"});
 	auto x = graph.add_import({vt, "x"});
@@ -115,12 +115,12 @@ TestGamma2()
 static void
 TestTheta()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	jlm::valuetype vt;
 	jlm::rvsdg::ctltype ct(2);
 
-	RvsdgModule rm(util::filepath(""), "", "");
+	RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 	auto x = graph.add_import({vt, "x"});
 	auto y = graph.add_import({vt, "y"});
@@ -158,12 +158,12 @@ TestTheta()
 static void
 TestNestedTheta()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	jlm::valuetype vt;
 	jlm::rvsdg::ctltype ct(2);
 
-	RvsdgModule rm(util::filepath(""), "", "");
+	RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 	auto c = graph.add_import({ct, "c"});
 	auto x = graph.add_import({vt, "x"});
@@ -202,12 +202,12 @@ TestNestedTheta()
 static void
 TestEvolvingTheta()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	jlm::valuetype vt;
 	jlm::rvsdg::ctltype ct(2);
 
-	RvsdgModule rm(util::filepath(""), "", "");
+	RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 	auto c = graph.add_import({ct, "c"});
 	auto x1 = graph.add_import({vt, "x1"});
@@ -241,11 +241,11 @@ TestEvolvingTheta()
 static void
 TestLambda()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	jlm::valuetype vt;
 
-	RvsdgModule rm(util::filepath(""), "", "");
+	RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 	auto x = graph.add_import({vt, "x"});
 	auto y = graph.add_import({vt, "y"});
@@ -272,12 +272,12 @@ TestLambda()
 static void
 TestPhi()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	jlm::valuetype vt;
 	FunctionType ft({&vt}, {&vt});
 
-	RvsdgModule rm(util::filepath(""), "", "");
+	RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 	auto x = graph.add_import({vt, "x"});
 	auto y = graph.add_import({vt, "y"});

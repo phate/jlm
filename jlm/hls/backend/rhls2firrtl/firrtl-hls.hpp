@@ -47,7 +47,7 @@ namespace jlm {
 			}
 
 			std::string
-			get_text(jlm::RvsdgModule &rm) override;
+			get_text(llvm::RvsdgModule &rm) override;
 
 		private:
 			std::vector<std::pair<const jlm::rvsdg::operation*, FirrtlModule>> modules;
@@ -177,7 +177,7 @@ namespace jlm {
 			subregion_to_firrtl(jlm::rvsdg::region *sr);
 
 			FirrtlModule
-			lambda_node_to_firrtl(const jlm::lambda::node *ln);
+			lambda_node_to_firrtl(const llvm::lambda::node *ln);
 		};
 
 	}

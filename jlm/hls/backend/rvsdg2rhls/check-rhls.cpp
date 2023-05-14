@@ -39,13 +39,13 @@ jlm::hls::check_rhls(jlm::rvsdg::region *sr) {
 }
 
 void
-jlm::hls::check_rhls(jlm::RvsdgModule &rm) {
+jlm::hls::check_rhls(llvm::RvsdgModule &rm) {
 	auto &graph = rm.Rvsdg();
 	auto root = graph.root();
 	if (root->nodes.size() != 1) {
 		throw jlm::util::error("Root should have only one node now");
 	}
-	auto ln = dynamic_cast<const jlm::lambda::node *>(root->nodes.begin().ptr());
+	auto ln = dynamic_cast<const llvm::lambda::node *>(root->nodes.begin().ptr());
 	if (!ln) {
 		throw jlm::util::error("Node needs to be a lambda");
 	}

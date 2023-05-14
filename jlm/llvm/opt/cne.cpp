@@ -10,7 +10,8 @@
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 class cnestat final : public util::Statistics {
 public:
@@ -581,7 +582,7 @@ cne::run(
   RvsdgModule & module,
   util::StatisticsCollector & statisticsCollector)
 {
-	jlm::cne(module, statisticsCollector);
+	llvm::cne(module, statisticsCollector);
 }
 
 }

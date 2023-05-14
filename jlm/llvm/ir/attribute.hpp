@@ -13,7 +13,8 @@
 #include <string>
 #include <vector>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 /** \brief Attribute
 */
@@ -407,7 +408,7 @@ public:
   using reference = const attribute*&;
 
 private:
-	friend ::jlm::attributeset;
+	friend ::jlm::llvm::attributeset;
 
 private:
 	constiterator(const std::vector<std::unique_ptr<attribute>>::const_iterator & it)

@@ -16,15 +16,15 @@
 #include <llvm/IR/Module.h>
 
 template<class OP> static bool
-Contains(const jlm::ipgraph_module & module, const std::string & fctname)
+Contains(const jlm::llvm::ipgraph_module & module, const std::string & fctname)
 {
   using namespace jlm;
 
   bool hasInstruction = false;
-  auto controlFlowGraph = dynamic_cast<const function_node*>(module.ipgraph().find("f"))->cfg();
-  auto basicBlock = dynamic_cast<const basic_block*>(controlFlowGraph->entry()->outedge(0)->sink());
+  auto controlFlowGraph = dynamic_cast<const jlm::llvm::function_node*>(module.ipgraph().find("f"))->cfg();
+  auto basicBlock = dynamic_cast<const jlm::llvm::basic_block*>(controlFlowGraph->entry()->outedge(0)->sink());
   for (auto threeAddressCode : *basicBlock)
-    hasInstruction = hasInstruction || is<OP>(threeAddressCode);
+    hasInstruction = hasInstruction || jlm::llvm::is<OP>(threeAddressCode);
 
   return hasInstruction;
 }
@@ -57,10 +57,10 @@ TestFNegScalar()
   auto llvmModule = Setup(context);
   jlm::print(*llvmModule);
 
-  auto ipgModule = jlm::ConvertLlvmModule(*llvmModule);
-  jlm::print(*ipgModule, stdout);
+  auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
+  print(*ipgModule, stdout);
 
-  assert(Contains<jlm::fpneg_op>(*ipgModule, "f"));
+  assert(Contains<jlm::llvm::fpneg_op>(*ipgModule, "f"));
 }
 
 static void
@@ -91,10 +91,10 @@ TestFNegVector()
   auto llvmModule = Setup(context);
   jlm::print(*llvmModule);
 
-  auto ipgModule = jlm::ConvertLlvmModule(*llvmModule);
-  jlm::print(*ipgModule, stdout);
+  auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
+  print(*ipgModule, stdout);
 
-  assert(Contains<jlm::vectorunary_op>(*ipgModule, "f"));
+  assert(Contains<jlm::llvm::vectorunary_op>(*ipgModule, "f"));
 }
 
 static int

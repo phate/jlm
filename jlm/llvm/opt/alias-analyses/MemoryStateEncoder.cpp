@@ -12,19 +12,19 @@
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 
-namespace jlm::aa {
-
+namespace jlm::llvm::aa
+{
 
 /** \brief Statistics class for memory state encoder encoding
  *
  */
-class EncodingStatistics final : public util::Statistics {
+class EncodingStatistics final : public jlm::util::Statistics {
 public:
   ~EncodingStatistics() override
   = default;
 
   explicit
-  EncodingStatistics(util::filepath sourceFile)
+  EncodingStatistics(jlm::util::filepath sourceFile)
     : Statistics(Statistics::Id::BasicEncoderEncoding)
     , NumNodesBefore_(0)
     , SourceFile_(std::move(sourceFile))
@@ -46,22 +46,22 @@ public:
   [[nodiscard]] std::string
   ToString() const override
   {
-    return util::strfmt("BasicEncoderEncoding ",
+    return jlm::util::strfmt("BasicEncoderEncoding ",
                   SourceFile_.to_str(), " ",
                   "#RvsdgNodes:", NumNodesBefore_, " ",
                   "Time[ns]:", Timer_.ns());
   }
 
   static std::unique_ptr<EncodingStatistics>
-  Create(const util::filepath & sourceFile)
+  Create(const jlm::util::filepath & sourceFile)
   {
     return std::make_unique<EncodingStatistics>(sourceFile);
   }
 
 private:
-  util::timer Timer_;
+  jlm::util::timer Timer_;
   size_t NumNodesBefore_;
-  util::filepath SourceFile_;
+  jlm::util::filepath SourceFile_;
 };
 
 static jlm::rvsdg::argument *
@@ -125,7 +125,7 @@ public:
     return MemoryNodeMap_.find(&output) != MemoryNodeMap_.end();
   }
 
-  util::HashSet<const PointsToGraph::MemoryNode*>
+  jlm::util::HashSet<const PointsToGraph::MemoryNode*>
   GetMemoryNodes(const jlm::rvsdg::output & output)
   {
     JLM_ASSERT(is<PointerType>(output.type()));
@@ -165,7 +165,7 @@ public:
 
 private:
   const MemoryNodeProvisioning & MemoryNodeProvisioning_;
-  std::unordered_map<const jlm::rvsdg::output*, util::HashSet<const PointsToGraph::MemoryNode*>> MemoryNodeMap_;
+  std::unordered_map<const jlm::rvsdg::output*, jlm::util::HashSet<const PointsToGraph::MemoryNode*>> MemoryNodeMap_;
 };
 
 /** \brief Hash map for mapping points-to graph memory nodes to RVSDG memory states.
@@ -262,7 +262,7 @@ public:
   }
 
   std::vector<MemoryNodeStatePair*>
-  GetStates(const util::HashSet<const PointsToGraph::MemoryNode*> & memoryNodes)
+  GetStates(const jlm::util::HashSet<const PointsToGraph::MemoryNode*> & memoryNodes)
   {
     std::vector<MemoryNodeStatePair*> memoryNodeStatePairs;
     for (auto & memoryNode : memoryNodes.Items())
@@ -348,7 +348,7 @@ public:
   std::vector<StateMap::MemoryNodeStatePair*>
   GetStates(
     const jlm::rvsdg::region & region,
-    const util::HashSet<const PointsToGraph::MemoryNode*> & memoryNodes)
+    const jlm::util::HashSet<const PointsToGraph::MemoryNode*> & memoryNodes)
   {
     return GetStateMap(region).GetStates(memoryNodes);
   }
@@ -361,7 +361,7 @@ public:
     return GetStateMap(region).GetState(memoryNode);
   }
 
-  util::HashSet<const PointsToGraph::MemoryNode*>
+  jlm::util::HashSet<const PointsToGraph::MemoryNode*>
   GetMemoryNodes(const jlm::rvsdg::output & output)
   {
     auto & memoryNodeCache = GetMemoryNodeCache(*output.region());
@@ -462,7 +462,7 @@ void
 MemoryStateEncoder::Encode(
   RvsdgModule & rvsdgModule,
   const MemoryNodeProvisioning & provisioning,
-  util::StatisticsCollector & statisticsCollector)
+  jlm::util::StatisticsCollector & statisticsCollector)
 {
   Context_ = Context::Create(provisioning);
   auto statistics = EncodingStatistics::Create(rvsdgModule.SourceFileName());
@@ -476,7 +476,7 @@ MemoryStateEncoder::Encode(
   /*
    * Remove all nodes that became dead throughout the encoding.
    */
-  jlm::DeadNodeElimination deadNodeElimination;
+  DeadNodeElimination deadNodeElimination;
   deadNodeElimination.run(rvsdgModule, statisticsCollector);
 }
 
@@ -492,7 +492,7 @@ MemoryStateEncoder::EncodeRegion(jlm::rvsdg::region & region)
       continue;
     }
 
-    auto structuralNode = util::AssertedCast<structural_node>(node);
+    auto structuralNode = jlm::util::AssertedCast<structural_node>(node);
     EncodeStructuralNode(*structuralNode);
   }
 }
@@ -500,11 +500,11 @@ MemoryStateEncoder::EncodeRegion(jlm::rvsdg::region & region)
 void
 MemoryStateEncoder::EncodeStructuralNode(jlm::rvsdg::structural_node & structuralNode)
 {
-  auto encodeLambda = [](auto & be, auto & n){ be.EncodeLambda(*util::AssertedCast<lambda::node>(&n));    };
-  auto encodeDelta  = [](auto & be, auto & n){ be.EncodeDelta(*util::AssertedCast<delta::node>(&n));      };
-  auto encodePhi    = [](auto & be, auto & n){ be.EncodePhi(*util::AssertedCast<phi::node>(&n));          };
-  auto encodeGamma  = [](auto & be, auto & n){ be.EncodeGamma(*util::AssertedCast<jlm::rvsdg::gamma_node>(&n)); };
-  auto encodeTheta  = [](auto & be, auto & n){ be.EncodeTheta(*util::AssertedCast<jlm::rvsdg::theta_node>(&n)); };
+  auto encodeLambda = [](auto & be, auto & n){ be.EncodeLambda(*jlm::util::AssertedCast<lambda::node>(&n));    };
+  auto encodeDelta  = [](auto & be, auto & n){ be.EncodeDelta(*jlm::util::AssertedCast<delta::node>(&n));      };
+  auto encodePhi    = [](auto & be, auto & n){ be.EncodePhi(*jlm::util::AssertedCast<phi::node>(&n));          };
+  auto encodeGamma  = [](auto & be, auto & n){ be.EncodeGamma(*jlm::util::AssertedCast<jlm::rvsdg::gamma_node>(&n)); };
+  auto encodeTheta  = [](auto & be, auto & n){ be.EncodeTheta(*jlm::util::AssertedCast<jlm::rvsdg::theta_node>(&n)); };
 
   static std::unordered_map<
     std::type_index,
@@ -528,9 +528,9 @@ MemoryStateEncoder::EncodeSimpleNode(const jlm::rvsdg::simple_node & be)
 {
   auto EncodeAlloca = [](auto & be, auto & node){ be.EncodeAlloca(node); };
   auto EncodeMalloc = [](auto & be, auto & node){ be.EncodeMalloc(node); };
-  auto EncodeCall   = [](auto & be, auto & node){ be.EncodeCall(*util::AssertedCast<const CallNode>(&node)); };
-  auto EncodeLoad   = [](auto & be, auto & node){ be.EncodeLoad(*util::AssertedCast<const LoadNode>(&node)); };
-  auto EncodeStore  = [](auto & be, auto & node){ be.EncodeStore(*util::AssertedCast<const StoreNode>(&node)); };
+  auto EncodeCall   = [](auto & be, auto & node){ be.EncodeCall(*jlm::util::AssertedCast<const CallNode>(&node)); };
+  auto EncodeLoad   = [](auto & be, auto & node){ be.EncodeLoad(*jlm::util::AssertedCast<const LoadNode>(&node)); };
+  auto EncodeStore  = [](auto & be, auto & node){ be.EncodeStore(*jlm::util::AssertedCast<const StoreNode>(&node)); };
   auto EncodeFree   = [](auto & be, auto & node){ be.EncodeFree(node); };
   auto EncodeMemcpy = [](auto & be, auto & node){ be.EncodeMemcpy(node); };
 

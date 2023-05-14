@@ -13,7 +13,9 @@
 #include <jlm/rvsdg/structural-node.hpp>
 #include <jlm/util/common.hpp>
 
-namespace jlm {
+namespace jlm::llvm
+{
+
 namespace phi {
 
 /* phi operation class  */

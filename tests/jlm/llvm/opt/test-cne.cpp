@@ -22,11 +22,11 @@ static jlm::util::StatisticsCollector statisticsCollector;
 static inline void
 test_simple()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	jlm::valuetype vt;
 
-	RvsdgModule rm(util::filepath(""), "", "");
+	RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 	auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
 	nf->set_mutable(false);
@@ -54,7 +54,7 @@ test_simple()
 	graph.add_export(b4, {n2->type(), "b4"});
 
 //	jlm::rvsdg::view(graph.root(), stdout);
-	jlm::cne cne;
+	jlm::llvm::cne cne;
 	cne.run(rm, statisticsCollector);
 //	jlm::rvsdg::view(graph.root(), stdout);
 
@@ -66,12 +66,12 @@ test_simple()
 static inline void
 test_gamma()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	jlm::valuetype vt;
 	jlm::rvsdg::ctltype ct(2);
 
-	RvsdgModule rm(util::filepath(""), "", "");
+	RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 	auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
 	nf->set_mutable(false);
@@ -109,7 +109,7 @@ test_gamma()
 	graph.add_export(gamma->output(2), {gamma->output(2)->type(), "y"});
 
 //	jlm::rvsdg::view(graph.root(), stdout);
-	jlm::cne cne;
+	jlm::llvm::cne cne;
 	cne.run(rm, statisticsCollector);
 //	jlm::rvsdg::view(graph.root(), stdout);
 
@@ -130,12 +130,12 @@ test_gamma()
 static inline void
 test_theta()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	jlm::valuetype vt;
 	jlm::rvsdg::ctltype ct(2);
 
-	RvsdgModule rm(util::filepath(""), "", "");
+	RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 	auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
 	nf->set_mutable(false);
@@ -166,7 +166,7 @@ test_theta()
 	graph.add_export(theta->output(3), {theta->output(3)->type(), "lv4"});
 
 //	jlm::rvsdg::view(graph.root(), stdout);
-	jlm::cne cne;
+	jlm::llvm::cne cne;
 	cne.run(rm, statisticsCollector);
 //	jlm::rvsdg::view(graph.root(), stdout);
 
@@ -183,12 +183,12 @@ test_theta()
 static inline void
 test_theta2()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	jlm::valuetype vt;
 	jlm::rvsdg::ctltype ct(2);
 
-	RvsdgModule rm(util::filepath(""), "", "");
+	RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 	auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
 	nf->set_mutable(false);
@@ -216,7 +216,7 @@ test_theta2()
 	graph.add_export(theta->output(2), {theta->output(2)->type(), "lv3"});
 
 //	jlm::rvsdg::view(graph, stdout);
-	jlm::cne cne;
+	jlm::llvm::cne cne;
 	cne.run(rm, statisticsCollector);
 //	jlm::rvsdg::view(graph, stdout);
 
@@ -227,12 +227,12 @@ test_theta2()
 static inline void
 test_theta3()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	jlm::valuetype vt;
 	jlm::rvsdg::ctltype ct(2);
 
-	RvsdgModule rm(util::filepath(""), "", "");
+	RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 	auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
 	nf->set_mutable(false);
@@ -256,9 +256,9 @@ test_theta3()
 	theta2->add_loopvar(lv4->argument());
 	theta2->set_predicate(p->argument());
 
-	auto u1 = test_op::create(r1, {theta2->output(1)}, {&vt});
-	auto b1 = test_op::create(r1, {theta2->output(2), theta2->output(2)}, {&vt});
-	auto u2 = test_op::create(r1, {theta2->output(3)}, {&vt});
+	auto u1 = jlm::test_op::create(r1, {theta2->output(1)}, {&vt});
+	auto b1 = jlm::test_op::create(r1, {theta2->output(2), theta2->output(2)}, {&vt});
+	auto u2 = jlm::test_op::create(r1, {theta2->output(3)}, {&vt});
 
 	lv2->result()->divert_to(u1->output(0));
 	lv3->result()->divert_to(b1->output(0));
@@ -271,7 +271,7 @@ test_theta3()
 	graph.add_export(theta1->output(3), {theta1->output(3)->type(), "lv4"});
 
 //	jlm::rvsdg::view(graph, stdout);
-	jlm::cne cne;
+	jlm::llvm::cne cne;
 	cne.run(rm, statisticsCollector);
 //	jlm::rvsdg::view(graph, stdout);
 
@@ -286,12 +286,12 @@ test_theta3()
 static inline void
 test_theta4()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	jlm::valuetype vt;
 	jlm::rvsdg::ctltype ct(2);
 
-	RvsdgModule rm(util::filepath(""), "", "");
+	RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 	auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
 	nf->set_mutable(false);
@@ -311,8 +311,8 @@ test_theta4()
 	auto lv6 = theta->add_loopvar(x);
 	auto lv7 = theta->add_loopvar(x);
 
-	auto u1 = test_op::create(region, {lv2->argument()}, {&vt});
-	auto b1 = test_op::create(region, {lv3->argument(), lv3->argument()}, {&vt});
+	auto u1 = jlm::test_op::create(region, {lv2->argument()}, {&vt});
+	auto b1 = jlm::test_op::create(region, {lv3->argument(), lv3->argument()}, {&vt});
 
 	lv2->result()->divert_to(lv4->argument());
 	lv3->result()->divert_to(lv5->argument());
@@ -327,7 +327,7 @@ test_theta4()
 	graph.add_export(theta->output(4), {theta->output(4)->type(), "lv5"});
 
 //	jlm::rvsdg::view(graph, stdout);
-	jlm::cne cne;
+	jlm::llvm::cne cne;
 	cne.run(rm, statisticsCollector);
 //	jlm::rvsdg::view(graph, stdout);
 
@@ -339,12 +339,12 @@ test_theta4()
 static inline void
 test_theta5()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	jlm::valuetype vt;
 	jlm::rvsdg::ctltype ct(2);
 
-	RvsdgModule rm(util::filepath(""), "", "");
+	RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 	auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
 	nf->set_mutable(false);
@@ -373,7 +373,7 @@ test_theta5()
 	auto ex4 = graph.add_export(theta->output(4), {theta->output(4)->type(), "lv4"});
 
 //	jlm::rvsdg::view(graph, stdout);
-	jlm::cne cne;
+	jlm::llvm::cne cne;
 	cne.run(rm, statisticsCollector);
 //	jlm::rvsdg::view(graph, stdout);
 
@@ -386,12 +386,12 @@ test_theta5()
 static inline void
 test_lambda()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	jlm::valuetype vt;
 	FunctionType ft({&vt, &vt}, {&vt});
 
-	RvsdgModule rm(util::filepath(""), "", "");
+	RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 	auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
 	nf->set_mutable(false);
@@ -410,7 +410,7 @@ test_lambda()
 	graph.add_export(output, {output->type(), "f"});
 
 //	jlm::rvsdg::view(graph.root(), stdout);
-	jlm::cne cne;
+	jlm::llvm::cne cne;
 	cne.run(rm, statisticsCollector);
 //	jlm::rvsdg::view(graph.root(), stdout);
 
@@ -421,12 +421,12 @@ test_lambda()
 static inline void
 test_phi()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
 	jlm::valuetype vt;
 	FunctionType ft({&vt, &vt}, {&vt});
 
-	RvsdgModule rm(util::filepath(""), "", "");
+	RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
 	auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
 	nf->set_mutable(false);
@@ -460,7 +460,7 @@ test_phi()
 	graph.add_export(phi->output(1), {phi->output(1)->type(), "f2"});
 
 //	jlm::rvsdg::view(graph.root(), stdout);
-	jlm::cne cne;
+	jlm::llvm::cne cne;
 	cne.run(rm, statisticsCollector);
 //	jlm::rvsdg::view(graph.root(), stdout);
 

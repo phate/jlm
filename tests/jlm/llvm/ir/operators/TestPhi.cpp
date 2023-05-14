@@ -13,7 +13,7 @@
 
 static int test_main()
 {
-  using namespace jlm;
+  using namespace jlm::llvm;
 
   jlm::rvsdg::graph graph;
 

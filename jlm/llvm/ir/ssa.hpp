@@ -6,12 +6,13 @@
 #ifndef JLM_LLVM_IR_SSA_HPP
 #define JLM_LLVM_IR_SSA_HPP
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 class cfg;
 
 void
-destruct_ssa(jlm::cfg & cfg);
+destruct_ssa(llvm::cfg & cfg);
 
 }
 

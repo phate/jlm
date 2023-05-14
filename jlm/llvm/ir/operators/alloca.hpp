@@ -13,7 +13,8 @@
 #include <jlm/rvsdg/simple-normal-form.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 /* alloca operator */
 
@@ -62,7 +63,7 @@ public:
 	inline const rvsdg::valuetype &
 	value_type() const noexcept
 	{
-		return *util::AssertedCast<const rvsdg::valuetype>(AllocatedType_.get());
+		return *::jlm::util::AssertedCast<const rvsdg::valuetype>(AllocatedType_.get());
 	}
 
 	inline size_t
@@ -71,14 +72,14 @@ public:
 		return alignment_;
 	}
 
-	static std::unique_ptr<jlm::tac>
+	static std::unique_ptr<llvm::tac>
 	create(
 		const rvsdg::valuetype & allocatedType,
 		const variable * size,
 		size_t alignment)
 	{
 		auto bt = dynamic_cast<const rvsdg::bittype*>(&size->type());
-		if (!bt) throw util::error("expected bits type.");
+		if (!bt) throw jlm::util::error("expected bits type.");
 
 		alloca_op op(allocatedType, *bt, alignment);
 		return tac::create(op, {size});
@@ -91,7 +92,7 @@ public:
 		size_t alignment)
 	{
 		auto bt = dynamic_cast<const rvsdg::bittype*>(&size->type());
-		if (!bt) throw util::error("expected bits type.");
+		if (!bt) throw jlm::util::error("expected bits type.");
 
 		alloca_op op(allocatedType, *bt, alignment);
 		return rvsdg::simple_node::create_normalized(size->region(), op, {size});

@@ -7,7 +7,8 @@
 #include <jlm/llvm/ir/basic-block.hpp>
 #include <jlm/llvm/ir/ipgraph.hpp>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 /* edge */
 

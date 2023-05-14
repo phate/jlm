@@ -10,27 +10,27 @@
 #include <jlm/llvm/ir/print.hpp>
 
 static bool
-is_entry(const jlm::aggnode * node)
+is_entry(const jlm::llvm::aggnode * node)
 {
-	return jlm::is<jlm::entryaggnode>(node) && node->nchildren() == 0;
+	return jlm::llvm::is<jlm::llvm::entryaggnode>(node) && node->nchildren() == 0;
 }
 
 static bool
-is_exit(const jlm::aggnode * node)
+is_exit(const jlm::llvm::aggnode * node)
 {
-	return jlm::is<jlm::exitaggnode>(node) && node->nchildren() == 0;
+	return jlm::llvm::is<jlm::llvm::exitaggnode>(node) && node->nchildren() == 0;
 }
 
 static bool
-is_block(const jlm::aggnode * node)
+is_block(const jlm::llvm::aggnode * node)
 {
-	return jlm::is<jlm::blockaggnode>(node) && node->nchildren() == 0;
+	return jlm::llvm::is<jlm::llvm::blockaggnode>(node) && node->nchildren() == 0;
 }
 
 static bool
-is_linear(const jlm::aggnode * node, size_t nchildren)
+is_linear(const jlm::llvm::aggnode * node, size_t nchildren)
 {
-	if (!jlm::is<jlm::linearaggnode>(node))
+	if (!jlm::llvm::is<jlm::llvm::linearaggnode>(node))
 		return false;
 
 	if (node->nchildren() != nchildren)
@@ -45,17 +45,17 @@ is_linear(const jlm::aggnode * node, size_t nchildren)
 }
 
 static bool
-is_loop(const jlm::aggnode * node)
+is_loop(const jlm::llvm::aggnode * node)
 {
-	return jlm::is<jlm::loopaggnode>(node)
+	return jlm::llvm::is<jlm::llvm::loopaggnode>(node)
 	    && node->nchildren() == 1
 	    && node->child(0)->parent() == node;
 }
 
 static bool
-is_branch(const jlm::aggnode * node, size_t nchildren)
+is_branch(const jlm::llvm::aggnode * node, size_t nchildren)
 {
-	if (!jlm::is<jlm::branchaggnode>(node))
+	if (!jlm::llvm::is<jlm::llvm::branchaggnode>(node))
 		return false;
 
 	if (node->nchildren() != nchildren)
@@ -72,20 +72,20 @@ is_branch(const jlm::aggnode * node, size_t nchildren)
 static void
 test_linear_reduction()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
-	auto setup_cfg = [](ipgraph_module & module)
+	auto setup_cfg = [](jlm::llvm::ipgraph_module & module)
 	{
-		auto cfg = jlm::cfg::create(module);
+		auto cfg = cfg::create(module);
 
-		auto bb = basic_block::create(*cfg);
+		auto bb = jlm::llvm::basic_block::create(*cfg);
 		cfg->exit()->divert_inedges(bb);
 		bb->add_outedge(cfg->exit());
 
 		return cfg;
 	};
 
-	auto verify_aggtree = [](const aggnode & root)
+	auto verify_aggtree = [](const jlm::llvm::aggnode & root)
 	{
 		assert(is_linear(&root, 3));
 		{
@@ -95,12 +95,12 @@ test_linear_reduction()
 		}
 	};
 
-	ipgraph_module module(util::filepath(""), "", "");
+	jlm::llvm::ipgraph_module module(jlm::util::filepath(""), "", "");
 	auto cfg = setup_cfg(module);
 
-	auto root = jlm::aggregate(*cfg);
-	aggnode::normalize(*root);
-	jlm::print(*root, stdout);
+	auto root = jlm::llvm::aggregate(*cfg);
+	jlm::llvm::aggnode::normalize(*root);
+	jlm::llvm::print(*root, stdout);
 
 	verify_aggtree(*root);
 }
@@ -108,14 +108,14 @@ test_linear_reduction()
 static void
 test_loop_reduction()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
-	auto setup_cfg = [](ipgraph_module & module)
+	auto setup_cfg = [](jlm::llvm::ipgraph_module & module)
 	{
-		auto cfg = jlm::cfg::create(module);
+		auto cfg = cfg::create(module);
 
-		auto bb1 = basic_block::create(*cfg);
-		auto bb2 = basic_block::create(*cfg);
+		auto bb1 = jlm::llvm::basic_block::create(*cfg);
+		auto bb2 = jlm::llvm::basic_block::create(*cfg);
 
 		cfg->exit()->divert_inedges(bb1);
 		bb1->add_outedge(bb2);
@@ -125,7 +125,7 @@ test_loop_reduction()
 		return cfg;
 	};
 
-	auto verify_aggtree = [](const aggnode & root)
+	auto verify_aggtree = [](const jlm::llvm::aggnode & root)
 	{
 		assert(is_linear(&root, 3));
 		{
@@ -146,12 +146,12 @@ test_loop_reduction()
 		}
 	};
 
-	ipgraph_module module(util::filepath(""), "", "");
+	jlm::llvm::ipgraph_module module(jlm::util::filepath(""), "", "");
 	auto cfg = setup_cfg(module);
 
-	auto root = jlm::aggregate(*cfg);
-	aggnode::normalize(*root);
-	jlm::print(*root, stdout);
+	auto root = jlm::llvm::aggregate(*cfg);
+	jlm::llvm::aggnode::normalize(*root);
+	jlm::llvm::print(*root, stdout);
 
 	verify_aggtree(*root);
 }
@@ -159,18 +159,18 @@ test_loop_reduction()
 static void
 test_branch_reduction()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
-	auto setup_cfg = [](ipgraph_module & module)
+	auto setup_cfg = [](jlm::llvm::ipgraph_module & module)
 	{
 		auto cfg = cfg::create(module);
 
-		auto split = basic_block::create(*cfg);
-		auto bb1 = basic_block::create(*cfg);
-		auto bb2 = basic_block::create(*cfg);
-		auto bb3 = basic_block::create(*cfg);
-		auto bb4 = basic_block::create(*cfg);
-		auto join = basic_block::create(*cfg);
+		auto split = jlm::llvm::basic_block::create(*cfg);
+		auto bb1 = jlm::llvm::basic_block::create(*cfg);
+		auto bb2 = jlm::llvm::basic_block::create(*cfg);
+		auto bb3 = jlm::llvm::basic_block::create(*cfg);
+		auto bb4 = jlm::llvm::basic_block::create(*cfg);
+		auto join = jlm::llvm::basic_block::create(*cfg);
 
 		cfg->exit()->divert_inedges(split);
 		split->add_outedge(bb1);
@@ -184,7 +184,7 @@ test_branch_reduction()
 		return cfg;
 	};
 
-	auto verify_aggtree = [](const aggnode & root)
+	auto verify_aggtree = [](const jlm::llvm::aggnode & root)
 	{
 		assert(is_linear(&root, 5));
 		{
@@ -214,12 +214,12 @@ test_branch_reduction()
 		}
 	};
 
-	ipgraph_module module(util::filepath(""), "", "");
+	jlm::llvm::ipgraph_module module(jlm::util::filepath(""), "", "");
 	auto cfg = setup_cfg(module);
 
-	auto root = jlm::aggregate(*cfg);
-	aggnode::normalize(*root);
-	jlm::print(*root, stdout);
+	auto root = jlm::llvm::aggregate(*cfg);
+	jlm::llvm::aggnode::normalize(*root);
+	jlm::llvm::print(*root, stdout);
 
 	verify_aggtree(*root);
 }
@@ -227,17 +227,17 @@ test_branch_reduction()
 static void
 test_branch_loop_reduction()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
-	auto setup_cfg = [](ipgraph_module & module)
+	auto setup_cfg = [](jlm::llvm::ipgraph_module & module)
 	{
 		auto cfg = cfg::create(module);
-		auto split = basic_block::create(*cfg);
-		auto bb1 = basic_block::create(*cfg);
-		auto bb2 = basic_block::create(*cfg);
-		auto bb3 = basic_block::create(*cfg);
-		auto bb4 = basic_block::create(*cfg);
-		auto join = basic_block::create(*cfg);
+		auto split = jlm::llvm::basic_block::create(*cfg);
+		auto bb1 = jlm::llvm::basic_block::create(*cfg);
+		auto bb2 = jlm::llvm::basic_block::create(*cfg);
+		auto bb3 = jlm::llvm::basic_block::create(*cfg);
+		auto bb4 = jlm::llvm::basic_block::create(*cfg);
+		auto join = jlm::llvm::basic_block::create(*cfg);
 
 		cfg->exit()->divert_inedges(split);
 		split->add_outedge(bb1);
@@ -253,7 +253,7 @@ test_branch_loop_reduction()
 		return cfg;
 	};
 
-	auto verify_aggtree = [](const aggnode & root)
+	auto verify_aggtree = [](const jlm::llvm::aggnode & root)
 	{
 		assert(is_linear(&root, 5));
 		{
@@ -291,12 +291,12 @@ test_branch_loop_reduction()
 		}
 	};
 
-	ipgraph_module module(util::filepath(""), "", "");
+	jlm::llvm::ipgraph_module module(jlm::util::filepath(""), "", "");
 	auto cfg = setup_cfg(module);
 
-	auto root = jlm::aggregate(*cfg);
-	aggnode::normalize(*root);
-	jlm::print(*root, stdout);
+	auto root = jlm::llvm::aggregate(*cfg);
+	jlm::llvm::aggnode::normalize(*root);
+	jlm::llvm::print(*root, stdout);
 
 	verify_aggtree(*root);
 }
@@ -304,17 +304,17 @@ test_branch_loop_reduction()
 static void
 test_loop_branch_reduction()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
-	auto setup_cfg = [](ipgraph_module & module)
+	auto setup_cfg = [](jlm::llvm::ipgraph_module & module)
 	{
 		auto cfg = cfg::create(module);
 
-		auto split = basic_block::create(*cfg);
-		auto bb1 = basic_block::create(*cfg);
-		auto bb2 = basic_block::create(*cfg);
-		auto join = basic_block::create(*cfg);
-		auto bb3 = basic_block::create(*cfg);
+		auto split = jlm::llvm::basic_block::create(*cfg);
+		auto bb1 = jlm::llvm::basic_block::create(*cfg);
+		auto bb2 = jlm::llvm::basic_block::create(*cfg);
+		auto join = jlm::llvm::basic_block::create(*cfg);
+		auto bb3 = jlm::llvm::basic_block::create(*cfg);
 
 		cfg->exit()->divert_inedges(split);
 		split->add_outedge(bb1);
@@ -328,7 +328,7 @@ test_loop_branch_reduction()
 		return cfg;
 	};
 
-	auto verify_aggtree = [](const aggnode & root)
+	auto verify_aggtree = [](const jlm::llvm::aggnode & root)
 	{
 		assert(is_linear(&root, 3));
 		{
@@ -358,12 +358,12 @@ test_loop_branch_reduction()
 		}
 	};
 
-	ipgraph_module module(util::filepath(""), "", "");
+	jlm::llvm::ipgraph_module module(jlm::util::filepath(""), "", "");
 	auto cfg = setup_cfg(module);
 
-	auto root = jlm::aggregate(*cfg);
-	aggnode::normalize(*root);
-	jlm::print(*root, stdout);
+	auto root = jlm::llvm::aggregate(*cfg);
+	jlm::llvm::aggnode::normalize(*root);
+	jlm::llvm::print(*root, stdout);
 
 	verify_aggtree(*root);
 }
@@ -371,17 +371,17 @@ test_loop_branch_reduction()
 static void
 test_ifthen_reduction()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
-	auto setup_cfg = [](ipgraph_module & module)
+	auto setup_cfg = [](jlm::llvm::ipgraph_module & module)
 	{
 		auto cfg = cfg::create(module);
 
-		auto split = basic_block::create(*cfg);
-		auto bb1 = basic_block::create(*cfg);
-		auto bb2 = basic_block::create(*cfg);
-		auto bb3 = basic_block::create(*cfg);
-		auto join = basic_block::create(*cfg);
+		auto split = jlm::llvm::basic_block::create(*cfg);
+		auto bb1 = jlm::llvm::basic_block::create(*cfg);
+		auto bb2 = jlm::llvm::basic_block::create(*cfg);
+		auto bb3 = jlm::llvm::basic_block::create(*cfg);
+		auto join = jlm::llvm::basic_block::create(*cfg);
 
 		cfg->exit()->divert_inedges(split);
 		split->add_outedge(bb3);
@@ -394,7 +394,7 @@ test_ifthen_reduction()
 		return cfg;
 	};
 
-	auto verify_aggtree = [](const aggnode & root)
+	auto verify_aggtree = [](const jlm::llvm::aggnode & root)
 	{
 		assert(is_linear(&root, 5));
 		{
@@ -419,12 +419,12 @@ test_ifthen_reduction()
 		}
 	};
 
-	ipgraph_module module(util::filepath(""), "", "");
+	jlm::llvm::ipgraph_module module(jlm::util::filepath(""), "", "");
 	auto cfg = setup_cfg(module);
 
-	auto root = jlm::aggregate(*cfg);
-	aggnode::normalize(*root);
-	jlm::print(*root, stdout);
+	auto root = jlm::llvm::aggregate(*cfg);
+	jlm::llvm::aggnode::normalize(*root);
+	jlm::llvm::print(*root, stdout);
 
 	verify_aggtree(*root);
 }
@@ -432,16 +432,16 @@ test_ifthen_reduction()
 static void
 test_branch_and_loop()
 {
-	using namespace jlm;
+	using namespace jlm::llvm;
 
-	auto setup_cfg = [](ipgraph_module & module)
+	auto setup_cfg = [](jlm::llvm::ipgraph_module & module)
 	{
 		auto cfg = cfg::create(module);
 
-		auto split = basic_block::create(*cfg);
-		auto bb1 = basic_block::create(*cfg);
-		auto bb2 = basic_block::create(*cfg);
-		auto loop= basic_block::create(*cfg);
+		auto split = jlm::llvm::basic_block::create(*cfg);
+		auto bb1 = jlm::llvm::basic_block::create(*cfg);
+		auto bb2 = jlm::llvm::basic_block::create(*cfg);
+		auto loop= jlm::llvm::basic_block::create(*cfg);
 
 		cfg->exit()->divert_inedges(split);
 		split->add_outedge(bb1);
@@ -454,7 +454,7 @@ test_branch_and_loop()
 		return cfg;
 	};
 
-	auto verify_aggtree = [](const aggnode & root)
+	auto verify_aggtree = [](const jlm::llvm::aggnode & root)
 	{
 		assert(is_linear(&root, 5));
 		{
@@ -478,12 +478,12 @@ test_branch_and_loop()
 		}
 	};
 
-	ipgraph_module module(util::filepath(""), "", "");
+	jlm::llvm::ipgraph_module module(jlm::util::filepath(""), "", "");
 	auto cfg = setup_cfg(module);
 
-	auto root = jlm::aggregate(*cfg);
-	aggnode::normalize(*root);
-	jlm::print(*root, stdout);
+	auto root = jlm::llvm::aggregate(*cfg);
+	jlm::llvm::aggnode::normalize(*root);
+	jlm::llvm::print(*root, stdout);
 
 	verify_aggtree(*root);
 }

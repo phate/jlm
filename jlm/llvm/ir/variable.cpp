@@ -5,7 +5,8 @@
 
 #include <jlm/llvm/ir/variable.hpp>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 /* variable */
 

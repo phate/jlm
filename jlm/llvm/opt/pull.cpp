@@ -10,7 +10,8 @@
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 class pullstat final : public util::Statistics {
 public:

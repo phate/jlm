@@ -12,7 +12,8 @@
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 /** \brief Call operation class
  *
@@ -81,7 +82,7 @@ private:
   CheckFunctionInputType(const jlm::rvsdg::type & type)
   {
     if (!is<PointerType>(type))
-      throw util::error("Expected pointer type.");
+      throw jlm::util::error("Expected pointer type.");
   }
 
   FunctionType FunctionType_;
@@ -182,17 +183,17 @@ public:
   {
     if (GetCallType() == CallType::NonRecursiveDirectCall)
     {
-      return *util::AssertedCast<lambda::output>(Output_);
+      return *jlm::util::AssertedCast<lambda::output>(Output_);
     }
 
     JLM_ASSERT(GetCallType() == CallType::RecursiveDirectCall);
-    auto argument = util::AssertedCast<jlm::rvsdg::argument>(Output_);
+    auto argument = jlm::util::AssertedCast<jlm::rvsdg::argument>(Output_);
     /*
      * FIXME: This assumes that all recursion variables where added before the dependencies. It
      * would be better if we did not use the index for retrieving the result, but instead
      * explicitly encoded it in an phi_argument.
      */
-    return *util::AssertedCast<lambda::output>(argument->region()->result(argument->index())->origin());
+    return *jlm::util::AssertedCast<lambda::output>(argument->region()->result(argument->index())->origin());
   }
 
   /** \brief Returns the imported function.
@@ -205,7 +206,7 @@ public:
   GetImport() const noexcept
   {
     JLM_ASSERT(GetCallType() == CallType::ExternalCall);
-    return *util::AssertedCast<jlm::rvsdg::argument>(Output_);
+    return *jlm::util::AssertedCast<jlm::rvsdg::argument>(Output_);
   }
 
   /** \brief Return origin of a call node's function input.
@@ -269,7 +270,7 @@ public:
   [[nodiscard]] const CallOperation&
   GetOperation() const noexcept
   {
-    return *util::AssertedCast<const CallOperation>(&operation());
+    return *jlm::util::AssertedCast<const CallOperation>(&operation());
   }
 
   [[nodiscard]] size_t
@@ -414,7 +415,7 @@ private:
   CheckFunctionInputType(const jlm::rvsdg::type & type)
   {
     if (!is<PointerType>(type))
-      throw util::error("Expected pointer type.");
+      throw jlm::util::error("Expected pointer type.");
   }
 
   static void
@@ -423,39 +424,39 @@ private:
     auto CheckArgumentTypes = [](const FunctionType & functionType)
     {
       if (functionType.NumArguments() < 3)
-        throw util::error("Expected at least three argument types.");
+        throw jlm::util::error("Expected at least three argument types.");
 
       auto loopStateArgumentIndex = functionType.NumArguments()-1;
       auto memoryStateArgumentIndex = functionType.NumArguments()-2;
       auto iOStateArgumentIndex = functionType.NumArguments()-3;
 
       if (!is<loopstatetype>(functionType.ArgumentType(loopStateArgumentIndex)))
-        throw util::error("Expected loop state type.");
+        throw jlm::util::error("Expected loop state type.");
 
       if (!is<MemoryStateType>(functionType.ArgumentType(memoryStateArgumentIndex)))
-        throw util::error("Expected memory state type.");
+        throw jlm::util::error("Expected memory state type.");
 
       if (!is<iostatetype>(functionType.ArgumentType(iOStateArgumentIndex)))
-        throw util::error("Expected IO state type.");
+        throw jlm::util::error("Expected IO state type.");
     };
 
     auto CheckResultTypes = [](const FunctionType & functionType)
     {
       if (functionType.NumResults() < 3)
-        throw util::error("Expected at least three result types.");
+        throw jlm::util::error("Expected at least three result types.");
 
       auto loopStateResultIndex = functionType.NumResults()-1;
       auto memoryStateResultIndex = functionType.NumResults()-2;
       auto iOStateResultIndex = functionType.NumResults()-3;
 
       if (!is<loopstatetype>(functionType.ResultType(loopStateResultIndex)))
-        throw util::error("Expected loop state type.");
+        throw jlm::util::error("Expected loop state type.");
 
       if (!is<MemoryStateType>(functionType.ResultType(memoryStateResultIndex)))
-        throw util::error("Expected memory state type.");
+        throw jlm::util::error("Expected memory state type.");
 
       if (!is<iostatetype>(functionType.ResultType(iOStateResultIndex)))
-        throw util::error("Expected IO state type.");
+        throw jlm::util::error("Expected IO state type.");
     };
 
     CheckArgumentTypes(functionType);

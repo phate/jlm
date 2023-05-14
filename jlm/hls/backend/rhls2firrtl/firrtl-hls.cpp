@@ -18,7 +18,7 @@ jlm::hls::is_identity_mapping(const jlm::rvsdg::match_op &op) {
 }
 
 std::string
-jlm::hls::FirrtlHLS::get_text(jlm::RvsdgModule &rm) {
+jlm::hls::FirrtlHLS::get_text(llvm::RvsdgModule &rm) {
 	std::ostringstream firrtl;
 	auto module = lambda_node_to_firrtl(get_hls_lambda(rm));
 	firrtl << indent(0) << "circuit " << module.name << ":\n";
@@ -101,7 +101,7 @@ jlm::hls::FirrtlHLS::mem_node_to_firrtl(const jlm::rvsdg::simple_node *n) {
 	std::ostringstream module;
 	module << module_header(n, true);
 
-	bool store = dynamic_cast<const jlm::StoreOperation *>(&(n->operation()));
+	bool store = dynamic_cast<const llvm::StoreOperation *>(&(n->operation()));
 	// registers
 	module << indent(2) << "; registers\n";
 	for (size_t i = 0; i < n->noutputs(); ++i) {
@@ -135,7 +135,7 @@ jlm::hls::FirrtlHLS::mem_node_to_firrtl(const jlm::rvsdg::simple_node *n) {
 		module << indent(2) << "mem_req.data is invalid\n";
 		if (auto bt = dynamic_cast<const jlm::rvsdg::bittype *>(&n->output(0)->type())) {
 			bit_width = bt->nbits();
-		} else if (dynamic_cast<const jlm::PointerType *>(&n->output(0)->type())) {
+		} else if (dynamic_cast<const llvm::PointerType *>(&n->output(0)->type())) {
 			bit_width = 64;
 		} else {
 			throw util::error("unknown width for mem request");
@@ -492,9 +492,9 @@ int
 jlm::hls::jlm_sizeof(const jlm::rvsdg::type *t) {
 	if (auto bt = dynamic_cast<const jlm::rvsdg::bittype *>(t)) {
 		return bt->nbits();
-	} else if (auto at = dynamic_cast<const jlm::arraytype *>(t)) {
+	} else if (auto at = dynamic_cast<const llvm::arraytype *>(t)) {
 		return jlm_sizeof(&at->element_type()) * at->nelements();
-	} else if ( dynamic_cast<const jlm::PointerType *>(t)) {
+	} else if ( dynamic_cast<const llvm::PointerType *>(t)) {
 		return 64;
 	} else if (auto ct = dynamic_cast<const jlm::rvsdg::ctltype *>(t)) {
 		return ceil(log2(ct->nalternatives()));
@@ -507,14 +507,14 @@ jlm::hls::jlm_sizeof(const jlm::rvsdg::type *t) {
 
 std::string
 jlm::hls::FirrtlHLS::gep_op_to_firrtl(const jlm::rvsdg::simple_node *n) {
-	auto o = dynamic_cast<const jlm::GetElementPtrOperation *>(&(n->operation()));
+	auto o = dynamic_cast<const llvm::GetElementPtrOperation *>(&(n->operation()));
 	std::string result = "cvt("+data(n->input(0))+")"; // start of with base pointer
 	//TODO: support structs
 	const jlm::rvsdg::type *pt = &o->GetPointeeType();
 	for (size_t i = 1; i < n->ninputs(); ++i) {
 		int bits = jlm_sizeof(pt);
 		if (dynamic_cast<const jlm::rvsdg::bittype *>(pt)) { ;
-		} else if (auto at = dynamic_cast<const jlm::arraytype *>(pt)) {
+		} else if (auto at = dynamic_cast<const llvm::arraytype *>(pt)) {
 			pt = &at->element_type();
 		} else {
 			throw std::logic_error(pt->debug_string() + " pointer not implemented!");
@@ -556,14 +556,14 @@ jlm::hls::FirrtlHLS::simple_op_to_firrtl(const jlm::rvsdg::simple_node *n) {
 		return "geq(asSInt(" + data(n->input(0)) + "), asSInt(" + data(n->input(1)) + "))";
 	} else if (dynamic_cast<const jlm::rvsdg::bitsle_op *>(&(n->operation()))) {
 		return "leq(asSInt(" + data(n->input(0)) + "), asSInt(" + data(n->input(1)) + "))";
-	} else if (auto o = dynamic_cast<const jlm::sext_op *>(&(n->operation()))) {
+	} else if (auto o = dynamic_cast<const llvm::sext_op *>(&(n->operation()))) {
 		return "asUInt(pad(asSInt(" + data(n->input(0)) + "), " + util::strfmt(o->ndstbits()) +
 			   "))";
-	} else if (dynamic_cast<const jlm::trunc_op *>(&(n->operation()))) {
+	} else if (dynamic_cast<const llvm::trunc_op *>(&(n->operation()))) {
 		return data(n->input(0));
-	} else if (dynamic_cast<const jlm::bitcast_op *>(&(n->operation()))) {
+	} else if (dynamic_cast<const llvm::bitcast_op *>(&(n->operation()))) {
 		return data(n->input(0));
-	} else if (dynamic_cast<const jlm::zext_op *>(&(n->operation()))) {
+	} else if (dynamic_cast<const llvm::zext_op *>(&(n->operation()))) {
 		return data(n->input(0));
 	} else if (dynamic_cast<const jlm::rvsdg::bitugt_op *>(&(n->operation()))) {
 		return "gt(" + data(n->input(0)) + ", " + data(n->input(1)) + ")";
@@ -604,11 +604,11 @@ jlm::hls::FirrtlHLS::simple_op_to_firrtl(const jlm::rvsdg::simple_node *n) {
 	} else if (auto o = dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&(n->operation()))) {
 		auto value = o->value();
 		return util::strfmt("UInt<", value.nbits(), ">(", value.to_uint(), ")");
-	} else if (dynamic_cast<const jlm::UndefValueOperation *>(&(n->operation()))) {
+	} else if (dynamic_cast<const llvm::UndefValueOperation *>(&(n->operation()))) {
 		return UInt(1, 0);  // TODO: Fix?
 	} else if (auto o = dynamic_cast<const jlm::rvsdg::ctlconstant_op *>(&(n->operation()))) {
 		return UInt(ceil(log2(o->value().nalternatives())), o->value().alternative());
-	} else if (dynamic_cast<const jlm::GetElementPtrOperation *>(&(n->operation()))) {
+	} else if (dynamic_cast<const llvm::GetElementPtrOperation *>(&(n->operation()))) {
 		return gep_op_to_firrtl(n);
 	} else {
 		throw std::logic_error(n->operation().debug_string() + " not implemented!");
@@ -659,9 +659,9 @@ jlm::hls::FirrtlHLS::node_to_firrtl(const jlm::rvsdg::node *node, const int dept
 		}
 	}
 	if (auto n = dynamic_cast<const jlm::rvsdg::simple_node *>(node)) {
-		if (dynamic_cast<const jlm::LoadOperation *>(&(n->operation()))) {
+		if (dynamic_cast<const llvm::LoadOperation *>(&(n->operation()))) {
 			return mem_node_to_firrtl(n);
-		} else if (dynamic_cast<const jlm::StoreOperation *>(&(n->operation()))) {
+		} else if (dynamic_cast<const llvm::StoreOperation *>(&(n->operation()))) {
 			return mem_node_to_firrtl(n);
 		} else if (dynamic_cast<const hls::predicate_buffer_op *>(&(n->operation()))) {
 			return pred_buffer_to_firrtl(n);
@@ -818,7 +818,7 @@ jlm::hls::FirrtlHLS::subregion_to_firrtl(jlm::rvsdg::region *sr) {
 }
 
 jlm::hls::FirrtlModule
-jlm::hls::FirrtlHLS::lambda_node_to_firrtl(const jlm::lambda::node *ln) {
+jlm::hls::FirrtlHLS::lambda_node_to_firrtl(const llvm::lambda::node *ln) {
 	auto module_name = ln->name() + "_lambda_mod";
 	auto sr = ln->subregion();
 	create_node_names(sr);

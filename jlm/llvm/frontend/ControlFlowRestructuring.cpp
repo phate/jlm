@@ -11,12 +11,13 @@
 #include <unordered_map>
 #include <unordered_set>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 struct tcloop {
 	inline
 	tcloop(
-		jlm::cfg_node * entry,
+		cfg_node * entry,
 		basic_block * i,
 		basic_block * r)
 	: ne(entry)
@@ -24,13 +25,13 @@ struct tcloop {
 	, replacement(r)
 	{}
 
-	jlm::cfg_node * ne;
+	cfg_node * ne;
 	basic_block * insert;
 	basic_block * replacement;
 };
 
 static inline tcloop
-extract_tcloop(jlm::cfg_node * ne, jlm::cfg_node * nx)
+extract_tcloop(cfg_node * ne, cfg_node * nx)
 {
 	JLM_ASSERT(nx->noutedges() == 2);
 	auto & cfg = ne->cfg();
@@ -136,7 +137,7 @@ restructure_loop_entry(
 	const tacvariable * ev)
 {
 	size_t n = 0;
-	std::unordered_map<jlm::cfg_node*, size_t> indices;
+	std::unordered_map<llvm::cfg_node*, size_t> indices;
 	for (auto & node : s.enodes()) {
 		new_ne->add_outedge(node);
 		indices[node] = n++;
@@ -178,7 +179,7 @@ restructure_loop_exit(
 	}
 
 	size_t n = 0;
-	std::unordered_map<jlm::cfg_node*, size_t> indices;
+	std::unordered_map<llvm::cfg_node*, size_t> indices;
 	for (auto & node : s.xnodes()) {
 		new_nx->add_outedge(node);
 		indices[node] = n++;
@@ -198,13 +199,13 @@ restructure_loop_exit(
 static inline void
 restructure_loop_repetition(
 	const sccstructure & s,
-	jlm::cfg_node * new_nr,
-	jlm::cfg_node * new_nx,
+	cfg_node * new_nr,
+	cfg_node * new_nx,
 	const tacvariable * ev,
 	const tacvariable * rv)
 {
 	size_t n = 0;
-	std::unordered_map<jlm::cfg_node*, size_t> indices;
+	std::unordered_map<llvm::cfg_node*, size_t> indices;
 	for (auto & node : s.enodes())
 		indices[node] = n++;
 
@@ -230,10 +231,10 @@ find_tvariable_bb(cfg_node * node)
 }
 
 static void
-restructure(jlm::cfg_node*, jlm::cfg_node*, std::vector<tcloop>&);
+restructure(cfg_node*, cfg_node*, std::vector<tcloop>&);
 
 static void
-restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit, std::vector<tcloop> & loops)
+restructure_loops(cfg_node * entry, cfg_node * exit, std::vector<tcloop> & loops)
 {
 	if (entry == exit)
 		return;
@@ -281,8 +282,8 @@ restructure_loops(jlm::cfg_node * entry, jlm::cfg_node * exit, std::vector<tcloo
 	}
 }
 
-static jlm::cfg_node *
-find_head_branch(jlm::cfg_node * start, jlm::cfg_node * end)
+static cfg_node *
+find_head_branch(cfg_node * start, cfg_node * end)
 {
 	do {
 		if (start->is_branch() || start == end)
@@ -294,15 +295,15 @@ find_head_branch(jlm::cfg_node * start, jlm::cfg_node * end)
 	return start;
 }
 
-static std::unordered_set<jlm::cfg_node*>
-find_dominator_graph(const jlm::cfg_edge * edge)
+static std::unordered_set<llvm::cfg_node*>
+find_dominator_graph(const cfg_edge * edge)
 {
-	std::unordered_set<jlm::cfg_node*> nodes;
-	std::unordered_set<const jlm::cfg_edge*> edges({edge});
+	std::unordered_set<llvm::cfg_node*> nodes;
+	std::unordered_set<const cfg_edge*> edges({edge});
 
-	std::deque<jlm::cfg_node*> to_visit(1, edge->sink());
+	std::deque<llvm::cfg_node*> to_visit(1, edge->sink());
 	while (to_visit.size() != 0) {
-		jlm::cfg_node * node = to_visit.front(); to_visit.pop_front();
+		cfg_node * node = to_visit.front(); to_visit.pop_front();
 		if (nodes.find(node) != nodes.end())
 			continue;
 
@@ -327,16 +328,16 @@ find_dominator_graph(const jlm::cfg_edge * edge)
 }
 
 struct continuation {
-	std::unordered_set<jlm::cfg_node*> points;
-	std::unordered_map<jlm::cfg_edge*, std::unordered_set<jlm::cfg_edge*>> edges;
+	std::unordered_set<cfg_node*> points;
+	std::unordered_map<cfg_edge*, std::unordered_set<cfg_edge*>> edges;
 };
 
 static inline continuation
-compute_continuation(jlm::cfg_node * hb)
+compute_continuation(cfg_node * hb)
 {
 	JLM_ASSERT(hb->noutedges() > 1);
 
-	std::unordered_map<jlm::cfg_edge*, std::unordered_set<jlm::cfg_node*>> dgraphs;
+	std::unordered_map<cfg_edge*, std::unordered_set<cfg_node*>> dgraphs;
 	for (auto it = hb->begin_outedges(); it != hb->end_outedges(); it++)
 		dgraphs[it.edge()] = find_dominator_graph(it.edge());
 
@@ -363,7 +364,7 @@ compute_continuation(jlm::cfg_node * hb)
 }
 
 static inline void
-restructure_branches(jlm::cfg_node * entry, jlm::cfg_node * exit)
+restructure_branches(cfg_node * entry, cfg_node * exit)
 {
 	auto & cfg = entry->cfg();
 
@@ -439,7 +440,7 @@ restructure_branches(jlm::cfg_node * entry, jlm::cfg_node * exit)
 }
 
 void
-RestructureLoops(jlm::cfg * cfg)
+RestructureLoops(llvm::cfg * cfg)
 {
 	JLM_ASSERT(is_closed(*cfg));
 
@@ -451,7 +452,7 @@ RestructureLoops(jlm::cfg * cfg)
 }
 
 void
-RestructureBranches(jlm::cfg * cfg)
+RestructureBranches(llvm::cfg * cfg)
 {
 	JLM_ASSERT(is_acyclic(*cfg));
 	restructure_branches(cfg->entry(), cfg->exit());
@@ -459,14 +460,14 @@ RestructureBranches(jlm::cfg * cfg)
 }
 
 static inline void
-restructure(jlm::cfg_node * entry, jlm::cfg_node * exit, std::vector<tcloop> & tcloops)
+restructure(cfg_node * entry, cfg_node * exit, std::vector<tcloop> & tcloops)
 {
 	restructure_loops(entry, exit, tcloops);
 	restructure_branches(entry, exit);
 }
 
 void
-RestructureControlFlow(jlm::cfg * cfg)
+RestructureControlFlow(llvm::cfg * cfg)
 {
 	JLM_ASSERT(is_closed(*cfg));
 

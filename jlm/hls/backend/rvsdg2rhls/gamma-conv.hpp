@@ -22,7 +22,7 @@ namespace jlm{
 		gamma_conv(jlm::rvsdg::region *region, bool allow_speculation=true);
 
 		void
-		gamma_conv(jlm::RvsdgModule &rm, bool allow_speculation=true);
+		gamma_conv(llvm::RvsdgModule &rm, bool allow_speculation=true);
 	}
 }
 #endif //JLM_HLS_BACKEND_RVSDG2RHLS_GAMMA_CONV_HPP

@@ -14,7 +14,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 class aggnode;
 class variable;
@@ -25,30 +26,30 @@ class VariableSet final {
   {
   public:
     using iterator_category = std::forward_iterator_tag;
-    using value_type = const jlm::variable*;
+    using value_type = const llvm::variable*;
     using difference_type = std::ptrdiff_t;
-    using pointer = const jlm::variable**;
-    using reference = const jlm::variable*&;
+    using pointer = const llvm::variable**;
+    using reference = const llvm::variable*&;
 
     explicit
-    ConstIterator(const std::unordered_set<const jlm::variable*>::const_iterator & it)
+    ConstIterator(const std::unordered_set<const llvm::variable*>::const_iterator & it)
       : It_(it)
     {}
 
   public:
-    const jlm::variable &
+    const llvm::variable &
     GetVariable() const noexcept
     {
       return **It_;
     }
 
-    const jlm::variable &
+    const llvm::variable &
     operator*() const
     {
       return GetVariable();
     }
 
-    const jlm::variable *
+    const llvm::variable *
     operator->() const
     {
       return &GetVariable();
@@ -82,10 +83,10 @@ class VariableSet final {
     }
 
   private:
-    std::unordered_set<const jlm::variable*>::const_iterator It_;
+    std::unordered_set<const llvm::variable*>::const_iterator It_;
   };
 
-  using ConstRange = util::iterator_range<ConstIterator>;
+  using ConstRange = jlm::util::iterator_range<ConstIterator>;
 
 public:
   VariableSet()
@@ -558,7 +559,7 @@ public:
   {
     JLM_ASSERT(Contains(aggregationNode));
     auto & demandSet = Map_.find(&aggregationNode)->second;
-    return *util::AssertedCast<T>(demandSet.get());
+    return *jlm::util::AssertedCast<T>(demandSet.get());
   }
 
   void
@@ -581,7 +582,7 @@ private:
 };
 
 std::unique_ptr<AnnotationMap>
-Annotate(const jlm::aggnode & aggregationTreeRoot);
+Annotate(const aggnode & aggregationTreeRoot);
 
 }
 

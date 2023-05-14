@@ -12,7 +12,8 @@
 
 #include <string>
 
-namespace jlm {
+namespace jlm::llvm
+{
 
 class cfg;
 class ipgraph;
@@ -21,20 +22,20 @@ class ipgraph_module;
 /* control flow graph */
 
 std::string
-to_str(const jlm::cfg & cfg);
+to_str(const llvm::cfg & cfg);
 
 std::string
-to_dot(const jlm::cfg & cfg);
+to_dot(const llvm::cfg & cfg);
 
 static inline void
-print_ascii(const jlm::cfg & cfg, FILE * out)
+print_ascii(const llvm::cfg & cfg, FILE * out)
 {
 	fputs(to_str(cfg).c_str(), out);
 	fflush(out);
 }
 
 static inline void
-print_dot(const jlm::cfg & cfg, FILE * out)
+print_dot(const llvm::cfg & cfg, FILE * out)
 {
 	fputs(to_dot(cfg).c_str(), out);
 	fflush(out);
@@ -43,20 +44,20 @@ print_dot(const jlm::cfg & cfg, FILE * out)
 /* inter-procedural graph */
 
 std::string
-to_str(const jlm::ipgraph & ipg);
+to_str(const llvm::ipgraph & ipg);
 
 std::string
-to_dot(const jlm::ipgraph & ipg);
+to_dot(const llvm::ipgraph & ipg);
 
 static inline void
-print_ascii(const jlm::ipgraph & ipg, FILE * out)
+print_ascii(const llvm::ipgraph & ipg, FILE * out)
 {
 	fputs(to_str(ipg).c_str(), out);
 	fflush(out);
 }
 
 static inline void
-print_dot(const jlm::ipgraph & ipg, FILE * out)
+print_dot(const llvm::ipgraph & ipg, FILE * out)
 {
 	fputs(to_dot(ipg).c_str(), out);
 	fflush(out);

@@ -17,7 +17,7 @@ namespace jlm{
 		theta_conv(jlm::rvsdg::region *region);
 
 		void
-		theta_conv(jlm::RvsdgModule &rm);
+		theta_conv(jlm::llvm::RvsdgModule &rm);
 	}
 }
 #endif //JLM_HLS_BACKEND_RVSDG2RHLS_THETA_CONV_HPP
