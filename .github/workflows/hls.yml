@@ -20,21 +20,6 @@ jobs:
     - uses: actions/checkout@v3
 
     # --------
-    # Install dependencies
-    # --------
-
-    - name: Get LLVM apt key
-      run: wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
-    - name: Update apt sources
-      run: sudo add-apt-repository deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-16 main
-    - name: Install dependencies (LLVM-16, MLIR-16, Clang-16, and ninja)
-      run: sudo apt-get install llvm-16-dev libmlir-16-dev mlir-16-tools clang-16 ninja-build
-    - name: Place MLIRlib in system folder
-      run: sudo ln -s /usr/lib/llvm-16/lib/libMLIR.so.16 /usr/lib/x86_64-linux-gnu/ && sudo ln -s /usr/lib/llvm-16/lib/libMLIR.so.16 /usr/lib/x86_64-linux-gnu/libMLIR.so
-    - name: Instal llvm-lit
-      run: sudo python3 /usr/lib/llvm-16/build/utils/lit/setup.py install
-
-    # --------
     # Restore CIRCT from cache and build if it's not in there
     # --------
 
@@ -43,10 +28,6 @@ jobs:
       run: git clone https://github.com/EECS-NTNU/jlm-eval-suite.git
 
     # Extract the CIRCT submodule hash for use in the cache key
-    - name: Checkout CIRCT
-      run: |
-        cd jlm-eval-suite
-        make submodule-circt
     - name: Get CIRCT hash
       id: get-circt-hash
       run: |
@@ -62,11 +43,22 @@ jobs:
           jlm-eval-suite/circt/local
         key: ${{ runner.os }}-circt-${{ steps.get-circt-hash.outputs.hash }}
 
+    # Install dependencies if we didn't hit in the cache
+    - name: Install dependencies
+      if: steps.cache-circt.outputs.cache-hit != 'true'
+      run: |
+        wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+        sudo add-apt-repository deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-16 main
+        sudo apt-get install llvm-16-dev libmlir-16-dev mlir-16-tools clang-16 ninja-build
+        sudo ln -s /usr/lib/llvm-16/lib/libMLIR.so.16 /usr/lib/x86_64-linux-gnu/ && sudo ln -s /usr/lib/llvm-16/lib/libMLIR.so.16 /usr/lib/x86_64-linux-gnu/libMLIR.so
+        sudo python3 /usr/lib/llvm-16/build/utils/lit/setup.py install
+
     # Build CIRCT if we didn't hit in the cache
     - name: Rebuild and Install CIRCT
       if: steps.cache-circt.outputs.cache-hit != 'true'
       run: |
         cd jlm-eval-suite
+        make submodule-circt
         make circt-build
 
   hls-test-suite:
@@ -101,10 +93,6 @@ jobs:
       run: git clone https://github.com/EECS-NTNU/jlm-eval-suite.git
 
     # Extract the CIRCT submodule hash for use in the cache key
-    - name: Checkout CIRCT
-      run: |
-        cd jlm-eval-suite
-        make submodule-circt
     - name: Get CIRCT hash
       id: get-circt-hash
       run: |
@@ -125,6 +113,7 @@ jobs:
       if: steps.cache-circt.outputs.cache-hit != 'true'
       run: |
         cd jlm-eval-suite
+        make submodule-circt
         make circt-build
 
     # --------
