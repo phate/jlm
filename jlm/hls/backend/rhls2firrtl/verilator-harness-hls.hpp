@@ -9,25 +9,26 @@
 #include <jlm/hls/backend/rhls2firrtl/base-hls.hpp>
 #include <jlm/rvsdg/bitstring/type.hpp>
 
-namespace jlm {
-	namespace hls {
-		class VerilatorHarnessHLS : public BaseHLS {
-			std::string
-			extension() override {
-				return "_harness.cpp";
-			}
+namespace jlm::hls
+{
 
-			std::string
-			get_text(llvm::RvsdgModule &rm) override;
+class VerilatorHarnessHLS : public BaseHLS {
+  std::string
+  extension() override {
+    return "_harness.cpp";
+  }
 
-		private:
-			std::string
-			convert_to_c_type(const jlm::rvsdg::type* type);
+  std::string
+  get_text(llvm::RvsdgModule &rm) override;
 
-			std::string
-			convert_to_c_type_postfix(const jlm::rvsdg::type* type);
-		};
-	}
+private:
+  std::string
+  convert_to_c_type(const jlm::rvsdg::type* type);
+
+  std::string
+  convert_to_c_type_postfix(const jlm::rvsdg::type* type);
+};
+
 }
 
 #endif //JLM_HLS_BACKEND_RHLS2FIRRTL_VERILATOR_HARNESS_HLS_HPP
