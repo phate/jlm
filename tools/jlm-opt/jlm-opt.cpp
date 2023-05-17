@@ -84,18 +84,18 @@ static void
 print(
 	const jlm::llvm::RvsdgModule & rm,
 	const jlm::util::filepath & fp,
-	const jlm::JlmOptCommandLineOptions::OutputFormat & format,
+	const jlm::tooling::JlmOptCommandLineOptions::OutputFormat & format,
 	jlm::util::StatisticsCollector & statisticsCollector)
 {
   using namespace jlm;
 
   static std::unordered_map<
-    jlm::JlmOptCommandLineOptions::OutputFormat,
+    tooling::JlmOptCommandLineOptions::OutputFormat,
     std::function<void(const jlm::llvm::RvsdgModule&, const jlm::util::filepath&, jlm::util::StatisticsCollector&)>
   > formatters(
     {
-      {JlmOptCommandLineOptions::OutputFormat::Xml,  print_as_xml},
-      {JlmOptCommandLineOptions::OutputFormat::Llvm, print_as_llvm}
+      {tooling::JlmOptCommandLineOptions::OutputFormat::Xml,  print_as_xml},
+      {tooling::JlmOptCommandLineOptions::OutputFormat::Llvm, print_as_llvm}
     });
 
   JLM_ASSERT(formatters.find(format) != formatters.end());
@@ -105,7 +105,7 @@ print(
 int
 main(int argc, char ** argv)
 {
-  auto & commandLineOptions = jlm::JlmOptCommandLineParser::Parse(argc, argv);
+  auto & commandLineOptions = jlm::tooling::JlmOptCommandLineParser::Parse(argc, argv);
 
   jlm::util::StatisticsCollector statisticsCollector(commandLineOptions.StatisticsCollectorSettings_);
 

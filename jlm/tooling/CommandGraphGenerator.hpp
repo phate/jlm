@@ -11,7 +11,7 @@
 
 #include <memory>
 
-namespace jlm
+namespace jlm::tooling
 {
 
 class CommandGraph;

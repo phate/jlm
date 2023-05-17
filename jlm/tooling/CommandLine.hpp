@@ -12,7 +12,7 @@
 
 #include <vector>
 
-namespace jlm
+namespace jlm::tooling
 {
 
 /**

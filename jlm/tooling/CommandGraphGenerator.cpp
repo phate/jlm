@@ -12,7 +12,7 @@
 
 #include <unistd.h>
 
-namespace jlm
+namespace jlm::tooling
 {
 
 JlcCommandGraphGenerator::~JlcCommandGraphGenerator() noexcept

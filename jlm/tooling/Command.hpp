@@ -12,7 +12,8 @@
 #include <memory>
 #include <string>
 
-namespace jlm {
+namespace jlm::tooling
+{
 
 /** \brief Command class
  *

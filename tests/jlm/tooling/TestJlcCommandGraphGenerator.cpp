@@ -14,7 +14,7 @@
 static void
 Test1()
 {
-  using namespace jlm;
+  using namespace jlm::tooling;
 
   /*
    * Arrange
@@ -46,12 +46,12 @@ Test1()
 static void
 Test2()
 {
-  using namespace jlm;
+  using namespace jlm::tooling;
 
   /*
    * Arrange
    */
-  jlm::JlcCommandLineOptions commandLineOptions;
+  JlcCommandLineOptions commandLineOptions;
   commandLineOptions.Compilations_.push_back({
                                                {"foo.o"},
                                                {""},
@@ -81,12 +81,12 @@ Test2()
 static void
 TestJlmOptOptimizations()
 {
-  using namespace jlm;
+  using namespace jlm::tooling;
 
   /*
    * Arrange
    */
-  jlm::JlcCommandLineOptions commandLineOptions;
+  JlcCommandLineOptions commandLineOptions;
   commandLineOptions.Compilations_.push_back({
                                                {"foo.o"},
                                                {""},
@@ -110,11 +110,11 @@ TestJlmOptOptimizations()
    */
   auto & clangCommandNode = (*commandGraph->GetEntryNode().OutgoingEdges().begin()).GetSink();
   auto & jlmOptCommandNode = (clangCommandNode.OutgoingEdges().begin())->GetSink();
-  auto command = dynamic_cast<const jlm::JlmOptCommand*>(&jlmOptCommandNode.GetCommand());
+  auto command = dynamic_cast<const JlmOptCommand*>(&jlmOptCommandNode.GetCommand());
   auto optimizations = command->Optimizations();
   assert(optimizations.size() == 2);
-  assert(optimizations[0] == jlm::JlmOptCommand::Optimization::CommonNodeElimination && \
-         optimizations[1] == jlm::JlmOptCommand::Optimization::DeadNodeElimination);
+  assert(optimizations[0] == JlmOptCommand::Optimization::CommonNodeElimination && \
+         optimizations[1] == JlmOptCommand::Optimization::DeadNodeElimination);
 }
 
 static int

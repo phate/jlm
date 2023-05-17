@@ -8,7 +8,8 @@
 #include <deque>
 #include <functional>
 
-namespace jlm {
+namespace jlm::tooling
+{
 
 /**
  * This class represents a dummy command that is used for the single entry node of the command graph. Its Run() method
