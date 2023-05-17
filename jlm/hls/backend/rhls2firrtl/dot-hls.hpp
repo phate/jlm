@@ -10,40 +10,41 @@
 #include <jlm/hls/backend/rhls2firrtl/base-hls.hpp>
 #include <jlm/hls/ir/hls.hpp>
 
-namespace jlm {
-	namespace hls {
-		class DotHLS : public BaseHLS {
-			std::string
-			extension() override;
+namespace jlm::hls
+{
 
-			std::string
-			get_text(llvm::RvsdgModule &rm) override;
+class DotHLS : public BaseHLS {
+  std::string
+  extension() override;
 
-		private:
-			std::string
-			argument_to_dot(jlm::rvsdg::argument *port);
+  std::string
+  get_text(llvm::RvsdgModule &rm) override;
 
-			std::string
-			result_to_dot(jlm::rvsdg::result *port);
+private:
+  std::string
+  argument_to_dot(jlm::rvsdg::argument *port);
 
-			std::string
-			node_to_dot(const jlm::rvsdg::node *node);
+  std::string
+  result_to_dot(jlm::rvsdg::result *port);
 
-			std::string
-			edge(std::string src, std::string snk, const jlm::rvsdg::type &type, bool back = false);
+  std::string
+  node_to_dot(const jlm::rvsdg::node *node);
 
-			std::string
-			loop_to_dot(hls::loop_node *ln);
+  std::string
+  edge(std::string src, std::string snk, const jlm::rvsdg::type &type, bool back = false);
 
-			void
-			prepare_loop_out_port(hls::loop_node *ln);
+  std::string
+  loop_to_dot(hls::loop_node *ln);
 
-			std::string
-			subregion_to_dot(jlm::rvsdg::region *sr);
+  void
+  prepare_loop_out_port(hls::loop_node *ln);
 
-			int loop_ctr = 0;
-		};
-	}
+  std::string
+  subregion_to_dot(jlm::rvsdg::region *sr);
+
+  int loop_ctr = 0;
+};
+
 }
 
 #endif //JLM_HLS_BACKEND_RHLS2FIRRTL_DOT_HLS_HPP

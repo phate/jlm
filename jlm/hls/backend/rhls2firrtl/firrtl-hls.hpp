@@ -19,167 +19,173 @@
 
 #include <string>
 
+namespace jlm::hls
+{
 
-namespace jlm {
-	namespace hls {
-		class FirrtlModule {
-		public:
-			FirrtlModule(const std::string &name, const std::string &firrtl, bool hasMem) : has_mem(hasMem), name(name),
-																							firrtl(firrtl) {}
+class FirrtlModule {
+public:
+  FirrtlModule(
+    const std::string &name,
+    const std::string &firrtl,
+    bool hasMem)
+    : has_mem(hasMem),
+      name(name),
+      firrtl(firrtl)
+  {}
 
-		public:
-			bool has_mem;
-			std::string name;
-			std::string firrtl;
-		};
-
-
-		inline bool
-		is_identity_mapping(const jlm::rvsdg::match_op &op);
-
-
-		int jlm_sizeof(const jlm::rvsdg::type * t);
-
-		class FirrtlHLS : public BaseHLS {
-			std::string
-			extension() override {
-				return ".fir";
-			}
-
-			std::string
-			get_text(llvm::RvsdgModule &rm) override;
-
-		private:
-			std::vector<std::pair<const jlm::rvsdg::operation*, FirrtlModule>> modules;
-			std::vector<std::string> mem_nodes;
-
-			std::string
-			get_module_name(const jlm::rvsdg::node *node);
-
-			static inline std::string
-			indent(size_t depth) {
-				return std::string(depth * 4, ' ');
-			}
-
-			static std::string
-			ready(jlm::rvsdg::output *port) {
-				return get_port_name(port) + ".ready";
-			}
-
-			static std::string
-			ready(jlm::rvsdg::input *port) {
-				return get_port_name(port) + ".ready";
-			}
-
-			static std::string
-			valid(jlm::rvsdg::output *port) {
-				return get_port_name(port) + ".valid";
-			}
-
-			static std::string
-			valid(jlm::rvsdg::input *port) {
-				return get_port_name(port) + ".valid";
-			}
-
-			static std::string
-			data(jlm::rvsdg::output *port) {
-				return get_port_name(port) + ".data";
-			}
-
-			static std::string
-			data(jlm::rvsdg::input *port) {
-				return get_port_name(port) + ".data";
-			}
-
-			static std::string
-			fire(jlm::rvsdg::output *port) {
-				return "and(" + valid(port) + ", " + ready(port) + ")";
-			}
-
-			static std::string
-			fire(jlm::rvsdg::input *port) {
-				return "and(" + valid(port) + ", " + ready(port) + ")";
-			}
-
-			static std::string
-			UInt(size_t width, size_t value) {
-				return util::strfmt("UInt<", width, ">(", value, ")");
-			}
-
-			static std::string
-			to_firrtl_type(const jlm::rvsdg::type *type);
-
-			std::string
-			mem_io();
-
-			std::string
-			mux_mem(const std::vector<std::string> &mem_nodes) const;
-
-			std::string
-			module_header(const jlm::rvsdg::node *node, bool has_mem_io = false);
+public:
+  bool has_mem;
+  std::string name;
+  std::string firrtl;
+};
 
 
-			FirrtlModule &
-			mem_node_to_firrtl(const jlm::rvsdg::simple_node *n);
+inline bool
+is_identity_mapping(const jlm::rvsdg::match_op &op);
 
-			FirrtlModule &
-			pred_buffer_to_firrtl(const jlm::rvsdg::simple_node *n);
 
-			FirrtlModule &
-			buffer_to_firrtl(const jlm::rvsdg::simple_node *n);
+int jlm_sizeof(const jlm::rvsdg::type * t);
 
-			FirrtlModule &
-			ndmux_to_firrtl(const jlm::rvsdg::simple_node *n);
+class FirrtlHLS : public BaseHLS {
+  std::string
+  extension() override {
+    return ".fir";
+  }
 
-			FirrtlModule &
-			dmux_to_firrtl(const jlm::rvsdg::simple_node *n);
+  std::string
+  get_text(llvm::RvsdgModule &rm) override;
 
-			FirrtlModule &
-			merge_to_firrtl(const jlm::rvsdg::simple_node *n);
+private:
+  std::vector<std::pair<const jlm::rvsdg::operation*, FirrtlModule>> modules;
+  std::vector<std::string> mem_nodes;
 
-			FirrtlModule &
-			fork_to_firrtl(const jlm::rvsdg::simple_node *n);
+  std::string
+  get_module_name(const jlm::rvsdg::node *node);
 
-			FirrtlModule &
-			sink_to_firrtl(const jlm::rvsdg::simple_node *n);
+  static inline std::string
+  indent(size_t depth) {
+    return std::string(depth * 4, ' ');
+  }
 
-			FirrtlModule &
-			print_to_firrtl(const jlm::rvsdg::simple_node *n);
+  static std::string
+  ready(jlm::rvsdg::output *port) {
+    return get_port_name(port) + ".ready";
+  }
 
-			FirrtlModule &
-			branch_to_firrtl(const jlm::rvsdg::simple_node *n);
+  static std::string
+  ready(jlm::rvsdg::input *port) {
+    return get_port_name(port) + ".ready";
+  }
 
-			FirrtlModule &
-			trigger_to_firrtl(const jlm::rvsdg::simple_node *n);
+  static std::string
+  valid(jlm::rvsdg::output *port) {
+    return get_port_name(port) + ".valid";
+  }
 
-			static std::string
-			gep_op_to_firrtl(const jlm::rvsdg::simple_node *n);
+  static std::string
+  valid(jlm::rvsdg::input *port) {
+    return get_port_name(port) + ".valid";
+  }
 
-			static std::string
-			match_op_to_firrtl(const jlm::rvsdg::simple_node *n);
+  static std::string
+  data(jlm::rvsdg::output *port) {
+    return get_port_name(port) + ".data";
+  }
 
-			static std::string
-			simple_op_to_firrtl(const jlm::rvsdg::simple_node *n);
+  static std::string
+  data(jlm::rvsdg::input *port) {
+    return get_port_name(port) + ".data";
+  }
 
-			FirrtlModule &
-			single_out_simple_node_to_firrtl(const jlm::rvsdg::simple_node *n);
+  static std::string
+  fire(jlm::rvsdg::output *port) {
+    return "and(" + valid(port) + ", " + ready(port) + ")";
+  }
 
-			FirrtlModule
-			node_to_firrtl(const jlm::rvsdg::node *node, const int depth);
+  static std::string
+  fire(jlm::rvsdg::input *port) {
+    return "and(" + valid(port) + ", " + ready(port) + ")";
+  }
 
-			std::string
-			create_loop_instances(hls::loop_node *ln);
+  static std::string
+  UInt(size_t width, size_t value) {
+    return util::strfmt("UInt<", width, ">(", value, ")");
+  }
 
-			std::string
-			connect(jlm::rvsdg::region *sr);
+  static std::string
+  to_firrtl_type(const jlm::rvsdg::type *type);
 
-			FirrtlModule
-			subregion_to_firrtl(jlm::rvsdg::region *sr);
+  std::string
+  mem_io();
 
-			FirrtlModule
-			lambda_node_to_firrtl(const llvm::lambda::node *ln);
-		};
+  std::string
+  mux_mem(const std::vector<std::string> &mem_nodes) const;
 
-	}
+  std::string
+  module_header(const jlm::rvsdg::node *node, bool has_mem_io = false);
+
+
+  FirrtlModule &
+  mem_node_to_firrtl(const jlm::rvsdg::simple_node *n);
+
+  FirrtlModule &
+  pred_buffer_to_firrtl(const jlm::rvsdg::simple_node *n);
+
+  FirrtlModule &
+  buffer_to_firrtl(const jlm::rvsdg::simple_node *n);
+
+  FirrtlModule &
+  ndmux_to_firrtl(const jlm::rvsdg::simple_node *n);
+
+  FirrtlModule &
+  dmux_to_firrtl(const jlm::rvsdg::simple_node *n);
+
+  FirrtlModule &
+  merge_to_firrtl(const jlm::rvsdg::simple_node *n);
+
+  FirrtlModule &
+  fork_to_firrtl(const jlm::rvsdg::simple_node *n);
+
+  FirrtlModule &
+  sink_to_firrtl(const jlm::rvsdg::simple_node *n);
+
+  FirrtlModule &
+  print_to_firrtl(const jlm::rvsdg::simple_node *n);
+
+  FirrtlModule &
+  branch_to_firrtl(const jlm::rvsdg::simple_node *n);
+
+  FirrtlModule &
+  trigger_to_firrtl(const jlm::rvsdg::simple_node *n);
+
+  static std::string
+  gep_op_to_firrtl(const jlm::rvsdg::simple_node *n);
+
+  static std::string
+  match_op_to_firrtl(const jlm::rvsdg::simple_node *n);
+
+  static std::string
+  simple_op_to_firrtl(const jlm::rvsdg::simple_node *n);
+
+  FirrtlModule &
+  single_out_simple_node_to_firrtl(const jlm::rvsdg::simple_node *n);
+
+  FirrtlModule
+  node_to_firrtl(const jlm::rvsdg::node *node, const int depth);
+
+  std::string
+  create_loop_instances(hls::loop_node *ln);
+
+  std::string
+  connect(jlm::rvsdg::region *sr);
+
+  FirrtlModule
+  subregion_to_firrtl(jlm::rvsdg::region *sr);
+
+  FirrtlModule
+  lambda_node_to_firrtl(const llvm::lambda::node *ln);
+};
+
 }
+
 #endif //JLM_HLS_BACKEND_RHLS2FIRRTL_FIRRTL_HLS_HPP

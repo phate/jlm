@@ -9,26 +9,27 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/region.hpp>
 
-namespace jlm{
-	namespace hls{
-		void
-		add_prints(rvsdg::region *region);
+namespace jlm::hls
+{
 
-		void
-		add_prints(llvm::RvsdgModule &rm);
+void
+add_prints(rvsdg::region *region);
 
-		void
-		convert_prints(llvm::RvsdgModule &rm);
+void
+add_prints(llvm::RvsdgModule &rm);
 
-		void
-		convert_prints(
-      rvsdg::region *region,
-      rvsdg::output * printf,
-      const llvm::FunctionType & functionType);
+void
+convert_prints(llvm::RvsdgModule &rm);
 
-		rvsdg::output *
-		route_to_region(rvsdg::output * output, rvsdg::region * region);
-	}
+void
+convert_prints(
+  rvsdg::region *region,
+  rvsdg::output * printf,
+  const llvm::FunctionType & functionType);
+
+rvsdg::output *
+route_to_region(rvsdg::output * output, rvsdg::region * region);
+
 }
 
 #endif //JLM_HLS_BACKEND_RVSDG2RHLS_ADD_PRINTS_HPP

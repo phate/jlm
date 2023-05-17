@@ -12,55 +12,55 @@
 
 #include <fstream>
 
-namespace jlm {
-	namespace hls {
-		bool
-		isForbiddenChar(char c);
+namespace jlm::hls
+{
 
-		class BaseHLS {
-		public:
-			std::string
-			run(llvm::RvsdgModule &rm) {
-				assert(node_map.empty());
-				// ensure consistent naming across runs
-				create_node_names(get_hls_lambda(rm)->subregion());
-				return get_text(rm);
-			}
+bool
+isForbiddenChar(char c);
 
-		private:
-			virtual std::string
-			extension() = 0;
+class BaseHLS {
+public:
+  std::string
+  run(llvm::RvsdgModule &rm) {
+    assert(node_map.empty());
+    // ensure consistent naming across runs
+    create_node_names(get_hls_lambda(rm)->subregion());
+    return get_text(rm);
+  }
 
-		protected:
-			std::unordered_map<const jlm::rvsdg::node *, std::string> node_map;
-			std::unordered_map<jlm::rvsdg::output *, std::string> output_map;
+private:
+  virtual std::string
+  extension() = 0;
 
-			std::string
-			get_node_name(const jlm::rvsdg::node *node);
+protected:
+  std::unordered_map<const jlm::rvsdg::node *, std::string> node_map;
+  std::unordered_map<jlm::rvsdg::output *, std::string> output_map;
 
-			static std::string
-			get_port_name(jlm::rvsdg::input *port);
+  std::string
+  get_node_name(const jlm::rvsdg::node *node);
 
-			static std::string
-			get_port_name(jlm::rvsdg::output *port);
+  static std::string
+  get_port_name(jlm::rvsdg::input *port);
 
-			const llvm::lambda::node *
-			get_hls_lambda(llvm::RvsdgModule &rm);
+  static std::string
+  get_port_name(jlm::rvsdg::output *port);
 
-			int
-			JlmSize(const jlm::rvsdg::type *type);
+  const llvm::lambda::node *
+  get_hls_lambda(llvm::RvsdgModule &rm);
 
-			void
-			create_node_names(jlm::rvsdg::region *r);
+  int
+  JlmSize(const jlm::rvsdg::type *type);
 
-			virtual std::string
-			get_text(llvm::RvsdgModule &rm) = 0;
+  void
+  create_node_names(jlm::rvsdg::region *r);
 
-			static std::string
-			get_base_file_name(const llvm::RvsdgModule &rm);
-		};
-	}
+  virtual std::string
+  get_text(llvm::RvsdgModule &rm) = 0;
+
+  static std::string
+  get_base_file_name(const llvm::RvsdgModule &rm);
+};
+
 }
-
 
 #endif //JLM_HLS_BACKEND_RHLS2FIRRTL_BASE_HLS_HPP
