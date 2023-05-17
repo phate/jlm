@@ -10,20 +10,21 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/region.hpp>
 
-namespace jlm {
-	namespace hls {
+namespace jlm::hls
+{
 
-		rvsdg::output *
-		get_trigger(rvsdg::region *region);
+rvsdg::output *
+get_trigger(rvsdg::region *region);
 
-		llvm::lambda::node *
-		add_lambda_argument(llvm::lambda::node *ln, const rvsdg::type *type);
+llvm::lambda::node *
+add_lambda_argument(llvm::lambda::node *ln, const rvsdg::type *type);
 
-		void
-		add_triggers(rvsdg::region *region);
+void
+add_triggers(rvsdg::region *region);
 
-		void
-		add_triggers(llvm::RvsdgModule &rm);
-	}
+void
+add_triggers(llvm::RvsdgModule &rm);
+
 }
+
 #endif //JLM_HLS_BACKEND_RVSDG2RHLS_ADD_TRIGGERS_HPP

@@ -8,13 +8,15 @@
 
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 
-namespace jlm {
-	namespace hls {
-		void
-		check_rhls(jlm::rvsdg::region *sr);
+namespace jlm::hls
+{
 
-		void
-		check_rhls(llvm::RvsdgModule &rm);
-	}
+void
+check_rhls(jlm::rvsdg::region *sr);
+
+void
+check_rhls(llvm::RvsdgModule &rm);
+
 }
+
 #endif //JLM_HLS_BACKEND_RVSDG2RHLS_CHECK_RHLS_HPP

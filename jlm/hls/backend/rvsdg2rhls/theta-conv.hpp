@@ -9,15 +9,18 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
-namespace jlm{
-	namespace hls{
-		void theta_conv(jlm::rvsdg::theta_node *theta);
+namespace jlm::hls
+{
 
-		void
-		theta_conv(jlm::rvsdg::region *region);
+void
+theta_conv(jlm::rvsdg::theta_node *theta);
 
-		void
-		theta_conv(jlm::llvm::RvsdgModule &rm);
-	}
+void
+theta_conv(jlm::rvsdg::region *region);
+
+void
+theta_conv(jlm::llvm::RvsdgModule &rm);
+
 }
+
 #endif //JLM_HLS_BACKEND_RVSDG2RHLS_THETA_CONV_HPP
