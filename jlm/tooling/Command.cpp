@@ -12,7 +12,8 @@
 #include <filesystem>
 #include <unordered_map>
 
-namespace jlm {
+namespace jlm::tooling
+{
 
 Command::~Command()
 = default;

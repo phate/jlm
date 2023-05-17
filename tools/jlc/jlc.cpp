@@ -9,10 +9,12 @@
 int
 main(int argc, char ** argv)
 {
-  jlm::JlcCommandLineParser commandLineParser;
+  using namespace jlm::tooling;
+
+  JlcCommandLineParser commandLineParser;
   auto & commandLineOptions = commandLineParser.ParseCommandLineArguments(argc, argv);
 
-  auto commandGraph = jlm::JlcCommandGraphGenerator::Generate(commandLineOptions);
+  auto commandGraph = JlcCommandGraphGenerator::Generate(commandLineOptions);
   commandGraph->Run();
 
   return 0;

@@ -19,7 +19,7 @@
 
 #include <unordered_map>
 
-namespace jlm
+namespace jlm::tooling
 {
 
 CommandLineOptions::~CommandLineOptions()
@@ -254,7 +254,7 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
 
   /* Process parsed options */
 
-  static std::unordered_map<std::string, jlm::JlcCommandLineOptions::OptimizationLevel> optimizationLevelMap(
+  static std::unordered_map<std::string, JlcCommandLineOptions::OptimizationLevel> optimizationLevelMap(
     {
       {"0", JlcCommandLineOptions::OptimizationLevel::O0},
       {"1", JlcCommandLineOptions::OptimizationLevel::O1},
@@ -262,18 +262,18 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
       {"3", JlcCommandLineOptions::OptimizationLevel::O3}
     });
 
-  static std::unordered_map<std::string, jlm::JlcCommandLineOptions::LanguageStandard> languageStandardMap(
+  static std::unordered_map<std::string, JlcCommandLineOptions::LanguageStandard> languageStandardMap(
     {
-      {"gnu89", jlm::JlcCommandLineOptions::LanguageStandard::Gnu89},
-      {"gnu99", jlm::JlcCommandLineOptions::LanguageStandard::Gnu99},
-      {"c89",   jlm::JlcCommandLineOptions::LanguageStandard::C89},
-      {"c90",   jlm::JlcCommandLineOptions::LanguageStandard::C99},
-      {"c99",   jlm::JlcCommandLineOptions::LanguageStandard::C99},
-      {"c11",   jlm::JlcCommandLineOptions::LanguageStandard::C11},
-      {"c++98", jlm::JlcCommandLineOptions::LanguageStandard::Cpp98},
-      {"c++03", jlm::JlcCommandLineOptions::LanguageStandard::Cpp03},
-      {"c++11", jlm::JlcCommandLineOptions::LanguageStandard::Cpp11},
-      {"c++14", jlm::JlcCommandLineOptions::LanguageStandard::Cpp14}
+      {"gnu89", JlcCommandLineOptions::LanguageStandard::Gnu89},
+      {"gnu99", JlcCommandLineOptions::LanguageStandard::Gnu99},
+      {"c89",   JlcCommandLineOptions::LanguageStandard::C89},
+      {"c90",   JlcCommandLineOptions::LanguageStandard::C99},
+      {"c99",   JlcCommandLineOptions::LanguageStandard::C99},
+      {"c11",   JlcCommandLineOptions::LanguageStandard::C11},
+      {"c++98", JlcCommandLineOptions::LanguageStandard::Cpp98},
+      {"c++03", JlcCommandLineOptions::LanguageStandard::Cpp03},
+      {"c++11", JlcCommandLineOptions::LanguageStandard::Cpp11},
+      {"c++14", JlcCommandLineOptions::LanguageStandard::Cpp14}
     });
 
   if (!optimizationLevel.empty()) {

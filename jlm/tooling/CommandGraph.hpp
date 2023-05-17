@@ -13,7 +13,8 @@
 #include <unordered_set>
 #include <vector>
 
-namespace jlm {
+namespace jlm::tooling
+{
 
 class Command;
 

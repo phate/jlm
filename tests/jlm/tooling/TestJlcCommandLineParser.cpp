@@ -10,7 +10,7 @@
 #include <cassert>
 #include <cstring>
 
-static const jlm::JlcCommandLineOptions &
+static const jlm::tooling::JlcCommandLineOptions &
 ParseCommandLineArguments(const std::vector<std::string> & commandLineArguments)
 {
   std::vector<char*> array;
@@ -20,7 +20,7 @@ ParseCommandLineArguments(const std::vector<std::string> & commandLineArguments)
     array.back()[commandLineArgument.size()] = '\0';
   }
 
-  static jlm::JlcCommandLineParser commandLineParser;
+  static jlm::tooling::JlcCommandLineParser commandLineParser;
   auto & commandLineOptions = commandLineParser.ParseCommandLineArguments(
     static_cast<int>(array.size()),
     &array[0]);
@@ -83,6 +83,8 @@ Test2()
 static void
 Test3()
 {
+  using namespace jlm::tooling;
+
   /*
    * Arrange
    */
@@ -96,7 +98,7 @@ Test3()
   /*
    * Assert
    */
-  assert(commandLineOptions.OptimizationLevel_ == jlm::JlcCommandLineOptions::OptimizationLevel::O0);
+  assert(commandLineOptions.OptimizationLevel_ == JlcCommandLineOptions::OptimizationLevel::O0);
 }
 
 static void
