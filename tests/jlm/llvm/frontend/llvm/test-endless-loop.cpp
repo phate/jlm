@@ -40,7 +40,7 @@ test()
 
 	llvm::LLVMContext ctx;
 	auto llvmModule = setup(ctx);
-	jlm::print(*llvmModule);
+	jlm::tests::print(*llvmModule);
 
 	auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
 	print(*ipgModule, stdout);

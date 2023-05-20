@@ -16,14 +16,14 @@ static int test_main(void)
 
 	jlm::rvsdg::graph graph;
 	
-	jlm::statetype type;
-	jlm::valuetype value_type;
+	jlm::tests::statetype type;
+	jlm::tests::valuetype value_type;
 
-	auto n1 = jlm::test_op::create(graph.root(), {}, {&type});
+	auto n1 = jlm::tests::test_op::create(graph.root(), {}, {&type});
 
 	bool error_handler_called = false;
 	try {
-		jlm::test_op::Create(graph.root(), {&value_type}, {n1->output(0)}, {});
+		jlm::tests::test_op::Create(graph.root(), {&value_type}, {n1->output(0)}, {});
 	} catch (jlm::util::type_error & e) {
 		error_handler_called = true;
 	}

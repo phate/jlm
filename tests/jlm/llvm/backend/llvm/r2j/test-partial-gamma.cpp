@@ -24,7 +24,7 @@ test()
 {
 	using namespace jlm::llvm;
 
-	jlm::valuetype vt;
+	jlm::tests::valuetype vt;
 	jlm::rvsdg::bittype bt1(1);
 	FunctionType ft({&bt1, &vt}, {&vt});
 
@@ -35,7 +35,7 @@ test()
 	auto match = jlm::rvsdg::match(1, {{0, 0}}, 1, 2, lambda->fctargument(0));
 	auto gamma = jlm::rvsdg::gamma_node::create(match, 2);
 	auto ev = gamma->add_entryvar(lambda->fctargument(1));
-	auto output = jlm::create_testop(gamma->subregion(1), {ev->argument(1)}, {&vt})[0];
+	auto output = jlm::tests::create_testop(gamma->subregion(1), {ev->argument(1)}, {&vt})[0];
 	auto ex = gamma->add_exitvar({ev->argument(0), output});
 
 	auto f = lambda->finalize({ex});

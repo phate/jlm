@@ -18,7 +18,7 @@ test_two_phis()
 {
 	using namespace jlm::llvm;
 
-	jlm::valuetype vt;
+	jlm::tests::valuetype vt;
 	ipgraph_module module(jlm::util::filepath(""), "", "");
 
 	jlm::llvm::cfg cfg(module);
@@ -34,16 +34,16 @@ test_two_phis()
 	bb3->add_outedge(bb4);
 	bb4->add_outedge(cfg.exit());
 
-	bb2->append_last(jlm::create_testop_tac({}, {&vt}));
+	bb2->append_last(jlm::tests::create_testop_tac({}, {&vt}));
 	auto v1 = bb2->last()->result(0);
 
-	bb2->append_last(jlm::create_testop_tac({}, {&vt}));
+	bb2->append_last(jlm::tests::create_testop_tac({}, {&vt}));
 	auto v3 = bb2->last()->result(0);
 
-	bb3->append_last(jlm::create_testop_tac({}, {&vt}));
+	bb3->append_last(jlm::tests::create_testop_tac({}, {&vt}));
 	auto v2 = bb3->last()->result(0);
 
-	bb3->append_last(jlm::create_testop_tac({}, {&vt}));
+	bb3->append_last(jlm::tests::create_testop_tac({}, {&vt}));
 	auto v4 = bb3->last()->result(0);
 
 	bb4->append_last(phi_op::create({{v1, bb2}, {v2, bb3}}, vt));

@@ -30,7 +30,7 @@ TestGamma()
   {
     using namespace jlm::llvm;
 
-    jlm::valuetype valueType;
+    jlm::tests::valuetype valueType;
     jlm::rvsdg::ctltype controlType(2);
 
     auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
@@ -87,7 +87,7 @@ TestTheta()
     using namespace jlm::llvm;
 
     loopstatetype loopStateType;
-    jlm::valuetype valueType;
+    jlm::tests::valuetype valueType;
     jlm::rvsdg::ctltype controlType(2);
 
     auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");

@@ -55,7 +55,7 @@ TestFNegScalar()
 
   llvm::LLVMContext context;
   auto llvmModule = Setup(context);
-  jlm::print(*llvmModule);
+  jlm::tests::print(*llvmModule);
 
   auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
   print(*ipgModule, stdout);
@@ -89,7 +89,7 @@ TestFNegVector()
 
   llvm::LLVMContext context;
   auto llvmModule = Setup(context);
-  jlm::print(*llvmModule);
+  jlm::tests::print(*llvmModule);
 
   auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
   print(*ipgModule, stdout);

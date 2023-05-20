@@ -23,7 +23,7 @@ test_with_match()
 {
 	using namespace jlm::llvm;
 
-	jlm::valuetype vt;
+	jlm::tests::valuetype vt;
 	jlm::rvsdg::bittype bt1(1);
 	FunctionType ft({&bt1, &vt, &vt}, {&vt});
 
@@ -67,7 +67,7 @@ test_without_match()
 {
 	using namespace jlm::llvm;
 
-	jlm::valuetype vt;
+	jlm::tests::valuetype vt;
 	jlm::rvsdg::ctltype ctl2(2);
 	jlm::rvsdg::bittype bt1(1);
 	FunctionType ft({&ctl2, &vt, &vt}, {&vt});
@@ -112,7 +112,7 @@ test_gamma3()
 {
 	using namespace jlm::llvm;
 
-	jlm::valuetype vt;
+	jlm::tests::valuetype vt;
 	FunctionType ft({&jlm::rvsdg::bit32, &vt, &vt}, {&vt});
 
 	RvsdgModule rm(jlm::util::filepath(""), "", "");

@@ -87,7 +87,7 @@ test_invariant_reduction(void)
 {
 	using namespace jlm::rvsdg;
 
-	jlm::valuetype vtype;
+	jlm::tests::valuetype vtype;
 
 	jlm::rvsdg::graph graph;
 	gamma_op::normal_form(&graph)->set_invariant_reduction(true);

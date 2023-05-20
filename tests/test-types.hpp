@@ -8,7 +8,8 @@
 
 #include <jlm/rvsdg/type.hpp>
 
-namespace jlm {
+namespace jlm::tests
+{
 
 class valuetype final : public rvsdg::valuetype {
 public:

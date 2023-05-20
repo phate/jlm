@@ -45,7 +45,7 @@ test()
 	llvm::LLVMContext ctx;
 	auto lm = jlm2llvm::convert(im, ctx);
 
-	jlm::print(*lm);
+	jlm::tests::print(*lm);
 
 	return 0;
 }

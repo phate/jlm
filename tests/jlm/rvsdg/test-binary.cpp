@@ -14,8 +14,8 @@ test_flattened_binary_reduction()
 {
 	using namespace jlm::rvsdg;
 
-	jlm::valuetype vt;
-	jlm::binary_op op(vt, vt, binary_op::flags::associative);
+	jlm::tests::valuetype vt;
+	jlm::tests::binary_op op(vt, vt, binary_op::flags::associative);
 
 	/* test paralell reduction */
 	{
@@ -41,13 +41,13 @@ test_flattened_binary_reduction()
 		assert(graph.root()->nnodes() == 3);
 
 		auto node0 = node_output::node(ex->origin());
-		assert(is<jlm::binary_op>(node0));
+		assert(is<jlm::tests::binary_op>(node0));
 
 		auto node1 = node_output::node(node0->input(0)->origin());
-		assert(is<jlm::binary_op>(node1));
+		assert(is<jlm::tests::binary_op>(node1));
 
 		auto node2 = node_output::node(node0->input(1)->origin());
-		assert(is<jlm::binary_op>(node2));
+		assert(is<jlm::tests::binary_op>(node2));
 	}
 
 	/* test linear reduction */
@@ -74,13 +74,13 @@ test_flattened_binary_reduction()
 		assert(graph.root()->nnodes() == 3);
 
 		auto node0 = node_output::node(ex->origin());
-		assert(is<jlm::binary_op>(node0));
+		assert(is<jlm::tests::binary_op>(node0));
 
 		auto node1 = node_output::node(node0->input(0)->origin());
-		assert(is<jlm::binary_op>(node1));
+		assert(is<jlm::tests::binary_op>(node1));
 
 		auto node2 = node_output::node(node1->input(0)->origin());
-		assert(is<jlm::binary_op>(node2));
+		assert(is<jlm::tests::binary_op>(node2));
 	}
 }
 

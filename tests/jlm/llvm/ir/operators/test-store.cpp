@@ -19,7 +19,7 @@ test_store_mux_reduction()
 {
 	using namespace jlm::llvm;
 
-	jlm::valuetype vt;
+	jlm::tests::valuetype vt;
 	PointerType pt;
 	MemoryStateType mt;
 
@@ -65,7 +65,7 @@ test_multiple_origin_reduction()
 {
 	using namespace jlm::llvm;
 
-	jlm::valuetype vt;
+	jlm::tests::valuetype vt;
 	PointerType pt;
 	MemoryStateType mt;
 
@@ -101,7 +101,7 @@ test_store_alloca_reduction()
 {
 	using namespace jlm::llvm;
 
-	jlm::valuetype vt;
+	jlm::tests::valuetype vt;
 	MemoryStateType mt;
 	jlm::rvsdg::bittype bt(32);
 
@@ -146,7 +146,7 @@ test_store_store_reduction()
 {
 	using namespace jlm::llvm;
 
-	jlm::valuetype vt;
+	jlm::tests::valuetype vt;
 	PointerType pt;
 	MemoryStateType mt;
 

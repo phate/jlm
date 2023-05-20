@@ -14,14 +14,14 @@ test_node_copy(void)
 {
 	using namespace jlm::rvsdg;
 
-	jlm::statetype stype;
-	jlm::valuetype vtype;
+	jlm::tests::statetype stype;
+	jlm::tests::valuetype vtype;
 
 	jlm::rvsdg::graph graph;
 	auto s = graph.add_import({stype, ""});
 	auto v = graph.add_import({vtype, ""});
 
-	auto n1 = jlm::structural_node::create(graph.root(), 3);
+	auto n1 = jlm::tests::structural_node::create(graph.root(), 3);
 	auto i1 = structural_input::create(n1, s, stype);
 	auto i2 = structural_input::create(n1, v, vtype);
 	auto o1 = structural_output::create(n1, stype);
@@ -30,8 +30,8 @@ test_node_copy(void)
 	auto a1 = argument::create(n1->subregion(0), i1, stype);
 	auto a2 = argument::create(n1->subregion(0), i2, vtype);
 
-	auto n2 = jlm::test_op::create(n1->subregion(0), {a1}, {&stype});
-	auto n3 = jlm::test_op::create(n1->subregion(0), {a2}, {&vtype});
+	auto n2 = jlm::tests::test_op::create(n1->subregion(0), {a1}, {&stype});
+	auto n3 = jlm::tests::test_op::create(n1->subregion(0), {a2}, {&vtype});
 
 	result::create(n1->subregion(0), n2->output(0), o1, stype);
 	result::create(n1->subregion(0), n3->output(0), o2, vtype);
@@ -89,14 +89,14 @@ test_node_copy(void)
 static inline void
 test_node_depth()
 {
-	jlm::valuetype vt;
+	jlm::tests::valuetype vt;
 
 	jlm::rvsdg::graph graph;
 	auto x = graph.add_import({vt, "x"});
 
-	auto null = jlm::test_op::create(graph.root(), {}, {&vt});
-	auto bin = jlm::test_op::create(graph.root(), {null->output(0), x}, {&vt});
-	auto un = jlm::test_op::create(graph.root(), {bin->output(0)}, {&vt});
+	auto null = jlm::tests::test_op::create(graph.root(), {}, {&vt});
+	auto bin = jlm::tests::test_op::create(graph.root(), {null->output(0), x}, {&vt});
+	auto un = jlm::tests::test_op::create(graph.root(), {bin->output(0)}, {&vt});
 
 	graph.add_export(un->output(0), {un->output(0)->type(), "x"});
 

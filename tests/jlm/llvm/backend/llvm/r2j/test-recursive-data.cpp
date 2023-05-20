@@ -21,7 +21,7 @@ test()
 {
 	using namespace jlm::llvm;
 
-	jlm::valuetype vt;
+	jlm::tests::valuetype vt;
 	PointerType pt;
 
 	RvsdgModule rm(jlm::util::filepath(""), "", "");
@@ -47,7 +47,7 @@ test()
 			false);
 		auto dep1 = delta->add_ctxvar(r2->argument());
 		auto dep2 = delta->add_ctxvar(dep);
-		delta1 = delta->finalize(jlm::create_testop(delta->subregion(), {dep1, dep2}, {&vt})[0]);
+		delta1 = delta->finalize(jlm::tests::create_testop(delta->subregion(), {dep1, dep2}, {&vt})[0]);
 	}
 
 	{
@@ -60,7 +60,7 @@ test()
 			false);
 		auto dep1 = delta->add_ctxvar(r1->argument());
 		auto dep2 = delta->add_ctxvar(dep);
-		delta2 = delta->finalize(jlm::create_testop(delta->subregion(), {dep1, dep2}, {&vt})[0]);
+		delta2 = delta->finalize(jlm::tests::create_testop(delta->subregion(), {dep1, dep2}, {&vt})[0]);
 	}
 
 	r1->set_rvorigin(delta1);

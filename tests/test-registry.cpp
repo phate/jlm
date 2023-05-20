@@ -9,7 +9,8 @@
 #include <memory>
 #include <unordered_map>
 
-namespace jlm {
+namespace jlm::tests
+{
 
 class unit_test {
 public:

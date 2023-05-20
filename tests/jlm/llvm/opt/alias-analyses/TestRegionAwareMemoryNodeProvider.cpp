@@ -35,7 +35,7 @@ TestStore1()
    * Arrange
    */
   auto ValidateProvider = [](
-    const StoreTest1 & test,
+    const jlm::tests::StoreTest1 & test,
     const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
     const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -59,7 +59,7 @@ TestStore1()
     AssertMemoryNodes(lambdaExitNodes, expectedMemoryNodes);
   };
 
-  StoreTest1 test;
+  jlm::tests::StoreTest1 test;
   // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
@@ -83,7 +83,7 @@ TestStore2()
    * Arrange
    */
   auto ValidateProvider = [](
-    const StoreTest2 & test,
+    const jlm::tests::StoreTest2 & test,
     const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
     const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -109,7 +109,7 @@ TestStore2()
     AssertMemoryNodes(lambdaExitNodes, expectedMemoryNodes);
   };
 
-  StoreTest2 test;
+  jlm::tests::StoreTest2 test;
   // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
@@ -133,7 +133,7 @@ TestLoad1()
    * Arrange
    */
   auto ValidateProvider = [](
-    const LoadTest1 & test,
+    const jlm::tests::LoadTest1 & test,
     const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
     const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -147,7 +147,7 @@ TestLoad1()
     AssertMemoryNodes(lambdaExitNodes, {&lambdaMemoryNode, &externalMemoryNode});
   };
 
-  LoadTest1 test;
+  jlm::tests::LoadTest1 test;
   // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
@@ -171,7 +171,7 @@ TestLoad2()
    * Arrange
    */
   auto ValidateProvider = [](
-    const LoadTest2 & test,
+    const jlm::tests::LoadTest2 & test,
     const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
     const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -197,7 +197,7 @@ TestLoad2()
     AssertMemoryNodes(lambdaExitNodes, expectedMemoryNodes);
   };
 
-  LoadTest2 test;
+  jlm::tests::LoadTest2 test;
   // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
@@ -221,7 +221,7 @@ TestLoadFromUndef()
    * Arrange
    */
   auto ValidateProvider = [](
-    const LoadFromUndefTest & test,
+    const jlm::tests::LoadFromUndefTest & test,
     const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
     const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -232,7 +232,7 @@ TestLoadFromUndef()
     assert(numLambdaExitNodes == 0);
   };
 
-  LoadFromUndefTest test;
+  jlm::tests::LoadFromUndefTest test;
   // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
@@ -256,7 +256,7 @@ TestCall1()
    * Arrange
    */
   auto ValidateProvider = [](
-    const CallTest1 & test,
+    const jlm::tests::CallTest1 & test,
     const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
     const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -310,7 +310,7 @@ TestCall1()
     }
   };
 
-  CallTest1 test;
+  jlm::tests::CallTest1 test;
 //	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
@@ -334,7 +334,7 @@ TestCall2()
    * Arrange
    */
   auto ValidateProvider = [](
-    const CallTest2 & test,
+    const jlm::tests::CallTest2 & test,
     const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
     const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -398,7 +398,7 @@ TestCall2()
     }
   };
 
-  CallTest2 test;
+  jlm::tests::CallTest2 test;
 //	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
@@ -422,7 +422,7 @@ TestIndirectCall()
    * Arrange
    */
   auto ValidateProvider = [](
-    const IndirectCallTest1 & test,
+    const jlm::tests::IndirectCallTest1 & test,
     const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
     const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -491,7 +491,7 @@ TestIndirectCall()
     }
   };
 
-  IndirectCallTest1 test;
+  jlm::tests::IndirectCallTest1 test;
 //	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
@@ -515,7 +515,7 @@ TestIndirectCall2()
    * Arrange
    */
   auto ValidateProvider = [](
-    const IndirectCallTest2 & test,
+    const jlm::tests::IndirectCallTest2 & test,
     const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
     const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -640,7 +640,7 @@ TestIndirectCall2()
     }
   };
 
-  IndirectCallTest2 test;
+  jlm::tests::IndirectCallTest2 test;
 //	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
@@ -664,7 +664,7 @@ TestGamma()
    * Arrange
    */
   auto ValidateProvider = [](
-    const GammaTest & test,
+    const jlm::tests::GammaTest & test,
     const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
     const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -684,7 +684,7 @@ TestGamma()
     AssertMemoryNodes(lambdaExitNodes, {&lambdaMemoryNode, &externalMemoryNode});
   };
 
-  GammaTest test;
+  jlm::tests::GammaTest test;
   // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
@@ -708,7 +708,7 @@ TestTheta()
    * Arrange
    */
   auto ValidateProvider = [](
-    const ThetaTest & test,
+    const jlm::tests::ThetaTest & test,
     const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
     const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -725,7 +725,7 @@ TestTheta()
     AssertMemoryNodes(lambdaExitNodes, {&lambdaMemoryNode, &externalMemoryNode});
   };
 
-  ThetaTest test;
+  jlm::tests::ThetaTest test;
 //	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
@@ -749,7 +749,7 @@ TestDelta1()
    * Arrange
    */
   auto ValidateProvider = [](
-    const DeltaTest1 & test,
+    const jlm::tests::DeltaTest1 & test,
     const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
     const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -784,7 +784,7 @@ TestDelta1()
     }
   };
 
-  DeltaTest1 test;
+  jlm::tests::DeltaTest1 test;
   // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
@@ -808,7 +808,7 @@ TestDelta2()
    * Arrange
    */
   auto ValidateProvider = [](
-    const DeltaTest2 & test,
+    const jlm::tests::DeltaTest2 & test,
     const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
     const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -844,7 +844,7 @@ TestDelta2()
     }
   };
 
-  DeltaTest2 test;
+  jlm::tests::DeltaTest2 test;
 //	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
@@ -868,7 +868,7 @@ TestImports()
    * Arrange
    */
   auto ValidateProvider = [](
-    const ImportTest & test,
+    const jlm::tests::ImportTest & test,
     const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
     const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -904,7 +904,7 @@ TestImports()
     }
   };
 
-  ImportTest test;
+  jlm::tests::ImportTest test;
 //	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
@@ -928,7 +928,7 @@ TestPhi1()
    * Arrange
    */
   auto ValidateProvider = [](
-    const PhiTest1 & test,
+    const jlm::tests::PhiTest1 & test,
     const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
     const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -975,7 +975,7 @@ TestPhi1()
     }
   };
 
-  PhiTest1 test;
+  jlm::tests::PhiTest1 test;
 	// jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
@@ -999,7 +999,7 @@ TestPhi2()
    * Arrange
    */
   auto ValidateProvider = [](
-    const PhiTest2 & test,
+    const jlm::tests::PhiTest2 & test,
     const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
     const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -1147,7 +1147,7 @@ TestPhi2()
     }
   };
 
-  PhiTest2 test;
+  jlm::tests::PhiTest2 test;
   // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
@@ -1171,7 +1171,7 @@ TestMemcpy()
    * Arrange
    */
   auto ValidateProvider = [](
-    const MemcpyTest & test,
+    const jlm::tests::MemcpyTest & test,
     const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
     const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -1207,7 +1207,7 @@ TestMemcpy()
     }
   };
 
-  MemcpyTest test;
+  jlm::tests::MemcpyTest test;
 //	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
@@ -1231,7 +1231,7 @@ TestEscapedMemory1()
    * Arrange
    */
   auto ValidateProvider = [](
-    const EscapedMemoryTest1 & test,
+    const jlm::tests::EscapedMemoryTest1 & test,
     const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
     const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -1257,7 +1257,7 @@ TestEscapedMemory1()
     AssertMemoryNodes(lambdaExitNodes, expectedMemoryNodes);
   };
 
-  EscapedMemoryTest1 test;
+  jlm::tests::EscapedMemoryTest1 test;
 //	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
@@ -1281,7 +1281,7 @@ TestEscapedMemory2()
    * Arrange
    */
   auto ValidateProvider = [](
-    const EscapedMemoryTest2 & test,
+    const jlm::tests::EscapedMemoryTest2 & test,
     const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
     const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -1356,7 +1356,7 @@ TestEscapedMemory2()
     }
   };
 
-  EscapedMemoryTest2 test;
+  jlm::tests::EscapedMemoryTest2 test;
 //	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
@@ -1380,7 +1380,7 @@ TestEscapedMemory3()
    * Arrange
    */
   auto ValidateProvider = [](
-    const EscapedMemoryTest3 & test,
+    const jlm::tests::EscapedMemoryTest3 & test,
     const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
     const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
@@ -1406,7 +1406,7 @@ TestEscapedMemory3()
     AssertMemoryNodes(lambdaExitNodes, expectedMemoryNodes);
   };
 
-  EscapedMemoryTest3 test;
+  jlm::tests::EscapedMemoryTest3 test;
 //	jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
@@ -1429,7 +1429,7 @@ TestStatistics()
   /*
    * Arrange
    */
-  LoadTest1 test;
+  jlm::tests::LoadTest1 test;
   jlm::util::filepath filePath("/tmp/TestDisabledStatistics");
   std::remove(filePath.to_str().c_str());
 

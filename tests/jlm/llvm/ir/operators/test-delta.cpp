@@ -19,7 +19,7 @@ test()
 
 	/* setup graph */
 
-	jlm::valuetype vt;
+	jlm::tests::valuetype vt;
 	PointerType pt;
 	RvsdgModule rm(jlm::util::filepath(""), "", "");
 
@@ -33,7 +33,7 @@ test()
     "",
 		true);
 	auto dep = delta1->add_ctxvar(imp);
-	auto d1 = delta1->finalize(jlm::create_testop(delta1->subregion(), {dep}, {&vt})[0]);
+	auto d1 = delta1->finalize(jlm::tests::create_testop(delta1->subregion(), {dep}, {&vt})[0]);
 
 	auto delta2 = delta::node::Create(
     rm.Rvsdg().root(),
@@ -42,7 +42,7 @@ test()
 		linkage::internal_linkage,
     "",
 		false);
-	auto d2 = delta2->finalize(jlm::create_testop(delta2->subregion(), {}, {&vt})[0]);
+	auto d2 = delta2->finalize(jlm::tests::create_testop(delta2->subregion(), {}, {&vt})[0]);
 
   rm.Rvsdg().add_export(d1, {d1->type(), ""});
   rm.Rvsdg().add_export(d2, {d2->type(), ""});
