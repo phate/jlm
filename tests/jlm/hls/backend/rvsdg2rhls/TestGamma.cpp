@@ -17,7 +17,7 @@ TestWithMatch()
 {
 	using namespace jlm::llvm;
 
-	jlm::valuetype vt;
+	jlm::tests::valuetype vt;
 	jlm::rvsdg::bittype bt1(1);
 	FunctionType ft({&bt1, &vt, &vt}, {&vt});
 
@@ -55,7 +55,7 @@ TestWithoutMatch()
 {
 	using namespace jlm::llvm;
 
-	jlm::valuetype vt;
+	jlm::tests::valuetype vt;
 	jlm::rvsdg::ctltype ctl2(2);
 	jlm::rvsdg::bittype bt1(1);
 	FunctionType ft({&ctl2, &vt, &vt}, {&vt});

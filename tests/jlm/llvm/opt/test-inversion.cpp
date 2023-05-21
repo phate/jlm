@@ -14,7 +14,7 @@
 #include <jlm/llvm/opt/inversion.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static const jlm::valuetype vt;
+static const jlm::tests::valuetype vt;
 static jlm::util::StatisticsCollector statisticsCollector;
 
 static inline void
@@ -35,7 +35,7 @@ test1()
 	auto lvy = theta->add_loopvar(y);
 	theta->add_loopvar(z);
 
-	auto a = jlm::create_testop(theta->subregion(), {lvx->argument(), lvy->argument()},
+	auto a = jlm::tests::create_testop(theta->subregion(), {lvx->argument(), lvy->argument()},
 		{&jlm::rvsdg::bit1})[0];
 	auto predicate = jlm::rvsdg::match(1, {{1, 0}}, 1, 2, a);
 
@@ -44,8 +44,8 @@ test1()
 	auto evx = gamma->add_entryvar(lvx->argument());
 	auto evy = gamma->add_entryvar(lvy->argument());
 
-	auto b = jlm::create_testop(gamma->subregion(0), {evx->argument(0), evy->argument(0)}, {&vt})[0];
-	auto c = jlm::create_testop(gamma->subregion(1), {evx->argument(1), evy->argument(1)}, {&vt})[0];
+	auto b = jlm::tests::create_testop(gamma->subregion(0), {evx->argument(0), evy->argument(0)}, {&vt})[0];
+	auto c = jlm::tests::create_testop(gamma->subregion(1), {evx->argument(1), evy->argument(1)}, {&vt})[0];
 
 	auto xvy = gamma->add_exitvar({b, c});
 
@@ -81,8 +81,8 @@ test2()
 
 	auto lv1 = theta->add_loopvar(x);
 
-	auto n1 = jlm::create_testop(theta->subregion(), {lv1->argument()}, {&jlm::rvsdg::bit1})[0];
-	auto n2 = jlm::create_testop(theta->subregion(), {lv1->argument()}, {&vt})[0];
+	auto n1 = jlm::tests::create_testop(theta->subregion(), {lv1->argument()}, {&jlm::rvsdg::bit1})[0];
+	auto n2 = jlm::tests::create_testop(theta->subregion(), {lv1->argument()}, {&vt})[0];
 	auto predicate = jlm::rvsdg::match(1, {{1, 0}}, 1, 2, n1);
 
 	auto gamma = jlm::rvsdg::gamma_node::create(predicate, 2);

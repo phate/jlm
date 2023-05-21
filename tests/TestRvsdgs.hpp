@@ -7,6 +7,9 @@
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
+namespace jlm::tests
+{
+
 /**
 * \brief RvsdgTest class
 */
@@ -784,6 +787,7 @@ public:
   {
     return *CallG_;
   }
+
 private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
@@ -1642,3 +1646,5 @@ private:
 
   jlm::rvsdg::node * Alloca_;
 };
+
+}

@@ -17,7 +17,8 @@
 
 #include <jlm/llvm/ir/tac.hpp>
 
-namespace jlm {
+namespace jlm::tests
+{
 
 /* unary operation */
 

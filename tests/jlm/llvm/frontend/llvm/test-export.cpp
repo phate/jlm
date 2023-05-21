@@ -18,7 +18,7 @@ test()
 {
 	using namespace jlm::llvm;
 
-	jlm::valuetype vt;
+	jlm::tests::valuetype vt;
 	FunctionType ft({&vt}, {&vt});
 
 	ipgraph_module im(jlm::util::filepath(""), "", "");

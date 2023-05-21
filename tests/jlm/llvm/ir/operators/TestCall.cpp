@@ -20,7 +20,7 @@ TestCallTypeClassifierIndirectCall()
   /*
    * Arrange
    */
-	jlm::valuetype vt;
+	jlm::tests::valuetype vt;
   iostatetype iOStateType;
   MemoryStateType memoryStateType;
   loopstatetype loopStateType;
@@ -95,7 +95,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
 	auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
 	nf->set_mutable(false);
 
-  jlm::valuetype vt;
+  jlm::tests::valuetype vt;
   iostatetype iOStateType;
   MemoryStateType memoryStateType;
   loopstatetype loopStateType;
@@ -115,7 +115,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
     auto memoryStateArgument = lambda->fctargument(1);
     auto loopStateArgument = lambda->fctargument(2);
 
-    auto constant = jlm::test_op::create(lambda->subregion(), {}, {&vt});
+    auto constant = jlm::tests::test_op::create(lambda->subregion(), {}, {&vt});
 
     auto lambdaOutput = lambda->finalize(
       {constant->output(0), iOStateArgument, memoryStateArgument, loopStateArgument});
@@ -144,7 +144,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
       return otf;
     };
 
-    jlm::valuetype vt;
+    jlm::tests::valuetype vt;
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
     loopstatetype loopStateType;
@@ -206,7 +206,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
 	auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
 	nf->set_mutable(false);
 
-  jlm::valuetype vt;
+  jlm::tests::valuetype vt;
   iostatetype iOStateType;
   MemoryStateType memoryStateType;
   loopstatetype loopStateType;
@@ -226,7 +226,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
     auto memoryStateArgument = lambda->fctargument(1);
     auto loopStateArgument = lambda->fctargument(2);
 
-    auto c1 = jlm::test_op::create(lambda->subregion(), {}, {&vt});
+    auto c1 = jlm::tests::test_op::create(lambda->subregion(), {}, {&vt});
 
     return lambda->finalize({c1->output(0), iOStateArgument, memoryStateArgument, loopStateArgument});
   };
@@ -284,7 +284,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
         jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callResults[0])));
     };
 
-    jlm::valuetype vt;
+    jlm::tests::valuetype vt;
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
     loopstatetype loopStateType;
@@ -303,7 +303,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
     auto memoryStateArgument = lambda->fctargument(1);
     auto loopStateArgument = lambda->fctargument(2);
 
-    auto value = jlm::test_op::create(lambda->subregion(), {}, {&vt})->output(0);
+    auto value = jlm::tests::test_op::create(lambda->subregion(), {}, {&vt})->output(0);
 
     auto [loopValue, iOState, memoryState, loopState, callNode] = SetupOuterTheta(
       lambda->subregion(),

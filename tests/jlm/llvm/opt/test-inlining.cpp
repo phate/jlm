@@ -28,11 +28,11 @@ test1()
    */
 	RvsdgModule rm(jlm::util::filepath(""), "", "");
 	auto & graph = rm.Rvsdg();
-	auto i = graph.add_import({jlm::valuetype(), "i"});
+	auto i = graph.add_import({jlm::tests::valuetype(), "i"});
 
   auto SetupF1 = [&]()
   {
-    jlm::valuetype vt;
+    jlm::tests::valuetype vt;
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
     loopstatetype loopStateType;
@@ -47,14 +47,14 @@ test1()
       linkage::external_linkage);
     lambda->add_ctxvar(i);
 
-    auto t = jlm::test_op::create(lambda->subregion(), {lambda->fctargument(0)}, {&vt});
+    auto t = jlm::tests::test_op::create(lambda->subregion(), {lambda->fctargument(0)}, {&vt});
 
     return lambda->finalize({t->output(0), lambda->fctargument(1), lambda->fctargument(2), lambda->fctargument(3)});
   };
 
   auto SetupF2 = [&](lambda::output * f1)
   {
-    jlm::valuetype vt;
+    jlm::tests::valuetype vt;
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
     loopstatetype loopStateType;
@@ -124,7 +124,7 @@ test2()
    */
 	using namespace jlm::llvm;
 
-	jlm::valuetype vt;
+	jlm::tests::valuetype vt;
   iostatetype iOStateType;
   MemoryStateType memoryStateType;
   loopstatetype loopStateType;

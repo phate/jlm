@@ -5,7 +5,8 @@
 
 #include "test-operation.hpp"
 
-namespace jlm {
+namespace jlm::tests
+{
 
 /* unary operation */
 

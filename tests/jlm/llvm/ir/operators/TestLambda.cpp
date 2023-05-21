@@ -15,7 +15,7 @@ TestArgumentIterators()
 {
   using namespace jlm::llvm;
 
-  jlm::valuetype vt;
+  jlm::tests::valuetype vt;
   RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
 
   {
@@ -45,7 +45,7 @@ TestArgumentIterators()
       "f",
       linkage::external_linkage);
 
-    auto nullaryNode = jlm::create_testop(lambda->subregion(), {}, {&vt});
+    auto nullaryNode = jlm::tests::create_testop(lambda->subregion(), {}, {&vt});
 
     lambda->finalize({nullaryNode});
 
@@ -83,7 +83,7 @@ TestInvalidOperandRegion()
 {
   using namespace jlm::llvm;
 
-  jlm::valuetype vt;
+  jlm::tests::valuetype vt;
   FunctionType functionType({}, {&vt});
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
@@ -94,7 +94,7 @@ TestInvalidOperandRegion()
     functionType,
     "f",
     linkage::external_linkage);
-  auto result = jlm::create_testop(rvsdg->root(), {}, {&vt})[0];
+  auto result = jlm::tests::create_testop(rvsdg->root(), {}, {&vt})[0];
 
   bool invalidRegionErrorCaught = false;
   try {

@@ -10,5 +10,5 @@
 int main(int argc, char ** argv)
 {
 	assert(argc == 2);
-	return jlm::run_unit_test(argv[1]);
+	return jlm::tests::run_unit_test(argv[1]);
 }

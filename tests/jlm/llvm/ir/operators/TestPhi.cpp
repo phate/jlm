@@ -17,7 +17,7 @@ static int test_main()
 
   jlm::rvsdg::graph graph;
 
-  jlm::valuetype vtype;
+  jlm::tests::valuetype vtype;
   iostatetype iOStateType;
   MemoryStateType memoryStateType;
   loopstatetype loopStateType;

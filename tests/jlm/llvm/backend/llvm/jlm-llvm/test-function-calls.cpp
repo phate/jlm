@@ -59,7 +59,7 @@ test_malloc()
 
 	llvm::LLVMContext ctx;
 	auto lm = jlm::llvm::jlm2llvm::convert(*im, ctx);
-	jlm::print(*lm);
+	jlm::tests::print(*lm);
 
 	verify(*lm);
 }
@@ -115,7 +115,7 @@ test_free()
 
 	llvm::LLVMContext ctx;
 	auto llvmmod = jlm::llvm::jlm2llvm::convert(*ipgmod, ctx);
-	jlm::print(*llvmmod);
+	jlm::tests::print(*llvmmod);
 
 	verify(*llvmmod);
 }

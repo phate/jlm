@@ -19,7 +19,7 @@ test()
 {
 	using namespace jlm::llvm;
 
-	jlm::valuetype vt;
+	jlm::tests::valuetype vt;
 	ipgraph_module im(jlm::util::filepath(""), "", "");
 
 	auto d0 = data_node::Create(
@@ -55,8 +55,8 @@ test()
 	d2->add_dependency(d1);
 
 	tacsvector_t tvec1, tvec2;
-	tvec1.push_back(jlm::create_testop_tac({v0, v2}, {&vt}));
-	tvec2.push_back(jlm::create_testop_tac({v0, v1}, {&vt}));
+	tvec1.push_back(jlm::tests::create_testop_tac({v0, v2}, {&vt}));
+	tvec2.push_back(jlm::tests::create_testop_tac({v0, v1}, {&vt}));
 
 	d1->set_initialization(std::make_unique<data_node_init>(std::move(tvec1)));
 	d2->set_initialization(std::make_unique<data_node_init>(std::move(tvec2)));

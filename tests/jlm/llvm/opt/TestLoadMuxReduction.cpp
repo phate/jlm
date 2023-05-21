@@ -16,7 +16,7 @@ test_load_mux_reduction()
 {
   using namespace jlm::llvm;
 
-  jlm::valuetype vt;
+  jlm::tests::valuetype vt;
   PointerType pt;
   MemoryStateType mt;
 
@@ -69,7 +69,7 @@ test_load_mux_reduction2()
    */
   using namespace jlm::llvm;
 
-  jlm::valuetype vt;
+  jlm::tests::valuetype vt;
   PointerType pt;
   MemoryStateType mt;
 

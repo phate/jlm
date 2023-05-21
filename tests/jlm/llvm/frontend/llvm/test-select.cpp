@@ -56,7 +56,7 @@ test_scalar_select()
 
 	llvm::LLVMContext ctx;
 	auto llmod = setup(ctx);
-	jlm::print(*llmod);
+	jlm::tests::print(*llmod);
 
 	auto ipgmod = jlm::llvm::ConvertLlvmModule(*llmod);
 	print(*ipgmod, stdout);
@@ -90,7 +90,7 @@ test_vector_select()
 
 	llvm::LLVMContext ctx;
 	auto llmod = setup(ctx);
-	jlm::print(*llmod);
+	jlm::tests::print(*llmod);
 
 	auto ipgmod = jlm::llvm::ConvertLlvmModule(*llmod);
 	print(*ipgmod, stdout);

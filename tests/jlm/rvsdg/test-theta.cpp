@@ -16,7 +16,7 @@ test_main()
 	using namespace jlm::rvsdg;
 
 	jlm::rvsdg::graph graph;
-	jlm::valuetype t;
+	jlm::tests::valuetype t;
 
 	auto imp1 = graph.add_import({ctl2, "imp1"});
 	auto imp2 = graph.add_import({t, "imp2"});

@@ -5,7 +5,8 @@
 
 #include "test-types.hpp"
 
-namespace jlm {
+namespace jlm::tests
+{
 
 /* valuetype */
 

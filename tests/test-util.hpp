@@ -11,7 +11,8 @@
 
 #include <iostream>
 
-namespace jlm {
+namespace jlm::tests
+{
 
 static inline void
 print(const llvm::Module & module)

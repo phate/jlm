@@ -58,7 +58,7 @@ test_multiple_origin_reduction()
 	using namespace jlm::llvm;
 
 	MemoryStateType mt;
-	jlm::valuetype vt;
+	jlm::tests::valuetype vt;
 	PointerType pt;
 
 	jlm::rvsdg::graph graph;
@@ -168,7 +168,7 @@ test_load_store_reduction()
 {
   using namespace jlm::llvm;
 
-  jlm::valuetype vt;
+  jlm::tests::valuetype vt;
   PointerType pt;
   MemoryStateType mt;
 
@@ -205,7 +205,7 @@ test_load_load_reduction()
 {
 	using namespace jlm::llvm;
 
-	jlm::valuetype vt;
+	jlm::tests::valuetype vt;
 	PointerType pt;
 	MemoryStateType mt;
 

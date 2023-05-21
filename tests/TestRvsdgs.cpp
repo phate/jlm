@@ -5,6 +5,9 @@
 
 #include "TestRvsdgs.hpp"
 
+namespace jlm::tests
+{
+
 std::unique_ptr<jlm::llvm::RvsdgModule>
 StoreTest1::SetupRvsdg()
 {
@@ -3047,4 +3050,6 @@ LinkedListTest::SetupRvsdg()
   this->Alloca_ = alloca;
 
   return rvsdgModule;
+}
+
 }
