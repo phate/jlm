@@ -5,9 +5,10 @@
 
 #include "test-registry.hpp"
 
-#include <assert.h>
+#include <cassert>
+#include <iostream>
+#include <map>
 #include <memory>
-#include <unordered_map>
 
 namespace jlm::tests
 {
@@ -22,10 +23,12 @@ public:
   int (*verify)();
 };
 
-static std::unordered_map<std::string, std::unique_ptr<unit_test>> &
+using unit_test_map_t = std::map<std::string, std::unique_ptr<unit_test>>;
+
+static unit_test_map_t &
 GetUnitTestMap()
 {
-  static std::unordered_map<std::string, std::unique_ptr<unit_test>> unit_test_map;
+  static unit_test_map_t unit_test_map;
   return unit_test_map;
 }
 
@@ -41,6 +44,21 @@ run_unit_test(const std::string & name)
 {
   assert(GetUnitTestMap().find(name) != GetUnitTestMap().end());
   return GetUnitTestMap()[name]->verify();
+}
+
+int
+RunAllUnitTests()
+{
+  int fail = 0;
+  for (const auto & named_test : GetUnitTestMap())
+  {
+    std::cerr << named_test.first << std::endl;
+    if (named_test.second->verify())
+    {
+      fail = 1;
+    }
+  }
+  return fail;
 }
 
 }

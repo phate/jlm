@@ -1,1 +1,0 @@
-include $(JLM_ROOT)/tests/jlm/llvm/frontend/llvm/Makefile.sub

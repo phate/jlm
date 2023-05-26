@@ -41,10 +41,12 @@ jobs:
     # Compile MLIR version of jlm
     # --------
 
+    - name: Configure jlm
+      run: ./configure.sh --circt-path $(pwd)/jlm-eval-suite/circt/local CXX=clang++-16
     - name: Compile jlm
-      run: make CIRCT_PATH=$(pwd)/jlm-eval-suite/circt/local jlm-release -j `nproc`
-    - name: Place the bin directory to where it is expected by jlm-eval-suite
-      run: ln -s ${{ github.workspace }}/bin jlm-eval-suite/jlm/bin
+      run: make -j `nproc` -O
+    - name: Link the build output directory to where it is expected by jlm-eval-suite
+      run: ln -s ${{ github.workspace }}/build jlm-eval-suite/jlm/bin
 
     # --------
     # Run HLS test suite
