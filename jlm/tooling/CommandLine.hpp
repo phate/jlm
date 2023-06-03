@@ -90,6 +90,16 @@ public:
 
 private:
   inline static const char* AaSteensgaardAgnosticCommandLineArgument_ = "AASteensgaardAgnostic";
+  inline static const char* AaSteensgaardRegionAwareCommandLineArgument_ = "AASteensgaardRegionAware";
+  inline static const char* CommonNodeEliminationCommandLineArgument_ = "cne";
+  inline static const char* DeadNodeEliminationCommandLineArgument_ = "dne";
+  inline static const char* FunctionInliningCommandLineArgument_ = "iln";
+  inline static const char* InvariantValueRedirectionCommandLineArgument_ = "InvariantValueRedirection";
+  inline static const char* NodePullInCommandLineArgument_ = "pll";
+  inline static const char* NodePushOutCommandLineArgument_ = "psh";
+  inline static const char* ThetaGammaInversionCommandLineArgument_ = "ivt";
+  inline static const char* LoopUnrollingCommandLineArgument_ = "url";
+  inline static const char* NodeReductionCommandLineArgument_ = "red";
 };
 
 class JlcCommandLineOptions final : public CommandLineOptions {

@@ -103,17 +103,17 @@ JlmOptCommandLineOptions::FromCommandLineArgument(const std::string& commandLine
 {
   static std::unordered_map<std::string, OptimizationId> map(
     {
-      {"AASteensgaardAgnostic",     OptimizationId::AASteensgaardAgnostic},
-      {"AASteensgaardRegionAware",  OptimizationId::AASteensgaardRegionAware},
-      {"cne",                       OptimizationId::cne},
-      {"dne",                       OptimizationId::dne},
-      {"iln",                       OptimizationId::iln},
-      {"InvariantValueRedirection", OptimizationId::InvariantValueRedirection},
-      {"psh",                       OptimizationId::psh},
-      {"pll",                       OptimizationId::pll},
-      {"red",                       OptimizationId::red},
-      {"ivt",                       OptimizationId::ivt},
-      {"url",                       OptimizationId::url}
+      {AaSteensgaardAgnosticCommandLineArgument_,     OptimizationId::AASteensgaardAgnostic},
+      {AaSteensgaardRegionAwareCommandLineArgument_,  OptimizationId::AASteensgaardRegionAware},
+      {CommonNodeEliminationCommandLineArgument_,     OptimizationId::cne},
+      {DeadNodeEliminationCommandLineArgument_,       OptimizationId::dne},
+      {FunctionInliningCommandLineArgument_,          OptimizationId::iln},
+      {InvariantValueRedirectionCommandLineArgument_, OptimizationId::InvariantValueRedirection},
+      {NodePushOutCommandLineArgument_,               OptimizationId::psh},
+      {NodePullInCommandLineArgument_,                OptimizationId::pll},
+      {NodeReductionCommandLineArgument_,             OptimizationId::red},
+      {ThetaGammaInversionCommandLineArgument_,       OptimizationId::ivt},
+      {LoopUnrollingCommandLineArgument_,             OptimizationId::url}
     });
 
   if (map.find(commandLineArgument) != map.end())
@@ -127,17 +127,17 @@ JlmOptCommandLineOptions::ToCommandLineArgument(OptimizationId optimizationId)
 {
   static std::unordered_map<OptimizationId, const char*> map(
     {
-      {OptimizationId::AASteensgaardAgnostic,     "AASteensgaardAgnostic"},
-      {OptimizationId::AASteensgaardRegionAware,  "AASteensgaardRegionAware"},
-      {OptimizationId::cne,                       "cne"},
-      {OptimizationId::dne,                       "dne"},
-      {OptimizationId::iln,                       "iln"},
-      {OptimizationId::InvariantValueRedirection, "InvariantValueRedirection"},
-      {OptimizationId::psh,                       "psh"},
-      {OptimizationId::pll,                       "pll"},
-      {OptimizationId::red,                       "red"},
-      {OptimizationId::ivt,                       "ivt"},
-      {OptimizationId::url,                       "url"}
+      {OptimizationId::AASteensgaardAgnostic,     AaSteensgaardAgnosticCommandLineArgument_},
+      {OptimizationId::AASteensgaardRegionAware,  AaSteensgaardRegionAwareCommandLineArgument_},
+      {OptimizationId::cne,                       CommonNodeEliminationCommandLineArgument_},
+      {OptimizationId::dne,                       DeadNodeEliminationCommandLineArgument_},
+      {OptimizationId::iln,                       FunctionInliningCommandLineArgument_},
+      {OptimizationId::InvariantValueRedirection, InvariantValueRedirectionCommandLineArgument_},
+      {OptimizationId::psh,                       NodePushOutCommandLineArgument_},
+      {OptimizationId::pll,                       NodePullInCommandLineArgument_},
+      {OptimizationId::red,                       NodeReductionCommandLineArgument_},
+      {OptimizationId::ivt,                       ThetaGammaInversionCommandLineArgument_},
+      {OptimizationId::url,                       LoopUnrollingCommandLineArgument_}
     });
 
   if (map.find(optimizationId) != map.end())
