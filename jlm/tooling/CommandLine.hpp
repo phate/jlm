@@ -444,7 +444,7 @@ public:
   /**
    * Exception thrown in case of command line parsing errors.
    */
-  class Exception : util::error
+  class Exception : public util::error
   {
   public:
     ~Exception() noexcept override;
