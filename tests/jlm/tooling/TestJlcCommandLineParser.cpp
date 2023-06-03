@@ -13,6 +13,14 @@
 static const jlm::tooling::JlcCommandLineOptions &
 ParseCommandLineArguments(const std::vector<std::string> & commandLineArguments)
 {
+  auto cleanUp = [](const std::vector<char*>& array)
+  {
+    for (const auto& ptr : array)
+    {
+      delete[] ptr;
+    }
+  };
+
   std::vector<char*> array;
   for (const auto & commandLineArgument : commandLineArguments) {
     array.push_back(new char[commandLineArgument.size() + 1]);
@@ -21,14 +29,22 @@ ParseCommandLineArguments(const std::vector<std::string> & commandLineArguments)
   }
 
   static jlm::tooling::JlcCommandLineParser commandLineParser;
-  auto & commandLineOptions = commandLineParser.ParseCommandLineArguments(
-    static_cast<int>(array.size()),
-    &array[0]);
+  const jlm::tooling::JlcCommandLineOptions* commandLineOptions;
+  try
+  {
+    commandLineOptions = &commandLineParser.ParseCommandLineArguments(
+      static_cast<int>(array.size()),
+      &array[0]);
+  }
+  catch (...)
+  {
+    cleanUp(array);
+    throw;
+  }
 
-  for (const auto & ptr : array)
-    delete[] ptr;
+  cleanUp(array);
 
-  return commandLineOptions;
+  return *commandLineOptions;
 }
 
 static void
