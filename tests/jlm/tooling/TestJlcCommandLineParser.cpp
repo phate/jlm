@@ -127,21 +127,40 @@ Test4()
 static void
 TestJlmOptOptimizations()
 {
-  /*
-   * Arrange
-   */
+  using namespace jlm::tooling;
+
+  // Arrange
   std::vector<std::string> commandLineArguments({"jlc", "foobar.c", "-Jcne", "-Jdne"});
 
-  /*
-   * Act
-   */
+  // Act
   auto & commandLineOptions = ParseCommandLineArguments(commandLineArguments);
 
-  /*
-   * Assert
-   */
-  assert(commandLineOptions.JlmOptOptimizations_[0].compare("cne") == 0 && \
-         commandLineOptions.JlmOptOptimizations_[1].compare("dne") == 0);
+  // Assert
+  assert(commandLineOptions.JlmOptOptimizations_.size() == 2);
+  assert(commandLineOptions.JlmOptOptimizations_[0] == JlmOptCommandLineOptions::OptimizationId::cne);
+  assert(commandLineOptions.JlmOptOptimizations_[1] == JlmOptCommandLineOptions::OptimizationId::dne);
+}
+
+static void
+TestFalseJlmOptOptimization()
+{
+  using namespace jlm::tooling;
+
+  // Arrange
+  std::vector<std::string> commandLineArguments({"jlc", "-JFoobar", "foobar.c"});
+
+  // Act & Assert
+  bool exceptionThrown = false;
+  try
+  {
+    ParseCommandLineArguments(commandLineArguments);
+  }
+  catch (CommandLineParser::Exception&)
+  {
+    exceptionThrown = true;
+  }
+
+  assert(exceptionThrown);
 }
 
 static int
@@ -152,6 +171,7 @@ Test()
   Test3();
   Test4();
   TestJlmOptOptimizations();
+  TestFalseJlmOptOptimization();
 
   return 0;
 }
