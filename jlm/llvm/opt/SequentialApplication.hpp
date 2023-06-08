@@ -1,0 +1,50 @@
+/*
+ * Copyright 2023 Nico Reißmann <nico.reissmann@gmail.com>
+ * See COPYING for terms of redistribution.
+ */
+
+#ifndef JLM_LLVM_OPT_SEQUENTIALAPPLICATION_HPP
+#define JLM_LLVM_OPT_SEQUENTIALAPPLICATION_HPP
+
+#include <jlm/llvm/opt/optimization.hpp>
+
+namespace jlm::llvm
+{
+
+/**
+ * Sequentially applies a list of optimizations to an Rvsdg.
+ */
+class SequentialApplication final : public optimization
+{
+public:
+  class Statistics;
+
+  ~SequentialApplication() noexcept override;
+
+  explicit
+  SequentialApplication(std::vector<optimization*> optimizations)
+    : Optimizations_(std::move(optimizations))
+  {}
+
+  void
+  run(
+    RvsdgModule& rvsdgModule,
+    util::StatisticsCollector& statisticsCollector) override;
+
+  static void
+  CreateAndRun(
+    RvsdgModule& rvsdgModule,
+    util::StatisticsCollector& statisticsCollector,
+    std::vector<optimization*> optimizations)
+  {
+    SequentialApplication sequentialApplication(std::move(optimizations));
+    sequentialApplication.run(rvsdgModule, statisticsCollector);
+  }
+
+private:
+  std::vector<optimization*> Optimizations_;
+};
+
+}
+
+#endif //JLM_LLVM_OPT_SEQUENTIALAPPLICATION_HPP

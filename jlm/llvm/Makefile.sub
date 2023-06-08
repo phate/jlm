@@ -57,6 +57,7 @@ LIBLLVM_SRC = \
     jlm/llvm/opt/pull.cpp \
     jlm/llvm/opt/push.cpp \
     jlm/llvm/opt/reduction.cpp \
+    jlm/llvm/opt/SequentialApplication.cpp \
     jlm/llvm/opt/unroll.cpp \
 
 .PHONY: libllvm-debug
