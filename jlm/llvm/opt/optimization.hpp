@@ -42,14 +42,6 @@ public:
     jlm::util::StatisticsCollector & statisticsCollector) = 0;
 };
 
-/*
-	FIXME: This function should be removed.
-*/
-void
-optimize(RvsdgModule & rm,
-         jlm::util::StatisticsCollector & statisticsCollector,
-         const std::vector<optimization*> & opts);
-
 }
 
 #endif
