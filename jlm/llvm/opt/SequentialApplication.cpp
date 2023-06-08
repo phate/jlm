@@ -26,14 +26,14 @@ public:
   {}
 
   void
-  start(const jlm::rvsdg::graph & graph) noexcept
+  StartMeasuring(const jlm::rvsdg::graph & graph) noexcept
   {
     NumNodesBefore_ = jlm::rvsdg::nnodes(graph.root());
     Timer_.start();
   }
 
   void
-  end(const jlm::rvsdg::graph & graph) noexcept
+  EndMeasuring(const jlm::rvsdg::graph & graph) noexcept
   {
     Timer_.stop();
     NumNodesAfter_ = jlm::rvsdg::nnodes(graph.root());
@@ -72,14 +72,14 @@ SequentialApplication::run(
   util::StatisticsCollector& statisticsCollector)
 {
   auto statistics = Statistics::Create(rvsdgModule.SourceFileName());
-  statistics->start(rvsdgModule.Rvsdg());
+  statistics->StartMeasuring(rvsdgModule.Rvsdg());
 
   for (const auto & optimization : Optimizations_)
   {
     optimization->run(rvsdgModule, statisticsCollector);
   }
 
-  statistics->end(rvsdgModule.Rvsdg());
+  statistics->EndMeasuring(rvsdgModule.Rvsdg());
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
 
