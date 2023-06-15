@@ -115,30 +115,65 @@ JlcCommandGraphGenerator::GenerateCommandGraph(const JlcCommandLineOptions & com
     if (compilation.RequiresOptimization())
     {
       std::vector<JlmOptCommand::Optimization> optimizations;
-      if (!commandLineOptions.JlmOptOptimizations_.empty()) {
-        static std::unordered_map<std::string, JlmOptCommand::Optimization>map(
-        {
-          {"AASteensgaardAgnostic", JlmOptCommand::Optimization::AASteensgaardAgnostic},
-          {"AASteensgaardRegionAware", JlmOptCommand::Optimization::AASteensgaardRegionAware},
-          {"cne", JlmOptCommand::Optimization::CommonNodeElimination},
-          {"dne", JlmOptCommand::Optimization::DeadNodeElimination},
-          {"iln", JlmOptCommand::Optimization::FunctionInlining},
-          {"InvariantValueRedirection", JlmOptCommand::Optimization::InvariantValueRedirection},
-          {"psh", JlmOptCommand::Optimization::NodePushOut},
-          {"pll", JlmOptCommand::Optimization::NodePullIn},
-          {"red", JlmOptCommand::Optimization::NodeReduction},
-          {"ivt", JlmOptCommand::Optimization::ThetaGammaInversion},
-          {"url", JlmOptCommand::Optimization::LoopUnrolling},
-        });
+      if (!commandLineOptions.JlmOptOptimizations_.empty())
+      {
+        static std::unordered_map<JlmOptCommandLineOptions::OptimizationId, JlmOptCommand::Optimization> map(
+          {
+            {
+              JlmOptCommandLineOptions::OptimizationId::AASteensgaardAgnostic,
+              JlmOptCommand::Optimization::AASteensgaardAgnostic
+            },
+            {
+              JlmOptCommandLineOptions::OptimizationId::AASteensgaardRegionAware,
+              JlmOptCommand::Optimization::AASteensgaardRegionAware
+            },
+            {
+              JlmOptCommandLineOptions::OptimizationId::cne,
+              JlmOptCommand::Optimization::CommonNodeElimination
+            },
+            {
+              JlmOptCommandLineOptions::OptimizationId::dne,
+              JlmOptCommand::Optimization::DeadNodeElimination
+            },
+            {
+              JlmOptCommandLineOptions::OptimizationId::iln,
+              JlmOptCommand::Optimization::FunctionInlining
+            },
+            {
+              JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+              JlmOptCommand::Optimization::InvariantValueRedirection
+            },
+            {
+              JlmOptCommandLineOptions::OptimizationId::psh,
+              JlmOptCommand::Optimization::NodePushOut
+            },
+            {
+              JlmOptCommandLineOptions::OptimizationId::pll,
+              JlmOptCommand::Optimization::NodePullIn
+            },
+            {
+              JlmOptCommandLineOptions::OptimizationId::red,
+              JlmOptCommand::Optimization::NodeReduction
+            },
+            {
+              JlmOptCommandLineOptions::OptimizationId::ivt,
+              JlmOptCommand::Optimization::ThetaGammaInversion
+            },
+            {
+              JlmOptCommandLineOptions::OptimizationId::url,
+              JlmOptCommand::Optimization::LoopUnrolling},
+          });
+
         for (const auto & jlmOpt : commandLineOptions.JlmOptOptimizations_)
-	{
+        {
           JLM_ASSERT(map.find(jlmOpt) != map.end());
           optimizations.push_back(map[jlmOpt]);
-	}
-      /*
-       * If a default optimization level has been specified (-O) and no specific jlm options
-       * have been specified (-J) then use a default set of optimizations.
-       */
+        }
+
+        /*
+         * If a default optimization level has been specified (-O) and no specific jlm options
+         * have been specified (-J) then use a default set of optimizations.
+         */
       } else if (commandLineOptions.JlmOptOptimizations_.empty()
           && commandLineOptions.OptimizationLevel_ == JlcCommandLineOptions::OptimizationLevel::O3)
       {

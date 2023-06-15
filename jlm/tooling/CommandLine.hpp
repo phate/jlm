@@ -33,6 +33,75 @@ public:
   Reset() noexcept = 0;
 };
 
+class optimization;
+
+/**
+ * Command line options for the \a jlm-opt command line tool.
+ */
+class JlmOptCommandLineOptions final : public CommandLineOptions {
+public:
+  enum class OutputFormat {
+    Llvm,
+    Xml
+  };
+
+  enum class OptimizationId
+  {
+    FirstEnumValue, // must always be the first enum value, used for iteration
+
+    AASteensgaardAgnostic,
+    AASteensgaardRegionAware,
+    cne,
+    dne,
+    iln,
+    InvariantValueRedirection,
+    psh,
+    red,
+    ivt,
+    url,
+    pll,
+
+    LastEnumValue // must always be the last enum value, used for iteration
+  };
+
+  JlmOptCommandLineOptions()
+    : InputFile_("")
+    , OutputFile_("")
+    , OutputFormat_(OutputFormat::Llvm)
+  {}
+
+  void
+  Reset() noexcept override;
+
+  static OptimizationId
+  FromCommandLineArgument(const std::string& commandLineArgument);
+
+  static const char*
+  ToCommandLineArgument(OptimizationId optimizationId);
+
+  static llvm::optimization *
+  GetOptimization(enum OptimizationId optimizationId);
+
+  util::filepath InputFile_;
+  util::filepath OutputFile_;
+  OutputFormat OutputFormat_;
+  util::StatisticsCollectorSettings StatisticsCollectorSettings_;
+  std::vector<jlm::llvm::optimization*> Optimizations_;
+
+private:
+  inline static const char* AaSteensgaardAgnosticCommandLineArgument_ = "AASteensgaardAgnostic";
+  inline static const char* AaSteensgaardRegionAwareCommandLineArgument_ = "AASteensgaardRegionAware";
+  inline static const char* CommonNodeEliminationCommandLineArgument_ = "cne";
+  inline static const char* DeadNodeEliminationCommandLineArgument_ = "dne";
+  inline static const char* FunctionInliningCommandLineArgument_ = "iln";
+  inline static const char* InvariantValueRedirectionCommandLineArgument_ = "InvariantValueRedirection";
+  inline static const char* NodePullInCommandLineArgument_ = "pll";
+  inline static const char* NodePushOutCommandLineArgument_ = "psh";
+  inline static const char* ThetaGammaInversionCommandLineArgument_ = "ivt";
+  inline static const char* LoopUnrollingCommandLineArgument_ = "url";
+  inline static const char* NodeReductionCommandLineArgument_ = "red";
+};
+
 class JlcCommandLineOptions final : public CommandLineOptions {
 public:
   class Compilation;
@@ -98,7 +167,7 @@ public:
   std::vector<std::string> Warnings_;
   std::vector<std::string> IncludePaths_;
   std::vector<std::string> Flags_;
-  std::vector<std::string> JlmOptOptimizations_;
+  std::vector<JlmOptCommandLineOptions::OptimizationId> JlmOptOptimizations_;
 
   std::vector<Compilation> Compilations_;
 };
@@ -187,34 +256,6 @@ private:
   util::filepath OutputFile_;
   util::filepath DependencyFile_;
   const std::string Mt_;
-};
-
-class optimization;
-
-/**
- * Command line options for the \a jlm-opt command line tool.
- */
-class JlmOptCommandLineOptions final : public CommandLineOptions {
-public:
-  enum class OutputFormat {
-    Llvm,
-    Xml
-  };
-
-  JlmOptCommandLineOptions()
-    : InputFile_("")
-    , OutputFile_("")
-    , OutputFormat_(OutputFormat::Llvm)
-  {}
-
-  void
-  Reset() noexcept override;
-
-  util::filepath InputFile_;
-  util::filepath OutputFile_;
-  OutputFormat OutputFormat_;
-  util::StatisticsCollectorSettings StatisticsCollectorSettings_;
-  std::vector<jlm::llvm::optimization*> Optimizations_;
 };
 
 /**
@@ -410,6 +451,20 @@ private:
  */
 class CommandLineParser {
 public:
+  /**
+   * Exception thrown in case of command line parsing errors.
+   */
+  class Exception : public util::error
+  {
+  public:
+    ~Exception() noexcept override;
+
+    explicit
+    Exception(const std::string & message)
+    : util::error(message)
+    {}
+  };
+
   virtual
   ~CommandLineParser() noexcept;
 
@@ -457,20 +512,6 @@ private:
  */
 class JlmOptCommandLineParser final : public CommandLineParser {
 public:
-  enum class OptimizationId {
-    AASteensgaardAgnostic,
-    AASteensgaardRegionAware,
-    cne,
-    dne,
-    iln,
-    InvariantValueRedirection,
-    psh,
-    red,
-    ivt,
-    url,
-    pll,
-  };
-
   ~JlmOptCommandLineParser() noexcept override;
 
   const JlmOptCommandLineOptions &
@@ -480,9 +521,6 @@ public:
   Parse(int argc, char ** argv);
 
 private:
-  static llvm::optimization *
-  GetOptimization(enum OptimizationId optimizationId);
-
   JlmOptCommandLineOptions CommandLineOptions_;
 };
 

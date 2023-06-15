@@ -13,6 +13,14 @@
 static const jlm::tooling::JlcCommandLineOptions &
 ParseCommandLineArguments(const std::vector<std::string> & commandLineArguments)
 {
+  auto cleanUp = [](const std::vector<char*>& array)
+  {
+    for (const auto& ptr : array)
+    {
+      delete[] ptr;
+    }
+  };
+
   std::vector<char*> array;
   for (const auto & commandLineArgument : commandLineArguments) {
     array.push_back(new char[commandLineArgument.size() + 1]);
@@ -21,14 +29,22 @@ ParseCommandLineArguments(const std::vector<std::string> & commandLineArguments)
   }
 
   static jlm::tooling::JlcCommandLineParser commandLineParser;
-  auto & commandLineOptions = commandLineParser.ParseCommandLineArguments(
-    static_cast<int>(array.size()),
-    &array[0]);
+  const jlm::tooling::JlcCommandLineOptions* commandLineOptions;
+  try
+  {
+    commandLineOptions = &commandLineParser.ParseCommandLineArguments(
+      static_cast<int>(array.size()),
+      &array[0]);
+  }
+  catch (...)
+  {
+    cleanUp(array);
+    throw;
+  }
 
-  for (const auto & ptr : array)
-    delete[] ptr;
+  cleanUp(array);
 
-  return commandLineOptions;
+  return *commandLineOptions;
 }
 
 static void
@@ -127,21 +143,40 @@ Test4()
 static void
 TestJlmOptOptimizations()
 {
-  /*
-   * Arrange
-   */
+  using namespace jlm::tooling;
+
+  // Arrange
   std::vector<std::string> commandLineArguments({"jlc", "foobar.c", "-Jcne", "-Jdne"});
 
-  /*
-   * Act
-   */
+  // Act
   auto & commandLineOptions = ParseCommandLineArguments(commandLineArguments);
 
-  /*
-   * Assert
-   */
-  assert(commandLineOptions.JlmOptOptimizations_[0].compare("cne") == 0 && \
-         commandLineOptions.JlmOptOptimizations_[1].compare("dne") == 0);
+  // Assert
+  assert(commandLineOptions.JlmOptOptimizations_.size() == 2);
+  assert(commandLineOptions.JlmOptOptimizations_[0] == JlmOptCommandLineOptions::OptimizationId::cne);
+  assert(commandLineOptions.JlmOptOptimizations_[1] == JlmOptCommandLineOptions::OptimizationId::dne);
+}
+
+static void
+TestFalseJlmOptOptimization()
+{
+  using namespace jlm::tooling;
+
+  // Arrange
+  std::vector<std::string> commandLineArguments({"jlc", "-JFoobar", "foobar.c"});
+
+  // Act & Assert
+  bool exceptionThrown = false;
+  try
+  {
+    ParseCommandLineArguments(commandLineArguments);
+  }
+  catch (CommandLineParser::Exception&)
+  {
+    exceptionThrown = true;
+  }
+
+  assert(exceptionThrown);
 }
 
 static int
@@ -152,6 +187,7 @@ Test()
   Test3();
   Test4();
   TestJlmOptOptimizations();
+  TestFalseJlmOptOptimization();
 
   return 0;
 }

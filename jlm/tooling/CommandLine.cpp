@@ -98,6 +98,90 @@ JlmOptCommandLineOptions::Reset() noexcept
   Optimizations_.clear();
 }
 
+JlmOptCommandLineOptions::OptimizationId
+JlmOptCommandLineOptions::FromCommandLineArgument(const std::string& commandLineArgument)
+{
+  static std::unordered_map<std::string, OptimizationId> map(
+    {
+      {AaSteensgaardAgnosticCommandLineArgument_,     OptimizationId::AASteensgaardAgnostic},
+      {AaSteensgaardRegionAwareCommandLineArgument_,  OptimizationId::AASteensgaardRegionAware},
+      {CommonNodeEliminationCommandLineArgument_,     OptimizationId::cne},
+      {DeadNodeEliminationCommandLineArgument_,       OptimizationId::dne},
+      {FunctionInliningCommandLineArgument_,          OptimizationId::iln},
+      {InvariantValueRedirectionCommandLineArgument_, OptimizationId::InvariantValueRedirection},
+      {NodePushOutCommandLineArgument_,               OptimizationId::psh},
+      {NodePullInCommandLineArgument_,                OptimizationId::pll},
+      {NodeReductionCommandLineArgument_,             OptimizationId::red},
+      {ThetaGammaInversionCommandLineArgument_,       OptimizationId::ivt},
+      {LoopUnrollingCommandLineArgument_,             OptimizationId::url}
+    });
+
+  if (map.find(commandLineArgument) != map.end())
+    return map[commandLineArgument];
+
+  throw util::error("Unknown command line argument: " + commandLineArgument);
+}
+
+const char*
+JlmOptCommandLineOptions::ToCommandLineArgument(OptimizationId optimizationId)
+{
+  static std::unordered_map<OptimizationId, const char*> map(
+    {
+      {OptimizationId::AASteensgaardAgnostic,     AaSteensgaardAgnosticCommandLineArgument_},
+      {OptimizationId::AASteensgaardRegionAware,  AaSteensgaardRegionAwareCommandLineArgument_},
+      {OptimizationId::cne,                       CommonNodeEliminationCommandLineArgument_},
+      {OptimizationId::dne,                       DeadNodeEliminationCommandLineArgument_},
+      {OptimizationId::iln,                       FunctionInliningCommandLineArgument_},
+      {OptimizationId::InvariantValueRedirection, InvariantValueRedirectionCommandLineArgument_},
+      {OptimizationId::psh,                       NodePushOutCommandLineArgument_},
+      {OptimizationId::pll,                       NodePullInCommandLineArgument_},
+      {OptimizationId::red,                       NodeReductionCommandLineArgument_},
+      {OptimizationId::ivt,                       ThetaGammaInversionCommandLineArgument_},
+      {OptimizationId::url,                       LoopUnrollingCommandLineArgument_}
+    });
+
+  if (map.find(optimizationId) != map.end())
+    return map[optimizationId];
+
+  throw util::error("Unknown optimization identifier");
+}
+
+llvm::optimization *
+JlmOptCommandLineOptions::GetOptimization(enum OptimizationId id)
+{
+  static llvm::aa::SteensgaardAgnostic steensgaardAgnostic;
+  static llvm::aa::SteensgaardRegionAware steensgaardRegionAware;
+  static llvm::cne commonNodeElimination;
+  static llvm::DeadNodeElimination deadNodeElimination;
+  static llvm::fctinline functionInlining;
+  static llvm::InvariantValueRedirection invariantValueRedirection;
+  static llvm::pullin nodePullIn;
+  static llvm::pushout nodePushOt;
+  static llvm::tginversion thetaGammaInversion;
+  static llvm::loopunroll loopUnrolling(4);
+  static llvm::nodereduction nodeReduction;
+
+  static std::unordered_map<OptimizationId, llvm::optimization*> map(
+    {
+      {OptimizationId::AASteensgaardAgnostic,     &steensgaardAgnostic},
+      {OptimizationId::AASteensgaardRegionAware,  &steensgaardRegionAware},
+      {OptimizationId::cne,                       &commonNodeElimination},
+      {OptimizationId::dne,                       &deadNodeElimination},
+      {OptimizationId::iln,                       &functionInlining},
+      {OptimizationId::InvariantValueRedirection, &invariantValueRedirection},
+      {OptimizationId::pll,                       &nodePullIn},
+      {OptimizationId::psh,                       &nodePushOt},
+      {OptimizationId::ivt,                       &thetaGammaInversion},
+      {OptimizationId::url,                       &loopUnrolling},
+      {OptimizationId::red,                       &nodeReduction}
+    });
+
+  if (map.find(id) != map.end())
+    return map[id];
+
+  throw util::error("Unknown optimization identifier");
+}
+
 void
 JlmHlsCommandLineOptions::Reset() noexcept
 {
@@ -118,12 +202,36 @@ JhlsCommandLineOptions::Reset() noexcept
 CommandLineParser::~CommandLineParser() noexcept
 = default;
 
+CommandLineParser::Exception::~Exception() noexcept
+= default;
+
 JlcCommandLineParser::~JlcCommandLineParser() noexcept
 = default;
 
 const JlcCommandLineOptions &
 JlcCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
 {
+  auto checkAndConvertJlmOptOptimizations = [](const ::llvm::cl::list<std::string>& optimizations)
+  {
+    std::vector<JlmOptCommandLineOptions::OptimizationId> optimizationIds;
+    for (auto & optimization : optimizations)
+    {
+      JlmOptCommandLineOptions::OptimizationId optimizationId;
+      try
+      {
+        optimizationId = JlmOptCommandLineOptions::FromCommandLineArgument(optimization);
+      }
+      catch (util::error&)
+      {
+        throw CommandLineParser::Exception("Unknown jlm-opt optimization: " + optimization);
+      }
+
+      optimizationIds.emplace_back(optimizationId);
+    }
+
+    return optimizationIds;
+  };
+
   CommandLineOptions_.Reset();
 
   using namespace ::llvm;
@@ -312,7 +420,7 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
   CommandLineOptions_.OnlyPrintCommands_ = onlyPrintCommands;
   CommandLineOptions_.GenerateDebugInformation_ = generateDebugInformation;
   CommandLineOptions_.Flags_ = flags;
-  CommandLineOptions_.JlmOptOptimizations_ = jlmOptimizations;
+  CommandLineOptions_.JlmOptOptimizations_ = checkAndConvertJlmOptOptimizations(jlmOptimizations);
   CommandLineOptions_.Verbose_ = verbose;
   CommandLineOptions_.Rdynamic_ = rDynamic;
   CommandLineOptions_.Suppress_ = suppress;
@@ -360,40 +468,6 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
 
 JlmOptCommandLineParser::~JlmOptCommandLineParser() noexcept
 = default;
-
-llvm::optimization *
-JlmOptCommandLineParser::GetOptimization(enum OptimizationId id)
-{
-  static llvm::aa::SteensgaardAgnostic steensgaardAgnostic;
-  static llvm::aa::SteensgaardRegionAware steensgaardRegionAware;
-  static llvm::cne commonNodeElimination;
-  static llvm::DeadNodeElimination deadNodeElimination;
-  static llvm::fctinline functionInlining;
-  static llvm::InvariantValueRedirection invariantValueRedirection;
-  static llvm::pullin nodePullIn;
-  static llvm::pushout nodePushOt;
-  static llvm::tginversion thetaGammaInversion;
-  static llvm::loopunroll loopUnrolling(4);
-  static llvm::nodereduction nodeReduction;
-
-  static std::unordered_map<OptimizationId, llvm::optimization*> map(
-    {
-      {OptimizationId::AASteensgaardAgnostic,     &steensgaardAgnostic},
-      {OptimizationId::AASteensgaardRegionAware,  &steensgaardRegionAware},
-      {OptimizationId::cne,                       &commonNodeElimination},
-      {OptimizationId::dne,                       &deadNodeElimination},
-      {OptimizationId::iln,                       &functionInlining},
-      {OptimizationId::InvariantValueRedirection, &invariantValueRedirection},
-      {OptimizationId::pll,                       &nodePullIn},
-      {OptimizationId::psh,                       &nodePushOt},
-      {OptimizationId::ivt,                       &thetaGammaInversion},
-      {OptimizationId::url,                       &loopUnrolling},
-      {OptimizationId::red,                       &nodeReduction}
-    });
-
-  JLM_ASSERT(map.find(id) != map.end());
-  return map[id];
-}
 
 const JlmOptCommandLineOptions &
 JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
@@ -527,51 +601,63 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
         "Output XML")),
     cl::desc("Select output format"));
 
-  cl::list<OptimizationId> optimizationIds(
+  auto aASteensgaardAgnostic = JlmOptCommandLineOptions::OptimizationId::AASteensgaardAgnostic;
+  auto aASteensgaardRegionAware = JlmOptCommandLineOptions::OptimizationId::AASteensgaardRegionAware;
+  auto commonNodeElimination = JlmOptCommandLineOptions::OptimizationId::cne;
+  auto deadNodeElimination = JlmOptCommandLineOptions::OptimizationId::dne;
+  auto functionInlining = JlmOptCommandLineOptions::OptimizationId::iln;
+  auto invariantValueRedirection = JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection;
+  auto nodePushOut = JlmOptCommandLineOptions::OptimizationId::psh;
+  auto nodePullIn = JlmOptCommandLineOptions::OptimizationId::pll;
+  auto nodeReduction = JlmOptCommandLineOptions::OptimizationId::red;
+  auto thetaGammaInversion = JlmOptCommandLineOptions::OptimizationId::ivt;
+  auto loopUnrolling = JlmOptCommandLineOptions::OptimizationId::url;
+
+  cl::list<JlmOptCommandLineOptions::OptimizationId> optimizationIds(
     cl::values(
       ::clEnumValN(
-        OptimizationId::AASteensgaardAgnostic,
-        "AASteensgaardAgnostic",
+        aASteensgaardAgnostic,
+        JlmOptCommandLineOptions::ToCommandLineArgument(aASteensgaardAgnostic),
         "Steensgaard alias analysis with agnostic memory state encoding."),
       ::clEnumValN(
-        OptimizationId::AASteensgaardRegionAware,
-        "AASteensgaardRegionAware",
+        aASteensgaardRegionAware,
+        JlmOptCommandLineOptions::ToCommandLineArgument(aASteensgaardRegionAware),
         "Steensgaard alias analysis with region-aware memory state encoding."),
       ::clEnumValN(
-        OptimizationId::cne,
-        "cne",
+        commonNodeElimination,
+        JlmOptCommandLineOptions::ToCommandLineArgument(commonNodeElimination),
         "Common node elimination"),
       ::clEnumValN(
-        OptimizationId::dne,
-        "dne",
+        deadNodeElimination,
+        JlmOptCommandLineOptions::ToCommandLineArgument(deadNodeElimination),
         "Dead node elimination"),
       ::clEnumValN(
-        OptimizationId::iln,
-        "iln",
+        functionInlining,
+        JlmOptCommandLineOptions::ToCommandLineArgument(functionInlining),
         "Function inlining"),
       ::clEnumValN(
-        OptimizationId::InvariantValueRedirection,
-        "InvariantValueRedirection",
+        invariantValueRedirection,
+        JlmOptCommandLineOptions::ToCommandLineArgument(invariantValueRedirection),
         "Invariant Value Redirection"),
       ::clEnumValN(
-        OptimizationId::psh,
-        "psh",
+        nodePushOut,
+        JlmOptCommandLineOptions::ToCommandLineArgument(nodePushOut),
         "Node push out"),
       ::clEnumValN(
-        OptimizationId::pll,
-        "pll",
+        nodePullIn,
+        JlmOptCommandLineOptions::ToCommandLineArgument(nodePullIn),
         "Node pull in"),
       ::clEnumValN(
-        OptimizationId::red,
-        "red",
+        nodeReduction,
+        JlmOptCommandLineOptions::ToCommandLineArgument(nodeReduction),
         "Node reductions"),
       ::clEnumValN(
-        OptimizationId::ivt,
-        "ivt",
+        thetaGammaInversion,
+        JlmOptCommandLineOptions::ToCommandLineArgument(thetaGammaInversion),
         "Theta-gamma inversion"),
       ::clEnumValN(
-        OptimizationId::url,
-        "url",
+        loopUnrolling,
+        JlmOptCommandLineOptions::ToCommandLineArgument(loopUnrolling),
         "Loop unrolling")),
     cl::desc("Perform optimization"));
 
@@ -584,8 +670,9 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
     CommandLineOptions_.StatisticsCollectorSettings_.SetFilePath(statisticFile);
 
   std::vector<llvm::optimization*> optimizations;
-  for (auto & optimizationId : optimizationIds)
-    optimizations.push_back(GetOptimization(optimizationId));
+  for (auto &optimizationId: optimizationIds)
+    optimizations.push_back(JlmOptCommandLineOptions::GetOptimization(optimizationId));
+
 
   util::HashSet<util::Statistics::Id> printStatisticsIds({printStatistics.begin(), printStatistics.end()});
 
