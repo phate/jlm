@@ -114,48 +114,11 @@ JlcCommandGraphGenerator::GenerateCommandGraph(const JlcCommandLineOptions & com
 
     if (compilation.RequiresOptimization())
     {
-      std::vector<JlmOptCommandLineOptions::OptimizationId> optimizations;
-      if (!commandLineOptions.JlmOptOptimizations_.empty())
-      {
-        optimizations = commandLineOptions.JlmOptOptimizations_;
-        /*
-         * If a default optimization level has been specified (-O) and no specific jlm options
-         * have been specified (-J) then use a default set of optimizations.
-         */
-      }
-      else if (commandLineOptions.JlmOptOptimizations_.empty()
-          && commandLineOptions.OptimizationLevel_ == JlcCommandLineOptions::OptimizationLevel::O3)
-      {
-        /*
-         * Only -O3 sets default optimizations
-         */
-        optimizations = {
-          JlmOptCommandLineOptions::OptimizationId::iln,
-          JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
-          JlmOptCommandLineOptions::OptimizationId::red,
-          JlmOptCommandLineOptions::OptimizationId::dne,
-          JlmOptCommandLineOptions::OptimizationId::ivt,
-          JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
-          JlmOptCommandLineOptions::OptimizationId::dne,
-          JlmOptCommandLineOptions::OptimizationId::psh,
-          JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
-          JlmOptCommandLineOptions::OptimizationId::dne,
-          JlmOptCommandLineOptions::OptimizationId::red,
-          JlmOptCommandLineOptions::OptimizationId::cne,
-          JlmOptCommandLineOptions::OptimizationId::dne,
-          JlmOptCommandLineOptions::OptimizationId::pll,
-          JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
-          JlmOptCommandLineOptions::OptimizationId::dne,
-          JlmOptCommandLineOptions::OptimizationId::url,
-          JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection
-        };
-      }
-
       auto & jlmOptCommandNode = JlmOptCommand::Create(
         *commandGraph,
         CreateParserCommandOutputFile(compilation.InputFile()),
         CreateJlmOptCommandOutputFile(compilation.InputFile()),
-        optimizations);
+        commandLineOptions.JlmOptOptimizations_);
       lastNode->AddEdge(jlmOptCommandNode);
       lastNode = &jlmOptCommandNode;
     }

@@ -225,8 +225,36 @@ JlcCommandLineParser::~JlcCommandLineParser() noexcept
 const JlcCommandLineOptions &
 JlcCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
 {
-  auto checkAndConvertJlmOptOptimizations = [](const ::llvm::cl::list<std::string>& optimizations)
+  auto checkAndConvertJlmOptOptimizations = [](
+    const ::llvm::cl::list<std::string>& optimizations,
+    JlcCommandLineOptions::OptimizationLevel optimizationLevel)
   {
+    if (optimizations.empty()
+        && optimizationLevel == JlcCommandLineOptions::OptimizationLevel::O3)
+    {
+      return std::vector<JlmOptCommandLineOptions::OptimizationId>
+        ({
+           JlmOptCommandLineOptions::OptimizationId::iln,
+           JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+           JlmOptCommandLineOptions::OptimizationId::red,
+           JlmOptCommandLineOptions::OptimizationId::dne,
+           JlmOptCommandLineOptions::OptimizationId::ivt,
+           JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+           JlmOptCommandLineOptions::OptimizationId::dne,
+           JlmOptCommandLineOptions::OptimizationId::psh,
+           JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+           JlmOptCommandLineOptions::OptimizationId::dne,
+           JlmOptCommandLineOptions::OptimizationId::red,
+           JlmOptCommandLineOptions::OptimizationId::cne,
+           JlmOptCommandLineOptions::OptimizationId::dne,
+           JlmOptCommandLineOptions::OptimizationId::pll,
+           JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+           JlmOptCommandLineOptions::OptimizationId::dne,
+           JlmOptCommandLineOptions::OptimizationId::url,
+           JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection
+         });
+    }
+
     std::vector<JlmOptCommandLineOptions::OptimizationId> optimizationIds;
     for (auto & optimization : optimizations)
     {
@@ -426,6 +454,10 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
     exit(EXIT_FAILURE);
   }
 
+  auto jlmOptOptimizations = checkAndConvertJlmOptOptimizations(
+    jlmOptimizations,
+    CommandLineOptions_.OptimizationLevel_);
+
   CommandLineOptions_.Libraries_ = libraries;
   CommandLineOptions_.MacroDefinitions_ = macroDefinitions;
   CommandLineOptions_.LibraryPaths_ = libraryPaths;
@@ -434,7 +466,7 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
   CommandLineOptions_.OnlyPrintCommands_ = onlyPrintCommands;
   CommandLineOptions_.GenerateDebugInformation_ = generateDebugInformation;
   CommandLineOptions_.Flags_ = flags;
-  CommandLineOptions_.JlmOptOptimizations_ = checkAndConvertJlmOptOptimizations(jlmOptimizations);
+  CommandLineOptions_.JlmOptOptimizations_ = jlmOptOptimizations;
   CommandLineOptions_.Verbose_ = verbose;
   CommandLineOptions_.Rdynamic_ = rDynamic;
   CommandLineOptions_.Suppress_ = suppress;
