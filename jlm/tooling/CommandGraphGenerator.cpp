@@ -114,91 +114,40 @@ JlcCommandGraphGenerator::GenerateCommandGraph(const JlcCommandLineOptions & com
 
     if (compilation.RequiresOptimization())
     {
-      std::vector<JlmOptCommand::Optimization> optimizations;
+      std::vector<JlmOptCommandLineOptions::OptimizationId> optimizations;
       if (!commandLineOptions.JlmOptOptimizations_.empty())
       {
-        static std::unordered_map<JlmOptCommandLineOptions::OptimizationId, JlmOptCommand::Optimization> map(
-          {
-            {
-              JlmOptCommandLineOptions::OptimizationId::AASteensgaardAgnostic,
-              JlmOptCommand::Optimization::AASteensgaardAgnostic
-            },
-            {
-              JlmOptCommandLineOptions::OptimizationId::AASteensgaardRegionAware,
-              JlmOptCommand::Optimization::AASteensgaardRegionAware
-            },
-            {
-              JlmOptCommandLineOptions::OptimizationId::cne,
-              JlmOptCommand::Optimization::CommonNodeElimination
-            },
-            {
-              JlmOptCommandLineOptions::OptimizationId::dne,
-              JlmOptCommand::Optimization::DeadNodeElimination
-            },
-            {
-              JlmOptCommandLineOptions::OptimizationId::iln,
-              JlmOptCommand::Optimization::FunctionInlining
-            },
-            {
-              JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
-              JlmOptCommand::Optimization::InvariantValueRedirection
-            },
-            {
-              JlmOptCommandLineOptions::OptimizationId::psh,
-              JlmOptCommand::Optimization::NodePushOut
-            },
-            {
-              JlmOptCommandLineOptions::OptimizationId::pll,
-              JlmOptCommand::Optimization::NodePullIn
-            },
-            {
-              JlmOptCommandLineOptions::OptimizationId::red,
-              JlmOptCommand::Optimization::NodeReduction
-            },
-            {
-              JlmOptCommandLineOptions::OptimizationId::ivt,
-              JlmOptCommand::Optimization::ThetaGammaInversion
-            },
-            {
-              JlmOptCommandLineOptions::OptimizationId::url,
-              JlmOptCommand::Optimization::LoopUnrolling},
-          });
-
-        for (const auto & jlmOpt : commandLineOptions.JlmOptOptimizations_)
-        {
-          JLM_ASSERT(map.find(jlmOpt) != map.end());
-          optimizations.push_back(map[jlmOpt]);
-        }
-
+        optimizations = commandLineOptions.JlmOptOptimizations_;
         /*
          * If a default optimization level has been specified (-O) and no specific jlm options
          * have been specified (-J) then use a default set of optimizations.
          */
-      } else if (commandLineOptions.JlmOptOptimizations_.empty()
+      }
+      else if (commandLineOptions.JlmOptOptimizations_.empty()
           && commandLineOptions.OptimizationLevel_ == JlcCommandLineOptions::OptimizationLevel::O3)
       {
         /*
          * Only -O3 sets default optimizations
          */
         optimizations = {
-          JlmOptCommand::Optimization::FunctionInlining,
-          JlmOptCommand::Optimization::InvariantValueRedirection,
-          JlmOptCommand::Optimization::NodeReduction,
-          JlmOptCommand::Optimization::DeadNodeElimination,
-          JlmOptCommand::Optimization::ThetaGammaInversion,
-          JlmOptCommand::Optimization::InvariantValueRedirection,
-          JlmOptCommand::Optimization::DeadNodeElimination,
-          JlmOptCommand::Optimization::NodePushOut,
-          JlmOptCommand::Optimization::InvariantValueRedirection,
-          JlmOptCommand::Optimization::DeadNodeElimination,
-          JlmOptCommand::Optimization::NodeReduction,
-          JlmOptCommand::Optimization::CommonNodeElimination,
-          JlmOptCommand::Optimization::DeadNodeElimination,
-          JlmOptCommand::Optimization::NodePullIn,
-          JlmOptCommand::Optimization::InvariantValueRedirection,
-          JlmOptCommand::Optimization::DeadNodeElimination,
-          JlmOptCommand::Optimization::LoopUnrolling,
-          JlmOptCommand::Optimization::InvariantValueRedirection
+          JlmOptCommandLineOptions::OptimizationId::iln,
+          JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+          JlmOptCommandLineOptions::OptimizationId::red,
+          JlmOptCommandLineOptions::OptimizationId::dne,
+          JlmOptCommandLineOptions::OptimizationId::ivt,
+          JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+          JlmOptCommandLineOptions::OptimizationId::dne,
+          JlmOptCommandLineOptions::OptimizationId::psh,
+          JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+          JlmOptCommandLineOptions::OptimizationId::dne,
+          JlmOptCommandLineOptions::OptimizationId::red,
+          JlmOptCommandLineOptions::OptimizationId::cne,
+          JlmOptCommandLineOptions::OptimizationId::dne,
+          JlmOptCommandLineOptions::OptimizationId::pll,
+          JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+          JlmOptCommandLineOptions::OptimizationId::dne,
+          JlmOptCommandLineOptions::OptimizationId::url,
+          JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection
         };
       }
 

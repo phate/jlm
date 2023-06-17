@@ -249,7 +249,7 @@ JlmOptCommand::ToString() const
 {
   std::string optimizationArguments;
   for (auto & optimization : Optimizations_)
-    optimizationArguments += ToString(optimization) + " ";
+    optimizationArguments += "--" + std::string(JlmOptCommandLineOptions::ToCommandLineArgument(optimization)) + " ";
 
   return util::strfmt(
     "jlm-opt ",
@@ -264,28 +264,6 @@ JlmOptCommand::Run() const
 {
   if (system(ToString().c_str()))
     exit(EXIT_FAILURE);
-}
-
-std::string
-JlmOptCommand::ToString(const Optimization & optimization)
-{
-  static std::unordered_map<Optimization, const char*>
-    map({
-          {Optimization::AASteensgaardAgnostic,     "--AASteensgaardAgnostic"},
-          {Optimization::AASteensgaardRegionAware,  "--AASteensgaardRegionAware"},
-          {Optimization::CommonNodeElimination,     "--cne"},
-          {Optimization::DeadNodeElimination,       "--dne"},
-          {Optimization::FunctionInlining,          "--iln"},
-          {Optimization::InvariantValueRedirection, "--InvariantValueRedirection"},
-          {Optimization::LoopUnrolling,             "--url"},
-          {Optimization::NodePullIn,                "--pll"},
-          {Optimization::NodePushOut,               "--psh"},
-          {Optimization::NodeReduction,             "--red"},
-          {Optimization::ThetaGammaInversion,       "--ivt"}
-        });
-
-  JLM_ASSERT(map.find(optimization) != map.end());
-  return map[optimization];
 }
 
 MkdirCommand::~MkdirCommand() noexcept

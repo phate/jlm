@@ -7,6 +7,7 @@
 #define JLM_TOOLING_COMMAND_HPP
 
 #include <jlm/tooling/CommandGraph.hpp>
+#include <jlm/tooling/CommandLine.hpp>
 #include <jlm/util/file.hpp>
 
 #include <memory>
@@ -338,26 +339,12 @@ private:
  */
 class JlmOptCommand final : public Command {
 public:
-  enum class Optimization {
-    AASteensgaardAgnostic,
-    AASteensgaardRegionAware,
-    CommonNodeElimination,
-    DeadNodeElimination,
-    FunctionInlining,
-    InvariantValueRedirection,
-    LoopUnrolling,
-    NodePullIn,
-    NodePushOut,
-    NodeReduction,
-    ThetaGammaInversion
-  };
-
   ~JlmOptCommand() override;
 
   JlmOptCommand(
     util::filepath inputFile,
     util::filepath outputFile,
-    std::vector<Optimization> optimizations)
+    std::vector<JlmOptCommandLineOptions::OptimizationId> optimizations)
     : InputFile_(std::move(inputFile))
     , OutputFile_(std::move(outputFile))
     , Optimizations_(std::move(optimizations))
@@ -372,23 +359,27 @@ public:
   static CommandGraph::Node &
   Create(
     CommandGraph & commandGraph,
-    const util::filepath & inputFile,
-    const util::filepath & outputFile,
-    const std::vector<Optimization> & optimizations)
+    util::filepath inputFile,
+    util::filepath outputFile,
+    std::vector<JlmOptCommandLineOptions::OptimizationId> optimizations)
   {
-    std::unique_ptr<JlmOptCommand> command(new JlmOptCommand(inputFile, outputFile, optimizations));
+    auto command = std::make_unique<JlmOptCommand>(
+      std::move(inputFile),
+      std::move(outputFile),
+      std::move(optimizations));
     return CommandGraph::Node::Create(commandGraph, std::move(command));
   }
 
-  const std::vector<Optimization> &Optimizations() const noexcept { return Optimizations_; }
+  [[nodiscard]] const std::vector<JlmOptCommandLineOptions::OptimizationId>&
+  Optimizations() const noexcept
+  {
+    return Optimizations_;
+  }
 
 private:
-  static std::string
-  ToString(const Optimization & optimization);
-
   util::filepath InputFile_;
   util::filepath OutputFile_;
-  std::vector<Optimization> Optimizations_;
+  std::vector<JlmOptCommandLineOptions::OptimizationId> Optimizations_;
 };
 
 /**
