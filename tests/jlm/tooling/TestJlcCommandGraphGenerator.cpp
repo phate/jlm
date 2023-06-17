@@ -97,8 +97,8 @@ TestJlmOptOptimizations()
                                                true,
                                                true});
   commandLineOptions.OutputFile_ = {"foobar"};
-  commandLineOptions.JlmOptOptimizations_.push_back("cne");
-  commandLineOptions.JlmOptOptimizations_.push_back("dne");
+  commandLineOptions.JlmOptOptimizations_.push_back(JlmOptCommandLineOptions::OptimizationId::cne);
+  commandLineOptions.JlmOptOptimizations_.push_back(JlmOptCommandLineOptions::OptimizationId::dne);
 
   /*
    * Act
