@@ -114,11 +114,16 @@ JlcCommandGraphGenerator::GenerateCommandGraph(const JlcCommandLineOptions & com
 
     if (compilation.RequiresOptimization())
     {
-      auto & jlmOptCommandNode = JlmOptCommand::Create(
-        *commandGraph,
+      JlmOptCommandLineOptions jlmOptCommandLineOptions(
         CreateParserCommandOutputFile(compilation.InputFile()),
         CreateJlmOptCommandOutputFile(compilation.InputFile()),
+        JlmOptCommandLineOptions::OutputFormat::Llvm,
+        util::StatisticsCollectorSettings(),
         commandLineOptions.JlmOptOptimizations_);
+
+      auto & jlmOptCommandNode = JlmOptCommand::Create(
+        *commandGraph,
+        std::move(jlmOptCommandLineOptions));
       lastNode->AddEdge(jlmOptCommandNode);
       lastNode = &jlmOptCommandNode;
     }

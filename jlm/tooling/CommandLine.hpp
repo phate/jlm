@@ -119,6 +119,9 @@ public:
   static const char*
   ToCommandLineArgument(OptimizationId optimizationId);
 
+  static const char*
+  ToCommandLineArgument(OutputFormat outputFormat);
+
   static llvm::optimization *
   GetOptimization(enum OptimizationId optimizationId);
 

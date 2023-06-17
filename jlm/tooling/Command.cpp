@@ -247,16 +247,30 @@ JlmOptCommand::~JlmOptCommand()
 std::string
 JlmOptCommand::ToString() const
 {
+  /*
+   * There is currently no need to support statistics gathering here.
+   */
+  JLM_ASSERT(CommandLineOptions_.GetStatisticsCollectorSettings().NumDemandedStatistics() == 0);
+
   std::string optimizationArguments;
-  for (auto & optimization : Optimizations_)
+  for (auto & optimization : CommandLineOptions_.GetOptimizationIds())
     optimizationArguments += "--" + std::string(JlmOptCommandLineOptions::ToCommandLineArgument(optimization)) + " ";
+
+  auto outputFormatArgument =
+    "--"
+    + std::string(JlmOptCommandLineOptions::ToCommandLineArgument(CommandLineOptions_.GetOutputFormat()))
+    + " ";
+
+  auto outputFileArgument = !CommandLineOptions_.GetOutputFile().to_str().empty()
+    ? "-o " + CommandLineOptions_.GetOutputFile().to_str() + " "
+    : "";
 
   return util::strfmt(
     "jlm-opt ",
-    "--llvm ",
+    outputFormatArgument,
     optimizationArguments,
-    "-o ", OutputFile_.to_str(), " ",
-    InputFile_.to_str());
+    outputFileArgument,
+    CommandLineOptions_.GetInputFile().to_str());
 }
 
 void

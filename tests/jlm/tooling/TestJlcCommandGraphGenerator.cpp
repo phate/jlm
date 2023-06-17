@@ -110,7 +110,8 @@ TestJlmOptOptimizations()
    */
   auto & clangCommandNode = (*commandGraph->GetEntryNode().OutgoingEdges().begin()).GetSink();
   auto & jlmOptCommandNode = (clangCommandNode.OutgoingEdges().begin())->GetSink();
-  auto optimizations = dynamic_cast<const JlmOptCommand*>(&jlmOptCommandNode.GetCommand())->Optimizations();
+  auto & jlmOptCommand = *dynamic_cast<const JlmOptCommand*>(&jlmOptCommandNode.GetCommand());
+  auto & optimizations = jlmOptCommand.GetCommandLineOptions().GetOptimizationIds();
 
   assert(optimizations.size() == 2);
   assert(optimizations[0] == JlmOptCommandLineOptions::OptimizationId::cne);

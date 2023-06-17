@@ -341,13 +341,9 @@ class JlmOptCommand final : public Command {
 public:
   ~JlmOptCommand() override;
 
-  JlmOptCommand(
-    util::filepath inputFile,
-    util::filepath outputFile,
-    std::vector<JlmOptCommandLineOptions::OptimizationId> optimizations)
-    : InputFile_(std::move(inputFile))
-    , OutputFile_(std::move(outputFile))
-    , Optimizations_(std::move(optimizations))
+  explicit
+  JlmOptCommand(JlmOptCommandLineOptions commandLineOptions)
+    : CommandLineOptions_(std::move(commandLineOptions))
   {}
 
   [[nodiscard]] std::string
@@ -359,27 +355,20 @@ public:
   static CommandGraph::Node &
   Create(
     CommandGraph & commandGraph,
-    util::filepath inputFile,
-    util::filepath outputFile,
-    std::vector<JlmOptCommandLineOptions::OptimizationId> optimizations)
+    JlmOptCommandLineOptions commandLineOptions)
   {
-    auto command = std::make_unique<JlmOptCommand>(
-      std::move(inputFile),
-      std::move(outputFile),
-      std::move(optimizations));
+    auto command = std::make_unique<JlmOptCommand>(std::move(commandLineOptions));
     return CommandGraph::Node::Create(commandGraph, std::move(command));
   }
 
-  [[nodiscard]] const std::vector<JlmOptCommandLineOptions::OptimizationId>&
-  Optimizations() const noexcept
+  [[nodiscard]] const JlmOptCommandLineOptions&
+  GetCommandLineOptions() const noexcept
   {
-    return Optimizations_;
+    return CommandLineOptions_;
   }
 
 private:
-  util::filepath InputFile_;
-  util::filepath OutputFile_;
-  std::vector<JlmOptCommandLineOptions::OptimizationId> Optimizations_;
+  JlmOptCommandLineOptions CommandLineOptions_;
 };
 
 /**

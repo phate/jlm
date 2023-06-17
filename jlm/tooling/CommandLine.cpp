@@ -160,6 +160,21 @@ JlmOptCommandLineOptions::ToCommandLineArgument(OptimizationId optimizationId)
   throw util::error("Unknown optimization identifier");
 }
 
+const char*
+JlmOptCommandLineOptions::ToCommandLineArgument(OutputFormat outputFormat)
+{
+  static std::unordered_map<OutputFormat, const char*> map(
+    {
+      {OutputFormat::Llvm, "llvm"},
+      {OutputFormat::Xml,  "xml"}
+    });
+
+  if (map.find(outputFormat) != map.end())
+    return map[outputFormat];
+
+  throw util::error("Unknown output format");
+}
+
 llvm::optimization *
 JlmOptCommandLineOptions::GetOptimization(enum OptimizationId id)
 {
@@ -637,17 +652,20 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
         "Write theta-gamma inversion statistics to file.")),
     cl::desc("Write statistics"));
 
+  auto llvmOutputFormat = JlmOptCommandLineOptions::OutputFormat::Llvm;
+  auto xmlOutputFormat = JlmOptCommandLineOptions::OutputFormat::Xml;
+
   cl::opt<JlmOptCommandLineOptions::OutputFormat> outputFormat(
     cl::values(
       ::clEnumValN(
-        JlmOptCommandLineOptions::OutputFormat::Llvm,
-        "llvm",
+        llvmOutputFormat,
+        JlmOptCommandLineOptions::ToCommandLineArgument(llvmOutputFormat),
         "Output LLVM IR [default]"),
       ::clEnumValN(
-        JlmOptCommandLineOptions::OutputFormat::Xml,
-        "xml",
+        xmlOutputFormat,
+        JlmOptCommandLineOptions::ToCommandLineArgument(xmlOutputFormat),
         "Output XML")),
-    cl::init(JlmOptCommandLineOptions::OutputFormat::Llvm),
+    cl::init(llvmOutputFormat),
     cl::desc("Select output format"));
 
   auto aASteensgaardAgnostic = JlmOptCommandLineOptions::OptimizationId::AASteensgaardAgnostic;
