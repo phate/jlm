@@ -54,10 +54,10 @@ LIBLLVM_SRC = \
     jlm/llvm/opt/InvariantValueRedirection.cpp \
     jlm/llvm/opt/inversion.cpp \
     jlm/llvm/opt/optimization.cpp \
+    jlm/llvm/opt/OptimizationSequence.cpp \
     jlm/llvm/opt/pull.cpp \
     jlm/llvm/opt/push.cpp \
     jlm/llvm/opt/reduction.cpp \
-    jlm/llvm/opt/SequentialApplication.cpp \
     jlm/llvm/opt/unroll.cpp \
 
 .PHONY: libllvm-debug

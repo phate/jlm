@@ -4,14 +4,14 @@
  */
 
 #include <jlm/llvm/ir/RvsdgModule.hpp>
-#include <jlm/llvm/opt/SequentialApplication.hpp>
+#include <jlm/llvm/opt/OptimizationSequence.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 
 namespace jlm::llvm
 {
 
-class SequentialApplication::Statistics final : public util::Statistics
+class OptimizationSequence::Statistics final : public util::Statistics
 {
 public:
   ~Statistics() noexcept override
@@ -63,11 +63,11 @@ private:
   size_t NumNodesAfter_;
 };
 
-SequentialApplication::~SequentialApplication() noexcept
+OptimizationSequence::~OptimizationSequence() noexcept
 = default;
 
 void
-SequentialApplication::run(
+OptimizationSequence::run(
   RvsdgModule& rvsdgModule,
   util::StatisticsCollector& statisticsCollector)
 {
