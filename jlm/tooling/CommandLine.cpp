@@ -95,7 +95,21 @@ JlmOptCommandLineOptions::Reset() noexcept
   OutputFile_ = util::filepath("");
   OutputFormat_ = OutputFormat::Llvm;
   StatisticsCollectorSettings_ = util::StatisticsCollectorSettings();
-  Optimizations_.clear();
+  OptimizationIds_.clear();
+}
+
+std::vector<llvm::optimization*>
+JlmOptCommandLineOptions::GetOptimizations() const noexcept
+{
+  std::vector<llvm::optimization*> optimizations;
+  optimizations.reserve(OptimizationIds_.size());
+
+  for (auto & optimizationId: OptimizationIds_)
+  {
+    optimizations.emplace_back(GetOptimization(optimizationId));
+  }
+
+  return optimizations;
 }
 
 JlmOptCommandLineOptions::OptimizationId
@@ -671,16 +685,12 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
   util::HashSet<util::Statistics::Id> demandedStatistics({printStatistics.begin(), printStatistics.end()});
   statisticsCollectorSettings.SetDemandedStatistics(std::move(demandedStatistics));
 
-  std::vector<llvm::optimization*> optimizations;
-  for (auto &optimizationId: optimizationIds)
-    optimizations.push_back(JlmOptCommandLineOptions::GetOptimization(optimizationId));
-
   CommandLineOptions_ = JlmOptCommandLineOptions::Create(
     inputFile,
     outputFile,
     outputFormat,
     std::move(statisticsCollectorSettings),
-    std::move(optimizations));
+    std::move(optimizationIds));
 
   return *CommandLineOptions_;
 }

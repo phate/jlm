@@ -122,10 +122,12 @@ main(int argc, char ** argv)
     *interProceduralGraphModule,
     statisticsCollector);
 
+  auto optimizations = commandLineOptions.GetOptimizations();
+
   jlm::llvm::OptimizationSequence::CreateAndRun(
     *rvsdgModule,
     statisticsCollector,
-    commandLineOptions.GetOptimizations());
+    std::move(optimizations));
 
   print(
     *rvsdgModule,

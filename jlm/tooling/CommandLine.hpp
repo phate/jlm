@@ -69,12 +69,12 @@ public:
     util::filepath outputFile,
     OutputFormat outputFormat,
     util::StatisticsCollectorSettings statisticsCollectorSettings,
-    std::vector<jlm::llvm::optimization*> optimizations)
+    std::vector<OptimizationId> optimizations)
     : InputFile_(std::move(inputFile))
     , OutputFile_(std::move(outputFile))
     , OutputFormat_(outputFormat)
     , StatisticsCollectorSettings_(std::move(statisticsCollectorSettings))
-    , Optimizations_(std::move(optimizations))
+    , OptimizationIds_(std::move(optimizations))
   {}
 
   void
@@ -104,11 +104,14 @@ public:
     return StatisticsCollectorSettings_;
   }
 
-  [[nodiscard]] const std::vector<jlm::llvm::optimization*> &
-  GetOptimizations() const noexcept
+  [[nodiscard]] const std::vector<OptimizationId> &
+  GetOptimizationIds() const noexcept
   {
-    return Optimizations_;
+    return OptimizationIds_;
   }
+
+  [[nodiscard]] std::vector<llvm::optimization*>
+  GetOptimizations() const noexcept;
 
   static OptimizationId
   FromCommandLineArgument(const std::string& commandLineArgument);
@@ -125,7 +128,7 @@ public:
     util::filepath outputFile,
     OutputFormat outputFormat,
     util::StatisticsCollectorSettings statisticsCollectorSettings,
-    std::vector<jlm::llvm::optimization*> optimizations)
+    std::vector<OptimizationId> optimizations)
   {
     return std::make_unique<JlmOptCommandLineOptions>(
       std::move(inputFile),
@@ -140,7 +143,7 @@ private:
   util::filepath OutputFile_;
   OutputFormat OutputFormat_;
   util::StatisticsCollectorSettings StatisticsCollectorSettings_;
-  std::vector<jlm::llvm::optimization*> Optimizations_;
+  std::vector<OptimizationId> OptimizationIds_;
 
   inline static const char* AaSteensgaardAgnosticCommandLineArgument_ = "AASteensgaardAgnostic";
   inline static const char* AaSteensgaardRegionAwareCommandLineArgument_ = "AASteensgaardRegionAware";
