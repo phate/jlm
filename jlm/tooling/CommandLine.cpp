@@ -472,8 +472,6 @@ JlmOptCommandLineParser::~JlmOptCommandLineParser() noexcept
 const JlmOptCommandLineOptions &
 JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
 {
-  CommandLineOptions_.Reset();
-
   using namespace ::llvm;
 
   /*
@@ -485,19 +483,23 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
 
   cl::TopLevelSubCommand->reset();
 
+  util::StatisticsCollectorSettings statisticsCollectorSettings;
+
   cl::opt<std::string> inputFile(
     cl::Positional,
     cl::desc("<input>"));
 
   cl::opt<std::string> outputFile(
     "o",
+    cl::init(""),
     cl::desc("Write output to <file>"),
     cl::value_desc("file"));
 
   cl::opt<std::string> statisticFile(
     "s",
+    cl::init(statisticsCollectorSettings.GetFilePath().to_str()),
     cl::desc("Write stats to <file>. Default is "
-             + CommandLineOptions_.StatisticsCollectorSettings_.GetFilePath().to_str()
+             + statisticsCollectorSettings.GetFilePath().to_str()
              + "."),
     cl::value_desc("file"));
 
@@ -599,6 +601,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
         JlmOptCommandLineOptions::OutputFormat::Xml,
         "xml",
         "Output XML")),
+    cl::init(JlmOptCommandLineOptions::OutputFormat::Llvm),
     cl::desc("Select output format"));
 
   auto aASteensgaardAgnostic = JlmOptCommandLineOptions::OptimizationId::AASteensgaardAgnostic;
@@ -663,25 +666,23 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
 
   cl::ParseCommandLineOptions(argc, argv);
 
-  if (!outputFile.empty())
-    CommandLineOptions_.OutputFile_ = outputFile;
+  statisticsCollectorSettings.SetFilePath(statisticFile);
 
-  if (!statisticFile.empty())
-    CommandLineOptions_.StatisticsCollectorSettings_.SetFilePath(statisticFile);
+  util::HashSet<util::Statistics::Id> demandedStatistics({printStatistics.begin(), printStatistics.end()});
+  statisticsCollectorSettings.SetDemandedStatistics(std::move(demandedStatistics));
 
   std::vector<llvm::optimization*> optimizations;
   for (auto &optimizationId: optimizationIds)
     optimizations.push_back(JlmOptCommandLineOptions::GetOptimization(optimizationId));
 
+  CommandLineOptions_ = JlmOptCommandLineOptions::Create(
+    inputFile,
+    outputFile,
+    outputFormat,
+    std::move(statisticsCollectorSettings),
+    std::move(optimizations));
 
-  util::HashSet<util::Statistics::Id> printStatisticsIds({printStatistics.begin(), printStatistics.end()});
-
-  CommandLineOptions_.InputFile_ = inputFile;
-  CommandLineOptions_.OutputFormat_ = outputFormat;
-  CommandLineOptions_.Optimizations_ = optimizations;
-  CommandLineOptions_.StatisticsCollectorSettings_.SetDemandedStatistics(printStatisticsIds);
-
-  return CommandLineOptions_;
+  return *CommandLineOptions_;
 }
 
 const JlmOptCommandLineOptions &

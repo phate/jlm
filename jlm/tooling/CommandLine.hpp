@@ -64,14 +64,51 @@ public:
     LastEnumValue // must always be the last enum value, used for iteration
   };
 
-  JlmOptCommandLineOptions()
-    : InputFile_("")
-    , OutputFile_("")
-    , OutputFormat_(OutputFormat::Llvm)
+  JlmOptCommandLineOptions(
+    util::filepath inputFile,
+    util::filepath outputFile,
+    OutputFormat outputFormat,
+    util::StatisticsCollectorSettings statisticsCollectorSettings,
+    std::vector<jlm::llvm::optimization*> optimizations)
+    : InputFile_(std::move(inputFile))
+    , OutputFile_(std::move(outputFile))
+    , OutputFormat_(outputFormat)
+    , StatisticsCollectorSettings_(std::move(statisticsCollectorSettings))
+    , Optimizations_(std::move(optimizations))
   {}
 
   void
   Reset() noexcept override;
+
+  [[nodiscard]] const util::filepath&
+  GetInputFile() const noexcept
+  {
+    return InputFile_;
+  }
+
+  [[nodiscard]] const util::filepath&
+  GetOutputFile() const noexcept
+  {
+    return OutputFile_;
+  }
+
+  [[nodiscard]] OutputFormat
+  GetOutputFormat() const noexcept
+  {
+    return OutputFormat_;
+  }
+
+  [[nodiscard]] const util::StatisticsCollectorSettings &
+  GetStatisticsCollectorSettings() const noexcept
+  {
+    return StatisticsCollectorSettings_;
+  }
+
+  [[nodiscard]] const std::vector<jlm::llvm::optimization*> &
+  GetOptimizations() const noexcept
+  {
+    return Optimizations_;
+  }
 
   static OptimizationId
   FromCommandLineArgument(const std::string& commandLineArgument);
@@ -82,13 +119,29 @@ public:
   static llvm::optimization *
   GetOptimization(enum OptimizationId optimizationId);
 
+  static std::unique_ptr<JlmOptCommandLineOptions>
+  Create(
+    util::filepath inputFile,
+    util::filepath outputFile,
+    OutputFormat outputFormat,
+    util::StatisticsCollectorSettings statisticsCollectorSettings,
+    std::vector<jlm::llvm::optimization*> optimizations)
+  {
+    return std::make_unique<JlmOptCommandLineOptions>(
+      std::move(inputFile),
+      std::move(outputFile),
+      outputFormat,
+      std::move(statisticsCollectorSettings),
+      std::move(optimizations));
+  }
+
+private:
   util::filepath InputFile_;
   util::filepath OutputFile_;
   OutputFormat OutputFormat_;
   util::StatisticsCollectorSettings StatisticsCollectorSettings_;
   std::vector<jlm::llvm::optimization*> Optimizations_;
 
-private:
   inline static const char* AaSteensgaardAgnosticCommandLineArgument_ = "AASteensgaardAgnostic";
   inline static const char* AaSteensgaardRegionAwareCommandLineArgument_ = "AASteensgaardRegionAware";
   inline static const char* CommonNodeEliminationCommandLineArgument_ = "cne";
@@ -521,7 +574,7 @@ public:
   Parse(int argc, char ** argv);
 
 private:
-  JlmOptCommandLineOptions CommandLineOptions_;
+  std::unique_ptr<JlmOptCommandLineOptions> CommandLineOptions_;
 };
 
 /**

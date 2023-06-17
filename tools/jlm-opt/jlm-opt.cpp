@@ -107,12 +107,12 @@ main(int argc, char ** argv)
 {
   auto & commandLineOptions = jlm::tooling::JlmOptCommandLineParser::Parse(argc, argv);
 
-  jlm::util::StatisticsCollector statisticsCollector(commandLineOptions.StatisticsCollectorSettings_);
+  jlm::util::StatisticsCollector statisticsCollector(commandLineOptions.GetStatisticsCollectorSettings());
 
   llvm::LLVMContext llvmContext;
   auto llvmModule = parse_llvm_file(
     argv[0],
-    commandLineOptions.InputFile_,
+    commandLineOptions.GetInputFile(),
     llvmContext);
 
   auto interProceduralGraphModule = construct_jlm_module(*llvmModule);
@@ -125,12 +125,12 @@ main(int argc, char ** argv)
   jlm::llvm::OptimizationSequence::CreateAndRun(
     *rvsdgModule,
     statisticsCollector,
-    commandLineOptions.Optimizations_);
+    commandLineOptions.GetOptimizations());
 
   print(
     *rvsdgModule,
-    commandLineOptions.OutputFile_,
-    commandLineOptions.OutputFormat_,
+    commandLineOptions.GetOutputFile(),
+    commandLineOptions.GetOutputFormat(),
     statisticsCollector);
 
   statisticsCollector.PrintStatistics();
