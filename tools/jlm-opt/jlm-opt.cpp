@@ -12,7 +12,7 @@
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
-#include <jlm/llvm/opt/optimization.hpp>
+#include <jlm/llvm/opt/OptimizationSequence.hpp>
 #include <jlm/tooling/CommandLine.hpp>
 
 #include <llvm/IR/LLVMContext.h>
@@ -122,7 +122,7 @@ main(int argc, char ** argv)
     *interProceduralGraphModule,
     statisticsCollector);
 
-  optimize(
+  jlm::llvm::OptimizationSequence::CreateAndRun(
     *rvsdgModule,
     statisticsCollector,
     commandLineOptions.Optimizations_);
