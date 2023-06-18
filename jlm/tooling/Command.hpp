@@ -10,6 +10,8 @@
 #include <jlm/tooling/CommandLine.hpp>
 #include <jlm/util/file.hpp>
 
+#include <llvm/IR/Module.h>
+
 #include <memory>
 #include <string>
 
@@ -341,9 +343,11 @@ class JlmOptCommand final : public Command {
 public:
   ~JlmOptCommand() override;
 
-  explicit
-  JlmOptCommand(JlmOptCommandLineOptions commandLineOptions)
-    : CommandLineOptions_(std::move(commandLineOptions))
+  JlmOptCommand(
+    std::string programName,
+    JlmOptCommandLineOptions commandLineOptions)
+    : ProgramName_(std::move(programName)),
+      CommandLineOptions_(std::move(commandLineOptions))
   {}
 
   [[nodiscard]] std::string
@@ -355,9 +359,12 @@ public:
   static CommandGraph::Node &
   Create(
     CommandGraph & commandGraph,
+    std::string programName,
     JlmOptCommandLineOptions commandLineOptions)
   {
-    auto command = std::make_unique<JlmOptCommand>(std::move(commandLineOptions));
+    auto command = std::make_unique<JlmOptCommand>(
+      std::move(programName),
+      std::move(commandLineOptions));
     return CommandGraph::Node::Create(commandGraph, std::move(command));
   }
 
@@ -368,6 +375,19 @@ public:
   }
 
 private:
+  std::unique_ptr<::llvm::Module>
+  ParseLlvmIrFile(
+    const util::filepath & llvmIrFile,
+    ::llvm::LLVMContext & llvmContext) const;
+
+  static void
+  PrintRvsdgModule(
+    const llvm::RvsdgModule & rvsdgModule,
+    const util::filepath & outputFile,
+    const JlmOptCommandLineOptions::OutputFormat & outputFormat,
+    util::StatisticsCollector & statisticsCollector);
+
+  std::string ProgramName_;
   JlmOptCommandLineOptions CommandLineOptions_;
 };
 

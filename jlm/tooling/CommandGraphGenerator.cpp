@@ -123,6 +123,7 @@ JlcCommandGraphGenerator::GenerateCommandGraph(const JlcCommandLineOptions & com
 
       auto & jlmOptCommandNode = JlmOptCommand::Create(
         *commandGraph,
+        "jlm-opt",
         std::move(jlmOptCommandLineOptions));
       lastNode->AddEdge(jlmOptCommandNode);
       lastNode = &jlmOptCommandNode;

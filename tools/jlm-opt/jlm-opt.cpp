@@ -3,139 +3,23 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/rvsdg/view.hpp>
-
-#include <jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp>
-#include <jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.hpp>
-#include <jlm/llvm/frontend/InterProceduralGraphConversion.hpp>
-#include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
-#include <jlm/llvm/ir/ipgraph-module.hpp>
-#include <jlm/llvm/ir/operators.hpp>
-#include <jlm/llvm/ir/RvsdgModule.hpp>
-#include <jlm/llvm/opt/OptimizationSequence.hpp>
-#include <jlm/tooling/CommandLine.hpp>
-
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/Module.h>
-#include <llvm/IRReader/IRReader.h>
-#include <llvm/Support/raw_os_ostream.h>
-#include <llvm/Support/SourceMgr.h>
-
-#include <iostream>
-
-static std::unique_ptr<llvm::Module>
-parse_llvm_file(
-	const char * executable,
-	const jlm::util::filepath & file,
-	llvm::LLVMContext & ctx)
-{
-	llvm::SMDiagnostic d;
-	auto module = llvm::parseIRFile(file.to_str(), d, ctx);
-	if (!module) {
-		d.print(executable, llvm::errs());
-		exit(EXIT_FAILURE);
-	}
-
-	return module;
-}
-
-static std::unique_ptr<jlm::llvm::ipgraph_module>
-construct_jlm_module(llvm::Module & module)
-{
-	return jlm::llvm::ConvertLlvmModule(module);
-}
-
-static void
-print_as_xml(
-	const jlm::llvm::RvsdgModule & rm,
-	const jlm::util::filepath & fp,
-	jlm::util::StatisticsCollector&)
-{
-	auto fd = fp == "" ? stdout : fopen(fp.to_str().c_str(), "w");
-
-	jlm::rvsdg::view_xml(rm.Rvsdg().root(), fd);
-
-	if (fd != stdout)
-			fclose(fd);
-}
-
-static void
-print_as_llvm(
-	const jlm::llvm::RvsdgModule & rm,
-	const jlm::util::filepath & fp,
-	jlm::util::StatisticsCollector & statisticsCollector)
-{
-	auto jlm_module = jlm::llvm::rvsdg2jlm::rvsdg2jlm(rm, statisticsCollector);
-
-	llvm::LLVMContext ctx;
-	auto llvm_module = jlm::llvm::jlm2llvm::convert(*jlm_module, ctx);
-
-	if (fp == "") {
-		llvm::raw_os_ostream os(std::cout);
-		llvm_module->print(os, nullptr);
-	} else {
-		std::error_code ec;
-		llvm::raw_fd_ostream os(fp.to_str(), ec);
-		llvm_module->print(os, nullptr);
-	}
-}
-
-static void
-print(
-	const jlm::llvm::RvsdgModule & rm,
-	const jlm::util::filepath & fp,
-	const jlm::tooling::JlmOptCommandLineOptions::OutputFormat & format,
-	jlm::util::StatisticsCollector & statisticsCollector)
-{
-  using namespace jlm;
-
-  static std::unordered_map<
-    tooling::JlmOptCommandLineOptions::OutputFormat,
-    std::function<void(const jlm::llvm::RvsdgModule&, const jlm::util::filepath&, jlm::util::StatisticsCollector&)>
-  > formatters(
-    {
-      {tooling::JlmOptCommandLineOptions::OutputFormat::Xml,  print_as_xml},
-      {tooling::JlmOptCommandLineOptions::OutputFormat::Llvm, print_as_llvm}
-    });
-
-  JLM_ASSERT(formatters.find(format) != formatters.end());
-  formatters[format](rm, fp, statisticsCollector);
-}
+#include <jlm/tooling/Command.hpp>
 
 int
 main(int argc, char ** argv)
 {
   auto & commandLineOptions = jlm::tooling::JlmOptCommandLineParser::Parse(argc, argv);
 
-  jlm::util::StatisticsCollector statisticsCollector(commandLineOptions.GetStatisticsCollectorSettings());
-
-  llvm::LLVMContext llvmContext;
-  auto llvmModule = parse_llvm_file(
-    argv[0],
-    commandLineOptions.GetInputFile(),
-    llvmContext);
-
-  auto interProceduralGraphModule = construct_jlm_module(*llvmModule);
-  llvmModule.reset();
-
-  auto rvsdgModule = jlm::llvm::ConvertInterProceduralGraphModule(
-    *interProceduralGraphModule,
-    statisticsCollector);
-
-  auto optimizations = commandLineOptions.GetOptimizations();
-
-  jlm::llvm::OptimizationSequence::CreateAndRun(
-    *rvsdgModule,
-    statisticsCollector,
-    std::move(optimizations));
-
-  print(
-    *rvsdgModule,
-    commandLineOptions.GetOutputFile(),
-    commandLineOptions.GetOutputFormat(),
-    statisticsCollector);
-
-  statisticsCollector.PrintStatistics();
+  try
+  {
+    jlm::tooling::JlmOptCommand command(argv[0], commandLineOptions);
+    command.Run();
+  }
+  catch (jlm::util::error & e)
+  {
+    std::cerr << e.what();
+    exit(EXIT_FAILURE);
+  }
 
   return 0;
 }
