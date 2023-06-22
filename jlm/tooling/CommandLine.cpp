@@ -273,23 +273,23 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
     {
       return std::vector<JlmOptCommandLineOptions::OptimizationId>
         ({
-           JlmOptCommandLineOptions::OptimizationId::iln,
+           JlmOptCommandLineOptions::OptimizationId::FunctionInlining,
            JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
-           JlmOptCommandLineOptions::OptimizationId::red,
-           JlmOptCommandLineOptions::OptimizationId::dne,
-           JlmOptCommandLineOptions::OptimizationId::ivt,
+           JlmOptCommandLineOptions::OptimizationId::NodeReduction,
+           JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
+           JlmOptCommandLineOptions::OptimizationId::ThetaGammaInversion,
            JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
-           JlmOptCommandLineOptions::OptimizationId::dne,
-           JlmOptCommandLineOptions::OptimizationId::psh,
+           JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
+           JlmOptCommandLineOptions::OptimizationId::NodePushOut,
            JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
-           JlmOptCommandLineOptions::OptimizationId::dne,
-           JlmOptCommandLineOptions::OptimizationId::red,
-           JlmOptCommandLineOptions::OptimizationId::cne,
-           JlmOptCommandLineOptions::OptimizationId::dne,
-           JlmOptCommandLineOptions::OptimizationId::pll,
+           JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
+           JlmOptCommandLineOptions::OptimizationId::NodeReduction,
+           JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination,
+           JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
+           JlmOptCommandLineOptions::OptimizationId::NodePullIn,
            JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
-           JlmOptCommandLineOptions::OptimizationId::dne,
-           JlmOptCommandLineOptions::OptimizationId::url,
+           JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
+           JlmOptCommandLineOptions::OptimizationId::LoopUnrolling,
            JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection
          });
     }
