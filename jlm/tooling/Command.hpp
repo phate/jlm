@@ -7,7 +7,10 @@
 #define JLM_TOOLING_COMMAND_HPP
 
 #include <jlm/tooling/CommandGraph.hpp>
+#include <jlm/tooling/CommandLine.hpp>
 #include <jlm/util/file.hpp>
+
+#include <llvm/IR/Module.h>
 
 #include <memory>
 #include <string>
@@ -338,29 +341,13 @@ private:
  */
 class JlmOptCommand final : public Command {
 public:
-  enum class Optimization {
-    AASteensgaardAgnostic,
-    AASteensgaardRegionAware,
-    CommonNodeElimination,
-    DeadNodeElimination,
-    FunctionInlining,
-    InvariantValueRedirection,
-    LoopUnrolling,
-    NodePullIn,
-    NodePushOut,
-    NodeReduction,
-    ThetaGammaInversion
-  };
-
   ~JlmOptCommand() override;
 
   JlmOptCommand(
-    util::filepath inputFile,
-    util::filepath outputFile,
-    std::vector<Optimization> optimizations)
-    : InputFile_(std::move(inputFile))
-    , OutputFile_(std::move(outputFile))
-    , Optimizations_(std::move(optimizations))
+    std::string programName,
+    JlmOptCommandLineOptions commandLineOptions)
+    : ProgramName_(std::move(programName)),
+      CommandLineOptions_(std::move(commandLineOptions))
   {}
 
   [[nodiscard]] std::string
@@ -372,23 +359,36 @@ public:
   static CommandGraph::Node &
   Create(
     CommandGraph & commandGraph,
-    const util::filepath & inputFile,
-    const util::filepath & outputFile,
-    const std::vector<Optimization> & optimizations)
+    std::string programName,
+    JlmOptCommandLineOptions commandLineOptions)
   {
-    std::unique_ptr<JlmOptCommand> command(new JlmOptCommand(inputFile, outputFile, optimizations));
+    auto command = std::make_unique<JlmOptCommand>(
+      std::move(programName),
+      std::move(commandLineOptions));
     return CommandGraph::Node::Create(commandGraph, std::move(command));
   }
 
-  const std::vector<Optimization> &Optimizations() const noexcept { return Optimizations_; }
+  [[nodiscard]] const JlmOptCommandLineOptions&
+  GetCommandLineOptions() const noexcept
+  {
+    return CommandLineOptions_;
+  }
 
 private:
-  static std::string
-  ToString(const Optimization & optimization);
+  std::unique_ptr<::llvm::Module>
+  ParseLlvmIrFile(
+    const util::filepath & llvmIrFile,
+    ::llvm::LLVMContext & llvmContext) const;
 
-  util::filepath InputFile_;
-  util::filepath OutputFile_;
-  std::vector<Optimization> Optimizations_;
+  static void
+  PrintRvsdgModule(
+    const llvm::RvsdgModule & rvsdgModule,
+    const util::filepath & outputFile,
+    const JlmOptCommandLineOptions::OutputFormat & outputFormat,
+    util::StatisticsCollector & statisticsCollector);
+
+  std::string ProgramName_;
+  JlmOptCommandLineOptions CommandLineOptions_;
 };
 
 /**

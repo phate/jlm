@@ -109,6 +109,12 @@ public:
     DemandedStatistics_ = std::move(demandedStatistics);
   }
 
+  [[nodiscard]] size_t
+  NumDemandedStatistics() const noexcept
+  {
+    return DemandedStatistics_.Size();
+  }
+
 private:
   filepath FilePath_;
   HashSet<Statistics::Id> DemandedStatistics_;

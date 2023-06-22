@@ -3,9 +3,22 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.hpp>
+#include <jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp>
+#include <jlm/llvm/frontend/InterProceduralGraphConversion.hpp>
+#include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
+#include <jlm/llvm/ir/ipgraph-module.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/opt/OptimizationSequence.hpp>
 #include <jlm/tooling/Command.hpp>
 #include <jlm/tooling/CommandPaths.hpp>
-#include <jlm/util/strfmt.hpp>
+#include <jlm/rvsdg/view.hpp>
+
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IRReader/IRReader.h>
+#include <llvm/Support/raw_os_ostream.h>
+#include <llvm/Support/SourceMgr.h>
 
 #include <sys/stat.h>
 
@@ -247,45 +260,135 @@ JlmOptCommand::~JlmOptCommand()
 std::string
 JlmOptCommand::ToString() const
 {
+  /*
+   * There is currently no need to support statistics gathering here.
+   */
+  JLM_ASSERT(CommandLineOptions_.GetStatisticsCollectorSettings().NumDemandedStatistics() == 0);
+
   std::string optimizationArguments;
-  for (auto & optimization : Optimizations_)
-    optimizationArguments += ToString(optimization) + " ";
+  for (auto & optimization : CommandLineOptions_.GetOptimizationIds())
+    optimizationArguments += "--" + std::string(JlmOptCommandLineOptions::ToCommandLineArgument(optimization)) + " ";
+
+  auto outputFormatArgument =
+    "--"
+    + std::string(JlmOptCommandLineOptions::ToCommandLineArgument(CommandLineOptions_.GetOutputFormat()))
+    + " ";
+
+  auto outputFileArgument = !CommandLineOptions_.GetOutputFile().to_str().empty()
+    ? "-o " + CommandLineOptions_.GetOutputFile().to_str() + " "
+    : "";
 
   return util::strfmt(
-    "jlm-opt ",
-    "--llvm ",
+    ProgramName_ + " ",
+    outputFormatArgument,
     optimizationArguments,
-    "-o ", OutputFile_.to_str(), " ",
-    InputFile_.to_str());
+    outputFileArgument,
+    CommandLineOptions_.GetInputFile().to_str());
 }
 
 void
 JlmOptCommand::Run() const
 {
-  if (system(ToString().c_str()))
-    exit(EXIT_FAILURE);
+  ::llvm::LLVMContext llvmContext;
+  auto llvmModule = ParseLlvmIrFile(
+    CommandLineOptions_.GetInputFile(),
+    llvmContext);
+
+  auto interProceduralGraphModule = llvm::ConvertLlvmModule(*llvmModule);
+
+  /*
+   * Dispose of Llvm module. It is no longer needed.
+   */
+  llvmModule.reset();
+
+  jlm::util::StatisticsCollector statisticsCollector(CommandLineOptions_.GetStatisticsCollectorSettings());
+
+  auto rvsdgModule = llvm::ConvertInterProceduralGraphModule(
+    *interProceduralGraphModule,
+    statisticsCollector);
+
+  llvm::OptimizationSequence::CreateAndRun(
+    *rvsdgModule,
+    statisticsCollector,
+    CommandLineOptions_.GetOptimizations());
+
+  PrintRvsdgModule(
+    *rvsdgModule,
+    CommandLineOptions_.GetOutputFile(),
+    CommandLineOptions_.GetOutputFormat(),
+    statisticsCollector);
+
+  statisticsCollector.PrintStatistics();
 }
 
-std::string
-JlmOptCommand::ToString(const Optimization & optimization)
+std::unique_ptr<::llvm::Module>
+JlmOptCommand::ParseLlvmIrFile(
+  const util::filepath & llvmIrFile,
+  ::llvm::LLVMContext & llvmContext) const
 {
-  static std::unordered_map<Optimization, const char*>
-    map({
-          {Optimization::AASteensgaardAgnostic,     "--AASteensgaardAgnostic"},
-          {Optimization::AASteensgaardRegionAware,  "--AASteensgaardRegionAware"},
-          {Optimization::CommonNodeElimination,     "--cne"},
-          {Optimization::DeadNodeElimination,       "--dne"},
-          {Optimization::FunctionInlining,          "--iln"},
-          {Optimization::InvariantValueRedirection, "--InvariantValueRedirection"},
-          {Optimization::LoopUnrolling,             "--url"},
-          {Optimization::NodePullIn,                "--pll"},
-          {Optimization::NodePushOut,               "--psh"},
-          {Optimization::NodeReduction,             "--red"},
-          {Optimization::ThetaGammaInversion,       "--ivt"}
-        });
+  ::llvm::SMDiagnostic diagnostic;
+  if (auto module = ::llvm::parseIRFile(llvmIrFile.to_str(), diagnostic, llvmContext))
+  {
+    return module;
+  }
 
-  JLM_ASSERT(map.find(optimization) != map.end());
-  return map[optimization];
+  std::string errors;
+  ::llvm::raw_string_ostream os(errors);
+  diagnostic.print(ProgramName_.c_str(), os);
+  throw util::error(errors);
+}
+
+void
+JlmOptCommand::PrintRvsdgModule(
+  const llvm::RvsdgModule & rvsdgModule,
+  const util::filepath & outputFile,
+  const JlmOptCommandLineOptions::OutputFormat & outputFormat,
+  util::StatisticsCollector & statisticsCollector)
+{
+  auto printAsXml = [](
+    const llvm::RvsdgModule & rvsdgModule,
+    const util::filepath & outputFile,
+    util::StatisticsCollector&)
+  {
+    auto fd = outputFile == "" ? stdout : fopen(outputFile.to_str().c_str(), "w");
+
+    jlm::rvsdg::view_xml(rvsdgModule.Rvsdg().root(), fd);
+
+    if (fd != stdout)
+      fclose(fd);
+  };
+
+  auto printAsLlvm = [](
+    const llvm::RvsdgModule & rvsdgModule,
+    const util::filepath & outputFile,
+    util::StatisticsCollector & statisticsCollector)
+  {
+    auto jlm_module = llvm::rvsdg2jlm::rvsdg2jlm(rvsdgModule, statisticsCollector);
+
+    ::llvm::LLVMContext ctx;
+    auto llvm_module = jlm::llvm::jlm2llvm::convert(*jlm_module, ctx);
+
+    if (outputFile == "") {
+      ::llvm::raw_os_ostream os(std::cout);
+      llvm_module->print(os, nullptr);
+    } else {
+      std::error_code ec;
+      ::llvm::raw_fd_ostream os(outputFile.to_str(), ec);
+      llvm_module->print(os, nullptr);
+    }
+  };
+
+  static std::unordered_map<
+    JlmOptCommandLineOptions::OutputFormat,
+    std::function<void(const llvm::RvsdgModule&, const util::filepath&, util::StatisticsCollector&)>
+  > printers(
+    {
+      {tooling::JlmOptCommandLineOptions::OutputFormat::Xml,  printAsXml},
+      {tooling::JlmOptCommandLineOptions::OutputFormat::Llvm, printAsLlvm}
+    });
+
+  JLM_ASSERT(printers.find(outputFormat) != printers.end());
+  printers[outputFormat](rvsdgModule, outputFile, statisticsCollector);
 }
 
 MkdirCommand::~MkdirCommand() noexcept

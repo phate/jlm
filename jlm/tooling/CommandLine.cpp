@@ -95,7 +95,21 @@ JlmOptCommandLineOptions::Reset() noexcept
   OutputFile_ = util::filepath("");
   OutputFormat_ = OutputFormat::Llvm;
   StatisticsCollectorSettings_ = util::StatisticsCollectorSettings();
-  Optimizations_.clear();
+  OptimizationIds_.clear();
+}
+
+std::vector<llvm::optimization*>
+JlmOptCommandLineOptions::GetOptimizations() const noexcept
+{
+  std::vector<llvm::optimization*> optimizations;
+  optimizations.reserve(OptimizationIds_.size());
+
+  for (auto & optimizationId: OptimizationIds_)
+  {
+    optimizations.emplace_back(GetOptimization(optimizationId));
+  }
+
+  return optimizations;
 }
 
 JlmOptCommandLineOptions::OptimizationId
@@ -144,6 +158,21 @@ JlmOptCommandLineOptions::ToCommandLineArgument(OptimizationId optimizationId)
     return map[optimizationId];
 
   throw util::error("Unknown optimization identifier");
+}
+
+const char*
+JlmOptCommandLineOptions::ToCommandLineArgument(OutputFormat outputFormat)
+{
+  static std::unordered_map<OutputFormat, const char*> map(
+    {
+      {OutputFormat::Llvm, "llvm"},
+      {OutputFormat::Xml,  "xml"}
+    });
+
+  if (map.find(outputFormat) != map.end())
+    return map[outputFormat];
+
+  throw util::error("Unknown output format");
 }
 
 llvm::optimization *
@@ -211,8 +240,36 @@ JlcCommandLineParser::~JlcCommandLineParser() noexcept
 const JlcCommandLineOptions &
 JlcCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
 {
-  auto checkAndConvertJlmOptOptimizations = [](const ::llvm::cl::list<std::string>& optimizations)
+  auto checkAndConvertJlmOptOptimizations = [](
+    const ::llvm::cl::list<std::string>& optimizations,
+    JlcCommandLineOptions::OptimizationLevel optimizationLevel)
   {
+    if (optimizations.empty()
+        && optimizationLevel == JlcCommandLineOptions::OptimizationLevel::O3)
+    {
+      return std::vector<JlmOptCommandLineOptions::OptimizationId>
+        ({
+           JlmOptCommandLineOptions::OptimizationId::iln,
+           JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+           JlmOptCommandLineOptions::OptimizationId::red,
+           JlmOptCommandLineOptions::OptimizationId::dne,
+           JlmOptCommandLineOptions::OptimizationId::ivt,
+           JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+           JlmOptCommandLineOptions::OptimizationId::dne,
+           JlmOptCommandLineOptions::OptimizationId::psh,
+           JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+           JlmOptCommandLineOptions::OptimizationId::dne,
+           JlmOptCommandLineOptions::OptimizationId::red,
+           JlmOptCommandLineOptions::OptimizationId::cne,
+           JlmOptCommandLineOptions::OptimizationId::dne,
+           JlmOptCommandLineOptions::OptimizationId::pll,
+           JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+           JlmOptCommandLineOptions::OptimizationId::dne,
+           JlmOptCommandLineOptions::OptimizationId::url,
+           JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection
+         });
+    }
+
     std::vector<JlmOptCommandLineOptions::OptimizationId> optimizationIds;
     for (auto & optimization : optimizations)
     {
@@ -412,6 +469,10 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
     exit(EXIT_FAILURE);
   }
 
+  auto jlmOptOptimizations = checkAndConvertJlmOptOptimizations(
+    jlmOptimizations,
+    CommandLineOptions_.OptimizationLevel_);
+
   CommandLineOptions_.Libraries_ = libraries;
   CommandLineOptions_.MacroDefinitions_ = macroDefinitions;
   CommandLineOptions_.LibraryPaths_ = libraryPaths;
@@ -420,7 +481,7 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
   CommandLineOptions_.OnlyPrintCommands_ = onlyPrintCommands;
   CommandLineOptions_.GenerateDebugInformation_ = generateDebugInformation;
   CommandLineOptions_.Flags_ = flags;
-  CommandLineOptions_.JlmOptOptimizations_ = checkAndConvertJlmOptOptimizations(jlmOptimizations);
+  CommandLineOptions_.JlmOptOptimizations_ = jlmOptOptimizations;
   CommandLineOptions_.Verbose_ = verbose;
   CommandLineOptions_.Rdynamic_ = rDynamic;
   CommandLineOptions_.Suppress_ = suppress;
@@ -472,8 +533,6 @@ JlmOptCommandLineParser::~JlmOptCommandLineParser() noexcept
 const JlmOptCommandLineOptions &
 JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
 {
-  CommandLineOptions_.Reset();
-
   using namespace ::llvm;
 
   /*
@@ -485,19 +544,23 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
 
   cl::TopLevelSubCommand->reset();
 
+  util::StatisticsCollectorSettings statisticsCollectorSettings;
+
   cl::opt<std::string> inputFile(
     cl::Positional,
     cl::desc("<input>"));
 
   cl::opt<std::string> outputFile(
     "o",
+    cl::init(""),
     cl::desc("Write output to <file>"),
     cl::value_desc("file"));
 
   cl::opt<std::string> statisticFile(
     "s",
+    cl::init(statisticsCollectorSettings.GetFilePath().to_str()),
     cl::desc("Write stats to <file>. Default is "
-             + CommandLineOptions_.StatisticsCollectorSettings_.GetFilePath().to_str()
+             + statisticsCollectorSettings.GetFilePath().to_str()
              + "."),
     cl::value_desc("file"));
 
@@ -589,16 +652,20 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
         "Write theta-gamma inversion statistics to file.")),
     cl::desc("Write statistics"));
 
+  auto llvmOutputFormat = JlmOptCommandLineOptions::OutputFormat::Llvm;
+  auto xmlOutputFormat = JlmOptCommandLineOptions::OutputFormat::Xml;
+
   cl::opt<JlmOptCommandLineOptions::OutputFormat> outputFormat(
     cl::values(
       ::clEnumValN(
-        JlmOptCommandLineOptions::OutputFormat::Llvm,
-        "llvm",
+        llvmOutputFormat,
+        JlmOptCommandLineOptions::ToCommandLineArgument(llvmOutputFormat),
         "Output LLVM IR [default]"),
       ::clEnumValN(
-        JlmOptCommandLineOptions::OutputFormat::Xml,
-        "xml",
+        xmlOutputFormat,
+        JlmOptCommandLineOptions::ToCommandLineArgument(xmlOutputFormat),
         "Output XML")),
+    cl::init(llvmOutputFormat),
     cl::desc("Select output format"));
 
   auto aASteensgaardAgnostic = JlmOptCommandLineOptions::OptimizationId::AASteensgaardAgnostic;
@@ -663,25 +730,19 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
 
   cl::ParseCommandLineOptions(argc, argv);
 
-  if (!outputFile.empty())
-    CommandLineOptions_.OutputFile_ = outputFile;
+  statisticsCollectorSettings.SetFilePath(statisticFile);
 
-  if (!statisticFile.empty())
-    CommandLineOptions_.StatisticsCollectorSettings_.SetFilePath(statisticFile);
+  util::HashSet<util::Statistics::Id> demandedStatistics({printStatistics.begin(), printStatistics.end()});
+  statisticsCollectorSettings.SetDemandedStatistics(std::move(demandedStatistics));
 
-  std::vector<llvm::optimization*> optimizations;
-  for (auto &optimizationId: optimizationIds)
-    optimizations.push_back(JlmOptCommandLineOptions::GetOptimization(optimizationId));
+  CommandLineOptions_ = JlmOptCommandLineOptions::Create(
+    inputFile,
+    outputFile,
+    outputFormat,
+    std::move(statisticsCollectorSettings),
+    std::move(optimizationIds));
 
-
-  util::HashSet<util::Statistics::Id> printStatisticsIds({printStatistics.begin(), printStatistics.end()});
-
-  CommandLineOptions_.InputFile_ = inputFile;
-  CommandLineOptions_.OutputFormat_ = outputFormat;
-  CommandLineOptions_.Optimizations_ = optimizations;
-  CommandLineOptions_.StatisticsCollectorSettings_.SetDemandedStatistics(printStatisticsIds);
-
-  return CommandLineOptions_;
+  return *CommandLineOptions_;
 }
 
 const JlmOptCommandLineOptions &
