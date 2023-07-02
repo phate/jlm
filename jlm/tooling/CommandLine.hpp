@@ -51,15 +51,56 @@ public:
 
     AASteensgaardAgnostic,
     AASteensgaardRegionAware,
+
+    /**
+     * \deprecated This flag is going to be removed in the future. Use \ref OptimizationId::CommonNodeElimination
+     * instead.
+     */
     cne,
+    CommonNodeElimination,
+    DeadNodeElimination,
+
+    /**
+     * \deprecated This flag is going to be removed in the future. Use \ref OptimizationId::DeadNodeElimination instead.
+     */
     dne,
+    FunctionInlining,
+
+    /**
+     * \deprecated This flag is going to be removed in the future. Use \ref OptimizationId::FunctionInlining instead.
+     */
     iln,
     InvariantValueRedirection,
+    LoopUnrolling,
+    NodePullIn,
+    NodePushOut,
+    NodeReduction,
+
+    /**
+     * \deprecated This flag is going to be removed in the future. Use \ref OptimizationId::NodePushOut instead.
+     */
     psh,
+
+    /**
+     * \deprecated This flag is going to be removed in the future. Use \ref OptimizationId::NodeReduction instead.
+     */
     red,
+
+    /**
+     * \deprecated This flag is going to be removed in the future. Use \ref OptimizationId::ThetaGammaInversion instead.
+     */
     ivt,
+
+    /**
+     * \deprecated This flag is going to be removed in the future. Use \ref OptimizationId::LoopUnrolling instead.
+     */
     url,
+
+    /**
+     * \deprecated This flag is going to be removed in the future. Use \ref OptimizationId::NodePullIn instead.
+     */
     pll,
+    ThetaGammaInversion,
 
     LastEnumValue // must always be the last enum value, used for iteration
   };
@@ -150,15 +191,23 @@ private:
 
   inline static const char* AaSteensgaardAgnosticCommandLineArgument_ = "AASteensgaardAgnostic";
   inline static const char* AaSteensgaardRegionAwareCommandLineArgument_ = "AASteensgaardRegionAware";
-  inline static const char* CommonNodeEliminationCommandLineArgument_ = "cne";
-  inline static const char* DeadNodeEliminationCommandLineArgument_ = "dne";
-  inline static const char* FunctionInliningCommandLineArgument_ = "iln";
+  inline static const char* CommonNodeEliminationCommandLineArgument_ = "CommonNodeElimination";
+  inline static const char* CommonNodeEliminationDeprecatedCommandLineArgument_ = "cne";
+  inline static const char* DeadNodeEliminationCommandLineArgument_ = "DeadNodeElimination";
+  inline static const char* DeadNodeEliminationDeprecatedCommandLineArgument_ = "dne";
+  inline static const char* FunctionInliningCommandLineArgument_ = "FunctionInlining";
+  inline static const char* FunctionInliningDeprecatedCommandLineArgument_ = "iln";
   inline static const char* InvariantValueRedirectionCommandLineArgument_ = "InvariantValueRedirection";
-  inline static const char* NodePullInCommandLineArgument_ = "pll";
-  inline static const char* NodePushOutCommandLineArgument_ = "psh";
-  inline static const char* ThetaGammaInversionCommandLineArgument_ = "ivt";
-  inline static const char* LoopUnrollingCommandLineArgument_ = "url";
-  inline static const char* NodeReductionCommandLineArgument_ = "red";
+  inline static const char* NodePullInCommandLineArgument_ = "NodePullIn";
+  inline static const char* NodePullInDeprecatedCommandLineArgument_ = "pll";
+  inline static const char* NodePushOutCommandLineArgument_ = "NodePushOut";
+  inline static const char* NodePushOutDeprecatedCommandLineArgument_ = "psh";
+  inline static const char* ThetaGammaInversionCommandLineArgument_ = "ThetaGammaInversion";
+  inline static const char* ThetaGammaInversionDeprecatedCommandLineArgument_ = "ivt";
+  inline static const char* LoopUnrollingCommandLineArgument_ = "LoopUnrolling";
+  inline static const char* LoopUnrollingDeprecatedCommandLineArgument_ = "url";
+  inline static const char* NodeReductionCommandLineArgument_ = "NodeReduction";
+  inline static const char* NodeReductionDeprecatedCommandLineArgument_ = "red";
 };
 
 class JlcCommandLineOptions final : public CommandLineOptions {

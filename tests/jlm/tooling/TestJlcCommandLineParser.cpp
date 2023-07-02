@@ -146,15 +146,15 @@ TestJlmOptOptimizations()
   using namespace jlm::tooling;
 
   // Arrange
-  std::vector<std::string> commandLineArguments({"jlc", "foobar.c", "-Jcne", "-Jdne"});
+  std::vector<std::string> commandLineArguments({"jlc", "foobar.c", "-JCommonNodeElimination", "-JDeadNodeElimination"});
 
   // Act
   auto & commandLineOptions = ParseCommandLineArguments(commandLineArguments);
 
   // Assert
   assert(commandLineOptions.JlmOptOptimizations_.size() == 2);
-  assert(commandLineOptions.JlmOptOptimizations_[0] == JlmOptCommandLineOptions::OptimizationId::cne);
-  assert(commandLineOptions.JlmOptOptimizations_[1] == JlmOptCommandLineOptions::OptimizationId::dne);
+  assert(commandLineOptions.JlmOptOptimizations_[0] == JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination);
+  assert(commandLineOptions.JlmOptOptimizations_[1] == JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination);
 }
 
 static void

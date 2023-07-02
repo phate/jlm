@@ -97,8 +97,8 @@ TestJlmOptOptimizations()
                                                true,
                                                true});
   commandLineOptions.OutputFile_ = {"foobar"};
-  commandLineOptions.JlmOptOptimizations_.push_back(JlmOptCommandLineOptions::OptimizationId::cne);
-  commandLineOptions.JlmOptOptimizations_.push_back(JlmOptCommandLineOptions::OptimizationId::dne);
+  commandLineOptions.JlmOptOptimizations_.push_back(JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination);
+  commandLineOptions.JlmOptOptimizations_.push_back(JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination);
 
   /*
    * Act
@@ -114,8 +114,8 @@ TestJlmOptOptimizations()
   auto & optimizations = jlmOptCommand.GetCommandLineOptions().GetOptimizationIds();
 
   assert(optimizations.size() == 2);
-  assert(optimizations[0] == JlmOptCommandLineOptions::OptimizationId::cne);
-  assert(optimizations[1] == JlmOptCommandLineOptions::OptimizationId::dne);
+  assert(optimizations[0] == JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination);
+  assert(optimizations[1] == JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination);
 }
 
 static int
