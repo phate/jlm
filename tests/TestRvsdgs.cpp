@@ -1286,6 +1286,205 @@ GammaTest::SetupRvsdg()
   return module;
 }
 
+std::unique_ptr<llvm::RvsdgModule>
+GammaTest2::SetupRvsdg()
+{
+  using namespace jlm::llvm;
+
+  auto rvsdgModule = RvsdgModule::Create(util::filepath(""), "", "");
+  auto rvsdg = &rvsdgModule->Rvsdg();
+
+  auto nf = rvsdg->node_normal_form(typeid(rvsdg::operation));
+  nf->set_mutable(false);
+
+  auto SetupLambdaF = [&]()
+  {
+    auto SetupGamma = [](
+      rvsdg::output * predicate,
+      rvsdg::output * xAddress,
+      rvsdg::output * yAddress,
+      rvsdg::output * zAddress,
+      rvsdg::output * memoryState)
+    {
+      auto gammaNode = rvsdg::gamma_node::create(predicate, 2);
+
+      auto gammaInputX = gammaNode->add_entryvar(xAddress);
+      auto gammaInputY = gammaNode->add_entryvar(yAddress);
+      auto gammaInputZ = gammaNode->add_entryvar(zAddress);
+      auto gammaInputMemoryState = gammaNode->add_entryvar(memoryState);
+
+      // gamma subregion 0
+      auto loadXResults = LoadNode::Create(
+        gammaInputX->argument(0),
+        {gammaInputMemoryState->argument(0)},
+        jlm::rvsdg::bit32,
+        4);
+
+      auto one = rvsdg::create_bitconstant(gammaNode->subregion(0), 32, 1);
+      auto storeZRegion0Results = StoreNode::Create(
+        gammaInputZ->argument(0),
+        one,
+        {loadXResults[1]},
+        4);
+
+      // gamma subregion 1
+      auto loadYResults = LoadNode::Create(
+        gammaInputY->argument(1),
+        {gammaInputMemoryState->argument(1)},
+        jlm::rvsdg::bit32,
+        4);
+
+      auto two = rvsdg::create_bitconstant(gammaNode->subregion(1), 32, 2);
+      auto storeZRegion1Results = StoreNode::Create(
+        gammaInputZ->argument(1),
+        two,
+        {loadYResults[1]},
+        4);
+
+      // finalize gamma
+      auto gammaOutputA = gammaNode->add_exitvar({loadXResults[0], loadYResults[0]});
+      auto gammaOutputMemoryState = gammaNode->add_exitvar({storeZRegion0Results[0], storeZRegion1Results[0]});
+
+      return std::make_tuple(
+        gammaOutputA,
+        gammaOutputMemoryState);
+    };
+
+    iostatetype iOStateType;
+    MemoryStateType memoryStateType;
+    loopstatetype loopStateType;
+    PointerType pointerType;
+    FunctionType functionType(
+      {&rvsdg::bit32, &pointerType, &pointerType, &iOStateType, &memoryStateType, &loopStateType},
+      {&rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType});
+
+    auto lambda = lambda::node::create(rvsdg->root(), functionType, "f", linkage::external_linkage);
+    auto cArgument = lambda->fctargument(0);
+    auto xArgument = lambda->fctargument(1);
+    auto yArgument = lambda->fctargument(2);
+    auto iOStateArgument = lambda->fctargument(3);
+    auto memoryStateArgument = lambda->fctargument(4);
+    auto loopStateArgument = lambda->fctargument(5);
+
+    auto size = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
+
+    auto allocaZResults = alloca_op::create(pointerType, size, 4);
+
+    auto memoryState = MemStateMergeOperator::Create({allocaZResults[1], memoryStateArgument});
+
+    auto nullPointer = ConstantPointerNullOperation::Create(lambda->subregion(), pointerType);
+    auto storeZResults = StoreNode::Create(allocaZResults[0], nullPointer, {memoryState}, 4);
+
+    auto zero = rvsdg::create_bitconstant(lambda->subregion(), 32, 0);
+    auto bitEq = rvsdg::biteq_op::create(32, cArgument, zero);
+    auto predicate = rvsdg::match(1, {{0, 1}}, 0, 2, bitEq);
+
+    auto [gammaOutputA, gammaOutputMemoryState] = SetupGamma(
+      predicate,
+      xArgument,
+      yArgument,
+      allocaZResults[0],
+      memoryState);
+
+    auto loadZResults = LoadNode::Create(
+      allocaZResults[0],
+      {gammaOutputMemoryState},
+      jlm::rvsdg::bit32,
+      4);
+
+    auto sum = jlm::rvsdg::bitadd_op::create(32, gammaOutputA, loadZResults[0]);
+
+    lambda->finalize({sum, iOStateArgument, loadZResults[1], loopStateArgument});
+
+    return std::make_tuple(
+      lambda->output(),
+      gammaOutputA->node(),
+      rvsdg::node_output::node(allocaZResults[0]));
+  };
+
+  auto SetupLambdaGH = [&](
+    lambda::output & lambdaF,
+    int64_t cValue,
+    int64_t xValue,
+    int64_t yValue,
+    const char * functionName)
+  {
+    iostatetype iOStateType;
+    MemoryStateType memoryStateType;
+    loopstatetype loopStateType;
+    PointerType pointerType;
+    FunctionType functionType(
+      {&iOStateType, &memoryStateType, &loopStateType},
+      {&rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType});
+
+    auto lambda = lambda::node::create(rvsdg->root(), functionType, functionName, linkage::external_linkage);
+    auto iOStateArgument = lambda->fctargument(0);
+    auto memoryStateArgument = lambda->fctargument(1);
+    auto loopStateArgument = lambda->fctargument(2);
+    auto lambdaFArgument = lambda->add_ctxvar(&lambdaF);
+
+    auto size = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
+
+    auto allocaXResults = alloca_op::create(rvsdg::bit32, size, 4);
+    auto allocaYResults = alloca_op::create(pointerType, size, 4);
+
+    auto memoryState = MemStateMergeOperator::Create({allocaXResults[1], memoryStateArgument});
+    memoryState = MemStateMergeOperator::Create(std::vector<jlm::rvsdg::output *>({allocaYResults[1], memoryState}));
+
+    auto predicate = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, cValue);
+    auto x = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, xValue);
+    auto y = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, yValue);
+
+    auto storeXResults = StoreNode::Create(
+      allocaXResults[0],
+      x,
+      {allocaXResults[1]},
+      4);
+
+    auto storeYResults = StoreNode::Create(
+      allocaYResults[0],
+      y,
+      {storeXResults[0]},
+      4);
+
+    auto callResults = CallNode::Create(
+      lambdaFArgument,
+      lambdaF.node()->type(),
+      {predicate, allocaXResults[0], allocaYResults[0], iOStateArgument, storeYResults[0], loopStateArgument});
+
+    lambda->finalize(callResults);
+    rvsdg->add_export(lambda->output(), {PointerType(), functionName});
+
+    return std::make_tuple(
+      lambda->output(),
+      util::AssertedCast<CallNode>(rvsdg::node_output::node(callResults[0])),
+      rvsdg::node_output::node(allocaXResults[0]),
+      rvsdg::node_output::node(allocaYResults[1]));
+  };
+
+  auto [lambdaF, gammaNode, allocaZ] = SetupLambdaF();
+  auto [lambdaG, callFromG, allocaXFromG, allocaYFromG] = SetupLambdaGH(*lambdaF, 0, 1, 2, "g");
+  auto [lambdaH, callFromH, allocaXFromH, allocaYFromH] = SetupLambdaGH(*lambdaF, 1, 3, 4, "h");
+
+  // Assign nodes
+  this->LambdaF_ = lambdaF->node();
+  this->LambdaG_ = lambdaG->node();
+  this->LambdaH_ = lambdaH->node();
+
+  this->Gamma_ = gammaNode;
+
+  this->CallFromG_ = callFromG;
+  this->CallFromH_ = callFromH;
+
+  this->AllocaXFromG_ = allocaXFromG;
+  this->AllocaYFromG_ = allocaYFromG;
+  this->AllocaXFromH_ = allocaXFromH;
+  this->AllocaYFromH_ = allocaYFromH;
+  this->AllocaZ_ = allocaZ;
+
+  return rvsdgModule;
+}
+
 std::unique_ptr<jlm::llvm::RvsdgModule>
 ThetaTest::SetupRvsdg()
 {
