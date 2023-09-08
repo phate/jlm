@@ -1,0 +1,979 @@
+/*
+ * Copyright 2023 Nico Reißmann <nico.reissmann@gmail.com>
+ * See COPYING for terms of redistribution.
+ */
+
+#include <jlm/llvm/opt/alias-analyses/MemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/TopDownMemoryNodeEliminator.hpp>
+#include <jlm/rvsdg/traverser.hpp>
+#include <jlm/util/time.hpp>
+
+namespace jlm::llvm::aa
+{
+
+static bool
+IsAllocaNode(const PointsToGraph::MemoryNode * memoryNode) noexcept
+{
+  return PointsToGraph::Node::Is<PointsToGraph::AllocaNode>(*memoryNode);
+}
+
+/** \brief Collect statistics about TopDownMemoryNodeEliminator pass
+ *
+ */
+class TopDownMemoryNodeEliminator::Statistics final : public util::Statistics
+{
+public:
+  ~Statistics() override
+  = default;
+
+  explicit
+  Statistics(util::filepath sourceFile)
+    : util::Statistics(Statistics::Id::TopDownMemoryNodeEliminator)
+    , NumRvsdgNodes_(0)
+    , SourceFile_(std::move(sourceFile))
+  {}
+
+  void
+  Start(const rvsdg::graph & graph) noexcept
+  {
+    NumRvsdgNodes_ = rvsdg::nnodes(graph.root());
+    Timer_.start();
+  }
+
+  void
+  Stop() noexcept
+  {
+    Timer_.stop();
+  }
+
+  [[nodiscard]] std::string
+  ToString() const override
+  {
+    return util::strfmt("TopDownMemoryNodeEliminator ",
+                        SourceFile_.to_str(), " ",
+                        "#RvsdgNodes:", NumRvsdgNodes_, " ",
+                        "Time[ns]:", Timer_.ns());
+  }
+
+  static std::unique_ptr<Statistics>
+  Create(const jlm::util::filepath & sourceFile)
+  {
+    return std::make_unique<Statistics>(sourceFile);
+  }
+
+private:
+  size_t NumRvsdgNodes_;
+  util::filepath SourceFile_;
+  util::timer Timer_;
+};
+
+/** \brief Memory node provisioning of TopDownMemoryNodeEliminator
+ *
+ */
+class TopDownMemoryNodeEliminator::Provisioning final : public MemoryNodeProvisioning
+{
+  using RegionMap = std::unordered_map<const rvsdg::region*, util::HashSet<const PointsToGraph::MemoryNode*>>;
+  using CallMap = std::unordered_map<const CallNode*, util::HashSet<const PointsToGraph::MemoryNode*>>;
+
+public:
+  explicit
+  Provisioning(const PointsToGraph & pointsToGraph)
+    : PointsToGraph_(pointsToGraph)
+  {}
+
+  Provisioning(const Provisioning&) = delete;
+
+  Provisioning(Provisioning&&) = delete;
+
+  Provisioning&
+  operator=(const Provisioning&) = delete;
+
+  Provisioning&
+  operator=(Provisioning&&) = delete;
+
+  [[nodiscard]] const PointsToGraph &
+  GetPointsToGraph() const noexcept override
+  {
+    return PointsToGraph_;
+  }
+
+  [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode*> &
+  GetRegionEntryNodes(const rvsdg::region & region) const override
+  {
+    JLM_ASSERT(HasRegionEntryMemoryNodesSet(region));
+    return RegionEntryMemoryNodes_.find(&region)->second;
+  }
+
+  [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode*> &
+  GetRegionExitNodes(const rvsdg::region & region) const override
+  {
+    JLM_ASSERT(HasRegionExitMemoryNodesSet(region));
+    return RegionExitMemoryNodes_.find(&region)->second;
+  }
+
+  [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode*> &
+  GetCallEntryNodes(const CallNode & callNode) const override
+  {
+    auto callTypeClassifier = CallNode::ClassifyCall(callNode);
+
+    if (callTypeClassifier->IsNonRecursiveDirectCall())
+    {
+      auto & lambdaNode = *callTypeClassifier->GetLambdaOutput().node();
+      return GetLambdaEntryNodes(lambdaNode);
+    }
+    else if (callTypeClassifier->IsRecursiveDirectCall())
+    {
+      auto & lambdaNode = *callTypeClassifier->GetLambdaOutput().node();
+      return GetLambdaEntryNodes(lambdaNode);
+    }
+    else if (callTypeClassifier->IsExternalCall())
+    {
+      return GetExternalCallNodesSet(callNode);
+    }
+    else if (callTypeClassifier->IsIndirectCall())
+    {
+      return GetIndirectCallNodesSet(callNode);
+    }
+
+    JLM_UNREACHABLE("Unhandled call type!");
+  }
+
+  [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode*> &
+  GetCallExitNodes(const CallNode & callNode) const override
+  {
+    auto callTypeClassifier = CallNode::ClassifyCall(callNode);
+
+    if (callTypeClassifier->IsNonRecursiveDirectCall())
+    {
+      auto & lambdaNode = *callTypeClassifier->GetLambdaOutput().node();
+      return GetLambdaExitNodes(lambdaNode);
+    }
+    else if (callTypeClassifier->IsRecursiveDirectCall())
+    {
+      auto & lambdaNode = *callTypeClassifier->GetLambdaOutput().node();
+      return GetLambdaExitNodes(lambdaNode);
+    }
+    else if (callTypeClassifier->IsExternalCall())
+    {
+      return GetExternalCallNodesSet(callNode);
+    }
+    else if (callTypeClassifier->IsIndirectCall())
+    {
+      return GetIndirectCallNodesSet(callNode);
+    }
+
+    JLM_UNREACHABLE("Unhandled call type!");
+  }
+
+  [[nodiscard]] util::HashSet<const PointsToGraph::MemoryNode*>
+  GetOutputNodes(const rvsdg::output & output) const override
+  {
+    JLM_ASSERT(is<PointerType>(output.type()));
+    auto & registerNode = PointsToGraph_.GetRegisterNode(output);
+
+    util::HashSet<const PointsToGraph::MemoryNode*> memoryNodes;
+    for (auto & memoryNode : registerNode.Targets())
+      memoryNodes.Insert(&memoryNode);
+
+    return memoryNodes;
+  }
+
+  void
+  AddRegionEntryNodes(
+    const rvsdg::region & region,
+    const util::HashSet<const PointsToGraph::MemoryNode*> & memoryNodes)
+  {
+    auto & set = GetOrCreateRegionEntryMemoryNodesSet(region);
+    set.UnionWith(memoryNodes);
+  }
+
+  void
+  AddRegionExitNodes(
+    const rvsdg::region & region,
+    const util::HashSet<const PointsToGraph::MemoryNode*> & memoryNodes)
+  {
+    auto & set = GetOrCreateRegionExitMemoryNodesSet(region);
+    set.UnionWith(memoryNodes);
+  }
+
+  void
+  AddExternalCallNodes(
+    const CallNode & externalCall,
+    const util::HashSet<const PointsToGraph::MemoryNode*> & memoryNodes)
+  {
+    auto & set = GetOrCreateExternalCallNodesSet(externalCall);
+    set.UnionWith(memoryNodes);
+  }
+
+  void
+  AddIndirectCallNodes(
+    const CallNode & indirectCall,
+    const util::HashSet<const PointsToGraph::MemoryNode*> & memoryNodes)
+  {
+    JLM_ASSERT(CallNode::ClassifyCall(indirectCall)->IsIndirectCall());
+    auto & set = CreateIndirectCallNodesSet(indirectCall);
+    set.UnionWith(memoryNodes);
+  }
+
+  static std::unique_ptr<Provisioning>
+  Create(const PointsToGraph & pointsToGraph)
+  {
+    return std::make_unique<Provisioning>(pointsToGraph);
+  }
+
+private:
+  bool
+  HasExternalCallNodesSet(const CallNode & externalCall) const noexcept
+  {
+    return ExternalCallNodes_.find(&externalCall) != ExternalCallNodes_.end();
+  }
+
+  bool
+  HasIndirectCallNodesSet(const CallNode & indirectCall) const noexcept
+  {
+    return IndirectCallNodes_.find(&indirectCall) != IndirectCallNodes_.end();
+  }
+
+  bool
+  HasRegionEntryMemoryNodesSet(const rvsdg::region & region) const noexcept
+  {
+    return RegionEntryMemoryNodes_.find(&region) != RegionEntryMemoryNodes_.end();
+  }
+
+  bool
+  HasRegionExitMemoryNodesSet(const rvsdg::region & region) const noexcept
+  {
+    return RegionExitMemoryNodes_.find(&region) != RegionExitMemoryNodes_.end();
+  }
+
+  util::HashSet<const PointsToGraph::MemoryNode*> &
+  GetOrCreateRegionEntryMemoryNodesSet(const rvsdg::region & region)
+  {
+    if (!HasRegionEntryMemoryNodesSet(region))
+    {
+      RegionEntryMemoryNodes_[&region] = {};
+    }
+
+    return RegionEntryMemoryNodes_[&region];
+  }
+
+  util::HashSet<const PointsToGraph::MemoryNode*> &
+  GetOrCreateRegionExitMemoryNodesSet(const rvsdg::region & region)
+  {
+    if (!HasRegionExitMemoryNodesSet(region))
+    {
+      RegionExitMemoryNodes_[&region] = {};
+    }
+
+    return RegionExitMemoryNodes_[&region];
+  }
+
+  util::HashSet<const PointsToGraph::MemoryNode*> &
+  GetOrCreateExternalCallNodesSet(const CallNode & externalCall)
+  {
+    if (!HasExternalCallNodesSet(externalCall))
+    {
+      ExternalCallNodes_[&externalCall] = {};
+    }
+
+    return ExternalCallNodes_[&externalCall];
+  }
+
+  util::HashSet<const PointsToGraph::MemoryNode*> &
+  CreateIndirectCallNodesSet(const CallNode & indirectCall)
+  {
+    JLM_ASSERT(!HasIndirectCallNodesSet(indirectCall));
+    IndirectCallNodes_[&indirectCall] = {};
+    return IndirectCallNodes_[&indirectCall];
+  }
+
+  const util::HashSet<const PointsToGraph::MemoryNode*> &
+  GetExternalCallNodesSet(const CallNode & externalCall) const
+  {
+    JLM_ASSERT(HasExternalCallNodesSet(externalCall));
+    return (*ExternalCallNodes_.find(&externalCall)).second;
+  }
+
+  const util::HashSet<const PointsToGraph::MemoryNode*> &
+  GetIndirectCallNodesSet(const CallNode & indirectCall) const
+  {
+    JLM_ASSERT(HasIndirectCallNodesSet(indirectCall));
+    return (*IndirectCallNodes_.find(&indirectCall)).second;
+  }
+
+  const PointsToGraph & PointsToGraph_;
+
+  RegionMap RegionEntryMemoryNodes_;
+  RegionMap RegionExitMemoryNodes_;
+
+  CallMap ExternalCallNodes_;
+  CallMap IndirectCallNodes_;
+};
+
+/** \brief Context for TopDownMemoryNodeEliminator
+ *
+ * This class keeps track of all the required state throughout the transformation.
+ *
+ */
+class TopDownMemoryNodeEliminator::Context final
+{
+public:
+  explicit
+  Context(const MemoryNodeProvisioning & seedProvisioning)
+    : SeedProvisioning_(seedProvisioning)
+    , Provisioning_(Provisioning::Create(seedProvisioning.GetPointsToGraph()))
+  {}
+
+  Context(const Context&) = delete;
+
+  Context(Context&&) noexcept = delete;
+
+  Context&
+  operator=(const Context&) = delete;
+
+  Context&
+  operator=(Context&&) noexcept = delete;
+
+  [[nodiscard]] const MemoryNodeProvisioning &
+  GetSeedProvisioning() const noexcept
+  {
+    return SeedProvisioning_;
+  }
+
+  [[nodiscard]] const PointsToGraph &
+  GetPointsToGraph() const noexcept
+  {
+    return GetSeedProvisioning().GetPointsToGraph();
+  }
+
+  [[nodiscard]] Provisioning &
+  GetProvisioning() noexcept
+  {
+    return *Provisioning_;
+  }
+
+  [[nodiscard]] std::unique_ptr<Provisioning>
+  ReleaseProvisioning() noexcept
+  {
+    return std::move(Provisioning_);
+  }
+
+  const util::HashSet<const PointsToGraph::MemoryNode*> &
+  GetLiveNodes(const rvsdg::region & region) noexcept
+  {
+    return GetOrCreateLiveNodesSet(region);
+  }
+
+  void
+  AddLiveNodes(
+    const rvsdg::region & region,
+    const util::HashSet<const PointsToGraph::MemoryNode*> & memoryNodes)
+  {
+    auto & liveNodes = GetOrCreateLiveNodesSet(region);
+    liveNodes.UnionWith(memoryNodes);
+  }
+
+  bool
+  HasAnnotatedLiveNodes(const lambda::node & lambdaNode) const noexcept
+  {
+    return LiveNodesAnnotatedLambdaNodes_.Contains(&lambdaNode);
+  }
+
+  void
+  AddLiveNodesAnnotatedLambda(const lambda::node & lambdaNode)
+  {
+    LiveNodesAnnotatedLambdaNodes_.Insert(&lambdaNode);
+  }
+
+  static std::unique_ptr<Context>
+  Create(const MemoryNodeProvisioning & seedProvisioning)
+  {
+    return std::make_unique<Context>(seedProvisioning);
+  }
+
+private:
+  bool
+  HasLiveNodesSet(const rvsdg::region & region) const noexcept
+  {
+    return LiveNodes_.find(&region) != LiveNodes_.end();
+  }
+
+  util::HashSet<const PointsToGraph::MemoryNode*> &
+  GetOrCreateLiveNodesSet(const rvsdg::region & region)
+  {
+    if (!HasLiveNodesSet(region))
+    {
+      LiveNodes_[&region] = {};
+    }
+
+    return LiveNodes_[&region];
+  }
+
+  const MemoryNodeProvisioning & SeedProvisioning_;
+  std::unique_ptr<Provisioning> Provisioning_;
+
+  // Keeps track of the memory nodes that are live within a region.
+  std::unordered_map<const rvsdg::region*, util::HashSet<const PointsToGraph::MemoryNode*>> LiveNodes_;
+
+  // Keeps track of all lambda nodes where we annotated live nodes BEFORE traversing its subregion.
+  util::HashSet<const lambda::node*> LiveNodesAnnotatedLambdaNodes_;
+};
+
+TopDownMemoryNodeEliminator::~TopDownMemoryNodeEliminator() noexcept
+= default;
+
+TopDownMemoryNodeEliminator::TopDownMemoryNodeEliminator()
+= default;
+
+std::unique_ptr<MemoryNodeProvisioning>
+TopDownMemoryNodeEliminator::EliminateMemoryNodes(
+  const RvsdgModule &rvsdgModule,
+  const MemoryNodeProvisioning & seedProvisioning,
+  util::StatisticsCollector &statisticsCollector)
+{
+  Context_ = Context::Create(seedProvisioning);
+  auto statistics = Statistics::Create(rvsdgModule.SourceFileName());
+
+  statistics->Start(rvsdgModule.Rvsdg());
+  EliminateTopDown(rvsdgModule);
+  statistics->Stop();
+
+  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
+
+  auto provisioning = Context_->ReleaseProvisioning();
+  Context_.reset();
+
+  JLM_ASSERT(CheckInvariants(rvsdgModule, seedProvisioning, *provisioning));
+
+  return provisioning;
+}
+
+std::unique_ptr<MemoryNodeProvisioning>
+TopDownMemoryNodeEliminator::CreateAndEliminate(
+  const RvsdgModule &rvsdgModule,
+  const MemoryNodeProvisioning &seedProvisioning,
+  util::StatisticsCollector &statisticsCollector)
+{
+  TopDownMemoryNodeEliminator provider;
+  return provider.EliminateMemoryNodes(rvsdgModule, seedProvisioning, statisticsCollector);
+}
+
+std::unique_ptr<MemoryNodeProvisioning>
+TopDownMemoryNodeEliminator::CreateAndEliminate(
+  const RvsdgModule &rvsdgModule,
+  const MemoryNodeProvisioning &seedProvisioning)
+{
+  util::StatisticsCollector statisticsCollector;
+  return CreateAndEliminate(rvsdgModule, seedProvisioning, statisticsCollector);
+}
+
+void
+TopDownMemoryNodeEliminator::EliminateTopDown(const RvsdgModule &rvsdgModule)
+{
+  InitializeLiveNodes(rvsdgModule);
+  EliminateTopDownRootRegion(*rvsdgModule.Rvsdg().root());
+}
+
+void
+TopDownMemoryNodeEliminator::EliminateTopDownRootRegion(rvsdg::region & region)
+{
+  rvsdg::bottomup_traverser traverser(&region);
+  for (auto & node : traverser)
+  {
+    if (auto lambdaNode = dynamic_cast<const lambda::node*>(node))
+    {
+      EliminateTopDownLambda(*lambdaNode);
+    }
+    else if (auto phiNode = dynamic_cast<const phi::node*>(node))
+    {
+      EliminateTopDownPhi(*phiNode);
+    }
+    else if (dynamic_cast<const delta::node*>(node))
+    {
+      // Nothing needs to be done.
+    }
+    else
+    {
+      JLM_UNREACHABLE("Unhandled node type!");
+    }
+  }
+}
+
+void
+TopDownMemoryNodeEliminator::EliminateTopDownRegion(rvsdg::region & region)
+{
+  rvsdg::topdown_traverser traverser(&region);
+  for (auto & node : traverser)
+  {
+    if (auto simpleNode = dynamic_cast<const rvsdg::simple_node*>(node))
+    {
+      EliminateTopDownSimpleNode(*simpleNode);
+    }
+    else if (auto structuralNode = dynamic_cast<const rvsdg::structural_node*>(node))
+    {
+      EliminateTopDownStructuralNode(*structuralNode);
+    }
+    else
+    {
+      JLM_UNREACHABLE("Unhandled node type!");
+    }
+  }
+}
+
+void
+TopDownMemoryNodeEliminator::EliminateTopDownStructuralNode(const rvsdg::structural_node & structuralNode)
+{
+  if (auto gammaNode = dynamic_cast<const rvsdg::gamma_node*>(&structuralNode))
+  {
+    EliminateTopDownGamma(*gammaNode);
+  }
+  else if (auto thetaNode = dynamic_cast<const rvsdg::theta_node*>(&structuralNode))
+  {
+    EliminateTopDownTheta(*thetaNode);
+  }
+  else
+  {
+    JLM_UNREACHABLE("Unhandled structural node type!");
+  }
+}
+
+void
+TopDownMemoryNodeEliminator::EliminateTopDownLambda(const lambda::node & lambdaNode)
+{
+  EliminateTopDownLambdaEntry(lambdaNode);
+  EliminateTopDownRegion(*lambdaNode.subregion());
+  EliminateTopDownLambdaExit(lambdaNode);
+}
+
+void
+TopDownMemoryNodeEliminator::EliminateTopDownLambdaEntry(const lambda::node &lambdaNode)
+{
+  auto & lambdaSubregion = *lambdaNode.subregion();
+  auto & provisioning = Context_->GetProvisioning();
+  auto & seedProvisioning = Context_->GetSeedProvisioning();
+
+  if (Context_->HasAnnotatedLiveNodes(lambdaNode))
+  {
+    // The live nodes were annotated by the InitializeLiveNodes method and/or from the call sides
+    auto & liveNodes = Context_->GetLiveNodes(lambdaSubregion);
+    provisioning.AddRegionEntryNodes(lambdaSubregion, liveNodes);
+  }
+  else
+  {
+    // The lambda node has only indirect calls (no direct calls or exported). We therefore have no idea what memory
+    // nodes are live at its entry. Thus, we need to be conservative and simply say that all memory nodes
+    // from the seed provisioning are live.
+    auto & seedLambdaEntryNodes = seedProvisioning.GetLambdaEntryNodes(lambdaNode);
+    Context_->AddLiveNodes(lambdaSubregion, seedLambdaEntryNodes);
+    provisioning.AddRegionEntryNodes(lambdaSubregion, seedLambdaEntryNodes);
+  }
+}
+
+void
+TopDownMemoryNodeEliminator::EliminateTopDownLambdaExit(const lambda::node &lambdaNode)
+{
+  auto & lambdaSubregion = *lambdaNode.subregion();
+  auto & provisioning = Context_->GetProvisioning();
+  auto & seedProvisioning = Context_->GetSeedProvisioning();
+
+  if (Context_->HasAnnotatedLiveNodes(lambdaNode))
+  {
+    auto & entryNodes = provisioning.GetLambdaEntryNodes(lambdaNode);
+    provisioning.AddRegionExitNodes(lambdaSubregion, entryNodes);
+  }
+  else
+  {
+    // The lambda node has only indirect calls (no direct calls or exported). We therefore have no idea what memory
+    // nodes are live or dead at its exit. Thus, we need to be conservative and simply say that all memory nodes
+    // from the seed provisioning are live.
+    auto & seedLambdaExitNodes = seedProvisioning.GetLambdaExitNodes(lambdaNode);
+    provisioning.AddRegionExitNodes(lambdaSubregion, seedLambdaExitNodes);
+  }
+}
+
+void
+TopDownMemoryNodeEliminator::EliminateTopDownPhi(const phi::node & phiNode)
+{
+  auto computeLiveNodes = [&](const rvsdg::region & phiSubregion)
+  {
+    std::vector<const lambda::node*> lambdaNodes;
+    util::HashSet<const PointsToGraph::MemoryNode*> liveNodes;
+    for (auto & node : phiSubregion.nodes)
+    {
+      if (auto lambdaNode = dynamic_cast<const lambda::node*>(&node))
+      {
+        lambdaNodes.emplace_back(lambdaNode);
+
+        auto & lambdaSubregion = *lambdaNode->subregion();
+        auto & lambdaLiveNodes = Context_->GetLiveNodes(lambdaSubregion);
+        liveNodes.UnionWith(lambdaLiveNodes);
+      }
+      else if (dynamic_cast<const delta::node*>(&node))
+      {
+        // Nothing needs to be done.
+      }
+      else
+      {
+        JLM_UNREACHABLE("Unhandled node type!");
+      }
+    }
+
+    for (auto & lambdaNode : lambdaNodes)
+    {
+      auto & lambdaSubregion = *lambdaNode->subregion();
+      Context_->AddLiveNodes(lambdaSubregion, liveNodes);
+      Context_->AddLiveNodesAnnotatedLambda(*lambdaNode);
+    }
+  };
+
+  auto & phiSubregion = *phiNode.subregion();
+
+  EliminateTopDownRootRegion(phiSubregion);
+  computeLiveNodes(phiSubregion);
+  EliminateTopDownRootRegion(phiSubregion);
+}
+
+void
+TopDownMemoryNodeEliminator::EliminateTopDownGamma(const rvsdg::gamma_node & gammaNode)
+{
+  auto addSubregionLiveAndEntryNodes = [](
+    const rvsdg::gamma_node & gammaNode,
+    TopDownMemoryNodeEliminator::Context & context)
+  {
+    auto & gammaRegion = *gammaNode.region();
+    auto & seedProvisioning = context.GetSeedProvisioning();
+    auto & provisioning = context.GetProvisioning();
+    auto & gammaRegionLiveNodes = context.GetLiveNodes(gammaRegion);
+
+    for (size_t n = 0; n < gammaNode.nsubregions(); n++)
+    {
+      auto & subregion = *gammaNode.subregion(n);
+
+      auto subregionEntryNodes = seedProvisioning.GetRegionEntryNodes(subregion);
+      subregionEntryNodes.IntersectWith(gammaRegionLiveNodes);
+
+      context.AddLiveNodes(subregion, subregionEntryNodes);
+      provisioning.AddRegionEntryNodes(subregion, subregionEntryNodes);
+    }
+  };
+
+  auto eliminateTopDownForSubregions = [&](const rvsdg::gamma_node & gammaNode)
+  {
+    for (size_t n = 0; n < gammaNode.nsubregions(); n++)
+    {
+      auto & subregion = *gammaNode.subregion(n);
+      EliminateTopDownRegion(subregion);
+    }
+  };
+
+  auto addSubregionExitNodes = [](
+    const rvsdg::gamma_node & gammaNode,
+    TopDownMemoryNodeEliminator::Context & context)
+  {
+    auto & provisioning = context.GetProvisioning();
+
+    for (size_t n = 0; n < gammaNode.nsubregions(); n++)
+    {
+      auto & subregion = *gammaNode.subregion(n);
+      auto & liveNodes = context.GetLiveNodes(subregion);
+      provisioning.AddRegionExitNodes(subregion, liveNodes);
+    }
+  };
+
+  auto updateGammaRegionLiveNodes = [](
+    const rvsdg::gamma_node & gammaNode,
+    TopDownMemoryNodeEliminator::Context & context)
+  {
+    auto & gammaRegion = *gammaNode.region();
+    auto & provisioning = context.GetProvisioning();
+
+    for (size_t n = 0; n < gammaNode.nsubregions(); n++)
+    {
+      auto & subregion = *gammaNode.subregion(n);
+      auto & subregionExitNodes = provisioning.GetRegionExitNodes(subregion);
+      context.AddLiveNodes(gammaRegion, subregionExitNodes);
+    }
+  };
+
+  addSubregionLiveAndEntryNodes(gammaNode, *Context_);
+  eliminateTopDownForSubregions(gammaNode);
+  addSubregionExitNodes(gammaNode, *Context_);
+  updateGammaRegionLiveNodes(gammaNode, *Context_);
+}
+
+void
+TopDownMemoryNodeEliminator::EliminateTopDownTheta(const rvsdg::theta_node& thetaNode)
+{
+  auto & thetaRegion = *thetaNode.region();
+  auto & thetaSubregion = *thetaNode.subregion();
+  auto & seedProvisioning = Context_->GetSeedProvisioning();
+  auto & provisioning = Context_->GetProvisioning();
+  auto & thetaRegionLiveNodes = Context_->GetLiveNodes(thetaRegion);
+
+  auto subregionEntryNodes = seedProvisioning.GetRegionEntryNodes(thetaSubregion);
+  subregionEntryNodes.IntersectWith(thetaRegionLiveNodes);
+
+  Context_->AddLiveNodes(thetaSubregion, subregionEntryNodes);
+  provisioning.AddRegionEntryNodes(thetaSubregion, subregionEntryNodes);
+
+  EliminateTopDownRegion(thetaSubregion);
+
+  auto & thetaSubregionRegionLiveNodes = Context_->GetLiveNodes(thetaSubregion);
+  auto subregionExitNodes = seedProvisioning.GetRegionExitNodes(thetaSubregion);
+  subregionExitNodes.IntersectWith(thetaSubregionRegionLiveNodes);
+
+  // Theta entry and exit needs to be equivalent
+  provisioning.AddRegionEntryNodes(thetaSubregion, subregionExitNodes);
+  provisioning.AddRegionExitNodes(thetaSubregion, subregionExitNodes);
+
+  Context_->AddLiveNodes(thetaRegion, subregionExitNodes);
+}
+
+void
+TopDownMemoryNodeEliminator::EliminateTopDownSimpleNode(const rvsdg::simple_node & simpleNode)
+{
+  auto annotateAlloca = [](auto & p, auto & n) { p.EliminateTopDownAlloca(n); };
+  auto annotateCall = [](auto & p, auto & n) { p.EliminateTopDownCall(*util::AssertedCast<const CallNode>(&n)); };
+
+  static std::unordered_map<
+    std::type_index,
+    std::function<void(TopDownMemoryNodeEliminator&, const rvsdg::simple_node&)>> nodes
+    ({
+       {typeid(alloca_op), annotateAlloca},
+       {typeid(CallOperation), annotateCall}
+     });
+
+  auto & operation = simpleNode.operation();
+  if (nodes.find(typeid(operation)) != nodes.end())
+  {
+    nodes[typeid(operation)](*this, simpleNode);
+  }
+}
+
+void
+TopDownMemoryNodeEliminator::EliminateTopDownAlloca(const rvsdg::simple_node & node)
+{
+  JLM_ASSERT(is<alloca_op>(&node));
+
+  auto & allocaNode = Context_->GetPointsToGraph().GetAllocaNode(node);
+  Context_->AddLiveNodes(*node.region(), {&allocaNode});
+}
+
+void
+TopDownMemoryNodeEliminator::EliminateTopDownCall(const CallNode & callNode)
+{
+  auto callTypeClassifier = CallNode::ClassifyCall(callNode);
+
+  switch (callTypeClassifier->GetCallType())
+  {
+    case CallTypeClassifier::CallType::NonRecursiveDirectCall:
+      EliminateTopDownNonRecursiveDirectCall(callNode, *callTypeClassifier);
+      break;
+    case CallTypeClassifier::CallType::RecursiveDirectCall:
+      EliminateTopDownRecursiveDirectCall(callNode, *callTypeClassifier);
+      break;
+    case CallTypeClassifier::CallType::ExternalCall:
+      EliminateTopDownExternalCall(callNode, *callTypeClassifier);
+      break;
+    case CallTypeClassifier::CallType::IndirectCall:
+      EliminateTopDownIndirectCall(callNode, *callTypeClassifier);
+      break;
+    default:
+      JLM_UNREACHABLE("Unhandled call type classifier!");
+  }
+}
+
+void
+TopDownMemoryNodeEliminator::EliminateTopDownNonRecursiveDirectCall(
+  const CallNode & callNode,
+  const CallTypeClassifier & callTypeClassifier)
+{
+  JLM_ASSERT(callTypeClassifier.IsNonRecursiveDirectCall());
+
+  auto & liveNodes = Context_->GetLiveNodes(*callNode.region());
+  auto & lambdaNode = *callTypeClassifier.GetLambdaOutput().node();
+
+  Context_->AddLiveNodes(*lambdaNode.subregion(), liveNodes);
+  Context_->AddLiveNodesAnnotatedLambda(lambdaNode);
+}
+
+void
+TopDownMemoryNodeEliminator::EliminateTopDownRecursiveDirectCall(
+  const CallNode &callNode,
+  const CallTypeClassifier &callTypeClassifier)
+{
+  JLM_ASSERT(callTypeClassifier.IsRecursiveDirectCall());
+
+  auto & liveNodes = Context_->GetLiveNodes(*callNode.region());
+  auto & lambdaNode = *callTypeClassifier.GetLambdaOutput().node();
+
+  Context_->AddLiveNodes(*lambdaNode.subregion(), liveNodes);
+  Context_->AddLiveNodesAnnotatedLambda(lambdaNode);
+}
+
+void
+TopDownMemoryNodeEliminator::EliminateTopDownExternalCall(
+  const CallNode &callNode,
+  const CallTypeClassifier &callTypeClassifier)
+{
+  JLM_ASSERT(callTypeClassifier.IsExternalCall());
+
+  auto & liveNodes = Context_->GetLiveNodes(*callNode.region());
+
+  auto & seedCallEntryNodes = Context_->GetSeedProvisioning().GetCallEntryNodes(callNode);
+  JLM_ASSERT(liveNodes.IsSubsetOf(seedCallEntryNodes));
+
+  auto & seedCallExitNodes = Context_->GetSeedProvisioning().GetCallExitNodes(callNode);
+  JLM_ASSERT(liveNodes.IsSubsetOf(seedCallExitNodes));
+
+  Context_->GetProvisioning().AddExternalCallNodes(callNode, liveNodes);
+}
+
+void
+TopDownMemoryNodeEliminator::EliminateTopDownIndirectCall(
+  const CallNode &indirectCall,
+  const CallTypeClassifier &callTypeClassifier)
+{
+  JLM_ASSERT(callTypeClassifier.IsIndirectCall());
+
+  auto & liveNodes = Context_->GetLiveNodes(*indirectCall.region());
+
+  auto & seedCallEntryNodes = Context_->GetSeedProvisioning().GetCallEntryNodes(indirectCall);
+  JLM_ASSERT(liveNodes.IsSubsetOf(seedCallEntryNodes));
+
+  auto & seedCallExitNodes = Context_->GetSeedProvisioning().GetCallExitNodes(indirectCall);
+  JLM_ASSERT(liveNodes.IsSubsetOf(seedCallExitNodes));
+
+  Context_->GetProvisioning().AddIndirectCallNodes(indirectCall, liveNodes);
+}
+
+void
+TopDownMemoryNodeEliminator::InitializeLiveNodes(const RvsdgModule & rvsdgModule)
+{
+  auto nodes = rvsdg::graph::ExtractTailNodes(rvsdgModule.Rvsdg());
+  for (auto & node : nodes)
+  {
+    if (auto lambdaNode = dynamic_cast<const lambda::node*>(node))
+    {
+      InitializeLiveNodesLambda(*lambdaNode);
+    }
+    else if (auto phiNode = dynamic_cast<const phi::node*>(node))
+    {
+      auto lambdaNodes = phi::node::ExtractLambdaNodes(*phiNode);
+      for (auto & phiLambdaNode : lambdaNodes)
+      {
+        InitializeLiveNodesLambda(*phiLambdaNode);
+      }
+    }
+    else if (dynamic_cast<const delta::node*>(node))
+    {
+      // Nothing needs to be done for delta nodes.
+    }
+    else
+    {
+      JLM_UNREACHABLE("Unhandled node type!");
+    }
+  }
+}
+
+void
+TopDownMemoryNodeEliminator::InitializeLiveNodesLambda(const lambda::node & lambdaNode)
+{
+  auto & lambdaSubregion = *lambdaNode.subregion();
+  auto & seedProvisioning = Context_->GetSeedProvisioning();
+
+  auto memoryNodes = seedProvisioning.GetLambdaEntryNodes(lambdaNode);
+  memoryNodes.RemoveWhere(IsAllocaNode);
+  Context_->AddLiveNodes(lambdaSubregion, memoryNodes);
+  Context_->AddLiveNodesAnnotatedLambda(lambdaNode);
+}
+
+bool
+TopDownMemoryNodeEliminator::CheckInvariants(
+  const RvsdgModule & rvsdgModule,
+  const MemoryNodeProvisioning &seedProvisioning,
+  const Provisioning &provisioning)
+{
+  std::function<void(const rvsdg::region&, std::vector<const rvsdg::region*>&, std::vector<const CallNode*>&)>
+    collectRegionsAndCalls = [&](
+      const rvsdg::region & rootRegion,
+      std::vector<const rvsdg::region*> & regions,
+      std::vector<const CallNode*> & callNodes)
+  {
+    for (auto & node : rootRegion.nodes)
+    {
+      if (auto lambdaNode = dynamic_cast<const lambda::node*>(&node))
+      {
+        auto lambdaSubregion = lambdaNode->subregion();
+        regions.push_back(lambdaSubregion);
+        collectRegionsAndCalls(*lambdaSubregion, regions, callNodes);
+      }
+      else if (auto phiNode = dynamic_cast<const phi::node*>(&node))
+      {
+        auto subregion = phiNode->subregion();
+        collectRegionsAndCalls(*subregion, regions, callNodes);
+      }
+      else if (auto gammaNode = dynamic_cast<const rvsdg::gamma_node*>(&node))
+      {
+        for (size_t n = 0; n < gammaNode->nsubregions(); n++)
+        {
+          auto subregion = gammaNode->subregion(n);
+          regions.push_back(subregion);
+          collectRegionsAndCalls(*subregion, regions, callNodes);
+        }
+      }
+      else if (auto thetaNode = dynamic_cast<const rvsdg::theta_node*>(&node))
+      {
+        auto subregion = thetaNode->subregion();
+        regions.push_back(subregion);
+        collectRegionsAndCalls(*subregion, regions, callNodes);
+      }
+      else if (auto callNode = dynamic_cast<const CallNode*>(&node))
+      {
+        callNodes.push_back(callNode);
+      }
+    }
+  };
+
+  std::vector<const CallNode*> callNodes;
+  std::vector<const rvsdg::region*> regions;
+  collectRegionsAndCalls(*rvsdgModule.Rvsdg().root(), regions, callNodes);
+
+  for (auto region : regions)
+  {
+    auto & regionEntry = provisioning.GetRegionEntryNodes(*region);
+    auto & seedRegionEntry = seedProvisioning.GetRegionEntryNodes(*region);
+    if (!regionEntry.IsSubsetOf(seedRegionEntry))
+    {
+      return false;
+    }
+
+    auto & regionExit = provisioning.GetRegionExitNodes(*region);
+    auto & seedRegionExit = provisioning.GetRegionExitNodes(*region);
+    if (!regionExit.IsSubsetOf(seedRegionExit))
+    {
+      return false;
+    }
+  }
+
+  for (auto callNode : callNodes)
+  {
+    auto & callEntry = provisioning.GetCallEntryNodes(*callNode);
+    auto & seedCallEntry = provisioning.GetCallEntryNodes(*callNode);
+    if(!callEntry.IsSubsetOf(seedCallEntry))
+    {
+      return false;
+    }
+
+    auto & callExit = provisioning.GetCallExitNodes(*callNode);
+    auto & seedCallExit = provisioning.GetCallExitNodes(*callNode);
+    if (!callExit.IsSubsetOf(seedCallExit))
+    {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+}
