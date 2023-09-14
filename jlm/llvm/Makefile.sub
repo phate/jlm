@@ -42,7 +42,6 @@ LIBLLVM_SRC = \
     \
     jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.cpp \
     jlm/llvm/opt/alias-analyses/MemoryStateEncoder.cpp \
-    jlm/llvm/opt/alias-analyses/MemoryNodeProvider.cpp \
     jlm/llvm/opt/alias-analyses/Operators.cpp \
     jlm/llvm/opt/alias-analyses/Optimization.cpp \
     jlm/llvm/opt/alias-analyses/PointsToGraph.cpp \
