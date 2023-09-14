@@ -580,12 +580,13 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
     cl::desc("Write output to <file>"),
     cl::value_desc("file"));
 
+  const auto statisticFileDesc = "Write stats to <file>. Default is "
+                                 + statisticsCollectorSettings.GetFilePath().to_str()
+                                 + ".";
   cl::opt<std::string> statisticFile(
     "s",
     cl::init(statisticsCollectorSettings.GetFilePath().to_str()),
-    cl::desc("Write stats to <file>. Default is "
-             + statisticsCollectorSettings.GetFilePath().to_str()
-             + "."),
+    cl::desc(statisticFileDesc),
     cl::value_desc("file"));
 
   cl::list<util::Statistics::Id> printStatistics(
