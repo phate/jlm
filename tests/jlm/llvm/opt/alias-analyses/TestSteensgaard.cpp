@@ -1114,8 +1114,29 @@ TestLinkedList()
   validatePointsToGraph(*pointsToGraph, test);
 }
 
+static void
+TestStatistics()
+{
+  // Arrange
+  jlm::tests::LoadTest1 test;
+  jlm::util::filepath filePath("/tmp/TestDisabledStatistics");
+  std::remove(filePath.to_str().c_str());
+
+  jlm::util::StatisticsCollectorSettings statisticsCollectorSettings(
+    filePath,
+    {jlm::util::Statistics::Id::SteensgaardAnalysis});
+  jlm::util::StatisticsCollector statisticsCollector(statisticsCollectorSettings);
+
+  // Act
+  jlm::llvm::aa::Steensgaard steensgaard;
+  steensgaard.Analyze(test.module(), statisticsCollector);
+
+  // Assert
+  assert(statisticsCollector.NumCollectedStatistics() == 1);
+}
+
 static int
-test()
+TestSteensgaardAnalysis()
 {
   TestStore1();
   TestStore2();
@@ -1158,7 +1179,11 @@ test()
 
   TestLinkedList();
 
+  TestStatistics();
+
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestSteensgaard", test)
+JLM_UNIT_TEST_REGISTER(
+  "jlm/llvm/opt/alias-analyses/TestSteensgaard",
+  TestSteensgaardAnalysis)
