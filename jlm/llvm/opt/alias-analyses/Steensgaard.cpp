@@ -19,7 +19,7 @@
 namespace jlm::llvm::aa
 {
 
-/** \brief Steensgaard analysis statistics class
+/** \brief Collect statistics about Steensgaard alias analysis pass
  *
  */
 class Steensgaard::Statistics final : public jlm::util::Statistics {
