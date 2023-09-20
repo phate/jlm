@@ -239,7 +239,6 @@ private:
     inline static const char* RvsdgDestruction_ = "print-rvsdg-destruction";
     inline static const char* RvsdgOptimization_ = "print-rvsdg-optimization";
     inline static const char* SteensgaardAnalysis_ = "print-steensgaard-analysis";
-    inline static const char* SteensgaardPointsToGraphConstruction_ = "print-steensgaard-pointstograph-construction";
     inline static const char* ThetaGammaInversion_ = "print-ivt-stat";
   };
 };

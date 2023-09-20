@@ -181,27 +181,26 @@ JlmOptCommandLineOptions::FromCommandLineArgumentToStatisticsId(const std::strin
 {
   static std::unordered_map<std::string, util::Statistics::Id> map(
     {
-      {StatisticsCommandLineArgument::Aggregation_,                          util::Statistics::Id::Aggregation},
-      {StatisticsCommandLineArgument::BasicEncoderEncoding_,                 util::Statistics::Id::BasicEncoderEncoding},
-      {StatisticsCommandLineArgument::Annotation_,                           util::Statistics::Id::Annotation},
-      {StatisticsCommandLineArgument::CommonNodeElimination_,                util::Statistics::Id::CommonNodeElimination},
-      {StatisticsCommandLineArgument::ControlFlowRecovery_,                  util::Statistics::Id::ControlFlowRecovery},
-      {StatisticsCommandLineArgument::DataNodeToDelta_,                      util::Statistics::Id::DataNodeToDelta},
-      {StatisticsCommandLineArgument::DeadNodeElimination_,                  util::Statistics::Id::DeadNodeElimination},
-      {StatisticsCommandLineArgument::FunctionInlining_,                     util::Statistics::Id::FunctionInlining},
-      {StatisticsCommandLineArgument::InvariantValueRedirection_,            util::Statistics::Id::InvariantValueRedirection},
-      {StatisticsCommandLineArgument::JlmToRvsdgConversion_,                 util::Statistics::Id::JlmToRvsdgConversion},
-      {StatisticsCommandLineArgument::LoopUnrolling_,                        util::Statistics::Id::LoopUnrolling},
-      {StatisticsCommandLineArgument::MemoryNodeProvisioning_,               util::Statistics::Id::MemoryNodeProvisioning},
-      {StatisticsCommandLineArgument::PullNodes_,                            util::Statistics::Id::PullNodes},
-      {StatisticsCommandLineArgument::PushNodes_,                            util::Statistics::Id::PushNodes},
-      {StatisticsCommandLineArgument::ReduceNodes_,                          util::Statistics::Id::ReduceNodes},
-      {StatisticsCommandLineArgument::RvsdgConstruction_,                    util::Statistics::Id::RvsdgConstruction},
-      {StatisticsCommandLineArgument::RvsdgDestruction_,                     util::Statistics::Id::RvsdgDestruction},
-      {StatisticsCommandLineArgument::RvsdgOptimization_,                    util::Statistics::Id::RvsdgOptimization},
-      {StatisticsCommandLineArgument::SteensgaardAnalysis_,                  util::Statistics::Id::SteensgaardAnalysis},
-      {StatisticsCommandLineArgument::SteensgaardPointsToGraphConstruction_, util::Statistics::Id::SteensgaardPointsToGraphConstruction},
-      {StatisticsCommandLineArgument::ThetaGammaInversion_,                  util::Statistics::Id::ThetaGammaInversion}
+      {StatisticsCommandLineArgument::Aggregation_,               util::Statistics::Id::Aggregation},
+      {StatisticsCommandLineArgument::BasicEncoderEncoding_,      util::Statistics::Id::BasicEncoderEncoding},
+      {StatisticsCommandLineArgument::Annotation_,                util::Statistics::Id::Annotation},
+      {StatisticsCommandLineArgument::CommonNodeElimination_,     util::Statistics::Id::CommonNodeElimination},
+      {StatisticsCommandLineArgument::ControlFlowRecovery_,       util::Statistics::Id::ControlFlowRecovery},
+      {StatisticsCommandLineArgument::DataNodeToDelta_,           util::Statistics::Id::DataNodeToDelta},
+      {StatisticsCommandLineArgument::DeadNodeElimination_,       util::Statistics::Id::DeadNodeElimination},
+      {StatisticsCommandLineArgument::FunctionInlining_,          util::Statistics::Id::FunctionInlining},
+      {StatisticsCommandLineArgument::InvariantValueRedirection_, util::Statistics::Id::InvariantValueRedirection},
+      {StatisticsCommandLineArgument::JlmToRvsdgConversion_,      util::Statistics::Id::JlmToRvsdgConversion},
+      {StatisticsCommandLineArgument::LoopUnrolling_,             util::Statistics::Id::LoopUnrolling},
+      {StatisticsCommandLineArgument::MemoryNodeProvisioning_,    util::Statistics::Id::MemoryNodeProvisioning},
+      {StatisticsCommandLineArgument::PullNodes_,                 util::Statistics::Id::PullNodes},
+      {StatisticsCommandLineArgument::PushNodes_,                 util::Statistics::Id::PushNodes},
+      {StatisticsCommandLineArgument::ReduceNodes_,               util::Statistics::Id::ReduceNodes},
+      {StatisticsCommandLineArgument::RvsdgConstruction_,         util::Statistics::Id::RvsdgConstruction},
+      {StatisticsCommandLineArgument::RvsdgDestruction_,          util::Statistics::Id::RvsdgDestruction},
+      {StatisticsCommandLineArgument::RvsdgOptimization_,         util::Statistics::Id::RvsdgOptimization},
+      {StatisticsCommandLineArgument::SteensgaardAnalysis_,       util::Statistics::Id::SteensgaardAnalysis},
+      {StatisticsCommandLineArgument::ThetaGammaInversion_,       util::Statistics::Id::ThetaGammaInversion}
     });
 
   if (map.find(commandLineArgument) != map.end())
@@ -215,27 +214,26 @@ JlmOptCommandLineOptions::ToCommandLineArgument(jlm::util::Statistics::Id statis
 {
   static std::unordered_map<util::Statistics::Id, const char*> map(
     {
-      {util::Statistics::Id::Aggregation,                          StatisticsCommandLineArgument::Aggregation_},
-      {util::Statistics::Id::BasicEncoderEncoding,                 StatisticsCommandLineArgument::BasicEncoderEncoding_},
-      {util::Statistics::Id::Annotation,                           StatisticsCommandLineArgument::Annotation_},
-      {util::Statistics::Id::CommonNodeElimination,                StatisticsCommandLineArgument::CommonNodeElimination_},
-      {util::Statistics::Id::ControlFlowRecovery,                  StatisticsCommandLineArgument::ControlFlowRecovery_},
-      {util::Statistics::Id::DataNodeToDelta,                      StatisticsCommandLineArgument::DataNodeToDelta_},
-      {util::Statistics::Id::DeadNodeElimination,                  StatisticsCommandLineArgument::DeadNodeElimination_},
-      {util::Statistics::Id::FunctionInlining,                     StatisticsCommandLineArgument::FunctionInlining_},
-      {util::Statistics::Id::InvariantValueRedirection,            StatisticsCommandLineArgument::InvariantValueRedirection_},
-      {util::Statistics::Id::JlmToRvsdgConversion,                 StatisticsCommandLineArgument::JlmToRvsdgConversion_},
-      {util::Statistics::Id::LoopUnrolling,                        StatisticsCommandLineArgument::LoopUnrolling_},
-      {util::Statistics::Id::MemoryNodeProvisioning,               StatisticsCommandLineArgument::MemoryNodeProvisioning_},
-      {util::Statistics::Id::PullNodes,                            StatisticsCommandLineArgument::PullNodes_},
-      {util::Statistics::Id::PushNodes,                            StatisticsCommandLineArgument::PushNodes_},
-      {util::Statistics::Id::ReduceNodes,                          StatisticsCommandLineArgument::ReduceNodes_},
-      {util::Statistics::Id::RvsdgConstruction,                    StatisticsCommandLineArgument::RvsdgConstruction_},
-      {util::Statistics::Id::RvsdgDestruction,                     StatisticsCommandLineArgument::RvsdgDestruction_},
-      {util::Statistics::Id::RvsdgOptimization,                    StatisticsCommandLineArgument::RvsdgOptimization_},
-      {util::Statistics::Id::SteensgaardAnalysis,                  StatisticsCommandLineArgument::SteensgaardAnalysis_},
-      {util::Statistics::Id::SteensgaardPointsToGraphConstruction, StatisticsCommandLineArgument::SteensgaardPointsToGraphConstruction_},
-      {util::Statistics::Id::ThetaGammaInversion,                  StatisticsCommandLineArgument::ThetaGammaInversion_}
+      {util::Statistics::Id::Aggregation,               StatisticsCommandLineArgument::Aggregation_},
+      {util::Statistics::Id::BasicEncoderEncoding,      StatisticsCommandLineArgument::BasicEncoderEncoding_},
+      {util::Statistics::Id::Annotation,                StatisticsCommandLineArgument::Annotation_},
+      {util::Statistics::Id::CommonNodeElimination,     StatisticsCommandLineArgument::CommonNodeElimination_},
+      {util::Statistics::Id::ControlFlowRecovery,       StatisticsCommandLineArgument::ControlFlowRecovery_},
+      {util::Statistics::Id::DataNodeToDelta,           StatisticsCommandLineArgument::DataNodeToDelta_},
+      {util::Statistics::Id::DeadNodeElimination,       StatisticsCommandLineArgument::DeadNodeElimination_},
+      {util::Statistics::Id::FunctionInlining,          StatisticsCommandLineArgument::FunctionInlining_},
+      {util::Statistics::Id::InvariantValueRedirection, StatisticsCommandLineArgument::InvariantValueRedirection_},
+      {util::Statistics::Id::JlmToRvsdgConversion,      StatisticsCommandLineArgument::JlmToRvsdgConversion_},
+      {util::Statistics::Id::LoopUnrolling,             StatisticsCommandLineArgument::LoopUnrolling_},
+      {util::Statistics::Id::MemoryNodeProvisioning,    StatisticsCommandLineArgument::MemoryNodeProvisioning_},
+      {util::Statistics::Id::PullNodes,                 StatisticsCommandLineArgument::PullNodes_},
+      {util::Statistics::Id::PushNodes,                 StatisticsCommandLineArgument::PushNodes_},
+      {util::Statistics::Id::ReduceNodes,               StatisticsCommandLineArgument::ReduceNodes_},
+      {util::Statistics::Id::RvsdgConstruction,         StatisticsCommandLineArgument::RvsdgConstruction_},
+      {util::Statistics::Id::RvsdgDestruction,          StatisticsCommandLineArgument::RvsdgDestruction_},
+      {util::Statistics::Id::RvsdgOptimization,         StatisticsCommandLineArgument::RvsdgOptimization_},
+      {util::Statistics::Id::SteensgaardAnalysis,       StatisticsCommandLineArgument::SteensgaardAnalysis_},
+      {util::Statistics::Id::ThetaGammaInversion,       StatisticsCommandLineArgument::ThetaGammaInversion_}
     });
 
   if (map.find(statisticsId) != map.end())
@@ -526,7 +524,6 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
   auto rvsdgDestructionStatisticsId = util::Statistics::Id::RvsdgDestruction;
   auto rvsdgOptimizationStatisticsId = util::Statistics::Id::RvsdgOptimization;
   auto steensgaardAnalysisStatisticsId = util::Statistics::Id::SteensgaardAnalysis;
-  auto steensgaardPointsToGraphConstructionStatisticsId = util::Statistics::Id::SteensgaardPointsToGraphConstruction;
   auto thetaGammaInversionStatisticsId = util::Statistics::Id::ThetaGammaInversion;
 
   cl::list<util::Statistics::Id> jlmOptPassStatistics(
@@ -608,10 +605,6 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
         steensgaardAnalysisStatisticsId,
         JlmOptCommandLineOptions::ToCommandLineArgument(steensgaardAnalysisStatisticsId),
         "Collect Steensgaard alias analysis pass statistics."),
-      ::clEnumValN(
-        steensgaardPointsToGraphConstructionStatisticsId,
-        JlmOptCommandLineOptions::ToCommandLineArgument(steensgaardPointsToGraphConstructionStatisticsId),
-        "Collect Steensgaard alias analysis points-to graph construction pass statistics."),
       ::clEnumValN(
         thetaGammaInversionStatisticsId,
         JlmOptCommandLineOptions::ToCommandLineArgument(thetaGammaInversionStatisticsId),
@@ -792,7 +785,6 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
   auto rvsdgDestructionStatisticsId = util::Statistics::Id::RvsdgDestruction;
   auto rvsdgOptimizationStatisticsId = util::Statistics::Id::RvsdgOptimization;
   auto steensgaardAnalysisStatisticsId = util::Statistics::Id::SteensgaardAnalysis;
-  auto steensgaardPointsToGraphConstructionStatisticsId = util::Statistics::Id::SteensgaardPointsToGraphConstruction;
   auto thetaGammaInversionStatisticsId = util::Statistics::Id::ThetaGammaInversion;
 
   cl::list<util::Statistics::Id> printStatistics(
