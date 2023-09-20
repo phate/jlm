@@ -310,6 +310,7 @@ public:
   std::vector<std::string> IncludePaths_;
   std::vector<std::string> Flags_;
   std::vector<JlmOptCommandLineOptions::OptimizationId> JlmOptOptimizations_;
+  util::HashSet<util::Statistics::Id> JlmOptPassStatistics_;
 
   std::vector<Compilation> Compilations_;
 };

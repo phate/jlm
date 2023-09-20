@@ -507,6 +507,117 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
     cl::desc("Specify name of main file output in depfile."),
     cl::value_desc("value"));
 
+  auto aggregationStatisticsId = util::Statistics::Id::Aggregation;
+  auto annotationStatisticsId = util::Statistics::Id::Annotation;
+  auto basicEncoderEncodingStatisticsId = util::Statistics::Id::BasicEncoderEncoding;
+  auto commonNodeEliminationStatisticsId = util::Statistics::Id::CommonNodeElimination;
+  auto controlFlowRecoveryStatisticsId = util::Statistics::Id::ControlFlowRecovery;
+  auto dataNodeToDeltaStatisticsId = util::Statistics::Id::DataNodeToDelta;
+  auto deadNodeEliminationStatisticsId = util::Statistics::Id::DeadNodeElimination;
+  auto functionInliningStatisticsId = util::Statistics::Id::FunctionInlining;
+  auto invariantValueRedirectionStatisticsId = util::Statistics::Id::InvariantValueRedirection;
+  auto jlmToRvsdgConversionStatisticsId = util::Statistics::Id::JlmToRvsdgConversion;
+  auto loopUnrollingStatisticsId = util::Statistics::Id::LoopUnrolling;
+  auto memoryNodeProvisioningStatisticsId = util::Statistics::Id::MemoryNodeProvisioning;
+  auto pullNodesStatisticsId = util::Statistics::Id::PullNodes;
+  auto pushNodesStatisticsId = util::Statistics::Id::PushNodes;
+  auto reduceNodesStatisticsId = util::Statistics::Id::ReduceNodes;
+  auto rvsdgConstructionStatisticsId = util::Statistics::Id::RvsdgConstruction;
+  auto rvsdgDestructionStatisticsId = util::Statistics::Id::RvsdgDestruction;
+  auto rvsdgOptimizationStatisticsId = util::Statistics::Id::RvsdgOptimization;
+  auto steensgaardAnalysisStatisticsId = util::Statistics::Id::SteensgaardAnalysis;
+  auto steensgaardPointsToGraphConstructionStatisticsId = util::Statistics::Id::SteensgaardPointsToGraphConstruction;
+  auto thetaGammaInversionStatisticsId = util::Statistics::Id::ThetaGammaInversion;
+
+  cl::list<util::Statistics::Id> jlmOptPassStatistics(
+    "JlmOptPassStatistics",
+    cl::values(
+      ::clEnumValN(
+        aggregationStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(aggregationStatisticsId),
+        "Collect control flow graph aggregation pass statistics."),
+      ::clEnumValN(
+        annotationStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(annotationStatisticsId),
+        "Collect aggregation tree annotation pass statistics."),
+      ::clEnumValN(
+        basicEncoderEncodingStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(basicEncoderEncodingStatisticsId),
+        "Collect memory state encoding pass statistics."),
+      ::clEnumValN(
+        commonNodeEliminationStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(commonNodeEliminationStatisticsId),
+        "Collect common node elimination pass statistics."),
+      ::clEnumValN(
+        controlFlowRecoveryStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(controlFlowRecoveryStatisticsId),
+        "Collect control flow recovery pass statistics."),
+      ::clEnumValN(
+        dataNodeToDeltaStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(dataNodeToDeltaStatisticsId),
+        "Collect data node to delta node conversion pass statistics."),
+      ::clEnumValN(
+        deadNodeEliminationStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(deadNodeEliminationStatisticsId),
+        "Collect dead node elimination pass statistics."),
+      ::clEnumValN(
+        functionInliningStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(functionInliningStatisticsId),
+        "Collect function inlining pass statistics."),
+      ::clEnumValN(
+        invariantValueRedirectionStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(invariantValueRedirectionStatisticsId),
+        "Collect invariant value redirection pass statistics."),
+      ::clEnumValN(
+        jlmToRvsdgConversionStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(jlmToRvsdgConversionStatisticsId),
+        "Collect Jlm to RVSDG conversion pass statistics."),
+      ::clEnumValN(
+        loopUnrollingStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(loopUnrollingStatisticsId),
+        "Collect loop unrolling pass statistics."),
+      ::clEnumValN(
+        memoryNodeProvisioningStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(memoryNodeProvisioningStatisticsId),
+        "Collect memory node provisioning pass statistics."),
+      ::clEnumValN(
+        pullNodesStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(pullNodesStatisticsId),
+        "Collect node pull pass statistics."),
+      ::clEnumValN(
+        pushNodesStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(pushNodesStatisticsId),
+        "Collect node push pass statistics."),
+      ::clEnumValN(
+        reduceNodesStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(reduceNodesStatisticsId),
+        "Collect node reduction pass statistics."),
+      ::clEnumValN(
+        rvsdgConstructionStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(rvsdgConstructionStatisticsId),
+        "Collect RVSDG construction pass statistics."),
+      ::clEnumValN(
+        rvsdgDestructionStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(rvsdgDestructionStatisticsId),
+        "Collect RVSDG destruction pass statistics."),
+      ::clEnumValN(
+        rvsdgOptimizationStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(rvsdgOptimizationStatisticsId),
+        "Collect RVSDG optimization pass statistics."),
+      ::clEnumValN(
+        steensgaardAnalysisStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(steensgaardAnalysisStatisticsId),
+        "Collect Steensgaard alias analysis pass statistics."),
+      ::clEnumValN(
+        steensgaardPointsToGraphConstructionStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(steensgaardPointsToGraphConstructionStatisticsId),
+        "Collect Steensgaard alias analysis points-to graph construction pass statistics."),
+      ::clEnumValN(
+        thetaGammaInversionStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(thetaGammaInversionStatisticsId),
+        "Collect theta-gamma inversion pass statistics.")),
+    cl::desc("Collect jlm-opt pass statistics"));
+
   cl::ParseCommandLineOptions(argc, argv);
 
   /* Process parsed options */
@@ -574,6 +685,11 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
   CommandLineOptions_.GenerateDebugInformation_ = generateDebugInformation;
   CommandLineOptions_.Flags_ = flags;
   CommandLineOptions_.JlmOptOptimizations_ = jlmOptOptimizations;
+  CommandLineOptions_.JlmOptPassStatistics_ = util::HashSet<util::Statistics::Id>(
+    {
+      jlmOptPassStatistics.begin(),
+      jlmOptPassStatistics.end()
+    });
   CommandLineOptions_.Verbose_ = verbose;
   CommandLineOptions_.Rdynamic_ = rDynamic;
   CommandLineOptions_.Suppress_ = suppress;

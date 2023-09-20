@@ -179,6 +179,33 @@ TestFalseJlmOptOptimization()
   assert(exceptionThrown);
 }
 
+static void
+TestJlmOptPassStatistics()
+{
+  using namespace jlm::tooling;
+
+  // Arrange
+  std::vector<std::string> commandLineArguments(
+    {
+      "jlc",
+      "--JlmOptPassStatistics=print-aggregation-time",
+      "--JlmOptPassStatistics=print-steensgaard-analysis",
+      "foobar.c"
+    });
+
+  jlm::util::HashSet<jlm::util::Statistics::Id> expectedStatistics(
+    {
+      jlm::util::Statistics::Id::Aggregation,
+      jlm::util::Statistics::Id::SteensgaardAnalysis
+    });
+
+  // Act
+  auto & commandLineOptions = ParseCommandLineArguments(commandLineArguments);
+
+  // Assert
+  assert(commandLineOptions.JlmOptPassStatistics_ == expectedStatistics);
+}
+
 static int
 Test()
 {
@@ -188,6 +215,7 @@ Test()
   Test4();
   TestJlmOptOptimizations();
   TestFalseJlmOptOptimization();
+  TestJlmOptPassStatistics();
 
   return 0;
 }

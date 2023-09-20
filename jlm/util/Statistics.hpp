@@ -72,10 +72,19 @@ private:
 /**
  * Determines the settings of a StatisticsCollector.
  */
-class StatisticsCollectorSettings final {
+class StatisticsCollectorSettings final
+{
+  inline static const char* DefaultFilePath_ = "/tmp/jlm-stats.log";
+
 public:
   StatisticsCollectorSettings()
-    : FilePath_("/tmp/jlm-stats.log")
+    : FilePath_(DefaultFilePath_)
+  {}
+
+  explicit
+  StatisticsCollectorSettings(HashSet<Statistics::Id> demandedStatistics)
+    : FilePath_(DefaultFilePath_)
+    , DemandedStatistics_(std::move(demandedStatistics))
   {}
 
   StatisticsCollectorSettings(
@@ -118,6 +127,12 @@ public:
   NumDemandedStatistics() const noexcept
   {
     return DemandedStatistics_.Size();
+  }
+
+  [[nodiscard]] const HashSet<Statistics::Id>&
+  GetDemandedStatistics() const noexcept
+  {
+    return DemandedStatistics_;
   }
 
 private:
