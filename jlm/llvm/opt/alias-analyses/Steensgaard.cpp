@@ -22,13 +22,14 @@ namespace jlm::llvm::aa
 /** \brief Steensgaard analysis statistics class
  *
  */
-class SteensgaardAnalysisStatistics final : public jlm::util::Statistics {
+class Steensgaard::Statistics final : public jlm::util::Statistics {
 public:
-  ~SteensgaardAnalysisStatistics() override = default;
+  ~Statistics() override
+  = default;
 
   explicit
-  SteensgaardAnalysisStatistics(jlm::util::filepath sourceFile)
-    : Statistics(Statistics::Id::SteensgaardAnalysis)
+  Statistics(jlm::util::filepath sourceFile)
+    : jlm::util::Statistics(Statistics::Id::SteensgaardAnalysis)
     , NumRvsdgNodes_(0)
     , SourceFile_(std::move(sourceFile))
     , NumDisjointSets_(0)
@@ -101,10 +102,10 @@ public:
                              "PointsToGraphConstructionTime[ns]:", PointsToGraphConstructionTimer_.ns());
   }
 
-  static std::unique_ptr<SteensgaardAnalysisStatistics>
+  static std::unique_ptr<Statistics>
   Create(const jlm::util::filepath & sourceFile)
   {
-    return std::make_unique<SteensgaardAnalysisStatistics>(sourceFile);
+    return std::make_unique<Statistics>(sourceFile);
   }
 
 private:
@@ -1525,7 +1526,7 @@ Steensgaard::Analyze(
   jlm::util::StatisticsCollector & statisticsCollector)
 {
   ResetState();
-  auto statistics = SteensgaardAnalysisStatistics::Create(module.SourceFileName());
+  auto statistics = Statistics::Create(module.SourceFileName());
 
   // Perform Steensgaard analysis
   statistics->StartAliasAnalysisStatistics(module.Rvsdg());
