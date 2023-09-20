@@ -117,25 +117,25 @@ JlmOptCommandLineOptions::FromCommandLineArgumentToOptimizationId(const std::str
 {
   static std::unordered_map<std::string, OptimizationId> map(
     {
-      {AaSteensgaardAgnosticCommandLineArgument_,           OptimizationId::AASteensgaardAgnostic},
-      {AaSteensgaardRegionAwareCommandLineArgument_,        OptimizationId::AASteensgaardRegionAware},
-      {CommonNodeEliminationCommandLineArgument_,           OptimizationId::CommonNodeElimination},
-      {CommonNodeEliminationDeprecatedCommandLineArgument_, OptimizationId::cne},
-      {DeadNodeEliminationCommandLineArgument_,             OptimizationId::DeadNodeElimination},
-      {DeadNodeEliminationDeprecatedCommandLineArgument_,   OptimizationId::dne},
-      {FunctionInliningCommandLineArgument_,                OptimizationId::FunctionInlining},
-      {FunctionInliningDeprecatedCommandLineArgument_,      OptimizationId::iln},
-      {InvariantValueRedirectionCommandLineArgument_,       OptimizationId::InvariantValueRedirection},
-      {NodePushOutCommandLineArgument_,                     OptimizationId::NodePushOut},
-      {NodePushOutDeprecatedCommandLineArgument_,           OptimizationId::psh},
-      {NodePullInCommandLineArgument_,                      OptimizationId::NodePullIn},
-      {NodePullInDeprecatedCommandLineArgument_,            OptimizationId::pll},
-      {NodeReductionCommandLineArgument_,                   OptimizationId::NodeReduction},
-      {NodeReductionDeprecatedCommandLineArgument_,         OptimizationId::red},
-      {ThetaGammaInversionCommandLineArgument_,             OptimizationId::ThetaGammaInversion},
-      {ThetaGammaInversionDeprecatedCommandLineArgument_,   OptimizationId::ivt},
-      {LoopUnrollingCommandLineArgument_,                   OptimizationId::LoopUnrolling},
-      {LoopUnrollingDeprecatedCommandLineArgument_,         OptimizationId::url}
+      {OptimizationCommandLineArgument::AaSteensgaardAgnostic_,           OptimizationId::AASteensgaardAgnostic},
+      {OptimizationCommandLineArgument::AaSteensgaardRegionAware_,        OptimizationId::AASteensgaardRegionAware},
+      {OptimizationCommandLineArgument::CommonNodeElimination_,           OptimizationId::CommonNodeElimination},
+      {OptimizationCommandLineArgument::CommonNodeEliminationDeprecated_, OptimizationId::cne},
+      {OptimizationCommandLineArgument::DeadNodeElimination_,             OptimizationId::DeadNodeElimination},
+      {OptimizationCommandLineArgument::DeadNodeEliminationDeprecated_,   OptimizationId::dne},
+      {OptimizationCommandLineArgument::FunctionInlining_,                OptimizationId::FunctionInlining},
+      {OptimizationCommandLineArgument::FunctionInliningDeprecated_,      OptimizationId::iln},
+      {OptimizationCommandLineArgument::InvariantValueRedirection_,       OptimizationId::InvariantValueRedirection},
+      {OptimizationCommandLineArgument::NodePushOut_,                     OptimizationId::NodePushOut},
+      {OptimizationCommandLineArgument::NodePushOutDeprecated_,           OptimizationId::psh},
+      {OptimizationCommandLineArgument::NodePullIn_,                      OptimizationId::NodePullIn},
+      {OptimizationCommandLineArgument::NodePullInDeprecated_,            OptimizationId::pll},
+      {OptimizationCommandLineArgument::NodeReduction_,                   OptimizationId::NodeReduction},
+      {OptimizationCommandLineArgument::NodeReductionDeprecated_,         OptimizationId::red},
+      {OptimizationCommandLineArgument::ThetaGammaInversion_,             OptimizationId::ThetaGammaInversion},
+      {OptimizationCommandLineArgument::ThetaGammaInversionDeprecated_,   OptimizationId::ivt},
+      {OptimizationCommandLineArgument::LoopUnrolling_,                   OptimizationId::LoopUnrolling},
+      {OptimizationCommandLineArgument::LoopUnrollingDeprecated_,         OptimizationId::url}
     });
 
   if (map.find(commandLineArgument) != map.end())
@@ -149,25 +149,25 @@ JlmOptCommandLineOptions::ToCommandLineArgument(OptimizationId optimizationId)
 {
   static std::unordered_map<OptimizationId, const char*> map(
     {
-      {OptimizationId::AASteensgaardAgnostic,     AaSteensgaardAgnosticCommandLineArgument_},
-      {OptimizationId::AASteensgaardRegionAware,  AaSteensgaardRegionAwareCommandLineArgument_},
-      {OptimizationId::cne,                       CommonNodeEliminationDeprecatedCommandLineArgument_},
-      {OptimizationId::CommonNodeElimination,     CommonNodeEliminationCommandLineArgument_},
-      {OptimizationId::DeadNodeElimination,       DeadNodeEliminationCommandLineArgument_},
-      {OptimizationId::dne,                       DeadNodeEliminationDeprecatedCommandLineArgument_},
-      {OptimizationId::FunctionInlining,          FunctionInliningCommandLineArgument_},
-      {OptimizationId::iln,                       FunctionInliningDeprecatedCommandLineArgument_},
-      {OptimizationId::InvariantValueRedirection, InvariantValueRedirectionCommandLineArgument_},
-      {OptimizationId::LoopUnrolling,             LoopUnrollingCommandLineArgument_},
-      {OptimizationId::NodePullIn,                NodePullInCommandLineArgument_},
-      {OptimizationId::NodePushOut,               NodePushOutCommandLineArgument_},
-      {OptimizationId::NodeReduction,             NodeReductionCommandLineArgument_},
-      {OptimizationId::psh,                       NodePushOutDeprecatedCommandLineArgument_},
-      {OptimizationId::pll,                       NodePullInDeprecatedCommandLineArgument_},
-      {OptimizationId::red,                       NodeReductionDeprecatedCommandLineArgument_},
-      {OptimizationId::ivt,                       ThetaGammaInversionDeprecatedCommandLineArgument_},
-      {OptimizationId::url,                       LoopUnrollingDeprecatedCommandLineArgument_},
-      {OptimizationId::ThetaGammaInversion,       ThetaGammaInversionCommandLineArgument_}
+      {OptimizationId::AASteensgaardAgnostic,     OptimizationCommandLineArgument::AaSteensgaardAgnostic_},
+      {OptimizationId::AASteensgaardRegionAware,  OptimizationCommandLineArgument::AaSteensgaardRegionAware_},
+      {OptimizationId::cne,                       OptimizationCommandLineArgument::CommonNodeEliminationDeprecated_},
+      {OptimizationId::CommonNodeElimination,     OptimizationCommandLineArgument::CommonNodeElimination_},
+      {OptimizationId::DeadNodeElimination,       OptimizationCommandLineArgument::DeadNodeElimination_},
+      {OptimizationId::dne,                       OptimizationCommandLineArgument::DeadNodeEliminationDeprecated_},
+      {OptimizationId::FunctionInlining,          OptimizationCommandLineArgument::FunctionInlining_},
+      {OptimizationId::iln,                       OptimizationCommandLineArgument::FunctionInliningDeprecated_},
+      {OptimizationId::InvariantValueRedirection, OptimizationCommandLineArgument::InvariantValueRedirection_},
+      {OptimizationId::LoopUnrolling,             OptimizationCommandLineArgument::LoopUnrolling_},
+      {OptimizationId::NodePullIn,                OptimizationCommandLineArgument::NodePullIn_},
+      {OptimizationId::NodePushOut,               OptimizationCommandLineArgument::NodePushOut_},
+      {OptimizationId::NodeReduction,             OptimizationCommandLineArgument::NodeReduction_},
+      {OptimizationId::psh,                       OptimizationCommandLineArgument::NodePushOutDeprecated_},
+      {OptimizationId::pll,                       OptimizationCommandLineArgument::NodePullInDeprecated_},
+      {OptimizationId::red,                       OptimizationCommandLineArgument::NodeReductionDeprecated_},
+      {OptimizationId::ivt,                       OptimizationCommandLineArgument::ThetaGammaInversionDeprecated_},
+      {OptimizationId::url,                       OptimizationCommandLineArgument::LoopUnrollingDeprecated_},
+      {OptimizationId::ThetaGammaInversion,       OptimizationCommandLineArgument::ThetaGammaInversion_}
     });
 
   if (map.find(optimizationId) != map.end())
