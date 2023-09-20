@@ -165,7 +165,9 @@ private:
  * context-insensitive, flow-insensitive, and uses a static heap model. It is an implementation corresponding to the
  * algorithm presented in Bjarne Steensgaard - Points-to Analysis in Almost Linear Time.
  */
-class Steensgaard final : public AliasAnalysis {
+class Steensgaard final : public AliasAnalysis
+{
+  class Statistics;
 public:
 	~Steensgaard() override;
 
