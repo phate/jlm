@@ -42,7 +42,6 @@ public:
     RvsdgDestruction,
     RvsdgOptimization,
     SteensgaardAnalysis,
-    SteensgaardPointsToGraphConstruction,
     ThetaGammaInversion,
 
     LastEnumValue // must always be the last enum value, used for iteration

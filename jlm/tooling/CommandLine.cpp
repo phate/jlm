@@ -874,10 +874,6 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
         JlmOptCommandLineOptions::ToCommandLineArgument(steensgaardAnalysisStatisticsId),
         "Write Steensgaard analysis statistics to file."),
       ::clEnumValN(
-        steensgaardPointsToGraphConstructionStatisticsId,
-        JlmOptCommandLineOptions::ToCommandLineArgument(steensgaardPointsToGraphConstructionStatisticsId),
-        "Write Steensgaard PointsTo Graph construction statistics to file."),
-      ::clEnumValN(
         thetaGammaInversionStatisticsId,
         JlmOptCommandLineOptions::ToCommandLineArgument(thetaGammaInversionStatisticsId),
         "Write theta-gamma inversion statistics to file.")),

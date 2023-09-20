@@ -19,69 +19,22 @@
 namespace jlm::llvm::aa
 {
 
-/** \brief Steensgaard analysis statistics class
+/** \brief Collect statistics about Steensgaard alias analysis pass
  *
  */
-class SteensgaardAnalysisStatistics final : public jlm::util::Statistics {
+class Steensgaard::Statistics final : public jlm::util::Statistics {
 public:
-  ~SteensgaardAnalysisStatistics() override = default;
+  ~Statistics() override
+  = default;
 
   explicit
-  SteensgaardAnalysisStatistics(jlm::util::filepath sourceFile)
-    : Statistics(Statistics::Id::SteensgaardAnalysis)
-    , NumNodesBefore_(0)
-    , SourceFile_(std::move(sourceFile))
-  {}
-
-  void
-  Start(const jlm::rvsdg::graph & graph) noexcept
-  {
-    NumNodesBefore_ = jlm::rvsdg::nnodes(graph.root());
-    Timer_.start();
-  }
-
-  void
-  Stop() noexcept
-  {
-    Timer_.stop();
-  }
-
-  [[nodiscard]] std::string
-  ToString() const override
-  {
-    return jlm::util::strfmt("SteensgaardAnalysis ",
-                  SourceFile_.to_str(), " ",
-                  "#RvsdgNodes:", NumNodesBefore_, " ",
-                  "Time[ns]:", Timer_.ns());
-  }
-
-  static std::unique_ptr<SteensgaardAnalysisStatistics>
-  Create(const jlm::util::filepath & sourceFile)
-  {
-    return std::make_unique<SteensgaardAnalysisStatistics>(sourceFile);
-  }
-
-private:
-  size_t NumNodesBefore_;
-  jlm::util::filepath SourceFile_;
-
-  jlm::util::timer Timer_;
-};
-
-/** \brief Steensgaard PointsTo graph construction statistics class
- *
- */
-class SteensgaardPointsToGraphConstructionStatistics final : public jlm::util::Statistics {
-public:
-  ~SteensgaardPointsToGraphConstructionStatistics() override = default;
-
-  explicit
-  SteensgaardPointsToGraphConstructionStatistics(jlm::util::filepath sourceFile)
-    : Statistics(jlm::util::Statistics::Id::SteensgaardPointsToGraphConstruction)
+  Statistics(jlm::util::filepath sourceFile)
+    : jlm::util::Statistics(Statistics::Id::SteensgaardAnalysis)
+    , NumRvsdgNodes_(0)
     , SourceFile_(std::move(sourceFile))
     , NumDisjointSets_(0)
     , NumLocations_(0)
-    , NumNodes_(0)
+    , NumPointsToGraphNodes_(0)
     , NumAllocaNodes_(0)
     , NumDeltaNodes_(0)
     , NumImportNodes_(0)
@@ -93,18 +46,31 @@ public:
   {}
 
   void
-  Start(const LocationSet & locationSet)
+  StartSteensgaardStatistics(const jlm::rvsdg::graph & graph) noexcept
   {
-    NumDisjointSets_ = locationSet.NumDisjointSets();
-    NumLocations_ = locationSet.NumLocations();
-    Timer_.start();
+    NumRvsdgNodes_ = jlm::rvsdg::nnodes(graph.root());
+    AnalysisTimer_.start();
   }
 
   void
-  Stop(const PointsToGraph & pointsToGraph)
+  StopSteensgaardStatistics() noexcept
   {
-    Timer_.stop();
-    NumNodes_ = pointsToGraph.NumNodes();
+    AnalysisTimer_.stop();
+  }
+
+  void
+  StartPointsToGraphConstructionStatistics(const LocationSet & locationSet)
+  {
+    NumDisjointSets_ = locationSet.NumDisjointSets();
+    NumLocations_ = locationSet.NumLocations();
+    PointsToGraphConstructionTimer_.start();
+  }
+
+  void
+  StopPointsToGraphConstructionStatistics(const PointsToGraph & pointsToGraph)
+  {
+    PointsToGraphConstructionTimer_.stop();
+    NumPointsToGraphNodes_ = pointsToGraph.NumNodes();
     NumAllocaNodes_ = pointsToGraph.NumAllocaNodes();
     NumDeltaNodes_ = pointsToGraph.NumDeltaNodes();
     NumImportNodes_ = pointsToGraph.NumImportNodes();
@@ -118,35 +84,38 @@ public:
   [[nodiscard]] std::string
   ToString() const override
   {
-    return jlm::util::strfmt("SteensgaardPointsToGraphConstruction ",
-                  SourceFile_.to_str(), " ",
-                  "#DisjointSets:", NumDisjointSets_, " ",
-                  "#Locations:", NumLocations_, " ",
-                  "#Nodes:", NumNodes_, " ",
-                  "#AllocaNodes:", NumAllocaNodes_, " ",
-                  "#DeltaNodes:", NumDeltaNodes_, " ",
-                  "#ImportNodes:", NumImportNodes_, " ",
-                  "#LambdaNodes:", NumLambdaNodes_, " ",
-                  "#MallocNodes:", NumMallocNodes_, " ",
-                  "#MemoryNodes:", NumMemoryNodes_, " ",
-                  "#RegisterNodes:", NumRegisterNodes_, " ",
-                  "#UnknownMemorySources:", NumUnknownMemorySources_, " ",
-                  "Time[ns]:", Timer_.ns());
+    return jlm::util::strfmt("SteensgaardAnalysis ",
+                             SourceFile_.to_str(), " ",
+                             "#RvsdgNodes:", NumRvsdgNodes_, " ",
+                             "AliasAnalysisTime[ns]:", AnalysisTimer_.ns(), " ",
+                             "#DisjointSets:", NumDisjointSets_, " ",
+                             "#Locations:", NumLocations_, " ",
+                             "#PointsToGraphNodes:", NumPointsToGraphNodes_, " ",
+                             "#AllocaNodes:", NumAllocaNodes_, " ",
+                             "#DeltaNodes:", NumDeltaNodes_, " ",
+                             "#ImportNodes:", NumImportNodes_, " ",
+                             "#LambdaNodes:", NumLambdaNodes_, " ",
+                             "#MallocNodes:", NumMallocNodes_, " ",
+                             "#MemoryNodes:", NumMemoryNodes_, " ",
+                             "#RegisterNodes:", NumRegisterNodes_, " ",
+                             "#UnknownMemorySources:", NumUnknownMemorySources_, " ",
+                             "PointsToGraphConstructionTime[ns]:", PointsToGraphConstructionTimer_.ns());
   }
 
-  static std::unique_ptr<SteensgaardPointsToGraphConstructionStatistics>
+  static std::unique_ptr<Statistics>
   Create(const jlm::util::filepath & sourceFile)
   {
-    return std::make_unique<SteensgaardPointsToGraphConstructionStatistics>(sourceFile);
+    return std::make_unique<Statistics>(sourceFile);
   }
 
 private:
+  size_t NumRvsdgNodes_;
   jlm::util::filepath SourceFile_;
 
   size_t NumDisjointSets_;
   size_t NumLocations_;
 
-  size_t NumNodes_;
+  size_t NumPointsToGraphNodes_;
   size_t NumAllocaNodes_;
   size_t NumDeltaNodes_;
   size_t NumImportNodes_;
@@ -155,7 +124,9 @@ private:
   size_t NumMemoryNodes_;
   size_t NumRegisterNodes_;
   size_t NumUnknownMemorySources_;
-  jlm::util::timer Timer_;
+
+  jlm::util::timer AnalysisTimer_;
+  jlm::util::timer PointsToGraphConstructionTimer_;
 };
 
 /** \brief Location class
@@ -1555,27 +1526,21 @@ Steensgaard::Analyze(
   jlm::util::StatisticsCollector & statisticsCollector)
 {
   ResetState();
-  auto steensgaardStatistics = SteensgaardAnalysisStatistics::Create(module.SourceFileName());
-  auto ptgConstructionStatistics = SteensgaardPointsToGraphConstructionStatistics::Create(module.SourceFileName());
+  auto statistics = Statistics::Create(module.SourceFileName());
 
-  /**
-   * Perform Steensgaard analysis
-   */
-  steensgaardStatistics->Start(module.Rvsdg());
+  // Perform Steensgaard analysis
+  statistics->StartSteensgaardStatistics(module.Rvsdg());
   Analyze(module.Rvsdg());
 	// std::cout << LocationSet_.ToDot() << std::flush;
-  steensgaardStatistics->Stop();
+  statistics->StopSteensgaardStatistics();
 
-  /**
-   * Construct PointsTo graph
-   */
-  ptgConstructionStatistics->Start(LocationSet_);
+  // Construct PointsTo graph
+  statistics->StartPointsToGraphConstructionStatistics(LocationSet_);
   auto pointsToGraph = ConstructPointsToGraph(LocationSet_);
-//	std::cout << PointsToGraph::ToDot(*pointsToGraph) << std::flush;
-  ptgConstructionStatistics->Stop(*pointsToGraph);
+  // std::cout << PointsToGraph::ToDot(*pointsToGraph) << std::flush;
+  statistics->StopPointsToGraphConstructionStatistics(*pointsToGraph);
 
-  statisticsCollector.CollectDemandedStatistics(std::move(steensgaardStatistics));
-  statisticsCollector.CollectDemandedStatistics(std::move(ptgConstructionStatistics));
+  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
   return pointsToGraph;
 }
