@@ -19,7 +19,10 @@ namespace jlm::util
  */
 class Statistics {
 public:
-  enum class Id {
+  enum class Id
+  {
+    FirstEnumValue, // must always be the first enum value, used for iteration
+
     Aggregation,
     Annotation,
     BasicEncoderEncoding,
@@ -40,7 +43,9 @@ public:
     RvsdgOptimization,
     SteensgaardAnalysis,
     SteensgaardPointsToGraphConstruction,
-    ThetaGammaInversion
+    ThetaGammaInversion,
+
+    LastEnumValue // must always be the last enum value, used for iteration
   };
 
   virtual

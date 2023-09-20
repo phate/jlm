@@ -26,6 +26,23 @@ TestOptimizationCommandLineArgumentConversion()
 }
 
 static void
+TestStatisticsCommandLineArgumentConversion()
+{
+  using namespace jlm::tooling;
+  for (
+    size_t n = static_cast<std::size_t>(jlm::util::Statistics::Id::FirstEnumValue) + 1;
+    n != static_cast<std::size_t>(jlm::util::Statistics::Id::LastEnumValue);
+    n++)
+  {
+    auto expectedStatisticsId = static_cast<jlm::util::Statistics::Id>(n);
+    auto commandLineArgument = JlmOptCommandLineOptions::ToCommandLineArgument(expectedStatisticsId);
+    auto receivedStatisticsId = JlmOptCommandLineOptions::FromCommandLineArgumentToStatisticsId(commandLineArgument);
+
+    assert(receivedStatisticsId == expectedStatisticsId);
+  }
+}
+
+static void
 TestOptimizationIdToOptimizationTranslation()
 {
   using namespace jlm::tooling;
@@ -47,6 +64,7 @@ static int
 Test()
 {
   TestOptimizationCommandLineArgumentConversion();
+  TestStatisticsCommandLineArgumentConversion();
   TestOptimizationIdToOptimizationTranslation();
 
   return 0;

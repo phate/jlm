@@ -157,8 +157,14 @@ public:
   static OptimizationId
   FromCommandLineArgumentToOptimizationId(const std::string& commandLineArgument);
 
+  static util::Statistics::Id
+  FromCommandLineArgumentToStatisticsId(const std::string& commandLineArgument);
+
   static const char*
   ToCommandLineArgument(OptimizationId optimizationId);
+
+  static const char*
+  ToCommandLineArgument(util::Statistics::Id statisticsId);
 
   static const char*
   ToCommandLineArgument(OutputFormat outputFormat);
@@ -215,8 +221,8 @@ private:
   struct StatisticsCommandLineArgument
   {
     inline static const char* Aggregation_ = "print-aggregation-time";
-    inline static const char* AgnosticMemoryNodeProvider_ = "print-basicencoder-encoding";
     inline static const char* Annotation_ = "print-annotation-time";
+    inline static const char* BasicEncoderEncoding_ = "print-basicencoder-encoding";
     inline static const char* CommonNodeElimination_ = "print-cne-stat";
     inline static const char* ControlFlowRecovery_ = "print-cfr-time";
     inline static const char* DataNodeToDelta_ = "printDataNodeToDelta";
