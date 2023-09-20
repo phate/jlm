@@ -46,14 +46,14 @@ public:
   {}
 
   void
-  StartAliasAnalysisStatistics(const jlm::rvsdg::graph & graph) noexcept
+  StartSteensgaardStatistics(const jlm::rvsdg::graph & graph) noexcept
   {
     NumRvsdgNodes_ = jlm::rvsdg::nnodes(graph.root());
     AnalysisTimer_.start();
   }
 
   void
-  StopAliasAnalysisStatistics() noexcept
+  StopSteensgaardStatistics() noexcept
   {
     AnalysisTimer_.stop();
   }
@@ -1529,10 +1529,10 @@ Steensgaard::Analyze(
   auto statistics = Statistics::Create(module.SourceFileName());
 
   // Perform Steensgaard analysis
-  statistics->StartAliasAnalysisStatistics(module.Rvsdg());
+  statistics->StartSteensgaardStatistics(module.Rvsdg());
   Analyze(module.Rvsdg());
 	// std::cout << LocationSet_.ToDot() << std::flush;
-  statistics->StopAliasAnalysisStatistics();
+  statistics->StopSteensgaardStatistics();
 
   // Construct PointsTo graph
   statistics->StartPointsToGraphConstructionStatistics(LocationSet_);
