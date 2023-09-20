@@ -113,7 +113,7 @@ JlmOptCommandLineOptions::GetOptimizations() const noexcept
 }
 
 JlmOptCommandLineOptions::OptimizationId
-JlmOptCommandLineOptions::FromCommandLineArgument(const std::string& commandLineArgument)
+JlmOptCommandLineOptions::FromCommandLineArgumentToOptimizationId(const std::string& commandLineArgument)
 {
   static std::unordered_map<std::string, OptimizationId> map(
     {
@@ -300,7 +300,7 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
       JlmOptCommandLineOptions::OptimizationId optimizationId;
       try
       {
-        optimizationId = JlmOptCommandLineOptions::FromCommandLineArgument(optimization);
+        optimizationId = JlmOptCommandLineOptions::FromCommandLineArgumentToOptimizationId(optimization);
       }
       catch (util::error&)
       {

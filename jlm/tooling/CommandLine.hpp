@@ -155,7 +155,7 @@ public:
   GetOptimizations() const noexcept;
 
   static OptimizationId
-  FromCommandLineArgument(const std::string& commandLineArgument);
+  FromCommandLineArgumentToOptimizationId(const std::string& commandLineArgument);
 
   static const char*
   ToCommandLineArgument(OptimizationId optimizationId);

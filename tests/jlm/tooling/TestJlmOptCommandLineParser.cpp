@@ -19,7 +19,7 @@ TestOptimizationCommandLineArgumentConversion()
   {
     auto expectedOptimizationId = static_cast<JlmOptCommandLineOptions::OptimizationId>(n);
     auto commandLineArgument = JlmOptCommandLineOptions::ToCommandLineArgument(expectedOptimizationId);
-    auto receivedOptimizationId = JlmOptCommandLineOptions::FromCommandLineArgument(commandLineArgument);
+    auto receivedOptimizationId = JlmOptCommandLineOptions::FromCommandLineArgumentToOptimizationId(commandLineArgument);
 
     assert(receivedOptimizationId == expectedOptimizationId);
   }
