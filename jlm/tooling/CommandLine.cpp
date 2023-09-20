@@ -668,10 +668,6 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
         "print-steensgaard-analysis",
         "Write Steensgaard analysis statistics to file."),
       ::clEnumValN(
-        util::Statistics::Id::SteensgaardPointsToGraphConstruction,
-        "print-steensgaard-pointstograph-construction",
-        "Write Steensgaard PointsTo Graph construction statistics to file."),
-      ::clEnumValN(
         util::Statistics::Id::ThetaGammaInversion,
         "print-ivt-stat",
         "Write theta-gamma inversion statistics to file.")),
