@@ -17,8 +17,14 @@ StatisticsCollector::PrintStatistics() const
   if (NumCollectedStatistics() == 0)
     return;
 
-  util::file file(GetSettings().GetFilePath());
-  file.open("a");
+  auto & filePath = GetSettings().GetFilePath();
+  if (filePath.Exists() && !filePath.IsFile())
+  {
+    return;
+  }
+
+  util::file file(filePath);
+  file.open("w");
 
   for (auto & statistics : CollectedStatistics())
   {

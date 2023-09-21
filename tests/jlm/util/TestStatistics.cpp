@@ -67,14 +67,11 @@ void
 TestStatisticsPrinting()
 {
   using namespace jlm::util;
-  /*
-   * Arrange
-   */
-  filepath filePath("/tmp/TestStatistics");
 
-  /*
-   * Ensure file is not around from last test run.
-   */
+  // Arrange
+  filepath filePath(std::string(std::filesystem::temp_directory_path()) + "/TestStatistics");
+
+  // Ensure file is not around from last test run.
   std::remove(filePath.to_str().c_str());
 
   std::string myText("MyTestStatistics");
@@ -89,14 +86,10 @@ TestStatisticsPrinting()
   StatisticsCollector collector(std::move(settings));
   collector.CollectDemandedStatistics(std::move(testStatistics));
 
-  /*
-   * Act
-   */
+  // Act
   collector.PrintStatistics();
 
-  /*
-   * Assert
-   */
+  // Assert
   std::stringstream stringStream;
   std::ifstream file(filePath.to_str());
   stringStream << file.rdbuf();
