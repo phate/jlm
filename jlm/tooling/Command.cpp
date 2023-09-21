@@ -280,10 +280,16 @@ JlmOptCommand::ToString() const
     statisticsArguments += "--" + std::string(JlmOptCommandLineOptions::ToCommandLineArgument(statisticsId)) + " ";
   }
 
+  std::string statisticsDirArgument =
+    "-s "
+    + CommandLineOptions_.GetStatisticsCollectorSettings().GetFilePath().path()
+    + " ";
+
   return util::strfmt(
     ProgramName_ + " ",
     outputFormatArgument,
     optimizationArguments,
+    statisticsDirArgument,
     statisticsArguments,
     outputFileArgument,
     CommandLineOptions_.GetInputFile().to_str());

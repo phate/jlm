@@ -14,7 +14,11 @@ TestStatistics()
   using namespace jlm::tooling;
 
   // Arrange
-  jlm::util::StatisticsCollectorSettings statisticsCollectorSettings({jlm::util::Statistics::Id::SteensgaardAnalysis});
+  std::string expectedStatisticsDir = "/myStatisticsDir/";
+
+  jlm::util::StatisticsCollectorSettings statisticsCollectorSettings(
+    jlm::util::filepath(expectedStatisticsDir + "myStatisticsFile"),
+    {jlm::util::Statistics::Id::SteensgaardAnalysis});
 
   JlmOptCommandLineOptions commandLineOptions(
     jlm::util::filepath("inputFile.ll"),
@@ -36,6 +40,7 @@ TestStatistics()
     "jlm-opt ",
     "--llvm ",
     "--DeadNodeElimination --LoopUnrolling ",
+    "-s " + expectedStatisticsDir + " ",
     "--print-steensgaard-analysis ",
     "-o outputFile.ll ",
     "inputFile.ll");
