@@ -134,6 +134,14 @@ public:
     return DemandedStatistics_;
   }
 
+  static filepath
+  CreateUniqueStatisticsFile(
+    const filepath & directory,
+    const filepath & inputFile)
+  {
+    return filepath::CreateUniqueFile(directory, inputFile.base() + "-", "-statistics.log");
+  }
+
 private:
   filepath FilePath_;
   HashSet<Statistics::Id> DemandedStatistics_;

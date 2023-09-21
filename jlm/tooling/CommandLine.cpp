@@ -996,10 +996,9 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
   }
 
   jlm::util::filepath inputFilePath(inputFile);
-  jlm::util::filepath statisticsFilePath = jlm::util::filepath::CreateUniqueFile(
+  jlm::util::filepath statisticsFilePath = jlm::util::StatisticsCollectorSettings::CreateUniqueStatisticsFile(
     statisticsDirectoryFilePath,
-    inputFilePath.base() + "-",
-    "-statistics.log");
+    inputFilePath);
 
   util::HashSet<util::Statistics::Id> demandedStatistics({printStatistics.begin(), printStatistics.end()});
 
