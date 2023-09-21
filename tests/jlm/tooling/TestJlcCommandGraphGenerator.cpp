@@ -118,12 +118,50 @@ TestJlmOptOptimizations()
   assert(optimizations[1] == JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination);
 }
 
+static void
+TestJlmOptStatistics()
+{
+  using namespace jlm::util;
+
+  // Arrange
+  HashSet<Statistics::Id> expectedStatistics(
+    {
+      Statistics::Id::Aggregation,
+      Statistics::Id::SteensgaardAnalysis
+    });
+
+  jlm::tooling::JlcCommandLineOptions commandLineOptions;
+  commandLineOptions.Compilations_.push_back({
+                                               {"foo.o"},
+                                               {""},
+                                               {"foo.o"},
+                                               "foo.o",
+                                               true,
+                                               true,
+                                               true,
+                                               true});
+  commandLineOptions.OutputFile_ = {"foobar"};
+  commandLineOptions.JlmOptPassStatistics_ = expectedStatistics;
+
+  // Act
+  auto commandGraph = jlm::tooling::JlcCommandGraphGenerator::Generate(commandLineOptions);
+
+  // Assert
+  auto & clangCommandNode = (*commandGraph->GetEntryNode().OutgoingEdges().begin()).GetSink();
+  auto & jlmOptCommandNode = (clangCommandNode.OutgoingEdges().begin())->GetSink();
+  auto & jlmOptCommand = *dynamic_cast<const jlm::tooling::JlmOptCommand*>(&jlmOptCommandNode.GetCommand());
+  auto & statisticsCollectorSettings = jlmOptCommand.GetCommandLineOptions().GetStatisticsCollectorSettings();
+
+  assert(statisticsCollectorSettings.GetDemandedStatistics() == expectedStatistics);
+}
+
 static int
 Test()
 {
   Test1();
   Test2();
   TestJlmOptOptimizations();
+  TestJlmOptStatistics();
 
   return 0;
 }

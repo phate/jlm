@@ -118,7 +118,7 @@ JlcCommandGraphGenerator::GenerateCommandGraph(const JlcCommandLineOptions & com
         CreateParserCommandOutputFile(compilation.InputFile()),
         CreateJlmOptCommandOutputFile(compilation.InputFile()),
         JlmOptCommandLineOptions::OutputFormat::Llvm,
-        util::StatisticsCollectorSettings(),
+        util::StatisticsCollectorSettings(commandLineOptions.JlmOptPassStatistics_),
         commandLineOptions.JlmOptOptimizations_);
 
       auto & jlmOptCommandNode = JlmOptCommand::Create(

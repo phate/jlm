@@ -19,7 +19,10 @@ namespace jlm::util
  */
 class Statistics {
 public:
-  enum class Id {
+  enum class Id
+  {
+    FirstEnumValue, // must always be the first enum value, used for iteration
+
     Aggregation,
     Annotation,
     BasicEncoderEncoding,
@@ -39,7 +42,9 @@ public:
     RvsdgDestruction,
     RvsdgOptimization,
     SteensgaardAnalysis,
-    ThetaGammaInversion
+    ThetaGammaInversion,
+
+    LastEnumValue // must always be the last enum value, used for iteration
   };
 
   virtual
@@ -66,10 +71,19 @@ private:
 /**
  * Determines the settings of a StatisticsCollector.
  */
-class StatisticsCollectorSettings final {
+class StatisticsCollectorSettings final
+{
+  inline static const char* DefaultFilePath_ = "/tmp/jlm-stats.log";
+
 public:
   StatisticsCollectorSettings()
-    : FilePath_("/tmp/jlm-stats.log")
+    : FilePath_(DefaultFilePath_)
+  {}
+
+  explicit
+  StatisticsCollectorSettings(HashSet<Statistics::Id> demandedStatistics)
+    : FilePath_(DefaultFilePath_)
+    , DemandedStatistics_(std::move(demandedStatistics))
   {}
 
   StatisticsCollectorSettings(
@@ -112,6 +126,12 @@ public:
   NumDemandedStatistics() const noexcept
   {
     return DemandedStatistics_.Size();
+  }
+
+  [[nodiscard]] const HashSet<Statistics::Id>&
+  GetDemandedStatistics() const noexcept
+  {
+    return DemandedStatistics_;
   }
 
 private:

@@ -260,11 +260,6 @@ JlmOptCommand::~JlmOptCommand()
 std::string
 JlmOptCommand::ToString() const
 {
-  /*
-   * There is currently no need to support statistics gathering here.
-   */
-  JLM_ASSERT(CommandLineOptions_.GetStatisticsCollectorSettings().NumDemandedStatistics() == 0);
-
   std::string optimizationArguments;
   for (auto & optimization : CommandLineOptions_.GetOptimizationIds())
     optimizationArguments += "--" + std::string(JlmOptCommandLineOptions::ToCommandLineArgument(optimization)) + " ";
@@ -278,10 +273,18 @@ JlmOptCommand::ToString() const
     ? "-o " + CommandLineOptions_.GetOutputFile().to_str() + " "
     : "";
 
+  std::string statisticsArguments;
+  auto & demandedStatistics = CommandLineOptions_.GetStatisticsCollectorSettings().GetDemandedStatistics();
+  for (auto & statisticsId : demandedStatistics.Items())
+  {
+    statisticsArguments += "--" + std::string(JlmOptCommandLineOptions::ToCommandLineArgument(statisticsId)) + " ";
+  }
+
   return util::strfmt(
     ProgramName_ + " ",
     outputFormatArgument,
     optimizationArguments,
+    statisticsArguments,
     outputFileArgument,
     CommandLineOptions_.GetInputFile().to_str());
 }

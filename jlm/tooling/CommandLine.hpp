@@ -155,10 +155,16 @@ public:
   GetOptimizations() const noexcept;
 
   static OptimizationId
-  FromCommandLineArgument(const std::string& commandLineArgument);
+  FromCommandLineArgumentToOptimizationId(const std::string& commandLineArgument);
+
+  static util::Statistics::Id
+  FromCommandLineArgumentToStatisticsId(const std::string& commandLineArgument);
 
   static const char*
   ToCommandLineArgument(OptimizationId optimizationId);
+
+  static const char*
+  ToCommandLineArgument(util::Statistics::Id statisticsId);
 
   static const char*
   ToCommandLineArgument(OutputFormat outputFormat);
@@ -189,25 +195,52 @@ private:
   util::StatisticsCollectorSettings StatisticsCollectorSettings_;
   std::vector<OptimizationId> OptimizationIds_;
 
-  inline static const char* AaSteensgaardAgnosticCommandLineArgument_ = "AASteensgaardAgnostic";
-  inline static const char* AaSteensgaardRegionAwareCommandLineArgument_ = "AASteensgaardRegionAware";
-  inline static const char* CommonNodeEliminationCommandLineArgument_ = "CommonNodeElimination";
-  inline static const char* CommonNodeEliminationDeprecatedCommandLineArgument_ = "cne";
-  inline static const char* DeadNodeEliminationCommandLineArgument_ = "DeadNodeElimination";
-  inline static const char* DeadNodeEliminationDeprecatedCommandLineArgument_ = "dne";
-  inline static const char* FunctionInliningCommandLineArgument_ = "FunctionInlining";
-  inline static const char* FunctionInliningDeprecatedCommandLineArgument_ = "iln";
-  inline static const char* InvariantValueRedirectionCommandLineArgument_ = "InvariantValueRedirection";
-  inline static const char* NodePullInCommandLineArgument_ = "NodePullIn";
-  inline static const char* NodePullInDeprecatedCommandLineArgument_ = "pll";
-  inline static const char* NodePushOutCommandLineArgument_ = "NodePushOut";
-  inline static const char* NodePushOutDeprecatedCommandLineArgument_ = "psh";
-  inline static const char* ThetaGammaInversionCommandLineArgument_ = "ThetaGammaInversion";
-  inline static const char* ThetaGammaInversionDeprecatedCommandLineArgument_ = "ivt";
-  inline static const char* LoopUnrollingCommandLineArgument_ = "LoopUnrolling";
-  inline static const char* LoopUnrollingDeprecatedCommandLineArgument_ = "url";
-  inline static const char* NodeReductionCommandLineArgument_ = "NodeReduction";
-  inline static const char* NodeReductionDeprecatedCommandLineArgument_ = "red";
+  struct OptimizationCommandLineArgument
+  {
+    inline static const char* AaSteensgaardAgnostic_ = "AASteensgaardAgnostic";
+    inline static const char* AaSteensgaardRegionAware_ = "AASteensgaardRegionAware";
+    inline static const char* CommonNodeElimination_ = "CommonNodeElimination";
+    inline static const char* CommonNodeEliminationDeprecated_ = "cne";
+    inline static const char* DeadNodeElimination_ = "DeadNodeElimination";
+    inline static const char* DeadNodeEliminationDeprecated_ = "dne";
+    inline static const char* FunctionInlining_ = "FunctionInlining";
+    inline static const char* FunctionInliningDeprecated_ = "iln";
+    inline static const char* InvariantValueRedirection_ = "InvariantValueRedirection";
+    inline static const char* NodePullIn_ = "NodePullIn";
+    inline static const char* NodePullInDeprecated_ = "pll";
+    inline static const char* NodePushOut_ = "NodePushOut";
+    inline static const char* NodePushOutDeprecated_ = "psh";
+    inline static const char* ThetaGammaInversion_ = "ThetaGammaInversion";
+    inline static const char* ThetaGammaInversionDeprecated_ = "ivt";
+    inline static const char* LoopUnrolling_ = "LoopUnrolling";
+    inline static const char* LoopUnrollingDeprecated_ = "url";
+    inline static const char* NodeReduction_ = "NodeReduction";
+    inline static const char* NodeReductionDeprecated_ = "red";
+  };
+
+  struct StatisticsCommandLineArgument
+  {
+    inline static const char* Aggregation_ = "print-aggregation-time";
+    inline static const char* Annotation_ = "print-annotation-time";
+    inline static const char* BasicEncoderEncoding_ = "print-basicencoder-encoding";
+    inline static const char* CommonNodeElimination_ = "print-cne-stat";
+    inline static const char* ControlFlowRecovery_ = "print-cfr-time";
+    inline static const char* DataNodeToDelta_ = "printDataNodeToDelta";
+    inline static const char* DeadNodeElimination_ = "print-dne-stat";
+    inline static const char* FunctionInlining_ = "print-iln-stat";
+    inline static const char* InvariantValueRedirection_ = "printInvariantValueRedirection";
+    inline static const char* JlmToRvsdgConversion_ = "print-jlm-rvsdg-conversion";
+    inline static const char* LoopUnrolling_ = "print-unroll-stat";
+    inline static const char* MemoryNodeProvisioning_ = "print-memory-node-provisioning";
+    inline static const char* PullNodes_ = "print-pull-stat";
+    inline static const char* PushNodes_ = "print-push-stat";
+    inline static const char* ReduceNodes_ = "print-reduction-stat";
+    inline static const char* RvsdgConstruction_ = "print-rvsdg-construction";
+    inline static const char* RvsdgDestruction_ = "print-rvsdg-destruction";
+    inline static const char* RvsdgOptimization_ = "print-rvsdg-optimization";
+    inline static const char* SteensgaardAnalysis_ = "print-steensgaard-analysis";
+    inline static const char* ThetaGammaInversion_ = "print-ivt-stat";
+  };
 };
 
 class JlcCommandLineOptions final : public CommandLineOptions {
@@ -276,6 +309,7 @@ public:
   std::vector<std::string> IncludePaths_;
   std::vector<std::string> Flags_;
   std::vector<JlmOptCommandLineOptions::OptimizationId> JlmOptOptimizations_;
+  util::HashSet<util::Statistics::Id> JlmOptPassStatistics_;
 
   std::vector<Compilation> Compilations_;
 };
