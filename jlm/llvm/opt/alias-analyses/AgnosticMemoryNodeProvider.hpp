@@ -135,7 +135,7 @@ public:
   ToString() const override
   {
     return util::strfmt(
-      "AgnosticMemoryNodeProvision ",
+      "AgnosticMemoryNodeProvider ",
       "#PointsToGraphMemoryNodes:", NumPointsToGraphMemoryNodes_, " ",
       "Time[ns]:", Timer_.ns()
       );
