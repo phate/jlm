@@ -123,7 +123,7 @@ LoadTest1::SetupRvsdg()
   PointerType pointerType;
   FunctionType fcttype({&pointerType, &mt}, {&jlm::rvsdg::bit32, &mt});
 
-  auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto module = RvsdgModule::Create(jlm::util::filepath("LoadTest1.c"), "", "");
   auto graph = &module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
