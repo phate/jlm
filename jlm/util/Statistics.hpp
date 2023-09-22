@@ -73,16 +73,14 @@ private:
  */
 class StatisticsCollectorSettings final
 {
-  inline static const char* DefaultFilePath_ = "/tmp/jlm-stats.log";
-
 public:
   StatisticsCollectorSettings()
-    : FilePath_(DefaultFilePath_)
+    : FilePath_("")
   {}
 
   explicit
   StatisticsCollectorSettings(HashSet<Statistics::Id> demandedStatistics)
-    : FilePath_(DefaultFilePath_)
+    : FilePath_("")
     , DemandedStatistics_(std::move(demandedStatistics))
   {}
 
@@ -132,6 +130,14 @@ public:
   GetDemandedStatistics() const noexcept
   {
     return DemandedStatistics_;
+  }
+
+  static filepath
+  CreateUniqueStatisticsFile(
+    const filepath & directory,
+    const filepath & inputFile)
+  {
+    return filepath::CreateUniqueFile(directory, inputFile.base() + "-", "-statistics.log");
   }
 
 private:

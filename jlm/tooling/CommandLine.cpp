@@ -745,8 +745,6 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
 
   cl::TopLevelSubCommand->reset();
 
-  util::StatisticsCollectorSettings statisticsCollectorSettings;
-
   cl::opt<std::string> inputFile(
     cl::Positional,
     cl::desc("<input>"));
@@ -757,14 +755,15 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
     cl::desc("Write output to <file>"),
     cl::value_desc("file"));
 
-  const auto statisticFileDesc = "Write stats to <file>. Default is "
-                                 + statisticsCollectorSettings.GetFilePath().to_str()
-                                 + ".";
-  cl::opt<std::string> statisticFile(
+  std::string statisticsDirectoryDefault = std::filesystem::temp_directory_path();
+  const auto statisticDirectoryDescription = "Write statistics to file in <dir>. Default is "
+                                             + statisticsDirectoryDefault
+                                             + ".";
+  cl::opt<std::string> statisticDirectory(
     "s",
-    cl::init(statisticsCollectorSettings.GetFilePath().to_str()),
-    cl::desc(statisticFileDesc),
-    cl::value_desc("file"));
+    cl::init(statisticsDirectoryDefault),
+    cl::desc(statisticDirectoryDescription),
+    cl::value_desc("dir"));
 
   auto aggregationStatisticsId = util::Statistics::Id::Aggregation;
   auto annotationStatisticsId = util::Statistics::Id::Annotation;
@@ -989,13 +988,24 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
 
   cl::ParseCommandLineOptions(argc, argv);
 
-  statisticsCollectorSettings.SetFilePath(statisticFile);
+  jlm::util::filepath statisticsDirectoryFilePath(statisticDirectory);
+  if (!statisticsDirectoryFilePath.Exists()
+  && !statisticsDirectoryFilePath.IsDirectory())
+  {
+    throw CommandLineParser::Exception(statisticsDirectoryFilePath.to_str() + " does not exist or is not a directory.");
+  }
+
+  jlm::util::filepath inputFilePath(inputFile);
+  jlm::util::filepath statisticsFilePath = jlm::util::StatisticsCollectorSettings::CreateUniqueStatisticsFile(
+    statisticsDirectoryFilePath,
+    inputFilePath);
 
   util::HashSet<util::Statistics::Id> demandedStatistics({printStatistics.begin(), printStatistics.end()});
-  statisticsCollectorSettings.SetDemandedStatistics(std::move(demandedStatistics));
+
+  util::StatisticsCollectorSettings statisticsCollectorSettings(statisticsFilePath, demandedStatistics);
 
   CommandLineOptions_ = JlmOptCommandLineOptions::Create(
-    inputFile,
+    std::move(inputFilePath),
     outputFile,
     outputFormat,
     std::move(statisticsCollectorSettings),

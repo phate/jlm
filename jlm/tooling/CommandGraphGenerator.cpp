@@ -114,11 +114,18 @@ JlcCommandGraphGenerator::GenerateCommandGraph(const JlcCommandLineOptions & com
 
     if (compilation.RequiresOptimization())
     {
+      auto statisticsFilePath = util::StatisticsCollectorSettings::CreateUniqueStatisticsFile(
+        util::filepath(std::filesystem::temp_directory_path()),
+        compilation.InputFile());
+      util::StatisticsCollectorSettings statisticsCollectorSettings(
+        statisticsFilePath,
+        commandLineOptions.JlmOptPassStatistics_);
+
       JlmOptCommandLineOptions jlmOptCommandLineOptions(
         CreateParserCommandOutputFile(compilation.InputFile()),
         CreateJlmOptCommandOutputFile(compilation.InputFile()),
         JlmOptCommandLineOptions::OutputFormat::Llvm,
-        util::StatisticsCollectorSettings(commandLineOptions.JlmOptPassStatistics_),
+        statisticsCollectorSettings,
         commandLineOptions.JlmOptOptimizations_);
 
       auto & jlmOptCommandNode = JlmOptCommand::Create(
