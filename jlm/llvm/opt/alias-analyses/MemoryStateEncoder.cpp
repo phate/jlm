@@ -46,10 +46,11 @@ public:
   [[nodiscard]] std::string
   ToString() const override
   {
-    return jlm::util::strfmt("BasicEncoderEncoding ",
-                  SourceFile_.to_str(), " ",
-                  "#RvsdgNodes:", NumNodesBefore_, " ",
-                  "Time[ns]:", Timer_.ns());
+    return jlm::util::strfmt(
+      "MemoryStateEncoder ",
+      SourceFile_.to_str(), " ",
+      "#RvsdgNodes:", NumNodesBefore_, " ",
+      "Time[ns]:", Timer_.ns());
   }
 
   static std::unique_ptr<EncodingStatistics>
