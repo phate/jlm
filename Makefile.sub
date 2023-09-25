@@ -35,10 +35,11 @@ endif
 
 JLM_BIN = $(JLM_ROOT)/bin
 JLM_BUILD = $(JLM_ROOT)/build
+MLIR_ROOT = $(JLM_ROOT)/lib/mlir-rvsdg/
 
 # -gdwarf-4 is used since the valgrind version in Ubuntu 22.04 doesn't support dwarf-5, 
 #  which is produced by default by clang-14
-CXXFLAGS += --std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Werror -Wfatal-errors -gdwarf-4
+CXXFLAGS += --std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Werror -Wfatal-errors -gdwarf-4 -I$(MLIR_ROOT)/include -I$(MLIR_ROOT)/include
 CXXFLAGS_DEBUG += -g -DJLM_DEBUG -DJLM_ENABLE_ASSERTS
 
 $(JLM_BUILD)/%.la: $(JLM_ROOT)/%.cpp
@@ -55,6 +56,7 @@ $(JLM_BUILD)/%.a:
 	ranlib $@
 
 include $(JLM_ROOT)/jlm/hls/Makefile.sub
+include $(JLM_ROOT)/jlm/mlir/Makefile.sub
 include $(JLM_ROOT)/jlm/llvm/Makefile.sub
 include $(JLM_ROOT)/jlm/rvsdg/Makefile.sub
 include $(JLM_ROOT)/jlm/tooling/Makefile.sub
@@ -72,10 +74,10 @@ format-dry-run:
 	@find $(JLM_ROOT) -name "*.[ch]pp" -exec clang-format-16 --dry-run --Werror --style="file:.clang-format" --verbose -i {} \;
 
 .PHONY: jlm-debug
-jlm-debug: libutil-debug libhls-debug jlm-opt-debug jlm-hls-debug jlc-debug jhls-debug
+jlm-debug: libutil-debug libhls-debug libmlir-debug jlm-opt-debug jlm-hls-debug jlc-debug jhls-debug
 
 .PHONY: jlm-release
-jlm-release: libutil-release libhls-release jlm-opt-release jlm-hls-release jlc-release jhls-release
+jlm-release: libutil-release libhls-release libmlir-release jlm-opt-release jlm-hls-release jlc-release jhls-release
 
 .PHONY: jlm-clean
 jlm-clean:

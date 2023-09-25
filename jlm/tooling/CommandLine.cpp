@@ -269,8 +269,9 @@ JlmOptCommandLineOptions::ToCommandLineArgument(jlm::util::Statistics::Id statis
 const char *
 JlmOptCommandLineOptions::ToCommandLineArgument(OutputFormat outputFormat)
 {
-  static std::unordered_map<OutputFormat, const char *> map(
-      { { OutputFormat::Llvm, "llvm" }, { OutputFormat::Xml, "xml" } });
+  static std::unordered_map<OutputFormat, const char *> map({ { OutputFormat::Llvm, "llvm" },
+                                                              { OutputFormat::Xml, "xml" },
+                                                              { OutputFormat::Mlir, "mlir" } });
 
   if (map.find(outputFormat) != map.end())
     return map[outputFormat];
@@ -869,6 +870,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
 
   auto llvmOutputFormat = JlmOptCommandLineOptions::OutputFormat::Llvm;
   auto xmlOutputFormat = JlmOptCommandLineOptions::OutputFormat::Xml;
+  auto mlirOutputFormat = JlmOptCommandLineOptions::OutputFormat::Mlir;
 
   cl::opt<JlmOptCommandLineOptions::OutputFormat> outputFormat(
       cl::values(
@@ -879,7 +881,11 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
           ::clEnumValN(
               xmlOutputFormat,
               JlmOptCommandLineOptions::ToCommandLineArgument(xmlOutputFormat),
-              "Output XML")),
+              "Output XML"),
+          ::clEnumValN(
+              mlirOutputFormat,
+              JlmOptCommandLineOptions::ToCommandLineArgument(mlirOutputFormat),
+              "Output MLIR")),
       cl::init(llvmOutputFormat),
       cl::desc("Select output format"));
 

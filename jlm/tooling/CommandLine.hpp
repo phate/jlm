@@ -43,6 +43,7 @@ public:
   enum class OutputFormat
   {
     Llvm,
+    Mlir,
     Xml
   };
 

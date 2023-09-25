@@ -25,8 +25,18 @@ jobs:
       - name: Check format
         run: clang-format-16 --Werror --dry-run --style="file:.clang-format" --verbose --files=sourceFiles.txt
 
+  build-mlir:
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: '0'
+    - name: "Build MLIR RVSDG Dialect"
+      uses: ./.github/actions/BuildMlirDialect
+
   build:
     runs-on: ubuntu-22.04
+    needs: build-mlir
     steps:
     - uses: actions/checkout@v3
     - name: Cache build
@@ -37,19 +47,24 @@ jobs:
         key: ${{ runner.os }}-${{ github.sha }}-jlm
     - name: "Install LLVM and Clang"
       uses: ./.github/actions/InstallLlvmDependencies
+    - name: "Build MLIR RVSDG Dialect"
+      uses: ./.github/actions/BuildMlirDialect
     - name: Compile jlm
-      run: make jlm-release -j `nproc`
+      run: CPPFLAGS=-DMLIR_ENABLED=1 make jlm-release -j `nproc`
     - name: Run unit and C tests
       run: make check -j `nproc`
 
   gcc:
     runs-on: ubuntu-22.04
+    needs: build-mlir
     steps:
     - uses: actions/checkout@v3
     - name: "Install LLVM and Clang"
       uses: ./.github/actions/InstallLlvmDependencies
+    - name: "Build MLIR RVSDG Dialect"
+      uses: ./.github/actions/BuildMlirDialect
     - name: Compile jlm
-      run: make CXX=g++ jlm-release -j `nproc`
+      run: CPPFLAGS=-DMLIR_ENABLED=1 make CXX=g++ jlm-release -j `nproc`
     - name: Run unit and C tests
       run: make check -j `nproc`
 

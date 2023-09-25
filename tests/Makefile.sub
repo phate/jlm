@@ -13,8 +13,8 @@ TEST_SOURCES = \
 $(JLM_BUILD)/tests/test-runner: rvsdg-debug
 $(JLM_BUILD)/tests/test-runner: CXXFLAGS += $(CXXFLAGS_DEBUG)
 $(JLM_BUILD)/tests/test-runner: CPPFLAGS += -I$(JLM_ROOT)/tests -I$(JLM_ROOT) -I$(shell $(LLVMCONFIG) --includedir)
-$(JLM_BUILD)/tests/test-runner: LDFLAGS=-L$(JLM_BUILD) $(shell $(LLVMCONFIG) --ldflags --libs --system-libs) -ltooling -lhls -lllvm -lrvsdg -lutil
-$(JLM_BUILD)/tests/test-runner: %: $(patsubst %.cpp, $(JLM_BUILD)/%.la, $(TEST_SOURCES)) $(JLM_BUILD)/libtooling.a $(JLM_BUILD)/librvsdg.a $(JLM_BUILD)/libhls.a $(JLM_BUILD)/libllvm.a $(JLM_BUILD)/libutil.a
+$(JLM_BUILD)/tests/test-runner: LDFLAGS=-L$(JLM_BUILD) $(shell $(LLVMCONFIG) --ldflags --libs --system-libs) -ltooling -lhls -lllvm -lrvsdg -lutil -lmlir -L$(MLIR_ROOT)/lib -lMLIR -lMLIRJLM -lMLIRRVSDG
+$(JLM_BUILD)/tests/test-runner: %: $(patsubst %.cpp, $(JLM_BUILD)/%.la, $(TEST_SOURCES)) $(JLM_BUILD)/libtooling.a $(JLM_BUILD)/librvsdg.a $(JLM_BUILD)/libhls.a $(JLM_BUILD)/libllvm.a $(JLM_BUILD)/libutil.a $(JLM_BUILD)/libmlir.a
 	mkdir -p ${dir $@}
 	$(CXX) -o $@ $(filter %.la, $^) $(LDFLAGS)
 

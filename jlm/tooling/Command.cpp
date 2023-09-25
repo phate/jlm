@@ -10,6 +10,7 @@
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/OptimizationSequence.hpp>
+#include <jlm/mlir/backend/mlirgen.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/tooling/Command.hpp>
 #include <jlm/tooling/CommandPaths.hpp>
@@ -395,12 +396,27 @@ JlmOptCommand::PrintRvsdgModule(
     }
   };
 
+  auto printAsMlir = [](const llvm::RvsdgModule & rvsdgModule,
+                        const util::filepath & outputFile,
+                        util::StatisticsCollector &)
+  {
+#ifdef MLIR_ENABLED
+    jlm::rvsdgmlir::MLIRGen mlirgen;
+    auto omega = mlirgen.convertModule(rvsdgModule);
+    mlirgen.print(omega, outputFile);
+#else
+    throw util::error(
+        "This version of jlm-opt has not been compiled with support for the MLIR backend\n");
+#endif
+  };
+
   static std::unordered_map<
       JlmOptCommandLineOptions::OutputFormat,
       std::function<
           void(const llvm::RvsdgModule &, const util::filepath &, util::StatisticsCollector &)>>
       printers({ { tooling::JlmOptCommandLineOptions::OutputFormat::Xml, printAsXml },
-                 { tooling::JlmOptCommandLineOptions::OutputFormat::Llvm, printAsLlvm } });
+                 { tooling::JlmOptCommandLineOptions::OutputFormat::Llvm, printAsLlvm },
+                 { tooling::JlmOptCommandLineOptions::OutputFormat::Mlir, printAsMlir } });
 
   JLM_ASSERT(printers.find(outputFormat) != printers.end());
   printers[outputFormat](rvsdgModule, outputFile, statisticsCollector);
