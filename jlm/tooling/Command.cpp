@@ -14,6 +14,11 @@
 #include <jlm/tooling/Command.hpp>
 #include <jlm/tooling/CommandPaths.hpp>
 
+#ifdef ENABLE_MLIR
+#include <jlm/mlir/backend/JlmToMlirConverter.hpp>
+#include <jlm/mlir/frontend/MlirToJlmConverter.hpp>
+#endif
+
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IRReader/IRReader.h>
@@ -308,21 +313,13 @@ JlmOptCommand::ToString() const
 void
 JlmOptCommand::Run() const
 {
-  ::llvm::LLVMContext llvmContext;
-  auto llvmModule = ParseLlvmIrFile(CommandLineOptions_.GetInputFile(), llvmContext);
-
-  auto interProceduralGraphModule = llvm::ConvertLlvmModule(*llvmModule);
-
-  /*
-   * Dispose of Llvm module. It is no longer needed.
-   */
-  llvmModule.reset();
-
   jlm::util::StatisticsCollector statisticsCollector(
       CommandLineOptions_.GetStatisticsCollectorSettings());
 
-  auto rvsdgModule =
-      llvm::ConvertInterProceduralGraphModule(*interProceduralGraphModule, statisticsCollector);
+  auto rvsdgModule = ParseInputFile(
+      CommandLineOptions_.GetInputFile(),
+      CommandLineOptions_.GetInputFormat(),
+      statisticsCollector);
 
   llvm::OptimizationSequence::CreateAndRun(
       *rvsdgModule,
@@ -338,21 +335,60 @@ JlmOptCommand::Run() const
   statisticsCollector.PrintStatistics();
 }
 
-std::unique_ptr<::llvm::Module>
-JlmOptCommand::ParseLlvmIrFile(const util::filepath & llvmIrFile, ::llvm::LLVMContext & llvmContext)
-    const
+std::unique_ptr<llvm::RvsdgModule>
+JlmOptCommand::ParseInputFile(
+    const util::filepath & inputFile,
+    const JlmOptCommandLineOptions::InputFormat & inputFormat,
+    util::StatisticsCollector & statisticsCollector) const
 {
-  ::llvm::SMDiagnostic diagnostic;
-  if (auto module = ::llvm::parseIRFile(llvmIrFile.to_str(), diagnostic, llvmContext))
+  auto parseLlvmIrFile =
+      [=](const util::filepath & llvmIrFile,
+          util::StatisticsCollector & statisticsCollector) -> std::unique_ptr<llvm::RvsdgModule>
   {
-    return module;
-  }
+    ::llvm::LLVMContext llvmContext;
+    ::llvm::SMDiagnostic diagnostic;
+    if (auto llvmModule = ::llvm::parseIRFile(llvmIrFile.to_str(), diagnostic, llvmContext))
+    {
+      auto interProceduralGraphModule = llvm::ConvertLlvmModule(*llvmModule);
 
-  std::string errors;
-  ::llvm::raw_string_ostream os(errors);
-  diagnostic.print(ProgramName_.c_str(), os);
-  throw util::error(errors);
-}
+      // Dispose of Llvm module. It is no longer needed.
+      llvmModule.reset();
+
+      auto rvsdgModule =
+          llvm::ConvertInterProceduralGraphModule(*interProceduralGraphModule, statisticsCollector);
+
+      return rvsdgModule;
+    }
+
+    std::string errors;
+    ::llvm::raw_string_ostream os(errors);
+    diagnostic.print(ProgramName_.c_str(), os);
+    throw util::error(errors);
+  };
+
+  auto parseMlirIrFile =
+      [](const util::filepath & mlirIrFile,
+         util::StatisticsCollector & statisticsCollector) -> std::unique_ptr<llvm::RvsdgModule>
+  {
+#ifdef ENABLE_MLIR
+    jlm::mlir::MlirToJlmConverter rvsdggen;
+    return rvsdggen.ReadAndConvertMlir(mlirIrFile);
+#else
+    throw util::error(
+        "This version of jlm-opt has not been compiled with support for the MLIR backend\n");
+#endif
+  };
+
+  static std::unordered_map<
+      JlmOptCommandLineOptions::InputFormat,
+      std::function<
+          std::unique_ptr<llvm::RvsdgModule>(const util::filepath &, util::StatisticsCollector &)>>
+      parsers({ { tooling::JlmOptCommandLineOptions::InputFormat::Llvm, parseLlvmIrFile },
+                { tooling::JlmOptCommandLineOptions::InputFormat::Mlir, parseMlirIrFile } });
+
+  JLM_ASSERT(parsers.find(inputFormat) != parsers.end());
+  return parsers[inputFormat](inputFile, statisticsCollector);
+};
 
 void
 JlmOptCommand::PrintRvsdgModule(
@@ -395,11 +431,26 @@ JlmOptCommand::PrintRvsdgModule(
     }
   };
 
+  auto printAsMlir = [](const llvm::RvsdgModule & rvsdgModule,
+                        const util::filepath & outputFile,
+                        util::StatisticsCollector &)
+  {
+#ifdef ENABLE_MLIR
+    jlm::mlir::JlmToMlirConverter mlirgen;
+    auto omega = mlirgen.ConvertModule(rvsdgModule);
+    mlirgen.Print(omega, outputFile);
+#else
+    throw util::error(
+        "This version of jlm-opt has not been compiled with support for the MLIR backend\n");
+#endif
+  };
+
   static std::unordered_map<
       JlmOptCommandLineOptions::OutputFormat,
       std::function<void(llvm::RvsdgModule &, const util::filepath &, util::StatisticsCollector &)>>
       printers({ { tooling::JlmOptCommandLineOptions::OutputFormat::Xml, printAsXml },
-                 { tooling::JlmOptCommandLineOptions::OutputFormat::Llvm, printAsLlvm } });
+                 { tooling::JlmOptCommandLineOptions::OutputFormat::Llvm, printAsLlvm },
+                 { tooling::JlmOptCommandLineOptions::OutputFormat::Mlir, printAsMlir } });
 
   JLM_ASSERT(printers.find(outputFormat) != printers.end());
   printers[outputFormat](rvsdgModule, outputFile, statisticsCollector);

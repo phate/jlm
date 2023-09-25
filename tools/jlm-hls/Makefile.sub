@@ -3,7 +3,7 @@
 # See COPYING for terms of redistribution.
 
 jlm-hls_SOURCES = \
-    tools/jlm-hls/jlm-hls.cpp \
+	tools/jlm-hls/jlm-hls.cpp \
 
 jlm-hls_LIBS = \
 	libtooling \
@@ -15,18 +15,19 @@ jlm-hls_LIBS = \
 jlm-hls_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs)
 
 jlm-hls_EXTRA_LDFLAGS += \
-        -L$(CIRCT_PATH)/lib \
-        -lMLIR \
-        -lCIRCTAnalysisTestPasses \
-        -lCIRCTDependenceAnalysis \
-        -lCIRCTExportFIRRTL \
-        -lCIRCTFIRRTL \
-        -lCIRCTFIRRTLTransforms \
-        -lCIRCTScheduling \
-        -lCIRCTSchedulingAnalysis \
-        -lCIRCTSeq \
-        -lCIRCTSupport \
-        -lCIRCTTransforms \
-        -lCIRCTHW
+	-L$(CIRCT_PATH)/lib \
+	-lMLIR \
+	-lCIRCTAnalysisTestPasses \
+	-lCIRCTDependenceAnalysis \
+	-lCIRCTExportFIRRTL \
+	-lCIRCTFIRRTL \
+	-lCIRCTFIRRTLTransforms \
+	-lCIRCTScheduling \
+	-lCIRCTSchedulingAnalysis \
+	-lCIRCTSeq \
+	-lCIRCTSupport \
+	-lCIRCTTransforms \
+	-lCIRCTHW \
+	${MLIR_LDFLAGS} \
 
 $(eval $(call common_executable,jlm-hls))
