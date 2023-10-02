@@ -145,8 +145,11 @@ public:
   std::string
   ToDot() const;
 
-  void
-  Clear();
+  static std::unique_ptr<LocationSet>
+  Create()
+  {
+    return std::make_unique<LocationSet>();
+  }
 
 private:
   RegisterLocation &
@@ -189,9 +192,6 @@ public:
     jlm::util::StatisticsCollector & statisticsCollector) override;
 
 private:
-  void
-  ResetState();
-
   void
   Analyze(const jlm::rvsdg::graph & graph);
 
@@ -272,7 +272,7 @@ private:
   void
   join(Location & x, Location & y);
 
-  LocationSet LocationSet_;
+  std::unique_ptr<LocationSet> LocationSet_;
 };
 
 }}
