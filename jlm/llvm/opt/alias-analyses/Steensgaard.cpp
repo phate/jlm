@@ -484,9 +484,11 @@ public:
     , Location*
   >::const_iterator;
 
-  ~LocationSet();
+  ~LocationSet()
+  = default;
 
-  LocationSet();
+  LocationSet()
+  = default;
 
   LocationSet(const LocationSet &) = delete;
 
@@ -511,30 +513,81 @@ public:
   }
 
   Location &
-  InsertAllocaLocation(const jlm::rvsdg::node & node);
+  InsertAllocaLocation(const jlm::rvsdg::node & node)
+  {
+    Locations_.push_back(AllocaLocation::Create(node));
+    auto location = Locations_.back().get();
+    DisjointLocationSet_.insert(location);
+
+    return *location;
+  }
 
   Location &
-  InsertMallocLocation(const jlm::rvsdg::node & node);
+  InsertMallocLocation(const jlm::rvsdg::node & node)
+  {
+    Locations_.push_back(MallocLocation::Create(node));
+    auto location = Locations_.back().get();
+    DisjointLocationSet_.insert(location);
+
+    return *location;
+  }
 
   Location &
-  InsertLambdaLocation(const lambda::node & lambda);
+  InsertLambdaLocation(const lambda::node & lambda)
+  {
+    Locations_.push_back(LambdaLocation::Create(lambda));
+    auto location = Locations_.back().get();
+    DisjointLocationSet_.insert(location);
+
+    return *location;
+  }
 
   Location &
-  InsertDeltaLocation(const delta::node & delta);
+  InsertDeltaLocation(const delta::node & delta)
+  {
+    Locations_.push_back(DeltaLocation::Create(delta));
+    auto location = Locations_.back().get();
+    DisjointLocationSet_.insert(location);
+
+    return *location;
+  }
 
   Location &
-  InsertImportLocation(const jlm::rvsdg::argument & argument);
+  InsertImportLocation(const jlm::rvsdg::argument & argument)
+  {
+    Locations_.push_back(ImportLocation::Create(argument));
+    auto location = Locations_.back().get();
+    DisjointLocationSet_.insert(location);
+
+    return *location;
+  }
 
   Location &
-  InsertDummyLocation();
+  InsertDummyLocation()
+  {
+    Locations_.push_back(DummyLocation::Create());
+    auto location = Locations_.back().get();
+    DisjointLocationSet_.insert(location);
+
+    return *location;
+  }
 
   bool
-  Contains(const jlm::rvsdg::output & output) const noexcept;
+  Contains(const jlm::rvsdg::output & output) const noexcept
+  {
+    return LocationMap_.find(&output) != LocationMap_.end();
+  }
 
   Location &
   FindOrInsertRegisterLocation(
     const jlm::rvsdg::output & output,
-    PointsToFlags pointsToFlags);
+    PointsToFlags pointsToFlags)
+  {
+    if (auto location = LookupRegisterLocation(output))
+      return GetRootLocation(*location);
+
+    return InsertRegisterLocation(output, pointsToFlags);
+  }
 
   const DisjointLocationSet::set &
   GetSet(Location & location) const
@@ -555,19 +608,84 @@ public:
   }
 
   Location &
-  GetRootLocation(Location & location) const;
+  GetRootLocation(Location & location) const
+  {
+    return *GetSet(location).value();
+  }
 
   Location &
-  Find(const jlm::rvsdg::output & output);
+  Find(const jlm::rvsdg::output & output)
+  {
+    auto location = LookupRegisterLocation(output);
+    JLM_ASSERT(location != nullptr);
+
+    return GetRootLocation(*location);
+  }
 
   RegisterLocation *
-  LookupRegisterLocation(const jlm::rvsdg::output & output);
+  LookupRegisterLocation(const jlm::rvsdg::output & output)
+  {
+    auto it = LocationMap_.find(&output);
+    return it == LocationMap_.end() ? nullptr : it->second;
+  }
 
   Location &
-  Merge(Location & location1, Location & location2);
+  Merge(Location & location1, Location & location2)
+  {
+    return *DisjointLocationSet_.merge(&location1, &location2)->value();
+  }
 
   std::string
-  ToDot() const;
+  ToDot() const
+  {
+    auto dot_node = [](const DisjointLocationSet::set & set)
+    {
+      auto rootLocation = set.value();
+
+      std::string setLabel;
+      for (auto & location : set) {
+        auto unknownLabel = location->PointsToUnknownMemory() ? "{U}" : "";
+        auto pointsToEscapedMemoryLabel = location->PointsToEscapedMemory() ? "{E}" : "";
+        auto escapesModuleLabel = RegisterLocation::IsEscapingModule(*location) ? "{EscapesModule}" : "";
+        auto pointsToLabel = jlm::util::strfmt("{pt:", (intptr_t) location->GetPointsTo(), "}");
+        auto locationLabel = jlm::util::strfmt((intptr_t)location, " : ", location->DebugString());
+
+        setLabel += location == rootLocation
+                    ? jlm::util::strfmt("*",
+                                        locationLabel,
+                                        unknownLabel,
+                                        pointsToEscapedMemoryLabel,
+                                        escapesModuleLabel,
+                                        pointsToLabel,
+                                        "*\\n")
+                    : jlm::util::strfmt(locationLabel, escapesModuleLabel, "\\n");
+      }
+
+      return jlm::util::strfmt("{ ", (intptr_t)&set, " [label = \"", setLabel, "\"]; }");
+    };
+
+    auto dot_edge = [&](const DisjointLocationSet::set & set, const DisjointLocationSet::set & pointsToSet)
+    {
+      return jlm::util::strfmt((intptr_t)&set, " -> ", (intptr_t)&pointsToSet);
+    };
+
+    std::string str;
+    str.append("digraph PointsToGraph {\n");
+
+    for (auto & set : DisjointLocationSet_) {
+      str += dot_node(set) + "\n";
+
+      auto pointsTo = set.value()->GetPointsTo();
+      if (pointsTo != nullptr) {
+        auto pointsToSet = DisjointLocationSet_.find(pointsTo);
+        str += dot_edge(set, *pointsToSet) + "\n";
+      }
+    }
+
+    str.append("}\n");
+
+    return str;
+  }
 
   static std::unique_ptr<LocationSet>
   Create()
@@ -579,192 +697,24 @@ private:
   RegisterLocation &
   InsertRegisterLocation(
     const jlm::rvsdg::output & output,
-    PointsToFlags pointsToFlags);
+    PointsToFlags pointsToFlags)
+  {
+    JLM_ASSERT(!Contains(output));
+
+    auto registerLocation = RegisterLocation::Create(output, pointsToFlags);
+    auto registerLocationPointer = registerLocation.get();
+
+    LocationMap_[&output] = registerLocationPointer;
+    DisjointLocationSet_.insert(registerLocationPointer);
+    Locations_.push_back(std::move(registerLocation));
+
+    return *registerLocationPointer;
+  }
 
   DisjointLocationSet DisjointLocationSet_;
   std::vector<std::unique_ptr<Location>> Locations_;
   std::unordered_map<const jlm::rvsdg::output*, RegisterLocation*> LocationMap_;
 };
-
-LocationSet::~LocationSet()
-= default;
-
-LocationSet::LocationSet()
-= default;
-
-RegisterLocation &
-LocationSet::InsertRegisterLocation(
-  const jlm::rvsdg::output & output,
-  PointsToFlags pointsToFlags)
-{
-  JLM_ASSERT(!Contains(output));
-
-  auto registerLocation = RegisterLocation::Create(output, pointsToFlags);
-  auto registerLocationPointer = registerLocation.get();
-
-  LocationMap_[&output] = registerLocationPointer;
-  DisjointLocationSet_.insert(registerLocationPointer);
-  Locations_.push_back(std::move(registerLocation));
-
-  return *registerLocationPointer;
-}
-
-Location &
-LocationSet::InsertAllocaLocation(const jlm::rvsdg::node & node)
-{
-  Locations_.push_back(AllocaLocation::Create(node));
-  auto location = Locations_.back().get();
-  DisjointLocationSet_.insert(location);
-
-  return *location;
-}
-
-Location &
-LocationSet::InsertMallocLocation(const jlm::rvsdg::node & node)
-{
-  Locations_.push_back(MallocLocation::Create(node));
-  auto location = Locations_.back().get();
-  DisjointLocationSet_.insert(location);
-
-  return *location;
-}
-
-Location &
-LocationSet::InsertLambdaLocation(const lambda::node & node)
-{
-  Locations_.push_back(LambdaLocation::Create(node));
-  auto location = Locations_.back().get();
-  DisjointLocationSet_.insert(location);
-
-  return *location;
-}
-
-Location &
-LocationSet::InsertDeltaLocation(const delta::node & node)
-{
-  Locations_.push_back(DeltaLocation::Create(node));
-  auto location = Locations_.back().get();
-  DisjointLocationSet_.insert(location);
-
-  return *location;
-}
-
-Location &
-LocationSet::InsertDummyLocation()
-{
-  Locations_.push_back(DummyLocation::Create());
-  auto location = Locations_.back().get();
-  DisjointLocationSet_.insert(location);
-
-  return *location;
-}
-
-Location &
-LocationSet::InsertImportLocation(const jlm::rvsdg::argument & argument)
-{
-  Locations_.push_back(ImportLocation::Create(argument));
-  auto location = Locations_.back().get();
-  DisjointLocationSet_.insert(location);
-
-  return *location;
-}
-
-RegisterLocation *
-LocationSet::LookupRegisterLocation(const jlm::rvsdg::output & output)
-{
-  auto it = LocationMap_.find(&output);
-  return it == LocationMap_.end() ? nullptr : it->second;
-}
-
-bool
-LocationSet::Contains(const jlm::rvsdg::output & output) const noexcept
-{
-  return LocationMap_.find(&output) != LocationMap_.end();
-}
-
-Location &
-LocationSet::FindOrInsertRegisterLocation(
-  const jlm::rvsdg::output & output,
-  PointsToFlags pointsToFlags)
-{
-  if (auto location = LookupRegisterLocation(output))
-    return GetRootLocation(*location);
-
-  return InsertRegisterLocation(output, pointsToFlags);
-}
-
-Location &
-LocationSet::GetRootLocation(Location & l) const
-{
-  return *GetSet(l).value();
-}
-
-Location &
-LocationSet::Find(const jlm::rvsdg::output & output)
-{
-  auto location = LookupRegisterLocation(output);
-  JLM_ASSERT(location != nullptr);
-
-  return GetRootLocation(*location);
-}
-
-Location &
-LocationSet::Merge(Location & location1, Location & location2)
-{
-  return *DisjointLocationSet_.merge(&location1, &location2)->value();
-}
-
-std::string
-LocationSet::ToDot() const
-{
-  auto dot_node = [](const DisjointLocationSet::set & set)
-  {
-    auto rootLocation = set.value();
-
-    std::string setLabel;
-    for (auto & location : set) {
-      auto unknownLabel = location->PointsToUnknownMemory() ? "{U}" : "";
-      auto pointsToEscapedMemoryLabel = location->PointsToEscapedMemory() ? "{E}" : "";
-      auto escapesModuleLabel = RegisterLocation::IsEscapingModule(*location) ? "{EscapesModule}" : "";
-      auto pointsToLabel = jlm::util::strfmt("{pt:", (intptr_t) location->GetPointsTo(), "}");
-      auto locationLabel = jlm::util::strfmt((intptr_t)location, " : ", location->DebugString());
-
-      setLabel += location == rootLocation
-                  ? jlm::util::strfmt("*",
-                                      locationLabel,
-                                      unknownLabel,
-                                      pointsToEscapedMemoryLabel,
-                                      escapesModuleLabel,
-                                      pointsToLabel,
-                                      "*\\n")
-                  : jlm::util::strfmt(locationLabel, escapesModuleLabel, "\\n");
-    }
-
-    return jlm::util::strfmt("{ ", (intptr_t)&set, " [label = \"", setLabel, "\"]; }");
-  };
-
-  auto dot_edge = [&](const DisjointLocationSet::set & set, const DisjointLocationSet::set & pointsToSet)
-  {
-    return jlm::util::strfmt((intptr_t)&set, " -> ", (intptr_t)&pointsToSet);
-  };
-
-  std::string str;
-  str.append("digraph PointsToGraph {\n");
-
-  for (auto & set : DisjointLocationSet_) {
-    str += dot_node(set) + "\n";
-
-    auto pointsTo = set.value()->GetPointsTo();
-    if (pointsTo != nullptr) {
-      auto pointsToSet = DisjointLocationSet_.find(pointsTo);
-      str += dot_edge(set, *pointsToSet) + "\n";
-    }
-  }
-
-  str.append("}\n");
-
-  return str;
-}
 
 /** \brief Collect statistics about Steensgaard alias analysis pass
  *
