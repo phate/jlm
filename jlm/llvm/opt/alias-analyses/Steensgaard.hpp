@@ -11,7 +11,6 @@
 namespace jlm::llvm::aa
 {
 
-class Location;
 class LocationSet;
 
 /** \brief Steensgaard alias analysis
@@ -118,11 +117,6 @@ private:
 
   static std::unique_ptr<PointsToGraph>
   ConstructPointsToGraph(const LocationSet & locationSets);
-
-  /** \brief Perform a recursive union of Location \p x and \p y.
-  */
-  void
-  join(Location & x, Location & y);
 
   std::unique_ptr<LocationSet> LocationSet_;
 };

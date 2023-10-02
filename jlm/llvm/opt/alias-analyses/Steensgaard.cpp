@@ -630,12 +630,6 @@ public:
     return it == LocationMap_.end() ? nullptr : it->second;
   }
 
-  Location &
-  Merge(Location & location1, Location & location2)
-  {
-    return *DisjointLocationSet_.merge(&location1, &location2)->value();
-  }
-
   std::string
   ToDot() const
   {
@@ -688,6 +682,39 @@ public:
     return str;
   }
 
+  /** \brief Perform a recursive union of Location \p x and \p y.
+  */
+  void
+  Join(Location & x, Location & y)
+  {
+    std::function<Location*(Location*, Location*)>
+      join = [&](Location * x, Location * y)
+    {
+      if (x == nullptr)
+        return y;
+
+      if (y == nullptr)
+        return x;
+
+      if (x == y)
+        return x;
+
+      auto & rootx = GetRootLocation(*x);
+      auto & rooty = GetRootLocation(*y);
+      auto flags = rootx.GetPointsToFlags() | rooty.GetPointsToFlags();
+      rootx.SetPointsToFlags(flags);
+      rooty.SetPointsToFlags(flags);
+      auto & tmp = Merge(rootx, rooty);
+
+      if (auto root = join(rootx.GetPointsTo(), rooty.GetPointsTo()))
+        tmp.SetPointsTo(*root);
+
+      return &tmp;
+    };
+
+    join(&x, &y);
+  }
+
   static std::unique_ptr<LocationSet>
   Create()
   {
@@ -695,6 +722,12 @@ public:
   }
 
 private:
+  Location &
+  Merge(Location & location1, Location & location2)
+  {
+    return *DisjointLocationSet_.merge(&location1, &location2)->value();
+  }
+
   RegisterLocation &
   InsertRegisterLocation(
     const jlm::rvsdg::output & output,
@@ -834,37 +867,6 @@ Steensgaard::Steensgaard()
 = default;
 
 void
-Steensgaard::join(Location & x, Location & y)
-{
-  std::function<Location*(Location*, Location*)>
-    join = [&](Location * x, Location * y)
-  {
-    if (x == nullptr)
-      return y;
-
-    if (y == nullptr)
-      return x;
-
-    if (x == y)
-      return x;
-
-    auto & rootx = LocationSet_->GetRootLocation(*x);
-    auto & rooty = LocationSet_->GetRootLocation(*y);
-    auto flags = rootx.GetPointsToFlags() | rooty.GetPointsToFlags();
-    rootx.SetPointsToFlags(flags);
-    rooty.SetPointsToFlags(flags);
-    auto & tmp = LocationSet_->Merge(rootx, rooty);
-
-    if (auto root = join(rootx.GetPointsTo(), rooty.GetPointsTo()))
-      tmp.SetPointsTo(*root);
-
-    return &tmp;
-  };
-
-  join(&x, &y);
-}
-
-void
 Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::simple_node & node)
 {
   auto AnalyzeCall  = [](auto & s, auto & n) { s.AnalyzeCall(*util::AssertedCast<const CallNode>(&n)); };
@@ -983,7 +985,7 @@ Steensgaard::AnalyzeLoad(const LoadNode & loadNode)
     return;
   }
 
-  join(result, *address.GetPointsTo());
+  LocationSet_->Join(result, *address.GetPointsTo());
 }
 
 void
@@ -1003,7 +1005,7 @@ Steensgaard::AnalyzeStore(const StoreNode & storeNode)
     return;
   }
 
-  join(*addressLocation.GetPointsTo(), valueLocation);
+  LocationSet_->Join(*addressLocation.GetPointsTo(), valueLocation);
 }
 
 void
@@ -1029,7 +1031,7 @@ Steensgaard::AnalyzeCall(const CallNode & callNode)
         lambdaArgument,
         PointsToFlags::PointsToNone);
 
-      join(callArgumentLocation, lambdaArgumentLocation);
+      LocationSet_->Join(callArgumentLocation, lambdaArgumentLocation);
     }
 
     /* handle call node results */
@@ -1049,7 +1051,7 @@ Steensgaard::AnalyzeCall(const CallNode & callNode)
         lambdaResult,
         PointsToFlags::PointsToNone);
 
-      join(callResultLocation, lambdaResultLocation);
+      LocationSet_->Join(callResultLocation, lambdaResultLocation);
     }
   };
 
@@ -1131,7 +1133,7 @@ Steensgaard::AnalyzeGep(const jlm::rvsdg::simple_node & node)
     *node.output(0),
     PointsToFlags::PointsToNone);
 
-  join(base, value);
+  LocationSet_->Join(base, value);
 }
 
 void
@@ -1148,7 +1150,7 @@ Steensgaard::AnalyzeBitcast(const jlm::rvsdg::simple_node & node)
     *node.output(0),
     PointsToFlags::PointsToNone);
 
-  join(operand, result);
+  LocationSet_->Join(operand, result);
 }
 
 void
@@ -1245,7 +1247,7 @@ Steensgaard::AnalyzeConstantArray(const jlm::rvsdg::simple_node & node)
       auto & outputLocation = LocationSet_->FindOrInsertRegisterLocation(
         *node.output(0),
         PointsToFlags::PointsToNone);
-      join(outputLocation, originLocation);
+      LocationSet_->Join(outputLocation, originLocation);
     }
   }
 }
@@ -1263,7 +1265,7 @@ Steensgaard::AnalyzeConstantStruct(const jlm::rvsdg::simple_node & node)
       auto & outputLocation = LocationSet_->FindOrInsertRegisterLocation(
         *node.output(0),
         PointsToFlags::PointsToNone);
-      join(outputLocation, originLocation);
+      LocationSet_->Join(outputLocation, originLocation);
     }
   }
 }
@@ -1315,7 +1317,7 @@ Steensgaard::AnalyzeMemcpy(const jlm::rvsdg::simple_node & node)
     dstMemory.SetPointsTo(dummyLocation);
   }
 
-  join(*srcMemory.GetPointsTo(), *dstMemory.GetPointsTo());
+  LocationSet_->Join(*srcMemory.GetPointsTo(), *dstMemory.GetPointsTo());
 }
 
 void
@@ -1332,7 +1334,7 @@ Steensgaard::AnalyzeLambda(const lambda::node & lambda)
     auto & argumentLocation = LocationSet_->FindOrInsertRegisterLocation(
       *cv.argument(),
       PointsToFlags::PointsToNone);
-    join(originLocation, argumentLocation);
+    LocationSet_->Join(originLocation, argumentLocation);
   }
 
   /*
@@ -1396,7 +1398,7 @@ Steensgaard::AnalyzeDelta(const delta::node & delta)
     auto & argument = LocationSet_->FindOrInsertRegisterLocation(
       *input.arguments.first(),
       PointsToFlags::PointsToNone);
-    join(origin, argument);
+    LocationSet_->Join(origin, argument);
   }
 
   AnalyzeRegion(*delta.subregion());
@@ -1410,7 +1412,7 @@ Steensgaard::AnalyzeDelta(const delta::node & delta)
   auto & origin = *delta.result()->origin();
   if (LocationSet_->Contains(origin)) {
     auto & resultLocation = LocationSet_->Find(origin);
-    join(deltaLocation, resultLocation);
+    LocationSet_->Join(deltaLocation, resultLocation);
   }
 }
 
@@ -1426,7 +1428,7 @@ Steensgaard::AnalyzePhi(const phi::node & phi)
     auto & argument = LocationSet_->FindOrInsertRegisterLocation(
       *cv->argument(),
       PointsToFlags::PointsToNone);
-    join(origin, argument);
+    LocationSet_->Join(origin, argument);
   }
 
   /* handle recursion variable arguments */
@@ -1448,12 +1450,12 @@ Steensgaard::AnalyzePhi(const phi::node & phi)
 
     auto & origin = LocationSet_->Find(*rv->result()->origin());
     auto & argument = LocationSet_->Find(*rv->argument());
-    join(origin, argument);
+    LocationSet_->Join(origin, argument);
 
     auto & output = LocationSet_->FindOrInsertRegisterLocation(
       *rv.output(),
       PointsToFlags::PointsToNone);
-    join(argument, output);
+    LocationSet_->Join(argument, output);
   }
 }
 
@@ -1470,7 +1472,7 @@ Steensgaard::AnalyzeGamma(const jlm::rvsdg::gamma_node & node)
       auto & argumentLocation = LocationSet_->FindOrInsertRegisterLocation(
         argument,
         PointsToFlags::PointsToNone);
-      join(argumentLocation, originLocation);
+      LocationSet_->Join(argumentLocation, originLocation);
     }
   }
 
@@ -1488,7 +1490,7 @@ Steensgaard::AnalyzeGamma(const jlm::rvsdg::gamma_node & node)
       PointsToFlags::PointsToNone);
     for (auto & result : *ex) {
       auto & resultLocation = LocationSet_->Find(*result.origin());
-      join(outputLocation, resultLocation);
+      LocationSet_->Join(outputLocation, resultLocation);
     }
   }
 }
@@ -1505,7 +1507,7 @@ Steensgaard::AnalyzeTheta(const jlm::rvsdg::theta_node & theta)
       *thetaOutput->argument(),
       PointsToFlags::PointsToNone);
 
-    join(argumentLocation, originLocation);
+    LocationSet_->Join(argumentLocation, originLocation);
   }
 
   AnalyzeRegion(*theta.subregion());
@@ -1520,8 +1522,8 @@ Steensgaard::AnalyzeTheta(const jlm::rvsdg::theta_node & theta)
       *thetaOutput,
       PointsToFlags::PointsToNone);
 
-    join(originLocation, argumentLocation);
-    join(originLocation, outputLocation);
+    LocationSet_->Join(originLocation, argumentLocation);
+    LocationSet_->Join(originLocation, outputLocation);
   }
 }
 
