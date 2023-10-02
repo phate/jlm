@@ -7,25 +7,12 @@
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_STEENSGAARD_HPP
 
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
-#include <jlm/util/disjointset.hpp>
 
-#include <string>
-
-namespace jlm::llvm
+namespace jlm::llvm::aa
 {
-
-namespace delta { class node; }
-namespace lambda { class node; }
-namespace phi { class node; }
-
-class LoadNode;
-class StoreNode;
-
-namespace aa {
 
 class Location;
 class LocationSet;
-class PointsToGraph;
 
 /** \brief Steensgaard alias analysis
  *
@@ -140,6 +127,6 @@ private:
   std::unique_ptr<LocationSet> LocationSet_;
 };
 
-}}
+}
 
 #endif
