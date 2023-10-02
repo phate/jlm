@@ -305,9 +305,9 @@ public:
   [[nodiscard]] static bool
   IsEscapingModule(const Location & location) noexcept
   {
-      auto registerLocation = dynamic_cast<const RegisterLocation*>(&location);
-      return registerLocation
-             && registerLocation->IsEscapingModule();
+    auto registerLocation = dynamic_cast<const RegisterLocation*>(&location);
+    return registerLocation
+           && registerLocation->IsEscapingModule();
   }
 
   static std::unique_ptr<RegisterLocation>
@@ -713,14 +713,14 @@ LocationSet::ToDot() const
       auto locationLabel = jlm::util::strfmt((intptr_t)location, " : ", location->DebugString());
 
       setLabel += location == rootLocation
-        ? jlm::util::strfmt("*",
-                 locationLabel,
-                 unknownLabel,
-                 pointsToEscapedMemoryLabel,
-                 escapesModuleLabel,
-                 pointsToLabel,
-                 "*\\n")
-        : jlm::util::strfmt(locationLabel, escapesModuleLabel, "\\n");
+                  ? jlm::util::strfmt("*",
+                                      locationLabel,
+                                      unknownLabel,
+                                      pointsToEscapedMemoryLabel,
+                                      escapesModuleLabel,
+                                      pointsToLabel,
+                                      "*\\n")
+                  : jlm::util::strfmt(locationLabel, escapesModuleLabel, "\\n");
     }
 
     return jlm::util::strfmt("{ ", (intptr_t)&set, " [label = \"", setLabel, "\"]; }");
@@ -1531,7 +1531,7 @@ Steensgaard::Analyze(
   // Perform Steensgaard analysis
   statistics->StartSteensgaardStatistics(module.Rvsdg());
   Analyze(module.Rvsdg());
-	// std::cout << LocationSet_.ToDot() << std::flush;
+  // std::cout << LocationSet_.ToDot() << std::flush;
   statistics->StopSteensgaardStatistics();
 
   // Construct PointsTo graph
