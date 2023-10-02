@@ -19,115 +19,26 @@
 namespace jlm::llvm::aa
 {
 
-/** \brief Collect statistics about Steensgaard alias analysis pass
- *
- */
-class Steensgaard::Statistics final : public jlm::util::Statistics {
-public:
-  ~Statistics() override
-  = default;
-
-  explicit
-  Statistics(jlm::util::filepath sourceFile)
-    : jlm::util::Statistics(Statistics::Id::SteensgaardAnalysis)
-    , NumRvsdgNodes_(0)
-    , SourceFile_(std::move(sourceFile))
-    , NumDisjointSets_(0)
-    , NumLocations_(0)
-    , NumPointsToGraphNodes_(0)
-    , NumAllocaNodes_(0)
-    , NumDeltaNodes_(0)
-    , NumImportNodes_(0)
-    , NumLambdaNodes_(0)
-    , NumMallocNodes_(0)
-    , NumMemoryNodes_(0)
-    , NumRegisterNodes_(0)
-    , NumUnknownMemorySources_(0)
-  {}
-
-  void
-  StartSteensgaardStatistics(const jlm::rvsdg::graph & graph) noexcept
-  {
-    NumRvsdgNodes_ = jlm::rvsdg::nnodes(graph.root());
-    AnalysisTimer_.start();
-  }
-
-  void
-  StopSteensgaardStatistics() noexcept
-  {
-    AnalysisTimer_.stop();
-  }
-
-  void
-  StartPointsToGraphConstructionStatistics(const LocationSet & locationSet)
-  {
-    NumDisjointSets_ = locationSet.NumDisjointSets();
-    NumLocations_ = locationSet.NumLocations();
-    PointsToGraphConstructionTimer_.start();
-  }
-
-  void
-  StopPointsToGraphConstructionStatistics(const PointsToGraph & pointsToGraph)
-  {
-    PointsToGraphConstructionTimer_.stop();
-    NumPointsToGraphNodes_ = pointsToGraph.NumNodes();
-    NumAllocaNodes_ = pointsToGraph.NumAllocaNodes();
-    NumDeltaNodes_ = pointsToGraph.NumDeltaNodes();
-    NumImportNodes_ = pointsToGraph.NumImportNodes();
-    NumLambdaNodes_ = pointsToGraph.NumLambdaNodes();
-    NumMallocNodes_ = pointsToGraph.NumMallocNodes();
-    NumMemoryNodes_ = pointsToGraph.NumMemoryNodes();
-    NumRegisterNodes_ = pointsToGraph.NumRegisterNodes();
-    NumUnknownMemorySources_ = pointsToGraph.GetUnknownMemoryNode().NumSources();
-  }
-
-  [[nodiscard]] std::string
-  ToString() const override
-  {
-    return jlm::util::strfmt("SteensgaardAnalysis ",
-                             SourceFile_.to_str(), " ",
-                             "#RvsdgNodes:", NumRvsdgNodes_, " ",
-                             "AliasAnalysisTime[ns]:", AnalysisTimer_.ns(), " ",
-                             "#DisjointSets:", NumDisjointSets_, " ",
-                             "#Locations:", NumLocations_, " ",
-                             "#PointsToGraphNodes:", NumPointsToGraphNodes_, " ",
-                             "#AllocaNodes:", NumAllocaNodes_, " ",
-                             "#DeltaNodes:", NumDeltaNodes_, " ",
-                             "#ImportNodes:", NumImportNodes_, " ",
-                             "#LambdaNodes:", NumLambdaNodes_, " ",
-                             "#MallocNodes:", NumMallocNodes_, " ",
-                             "#MemoryNodes:", NumMemoryNodes_, " ",
-                             "#RegisterNodes:", NumRegisterNodes_, " ",
-                             "#UnknownMemorySources:", NumUnknownMemorySources_, " ",
-                             "PointsToGraphConstructionTime[ns]:", PointsToGraphConstructionTimer_.ns());
-  }
-
-  static std::unique_ptr<Statistics>
-  Create(const jlm::util::filepath & sourceFile)
-  {
-    return std::make_unique<Statistics>(sourceFile);
-  }
-
-private:
-  size_t NumRvsdgNodes_;
-  jlm::util::filepath SourceFile_;
-
-  size_t NumDisjointSets_;
-  size_t NumLocations_;
-
-  size_t NumPointsToGraphNodes_;
-  size_t NumAllocaNodes_;
-  size_t NumDeltaNodes_;
-  size_t NumImportNodes_;
-  size_t NumLambdaNodes_;
-  size_t NumMallocNodes_;
-  size_t NumMemoryNodes_;
-  size_t NumRegisterNodes_;
-  size_t NumUnknownMemorySources_;
-
-  jlm::util::timer AnalysisTimer_;
-  jlm::util::timer PointsToGraphConstructionTimer_;
+enum class PointsToFlags {
+  PointsToNone           = 1 << 0,
+  PointsToUnknownMemory  = 1 << 1,
+  PointsToExternalMemory = 1 << 2,
+  PointsToEscapedMemory  = 1 << 3,
 };
+
+static inline PointsToFlags
+operator|(PointsToFlags lhs, PointsToFlags rhs)
+{
+  typedef typename std::underlying_type<PointsToFlags>::type underlyingType;
+  return static_cast<PointsToFlags>(static_cast<underlyingType>(lhs) | static_cast<underlyingType>(rhs));
+}
+
+static inline PointsToFlags
+operator&(PointsToFlags lhs, PointsToFlags rhs)
+{
+  typedef typename std::underlying_type<PointsToFlags>::type underlyingType;
+  return static_cast<PointsToFlags>(static_cast<underlyingType>(lhs) & static_cast<underlyingType>(rhs));
+}
 
 /** \brief Location class
  *
@@ -561,6 +472,120 @@ public:
   }
 };
 
+/** \brief LocationSet class
+*/
+class LocationSet final
+{
+public:
+  using DisjointLocationSet = typename jlm::util::disjointset<Location*>;
+
+  using const_iterator = std::unordered_map<
+    const jlm::rvsdg::output*
+    , Location*
+  >::const_iterator;
+
+  ~LocationSet();
+
+  LocationSet();
+
+  LocationSet(const LocationSet &) = delete;
+
+  LocationSet(LocationSet &&) = delete;
+
+  LocationSet &
+  operator=(const LocationSet &) = delete;
+
+  LocationSet &
+  operator=(LocationSet &&) = delete;
+
+  DisjointLocationSet::set_iterator
+  begin() const
+  {
+    return DisjointLocationSet_.begin();
+  }
+
+  DisjointLocationSet::set_iterator
+  end() const
+  {
+    return DisjointLocationSet_.end();
+  }
+
+  Location &
+  InsertAllocaLocation(const jlm::rvsdg::node & node);
+
+  Location &
+  InsertMallocLocation(const jlm::rvsdg::node & node);
+
+  Location &
+  InsertLambdaLocation(const lambda::node & lambda);
+
+  Location &
+  InsertDeltaLocation(const delta::node & delta);
+
+  Location &
+  InsertImportLocation(const jlm::rvsdg::argument & argument);
+
+  Location &
+  InsertDummyLocation();
+
+  bool
+  Contains(const jlm::rvsdg::output & output) const noexcept;
+
+  Location &
+  FindOrInsertRegisterLocation(
+    const jlm::rvsdg::output & output,
+    PointsToFlags pointsToFlags);
+
+  const DisjointLocationSet::set &
+  GetSet(Location & location) const
+  {
+    return *DisjointLocationSet_.find(&location);
+  }
+
+  size_t
+  NumDisjointSets() const noexcept
+  {
+    return DisjointLocationSet_.nsets();
+  }
+
+  size_t
+  NumLocations() const noexcept
+  {
+    return DisjointLocationSet_.nvalues();
+  }
+
+  Location &
+  GetRootLocation(Location & location) const;
+
+  Location &
+  Find(const jlm::rvsdg::output & output);
+
+  RegisterLocation *
+  LookupRegisterLocation(const jlm::rvsdg::output & output);
+
+  Location &
+  Merge(Location & location1, Location & location2);
+
+  std::string
+  ToDot() const;
+
+  static std::unique_ptr<LocationSet>
+  Create()
+  {
+    return std::make_unique<LocationSet>();
+  }
+
+private:
+  RegisterLocation &
+  InsertRegisterLocation(
+    const jlm::rvsdg::output & output,
+    PointsToFlags pointsToFlags);
+
+  DisjointLocationSet DisjointLocationSet_;
+  std::vector<std::unique_ptr<Location>> Locations_;
+  std::unordered_map<const jlm::rvsdg::output*, RegisterLocation*> LocationMap_;
+};
+
 LocationSet::~LocationSet()
 = default;
 
@@ -741,7 +766,120 @@ LocationSet::ToDot() const
   return str;
 }
 
+/** \brief Collect statistics about Steensgaard alias analysis pass
+ *
+ */
+class Steensgaard::Statistics final : public jlm::util::Statistics {
+public:
+  ~Statistics() override
+  = default;
+
+  explicit
+  Statistics(jlm::util::filepath sourceFile)
+    : jlm::util::Statistics(Statistics::Id::SteensgaardAnalysis)
+    , NumRvsdgNodes_(0)
+    , SourceFile_(std::move(sourceFile))
+    , NumDisjointSets_(0)
+    , NumLocations_(0)
+    , NumPointsToGraphNodes_(0)
+    , NumAllocaNodes_(0)
+    , NumDeltaNodes_(0)
+    , NumImportNodes_(0)
+    , NumLambdaNodes_(0)
+    , NumMallocNodes_(0)
+    , NumMemoryNodes_(0)
+    , NumRegisterNodes_(0)
+    , NumUnknownMemorySources_(0)
+  {}
+
+  void
+  StartSteensgaardStatistics(const jlm::rvsdg::graph & graph) noexcept
+  {
+    NumRvsdgNodes_ = jlm::rvsdg::nnodes(graph.root());
+    AnalysisTimer_.start();
+  }
+
+  void
+  StopSteensgaardStatistics() noexcept
+  {
+    AnalysisTimer_.stop();
+  }
+
+  void
+  StartPointsToGraphConstructionStatistics(const LocationSet & locationSet)
+  {
+    NumDisjointSets_ = locationSet.NumDisjointSets();
+    NumLocations_ = locationSet.NumLocations();
+    PointsToGraphConstructionTimer_.start();
+  }
+
+  void
+  StopPointsToGraphConstructionStatistics(const PointsToGraph & pointsToGraph)
+  {
+    PointsToGraphConstructionTimer_.stop();
+    NumPointsToGraphNodes_ = pointsToGraph.NumNodes();
+    NumAllocaNodes_ = pointsToGraph.NumAllocaNodes();
+    NumDeltaNodes_ = pointsToGraph.NumDeltaNodes();
+    NumImportNodes_ = pointsToGraph.NumImportNodes();
+    NumLambdaNodes_ = pointsToGraph.NumLambdaNodes();
+    NumMallocNodes_ = pointsToGraph.NumMallocNodes();
+    NumMemoryNodes_ = pointsToGraph.NumMemoryNodes();
+    NumRegisterNodes_ = pointsToGraph.NumRegisterNodes();
+    NumUnknownMemorySources_ = pointsToGraph.GetUnknownMemoryNode().NumSources();
+  }
+
+  [[nodiscard]] std::string
+  ToString() const override
+  {
+    return jlm::util::strfmt("SteensgaardAnalysis ",
+                             SourceFile_.to_str(), " ",
+                             "#RvsdgNodes:", NumRvsdgNodes_, " ",
+                             "AliasAnalysisTime[ns]:", AnalysisTimer_.ns(), " ",
+                             "#DisjointSets:", NumDisjointSets_, " ",
+                             "#Locations:", NumLocations_, " ",
+                             "#PointsToGraphNodes:", NumPointsToGraphNodes_, " ",
+                             "#AllocaNodes:", NumAllocaNodes_, " ",
+                             "#DeltaNodes:", NumDeltaNodes_, " ",
+                             "#ImportNodes:", NumImportNodes_, " ",
+                             "#LambdaNodes:", NumLambdaNodes_, " ",
+                             "#MallocNodes:", NumMallocNodes_, " ",
+                             "#MemoryNodes:", NumMemoryNodes_, " ",
+                             "#RegisterNodes:", NumRegisterNodes_, " ",
+                             "#UnknownMemorySources:", NumUnknownMemorySources_, " ",
+                             "PointsToGraphConstructionTime[ns]:", PointsToGraphConstructionTimer_.ns());
+  }
+
+  static std::unique_ptr<Statistics>
+  Create(const jlm::util::filepath & sourceFile)
+  {
+    return std::make_unique<Statistics>(sourceFile);
+  }
+
+private:
+  size_t NumRvsdgNodes_;
+  jlm::util::filepath SourceFile_;
+
+  size_t NumDisjointSets_;
+  size_t NumLocations_;
+
+  size_t NumPointsToGraphNodes_;
+  size_t NumAllocaNodes_;
+  size_t NumDeltaNodes_;
+  size_t NumImportNodes_;
+  size_t NumLambdaNodes_;
+  size_t NumMallocNodes_;
+  size_t NumMemoryNodes_;
+  size_t NumRegisterNodes_;
+  size_t NumUnknownMemorySources_;
+
+  jlm::util::timer AnalysisTimer_;
+  jlm::util::timer PointsToGraphConstructionTimer_;
+};
+
 Steensgaard::~Steensgaard()
+= default;
+
+Steensgaard::Steensgaard()
 = default;
 
 void

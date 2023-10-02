@@ -24,143 +24,8 @@ class StoreNode;
 namespace aa {
 
 class Location;
+class LocationSet;
 class PointsToGraph;
-class RegisterLocation;
-
-enum class PointsToFlags {
-  PointsToNone           = 1 << 0,
-  PointsToUnknownMemory  = 1 << 1,
-  PointsToExternalMemory = 1 << 2,
-  PointsToEscapedMemory  = 1 << 3,
-};
-
-static inline PointsToFlags
-operator|(PointsToFlags lhs, PointsToFlags rhs)
-{
-  typedef typename std::underlying_type<PointsToFlags>::type underlyingType;
-  return static_cast<PointsToFlags>(static_cast<underlyingType>(lhs) | static_cast<underlyingType>(rhs));
-}
-
-static inline PointsToFlags
-operator&(PointsToFlags lhs, PointsToFlags rhs)
-{
-  typedef typename std::underlying_type<PointsToFlags>::type underlyingType;
-  return static_cast<PointsToFlags>(static_cast<underlyingType>(lhs) & static_cast<underlyingType>(rhs));
-}
-
-/** \brief LocationSet class
-*/
-class LocationSet final
-{
-public:
-  using DisjointLocationSet = typename jlm::util::disjointset<Location*>;
-
-  using const_iterator = std::unordered_map<
-    const jlm::rvsdg::output*
-    , Location*
-  >::const_iterator;
-
-  ~LocationSet();
-
-  LocationSet();
-
-  LocationSet(const LocationSet &) = delete;
-
-  LocationSet(LocationSet &&) = delete;
-
-  LocationSet &
-  operator=(const LocationSet &) = delete;
-
-  LocationSet &
-  operator=(LocationSet &&) = delete;
-
-  DisjointLocationSet::set_iterator
-  begin() const
-  {
-    return DisjointLocationSet_.begin();
-  }
-
-  DisjointLocationSet::set_iterator
-  end() const
-  {
-    return DisjointLocationSet_.end();
-  }
-
-  Location &
-  InsertAllocaLocation(const jlm::rvsdg::node & node);
-
-  Location &
-  InsertMallocLocation(const jlm::rvsdg::node & node);
-
-  Location &
-  InsertLambdaLocation(const lambda::node & lambda);
-
-  Location &
-  InsertDeltaLocation(const delta::node & delta);
-
-  Location &
-  InsertImportLocation(const jlm::rvsdg::argument & argument);
-
-  Location &
-  InsertDummyLocation();
-
-  bool
-  Contains(const jlm::rvsdg::output & output) const noexcept;
-
-  Location &
-  FindOrInsertRegisterLocation(
-    const jlm::rvsdg::output & output,
-    PointsToFlags pointsToFlags);
-
-  const DisjointLocationSet::set &
-  GetSet(Location & location) const
-  {
-    return *DisjointLocationSet_.find(&location);
-  }
-
-  size_t
-  NumDisjointSets() const noexcept
-  {
-    return DisjointLocationSet_.nsets();
-  }
-
-  size_t
-  NumLocations() const noexcept
-  {
-    return DisjointLocationSet_.nvalues();
-  }
-
-  Location &
-  GetRootLocation(Location & location) const;
-
-  Location &
-  Find(const jlm::rvsdg::output & output);
-
-  RegisterLocation *
-  LookupRegisterLocation(const jlm::rvsdg::output & output);
-
-  Location &
-  Merge(Location & location1, Location & location2);
-
-  std::string
-  ToDot() const;
-
-  static std::unique_ptr<LocationSet>
-  Create()
-  {
-    return std::make_unique<LocationSet>();
-  }
-
-private:
-  RegisterLocation &
-  InsertRegisterLocation(
-    const jlm::rvsdg::output & output,
-    PointsToFlags pointsToFlags);
-
-  DisjointLocationSet DisjointLocationSet_;
-  std::vector<std::unique_ptr<Location>> Locations_;
-  std::unordered_map<const jlm::rvsdg::output*, RegisterLocation*> LocationMap_;
-};
 
 /** \brief Steensgaard alias analysis
  *
@@ -174,7 +39,7 @@ class Steensgaard final : public AliasAnalysis
 public:
   ~Steensgaard() override;
 
-  Steensgaard() = default;
+  Steensgaard();
 
   Steensgaard(const Steensgaard &) = delete;
 
