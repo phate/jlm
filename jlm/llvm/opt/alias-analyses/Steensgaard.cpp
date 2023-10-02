@@ -1622,6 +1622,9 @@ Steensgaard::Analyze(
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
+  // Discard internal state to free up memory after we are done with the analysis
+  LocationSet_.reset();
+
   return pointsToGraph;
 }
 
