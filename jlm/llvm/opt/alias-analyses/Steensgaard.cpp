@@ -864,11 +864,11 @@ Steensgaard::join(Location & x, Location & y)
 }
 
 void
-Steensgaard::Analyze(const jlm::rvsdg::simple_node & node)
+Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::simple_node & node)
 {
-  auto AnalyzeCall  = [](auto & s, auto & n) { s.AnalyzeCall(*jlm::util::AssertedCast<const CallNode>(&n)); };
-  auto AnalyzeLoad  = [](auto & s, auto & n) { s.AnalyzeLoad(*jlm::util::AssertedCast<const LoadNode>(&n)); };
-  auto AnalyzeStore = [](auto & s, auto & n) { s.AnalyzeStore(*jlm::util::AssertedCast<const StoreNode>(&n)); };
+  auto AnalyzeCall  = [](auto & s, auto & n) { s.AnalyzeCall(*util::AssertedCast<const CallNode>(&n)); };
+  auto AnalyzeLoad  = [](auto & s, auto & n) { s.AnalyzeLoad(*util::AssertedCast<const LoadNode>(&n)); };
+  auto AnalyzeStore = [](auto & s, auto & n) { s.AnalyzeStore(*util::AssertedCast<const StoreNode>(&n)); };
 
   static std::unordered_map<
     std::type_index
@@ -1318,7 +1318,7 @@ Steensgaard::AnalyzeMemcpy(const jlm::rvsdg::simple_node & node)
 }
 
 void
-Steensgaard::Analyze(const lambda::node & lambda)
+Steensgaard::AnalyzeLambda(const lambda::node & lambda)
 {
   /*
    * Handle context variables
@@ -1357,7 +1357,7 @@ Steensgaard::Analyze(const lambda::node & lambda)
     }
   }
 
-  Analyze(*lambda.subregion());
+  AnalyzeRegion(*lambda.subregion());
 
   /*
    * Handle function results
@@ -1382,7 +1382,7 @@ Steensgaard::Analyze(const lambda::node & lambda)
 }
 
 void
-Steensgaard::Analyze(const delta::node & delta)
+Steensgaard::AnalyzeDelta(const delta::node & delta)
 {
   /*
     Handle context variables
@@ -1398,7 +1398,7 @@ Steensgaard::Analyze(const delta::node & delta)
     join(origin, argument);
   }
 
-  Analyze(*delta.subregion());
+  AnalyzeRegion(*delta.subregion());
 
   auto & deltaOutputLocation = LocationSet_->FindOrInsertRegisterLocation(
     *delta.output(),
@@ -1414,7 +1414,7 @@ Steensgaard::Analyze(const delta::node & delta)
 }
 
 void
-Steensgaard::Analyze(const phi::node & phi)
+Steensgaard::AnalyzePhi(const phi::node & phi)
 {
   /* handle context variables */
   for (auto cv = phi.begin_cv(); cv != phi.end_cv(); cv++) {
@@ -1438,7 +1438,7 @@ Steensgaard::Analyze(const phi::node & phi)
       PointsToFlags::PointsToNone);
   }
 
-  Analyze(*phi.subregion());
+  AnalyzeRegion(*phi.subregion());
 
   /* handle recursion variable outputs */
   for (auto rv = phi.begin_rv(); rv != phi.end_rv(); rv++) {
@@ -1457,7 +1457,7 @@ Steensgaard::Analyze(const phi::node & phi)
 }
 
 void
-Steensgaard::Analyze(const jlm::rvsdg::gamma_node & node)
+Steensgaard::AnalyzeGamma(const jlm::rvsdg::gamma_node & node)
 {
   /* handle entry variables */
   for (auto ev = node.begin_entryvar(); ev != node.end_entryvar(); ev++) {
@@ -1475,7 +1475,7 @@ Steensgaard::Analyze(const jlm::rvsdg::gamma_node & node)
 
   /* handle subregions */
   for (size_t n = 0; n < node.nsubregions(); n++)
-    Analyze(*node.subregion(n));
+    AnalyzeRegion(*node.subregion(n));
 
   /* handle exit variables */
   for (auto ex = node.begin_exitvar(); ex != node.end_exitvar(); ex++) {
@@ -1493,7 +1493,7 @@ Steensgaard::Analyze(const jlm::rvsdg::gamma_node & node)
 }
 
 void
-Steensgaard::Analyze(const jlm::rvsdg::theta_node & theta)
+Steensgaard::AnalyzeTheta(const jlm::rvsdg::theta_node & theta)
 {
   for (auto thetaOutput : theta) {
     if (!jlm::rvsdg::is<PointerType>(thetaOutput->type()))
@@ -1507,7 +1507,7 @@ Steensgaard::Analyze(const jlm::rvsdg::theta_node & theta)
     join(argumentLocation, originLocation);
   }
 
-  Analyze(*theta.subregion());
+  AnalyzeRegion(*theta.subregion());
 
   for (auto thetaOutput : theta) {
     if (!jlm::rvsdg::is<PointerType>(thetaOutput->type()))
@@ -1525,13 +1525,13 @@ Steensgaard::Analyze(const jlm::rvsdg::theta_node & theta)
 }
 
 void
-Steensgaard::Analyze(const jlm::rvsdg::structural_node & node)
+Steensgaard::AnalyzeStructuralNode(const jlm::rvsdg::structural_node & node)
 {
-  auto analyzeLambda = [](auto& s, auto& n){s.Analyze(*static_cast<const lambda::node*>(&n));    };
-  auto analyzeDelta  = [](auto& s, auto& n){s.Analyze(*static_cast<const delta::node*>(&n));     };
-  auto analyzeGamma  = [](auto& s, auto& n){s.Analyze(*static_cast<const jlm::rvsdg::gamma_node*>(&n));};
-  auto analyzeTheta  = [](auto& s, auto& n){s.Analyze(*static_cast<const jlm::rvsdg::theta_node*>(&n));};
-  auto analyzePhi    = [](auto& s, auto& n){s.Analyze(*static_cast<const phi::node*>(&n));       };
+  auto analyzeLambda = [](auto& s, auto& n){ s.AnalyzeLambda(*util::AssertedCast<const lambda::node>(&n)); };
+  auto analyzeDelta  = [](auto& s, auto& n){ s.AnalyzeDelta(*util::AssertedCast<const delta::node>(&n)); };
+  auto analyzeGamma  = [](auto& s, auto& n){ s.AnalyzeGamma(*util::AssertedCast<const rvsdg::gamma_node>(&n)); };
+  auto analyzeTheta  = [](auto& s, auto& n){ s.AnalyzeTheta(*util::AssertedCast<const rvsdg::theta_node>(&n)); };
+  auto analyzePhi    = [](auto& s, auto& n){ s.AnalyzePhi(*util::AssertedCast<const phi::node>(&n)); };
 
   static std::unordered_map<
     std::type_index
@@ -1539,8 +1539,8 @@ Steensgaard::Analyze(const jlm::rvsdg::structural_node & node)
     ({
          {typeid(lambda::operation), analyzeLambda }
        , {typeid(delta::operation),  analyzeDelta  }
-       , {typeid(jlm::rvsdg::gamma_op),    analyzeGamma  }
-       , {typeid(jlm::rvsdg::theta_op),    analyzeTheta  }
+       , {typeid(rvsdg::gamma_op),   analyzeGamma  }
+       , {typeid(rvsdg::theta_op),   analyzeTheta  }
        , {typeid(phi::operation),    analyzePhi    }
      });
 
@@ -1550,23 +1550,23 @@ Steensgaard::Analyze(const jlm::rvsdg::structural_node & node)
 }
 
 void
-Steensgaard::Analyze(jlm::rvsdg::region & region)
+Steensgaard::AnalyzeRegion(jlm::rvsdg::region & region)
 {
   using namespace jlm::rvsdg;
 
   topdown_traverser traverser(&region);
   for (auto & node : traverser) {
     if (auto simpleNode = dynamic_cast<const simple_node*>(node)) {
-      Analyze(*simpleNode);
+      AnalyzeSimpleNode(*simpleNode);
       continue;
     }
 
-    Analyze(*jlm::util::AssertedCast<const structural_node>(node));
+    AnalyzeStructuralNode(*util::AssertedCast<const structural_node>(node));
   }
 }
 
 void
-Steensgaard::Analyze(const jlm::rvsdg::graph & graph)
+Steensgaard::AnalyzeRvsdg(const jlm::rvsdg::graph & graph)
 {
   auto add_imports = [](const jlm::rvsdg::graph & graph, LocationSet & lset)
   {
@@ -1596,7 +1596,7 @@ Steensgaard::Analyze(const jlm::rvsdg::graph & graph)
   };
 
   add_imports(graph, *LocationSet_);
-  Analyze(*graph.root());
+  AnalyzeRegion(*graph.root());
   MarkExportsAsEscaping(graph, *LocationSet_);
 }
 
@@ -1610,7 +1610,7 @@ Steensgaard::Analyze(
 
   // Perform Steensgaard analysis
   statistics->StartSteensgaardStatistics(module.Rvsdg());
-  Analyze(module.Rvsdg());
+  AnalyzeRvsdg(module.Rvsdg());
   // std::cout << LocationSet_.ToDot() << std::flush;
   statistics->StopSteensgaardStatistics();
 

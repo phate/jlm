@@ -58,31 +58,31 @@ public:
 
 private:
   void
-  Analyze(const jlm::rvsdg::graph & graph);
+  AnalyzeRvsdg(const jlm::rvsdg::graph & graph);
 
   void
-  Analyze(jlm::rvsdg::region & region);
+  AnalyzeRegion(jlm::rvsdg::region & region);
 
   void
-  Analyze(const lambda::node & node);
+  AnalyzeLambda(const lambda::node & node);
 
   void
-  Analyze(const delta::node & node);
+  AnalyzeDelta(const delta::node & node);
 
   void
-  Analyze(const phi::node & node);
+  AnalyzePhi(const phi::node & node);
 
   void
-  Analyze(const jlm::rvsdg::gamma_node & node);
+  AnalyzeGamma(const jlm::rvsdg::gamma_node & node);
 
   void
-  Analyze(const jlm::rvsdg::theta_node & node);
+  AnalyzeTheta(const jlm::rvsdg::theta_node & node);
 
   void
-  Analyze(const jlm::rvsdg::simple_node & node);
+  AnalyzeSimpleNode(const jlm::rvsdg::simple_node & node);
 
   void
-  Analyze(const jlm::rvsdg::structural_node & node);
+  AnalyzeStructuralNode(const jlm::rvsdg::structural_node & node);
 
   void
   AnalyzeAlloca(const jlm::rvsdg::simple_node & node);
