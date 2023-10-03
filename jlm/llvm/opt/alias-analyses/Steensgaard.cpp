@@ -633,7 +633,7 @@ public:
   std::string
   ToDot() const
   {
-    auto dot_node = [](const DisjointLocationSet::set & set)
+    auto toDotNode = [](const DisjointLocationSet::set & set)
     {
       auto rootLocation = set.value();
 
@@ -659,7 +659,7 @@ public:
       return jlm::util::strfmt("{ ", (intptr_t)&set, " [label = \"", setLabel, "\"]; }");
     };
 
-    auto dot_edge = [&](const DisjointLocationSet::set & set, const DisjointLocationSet::set & pointsToSet)
+    auto toDotEdge = [](const DisjointLocationSet::set & set, const DisjointLocationSet::set & pointsToSet)
     {
       return jlm::util::strfmt((intptr_t)&set, " -> ", (intptr_t)&pointsToSet);
     };
@@ -668,12 +668,12 @@ public:
     str.append("digraph PointsToGraph {\n");
 
     for (auto & set : DisjointLocationSet_) {
-      str += dot_node(set) + "\n";
+      str += toDotNode(set) + "\n";
 
       auto pointsTo = set.value()->GetPointsTo();
       if (pointsTo != nullptr) {
         auto pointsToSet = DisjointLocationSet_.find(pointsTo);
-        str += dot_edge(set, *pointsToSet) + "\n";
+        str += toDotEdge(set, *pointsToSet) + "\n";
       }
     }
 
