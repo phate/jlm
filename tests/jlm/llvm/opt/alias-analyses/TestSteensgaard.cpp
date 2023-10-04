@@ -352,11 +352,12 @@ TestBits2Ptr()
     auto & lambdaBitsToPtrMemoryNode = pointsToGraph.GetLambdaNode(test.GetLambdaBits2Ptr());
     auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
 
-    std::unordered_set<const PointsToGraph::Node*> expectedMemoryNodes({
-      &lambdaTestMemoryNode,
-      &lambdaBitsToPtrMemoryNode,
-      &externalMemoryNode
-    });
+    std::unordered_set<const PointsToGraph::Node*> expectedMemoryNodes(
+      {
+        &lambdaTestMemoryNode,
+        &lambdaBitsToPtrMemoryNode,
+        &externalMemoryNode
+      });
 
     auto & callOutput0 = pointsToGraph.GetRegisterNode(*test.GetCallNode().output(0));
     assertTargets(callOutput0, expectedMemoryNodes);
@@ -372,7 +373,7 @@ TestBits2Ptr()
   // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
-	// std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph) << std::flush;
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph) << std::flush;
   validatePointsToGraph(*pointsToGraph, test);
 }
 
