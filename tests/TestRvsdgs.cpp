@@ -390,7 +390,7 @@ Bits2PtrTest::SetupRvsdg()
       {valueArgument, iOStateArgument, memoryStateArgument, loopStateArgument});
 
     lambda->finalize({callResults[1], callResults[2], callResults[3]});
-    graph->add_export(lambda->output(), {PointerType(), "lambdaTest"});
+    graph->add_export(lambda->output(), {PointerType(), "testfct"});
 
     return std::make_tuple(
       lambda,
