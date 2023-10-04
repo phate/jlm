@@ -326,12 +326,12 @@ private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
-	jlm::llvm::lambda::node * LambdaBits2Ptr_;
-	jlm::llvm::lambda::node * LambdaTest_;
+  jlm::llvm::lambda::node * LambdaBits2Ptr_;
+  jlm::llvm::lambda::node * LambdaTest_;
 
-	jlm::rvsdg::node * BitsToPtrNode_;
+  jlm::rvsdg::node * BitsToPtrNode_;
 
-	jlm::llvm::CallNode * CallNode_;
+  jlm::llvm::CallNode * CallNode_;
 };
 
 /** \brief ConstantPointerNullTest class
