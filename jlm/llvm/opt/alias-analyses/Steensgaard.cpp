@@ -812,6 +812,18 @@ public:
     NumUnknownMemorySources_ = pointsToGraph.GetUnknownMemoryNode().NumSources();
   }
 
+  void
+  StartUnknownMemoryNodeSourcesRedirectionStatistics()
+  {
+    UnknownMemoryNodeSourcesRedirectionTimer_.start();
+  }
+
+  void
+  StopUnknownMemoryNodeSourcesRedirectionStatistics()
+  {
+    UnknownMemoryNodeSourcesRedirectionTimer_.stop();
+  }
+
   [[nodiscard]] std::string
   ToString() const override
   {
@@ -830,7 +842,8 @@ public:
                              "#MemoryNodes:", NumMemoryNodes_, " ",
                              "#RegisterNodes:", NumRegisterNodes_, " ",
                              "#UnknownMemorySources:", NumUnknownMemorySources_, " ",
-                             "PointsToGraphConstructionTime[ns]:", PointsToGraphConstructionTimer_.ns());
+                             "PointsToGraphConstructionTime[ns]:", PointsToGraphConstructionTimer_.ns(), " ",
+                             "UnknownMemoryNodeSourcesRedirection[ns]:", UnknownMemoryNodeSourcesRedirectionTimer_.ns());
   }
 
   static std::unique_ptr<Statistics>
@@ -856,8 +869,9 @@ private:
   size_t NumRegisterNodes_;
   size_t NumUnknownMemorySources_;
 
-  jlm::util::timer AnalysisTimer_;
-  jlm::util::timer PointsToGraphConstructionTimer_;
+  util::timer AnalysisTimer_;
+  util::timer PointsToGraphConstructionTimer_;
+  util::timer UnknownMemoryNodeSourcesRedirectionTimer_;
 };
 
 Steensgaard::~Steensgaard()
@@ -1623,6 +1637,11 @@ Steensgaard::Analyze(
   // std::cout << PointsToGraph::ToDot(*pointsToGraph) << std::flush;
   statistics->StopPointsToGraphConstructionStatistics(*pointsToGraph);
 
+  // Redirect unknown memory node sources
+  statistics->StartUnknownMemoryNodeSourcesRedirectionStatistics();
+  RedirectUnknownMemoryNodeSources(*pointsToGraph);
+  statistics->StopUnknownMemoryNodeSourcesRedirectionStatistics();
+
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
   // Discard internal state to free up memory after we are done with the analysis
@@ -1791,6 +1810,48 @@ Steensgaard::ConstructPointsToGraph(const LocationSet & locationSets)
   }
 
   return pointsToGraph;
+}
+
+void
+Steensgaard::RedirectUnknownMemoryNodeSources(PointsToGraph &pointsToGraph)
+{
+  auto collectMemoryNodes = [](PointsToGraph &pointsToGraph)
+  {
+    std::vector<PointsToGraph::MemoryNode*> memoryNodes;
+    for (auto & allocaNode : pointsToGraph.AllocaNodes())
+      memoryNodes.push_back(&allocaNode);
+
+    for (auto & deltaNode : pointsToGraph.DeltaNodes())
+      memoryNodes.push_back(&deltaNode);
+
+    for (auto & lambdaNode : pointsToGraph.LambdaNodes())
+      memoryNodes.push_back(&lambdaNode);
+
+    for (auto & mallocNode : pointsToGraph.MallocNodes())
+      memoryNodes.push_back(&mallocNode);
+
+    for (auto & node : pointsToGraph.ImportNodes())
+      memoryNodes.push_back(&node);
+
+    return memoryNodes;
+  };
+
+  auto & unknownMemoryNode = pointsToGraph.GetUnknownMemoryNode();
+  if (unknownMemoryNode.NumSources() == 0)
+  {
+    return;
+  }
+
+  auto memoryNodes = collectMemoryNodes(pointsToGraph);
+  while (unknownMemoryNode.NumSources())
+  {
+    auto & source = *unknownMemoryNode.Sources().begin();
+    for (auto & memoryNode : memoryNodes)
+    {
+      source.AddEdge(*memoryNode);
+    }
+    source.RemoveEdge(unknownMemoryNode);
+  }
 }
 
 }

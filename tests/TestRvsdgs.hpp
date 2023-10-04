@@ -295,18 +295,43 @@ public:
 *
 * It uses a single memory state to sequentialize the respective memory operations.
 */
-class Bits2PtrTest final : public RvsdgTest {
+class Bits2PtrTest final : public RvsdgTest
+{
+public:
+  [[nodiscard]] const jlm::llvm::lambda::node&
+  GetLambdaBits2Ptr() const noexcept
+  {
+    return *LambdaBits2Ptr_;
+  }
+
+  [[nodiscard]] const jlm::llvm::lambda::node&
+  GetLambdaTest() const noexcept
+  {
+    return *LambdaTest_;
+  }
+
+  [[nodiscard]] const jlm::llvm::CallNode&
+  GetCallNode() const noexcept
+  {
+    return *CallNode_;
+  }
+
+  [[nodiscard]] const jlm::rvsdg::node&
+  GetBitsToPtrNode() const noexcept
+  {
+    return *BitsToPtrNode_;
+  }
+
 private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
-	SetupRvsdg() override;
+  SetupRvsdg() override;
 
-public:
-	jlm::llvm::lambda::node * lambda_bits2ptr;
-	jlm::llvm::lambda::node * lambda_test;
+	jlm::llvm::lambda::node * LambdaBits2Ptr_;
+	jlm::llvm::lambda::node * LambdaTest_;
 
-	jlm::rvsdg::node * bits2ptr;
+	jlm::rvsdg::node * BitsToPtrNode_;
 
-	jlm::rvsdg::node * call;
+	jlm::llvm::CallNode * CallNode_;
 };
 
 /** \brief ConstantPointerNullTest class

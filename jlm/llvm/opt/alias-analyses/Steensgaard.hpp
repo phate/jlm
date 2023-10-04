@@ -118,6 +118,9 @@ private:
   static std::unique_ptr<PointsToGraph>
   ConstructPointsToGraph(const LocationSet & locationSets);
 
+  static void
+  RedirectUnknownMemoryNodeSources(PointsToGraph & pointsToGraph);
+
   std::unique_ptr<LocationSet> LocationSet_;
 };
 
