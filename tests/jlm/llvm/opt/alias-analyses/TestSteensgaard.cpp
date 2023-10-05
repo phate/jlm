@@ -339,31 +339,42 @@ TestConstantPointerNull()
 static void
 TestBits2Ptr()
 {
-  auto validate_ptg = [](
-    const jlm::llvm::aa::PointsToGraph & ptg,
+  auto validatePointsToGraph = [](
+    const jlm::llvm::aa::PointsToGraph & pointsToGraph,
     const jlm::tests::Bits2PtrTest & test)
   {
-    assert(ptg.NumLambdaNodes() == 2);
-    assert(ptg.NumRegisterNodes() == 5);
+    using namespace jlm::llvm::aa;
 
-    auto & call_out0 = ptg.GetRegisterNode(*test.call->output(0));
-    assertTargets(call_out0, {&ptg.GetUnknownMemoryNode(), &ptg.GetExternalMemoryNode()});
+    assert(pointsToGraph.NumLambdaNodes() == 2);
+    assert(pointsToGraph.NumRegisterNodes() == 5);
 
-    auto & bits2ptr = ptg.GetRegisterNode(*test.call->output(0));
-    assertTargets(bits2ptr, {&ptg.GetUnknownMemoryNode(), &ptg.GetExternalMemoryNode()});
+    auto & lambdaTestMemoryNode = pointsToGraph.GetLambdaNode(test.GetLambdaTest());
+    auto & lambdaBitsToPtrMemoryNode = pointsToGraph.GetLambdaNode(test.GetLambdaBits2Ptr());
+    auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
 
-    auto & lambdaTestMemoryNode = ptg.GetLambdaNode(*test.lambda_test);
+    std::unordered_set<const PointsToGraph::Node*> expectedMemoryNodes(
+      {
+        &lambdaTestMemoryNode,
+        &lambdaBitsToPtrMemoryNode,
+        &externalMemoryNode
+      });
 
-    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambdaTestMemoryNode});
-    assert(ptg.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
+    auto & callOutput0 = pointsToGraph.GetRegisterNode(*test.GetCallNode().output(0));
+    assertTargets(callOutput0, expectedMemoryNodes);
+
+    auto & bits2ptr = pointsToGraph.GetRegisterNode(*test.GetBitsToPtrNode().output(0));
+    assertTargets(bits2ptr, expectedMemoryNodes);
+
+    jlm::util::HashSet<const PointsToGraph::MemoryNode*> expectedEscapedMemoryNodes({&lambdaTestMemoryNode});
+    assert(pointsToGraph.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
   };
 
   jlm::tests::Bits2PtrTest test;
-//	jlm::rvsdg::view(test.graph().root(), stdout);
+  // jlm::rvsdg::view(test.graph().root(), stdout);
 
-  auto ptg = RunSteensgaard(test.module());
-//	std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
-  validate_ptg(*ptg, test);
+  auto pointsToGraph = RunSteensgaard(test.module());
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph) << std::flush;
+  validatePointsToGraph(*pointsToGraph, test);
 }
 
 static void
