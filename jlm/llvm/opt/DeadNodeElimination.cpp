@@ -378,16 +378,23 @@ DeadNodeElimination::SweepRegion(jlm::rvsdg::region & region) const
 void
 DeadNodeElimination::SweepStructuralNode(jlm::rvsdg::structural_node & node) const
 {
+  auto sweepGamma =  [](auto & d, auto & n){ d.SweepGamma(*util::AssertedCast<jlm::rvsdg::gamma_node>(&n)); };
+  auto sweepTheta =  [](auto & d, auto & n){ d.SweepTheta(*util::AssertedCast<jlm::rvsdg::theta_node>(&n)); };
+  auto sweepLambda = [](auto & d, auto & n){ d.SweepLambda(*util::AssertedCast<lambda::node>(&n)); };
+  auto sweepPhi =    [](auto & d, auto & n){ d.SweepPhi(*util::AssertedCast<phi::node>(&n)); };
+  auto sweepDelta =  [](auto & d, auto & n){ d.SweepDelta(*util::AssertedCast<delta::node>(&n)); };
+
   static std::unordered_map<
     std::type_index,
     std::function<void(const DeadNodeElimination&, jlm::rvsdg::structural_node&)>
-  > map({
-          {typeid(jlm::rvsdg::gamma_op), [](auto & d, auto & n){ d.SweepGamma(*static_cast<jlm::rvsdg::gamma_node*>(&n)); }},
-          {typeid(jlm::rvsdg::theta_op), [](auto & d, auto & n){ d.SweepTheta(*static_cast<jlm::rvsdg::theta_node*>(&n)); }},
-          {typeid(lambda::operation),    [](auto & d, auto & n){ d.SweepLambda(*static_cast<lambda::node*>(&n));    }},
-          {typeid(phi::operation),       [](auto & d, auto & n){ d.SweepPhi(*static_cast<phi::node*>(&n));          }},
-          {typeid(delta::operation),     [](auto & d, auto & n){ d.SweepDelta(*static_cast<delta::node*>(&n));      }}
-        });
+  > map(
+    {
+      {typeid(jlm::rvsdg::gamma_op), sweepGamma},
+      {typeid(jlm::rvsdg::theta_op), sweepTheta},
+      {typeid(lambda::operation),    sweepLambda},
+      {typeid(phi::operation),       sweepPhi},
+      {typeid(delta::operation),     sweepDelta}
+    });
 
   auto & op = node.operation();
   JLM_ASSERT(map.find(typeid(op)) != map.end());
