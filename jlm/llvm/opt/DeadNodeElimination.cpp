@@ -154,7 +154,7 @@ private:
   util::timer sweepTimer_;
 };
 
-DeadNodeElimination::~DeadNodeElimination()
+DeadNodeElimination::~DeadNodeElimination() noexcept
 = default;
 
 void

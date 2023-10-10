@@ -49,7 +49,7 @@ class DeadNodeElimination final : public optimization
   class Statistics;
 
 public:
-  ~DeadNodeElimination() override;
+  ~DeadNodeElimination() noexcept override;
 
   void
   run(jlm::rvsdg::region & region);
