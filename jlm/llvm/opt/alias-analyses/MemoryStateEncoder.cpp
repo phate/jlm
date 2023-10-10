@@ -474,9 +474,10 @@ MemoryStateEncoder::Encode(
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
-  /*
-   * Remove all nodes that became dead throughout the encoding.
-   */
+  // Discard internal state to free up memory after we are done with the encoding
+  Context_.reset();
+
+  // Remove all nodes that became dead throughout the encoding.
   DeadNodeElimination deadNodeElimination;
   deadNodeElimination.run(rvsdgModule, statisticsCollector);
 }
