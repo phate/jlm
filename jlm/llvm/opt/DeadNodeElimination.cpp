@@ -157,6 +157,9 @@ private:
 DeadNodeElimination::~DeadNodeElimination() noexcept
 = default;
 
+DeadNodeElimination::DeadNodeElimination()
+= default;
+
 void
 DeadNodeElimination::run(jlm::rvsdg::region & region)
 {

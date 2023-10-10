@@ -51,6 +51,18 @@ class DeadNodeElimination final : public optimization
 public:
   ~DeadNodeElimination() noexcept override;
 
+  DeadNodeElimination();
+
+  DeadNodeElimination(const DeadNodeElimination&) = delete;
+
+  DeadNodeElimination(DeadNodeElimination&&) = delete;
+
+  DeadNodeElimination&
+  operator=(const DeadNodeElimination&) = delete;
+
+  DeadNodeElimination&
+  operator=(DeadNodeElimination&&) = delete;
+
   void
   run(jlm::rvsdg::region & region);
 
