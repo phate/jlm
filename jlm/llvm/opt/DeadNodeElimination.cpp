@@ -90,54 +90,54 @@ private:
  */
 class DeadNodeElimination::Statistics final : public util::Statistics {
 public:
-	~Statistics() override = default;
+  ~Statistics() override = default;
 
-	Statistics()
-	: util::Statistics(Statistics::Id::DeadNodeElimination)
-  , numNodesBefore_(0), numNodesAfter_(0)
-	, numInputsBefore_(0), numInputsAfter_(0)
-	{}
+  Statistics()
+    : util::Statistics(Statistics::Id::DeadNodeElimination)
+    , numNodesBefore_(0), numNodesAfter_(0)
+    , numInputsBefore_(0), numInputsAfter_(0)
+  {}
 
-	void
-	StartMarkStatistics(const jlm::rvsdg::graph & graph) noexcept
-	{
+  void
+  StartMarkStatistics(const jlm::rvsdg::graph & graph) noexcept
+  {
     numNodesBefore_ = jlm::rvsdg::nnodes(graph.root());
     numInputsBefore_ = jlm::rvsdg::ninputs(graph.root());
-		markTimer_.start();
-	}
+    markTimer_.start();
+  }
 
-	void
-	StopMarkStatistics() noexcept
-	{
-		markTimer_.stop();
-	}
+  void
+  StopMarkStatistics() noexcept
+  {
+    markTimer_.stop();
+  }
 
-	void
-	StartSweepStatistics() noexcept
-	{
-		sweepTimer_.start();
-	}
+  void
+  StartSweepStatistics() noexcept
+  {
+    sweepTimer_.start();
+  }
 
-	void
-	StopSweepStatistics(const jlm::rvsdg::graph & graph) noexcept
-	{
+  void
+  StopSweepStatistics(const jlm::rvsdg::graph & graph) noexcept
+  {
     sweepTimer_.stop();
     numNodesAfter_ = jlm::rvsdg::nnodes(graph.root());
     numInputsAfter_ = jlm::rvsdg::ninputs(graph.root());
-	}
+  }
 
-	[[nodiscard]] std::string
-	ToString() const override
-	{
-		return util::strfmt("DeadNodeElimination ",
-                  "#RvsdgNodesBeforeDNE:", numNodesBefore_, " ",
-                  "#RvsdgNodesAfterDNE:", numNodesAfter_, " ",
-                  "#RvsdgInputsBeforeDNE:", numInputsBefore_, " ",
-                  "#RvsdgInputsAfterDNE:", numInputsAfter_, " ",
-                  "MarkTime[ns]:", markTimer_.ns(), " ",
-                  "SweepTime[ns]:", sweepTimer_.ns()
-		);
-	}
+  [[nodiscard]] std::string
+  ToString() const override
+  {
+    return util::strfmt("DeadNodeElimination ",
+                        "#RvsdgNodesBeforeDNE:", numNodesBefore_, " ",
+                        "#RvsdgNodesAfterDNE:", numNodesAfter_, " ",
+                        "#RvsdgInputsBeforeDNE:", numInputsBefore_, " ",
+                        "#RvsdgInputsAfterDNE:", numInputsAfter_, " ",
+                        "MarkTime[ns]:", markTimer_.ns(), " ",
+                        "SweepTime[ns]:", sweepTimer_.ns()
+    );
+  }
 
   static std::unique_ptr<Statistics>
   Create()
@@ -146,11 +146,11 @@ public:
   }
 
 private:
-	size_t numNodesBefore_;
+  size_t numNodesBefore_;
   size_t numNodesAfter_;
-	size_t numInputsBefore_;
+  size_t numInputsBefore_;
   size_t numInputsAfter_;
-	util::timer markTimer_;
+  util::timer markTimer_;
   util::timer sweepTimer_;
 };
 
@@ -162,8 +162,8 @@ DeadNodeElimination::run(jlm::rvsdg::region & region)
 {
   Context_ = Context::Create();
 
-	Mark(region);
-	Sweep(region);
+  Mark(region);
+  Sweep(region);
 
   // Discard internal state to free up memory after we are done
   Context_.reset();
@@ -328,12 +328,12 @@ DeadNodeElimination::Sweep(jlm::rvsdg::structural_node & node) const
     std::type_index,
     std::function<void(const DeadNodeElimination&, jlm::rvsdg::structural_node&)>
   > map({
-    {typeid(jlm::rvsdg::gamma_op),       [](auto & d, auto & n){ d.SweepGamma(*static_cast<jlm::rvsdg::gamma_node*>(&n)); }},
-    {typeid(jlm::rvsdg::theta_op),       [](auto & d, auto & n){ d.SweepTheta(*static_cast<jlm::rvsdg::theta_node*>(&n)); }},
-    {typeid(lambda::operation),    [](auto & d, auto & n){ d.SweepLambda(*static_cast<lambda::node*>(&n));    }},
-    {typeid(phi::operation),       [](auto & d, auto & n){ d.SweepPhi(*static_cast<phi::node*>(&n));          }},
-    {typeid(delta::operation),     [](auto & d, auto & n){ d.SweepDelta(*static_cast<delta::node*>(&n));      }}
-  });
+          {typeid(jlm::rvsdg::gamma_op), [](auto & d, auto & n){ d.SweepGamma(*static_cast<jlm::rvsdg::gamma_node*>(&n)); }},
+          {typeid(jlm::rvsdg::theta_op), [](auto & d, auto & n){ d.SweepTheta(*static_cast<jlm::rvsdg::theta_node*>(&n)); }},
+          {typeid(lambda::operation),    [](auto & d, auto & n){ d.SweepLambda(*static_cast<lambda::node*>(&n));    }},
+          {typeid(phi::operation),       [](auto & d, auto & n){ d.SweepPhi(*static_cast<phi::node*>(&n));          }},
+          {typeid(delta::operation),     [](auto & d, auto & n){ d.SweepDelta(*static_cast<delta::node*>(&n));      }}
+        });
 
   auto & op = node.operation();
   JLM_ASSERT(map.find(typeid(op)) != map.end());

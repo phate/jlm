@@ -49,13 +49,13 @@ class DeadNodeElimination final : public optimization
   class Statistics;
 
 public:
-	~DeadNodeElimination() override;
+  ~DeadNodeElimination() override;
 
-	void
-	run(jlm::rvsdg::region & region);
+  void
+  run(jlm::rvsdg::region & region);
 
-	void
-	run(
+  void
+  run(
     RvsdgModule & module,
     jlm::util::StatisticsCollector & statisticsCollector) override;
 
