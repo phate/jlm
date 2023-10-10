@@ -44,27 +44,27 @@ public:
   MarkAlive(const jlm::rvsdg::output & output)
   {
     if (auto simpleOutput = dynamic_cast<const jlm::rvsdg::simple_output*>(&output)) {
-      SimpleNodes_.insert(simpleOutput->node());
+      SimpleNodes_.Insert(simpleOutput->node());
       return;
     }
 
-    Outputs_.insert(&output);
+    Outputs_.Insert(&output);
   }
 
   bool
   IsAlive(const jlm::rvsdg::output & output) const noexcept
   {
     if (auto simpleOutput = dynamic_cast<const jlm::rvsdg::simple_output*>(&output))
-      return SimpleNodes_.find(simpleOutput->node()) != SimpleNodes_.end();
+      return SimpleNodes_.Contains(simpleOutput->node());
 
-    return Outputs_.find(&output) != Outputs_.end();
+    return Outputs_.Contains(&output);
   }
 
   bool
   IsAlive(const jlm::rvsdg::node & node) const noexcept
   {
     if (auto simpleNode = dynamic_cast<const jlm::rvsdg::simple_node*>(&node))
-      return SimpleNodes_.find(simpleNode) != SimpleNodes_.end();
+      return SimpleNodes_.Contains(simpleNode);
 
     for (size_t n = 0; n < node.noutputs(); n++) {
       if (IsAlive(*node.output(n)))
@@ -81,8 +81,8 @@ public:
   }
 
 private:
-  std::unordered_set<const jlm::rvsdg::simple_node*> SimpleNodes_;
-  std::unordered_set<const jlm::rvsdg::output*> Outputs_;
+  util::HashSet<const jlm::rvsdg::simple_node*> SimpleNodes_;
+  util::HashSet<const jlm::rvsdg::output*> Outputs_;
 };
 
 /** \brief Dead Node Elimination statistics class
