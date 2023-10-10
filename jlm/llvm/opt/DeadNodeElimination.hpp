@@ -97,11 +97,10 @@ class DeadNodeElimination final : public optimization {
       return false;
     }
 
-    void
-    Clear()
+    static std::unique_ptr<Context>
+    Create()
     {
-      simpleNodes_.clear();
-      outputs_.clear();
+      return std::make_unique<Context>();
     }
 
   private:
@@ -123,9 +122,6 @@ public:
     jlm::util::StatisticsCollector & statisticsCollector) override;
 
 private:
-  void
-  ResetState();
-
   void
   Mark(const jlm::rvsdg::region & region);
 
@@ -156,7 +152,7 @@ private:
   void
   SweepDelta(delta::node & deltaNode) const;
 
-  Context Context_;
+  std::unique_ptr<Context> Context_;
 };
 
 }

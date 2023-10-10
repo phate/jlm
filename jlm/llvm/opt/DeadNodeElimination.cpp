@@ -96,9 +96,13 @@ DeadNodeElimination::~DeadNodeElimination()
 void
 DeadNodeElimination::run(jlm::rvsdg::region & region)
 {
-  ResetState();
+  Context_ = Context::Create();
+
 	Mark(region);
 	Sweep(region);
+
+  // Discard internal state to free up memory after we are done
+  Context_.reset();
 }
 
 void
@@ -106,26 +110,22 @@ DeadNodeElimination::run(
   RvsdgModule & module,
   jlm::util::StatisticsCollector & statisticsCollector)
 {
-  auto & graph = module.Rvsdg();
+  Context_ = Context::Create();
 
-  ResetState();
-
+  auto & rvsdg = module.Rvsdg();
   auto statistics = Statistics::Create();
-  statistics->StartMarkStatistics(graph);
-  Mark(*graph.root());
+  statistics->StartMarkStatistics(rvsdg);
+  Mark(*rvsdg.root());
   statistics->StopMarkStatistics();
 
   statistics->StartSweepStatistics();
-  Sweep(graph);
-  statistics->StopSweepStatistics(graph);
+  Sweep(rvsdg);
+  statistics->StopSweepStatistics(rvsdg);
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
-}
 
-void
-DeadNodeElimination::ResetState()
-{
-  Context_.Clear();
+  // Discard internal state to free up memory after we are done
+  Context_.reset();
 }
 
 void
@@ -138,10 +138,10 @@ DeadNodeElimination::Mark(const jlm::rvsdg::region & region)
 void
 DeadNodeElimination::Mark(const jlm::rvsdg::output & output)
 {
-  if (Context_.IsAlive(output))
+  if (Context_->IsAlive(output))
     return;
 
-  Context_.MarkAlive(output);
+  Context_->MarkAlive(output);
 
   if (is_import(&output))
     return;
@@ -228,7 +228,7 @@ DeadNodeElimination::Sweep(jlm::rvsdg::graph & graph) const
    * Remove dead imports
    */
   for (size_t n = graph.root()->narguments()-1; n != static_cast<size_t>(-1); n--) {
-    if (!Context_.IsAlive(*graph.root()->argument(n)))
+    if (!Context_->IsAlive(*graph.root()->argument(n)))
       graph.root()->remove_argument(n);
   }
 }
@@ -244,7 +244,7 @@ DeadNodeElimination::Sweep(jlm::rvsdg::region & region) const
 
   for (auto it = nodesTopDown.rbegin(); it != nodesTopDown.rend(); it++) {
     for (auto node : *it) {
-      if (!Context_.IsAlive(*node)) {
+      if (!Context_->IsAlive(*node)) {
         remove(node);
         continue;
       }
@@ -283,7 +283,7 @@ DeadNodeElimination::SweepGamma(jlm::rvsdg::gamma_node & gammaNode) const
    * Remove dead outputs and results
    */
   for (size_t n = gammaNode.noutputs()-1; n != static_cast<size_t>(-1); n--) {
-    if (Context_.IsAlive(*gammaNode.output(n)))
+    if (Context_->IsAlive(*gammaNode.output(n)))
       continue;
 
     for (size_t r = 0; r < gammaNode.nsubregions(); r++)
@@ -305,7 +305,7 @@ DeadNodeElimination::SweepGamma(jlm::rvsdg::gamma_node & gammaNode) const
 
     bool alive = false;
     for (auto & argument : input->arguments) {
-      if (Context_.IsAlive(argument)) {
+      if (Context_->IsAlive(argument)) {
         alive = true;
         break;
       }
@@ -331,7 +331,7 @@ DeadNodeElimination::SweepTheta(jlm::rvsdg::theta_node & thetaNode) const
     auto & thetaArgument = *thetaOutput.argument();
     auto & thetaResult = *thetaOutput.result();
 
-    if (!Context_.IsAlive(thetaArgument) && !Context_.IsAlive(thetaOutput))
+    if (!Context_->IsAlive(thetaArgument) && !Context_->IsAlive(thetaOutput))
       subregion->remove_result(thetaResult.index());
   }
 
@@ -345,7 +345,7 @@ DeadNodeElimination::SweepTheta(jlm::rvsdg::theta_node & thetaNode) const
     auto & thetaArgument = *thetaInput.argument();
     auto & thetaOutput = *thetaInput.output();
 
-    if (!Context_.IsAlive(thetaArgument) && !Context_.IsAlive(thetaOutput)) {
+    if (!Context_->IsAlive(thetaArgument) && !Context_->IsAlive(thetaOutput)) {
       JLM_ASSERT(thetaOutput.results.empty());
       subregion->remove_argument(thetaArgument.index());
       thetaNode.remove_input(thetaInput.index());
@@ -368,7 +368,7 @@ DeadNodeElimination::SweepLambda(lambda::node & lambdaNode) const
   for (size_t n = lambdaNode.ninputs()-1; n != static_cast<size_t>(-1); n--) {
     auto input = lambdaNode.input(n);
 
-    if (!Context_.IsAlive(*input->argument())) {
+    if (!Context_->IsAlive(*input->argument())) {
       lambdaNode.subregion()->remove_argument(input->argument()->index());
       lambdaNode.remove_input(n);
     }
@@ -385,8 +385,8 @@ DeadNodeElimination::SweepPhi(phi::node & phiNode) const
    */
   for (size_t n = subregion->nresults()-1; n != static_cast<size_t>(-1); n--) {
     auto result = subregion->result(n);
-    if (!Context_.IsAlive(*result->output())
-        && !Context_.IsAlive(*subregion->argument(result->index()))) {
+    if (!Context_->IsAlive(*result->output())
+        && !Context_->IsAlive(*subregion->argument(result->index()))) {
       subregion->remove_result(n);
       phiNode.remove_output(n);
     }
@@ -400,7 +400,7 @@ DeadNodeElimination::SweepPhi(phi::node & phiNode) const
   for (size_t n = subregion->narguments()-1; n != static_cast<size_t>(-1); n--) {
     auto argument = subregion->argument(n);
     auto input = argument->input();
-    if (!Context_.IsAlive(*argument)) {
+    if (!Context_->IsAlive(*argument)) {
       subregion->remove_argument(n);
       if (input) {
         phiNode.remove_input(input->index());
@@ -422,7 +422,7 @@ DeadNodeElimination::SweepDelta(delta::node & deltaNode) const
    */
   for (size_t n = deltaNode.ninputs()-1; n != static_cast<size_t>(-1); n--) {
     auto input = deltaNode.input(n);
-    if (!Context_.IsAlive(*input->argument())) {
+    if (!Context_->IsAlive(*input->argument())) {
       deltaNode.subregion()->remove_argument(input->argument()->index());
       deltaNode.remove_input(input->index());
     }
