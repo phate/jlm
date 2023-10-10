@@ -67,7 +67,7 @@ private:
   MarkOutput(const jlm::rvsdg::output & output);
 
   void
-  SweepRvsdg(jlm::rvsdg::graph & graph) const;
+  SweepRvsdg(jlm::rvsdg::graph & rvsdg) const;
 
   void
   SweepRegion(jlm::rvsdg::region & region) const;

@@ -284,16 +284,16 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
 }
 
 void
-DeadNodeElimination::SweepRvsdg(jlm::rvsdg::graph & graph) const
+DeadNodeElimination::SweepRvsdg(jlm::rvsdg::graph & rvsdg) const
 {
-  SweepRegion(*graph.root());
+  SweepRegion(*rvsdg.root());
 
   /**
    * Remove dead imports
    */
-  for (size_t n = graph.root()->narguments()-1; n != static_cast<size_t>(-1); n--) {
-    if (!Context_->IsAlive(*graph.root()->argument(n)))
-      graph.root()->remove_argument(n);
+  for (size_t n = rvsdg.root()->narguments() - 1; n != static_cast<size_t>(-1); n--) {
+    if (!Context_->IsAlive(*rvsdg.root()->argument(n)))
+      rvsdg.root()->remove_argument(n);
   }
 }
 
