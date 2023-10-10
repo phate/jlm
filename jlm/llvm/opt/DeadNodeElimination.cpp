@@ -288,9 +288,7 @@ DeadNodeElimination::SweepRvsdg(jlm::rvsdg::graph & rvsdg) const
 {
   SweepRegion(*rvsdg.root());
 
-  /**
-   * Remove dead imports
-   */
+  // Remove dead imports
   for (size_t n = rvsdg.root()->narguments() - 1; n != static_cast<size_t>(-1); n--) {
     if (!Context_->IsAlive(*rvsdg.root()->argument(n)))
       rvsdg.root()->remove_argument(n);
@@ -343,9 +341,7 @@ DeadNodeElimination::SweepStructuralNode(jlm::rvsdg::structural_node & node) con
 void
 DeadNodeElimination::SweepGamma(jlm::rvsdg::gamma_node & gammaNode) const
 {
-  /**
-   * Remove dead outputs and results
-   */
+  // Remove dead outputs and results
   for (size_t n = gammaNode.noutputs()-1; n != static_cast<size_t>(-1); n--) {
     if (Context_->IsAlive(*gammaNode.output(n)))
       continue;
@@ -355,15 +351,11 @@ DeadNodeElimination::SweepGamma(jlm::rvsdg::gamma_node & gammaNode) const
     gammaNode.remove_output(n);
   }
 
-  /**
-   * Sweep Gamma subregions
-   */
+  // Sweep gamma subregions
   for (size_t r = 0; r < gammaNode.nsubregions(); r++)
     SweepRegion(*gammaNode.subregion(r));
 
-  /**
-   * Remove dead arguments and inputs
-   */
+  // Remove dead arguments and inputs
   for (size_t n = gammaNode.ninputs()-1; n >= 1; n--) {
     auto input = gammaNode.input(n);
 
@@ -387,9 +379,7 @@ DeadNodeElimination::SweepTheta(jlm::rvsdg::theta_node & thetaNode) const
 {
   auto subregion = thetaNode.subregion();
 
-  /**
-   * Remove dead results
-   */
+  // Remove dead results
   for (size_t n = thetaNode.noutputs()-1; n != static_cast<size_t>(-1); n--) {
     auto & thetaOutput = *thetaNode.output(n);
     auto & thetaArgument = *thetaOutput.argument();
@@ -401,9 +391,7 @@ DeadNodeElimination::SweepTheta(jlm::rvsdg::theta_node & thetaNode) const
 
   SweepRegion(*subregion);
 
-  /**
-   * Remove dead outputs, inputs, and arguments
-   */
+  // Remove dead outputs, inputs, and arguments
   for (size_t n = thetaNode.ninputs()-1; n != static_cast<size_t>(-1); n--) {
     auto & thetaInput = *thetaNode.input(n);
     auto & thetaArgument = *thetaInput.argument();
@@ -426,9 +414,7 @@ DeadNodeElimination::SweepLambda(lambda::node & lambdaNode) const
 {
   SweepRegion(*lambdaNode.subregion());
 
-  /**
-   * Remove dead arguments and inputs
-   */
+  // Remove dead arguments and inputs
   for (size_t n = lambdaNode.ninputs()-1; n != static_cast<size_t>(-1); n--) {
     auto input = lambdaNode.input(n);
 
@@ -444,9 +430,7 @@ DeadNodeElimination::SweepPhi(phi::node & phiNode) const
 {
   auto subregion = phiNode.subregion();
 
-  /**
-   * Remove dead outputs and results
-   */
+  // Remove dead outputs and results
   for (size_t n = subregion->nresults()-1; n != static_cast<size_t>(-1); n--) {
     auto result = subregion->result(n);
     if (!Context_->IsAlive(*result->output())
@@ -458,9 +442,7 @@ DeadNodeElimination::SweepPhi(phi::node & phiNode) const
 
   SweepRegion(*subregion);
 
-  /**
-   * Remove dead arguments and inputs
-   */
+  // Remove dead arguments and inputs
   for (size_t n = subregion->narguments()-1; n != static_cast<size_t>(-1); n--) {
     auto argument = subregion->argument(n);
     auto input = argument->input();
@@ -476,14 +458,10 @@ DeadNodeElimination::SweepPhi(phi::node & phiNode) const
 void
 DeadNodeElimination::SweepDelta(delta::node & deltaNode) const
 {
-  /**
-   * A delta subregion can only contain simple nodes. Thus, a simple prune is sufficient.
-   */
+  // A delta subregion can only contain simple nodes. Thus, a simple prune is sufficient.
   deltaNode.subregion()->prune(false);
 
-  /**
-   * Remove dead arguments and inputs.
-   */
+  // Remove dead arguments and inputs.
   for (size_t n = deltaNode.ninputs()-1; n != static_cast<size_t>(-1); n--) {
     auto input = deltaNode.input(n);
     if (!Context_->IsAlive(*input->argument())) {
