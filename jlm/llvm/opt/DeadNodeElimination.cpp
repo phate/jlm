@@ -257,7 +257,7 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
 
   if (auto thetaArgument = is_theta_argument(&output))
   {
-    auto thetaInput = static_cast<const jlm::rvsdg::theta_input*>(thetaArgument->input());
+    auto thetaInput = util::AssertedCast<const jlm::rvsdg::theta_input>(thetaArgument->input());
     MarkOutput(*thetaInput->output());
     MarkOutput(*thetaInput->origin());
     return;
@@ -285,14 +285,14 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
 
   if (is_phi_output(&output))
   {
-    auto soutput = static_cast<const jlm::rvsdg::structural_output*>(&output);
-    MarkOutput(*soutput->results.first()->origin());
+    auto structuralOutput = util::AssertedCast<const jlm::rvsdg::structural_output>(&output);
+    MarkOutput(*structuralOutput->results.first()->origin());
     return;
   }
 
   if (is_phi_argument(&output))
   {
-    auto argument = static_cast<const jlm::rvsdg::argument*>(&output);
+    auto argument = util::AssertedCast<const jlm::rvsdg::argument>(&output);
     if (argument->input())
     {
       MarkOutput(*argument->input()->origin());
