@@ -44,27 +44,27 @@ public:
   MarkAlive(const jlm::rvsdg::output & output)
   {
     if (auto simpleOutput = dynamic_cast<const jlm::rvsdg::simple_output*>(&output)) {
-      simpleNodes_.insert(simpleOutput->node());
+      SimpleNodes_.insert(simpleOutput->node());
       return;
     }
 
-    outputs_.insert(&output);
+    Outputs_.insert(&output);
   }
 
   bool
   IsAlive(const jlm::rvsdg::output & output) const noexcept
   {
     if (auto simpleOutput = dynamic_cast<const jlm::rvsdg::simple_output*>(&output))
-      return simpleNodes_.find(simpleOutput->node()) != simpleNodes_.end();
+      return SimpleNodes_.find(simpleOutput->node()) != SimpleNodes_.end();
 
-    return outputs_.find(&output) != outputs_.end();
+    return Outputs_.find(&output) != Outputs_.end();
   }
 
   bool
   IsAlive(const jlm::rvsdg::node & node) const noexcept
   {
     if (auto simpleNode = dynamic_cast<const jlm::rvsdg::simple_node*>(&node))
-      return simpleNodes_.find(simpleNode) != simpleNodes_.end();
+      return SimpleNodes_.find(simpleNode) != SimpleNodes_.end();
 
     for (size_t n = 0; n < node.noutputs(); n++) {
       if (IsAlive(*node.output(n)))
@@ -81,8 +81,8 @@ public:
   }
 
 private:
-  std::unordered_set<const jlm::rvsdg::simple_node*> simpleNodes_;
-  std::unordered_set<const jlm::rvsdg::output*> outputs_;
+  std::unordered_set<const jlm::rvsdg::simple_node*> SimpleNodes_;
+  std::unordered_set<const jlm::rvsdg::output*> Outputs_;
 };
 
 /** \brief Dead Node Elimination statistics class
