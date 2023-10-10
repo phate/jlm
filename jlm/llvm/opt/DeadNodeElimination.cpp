@@ -162,8 +162,8 @@ DeadNodeElimination::run(jlm::rvsdg::region & region)
 {
   Context_ = Context::Create();
 
-  Mark(region);
-  Sweep(region);
+  MarkRegion(region);
+  SweepRegion(region);
 
   // Discard internal state to free up memory after we are done
   Context_.reset();
@@ -179,11 +179,11 @@ DeadNodeElimination::run(
   auto & rvsdg = module.Rvsdg();
   auto statistics = Statistics::Create();
   statistics->StartMarkStatistics(rvsdg);
-  Mark(*rvsdg.root());
+  MarkRegion(*rvsdg.root());
   statistics->StopMarkStatistics();
 
   statistics->StartSweepStatistics();
-  Sweep(rvsdg);
+  SweepRvsdg(rvsdg);
   statistics->StopSweepStatistics(rvsdg);
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
@@ -193,14 +193,14 @@ DeadNodeElimination::run(
 }
 
 void
-DeadNodeElimination::Mark(const jlm::rvsdg::region & region)
+DeadNodeElimination::MarkRegion(const jlm::rvsdg::region & region)
 {
   for (size_t n = 0; n < region.nresults(); n++)
-    Mark(*region.result(n)->origin());
+    MarkOutput(*region.result(n)->origin());
 }
 
 void
-DeadNodeElimination::Mark(const jlm::rvsdg::output & output)
+DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
 {
   if (Context_->IsAlive(output))
     return;
@@ -211,34 +211,34 @@ DeadNodeElimination::Mark(const jlm::rvsdg::output & output)
     return;
 
   if (auto gammaOutput = is_gamma_output(&output)) {
-    Mark(*gammaOutput->node()->predicate()->origin());
+    MarkOutput(*gammaOutput->node()->predicate()->origin());
     for (const auto & result : gammaOutput->results)
-      Mark(*result.origin());
+      MarkOutput(*result.origin());
     return;
   }
 
   if (auto argument = is_gamma_argument(&output)) {
-    Mark(*argument->input()->origin());
+    MarkOutput(*argument->input()->origin());
     return;
   }
 
   if (auto thetaOutput = is_theta_output(&output)) {
-    Mark(*thetaOutput->node()->predicate()->origin());
-    Mark(*thetaOutput->result()->origin());
-    Mark(*thetaOutput->input()->origin());
+    MarkOutput(*thetaOutput->node()->predicate()->origin());
+    MarkOutput(*thetaOutput->result()->origin());
+    MarkOutput(*thetaOutput->input()->origin());
     return;
   }
 
   if (auto thetaArgument = is_theta_argument(&output)) {
     auto thetaInput = static_cast<const jlm::rvsdg::theta_input*>(thetaArgument->input());
-    Mark(*thetaInput->output());
-    Mark(*thetaInput->origin());
+    MarkOutput(*thetaInput->output());
+    MarkOutput(*thetaInput->origin());
     return;
   }
 
   if (auto o = dynamic_cast<const lambda::output*>(&output)) {
     for (auto & result : o->node()->fctresults())
-      Mark(*result.origin());
+      MarkOutput(*result.origin());
     return;
   }
 
@@ -246,37 +246,37 @@ DeadNodeElimination::Mark(const jlm::rvsdg::output & output)
     return;
 
   if (auto cv = dynamic_cast<const lambda::cvargument*>(&output)) {
-    Mark(*cv->input()->origin());
+    MarkOutput(*cv->input()->origin());
     return;
   }
 
   if (is_phi_output(&output)) {
     auto soutput = static_cast<const jlm::rvsdg::structural_output*>(&output);
-    Mark(*soutput->results.first()->origin());
+    MarkOutput(*soutput->results.first()->origin());
     return;
   }
 
   if (is_phi_argument(&output)) {
     auto argument = static_cast<const jlm::rvsdg::argument*>(&output);
-    if (argument->input()) Mark(*argument->input()->origin());
-    else Mark(*argument->region()->result(argument->index())->origin());
+    if (argument->input()) MarkOutput(*argument->input()->origin());
+    else MarkOutput(*argument->region()->result(argument->index())->origin());
     return;
   }
 
   if (auto deltaOutput = dynamic_cast<const delta::output*>(&output)) {
-    Mark(*deltaOutput->node()->subregion()->result(0)->origin());
+    MarkOutput(*deltaOutput->node()->subregion()->result(0)->origin());
     return;
   }
 
   if (auto deltaCvArgument = dynamic_cast<const delta::cvargument*>(&output)) {
-    Mark(*deltaCvArgument->input()->origin());
+    MarkOutput(*deltaCvArgument->input()->origin());
     return;
   }
 
   if (auto simpleOutput = dynamic_cast<const jlm::rvsdg::simple_output*>(&output)) {
     auto node = simpleOutput->node();
     for (size_t n = 0; n < node->ninputs(); n++)
-      Mark(*node->input(n)->origin());
+      MarkOutput(*node->input(n)->origin());
     return;
   }
 
@@ -284,9 +284,9 @@ DeadNodeElimination::Mark(const jlm::rvsdg::output & output)
 }
 
 void
-DeadNodeElimination::Sweep(jlm::rvsdg::graph & graph) const
+DeadNodeElimination::SweepRvsdg(jlm::rvsdg::graph & graph) const
 {
-  Sweep(*graph.root());
+  SweepRegion(*graph.root());
 
   /**
    * Remove dead imports
@@ -298,7 +298,7 @@ DeadNodeElimination::Sweep(jlm::rvsdg::graph & graph) const
 }
 
 void
-DeadNodeElimination::Sweep(jlm::rvsdg::region & region) const
+DeadNodeElimination::SweepRegion(jlm::rvsdg::region & region) const
 {
   region.prune(false);
 
@@ -314,7 +314,7 @@ DeadNodeElimination::Sweep(jlm::rvsdg::region & region) const
       }
 
       if (auto structuralNode = dynamic_cast<jlm::rvsdg::structural_node*>(node))
-        Sweep(*structuralNode);
+        SweepStructuralNode(*structuralNode);
     }
   }
 
@@ -322,7 +322,7 @@ DeadNodeElimination::Sweep(jlm::rvsdg::region & region) const
 }
 
 void
-DeadNodeElimination::Sweep(jlm::rvsdg::structural_node & node) const
+DeadNodeElimination::SweepStructuralNode(jlm::rvsdg::structural_node & node) const
 {
   static std::unordered_map<
     std::type_index,
@@ -359,7 +359,7 @@ DeadNodeElimination::SweepGamma(jlm::rvsdg::gamma_node & gammaNode) const
    * Sweep Gamma subregions
    */
   for (size_t r = 0; r < gammaNode.nsubregions(); r++)
-    Sweep(*gammaNode.subregion(r));
+    SweepRegion(*gammaNode.subregion(r));
 
   /**
    * Remove dead arguments and inputs
@@ -399,7 +399,7 @@ DeadNodeElimination::SweepTheta(jlm::rvsdg::theta_node & thetaNode) const
       subregion->remove_result(thetaResult.index());
   }
 
-  Sweep(*subregion);
+  SweepRegion(*subregion);
 
   /**
    * Remove dead outputs, inputs, and arguments
@@ -424,7 +424,7 @@ DeadNodeElimination::SweepTheta(jlm::rvsdg::theta_node & thetaNode) const
 void
 DeadNodeElimination::SweepLambda(lambda::node & lambdaNode) const
 {
-  Sweep(*lambdaNode.subregion());
+  SweepRegion(*lambdaNode.subregion());
 
   /**
    * Remove dead arguments and inputs
@@ -456,7 +456,7 @@ DeadNodeElimination::SweepPhi(phi::node & phiNode) const
     }
   }
 
-  Sweep(*subregion);
+  SweepRegion(*subregion);
 
   /**
    * Remove dead arguments and inputs

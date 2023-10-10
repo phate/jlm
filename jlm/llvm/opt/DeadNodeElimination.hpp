@@ -61,19 +61,19 @@ public:
 
 private:
   void
-  Mark(const jlm::rvsdg::region & region);
+  MarkRegion(const jlm::rvsdg::region & region);
 
   void
-  Mark(const jlm::rvsdg::output & output);
+  MarkOutput(const jlm::rvsdg::output & output);
 
   void
-  Sweep(jlm::rvsdg::graph & graph) const;
+  SweepRvsdg(jlm::rvsdg::graph & graph) const;
 
   void
-  Sweep(jlm::rvsdg::region & region) const;
+  SweepRegion(jlm::rvsdg::region & region) const;
 
   void
-  Sweep(jlm::rvsdg::structural_node & node) const;
+  SweepStructuralNode(jlm::rvsdg::structural_node & node) const;
 
   void
   SweepGamma(rvsdg::gamma_node & gammaNode) const;
