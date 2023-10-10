@@ -98,53 +98,56 @@ private:
  */
 class DeadNodeElimination::Statistics final : public util::Statistics {
 public:
-  ~Statistics() override = default;
+  ~Statistics() override
+  = default;
 
   Statistics()
-    : util::Statistics(Statistics::Id::DeadNodeElimination)
-    , numNodesBefore_(0), numNodesAfter_(0)
-    , numInputsBefore_(0), numInputsAfter_(0)
+    : util::Statistics(Statistics::Id::DeadNodeElimination),
+    NumRvsdgNodesBefore_(0),
+    NumRvsdgNodesAfter_(0),
+    NumInputsBefore_(0),
+    NumInputsAfter_(0)
   {}
 
   void
   StartMarkStatistics(const jlm::rvsdg::graph & graph) noexcept
   {
-    numNodesBefore_ = jlm::rvsdg::nnodes(graph.root());
-    numInputsBefore_ = jlm::rvsdg::ninputs(graph.root());
-    markTimer_.start();
+    NumRvsdgNodesBefore_ = jlm::rvsdg::nnodes(graph.root());
+    NumInputsBefore_ = jlm::rvsdg::ninputs(graph.root());
+    MarkTimer_.start();
   }
 
   void
   StopMarkStatistics() noexcept
   {
-    markTimer_.stop();
+    MarkTimer_.stop();
   }
 
   void
   StartSweepStatistics() noexcept
   {
-    sweepTimer_.start();
+    SweepTimer_.start();
   }
 
   void
   StopSweepStatistics(const jlm::rvsdg::graph & graph) noexcept
   {
-    sweepTimer_.stop();
-    numNodesAfter_ = jlm::rvsdg::nnodes(graph.root());
-    numInputsAfter_ = jlm::rvsdg::ninputs(graph.root());
+    SweepTimer_.stop();
+    NumRvsdgNodesAfter_ = jlm::rvsdg::nnodes(graph.root());
+    NumInputsAfter_ = jlm::rvsdg::ninputs(graph.root());
   }
 
   [[nodiscard]] std::string
   ToString() const override
   {
-    return util::strfmt("DeadNodeElimination ",
-                        "#RvsdgNodesBeforeDNE:", numNodesBefore_, " ",
-                        "#RvsdgNodesAfterDNE:", numNodesAfter_, " ",
-                        "#RvsdgInputsBeforeDNE:", numInputsBefore_, " ",
-                        "#RvsdgInputsAfterDNE:", numInputsAfter_, " ",
-                        "MarkTime[ns]:", markTimer_.ns(), " ",
-                        "SweepTime[ns]:", sweepTimer_.ns()
-    );
+    return util::strfmt(
+      "DeadNodeElimination ",
+      "#RvsdgNodesBeforeDNE:", NumRvsdgNodesBefore_, " ",
+      "#RvsdgNodesAfterDNE:", NumRvsdgNodesAfter_, " ",
+      "#RvsdgInputsBeforeDNE:", NumInputsBefore_, " ",
+      "#RvsdgInputsAfterDNE:", NumInputsAfter_, " ",
+      "MarkTime[ns]:", MarkTimer_.ns(), " ",
+      "SweepTime[ns]:", SweepTimer_.ns());
   }
 
   static std::unique_ptr<Statistics>
@@ -154,12 +157,13 @@ public:
   }
 
 private:
-  size_t numNodesBefore_;
-  size_t numNodesAfter_;
-  size_t numInputsBefore_;
-  size_t numInputsAfter_;
-  util::timer markTimer_;
-  util::timer sweepTimer_;
+  size_t NumRvsdgNodesBefore_;
+  size_t NumRvsdgNodesAfter_;
+  size_t NumInputsBefore_;
+  size_t NumInputsAfter_;
+
+  util::timer MarkTimer_;
+  util::timer SweepTimer_;
 };
 
 DeadNodeElimination::~DeadNodeElimination() noexcept
