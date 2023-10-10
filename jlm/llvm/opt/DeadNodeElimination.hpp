@@ -156,7 +156,7 @@ private:
   void
   SweepDelta(delta::node & deltaNode) const;
 
-  Context context_;
+  Context Context_;
 };
 
 }
