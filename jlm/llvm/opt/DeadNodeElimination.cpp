@@ -101,8 +101,10 @@ public:
   ~Statistics() override
   = default;
 
-  Statistics()
+  explicit
+  Statistics(util::filepath sourceFile)
     : util::Statistics(Statistics::Id::DeadNodeElimination),
+    SourceFile_(std::move(sourceFile)),
     NumRvsdgNodesBefore_(0),
     NumRvsdgNodesAfter_(0),
     NumInputsBefore_(0),
@@ -142,6 +144,7 @@ public:
   {
     return util::strfmt(
       "DeadNodeElimination ",
+      SourceFile_.to_str(), " ",
       "#RvsdgNodesBeforeDNE:", NumRvsdgNodesBefore_, " ",
       "#RvsdgNodesAfterDNE:", NumRvsdgNodesAfter_, " ",
       "#RvsdgInputsBeforeDNE:", NumInputsBefore_, " ",
@@ -151,12 +154,14 @@ public:
   }
 
   static std::unique_ptr<Statistics>
-  Create()
+  Create(const util::filepath & sourceFile)
   {
-    return std::make_unique<Statistics>();
+    return std::make_unique<Statistics>(sourceFile);
   }
 
 private:
+  util::filepath SourceFile_;
+
   size_t NumRvsdgNodesBefore_;
   size_t NumRvsdgNodesAfter_;
   size_t NumInputsBefore_;
@@ -192,7 +197,7 @@ DeadNodeElimination::run(
   Context_ = Context::Create();
 
   auto & rvsdg = module.Rvsdg();
-  auto statistics = Statistics::Create();
+  auto statistics = Statistics::Create(module.SourceFileName());
   statistics->StartMarkStatistics(rvsdg);
   MarkRegion(*rvsdg.root());
   statistics->StopMarkStatistics();
