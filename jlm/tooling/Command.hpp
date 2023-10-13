@@ -370,8 +370,21 @@ public:
   }
 
 private:
-  std::unique_ptr<::llvm::Module>
-  ParseLlvmIrFile(const util::filepath & llvmIrFile, ::llvm::LLVMContext & llvmContext) const;
+  std::unique_ptr<llvm::RvsdgModule>
+  ParseInputFile(
+      const util::filepath & inputFile,
+      const JlmOptCommandLineOptions::InputFormat & inputFormat,
+      util::StatisticsCollector & statisticsCollector) const;
+
+  std::unique_ptr<llvm::RvsdgModule>
+  ParseLlvmIrFile(
+      const util::filepath & llvmIrFile,
+      util::StatisticsCollector & statisticsCollector) const;
+
+  std::unique_ptr<llvm::RvsdgModule>
+  ParseMlirIrFile(
+      const util::filepath & rvsdgIrFile,
+      util::StatisticsCollector & statisticsCollector) const;
 
   static void
   PrintRvsdgModule(

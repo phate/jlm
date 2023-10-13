@@ -136,6 +136,7 @@ JlcCommandGraphGenerator::GenerateCommandGraph(const JlcCommandLineOptions & com
 
       JlmOptCommandLineOptions jlmOptCommandLineOptions(
           clangCommand->OutputFile(),
+          JlmOptCommandLineOptions::InputFormat::Llvm,
           CreateJlmOptCommandOutputFile(compilation.InputFile()),
           JlmOptCommandLineOptions::OutputFormat::Llvm,
           statisticsCollectorSettings,

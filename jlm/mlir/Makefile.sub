@@ -16,6 +16,7 @@ endif
 
 LIBMLIR_SRC = \
     jlm/mlir/backend/mlirgen.cpp \
+    jlm/mlir/frontend/rvsdggen.cpp \
 
 .PHONY: libmlir-debug
 libmlir-debug: CXXFLAGS += $(CXXFLAGS_DEBUG)

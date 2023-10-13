@@ -93,8 +93,8 @@ MLIRGen::convertSubregion(rvsdg::region & region, mlir::Block & block)
     block.addArgument(type, Builder_->getUnknownLoc());
   }
 
-  // Create an MLIR node for each RVSDG node and store each pair in a
-  // hash map for easy lookup of corresponding MLIR nodes
+  // Create an MLIR operation for each RVSDG node and store each pair in a
+  // hash map for easy lookup of corresponding MLIR operation
   std::unordered_map<rvsdg::node *, mlir::Value> nodes;
   for (rvsdg::node * rvsdgNode : rvsdg::topdown_traverser(&region))
   {
@@ -164,6 +164,7 @@ MLIRGen::convertSimpleNode(const rvsdg::simple_node & node, mlir::Block & block)
         value.to_uint(),
         value.nbits());
     block.push_back(constOp);
+
     return constOp;
   }
   else
