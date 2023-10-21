@@ -47,6 +47,7 @@ LIBLLVM_SRC = \
     jlm/llvm/opt/alias-analyses/PointsToGraph.cpp \
     jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.cpp \
     jlm/llvm/opt/alias-analyses/Steensgaard.cpp \
+    jlm/llvm/opt/alias-analyses/Andersen.cpp \
     jlm/llvm/opt/cne.cpp \
     jlm/llvm/opt/DeadNodeElimination.cpp \
     jlm/llvm/opt/inlining.cpp \
