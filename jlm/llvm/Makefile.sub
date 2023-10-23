@@ -41,13 +41,13 @@ LIBLLVM_SRC = \
     jlm/llvm/ir/variable.cpp \
     \
     jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.cpp \
+    jlm/llvm/opt/alias-analyses/Andersen.cpp \
     jlm/llvm/opt/alias-analyses/MemoryStateEncoder.cpp \
     jlm/llvm/opt/alias-analyses/Operators.cpp \
     jlm/llvm/opt/alias-analyses/Optimization.cpp \
     jlm/llvm/opt/alias-analyses/PointsToGraph.cpp \
     jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.cpp \
     jlm/llvm/opt/alias-analyses/Steensgaard.cpp \
-    jlm/llvm/opt/alias-analyses/Andersen.cpp \
     jlm/llvm/opt/cne.cpp \
     jlm/llvm/opt/DeadNodeElimination.cpp \
     jlm/llvm/opt/inlining.cpp \
