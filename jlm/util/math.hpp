@@ -12,13 +12,33 @@ namespace jlm::util
 {
 
 /**
- * Log2 for integers, rounding up when value is not a perfect power of two
+ * Log2 for integers, rounding down when value is not a perfect power of two
+ *
+ * Examples:
+ * Log2floor(4) = 2
+ * Log2floor(7) = 2
+ * Log2floor(8) = 3
  */
 template<class T>
-static inline constexpr int Log2i(T value) {
+static inline constexpr int Log2floor(T value) {
   if (value <= 1)
     return 0;
-  return 1 + Log2i(value >> 1);
+
+  return 1 + Log2floor(value >> 1);
+}
+
+/**
+ * The number of bits needed to hold the given value
+ *
+ * Examples:
+ * BitsRequiredToRepresent(0b1)   = 1
+ * BitsRequiredToRepresent(0b10)  = 2
+ * BitsRequiredToRepresent(0b100) = 3
+ * BitsRequiredToRepresent(0b111) = 3
+ */
+template<class T>
+static inline constexpr int BitsRequiredToRepresent(T value) {
+  return Log2floor(value) + 1;
 }
 
 /**
@@ -30,7 +50,9 @@ static inline constexpr int BitWidthOfEnum(T sentinelEndValue) {
   static_assert(std::is_enum<T>::value, "BitWidthOfEnum only takes enums");
 
   using UnderlyingT = std::underlying_type_t<T>;
-  return Log2i(static_cast<UnderlyingT>(sentinelEndValue));
+
+  // To appease gcc warnings, the returned bit width is large enough to hold the sentinel value as well
+  return BitsRequiredToRepresent(static_cast<UnderlyingT>(sentinelEndValue));
 }
 
 }
