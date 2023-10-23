@@ -1,77 +1,59 @@
 /*
- * Copyright 2023
+ * Copyright 2023 Håvard Krogstie <krogstie.havard@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
-#include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
-#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
+#include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/util/math.hpp>
-#include <vector>
-#include <set>
+
 #include <unordered_map>
+#include <unordered_set>
+#include <vector>
 #include <variant>
+#include <queue>
 
 namespace jlm::llvm::aa
 {
 
 enum class PointerObjectKind : uint8_t
 {
-  /*
-   * Registers represent values that are calculated once per region execution.
-   * They are the outputs of nodes, or the region's arguments.
-   * Only registers of pointer type get a PointerObject created for them.
-   * Registers can not be pointed to, only point.
-   */
+  // Registers can not be pointed to, only point.
   Register = 0,
   AllocaMemoryObject,
   MallocMemoryObject,
-
-  /*
-   * Represents global memory objects, such as global variables and thread local variables.
-   * Global variables often, but not always, escape the module through exported symbols.
-   */
+  // Represents global memory objects, such as global variables and thread local variables.
   GlobalMemoryObject,
-
-  /*
-   * Functions often, but not always, escape the module through exported symbols.
-   */
   Function,
-
-  /*
-   * Represents functions and global variables imported from other modules.
-   * Are always marked as escaping the current module.
-   */
+  // Represents functions and global variables imported from other modules.
   ImportMemoryObject,
 
   // Sentinel enum value
   COUNT
 };
-// The number of bits required to hold the integer representation of any PointerObjectKind value.
-static constexpr int BITS_NEEDED_FOR_KIND = jlm::util::BitWidthOfEnum(PointerObjectKind::COUNT);
-
-class PointerObjectSet;
-class PointerObjectConstraintSet;
 
 /**
  * Class representing a single entry in the PointerObjectSet.
  */
 class PointerObject final
 {
-  friend PointerObjectSet;
-private:
-  uint8_t Kind_ : BITS_NEEDED_FOR_KIND;
+  PointerObjectKind Kind_ : jlm::util::BitWidthOfEnum(PointerObjectKind::COUNT);
 
   // Instead of adding the special nodes *external* and *escaped*, flags are used.
   // The constraint solver knows their meaning.
   uint8_t PointsToExternal_ : 1;
   uint8_t HasEscaped_ : 1;
 
-  explicit PointerObject(PointerObjectKind kind) : Kind_(static_cast<std::underlying_type_t<PointerObjectKind>>(kind)),
-                                          PointsToExternal_(0), HasEscaped_(0) {
+public:
+  using Index = size_t;
+
+  explicit PointerObject(PointerObjectKind kind) : Kind_(kind),
+                                                   PointsToExternal_(0), HasEscaped_(0)
+  {
     JLM_ASSERT(kind != PointerObjectKind::COUNT);
 
     // Memory objects from other modules are definitely not private to this module
@@ -79,40 +61,48 @@ private:
       MarkAsEscaped();
   }
 
-public:
   PointerObjectKind
-  GetKind()
+  GetKind() const noexcept
   {
-    return static_cast<PointerObjectKind>(Kind_);
+    return Kind_;
   }
 
   bool
-  PointsToExternal()
+  PointsToExternal() const noexcept
   {
     return PointsToExternal_;
   }
 
-  void
-  PointToExternal()
+  /**
+   * Sets the PointsToExternal-flag.
+   * @return true if the PointerObject used to not point to external, before this call
+   */
+  bool
+  MarkAsPointsToExternal() noexcept
   {
+    bool modified = !PointsToExternal_;
     PointsToExternal_ = 1;
+    return modified;
   }
 
   bool
-  HasEscaped()
+  HasEscaped() const noexcept
   {
     return HasEscaped_;
   }
 
-  void
-  MarkAsEscaped()
+  /**
+   * Sets the Escaped-flag.
+   * @return true if the PointerObject used to not be marked as escaped, before this call
+   */
+  bool
+  MarkAsEscaped() noexcept
   {
+    bool modified = !HasEscaped_;
     HasEscaped_ = 1;
+    return modified;
   }
 };
-
-// We use indices, this allows up to ~4 billion pointer objects
-using PointerObjectIndex = uint32_t;
 
 /**
  * A class containing all PointerObjects, their points-to-sets,
@@ -120,67 +110,119 @@ using PointerObjectIndex = uint32_t;
  */
 class PointerObjectSet final
 {
-  // All nodes in the graph
-  std::vector<PointerObject> Nodes_;
+  // All PointerObjects in the set
+  std::vector<PointerObject> PointerObjects_;
 
-  // For each node, a set of the other nodes it points to
-  std::vector<std::set<PointerObjectIndex>> PointsToSets_;
+  // For each PointerObject, a set of the other PointerObjects it points to
+  std::vector<std::unordered_set<PointerObject::Index>> PointsToSets_;
 
   // Mapping from register to PointerObject
-  // Unlike the other maps, several rvsdg::output* can share PointerObject
-  std::unordered_map<jlm::rvsdg::output *, PointerObjectIndex> RegisterMap_;
+  // Unlike the other maps, several rvsdg::output* can share register PointerObject
+  std::unordered_map<const rvsdg::output *, PointerObject::Index> RegisterMap_;
   // Mapping from alloca node to PointerObject
-  std::unordered_map<jlm::rvsdg::node *, PointerObjectIndex> AllocaMap_;
+  std::unordered_map<const rvsdg::node *, PointerObject::Index> AllocaMap_;
   // Mapping from malloc call node to PointerObject
-  std::unordered_map<jlm::rvsdg::node *, PointerObjectIndex> MallocMap_;
+  std::unordered_map<const rvsdg::node *, PointerObject::Index> MallocMap_;
   // Mapping from global variables declared with delta nodes to PointerObject
-  std::unordered_map<jlm::llvm::delta::node *, PointerObjectIndex> GlobalMap_;
+  std::unordered_map<const delta::node *, PointerObject::Index> GlobalMap_;
   // Mapping from functions declared with lambda nodes to PointerObject
-  std::unordered_map<jlm::llvm::lambda::node *, PointerObjectIndex> FunctionMap_;
+  std::unordered_map<const lambda::node *, PointerObject::Index> FunctionMap_;
   // Mapping from symbols imported into the module to PointerObject
-  std::unordered_map<jlm::rvsdg::argument *, PointerObjectIndex> ImportMap_;
+  std::unordered_map<const rvsdg::argument *, PointerObject::Index> ImportMap_;
 
   /**
-   * Internal helper function for adding nodes, use the Create* methods instead
+   * Internal helper function for adding PointerObjects, use the Create* methods instead
    */
-  PointerObjectIndex
-  AddNode(PointerObjectKind kind)
+  PointerObject::Index
+  AddPointerObject(PointerObjectKind kind)
   {
-    Nodes_.push_back(PointerObject(kind));
+    PointerObjects_.emplace_back(kind);
     PointsToSets_.emplace_back(); // Add empty points-to-set
-    return Nodes_.size() - 1;
+    return PointerObjects_.size() - 1;
   }
 
 public:
+  PointerObject::Index
+  CreateRegisterPointerObject(const rvsdg::output & rvsdgOutput)
+  {
+    JLM_ASSERT(RegisterMap_.count(&rvsdgOutput) == 0);
+    return RegisterMap_[&rvsdgOutput] = AddPointerObject(PointerObjectKind::Register);
+  }
+
+  void
+  MapRegisterToExistingPointerObject(const rvsdg::output & rvsdgOutput, PointerObject::Index pointerObject)
+  {
+    JLM_ASSERT(RegisterMap_.count(&rvsdgOutput) == 0);
+    JLM_ASSERT(pointerObject < NumPointerObjects());
+    RegisterMap_[&rvsdgOutput] = pointerObject;
+  }
+
+  PointerObject::Index
+  CreateAllocaMemoryObject(const rvsdg::node & allocaNode)
+  {
+    JLM_ASSERT(AllocaMap_.count(&allocaNode) == 0);
+    return AllocaMap_[&allocaNode] = AddPointerObject(PointerObjectKind::AllocaMemoryObject);
+  }
+
+  PointerObject::Index
+  CreateMallocMemoryObject(const rvsdg::node & mallocNode)
+  {
+    JLM_ASSERT(MallocMap_.count(&mallocNode) == 0);
+    return MallocMap_[&mallocNode] = AddPointerObject(PointerObjectKind::MallocMemoryObject);
+  }
+
+  PointerObject::Index
+  CreateGlobalMemoryObject(const delta::node & deltaNode)
+  {
+    JLM_ASSERT(GlobalMap_.count(&deltaNode) == 0);
+    return GlobalMap_[&deltaNode] = AddPointerObject(PointerObjectKind::GlobalMemoryObject);
+  }
+
+  PointerObject::Index
+  CreateFunction(const lambda::node & lambdaNode)
+  {
+    JLM_ASSERT(FunctionMap_.count(&lambdaNode) == 0);
+    return FunctionMap_[&lambdaNode] = AddPointerObject(PointerObjectKind::Function);
+  }
+
+  PointerObject::Index
+  CreateImportMemoryObject(const rvsdg::argument & importNode)
+  {
+    JLM_ASSERT(ImportMap_.count(&importNode) == 0);
+    return ImportMap_[&importNode] = AddPointerObject(PointerObjectKind::ImportMemoryObject);
+  }
+
   PointerObject &
-  GetNode(PointerObjectIndex index)
+  GetPointerObject(PointerObject::Index index)
   {
-    JLM_ASSERT(index <= NodeCount());
-    return Nodes_[index];
+    JLM_ASSERT(index <= NumPointerObjects());
+    return PointerObjects_[index];
   }
 
-  PointerObjectIndex
-  NodeCount()
+  PointerObject::Index
+  NumPointerObjects() const noexcept
   {
-    return Nodes_.size();
+    return PointerObjects_.size();
   }
 
-  const std::set<PointerObjectIndex> &
-  GetPointsToSet(PointerObjectIndex idx)
+  const std::unordered_set<PointerObject::Index> &
+  GetPointsToSet(PointerObject::Index idx)
   {
     return PointsToSets_[idx];
   }
 
   /**
    * Adds pointee to P(pointer)
+   * @param pointer the index of the PointerObject that points
+   * @param pointee the index of the PointerObject that is pointed at
    * @return true if P(pointer) was changed by this operation
    */
   bool
-  AddToPointsToSet(PointerObjectIndex pointer, PointerObjectIndex pointee)
+  AddToPointsToSet(PointerObject::Index pointer, PointerObject::Index pointee)
   {
-    JLM_ASSERT(pointer < NodeCount());
-    JLM_ASSERT(pointee < NodeCount());
-    JLM_ASSERT(GetNode(pointee).GetKind() != PointerObjectKind::Register);
+    JLM_ASSERT(pointer < NumPointerObjects());
+    JLM_ASSERT(pointee < NumPointerObjects());
+    JLM_ASSERT(GetPointerObject(pointee).GetKind() != PointerObjectKind::Register);
 
     auto sizeBefore = PointsToSets_[pointer].size();
     PointsToSets_[pointer].insert(pointee);
@@ -190,68 +232,44 @@ public:
 
   /**
    * Makes P(superset) a superset of P(subset) by adding any elements in the set difference
-   * @return true if P(superset) was changed by this
+   * @param superset the index of the PointerObject that shall point to everything subset points to
+   * @param subset the index of the PointerObject that only points to
+   * @return true if P(superset) was modified by this operation
    */
   bool
-  MakePointsToSetSuperset(PointerObjectIndex superset, PointerObjectIndex subset)
+  MakePointsToSetSuperset(PointerObject::Index superset, PointerObject::Index subset)
   {
+    JLM_ASSERT(superset <= NumPointerObjects());
+    JLM_ASSERT(subset <= NumPointerObjects());
+
     auto& P_super = PointsToSets_[superset];
     auto& P_sub = PointsToSets_[subset];
 
+    bool modified = false;
+
     auto sizeBefore = P_super.size();
     P_super.insert(P_sub.begin(), P_sub.end());
+    modified |= P_super.size() != sizeBefore;
 
-    return P_super.size() != sizeBefore;
+    // If the external node is in the subset, it must also be part of the superset
+    if (GetPointerObject(subset).PointsToExternal())
+      modified |= GetPointerObject(superset).MarkAsPointsToExternal();
+
+    return modified;
   }
 
-  PointerObjectIndex
-  CreateRegisterNode(jlm::rvsdg::output *rvsdgOutput)
+  /**
+   * Adds the Escaped flag to all PointerObjects in the P(pointer) set
+   * @param pointer the pointer whose pointees should be marked as escaped
+   * @return true if any PointerObjects had their flag modified by this operation
+   */
+  bool
+  MarkAllPointeesAsEscaped(PointerObject::Index pointer)
   {
-    JLM_ASSERT(RegisterMap_.count(rvsdgOutput) == 0);
-    return RegisterMap_[rvsdgOutput] = AddNode(PointerObjectKind::Register);
-  }
-
-  void
-  MapRegisterToExistingNode(jlm::rvsdg::output *rvsdgOutput, PointerObjectIndex node)
-  {
-    JLM_ASSERT(RegisterMap_.count(rvsdgOutput) == 0);
-    JLM_ASSERT(node < NodeCount());
-    RegisterMap_[rvsdgOutput] = node;
-  }
-
-  PointerObjectIndex
-  CreateAllocaMemoryObject(jlm::rvsdg::node *allocaNode)
-  {
-    JLM_ASSERT(AllocaMap_.count(allocaNode) == 0);
-    return AllocaMap_[allocaNode] = AddNode(PointerObjectKind::AllocaMemoryObject);
-  }
-
-  PointerObjectIndex
-  CreateMallocMemoryObject(jlm::rvsdg::node *mallocNode)
-  {
-    JLM_ASSERT(MallocMap_.count(mallocNode) == 0);
-    return MallocMap_[mallocNode] = AddNode(PointerObjectKind::MallocMemoryObject);
-  }
-
-  PointerObjectIndex
-  CreateGlobalMemoryObject(jlm::llvm::delta::node *deltaNode)
-  {
-    JLM_ASSERT(GlobalMap_.count(deltaNode) == 0);
-    return GlobalMap_[deltaNode] = AddNode(PointerObjectKind::GlobalMemoryObject);
-  }
-
-  PointerObjectIndex
-  CreateFunction(jlm::llvm::lambda::node *lambdaNode)
-  {
-    JLM_ASSERT(FunctionMap_.count(lambdaNode) == 0);
-    return FunctionMap_[lambdaNode] = AddNode(PointerObjectKind::Function);
-  }
-
-  PointerObjectIndex
-  CreateImportMemoryObject(jlm::rvsdg::argument *importNode)
-  {
-    JLM_ASSERT(ImportMap_.count(importNode) == 0);
-    return ImportMap_[importNode] = AddNode(PointerObjectKind::ImportMemoryObject);
+    bool modified = false;
+    for (PointerObject::Index pointee : PointsToSets_[pointer])
+      modified |= GetPointerObject(pointee).MarkAsEscaped();
+    return modified;
   }
 
   /**
@@ -269,9 +287,9 @@ public:
   {
     auto pointsToGraph = PointsToGraph::Create();
 
-    // memory nodes are the nodes that can be pointed to in the PtG.
+    // memory nodes are the nodes that can be pointed to in the points-to graph.
     // This vector has the same indexing as the nodes themselves, register nodes become nullptr.
-    std::vector<PointsToGraph::MemoryNode*> memoryNodes(NodeCount());
+    std::vector<PointsToGraph::MemoryNode*> memoryNodes(NumPointerObjects());
 
     // Nodes that should point to external in the final graph.
     // They also get explicit edges connecting them to all escaped memory nodes.
@@ -302,35 +320,34 @@ public:
       memoryNodes[pointerObjectIndex] = &node;
     }
 
-    auto applyPointsToSet = [&](PointsToGraph::Node* node, PointerObjectIndex index) {
+    auto applyPointsToSet = [&](PointsToGraph::Node & node, PointerObject::Index index)
+    {
       // Add all PointsToGraph nodes who should point to external to the list
-      if (GetNode(index).PointsToExternal())
-        pointsToExternal.push_back(node);
+      if (GetPointerObject(index).PointsToExternal())
+        pointsToExternal.push_back(&node);
 
-      for (PointerObjectIndex targetIdx : PointsToSets_[index]) {
+      for (PointerObject::Index targetIdx : PointsToSets_[index]) {
         // Only add edges to memory nodes
         if (memoryNodes[targetIdx]) {
-          node->AddEdge(*memoryNodes[targetIdx]);
+          node.AddEdge(*memoryNodes[targetIdx]);
         }
       }
     };
 
-    // Now add register nodes last. This is done due to the fact that several registers can share PointerObject.
-    // While adding the register nodes, also add any edges from them to memoryNodes
+    // Now add register nodes last. While adding them, also add any edges from them to the previously created memoryNodes
     for (auto [outputNode, registerIdx] : RegisterMap_) {
       auto &registerNode = PointsToGraph::RegisterNode::Create(*pointsToGraph, *outputNode);
-      applyPointsToSet(&registerNode, registerIdx);
+      applyPointsToSet(registerNode, registerIdx);
     }
 
-    // Now add all edges from memory node to memory node
-    // Also add all escaped memory nodes to
-    for (PointerObjectIndex idx = 0; idx < NodeCount(); idx++) {
+    // Now add all edges from memory node to memory node. Also tracks which memory nodes are marked as escaped
+    for (PointerObject::Index idx = 0; idx < NumPointerObjects(); idx++) {
       if (memoryNodes[idx] == nullptr)
         continue; // Skip all nodes that are not MemoryNodes
 
-      applyPointsToSet(memoryNodes[idx], idx);
+      applyPointsToSet(*memoryNodes[idx], idx);
 
-      if (GetNode(idx).HasEscaped())
+      if (GetPointerObject(idx).HasEscaped())
         escapedMemoryNodes.push_back(memoryNodes[idx]);
     }
 
@@ -352,12 +369,14 @@ public:
  * for all x in P(pointer1), make P(x) a superset of P(pointer2)
  * Example of application is a store, e.g. when *pointer1 = pointer2
  */
-class AllPointeesPointToSupersetConstraint final {
-  PointerObjectIndex Pointer1_;
-  PointerObjectIndex Pointer2_;
+class AllPointeesPointToSupersetConstraint final
+{
+  PointerObject::Index Pointer1_;
+  PointerObject::Index Pointer2_;
 
 public:
-  AllPointeesPointToSupersetConstraint(PointerObjectIndex pointer1, PointerObjectIndex pointer2)
+  AllPointeesPointToSupersetConstraint(
+          PointerObject::Index pointer1, PointerObject::Index pointer2)
           : Pointer1_(pointer1), Pointer2_(pointer2) {}
 
   bool
@@ -365,11 +384,14 @@ public:
   {
     bool modified = false;
 
-    for (PointerObjectIndex x : set.GetPointsToSet(Pointer1_)) {
+    for (PointerObject::Index x : set.GetPointsToSet(Pointer1_)) {
       modified |= set.MakePointsToSetSuperset(x, Pointer2_);
     }
 
-    // TODO: external and escaped flag stuff
+    // If external in P(Pointer1_), P(external) should become a superset of P(Pointer2)
+    // In practice, this means everything in P(Pointer2) escapes
+    if (set.GetPointerObject(Pointer1_).PointsToExternal())
+      modified |= set.MarkAllPointeesAsEscaped(Pointer2_);
 
     return modified;
   }
@@ -377,15 +399,17 @@ public:
 
 /**
  * A constraint of the form:
- * P(loaded) = union of P(x) for all x in P(pointer)
+ * P(loaded) is a superset of P(x) for all x in P(pointer)
  * Example of application is a load, e.g. when loaded = *pointer
  */
-class SupersetOfAllPointeesConstraint final {
-  PointerObjectIndex Loaded_;
-  PointerObjectIndex Pointer_;
+class SupersetOfAllPointeesConstraint final
+{
+  PointerObject::Index Loaded_;
+  PointerObject::Index Pointer_;
 
 public:
-  SupersetOfAllPointeesConstraint(PointerObjectIndex loaded, PointerObjectIndex pointer)
+  SupersetOfAllPointeesConstraint(
+          PointerObject::Index loaded, PointerObject::Index pointer)
           : Loaded_(loaded), Pointer_(pointer) {}
 
   bool
@@ -393,46 +417,59 @@ public:
   {
     bool modified = false;
 
-    for (PointerObjectIndex x : set.GetPointsToSet(Pointer_)) {
+    for (PointerObject::Index x : set.GetPointsToSet(Pointer_)) {
       modified |= set.MakePointsToSetSuperset(Loaded_, x);
     }
 
-    // TODO: external and escaped flag stuff
+    // Handling pointing to external is done by MakePointsToSetSuperset,
+    // Propagating escaped status is handled by different constraints
 
     return modified;
   }
 };
 
-using ConstraintVariant = std::variant<AllPointeesPointToSupersetConstraint, SupersetOfAllPointeesConstraint>;
-
 /**
- * A class for adding and applying constraints to the points-to-sets of the PointerObjectSet
- * Some constraints are applied immediately, while others are kept in lists for later constraint solving.
+ * A class for adding and applying constraints to the points-to-sets of the PointerObjectSet.
+ * Unlike the set modification methods on PointerObjectSet, constraints can be added in any order, with the same result.
  * Use Solve() to calculate the final points-to-sets.
  *
- * Constraints on the special external and escaped nodes are built in.
+ * Constraints on the special nodes, external and escaped, are built in.
  */
 class PointerObjectConstraintSet final
 {
 public:
+  using ConstraintVariant = std::variant<AllPointeesPointToSupersetConstraint, SupersetOfAllPointeesConstraint>;
+
   explicit PointerObjectConstraintSet(PointerObjectSet& set) : Set_(set) {}
 
   PointerObjectConstraintSet(const PointerObjectConstraintSet& other) = delete;
 
+  PointerObjectConstraintSet(PointerObjectConstraintSet&& other) = delete;
+
   PointerObjectConstraintSet&
   operator =(const PointerObjectConstraintSet& other) = delete;
+
+  PointerObjectConstraintSet&
+  operator =(PointerObjectConstraintSet&& other) = delete;
 
   /**
    * The simplest constraint, on the form: pointee in P(pointer)
    */
   void
-  AddPointerPointeeConstraint(PointerObjectIndex pointer, PointerObjectIndex pointee)
+  AddPointerPointeeConstraint(PointerObject::Index pointer, PointerObject::Index pointee)
   {
-    JLM_ASSERT(pointer <= Set_.NodeCount());
-    JLM_ASSERT(pointee <= Set_.NodeCount());
-
     // All set constraints are additive, so simple constraints like this can be directly applied and forgotten.
     Set_.AddToPointsToSet(pointer, pointee);
+  }
+
+  void
+  AddRegisterContentEscapedConstraint(PointerObject::Index registerIndex)
+  {
+    // Registers themselves can't really escape, since they don't have an address
+    // We can however mark it as escaped, and let escape flag propagation ensure everything it ever points to is marked.
+    auto& registerPointerObject = Set_.GetPointerObject(registerIndex);
+    JLM_ASSERT(registerPointerObject.GetKind() == PointerObjectKind::Register);
+    registerPointerObject.MarkAsEscaped();
   }
 
   void
@@ -445,15 +482,53 @@ public:
    * Iterates over and applies constraints until the all points-to-sets satisfy them
    */
   void
-  Solve();
+  Solve() {
+    // Keep applying constraints until no sets are modified
+    bool modified = true;
+
+    while (modified) {
+      modified = false;
+
+      for (auto& constraint : Constraints_)
+        std::visit([&](auto constraint) {
+          modified |= constraint.Apply(Set_);
+        }, constraint);
+
+      modified |= PropagateEscapedFlag();
+    }
+  }
 
 private:
 
-  /**
-   * Internal function used to implement the constraints on flags
-   */
   bool
-  ApplyEscapedFlagPropagation();
+  PropagateEscapedFlag()
+  {
+    bool modified = false;
+
+    std::queue<PointerObject::Index> escapers;
+
+    // First add all already escaped PointerObjects to the queue
+    for (PointerObject::Index idx = 0; idx < Set_.NumPointerObjects(); idx++) {
+      if (Set_.GetPointerObject(idx).HasEscaped())
+        escapers.push(idx);
+    }
+
+    // For all escapers, check if they point to any PointerObjects not marked as escaped
+    while (!escapers.empty()) {
+      PointerObject::Index escaper = escapers.front();
+      escapers.pop();
+
+      for (PointerObject::Index pointee : Set_.GetPointsToSet(escaper)) {
+        if (Set_.GetPointerObject(pointee).MarkAsEscaped()) {
+          // Add the newly marked PointerObject to the queue, in case the flag can be propagated further
+          escapers.push(pointee);
+          modified = true;
+        }
+      }
+    }
+
+    return modified;
+  }
 
   // The PointerObjectSet being built upon
   PointerObjectSet& Set_;
@@ -461,44 +536,6 @@ private:
   // Lists of all constraints, of all different types
   std::vector<ConstraintVariant> Constraints_;
 };
-
-void
-PointerObjectConstraintSet::Solve()
-{
-  // Keep applying constraints until no sets are modified
-  bool modified = true;
-  while (modified) {
-    modified = false;
-
-    for (auto& constraint : Constraints_)
-      std::visit([&](auto constraint) {
-        modified |= constraint.Apply(Set_);
-      }, constraint);
-
-    modified |= ApplyEscapedFlagPropagation();
-  }
-}
-
-bool
-PointerObjectConstraintSet::ApplyEscapedFlagPropagation()
-{
-  // This function only applies one iteration of escape flag propagation, so it might need to be run again
-  bool modified = false;
-
-  for (PointerObjectIndex idx = 0; idx < Set_.NodeCount(); idx++)
-  {
-    if (!Set_.GetNode(idx).HasEscaped())
-      continue;
-
-    for (PointerObjectIndex pointee : Set_.GetPointsToSet(idx)) {
-      auto& pointeeNode = Set_.GetNode(pointee);
-      modified |= !pointeeNode.HasEscaped();
-      pointeeNode.MarkAsEscaped();
-    }
-  }
-
-  return modified;
-}
 
 std::unique_ptr<PointsToGraph>
 Andersen::Analyze(const RvsdgModule &module, jlm::util::StatisticsCollector &statisticsCollector)
@@ -508,7 +545,12 @@ Andersen::Analyze(const RvsdgModule &module, jlm::util::StatisticsCollector &sta
 
   AnalyzeRvsdg(module.Rvsdg());
 
-  return Set_->ConstructPointsToGraph();
+  auto result = Set_->ConstructPointsToGraph();
+
+  Constraints_.reset();
+  Set_.reset();
+
+  return result;
 }
 
 }

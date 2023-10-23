@@ -1,11 +1,17 @@
+/*
+ * Copyright 2023 Håvard Krogstie <krogstie.havard@gmail.com>
+ * See COPYING for terms of redistribution.
+ */
+
 #ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_ANDERSEN_HPP
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_ANDERSEN_HPP
 
-#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
 
-namespace jlm::llvm::aa {
+namespace jlm::llvm::aa
+{
 
 class PointerObjectSet;
 class PointerObjectConstraintSet;

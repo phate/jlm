@@ -1,4 +1,7 @@
-
+/*
+ * Copyright 2023 Håvard Krogstie <krogstie.havard@gmail.com>
+ * See COPYING for terms of redistribution.
+ */
 
 #ifndef JLM_UTIL_MATH_HPP
 #define JLM_UTIL_MATH_HPP
