@@ -9,15 +9,13 @@
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
+#include <jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp>
 
 namespace jlm::llvm::aa
 {
 
-class PointerObjectSet;
-class PointerObjectConstraintSet;
-
 /**
-  * This class implements Andersen's set constraint based alias analysis.
+  * class implementing Andersen's set constraint based alias analysis.
   * The analysis is inter-procedural, field-insensitive,
   * context-insensitive, flow-insensitive, and uses a static heap model.
   */
@@ -43,6 +41,9 @@ public:
 	Analyze(
     const RvsdgModule & module,
     jlm::util::StatisticsCollector & statisticsCollector) override;
+
+  static std::unique_ptr<PointsToGraph>
+  ConstructPointsToGraphFromPointerObjectSet(const PointerObjectSet& set);
 
 private:
   void
