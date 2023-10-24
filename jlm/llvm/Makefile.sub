@@ -45,6 +45,7 @@ LIBLLVM_SRC = \
     jlm/llvm/opt/alias-analyses/MemoryStateEncoder.cpp \
     jlm/llvm/opt/alias-analyses/Operators.cpp \
     jlm/llvm/opt/alias-analyses/Optimization.cpp \
+    jlm/llvm/opt/alias-analyses/PointerObjectSet.cpp \
     jlm/llvm/opt/alias-analyses/PointsToGraph.cpp \
     jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.cpp \
     jlm/llvm/opt/alias-analyses/Steensgaard.cpp \
