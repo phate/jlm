@@ -4,8 +4,8 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Phi.hpp>
-#include <jlm/rvsdg/substitution.hpp>
 
 namespace jlm::llvm
 {
@@ -89,6 +89,32 @@ node::copy(
   }
 
   return pb.end();
+}
+
+std::vector<lambda::node*>
+node::ExtractLambdaNodes(const phi::node & phiNode)
+{
+  std::function<void(const phi::node&, std::vector<lambda::node*>&)> extractLambdaNodes = [&](
+    auto & phiNode,
+    auto & lambdaNodes)
+  {
+    for (auto & node : phiNode.subregion()->nodes)
+    {
+      if (auto lambdaNode = dynamic_cast<lambda::node*>(&node))
+      {
+        lambdaNodes.push_back(lambdaNode);
+      }
+      else if (auto innerPhiNode = dynamic_cast<const phi::node*>(&node))
+      {
+        extractLambdaNodes(*innerPhiNode, lambdaNodes);
+      }
+    }
+  };
+
+  std::vector<lambda::node*> lambdaNodes;
+  extractLambdaNodes(phiNode, lambdaNodes);
+
+  return lambdaNodes;
 }
 
 /* phi builder class */
