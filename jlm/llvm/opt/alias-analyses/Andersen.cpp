@@ -9,7 +9,7 @@
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/rvsdg/node.hpp>
-#include <jlm/util/math.hpp>
+#include <jlm/util/Math.hpp>
 
 #include <unordered_map>
 #include <unordered_set>
