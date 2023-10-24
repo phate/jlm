@@ -4,4 +4,5 @@ TESTS += \
     jlm/util/test-intrusive-hash \
     jlm/util/test-intrusive-list \
     jlm/util/TestHashSet \
+    jlm/util/TestMath \
     jlm/util/TestStatistics \
