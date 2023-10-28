@@ -38,10 +38,10 @@ debug: jlm-debug check
 .PHONY: check
 check: jlm-check
 
-.PHONY: check-ctets
+.PHONY: check-ctests
 check-ctests: jlm-check-ctests
 
-.PHONY: check-utets
+.PHONY: check-utests
 check-utests: jlm-check-utests
 
 .PHONY: valgrind-check
