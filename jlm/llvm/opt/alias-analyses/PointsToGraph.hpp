@@ -395,6 +395,16 @@ public:
   void
   RemoveEdge(PointsToGraph::MemoryNode & target);
 
+  template <class T> static bool
+  Is(const Node & node)
+  {
+    static_assert(
+      std::is_base_of<Node, T>::value,
+      "Template parameter T must be derived from PointsToGraph::Node.");
+
+    return dynamic_cast<const T*>(&node) != nullptr;
+  }
+
 private:
   PointsToGraph * PointsToGraph_;
   std::unordered_set<PointsToGraph::MemoryNode*> Targets_;
