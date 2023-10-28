@@ -8,6 +8,8 @@
 
 #include <jlm/util/common.hpp>
 
+#include <filesystem>
+#include <random>
 #include <string>
 
 namespace jlm::util
@@ -138,6 +140,40 @@ public:
 		return path_.substr(0, pos+1);
 	}
 
+  /**
+   * \brief Determines whether the filepath exists
+   *
+   * @return True if the filepath exists, otherwise false.
+   */
+  [[nodiscard]] bool
+  Exists() const noexcept
+  {
+    auto fileStatus = std::filesystem::status(path_);
+    return std::filesystem::exists(fileStatus);
+  }
+
+  /** \brief Determines whether filepath is a directory.
+   *
+   * @return True if the filepath is a directory, otherwise false.
+   */
+  [[nodiscard]] bool
+  IsDirectory() const noexcept
+  {
+    auto fileStatus = std::filesystem::status(path_);
+    return std::filesystem::is_directory(fileStatus);
+  }
+
+  /** \brief Determines whether filepath is a file.
+   *
+   * @return True if the filepath is a file, otherwise false.
+   */
+  [[nodiscard]] bool
+  IsFile() const noexcept
+  {
+    auto fileStatus = std::filesystem::status(path_);
+    return std::filesystem::is_regular_file(fileStatus);
+  }
+
 	inline std::string
 	to_str() const noexcept
 	{
@@ -156,7 +192,48 @@ public:
 		return path_ == f;
 	}
 
+  /** \brief Generates a unique file in a given \p directory with a prefix and suffix.
+   *
+   * @param directory The directory in which the file is created.
+   * @param fileNamePrefix The file name prefix.
+   * @param fileNameSuffix The file name suffix.
+   *
+   * @return A unique file
+   */
+  static jlm::util::filepath
+  CreateUniqueFile(
+    const jlm::util::filepath & directory,
+    const std::string & fileNamePrefix,
+    const std::string & fileNameSuffix)
+  {
+    JLM_ASSERT(directory.Exists() && directory.IsDirectory());
+
+    auto randomString = CreateRandomString(6);
+    filepath filePath(directory.to_str() + "/" + fileNamePrefix + randomString + fileNameSuffix);
+
+    JLM_ASSERT(!filePath.Exists());
+    return filePath;
+  }
+
 private:
+  static std::string
+  CreateRandomString(std::size_t length)
+  {
+    const std::string characterSet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+    std::random_device random_device;
+    std::mt19937 generator(random_device());
+    std::uniform_int_distribution<> distribution(0, characterSet.size() - 1);
+
+    std::string result;
+    for (std::size_t i = 0; i < length; ++i)
+    {
+      result += characterSet[distribution(generator)];
+    }
+
+    return result;
+  }
+
 	std::string path_;
 };
 

@@ -46,10 +46,11 @@ public:
   [[nodiscard]] std::string
   ToString() const override
   {
-    return jlm::util::strfmt("BasicEncoderEncoding ",
-                  SourceFile_.to_str(), " ",
-                  "#RvsdgNodes:", NumNodesBefore_, " ",
-                  "Time[ns]:", Timer_.ns());
+    return jlm::util::strfmt(
+      "MemoryStateEncoder ",
+      SourceFile_.to_str(), " ",
+      "#RvsdgNodes:", NumNodesBefore_, " ",
+      "Time[ns]:", Timer_.ns());
   }
 
   static std::unique_ptr<EncodingStatistics>
@@ -473,9 +474,10 @@ MemoryStateEncoder::Encode(
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
-  /*
-   * Remove all nodes that became dead throughout the encoding.
-   */
+  // Discard internal state to free up memory after we are done with the encoding
+  Context_.reset();
+
+  // Remove all nodes that became dead throughout the encoding.
   DeadNodeElimination deadNodeElimination;
   deadNodeElimination.run(rvsdgModule, statisticsCollector);
 }
