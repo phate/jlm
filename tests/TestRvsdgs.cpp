@@ -123,7 +123,7 @@ LoadTest1::SetupRvsdg()
   PointerType pointerType;
   FunctionType fcttype({&pointerType, &mt}, {&jlm::rvsdg::bit32, &mt});
 
-  auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto module = RvsdgModule::Create(jlm::util::filepath("LoadTest1.c"), "", "");
   auto graph = &module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
@@ -334,7 +334,7 @@ Bits2PtrTest::SetupRvsdg()
   auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);
 
-  auto SetupBit2PtrFunction = [&]()
+  auto setupBit2PtrFunction = [&]()
   {
     PointerType pt;
     iostatetype iOStateType;
@@ -358,10 +358,12 @@ Bits2PtrTest::SetupRvsdg()
 
     lambda->finalize({cast, iOStateArgument, memoryStateArgument, loopStateArgument});
 
-    return std::make_tuple(lambda, jlm::rvsdg::node_output::node(cast));
+    return std::make_tuple(
+      lambda,
+      jlm::rvsdg::node_output::node(cast));
   };
 
-  auto SetupTestFunction = [&](lambda::output * b2p)
+  auto setupTestFunction = [&](lambda::output * b2p)
   {
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
@@ -390,21 +392,21 @@ Bits2PtrTest::SetupRvsdg()
     lambda->finalize({callResults[1], callResults[2], callResults[3]});
     graph->add_export(lambda->output(), {PointerType(), "testfct"});
 
-    return std::make_tuple(lambda, jlm::rvsdg::node_output::node(callResults[0]));
+    return std::make_tuple(
+      lambda,
+      util::AssertedCast<CallNode>(rvsdg::node_output::node(callResults[0])));
   };
 
-  auto [bits2ptrFunction, castNode] = SetupBit2PtrFunction();
-  auto [testfct, callNode] = SetupTestFunction(bits2ptrFunction->output());
+  auto [lambdaBits2Ptr, bitsToPtrNode] = setupBit2PtrFunction();
+  auto [lambdaTest, callNode] = setupTestFunction(lambdaBits2Ptr->output());
 
-  /*
-   * Assign nodes
-   */
-  this->lambda_bits2ptr = bits2ptrFunction;
-  this->lambda_test = testfct;
+  // Assign nodes
+  this->LambdaBits2Ptr_ = lambdaBits2Ptr;
+  this->LambdaTest_ = lambdaTest;
 
-  this->bits2ptr = castNode;
+  this->BitsToPtrNode_ = bitsToPtrNode;
 
-  this->call = callNode;
+  this->CallNode_ = callNode;
 
   return module;
 }
