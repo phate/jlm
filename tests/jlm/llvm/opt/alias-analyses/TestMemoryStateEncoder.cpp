@@ -17,34 +17,6 @@
 
 #include <iostream>
 
-static void
-UnlinkUnknownMemoryNode(jlm::llvm::aa::PointsToGraph & pointsToGraph)
-{
-  std::vector<jlm::llvm::aa::PointsToGraph::Node*> memoryNodes;
-  for (auto & allocaNode : pointsToGraph.AllocaNodes())
-    memoryNodes.push_back(&allocaNode);
-
-  for (auto & deltaNode : pointsToGraph.DeltaNodes())
-    memoryNodes.push_back(&deltaNode);
-
-  for (auto & lambdaNode : pointsToGraph.LambdaNodes())
-    memoryNodes.push_back(&lambdaNode);
-
-  for (auto & mallocNode : pointsToGraph.MallocNodes())
-    memoryNodes.push_back(&mallocNode);
-
-  for (auto & node : pointsToGraph.ImportNodes())
-    memoryNodes.push_back(&node);
-
-  auto & unknownMemoryNode = pointsToGraph.GetUnknownMemoryNode();
-  while (unknownMemoryNode.NumSources() != 0) {
-    auto & source = *unknownMemoryNode.Sources().begin();
-    for (auto & memoryNode : memoryNodes)
-      source.AddEdge(*dynamic_cast<jlm::llvm::aa::PointsToGraph::MemoryNode *>(memoryNode));
-    source.RemoveEdge(unknownMemoryNode);
-  }
-};
-
 template <class Test, class Analysis, class Provider> static void
 ValidateTest(std::function<void(const Test&)> validateEncoding)
 {
@@ -69,8 +41,6 @@ ValidateTest(std::function<void(const Test&)> validateEncoding)
   Analysis aliasAnalysis;
   auto pointsToGraph = aliasAnalysis.Analyze(rvsdgModule, statisticsCollector);
   std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
-
-  UnlinkUnknownMemoryNode(*pointsToGraph);
 
   auto provisioning = Provider::Create(rvsdgModule, *pointsToGraph);
 

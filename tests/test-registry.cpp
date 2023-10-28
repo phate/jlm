@@ -12,7 +12,8 @@
 namespace jlm::tests
 {
 
-class unit_test {
+class unit_test
+{
 public:
 	unit_test(int (*v)())
 	: verify(v)
@@ -21,20 +22,25 @@ public:
 	int (*verify)();
 };
 
-static std::unordered_map<std::string, std::unique_ptr<unit_test>> unit_test_map;
+static std::unordered_map<std::string, std::unique_ptr<unit_test>> &
+GetUnitTestMap()
+{
+	static std::unordered_map<std::string, std::unique_ptr<unit_test>> unit_test_map;
+	return unit_test_map;
+}
 
 void
 register_unit_test(const std::string & name, int (*verify)())
 {
-	assert(unit_test_map.find(name) == unit_test_map.end());
-	unit_test_map.insert(std::make_pair(name,std::make_unique<unit_test>(verify)));
+	assert(GetUnitTestMap().find(name) == GetUnitTestMap().end());
+	GetUnitTestMap().insert(std::make_pair(name,std::make_unique<unit_test>(verify)));
 }
 
 int
 run_unit_test(const std::string & name)
 {
-	assert(unit_test_map.find(name) != unit_test_map.end());
-	return unit_test_map[name]->verify();
+	assert(GetUnitTestMap().find(name) != GetUnitTestMap().end());
+	return GetUnitTestMap()[name]->verify();
 }
 
 }
