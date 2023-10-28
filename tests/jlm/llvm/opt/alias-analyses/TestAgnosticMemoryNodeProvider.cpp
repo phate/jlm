@@ -821,9 +821,7 @@ TestMemcpy()
 static void
 TestStatistics()
 {
-  /*
-   * Arrange
-   */
+   // Arrange
   jlm::tests::LoadTest1 test;
   jlm::util::filepath filePath("/tmp/TestStatistics");
   auto pointsToGraph = RunSteensgaard(test.module());
@@ -833,22 +831,19 @@ TestStatistics()
     {jlm::util::Statistics::Id::MemoryNodeProvisioning});
   jlm::util::StatisticsCollector statisticsCollector(statisticsCollectorSettings);
 
-  /*
-   * Act
-   */
+   // Act
   jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(
     test.module(),
     *pointsToGraph,
     statisticsCollector);
 
-  /*
-   * Assert
-   */
+   // Assert
   assert(statisticsCollector.NumCollectedStatistics() == 1);
 
   auto & statistics = dynamic_cast<const jlm::llvm::aa::AgnosticMemoryNodeProvider::Statistics&>(
     *statisticsCollector.CollectedStatistics().begin());
 
+  assert(statistics.GetSourceFile() == test.module().SourceFileName());
   assert(statistics.NumPointsToGraphMemoryNodes() == 2);
   assert(statistics.GetTime() != 0);
 }
