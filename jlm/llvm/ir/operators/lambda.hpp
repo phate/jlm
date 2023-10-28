@@ -691,16 +691,6 @@ public:
     , OtherUsers_(std::move(otherUsers))
   {}
 
-  CallSummary(const CallSummary&) = delete;
-
-  CallSummary(CallSummary&&) noexcept = delete;
-
-  CallSummary&
-  operator=(const CallSummary&) = delete;
-
-  CallSummary&
-  operator=(CallSummary&&) noexcept = delete;
-
   /**
    * Determines whether the lambda is dead.
    *
