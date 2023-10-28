@@ -98,11 +98,11 @@ AgnosticMemoryNodeProvider::~AgnosticMemoryNodeProvider()
 
 std::unique_ptr<MemoryNodeProvisioning>
 AgnosticMemoryNodeProvider::ProvisionMemoryNodes(
-  const RvsdgModule&,
+  const RvsdgModule & rvsdgModule,
   const PointsToGraph & pointsToGraph,
   util::StatisticsCollector& statisticsCollector)
 {
-  auto statistics = Statistics::Create(statisticsCollector, pointsToGraph);
+  auto statistics = Statistics::Create(rvsdgModule.SourceFileName(), statisticsCollector, pointsToGraph);
   statistics->StartCollecting();
 
   util::HashSet<const PointsToGraph::MemoryNode*> memoryNodes;

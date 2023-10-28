@@ -113,29 +113,29 @@ JlmOptCommandLineOptions::GetOptimizations() const noexcept
 }
 
 JlmOptCommandLineOptions::OptimizationId
-JlmOptCommandLineOptions::FromCommandLineArgument(const std::string& commandLineArgument)
+JlmOptCommandLineOptions::FromCommandLineArgumentToOptimizationId(const std::string& commandLineArgument)
 {
   static std::unordered_map<std::string, OptimizationId> map(
     {
-      {AaSteensgaardAgnosticCommandLineArgument_,           OptimizationId::AASteensgaardAgnostic},
-      {AaSteensgaardRegionAwareCommandLineArgument_,        OptimizationId::AASteensgaardRegionAware},
-      {CommonNodeEliminationCommandLineArgument_,           OptimizationId::CommonNodeElimination},
-      {CommonNodeEliminationDeprecatedCommandLineArgument_, OptimizationId::cne},
-      {DeadNodeEliminationCommandLineArgument_,             OptimizationId::DeadNodeElimination},
-      {DeadNodeEliminationDeprecatedCommandLineArgument_,   OptimizationId::dne},
-      {FunctionInliningCommandLineArgument_,                OptimizationId::FunctionInlining},
-      {FunctionInliningDeprecatedCommandLineArgument_,      OptimizationId::iln},
-      {InvariantValueRedirectionCommandLineArgument_,       OptimizationId::InvariantValueRedirection},
-      {NodePushOutCommandLineArgument_,                     OptimizationId::NodePushOut},
-      {NodePushOutDeprecatedCommandLineArgument_,           OptimizationId::psh},
-      {NodePullInCommandLineArgument_,                      OptimizationId::NodePullIn},
-      {NodePullInDeprecatedCommandLineArgument_,            OptimizationId::pll},
-      {NodeReductionCommandLineArgument_,                   OptimizationId::NodeReduction},
-      {NodeReductionDeprecatedCommandLineArgument_,         OptimizationId::red},
-      {ThetaGammaInversionCommandLineArgument_,             OptimizationId::ThetaGammaInversion},
-      {ThetaGammaInversionDeprecatedCommandLineArgument_,   OptimizationId::ivt},
-      {LoopUnrollingCommandLineArgument_,                   OptimizationId::LoopUnrolling},
-      {LoopUnrollingDeprecatedCommandLineArgument_,         OptimizationId::url}
+      {OptimizationCommandLineArgument::AaSteensgaardAgnostic_,           OptimizationId::AASteensgaardAgnostic},
+      {OptimizationCommandLineArgument::AaSteensgaardRegionAware_,        OptimizationId::AASteensgaardRegionAware},
+      {OptimizationCommandLineArgument::CommonNodeElimination_,           OptimizationId::CommonNodeElimination},
+      {OptimizationCommandLineArgument::CommonNodeEliminationDeprecated_, OptimizationId::cne},
+      {OptimizationCommandLineArgument::DeadNodeElimination_,             OptimizationId::DeadNodeElimination},
+      {OptimizationCommandLineArgument::DeadNodeEliminationDeprecated_,   OptimizationId::dne},
+      {OptimizationCommandLineArgument::FunctionInlining_,                OptimizationId::FunctionInlining},
+      {OptimizationCommandLineArgument::FunctionInliningDeprecated_,      OptimizationId::iln},
+      {OptimizationCommandLineArgument::InvariantValueRedirection_,       OptimizationId::InvariantValueRedirection},
+      {OptimizationCommandLineArgument::NodePushOut_,                     OptimizationId::NodePushOut},
+      {OptimizationCommandLineArgument::NodePushOutDeprecated_,           OptimizationId::psh},
+      {OptimizationCommandLineArgument::NodePullIn_,                      OptimizationId::NodePullIn},
+      {OptimizationCommandLineArgument::NodePullInDeprecated_,            OptimizationId::pll},
+      {OptimizationCommandLineArgument::NodeReduction_,                   OptimizationId::NodeReduction},
+      {OptimizationCommandLineArgument::NodeReductionDeprecated_,         OptimizationId::red},
+      {OptimizationCommandLineArgument::ThetaGammaInversion_,             OptimizationId::ThetaGammaInversion},
+      {OptimizationCommandLineArgument::ThetaGammaInversionDeprecated_,   OptimizationId::ivt},
+      {OptimizationCommandLineArgument::LoopUnrolling_,                   OptimizationId::LoopUnrolling},
+      {OptimizationCommandLineArgument::LoopUnrollingDeprecated_,         OptimizationId::url}
     });
 
   if (map.find(commandLineArgument) != map.end())
@@ -149,31 +149,97 @@ JlmOptCommandLineOptions::ToCommandLineArgument(OptimizationId optimizationId)
 {
   static std::unordered_map<OptimizationId, const char*> map(
     {
-      {OptimizationId::AASteensgaardAgnostic,     AaSteensgaardAgnosticCommandLineArgument_},
-      {OptimizationId::AASteensgaardRegionAware,  AaSteensgaardRegionAwareCommandLineArgument_},
-      {OptimizationId::cne,                       CommonNodeEliminationDeprecatedCommandLineArgument_},
-      {OptimizationId::CommonNodeElimination,     CommonNodeEliminationCommandLineArgument_},
-      {OptimizationId::DeadNodeElimination,       DeadNodeEliminationCommandLineArgument_},
-      {OptimizationId::dne,                       DeadNodeEliminationDeprecatedCommandLineArgument_},
-      {OptimizationId::FunctionInlining,          FunctionInliningCommandLineArgument_},
-      {OptimizationId::iln,                       FunctionInliningDeprecatedCommandLineArgument_},
-      {OptimizationId::InvariantValueRedirection, InvariantValueRedirectionCommandLineArgument_},
-      {OptimizationId::LoopUnrolling,             LoopUnrollingCommandLineArgument_},
-      {OptimizationId::NodePullIn,                NodePullInCommandLineArgument_},
-      {OptimizationId::NodePushOut,               NodePushOutCommandLineArgument_},
-      {OptimizationId::NodeReduction,             NodeReductionCommandLineArgument_},
-      {OptimizationId::psh,                       NodePushOutDeprecatedCommandLineArgument_},
-      {OptimizationId::pll,                       NodePullInDeprecatedCommandLineArgument_},
-      {OptimizationId::red,                       NodeReductionDeprecatedCommandLineArgument_},
-      {OptimizationId::ivt,                       ThetaGammaInversionDeprecatedCommandLineArgument_},
-      {OptimizationId::url,                       LoopUnrollingDeprecatedCommandLineArgument_},
-      {OptimizationId::ThetaGammaInversion,       ThetaGammaInversionCommandLineArgument_}
+      {OptimizationId::AASteensgaardAgnostic,     OptimizationCommandLineArgument::AaSteensgaardAgnostic_},
+      {OptimizationId::AASteensgaardRegionAware,  OptimizationCommandLineArgument::AaSteensgaardRegionAware_},
+      {OptimizationId::cne,                       OptimizationCommandLineArgument::CommonNodeEliminationDeprecated_},
+      {OptimizationId::CommonNodeElimination,     OptimizationCommandLineArgument::CommonNodeElimination_},
+      {OptimizationId::DeadNodeElimination,       OptimizationCommandLineArgument::DeadNodeElimination_},
+      {OptimizationId::dne,                       OptimizationCommandLineArgument::DeadNodeEliminationDeprecated_},
+      {OptimizationId::FunctionInlining,          OptimizationCommandLineArgument::FunctionInlining_},
+      {OptimizationId::iln,                       OptimizationCommandLineArgument::FunctionInliningDeprecated_},
+      {OptimizationId::InvariantValueRedirection, OptimizationCommandLineArgument::InvariantValueRedirection_},
+      {OptimizationId::LoopUnrolling,             OptimizationCommandLineArgument::LoopUnrolling_},
+      {OptimizationId::NodePullIn,                OptimizationCommandLineArgument::NodePullIn_},
+      {OptimizationId::NodePushOut,               OptimizationCommandLineArgument::NodePushOut_},
+      {OptimizationId::NodeReduction,             OptimizationCommandLineArgument::NodeReduction_},
+      {OptimizationId::psh,                       OptimizationCommandLineArgument::NodePushOutDeprecated_},
+      {OptimizationId::pll,                       OptimizationCommandLineArgument::NodePullInDeprecated_},
+      {OptimizationId::red,                       OptimizationCommandLineArgument::NodeReductionDeprecated_},
+      {OptimizationId::ivt,                       OptimizationCommandLineArgument::ThetaGammaInversionDeprecated_},
+      {OptimizationId::url,                       OptimizationCommandLineArgument::LoopUnrollingDeprecated_},
+      {OptimizationId::ThetaGammaInversion,       OptimizationCommandLineArgument::ThetaGammaInversion_}
     });
 
   if (map.find(optimizationId) != map.end())
     return map[optimizationId];
 
   throw util::error("Unknown optimization identifier");
+}
+
+util::Statistics::Id
+JlmOptCommandLineOptions::FromCommandLineArgumentToStatisticsId(const std::string& commandLineArgument)
+{
+  static std::unordered_map<std::string, util::Statistics::Id> map(
+    {
+      {StatisticsCommandLineArgument::Aggregation_,               util::Statistics::Id::Aggregation},
+      {StatisticsCommandLineArgument::BasicEncoderEncoding_,      util::Statistics::Id::BasicEncoderEncoding},
+      {StatisticsCommandLineArgument::Annotation_,                util::Statistics::Id::Annotation},
+      {StatisticsCommandLineArgument::CommonNodeElimination_,     util::Statistics::Id::CommonNodeElimination},
+      {StatisticsCommandLineArgument::ControlFlowRecovery_,       util::Statistics::Id::ControlFlowRecovery},
+      {StatisticsCommandLineArgument::DataNodeToDelta_,           util::Statistics::Id::DataNodeToDelta},
+      {StatisticsCommandLineArgument::DeadNodeElimination_,       util::Statistics::Id::DeadNodeElimination},
+      {StatisticsCommandLineArgument::FunctionInlining_,          util::Statistics::Id::FunctionInlining},
+      {StatisticsCommandLineArgument::InvariantValueRedirection_, util::Statistics::Id::InvariantValueRedirection},
+      {StatisticsCommandLineArgument::JlmToRvsdgConversion_,      util::Statistics::Id::JlmToRvsdgConversion},
+      {StatisticsCommandLineArgument::LoopUnrolling_,             util::Statistics::Id::LoopUnrolling},
+      {StatisticsCommandLineArgument::MemoryNodeProvisioning_,    util::Statistics::Id::MemoryNodeProvisioning},
+      {StatisticsCommandLineArgument::PullNodes_,                 util::Statistics::Id::PullNodes},
+      {StatisticsCommandLineArgument::PushNodes_,                 util::Statistics::Id::PushNodes},
+      {StatisticsCommandLineArgument::ReduceNodes_,               util::Statistics::Id::ReduceNodes},
+      {StatisticsCommandLineArgument::RvsdgConstruction_,         util::Statistics::Id::RvsdgConstruction},
+      {StatisticsCommandLineArgument::RvsdgDestruction_,          util::Statistics::Id::RvsdgDestruction},
+      {StatisticsCommandLineArgument::RvsdgOptimization_,         util::Statistics::Id::RvsdgOptimization},
+      {StatisticsCommandLineArgument::SteensgaardAnalysis_,       util::Statistics::Id::SteensgaardAnalysis},
+      {StatisticsCommandLineArgument::ThetaGammaInversion_,       util::Statistics::Id::ThetaGammaInversion}
+    });
+
+  if (map.find(commandLineArgument) != map.end())
+    return map[commandLineArgument];
+
+  throw util::error("Unknown command line argument: " + commandLineArgument);
+}
+
+const char*
+JlmOptCommandLineOptions::ToCommandLineArgument(jlm::util::Statistics::Id statisticsId)
+{
+  static std::unordered_map<util::Statistics::Id, const char*> map(
+    {
+      {util::Statistics::Id::Aggregation,               StatisticsCommandLineArgument::Aggregation_},
+      {util::Statistics::Id::BasicEncoderEncoding,      StatisticsCommandLineArgument::BasicEncoderEncoding_},
+      {util::Statistics::Id::Annotation,                StatisticsCommandLineArgument::Annotation_},
+      {util::Statistics::Id::CommonNodeElimination,     StatisticsCommandLineArgument::CommonNodeElimination_},
+      {util::Statistics::Id::ControlFlowRecovery,       StatisticsCommandLineArgument::ControlFlowRecovery_},
+      {util::Statistics::Id::DataNodeToDelta,           StatisticsCommandLineArgument::DataNodeToDelta_},
+      {util::Statistics::Id::DeadNodeElimination,       StatisticsCommandLineArgument::DeadNodeElimination_},
+      {util::Statistics::Id::FunctionInlining,          StatisticsCommandLineArgument::FunctionInlining_},
+      {util::Statistics::Id::InvariantValueRedirection, StatisticsCommandLineArgument::InvariantValueRedirection_},
+      {util::Statistics::Id::JlmToRvsdgConversion,      StatisticsCommandLineArgument::JlmToRvsdgConversion_},
+      {util::Statistics::Id::LoopUnrolling,             StatisticsCommandLineArgument::LoopUnrolling_},
+      {util::Statistics::Id::MemoryNodeProvisioning,    StatisticsCommandLineArgument::MemoryNodeProvisioning_},
+      {util::Statistics::Id::PullNodes,                 StatisticsCommandLineArgument::PullNodes_},
+      {util::Statistics::Id::PushNodes,                 StatisticsCommandLineArgument::PushNodes_},
+      {util::Statistics::Id::ReduceNodes,               StatisticsCommandLineArgument::ReduceNodes_},
+      {util::Statistics::Id::RvsdgConstruction,         StatisticsCommandLineArgument::RvsdgConstruction_},
+      {util::Statistics::Id::RvsdgDestruction,          StatisticsCommandLineArgument::RvsdgDestruction_},
+      {util::Statistics::Id::RvsdgOptimization,         StatisticsCommandLineArgument::RvsdgOptimization_},
+      {util::Statistics::Id::SteensgaardAnalysis,       StatisticsCommandLineArgument::SteensgaardAnalysis_},
+      {util::Statistics::Id::ThetaGammaInversion,       StatisticsCommandLineArgument::ThetaGammaInversion_}
+    });
+
+  if (map.find(statisticsId) != map.end())
+    return map[statisticsId];
+
+  throw util::error("Unknown statistics identifier");
 }
 
 const char*
@@ -300,7 +366,7 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
       JlmOptCommandLineOptions::OptimizationId optimizationId;
       try
       {
-        optimizationId = JlmOptCommandLineOptions::FromCommandLineArgument(optimization);
+        optimizationId = JlmOptCommandLineOptions::FromCommandLineArgumentToOptimizationId(optimization);
       }
       catch (util::error&)
       {
@@ -439,6 +505,112 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
     cl::desc("Specify name of main file output in depfile."),
     cl::value_desc("value"));
 
+  auto aggregationStatisticsId = util::Statistics::Id::Aggregation;
+  auto annotationStatisticsId = util::Statistics::Id::Annotation;
+  auto basicEncoderEncodingStatisticsId = util::Statistics::Id::BasicEncoderEncoding;
+  auto commonNodeEliminationStatisticsId = util::Statistics::Id::CommonNodeElimination;
+  auto controlFlowRecoveryStatisticsId = util::Statistics::Id::ControlFlowRecovery;
+  auto dataNodeToDeltaStatisticsId = util::Statistics::Id::DataNodeToDelta;
+  auto deadNodeEliminationStatisticsId = util::Statistics::Id::DeadNodeElimination;
+  auto functionInliningStatisticsId = util::Statistics::Id::FunctionInlining;
+  auto invariantValueRedirectionStatisticsId = util::Statistics::Id::InvariantValueRedirection;
+  auto jlmToRvsdgConversionStatisticsId = util::Statistics::Id::JlmToRvsdgConversion;
+  auto loopUnrollingStatisticsId = util::Statistics::Id::LoopUnrolling;
+  auto memoryNodeProvisioningStatisticsId = util::Statistics::Id::MemoryNodeProvisioning;
+  auto pullNodesStatisticsId = util::Statistics::Id::PullNodes;
+  auto pushNodesStatisticsId = util::Statistics::Id::PushNodes;
+  auto reduceNodesStatisticsId = util::Statistics::Id::ReduceNodes;
+  auto rvsdgConstructionStatisticsId = util::Statistics::Id::RvsdgConstruction;
+  auto rvsdgDestructionStatisticsId = util::Statistics::Id::RvsdgDestruction;
+  auto rvsdgOptimizationStatisticsId = util::Statistics::Id::RvsdgOptimization;
+  auto steensgaardAnalysisStatisticsId = util::Statistics::Id::SteensgaardAnalysis;
+  auto thetaGammaInversionStatisticsId = util::Statistics::Id::ThetaGammaInversion;
+
+  cl::list<util::Statistics::Id> jlmOptPassStatistics(
+    "JlmOptPassStatistics",
+    cl::values(
+      ::clEnumValN(
+        aggregationStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(aggregationStatisticsId),
+        "Collect control flow graph aggregation pass statistics."),
+      ::clEnumValN(
+        annotationStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(annotationStatisticsId),
+        "Collect aggregation tree annotation pass statistics."),
+      ::clEnumValN(
+        basicEncoderEncodingStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(basicEncoderEncodingStatisticsId),
+        "Collect memory state encoding pass statistics."),
+      ::clEnumValN(
+        commonNodeEliminationStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(commonNodeEliminationStatisticsId),
+        "Collect common node elimination pass statistics."),
+      ::clEnumValN(
+        controlFlowRecoveryStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(controlFlowRecoveryStatisticsId),
+        "Collect control flow recovery pass statistics."),
+      ::clEnumValN(
+        dataNodeToDeltaStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(dataNodeToDeltaStatisticsId),
+        "Collect data node to delta node conversion pass statistics."),
+      ::clEnumValN(
+        deadNodeEliminationStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(deadNodeEliminationStatisticsId),
+        "Collect dead node elimination pass statistics."),
+      ::clEnumValN(
+        functionInliningStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(functionInliningStatisticsId),
+        "Collect function inlining pass statistics."),
+      ::clEnumValN(
+        invariantValueRedirectionStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(invariantValueRedirectionStatisticsId),
+        "Collect invariant value redirection pass statistics."),
+      ::clEnumValN(
+        jlmToRvsdgConversionStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(jlmToRvsdgConversionStatisticsId),
+        "Collect Jlm to RVSDG conversion pass statistics."),
+      ::clEnumValN(
+        loopUnrollingStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(loopUnrollingStatisticsId),
+        "Collect loop unrolling pass statistics."),
+      ::clEnumValN(
+        memoryNodeProvisioningStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(memoryNodeProvisioningStatisticsId),
+        "Collect memory node provisioning pass statistics."),
+      ::clEnumValN(
+        pullNodesStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(pullNodesStatisticsId),
+        "Collect node pull pass statistics."),
+      ::clEnumValN(
+        pushNodesStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(pushNodesStatisticsId),
+        "Collect node push pass statistics."),
+      ::clEnumValN(
+        reduceNodesStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(reduceNodesStatisticsId),
+        "Collect node reduction pass statistics."),
+      ::clEnumValN(
+        rvsdgConstructionStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(rvsdgConstructionStatisticsId),
+        "Collect RVSDG construction pass statistics."),
+      ::clEnumValN(
+        rvsdgDestructionStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(rvsdgDestructionStatisticsId),
+        "Collect RVSDG destruction pass statistics."),
+      ::clEnumValN(
+        rvsdgOptimizationStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(rvsdgOptimizationStatisticsId),
+        "Collect RVSDG optimization pass statistics."),
+      ::clEnumValN(
+        steensgaardAnalysisStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(steensgaardAnalysisStatisticsId),
+        "Collect Steensgaard alias analysis pass statistics."),
+      ::clEnumValN(
+        thetaGammaInversionStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(thetaGammaInversionStatisticsId),
+        "Collect theta-gamma inversion pass statistics.")),
+    cl::desc("Collect jlm-opt pass statistics"));
+
   cl::ParseCommandLineOptions(argc, argv);
 
   /* Process parsed options */
@@ -506,6 +678,11 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
   CommandLineOptions_.GenerateDebugInformation_ = generateDebugInformation;
   CommandLineOptions_.Flags_ = flags;
   CommandLineOptions_.JlmOptOptimizations_ = jlmOptOptimizations;
+  CommandLineOptions_.JlmOptPassStatistics_ = util::HashSet<util::Statistics::Id>(
+    {
+      jlmOptPassStatistics.begin(),
+      jlmOptPassStatistics.end()
+    });
   CommandLineOptions_.Verbose_ = verbose;
   CommandLineOptions_.Rdynamic_ = rDynamic;
   CommandLineOptions_.Suppress_ = suppress;
@@ -568,8 +745,6 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
 
   cl::TopLevelSubCommand->reset();
 
-  util::StatisticsCollectorSettings statisticsCollectorSettings;
-
   cl::opt<std::string> inputFile(
     cl::Positional,
     cl::desc("<input>"));
@@ -580,99 +755,118 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
     cl::desc("Write output to <file>"),
     cl::value_desc("file"));
 
-  cl::opt<std::string> statisticFile(
+  std::string statisticsDirectoryDefault = std::filesystem::temp_directory_path();
+  const auto statisticDirectoryDescription = "Write statistics to file in <dir>. Default is "
+                                             + statisticsDirectoryDefault
+                                             + ".";
+  cl::opt<std::string> statisticDirectory(
     "s",
-    cl::init(statisticsCollectorSettings.GetFilePath().to_str()),
-    cl::desc("Write stats to <file>. Default is "
-             + statisticsCollectorSettings.GetFilePath().to_str()
-             + "."),
-    cl::value_desc("file"));
+    cl::init(statisticsDirectoryDefault),
+    cl::desc(statisticDirectoryDescription),
+    cl::value_desc("dir"));
+
+  auto aggregationStatisticsId = util::Statistics::Id::Aggregation;
+  auto annotationStatisticsId = util::Statistics::Id::Annotation;
+  auto basicEncoderEncodingStatisticsId = util::Statistics::Id::BasicEncoderEncoding;
+  auto commonNodeEliminationStatisticsId = util::Statistics::Id::CommonNodeElimination;
+  auto controlFlowRecoveryStatisticsId = util::Statistics::Id::ControlFlowRecovery;
+  auto dataNodeToDeltaStatisticsId = util::Statistics::Id::DataNodeToDelta;
+  auto deadNodeEliminationStatisticsId = util::Statistics::Id::DeadNodeElimination;
+  auto functionInliningStatisticsId = util::Statistics::Id::FunctionInlining;
+  auto invariantValueRedirectionStatisticsId = util::Statistics::Id::InvariantValueRedirection;
+  auto jlmToRvsdgConversionStatisticsId = util::Statistics::Id::JlmToRvsdgConversion;
+  auto loopUnrollingStatisticsId = util::Statistics::Id::LoopUnrolling;
+  auto memoryNodeProvisioningStatisticsId = util::Statistics::Id::MemoryNodeProvisioning;
+  auto pullNodesStatisticsId = util::Statistics::Id::PullNodes;
+  auto pushNodesStatisticsId = util::Statistics::Id::PushNodes;
+  auto reduceNodesStatisticsId = util::Statistics::Id::ReduceNodes;
+  auto rvsdgConstructionStatisticsId = util::Statistics::Id::RvsdgConstruction;
+  auto rvsdgDestructionStatisticsId = util::Statistics::Id::RvsdgDestruction;
+  auto rvsdgOptimizationStatisticsId = util::Statistics::Id::RvsdgOptimization;
+  auto steensgaardAnalysisStatisticsId = util::Statistics::Id::SteensgaardAnalysis;
+  auto thetaGammaInversionStatisticsId = util::Statistics::Id::ThetaGammaInversion;
 
   cl::list<util::Statistics::Id> printStatistics(
     cl::values(
       ::clEnumValN(
-        util::Statistics::Id::Aggregation,
-        "print-aggregation-time",
+        aggregationStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(aggregationStatisticsId),
         "Write aggregation statistics to file."),
       ::clEnumValN(
-        util::Statistics::Id::Annotation,
-        "print-annotation-time",
+        annotationStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(annotationStatisticsId),
         "Write annotation statistics to file."),
       ::clEnumValN(
-        util::Statistics::Id::BasicEncoderEncoding,
-        "print-basicencoder-encoding",
+        basicEncoderEncodingStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(basicEncoderEncodingStatisticsId),
         "Write encoding statistics of basic encoder to file."),
       ::clEnumValN(
-        util::Statistics::Id::CommonNodeElimination,
-        "print-cne-stat",
+        commonNodeEliminationStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(commonNodeEliminationStatisticsId),
         "Write common node elimination statistics to file."),
       ::clEnumValN(
-        util::Statistics::Id::ControlFlowRecovery,
-        "print-cfr-time",
+        controlFlowRecoveryStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(controlFlowRecoveryStatisticsId),
         "Write control flow recovery statistics to file."),
       ::clEnumValN(
-        util::Statistics::Id::DataNodeToDelta,
-        "printDataNodeToDelta",
+        dataNodeToDeltaStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(dataNodeToDeltaStatisticsId),
         "Write data node to delta node conversion statistics to file."),
       ::clEnumValN(
-        util::Statistics::Id::DeadNodeElimination,
-        "print-dne-stat",
+        deadNodeEliminationStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(deadNodeEliminationStatisticsId),
         "Write dead node elimination statistics to file."),
       ::clEnumValN(
-        util::Statistics::Id::FunctionInlining,
-        "print-iln-stat",
+        functionInliningStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(functionInliningStatisticsId),
         "Write function inlining statistics to file."),
       ::clEnumValN(
-        util::Statistics::Id::InvariantValueRedirection,
-        "printInvariantValueRedirection",
+        invariantValueRedirectionStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(invariantValueRedirectionStatisticsId),
         "Write invariant value redirection statistics to file."),
       ::clEnumValN(
-        util::Statistics::Id::JlmToRvsdgConversion,
-        "print-jlm-rvsdg-conversion",
+        jlmToRvsdgConversionStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(jlmToRvsdgConversionStatisticsId),
         "Write Jlm to RVSDG conversion statistics to file."),
       ::clEnumValN(
-        util::Statistics::Id::LoopUnrolling,
-        "print-unroll-stat",
+        loopUnrollingStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(loopUnrollingStatisticsId),
         "Write loop unrolling statistics to file."),
       ::clEnumValN(
-        util::Statistics::Id::MemoryNodeProvisioning,
-        "print-memory-node-provisioning",
+        memoryNodeProvisioningStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(memoryNodeProvisioningStatisticsId),
         "Write memory node provisioning statistics to file."),
       ::clEnumValN(
-        util::Statistics::Id::PullNodes,
-        "print-pull-stat",
+        pullNodesStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(pullNodesStatisticsId),
         "Write node pull statistics to file."),
       ::clEnumValN(
-        util::Statistics::Id::PushNodes,
-        "print-push-stat",
+        pushNodesStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(pushNodesStatisticsId),
         "Write node push statistics to file."),
       ::clEnumValN(
-        util::Statistics::Id::ReduceNodes,
-        "print-reduction-stat",
+        reduceNodesStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(reduceNodesStatisticsId),
         "Write node reduction statistics to file."),
       ::clEnumValN(
-        util::Statistics::Id::RvsdgConstruction,
-        "print-rvsdg-construction",
+        rvsdgConstructionStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(rvsdgConstructionStatisticsId),
         "Write RVSDG construction statistics to file."),
       ::clEnumValN(
-        util::Statistics::Id::RvsdgDestruction,
-        "print-rvsdg-destruction",
+        rvsdgDestructionStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(rvsdgDestructionStatisticsId),
         "Write RVSDG destruction statistics to file."),
       ::clEnumValN(
-        util::Statistics::Id::RvsdgOptimization,
-        "print-rvsdg-optimization",
+        rvsdgOptimizationStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(rvsdgOptimizationStatisticsId),
         "Write RVSDG optimization statistics to file."),
       ::clEnumValN(
-        util::Statistics::Id::SteensgaardAnalysis,
-        "print-steensgaard-analysis",
+        steensgaardAnalysisStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(steensgaardAnalysisStatisticsId),
         "Write Steensgaard analysis statistics to file."),
       ::clEnumValN(
-        util::Statistics::Id::SteensgaardPointsToGraphConstruction,
-        "print-steensgaard-pointstograph-construction",
-        "Write Steensgaard PointsTo Graph construction statistics to file."),
-      ::clEnumValN(
-        util::Statistics::Id::ThetaGammaInversion,
-        "print-ivt-stat",
+        thetaGammaInversionStatisticsId,
+        JlmOptCommandLineOptions::ToCommandLineArgument(thetaGammaInversionStatisticsId),
         "Write theta-gamma inversion statistics to file.")),
     cl::desc("Write statistics"));
 
@@ -794,13 +988,24 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char **argv)
 
   cl::ParseCommandLineOptions(argc, argv);
 
-  statisticsCollectorSettings.SetFilePath(statisticFile);
+  jlm::util::filepath statisticsDirectoryFilePath(statisticDirectory);
+  if (!statisticsDirectoryFilePath.Exists()
+  && !statisticsDirectoryFilePath.IsDirectory())
+  {
+    throw CommandLineParser::Exception(statisticsDirectoryFilePath.to_str() + " does not exist or is not a directory.");
+  }
+
+  jlm::util::filepath inputFilePath(inputFile);
+  jlm::util::filepath statisticsFilePath = jlm::util::StatisticsCollectorSettings::CreateUniqueStatisticsFile(
+    statisticsDirectoryFilePath,
+    inputFilePath);
 
   util::HashSet<util::Statistics::Id> demandedStatistics({printStatistics.begin(), printStatistics.end()});
-  statisticsCollectorSettings.SetDemandedStatistics(std::move(demandedStatistics));
+
+  util::StatisticsCollectorSettings statisticsCollectorSettings(statisticsFilePath, demandedStatistics);
 
   CommandLineOptions_ = JlmOptCommandLineOptions::Create(
-    inputFile,
+    std::move(inputFilePath),
     outputFile,
     outputFormat,
     std::move(statisticsCollectorSettings),

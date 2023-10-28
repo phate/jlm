@@ -89,9 +89,11 @@ class AgnosticMemoryNodeProvider::Statistics final : public util::Statistics
 {
 public:
   Statistics(
+    util::filepath sourceFile,
     const util::StatisticsCollector & statisticsCollector,
     const PointsToGraph & pointsToGraph)
     : util::Statistics(Statistics::Id::MemoryNodeProvisioning)
+    , SourceFile_(std::move(sourceFile))
     , NumPointsToGraphMemoryNodes_(0)
     , StatisticsCollector_(statisticsCollector)
   {
@@ -111,6 +113,12 @@ public:
   GetTime() const noexcept
   {
     return Timer_.ns();
+  }
+
+  [[nodiscard]] const util::filepath&
+  GetSourceFile() const noexcept
+  {
+    return SourceFile_;
   }
 
   void
@@ -135,7 +143,8 @@ public:
   ToString() const override
   {
     return util::strfmt(
-      "AgnosticMemoryNodeProvision ",
+      "AgnosticMemoryNodeProvider ",
+      SourceFile_.to_str(), " ",
       "#PointsToGraphMemoryNodes:", NumPointsToGraphMemoryNodes_, " ",
       "Time[ns]:", Timer_.ns()
       );
@@ -143,14 +152,16 @@ public:
 
   static std::unique_ptr<Statistics>
   Create(
+    const util::filepath & sourceFile,
     const util::StatisticsCollector & statisticsCollector,
     const PointsToGraph & pointsToGraph)
   {
-    return std::make_unique<Statistics>(statisticsCollector, pointsToGraph);
+    return std::make_unique<Statistics>(sourceFile, statisticsCollector, pointsToGraph);
   }
 
 private:
   util::timer Timer_;
+  util::filepath SourceFile_;
   size_t NumPointsToGraphMemoryNodes_;
   const util::StatisticsCollector & StatisticsCollector_;
 };
