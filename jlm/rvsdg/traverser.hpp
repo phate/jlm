@@ -7,11 +7,18 @@
 #ifndef JLM_RVSDG_TRAVERSER_HPP
 #define JLM_RVSDG_TRAVERSER_HPP
 
+#include <jlm/rvsdg/tracker.hpp>
+
 #include <stdbool.h>
 #include <stdlib.h>
 
 namespace jlm::rvsdg
 {
+
+class graph;
+class input;
+class output;
+
 namespace detail {
 
 template<typename T>
