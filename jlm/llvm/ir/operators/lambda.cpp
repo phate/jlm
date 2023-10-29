@@ -240,13 +240,16 @@ node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) con
   return lambda;
 }
 
-bool
-node::direct_calls(std::vector<jlm::rvsdg::simple_node*> * calls) const
+std::unique_ptr<node::CallSummary>
+node::ComputeCallSummary() const
 {
-  std::deque<jlm::rvsdg::input*> worklist;
+  std::deque<rvsdg::input*> worklist;
   worklist.insert(worklist.end(), output()->begin(), output()->end());
 
-  bool has_only_direct_calls = true;
+  std::vector<CallNode*> directCalls;
+  rvsdg::result * rvsdgExport = nullptr;
+  std::vector<rvsdg::simple_input*> otherUsers;
+
   while (!worklist.empty()) {
     auto input = worklist.front();
     worklist.pop_front();
@@ -257,7 +260,7 @@ node::direct_calls(std::vector<jlm::rvsdg::simple_node*> * calls) const
       continue;
     }
 
-    if (auto gamma_input = dynamic_cast<jlm::rvsdg::gamma_input*>(input)) {
+    if (auto gamma_input = dynamic_cast<rvsdg::gamma_input*>(input)) {
       for (auto & argument : *gamma_input)
         worklist.insert(worklist.end(), argument.begin(), argument.end());
       continue;
@@ -269,7 +272,7 @@ node::direct_calls(std::vector<jlm::rvsdg::simple_node*> * calls) const
       continue;
     }
 
-    if (auto theta_input = dynamic_cast<jlm::rvsdg::theta_input*>(input)) {
+    if (auto theta_input = dynamic_cast<rvsdg::theta_input*>(input)) {
       auto argument = theta_input->argument();
       worklist.insert(worklist.end(), argument->begin(), argument->end());
       continue;
@@ -302,25 +305,34 @@ node::direct_calls(std::vector<jlm::rvsdg::simple_node*> * calls) const
       continue;
     }
 
-    auto node = jlm::rvsdg::input::GetNode(*input);
-    if (is<CallOperation>(node) && input == node->input(0)) {
-      if (calls != nullptr)
-        calls->push_back(util::AssertedCast<jlm::rvsdg::simple_node>(node));
+    auto inputNode = rvsdg::input::GetNode(*input);
+    if (is<CallOperation>(inputNode) && input == inputNode->input(0)) {
+      directCalls.emplace_back(util::AssertedCast<CallNode>(inputNode));
       continue;
     }
 
-    if (is_export(input) || is<jlm::rvsdg::simple_op>(node)) {
-      if (calls == nullptr)
-        return false;
-
-      has_only_direct_calls = false;
+    auto result = dynamic_cast<rvsdg::result*>(input);
+    if (result != nullptr
+        && input->region() == graph()->root())
+    {
+      rvsdgExport = result;
       continue;
     }
 
-    JLM_UNREACHABLE("This should have never happend!");
+    auto simpleInput = dynamic_cast<rvsdg::simple_input*>(input);
+    if (simpleInput != nullptr)
+    {
+      otherUsers.emplace_back(simpleInput);
+      continue;
+    }
+
+    JLM_UNREACHABLE("This should have never happened!");
   }
 
-  return has_only_direct_calls;
+  return CallSummary::Create(
+    rvsdgExport,
+    std::move(directCalls),
+    std::move(otherUsers));
 }
 
 /* lambda context variable input class */
