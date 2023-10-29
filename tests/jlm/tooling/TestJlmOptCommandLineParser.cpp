@@ -19,9 +19,26 @@ TestOptimizationCommandLineArgumentConversion()
   {
     auto expectedOptimizationId = static_cast<JlmOptCommandLineOptions::OptimizationId>(n);
     auto commandLineArgument = JlmOptCommandLineOptions::ToCommandLineArgument(expectedOptimizationId);
-    auto receivedOptimizationId = JlmOptCommandLineOptions::FromCommandLineArgument(commandLineArgument);
+    auto receivedOptimizationId = JlmOptCommandLineOptions::FromCommandLineArgumentToOptimizationId(commandLineArgument);
 
     assert(receivedOptimizationId == expectedOptimizationId);
+  }
+}
+
+static void
+TestStatisticsCommandLineArgumentConversion()
+{
+  using namespace jlm::tooling;
+  for (
+    size_t n = static_cast<std::size_t>(jlm::util::Statistics::Id::FirstEnumValue) + 1;
+    n != static_cast<std::size_t>(jlm::util::Statistics::Id::LastEnumValue);
+    n++)
+  {
+    auto expectedStatisticsId = static_cast<jlm::util::Statistics::Id>(n);
+    auto commandLineArgument = JlmOptCommandLineOptions::ToCommandLineArgument(expectedStatisticsId);
+    auto receivedStatisticsId = JlmOptCommandLineOptions::FromCommandLineArgumentToStatisticsId(commandLineArgument);
+
+    assert(receivedStatisticsId == expectedStatisticsId);
   }
 }
 
@@ -47,6 +64,7 @@ static int
 Test()
 {
   TestOptimizationCommandLineArgumentConversion();
+  TestStatisticsCommandLineArgumentConversion();
   TestOptimizationIdToOptimizationTranslation();
 
   return 0;
