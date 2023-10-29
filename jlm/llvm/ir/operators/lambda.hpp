@@ -15,7 +15,12 @@
 
 #include <utility>
 
-namespace jlm::llvm::lambda
+namespace jlm::llvm
+{
+
+class CallNode;
+
+namespace lambda
 {
 
 /** \brief Lambda operation
@@ -148,6 +153,10 @@ class result;
 */
 class node final : public jlm::rvsdg::structural_node
 {
+public:
+  class CallSummary;
+
+private:
   class cviterator;
   class cvconstiterator;
 
@@ -329,15 +338,12 @@ public:
   finalize(const std::vector<jlm::rvsdg::output*> & results);
 
   /**
-  * Retrieves all direct calls of a lambda node.
-  *
-  * \param calls A vector for the direct calls. If vector is NULL, then no call will be
-  * retrieved.
-  *
-  * \return True if the lambda has only direct calls, otherwise False.
-  */
-  bool
-  direct_calls(std::vector<jlm::rvsdg::simple_node*> * calls = nullptr) const;
+   * Compute the \ref CallSummary of the lambda.
+   *
+   * @return A new CallSummary instance.
+   */
+  [[nodiscard]] std::unique_ptr<CallSummary>
+  ComputeCallSummary() const;
 };
 
 /** \brief Lambda context variable input
@@ -663,7 +669,187 @@ class node::fctresconstiterator final : public jlm::rvsdg::input::constiterator<
   }
 };
 
-}
+/**
+ * The CallSummary of a lambda summarizes all call usages of the lambda. It distinguishes between three call usages:
+ *
+ * 1. The export of the lambda, which is null if the lambda is not exported.
+ * 2. All direct calls of the lambda.
+ * 3. All other usages, e.g., indirect calls.
+ */
+class node::CallSummary final
+{
+  using DirectCallsConstRange = util::iterator_range<std::vector<CallNode*>::const_iterator>;
+  using OtherUsersConstRange = util::iterator_range<std::vector<rvsdg::simple_input*>::const_iterator>;
+
+public:
+  CallSummary(
+    rvsdg::result * rvsdgExport,
+    std::vector<CallNode*> directCalls,
+    std::vector<rvsdg::simple_input*> otherUsers)
+    : RvsdgExport_(rvsdgExport)
+    , DirectCalls_(std::move(directCalls))
+    , OtherUsers_(std::move(otherUsers))
+  {}
+
+  /**
+   * Determines whether the lambda is dead.
+   *
+   * @return True if the lambda is dead, otherwise false.
+   */
+  [[nodiscard]] bool
+  IsDead() const noexcept
+  {
+    return RvsdgExport_ == nullptr
+           && DirectCalls_.empty()
+           && OtherUsers_.empty();
+  }
+
+  /**
+   * Determines whether the lambda is exported from the RVSDG
+   *
+   * @return True if the lambda is exported, otherwise false.
+   */
+  [[nodiscard]] bool
+  IsExported() const noexcept
+  {
+    return RvsdgExport_ != nullptr;
+  }
+
+  /**
+   * Determines whether the lambda is only(!) exported from the RVSDG.
+   *
+   * @return True if the lambda is only exported, otherwise false.
+   */
+  [[nodiscard]] bool
+  IsOnlyExported() const noexcept
+  {
+    return RvsdgExport_ != nullptr
+           && DirectCalls_.empty()
+           && OtherUsers_.empty();
+  }
+
+  /**
+   * Determines whether the lambda has only direct calls.
+   *
+   * @return True if the lambda has only direct calls, otherwise false.
+   */
+  [[nodiscard]] bool
+  HasOnlyDirectCalls() const noexcept
+  {
+    return RvsdgExport_ == nullptr
+           && OtherUsers_.empty()
+           && !DirectCalls_.empty();
+  }
+
+  /**
+   * Determines whether the lambda has no other usages, i.e., it can only be exported and/or have direct calls.
+   *
+   * @return True if the lambda has no other usages, otherwise false.
+   */
+  [[nodiscard]] bool
+  HasNoOtherUsages() const noexcept
+  {
+    return OtherUsers_.empty();
+  }
+
+  /**
+   * Determines whether the lambda has only(!) other usages.
+   *
+   * @return True if the lambda has only other usages, otherwise false.
+   */
+  [[nodiscard]] bool
+  HasOnlyOtherUsages() const noexcept
+  {
+    return RvsdgExport_ == nullptr
+           && DirectCalls_.empty()
+           && !OtherUsers_.empty();
+  }
+
+  /**
+   * Returns the number of direct call sites invoking the lambda.
+   *
+   * @return The number of direct call sites.
+   */
+  [[nodiscard]] size_t
+  NumDirectCalls() const noexcept
+  {
+    return DirectCalls_.size();
+  }
+
+  /**
+   * Returns the number of all other users that are not direct calls.
+   *
+   * @return The number of usages that are not direct calls.
+   */
+  [[nodiscard]] size_t
+  NumOtherUsers() const noexcept
+  {
+    return OtherUsers_.size();
+  }
+
+  /**
+   * Returns the export of the lambda.
+   *
+   * @return The export of the lambda from the RVSDG root region.
+   */
+  [[nodiscard]] rvsdg::result*
+  GetRvsdgExport() const noexcept
+  {
+    return RvsdgExport_;
+  }
+
+  /**
+   * Returns an \ref iterator_range for iterating through all direct call sites.
+   *
+   * @return An \ref iterator_range of all direct call sites.
+   */
+  [[nodiscard]] DirectCallsConstRange
+  DirectCalls() const noexcept
+  {
+    return {DirectCalls_.begin(), DirectCalls_.end()};
+  }
+
+  /**
+   * Returns an \ref iterator_range for iterating through all other usages.
+   *
+   * @return An \ref iterator_range of all other usages.
+   */
+  [[nodiscard]] OtherUsersConstRange
+  OtherUsers() const noexcept
+  {
+    return {OtherUsers_.begin(), OtherUsers_.end()};
+  }
+
+  /**
+   * Creates a new CallSummary.
+   *
+   * @param rvsdgExport The lambda export.
+   * @param directCalls The direct call sites of a lambda.
+   * @param otherUsers All other usages of a lambda.
+   *
+   * @return A new CallSummary instance.
+   *
+   * @see ComputeCallSummary()
+   */
+  static std::unique_ptr<CallSummary>
+  Create(
+    rvsdg::result * rvsdgExport,
+    std::vector<CallNode*> directCalls,
+    std::vector<rvsdg::simple_input*> otherUsers)
+  {
+    return std::make_unique<CallSummary>(
+      rvsdgExport,
+      std::move(directCalls),
+      std::move(otherUsers));
+  }
+
+private:
+  rvsdg::result * RvsdgExport_;
+  std::vector<CallNode*> DirectCalls_;
+  std::vector<rvsdg::simple_input*> OtherUsers_;
+};
+
+}}
 
 static inline bool
 is_exported(const jlm::llvm::lambda::node & lambda)
