@@ -236,11 +236,12 @@ public:
   /**
    * Removes all elements that match the conditions defined by the specified \p match from a HashSet object.
    *
+   * @tparam F A type supporting function call operator: bool operator(const ItemType&)
    * @param match Defines the condition of the elements to remove.
    * @return The number of elements that were removed from the HashSet object.
    */
-  size_t
-  RemoveWhere(std::function<bool(const ItemType)> match)
+  template <typename F> size_t
+  RemoveWhere(const F& match)
   {
     size_t numRemoved = 0;
     auto it = Set_.begin();
