@@ -222,6 +222,22 @@ public:
   }
 
   /**
+   * Modifies this HashSet object to contain only elements that are present in itself and \p other.
+   *
+   * @param other A HashSet to intersect with.
+   */
+  void
+  IntersectWith(const HashSet<ItemType> & other)
+  {
+    auto isContained = [&](const ItemType item)
+    {
+      return !other.Contains(item);
+    };
+
+    RemoveWhere(isContained);
+  }
+
+  /**
    * Removes the specified item from a HashSet object.
    *
    * @param item The item to remove.
