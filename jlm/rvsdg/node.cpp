@@ -239,7 +239,7 @@ node::remove_input(size_t index)
 }
 
 void
-node::remove_output(size_t index)
+node::RemoveOutputByIndex(size_t index)
 {
 	JLM_ASSERT(index < noutputs());
 

@@ -712,7 +712,7 @@ protected:
 	}
 
 	void
-	remove_output(size_t index);
+	RemoveOutputByIndex(size_t index);
 
 public:
 	inline jlm::rvsdg::graph *

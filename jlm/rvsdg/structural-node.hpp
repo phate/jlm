@@ -65,7 +65,7 @@ public:
 	inline void
 	remove_output(size_t index)
 	{
-		node::remove_output(index);
+    node::RemoveOutputByIndex(index);
 	}
 
 private:
