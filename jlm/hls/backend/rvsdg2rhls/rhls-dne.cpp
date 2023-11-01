@@ -20,7 +20,7 @@ remove_unused_loop_outputs(hls::loop_node *ln) {
       assert(out->results.size() == 1);
       auto result = out->results.begin();
       sr->remove_result(result->index());
-      ln->remove_output(out->index());
+      ln->RemoveOutputByIndex(out->index());
       any_changed = true;
     }
   }

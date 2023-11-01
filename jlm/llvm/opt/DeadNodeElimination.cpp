@@ -421,7 +421,7 @@ DeadNodeElimination::SweepGamma(jlm::rvsdg::gamma_node & gammaNode) const
     {
       gammaNode.subregion(r)->remove_result(n);
     }
-    gammaNode.remove_output(n);
+    gammaNode.RemoveOutputByIndex(n);
   }
 
   // Sweep gamma subregions
@@ -489,7 +489,7 @@ DeadNodeElimination::SweepTheta(jlm::rvsdg::theta_node & thetaNode) const
       JLM_ASSERT(thetaOutput.results.empty());
       subregion->remove_argument(thetaArgument.index());
       thetaNode.remove_input(thetaInput.index());
-      thetaNode.remove_output(thetaOutput.index());
+      thetaNode.RemoveOutputByIndex(thetaOutput.index());
     }
   }
 
@@ -528,7 +528,7 @@ DeadNodeElimination::SweepPhi(phi::node & phiNode) const
         && !Context_->IsAlive(*subregion->argument(result->index())))
     {
       subregion->remove_result(n);
-      phiNode.remove_output(n);
+      phiNode.RemoveOutputByIndex(n);
     }
   }
 
