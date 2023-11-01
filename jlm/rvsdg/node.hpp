@@ -711,6 +711,21 @@ protected:
 		return this->output(noutputs()-1);
 	}
 
+  /**
+   * Removes an output from the node given the outputs' index.
+   *
+   * An output can only be removed, if it has no users. The removal of an output invalidates the node's existing output
+   * iterators.
+   *
+   * @param index The outputs' index. It must be between [0, noutputs()).
+   *
+   * \note The method must adjust the indices of the other outputs after the removal. The methods' runtime is therefore
+   * O(n), where n is the node's number of outputs.
+   *
+   * \see noutputs()
+   * \see output#index()
+   * \see output#nusers()
+   */
 	void
 	RemoveOutputByIndex(size_t index);
 
