@@ -44,9 +44,13 @@ class PointerObject final
 {
   PointerObjectKind Kind_ : jlm::util::BitWidthOfEnum(PointerObjectKind::COUNT);
 
-  // Instead of adding the special nodes *external* and *escaped*, flags are used.
-  // The constraint solver knows their meaning.
+  // When this flag is set, the PointerObject possibly points to a storage instance declared outside to module.
+  // The flag also means that the PointerObject possibly points to any escaped storage instance from this module.
   uint8_t PointsToExternal_ : 1;
+
+  // When set, the PointerObject is known to be accessible from outside the module.
+  // Anything it points to can also be accessed outside the module, and should also be marked as escaped.
+  // Escaped memory object can be overridden outside the module, so **HasEscaped implies PointsToExternal**.
   uint8_t HasEscaped_ : 1;
 
 public:
@@ -94,13 +98,15 @@ public:
 
   /**
    * Sets the Escaped-flag.
-   * @return true if the PointerObject used to not be marked as escaped, before this call
+   * Also sets the PointsToExternal flag, if unset
+   * @return true if the PointerObject's flags were modified by this call
    */
   bool
   MarkAsEscaped() noexcept
   {
     bool modified = !HasEscaped_;
     HasEscaped_ = 1;
+    modified |= MarkAsPointsToExternal();
     return modified;
   }
 };
@@ -338,6 +344,10 @@ public:
 
 private:
 
+  /**
+   * Makes sure any PointerObject marked as escaped, also makes all its pointees get the HasEscaped flag set.
+   * @return true if the function modified any flags
+   */
   bool
   PropagateEscapedFlag();
 

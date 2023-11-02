@@ -1807,4 +1807,39 @@ private:
   jlm::rvsdg::node * Alloca_;
 };
 
+/** \brief RVSDG module with an arbitrary amount of alloca nodes.
+ *
+ * The class sets up an RVSDG module corresponding to the code:
+ *
+ * \code{.c}
+ *   void f()
+ *   {
+ *     uint32_t a;
+ *     uint32_t b;
+ *     uint32_t c;
+ *     ...
+ *   }
+ * \endcode
+ *
+ * It provides getters for the alloca nodes themselves, and for their outputs.
+ */
+class NAllocaNodesTest final : public RvsdgTest {
+  size_t NumAllocaNodes_;
+
+  std::vector<const rvsdg::node *> AllocaNodes_;
+
+  std::unique_ptr<jlm::llvm::RvsdgModule>
+  SetupRvsdg() override;
+
+public:
+
+  NAllocaNodesTest(size_t numAllocaNodes) : NumAllocaNodes_(numAllocaNodes) {}
+
+  [[nodiscard]] const jlm::rvsdg::node &
+  GetAllocaNode(size_t index);
+
+  [[nodiscard]] const jlm::rvsdg::output &
+  GetAllocaOutput(size_t index);
+};
+
 }

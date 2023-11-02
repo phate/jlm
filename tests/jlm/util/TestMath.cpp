@@ -100,7 +100,8 @@ TestBitWidthOfEnum()
   assert(BitWidthOfEnum(TestEnum127::OneHundredAndTwentySeven) == 7);
 }
 
-static int TestMath()
+static int
+TestMath()
 {
   TestLog2floor();
   TestBitsRequiredToRepresent();
