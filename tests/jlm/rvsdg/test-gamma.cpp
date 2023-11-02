@@ -178,10 +178,62 @@ test_control_constant_reduction2()
 	assert(is<match_op>(match));
 }
 
+static void
+TestRemoveOutputsWhere()
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  jlm::rvsdg::graph rvsdg;
+  jlm::tests::valuetype vt;
+  ctltype ct(2);
+
+  auto predicate = rvsdg.add_import({ctl2, ""});
+  auto v0 = rvsdg.add_import({vt, ""});
+  auto v1 = rvsdg.add_import({vt, ""});
+  auto v2 = rvsdg.add_import({vt, ""});
+  auto v3 = rvsdg.add_import({vt, ""});
+
+  auto gammaNode = gamma_node::create(predicate, 2);
+  auto gammaInput0 = gammaNode->add_entryvar(v0);
+  auto gammaInput1 = gammaNode->add_entryvar(v1);
+  auto gammaInput2 = gammaNode->add_entryvar(v2);
+  auto gammaInput3 = gammaNode->add_entryvar(v3);
+
+  auto gammaOutput0 = gammaNode->add_exitvar({gammaInput0->argument(0), gammaInput0->argument(1)});
+  auto gammaOutput1 = gammaNode->add_exitvar({gammaInput1->argument(0), gammaInput1->argument(1)});
+  auto gammaOutput2 = gammaNode->add_exitvar({gammaInput2->argument(0), gammaInput2->argument(1)});
+  auto gammaOutput3 = gammaNode->add_exitvar({gammaInput3->argument(0), gammaInput3->argument(1)});
+
+  rvsdg.add_export(gammaOutput0, {gammaOutput0->type(), ""});
+  rvsdg.add_export(gammaOutput2, {gammaOutput2->type(), ""});
+
+  // Act & Assert
+  assert(gammaNode->noutputs() == 4);
+
+  // Remove gammaOutput1
+  gammaNode->RemoveOutputsWhere([&](const gamma_output & output){ return output.index() == gammaOutput1->index(); });
+  assert(gammaNode->noutputs() == 3);
+  assert(gammaNode->subregion(0)->nresults() == 3);
+  assert(gammaNode->subregion(1)->nresults() == 3);
+  assert(gammaOutput2->index() == 1);
+  assert(gammaOutput3->index() == 2);
+
+  // Try to remove gammaOutput2. This should result in no change as gammaOutput2 still has users.
+  gammaNode->RemoveOutputsWhere([&](const gamma_output & output){ return output.index() == gammaOutput2->index(); });
+  assert(gammaNode->noutputs() == 3);
+  assert(gammaNode->subregion(0)->nresults() == 3);
+  assert(gammaNode->subregion(1)->nresults() == 3);
+  assert(gammaOutput2->index() == 1);
+  assert(gammaOutput3->index() == 2);
+}
+
 static int
-test_main(void)
+test_main()
 {
 	test_gamma();
+  TestRemoveOutputsWhere();
+
 	test_predicate_reduction();
 	test_invariant_reduction();
 	test_control_constant_reduction();
