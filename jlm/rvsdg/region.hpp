@@ -226,8 +226,21 @@ public:
 	void
 	append_result(jlm::rvsdg::result * result);
 
-	void
-	RemoveResult(size_t index);
+  /**
+   * Removes a result from the region given a results' index.
+   *
+   * The removal of a result invalidates the region's existing result iterators.
+   *
+   * @param index The results' index. It must be between [0, nresults()).
+   *
+   * \note The method must adjust the indices of the other results after the removal. The methods' runtime is therefore
+   * O(n), where n is the region's number of results.
+   *
+   * \see nresults()
+   * \see result#index()
+   */
+  void
+  RemoveResult(size_t index);
 
 	inline size_t
 	nresults() const noexcept
