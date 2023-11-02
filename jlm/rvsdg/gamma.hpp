@@ -518,7 +518,7 @@ gamma_node::RemoveOutputsWhere(const F& match)
     {
       for (size_t r = 0; r < nsubregions(); r++)
       {
-        subregion(r)->remove_result(n);
+        subregion(r)->RemoveResult(n);
       }
 
       RemoveOutput(n);

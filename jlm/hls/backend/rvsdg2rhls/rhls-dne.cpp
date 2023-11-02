@@ -19,7 +19,7 @@ remove_unused_loop_outputs(hls::loop_node *ln) {
     if (out->nusers() == 0) {
       assert(out->results.size() == 1);
       auto result = out->results.begin();
-      sr->remove_result(result->index());
+      sr->RemoveResult(result->index());
       ln->RemoveOutput(out->index());
       any_changed = true;
     }
@@ -50,7 +50,7 @@ remove_unused_loop_inputs(hls::loop_node *ln) {
       auto result = ba->result();
       assert(result->type() == arg->type());
       if (arg->nusers() == 0 || (arg->nusers() == 1 && result->origin() == arg)) {
-        sr->remove_result(result->index());
+        sr->RemoveResult(result->index());
         sr->remove_argument(arg->index());
       }
     } else {

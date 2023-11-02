@@ -227,7 +227,7 @@ public:
 	append_result(jlm::rvsdg::result * result);
 
 	void
-	remove_result(size_t index);
+	RemoveResult(size_t index);
 
 	inline size_t
 	nresults() const noexcept

@@ -94,7 +94,7 @@ region::~region()
 	on_region_destroy(this);
 
 	while (results_.size())
-		remove_result(results_.size()-1);
+    RemoveResult(results_.size() - 1);
 
 	prune(false);
 	JLM_ASSERT(nodes.empty());
@@ -175,7 +175,7 @@ region::append_result(jlm::rvsdg::result * result)
 }
 
 void
-region::remove_result(size_t index)
+region::RemoveResult(size_t index)
 {
 	JLM_ASSERT(index < results_.size());
 	jlm::rvsdg::result * result = results_[index];
