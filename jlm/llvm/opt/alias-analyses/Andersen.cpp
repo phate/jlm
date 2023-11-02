@@ -6,8 +6,6 @@
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/rvsdg/node.hpp>
-#include <jlm/util/Math.hpp>
-
 
 namespace jlm::llvm::aa
 {
@@ -18,8 +16,9 @@ namespace jlm::llvm::aa
  *
  * Note that registers sharing PointerObject, become separate PointsToGraph nodes.
  *
- * An *escaped* node is not included.
- * Instead implicit edges through escaped+external, are added as explicit edges.
+ * In the PointerObjectSet, the PointsToExternal flag encodes both pointing to
+ *
+ *
  * @return the newly created PointsToGraph
  */
 std::unique_ptr<PointsToGraph>

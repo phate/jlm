@@ -3253,4 +3253,60 @@ LinkedListTest::SetupRvsdg()
   return rvsdgModule;
 }
 
+
+std::unique_ptr<jlm::llvm::RvsdgModule>
+NAllocaNodesTest::SetupRvsdg()
+{
+  using namespace jlm::llvm;
+
+  MemoryStateType mt;
+  PointerType pointerType;
+  FunctionType fcttype({&mt}, {&mt});
+
+  auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto graph = &module->Rvsdg();
+
+  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  nf->set_mutable(false);
+
+  auto fct = lambda::node::create(graph->root(), fcttype, "f", linkage::external_linkage);
+
+  auto allocaSize = jlm::rvsdg::create_bitconstant(fct->subregion(), 32, 4);
+
+  jlm::rvsdg::output * latestMemoryState = fct->fctargument(0);
+
+  for (size_t i = 0; i < NumAllocaNodes_; i++) {
+    auto alloca_outputs = alloca_op::create(jlm::rvsdg::bit32, allocaSize, 4);
+    auto alloca_node = jlm::rvsdg::node_output::node(alloca_outputs[0]);
+
+    AllocaNodes_.push_back(alloca_node);
+
+    // Update latestMemoryState to include the alloca memory state output
+    latestMemoryState = MemStateMergeOperator::Create(
+                            std::vector<jlm::rvsdg::output*>{latestMemoryState, alloca_outputs[1]});
+  }
+
+  fct->finalize({latestMemoryState});
+
+  graph->add_export(fct->output(), {pointerType, "f"});
+
+  return module;
+}
+
+const jlm::rvsdg::node&
+NAllocaNodesTest::GetAllocaNode(size_t index)
+{
+  JLM_ASSERT(index < NumAllocaNodes_);
+  module();
+  return *AllocaNodes_[index];
+}
+
+const jlm::rvsdg::output&
+NAllocaNodesTest::GetAllocaOutput(size_t index)
+{
+  JLM_ASSERT(index < NumAllocaNodes_);
+  module();
+  return *AllocaNodes_[index]->output(0);
+}
+
 }
