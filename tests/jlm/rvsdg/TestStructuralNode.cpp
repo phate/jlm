@@ -33,14 +33,14 @@ TestOutputRemoval()
   assert(output3->index() == 3);
   assert(output4->index() == 4);
 
-  structuralNode->RemoveOutputByIndex(2);
+  structuralNode->RemoveOutput(2);
   assert(structuralNode->noutputs() == 4);
   assert(output0->index() == 0);
   assert(output1->index() == 1);
   assert(output3->index() == 2);
   assert(output4->index() == 3);
 
-  structuralNode->RemoveOutputByIndex(3);
+  structuralNode->RemoveOutput(3);
   assert(structuralNode->noutputs() == 3);
   assert(output0->index() == 0);
   assert(output1->index() == 1);

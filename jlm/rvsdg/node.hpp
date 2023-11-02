@@ -727,7 +727,7 @@ protected:
    * \see output#nusers()
    */
 	void
-	RemoveOutputByIndex(size_t index);
+	RemoveOutput(size_t index);
 
 public:
 	inline jlm::rvsdg::graph *

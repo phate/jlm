@@ -62,7 +62,7 @@ public:
 		node::remove_input(index);
 	}
 
-  using node::RemoveOutputByIndex;
+  using node::RemoveOutput;
 
 private:
 	std::vector<std::unique_ptr<jlm::rvsdg::region>> subregions_;

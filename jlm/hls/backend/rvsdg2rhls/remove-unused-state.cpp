@@ -68,7 +68,7 @@ remove_gamma_passthrough(jlm::rvsdg::gamma_node *gn) {// remove inputs in revers
 
       gn->output(res_index)->divert_users(origin);
       gn->output(res_index)->results.clear();
-      gn->RemoveOutputByIndex(res_index);
+      gn->RemoveOutput(res_index);
       // remove input
       gn->input(i + 1)->arguments.clear();
       gn->remove_input(i + 1);
@@ -154,7 +154,7 @@ remove_region_passthrough(const jlm::rvsdg::argument *arg) {
   arg->region()->remove_result(res->index());
   arg->region()->remove_argument(arg->index());
   arg->region()->node()->remove_input(arg->input()->index());
-  arg->region()->node()->RemoveOutputByIndex(res->output()->index());
+  arg->region()->node()->RemoveOutput(res->output()->index());
 }
 
 bool
