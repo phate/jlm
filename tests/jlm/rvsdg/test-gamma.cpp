@@ -228,11 +228,59 @@ TestRemoveOutputsWhere()
   assert(gammaOutput3->index() == 2);
 }
 
+static void
+TestPruneOutputs()
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  jlm::rvsdg::graph rvsdg;
+  jlm::tests::valuetype vt;
+  ctltype ct(2);
+
+  auto predicate = rvsdg.add_import({ctl2, ""});
+  auto v0 = rvsdg.add_import({vt, ""});
+  auto v1 = rvsdg.add_import({vt, ""});
+  auto v2 = rvsdg.add_import({vt, ""});
+  auto v3 = rvsdg.add_import({vt, ""});
+
+  auto gammaNode = gamma_node::create(predicate, 2);
+  auto gammaInput0 = gammaNode->add_entryvar(v0);
+  auto gammaInput1 = gammaNode->add_entryvar(v1);
+  auto gammaInput2 = gammaNode->add_entryvar(v2);
+  auto gammaInput3 = gammaNode->add_entryvar(v3);
+
+  auto gammaOutput0 = gammaNode->add_exitvar({gammaInput0->argument(0), gammaInput0->argument(1)});
+  gammaNode->add_exitvar({gammaInput1->argument(0), gammaInput1->argument(1)});
+  auto gammaOutput2 = gammaNode->add_exitvar({gammaInput2->argument(0), gammaInput2->argument(1)});
+  gammaNode->add_exitvar({gammaInput3->argument(0), gammaInput3->argument(1)});
+
+  rvsdg.add_export(gammaOutput0, {gammaOutput0->type(), ""});
+  rvsdg.add_export(gammaOutput2, {gammaOutput2->type(), ""});
+
+  // Act
+  gammaNode->PruneOutputs();
+
+  // Assert
+  assert(gammaNode->noutputs() == 2);
+  assert(gammaNode->subregion(0)->nresults() == 2);
+  assert(gammaNode->subregion(1)->nresults() == 2);
+
+  assert(gammaOutput0->index() == 0);
+  assert(gammaNode->subregion(0)->result(0)->output() == gammaOutput0);
+  assert(gammaNode->subregion(1)->result(0)->output() == gammaOutput0);
+
+  assert(gammaOutput2->index() == 1);
+  assert(gammaNode->subregion(0)->result(1)->output() == gammaOutput2);
+  assert(gammaNode->subregion(1)->result(1)->output() == gammaOutput2);
+}
+
 static int
 test_main()
 {
 	test_gamma();
   TestRemoveOutputsWhere();
+  TestPruneOutputs();
 
 	test_predicate_reduction();
 	test_invariant_reduction();

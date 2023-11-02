@@ -295,6 +295,20 @@ public:
   template<typename F> void
   RemoveOutputsWhere(const F& match);
 
+  /**
+   * Removes all outputs that have no users.
+   */
+  void
+  PruneOutputs()
+  {
+    auto match = [](const gamma_output&)
+    {
+      return true;
+    };
+
+    RemoveOutputsWhere(match);
+  }
+
 	virtual jlm::rvsdg::gamma_node *
 	copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const override;
 };
