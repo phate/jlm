@@ -1619,6 +1619,13 @@ Steensgaard::AnalyzeRvsdg(const jlm::rvsdg::graph & graph)
 }
 
 std::unique_ptr<PointsToGraph>
+Steensgaard::Analyze(const RvsdgModule &rvsdgModule)
+{
+  util::StatisticsCollector statisticsCollector;
+  return Analyze(rvsdgModule, statisticsCollector);
+}
+
+std::unique_ptr<PointsToGraph>
 Steensgaard::Analyze(
   const RvsdgModule & module,
   jlm::util::StatisticsCollector & statisticsCollector)
