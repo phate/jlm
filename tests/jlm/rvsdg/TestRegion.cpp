@@ -208,6 +208,36 @@ TestRemoveArgumentsWhere()
   assert(region.narguments() == 0);
 }
 
+/**
+ * Test region::PruneArguments()
+ */
+static void
+TestPruneArguments()
+{
+  // Arrange
+  jlm::rvsdg::graph rvsdg;
+  jlm::rvsdg::region region(rvsdg.root(), &rvsdg);
+
+  jlm::tests::valuetype valueType;
+  auto argument0 = jlm::rvsdg::argument::create(&region, nullptr, jlm::rvsdg::port(valueType));
+  jlm::rvsdg::argument::create(&region, nullptr, jlm::rvsdg::port(valueType));
+  auto argument2 = jlm::rvsdg::argument::create(&region, nullptr, jlm::rvsdg::port(valueType));
+
+  auto node = jlm::tests::test_op::Create(&region, {&valueType, &valueType}, {argument0, argument2}, {&valueType});
+
+  // Act & Arrange
+  assert(region.narguments() == 3);
+
+  region.PruneArguments();
+  assert(region.narguments() == 2);
+  assert(argument0->index() == 0);
+  assert(argument2->index() == 1);
+
+  region.remove_node(node);
+  region.PruneArguments();
+  assert(region.narguments() == 0);
+}
+
 static int
 Test()
 {
@@ -219,6 +249,7 @@ Test()
   TestNumRegions();
   TestRemoveResultsWhere();
   TestRemoveArgumentsWhere();
+  TestPruneArguments();
 
   return 0;
 }

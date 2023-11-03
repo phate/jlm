@@ -297,6 +297,20 @@ public:
     }
   }
 
+  /**
+   * Remove all arguments that have no users.
+   */
+  void
+  PruneArguments()
+  {
+    auto match = [](const rvsdg::argument&)
+    {
+      return true;
+    };
+
+    RemoveArgumentsWhere(match);
+  }
+
 	inline size_t
 	nresults() const noexcept
 	{
