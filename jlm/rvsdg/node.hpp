@@ -701,7 +701,7 @@ protected:
 	add_input(std::unique_ptr<node_input> input);
 
 	void
-	remove_input(size_t index);
+	RemoveInput(size_t index);
 
 	node_output *
 	add_output(std::unique_ptr<node_output> output)

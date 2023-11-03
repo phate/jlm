@@ -59,7 +59,7 @@ public:
 	inline void
 	remove_input(size_t index)
 	{
-		node::remove_input(index);
+    node::RemoveInput(index);
 	}
 
   using node::RemoveOutput;
