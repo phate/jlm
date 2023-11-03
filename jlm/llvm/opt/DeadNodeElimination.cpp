@@ -450,7 +450,7 @@ DeadNodeElimination::SweepGamma(jlm::rvsdg::gamma_node & gammaNode) const
       {
         gammaNode.subregion(r)->RemoveArgument(n - 1);
       }
-      gammaNode.remove_input(n);
+      gammaNode.RemoveInput(n);
     }
   }
 }
@@ -488,7 +488,7 @@ DeadNodeElimination::SweepTheta(jlm::rvsdg::theta_node & thetaNode) const
     {
       JLM_ASSERT(thetaOutput.results.empty());
       subregion->RemoveArgument(thetaArgument.index());
-      thetaNode.remove_input(thetaInput.index());
+      thetaNode.RemoveInput(thetaInput.index());
       thetaNode.RemoveOutput(thetaOutput.index());
     }
   }
@@ -510,7 +510,7 @@ DeadNodeElimination::SweepLambda(lambda::node & lambdaNode) const
     if (!Context_->IsAlive(*input->argument()))
     {
       lambdaNode.subregion()->RemoveArgument(input->argument()->index());
-      lambdaNode.remove_input(n);
+      lambdaNode.RemoveInput(n);
     }
   }
 }
@@ -544,7 +544,7 @@ DeadNodeElimination::SweepPhi(phi::node & phiNode) const
       subregion->RemoveArgument(n);
       if (input)
       {
-        phiNode.remove_input(input->index());
+        phiNode.RemoveInput(input->index());
       }
     }
   }
@@ -563,7 +563,7 @@ DeadNodeElimination::SweepDelta(delta::node & deltaNode) const
     if (!Context_->IsAlive(*input->argument()))
     {
       deltaNode.subregion()->RemoveArgument(input->argument()->index());
-      deltaNode.remove_input(input->index());
+      deltaNode.RemoveInput(input->index());
     }
   }
 }

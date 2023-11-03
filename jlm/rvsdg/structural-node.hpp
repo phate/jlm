@@ -56,11 +56,7 @@ public:
 	structural_output *
 	append_output(std::unique_ptr<structural_output> output);
 
-	inline void
-	remove_input(size_t index)
-	{
-    node::RemoveInput(index);
-	}
+  using node::RemoveInput;
 
   using node::RemoveOutput;
 

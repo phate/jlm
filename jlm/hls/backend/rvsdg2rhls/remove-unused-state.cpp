@@ -71,7 +71,7 @@ remove_gamma_passthrough(jlm::rvsdg::gamma_node *gn) {// remove inputs in revers
       gn->RemoveOutput(res_index);
       // remove input
       gn->input(i + 1)->arguments.clear();
-      gn->remove_input(i + 1);
+      gn->RemoveInput(i + 1);
       for (size_t j = 0; j < gn->nsubregions(); ++j) {
         JLM_ASSERT(gn->subregion(j)->result(res_index)->origin() == gn->subregion(j)->argument(i));
         JLM_ASSERT(gn->subregion(j)->argument(i)->nusers() == 1);
@@ -153,7 +153,7 @@ remove_region_passthrough(const jlm::rvsdg::argument *arg) {
   // remove result first so argument has no users
   arg->region()->RemoveResult(res->index());
   arg->region()->RemoveArgument(arg->index());
-  arg->region()->node()->remove_input(arg->input()->index());
+  arg->region()->node()->RemoveInput(arg->input()->index());
   arg->region()->node()->RemoveOutput(res->output()->index());
 }
 

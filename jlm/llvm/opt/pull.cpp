@@ -88,7 +88,7 @@ remove(jlm::rvsdg::gamma_input * input)
 
 	for (size_t n = 0; n < gamma->nsubregions(); n++)
     gamma->subregion(n)->RemoveArgument(input->index() - 1);
-	gamma->remove_input(input->index());
+	gamma->RemoveInput(input->index());
 }
 
 static void

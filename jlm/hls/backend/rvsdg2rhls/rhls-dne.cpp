@@ -38,7 +38,7 @@ remove_unused_loop_inputs(hls::loop_node *ln) {
     auto arg = in->arguments.begin();
     if (arg->nusers() == 0) {
       sr->RemoveArgument(arg->index());
-      ln->remove_input(in->index());
+      ln->RemoveInput(in->index());
       any_changed = true;
     }
   }
