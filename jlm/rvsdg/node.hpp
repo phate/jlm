@@ -700,6 +700,20 @@ protected:
 	node_input *
 	add_input(std::unique_ptr<node_input> input);
 
+  /**
+   * Removes an input from the node given the inputs' index.
+   *
+   * The removal of an input invalidates the node's existing input iterators.
+   *
+   * @param index The inputs' index. It must be between [0, ninputs()).
+   *
+   * \note The method must adjust the indices of the other inputs after the removal. Moreover, it also might need to
+   * recompute the depth of the node.
+   *
+   * \see ninputs()
+   * \see recompute_depth()
+   * \see input#index()
+   */
 	void
 	RemoveInput(size_t index);
 
