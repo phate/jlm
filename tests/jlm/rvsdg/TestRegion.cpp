@@ -135,6 +135,43 @@ TestNumRegions()
   }
 }
 
+/**
+ * Test region::RemoveResultsWhere()
+ */
+static void
+TestRemoveResultsWhere()
+{
+  // Arrange
+  jlm::rvsdg::graph rvsdg;
+  jlm::rvsdg::region region(rvsdg.root(), &rvsdg);
+
+  jlm::tests::valuetype valueType;
+  auto node = jlm::tests::test_op::Create(&region, {}, {}, {&valueType});
+
+  auto result0 = jlm::rvsdg::result::create(&region, node->output(0), nullptr, jlm::rvsdg::port(valueType));
+  auto result1 = jlm::rvsdg::result::create(&region, node->output(0), nullptr, jlm::rvsdg::port(valueType));
+  auto result2 = jlm::rvsdg::result::create(&region, node->output(0), nullptr, jlm::rvsdg::port(valueType));
+
+  // Act & Arrange
+  assert(region.nresults() == 3);
+  assert(result0->index() == 0);
+  assert(result1->index() == 1);
+  assert(result2->index() == 2);
+
+  region.RemoveResultsWhere([](const jlm::rvsdg::result &result){ return result.index() == 1; });
+  assert(region.nresults() == 2);
+  assert(result0->index() == 0);
+  assert(result2->index() == 1);
+
+  region.RemoveResultsWhere([](const jlm::rvsdg::result & result){ return false; });
+  assert(region.nresults() == 2);
+  assert(result0->index() == 0);
+  assert(result2->index() == 1);
+
+  region.RemoveResultsWhere([](const jlm::rvsdg::result & result){ return true; });
+  assert(region.nresults() == 0);
+}
+
 static int
 Test()
 {
@@ -144,6 +181,7 @@ Test()
   TestContainsMethod();
   TestIsRootRegion();
   TestNumRegions();
+  TestRemoveResultsWhere();
 
   return 0;
 }

@@ -242,6 +242,26 @@ public:
   void
   RemoveResult(size_t index);
 
+  /**
+   * Remove all results that match the condition specified by \p match.
+   *
+   * @tparam F A type that supports the function call operator: bool operator(const result&)
+   * @param match Defines the condition for the results to remove.
+   */
+  template <typename F> void
+  RemoveResultsWhere(const F& match)
+  {
+    // iterate backwards to avoid the invalidation of 'n' by RemoveResult()
+    for (size_t n = nresults()-1; n != static_cast<size_t>(-1); n--)
+    {
+      auto & result = *this->result(n);
+      if (match(result))
+      {
+        RemoveResult(n);
+      }
+    }
+  }
+
 	inline size_t
 	nresults() const noexcept
 	{
