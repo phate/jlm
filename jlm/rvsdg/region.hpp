@@ -204,7 +204,7 @@ public:
 	append_argument(jlm::rvsdg::argument * argument);
 
 	void
-	remove_argument(size_t index);
+	RemoveArgument(size_t index);
 
 	inline size_t
 	narguments() const noexcept

@@ -102,7 +102,7 @@ region::~region()
 	JLM_ASSERT(bottom_nodes.empty());
 
 	while (arguments_.size())
-		remove_argument(arguments_.size()-1);
+    RemoveArgument(arguments_.size() - 1);
 }
 
 region::region(jlm::rvsdg::region * parent, jlm::rvsdg::graph * graph)
@@ -141,7 +141,7 @@ region::append_argument(jlm::rvsdg::argument * argument)
 }
 
 void
-region::remove_argument(size_t index)
+region::RemoveArgument(size_t index)
 {
 	JLM_ASSERT(index < narguments());
 	jlm::rvsdg::argument * argument = arguments_[index];
