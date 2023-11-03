@@ -743,6 +743,28 @@ protected:
 	void
 	RemoveOutput(size_t index);
 
+  /**
+   * Removes all outputs that have no users and match the condition specified by \p match.
+   *
+   * @tparam F A type that supports the function call operator: bool operator(const node_output&)
+   * @param match Defines the condition for the outputs to remove.
+   *
+   * \see output#nusers()
+   */
+  template <typename F> void
+  RemoveOutputsWhere(const F& match)
+  {
+    // iterate backwards to avoid the invalidation of 'n' by RemoveOutput()
+    for (size_t n = noutputs()-1; n != static_cast<size_t>(-1); n--)
+    {
+      auto & output = *node::output(n);
+      if (output.nusers() == 0 && match(output))
+      {
+        RemoveOutput(n);
+      }
+    }
+  }
+
 public:
 	inline jlm::rvsdg::graph *
 	graph() const noexcept

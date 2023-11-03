@@ -111,11 +111,59 @@ test_node_depth()
 	assert(un->depth() == 1);
 }
 
+/**
+ * Test node::RemoveOutputsWhere()
+ */
+static void
+TestRemoveOutputsWhere()
+{
+  // Arrange
+  jlm::rvsdg::graph rvsdg;
+
+  jlm::tests::valuetype valueType;
+  auto & node1 = jlm::tests::SimpleNode::Create(
+    *rvsdg.root(),
+    {},
+    {&valueType, &valueType, &valueType});
+  auto output0 = node1.output(0);
+  auto output2 = node1.output(2);
+
+  auto & node2 = jlm::tests::SimpleNode::Create(
+    *rvsdg.root(),
+    {output0, output2},
+    {&valueType, &valueType});
+
+  // Act & Assert
+  node2.RemoveOutputsWhere([](const jlm::rvsdg::output &output){ return false; });
+  assert(node2.noutputs() == 2);
+
+  node1.RemoveOutputsWhere([](const jlm::rvsdg::output &output){ return true; });
+  assert(node1.noutputs() == 2);
+  assert(node1.output(0) == output0);
+  assert(node1.output(0)->index() == 0);
+  assert(node1.output(1) == output2);
+  assert(node1.output(1)->index() == 1);
+
+  node2.RemoveOutputsWhere([](const jlm::rvsdg::output &output){ return true; });
+  assert(node2.noutputs() == 0);
+
+  remove(&node2);
+
+  node1.RemoveOutputsWhere([](const jlm::rvsdg::output &output){ return output.index() == 0; });
+  assert(node1.noutputs() == 1);
+  assert(node1.output(0) == output2);
+  assert(node1.output(0)->index() == 0);
+
+  node1.RemoveOutputsWhere([](const jlm::rvsdg::output &output){ return true; });
+  assert(node1.noutputs() == 0);
+}
+
 static int
 test_nodes()
 {
 	test_node_copy();
 	test_node_depth();
+  TestRemoveOutputsWhere();
 
 	return 0;
 }

@@ -248,6 +248,47 @@ private:
 	}
 };
 
+class SimpleNode final : public rvsdg::simple_node
+{
+private:
+  SimpleNode(
+    rvsdg::region & region,
+    const test_op & operation,
+    const std::vector<rvsdg::output*> & operands)
+  : simple_node(&region, operation, operands)
+  {}
+
+public:
+  using rvsdg::node::RemoveOutputsWhere;
+
+  static SimpleNode&
+  Create(
+    rvsdg::region & region,
+    const std::vector<rvsdg::output*> & operands,
+    const std::vector<const rvsdg::type*> & resultTypes)
+  {
+    auto operandTypes = ExtractTypes(operands);
+    test_op operation(operandTypes, resultTypes);
+
+    auto node = new SimpleNode(region, operation, operands);
+    return *node;
+  }
+
+private:
+  static std::vector<const rvsdg::type*>
+  ExtractTypes(const std::vector<rvsdg::output*> & outputs)
+  {
+    std::vector<const rvsdg::type*> types;
+    types.reserve(outputs.size());
+    for (auto output : outputs)
+    {
+      types.emplace_back(&output->type());
+    }
+
+    return types;
+  }
+};
+
 static inline std::unique_ptr<llvm::tac>
 create_testop_tac(
 	const std::vector<const llvm::variable*> & arguments,
