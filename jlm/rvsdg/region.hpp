@@ -203,6 +203,21 @@ public:
 	void
 	append_argument(jlm::rvsdg::argument * argument);
 
+  /**
+   * Removes an argument from the region given a arguments' index.
+   *
+   * An argument can only be removed, if it has no users. The removal of an argument invalidates the region's existing
+   * argument iterators.
+   *
+   * @param index The arguments' index. It must be between [0, narguments()].
+   *
+   * \note The method must adjust the indices of the other arguments after the removal. The methods' runtime is
+   * therefore O(n), where n is the region's number of arguments.
+   *
+   * \see narguments()
+   * \see argument#index()
+   * \see argument::nusers()
+   */
 	void
 	RemoveArgument(size_t index);
 
