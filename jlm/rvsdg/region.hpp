@@ -221,6 +221,26 @@ public:
 	void
 	RemoveArgument(size_t index);
 
+  /**
+   * Removes all arguments that have no users and match the condition specified by \p match.
+   *
+   * @tparam F A type that supports the function call operator: bool operator(const argument&)
+   * @param match Defines the condition for the arguments to remove.
+   */
+  template <typename F> void
+  RemoveArgumentsWhere(const F& match)
+  {
+    // iterate backwards to avoid the invalidation of 'n' by RemoveArgument()
+    for (size_t n = narguments()-1; n != static_cast<size_t>(-1); n--)
+    {
+      auto & argument = *this->argument(n);
+      if (argument.nusers() == 0 && match(argument))
+      {
+        RemoveArgument(n);
+      }
+    }
+  }
+
 	inline size_t
 	narguments() const noexcept
 	{

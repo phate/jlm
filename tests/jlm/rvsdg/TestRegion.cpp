@@ -172,6 +172,42 @@ TestRemoveResultsWhere()
   assert(region.nresults() == 0);
 }
 
+/**
+ * Test region::RemoveArgumentsWhere()
+ */
+static void
+TestRemoveArgumentsWhere()
+{
+  // Arrange
+  jlm::rvsdg::graph rvsdg;
+  jlm::rvsdg::region region(rvsdg.root(), &rvsdg);
+
+  jlm::tests::valuetype valueType;
+  auto argument0 = jlm::rvsdg::argument::create(&region, nullptr, jlm::rvsdg::port(valueType));
+  auto argument1 = jlm::rvsdg::argument::create(&region, nullptr, jlm::rvsdg::port(valueType));
+  auto argument2 = jlm::rvsdg::argument::create(&region, nullptr, jlm::rvsdg::port(valueType));
+
+  auto node = jlm::tests::test_op::Create(&region, {&valueType}, {argument1}, {&valueType});
+
+  // Act & Arrange
+  assert(region.narguments() == 3);
+  assert(argument0->index() == 0);
+  assert(argument1->index() == 1);
+  assert(argument2->index() == 2);
+
+  region.RemoveArgumentsWhere([](const jlm::rvsdg::argument &argument){ return true; });
+  assert(region.narguments() == 1);
+  assert(argument1->index() == 0);
+
+  region.remove_node(node);
+  region.RemoveArgumentsWhere([](const jlm::rvsdg::argument &argument){ return false; });
+  assert(region.narguments() == 1);
+  assert(argument1->index() == 0);
+
+  region.RemoveArgumentsWhere([](const jlm::rvsdg::argument &argument){ return argument.index() == 0; });
+  assert(region.narguments() == 0);
+}
+
 static int
 Test()
 {
@@ -182,6 +218,7 @@ Test()
   TestIsRootRegion();
   TestNumRegions();
   TestRemoveResultsWhere();
+  TestRemoveArgumentsWhere();
 
   return 0;
 }
