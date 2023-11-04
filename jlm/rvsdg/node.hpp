@@ -717,6 +717,26 @@ protected:
 	void
 	RemoveInput(size_t index);
 
+  /**
+   * Removes all inputs that match the condition specified by \p match.
+   *
+   * @tparam F A type that supports the function call operator: bool operator(const node_input&)
+   * @param match Defines the condition for the inputs to remove.
+   */
+  template<typename F> void
+  RemoveInputsWhere(const F& match)
+  {
+    // iterate backwards to avoid the invalidation of 'n' by RemoveInput()
+    for (size_t n = ninputs()-1; n != static_cast<size_t>(-1); n--)
+    {
+      auto & input = *node::input(n);
+      if (match(input))
+      {
+        RemoveInput(n);
+      }
+    }
+  }
+
 	node_output *
 	add_output(std::unique_ptr<node_output> output)
 	{

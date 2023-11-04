@@ -158,12 +158,42 @@ TestRemoveOutputsWhere()
   assert(node1.noutputs() == 0);
 }
 
+/**
+ * Test node::RemoveInputsWhere()
+ */
+static void
+TestRemoveInputsWhere()
+{
+  // Arrange
+  jlm::rvsdg::graph rvsdg;
+  jlm::tests::valuetype valueType;
+  auto x = rvsdg.add_import({valueType, "x"});
+
+
+  auto & node = jlm::tests::SimpleNode::Create(
+    *rvsdg.root(),
+    {x, x, x},
+    {});
+  auto input0 = node.input(0);
+  auto input2 = node.input(2);
+
+  // Act & Assert
+  node.RemoveInputsWhere([](const jlm::rvsdg::input & input){ return input.index() == 1; });
+  assert(node.ninputs() == 2);
+  assert(node.input(0) == input0);
+  assert(node.input(1) == input2);
+
+  node.RemoveInputsWhere([](const jlm::rvsdg::input & input){ return true; });
+  assert(node.ninputs() == 0);
+}
+
 static int
 test_nodes()
 {
 	test_node_copy();
 	test_node_depth();
   TestRemoveOutputsWhere();
+  TestRemoveInputsWhere();
 
 	return 0;
 }

@@ -259,6 +259,8 @@ private:
   {}
 
 public:
+  using rvsdg::node::RemoveInputsWhere;
+
   using rvsdg::node::RemoveOutputsWhere;
 
   static SimpleNode&
