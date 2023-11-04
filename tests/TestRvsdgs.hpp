@@ -857,7 +857,7 @@ public:
 
 /** \brief GammaTest2 class
  *
- * This function sets up an RVSDG representing the following function:
+ * This class sets up an RVSDG representing the following code:
  *
  * \code{.c}
  *   static uint32_t
