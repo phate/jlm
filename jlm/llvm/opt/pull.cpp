@@ -84,11 +84,11 @@ single_successor(const jlm::rvsdg::node * node)
 static void
 remove(jlm::rvsdg::gamma_input * input)
 {
-	auto gamma = input->node();
+  auto gamma = input->node();
 
-	for (size_t n = 0; n < gamma->nsubregions(); n++)
+  for (size_t n = 0; n < gamma->nsubregions(); n++)
     gamma->subregion(n)->RemoveArgument(input->index() - 1);
-	gamma->RemoveInput(input->index());
+  gamma->RemoveInput(input->index());
 }
 
 static void
