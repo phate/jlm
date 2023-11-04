@@ -1354,7 +1354,8 @@ Steensgaard::AnalyzeLambda(const lambda::node & lambda)
   /*
    * Handle function arguments
    */
-  if (lambda.direct_calls()) {
+  auto callSummary = lambda.ComputeCallSummary();
+  if (callSummary->HasOnlyDirectCalls()) {
     for (auto & argument : lambda.fctarguments()) {
       if (jlm::rvsdg::is<PointerType>(argument.type())) {
         LocationSet_->FindOrInsertRegisterLocation(
@@ -1615,6 +1616,13 @@ Steensgaard::AnalyzeRvsdg(const jlm::rvsdg::graph & graph)
   add_imports(graph, *LocationSet_);
   AnalyzeRegion(*graph.root());
   MarkExportsAsEscaping(graph, *LocationSet_);
+}
+
+std::unique_ptr<PointsToGraph>
+Steensgaard::Analyze(const RvsdgModule &rvsdgModule)
+{
+  util::StatisticsCollector statisticsCollector;
+  return Analyze(rvsdgModule, statisticsCollector);
 }
 
 std::unique_ptr<PointsToGraph>

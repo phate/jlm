@@ -74,12 +74,29 @@ TestIsSubsetOf()
   assert(!set1234.IsSubsetOf(set123));
 }
 
+static void
+TestIntersectWith()
+{
+  using namespace jlm::util;
+
+  HashSet<int> set12({1, 2});
+  HashSet<int> set123({1, 2, 3});
+  HashSet<int> set45({4, 5});
+
+  set123.IntersectWith(set12);
+  assert(set123 == set12);
+
+  set123.IntersectWith(set45);
+  assert(set123.Size() == 0);
+}
+
 static int
 TestHashSet()
 {
   TestInt();
   TestUniquePointer();
   TestIsSubsetOf();
+  TestIntersectWith();
 
   return 0;
 }

@@ -142,22 +142,21 @@ inlineCall(jlm::rvsdg::simple_node * call, const lambda::node * lambda)
 }
 
 static void
-inlining(jlm::rvsdg::graph & graph)
+inlining(jlm::rvsdg::graph & rvsdg)
 {
-	auto root = graph.root();
+  for (auto node : rvsdg::topdown_traverser(rvsdg.root()))
+  {
+    if (auto lambda = dynamic_cast<const lambda::node*>(node))
+    {
+      auto callSummary = lambda->ComputeCallSummary();
 
-	for (auto node : jlm::rvsdg::topdown_traverser(root)) {
-		if (!is<lambda::operation>(node))
-			continue;
-
-		auto lambda = static_cast<const lambda::node*>(node);
-
-		std::vector<jlm::rvsdg::simple_node*> calls;
-		bool onlyDirectCalls = lambda->direct_calls(&calls);
-
-		if (onlyDirectCalls && calls.size() == 1)
-			inlineCall(calls[0], lambda);
-	}
+      if (callSummary->HasOnlyDirectCalls()
+          && callSummary->NumDirectCalls() == 1)
+      {
+        inlineCall(*callSummary->DirectCalls().begin(), lambda);
+      }
+    }
+  }
 }
 
 static void
