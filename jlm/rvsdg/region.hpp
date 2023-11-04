@@ -218,8 +218,8 @@ public:
    * \see argument#index()
    * \see argument::nusers()
    */
-	void
-	RemoveArgument(size_t index);
+  void
+  RemoveArgument(size_t index);
 
   /**
    * Removes all arguments that have no users and match the condition specified by \p match.

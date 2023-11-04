@@ -278,16 +278,16 @@ TestPruneOutputs()
 static int
 test_main()
 {
-	test_gamma();
+  test_gamma();
   TestRemoveOutputsWhere();
   TestPruneOutputs();
 
-	test_predicate_reduction();
-	test_invariant_reduction();
-	test_control_constant_reduction();
-	test_control_constant_reduction2();
+  test_predicate_reduction();
+  test_invariant_reduction();
+  test_control_constant_reduction();
+  test_control_constant_reduction2();
 
-	return 0;
+  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-gamma", test_main)

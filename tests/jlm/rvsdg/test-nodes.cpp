@@ -190,12 +190,12 @@ TestRemoveInputsWhere()
 static int
 test_nodes()
 {
-	test_node_copy();
-	test_node_depth();
+  test_node_copy();
+  test_node_depth();
   TestRemoveOutputsWhere();
   TestRemoveInputsWhere();
 
-	return 0;
+  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-nodes", test_nodes)

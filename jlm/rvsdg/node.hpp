@@ -714,8 +714,8 @@ protected:
    * \see recompute_depth()
    * \see input#index()
    */
-	void
-	RemoveInput(size_t index);
+  void
+  RemoveInput(size_t index);
 
   /**
    * Removes all inputs that match the condition specified by \p match.
@@ -760,8 +760,8 @@ protected:
    * \see output#index()
    * \see output#nusers()
    */
-	void
-	RemoveOutput(size_t index);
+  void
+  RemoveOutput(size_t index);
 
   /**
    * Removes all outputs that have no users and match the condition specified by \p match.

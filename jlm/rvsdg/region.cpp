@@ -91,17 +91,17 @@ result::create(
 
 region::~region()
 {
-	on_region_destroy(this);
+  on_region_destroy(this);
 
-	while (results_.size())
+  while (results_.size())
     RemoveResult(results_.size() - 1);
 
-	prune(false);
-	JLM_ASSERT(nodes.empty());
-	JLM_ASSERT(top_nodes.empty());
-	JLM_ASSERT(bottom_nodes.empty());
+  prune(false);
+  JLM_ASSERT(nodes.empty());
+  JLM_ASSERT(top_nodes.empty());
+  JLM_ASSERT(bottom_nodes.empty());
 
-	while (arguments_.size())
+  while (arguments_.size())
     RemoveArgument(arguments_.size() - 1);
 }
 
