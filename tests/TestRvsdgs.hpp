@@ -855,6 +855,141 @@ public:
 	jlm::rvsdg::gamma_node * gamma;
 };
 
+/** \brief GammaTest2 class
+ *
+ * This class sets up an RVSDG representing the following code:
+ *
+ * \code{.c}
+ *   static uint32_t
+ *   f(uint32_t c, uint32_t* x, uint32_t* y)
+ *   {
+ *     uint32_t a;
+ *     uint32_t* z = NULL;
+ *
+ *     if (c == 0)
+ *     {
+ *       a = *x;
+ *       *z = 1;
+ *     }
+ *     else
+ *     {
+ *       a = *y;
+ *       *z = 2;
+ *     }
+ *
+ *     return a + *z;
+ *   }
+ *
+ *   uint32_t
+ *   g()
+ *   {
+ *     uint32_t x = 1;
+ *     uint32_t y = 2;
+ *
+ *     return f(0, &x, &y);
+ *   }
+ *
+ *   uint32_t
+ *   h()
+ *   {
+ *     uint32_t x = 3;
+ *     uint32_t y = 4;
+ *
+ *     return f(1, &x, &y);
+ *   }
+ * \endcode
+ *
+ * It uses a single memory state to sequentialize the respective memory operations.
+ */
+class GammaTest2 final : public RvsdgTest
+{
+public:
+  [[nodiscard]] llvm::lambda::node&
+  GetLambdaF() const noexcept
+  {
+    return *LambdaF_;
+  }
+
+  [[nodiscard]] llvm::lambda::node&
+  GetLambdaG() const noexcept
+  {
+    return *LambdaG_;
+  }
+
+  [[nodiscard]] llvm::lambda::node&
+  GetLambdaH() const noexcept
+  {
+    return *LambdaH_;
+  }
+
+  [[nodiscard]] rvsdg::gamma_node&
+  GetGamma() const noexcept
+  {
+    return *Gamma_;
+  }
+
+  [[nodiscard]] llvm::CallNode&
+  GetCallFromG() const noexcept
+  {
+    return *CallFromG_;
+  }
+
+  [[nodiscard]] llvm::CallNode&
+  GetCallFromH() const noexcept
+  {
+    return *CallFromH_;
+  }
+
+  [[nodiscard]] rvsdg::node &
+  GetAllocaXFromG() const noexcept
+  {
+    return *AllocaXFromG_;
+  }
+
+  [[nodiscard]] rvsdg::node &
+  GetAllocaYFromG() const noexcept
+  {
+    return *AllocaYFromG_;
+  }
+
+  [[nodiscard]] rvsdg::node &
+  GetAllocaXFromH() const noexcept
+  {
+    return *AllocaXFromH_;
+  }
+
+  [[nodiscard]] rvsdg::node &
+  GetAllocaYFromH() const noexcept
+  {
+    return *AllocaYFromH_;
+  }
+
+  [[nodiscard]] rvsdg::node &
+  GetAllocaZ() const noexcept
+  {
+    return *AllocaZ_;
+  }
+
+private:
+  std::unique_ptr<llvm::RvsdgModule>
+  SetupRvsdg() override;
+
+  llvm::lambda::node * LambdaF_;
+  llvm::lambda::node * LambdaG_;
+  llvm::lambda::node * LambdaH_;
+
+  rvsdg::gamma_node * Gamma_;
+
+  llvm::CallNode * CallFromG_;
+  llvm::CallNode * CallFromH_;
+
+  rvsdg::node * AllocaXFromG_;
+  rvsdg::node * AllocaYFromG_;
+  rvsdg::node * AllocaXFromH_;
+  rvsdg::node * AllocaYFromH_;
+  rvsdg::node * AllocaZ_;
+};
+
 /** \brief ThetaTest class
 *
 * This function sets up an RVSDG representing the following function:
