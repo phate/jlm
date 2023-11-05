@@ -47,7 +47,7 @@ public:
 
   ~RegionAwareMemoryNodeProvider() noexcept override;
 
-  RegionAwareMemoryNodeProvider() = default;
+  RegionAwareMemoryNodeProvider();
 
   RegionAwareMemoryNodeProvider(const RegionAwareMemoryNodeProvider &) = delete;
 
