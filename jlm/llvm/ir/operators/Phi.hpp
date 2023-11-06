@@ -16,6 +16,8 @@
 namespace jlm::llvm
 {
 
+namespace lambda { class node; }
+
 namespace phi {
 
 /* phi operation class  */
@@ -394,6 +396,17 @@ public:
 
   virtual phi::node *
   copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const override;
+
+  /**
+   * Extracts all lambda nodes from a phi node.
+   *
+   * The function is capable of handling nested phi nodes.
+   *
+   * @param phiNode The phi node from which the lambda nodes should be extracted.
+   * @return A vector of lambda nodes.
+   */
+  static std::vector<lambda::node*>
+  ExtractLambdaNodes(const phi::node & phiNode);
 };
 
 /* phi builder class */

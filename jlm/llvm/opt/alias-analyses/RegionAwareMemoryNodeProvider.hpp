@@ -47,7 +47,7 @@ public:
 
   ~RegionAwareMemoryNodeProvider() noexcept override;
 
-  RegionAwareMemoryNodeProvider() = default;
+  RegionAwareMemoryNodeProvider();
 
   RegionAwareMemoryNodeProvider(const RegionAwareMemoryNodeProvider &) = delete;
 
@@ -178,17 +178,6 @@ private:
    */
   void
   ResolveUnknownMemoryNodeReferences(const RvsdgModule & rvsdgModule);
-
-  /**
-   * Extracts all lambda nodes from a phi node.
-   *
-   * The function is capable of handling nested phi nodes.
-   *
-   * @param phiNode The phi node from which the lambda nodes should be extracted.
-   * @return A vector of lambda nodes.
-   */
-  static std::vector<const lambda::node*>
-  ExtractLambdaNodes(const phi::node & phiNode);
 
   /**
    * Extracts all tail nodes of the RVSDG root region.
