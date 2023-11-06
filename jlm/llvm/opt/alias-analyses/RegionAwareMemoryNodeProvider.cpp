@@ -475,6 +475,9 @@ private:
 RegionAwareMemoryNodeProvider::~RegionAwareMemoryNodeProvider() noexcept
 = default;
 
+RegionAwareMemoryNodeProvider::RegionAwareMemoryNodeProvider()
+= default;
+
 std::unique_ptr<MemoryNodeProvisioning>
 RegionAwareMemoryNodeProvider::ProvisionMemoryNodes(
   const RvsdgModule & rvsdgModule,
