@@ -820,7 +820,7 @@ RegionAwareMemoryNodeProvider::PropagatePhi(const phi::node & phiNode)
   auto & phiNodeSubregion = *phiNode.subregion();
   PropagateRegion(phiNodeSubregion);
 
-  auto lambdaNodes = ExtractLambdaNodes(phiNode);
+  auto lambdaNodes = phi::node::ExtractLambdaNodes(phiNode);
 
   util::HashSet<const PointsToGraph::MemoryNode*> memoryNodes;
   util::HashSet<const jlm::rvsdg::simple_node*> unknownMemoryNodeReferences;
@@ -884,7 +884,7 @@ RegionAwareMemoryNodeProvider::ResolveUnknownMemoryNodeReferences(const RvsdgMod
     }
     else if (auto phiNode = dynamic_cast<const phi::node*>(node))
     {
-      auto lambdaNodes = ExtractLambdaNodes(*phiNode);
+      auto lambdaNodes = phi::node::ExtractLambdaNodes(*phiNode);
       for (auto & lambda : lambdaNodes)
       {
         ResolveLambda(*lambda);
@@ -901,32 +901,6 @@ RegionAwareMemoryNodeProvider::ResolveUnknownMemoryNodeReferences(const RvsdgMod
       JLM_UNREACHABLE("Unhandled node type!");
     }
   }
-}
-
-std::vector<const lambda::node*>
-RegionAwareMemoryNodeProvider::ExtractLambdaNodes(const phi::node & phiNode)
-{
-  std::function<void(const phi::node&, std::vector<const lambda::node*>&)> extractLambdaNodes = [&](
-      auto & phiNode,
-      auto & lambdaNodes)
-  {
-    for (auto & node : phiNode.subregion()->nodes)
-    {
-      if (auto lambdaNode = dynamic_cast<const lambda::node*>(&node))
-      {
-        lambdaNodes.push_back(lambdaNode);
-      }
-      else if (auto innerPhiNode = dynamic_cast<const phi::node*>(&node))
-      {
-        extractLambdaNodes(*innerPhiNode, lambdaNodes);
-      }
-    }
-  };
-
-  std::vector<const lambda::node*> lambdaNodes;
-  extractLambdaNodes(phiNode, lambdaNodes);
-
-  return lambdaNodes;
 }
 
 std::vector<const jlm::rvsdg::node*>
