@@ -204,7 +204,7 @@ public:
 	append_argument(jlm::rvsdg::argument * argument);
 
   /**
-   * Removes an argument from the region given a arguments' index.
+   * Removes an argument from the region given an arguments' index.
    *
    * An argument can only be removed, if it has no users. The removal of an argument invalidates the region's existing
    * argument iterators.
