@@ -18,9 +18,7 @@ public:
 	jlm::llvm::RvsdgModule &
 	module()
 	{
-    if (module_ == nullptr)
-      module_ = SetupRvsdg();
-
+    EnsureInitialized();
 		return *module_;
 	}
 
@@ -29,6 +27,13 @@ public:
 	{
 		return module().Rvsdg();
 	}
+
+  void
+  EnsureInitialized()
+  {
+    if (module_ == nullptr)
+      module_ = SetupRvsdg();
+  }
 
 private:
   /**
@@ -1807,6 +1812,104 @@ private:
   jlm::rvsdg::node * Alloca_;
 };
 
+/** \brief RVSDG module with one of each memory node type.
+ *
+ * The class sets up an RVSDG module corresponding to the code:
+ *
+ * \code{.c}
+ *   static int global = 1;
+ *   extern int imported;
+ *
+ *   void f()
+ *   {
+ *     int* alloca;
+ *     alloca = malloc(4);
+ *   }
+ * \endcode
+ *
+ * It provides getters for all the memory node creating RVSDG nodes, and their outputs.
+ */
+class AllMemoryNodesTest final : public RvsdgTest
+{
+public:
+  [[nodiscard]] const jlm::llvm::delta::node &
+  GetDeltaNode() const noexcept
+  {
+    JLM_ASSERT(Delta_);
+    return *Delta_;
+  }
+
+  [[nodiscard]] const jlm::llvm::delta::output &
+  GetDeltaOutput() const noexcept
+  {
+    JLM_ASSERT(Delta_);
+    return *Delta_->output();
+  }
+
+  [[nodiscard]] const jlm::rvsdg::argument &
+  GetImportOutput() const noexcept
+  {
+    JLM_ASSERT(Import_);
+    return *Import_;
+  }
+
+  [[nodiscard]] const jlm::llvm::lambda::node &
+  GetLambdaNode() const noexcept
+  {
+    JLM_ASSERT(Lambda_);
+    return *Lambda_;
+  }
+
+  [[nodiscard]] const jlm::llvm::lambda::output &
+  GetLambdaOutput() const noexcept
+  {
+    JLM_ASSERT(Lambda_);
+    return *Lambda_->output();
+  }
+
+  [[nodiscard]] const jlm::rvsdg::node &
+  GetAllocaNode() const noexcept
+  {
+    JLM_ASSERT(Alloca_);
+    return *Alloca_;
+  }
+
+  [[nodiscard]] const jlm::rvsdg::output &
+  GetAllocaOutput() const noexcept
+  {
+    JLM_ASSERT(Alloca_);
+    return *Alloca_->output(0);
+  }
+
+  [[nodiscard]] const jlm::rvsdg::node &
+  GetMallocNode() const noexcept
+  {
+    JLM_ASSERT(Malloc_);
+    return *Malloc_;
+  }
+
+  [[nodiscard]] const jlm::rvsdg::output &
+  GetMallocOutput() const noexcept
+  {
+    JLM_ASSERT(Malloc_);
+    return *Malloc_->output(0);
+  }
+
+private:
+  std::unique_ptr<jlm::llvm::RvsdgModule>
+  SetupRvsdg() override;
+
+  jlm::llvm::delta::node * Delta_ = {};
+
+  jlm::rvsdg::argument * Import_ = {};
+
+  jlm::llvm::lambda::node * Lambda_ = {};
+
+  jlm::rvsdg::node * Alloca_ = {};
+
+  jlm::rvsdg::node * Malloc_ = {};
+};
+
 /** \brief RVSDG module with an arbitrary amount of alloca nodes.
  *
  * The class sets up an RVSDG module corresponding to the code:
@@ -1823,23 +1926,32 @@ private:
  *
  * It provides getters for the alloca nodes themselves, and for their outputs.
  */
-class NAllocaNodesTest final : public RvsdgTest {
-  size_t NumAllocaNodes_;
-
-  std::vector<const rvsdg::node *> AllocaNodes_;
-
-  std::unique_ptr<jlm::llvm::RvsdgModule>
-  SetupRvsdg() override;
-
+class NAllocaNodesTest final : public RvsdgTest
+{
 public:
-
   NAllocaNodesTest(size_t numAllocaNodes) : NumAllocaNodes_(numAllocaNodes) {}
 
   [[nodiscard]] const jlm::rvsdg::node &
-  GetAllocaNode(size_t index);
+  GetAllocaNode(size_t index) const noexcept
+  {
+    JLM_ASSERT(index < AllocaNodes_.size());
+    return *AllocaNodes_[index];
+  }
 
   [[nodiscard]] const jlm::rvsdg::output &
-  GetAllocaOutput(size_t index);
+  GetAllocaOutput(size_t index) const noexcept
+  {
+    JLM_ASSERT(index < AllocaNodes_.size());
+    return *AllocaNodes_[index]->output(0);
+  }
+
+private:
+  std::unique_ptr<jlm::llvm::RvsdgModule>
+  SetupRvsdg() override;
+
+  size_t NumAllocaNodes_;
+
+  std::vector<const rvsdg::node *> AllocaNodes_;
 };
 
 }

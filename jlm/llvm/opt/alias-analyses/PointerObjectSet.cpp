@@ -56,7 +56,7 @@ PointerObjectSet::CreateGlobalMemoryObject(const delta::node & deltaNode)
 }
 
 PointerObject::Index
-PointerObjectSet::CreateFunction(const lambda::node & lambdaNode)
+PointerObjectSet::CreateFunctionMemoryObject(const lambda::node & lambdaNode)
 {
   JLM_ASSERT(FunctionMap_.count(&lambdaNode) == 0);
   return FunctionMap_[&lambdaNode] = AddPointerObject(PointerObjectKind::FunctionMemoryObject);

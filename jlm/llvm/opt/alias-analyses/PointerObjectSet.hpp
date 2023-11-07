@@ -28,7 +28,6 @@ enum class PointerObjectKind : uint8_t
   // All other pointer objects represent storage instances in memory
   AllocaMemoryObject,
   MallocMemoryObject,
-  // Represents global memory objects, such as global variables and thread local variables.
   GlobalMemoryObject,
   FunctionMemoryObject,
   // Represents functions and global variables imported from other modules.
@@ -50,7 +49,7 @@ class PointerObject final
 
   // When set, the PointerObject is known to be accessible from outside the module.
   // Anything it points to can also be accessed outside the module, and should also be marked as escaped.
-  // Escaped memory object can be overridden outside the module, so **HasEscaped implies PointsToExternal**.
+  // Escaped memory object can be overridden outside the module, so HasEscaped implies PointsToExternal.
   uint8_t HasEscaped_ : 1;
 
 public:
@@ -171,7 +170,7 @@ public:
   CreateGlobalMemoryObject(const delta::node &deltaNode);
 
   PointerObject::Index
-  CreateFunction(const lambda::node &lambdaNode);
+  CreateFunctionMemoryObject(const lambda::node &lambdaNode);
 
   PointerObject::Index
   CreateImportMemoryObject(const rvsdg::argument &importNode);
