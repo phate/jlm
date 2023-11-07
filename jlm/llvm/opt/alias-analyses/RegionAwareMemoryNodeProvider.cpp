@@ -875,7 +875,7 @@ RegionAwareMemoryNodeProvider::ResolveUnknownMemoryNodeReferences(const RvsdgMod
     }
   };
 
-  auto nodes = ExtractRvsdgTailNodes(rvsdgModule);
+  auto nodes = rvsdg::graph::ExtractTailNodes(rvsdgModule.Rvsdg());
   for (auto & node : nodes)
   {
     if (auto lambdaNode = dynamic_cast<const lambda::node*>(node))
@@ -901,52 +901,6 @@ RegionAwareMemoryNodeProvider::ResolveUnknownMemoryNodeReferences(const RvsdgMod
       JLM_UNREACHABLE("Unhandled node type!");
     }
   }
-}
-
-std::vector<const jlm::rvsdg::node*>
-RegionAwareMemoryNodeProvider::ExtractRvsdgTailNodes(const RvsdgModule & rvsdgModule)
-{
-  auto IsOnlyExported = [](const jlm::rvsdg::output & output)
-  {
-    auto IsRootRegionExport = [](const jlm::rvsdg::input * input)
-    {
-      if (!input->region()->IsRootRegion())
-      {
-        return false;
-      }
-
-      if (jlm::rvsdg::node_input::node(*input))
-      {
-        return false;
-      }
-
-      return true;
-    };
-
-    return std::all_of(
-      output.begin(),
-      output.end(),
-      IsRootRegionExport);
-  };
-
-  auto & rootRegion = *rvsdgModule.Rvsdg().root();
-
-  std::vector<const jlm::rvsdg::node*> nodes;
-  for (auto & node : rootRegion.bottom_nodes)
-  {
-      nodes.push_back(&node);
-  }
-
-  for (size_t n = 0; n < rootRegion.nresults(); n++)
-  {
-    auto output = rootRegion.result(n)->origin();
-    if (IsOnlyExported(*output))
-    {
-      nodes.push_back(jlm::rvsdg::node_output::node(output));
-    }
-  }
-
-  return nodes;
 }
 
 }
