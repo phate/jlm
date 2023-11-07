@@ -287,13 +287,14 @@ public:
 	add_exitvar(const std::vector<jlm::rvsdg::output*> & values);
 
   /**
-   * Removes all outputs that have no users and match the condition specified by \p match.
+   * Removes all gamma outputs and their respective results. The outputs must have no users and match the condition
+   * specified by \p match.
    *
    * @tparam F A type that supports the function call operator: bool operator(const gamma_output&)
    * @param match Defines the condition of the elements to remove.
    */
   template<typename F> void
-  RemoveOutputsWhere(const F& match);
+  RemoveGammaOutputsWhere(const F& match);
 
   /**
    * Removes all outputs that have no users.
@@ -306,7 +307,7 @@ public:
       return true;
     };
 
-    RemoveOutputsWhere(match);
+    RemoveGammaOutputsWhere(match);
   }
 
 	virtual jlm::rvsdg::gamma_node *
@@ -508,7 +509,7 @@ gamma_node::add_exitvar(const std::vector<jlm::rvsdg::output*> & values)
 }
 
 template<typename F> void
-gamma_node::RemoveOutputsWhere(const F& match)
+gamma_node::RemoveGammaOutputsWhere(const F& match)
 {
   // iterate backwards to avoid the invalidation of 'n' by RemoveOutput()
   for (size_t n = noutputs()-1; n != static_cast<size_t>(-1); n--)

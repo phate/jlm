@@ -179,7 +179,7 @@ test_control_constant_reduction2()
 }
 
 static void
-TestRemoveOutputsWhere()
+TestRemoveGammaOutputsWhere()
 {
   using namespace jlm::rvsdg;
 
@@ -212,7 +212,7 @@ TestRemoveOutputsWhere()
   assert(gammaNode->noutputs() == 4);
 
   // Remove gammaOutput1
-  gammaNode->RemoveOutputsWhere([&](const gamma_output & output){ return output.index() == gammaOutput1->index(); });
+  gammaNode->RemoveGammaOutputsWhere([&](const gamma_output & output){return output.index() == gammaOutput1->index();});
   assert(gammaNode->noutputs() == 3);
   assert(gammaNode->subregion(0)->nresults() == 3);
   assert(gammaNode->subregion(1)->nresults() == 3);
@@ -220,7 +220,7 @@ TestRemoveOutputsWhere()
   assert(gammaOutput3->index() == 2);
 
   // Try to remove gammaOutput2. This should result in no change as gammaOutput2 still has users.
-  gammaNode->RemoveOutputsWhere([&](const gamma_output & output){ return output.index() == gammaOutput2->index(); });
+  gammaNode->RemoveGammaOutputsWhere([&](const gamma_output & output){return output.index() == gammaOutput2->index();});
   assert(gammaNode->noutputs() == 3);
   assert(gammaNode->subregion(0)->nresults() == 3);
   assert(gammaNode->subregion(1)->nresults() == 3);
@@ -279,7 +279,7 @@ static int
 test_main()
 {
   test_gamma();
-  TestRemoveOutputsWhere();
+  TestRemoveGammaOutputsWhere();
   TestPruneOutputs();
 
   test_predicate_reduction();
