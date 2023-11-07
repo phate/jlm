@@ -165,6 +165,18 @@ public:
 		root()->prune(true);
 	}
 
+  /**
+   * Extracts all tail nodes of the RVSDG root region.
+   *
+   * A tail node is any node in the root region on which no other node in the root region depends on. An example would
+   * be a lambda node that is not called within the RVSDG module.
+   *
+   * @param rvsdg The RVSDG from which to extract the tail nodes.
+   * @return A vector of tail nodes.
+   */
+  static std::vector<rvsdg::node*>
+  ExtractTailNodes(const graph & rvsdg);
+
 private:
 	bool normalized_;
 	jlm::rvsdg::region * root_;

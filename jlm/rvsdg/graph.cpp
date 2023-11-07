@@ -94,4 +94,50 @@ graph::node_normal_form(const std::type_info & type) noexcept
 	return result;
 }
 
+std::vector<rvsdg::node*>
+graph::ExtractTailNodes(const graph & rvsdg)
+{
+  auto IsOnlyExported = [](const rvsdg::output & output)
+  {
+    auto IsRootRegionExport = [](const rvsdg::input * input)
+    {
+      if (!input->region()->IsRootRegion())
+      {
+        return false;
+      }
+
+      if (rvsdg::node_input::node(*input))
+      {
+        return false;
+      }
+
+      return true;
+    };
+
+    return std::all_of(
+      output.begin(),
+      output.end(),
+      IsRootRegionExport);
+  };
+
+  auto & rootRegion = *rvsdg.root();
+
+  std::vector<rvsdg::node*> nodes;
+  for (auto & node : rootRegion.bottom_nodes)
+  {
+    nodes.push_back(&node);
+  }
+
+  for (size_t n = 0; n < rootRegion.nresults(); n++)
+  {
+    auto output = rootRegion.result(n)->origin();
+    if (IsOnlyExported(*output))
+    {
+      nodes.push_back(rvsdg::node_output::node(output));
+    }
+  }
+
+  return nodes;
+}
+
 }
