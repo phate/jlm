@@ -724,12 +724,12 @@ MemoryStateEncoder::EncodeCall(const CallNode & callNode)
   auto EncodeEntry = [this](const CallNode & callNode)
   {
     auto region = callNode.region();
+    auto & regionalizedStateMap = Context_->GetRegionalizedStateMap();
     auto & memoryNodes = Context_->GetMemoryNodeProvisioning().GetCallEntryNodes(callNode);
 
     std::vector<StateMap::MemoryNodeStatePair*> memoryNodeStatePairs;
     for (auto memoryNode : memoryNodes.Items())
     {
-      auto & regionalizedStateMap = Context_->GetRegionalizedStateMap();
       if (regionalizedStateMap.HasState(*region, *memoryNode))
       {
         memoryNodeStatePairs.emplace_back(regionalizedStateMap.GetState(*region, *memoryNode));
