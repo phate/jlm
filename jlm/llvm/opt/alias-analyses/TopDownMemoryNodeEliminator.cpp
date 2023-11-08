@@ -732,21 +732,13 @@ TopDownMemoryNodeEliminator::EliminateTopDownTheta(const rvsdg::theta_node& thet
 void
 TopDownMemoryNodeEliminator::EliminateTopDownSimpleNode(const rvsdg::simple_node & simpleNode)
 {
-  auto annotateAlloca = [](auto & p, auto & n) { p.EliminateTopDownAlloca(n); };
-  auto annotateCall = [](auto & p, auto & n) { p.EliminateTopDownCall(*util::AssertedCast<const CallNode>(&n)); };
-
-  static std::unordered_map<
-    std::type_index,
-    std::function<void(TopDownMemoryNodeEliminator&, const rvsdg::simple_node&)>> nodes
-    ({
-       {typeid(alloca_op), annotateAlloca},
-       {typeid(CallOperation), annotateCall}
-     });
-
-  auto & operation = simpleNode.operation();
-  if (nodes.find(typeid(operation)) != nodes.end())
+  if (is<alloca_op>(&simpleNode))
   {
-    nodes[typeid(operation)](*this, simpleNode);
+    EliminateTopDownAlloca(simpleNode);
+  }
+  else if (auto callNode = dynamic_cast<const CallNode*>(&simpleNode))
+  {
+    EliminateTopDownCall(*callNode);
   }
 }
 
