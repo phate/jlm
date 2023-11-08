@@ -679,13 +679,13 @@ class node::fctresconstiterator final : public jlm::rvsdg::input::constiterator<
 class node::CallSummary final
 {
   using DirectCallsConstRange = util::iterator_range<std::vector<CallNode*>::const_iterator>;
-  using OtherUsersConstRange = util::iterator_range<std::vector<rvsdg::simple_input*>::const_iterator>;
+  using OtherUsersConstRange = util::iterator_range<std::vector<rvsdg::input*>::const_iterator>;
 
 public:
   CallSummary(
     rvsdg::result * rvsdgExport,
     std::vector<CallNode*> directCalls,
-    std::vector<rvsdg::simple_input*> otherUsers)
+    std::vector<rvsdg::input*> otherUsers)
     : RvsdgExport_(rvsdgExport)
     , DirectCalls_(std::move(directCalls))
     , OtherUsers_(std::move(otherUsers))
@@ -835,7 +835,7 @@ public:
   Create(
     rvsdg::result * rvsdgExport,
     std::vector<CallNode*> directCalls,
-    std::vector<rvsdg::simple_input*> otherUsers)
+    std::vector<rvsdg::input*> otherUsers)
   {
     return std::make_unique<CallSummary>(
       rvsdgExport,
@@ -846,7 +846,7 @@ public:
 private:
   rvsdg::result * RvsdgExport_;
   std::vector<CallNode*> DirectCalls_;
-  std::vector<rvsdg::simple_input*> OtherUsers_;
+  std::vector<rvsdg::input*> OtherUsers_;
 };
 
 }}
