@@ -210,7 +210,7 @@ node::add_input(std::unique_ptr<node_input> input)
 }
 
 void
-node::remove_input(size_t index)
+node::RemoveInput(size_t index)
 {
 	JLM_ASSERT(index < ninputs());
 	auto producer = node_output::node(input(index)->origin());
@@ -239,7 +239,7 @@ node::remove_input(size_t index)
 }
 
 void
-node::remove_output(size_t index)
+node::RemoveOutput(size_t index)
 {
 	JLM_ASSERT(index < noutputs());
 

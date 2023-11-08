@@ -179,18 +179,6 @@ private:
   void
   ResolveUnknownMemoryNodeReferences(const RvsdgModule & rvsdgModule);
 
-  /**
-   * Extracts all tail nodes of the RVSDG root region.
-   *
-   * A tail node is any node in the root region on which no other node in the root region depends on. An example would
-   * be a lambda node that is not called within the RVSDG module.
-   *
-   * @param rvsdgModule The RVSDG module from which to extract the tail nodes.
-   * @return A vector of tail nodes.
-   */
-  static std::vector<const jlm::rvsdg::node*>
-  ExtractRvsdgTailNodes(const RvsdgModule & rvsdgModule);
-
   std::unique_ptr<RegionAwareMemoryNodeProvisioning> Provisioning_;
 };
 

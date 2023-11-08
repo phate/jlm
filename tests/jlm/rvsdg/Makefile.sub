@@ -12,3 +12,4 @@ TESTS+=\
 	jlm/rvsdg/test-topdown \
 	jlm/rvsdg/test-typemismatch \
 	jlm/rvsdg/TestRegion \
+	jlm/rvsdg/TestStructuralNode \
