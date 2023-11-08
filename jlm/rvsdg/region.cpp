@@ -91,18 +91,18 @@ result::create(
 
 region::~region()
 {
-	on_region_destroy(this);
+  on_region_destroy(this);
 
-	while (results_.size())
-		remove_result(results_.size()-1);
+  while (results_.size())
+    RemoveResult(results_.size() - 1);
 
-	prune(false);
-	JLM_ASSERT(nodes.empty());
-	JLM_ASSERT(top_nodes.empty());
-	JLM_ASSERT(bottom_nodes.empty());
+  prune(false);
+  JLM_ASSERT(nodes.empty());
+  JLM_ASSERT(top_nodes.empty());
+  JLM_ASSERT(bottom_nodes.empty());
 
-	while (arguments_.size())
-		remove_argument(arguments_.size()-1);
+  while (arguments_.size())
+    RemoveArgument(arguments_.size() - 1);
 }
 
 region::region(jlm::rvsdg::region * parent, jlm::rvsdg::graph * graph)
@@ -141,7 +141,7 @@ region::append_argument(jlm::rvsdg::argument * argument)
 }
 
 void
-region::remove_argument(size_t index)
+region::RemoveArgument(size_t index)
 {
 	JLM_ASSERT(index < narguments());
 	jlm::rvsdg::argument * argument = arguments_[index];
@@ -175,7 +175,7 @@ region::append_result(jlm::rvsdg::result * result)
 }
 
 void
-region::remove_result(size_t index)
+region::RemoveResult(size_t index)
 {
 	JLM_ASSERT(index < results_.size());
 	jlm::rvsdg::result * result = results_[index];

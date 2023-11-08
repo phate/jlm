@@ -56,17 +56,9 @@ public:
 	structural_output *
 	append_output(std::unique_ptr<structural_output> output);
 
-	inline void
-	remove_input(size_t index)
-	{
-		node::remove_input(index);
-	}
+  using node::RemoveInput;
 
-	inline void
-	remove_output(size_t index)
-	{
-		node::remove_output(index);
-	}
+  using node::RemoveOutput;
 
 private:
 	std::vector<std::unique_ptr<jlm::rvsdg::region>> subregions_;

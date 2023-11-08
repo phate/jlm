@@ -135,6 +135,109 @@ TestNumRegions()
   }
 }
 
+/**
+ * Test region::RemoveResultsWhere()
+ */
+static void
+TestRemoveResultsWhere()
+{
+  // Arrange
+  jlm::rvsdg::graph rvsdg;
+  jlm::rvsdg::region region(rvsdg.root(), &rvsdg);
+
+  jlm::tests::valuetype valueType;
+  auto node = jlm::tests::test_op::Create(&region, {}, {}, {&valueType});
+
+  auto result0 = jlm::rvsdg::result::create(&region, node->output(0), nullptr, jlm::rvsdg::port(valueType));
+  auto result1 = jlm::rvsdg::result::create(&region, node->output(0), nullptr, jlm::rvsdg::port(valueType));
+  auto result2 = jlm::rvsdg::result::create(&region, node->output(0), nullptr, jlm::rvsdg::port(valueType));
+
+  // Act & Arrange
+  assert(region.nresults() == 3);
+  assert(result0->index() == 0);
+  assert(result1->index() == 1);
+  assert(result2->index() == 2);
+
+  region.RemoveResultsWhere([](const jlm::rvsdg::result &result){ return result.index() == 1; });
+  assert(region.nresults() == 2);
+  assert(result0->index() == 0);
+  assert(result2->index() == 1);
+
+  region.RemoveResultsWhere([](const jlm::rvsdg::result & result){ return false; });
+  assert(region.nresults() == 2);
+  assert(result0->index() == 0);
+  assert(result2->index() == 1);
+
+  region.RemoveResultsWhere([](const jlm::rvsdg::result & result){ return true; });
+  assert(region.nresults() == 0);
+}
+
+/**
+ * Test region::RemoveArgumentsWhere()
+ */
+static void
+TestRemoveArgumentsWhere()
+{
+  // Arrange
+  jlm::rvsdg::graph rvsdg;
+  jlm::rvsdg::region region(rvsdg.root(), &rvsdg);
+
+  jlm::tests::valuetype valueType;
+  auto argument0 = jlm::rvsdg::argument::create(&region, nullptr, jlm::rvsdg::port(valueType));
+  auto argument1 = jlm::rvsdg::argument::create(&region, nullptr, jlm::rvsdg::port(valueType));
+  auto argument2 = jlm::rvsdg::argument::create(&region, nullptr, jlm::rvsdg::port(valueType));
+
+  auto node = jlm::tests::test_op::Create(&region, {&valueType}, {argument1}, {&valueType});
+
+  // Act & Arrange
+  assert(region.narguments() == 3);
+  assert(argument0->index() == 0);
+  assert(argument1->index() == 1);
+  assert(argument2->index() == 2);
+
+  region.RemoveArgumentsWhere([](const jlm::rvsdg::argument &argument){ return true; });
+  assert(region.narguments() == 1);
+  assert(argument1->index() == 0);
+
+  region.remove_node(node);
+  region.RemoveArgumentsWhere([](const jlm::rvsdg::argument &argument){ return false; });
+  assert(region.narguments() == 1);
+  assert(argument1->index() == 0);
+
+  region.RemoveArgumentsWhere([](const jlm::rvsdg::argument &argument){ return argument.index() == 0; });
+  assert(region.narguments() == 0);
+}
+
+/**
+ * Test region::PruneArguments()
+ */
+static void
+TestPruneArguments()
+{
+  // Arrange
+  jlm::rvsdg::graph rvsdg;
+  jlm::rvsdg::region region(rvsdg.root(), &rvsdg);
+
+  jlm::tests::valuetype valueType;
+  auto argument0 = jlm::rvsdg::argument::create(&region, nullptr, jlm::rvsdg::port(valueType));
+  jlm::rvsdg::argument::create(&region, nullptr, jlm::rvsdg::port(valueType));
+  auto argument2 = jlm::rvsdg::argument::create(&region, nullptr, jlm::rvsdg::port(valueType));
+
+  auto node = jlm::tests::test_op::Create(&region, {&valueType, &valueType}, {argument0, argument2}, {&valueType});
+
+  // Act & Arrange
+  assert(region.narguments() == 3);
+
+  region.PruneArguments();
+  assert(region.narguments() == 2);
+  assert(argument0->index() == 0);
+  assert(argument2->index() == 1);
+
+  region.remove_node(node);
+  region.PruneArguments();
+  assert(region.narguments() == 0);
+}
+
 static int
 Test()
 {
@@ -144,6 +247,9 @@ Test()
   TestContainsMethod();
   TestIsRootRegion();
   TestNumRegions();
+  TestRemoveResultsWhere();
+  TestRemoveArgumentsWhere();
+  TestPruneArguments();
 
   return 0;
 }

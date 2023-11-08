@@ -286,6 +286,30 @@ public:
 	jlm::rvsdg::gamma_output *
 	add_exitvar(const std::vector<jlm::rvsdg::output*> & values);
 
+  /**
+   * Removes all gamma outputs and their respective results. The outputs must have no users and match the condition
+   * specified by \p match.
+   *
+   * @tparam F A type that supports the function call operator: bool operator(const gamma_output&)
+   * @param match Defines the condition of the elements to remove.
+   */
+  template<typename F> void
+  RemoveGammaOutputsWhere(const F& match);
+
+  /**
+   * Removes all outputs that have no users.
+   */
+  void
+  PruneOutputs()
+  {
+    auto match = [](const gamma_output&)
+    {
+      return true;
+    };
+
+    RemoveGammaOutputsWhere(match);
+  }
+
 	virtual jlm::rvsdg::gamma_node *
 	copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const override;
 };
@@ -482,6 +506,25 @@ gamma_node::add_exitvar(const std::vector<jlm::rvsdg::output*> & values)
 		result::create(subregion(n), values[n], output, port);
 
 	return output;
+}
+
+template<typename F> void
+gamma_node::RemoveGammaOutputsWhere(const F& match)
+{
+  // iterate backwards to avoid the invalidation of 'n' by RemoveOutput()
+  for (size_t n = noutputs()-1; n != static_cast<size_t>(-1); n--)
+  {
+    auto & gammaOutput = *util::AssertedCast<const gamma_output>(output(n));
+    if (gammaOutput.nusers() == 0 && match(gammaOutput))
+    {
+      for (size_t r = 0; r < nsubregions(); r++)
+      {
+        subregion(r)->RemoveResult(n);
+      }
+
+      RemoveOutput(n);
+    }
+  }
 }
 
 }

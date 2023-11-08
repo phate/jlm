@@ -700,8 +700,42 @@ protected:
 	node_input *
 	add_input(std::unique_ptr<node_input> input);
 
-	void
-	remove_input(size_t index);
+  /**
+   * Removes an input from the node given the inputs' index.
+   *
+   * The removal of an input invalidates the node's existing input iterators.
+   *
+   * @param index The inputs' index. It must be between [0, ninputs()).
+   *
+   * \note The method must adjust the indices of the other inputs after the removal. Moreover, it also might need to
+   * recompute the depth of the node.
+   *
+   * \see ninputs()
+   * \see recompute_depth()
+   * \see input#index()
+   */
+  void
+  RemoveInput(size_t index);
+
+  /**
+   * Removes all inputs that match the condition specified by \p match.
+   *
+   * @tparam F A type that supports the function call operator: bool operator(const node_input&)
+   * @param match Defines the condition for the inputs to remove.
+   */
+  template<typename F> void
+  RemoveInputsWhere(const F& match)
+  {
+    // iterate backwards to avoid the invalidation of 'n' by RemoveInput()
+    for (size_t n = ninputs()-1; n != static_cast<size_t>(-1); n--)
+    {
+      auto & input = *node::input(n);
+      if (match(input))
+      {
+        RemoveInput(n);
+      }
+    }
+  }
 
 	node_output *
 	add_output(std::unique_ptr<node_output> output)
@@ -711,8 +745,45 @@ protected:
 		return this->output(noutputs()-1);
 	}
 
-	void
-	remove_output(size_t index);
+  /**
+   * Removes an output from the node given the outputs' index.
+   *
+   * An output can only be removed, if it has no users. The removal of an output invalidates the node's existing output
+   * iterators.
+   *
+   * @param index The outputs' index. It must be between [0, noutputs()).
+   *
+   * \note The method must adjust the indices of the other outputs after the removal. The methods' runtime is therefore
+   * O(n), where n is the node's number of outputs.
+   *
+   * \see noutputs()
+   * \see output#index()
+   * \see output#nusers()
+   */
+  void
+  RemoveOutput(size_t index);
+
+  /**
+   * Removes all outputs that have no users and match the condition specified by \p match.
+   *
+   * @tparam F A type that supports the function call operator: bool operator(const node_output&)
+   * @param match Defines the condition for the outputs to remove.
+   *
+   * \see output#nusers()
+   */
+  template <typename F> void
+  RemoveOutputsWhere(const F& match)
+  {
+    // iterate backwards to avoid the invalidation of 'n' by RemoveOutput()
+    for (size_t n = noutputs()-1; n != static_cast<size_t>(-1); n--)
+    {
+      auto & output = *node::output(n);
+      if (output.nusers() == 0 && match(output))
+      {
+        RemoveOutput(n);
+      }
+    }
+  }
 
 public:
 	inline jlm::rvsdg::graph *

@@ -203,8 +203,43 @@ public:
 	void
 	append_argument(jlm::rvsdg::argument * argument);
 
-	void
-	remove_argument(size_t index);
+  /**
+   * Removes an argument from the region given an arguments' index.
+   *
+   * An argument can only be removed, if it has no users. The removal of an argument invalidates the region's existing
+   * argument iterators.
+   *
+   * @param index The arguments' index. It must be between [0, narguments()].
+   *
+   * \note The method must adjust the indices of the other arguments after the removal. The methods' runtime is
+   * therefore O(n), where n is the region's number of arguments.
+   *
+   * \see narguments()
+   * \see argument#index()
+   * \see argument::nusers()
+   */
+  void
+  RemoveArgument(size_t index);
+
+  /**
+   * Removes all arguments that have no users and match the condition specified by \p match.
+   *
+   * @tparam F A type that supports the function call operator: bool operator(const argument&)
+   * @param match Defines the condition for the arguments to remove.
+   */
+  template <typename F> void
+  RemoveArgumentsWhere(const F& match)
+  {
+    // iterate backwards to avoid the invalidation of 'n' by RemoveArgument()
+    for (size_t n = narguments()-1; n != static_cast<size_t>(-1); n--)
+    {
+      auto & argument = *this->argument(n);
+      if (argument.nusers() == 0 && match(argument))
+      {
+        RemoveArgument(n);
+      }
+    }
+  }
 
 	inline size_t
 	narguments() const noexcept
@@ -226,8 +261,55 @@ public:
 	void
 	append_result(jlm::rvsdg::result * result);
 
-	void
-	remove_result(size_t index);
+  /**
+   * Removes a result from the region given a results' index.
+   *
+   * The removal of a result invalidates the region's existing result iterators.
+   *
+   * @param index The results' index. It must be between [0, nresults()).
+   *
+   * \note The method must adjust the indices of the other results after the removal. The methods' runtime is therefore
+   * O(n), where n is the region's number of results.
+   *
+   * \see nresults()
+   * \see result#index()
+   */
+  void
+  RemoveResult(size_t index);
+
+  /**
+   * Remove all results that match the condition specified by \p match.
+   *
+   * @tparam F A type that supports the function call operator: bool operator(const result&)
+   * @param match Defines the condition for the results to remove.
+   */
+  template <typename F> void
+  RemoveResultsWhere(const F& match)
+  {
+    // iterate backwards to avoid the invalidation of 'n' by RemoveResult()
+    for (size_t n = nresults()-1; n != static_cast<size_t>(-1); n--)
+    {
+      auto & result = *this->result(n);
+      if (match(result))
+      {
+        RemoveResult(n);
+      }
+    }
+  }
+
+  /**
+   * Remove all arguments that have no users.
+   */
+  void
+  PruneArguments()
+  {
+    auto match = [](const rvsdg::argument&)
+    {
+      return true;
+    };
+
+    RemoveArgumentsWhere(match);
+  }
 
 	inline size_t
 	nresults() const noexcept
