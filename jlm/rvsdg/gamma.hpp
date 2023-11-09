@@ -315,7 +315,7 @@ public:
   }
 
   /**
-   * Removes all gamma outputs and their respective results. The outputs must have no users and
+   * Removes gamma outputs and their respective results. The outputs must have no users and
    * match the condition specified by \p match.
    *
    * @tparam F A type that supports the function call operator: bool operator(const gamma_output&)
