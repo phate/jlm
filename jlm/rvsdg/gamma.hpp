@@ -299,6 +299,22 @@ public:
   RemoveGammaInputsWhere(const F& match);
 
   /**
+   * Remove all dead inputs.
+   *
+   * \see gamma_input#IsDead()
+   */
+  void
+  PruneInputs()
+  {
+    auto match = [](const gamma_input&)
+    {
+      return true;
+    };
+
+    RemoveGammaInputsWhere(match);
+  }
+
+  /**
    * Removes all gamma outputs and their respective results. The outputs must have no users and
    * match the condition specified by \p match.
    *

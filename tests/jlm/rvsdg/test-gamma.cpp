@@ -271,6 +271,52 @@ TestRemoveGammaInputsWhere()
   assert(gammaInput1->index() == 2);
 }
 
+/**
+ * Test gamma_node::PruneInputs()
+ */
+static void
+TestPruneInputs()
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  jlm::rvsdg::graph rvsdg;
+  jlm::tests::valuetype valueType;
+
+  auto predicate = rvsdg.add_import({ctl2, ""});
+  auto v0 = rvsdg.add_import({valueType, ""});
+  auto v1 = rvsdg.add_import({valueType, ""});
+  auto v2 = rvsdg.add_import({valueType, ""});
+
+  auto gammaNode = gamma_node::create(predicate, 2);
+  auto gammaInput0 = gammaNode->add_entryvar(v0);
+  gammaNode->add_entryvar(v1);
+  auto gammaInput2 = gammaNode->add_entryvar(v2);
+
+  auto gammaOutput0 = gammaNode->add_exitvar({gammaInput0->argument(0), gammaInput0->argument(1)});
+  auto gammaOutput2 = gammaNode->add_exitvar({gammaInput0->argument(0), gammaInput2->argument(1)});
+
+  rvsdg.add_export(gammaOutput0, {gammaOutput0->type(), ""});
+  rvsdg.add_export(gammaOutput2, {gammaOutput2->type(), ""});
+
+  // Act
+  gammaNode->PruneInputs();
+
+  // Assert
+  assert(gammaNode->ninputs() == 3);
+  assert(gammaNode->subregion(0)->narguments() == 2);
+  assert(gammaNode->subregion(1)->narguments() == 2);
+
+  assert(gammaInput0->index() == 1);
+  assert(gammaNode->subregion(0)->argument(0)->input() == gammaInput0);
+  assert(gammaNode->subregion(1)->argument(0)->input() == gammaInput0);
+
+  assert(gammaInput2->index() == 2);
+  assert(gammaNode->subregion(0)->argument(1)->input() == gammaInput2);
+  assert(gammaNode->subregion(0)->argument(1)->nusers() == 0);
+  assert(gammaNode->subregion(1)->argument(1)->input() == gammaInput2);
+}
+
 static void
 TestRemoveGammaOutputsWhere()
 {
@@ -389,6 +435,7 @@ test_main()
   TestGammaInputIsDead();
 
   TestRemoveGammaInputsWhere();
+  TestPruneInputs();
 
   TestRemoveGammaOutputsWhere();
   TestPruneOutputs();
