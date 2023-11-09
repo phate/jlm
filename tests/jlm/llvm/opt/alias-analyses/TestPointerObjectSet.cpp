@@ -49,7 +49,7 @@ TestCreatePointerObjects()
   using namespace jlm::llvm::aa;
 
   jlm::tests::AllMemoryNodesTest rvsdg;
-  rvsdg.EnsureInitialized();
+  rvsdg.InitializeTest();
 
   PointerObjectSet set;
   auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode());
@@ -64,6 +64,12 @@ TestCreatePointerObjects()
   assert(set.GetPointerObject(lambda0).GetKind() == PointerObjectKind::FunctionMemoryObject);
   assert(set.GetPointerObject(import0).GetKind() == PointerObjectKind::ImportMemoryObject);
 
+  assert(set.GetAllocaMap().at(&rvsdg.GetAllocaNode()) == alloca0);
+  assert(set.GetMallocMap().at(&rvsdg.GetMallocNode()) == malloc0);
+  assert(set.GetGlobalMap().at(&rvsdg.GetDeltaNode()) == delta0);
+  assert(set.GetFunctionMap().at(&rvsdg.GetLambdaNode()) == lambda0);
+  assert(set.GetImportMap().at(&rvsdg.GetImportOutput()) == import0);
+
   // Imported objects should have been marked as escaped
   assert(set.GetPointerObject(import0).HasEscaped());
 }
@@ -75,7 +81,7 @@ TestAddToPointsToSet()
   using namespace jlm::llvm::aa;
 
   jlm::tests::NAllocaNodesTest rvsdg(1);
-  rvsdg.EnsureInitialized();
+  rvsdg.InitializeTest();
 
   PointerObjectSet set;
   auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0));
@@ -98,7 +104,7 @@ TestMakePointsToSetSuperset()
   using namespace jlm::llvm::aa;
 
   jlm::tests::NAllocaNodesTest rvsdg(3);
-  rvsdg.EnsureInitialized();
+  rvsdg.InitializeTest();
 
   PointerObjectSet set;
   auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0));
@@ -134,7 +140,7 @@ TestMarkAllPointeesAsEscaped()
   using namespace jlm::llvm::aa;
 
   jlm::tests::NAllocaNodesTest rvsdg(3);
-  rvsdg.EnsureInitialized();
+  rvsdg.InitializeTest();
 
   PointerObjectSet set;
   auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0));
@@ -159,7 +165,7 @@ TestSupersetConstraint()
   using namespace jlm::llvm::aa;
 
   jlm::tests::NAllocaNodesTest rvsdg(3);
-  rvsdg.EnsureInitialized();
+  rvsdg.InitializeTest();
 
   PointerObjectSet set;
   auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0));
@@ -213,7 +219,7 @@ TestAllPointeesPointToSupersetConstraint()
   using namespace jlm::llvm::aa;
 
   jlm::tests::NAllocaNodesTest rvsdg(3);
-  rvsdg.EnsureInitialized();
+  rvsdg.InitializeTest();
 
   PointerObjectSet set;
   auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0));
@@ -254,7 +260,7 @@ TestSupersetOfAllPointeesConstraint()
   using namespace jlm::llvm::aa;
 
   jlm::tests::NAllocaNodesTest rvsdg(3);
-  rvsdg.EnsureInitialized();
+  rvsdg.InitializeTest();
 
   PointerObjectSet set;
   auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0));
@@ -283,6 +289,211 @@ TestSupersetOfAllPointeesConstraint()
   assert(set.GetPointsToSet(reg1).count(alloca2) == 1);
 }
 
+static void
+TestAddPointsToExternalConstraint()
+{
+  using namespace jlm::llvm::aa;
+
+  jlm::tests::NAllocaNodesTest rvsdg(2);
+  rvsdg.InitializeTest();
+
+  PointerObjectSet set;
+  auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0));
+  auto reg0 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(0));
+  auto alloca1 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(1));
+  auto reg1 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(1));
+
+  PointerObjectConstraintSet constraints(set);
+  constraints.AddPointerPointeeConstraint(reg0, alloca0);
+  constraints.AddPointerPointeeConstraint(reg1, alloca1);
+
+  constraints.AddPointsToExternalConstraint(reg0);
+  constraints.Solve();
+
+  // Make sure only reg0 points to external, and nothing has escaped
+  assert(set.GetPointerObject(reg0).PointsToExternal());
+  assert(!set.GetPointerObject(reg1).PointsToExternal());
+  assert(!set.GetPointerObject(alloca0).PointsToExternal());
+  assert(!set.GetPointerObject(alloca1).PointsToExternal());
+
+  assert(!set.GetPointerObject(reg0).HasEscaped());
+  assert(!set.GetPointerObject(reg1).HasEscaped());
+  assert(!set.GetPointerObject(alloca0).HasEscaped());
+  assert(!set.GetPointerObject(alloca1).HasEscaped());
+
+  // Add a *reg0 = reg1 store
+  constraints.AddConstraint(AllPointeesPointToSupersetConstraint(reg0, reg1));
+  constraints.Solve();
+
+  // Now alloca1 is marked as escaped, due to being written to a pointer that might point to external
+  assert(set.GetPointerObject(alloca1).HasEscaped());
+  // The other alloca has not escaped
+  assert(!set.GetPointerObject(alloca0).HasEscaped());
+}
+
+static void
+TestAddRegisterContentEscapedConstraint()
+{
+  using namespace jlm::llvm::aa;
+
+  jlm::tests::NAllocaNodesTest rvsdg(2);
+  rvsdg.InitializeTest();
+
+  PointerObjectSet set;
+  auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0));
+  auto reg0 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(0));
+  auto alloca1 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(1));
+  auto reg1 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(1));
+
+  PointerObjectConstraintSet constraints(set);
+  constraints.AddPointerPointeeConstraint(reg0, alloca0);
+  constraints.AddPointerPointeeConstraint(reg1, alloca1);
+
+  // return reg0, making alloca0 escapce
+  constraints.AddRegisterContentEscapedConstraint(reg0);
+  constraints.Solve();
+
+  // Make sure only alloca0 has escaped
+  assert(set.GetPointerObject(alloca0).HasEscaped());
+  assert(!set.GetPointerObject(alloca1).HasEscaped());
+
+  // Add a alloca0 = reg1 store
+  constraints.AddConstraint(AllPointeesPointToSupersetConstraint(reg0, reg1));
+  constraints.Solve();
+
+  // Now both are marked as escaped
+  assert(set.GetPointerObject(alloca0).HasEscaped());
+  assert(set.GetPointerObject(alloca1).HasEscaped());
+}
+
+// Tests crating a ConstraintSet with multiple different constraints and calling Solve()
+static void
+TestPointerObjectConstraintSetSolve()
+{
+  using namespace jlm::llvm::aa;
+
+  /*
+   * Line in the test corresponds to lines of pseudo-SSA, with branching removed.
+   * First, the function definition and local variables.
+   *
+   * function f(%0):
+   * %1 = alloca 8 (variable v1)
+   * %2 = alloca 8 (variable v2)
+   * %3 = alloca 8 (variable v3)
+   * %4 = alloca 8 (variable v4)
+   */
+
+  // Create a graph with 11 different registers, and 4 allocas.
+  jlm::tests::NAllocaNodesTest rvsdg(11);
+  rvsdg.InitializeTest();
+
+  PointerObjectSet set;
+  PointerObject::Index reg[11];
+  for (size_t i = 0; i < 11; i++) {
+    reg[i] = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(i));
+  }
+
+  // Only the alloca nodes in the range [1,4] are used
+  auto alloca1 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(1));
+  auto alloca2 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(2));
+  auto alloca3 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(3));
+  auto alloca4 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(4));
+
+  // Now start building constraints based on instructions
+  PointerObjectConstraintSet constraints(set);
+
+  // the function parameter is marked as pointing to external
+  constraints.AddPointsToExternalConstraint(reg[0]);
+
+  // all alloca outputs point to the alloca memory object
+  constraints.AddPointerPointeeConstraint(reg[1], alloca1);
+  constraints.AddPointerPointeeConstraint(reg[2], alloca2);
+  constraints.AddPointerPointeeConstraint(reg[3], alloca3);
+  constraints.AddPointerPointeeConstraint(reg[4], alloca4);
+
+  // store [%1], %2 (alloca1 now points to alloca2)
+  constraints.AddConstraint(AllPointeesPointToSupersetConstraint(reg[1], reg[2]));
+  // store [%2], %3 (alloca2 now points to alloca3)
+  constraints.AddConstraint(AllPointeesPointToSupersetConstraint(reg[2], reg[3]));
+  // store [%3], %4 (alloca3 now points to alloca4)
+  constraints.AddConstraint(AllPointeesPointToSupersetConstraint(reg[3], reg[4]));
+
+  // %5 = load [%1] (loads v1, which is %2, the pointer to alloca2)
+  constraints.AddConstraint(SupersetOfAllPointeesConstraint(reg[5], reg[1]));
+  // %6 = load [%3] (loads v3, which is %4, the pointer to alloca4)
+  constraints.AddConstraint(SupersetOfAllPointeesConstraint(reg[6], reg[3]));
+
+  // %7 = phi %5/%6 (either points to alloca2 or alloca4)
+  constraints.AddConstraint(SupersetConstraint(reg[7], reg[5]));
+  constraints.AddConstraint(SupersetConstraint(reg[7], reg[6]));
+
+  // %8 = phi %0/%4 (either the function argument or pointer to alloca4)
+  constraints.AddConstraint(SupersetConstraint(reg[8], reg[0]));
+  constraints.AddConstraint(SupersetConstraint(reg[8], reg[4]));
+
+  // %9 = load [%7] (either loads alloca2 or alloca4, the first is a pointer to alloca3)
+  constraints.AddConstraint(SupersetOfAllPointeesConstraint(reg[9], reg[7]));
+
+  // store [%8], %9 (stores what might be a pointer to alloca3 into what's either alloca4 or the pointer argument)
+  constraints.AddConstraint(AllPointeesPointToSupersetConstraint(reg[8], reg[9]));
+
+  // %10 = load [%8] (loads from possibly external, should also point to external)
+  constraints.AddConstraint(SupersetOfAllPointeesConstraint(reg[10], reg[8]));
+
+  // Find a solution to all the constraints
+  constraints.Solve();
+
+  // alloca1 should point to alloca2, etc.
+  assert(set.GetPointsToSet(alloca1).size() == 1);
+  assert(set.GetPointsToSet(alloca1).count(alloca2) == 1);
+  assert(set.GetPointsToSet(alloca2).size() == 1);
+  assert(set.GetPointsToSet(alloca2).count(alloca3) == 1);
+  assert(set.GetPointsToSet(alloca3).size() == 1);
+  assert(set.GetPointsToSet(alloca3).count(alloca4) == 1);
+
+  // %5 is a load of alloca1, and should only be a pointer to alloca2
+  assert(set.GetPointsToSet(reg[5]).size() == 1);
+  assert(set.GetPointsToSet(reg[5]).count(alloca2) == 1);
+
+  // %6 is a load of alloca3, and should only be a pointer to alloca4
+  assert(set.GetPointsToSet(reg[6]).size() == 1);
+  assert(set.GetPointsToSet(reg[6]).count(alloca4) == 1);
+
+  // %7 can point to either alloca2 or alloca4
+  assert(set.GetPointsToSet(reg[7]).size() == 2);
+  assert(set.GetPointsToSet(reg[7]).count(alloca2) == 1);
+  assert(set.GetPointsToSet(reg[7]).count(alloca4) == 1);
+
+  // %8 should point to external, since it points to the superset of %0 and %1
+  assert(set.GetPointerObject(reg[8]).PointsToExternal());
+  // %8 may also point to alloca4
+  assert(set.GetPointsToSet(reg[8]).size() == 1);
+  assert(set.GetPointsToSet(reg[8]).count(alloca4) == 1);
+
+  // %9 may point to v3
+  assert(set.GetPointsToSet(reg[9]).count(alloca3) == 1);
+
+  // Due to the store of %9 into [%8], alloca4 may now point back to alloca3
+  assert(set.GetPointsToSet(alloca4).size() == 1);
+  assert(set.GetPointsToSet(alloca4).count(alloca3) == 1);
+  // Also due to the same store, alloca3 might have escaped
+  assert(set.GetPointerObject(alloca3).HasEscaped());
+  // Due to alloca3 pointing to alloca4, it too should have been marked as escaped
+  assert(set.GetPointerObject(alloca4).HasEscaped());
+  // Check that the other two allocas haven't escaped
+  assert(!set.GetPointerObject(alloca1).HasEscaped());
+  assert(!set.GetPointerObject(alloca2).HasEscaped());
+
+  // Make sure only the escaped allocas are marked as pointing to external
+  assert(!set.GetPointerObject(alloca1).PointsToExternal());
+  assert(!set.GetPointerObject(alloca2).PointsToExternal());
+  assert(set.GetPointerObject(alloca3).PointsToExternal());
+  assert(set.GetPointerObject(alloca4).PointsToExternal());
+
+  // %10 should also point to external, since it might have been loaded from external
+  assert(set.GetPointerObject(reg[10]).PointsToExternal());
+}
+
 static int
 TestPointerObjectSet()
 {
@@ -294,6 +505,9 @@ TestPointerObjectSet()
   TestSupersetConstraint();
   TestAllPointeesPointToSupersetConstraint();
   TestSupersetOfAllPointeesConstraint();
+  TestAddPointsToExternalConstraint();
+  TestAddRegisterContentEscapedConstraint();
+  TestPointerObjectConstraintSetSolve();
   return 0;
 }
 

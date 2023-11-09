@@ -322,6 +322,13 @@ public:
   AddPointerPointeeConstraint(PointerObject::Index pointer, PointerObject::Index pointee);
 
   /**
+   * Adds a constraint making \p pointer flagged as pointing to external
+   * @param pointer the PointerObject that should be marked as pointing to external
+   */
+  void
+  AddPointsToExternalConstraint(PointerObject::Index pointer);
+
+  /**
    * Ensures that any PointerObject in P(registerIndex) will be marked as escaped.
    * @param registerIndex the register whose content leaves the module, thus exposing any memory it may point to
    */
