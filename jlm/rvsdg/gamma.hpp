@@ -286,6 +286,19 @@ public:
   add_exitvar(const std::vector<jlm::rvsdg::output *> & values);
 
   /**
+   * Removes gamma inputs and their respective arguments.
+   *
+   * An input must match the condition specified by \p match and its arguments must have no users.
+   *
+   * @tparam F A type that supports the function call operator: bool operator(const gamma_input&)
+   * @param match Defines the condition of the elements to remove.
+   *
+   * \see gamma_input#IsDead()
+   */
+  template<typename F> void
+  RemoveGammaInputsWhere(const F& match);
+
+  /**
    * Removes all gamma outputs and their respective results. The outputs must have no users and
    * match the condition specified by \p match.
    *
@@ -518,6 +531,24 @@ gamma_node::add_exitvar(const std::vector<jlm::rvsdg::output *> & values)
     result::create(subregion(n), values[n], output, port);
 
   return output;
+}
+
+template<typename F> void
+gamma_node::RemoveGammaInputsWhere(const F& match)
+{
+  // iterate backwards to avoid the invalidation of 'n' by RemoveInput()
+  for (size_t n = ninputs()-1; n >= 1; n--)
+  {
+    auto & gammaInput = *util::AssertedCast<const gamma_input>(input(n));
+    if (gammaInput.IsDead() && match(gammaInput))
+    {
+      for (size_t r = 0; r < nsubregions(); r++)
+      {
+        subregion(r)->RemoveArgument(n - 1);
+      }
+      RemoveInput(n);
+    }
+  }
 }
 
 template<typename F>

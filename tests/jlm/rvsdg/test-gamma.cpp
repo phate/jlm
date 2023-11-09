@@ -212,6 +212,65 @@ test_control_constant_reduction2()
   assert(is<match_op>(match));
 }
 
+/**
+ * Test gamma_node::RemoveGammaInputsWhere()
+ */
+static void
+TestRemoveGammaInputsWhere()
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  jlm::rvsdg::graph rvsdg;
+  jlm::tests::valuetype valueType;
+
+  auto predicate = rvsdg.add_import({ctl2, ""});
+  auto v0 = rvsdg.add_import({valueType, ""});
+  auto v1 = rvsdg.add_import({valueType, ""});
+  auto v2 = rvsdg.add_import({valueType, ""});
+  auto v3 = rvsdg.add_import({valueType, ""});
+
+  auto gammaNode = gamma_node::create(predicate, 2);
+  auto gammaInput0 = gammaNode->add_entryvar(v0);
+  auto gammaInput1 = gammaNode->add_entryvar(v1);
+  auto gammaInput2 = gammaNode->add_entryvar(v2);
+  auto gammaInput3 = gammaNode->add_entryvar(v3);
+
+  auto gammaOutput0 = gammaNode->add_exitvar({gammaInput0->argument(0), gammaInput0->argument(1)});
+  auto gammaOutput2 = gammaNode->add_exitvar({gammaInput0->argument(0), gammaInput1->argument(1)});
+
+  rvsdg.add_export(gammaOutput0, {gammaOutput0->type(), ""});
+  rvsdg.add_export(gammaOutput2, {gammaOutput2->type(), ""});
+
+  // Act & Assert
+  assert(gammaNode->ninputs() == 5);
+
+  // Remove gammaInput2
+  gammaNode->RemoveGammaInputsWhere([&](const gamma_input& input){ return input.index() == gammaInput2->index(); });
+  assert(gammaNode->ninputs() == 4);
+  assert(gammaNode->subregion(0)->narguments() == 3);
+  assert(gammaNode->subregion(1)->narguments() == 3);
+  assert(gammaInput0->index() == 1);
+  assert(gammaInput1->index() == 2);
+  assert(gammaInput3->index() == 3);
+
+  // Try and fail to remove gammaInput3, even though it is dead.
+  gammaNode->RemoveGammaInputsWhere([&](const gamma_input& input){ return false; });
+  assert(gammaNode->ninputs() == 4);
+
+  // Try and fail to remove gammaInput1, as it is not dead.
+  gammaNode->RemoveGammaInputsWhere([&](const gamma_input& input){ return input.index() == gammaInput1->index(); });
+  assert(gammaNode->ninputs() == 4);
+
+  // Remove gammaInput3
+  gammaNode->RemoveGammaInputsWhere([&](const gamma_input& input){ return input.index() == gammaInput3->index(); });
+  assert(gammaNode->ninputs() == 3);
+  assert(gammaNode->subregion(0)->narguments() == 2);
+  assert(gammaNode->subregion(1)->narguments() == 2);
+  assert(gammaInput0->index() == 1);
+  assert(gammaInput1->index() == 2);
+}
+
 static void
 TestRemoveGammaOutputsWhere()
 {
@@ -328,6 +387,8 @@ test_main()
 {
   test_gamma();
   TestGammaInputIsDead();
+
+  TestRemoveGammaInputsWhere();
 
   TestRemoveGammaOutputsWhere();
   TestPruneOutputs();
