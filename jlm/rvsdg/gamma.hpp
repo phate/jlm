@@ -373,6 +373,24 @@ public:
     JLM_ASSERT(argument->input() == this);
     return argument;
   }
+
+  /**
+   * Determines whether the gamma input is dead.
+   *
+   * A gamma input is considered dead, if all its arguments are dead.
+   *
+   * @return True, if the gamma input is dead, otherwise false.
+   *
+   * \see output#IsDead()
+   */
+  [[nodiscard]] bool
+  IsDead() const noexcept
+  {
+    return std::all_of(
+      arguments.begin(),
+      arguments.end(),
+      [](const rvsdg::argument & argument){ return argument.IsDead(); });
+  }
 };
 
 static inline bool

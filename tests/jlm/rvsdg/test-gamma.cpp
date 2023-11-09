@@ -50,6 +50,40 @@ test_gamma(void)
   assert(gamma3->begin_exitvar() == gamma3->end_exitvar());
 }
 
+/**
+ * Test gamma_input::IsDead()
+ */
+static void
+TestGammaInputIsDead()
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  jlm::rvsdg::graph rvsdg;
+  jlm::tests::valuetype valueType;
+
+  auto predicate = rvsdg.add_import({ctl2, ""});
+  auto v0 = rvsdg.add_import({valueType, ""});
+  auto v1 = rvsdg.add_import({valueType, ""});
+  auto v2 = rvsdg.add_import({valueType, ""});
+
+  auto gammaNode = gamma_node::create(predicate, 2);
+  auto gammaInput0 = gammaNode->add_entryvar(v0);
+  auto gammaInput1 = gammaNode->add_entryvar(v1);
+  auto gammaInput2 = gammaNode->add_entryvar(v2);
+
+  auto gammaOutput0 = gammaNode->add_exitvar({gammaInput0->argument(0), gammaInput0->argument(1)});
+  auto gammaOutput2 = gammaNode->add_exitvar({gammaInput0->argument(0), gammaInput1->argument(1)});
+
+  rvsdg.add_export(gammaOutput0, {gammaOutput0->type(), ""});
+  rvsdg.add_export(gammaOutput2, {gammaOutput2->type(), ""});
+
+  // Act & Assert
+  assert(!gammaInput0->IsDead());
+  assert(!gammaInput1->IsDead());
+  assert(gammaInput2->IsDead());
+}
+
 static void
 test_predicate_reduction(void)
 {
@@ -293,6 +327,8 @@ static int
 test_main()
 {
   test_gamma();
+  TestGammaInputIsDead();
+
   TestRemoveGammaOutputsWhere();
   TestPruneOutputs();
 
