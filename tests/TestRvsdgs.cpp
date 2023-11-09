@@ -3274,17 +3274,19 @@ AllMemoryNodesTest::SetupRvsdg()
   // Create global variable "global"
   Delta_ = delta::node::Create(
           graph->root(),
-          jlm::rvsdg::bit32,
+          pointerType,
           "global",
           linkage::external_linkage,
           "",
           false);
-  auto constant = jlm::rvsdg::create_bitconstant(Delta_->subregion(), 32, 1);
-  Delta_->finalize(constant);
+  auto constantPointerNullResult = ConstantPointerNullOperation::Create(Delta_->subregion(), pointerType);
+  Delta_->finalize(constantPointerNullResult);
 
   // Start of function "f"
   Lambda_ = lambda::node::create(graph->root(), fcttype, "f", linkage::external_linkage);
   auto entryMemoryState = Lambda_->fctargument(0);
+  auto deltaContextVar = Lambda_->add_ctxvar(Delta_->output());
+  auto importContextVar = Lambda_->add_ctxvar(Import_);
 
   // Create alloca node
   auto allocaSize = jlm::rvsdg::create_bitconstant(Lambda_->subregion(), 32, 8);
@@ -3303,10 +3305,23 @@ AllMemoryNodesTest::SetupRvsdg()
           std::vector<jlm::rvsdg::output *>{afterAllocaMemoryState, mallocOutputs[1]});
 
   // Store the result of malloc into the alloca'd memory
-  auto storeOutputs = StoreNode::Create(allocaOutputs[0], mallocOutputs[0], { afterMallocMemoryState }, 8);
+  auto storeAllocaOutputs = StoreNode::Create(allocaOutputs[0], mallocOutputs[0], {afterMallocMemoryState}, 8);
+
+  // load the value in the alloca again
+  auto loadAllocaOutputs = LoadNode::Create(allocaOutputs[0], {storeAllocaOutputs[0]}, pointerType, 8);
+
+  // Load the value of the imported symbol "imported"
+  auto loadImportedOutputs = LoadNode::Create(importContextVar, {loadAllocaOutputs[1]}, jlm::rvsdg::bit32, 4);
+
+  // Store the loaded value from imported, into the address loaded from the alloca (aka. the malloc result)
+  auto storeImportedOutputs = StoreNode::Create(loadAllocaOutputs[0], loadImportedOutputs[0], {loadImportedOutputs[1]}, 4);
+
+  // store the loaded alloca value in the global variable
+  auto storeOutputs = StoreNode::Create(deltaContextVar, loadAllocaOutputs[0], {storeImportedOutputs[0]}, 8);
 
   Lambda_->finalize({storeOutputs[0]});
 
+  graph->add_export(Delta_->output(), {pointerType, "global"});
   graph->add_export(Lambda_->output(), {pointerType, "f"});
 
   return module;

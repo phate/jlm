@@ -231,13 +231,20 @@ PointerObjectConstraintSet::AddPointerPointeeConstraint(PointerObject::Index poi
 }
 
 void
+PointerObjectConstraintSet::AddPointsToExternalConstraint(PointerObject::Index pointer)
+{
+  // Flags are never removed, so adding the flag now ensures it will be included in the final solution
+  Set_.GetPointerObject(pointer).MarkAsPointsToExternal();
+}
+
+void
 PointerObjectConstraintSet::AddRegisterContentEscapedConstraint(PointerObject::Index registerIndex)
 {
-// Registers themselves can't really escape, since they don't have an address
-// We can however mark it as escaped, and let escape flag propagation ensure everything it ever points to is marked.
-auto& registerPointerObject = Set_.GetPointerObject(registerIndex);
-JLM_ASSERT(registerPointerObject.GetKind() == PointerObjectKind::Register);
-registerPointerObject.MarkAsEscaped();
+  // Registers themselves can't really escape, since they don't have an address
+  // We can however mark it as escaped, and let escape flag propagation ensure everything it ever points to is marked.
+  auto& registerPointerObject = Set_.GetPointerObject(registerIndex);
+  JLM_ASSERT(registerPointerObject.GetKind() == PointerObjectKind::Register);
+  registerPointerObject.MarkAsEscaped();
 }
 
 void

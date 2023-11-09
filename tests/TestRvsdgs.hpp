@@ -15,21 +15,25 @@ namespace jlm::tests
 */
 class RvsdgTest {
 public:
-	jlm::llvm::RvsdgModule &
-	module()
-	{
-    EnsureInitialized();
-		return *module_;
-	}
+  jlm::llvm::RvsdgModule &
+  module()
+  {
+    InitializeTest();
+    return *module_;
+  }
 
-	const jlm::rvsdg::graph &
-	graph()
-	{
-		return module().Rvsdg();
-	}
+  const jlm::rvsdg::graph &
+  graph()
+  {
+    return module().Rvsdg();
+  }
 
+  /**
+   * Needs to be called to create the RVSDG module provided by the class.
+   * Will automatically be called by the module() and graph() accessors.
+   */
   void
-  EnsureInitialized()
+  InitializeTest()
   {
     if (module_ == nullptr)
       module_ = SetupRvsdg();
@@ -39,10 +43,10 @@ private:
   /**
    * \brief Create RVSDG for this test.
    */
-	virtual std::unique_ptr<jlm::llvm::RvsdgModule>
-	SetupRvsdg() = 0;
+  virtual std::unique_ptr<jlm::llvm::RvsdgModule>
+  SetupRvsdg() = 0;
 
-	std::unique_ptr<jlm::llvm::RvsdgModule> module_;
+  std::unique_ptr<jlm::llvm::RvsdgModule> module_;
 };
 
 /** \brief StoreTest1 class
@@ -1817,13 +1821,15 @@ private:
  * The class sets up an RVSDG module corresponding to the code:
  *
  * \code{.c}
- *   static int global = 1;
+ *   int* global;
  *   extern int imported;
  *
  *   void f()
  *   {
- *     int* alloca;
+ *     int* alloca:
  *     alloca = malloc(4);
+ *     *alloca = imported;
+ *     global = alloca;
  *   }
  * \endcode
  *
@@ -1929,7 +1935,15 @@ private:
 class NAllocaNodesTest final : public RvsdgTest
 {
 public:
-  NAllocaNodesTest(size_t numAllocaNodes) : NumAllocaNodes_(numAllocaNodes) {}
+  NAllocaNodesTest(size_t numAllocaNodes)
+    : NumAllocaNodes_(numAllocaNodes)
+  {}
+
+  [[nodiscard]] size_t
+  GetNumAllocaNodes() const noexcept
+  {
+    return NumAllocaNodes_;
+  }
 
   [[nodiscard]] const jlm::rvsdg::node &
   GetAllocaNode(size_t index) const noexcept
