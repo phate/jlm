@@ -279,6 +279,24 @@ public:
   template <typename F> size_t
   RemoveLambdaInputsWhere(const F& match);
 
+  /**
+   * Remove all dead inputs.
+   *
+   * @return The number of removed inputs.
+   *
+   * \see RemoveLambdaInputsWhere()
+   */
+  size_t
+  PruneLambdaInputs()
+  {
+    auto match = [](const cvinput&)
+    {
+      return true;
+    };
+
+    return RemoveLambdaInputsWhere(match);
+  }
+
   [[nodiscard]] cvinput *
   input(size_t n) const noexcept;
 
