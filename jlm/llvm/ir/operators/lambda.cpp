@@ -248,7 +248,7 @@ node::ComputeCallSummary() const
 
   std::vector<CallNode*> directCalls;
   rvsdg::result * rvsdgExport = nullptr;
-  std::vector<rvsdg::simple_input*> otherUsers;
+  std::vector<rvsdg::input*> otherUsers;
 
   while (!worklist.empty()) {
     auto input = worklist.front();
@@ -302,6 +302,12 @@ node::ComputeCallSummary() const
     if (auto cvinput = dynamic_cast<delta::cvinput*>(input)) {
       auto argument = cvinput->arguments.first();
       worklist.insert(worklist.end(), argument->begin(), argument->end());
+      continue;
+    }
+
+    if (auto deltaResult = dynamic_cast<delta::result*>(input))
+    {
+      otherUsers.emplace_back(deltaResult);
       continue;
     }
 
