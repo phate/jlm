@@ -339,6 +339,48 @@ TestCallSummaryComputationIndirectCalls()
   assert(lambdaTestCallSummary->NumOtherUsers() == 0);
 }
 
+static void
+TestCallSummaryComputationFunctionPointerInDelta()
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdg = &rvsdgModule->Rvsdg();
+
+  auto nf = rvsdg->node_normal_form(typeid(jlm::rvsdg::operation));
+  nf->set_mutable(false);
+
+  jlm::tests::valuetype valueType;
+  FunctionType functionType({&valueType}, {&valueType});
+
+  auto lambdaNode = lambda::node::create(
+    rvsdg->root(),
+    functionType,
+    "f",
+    linkage::external_linkage);
+  lambdaNode->finalize({lambdaNode->fctargument(0)});
+
+  auto deltaNode = delta::node::Create(
+    rvsdg->root(),
+    PointerType(),
+    "fp",
+    linkage::external_linkage,
+    "",
+    false);
+  auto argument = deltaNode->add_ctxvar(lambdaNode->output());
+  deltaNode->finalize(argument);
+
+  rvsdg->add_export(deltaNode->output(), {PointerType(), "fp"});
+
+  // Act
+  auto callSummary = lambdaNode->ComputeCallSummary();
+
+  // Assert
+  assert(callSummary->NumOtherUsers() == 1);
+  assert(callSummary->HasOnlyOtherUsages());
+}
+
 static int
 Test()
 {
@@ -349,6 +391,7 @@ Test()
   TestCallSummaryComputationExport();
   TestCallSummaryComputationDirectCalls();
   TestCallSummaryComputationIndirectCalls();
+  TestCallSummaryComputationFunctionPointerInDelta();
 
   return 0;
 }
