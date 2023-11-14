@@ -390,6 +390,20 @@ public:
   cvargument *
   add_ctxvar(jlm::rvsdg::output * origin);
 
+  /**
+   * Remove phi arguments and their respective inputs.
+   *
+   * An argument must match the condition specified by \p match and it must be dead.
+   *
+   * @tparam F A type that supports the function call operator: bool operator(const argument&)
+   * @param match Defines the condition of the elements to remove.
+   * @return The number of removed arguments.
+   *
+   * \see argument#IsDead()
+   */
+  template <typename F> size_t
+  RemovePhiArgumentsWhere(const F& match);
+
   cvinput *
   input(size_t n) const noexcept;
 
@@ -788,6 +802,32 @@ rvoutput::set_rvorigin(jlm::rvsdg::output * origin)
 {
   JLM_ASSERT(result()->origin() == argument());
   result()->divert_to(origin);
+}
+
+template <typename F> size_t
+phi::node::RemovePhiArgumentsWhere(const F &match)
+{
+  size_t numRemovedArguments = 0;
+
+  // iterate backwards to avoid the invalidation of 'n' by RemoveArgument()
+  for (size_t n = subregion()->narguments()-1; n != static_cast<size_t>(-1); n--)
+  {
+    auto & argument = *subregion()->argument(n);
+    auto input = argument.input();
+
+    if (argument.IsDead() && match(argument))
+    {
+      subregion()->RemoveArgument(argument.index());
+      numRemovedArguments++;
+
+      if (input)
+      {
+        RemoveInput(input->index());
+      }
+    }
+  }
+
+  return numRemovedArguments;
 }
 
 }
