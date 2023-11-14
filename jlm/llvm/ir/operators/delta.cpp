@@ -110,6 +110,12 @@ node::input(size_t n) const noexcept
   return static_cast<cvinput *>(structural_node::input(n));
 }
 
+cvargument *
+node::cvargument(size_t n) const noexcept
+{
+  return util::AssertedCast<delta::cvargument>(subregion()->argument(n));
+}
+
 delta::output *
 node::output() const noexcept
 {

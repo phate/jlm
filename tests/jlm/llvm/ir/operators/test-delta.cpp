@@ -118,11 +118,56 @@ TestRemoveDeltaInputsWhere()
   assert(deltaInput1->argument()->index() == 0);
 }
 
+static void
+TestPruneDeltaInputs()
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  jlm::tests::valuetype valueType;
+  RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+
+  auto x = rvsdgModule.Rvsdg().add_import({valueType, ""});
+
+  auto deltaNode = delta::node::Create(
+    rvsdgModule.Rvsdg().root(),
+    valueType,
+    "delta",
+    linkage::external_linkage,
+    "",
+    true);
+
+  deltaNode->add_ctxvar(x);
+  auto deltaInput1 = deltaNode->add_ctxvar(x)->input();
+  deltaNode->add_ctxvar(x);
+
+  auto result = jlm::tests::SimpleNode::Create(
+    *deltaNode->subregion(),
+    {deltaInput1->argument()},
+    {&valueType})
+    .output(0);
+
+  deltaNode->finalize(result);
+
+  // Act
+  auto numRemovedInputs = deltaNode->PruneDeltaInputs();
+
+  // Assert
+  assert(numRemovedInputs == 2);
+  assert(deltaNode->ninputs() == 1);
+  assert(deltaNode->ncvarguments() == 1);
+  assert(deltaNode->input(0) == deltaInput1);
+  assert(deltaNode->cvargument(0) == deltaInput1->argument());
+  assert(deltaInput1->index() == 0);
+  assert(deltaInput1->argument()->index() == 0);
+}
+
 static int
 TestDelta()
 {
   TestDeltaCreation();
   TestRemoveDeltaInputsWhere();
+  TestPruneDeltaInputs();
 
   return 0;
 }

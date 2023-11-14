@@ -227,6 +227,24 @@ public:
   template <typename F> size_t
   RemoveDeltaInputsWhere(const F& match);
 
+  /**
+   * Remove all dead inputs.
+   *
+   * @return The number of removed inputs.
+   *
+   * \see RemoveDeltaInputsWhere()
+   */
+  size_t
+  PruneDeltaInputs()
+  {
+    auto match = [](const cvinput&)
+    {
+      return true;
+    };
+
+    return RemoveDeltaInputsWhere(match);
+  }
+
 	cvinput *
 	input(size_t n) const noexcept;
 
