@@ -21,7 +21,8 @@ namespace jlm::util
  * Log2floor(8) = 3
  */
 template<class T>
-static inline constexpr int Log2Floor(T value) {
+static constexpr int Log2Floor(T value)
+{
   if (value < 1)
     return -1;
 
@@ -39,7 +40,8 @@ static inline constexpr int Log2Floor(T value) {
  * BitsRequiredToRepresent(0b111) = 3
  */
 template<class T>
-static inline constexpr int BitsRequiredToRepresent(T value) {
+static constexpr int BitsRequiredToRepresent(T value)
+{
   using UnsignedT = std::make_unsigned_t<T>;
   return Log2Floor(static_cast<UnsignedT>(value)) + 1;
 }
@@ -49,7 +51,8 @@ static inline constexpr int BitsRequiredToRepresent(T value) {
  * @param endValue the largest enum value, requires all other enum values to have a lower integer value.
  */
 template<class T>
-static inline constexpr int BitWidthOfEnum(T endValue) {
+static constexpr int BitWidthOfEnum(T endValue)
+{
   static_assert(std::is_enum<T>::value, "BitWidthOfEnum only takes enums");
 
   using UnderlyingT = std::underlying_type_t<T>;

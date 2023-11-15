@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Håvard Krogstie <nico.reissmann@gmail.com>
+ * Copyright 2023 Håvard Krogstie <krogstie.havard@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
@@ -13,7 +13,7 @@
 using namespace jlm::util;
 
 static void
-TestLog2floor()
+TestLog2Floor()
 {
   auto testByteRange = [](auto type) {
     using T = decltype(type);
@@ -103,12 +103,12 @@ TestBitWidthOfEnum()
 static int
 TestMath()
 {
-  TestLog2floor();
+  TestLog2Floor();
   TestBitsRequiredToRepresent();
   TestBitWidthOfEnum();
   return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
-"jlm/util/TestMath",
-TestMath)
+  "jlm/util/TestMath",
+  TestMath)
