@@ -1,0 +1,119 @@
+---
+Language:      Cpp
+Standard:      Latest
+BasedOnStyle:  LLVM
+
+# int * a and int & a
+PointerAlignment: Middle
+ReferenceAlignment: Pointer
+SpaceAroundPointerQualifiers: Both
+# Don't touch position of "const int *" vs "int const *"
+QualifierAlignment: Leave
+
+ColumnLimit: 100
+
+# Indentation width related flags
+IndentWidth: 2
+TabWidth:    2
+UseTab:      Never
+ConstructorInitializerIndentWidth: 4
+ContinuationIndentWidth: 4
+IndentCaseBlocks: false
+IndentCaseLabels: false
+IndentExternBlock: NoIndent
+NamespaceIndentation: None
+
+# Newline rules
+InsertNewlineAtEOF: true
+LineEnding: LF
+MaxEmptyLinesToKeep: 1
+
+# Collection of all brace wrapping rules
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterCaseLabel:  false
+  AfterClass:      true
+  AfterControlStatement: Never
+  AfterEnum:       true
+  AfterExternBlock: true
+  AfterFunction:   true
+  AfterNamespace:  true
+  AfterStruct:     true
+  AfterUnion:      true
+  BeforeCatch:     true
+  BeforeElse:      false
+  BeforeLambdaBody: true
+  BeforeWhile:     false
+  IndentBraces:    false
+  SplitEmptyFunction: false # Allow empty functions to have {} body
+  SplitEmptyRecord: true
+  SplitEmptyNamespace: true
+
+# class X
+# {
+# public:
+#   int field;
+AccessModifierOffset: -2
+AlignAfterOpenBracket: Align
+AlignEscapedNewlines: Left
+AlignOperands: Align
+BreakBeforeBinaryOperators: NonAssignment
+
+# callFunction(
+#     a, b, c, d, e);
+AllowAllArgumentsOnNextLine: true
+
+# Short blocks should still get their own lines
+AllowShortBlocksOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLambdasOnASingleLine: None
+AllowShortLoopsOnASingleLine: false
+
+# We like to do [[nodiscard]] int
+BreakAfterAttributes: Never
+
+# const int &
+# MyFunction()
+AlwaysBreakAfterReturnType: All
+AlwaysBreakTemplateDeclarations: Yes
+
+# If possible, put all constructor initializers on same line
+# Otherwise try to put all on next line
+# Otherwise one initializer per line
+PackConstructorInitializers: NextLine
+
+# Makes initializer lists "tighter" {1, 2, 3}
+Cpp11BracedListStyle: true
+
+# false: do not add // jlm::rvsdg::delta to the closing curly bracket
+FixNamespaceComments: false
+
+# Allow multiple alphabetically sorted include blocks
+IncludeBlocks:   Preserve
+# Only have one category, use alphabetical sorting within each include block
+IncludeCategories:
+  - Regex:           '.*'
+    Priority:        1
+    SortPriority:    0
+    CaseSensitive:   false
+IncludeIsMainRegex: '^(Test)?'
+
+ReflowComments:  true
+
+# Changed from "Leave", forces space between definitions (functions, classes, structs)
+SeparateDefinitionBlocks: Always
+
+SortIncludes: CaseInsensitive
+SortUsingDeclarations: LexicographicNumeric
+
+# Inserting space settings, pretty much all of these are default
+SpaceAfterTemplateKeyword: false
+# vector<int>{1, 2, 3}
+SpaceBeforeCpp11BracedList: false
+# if (...), but func();
+SpaceBeforeParens: ControlStatements
+# for (auto it : myList) {
+SpaceBeforeRangeBasedForLoopColon: true
+# vector<int>
+SpacesInAngles:  Never
