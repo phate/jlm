@@ -161,6 +161,15 @@ public:
   CreateRegisterPointerObject(const rvsdg::output &rvsdgOutput);
 
   /**
+   * If a PointerObject already exists for the given rvsgd::output, it is returned.
+   * Otherwise, a new PointerObject of Register kind is created.
+   * \param rvsdgOutput the rvsdg output associated with the register PointerObject
+   * \return the index of the existing or newly created PointerObject
+   */
+  [[nodiscard]] PointerObject::Index
+  GetOrCreateRegisterPointerObject(const rvsdg::output & rvsdgOutput);
+
+  /**
    * Reuses an existing PointerObject of register type for an additional rvsdg output.
    * This is useful when two rvsdg outputs can be shown to always hold the exact same value.
    * @param rvsdgOutput the new rvsdg output providing the register value
@@ -183,6 +192,15 @@ public:
 
   PointerObject::Index
   CreateImportMemoryObject(const rvsdg::argument &importNode);
+
+  /**
+   * \brief retrieves a previously made PointerObject of Register kind.
+   * \param rvsdgOutput an rvsdg::output that already has a PointerObject in the set
+   * \return the index of the PointerObject associated with the rvsdg::output
+   * \throws jlm::util::error if no associated PointerObject exists
+   */
+  [[nodiscard]] PointerObject::Index
+  GetRegisterPointerObject(const rvsdg::output & rvsdgOutput);
 
   const std::unordered_map<const rvsdg::output *, PointerObject::Index>&
   GetRegisterMap() const noexcept;

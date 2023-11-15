@@ -25,6 +25,14 @@ PointerObjectSet::CreateRegisterPointerObject(const rvsdg::output & rvsdgOutput)
   return RegisterMap_[&rvsdgOutput] = AddPointerObject(PointerObjectKind::Register);
 }
 
+PointerObject::Index
+PointerObjectSet::GetOrCreateRegisterPointerObject(const rvsdg::output & rvsdgOutput)
+{
+  if (RegisterMap_.count(&rvsdgOutput))
+    return RegisterMap_[&rvsdgOutput];
+  return RegisterMap_[&rvsdgOutput] = AddPointerObject(PointerObjectKind::Register);
+}
+
 void
 PointerObjectSet::MapRegisterToExistingPointerObject(const rvsdg::output & rvsdgOutput,
                                                      PointerObject::Index pointerObject)
@@ -68,6 +76,15 @@ PointerObjectSet::CreateImportMemoryObject(const rvsdg::argument & importNode)
 {
   JLM_ASSERT(ImportMap_.count(&importNode) == 0);
   return ImportMap_[&importNode] = AddPointerObject(PointerObjectKind::ImportMemoryObject);
+}
+
+PointerObject::Index
+PointerObjectSet::GetRegisterPointerObject(const rvsdg::output & rvsdgOutput)
+{
+  const auto it = RegisterMap_.find(&rvsdgOutput);
+  if (it == RegisterMap_.end())
+    throw util::error("No PointerObject exists for the given rvsdg::output");
+  return it->second;
 }
 
 const std::unordered_map<const rvsdg::output *, PointerObject::Index>&
