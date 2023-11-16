@@ -372,17 +372,6 @@ TestPointerObjectConstraintSetSolve()
 {
   using namespace jlm::llvm::aa;
 
-  /*
-   * Line in the test corresponds to lines of pseudo-SSA, with branching removed.
-   * First, the function definition and local variables.
-   *
-   * function f(%0):
-   * %1 = alloca 8 (variable v1)
-   * %2 = alloca 8 (variable v2)
-   * %3 = alloca 8 (variable v3)
-   * %4 = alloca 8 (variable v4)
-   */
-
   // Create a graph with 11 different registers, and 4 allocas.
   jlm::tests::NAllocaNodesTest rvsdg(11);
   rvsdg.InitializeTest();
@@ -393,7 +382,11 @@ TestPointerObjectConstraintSetSolve()
     reg[i] = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(i));
   }
 
-  // Only the alloca nodes in the range [1,4] are used
+  // %0 is a function parameter
+  // %1 = alloca 8 (variable v1)
+  // %2 = alloca 8 (variable v2)
+  // %3 = alloca 8 (variable v3)
+  // %4 = alloca 8 (variable v4)
   auto alloca1 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(1));
   auto alloca2 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(2));
   auto alloca3 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(3));
@@ -512,5 +505,5 @@ TestPointerObjectSet()
 }
 
 JLM_UNIT_TEST_REGISTER(
-"jlm/llvm/opt/alias-analyses/TestPointerObjectSet",
-TestPointerObjectSet)
+    "jlm/llvm/opt/alias-analyses/TestPointerObjectSet",
+    TestPointerObjectSet)

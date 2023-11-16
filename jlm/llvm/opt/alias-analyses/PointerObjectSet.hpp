@@ -55,8 +55,10 @@ class PointerObject final
 public:
   using Index = size_t;
 
-  explicit PointerObject(PointerObjectKind kind) : Kind_(kind),
-                                                   PointsToExternal_(0), HasEscaped_(0)
+  explicit PointerObject(PointerObjectKind kind)
+      : Kind_(kind),
+        PointsToExternal_(0),
+        HasEscaped_(0)
   {
     JLM_ASSERT(kind != PointerObjectKind::COUNT);
 
@@ -79,7 +81,7 @@ public:
 
   /**
    * Sets the PointsToExternal-flag.
-   * @return true if the PointerObject used to not point to external, before this call
+   * @return True, if the PointsToExternal flag was modified, otherwise false
    */
   bool
   MarkAsPointsToExternal() noexcept
@@ -98,7 +100,7 @@ public:
   /**
    * Sets the Escaped-flag.
    * Also sets the PointsToExternal flag, if unset
-   * @return true if the PointerObject's flags were modified by this call
+   * @return true if HasEscaped or PointsToExternal flag were modified, otherwise false
    */
   bool
   MarkAsEscaped() noexcept
@@ -111,10 +113,12 @@ public:
 };
 
 /**
- * A class containing a set of PointerObjects, their points-to-sets,
+ * A class containing a set of PointerObjects, and their points-to-sets,
  * as well as mappings from RVSDG nodes/outputs to the PointerObjects.
+ * For brevity, P(x) denotes the points-to-set of a PointerObject x.
  */
-class PointerObjectSet final {
+class PointerObjectSet final
+{
   // All PointerObjects in the set
   std::vector<PointerObject> PointerObjects_;
 
@@ -124,14 +128,19 @@ class PointerObjectSet final {
   // Mapping from register to PointerObject
   // Unlike the other maps, several rvsdg::output* can share register PointerObject
   std::unordered_map<const rvsdg::output *, PointerObject::Index> RegisterMap_;
+
   // Mapping from alloca node to PointerObject
   std::unordered_map<const rvsdg::node *, PointerObject::Index> AllocaMap_;
+
   // Mapping from malloc call node to PointerObject
   std::unordered_map<const rvsdg::node *, PointerObject::Index> MallocMap_;
+
   // Mapping from global variables declared with delta nodes to PointerObject
   std::unordered_map<const delta::node *, PointerObject::Index> GlobalMap_;
+
   // Mapping from functions declared with lambda nodes to PointerObject
   std::unordered_map<const lambda::node *, PointerObject::Index> FunctionMap_;
+
   // Mapping from symbols imported into the module to PointerObject
   std::unordered_map<const rvsdg::argument *, PointerObject::Index> ImportMap_;
 
@@ -144,9 +153,9 @@ class PointerObjectSet final {
 public:
 
   /**
-   * Creates a PointerObject of register kind, and maps the rvsdg output to the new PointerObject.
+   * Creates a PointerObject of register kind and maps the rvsdg output to the new PointerObject.
    * @param rvsdgOutput the rvsdg output associated with the register PointerObject
-   * @return the index of the new PointerObject, in the PointerObjectSet
+   * @return the index of the new PointerObject in the PointerObjectSet
    */
   PointerObject::Index
   CreateRegisterPointerObject(const rvsdg::output &rvsdgOutput);
@@ -193,38 +202,38 @@ public:
   const std::unordered_map<const rvsdg::argument *, PointerObject::Index>&
   GetImportMap() const noexcept;
 
-  PointerObject::Index
+  [[nodiscard]] size_t
   NumPointerObjects() const noexcept;
 
-  PointerObject &
+  [[nodiscard]] PointerObject &
   GetPointerObject(PointerObject::Index index);
 
-  const PointerObject &
+  [[nodiscard]] const PointerObject &
   GetPointerObject(PointerObject::Index index) const;
 
   const std::unordered_set<PointerObject::Index> &
   GetPointsToSet(PointerObject::Index idx) const;
 
   /**
-   * Adds pointee to P(pointer)
-   * @param pointer the index of the PointerObject that points
+   * Adds \p pointee to P(\p pointer)
+   * @param pointer the index of the PointerObject that shall point to \p pointee
    * @param pointee the index of the PointerObject that is pointed at, can not be a register.
-   * @return true if P(pointer) was changed by this operation
+   * @return true if P(\p pointer) was changed by this operation
    */
   bool
   AddToPointsToSet(PointerObject::Index pointer, PointerObject::Index pointee);
 
   /**
-   * Makes P(superset) a superset of P(subset) by adding any elements in the set difference
+   * Makes P(\p superset) a superset of P(\p subset), by adding any elements in the set difference
    * @param superset the index of the PointerObject that shall point to everything subset points to
    * @param subset the index of the PointerObject whose pointees shall all be pointed to by superset as well
-   * @return true if P(superset) was modified by this operation
+   * @return true if P(\p superset) was modified by this operation
    */
   bool
   MakePointsToSetSuperset(PointerObject::Index superset, PointerObject::Index subset);
 
   /**
-   * Adds the Escaped flag to all PointerObjects in the P(pointer) set
+   * Adds the Escaped flag to all PointerObjects in the P(\ pointer) set
    * @param pointer the pointer whose pointees should be marked as escaped
    * @return true if any PointerObjects had their flag modified by this operation
    */
@@ -244,8 +253,14 @@ class SupersetConstraint final
 
 public:
   SupersetConstraint(PointerObject::Index superset, PointerObject::Index subset)
-          : Superset_(superset), Subset_(subset) {}
+      : Superset_(superset),
+        Subset_(subset)
+  {}
 
+  /**
+   * \brief Applies the constraint to the \p set
+   * \return true if this operation modified any PointerObjects or points-to-sets
+   */
   bool
   Apply(PointerObjectSet& set);
 };
@@ -262,8 +277,14 @@ class AllPointeesPointToSupersetConstraint final
 
 public:
   AllPointeesPointToSupersetConstraint(PointerObject::Index pointer1, PointerObject::Index pointer2)
-                                      : Pointer1_(pointer1), Pointer2_(pointer2) {}
+      : Pointer1_(pointer1),
+      Pointer2_(pointer2)
+  {}
 
+  /**
+   * \brief Applies the constraint to the \p set
+   * \return true if this operation modified any PointerObjects or points-to-sets
+   */
   bool
   Apply(PointerObjectSet& set);
 };
@@ -280,8 +301,14 @@ class SupersetOfAllPointeesConstraint final
 
 public:
   SupersetOfAllPointeesConstraint(PointerObject::Index loaded, PointerObject::Index pointer)
-                                 : Loaded_(loaded), Pointer_(pointer) {}
+      : Loaded_(loaded),
+        Pointer_(pointer)
+  {}
 
+  /**
+   * \brief Applies the constraint to the \p set
+   * \return true if this operation modified any PointerObjects or points-to-sets
+   */
   bool
   Apply(PointerObjectSet& set);
 };
@@ -291,7 +318,7 @@ public:
  * Unlike the set modification methods on PointerObjectSet, constraints can be added in any order, with the same result.
  * Use Solve() to calculate the final points-to-sets.
  *
- * Constraints on the special nodes, external and escaped, are built in.
+ * Some additional constraints on the PointerObject flags are built in.
  */
 class PointerObjectConstraintSet final
 {
@@ -301,7 +328,9 @@ public:
           AllPointeesPointToSupersetConstraint,
           SupersetOfAllPointeesConstraint>;
 
-  explicit PointerObjectConstraintSet(PointerObjectSet& set) : Set_(set) {}
+  explicit PointerObjectConstraintSet(PointerObjectSet& set)
+      : Set_(set)
+  {}
 
   PointerObjectConstraintSet(const PointerObjectConstraintSet& other) = delete;
 
@@ -343,7 +372,7 @@ public:
   AddConstraint(ConstraintVariant c);
 
   /**
-   * Iterates over and applies constraints until the all points-to-sets satisfy them
+   * Iterates over and applies constraints until all points-to-sets satisfy them
    */
   void
   Solve();
@@ -351,7 +380,7 @@ public:
 private:
 
   /**
-   * Makes sure any PointerObject marked as escaped, also makes all its pointees get the HasEscaped flag set.
+   * Ensures that the escaped flag is set for all pointees of any pointer object that is marked as escaped.
    * @return true if the function modified any flags
    */
   bool
