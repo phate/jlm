@@ -31,9 +31,9 @@ MaxEmptyLinesToKeep: 1
 # Collection of all brace wrapping rules
 BreakBeforeBraces: Custom
 BraceWrapping:
-  AfterCaseLabel:  false
+  AfterCaseLabel:  true
   AfterClass:      true
-  AfterControlStatement: Never
+  AfterControlStatement: Always
   AfterEnum:       true
   AfterExternBlock: true
   AfterFunction:   true
@@ -41,7 +41,7 @@ BraceWrapping:
   AfterStruct:     true
   AfterUnion:      true
   BeforeCatch:     true
-  BeforeElse:      false
+  BeforeElse:      true
   BeforeLambdaBody: true
   BeforeWhile:     false
   IndentBraces:    false
@@ -49,22 +49,39 @@ BraceWrapping:
   SplitEmptyRecord: true
   SplitEmptyNamespace: true
 
+# Inserting space settings, pretty much all of these are default
+SpaceAfterTemplateKeyword: false
+# vector<int>{1, 2, 3}
+SpaceBeforeCpp11BracedList: false
+# if (...), but func();
+SpaceBeforeParens: ControlStatements
+# for (auto it : myList) {
+SpaceBeforeRangeBasedForLoopColon: true
+# vector<int>
+SpacesInAngles: Never
+
 # class X
 # {
 # public:
 #   int field;
 AccessModifierOffset: -2
 AlignAfterOpenBracket: Align
+
 AlignEscapedNewlines: Left
-AlignOperands: Align
+AlignOperands: AlignAfterOperator
 BreakBeforeBinaryOperators: NonAssignment
 
-# callFunction(
-#     a, b, c, d, e);
-AllowAllArgumentsOnNextLine: true
+# if arguments or parameters overflow, give them a line each
+BinPackArguments: false
+BinPackParameters: false
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
 
-# Short blocks should still get their own lines
-AllowShortBlocksOnASingleLine: Empty
+# Always give constructor initializers their own line
+PackConstructorInitializers: Never
+
+# Avoid exceptions for short blocks
+AllowShortBlocksOnASingleLine: Never
 AllowShortFunctionsOnASingleLine: None
 AllowShortIfStatementsOnASingleLine: Never
 AllowShortLambdasOnASingleLine: None
@@ -72,19 +89,13 @@ AllowShortLoopsOnASingleLine: false
 
 # We like to do [[nodiscard]] int
 BreakAfterAttributes: Never
-
 # const int &
 # MyFunction()
 AlwaysBreakAfterReturnType: All
 AlwaysBreakTemplateDeclarations: Yes
 
-# If possible, put all constructor initializers on same line
-# Otherwise try to put all on next line
-# Otherwise one initializer per line
-PackConstructorInitializers: NextLine
-
-# Makes initializer lists "tighter" {1, 2, 3}
-Cpp11BracedListStyle: true
+# Makes initializer lists a bit more spacious { 1, 2, 3 }
+Cpp11BracedListStyle: false
 
 # false: do not add // jlm::rvsdg::delta to the closing curly bracket
 FixNamespaceComments: false
@@ -98,22 +109,10 @@ IncludeCategories:
     SortPriority:    0
     CaseSensitive:   false
 IncludeIsMainRegex: '^(Test)?'
+SortIncludes: CaseInsensitive
+SortUsingDeclarations: LexicographicNumeric
 
 ReflowComments:  true
 
 # Changed from "Leave", forces space between definitions (functions, classes, structs)
 SeparateDefinitionBlocks: Always
-
-SortIncludes: CaseInsensitive
-SortUsingDeclarations: LexicographicNumeric
-
-# Inserting space settings, pretty much all of these are default
-SpaceAfterTemplateKeyword: false
-# vector<int>{1, 2, 3}
-SpaceBeforeCpp11BracedList: false
-# if (...), but func();
-SpaceBeforeParens: ControlStatements
-# for (auto it : myList) {
-SpaceBeforeRangeBasedForLoopColon: true
-# vector<int>
-SpacesInAngles:  Never
