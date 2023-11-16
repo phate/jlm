@@ -65,7 +65,6 @@ SpacesInAngles: Never
 # public:
 #   int field;
 AccessModifierOffset: -2
-AlignAfterOpenBracket: Align
 
 AlignEscapedNewlines: Left
 AlignOperands: AlignAfterOperator
@@ -76,6 +75,8 @@ BinPackArguments: false
 BinPackParameters: false
 AllowAllArgumentsOnNextLine: false
 AllowAllParametersOfDeclarationOnNextLine: false
+# If parameters/arguments don't fit on a single line, put the first parameter on the next line
+AlignAfterOpenBracket: AlwaysBreak
 
 # Always give constructor initializers their own line
 PackConstructorInitializers: Never
