@@ -26,7 +26,8 @@ PointerObjectSet::CreateRegisterPointerObject(const rvsdg::output & rvsdgOutput)
 }
 
 void
-PointerObjectSet::MapRegisterToExistingPointerObject(const rvsdg::output & rvsdgOutput, PointerObject::Index pointerObject)
+PointerObjectSet::MapRegisterToExistingPointerObject(const rvsdg::output & rvsdgOutput,
+                                                     PointerObject::Index pointerObject)
 {
   JLM_ASSERT(RegisterMap_.count(&rvsdgOutput) == 0);
   JLM_ASSERT(pointerObject < NumPointerObjects());
@@ -141,10 +142,7 @@ PointerObjectSet::AddToPointsToSet(PointerObject::Index pointer, PointerObject::
   // Registers can not be pointed to
   JLM_ASSERT(GetPointerObject(pointee).GetKind() != PointerObjectKind::Register);
 
-  auto sizeBefore = PointsToSets_[pointer].size();
-  PointsToSets_[pointer].insert(pointee);
-
-  return PointsToSets_[pointer].size() != sizeBefore;
+  return PointsToSets_[pointer].insert(pointee).second;
 }
 
 // Makes P(superset) a superset of P(subset)
@@ -224,7 +222,9 @@ SupersetOfAllPointeesConstraint::Apply(PointerObjectSet& set)
 
 
 void
-PointerObjectConstraintSet::AddPointerPointeeConstraint(PointerObject::Index pointer, PointerObject::Index pointee)
+PointerObjectConstraintSet::AddPointerPointeeConstraint(
+    PointerObject::Index pointer,
+    PointerObject::Index pointee)
 {
   // All set constraints are additive, so simple constraints like this can be directly applied and forgotten.
   Set_.AddToPointsToSet(pointer, pointee);
@@ -254,17 +254,22 @@ PointerObjectConstraintSet::AddConstraint(ConstraintVariant c)
 }
 
 void
-PointerObjectConstraintSet::Solve() {
+PointerObjectConstraintSet::Solve()
+{
   // Keep applying constraints until no sets are modified
   bool modified = true;
 
-  while (modified) {
+  while (modified)
+  {
     modified = false;
 
-    for (auto& constraint : Constraints_)
-      std::visit([&](auto constraint) {
-        modified |= constraint.Apply(Set_);
-      }, constraint);
+    for (auto & constraint : Constraints_)
+    {
+      std::visit([&](auto & constraint)
+          {
+            modified |= constraint.Apply(Set_);
+          }, constraint);
+    }
 
     modified |= PropagateEscapedFlag();
   }
@@ -273,8 +278,6 @@ PointerObjectConstraintSet::Solve() {
 bool
 PointerObjectConstraintSet::PropagateEscapedFlag()
 {
-  bool modified = false;
-
   std::queue<PointerObject::Index> escapers;
 
   // First add all already escaped PointerObjects to the queue
@@ -282,6 +285,8 @@ PointerObjectConstraintSet::PropagateEscapedFlag()
     if (Set_.GetPointerObject(idx).HasEscaped())
       escapers.push(idx);
   }
+
+  bool modified = false;
 
   // For all escapers, check if they point to any PointerObjects not marked as escaped
   while (!escapers.empty()) {
