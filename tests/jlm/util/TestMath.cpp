@@ -15,7 +15,8 @@ using namespace jlm::util;
 static void
 TestLog2Floor()
 {
-  auto testByteRange = [](auto type) {
+  auto testByteRange = [](auto type)
+  {
     using T = decltype(type);
     assert(Log2Floor<T>(-10) == -1);
     assert(Log2Floor<T>(-1) == -1);
@@ -70,18 +71,21 @@ TestBitsRequiredToRepresent()
 static void
 TestBitWidthOfEnum()
 {
-  enum class TestEnum1 {
+  enum class TestEnum1
+  {
     Zero
   };
 
-  enum class TestEnum4 {
+  enum class TestEnum4
+  {
     Zero,
     One,
     Two,
     Three
   };
 
-  enum class TestEnum5 {
+  enum class TestEnum5
+  {
     Zero,
     One,
     Two,
@@ -89,7 +93,8 @@ TestBitWidthOfEnum()
     Four
   };
 
-  enum class TestEnum127 {
+  enum class TestEnum127
+  {
     Zero = 0,
     OneHundredAndTwentySeven = 127
   };
@@ -109,6 +114,4 @@ TestMath()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER(
-  "jlm/util/TestMath",
-  TestMath)
+JLM_UNIT_TEST_REGISTER("jlm/util/TestMath", TestMath)
