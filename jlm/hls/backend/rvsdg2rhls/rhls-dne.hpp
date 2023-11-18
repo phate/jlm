@@ -13,18 +13,17 @@ namespace jlm::hls
 {
 
 bool
-remove_unused_loop_outputs(hls::loop_node *ln);
+remove_unused_loop_outputs(hls::loop_node * ln);
 
 bool
-remove_unused_loop_inputs(hls::loop_node *ln);
-
+remove_unused_loop_inputs(hls::loop_node * ln);
 
 bool
-dne(jlm::rvsdg::region *sr);
+dne(jlm::rvsdg::region * sr);
 
 void
-dne(llvm::RvsdgModule &rm);
+dne(llvm::RvsdgModule & rm);
 
 }
 
-#endif //JLM_HLS_BACKEND_RVSDG2RHLS_RHLS_DNE_HPP
+#endif // JLM_HLS_BACKEND_RVSDG2RHLS_RHLS_DNE_HPP

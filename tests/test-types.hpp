@@ -11,44 +11,42 @@
 namespace jlm::tests
 {
 
-class valuetype final : public rvsdg::valuetype {
+class valuetype final : public rvsdg::valuetype
+{
 public:
-	virtual
-	~valuetype();
+  virtual ~valuetype();
 
-	inline constexpr
-	valuetype() noexcept
-	: rvsdg::valuetype()
-	{}
+  inline constexpr valuetype() noexcept
+      : rvsdg::valuetype()
+  {}
 
-	virtual std::string
-	debug_string() const override;
+  virtual std::string
+  debug_string() const override;
 
-	virtual bool
-	operator==(const rvsdg::type & other) const noexcept override;
+  virtual bool
+  operator==(const rvsdg::type & other) const noexcept override;
 
-	virtual std::unique_ptr<rvsdg::type>
-	copy() const override;
+  virtual std::unique_ptr<rvsdg::type>
+  copy() const override;
 };
 
-class statetype final : public rvsdg::statetype {
+class statetype final : public rvsdg::statetype
+{
 public:
-	virtual
-	~statetype();
+  virtual ~statetype();
 
-	inline constexpr
-	statetype() noexcept
-	: rvsdg::statetype()
-	{}
+  inline constexpr statetype() noexcept
+      : rvsdg::statetype()
+  {}
 
-	virtual std::string
-	debug_string() const override;
+  virtual std::string
+  debug_string() const override;
 
-	virtual bool
-	operator==(const rvsdg::type & other) const noexcept override;
+  virtual bool
+  operator==(const rvsdg::type & other) const noexcept override;
 
-	virtual std::unique_ptr<rvsdg::type>
-	copy() const override;
+  virtual std::unique_ptr<rvsdg::type>
+  copy() const override;
 };
 
 }

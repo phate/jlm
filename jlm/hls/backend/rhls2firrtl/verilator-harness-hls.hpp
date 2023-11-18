@@ -12,23 +12,25 @@
 namespace jlm::hls
 {
 
-class VerilatorHarnessHLS : public BaseHLS {
+class VerilatorHarnessHLS : public BaseHLS
+{
   std::string
-  extension() override {
+  extension() override
+  {
     return "_harness.cpp";
   }
 
   std::string
-  get_text(llvm::RvsdgModule &rm) override;
+  get_text(llvm::RvsdgModule & rm) override;
 
 private:
   std::string
-  convert_to_c_type(const jlm::rvsdg::type* type);
+  convert_to_c_type(const jlm::rvsdg::type * type);
 
   std::string
-  convert_to_c_type_postfix(const jlm::rvsdg::type* type);
+  convert_to_c_type_postfix(const jlm::rvsdg::type * type);
 };
 
 }
 
-#endif //JLM_HLS_BACKEND_RHLS2FIRRTL_VERILATOR_HARNESS_HLS_HPP
+#endif // JLM_HLS_BACKEND_RHLS2FIRRTL_VERILATOR_HARNESS_HLS_HPP

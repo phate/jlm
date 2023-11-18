@@ -29,73 +29,79 @@ PointsToGraph::AddEscapedMemoryNode(PointsToGraph::MemoryNode & memoryNode)
 PointsToGraph::AllocaNodeRange
 PointsToGraph::AllocaNodes()
 {
-  return {AllocaNodeIterator(AllocaNodes_.begin()), AllocaNodeIterator(AllocaNodes_.end())};
+  return { AllocaNodeIterator(AllocaNodes_.begin()), AllocaNodeIterator(AllocaNodes_.end()) };
 }
 
 PointsToGraph::AllocaNodeConstRange
 PointsToGraph::AllocaNodes() const
 {
-  return {AllocaNodeConstIterator(AllocaNodes_.begin()), AllocaNodeConstIterator(AllocaNodes_.end())};
+  return { AllocaNodeConstIterator(AllocaNodes_.begin()),
+           AllocaNodeConstIterator(AllocaNodes_.end()) };
 }
 
 PointsToGraph::DeltaNodeRange
 PointsToGraph::DeltaNodes()
 {
-  return {DeltaNodeIterator(DeltaNodes_.begin()), DeltaNodeIterator(DeltaNodes_.end())};
+  return { DeltaNodeIterator(DeltaNodes_.begin()), DeltaNodeIterator(DeltaNodes_.end()) };
 }
 
 PointsToGraph::DeltaNodeConstRange
 PointsToGraph::DeltaNodes() const
 {
-  return {DeltaNodeConstIterator(DeltaNodes_.begin()), DeltaNodeConstIterator(DeltaNodes_.end())};
+  return { DeltaNodeConstIterator(DeltaNodes_.begin()), DeltaNodeConstIterator(DeltaNodes_.end()) };
 }
 
 PointsToGraph::LambdaNodeRange
 PointsToGraph::LambdaNodes()
 {
-  return {LambdaNodeIterator(LambdaNodes_.begin()), LambdaNodeIterator(LambdaNodes_.end())};
+  return { LambdaNodeIterator(LambdaNodes_.begin()), LambdaNodeIterator(LambdaNodes_.end()) };
 }
 
 PointsToGraph::LambdaNodeConstRange
 PointsToGraph::LambdaNodes() const
 {
-  return {LambdaNodeConstIterator(LambdaNodes_.begin()), LambdaNodeConstIterator(LambdaNodes_.end())};
+  return { LambdaNodeConstIterator(LambdaNodes_.begin()),
+           LambdaNodeConstIterator(LambdaNodes_.end()) };
 }
 
 PointsToGraph::MallocNodeRange
 PointsToGraph::MallocNodes()
 {
-  return {MallocNodeIterator(MallocNodes_.begin()), MallocNodeIterator(MallocNodes_.end())};
+  return { MallocNodeIterator(MallocNodes_.begin()), MallocNodeIterator(MallocNodes_.end()) };
 }
 
 PointsToGraph::MallocNodeConstRange
 PointsToGraph::MallocNodes() const
 {
-  return {MallocNodeConstIterator(MallocNodes_.begin()), MallocNodeConstIterator(MallocNodes_.end())};
+  return { MallocNodeConstIterator(MallocNodes_.begin()),
+           MallocNodeConstIterator(MallocNodes_.end()) };
 }
 
 PointsToGraph::ImportNodeRange
 PointsToGraph::ImportNodes()
 {
-  return {ImportNodeIterator(ImportNodes_.begin()), ImportNodeIterator(ImportNodes_.end())};
+  return { ImportNodeIterator(ImportNodes_.begin()), ImportNodeIterator(ImportNodes_.end()) };
 }
 
 PointsToGraph::ImportNodeConstRange
 PointsToGraph::ImportNodes() const
 {
-  return {ImportNodeConstIterator(ImportNodes_.begin()), ImportNodeConstIterator(ImportNodes_.end())};
+  return { ImportNodeConstIterator(ImportNodes_.begin()),
+           ImportNodeConstIterator(ImportNodes_.end()) };
 }
 
 PointsToGraph::RegisterNodeRange
 PointsToGraph::RegisterNodes()
 {
-  return {RegisterNodeIterator(RegisterNodes_.begin()), RegisterNodeIterator(RegisterNodes_.end())};
+  return { RegisterNodeIterator(RegisterNodes_.begin()),
+           RegisterNodeIterator(RegisterNodes_.end()) };
 }
 
 PointsToGraph::RegisterNodeConstRange
 PointsToGraph::RegisterNodes() const
 {
-  return {RegisterNodeConstIterator(RegisterNodes_.begin()), RegisterNodeConstIterator(RegisterNodes_.end())};
+  return { RegisterNodeConstIterator(RegisterNodes_.begin()),
+           RegisterNodeConstIterator(RegisterNodes_.end()) };
 }
 
 PointsToGraph::AllocaNode &
@@ -155,18 +161,17 @@ PointsToGraph::AddImportNode(std::unique_ptr<PointsToGraph::ImportNode> node)
 std::string
 PointsToGraph::ToDot(const PointsToGraph & pointsToGraph)
 {
-  auto nodeShape = [](const PointsToGraph::Node & node) {
-    static std::unordered_map<std::type_index, std::string> shapes
-      ({
-         {typeid(AllocaNode),         "box"},
-         {typeid(DeltaNode),          "box"},
-         {typeid(ImportNode),         "box"},
-         {typeid(LambdaNode),         "box"},
-         {typeid(MallocNode),         "box"},
-         {typeid(RegisterNode),       "oval"},
-         {typeid(UnknownMemoryNode),  "box"},
-         {typeid(ExternalMemoryNode), "box"}
-       });
+  auto nodeShape = [](const PointsToGraph::Node & node)
+  {
+    static std::unordered_map<std::type_index, std::string> shapes(
+        { { typeid(AllocaNode), "box" },
+          { typeid(DeltaNode), "box" },
+          { typeid(ImportNode), "box" },
+          { typeid(LambdaNode), "box" },
+          { typeid(MallocNode), "box" },
+          { typeid(RegisterNode), "oval" },
+          { typeid(UnknownMemoryNode), "box" },
+          { typeid(ExternalMemoryNode), "box" } });
 
     if (shapes.find(typeid(node)) != shapes.end())
       return shapes[typeid(node)];
@@ -174,10 +179,18 @@ PointsToGraph::ToDot(const PointsToGraph & pointsToGraph)
     JLM_UNREACHABLE("Unknown points-to graph Node type.");
   };
 
-  auto nodeString = [&](const PointsToGraph::Node & node) {
-    return util::strfmt("{ ", (intptr_t)&node, " ["
-      , "label = \"", node.DebugString(), "\" "
-      , "shape = \"", nodeShape(node), "\"]; }\n");
+  auto nodeString = [&](const PointsToGraph::Node & node)
+  {
+    return util::strfmt(
+        "{ ",
+        (intptr_t)&node,
+        " [",
+        "label = \"",
+        node.DebugString(),
+        "\" ",
+        "shape = \"",
+        nodeShape(node),
+        "\"]; }\n");
   };
 
   auto edgeString = [](const PointsToGraph::Node & node, const PointsToGraph::Node & target)
@@ -221,31 +234,30 @@ PointsToGraph::ToDot(const PointsToGraph & pointsToGraph)
   return dot;
 }
 
-PointsToGraph::Node::~Node() noexcept
-= default;
+PointsToGraph::Node::~Node() noexcept = default;
 
 PointsToGraph::Node::TargetRange
 PointsToGraph::Node::Targets()
 {
-  return {TargetIterator(Targets_.begin()), TargetIterator(Targets_.end())};
+  return { TargetIterator(Targets_.begin()), TargetIterator(Targets_.end()) };
 }
 
 PointsToGraph::Node::TargetConstRange
 PointsToGraph::Node::Targets() const
 {
-  return {TargetConstIterator(Targets_.begin()), TargetConstIterator(Targets_.end())};
+  return { TargetConstIterator(Targets_.begin()), TargetConstIterator(Targets_.end()) };
 }
 
 PointsToGraph::Node::SourceRange
 PointsToGraph::Node::Sources()
 {
-  return {SourceIterator(Sources_.begin()), SourceIterator(Sources_.end())};
+  return { SourceIterator(Sources_.begin()), SourceIterator(Sources_.end()) };
 }
 
 PointsToGraph::Node::SourceConstRange
 PointsToGraph::Node::Sources() const
 {
-  return {SourceConstIterator(Sources_.begin()), SourceConstIterator(Sources_.end())};
+  return { SourceConstIterator(Sources_.begin()), SourceConstIterator(Sources_.end()) };
 }
 
 void
@@ -268,8 +280,7 @@ PointsToGraph::Node::RemoveEdge(PointsToGraph::MemoryNode & target)
   Targets_.erase(&target);
 }
 
-PointsToGraph::RegisterNode::~RegisterNode() noexcept
-= default;
+PointsToGraph::RegisterNode::~RegisterNode() noexcept = default;
 
 std::string
 PointsToGraph::RegisterNode::DebugString() const
@@ -283,7 +294,8 @@ PointsToGraph::RegisterNode::DebugString() const
   if (node != nullptr)
     return util::strfmt(node->operation().debug_string(), ":a", GetOutput().index());
 
-  if (is_import(&GetOutput())) {
+  if (is_import(&GetOutput()))
+  {
     auto port = util::AssertedCast<const impport>(&GetOutput().port());
     return util::strfmt("import:", port->name());
   }
@@ -291,11 +303,9 @@ PointsToGraph::RegisterNode::DebugString() const
   return "RegisterNode";
 }
 
-PointsToGraph::MemoryNode::~MemoryNode() noexcept
-= default;
+PointsToGraph::MemoryNode::~MemoryNode() noexcept = default;
 
-PointsToGraph::AllocaNode::~AllocaNode() noexcept
-= default;
+PointsToGraph::AllocaNode::~AllocaNode() noexcept = default;
 
 std::string
 PointsToGraph::AllocaNode::DebugString() const
@@ -303,8 +313,7 @@ PointsToGraph::AllocaNode::DebugString() const
   return GetAllocaNode().operation().debug_string();
 }
 
-PointsToGraph::DeltaNode::~DeltaNode() noexcept
-= default;
+PointsToGraph::DeltaNode::~DeltaNode() noexcept = default;
 
 std::string
 PointsToGraph::DeltaNode::DebugString() const
@@ -312,8 +321,7 @@ PointsToGraph::DeltaNode::DebugString() const
   return GetDeltaNode().operation().debug_string();
 }
 
-PointsToGraph::LambdaNode::~LambdaNode() noexcept
-= default;
+PointsToGraph::LambdaNode::~LambdaNode() noexcept = default;
 
 std::string
 PointsToGraph::LambdaNode::DebugString() const
@@ -321,8 +329,7 @@ PointsToGraph::LambdaNode::DebugString() const
   return GetLambdaNode().operation().debug_string();
 }
 
-PointsToGraph::MallocNode::~MallocNode() noexcept
-= default;
+PointsToGraph::MallocNode::~MallocNode() noexcept = default;
 
 std::string
 PointsToGraph::MallocNode::DebugString() const
@@ -330,27 +337,24 @@ PointsToGraph::MallocNode::DebugString() const
   return GetMallocNode().operation().debug_string();
 }
 
-PointsToGraph::ImportNode::~ImportNode() noexcept
-= default;
+PointsToGraph::ImportNode::~ImportNode() noexcept = default;
 
 std::string
 PointsToGraph::ImportNode::DebugString() const
 {
-	auto port = util::AssertedCast<const impport>(&GetArgument().port());
-	return port->name();
+  auto port = util::AssertedCast<const impport>(&GetArgument().port());
+  return port->name();
 }
 
-PointsToGraph::UnknownMemoryNode::~UnknownMemoryNode() noexcept
-= default;
+PointsToGraph::UnknownMemoryNode::~UnknownMemoryNode() noexcept = default;
 
 std::string
 PointsToGraph::UnknownMemoryNode::DebugString() const
 {
-	return "UnknownMemory";
+  return "UnknownMemory";
 }
 
-PointsToGraph::ExternalMemoryNode::~ExternalMemoryNode() noexcept
-= default;
+PointsToGraph::ExternalMemoryNode::~ExternalMemoryNode() noexcept = default;
 
 std::string
 PointsToGraph::ExternalMemoryNode::DebugString() const

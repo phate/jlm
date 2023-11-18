@@ -14,17 +14,15 @@ namespace jlm::llvm
 class RvsdgModule;
 
 /**
-* \brief Common Node Elimination
-*/
-class cne final : public optimization {
+ * \brief Common Node Elimination
+ */
+class cne final : public optimization
+{
 public:
-	virtual
-	~cne();
+  virtual ~cne();
 
-	virtual void
-	run(
-    RvsdgModule & module,
-    jlm::util::StatisticsCollector & statisticsCollector) override;
+  virtual void
+  run(RvsdgModule & module, jlm::util::StatisticsCollector & statisticsCollector) override;
 };
 
 }

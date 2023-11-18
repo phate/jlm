@@ -14,95 +14,95 @@
 static inline void
 test_bitunary_reduction()
 {
-	jlm::rvsdg::bittype bt32(32);
+  jlm::rvsdg::bittype bt32(32);
 
-	jlm::rvsdg::graph graph;
-	auto nf = jlm::llvm::sext_op::normal_form(&graph);
-	nf->set_mutable(false);
+  jlm::rvsdg::graph graph;
+  auto nf = jlm::llvm::sext_op::normal_form(&graph);
+  nf->set_mutable(false);
 
-	auto x = graph.add_import({bt32, "x"});
+  auto x = graph.add_import({ bt32, "x" });
 
-	auto y = jlm::rvsdg::bitnot_op::create(32, x);
-	auto z = jlm::llvm::sext_op::create(64, y);
+  auto y = jlm::rvsdg::bitnot_op::create(32, x);
+  auto z = jlm::llvm::sext_op::create(64, y);
 
-	auto ex = graph.add_export(z, {z->type(), "x"});
+  auto ex = graph.add_export(z, { z->type(), "x" });
 
-	//jlm::rvsdg::view(graph, stdout);
+  // jlm::rvsdg::view(graph, stdout);
 
-	nf->set_mutable(true);
-	graph.normalize();
-	graph.prune();
+  nf->set_mutable(true);
+  graph.normalize();
+  graph.prune();
 
-	//jlm::rvsdg::view(graph, stdout);
+  // jlm::rvsdg::view(graph, stdout);
 
-	assert(jlm::rvsdg::is<jlm::rvsdg::bitnot_op>(jlm::rvsdg::node_output::node(ex->origin())));
+  assert(jlm::rvsdg::is<jlm::rvsdg::bitnot_op>(jlm::rvsdg::node_output::node(ex->origin())));
 }
 
 static inline void
 test_bitbinary_reduction()
 {
-	jlm::rvsdg::bittype bt32(32);
+  jlm::rvsdg::bittype bt32(32);
 
-	jlm::rvsdg::graph graph;
-	auto nf = jlm::llvm::sext_op::normal_form(&graph);
-	nf->set_mutable(false);
+  jlm::rvsdg::graph graph;
+  auto nf = jlm::llvm::sext_op::normal_form(&graph);
+  nf->set_mutable(false);
 
-	auto x = graph.add_import({bt32, "x"});
-	auto y = graph.add_import({bt32, "y"});
+  auto x = graph.add_import({ bt32, "x" });
+  auto y = graph.add_import({ bt32, "y" });
 
-	auto z = jlm::rvsdg::bitadd_op::create(32, x, y);
-	auto w = jlm::llvm::sext_op::create(64, z);
+  auto z = jlm::rvsdg::bitadd_op::create(32, x, y);
+  auto w = jlm::llvm::sext_op::create(64, z);
 
-	auto ex = graph.add_export(w, {w->type(), "x"});
+  auto ex = graph.add_export(w, { w->type(), "x" });
 
-//	jlm::rvsdg::view(graph, stdout);
+  //	jlm::rvsdg::view(graph, stdout);
 
-	nf->set_mutable(true);
-	graph.normalize();
-	graph.prune();
+  nf->set_mutable(true);
+  graph.normalize();
+  graph.prune();
 
-//	jlm::rvsdg::view(graph, stdout);
+  //	jlm::rvsdg::view(graph, stdout);
 
-	assert(jlm::rvsdg::is<jlm::rvsdg::bitadd_op>(jlm::rvsdg::node_output::node(ex->origin())));
+  assert(jlm::rvsdg::is<jlm::rvsdg::bitadd_op>(jlm::rvsdg::node_output::node(ex->origin())));
 }
 
 static inline void
 test_inverse_reduction()
 {
-	using namespace jlm;
+  using namespace jlm;
 
-	jlm::rvsdg::bittype bt64(64);
+  jlm::rvsdg::bittype bt64(64);
 
-	jlm::rvsdg::graph graph;
-	auto nf = jlm::llvm::sext_op::normal_form(&graph);
-	nf->set_mutable(false);
+  jlm::rvsdg::graph graph;
+  auto nf = jlm::llvm::sext_op::normal_form(&graph);
+  nf->set_mutable(false);
 
-	auto x = graph.add_import({bt64, "x"});
+  auto x = graph.add_import({ bt64, "x" });
 
-	auto y = jlm::llvm::trunc_op::create(32, x);
-	auto z = jlm::llvm::sext_op::create(64, y);
+  auto y = jlm::llvm::trunc_op::create(32, x);
+  auto z = jlm::llvm::sext_op::create(64, y);
 
-	auto ex = graph.add_export(z, {z->type(), "x"});
+  auto ex = graph.add_export(z, { z->type(), "x" });
 
-	jlm::rvsdg::view(graph, stdout);
+  jlm::rvsdg::view(graph, stdout);
 
-	nf->set_mutable(true);
-	graph.normalize();
-	graph.prune();
+  nf->set_mutable(true);
+  graph.normalize();
+  graph.prune();
 
-	jlm::rvsdg::view(graph, stdout);
+  jlm::rvsdg::view(graph, stdout);
 
-	assert(ex->origin() == x);
+  assert(ex->origin() == x);
 }
 
 static int
 test()
 {
-	test_bitunary_reduction();
-	test_bitbinary_reduction();
-	test_inverse_reduction();
+  test_bitunary_reduction();
+  test_bitbinary_reduction();
+  test_inverse_reduction();
 
-	return 0;
+  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/test-sext", test)

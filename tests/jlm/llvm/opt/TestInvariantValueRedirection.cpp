@@ -35,9 +35,9 @@ TestGamma()
 
     auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
     auto & graph = rvsdgModule->Rvsdg();
-    auto c = graph.add_import({controlType, "c"});
-    auto x = graph.add_import({valueType, "x"});
-    auto y = graph.add_import({valueType, "y"});
+    auto c = graph.add_import({ controlType, "c" });
+    auto x = graph.add_import({ valueType, "x" });
+    auto y = graph.add_import({ valueType, "y" });
 
     auto gammaNode1 = jlm::rvsdg::gamma_node::create(c, 2);
     auto gammaInput1 = gammaNode1->add_entryvar(c);
@@ -47,14 +47,14 @@ TestGamma()
     auto gammaNode2 = jlm::rvsdg::gamma_node::create(gammaInput1->argument(0), 2);
     auto gammaInput4 = gammaNode2->add_entryvar(gammaInput2->argument(0));
     auto gammaInput5 = gammaNode2->add_entryvar(gammaInput3->argument(0));
-    gammaNode2->add_exitvar({gammaInput4->argument(0), gammaInput4->argument(1)});
-    gammaNode2->add_exitvar({gammaInput5->argument(0), gammaInput5->argument(1)});
+    gammaNode2->add_exitvar({ gammaInput4->argument(0), gammaInput4->argument(1) });
+    gammaNode2->add_exitvar({ gammaInput5->argument(0), gammaInput5->argument(1) });
 
-    gammaNode1->add_exitvar({gammaNode2->output(0), gammaInput2->argument(1)});
-    gammaNode1->add_exitvar({gammaNode2->output(1), gammaInput3->argument(1)});
+    gammaNode1->add_exitvar({ gammaNode2->output(0), gammaInput2->argument(1) });
+    gammaNode1->add_exitvar({ gammaNode2->output(1), gammaInput3->argument(1) });
 
-    graph.add_export(gammaNode1->output(0), {gammaNode1->output(0)->type(), "x"});
-    graph.add_export(gammaNode1->output(1), {gammaNode1->output(1)->type(), "y"});
+    graph.add_export(gammaNode1->output(0), { gammaNode1->output(0)->type(), "x" });
+    graph.add_export(gammaNode1->output(1), { gammaNode1->output(1)->type(), "y" });
 
     return rvsdgModule;
   };
@@ -92,9 +92,9 @@ TestTheta()
 
     auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
     auto & graph = rvsdgModule->Rvsdg();
-    auto c = graph.add_import({controlType, "c"});
-    auto x = graph.add_import({valueType, "x"});
-    auto l = graph.add_import({loopStateType, "l"});
+    auto c = graph.add_import({ controlType, "c" });
+    auto x = graph.add_import({ valueType, "x" });
+    auto l = graph.add_import({ loopStateType, "l" });
 
     auto thetaNode1 = jlm::rvsdg::theta_node::create(graph.root());
     auto thetaOutput1 = thetaNode1->add_loopvar(c);
@@ -110,13 +110,11 @@ TestTheta()
     thetaOutput3->result()->divert_to(thetaOutput5);
     thetaNode1->set_predicate(thetaOutput1->argument());
 
-    graph.add_export(thetaOutput1, {thetaOutput1->type(), "c"});
-    graph.add_export(thetaOutput2, {thetaOutput2->type(), "x"});
-    graph.add_export(thetaOutput3, {thetaOutput3->type(), "l"});
+    graph.add_export(thetaOutput1, { thetaOutput1->type(), "c" });
+    graph.add_export(thetaOutput2, { thetaOutput2->type(), "x" });
+    graph.add_export(thetaOutput3, { thetaOutput3->type(), "l" });
 
-    return std::make_tuple(
-      std::move(rvsdgModule),
-      thetaOutput3);
+    return std::make_tuple(std::move(rvsdgModule), thetaOutput3);
   };
 
   /*

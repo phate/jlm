@@ -14,17 +14,17 @@ namespace jlm::tests
 class module;
 
 void
-register_unit_test(const std::string & name, int(*verify)());
+register_unit_test(const std::string & name, int (*verify)());
 
 int
 run_unit_test(const std::string & name);
 
 }
 
-#define JLM_UNIT_TEST_REGISTER(name, verify) \
-	static void __attribute__((constructor)) register_##verify(void) \
-	{ \
-		jlm::tests::register_unit_test(name, verify); \
-	} \
+#define JLM_UNIT_TEST_REGISTER(name, verify)                       \
+  static void __attribute__((constructor)) register_##verify(void) \
+  {                                                                \
+    jlm::tests::register_unit_test(name, verify);                  \
+  }
 
 #endif

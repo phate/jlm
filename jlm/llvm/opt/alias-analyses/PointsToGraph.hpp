@@ -23,12 +23,14 @@ namespace jlm::llvm
 
 class RvsdgModule;
 
-namespace aa {
+namespace aa
+{
 
 /** /brief PointsTo Graph
-*
-*/
-class PointsToGraph final {
+ *
+ */
+class PointsToGraph final
+{
   template<class DATATYPE, class ITERATORTYPE>
   class NodeIterator;
 
@@ -47,12 +49,18 @@ public:
   class UnknownMemoryNode;
   class ExternalMemoryNode;
 
-  using AllocaNodeMap = std::unordered_map<const jlm::rvsdg::node*, std::unique_ptr<PointsToGraph::AllocaNode>>;
-  using DeltaNodeMap = std::unordered_map<const delta::node*, std::unique_ptr<PointsToGraph::DeltaNode>>;
-  using ImportNodeMap = std::unordered_map<const jlm::rvsdg::argument*, std::unique_ptr<PointsToGraph::ImportNode>>;
-  using LambdaNodeMap = std::unordered_map<const lambda::node*, std::unique_ptr<PointsToGraph::LambdaNode>>;
-  using MallocNodeMap = std::unordered_map<const jlm::rvsdg::node*, std::unique_ptr<PointsToGraph::MallocNode>>;
-  using RegisterNodeMap = std::unordered_map<const jlm::rvsdg::output*, std::unique_ptr<PointsToGraph::RegisterNode>>;
+  using AllocaNodeMap =
+      std::unordered_map<const jlm::rvsdg::node *, std::unique_ptr<PointsToGraph::AllocaNode>>;
+  using DeltaNodeMap =
+      std::unordered_map<const delta::node *, std::unique_ptr<PointsToGraph::DeltaNode>>;
+  using ImportNodeMap =
+      std::unordered_map<const jlm::rvsdg::argument *, std::unique_ptr<PointsToGraph::ImportNode>>;
+  using LambdaNodeMap =
+      std::unordered_map<const lambda::node *, std::unique_ptr<PointsToGraph::LambdaNode>>;
+  using MallocNodeMap =
+      std::unordered_map<const jlm::rvsdg::node *, std::unique_ptr<PointsToGraph::MallocNode>>;
+  using RegisterNodeMap =
+      std::unordered_map<const jlm::rvsdg::output *, std::unique_ptr<PointsToGraph::RegisterNode>>;
 
   using AllocaNodeIterator = NodeIterator<AllocaNode, AllocaNodeMap::iterator>;
   using AllocaNodeConstIterator = NodeConstIterator<AllocaNode, AllocaNodeMap::const_iterator>;
@@ -80,7 +88,8 @@ public:
   using MallocNodeConstRange = jlm::util::iterator_range<MallocNodeConstIterator>;
 
   using RegisterNodeIterator = NodeIterator<RegisterNode, RegisterNodeMap::iterator>;
-  using RegisterNodeConstIterator = NodeConstIterator<RegisterNode, RegisterNodeMap::const_iterator>;
+  using RegisterNodeConstIterator =
+      NodeConstIterator<RegisterNode, RegisterNodeMap::const_iterator>;
   using RegisterNodeRange = jlm::util::iterator_range<RegisterNodeIterator>;
   using RegisterNodeConstRange = jlm::util::iterator_range<RegisterNodeConstIterator>;
 
@@ -88,15 +97,15 @@ private:
   PointsToGraph();
 
 public:
-  PointsToGraph(const PointsToGraph&) = delete;
+  PointsToGraph(const PointsToGraph &) = delete;
 
-  PointsToGraph(PointsToGraph&&) = delete;
-
-  PointsToGraph &
-  operator=(const PointsToGraph&) = delete;
+  PointsToGraph(PointsToGraph &&) = delete;
 
   PointsToGraph &
-  operator=(PointsToGraph&&) = delete;
+  operator=(const PointsToGraph &) = delete;
+
+  PointsToGraph &
+  operator=(PointsToGraph &&) = delete;
 
   AllocaNodeRange
   AllocaNodes();
@@ -173,12 +182,8 @@ public:
   size_t
   NumMemoryNodes() const noexcept
   {
-    return NumAllocaNodes()
-           + NumDeltaNodes()
-           + NumImportNodes()
-           + NumLambdaNodes()
-           + NumMallocNodes()
-           + 1; //External memory node
+    return NumAllocaNodes() + NumDeltaNodes() + NumImportNodes() + NumLambdaNodes()
+         + NumMallocNodes() + 1; // External memory node
   }
 
   size_t
@@ -266,7 +271,7 @@ public:
    *
    * @see PointsToGraph::MemoryNode::MarkAsModuleEscaping()
    */
-  const jlm::util::HashSet<const PointsToGraph::MemoryNode*> &
+  const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
   GetEscapedMemoryNodes() const noexcept
   {
     return EscapedMemoryNodes_;
@@ -306,7 +311,7 @@ private:
   /**
    * All memory nodes that escape from the module.
    */
-  jlm::util::HashSet<const PointsToGraph::MemoryNode*> EscapedMemoryNodes_;
+  jlm::util::HashSet<const PointsToGraph::MemoryNode *> EscapedMemoryNodes_;
 
   AllocaNodeMap AllocaNodes_;
   DeltaNodeMap DeltaNodes_;
@@ -319,11 +324,14 @@ private:
 };
 
 /** \brief PointsTo graph node
-*
-*/
-class PointsToGraph::Node {
-  template<class NODETYPE> class ConstIterator;
-  template<class NODETYPE> class Iterator;
+ *
+ */
+class PointsToGraph::Node
+{
+  template<class NODETYPE>
+  class ConstIterator;
+  template<class NODETYPE>
+  class Iterator;
 
   using SourceIterator = Iterator<PointsToGraph::Node>;
   using SourceConstIterator = ConstIterator<PointsToGraph::Node>;
@@ -338,23 +346,21 @@ class PointsToGraph::Node {
   using TargetConstRange = jlm::util::iterator_range<TargetConstIterator>;
 
 public:
-  virtual
-  ~Node() noexcept;
+  virtual ~Node() noexcept;
 
-  explicit
-  Node(PointsToGraph & pointsToGraph)
-    : PointsToGraph_(&pointsToGraph)
+  explicit Node(PointsToGraph & pointsToGraph)
+      : PointsToGraph_(&pointsToGraph)
   {}
 
-  Node(const Node&) = delete;
+  Node(const Node &) = delete;
 
-  Node(Node&&) = delete;
+  Node(Node &&) = delete;
 
-  Node&
-  operator=(const Node&) = delete;
+  Node &
+  operator=(const Node &) = delete;
 
-  Node&
-  operator=(Node&&) = delete;
+  Node &
+  operator=(Node &&) = delete;
 
   TargetRange
   Targets();
@@ -368,7 +374,7 @@ public:
   SourceConstRange
   Sources() const;
 
-  PointsToGraph&
+  PointsToGraph &
   Graph() const noexcept
   {
     return *PointsToGraph_;
@@ -395,35 +401,35 @@ public:
   void
   RemoveEdge(PointsToGraph::MemoryNode & target);
 
-  template <class T> static bool
+  template<class T>
+  static bool
   Is(const Node & node)
   {
     static_assert(
-      std::is_base_of<Node, T>::value,
-      "Template parameter T must be derived from PointsToGraph::Node.");
+        std::is_base_of<Node, T>::value,
+        "Template parameter T must be derived from PointsToGraph::Node.");
 
-    return dynamic_cast<const T*>(&node) != nullptr;
+    return dynamic_cast<const T *>(&node) != nullptr;
   }
 
 private:
   PointsToGraph * PointsToGraph_;
-  std::unordered_set<PointsToGraph::MemoryNode*> Targets_;
-  std::unordered_set<PointsToGraph::Node*> Sources_;
+  std::unordered_set<PointsToGraph::MemoryNode *> Targets_;
+  std::unordered_set<PointsToGraph::Node *> Sources_;
 };
 
 /** \brief PointsTo graph register node
-*
-*/
-class PointsToGraph::RegisterNode final : public PointsToGraph::Node {
+ *
+ */
+class PointsToGraph::RegisterNode final : public PointsToGraph::Node
+{
 public:
   ~RegisterNode() noexcept override;
 
 private:
-  RegisterNode(
-    PointsToGraph & pointsToGraph,
-    const jlm::rvsdg::output & output)
-    : Node(pointsToGraph)
-    , Output_(&output)
+  RegisterNode(PointsToGraph & pointsToGraph, const jlm::rvsdg::output & output)
+      : Node(pointsToGraph),
+        Output_(&output)
   {}
 
 public:
@@ -437,11 +443,10 @@ public:
   DebugString() const override;
 
   static PointsToGraph::RegisterNode &
-  Create(
-    PointsToGraph & pointsToGraph,
-    const jlm::rvsdg::output & output)
+  Create(PointsToGraph & pointsToGraph, const jlm::rvsdg::output & output)
   {
-    auto node = std::unique_ptr<PointsToGraph::RegisterNode>(new RegisterNode(pointsToGraph, output));
+    auto node =
+        std::unique_ptr<PointsToGraph::RegisterNode>(new RegisterNode(pointsToGraph, output));
     return pointsToGraph.AddRegisterNode(std::move(node));
   }
 
@@ -450,9 +455,10 @@ private:
 };
 
 /** \brief PointsTo graph memory node
-*
-*/
-class PointsToGraph::MemoryNode : public PointsToGraph::Node {
+ *
+ */
+class PointsToGraph::MemoryNode : public PointsToGraph::Node
+{
 public:
   ~MemoryNode() noexcept override;
 
@@ -466,25 +472,23 @@ public:
   }
 
 protected:
-  explicit
-  MemoryNode(PointsToGraph & pointsToGraph)
-    : Node(pointsToGraph)
+  explicit MemoryNode(PointsToGraph & pointsToGraph)
+      : Node(pointsToGraph)
   {}
 };
 
 /** \brief PointsTo graph alloca node
  *
  */
-class PointsToGraph::AllocaNode final : public PointsToGraph::MemoryNode {
+class PointsToGraph::AllocaNode final : public PointsToGraph::MemoryNode
+{
 public:
   ~AllocaNode() noexcept override;
 
 private:
-  AllocaNode(
-    PointsToGraph & pointsToGraph,
-  const jlm::rvsdg::node & allocaNode)
-  : MemoryNode(pointsToGraph)
-  , AllocaNode_(&allocaNode)
+  AllocaNode(PointsToGraph & pointsToGraph, const jlm::rvsdg::node & allocaNode)
+      : MemoryNode(pointsToGraph),
+        AllocaNode_(&allocaNode)
   {
     JLM_ASSERT(is<alloca_op>(&allocaNode));
   }
@@ -500,9 +504,7 @@ public:
   DebugString() const override;
 
   static PointsToGraph::AllocaNode &
-  Create(
-    PointsToGraph & pointsToGraph,
-    const jlm::rvsdg::node & node)
+  Create(PointsToGraph & pointsToGraph, const jlm::rvsdg::node & node)
   {
     auto n = std::unique_ptr<PointsToGraph::AllocaNode>(new AllocaNode(pointsToGraph, node));
     return pointsToGraph.AddAllocaNode(std::move(n));
@@ -515,16 +517,15 @@ private:
 /** \brief PointsTo graph delta node
  *
  */
-class PointsToGraph::DeltaNode final : public PointsToGraph::MemoryNode {
+class PointsToGraph::DeltaNode final : public PointsToGraph::MemoryNode
+{
 public:
   ~DeltaNode() noexcept override;
 
 private:
-  DeltaNode(
-    PointsToGraph & pointsToGraph,
-    const delta::node & deltaNode)
-    : MemoryNode(pointsToGraph)
-    , DeltaNode_(&deltaNode)
+  DeltaNode(PointsToGraph & pointsToGraph, const delta::node & deltaNode)
+      : MemoryNode(pointsToGraph),
+        DeltaNode_(&deltaNode)
   {
     JLM_ASSERT(is<delta::operation>(&deltaNode));
   }
@@ -540,9 +541,7 @@ public:
   DebugString() const override;
 
   static PointsToGraph::DeltaNode &
-  Create(
-    PointsToGraph & pointsToGraph,
-    const delta::node & deltaNode)
+  Create(PointsToGraph & pointsToGraph, const delta::node & deltaNode)
   {
     auto n = std::unique_ptr<PointsToGraph::DeltaNode>(new DeltaNode(pointsToGraph, deltaNode));
     return pointsToGraph.AddDeltaNode(std::move(n));
@@ -555,16 +554,15 @@ private:
 /** \brief PointsTo graph malloc node
  *
  */
-class PointsToGraph::MallocNode final : public PointsToGraph::MemoryNode {
+class PointsToGraph::MallocNode final : public PointsToGraph::MemoryNode
+{
 public:
   ~MallocNode() noexcept override;
 
 private:
-  MallocNode(
-    PointsToGraph & pointsToGraph,
-    const jlm::rvsdg::node & mallocNode)
-    : MemoryNode(pointsToGraph)
-    , MallocNode_(&mallocNode)
+  MallocNode(PointsToGraph & pointsToGraph, const jlm::rvsdg::node & mallocNode)
+      : MemoryNode(pointsToGraph),
+        MallocNode_(&mallocNode)
   {
     JLM_ASSERT(is<malloc_op>(&mallocNode));
   }
@@ -580,9 +578,7 @@ public:
   DebugString() const override;
 
   static PointsToGraph::MallocNode &
-  Create(
-    PointsToGraph & pointsToGraph,
-    const jlm::rvsdg::node & node)
+  Create(PointsToGraph & pointsToGraph, const jlm::rvsdg::node & node)
   {
     auto n = std::unique_ptr<PointsToGraph::MallocNode>(new MallocNode(pointsToGraph, node));
     return pointsToGraph.AddMallocNode(std::move(n));
@@ -595,16 +591,15 @@ private:
 /** \brief PointsTo graph malloc node
  *
  */
-class PointsToGraph::LambdaNode final : public PointsToGraph::MemoryNode {
+class PointsToGraph::LambdaNode final : public PointsToGraph::MemoryNode
+{
 public:
   ~LambdaNode() noexcept override;
 
 private:
-  LambdaNode(
-    PointsToGraph & pointsToGraph,
-    const lambda::node & lambdaNode)
-    : MemoryNode(pointsToGraph)
-    , LambdaNode_(&lambdaNode)
+  LambdaNode(PointsToGraph & pointsToGraph, const lambda::node & lambdaNode)
+      : MemoryNode(pointsToGraph),
+        LambdaNode_(&lambdaNode)
   {
     JLM_ASSERT(is<lambda::operation>(&lambdaNode));
   }
@@ -620,9 +615,7 @@ public:
   DebugString() const override;
 
   static PointsToGraph::LambdaNode &
-  Create(
-    PointsToGraph & pointsToGraph,
-    const lambda::node & lambdaNode)
+  Create(PointsToGraph & pointsToGraph, const lambda::node & lambdaNode)
   {
     auto n = std::unique_ptr<PointsToGraph::LambdaNode>(new LambdaNode(pointsToGraph, lambdaNode));
     return pointsToGraph.AddLambdaNode(std::move(n));
@@ -633,20 +626,19 @@ private:
 };
 
 /** \brief PointsTo graph import node
-*
-*/
-class PointsToGraph::ImportNode final : public PointsToGraph::MemoryNode {
+ *
+ */
+class PointsToGraph::ImportNode final : public PointsToGraph::MemoryNode
+{
 public:
   ~ImportNode() noexcept override;
 
 private:
-  ImportNode(
-    PointsToGraph & pointsToGraph,
-    const jlm::rvsdg::argument & argument)
-    : MemoryNode(pointsToGraph)
-    , Argument_(&argument)
+  ImportNode(PointsToGraph & pointsToGraph, const jlm::rvsdg::argument & argument)
+      : MemoryNode(pointsToGraph),
+        Argument_(&argument)
   {
-    JLM_ASSERT(dynamic_cast<const impport*>(&argument.port()));
+    JLM_ASSERT(dynamic_cast<const impport *>(&argument.port()));
   }
 
 public:
@@ -660,9 +652,7 @@ public:
   DebugString() const override;
 
   static PointsToGraph::ImportNode &
-  Create(
-    PointsToGraph & pointsToGraph,
-    const jlm::rvsdg::argument & argument)
+  Create(PointsToGraph & pointsToGraph, const jlm::rvsdg::argument & argument)
   {
     auto n = std::unique_ptr<PointsToGraph::ImportNode>(new ImportNode(pointsToGraph, argument));
     return pointsToGraph.AddImportNode(std::move(n));
@@ -673,18 +663,18 @@ private:
 };
 
 /** \brief PointsTo graph unknown node
-*
-*/
-class PointsToGraph::UnknownMemoryNode final : public PointsToGraph::MemoryNode {
+ *
+ */
+class PointsToGraph::UnknownMemoryNode final : public PointsToGraph::MemoryNode
+{
   friend PointsToGraph;
 
 public:
   ~UnknownMemoryNode() noexcept override;
 
 private:
-  explicit
-  UnknownMemoryNode(PointsToGraph & pointsToGraph)
-    : MemoryNode(pointsToGraph)
+  explicit UnknownMemoryNode(PointsToGraph & pointsToGraph)
+      : MemoryNode(pointsToGraph)
   {}
 
   std::string
@@ -700,16 +690,16 @@ private:
 /** \brief PointsTo graph external memory node
  *
  */
-class PointsToGraph::ExternalMemoryNode final : public PointsToGraph::MemoryNode {
+class PointsToGraph::ExternalMemoryNode final : public PointsToGraph::MemoryNode
+{
   friend PointsToGraph;
 
 public:
   ~ExternalMemoryNode() noexcept override;
 
 private:
-  explicit
-  ExternalMemoryNode(PointsToGraph & pointsToGraph)
-    : MemoryNode(pointsToGraph)
+  explicit ExternalMemoryNode(PointsToGraph & pointsToGraph)
+      : MemoryNode(pointsToGraph)
   {}
 
   static std::unique_ptr<ExternalMemoryNode>
@@ -723,23 +713,22 @@ private:
 };
 
 /** \brief Points-to graph node iterator
-*/
+ */
 template<class DATATYPE, class ITERATORTYPE>
 class PointsToGraph::NodeIterator final
 {
 public:
   using iterator_category = std::forward_iterator_tag;
-  using value_type = DATATYPE*;
+  using value_type = DATATYPE *;
   using difference_type = std::ptrdiff_t;
-  using pointer = DATATYPE**;
-  using reference = DATATYPE*&;
+  using pointer = DATATYPE **;
+  using reference = DATATYPE *&;
 
 private:
   friend PointsToGraph;
 
-  explicit
-  NodeIterator(const ITERATORTYPE & it)
-    : it_(it)
+  explicit NodeIterator(const ITERATORTYPE & it)
+      : it_(it)
   {}
 
 public:
@@ -794,23 +783,22 @@ private:
 };
 
 /** \brief Points-to graph node const iterator
-*/
+ */
 template<class DATATYPE, class ITERATORTYPE>
 class PointsToGraph::NodeConstIterator final
 {
 public:
   using iterator_category = std::forward_iterator_tag;
-  using value_type = const DATATYPE*;
+  using value_type = const DATATYPE *;
   using difference_type = std::ptrdiff_t;
-  using pointer = const DATATYPE**;
-  using reference = const DATATYPE*&;
+  using pointer = const DATATYPE **;
+  using reference = const DATATYPE *&;
 
 private:
   friend PointsToGraph;
 
-  explicit
-  NodeConstIterator(const ITERATORTYPE & it)
-    : it_(it)
+  explicit NodeConstIterator(const ITERATORTYPE & it)
+      : it_(it)
   {}
 
 public:
@@ -865,23 +853,22 @@ private:
 };
 
 /** \brief Points-to graph edge iterator
-*/
-template <class NODETYPE>
+ */
+template<class NODETYPE>
 class PointsToGraph::Node::Iterator final
 {
 public:
   using iterator_category = std::forward_iterator_tag;
-  using value_type = NODETYPE*;
+  using value_type = NODETYPE *;
   using difference_type = std::ptrdiff_t;
-  using pointer = NODETYPE**;
-  using reference = NODETYPE*&;
+  using pointer = NODETYPE **;
+  using reference = NODETYPE *&;
 
 private:
   friend PointsToGraph::Node;
 
-  explicit
-  Iterator(const typename std::unordered_set<NODETYPE*>::iterator & it)
-    : It_(it)
+  explicit Iterator(const typename std::unordered_set<NODETYPE *>::iterator & it)
+      : It_(it)
   {}
 
 public:
@@ -932,27 +919,26 @@ public:
   }
 
 private:
-  typename std::unordered_set<NODETYPE*>::iterator It_;
+  typename std::unordered_set<NODETYPE *>::iterator It_;
 };
 
 /** \brief Points-to graph edge const iterator
-*/
-template <class NODETYPE>
+ */
+template<class NODETYPE>
 class PointsToGraph::Node::ConstIterator final
 {
 public:
   using itearator_category = std::forward_iterator_tag;
-  using value_type = const NODETYPE*;
+  using value_type = const NODETYPE *;
   using difference_type = std::ptrdiff_t;
-  using pointer = const NODETYPE**;
-  using reference = const NODETYPE*&;
+  using pointer = const NODETYPE **;
+  using reference = const NODETYPE *&;
 
 private:
   friend PointsToGraph;
 
-  explicit
-  ConstIterator(const typename std::unordered_set<NODETYPE*>::const_iterator & it)
-    : It_(it)
+  explicit ConstIterator(const typename std::unordered_set<NODETYPE *>::const_iterator & it)
+      : It_(it)
   {}
 
 public:
@@ -1003,9 +989,10 @@ public:
   }
 
 private:
-  typename std::unordered_set<NODETYPE*>::const_iterator It_;
+  typename std::unordered_set<NODETYPE *>::const_iterator It_;
 };
 
-}}
+}
+}
 
 #endif

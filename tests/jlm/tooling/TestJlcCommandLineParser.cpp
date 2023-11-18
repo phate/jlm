@@ -13,28 +13,28 @@
 static const jlm::tooling::JlcCommandLineOptions &
 ParseCommandLineArguments(const std::vector<std::string> & commandLineArguments)
 {
-  auto cleanUp = [](const std::vector<char*>& array)
+  auto cleanUp = [](const std::vector<char *> & array)
   {
-    for (const auto& ptr : array)
+    for (const auto & ptr : array)
     {
       delete[] ptr;
     }
   };
 
-  std::vector<char*> array;
-  for (const auto & commandLineArgument : commandLineArguments) {
+  std::vector<char *> array;
+  for (const auto & commandLineArgument : commandLineArguments)
+  {
     array.push_back(new char[commandLineArgument.size() + 1]);
     strncpy(array.back(), commandLineArgument.data(), commandLineArgument.size());
     array.back()[commandLineArgument.size()] = '\0';
   }
 
   static jlm::tooling::JlcCommandLineParser commandLineParser;
-  const jlm::tooling::JlcCommandLineOptions* commandLineOptions;
+  const jlm::tooling::JlcCommandLineOptions * commandLineOptions;
   try
   {
-    commandLineOptions = &commandLineParser.ParseCommandLineArguments(
-      static_cast<int>(array.size()),
-      &array[0]);
+    commandLineOptions =
+        &commandLineParser.ParseCommandLineArguments(static_cast<int>(array.size()), &array[0]);
   }
   catch (...)
   {
@@ -53,7 +53,7 @@ Test1()
   /*
    * Arrange
    */
-  std::vector<std::string> commandLineArguments({"jlc", "-c", "-o", "foo.o", "foo.c"});
+  std::vector<std::string> commandLineArguments({ "jlc", "-c", "-o", "foo.o", "foo.c" });
 
   /*
    * Act
@@ -76,7 +76,7 @@ Test2()
   /*
    * Arrange
    */
-  std::vector<std::string> commandLineArguments({"jlc", "-o", "foobar", "/tmp/f1.o"});
+  std::vector<std::string> commandLineArguments({ "jlc", "-o", "foobar", "/tmp/f1.o" });
 
   /*
    * Act
@@ -104,7 +104,7 @@ Test3()
   /*
    * Arrange
    */
-  std::vector<std::string> commandLineArguments({"jlc", "-O", "foobar.c"});
+  std::vector<std::string> commandLineArguments({ "jlc", "-O", "foobar.c" });
 
   /*
    * Act
@@ -123,7 +123,7 @@ Test4()
   /*
    * Arrange
    */
-  std::vector<std::string> commandLineArguments({"jlc", "foobar.c", "-c"});
+  std::vector<std::string> commandLineArguments({ "jlc", "foobar.c", "-c" });
 
   /*
    * Act
@@ -146,15 +146,20 @@ TestJlmOptOptimizations()
   using namespace jlm::tooling;
 
   // Arrange
-  std::vector<std::string> commandLineArguments({"jlc", "foobar.c", "-JCommonNodeElimination", "-JDeadNodeElimination"});
+  std::vector<std::string> commandLineArguments(
+      { "jlc", "foobar.c", "-JCommonNodeElimination", "-JDeadNodeElimination" });
 
   // Act
   auto & commandLineOptions = ParseCommandLineArguments(commandLineArguments);
 
   // Assert
   assert(commandLineOptions.JlmOptOptimizations_.size() == 2);
-  assert(commandLineOptions.JlmOptOptimizations_[0] == JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination);
-  assert(commandLineOptions.JlmOptOptimizations_[1] == JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination);
+  assert(
+      commandLineOptions.JlmOptOptimizations_[0]
+      == JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination);
+  assert(
+      commandLineOptions.JlmOptOptimizations_[1]
+      == JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination);
 }
 
 static void
@@ -163,7 +168,7 @@ TestFalseJlmOptOptimization()
   using namespace jlm::tooling;
 
   // Arrange
-  std::vector<std::string> commandLineArguments({"jlc", "-JFoobar", "foobar.c"});
+  std::vector<std::string> commandLineArguments({ "jlc", "-JFoobar", "foobar.c" });
 
   // Act & Assert
   bool exceptionThrown = false;
@@ -171,7 +176,7 @@ TestFalseJlmOptOptimization()
   {
     ParseCommandLineArguments(commandLineArguments);
   }
-  catch (CommandLineParser::Exception&)
+  catch (CommandLineParser::Exception &)
   {
     exceptionThrown = true;
   }
@@ -186,18 +191,13 @@ TestJlmOptPassStatistics()
 
   // Arrange
   std::vector<std::string> commandLineArguments(
-    {
-      "jlc",
-      "--JlmOptPassStatistics=print-aggregation-time",
-      "--JlmOptPassStatistics=print-steensgaard-analysis",
-      "foobar.c"
-    });
+      { "jlc",
+        "--JlmOptPassStatistics=print-aggregation-time",
+        "--JlmOptPassStatistics=print-steensgaard-analysis",
+        "foobar.c" });
 
   jlm::util::HashSet<jlm::util::Statistics::Id> expectedStatistics(
-    {
-      jlm::util::Statistics::Id::Aggregation,
-      jlm::util::Statistics::Id::SteensgaardAnalysis
-    });
+      { jlm::util::Statistics::Id::Aggregation, jlm::util::Statistics::Id::SteensgaardAnalysis });
 
   // Act
   auto & commandLineOptions = ParseCommandLineArguments(commandLineArguments);

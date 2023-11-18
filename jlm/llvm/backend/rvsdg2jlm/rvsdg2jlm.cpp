@@ -19,42 +19,46 @@
 namespace jlm::llvm
 {
 
-class rvsdg_destruction_stat final : public jlm::util::Statistics {
+class rvsdg_destruction_stat final : public jlm::util::Statistics
+{
 public:
-	virtual
-	~rvsdg_destruction_stat()
-	{}
+  virtual ~rvsdg_destruction_stat()
+  {}
 
-	rvsdg_destruction_stat(const jlm::util::filepath & filename)
-	: Statistics(Statistics::Id::RvsdgDestruction)
-  , ntacs_(0)
-	, nnodes_(0)
-	, filename_(filename)
-	{}
+  rvsdg_destruction_stat(const jlm::util::filepath & filename)
+      : Statistics(Statistics::Id::RvsdgDestruction),
+        ntacs_(0),
+        nnodes_(0),
+        filename_(filename)
+  {}
 
-	void
-	start(const rvsdg::graph & graph) noexcept
-	{
-		nnodes_ = rvsdg::nnodes(graph.root());
-		timer_.start();
-	}
+  void
+  start(const rvsdg::graph & graph) noexcept
+  {
+    nnodes_ = rvsdg::nnodes(graph.root());
+    timer_.start();
+  }
 
-	void
-	end(const ipgraph_module & im)
-	{
-		ntacs_ = llvm::ntacs(im);
-		timer_.stop();
-	}
+  void
+  end(const ipgraph_module & im)
+  {
+    ntacs_ = llvm::ntacs(im);
+    timer_.stop();
+  }
 
-	virtual std::string
-	ToString() const override
-	{
-		return jlm::util::strfmt("RVSDGDESTRUCTION ",
-			filename_.to_str(), " ",
-			nnodes_, " ", ntacs_, " ",
-			timer_.ns()
-		);
-	}
+  virtual std::string
+  ToString() const override
+  {
+    return jlm::util::strfmt(
+        "RVSDGDESTRUCTION ",
+        filename_.to_str(),
+        " ",
+        nnodes_,
+        " ",
+        ntacs_,
+        " ",
+        timer_.ns());
+  }
 
   static std::unique_ptr<rvsdg_destruction_stat>
   Create(const jlm::util::filepath & sourceFile)
@@ -63,62 +67,64 @@ public:
   }
 
 private:
-	size_t ntacs_;
-	size_t nnodes_;
-	jlm::util::timer timer_;
-	jlm::util::filepath filename_;
+  size_t ntacs_;
+  size_t nnodes_;
+  jlm::util::timer timer_;
+  jlm::util::filepath filename_;
 };
 
-namespace rvsdg2jlm {
+namespace rvsdg2jlm
+{
 
 static const FunctionType *
 is_function_import(const rvsdg::argument * argument)
 {
-    JLM_ASSERT(argument->region()->graph()->root() == argument->region());
+  JLM_ASSERT(argument->region()->graph()->root() == argument->region());
 
-    if (auto rvsdgImport = dynamic_cast<const impport*>(&argument->port()))
-    {
-        return dynamic_cast<const FunctionType*>(&rvsdgImport->GetValueType());
-    }
+  if (auto rvsdgImport = dynamic_cast<const impport *>(&argument->port()))
+  {
+    return dynamic_cast<const FunctionType *>(&rvsdgImport->GetValueType());
+  }
 
-    return nullptr;
+  return nullptr;
 }
 
 static std::unique_ptr<data_node_init>
 create_initialization(const delta::node * delta, context & ctx)
 {
-	auto subregion = delta->subregion();
+  auto subregion = delta->subregion();
 
-	/* add delta dependencies to context */
-	for (size_t n = 0; n < delta->ninputs(); n++) {
-		auto v = ctx.variable(delta->input(n)->origin());
-		ctx.insert(delta->input(n)->arguments.first(), v);
-	}
+  /* add delta dependencies to context */
+  for (size_t n = 0; n < delta->ninputs(); n++)
+  {
+    auto v = ctx.variable(delta->input(n)->origin());
+    ctx.insert(delta->input(n)->arguments.first(), v);
+  }
 
+  if (subregion->nnodes() == 0)
+  {
+    auto value = ctx.variable(subregion->result(0)->origin());
+    return std::make_unique<data_node_init>(value);
+  }
 
-	if (subregion->nnodes() == 0) {
-		auto value = ctx.variable(subregion->result(0)->origin());
-		return std::make_unique<data_node_init>(value);
-	}
+  tacsvector_t tacs;
+  for (const auto & node : rvsdg::topdown_traverser(delta->subregion()))
+  {
+    JLM_ASSERT(node->noutputs() == 1);
+    auto output = node->output(0);
 
+    /* collect operand variables */
+    std::vector<const variable *> operands;
+    for (size_t n = 0; n < node->ninputs(); n++)
+      operands.push_back(ctx.variable(node->input(n)->origin()));
 
-	tacsvector_t tacs;
-	for (const auto & node : rvsdg::topdown_traverser(delta->subregion())) {
-		JLM_ASSERT(node->noutputs() == 1);
-		auto output = node->output(0);
+    /* convert node to tac */
+    auto & op = *static_cast<const rvsdg::simple_op *>(&node->operation());
+    tacs.push_back(tac::create(op, operands));
+    ctx.insert(output, tacs.back()->result(0));
+  }
 
-		/* collect operand variables */
-		std::vector<const variable*> operands;
-		for (size_t n = 0; n < node->ninputs(); n++)
-			operands.push_back(ctx.variable(node->input(n)->origin()));
-
-		/* convert node to tac */
-		auto & op = *static_cast<const rvsdg::simple_op*>(&node->operation());
-		tacs.push_back(tac::create(op, operands));
-		ctx.insert(output, tacs.back()->result(0));
-	}
-
-	return std::make_unique<data_node_init>(std::move(tacs));
+  return std::make_unique<data_node_init>(std::move(tacs));
 }
 
 static void
@@ -127,379 +133,410 @@ convert_node(const rvsdg::node & node, context & ctx);
 static inline void
 convert_region(rvsdg::region & region, context & ctx)
 {
-	auto entry = basic_block::create(*ctx.cfg());
-	ctx.lpbb()->add_outedge(entry);
-	ctx.set_lpbb(entry);
+  auto entry = basic_block::create(*ctx.cfg());
+  ctx.lpbb()->add_outedge(entry);
+  ctx.set_lpbb(entry);
 
-	for (const auto & node : rvsdg::topdown_traverser(&region))
-		convert_node(*node, ctx);
+  for (const auto & node : rvsdg::topdown_traverser(&region))
+    convert_node(*node, ctx);
 
-	auto exit = basic_block::create(*ctx.cfg());
-	ctx.lpbb()->add_outedge(exit);
-	ctx.set_lpbb(exit);
+  auto exit = basic_block::create(*ctx.cfg());
+  ctx.lpbb()->add_outedge(exit);
+  ctx.set_lpbb(exit);
 }
 
 static inline std::unique_ptr<llvm::cfg>
 create_cfg(const lambda::node & lambda, context & ctx)
 {
-	JLM_ASSERT(ctx.lpbb() == nullptr);
-	std::unique_ptr<llvm::cfg> cfg(new llvm::cfg(ctx.module()));
-	auto entry = basic_block::create(*cfg);
-	cfg->exit()->divert_inedges(entry);
-	ctx.set_lpbb(entry);
-	ctx.set_cfg(cfg.get());
+  JLM_ASSERT(ctx.lpbb() == nullptr);
+  std::unique_ptr<llvm::cfg> cfg(new llvm::cfg(ctx.module()));
+  auto entry = basic_block::create(*cfg);
+  cfg->exit()->divert_inedges(entry);
+  ctx.set_lpbb(entry);
+  ctx.set_cfg(cfg.get());
 
-	/* add arguments */
-	for (auto & fctarg : lambda.fctarguments()) {
-		auto argument = llvm::argument::create("", fctarg.type(), fctarg.attributes());
-		auto v = cfg->entry()->append_argument(std::move(argument));
-		ctx.insert(&fctarg, v);
-	}
+  /* add arguments */
+  for (auto & fctarg : lambda.fctarguments())
+  {
+    auto argument = llvm::argument::create("", fctarg.type(), fctarg.attributes());
+    auto v = cfg->entry()->append_argument(std::move(argument));
+    ctx.insert(&fctarg, v);
+  }
 
-	/* add context variables */
-	for (auto & cv : lambda.ctxvars()) {
-		auto v = ctx.variable(cv.origin());
-		ctx.insert(cv.argument(), v);
-	}
+  /* add context variables */
+  for (auto & cv : lambda.ctxvars())
+  {
+    auto v = ctx.variable(cv.origin());
+    ctx.insert(cv.argument(), v);
+  }
 
-	convert_region(*lambda.subregion(), ctx);
+  convert_region(*lambda.subregion(), ctx);
 
-	/* add results */
-	for (auto & result : lambda.fctresults())
-		cfg->exit()->append_result(ctx.variable(result.origin()));
+  /* add results */
+  for (auto & result : lambda.fctresults())
+    cfg->exit()->append_result(ctx.variable(result.origin()));
 
-	ctx.lpbb()->add_outedge(cfg->exit());
-	ctx.set_lpbb(nullptr);
-	ctx.set_cfg(nullptr);
+  ctx.lpbb()->add_outedge(cfg->exit());
+  ctx.set_lpbb(nullptr);
+  ctx.set_cfg(nullptr);
 
-	straighten(*cfg);
-	JLM_ASSERT(is_closed(*cfg));
-	return cfg;
+  straighten(*cfg);
+  JLM_ASSERT(is_closed(*cfg));
+  return cfg;
 }
 
 static inline void
 convert_simple_node(const rvsdg::node & node, context & ctx)
 {
-	JLM_ASSERT(dynamic_cast<const rvsdg::simple_op*>(&node.operation()));
+  JLM_ASSERT(dynamic_cast<const rvsdg::simple_op *>(&node.operation()));
 
-	std::vector<const variable*> operands;
-	for (size_t n = 0; n < node.ninputs(); n++)
-		operands.push_back(ctx.variable(node.input(n)->origin()));
+  std::vector<const variable *> operands;
+  for (size_t n = 0; n < node.ninputs(); n++)
+    operands.push_back(ctx.variable(node.input(n)->origin()));
 
-	auto & op = *static_cast<const rvsdg::simple_op*>(&node.operation());
-	ctx.lpbb()->append_last(tac::create(op, operands));
+  auto & op = *static_cast<const rvsdg::simple_op *>(&node.operation());
+  ctx.lpbb()->append_last(tac::create(op, operands));
 
-	for (size_t n = 0; n < node.noutputs(); n++)
-		ctx.insert(node.output(n), ctx.lpbb()->last()->result(n));
+  for (size_t n = 0; n < node.noutputs(); n++)
+    ctx.insert(node.output(n), ctx.lpbb()->last()->result(n));
 }
 
 static void
 convert_empty_gamma_node(const rvsdg::gamma_node * gamma, context & ctx)
 {
-	JLM_ASSERT(gamma->nsubregions() == 2);
-	JLM_ASSERT(gamma->subregion(0)->nnodes() == 0 && gamma->subregion(1)->nnodes() == 0);
+  JLM_ASSERT(gamma->nsubregions() == 2);
+  JLM_ASSERT(gamma->subregion(0)->nnodes() == 0 && gamma->subregion(1)->nnodes() == 0);
 
-	/* both regions are empty, create only select instructions */
+  /* both regions are empty, create only select instructions */
 
-	auto predicate = gamma->predicate()->origin();
-	auto cfg = ctx.cfg();
+  auto predicate = gamma->predicate()->origin();
+  auto cfg = ctx.cfg();
 
-	auto bb = basic_block::create(*cfg);
-	ctx.lpbb()->add_outedge(bb);
+  auto bb = basic_block::create(*cfg);
+  ctx.lpbb()->add_outedge(bb);
 
-	for (size_t n = 0; n < gamma->noutputs(); n++) {
-		auto output = gamma->output(n);
+  for (size_t n = 0; n < gamma->noutputs(); n++)
+  {
+    auto output = gamma->output(n);
 
-		auto a0 = static_cast<const rvsdg::argument*>(gamma->subregion(0)->result(n)->origin());
-		auto a1 = static_cast<const rvsdg::argument*>(gamma->subregion(1)->result(n)->origin());
-		auto o0 = a0->input()->origin();
-		auto o1 = a1->input()->origin();
+    auto a0 = static_cast<const rvsdg::argument *>(gamma->subregion(0)->result(n)->origin());
+    auto a1 = static_cast<const rvsdg::argument *>(gamma->subregion(1)->result(n)->origin());
+    auto o0 = a0->input()->origin();
+    auto o1 = a1->input()->origin();
 
-		/* both operands are the same, no select is necessary */
-		if (o0 == o1) {
-			ctx.insert(output, ctx.variable(o0));
-			continue;
-		}
+    /* both operands are the same, no select is necessary */
+    if (o0 == o1)
+    {
+      ctx.insert(output, ctx.variable(o0));
+      continue;
+    }
 
-		auto matchnode = rvsdg::node_output::node(predicate);
-		if (is<rvsdg::match_op>(matchnode)) {
-			auto matchop = static_cast<const rvsdg::match_op*>(&matchnode->operation());
-			auto d = matchop->default_alternative();
-			auto c = ctx.variable(matchnode->input(0)->origin());
-			auto t = d == 0 ? ctx.variable(o1) : ctx.variable(o0);
-			auto f = d == 0 ? ctx.variable(o0) : ctx.variable(o1);
-			bb->append_last(select_op::create(c, t, f));
-		} else {
-			auto vo0 = ctx.variable(o0);
-			auto vo1 = ctx.variable(o1);
-			bb->append_last(ctl2bits_op::create(ctx.variable(predicate), rvsdg::bittype(1)));
-			bb->append_last(select_op::create(bb->last()->result(0), vo0, vo1));
-		}
+    auto matchnode = rvsdg::node_output::node(predicate);
+    if (is<rvsdg::match_op>(matchnode))
+    {
+      auto matchop = static_cast<const rvsdg::match_op *>(&matchnode->operation());
+      auto d = matchop->default_alternative();
+      auto c = ctx.variable(matchnode->input(0)->origin());
+      auto t = d == 0 ? ctx.variable(o1) : ctx.variable(o0);
+      auto f = d == 0 ? ctx.variable(o0) : ctx.variable(o1);
+      bb->append_last(select_op::create(c, t, f));
+    }
+    else
+    {
+      auto vo0 = ctx.variable(o0);
+      auto vo1 = ctx.variable(o1);
+      bb->append_last(ctl2bits_op::create(ctx.variable(predicate), rvsdg::bittype(1)));
+      bb->append_last(select_op::create(bb->last()->result(0), vo0, vo1));
+    }
 
-		ctx.insert(output, bb->last()->result(0));
-	}
+    ctx.insert(output, bb->last()->result(0));
+  }
 
-	ctx.set_lpbb(bb);
+  ctx.set_lpbb(bb);
 }
 
 static inline void
 convert_gamma_node(const rvsdg::node & node, context & ctx)
 {
-	JLM_ASSERT(is<rvsdg::gamma_op>(&node));
-	auto gamma = static_cast<const rvsdg::gamma_node*>(&node);
-	auto nalternatives = gamma->nsubregions();
-	auto predicate = gamma->predicate()->origin();
-	auto cfg = ctx.cfg();
+  JLM_ASSERT(is<rvsdg::gamma_op>(&node));
+  auto gamma = static_cast<const rvsdg::gamma_node *>(&node);
+  auto nalternatives = gamma->nsubregions();
+  auto predicate = gamma->predicate()->origin();
+  auto cfg = ctx.cfg();
 
-	if (gamma->nsubregions() == 2
-	&& gamma->subregion(0)->nnodes() == 0
-	&& gamma->subregion(1)->nnodes() == 0)
-		return convert_empty_gamma_node(gamma, ctx);
+  if (gamma->nsubregions() == 2 && gamma->subregion(0)->nnodes() == 0
+      && gamma->subregion(1)->nnodes() == 0)
+    return convert_empty_gamma_node(gamma, ctx);
 
-	auto entry = basic_block::create(*cfg);
-	auto exit = basic_block::create(*cfg);
-	ctx.lpbb()->add_outedge(entry);
+  auto entry = basic_block::create(*cfg);
+  auto exit = basic_block::create(*cfg);
+  ctx.lpbb()->add_outedge(entry);
 
-	/* convert gamma regions */
-	std::vector<cfg_node*> phi_nodes;
-	entry->append_last(branch_op::create(nalternatives, ctx.variable(predicate)));
-	for (size_t n = 0; n < gamma->nsubregions(); n++) {
-		auto subregion = gamma->subregion(n);
+  /* convert gamma regions */
+  std::vector<cfg_node *> phi_nodes;
+  entry->append_last(branch_op::create(nalternatives, ctx.variable(predicate)));
+  for (size_t n = 0; n < gamma->nsubregions(); n++)
+  {
+    auto subregion = gamma->subregion(n);
 
-		/* add arguments to context */
-		for (size_t i = 0; i < subregion->narguments(); i++) {
-			auto argument = subregion->argument(i);
-			ctx.insert(argument, ctx.variable(argument->input()->origin()));
-		}
+    /* add arguments to context */
+    for (size_t i = 0; i < subregion->narguments(); i++)
+    {
+      auto argument = subregion->argument(i);
+      ctx.insert(argument, ctx.variable(argument->input()->origin()));
+    }
 
-		if (subregion->nnodes() == 0 && nalternatives == 2) {
-			/* subregin is empty */
-			phi_nodes.push_back(entry);
-			entry->add_outedge(exit);
-		} else {
-			/* convert subregion */
-			auto region_entry = basic_block::create(*cfg);
-			entry->add_outedge(region_entry);
-			ctx.set_lpbb(region_entry);
-			convert_region(*subregion, ctx);
+    if (subregion->nnodes() == 0 && nalternatives == 2)
+    {
+      /* subregin is empty */
+      phi_nodes.push_back(entry);
+      entry->add_outedge(exit);
+    }
+    else
+    {
+      /* convert subregion */
+      auto region_entry = basic_block::create(*cfg);
+      entry->add_outedge(region_entry);
+      ctx.set_lpbb(region_entry);
+      convert_region(*subregion, ctx);
 
-			phi_nodes.push_back(ctx.lpbb());
-			ctx.lpbb()->add_outedge(exit);
-		}
-	}
+      phi_nodes.push_back(ctx.lpbb());
+      ctx.lpbb()->add_outedge(exit);
+    }
+  }
 
-	/* add phi instructions */
-	for (size_t n = 0; n < gamma->noutputs(); n++) {
-		auto output = gamma->output(n);
+  /* add phi instructions */
+  for (size_t n = 0; n < gamma->noutputs(); n++)
+  {
+    auto output = gamma->output(n);
 
-		bool invariant = true;
-		auto matchnode = rvsdg::node_output::node(predicate);
-		bool select = (gamma->nsubregions() == 2) && is<rvsdg::match_op>(matchnode);
-		std::vector<std::pair<const variable*, cfg_node*>> arguments;
-		for (size_t r = 0; r < gamma->nsubregions(); r++) {
-			auto origin = gamma->subregion(r)->result(n)->origin();
+    bool invariant = true;
+    auto matchnode = rvsdg::node_output::node(predicate);
+    bool select = (gamma->nsubregions() == 2) && is<rvsdg::match_op>(matchnode);
+    std::vector<std::pair<const variable *, cfg_node *>> arguments;
+    for (size_t r = 0; r < gamma->nsubregions(); r++)
+    {
+      auto origin = gamma->subregion(r)->result(n)->origin();
 
-			auto v = ctx.variable(origin);
-			arguments.push_back(std::make_pair(v, phi_nodes[r]));
-			invariant &= (v == ctx.variable(gamma->subregion(0)->result(n)->origin()));
-			auto tmp = rvsdg::node_output::node(origin);
-			select &= (tmp == nullptr && origin->region()->node() == &node);
-		}
+      auto v = ctx.variable(origin);
+      arguments.push_back(std::make_pair(v, phi_nodes[r]));
+      invariant &= (v == ctx.variable(gamma->subregion(0)->result(n)->origin()));
+      auto tmp = rvsdg::node_output::node(origin);
+      select &= (tmp == nullptr && origin->region()->node() == &node);
+    }
 
-		if (invariant) {
-			/* all operands are the same */
-			ctx.insert(output, arguments[0].first);
-			continue;
-		}
+    if (invariant)
+    {
+      /* all operands are the same */
+      ctx.insert(output, arguments[0].first);
+      continue;
+    }
 
-		if (select) {
-			/* use select instead of phi */
-			auto matchnode = rvsdg::node_output::node(predicate);
-			auto matchop = static_cast<const rvsdg::match_op*>(&matchnode->operation());
-			auto d = matchop->default_alternative();
-			auto c = ctx.variable(matchnode->input(0)->origin());
-			auto t = d == 0 ? arguments[1].first : arguments[0].first;
-			auto f = d == 0 ? arguments[0].first : arguments[1].first;
-			entry->append_first(select_op::create(c, t, f));
-			ctx.insert(output, entry->first()->result(0));
-			continue;
-		}
+    if (select)
+    {
+      /* use select instead of phi */
+      auto matchnode = rvsdg::node_output::node(predicate);
+      auto matchop = static_cast<const rvsdg::match_op *>(&matchnode->operation());
+      auto d = matchop->default_alternative();
+      auto c = ctx.variable(matchnode->input(0)->origin());
+      auto t = d == 0 ? arguments[1].first : arguments[0].first;
+      auto f = d == 0 ? arguments[0].first : arguments[1].first;
+      entry->append_first(select_op::create(c, t, f));
+      ctx.insert(output, entry->first()->result(0));
+      continue;
+    }
 
-		/* create phi instruction */
-		exit->append_last(phi_op::create(arguments, output->type()));
-		ctx.insert(output, exit->last()->result(0));
-	}
+    /* create phi instruction */
+    exit->append_last(phi_op::create(arguments, output->type()));
+    ctx.insert(output, exit->last()->result(0));
+  }
 
-	ctx.set_lpbb(exit);
+  ctx.set_lpbb(exit);
 }
 
 static inline bool
 phi_needed(const rvsdg::input * i, const llvm::variable * v)
 {
-	auto node = input_node(i);
-	JLM_ASSERT(is<rvsdg::theta_op>(node));
-	auto theta = static_cast<const rvsdg::structural_node*>(node);
-	auto input = static_cast<const rvsdg::structural_input*>(i);
-	auto output = theta->output(input->index());
+  auto node = input_node(i);
+  JLM_ASSERT(is<rvsdg::theta_op>(node));
+  auto theta = static_cast<const rvsdg::structural_node *>(node);
+  auto input = static_cast<const rvsdg::structural_input *>(i);
+  auto output = theta->output(input->index());
 
-	/* FIXME: solely decide on the input instead of using the variable */
-	if (is<gblvariable>(v))
-		return false;
+  /* FIXME: solely decide on the input instead of using the variable */
+  if (is<gblvariable>(v))
+    return false;
 
-	if (output->results.first()->origin() == input->arguments.first())
-		return false;
+  if (output->results.first()->origin() == input->arguments.first())
+    return false;
 
-	if (input->arguments.first()->nusers() == 0)
-		return false;
+  if (input->arguments.first()->nusers() == 0)
+    return false;
 
-	return true;
+  return true;
 }
 
 static inline void
 convert_theta_node(const rvsdg::node & node, context & ctx)
 {
-	JLM_ASSERT(is<rvsdg::theta_op>(&node));
-	auto subregion = static_cast<const rvsdg::structural_node*>(&node)->subregion(0);
-	auto predicate = subregion->result(0)->origin();
+  JLM_ASSERT(is<rvsdg::theta_op>(&node));
+  auto subregion = static_cast<const rvsdg::structural_node *>(&node)->subregion(0);
+  auto predicate = subregion->result(0)->origin();
 
-	auto pre_entry = ctx.lpbb();
-	auto entry = basic_block::create(*ctx.cfg());
-	pre_entry->add_outedge(entry);
-	ctx.set_lpbb(entry);
+  auto pre_entry = ctx.lpbb();
+  auto entry = basic_block::create(*ctx.cfg());
+  pre_entry->add_outedge(entry);
+  ctx.set_lpbb(entry);
 
-	/* create phi nodes and add arguments to context */
-	std::deque<llvm::tac*> phis;
-	for (size_t n = 0; n < subregion->narguments(); n++) {
-		auto argument = subregion->argument(n);
-		auto v = ctx.variable(argument->input()->origin());
-		if (phi_needed(argument->input(), v)) {
-			auto phi = entry->append_last(phi_op::create({}, argument->type()));
-			phis.push_back(phi);
-			v = phi->result(0);
-		}
-		ctx.insert(argument, v);
-	}
+  /* create phi nodes and add arguments to context */
+  std::deque<llvm::tac *> phis;
+  for (size_t n = 0; n < subregion->narguments(); n++)
+  {
+    auto argument = subregion->argument(n);
+    auto v = ctx.variable(argument->input()->origin());
+    if (phi_needed(argument->input(), v))
+    {
+      auto phi = entry->append_last(phi_op::create({}, argument->type()));
+      phis.push_back(phi);
+      v = phi->result(0);
+    }
+    ctx.insert(argument, v);
+  }
 
-	convert_region(*subregion, ctx);
+  convert_region(*subregion, ctx);
 
-	/* add phi operands and results to context */
-	for (size_t n = 1; n < subregion->nresults(); n++) {
-		auto result = subregion->result(n);
-		auto ve = ctx.variable(node.input(n-1)->origin());
-		if (!phi_needed(node.input(n-1), ve)) {
-			ctx.insert(result->output(), ctx.variable(result->origin()));
-			continue;
-		}
+  /* add phi operands and results to context */
+  for (size_t n = 1; n < subregion->nresults(); n++)
+  {
+    auto result = subregion->result(n);
+    auto ve = ctx.variable(node.input(n - 1)->origin());
+    if (!phi_needed(node.input(n - 1), ve))
+    {
+      ctx.insert(result->output(), ctx.variable(result->origin()));
+      continue;
+    }
 
-		auto vr = ctx.variable(result->origin());
-		auto phi = phis.front();
-		phis.pop_front();
-		phi->replace(phi_op({pre_entry, ctx.lpbb()}, vr->type()), {ve, vr});
-		ctx.insert(result->output(), vr);
-	}
-	JLM_ASSERT(phis.empty());
+    auto vr = ctx.variable(result->origin());
+    auto phi = phis.front();
+    phis.pop_front();
+    phi->replace(phi_op({ pre_entry, ctx.lpbb() }, vr->type()), { ve, vr });
+    ctx.insert(result->output(), vr);
+  }
+  JLM_ASSERT(phis.empty());
 
-	ctx.lpbb()->append_last(branch_op::create(2, ctx.variable(predicate)));
-	auto exit = basic_block::create(*ctx.cfg());
-	ctx.lpbb()->add_outedge(exit);
-	ctx.lpbb()->add_outedge(entry);
-	ctx.set_lpbb(exit);
+  ctx.lpbb()->append_last(branch_op::create(2, ctx.variable(predicate)));
+  auto exit = basic_block::create(*ctx.cfg());
+  ctx.lpbb()->add_outedge(exit);
+  ctx.lpbb()->add_outedge(entry);
+  ctx.set_lpbb(exit);
 }
 
 static inline void
 convert_lambda_node(const rvsdg::node & node, context & ctx)
 {
-	JLM_ASSERT(is<lambda::operation>(&node));
-	auto lambda = static_cast<const lambda::node*>(&node);
-	auto & module = ctx.module();
-	auto & clg = module.ipgraph();
+  JLM_ASSERT(is<lambda::operation>(&node));
+  auto lambda = static_cast<const lambda::node *>(&node);
+  auto & module = ctx.module();
+  auto & clg = module.ipgraph();
 
-	auto f = function_node::create(clg, lambda->name(), lambda->type(), lambda->linkage(),
-		lambda->attributes());
-	auto v = module.create_variable(f);
+  auto f = function_node::create(
+      clg,
+      lambda->name(),
+      lambda->type(),
+      lambda->linkage(),
+      lambda->attributes());
+  auto v = module.create_variable(f);
 
-	f->add_cfg(create_cfg(*lambda, ctx));
-	ctx.insert(node.output(0), v);
+  f->add_cfg(create_cfg(*lambda, ctx));
+  ctx.insert(node.output(0), v);
 }
 
 static inline void
 convert_phi_node(const rvsdg::node & node, context & ctx)
 {
-	JLM_ASSERT(rvsdg::is<phi::operation>(&node));
-	auto phi = static_cast<const rvsdg::structural_node*>(&node);
-	auto subregion = phi->subregion(0);
-	auto & module = ctx.module();
-	auto & ipg = module.ipgraph();
+  JLM_ASSERT(rvsdg::is<phi::operation>(&node));
+  auto phi = static_cast<const rvsdg::structural_node *>(&node);
+  auto subregion = phi->subregion(0);
+  auto & module = ctx.module();
+  auto & ipg = module.ipgraph();
 
-	/* add dependencies to context */
-	for (size_t n = 0; n < phi->ninputs(); n++) {
-		auto v = ctx.variable(phi->input(n)->origin());
-		ctx.insert(phi->input(n)->arguments.first(), v);
-	}
+  /* add dependencies to context */
+  for (size_t n = 0; n < phi->ninputs(); n++)
+  {
+    auto v = ctx.variable(phi->input(n)->origin());
+    ctx.insert(phi->input(n)->arguments.first(), v);
+  }
 
-	/* forward declare all functions and globals */
-	for (size_t n = 0; n < subregion->nresults(); n++) {
-		JLM_ASSERT(subregion->argument(n)->input() == nullptr);
-		auto node = rvsdg::node_output::node(subregion->result(n)->origin());
+  /* forward declare all functions and globals */
+  for (size_t n = 0; n < subregion->nresults(); n++)
+  {
+    JLM_ASSERT(subregion->argument(n)->input() == nullptr);
+    auto node = rvsdg::node_output::node(subregion->result(n)->origin());
 
-		if (auto lambda = dynamic_cast<const lambda::node*>(node)) {
-			auto f = function_node::create(ipg, lambda->name(), lambda->type(), lambda->linkage(),
-				lambda->attributes());
-			ctx.insert(subregion->argument(n), module.create_variable(f));
-		} else {
-			JLM_ASSERT(is<delta::operation>(node));
-			auto d = static_cast<const delta::node*>(node);
-			auto data = data_node::Create(
-        ipg,
-        d->name(),
-        d->type(),
-        d->linkage(),
-        d->Section(),
-				d->constant());
-			ctx.insert(subregion->argument(n), module.create_global_value(data));
-		}
-	}
+    if (auto lambda = dynamic_cast<const lambda::node *>(node))
+    {
+      auto f = function_node::create(
+          ipg,
+          lambda->name(),
+          lambda->type(),
+          lambda->linkage(),
+          lambda->attributes());
+      ctx.insert(subregion->argument(n), module.create_variable(f));
+    }
+    else
+    {
+      JLM_ASSERT(is<delta::operation>(node));
+      auto d = static_cast<const delta::node *>(node);
+      auto data =
+          data_node::Create(ipg, d->name(), d->type(), d->linkage(), d->Section(), d->constant());
+      ctx.insert(subregion->argument(n), module.create_global_value(data));
+    }
+  }
 
-	/* convert function bodies and global initializations */
-	for (size_t n = 0; n < subregion->nresults(); n++) {
-		JLM_ASSERT(subregion->argument(n)->input() == nullptr);
-		auto result = subregion->result(n);
-		auto node = rvsdg::node_output::node(result->origin());
+  /* convert function bodies and global initializations */
+  for (size_t n = 0; n < subregion->nresults(); n++)
+  {
+    JLM_ASSERT(subregion->argument(n)->input() == nullptr);
+    auto result = subregion->result(n);
+    auto node = rvsdg::node_output::node(result->origin());
 
-		if (auto lambda = dynamic_cast<const lambda::node*>(node)) {
-			auto v = static_cast<const fctvariable*>(ctx.variable(subregion->argument(n)));
-			v->function()->add_cfg(create_cfg(*lambda, ctx));
-			ctx.insert(node->output(0), v);
-		} else {
-			JLM_ASSERT(is<delta::operation>(node));
-			auto delta = static_cast<const delta::node*>(node);
-			auto v = static_cast<const gblvalue*>(ctx.variable(subregion->argument(n)));
+    if (auto lambda = dynamic_cast<const lambda::node *>(node))
+    {
+      auto v = static_cast<const fctvariable *>(ctx.variable(subregion->argument(n)));
+      v->function()->add_cfg(create_cfg(*lambda, ctx));
+      ctx.insert(node->output(0), v);
+    }
+    else
+    {
+      JLM_ASSERT(is<delta::operation>(node));
+      auto delta = static_cast<const delta::node *>(node);
+      auto v = static_cast<const gblvalue *>(ctx.variable(subregion->argument(n)));
 
-			v->node()->set_initialization(create_initialization(delta, ctx));
-			ctx.insert(node->output(0), v);
-		}
-	}
+      v->node()->set_initialization(create_initialization(delta, ctx));
+      ctx.insert(node->output(0), v);
+    }
+  }
 
-	/* add functions and globals to context */
-	JLM_ASSERT(node.noutputs() == subregion->nresults());
-	for (size_t n = 0; n < node.noutputs(); n++)
-		ctx.insert(node.output(n), ctx.variable(subregion->result(n)->origin()));
+  /* add functions and globals to context */
+  JLM_ASSERT(node.noutputs() == subregion->nresults());
+  for (size_t n = 0; n < node.noutputs(); n++)
+    ctx.insert(node.output(n), ctx.variable(subregion->result(n)->origin()));
 }
 
 static inline void
 convert_delta_node(const rvsdg::node & node, context & ctx)
 {
   JLM_ASSERT(is<delta::operation>(&node));
-  auto delta = static_cast<const delta::node*>(&node);
+  auto delta = static_cast<const delta::node *>(&node);
   auto & m = ctx.module();
 
   auto dnode = data_node::Create(
-    m.ipgraph(),
-    delta->name(),
-    delta->type(),
-    delta->linkage(),
-    delta->Section(),
-    delta->constant());
+      m.ipgraph(),
+      delta->name(),
+      delta->type(),
+      delta->linkage(),
+      delta->Section(),
+      delta->constant());
   dnode->set_initialization(create_initialization(delta, ctx));
   auto v = m.create_global_value(dnode);
   ctx.insert(delta->output(), v);
@@ -508,86 +545,87 @@ convert_delta_node(const rvsdg::node & node, context & ctx)
 static inline void
 convert_node(const rvsdg::node & node, context & ctx)
 {
-	static std::unordered_map<
-	  std::type_index
-	, std::function<void(const rvsdg::node & node, context & ctx)
-	>> map({
-	  {typeid(lambda::operation), convert_lambda_node}
-	, {std::type_index(typeid(rvsdg::gamma_op)), convert_gamma_node}
-	, {std::type_index(typeid(rvsdg::theta_op)), convert_theta_node}
-	, {typeid(phi::operation), convert_phi_node}
-	, {typeid(delta::operation), convert_delta_node}
-	});
+  static std::
+      unordered_map<std::type_index, std::function<void(const rvsdg::node & node, context & ctx)>>
+          map({ { typeid(lambda::operation), convert_lambda_node },
+                { std::type_index(typeid(rvsdg::gamma_op)), convert_gamma_node },
+                { std::type_index(typeid(rvsdg::theta_op)), convert_theta_node },
+                { typeid(phi::operation), convert_phi_node },
+                { typeid(delta::operation), convert_delta_node } });
 
-	if (dynamic_cast<const rvsdg::simple_op*>(&node.operation())) {
-		convert_simple_node(node, ctx);
-		return;
-	}
+  if (dynamic_cast<const rvsdg::simple_op *>(&node.operation()))
+  {
+    convert_simple_node(node, ctx);
+    return;
+  }
 
-	auto & op = node.operation();
-	JLM_ASSERT(map.find(typeid(op)) != map.end());
-	map[typeid(op)](node, ctx);
+  auto & op = node.operation();
+  JLM_ASSERT(map.find(typeid(op)) != map.end());
+  map[typeid(op)](node, ctx);
 }
 
 static void
 convert_nodes(const rvsdg::graph & graph, context & ctx)
 {
-	for (const auto & node : rvsdg::topdown_traverser(graph.root()))
-		convert_node(*node, ctx);
+  for (const auto & node : rvsdg::topdown_traverser(graph.root()))
+    convert_node(*node, ctx);
 }
 
 static void
 convert_imports(const rvsdg::graph & graph, ipgraph_module & im, context & ctx)
 {
-	auto & ipg = im.ipgraph();
+  auto & ipg = im.ipgraph();
 
-	for (size_t n = 0; n < graph.root()->narguments(); n++) {
-		auto argument = graph.root()->argument(n);
-		auto import = static_cast<const llvm::impport*>(&argument->port());
-		if (auto ftype = is_function_import(argument)) {
-			auto f = function_node::create(ipg, import->name(), *ftype, import->linkage());
-			auto v = im.create_variable(f);
-			ctx.insert(argument, v);
-		} else {
-            auto dnode = data_node::Create(
-                    ipg,
-                    import->name(),
-                    import->GetValueType(),
-                    import->linkage(),
-                    "",
-                    false);
-            auto v = im.create_global_value(dnode);
-            ctx.insert(argument, v);
-		}
-	}
+  for (size_t n = 0; n < graph.root()->narguments(); n++)
+  {
+    auto argument = graph.root()->argument(n);
+    auto import = static_cast<const llvm::impport *>(&argument->port());
+    if (auto ftype = is_function_import(argument))
+    {
+      auto f = function_node::create(ipg, import->name(), *ftype, import->linkage());
+      auto v = im.create_variable(f);
+      ctx.insert(argument, v);
+    }
+    else
+    {
+      auto dnode = data_node::Create(
+          ipg,
+          import->name(),
+          import->GetValueType(),
+          import->linkage(),
+          "",
+          false);
+      auto v = im.create_global_value(dnode);
+      ctx.insert(argument, v);
+    }
+  }
 }
 
 static std::unique_ptr<ipgraph_module>
 convert_rvsdg(const RvsdgModule & rm)
 {
-	auto im = ipgraph_module::create(rm.SourceFileName(), rm.TargetTriple(), rm.DataLayout());
+  auto im = ipgraph_module::create(rm.SourceFileName(), rm.TargetTriple(), rm.DataLayout());
 
-	context ctx(*im);
-	convert_imports(rm.Rvsdg(), *im, ctx);
-	convert_nodes(rm.Rvsdg(), ctx);
+  context ctx(*im);
+  convert_imports(rm.Rvsdg(), *im, ctx);
+  convert_nodes(rm.Rvsdg(), ctx);
 
-	return im;
+  return im;
 }
 
 std::unique_ptr<ipgraph_module>
-rvsdg2jlm(
-  const RvsdgModule & rm,
-  jlm::util::StatisticsCollector & statisticsCollector)
+rvsdg2jlm(const RvsdgModule & rm, jlm::util::StatisticsCollector & statisticsCollector)
 {
-	auto statistics = rvsdg_destruction_stat::Create(rm.SourceFileName());
+  auto statistics = rvsdg_destruction_stat::Create(rm.SourceFileName());
 
-	statistics->start(rm.Rvsdg());
-	auto im = convert_rvsdg(rm);
-	statistics->end(*im);
+  statistics->start(rm.Rvsdg());
+  auto im = convert_rvsdg(rm);
+  statistics->end(*im);
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
-	return im;
+  return im;
 }
 
-}}
+}
+}

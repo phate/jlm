@@ -18,32 +18,32 @@ namespace jlm::llvm
 
 class RvsdgModule;
 
-namespace aa {
+namespace aa
+{
 
 class PointsToGraph;
 
 /**
-* \brief Alias Analysis Interface
-*/
-class AliasAnalysis {
+ * \brief Alias Analysis Interface
+ */
+class AliasAnalysis
+{
 public:
-	virtual
-	~AliasAnalysis() = default;
+  virtual ~AliasAnalysis() = default;
 
-	/**
-	  * \brief Analyze RVSDG module
-	  *
-	  * \param module RVSDG module the analysis is performed on.
-	  * \param statisticsCollector Statistics collector for collecting analysis statistics.
-	  *
-	  * \return A PointsTo graph.
-	  */
-	virtual std::unique_ptr<PointsToGraph>
-	Analyze(
-    const RvsdgModule & module,
-    jlm::util::StatisticsCollector & statisticsCollector) = 0;
+  /**
+   * \brief Analyze RVSDG module
+   *
+   * \param module RVSDG module the analysis is performed on.
+   * \param statisticsCollector Statistics collector for collecting analysis statistics.
+   *
+   * \return A PointsTo graph.
+   */
+  virtual std::unique_ptr<PointsToGraph>
+  Analyze(const RvsdgModule & module, jlm::util::StatisticsCollector & statisticsCollector) = 0;
 };
 
-}}
+}
+}
 
 #endif

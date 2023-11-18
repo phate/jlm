@@ -14,13 +14,13 @@
 namespace jlm::llvm
 {
 
-class InvariantValueRedirectionStatistics final : public util::Statistics {
+class InvariantValueRedirectionStatistics final : public util::Statistics
+{
 public:
-  ~InvariantValueRedirectionStatistics() override
-  = default;
+  ~InvariantValueRedirectionStatistics() override = default;
 
   InvariantValueRedirectionStatistics()
-    : Statistics(Statistics::Id::InvariantValueRedirection)
+      : Statistics(Statistics::Id::InvariantValueRedirection)
   {}
 
   void
@@ -38,9 +38,7 @@ public:
   [[nodiscard]] std::string
   ToString() const override
   {
-    return util::strfmt("InvariantValueRedirection ",
-                  "Time[ns]:", Timer_.ns()
-    );
+    return util::strfmt("InvariantValueRedirection ", "Time[ns]:", Timer_.ns());
   }
 
   static std::unique_ptr<InvariantValueRedirectionStatistics>
@@ -53,13 +51,12 @@ private:
   util::timer Timer_;
 };
 
-InvariantValueRedirection::~InvariantValueRedirection()
-= default;
+InvariantValueRedirection::~InvariantValueRedirection() = default;
 
 void
 InvariantValueRedirection::run(
-  RvsdgModule & rvsdgModule,
-  util::StatisticsCollector & statisticsCollector)
+    RvsdgModule & rvsdgModule,
+    util::StatisticsCollector & statisticsCollector)
 {
   auto & rvsdg = rvsdgModule.Rvsdg();
   auto statistics = InvariantValueRedirectionStatistics::Create();
@@ -74,7 +71,8 @@ InvariantValueRedirection::run(
 void
 InvariantValueRedirection::RedirectInvariantValues(jlm::rvsdg::region & region)
 {
-  for (auto node : jlm::rvsdg::topdown_traverser(&region)) {
+  for (auto node : jlm::rvsdg::topdown_traverser(&region))
+  {
     if (jlm::rvsdg::is<jlm::rvsdg::simple_op>(node))
       continue;
 
@@ -82,12 +80,14 @@ InvariantValueRedirection::RedirectInvariantValues(jlm::rvsdg::region & region)
     for (size_t n = 0; n < structuralNode.nsubregions(); n++)
       RedirectInvariantValues(*structuralNode.subregion(n));
 
-    if (auto gammaNode = dynamic_cast<jlm::rvsdg::gamma_node*>(&structuralNode)) {
+    if (auto gammaNode = dynamic_cast<jlm::rvsdg::gamma_node *>(&structuralNode))
+    {
       RedirectInvariantGammaOutputs(*gammaNode);
       continue;
     }
 
-    if (auto thetaNode = dynamic_cast<jlm::rvsdg::theta_node*>(&structuralNode)) {
+    if (auto thetaNode = dynamic_cast<jlm::rvsdg::theta_node *>(&structuralNode))
+    {
       RedirectInvariantThetaOutputs(*thetaNode);
       continue;
     }
@@ -97,7 +97,8 @@ InvariantValueRedirection::RedirectInvariantValues(jlm::rvsdg::region & region)
 void
 InvariantValueRedirection::RedirectInvariantGammaOutputs(jlm::rvsdg::gamma_node & gammaNode)
 {
-  for (auto it = gammaNode.begin_exitvar(); it != gammaNode.end_exitvar(); it++) {
+  for (auto it = gammaNode.begin_exitvar(); it != gammaNode.end_exitvar(); it++)
+  {
     auto & gammaOutput = *it;
 
     if (auto origin = is_invariant(&gammaOutput))
@@ -108,8 +109,10 @@ InvariantValueRedirection::RedirectInvariantGammaOutputs(jlm::rvsdg::gamma_node 
 void
 InvariantValueRedirection::RedirectInvariantThetaOutputs(jlm::rvsdg::theta_node & thetaNode)
 {
-  for (const auto & thetaOutput : thetaNode) {
-    /* FIXME: In order to also redirect loop state type variables, we need to know whether a loop terminates.*/
+  for (const auto & thetaOutput : thetaNode)
+  {
+    /* FIXME: In order to also redirect loop state type variables, we need to know whether a loop
+     * terminates.*/
     if (jlm::rvsdg::is<loopstatetype>(thetaOutput->type()))
       continue;
 

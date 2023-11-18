@@ -19,31 +19,45 @@ namespace jlm::llvm
 class CallNode;
 class RvsdgModule;
 
-namespace delta { class node; }
-namespace lambda { class node; }
-namespace phi { class node; }
+namespace delta
+{
+class node;
+}
+
+namespace lambda
+{
+class node;
+}
+
+namespace phi
+{
+class node;
+}
 
 class LoadNode;
 class StoreNode;
 
-namespace aa {
+namespace aa
+{
 
 class MemoryNodeProvisioning;
 
 /** \brief Memory State Encoder
  *
- * A memory state encoder encodes a points-to graph in the RVSDG. The basic idea is that there exists a one-to-one
- * correspondence between memory nodes in the points-to graph and memory states in the RVSDG, i.e., for each memory
- * node in the points-to graph, there exists a memory state edge in the RVSDG. A memory state encoder routes these
- * state edges through the RVSDG's structural nodes and ensures that simple nodes operating on a
- * memory location represented by a corresponding memory node in the points-to graph are sequentialized with the
- * respective memory state edge. For example, a store node that modifies a global variable needs to have the respective
- * state edge that corresponds to its memory location routed through it, i.e., the store node
- * is sequentialized by this state edge. Such an encoding ensures that the ordering of side-effecting operations
- * touching on the same memory locations is preserved, while rendering operations independent that are not operating on
- * the same memory locations.
+ * A memory state encoder encodes a points-to graph in the RVSDG. The basic idea is that there
+ * exists a one-to-one correspondence between memory nodes in the points-to graph and memory states
+ * in the RVSDG, i.e., for each memory node in the points-to graph, there exists a memory state edge
+ * in the RVSDG. A memory state encoder routes these state edges through the RVSDG's structural
+ * nodes and ensures that simple nodes operating on a memory location represented by a corresponding
+ * memory node in the points-to graph are sequentialized with the respective memory state edge. For
+ * example, a store node that modifies a global variable needs to have the respective state edge
+ * that corresponds to its memory location routed through it, i.e., the store node is sequentialized
+ * by this state edge. Such an encoding ensures that the ordering of side-effecting operations
+ * touching on the same memory locations is preserved, while rendering operations independent that
+ * are not operating on the same memory locations.
  */
-class MemoryStateEncoder final {
+class MemoryStateEncoder final
+{
 public:
   class Context;
 
@@ -63,9 +77,9 @@ public:
 
   void
   Encode(
-    RvsdgModule & rvsdgModule,
-    const MemoryNodeProvisioning & provisioning,
-    jlm::util::StatisticsCollector & statisticsCollector);
+      RvsdgModule & rvsdgModule,
+      const MemoryNodeProvisioning & provisioning,
+      jlm::util::StatisticsCollector & statisticsCollector);
 
 private:
   void
@@ -113,9 +127,10 @@ private:
   void
   EncodeTheta(jlm::rvsdg::theta_node & theta);
 
-  std::unique_ptr <Context> Context_;
+  std::unique_ptr<Context> Context_;
 };
 
-}}
+}
+}
 
-#endif //JLM_LLVM_OPT_ALIAS_ANALYSES_MEMORYSTATEENCODER_HPP
+#endif // JLM_LLVM_OPT_ALIAS_ANALYSES_MEMORYSTATEENCODER_HPP

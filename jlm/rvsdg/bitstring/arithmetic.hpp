@@ -12,76 +12,72 @@
 namespace jlm::rvsdg
 {
 
-#define DECLARE_BITUNARY_OPERATION(NAME) \
-class NAME ## _op final : public bitunary_op { \
-public: \
-	virtual \
-	~NAME ## _op() noexcept; \
-\
-	inline \
-	NAME ## _op(const bittype & type) noexcept \
-	: bitunary_op(type) \
-	{} \
-\
-	virtual bool \
-	operator==(const operation & other) const noexcept override; \
-\
-	virtual bitvalue_repr \
-	reduce_constant(const bitvalue_repr & arg) const override; \
-\
-	virtual std::string \
-	debug_string() const override; \
-\
-	virtual std::unique_ptr<operation> \
-	copy() const override; \
-\
-	virtual std::unique_ptr<bitunary_op> \
-	create(size_t nbits) const override; \
-\
-	static inline output * \
-	create(size_t nbits, output * op) \
-	{ \
-		return simple_node::create_normalized(op->region(), NAME ## _op(nbits), {op})[0]; \
-	} \
-}; \
+#define DECLARE_BITUNARY_OPERATION(NAME)                                                \
+  class NAME##_op final : public bitunary_op                                            \
+  {                                                                                     \
+  public:                                                                               \
+    virtual ~NAME##_op() noexcept;                                                      \
+                                                                                        \
+    inline NAME##_op(const bittype & type) noexcept                                     \
+        : bitunary_op(type)                                                             \
+    {}                                                                                  \
+                                                                                        \
+    virtual bool                                                                        \
+    operator==(const operation & other) const noexcept override;                        \
+                                                                                        \
+    virtual bitvalue_repr                                                               \
+    reduce_constant(const bitvalue_repr & arg) const override;                          \
+                                                                                        \
+    virtual std::string                                                                 \
+    debug_string() const override;                                                      \
+                                                                                        \
+    virtual std::unique_ptr<operation>                                                  \
+    copy() const override;                                                              \
+                                                                                        \
+    virtual std::unique_ptr<bitunary_op>                                                \
+    create(size_t nbits) const override;                                                \
+                                                                                        \
+    static inline output *                                                              \
+    create(size_t nbits, output * op)                                                   \
+    {                                                                                   \
+      return simple_node::create_normalized(op->region(), NAME##_op(nbits), { op })[0]; \
+    }                                                                                   \
+  };
 
-#define DECLARE_BITBINARY_OPERATION(NAME) \
-class NAME ## _op final : public bitbinary_op { \
-public: \
-	virtual \
-	~NAME ## _op() noexcept; \
-\
-	inline \
-	NAME ## _op(const bittype & type) noexcept \
-	: bitbinary_op(type) \
-	{} \
-\
-	virtual bool \
-	operator==(const operation & other) const noexcept override; \
-\
-	virtual enum binary_op::flags \
-	flags() const noexcept override; \
-\
-	virtual bitvalue_repr \
-	reduce_constants( \
-		const bitvalue_repr & arg1, \
-		const bitvalue_repr & arg2) const override; \
-\
-	virtual std::string \
-	debug_string() const override; \
-\
-	virtual std::unique_ptr<operation> \
-	copy() const override; \
-\
-	virtual std::unique_ptr<bitbinary_op> \
-	create(size_t nbits) const override; \
-\
-	static inline output * \
-	create(size_t nbits, output * op1, output * op2) \
-	{ \
-		return simple_node::create_normalized(op1->region(), NAME ## _op(nbits), {op1, op2})[0]; \
-	} \
-}; \
+#define DECLARE_BITBINARY_OPERATION(NAME)                                                      \
+  class NAME##_op final : public bitbinary_op                                                  \
+  {                                                                                            \
+  public:                                                                                      \
+    virtual ~NAME##_op() noexcept;                                                             \
+                                                                                               \
+    inline NAME##_op(const bittype & type) noexcept                                            \
+        : bitbinary_op(type)                                                                   \
+    {}                                                                                         \
+                                                                                               \
+    virtual bool                                                                               \
+    operator==(const operation & other) const noexcept override;                               \
+                                                                                               \
+    virtual enum binary_op::flags                                                              \
+    flags() const noexcept override;                                                           \
+                                                                                               \
+    virtual bitvalue_repr                                                                      \
+    reduce_constants(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const override;   \
+                                                                                               \
+    virtual std::string                                                                        \
+    debug_string() const override;                                                             \
+                                                                                               \
+    virtual std::unique_ptr<operation>                                                         \
+    copy() const override;                                                                     \
+                                                                                               \
+    virtual std::unique_ptr<bitbinary_op>                                                      \
+    create(size_t nbits) const override;                                                       \
+                                                                                               \
+    static inline output *                                                                     \
+    create(size_t nbits, output * op1, output * op2)                                           \
+    {                                                                                          \
+      return simple_node::create_normalized(op1->region(), NAME##_op(nbits), { op1, op2 })[0]; \
+    }                                                                                          \
+  };
 
 DECLARE_BITUNARY_OPERATION(bitneg)
 DECLARE_BITUNARY_OPERATION(bitnot)

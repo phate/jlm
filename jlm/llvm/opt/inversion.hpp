@@ -14,17 +14,15 @@ namespace jlm::llvm
 class RvsdgModule;
 
 /**
-* \brief Theta-Gamma Inversion
-*/
-class tginversion final : public optimization {
+ * \brief Theta-Gamma Inversion
+ */
+class tginversion final : public optimization
+{
 public:
-	virtual
-	~tginversion();
+  virtual ~tginversion();
 
-	virtual void
-	run(
-    RvsdgModule & module,
-    jlm::util::StatisticsCollector & statisticsCollector) override;
+  virtual void
+  run(RvsdgModule & module, jlm::util::StatisticsCollector & statisticsCollector) override;
 };
 
 }

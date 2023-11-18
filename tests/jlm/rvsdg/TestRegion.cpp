@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-registry.hpp"
 #include "test-operation.hpp"
+#include "test-registry.hpp"
 #include "test-types.hpp"
 
 #include <cassert>
@@ -20,7 +20,7 @@ TestArgumentNodeMismatch()
   jlm::tests::valuetype vt;
 
   jlm::rvsdg::graph graph;
-  auto import = graph.add_import({vt, "import"});
+  auto import = graph.add_import({ vt, "import" });
 
   auto structuralNode1 = jlm::tests::structural_node::create(graph.root(), 1);
   auto structuralNode2 = jlm::tests::structural_node::create(graph.root(), 2);
@@ -28,9 +28,12 @@ TestArgumentNodeMismatch()
   auto structuralInput = structural_input::create(structuralNode1, import, vt);
 
   bool inputErrorHandlerCalled = false;
-  try {
+  try
+  {
     argument::create(structuralNode2->subregion(0), structuralInput, vt);
-  } catch (jlm::util::error & e) {
+  }
+  catch (jlm::util::error & e)
+  {
     inputErrorHandlerCalled = true;
   }
 
@@ -48,7 +51,7 @@ TestResultNodeMismatch()
   jlm::tests::valuetype vt;
 
   jlm::rvsdg::graph graph;
-  auto import = graph.add_import({vt, "import"});
+  auto import = graph.add_import({ vt, "import" });
 
   auto structuralNode1 = jlm::tests::structural_node::create(graph.root(), 1);
   auto structuralNode2 = jlm::tests::structural_node::create(graph.root(), 2);
@@ -59,9 +62,12 @@ TestResultNodeMismatch()
   auto structuralOutput = structural_output::create(structuralNode1, vt);
 
   bool outputErrorHandlerCalled = false;
-  try {
+  try
+  {
     result::create(structuralNode2->subregion(0), argument, structuralOutput, vt);
-  } catch (jlm::util::error & e) {
+  }
+  catch (jlm::util::error & e)
+  {
     outputErrorHandlerCalled = true;
   }
 
@@ -79,17 +85,19 @@ TestContainsMethod()
   valuetype vt;
 
   jlm::rvsdg::graph graph;
-  auto import = graph.add_import({vt, "import"});
+  auto import = graph.add_import({ vt, "import" });
 
   auto structuralNode1 = structural_node::create(graph.root(), 1);
   auto structuralInput1 = jlm::rvsdg::structural_input::create(structuralNode1, import, vt);
-  auto regionArgument1 = jlm::rvsdg::argument::create(structuralNode1->subregion(0), structuralInput1, vt);
-  unary_op::create(structuralNode1->subregion(0), {vt}, regionArgument1, {vt});
+  auto regionArgument1 =
+      jlm::rvsdg::argument::create(structuralNode1->subregion(0), structuralInput1, vt);
+  unary_op::create(structuralNode1->subregion(0), { vt }, regionArgument1, { vt });
 
   auto structuralNode2 = structural_node::create(graph.root(), 1);
   auto structuralInput2 = jlm::rvsdg::structural_input::create(structuralNode2, import, vt);
-  auto regionArgument2 = jlm::rvsdg::argument::create(structuralNode2->subregion(0), structuralInput2, vt);
-  binary_op::create({vt}, {vt}, regionArgument2, regionArgument2);
+  auto regionArgument2 =
+      jlm::rvsdg::argument::create(structuralNode2->subregion(0), structuralInput2, vt);
+  binary_op::create({ vt }, { vt }, regionArgument2, regionArgument2);
 
   assert(jlm::rvsdg::region::Contains<structural_op>(*graph.root(), false));
   assert(jlm::rvsdg::region::Contains<unary_op>(*graph.root(), true));
@@ -131,7 +139,7 @@ TestNumRegions()
     jlm::tests::structural_node::create(structuralNode->subregion(0), 2);
     jlm::tests::structural_node::create(structuralNode->subregion(3), 5);
 
-    assert(region::NumRegions(*graph.root()) == 1+4+2+5);
+    assert(region::NumRegions(*graph.root()) == 1 + 4 + 2 + 5);
   }
 }
 
@@ -146,11 +154,14 @@ TestRemoveResultsWhere()
   jlm::rvsdg::region region(rvsdg.root(), &rvsdg);
 
   jlm::tests::valuetype valueType;
-  auto node = jlm::tests::test_op::Create(&region, {}, {}, {&valueType});
+  auto node = jlm::tests::test_op::Create(&region, {}, {}, { &valueType });
 
-  auto result0 = jlm::rvsdg::result::create(&region, node->output(0), nullptr, jlm::rvsdg::port(valueType));
-  auto result1 = jlm::rvsdg::result::create(&region, node->output(0), nullptr, jlm::rvsdg::port(valueType));
-  auto result2 = jlm::rvsdg::result::create(&region, node->output(0), nullptr, jlm::rvsdg::port(valueType));
+  auto result0 =
+      jlm::rvsdg::result::create(&region, node->output(0), nullptr, jlm::rvsdg::port(valueType));
+  auto result1 =
+      jlm::rvsdg::result::create(&region, node->output(0), nullptr, jlm::rvsdg::port(valueType));
+  auto result2 =
+      jlm::rvsdg::result::create(&region, node->output(0), nullptr, jlm::rvsdg::port(valueType));
 
   // Act & Arrange
   assert(region.nresults() == 3);
@@ -158,17 +169,29 @@ TestRemoveResultsWhere()
   assert(result1->index() == 1);
   assert(result2->index() == 2);
 
-  region.RemoveResultsWhere([](const jlm::rvsdg::result &result){ return result.index() == 1; });
+  region.RemoveResultsWhere(
+      [](const jlm::rvsdg::result & result)
+      {
+        return result.index() == 1;
+      });
   assert(region.nresults() == 2);
   assert(result0->index() == 0);
   assert(result2->index() == 1);
 
-  region.RemoveResultsWhere([](const jlm::rvsdg::result & result){ return false; });
+  region.RemoveResultsWhere(
+      [](const jlm::rvsdg::result & result)
+      {
+        return false;
+      });
   assert(region.nresults() == 2);
   assert(result0->index() == 0);
   assert(result2->index() == 1);
 
-  region.RemoveResultsWhere([](const jlm::rvsdg::result & result){ return true; });
+  region.RemoveResultsWhere(
+      [](const jlm::rvsdg::result & result)
+      {
+        return true;
+      });
   assert(region.nresults() == 0);
 }
 
@@ -187,7 +210,7 @@ TestRemoveArgumentsWhere()
   auto argument1 = jlm::rvsdg::argument::create(&region, nullptr, jlm::rvsdg::port(valueType));
   auto argument2 = jlm::rvsdg::argument::create(&region, nullptr, jlm::rvsdg::port(valueType));
 
-  auto node = jlm::tests::test_op::Create(&region, {&valueType}, {argument1}, {&valueType});
+  auto node = jlm::tests::test_op::Create(&region, { &valueType }, { argument1 }, { &valueType });
 
   // Act & Arrange
   assert(region.narguments() == 3);
@@ -195,16 +218,28 @@ TestRemoveArgumentsWhere()
   assert(argument1->index() == 1);
   assert(argument2->index() == 2);
 
-  region.RemoveArgumentsWhere([](const jlm::rvsdg::argument &argument){ return true; });
+  region.RemoveArgumentsWhere(
+      [](const jlm::rvsdg::argument & argument)
+      {
+        return true;
+      });
   assert(region.narguments() == 1);
   assert(argument1->index() == 0);
 
   region.remove_node(node);
-  region.RemoveArgumentsWhere([](const jlm::rvsdg::argument &argument){ return false; });
+  region.RemoveArgumentsWhere(
+      [](const jlm::rvsdg::argument & argument)
+      {
+        return false;
+      });
   assert(region.narguments() == 1);
   assert(argument1->index() == 0);
 
-  region.RemoveArgumentsWhere([](const jlm::rvsdg::argument &argument){ return argument.index() == 0; });
+  region.RemoveArgumentsWhere(
+      [](const jlm::rvsdg::argument & argument)
+      {
+        return argument.index() == 0;
+      });
   assert(region.narguments() == 0);
 }
 
@@ -223,7 +258,11 @@ TestPruneArguments()
   jlm::rvsdg::argument::create(&region, nullptr, jlm::rvsdg::port(valueType));
   auto argument2 = jlm::rvsdg::argument::create(&region, nullptr, jlm::rvsdg::port(valueType));
 
-  auto node = jlm::tests::test_op::Create(&region, {&valueType, &valueType}, {argument0, argument2}, {&valueType});
+  auto node = jlm::tests::test_op::Create(
+      &region,
+      { &valueType, &valueType },
+      { argument0, argument2 },
+      { &valueType });
 
   // Act & Arrange
   assert(region.narguments() == 3);

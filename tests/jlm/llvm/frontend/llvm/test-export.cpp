@@ -16,38 +16,32 @@
 static int
 test()
 {
-	using namespace jlm::llvm;
+  using namespace jlm::llvm;
 
-	jlm::tests::valuetype vt;
-	FunctionType ft({&vt}, {&vt});
+  jlm::tests::valuetype vt;
+  FunctionType ft({ &vt }, { &vt });
 
-	ipgraph_module im(jlm::util::filepath(""), "", "");
+  ipgraph_module im(jlm::util::filepath(""), "", "");
 
-	auto d = data_node::Create(
-    im.ipgraph(),
-    "d",
-    vt,
-    linkage::external_linkage,
-    "",
-    false);
-	auto f = function_node::create(im.ipgraph(), "f", ft, linkage::external_linkage);
+  auto d = data_node::Create(im.ipgraph(), "d", vt, linkage::external_linkage, "", false);
+  auto f = function_node::create(im.ipgraph(), "f", ft, linkage::external_linkage);
 
-	im.create_global_value(d);
-	im.create_variable(f);
+  im.create_global_value(d);
+  im.create_variable(f);
 
-	jlm::util::StatisticsCollector statisticsCollector;
-	auto rvsdgModule = ConvertInterProceduralGraphModule(im, statisticsCollector);
+  jlm::util::StatisticsCollector statisticsCollector;
+  auto rvsdgModule = ConvertInterProceduralGraphModule(im, statisticsCollector);
 
-	jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
+  jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
 
-	/*
-		We should have no exports in the RVSDG. The data and function
-		node should be converted to RVSDG imports as they do not have
-		a body, i.e., either a CFG or a initialization.
-	*/
-	assert(rvsdgModule->Rvsdg().root()->nresults() == 0);
+  /*
+    We should have no exports in the RVSDG. The data and function
+    node should be converted to RVSDG imports as they do not have
+    a body, i.e., either a CFG or a initialization.
+  */
+  assert(rvsdgModule->Rvsdg().root()->nresults() == 0);
 
-	return 0;
+  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/test-export", test)

@@ -13,64 +13,63 @@
 namespace jlm::rvsdg
 {
 
-class type {
+class type
+{
 public:
-	virtual
-	~type() noexcept;
+  virtual ~type() noexcept;
 
 protected:
-	inline constexpr
-	type() noexcept
-	{}
+  inline constexpr type() noexcept
+  {}
 
 public:
-	virtual bool
-	operator==(const jlm::rvsdg::type & other) const noexcept = 0;
+  virtual bool
+  operator==(const jlm::rvsdg::type & other) const noexcept = 0;
 
-	inline bool
-	operator!=(const jlm::rvsdg::type & other) const noexcept
-	{
-		return !(*this == other);
-	}
+  inline bool
+  operator!=(const jlm::rvsdg::type & other) const noexcept
+  {
+    return !(*this == other);
+  }
 
-	virtual std::unique_ptr<type>
-	copy() const = 0;
+  virtual std::unique_ptr<type>
+  copy() const = 0;
 
-	virtual std::string
-	debug_string() const = 0;
+  virtual std::string
+  debug_string() const = 0;
 };
 
-class valuetype : public jlm::rvsdg::type {
+class valuetype : public jlm::rvsdg::type
+{
 public:
-	virtual
-	~valuetype() noexcept;
+  virtual ~valuetype() noexcept;
 
 protected:
-	inline constexpr
-	valuetype() noexcept
-	: jlm::rvsdg::type()
-	{}
+  inline constexpr valuetype() noexcept
+      : jlm::rvsdg::type()
+  {}
 };
 
-class statetype : public jlm::rvsdg::type {
+class statetype : public jlm::rvsdg::type
+{
 public:
-	virtual
-	~statetype() noexcept;
+  virtual ~statetype() noexcept;
 
 protected:
-	inline constexpr
-	statetype() noexcept
-	: jlm::rvsdg::type()
-	{}
+  inline constexpr statetype() noexcept
+      : jlm::rvsdg::type()
+  {}
 };
 
-template <class T> static inline bool
+template<class T>
+static inline bool
 is(const jlm::rvsdg::type & type) noexcept
 {
-	static_assert(std::is_base_of<jlm::rvsdg::type, T>::value,
-		"Template parameter T must be derived from jlm::rvsdg::type.");
+  static_assert(
+      std::is_base_of<jlm::rvsdg::type, T>::value,
+      "Template parameter T must be derived from jlm::rvsdg::type.");
 
-	return dynamic_cast<const T*>(&type) != nullptr;
+  return dynamic_cast<const T *>(&type) != nullptr;
 }
 
 }

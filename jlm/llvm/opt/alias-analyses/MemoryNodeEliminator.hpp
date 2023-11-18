@@ -26,9 +26,7 @@ class MemoryNodeProvisioning;
 class MemoryNodeEliminator
 {
 public:
-  virtual
-  ~MemoryNodeEliminator() noexcept
-  = default;
+  virtual ~MemoryNodeEliminator() noexcept = default;
 
   /**
    * Eliminates unnecessary memory nodes from a MemoryNodeProvisioning.
@@ -41,11 +39,11 @@ public:
    */
   virtual std::unique_ptr<MemoryNodeProvisioning>
   EliminateMemoryNodes(
-    const RvsdgModule & rvsdgModule,
-    const MemoryNodeProvisioning & seedProvisioning,
-    jlm::util::StatisticsCollector & statisticsCollector) = 0;
+      const RvsdgModule & rvsdgModule,
+      const MemoryNodeProvisioning & seedProvisioning,
+      jlm::util::StatisticsCollector & statisticsCollector) = 0;
 };
 
 }
 
-#endif //JLM_LLVM_OPT_ALIAS_ANALYSES_MEMORYNODEELIMINATOR_HPP
+#endif // JLM_LLVM_OPT_ALIAS_ANALYSES_MEMORYNODEELIMINATOR_HPP

@@ -15,86 +15,86 @@
 static void
 TestWithMatch()
 {
-	using namespace jlm::llvm;
+  using namespace jlm::llvm;
 
-	jlm::tests::valuetype vt;
-	jlm::rvsdg::bittype bt1(1);
-	FunctionType ft({&bt1, &vt, &vt}, {&vt});
+  jlm::tests::valuetype vt;
+  jlm::rvsdg::bittype bt1(1);
+  FunctionType ft({ &bt1, &vt, &vt }, { &vt });
 
-	RvsdgModule rm(jlm::util::filepath(""), "", "");
-	auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
-	nf->set_mutable(false);
+  RvsdgModule rm(jlm::util::filepath(""), "", "");
+  auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
+  nf->set_mutable(false);
 
-	/* Setup graph */
+  /* Setup graph */
 
-	auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage);
+  auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage);
 
-	auto match = jlm::rvsdg::match(1, {{0, 0}}, 1, 2, lambda->fctargument(0));
-	auto gamma = jlm::rvsdg::gamma_node::create(match, 2);
-	auto ev1 = gamma->add_entryvar(lambda->fctargument(1));
-	auto ev2 = gamma->add_entryvar(lambda->fctargument(2));
-	auto ex = gamma->add_exitvar({ev1->argument(0), ev2->argument(1)});
+  auto match = jlm::rvsdg::match(1, { { 0, 0 } }, 1, 2, lambda->fctargument(0));
+  auto gamma = jlm::rvsdg::gamma_node::create(match, 2);
+  auto ev1 = gamma->add_entryvar(lambda->fctargument(1));
+  auto ev2 = gamma->add_entryvar(lambda->fctargument(2));
+  auto ex = gamma->add_exitvar({ ev1->argument(0), ev2->argument(1) });
 
-	auto f = lambda->finalize({ex});
-	rm.Rvsdg().add_export(f, {f->type(), ""});
+  auto f = lambda->finalize({ ex });
+  rm.Rvsdg().add_export(f, { f->type(), "" });
 
-	jlm::rvsdg::view(rm.Rvsdg(), stdout);
+  jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
-	/* Convert graph to RHLS */
+  /* Convert graph to RHLS */
 
-	jlm::hls::gamma_conv(rm);
-	jlm::rvsdg::view(rm.Rvsdg(), stdout);
+  jlm::hls::gamma_conv(rm);
+  jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
-	/* Verify output */
+  /* Verify output */
 
-	assert(jlm::rvsdg::region::Contains<jlm::hls::mux_op>(*lambda->subregion(), true));
+  assert(jlm::rvsdg::region::Contains<jlm::hls::mux_op>(*lambda->subregion(), true));
 }
 
 static void
 TestWithoutMatch()
 {
-	using namespace jlm::llvm;
+  using namespace jlm::llvm;
 
-	jlm::tests::valuetype vt;
-	jlm::rvsdg::ctltype ctl2(2);
-	jlm::rvsdg::bittype bt1(1);
-	FunctionType ft({&ctl2, &vt, &vt}, {&vt});
+  jlm::tests::valuetype vt;
+  jlm::rvsdg::ctltype ctl2(2);
+  jlm::rvsdg::bittype bt1(1);
+  FunctionType ft({ &ctl2, &vt, &vt }, { &vt });
 
-	RvsdgModule rm(jlm::util::filepath(""), "", "");
-	auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
-	nf->set_mutable(false);
+  RvsdgModule rm(jlm::util::filepath(""), "", "");
+  auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
+  nf->set_mutable(false);
 
-	/* Setup graph */
+  /* Setup graph */
 
-	auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage);
+  auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage);
 
-	auto gamma = jlm::rvsdg::gamma_node::create(lambda->fctargument(0), 2);
-	auto ev1 = gamma->add_entryvar(lambda->fctargument(1));
-	auto ev2 = gamma->add_entryvar(lambda->fctargument(2));
-	auto ex = gamma->add_exitvar({ev1->argument(0), ev2->argument(1)});
+  auto gamma = jlm::rvsdg::gamma_node::create(lambda->fctargument(0), 2);
+  auto ev1 = gamma->add_entryvar(lambda->fctargument(1));
+  auto ev2 = gamma->add_entryvar(lambda->fctargument(2));
+  auto ex = gamma->add_exitvar({ ev1->argument(0), ev2->argument(1) });
 
-	auto f = lambda->finalize({ex});
-	rm.Rvsdg().add_export(f, {f->type(), ""});
+  auto f = lambda->finalize({ ex });
+  rm.Rvsdg().add_export(f, { f->type(), "" });
 
-	jlm::rvsdg::view(rm.Rvsdg(), stdout);
+  jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
-	/* Convert graph to RHLS */
+  /* Convert graph to RHLS */
 
-	jlm::hls::gamma_conv(rm);
-	jlm::rvsdg::view(rm.Rvsdg(), stdout);
+  jlm::hls::gamma_conv(rm);
+  jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
-	/* Verify output */
+  /* Verify output */
 
-	assert(jlm::rvsdg::region::Contains<jlm::hls::mux_op>(*lambda->subregion(), true));
+  assert(jlm::rvsdg::region::Contains<jlm::hls::mux_op>(*lambda->subregion(), true));
 }
 
 static int
 Test()
 {
-	TestWithMatch();
-	TestWithoutMatch();
+  TestWithMatch();
+  TestWithoutMatch();
 
-	return 0;
+  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/TestGamma", Test)

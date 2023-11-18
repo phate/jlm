@@ -11,14 +11,12 @@
 #include <memory>
 #include <sstream>
 
-class MyTestStatistics final : public jlm::util::Statistics {
+class MyTestStatistics final : public jlm::util::Statistics
+{
 public:
-  explicit
-  MyTestStatistics(
-    jlm::util::Statistics::Id id,
-    std::string text)
-    : jlm::util::Statistics(id)
-    , Text_(std::move(text))
+  explicit MyTestStatistics(jlm::util::Statistics::Id id, std::string text)
+      : jlm::util::Statistics(id),
+        Text_(std::move(text))
   {}
 
   [[nodiscard]] std::string
@@ -38,12 +36,12 @@ TestStatisticsCollection()
   /*
    * Arrange
    */
-  std::unique_ptr<Statistics> testStatistics1(new MyTestStatistics(Statistics::Id::Aggregation, ""));
-  std::unique_ptr<Statistics> testStatistics2(new MyTestStatistics(Statistics::Id::LoopUnrolling, ""));
+  std::unique_ptr<Statistics> testStatistics1(
+      new MyTestStatistics(Statistics::Id::Aggregation, ""));
+  std::unique_ptr<Statistics> testStatistics2(
+      new MyTestStatistics(Statistics::Id::LoopUnrolling, ""));
 
-  StatisticsCollectorSettings settings(
-    filepath(""),
-    {Statistics::Id::Aggregation});
+  StatisticsCollectorSettings settings(filepath(""), { Statistics::Id::Aggregation });
 
   StatisticsCollector collector(std::move(settings));
 
@@ -56,9 +54,8 @@ TestStatisticsCollection()
   /*
    * Assert
    */
-  auto numCollectedStatistics = std::distance(
-    collector.CollectedStatistics().begin(),
-    collector.CollectedStatistics().end());
+  auto numCollectedStatistics =
+      std::distance(collector.CollectedStatistics().begin(), collector.CollectedStatistics().end());
 
   assert(numCollectedStatistics == 1);
 }
@@ -75,13 +72,10 @@ TestStatisticsPrinting()
   std::remove(filePath.to_str().c_str());
 
   std::string myText("MyTestStatistics");
-  std::unique_ptr<Statistics> testStatistics(new MyTestStatistics(
-    Statistics::Id::Aggregation,
-    myText));
+  std::unique_ptr<Statistics> testStatistics(
+      new MyTestStatistics(Statistics::Id::Aggregation, myText));
 
-  StatisticsCollectorSettings settings(
-    filePath,
-    {Statistics::Id::Aggregation});
+  StatisticsCollectorSettings settings(filePath, { Statistics::Id::Aggregation });
 
   StatisticsCollector collector(std::move(settings));
   collector.CollectDemandedStatistics(std::move(testStatistics));

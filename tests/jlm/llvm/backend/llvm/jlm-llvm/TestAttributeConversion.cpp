@@ -16,7 +16,8 @@ TestAttributeKindConversion()
 
   int begin = static_cast<int>(ak::None);
   int end = static_cast<int>(ak::EndAttrKinds);
-  for (int attributeKind = begin; attributeKind != end; attributeKind++) {
+  for (int attributeKind = begin; attributeKind != end; attributeKind++)
+  {
     jlm::llvm::jlm2llvm::convert_attribute_kind(static_cast<ak>(attributeKind));
   }
 }

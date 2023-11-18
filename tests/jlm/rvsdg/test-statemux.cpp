@@ -4,8 +4,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-registry.hpp"
 #include "test-operation.hpp"
+#include "test-registry.hpp"
 #include "test-types.hpp"
 
 #include <assert.h>
@@ -13,83 +13,82 @@
 #include <jlm/rvsdg/statemux.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-
 static void
 test_mux_mux_reduction()
 {
-	using namespace jlm::rvsdg;
+  using namespace jlm::rvsdg;
 
-	jlm::tests::statetype st;
+  jlm::tests::statetype st;
 
-	jlm::rvsdg::graph graph;
-	auto nf = graph.node_normal_form(typeid(jlm::rvsdg::mux_op));
-	auto mnf = static_cast<jlm::rvsdg::mux_normal_form*>(nf);
-	mnf->set_mutable(false);
-	mnf->set_mux_mux_reducible(false);
+  jlm::rvsdg::graph graph;
+  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::mux_op));
+  auto mnf = static_cast<jlm::rvsdg::mux_normal_form *>(nf);
+  mnf->set_mutable(false);
+  mnf->set_mux_mux_reducible(false);
 
-	auto x = graph.add_import({st, "x"});
-	auto y = graph.add_import({st, "y"});
-	auto z = graph.add_import({st, "z"});
+  auto x = graph.add_import({ st, "x" });
+  auto y = graph.add_import({ st, "y" });
+  auto z = graph.add_import({ st, "z" });
 
-	auto mux1 = jlm::rvsdg::create_state_merge(st, {x, y});
-	auto mux2 = jlm::rvsdg::create_state_split(st, z, 2);
-	auto mux3 = jlm::rvsdg::create_state_merge(st, {mux1, mux2[0], mux2[1], z});
+  auto mux1 = jlm::rvsdg::create_state_merge(st, { x, y });
+  auto mux2 = jlm::rvsdg::create_state_split(st, z, 2);
+  auto mux3 = jlm::rvsdg::create_state_merge(st, { mux1, mux2[0], mux2[1], z });
 
-	auto ex = graph.add_export(mux3, {mux3->type(), "m"});
+  auto ex = graph.add_export(mux3, { mux3->type(), "m" });
 
-//	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(graph.root(), stdout);
 
-	mnf->set_mutable(true);
-	mnf->set_mux_mux_reducible(true);
-	graph.normalize();
-	graph.prune();
+  mnf->set_mutable(true);
+  mnf->set_mux_mux_reducible(true);
+  graph.normalize();
+  graph.prune();
 
-//	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(graph.root(), stdout);
 
-	auto node = node_output::node(ex->origin());
-	assert(node->ninputs() == 4);
-	assert(node->input(0)->origin() == x);
-	assert(node->input(1)->origin() == y);
-	assert(node->input(2)->origin() == z);
-	assert(node->input(3)->origin() == z);
+  auto node = node_output::node(ex->origin());
+  assert(node->ninputs() == 4);
+  assert(node->input(0)->origin() == x);
+  assert(node->input(1)->origin() == y);
+  assert(node->input(2)->origin() == z);
+  assert(node->input(3)->origin() == z);
 }
 
 static void
 test_multiple_origin_reduction()
 {
-	using namespace jlm::rvsdg;
+  using namespace jlm::rvsdg;
 
-	jlm::tests::statetype st;
+  jlm::tests::statetype st;
 
-	jlm::rvsdg::graph graph;
-	auto nf = graph.node_normal_form(typeid(jlm::rvsdg::mux_op));
-	auto mnf = static_cast<jlm::rvsdg::mux_normal_form*>(nf);
-	mnf->set_mutable(false);
-	mnf->set_multiple_origin_reducible(false);
+  jlm::rvsdg::graph graph;
+  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::mux_op));
+  auto mnf = static_cast<jlm::rvsdg::mux_normal_form *>(nf);
+  mnf->set_mutable(false);
+  mnf->set_multiple_origin_reducible(false);
 
-	auto x = graph.add_import({st, "x"});
-	auto mux1 = jlm::rvsdg::create_state_merge(st, {x, x});
-	auto ex = graph.add_export(mux1, {mux1->type(), "m"});
+  auto x = graph.add_import({ st, "x" });
+  auto mux1 = jlm::rvsdg::create_state_merge(st, { x, x });
+  auto ex = graph.add_export(mux1, { mux1->type(), "m" });
 
-	view(graph.root(), stdout);
+  view(graph.root(), stdout);
 
-	mnf->set_mutable(true);
-	mnf->set_multiple_origin_reducible(true);
-	graph.normalize();
-	graph.prune();
+  mnf->set_mutable(true);
+  mnf->set_multiple_origin_reducible(true);
+  graph.normalize();
+  graph.prune();
 
-	view(graph.root(), stdout);
+  view(graph.root(), stdout);
 
-	assert(node_output::node(ex->origin())->ninputs() == 1);
+  assert(node_output::node(ex->origin())->ninputs() == 1);
 }
 
 static int
 test_main(void)
 {
-	test_mux_mux_reduction();
-	test_multiple_origin_reduction();
+  test_mux_mux_reduction();
+  test_multiple_origin_reduction();
 
-	return 0;
+  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-statemux", test_main)

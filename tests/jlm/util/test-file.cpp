@@ -12,15 +12,15 @@
 static int
 test()
 {
-	jlm::util::filepath f("/tmp/archive.tar.gz");
+  jlm::util::filepath f("/tmp/archive.tar.gz");
 
-	assert(f.name() == "archive.tar.gz");
-	assert(f.base() == "archive");
-	assert(f.suffix() == "gz");
-	assert(f.complete_suffix() == "tar.gz");
-	assert(f.path() == "/tmp/");
+  assert(f.name() == "archive.tar.gz");
+  assert(f.base() == "archive");
+  assert(f.suffix() == "gz");
+  assert(f.complete_suffix() == "tar.gz");
+  assert(f.path() == "/tmp/");
 
-	return 0;
+  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/test-file", test)

@@ -21,30 +21,27 @@ public:
 
   ~OptimizationSequence() noexcept override;
 
-  explicit
-  OptimizationSequence(std::vector<optimization*> optimizations)
-    : Optimizations_(std::move(optimizations))
+  explicit OptimizationSequence(std::vector<optimization *> optimizations)
+      : Optimizations_(std::move(optimizations))
   {}
 
   void
-  run(
-    RvsdgModule& rvsdgModule,
-    util::StatisticsCollector& statisticsCollector) override;
+  run(RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
 
   static void
   CreateAndRun(
-    RvsdgModule& rvsdgModule,
-    util::StatisticsCollector& statisticsCollector,
-    std::vector<optimization*> optimizations)
+      RvsdgModule & rvsdgModule,
+      util::StatisticsCollector & statisticsCollector,
+      std::vector<optimization *> optimizations)
   {
     OptimizationSequence sequentialApplication(std::move(optimizations));
     sequentialApplication.run(rvsdgModule, statisticsCollector);
   }
 
 private:
-  std::vector<optimization*> Optimizations_;
+  std::vector<optimization *> Optimizations_;
 };
 
 }
 
-#endif //JLM_LLVM_OPT_OPTIMIZATIONSEQUENCE_HPP
+#endif // JLM_LLVM_OPT_OPTIMIZATIONSEQUENCE_HPP

@@ -16,49 +16,47 @@
 namespace jlm::rvsdg
 {
 
-class bitconcat_op final : public jlm::rvsdg::binary_op {
+class bitconcat_op final : public jlm::rvsdg::binary_op
+{
 public:
-	virtual
-	~bitconcat_op() noexcept;
+  virtual ~bitconcat_op() noexcept;
 
-	explicit inline
-	bitconcat_op(const std::vector<bittype> & types)
-	: binary_op(to_ports(types), {aggregate_arguments(types)})
-	{}
+  explicit inline bitconcat_op(const std::vector<bittype> & types)
+      : binary_op(to_ports(types), { aggregate_arguments(types) })
+  {}
 
-	virtual bool
-	operator==(const jlm::rvsdg::operation & other) const noexcept override;
+  virtual bool
+  operator==(const jlm::rvsdg::operation & other) const noexcept override;
 
-	virtual binop_reduction_path_t
-	can_reduce_operand_pair(
-		const jlm::rvsdg::output * arg1,
-		const jlm::rvsdg::output * arg2) const noexcept override;
+  virtual binop_reduction_path_t
+  can_reduce_operand_pair(const jlm::rvsdg::output * arg1, const jlm::rvsdg::output * arg2)
+      const noexcept override;
 
-	virtual jlm::rvsdg::output *
-	reduce_operand_pair(
-		binop_reduction_path_t path,
-		jlm::rvsdg::output * arg1,
-		jlm::rvsdg::output * arg2) const override;
+  virtual jlm::rvsdg::output *
+  reduce_operand_pair(
+      binop_reduction_path_t path,
+      jlm::rvsdg::output * arg1,
+      jlm::rvsdg::output * arg2) const override;
 
-	virtual enum jlm::rvsdg::binary_op::flags
-	flags() const noexcept override;
+  virtual enum jlm::rvsdg::binary_op::flags
+  flags() const noexcept override;
 
-	virtual std::string
-	debug_string() const override;
+  virtual std::string
+  debug_string() const override;
 
-	virtual std::unique_ptr<jlm::rvsdg::operation>
-	copy() const override;
+  virtual std::unique_ptr<jlm::rvsdg::operation>
+  copy() const override;
 
 private:
-	static bittype
-	aggregate_arguments(const std::vector<bittype> & types) noexcept;
+  static bittype
+  aggregate_arguments(const std::vector<bittype> & types) noexcept;
 
-	static std::vector<jlm::rvsdg::port>
-	to_ports(const std::vector<bittype> & types);
+  static std::vector<jlm::rvsdg::port>
+  to_ports(const std::vector<bittype> & types);
 };
 
 jlm::rvsdg::output *
-bitconcat(const std::vector<jlm::rvsdg::output*> & operands);
+bitconcat(const std::vector<jlm::rvsdg::output *> & operands);
 
 }
 
