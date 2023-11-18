@@ -8,6 +8,7 @@
 #include <jlm/util/Math.hpp>
 
 #include <cassert>
+#include <cstdint>
 
 using namespace jlm::util;
 
