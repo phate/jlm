@@ -8,7 +8,6 @@
 
 #include <jlm/util/iterator_range.hpp>
 
-#include <functional>
 #include <unordered_set>
 
 namespace jlm::util
@@ -211,12 +210,15 @@ public:
    * both.
    *
    * @param other A HashSet to union with.
+   * @return true, if elements were added to this HashSet, otherwise false
    */
-  void
+  bool
   UnionWith(const HashSet<ItemType> & other)
   {
+    const size_t sizeBefore = Size();
     for (auto & item : other.Items())
       Insert(item);
+    return sizeBefore != Size();
   }
 
   /**

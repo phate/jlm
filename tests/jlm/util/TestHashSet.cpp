@@ -79,6 +79,27 @@ TestIsSubsetOf()
 }
 
 static void
+TestUnionWith()
+{
+  using namespace jlm::util;
+
+  HashSet<int> set12({1, 2});
+  HashSet<int> set123({1, 2, 3});
+  HashSet<int> set45({4, 5});
+
+  assert(!set123.UnionWith(set12));
+
+  assert(set12.UnionWith(set123));
+  assert(!set12.UnionWith(set123));
+
+  assert(set12.Size() == 3);
+  assert(set12 == set123);
+
+  assert(set45.UnionWith(set123));
+  assert(set45.Size() == 5);
+}
+
+static void
 TestIntersectWith()
 {
   using namespace jlm::util;
@@ -100,6 +121,7 @@ TestHashSet()
   TestInt();
   TestUniquePointer();
   TestIsSubsetOf();
+  TestUnionWith();
   TestIntersectWith();
 
   return 0;
