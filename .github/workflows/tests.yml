@@ -24,8 +24,10 @@ jobs:
         run: sudo add-apt-repository deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-16 main
       - name: Install dependencies (LLVM)
         run: sudo apt-get update && sudo apt-get install clang-format-16
-      - name: Check formatting
-        run: find . -name "*.cpp" -or -name "*.hpp" | xargs clang-format-16 -Werror -style="file:.clang-format"
+      - name: Find source files
+        run: find . -name "*.cpp" -or -name "*.hpp" > sourceFiles.txt
+      - name: Check format
+        run: clang-format-16 --Werror --dry-run --style="file:.clang-format" --verbose --files=sourceFiles.txt
 
   build:
     runs-on: ubuntu-22.04
