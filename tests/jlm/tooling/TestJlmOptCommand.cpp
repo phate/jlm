@@ -17,18 +17,16 @@ TestStatistics()
   std::string expectedStatisticsDir = "/myStatisticsDir/";
 
   jlm::util::StatisticsCollectorSettings statisticsCollectorSettings(
-    jlm::util::filepath(expectedStatisticsDir + "myStatisticsFile"),
-    {jlm::util::Statistics::Id::SteensgaardAnalysis});
+      jlm::util::filepath(expectedStatisticsDir + "myStatisticsFile"),
+      { jlm::util::Statistics::Id::SteensgaardAnalysis });
 
   JlmOptCommandLineOptions commandLineOptions(
-    jlm::util::filepath("inputFile.ll"),
-    jlm::util::filepath("outputFile.ll"),
-    JlmOptCommandLineOptions::OutputFormat::Llvm,
-    statisticsCollectorSettings,
-    {
-      JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
-      JlmOptCommandLineOptions::OptimizationId::LoopUnrolling
-    });
+      jlm::util::filepath("inputFile.ll"),
+      jlm::util::filepath("outputFile.ll"),
+      JlmOptCommandLineOptions::OutputFormat::Llvm,
+      statisticsCollectorSettings,
+      { JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
+        JlmOptCommandLineOptions::OptimizationId::LoopUnrolling });
 
   JlmOptCommand command("jlm-opt", commandLineOptions);
 
@@ -37,13 +35,13 @@ TestStatistics()
 
   // Assert
   std::string expectedCommandLine = jlm::util::strfmt(
-    "jlm-opt ",
-    "--llvm ",
-    "--DeadNodeElimination --LoopUnrolling ",
-    "-s " + expectedStatisticsDir + " ",
-    "--print-steensgaard-analysis ",
-    "-o outputFile.ll ",
-    "inputFile.ll");
+      "jlm-opt ",
+      "--llvm ",
+      "--DeadNodeElimination --LoopUnrolling ",
+      "-s " + expectedStatisticsDir + " ",
+      "--print-steensgaard-analysis ",
+      "-o outputFile.ll ",
+      "inputFile.ll");
 
   assert(receivedCommandLine == expectedCommandLine);
 }
@@ -56,6 +54,4 @@ TestJlmOptCommand()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER(
-  "jlm/tooling/TestJlmOptCommand",
-  TestJlmOptCommand)
+JLM_UNIT_TEST_REGISTER("jlm/tooling/TestJlmOptCommand", TestJlmOptCommand)

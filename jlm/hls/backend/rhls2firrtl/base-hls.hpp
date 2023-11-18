@@ -6,9 +6,9 @@
 #ifndef JLM_HLS_BACKEND_RHLS2FIRRTL_BASE_HLS_HPP
 #define JLM_HLS_BACKEND_RHLS2FIRRTL_BASE_HLS_HPP
 
-#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
 
 #include <fstream>
 
@@ -18,10 +18,12 @@ namespace jlm::hls
 bool
 isForbiddenChar(char c);
 
-class BaseHLS {
+class BaseHLS
+{
 public:
   std::string
-  run(llvm::RvsdgModule &rm) {
+  run(llvm::RvsdgModule & rm)
+  {
     assert(node_map.empty());
     // ensure consistent naming across runs
     create_node_names(get_hls_lambda(rm)->subregion());
@@ -37,30 +39,30 @@ protected:
   std::unordered_map<jlm::rvsdg::output *, std::string> output_map;
 
   std::string
-  get_node_name(const jlm::rvsdg::node *node);
+  get_node_name(const jlm::rvsdg::node * node);
 
   static std::string
-  get_port_name(jlm::rvsdg::input *port);
+  get_port_name(jlm::rvsdg::input * port);
 
   static std::string
-  get_port_name(jlm::rvsdg::output *port);
+  get_port_name(jlm::rvsdg::output * port);
 
   const llvm::lambda::node *
-  get_hls_lambda(llvm::RvsdgModule &rm);
+  get_hls_lambda(llvm::RvsdgModule & rm);
 
   int
-  JlmSize(const jlm::rvsdg::type *type);
+  JlmSize(const jlm::rvsdg::type * type);
 
   void
-  create_node_names(jlm::rvsdg::region *r);
+  create_node_names(jlm::rvsdg::region * r);
 
   virtual std::string
-  get_text(llvm::RvsdgModule &rm) = 0;
+  get_text(llvm::RvsdgModule & rm) = 0;
 
   static std::string
-  get_base_file_name(const llvm::RvsdgModule &rm);
+  get_base_file_name(const llvm::RvsdgModule & rm);
 };
 
 }
 
-#endif //JLM_HLS_BACKEND_RHLS2FIRRTL_BASE_HLS_HPP
+#endif // JLM_HLS_BACKEND_RHLS2FIRRTL_BASE_HLS_HPP

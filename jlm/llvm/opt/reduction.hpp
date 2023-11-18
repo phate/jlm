@@ -12,17 +12,15 @@ namespace jlm::llvm
 {
 
 /**
-* \brief Node Reduction Optimization
-*/
-class nodereduction final : public optimization {
+ * \brief Node Reduction Optimization
+ */
+class nodereduction final : public optimization
+{
 public:
-	virtual
-	~nodereduction();
+  virtual ~nodereduction();
 
-	virtual void
-	run(
-    RvsdgModule & module,
-    util::StatisticsCollector & statisticsCollector) override;
+  virtual void
+  run(RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 };
 
 }

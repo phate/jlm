@@ -22,7 +22,7 @@ view(const jlm::rvsdg::region * region, FILE * out);
 static inline void
 view(const jlm::rvsdg::graph & graph, FILE * out)
 {
-	return view(graph.root(), out);
+  return view(graph.root(), out);
 }
 
 std::string

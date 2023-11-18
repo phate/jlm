@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-registry.hpp"
 #include "test-operation.hpp"
+#include "test-registry.hpp"
 #include "test-types.hpp"
 
 #include <jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp>
@@ -18,38 +18,38 @@
 static int
 test()
 {
-	using namespace jlm::llvm;
+  using namespace jlm::llvm;
 
-	jlm::tests::valuetype vt;
-	PointerType pt;
-	MemoryStateType mt;
-	ipgraph_module m(jlm::util::filepath(""), "", "");
+  jlm::tests::valuetype vt;
+  PointerType pt;
+  MemoryStateType mt;
+  ipgraph_module m(jlm::util::filepath(""), "", "");
 
-	std::unique_ptr<jlm::llvm::cfg> cfg(new jlm::llvm::cfg(m));
-	auto bb = basic_block::create(*cfg);
-	cfg->exit()->divert_inedges(bb);
-	bb->add_outedge(cfg->exit());
+  std::unique_ptr<jlm::llvm::cfg> cfg(new jlm::llvm::cfg(m));
+  auto bb = basic_block::create(*cfg);
+  cfg->exit()->divert_inedges(bb);
+  bb->add_outedge(cfg->exit());
 
-	auto p = cfg->entry()->append_argument(argument::create("p", jlm::rvsdg::bit1));
-	auto s1 = cfg->entry()->append_argument(argument::create("s1", mt));
-	auto s2 = cfg->entry()->append_argument(argument::create("s2", mt));
+  auto p = cfg->entry()->append_argument(argument::create("p", jlm::rvsdg::bit1));
+  auto s1 = cfg->entry()->append_argument(argument::create("s1", mt));
+  auto s2 = cfg->entry()->append_argument(argument::create("s2", mt));
 
-	bb->append_last(select_op::create(p, s1, s2));
-	auto s3 = bb->last()->result(0);
+  bb->append_last(select_op::create(p, s1, s2));
+  auto s3 = bb->last()->result(0);
 
-	cfg->exit()->append_result(s3);
-	cfg->exit()->append_result(s3);
+  cfg->exit()->append_result(s3);
+  cfg->exit()->append_result(s3);
 
-	FunctionType ft({&jlm::rvsdg::bit1, &mt, &mt}, {&mt, &mt});
-	auto f = function_node::create(m.ipgraph(), "f", ft, linkage::external_linkage);
-	f->add_cfg(std::move(cfg));
+  FunctionType ft({ &jlm::rvsdg::bit1, &mt, &mt }, { &mt, &mt });
+  auto f = function_node::create(m.ipgraph(), "f", ft, linkage::external_linkage);
+  f->add_cfg(std::move(cfg));
 
-	print(m, stdout);
+  print(m, stdout);
 
-	llvm::LLVMContext ctx;
-	jlm2llvm::convert(m, ctx);
+  llvm::LLVMContext ctx;
+  jlm2llvm::convert(m, ctx);
 
-	return 0;
+  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/backend/llvm/jlm-llvm/test-select-with-state", test)

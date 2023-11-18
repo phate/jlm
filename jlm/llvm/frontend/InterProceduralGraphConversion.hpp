@@ -8,7 +8,6 @@
 
 #include <memory>
 
-
 namespace jlm::util
 {
 class StatisticsCollector;
@@ -22,8 +21,8 @@ class RvsdgModule;
 
 std::unique_ptr<RvsdgModule>
 ConvertInterProceduralGraphModule(
-  const ipgraph_module & im,
-  jlm::util::StatisticsCollector & statisticsCollector);
+    const ipgraph_module & im,
+    jlm::util::StatisticsCollector & statisticsCollector);
 
 }
 

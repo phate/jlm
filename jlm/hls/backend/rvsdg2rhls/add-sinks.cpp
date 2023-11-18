@@ -7,26 +7,35 @@
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
-namespace jlm::hls {
+namespace jlm::hls
+{
 
 void
-add_sinks(jlm::rvsdg::region *region) {
-  for (size_t i = 0; i < region->narguments(); ++i) {
+add_sinks(jlm::rvsdg::region * region)
+{
+  for (size_t i = 0; i < region->narguments(); ++i)
+  {
     auto arg = region->argument(i);
-    if (!arg->nusers()) {
+    if (!arg->nusers())
+    {
       hls::sink_op::create(*arg);
     }
   }
-  for (auto &node: jlm::rvsdg::topdown_traverser(region)) {
-    if (auto structnode = dynamic_cast<jlm::rvsdg::structural_node *>(node)) {
-      for (size_t n = 0; n < structnode->nsubregions(); n++) {
+  for (auto & node : jlm::rvsdg::topdown_traverser(region))
+  {
+    if (auto structnode = dynamic_cast<jlm::rvsdg::structural_node *>(node))
+    {
+      for (size_t n = 0; n < structnode->nsubregions(); n++)
+      {
         add_sinks(structnode->subregion(n));
       }
     }
 
-    for (size_t i = 0; i < node->noutputs(); ++i) {
+    for (size_t i = 0; i < node->noutputs(); ++i)
+    {
       auto out = node->output(i);
-      if (!out->nusers()) {
+      if (!out->nusers())
+      {
         hls::sink_op::create(*out);
       }
     }
@@ -34,8 +43,9 @@ add_sinks(jlm::rvsdg::region *region) {
 }
 
 void
-add_sinks(llvm::RvsdgModule &rm) {
-  auto &graph = rm.Rvsdg();
+add_sinks(llvm::RvsdgModule & rm)
+{
+  auto & graph = rm.Rvsdg();
   auto root = graph.root();
   add_sinks(root);
 }

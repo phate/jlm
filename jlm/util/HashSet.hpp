@@ -14,8 +14,8 @@ namespace jlm::util
 {
 
 /**
- * Represents a set of values. A set is a collection that contains no duplicate elements, and whose elements are in
- * no particular order.
+ * Represents a set of values. A set is a collection that contains no duplicate elements, and whose
+ * elements are in no particular order.
  * @tparam ItemType The type of the items in the hash set.
  */
 template<typename ItemType>
@@ -27,15 +27,14 @@ class HashSet
     using iterator_category = std::forward_iterator_tag;
     using value_type = ItemType;
     using difference_type = std::ptrdiff_t;
-    using pointer = ItemType*;
-    using reference = ItemType&;
+    using pointer = ItemType *;
+    using reference = ItemType &;
 
   private:
     friend HashSet;
 
-    explicit
-    ItemConstIterator(const typename std::unordered_set<ItemType>::const_iterator & it)
-      : It_(it)
+    explicit ItemConstIterator(const typename std::unordered_set<ItemType>::const_iterator & it)
+        : It_(it)
     {}
 
   public:
@@ -89,37 +88,34 @@ class HashSet
   };
 
 public:
-  ~HashSet() noexcept
-  = default;
+  ~HashSet() noexcept = default;
 
-  HashSet()
-  = default;
+  HashSet() = default;
 
   HashSet(std::initializer_list<ItemType> initializerList)
-    : Set_(initializerList)
+      : Set_(initializerList)
   {}
 
-  explicit
-  HashSet(const std::unordered_set<ItemType> & other)
-    : Set_(other)
+  explicit HashSet(const std::unordered_set<ItemType> & other)
+      : Set_(other)
   {}
 
   HashSet(const HashSet & other)
-    : Set_(other.Set_)
+      : Set_(other.Set_)
   {}
 
   HashSet(HashSet && other) noexcept
-    : Set_(std::move(other.Set_))
+      : Set_(std::move(other.Set_))
   {}
 
-  HashSet&
+  HashSet &
   operator=(const HashSet & other)
   {
     Set_ = other.Set_;
     return *this;
   }
 
-  HashSet&
+  HashSet &
   operator=(HashSet && other) noexcept
   {
     Set_ = std::move(other.Set_);
@@ -151,7 +147,8 @@ public:
    * Determines whether a HashSet object is a subset of \p other.
    *
    * @param other The HashSet to compare to the collection.
-   * @return Returns true if the collection is a subset of \p other or equal to \p other, otherwise false.
+   * @return Returns true if the collection is a subset of \p other or equal to \p other, otherwise
+   * false.
    */
   bool
   IsSubsetOf(const HashSet<ItemType> & other) const noexcept
@@ -205,11 +202,12 @@ public:
   [[nodiscard]] iterator_range<ItemConstIterator>
   Items() const noexcept
   {
-    return {ItemConstIterator(Set_.begin()), ItemConstIterator(Set_.end())};
+    return { ItemConstIterator(Set_.begin()), ItemConstIterator(Set_.end()) };
   }
 
   /**
-   * Modifies this HashSet object to contain all elements that are present in itself, \p other, or both.
+   * Modifies this HashSet object to contain all elements that are present in itself, \p other, or
+   * both.
    *
    * @param other A HashSet to union with.
    * @return true, if elements were added to this HashSet, otherwise false
@@ -218,7 +216,7 @@ public:
   UnionWith(const HashSet<ItemType> & other)
   {
     const size_t sizeBefore = Size();
-    for (auto & item: other.Items())
+    for (auto & item : other.Items())
       Insert(item);
     return sizeBefore != Size();
   }
@@ -252,14 +250,16 @@ public:
   }
 
   /**
-   * Removes all elements that match the conditions defined by the specified \p match from a HashSet object.
+   * Removes all elements that match the conditions defined by the specified \p match from a HashSet
+   * object.
    *
    * @tparam F A type supporting function call operator: bool operator(const ItemType&)
    * @param match Defines the condition of the elements to remove.
    * @return The number of elements that were removed from the HashSet object.
    */
-  template <typename F> size_t
-  RemoveWhere(const F& match)
+  template<typename F>
+  size_t
+  RemoveWhere(const F & match)
   {
     size_t numRemoved = 0;
     auto it = Set_.begin();
@@ -316,4 +316,4 @@ private:
 
 }
 
-#endif //JLM_UTIL_HASHSET_HPP
+#endif // JLM_UTIL_HASHSET_HPP

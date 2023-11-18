@@ -95,680 +95,693 @@ namespace jlm::util
 // FIXME: for some weird reason, std::equal_to does not specify noexcept, so
 // define our own equality comparison operator here
 template<typename T>
-struct safe_equal {
-	inline bool
-	operator()(const T & a, const T & b) const
-		noexcept(
-			noexcept(std::declval<const T&>() == std::declval<const T&>()))
-	{
-		return a == b;
-	}
+struct safe_equal
+{
+  inline bool
+  operator()(const T & a, const T & b) const
+      noexcept(noexcept(std::declval<const T &>() == std::declval<const T &>()))
+  {
+    return a == b;
+  }
 };
 
 template<>
-struct safe_equal<std::string> {
-	inline bool
-	operator()(const std::string & a, const std::string & b) const noexcept
-	{
-		// C++11 lacks "noexcept" specification for
-		// std::string::operator==, but implementations lacking
-		// this would be a weird breed. So declare it noexcept
-		// by "fiat".
-		return a == b;
-	}
+struct safe_equal<std::string>
+{
+  inline bool
+  operator()(const std::string & a, const std::string & b) const noexcept
+  {
+    // C++11 lacks "noexcept" specification for
+    // std::string::operator==, but implementations lacking
+    // this would be a weird breed. So declare it noexcept
+    // by "fiat".
+    return a == b;
+  }
 };
 
 template<
-	typename KeyType,
-	typename ElementType,
-	typename Accessor,
-	typename KeyHash = std::hash<KeyType>,
-	typename KeyEqual = safe_equal<KeyType>>
-class intrusive_hash {
+    typename KeyType,
+    typename ElementType,
+    typename Accessor,
+    typename KeyHash = std::hash<KeyType>,
+    typename KeyEqual = safe_equal<KeyType>>
+class intrusive_hash
+{
 private:
-	struct bucket_type {
-		constexpr inline bucket_type() noexcept
-			: first(nullptr)
-			, last(nullptr)
-		{
-		}
+  struct bucket_type
+  {
+    constexpr inline bucket_type() noexcept
+        : first(nullptr),
+          last(nullptr)
+    {}
 
-		ElementType * first;
-		ElementType * last;
-	};
+    ElementType * first;
+    ElementType * last;
+  };
 
 public:
-	static_assert(
-		noexcept(KeyHash()(std::declval<KeyType &>())),
-		"require noexcept hash");
-	static_assert(
-		noexcept(Accessor().get_key(nullptr)),
-		"require noexcept get_key");
-	static_assert(
-		noexcept(Accessor().get_prev(nullptr)),
-		"require noexcept get_prev");
-	static_assert(
-		noexcept(Accessor().get_next(nullptr)),
-		"require noexcept get_next");
-	static_assert(
-		noexcept(Accessor().set_prev(nullptr, nullptr)),
-		"require noexcept set_prev");
-	static_assert(
-		noexcept(Accessor().set_next(nullptr, nullptr)),
-		"require noexcept set_next");
-	static_assert(
-		noexcept(KeyEqual()(std::declval<KeyType &>(), std::declval<KeyType &>())),
-		"require noexcept key equality");
-	class const_iterator;
-	class iterator {
-	public:
-		typedef ElementType value_type;
-		typedef ElementType * pointer;
-		typedef ElementType & reference;
-		typedef std::forward_iterator_tag iterator_category;
-		typedef size_t size_type;
-		typedef ssize_t difference_type;
+  static_assert(noexcept(KeyHash()(std::declval<KeyType &>())), "require noexcept hash");
+  static_assert(noexcept(Accessor().get_key(nullptr)), "require noexcept get_key");
+  static_assert(noexcept(Accessor().get_prev(nullptr)), "require noexcept get_prev");
+  static_assert(noexcept(Accessor().get_next(nullptr)), "require noexcept get_next");
+  static_assert(noexcept(Accessor().set_prev(nullptr, nullptr)), "require noexcept set_prev");
+  static_assert(noexcept(Accessor().set_next(nullptr, nullptr)), "require noexcept set_next");
+  static_assert(
+      noexcept(KeyEqual()(std::declval<KeyType &>(), std::declval<KeyType &>())),
+      "require noexcept key equality");
+  class const_iterator;
 
-		constexpr iterator() noexcept
-			: map_(nullptr)
-			, element_(nullptr)
-		{
-		}
+  class iterator
+  {
+  public:
+    typedef ElementType value_type;
+    typedef ElementType * pointer;
+    typedef ElementType & reference;
+    typedef std::forward_iterator_tag iterator_category;
+    typedef size_t size_type;
+    typedef ssize_t difference_type;
 
-		constexpr iterator(
-			const intrusive_hash * map,
-			ElementType * object)
-			: map_(map)
-			, element_(object)
-		{
-		}
-	
-		inline const iterator &
-		operator++(void) noexcept
-		{
-			ElementType * next = map_->accessor_.get_next(element_);
-			if (next == nullptr) {
-				size_t hash = map_->hash_(map_->accessor_.get_key(element_));
-				size_t index = (hash & map_->mask_) + 1;
-				while (next == nullptr && index < map_->buckets_.size()) {
-					next = map_->buckets_[index].first;
-					++index;
-				}
-			}
-			element_ = next;
-			return *this;
-		}
+    constexpr iterator() noexcept
+        : map_(nullptr),
+          element_(nullptr)
+    {}
 
-		inline iterator
-		operator++(int) noexcept
-		{
-			iterator i = *this;
-			++*this;
-			return i;
-		}
+    constexpr iterator(const intrusive_hash * map, ElementType * object)
+        : map_(map),
+          element_(object)
+    {}
 
-		inline ElementType &
-		operator*() const noexcept
-		{
-			return *element_;
-		}
+    inline const iterator &
+    operator++(void) noexcept
+    {
+      ElementType * next = map_->accessor_.get_next(element_);
+      if (next == nullptr)
+      {
+        size_t hash = map_->hash_(map_->accessor_.get_key(element_));
+        size_t index = (hash & map_->mask_) + 1;
+        while (next == nullptr && index < map_->buckets_.size())
+        {
+          next = map_->buckets_[index].first;
+          ++index;
+        }
+      }
+      element_ = next;
+      return *this;
+    }
 
-		inline ElementType *
-		operator->() const noexcept
-		{
-			return element_;
-		}
+    inline iterator
+    operator++(int) noexcept
+    {
+      iterator i = *this;
+      ++*this;
+      return i;
+    }
 
-		inline bool
-		operator==(const iterator & other) const noexcept
-		{
-			return element_ == other.element_;
-		}
+    inline ElementType &
+    operator*() const noexcept
+    {
+      return *element_;
+    }
 
-		inline bool
-		operator!=(const iterator & other) const noexcept
-		{
-			return element_ != other.element_;
-		}
+    inline ElementType *
+    operator->() const noexcept
+    {
+      return element_;
+    }
 
-		inline ElementType *
-		ptr() const noexcept
-		{
-			return element_;
-		}
+    inline bool
+    operator==(const iterator & other) const noexcept
+    {
+      return element_ == other.element_;
+    }
 
-	private:
-		const intrusive_hash * map_;
-		ElementType * element_;
-		friend class const_iterator;
-	};
+    inline bool
+    operator!=(const iterator & other) const noexcept
+    {
+      return element_ != other.element_;
+    }
 
-	class const_iterator {
-	public:
-		typedef const ElementType value_type;
-		typedef const ElementType * pointer;
-		typedef const ElementType & reference;
-		typedef std::forward_iterator_tag iterator_category;
-		typedef size_t size_type;
-		typedef ssize_t difference_type;
+    inline ElementType *
+    ptr() const noexcept
+    {
+      return element_;
+    }
 
-		constexpr const_iterator(const const_iterator & other) noexcept = default;
-		constexpr const_iterator(const iterator & other) noexcept
-			: map_(other.map_)
-			, element_(other.element_)
-		{
-		}
+  private:
+    const intrusive_hash * map_;
+    ElementType * element_;
+    friend class const_iterator;
+  };
 
-		constexpr const_iterator() noexcept
-			: map_(nullptr)
-			, element_(nullptr)
-		{
-		}
+  class const_iterator
+  {
+  public:
+    typedef const ElementType value_type;
+    typedef const ElementType * pointer;
+    typedef const ElementType & reference;
+    typedef std::forward_iterator_tag iterator_category;
+    typedef size_t size_type;
+    typedef ssize_t difference_type;
 
-		constexpr const_iterator(
-			const intrusive_hash * map,
-			const ElementType * object)
-			: map_(map)
-			, element_(object)
-		{
-		}
-	
-		inline const const_iterator &
-		operator++(void) noexcept
-		{
-			ElementType * next = map_->accessor_.get_next(element_);
-			if (next == nullptr) {
-				size_t hash = map_->hash_(map_->accessor_.get_key(element_));
-				size_t index = (hash & map_->mask_) + 1;
-				while (next == nullptr && index < map_->buckets_.size()) {
-					next = map_->buckets_[index].first;
-					++index;
-				}
-			}
-			element_ = next;
-			return *this;
-		}
+    constexpr const_iterator(const const_iterator & other) noexcept = default;
 
-		inline const_iterator
-		operator++(int) noexcept
-		{
-			const_iterator i = *this;
-			++*this;
-			return i;
-		}
+    constexpr const_iterator(const iterator & other) noexcept
+        : map_(other.map_),
+          element_(other.element_)
+    {}
 
-		inline const ElementType &
-		operator*() const noexcept
-		{
-			return *element_;
-		}
+    constexpr const_iterator() noexcept
+        : map_(nullptr),
+          element_(nullptr)
+    {}
 
-		inline const ElementType *
-		operator->() const noexcept
-		{
-			return element_;
-		}
+    constexpr const_iterator(const intrusive_hash * map, const ElementType * object)
+        : map_(map),
+          element_(object)
+    {}
 
-		inline bool
-		operator==(const const_iterator & other) const noexcept
-		{
-			return element_ == other.element_;
-		}
+    inline const const_iterator &
+    operator++(void) noexcept
+    {
+      ElementType * next = map_->accessor_.get_next(element_);
+      if (next == nullptr)
+      {
+        size_t hash = map_->hash_(map_->accessor_.get_key(element_));
+        size_t index = (hash & map_->mask_) + 1;
+        while (next == nullptr && index < map_->buckets_.size())
+        {
+          next = map_->buckets_[index].first;
+          ++index;
+        }
+      }
+      element_ = next;
+      return *this;
+    }
 
-		inline bool
-		operator!=(const const_iterator & other) const noexcept
-		{
-			return element_ != other.element_;
-		}
+    inline const_iterator
+    operator++(int) noexcept
+    {
+      const_iterator i = *this;
+      ++*this;
+      return i;
+    }
 
-		inline const ElementType *
-		ptr() const noexcept
-		{
-			return element_;
-		}
+    inline const ElementType &
+    operator*() const noexcept
+    {
+      return *element_;
+    }
 
-	private:
-		const intrusive_hash * map_;
-		const ElementType * element_;
-	};
+    inline const ElementType *
+    operator->() const noexcept
+    {
+      return element_;
+    }
 
-	typedef ElementType value_type;
-	typedef ElementType mapped_type;
-	typedef KeyType key_type;
-	typedef size_t size_type;
+    inline bool
+    operator==(const const_iterator & other) const noexcept
+    {
+      return element_ == other.element_;
+    }
 
-	inline constexpr
-	intrusive_hash() noexcept
-		: size_(0)
-		, mask_(0)
-	{
-	}
+    inline bool
+    operator!=(const const_iterator & other) const noexcept
+    {
+      return element_ != other.element_;
+    }
 
-	intrusive_hash(const intrusive_hash & other) = delete;
+    inline const ElementType *
+    ptr() const noexcept
+    {
+      return element_;
+    }
 
-	void operator=(const intrusive_hash & other) = delete;
+  private:
+    const intrusive_hash * map_;
+    const ElementType * element_;
+  };
 
-	intrusive_hash(intrusive_hash && other) noexcept
-		: intrusive_hash()
-	{
-		swap(other);
-	}
+  typedef ElementType value_type;
+  typedef ElementType mapped_type;
+  typedef KeyType key_type;
+  typedef size_t size_type;
 
-	void swap(intrusive_hash & other) noexcept
-	{
-		buckets_.swap(other.buckets_);
-		std::swap(size_, other.size_);
-		std::swap(mask_, other.mask_);
-	}
+  inline constexpr intrusive_hash() noexcept
+      : size_(0),
+        mask_(0)
+  {}
 
-	void
-	clear() noexcept
-	{
-		for (bucket_type & bucket : buckets_) {
-			bucket.first = nullptr;
-			bucket.last = nullptr;
-			size_ = 0;
-		}
-	}
+  intrusive_hash(const intrusive_hash & other) = delete;
 
-	inline iterator
-	insert(ElementType * element)
-	{
-		++size_;
-		if (size_ > buckets_.size()) {
-			rehash();
-		}
-		private_insert_into(buckets_, mask_, element);
-		
-		return iterator(this, element);
-	}
+  void
+  operator=(const intrusive_hash & other) = delete;
 
-	inline void
-	erase(ElementType * element) noexcept
-	{
-		size_t index = hash_(accessor_.get_key(element)) & mask_;
-		bucket_type & b = buckets_[index];
-		ElementType * prev = accessor_.get_prev(element);
-		ElementType * next = accessor_.get_next(element);
-		if (prev) {
-			accessor_.set_next(prev, next);
-		} else {
-			b.first = next;
-		}
-		if (next) {
-			accessor_.set_prev(next, prev);
-		} else {
-			b.last = prev;
-		}
-		--size_;
-	}
+  intrusive_hash(intrusive_hash && other) noexcept
+      : intrusive_hash()
+  {
+    swap(other);
+  }
 
-	inline void
-	erase(iterator i) noexcept
-	{
-		erase(i.ptr());
-	}
+  void
+  swap(intrusive_hash & other) noexcept
+  {
+    buckets_.swap(other.buckets_);
+    std::swap(size_, other.size_);
+    std::swap(mask_, other.mask_);
+  }
 
-	inline void
-	erase(const KeyType & key) noexcept
-	{
-		iterator i = find(key);
-		if (i != end()) {
-			erase(i);
-		}
-	}
+  void
+  clear() noexcept
+  {
+    for (bucket_type & bucket : buckets_)
+    {
+      bucket.first = nullptr;
+      bucket.last = nullptr;
+      size_ = 0;
+    }
+  }
 
-	inline void
-	erase(iterator begin, iterator end) noexcept
-	{
-		while (begin != end) {
-			ElementType * element = begin.ptr();
-			++begin;
-			erase(element);
-		}
-	}
+  inline iterator
+  insert(ElementType * element)
+  {
+    ++size_;
+    if (size_ > buckets_.size())
+    {
+      rehash();
+    }
+    private_insert_into(buckets_, mask_, element);
 
-	inline size_type
-	size() const noexcept
-	{
-		return size_;
-	}
+    return iterator(this, element);
+  }
 
-	inline bool
-	empty() const noexcept
-	{
-		return size() == 0;
-	}
+  inline void
+  erase(ElementType * element) noexcept
+  {
+    size_t index = hash_(accessor_.get_key(element)) & mask_;
+    bucket_type & b = buckets_[index];
+    ElementType * prev = accessor_.get_prev(element);
+    ElementType * next = accessor_.get_next(element);
+    if (prev)
+    {
+      accessor_.set_next(prev, next);
+    }
+    else
+    {
+      b.first = next;
+    }
+    if (next)
+    {
+      accessor_.set_prev(next, prev);
+    }
+    else
+    {
+      b.last = prev;
+    }
+    --size_;
+  }
 
-	iterator
-	begin() noexcept
-	{
-		return iterator(this, first_object());
-	}
+  inline void
+  erase(iterator i) noexcept
+  {
+    erase(i.ptr());
+  }
 
-	iterator
-	end() noexcept
-	{
-		return iterator(this, nullptr);
-	}
+  inline void
+  erase(const KeyType & key) noexcept
+  {
+    iterator i = find(key);
+    if (i != end())
+    {
+      erase(i);
+    }
+  }
 
-	const_iterator
-	cbegin() const noexcept
-	{
-		return const_iterator(this, first_object());
-	}
+  inline void
+  erase(iterator begin, iterator end) noexcept
+  {
+    while (begin != end)
+    {
+      ElementType * element = begin.ptr();
+      ++begin;
+      erase(element);
+    }
+  }
 
-	const_iterator
-	cend() const noexcept
-	{
-		return const_iterator(this, nullptr);
-	}
+  inline size_type
+  size() const noexcept
+  {
+    return size_;
+  }
 
-	const_iterator
-	begin() const noexcept
-	{
-		return cbegin();
-	}
+  inline bool
+  empty() const noexcept
+  {
+    return size() == 0;
+  }
 
-	const_iterator
-	end() const noexcept
-	{
-		return cend();
-	}
+  iterator
+  begin() noexcept
+  {
+    return iterator(this, first_object());
+  }
 
-	inline iterator
-	find(const KeyType & key) noexcept
-	{
-		return iterator(this, lookup(key));
-	}
+  iterator
+  end() noexcept
+  {
+    return iterator(this, nullptr);
+  }
 
-	inline const_iterator
-	find(const KeyType & key) const noexcept
-	{
-		return const_iterator(this, lookup(key));
-	}
+  const_iterator
+  cbegin() const noexcept
+  {
+    return const_iterator(this, first_object());
+  }
+
+  const_iterator
+  cend() const noexcept
+  {
+    return const_iterator(this, nullptr);
+  }
+
+  const_iterator
+  begin() const noexcept
+  {
+    return cbegin();
+  }
+
+  const_iterator
+  end() const noexcept
+  {
+    return cend();
+  }
+
+  inline iterator
+  find(const KeyType & key) noexcept
+  {
+    return iterator(this, lookup(key));
+  }
+
+  inline const_iterator
+  find(const KeyType & key) const noexcept
+  {
+    return const_iterator(this, lookup(key));
+  }
 
 private:
-	ElementType *
-	first_object() const noexcept
-	{
-		for (const bucket_type & bucket : buckets_) {
-			if (bucket.first) {
-				return bucket.first;
-			}
-		}
-		return nullptr;
-	}
+  ElementType *
+  first_object() const noexcept
+  {
+    for (const bucket_type & bucket : buckets_)
+    {
+      if (bucket.first)
+      {
+        return bucket.first;
+      }
+    }
+    return nullptr;
+  }
 
-	size_t size_;
-	size_t mask_;
-	std::vector<bucket_type> buckets_;
+  size_t size_;
+  size_t mask_;
+  std::vector<bucket_type> buckets_;
 
-	inline void
-	private_insert_into(
-		std::vector<bucket_type> & bucket_types,
-		size_t mask,
-		ElementType * element) noexcept
-	{
-		size_t index = hash_(accessor_.get_key(element)) & mask;
-		accessor_.set_prev(element, bucket_types[index].last);
-		accessor_.set_next(element, nullptr);
-		if (bucket_types[index].last) {
-			accessor_.set_next(bucket_types[index].last, element);
-		} else {
-			bucket_types[index].first = element;
-		}
-		bucket_types[index].last = element;
-	}
+  inline void
+  private_insert_into(
+      std::vector<bucket_type> & bucket_types,
+      size_t mask,
+      ElementType * element) noexcept
+  {
+    size_t index = hash_(accessor_.get_key(element)) & mask;
+    accessor_.set_prev(element, bucket_types[index].last);
+    accessor_.set_next(element, nullptr);
+    if (bucket_types[index].last)
+    {
+      accessor_.set_next(bucket_types[index].last, element);
+    }
+    else
+    {
+      bucket_types[index].first = element;
+    }
+    bucket_types[index].last = element;
+  }
 
-	void
-	rehash()
-	{
-		std::vector<bucket_type> new_buckets(
-			std::max(
-				typename decltype(buckets_)::size_type(1),
-				buckets_.size() * 2),
-			bucket_type());
-		size_t new_mask = new_buckets.size() - 1;
-		
-		for (bucket_type & old_bucket_type : buckets_) {
-			ElementType * element = old_bucket_type.first;
-			while (element) {
-				ElementType * next = accessor_.get_next(element);
-				private_insert_into(new_buckets, new_mask, element);
-				element = next;
-			}
-		}
-		
-		buckets_.swap(new_buckets);
-		mask_ = new_mask;
-	}
-	
-	inline ElementType *
-	lookup(const KeyType & key) const noexcept
-	{
-		if (empty()) {
-			return nullptr;
-		}
+  void
+  rehash()
+  {
+    std::vector<bucket_type> new_buckets(
+        std::max(typename decltype(buckets_)::size_type(1), buckets_.size() * 2),
+        bucket_type());
+    size_t new_mask = new_buckets.size() - 1;
 
-		size_t index = hash_(key) & mask_;
-		ElementType * element = buckets_[index].first;
-		while (element && !equal_(key, accessor_.get_key(element))) {
-			element = accessor_.get_next(element);
-		}
+    for (bucket_type & old_bucket_type : buckets_)
+    {
+      ElementType * element = old_bucket_type.first;
+      while (element)
+      {
+        ElementType * next = accessor_.get_next(element);
+        private_insert_into(new_buckets, new_mask, element);
+        element = next;
+      }
+    }
 
-		return element;
-	}
+    buckets_.swap(new_buckets);
+    mask_ = new_mask;
+  }
 
-	Accessor accessor_;
-	KeyHash hash_;
-	KeyEqual equal_;
+  inline ElementType *
+  lookup(const KeyType & key) const noexcept
+  {
+    if (empty())
+    {
+      return nullptr;
+    }
+
+    size_t index = hash_(key) & mask_;
+    ElementType * element = buckets_[index].first;
+    while (element && !equal_(key, accessor_.get_key(element)))
+    {
+      element = accessor_.get_next(element);
+    }
+
+    return element;
+  }
+
+  Accessor accessor_;
+  KeyHash hash_;
+  KeyEqual equal_;
+};
+
+template<typename ElementType>
+class intrusive_hash_anchor
+{
+public:
+  ElementType * prev;
+  ElementType * next;
 };
 
 template<
-	typename ElementType>
-class intrusive_hash_anchor {
+    typename KeyType,
+    typename ElementType,
+    KeyType ElementType::*key_member,
+    intrusive_hash_anchor<ElementType> ElementType::*anchor_member>
+class intrusive_hash_accessor
+{
 public:
-	ElementType * prev;
-	ElementType * next;
+  inline KeyType
+  get_key(const ElementType * element) const noexcept
+  {
+    return element->*key_member;
+  }
+
+  inline ElementType *
+  get_prev(const ElementType * element) const noexcept
+  {
+    return (element->*anchor_member).prev;
+  }
+
+  inline void
+  set_prev(ElementType * element, ElementType * prev) const noexcept
+  {
+    (element->*anchor_member).prev = prev;
+  }
+
+  inline ElementType *
+  get_next(const ElementType * element) const noexcept
+  {
+    return (element->*anchor_member).next;
+  }
+
+  inline void
+  set_next(ElementType * element, ElementType * next) const noexcept
+  {
+    (element->*anchor_member).next = next;
+  }
 };
 
 template<
-	typename KeyType,
-	typename ElementType,
-	KeyType ElementType::*key_member,
-	intrusive_hash_anchor<ElementType> ElementType::*anchor_member>
-class intrusive_hash_accessor {
-public:
-	inline KeyType
-	get_key(const ElementType * element) const noexcept
-	{
-		return element->*key_member;
-	}
-	inline ElementType *
-	get_prev(const ElementType * element) const noexcept
-	{
-		return (element->*anchor_member).prev;
-	}
-	inline void
-	set_prev(ElementType * element, ElementType * prev) const noexcept
-	{
-		(element->*anchor_member).prev = prev;
-	}
-	inline ElementType *
-	get_next(const ElementType * element) const noexcept
-	{
-		return (element->*anchor_member).next;
-	}
-	inline void
-	set_next(ElementType * element, ElementType * next) const noexcept
-	{
-		(element->*anchor_member).next = next;
-	}
-};
-
-template<
-	typename KeyType,
-	typename ElementType,
-	typename Accessor,
-	typename KeyHash = std::hash<KeyType>,
-	typename KeyEqual = safe_equal<KeyType>>
-class owner_intrusive_hash {
+    typename KeyType,
+    typename ElementType,
+    typename Accessor,
+    typename KeyHash = std::hash<KeyType>,
+    typename KeyEqual = safe_equal<KeyType>>
+class owner_intrusive_hash
+{
 private:
-	typedef intrusive_hash<KeyType, ElementType, Accessor, KeyHash, KeyEqual>
-		internal_hash_type;
+  typedef intrusive_hash<KeyType, ElementType, Accessor, KeyHash, KeyEqual> internal_hash_type;
+
 public:
-	static_assert(
-		noexcept(std::declval<ElementType&>().~ElementType()),
-		"Require noexcept destructor for ElementType");
-	typedef typename internal_hash_type::const_iterator const_iterator;
-	typedef typename internal_hash_type::iterator iterator;
-	typedef typename internal_hash_type::value_type value_type;
-	typedef typename internal_hash_type::mapped_type mapped_type;
-	typedef typename internal_hash_type::key_type key_type;
-	typedef typename internal_hash_type::size_type size_type;
+  static_assert(
+      noexcept(std::declval<ElementType &>().~ElementType()),
+      "Require noexcept destructor for ElementType");
+  typedef typename internal_hash_type::const_iterator const_iterator;
+  typedef typename internal_hash_type::iterator iterator;
+  typedef typename internal_hash_type::value_type value_type;
+  typedef typename internal_hash_type::mapped_type mapped_type;
+  typedef typename internal_hash_type::key_type key_type;
+  typedef typename internal_hash_type::size_type size_type;
 
-	~owner_intrusive_hash() noexcept
-	{
-		clear();
-	}
+  ~owner_intrusive_hash() noexcept
+  {
+    clear();
+  }
 
-	inline constexpr
-	owner_intrusive_hash() noexcept
-	{
-	}
+  inline constexpr owner_intrusive_hash() noexcept
+  {}
 
-	owner_intrusive_hash(const owner_intrusive_hash & other) = delete;
+  owner_intrusive_hash(const owner_intrusive_hash & other) = delete;
 
-	void operator=(const owner_intrusive_hash & other) = delete;
+  void
+  operator=(const owner_intrusive_hash & other) = delete;
 
-	owner_intrusive_hash(owner_intrusive_hash && other) noexcept
-		: internal_hash_(std::move(other.internal_hash_))
-	{
-	}
+  owner_intrusive_hash(owner_intrusive_hash && other) noexcept
+      : internal_hash_(std::move(other.internal_hash_))
+  {}
 
-	void swap(owner_intrusive_hash & other) noexcept
-	{
-		internal_hash_.swap(other.internal_hash_);
-	}
+  void
+  swap(owner_intrusive_hash & other) noexcept
+  {
+    internal_hash_.swap(other.internal_hash_);
+  }
 
-	void
-	clear() noexcept
-	{
-		iterator i = begin();
-		while (i != end()) {
-			iterator j = i;
-			++i;
-			erase(j);
-		}
-	}
+  void
+  clear() noexcept
+  {
+    iterator i = begin();
+    while (i != end())
+    {
+      iterator j = i;
+      ++i;
+      erase(j);
+    }
+  }
 
-	inline iterator
-	insert(std::unique_ptr<ElementType> element)
-	{
-		iterator i = internal_hash_.insert(element.get());
-		element.release();
-		return i;
-	}
+  inline iterator
+  insert(std::unique_ptr<ElementType> element)
+  {
+    iterator i = internal_hash_.insert(element.get());
+    element.release();
+    return i;
+  }
 
-	inline void
-	erase(ElementType * element) noexcept
-	{
-		internal_hash_.erase(element);
-		delete element;
-	}
+  inline void
+  erase(ElementType * element) noexcept
+  {
+    internal_hash_.erase(element);
+    delete element;
+  }
 
-	inline void
-	erase(iterator i) noexcept
-	{
-		erase(i.ptr());
-	}
+  inline void
+  erase(iterator i) noexcept
+  {
+    erase(i.ptr());
+  }
 
-	inline void
-	erase(const KeyType & key) noexcept
-	{
-		iterator i = find(key);
-		if (i != end()) {
-			erase(i);
-		}
-	}
+  inline void
+  erase(const KeyType & key) noexcept
+  {
+    iterator i = find(key);
+    if (i != end())
+    {
+      erase(i);
+    }
+  }
 
-	inline std::unique_ptr<ElementType>
-	unlink(iterator i) noexcept
-	{
-		std::unique_ptr<ElementType> e = i.ptr();
-		internal_hash_.erase(i);
-		return e;
-	}
+  inline std::unique_ptr<ElementType>
+  unlink(iterator i) noexcept
+  {
+    std::unique_ptr<ElementType> e = i.ptr();
+    internal_hash_.erase(i);
+    return e;
+  }
 
-	inline void
-	erase(iterator begin, iterator end) noexcept
-	{
-		internal_hash_.erase(begin, end);
-	}
+  inline void
+  erase(iterator begin, iterator end) noexcept
+  {
+    internal_hash_.erase(begin, end);
+  }
 
-	inline size_type
-	size() const noexcept
-	{
-		return internal_hash_.size();
-	}
+  inline size_type
+  size() const noexcept
+  {
+    return internal_hash_.size();
+  }
 
-	inline bool
-	empty() const noexcept
-	{
-		return internal_hash_.empty();
-	}
+  inline bool
+  empty() const noexcept
+  {
+    return internal_hash_.empty();
+  }
 
-	iterator
-	begin() noexcept
-	{
-		return internal_hash_.begin();
-	}
+  iterator
+  begin() noexcept
+  {
+    return internal_hash_.begin();
+  }
 
-	iterator
-	end() noexcept
-	{
-		return internal_hash_.end();
-	}
+  iterator
+  end() noexcept
+  {
+    return internal_hash_.end();
+  }
 
-	const_iterator
-	cbegin() const noexcept
-	{
-		return internal_hash_.cbegin();
-	}
+  const_iterator
+  cbegin() const noexcept
+  {
+    return internal_hash_.cbegin();
+  }
 
-	const_iterator
-	cend() const noexcept
-	{
-		return internal_hash_.cend();
-	}
+  const_iterator
+  cend() const noexcept
+  {
+    return internal_hash_.cend();
+  }
 
-	const_iterator
-	begin() const noexcept
-	{
-		return internal_hash_.begin();
-	}
+  const_iterator
+  begin() const noexcept
+  {
+    return internal_hash_.begin();
+  }
 
-	const_iterator
-	end() const noexcept
-	{
-		return internal_hash_.end();
-	}
+  const_iterator
+  end() const noexcept
+  {
+    return internal_hash_.end();
+  }
 
-	inline iterator
-	find(const KeyType & key) noexcept
-	{
-		return internal_hash_.find(key);
-	}
+  inline iterator
+  find(const KeyType & key) noexcept
+  {
+    return internal_hash_.find(key);
+  }
 
-	inline const_iterator
-	find(const KeyType & key) const noexcept
-	{
-		return internal_hash_.find(key);
-	}
+  inline const_iterator
+  find(const KeyType & key) const noexcept
+  {
+    return internal_hash_.find(key);
+  }
 
 private:
-	internal_hash_type internal_hash_;
+  internal_hash_type internal_hash_;
 };
 
 }

@@ -16,38 +16,43 @@
 static int
 test()
 {
-	const char * bs = "0100000000" "0000000000" "0000000000" "0000000000" "0000000000" "0000000000" \
-		"00001";
+  const char * bs = "0100000000"
+                    "0000000000"
+                    "0000000000"
+                    "0000000000"
+                    "0000000000"
+                    "0000000000"
+                    "00001";
 
-	using namespace jlm::llvm;
+  using namespace jlm::llvm;
 
-	jlm::rvsdg::bittype bt65(65);
-	FunctionType ft({}, {&bt65});
+  jlm::rvsdg::bittype bt65(65);
+  FunctionType ft({}, { &bt65 });
 
-	jlm::rvsdg::bitvalue_repr vr(bs);
+  jlm::rvsdg::bitvalue_repr vr(bs);
 
-	ipgraph_module im(jlm::util::filepath(""), "", "");
+  ipgraph_module im(jlm::util::filepath(""), "", "");
 
-	auto cfg = cfg::create(im);
-	auto bb = basic_block::create(*cfg);
-	bb->append_last(tac::create(jlm::rvsdg::bitconstant_op(vr), {}));
-	auto c = bb->last()->result(0);
+  auto cfg = cfg::create(im);
+  auto bb = basic_block::create(*cfg);
+  bb->append_last(tac::create(jlm::rvsdg::bitconstant_op(vr), {}));
+  auto c = bb->last()->result(0);
 
-	cfg->exit()->divert_inedges(bb);
-	bb->add_outedge(cfg->exit());
-	cfg->exit()->append_result(c);
+  cfg->exit()->divert_inedges(bb);
+  bb->add_outedge(cfg->exit());
+  cfg->exit()->append_result(c);
 
-	auto f = function_node::create(im.ipgraph(), "f", ft, linkage::external_linkage);
-	f->add_cfg(std::move(cfg));
+  auto f = function_node::create(im.ipgraph(), "f", ft, linkage::external_linkage);
+  f->add_cfg(std::move(cfg));
 
-	print(im, stdout);
+  print(im, stdout);
 
-	llvm::LLVMContext ctx;
-	auto lm = jlm2llvm::convert(im, ctx);
+  llvm::LLVMContext ctx;
+  auto lm = jlm2llvm::convert(im, ctx);
 
-	jlm::tests::print(*lm);
+  jlm::tests::print(*lm);
 
-	return 0;
+  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/backend/llvm/jlm-llvm/test-bitconstant", test)

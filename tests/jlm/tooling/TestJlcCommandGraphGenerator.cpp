@@ -6,8 +6,8 @@
 #include "test-registry.hpp"
 
 #include <jlm/tooling/Command.hpp>
-#include <jlm/tooling/CommandLine.hpp>
 #include <jlm/tooling/CommandGraphGenerator.hpp>
+#include <jlm/tooling/CommandLine.hpp>
 
 #include <cassert>
 
@@ -20,15 +20,8 @@ Test1()
    * Arrange
    */
   JlcCommandLineOptions commandLineOptions;
-  commandLineOptions.Compilations_.push_back({
-                                               {"foo.c"},
-                                               {"foo.d"},
-                                               {"foo.o"},
-                                               "foo.o",
-                                               true,
-                                               true,
-                                               true,
-                                               false});
+  commandLineOptions.Compilations_.push_back(
+      { { "foo.c" }, { "foo.d" }, { "foo.o" }, "foo.o", true, true, true, false });
 
   /*
    * Act
@@ -39,7 +32,7 @@ Test1()
    * Assert
    */
   auto & commandNode = (*commandGraph->GetExitNode().IncomingEdges().begin()).GetSource();
-  auto command = dynamic_cast<const LlcCommand*>(&commandNode.GetCommand());
+  auto command = dynamic_cast<const LlcCommand *>(&commandNode.GetCommand());
   assert(command && command->OutputFile() == "foo.o");
 }
 
@@ -52,16 +45,9 @@ Test2()
    * Arrange
    */
   JlcCommandLineOptions commandLineOptions;
-  commandLineOptions.Compilations_.push_back({
-                                               {"foo.o"},
-                                               {""},
-                                               {"foo.o"},
-                                               "foo.o",
-                                               false,
-                                               false,
-                                               false,
-                                               true});
-  commandLineOptions.OutputFile_ = {"foobar"};
+  commandLineOptions.Compilations_.push_back(
+      { { "foo.o" }, { "" }, { "foo.o" }, "foo.o", false, false, false, true });
+  commandLineOptions.OutputFile_ = { "foobar" };
 
   /*
    * Act
@@ -74,7 +60,7 @@ Test2()
   assert(commandGraph->NumNodes() == 3);
 
   auto & commandNode = (*commandGraph->GetExitNode().IncomingEdges().begin()).GetSource();
-  auto command = dynamic_cast<const ClangCommand*>(&commandNode.GetCommand());
+  auto command = dynamic_cast<const ClangCommand *>(&commandNode.GetCommand());
   assert(command->InputFiles()[0] == "foo.o" && command->OutputFile() == "foobar");
 }
 
@@ -87,18 +73,13 @@ TestJlmOptOptimizations()
    * Arrange
    */
   JlcCommandLineOptions commandLineOptions;
-  commandLineOptions.Compilations_.push_back({
-                                               {"foo.o"},
-                                               {""},
-                                               {"foo.o"},
-                                               "foo.o",
-                                               true,
-                                               true,
-                                               true,
-                                               true});
-  commandLineOptions.OutputFile_ = {"foobar"};
-  commandLineOptions.JlmOptOptimizations_.push_back(JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination);
-  commandLineOptions.JlmOptOptimizations_.push_back(JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination);
+  commandLineOptions.Compilations_.push_back(
+      { { "foo.o" }, { "" }, { "foo.o" }, "foo.o", true, true, true, true });
+  commandLineOptions.OutputFile_ = { "foobar" };
+  commandLineOptions.JlmOptOptimizations_.push_back(
+      JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination);
+  commandLineOptions.JlmOptOptimizations_.push_back(
+      JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination);
 
   /*
    * Act
@@ -110,7 +91,7 @@ TestJlmOptOptimizations()
    */
   auto & clangCommandNode = (*commandGraph->GetEntryNode().OutgoingEdges().begin()).GetSink();
   auto & jlmOptCommandNode = (clangCommandNode.OutgoingEdges().begin())->GetSink();
-  auto & jlmOptCommand = *dynamic_cast<const JlmOptCommand*>(&jlmOptCommandNode.GetCommand());
+  auto & jlmOptCommand = *dynamic_cast<const JlmOptCommand *>(&jlmOptCommandNode.GetCommand());
   auto & optimizations = jlmOptCommand.GetCommandLineOptions().GetOptimizationIds();
 
   assert(optimizations.size() == 2);
@@ -125,22 +106,12 @@ TestJlmOptStatistics()
 
   // Arrange
   HashSet<Statistics::Id> expectedStatistics(
-    {
-      Statistics::Id::Aggregation,
-      Statistics::Id::SteensgaardAnalysis
-    });
+      { Statistics::Id::Aggregation, Statistics::Id::SteensgaardAnalysis });
 
   jlm::tooling::JlcCommandLineOptions commandLineOptions;
-  commandLineOptions.Compilations_.push_back({
-                                               {"foo.o"},
-                                               {""},
-                                               {"foo.o"},
-                                               "foo.o",
-                                               true,
-                                               true,
-                                               true,
-                                               true});
-  commandLineOptions.OutputFile_ = {"foobar"};
+  commandLineOptions.Compilations_.push_back(
+      { { "foo.o" }, { "" }, { "foo.o" }, "foo.o", true, true, true, true });
+  commandLineOptions.OutputFile_ = { "foobar" };
   commandLineOptions.JlmOptPassStatistics_ = expectedStatistics;
 
   // Act
@@ -149,8 +120,10 @@ TestJlmOptStatistics()
   // Assert
   auto & clangCommandNode = (*commandGraph->GetEntryNode().OutgoingEdges().begin()).GetSink();
   auto & jlmOptCommandNode = (clangCommandNode.OutgoingEdges().begin())->GetSink();
-  auto & jlmOptCommand = *dynamic_cast<const jlm::tooling::JlmOptCommand*>(&jlmOptCommandNode.GetCommand());
-  auto & statisticsCollectorSettings = jlmOptCommand.GetCommandLineOptions().GetStatisticsCollectorSettings();
+  auto & jlmOptCommand =
+      *dynamic_cast<const jlm::tooling::JlmOptCommand *>(&jlmOptCommandNode.GetCommand());
+  auto & statisticsCollectorSettings =
+      jlmOptCommand.GetCommandLineOptions().GetStatisticsCollectorSettings();
 
   assert(statisticsCollectorSettings.GetDemandedStatistics() == expectedStatistics);
 }

@@ -12,35 +12,35 @@
 namespace jlm::llvm::aa
 {
 
-SteensgaardAgnostic::~SteensgaardAgnostic() noexcept
-= default;
+SteensgaardAgnostic::~SteensgaardAgnostic() noexcept = default;
 
 void
 SteensgaardAgnostic::run(
-  RvsdgModule & rvsdgModule,
-  jlm::util::StatisticsCollector & statisticsCollector)
+    RvsdgModule & rvsdgModule,
+    jlm::util::StatisticsCollector & statisticsCollector)
 {
   Steensgaard steensgaard;
   auto pointsToGraph = steensgaard.Analyze(rvsdgModule, statisticsCollector);
 
-  auto provisioning = AgnosticMemoryNodeProvider::Create(rvsdgModule, *pointsToGraph, statisticsCollector);
+  auto provisioning =
+      AgnosticMemoryNodeProvider::Create(rvsdgModule, *pointsToGraph, statisticsCollector);
 
   MemoryStateEncoder encoder;
   encoder.Encode(rvsdgModule, *provisioning, statisticsCollector);
 }
 
-SteensgaardRegionAware::~SteensgaardRegionAware() noexcept
-= default;
+SteensgaardRegionAware::~SteensgaardRegionAware() noexcept = default;
 
 void
 SteensgaardRegionAware::run(
-  RvsdgModule & rvsdgModule,
-  util::StatisticsCollector & statisticsCollector)
+    RvsdgModule & rvsdgModule,
+    util::StatisticsCollector & statisticsCollector)
 {
   Steensgaard steensgaard;
   auto pointsToGraph = steensgaard.Analyze(rvsdgModule, statisticsCollector);
 
-  auto provisioning = RegionAwareMemoryNodeProvider::Create(rvsdgModule, *pointsToGraph, statisticsCollector);
+  auto provisioning =
+      RegionAwareMemoryNodeProvider::Create(rvsdgModule, *pointsToGraph, statisticsCollector);
 
   MemoryStateEncoder encoder;
   encoder.Encode(rvsdgModule, *provisioning, statisticsCollector);

@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-registry.hpp"
 #include "test-operation.hpp"
+#include "test-registry.hpp"
 #include "test-types.hpp"
 
 #include <jlm/rvsdg/view.hpp>
@@ -17,56 +17,38 @@
 static int
 test()
 {
-	using namespace jlm::llvm;
+  using namespace jlm::llvm;
 
-	jlm::tests::valuetype vt;
-	ipgraph_module im(jlm::util::filepath(""), "", "");
+  jlm::tests::valuetype vt;
+  ipgraph_module im(jlm::util::filepath(""), "", "");
 
-	auto d0 = data_node::Create(
-    im.ipgraph(),
-    "d0",
-    vt,
-    linkage::external_linkage,
-    "",
-    false);
+  auto d0 = data_node::Create(im.ipgraph(), "d0", vt, linkage::external_linkage, "", false);
 
-	auto d1 = data_node::Create(
-    im.ipgraph(),
-    "d1",
-    vt,
-    linkage::external_linkage,
-    "",
-    false);
-	auto d2 = data_node::Create(
-    im.ipgraph(),
-    "d2",
-    vt,
-    linkage::external_linkage,
-    "",
-    false);
+  auto d1 = data_node::Create(im.ipgraph(), "d1", vt, linkage::external_linkage, "", false);
+  auto d2 = data_node::Create(im.ipgraph(), "d2", vt, linkage::external_linkage, "", false);
 
-	auto v0 = im.create_global_value(d0);
-	auto v1 = im.create_global_value(d1);
-	auto v2 = im.create_global_value(d2);
+  auto v0 = im.create_global_value(d0);
+  auto v1 = im.create_global_value(d1);
+  auto v2 = im.create_global_value(d2);
 
-	d1->add_dependency(d0);
-	d1->add_dependency(d2);
-	d2->add_dependency(d0);
-	d2->add_dependency(d1);
+  d1->add_dependency(d0);
+  d1->add_dependency(d2);
+  d2->add_dependency(d0);
+  d2->add_dependency(d1);
 
-	tacsvector_t tvec1, tvec2;
-	tvec1.push_back(jlm::tests::create_testop_tac({v0, v2}, {&vt}));
-	tvec2.push_back(jlm::tests::create_testop_tac({v0, v1}, {&vt}));
+  tacsvector_t tvec1, tvec2;
+  tvec1.push_back(jlm::tests::create_testop_tac({ v0, v2 }, { &vt }));
+  tvec2.push_back(jlm::tests::create_testop_tac({ v0, v1 }, { &vt }));
 
-	d1->set_initialization(std::make_unique<data_node_init>(std::move(tvec1)));
-	d2->set_initialization(std::make_unique<data_node_init>(std::move(tvec2)));
+  d1->set_initialization(std::make_unique<data_node_init>(std::move(tvec1)));
+  d2->set_initialization(std::make_unique<data_node_init>(std::move(tvec2)));
 
-	jlm::util::StatisticsCollector statisticsCollector;
-	auto rvsdgModule = ConvertInterProceduralGraphModule(im, statisticsCollector);
+  jlm::util::StatisticsCollector statisticsCollector;
+  auto rvsdgModule = ConvertInterProceduralGraphModule(im, statisticsCollector);
 
-	jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
+  jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
 
-	return 0;
+  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/test-recursive-data", test)

@@ -4,33 +4,37 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-registry.hpp"
 #include "test-operation.hpp"
+#include "test-registry.hpp"
 #include "test-types.hpp"
 
 #include <assert.h>
 
-static int test_main(void)
+static int
+test_main(void)
 {
-	using namespace jlm::rvsdg;
+  using namespace jlm::rvsdg;
 
-	jlm::rvsdg::graph graph;
-	
-	jlm::tests::statetype type;
-	jlm::tests::valuetype value_type;
+  jlm::rvsdg::graph graph;
 
-	auto n1 = jlm::tests::test_op::create(graph.root(), {}, {&type});
+  jlm::tests::statetype type;
+  jlm::tests::valuetype value_type;
 
-	bool error_handler_called = false;
-	try {
-		jlm::tests::test_op::Create(graph.root(), {&value_type}, {n1->output(0)}, {});
-	} catch (jlm::util::type_error & e) {
-		error_handler_called = true;
-	}
-	
-	assert(error_handler_called);
+  auto n1 = jlm::tests::test_op::create(graph.root(), {}, { &type });
 
-	return 0;
+  bool error_handler_called = false;
+  try
+  {
+    jlm::tests::test_op::Create(graph.root(), { &value_type }, { n1->output(0) }, {});
+  }
+  catch (jlm::util::type_error & e)
+  {
+    error_handler_called = true;
+  }
+
+  assert(error_handler_called);
+
+  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-typemismatch", test_main)

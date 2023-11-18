@@ -12,7 +12,8 @@
 #include <memory>
 #include <unordered_map>
 
-namespace llvm {
+namespace llvm
+{
 
 class BasicBlock;
 class Module;
@@ -28,108 +29,108 @@ class cfg_node;
 class ipgraph_module;
 class variable;
 
-namespace jlm2llvm {
+namespace jlm2llvm
+{
 
-class context final {
-	typedef std::unordered_map<const cfg_node*, ::llvm::BasicBlock*>::const_iterator const_iterator;
+class context final
+{
+  typedef std::unordered_map<const cfg_node *, ::llvm::BasicBlock *>::const_iterator const_iterator;
 
 public:
-	inline
-	context(ipgraph_module & im, ::llvm::Module & lm)
-	: lm_(lm)
-	, im_(im)
-	{}
+  inline context(ipgraph_module & im, ::llvm::Module & lm)
+      : lm_(lm),
+        im_(im)
+  {}
 
-	context(const context&) = delete;
+  context(const context &) = delete;
 
-	context(context&&) = delete;
+  context(context &&) = delete;
 
-	context &
-	operator=(const context&) = delete;
+  context &
+  operator=(const context &) = delete;
 
-	context &
-	operator=(context&&) = delete;
+  context &
+  operator=(context &&) = delete;
 
-	/*
-		FIXME: It should be a const reference, but we still have to create variables to translate
-		       expressions.
-	*/
-	llvm::ipgraph_module &
-	module() const noexcept
-	{
-		return im_;
-	}
+  /*
+    FIXME: It should be a const reference, but we still have to create variables to translate
+           expressions.
+  */
+  llvm::ipgraph_module &
+  module() const noexcept
+  {
+    return im_;
+  }
 
-	inline ::llvm::Module &
-	llvm_module() const noexcept
-	{
-		return lm_;
-	}
+  inline ::llvm::Module &
+  llvm_module() const noexcept
+  {
+    return lm_;
+  }
 
-	inline const_iterator
-	begin() const
-	{
-		return nodes_.begin();
-	}
+  inline const_iterator
+  begin() const
+  {
+    return nodes_.begin();
+  }
 
-	inline const_iterator
-	end() const
-	{
-		return nodes_.end();
-	}
+  inline const_iterator
+  end() const
+  {
+    return nodes_.end();
+  }
 
-	inline void
-	insert(const llvm::cfg_node * node, ::llvm::BasicBlock * bb)
-	{
-		nodes_[node] = bb;
-	}
+  inline void
+  insert(const llvm::cfg_node * node, ::llvm::BasicBlock * bb)
+  {
+    nodes_[node] = bb;
+  }
 
-	inline void
-	insert(const llvm::variable * variable, ::llvm::Value * value)
-	{
-		variables_[variable] = value;
-	}
+  inline void
+  insert(const llvm::variable * variable, ::llvm::Value * value)
+  {
+    variables_[variable] = value;
+  }
 
-	inline ::llvm::BasicBlock *
-	basic_block(const llvm::cfg_node * node) const noexcept
-	{
-		auto it = nodes_.find(node);
-		JLM_ASSERT(it != nodes_.end());
-		return it->second;
-	}
+  inline ::llvm::BasicBlock *
+  basic_block(const llvm::cfg_node * node) const noexcept
+  {
+    auto it = nodes_.find(node);
+    JLM_ASSERT(it != nodes_.end());
+    return it->second;
+  }
 
-	inline ::llvm::Value *
-	value(const llvm::variable * variable) const noexcept
-	{
-		auto it = variables_.find(variable);
-		JLM_ASSERT(it != variables_.end());
-		return it->second;
-	}
+  inline ::llvm::Value *
+  value(const llvm::variable * variable) const noexcept
+  {
+    auto it = variables_.find(variable);
+    JLM_ASSERT(it != variables_.end());
+    return it->second;
+  }
 
-	inline ::llvm::StructType *
-	structtype(const rvsdg::rcddeclaration * dcl)
-	{
-		auto it = structtypes_.find(dcl);
-		return it != structtypes_.end() ? it->second : nullptr;
-	}
+  inline ::llvm::StructType *
+  structtype(const rvsdg::rcddeclaration * dcl)
+  {
+    auto it = structtypes_.find(dcl);
+    return it != structtypes_.end() ? it->second : nullptr;
+  }
 
-	inline void
-	add_structtype(
-		const rvsdg::rcddeclaration * dcl,
-		::llvm::StructType * type)
-	{
-		JLM_ASSERT(structtypes_.find(dcl) == structtypes_.end());
-		structtypes_[dcl] = type;
-	}
+  inline void
+  add_structtype(const rvsdg::rcddeclaration * dcl, ::llvm::StructType * type)
+  {
+    JLM_ASSERT(structtypes_.find(dcl) == structtypes_.end());
+    structtypes_[dcl] = type;
+  }
 
 private:
-	::llvm::Module & lm_;
-	ipgraph_module & im_;
-	std::unordered_map<const llvm::variable*, ::llvm::Value*> variables_;
-	std::unordered_map<const llvm::cfg_node*, ::llvm::BasicBlock*> nodes_;
-	std::unordered_map<const rvsdg::rcddeclaration*, ::llvm::StructType*> structtypes_;
+  ::llvm::Module & lm_;
+  ipgraph_module & im_;
+  std::unordered_map<const llvm::variable *, ::llvm::Value *> variables_;
+  std::unordered_map<const llvm::cfg_node *, ::llvm::BasicBlock *> nodes_;
+  std::unordered_map<const rvsdg::rcddeclaration *, ::llvm::StructType *> structtypes_;
 };
 
-}}
+}
+}
 
 #endif

@@ -7,36 +7,36 @@
 #include <test-registry.hpp>
 #include <test-types.hpp>
 
-#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
 
 #include <jlm/rvsdg/view.hpp>
 
 static void
 TestCallTypeClassifierIndirectCall()
 {
-	using namespace jlm::llvm;
+  using namespace jlm::llvm;
 
   /*
    * Arrange
    */
-	jlm::tests::valuetype vt;
+  jlm::tests::valuetype vt;
   iostatetype iOStateType;
   MemoryStateType memoryStateType;
   loopstatetype loopStateType;
-	FunctionType fcttype1(
-    {&iOStateType, &memoryStateType, &loopStateType},
-    {&vt, &iOStateType, &memoryStateType, &loopStateType});
-	PointerType pt;
-	FunctionType fcttype2(
-    {&pt, &iOStateType, &memoryStateType, &loopStateType},
-    {&vt, &iOStateType, &memoryStateType, &loopStateType});
+  FunctionType fcttype1(
+      { &iOStateType, &memoryStateType, &loopStateType },
+      { &vt, &iOStateType, &memoryStateType, &loopStateType });
+  PointerType pt;
+  FunctionType fcttype2(
+      { &pt, &iOStateType, &memoryStateType, &loopStateType },
+      { &vt, &iOStateType, &memoryStateType, &loopStateType });
 
-	auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
-	auto graph = &module->Rvsdg();
+  auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto graph = &module->Rvsdg();
 
-	auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
-	nf->set_mutable(false);
+  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  nf->set_mutable(false);
 
   auto SetupFunction = [&]()
   {
@@ -49,22 +49,22 @@ TestCallTypeClassifierIndirectCall()
 
     auto alloca = alloca_op::create(pt, one, 8);
 
-    auto store = StoreNode::Create(alloca[0], lambda->fctargument(0), {alloca[1]}, 8);
+    auto store = StoreNode::Create(alloca[0], lambda->fctargument(0), { alloca[1] }, 8);
 
     auto load = LoadNode::Create(alloca[0], store, pt, 8);
 
     auto callResults = CallNode::Create(
-      load[0],
-      fcttype1,
-      {iOStateArgument, memoryStateArgument, loopStateArgument});
+        load[0],
+        fcttype1,
+        { iOStateArgument, memoryStateArgument, loopStateArgument });
 
     lambda->finalize(callResults);
 
-    graph->add_export(lambda->output(), {pt, "f"});
+    graph->add_export(lambda->output(), { pt, "f" });
 
     return std::make_tuple(
-      jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callResults[0])),
-      load[0]);
+        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callResults[0])),
+        load[0]);
   };
 
   auto [callNode, loadOutput] = SetupFunction();
@@ -78,7 +78,7 @@ TestCallTypeClassifierIndirectCall()
    * Assert
    */
   assert(callTypeClassifier->IsIndirectCall());
-	assert(loadOutput == &callTypeClassifier->GetFunctionOrigin());
+  assert(loadOutput == &callTypeClassifier->GetFunctionOrigin());
 }
 
 static void
@@ -87,13 +87,13 @@ TestCallTypeClassifierNonRecursiveDirectCall()
   /*
    * Arrange
    */
-	using namespace jlm::llvm;
+  using namespace jlm::llvm;
 
-	auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
-	auto graph = &module->Rvsdg();
+  auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto graph = &module->Rvsdg();
 
-	auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
-	nf->set_mutable(false);
+  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  nf->set_mutable(false);
 
   jlm::tests::valuetype vt;
   iostatetype iOStateType;
@@ -101,24 +101,21 @@ TestCallTypeClassifierNonRecursiveDirectCall()
   loopstatetype loopStateType;
 
   FunctionType functionTypeG(
-    {&iOStateType, &memoryStateType, &loopStateType},
-    {&vt, &iOStateType, &memoryStateType, &loopStateType});
+      { &iOStateType, &memoryStateType, &loopStateType },
+      { &vt, &iOStateType, &memoryStateType, &loopStateType });
 
   auto SetupFunctionG = [&]()
   {
-    auto lambda = lambda::node::create(
-      graph->root(),
-      functionTypeG,
-      "g",
-      linkage::external_linkage);
+    auto lambda =
+        lambda::node::create(graph->root(), functionTypeG, "g", linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
     auto loopStateArgument = lambda->fctargument(2);
 
-    auto constant = jlm::tests::test_op::create(lambda->subregion(), {}, {&vt});
+    auto constant = jlm::tests::test_op::create(lambda->subregion(), {}, { &vt });
 
     auto lambdaOutput = lambda->finalize(
-      {constant->output(0), iOStateArgument, memoryStateArgument, loopStateArgument});
+        { constant->output(0), iOStateArgument, memoryStateArgument, loopStateArgument });
 
     return lambdaOutput;
   };
@@ -136,7 +133,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
       auto predicate = jlm::rvsdg::control_false(innerTheta->subregion());
       auto gamma = jlm::rvsdg::gamma_node::create(predicate, 2);
       auto ev = gamma->add_entryvar(itf->argument());
-      auto xv = gamma->add_exitvar({ev->argument(0), ev->argument(1)});
+      auto xv = gamma->add_exitvar({ ev->argument(0), ev->argument(1) });
 
       itf->result()->divert_to(xv);
       otf->result()->divert_to(itf);
@@ -150,14 +147,10 @@ TestCallTypeClassifierNonRecursiveDirectCall()
     loopstatetype loopStateType;
 
     FunctionType functionType(
-      {&iOStateType, &memoryStateType, &loopStateType},
-      {&vt, &iOStateType, &memoryStateType, &loopStateType});
+        { &iOStateType, &memoryStateType, &loopStateType },
+        { &vt, &iOStateType, &memoryStateType, &loopStateType });
 
-    auto lambda = lambda::node::create(
-      graph->root(),
-      functionType,
-      "f",
-      linkage::external_linkage);
+    auto lambda = lambda::node::create(graph->root(), functionType, "f", linkage::external_linkage);
     auto functionGArgument = lambda->add_ctxvar(g);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
@@ -166,45 +159,45 @@ TestCallTypeClassifierNonRecursiveDirectCall()
     auto functionG = SetupOuterTheta(lambda->subregion(), functionGArgument);
 
     auto callResults = CallNode::Create(
-      functionG,
-      functionTypeG,
-      {iOStateArgument, memoryStateArgument, loopStateArgument});
+        functionG,
+        functionTypeG,
+        { iOStateArgument, memoryStateArgument, loopStateArgument });
 
     lambda->finalize(callResults);
 
     return std::make_tuple(
-      lambda,
-      jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callResults[0])));
+        lambda,
+        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callResults[0])));
   };
 
   auto g = SetupFunctionG();
   auto [f, callNode] = SetupFunctionF(g);
 
-	graph->add_export(f->output(), {PointerType(), "f"});
+  graph->add_export(f->output(), { PointerType(), "f" });
 
-//	jlm::rvsdg::view(graph->root(), stdout);
+  //	jlm::rvsdg::view(graph->root(), stdout);
 
-	// Act
+  // Act
   auto callTypeClassifier = CallNode::ClassifyCall(*callNode);
 
-	// Assert
+  // Assert
   assert(callTypeClassifier->IsNonRecursiveDirectCall());
-	assert(&callTypeClassifier->GetLambdaOutput() == g);
+  assert(&callTypeClassifier->GetLambdaOutput() == g);
 }
 
 static void
 TestCallTypeClassifierNonRecursiveDirectCallTheta()
 {
-	using namespace jlm::llvm;
+  using namespace jlm::llvm;
 
-	/*
-	 * Arrange
-	 */
-	auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
-	auto graph = &module->Rvsdg();
+  /*
+   * Arrange
+   */
+  auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto graph = &module->Rvsdg();
 
-	auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
-	nf->set_mutable(false);
+  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  nf->set_mutable(false);
 
   jlm::tests::valuetype vt;
   iostatetype iOStateType;
@@ -212,39 +205,35 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
   loopstatetype loopStateType;
 
   FunctionType functionTypeG(
-    {&iOStateType, &memoryStateType, &loopStateType},
-    {&vt, &iOStateType, &memoryStateType, &loopStateType});
+      { &iOStateType, &memoryStateType, &loopStateType },
+      { &vt, &iOStateType, &memoryStateType, &loopStateType });
 
   auto SetupFunctionG = [&]()
   {
-    auto lambda = lambda::node::create(
-      graph->root(),
-      functionTypeG,
-      "g",
-      linkage::external_linkage);
+    auto lambda =
+        lambda::node::create(graph->root(), functionTypeG, "g", linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
     auto loopStateArgument = lambda->fctargument(2);
 
-    auto c1 = jlm::tests::test_op::create(lambda->subregion(), {}, {&vt});
+    auto c1 = jlm::tests::test_op::create(lambda->subregion(), {}, { &vt });
 
-    return lambda->finalize({c1->output(0), iOStateArgument, memoryStateArgument, loopStateArgument});
+    return lambda->finalize(
+        { c1->output(0), iOStateArgument, memoryStateArgument, loopStateArgument });
   };
 
   auto SetupFunctionF = [&](lambda::output * g)
   {
-    auto SetupOuterTheta = [&](
-      jlm::rvsdg::region * region,
-      jlm::rvsdg::argument * g,
-      jlm::rvsdg::output * value,
-      jlm::rvsdg::output * iOState,
-      jlm::rvsdg::output * memoryState,
-      jlm::rvsdg::output * loopState)
+    auto SetupOuterTheta = [&](jlm::rvsdg::region * region,
+                               jlm::rvsdg::argument * g,
+                               jlm::rvsdg::output * value,
+                               jlm::rvsdg::output * iOState,
+                               jlm::rvsdg::output * memoryState,
+                               jlm::rvsdg::output * loopState)
     {
-      auto SetupInnerTheta = [&](
-        jlm::rvsdg::region * region,
-        jlm::rvsdg::argument * g,
-        jlm::rvsdg::argument * loopState)
+      auto SetupInnerTheta = [&](jlm::rvsdg::region * region,
+                                 jlm::rvsdg::argument * g,
+                                 jlm::rvsdg::argument * loopState)
       {
         auto innerTheta = jlm::rvsdg::theta_node::create(region);
         auto thetaOutputG = innerTheta->add_loopvar(g);
@@ -261,14 +250,14 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
       auto thetaOutputLoopState = outerTheta->add_loopvar(loopState);
 
       auto [functionG, innerLoopState] = SetupInnerTheta(
-        outerTheta->subregion(),
-        thetaOutputG->argument(),
-        thetaOutputLoopState->argument());
+          outerTheta->subregion(),
+          thetaOutputG->argument(),
+          thetaOutputLoopState->argument());
 
       auto callResults = CallNode::Create(
-        functionG,
-        functionTypeG,
-        {thetaOutputIoState->argument(), thetaOutputMemoryState->argument(), innerLoopState});
+          functionG,
+          functionTypeG,
+          { thetaOutputIoState->argument(), thetaOutputMemoryState->argument(), innerLoopState });
 
       thetaOutputG->result()->divert_to(functionG);
       thetaOutputValue->result()->divert_to(callResults[0]);
@@ -277,11 +266,11 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
       thetaOutputLoopState->result()->divert_to(callResults[3]);
 
       return std::make_tuple(
-        thetaOutputValue,
-        thetaOutputIoState,
-        thetaOutputMemoryState,
-        thetaOutputLoopState,
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callResults[0])));
+          thetaOutputValue,
+          thetaOutputIoState,
+          thetaOutputMemoryState,
+          thetaOutputLoopState,
+          jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callResults[0])));
     };
 
     jlm::tests::valuetype vt;
@@ -290,48 +279,44 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
     loopstatetype loopStateType;
 
     FunctionType functionType(
-      {&iOStateType, &memoryStateType, &loopStateType},
-      {&vt, &iOStateType, &memoryStateType, &loopStateType});
+        { &iOStateType, &memoryStateType, &loopStateType },
+        { &vt, &iOStateType, &memoryStateType, &loopStateType });
 
-    auto lambda = lambda::node::create(
-      graph->root(),
-      functionType,
-      "f",
-      linkage::external_linkage);
+    auto lambda = lambda::node::create(graph->root(), functionType, "f", linkage::external_linkage);
     auto functionG = lambda->add_ctxvar(g);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
     auto loopStateArgument = lambda->fctargument(2);
 
-    auto value = jlm::tests::test_op::create(lambda->subregion(), {}, {&vt})->output(0);
+    auto value = jlm::tests::test_op::create(lambda->subregion(), {}, { &vt })->output(0);
 
     auto [loopValue, iOState, memoryState, loopState, callNode] = SetupOuterTheta(
-      lambda->subregion(),
-      functionG,
-      value,
-      iOStateArgument,
-      memoryStateArgument,
-      loopStateArgument);
+        lambda->subregion(),
+        functionG,
+        value,
+        iOStateArgument,
+        memoryStateArgument,
+        loopStateArgument);
 
-    auto lambdaOutput = lambda->finalize({loopValue, iOState, memoryState, loopState});
+    auto lambdaOutput = lambda->finalize({ loopValue, iOState, memoryState, loopState });
 
     return std::make_tuple(lambdaOutput, callNode);
   };
 
   auto g = SetupFunctionG();
   auto [f, callNode] = SetupFunctionF(g);
-	graph->add_export(f, {PointerType(), "f"});
+  graph->add_export(f, { PointerType(), "f" });
 
-	jlm::rvsdg::view(graph->root(), stdout);
+  jlm::rvsdg::view(graph->root(), stdout);
 
-	/*
-	 * Act
-	 */
+  /*
+   * Act
+   */
   auto callTypeClassifier = CallNode::ClassifyCall(*callNode);
 
-	/*
-	 * Assert
-	 */
+  /*
+   * Assert
+   */
   assert(callTypeClassifier->IsNonRecursiveDirectCall());
   assert(&callTypeClassifier->GetLambdaOutput() == g);
 }
@@ -357,19 +342,16 @@ TestCallTypeClassifierRecursiveDirectCall()
     MemoryStateType memoryStateType;
     loopstatetype loopStateType;
     FunctionType functionType(
-      {&jlm::rvsdg::bit64, &pbit64, &iOStateType, &memoryStateType, &loopStateType},
-      {&iOStateType, &memoryStateType, &loopStateType});
+        { &jlm::rvsdg::bit64, &pbit64, &iOStateType, &memoryStateType, &loopStateType },
+        { &iOStateType, &memoryStateType, &loopStateType });
     PointerType pt;
 
     jlm::llvm::phi::builder pb;
     pb.begin(graph->root());
     auto fibrv = pb.add_recvar(pt);
 
-    auto lambda = lambda::node::create(
-      pb.subregion(),
-      functionType,
-      "fib",
-      linkage::external_linkage);
+    auto lambda =
+        lambda::node::create(pb.subregion(), functionType, "fib", linkage::external_linkage);
     auto valueArgument = lambda->fctargument(0);
     auto pointerArgument = lambda->fctargument(1);
     auto iOStateArgument = lambda->fctargument(2);
@@ -379,7 +361,7 @@ TestCallTypeClassifierRecursiveDirectCall()
 
     auto two = jlm::rvsdg::create_bitconstant(lambda->subregion(), 64, 2);
     auto bitult = jlm::rvsdg::bitult_op::create(64, valueArgument, two);
-    auto predicate = jlm::rvsdg::match(1, {{0, 1}}, 0, 2, bitult);
+    auto predicate = jlm::rvsdg::match(1, { { 0, 1 } }, 0, 2, bitult);
 
     auto gammaNode = jlm::rvsdg::gamma_node::create(predicate, 2);
     auto nev = gammaNode->add_entryvar(valueArgument);
@@ -393,59 +375,61 @@ TestCallTypeClassifierRecursiveDirectCall()
     auto one = jlm::rvsdg::create_bitconstant(gammaNode->subregion(0), 64, 1);
     auto nm1 = jlm::rvsdg::bitsub_op::create(64, nev->argument(0), one);
     auto callfibm1Results = CallNode::Create(
-      fibev->argument(0),
-      functionType,
-      {nm1, resultev->argument(0), gIIoState->argument(0), gIMemoryState->argument(0), gILoopState->argument(0)});
+        fibev->argument(0),
+        functionType,
+        { nm1,
+          resultev->argument(0),
+          gIIoState->argument(0),
+          gIMemoryState->argument(0),
+          gILoopState->argument(0) });
 
     two = jlm::rvsdg::create_bitconstant(gammaNode->subregion(0), 64, 2);
     auto nm2 = jlm::rvsdg::bitsub_op::create(64, nev->argument(0), two);
     auto callfibm2Results = CallNode::Create(
-      fibev->argument(0),
-      functionType,
-      {nm2, resultev->argument(0), callfibm1Results[0], callfibm1Results[1], callfibm1Results[2]});
+        fibev->argument(0),
+        functionType,
+        { nm2,
+          resultev->argument(0),
+          callfibm1Results[0],
+          callfibm1Results[1],
+          callfibm1Results[2] });
 
-    auto gepnm1 = GetElementPtrOperation::Create(
-      resultev->argument(0),
-      {nm1},
-      jlm::rvsdg::bit64,
-      pbit64);
-    auto ldnm1 = LoadNode::Create(gepnm1, {callfibm2Results[1]}, jlm::rvsdg::bit64, 8);
+    auto gepnm1 =
+        GetElementPtrOperation::Create(resultev->argument(0), { nm1 }, jlm::rvsdg::bit64, pbit64);
+    auto ldnm1 = LoadNode::Create(gepnm1, { callfibm2Results[1] }, jlm::rvsdg::bit64, 8);
 
-    auto gepnm2 = GetElementPtrOperation::Create(
-      resultev->argument(0),
-      {nm2},
-      jlm::rvsdg::bit64,
-      pbit64);
-    auto ldnm2 = LoadNode::Create(gepnm2, {ldnm1[1]}, jlm::rvsdg::bit64, 8);
+    auto gepnm2 =
+        GetElementPtrOperation::Create(resultev->argument(0), { nm2 }, jlm::rvsdg::bit64, pbit64);
+    auto ldnm2 = LoadNode::Create(gepnm2, { ldnm1[1] }, jlm::rvsdg::bit64, 8);
 
     auto sum = jlm::rvsdg::bitadd_op::create(64, ldnm1[0], ldnm2[0]);
 
     /* gamma subregion 1 */
     /* Nothing needs to be done */
 
-    auto sumex = gammaNode->add_exitvar({sum, nev->argument(1)});
-    auto gOIoState = gammaNode->add_exitvar({callfibm2Results[0], gIIoState->argument(1)});
-    auto gOMemoryState = gammaNode->add_exitvar({ldnm2[1], gIMemoryState->argument(1)});
-    auto gOLoopState = gammaNode->add_exitvar({callfibm2Results[2], gILoopState->argument(1)});
+    auto sumex = gammaNode->add_exitvar({ sum, nev->argument(1) });
+    auto gOIoState = gammaNode->add_exitvar({ callfibm2Results[0], gIIoState->argument(1) });
+    auto gOMemoryState = gammaNode->add_exitvar({ ldnm2[1], gIMemoryState->argument(1) });
+    auto gOLoopState = gammaNode->add_exitvar({ callfibm2Results[2], gILoopState->argument(1) });
 
     auto gepn = GetElementPtrOperation::Create(
-      pointerArgument,
-      {valueArgument},
-      jlm::rvsdg::bit64,
-      pbit64);
-    auto store = StoreNode::Create(gepn, sumex, {gOMemoryState}, 8);
+        pointerArgument,
+        { valueArgument },
+        jlm::rvsdg::bit64,
+        pbit64);
+    auto store = StoreNode::Create(gepn, sumex, { gOMemoryState }, 8);
 
-    auto lambdaOutput = lambda->finalize({gOIoState, store[0], gOLoopState});
+    auto lambdaOutput = lambda->finalize({ gOIoState, store[0], gOLoopState });
 
     fibrv->result()->divert_to(lambdaOutput);
     pb.end();
 
-    graph->add_export(fibrv, {pt, "fib"});
+    graph->add_export(fibrv, { pt, "fib" });
 
     return std::make_tuple(
-      lambdaOutput,
-      jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callfibm1Results[0])),
-      jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callfibm2Results[0])));
+        lambdaOutput,
+        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callfibm1Results[0])),
+        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callfibm2Results[0])));
   };
 
   auto [fibfct, callFib1, callFib2] = SetupFib();
@@ -474,7 +458,7 @@ Test()
   TestCallTypeClassifierNonRecursiveDirectCallTheta();
   TestCallTypeClassifierRecursiveDirectCall();
 
-	return 0;
+  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/TestCall", Test)

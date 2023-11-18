@@ -10,7 +10,8 @@
 namespace jlm::llvm
 {
 
-namespace phi {
+namespace phi
+{
 
 /* phi operation class */
 
@@ -37,13 +38,13 @@ node::~node()
 cvinput *
 node::input(size_t n) const noexcept
 {
-  return static_cast<cvinput*>(structural_node::input(n));
+  return static_cast<cvinput *>(structural_node::input(n));
 }
 
 rvoutput *
 node::output(size_t n) const noexcept
 {
-  return static_cast<rvoutput*>(structural_node::output(n));
+  return static_cast<rvoutput *>(structural_node::output(n));
 }
 
 cvargument *
@@ -54,26 +55,27 @@ node::add_ctxvar(jlm::rvsdg::output * origin)
 }
 
 phi::node *
-node::copy(
-  jlm::rvsdg::region * region,
-  jlm::rvsdg::substitution_map & smap) const
+node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const
 {
   phi::builder pb;
   pb.begin(region);
 
   /* add context variables */
   jlm::rvsdg::substitution_map subregionmap;
-  for (auto it = begin_cv(); it != end_cv(); it++) {
+  for (auto it = begin_cv(); it != end_cv(); it++)
+  {
     auto origin = smap.lookup(it->origin());
-    if (!origin) throw util::error("Operand not provided by susbtitution map.");
+    if (!origin)
+      throw util::error("Operand not provided by susbtitution map.");
 
     auto newcv = pb.add_ctxvar(origin);
     subregionmap.insert(it->argument(), newcv);
   }
 
   /* add recursion variables */
-  std::vector<rvoutput*> newrvs;
-  for (auto it = begin_rv(); it != end_rv(); it++) {
+  std::vector<rvoutput *> newrvs;
+  for (auto it = begin_rv(); it != end_rv(); it++)
+  {
     auto newrv = pb.add_recvar(it->type());
     subregionmap.insert(it->argument(), newrv->argument());
     newrvs.push_back(newrv);
@@ -83,7 +85,8 @@ node::copy(
   subregion()->copy(pb.subregion(), subregionmap, false, false);
 
   /* finalize phi */
-  for (auto it = begin_rv(); it != end_rv(); it++) {
+  for (auto it = begin_rv(); it != end_rv(); it++)
+  {
     auto neworigin = subregionmap.lookup(it->result()->origin());
     newrvs[it->index()]->set_rvorigin(neworigin);
   }
@@ -91,27 +94,26 @@ node::copy(
   return pb.end();
 }
 
-std::vector<lambda::node*>
+std::vector<lambda::node *>
 node::ExtractLambdaNodes(const phi::node & phiNode)
 {
-  std::function<void(const phi::node&, std::vector<lambda::node*>&)> extractLambdaNodes = [&](
-    auto & phiNode,
-    auto & lambdaNodes)
+  std::function<void(const phi::node &, std::vector<lambda::node *> &)> extractLambdaNodes =
+      [&](auto & phiNode, auto & lambdaNodes)
   {
     for (auto & node : phiNode.subregion()->nodes)
     {
-      if (auto lambdaNode = dynamic_cast<lambda::node*>(&node))
+      if (auto lambdaNode = dynamic_cast<lambda::node *>(&node))
       {
         lambdaNodes.push_back(lambdaNode);
       }
-      else if (auto innerPhiNode = dynamic_cast<const phi::node*>(&node))
+      else if (auto innerPhiNode = dynamic_cast<const phi::node *>(&node))
       {
         extractLambdaNodes(*innerPhiNode, lambdaNodes);
       }
     }
   };
 
-  std::vector<lambda::node*> lambdaNodes;
+  std::vector<lambda::node *> lambdaNodes;
   extractLambdaNodes(phiNode, lambdaNodes);
 
   return lambdaNodes;
@@ -139,7 +141,8 @@ builder::end()
   if (!node_)
     return nullptr;
 
-  for (auto it = node_->begin_rv(); it != node_->end_rv(); it++) {
+  for (auto it = node_->begin_rv(); it != node_->end_rv(); it++)
+  {
     if (it->result()->origin() == it->argument())
       throw util::error("Recursion variable not properly set.");
   }
@@ -175,5 +178,5 @@ cvargument::~cvargument()
 rvresult::~rvresult()
 {}
 
-}}
-
+}
+}
