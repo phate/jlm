@@ -83,9 +83,9 @@ TestUnionWith()
 {
   using namespace jlm::util;
 
-  HashSet<int> set12({1, 2});
-  HashSet<int> set123({1, 2, 3});
-  HashSet<int> set45({4, 5});
+  HashSet<int> set12({ 1, 2 });
+  HashSet<int> set123({ 1, 2, 3 });
+  HashSet<int> set45({ 4, 5 });
 
   assert(!set123.UnionWith(set12));
 

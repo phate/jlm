@@ -1958,7 +1958,7 @@ class NAllocaNodesTest final : public RvsdgTest
 {
 public:
   NAllocaNodesTest(size_t numAllocaNodes)
-    : NumAllocaNodes_(numAllocaNodes)
+      : NumAllocaNodes_(numAllocaNodes)
   {}
 
   [[nodiscard]] size_t
