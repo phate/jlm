@@ -186,7 +186,7 @@ DotHLS::edge(std::string src, std::string snk, const jlm::rvsdg::type & type, bo
          "constraint=false];\n";
   //	return snk + " -> " + src + " [style=\"\", arrowhead=\"normal\", color=" + color +
   //		   ", headlabel=<>, fontsize=10, labelangle=45, labeldistance=2.0, labelfontcolor=black,
-  //dir=back];\n";
+  //  dir=back];\n";
 }
 
 std::string
