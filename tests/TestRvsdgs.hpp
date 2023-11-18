@@ -3,203 +3,209 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
 namespace jlm::tests
 {
 
 /**
-* \brief RvsdgTest class
-*/
-class RvsdgTest {
+ * \brief RvsdgTest class
+ */
+class RvsdgTest
+{
 public:
-	jlm::llvm::RvsdgModule &
-	module()
-	{
+  jlm::llvm::RvsdgModule &
+  module()
+  {
     if (module_ == nullptr)
       module_ = SetupRvsdg();
 
-		return *module_;
-	}
+    return *module_;
+  }
 
-	const jlm::rvsdg::graph &
-	graph()
-	{
-		return module().Rvsdg();
-	}
+  const jlm::rvsdg::graph &
+  graph()
+  {
+    return module().Rvsdg();
+  }
 
 private:
   /**
    * \brief Create RVSDG for this test.
    */
-	virtual std::unique_ptr<jlm::llvm::RvsdgModule>
-	SetupRvsdg() = 0;
+  virtual std::unique_ptr<jlm::llvm::RvsdgModule>
+  SetupRvsdg() = 0;
 
-	std::unique_ptr<jlm::llvm::RvsdgModule> module_;
+  std::unique_ptr<jlm::llvm::RvsdgModule> module_;
 };
 
 /** \brief StoreTest1 class
-*
-* This function sets up an RVSDG representing the following function:
-*
-* \code{.c}
-*   void f()
-*   {
-*     uint32_t d;
-*     uint32_t * c;
-*     uint32_t ** b;
-*     uint32_t *** a;
-*
-*     a = &b;
-*     b = &c;
-*     c = &d;
-*   }
-* \endcode
-*
-* It uses a single memory state to sequentialize the respective memory
-* operations.
-*/
-class StoreTest1 final : public RvsdgTest {
+ *
+ * This function sets up an RVSDG representing the following function:
+ *
+ * \code{.c}
+ *   void f()
+ *   {
+ *     uint32_t d;
+ *     uint32_t * c;
+ *     uint32_t ** b;
+ *     uint32_t *** a;
+ *
+ *     a = &b;
+ *     b = &c;
+ *     c = &d;
+ *   }
+ * \endcode
+ *
+ * It uses a single memory state to sequentialize the respective memory
+ * operations.
+ */
+class StoreTest1 final : public RvsdgTest
+{
 private:
-	std::unique_ptr<jlm::llvm::RvsdgModule>
-	SetupRvsdg() override;
+  std::unique_ptr<jlm::llvm::RvsdgModule>
+  SetupRvsdg() override;
 
 public:
-	jlm::llvm::lambda::node * lambda;
+  jlm::llvm::lambda::node * lambda;
 
-	jlm::rvsdg::node * size;
+  jlm::rvsdg::node * size;
 
-	jlm::rvsdg::node * alloca_a;
-	jlm::rvsdg::node * alloca_b;
-	jlm::rvsdg::node * alloca_c;
-	jlm::rvsdg::node * alloca_d;
+  jlm::rvsdg::node * alloca_a;
+  jlm::rvsdg::node * alloca_b;
+  jlm::rvsdg::node * alloca_c;
+  jlm::rvsdg::node * alloca_d;
 };
 
 /** \brief StoreTest2 class
-*
-* This function sets up an RVSDG representing the following function:
-*
-* \code{.c}
-*   void f()
-*   {
-*     uint32_t a, b;
-*     uint32_t * x, * y;
-*     uint32_t ** p;
-*
-*     x = &a;
-*     y = &b;
-*     p = &x;
-*     p = &y;
-*   }
-* \endcode
-*
-* It uses a single memory state to sequentialize the respective memory
-* operations.
-*/
-class StoreTest2 final : public RvsdgTest {
+ *
+ * This function sets up an RVSDG representing the following function:
+ *
+ * \code{.c}
+ *   void f()
+ *   {
+ *     uint32_t a, b;
+ *     uint32_t * x, * y;
+ *     uint32_t ** p;
+ *
+ *     x = &a;
+ *     y = &b;
+ *     p = &x;
+ *     p = &y;
+ *   }
+ * \endcode
+ *
+ * It uses a single memory state to sequentialize the respective memory
+ * operations.
+ */
+class StoreTest2 final : public RvsdgTest
+{
 private:
-	std::unique_ptr<jlm::llvm::RvsdgModule>
-	SetupRvsdg() override;
+  std::unique_ptr<jlm::llvm::RvsdgModule>
+  SetupRvsdg() override;
 
 public:
-	jlm::llvm::lambda::node * lambda;
+  jlm::llvm::lambda::node * lambda;
 
-	jlm::rvsdg::node * size;
+  jlm::rvsdg::node * size;
 
-	jlm::rvsdg::node * alloca_a;
-	jlm::rvsdg::node * alloca_b;
-	jlm::rvsdg::node * alloca_x;
-	jlm::rvsdg::node * alloca_y;
-	jlm::rvsdg::node * alloca_p;
+  jlm::rvsdg::node * alloca_a;
+  jlm::rvsdg::node * alloca_b;
+  jlm::rvsdg::node * alloca_x;
+  jlm::rvsdg::node * alloca_y;
+  jlm::rvsdg::node * alloca_p;
 };
 
 /** \brief LoadTest1 class
-*
-* This function sets up an RVSDG representing the following function:
-*
-* \code{.c}
-*   uint32_t f(uint32_t ** p)
-*   {
-*     uint32_t * x = *p;
-*     uint32_t a = *x;
-*     return a;
-*   }
-* \endcode
-*
-* It uses a single memory state to sequentialize the respective memory
-* operations.
-*/
-class LoadTest1 final : public RvsdgTest {
+ *
+ * This function sets up an RVSDG representing the following function:
+ *
+ * \code{.c}
+ *   uint32_t f(uint32_t ** p)
+ *   {
+ *     uint32_t * x = *p;
+ *     uint32_t a = *x;
+ *     return a;
+ *   }
+ * \endcode
+ *
+ * It uses a single memory state to sequentialize the respective memory
+ * operations.
+ */
+class LoadTest1 final : public RvsdgTest
+{
 private:
-	std::unique_ptr<jlm::llvm::RvsdgModule>
-	SetupRvsdg() override;
+  std::unique_ptr<jlm::llvm::RvsdgModule>
+  SetupRvsdg() override;
 
 public:
-	jlm::llvm::lambda::node * lambda;
+  jlm::llvm::lambda::node * lambda;
 
-	jlm::rvsdg::node * load_p;
-	jlm::rvsdg::node * load_x;
+  jlm::rvsdg::node * load_p;
+  jlm::rvsdg::node * load_x;
 };
 
 /** \brief LoadTest2 class
-*
-* This function sets up an RVSDG representing the following function:
-*
-* \code{.c}
-*   void f()
-*   {
-*     uint32_t a, b;
-*     uint32_t * x, * y;
-*     uint32_t ** p;
-*
-*     x = &a;
-*     y = &b;
-*     p = &x;
-*     y = *p;
-*   }
-* \endcode
-*
-* It uses a single memory state to sequentialize the respective memory
-* operations.
-*/
-class LoadTest2 final : public RvsdgTest {
+ *
+ * This function sets up an RVSDG representing the following function:
+ *
+ * \code{.c}
+ *   void f()
+ *   {
+ *     uint32_t a, b;
+ *     uint32_t * x, * y;
+ *     uint32_t ** p;
+ *
+ *     x = &a;
+ *     y = &b;
+ *     p = &x;
+ *     y = *p;
+ *   }
+ * \endcode
+ *
+ * It uses a single memory state to sequentialize the respective memory
+ * operations.
+ */
+class LoadTest2 final : public RvsdgTest
+{
 private:
-	std::unique_ptr<jlm::llvm::RvsdgModule>
-	SetupRvsdg() override;
+  std::unique_ptr<jlm::llvm::RvsdgModule>
+  SetupRvsdg() override;
 
 public:
-	jlm::llvm::lambda::node * lambda;
+  jlm::llvm::lambda::node * lambda;
 
-	jlm::rvsdg::node * size;
+  jlm::rvsdg::node * size;
 
-	jlm::rvsdg::node * alloca_a;
-	jlm::rvsdg::node * alloca_b;
-	jlm::rvsdg::node * alloca_x;
-	jlm::rvsdg::node * alloca_y;
-	jlm::rvsdg::node * alloca_p;
+  jlm::rvsdg::node * alloca_a;
+  jlm::rvsdg::node * alloca_b;
+  jlm::rvsdg::node * alloca_x;
+  jlm::rvsdg::node * alloca_y;
+  jlm::rvsdg::node * alloca_p;
 
-	jlm::rvsdg::node * load_x;
-	jlm::rvsdg::node * load_a;
+  jlm::rvsdg::node * load_x;
+  jlm::rvsdg::node * load_a;
 };
 
 /** \brief LoadFromUndefTest class
-*
-* This function sets up an RVSDG representing the following function:
-*
-* \code{.c}
-*   int f()
-*   {
-*     int * x;
-*     return *x;
-*   }
-* \endcode
-*
-* It uses a single memory state to sequentialize the respective memory
-* operations.
-*/
-class LoadFromUndefTest final : public RvsdgTest {
+ *
+ * This function sets up an RVSDG representing the following function:
+ *
+ * \code{.c}
+ *   int f()
+ *   {
+ *     int * x;
+ *     return *x;
+ *   }
+ * \endcode
+ *
+ * It uses a single memory state to sequentialize the respective memory
+ * operations.
+ */
+class LoadFromUndefTest final : public RvsdgTest
+{
 private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
@@ -223,100 +229,102 @@ private:
 };
 
 /** \brief GetElementPtrTest class
-*
-* This function sets up an RVSDG representing the following function:
-*
-* \code{.c}
-*   struct point {
-*     uint32_t x;
-*     uint32_t y;
-*   };
-*
-*   uint32_t f(const struct point * p)
-*   {
-*     return p->x + p->y;
-*   }
-* \endcode
-*
-* It uses a single memory state to sequentialize the respective memory
-* operations.
-*/
-class GetElementPtrTest final : public RvsdgTest {
+ *
+ * This function sets up an RVSDG representing the following function:
+ *
+ * \code{.c}
+ *   struct point {
+ *     uint32_t x;
+ *     uint32_t y;
+ *   };
+ *
+ *   uint32_t f(const struct point * p)
+ *   {
+ *     return p->x + p->y;
+ *   }
+ * \endcode
+ *
+ * It uses a single memory state to sequentialize the respective memory
+ * operations.
+ */
+class GetElementPtrTest final : public RvsdgTest
+{
 private:
-	std::unique_ptr<jlm::llvm::RvsdgModule>
-	SetupRvsdg() override;
+  std::unique_ptr<jlm::llvm::RvsdgModule>
+  SetupRvsdg() override;
 
 public:
-	jlm::llvm::lambda::node * lambda;
+  jlm::llvm::lambda::node * lambda;
 
-	jlm::rvsdg::node * getElementPtrX;
-	jlm::rvsdg::node * getElementPtrY;
+  jlm::rvsdg::node * getElementPtrX;
+  jlm::rvsdg::node * getElementPtrY;
 };
 
 /** \brief BitCastTest class
-*
-* This function sets up an RVSDG representing the following function:
-*
-* \code{.c}
-*   uint16_t * f(uint32_t * p)
-*   {
-*     return (uint16_t*)p;
-*   }
-* \endcode
-*/
-class BitCastTest final : public RvsdgTest {
+ *
+ * This function sets up an RVSDG representing the following function:
+ *
+ * \code{.c}
+ *   uint16_t * f(uint32_t * p)
+ *   {
+ *     return (uint16_t*)p;
+ *   }
+ * \endcode
+ */
+class BitCastTest final : public RvsdgTest
+{
 private:
-	std::unique_ptr<jlm::llvm::RvsdgModule>
-	SetupRvsdg() override;
+  std::unique_ptr<jlm::llvm::RvsdgModule>
+  SetupRvsdg() override;
 
 public:
-	jlm::llvm::lambda::node * lambda;
+  jlm::llvm::lambda::node * lambda;
 
-	jlm::rvsdg::node * bitCast;
+  jlm::rvsdg::node * bitCast;
 };
 
 /** \brief Bits2PtrTest class
-*
-* This function sets up an RVSDG representing the following code snippet:
-*
-* \code{.c}
-*   static void*
-*   bits2ptr(ptrdiff_t i)
-*   {
-*     return (void*)i;
-*   }
-*
-*   void
-*   test(ptrdiff_t i)
-*   {
-*     bit2ptr(i);
-*   }
-* \endcode
-*
-* It uses a single memory state to sequentialize the respective memory operations.
-*/
+ *
+ * This function sets up an RVSDG representing the following code snippet:
+ *
+ * \code{.c}
+ *   static void*
+ *   bits2ptr(ptrdiff_t i)
+ *   {
+ *     return (void*)i;
+ *   }
+ *
+ *   void
+ *   test(ptrdiff_t i)
+ *   {
+ *     bit2ptr(i);
+ *   }
+ * \endcode
+ *
+ * It uses a single memory state to sequentialize the respective memory operations.
+ */
 class Bits2PtrTest final : public RvsdgTest
 {
 public:
-  [[nodiscard]] const jlm::llvm::lambda::node&
+  [[nodiscard]] const jlm::llvm::lambda::node &
   GetLambdaBits2Ptr() const noexcept
   {
     return *LambdaBits2Ptr_;
   }
 
-  [[nodiscard]] const jlm::llvm::lambda::node&
+  [[nodiscard]] const jlm::llvm::lambda::node &
   GetLambdaTest() const noexcept
   {
     return *LambdaTest_;
   }
 
-  [[nodiscard]] const jlm::llvm::CallNode&
+  [[nodiscard]] const jlm::llvm::CallNode &
   GetCallNode() const noexcept
   {
     return *CallNode_;
   }
 
-  [[nodiscard]] const jlm::rvsdg::node&
+  [[nodiscard]] const jlm::rvsdg::node &
   GetBitsToPtrNode() const noexcept
   {
     return *BitsToPtrNode_;
@@ -335,59 +343,61 @@ private:
 };
 
 /** \brief ConstantPointerNullTest class
-*
-* This function sets up an RVSDG representing the following function:
-*
-* \code{.c}
-*   void f(uint32_t ** i)
-*   {
-*	    *i = NULL;
-*   }
-* \endcode
-*/
-class ConstantPointerNullTest final : public RvsdgTest {
+ *
+ * This function sets up an RVSDG representing the following function:
+ *
+ * \code{.c}
+ *   void f(uint32_t ** i)
+ *   {
+ *	    *i = NULL;
+ *   }
+ * \endcode
+ */
+class ConstantPointerNullTest final : public RvsdgTest
+{
 private:
-	std::unique_ptr<jlm::llvm::RvsdgModule>
-	SetupRvsdg() override;
+  std::unique_ptr<jlm::llvm::RvsdgModule>
+  SetupRvsdg() override;
 
 public:
-	jlm::llvm::lambda::node * lambda;
+  jlm::llvm::lambda::node * lambda;
 
-	jlm::rvsdg::node * constantPointerNullNode;
+  jlm::rvsdg::node * constantPointerNullNode;
 };
 
 /** \brief CallTest1 class
-*
-* This function sets up an RVSDG representing the following function:
-*
-* \code{.c}
-*	  static uint32_t
-*	  f(uint32_t * x, uint32_t * y)
-*	  {
-*	    return *x + *y;
-*	  }
-*
-*	  static uint32_t
-*	  g(uint32_t * x, uint32_t * y)
-*	  {
-*	    return *x - *y;
-*	  }
-*
-*	  uint32_t
-*	  h()
-*	  {
-*	    uint32_t x = 5, y = 6, z = 7;
-*	    return f(&x, &y) + g(&z, &z);
-*	  }
-* \endcode
-*
-* It uses a single memory state to sequentialize the respective memory
-* operations within each function.
-*/
-class CallTest1 final : public RvsdgTest {
+ *
+ * This function sets up an RVSDG representing the following function:
+ *
+ * \code{.c}
+ *	  static uint32_t
+ *	  f(uint32_t * x, uint32_t * y)
+ *	  {
+ *	    return *x + *y;
+ *	  }
+ *
+ *	  static uint32_t
+ *	  g(uint32_t * x, uint32_t * y)
+ *	  {
+ *	    return *x - *y;
+ *	  }
+ *
+ *	  uint32_t
+ *	  h()
+ *	  {
+ *	    uint32_t x = 5, y = 6, z = 7;
+ *	    return f(&x, &y) + g(&z, &z);
+ *	  }
+ * \endcode
+ *
+ * It uses a single memory state to sequentialize the respective memory
+ * operations within each function.
+ */
+class CallTest1 final : public RvsdgTest
+{
 private:
-	std::unique_ptr<jlm::llvm::RvsdgModule>
-	SetupRvsdg() override;
+  std::unique_ptr<jlm::llvm::RvsdgModule>
+  SetupRvsdg() override;
 
 public:
   [[nodiscard]] const jlm::llvm::CallNode &
@@ -402,13 +412,13 @@ public:
     return *CallG_;
   }
 
-	jlm::llvm::lambda::node * lambda_f;
-	jlm::llvm::lambda::node * lambda_g;
-	jlm::llvm::lambda::node * lambda_h;
+  jlm::llvm::lambda::node * lambda_f;
+  jlm::llvm::lambda::node * lambda_g;
+  jlm::llvm::lambda::node * lambda_h;
 
-	jlm::rvsdg::node * alloca_x;
-	jlm::rvsdg::node * alloca_y;
-	jlm::rvsdg::node * alloca_z;
+  jlm::rvsdg::node * alloca_x;
+  jlm::rvsdg::node * alloca_y;
+  jlm::rvsdg::node * alloca_z;
 
 private:
   jlm::llvm::CallNode * CallF_;
@@ -416,37 +426,38 @@ private:
 };
 
 /** \brief CallTest2 class
-*
-* This function sets up an RVSDG representing the following function:
-*
-* \code{.c}
-*	  static uint32_t *
-*	  create(size_t n)
-*	  {
-*	    return (uint32_t*)malloc(n * sizeof(uint32_t));
-*	  }
-*
-*	  static void
-*	  destroy(uint32_t * p)
-*	  {
-*	    free(p);
-*	  }
-*
-*	  void
-*	  test()
-*	  {
-*		  uint32_t * p1 = create(6);
-*		  uint32_t * p2 = create(7);
-*
-*	    destroy(p1);
-*		  destroy(p2);
-*	  }
-* \endcode
-*
-* It uses a single memory state to sequentialize the respective memory
-* operations within each function.
-*/
-class CallTest2 final : public RvsdgTest {
+ *
+ * This function sets up an RVSDG representing the following function:
+ *
+ * \code{.c}
+ *	  static uint32_t *
+ *	  create(size_t n)
+ *	  {
+ *	    return (uint32_t*)malloc(n * sizeof(uint32_t));
+ *	  }
+ *
+ *	  static void
+ *	  destroy(uint32_t * p)
+ *	  {
+ *	    free(p);
+ *	  }
+ *
+ *	  void
+ *	  test()
+ *	  {
+ *		  uint32_t * p1 = create(6);
+ *		  uint32_t * p2 = create(7);
+ *
+ *	    destroy(p1);
+ *		  destroy(p2);
+ *	  }
+ * \endcode
+ *
+ * It uses a single memory state to sequentialize the respective memory
+ * operations within each function.
+ */
+class CallTest2 final : public RvsdgTest
+{
 public:
   [[nodiscard]] const jlm::llvm::CallNode &
   CallCreate1() const noexcept
@@ -472,58 +483,59 @@ public:
     return *CallDestroy2_;
   }
 
-	jlm::llvm::lambda::node * lambda_create;
-	jlm::llvm::lambda::node * lambda_destroy;
-	jlm::llvm::lambda::node * lambda_test;
+  jlm::llvm::lambda::node * lambda_create;
+  jlm::llvm::lambda::node * lambda_destroy;
+  jlm::llvm::lambda::node * lambda_test;
 
-	jlm::rvsdg::node * malloc;
-	jlm::rvsdg::node * free;
+  jlm::rvsdg::node * malloc;
+  jlm::rvsdg::node * free;
 
 private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
-	jlm::llvm::CallNode * CallCreate1_;
-	jlm::llvm::CallNode * CallCreate2_;
+  jlm::llvm::CallNode * CallCreate1_;
+  jlm::llvm::CallNode * CallCreate2_;
 
-	jlm::llvm::CallNode * CallDestroy1_;
-	jlm::llvm::CallNode * CallDestroy2_;
+  jlm::llvm::CallNode * CallDestroy1_;
+  jlm::llvm::CallNode * CallDestroy2_;
 };
 
 /** \brief IndirectCallTest1 class
-*
-* This function sets up an RVSDG representing the following function:
-*
-*	\code{.c}
-*	  static uint32_t
-*	  four()
-*	  {
-*	    return 4;
-*	  }
-*
-*	  static uint32_t
-*	  three()
-*	  {
-*	    return 3;
-*	  }
-*
-*	  static uint32_t
-*	  indcall(uint32_t (*f)())
-*	  {
-*	    return (*f)();
-*	  }
-*
-*	  uint32_t
-*	  test()
-*	  {
-*	    return indcall(&four) + indcall(&three);
-*	  }
-*	\endcode
-*
-*	It uses a single memory state to sequentialize the respective memory
-* operations within each function.
-*/
-class IndirectCallTest1 final : public RvsdgTest {
+ *
+ * This function sets up an RVSDG representing the following function:
+ *
+ *	\code{.c}
+ *	  static uint32_t
+ *	  four()
+ *	  {
+ *	    return 4;
+ *	  }
+ *
+ *	  static uint32_t
+ *	  three()
+ *	  {
+ *	    return 3;
+ *	  }
+ *
+ *	  static uint32_t
+ *	  indcall(uint32_t (*f)())
+ *	  {
+ *	    return (*f)();
+ *	  }
+ *
+ *	  uint32_t
+ *	  test()
+ *	  {
+ *	    return indcall(&four) + indcall(&three);
+ *	  }
+ *	\endcode
+ *
+ *	It uses a single memory state to sequentialize the respective memory
+ * operations within each function.
+ */
+class IndirectCallTest1 final : public RvsdgTest
+{
 public:
   [[nodiscard]] const jlm::llvm::CallNode &
   CallIndcall() const noexcept
@@ -571,9 +583,9 @@ private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
-	jlm::llvm::CallNode * CallIndcall_;
-	jlm::llvm::CallNode * CallThree_;
-	jlm::llvm::CallNode * CallFour_;
+  jlm::llvm::CallNode * CallIndcall_;
+  jlm::llvm::CallNode * CallThree_;
+  jlm::llvm::CallNode * CallFour_;
 
   jlm::llvm::lambda::node * LambdaThree_;
   jlm::llvm::lambda::node * LambdaFour_;
@@ -643,7 +655,8 @@ private:
  * It uses a single memory state to sequentialize the respective memory
  * operations within each function.
  */
-class IndirectCallTest2 final : public RvsdgTest {
+class IndirectCallTest2 final : public RvsdgTest
+{
 public:
   [[nodiscard]] jlm::llvm::delta::node &
   GetDeltaG1() const noexcept
@@ -753,7 +766,6 @@ public:
     return *AllocaPz_;
   }
 
-
 private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
@@ -796,7 +808,8 @@ private:
  *   }
  * \endcode
  *
- * It uses a single memory state to sequentialize the respective memory operations within each function.
+ * It uses a single memory state to sequentialize the respective memory operations within each
+ * function.
  */
 class ExternalCallTest final : public RvsdgTest
 {
@@ -823,36 +836,37 @@ private:
 };
 
 /** \brief GammaTest class
-*
-* This function sets up an RVSDG representing the following function:
-*
-* \code{.c}
-*   uint32_t f(uint32_t c, uint32_t * p1, uint32_t * p2, uint32_t * p3, uint32_t * p4)
-*   {
-*		  uint32_t * tmp1, * tmp2;
-*     if (c == 0) {
-*		    tmp1 = p1;
-*       tmp2 = p2;
-*     } else {
-*		    tmp1 = p3;
-*       tmp2 = p4;
-*     }
-*		  return *tmp1 + *tmp2;
-*   }
-* \endcode
-*
-* It uses a single memory state to sequentialize the respective memory
-* operations.
-*/
-class GammaTest final : public RvsdgTest {
+ *
+ * This function sets up an RVSDG representing the following function:
+ *
+ * \code{.c}
+ *   uint32_t f(uint32_t c, uint32_t * p1, uint32_t * p2, uint32_t * p3, uint32_t * p4)
+ *   {
+ *		  uint32_t * tmp1, * tmp2;
+ *     if (c == 0) {
+ *		    tmp1 = p1;
+ *       tmp2 = p2;
+ *     } else {
+ *		    tmp1 = p3;
+ *       tmp2 = p4;
+ *     }
+ *		  return *tmp1 + *tmp2;
+ *   }
+ * \endcode
+ *
+ * It uses a single memory state to sequentialize the respective memory
+ * operations.
+ */
+class GammaTest final : public RvsdgTest
+{
 private:
-	std::unique_ptr<jlm::llvm::RvsdgModule>
-	SetupRvsdg() override;
+  std::unique_ptr<jlm::llvm::RvsdgModule>
+  SetupRvsdg() override;
 
 public:
-	jlm::llvm::lambda::node * lambda;
+  jlm::llvm::lambda::node * lambda;
 
-	jlm::rvsdg::gamma_node * gamma;
+  jlm::rvsdg::gamma_node * gamma;
 };
 
 /** \brief GammaTest2 class
@@ -904,37 +918,37 @@ public:
 class GammaTest2 final : public RvsdgTest
 {
 public:
-  [[nodiscard]] llvm::lambda::node&
+  [[nodiscard]] llvm::lambda::node &
   GetLambdaF() const noexcept
   {
     return *LambdaF_;
   }
 
-  [[nodiscard]] llvm::lambda::node&
+  [[nodiscard]] llvm::lambda::node &
   GetLambdaG() const noexcept
   {
     return *LambdaG_;
   }
 
-  [[nodiscard]] llvm::lambda::node&
+  [[nodiscard]] llvm::lambda::node &
   GetLambdaH() const noexcept
   {
     return *LambdaH_;
   }
 
-  [[nodiscard]] rvsdg::gamma_node&
+  [[nodiscard]] rvsdg::gamma_node &
   GetGamma() const noexcept
   {
     return *Gamma_;
   }
 
-  [[nodiscard]] llvm::CallNode&
+  [[nodiscard]] llvm::CallNode &
   GetCallFromG() const noexcept
   {
     return *CallFromG_;
   }
 
-  [[nodiscard]] llvm::CallNode&
+  [[nodiscard]] llvm::CallNode &
   GetCallFromH() const noexcept
   {
     return *CallFromH_;
@@ -991,58 +1005,60 @@ private:
 };
 
 /** \brief ThetaTest class
-*
-* This function sets up an RVSDG representing the following function:
-*
-* \code{.c}
-*   void f(uint32_t l, uint32_t  a[], uint32_t c)
-*   {
-*		  uint32_t n = 0;
-*		  do {
-*		    a[n++] = c;
-*		  } while (n < l);
-*   }
-* \endcode
-*
-* It uses a single memory state to sequentialize the respective memory
-* operations.
-*/
-class ThetaTest final : public RvsdgTest {
+ *
+ * This function sets up an RVSDG representing the following function:
+ *
+ * \code{.c}
+ *   void f(uint32_t l, uint32_t  a[], uint32_t c)
+ *   {
+ *		  uint32_t n = 0;
+ *		  do {
+ *		    a[n++] = c;
+ *		  } while (n < l);
+ *   }
+ * \endcode
+ *
+ * It uses a single memory state to sequentialize the respective memory
+ * operations.
+ */
+class ThetaTest final : public RvsdgTest
+{
 private:
-	std::unique_ptr<jlm::llvm::RvsdgModule>
-	SetupRvsdg() override;
+  std::unique_ptr<jlm::llvm::RvsdgModule>
+  SetupRvsdg() override;
 
 public:
-	jlm::llvm::lambda::node * lambda;
-	jlm::rvsdg::theta_node * theta;
-	jlm::rvsdg::node * gep;
+  jlm::llvm::lambda::node * lambda;
+  jlm::rvsdg::theta_node * theta;
+  jlm::rvsdg::node * gep;
 };
 
 /** \brief DeltaTest1 class
-*
-* This function sets up an RVSDG representing the following function:
-*
-* \code{.c}
-*   static uint32_t f;
-*
-*   static uint32_t
-*   g(uint32_t * v)
-*   {
-*     return *v;
-*   }
-*
-*   uint32_t
-*   h()
-*   {
-*     f = 5;
-*     return g(&f);
-*   }
-* \endcode
-*
-* It uses a single memory state to sequentialize the respective memory
-* operations.
-*/
-class DeltaTest1 final : public RvsdgTest {
+ *
+ * This function sets up an RVSDG representing the following function:
+ *
+ * \code{.c}
+ *   static uint32_t f;
+ *
+ *   static uint32_t
+ *   g(uint32_t * v)
+ *   {
+ *     return *v;
+ *   }
+ *
+ *   uint32_t
+ *   h()
+ *   {
+ *     f = 5;
+ *     return g(&f);
+ *   }
+ * \endcode
+ *
+ * It uses a single memory state to sequentialize the respective memory
+ * operations.
+ */
+class DeltaTest1 final : public RvsdgTest
+{
 public:
   [[nodiscard]] const jlm::llvm::CallNode &
   CallG() const noexcept
@@ -1050,10 +1066,10 @@ public:
     return *CallG_;
   }
 
-	jlm::llvm::lambda::node * lambda_g;
-	jlm::llvm::lambda::node * lambda_h;
+  jlm::llvm::lambda::node * lambda_g;
+  jlm::llvm::lambda::node * lambda_h;
 
-	jlm::llvm::delta::node * delta_f;
+  jlm::llvm::delta::node * delta_f;
 
   jlm::rvsdg::node * constantFive;
 
@@ -1065,32 +1081,33 @@ private:
 };
 
 /** \brief DeltaTest2 class
-*
-*	This function sets up an RVSDG representing the following function:
-*
-* \code{.c}
-*   static uint32_t d1 = 0;
-*   static uint32_t d2 = 0;
-*
-*   static void
-*   f1()
-*   {
-*     d1 = 2;
-*   }
-*
-*   void
-*   f2()
-*   {
-*     d1 = 5;
-*     f1();
-*     d2 = 42;
-*   }
-* \endcode
-*
-* It uses a single memory state to sequentialize the respective memory
-* operations.
-*/
-class DeltaTest2 final : public RvsdgTest {
+ *
+ *	This function sets up an RVSDG representing the following function:
+ *
+ * \code{.c}
+ *   static uint32_t d1 = 0;
+ *   static uint32_t d2 = 0;
+ *
+ *   static void
+ *   f1()
+ *   {
+ *     d1 = 2;
+ *   }
+ *
+ *   void
+ *   f2()
+ *   {
+ *     d1 = 5;
+ *     f1();
+ *     d2 = 42;
+ *   }
+ * \endcode
+ *
+ * It uses a single memory state to sequentialize the respective memory
+ * operations.
+ */
+class DeltaTest2 final : public RvsdgTest
+{
 public:
   [[nodiscard]] const jlm::llvm::CallNode &
   CallF1() const noexcept
@@ -1098,44 +1115,44 @@ public:
     return *CallF1_;
   }
 
-	jlm::llvm::lambda::node * lambda_f1;
-	jlm::llvm::lambda::node * lambda_f2;
+  jlm::llvm::lambda::node * lambda_f1;
+  jlm::llvm::lambda::node * lambda_f2;
 
-	jlm::llvm::delta::node * delta_d1;
-	jlm::llvm::delta::node * delta_d2;
+  jlm::llvm::delta::node * delta_d1;
+  jlm::llvm::delta::node * delta_d2;
 
 private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
-	jlm::llvm::CallNode * CallF1_;
+  jlm::llvm::CallNode * CallF1_;
 };
 
 /** \brief DeltaTest3 class
-*
-*	This function sets up an RVSDG representing the following function:
-*
-* \code{.c}
-*   static int32_t g1 = 1L;
-*   static int32_t *g2 = &g1;
-*
-*   static int16_t
-*   f()
-*   {
-*     g2 = g2;
-*     return g1;
-*   }
-*
-*   int16_t
-*   test()
-*   {
-*     return f();
-*   }
-* \endcode
-*
-* It uses a single memory state to sequentialize the respective memory
-* operations.
-*/
+ *
+ *	This function sets up an RVSDG representing the following function:
+ *
+ * \code{.c}
+ *   static int32_t g1 = 1L;
+ *   static int32_t *g2 = &g1;
+ *
+ *   static int16_t
+ *   f()
+ *   {
+ *     g2 = g2;
+ *     return g1;
+ *   }
+ *
+ *   int16_t
+ *   test()
+ *   {
+ *     return f();
+ *   }
+ * \endcode
+ *
+ * It uses a single memory state to sequentialize the respective memory
+ * operations.
+ */
 class DeltaTest3 final : public RvsdgTest
 {
 public:
@@ -1183,32 +1200,33 @@ private:
 };
 
 /** \brief ImportTest class
-*
-*	This function sets up an RVSDG representing the following function:
-*
-* \code{.c}
-*   extern uint32_t d1 = 0;
-*   extern uint32_t d2 = 0;
-*
-*   static void
-*   f1()
-*   {
-*     d1 = 5;
-*   }
-*
-*   void
-*   f2()
-*   {
-*     d1 = 2;
-*     f1();
-*     d2 = 21;
-*   }
-* \endcode
-*
-* It uses a single memory state to sequentialize the respective memory
-* operations.
-*/
-class ImportTest final : public RvsdgTest {
+ *
+ *	This function sets up an RVSDG representing the following function:
+ *
+ * \code{.c}
+ *   extern uint32_t d1 = 0;
+ *   extern uint32_t d2 = 0;
+ *
+ *   static void
+ *   f1()
+ *   {
+ *     d1 = 5;
+ *   }
+ *
+ *   void
+ *   f2()
+ *   {
+ *     d1 = 2;
+ *     f1();
+ *     d2 = 21;
+ *   }
+ * \endcode
+ *
+ * It uses a single memory state to sequentialize the respective memory
+ * operations.
+ */
+class ImportTest final : public RvsdgTest
+{
 public:
   [[nodiscard]] const jlm::llvm::CallNode &
   CallF1() const noexcept
@@ -1216,11 +1234,11 @@ public:
     return *CallF1_;
   }
 
-	jlm::llvm::lambda::node * lambda_f1;
-	jlm::llvm::lambda::node * lambda_f2;
+  jlm::llvm::lambda::node * lambda_f1;
+  jlm::llvm::lambda::node * lambda_f2;
 
-	jlm::rvsdg::argument * import_d1;
-	jlm::rvsdg::argument * import_d2;
+  jlm::rvsdg::argument * import_d1;
+  jlm::rvsdg::argument * import_d2;
 
 private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
@@ -1230,37 +1248,38 @@ private:
 };
 
 /** \brief PhiTest1 class
-*
-*	This function sets up an RVSDG representing the following code snippet:
-*
-* \code{.c}
-*	  static void
-*	  fib(uint64_t n, uint64_t result[])
-*	  {
-*	    if (n < 2) {
-*	      result[n] = n;
-*	      return;
-*	    }
-*
-*	    fib(n-1, result);
-*	    fib(n-2, result);
-*	    result[n] = result[n-1] + result[n-2];
-*	  }
-*
-*	  void
-*	  test()
-*	  {
-*	    uint64_t n = 10;
-*	    uint64_t results[n];
-*
-*	    fib(n, results);
-*	  }
-* \endcode
-*
-* It uses a single memory state to sequentialize the respective memory
-* operations.
-*/
-class PhiTest1 final : public RvsdgTest {
+ *
+ *	This function sets up an RVSDG representing the following code snippet:
+ *
+ * \code{.c}
+ *	  static void
+ *	  fib(uint64_t n, uint64_t result[])
+ *	  {
+ *	    if (n < 2) {
+ *	      result[n] = n;
+ *	      return;
+ *	    }
+ *
+ *	    fib(n-1, result);
+ *	    fib(n-2, result);
+ *	    result[n] = result[n-1] + result[n-2];
+ *	  }
+ *
+ *	  void
+ *	  test()
+ *	  {
+ *	    uint64_t n = 10;
+ *	    uint64_t results[n];
+ *
+ *	    fib(n, results);
+ *	  }
+ * \endcode
+ *
+ * It uses a single memory state to sequentialize the respective memory
+ * operations.
+ */
+class PhiTest1 final : public RvsdgTest
+{
 public:
   [[nodiscard]] const jlm::llvm::CallNode &
   CallFib() const noexcept
@@ -1280,14 +1299,14 @@ public:
     return *CallFibm2_;
   }
 
-	jlm::llvm::lambda::node * lambda_fib;
-	jlm::llvm::lambda::node * lambda_test;
+  jlm::llvm::lambda::node * lambda_fib;
+  jlm::llvm::lambda::node * lambda_test;
 
-	jlm::rvsdg::gamma_node * gamma;
+  jlm::rvsdg::gamma_node * gamma;
 
-	jlm::llvm::phi::node * phi;
+  jlm::llvm::phi::node * phi;
 
-	jlm::rvsdg::node * alloca;
+  jlm::rvsdg::node * alloca;
 
 private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
@@ -1537,14 +1556,14 @@ private:
  * It uses a single memory state to sequentialize the respective memory
  * operations.
  */
-class ExternalMemoryTest final : public RvsdgTest {
+class ExternalMemoryTest final : public RvsdgTest
+{
 private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
 public:
   jlm::llvm::lambda::node * LambdaF;
-
 };
 
 /** \brief EscapedMemoryTest1 class
@@ -1569,7 +1588,8 @@ public:
  *
  * It uses a single memory state to sequentialize the respective memory operations.
  */
-class EscapedMemoryTest1 final : public RvsdgTest {
+class EscapedMemoryTest1 final : public RvsdgTest
+{
 private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
@@ -1617,7 +1637,8 @@ public:
  *
  * It uses a single memory state to sequentialize the respective memory operations.
  */
-class EscapedMemoryTest2 final : public RvsdgTest {
+class EscapedMemoryTest2 final : public RvsdgTest
+{
 private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
@@ -1656,7 +1677,8 @@ public:
  *
  * It uses a single memory state to sequentialize the respective memory operations.
  */
-class EscapedMemoryTest3 final : public RvsdgTest {
+class EscapedMemoryTest3 final : public RvsdgTest
+{
 private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;

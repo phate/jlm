@@ -14,15 +14,13 @@ namespace jlm::llvm
 class OptimizationSequence::Statistics final : public util::Statistics
 {
 public:
-  ~Statistics() noexcept override
-  = default;
+  ~Statistics() noexcept override = default;
 
-  explicit
-  Statistics(util::filepath sourceFile)
-    : util::Statistics(Statistics::Id::RvsdgOptimization)
-    , SourceFile_(std::move(sourceFile))
-    , NumNodesBefore_(0)
-    , NumNodesAfter_(0)
+  explicit Statistics(util::filepath sourceFile)
+      : util::Statistics(Statistics::Id::RvsdgOptimization),
+        SourceFile_(std::move(sourceFile)),
+        NumNodesBefore_(0),
+        NumNodesAfter_(0)
   {}
 
   void
@@ -43,11 +41,14 @@ public:
   ToString() const override
   {
     return util::strfmt(
-      "RVSDGOPTIMIZATION ",
-      SourceFile_.to_str(), " ",
-      NumNodesBefore_, " ",
-      NumNodesAfter_, " ",
-      Timer_.ns());
+        "RVSDGOPTIMIZATION ",
+        SourceFile_.to_str(),
+        " ",
+        NumNodesBefore_,
+        " ",
+        NumNodesAfter_,
+        " ",
+        Timer_.ns());
   }
 
   static std::unique_ptr<Statistics>
@@ -63,13 +64,12 @@ private:
   size_t NumNodesAfter_;
 };
 
-OptimizationSequence::~OptimizationSequence() noexcept
-= default;
+OptimizationSequence::~OptimizationSequence() noexcept = default;
 
 void
 OptimizationSequence::run(
-  RvsdgModule& rvsdgModule,
-  util::StatisticsCollector& statisticsCollector)
+    RvsdgModule & rvsdgModule,
+    util::StatisticsCollector & statisticsCollector)
 {
   auto statistics = Statistics::Create(rvsdgModule.SourceFileName());
   statistics->StartMeasuring(rvsdgModule.Rvsdg());

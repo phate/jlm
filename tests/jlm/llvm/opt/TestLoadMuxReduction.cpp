@@ -25,16 +25,16 @@ test_load_mux_reduction()
   nf->set_mutable(false);
   nf->set_load_mux_reducible(false);
 
-  auto a = graph.add_import({pt, "a"});
-  auto s1 = graph.add_import({mt, "s1"});
-  auto s2 = graph.add_import({mt, "s2"});
-  auto s3 = graph.add_import({mt, "s3"});
+  auto a = graph.add_import({ pt, "a" });
+  auto s1 = graph.add_import({ mt, "s1" });
+  auto s2 = graph.add_import({ mt, "s2" });
+  auto s3 = graph.add_import({ mt, "s3" });
 
-  auto mux = MemStateMergeOperator::Create({s1, s2, s3});
-  auto ld = LoadNode::Create(a, {mux}, vt, 4);
+  auto mux = MemStateMergeOperator::Create({ s1, s2, s3 });
+  auto ld = LoadNode::Create(a, { mux }, vt, 4);
 
-  auto ex1 = graph.add_export(ld[0], {ld[0]->type(), "v"});
-  auto ex2 = graph.add_export(ld[1], {ld[1]->type(), "s"});
+  auto ex1 = graph.add_export(ld[0], { ld[0]->type(), "v" });
+  auto ex2 = graph.add_export(ld[1], { ld[1]->type(), "s" });
 
   // jlm::rvsdg::view(graph.root(), stdout);
 
@@ -55,7 +55,8 @@ test_load_mux_reduction()
   auto merge = jlm::rvsdg::node_output::node(ex2->origin());
   assert(is<MemStateMergeOperator>(merge));
   assert(merge->ninputs() == 3);
-  for (size_t n = 0; n < merge->ninputs(); n++) {
+  for (size_t n = 0; n < merge->ninputs(); n++)
+  {
     auto node = jlm::rvsdg::node_output::node(merge->input(n)->origin());
     assert(node == load);
   }
@@ -78,16 +79,16 @@ test_load_mux_reduction2()
   nf->set_mutable(false);
   nf->set_load_mux_reducible(false);
 
-  auto a = graph.add_import({pt, "a"});
-  auto s1 = graph.add_import({mt, "s1"});
-  auto s2 = graph.add_import({mt, "s2"});
+  auto a = graph.add_import({ pt, "a" });
+  auto s1 = graph.add_import({ mt, "s1" });
+  auto s2 = graph.add_import({ mt, "s2" });
 
-  auto merge = MemStateMergeOperator::Create(std::vector<jlm::rvsdg::output*>{s1, s2});
-  auto ld = LoadNode::Create(a, {merge, merge}, vt, 4);
+  auto merge = MemStateMergeOperator::Create(std::vector<jlm::rvsdg::output *>{ s1, s2 });
+  auto ld = LoadNode::Create(a, { merge, merge }, vt, 4);
 
-  auto ex1 = graph.add_export(ld[0], {ld[0]->type(), "v"});
-  auto ex2 = graph.add_export(ld[1], {ld[1]->type(), "s1"});
-  auto ex3 = graph.add_export(ld[2], {ld[2]->type(), "s2"});
+  auto ex1 = graph.add_export(ld[0], { ld[0]->type(), "v" });
+  auto ex2 = graph.add_export(ld[1], { ld[1]->type(), "s1" });
+  auto ex3 = graph.add_export(ld[2], { ld[2]->type(), "s2" });
 
   jlm::rvsdg::view(graph.root(), stdout);
 
@@ -104,8 +105,8 @@ test_load_mux_reduction2()
   /*
    * Assert
    *
-   * The LoadMux reduction should not be performed, as the current implementation does not correctly take care of
-   * the two identical load state operands originating from the merge node.
+   * The LoadMux reduction should not be performed, as the current implementation does not correctly
+   * take care of the two identical load state operands originating from the merge node.
    */
   assert(ld.size() == 3);
   assert(ex1->origin() == ld[0]);

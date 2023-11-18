@@ -15,63 +15,65 @@
 namespace jlm::llvm
 {
 
-namespace delta {
+namespace delta
+{
 
 /** \brief Delta operation
-*/
-class operation final : public rvsdg::structural_op {
+ */
+class operation final : public rvsdg::structural_op
+{
 public:
-	~operation() override;
+  ~operation() override;
 
-	operation(
-		const rvsdg::valuetype & type,
-		const std::string & name,
-		const llvm::linkage & linkage,
-    std::string section,
-		bool constant)
-	: constant_(constant)
-	, name_(name)
-  , Section_(std::move(section))
-	, linkage_(linkage)
-	, type_(type.copy())
-	{}
+  operation(
+      const rvsdg::valuetype & type,
+      const std::string & name,
+      const llvm::linkage & linkage,
+      std::string section,
+      bool constant)
+      : constant_(constant),
+        name_(name),
+        Section_(std::move(section)),
+        linkage_(linkage),
+        type_(type.copy())
+  {}
 
-	operation(const operation & other)
-	: constant_(other.constant_)
-	, name_(other.name_)
-  , Section_(other.Section_)
-	, linkage_(other.linkage_)
-	, type_(other.type_->copy())
-	{}
+  operation(const operation & other)
+      : constant_(other.constant_),
+        name_(other.name_),
+        Section_(other.Section_),
+        linkage_(other.linkage_),
+        type_(other.type_->copy())
+  {}
 
-	operation(operation && other) noexcept
-	: constant_(other.constant_)
-	, name_(std::move(other.name_))
-  , Section_(std::move(other.Section_))
-	, linkage_(other.linkage_)
-	, type_(std::move(other.type_))
-	{}
+  operation(operation && other) noexcept
+      : constant_(other.constant_),
+        name_(std::move(other.name_)),
+        Section_(std::move(other.Section_)),
+        linkage_(other.linkage_),
+        type_(std::move(other.type_))
+  {}
 
-	operation &
-	operator=(const operation&) = delete;
+  operation &
+  operator=(const operation &) = delete;
 
-	operation &
-	operator=(operation&&) = delete;
+  operation &
+  operator=(operation &&) = delete;
 
-	virtual std::string
-	debug_string() const override;
+  virtual std::string
+  debug_string() const override;
 
-	virtual std::unique_ptr<rvsdg::operation>
-	copy() const override;
+  virtual std::unique_ptr<rvsdg::operation>
+  copy() const override;
 
-	virtual bool
-	operator==(const rvsdg::operation & other) const noexcept override;
+  virtual bool
+  operator==(const rvsdg::operation & other) const noexcept override;
 
-	const std::string &
-	name() const noexcept
-	{
-		return name_;
-	}
+  const std::string &
+  name() const noexcept
+  {
+    return name_;
+  }
 
   [[nodiscard]] const std::string &
   Section() const noexcept
@@ -79,30 +81,30 @@ public:
     return Section_;
   }
 
-	const llvm::linkage &
-	linkage() const noexcept
-	{
-		return linkage_;
-	}
+  const llvm::linkage &
+  linkage() const noexcept
+  {
+    return linkage_;
+  }
 
-	bool
-	constant() const noexcept
-	{
-		return constant_;
-	}
+  bool
+  constant() const noexcept
+  {
+    return constant_;
+  }
 
-	[[nodiscard]] const rvsdg::valuetype &
-	type() const noexcept
-	{
+  [[nodiscard]] const rvsdg::valuetype &
+  type() const noexcept
+  {
     return *jlm::util::AssertedCast<rvsdg::valuetype>(type_.get());
-	}
+  }
 
 private:
-	bool constant_;
-	std::string name_;
+  bool constant_;
+  std::string name_;
   std::string Section_;
-	llvm::linkage linkage_;
-	std::unique_ptr<rvsdg::type> type_;
+  llvm::linkage linkage_;
+  std::unique_ptr<rvsdg::type> type_;
 };
 
 class cvargument;
@@ -111,73 +113,72 @@ class output;
 class result;
 
 /** \brief Delta node
-*
-* A delta node represents a global variable in the RVSDG. Its creation requires the invocation
-* of two functions: \ref create() and \ref finalize(). First, a delta node is create by invoking
-* \ref create(). The delta's dependencies can then be added using the \ref add_ctxvar() method,
-* and the body of the delta node can be created. Finally, the delta node can be finalized by
-* invoking \ref finalize().
-*
-* The following snippet illustrates the creation of delta nodes:
-*
-* \code{.cpp}
-*   auto delta = delta::node::create(...);
-*   ...
-*   auto cv1 = delta->add_ctxvar(...);
-*   auto cv2 = delta->add_ctxvar(...);
-*   ...
-*   // generate delta body
-*   ...
-*   auto output = delta->finalize(...);
-* \endcode
-*/
-class node final : public rvsdg::structural_node {
-	class cviterator;
-	class cvconstiterator;
+ *
+ * A delta node represents a global variable in the RVSDG. Its creation requires the invocation
+ * of two functions: \ref create() and \ref finalize(). First, a delta node is create by invoking
+ * \ref create(). The delta's dependencies can then be added using the \ref add_ctxvar() method,
+ * and the body of the delta node can be created. Finally, the delta node can be finalized by
+ * invoking \ref finalize().
+ *
+ * The following snippet illustrates the creation of delta nodes:
+ *
+ * \code{.cpp}
+ *   auto delta = delta::node::create(...);
+ *   ...
+ *   auto cv1 = delta->add_ctxvar(...);
+ *   auto cv2 = delta->add_ctxvar(...);
+ *   ...
+ *   // generate delta body
+ *   ...
+ *   auto output = delta->finalize(...);
+ * \endcode
+ */
+class node final : public rvsdg::structural_node
+{
+  class cviterator;
+  class cvconstiterator;
 
-	using ctxvar_range = jlm::util::iterator_range<cviterator>;
-	using ctxvar_constrange = jlm::util::iterator_range<cvconstiterator>;
+  using ctxvar_range = jlm::util::iterator_range<cviterator>;
+  using ctxvar_constrange = jlm::util::iterator_range<cvconstiterator>;
 
 public:
-	~node() override;
+  ~node() override;
 
 private:
-	node(
-		rvsdg::region * parent,
-		delta::operation && op)
-	: structural_node(op, parent, 1)
-	{}
+  node(rvsdg::region * parent, delta::operation && op)
+      : structural_node(op, parent, 1)
+  {}
 
 public:
-	ctxvar_range
-	ctxvars();
+  ctxvar_range
+  ctxvars();
 
-	ctxvar_constrange
-	ctxvars() const;
+  ctxvar_constrange
+  ctxvars() const;
 
-	rvsdg::region *
-	subregion() const noexcept
-	{
-		return structural_node::subregion(0);
-	}
+  rvsdg::region *
+  subregion() const noexcept
+  {
+    return structural_node::subregion(0);
+  }
 
-	const delta::operation &
-	operation() const noexcept
-	{
-		return *static_cast<const delta::operation*>(&structural_node::operation());
-	}
+  const delta::operation &
+  operation() const noexcept
+  {
+    return *static_cast<const delta::operation *>(&structural_node::operation());
+  }
 
-	[[nodiscard]] const rvsdg::valuetype &
-	type() const noexcept
-	{
-		return operation().type();
-	}
+  [[nodiscard]] const rvsdg::valuetype &
+  type() const noexcept
+  {
+    return operation().type();
+  }
 
-	const std::string &
-	name() const noexcept
-	{
-		return operation().name();
-	}
+  const std::string &
+  name() const noexcept
+  {
+    return operation().name();
+  }
 
   [[nodiscard]] const std::string &
   Section() const noexcept
@@ -185,263 +186,252 @@ public:
     return operation().Section();
   }
 
-	const llvm::linkage &
-	linkage() const noexcept
-	{
-		return operation().linkage();
-	}
+  const llvm::linkage &
+  linkage() const noexcept
+  {
+    return operation().linkage();
+  }
 
-	bool
-	constant() const noexcept
-	{
-		return operation().constant();
-	}
+  bool
+  constant() const noexcept
+  {
+    return operation().constant();
+  }
 
-	size_t
-	ncvarguments() const noexcept
-	{
-		return ninputs();
-	}
+  size_t
+  ncvarguments() const noexcept
+  {
+    return ninputs();
+  }
 
-	/**
-	* Adds a context/free variable to the delta node. The \p origin must be from the same region
-	* as the delta node.
-	*
-	* \return The context variable argument from the delta region.
-	*/
-	delta::cvargument *
-	add_ctxvar(rvsdg::output * origin);
+  /**
+   * Adds a context/free variable to the delta node. The \p origin must be from the same region
+   * as the delta node.
+   *
+   * \return The context variable argument from the delta region.
+   */
+  delta::cvargument *
+  add_ctxvar(rvsdg::output * origin);
 
-	cvinput *
-	input(size_t n) const noexcept;
+  cvinput *
+  input(size_t n) const noexcept;
 
-	delta::cvargument *
-	cvargument(size_t n) const noexcept;
+  delta::cvargument *
+  cvargument(size_t n) const noexcept;
 
-	delta::output *
-	output() const noexcept;
+  delta::output *
+  output() const noexcept;
 
-	delta::result *
-	result() const noexcept;
+  delta::result *
+  result() const noexcept;
 
-	virtual delta::node *
-	copy(
-		rvsdg::region * region,
-		const std::vector<rvsdg::output*> & operands) const override;
+  virtual delta::node *
+  copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const override;
 
-	virtual delta::node *
-	copy(
-		rvsdg::region * region,
-		rvsdg::substitution_map & smap) const override;
+  virtual delta::node *
+  copy(rvsdg::region * region, rvsdg::substitution_map & smap) const override;
 
-	/**
-	* Creates a delta node in the region \p parent with the pointer type \p type and name \p name.
-	* After the invocation of \ref create(), the delta node has no inputs or outputs.
-	* Free variables can be added to the delta node using \ref add_ctxvar(). The generation of the
-	* node can be finished using the \ref finalize() method.
-	*
-	* \param parent The region where the delta node is created.
-	* \param type The delta node's type.
-	* \param name The delta node's name.
-	* \param linkage The delta node's linkage.
-	* \param Section The delta node's section.
-	* \param constant True, if the delta node is constant, otherwise false.
-	*
-	* \return A delta node without inputs or outputs.
-	*/
-	static node *
-	Create(
-		rvsdg::region * parent,
-    const rvsdg::valuetype & type,
-		const std::string & name,
-		const llvm::linkage & linkage,
-    std::string section,
-		bool constant)
-	{
-		delta::operation op(type, name, linkage, std::move(section), constant);
-		return new delta::node(parent, std::move(op));
-	}
+  /**
+   * Creates a delta node in the region \p parent with the pointer type \p type and name \p name.
+   * After the invocation of \ref create(), the delta node has no inputs or outputs.
+   * Free variables can be added to the delta node using \ref add_ctxvar(). The generation of the
+   * node can be finished using the \ref finalize() method.
+   *
+   * \param parent The region where the delta node is created.
+   * \param type The delta node's type.
+   * \param name The delta node's name.
+   * \param linkage The delta node's linkage.
+   * \param Section The delta node's section.
+   * \param constant True, if the delta node is constant, otherwise false.
+   *
+   * \return A delta node without inputs or outputs.
+   */
+  static node *
+  Create(
+      rvsdg::region * parent,
+      const rvsdg::valuetype & type,
+      const std::string & name,
+      const llvm::linkage & linkage,
+      std::string section,
+      bool constant)
+  {
+    delta::operation op(type, name, linkage, std::move(section), constant);
+    return new delta::node(parent, std::move(op));
+  }
 
-	/**
-	* Finalizes the creation of a delta node.
-	*
-	* \param result The result values of the delta expression, originating from the delta region.
-	*
-	* \return The output of the delta node.
-	*/
-	delta::output *
-	finalize(rvsdg::output * result);
+  /**
+   * Finalizes the creation of a delta node.
+   *
+   * \param result The result values of the delta expression, originating from the delta region.
+   *
+   * \return The output of the delta node.
+   */
+  delta::output *
+  finalize(rvsdg::output * result);
 };
 
 /** \brief Delta context variable input
-*/
-class cvinput final : public rvsdg::structural_input {
-	friend ::jlm::llvm::delta::node;
+ */
+class cvinput final : public rvsdg::structural_input
+{
+  friend ::jlm::llvm::delta::node;
 
 public:
-	~cvinput() override;
+  ~cvinput() override;
 
 private:
-	cvinput(
-		delta::node * node,
-		rvsdg::output * origin)
-	: structural_input(node, origin, origin->port())
-	{}
+  cvinput(delta::node * node, rvsdg::output * origin)
+      : structural_input(node, origin, origin->port())
+  {}
 
-	static cvinput *
-	create(
-		delta::node * node,
-		rvsdg::output * origin)
-	{
-		auto input = std::unique_ptr<cvinput>(new cvinput(node, origin));
-		return static_cast<cvinput*>(node->append_input(std::move(input)));
-	}
+  static cvinput *
+  create(delta::node * node, rvsdg::output * origin)
+  {
+    auto input = std::unique_ptr<cvinput>(new cvinput(node, origin));
+    return static_cast<cvinput *>(node->append_input(std::move(input)));
+  }
 
 public:
-	cvargument *
-	argument() const noexcept;
+  cvargument *
+  argument() const noexcept;
 
-	delta::node *
-	node() const noexcept
-	{
-		return static_cast<delta::node*>(structural_input::node());
-	}
+  delta::node *
+  node() const noexcept
+  {
+    return static_cast<delta::node *>(structural_input::node());
+  }
 };
 
 /** \brief Delta context variable iterator
-*/
-class node::cviterator final : public rvsdg::input::iterator<cvinput> {
-	friend ::jlm::llvm::delta::node;
+ */
+class node::cviterator final : public rvsdg::input::iterator<cvinput>
+{
+  friend ::jlm::llvm::delta::node;
 
-	constexpr
-	cviterator(cvinput * input)
-	: rvsdg::input::iterator<cvinput>(input)
-	{}
+  constexpr cviterator(cvinput * input)
+      : rvsdg::input::iterator<cvinput>(input)
+  {}
 
-	virtual cvinput *
-	next() const override
-	{
-		auto node = value()->node();
-		auto index = value()->index();
+  virtual cvinput *
+  next() const override
+  {
+    auto node = value()->node();
+    auto index = value()->index();
 
-		return node->ninputs() > index+1 ? node->input(index+1) : nullptr;
-	}
+    return node->ninputs() > index + 1 ? node->input(index + 1) : nullptr;
+  }
 };
 
 /** \brief Delta context variable const iterator
-*/
-class node::cvconstiterator final : public rvsdg::input::constiterator<cvinput> {
-	friend ::jlm::llvm::delta::node;
+ */
+class node::cvconstiterator final : public rvsdg::input::constiterator<cvinput>
+{
+  friend ::jlm::llvm::delta::node;
 
-	constexpr
-	cvconstiterator(const cvinput * input)
-	: rvsdg::input::constiterator<cvinput>(input)
-	{}
+  constexpr cvconstiterator(const cvinput * input)
+      : rvsdg::input::constiterator<cvinput>(input)
+  {}
 
-	virtual const cvinput *
-	next() const override
-	{
-		auto node = value()->node();
-		auto index = value()->index();
+  virtual const cvinput *
+  next() const override
+  {
+    auto node = value()->node();
+    auto index = value()->index();
 
-		return node->ninputs() > index+1 ? node->input(index+1) : nullptr;
-	}
+    return node->ninputs() > index + 1 ? node->input(index + 1) : nullptr;
+  }
 };
 
 /** \brief Delta output
-*/
-class output final : public rvsdg::structural_output {
-	friend ::jlm::llvm::delta::node;
+ */
+class output final : public rvsdg::structural_output
+{
+  friend ::jlm::llvm::delta::node;
 
 public:
-	~output() override;
+  ~output() override;
 
 private:
-	output(
-		delta::node * node,
-		const rvsdg::port & port)
-	: structural_output(node, port)
-	{}
+  output(delta::node * node, const rvsdg::port & port)
+      : structural_output(node, port)
+  {}
 
-	static output *
-	create(
-		delta::node * node,
-		const rvsdg::port & port)
-	{
-		auto output = std::unique_ptr<delta::output>(new delta::output(node, port));
-		return static_cast<delta::output*>(node->append_output(std::move(output)));
-	}
+  static output *
+  create(delta::node * node, const rvsdg::port & port)
+  {
+    auto output = std::unique_ptr<delta::output>(new delta::output(node, port));
+    return static_cast<delta::output *>(node->append_output(std::move(output)));
+  }
 
 public:
-	delta::node *
-	node() const noexcept
-	{
-		return static_cast<delta::node*>(structural_output::node());
-	}
+  delta::node *
+  node() const noexcept
+  {
+    return static_cast<delta::node *>(structural_output::node());
+  }
 };
 
 /** \brief Delta context variable argument
-*/
-class cvargument final : public rvsdg::argument {
-	friend ::jlm::llvm::delta::node;
+ */
+class cvargument final : public rvsdg::argument
+{
+  friend ::jlm::llvm::delta::node;
 
 public:
-	~cvargument() override;
+  ~cvargument() override;
 
 private:
-	cvargument(
-		rvsdg::region * region,
-		cvinput * input)
-	: rvsdg::argument(region, input, input->port())
-	{}
+  cvargument(rvsdg::region * region, cvinput * input)
+      : rvsdg::argument(region, input, input->port())
+  {}
 
-	static cvargument *
-	create(
-		rvsdg::region * region,
-		delta::cvinput * input)
-	{
-		auto argument = new cvargument(region, input);
-		region->append_argument(argument);
-		return argument;
-	}
+  static cvargument *
+  create(rvsdg::region * region, delta::cvinput * input)
+  {
+    auto argument = new cvargument(region, input);
+    region->append_argument(argument);
+    return argument;
+  }
 
 public:
-	cvinput *
-	input() const noexcept
-	{
-		return static_cast<cvinput*>(rvsdg::argument::input());
-	}
+  cvinput *
+  input() const noexcept
+  {
+    return static_cast<cvinput *>(rvsdg::argument::input());
+  }
 };
 
 /** \brief Delta result
-*/
-class result final : public rvsdg::result {
-	friend ::jlm::llvm::delta::node;
+ */
+class result final : public rvsdg::result
+{
+  friend ::jlm::llvm::delta::node;
 
 public:
-	~result() override;
+  ~result() override;
 
 private:
-	result(rvsdg::output * origin)
-	: rvsdg::result(origin->region(), origin, nullptr, origin->port())
-	{}
+  result(rvsdg::output * origin)
+      : rvsdg::result(origin->region(), origin, nullptr, origin->port())
+  {}
 
-	static result *
-	create(rvsdg::output * origin)
-	{
-		auto result = new delta::result(origin);
-		origin->region()->append_result(result);
-		return result;
-	}
+  static result *
+  create(rvsdg::output * origin)
+  {
+    auto result = new delta::result(origin);
+    origin->region()->append_result(result);
+    return result;
+  }
 
 public:
-	delta::output *
-	output() const noexcept
-	{
-		return static_cast<delta::output*>(rvsdg::result::output());
-	}
+  delta::output *
+  output() const noexcept
+  {
+    return static_cast<delta::output *>(rvsdg::result::output());
+  }
 };
 
-}}
+}
+}
 
 #endif

@@ -11,7 +11,8 @@
 
 #include <jlm/llvm/ir/operators/call.hpp>
 
-static int test_main()
+static int
+test_main()
 {
   using namespace jlm::llvm;
 
@@ -22,33 +23,25 @@ static int test_main()
   MemoryStateType memoryStateType;
   loopstatetype loopStateType;
   FunctionType f0type(
-    {&vtype, &iOStateType, &memoryStateType, &loopStateType},
-    {&iOStateType, &memoryStateType, &loopStateType});
+      { &vtype, &iOStateType, &memoryStateType, &loopStateType },
+      { &iOStateType, &memoryStateType, &loopStateType });
   FunctionType f1type(
-    {&vtype, &iOStateType, &memoryStateType, &loopStateType},
-    {&vtype, &iOStateType, &memoryStateType, &loopStateType});
+      { &vtype, &iOStateType, &memoryStateType, &loopStateType },
+      { &vtype, &iOStateType, &memoryStateType, &loopStateType });
 
   auto SetupEmptyLambda = [&](jlm::rvsdg::region * region, const std::string & name)
   {
-    auto lambda = lambda::node::create(
-      region,
-      f0type,
-      name,
-      linkage::external_linkage);
+    auto lambda = lambda::node::create(region, f0type, name, linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(1);
     auto memoryStateArgument = lambda->fctargument(2);
     auto loopStateArgument = lambda->fctargument(3);
 
-    return lambda->finalize({iOStateArgument, memoryStateArgument, loopStateArgument});
+    return lambda->finalize({ iOStateArgument, memoryStateArgument, loopStateArgument });
   };
 
   auto SetupF2 = [&](jlm::rvsdg::region * region, jlm::rvsdg::argument * f2)
   {
-    auto lambda = lambda::node::create(
-      region,
-      f1type,
-      "f2",
-      linkage::external_linkage);
+    auto lambda = lambda::node::create(region, f1type, "f2", linkage::external_linkage);
     auto ctxVarF2 = lambda->add_ctxvar(f2);
     auto valueArgument = lambda->fctargument(0);
     auto iOStateArgument = lambda->fctargument(1);
@@ -56,9 +49,9 @@ static int test_main()
     auto loopStateArgument = lambda->fctargument(3);
 
     auto callResults = CallNode::Create(
-      ctxVarF2,
-      f1type,
-      {valueArgument, iOStateArgument, memoryStateArgument, loopStateArgument});
+        ctxVarF2,
+        f1type,
+        { valueArgument, iOStateArgument, memoryStateArgument, loopStateArgument });
 
     return lambda->finalize(callResults);
   };
@@ -78,7 +71,7 @@ static int test_main()
   rv3->set_rvorigin(lambdaOutput2);
 
   auto phi = pb.end();
-  graph.add_export(phi->output(0), {phi->output(0)->type(), "dummy"});
+  graph.add_export(phi->output(0), { phi->output(0)->type(), "dummy" });
 
   graph.normalize();
   graph.prune();

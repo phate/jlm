@@ -20,12 +20,13 @@ namespace jlm::tooling
 
 /** \brief Command class
  *
- * This class represents simple commands, such as \a mkdir or \a rm, that can be executed with the Run() method.
+ * This class represents simple commands, such as \a mkdir or \a rm, that can be executed with the
+ * Run() method.
  */
-class Command {
+class Command
+{
 public:
-  virtual
-  ~Command();
+  virtual ~Command();
 
   [[nodiscard]] virtual std::string
   ToString() const = 0;
@@ -37,24 +38,24 @@ public:
 /**
  * The PrintCommandsCommand class prints the commands of a command graph in topological order.
  */
-class PrintCommandsCommand final : public Command {
+class PrintCommandsCommand final : public Command
+{
 public:
   ~PrintCommandsCommand() override;
 
-  explicit
-  PrintCommandsCommand(std::unique_ptr<CommandGraph> commandGraph)
-    : CommandGraph_(std::move(commandGraph))
+  explicit PrintCommandsCommand(std::unique_ptr<CommandGraph> commandGraph)
+      : CommandGraph_(std::move(commandGraph))
   {}
 
-  PrintCommandsCommand(const PrintCommandsCommand&) = delete;
+  PrintCommandsCommand(const PrintCommandsCommand &) = delete;
 
-  PrintCommandsCommand(PrintCommandsCommand&&) = delete;
-
-  PrintCommandsCommand &
-  operator=(const PrintCommandsCommand&) = delete;
+  PrintCommandsCommand(PrintCommandsCommand &&) = delete;
 
   PrintCommandsCommand &
-  operator=(PrintCommandsCommand&&)	= delete;
+  operator=(const PrintCommandsCommand &) = delete;
+
+  PrintCommandsCommand &
+  operator=(PrintCommandsCommand &&) = delete;
 
   [[nodiscard]] std::string
   ToString() const override;
@@ -67,9 +68,7 @@ public:
 
 private:
   static CommandGraph::Node &
-  Create(
-    CommandGraph & commandGraph,
-    std::unique_ptr<CommandGraph> printedCommandGraph)
+  Create(CommandGraph & commandGraph, std::unique_ptr<CommandGraph> printedCommandGraph)
   {
     auto command = std::make_unique<PrintCommandsCommand>(std::move(printedCommandGraph));
     return CommandGraph::Node::Create(commandGraph, std::move(command));
@@ -81,9 +80,11 @@ private:
 /**
  * The ClangCommand class represents the clang command line tool.
  */
-class ClangCommand final : public Command {
+class ClangCommand final : public Command
+{
 public:
-  enum class LanguageStandard {
+  enum class LanguageStandard
+  {
     Unspecified,
     Gnu89,
     Gnu99,
@@ -96,66 +97,66 @@ public:
     Cpp14
   };
 
-  enum class ClangArgument {
+  enum class ClangArgument
+  {
     DisableO0OptNone
   };
 
   ~ClangCommand() override;
 
   ClangCommand(
-    std::vector<util::filepath> inputFiles,
-    util::filepath outputFile,
-    std::vector<std::string> libraryPaths,
-    std::vector<std::string> libraries,
-    bool usePthreads)
-    : InputFiles_(std::move(inputFiles))
-    , OutputFile_(std::move(outputFile))
-    , DependencyFile_("")
-    , Libraries_(std::move(libraries))
-    , LibraryPaths_(std::move(libraryPaths))
-    , UsePthreads_(usePthreads)
-    , Verbose_(false)
-    , Rdynamic_(false)
-    , Suppress_(false)
-    , Md_(false)
-    , LanguageStandard_(LanguageStandard::Unspecified)
-    , LinkerCommand_(true)
+      std::vector<util::filepath> inputFiles,
+      util::filepath outputFile,
+      std::vector<std::string> libraryPaths,
+      std::vector<std::string> libraries,
+      bool usePthreads)
+      : InputFiles_(std::move(inputFiles)),
+        OutputFile_(std::move(outputFile)),
+        DependencyFile_(""),
+        Libraries_(std::move(libraries)),
+        LibraryPaths_(std::move(libraryPaths)),
+        UsePthreads_(usePthreads),
+        Verbose_(false),
+        Rdynamic_(false),
+        Suppress_(false),
+        Md_(false),
+        LanguageStandard_(LanguageStandard::Unspecified),
+        LinkerCommand_(true)
   {}
 
   ClangCommand(
-    const util::filepath & inputFile,
-    util::filepath outputFile,
-    util::filepath dependencyFile,
-    std::vector<std::string> includePaths,
-    std::vector<std::string> macroDefinitions,
-    std::vector<std::string> warnings,
-    std::vector<std::string> flags,
-    bool verbose,
-    bool rdynamic,
-    bool suppress,
-    bool usePthreads,
-    bool mD,
-    std::string mT,
-    const LanguageStandard & languageStandard,
-    std::vector<ClangArgument> clangArguments)
-    : InputFiles_({inputFile})
-    , OutputFile_(std::move(outputFile))
-    , DependencyFile_(std::move(dependencyFile))
-    , IncludePaths_(std::move(includePaths))
-    , MacroDefinitions_(std::move(macroDefinitions))
-    , Warnings_(std::move(warnings))
-    , Flags_(std::move(flags))
-    , UsePthreads_(usePthreads)
-    , Verbose_(verbose)
-    , Rdynamic_(rdynamic)
-    , Suppress_(suppress)
-    , Md_(mD)
-    , Mt_(std::move(mT))
-    , LanguageStandard_(languageStandard)
-    , ClangArguments_(std::move(clangArguments))
-    , LinkerCommand_(false)
+      const util::filepath & inputFile,
+      util::filepath outputFile,
+      util::filepath dependencyFile,
+      std::vector<std::string> includePaths,
+      std::vector<std::string> macroDefinitions,
+      std::vector<std::string> warnings,
+      std::vector<std::string> flags,
+      bool verbose,
+      bool rdynamic,
+      bool suppress,
+      bool usePthreads,
+      bool mD,
+      std::string mT,
+      const LanguageStandard & languageStandard,
+      std::vector<ClangArgument> clangArguments)
+      : InputFiles_({ inputFile }),
+        OutputFile_(std::move(outputFile)),
+        DependencyFile_(std::move(dependencyFile)),
+        IncludePaths_(std::move(includePaths)),
+        MacroDefinitions_(std::move(macroDefinitions)),
+        Warnings_(std::move(warnings)),
+        Flags_(std::move(flags)),
+        UsePthreads_(usePthreads),
+        Verbose_(verbose),
+        Rdynamic_(rdynamic),
+        Suppress_(suppress),
+        Md_(mD),
+        Mt_(std::move(mT)),
+        LanguageStandard_(languageStandard),
+        ClangArguments_(std::move(clangArguments)),
+        LinkerCommand_(false)
   {}
-
 
   [[nodiscard]] std::string
   ToString() const override;
@@ -177,57 +178,53 @@ public:
 
   static CommandGraph::Node &
   CreateLinkerCommand(
-    CommandGraph & commandGraph,
-    const std::vector<util::filepath> & inputFiles,
-    const util::filepath & outputFile,
-    const std::vector<std::string> & libraryPaths,
-    const std::vector<std::string> & libraries,
-    bool usePthreads)
+      CommandGraph & commandGraph,
+      const std::vector<util::filepath> & inputFiles,
+      const util::filepath & outputFile,
+      const std::vector<std::string> & libraryPaths,
+      const std::vector<std::string> & libraries,
+      bool usePthreads)
   {
-    std::unique_ptr<ClangCommand> command(new ClangCommand(
-      inputFiles,
-      outputFile,
-      libraryPaths,
-      libraries,
-      usePthreads));
+    std::unique_ptr<ClangCommand> command(
+        new ClangCommand(inputFiles, outputFile, libraryPaths, libraries, usePthreads));
     return CommandGraph::Node::Create(commandGraph, std::move(command));
   }
 
   static CommandGraph::Node &
   CreateParsingCommand(
-    CommandGraph & commandGraph,
-    const util::filepath & inputFile,
-    const util::filepath & outputFile,
-    const util::filepath & dependencyFile,
-    const std::vector<std::string> & includePaths,
-    const std::vector<std::string> & macroDefinitions,
-    const std::vector<std::string> & warnings,
-    const std::vector<std::string> & flags,
-    bool verbose,
-    bool rdynamic,
-    bool suppress,
-    bool usePthread,
-    bool mD,
-    const std::string & mT,
-    const LanguageStandard & languageStandard,
-    const std::vector<ClangArgument> & clangArguments)
+      CommandGraph & commandGraph,
+      const util::filepath & inputFile,
+      const util::filepath & outputFile,
+      const util::filepath & dependencyFile,
+      const std::vector<std::string> & includePaths,
+      const std::vector<std::string> & macroDefinitions,
+      const std::vector<std::string> & warnings,
+      const std::vector<std::string> & flags,
+      bool verbose,
+      bool rdynamic,
+      bool suppress,
+      bool usePthread,
+      bool mD,
+      const std::string & mT,
+      const LanguageStandard & languageStandard,
+      const std::vector<ClangArgument> & clangArguments)
   {
     std::unique_ptr<ClangCommand> command(new ClangCommand(
-      inputFile,
-      outputFile,
-      dependencyFile,
-      includePaths,
-      macroDefinitions,
-      warnings,
-      flags,
-      verbose,
-      rdynamic,
-      suppress,
-      usePthread,
-      mD,
-      mT,
-      languageStandard,
-      clangArguments));
+        inputFile,
+        outputFile,
+        dependencyFile,
+        includePaths,
+        macroDefinitions,
+        warnings,
+        flags,
+        verbose,
+        rdynamic,
+        suppress,
+        usePthread,
+        mD,
+        mT,
+        languageStandard,
+        clangArguments));
     return CommandGraph::Node::Create(commandGraph, std::move(command));
   }
 
@@ -239,7 +236,7 @@ private:
   ToString(const ClangArgument & clangArgument);
 
   static std::string
-  ReplaceAll(std::string str, const std::string& from, const std::string& to);
+  ReplaceAll(std::string str, const std::string & from, const std::string & to);
 
   std::vector<util::filepath> InputFiles_;
   util::filepath OutputFile_;
@@ -268,16 +265,19 @@ private:
 /**
  * The LlcCommand class represents the llc command line tool.
  */
-class LlcCommand final : public Command {
+class LlcCommand final : public Command
+{
 public:
-  enum class OptimizationLevel {
+  enum class OptimizationLevel
+  {
     O0,
     O1,
     O2,
     O3
   };
 
-  enum class RelocationModel {
+  enum class RelocationModel
+  {
     Static,
     Pic
   };
@@ -285,14 +285,14 @@ public:
   ~LlcCommand() override;
 
   LlcCommand(
-    util::filepath inputFile,
-    util::filepath outputFile,
-    const OptimizationLevel & optimizationLevel,
-    const RelocationModel & relocationModel)
-    : OptimizationLevel_(optimizationLevel)
-    , RelocationModel_(relocationModel)
-    , InputFile_(std::move(inputFile))
-    , OutputFile_(std::move(outputFile))
+      util::filepath inputFile,
+      util::filepath outputFile,
+      const OptimizationLevel & optimizationLevel,
+      const RelocationModel & relocationModel)
+      : OptimizationLevel_(optimizationLevel),
+        RelocationModel_(relocationModel),
+        InputFile_(std::move(inputFile)),
+        OutputFile_(std::move(outputFile))
   {}
 
   [[nodiscard]] std::string
@@ -309,17 +309,14 @@ public:
 
   static CommandGraph::Node &
   Create(
-    CommandGraph & commandGraph,
-    const util::filepath & inputFile,
-    const util::filepath & outputFile,
-    const OptimizationLevel & optimizationLevel,
-    const RelocationModel & relocationModel)
+      CommandGraph & commandGraph,
+      const util::filepath & inputFile,
+      const util::filepath & outputFile,
+      const OptimizationLevel & optimizationLevel,
+      const RelocationModel & relocationModel)
   {
-    std::unique_ptr<LlcCommand> command(new LlcCommand(
-      inputFile,
-      outputFile,
-      optimizationLevel,
-      relocationModel));
+    std::unique_ptr<LlcCommand> command(
+        new LlcCommand(inputFile, outputFile, optimizationLevel, relocationModel));
     return CommandGraph::Node::Create(commandGraph, std::move(command));
   }
 
@@ -339,15 +336,14 @@ private:
 /**
  * The JlmOptCommand class represents the jlm-opt command line tool.
  */
-class JlmOptCommand final : public Command {
+class JlmOptCommand final : public Command
+{
 public:
   ~JlmOptCommand() override;
 
-  JlmOptCommand(
-    std::string programName,
-    JlmOptCommandLineOptions commandLineOptions)
-    : ProgramName_(std::move(programName)),
-      CommandLineOptions_(std::move(commandLineOptions))
+  JlmOptCommand(std::string programName, JlmOptCommandLineOptions commandLineOptions)
+      : ProgramName_(std::move(programName)),
+        CommandLineOptions_(std::move(commandLineOptions))
   {}
 
   [[nodiscard]] std::string
@@ -358,17 +354,16 @@ public:
 
   static CommandGraph::Node &
   Create(
-    CommandGraph & commandGraph,
-    std::string programName,
-    JlmOptCommandLineOptions commandLineOptions)
+      CommandGraph & commandGraph,
+      std::string programName,
+      JlmOptCommandLineOptions commandLineOptions)
   {
-    auto command = std::make_unique<JlmOptCommand>(
-      std::move(programName),
-      std::move(commandLineOptions));
+    auto command =
+        std::make_unique<JlmOptCommand>(std::move(programName), std::move(commandLineOptions));
     return CommandGraph::Node::Create(commandGraph, std::move(command));
   }
 
-  [[nodiscard]] const JlmOptCommandLineOptions&
+  [[nodiscard]] const JlmOptCommandLineOptions &
   GetCommandLineOptions() const noexcept
   {
     return CommandLineOptions_;
@@ -376,16 +371,14 @@ public:
 
 private:
   std::unique_ptr<::llvm::Module>
-  ParseLlvmIrFile(
-    const util::filepath & llvmIrFile,
-    ::llvm::LLVMContext & llvmContext) const;
+  ParseLlvmIrFile(const util::filepath & llvmIrFile, ::llvm::LLVMContext & llvmContext) const;
 
   static void
   PrintRvsdgModule(
-    const llvm::RvsdgModule & rvsdgModule,
-    const util::filepath & outputFile,
-    const JlmOptCommandLineOptions::OutputFormat & outputFormat,
-    util::StatisticsCollector & statisticsCollector);
+      const llvm::RvsdgModule & rvsdgModule,
+      const util::filepath & outputFile,
+      const JlmOptCommandLineOptions::OutputFormat & outputFormat,
+      util::StatisticsCollector & statisticsCollector);
 
   std::string ProgramName_;
   JlmOptCommandLineOptions CommandLineOptions_;
@@ -394,13 +387,13 @@ private:
 /**
  * The MkdirCommand class represents the mkdir command line tool.
  */
-class MkdirCommand final : public Command {
+class MkdirCommand final : public Command
+{
 public:
   ~MkdirCommand() noexcept override;
 
-  explicit
-  MkdirCommand(util::filepath path)
-    : Path_(std::move(path))
+  explicit MkdirCommand(util::filepath path)
+      : Path_(std::move(path))
   {}
 
   [[nodiscard]] std::string
@@ -410,9 +403,7 @@ public:
   Run() const override;
 
   static CommandGraph::Node &
-  Create(
-    CommandGraph & commandGraph,
-    const util::filepath & path)
+  Create(CommandGraph & commandGraph, const util::filepath & path)
   {
     std::unique_ptr<MkdirCommand> command(new MkdirCommand(path));
     return CommandGraph::Node::Create(commandGraph, std::move(command));
@@ -425,23 +416,25 @@ private:
 /**
  * The LlvmOptCommand class represents the LLVM opt command line tool.
  */
-class LlvmOptCommand final : public Command {
+class LlvmOptCommand final : public Command
+{
 public:
-  enum class Optimization {
+  enum class Optimization
+  {
     Mem2Reg,
   };
 
   ~LlvmOptCommand() noexcept override;
 
   LlvmOptCommand(
-    util::filepath inputFile,
-    util::filepath outputFile,
-    bool writeLlvmAssembly,
-    std::vector<Optimization> optimizations)
-    : InputFile_(std::move(inputFile))
-    , OutputFile_(std::move(outputFile))
-    , WriteLlvmAssembly_(writeLlvmAssembly)
-    , Optimizations_(std::move(optimizations))
+      util::filepath inputFile,
+      util::filepath outputFile,
+      bool writeLlvmAssembly,
+      std::vector<Optimization> optimizations)
+      : InputFile_(std::move(inputFile)),
+        OutputFile_(std::move(outputFile)),
+        WriteLlvmAssembly_(writeLlvmAssembly),
+        Optimizations_(std::move(optimizations))
   {}
 
   [[nodiscard]] std::string
@@ -458,17 +451,14 @@ public:
 
   static CommandGraph::Node &
   Create(
-    CommandGraph & commandGraph,
-    const util::filepath & inputFile,
-    const util::filepath & outputFile,
-    bool writeLlvmAssembly,
-    const std::vector<Optimization> & optimizations)
+      CommandGraph & commandGraph,
+      const util::filepath & inputFile,
+      const util::filepath & outputFile,
+      bool writeLlvmAssembly,
+      const std::vector<Optimization> & optimizations)
   {
-    std::unique_ptr<LlvmOptCommand> command(new LlvmOptCommand(
-      inputFile,
-      outputFile,
-      writeLlvmAssembly,
-      optimizations));
+    std::unique_ptr<LlvmOptCommand> command(
+        new LlvmOptCommand(inputFile, outputFile, writeLlvmAssembly, optimizations));
     return CommandGraph::Node::Create(commandGraph, std::move(command));
   }
 
@@ -487,19 +477,20 @@ private:
 /**
  * The LlvmLinkCommand class represents the llvm-link command line tool.
  */
-class LlvmLinkCommand final : public Command {
+class LlvmLinkCommand final : public Command
+{
 public:
   ~LlvmLinkCommand() noexcept override;
 
   LlvmLinkCommand(
-    std::vector<util::filepath> inputFiles,
-    util::filepath outputFile,
-    bool writeLlvmAssembly,
-    bool verbose)
-    : OutputFile_(std::move(outputFile))
-    , InputFiles_(std::move(inputFiles))
-    , WriteLlvmAssembly_(writeLlvmAssembly)
-    , Verbose_(verbose)
+      std::vector<util::filepath> inputFiles,
+      util::filepath outputFile,
+      bool writeLlvmAssembly,
+      bool verbose)
+      : OutputFile_(std::move(outputFile)),
+        InputFiles_(std::move(inputFiles)),
+        WriteLlvmAssembly_(writeLlvmAssembly),
+        Verbose_(verbose)
   {}
 
   [[nodiscard]] std::string
@@ -522,17 +513,14 @@ public:
 
   static CommandGraph::Node &
   Create(
-    CommandGraph & commandGraph,
-    const std::vector<util::filepath> & inputFiles,
-    const util::filepath & outputFile,
-    bool writeLlvmAssembly,
-    bool verbose)
+      CommandGraph & commandGraph,
+      const std::vector<util::filepath> & inputFiles,
+      const util::filepath & outputFile,
+      bool writeLlvmAssembly,
+      bool verbose)
   {
-    std::unique_ptr<LlvmLinkCommand> command(new LlvmLinkCommand(
-      inputFiles,
-      outputFile,
-      writeLlvmAssembly,
-      verbose));
+    std::unique_ptr<LlvmLinkCommand> command(
+        new LlvmLinkCommand(inputFiles, outputFile, writeLlvmAssembly, verbose));
     return CommandGraph::Node::Create(commandGraph, std::move(command));
   }
 
@@ -547,17 +535,15 @@ private:
 /**
  * The JlmHlsCommand class represents the jlm-hls command line tool.
  */
-class JlmHlsCommand final : public Command {
+class JlmHlsCommand final : public Command
+{
 public:
   ~JlmHlsCommand() noexcept override;
 
-  JlmHlsCommand(
-    util::filepath inputFile,
-    util::filepath outputFolder,
-    bool useCirct)
-    : InputFile_(std::move(inputFile))
-    , OutputFolder_(std::move(outputFolder))
-    , UseCirct_(useCirct)
+  JlmHlsCommand(util::filepath inputFile, util::filepath outputFolder, bool useCirct)
+      : InputFile_(std::move(inputFile)),
+        OutputFolder_(std::move(outputFolder)),
+        UseCirct_(useCirct)
   {}
 
   [[nodiscard]] std::string
@@ -592,15 +578,12 @@ public:
 
   static CommandGraph::Node &
   Create(
-    CommandGraph & commandGraph,
-    const util::filepath & inputFile,
-    const util::filepath & outputFolder,
-    bool useCirct)
+      CommandGraph & commandGraph,
+      const util::filepath & inputFile,
+      const util::filepath & outputFolder,
+      bool useCirct)
   {
-    std::unique_ptr<JlmHlsCommand> command(new JlmHlsCommand(
-      inputFile,
-      outputFolder,
-      useCirct));
+    std::unique_ptr<JlmHlsCommand> command(new JlmHlsCommand(inputFile, outputFolder, useCirct));
     return CommandGraph::Node::Create(commandGraph, std::move(command));
   }
 
@@ -611,20 +594,21 @@ private:
 };
 
 /**
- * The JlmHlsExtractCommand class represents the jlm-hls command line tool with the --extract command line argument
- * provided.
+ * The JlmHlsExtractCommand class represents the jlm-hls command line tool with the --extract
+ * command line argument provided.
  */
-class JlmHlsExtractCommand final : public Command {
+class JlmHlsExtractCommand final : public Command
+{
 public:
   ~JlmHlsExtractCommand() noexcept override;
 
   JlmHlsExtractCommand(
-    util::filepath inputFile,
-    util::filepath outputFolder,
-    std::string hlsFunctionName)
-    : InputFile_(std::move(inputFile))
-    , OutputFolder_(std::move(outputFolder))
-    , HlsFunctionName_(std::move(hlsFunctionName))
+      util::filepath inputFile,
+      util::filepath outputFolder,
+      std::string hlsFunctionName)
+      : InputFile_(std::move(inputFile)),
+        OutputFolder_(std::move(outputFolder)),
+        HlsFunctionName_(std::move(hlsFunctionName))
   {}
 
   [[nodiscard]] std::string
@@ -659,15 +643,13 @@ public:
 
   static CommandGraph::Node &
   Create(
-    CommandGraph & commandGraph,
-    const util::filepath & inputFile,
-    const std::string & hlsFunctionName,
-    const util::filepath & outputFolder)
+      CommandGraph & commandGraph,
+      const util::filepath & inputFile,
+      const std::string & hlsFunctionName,
+      const util::filepath & outputFolder)
   {
-    std::unique_ptr<JlmHlsExtractCommand> command(new JlmHlsExtractCommand(
-      inputFile,
-      outputFolder,
-      hlsFunctionName));
+    std::unique_ptr<JlmHlsExtractCommand> command(
+        new JlmHlsExtractCommand(inputFile, outputFolder, hlsFunctionName));
     return CommandGraph::Node::Create(commandGraph, std::move(command));
   }
 
@@ -676,21 +658,19 @@ private:
   util::filepath OutputFolder_;
 
   std::string HlsFunctionName_;
-
 };
 
 /**
  * The FirtoolCommand class represents the firtool command line tool.
  */
-class FirtoolCommand final : public Command {
+class FirtoolCommand final : public Command
+{
 public:
   ~FirtoolCommand() noexcept override;
 
-  FirtoolCommand(
-    util::filepath inputFile,
-    util::filepath outputFile)
-    : OutputFile_(std::move(outputFile))
-    , InputFile_(std::move(inputFile))
+  FirtoolCommand(util::filepath inputFile, util::filepath outputFile)
+      : OutputFile_(std::move(outputFile)),
+        InputFile_(std::move(inputFile))
   {}
 
   [[nodiscard]] std::string
@@ -713,9 +693,9 @@ public:
 
   static CommandGraph::Node &
   Create(
-    CommandGraph & commandGraph,
-    const util::filepath & inputFile,
-    const util::filepath & outputFile)
+      CommandGraph & commandGraph,
+      const util::filepath & inputFile,
+      const util::filepath & outputFile)
   {
     std::unique_ptr<FirtoolCommand> command(new FirtoolCommand(inputFile, outputFile));
     return CommandGraph::Node::Create(commandGraph, std::move(command));
@@ -729,25 +709,26 @@ private:
 /**
  * The VerilatorCommand class represents the verilator command line tool.
  */
-class VerilatorCommand final : public Command {
+class VerilatorCommand final : public Command
+{
 public:
   ~VerilatorCommand() noexcept override;
 
   VerilatorCommand(
-    util::filepath verilogFile,
-    std::vector<util::filepath> objectFiles,
-    util::filepath harnessFile,
-    util::filepath outputFile,
-    util::filepath tempFolder,
-    std::vector<std::string> libraryPaths,
-    std::vector<std::string> libraries)
-    : OutputFile_(std::move(outputFile))
-    , VerilogFile_(std::move(verilogFile))
-    , HarnessFile_(std::move(harnessFile))
-    , TempFolder_(std::move(tempFolder))
-    , Libraries_(std::move(libraries))
-    , ObjectFiles_(std::move(objectFiles))
-    , LibraryPaths_(std::move(libraryPaths))
+      util::filepath verilogFile,
+      std::vector<util::filepath> objectFiles,
+      util::filepath harnessFile,
+      util::filepath outputFile,
+      util::filepath tempFolder,
+      std::vector<std::string> libraryPaths,
+      std::vector<std::string> libraries)
+      : OutputFile_(std::move(outputFile)),
+        VerilogFile_(std::move(verilogFile)),
+        HarnessFile_(std::move(harnessFile)),
+        TempFolder_(std::move(tempFolder)),
+        Libraries_(std::move(libraries)),
+        ObjectFiles_(std::move(objectFiles)),
+        LibraryPaths_(std::move(libraryPaths))
   {}
 
   [[nodiscard]] std::string
@@ -782,23 +763,23 @@ public:
 
   static CommandGraph::Node &
   Create(
-    CommandGraph & commandGraph,
-    const util::filepath & verilogFile,
-    const std::vector<util::filepath> & objectFiles,
-    const util::filepath & harnessFile,
-    const util::filepath & outputFile,
-    const util::filepath & tempFolder,
-    const std::vector<std::string> & libraryPaths,
-    const std::vector<std::string> & libraries)
+      CommandGraph & commandGraph,
+      const util::filepath & verilogFile,
+      const std::vector<util::filepath> & objectFiles,
+      const util::filepath & harnessFile,
+      const util::filepath & outputFile,
+      const util::filepath & tempFolder,
+      const std::vector<std::string> & libraryPaths,
+      const std::vector<std::string> & libraries)
   {
     std::unique_ptr<VerilatorCommand> command(new VerilatorCommand(
-      verilogFile,
-      objectFiles,
-      harnessFile,
-      outputFile,
-      tempFolder,
-      libraryPaths,
-      libraries));
+        verilogFile,
+        objectFiles,
+        harnessFile,
+        outputFile,
+        tempFolder,
+        libraryPaths,
+        libraries));
     return CommandGraph::Node::Create(commandGraph, std::move(command));
   }
 

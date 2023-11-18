@@ -19,16 +19,15 @@ class CommandGraph;
 /**
  * Interface for the generator of a command graph.
  */
-template <class T>
-class CommandGraphGenerator {
+template<class T>
+class CommandGraphGenerator
+{
   static_assert(
-    std::is_base_of<CommandLineOptions, T>::value,
-    "T is not derived from CommandLineOptions.");
+      std::is_base_of<CommandLineOptions, T>::value,
+      "T is not derived from CommandLineOptions.");
 
 public:
-  virtual
-  ~CommandGraphGenerator() noexcept
-  = default;
+  virtual ~CommandGraphGenerator() noexcept = default;
 
   /**
    * Generate a command graph.
@@ -43,12 +42,12 @@ public:
 /**
  * Command graph generator for the \a jlc command line tool.
  */
-class JlcCommandGraphGenerator final : public CommandGraphGenerator<JlcCommandLineOptions> {
+class JlcCommandGraphGenerator final : public CommandGraphGenerator<JlcCommandLineOptions>
+{
 public:
   ~JlcCommandGraphGenerator() noexcept override;
 
-  JlcCommandGraphGenerator()
-  = default;
+  JlcCommandGraphGenerator() = default;
 
   [[nodiscard]] std::unique_ptr<CommandGraph>
   GenerateCommandGraph(const JlcCommandLineOptions & commandLineOptions) override;
@@ -75,20 +74,20 @@ private:
 
   static CommandGraph::Node &
   CreateParserCommand(
-    CommandGraph & commandGraph,
-    const JlcCommandLineOptions::Compilation & compilation,
-    const JlcCommandLineOptions & commandLineOptions);
+      CommandGraph & commandGraph,
+      const JlcCommandLineOptions::Compilation & compilation,
+      const JlcCommandLineOptions & commandLineOptions);
 };
 
 /**
  * Command graph generator for the \a jhls command line tool.
  */
-class JhlsCommandGraphGenerator final : public CommandGraphGenerator<JhlsCommandLineOptions> {
+class JhlsCommandGraphGenerator final : public CommandGraphGenerator<JhlsCommandLineOptions>
+{
 public:
   ~JhlsCommandGraphGenerator() noexcept override;
 
-  JhlsCommandGraphGenerator()
-  = default;
+  JhlsCommandGraphGenerator() = default;
 
   [[nodiscard]] std::unique_ptr<CommandGraph>
   GenerateCommandGraph(const JhlsCommandLineOptions & commandLineOptions) override;
@@ -116,4 +115,4 @@ private:
 
 }
 
-#endif //JLM_TOOLING_COMMANDGRAPHGENERATOR_HPP
+#endif // JLM_TOOLING_COMMANDGRAPHGENERATOR_HPP

@@ -14,9 +14,10 @@ namespace jlm::llvm::aa
 
 /** \brief Combines a MemoryNodeProvider and a MemoryNodeEliminator
  *
- * Combines a MemoryNodeProvider and a MemoryNodeEliminator by applying them sequentially. The Provider is
- * applied to a given RvsdgModule and PointsToGraph, which results in a MemoryNodeProvisioning. This
- * MemoryNodeProvisioning is then fed in to the Eliminator, which removes superfluous memory nodes.
+ * Combines a MemoryNodeProvider and a MemoryNodeEliminator by applying them sequentially. The
+ * Provider is applied to a given RvsdgModule and PointsToGraph, which results in a
+ * MemoryNodeProvisioning. This MemoryNodeProvisioning is then fed in to the Eliminator, which
+ * removes superfluous memory nodes.
  *
  * @tparam Provider A MemoryNodeProvider
  * @tparam Eliminator A MemoryNodeEliminator
@@ -25,19 +26,17 @@ template<class Provider, class Eliminator>
 class EliminatedMemoryNodeProvider final : public MemoryNodeProvider
 {
   static_assert(
-    std::is_base_of<MemoryNodeProvider, Provider>::value,
-    "T is not derived from MemoryNodeProvider.");
+      std::is_base_of<MemoryNodeProvider, Provider>::value,
+      "T is not derived from MemoryNodeProvider.");
 
   static_assert(
-    std::is_base_of<MemoryNodeEliminator, Eliminator>::value,
-    "T is not derived from MemoryNodeEliminator.");
+      std::is_base_of<MemoryNodeEliminator, Eliminator>::value,
+      "T is not derived from MemoryNodeEliminator.");
 
 public:
-  ~EliminatedMemoryNodeProvider() noexcept override
-  = default;
+  ~EliminatedMemoryNodeProvider() noexcept override = default;
 
-  EliminatedMemoryNodeProvider()
-  = default;
+  EliminatedMemoryNodeProvider() = default;
 
   EliminatedMemoryNodeProvider(const EliminatedMemoryNodeProvider &) = delete;
 
@@ -51,11 +50,12 @@ public:
 
   std::unique_ptr<MemoryNodeProvisioning>
   ProvisionMemoryNodes(
-    const RvsdgModule &rvsdgModule,
-    const PointsToGraph &pointsToGraph,
-    util::StatisticsCollector &statisticsCollector) override
+      const RvsdgModule & rvsdgModule,
+      const PointsToGraph & pointsToGraph,
+      util::StatisticsCollector & statisticsCollector) override
   {
-    auto seedProvisioning = Provider_.ProvisionMemoryNodes(rvsdgModule, pointsToGraph, statisticsCollector);
+    auto seedProvisioning =
+        Provider_.ProvisionMemoryNodes(rvsdgModule, pointsToGraph, statisticsCollector);
     return Eliminator_.EliminateMemoryNodes(rvsdgModule, *seedProvisioning, statisticsCollector);
   }
 
@@ -66,4 +66,4 @@ private:
 
 }
 
-#endif //JLM_LLVM_OPT_ALIAS_ANALYSES_ELIMINATEDMEMORYNODEPROVIDER_HPP
+#endif // JLM_LLVM_OPT_ALIAS_ANALYSES_ELIMINATEDMEMORYNODEPROVIDER_HPP

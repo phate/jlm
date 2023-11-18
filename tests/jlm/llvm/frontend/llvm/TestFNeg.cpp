@@ -7,22 +7,25 @@
 #include <test-util.hpp>
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
-#include <jlm/llvm/ir/print.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/print.hpp>
 
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
 
-template<class OP> static bool
+template<class OP>
+static bool
 Contains(const jlm::llvm::ipgraph_module & module, const std::string & fctname)
 {
   using namespace jlm;
 
   bool hasInstruction = false;
-  auto controlFlowGraph = dynamic_cast<const jlm::llvm::function_node*>(module.ipgraph().find("f"))->cfg();
-  auto basicBlock = dynamic_cast<const jlm::llvm::basic_block*>(controlFlowGraph->entry()->outedge(0)->sink());
+  auto controlFlowGraph =
+      dynamic_cast<const jlm::llvm::function_node *>(module.ipgraph().find("f"))->cfg();
+  auto basicBlock =
+      dynamic_cast<const jlm::llvm::basic_block *>(controlFlowGraph->entry()->outedge(0)->sink());
   for (auto threeAddressCode : *basicBlock)
     hasInstruction = hasInstruction || jlm::llvm::is<OP>(threeAddressCode);
 
@@ -40,7 +43,7 @@ TestFNegScalar()
 
     auto doubleType = Type::getDoubleTy(context);
 
-    auto functionArguments = std::vector<Type*>({doubleType});
+    auto functionArguments = std::vector<Type *>({ doubleType });
     auto functionType = FunctionType::get(doubleType, functionArguments, false);
     auto function = Function::Create(functionType, GlobalValue::ExternalLinkage, "f", module.get());
 
@@ -74,7 +77,7 @@ TestFNegVector()
 
     auto vectorType = VectorType::get(Type::getDoubleTy(context), 2, false);
 
-    auto functionArguments = std::vector<Type*>({vectorType});
+    auto functionArguments = std::vector<Type *>({ vectorType });
     auto functionType = FunctionType::get(vectorType, functionArguments, false);
     auto function = Function::Create(functionType, GlobalValue::ExternalLinkage, "f", module.get());
 

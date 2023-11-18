@@ -13,14 +13,14 @@ namespace jlm::hls
 {
 
 void
-theta_conv(jlm::rvsdg::theta_node *theta);
+theta_conv(jlm::rvsdg::theta_node * theta);
 
 void
-theta_conv(jlm::rvsdg::region *region);
+theta_conv(jlm::rvsdg::region * region);
 
 void
-theta_conv(jlm::llvm::RvsdgModule &rm);
+theta_conv(jlm::llvm::RvsdgModule & rm);
 
 }
 
-#endif //JLM_HLS_BACKEND_RVSDG2RHLS_THETA_CONV_HPP
+#endif // JLM_HLS_BACKEND_RVSDG2RHLS_THETA_CONV_HPP

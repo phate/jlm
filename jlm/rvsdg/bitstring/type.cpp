@@ -18,20 +18,20 @@ bittype::~bittype() noexcept
 std::string
 bittype::debug_string() const
 {
-	return jlm::util::strfmt("bit", nbits());
+  return jlm::util::strfmt("bit", nbits());
 }
 
 bool
 bittype::operator==(const jlm::rvsdg::type & other) const noexcept
 {
-	auto type = dynamic_cast<const bittype*>(&other);
-	return type != nullptr && this->nbits() == type->nbits();
+  auto type = dynamic_cast<const bittype *>(&other);
+  return type != nullptr && this->nbits() == type->nbits();
 }
 
 std::unique_ptr<jlm::rvsdg::type>
 bittype::copy() const
 {
-	return std::unique_ptr<jlm::rvsdg::type>(new bittype(*this));
+  return std::unique_ptr<jlm::rvsdg::type>(new bittype(*this));
 }
 
 const bittype bit1(1);

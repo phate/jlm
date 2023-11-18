@@ -20,102 +20,111 @@ static jlm::util::StatisticsCollector statisticsCollector;
 static inline void
 test1()
 {
-	using namespace jlm::llvm;
+  using namespace jlm::llvm;
 
-	RvsdgModule rm(jlm::util::filepath(""), "", "");
-	auto & graph = rm.Rvsdg();
+  RvsdgModule rm(jlm::util::filepath(""), "", "");
+  auto & graph = rm.Rvsdg();
 
-	auto x = graph.add_import({vt, "x"});
-	auto y = graph.add_import({vt, "y"});
-	auto z = graph.add_import({vt, "z"});
+  auto x = graph.add_import({ vt, "x" });
+  auto y = graph.add_import({ vt, "y" });
+  auto z = graph.add_import({ vt, "z" });
 
-	auto theta = jlm::rvsdg::theta_node::create(graph.root());
+  auto theta = jlm::rvsdg::theta_node::create(graph.root());
 
-	auto lvx = theta->add_loopvar(x);
-	auto lvy = theta->add_loopvar(y);
-	theta->add_loopvar(z);
+  auto lvx = theta->add_loopvar(x);
+  auto lvy = theta->add_loopvar(y);
+  theta->add_loopvar(z);
 
-	auto a = jlm::tests::create_testop(theta->subregion(), {lvx->argument(), lvy->argument()},
-		{&jlm::rvsdg::bit1})[0];
-	auto predicate = jlm::rvsdg::match(1, {{1, 0}}, 1, 2, a);
+  auto a = jlm::tests::create_testop(
+      theta->subregion(),
+      { lvx->argument(), lvy->argument() },
+      { &jlm::rvsdg::bit1 })[0];
+  auto predicate = jlm::rvsdg::match(1, { { 1, 0 } }, 1, 2, a);
 
-	auto gamma = jlm::rvsdg::gamma_node::create(predicate, 2);
+  auto gamma = jlm::rvsdg::gamma_node::create(predicate, 2);
 
-	auto evx = gamma->add_entryvar(lvx->argument());
-	auto evy = gamma->add_entryvar(lvy->argument());
+  auto evx = gamma->add_entryvar(lvx->argument());
+  auto evy = gamma->add_entryvar(lvy->argument());
 
-	auto b = jlm::tests::create_testop(gamma->subregion(0), {evx->argument(0), evy->argument(0)}, {&vt})[0];
-	auto c = jlm::tests::create_testop(gamma->subregion(1), {evx->argument(1), evy->argument(1)}, {&vt})[0];
+  auto b = jlm::tests::create_testop(
+      gamma->subregion(0),
+      { evx->argument(0), evy->argument(0) },
+      { &vt })[0];
+  auto c = jlm::tests::create_testop(
+      gamma->subregion(1),
+      { evx->argument(1), evy->argument(1) },
+      { &vt })[0];
 
-	auto xvy = gamma->add_exitvar({b, c});
+  auto xvy = gamma->add_exitvar({ b, c });
 
-	lvy->result()->divert_to(xvy);
+  lvy->result()->divert_to(xvy);
 
-	theta->set_predicate(predicate);
+  theta->set_predicate(predicate);
 
-	auto ex1 = graph.add_export(theta->output(0), {theta->output(0)->type(), "x"});
-	auto ex2 = graph.add_export(theta->output(1), {theta->output(1)->type(), "y"});
-	auto ex3 = graph.add_export(theta->output(2), {theta->output(2)->type(), "z"});
+  auto ex1 = graph.add_export(theta->output(0), { theta->output(0)->type(), "x" });
+  auto ex2 = graph.add_export(theta->output(1), { theta->output(1)->type(), "y" });
+  auto ex3 = graph.add_export(theta->output(2), { theta->output(2)->type(), "z" });
 
-//	jlm::rvsdg::view(graph.root(), stdout);
-	jlm::llvm::tginversion tginversion;
-	tginversion.run(rm, statisticsCollector);
-//	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(graph.root(), stdout);
+  jlm::llvm::tginversion tginversion;
+  tginversion.run(rm, statisticsCollector);
+  //	jlm::rvsdg::view(graph.root(), stdout);
 
-	assert(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(jlm::rvsdg::node_output::node(ex1->origin())));
-	assert(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(jlm::rvsdg::node_output::node(ex2->origin())));
-	assert(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(jlm::rvsdg::node_output::node(ex3->origin())));
+  assert(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(jlm::rvsdg::node_output::node(ex1->origin())));
+  assert(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(jlm::rvsdg::node_output::node(ex2->origin())));
+  assert(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(jlm::rvsdg::node_output::node(ex3->origin())));
 }
 
 static inline void
 test2()
 {
-	using namespace jlm::llvm;
+  using namespace jlm::llvm;
 
-	RvsdgModule rm(jlm::util::filepath(""), "", "");
-	auto & graph = rm.Rvsdg();
+  RvsdgModule rm(jlm::util::filepath(""), "", "");
+  auto & graph = rm.Rvsdg();
 
-	auto x = graph.add_import({vt, "x"});
+  auto x = graph.add_import({ vt, "x" });
 
-	auto theta = jlm::rvsdg::theta_node::create(graph.root());
+  auto theta = jlm::rvsdg::theta_node::create(graph.root());
 
-	auto lv1 = theta->add_loopvar(x);
+  auto lv1 = theta->add_loopvar(x);
 
-	auto n1 = jlm::tests::create_testop(theta->subregion(), {lv1->argument()}, {&jlm::rvsdg::bit1})[0];
-	auto n2 = jlm::tests::create_testop(theta->subregion(), {lv1->argument()}, {&vt})[0];
-	auto predicate = jlm::rvsdg::match(1, {{1, 0}}, 1, 2, n1);
+  auto n1 =
+      jlm::tests::create_testop(theta->subregion(), { lv1->argument() }, { &jlm::rvsdg::bit1 })[0];
+  auto n2 = jlm::tests::create_testop(theta->subregion(), { lv1->argument() }, { &vt })[0];
+  auto predicate = jlm::rvsdg::match(1, { { 1, 0 } }, 1, 2, n1);
 
-	auto gamma = jlm::rvsdg::gamma_node::create(predicate, 2);
+  auto gamma = jlm::rvsdg::gamma_node::create(predicate, 2);
 
-	auto ev1 = gamma->add_entryvar(n1);
-	auto ev2 = gamma->add_entryvar(lv1->argument());
-	auto ev3 = gamma->add_entryvar(n2);
+  auto ev1 = gamma->add_entryvar(n1);
+  auto ev2 = gamma->add_entryvar(lv1->argument());
+  auto ev3 = gamma->add_entryvar(n2);
 
-	gamma->add_exitvar({ev1->argument(0), ev1->argument(1)});
-	gamma->add_exitvar({ev2->argument(0), ev2->argument(1)});
-	gamma->add_exitvar({ev3->argument(0), ev3->argument(1)});
+  gamma->add_exitvar({ ev1->argument(0), ev1->argument(1) });
+  gamma->add_exitvar({ ev2->argument(0), ev2->argument(1) });
+  gamma->add_exitvar({ ev3->argument(0), ev3->argument(1) });
 
-	lv1->result()->divert_to(gamma->output(1));
+  lv1->result()->divert_to(gamma->output(1));
 
-	theta->set_predicate(predicate);
+  theta->set_predicate(predicate);
 
-	auto ex = graph.add_export(theta->output(0), {theta->output(0)->type(), "x"});
+  auto ex = graph.add_export(theta->output(0), { theta->output(0)->type(), "x" });
 
-//	jlm::rvsdg::view(graph.root(), stdout);
-	jlm::llvm::tginversion tginversion;
-	tginversion.run(rm, statisticsCollector);
-//	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(graph.root(), stdout);
+  jlm::llvm::tginversion tginversion;
+  tginversion.run(rm, statisticsCollector);
+  //	jlm::rvsdg::view(graph.root(), stdout);
 
-	assert(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(jlm::rvsdg::node_output::node(ex->origin())));
+  assert(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(jlm::rvsdg::node_output::node(ex->origin())));
 }
 
 static int
 verify()
 {
-	test1();
-	test2();
+  test1();
+  test2();
 
-	return 0;
+  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-inversion", verify)

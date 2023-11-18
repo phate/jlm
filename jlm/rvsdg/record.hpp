@@ -16,60 +16,59 @@ namespace jlm::rvsdg
 
 /* declaration */
 
-class rcddeclaration final {
+class rcddeclaration final
+{
 public:
-	inline
-	~rcddeclaration()
-	{}
+  inline ~rcddeclaration()
+  {}
 
 private:
-	inline
-	rcddeclaration()
-	{}
+  inline rcddeclaration()
+  {}
 
-	rcddeclaration(const rcddeclaration &) = delete;
+  rcddeclaration(const rcddeclaration &) = delete;
 
-	rcddeclaration &
-	operator=(const rcddeclaration &) = delete;
+  rcddeclaration &
+  operator=(const rcddeclaration &) = delete;
 
 public:
-	inline size_t
-	nelements() const noexcept
-	{
-		return types_.size();
-	}
+  inline size_t
+  nelements() const noexcept
+  {
+    return types_.size();
+  }
 
-	const valuetype &
-	element(size_t index) const noexcept
-	{
-		JLM_ASSERT(index < nelements());
-		return *static_cast<const valuetype*>(types_[index].get());
-	}
+  const valuetype &
+  element(size_t index) const noexcept
+  {
+    JLM_ASSERT(index < nelements());
+    return *static_cast<const valuetype *>(types_[index].get());
+  }
 
-	void
-	append(const jlm::rvsdg::valuetype & type)
-	{
-		types_.push_back(type.copy());
-	}
+  void
+  append(const jlm::rvsdg::valuetype & type)
+  {
+    types_.push_back(type.copy());
+  }
 
-	static inline std::unique_ptr<rcddeclaration>
-	create()
-	{
-		return std::unique_ptr<rcddeclaration>(new rcddeclaration());
-	}
+  static inline std::unique_ptr<rcddeclaration>
+  create()
+  {
+    return std::unique_ptr<rcddeclaration>(new rcddeclaration());
+  }
 
-	static inline std::unique_ptr<rcddeclaration>
-	create(const std::vector<const valuetype*> & types)
-	{
-		auto dcl = create();
-		for (const auto & type : types)
-			dcl->append(*type);
+  static inline std::unique_ptr<rcddeclaration>
+  create(const std::vector<const valuetype *> & types)
+  {
+    auto dcl = create();
+    for (const auto & type : types)
+      dcl->append(*type);
 
-		return dcl;
-	}
+    return dcl;
+  }
 
 private:
-	std::vector<std::unique_ptr<jlm::rvsdg::type>> types_;
+  std::vector<std::unique_ptr<jlm::rvsdg::type>> types_;
 };
 
 void
@@ -77,33 +76,32 @@ unregister_rcddeclarations(const jlm::rvsdg::graph * graph);
 
 /* record type */
 
-class rcdtype final : public jlm::rvsdg::valuetype {
+class rcdtype final : public jlm::rvsdg::valuetype
+{
 public:
-	virtual
-	~rcdtype() noexcept;
+  virtual ~rcdtype() noexcept;
 
-	inline
-	rcdtype(const rcddeclaration * dcl) noexcept
-	: dcl_(dcl)
-	{}
+  inline rcdtype(const rcddeclaration * dcl) noexcept
+      : dcl_(dcl)
+  {}
 
-	inline const rcddeclaration *
-	declaration() const noexcept
-	{
-		return dcl_;
-	}
+  inline const rcddeclaration *
+  declaration() const noexcept
+  {
+    return dcl_;
+  }
 
-	virtual
-	std::string debug_string() const override;
+  virtual std::string
+  debug_string() const override;
 
-	virtual bool
-	operator==(const jlm::rvsdg::type & type) const noexcept override;
+  virtual bool
+  operator==(const jlm::rvsdg::type & type) const noexcept override;
 
-	virtual std::unique_ptr<jlm::rvsdg::type>
-	copy() const override;
+  virtual std::unique_ptr<jlm::rvsdg::type>
+  copy() const override;
 
 private:
-	const rcddeclaration * dcl_;
+  const rcddeclaration * dcl_;
 };
 
 }

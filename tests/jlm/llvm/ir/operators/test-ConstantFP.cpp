@@ -10,22 +10,22 @@
 static void
 test_equality()
 {
-	using namespace jlm::llvm;
+  using namespace jlm::llvm;
 
-	ConstantFP c1(fpsize::half, llvm::APFloat(0.0));
-	ConstantFP c2(fpsize::flt, llvm::APFloat(0.0));
-	ConstantFP c3(fpsize::flt, llvm::APFloat(-0.0));
+  ConstantFP c1(fpsize::half, llvm::APFloat(0.0));
+  ConstantFP c2(fpsize::flt, llvm::APFloat(0.0));
+  ConstantFP c3(fpsize::flt, llvm::APFloat(-0.0));
 
-	assert(c1 != c2);
-	assert(c2 != c3);
+  assert(c1 != c2);
+  assert(c2 != c3);
 }
 
 static int
 test()
 {
-	test_equality();
+  test_equality();
 
-	return 0;
+  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/test-ConstantFP", test)

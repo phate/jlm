@@ -8,16 +8,14 @@
 namespace jlm::llvm
 {
 
-GetElementPtrOperation::~GetElementPtrOperation() noexcept
-= default;
+GetElementPtrOperation::~GetElementPtrOperation() noexcept = default;
 
 bool
 GetElementPtrOperation::operator==(const operation & other) const noexcept
 {
-  auto operation = dynamic_cast<const GetElementPtrOperation*>(&other);
+  auto operation = dynamic_cast<const GetElementPtrOperation *>(&other);
 
-  if (operation == nullptr
-      || GetPointeeType() != operation->GetPointeeType()
+  if (operation == nullptr || GetPointeeType() != operation->GetPointeeType()
       || narguments() != operation->narguments())
   {
     return false;

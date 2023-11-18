@@ -11,19 +11,19 @@
 namespace jlm::llvm
 {
 
-namespace aa {
+namespace aa
+{
 
 /** \brief LambdaEntryMemStateOperator class
-*/
-class LambdaEntryMemStateOperator final : public MemStateOperator {
+ */
+class LambdaEntryMemStateOperator final : public MemStateOperator
+{
 public:
   ~LambdaEntryMemStateOperator() override;
 
 private:
-  explicit
-  LambdaEntryMemStateOperator(
-    size_t nresults)
-    : MemStateOperator(1, nresults)
+  explicit LambdaEntryMemStateOperator(size_t nresults)
+      : MemStateOperator(1, nresults)
   {}
 
 public:
@@ -36,28 +36,25 @@ public:
   std::unique_ptr<jlm::rvsdg::operation>
   copy() const override;
 
-  static std::vector<jlm::rvsdg::output*>
-  Create(
-    jlm::rvsdg::output * output,
-    size_t nresults)
+  static std::vector<jlm::rvsdg::output *>
+  Create(jlm::rvsdg::output * output, size_t nresults)
   {
     auto region = output->region();
     LambdaEntryMemStateOperator op(nresults);
-    return jlm::rvsdg::simple_node::create_normalized(region, op, {output});
+    return jlm::rvsdg::simple_node::create_normalized(region, op, { output });
   }
 };
 
 /** \brief LambdaExitMemStateOperator class
-*/
-class LambdaExitMemStateOperator final : public MemStateOperator {
+ */
+class LambdaExitMemStateOperator final : public MemStateOperator
+{
 public:
   ~LambdaExitMemStateOperator() override;
 
 private:
-  explicit
-  LambdaExitMemStateOperator(
-    size_t noperands)
-    : MemStateOperator(noperands, 1)
+  explicit LambdaExitMemStateOperator(size_t noperands)
+      : MemStateOperator(noperands, 1)
   {}
 
 public:
@@ -71,9 +68,7 @@ public:
   copy() const override;
 
   static jlm::rvsdg::output *
-  Create(
-    jlm::rvsdg::region * region,
-    const std::vector<jlm::rvsdg::output*> & operands)
+  Create(jlm::rvsdg::region * region, const std::vector<jlm::rvsdg::output *> & operands)
   {
     LambdaExitMemStateOperator op(operands.size());
     return jlm::rvsdg::simple_node::create_normalized(region, op, operands)[0];
@@ -81,16 +76,15 @@ public:
 };
 
 /** \brief CallEntryMemStateOperator class
-*/
-class CallEntryMemStateOperator final : public MemStateOperator {
+ */
+class CallEntryMemStateOperator final : public MemStateOperator
+{
 public:
   ~CallEntryMemStateOperator() override;
 
 private:
-  explicit
-  CallEntryMemStateOperator(
-    size_t noperands)
-    : MemStateOperator(noperands, 1)
+  explicit CallEntryMemStateOperator(size_t noperands)
+      : MemStateOperator(noperands, 1)
   {}
 
 public:
@@ -104,9 +98,7 @@ public:
   copy() const override;
 
   static jlm::rvsdg::output *
-  Create(
-    jlm::rvsdg::region * region,
-    const std::vector<jlm::rvsdg::output*> & operands)
+  Create(jlm::rvsdg::region * region, const std::vector<jlm::rvsdg::output *> & operands)
   {
     CallEntryMemStateOperator op(operands.size());
     return jlm::rvsdg::simple_node::create_normalized(region, op, operands)[0];
@@ -114,16 +106,15 @@ public:
 };
 
 /** \brief CallExitMemStateOperator class
-*/
-class CallExitMemStateOperator final : public MemStateOperator {
+ */
+class CallExitMemStateOperator final : public MemStateOperator
+{
 public:
   ~CallExitMemStateOperator() override;
 
 private:
-  explicit
-  CallExitMemStateOperator(
-    size_t nresults)
-    : MemStateOperator(1, nresults)
+  explicit CallExitMemStateOperator(size_t nresults)
+      : MemStateOperator(1, nresults)
   {}
 
 public:
@@ -136,14 +127,12 @@ public:
   std::unique_ptr<jlm::rvsdg::operation>
   copy() const override;
 
-  static std::vector<jlm::rvsdg::output*>
-  Create(
-    jlm::rvsdg::output * output,
-    size_t nresults)
+  static std::vector<jlm::rvsdg::output *>
+  Create(jlm::rvsdg::output * output, size_t nresults)
   {
     auto region = output->region();
     CallExitMemStateOperator op(nresults);
-    return jlm::rvsdg::simple_node::create_normalized(region, op, {output});
+    return jlm::rvsdg::simple_node::create_normalized(region, op, { output });
   }
 };
 

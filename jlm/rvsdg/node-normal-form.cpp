@@ -13,84 +13,88 @@ namespace jlm::rvsdg
 {
 
 node_normal_form::~node_normal_form() noexcept
-{
-}
+{}
 
 bool
 node_normal_form::normalize_node(jlm::rvsdg::node * node) const
 {
-	return true;
+  return true;
 }
 
 void
 node_normal_form::set_mutable(bool enable)
 {
-	if (enable_mutable_ == enable) {
-		return;
-	}
+  if (enable_mutable_ == enable)
+  {
+    return;
+  }
 
-	children_set<node_normal_form, &node_normal_form::set_mutable>(enable);
+  children_set<node_normal_form, &node_normal_form::set_mutable>(enable);
 
-	enable_mutable_ = enable;
-	if (enable)
-		graph()->mark_denormalized();
+  enable_mutable_ = enable;
+  if (enable)
+    graph()->mark_denormalized();
 }
 
-namespace {
+namespace
+{
 
-typedef jlm::rvsdg::node_normal_form *(*create_node_normal_form_functor)(
-	const std::type_info & operator_class,
-	jlm::rvsdg::node_normal_form * parent,
-	jlm::rvsdg::graph * graph);
+typedef jlm::rvsdg::node_normal_form * (*create_node_normal_form_functor)(
+    const std::type_info & operator_class,
+    jlm::rvsdg::node_normal_form * parent,
+    jlm::rvsdg::graph * graph);
 
 typedef std::unordered_map<std::type_index, create_node_normal_form_functor>
-	node_normal_form_registry;
+    node_normal_form_registry;
 
 std::unique_ptr<node_normal_form_registry> registry;
 
 create_node_normal_form_functor
 lookup_factory_functor(const std::type_info * info)
 {
-	if (!registry) {
-		registry.reset(new node_normal_form_registry());
-	}
+  if (!registry)
+  {
+    registry.reset(new node_normal_form_registry());
+  }
 
-	node_normal_form_registry::const_iterator i;
-	for(;;) {
-		auto i = registry->find(std::type_index(*info));
-		if (i != registry->end()) {
-			return i->second;
-		}
-		const auto& cinfo = dynamic_cast<const abi::__si_class_type_info &>(
-			*info);
-		info = cinfo.__base_type;
-	}
+  node_normal_form_registry::const_iterator i;
+  for (;;)
+  {
+    auto i = registry->find(std::type_index(*info));
+    if (i != registry->end())
+    {
+      return i->second;
+    }
+    const auto & cinfo = dynamic_cast<const abi::__si_class_type_info &>(*info);
+    info = cinfo.__base_type;
+  }
 }
 
 }
 
 void
 node_normal_form::register_factory(
-	const std::type_info & operator_class,
-	jlm::rvsdg::node_normal_form *(*fn)(
-		const std::type_info & operator_class,
-		jlm::rvsdg::node_normal_form * parent,
-		jlm::rvsdg::graph * graph))
+    const std::type_info & operator_class,
+    jlm::rvsdg::node_normal_form * (*fn)(
+        const std::type_info & operator_class,
+        jlm::rvsdg::node_normal_form * parent,
+        jlm::rvsdg::graph * graph))
 {
-	if (!registry) {
-		registry.reset(new node_normal_form_registry());
-	}
+  if (!registry)
+  {
+    registry.reset(new node_normal_form_registry());
+  }
 
-	(*registry)[std::type_index(operator_class)] = fn;
+  (*registry)[std::type_index(operator_class)] = fn;
 }
 
 node_normal_form *
 node_normal_form::create(
-	const std::type_info & operator_class,
-	jlm::rvsdg::node_normal_form * parent,
-	jlm::rvsdg::graph * graph)
+    const std::type_info & operator_class,
+    jlm::rvsdg::node_normal_form * parent,
+    jlm::rvsdg::graph * graph)
 {
-	return lookup_factory_functor(&operator_class)(operator_class, parent, graph);
+  return lookup_factory_functor(&operator_class)(operator_class, parent, graph);
 }
 
 }

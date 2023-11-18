@@ -18,127 +18,119 @@ class structural_input;
 class structural_op;
 class structural_output;
 
-class structural_node : public node {
+class structural_node : public node
+{
 public:
-	virtual
-	~structural_node();
+  virtual ~structural_node();
 
 protected:
-	structural_node(
-		/* FIXME: use move semantics instead of copy semantics for op */
-		const jlm::rvsdg::structural_op & op,
-		jlm::rvsdg::region * region,
-		size_t nsubregions);
+  structural_node(
+      /* FIXME: use move semantics instead of copy semantics for op */
+      const jlm::rvsdg::structural_op & op,
+      jlm::rvsdg::region * region,
+      size_t nsubregions);
 
 public:
-	inline size_t
-	nsubregions() const noexcept
-	{
-		return subregions_.size();
-	}
+  inline size_t
+  nsubregions() const noexcept
+  {
+    return subregions_.size();
+  }
 
-	inline jlm::rvsdg::region *
-	subregion(size_t index) const noexcept
-	{
-		JLM_ASSERT(index < nsubregions());
-		return subregions_[index].get();
-	}
+  inline jlm::rvsdg::region *
+  subregion(size_t index) const noexcept
+  {
+    JLM_ASSERT(index < nsubregions());
+    return subregions_[index].get();
+  }
 
-	inline jlm::rvsdg::structural_input *
-	input(size_t index) const noexcept;
+  inline jlm::rvsdg::structural_input *
+  input(size_t index) const noexcept;
 
-	inline jlm::rvsdg::structural_output *
-	output(size_t index) const noexcept;
+  inline jlm::rvsdg::structural_output *
+  output(size_t index) const noexcept;
 
-	structural_input *
-	append_input(std::unique_ptr<structural_input> input);
+  structural_input *
+  append_input(std::unique_ptr<structural_input> input);
 
-	structural_output *
-	append_output(std::unique_ptr<structural_output> output);
+  structural_output *
+  append_output(std::unique_ptr<structural_output> output);
 
   using node::RemoveInput;
 
   using node::RemoveOutput;
 
 private:
-	std::vector<std::unique_ptr<jlm::rvsdg::region>> subregions_;
+  std::vector<std::unique_ptr<jlm::rvsdg::region>> subregions_;
 };
 
 /* structural input class */
 
-typedef jlm::util::intrusive_list<
-	jlm::rvsdg::argument,
-	jlm::rvsdg::argument::structural_input_accessor
-> argument_list;
+typedef jlm::util::
+    intrusive_list<jlm::rvsdg::argument, jlm::rvsdg::argument::structural_input_accessor>
+        argument_list;
 
-class structural_input : public node_input {
-	friend structural_node;
+class structural_input : public node_input
+{
+  friend structural_node;
+
 public:
-	virtual
-	~structural_input() noexcept;
+  virtual ~structural_input() noexcept;
 
 protected:
-	structural_input(
-		jlm::rvsdg::structural_node * node,
-		jlm::rvsdg::output * origin,
-		const jlm::rvsdg::port & port);
+  structural_input(
+      jlm::rvsdg::structural_node * node,
+      jlm::rvsdg::output * origin,
+      const jlm::rvsdg::port & port);
 
 public:
-	static structural_input *
-	create(
-		structural_node * node,
-		jlm::rvsdg::output * origin,
-		const jlm::rvsdg::port & port)
-	{
-		auto input = std::unique_ptr<structural_input>(new structural_input(node, origin, port));
-		return node->append_input(std::move(input));
-	}
+  static structural_input *
+  create(structural_node * node, jlm::rvsdg::output * origin, const jlm::rvsdg::port & port)
+  {
+    auto input = std::unique_ptr<structural_input>(new structural_input(node, origin, port));
+    return node->append_input(std::move(input));
+  }
 
-	structural_node *
-	node() const noexcept
-	{
-		return static_cast<structural_node*>(node_input::node());
-	}
+  structural_node *
+  node() const noexcept
+  {
+    return static_cast<structural_node *>(node_input::node());
+  }
 
-	argument_list arguments;
+  argument_list arguments;
 };
 
 /* structural output class */
 
-typedef jlm::util::intrusive_list<
-	jlm::rvsdg::result,
-	jlm::rvsdg::result::structural_output_accessor
-> result_list;
+typedef jlm::util::
+    intrusive_list<jlm::rvsdg::result, jlm::rvsdg::result::structural_output_accessor>
+        result_list;
 
-class structural_output : public node_output {
-	friend structural_node;
+class structural_output : public node_output
+{
+  friend structural_node;
 
 public:
-	virtual
-	~structural_output() noexcept;
+  virtual ~structural_output() noexcept;
 
 protected:
-	structural_output(
-		jlm::rvsdg::structural_node * node,
-		const jlm::rvsdg::port & port);
+  structural_output(jlm::rvsdg::structural_node * node, const jlm::rvsdg::port & port);
 
 public:
-	static structural_output *
-	create(
-		structural_node * node,
-		const jlm::rvsdg::port & port)
-	{
-		auto output = std::unique_ptr<structural_output>(new structural_output(node, port));
-		return node->append_output(std::move(output));
-	}
+  static structural_output *
+  create(structural_node * node, const jlm::rvsdg::port & port)
+  {
+    auto output = std::unique_ptr<structural_output>(new structural_output(node, port));
+    return node->append_output(std::move(output));
+  }
 
-	structural_node *
-	node() const noexcept
-	{
-		return static_cast<structural_node*>(node_output::node());
-	}
+  structural_node *
+  node() const noexcept
+  {
+    return static_cast<structural_node *>(node_output::node());
+  }
 
-	result_list results;
+  result_list results;
 };
 
 /* structural node method definitions */
@@ -146,16 +138,17 @@ public:
 inline jlm::rvsdg::structural_input *
 structural_node::input(size_t index) const noexcept
 {
-	return static_cast<structural_input*>(node::input(index));
+  return static_cast<structural_input *>(node::input(index));
 }
 
 inline jlm::rvsdg::structural_output *
 structural_node::output(size_t index) const noexcept
 {
-	return static_cast<structural_output*>(node::output(index));
+  return static_cast<structural_output *>(node::output(index));
 }
 
-template <class Operation> bool
+template<class Operation>
+bool
 region::Contains(const jlm::rvsdg::region & region, bool checkSubregions)
 {
   for (auto & node : region.nodes)
@@ -170,7 +163,7 @@ region::Contains(const jlm::rvsdg::region & region, bool checkSubregions)
       continue;
     }
 
-    if (auto structuralNode = dynamic_cast<const jlm::rvsdg::structural_node*>(&node))
+    if (auto structuralNode = dynamic_cast<const jlm::rvsdg::structural_node *>(&node))
     {
       for (size_t n = 0; n < structuralNode->nsubregions(); n++)
       {

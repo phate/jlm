@@ -30,15 +30,15 @@ to_dot(const llvm::cfg & cfg);
 static inline void
 print_ascii(const llvm::cfg & cfg, FILE * out)
 {
-	fputs(to_str(cfg).c_str(), out);
-	fflush(out);
+  fputs(to_str(cfg).c_str(), out);
+  fflush(out);
 }
 
 static inline void
 print_dot(const llvm::cfg & cfg, FILE * out)
 {
-	fputs(to_dot(cfg).c_str(), out);
-	fflush(out);
+  fputs(to_dot(cfg).c_str(), out);
+  fflush(out);
 }
 
 /* inter-procedural graph */
@@ -52,15 +52,15 @@ to_dot(const llvm::ipgraph & ipg);
 static inline void
 print_ascii(const llvm::ipgraph & ipg, FILE * out)
 {
-	fputs(to_str(ipg).c_str(), out);
-	fflush(out);
+  fputs(to_str(ipg).c_str(), out);
+  fflush(out);
 }
 
 static inline void
 print_dot(const llvm::ipgraph & ipg, FILE * out)
 {
-	fputs(to_dot(ipg).c_str(), out);
-	fflush(out);
+  fputs(to_dot(ipg).c_str(), out);
+  fflush(out);
 }
 
 /* ipgraph module */
@@ -68,14 +68,14 @@ print_dot(const llvm::ipgraph & ipg, FILE * out)
 static inline std::string
 to_str(const ipgraph_module & im)
 {
-	return to_str(im.ipgraph());
+  return to_str(im.ipgraph());
 }
 
 static inline void
 print(const ipgraph_module & im, FILE * out)
 {
-	fputs(to_str(im).c_str(), out);
-	fflush(out);
+  fputs(to_str(im).c_str(), out);
+  fflush(out);
 }
 
 /* aggregation tree */
@@ -86,7 +86,7 @@ to_str(const aggnode & n, const AnnotationMap & dm);
 static inline std::string
 to_str(const aggnode & n)
 {
-	return to_str(n, {});
+  return to_str(n, {});
 }
 
 void
@@ -95,7 +95,7 @@ print(const aggnode & n, const AnnotationMap & dm, FILE * out);
 static inline void
 print(const aggnode & n, FILE * out)
 {
-	print(n, {}, out);
+  print(n, {}, out);
 }
 
 }

@@ -14,7 +14,8 @@ TestAttributeKindConversion()
 {
   typedef llvm::Attribute::AttrKind ak;
 
-  for (int attributeKind = ak::None; attributeKind != ak::EndAttrKinds; attributeKind++) {
+  for (int attributeKind = ak::None; attributeKind != ak::EndAttrKinds; attributeKind++)
+  {
     jlm::llvm::ConvertAttributeKind(static_cast<ak>(attributeKind));
   }
 }

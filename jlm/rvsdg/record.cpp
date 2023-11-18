@@ -17,21 +17,20 @@ rcdtype::~rcdtype() noexcept
 std::string
 rcdtype::debug_string() const
 {
-	return "rcd";
+  return "rcd";
 }
 
 bool
 rcdtype::operator==(const jlm::rvsdg::type & other) const noexcept
 {
-	auto type = dynamic_cast<const rcdtype*>(&other);
-	return type != nullptr
-	    && declaration() == type->declaration();
+  auto type = dynamic_cast<const rcdtype *>(&other);
+  return type != nullptr && declaration() == type->declaration();
 }
 
 std::unique_ptr<jlm::rvsdg::type>
 rcdtype::copy() const
 {
-	return std::unique_ptr<jlm::rvsdg::type>(new rcdtype(*this));
+  return std::unique_ptr<jlm::rvsdg::type>(new rcdtype(*this));
 }
 
 }

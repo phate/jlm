@@ -16,7 +16,7 @@ variable::~variable() noexcept
 std::string
 variable::debug_string() const
 {
-	return name();
+  return name();
 }
 
 /* top level variable */
