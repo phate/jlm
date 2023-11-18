@@ -9,7 +9,7 @@ on:
 jobs:
 
   # --------
-  # Since rebase often failes we compile CIRCT in a separate job.
+  # We build CIRCT in a separate job.
   # This makes it more likely that when rerunning failed jobs it's
   # not necessary to rebuild CIRCT.
   # --------
@@ -27,7 +27,7 @@ jobs:
 
     # Clone jlm-eval-suite
     - name: Clone jlm-test-suite
-      run: git clone https://github.com/EECS-NTNU/jlm-eval-suite.git
+      run: git clone https://github.com/phate/jlm-eval-suite.git
 
     # Extract the CIRCT submodule hash for use in the cache key
     - name: Get CIRCT hash
@@ -83,16 +83,14 @@ jobs:
       run: sudo apt-get install llvm-16-dev libmlir-16-dev mlir-16-tools clang-16 ninja-build
     - name: Place MLIRlib in system folder
       run: sudo ln -s /usr/lib/llvm-16/lib/libMLIR.so.16 /usr/lib/x86_64-linux-gnu/ && sudo ln -s /usr/lib/llvm-16/lib/libMLIR.so.16 /usr/lib/x86_64-linux-gnu/libMLIR.so
-    - name: Instal llvm-lit
-      run: sudo python3 /usr/lib/llvm-16/build/utils/lit/setup.py install
 
     # --------
-    # Restore CIRCT from cache and build if it's not in there
+    # Restore CIRCT from cache or build it if it's not in the cache
     # --------
 
     # Clone jlm-eval-suite
     - name: Clone jlm-test-suite
-      run: git clone https://github.com/EECS-NTNU/jlm-eval-suite.git
+      run: git clone https://github.com/phate/jlm-eval-suite.git
 
     # Extract the CIRCT submodule hash for use in the cache key
     - name: Get CIRCT hash
@@ -122,14 +120,6 @@ jobs:
     # Compile MLIR version of jlm
     # --------
 
-    - name: Set temporary git config only used for this CI run
-      run: |
-       git config --global user.name "John Doe"
-       git config --global user.email johndoe@example.com
-    - name: Checkout the mlir branch
-      run: git checkout mlir
-    - name: Rebase the mlir branch on master
-      run: git rebase origin/master
     - name: Compile jlm
       run: make CIRCT_PATH=$(pwd)/jlm-eval-suite/circt/local jlm-release -j `nproc`
     - name: Place the bin directory to where it is expected by jlm-eval-suite
