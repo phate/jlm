@@ -41,12 +41,8 @@ jobs:
       with:
         path: ${{ github.workspace }}/*
         key: ${{ runner.os }}-${{ github.sha }}-jlm
-    - name: Get LLVM apt key
-      run: wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
-    - name: Update apt sources
-      run: sudo add-apt-repository deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-16 main
-    - name: Install dependencies (LLVM)
-      run: sudo apt-get update && sudo apt-get install llvm-16-dev clang-16
+    - name: "Install LLVM dependencies"
+      uses: ./.github/actions/InstallLlvmDependencies
     - name: Compile jlm
       run: make jlm-release -j `nproc`
     - name: Run unit and C tests
@@ -56,12 +52,8 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v3
-    - name: Get LLVM apt key
-      run: wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
-    - name: Update apt sources
-      run: sudo add-apt-repository deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-16 main
-    - name: Install dependencies (LLVM)
-      run: sudo apt-get update && sudo apt-get install llvm-16-dev clang-16
+    - name: "Install LLVM dependencies"
+      uses: ./.github/actions/InstallLlvmDependencies
     - name: Compile jlm
       run: make CXX=g++ jlm-release -j `nproc`
     - name: Run unit and C tests
@@ -76,12 +68,8 @@ jobs:
       with:
         path: ${{ github.workspace }}/*
         key: ${{ runner.os }}-${{ github.sha }}-jlm
-    - name: Get LLVM apt key
-      run: wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
-    - name: Update apt sources
-      run: sudo add-apt-repository deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-16 main
-    - name: Install dependencies (LLVM)
-      run: sudo apt-get update && sudo apt-get install llvm-16-dev clang-16
+    - name: "Install LLVM dependencies"
+      uses: ./.github/actions/InstallLlvmDependencies
     - name: Add jlc to PATH
       run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
     - name: Install valgrind
@@ -100,12 +88,8 @@ jobs:
         key: ${{ runner.os }}-${{ github.sha }}-jlm-bin
     - name: Add jlc to PATH
       run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
-    - name: Get LLVM apt key
-      run: wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
-    - name: Update apt sources
-      run: sudo add-apt-repository deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-16 main
-    - name: Install dependencies (LLVM)
-      run: sudo apt-get update && sudo apt-get install llvm-16-dev clang-16
+    - name: "Install LLVM dependencies"
+      uses: ./.github/actions/InstallLlvmDependencies
     - name: Clone polybench
       run: git clone https://github.com/phate/polybench-jlm.git
     - name: Check polybench
@@ -120,12 +104,8 @@ jobs:
       with:
         path: ${{ github.workspace }}/bin/*
         key: ${{ runner.os }}-${{ github.sha }}-jlm-bin
-    - name: Get LLVM apt key
-      run: wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
-    - name: Update apt sources
-      run: sudo add-apt-repository deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-16 main
-    - name: Install dependencies (LLVM)
-      run: sudo apt-get update && sudo apt-get install llvm-16-dev clang-16
+    - name: "Install LLVM dependencies"
+      uses: ./.github/actions/InstallLlvmDependencies
     - name: Add jlc to PATH
       run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
     - name: Clone jlm-test-suite
