@@ -80,11 +80,10 @@ jobs:
       with:
         path: ${{ github.workspace }}/*
         key: ${{ runner.os }}-${{ github.sha }}-jlm
-    - name: Add jlc to PATH
-      run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
-    - uses: actions/checkout@v3
     - name: "Install LLVM and Clang"
       uses: ./.github/actions/InstallLlvmDependencies
+    - name: Add jlc to PATH
+      run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
     - name: Clone polybench
       run: git clone https://github.com/phate/polybench-jlm.git
     - name: Check polybench
