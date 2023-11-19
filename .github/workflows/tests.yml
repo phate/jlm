@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: "Install LLVM dependencies"
-        uses: .github/actions/InstallLlvmDependencies
+        uses: ./.github/actions/InstallLlvmDependencies
       - name: Find source files
         run: find . -name "*.cpp" -or -name "*.hpp" > sourceFiles.txt
       - name: Check format
