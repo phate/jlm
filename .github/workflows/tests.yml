@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
-      - name: "Install LLVM dependencies"
+      - name: "Install clang format"
         uses: ./.github/actions/InstallLlvmDependencies
       - name: Find source files
         run: find . -name "*.cpp" -or -name "*.hpp" > sourceFiles.txt
@@ -30,18 +30,12 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Cache build
-      id: cache-bin
-      uses: actions/cache@v3
-      with:
-        path: ${{ github.workspace }}/bin/*
-        key: ${{ runner.os }}-${{ github.sha }}-jlm-bin
-    - name: Cache build
       id: cache-build
       uses: actions/cache@v3
       with:
         path: ${{ github.workspace }}/*
         key: ${{ runner.os }}-${{ github.sha }}-jlm
-    - name: "Install LLVM dependencies"
+    - name: "Install LLVM and Clang"
       uses: ./.github/actions/InstallLlvmDependencies
     - name: Compile jlm
       run: make jlm-release -j `nproc`
@@ -52,7 +46,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v3
-    - name: "Install LLVM dependencies"
+    - name: "Install LLVM and Clang"
       uses: ./.github/actions/InstallLlvmDependencies
     - name: Compile jlm
       run: make CXX=g++ jlm-release -j `nproc`
@@ -68,7 +62,7 @@ jobs:
       with:
         path: ${{ github.workspace }}/*
         key: ${{ runner.os }}-${{ github.sha }}-jlm
-    - name: "Install LLVM dependencies"
+    - name: "Install LLVM and Clang"
       uses: ./.github/actions/InstallLlvmDependencies
     - name: Add jlc to PATH
       run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
@@ -84,12 +78,12 @@ jobs:
     - name: Cache
       uses: actions/cache@v3
       with:
-        path: ${{ github.workspace }}/bin/*
-        key: ${{ runner.os }}-${{ github.sha }}-jlm-bin
+        path: ${{ github.workspace }}/*
+        key: ${{ runner.os }}-${{ github.sha }}-jlm
     - name: Add jlc to PATH
       run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
     - uses: actions/checkout@v3
-    - name: "Install LLVM dependencies"
+    - name: "Install LLVM and Clang"
       uses: ./.github/actions/InstallLlvmDependencies
     - name: Clone polybench
       run: git clone https://github.com/phate/polybench-jlm.git
@@ -103,10 +97,9 @@ jobs:
     - name: Cache
       uses: actions/cache@v3
       with:
-        path: ${{ github.workspace }}/bin/*
-        key: ${{ runner.os }}-${{ github.sha }}-jlm-bin
-    - uses: actions/checkout@v3
-    - name: "Install LLVM dependencies"
+        path: ${{ github.workspace }}/*
+        key: ${{ runner.os }}-${{ github.sha }}-jlm
+    - name: "Install LLVM and Clang"
       uses: ./.github/actions/InstallLlvmDependencies
     - name: Add jlc to PATH
       run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
