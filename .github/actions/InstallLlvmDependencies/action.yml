@@ -5,10 +5,13 @@ runs:
   using: "composite"
   steps:
     - name: "Get LLVM apt key"
-    - run: wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
+      run: wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
+      shell: bash
 
     - name: "Update apt sources"
-    - run: sudo add-apt-repository deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-16 main
+      run: sudo add-apt-repository deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-16 main
+      shell: bash
 
     - name: "Install LLVM dependencies"
-    - run: sudo apt-get update && sudo apt-get install llvm-16-dev clang-16 clang-format-16
+      run: sudo apt-get update && sudo apt-get install llvm-16-dev clang-16 clang-format-16
+      shell: bash
