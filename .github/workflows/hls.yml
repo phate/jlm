@@ -75,12 +75,8 @@ jobs:
     # Install dependencies
     # --------
 
-    - name: Get LLVM apt key
-      run: wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-    - name: Update apt sources
-      run: sudo add-apt-repository deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-16 main
-    - name: Install dependencies (LLVM-16, MLIR-16, Clang-16, and ninja)
-      run: sudo apt-get install llvm-16-dev libmlir-16-dev mlir-16-tools clang-16 ninja-build
+    - name: "Install LLVM, Clang, MLIR, and Ninja"
+      uses: ./.github/actions/InstallLlvmDependencies
     - name: Place MLIRlib in system folder
       run: sudo ln -s /usr/lib/llvm-16/lib/libMLIR.so.16 /usr/lib/x86_64-linux-gnu/ && sudo ln -s /usr/lib/llvm-16/lib/libMLIR.so.16 /usr/lib/x86_64-linux-gnu/libMLIR.so
 

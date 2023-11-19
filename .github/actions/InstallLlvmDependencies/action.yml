@@ -13,5 +13,5 @@ runs:
       shell: bash
 
     - name: "Install LLVM dependencies"
-      run: sudo apt-get update && sudo apt-get install llvm-16-dev clang-16 clang-format-16
+      run: sudo apt-get update && sudo apt-get install llvm-16-dev clang-16 libmlir-16-dev mlir-16-tools clang-format-16 ninja-build
       shell: bash
