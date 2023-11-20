@@ -14,8 +14,15 @@ namespace jlm::llvm
 class CallNode;
 class CallTypeClassifier;
 
-namespace lambda { class node; }
-namespace phi { class node; }
+namespace lambda
+{
+class node;
+}
+
+namespace phi
+{
+class node;
+}
 }
 
 namespace jlm::rvsdg
@@ -33,18 +40,19 @@ namespace jlm::llvm::aa
 
 /** \brief Top-down memory node eliminator
  *
- * The key idea of the TopDownMemoryNodeEliminator is to restrict the lifetime of memory states by eliminating the
- * respective memory nodes from regions where the corresponding RVSDG nodes are not alive. For example, the lifetime
- * of a stack allocation from an alloca node is only within the function the alloca node is alive.
+ * The key idea of the TopDownMemoryNodeEliminator is to restrict the lifetime of memory states by
+ * eliminating the respective memory nodes from regions where the corresponding RVSDG nodes are not
+ * alive. For example, the lifetime of a stack allocation from an alloca node is only within the
+ * function the alloca node is alive.
  *
- * The AgnosticMemoryNodeProvider and the RegionAwareMemoryNodeProvider are only region-aware, but not
- * lifetime-aware. In other words, they restrict the number of regions a memory state needs to be routed through, but do
- * not limit the lifetime of the respective memory states. The provisioning produced by these memory node providers
- * serves as seed provisioning for the TopDownMemoryNodeEliminator, which restricts then the lifetime of memory
- * locations.
+ * The AgnosticMemoryNodeProvider and the RegionAwareMemoryNodeProvider are only region-aware, but
+ * not lifetime-aware. In other words, they restrict the number of regions a memory state needs to
+ * be routed through, but do not limit the lifetime of the respective memory states. The
+ * provisioning produced by these memory node providers serves as seed provisioning for the
+ * TopDownMemoryNodeEliminator, which restricts then the lifetime of memory locations.
  *
- * The TopDownMemoryNodeEliminator only restricts the lifetime of memory states from alloca nodes before the nodes
- * are alive.
+ * The TopDownMemoryNodeEliminator only restricts the lifetime of memory states from alloca nodes
+ * before the nodes are alive.
  */
 class TopDownMemoryNodeEliminator final : public MemoryNodeEliminator
 {
@@ -57,21 +65,21 @@ public:
 
   TopDownMemoryNodeEliminator();
 
-  TopDownMemoryNodeEliminator(const TopDownMemoryNodeEliminator&) = delete;
+  TopDownMemoryNodeEliminator(const TopDownMemoryNodeEliminator &) = delete;
 
-  TopDownMemoryNodeEliminator(TopDownMemoryNodeEliminator&&) = delete;
+  TopDownMemoryNodeEliminator(TopDownMemoryNodeEliminator &&) = delete;
 
-  TopDownMemoryNodeEliminator&
-  operator=(const TopDownMemoryNodeEliminator&) = delete;
+  TopDownMemoryNodeEliminator &
+  operator=(const TopDownMemoryNodeEliminator &) = delete;
 
-  TopDownMemoryNodeEliminator&
-  operator=(TopDownMemoryNodeEliminator&&) = delete;
+  TopDownMemoryNodeEliminator &
+  operator=(TopDownMemoryNodeEliminator &&) = delete;
 
   std::unique_ptr<MemoryNodeProvisioning>
   EliminateMemoryNodes(
-    const RvsdgModule & rvsdgModule,
-    const MemoryNodeProvisioning & seedProvisioning,
-    util::StatisticsCollector & statisticsCollector) override;
+      const RvsdgModule & rvsdgModule,
+      const MemoryNodeProvisioning & seedProvisioning,
+      util::StatisticsCollector & statisticsCollector) override;
 
   /**
    * Creates a TopDownMemoryNodeEliminator and calls the EliminateMemoryNodes() method.
@@ -84,9 +92,9 @@ public:
    */
   static std::unique_ptr<MemoryNodeProvisioning>
   CreateAndEliminate(
-    const RvsdgModule & rvsdgModule,
-    const MemoryNodeProvisioning & seedProvisioning,
-    util::StatisticsCollector & statisticsCollector);
+      const RvsdgModule & rvsdgModule,
+      const MemoryNodeProvisioning & seedProvisioning,
+      util::StatisticsCollector & statisticsCollector);
 
   /**
    * Creates a TopDownMemoryNodeEliminator and calls the EliminateMemoryNodes() method.
@@ -99,8 +107,8 @@ public:
    */
   static std::unique_ptr<MemoryNodeProvisioning>
   CreateAndEliminate(
-    const RvsdgModule & rvsdgModule,
-    const MemoryNodeProvisioning & seedProvisioning);
+      const RvsdgModule & rvsdgModule,
+      const MemoryNodeProvisioning & seedProvisioning);
 
 private:
   void
@@ -144,23 +152,23 @@ private:
 
   void
   EliminateTopDownNonRecursiveDirectCall(
-    const CallNode & callNode,
-    const CallTypeClassifier & callTypeClassifier);
+      const CallNode & callNode,
+      const CallTypeClassifier & callTypeClassifier);
 
   void
   EliminateTopDownRecursiveDirectCall(
-    const CallNode & callNode,
-    const CallTypeClassifier & callTypeClassifier);
+      const CallNode & callNode,
+      const CallTypeClassifier & callTypeClassifier);
 
   void
   EliminateTopDownExternalCall(
-    const CallNode & callNode,
-    const CallTypeClassifier & callTypeClassifier);
+      const CallNode & callNode,
+      const CallTypeClassifier & callTypeClassifier);
 
   void
   EliminateTopDownIndirectCall(
-    const CallNode & indirectCall,
-    const CallTypeClassifier & callTypeClassifier);
+      const CallNode & indirectCall,
+      const CallTypeClassifier & callTypeClassifier);
 
   void
   InitializeLiveNodes(const RvsdgModule & rvsdgModule);
@@ -171,8 +179,9 @@ private:
   /**
    * The function checks the following invariants:
    *
-   * 1. The set of memory nodes computed for each region and call node by TopDownMemoryNodeEliminator are a subset of
-   * the corresponding set of memory nodes from the seed provisioning.
+   * 1. The set of memory nodes computed for each region and call node by
+   * TopDownMemoryNodeEliminator are a subset of the corresponding set of memory nodes from the seed
+   * provisioning.
    *
    * @param rvsdgModule The RVSDG module for which the provisioning is computed.
    * @param seedProvisioning The seed provisioning. \see EliminateMemoryNodes
@@ -182,13 +191,13 @@ private:
    */
   static bool
   CheckInvariants(
-    const RvsdgModule & rvsdgModule,
-    const MemoryNodeProvisioning & seedProvisioning,
-    const Provisioning & provisioning);
+      const RvsdgModule & rvsdgModule,
+      const MemoryNodeProvisioning & seedProvisioning,
+      const Provisioning & provisioning);
 
   std::unique_ptr<Context> Context_;
 };
 
 }
 
-#endif //JLM_LLVM_OPT_ALIAS_ANALYSIS_TOPDOWNMEMORYNODEELIMINATOR_HPP
+#endif // JLM_LLVM_OPT_ALIAS_ANALYSIS_TOPDOWNMEMORYNODEELIMINATOR_HPP

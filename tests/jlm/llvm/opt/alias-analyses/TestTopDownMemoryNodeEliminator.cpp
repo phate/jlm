@@ -7,23 +7,25 @@
 #include <TestRvsdgs.hpp>
 
 #include <jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp>
-#include <jlm/llvm/opt/alias-analyses/TopDownMemoryNodeEliminator.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
+#include <jlm/llvm/opt/alias-analyses/TopDownMemoryNodeEliminator.hpp>
 
-template <class Test, class Analysis, class Provider> static void
-ValidateTest(std::function<void(const Test&, const jlm::llvm::aa::MemoryNodeProvisioning&)> validateProvisioning)
+template<class Test, class Analysis, class Provider>
+static void
+ValidateTest(std::function<void(const Test &, const jlm::llvm::aa::MemoryNodeProvisioning &)>
+                 validateProvisioning)
 {
   static_assert(
-    std::is_base_of<jlm::tests::RvsdgTest, Test>::value,
-    "Test should be derived from RvsdgTest class.");
+      std::is_base_of<jlm::tests::RvsdgTest, Test>::value,
+      "Test should be derived from RvsdgTest class.");
 
   static_assert(
-    std::is_base_of<jlm::llvm::aa::AliasAnalysis, Analysis>::value,
-    "Analysis should be derived from AliasAnalysis class.");
+      std::is_base_of<jlm::llvm::aa::AliasAnalysis, Analysis>::value,
+      "Analysis should be derived from AliasAnalysis class.");
 
   static_assert(
-    std::is_base_of<jlm::llvm::aa::MemoryNodeProvider, Provider>::value,
-    "Provider should be derived from MemoryNodeProvider class.");
+      std::is_base_of<jlm::llvm::aa::MemoryNodeProvider, Provider>::value,
+      "Provider should be derived from MemoryNodeProvider class.");
 
   Test test;
   auto & rvsdgModule = test.module();
@@ -34,15 +36,17 @@ ValidateTest(std::function<void(const Test&, const jlm::llvm::aa::MemoryNodeProv
 
   auto seedProvisioning = Provider::Create(rvsdgModule, *pointsToGraph);
 
-  auto provisioning = jlm::llvm::aa::TopDownMemoryNodeEliminator::CreateAndEliminate(test.module(), *seedProvisioning);
+  auto provisioning = jlm::llvm::aa::TopDownMemoryNodeEliminator::CreateAndEliminate(
+      test.module(),
+      *seedProvisioning);
 
   validateProvisioning(test, *provisioning);
 }
 
 static void
 ValidateStoreTest1SteensgaardAgnostic(
-  const jlm::tests::StoreTest1 & test,
-  const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
+    const jlm::tests::StoreTest1 & test,
+    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
 {
   auto & pointsToGraph = provisioning.GetPointsToGraph();
 
@@ -50,10 +54,7 @@ ValidateStoreTest1SteensgaardAgnostic(
   auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
 
   jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
-    {
-      &lambdaMemoryNode,
-      &externalMemoryNode
-    });
+      { &lambdaMemoryNode, &externalMemoryNode });
 
   auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda);
   assert(lambdaEntryNodes == expectedMemoryNodes);
@@ -64,19 +65,16 @@ ValidateStoreTest1SteensgaardAgnostic(
 
 static void
 ValidateStoreTest2SteensgaardAgnostic(
-  const jlm::tests::StoreTest2 & test,
-  const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
+    const jlm::tests::StoreTest2 & test,
+    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
 {
   auto & pointsToGraph = provisioning.GetPointsToGraph();
 
   auto & lambdaMemoryNode = pointsToGraph.GetLambdaNode(*test.lambda);
   auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
 
-  jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode*> expectedMemoryNodes(
-    {
-      &lambdaMemoryNode,
-      &externalMemoryNode
-    });
+  jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
+      { &lambdaMemoryNode, &externalMemoryNode });
 
   auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda);
   assert(lambdaEntryNodes == expectedMemoryNodes);
@@ -87,8 +85,8 @@ ValidateStoreTest2SteensgaardAgnostic(
 
 static void
 ValidateLoadTest1SteensgaardAgnostic(
-  const jlm::tests::LoadTest1 & test,
-  const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
+    const jlm::tests::LoadTest1 & test,
+    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
 {
   auto & pointsToGraph = provisioning.GetPointsToGraph();
 
@@ -96,10 +94,7 @@ ValidateLoadTest1SteensgaardAgnostic(
   auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
 
   jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
-    {
-      &lambdaMemoryNode,
-      &externalMemoryNode
-    });
+      { &lambdaMemoryNode, &externalMemoryNode });
 
   auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda);
   assert(lambdaEntryNodes == expectedMemoryNodes);
@@ -110,8 +105,8 @@ ValidateLoadTest1SteensgaardAgnostic(
 
 static void
 ValidateLoadTest2SteensgaardAgnostic(
-  const jlm::tests::LoadTest2 & test,
-  const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
+    const jlm::tests::LoadTest2 & test,
+    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
 {
   auto & pointsToGraph = provisioning.GetPointsToGraph();
 
@@ -119,10 +114,7 @@ ValidateLoadTest2SteensgaardAgnostic(
   auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
 
   jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
-    {
-      &lambdaMemoryNode,
-      &externalMemoryNode
-    });
+      { &lambdaMemoryNode, &externalMemoryNode });
 
   auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda);
   assert(lambdaEntryNodes == expectedMemoryNodes);
@@ -133,8 +125,8 @@ ValidateLoadTest2SteensgaardAgnostic(
 
 static void
 ValidateLoadFromUndefTestSteensgaardAgnostic(
-  const jlm::tests::LoadFromUndefTest & test,
-  const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
+    const jlm::tests::LoadFromUndefTest & test,
+    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
 {
   auto & pointsToGraph = provisioning.GetPointsToGraph();
 
@@ -142,10 +134,7 @@ ValidateLoadFromUndefTestSteensgaardAgnostic(
   auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
 
   jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
-    {
-      &lambdaMemoryNode,
-      &externalMemoryNode
-    });
+      { &lambdaMemoryNode, &externalMemoryNode });
 
   auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.Lambda());
   assert(lambdaEntryNodes == expectedMemoryNodes);
@@ -156,8 +145,8 @@ ValidateLoadFromUndefTestSteensgaardAgnostic(
 
 static void
 ValidateCallTest1SteensgaardAgnostic(
-  const jlm::tests::CallTest1 & test,
-  const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
+    const jlm::tests::CallTest1 & test,
+    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
 {
   auto & pointsToGraph = provisioning.GetPointsToGraph();
 
@@ -172,15 +161,13 @@ ValidateCallTest1SteensgaardAgnostic(
   // Validate function f
   {
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
-      {
-        &allocaXMemoryNode,
-        &allocaYMemoryNode,
-        &allocaZMemoryNode,
-        &lambdaFMemoryNode,
-        &lambdaGMemoryNode,
-        &lambdaHMemoryNode,
-        &externalMemoryNode
-      });
+        { &allocaXMemoryNode,
+          &allocaYMemoryNode,
+          &allocaZMemoryNode,
+          &lambdaFMemoryNode,
+          &lambdaGMemoryNode,
+          &lambdaHMemoryNode,
+          &externalMemoryNode });
 
     auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda_f);
     assert(lambdaEntryNodes == expectedMemoryNodes);
@@ -192,15 +179,13 @@ ValidateCallTest1SteensgaardAgnostic(
   // Validate function g
   {
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
-      {
-        &allocaXMemoryNode,
-        &allocaYMemoryNode,
-        &allocaZMemoryNode,
-        &lambdaFMemoryNode,
-        &lambdaGMemoryNode,
-        &lambdaHMemoryNode,
-        &externalMemoryNode
-      });
+        { &allocaXMemoryNode,
+          &allocaYMemoryNode,
+          &allocaZMemoryNode,
+          &lambdaFMemoryNode,
+          &lambdaGMemoryNode,
+          &lambdaHMemoryNode,
+          &externalMemoryNode });
 
     auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda_g);
     assert(lambdaEntryNodes == expectedMemoryNodes);
@@ -212,12 +197,7 @@ ValidateCallTest1SteensgaardAgnostic(
   // Validate function h
   {
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
-      {
-        &lambdaFMemoryNode,
-        &lambdaGMemoryNode,
-        &lambdaHMemoryNode,
-        &externalMemoryNode
-      });
+        { &lambdaFMemoryNode, &lambdaGMemoryNode, &lambdaHMemoryNode, &externalMemoryNode });
 
     auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda_h);
     assert(lambdaEntryNodes == expectedMemoryNodes);
@@ -229,15 +209,13 @@ ValidateCallTest1SteensgaardAgnostic(
   // Validate call to f
   {
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
-      {
-        &allocaXMemoryNode,
-        &allocaYMemoryNode,
-        &allocaZMemoryNode,
-        &lambdaFMemoryNode,
-        &lambdaGMemoryNode,
-        &lambdaHMemoryNode,
-        &externalMemoryNode
-      });
+        { &allocaXMemoryNode,
+          &allocaYMemoryNode,
+          &allocaZMemoryNode,
+          &lambdaFMemoryNode,
+          &lambdaGMemoryNode,
+          &lambdaHMemoryNode,
+          &externalMemoryNode });
 
     auto & callEntryNodes = provisioning.GetCallEntryNodes(test.CallF());
     assert(callEntryNodes == expectedMemoryNodes);
@@ -249,15 +227,13 @@ ValidateCallTest1SteensgaardAgnostic(
   // Validate call to g
   {
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
-      {
-        &allocaXMemoryNode,
-        &allocaYMemoryNode,
-        &allocaZMemoryNode,
-        &lambdaFMemoryNode,
-        &lambdaGMemoryNode,
-        &lambdaHMemoryNode,
-        &externalMemoryNode
-      });
+        { &allocaXMemoryNode,
+          &allocaYMemoryNode,
+          &allocaZMemoryNode,
+          &lambdaFMemoryNode,
+          &lambdaGMemoryNode,
+          &lambdaHMemoryNode,
+          &externalMemoryNode });
 
     auto & callEntryNodes = provisioning.GetCallEntryNodes(test.CallG());
     assert(callEntryNodes == expectedMemoryNodes);
@@ -269,8 +245,8 @@ ValidateCallTest1SteensgaardAgnostic(
 
 static void
 ValidateIndirectCallTest1SteensgaardAgnostic(
-  const jlm::tests::IndirectCallTest1 & test,
-  const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
+    const jlm::tests::IndirectCallTest1 & test,
+    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
 {
   auto & pointsToGraph = provisioning.GetPointsToGraph();
 
@@ -281,13 +257,11 @@ ValidateIndirectCallTest1SteensgaardAgnostic(
   auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
 
   jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
-    {
-      &lambdaFourMemoryNode,
-      &lambdaThreeMemoryNode,
-      &lambdaIndCallMemoryNode,
-      &lambdaTestMemoryNode,
-      &externalMemoryNode
-    });
+      { &lambdaFourMemoryNode,
+        &lambdaThreeMemoryNode,
+        &lambdaIndCallMemoryNode,
+        &lambdaTestMemoryNode,
+        &externalMemoryNode });
 
   // Validate function four
   {
@@ -355,8 +329,8 @@ ValidateIndirectCallTest1SteensgaardAgnostic(
 
 static void
 ValidateIndirectCallTest2SteensgaardAgnostic(
-  const jlm::tests::IndirectCallTest2 & test,
-  const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
+    const jlm::tests::IndirectCallTest2 & test,
+    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
 {
   auto & pointsToGraph = provisioning.GetPointsToGraph();
 
@@ -380,20 +354,18 @@ ValidateIndirectCallTest2SteensgaardAgnostic(
   // Validate function test2
   {
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
-      {
-        &lambdaThreeMemoryNode,
-        &lambdaFourMemoryNode,
-        &lambdaIMemoryNode,
-        &lambdaXMemoryNode,
-        &lambdaYMemoryNode,
-        &lambdaTestMemoryNode,
-        &lambdaTest2MemoryNode,
+        { &lambdaThreeMemoryNode,
+          &lambdaFourMemoryNode,
+          &lambdaIMemoryNode,
+          &lambdaXMemoryNode,
+          &lambdaYMemoryNode,
+          &lambdaTestMemoryNode,
+          &lambdaTest2MemoryNode,
 
-        &deltaG1MemoryNode,
-        &deltaG2MemoryNode,
+          &deltaG1MemoryNode,
+          &deltaG2MemoryNode,
 
-        &externalMemoryNode
-      });
+          &externalMemoryNode });
 
     auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaTest2());
     assert(lambdaEntryNodes == expectedMemoryNodes);
@@ -405,20 +377,18 @@ ValidateIndirectCallTest2SteensgaardAgnostic(
   // Validate function test
   {
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
-      {
-        &lambdaThreeMemoryNode,
-        &lambdaFourMemoryNode,
-        &lambdaIMemoryNode,
-        &lambdaXMemoryNode,
-        &lambdaYMemoryNode,
-        &lambdaTestMemoryNode,
-        &lambdaTest2MemoryNode,
+        { &lambdaThreeMemoryNode,
+          &lambdaFourMemoryNode,
+          &lambdaIMemoryNode,
+          &lambdaXMemoryNode,
+          &lambdaYMemoryNode,
+          &lambdaTestMemoryNode,
+          &lambdaTest2MemoryNode,
 
-        &deltaG1MemoryNode,
-        &deltaG2MemoryNode,
+          &deltaG1MemoryNode,
+          &deltaG2MemoryNode,
 
-        &externalMemoryNode
-      });
+          &externalMemoryNode });
 
     auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaTest());
     assert(lambdaEntryNodes == expectedMemoryNodes);
@@ -430,23 +400,21 @@ ValidateIndirectCallTest2SteensgaardAgnostic(
   // Validate function y
   {
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
-      {
-        &lambdaThreeMemoryNode,
-        &lambdaFourMemoryNode,
-        &lambdaIMemoryNode,
-        &lambdaXMemoryNode,
-        &lambdaYMemoryNode,
-        &lambdaTestMemoryNode,
-        &lambdaTest2MemoryNode,
+        { &lambdaThreeMemoryNode,
+          &lambdaFourMemoryNode,
+          &lambdaIMemoryNode,
+          &lambdaXMemoryNode,
+          &lambdaYMemoryNode,
+          &lambdaTestMemoryNode,
+          &lambdaTest2MemoryNode,
 
-        &deltaG1MemoryNode,
-        &deltaG2MemoryNode,
+          &deltaG1MemoryNode,
+          &deltaG2MemoryNode,
 
-        &allocaPxMemoryNode,
-        &allocaPyMemoryNode,
+          &allocaPxMemoryNode,
+          &allocaPyMemoryNode,
 
-        &externalMemoryNode
-      });
+          &externalMemoryNode });
 
     auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaY());
     assert(lambdaEntryNodes == expectedMemoryNodes);
@@ -458,24 +426,22 @@ ValidateIndirectCallTest2SteensgaardAgnostic(
   // Validate function x
   {
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
-      {
-        &lambdaThreeMemoryNode,
-        &lambdaFourMemoryNode,
-        &lambdaIMemoryNode,
-        &lambdaXMemoryNode,
-        &lambdaYMemoryNode,
-        &lambdaTestMemoryNode,
-        &lambdaTest2MemoryNode,
+        { &lambdaThreeMemoryNode,
+          &lambdaFourMemoryNode,
+          &lambdaIMemoryNode,
+          &lambdaXMemoryNode,
+          &lambdaYMemoryNode,
+          &lambdaTestMemoryNode,
+          &lambdaTest2MemoryNode,
 
-        &deltaG1MemoryNode,
-        &deltaG2MemoryNode,
+          &deltaG1MemoryNode,
+          &deltaG2MemoryNode,
 
-        &allocaPxMemoryNode,
-        &allocaPyMemoryNode,
-        &allocaPzMemoryNode,
+          &allocaPxMemoryNode,
+          &allocaPyMemoryNode,
+          &allocaPzMemoryNode,
 
-        &externalMemoryNode
-      });
+          &externalMemoryNode });
 
     auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaX());
     assert(lambdaEntryNodes == expectedMemoryNodes);
@@ -487,24 +453,22 @@ ValidateIndirectCallTest2SteensgaardAgnostic(
   // Validate function i
   {
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
-      {
-        &lambdaThreeMemoryNode,
-        &lambdaFourMemoryNode,
-        &lambdaIMemoryNode,
-        &lambdaXMemoryNode,
-        &lambdaYMemoryNode,
-        &lambdaTestMemoryNode,
-        &lambdaTest2MemoryNode,
+        { &lambdaThreeMemoryNode,
+          &lambdaFourMemoryNode,
+          &lambdaIMemoryNode,
+          &lambdaXMemoryNode,
+          &lambdaYMemoryNode,
+          &lambdaTestMemoryNode,
+          &lambdaTest2MemoryNode,
 
-        &deltaG1MemoryNode,
-        &deltaG2MemoryNode,
+          &deltaG1MemoryNode,
+          &deltaG2MemoryNode,
 
-        &allocaPxMemoryNode,
-        &allocaPyMemoryNode,
-        &allocaPzMemoryNode,
+          &allocaPxMemoryNode,
+          &allocaPyMemoryNode,
+          &allocaPzMemoryNode,
 
-        &externalMemoryNode
-      });
+          &externalMemoryNode });
 
     auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaI());
     assert(lambdaEntryNodes == expectedMemoryNodes);
@@ -516,24 +480,22 @@ ValidateIndirectCallTest2SteensgaardAgnostic(
   // Validate function four
   {
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
-      {
-        &lambdaThreeMemoryNode,
-        &lambdaFourMemoryNode,
-        &lambdaIMemoryNode,
-        &lambdaXMemoryNode,
-        &lambdaYMemoryNode,
-        &lambdaTestMemoryNode,
-        &lambdaTest2MemoryNode,
+        { &lambdaThreeMemoryNode,
+          &lambdaFourMemoryNode,
+          &lambdaIMemoryNode,
+          &lambdaXMemoryNode,
+          &lambdaYMemoryNode,
+          &lambdaTestMemoryNode,
+          &lambdaTest2MemoryNode,
 
-        &deltaG1MemoryNode,
-        &deltaG2MemoryNode,
+          &deltaG1MemoryNode,
+          &deltaG2MemoryNode,
 
-        &allocaPxMemoryNode,
-        &allocaPyMemoryNode,
-        &allocaPzMemoryNode,
+          &allocaPxMemoryNode,
+          &allocaPyMemoryNode,
+          &allocaPzMemoryNode,
 
-        &externalMemoryNode
-      });
+          &externalMemoryNode });
 
     auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaFour());
     assert(lambdaEntryNodes == expectedMemoryNodes);
@@ -545,24 +507,22 @@ ValidateIndirectCallTest2SteensgaardAgnostic(
   // Validate function three
   {
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
-      {
-        &lambdaThreeMemoryNode,
-        &lambdaFourMemoryNode,
-        &lambdaIMemoryNode,
-        &lambdaXMemoryNode,
-        &lambdaYMemoryNode,
-        &lambdaTestMemoryNode,
-        &lambdaTest2MemoryNode,
+        { &lambdaThreeMemoryNode,
+          &lambdaFourMemoryNode,
+          &lambdaIMemoryNode,
+          &lambdaXMemoryNode,
+          &lambdaYMemoryNode,
+          &lambdaTestMemoryNode,
+          &lambdaTest2MemoryNode,
 
-        &deltaG1MemoryNode,
-        &deltaG2MemoryNode,
+          &deltaG1MemoryNode,
+          &deltaG2MemoryNode,
 
-        &allocaPxMemoryNode,
-        &allocaPyMemoryNode,
-        &allocaPzMemoryNode,
+          &allocaPxMemoryNode,
+          &allocaPyMemoryNode,
+          &allocaPzMemoryNode,
 
-        &externalMemoryNode
-      });
+          &externalMemoryNode });
 
     auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaThree());
     assert(lambdaEntryNodes == expectedMemoryNodes);
@@ -574,24 +534,22 @@ ValidateIndirectCallTest2SteensgaardAgnostic(
   // Validate indirect call
   {
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
-      {
-        &lambdaThreeMemoryNode,
-        &lambdaFourMemoryNode,
-        &lambdaIMemoryNode,
-        &lambdaXMemoryNode,
-        &lambdaYMemoryNode,
-        &lambdaTestMemoryNode,
-        &lambdaTest2MemoryNode,
+        { &lambdaThreeMemoryNode,
+          &lambdaFourMemoryNode,
+          &lambdaIMemoryNode,
+          &lambdaXMemoryNode,
+          &lambdaYMemoryNode,
+          &lambdaTestMemoryNode,
+          &lambdaTest2MemoryNode,
 
-        &deltaG1MemoryNode,
-        &deltaG2MemoryNode,
+          &deltaG1MemoryNode,
+          &deltaG2MemoryNode,
 
-        &allocaPxMemoryNode,
-        &allocaPyMemoryNode,
-        &allocaPzMemoryNode,
+          &allocaPxMemoryNode,
+          &allocaPyMemoryNode,
+          &allocaPzMemoryNode,
 
-        &externalMemoryNode
-      });
+          &externalMemoryNode });
 
     auto & callEntryNodes = provisioning.GetCallEntryNodes(test.GetIndirectCall());
     assert(callEntryNodes == expectedMemoryNodes);
@@ -603,24 +561,22 @@ ValidateIndirectCallTest2SteensgaardAgnostic(
   // Validate call to i from x
   {
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
-      {
-        &lambdaThreeMemoryNode,
-        &lambdaFourMemoryNode,
-        &lambdaIMemoryNode,
-        &lambdaXMemoryNode,
-        &lambdaYMemoryNode,
-        &lambdaTestMemoryNode,
-        &lambdaTest2MemoryNode,
+        { &lambdaThreeMemoryNode,
+          &lambdaFourMemoryNode,
+          &lambdaIMemoryNode,
+          &lambdaXMemoryNode,
+          &lambdaYMemoryNode,
+          &lambdaTestMemoryNode,
+          &lambdaTest2MemoryNode,
 
-        &deltaG1MemoryNode,
-        &deltaG2MemoryNode,
+          &deltaG1MemoryNode,
+          &deltaG2MemoryNode,
 
-        &allocaPxMemoryNode,
-        &allocaPyMemoryNode,
-        &allocaPzMemoryNode,
+          &allocaPxMemoryNode,
+          &allocaPyMemoryNode,
+          &allocaPzMemoryNode,
 
-        &externalMemoryNode
-      });
+          &externalMemoryNode });
 
     auto & callEntryNodes = provisioning.GetCallEntryNodes(test.GetCallIWithThree());
     assert(callEntryNodes == expectedMemoryNodes);
@@ -632,24 +588,22 @@ ValidateIndirectCallTest2SteensgaardAgnostic(
   // Validate call to i from y
   {
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
-      {
-        &lambdaThreeMemoryNode,
-        &lambdaFourMemoryNode,
-        &lambdaIMemoryNode,
-        &lambdaXMemoryNode,
-        &lambdaYMemoryNode,
-        &lambdaTestMemoryNode,
-        &lambdaTest2MemoryNode,
+        { &lambdaThreeMemoryNode,
+          &lambdaFourMemoryNode,
+          &lambdaIMemoryNode,
+          &lambdaXMemoryNode,
+          &lambdaYMemoryNode,
+          &lambdaTestMemoryNode,
+          &lambdaTest2MemoryNode,
 
-        &deltaG1MemoryNode,
-        &deltaG2MemoryNode,
+          &deltaG1MemoryNode,
+          &deltaG2MemoryNode,
 
-        &allocaPxMemoryNode,
-        &allocaPyMemoryNode,
-        &allocaPzMemoryNode,
+          &allocaPxMemoryNode,
+          &allocaPyMemoryNode,
+          &allocaPzMemoryNode,
 
-        &externalMemoryNode
-      });
+          &externalMemoryNode });
 
     auto & callEntryNodes = provisioning.GetCallEntryNodes(test.GetCallIWithFour());
     assert(callEntryNodes == expectedMemoryNodes);
@@ -661,24 +615,22 @@ ValidateIndirectCallTest2SteensgaardAgnostic(
   // Validate call to x from test
   {
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
-      {
-        &lambdaThreeMemoryNode,
-        &lambdaFourMemoryNode,
-        &lambdaIMemoryNode,
-        &lambdaXMemoryNode,
-        &lambdaYMemoryNode,
-        &lambdaTestMemoryNode,
-        &lambdaTest2MemoryNode,
+        { &lambdaThreeMemoryNode,
+          &lambdaFourMemoryNode,
+          &lambdaIMemoryNode,
+          &lambdaXMemoryNode,
+          &lambdaYMemoryNode,
+          &lambdaTestMemoryNode,
+          &lambdaTest2MemoryNode,
 
-        &deltaG1MemoryNode,
-        &deltaG2MemoryNode,
+          &deltaG1MemoryNode,
+          &deltaG2MemoryNode,
 
-        &allocaPxMemoryNode,
-        &allocaPyMemoryNode,
-        &allocaPzMemoryNode,
+          &allocaPxMemoryNode,
+          &allocaPyMemoryNode,
+          &allocaPzMemoryNode,
 
-        &externalMemoryNode
-      });
+          &externalMemoryNode });
 
     auto & callEntryNodes = provisioning.GetCallEntryNodes(test.GetTestCallX());
     assert(callEntryNodes == expectedMemoryNodes);
@@ -690,23 +642,21 @@ ValidateIndirectCallTest2SteensgaardAgnostic(
   // Validate call to y from test
   {
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
-      {
-        &lambdaThreeMemoryNode,
-        &lambdaFourMemoryNode,
-        &lambdaIMemoryNode,
-        &lambdaXMemoryNode,
-        &lambdaYMemoryNode,
-        &lambdaTestMemoryNode,
-        &lambdaTest2MemoryNode,
+        { &lambdaThreeMemoryNode,
+          &lambdaFourMemoryNode,
+          &lambdaIMemoryNode,
+          &lambdaXMemoryNode,
+          &lambdaYMemoryNode,
+          &lambdaTestMemoryNode,
+          &lambdaTest2MemoryNode,
 
-        &deltaG1MemoryNode,
-        &deltaG2MemoryNode,
+          &deltaG1MemoryNode,
+          &deltaG2MemoryNode,
 
-        &allocaPxMemoryNode,
-        &allocaPyMemoryNode,
+          &allocaPxMemoryNode,
+          &allocaPyMemoryNode,
 
-        &externalMemoryNode
-      });
+          &externalMemoryNode });
 
     auto & callEntryNodes = provisioning.GetCallEntryNodes(test.GetCallY());
     assert(callEntryNodes == expectedMemoryNodes);
@@ -718,24 +668,22 @@ ValidateIndirectCallTest2SteensgaardAgnostic(
   // Validate call to x from test2
   {
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
-      {
-        &lambdaThreeMemoryNode,
-        &lambdaFourMemoryNode,
-        &lambdaIMemoryNode,
-        &lambdaXMemoryNode,
-        &lambdaYMemoryNode,
-        &lambdaTestMemoryNode,
-        &lambdaTest2MemoryNode,
+        { &lambdaThreeMemoryNode,
+          &lambdaFourMemoryNode,
+          &lambdaIMemoryNode,
+          &lambdaXMemoryNode,
+          &lambdaYMemoryNode,
+          &lambdaTestMemoryNode,
+          &lambdaTest2MemoryNode,
 
-        &deltaG1MemoryNode,
-        &deltaG2MemoryNode,
+          &deltaG1MemoryNode,
+          &deltaG2MemoryNode,
 
-        &allocaPxMemoryNode,
-        &allocaPyMemoryNode,
-        &allocaPzMemoryNode,
+          &allocaPxMemoryNode,
+          &allocaPyMemoryNode,
+          &allocaPzMemoryNode,
 
-        &externalMemoryNode
-      });
+          &externalMemoryNode });
 
     auto & callEntryNodes = provisioning.GetCallEntryNodes(test.GetTest2CallX());
     assert(callEntryNodes == expectedMemoryNodes);
@@ -747,8 +695,8 @@ ValidateIndirectCallTest2SteensgaardAgnostic(
 
 static void
 ValidateGammaTestSteensgaardAgnostic(
-  const jlm::tests::GammaTest & test,
-  const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
+    const jlm::tests::GammaTest & test,
+    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
 {
   auto & pointsToGraph = provisioning.GetPointsToGraph();
 
@@ -756,10 +704,7 @@ ValidateGammaTestSteensgaardAgnostic(
   auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
 
   jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
-    {
-      &lambdaMemoryNode,
-      &externalMemoryNode
-    });
+      { &lambdaMemoryNode, &externalMemoryNode });
 
   auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda);
   assert(lambdaEntryNodes == expectedMemoryNodes);
@@ -787,8 +732,8 @@ ValidateGammaTestSteensgaardAgnostic(
 
 static void
 ValidateGammaTest2SteensgaardAgnostic(
-  const jlm::tests::GammaTest2 & test,
-  const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
+    const jlm::tests::GammaTest2 & test,
+    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
 {
   auto & pointsToGraph = provisioning.GetPointsToGraph();
 
@@ -802,25 +747,19 @@ ValidateGammaTest2SteensgaardAgnostic(
   auto & lambdaHMemoryNode = pointsToGraph.GetLambdaNode(test.GetLambdaH());
   auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
 
-  jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedLambdaGHEntryExitMemoryNodes(
-    {
-      &lambdaFMemoryNode,
-      &lambdaGMemoryNode,
-      &lambdaHMemoryNode,
-      &externalMemoryNode
-    });
+  jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *>
+      expectedLambdaGHEntryExitMemoryNodes(
+          { &lambdaFMemoryNode, &lambdaGMemoryNode, &lambdaHMemoryNode, &externalMemoryNode });
 
-  jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedLambdaFEntryExitMemoryNodes(
-    {
-      &allocaXFromGMemoryNode,
-      &allocaYFromGMemoryNode,
-      &allocaXFromHMemoryNode,
-      &allocaYFromHMemoryNode,
-      &lambdaFMemoryNode,
-      &lambdaGMemoryNode,
-      &lambdaHMemoryNode,
-      &externalMemoryNode
-    });
+  jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *>
+      expectedLambdaFEntryExitMemoryNodes({ &allocaXFromGMemoryNode,
+                                            &allocaYFromGMemoryNode,
+                                            &allocaXFromHMemoryNode,
+                                            &allocaYFromHMemoryNode,
+                                            &lambdaFMemoryNode,
+                                            &lambdaGMemoryNode,
+                                            &lambdaHMemoryNode,
+                                            &externalMemoryNode });
 
   // Validate g
   {
@@ -855,17 +794,15 @@ ValidateGammaTest2SteensgaardAgnostic(
   // Validate f
   {
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedGammaMemoryNodes(
-      {
-        &allocaZMemoryNode,
-        &allocaXFromGMemoryNode,
-        &allocaYFromGMemoryNode,
-        &allocaXFromHMemoryNode,
-        &allocaYFromHMemoryNode,
-        &lambdaFMemoryNode,
-        &lambdaGMemoryNode,
-        &lambdaHMemoryNode,
-        &externalMemoryNode
-      });
+        { &allocaZMemoryNode,
+          &allocaXFromGMemoryNode,
+          &allocaYFromGMemoryNode,
+          &allocaXFromHMemoryNode,
+          &allocaYFromHMemoryNode,
+          &lambdaFMemoryNode,
+          &lambdaGMemoryNode,
+          &lambdaHMemoryNode,
+          &externalMemoryNode });
 
     auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaF());
     assert(lambdaEntryNodes == expectedLambdaFEntryExitMemoryNodes);
@@ -894,8 +831,8 @@ ValidateGammaTest2SteensgaardAgnostic(
 
 static void
 ValidateThetaTestSteensgaardAgnostic(
-  const jlm::tests::ThetaTest & test,
-  const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
+    const jlm::tests::ThetaTest & test,
+    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
 {
   auto & pointsToGraph = provisioning.GetPointsToGraph();
 
@@ -903,10 +840,7 @@ ValidateThetaTestSteensgaardAgnostic(
   auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
 
   jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
-    {
-      &lambdaMemoryNode,
-      &externalMemoryNode
-    });
+      { &lambdaMemoryNode, &externalMemoryNode });
 
   auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda);
   assert(lambdaEntryNodes == expectedMemoryNodes);
@@ -920,8 +854,8 @@ ValidateThetaTestSteensgaardAgnostic(
 
 static void
 ValidatePhiTest1SteensgaardAgnostic(
-  const jlm::tests::PhiTest1 & test,
-  const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
+    const jlm::tests::PhiTest1 & test,
+    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
 {
   auto & pointsToGraph = provisioning.GetPointsToGraph();
 
@@ -933,12 +867,7 @@ ValidatePhiTest1SteensgaardAgnostic(
   // validate function fib()
   {
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
-      {
-        &lambdaFibMemoryNode,
-        &lambdaTestMemoryNode,
-        &allocaMemoryNode,
-        &externalMemoryNode
-      });
+        { &lambdaFibMemoryNode, &lambdaTestMemoryNode, &allocaMemoryNode, &externalMemoryNode });
 
     auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda_fib);
     assert(lambdaEntryNodes == expectedMemoryNodes);
@@ -968,19 +897,10 @@ ValidatePhiTest1SteensgaardAgnostic(
   // validate function test()
   {
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedLambdaMemoryNodes(
-      {
-        &lambdaFibMemoryNode,
-        &lambdaTestMemoryNode,
-        &externalMemoryNode
-      });
+        { &lambdaFibMemoryNode, &lambdaTestMemoryNode, &externalMemoryNode });
 
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedCallMemoryNodes(
-      {
-        &lambdaFibMemoryNode,
-        &lambdaTestMemoryNode,
-        &allocaMemoryNode,
-        &externalMemoryNode
-      });
+        { &lambdaFibMemoryNode, &lambdaTestMemoryNode, &allocaMemoryNode, &externalMemoryNode });
 
     auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda_test);
     assert(lambdaEntryNodes == expectedLambdaMemoryNodes);
@@ -996,11 +916,10 @@ ValidatePhiTest1SteensgaardAgnostic(
   }
 }
 
-
 static void
 ValidatePhiTest2SteensgaardAgnostic(
-  const jlm::tests::PhiTest2 & test,
-  const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
+    const jlm::tests::PhiTest2 & test,
+    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
 {
   auto & pointsToGraph = provisioning.GetPointsToGraph();
 
@@ -1019,21 +938,19 @@ ValidatePhiTest2SteensgaardAgnostic(
   auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
 
   jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
-    {
-      &lambdaAMemoryNode,
-      &lambdaBMemoryNode,
-      &lambdaCMemoryNode,
-      &lambdaDMemoryNode,
-      &lambdaIMemoryNode,
-      &lambdaEightMemoryNode,
-      &lambdaTestMemoryNode,
-      &allocaPaMemoryNode,
-      &allocaPbMemoryNode,
-      &allocaPcMemoryNode,
-      &allocaPdMemoryNode,
-      &allocaPTestMemoryNode,
-      &externalMemoryNode
-    });
+      { &lambdaAMemoryNode,
+        &lambdaBMemoryNode,
+        &lambdaCMemoryNode,
+        &lambdaDMemoryNode,
+        &lambdaIMemoryNode,
+        &lambdaEightMemoryNode,
+        &lambdaTestMemoryNode,
+        &allocaPaMemoryNode,
+        &allocaPbMemoryNode,
+        &allocaPcMemoryNode,
+        &allocaPdMemoryNode,
+        &allocaPTestMemoryNode,
+        &externalMemoryNode });
 
   // validate function eight()
   {
@@ -1134,16 +1051,14 @@ ValidatePhiTest2SteensgaardAgnostic(
   // validate function test()
   {
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedLambdaMemoryNodes(
-      {
-        &lambdaAMemoryNode,
-        &lambdaBMemoryNode,
-        &lambdaCMemoryNode,
-        &lambdaDMemoryNode,
-        &lambdaIMemoryNode,
-        &lambdaEightMemoryNode,
-        &lambdaTestMemoryNode,
-        &externalMemoryNode
-      });
+        { &lambdaAMemoryNode,
+          &lambdaBMemoryNode,
+          &lambdaCMemoryNode,
+          &lambdaDMemoryNode,
+          &lambdaIMemoryNode,
+          &lambdaEightMemoryNode,
+          &lambdaTestMemoryNode,
+          &externalMemoryNode });
 
     auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaTest());
     assert(lambdaEntryNodes == expectedLambdaMemoryNodes);
@@ -1161,8 +1076,8 @@ ValidatePhiTest2SteensgaardAgnostic(
 
 static void
 ValidateEscapedMemoryTest3SteensgaardAgnostic(
-  const jlm::tests::EscapedMemoryTest3 & test,
-  const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
+    const jlm::tests::EscapedMemoryTest3 & test,
+    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
 {
   auto & pointsToGraph = provisioning.GetPointsToGraph();
 
@@ -1172,12 +1087,7 @@ ValidateEscapedMemoryTest3SteensgaardAgnostic(
   auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
 
   jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
-    {
-      &lambdaTestMemoryNode,
-      &deltaGlobalMemoryNode,
-      &importMemoryNode,
-      &externalMemoryNode
-    });
+      { &lambdaTestMemoryNode, &deltaGlobalMemoryNode, &importMemoryNode, &externalMemoryNode });
 
   auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.LambdaTest);
   assert(lambdaEntryNodes == expectedMemoryNodes);
@@ -1194,8 +1104,8 @@ ValidateEscapedMemoryTest3SteensgaardAgnostic(
 
 static void
 ValidateMemcpyTestSteensgaardAgnostic(
-  const jlm::tests::MemcpyTest & test,
-  const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
+    const jlm::tests::MemcpyTest & test,
+    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
 {
   auto & pointsToGraph = provisioning.GetPointsToGraph();
 
@@ -1206,13 +1116,11 @@ ValidateMemcpyTestSteensgaardAgnostic(
   auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
 
   jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
-    {
-      &lambdaFMemoryNode,
-      &lambdaGMemoryNode,
-      &globalArrayMemoryNode,
-      &localArrayMemoryNode,
-      &externalMemoryNode
-    });
+      { &lambdaFMemoryNode,
+        &lambdaGMemoryNode,
+        &globalArrayMemoryNode,
+        &localArrayMemoryNode,
+        &externalMemoryNode });
 
   // Validate function f()
   {
@@ -1248,21 +1156,21 @@ TestStatistics()
   std::remove(filePath.to_str().c_str());
 
   jlm::util::StatisticsCollectorSettings statisticsCollectorSettings(
-    filePath,
-    {jlm::util::Statistics::Id::TopDownMemoryNodeEliminator});
+      filePath,
+      { jlm::util::Statistics::Id::TopDownMemoryNodeEliminator });
   jlm::util::StatisticsCollector statisticsCollector(statisticsCollectorSettings);
 
   auto pointsToGraph = jlm::llvm::aa::PointsToGraph::Create();
   auto provisioning = jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(
-    test.module(),
-    *pointsToGraph,
-    statisticsCollector);
+      test.module(),
+      *pointsToGraph,
+      statisticsCollector);
 
   // Act
   jlm::llvm::aa::TopDownMemoryNodeEliminator::CreateAndEliminate(
-    test.module(),
-    *provisioning,
-    statisticsCollector);
+      test.module(),
+      *provisioning,
+      statisticsCollector);
 
   // Assert
   assert(statisticsCollector.NumCollectedStatistics() == 1);
@@ -1273,95 +1181,50 @@ TestTopDownMemoryNodeEliminator()
 {
   using namespace jlm::llvm::aa;
 
-  ValidateTest<
-    jlm::tests::StoreTest1,
-    Steensgaard,
-    AgnosticMemoryNodeProvider
-  >(ValidateStoreTest1SteensgaardAgnostic);
+  ValidateTest<jlm::tests::StoreTest1, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateStoreTest1SteensgaardAgnostic);
 
-  ValidateTest<
-    jlm::tests::StoreTest2,
-    Steensgaard,
-    AgnosticMemoryNodeProvider
-  >(ValidateStoreTest2SteensgaardAgnostic);
+  ValidateTest<jlm::tests::StoreTest2, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateStoreTest2SteensgaardAgnostic);
 
-  ValidateTest<
-    jlm::tests::LoadTest1,
-    Steensgaard,
-    AgnosticMemoryNodeProvider
-  >(ValidateLoadTest1SteensgaardAgnostic);
+  ValidateTest<jlm::tests::LoadTest1, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateLoadTest1SteensgaardAgnostic);
 
-  ValidateTest<
-    jlm::tests::LoadTest2,
-    Steensgaard,
-    AgnosticMemoryNodeProvider
-  >(ValidateLoadTest2SteensgaardAgnostic);
+  ValidateTest<jlm::tests::LoadTest2, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateLoadTest2SteensgaardAgnostic);
 
-  ValidateTest<
-    jlm::tests::LoadFromUndefTest,
-    Steensgaard,
-    AgnosticMemoryNodeProvider
-  >(ValidateLoadFromUndefTestSteensgaardAgnostic);
+  ValidateTest<jlm::tests::LoadFromUndefTest, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateLoadFromUndefTestSteensgaardAgnostic);
 
-  ValidateTest<
-    jlm::tests::CallTest1,
-    Steensgaard,
-    AgnosticMemoryNodeProvider
-  >(ValidateCallTest1SteensgaardAgnostic);
+  ValidateTest<jlm::tests::CallTest1, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateCallTest1SteensgaardAgnostic);
 
-  ValidateTest<
-    jlm::tests::IndirectCallTest1,
-    Steensgaard,
-    AgnosticMemoryNodeProvider
-  >(ValidateIndirectCallTest1SteensgaardAgnostic);
+  ValidateTest<jlm::tests::IndirectCallTest1, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateIndirectCallTest1SteensgaardAgnostic);
 
-  ValidateTest<
-    jlm::tests::IndirectCallTest2,
-    Steensgaard,
-    AgnosticMemoryNodeProvider
-  >(ValidateIndirectCallTest2SteensgaardAgnostic);
+  ValidateTest<jlm::tests::IndirectCallTest2, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateIndirectCallTest2SteensgaardAgnostic);
 
-  ValidateTest<
-    jlm::tests::GammaTest,
-    Steensgaard,
-    AgnosticMemoryNodeProvider
-  >(ValidateGammaTestSteensgaardAgnostic);
+  ValidateTest<jlm::tests::GammaTest, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateGammaTestSteensgaardAgnostic);
 
-  ValidateTest<
-    jlm::tests::GammaTest2,
-    Steensgaard,
-    AgnosticMemoryNodeProvider
-  >(ValidateGammaTest2SteensgaardAgnostic);
+  ValidateTest<jlm::tests::GammaTest2, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateGammaTest2SteensgaardAgnostic);
 
-  ValidateTest<
-    jlm::tests::ThetaTest,
-    Steensgaard,
-    AgnosticMemoryNodeProvider
-  >(ValidateThetaTestSteensgaardAgnostic);
+  ValidateTest<jlm::tests::ThetaTest, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateThetaTestSteensgaardAgnostic);
 
-  ValidateTest<
-    jlm::tests::PhiTest1,
-    Steensgaard,
-    AgnosticMemoryNodeProvider
-  >(ValidatePhiTest1SteensgaardAgnostic);
+  ValidateTest<jlm::tests::PhiTest1, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidatePhiTest1SteensgaardAgnostic);
 
-  ValidateTest<
-    jlm::tests::PhiTest2,
-    Steensgaard,
-    AgnosticMemoryNodeProvider
-  >(ValidatePhiTest2SteensgaardAgnostic);
+  ValidateTest<jlm::tests::PhiTest2, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidatePhiTest2SteensgaardAgnostic);
 
-  ValidateTest<
-    jlm::tests::EscapedMemoryTest3,
-    Steensgaard,
-    AgnosticMemoryNodeProvider
-  >(ValidateEscapedMemoryTest3SteensgaardAgnostic);
+  ValidateTest<jlm::tests::EscapedMemoryTest3, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateEscapedMemoryTest3SteensgaardAgnostic);
 
-  ValidateTest<
-    jlm::tests::MemcpyTest,
-    Steensgaard,
-    AgnosticMemoryNodeProvider
-  >(ValidateMemcpyTestSteensgaardAgnostic);
+  ValidateTest<jlm::tests::MemcpyTest, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateMemcpyTestSteensgaardAgnostic);
 
   TestStatistics();
 
@@ -1369,5 +1232,5 @@ TestTopDownMemoryNodeEliminator()
 }
 
 JLM_UNIT_TEST_REGISTER(
-  "jlm/llvm/opt/alias-analyses/TestTopDownMemoryNodeEliminator",
-  TestTopDownMemoryNodeEliminator)
+    "jlm/llvm/opt/alias-analyses/TestTopDownMemoryNodeEliminator",
+    TestTopDownMemoryNodeEliminator)

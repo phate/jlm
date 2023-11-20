@@ -255,7 +255,7 @@ public:
     return memoryNodeStatePairs;
   }
 
-  MemoryNodeStatePair*
+  MemoryNodeStatePair *
   InsertState(const PointsToGraph::MemoryNode & memoryNode, jlm::rvsdg::output & state)
   {
     JLM_ASSERT(!HasState(memoryNode));
@@ -305,16 +305,14 @@ public:
   RegionalizedStateMap &
   operator=(RegionalizedStateMap &&) = delete;
 
-  StateMap::MemoryNodeStatePair*
+  StateMap::MemoryNodeStatePair *
   InsertState(const PointsToGraph::MemoryNode & memoryNode, jlm::rvsdg::output & state)
   {
     return GetStateMap(*state.region()).InsertState(memoryNode, state);
   }
 
-  StateMap::MemoryNodeStatePair*
-  InsertUndefinedState(
-    jlm::rvsdg::region & region,
-    const PointsToGraph::MemoryNode & memoryNode)
+  StateMap::MemoryNodeStatePair *
+  InsertUndefinedState(jlm::rvsdg::region & region, const PointsToGraph::MemoryNode & memoryNode)
   {
     auto & undefinedState = GetOrInsertUndefinedMemoryState(region);
     return InsertState(memoryNode, undefinedState);
@@ -343,9 +341,7 @@ public:
   }
 
   bool
-  HasState(
-    const rvsdg::region & region,
-    const PointsToGraph::MemoryNode & memoryNode)
+  HasState(const rvsdg::region & region, const PointsToGraph::MemoryNode & memoryNode)
   {
     return GetStateMap(region).HasState(memoryNode);
   }
@@ -384,12 +380,11 @@ public:
   }
 
 private:
-  jlm::rvsdg::output&
+  jlm::rvsdg::output &
   GetOrInsertUndefinedMemoryState(jlm::rvsdg::region & region)
   {
-    return HasUndefinedMemoryState(region)
-           ? GetUndefinedMemoryState(region)
-           : InsertUndefinedMemoryState(region);
+    return HasUndefinedMemoryState(region) ? GetUndefinedMemoryState(region)
+                                           : InsertUndefinedMemoryState(region);
   }
 
   bool
@@ -398,14 +393,14 @@ private:
     return UndefinedMemoryStates_.find(&region) != UndefinedMemoryStates_.end();
   }
 
-  jlm::rvsdg::output&
+  jlm::rvsdg::output &
   GetUndefinedMemoryState(const jlm::rvsdg::region & region) const noexcept
   {
     JLM_ASSERT(HasUndefinedMemoryState(region));
     return *UndefinedMemoryStates_.find(&region)->second;
   }
 
-  jlm::rvsdg::output&
+  jlm::rvsdg::output &
   InsertUndefinedMemoryState(jlm::rvsdg::region & region) noexcept
   {
     auto undefinedMemoryState = UndefValueOperation::Create(region, MemoryStateType());
@@ -430,7 +425,7 @@ private:
   std::unordered_map<const jlm::rvsdg::region *, std::unique_ptr<StateMap>> StateMaps_;
   std::unordered_map<const jlm::rvsdg::region *, std::unique_ptr<MemoryNodeCache>>
       MemoryNodeCacheMaps_;
-  std::unordered_map<const jlm::rvsdg::region*, jlm::rvsdg::output*> UndefinedMemoryStates_;
+  std::unordered_map<const jlm::rvsdg::region *, jlm::rvsdg::output *> UndefinedMemoryStates_;
 
   const MemoryNodeProvisioning & MemoryNodeProvisioning_;
 };
@@ -624,7 +619,8 @@ MemoryStateEncoder::EncodeAlloca(const jlm::rvsdg::simple_node & allocaNode)
 
   if (stateMap.HasState(*allocaNode.region(), allocaMemoryNode))
   {
-    // The state for the alloca memory node should already exist in case of lifetime agnostic provisioning.
+    // The state for the alloca memory node should already exist in case of lifetime agnostic
+    // provisioning.
     auto memoryNodeStatePair = stateMap.GetState(*allocaNode.region(), allocaMemoryNode);
     memoryNodeStatePair->ReplaceState(allocaNodeStateOutput);
   }
@@ -727,7 +723,7 @@ MemoryStateEncoder::EncodeCall(const CallNode & callNode)
     auto & regionalizedStateMap = Context_->GetRegionalizedStateMap();
     auto & memoryNodes = Context_->GetMemoryNodeProvisioning().GetCallEntryNodes(callNode);
 
-    std::vector<StateMap::MemoryNodeStatePair*> memoryNodeStatePairs;
+    std::vector<StateMap::MemoryNodeStatePair *> memoryNodeStatePairs;
     for (auto memoryNode : memoryNodes.Items())
     {
       if (regionalizedStateMap.HasState(*region, *memoryNode))
@@ -737,7 +733,8 @@ MemoryStateEncoder::EncodeCall(const CallNode & callNode)
       else
       {
         // The state might not exist on the call side in case of lifetime aware provisioning
-        memoryNodeStatePairs.emplace_back(regionalizedStateMap.InsertUndefinedState(*region, *memoryNode));
+        memoryNodeStatePairs.emplace_back(
+            regionalizedStateMap.InsertUndefinedState(*region, *memoryNode));
       }
     }
 
