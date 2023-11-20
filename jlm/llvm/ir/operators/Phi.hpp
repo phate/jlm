@@ -404,6 +404,24 @@ public:
   template <typename F> size_t
   RemovePhiArgumentsWhere(const F& match);
 
+  /**
+   * Remove all dead phi arguments and their respective inputs.
+   *
+   * @return The number of removed arguments.
+   *
+   * \see RemovePhiArgumentsWhere()
+   */
+  size_t
+  PrunePhiArguments()
+  {
+    auto match = [](const jlm::rvsdg::argument &)
+    {
+      return true;
+    };
+
+    return RemovePhiArgumentsWhere(match);
+  }
+
   cvinput *
   input(size_t n) const noexcept;
 
