@@ -21,25 +21,25 @@ class Command;
 /**
  * A simple dependency graph for command execution.
  */
-class CommandGraph final {
+class CommandGraph final
+{
 public:
   class Edge;
   class Node;
 
-  ~CommandGraph()
-  = default;
+  ~CommandGraph() = default;
 
   CommandGraph();
 
-  CommandGraph(const CommandGraph&) = delete;
+  CommandGraph(const CommandGraph &) = delete;
 
-  CommandGraph(CommandGraph&&) = delete;
-
-  CommandGraph &
-  operator=(const CommandGraph&) = delete;
+  CommandGraph(CommandGraph &&) = delete;
 
   CommandGraph &
-  operator=(CommandGraph&&) = delete;
+  operator=(const CommandGraph &) = delete;
+
+  CommandGraph &
+  operator=(CommandGraph &&) = delete;
 
   Node &
   GetEntryNode() const noexcept
@@ -70,7 +70,7 @@ public:
   void
   Run() const;
 
-  static std::vector<CommandGraph::Node*>
+  static std::vector<CommandGraph::Node *>
   SortNodesTopological(const CommandGraph & commandGraph);
 
   static std::unique_ptr<CommandGraph>
@@ -86,16 +86,16 @@ private:
 };
 
 /**
- * Represents a dependency between two commands in the command graph. The dependency indicates that the command
- * represented by the GetSource() node should be executed before the command of the GetSink() node.
+ * Represents a dependency between two commands in the command graph. The dependency indicates that
+ * the command represented by the GetSource() node should be executed before the command of the
+ * GetSink() node.
  */
-class CommandGraph::Edge final {
+class CommandGraph::Edge final
+{
 public:
-  Edge(
-    Node & source,
-    Node & sink)
-    : Sink_(&sink)
-    , Source_(&source)
+  Edge(Node & source, Node & sink)
+      : Sink_(&sink),
+        Source_(&source)
   {}
 
   [[nodiscard]] Node &
@@ -118,7 +118,8 @@ private:
 /**
  * Represents a single command in the command graph.
  */
-class CommandGraph::Node final {
+class CommandGraph::Node final
+{
   class IncomingEdgeConstIterator;
   class OutgoingEdgeConstIterator;
 
@@ -129,20 +130,18 @@ public:
   ~Node();
 
 private:
-  Node(
-    const CommandGraph & commandGraph,
-    std::unique_ptr<Command> command);
+  Node(const CommandGraph & commandGraph, std::unique_ptr<Command> command);
 
 public:
-  Node(const Node&) = delete;
+  Node(const Node &) = delete;
 
-  Node(Node&&) = delete;
-
-  Node &
-  operator=(const Node&) = delete;
+  Node(Node &&) = delete;
 
   Node &
-  operator=(Node&&) = delete;
+  operator=(const Node &) = delete;
+
+  Node &
+  operator=(Node &&) = delete;
 
   const CommandGraph &
   GetCommandGraph() const noexcept
@@ -184,34 +183,31 @@ public:
   }
 
   static Node &
-  Create(
-    CommandGraph & commandGraph,
-    std::unique_ptr<Command> command);
+  Create(CommandGraph & commandGraph, std::unique_ptr<Command> command);
 
 private:
   const CommandGraph & CommandGraph_;
   std::unique_ptr<Command> Command_;
-  std::unordered_set<Edge*> IncomingEdges_;
+  std::unordered_set<Edge *> IncomingEdges_;
   std::unordered_set<std::unique_ptr<Edge>> OutgoingEdges_;
 };
 
 /** \brief Command graph node incoming edge const iterator
-*/
+ */
 class CommandGraph::Node::IncomingEdgeConstIterator final
 {
 public:
   using iterator_category = std::forward_iterator_tag;
-  using value_type = Edge*;
+  using value_type = Edge *;
   using difference_type = std::ptrdiff_t;
-  using pointer = Edge**;
-  using reference = Edge*&;
+  using pointer = Edge **;
+  using reference = Edge *&;
 
 private:
   friend Node;
 
-  explicit
-  IncomingEdgeConstIterator(const std::unordered_set<Edge*>::const_iterator & it)
-    : it_(it)
+  explicit IncomingEdgeConstIterator(const std::unordered_set<Edge *>::const_iterator & it)
+      : it_(it)
   {}
 
 public:
@@ -262,26 +258,26 @@ public:
   }
 
 private:
-  std::unordered_set<Edge*>::const_iterator it_;
+  std::unordered_set<Edge *>::const_iterator it_;
 };
 
 /** \brief Command graph node outgoing edge const iterator
-*/
+ */
 class CommandGraph::Node::OutgoingEdgeConstIterator final
 {
 public:
   using iterator_category = std::forward_iterator_tag;
-  using value_type = Edge*;
+  using value_type = Edge *;
   using difference_type = std::ptrdiff_t;
-  using pointer = Edge**;
-  using reference = Edge*&;
+  using pointer = Edge **;
+  using reference = Edge *&;
 
 private:
   friend Node;
 
-  explicit
-  OutgoingEdgeConstIterator(const std::unordered_set<std::unique_ptr<Edge>>::const_iterator & it)
-    : it_(it)
+  explicit OutgoingEdgeConstIterator(
+      const std::unordered_set<std::unique_ptr<Edge>>::const_iterator & it)
+      : it_(it)
   {}
 
 public:

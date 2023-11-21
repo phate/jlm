@@ -12,8 +12,9 @@
 
 #include <memory>
 
-namespace llvm {
-	class Module;
+namespace llvm
+{
+class Module;
 }
 
 namespace jlm::llvm

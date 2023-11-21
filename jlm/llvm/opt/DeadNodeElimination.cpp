@@ -15,27 +15,26 @@ namespace jlm::llvm
 static bool
 is_phi_argument(const jlm::rvsdg::output * output)
 {
-  auto argument = dynamic_cast<const jlm::rvsdg::argument*>(output);
-  return argument
-         && argument->region()->node()
-         && is<phi::operation>(argument->region()->node());
+  auto argument = dynamic_cast<const jlm::rvsdg::argument *>(output);
+  return argument && argument->region()->node() && is<phi::operation>(argument->region()->node());
 }
 
 /** \brief Dead Node Elimination context class
  *
- * This class keeps track of all the nodes and outputs that are alive. In contrast to all other nodes, a simple node
- * is considered alive if already a single of its outputs is alive. For this reason, this class keeps separately track
- * of simple nodes and therefore avoids to store all its outputs (and instead stores the node itself).
- * By marking the entire node as alive, we also avoid that we reiterate through all inputs of this node again in the
- * future. The following example illustrates the issue:
+ * This class keeps track of all the nodes and outputs that are alive. In contrast to all other
+ * nodes, a simple node is considered alive if already a single of its outputs is alive. For this
+ * reason, this class keeps separately track of simple nodes and therefore avoids to store all its
+ * outputs (and instead stores the node itself). By marking the entire node as alive, we also avoid
+ * that we reiterate through all inputs of this node again in the future. The following example
+ * illustrates the issue:
  *
  * o1 ... oN = Node2 i1 ... iN
  * p1 ... pN = Node1 o1 ... oN
  *
- * When we mark o1 as alive, we actually mark the entire Node2 as alive. This means that when we try to mark o2 alive
- * in the future, we can immediately stop marking instead of reiterating through i1 ... iN again. Thus, by marking the
- * entire simple node instead of just its outputs, we reduce the runtime for marking Node2 from
- * O(oN x iN) to O(oN + iN).
+ * When we mark o1 as alive, we actually mark the entire Node2 as alive. This means that when we try
+ * to mark o2 alive in the future, we can immediately stop marking instead of reiterating through i1
+ * ... iN again. Thus, by marking the entire simple node instead of just its outputs, we reduce the
+ * runtime for marking Node2 from O(oN x iN) to O(oN + iN).
  */
 class DeadNodeElimination::Context final
 {
@@ -43,7 +42,7 @@ public:
   void
   MarkAlive(const jlm::rvsdg::output & output)
   {
-    if (auto simpleOutput = dynamic_cast<const jlm::rvsdg::simple_output*>(&output))
+    if (auto simpleOutput = dynamic_cast<const jlm::rvsdg::simple_output *>(&output))
     {
       SimpleNodes_.Insert(simpleOutput->node());
       return;
@@ -55,7 +54,7 @@ public:
   bool
   IsAlive(const jlm::rvsdg::output & output) const noexcept
   {
-    if (auto simpleOutput = dynamic_cast<const jlm::rvsdg::simple_output*>(&output))
+    if (auto simpleOutput = dynamic_cast<const jlm::rvsdg::simple_output *>(&output))
     {
       return SimpleNodes_.Contains(simpleOutput->node());
     }
@@ -66,7 +65,7 @@ public:
   bool
   IsAlive(const jlm::rvsdg::node & node) const noexcept
   {
-    if (auto simpleNode = dynamic_cast<const jlm::rvsdg::simple_node*>(&node))
+    if (auto simpleNode = dynamic_cast<const jlm::rvsdg::simple_node *>(&node))
     {
       return SimpleNodes_.Contains(simpleNode);
     }
@@ -89,26 +88,25 @@ public:
   }
 
 private:
-  util::HashSet<const jlm::rvsdg::simple_node*> SimpleNodes_;
-  util::HashSet<const jlm::rvsdg::output*> Outputs_;
+  util::HashSet<const jlm::rvsdg::simple_node *> SimpleNodes_;
+  util::HashSet<const jlm::rvsdg::output *> Outputs_;
 };
 
 /** \brief Dead Node Elimination statistics class
  *
  */
-class DeadNodeElimination::Statistics final : public util::Statistics {
+class DeadNodeElimination::Statistics final : public util::Statistics
+{
 public:
-  ~Statistics() override
-  = default;
+  ~Statistics() override = default;
 
-  explicit
-  Statistics(util::filepath sourceFile)
-    : util::Statistics(Statistics::Id::DeadNodeElimination),
-    SourceFile_(std::move(sourceFile)),
-    NumRvsdgNodesBefore_(0),
-    NumRvsdgNodesAfter_(0),
-    NumInputsBefore_(0),
-    NumInputsAfter_(0)
+  explicit Statistics(util::filepath sourceFile)
+      : util::Statistics(Statistics::Id::DeadNodeElimination),
+        SourceFile_(std::move(sourceFile)),
+        NumRvsdgNodesBefore_(0),
+        NumRvsdgNodesAfter_(0),
+        NumInputsBefore_(0),
+        NumInputsAfter_(0)
   {}
 
   void
@@ -143,14 +141,26 @@ public:
   ToString() const override
   {
     return util::strfmt(
-      "DeadNodeElimination ",
-      SourceFile_.to_str(), " ",
-      "#RvsdgNodesBeforeDNE:", NumRvsdgNodesBefore_, " ",
-      "#RvsdgNodesAfterDNE:", NumRvsdgNodesAfter_, " ",
-      "#RvsdgInputsBeforeDNE:", NumInputsBefore_, " ",
-      "#RvsdgInputsAfterDNE:", NumInputsAfter_, " ",
-      "MarkTime[ns]:", MarkTimer_.ns(), " ",
-      "SweepTime[ns]:", SweepTimer_.ns());
+        "DeadNodeElimination ",
+        SourceFile_.to_str(),
+        " ",
+        "#RvsdgNodesBeforeDNE:",
+        NumRvsdgNodesBefore_,
+        " ",
+        "#RvsdgNodesAfterDNE:",
+        NumRvsdgNodesAfter_,
+        " ",
+        "#RvsdgInputsBeforeDNE:",
+        NumInputsBefore_,
+        " ",
+        "#RvsdgInputsAfterDNE:",
+        NumInputsAfter_,
+        " ",
+        "MarkTime[ns]:",
+        MarkTimer_.ns(),
+        " ",
+        "SweepTime[ns]:",
+        SweepTimer_.ns());
   }
 
   static std::unique_ptr<Statistics>
@@ -171,11 +181,9 @@ private:
   util::timer SweepTimer_;
 };
 
-DeadNodeElimination::~DeadNodeElimination() noexcept
-= default;
+DeadNodeElimination::~DeadNodeElimination() noexcept = default;
 
-DeadNodeElimination::DeadNodeElimination()
-= default;
+DeadNodeElimination::DeadNodeElimination() = default;
 
 void
 DeadNodeElimination::run(jlm::rvsdg::region & region)
@@ -190,9 +198,7 @@ DeadNodeElimination::run(jlm::rvsdg::region & region)
 }
 
 void
-DeadNodeElimination::run(
-  RvsdgModule & module,
-  jlm::util::StatisticsCollector & statisticsCollector)
+DeadNodeElimination::run(RvsdgModule & module, jlm::util::StatisticsCollector & statisticsCollector)
 {
   Context_ = Context::Create();
 
@@ -268,7 +274,7 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
     return;
   }
 
-  if (auto o = dynamic_cast<const lambda::output*>(&output))
+  if (auto o = dynamic_cast<const lambda::output *>(&output))
   {
     for (auto & result : o->node()->fctresults())
     {
@@ -282,7 +288,7 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
     return;
   }
 
-  if (auto cv = dynamic_cast<const lambda::cvargument*>(&output))
+  if (auto cv = dynamic_cast<const lambda::cvargument *>(&output))
   {
     MarkOutput(*cv->input()->origin());
     return;
@@ -309,19 +315,19 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
     return;
   }
 
-  if (auto deltaOutput = dynamic_cast<const delta::output*>(&output))
+  if (auto deltaOutput = dynamic_cast<const delta::output *>(&output))
   {
     MarkOutput(*deltaOutput->node()->subregion()->result(0)->origin());
     return;
   }
 
-  if (auto deltaCvArgument = dynamic_cast<const delta::cvargument*>(&output))
+  if (auto deltaCvArgument = dynamic_cast<const delta::cvargument *>(&output))
   {
     MarkOutput(*deltaCvArgument->input()->origin());
     return;
   }
 
-  if (auto simpleOutput = dynamic_cast<const jlm::rvsdg::simple_output*>(&output))
+  if (auto simpleOutput = dynamic_cast<const jlm::rvsdg::simple_output *>(&output))
   {
     auto node = simpleOutput->node();
     for (size_t n = 0; n < node->ninputs(); n++)
@@ -354,7 +360,7 @@ DeadNodeElimination::SweepRegion(jlm::rvsdg::region & region) const
 {
   region.prune(false);
 
-  std::vector<std::vector<jlm::rvsdg::node*>> nodesTopDown(region.nnodes());
+  std::vector<std::vector<jlm::rvsdg::node *>> nodesTopDown(region.nnodes());
   for (auto & node : region.nodes)
   {
     nodesTopDown[node.depth()].push_back(&node);
@@ -370,7 +376,7 @@ DeadNodeElimination::SweepRegion(jlm::rvsdg::region & region) const
         continue;
       }
 
-      if (auto structuralNode = dynamic_cast<jlm::rvsdg::structural_node*>(node))
+      if (auto structuralNode = dynamic_cast<jlm::rvsdg::structural_node *>(node))
       {
         SweepStructuralNode(*structuralNode);
       }
@@ -383,23 +389,35 @@ DeadNodeElimination::SweepRegion(jlm::rvsdg::region & region) const
 void
 DeadNodeElimination::SweepStructuralNode(jlm::rvsdg::structural_node & node) const
 {
-  auto sweepGamma =  [](auto & d, auto & n){ d.SweepGamma(*util::AssertedCast<jlm::rvsdg::gamma_node>(&n)); };
-  auto sweepTheta =  [](auto & d, auto & n){ d.SweepTheta(*util::AssertedCast<jlm::rvsdg::theta_node>(&n)); };
-  auto sweepLambda = [](auto & d, auto & n){ d.SweepLambda(*util::AssertedCast<lambda::node>(&n)); };
-  auto sweepPhi =    [](auto & d, auto & n){ d.SweepPhi(*util::AssertedCast<phi::node>(&n)); };
-  auto sweepDelta =  [](auto & d, auto & n){ d.SweepDelta(*util::AssertedCast<delta::node>(&n)); };
+  auto sweepGamma = [](auto & d, auto & n)
+  {
+    d.SweepGamma(*util::AssertedCast<jlm::rvsdg::gamma_node>(&n));
+  };
+  auto sweepTheta = [](auto & d, auto & n)
+  {
+    d.SweepTheta(*util::AssertedCast<jlm::rvsdg::theta_node>(&n));
+  };
+  auto sweepLambda = [](auto & d, auto & n)
+  {
+    d.SweepLambda(*util::AssertedCast<lambda::node>(&n));
+  };
+  auto sweepPhi = [](auto & d, auto & n)
+  {
+    d.SweepPhi(*util::AssertedCast<phi::node>(&n));
+  };
+  auto sweepDelta = [](auto & d, auto & n)
+  {
+    d.SweepDelta(*util::AssertedCast<delta::node>(&n));
+  };
 
   static std::unordered_map<
-    std::type_index,
-    std::function<void(const DeadNodeElimination&, jlm::rvsdg::structural_node&)>
-  > map(
-    {
-      {typeid(jlm::rvsdg::gamma_op), sweepGamma},
-      {typeid(jlm::rvsdg::theta_op), sweepTheta},
-      {typeid(lambda::operation),    sweepLambda},
-      {typeid(phi::operation),       sweepPhi},
-      {typeid(delta::operation),     sweepDelta}
-    });
+      std::type_index,
+      std::function<void(const DeadNodeElimination &, jlm::rvsdg::structural_node &)>>
+      map({ { typeid(jlm::rvsdg::gamma_op), sweepGamma },
+            { typeid(jlm::rvsdg::theta_op), sweepTheta },
+            { typeid(lambda::operation), sweepLambda },
+            { typeid(phi::operation), sweepPhi },
+            { typeid(delta::operation), sweepDelta } });
 
   auto & op = node.operation();
   JLM_ASSERT(map.find(typeid(op)) != map.end());
@@ -410,7 +428,7 @@ void
 DeadNodeElimination::SweepGamma(jlm::rvsdg::gamma_node & gammaNode) const
 {
   // Remove dead outputs and results
-  for (size_t n = gammaNode.noutputs()-1; n != static_cast<size_t>(-1); n--)
+  for (size_t n = gammaNode.noutputs() - 1; n != static_cast<size_t>(-1); n--)
   {
     if (Context_->IsAlive(*gammaNode.output(n)))
     {
@@ -431,7 +449,7 @@ DeadNodeElimination::SweepGamma(jlm::rvsdg::gamma_node & gammaNode) const
   }
 
   // Remove dead arguments and inputs
-  for (size_t n = gammaNode.ninputs()-1; n >= 1; n--)
+  for (size_t n = gammaNode.ninputs() - 1; n >= 1; n--)
   {
     auto input = gammaNode.input(n);
 
@@ -461,14 +479,13 @@ DeadNodeElimination::SweepTheta(jlm::rvsdg::theta_node & thetaNode) const
   auto subregion = thetaNode.subregion();
 
   // Remove dead results
-  for (size_t n = thetaNode.noutputs()-1; n != static_cast<size_t>(-1); n--)
+  for (size_t n = thetaNode.noutputs() - 1; n != static_cast<size_t>(-1); n--)
   {
     auto & thetaOutput = *thetaNode.output(n);
     auto & thetaArgument = *thetaOutput.argument();
     auto & thetaResult = *thetaOutput.result();
 
-    if (!Context_->IsAlive(thetaArgument)
-        && !Context_->IsAlive(thetaOutput))
+    if (!Context_->IsAlive(thetaArgument) && !Context_->IsAlive(thetaOutput))
     {
       subregion->RemoveResult(thetaResult.index());
     }
@@ -477,14 +494,13 @@ DeadNodeElimination::SweepTheta(jlm::rvsdg::theta_node & thetaNode) const
   SweepRegion(*subregion);
 
   // Remove dead outputs, inputs, and arguments
-  for (size_t n = thetaNode.ninputs()-1; n != static_cast<size_t>(-1); n--)
+  for (size_t n = thetaNode.ninputs() - 1; n != static_cast<size_t>(-1); n--)
   {
     auto & thetaInput = *thetaNode.input(n);
     auto & thetaArgument = *thetaInput.argument();
     auto & thetaOutput = *thetaInput.output();
 
-    if (!Context_->IsAlive(thetaArgument)
-        && !Context_->IsAlive(thetaOutput))
+    if (!Context_->IsAlive(thetaArgument) && !Context_->IsAlive(thetaOutput))
     {
       JLM_ASSERT(thetaOutput.results.empty());
       subregion->RemoveArgument(thetaArgument.index());
@@ -494,7 +510,7 @@ DeadNodeElimination::SweepTheta(jlm::rvsdg::theta_node & thetaNode) const
   }
 
   JLM_ASSERT(thetaNode.ninputs() == thetaNode.noutputs());
-  JLM_ASSERT(subregion->narguments() == subregion->nresults()-1);
+  JLM_ASSERT(subregion->narguments() == subregion->nresults() - 1);
 }
 
 void
@@ -503,7 +519,7 @@ DeadNodeElimination::SweepLambda(lambda::node & lambdaNode) const
   SweepRegion(*lambdaNode.subregion());
 
   // Remove dead arguments and inputs
-  for (size_t n = lambdaNode.ninputs()-1; n != static_cast<size_t>(-1); n--)
+  for (size_t n = lambdaNode.ninputs() - 1; n != static_cast<size_t>(-1); n--)
   {
     auto input = lambdaNode.input(n);
 
@@ -521,7 +537,7 @@ DeadNodeElimination::SweepPhi(phi::node & phiNode) const
   auto subregion = phiNode.subregion();
 
   // Remove dead outputs and results
-  for (size_t n = subregion->nresults()-1; n != static_cast<size_t>(-1); n--)
+  for (size_t n = subregion->nresults() - 1; n != static_cast<size_t>(-1); n--)
   {
     auto result = subregion->result(n);
     if (!Context_->IsAlive(*result->output())
@@ -535,7 +551,7 @@ DeadNodeElimination::SweepPhi(phi::node & phiNode) const
   SweepRegion(*subregion);
 
   // Remove dead arguments and inputs
-  for (size_t n = subregion->narguments()-1; n != static_cast<size_t>(-1); n--)
+  for (size_t n = subregion->narguments() - 1; n != static_cast<size_t>(-1); n--)
   {
     auto argument = subregion->argument(n);
     auto input = argument->input();
@@ -557,7 +573,7 @@ DeadNodeElimination::SweepDelta(delta::node & deltaNode) const
   deltaNode.subregion()->prune(false);
 
   // Remove dead arguments and inputs.
-  for (size_t n = deltaNode.ninputs()-1; n != static_cast<size_t>(-1); n--)
+  for (size_t n = deltaNode.ninputs() - 1; n != static_cast<size_t>(-1); n--)
   {
     auto input = deltaNode.input(n);
     if (!Context_->IsAlive(*input->argument()))

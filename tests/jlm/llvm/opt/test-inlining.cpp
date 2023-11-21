@@ -21,14 +21,14 @@ static jlm::util::StatisticsCollector statisticsCollector;
 static void
 test1()
 {
-	using namespace jlm::llvm;
+  using namespace jlm::llvm;
 
   /**
    * Arrange
    */
-	RvsdgModule rm(jlm::util::filepath(""), "", "");
-	auto & graph = rm.Rvsdg();
-	auto i = graph.add_import({jlm::tests::valuetype(), "i"});
+  RvsdgModule rm(jlm::util::filepath(""), "", "");
+  auto & graph = rm.Rvsdg();
+  auto i = graph.add_import({ jlm::tests::valuetype(), "i" });
 
   auto SetupF1 = [&]()
   {
@@ -37,19 +37,16 @@ test1()
     MemoryStateType memoryStateType;
     loopstatetype loopStateType;
     FunctionType functionType(
-      {&vt, &iOStateType, &memoryStateType, &loopStateType},
-      {&vt, &iOStateType, &memoryStateType, &loopStateType});
+        { &vt, &iOStateType, &memoryStateType, &loopStateType },
+        { &vt, &iOStateType, &memoryStateType, &loopStateType });
 
-    auto lambda = lambda::node::create(
-      graph.root(),
-      functionType,
-      "f1",
-      linkage::external_linkage);
+    auto lambda = lambda::node::create(graph.root(), functionType, "f1", linkage::external_linkage);
     lambda->add_ctxvar(i);
 
-    auto t = jlm::tests::test_op::create(lambda->subregion(), {lambda->fctargument(0)}, {&vt});
+    auto t = jlm::tests::test_op::create(lambda->subregion(), { lambda->fctargument(0) }, { &vt });
 
-    return lambda->finalize({t->output(0), lambda->fctargument(1), lambda->fctargument(2), lambda->fctargument(3)});
+    return lambda->finalize(
+        { t->output(0), lambda->fctargument(1), lambda->fctargument(2), lambda->fctargument(3) });
   };
 
   auto SetupF2 = [&](lambda::output * f1)
@@ -60,14 +57,10 @@ test1()
     loopstatetype loopStateType;
     jlm::rvsdg::ctltype ct(2);
     FunctionType functionType(
-      {&ct, &vt, &iOStateType, &memoryStateType, &loopStateType},
-      {&vt, &iOStateType, &memoryStateType, &loopStateType});
+        { &ct, &vt, &iOStateType, &memoryStateType, &loopStateType },
+        { &vt, &iOStateType, &memoryStateType, &loopStateType });
 
-    auto lambda = lambda::node::create(
-      graph.root(),
-      functionType,
-      "f1",
-      linkage::external_linkage);
+    auto lambda = lambda::node::create(graph.root(), functionType, "f1", linkage::external_linkage);
     auto d = lambda->add_ctxvar(f1);
     auto controlArgument = lambda->fctargument(0);
     auto valueArgument = lambda->fctargument(1);
@@ -83,37 +76,43 @@ test1()
     auto gammaInputLoopState = gamma->add_entryvar(loopStateArgument);
 
     auto callResults = CallNode::Create(
-      gammaInputF1->argument(0),
-      f1->node()->type(),
-      {gammaInputValue->argument(0), gammaInputIoState->argument(0), gammaInputMemoryState->argument(0),
-       gammaInputLoopState->argument(0)});
+        gammaInputF1->argument(0),
+        f1->node()->type(),
+        { gammaInputValue->argument(0),
+          gammaInputIoState->argument(0),
+          gammaInputMemoryState->argument(0),
+          gammaInputLoopState->argument(0) });
 
-    auto gammaOutputValue = gamma->add_exitvar({callResults[0], gammaInputValue->argument(1)});
-    auto gammaOutputIoState = gamma->add_exitvar({callResults[1], gammaInputIoState->argument(1)});
-    auto gammaOutputMemoryState = gamma->add_exitvar({callResults[2], gammaInputMemoryState->argument(1)});
-    auto gammaOutputLoopState = gamma->add_exitvar({callResults[3], gammaInputLoopState->argument(1)});
+    auto gammaOutputValue = gamma->add_exitvar({ callResults[0], gammaInputValue->argument(1) });
+    auto gammaOutputIoState =
+        gamma->add_exitvar({ callResults[1], gammaInputIoState->argument(1) });
+    auto gammaOutputMemoryState =
+        gamma->add_exitvar({ callResults[2], gammaInputMemoryState->argument(1) });
+    auto gammaOutputLoopState =
+        gamma->add_exitvar({ callResults[3], gammaInputLoopState->argument(1) });
 
-    return lambda->finalize({gammaOutputValue, gammaOutputIoState, gammaOutputMemoryState, gammaOutputLoopState});
+    return lambda->finalize(
+        { gammaOutputValue, gammaOutputIoState, gammaOutputMemoryState, gammaOutputLoopState });
   };
 
   auto f1 = SetupF1();
   auto f2 = SetupF2(f1);
 
-	graph.add_export(f2, {f2->type(), "f2"});
+  graph.add_export(f2, { f2->type(), "f2" });
 
-//	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(graph.root(), stdout);
 
   /*
    * Act
    */
-	jlm::llvm::fctinline fctinline;
-	fctinline.run(rm, statisticsCollector);
-//	jlm::rvsdg::view(graph.root(), stdout);
+  jlm::llvm::fctinline fctinline;
+  fctinline.run(rm, statisticsCollector);
+  //	jlm::rvsdg::view(graph.root(), stdout);
 
   /*
    * Assert
    */
-	assert(!jlm::rvsdg::region::Contains<CallOperation>(*graph.root(), true));
+  assert(!jlm::rvsdg::region::Contains<CallOperation>(*graph.root(), true));
 }
 
 static void
@@ -122,35 +121,31 @@ test2()
   /*
    * Arrange
    */
-	using namespace jlm::llvm;
+  using namespace jlm::llvm;
 
-	jlm::tests::valuetype vt;
+  jlm::tests::valuetype vt;
   iostatetype iOStateType;
   MemoryStateType memoryStateType;
   loopstatetype loopStateType;
 
   FunctionType functionType1(
-    {&vt, &iOStateType, &memoryStateType, &loopStateType},
-    {&iOStateType, &memoryStateType, &loopStateType});
-	PointerType pt;
+      { &vt, &iOStateType, &memoryStateType, &loopStateType },
+      { &iOStateType, &memoryStateType, &loopStateType });
+  PointerType pt;
 
-	FunctionType functionType2(
-    {&pt, &iOStateType, &memoryStateType, &loopStateType},
-    {&iOStateType, &memoryStateType, &loopStateType});
+  FunctionType functionType2(
+      { &pt, &iOStateType, &memoryStateType, &loopStateType },
+      { &iOStateType, &memoryStateType, &loopStateType });
 
-
-	RvsdgModule rm(jlm::util::filepath(""), "", "");
-	auto & graph = rm.Rvsdg();
-	auto i = graph.add_import({pt, "i"});
+  RvsdgModule rm(jlm::util::filepath(""), "", "");
+  auto & graph = rm.Rvsdg();
+  auto i = graph.add_import({ pt, "i" });
 
   auto SetupF1 = [&](const FunctionType & functionType)
   {
-    auto lambda = lambda::node::create(
-      graph.root(),
-      functionType,
-      "f1",
-      linkage::external_linkage);
-    return lambda->finalize({lambda->fctargument(1), lambda->fctargument(2), lambda->fctargument(3)});
+    auto lambda = lambda::node::create(graph.root(), functionType, "f1", linkage::external_linkage);
+    return lambda->finalize(
+        { lambda->fctargument(1), lambda->fctargument(2), lambda->fctargument(3) });
   };
 
   auto SetupF2 = [&](lambda::output * f1)
@@ -159,14 +154,10 @@ test2()
     MemoryStateType memoryStateType;
     loopstatetype loopStateType;
     FunctionType functionType(
-      {&iOStateType, &memoryStateType, &loopStateType},
-      {&iOStateType, &memoryStateType, &loopStateType});
+        { &iOStateType, &memoryStateType, &loopStateType },
+        { &iOStateType, &memoryStateType, &loopStateType });
 
-    auto lambda = lambda::node::create(
-      graph.root(),
-      functionType,
-      "f2",
-      linkage::external_linkage);
+    auto lambda = lambda::node::create(graph.root(), functionType, "f2", linkage::external_linkage);
     auto cvi = lambda->add_ctxvar(i);
     auto cvf1 = lambda->add_ctxvar(f1);
     auto iOStateArgument = lambda->fctargument(0);
@@ -174,9 +165,9 @@ test2()
     auto loopStateArgument = lambda->fctargument(2);
 
     auto callResults = CallNode::Create(
-      cvi,
-      functionType2,
-      {cvf1, iOStateArgument, memoryStateArgument, loopStateArgument});
+        cvi,
+        functionType2,
+        { cvf1, iOStateArgument, memoryStateArgument, loopStateArgument });
 
     return lambda->finalize(callResults);
   };
@@ -184,32 +175,32 @@ test2()
   auto f1 = SetupF1(functionType1);
   auto f2 = SetupF2(f1);
 
-	graph.add_export(f2, {f2->type(), "f2"});
+  graph.add_export(f2, { f2->type(), "f2" });
 
-	jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(graph.root(), stdout);
 
   /*
    * Act
    */
-	jlm::llvm::fctinline fctinline;
-	fctinline.run(rm, statisticsCollector);
-	jlm::rvsdg::view(graph.root(), stdout);
+  jlm::llvm::fctinline fctinline;
+  fctinline.run(rm, statisticsCollector);
+  jlm::rvsdg::view(graph.root(), stdout);
 
   /*
    * Assert
    *
    * Function f1 should not have been inlined.
    */
-	assert(is<CallOperation>(jlm::rvsdg::node_output::node(f2->node()->fctresult(0)->origin())));
+  assert(is<CallOperation>(jlm::rvsdg::node_output::node(f2->node()->fctresult(0)->origin())));
 }
 
 static int
 verify()
 {
-	test1();
-	test2();
+  test1();
+  test2();
 
-	return 0;
+  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-inlining", verify)

@@ -19,219 +19,244 @@ class graph;
 class input;
 class output;
 
-namespace detail {
+namespace detail
+{
 
 template<typename T>
-class traverser_iterator {
+class traverser_iterator
+{
 public:
-	typedef std::input_iterator_tag iterator_category;
-	typedef jlm::rvsdg::node * value_type;
-	typedef ssize_t difference_type;
-	typedef value_type * pointer;
-	typedef value_type & reference;
+  typedef std::input_iterator_tag iterator_category;
+  typedef jlm::rvsdg::node * value_type;
+  typedef ssize_t difference_type;
+  typedef value_type * pointer;
+  typedef value_type & reference;
 
-	constexpr
-	traverser_iterator(T * traverser = nullptr, jlm::rvsdg::node * node = nullptr) noexcept
-		: traverser_(traverser)
-		, node_(node)
-	{
-	}
+  constexpr traverser_iterator(T * traverser = nullptr, jlm::rvsdg::node * node = nullptr) noexcept
+      : traverser_(traverser),
+        node_(node)
+  {}
 
-	inline const traverser_iterator &
-	operator++() noexcept
-	{
-		node_ = traverser_->next();
-		return *this;
-	}
+  inline const traverser_iterator &
+  operator++() noexcept
+  {
+    node_ = traverser_->next();
+    return *this;
+  }
 
-	inline bool
-	operator==(const traverser_iterator& other) const noexcept
-	{
-		return traverser_ == other.traverser_ && node_ == other.node_;
-	}
+  inline bool
+  operator==(const traverser_iterator & other) const noexcept
+  {
+    return traverser_ == other.traverser_ && node_ == other.node_;
+  }
 
-	inline bool
-	operator!=(const traverser_iterator& other) const noexcept
-	{
-		return !(*this == other);
-	}
+  inline bool
+  operator!=(const traverser_iterator & other) const noexcept
+  {
+    return !(*this == other);
+  }
 
-	inline value_type & operator*() noexcept { return node_; }
+  inline value_type &
+  operator*() noexcept
+  {
+    return node_;
+  }
 
-	inline value_type
-	operator->() noexcept
-	{
-		return node_;
-	}
+  inline value_type
+  operator->() noexcept
+  {
+    return node_;
+  }
 
 private:
-	T * traverser_;
-	jlm::rvsdg::node * node_;
+  T * traverser_;
+  jlm::rvsdg::node * node_;
 };
 
 }
 
-enum class traversal_nodestate {
-	ahead = -1,
-	frontier = 0,
-	behind = +1
+enum class traversal_nodestate
+{
+  ahead = -1,
+  frontier = 0,
+  behind = +1
 };
 
 /* support class to track traversal states of nodes */
-class traversal_tracker final {
+class traversal_tracker final
+{
 public:
-	inline
-	traversal_tracker(jlm::rvsdg::graph * graph);
-	
-	inline traversal_nodestate
-	get_nodestate(jlm::rvsdg::node * node);
-	
-	inline void
-	set_nodestate(jlm::rvsdg::node * node, traversal_nodestate state);
-	
-	inline jlm::rvsdg::node *
-	peek_top();
-	
-	inline jlm::rvsdg::node *
-	peek_bottom();
+  inline traversal_tracker(jlm::rvsdg::graph * graph);
+
+  inline traversal_nodestate
+  get_nodestate(jlm::rvsdg::node * node);
+
+  inline void
+  set_nodestate(jlm::rvsdg::node * node, traversal_nodestate state);
+
+  inline jlm::rvsdg::node *
+  peek_top();
+
+  inline jlm::rvsdg::node *
+  peek_bottom();
 
 private:
-	tracker tracker_;
+  tracker tracker_;
 };
 
 /** \brief TopDown Traverser
  *
- * The topdown traverser visits a regions' nodes starting at the nodes with the lowest depth to the nodes with the
- * highest depth, i.e. from the topmost nodes to the nodes at the bottom. The traverser guarantees that newly created
- * nodes are never visited iff the created nodes replace already traversed nodes, including the current node under
- * inspection, and iff the edges of the inputs of the newly created nodes originate from already traversed nodes.
- * Otherwise, newly created nodes might also be traversed. The main usage of the topdown traverser is for
- * replacing subgraphs in the already visited part of a region.
+ * The topdown traverser visits a regions' nodes starting at the nodes with the lowest depth to the
+ * nodes with the highest depth, i.e. from the topmost nodes to the nodes at the bottom. The
+ * traverser guarantees that newly created nodes are never visited iff the created nodes replace
+ * already traversed nodes, including the current node under inspection, and iff the edges of the
+ * inputs of the newly created nodes originate from already traversed nodes. Otherwise, newly
+ * created nodes might also be traversed. The main usage of the topdown traverser is for replacing
+ * subgraphs in the already visited part of a region.
  *
- * The topdown traverser associates three distinct states with any node in the region throughout traversal:
+ * The topdown traverser associates three distinct states with any node in the region throughout
+ * traversal:
  *
  * 1. <b>ahead</b>: Nodes that have not been visited yet and are not yet marked for visitation.
  * 2. <b>frontier</b>: Nodes that are marked for visitation.
  * 3. <b>behind</b>: Nodes that were already visited.
  *
- * All nodes are by default in state <em>ahead</em>. The topdown_traverser() constructor associates the
- * <em>frontier</em> state with the top-most nodes in the region, <em>i.e.</em>, all nodes that have no inputs or
- * only region arguments as origins. The next() method can then be used to traverse these <em>frontier</em> nodes.
- * Before a <em>frontier</em> node is returned by next(), it is marked as <em>behind</em> and all nodes that depend on
- * its outputs are transferred from the <em>ahead</em> state to state <em>frontier</em>. The repeated invocation of
- * next() traverses all nodes in the region.
+ * All nodes are by default in state <em>ahead</em>. The topdown_traverser() constructor associates
+ * the <em>frontier</em> state with the top-most nodes in the region, <em>i.e.</em>, all nodes that
+ * have no inputs or only region arguments as origins. The next() method can then be used to
+ * traverse these <em>frontier</em> nodes. Before a <em>frontier</em> node is returned by next(), it
+ * is marked as <em>behind</em> and all nodes that depend on its outputs are transferred from the
+ * <em>ahead</em> state to state <em>frontier</em>. The repeated invocation of next() traverses all
+ * nodes in the region.
  *
- * A newly created node is marked as <em>behind</em> iff all the nodes' predecessors are marked as behind. Otherwise,
- * it is marked as <em>frontier</em>.
+ * A newly created node is marked as <em>behind</em> iff all the nodes' predecessors are marked as
+ * behind. Otherwise, it is marked as <em>frontier</em>.
  *
  * An alternative to traversing all nodes using next() is the utilization of begin() and end().
  *
  * @see node::depth()
  */
-class topdown_traverser final {
+class topdown_traverser final
+{
 public:
-	~topdown_traverser() noexcept;
+  ~topdown_traverser() noexcept;
 
-	explicit
-	topdown_traverser(jlm::rvsdg::region * region);
+  explicit topdown_traverser(jlm::rvsdg::region * region);
 
-	jlm::rvsdg::node *
-	next();
+  jlm::rvsdg::node *
+  next();
 
-	inline jlm::rvsdg::region *
-	region() const noexcept
-	{
-		return region_;
-	}
+  inline jlm::rvsdg::region *
+  region() const noexcept
+  {
+    return region_;
+  }
 
-	typedef detail::traverser_iterator<topdown_traverser> iterator;
-	typedef jlm::rvsdg::node * value_type;
-	inline iterator begin() { return iterator(this, next()); }
-	inline iterator end() { return iterator(this, nullptr); }
+  typedef detail::traverser_iterator<topdown_traverser> iterator;
+  typedef jlm::rvsdg::node * value_type;
+
+  inline iterator
+  begin()
+  {
+    return iterator(this, next());
+  }
+
+  inline iterator
+  end()
+  {
+    return iterator(this, nullptr);
+  }
 
 private:
-	bool
-	predecessors_visited(const jlm::rvsdg::node * node) noexcept;
+  bool
+  predecessors_visited(const jlm::rvsdg::node * node) noexcept;
 
-	void
-	node_create(jlm::rvsdg::node * node);
+  void
+  node_create(jlm::rvsdg::node * node);
 
-	void
-	input_change(input * in, output * old_origin, output * new_origin);
+  void
+  input_change(input * in, output * old_origin, output * new_origin);
 
-	jlm::rvsdg::region * region_;
-	traversal_tracker tracker_;
-	std::vector<jlm::util::callback> callbacks_;
+  jlm::rvsdg::region * region_;
+  traversal_tracker tracker_;
+  std::vector<jlm::util::callback> callbacks_;
 };
 
-class bottomup_traverser final {
+class bottomup_traverser final
+{
 public:
-	~bottomup_traverser() noexcept;
+  ~bottomup_traverser() noexcept;
 
-	explicit
-	bottomup_traverser(jlm::rvsdg::region * region, bool revisit = false);
+  explicit bottomup_traverser(jlm::rvsdg::region * region, bool revisit = false);
 
-	jlm::rvsdg::node *
-	next();
+  jlm::rvsdg::node *
+  next();
 
-	inline jlm::rvsdg::region *
-	region() const noexcept
-	{
-		return region_;
-	}
+  inline jlm::rvsdg::region *
+  region() const noexcept
+  {
+    return region_;
+  }
 
-	typedef detail::traverser_iterator<bottomup_traverser> iterator;
-	typedef jlm::rvsdg::node * value_type;
-	inline iterator begin() { return iterator(this, next()); }
-	inline iterator end() { return iterator(this, nullptr); }
+  typedef detail::traverser_iterator<bottomup_traverser> iterator;
+  typedef jlm::rvsdg::node * value_type;
+
+  inline iterator
+  begin()
+  {
+    return iterator(this, next());
+  }
+
+  inline iterator
+  end()
+  {
+    return iterator(this, nullptr);
+  }
 
 private:
-	void
-	node_create(jlm::rvsdg::node * node);
+  void
+  node_create(jlm::rvsdg::node * node);
 
-	void
-	node_destroy(jlm::rvsdg::node * node);
+  void
+  node_destroy(jlm::rvsdg::node * node);
 
-	void
-	input_change(input * in, output * old_origin, output * new_origin);
+  void
+  input_change(input * in, output * old_origin, output * new_origin);
 
-	jlm::rvsdg::region * region_;
-	traversal_tracker tracker_;
-	std::vector<jlm::util::callback> callbacks_;
-	traversal_nodestate new_node_state_;
+  jlm::rvsdg::region * region_;
+  traversal_tracker tracker_;
+  std::vector<jlm::util::callback> callbacks_;
+  traversal_nodestate new_node_state_;
 };
 
 /* traversal tracker implementation */
 
 traversal_tracker::traversal_tracker(jlm::rvsdg::graph * graph)
-	: tracker_(graph, 2)
-{
-}
+    : tracker_(graph, 2)
+{}
 
 traversal_nodestate
 traversal_tracker::get_nodestate(jlm::rvsdg::node * node)
 {
-	return static_cast<traversal_nodestate>(tracker_.get_nodestate(node));
+  return static_cast<traversal_nodestate>(tracker_.get_nodestate(node));
 }
 
 void
-traversal_tracker::set_nodestate(
-	jlm::rvsdg::node * node,
-	traversal_nodestate state)
+traversal_tracker::set_nodestate(jlm::rvsdg::node * node, traversal_nodestate state)
 {
-	tracker_.set_nodestate(node, static_cast<size_t>(state));
+  tracker_.set_nodestate(node, static_cast<size_t>(state));
 }
 
 jlm::rvsdg::node *
 traversal_tracker::peek_top()
 {
-	return tracker_.peek_top(static_cast<size_t>(traversal_nodestate::frontier));
+  return tracker_.peek_top(static_cast<size_t>(traversal_nodestate::frontier));
 }
 
 jlm::rvsdg::node *
 traversal_tracker::peek_bottom()
 {
-	return tracker_.peek_bottom(static_cast<size_t>(traversal_nodestate::frontier));
+  return tracker_.peek_bottom(static_cast<size_t>(traversal_nodestate::frontier));
 }
 
 }

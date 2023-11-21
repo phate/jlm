@@ -12,32 +12,32 @@
 static void
 test_remove_node()
 {
-	using namespace jlm::llvm;
+  using namespace jlm::llvm;
 
-	/* setup cfg */
+  /* setup cfg */
 
-	ipgraph_module im(jlm::util::filepath(""), "", "");
+  ipgraph_module im(jlm::util::filepath(""), "", "");
 
-	jlm::llvm::cfg cfg(im);
+  jlm::llvm::cfg cfg(im);
 
-	auto bb0 = basic_block::create(cfg);
-	bb0->add_outedge(bb0);
-	bb0->add_outedge(cfg.exit());
+  auto bb0 = basic_block::create(cfg);
+  bb0->add_outedge(bb0);
+  bb0->add_outedge(cfg.exit());
 
-	print_ascii(cfg, stdout);
+  print_ascii(cfg, stdout);
 
-	/* verify inedge diversion */
+  /* verify inedge diversion */
 
-	cfg.remove_node(bb0);
-	assert(cfg.nnodes() == 0);
+  cfg.remove_node(bb0);
+  assert(cfg.nnodes() == 0);
 }
 
 static int
 test()
 {
-	test_remove_node();
+  test_remove_node();
 
-	return 0;
+  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/test-cfg", test)

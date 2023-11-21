@@ -4,64 +4,64 @@
  */
 
 #include <test-operation.hpp>
-#include <test-types.hpp>
 #include <test-registry.hpp>
+#include <test-types.hpp>
 
 #include <jlm/rvsdg/view.hpp>
 
-#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
 
 static int
 test()
 {
-	using namespace jlm::llvm;
+  using namespace jlm::llvm;
 
-	/* setup graph */
+  /* setup graph */
 
-	jlm::tests::valuetype vt;
-	PointerType pt;
-	RvsdgModule rm(jlm::util::filepath(""), "", "");
+  jlm::tests::valuetype vt;
+  PointerType pt;
+  RvsdgModule rm(jlm::util::filepath(""), "", "");
 
-	auto imp = rm.Rvsdg().add_import({vt, ""});
+  auto imp = rm.Rvsdg().add_import({ vt, "" });
 
-	auto delta1 = delta::node::Create(
-    rm.Rvsdg().root(),
-    vt,
-		"test-delta1",
-		linkage::external_linkage,
-    "",
-		true);
-	auto dep = delta1->add_ctxvar(imp);
-	auto d1 = delta1->finalize(jlm::tests::create_testop(delta1->subregion(), {dep}, {&vt})[0]);
+  auto delta1 = delta::node::Create(
+      rm.Rvsdg().root(),
+      vt,
+      "test-delta1",
+      linkage::external_linkage,
+      "",
+      true);
+  auto dep = delta1->add_ctxvar(imp);
+  auto d1 = delta1->finalize(jlm::tests::create_testop(delta1->subregion(), { dep }, { &vt })[0]);
 
-	auto delta2 = delta::node::Create(
-    rm.Rvsdg().root(),
-    vt,
-		"test-delta2",
-		linkage::internal_linkage,
-    "",
-		false);
-	auto d2 = delta2->finalize(jlm::tests::create_testop(delta2->subregion(), {}, {&vt})[0]);
+  auto delta2 = delta::node::Create(
+      rm.Rvsdg().root(),
+      vt,
+      "test-delta2",
+      linkage::internal_linkage,
+      "",
+      false);
+  auto d2 = delta2->finalize(jlm::tests::create_testop(delta2->subregion(), {}, { &vt })[0]);
 
-  rm.Rvsdg().add_export(d1, {d1->type(), ""});
-  rm.Rvsdg().add_export(d2, {d2->type(), ""});
+  rm.Rvsdg().add_export(d1, { d1->type(), "" });
+  rm.Rvsdg().add_export(d2, { d2->type(), "" });
 
-	jlm::rvsdg::view(rm.Rvsdg(), stdout);
+  jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
-	/* verify graph */
+  /* verify graph */
 
-	assert(rm.Rvsdg().root()->nnodes() == 2);
+  assert(rm.Rvsdg().root()->nnodes() == 2);
 
-	assert(delta1->linkage() == linkage::external_linkage);
-	assert(delta1->constant() == true);
-	assert(delta1->type() == vt);
+  assert(delta1->linkage() == linkage::external_linkage);
+  assert(delta1->constant() == true);
+  assert(delta1->type() == vt);
 
-	assert(delta2->linkage() == linkage::internal_linkage);
-	assert(delta2->constant() == false);
-	assert(delta2->type() == vt);
+  assert(delta2->linkage() == linkage::internal_linkage);
+  assert(delta2->constant() == false);
+  assert(delta2->type() == vt);
 
-	return 0;
+  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/test-delta", test)

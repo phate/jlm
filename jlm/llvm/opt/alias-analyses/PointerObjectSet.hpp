@@ -10,13 +10,13 @@
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/util/common.hpp>
+#include <jlm/util/HashSet.hpp>
 #include <jlm/util/Math.hpp>
 
 #include <cstdint>
 #include <unordered_map>
-#include <unordered_set>
-#include <vector>
 #include <variant>
+#include <vector>
 
 namespace jlm::llvm::aa
 {
@@ -41,15 +41,17 @@ enum class PointerObjectKind : uint8_t
  */
 class PointerObject final
 {
-  PointerObjectKind Kind_ : jlm::util::BitWidthOfEnum(PointerObjectKind::COUNT);
+  PointerObjectKind Kind_ : util::BitWidthOfEnum(PointerObjectKind::COUNT);
 
-  // When this flag is set, the PointerObject possibly points to a storage instance declared outside to module.
-  // The flag also means that the PointerObject possibly points to any escaped storage instance from this module.
+  // When this flag is set, the PointerObject possibly points to a storage instance declared outside
+  // to module. The flag also means that the PointerObject possibly points to any escaped storage
+  // instance from this module.
   uint8_t PointsToExternal_ : 1;
 
   // When set, the PointerObject is known to be accessible from outside the module.
-  // Anything it points to can also be accessed outside the module, and should also be marked as escaped.
-  // Escaped memory object can be overridden outside the module, so HasEscaped implies PointsToExternal.
+  // Anything it points to can also be accessed outside the module, and should also be marked as
+  // escaped. Escaped memory object can be overridden outside the module, so HasEscaped implies
+  // PointsToExternal.
   uint8_t HasEscaped_ : 1;
 
 public:
@@ -123,7 +125,7 @@ class PointerObjectSet final
   std::vector<PointerObject> PointerObjects_;
 
   // For each PointerObject, a set of the other PointerObjects it points to
-  std::vector<std::unordered_set<PointerObject::Index>> PointsToSets_;
+  std::vector<util::HashSet<PointerObject::Index>> PointsToSets_;
 
   // Mapping from register to PointerObject
   // Unlike the other maps, several rvsdg::output* can share register PointerObject
@@ -151,6 +153,14 @@ class PointerObjectSet final
   AddPointerObject(PointerObjectKind kind);
 
 public:
+  [[nodiscard]] size_t
+  NumPointerObjects() const noexcept;
+
+  [[nodiscard]] PointerObject &
+  GetPointerObject(PointerObject::Index index);
+
+  [[nodiscard]] const PointerObject &
+  GetPointerObject(PointerObject::Index index) const;
 
   /**
    * Creates a PointerObject of register kind and maps the rvsdg output to the new PointerObject.
@@ -158,7 +168,16 @@ public:
    * @return the index of the new PointerObject in the PointerObjectSet
    */
   PointerObject::Index
-  CreateRegisterPointerObject(const rvsdg::output &rvsdgOutput);
+  CreateRegisterPointerObject(const rvsdg::output & rvsdgOutput);
+
+  /**
+     * \brief retrieves a previously created PointerObject of Register kind.
+     * \param rvsdgOutput an rvsdg::output that already corresponds to a PointerObject in the set
+     * \return the index of the PointerObject associated with the rvsdg::output
+     * \throws jlm::util::error if no associated PointerObject exists
+     */
+  [[nodiscard]] PointerObject::Index
+  GetRegisterPointerObject(const rvsdg::output & rvsdgOutput);
 
   /**
    * If a PointerObject already exists for the given rvsgd::output, it is returned.
@@ -176,60 +195,44 @@ public:
    * @param pointerObject the index of the existing PointerObject, must be of register kind
    */
   void
-  MapRegisterToExistingPointerObject(const rvsdg::output &rvsdgOutput, PointerObject::Index pointerObject);
+  MapRegisterToExistingPointerObject(
+      const rvsdg::output & rvsdgOutput,
+      PointerObject::Index pointerObject);
 
   PointerObject::Index
-  CreateAllocaMemoryObject(const rvsdg::node &allocaNode);
+  CreateAllocaMemoryObject(const rvsdg::node & allocaNode);
 
   PointerObject::Index
-  CreateMallocMemoryObject(const rvsdg::node &mallocNode);
+  CreateMallocMemoryObject(const rvsdg::node & mallocNode);
 
   PointerObject::Index
-  CreateGlobalMemoryObject(const delta::node &deltaNode);
+  CreateGlobalMemoryObject(const delta::node & deltaNode);
 
   PointerObject::Index
-  CreateFunctionMemoryObject(const lambda::node &lambdaNode);
+  CreateFunctionMemoryObject(const lambda::node & lambdaNode);
 
   PointerObject::Index
-  CreateImportMemoryObject(const rvsdg::argument &importNode);
+  CreateImportMemoryObject(const rvsdg::argument & importNode);
 
-  /**
-   * \brief retrieves a previously made PointerObject of Register kind.
-   * \param rvsdgOutput an rvsdg::output that already has a PointerObject in the set
-   * \return the index of the PointerObject associated with the rvsdg::output
-   * \throws jlm::util::error if no associated PointerObject exists
-   */
-  [[nodiscard]] PointerObject::Index
-  GetRegisterPointerObject(const rvsdg::output & rvsdgOutput);
-
-  const std::unordered_map<const rvsdg::output *, PointerObject::Index>&
+  const std::unordered_map<const rvsdg::output *, PointerObject::Index> &
   GetRegisterMap() const noexcept;
 
-  const std::unordered_map<const rvsdg::node *, PointerObject::Index>&
+  const std::unordered_map<const rvsdg::node *, PointerObject::Index> &
   GetAllocaMap() const noexcept;
 
-  const std::unordered_map<const rvsdg::node *, PointerObject::Index>&
+  const std::unordered_map<const rvsdg::node *, PointerObject::Index> &
   GetMallocMap() const noexcept;
 
-  const std::unordered_map<const delta::node *, PointerObject::Index>&
+  const std::unordered_map<const delta::node *, PointerObject::Index> &
   GetGlobalMap() const noexcept;
 
-  const std::unordered_map<const lambda::node *, PointerObject::Index>&
+  const std::unordered_map<const lambda::node *, PointerObject::Index> &
   GetFunctionMap() const noexcept;
 
-  const std::unordered_map<const rvsdg::argument *, PointerObject::Index>&
+  const std::unordered_map<const rvsdg::argument *, PointerObject::Index> &
   GetImportMap() const noexcept;
 
-  [[nodiscard]] size_t
-  NumPointerObjects() const noexcept;
-
-  [[nodiscard]] PointerObject &
-  GetPointerObject(PointerObject::Index index);
-
-  [[nodiscard]] const PointerObject &
-  GetPointerObject(PointerObject::Index index) const;
-
-  const std::unordered_set<PointerObject::Index> &
+  [[nodiscard]] const util::HashSet<PointerObject::Index> &
   GetPointsToSet(PointerObject::Index idx) const;
 
   /**
@@ -244,7 +247,8 @@ public:
   /**
    * Makes P(\p superset) a superset of P(\p subset), by adding any elements in the set difference
    * @param superset the index of the PointerObject that shall point to everything subset points to
-   * @param subset the index of the PointerObject whose pointees shall all be pointed to by superset as well
+   * @param subset the index of the PointerObject whose pointees shall all be pointed to by superset
+   * as well
    * @return true if P(\p superset) was modified by this operation
    */
   bool
@@ -280,7 +284,7 @@ public:
    * \return true if this operation modified any PointerObjects or points-to-sets
    */
   bool
-  Apply(PointerObjectSet& set);
+  Apply(PointerObjectSet & set);
 };
 
 /**
@@ -296,7 +300,7 @@ class AllPointeesPointToSupersetConstraint final
 public:
   AllPointeesPointToSupersetConstraint(PointerObject::Index pointer1, PointerObject::Index pointer2)
       : Pointer1_(pointer1),
-      Pointer2_(pointer2)
+        Pointer2_(pointer2)
   {}
 
   /**
@@ -304,7 +308,7 @@ public:
    * \return true if this operation modified any PointerObjects or points-to-sets
    */
   bool
-  Apply(PointerObjectSet& set);
+  Apply(PointerObjectSet & set);
 };
 
 /**
@@ -328,13 +332,13 @@ public:
    * \return true if this operation modified any PointerObjects or points-to-sets
    */
   bool
-  Apply(PointerObjectSet& set);
+  Apply(PointerObjectSet & set);
 };
 
 /**
  * A class for adding and applying constraints to the points-to-sets of the PointerObjectSet.
- * Unlike the set modification methods on PointerObjectSet, constraints can be added in any order, with the same result.
- * Use Solve() to calculate the final points-to-sets.
+ * Unlike the set modification methods on PointerObjectSet, constraints can be added in any order,
+ * with the same result. Use Solve() to calculate the final points-to-sets.
  *
  * Some additional constraints on the PointerObject flags are built in.
  */
@@ -342,23 +346,23 @@ class PointerObjectConstraintSet final
 {
 public:
   using ConstraintVariant = std::variant<
-          SupersetConstraint,
-          AllPointeesPointToSupersetConstraint,
-          SupersetOfAllPointeesConstraint>;
+      SupersetConstraint,
+      AllPointeesPointToSupersetConstraint,
+      SupersetOfAllPointeesConstraint>;
 
-  explicit PointerObjectConstraintSet(PointerObjectSet& set)
+  explicit PointerObjectConstraintSet(PointerObjectSet & set)
       : Set_(set)
   {}
 
-  PointerObjectConstraintSet(const PointerObjectConstraintSet& other) = delete;
+  PointerObjectConstraintSet(const PointerObjectConstraintSet & other) = delete;
 
-  PointerObjectConstraintSet(PointerObjectConstraintSet&& other) = delete;
+  PointerObjectConstraintSet(PointerObjectConstraintSet && other) = delete;
 
-  PointerObjectConstraintSet&
-  operator =(const PointerObjectConstraintSet& other) = delete;
+  PointerObjectConstraintSet &
+  operator=(const PointerObjectConstraintSet & other) = delete;
 
-  PointerObjectConstraintSet&
-  operator =(PointerObjectConstraintSet&& other) = delete;
+  PointerObjectConstraintSet &
+  operator=(PointerObjectConstraintSet && other) = delete;
 
   /**
    * The simplest constraint, on the form: pointee in P(pointer)
@@ -377,7 +381,8 @@ public:
 
   /**
    * Ensures that any PointerObject in P(registerIndex) will be marked as escaped.
-   * @param registerIndex the register whose content leaves the module, thus exposing any memory it may point to
+   * @param registerIndex the register whose content leaves the module, thus exposing any memory it
+   * may point to
    */
   void
   AddRegisterContentEscapedConstraint(PointerObject::Index registerIndex);
@@ -390,22 +395,23 @@ public:
   AddConstraint(ConstraintVariant c);
 
   /**
-   * Iterates over and applies constraints until all points-to-sets satisfy them
+   * Iterates over and applies constraints until all points-to-sets satisfy them.
+   * This operation potentially has a long runtime, with an upper bound of O(n^3).
    */
   void
   Solve();
 
 private:
-
   /**
-   * Ensures that the escaped flag is set for all pointees of any pointer object that is marked as escaped.
+   * Ensures that the escaped flag is set for all pointees of any pointer object that is marked as
+   * escaped.
    * @return true if the function modified any flags
    */
   bool
   PropagateEscapedFlag();
 
   // The PointerObjectSet being built upon
-  PointerObjectSet& Set_;
+  PointerObjectSet & Set_;
 
   // Lists of all constraints, of all different types
   std::vector<ConstraintVariant> Constraints_;

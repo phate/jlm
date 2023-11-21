@@ -18,83 +18,79 @@ namespace jlm::llvm
 
 /* variable */
 
-class variable {
+class variable
+{
 public:
-	virtual
-	~variable() noexcept;
+  virtual ~variable() noexcept;
 
-	inline
-	variable(const jlm::rvsdg::type & type, const std::string & name)
-	: name_(name)
-	, type_(type.copy())
-	{}
+  inline variable(const jlm::rvsdg::type & type, const std::string & name)
+      : name_(name),
+        type_(type.copy())
+  {}
 
-	variable(
-		std::unique_ptr<jlm::rvsdg::type> type,
-		const std::string & name)
-	: name_(name)
-	, type_(std::move(type))
-	{}
+  variable(std::unique_ptr<jlm::rvsdg::type> type, const std::string & name)
+      : name_(name),
+        type_(std::move(type))
+  {}
 
-	variable(variable && other)
-	: name_(std::move(other.name_))
-	, type_(std::move(other.type_))
-	{}
+  variable(variable && other)
+      : name_(std::move(other.name_)),
+        type_(std::move(other.type_))
+  {}
 
-	variable &
-	operator=(variable && other)
-	{
-		if (this == &other)
-			return *this;
+  variable &
+  operator=(variable && other)
+  {
+    if (this == &other)
+      return *this;
 
-		name_ = std::move(other.name_);
-		type_ = std::move(other.type_);
+    name_ = std::move(other.name_);
+    type_ = std::move(other.type_);
 
-		return *this;
-	}
+    return *this;
+  }
 
-	virtual std::string
-	debug_string() const;
+  virtual std::string
+  debug_string() const;
 
-	inline const std::string &
-	name() const noexcept
-	{
-		return name_;
-	}
+  inline const std::string &
+  name() const noexcept
+  {
+    return name_;
+  }
 
-	inline const jlm::rvsdg::type &
-	type() const noexcept
-	{
-		return *type_;
-	}
+  inline const jlm::rvsdg::type &
+  type() const noexcept
+  {
+    return *type_;
+  }
 
 private:
-	std::string name_;
-	std::unique_ptr<jlm::rvsdg::type> type_;
+  std::string name_;
+  std::unique_ptr<jlm::rvsdg::type> type_;
 };
 
-template <class T> static inline bool
+template<class T>
+static inline bool
 is(const llvm::variable * variable) noexcept
 {
-	static_assert(std::is_base_of<llvm::variable, T>::value,
-		"Template parameter T must be derived from jlm::variable.");
+  static_assert(
+      std::is_base_of<llvm::variable, T>::value,
+      "Template parameter T must be derived from jlm::variable.");
 
-	return dynamic_cast<const T*>(variable) != nullptr;
+  return dynamic_cast<const T *>(variable) != nullptr;
 }
 
 /* top level variable */
 
-class gblvariable : public variable {
+class gblvariable : public variable
+{
 public:
-	virtual
-	~gblvariable();
+  virtual ~gblvariable();
 
-	inline
-	gblvariable(
-		const jlm::rvsdg::type & type,
-		const std::string & name)
-	: variable(type, name)
-	{}
+  inline gblvariable(const jlm::rvsdg::type & type, const std::string & name)
+      : variable(type, name)
+  {}
 };
 
 }

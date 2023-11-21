@@ -21,7 +21,8 @@ namespace jlm::util
  * Log2floor(8) = 3
  */
 template<class T>
-static constexpr int Log2Floor(T value)
+static constexpr int
+Log2Floor(T value)
 {
   if (value < 1)
     return -1;
@@ -40,7 +41,8 @@ static constexpr int Log2Floor(T value)
  * BitsRequiredToRepresent(0b111) = 3
  */
 template<class T>
-static constexpr int BitsRequiredToRepresent(T value)
+static constexpr int
+BitsRequiredToRepresent(T value)
 {
   using UnsignedT = std::make_unsigned_t<T>;
   return Log2Floor(static_cast<UnsignedT>(value)) + 1;
@@ -48,12 +50,14 @@ static constexpr int BitsRequiredToRepresent(T value)
 
 /**
  * Calculates the number of bits needed to hold the integer representation of all enum values.
- * @param endValue the largest enum value, requires all other enum values to have a lower integer value.
+ * @param endValue the largest enum value, requires all other enum values to have a lower integer
+ * value.
  */
 template<class T>
-static constexpr int BitWidthOfEnum(T endValue)
+static constexpr int
+BitWidthOfEnum(T endValue)
 {
-  static_assert(std::is_enum<T>::value, "BitWidthOfEnum only takes enums");
+  static_assert(std::is_enum_v<T>, "BitWidthOfEnum only takes enums");
 
   using UnderlyingT = std::underlying_type_t<T>;
 
@@ -64,4 +68,4 @@ static constexpr int BitWidthOfEnum(T endValue)
 
 }
 
-#endif //JLM_UTIL_MATH_HPP
+#endif // JLM_UTIL_MATH_HPP

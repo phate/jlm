@@ -14,24 +14,29 @@ jobs:
     - name: Generate documentation
       run: make docs
 
+  ClangFormat:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: "Install clang format"
+        uses: ./.github/actions/InstallLlvmDependencies
+      - name: Find source files
+        run: find . -name "*.cpp" -or -name "*.hpp" > sourceFiles.txt
+      - name: Check format
+        run: clang-format-16 --Werror --dry-run --style="file:.clang-format" --verbose --files=sourceFiles.txt
+
   build:
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v3
-    - name: Cache build
-      id: cache-bin
-      uses: actions/cache@v3
-      with:
-        path: ${{ github.workspace }}/bin/*
-        key: ${{ runner.os }}-${{ github.sha }}-jlm-bin
     - name: Cache build
       id: cache-build
       uses: actions/cache@v3
       with:
         path: ${{ github.workspace }}/*
         key: ${{ runner.os }}-${{ github.sha }}-jlm
-    - name: Install dependencies (LLVM)
-      run: sudo apt-get update && sudo apt-get install llvm-15-dev clang-15
+    - name: "Install LLVM and Clang"
+      uses: ./.github/actions/InstallLlvmDependencies
     - name: Compile jlm
       run: make jlm-release -j `nproc`
     - name: Run unit and C tests
@@ -41,8 +46,8 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v3
-    - name: Install dependencies (LLVM)
-      run: sudo apt-get update && sudo apt-get install llvm-15-dev clang-15
+    - name: "Install LLVM and Clang"
+      uses: ./.github/actions/InstallLlvmDependencies
     - name: Compile jlm
       run: make CXX=g++ jlm-release -j `nproc`
     - name: Run unit and C tests
@@ -57,8 +62,8 @@ jobs:
       with:
         path: ${{ github.workspace }}/*
         key: ${{ runner.os }}-${{ github.sha }}-jlm
-    - name: Install dependencies (LLVM)
-      run: sudo apt-get update && sudo apt-get install llvm-15-dev clang-15
+    - name: "Install LLVM and Clang"
+      uses: ./.github/actions/InstallLlvmDependencies
     - name: Add jlc to PATH
       run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
     - name: Install valgrind
@@ -73,12 +78,12 @@ jobs:
     - name: Cache
       uses: actions/cache@v3
       with:
-        path: ${{ github.workspace }}/bin/*
-        key: ${{ runner.os }}-${{ github.sha }}-jlm-bin
+        path: ${{ github.workspace }}/*
+        key: ${{ runner.os }}-${{ github.sha }}-jlm
+    - name: "Install LLVM and Clang"
+      uses: ./.github/actions/InstallLlvmDependencies
     - name: Add jlc to PATH
       run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
-    - name: Install dependencies (LLVM)
-      run: sudo apt-get update && sudo apt-get install llvm-15-dev clang-15
     - name: Clone polybench
       run: git clone https://github.com/phate/polybench-jlm.git
     - name: Check polybench
@@ -91,10 +96,10 @@ jobs:
     - name: Cache
       uses: actions/cache@v3
       with:
-        path: ${{ github.workspace }}/bin/*
-        key: ${{ runner.os }}-${{ github.sha }}-jlm-bin
-    - name: Install dependencies (LLVM)
-      run: sudo apt-get update && sudo apt-get install llvm-15-dev clang-15
+        path: ${{ github.workspace }}/*
+        key: ${{ runner.os }}-${{ github.sha }}-jlm
+    - name: "Install LLVM and Clang"
+      uses: ./.github/actions/InstallLlvmDependencies
     - name: Add jlc to PATH
       run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
     - name: Clone jlm-test-suite
@@ -102,7 +107,7 @@ jobs:
     - name: Update submodules
       run: make -C jlm-eval-suite submodule
     - name: Install lit
-      run: cd jlm-eval-suite && make install-lit 
+      run: sudo python3 /usr/lib/llvm-16/build/utils/lit/setup.py install
     - name: Apply patch
       run: cd jlm-eval-suite && make apply-llvm-git-patch
     - name: Run llvm-test-suite

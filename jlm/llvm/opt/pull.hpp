@@ -15,17 +15,15 @@ namespace jlm::llvm
 class RvsdgModule;
 
 /**
-* \brief Node Pull-In Optimization
-*/
-class pullin final : public optimization {
+ * \brief Node Pull-In Optimization
+ */
+class pullin final : public optimization
+{
 public:
-	virtual
-	~pullin();
+  virtual ~pullin();
 
-	virtual void
-	run(
-    RvsdgModule & module,
-    util::StatisticsCollector & statisticsCollector) override;
+  virtual void
+  run(RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 };
 
 void
@@ -33,7 +31,6 @@ pullin_top(jlm::rvsdg::gamma_node * gamma);
 
 void
 pullin_bottom(jlm::rvsdg::gamma_node * gamma);
-
 
 void
 pull(jlm::rvsdg::gamma_node * gamma);

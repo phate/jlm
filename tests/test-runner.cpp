@@ -7,8 +7,9 @@
 
 #include <assert.h>
 
-int main(int argc, char ** argv)
+int
+main(int argc, char ** argv)
 {
-	assert(argc == 2);
-	return jlm::tests::run_unit_test(argv[1]);
+  assert(argc == 2);
+  return jlm::tests::run_unit_test(argv[1]);
 }

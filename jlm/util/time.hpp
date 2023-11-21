@@ -11,32 +11,33 @@
 namespace jlm::util
 {
 
-class timer final {
+class timer final
+{
 public:
-	constexpr timer()
-	{}
+  constexpr timer()
+  {}
 
-	void
-	start() noexcept
-	{
-		start_ = std::chrono::high_resolution_clock::now();
-	}
+  void
+  start() noexcept
+  {
+    start_ = std::chrono::high_resolution_clock::now();
+  }
 
-	void
-	stop() noexcept
-	{
-		end_ = std::chrono::high_resolution_clock::now();
-	}
+  void
+  stop() noexcept
+  {
+    end_ = std::chrono::high_resolution_clock::now();
+  }
 
-	size_t
-	ns() const
-	{
-		return std::chrono::duration_cast<std::chrono::nanoseconds>(end_-start_).count();
-	}
+  size_t
+  ns() const
+  {
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(end_ - start_).count();
+  }
 
 private:
-	std::chrono::time_point<std::chrono::high_resolution_clock> start_;
-	std::chrono::time_point<std::chrono::high_resolution_clock> end_;
+  std::chrono::time_point<std::chrono::high_resolution_clock> start_;
+  std::chrono::time_point<std::chrono::high_resolution_clock> end_;
 };
 
 }

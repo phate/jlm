@@ -21,331 +21,315 @@ class tac;
 
 /* tacvariable */
 
-class tacvariable final : public variable {
+class tacvariable final : public variable
+{
 public:
-	virtual
-	~tacvariable();
+  virtual ~tacvariable();
 
-	tacvariable(
-		llvm::tac * tac,
-		const jlm::rvsdg::type & type,
-		const std::string & name)
-	: variable(type, name)
-	, tac_(tac)
-	{}
+  tacvariable(llvm::tac * tac, const jlm::rvsdg::type & type, const std::string & name)
+      : variable(type, name),
+        tac_(tac)
+  {}
 
-	inline llvm::tac *
-	tac() const noexcept
-	{
-		return tac_;
-	}
+  inline llvm::tac *
+  tac() const noexcept
+  {
+    return tac_;
+  }
 
-	static std::unique_ptr<tacvariable>
-	create(
-		llvm::tac * tac,
-		const jlm::rvsdg::type & type,
-		const std::string & name)
-	{
-		return std::make_unique<tacvariable>(tac, type, name);
-	}
+  static std::unique_ptr<tacvariable>
+  create(llvm::tac * tac, const jlm::rvsdg::type & type, const std::string & name)
+  {
+    return std::make_unique<tacvariable>(tac, type, name);
+  }
 
 private:
-	llvm::tac * tac_;
+  llvm::tac * tac_;
 };
 
 /* tac */
 
-class tac final {
+class tac final
+{
 public:
-	inline
-	~tac() noexcept
-	{}
+  inline ~tac() noexcept
+  {}
 
-	tac(
-		const jlm::rvsdg::simple_op & operation,
-		const std::vector<const variable*> & operands);
+  tac(const jlm::rvsdg::simple_op & operation, const std::vector<const variable *> & operands);
 
-	tac(
-		const jlm::rvsdg::simple_op & operation,
-		const std::vector<const variable*> & operands,
-		const std::vector<std::string> & names);
+  tac(const jlm::rvsdg::simple_op & operation,
+      const std::vector<const variable *> & operands,
+      const std::vector<std::string> & names);
 
-	tac(
-		const jlm::rvsdg::simple_op & operation,
-		const std::vector<const variable*> & operands,
-		std::vector<std::unique_ptr<tacvariable>> results);
+  tac(const jlm::rvsdg::simple_op & operation,
+      const std::vector<const variable *> & operands,
+      std::vector<std::unique_ptr<tacvariable>> results);
 
-	tac(const llvm::tac &) = delete;
+  tac(const llvm::tac &) = delete;
 
-	tac(llvm::tac &&) = delete;
+  tac(llvm::tac &&) = delete;
 
-	tac &
-	operator=(const llvm::tac &) = delete;
+  tac &
+  operator=(const llvm::tac &) = delete;
 
-	tac &
-	operator=(llvm::tac &&) = delete;
+  tac &
+  operator=(llvm::tac &&) = delete;
 
-	inline const jlm::rvsdg::simple_op &
-	operation() const noexcept
-	{
-		return *static_cast<const jlm::rvsdg::simple_op*>(operation_.get());
-	}
+  inline const jlm::rvsdg::simple_op &
+  operation() const noexcept
+  {
+    return *static_cast<const jlm::rvsdg::simple_op *>(operation_.get());
+  }
 
-	inline size_t
-	noperands() const noexcept
-	{
-		return operands_.size();
-	}
+  inline size_t
+  noperands() const noexcept
+  {
+    return operands_.size();
+  }
 
-	inline const variable *
-	operand(size_t index) const noexcept
-	{
-		JLM_ASSERT(index < operands_.size());
-		return operands_[index];
-	}
+  inline const variable *
+  operand(size_t index) const noexcept
+  {
+    JLM_ASSERT(index < operands_.size());
+    return operands_[index];
+  }
 
-	inline size_t
-	nresults() const noexcept
-	{
-		return results_.size();
-	}
+  inline size_t
+  nresults() const noexcept
+  {
+    return results_.size();
+  }
 
-	const tacvariable *
-	result(size_t index) const noexcept
-	{
-		JLM_ASSERT(index < results_.size());
-		return results_[index].get();
-	}
+  const tacvariable *
+  result(size_t index) const noexcept
+  {
+    JLM_ASSERT(index < results_.size());
+    return results_[index].get();
+  }
 
-	/*
-		FIXME: I am really not happy with this function exposing
-		the results, but we need these results for the SSA destruction.
-	*/
-	std::vector<std::unique_ptr<tacvariable>>
-	results()
-	{
-		return std::move(results_);
-	}
+  /*
+    FIXME: I am really not happy with this function exposing
+    the results, but we need these results for the SSA destruction.
+  */
+  std::vector<std::unique_ptr<tacvariable>>
+  results()
+  {
+    return std::move(results_);
+  }
 
-	void
-	replace(
-		const jlm::rvsdg::simple_op & operation,
-		const std::vector<const variable*> & operands);
+  void
+  replace(const jlm::rvsdg::simple_op & operation, const std::vector<const variable *> & operands);
 
-	void
-	convert(
-		const jlm::rvsdg::simple_op & operation,
-		const std::vector<const variable*> & operands);
+  void
+  convert(const jlm::rvsdg::simple_op & operation, const std::vector<const variable *> & operands);
 
-	static std::unique_ptr<llvm::tac>
-	create(
-		const jlm::rvsdg::simple_op & operation,
-		const std::vector<const variable*> & operands)
-	{
-		return std::make_unique<llvm::tac>(operation, operands);
-	}
+  static std::unique_ptr<llvm::tac>
+  create(const jlm::rvsdg::simple_op & operation, const std::vector<const variable *> & operands)
+  {
+    return std::make_unique<llvm::tac>(operation, operands);
+  }
 
-	static std::unique_ptr<llvm::tac>
-	create(
-		const jlm::rvsdg::simple_op & operation,
-		const std::vector<const variable*> & operands,
-		const std::vector<std::string> & names)
-	{
-		return std::make_unique<llvm::tac>(operation, operands, names);
-	}
+  static std::unique_ptr<llvm::tac>
+  create(
+      const jlm::rvsdg::simple_op & operation,
+      const std::vector<const variable *> & operands,
+      const std::vector<std::string> & names)
+  {
+    return std::make_unique<llvm::tac>(operation, operands, names);
+  }
 
-	static std::unique_ptr<llvm::tac>
-	create(
-		const jlm::rvsdg::simple_op & operation,
-		const std::vector<const variable*> & operands,
-		std::vector<std::unique_ptr<tacvariable>> results)
-	{
-		return std::make_unique<llvm::tac>(operation, operands, std::move(results));
-	}
+  static std::unique_ptr<llvm::tac>
+  create(
+      const jlm::rvsdg::simple_op & operation,
+      const std::vector<const variable *> & operands,
+      std::vector<std::unique_ptr<tacvariable>> results)
+  {
+    return std::make_unique<llvm::tac>(operation, operands, std::move(results));
+  }
 
 private:
-	void
-	create_results(
-		const jlm::rvsdg::simple_op & operation,
-		const std::vector<std::string> & names)
-	{
-		JLM_ASSERT(names.size() == operation.nresults());
+  void
+  create_results(const jlm::rvsdg::simple_op & operation, const std::vector<std::string> & names)
+  {
+    JLM_ASSERT(names.size() == operation.nresults());
 
-		for (size_t n = 0; n < operation.nresults(); n++) {
-			auto & type = operation.result(n).type();
-			results_.push_back(tacvariable::create(this, type, names[n]));
-		}
-	}
+    for (size_t n = 0; n < operation.nresults(); n++)
+    {
+      auto & type = operation.result(n).type();
+      results_.push_back(tacvariable::create(this, type, names[n]));
+    }
+  }
 
-	static std::vector<std::string>
-	create_names(size_t nnames)
-	{
-		static size_t c = 0;
-		std::vector<std::string> names;
-		for (size_t n = 0; n < nnames; n++)
-			names.push_back(jlm::util::strfmt("tv", c++));
+  static std::vector<std::string>
+  create_names(size_t nnames)
+  {
+    static size_t c = 0;
+    std::vector<std::string> names;
+    for (size_t n = 0; n < nnames; n++)
+      names.push_back(jlm::util::strfmt("tv", c++));
 
-		return names;
-	}
+    return names;
+  }
 
-	std::vector<const variable*> operands_;
-	std::unique_ptr<jlm::rvsdg::operation> operation_;
-	std::vector<std::unique_ptr<tacvariable>> results_;
+  std::vector<const variable *> operands_;
+  std::unique_ptr<jlm::rvsdg::operation> operation_;
+  std::vector<std::unique_ptr<tacvariable>> results_;
 };
 
-template <class T> static inline bool
+template<class T>
+static inline bool
 is(const llvm::tac * tac)
 {
-	return tac && is<T>(tac->operation());
+  return tac && is<T>(tac->operation());
 }
 
 /* FIXME: Replace all occurences of tacsvector_t with taclist
-	and then remove tacsvector_t.
+  and then remove tacsvector_t.
 */
 typedef std::vector<std::unique_ptr<llvm::tac>> tacsvector_t;
 
 /* taclist */
 
-class taclist final {
+class taclist final
+{
 public:
-	typedef std::list<tac*>::const_iterator const_iterator;
-	typedef std::list<tac*>::const_reverse_iterator const_reverse_iterator;
+  typedef std::list<tac *>::const_iterator const_iterator;
+  typedef std::list<tac *>::const_reverse_iterator const_reverse_iterator;
 
-	~taclist();
+  ~taclist();
 
-	inline
-	taclist()
-	{}
+  inline taclist()
+  {}
 
-	taclist(const taclist&) = delete;
+  taclist(const taclist &) = delete;
 
-	taclist(taclist && other)
-	: tacs_(std::move(other.tacs_))
-	{}
+  taclist(taclist && other)
+      : tacs_(std::move(other.tacs_))
+  {}
 
-	taclist &
-	operator=(const taclist &) = delete;
+  taclist &
+  operator=(const taclist &) = delete;
 
-	taclist &
-	operator=(taclist && other)
-	{
-		if (this == &other)
-			return *this;
+  taclist &
+  operator=(taclist && other)
+  {
+    if (this == &other)
+      return *this;
 
-		for (const auto & tac : tacs_)
-			delete tac;
+    for (const auto & tac : tacs_)
+      delete tac;
 
-		tacs_.clear();
-		tacs_ = std::move(other.tacs_);
+    tacs_.clear();
+    tacs_ = std::move(other.tacs_);
 
-		return *this;
-	}
+    return *this;
+  }
 
-	inline const_iterator
-	begin() const noexcept
-	{
-		return tacs_.begin();
-	}
+  inline const_iterator
+  begin() const noexcept
+  {
+    return tacs_.begin();
+  }
 
-	inline const_reverse_iterator
-	rbegin() const noexcept
-	{
-		return tacs_.rbegin();
-	}
+  inline const_reverse_iterator
+  rbegin() const noexcept
+  {
+    return tacs_.rbegin();
+  }
 
-	inline const_iterator
-	end() const noexcept
-	{
-		return tacs_.end();
-	}
+  inline const_iterator
+  end() const noexcept
+  {
+    return tacs_.end();
+  }
 
-	inline const_reverse_iterator
-	rend() const noexcept
-	{
-		return tacs_.rend();
-	}
+  inline const_reverse_iterator
+  rend() const noexcept
+  {
+    return tacs_.rend();
+  }
 
-	inline tac *
-	insert_before(const const_iterator & it, std::unique_ptr<llvm::tac> tac)
-	{
-		return *tacs_.insert(it, tac.release());
-	}
+  inline tac *
+  insert_before(const const_iterator & it, std::unique_ptr<llvm::tac> tac)
+  {
+    return *tacs_.insert(it, tac.release());
+  }
 
-	inline void
-	insert_before(const const_iterator & it, taclist & tl)
-	{
-		tacs_.insert(it, tl.begin(), tl.end());
-	}
+  inline void
+  insert_before(const const_iterator & it, taclist & tl)
+  {
+    tacs_.insert(it, tl.begin(), tl.end());
+  }
 
-	inline void
-	append_last(std::unique_ptr<llvm::tac> tac)
-	{
-		tacs_.push_back(tac.release());
-	}
+  inline void
+  append_last(std::unique_ptr<llvm::tac> tac)
+  {
+    tacs_.push_back(tac.release());
+  }
 
-	inline void
-	append_first(std::unique_ptr<llvm::tac> tac)
-	{
-		tacs_.push_front(tac.release());
-	}
+  inline void
+  append_first(std::unique_ptr<llvm::tac> tac)
+  {
+    tacs_.push_front(tac.release());
+  }
 
-	inline void
-	append_first(taclist & tl)
-	{
-		tacs_.insert(tacs_.begin(), tl.begin(), tl.end());
-		tl.tacs_.clear();
-	}
+  inline void
+  append_first(taclist & tl)
+  {
+    tacs_.insert(tacs_.begin(), tl.begin(), tl.end());
+    tl.tacs_.clear();
+  }
 
-	inline size_t
-	ntacs() const noexcept
-	{
-		return tacs_.size();
-	}
+  inline size_t
+  ntacs() const noexcept
+  {
+    return tacs_.size();
+  }
 
-	inline tac *
-	first() const noexcept
-	{
-		return ntacs() != 0 ? tacs_.front() : nullptr;
-	}
+  inline tac *
+  first() const noexcept
+  {
+    return ntacs() != 0 ? tacs_.front() : nullptr;
+  }
 
-	inline tac *
-	last() const noexcept
-	{
-		return ntacs() != 0 ? tacs_.back() : nullptr;
-	}
+  inline tac *
+  last() const noexcept
+  {
+    return ntacs() != 0 ? tacs_.back() : nullptr;
+  }
 
-	std::unique_ptr<tac>
-	pop_first() noexcept
-	{
-		std::unique_ptr<tac> tac(tacs_.front());
-		tacs_.pop_front();
-		return tac;
-	}
+  std::unique_ptr<tac>
+  pop_first() noexcept
+  {
+    std::unique_ptr<tac> tac(tacs_.front());
+    tacs_.pop_front();
+    return tac;
+  }
 
-	std::unique_ptr<tac>
-	pop_last() noexcept
-	{
-		std::unique_ptr<tac> tac(tacs_.back());
-		tacs_.pop_back();
-		return tac;
-	}
+  std::unique_ptr<tac>
+  pop_last() noexcept
+  {
+    std::unique_ptr<tac> tac(tacs_.back());
+    tacs_.pop_back();
+    return tac;
+  }
 
-	inline void
-	drop_first()
-	{
-		delete tacs_.front();
-		tacs_.pop_front();
-	}
+  inline void
+  drop_first()
+  {
+    delete tacs_.front();
+    tacs_.pop_front();
+  }
 
-	inline void
-	drop_last()
-	{
-		delete tacs_.back();
-		tacs_.pop_back();
-	}
+  inline void
+  drop_last()
+  {
+    delete tacs_.back();
+    tacs_.pop_back();
+  }
 
 private:
-	std::list<tac*> tacs_;
+  std::list<tac *> tacs_;
 };
 
 }

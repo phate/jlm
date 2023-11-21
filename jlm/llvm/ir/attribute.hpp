@@ -17,17 +17,18 @@ namespace jlm::llvm
 {
 
 /** \brief Attribute
-*/
-class attribute {
+ */
+class attribute
+{
 public:
-	enum class kind {
+  enum class kind
+  {
     None, ///< No attributes have been set
 
     FirstEnumAttr,
     AllocAlign,
     AllocatedPointer,
     AlwaysInline,
-    ArgMemOnly,
     Builtin,
     Cold,
     Convergent,
@@ -36,10 +37,9 @@ public:
     Hot,
     ImmArg,
     InReg,
-    InaccessibleMemOnly,
-    InaccessibleMemOrArgMemOnly,
     InlineHint,
     JumpTable,
+    Memory,
     MinSize,
     MustProgress,
     Naked,
@@ -82,6 +82,7 @@ public:
     SanitizeMemory,
     SanitizeThread,
     ShadowCallStack,
+    SkipProfile,
     Speculatable,
     SpeculativeLoadHardening,
     StackProtect,
@@ -117,195 +118,186 @@ public:
     LastIntAttr,
 
     EndAttrKinds ///< Sentinel value useful for loops
-	};
+  };
 
-	virtual
-	~attribute();
+  virtual ~attribute();
 
-	attribute() = default;
+  attribute() = default;
 
-	attribute(const attribute&) = delete;
+  attribute(const attribute &) = delete;
 
-	attribute(attribute&&) = delete;
+  attribute(attribute &&) = delete;
 
-	attribute&
-	operator=(const attribute&) = delete;
+  attribute &
+  operator=(const attribute &) = delete;
 
-	attribute&
-	operator=(attribute&&) = delete;
+  attribute &
+  operator=(attribute &&) = delete;
 
-	virtual bool
-	operator==(const attribute&) const = 0;
+  virtual bool
+  operator==(const attribute &) const = 0;
 
-	virtual bool
-	operator!=(const attribute & other) const
-	{
-		return !operator==(other);
-	}
+  virtual bool
+  operator!=(const attribute & other) const
+  {
+    return !operator==(other);
+  }
 
-	virtual std::unique_ptr<attribute>
-	copy() const = 0;
+  virtual std::unique_ptr<attribute>
+  copy() const = 0;
 };
 
 /** \brief String attribute
-*/
-class string_attribute final : public attribute {
+ */
+class string_attribute final : public attribute
+{
 public:
-	~string_attribute() override;
+  ~string_attribute() override;
 
 private:
-	string_attribute(
-		const std::string & kind,
-		const std::string & value)
-	: kind_(kind)
-	, value_(value)
-	{}
+  string_attribute(const std::string & kind, const std::string & value)
+      : kind_(kind),
+        value_(value)
+  {}
 
 public:
-	const std::string &
-	kind() const noexcept
-	{
-		return kind_;
-	}
+  const std::string &
+  kind() const noexcept
+  {
+    return kind_;
+  }
 
-	const std::string &
-	value() const noexcept
-	{
-		return value_;
-	}
+  const std::string &
+  value() const noexcept
+  {
+    return value_;
+  }
 
-	virtual bool
-	operator==(const attribute&) const override;
+  virtual bool
+  operator==(const attribute &) const override;
 
-	virtual std::unique_ptr<attribute>
-	copy() const override;
+  virtual std::unique_ptr<attribute>
+  copy() const override;
 
-	static std::unique_ptr<attribute>
-	create(
-		const std::string & kind,
-		const std::string & value)
-	{
-		return std::unique_ptr<attribute>(new string_attribute(kind, value));
-	}
+  static std::unique_ptr<attribute>
+  create(const std::string & kind, const std::string & value)
+  {
+    return std::unique_ptr<attribute>(new string_attribute(kind, value));
+  }
 
 private:
-	std::string kind_;
-	std::string value_;
+  std::string kind_;
+  std::string value_;
 };
 
 /** \brief Enum attribute
-*/
-class enum_attribute : public attribute {
+ */
+class enum_attribute : public attribute
+{
 public:
-	~enum_attribute() override;
+  ~enum_attribute() override;
 
 protected:
-	enum_attribute(const attribute::kind & kind)
-	: kind_(kind)
-	{}
+  enum_attribute(const attribute::kind & kind)
+      : kind_(kind)
+  {}
 
 public:
-	const attribute::kind &
-	kind() const noexcept
-	{
-		return kind_;
-	}
+  const attribute::kind &
+  kind() const noexcept
+  {
+    return kind_;
+  }
 
-	virtual bool
-	operator==(const attribute&) const override;
+  virtual bool
+  operator==(const attribute &) const override;
 
-	virtual std::unique_ptr<attribute>
-	copy() const override;
+  virtual std::unique_ptr<attribute>
+  copy() const override;
 
-	static std::unique_ptr<attribute>
-	create(const attribute::kind & kind)
-	{
-		return std::unique_ptr<attribute>(new enum_attribute(kind));
-	}
+  static std::unique_ptr<attribute>
+  create(const attribute::kind & kind)
+  {
+    return std::unique_ptr<attribute>(new enum_attribute(kind));
+  }
 
 private:
-	attribute::kind kind_;
+  attribute::kind kind_;
 };
 
 /** \brief Integer attribute
-*/
-class int_attribute final : public enum_attribute {
+ */
+class int_attribute final : public enum_attribute
+{
 public:
-	~int_attribute() override;
+  ~int_attribute() override;
 
 private:
-	int_attribute(
-		attribute::kind kind,
-		uint64_t value)
-	: enum_attribute(kind)
-	, value_(value)
-	{}
+  int_attribute(attribute::kind kind, uint64_t value)
+      : enum_attribute(kind),
+        value_(value)
+  {}
 
 public:
-	uint64_t
-	value() const noexcept
-	{
-		return value_;
-	}
+  uint64_t
+  value() const noexcept
+  {
+    return value_;
+  }
 
-	virtual bool
-	operator==(const attribute&) const override;
+  virtual bool
+  operator==(const attribute &) const override;
 
-	virtual std::unique_ptr<attribute>
-	copy() const override;
+  virtual std::unique_ptr<attribute>
+  copy() const override;
 
-	static std::unique_ptr<attribute>
-	create(
-		const attribute::kind & kind,
-		uint64_t value)
-	{
-		return std::unique_ptr<attribute>(new int_attribute(kind, value));
-	}
+  static std::unique_ptr<attribute>
+  create(const attribute::kind & kind, uint64_t value)
+  {
+    return std::unique_ptr<attribute>(new int_attribute(kind, value));
+  }
 
 private:
-	uint64_t value_;
+  uint64_t value_;
 };
 
 /** \brief Type attribute
-*/
-class type_attribute final : public enum_attribute {
+ */
+class type_attribute final : public enum_attribute
+{
 public:
-	~type_attribute() override;
+  ~type_attribute() override;
 
 private:
-	type_attribute(
-		attribute::kind kind,
-		std::unique_ptr<jlm::rvsdg::valuetype> type)
-	: enum_attribute(kind)
-	, type_(std::move(type))
-	{}
+  type_attribute(attribute::kind kind, std::unique_ptr<jlm::rvsdg::valuetype> type)
+      : enum_attribute(kind),
+        type_(std::move(type))
+  {}
 
-	type_attribute(
-		attribute::kind kind,
-		const jlm::rvsdg::valuetype & type)
-	: enum_attribute(kind)
-	, type_(static_cast<jlm::rvsdg::valuetype*>(type.copy().release()))
-	{}
+  type_attribute(attribute::kind kind, const jlm::rvsdg::valuetype & type)
+      : enum_attribute(kind),
+        type_(static_cast<jlm::rvsdg::valuetype *>(type.copy().release()))
+  {}
 
 public:
-	const jlm::rvsdg::valuetype &
-	type() const noexcept
-	{
-		return *type_;
-	}
+  const jlm::rvsdg::valuetype &
+  type() const noexcept
+  {
+    return *type_;
+  }
 
-	virtual bool
-	operator==(const attribute&) const override;
+  virtual bool
+  operator==(const attribute &) const override;
 
-	virtual std::unique_ptr<attribute>
-	copy() const override;
+  virtual std::unique_ptr<attribute>
+  copy() const override;
 
-	static std::unique_ptr<attribute>
-	create_byval(std::unique_ptr<jlm::rvsdg::valuetype> type)
-	{
-		std::unique_ptr<type_attribute> ta(new type_attribute(kind::ByVal, std::move(type)));
-		return ta;
-	}
+  static std::unique_ptr<attribute>
+  create_byval(std::unique_ptr<jlm::rvsdg::valuetype> type)
+  {
+    std::unique_ptr<type_attribute> ta(new type_attribute(kind::ByVal, std::move(type)));
+    return ta;
+  }
 
   static std::unique_ptr<attribute>
   CreateStructRetAttribute(std::unique_ptr<jlm::rvsdg::valuetype> type)
@@ -314,149 +306,149 @@ public:
   }
 
 private:
-	std::unique_ptr<jlm::rvsdg::valuetype> type_;
+  std::unique_ptr<jlm::rvsdg::valuetype> type_;
 };
 
 /** \brief Attribute set
-*/
-class attributeset final {
-	class constiterator;
+ */
+class attributeset final
+{
+  class constiterator;
 
 public:
-	~attributeset()
-	{}
+  ~attributeset()
+  {}
 
-	attributeset() = default;
+  attributeset() = default;
 
-	attributeset(std::vector<std::unique_ptr<attribute>> attributes)
-	: attributes_(std::move(attributes))
-	{}
+  attributeset(std::vector<std::unique_ptr<attribute>> attributes)
+      : attributes_(std::move(attributes))
+  {}
 
-	attributeset(const attributeset & other)
-	{
-		*this = other;
-	}
+  attributeset(const attributeset & other)
+  {
+    *this = other;
+  }
 
-	attributeset(attributeset && other)
-	: attributes_(std::move(other.attributes_))
-	{}
+  attributeset(attributeset && other)
+      : attributes_(std::move(other.attributes_))
+  {}
 
-	attributeset &
-	operator=(const attributeset & other);
+  attributeset &
+  operator=(const attributeset & other);
 
-	attributeset &
-	operator=(attributeset && other)
-	{
-		if (this == &other)
-			return *this;
+  attributeset &
+  operator=(attributeset && other)
+  {
+    if (this == &other)
+      return *this;
 
-		attributes_ = std::move(other.attributes_);
+    attributes_ = std::move(other.attributes_);
 
-		return *this;
-	}
+    return *this;
+  }
 
-	constiterator
-	begin() const;
+  constiterator
+  begin() const;
 
-	constiterator
-	end() const;
+  constiterator
+  end() const;
 
-	void
-	insert(const attribute & a)
-	{
-		attributes_.push_back(a.copy());
-	}
+  void
+  insert(const attribute & a)
+  {
+    attributes_.push_back(a.copy());
+  }
 
-	void
-	insert(std::unique_ptr<attribute> a)
-	{
-		attributes_.push_back(std::move(a));
-	}
+  void
+  insert(std::unique_ptr<attribute> a)
+  {
+    attributes_.push_back(std::move(a));
+  }
 
-	bool
-	operator==(const attributeset & other) const noexcept
-	{
-		/*
-			FIXME: Ah, since this is not a real set, we cannot cheaply implement a comparison.
-		*/
-		return false;
-	}
+  bool
+  operator==(const attributeset & other) const noexcept
+  {
+    /*
+      FIXME: Ah, since this is not a real set, we cannot cheaply implement a comparison.
+    */
+    return false;
+  }
 
-	bool
-	operator!=(const attributeset & other) const noexcept
-	{
-		return !(*this == other);
-	}
+  bool
+  operator!=(const attributeset & other) const noexcept
+  {
+    return !(*this == other);
+  }
 
 private:
-	/*
-		FIXME: Implement a proper set. Elements are not unique here.
-	*/
-	std::vector<std::unique_ptr<attribute>> attributes_;
+  /*
+    FIXME: Implement a proper set. Elements are not unique here.
+  */
+  std::vector<std::unique_ptr<attribute>> attributes_;
 };
 
-
 /** \brief Attribute set const iterator
-*/
+ */
 class attributeset::constiterator final
 {
 public:
   using iterator_category = std::forward_iterator_tag;
-  using value_type = const attribute*;
+  using value_type = const attribute *;
   using difference_type = std::ptrdiff_t;
-  using pointer = const attribute**;
-  using reference = const attribute*&;
+  using pointer = const attribute **;
+  using reference = const attribute *&;
 
 private:
-	friend ::jlm::llvm::attributeset;
+  friend ::jlm::llvm::attributeset;
 
 private:
-	constiterator(const std::vector<std::unique_ptr<attribute>>::const_iterator & it)
-	: it_(it)
-	{}
+  constiterator(const std::vector<std::unique_ptr<attribute>>::const_iterator & it)
+      : it_(it)
+  {}
 
 public:
-	const attribute *
-	operator->() const
-	{
-		return it_->get();
-	}
+  const attribute *
+  operator->() const
+  {
+    return it_->get();
+  }
 
-	const attribute &
-	operator*()
-	{
-		return *operator->();
-	}
+  const attribute &
+  operator*()
+  {
+    return *operator->();
+  }
 
-	constiterator &
-	operator++()
-	{
-		it_++;
-		return *this;
-	}
+  constiterator &
+  operator++()
+  {
+    it_++;
+    return *this;
+  }
 
-	constiterator
-	operator++(int)
-	{
-		constiterator tmp = *this;
-		++*this;
-		return tmp;
-	}
+  constiterator
+  operator++(int)
+  {
+    constiterator tmp = *this;
+    ++*this;
+    return tmp;
+  }
 
-	bool
-	operator==(const constiterator & other) const
-	{
-		return it_ == other.it_;
-	}
+  bool
+  operator==(const constiterator & other) const
+  {
+    return it_ == other.it_;
+  }
 
-	bool
-	operator!=(const constiterator & other) const
-	{
-		return !operator==(other);
-	}
+  bool
+  operator!=(const constiterator & other) const
+  {
+    return !operator==(other);
+  }
 
 private:
-	std::vector<std::unique_ptr<attribute>>::const_iterator it_;
+  std::vector<std::unique_ptr<attribute>>::const_iterator it_;
 };
 
 }

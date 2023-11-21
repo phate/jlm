@@ -20,17 +20,15 @@ class theta_node;
 class RvsdgModule;
 
 /**
-* \brief Node Push-Out Optimization
-*/
-class pushout final : public optimization {
+ * \brief Node Push-Out Optimization
+ */
+class pushout final : public optimization
+{
 public:
-	virtual
-	~pushout();
+  virtual ~pushout();
 
-	virtual void
-	run(
-    RvsdgModule & module,
-    util::StatisticsCollector & statisticsCollector) override;
+  virtual void
+  run(RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 };
 
 void

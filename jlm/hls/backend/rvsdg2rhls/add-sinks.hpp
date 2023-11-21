@@ -13,11 +13,11 @@ namespace jlm::hls
 {
 
 void
-add_sinks(rvsdg::region *region);
+add_sinks(rvsdg::region * region);
 
 void
-add_sinks(jlm::llvm::RvsdgModule &rm);
+add_sinks(jlm::llvm::RvsdgModule & rm);
 
 }
 
-#endif //JLM_HLS_BACKEND_RVSDG2RHLS_ADD_SINKS_HPP
+#endif // JLM_HLS_BACKEND_RVSDG2RHLS_ADD_SINKS_HPP

@@ -17,7 +17,8 @@ namespace jlm::util
 /**
  * \brief Statistics Interface
  */
-class Statistics {
+class Statistics
+{
 public:
   enum class Id
   {
@@ -47,12 +48,10 @@ public:
     LastEnumValue // must always be the last enum value, used for iteration
   };
 
-  virtual
-  ~Statistics();
+  virtual ~Statistics();
 
-  explicit
-  Statistics(const Statistics::Id & statisticsId)
-    : StatisticsId_(statisticsId)
+  explicit Statistics(const Statistics::Id & statisticsId)
+      : StatisticsId_(statisticsId)
   {}
 
   [[nodiscard]] Statistics::Id
@@ -75,20 +74,17 @@ class StatisticsCollectorSettings final
 {
 public:
   StatisticsCollectorSettings()
-    : FilePath_("")
+      : FilePath_("")
   {}
 
-  explicit
-  StatisticsCollectorSettings(HashSet<Statistics::Id> demandedStatistics)
-    : FilePath_("")
-    , DemandedStatistics_(std::move(demandedStatistics))
+  explicit StatisticsCollectorSettings(HashSet<Statistics::Id> demandedStatistics)
+      : FilePath_(""),
+        DemandedStatistics_(std::move(demandedStatistics))
   {}
 
-  StatisticsCollectorSettings(
-    filepath filePath,
-    HashSet<Statistics::Id> demandedStatistics)
-    : FilePath_(std::move(filePath))
-    , DemandedStatistics_(std::move(demandedStatistics))
+  StatisticsCollectorSettings(filepath filePath, HashSet<Statistics::Id> demandedStatistics)
+      : FilePath_(std::move(filePath)),
+        DemandedStatistics_(std::move(demandedStatistics))
   {}
 
   /** \brief Checks if a statistics is demanded.
@@ -126,16 +122,14 @@ public:
     return DemandedStatistics_.Size();
   }
 
-  [[nodiscard]] const HashSet<Statistics::Id>&
+  [[nodiscard]] const HashSet<Statistics::Id> &
   GetDemandedStatistics() const noexcept
   {
     return DemandedStatistics_;
   }
 
   static filepath
-  CreateUniqueStatisticsFile(
-    const filepath & directory,
-    const filepath & inputFile)
+  CreateUniqueStatisticsFile(const filepath & directory, const filepath & inputFile)
   {
     return filepath::CreateUniqueFile(directory, inputFile.base() + "-", "-statistics.log");
   }
@@ -148,22 +142,22 @@ private:
 /**
  * Collects and prints statistics.
  */
-class StatisticsCollector final {
+class StatisticsCollector final
+{
   class StatisticsIterator final
   {
   public:
     using iterator_category = std::forward_iterator_tag;
-    using value_type = const Statistics*;
+    using value_type = const Statistics *;
     using difference_type = std::ptrdiff_t;
-    using pointer = const Statistics**;
-    using reference = const Statistics*&;
+    using pointer = const Statistics **;
+    using reference = const Statistics *&;
 
   private:
     friend StatisticsCollector;
 
-    explicit
-    StatisticsIterator(const std::vector<std::unique_ptr<Statistics>>::const_iterator & it)
-      : it_(it)
+    explicit StatisticsIterator(const std::vector<std::unique_ptr<Statistics>>::const_iterator & it)
+        : it_(it)
     {}
 
   public:
@@ -223,9 +217,8 @@ public:
   StatisticsCollector()
   {}
 
-  explicit
-  StatisticsCollector(StatisticsCollectorSettings settings)
-    : Settings_(std::move(settings))
+  explicit StatisticsCollector(StatisticsCollectorSettings settings)
+      : Settings_(std::move(settings))
   {}
 
   const StatisticsCollectorSettings &
@@ -237,7 +230,8 @@ public:
   StatisticsRange
   CollectedStatistics() const noexcept
   {
-    return {StatisticsIterator(CollectedStatistics_.begin()), StatisticsIterator(CollectedStatistics_.end())};
+    return { StatisticsIterator(CollectedStatistics_.begin()),
+             StatisticsIterator(CollectedStatistics_.end()) };
   }
 
   [[nodiscard]] size_t

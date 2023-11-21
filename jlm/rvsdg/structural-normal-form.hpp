@@ -11,15 +11,15 @@
 namespace jlm::rvsdg
 {
 
-class structural_normal_form : public node_normal_form {
+class structural_normal_form : public node_normal_form
+{
 public:
-	virtual
-	~structural_normal_form() noexcept;
+  virtual ~structural_normal_form() noexcept;
 
-	structural_normal_form(
-		const std::type_info & operator_class,
-		jlm::rvsdg::node_normal_form * parent,
-		jlm::rvsdg::graph * graph) noexcept;
+  structural_normal_form(
+      const std::type_info & operator_class,
+      jlm::rvsdg::node_normal_form * parent,
+      jlm::rvsdg::graph * graph) noexcept;
 };
 
 }

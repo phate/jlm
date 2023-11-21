@@ -74,7 +74,8 @@ TestCreatePointerObjects()
   assert(set.GetPointerObject(import0).HasEscaped());
 }
 
-// Test the PointerObjectSet method for adding pointer objects to another pointer object's points-to-set
+// Test the PointerObjectSet method for adding pointer objects to another pointer object's
+// points-to-set
 static void
 TestAddToPointsToSet()
 {
@@ -87,11 +88,11 @@ TestAddToPointsToSet()
   auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0));
   auto reg0 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(0));
 
-  assert(set.GetPointsToSet(reg0).size() == 0);
+  assert(set.GetPointsToSet(reg0).Size() == 0);
 
   assert(set.AddToPointsToSet(reg0, alloca0));
-  assert(set.GetPointsToSet(reg0).size() == 1);
-  assert(set.GetPointsToSet(reg0).count(alloca0));
+  assert(set.GetPointsToSet(reg0).Size() == 1);
+  assert(set.GetPointsToSet(reg0).Contains(alloca0));
 
   // Trying to add it again returns false
   assert(!set.AddToPointsToSet(reg0, alloca0));
@@ -116,13 +117,13 @@ TestMakePointsToSetSuperset()
   set.AddToPointsToSet(reg0, alloca0);
   set.AddToPointsToSet(reg1, alloca1);
 
-  assert(set.GetPointsToSet(reg0).size() == 1);
-  assert(set.GetPointsToSet(reg0).count(alloca0));
+  assert(set.GetPointsToSet(reg0).Size() == 1);
+  assert(set.GetPointsToSet(reg0).Contains(alloca0));
 
   assert(set.MakePointsToSetSuperset(reg0, reg1));
-  assert(set.GetPointsToSet(reg1).size() == 1);
-  assert(set.GetPointsToSet(reg0).size() == 2);
-  assert(set.GetPointsToSet(reg0).count(alloca1));
+  assert(set.GetPointsToSet(reg1).Size() == 1);
+  assert(set.GetPointsToSet(reg0).Size() == 2);
+  assert(set.GetPointsToSet(reg0).Contains(alloca1));
 
   // Calling it again without changing reg1 makes no difference, returns false
   assert(!set.MakePointsToSetSuperset(reg0, reg1));
@@ -130,7 +131,7 @@ TestMakePointsToSetSuperset()
   // Add an additional member to P(reg1)
   set.AddToPointsToSet(reg1, alloca2);
   assert(set.MakePointsToSetSuperset(reg0, reg1));
-  assert(set.GetPointsToSet(reg0).count(alloca2));
+  assert(set.GetPointsToSet(reg0).Contains(alloca2));
 }
 
 // Test the PointerObjectSet method for marking all pointees of the given pointer as escaped
@@ -182,31 +183,36 @@ TestSupersetConstraint()
   // Make alloca0 point to everything reg1 points to
   SupersetConstraint c1(alloca0, reg1);
   assert(c1.Apply(set));
-  while(c1.Apply(set));
+  while (c1.Apply(set))
+    ;
   // For now this only makes alloca0 point to alloca1
-  assert(set.GetPointsToSet(alloca0).size() == 1);
-  assert(set.GetPointsToSet(alloca0).count(alloca1) == 1);
+  assert(set.GetPointsToSet(alloca0).Size() == 1);
+  assert(set.GetPointsToSet(alloca0).Contains(alloca1));
 
   // Make reg1 point to everything reg2 points to
   SupersetConstraint c2(reg1, reg2);
   assert(c2.Apply(set));
-  while(c2.Apply(set));
+  while (c2.Apply(set))
+    ;
   // This makes alloca2 a member of P(reg1)
-  assert(set.GetPointsToSet(reg1).count(alloca2));
+  assert(set.GetPointsToSet(reg1).Contains(alloca2));
 
   // Apply c1 again
   assert(c1.Apply(set));
-  while(c1.Apply(set));
+  while (c1.Apply(set))
+    ;
   // Now alloca0 should also point to alloca2
-  assert(set.GetPointsToSet(alloca0).size() == 2);
-  assert(set.GetPointsToSet(alloca0).count(alloca2));
+  assert(set.GetPointsToSet(alloca0).Size() == 2);
+  assert(set.GetPointsToSet(alloca0).Contains(alloca2));
 
   // Make reg2 point to external, and propagate through constraints
   set.GetPointerObject(reg2).MarkAsPointsToExternal();
   assert(c2.Apply(set));
-  while(c2.Apply(set));
+  while (c2.Apply(set))
+    ;
   assert(c1.Apply(set));
-  while(c1.Apply(set));
+  while (c1.Apply(set))
+    ;
   // Now both reg1 and alloca0 may point to external
   assert(set.GetPointerObject(reg1).PointsToExternal());
   assert(set.GetPointerObject(alloca0).PointsToExternal());
@@ -242,15 +248,17 @@ TestAllPointeesPointToSupersetConstraint()
   // This should make alloca0 point to anything reg1 points to, aka alloca1
   AllPointeesPointToSupersetConstraint c2(reg0, reg1);
   assert(c2.Apply(set));
-  while(c2.Apply(set));
-  assert(set.GetPointsToSet(alloca0).size() == 1);
-  assert(set.GetPointsToSet(alloca0).count(alloca1) == 1);
+  while (c2.Apply(set))
+    ;
+  assert(set.GetPointsToSet(alloca0).Size() == 1);
+  assert(set.GetPointsToSet(alloca0).Contains(alloca1));
 
   // Do c1 again, now that alloca0 points to alloca1
   assert(c1.Apply(set));
-  while(c1.Apply(set));
-  assert(set.GetPointsToSet(alloca1).size() == 1);
-  assert(set.GetPointsToSet(alloca1).count(alloca2) == 1);
+  while (c1.Apply(set))
+    ;
+  assert(set.GetPointsToSet(alloca1).Size() == 1);
+  assert(set.GetPointsToSet(alloca1).Contains(alloca2));
 }
 
 // Test the SupersetOfAllPointeesConstraint's Apply function
@@ -284,9 +292,10 @@ TestSupersetOfAllPointeesConstraint()
   set.AddToPointsToSet(alloca0, alloca2);
   // The constraint now makes a difference
   assert(c1.Apply(set));
-  while(c1.Apply(set));
-  assert(set.GetPointsToSet(reg1).size() == 2);
-  assert(set.GetPointsToSet(reg1).count(alloca2) == 1);
+  while (c1.Apply(set))
+    ;
+  assert(set.GetPointsToSet(reg1).Size() == 2);
+  assert(set.GetPointsToSet(reg1).Contains(alloca2));
 }
 
 static void
@@ -325,7 +334,8 @@ TestAddPointsToExternalConstraint()
   constraints.AddConstraint(AllPointeesPointToSupersetConstraint(reg0, reg1));
   constraints.Solve();
 
-  // Now alloca1 is marked as escaped, due to being written to a pointer that might point to external
+  // Now alloca1 is marked as escaped, due to being written to a pointer that might point to
+  // external
   assert(set.GetPointerObject(alloca1).HasEscaped());
   // The other alloca has not escaped
   assert(!set.GetPointerObject(alloca0).HasEscaped());
@@ -378,9 +388,8 @@ TestPointerObjectConstraintSetSolve()
 
   PointerObjectSet set;
   PointerObject::Index reg[11];
-  for (size_t i = 0; i < 11; i++) {
+  for (size_t i = 0; i < 11; i++)
     reg[i] = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(i));
-  }
 
   // %0 is a function parameter
   // %1 = alloca 8 (variable v1)
@@ -427,7 +436,8 @@ TestPointerObjectConstraintSetSolve()
   // %9 = load [%7] (either loads alloca2 or alloca4, the first is a pointer to alloca3)
   constraints.AddConstraint(SupersetOfAllPointeesConstraint(reg[9], reg[7]));
 
-  // store [%8], %9 (stores what might be a pointer to alloca3 into what's either alloca4 or the pointer argument)
+  // store [%8], %9 (stores what might be a pointer to alloca3 into what's either alloca4 or the
+  // pointer argument)
   constraints.AddConstraint(AllPointeesPointToSupersetConstraint(reg[8], reg[9]));
 
   // %10 = load [%8] (loads from possibly external, should also point to external)
@@ -436,39 +446,40 @@ TestPointerObjectConstraintSetSolve()
   // Find a solution to all the constraints
   constraints.Solve();
 
-  // alloca1 should point to alloca2, etc.
-  assert(set.GetPointsToSet(alloca1).size() == 1);
-  assert(set.GetPointsToSet(alloca1).count(alloca2) == 1);
-  assert(set.GetPointsToSet(alloca2).size() == 1);
-  assert(set.GetPointsToSet(alloca2).count(alloca3) == 1);
-  assert(set.GetPointsToSet(alloca3).size() == 1);
-  assert(set.GetPointsToSet(alloca3).count(alloca4) == 1);
+  // alloca1 should point to alloca2, etc
+  assert(set.GetPointsToSet(alloca1).Size() == 1);
+  assert(set.GetPointsToSet(alloca1).Contains(alloca2));
+  assert(set.GetPointsToSet(alloca2).Size() == 1);
+  assert(set.GetPointsToSet(alloca2).Contains(alloca3));
+  assert(set.GetPointsToSet(alloca3).Size() == 1);
+  assert(set.GetPointsToSet(alloca3).Contains(alloca4));
 
   // %5 is a load of alloca1, and should only be a pointer to alloca2
-  assert(set.GetPointsToSet(reg[5]).size() == 1);
-  assert(set.GetPointsToSet(reg[5]).count(alloca2) == 1);
+  assert(set.GetPointsToSet(reg[5]).Size() == 1);
+  assert(set.GetPointsToSet(reg[5]).Contains(alloca2));
 
   // %6 is a load of alloca3, and should only be a pointer to alloca4
-  assert(set.GetPointsToSet(reg[6]).size() == 1);
-  assert(set.GetPointsToSet(reg[6]).count(alloca4) == 1);
+  assert(set.GetPointsToSet(reg[6]).Size() == 1);
+  assert(set.GetPointsToSet(reg[6]).Contains(alloca4));
 
   // %7 can point to either alloca2 or alloca4
-  assert(set.GetPointsToSet(reg[7]).size() == 2);
-  assert(set.GetPointsToSet(reg[7]).count(alloca2) == 1);
-  assert(set.GetPointsToSet(reg[7]).count(alloca4) == 1);
+  assert(set.GetPointsToSet(reg[7]).Size() == 2);
+  assert(set.GetPointsToSet(reg[7]).Contains(alloca2));
+  assert(set.GetPointsToSet(reg[7]).Contains(alloca4));
 
   // %8 should point to external, since it points to the superset of %0 and %1
   assert(set.GetPointerObject(reg[8]).PointsToExternal());
   // %8 may also point to alloca4
-  assert(set.GetPointsToSet(reg[8]).size() == 1);
-  assert(set.GetPointsToSet(reg[8]).count(alloca4) == 1);
+  assert(set.GetPointsToSet(reg[8]).Size() == 1);
+  assert(set.GetPointsToSet(reg[8]).Contains(alloca4));
 
   // %9 may point to v3
-  assert(set.GetPointsToSet(reg[9]).count(alloca3) == 1);
+  assert(set.GetPointsToSet(reg[9]).Contains(alloca3));
 
   // Due to the store of %9 into [%8], alloca4 may now point back to alloca3
-  assert(set.GetPointsToSet(alloca4).size() == 1);
-  assert(set.GetPointsToSet(alloca4).count(alloca3) == 1);
+  assert(set.GetPointsToSet(alloca4).Size() == 1);
+  assert(set.GetPointsToSet(alloca4).Contains(alloca3));
+
   // Also due to the same store, alloca3 might have escaped
   assert(set.GetPointerObject(alloca3).HasEscaped());
   // Due to alloca3 pointing to alloca4, it too should have been marked as escaped
@@ -504,6 +515,4 @@ TestPointerObjectSet()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/TestPointerObjectSet",
-    TestPointerObjectSet)
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestPointerObjectSet", TestPointerObjectSet)

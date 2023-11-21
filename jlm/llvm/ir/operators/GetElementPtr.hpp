@@ -27,20 +27,20 @@ public:
 
 public:
   GetElementPtrOperation(
-    const std::vector<rvsdg::bittype> & offsetTypes,
-    const rvsdg::valuetype & pointeeType)
-    : simple_op(CreateOperandPorts(offsetTypes), {PointerType()})
-    , PointeeType_(pointeeType.copy())
+      const std::vector<rvsdg::bittype> & offsetTypes,
+      const rvsdg::valuetype & pointeeType)
+      : simple_op(CreateOperandPorts(offsetTypes), { PointerType() }),
+        PointeeType_(pointeeType.copy())
   {}
 
   GetElementPtrOperation(const GetElementPtrOperation & other)
-  : simple_op(other)
-  , PointeeType_(other.PointeeType_->copy())
+      : simple_op(other),
+        PointeeType_(other.PointeeType_->copy())
   {}
 
   GetElementPtrOperation(GetElementPtrOperation && other) noexcept
-  : simple_op(other)
-  , PointeeType_(std::move(other.PointeeType_))
+      : simple_op(other),
+        PointeeType_(std::move(other.PointeeType_))
   {}
 
   bool
@@ -55,14 +55,14 @@ public:
   [[nodiscard]] const rvsdg::valuetype &
   GetPointeeType() const noexcept
   {
-    return *dynamic_cast<const rvsdg::valuetype*>(PointeeType_.get());
+    return *dynamic_cast<const rvsdg::valuetype *>(PointeeType_.get());
   }
 
   /**
    * Creates a GetElementPtr three address code.
    *
-   * FIXME: We should not explicitly hand in the resultType parameter, but rather compute it from the pointeeType and
-   * the offsets. See LLVM's GetElementPtr instruction for reference.
+   * FIXME: We should not explicitly hand in the resultType parameter, but rather compute it from
+   * the pointeeType and the offsets. See LLVM's GetElementPtr instruction for reference.
    *
    * @param baseAddress The base address for the pointer calculation.
    * @param offsets The offsets from the base address.
@@ -73,17 +73,17 @@ public:
    */
   static std::unique_ptr<llvm::tac>
   Create(
-    const variable * baseAddress,
-    const std::vector<const variable*> & offsets,
-    const rvsdg::valuetype & pointeeType,
-    const rvsdg::type & resultType)
+      const variable * baseAddress,
+      const std::vector<const variable *> & offsets,
+      const rvsdg::valuetype & pointeeType,
+      const rvsdg::type & resultType)
   {
     CheckPointerType(baseAddress->type());
     auto offsetTypes = CheckAndExtractOffsetTypes<const variable>(offsets);
     CheckPointerType(resultType);
 
     GetElementPtrOperation operation(offsetTypes, pointeeType);
-    std::vector<const variable*> operands(1, baseAddress);
+    std::vector<const variable *> operands(1, baseAddress);
     operands.insert(operands.end(), offsets.begin(), offsets.end());
 
     return tac::create(operation, operands);
@@ -92,8 +92,8 @@ public:
   /**
    * Creates a GetElementPtr RVSDG node.
    *
-   * FIXME: We should not explicitly hand in the resultType parameter, but rather compute it from the pointeeType and
-   * the offsets. See LLVM's GetElementPtr instruction for reference.
+   * FIXME: We should not explicitly hand in the resultType parameter, but rather compute it from
+   * the pointeeType and the offsets. See LLVM's GetElementPtr instruction for reference.
    *
    * @param baseAddress The base address for the pointer calculation.
    * @param offsets The offsets from the base address.
@@ -104,17 +104,17 @@ public:
    */
   static rvsdg::output *
   Create(
-    rvsdg::output * baseAddress,
-    const std::vector<rvsdg::output*> & offsets,
-    const rvsdg::valuetype & pointeeType,
-    const rvsdg::type & resultType)
+      rvsdg::output * baseAddress,
+      const std::vector<rvsdg::output *> & offsets,
+      const rvsdg::valuetype & pointeeType,
+      const rvsdg::type & resultType)
   {
     CheckPointerType(baseAddress->type());
     auto offsetTypes = CheckAndExtractOffsetTypes<rvsdg::output>(offsets);
     CheckPointerType(resultType);
 
     GetElementPtrOperation operation(offsetTypes, pointeeType);
-    std::vector<rvsdg::output*> operands(1, baseAddress);
+    std::vector<rvsdg::output *> operands(1, baseAddress);
     operands.insert(operands.end(), offsets.begin(), offsets.end());
 
     return rvsdg::simple_node::create_normalized(baseAddress->region(), operation, operands)[0];
@@ -130,13 +130,14 @@ private:
     }
   }
 
-  template<class T> static std::vector<rvsdg::bittype>
-  CheckAndExtractOffsetTypes(const std::vector<T*> & offsets)
+  template<class T>
+  static std::vector<rvsdg::bittype>
+  CheckAndExtractOffsetTypes(const std::vector<T *> & offsets)
   {
     std::vector<rvsdg::bittype> offsetTypes;
     for (const auto & offset : offsets)
     {
-      if (auto offsetType = dynamic_cast<const rvsdg::bittype*>(&offset->type()))
+      if (auto offsetType = dynamic_cast<const rvsdg::bittype *>(&offset->type()))
       {
         offsetTypes.emplace_back(*offsetType);
         continue;
@@ -151,7 +152,7 @@ private:
   static std::vector<rvsdg::port>
   CreateOperandPorts(const std::vector<rvsdg::bittype> & indexTypes)
   {
-    std::vector<rvsdg::port> ports({PointerType()});
+    std::vector<rvsdg::port> ports({ PointerType() });
     for (const auto & type : indexTypes)
     {
       ports.emplace_back(type);

@@ -13,62 +13,65 @@
 static inline void
 TestUnknownBoundaries()
 {
-	using namespace jlm::llvm;
+  using namespace jlm::llvm;
 
-	auto b32 = jlm::rvsdg::bit32;
-	FunctionType ft({&b32, &b32, &b32}, {&b32, &b32, &b32});
+  auto b32 = jlm::rvsdg::bit32;
+  FunctionType ft({ &b32, &b32, &b32 }, { &b32, &b32, &b32 });
 
-	RvsdgModule rm(jlm::util::filepath(""), "", "");
-	auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
-	nf->set_mutable(false);
+  RvsdgModule rm(jlm::util::filepath(""), "", "");
+  auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
+  nf->set_mutable(false);
 
-	/* Setup graph */
+  /* Setup graph */
 
-	auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage);
+  auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage);
 
-	jlm::rvsdg::bitult_op ult(32);
-	jlm::rvsdg::bitsgt_op sgt(32);
-	jlm::rvsdg::bitadd_op add(32);
-	jlm::rvsdg::bitsub_op sub(32);
+  jlm::rvsdg::bitult_op ult(32);
+  jlm::rvsdg::bitsgt_op sgt(32);
+  jlm::rvsdg::bitadd_op add(32);
+  jlm::rvsdg::bitsub_op sub(32);
 
-	auto theta = jlm::rvsdg::theta_node::create(lambda->subregion());
-	auto subregion = theta->subregion();
-	auto idv = theta->add_loopvar(lambda->fctargument(0));
-	auto lvs = theta->add_loopvar(lambda->fctargument(1));
-	auto lve = theta->add_loopvar(lambda->fctargument(2));
+  auto theta = jlm::rvsdg::theta_node::create(lambda->subregion());
+  auto subregion = theta->subregion();
+  auto idv = theta->add_loopvar(lambda->fctargument(0));
+  auto lvs = theta->add_loopvar(lambda->fctargument(1));
+  auto lve = theta->add_loopvar(lambda->fctargument(2));
 
-	auto arm = jlm::rvsdg::simple_node::create_normalized(subregion, add, {idv->argument(), lvs->argument()})[0];
-	auto cmp = jlm::rvsdg::simple_node::create_normalized(subregion, ult, {arm, lve->argument()})[0];
-	auto match = jlm::rvsdg::match(1, {{1, 1}}, 0, 2, cmp);
+  auto arm = jlm::rvsdg::simple_node::create_normalized(
+      subregion,
+      add,
+      { idv->argument(), lvs->argument() })[0];
+  auto cmp =
+      jlm::rvsdg::simple_node::create_normalized(subregion, ult, { arm, lve->argument() })[0];
+  auto match = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
 
-	idv->result()->divert_to(arm);
-	theta->set_predicate(match);
+  idv->result()->divert_to(arm);
+  theta->set_predicate(match);
 
-	auto f = lambda->finalize({theta->output(0), theta->output(1), theta->output(2)});
-	rm.Rvsdg().add_export(f, {f->type(), ""});
+  auto f = lambda->finalize({ theta->output(0), theta->output(1), theta->output(2) });
+  rm.Rvsdg().add_export(f, { f->type(), "" });
 
-	jlm::rvsdg::view(rm.Rvsdg(), stdout);
+  jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
-	/* Convert graph to RHLS */
+  /* Convert graph to RHLS */
 
-	jlm::hls::theta_conv(theta);
-	jlm::rvsdg::view(rm.Rvsdg(), stdout);
+  jlm::hls::theta_conv(theta);
+  jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
+  /* Verify graph */
 
-	/* Verify graph */
-
-	assert(jlm::rvsdg::region::Contains<jlm::hls::loop_op>(*lambda->subregion(), true));
-	assert(jlm::rvsdg::region::Contains<jlm::hls::predicate_buffer_op>(*lambda->subregion(), true));
-	assert(jlm::rvsdg::region::Contains<jlm::hls::branch_op>(*lambda->subregion(), true));
-	assert(jlm::rvsdg::region::Contains<jlm::hls::mux_op>(*lambda->subregion(), true));
+  assert(jlm::rvsdg::region::Contains<jlm::hls::loop_op>(*lambda->subregion(), true));
+  assert(jlm::rvsdg::region::Contains<jlm::hls::predicate_buffer_op>(*lambda->subregion(), true));
+  assert(jlm::rvsdg::region::Contains<jlm::hls::branch_op>(*lambda->subregion(), true));
+  assert(jlm::rvsdg::region::Contains<jlm::hls::mux_op>(*lambda->subregion(), true));
 }
 
 static int
 Test()
 {
-	TestUnknownBoundaries();
+  TestUnknownBoundaries();
 
-	return 0;
+  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/TestTheta", Test)

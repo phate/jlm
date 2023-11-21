@@ -6,8 +6,8 @@
 #ifndef JLM_LLVM_OPT_INLINE_HPP
 #define JLM_LLVM_OPT_INLINE_HPP
 
-#include <jlm/llvm/opt/optimization.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
+#include <jlm/llvm/opt/optimization.hpp>
 
 namespace jlm::llvm
 {
@@ -15,17 +15,15 @@ namespace jlm::llvm
 class RvsdgModule;
 
 /**
-* \brief Function Inlining
-*/
-class fctinline final : public optimization {
+ * \brief Function Inlining
+ */
+class fctinline final : public optimization
+{
 public:
-	virtual
-	~fctinline();
+  virtual ~fctinline();
 
-	virtual void
-	run(
-    RvsdgModule & module,
-    jlm::util::StatisticsCollector & statisticsCollector) override;
+  virtual void
+  run(RvsdgModule & module, jlm::util::StatisticsCollector & statisticsCollector) override;
 };
 
 jlm::rvsdg::output *

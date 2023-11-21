@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-registry.hpp"
 #include "test-operation.hpp"
+#include "test-registry.hpp"
 #include "test-types.hpp"
 
 #include <jlm/rvsdg/view.hpp>
@@ -19,68 +19,60 @@
 static int
 test()
 {
-	using namespace jlm::llvm;
+  using namespace jlm::llvm;
 
-	jlm::tests::valuetype vt;
-	PointerType pt;
+  jlm::tests::valuetype vt;
+  PointerType pt;
 
-	RvsdgModule rm(jlm::util::filepath(""), "", "");
+  RvsdgModule rm(jlm::util::filepath(""), "", "");
 
-	/* setup graph */
-	auto imp = rm.Rvsdg().add_import(impport(vt, "", linkage::external_linkage));
+  /* setup graph */
+  auto imp = rm.Rvsdg().add_import(impport(vt, "", linkage::external_linkage));
 
-	phi::builder pb;
-	pb.begin(rm.Rvsdg().root());
-	auto region = pb.subregion();
-	auto r1 = pb.add_recvar(pt);
-	auto r2 = pb.add_recvar(pt);
-	auto dep = pb.add_ctxvar(imp);
+  phi::builder pb;
+  pb.begin(rm.Rvsdg().root());
+  auto region = pb.subregion();
+  auto r1 = pb.add_recvar(pt);
+  auto r2 = pb.add_recvar(pt);
+  auto dep = pb.add_ctxvar(imp);
 
-	jlm::rvsdg::output * delta1, * delta2;
-	{
-		auto delta = delta::node::Create(
-			region,
-      vt,
-			"test-delta1",
-			linkage::external_linkage,
-      "",
-			false);
-		auto dep1 = delta->add_ctxvar(r2->argument());
-		auto dep2 = delta->add_ctxvar(dep);
-		delta1 = delta->finalize(jlm::tests::create_testop(delta->subregion(), {dep1, dep2}, {&vt})[0]);
-	}
+  jlm::rvsdg::output *delta1, *delta2;
+  {
+    auto delta =
+        delta::node::Create(region, vt, "test-delta1", linkage::external_linkage, "", false);
+    auto dep1 = delta->add_ctxvar(r2->argument());
+    auto dep2 = delta->add_ctxvar(dep);
+    delta1 =
+        delta->finalize(jlm::tests::create_testop(delta->subregion(), { dep1, dep2 }, { &vt })[0]);
+  }
 
-	{
-		auto delta = delta::node::Create(
-			region,
-      vt,
-			"test-delta2",
-			linkage::external_linkage,
-      "",
-			false);
-		auto dep1 = delta->add_ctxvar(r1->argument());
-		auto dep2 = delta->add_ctxvar(dep);
-		delta2 = delta->finalize(jlm::tests::create_testop(delta->subregion(), {dep1, dep2}, {&vt})[0]);
-	}
+  {
+    auto delta =
+        delta::node::Create(region, vt, "test-delta2", linkage::external_linkage, "", false);
+    auto dep1 = delta->add_ctxvar(r1->argument());
+    auto dep2 = delta->add_ctxvar(dep);
+    delta2 =
+        delta->finalize(jlm::tests::create_testop(delta->subregion(), { dep1, dep2 }, { &vt })[0]);
+  }
 
-	r1->set_rvorigin(delta1);
-	r2->set_rvorigin(delta2);
+  r1->set_rvorigin(delta1);
+  r2->set_rvorigin(delta2);
 
-	auto phi = pb.end();
-  rm.Rvsdg().add_export(phi->output(0), {phi->output(0)->type(), ""});
+  auto phi = pb.end();
+  rm.Rvsdg().add_export(phi->output(0), { phi->output(0)->type(), "" });
 
-	jlm::rvsdg::view(rm.Rvsdg(), stdout);
+  jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
-	jlm::util::StatisticsCollector statisticsCollector;
-	auto module = rvsdg2jlm::rvsdg2jlm(rm, statisticsCollector);
-	print(*module, stdout);
+  jlm::util::StatisticsCollector statisticsCollector;
+  auto module = rvsdg2jlm::rvsdg2jlm(rm, statisticsCollector);
+  print(*module, stdout);
 
-	/* verify output */
+  /* verify output */
 
-	auto & ipg = module->ipgraph();
-	assert(ipg.nnodes() == 3);
+  auto & ipg = module->ipgraph();
+  assert(ipg.nnodes() == 3);
 
-	return 0;
+  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/backend/llvm/r2j/test-recursive-data", test)

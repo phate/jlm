@@ -13,8 +13,7 @@ namespace jlm::llvm::lambda
 
 /* lambda operation class */
 
-operation::~operation()
-= default;
+operation::~operation() = default;
 
 std::string
 operation::debug_string() const
@@ -25,12 +24,9 @@ operation::debug_string() const
 bool
 operation::operator==(const jlm::rvsdg::operation & other) const noexcept
 {
-  auto op = dynamic_cast<const lambda::operation*>(&other);
-  return op
-         && op->type() == type()
-         && op->name() == name()
-         && op->linkage() == linkage()
-         && op->attributes() == attributes();
+  auto op = dynamic_cast<const lambda::operation *>(&other);
+  return op && op->type() == type() && op->name() == name() && op->linkage() == linkage()
+      && op->attributes() == attributes();
 }
 
 std::unique_ptr<jlm::rvsdg::operation>
@@ -41,8 +37,7 @@ operation::copy() const
 
 /* lambda node class */
 
-node::~node()
-= default;
+node::~node() = default;
 
 node::fctargument_range
 node::fctarguments()
@@ -50,10 +45,10 @@ node::fctarguments()
   fctargiterator end(nullptr);
 
   if (nfctarguments() == 0)
-    return {end, end};
+    return { end, end };
 
   fctargiterator begin(fctargument(0));
-  return {begin, end};
+  return { begin, end };
 }
 
 node::fctargument_constrange
@@ -62,10 +57,10 @@ node::fctarguments() const
   fctargconstiterator end(nullptr);
 
   if (nfctarguments() == 0)
-    return {end, end};
+    return { end, end };
 
   fctargconstiterator begin(fctargument(0));
-  return {begin, end};
+  return { begin, end };
 }
 
 node::ctxvar_range
@@ -74,10 +69,10 @@ node::ctxvars()
   cviterator end(nullptr);
 
   if (ncvarguments() == 0)
-    return {end, end};
+    return { end, end };
 
   cviterator begin(input(0));
-  return {begin, end};
+  return { begin, end };
 }
 
 node::ctxvar_constrange
@@ -86,10 +81,10 @@ node::ctxvars() const
   cvconstiterator end(nullptr);
 
   if (ncvarguments() == 0)
-    return {end, end};
+    return { end, end };
 
   cvconstiterator begin(input(0));
-  return {begin, end};
+  return { begin, end };
 }
 
 node::fctresult_range
@@ -98,10 +93,10 @@ node::fctresults()
   fctresiterator end(nullptr);
 
   if (nfctresults() == 0)
-    return {end, end};
+    return { end, end };
 
   fctresiterator begin(fctresult(0));
-  return {begin, end};
+  return { begin, end };
 }
 
 node::fctresult_constrange
@@ -110,10 +105,10 @@ node::fctresults() const
   fctresconstiterator end(nullptr);
 
   if (nfctresults() == 0)
-    return {end, end};
+    return { end, end };
 
   fctresconstiterator begin(fctresult(0));
-  return {begin, end};
+  return { begin, end };
 }
 
 cvinput *
@@ -155,11 +150,11 @@ node::add_ctxvar(jlm::rvsdg::output * origin)
 
 lambda::node *
 node::create(
-  jlm::rvsdg::region * parent,
-  const FunctionType & type,
-  const std::string & name,
-  const llvm::linkage & linkage,
-  const attributeset & attributes)
+    jlm::rvsdg::region * parent,
+    const FunctionType & type,
+    const std::string & name,
+    const llvm::linkage & linkage,
+    const attributeset & attributes)
 {
   lambda::operation op(type, name, linkage, attributes);
   auto node = new lambda::node(parent, std::move(op));
@@ -171,10 +166,11 @@ node::create(
 }
 
 lambda::output *
-node::finalize(const std::vector<jlm::rvsdg::output*> & results)
+node::finalize(const std::vector<jlm::rvsdg::output *> & results)
 {
   /* check if finalized was already called */
-  if (noutputs() > 0) {
+  if (noutputs() > 0)
+  {
     JLM_ASSERT(noutputs() == 1);
     return output();
   }
@@ -182,7 +178,8 @@ node::finalize(const std::vector<jlm::rvsdg::output*> & results)
   if (type().NumResults() != results.size())
     throw util::error("Incorrect number of results.");
 
-  for (size_t n = 0; n < results.size(); n++) {
+  for (size_t n = 0; n < results.size(); n++)
+  {
     auto & expected = type().ResultType(n);
     auto & received = results[n]->type();
     if (results[n]->type() != type().ResultType(n))
@@ -199,9 +196,7 @@ node::finalize(const std::vector<jlm::rvsdg::output*> & results)
 }
 
 lambda::node *
-node::copy(
-  jlm::rvsdg::region * region,
-  const std::vector<jlm::rvsdg::output*> & operands) const
+node::copy(jlm::rvsdg::region * region, const std::vector<jlm::rvsdg::output *> & operands) const
 {
   return util::AssertedCast<lambda::node>(jlm::rvsdg::node::copy(region, operands));
 }
@@ -213,14 +208,16 @@ node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) con
 
   /* add context variables */
   jlm::rvsdg::substitution_map subregionmap;
-  for (auto & cv : ctxvars()) {
+  for (auto & cv : ctxvars())
+  {
     auto origin = smap.lookup(cv.origin());
     auto newcv = lambda->add_ctxvar(origin);
     subregionmap.insert(cv.argument(), newcv);
   }
 
   /* collect function arguments */
-  for (size_t n = 0; n < nfctarguments(); n++){
+  for (size_t n = 0; n < nfctarguments(); n++)
+  {
     lambda->fctargument(n)->set_attributes(fctargument(n)->attributes());
     subregionmap.insert(fctargument(n), lambda->fctargument(n));
   }
@@ -229,7 +226,7 @@ node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) con
   subregion()->copy(lambda->subregion(), subregionmap, false, false);
 
   /* collect function results */
-  std::vector<jlm::rvsdg::output*> results;
+  std::vector<jlm::rvsdg::output *> results;
   for (auto & result : fctresults())
     results.push_back(subregionmap.lookup(result.origin()));
 
@@ -243,54 +240,62 @@ node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) con
 std::unique_ptr<node::CallSummary>
 node::ComputeCallSummary() const
 {
-  std::deque<rvsdg::input*> worklist;
+  std::deque<rvsdg::input *> worklist;
   worklist.insert(worklist.end(), output()->begin(), output()->end());
 
-  std::vector<CallNode*> directCalls;
+  std::vector<CallNode *> directCalls;
   rvsdg::result * rvsdgExport = nullptr;
-  std::vector<rvsdg::input*> otherUsers;
+  std::vector<rvsdg::input *> otherUsers;
 
-  while (!worklist.empty()) {
+  while (!worklist.empty())
+  {
     auto input = worklist.front();
     worklist.pop_front();
 
-    if (auto cvinput = dynamic_cast<lambda::cvinput*>(input)) {
+    if (auto cvinput = dynamic_cast<lambda::cvinput *>(input))
+    {
       auto argument = cvinput->argument();
       worklist.insert(worklist.end(), argument->begin(), argument->end());
       continue;
     }
 
-    if (auto gamma_input = dynamic_cast<rvsdg::gamma_input*>(input)) {
+    if (auto gamma_input = dynamic_cast<rvsdg::gamma_input *>(input))
+    {
       for (auto & argument : *gamma_input)
         worklist.insert(worklist.end(), argument.begin(), argument.end());
       continue;
     }
 
-    if (auto result = is_gamma_result(input)) {
+    if (auto result = is_gamma_result(input))
+    {
       auto output = result->output();
       worklist.insert(worklist.end(), output->begin(), output->end());
       continue;
     }
 
-    if (auto theta_input = dynamic_cast<rvsdg::theta_input*>(input)) {
+    if (auto theta_input = dynamic_cast<rvsdg::theta_input *>(input))
+    {
       auto argument = theta_input->argument();
       worklist.insert(worklist.end(), argument->begin(), argument->end());
       continue;
     }
 
-    if (auto result = is_theta_result(input)) {
+    if (auto result = is_theta_result(input))
+    {
       auto output = result->output();
       worklist.insert(worklist.end(), output->begin(), output->end());
       continue;
     }
 
-    if (auto cvinput = dynamic_cast<phi::cvinput*>(input)) {
+    if (auto cvinput = dynamic_cast<phi::cvinput *>(input))
+    {
       auto argument = cvinput->argument();
       worklist.insert(worklist.end(), argument->begin(), argument->end());
       continue;
     }
 
-    if (auto rvresult = dynamic_cast<phi::rvresult*>(input)) {
+    if (auto rvresult = dynamic_cast<phi::rvresult *>(input))
+    {
       auto argument = rvresult->argument();
       worklist.insert(worklist.end(), argument->begin(), argument->end());
 
@@ -299,33 +304,34 @@ node::ComputeCallSummary() const
       continue;
     }
 
-    if (auto cvinput = dynamic_cast<delta::cvinput*>(input)) {
+    if (auto cvinput = dynamic_cast<delta::cvinput *>(input))
+    {
       auto argument = cvinput->arguments.first();
       worklist.insert(worklist.end(), argument->begin(), argument->end());
       continue;
     }
 
-    if (auto deltaResult = dynamic_cast<delta::result*>(input))
+    if (auto deltaResult = dynamic_cast<delta::result *>(input))
     {
       otherUsers.emplace_back(deltaResult);
       continue;
     }
 
     auto inputNode = rvsdg::input::GetNode(*input);
-    if (is<CallOperation>(inputNode) && input == inputNode->input(0)) {
+    if (is<CallOperation>(inputNode) && input == inputNode->input(0))
+    {
       directCalls.emplace_back(util::AssertedCast<CallNode>(inputNode));
       continue;
     }
 
-    auto result = dynamic_cast<rvsdg::result*>(input);
-    if (result != nullptr
-        && input->region() == graph()->root())
+    auto result = dynamic_cast<rvsdg::result *>(input);
+    if (result != nullptr && input->region() == graph()->root())
     {
       rvsdgExport = result;
       continue;
     }
 
-    auto simpleInput = dynamic_cast<rvsdg::simple_input*>(input);
+    auto simpleInput = dynamic_cast<rvsdg::simple_input *>(input);
     if (simpleInput != nullptr)
     {
       otherUsers.emplace_back(simpleInput);
@@ -335,16 +341,12 @@ node::ComputeCallSummary() const
     JLM_UNREACHABLE("This should have never happened!");
   }
 
-  return CallSummary::Create(
-    rvsdgExport,
-    std::move(directCalls),
-    std::move(otherUsers));
+  return CallSummary::Create(rvsdgExport, std::move(directCalls), std::move(otherUsers));
 }
 
 /* lambda context variable input class */
 
-cvinput::~cvinput()
-= default;
+cvinput::~cvinput() = default;
 
 cvargument *
 cvinput::argument() const noexcept
@@ -354,22 +356,18 @@ cvinput::argument() const noexcept
 
 /* lambda output class */
 
-output::~output()
-= default;
+output::~output() = default;
 
 /* lambda function argument class */
 
-fctargument::~fctargument()
-= default;
+fctargument::~fctargument() = default;
 
 /* lambda context variable argument class */
 
-cvargument::~cvargument()
-= default;
+cvargument::~cvargument() = default;
 
 /* lambda result class */
 
-result::~result()
-= default;
+result::~result() = default;
 
 }
