@@ -9,31 +9,45 @@
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
-namespace jlm::hls {
+namespace jlm::hls
+{
 
 void
-check_rhls(jlm::rvsdg::region *sr) {
-  for (auto &node: jlm::rvsdg::topdown_traverser(sr)) {
-    if (dynamic_cast<jlm::rvsdg::structural_node *>(node)) {
-      if (auto ln = dynamic_cast<hls::loop_node *>(node)) {
+check_rhls(jlm::rvsdg::region * sr)
+{
+  for (auto & node : jlm::rvsdg::topdown_traverser(sr))
+  {
+    if (dynamic_cast<jlm::rvsdg::structural_node *>(node))
+    {
+      if (auto ln = dynamic_cast<hls::loop_node *>(node))
+      {
         check_rhls(ln->subregion());
-      } else {
+      }
+      else
+      {
         throw jlm::util::error("There should be only simple nodes and loop nodes");
       }
     }
-    for (size_t i = 0; i < node->noutputs(); i++) {
-      if (node->output(i)->nusers() == 0) {
+    for (size_t i = 0; i < node->noutputs(); i++)
+    {
+      if (node->output(i)->nusers() == 0)
+      {
         throw jlm::util::error("Output has no users");
-      } else if (node->output(i)->nusers() > 1) {
+      }
+      else if (node->output(i)->nusers() > 1)
+      {
         throw jlm::util::error("Output has more than one user");
       }
     }
-    if (is_constant(node)) {
-      if (node->noutputs() != 1) {
+    if (is_constant(node))
+    {
+      if (node->noutputs() != 1)
+      {
         throw jlm::util::error("Constant should have one output");
       }
       auto user_in = dynamic_cast<jlm::rvsdg::node_input *>(*node->output(0)->begin());
-      if (!user_in || !jlm::rvsdg::is<hls::trigger_op>(user_in->node())) {
+      if (!user_in || !jlm::rvsdg::is<hls::trigger_op>(user_in->node()))
+      {
         throw jlm::util::error("Constant has to be gated by a trigger");
       }
     }
@@ -41,14 +55,17 @@ check_rhls(jlm::rvsdg::region *sr) {
 }
 
 void
-check_rhls(llvm::RvsdgModule &rm) {
-  auto &graph = rm.Rvsdg();
+check_rhls(llvm::RvsdgModule & rm)
+{
+  auto & graph = rm.Rvsdg();
   auto root = graph.root();
-  if (root->nodes.size() != 1) {
+  if (root->nodes.size() != 1)
+  {
     throw jlm::util::error("Root should have only one node now");
   }
   auto ln = dynamic_cast<const llvm::lambda::node *>(root->nodes.begin().ptr());
-  if (!ln) {
+  if (!ln)
+  {
     throw jlm::util::error("Node needs to be a lambda");
   }
   check_rhls(ln->subregion());

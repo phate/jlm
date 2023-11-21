@@ -16,14 +16,13 @@ namespace jlm::llvm::aa
  * @see Steensgaard
  * @see AgnosticMemoryNodeProvider
  */
-class SteensgaardAgnostic final : public optimization {
+class SteensgaardAgnostic final : public optimization
+{
 public:
   ~SteensgaardAgnostic() noexcept override;
 
   void
-  run(
-    RvsdgModule & rvsdgModule,
-    jlm::util::StatisticsCollector & statisticsCollector) override;
+  run(RvsdgModule & rvsdgModule, jlm::util::StatisticsCollector & statisticsCollector) override;
 };
 
 /** \brief Steensgaard alias analysis with region-aware memory state encoding
@@ -31,14 +30,13 @@ public:
  * @see Steensgaard
  * @see RegionAwareMemoryNodeProvider
  */
-class SteensgaardRegionAware final : public optimization {
+class SteensgaardRegionAware final : public optimization
+{
 public:
   ~SteensgaardRegionAware() noexcept override;
 
   void
-  run(
-    RvsdgModule & rvsdgModule,
-    jlm::util::StatisticsCollector & statisticsCollector) override;
+  run(RvsdgModule & rvsdgModule, jlm::util::StatisticsCollector & statisticsCollector) override;
 };
 
 }

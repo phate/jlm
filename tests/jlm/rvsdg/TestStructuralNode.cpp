@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <test-registry.hpp>
 #include <test-operation.hpp>
+#include <test-registry.hpp>
 #include <test-types.hpp>
 
 #include <cassert>
@@ -19,11 +19,11 @@ TestOutputRemoval()
   tests::valuetype valueType;
 
   auto structuralNode = tests::structural_node::create(rvsdg.root(), 1);
-  auto output0 = rvsdg::structural_output::create(structuralNode, {valueType});
-  auto output1 = rvsdg::structural_output::create(structuralNode, {valueType});
-  auto output2 = rvsdg::structural_output::create(structuralNode, {valueType});
-  auto output3 = rvsdg::structural_output::create(structuralNode, {valueType});
-  auto output4 = rvsdg::structural_output::create(structuralNode, {valueType});
+  auto output0 = rvsdg::structural_output::create(structuralNode, { valueType });
+  auto output1 = rvsdg::structural_output::create(structuralNode, { valueType });
+  auto output2 = rvsdg::structural_output::create(structuralNode, { valueType });
+  auto output3 = rvsdg::structural_output::create(structuralNode, { valueType });
+  auto output4 = rvsdg::structural_output::create(structuralNode, { valueType });
 
   // Act & Assert
   assert(structuralNode->noutputs() == 5);
@@ -45,7 +45,6 @@ TestOutputRemoval()
   assert(output0->index() == 0);
   assert(output1->index() == 1);
   assert(output3->index() == 2);
-
 }
 
 static int

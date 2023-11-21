@@ -13,43 +13,40 @@
 namespace jlm::rvsdg
 {
 
-#define DECLARE_BITCOMPARISON_OPERATION(NAME) \
-class NAME ## _op final : public bitcompare_op { \
-public: \
-	virtual \
-	~NAME ## _op() noexcept; \
-\
-	inline \
-	NAME ## _op(const bittype & type) noexcept \
-	: bitcompare_op(type) \
-	{} \
-\
-	virtual bool \
-	operator==(const operation & other) const noexcept override; \
-\
-	virtual enum jlm::rvsdg::binary_op::flags \
-	flags() const noexcept override; \
-\
-	virtual compare_result \
-	reduce_constants( \
-		const bitvalue_repr & arg1, \
-		const bitvalue_repr & arg2) const override; \
-\
-	virtual std::string \
-	debug_string() const override; \
-\
-	virtual std::unique_ptr<jlm::rvsdg::operation> \
-	copy() const override; \
-\
-	virtual std::unique_ptr<bitcompare_op> \
-	create(size_t nbits) const override; \
-\
-	static inline jlm::rvsdg::output * \
-	create(size_t nbits, jlm::rvsdg::output * op1, jlm::rvsdg::output * op2) \
-	{ \
-		return simple_node::create_normalized(op1->region(), NAME ## _op(nbits), {op1, op2})[0]; \
-	} \
-}; \
+#define DECLARE_BITCOMPARISON_OPERATION(NAME)                                                  \
+  class NAME##_op final : public bitcompare_op                                                 \
+  {                                                                                            \
+  public:                                                                                      \
+    virtual ~NAME##_op() noexcept;                                                             \
+                                                                                               \
+    inline NAME##_op(const bittype & type) noexcept                                            \
+        : bitcompare_op(type)                                                                  \
+    {}                                                                                         \
+                                                                                               \
+    virtual bool                                                                               \
+    operator==(const operation & other) const noexcept override;                               \
+                                                                                               \
+    virtual enum jlm::rvsdg::binary_op::flags                                                  \
+    flags() const noexcept override;                                                           \
+                                                                                               \
+    virtual compare_result                                                                     \
+    reduce_constants(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const override;   \
+                                                                                               \
+    virtual std::string                                                                        \
+    debug_string() const override;                                                             \
+                                                                                               \
+    virtual std::unique_ptr<jlm::rvsdg::operation>                                             \
+    copy() const override;                                                                     \
+                                                                                               \
+    virtual std::unique_ptr<bitcompare_op>                                                     \
+    create(size_t nbits) const override;                                                       \
+                                                                                               \
+    static inline jlm::rvsdg::output *                                                         \
+    create(size_t nbits, jlm::rvsdg::output * op1, jlm::rvsdg::output * op2)                   \
+    {                                                                                          \
+      return simple_node::create_normalized(op1->region(), NAME##_op(nbits), { op1, op2 })[0]; \
+    }                                                                                          \
+  };
 
 DECLARE_BITCOMPARISON_OPERATION(biteq)
 DECLARE_BITCOMPARISON_OPERATION(bitne)

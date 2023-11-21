@@ -20,20 +20,21 @@ namespace jlm::llvm
 /** \brief Function type class
  *
  */
-class FunctionType final : public jlm::rvsdg::valuetype {
+class FunctionType final : public jlm::rvsdg::valuetype
+{
 
   class TypeConstIterator final
   {
   public:
     using iterator_category = std::forward_iterator_tag;
-    using value_type = jlm::rvsdg::type*;
+    using value_type = jlm::rvsdg::type *;
     using difference_type = std::ptrdiff_t;
-    using pointer = jlm::rvsdg::type**;
-    using reference = jlm::rvsdg::type*&;
+    using pointer = jlm::rvsdg::type **;
+    using reference = jlm::rvsdg::type *&;
 
-    explicit
-    TypeConstIterator(const std::vector<std::unique_ptr<jlm::rvsdg::type>>::const_iterator & it)
-      : It_(it)
+    explicit TypeConstIterator(
+        const std::vector<std::unique_ptr<jlm::rvsdg::type>>::const_iterator & it)
+        : It_(it)
     {}
 
   public:
@@ -94,12 +95,12 @@ public:
   ~FunctionType() noexcept override;
 
   FunctionType(
-    const std::vector<const jlm::rvsdg::type*> & argumentTypes,
-    const std::vector<const jlm::rvsdg::type*> & resultTypes);
+      const std::vector<const jlm::rvsdg::type *> & argumentTypes,
+      const std::vector<const jlm::rvsdg::type *> & resultTypes);
 
   FunctionType(
-    std::vector<std::unique_ptr<jlm::rvsdg::type>> argumentTypes,
-    std::vector<std::unique_ptr<jlm::rvsdg::type>> resultTypes);
+      std::vector<std::unique_ptr<jlm::rvsdg::type>> argumentTypes,
+      std::vector<std::unique_ptr<jlm::rvsdg::type>> resultTypes);
 
   FunctionType(const FunctionType & other);
 
@@ -161,7 +162,8 @@ private:
  *
  * This operator is the Jlm equivalent of LLVM's PointerType class.
  */
-class PointerType final : public jlm::rvsdg::valuetype {
+class PointerType final : public jlm::rvsdg::valuetype
+{
 public:
   ~PointerType() noexcept override;
 
@@ -185,165 +187,163 @@ public:
 
 /* array type */
 
-class arraytype final : public jlm::rvsdg::valuetype {
+class arraytype final : public jlm::rvsdg::valuetype
+{
 public:
-	virtual
-	~arraytype();
+  virtual ~arraytype();
 
-	inline
-	arraytype(const jlm::rvsdg::valuetype & type, size_t nelements)
-	: jlm::rvsdg::valuetype()
-	, nelements_(nelements)
-	, type_(type.copy())
-	{}
+  inline arraytype(const jlm::rvsdg::valuetype & type, size_t nelements)
+      : jlm::rvsdg::valuetype(),
+        nelements_(nelements),
+        type_(type.copy())
+  {}
 
-	inline
-	arraytype(const arraytype & other)
-	: jlm::rvsdg::valuetype(other)
-	, nelements_(other.nelements_)
-	, type_(other.type_->copy())
-	{}
+  inline arraytype(const arraytype & other)
+      : jlm::rvsdg::valuetype(other),
+        nelements_(other.nelements_),
+        type_(other.type_->copy())
+  {}
 
-	inline
-	arraytype(arraytype && other)
-	: jlm::rvsdg::valuetype(other)
-	, nelements_(other.nelements_)
-	, type_(std::move(other.type_))
-	{}
+  inline arraytype(arraytype && other)
+      : jlm::rvsdg::valuetype(other),
+        nelements_(other.nelements_),
+        type_(std::move(other.type_))
+  {}
 
-	inline arraytype &
-	operator=(const arraytype &) = delete;
+  inline arraytype &
+  operator=(const arraytype &) = delete;
 
-	inline arraytype &
-	operator=(arraytype &&) = delete;
+  inline arraytype &
+  operator=(arraytype &&) = delete;
 
-	virtual std::string
-	debug_string() const override;
+  virtual std::string
+  debug_string() const override;
 
-	virtual bool
-	operator==(const jlm::rvsdg::type & other) const noexcept override;
+  virtual bool
+  operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-	virtual std::unique_ptr<jlm::rvsdg::type>
-	copy() const override;
+  virtual std::unique_ptr<jlm::rvsdg::type>
+  copy() const override;
 
-	inline size_t
-	nelements() const noexcept
-	{
-		return nelements_;
-	}
+  inline size_t
+  nelements() const noexcept
+  {
+    return nelements_;
+  }
 
-	inline const jlm::rvsdg::valuetype &
-	element_type() const noexcept
-	{
-		return *static_cast<const jlm::rvsdg::valuetype*>(type_.get());
-	}
+  inline const jlm::rvsdg::valuetype &
+  element_type() const noexcept
+  {
+    return *static_cast<const jlm::rvsdg::valuetype *>(type_.get());
+  }
 
 private:
-	size_t nelements_;
-	std::unique_ptr<jlm::rvsdg::type> type_;
+  size_t nelements_;
+  std::unique_ptr<jlm::rvsdg::type> type_;
 };
 
 static inline std::unique_ptr<jlm::rvsdg::type>
 create_arraytype(const jlm::rvsdg::type & type, size_t nelements)
 {
-	auto vt = dynamic_cast<const jlm::rvsdg::valuetype*>(&type);
-	if (!vt) throw jlm::util::error("expected value type.");
+  auto vt = dynamic_cast<const jlm::rvsdg::valuetype *>(&type);
+  if (!vt)
+    throw jlm::util::error("expected value type.");
 
-	return std::unique_ptr<jlm::rvsdg::type>(new arraytype(*vt, nelements));
+  return std::unique_ptr<jlm::rvsdg::type>(new arraytype(*vt, nelements));
 }
 
 /* floating point type */
 
-enum class fpsize {half, flt, dbl, x86fp80};
+enum class fpsize
+{
+  half,
+  flt,
+  dbl,
+  x86fp80
+};
 
-class fptype final : public jlm::rvsdg::valuetype {
+class fptype final : public jlm::rvsdg::valuetype
+{
 public:
-	virtual
-	~fptype();
+  virtual ~fptype();
 
-	inline
-	fptype(const fpsize & size)
-	: jlm::rvsdg::valuetype()
-	, size_(size)
-	{}
+  inline fptype(const fpsize & size)
+      : jlm::rvsdg::valuetype(),
+        size_(size)
+  {}
 
-	virtual std::string
-	debug_string() const override;
+  virtual std::string
+  debug_string() const override;
 
-	virtual bool
-	operator==(const jlm::rvsdg::type & other) const noexcept override;
+  virtual bool
+  operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-	virtual std::unique_ptr<jlm::rvsdg::type>
-	copy() const override;
+  virtual std::unique_ptr<jlm::rvsdg::type>
+  copy() const override;
 
-	inline const fpsize &
-	size() const noexcept
-	{
-		return size_;
-	}
+  inline const fpsize &
+  size() const noexcept
+  {
+    return size_;
+  }
 
 private:
-	fpsize size_;
+  fpsize size_;
 };
 
 /* vararg type */
 
-class varargtype final : public jlm::rvsdg::statetype {
+class varargtype final : public jlm::rvsdg::statetype
+{
 public:
-	virtual
-	~varargtype();
+  virtual ~varargtype();
 
-	inline constexpr
-	varargtype()
-	: jlm::rvsdg::statetype()
-	{}
+  inline constexpr varargtype()
+      : jlm::rvsdg::statetype()
+  {}
 
-	virtual bool
-	operator==(const jlm::rvsdg::type & other) const noexcept override;
+  virtual bool
+  operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-	virtual std::unique_ptr<jlm::rvsdg::type>
-	copy() const override;
+  virtual std::unique_ptr<jlm::rvsdg::type>
+  copy() const override;
 
-	virtual std::string
-	debug_string() const override;
+  virtual std::string
+  debug_string() const override;
 };
 
 static inline bool
 is_varargtype(const jlm::rvsdg::type & type)
 {
-	return dynamic_cast<const varargtype*>(&type) != nullptr;
+  return dynamic_cast<const varargtype *>(&type) != nullptr;
 }
 
 static inline std::unique_ptr<jlm::rvsdg::type>
 create_varargtype()
 {
-	return std::unique_ptr<jlm::rvsdg::type>(new varargtype());
+  return std::unique_ptr<jlm::rvsdg::type>(new varargtype());
 }
 
 /** \brief StructType class
  *
  * This class is the equivalent of LLVM's StructType class.
  */
-class StructType final : public jlm::rvsdg::valuetype {
+class StructType final : public jlm::rvsdg::valuetype
+{
 public:
   ~StructType() override;
 
-  StructType(
-    bool isPacked,
-    const jlm::rvsdg::rcddeclaration & declaration)
-    : jlm::rvsdg::valuetype()
-    , IsPacked_(isPacked)
-    , Declaration_(declaration)
+  StructType(bool isPacked, const jlm::rvsdg::rcddeclaration & declaration)
+      : jlm::rvsdg::valuetype(),
+        IsPacked_(isPacked),
+        Declaration_(declaration)
   {}
 
-  StructType(
-    std::string name,
-    bool isPacked,
-    const jlm::rvsdg::rcddeclaration & declaration)
-    : jlm::rvsdg::valuetype()
-    , IsPacked_(isPacked)
-    , Name_(std::move(name))
-    , Declaration_(declaration)
+  StructType(std::string name, bool isPacked, const jlm::rvsdg::rcddeclaration & declaration)
+      : jlm::rvsdg::valuetype(),
+        IsPacked_(isPacked),
+        Name_(std::move(name)),
+        Declaration_(declaration)
   {}
 
   StructType(const StructType &) = default;
@@ -390,18 +390,13 @@ public:
   debug_string() const override;
 
   static std::unique_ptr<StructType>
-  Create(
-    const std::string & name,
-    bool isPacked,
-    const jlm::rvsdg::rcddeclaration & declaration)
+  Create(const std::string & name, bool isPacked, const jlm::rvsdg::rcddeclaration & declaration)
   {
     return std::make_unique<StructType>(name, isPacked, declaration);
   }
 
   static std::unique_ptr<StructType>
-  Create(
-    bool isPacked,
-    const jlm::rvsdg::rcddeclaration & declaration)
+  Create(bool isPacked, const jlm::rvsdg::rcddeclaration & declaration)
   {
     return std::make_unique<StructType>(isPacked, declaration);
   }
@@ -414,184 +409,180 @@ private:
 
 /* vector type */
 
-class vectortype : public jlm::rvsdg::valuetype {
+class vectortype : public jlm::rvsdg::valuetype
+{
 public:
-	vectortype(
-		const jlm::rvsdg::valuetype & type,
-		size_t size)
-	: size_(size)
-	, type_(type.copy())
-	{}
+  vectortype(const jlm::rvsdg::valuetype & type, size_t size)
+      : size_(size),
+        type_(type.copy())
+  {}
 
-	vectortype(const vectortype & other)
-	: valuetype(other)
-	, size_(other.size_)
-	, type_(other.type_->copy())
-	{}
+  vectortype(const vectortype & other)
+      : valuetype(other),
+        size_(other.size_),
+        type_(other.type_->copy())
+  {}
 
-	vectortype(vectortype && other)
-	: valuetype(other)
-	, size_(other.size_)
-	, type_(std::move(other.type_))
-	{}
+  vectortype(vectortype && other)
+      : valuetype(other),
+        size_(other.size_),
+        type_(std::move(other.type_))
+  {}
 
-	vectortype &
-	operator=(const vectortype & other)
-	{
-		if (this == &other)
-			return *this;
+  vectortype &
+  operator=(const vectortype & other)
+  {
+    if (this == &other)
+      return *this;
 
-		size_ = other.size_;
-		type_ = other.type_->copy();
-		return *this;
-	}
+    size_ = other.size_;
+    type_ = other.type_->copy();
+    return *this;
+  }
 
-	vectortype &
-	operator=(vectortype && other)
-	{
-		if (this == &other)
-			return *this;
+  vectortype &
+  operator=(vectortype && other)
+  {
+    if (this == &other)
+      return *this;
 
-		size_ = other.size_;
-		type_ = std::move(other.type_);
-		return *this;
-	}
+    size_ = other.size_;
+    type_ = std::move(other.type_);
+    return *this;
+  }
 
-	virtual bool
-	operator==(const jlm::rvsdg::type & other) const noexcept override;
+  virtual bool
+  operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-	size_t
-	size() const noexcept
-	{
-		return size_;
-	}
+  size_t
+  size() const noexcept
+  {
+    return size_;
+  }
 
-	const jlm::rvsdg::valuetype &
-	type() const noexcept
-	{
-		return *static_cast<const jlm::rvsdg::valuetype*>(type_.get());
-	}
+  const jlm::rvsdg::valuetype &
+  type() const noexcept
+  {
+    return *static_cast<const jlm::rvsdg::valuetype *>(type_.get());
+  }
 
 private:
-	size_t size_;
-	std::unique_ptr<jlm::rvsdg::type> type_;
+  size_t size_;
+  std::unique_ptr<jlm::rvsdg::type> type_;
 };
 
-class fixedvectortype final : public vectortype {
+class fixedvectortype final : public vectortype
+{
 public:
-	~fixedvectortype() override;
+  ~fixedvectortype() override;
 
-	fixedvectortype(
-		const jlm::rvsdg::valuetype & type,
-		size_t size)
-	: vectortype(type, size)
-	{}
+  fixedvectortype(const jlm::rvsdg::valuetype & type, size_t size)
+      : vectortype(type, size)
+  {}
 
-	virtual bool
-	operator==(const jlm::rvsdg::type & other) const noexcept override;
+  virtual bool
+  operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-	virtual std::unique_ptr<jlm::rvsdg::type>
-	copy() const override;
+  virtual std::unique_ptr<jlm::rvsdg::type>
+  copy() const override;
 
-	virtual std::string
-	debug_string() const override;
+  virtual std::string
+  debug_string() const override;
 };
 
-class scalablevectortype final : public vectortype {
+class scalablevectortype final : public vectortype
+{
 public:
-	~scalablevectortype() override;
+  ~scalablevectortype() override;
 
-	scalablevectortype(
-		const jlm::rvsdg::valuetype & type,
-		size_t size)
-	: vectortype(type, size)
-	{}
+  scalablevectortype(const jlm::rvsdg::valuetype & type, size_t size)
+      : vectortype(type, size)
+  {}
 
-	virtual bool
-	operator==(const jlm::rvsdg::type & other) const noexcept override;
+  virtual bool
+  operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-	virtual std::unique_ptr<jlm::rvsdg::type>
-	copy() const override;
+  virtual std::unique_ptr<jlm::rvsdg::type>
+  copy() const override;
 
-	virtual std::string
-	debug_string() const override;
+  virtual std::string
+  debug_string() const override;
 };
 
 /* loop state type */
 
-class loopstatetype final : public jlm::rvsdg::statetype {
+class loopstatetype final : public jlm::rvsdg::statetype
+{
 public:
-	virtual
-	~loopstatetype();
+  virtual ~loopstatetype();
 
-	constexpr
-	loopstatetype() noexcept
-	: statetype()
-	{}
+  constexpr loopstatetype() noexcept
+      : statetype()
+  {}
 
-	virtual bool
-	operator==(const jlm::rvsdg::type & other) const noexcept override;
+  virtual bool
+  operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-	virtual std::unique_ptr<jlm::rvsdg::type>
-	copy() const override;
+  virtual std::unique_ptr<jlm::rvsdg::type>
+  copy() const override;
 
-	virtual std::string
-	debug_string() const override;
+  virtual std::string
+  debug_string() const override;
 
-	static std::unique_ptr<jlm::rvsdg::type>
-	create()
-	{
-		return std::unique_ptr<jlm::rvsdg::type>(new loopstatetype());
-	}
+  static std::unique_ptr<jlm::rvsdg::type>
+  create()
+  {
+    return std::unique_ptr<jlm::rvsdg::type>(new loopstatetype());
+  }
 };
 
 /** \brief Input/Output state type
-*
-* This type is used for state edges that sequentialize input/output operations.
-*/
-class iostatetype final : public jlm::rvsdg::statetype {
+ *
+ * This type is used for state edges that sequentialize input/output operations.
+ */
+class iostatetype final : public jlm::rvsdg::statetype
+{
 public:
-	~iostatetype() override;
+  ~iostatetype() override;
 
-	constexpr
-	iostatetype() noexcept
-	{}
+  constexpr iostatetype() noexcept
+  {}
 
-	virtual bool
-	operator==(const jlm::rvsdg::type & other) const noexcept override;
+  virtual bool
+  operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-	virtual std::unique_ptr<jlm::rvsdg::type>
-	copy() const override;
+  virtual std::unique_ptr<jlm::rvsdg::type>
+  copy() const override;
 
-	virtual std::string
-	debug_string() const override;
+  virtual std::string
+  debug_string() const override;
 
-	static std::unique_ptr<jlm::rvsdg::type>
-	create()
-	{
-		return std::make_unique<iostatetype>();
-	}
+  static std::unique_ptr<jlm::rvsdg::type>
+  create()
+  {
+    return std::make_unique<iostatetype>();
+  }
 
-	static const iostatetype &
-	instance() noexcept
-	{
-		static iostatetype iotype;
-		return iotype;
-	}
+  static const iostatetype &
+  instance() noexcept
+  {
+    static iostatetype iotype;
+    return iotype;
+  }
 };
 
 /** \brief Memory state type class
  *
- * Represents the type of abstract memory locations and is used in state edges for sequentialiazing memory operations,
- * such as load and store operations.
+ * Represents the type of abstract memory locations and is used in state edges for sequentialiazing
+ * memory operations, such as load and store operations.
  */
-class MemoryStateType final : public jlm::rvsdg::statetype {
+class MemoryStateType final : public jlm::rvsdg::statetype
+{
 public:
   ~MemoryStateType() noexcept override;
 
-  constexpr
-  MemoryStateType() noexcept
-  : jlm::rvsdg::statetype()
+  constexpr MemoryStateType() noexcept
+      : jlm::rvsdg::statetype()
   {}
 
   std::string
@@ -610,16 +601,18 @@ public:
   }
 };
 
-template <class ELEMENTYPE> static inline bool
+template<class ELEMENTYPE>
+static inline bool
 IsOrContains(const jlm::rvsdg::type & type)
 {
   if (jlm::rvsdg::is<ELEMENTYPE>(type))
     return true;
 
-  if (auto arrayType = dynamic_cast<const arraytype*>(&type))
+  if (auto arrayType = dynamic_cast<const arraytype *>(&type))
     return IsOrContains<ELEMENTYPE>(arrayType->element_type());
 
-  if (auto structType = dynamic_cast<const StructType*>(&type)) {
+  if (auto structType = dynamic_cast<const StructType *>(&type))
+  {
     auto & structDeclaration = structType->GetDeclaration();
     for (size_t n = 0; n < structDeclaration.nelements(); n++)
       return IsOrContains<ELEMENTYPE>(structDeclaration.element(n));
@@ -627,7 +620,7 @@ IsOrContains(const jlm::rvsdg::type & type)
     return false;
   }
 
-  if (auto vectorType = dynamic_cast<const vectortype*>(&type))
+  if (auto vectorType = dynamic_cast<const vectortype *>(&type))
     return IsOrContains<ELEMENTYPE>(vectorType->type());
 
   return false;

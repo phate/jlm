@@ -13,23 +13,23 @@ namespace jlm::hls
 {
 
 void
-add_prints(rvsdg::region *region);
+add_prints(rvsdg::region * region);
 
 void
-add_prints(llvm::RvsdgModule &rm);
+add_prints(llvm::RvsdgModule & rm);
 
 void
-convert_prints(llvm::RvsdgModule &rm);
+convert_prints(llvm::RvsdgModule & rm);
 
 void
 convert_prints(
-  rvsdg::region *region,
-  rvsdg::output * printf,
-  const llvm::FunctionType & functionType);
+    rvsdg::region * region,
+    rvsdg::output * printf,
+    const llvm::FunctionType & functionType);
 
 rvsdg::output *
 route_to_region(rvsdg::output * output, rvsdg::region * region);
 
 }
 
-#endif //JLM_HLS_BACKEND_RVSDG2RHLS_ADD_PRINTS_HPP
+#endif // JLM_HLS_BACKEND_RVSDG2RHLS_ADD_PRINTS_HPP

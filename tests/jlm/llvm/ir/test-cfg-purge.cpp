@@ -13,30 +13,30 @@
 static int
 test()
 {
-	using namespace jlm::llvm;
+  using namespace jlm::llvm;
 
-	ipgraph_module module(jlm::util::filepath(""), "", "");
+  ipgraph_module module(jlm::util::filepath(""), "", "");
 
-	jlm::llvm::cfg cfg(module);
-	auto bb0 = basic_block::create(cfg);
-	auto bb1 = basic_block::create(cfg);
+  jlm::llvm::cfg cfg(module);
+  auto bb0 = basic_block::create(cfg);
+  auto bb1 = basic_block::create(cfg);
 
-	jlm::rvsdg::ctlconstant_op op(jlm::rvsdg::ctlvalue_repr(1, 2));
-	bb0->append_last(tac::create(op, {}));
-	bb0->append_last(branch_op::create(2, bb0->last()->result(0)));
+  jlm::rvsdg::ctlconstant_op op(jlm::rvsdg::ctlvalue_repr(1, 2));
+  bb0->append_last(tac::create(op, {}));
+  bb0->append_last(branch_op::create(2, bb0->last()->result(0)));
 
-	cfg.exit()->divert_inedges(bb0);
-	bb0->add_outedge(bb1);
-	bb0->add_outedge(cfg.exit());
-	bb1->add_outedge(bb1);
+  cfg.exit()->divert_inedges(bb0);
+  bb0->add_outedge(bb1);
+  bb0->add_outedge(cfg.exit());
+  bb1->add_outedge(bb1);
 
-	print_ascii(cfg, stdout);
+  print_ascii(cfg, stdout);
 
-	purge(cfg);
+  purge(cfg);
 
-	assert(cfg.nnodes() == 2);
+  assert(cfg.nnodes() == 2);
 
-	return 0;
+  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/test-cfg-purge", test)

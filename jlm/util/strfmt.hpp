@@ -8,28 +8,32 @@
 
 #include <sstream>
 
-namespace jlm::util {
+namespace jlm::util
+{
 
-template<typename ...Args>
+template<typename... Args>
 static inline void
-format_to_stream(std::ostream &os, Args... args);
+format_to_stream(std::ostream & os, Args... args);
 
 template<typename Arg>
 static inline void
-format_to_stream(std::ostream &os, const Arg &arg) {
+format_to_stream(std::ostream & os, const Arg & arg)
+{
   os << arg;
 }
 
 template<typename Arg, typename... Args>
 static inline void
-format_to_stream(std::ostream &os, const Arg &arg, Args... args) {
+format_to_stream(std::ostream & os, const Arg & arg, Args... args)
+{
   os << arg;
   format_to_stream(os, args...);
 }
 
-template<typename ...Args>
+template<typename... Args>
 static inline std::string
-strfmt(Args... args) {
+strfmt(Args... args)
+{
   std::ostringstream os;
   format_to_stream(os, args...);
   return os.str();

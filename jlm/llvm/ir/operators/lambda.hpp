@@ -24,36 +24,36 @@ namespace lambda
 {
 
 /** \brief Lambda operation
-*
-* A lambda operation determines a lambda's name and \ref FunctionType "function type".
-*/
+ *
+ * A lambda operation determines a lambda's name and \ref FunctionType "function type".
+ */
 class operation final : public jlm::rvsdg::structural_op
 {
 public:
   ~operation() override;
 
   operation(
-    jlm::llvm::FunctionType type,
-    std::string name,
-    const jlm::llvm::linkage & linkage,
-    jlm::llvm::attributeset attributes)
-    : type_(std::move(type))
-    , name_(std::move(name))
-    , linkage_(linkage)
-    , attributes_(std::move(attributes))
+      jlm::llvm::FunctionType type,
+      std::string name,
+      const jlm::llvm::linkage & linkage,
+      jlm::llvm::attributeset attributes)
+      : type_(std::move(type)),
+        name_(std::move(name)),
+        linkage_(linkage),
+        attributes_(std::move(attributes))
   {}
 
   operation(const operation & other)
-    : type_(other.type_)
-    , name_(other.name_)
-    , linkage_(other.linkage_)
-    , attributes_(other.attributes_)
+      : type_(other.type_),
+        name_(other.name_),
+        linkage_(other.linkage_),
+        attributes_(other.attributes_)
   {}
 
   operation(operation && other) noexcept
-    : type_(std::move(other.type_))
-    , name_(std::move(other.name_))
-    , linkage_(other.linkage_)
+      : type_(std::move(other.type_)),
+        name_(std::move(other.name_)),
+        linkage_(other.linkage_)
   {}
 
   operation &
@@ -131,26 +131,26 @@ class output;
 class result;
 
 /** \brief Lambda node
-*
-* A lambda node represents a lambda expression in the RVSDG. Its creation requires the invocation
-* of two functions: \ref create() and \ref finalize(). First, a node with only the function
-* arguments is created by invoking \ref create(). The free variables of the lambda expression can
-* then be added to the lambda node using the \ref add_ctxvar() method, and the body of the lambda
-* node can be created. Finally, the lambda node can be finalized by invoking \ref finalize().
-*
-* The following snippet illustrates the creation of lambda nodes:
-*
-* \code{.cpp}
-*   auto lambda = lambda::node::create(...);
-*   ...
-*   auto cv1 = lambda->add_ctxvar(...);
-*   auto cv2 = lambda->add_ctxvar(...);
-*   ...
-*   // generate lambda body
-*   ...
-*   auto output = lambda->finalize(...);
-* \endcode
-*/
+ *
+ * A lambda node represents a lambda expression in the RVSDG. Its creation requires the invocation
+ * of two functions: \ref create() and \ref finalize(). First, a node with only the function
+ * arguments is created by invoking \ref create(). The free variables of the lambda expression can
+ * then be added to the lambda node using the \ref add_ctxvar() method, and the body of the lambda
+ * node can be created. Finally, the lambda node can be finalized by invoking \ref finalize().
+ *
+ * The following snippet illustrates the creation of lambda nodes:
+ *
+ * \code{.cpp}
+ *   auto lambda = lambda::node::create(...);
+ *   ...
+ *   auto cv1 = lambda->add_ctxvar(...);
+ *   auto cv2 = lambda->add_ctxvar(...);
+ *   ...
+ *   // generate lambda body
+ *   ...
+ *   auto output = lambda->finalize(...);
+ * \endcode
+ */
 class node final : public jlm::rvsdg::structural_node
 {
 public:
@@ -179,10 +179,8 @@ public:
   ~node() override;
 
 private:
-  node(
-    jlm::rvsdg::region * parent,
-    lambda::operation && op)
-    : structural_node(op, parent, 1)
+  node(jlm::rvsdg::region * parent, lambda::operation && op)
+      : structural_node(op, parent, 1)
   {}
 
 public:
@@ -259,11 +257,11 @@ public:
   }
 
   /**
-  * Adds a context/free variable to the lambda node. The \p origin must be from the same region
-  * as the lambda node.
-  *
-  * \return The context variable argument from the lambda region.
-  */
+   * Adds a context/free variable to the lambda node. The \p origin must be from the same region
+   * as the lambda node.
+   *
+   * \return The context variable argument from the lambda region.
+   */
   lambda::cvargument *
   add_ctxvar(jlm::rvsdg::output * origin);
 
@@ -283,59 +281,56 @@ public:
   fctresult(size_t n) const noexcept;
 
   lambda::node *
-  copy(
-    jlm::rvsdg::region * region,
-    const std::vector<jlm::rvsdg::output*> & operands) const override;
+  copy(jlm::rvsdg::region * region, const std::vector<jlm::rvsdg::output *> & operands)
+      const override;
 
   lambda::node *
-  copy(
-    jlm::rvsdg::region * region,
-    jlm::rvsdg::substitution_map & smap) const override;
+  copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const override;
 
   /**
-  * Creates a lambda node in the region \p parent with the function type \p type and name \p name.
-  * After the invocation of \ref create(), the lambda node only features the function arguments.
-  * Free variables can be added to the function node using \ref add_ctxvar(). The generation of the
-  * node can be finished using the \ref finalize() method.
-  *
-  * \param parent The region where the lambda node is created.
-  * \param type The lambda node's type.
-  * \param name The lambda node's name.
-  * \param linkage The lambda node's linkage.
-  * \param attributes The lambda node's attributes.
-  *
-  * \return A lambda node featuring only function arguments.
-  */
+   * Creates a lambda node in the region \p parent with the function type \p type and name \p name.
+   * After the invocation of \ref create(), the lambda node only features the function arguments.
+   * Free variables can be added to the function node using \ref add_ctxvar(). The generation of the
+   * node can be finished using the \ref finalize() method.
+   *
+   * \param parent The region where the lambda node is created.
+   * \param type The lambda node's type.
+   * \param name The lambda node's name.
+   * \param linkage The lambda node's linkage.
+   * \param attributes The lambda node's attributes.
+   *
+   * \return A lambda node featuring only function arguments.
+   */
   static node *
   create(
-    jlm::rvsdg::region * parent,
-    const jlm::llvm::FunctionType & type,
-    const std::string & name,
-    const jlm::llvm::linkage & linkage,
-    const jlm::llvm::attributeset & attributes);
+      jlm::rvsdg::region * parent,
+      const jlm::llvm::FunctionType & type,
+      const std::string & name,
+      const jlm::llvm::linkage & linkage,
+      const jlm::llvm::attributeset & attributes);
 
   /**
-  * See \ref create().
-  */
+   * See \ref create().
+   */
   static node *
   create(
-    jlm::rvsdg::region * parent,
-    const jlm::llvm::FunctionType & type,
-    const std::string & name,
-    const jlm::llvm::linkage & linkage)
+      jlm::rvsdg::region * parent,
+      const jlm::llvm::FunctionType & type,
+      const std::string & name,
+      const jlm::llvm::linkage & linkage)
   {
     return create(parent, type, name, linkage, {});
   }
 
   /**
-  * Finalizes the creation of a lambda node.
-  *
-  * \param results The result values of the lambda expression, originating from the lambda region.
-  *
-  * \return The output of the lambda node.
-  */
+   * Finalizes the creation of a lambda node.
+   *
+   * \param results The result values of the lambda expression, originating from the lambda region.
+   *
+   * \return The output of the lambda node.
+   */
   lambda::output *
-  finalize(const std::vector<jlm::rvsdg::output*> & results);
+  finalize(const std::vector<jlm::rvsdg::output *> & results);
 
   /**
    * Compute the \ref CallSummary of the lambda.
@@ -347,7 +342,7 @@ public:
 };
 
 /** \brief Lambda context variable input
-*/
+ */
 class cvinput final : public jlm::rvsdg::structural_input
 {
   friend ::jlm::llvm::lambda::node;
@@ -356,16 +351,12 @@ public:
   ~cvinput() override;
 
 private:
-  cvinput(
-    lambda::node * node,
-    jlm::rvsdg::output * origin)
-    : structural_input(node, origin, origin->port())
+  cvinput(lambda::node * node, jlm::rvsdg::output * origin)
+      : structural_input(node, origin, origin->port())
   {}
 
   static cvinput *
-  create(
-    lambda::node * node,
-    jlm::rvsdg::output * origin)
+  create(lambda::node * node, jlm::rvsdg::output * origin)
   {
     auto input = std::unique_ptr<cvinput>(new cvinput(node, origin));
     return jlm::util::AssertedCast<cvinput>(node->append_input(std::move(input)));
@@ -383,14 +374,13 @@ public:
 };
 
 /** \brief Lambda context variable iterator
-*/
+ */
 class node::cviterator final : public jlm::rvsdg::input::iterator<cvinput>
 {
   friend ::jlm::llvm::lambda::node;
 
-  constexpr explicit
-  cviterator(cvinput * input)
-    : jlm::rvsdg::input::iterator<cvinput>(input)
+  constexpr explicit cviterator(cvinput * input)
+      : jlm::rvsdg::input::iterator<cvinput>(input)
   {}
 
   [[nodiscard]] cvinput *
@@ -399,19 +389,18 @@ class node::cviterator final : public jlm::rvsdg::input::iterator<cvinput>
     auto node = value()->node();
     auto index = value()->index();
 
-    return node->ninputs() > index+1 ? node->input(index+1) : nullptr;
+    return node->ninputs() > index + 1 ? node->input(index + 1) : nullptr;
   }
 };
 
 /** \brief Lambda context variable const iterator
-*/
+ */
 class node::cvconstiterator final : public jlm::rvsdg::input::constiterator<cvinput>
 {
   friend ::jlm::llvm::lambda::node;
 
-  constexpr explicit
-  cvconstiterator(const cvinput * input)
-    : jlm::rvsdg::input::constiterator<cvinput>(input)
+  constexpr explicit cvconstiterator(const cvinput * input)
+      : jlm::rvsdg::input::constiterator<cvinput>(input)
   {}
 
   [[nodiscard]] const cvinput *
@@ -420,12 +409,12 @@ class node::cvconstiterator final : public jlm::rvsdg::input::constiterator<cvin
     auto node = value()->node();
     auto index = value()->index();
 
-    return node->ninputs() > index+1 ? node->input(index+1) : nullptr;
+    return node->ninputs() > index + 1 ? node->input(index + 1) : nullptr;
   }
 };
 
 /** \brief Lambda output
-*/
+ */
 class output final : public jlm::rvsdg::structural_output
 {
   friend ::jlm::llvm::lambda::node;
@@ -434,16 +423,12 @@ public:
   ~output() override;
 
 private:
-  output(
-    lambda::node * node,
-    const jlm::rvsdg::port & port)
-    : structural_output(node, port)
+  output(lambda::node * node, const jlm::rvsdg::port & port)
+      : structural_output(node, port)
   {}
 
   static output *
-  create(
-    lambda::node * node,
-    const jlm::rvsdg::port & port)
+  create(lambda::node * node, const jlm::rvsdg::port & port)
   {
     auto output = std::unique_ptr<lambda::output>(new lambda::output(node, port));
     return jlm::util::AssertedCast<lambda::output>(node->append_output(std::move(output)));
@@ -458,7 +443,7 @@ public:
 };
 
 /** \brief Lambda function argument
-*/
+ */
 class fctargument final : public jlm::rvsdg::argument
 {
   friend ::jlm::llvm::lambda::node;
@@ -485,16 +470,12 @@ public:
   }
 
 private:
-  fctargument(
-    jlm::rvsdg::region * region,
-    const jlm::rvsdg::type & type)
-    : jlm::rvsdg::argument(region, nullptr, type)
+  fctargument(jlm::rvsdg::region * region, const jlm::rvsdg::type & type)
+      : jlm::rvsdg::argument(region, nullptr, type)
   {}
 
   static fctargument *
-  create(
-    jlm::rvsdg::region * region,
-    const jlm::rvsdg::type & type)
+  create(jlm::rvsdg::region * region, const jlm::rvsdg::type & type)
   {
     auto argument = new fctargument(region, type);
     region->append_argument(argument);
@@ -505,14 +486,13 @@ private:
 };
 
 /** \brief Lambda function argument iterator
-*/
+ */
 class node::fctargiterator final : public jlm::rvsdg::output::iterator<lambda::fctargument>
 {
   friend ::jlm::llvm::lambda::node;
 
-  constexpr explicit
-  fctargiterator(lambda::fctargument * argument)
-    : jlm::rvsdg::output::iterator<lambda::fctargument>(argument)
+  constexpr explicit fctargiterator(lambda::fctargument * argument)
+      : jlm::rvsdg::output::iterator<lambda::fctargument>(argument)
   {}
 
   [[nodiscard]] lambda::fctargument *
@@ -525,21 +505,19 @@ class node::fctargiterator final : public jlm::rvsdg::output::iterator<lambda::f
       This assumes that all function arguments were added to the lambda region
       before any context variable was added.
     */
-    return lambda->nfctarguments() > index+1
-           ? lambda->fctargument(index+1)
-           : nullptr;
+    return lambda->nfctarguments() > index + 1 ? lambda->fctargument(index + 1) : nullptr;
   }
 };
 
 /** \brief Lambda function argument const iterator
-*/
-class node::fctargconstiterator final : public jlm::rvsdg::output::constiterator<lambda::fctargument>
+ */
+class node::fctargconstiterator final
+    : public jlm::rvsdg::output::constiterator<lambda::fctargument>
 {
   friend ::jlm::llvm::lambda::node;
 
-  constexpr explicit
-  fctargconstiterator(const lambda::fctargument * argument)
-    : jlm::rvsdg::output::constiterator<lambda::fctargument>(argument)
+  constexpr explicit fctargconstiterator(const lambda::fctargument * argument)
+      : jlm::rvsdg::output::constiterator<lambda::fctargument>(argument)
   {}
 
   [[nodiscard]] const lambda::fctargument *
@@ -552,14 +530,12 @@ class node::fctargconstiterator final : public jlm::rvsdg::output::constiterator
       This assumes that all function arguments were added to the lambda region
       before any context variable was added.
     */
-    return lambda->nfctarguments() > index+1
-           ? lambda->fctargument(index+1)
-           : nullptr;
+    return lambda->nfctarguments() > index + 1 ? lambda->fctargument(index + 1) : nullptr;
   }
 };
 
 /** \brief Lambda context variable argument
-*/
+ */
 class cvargument final : public jlm::rvsdg::argument
 {
   friend ::jlm::llvm::lambda::node;
@@ -568,16 +544,12 @@ public:
   ~cvargument() override;
 
 private:
-  cvargument(
-    jlm::rvsdg::region * region,
-    cvinput * input)
-    : jlm::rvsdg::argument(region, input, input->port())
+  cvargument(jlm::rvsdg::region * region, cvinput * input)
+      : jlm::rvsdg::argument(region, input, input->port())
   {}
 
   static cvargument *
-  create(
-    jlm::rvsdg::region * region,
-    lambda::cvinput * input)
+  create(jlm::rvsdg::region * region, lambda::cvinput * input)
   {
     auto argument = new cvargument(region, input);
     region->append_argument(argument);
@@ -593,7 +565,7 @@ public:
 };
 
 /** \brief Lambda result
-*/
+ */
 class result final : public jlm::rvsdg::result
 {
   friend ::jlm::llvm::lambda::node;
@@ -602,9 +574,8 @@ public:
   ~result() override;
 
 private:
-  explicit
-  result(jlm::rvsdg::output * origin)
-    : jlm::rvsdg::result(origin->region(), origin, nullptr, origin->port())
+  explicit result(jlm::rvsdg::output * origin)
+      : jlm::rvsdg::result(origin->region(), origin, nullptr, origin->port())
   {}
 
   static result *
@@ -624,14 +595,13 @@ public:
 };
 
 /** \brief Lambda result iterator
-*/
+ */
 class node::fctresiterator final : public jlm::rvsdg::input::iterator<lambda::result>
 {
   friend ::jlm::llvm::lambda::node;
 
-  constexpr explicit
-  fctresiterator(lambda::result * result)
-    : jlm::rvsdg::input::iterator<lambda::result>(result)
+  constexpr explicit fctresiterator(lambda::result * result)
+      : jlm::rvsdg::input::iterator<lambda::result>(result)
   {}
 
   [[nodiscard]] lambda::result *
@@ -640,21 +610,18 @@ class node::fctresiterator final : public jlm::rvsdg::input::iterator<lambda::re
     auto index = value()->index();
     auto lambda = jlm::util::AssertedCast<lambda::node>(value()->region()->node());
 
-    return lambda->nfctresults() > index+1
-           ? lambda->fctresult(index+1)
-           : nullptr;
+    return lambda->nfctresults() > index + 1 ? lambda->fctresult(index + 1) : nullptr;
   }
 };
 
 /** \brief Lambda result const iterator
-*/
+ */
 class node::fctresconstiterator final : public jlm::rvsdg::input::constiterator<lambda::result>
 {
   friend ::jlm::llvm::lambda::node;
 
-  constexpr explicit
-  fctresconstiterator(const lambda::result * result)
-    : jlm::rvsdg::input::constiterator<lambda::result>(result)
+  constexpr explicit fctresconstiterator(const lambda::result * result)
+      : jlm::rvsdg::input::constiterator<lambda::result>(result)
   {}
 
   [[nodiscard]] const lambda::result *
@@ -663,14 +630,13 @@ class node::fctresconstiterator final : public jlm::rvsdg::input::constiterator<
     auto index = value()->index();
     auto lambda = jlm::util::AssertedCast<lambda::node>(value()->region()->node());
 
-    return lambda->nfctresults() > index+1
-           ? lambda->fctresult(index+1)
-           : nullptr;
+    return lambda->nfctresults() > index + 1 ? lambda->fctresult(index + 1) : nullptr;
   }
 };
 
 /**
- * The CallSummary of a lambda summarizes all call usages of the lambda. It distinguishes between three call usages:
+ * The CallSummary of a lambda summarizes all call usages of the lambda. It distinguishes between
+ * three call usages:
  *
  * 1. The export of the lambda, which is null if the lambda is not exported.
  * 2. All direct calls of the lambda.
@@ -678,17 +644,17 @@ class node::fctresconstiterator final : public jlm::rvsdg::input::constiterator<
  */
 class node::CallSummary final
 {
-  using DirectCallsConstRange = util::iterator_range<std::vector<CallNode*>::const_iterator>;
-  using OtherUsersConstRange = util::iterator_range<std::vector<rvsdg::input*>::const_iterator>;
+  using DirectCallsConstRange = util::iterator_range<std::vector<CallNode *>::const_iterator>;
+  using OtherUsersConstRange = util::iterator_range<std::vector<rvsdg::input *>::const_iterator>;
 
 public:
   CallSummary(
-    rvsdg::result * rvsdgExport,
-    std::vector<CallNode*> directCalls,
-    std::vector<rvsdg::input*> otherUsers)
-    : RvsdgExport_(rvsdgExport)
-    , DirectCalls_(std::move(directCalls))
-    , OtherUsers_(std::move(otherUsers))
+      rvsdg::result * rvsdgExport,
+      std::vector<CallNode *> directCalls,
+      std::vector<rvsdg::input *> otherUsers)
+      : RvsdgExport_(rvsdgExport),
+        DirectCalls_(std::move(directCalls)),
+        OtherUsers_(std::move(otherUsers))
   {}
 
   /**
@@ -699,9 +665,7 @@ public:
   [[nodiscard]] bool
   IsDead() const noexcept
   {
-    return RvsdgExport_ == nullptr
-           && DirectCalls_.empty()
-           && OtherUsers_.empty();
+    return RvsdgExport_ == nullptr && DirectCalls_.empty() && OtherUsers_.empty();
   }
 
   /**
@@ -723,9 +687,7 @@ public:
   [[nodiscard]] bool
   IsOnlyExported() const noexcept
   {
-    return RvsdgExport_ != nullptr
-           && DirectCalls_.empty()
-           && OtherUsers_.empty();
+    return RvsdgExport_ != nullptr && DirectCalls_.empty() && OtherUsers_.empty();
   }
 
   /**
@@ -736,13 +698,12 @@ public:
   [[nodiscard]] bool
   HasOnlyDirectCalls() const noexcept
   {
-    return RvsdgExport_ == nullptr
-           && OtherUsers_.empty()
-           && !DirectCalls_.empty();
+    return RvsdgExport_ == nullptr && OtherUsers_.empty() && !DirectCalls_.empty();
   }
 
   /**
-   * Determines whether the lambda has no other usages, i.e., it can only be exported and/or have direct calls.
+   * Determines whether the lambda has no other usages, i.e., it can only be exported and/or have
+   * direct calls.
    *
    * @return True if the lambda has no other usages, otherwise false.
    */
@@ -760,9 +721,7 @@ public:
   [[nodiscard]] bool
   HasOnlyOtherUsages() const noexcept
   {
-    return RvsdgExport_ == nullptr
-           && DirectCalls_.empty()
-           && !OtherUsers_.empty();
+    return RvsdgExport_ == nullptr && DirectCalls_.empty() && !OtherUsers_.empty();
   }
 
   /**
@@ -792,7 +751,7 @@ public:
    *
    * @return The export of the lambda from the RVSDG root region.
    */
-  [[nodiscard]] rvsdg::result*
+  [[nodiscard]] rvsdg::result *
   GetRvsdgExport() const noexcept
   {
     return RvsdgExport_;
@@ -806,7 +765,7 @@ public:
   [[nodiscard]] DirectCallsConstRange
   DirectCalls() const noexcept
   {
-    return {DirectCalls_.begin(), DirectCalls_.end()};
+    return { DirectCalls_.begin(), DirectCalls_.end() };
   }
 
   /**
@@ -817,7 +776,7 @@ public:
   [[nodiscard]] OtherUsersConstRange
   OtherUsers() const noexcept
   {
-    return {OtherUsers_.begin(), OtherUsers_.end()};
+    return { OtherUsers_.begin(), OtherUsers_.end() };
   }
 
   /**
@@ -833,29 +792,31 @@ public:
    */
   static std::unique_ptr<CallSummary>
   Create(
-    rvsdg::result * rvsdgExport,
-    std::vector<CallNode*> directCalls,
-    std::vector<rvsdg::input*> otherUsers)
+      rvsdg::result * rvsdgExport,
+      std::vector<CallNode *> directCalls,
+      std::vector<rvsdg::input *> otherUsers)
   {
     return std::make_unique<CallSummary>(
-      rvsdgExport,
-      std::move(directCalls),
-      std::move(otherUsers));
+        rvsdgExport,
+        std::move(directCalls),
+        std::move(otherUsers));
   }
 
 private:
   rvsdg::result * RvsdgExport_;
-  std::vector<CallNode*> DirectCalls_;
-  std::vector<rvsdg::input*> OtherUsers_;
+  std::vector<CallNode *> DirectCalls_;
+  std::vector<rvsdg::input *> OtherUsers_;
 };
 
-}}
+}
+}
 
 static inline bool
 is_exported(const jlm::llvm::lambda::node & lambda)
 {
-  for (auto & user : *lambda.output()) {
-    if (dynamic_cast<const jlm::rvsdg::expport*>(&user->port()))
+  for (auto & user : *lambda.output())
+  {
+    if (dynamic_cast<const jlm::rvsdg::expport *>(&user->port()))
       return true;
   }
 

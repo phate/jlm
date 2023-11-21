@@ -12,12 +12,12 @@ main(int argc, char ** argv)
   using namespace jlm::tooling;
 
   JlcCommandLineParser commandLineParser;
-  const JlcCommandLineOptions* commandLineOptions;
+  const JlcCommandLineOptions * commandLineOptions;
   try
   {
     commandLineOptions = &commandLineParser.ParseCommandLineArguments(argc, argv);
   }
-  catch(const CommandLineParser::Exception& e)
+  catch (const CommandLineParser::Exception & e)
   {
     std::cerr << e.what() << std::endl;
     exit(EXIT_FAILURE);

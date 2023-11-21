@@ -15,12 +15,13 @@ namespace jlm::llvm::aa
 
 /** \brief Agnostic memory node provider
  *
- * The key idea of the agnostic memory node provider is that \b all memory states are routed through \b all
- * structural nodes irregardless of whether these states are required by any simple nodes within the structural nodes.
- * This strategy ensures that the state of a memory location is always present for encoding while avoiding the
- * complexity of an additional analysis for determining the required routing path of the states. The drawback is that
- * a lot of states are routed through structural nodes where they are not needed, potentially leading to a significant
- * runtime of the encoder for bigger RVSDGs.
+ * The key idea of the agnostic memory node provider is that \b all memory states are routed through
+ * \b all structural nodes irregardless of whether these states are required by any simple nodes
+ * within the structural nodes. This strategy ensures that the state of a memory location is always
+ * present for encoding while avoiding the complexity of an additional analysis for determining the
+ * required routing path of the states. The drawback is that a lot of states are routed through
+ * structural nodes where they are not needed, potentially leading to a significant runtime of the
+ * encoder for bigger RVSDGs.
  *
  * @see MemoryNodeProvider
  * @see MemoryStateEncoder
@@ -34,21 +35,21 @@ public:
 
   AgnosticMemoryNodeProvider() = default;
 
-  AgnosticMemoryNodeProvider(const AgnosticMemoryNodeProvider&) = delete;
+  AgnosticMemoryNodeProvider(const AgnosticMemoryNodeProvider &) = delete;
 
-  AgnosticMemoryNodeProvider(AgnosticMemoryNodeProvider&&) = delete;
-
-  AgnosticMemoryNodeProvider &
-  operator=(const AgnosticMemoryNodeProvider&) = delete;
+  AgnosticMemoryNodeProvider(AgnosticMemoryNodeProvider &&) = delete;
 
   AgnosticMemoryNodeProvider &
-  operator=(AgnosticMemoryNodeProvider&&) = delete;
+  operator=(const AgnosticMemoryNodeProvider &) = delete;
+
+  AgnosticMemoryNodeProvider &
+  operator=(AgnosticMemoryNodeProvider &&) = delete;
 
   std::unique_ptr<MemoryNodeProvisioning>
   ProvisionMemoryNodes(
-    const RvsdgModule & rvsdgModule,
-    const PointsToGraph & pointsToGraph,
-    util::StatisticsCollector & statisticsCollector) override;
+      const RvsdgModule & rvsdgModule,
+      const PointsToGraph & pointsToGraph,
+      util::StatisticsCollector & statisticsCollector) override;
 
   /**
    * Creates a AgnosticMemoryNodeProvider and calls the ProvisionMemoryNodes() method.
@@ -61,9 +62,9 @@ public:
    */
   static std::unique_ptr<MemoryNodeProvisioning>
   Create(
-    const RvsdgModule & rvsdgModule,
-    const PointsToGraph & pointsToGraph,
-    util::StatisticsCollector & statisticsCollector);
+      const RvsdgModule & rvsdgModule,
+      const PointsToGraph & pointsToGraph,
+      util::StatisticsCollector & statisticsCollector);
 
   /**
    * Creates a AgnosticMemoryNodeProvider and calls the ProvisionMemoryNodes() method.
@@ -74,9 +75,7 @@ public:
    * @return A new instance of MemoryNodeProvisioning.
    */
   static std::unique_ptr<MemoryNodeProvisioning>
-  Create(
-    const RvsdgModule & rvsdgModule,
-    const PointsToGraph & pointsToGraph);
+  Create(const RvsdgModule & rvsdgModule, const PointsToGraph & pointsToGraph);
 };
 
 /** \brief Agnostic memory node provider statistics
@@ -89,13 +88,13 @@ class AgnosticMemoryNodeProvider::Statistics final : public util::Statistics
 {
 public:
   Statistics(
-    util::filepath sourceFile,
-    const util::StatisticsCollector & statisticsCollector,
-    const PointsToGraph & pointsToGraph)
-    : util::Statistics(Statistics::Id::MemoryNodeProvisioning)
-    , SourceFile_(std::move(sourceFile))
-    , NumPointsToGraphMemoryNodes_(0)
-    , StatisticsCollector_(statisticsCollector)
+      util::filepath sourceFile,
+      const util::StatisticsCollector & statisticsCollector,
+      const PointsToGraph & pointsToGraph)
+      : util::Statistics(Statistics::Id::MemoryNodeProvisioning),
+        SourceFile_(std::move(sourceFile)),
+        NumPointsToGraphMemoryNodes_(0),
+        StatisticsCollector_(statisticsCollector)
   {
     if (!StatisticsCollector_.IsDemanded(*this))
       return;
@@ -115,7 +114,7 @@ public:
     return Timer_.ns();
   }
 
-  [[nodiscard]] const util::filepath&
+  [[nodiscard]] const util::filepath &
   GetSourceFile() const noexcept
   {
     return SourceFile_;
@@ -143,18 +142,21 @@ public:
   ToString() const override
   {
     return util::strfmt(
-      "AgnosticMemoryNodeProvider ",
-      SourceFile_.to_str(), " ",
-      "#PointsToGraphMemoryNodes:", NumPointsToGraphMemoryNodes_, " ",
-      "Time[ns]:", Timer_.ns()
-      );
+        "AgnosticMemoryNodeProvider ",
+        SourceFile_.to_str(),
+        " ",
+        "#PointsToGraphMemoryNodes:",
+        NumPointsToGraphMemoryNodes_,
+        " ",
+        "Time[ns]:",
+        Timer_.ns());
   }
 
   static std::unique_ptr<Statistics>
   Create(
-    const util::filepath & sourceFile,
-    const util::StatisticsCollector & statisticsCollector,
-    const PointsToGraph & pointsToGraph)
+      const util::filepath & sourceFile,
+      const util::StatisticsCollector & statisticsCollector,
+      const PointsToGraph & pointsToGraph)
   {
     return std::make_unique<Statistics>(sourceFile, statisticsCollector, pointsToGraph);
   }
@@ -168,4 +170,4 @@ private:
 
 }
 
-#endif //JLM_LLVM_OPT_ALIAS_ANALYSES_AGNOSTICMEMORYNODEPROVIDER_HPP
+#endif // JLM_LLVM_OPT_ALIAS_ANALYSES_AGNOSTICMEMORYNODEPROVIDER_HPP

@@ -16,20 +16,20 @@ alloca_op::~alloca_op() noexcept
 bool
 alloca_op::operator==(const operation & other) const noexcept
 {
-	/* Avoid CNE for alloca operators */
-	return this == &other;
+  /* Avoid CNE for alloca operators */
+  return this == &other;
 }
 
 std::string
 alloca_op::debug_string() const
 {
-	return "ALLOCA[" + value_type().debug_string() + "]";
+  return "ALLOCA[" + value_type().debug_string() + "]";
 }
 
 std::unique_ptr<rvsdg::operation>
 alloca_op::copy() const
 {
-	return std::unique_ptr<rvsdg::operation>(new alloca_op(*this));
+  return std::unique_ptr<rvsdg::operation>(new alloca_op(*this));
 }
 
 }

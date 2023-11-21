@@ -1,0 +1,119 @@
+---
+Language:      Cpp
+Standard:      Latest
+BasedOnStyle:  LLVM
+
+# int * a and int & a
+PointerAlignment: Middle
+ReferenceAlignment: Pointer
+SpaceAroundPointerQualifiers: Both
+# Don't touch position of "const int *" vs "int const *"
+QualifierAlignment: Leave
+
+ColumnLimit: 100
+
+# Indentation width related flags
+IndentWidth: 2
+TabWidth:    2
+UseTab:      Never
+ConstructorInitializerIndentWidth: 4
+ContinuationIndentWidth: 4
+IndentCaseBlocks: false
+IndentCaseLabels: false
+IndentExternBlock: NoIndent
+NamespaceIndentation: None
+
+# Newline rules
+InsertNewlineAtEOF: true
+LineEnding: LF
+MaxEmptyLinesToKeep: 1
+
+# Collection of all brace wrapping rules
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterCaseLabel:  true
+  AfterClass:      true
+  AfterControlStatement: Always
+  AfterEnum:       true
+  AfterExternBlock: true
+  AfterFunction:   true
+  AfterNamespace:  true
+  AfterStruct:     true
+  AfterUnion:      true
+  BeforeCatch:     true
+  BeforeElse:      true
+  BeforeLambdaBody: true
+  BeforeWhile:     false
+  IndentBraces:    false
+  SplitEmptyFunction: false # Allow empty functions to have {} body
+  SplitEmptyRecord: true
+  SplitEmptyNamespace: true
+
+# Inserting space settings, pretty much all of these are default
+SpaceAfterTemplateKeyword: false
+# vector<int>{1, 2, 3}
+SpaceBeforeCpp11BracedList: false
+# if (...), but func();
+SpaceBeforeParens: ControlStatements
+# for (auto it : myList) {
+SpaceBeforeRangeBasedForLoopColon: true
+# vector<int>
+SpacesInAngles: Never
+
+# class X
+# {
+# public:
+#   int field;
+AccessModifierOffset: -2
+
+AlignEscapedNewlines: Left
+AlignOperands: AlignAfterOperator
+BreakBeforeBinaryOperators: NonAssignment
+
+# if arguments or parameters overflow, give them a line each
+BinPackArguments: false
+BinPackParameters: false
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+# If parameters/arguments don't fit on a single line, put the first parameter on the next line
+AlignAfterOpenBracket: AlwaysBreak
+
+# Always give constructor initializers their own line
+PackConstructorInitializers: Never
+
+# Avoid exceptions for short blocks
+AllowShortBlocksOnASingleLine: Never
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLambdasOnASingleLine: None
+AllowShortLoopsOnASingleLine: false
+
+# We like to do [[nodiscard]] int
+BreakAfterAttributes: Never
+# const int &
+# MyFunction()
+AlwaysBreakAfterReturnType: All
+AlwaysBreakTemplateDeclarations: Yes
+
+# Makes initializer lists a bit more spacious { 1, 2, 3 }
+Cpp11BracedListStyle: false
+
+# false: do not add // jlm::rvsdg::delta to the closing curly bracket
+FixNamespaceComments: false
+
+# Allow multiple alphabetically sorted include blocks
+IncludeBlocks:   Preserve
+# Only have one category, use alphabetical sorting within each include block
+IncludeCategories:
+  - Regex:           '.*'
+    Priority:        1
+    SortPriority:    0
+    CaseSensitive:   false
+IncludeIsMainRegex: '^(Test)?'
+SortIncludes: CaseInsensitive
+SortUsingDeclarations: LexicographicNumeric
+
+ReflowComments:  true
+
+# Changed from "Leave", forces space between definitions (functions, classes, structs)
+SeparateDefinitionBlocks: Always

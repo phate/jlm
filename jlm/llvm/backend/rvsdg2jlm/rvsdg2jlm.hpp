@@ -19,13 +19,13 @@ namespace jlm::llvm
 class ipgraph_module;
 class RvsdgModule;
 
-namespace rvsdg2jlm {
+namespace rvsdg2jlm
+{
 
 std::unique_ptr<ipgraph_module>
-rvsdg2jlm(
-  const RvsdgModule & rm,
-  jlm::util::StatisticsCollector & statisticsCollector);
+rvsdg2jlm(const RvsdgModule & rm, jlm::util::StatisticsCollector & statisticsCollector);
 
-}}
+}
+}
 
 #endif

@@ -24,195 +24,199 @@ emit_tac(const llvm::tac &);
 static std::string
 emit_tacs(const tacsvector_t & tacs)
 {
-	std::string str;
-	for (const auto & tac : tacs)
-		str += emit_tac(*tac) + ", ";
+  std::string str;
+  for (const auto & tac : tacs)
+    str += emit_tac(*tac) + ", ";
 
-	return "[" + str + "]";
+  return "[" + str + "]";
 }
 
 static inline std::string
 emit_entry(const cfg_node * node)
 {
-	JLM_ASSERT(is<entry_node>(node));
-	auto & en = *static_cast<const entry_node*>(node);
+  JLM_ASSERT(is<entry_node>(node));
+  auto & en = *static_cast<const entry_node *>(node);
 
-	std::string str;
-	for (size_t n = 0; n < en.narguments(); n++)
-		str += en.argument(n)->debug_string() + " ";
+  std::string str;
+  for (size_t n = 0; n < en.narguments(); n++)
+    str += en.argument(n)->debug_string() + " ";
 
-	return str + "\n";
+  return str + "\n";
 }
 
 static inline std::string
 emit_exit(const cfg_node * node)
 {
-	JLM_ASSERT(is<exit_node>(node));
-	auto & xn = *static_cast<const exit_node*>(node);
+  JLM_ASSERT(is<exit_node>(node));
+  auto & xn = *static_cast<const exit_node *>(node);
 
-	std::string str;
-	for (size_t n = 0; n < xn.nresults(); n++)
-		str += xn.result(n)->debug_string() + " ";
+  std::string str;
+  for (size_t n = 0; n < xn.nresults(); n++)
+    str += xn.result(n)->debug_string() + " ";
 
-	return str;
+  return str;
 }
 
 static inline std::string
 emit_tac(const llvm::tac & tac)
 {
-	/* convert results */
-	std::string results;
-	for (size_t n = 0; n < tac.nresults(); n++) {
-		results += tac.result(n)->debug_string();
-		if (n != tac.nresults()-1)
-			results += ", ";
-	}
+  /* convert results */
+  std::string results;
+  for (size_t n = 0; n < tac.nresults(); n++)
+  {
+    results += tac.result(n)->debug_string();
+    if (n != tac.nresults() - 1)
+      results += ", ";
+  }
 
-	/* convert operands */
-	std::string operands;
-	for (size_t n = 0; n < tac.noperands(); n++) {
-		operands += tac.operand(n)->debug_string();
-		if (n != tac.noperands()-1)
-			operands += ", ";
-	}
+  /* convert operands */
+  std::string operands;
+  for (size_t n = 0; n < tac.noperands(); n++)
+  {
+    operands += tac.operand(n)->debug_string();
+    if (n != tac.noperands() - 1)
+      operands += ", ";
+  }
 
-	std::string op = tac.operation().debug_string();
-	return results + (results.empty() ? "" : " = ") + op + " " + operands;
+  std::string op = tac.operation().debug_string();
+  return results + (results.empty() ? "" : " = ") + op + " " + operands;
 }
 
 static inline std::string
 emit_label(const cfg_node * node)
 {
-	return util::strfmt(node);
+  return util::strfmt(node);
 }
 
 static inline std::string
 emit_targets(const cfg_node * node)
 {
-	size_t n = 0;
-	std::string str("[");
-	for (auto it = node->begin_outedges(); it != node->end_outedges(); it++, n++) {
-		str += emit_label(it->sink());
-		if (n != node->noutedges()-1)
-			str += ", ";
-	}
-	str += "]";
+  size_t n = 0;
+  std::string str("[");
+  for (auto it = node->begin_outedges(); it != node->end_outedges(); it++, n++)
+  {
+    str += emit_label(it->sink());
+    if (n != node->noutedges() - 1)
+      str += ", ";
+  }
+  str += "]";
 
-	return str;
+  return str;
 }
 
 static inline std::string
 emit_basic_block(const cfg_node * node)
 {
-	JLM_ASSERT(is<basic_block>(node));
-	auto & tacs = static_cast<const basic_block*>(node)->tacs();
+  JLM_ASSERT(is<basic_block>(node));
+  auto & tacs = static_cast<const basic_block *>(node)->tacs();
 
-	std::string str;
-	for (const auto & tac : tacs) {
-		str += "\t" + emit_tac(*tac);
-		if (tac != tacs.last())
-			str += "\n";
-	}
+  std::string str;
+  for (const auto & tac : tacs)
+  {
+    str += "\t" + emit_tac(*tac);
+    if (tac != tacs.last())
+      str += "\n";
+  }
 
-	if (tacs.last()) {
-		if (is<branch_op>(tacs.last()->operation()))
-			str += " " + emit_targets(node);
-		else
-			str += "\n\t" + emit_targets(node);
-	}	else {
-		str += "\t" + emit_targets(node);
-	}
+  if (tacs.last())
+  {
+    if (is<branch_op>(tacs.last()->operation()))
+      str += " " + emit_targets(node);
+    else
+      str += "\n\t" + emit_targets(node);
+  }
+  else
+  {
+    str += "\t" + emit_targets(node);
+  }
 
-	return str + "\n";
+  return str + "\n";
 }
 
 std::string
 to_str(const llvm::cfg & cfg)
 {
-	static
-	std::unordered_map<std::type_index, std::string(*)(const cfg_node*)> map({
-	  {typeid(entry_node), emit_entry}
-	, {typeid(exit_node), emit_exit}
-	, {typeid(basic_block), emit_basic_block}
-	});
+  static std::unordered_map<std::type_index, std::string (*)(const cfg_node *)> map(
+      { { typeid(entry_node), emit_entry },
+        { typeid(exit_node), emit_exit },
+        { typeid(basic_block), emit_basic_block } });
 
-	std::string str;
-	auto nodes = breadth_first(cfg);
-	for (const auto & node : nodes) {
-		str += emit_label(node) + ":";
-		str += (is<basic_block>(node) ? "\n" : " ");
+  std::string str;
+  auto nodes = breadth_first(cfg);
+  for (const auto & node : nodes)
+  {
+    str += emit_label(node) + ":";
+    str += (is<basic_block>(node) ? "\n" : " ");
 
-		JLM_ASSERT(map.find(typeid(*node)) != map.end());
-		str += map[typeid(*node)](node) + "\n";
-	}
+    JLM_ASSERT(map.find(typeid(*node)) != map.end());
+    str += map[typeid(*node)](node) + "\n";
+  }
 
-	return str;
+  return str;
 }
 
 static std::string
 emit_function_node(const ipgraph_node & clg_node)
 {
-	JLM_ASSERT(dynamic_cast<const function_node*>(&clg_node));
-	auto & node = *static_cast<const function_node*>(&clg_node);
+  JLM_ASSERT(dynamic_cast<const function_node *>(&clg_node));
+  auto & node = *static_cast<const function_node *>(&clg_node);
 
-	const auto & fcttype = node.fcttype();
+  const auto & fcttype = node.fcttype();
 
-	/* convert result types */
-	std::string results("<");
-	for(size_t n = 0; n < fcttype.NumResults(); n++) {
-		results += fcttype.ResultType(n).debug_string();
-		if (n != fcttype.NumResults()-1)
-			results += ", ";
-	}
-	results += ">";
+  /* convert result types */
+  std::string results("<");
+  for (size_t n = 0; n < fcttype.NumResults(); n++)
+  {
+    results += fcttype.ResultType(n).debug_string();
+    if (n != fcttype.NumResults() - 1)
+      results += ", ";
+  }
+  results += ">";
 
-	/* convert operand types */
-	std::string operands("<");
-	for (size_t n = 0; n < fcttype.NumArguments(); n++) {
-		operands += fcttype.ArgumentType(n).debug_string();
-		if (n != fcttype.NumArguments()-1)
-			operands += ", ";
-	}
-	operands += ">";
+  /* convert operand types */
+  std::string operands("<");
+  for (size_t n = 0; n < fcttype.NumArguments(); n++)
+  {
+    operands += fcttype.ArgumentType(n).debug_string();
+    if (n != fcttype.NumArguments() - 1)
+      operands += ", ";
+  }
+  operands += ">";
 
-	std::string cfg = node.cfg() ? to_str(*node.cfg()) : "";
-	std::string exported = !is_externally_visible(node.linkage()) ? "static" : "";
+  std::string cfg = node.cfg() ? to_str(*node.cfg()) : "";
+  std::string exported = !is_externally_visible(node.linkage()) ? "static" : "";
 
-	return exported + results + " " + node.name() + " " + operands + "\n{\n" + cfg + "}\n";
+  return exported + results + " " + node.name() + " " + operands + "\n{\n" + cfg + "}\n";
 }
 
 static std::string
 emit_data_node(const ipgraph_node & clg_node)
 {
-	JLM_ASSERT(dynamic_cast<const data_node*>(&clg_node));
-	auto & node = *static_cast<const data_node*>(&clg_node);
-	auto init = node.initialization();
+  JLM_ASSERT(dynamic_cast<const data_node *>(&clg_node));
+  auto & node = *static_cast<const data_node *>(&clg_node);
+  auto init = node.initialization();
 
-	std::string str = node.name();
-	if (init)
-		str += " = " + emit_tacs(init->tacs());
+  std::string str = node.name();
+  if (init)
+    str += " = " + emit_tacs(init->tacs());
 
-	return str;
+  return str;
 }
 
 std::string
 to_str(const ipgraph & clg)
 {
-	static std::unordered_map<
-		std::type_index,
-		std::function<std::string(const ipgraph_node&)>
-	> map({
-		{typeid(function_node), emit_function_node}
-	, {typeid(data_node), emit_data_node}
-	});
+  static std::unordered_map<std::type_index, std::function<std::string(const ipgraph_node &)>> map(
+      { { typeid(function_node), emit_function_node }, { typeid(data_node), emit_data_node } });
 
-	std::string str;
-	for (const auto & node : clg) {
-		JLM_ASSERT(map.find(typeid(node)) != map.end());
-		str += map[typeid(node)](node) + "\n";
-	}
+  std::string str;
+  for (const auto & node : clg)
+  {
+    JLM_ASSERT(map.find(typeid(node)) != map.end());
+    str += map[typeid(node)](node) + "\n";
+  }
 
-	return str;
+  return str;
 }
 
 /* dot converters */
@@ -220,119 +224,133 @@ to_str(const ipgraph & clg)
 static inline std::string
 emit_entry_dot(const cfg_node & node)
 {
-	JLM_ASSERT(is<entry_node>(&node));
-	auto en = static_cast<const entry_node*>(&node);
+  JLM_ASSERT(is<entry_node>(&node));
+  auto en = static_cast<const entry_node *>(&node);
 
-	std::string str;
-	for (size_t n = 0; n < en->narguments(); n++) {
-		auto argument = en->argument(n);
-		str += "<" + argument->type().debug_string() + "> " + argument->name() + "\\n";
-	}
+  std::string str;
+  for (size_t n = 0; n < en->narguments(); n++)
+  {
+    auto argument = en->argument(n);
+    str += "<" + argument->type().debug_string() + "> " + argument->name() + "\\n";
+  }
 
-	return str;
+  return str;
 }
 
 static inline std::string
 emit_exit_dot(const cfg_node & node)
 {
-	JLM_ASSERT(is<exit_node>(&node));
-	auto xn = static_cast<const exit_node*>(&node);
+  JLM_ASSERT(is<exit_node>(&node));
+  auto xn = static_cast<const exit_node *>(&node);
 
-	std::string str;
-	for (size_t n = 0; n < xn->nresults(); n++) {
-		auto result = xn->result(n);
-		str += "<" + result->type().debug_string() + "> " + result->name() + "\\n";
-	}
+  std::string str;
+  for (size_t n = 0; n < xn->nresults(); n++)
+  {
+    auto result = xn->result(n);
+    str += "<" + result->type().debug_string() + "> " + result->name() + "\\n";
+  }
 
-	return str;
+  return str;
 }
 
 static inline std::string
 emit_basic_block(const cfg_node & node)
 {
-	JLM_ASSERT(is<basic_block>(&node));
-	auto & tacs = static_cast<const basic_block*>(&node)->tacs();
+  JLM_ASSERT(is<basic_block>(&node));
+  auto & tacs = static_cast<const basic_block *>(&node)->tacs();
 
-	std::string str;
-	for (const auto & tac : tacs)
-		str += emit_tac(*tac) + "\\n";
+  std::string str;
+  for (const auto & tac : tacs)
+    str += emit_tac(*tac) + "\\n";
 
-	return str;
+  return str;
 }
 
 static inline std::string
 emit_header(const cfg_node & node)
 {
-	if (is<entry_node>(&node))
-		return "ENTRY";
+  if (is<entry_node>(&node))
+    return "ENTRY";
 
-	if (is<exit_node>(&node))
-		return "EXIT";
+  if (is<exit_node>(&node))
+    return "EXIT";
 
-	return util::strfmt(&node);
+  return util::strfmt(&node);
 }
 
 static inline std::string
 emit_node(const cfg_node & node)
 {
-	static
-	std::unordered_map<std::type_index, std::string(*)(const cfg_node &)> map({
-	  {typeid(entry_node), emit_entry_dot}
-	, {typeid(exit_node), emit_exit_dot}
-	, {typeid(basic_block), emit_basic_block}
-	});
+  static std::unordered_map<std::type_index, std::string (*)(const cfg_node &)> map(
+      { { typeid(entry_node), emit_entry_dot },
+        { typeid(exit_node), emit_exit_dot },
+        { typeid(basic_block), emit_basic_block } });
 
-	JLM_ASSERT(map.find(typeid(node)) != map.end());
-	std::string body = map[typeid(node)](node);
+  JLM_ASSERT(map.find(typeid(node)) != map.end());
+  std::string body = map[typeid(node)](node);
 
-	return emit_header(node) + "\\n" + body;
+  return emit_header(node) + "\\n" + body;
 }
 
 std::string
 to_dot(const llvm::cfg & cfg)
 {
-	auto entry = cfg.entry();
-	auto exit = cfg.exit();
+  auto entry = cfg.entry();
+  auto exit = cfg.exit();
 
-	std::string dot("digraph cfg {\n");
+  std::string dot("digraph cfg {\n");
 
-	/* emit entry node */
-	dot += util::strfmt("{ rank = source; ", (intptr_t)entry, "[shape=box, label = \"",
-		emit_node(*entry), "\"]; }\n");
-	dot += util::strfmt((intptr_t)entry, " -> ", (intptr_t)entry->outedge(0)->sink(), "[label=\"0\"];\n");
+  /* emit entry node */
+  dot += util::strfmt(
+      "{ rank = source; ",
+      (intptr_t)entry,
+      "[shape=box, label = \"",
+      emit_node(*entry),
+      "\"]; }\n");
+  dot += util::strfmt(
+      (intptr_t)entry,
+      " -> ",
+      (intptr_t)entry->outedge(0)->sink(),
+      "[label=\"0\"];\n");
 
+  /* emit exit node */
+  dot += util::strfmt(
+      "{ rank = sink; ",
+      (intptr_t)exit,
+      "[shape=box, label = \"",
+      emit_node(*exit),
+      "\"]; }\n");
 
-	/* emit exit node */
-	dot += util::strfmt("{ rank = sink; ", (intptr_t)exit, "[shape=box, label = \"",
-		emit_node(*exit), "\"]; }\n");
+  for (const auto & node : cfg)
+  {
+    dot += util::strfmt("{", (intptr_t)&node);
+    dot += util::strfmt("[shape = box, label = \"", emit_node(node), "\"]; }\n");
+    for (auto it = node.begin_outedges(); it != node.end_outedges(); it++)
+    {
+      dot += util::strfmt((intptr_t)it->source(), " -> ", (intptr_t)it->sink());
+      dot += util::strfmt("[label = \"", it->index(), "\"];\n");
+    }
+  }
+  dot += "}\n";
 
-	for (const auto & node : cfg) {
-		dot += util::strfmt("{", (intptr_t)&node);
-		dot += util::strfmt("[shape = box, label = \"", emit_node(node), "\"]; }\n");
-		for (auto it = node.begin_outedges(); it != node.end_outedges(); it++) {
-			dot += util::strfmt((intptr_t)it->source(), " -> ", (intptr_t)it->sink());
-			dot += util::strfmt("[label = \"", it->index(), "\"];\n");
-		}
-	}
-	dot += "}\n";
-
-	return dot;
+  return dot;
 }
 
 std::string
 to_dot(const ipgraph & clg)
 {
-	std::string dot("digraph clg {\n");
-	for (const auto & node : clg) {
-		dot += util::strfmt((intptr_t)&node);
-		dot += util::strfmt("[label = \"", node.name(), "\"];\n");
+  std::string dot("digraph clg {\n");
+  for (const auto & node : clg)
+  {
+    dot += util::strfmt((intptr_t)&node);
+    dot += util::strfmt("[label = \"", node.name(), "\"];\n");
 
-		for (const auto & call : node)
-			dot += util::strfmt((intptr_t)&node, " -> ", (intptr_t)call, ";\n");
-	}
-	dot += "}\n";
+    for (const auto & call : node)
+      dot += util::strfmt((intptr_t)&node, " -> ", (intptr_t)call, ";\n");
+  }
+  dot += "}\n";
 
-	return dot;
+  return dot;
 }
 
 /* aggregation node */
@@ -340,18 +358,16 @@ to_dot(const ipgraph & clg)
 std::string
 to_str(const aggnode & n, const AnnotationMap & dm)
 {
-  std::function<std::string(const aggnode&, size_t)> f = [&] (
-    const aggnode & n,
-    size_t depth
-  ) {
+  std::function<std::string(const aggnode &, size_t)> f = [&](const aggnode & n, size_t depth)
+  {
     std::string subtree(depth, '-');
     subtree += n.debug_string();
 
     if (dm.Contains(n))
-		  subtree += " " + dm.Lookup<AnnotationSet>(n).DebugString() + "\n";
+      subtree += " " + dm.Lookup<AnnotationSet>(n).DebugString() + "\n";
 
     for (const auto & child : n)
-      subtree += f(child, depth+1);
+      subtree += f(child, depth + 1);
 
     return subtree;
   };
@@ -362,8 +378,8 @@ to_str(const aggnode & n, const AnnotationMap & dm)
 void
 print(const aggnode & n, const AnnotationMap & dm, FILE * out)
 {
-	fputs(to_str(n, dm).c_str(), out);
-	fflush(out);
+  fputs(to_str(n, dm).c_str(), out);
+  fflush(out);
 }
 
 }

@@ -12,33 +12,33 @@
 static void
 test_divert_inedges()
 {
-	using namespace jlm::llvm;
+  using namespace jlm::llvm;
 
-	/* setup cfg */
+  /* setup cfg */
 
-	ipgraph_module im(jlm::util::filepath(""), "", "");
+  ipgraph_module im(jlm::util::filepath(""), "", "");
 
-	jlm::llvm::cfg cfg(im);
+  jlm::llvm::cfg cfg(im);
 
-	auto bb0 = basic_block::create(cfg);
+  auto bb0 = basic_block::create(cfg);
 
-	cfg.exit()->divert_inedges(bb0);
-	bb0->add_outedge(bb0);
-	bb0->add_outedge(cfg.exit());
+  cfg.exit()->divert_inedges(bb0);
+  bb0->add_outedge(bb0);
+  bb0->add_outedge(cfg.exit());
 
-	print_ascii(cfg, stdout);
+  print_ascii(cfg, stdout);
 
-	/* verify inedge diversion */
+  /* verify inedge diversion */
 
-	bb0->divert_inedges(bb0);
+  bb0->divert_inedges(bb0);
 }
 
 static int
 test()
 {
-	test_divert_inedges();
+  test_divert_inedges();
 
-	return 0;
+  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/test-cfg-node", test)

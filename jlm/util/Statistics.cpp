@@ -8,8 +8,7 @@
 namespace jlm::util
 {
 
-Statistics::~Statistics()
-= default;
+Statistics::~Statistics() = default;
 
 void
 StatisticsCollector::PrintStatistics() const

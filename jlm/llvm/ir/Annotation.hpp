@@ -20,20 +20,20 @@ namespace jlm::llvm
 class aggnode;
 class variable;
 
-class VariableSet final {
+class VariableSet final
+{
 
   class ConstIterator final
   {
   public:
     using iterator_category = std::forward_iterator_tag;
-    using value_type = const llvm::variable*;
+    using value_type = const llvm::variable *;
     using difference_type = std::ptrdiff_t;
-    using pointer = const llvm::variable**;
-    using reference = const llvm::variable*&;
+    using pointer = const llvm::variable **;
+    using reference = const llvm::variable *&;
 
-    explicit
-    ConstIterator(const std::unordered_set<const llvm::variable*>::const_iterator & it)
-      : It_(it)
+    explicit ConstIterator(const std::unordered_set<const llvm::variable *>::const_iterator & it)
+        : It_(it)
     {}
 
   public:
@@ -83,30 +83,29 @@ class VariableSet final {
     }
 
   private:
-    std::unordered_set<const llvm::variable*>::const_iterator It_;
+    std::unordered_set<const llvm::variable *>::const_iterator It_;
   };
 
   using ConstRange = jlm::util::iterator_range<ConstIterator>;
 
 public:
-  VariableSet()
-  = default;
+  VariableSet() = default;
 
-  VariableSet(std::initializer_list<const variable*> init)
-  : Set_(init)
+  VariableSet(std::initializer_list<const variable *> init)
+      : Set_(init)
   {}
 
   ConstRange
   Variables() const noexcept
   {
-    return {ConstIterator(Set_.begin()), ConstIterator(Set_.end())};
+    return { ConstIterator(Set_.begin()), ConstIterator(Set_.end()) };
   }
 
-	bool
-	Contains(const variable & v) const
-	{
-		return Set_.find(&v) != Set_.end();
-	}
+  bool
+  Contains(const variable & v) const
+  {
+    return Set_.find(&v) != Set_.end();
+  }
 
   bool
   Contains(const VariableSet & variableSet) const
@@ -115,101 +114,105 @@ public:
       return false;
 
     return std::all_of(
-      variableSet.Set_.begin(),
-      variableSet.Set_.end(),
-      [&](const variable * v){ return Contains(*v); });
+        variableSet.Set_.begin(),
+        variableSet.Set_.end(),
+        [&](const variable * v)
+        {
+          return Contains(*v);
+        });
   }
 
-	size_t
-	Size() const noexcept
-	{
-		return Set_.size();
-	}
+  size_t
+  Size() const noexcept
+  {
+    return Set_.size();
+  }
 
-	void
-	Insert(const variable & v)
-	{
-		Set_.insert(&v);
-	}
+  void
+  Insert(const variable & v)
+  {
+    Set_.insert(&v);
+  }
 
-	void
-	Insert(const VariableSet & variableSet)
-	{
-		Set_.insert(variableSet.Set_.begin(), variableSet.Set_.end());
-	}
+  void
+  Insert(const VariableSet & variableSet)
+  {
+    Set_.insert(variableSet.Set_.begin(), variableSet.Set_.end());
+  }
 
-	void
-	Remove(const variable & v)
-	{
-		Set_.erase(&v);
-	}
+  void
+  Remove(const variable & v)
+  {
+    Set_.erase(&v);
+  }
 
-	void
-	Remove(const VariableSet & variableSet)
-	{
-		for (auto & v : variableSet.Variables())
-			Remove(v);
-	}
+  void
+  Remove(const VariableSet & variableSet)
+  {
+    for (auto & v : variableSet.Variables())
+      Remove(v);
+  }
 
-	void
-	Intersect(const VariableSet & variableSet)
-	{
-    for (auto it = Set_.begin(); it != Set_.end();) {
+  void
+  Intersect(const VariableSet & variableSet)
+  {
+    for (auto it = Set_.begin(); it != Set_.end();)
+    {
       if (!variableSet.Contains(**it))
         it = Set_.erase(it);
       else
         it++;
     }
-	}
+  }
 
-	bool
-	operator==(const VariableSet & other) const
-	{
-		if (Size() != other.Size())
-			return false;
+  bool
+  operator==(const VariableSet & other) const
+  {
+    if (Size() != other.Size())
+      return false;
 
     return std::all_of(
-      Set_.begin(),
-      Set_.end(),
-      [&](const variable * v){ return Contains(*v); });
-	}
+        Set_.begin(),
+        Set_.end(),
+        [&](const variable * v)
+        {
+          return Contains(*v);
+        });
+  }
 
-	bool
-	operator!=(const VariableSet & other) const
-	{
-		return !(*this == other);
-	}
+  bool
+  operator!=(const VariableSet & other) const
+  {
+    return !(*this == other);
+  }
 
   std::string
   DebugString() const noexcept;
 
 private:
-	std::unordered_set<const variable*> Set_;
+  std::unordered_set<const variable *> Set_;
 };
 
-class AnnotationSet {
+class AnnotationSet
+{
 public:
-	virtual
-	~AnnotationSet() noexcept;
+  virtual ~AnnotationSet() noexcept;
 
-	AnnotationSet(
-    VariableSet readSet,
-    VariableSet allWriteSet,
-    VariableSet fullWriteSet)
-    : ReadSet_(std::move(readSet))
-    , AllWriteSet_(std::move(allWriteSet))
-    , FullWriteSet_(std::move(fullWriteSet))
+  AnnotationSet(VariableSet readSet, VariableSet allWriteSet, VariableSet fullWriteSet)
+      : ReadSet_(std::move(readSet)),
+        AllWriteSet_(std::move(allWriteSet)),
+        FullWriteSet_(std::move(fullWriteSet))
   {}
 
-  AnnotationSet(const AnnotationSet&) = delete;
+  AnnotationSet(const AnnotationSet &) = delete;
 
-  AnnotationSet(AnnotationSet&&) noexcept = delete;
+  AnnotationSet(AnnotationSet &&) noexcept = delete;
 
-  AnnotationSet&
-  operator=(const AnnotationSet&) = delete;
+  AnnotationSet &
+  operator=(const AnnotationSet &) = delete;
 
-  AnnotationSet&
-  operator=(AnnotationSet&&) = delete;
+  AnnotationSet &
+  operator=(AnnotationSet &&) = delete;
 
   const VariableSet &
   ReadSet() const noexcept
@@ -232,8 +235,7 @@ public:
   virtual bool
   operator==(const AnnotationSet & other)
   {
-    return ReadSet_ == other.ReadSet_
-        && AllWriteSet_ == other.AllWriteSet_
+    return ReadSet_ == other.ReadSet_ && AllWriteSet_ == other.AllWriteSet_
         && FullWriteSet_ == other.FullWriteSet_;
   }
 
@@ -247,47 +249,36 @@ public:
   DebugString() const noexcept = 0;
 
 private:
-	VariableSet ReadSet_;
-	VariableSet AllWriteSet_;
-	VariableSet FullWriteSet_;
+  VariableSet ReadSet_;
+  VariableSet AllWriteSet_;
+  VariableSet FullWriteSet_;
 };
 
-class EntryAnnotationSet final : public AnnotationSet {
+class EntryAnnotationSet final : public AnnotationSet
+{
 public:
   ~EntryAnnotationSet() noexcept override;
 
-  EntryAnnotationSet(
-    VariableSet readSet,
-    VariableSet allWriteSet,
-    VariableSet fullWriteSet)
-  : AnnotationSet(
-    std::move(readSet),
-    std::move(allWriteSet),
-    std::move(fullWriteSet))
+  EntryAnnotationSet(VariableSet readSet, VariableSet allWriteSet, VariableSet fullWriteSet)
+      : AnnotationSet(std::move(readSet), std::move(allWriteSet), std::move(fullWriteSet))
   {}
 
   EntryAnnotationSet(
-    VariableSet readSet,
-    VariableSet allWriteSet,
-    VariableSet fullWriteSet,
-    VariableSet topSet)
-  : AnnotationSet(
-    std::move(readSet),
-    std::move(allWriteSet),
-    std::move(fullWriteSet))
-  , TopSet_(std::move(topSet))
+      VariableSet readSet,
+      VariableSet allWriteSet,
+      VariableSet fullWriteSet,
+      VariableSet topSet)
+      : AnnotationSet(std::move(readSet), std::move(allWriteSet), std::move(fullWriteSet)),
+        TopSet_(std::move(topSet))
   {}
 
   static std::unique_ptr<EntryAnnotationSet>
-  Create(
-    VariableSet readSet,
-    VariableSet allWriteSet,
-    VariableSet fullWriteSet)
+  Create(VariableSet readSet, VariableSet allWriteSet, VariableSet fullWriteSet)
   {
     return std::make_unique<EntryAnnotationSet>(
-      std::move(readSet),
-      std::move(allWriteSet),
-      std::move(fullWriteSet));
+        std::move(readSet),
+        std::move(allWriteSet),
+        std::move(fullWriteSet));
   }
 
   std::string
@@ -299,30 +290,22 @@ public:
   VariableSet TopSet_;
 };
 
-class ExitAnnotationSet final : public AnnotationSet {
+class ExitAnnotationSet final : public AnnotationSet
+{
 public:
   ~ExitAnnotationSet() noexcept override;
 
-  ExitAnnotationSet(
-    VariableSet readSet,
-    VariableSet allWriteSet,
-    VariableSet fullWriteSet)
-    : AnnotationSet(
-    std::move(readSet),
-    std::move(allWriteSet),
-    std::move(fullWriteSet))
+  ExitAnnotationSet(VariableSet readSet, VariableSet allWriteSet, VariableSet fullWriteSet)
+      : AnnotationSet(std::move(readSet), std::move(allWriteSet), std::move(fullWriteSet))
   {}
 
   static std::unique_ptr<ExitAnnotationSet>
-  Create(
-    VariableSet readSet,
-    VariableSet allWriteSet,
-    VariableSet fullWriteSet)
+  Create(VariableSet readSet, VariableSet allWriteSet, VariableSet fullWriteSet)
   {
     return std::make_unique<ExitAnnotationSet>(
-      std::move(readSet),
-      std::move(allWriteSet),
-      std::move(fullWriteSet));
+        std::move(readSet),
+        std::move(allWriteSet),
+        std::move(fullWriteSet));
   }
 
   std::string
@@ -332,30 +315,22 @@ public:
   operator==(const AnnotationSet & other) override;
 };
 
-class BasicBlockAnnotationSet final : public AnnotationSet {
+class BasicBlockAnnotationSet final : public AnnotationSet
+{
 public:
   ~BasicBlockAnnotationSet() noexcept override;
 
-  BasicBlockAnnotationSet(
-    VariableSet readSet,
-    VariableSet allWriteSet,
-    VariableSet fullWriteSet)
-    : AnnotationSet(
-    std::move(readSet),
-    std::move(allWriteSet),
-    std::move(fullWriteSet))
+  BasicBlockAnnotationSet(VariableSet readSet, VariableSet allWriteSet, VariableSet fullWriteSet)
+      : AnnotationSet(std::move(readSet), std::move(allWriteSet), std::move(fullWriteSet))
   {}
 
   static std::unique_ptr<BasicBlockAnnotationSet>
-  Create(
-    VariableSet readSet,
-    VariableSet allWriteSet,
-    VariableSet fullWriteSet)
+  Create(VariableSet readSet, VariableSet allWriteSet, VariableSet fullWriteSet)
   {
     return std::make_unique<BasicBlockAnnotationSet>(
-      std::move(readSet),
-      std::move(allWriteSet),
-      std::move(fullWriteSet));
+        std::move(readSet),
+        std::move(allWriteSet),
+        std::move(fullWriteSet));
   }
 
   std::string
@@ -365,30 +340,22 @@ public:
   operator==(const AnnotationSet & other) override;
 };
 
-class LinearAnnotationSet final : public AnnotationSet {
+class LinearAnnotationSet final : public AnnotationSet
+{
 public:
   ~LinearAnnotationSet() noexcept override;
 
-  LinearAnnotationSet(
-    VariableSet readSet,
-    VariableSet allWriteSet,
-    VariableSet fullWriteSet)
-    : AnnotationSet(
-    std::move(readSet),
-    std::move(allWriteSet),
-    std::move(fullWriteSet))
+  LinearAnnotationSet(VariableSet readSet, VariableSet allWriteSet, VariableSet fullWriteSet)
+      : AnnotationSet(std::move(readSet), std::move(allWriteSet), std::move(fullWriteSet))
   {}
 
   static std::unique_ptr<LinearAnnotationSet>
-  Create(
-    VariableSet readSet,
-    VariableSet allWriteSet,
-    VariableSet fullWriteSet)
+  Create(VariableSet readSet, VariableSet allWriteSet, VariableSet fullWriteSet)
   {
     return std::make_unique<LinearAnnotationSet>(
-      std::move(readSet),
-      std::move(allWriteSet),
-      std::move(fullWriteSet));
+        std::move(readSet),
+        std::move(allWriteSet),
+        std::move(fullWriteSet));
   }
 
   std::string
@@ -398,44 +365,33 @@ public:
   operator==(const AnnotationSet & other) override;
 };
 
-class BranchAnnotationSet final : public AnnotationSet {
+class BranchAnnotationSet final : public AnnotationSet
+{
 public:
   ~BranchAnnotationSet() noexcept override;
 
-  BranchAnnotationSet(
-    VariableSet readSet,
-    VariableSet allWriteSet,
-    VariableSet fullWriteSet)
-    : AnnotationSet(
-    std::move(readSet),
-    std::move(allWriteSet),
-    std::move(fullWriteSet))
+  BranchAnnotationSet(VariableSet readSet, VariableSet allWriteSet, VariableSet fullWriteSet)
+      : AnnotationSet(std::move(readSet), std::move(allWriteSet), std::move(fullWriteSet))
   {}
 
   BranchAnnotationSet(
-    VariableSet readSet,
-    VariableSet allWriteSet,
-    VariableSet fullWriteSet,
-    VariableSet inputVariables,
-    VariableSet outputVariables)
-  : AnnotationSet(
-    std::move(readSet),
-    std::move(allWriteSet),
-    std::move(fullWriteSet))
-  , InputVariables_(std::move(inputVariables))
-  , OutputVariables_(std::move(outputVariables))
+      VariableSet readSet,
+      VariableSet allWriteSet,
+      VariableSet fullWriteSet,
+      VariableSet inputVariables,
+      VariableSet outputVariables)
+      : AnnotationSet(std::move(readSet), std::move(allWriteSet), std::move(fullWriteSet)),
+        InputVariables_(std::move(inputVariables)),
+        OutputVariables_(std::move(outputVariables))
   {}
 
   static std::unique_ptr<BranchAnnotationSet>
-  Create(
-    VariableSet readSet,
-    VariableSet allWriteSet,
-    VariableSet fullWriteSet)
+  Create(VariableSet readSet, VariableSet allWriteSet, VariableSet fullWriteSet)
   {
     return std::make_unique<BranchAnnotationSet>(
-      std::move(readSet),
-      std::move(allWriteSet),
-      std::move(fullWriteSet));
+        std::move(readSet),
+        std::move(allWriteSet),
+        std::move(fullWriteSet));
   }
 
   std::string
@@ -473,42 +429,31 @@ private:
   VariableSet OutputVariables_;
 };
 
-class LoopAnnotationSet final : public AnnotationSet {
+class LoopAnnotationSet final : public AnnotationSet
+{
 public:
   ~LoopAnnotationSet() noexcept override;
 
-  LoopAnnotationSet(
-    VariableSet readSet,
-    VariableSet allWriteSet,
-    VariableSet fullWriteSet)
-    : AnnotationSet(
-    std::move(readSet),
-    std::move(allWriteSet),
-    std::move(fullWriteSet))
+  LoopAnnotationSet(VariableSet readSet, VariableSet allWriteSet, VariableSet fullWriteSet)
+      : AnnotationSet(std::move(readSet), std::move(allWriteSet), std::move(fullWriteSet))
   {}
 
   LoopAnnotationSet(
-    VariableSet readSet,
-    VariableSet allWriteSet,
-    VariableSet fullWriteSet,
-    VariableSet loopVariables)
-  : AnnotationSet(
-    std::move(readSet),
-    std::move(allWriteSet),
-    std::move(fullWriteSet))
-  , LoopVariables_(std::move(loopVariables))
+      VariableSet readSet,
+      VariableSet allWriteSet,
+      VariableSet fullWriteSet,
+      VariableSet loopVariables)
+      : AnnotationSet(std::move(readSet), std::move(allWriteSet), std::move(fullWriteSet)),
+        LoopVariables_(std::move(loopVariables))
   {}
 
   static std::unique_ptr<LoopAnnotationSet>
-  Create(
-    VariableSet readSet,
-    VariableSet allWriteSet,
-    VariableSet fullWriteSet)
+  Create(VariableSet readSet, VariableSet allWriteSet, VariableSet fullWriteSet)
   {
     return std::make_unique<LoopAnnotationSet>(
-      std::move(readSet),
-      std::move(allWriteSet),
-      std::move(fullWriteSet));
+        std::move(readSet),
+        std::move(allWriteSet),
+        std::move(fullWriteSet));
   }
 
   std::string
@@ -533,20 +478,20 @@ private:
   VariableSet LoopVariables_;
 };
 
-class AnnotationMap final {
+class AnnotationMap final
+{
 public:
-  AnnotationMap()
-  = default;
+  AnnotationMap() = default;
 
-  AnnotationMap(const AnnotationMap&) = delete;
+  AnnotationMap(const AnnotationMap &) = delete;
 
-  AnnotationMap(AnnotationMap&&) noexcept = delete;
+  AnnotationMap(AnnotationMap &&) noexcept = delete;
 
-  AnnotationMap&
-  operator=(const AnnotationMap&) = delete;
+  AnnotationMap &
+  operator=(const AnnotationMap &) = delete;
 
-  AnnotationMap&
-  operator=(AnnotationMap&&) noexcept = delete;
+  AnnotationMap &
+  operator=(AnnotationMap &&) noexcept = delete;
 
   bool
   Contains(const aggnode & aggregationNode) const noexcept
@@ -554,7 +499,8 @@ public:
     return Map_.find(&aggregationNode) != Map_.end();
   }
 
-  template <class T> T&
+  template<class T>
+  T &
   Lookup(const aggnode & aggregationNode) const noexcept
   {
     JLM_ASSERT(Contains(aggregationNode));
@@ -563,9 +509,7 @@ public:
   }
 
   void
-  Insert(
-    const aggnode & aggregationNode,
-    std::unique_ptr<AnnotationSet> annotationSet)
+  Insert(const aggnode & aggregationNode, std::unique_ptr<AnnotationSet> annotationSet)
   {
     JLM_ASSERT(!Contains(aggregationNode));
     Map_[&aggregationNode] = std::move(annotationSet);
@@ -578,7 +522,7 @@ public:
   }
 
 private:
-  std::unordered_map<const aggnode*, std::unique_ptr<AnnotationSet>> Map_;
+  std::unordered_map<const aggnode *, std::unique_ptr<AnnotationSet>> Map_;
 };
 
 std::unique_ptr<AnnotationMap>

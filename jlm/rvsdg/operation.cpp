@@ -17,23 +17,23 @@ port::~port()
 {}
 
 port::port(const jlm::rvsdg::type & type)
-: port(type.copy())
+    : port(type.copy())
 {}
 
 port::port(std::unique_ptr<jlm::rvsdg::type> type)
-: type_(std::move(type))
+    : type_(std::move(type))
 {}
 
 bool
 port::operator==(const port & other) const noexcept
 {
-	return *type_ == *other.type_;
+  return *type_ == *other.type_;
 }
 
 std::unique_ptr<port>
 port::copy() const
 {
-	return std::make_unique<port>(*this);
+  return std::make_unique<port>(*this);
 }
 
 /* operation */
@@ -44,7 +44,7 @@ operation::~operation() noexcept
 jlm::rvsdg::node_normal_form *
 operation::normal_form(jlm::rvsdg::graph * graph) noexcept
 {
-	return graph->node_normal_form(typeid(operation));
+  return graph->node_normal_form(typeid(operation));
 }
 
 /* simple operation */
@@ -55,33 +55,33 @@ simple_op::~simple_op()
 size_t
 simple_op::narguments() const noexcept
 {
-	return operands_.size();
+  return operands_.size();
 }
 
 const jlm::rvsdg::port &
 simple_op::argument(size_t index) const noexcept
 {
-	JLM_ASSERT(index < narguments());
-	return operands_[index];
+  JLM_ASSERT(index < narguments());
+  return operands_[index];
 }
 
 size_t
 simple_op::nresults() const noexcept
 {
-	return results_.size();
+  return results_.size();
 }
 
 const jlm::rvsdg::port &
 simple_op::result(size_t index) const noexcept
 {
-	JLM_ASSERT(index < nresults());
-	return results_[index];
+  JLM_ASSERT(index < nresults());
+  return results_[index];
 }
 
 jlm::rvsdg::simple_normal_form *
 simple_op::normal_form(jlm::rvsdg::graph * graph) noexcept
 {
-	return static_cast<jlm::rvsdg::simple_normal_form*>(graph->node_normal_form(typeid(simple_op)));
+  return static_cast<jlm::rvsdg::simple_normal_form *>(graph->node_normal_form(typeid(simple_op)));
 }
 
 /* structural operation */
@@ -89,13 +89,13 @@ simple_op::normal_form(jlm::rvsdg::graph * graph) noexcept
 bool
 structural_op::operator==(const operation & other) const noexcept
 {
-	return typeid(*this) == typeid(other);
+  return typeid(*this) == typeid(other);
 }
 
 jlm::rvsdg::structural_normal_form *
 structural_op::normal_form(jlm::rvsdg::graph * graph) noexcept
 {
-	return static_cast<structural_normal_form*>(graph->node_normal_form(typeid(structural_op)));
+  return static_cast<structural_normal_form *>(graph->node_normal_form(typeid(structural_op)));
 }
 
 }
