@@ -245,6 +245,43 @@ TestRemovePhiOutputsWhere()
   assert(phiNode.noutputs() == 0);
 }
 
+static void
+TestPrunePhiOutputs()
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  // The phi setup is nonsense, but it is sufficient for this test
+  jlm::tests::valuetype valueType;
+  RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+
+  phi::builder phiBuilder;
+  phiBuilder.begin(rvsdgModule.Rvsdg().root());
+
+  auto phiOutput0 = phiBuilder.add_recvar(valueType);
+  auto phiOutput1 = phiBuilder.add_recvar(valueType);
+  auto phiOutput2 = phiBuilder.add_recvar(valueType);
+
+  auto result = jlm::tests::SimpleNode::Create(
+                    *phiBuilder.subregion(),
+                    { phiOutput0->argument(), phiOutput2->argument() },
+                    { &valueType })
+                    .output(0);
+
+  phiOutput0->set_rvorigin(result);
+  phiOutput1->set_rvorigin(result);
+  phiOutput2->set_rvorigin(result);
+
+  auto & phiNode = *phiBuilder.end();
+
+  // Act
+  auto numRemovedOutputs = phiNode.PrunePhiOutputs();
+
+  // Assert
+  assert(numRemovedOutputs == 3);
+  assert(phiNode.noutputs() == 0);
+}
+
 static int
 TestPhi()
 {
@@ -252,6 +289,7 @@ TestPhi()
   TestRemovePhiArgumentsWhere();
   TestPrunePhiArguments();
   TestRemovePhiOutputsWhere();
+  TestPrunePhiOutputs();
 
   return 0;
 }
