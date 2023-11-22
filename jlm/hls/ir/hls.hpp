@@ -611,7 +611,8 @@ public:
    * An input must match the condition specified by \p match and its respective argument must be
    * dead.
    *
-   * @tparam F A type that supports the function call operator: bool operator(const loop_input&)
+   * @tparam F A type that supports the function call operator:
+   * bool operator(const structural_input&)
    * @param match Defines the condition of the elements to remove.
    * @return The number of removed inputs.
    *
@@ -644,6 +645,29 @@ public:
     }
 
     return numRemovedInputs;
+  }
+
+  /**
+   * Remove all dead loop inputs and their respective arguments.
+   *
+   * @return The number of removed inputs.
+   *
+   * \note The application of this method might leave the loop node in an invalid state. It
+   * is up to the caller to ensure that the invariants of the loop node will eventually be met
+   * again.
+   *
+   * \see RemoveLoopInputsWhere()
+   * \see argument#IsDead()
+   */
+  size_t
+  PruneLoopInputs()
+  {
+    auto match = [](const rvsdg::structural_input &)
+    {
+      return true;
+    };
+
+    return RemoveLoopInputsWhere(match);
   }
 
   /**
