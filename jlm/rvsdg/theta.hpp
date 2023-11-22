@@ -150,6 +150,25 @@ public:
     return loopvar_iterator(nullptr);
   }
 
+  /**
+   * Remove theta outputs and their respective results.
+   *
+   * An output must match the condition specified by \p match and it must be dead.
+   *
+   * @tparam F A type that supports the function call operator: bool operator(const theta_output&)
+   * @param match Defines the condition of the elements to remove.
+   * @return The number of removed outputs.
+   *
+   * \note The application of this method might leave the phi node in an invalid state. Some
+   * arguments might refer to outputs that have been removed by the application of this method. It
+   * is up to the caller to ensure that the invariants of the phi node will eventually be met again.
+   *
+   * \see theta_output#IsDead()
+   */
+  template<typename F>
+  size_t
+  RemoveThetaOutputsWhere(const F & match);
+
   theta_input *
   input(size_t index) const noexcept;
 
@@ -288,6 +307,29 @@ inline jlm::rvsdg::theta_output *
 theta_node::output(size_t index) const noexcept
 {
   return static_cast<theta_output *>(node::output(index));
+}
+
+template<typename F>
+size_t
+theta_node::RemoveThetaOutputsWhere(const F & match)
+{
+  size_t numRemovedOutputs = 0;
+
+  // iterate backwards to avoid the invalidation of 'n' by RemoveOutput()
+  for (size_t n = noutputs() - 1; n != static_cast<size_t>(-1); n--)
+  {
+    auto & thetaOutput = *output(n);
+    auto & thetaResult = *thetaOutput.result();
+
+    if (thetaOutput.IsDead() && match(thetaOutput))
+    {
+      subregion()->RemoveResult(thetaResult.index());
+      RemoveOutput(thetaOutput.index());
+      numRemovedOutputs++;
+    }
+  }
+
+  return numRemovedOutputs;
 }
 
 /* theta input method definitions */
