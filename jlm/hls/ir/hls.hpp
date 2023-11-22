@@ -604,6 +604,47 @@ public:
 
   virtual loop_node *
   copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const override;
+
+  /**
+   * Remove loop outputs and their respective results.
+   *
+   * An output must match the condition specified by \p match and it must be dead.
+   *
+   * @tparam F A type that supports the function call operator:
+   * bool operator(const structural_output&)
+   * @param match Defines the condition of the elements to remove.
+   * @return The number of removed outputs.
+   *
+   * \note The application of this method might leave the loop node in an invalid state. Some
+   * inputs might refer to outputs that have been removed by the application of this method. It
+   * is up to the caller to ensure that the invariants of the loop node will eventually be met
+   * again.
+   *
+   * \see output#IsDead()
+   */
+  template<typename F>
+  size_t
+  RemoveLoopOutputsWhere(const F & match)
+  {
+    size_t numRemovedOutputs = 0;
+
+    // iterate backwards to avoid the invalidation of 'n' by RemoveOutput()
+    for (size_t n = noutputs() - 1; n != static_cast<size_t>(-1); n--)
+    {
+      auto & loopOutput = *output(n);
+      JLM_ASSERT(loopOutput.results.size() == 1);
+      auto & loopResult = *loopOutput.results.begin();
+
+      if (loopOutput.IsDead() && match(loopOutput))
+      {
+        subregion()->RemoveResult(loopResult.index());
+        RemoveOutput(loopOutput.index());
+        numRemovedOutputs++;
+      }
+    }
+
+    return numRemovedOutputs;
+  }
 };
 
 }
