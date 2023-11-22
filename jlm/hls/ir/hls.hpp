@@ -686,6 +686,45 @@ public:
 
     return numRemovedOutputs;
   }
+
+  /**
+   * Remove back-edge arguments and their respective results.
+   *
+   * An argument must match the condition specified by \p match.
+   *
+   * @tparam F A type that supports the function call operator:
+   * bool operator(const backedge_argument&)
+   * @param match Defines the condition of the elements to remove.
+   * @return The number of removed arguments.
+   *
+   * \note The application of this method might leave the loop node in an invalid state. It
+   * is up to the caller to ensure that the invariants of the loop node will eventually be met
+   * again.
+   *
+   */
+  template<typename F>
+  size_t
+  RemoveBackEdgeArgumentsWhere(const F & match)
+  {
+    size_t numRemovedArguments = 0;
+    auto & subregion = *this->subregion();
+
+    // iterate backwards to avoid the invalidation of 'n' by RemoveArgument()
+    for (size_t n = subregion.narguments() - 1; n != static_cast<size_t>(-1); n--)
+    {
+      auto backEdgeArgument = dynamic_cast<backedge_argument *>(subregion.argument(n));
+      if (backEdgeArgument && match(*backEdgeArgument))
+      {
+        auto & backEdgeResult = *backEdgeArgument->result();
+
+        subregion.RemoveResult(backEdgeResult.index());
+        subregion.RemoveArgument(backEdgeArgument->index());
+        numRemovedArguments++;
+      }
+    }
+
+    return numRemovedArguments;
+  }
 };
 
 }
