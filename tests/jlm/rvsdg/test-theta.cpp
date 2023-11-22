@@ -10,8 +10,8 @@
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-static int
-test_main()
+static void
+TestThetaCreation()
 {
   using namespace jlm::rvsdg;
 
@@ -46,8 +46,63 @@ test_main()
   assert((*theta->begin())->result() == theta->subregion()->result(1));
 
   assert(dynamic_cast<const jlm::rvsdg::theta_node *>(theta2));
+}
+
+static void
+TestRemoveThetaOutputsWhere()
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  graph rvsdg;
+  jlm::tests::valuetype valueType;
+
+  auto ctl = rvsdg.add_import({ ctl2, "ctl" });
+  auto x = rvsdg.add_import({ valueType, "x" });
+  auto y = rvsdg.add_import({ valueType, "y" });
+
+  auto thetaNode = theta_node::create(rvsdg.root());
+
+  auto thetaOutput0 = thetaNode->add_loopvar(ctl);
+  auto thetaOutput1 = thetaNode->add_loopvar(x);
+  auto thetaOutput2 = thetaNode->add_loopvar(y);
+  thetaNode->set_predicate(thetaOutput0->argument());
+
+  rvsdg.add_export(thetaOutput0, { ctl2, "" });
+
+  // Act & Assert
+  auto numRemovedOutputs = thetaNode->RemoveThetaOutputsWhere(
+      [&](const theta_output & output)
+      {
+        return output.index() == thetaOutput1->index();
+      });
+  assert(numRemovedOutputs == 1);
+  assert(thetaNode->noutputs() == 2);
+  assert(thetaNode->subregion()->nresults() == 3);
+  assert(thetaOutput0->index() == 0);
+  assert(thetaOutput0->result()->index() == 1);
+  assert(thetaOutput2->index() == 1);
+  assert(thetaOutput2->result()->index() == 2);
+
+  numRemovedOutputs = thetaNode->RemoveThetaOutputsWhere(
+      [](const theta_output &)
+      {
+        return true;
+      });
+  assert(numRemovedOutputs == 1);
+  assert(thetaNode->noutputs() == 1);
+  assert(thetaNode->subregion()->nresults() == 2);
+  assert(thetaOutput0->index() == 0);
+  assert(thetaOutput0->result()->index() == 1);
+}
+
+static int
+TestTheta()
+{
+  TestThetaCreation();
+  TestRemoveThetaOutputsWhere();
 
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-theta", test_main)
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-theta", TestTheta)
