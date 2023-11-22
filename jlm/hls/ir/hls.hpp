@@ -688,6 +688,29 @@ public:
   }
 
   /**
+   * Remove all dead loop outputs and their respective results.
+   *
+   * @return The number of removed outputs.
+   *
+   * \note The application of this method might leave the loop node in an invalid state. It
+   * is up to the caller to ensure that the invariants of the loop node will eventually be met
+   * again.
+   *
+   * \see RemoveLoopOutputsWhere()
+   * \see output#IsDead()
+   */
+  size_t
+  PruneLoopOutputs()
+  {
+    auto match = [](const rvsdg::structural_output &)
+    {
+      return true;
+    };
+
+    return RemoveLoopOutputsWhere(match);
+  }
+
+  /**
    * Remove back-edge arguments and their respective results.
    *
    * An argument must match the condition specified by \p match.
