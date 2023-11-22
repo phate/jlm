@@ -215,6 +215,30 @@ public:
   size_t
   RemoveThetaInputsWhere(const F & match);
 
+  /**
+   * Remove all dead theta inputs and their respective arguments.
+   *
+   * @return The number of removed inputs.
+   *
+   * \note The application of this method might leave the theta node in an invalid state. Some
+   * outputs might refer to inputs that have been removed by the application of this method. It
+   * is up to the caller to ensure that the invariants of the theta node will eventually be met
+   * again.
+   *
+   * \see RemoveThetaInputsWhere()
+   * \see argument#IsDead()
+   */
+  size_t
+  PruneThetaInputs()
+  {
+    auto match = [](const theta_input &)
+    {
+      return true;
+    };
+
+    return RemoveThetaInputsWhere(match);
+  }
+
   theta_input *
   input(size_t index) const noexcept;
 

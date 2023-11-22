@@ -183,6 +183,45 @@ TestRemoveThetaInputsWhere()
   assert(thetaOutput0->argument()->index() == 0);
 }
 
+static void
+TestPruneThetaInputs()
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  graph rvsdg;
+  jlm::tests::valuetype valueType;
+
+  auto ctl = rvsdg.add_import({ ctl2, "ctl" });
+  auto x = rvsdg.add_import({ valueType, "x" });
+  auto y = rvsdg.add_import({ valueType, "y" });
+
+  auto thetaNode = theta_node::create(rvsdg.root());
+
+  auto thetaOutput0 = thetaNode->add_loopvar(ctl);
+  auto thetaOutput1 = thetaNode->add_loopvar(x);
+  auto thetaOutput2 = thetaNode->add_loopvar(y);
+  thetaNode->set_predicate(thetaOutput0->argument());
+
+  auto result =
+      jlm::tests::SimpleNode::Create(*thetaNode->subregion(), {}, { &valueType }).output(0);
+
+  thetaOutput1->result()->divert_to(result);
+  thetaOutput2->result()->divert_to(result);
+
+  rvsdg.add_export(thetaOutput0, { ctl2, "" });
+
+  // Act
+  auto numRemovedInputs = thetaNode->PruneThetaInputs();
+
+  // Assert
+  assert(numRemovedInputs == 2);
+  assert(thetaNode->ninputs() == 1);
+  assert(thetaNode->subregion()->narguments() == 1);
+  assert(thetaOutput0->input()->index() == 0);
+  assert(thetaOutput0->argument()->index() == 0);
+}
+
 static int
 TestTheta()
 {
@@ -190,6 +229,7 @@ TestTheta()
   TestRemoveThetaOutputsWhere();
   TestPruneThetaOutputs();
   TestRemoveThetaInputsWhere();
+  TestPruneThetaInputs();
 
   return 0;
 }
