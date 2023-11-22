@@ -606,6 +606,47 @@ public:
   copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const override;
 
   /**
+   * Remove loop inputs and their respective arguments.
+   *
+   * An input must match the condition specified by \p match and its respective argument must be
+   * dead.
+   *
+   * @tparam F A type that supports the function call operator: bool operator(const loop_input&)
+   * @param match Defines the condition of the elements to remove.
+   * @return The number of removed inputs.
+   *
+   * \note The application of this method might leave the loop node in an invalid state. Some
+   * outputs might refer to inputs that have been removed by the application of this method. It
+   * is up to the caller to ensure that the invariants of the loop node will eventually be met
+   * again.
+   *
+   * \see argument#IsDead()
+   */
+  template<typename F>
+  size_t
+  RemoveLoopInputsWhere(const F & match)
+  {
+    size_t numRemovedInputs = 0;
+
+    // iterate backwards to avoid the invalidation of 'n' by RemoveInput()
+    for (size_t n = ninputs() - 1; n != static_cast<size_t>(-1); n--)
+    {
+      auto & loopInput = *input(n);
+      JLM_ASSERT(loopInput.arguments.size() == 1);
+      auto & loopArgument = *loopInput.arguments.begin();
+
+      if (loopArgument.IsDead() && match(loopInput))
+      {
+        subregion()->RemoveArgument(loopArgument.index());
+        RemoveInput(loopInput.index());
+        numRemovedInputs++;
+      }
+    }
+
+    return numRemovedInputs;
+  }
+
+  /**
    * Remove loop outputs and their respective results.
    *
    * An output must match the condition specified by \p match and it must be dead.
