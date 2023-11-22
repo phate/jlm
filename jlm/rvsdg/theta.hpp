@@ -161,13 +161,38 @@ public:
    *
    * \note The application of this method might leave the phi node in an invalid state. Some
    * arguments might refer to outputs that have been removed by the application of this method. It
-   * is up to the caller to ensure that the invariants of the phi node will eventually be met again.
+   * is up to the caller to ensure that the invariants of the theta node will eventually be met
+   * again.
    *
    * \see theta_output#IsDead()
    */
   template<typename F>
   size_t
   RemoveThetaOutputsWhere(const F & match);
+
+  /**
+   * Remove all dead theta outputs and their respective results.
+   *
+   * @return The number of removed outputs.
+   *
+   * \note The application of this method might leave the phi node in an invalid state. Some
+   * arguments might refer to outputs that have been removed by the application of this method. It
+   * is up to the caller to ensure that the invariants of the theta node will eventually be met
+   * again.
+   *
+   * \see RemoveThetaOutputsWhere()
+   * \see theta_output#IsDead()
+   */
+  size_t
+  PruneThetaOutputs()
+  {
+    auto match = [](const theta_output &)
+    {
+      return true;
+    };
+
+    return RemoveThetaOutputsWhere(match);
+  }
 
   theta_input *
   input(size_t index) const noexcept;
