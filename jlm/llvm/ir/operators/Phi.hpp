@@ -435,11 +435,34 @@ public:
    * arguments might refer to outputs that have been removed by the application of this method. It
    * is up to the caller to ensure that the invariants of the phi node will eventually be met again.
    *
-   * \see rvoutput::IsDead()
+   * \see rvoutput#IsDead()
    */
   template<typename F>
   size_t
   RemovePhiOutputsWhere(const F & match);
+
+  /**
+   * Remove all dead phi outputs and their respective results.
+   *
+   * @return The number of removed outputs.
+   *
+   * \note The application of this method might leave the phi node in an invalid state. Some
+   * arguments might refer to outputs that have been removed by the application of this method. It
+   * is up to the caller to ensure that the invariants of the phi node will eventually be met again.
+   *
+   * \see RemovePhiOutputsWhere()
+   * \see rvoutput#IsDead()
+   */
+  size_t
+  PrunePhiOutputs()
+  {
+    auto match = [](const phi::rvoutput &)
+    {
+      return true;
+    };
+
+    return RemovePhiOutputsWhere(match);
+  }
 
   cvinput *
   input(size_t n) const noexcept;
