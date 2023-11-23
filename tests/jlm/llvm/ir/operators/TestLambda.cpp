@@ -116,42 +116,45 @@ TestRemoveLambdaInputsWhere()
 
   // Arrange
   jlm::tests::valuetype valueType;
-  FunctionType functionType({}, {&valueType});
+  FunctionType functionType({}, { &valueType });
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto x = rvsdg.add_import({valueType, "x"});
+  auto x = rvsdg.add_import({ valueType, "x" });
 
-  auto lambdaNode = lambda::node::create(
-    rvsdg.root(),
-    functionType,
-    "f",
-    linkage::external_linkage);
+  auto lambdaNode =
+      lambda::node::create(rvsdg.root(), functionType, "f", linkage::external_linkage);
 
   auto lambdaInput0 = lambdaNode->add_ctxvar(x)->input();
   auto lambdaInput1 = lambdaNode->add_ctxvar(x)->input();
   auto lambdaInput2 = lambdaNode->add_ctxvar(x)->input();
 
   auto result = jlm::tests::SimpleNode::Create(
-    *lambdaNode->subregion(),
-    {lambdaInput1->argument()},
-    {&valueType})
-    .output(0);
+                    *lambdaNode->subregion(),
+                    { lambdaInput1->argument() },
+                    { &valueType })
+                    .output(0);
 
-  lambdaNode->finalize({result});
+  lambdaNode->finalize({ result });
 
   // Act & Assert
   // Try to remove lambdaInput1 even though it is used
   auto numRemovedInputs = lambdaNode->RemoveLambdaInputsWhere(
-    [&](const lambda::cvinput& input){ return input.index() == lambdaInput1->index(); });
+      [&](const lambda::cvinput & input)
+      {
+        return input.index() == lambdaInput1->index();
+      });
   assert(numRemovedInputs == 0);
   assert(lambdaNode->ninputs() == 3);
   assert(lambdaNode->ncvarguments() == 3);
 
   // Remove lambdaInput2
   numRemovedInputs = lambdaNode->RemoveLambdaInputsWhere(
-    [&](const lambda::cvinput& input){ return input.index() == lambdaInput2->index(); });
+      [&](const lambda::cvinput & input)
+      {
+        return input.index() == lambdaInput2->index();
+      });
   assert(numRemovedInputs == 1);
   assert(lambdaNode->ninputs() == 2);
   assert(lambdaNode->ncvarguments() == 2);
@@ -160,7 +163,10 @@ TestRemoveLambdaInputsWhere()
 
   // Remove lambdaInput0
   numRemovedInputs = lambdaNode->RemoveLambdaInputsWhere(
-    [&](const lambda::cvinput& input){ return input.index() == lambdaInput0->index(); });
+      [&](const lambda::cvinput & input)
+      {
+        return input.index() == lambdaInput0->index();
+      });
   assert(numRemovedInputs == 1);
   assert(lambdaNode->ninputs() == 1);
   assert(lambdaNode->ncvarguments() == 1);
@@ -179,30 +185,27 @@ TestPruneLambdaInputs()
 
   // Arrange
   jlm::tests::valuetype valueType;
-  FunctionType functionType({}, {&valueType});
+  FunctionType functionType({}, { &valueType });
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto x = rvsdg.add_import({valueType, "x"});
+  auto x = rvsdg.add_import({ valueType, "x" });
 
-  auto lambdaNode = lambda::node::create(
-    rvsdg.root(),
-    functionType,
-    "f",
-    linkage::external_linkage);
+  auto lambdaNode =
+      lambda::node::create(rvsdg.root(), functionType, "f", linkage::external_linkage);
 
   lambdaNode->add_ctxvar(x)->input();
   auto lambdaInput1 = lambdaNode->add_ctxvar(x)->input();
   lambdaNode->add_ctxvar(x)->input();
 
   auto result = jlm::tests::SimpleNode::Create(
-    *lambdaNode->subregion(),
-    {lambdaInput1->argument()},
-    {&valueType})
-    .output(0);
+                    *lambdaNode->subregion(),
+                    { lambdaInput1->argument() },
+                    { &valueType })
+                    .output(0);
 
-  lambdaNode->finalize({result});
+  lambdaNode->finalize({ result });
 
   // Act
   auto numRemovedInputs = lambdaNode->PruneLambdaInputs();

@@ -337,11 +337,11 @@ public:
     return nusers() == 0;
   }
 
-	inline void
-	divert_users(jlm::rvsdg::output * new_origin)
-	{
-		if (this == new_origin)
-			return;
+  inline void
+  divert_users(jlm::rvsdg::output * new_origin)
+  {
+    if (this == new_origin)
+      return;
 
     while (users_.size())
       (*users_.begin())->divert_to(new_origin);
