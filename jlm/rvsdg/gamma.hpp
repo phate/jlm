@@ -487,6 +487,18 @@ public:
     JLM_ASSERT(result->output() == this);
     return result;
   }
+
+  /**
+   * Determines whether the gamma output is invariant.
+   *
+   * A gamma output is invariant if its value statically is the same for all subregions of the
+   * gamma.
+   *
+   * @param invariantOrigin The value if the gamma output is invariant.
+   * @return True if the gamma output is invariant, otherwise false.
+   */
+  [[nodiscard]] bool
+  IsInvariant(output ** invariantOrigin) const noexcept;
 };
 
 static inline bool

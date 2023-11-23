@@ -276,6 +276,28 @@ gamma_input::~gamma_input() noexcept
 gamma_output::~gamma_output() noexcept
 {}
 
+bool
+gamma_output::IsInvariant(rvsdg::output ** invariantOrigin) const noexcept
+{
+  auto argument = dynamic_cast<const jlm::rvsdg::argument *>(result(0)->origin());
+  if (!argument)
+  {
+    return false;
+  }
+
+  size_t n;
+  auto origin = argument->input()->origin();
+  for (n = 1; n < nresults(); n++)
+  {
+    argument = dynamic_cast<const jlm::rvsdg::argument *>(result(n)->origin());
+    if (argument == nullptr || argument->input()->origin() != origin)
+      break;
+  }
+
+  *invariantOrigin = origin;
+  return n == nresults();
+}
+
 /* gamma node */
 
 gamma_node::~gamma_node()

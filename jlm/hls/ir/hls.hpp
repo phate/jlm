@@ -503,7 +503,7 @@ public:
   ~backedge_argument() override = default;
 
   backedge_result *
-  result()
+  result() const
   {
     return result_;
   }

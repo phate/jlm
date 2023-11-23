@@ -13,10 +13,10 @@ namespace jlm::hls
 {
 
 bool
-remove_unused_loop_outputs(hls::loop_node * ln);
+remove_unused_loop_outputs(hls::loop_node * loopNode);
 
 bool
-remove_unused_loop_inputs(hls::loop_node * ln);
+remove_unused_loop_inputs(hls::loop_node * loopNode);
 
 bool
 dne(jlm::rvsdg::region * sr);

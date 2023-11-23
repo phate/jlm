@@ -56,6 +56,7 @@ public:
   structural_output *
   append_output(std::unique_ptr<structural_output> output);
 
+protected:
   using node::RemoveInput;
 
   using node::RemoveOutput;
