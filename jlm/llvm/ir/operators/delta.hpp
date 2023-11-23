@@ -245,8 +245,8 @@ public:
     return RemoveDeltaInputsWhere(match);
   }
 
-	cvinput *
-	input(size_t n) const noexcept;
+  cvinput *
+  input(size_t n) const noexcept;
 
   delta::cvargument *
   cvargument(size_t n) const noexcept;
