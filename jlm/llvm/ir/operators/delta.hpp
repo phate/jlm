@@ -224,8 +224,9 @@ public:
    *
    * \see cvargument#IsDead()
    */
-  template <typename F> size_t
-  RemoveDeltaInputsWhere(const F& match);
+  template<typename F>
+  size_t
+  RemoveDeltaInputsWhere(const F & match);
 
   /**
    * Remove all dead inputs.
@@ -237,7 +238,7 @@ public:
   size_t
   PruneDeltaInputs()
   {
-    auto match = [](const cvinput&)
+    auto match = [](const cvinput &)
     {
       return true;
     };
@@ -463,13 +464,14 @@ public:
   }
 };
 
-template <typename F> size_t
-delta::node::RemoveDeltaInputsWhere(const F &match)
+template<typename F>
+size_t
+delta::node::RemoveDeltaInputsWhere(const F & match)
 {
   size_t numRemovedInputs = 0;
 
   // iterate backwards to avoid the invalidation of 'n' by RemoveInput()
-  for (size_t n = ninputs()-1; n != static_cast<size_t>(-1); n--)
+  for (size_t n = ninputs() - 1; n != static_cast<size_t>(-1); n--)
   {
     auto & deltaInput = *input(n);
     auto & argument = *deltaInput.argument();
