@@ -128,7 +128,7 @@ TestRemoveLambdaInputsWhere()
 
   auto lambdaInput0 = lambdaNode->add_ctxvar(x)->input();
   auto lambdaInput1 = lambdaNode->add_ctxvar(x)->input();
-  auto lambdaInput2 = lambdaNode->add_ctxvar(x)->input();
+  lambdaNode->add_ctxvar(x)->input();
 
   auto result = jlm::tests::SimpleNode::Create(
                     *lambdaNode->subregion(),
@@ -153,7 +153,7 @@ TestRemoveLambdaInputsWhere()
   numRemovedInputs = lambdaNode->RemoveLambdaInputsWhere(
       [&](const lambda::cvinput & input)
       {
-        return input.index() == lambdaInput2->index();
+        return input.index() == 2;
       });
   assert(numRemovedInputs == 1);
   assert(lambdaNode->ninputs() == 2);
@@ -165,7 +165,7 @@ TestRemoveLambdaInputsWhere()
   numRemovedInputs = lambdaNode->RemoveLambdaInputsWhere(
       [&](const lambda::cvinput & input)
       {
-        return input.index() == lambdaInput0->index();
+        return input.index() == 0;
       });
   assert(numRemovedInputs == 1);
   assert(lambdaNode->ninputs() == 1);
