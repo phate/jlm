@@ -517,18 +517,7 @@ void
 DeadNodeElimination::SweepLambda(lambda::node & lambdaNode) const
 {
   SweepRegion(*lambdaNode.subregion());
-
-  // Remove dead arguments and inputs
-  for (size_t n = lambdaNode.ninputs() - 1; n != static_cast<size_t>(-1); n--)
-  {
-    auto input = lambdaNode.input(n);
-
-    if (!Context_->IsAlive(*input->argument()))
-    {
-      lambdaNode.subregion()->RemoveArgument(input->argument()->index());
-      lambdaNode.RemoveInput(n);
-    }
-  }
+  lambdaNode.PruneLambdaInputs();
 }
 
 void
