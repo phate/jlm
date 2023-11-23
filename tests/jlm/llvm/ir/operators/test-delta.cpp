@@ -81,7 +81,7 @@ TestRemoveDeltaInputsWhere()
       true);
   auto deltaInput0 = deltaNode->add_ctxvar(x)->input();
   auto deltaInput1 = deltaNode->add_ctxvar(x)->input();
-  auto deltaInput2 = deltaNode->add_ctxvar(x)->input();
+  deltaNode->add_ctxvar(x)->input();
 
   auto result = jlm::tests::SimpleNode::Create(
                     *deltaNode->subregion(),
@@ -106,7 +106,7 @@ TestRemoveDeltaInputsWhere()
   numRemovedInputs = deltaNode->RemoveDeltaInputsWhere(
       [&](const delta::cvinput & input)
       {
-        return input.index() == deltaInput2->index();
+        return input.index() == 2;
       });
   assert(numRemovedInputs == 1);
   assert(deltaNode->ninputs() == 2);
@@ -118,7 +118,7 @@ TestRemoveDeltaInputsWhere()
   numRemovedInputs = deltaNode->RemoveDeltaInputsWhere(
       [&](const delta::cvinput & input)
       {
-        return input.index() == deltaInput0->index();
+        return input.index() == 0;
       });
   assert(numRemovedInputs == 1);
   assert(deltaNode->ninputs() == 1);
