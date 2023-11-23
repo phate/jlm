@@ -567,21 +567,12 @@ DeadNodeElimination::SweepPhi(phi::node & phiNode) const
 }
 
 void
-DeadNodeElimination::SweepDelta(delta::node & deltaNode) const
+DeadNodeElimination::SweepDelta(delta::node & deltaNode)
 {
   // A delta subregion can only contain simple nodes. Thus, a simple prune is sufficient.
   deltaNode.subregion()->prune(false);
 
-  // Remove dead arguments and inputs.
-  for (size_t n = deltaNode.ninputs() - 1; n != static_cast<size_t>(-1); n--)
-  {
-    auto input = deltaNode.input(n);
-    if (!Context_->IsAlive(*input->argument()))
-    {
-      deltaNode.subregion()->RemoveArgument(input->argument()->index());
-      deltaNode.RemoveInput(input->index());
-    }
-  }
+  deltaNode.PruneDeltaInputs();
 }
 
 }
