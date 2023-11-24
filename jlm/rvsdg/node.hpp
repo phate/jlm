@@ -322,6 +322,21 @@ public:
     return users_.size();
   }
 
+  /**
+   * Determines whether the output is dead.
+   *
+   * An output is considered dead when it has no users.
+   *
+   * @return True, if the output is dead, otherwise false.
+   *
+   * \see nusers()
+   */
+  [[nodiscard]] bool
+  IsDead() const noexcept
+  {
+    return nusers() == 0;
+  }
+
   inline void
   divert_users(jlm::rvsdg::output * new_origin)
   {

@@ -213,6 +213,39 @@ public:
   delta::cvargument *
   add_ctxvar(rvsdg::output * origin);
 
+  /**
+   * Remove delta inputs and their respective arguments.
+   *
+   * An input must match the condition specified by \p match and its argument must be dead.
+   *
+   * @tparam F A type that supports the function call operator: bool operator(const cvinput&)
+   * @param match Defines the condition of the elements to remove.
+   * @return The number of removed inputs.
+   *
+   * \see cvargument#IsDead()
+   */
+  template<typename F>
+  size_t
+  RemoveDeltaInputsWhere(const F & match);
+
+  /**
+   * Remove all dead inputs.
+   *
+   * @return The number of removed inputs.
+   *
+   * \see RemoveDeltaInputsWhere()
+   */
+  size_t
+  PruneDeltaInputs()
+  {
+    auto match = [](const cvinput &)
+    {
+      return true;
+    };
+
+    return RemoveDeltaInputsWhere(match);
+  }
+
   cvinput *
   input(size_t n) const noexcept;
 
@@ -430,6 +463,29 @@ public:
     return static_cast<delta::output *>(rvsdg::result::output());
   }
 };
+
+template<typename F>
+size_t
+delta::node::RemoveDeltaInputsWhere(const F & match)
+{
+  size_t numRemovedInputs = 0;
+
+  // iterate backwards to avoid the invalidation of 'n' by RemoveInput()
+  for (size_t n = ninputs() - 1; n != static_cast<size_t>(-1); n--)
+  {
+    auto & deltaInput = *input(n);
+    auto & argument = *deltaInput.argument();
+
+    if (argument.IsDead() && match(deltaInput))
+    {
+      subregion()->RemoveArgument(argument.index());
+      RemoveInput(deltaInput.index());
+      numRemovedInputs++;
+    }
+  }
+
+  return numRemovedInputs;
+}
 
 }
 }

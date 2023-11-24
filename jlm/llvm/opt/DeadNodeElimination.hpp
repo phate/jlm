@@ -105,8 +105,8 @@ private:
   void
   SweepPhi(phi::node & phiNode) const;
 
-  void
-  SweepDelta(delta::node & deltaNode) const;
+  static void
+  SweepDelta(delta::node & deltaNode);
 
   std::unique_ptr<Context> Context_;
 };

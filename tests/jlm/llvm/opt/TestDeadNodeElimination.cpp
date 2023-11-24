@@ -11,6 +11,7 @@
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
+#include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Phi.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
@@ -311,8 +312,47 @@ TestPhi()
   //	jlm::rvsdg::view(graph.root(), stdout);
 }
 
+static void
+TestDelta()
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  jlm::tests::valuetype valueType;
+
+  RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
+
+  auto x = rvsdg.add_import({ valueType, "x" });
+  auto y = rvsdg.add_import({ valueType, "y" });
+  auto z = rvsdg.add_import({ valueType, "z" });
+
+  auto deltaNode =
+      delta::node::Create(rvsdg.root(), valueType, "delta", linkage::external_linkage, "", false);
+
+  auto xArgument = deltaNode->add_ctxvar(x);
+  deltaNode->add_ctxvar(y);
+  auto zArgument = deltaNode->add_ctxvar(z);
+
+  auto result =
+      jlm::tests::SimpleNode::Create(*deltaNode->subregion(), { xArgument }, { &valueType })
+          .output(0);
+
+  jlm::tests::SimpleNode::Create(*deltaNode->subregion(), { zArgument }, {});
+
+  auto deltaOutput = deltaNode->finalize(result);
+  rvsdg.add_export(deltaOutput, { PointerType(), "" });
+
+  // Act
+  RunDeadNodeElimination(rvsdgModule);
+
+  // Assert
+  assert(deltaNode->subregion()->nnodes() == 1);
+  assert(deltaNode->ninputs() == 1);
+}
+
 static int
-verify()
+TestDeadNodeElimination()
 {
   TestRoot();
   TestGamma();
@@ -322,8 +362,9 @@ verify()
   TestEvolvingTheta();
   TestLambda();
   TestPhi();
+  TestDelta();
 
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/TestDeadNodeElimination", verify)
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/TestDeadNodeElimination", TestDeadNodeElimination)
