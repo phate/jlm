@@ -128,7 +128,7 @@ TestRemovePhiArgumentsWhere()
   numRemovedArguments = phiNode.RemovePhiArgumentsWhere(
       [&](const jlm::rvsdg::argument & argument)
       {
-        return argument.index() == phiOutput1->argument()->index();
+        return argument.index() == 1;
       });
   assert(numRemovedArguments == 1);
   assert(phiNode.subregion()->narguments() == 4);
@@ -242,7 +242,7 @@ TestRemovePhiOutputsWhere()
   auto numRemovedOutputs = phiNode.RemovePhiOutputsWhere(
       [&](const phi::rvoutput & output)
       {
-        return output.index() == phiOutput1->index();
+        return output.index() == 1;
       });
   assert(numRemovedOutputs == 1);
   assert(phiNode.noutputs() == 2);
