@@ -90,7 +90,7 @@ TestRemovePhiArgumentsWhere()
   jlm::tests::valuetype valueType;
   RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
 
-  auto x = rvsdgModule.Rvsdg().add_import({valueType, ""});
+  auto x = rvsdgModule.Rvsdg().add_import({ valueType, "" });
 
   phi::builder phiBuilder;
   phiBuilder.begin(rvsdgModule.Rvsdg().root());
@@ -102,10 +102,10 @@ TestRemovePhiArgumentsWhere()
   auto phiArgument4 = phiBuilder.add_ctxvar(x);
 
   auto result = jlm::tests::SimpleNode::Create(
-    *phiBuilder.subregion(),
-    {phiOutput0->argument(), phiOutput2->argument(), phiArgument4},
-    {&valueType})
-    .output(0);
+                    *phiBuilder.subregion(),
+                    { phiOutput0->argument(), phiOutput2->argument(), phiArgument4 },
+                    { &valueType })
+                    .output(0);
 
   phiOutput0->set_rvorigin(result);
   phiOutput1->set_rvorigin(result);
@@ -116,14 +116,20 @@ TestRemovePhiArgumentsWhere()
   // Act & Assert
   // Try to remove phiArgument0 even though it is used
   auto numRemovedArguments = phiNode.RemovePhiArgumentsWhere(
-    [&](const jlm::rvsdg::argument& argument){ return argument.index() == phiOutput0->argument()->index(); });
+      [&](const jlm::rvsdg::argument & argument)
+      {
+        return argument.index() == phiOutput0->argument()->index();
+      });
   assert(numRemovedArguments == 0);
   assert(phiNode.subregion()->narguments() == 5);
   assert(phiNode.ninputs() == 2);
 
   // Remove phiArgument1
   numRemovedArguments = phiNode.RemovePhiArgumentsWhere(
-    [&](const jlm::rvsdg::argument& argument){ return argument.index() == phiOutput1->argument()->index(); });
+      [&](const jlm::rvsdg::argument & argument)
+      {
+        return argument.index() == phiOutput1->argument()->index();
+      });
   assert(numRemovedArguments == 1);
   assert(phiNode.subregion()->narguments() == 4);
   assert(phiNode.ninputs() == 2);
@@ -134,13 +140,20 @@ TestRemovePhiArgumentsWhere()
 
   // Try to remove anything else, but the only dead argument, i.e, phiArgument3
   numRemovedArguments = phiNode.RemovePhiArgumentsWhere(
-    [&](const jlm::rvsdg::argument& argument){ return argument.index() != phiArgument3->index(); });
+      [&](const jlm::rvsdg::argument & argument)
+      {
+        return argument.index() != phiArgument3->index();
+      });
   assert(numRemovedArguments == 0);
   assert(phiNode.subregion()->narguments() == 4);
   assert(phiNode.ninputs() == 2);
 
   // Remove everything that is dead, i.e., phiArgument3
-  numRemovedArguments = phiNode.RemovePhiArgumentsWhere([&](const jlm::rvsdg::argument& argument){ return true; });
+  numRemovedArguments = phiNode.RemovePhiArgumentsWhere(
+      [&](const jlm::rvsdg::argument & argument)
+      {
+        return true;
+      });
   assert(numRemovedArguments == 1);
   assert(phiNode.subregion()->narguments() == 3);
   assert(phiNode.ninputs() == 1);
@@ -294,6 +307,4 @@ TestPhi()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER(
-  "jlm/llvm/ir/operators/TestPhi",
-  TestPhi)
+JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/TestPhi", TestPhi)

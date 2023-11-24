@@ -405,8 +405,9 @@ public:
    *
    * \see argument#IsDead()
    */
-  template <typename F> size_t
-  RemovePhiArgumentsWhere(const F& match);
+  template<typename F>
+  size_t
+  RemovePhiArgumentsWhere(const F & match);
 
   /**
    * Remove all dead phi arguments and their respective inputs.
@@ -868,13 +869,14 @@ rvoutput::set_rvorigin(jlm::rvsdg::output * origin)
   result()->divert_to(origin);
 }
 
-template <typename F> size_t
-phi::node::RemovePhiArgumentsWhere(const F &match)
+template<typename F>
+size_t
+phi::node::RemovePhiArgumentsWhere(const F & match)
 {
   size_t numRemovedArguments = 0;
 
   // iterate backwards to avoid the invalidation of 'n' by RemoveArgument()
-  for (size_t n = subregion()->narguments()-1; n != static_cast<size_t>(-1); n--)
+  for (size_t n = subregion()->narguments() - 1; n != static_cast<size_t>(-1); n--)
   {
     auto & argument = *subregion()->argument(n);
     auto input = argument.input();
