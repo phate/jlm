@@ -523,36 +523,16 @@ DeadNodeElimination::SweepLambda(lambda::node & lambdaNode) const
 void
 DeadNodeElimination::SweepPhi(phi::node & phiNode) const
 {
-  auto subregion = phiNode.subregion();
-
-  // Remove dead outputs and results
-  for (size_t n = subregion->nresults() - 1; n != static_cast<size_t>(-1); n--)
+  auto matchOutput = [&](const phi::rvoutput & output)
   {
-    auto result = subregion->result(n);
-    if (!Context_->IsAlive(*result->output())
-        && !Context_->IsAlive(*subregion->argument(result->index())))
-    {
-      subregion->RemoveResult(n);
-      phiNode.RemoveOutput(n);
-    }
-  }
+    auto & argument = *output.argument();
+    return !Context_->IsAlive(output) && !Context_->IsAlive(argument);
+  };
+  phiNode.RemovePhiOutputsWhere(matchOutput);
 
-  SweepRegion(*subregion);
+  SweepRegion(*phiNode.subregion());
 
-  // Remove dead arguments and inputs
-  for (size_t n = subregion->narguments() - 1; n != static_cast<size_t>(-1); n--)
-  {
-    auto argument = subregion->argument(n);
-    auto input = argument->input();
-    if (!Context_->IsAlive(*argument))
-    {
-      subregion->RemoveArgument(n);
-      if (input)
-      {
-        phiNode.RemoveInput(input->index());
-      }
-    }
-  }
+  phiNode.PrunePhiArguments();
 }
 
 void
