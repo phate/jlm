@@ -476,41 +476,27 @@ DeadNodeElimination::SweepGamma(jlm::rvsdg::gamma_node & gammaNode) const
 void
 DeadNodeElimination::SweepTheta(jlm::rvsdg::theta_node & thetaNode) const
 {
-  auto subregion = thetaNode.subregion();
+  auto & thetaSubregion = *thetaNode.subregion();
 
-  // Remove dead results
-  for (size_t n = thetaNode.noutputs() - 1; n != static_cast<size_t>(-1); n--)
+  auto matchOutput = [&](const rvsdg::theta_output & output)
   {
-    auto & thetaOutput = *thetaNode.output(n);
-    auto & thetaArgument = *thetaOutput.argument();
-    auto & thetaResult = *thetaOutput.result();
+    auto & argument = *output.argument();
+    return !Context_->IsAlive(argument) && !Context_->IsAlive(output);
+  };
+  thetaNode.RemoveThetaOutputsWhere(matchOutput);
 
-    if (!Context_->IsAlive(thetaArgument) && !Context_->IsAlive(thetaOutput))
-    {
-      subregion->RemoveResult(thetaResult.index());
-    }
-  }
+  SweepRegion(thetaSubregion);
 
-  SweepRegion(*subregion);
-
-  // Remove dead outputs, inputs, and arguments
-  for (size_t n = thetaNode.ninputs() - 1; n != static_cast<size_t>(-1); n--)
+  auto matchInput = [&](const rvsdg::theta_input & input)
   {
-    auto & thetaInput = *thetaNode.input(n);
-    auto & thetaArgument = *thetaInput.argument();
-    auto & thetaOutput = *thetaInput.output();
-
-    if (!Context_->IsAlive(thetaArgument) && !Context_->IsAlive(thetaOutput))
-    {
-      JLM_ASSERT(thetaOutput.results.empty());
-      subregion->RemoveArgument(thetaArgument.index());
-      thetaNode.RemoveInput(thetaInput.index());
-      thetaNode.RemoveOutput(thetaOutput.index());
-    }
-  }
+    auto & output = *input.output();
+    auto & argument = *input.argument();
+    return !Context_->IsAlive(argument) && !Context_->IsAlive(output);
+  };
+  thetaNode.RemoveThetaInputsWhere(matchInput);
 
   JLM_ASSERT(thetaNode.ninputs() == thetaNode.noutputs());
-  JLM_ASSERT(subregion->narguments() == subregion->nresults() - 1);
+  JLM_ASSERT(thetaSubregion.narguments() == thetaSubregion.nresults() - 1);
 }
 
 void
