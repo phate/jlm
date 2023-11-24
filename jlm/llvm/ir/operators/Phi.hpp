@@ -404,6 +404,9 @@ public:
    * is up to the caller to ensure that the invariants of the phi node will eventually be met again.
    *
    * \see argument#IsDead()
+   * \see PrunePhiArguments()
+   * \see RemovePhiOutputsWhere()
+   * \see PrunePhiOutputs()
    */
   template<typename F>
   size_t
@@ -413,6 +416,10 @@ public:
    * Remove all dead phi arguments and their respective inputs.
    *
    * @return The number of removed arguments.
+   *
+   * \note The application of this method might leave the phi node in an invalid state. Some
+   * outputs might refer to arguments that have been removed by the application of this method. It
+   * is up to the caller to ensure that the invariants of the phi node will eventually be met again.
    *
    * \see RemovePhiArgumentsWhere()
    */
@@ -441,6 +448,9 @@ public:
    * is up to the caller to ensure that the invariants of the phi node will eventually be met again.
    *
    * \see rvoutput#IsDead()
+   * \see PrunePhiOutputs()
+   * \see RemovePhiArgumentsWhere()
+   * \see PrunePhiArguments()
    */
   template<typename F>
   size_t
