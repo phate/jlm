@@ -329,12 +329,19 @@ TestPhi()
     return lambda3->finalize({ result });
   };
 
+  auto setupF4 = [&](jlm::rvsdg::region & region)
+  {
+    auto lambda = lambda::node::create(&region, functionType, "f3", linkage::external_linkage);
+    return lambda->finalize({ lambda->fctargument(0) });
+  };
+
   phi::builder phiBuilder;
   phiBuilder.begin(rvsdg.root());
 
   auto rv1 = phiBuilder.add_recvar(PointerType());
   auto rv2 = phiBuilder.add_recvar(PointerType());
   auto rv3 = phiBuilder.add_recvar(PointerType());
+  auto rv4 = phiBuilder.add_recvar(PointerType());
   auto dx = phiBuilder.add_ctxvar(x);
   auto dy = phiBuilder.add_ctxvar(y);
   auto dz = phiBuilder.add_ctxvar(z);
@@ -342,21 +349,24 @@ TestPhi()
   auto f1 = setupF1(*phiBuilder.subregion(), *rv2, *dx);
   auto f2 = setupF2(*phiBuilder.subregion(), *rv1, *dy);
   auto f3 = setupF3(*phiBuilder.subregion(), *dz);
+  auto f4 = setupF4(*phiBuilder.subregion());
 
   rv1->set_rvorigin(f1);
   rv2->set_rvorigin(f2);
   rv3->set_rvorigin(f3);
+  rv4->set_rvorigin(f4);
   auto phiNode = phiBuilder.end();
 
   rvsdg.add_export(phiNode->output(0), { phiNode->output(0)->type(), "f1" });
+  rvsdg.add_export(phiNode->output(3), { phiNode->output(3)->type(), "f4" });
 
   // Act
   RunDeadNodeElimination(rvsdgModule);
 
   // Assert
-  assert(phiNode->noutputs() == 2);                // f1 and f2 are alive
-  assert(phiNode->subregion()->nresults() == 2);   // f1 and f2 are alive
-  assert(phiNode->subregion()->narguments() == 3); // f1, f2, and dx are alive
+  assert(phiNode->noutputs() == 3);                // f1, f2, and f4 are alive
+  assert(phiNode->subregion()->nresults() == 3);   // f1, f2, and f4 are alive
+  assert(phiNode->subregion()->narguments() == 4); // f1, f2, f4, and dx are alive
   assert(phiNode->ninputs() == 1);                 // dx is alive
   assert(phiNode->input(0) == dx->input());
 }
