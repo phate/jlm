@@ -331,12 +331,13 @@ TestPhi()
 
   auto setupF4 = [&](jlm::rvsdg::region & region)
   {
-    auto lambda = lambda::node::create(&region, functionType, "f3", linkage::external_linkage);
+    auto lambda = lambda::node::create(&region, functionType, "f4", linkage::external_linkage);
     return lambda->finalize({ lambda->fctargument(0) });
   };
 
   phi::builder phiBuilder;
   phiBuilder.begin(rvsdg.root());
+  auto & phiSubregion = *phiBuilder.subregion();
 
   auto rv1 = phiBuilder.add_recvar(PointerType());
   auto rv2 = phiBuilder.add_recvar(PointerType());
@@ -346,10 +347,10 @@ TestPhi()
   auto dy = phiBuilder.add_ctxvar(y);
   auto dz = phiBuilder.add_ctxvar(z);
 
-  auto f1 = setupF1(*phiBuilder.subregion(), *rv2, *dx);
-  auto f2 = setupF2(*phiBuilder.subregion(), *rv1, *dy);
-  auto f3 = setupF3(*phiBuilder.subregion(), *dz);
-  auto f4 = setupF4(*phiBuilder.subregion());
+  auto f1 = setupF1(phiSubregion, *rv2, *dx);
+  auto f2 = setupF2(phiSubregion, *rv1, *dy);
+  auto f3 = setupF3(phiSubregion, *dz);
+  auto f4 = setupF4(phiSubregion);
 
   rv1->set_rvorigin(f1);
   rv2->set_rvorigin(f2);
@@ -364,10 +365,20 @@ TestPhi()
   RunDeadNodeElimination(rvsdgModule);
 
   // Assert
-  assert(phiNode->noutputs() == 3);                // f1, f2, and f4 are alive
-  assert(phiNode->subregion()->nresults() == 3);   // f1, f2, and f4 are alive
-  assert(phiNode->subregion()->narguments() == 4); // f1, f2, f4, and dx are alive
-  assert(phiNode->ninputs() == 1);                 // dx is alive
+  assert(phiNode->noutputs() == 3); // f1, f2, and f4 are alive
+  assert(phiNode->output(0) == rv1);
+  assert(phiNode->output(1) == rv2);
+  assert(phiNode->output(2) == rv4);
+  assert(phiSubregion.nresults() == 3); // f1, f2, and f4 are alive
+  assert(phiSubregion.result(0) == rv1->result());
+  assert(phiSubregion.result(1) == rv2->result());
+  assert(phiSubregion.result(2) == rv4->result());
+  assert(phiSubregion.narguments() == 4); // f1, f2, f4, and dx are alive
+  assert(phiSubregion.argument(0) == rv1->argument());
+  assert(phiSubregion.argument(1) == rv2->argument());
+  assert(phiSubregion.argument(2) == rv4->argument());
+  assert(phiSubregion.argument(3) == dx);
+  assert(phiNode->ninputs() == 1); // dx is alive
   assert(phiNode->input(0) == dx->input());
 }
 
