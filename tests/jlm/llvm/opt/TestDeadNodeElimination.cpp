@@ -275,41 +275,90 @@ TestPhi()
 {
   using namespace jlm::llvm;
 
-  jlm::tests::valuetype vt;
-  FunctionType ft({ &vt }, { &vt });
+  // Arrange
+  jlm::tests::valuetype valueType;
+  FunctionType functionType({ &valueType }, { &valueType });
 
-  RvsdgModule rm(jlm::util::filepath(""), "", "");
-  auto & graph = rm.Rvsdg();
-  auto x = graph.add_import({ vt, "x" });
-  auto y = graph.add_import({ vt, "y" });
+  RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
+  auto x = rvsdg.add_import({ valueType, "x" });
+  auto y = rvsdg.add_import({ valueType, "y" });
+  auto z = rvsdg.add_import({ valueType, "z" });
 
-  phi::builder pb;
-  pb.begin(graph.root());
+  auto setupF1 = [&](jlm::rvsdg::region & region, phi::rvoutput & rv2, jlm::rvsdg::argument & dx)
+  {
+    auto lambda1 = lambda::node::create(&region, functionType, "f1", linkage::external_linkage);
+    auto f2Argument = lambda1->add_ctxvar(rv2.argument());
+    auto xArgument = lambda1->add_ctxvar(&dx);
 
-  auto rv1 = pb.add_recvar(PointerType());
-  auto rv2 = pb.add_recvar(PointerType());
-  auto dx = pb.add_ctxvar(x);
-  auto dy = pb.add_ctxvar(y);
+    auto result = jlm::tests::SimpleNode::Create(
+                      *lambda1->subregion(),
+                      { lambda1->fctargument(0), f2Argument, xArgument },
+                      { &valueType })
+                      .output(0);
 
-  auto lambda1 = lambda::node::create(pb.subregion(), ft, "f", linkage::external_linkage);
-  lambda1->add_ctxvar(rv1->argument());
-  lambda1->add_ctxvar(dx);
-  auto f1 = lambda1->finalize({ lambda1->fctargument(0) });
+    return lambda1->finalize({ result });
+  };
 
-  auto lambda2 = lambda::node::create(pb.subregion(), ft, "f", linkage::external_linkage);
-  lambda2->add_ctxvar(rv2->argument());
-  lambda2->add_ctxvar(dy);
-  auto f2 = lambda2->finalize({ lambda2->fctargument(0) });
+  auto setupF2 = [&](jlm::rvsdg::region & region, phi::rvoutput & rv1, jlm::rvsdg::argument & dy)
+  {
+    auto lambda2 = lambda::node::create(&region, functionType, "f2", linkage::external_linkage);
+    auto f1Argument = lambda2->add_ctxvar(rv1.argument());
+    lambda2->add_ctxvar(&dy);
+
+    auto result = jlm::tests::SimpleNode::Create(
+                      *lambda2->subregion(),
+                      { lambda2->fctargument(0), f1Argument },
+                      { &valueType })
+                      .output(0);
+
+    return lambda2->finalize({ result });
+  };
+
+  auto setupF3 = [&](jlm::rvsdg::region & region, jlm::rvsdg::argument & dz)
+  {
+    auto lambda3 = lambda::node::create(&region, functionType, "f3", linkage::external_linkage);
+    auto zArgument = lambda3->add_ctxvar(&dz);
+
+    auto result = jlm::tests::SimpleNode::Create(
+                      *lambda3->subregion(),
+                      { lambda3->fctargument(0), zArgument },
+                      { &valueType })
+                      .output(0);
+
+    return lambda3->finalize({ result });
+  };
+
+  phi::builder phiBuilder;
+  phiBuilder.begin(rvsdg.root());
+
+  auto rv1 = phiBuilder.add_recvar(PointerType());
+  auto rv2 = phiBuilder.add_recvar(PointerType());
+  auto rv3 = phiBuilder.add_recvar(PointerType());
+  auto dx = phiBuilder.add_ctxvar(x);
+  auto dy = phiBuilder.add_ctxvar(y);
+  auto dz = phiBuilder.add_ctxvar(z);
+
+  auto f1 = setupF1(*phiBuilder.subregion(), *rv2, *dx);
+  auto f2 = setupF2(*phiBuilder.subregion(), *rv1, *dy);
+  auto f3 = setupF3(*phiBuilder.subregion(), *dz);
 
   rv1->set_rvorigin(f1);
   rv2->set_rvorigin(f2);
-  auto phi = pb.end();
+  rv3->set_rvorigin(f3);
+  auto phiNode = phiBuilder.end();
 
-  graph.add_export(phi->output(0), { phi->output(0)->type(), "f1" });
+  rvsdg.add_export(phiNode->output(0), { phiNode->output(0)->type(), "f1" });
 
-  //	jlm::rvsdg::view(graph.root(), stdout);
-  RunDeadNodeElimination(rm);
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  // Act
+  RunDeadNodeElimination(rvsdgModule);
+
+  // Assert
+  assert(phiNode->noutputs() == 2);                // f1 and f2 are alive
+  assert(phiNode->subregion()->nresults() == 2);   // f1 and f2 are alive
+  assert(phiNode->subregion()->narguments() == 3); // f1, f2, and dx are alive
+  assert(phiNode->ninputs() == 1);                 // dx is alive
+  assert(phiNode->input(0) == dx->input());
 }
 
 static void
