@@ -52,18 +52,38 @@ TestCreatePointerObjects()
   rvsdg.InitializeTest();
 
   PointerObjectSet set;
+
+  // Register PointerObjects have some extra ways of being created: Dummy and mapping
+  auto register0 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput());
+  set.MapRegisterToExistingPointerObject(rvsdg.GetDeltaOutput(), register0);
+  auto dummy0 = set.CreateDummyRegisterPointerObject();
+
+  // For PointerObjects representing MemoryObjects, there is only one Create function
   auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode());
   auto malloc0 = set.CreateMallocMemoryObject(rvsdg.GetMallocNode());
   auto delta0 = set.CreateGlobalMemoryObject(rvsdg.GetDeltaNode());
   auto lambda0 = set.CreateFunctionMemoryObject(rvsdg.GetLambdaNode());
   auto import0 = set.CreateImportMemoryObject(rvsdg.GetImportOutput());
 
+  assert(set.GetPointerObject(register0).GetKind() == PointerObjectKind::Register);
+  assert(set.GetPointerObject(dummy0).GetKind() == PointerObjectKind::Register);
   assert(set.GetPointerObject(alloca0).GetKind() == PointerObjectKind::AllocaMemoryObject);
   assert(set.GetPointerObject(malloc0).GetKind() == PointerObjectKind::MallocMemoryObject);
   assert(set.GetPointerObject(delta0).GetKind() == PointerObjectKind::GlobalMemoryObject);
   assert(set.GetPointerObject(lambda0).GetKind() == PointerObjectKind::FunctionMemoryObject);
   assert(set.GetPointerObject(import0).GetKind() == PointerObjectKind::ImportMemoryObject);
 
+  // Registers have helper function for looking up existing PointerObjects
+  assert(set.GetRegisterPointerObject(rvsdg.GetAllocaOutput()) == register0);
+  assert(set.GetRegisterPointerObject(rvsdg.GetDeltaOutput()) == register0);
+
+  // Funtions have the same, but also in the other direction
+  assert(set.GetFunctionMemoryObject(rvsdg.GetLambdaNode()) == lambda0);
+  assert(&set.GetLambdaNodeFromFunctionMemoryObject(lambda0) == &rvsdg.GetLambdaNode());
+
+  // The maps can also be accessed directly
+  assert(set.GetRegisterMap().at(&rvsdg.GetAllocaOutput()) == register0);
+  assert(set.GetRegisterMap().at(&rvsdg.GetDeltaOutput()) == register0);
   assert(set.GetAllocaMap().at(&rvsdg.GetAllocaNode()) == alloca0);
   assert(set.GetMallocMap().at(&rvsdg.GetMallocNode()) == malloc0);
   assert(set.GetGlobalMap().at(&rvsdg.GetDeltaNode()) == delta0);
@@ -383,23 +403,23 @@ TestPointerObjectConstraintSetSolve()
   using namespace jlm::llvm::aa;
 
   // Create a graph with 11 different registers, and 4 allocas.
-  jlm::tests::NAllocaNodesTest rvsdg(11);
+  jlm::tests::NAllocaNodesTest rvsdg(4);
   rvsdg.InitializeTest();
 
   PointerObjectSet set;
   PointerObject::Index reg[11];
   for (size_t i = 0; i < 11; i++)
-    reg[i] = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(i));
+    reg[i] = set.CreateDummyRegisterPointerObject();
 
   // %0 is a function parameter
   // %1 = alloca 8 (variable v1)
   // %2 = alloca 8 (variable v2)
   // %3 = alloca 8 (variable v3)
   // %4 = alloca 8 (variable v4)
-  auto alloca1 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(1));
-  auto alloca2 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(2));
-  auto alloca3 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(3));
-  auto alloca4 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(4));
+  auto alloca1 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0));
+  auto alloca2 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(1));
+  auto alloca3 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(2));
+  auto alloca4 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(3));
 
   // Now start building constraints based on instructions
   PointerObjectConstraintSet constraints(set);

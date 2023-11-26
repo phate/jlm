@@ -46,20 +46,12 @@ PointerObjectSet::CreateRegisterPointerObject(const rvsdg::output & rvsdgOutput)
 }
 
 PointerObject::Index
-PointerObjectSet::GetRegisterPointerObject(const rvsdg::output & rvsdgOutput)
+PointerObjectSet::GetRegisterPointerObject(const rvsdg::output & rvsdgOutput) const
 {
   const auto it = RegisterMap_.find(&rvsdgOutput);
   if (it == RegisterMap_.end())
     throw util::error("No PointerObject exists for the given rvsdg::output");
   return it->second;
-}
-
-PointerObject::Index
-PointerObjectSet::GetOrCreateRegisterPointerObject(const rvsdg::output & rvsdgOutput)
-{
-  if (RegisterMap_.count(&rvsdgOutput))
-    return RegisterMap_[&rvsdgOutput];
-  return RegisterMap_[&rvsdgOutput] = AddPointerObject(PointerObjectKind::Register);
 }
 
 void
@@ -68,7 +60,6 @@ PointerObjectSet::MapRegisterToExistingPointerObject(
     PointerObject::Index pointerObject)
 {
   JLM_ASSERT(RegisterMap_.count(&rvsdgOutput) == 0);
-  JLM_ASSERT(pointerObject < NumPointerObjects());
   JLM_ASSERT(GetPointerObject(pointerObject).GetKind() == PointerObjectKind::Register);
   RegisterMap_[&rvsdgOutput] = pointerObject;
 }
@@ -97,8 +88,24 @@ PointerObjectSet::CreateGlobalMemoryObject(const delta::node & deltaNode)
 PointerObject::Index
 PointerObjectSet::CreateFunctionMemoryObject(const lambda::node & lambdaNode)
 {
-  JLM_ASSERT(FunctionMap_.count(&lambdaNode) == 0);
-  return FunctionMap_[&lambdaNode] = AddPointerObject(PointerObjectKind::FunctionMemoryObject);
+  JLM_ASSERT(!FunctionMap_.HasKey(&lambdaNode));
+  const auto pointerObject = AddPointerObject(PointerObjectKind::FunctionMemoryObject);
+  FunctionMap_.Insert(&lambdaNode, pointerObject);
+  return pointerObject;
+}
+
+PointerObject::Index
+PointerObjectSet::GetFunctionMemoryObject(const lambda::node & lambdaNode) const
+{
+  JLM_ASSERT(FunctionMap_.HasKey(&lambdaNode));
+  return FunctionMap_.LookupKey(&lambdaNode);
+}
+
+const lambda::node &
+PointerObjectSet::GetLambdaNodeFromFunctionMemoryObject(PointerObject::Index index) const
+{
+  JLM_ASSERT(FunctionMap_.HasValue(index));
+  return *FunctionMap_.LookupValue(index);
 }
 
 PointerObject::Index
@@ -135,7 +142,7 @@ PointerObjectSet::GetGlobalMap() const noexcept
 const std::unordered_map<const lambda::node *, PointerObject::Index> &
 PointerObjectSet::GetFunctionMap() const noexcept
 {
-  return FunctionMap_;
+  return FunctionMap_.GetForwardMap();
 }
 
 const std::unordered_map<const rvsdg::argument *, PointerObject::Index> &
@@ -230,6 +237,46 @@ SupersetOfAllPointeesConstraint::Apply(PointerObjectSet & set)
   // Propagating escaped status is handled by different constraints
 
   return modified;
+}
+
+// For escaped functions, the result must be marked as escaped,
+// and all arguments of pointer type as pointing to external.
+bool
+HandleEscapingFunctionConstraint::Apply(PointerObjectSet & set)
+{
+  // Don't perform the same work again
+  if (EscapeHandled_)
+    return false;
+
+  if (!set.GetPointerObject(Lambda_).HasEscaped())
+    return false;
+
+  // We now go though the lambda's inner region and apply the necessary flags
+  EscapeHandled_ = true;
+  auto & lambdaNode = set.GetLambdaNodeFromFunctionMemoryObject(Lambda_);
+
+  // All the function's arguments need to be flagged as PointsToExternal
+  for (auto & argument : lambdaNode.fctarguments())
+  {
+    if (!is<PointerType>(argument.type()))
+      continue;
+
+    const auto argumentPO = set.GetRegisterPointerObject(argument);
+    set.GetPointerObject(argumentPO).MarkAsPointsToExternal();
+  }
+
+  // All results of pointer type need to be flagged as HasEscaped
+  for (auto & result : lambdaNode.fctresults())
+  {
+    if (!is<PointerType>(result.type()))
+      continue;
+
+    // Mark the register as escaped, which will propagate the escaped flag to all pointees
+    const auto resultPO = set.GetRegisterPointerObject(*result.origin());
+    set.GetPointerObject(resultPO).MarkAsEscaped();
+  }
+
+  return true;
 }
 
 void

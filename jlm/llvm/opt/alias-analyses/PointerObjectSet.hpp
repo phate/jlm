@@ -8,7 +8,7 @@
 
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
-#include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/util/BiMap.hpp>
 #include <jlm/util/common.hpp>
 #include <jlm/util/HashSet.hpp>
 #include <jlm/util/Math.hpp>
@@ -140,8 +140,8 @@ class PointerObjectSet final
   // Mapping from global variables declared with delta nodes to PointerObject
   std::unordered_map<const delta::node *, PointerObject::Index> GlobalMap_;
 
-  // Mapping from functions declared with lambda nodes to PointerObject
-  std::unordered_map<const lambda::node *, PointerObject::Index> FunctionMap_;
+  // Bidirectional mapping from functions declared with lambda nodes to PointerObject
+  util::BiMap<const lambda::node *, PointerObject::Index> FunctionMap_;
 
   // Mapping from symbols imported into the module to PointerObject
   std::unordered_map<const rvsdg::argument *, PointerObject::Index> ImportMap_;
@@ -163,34 +163,26 @@ public:
   GetPointerObject(PointerObject::Index index) const;
 
   /**
-   * Creates a PointerObject of register kind and maps the rvsdg output to the new PointerObject.
+   * Creates a PointerObject of Register kind and maps the rvsdg output to the new PointerObject.
+   * The rvsdg output can not already be associated with a PointerObject.
    * @param rvsdgOutput the rvsdg output associated with the register PointerObject
    * @return the index of the new PointerObject in the PointerObjectSet
    */
-  PointerObject::Index
+  [[nodiscard]] PointerObject::Index
   CreateRegisterPointerObject(const rvsdg::output & rvsdgOutput);
 
   /**
-     * \brief retrieves a previously created PointerObject of Register kind.
-     * \param rvsdgOutput an rvsdg::output that already corresponds to a PointerObject in the set
-     * \return the index of the PointerObject associated with the rvsdg::output
-     * \throws jlm::util::error if no associated PointerObject exists
-     */
-  [[nodiscard]] PointerObject::Index
-  GetRegisterPointerObject(const rvsdg::output & rvsdgOutput);
-
-  /**
-   * If a PointerObject already exists for the given rvsgd::output, it is returned.
-   * Otherwise, a new PointerObject of Register kind is created.
-   * \param rvsdgOutput the rvsdg output associated with the register PointerObject
-   * \return the index of the existing or newly created PointerObject
+   * Retrieves a previously created PointerObject of Register kind.
+   * @param rvsdgOutput an rvsdg::output that already corresponds to a PointerObject in the set
+   * @return the index of the PointerObject associated with the rvsdg::output
+   * @throws jlm::util::error if no associated PointerObject exists
    */
   [[nodiscard]] PointerObject::Index
-  GetOrCreateRegisterPointerObject(const rvsdg::output & rvsdgOutput);
+  GetRegisterPointerObject(const rvsdg::output & rvsdgOutput) const;
 
   /**
    * Reuses an existing PointerObject of register type for an additional rvsdg output.
-   * This is useful when two rvsdg outputs can be shown to always hold the exact same value.
+   * This is useful when values are passed from outer regions to inner regions.
    * @param rvsdgOutput the new rvsdg output providing the register value
    * @param pointerObject the index of the existing PointerObject, must be of register kind
    */
@@ -199,17 +191,49 @@ public:
       const rvsdg::output & rvsdgOutput,
       PointerObject::Index pointerObject);
 
-  PointerObject::Index
+  /**
+   * Creates a PointerObject of Register kind, without any association to any node in the program.
+   * It can not be pointed to, and will not be included in the final PointsToGraph,
+   * but it can be used as a temporary object to string together constraints.
+   * @see Andersen::AnalyzeMemcpy.
+   * @return the index of the new PointerObject
+   */
+  [[nodiscard]] PointerObject::Index
+  CreateDummyRegisterPointerObject();
+
+  [[nodiscard]] PointerObject::Index
   CreateAllocaMemoryObject(const rvsdg::node & allocaNode);
 
-  PointerObject::Index
+  [[nodiscard]] PointerObject::Index
   CreateMallocMemoryObject(const rvsdg::node & mallocNode);
 
-  PointerObject::Index
+  [[nodiscard]] PointerObject::Index
   CreateGlobalMemoryObject(const delta::node & deltaNode);
 
-  PointerObject::Index
+  /**
+   * Creates a PointerObject of Function kind associated with the given \p lambdaNode.
+   * The lambda node can not already
+   * @param lambdaNode the RVSDG node defining the function,
+   * @return the index of the new PointerObject in the PointerObjectSet
+   */
+  [[nodiscard]] PointerObject::Index
   CreateFunctionMemoryObject(const lambda::node & lambdaNode);
+
+  /**
+   * Retrieves the PointerObject of Function kind associated with the given lambda node
+   * @param lambdaNode the lambda node associated with the existing PointerObject
+   * @return the index of the associated PointerObject
+   */
+  [[nodiscard]] PointerObject::Index
+  GetFunctionMemoryObject(const lambda::node & lambdaNode) const;
+
+  /**
+   * \brief
+   * \param index
+   * \return
+   */
+  [[nodiscard]] const lambda::node &
+  GetLambdaNodeFromFunctionMemoryObject(PointerObject::Index index) const;
 
   PointerObject::Index
   CreateImportMemoryObject(const rvsdg::argument & importNode);
@@ -336,6 +360,80 @@ public:
 };
 
 /**
+ * A constraint of the form:
+ * If the function escapes the module, its return value should be marked as escaping the module,
+ * and all arguments should be marked as possibly pointing to external
+ */
+class HandleEscapingFunctionConstraint final
+{
+  PointerObject::Index Lambda_;
+
+  /**
+   * Once the function has been determined to be escaping,
+   * the flags only need to be applied to its arguments and results once.
+   * Afterwards, this boolean will be true, preventing additional unnecessary work.
+   */
+  bool EscapeHandled_;
+
+public:
+  explicit HandleEscapingFunctionConstraint(PointerObject::Index lambda)
+      : Lambda_(lambda),
+        EscapeHandled_(false)
+  {}
+
+  /**
+   * \brief Applies the constraint to the \p set
+   * \return true if this operation modified any PointerObjects or points-to-sets
+   */
+  bool
+  Apply(PointerObjectSet & set);
+};
+
+/**
+ * A constraint making the given call site communicate with the functions it may call.
+ *
+ * It follows the given pseudocode:
+ * for f in P(CallTarget):
+ *   if f is not a lambda:
+ *     continue
+ *   for each function argument/input pair (a, i):
+ *     make P(x) a superset of P(y)
+ *   for each return value/output pair (r, o):
+ *     make P(o) a superset of P(r)
+ *
+ * if CallTarget is flagged as PointsToExternal:
+ *   mark all of CallNode's parameters as HasEscaped
+ *   mark the CallNode's return values as PointsToExternal
+ */
+class FunctionCallConstraint final
+{
+  /**
+   * A PointerObject of Register kind, representing the source of the function pointer
+   */
+  PointerObject::Index CallTarget_;
+
+  /**
+   *
+   */
+  const jlm::llvm::CallNode & CallNode_;
+
+public:
+  explicit FunctionCallConstraint(
+      PointerObject::Index callTarget,
+      const jlm::llvm::CallNode & callNode)
+      : CallTarget_(callTarget),
+        CallNode_(callNode)
+  {}
+
+  /**
+   * \brief Applies the constraint to the \p set
+   * \return true if this operation modified any PointerObjects or points-to-sets
+   */
+  bool
+  Apply(PointerObjectSet & set);
+};
+
+/**
  * A class for adding and applying constraints to the points-to-sets of the PointerObjectSet.
  * Unlike the set modification methods on PointerObjectSet, constraints can be added in any order,
  * with the same result. Use Solve() to calculate the final points-to-sets.
@@ -348,7 +446,8 @@ public:
   using ConstraintVariant = std::variant<
       SupersetConstraint,
       AllPointeesPointToSupersetConstraint,
-      SupersetOfAllPointeesConstraint>;
+      SupersetOfAllPointeesConstraint,
+      HandleEscapingFunctionConstraint>;
 
   explicit PointerObjectConstraintSet(PointerObjectSet & set)
       : Set_(set)
