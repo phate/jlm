@@ -4,15 +4,16 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-registry.hpp"
-#include "test-types.hpp"
-
-#include <jlm/rvsdg/view.hpp>
+#include <test-operation.hpp>
+#include <test-registry.hpp>
+#include <test-types.hpp>
 
 #include <jlm/llvm/ir/operators/call.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/view.hpp>
 
-static int
-test_main()
+static void
+TestPhiCreation()
 {
   using namespace jlm::llvm;
 
@@ -77,8 +78,233 @@ test_main()
   graph.prune();
 
   jlm::rvsdg::view(graph.root(), stderr);
+}
+
+static void
+TestRemovePhiArgumentsWhere()
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  // The phi setup is nonsense, but it is sufficient for this test
+  jlm::tests::valuetype valueType;
+  RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+
+  auto x = rvsdgModule.Rvsdg().add_import({ valueType, "" });
+
+  phi::builder phiBuilder;
+  phiBuilder.begin(rvsdgModule.Rvsdg().root());
+
+  auto phiOutput0 = phiBuilder.add_recvar(valueType);
+  auto phiOutput1 = phiBuilder.add_recvar(valueType);
+  auto phiOutput2 = phiBuilder.add_recvar(valueType);
+  auto phiArgument3 = phiBuilder.add_ctxvar(x);
+  auto phiArgument4 = phiBuilder.add_ctxvar(x);
+
+  auto result = jlm::tests::SimpleNode::Create(
+                    *phiBuilder.subregion(),
+                    { phiOutput0->argument(), phiOutput2->argument(), phiArgument4 },
+                    { &valueType })
+                    .output(0);
+
+  phiOutput0->set_rvorigin(result);
+  phiOutput1->set_rvorigin(result);
+  phiOutput2->set_rvorigin(result);
+
+  auto & phiNode = *phiBuilder.end();
+
+  // Act & Assert
+  // Try to remove phiArgument0 even though it is used
+  auto numRemovedArguments = phiNode.RemovePhiArgumentsWhere(
+      [&](const jlm::rvsdg::argument & argument)
+      {
+        return argument.index() == phiOutput0->argument()->index();
+      });
+  assert(numRemovedArguments == 0);
+  assert(phiNode.subregion()->narguments() == 5);
+  assert(phiNode.ninputs() == 2);
+
+  // Remove phiArgument1
+  numRemovedArguments = phiNode.RemovePhiArgumentsWhere(
+      [&](const jlm::rvsdg::argument & argument)
+      {
+        return argument.index() == 1;
+      });
+  assert(numRemovedArguments == 1);
+  assert(phiNode.subregion()->narguments() == 4);
+  assert(phiNode.ninputs() == 2);
+  assert(phiOutput0->argument()->index() == 0);
+  assert(phiOutput2->argument()->index() == 1);
+  assert(phiArgument3->index() == 2);
+  assert(phiArgument4->index() == 3);
+
+  // Try to remove anything else, but the only dead argument, i.e, phiArgument3
+  numRemovedArguments = phiNode.RemovePhiArgumentsWhere(
+      [&](const jlm::rvsdg::argument & argument)
+      {
+        return argument.index() != phiArgument3->index();
+      });
+  assert(numRemovedArguments == 0);
+  assert(phiNode.subregion()->narguments() == 4);
+  assert(phiNode.ninputs() == 2);
+
+  // Remove everything that is dead, i.e., phiArgument3
+  numRemovedArguments = phiNode.RemovePhiArgumentsWhere(
+      [&](const jlm::rvsdg::argument & argument)
+      {
+        return true;
+      });
+  assert(numRemovedArguments == 1);
+  assert(phiNode.subregion()->narguments() == 3);
+  assert(phiNode.ninputs() == 1);
+  assert(phiOutput0->argument()->index() == 0);
+  assert(phiOutput2->argument()->index() == 1);
+  assert(phiArgument4->index() == 2);
+  assert(phiArgument4->input()->index() == 0);
+}
+
+static void
+TestPrunePhiArguments()
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  // The phi setup is nonsense, but it is sufficient for this test
+  jlm::tests::valuetype valueType;
+  RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+
+  auto x = rvsdgModule.Rvsdg().add_import({ valueType, "" });
+
+  phi::builder phiBuilder;
+  phiBuilder.begin(rvsdgModule.Rvsdg().root());
+
+  auto phiOutput0 = phiBuilder.add_recvar(valueType);
+  auto phiOutput1 = phiBuilder.add_recvar(valueType);
+  auto phiOutput2 = phiBuilder.add_recvar(valueType);
+  phiBuilder.add_ctxvar(x);
+  auto phiArgument4 = phiBuilder.add_ctxvar(x);
+
+  auto result = jlm::tests::SimpleNode::Create(
+                    *phiBuilder.subregion(),
+                    { phiOutput0->argument(), phiOutput2->argument(), phiArgument4 },
+                    { &valueType })
+                    .output(0);
+
+  phiOutput0->set_rvorigin(result);
+  phiOutput1->set_rvorigin(result);
+  phiOutput2->set_rvorigin(result);
+
+  auto & phiNode = *phiBuilder.end();
+
+  // Act
+  auto numRemovedArguments = phiNode.PrunePhiArguments();
+
+  // Assert
+  assert(numRemovedArguments == 2);
+  assert(phiNode.subregion()->narguments() == 3);
+  assert(phiNode.ninputs() == 1);
+  assert(phiOutput0->argument()->index() == 0);
+  assert(phiOutput2->argument()->index() == 1);
+  assert(phiArgument4->index() == 2);
+  assert(phiArgument4->input()->index() == 0);
+}
+
+static void
+TestRemovePhiOutputsWhere()
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  // The phi setup is nonsense, but it is sufficient for this test
+  jlm::tests::valuetype valueType;
+  RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+
+  phi::builder phiBuilder;
+  phiBuilder.begin(rvsdgModule.Rvsdg().root());
+
+  auto phiOutput0 = phiBuilder.add_recvar(valueType);
+  auto phiOutput1 = phiBuilder.add_recvar(valueType);
+  auto phiOutput2 = phiBuilder.add_recvar(valueType);
+
+  auto result = jlm::tests::SimpleNode::Create(
+                    *phiBuilder.subregion(),
+                    { phiOutput0->argument(), phiOutput2->argument() },
+                    { &valueType })
+                    .output(0);
+
+  phiOutput0->set_rvorigin(result);
+  phiOutput1->set_rvorigin(result);
+  phiOutput2->set_rvorigin(result);
+
+  auto & phiNode = *phiBuilder.end();
+
+  // Act & Assert
+  auto numRemovedOutputs = phiNode.RemovePhiOutputsWhere(
+      [&](const phi::rvoutput & output)
+      {
+        return output.index() == 1;
+      });
+  assert(numRemovedOutputs == 1);
+  assert(phiNode.noutputs() == 2);
+  assert(phiOutput0->index() == 0);
+  assert(phiOutput2->index() == 1);
+
+  numRemovedOutputs = phiNode.RemovePhiOutputsWhere(
+      [&](const phi::rvoutput & output)
+      {
+        return true;
+      });
+  assert(numRemovedOutputs == 2);
+  assert(phiNode.noutputs() == 0);
+}
+
+static void
+TestPrunePhiOutputs()
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  // The phi setup is nonsense, but it is sufficient for this test
+  jlm::tests::valuetype valueType;
+  RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+
+  phi::builder phiBuilder;
+  phiBuilder.begin(rvsdgModule.Rvsdg().root());
+
+  auto phiOutput0 = phiBuilder.add_recvar(valueType);
+  auto phiOutput1 = phiBuilder.add_recvar(valueType);
+  auto phiOutput2 = phiBuilder.add_recvar(valueType);
+
+  auto result = jlm::tests::SimpleNode::Create(
+                    *phiBuilder.subregion(),
+                    { phiOutput0->argument(), phiOutput2->argument() },
+                    { &valueType })
+                    .output(0);
+
+  phiOutput0->set_rvorigin(result);
+  phiOutput1->set_rvorigin(result);
+  phiOutput2->set_rvorigin(result);
+
+  auto & phiNode = *phiBuilder.end();
+
+  // Act
+  auto numRemovedOutputs = phiNode.PrunePhiOutputs();
+
+  // Assert
+  assert(numRemovedOutputs == 3);
+  assert(phiNode.noutputs() == 0);
+}
+
+static int
+TestPhi()
+{
+  TestPhiCreation();
+  TestRemovePhiArgumentsWhere();
+  TestPrunePhiArguments();
+  TestRemovePhiOutputsWhere();
+  TestPrunePhiOutputs();
 
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/TestPhi", test_main)
+JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/TestPhi", TestPhi)

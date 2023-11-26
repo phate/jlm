@@ -390,6 +390,95 @@ public:
   cvargument *
   add_ctxvar(jlm::rvsdg::output * origin);
 
+  /**
+   * Remove phi arguments and their respective inputs.
+   *
+   * An argument must match the condition specified by \p match and it must be dead.
+   *
+   * @tparam F A type that supports the function call operator: bool operator(const argument&)
+   * @param match Defines the condition of the elements to remove.
+   * @return The number of removed arguments.
+   *
+   * \note The application of this method might leave the phi node in an invalid state. Some
+   * outputs might refer to arguments that have been removed by the application of this method. It
+   * is up to the caller to ensure that the invariants of the phi node will eventually be met again.
+   *
+   * \see argument#IsDead()
+   * \see PrunePhiArguments()
+   * \see RemovePhiOutputsWhere()
+   * \see PrunePhiOutputs()
+   */
+  template<typename F>
+  size_t
+  RemovePhiArgumentsWhere(const F & match);
+
+  /**
+   * Remove all dead phi arguments and their respective inputs.
+   *
+   * @return The number of removed arguments.
+   *
+   * \note The application of this method might leave the phi node in an invalid state. Some
+   * outputs might refer to arguments that have been removed by the application of this method. It
+   * is up to the caller to ensure that the invariants of the phi node will eventually be met again.
+   *
+   * \see RemovePhiArgumentsWhere()
+   */
+  size_t
+  PrunePhiArguments()
+  {
+    auto match = [](const jlm::rvsdg::argument &)
+    {
+      return true;
+    };
+
+    return RemovePhiArgumentsWhere(match);
+  }
+
+  /**
+   * Remove phi outputs and their respective results.
+   *
+   * An output must match the condition specified by \p match and it must be dead.
+   *
+   * @tparam F A type that supports the function call operator: bool operator(const phi::rvoutput&)
+   * @param match Defines the condition of the elements to remove.
+   * @return The number of removed outputs.
+   *
+   * \note The application of this method might leave the phi node in an invalid state. Some
+   * arguments might refer to outputs that have been removed by the application of this method. It
+   * is up to the caller to ensure that the invariants of the phi node will eventually be met again.
+   *
+   * \see rvoutput#IsDead()
+   * \see PrunePhiOutputs()
+   * \see RemovePhiArgumentsWhere()
+   * \see PrunePhiArguments()
+   */
+  template<typename F>
+  size_t
+  RemovePhiOutputsWhere(const F & match);
+
+  /**
+   * Remove all dead phi outputs and their respective results.
+   *
+   * @return The number of removed outputs.
+   *
+   * \note The application of this method might leave the phi node in an invalid state. Some
+   * arguments might refer to outputs that have been removed by the application of this method. It
+   * is up to the caller to ensure that the invariants of the phi node will eventually be met again.
+   *
+   * \see RemovePhiOutputsWhere()
+   * \see rvoutput#IsDead()
+   */
+  size_t
+  PrunePhiOutputs()
+  {
+    auto match = [](const phi::rvoutput &)
+    {
+      return true;
+    };
+
+    return RemovePhiOutputsWhere(match);
+  }
+
   cvinput *
   input(size_t n) const noexcept;
 
@@ -788,6 +877,56 @@ rvoutput::set_rvorigin(jlm::rvsdg::output * origin)
 {
   JLM_ASSERT(result()->origin() == argument());
   result()->divert_to(origin);
+}
+
+template<typename F>
+size_t
+phi::node::RemovePhiArgumentsWhere(const F & match)
+{
+  size_t numRemovedArguments = 0;
+
+  // iterate backwards to avoid the invalidation of 'n' by RemoveArgument()
+  for (size_t n = subregion()->narguments() - 1; n != static_cast<size_t>(-1); n--)
+  {
+    auto & argument = *subregion()->argument(n);
+    auto input = argument.input();
+
+    if (argument.IsDead() && match(argument))
+    {
+      subregion()->RemoveArgument(argument.index());
+      numRemovedArguments++;
+
+      if (input)
+      {
+        RemoveInput(input->index());
+      }
+    }
+  }
+
+  return numRemovedArguments;
+}
+
+template<typename F>
+size_t
+phi::node::RemovePhiOutputsWhere(const F & match)
+{
+  size_t numRemovedOutputs = 0;
+
+  // iterate backwards to avoid the invalidation of 'n' by RemoveOutput()
+  for (size_t n = noutputs() - 1; n != static_cast<size_t>(-1); n--)
+  {
+    auto & phiOutput = *output(n);
+    auto & phiResult = *phiOutput.result();
+
+    if (phiOutput.IsDead() && match(phiOutput))
+    {
+      subregion()->RemoveResult(phiResult.index());
+      RemoveOutput(phiOutput.index());
+      numRemovedOutputs++;
+    }
+  }
+
+  return numRemovedOutputs;
 }
 
 }

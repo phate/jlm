@@ -523,36 +523,38 @@ DeadNodeElimination::SweepLambda(lambda::node & lambdaNode) const
 void
 DeadNodeElimination::SweepPhi(phi::node & phiNode) const
 {
-  auto subregion = phiNode.subregion();
+  util::HashSet<const rvsdg::argument *> deadRecursionArguments;
 
-  // Remove dead outputs and results
-  for (size_t n = subregion->nresults() - 1; n != static_cast<size_t>(-1); n--)
+  auto isDeadOutput = [&](const phi::rvoutput & output)
   {
-    auto result = subregion->result(n);
-    if (!Context_->IsAlive(*result->output())
-        && !Context_->IsAlive(*subregion->argument(result->index())))
+    auto argument = output.argument();
+
+    // A recursion variable is only dead iff its output AND argument are dead
+    auto isDead = !Context_->IsAlive(output) && !Context_->IsAlive(*argument);
+    if (isDead)
     {
-      subregion->RemoveResult(n);
-      phiNode.RemoveOutput(n);
+      deadRecursionArguments.Insert(argument);
     }
-  }
 
-  SweepRegion(*subregion);
+    return isDead;
+  };
+  phiNode.RemovePhiOutputsWhere(isDeadOutput);
 
-  // Remove dead arguments and inputs
-  for (size_t n = subregion->narguments() - 1; n != static_cast<size_t>(-1); n--)
+  SweepRegion(*phiNode.subregion());
+
+  auto isDeadArgument = [&](const rvsdg::argument & argument)
   {
-    auto argument = subregion->argument(n);
-    auto input = argument->input();
-    if (!Context_->IsAlive(*argument))
+    if (argument.input())
     {
-      subregion->RemoveArgument(n);
-      if (input)
-      {
-        phiNode.RemoveInput(input->index());
-      }
+      // It is always safe to remove context variables if they are dead
+      return argument.IsDead();
     }
-  }
+
+    // Only remove the recursion argument if its output was removed in isDeadOutput()
+    JLM_ASSERT(is<phi::rvargument>(&argument));
+    return deadRecursionArguments.Contains(&argument);
+  };
+  phiNode.RemovePhiArgumentsWhere(isDeadArgument);
 }
 
 void
