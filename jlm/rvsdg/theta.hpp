@@ -161,7 +161,7 @@ public:
    * @return The inputs corresponding to the removed outputs.
    *
    * \note The application of this method might leave the theta node in an invalid state. Some
-   * arguments might refer to outputs that have been removed by the application of this method. It
+   * inputs might refer to outputs that have been removed by the application of this method. It
    * is up to the caller to ensure that the invariants of the theta node will eventually be met
    * again.
    *
@@ -178,7 +178,7 @@ public:
    * @return The inputs corresponding to the removed outputs.
    *
    * \note The application of this method might leave the theta node in an invalid state. Some
-   * arguments might refer to outputs that have been removed by the application of this method. It
+   * inputs might refer to outputs that have been removed by the application of this method. It
    * is up to the caller to ensure that the invariants of the theta node will eventually be met
    * again.
    *
