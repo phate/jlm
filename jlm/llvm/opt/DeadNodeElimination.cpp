@@ -483,15 +483,13 @@ DeadNodeElimination::SweepTheta(jlm::rvsdg::theta_node & thetaNode) const
     auto & argument = *output.argument();
     return !Context_->IsAlive(argument) && !Context_->IsAlive(output);
   };
-  thetaNode.RemoveThetaOutputsWhere(matchOutput);
+  auto deadInputs = thetaNode.RemoveThetaOutputsWhere(matchOutput);
 
   SweepRegion(thetaSubregion);
 
   auto matchInput = [&](const rvsdg::theta_input & input)
   {
-    auto & output = *input.output();
-    auto & argument = *input.argument();
-    return !Context_->IsAlive(argument) && !Context_->IsAlive(output);
+    return deadInputs.Contains(&input);
   };
   thetaNode.RemoveThetaInputsWhere(matchInput);
 

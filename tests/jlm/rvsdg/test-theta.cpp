@@ -71,12 +71,13 @@ TestRemoveThetaOutputsWhere()
   rvsdg.add_export(thetaOutput0, { ctl2, "" });
 
   // Act & Assert
-  auto numRemovedOutputs = thetaNode->RemoveThetaOutputsWhere(
+  auto deadInputs = thetaNode->RemoveThetaOutputsWhere(
       [&](const theta_output & output)
       {
         return output.index() == thetaOutput1->index();
       });
-  assert(numRemovedOutputs == 1);
+  assert(deadInputs.Size() == 1);
+  assert(deadInputs.Contains(thetaNode->input(1)));
   assert(thetaNode->noutputs() == 2);
   assert(thetaNode->subregion()->nresults() == 3);
   assert(thetaOutput0->index() == 0);
@@ -84,12 +85,13 @@ TestRemoveThetaOutputsWhere()
   assert(thetaOutput2->index() == 1);
   assert(thetaOutput2->result()->index() == 2);
 
-  numRemovedOutputs = thetaNode->RemoveThetaOutputsWhere(
+  deadInputs = thetaNode->RemoveThetaOutputsWhere(
       [](const theta_output &)
       {
         return true;
       });
-  assert(numRemovedOutputs == 1);
+  assert(deadInputs.Size() == 1);
+  assert(deadInputs.Contains(thetaNode->input(2)));
   assert(thetaNode->noutputs() == 1);
   assert(thetaNode->subregion()->nresults() == 2);
   assert(thetaOutput0->index() == 0);
@@ -119,10 +121,12 @@ TestPruneThetaOutputs()
   rvsdg.add_export(thetaOutput0, { ctl2, "" });
 
   // Act
-  auto numRemovedOutputs = thetaNode->PruneThetaOutputs();
+  auto deadInputs = thetaNode->PruneThetaOutputs();
 
   // Assert
-  assert(numRemovedOutputs == 2);
+  assert(deadInputs.Size() == 2);
+  assert(deadInputs.Contains(thetaNode->input(1)));
+  assert(deadInputs.Contains(thetaNode->input(2)));
   assert(thetaNode->noutputs() == 1);
   assert(thetaNode->subregion()->nresults() == 2);
   assert(thetaOutput0->index() == 0);
@@ -158,12 +162,13 @@ TestRemoveThetaInputsWhere()
   rvsdg.add_export(thetaOutput0, { ctl2, "" });
 
   // Act & Assert
-  auto numRemovedInputs = thetaNode->RemoveThetaInputsWhere(
+  auto deadOutputs = thetaNode->RemoveThetaInputsWhere(
       [&](const theta_input & input)
       {
         return input.index() == thetaOutput1->input()->index();
       });
-  assert(numRemovedInputs == 1);
+  assert(deadOutputs.Size() == 1);
+  assert(deadOutputs.Contains(thetaNode->output(1)));
   assert(thetaNode->ninputs() == 2);
   assert(thetaNode->subregion()->narguments() == 2);
   assert(thetaOutput0->input()->index() == 0);
@@ -171,12 +176,13 @@ TestRemoveThetaInputsWhere()
   assert(thetaOutput2->input()->index() == 1);
   assert(thetaOutput2->argument()->index() == 1);
 
-  numRemovedInputs = thetaNode->RemoveThetaInputsWhere(
+  deadOutputs = thetaNode->RemoveThetaInputsWhere(
       [](const theta_input & input)
       {
         return true;
       });
-  assert(numRemovedInputs == 1);
+  assert(deadOutputs.Size() == 1);
+  assert(deadOutputs.Contains(thetaNode->output(2)));
   assert(thetaNode->ninputs() == 1);
   assert(thetaNode->subregion()->narguments() == 1);
   assert(thetaOutput0->input()->index() == 0);
@@ -212,10 +218,12 @@ TestPruneThetaInputs()
   rvsdg.add_export(thetaOutput0, { ctl2, "" });
 
   // Act
-  auto numRemovedInputs = thetaNode->PruneThetaInputs();
+  auto deadOutputs = thetaNode->PruneThetaInputs();
 
   // Assert
-  assert(numRemovedInputs == 2);
+  assert(deadOutputs.Size() == 2);
+  assert(deadOutputs.Contains(thetaNode->output(1)));
+  assert(deadOutputs.Contains(thetaNode->output(2)));
   assert(thetaNode->ninputs() == 1);
   assert(thetaNode->subregion()->narguments() == 1);
   assert(thetaOutput0->input()->index() == 0);
