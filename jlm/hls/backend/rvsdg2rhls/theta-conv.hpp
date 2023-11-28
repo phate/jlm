@@ -13,7 +13,7 @@ namespace jlm::hls
 {
 
 void
-theta_conv(jlm::llvm::RvsdgModule & rm);
+theta_conv(jlm::llvm::RvsdgModule & rvsdgModule);
 
 }
 
