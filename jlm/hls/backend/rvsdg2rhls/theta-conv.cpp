@@ -10,7 +10,7 @@
 namespace jlm::hls
 {
 
-void
+static void
 theta_conv(jlm::rvsdg::theta_node * theta)
 {
   jlm::rvsdg::substitution_map smap;
@@ -43,7 +43,7 @@ theta_conv(jlm::rvsdg::theta_node * theta)
   remove(theta);
 }
 
-void
+static void
 theta_conv(jlm::rvsdg::region * region)
 {
   for (auto & node : jlm::rvsdg::topdown_traverser(region))
