@@ -10,66 +10,28 @@
 namespace jlm::hls
 {
 
-bool
-remove_unused_loop_outputs(hls::loop_node * ln)
+static bool
+remove_unused_loop_outputs(hls::loop_node & loopNode)
 {
-  bool any_changed = false;
-  auto sr = ln->subregion();
-  // go through in reverse because we remove some
-  for (int i = ln->noutputs() - 1; i >= 0; --i)
-  {
-    auto out = ln->output(i);
-    if (out->nusers() == 0)
-    {
-      assert(out->results.size() == 1);
-      auto result = out->results.begin();
-      sr->RemoveResult(result->index());
-      ln->RemoveOutput(out->index());
-      any_changed = true;
-    }
-  }
-  return any_changed;
+  auto numRemovedOutputs = loopNode.PruneLoopOutputs();
+  return numRemovedOutputs != 0;
 }
 
-bool
-remove_unused_loop_inputs(hls::loop_node * ln)
+static bool
+remove_unused_loop_inputs(hls::loop_node & loopNode)
 {
-  bool any_changed = false;
-  auto sr = ln->subregion();
-  // go through in reverse because we remove some
-  for (int i = ln->ninputs() - 1; i >= 0; --i)
+  size_t numRemovedInputs = loopNode.PruneLoopInputs();
+
+  auto match = [](const backedge_argument & argument)
   {
-    auto in = ln->input(i);
-    assert(in->arguments.size() == 1);
-    auto arg = in->arguments.begin();
-    if (arg->nusers() == 0)
-    {
-      sr->RemoveArgument(arg->index());
-      ln->RemoveInput(in->index());
-      any_changed = true;
-    }
-  }
-  // clean up unused arguments - only ones without an input should be left
-  // go through in reverse because we remove some
-  for (int i = sr->narguments() - 1; i >= 0; --i)
-  {
-    auto arg = sr->argument(i);
-    if (auto ba = dynamic_cast<backedge_argument *>(arg))
-    {
-      auto result = ba->result();
-      assert(result->type() == arg->type());
-      if (arg->nusers() == 0 || (arg->nusers() == 1 && result->origin() == arg))
-      {
-        sr->RemoveResult(result->index());
-        sr->RemoveArgument(arg->index());
-      }
-    }
-    else
-    {
-      assert(arg->nusers() != 0);
-    }
-  }
-  return any_changed;
+    auto & result = *argument.result();
+    auto isPassthrough = argument.nusers() == 1 && result.origin() == &argument;
+
+    return argument.IsDead() || isPassthrough;
+  };
+  loopNode.RemoveBackEdgeArgumentsWhere(match);
+
+  return numRemovedInputs != 0;
 }
 
 bool
@@ -89,8 +51,8 @@ dne(jlm::rvsdg::region * sr)
       }
       else if (auto ln = dynamic_cast<hls::loop_node *>(node))
       {
-        changed |= remove_unused_loop_outputs(ln);
-        changed |= remove_unused_loop_inputs(ln);
+        changed |= remove_unused_loop_outputs(*ln);
+        changed |= remove_unused_loop_inputs(*ln);
         changed |= dne(ln->subregion());
       }
     }
