@@ -22,7 +22,7 @@ TestUnknownBoundaries()
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);
-  
+
   auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage);
 
   jlm::rvsdg::bitult_op ult(32);
