@@ -5,7 +5,7 @@
 
 #include "test-registry.hpp"
 
-#include <jlm/hls/backend/rvsdg2rhls/theta-conv.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/rvsdg/view.hpp>

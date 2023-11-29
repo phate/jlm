@@ -12,7 +12,7 @@
 #include <jlm/hls/backend/rvsdg2rhls/remove-unused-state.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp>
-#include <jlm/hls/backend/rvsdg2rhls/theta-conv.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp>
 #include <jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp>
 #include <jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>

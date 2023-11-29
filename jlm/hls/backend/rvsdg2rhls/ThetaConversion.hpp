@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_HLS_BACKEND_RVSDG2RHLS_THETA_CONV_HPP
-#define JLM_HLS_BACKEND_RVSDG2RHLS_THETA_CONV_HPP
+#ifndef JLM_HLS_BACKEND_RVSDG2RHLS_THETACONVERSION_HPP
+#define JLM_HLS_BACKEND_RVSDG2RHLS_THETACONVERSION_HPP
 
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/theta.hpp>
@@ -22,4 +22,4 @@ ConvertThetaNodes(jlm::llvm::RvsdgModule & rvsdgModule);
 
 }
 
-#endif // JLM_HLS_BACKEND_RVSDG2RHLS_THETA_CONV_HPP
+#endif // JLM_HLS_BACKEND_RVSDG2RHLS_THETACONVERSION_HPP

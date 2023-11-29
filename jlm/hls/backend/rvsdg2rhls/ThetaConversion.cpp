@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/hls/backend/rvsdg2rhls/theta-conv.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
