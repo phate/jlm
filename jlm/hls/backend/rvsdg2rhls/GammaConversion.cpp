@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/hls/backend/rvsdg2rhls/gamma-conv.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/GammaConversion.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>

@@ -7,7 +7,7 @@
 #include "test-registry.hpp"
 #include "test-types.hpp"
 
-#include <jlm/hls/backend/rvsdg2rhls/gamma-conv.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/GammaConversion.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/rvsdg/view.hpp>
