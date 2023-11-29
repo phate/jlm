@@ -11,73 +11,7 @@
 namespace jlm::hls
 {
 
-void
-gamma_conv(llvm::RvsdgModule & rm, bool allow_speculation)
-{
-  auto & graph = rm.Rvsdg();
-  auto root = graph.root();
-  gamma_conv(root, allow_speculation);
-}
-
-void
-gamma_conv(jlm::rvsdg::region * region, bool allow_speculation)
-{
-  for (auto & node : jlm::rvsdg::topdown_traverser(region))
-  {
-    if (auto structnode = dynamic_cast<jlm::rvsdg::structural_node *>(node))
-    {
-      for (size_t n = 0; n < structnode->nsubregions(); n++)
-        gamma_conv(structnode->subregion(n), allow_speculation);
-      if (auto gamma = dynamic_cast<jlm::rvsdg::gamma_node *>(node))
-      {
-        if (allow_speculation && gamma_can_be_spec(gamma))
-        {
-          gamma_conv_spec(gamma);
-        }
-        else
-        {
-          gamma_conv_nonspec(gamma);
-        }
-      }
-    }
-  }
-}
-
-void
-gamma_conv_spec(jlm::rvsdg::gamma_node * gamma)
-{
-  jlm::rvsdg::substitution_map smap;
-  // connect arguments to origins of inputs. Forks will automatically be created later
-  auto pro = gamma->predicate()->origin();
-  for (size_t i = 0; i < gamma->nentryvars(); i++)
-  {
-    auto envo = gamma->entryvar(i)->origin();
-    for (size_t s = 0; s < gamma->nsubregions(); s++)
-    {
-      smap.insert(gamma->subregion(s)->argument(i), envo);
-    }
-  }
-  // copy each of the subregions
-  for (size_t s = 0; s < gamma->nsubregions(); s++)
-  {
-    gamma->subregion(s)->copy(gamma->region(), smap, false, false);
-  }
-  for (size_t i = 0; i < gamma->nexitvars(); i++)
-  {
-    std::vector<jlm::rvsdg::output *> alternatives;
-    for (size_t s = 0; s < gamma->nsubregions(); s++)
-    {
-      alternatives.push_back(smap.lookup(gamma->subregion(s)->result(i)->origin()));
-    }
-    // create discarding mux for each exitvar
-    auto merge = hls::mux_op::create(*pro, alternatives, true);
-    // divert users of exitvars to merge instead
-    gamma->exitvar(i)->divert_users(merge[0]);
-  }
-  remove(gamma);
-}
-
-void
+static void
 gamma_conv_nonspec(jlm::rvsdg::gamma_node * gamma)
 {
   jlm::rvsdg::substitution_map smap;
@@ -117,7 +51,41 @@ gamma_conv_nonspec(jlm::rvsdg::gamma_node * gamma)
   remove(gamma);
 }
 
-bool
+static void
+gamma_conv_spec(jlm::rvsdg::gamma_node * gamma)
+{
+  jlm::rvsdg::substitution_map smap;
+  // connect arguments to origins of inputs. Forks will automatically be created later
+  auto pro = gamma->predicate()->origin();
+  for (size_t i = 0; i < gamma->nentryvars(); i++)
+  {
+    auto envo = gamma->entryvar(i)->origin();
+    for (size_t s = 0; s < gamma->nsubregions(); s++)
+    {
+      smap.insert(gamma->subregion(s)->argument(i), envo);
+    }
+  }
+  // copy each of the subregions
+  for (size_t s = 0; s < gamma->nsubregions(); s++)
+  {
+    gamma->subregion(s)->copy(gamma->region(), smap, false, false);
+  }
+  for (size_t i = 0; i < gamma->nexitvars(); i++)
+  {
+    std::vector<jlm::rvsdg::output *> alternatives;
+    for (size_t s = 0; s < gamma->nsubregions(); s++)
+    {
+      alternatives.push_back(smap.lookup(gamma->subregion(s)->result(i)->origin()));
+    }
+    // create discarding mux for each exitvar
+    auto merge = hls::mux_op::create(*pro, alternatives, true);
+    // divert users of exitvars to merge instead
+    gamma->exitvar(i)->divert_users(merge[0]);
+  }
+  remove(gamma);
+}
+
+static bool
 gamma_can_be_spec(jlm::rvsdg::gamma_node * gamma)
 {
   for (size_t i = 0; i < gamma->noutputs(); ++i)
@@ -154,6 +122,38 @@ gamma_can_be_spec(jlm::rvsdg::gamma_node * gamma)
     }
   }
   return true;
+}
+
+static void
+gamma_conv(jlm::rvsdg::region * region, bool allow_speculation)
+{
+  for (auto & node : jlm::rvsdg::topdown_traverser(region))
+  {
+    if (auto structnode = dynamic_cast<jlm::rvsdg::structural_node *>(node))
+    {
+      for (size_t n = 0; n < structnode->nsubregions(); n++)
+        gamma_conv(structnode->subregion(n), allow_speculation);
+      if (auto gamma = dynamic_cast<jlm::rvsdg::gamma_node *>(node))
+      {
+        if (allow_speculation && gamma_can_be_spec(gamma))
+        {
+          gamma_conv_spec(gamma);
+        }
+        else
+        {
+          gamma_conv_nonspec(gamma);
+        }
+      }
+    }
+  }
+}
+
+void
+gamma_conv(llvm::RvsdgModule & rm, bool allow_speculation)
+{
+  auto & graph = rm.Rvsdg();
+  auto root = graph.root();
+  gamma_conv(root, allow_speculation);
 }
 
 }

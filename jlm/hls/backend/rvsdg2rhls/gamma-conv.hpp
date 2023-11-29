@@ -12,18 +12,6 @@
 namespace jlm::hls
 {
 
-bool
-gamma_can_be_spec(jlm::rvsdg::gamma_node * gamma);
-
-void
-gamma_conv_nonspec(jlm::rvsdg::gamma_node * gamma);
-
-void
-gamma_conv_spec(jlm::rvsdg::gamma_node * gamma);
-
-void
-gamma_conv(jlm::rvsdg::region * region, bool allow_speculation = true);
-
 void
 gamma_conv(llvm::RvsdgModule & rm, bool allow_speculation = true);
 
