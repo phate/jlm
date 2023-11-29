@@ -13,7 +13,7 @@ namespace jlm::hls
 {
 
 /**
- * Converts an rvsdg::theta_node to an hls::loop_node.
+ * Converts every rvsdg::theta_node in \p rvsdgModule to an hls::loop_node.
  *
  * @param rvsdgModule The RVSDG module the transformation is performed on.
  */
