@@ -8,7 +8,7 @@
 #include <jlm/hls/backend/rvsdg2rhls/add-sinks.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/add-triggers.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/check-rhls.hpp>
-#include <jlm/hls/backend/rvsdg2rhls/gamma-conv.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/GammaConversion.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/remove-unused-state.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp>
@@ -346,7 +346,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls)
   remove_unused_state(rhls);
   // main conversion steps
   add_triggers(rhls); // TODO: make compatible with loop nodes?
-  gamma_conv(rhls, true);
+  ConvertGammaNodes(rhls);
   ConvertThetaNodes(rhls);
   // rhls optimization
   dne(rhls);
