@@ -12,7 +12,7 @@ namespace jlm::hls
 {
 
 static void
-gamma_conv_nonspec(jlm::rvsdg::gamma_node * gamma)
+ConvertGammaNodeWithoutSpeculation(jlm::rvsdg::gamma_node * gamma)
 {
   jlm::rvsdg::substitution_map smap;
   // create a branch for each entryvar and map the corresponding argument of each subregion to an
@@ -52,7 +52,7 @@ gamma_conv_nonspec(jlm::rvsdg::gamma_node * gamma)
 }
 
 static void
-gamma_conv_spec(jlm::rvsdg::gamma_node * gamma)
+ConvertGammaNodeWithSpeculation(jlm::rvsdg::gamma_node * gamma)
 {
   jlm::rvsdg::substitution_map smap;
   // connect arguments to origins of inputs. Forks will automatically be created later
@@ -86,7 +86,7 @@ gamma_conv_spec(jlm::rvsdg::gamma_node * gamma)
 }
 
 static bool
-gamma_can_be_spec(jlm::rvsdg::gamma_node * gamma)
+CanGammaNodeBeSpeculative(jlm::rvsdg::gamma_node * gamma)
 {
   for (size_t i = 0; i < gamma->noutputs(); ++i)
   {
@@ -109,7 +109,7 @@ gamma_can_be_spec(jlm::rvsdg::gamma_node * gamma)
       }
       else if (auto g = dynamic_cast<jlm::rvsdg::gamma_node *>(node))
       {
-        if (!gamma_can_be_spec(g))
+        if (!CanGammaNodeBeSpeculative(g))
         {
           // only allow gammas that can also be speculated on
           return false;
@@ -125,23 +125,23 @@ gamma_can_be_spec(jlm::rvsdg::gamma_node * gamma)
 }
 
 static void
-gamma_conv(jlm::rvsdg::region * region, bool allow_speculation)
+ConvertGammaNodesInRegion(jlm::rvsdg::region * region, bool allow_speculation)
 {
   for (auto & node : jlm::rvsdg::topdown_traverser(region))
   {
     if (auto structnode = dynamic_cast<jlm::rvsdg::structural_node *>(node))
     {
       for (size_t n = 0; n < structnode->nsubregions(); n++)
-        gamma_conv(structnode->subregion(n), allow_speculation);
+        ConvertGammaNodesInRegion(structnode->subregion(n), allow_speculation);
       if (auto gamma = dynamic_cast<jlm::rvsdg::gamma_node *>(node))
       {
-        if (allow_speculation && gamma_can_be_spec(gamma))
+        if (allow_speculation && CanGammaNodeBeSpeculative(gamma))
         {
-          gamma_conv_spec(gamma);
+          ConvertGammaNodeWithSpeculation(gamma);
         }
         else
         {
-          gamma_conv_nonspec(gamma);
+          ConvertGammaNodeWithoutSpeculation(gamma);
         }
       }
     }
@@ -149,11 +149,11 @@ gamma_conv(jlm::rvsdg::region * region, bool allow_speculation)
 }
 
 void
-gamma_conv(llvm::RvsdgModule & rm, bool allow_speculation)
+ConvertGammaNodes(llvm::RvsdgModule & rm, bool allow_speculation)
 {
   auto & graph = rm.Rvsdg();
   auto root = graph.root();
-  gamma_conv(root, allow_speculation);
+  ConvertGammaNodesInRegion(root, allow_speculation);
 }
 
 }

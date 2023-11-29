@@ -42,7 +42,7 @@ TestWithMatch()
 
   /* Convert graph to RHLS */
 
-  jlm::hls::gamma_conv(rm, true);
+  jlm::hls::ConvertGammaNodes(rm, true);
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
   /* Verify output */
@@ -80,7 +80,7 @@ TestWithoutMatch()
 
   /* Convert graph to RHLS */
 
-  jlm::hls::gamma_conv(rm, true);
+  jlm::hls::ConvertGammaNodes(rm, true);
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
   /* Verify output */
