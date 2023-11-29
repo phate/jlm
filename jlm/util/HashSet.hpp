@@ -138,7 +138,7 @@ public:
    * @return True if the HashSet object contains \p item, otherwise false.
    */
   bool
-  Contains(ItemType item) const noexcept
+  Contains(const ItemType & item) const noexcept
   {
     return Set_.find(item) != Set_.end();
   }
