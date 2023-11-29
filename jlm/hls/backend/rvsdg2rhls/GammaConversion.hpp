@@ -12,6 +12,11 @@
 namespace jlm::hls
 {
 
+/**
+ * Converts every rvsdg::gamma_node in \p rvsdgModule to its respective HLS equivalent.
+ *
+ * @param rvsdgModule The RVSDG module the transformation is performed on.
+ */
 void
 ConvertGammaNodes(llvm::RvsdgModule & rvsdgModule);
 
