@@ -12,138 +12,160 @@ namespace jlm::hls
 {
 
 static void
-ConvertGammaNodeWithoutSpeculation(jlm::rvsdg::gamma_node * gamma)
+ConvertGammaNodeWithoutSpeculation(jlm::rvsdg::gamma_node & gammaNode)
 {
-  jlm::rvsdg::substitution_map smap;
-  // create a branch for each entryvar and map the corresponding argument of each subregion to an
+  jlm::rvsdg::substitution_map substitutionMap;
+
+  // create a branch for each gamma input and map the corresponding argument of each subregion to an
   // output of the branch
-  auto pro = gamma->predicate()->origin();
-  for (size_t i = 0; i < gamma->nentryvars(); i++)
+  for (size_t i = 0; i < gammaNode.nentryvars(); i++)
   {
-    auto envo = gamma->entryvar(i)->origin();
-    auto bros = hls::branch_op::create(*pro, *envo);
-    for (size_t s = 0; s < gamma->nsubregions(); s++)
+    auto branchResults =
+        hls::branch_op::create(*gammaNode.predicate()->origin(), *gammaNode.entryvar(i)->origin());
+
+    for (size_t s = 0; s < gammaNode.nsubregions(); s++)
     {
-      smap.insert(gamma->subregion(s)->argument(i), bros[s]);
+      substitutionMap.insert(gammaNode.subregion(s)->argument(i), branchResults[s]);
     }
   }
-  // copy each of the subregions
-  for (size_t s = 0; s < gamma->nsubregions(); s++)
+
+  for (size_t s = 0; s < gammaNode.nsubregions(); s++)
   {
-    //                std::cout << "copying gamma subregion:\n";
-    //                jlm::rvsdg::view(gamma->subregion(s), stdout);
-    gamma->subregion(s)->copy(gamma->region(), smap, false, false);
+    gammaNode.subregion(s)->copy(gammaNode.region(), substitutionMap, false, false);
   }
-  for (size_t i = 0; i < gamma->nexitvars(); i++)
+
+  for (size_t i = 0; i < gammaNode.nexitvars(); i++)
   {
     std::vector<jlm::rvsdg::output *> alternatives;
-    for (size_t s = 0; s < gamma->nsubregions(); s++)
+    for (size_t s = 0; s < gammaNode.nsubregions(); s++)
     {
-      alternatives.push_back(smap.lookup(gamma->subregion(s)->result(i)->origin()));
+      alternatives.push_back(substitutionMap.lookup(gammaNode.subregion(s)->result(i)->origin()));
     }
-    // create mux nodes for each exitvar
+    // create mux nodes for each gamma output
     // use mux instead of merge in case of paths with different delay - otherwise one could overtake
     // the other see https://ieeexplore.ieee.org/abstract/document/9515491
-    auto mux = hls::mux_op::create(*pro, alternatives, false);
-    // divert users of exitvars to mux instead
-    gamma->exitvar(i)->divert_users(mux[0]);
+    auto mux = hls::mux_op::create(*gammaNode.predicate()->origin(), alternatives, false);
+
+    gammaNode.exitvar(i)->divert_users(mux[0]);
   }
-  remove(gamma);
+
+  remove(&gammaNode);
 }
 
 static void
-ConvertGammaNodeWithSpeculation(jlm::rvsdg::gamma_node * gamma)
+ConvertGammaNodeWithSpeculation(jlm::rvsdg::gamma_node & gammaNode)
 {
-  jlm::rvsdg::substitution_map smap;
-  // connect arguments to origins of inputs. Forks will automatically be created later
-  auto pro = gamma->predicate()->origin();
-  for (size_t i = 0; i < gamma->nentryvars(); i++)
+  rvsdg::substitution_map substitutionMap;
+
+  // Map arguments to origins of inputs. Forks will automatically be created later
+  for (size_t i = 0; i < gammaNode.nentryvars(); i++)
   {
-    auto envo = gamma->entryvar(i)->origin();
-    for (size_t s = 0; s < gamma->nsubregions(); s++)
+    auto gammaInput = gammaNode.entryvar(i);
+
+    for (size_t s = 0; s < gammaNode.nsubregions(); s++)
     {
-      smap.insert(gamma->subregion(s)->argument(i), envo);
+      substitutionMap.insert(gammaNode.subregion(s)->argument(i), gammaInput->origin());
     }
   }
-  // copy each of the subregions
-  for (size_t s = 0; s < gamma->nsubregions(); s++)
+
+  for (size_t s = 0; s < gammaNode.nsubregions(); s++)
   {
-    gamma->subregion(s)->copy(gamma->region(), smap, false, false);
+    gammaNode.subregion(s)->copy(gammaNode.region(), substitutionMap, false, false);
   }
-  for (size_t i = 0; i < gamma->nexitvars(); i++)
+
+  for (size_t i = 0; i < gammaNode.nexitvars(); i++)
   {
     std::vector<jlm::rvsdg::output *> alternatives;
-    for (size_t s = 0; s < gamma->nsubregions(); s++)
+    for (size_t s = 0; s < gammaNode.nsubregions(); s++)
     {
-      alternatives.push_back(smap.lookup(gamma->subregion(s)->result(i)->origin()));
+      alternatives.push_back(substitutionMap.lookup(gammaNode.subregion(s)->result(i)->origin()));
     }
-    // create discarding mux for each exitvar
-    auto merge = hls::mux_op::create(*pro, alternatives, true);
-    // divert users of exitvars to merge instead
-    gamma->exitvar(i)->divert_users(merge[0]);
+
+    // create discarding mux for each gamma output
+    auto merge = hls::mux_op::create(*gammaNode.predicate()->origin(), alternatives, true);
+
+    gammaNode.exitvar(i)->divert_users(merge[0]);
   }
-  remove(gamma);
+
+  remove(&gammaNode);
 }
 
 static bool
-CanGammaNodeBeSpeculative(jlm::rvsdg::gamma_node * gamma)
+CanGammaNodeBeSpeculative(const jlm::rvsdg::gamma_node & gammaNode)
 {
-  for (size_t i = 0; i < gamma->noutputs(); ++i)
+  for (size_t i = 0; i < gammaNode.noutputs(); ++i)
   {
-    auto out = gamma->output(i);
-    if (jlm::rvsdg::is<jlm::rvsdg::statetype>(out->type()))
+    auto gammaOutput = gammaNode.output(i);
+    if (rvsdg::is<jlm::rvsdg::statetype>(gammaOutput->type()))
     {
       // don't allow state outputs since they imply operations with side effects
       return false;
     }
   }
-  for (size_t i = 0; i < gamma->nsubregions(); ++i)
+
+  for (size_t i = 0; i < gammaNode.nsubregions(); ++i)
   {
-    auto sr = gamma->subregion(i);
-    for (auto & node : jlm::rvsdg::topdown_traverser(sr))
+    auto subregion = gammaNode.subregion(i);
+
+    for (auto & node : subregion->nodes)
     {
-      if (jlm::rvsdg::is<jlm::rvsdg::theta_op>(node) || jlm::rvsdg::is<hls::loop_op>(node))
+      if (rvsdg::is<rvsdg::theta_op>(&node) || rvsdg::is<hls::loop_op>(&node))
       {
         // don't allow thetas or loops since they could potentially block forever
         return false;
       }
-      else if (auto g = dynamic_cast<jlm::rvsdg::gamma_node *>(node))
+      else if (auto innerGammaNode = dynamic_cast<rvsdg::gamma_node *>(&node))
       {
-        if (!CanGammaNodeBeSpeculative(g))
+        if (!CanGammaNodeBeSpeculative(*innerGammaNode))
         {
           // only allow gammas that can also be speculated on
           return false;
         }
       }
-      else if (dynamic_cast<jlm::rvsdg::structural_node *>(node))
+      else if (rvsdg::is<rvsdg::structural_op>(&node))
       {
-        throw util::error("Unexpected structural node: " + node->operation().debug_string());
+        throw util::error("Unexpected structural node: " + node.operation().debug_string());
       }
     }
   }
+
   return true;
 }
 
 static void
-ConvertGammaNodesInRegion(jlm::rvsdg::region * region, bool allow_speculation)
+ConvertGammaNodesInRegion(jlm::rvsdg::region & region, bool allowSpeculation);
+
+static void
+ConvertGammaNodesInStructuralNode(
+    jlm::rvsdg::structural_node & structuralNode,
+    bool allowSpeculation)
 {
-  for (auto & node : jlm::rvsdg::topdown_traverser(region))
+  for (size_t n = 0; n < structuralNode.nsubregions(); n++)
   {
-    if (auto structnode = dynamic_cast<jlm::rvsdg::structural_node *>(node))
+    ConvertGammaNodesInRegion(*structuralNode.subregion(n), allowSpeculation);
+  }
+
+  if (auto gammaNode = dynamic_cast<jlm::rvsdg::gamma_node *>(&structuralNode))
+  {
+    if (allowSpeculation && CanGammaNodeBeSpeculative(*gammaNode))
     {
-      for (size_t n = 0; n < structnode->nsubregions(); n++)
-        ConvertGammaNodesInRegion(structnode->subregion(n), allow_speculation);
-      if (auto gamma = dynamic_cast<jlm::rvsdg::gamma_node *>(node))
-      {
-        if (allow_speculation && CanGammaNodeBeSpeculative(gamma))
-        {
-          ConvertGammaNodeWithSpeculation(gamma);
-        }
-        else
-        {
-          ConvertGammaNodeWithoutSpeculation(gamma);
-        }
-      }
+      ConvertGammaNodeWithSpeculation(*gammaNode);
+    }
+    else
+    {
+      ConvertGammaNodeWithoutSpeculation(*gammaNode);
+    }
+  }
+}
+
+static void
+ConvertGammaNodesInRegion(jlm::rvsdg::region & region, bool allowSpeculation)
+{
+  for (auto & node : jlm::rvsdg::topdown_traverser(&region))
+  {
+    if (auto structuralNode = dynamic_cast<jlm::rvsdg::structural_node *>(node))
+    {
+      ConvertGammaNodesInStructuralNode(*structuralNode, allowSpeculation);
     }
   }
 }
@@ -151,9 +173,7 @@ ConvertGammaNodesInRegion(jlm::rvsdg::region * region, bool allow_speculation)
 void
 ConvertGammaNodes(llvm::RvsdgModule & rvsdgModule, bool allowSpeculation)
 {
-  auto & graph = rvsdgModule.Rvsdg();
-  auto root = graph.root();
-  ConvertGammaNodesInRegion(root, allowSpeculation);
+  ConvertGammaNodesInRegion(*rvsdgModule.Rvsdg().root(), allowSpeculation);
 }
 
 }
