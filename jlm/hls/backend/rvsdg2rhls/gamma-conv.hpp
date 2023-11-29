@@ -13,7 +13,7 @@ namespace jlm::hls
 {
 
 void
-ConvertGammaNodes(llvm::RvsdgModule & rm, bool allow_speculation);
+ConvertGammaNodes(llvm::RvsdgModule & rvsdgModule, bool allowSpeculation);
 
 }
 

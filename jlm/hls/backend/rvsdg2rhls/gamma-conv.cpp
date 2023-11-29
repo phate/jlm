@@ -149,11 +149,11 @@ ConvertGammaNodesInRegion(jlm::rvsdg::region * region, bool allow_speculation)
 }
 
 void
-ConvertGammaNodes(llvm::RvsdgModule & rm, bool allow_speculation)
+ConvertGammaNodes(llvm::RvsdgModule & rvsdgModule, bool allowSpeculation)
 {
-  auto & graph = rm.Rvsdg();
+  auto & graph = rvsdgModule.Rvsdg();
   auto root = graph.root();
-  ConvertGammaNodesInRegion(root, allow_speculation);
+  ConvertGammaNodesInRegion(root, allowSpeculation);
 }
 
 }
