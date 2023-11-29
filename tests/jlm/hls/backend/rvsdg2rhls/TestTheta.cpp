@@ -53,7 +53,7 @@ TestUnknownBoundaries()
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
   // Act
-  jlm::hls::theta_conv(rm);
+  jlm::hls::ConvertThetaNodes(rm);
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
   // Assert

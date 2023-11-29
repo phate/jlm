@@ -18,7 +18,7 @@ namespace jlm::hls
  * @param rvsdgModule The RVSDG module the transformation is performed on.
  */
 void
-theta_conv(jlm::llvm::RvsdgModule & rvsdgModule);
+ConvertThetaNodes(jlm::llvm::RvsdgModule & rvsdgModule);
 
 }
 

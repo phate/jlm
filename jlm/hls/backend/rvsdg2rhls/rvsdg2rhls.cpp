@@ -347,7 +347,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls)
   // main conversion steps
   add_triggers(rhls); // TODO: make compatible with loop nodes?
   gamma_conv(rhls, true);
-  theta_conv(rhls);
+  ConvertThetaNodes(rhls);
   // rhls optimization
   dne(rhls);
   // enforce 1:1 input output relationship

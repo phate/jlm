@@ -11,7 +11,7 @@ namespace jlm::hls
 {
 
 static void
-ConvertTheta(jlm::rvsdg::theta_node & theta)
+ConvertThetaNode(jlm::rvsdg::theta_node & theta)
 {
   jlm::rvsdg::substitution_map smap;
 
@@ -44,38 +44,38 @@ ConvertTheta(jlm::rvsdg::theta_node & theta)
 }
 
 static void
-ConvertThetaRegion(jlm::rvsdg::region & region);
+ConvertThetaNodesInRegion(jlm::rvsdg::region & region);
 
 static void
-ConvertThetaStructuralNode(jlm::rvsdg::structural_node & structuralNode)
+ConvertThetaNodesInStructuralNode(jlm::rvsdg::structural_node & structuralNode)
 {
   for (size_t n = 0; n < structuralNode.nsubregions(); n++)
   {
-    ConvertThetaRegion(*structuralNode.subregion(n));
+    ConvertThetaNodesInRegion(*structuralNode.subregion(n));
   }
 
   if (auto thetaNode = dynamic_cast<jlm::rvsdg::theta_node *>(&structuralNode))
   {
-    ConvertTheta(*thetaNode);
+    ConvertThetaNode(*thetaNode);
   }
 }
 
 static void
-ConvertThetaRegion(jlm::rvsdg::region & region)
+ConvertThetaNodesInRegion(jlm::rvsdg::region & region)
 {
   for (auto & node : jlm::rvsdg::topdown_traverser(&region))
   {
     if (auto structuralNode = dynamic_cast<jlm::rvsdg::structural_node *>(node))
     {
-      ConvertThetaStructuralNode(*structuralNode);
+      ConvertThetaNodesInStructuralNode(*structuralNode);
     }
   }
 }
 
 void
-theta_conv(jlm::llvm::RvsdgModule & rvsdgModule)
+ConvertThetaNodes(jlm::llvm::RvsdgModule & rvsdgModule)
 {
-  ConvertThetaRegion(*rvsdgModule.Rvsdg().root());
+  ConvertThetaNodesInRegion(*rvsdgModule.Rvsdg().root());
 }
 
 }
