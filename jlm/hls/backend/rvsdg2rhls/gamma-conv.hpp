@@ -13,7 +13,7 @@ namespace jlm::hls
 {
 
 void
-gamma_conv(llvm::RvsdgModule & rm, bool allow_speculation = true);
+gamma_conv(llvm::RvsdgModule & rm, bool allow_speculation);
 
 }
 
