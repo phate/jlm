@@ -1,0 +1,42 @@
+name: "Build CIRCT"
+description: "Builds CIRCT, which is used for the HLS backend"
+
+runs:
+  using: "composite"
+  steps:
+    # Clone jlm-eval-suite
+    - name: Clone jlm-test-suite
+      run: git clone https://github.com/phate/jlm-eval-suite.git
+      shell: bash
+
+    # Extract the CIRCT submodule hash for use in the cache key
+    - name: Get CIRCT hash
+      id: get-circt-hash
+      run: |
+        cd jlm-eval-suite
+        echo "hash=$(git rev-parse @:./circt)" >> $GITHUB_OUTPUT
+      shell: bash
+
+    # Try to fetch CIRCT from the cache
+    - name: Cache CIRCT
+      id: cache-circt
+      uses: actions/cache@v3
+      with:
+        path: |
+          jlm-eval-suite/circt/local
+        key: ${{ runner.os }}-circt-${{ steps.get-circt-hash.outputs.hash }}
+
+    # Install dependencies if we didn't hit in the cache
+    - name: "Install LLVM, Clang, MLIR, and Ninja"
+      if: steps.cache-circt.outputs.cache-hit != 'true'
+      uses: ./.github/actions/InstallLlvmDependencies
+
+    # Build CIRCT if we didn't hit in the cache
+    - name: Rebuild and Install CIRCT
+      if: steps.cache-circt.outputs.cache-hit != 'true'
+      run: |
+        cd jlm-eval-suite
+        make submodule-circt
+        make circt-build
+      shell: bash
+
