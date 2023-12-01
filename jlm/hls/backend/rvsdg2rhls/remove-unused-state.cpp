@@ -154,19 +154,34 @@ remove_gamma_passthrough(jlm::rvsdg::gamma_node * gn)
       // divert users of output to origin of input
 
       gn->output(res_index)->divert_users(origin);
-      gn->output(res_index)->results.clear();
-      gn->RemoveOutput(res_index);
-      // remove input
-      gn->input(i + 1)->arguments.clear();
-      gn->RemoveInput(i + 1);
-      for (size_t j = 0; j < gn->nsubregions(); ++j)
+
+      for (size_t r = 0; r < gn->nsubregions(); r++)
       {
-        JLM_ASSERT(gn->subregion(j)->result(res_index)->origin() == gn->subregion(j)->argument(i));
-        JLM_ASSERT(gn->subregion(j)->argument(i)->nusers() == 1);
-        gn->subregion(j)->RemoveResult(res_index);
-        JLM_ASSERT(gn->subregion(j)->argument(i)->nusers() == 0);
-        gn->subregion(j)->RemoveArgument(i);
+        gn->subregion(r)->RemoveResult(res_index);
       }
+      gn->RemoveOutput(res_index);
+
+      for (size_t r = 0; r < gn->nsubregions(); r++)
+      {
+        gn->subregion(r)->RemoveArgument(i);
+      }
+      gn->RemoveInput(i + 1);
+
+      // Valgrind was acting up on the code below
+      //
+      //      gn->output(res_index)->results.clear();
+      //      gn->RemoveOutput(res_index);
+      //      // remove input
+      //      gn->input(i + 1)->arguments.clear();
+      //      gn->RemoveInput(i + 1);
+      //      for (size_t j = 0; j < gn->nsubregions(); ++j)
+      //      {
+      //        JLM_ASSERT(gn->subregion(j)->result(res_index)->origin() ==
+      //        gn->subregion(j)->argument(i)); JLM_ASSERT(gn->subregion(j)->argument(i)->nusers()
+      //        == 1); gn->subregion(j)->RemoveResult(res_index);
+      //        JLM_ASSERT(gn->subregion(j)->argument(i)->nusers() == 0);
+      //        gn->subregion(j)->RemoveArgument(i);
+      //      }
     }
   }
 }
