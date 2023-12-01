@@ -325,8 +325,9 @@ FunctionCallConstraint::Apply(PointerObjectSet & set)
     auto & lambdaNode = set.GetLambdaNodeFromFunctionMemoryObject(lambda);
 
     // If the number of parameters or number of results doesn't line up,
-    // assume this is not the function we are calling
-    // FIXME: Add support for vararg function calls
+    // assume this is not the function we are calling.
+    // Note that the number of arguments and results include 3 state edges: memory, loop and IO.
+    // Varargs are properly handled, since they get merged by a valist_op node before the CallNode.
     if (lambdaNode.nfctarguments() != CallNode_.NumArguments()
         || lambdaNode.nfctresults() != CallNode_.NumResults())
       return;

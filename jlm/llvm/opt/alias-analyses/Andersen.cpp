@@ -528,6 +528,7 @@ Andersen::AnalyzeRvsdg(const rvsdg::graph & graph)
   auto & rootRegion = *graph.root();
 
   // Iterate over all arguments to the root region - symbols imported from other modules
+  // These symbols can either be global variables or functions
   for (size_t n = 0; n < rootRegion.narguments(); n++)
   {
     auto & argument = *rootRegion.argument(n);
@@ -535,10 +536,6 @@ Andersen::AnalyzeRvsdg(const rvsdg::graph & graph)
     // Only care about imported pointer values
     if (!jlm::rvsdg::is<PointerType>(argument.type()))
       continue;
-
-    /* FIXME: Steensgaard says we should not add function imports.
-     * What should be done to functions instead, creating lambda nodes with special linkage flags?
-     */
 
     // Create a memory PointerObject representing the target of the external symbol
     // We can assume that two external symbols don't alias, clang does.
