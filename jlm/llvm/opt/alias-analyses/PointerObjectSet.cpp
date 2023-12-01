@@ -5,6 +5,7 @@
 
 #include <jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp>
 
+#include <jlm/llvm/ir/operators/call.hpp>
 #include <queue>
 
 namespace jlm::llvm::aa
@@ -277,6 +278,109 @@ HandleEscapingFunctionConstraint::Apply(PointerObjectSet & set)
   }
 
   return true;
+}
+
+// Connects function calls to every possible target function
+bool
+FunctionCallConstraint::Apply(PointerObjectSet & set)
+{
+  bool modified = false;
+
+  // When the function pointer can point to anything visible outside of the module
+  const auto handleCallingExternalFunction = [&]
+  {
+    // Mark all the call's inputs as escaped, and all the outputs as pointing to external
+    for (size_t n = 0; n < CallNode_.NumArguments(); n++)
+    {
+      const auto & inputRegister = *CallNode_.Argument(n)->origin();
+      if (!is<PointerType>(inputRegister.type()))
+        continue;
+
+      const auto inputRegisterPO = set.GetRegisterPointerObject(inputRegister);
+      modified |= set.GetPointerObject(inputRegisterPO).MarkAsEscaped();
+    }
+
+    for (size_t n = 0; n < CallNode_.NumResults(); n++)
+    {
+      const auto & outputRegister = *CallNode_.Result(n);
+      if (!is<PointerType>(outputRegister.type()))
+        continue;
+
+      const auto outputRegisterPO = set.GetRegisterPointerObject(outputRegister);
+      modified |= set.GetPointerObject(outputRegisterPO).MarkAsPointsToExternal();
+    }
+  };
+
+  // When the function pointer can point to a function imported from outside the module
+  const auto handleCallingImportedFunction = [&](const PointerObject::Index imported)
+  {
+    // FIXME: Add special handling of common library functions
+    // Otherwise we don't know anything about the function
+    handleCallingExternalFunction();
+  };
+
+  // When the function pointer can point to a lambda node in our module
+  const auto handleCallingLambdaFunction = [&](const PointerObject::Index lambda)
+  {
+    auto & lambdaNode = set.GetLambdaNodeFromFunctionMemoryObject(lambda);
+
+    // If the number of parameters or number of results doesn't line up,
+    // assume this is not the function we are calling
+    // FIXME: Add support for vararg function calls
+    if (lambdaNode.nfctarguments() != CallNode_.NumArguments()
+        || lambdaNode.nfctresults() != CallNode_.NumResults())
+      return;
+
+    // Pass all call node inputs to the function's subregion
+    for (size_t n = 0; n < CallNode_.NumArguments(); n++)
+    {
+      const auto & inputRegister = *CallNode_.Argument(n)->origin();
+      const auto & argumentRegister = *lambdaNode.fctargument(n);
+      if (!is<PointerType>(inputRegister.type()) || !is<PointerType>(argumentRegister.type()))
+        continue;
+
+      const auto inputRegisterPO = set.GetRegisterPointerObject(inputRegister);
+      const auto argumentRegisterPO = set.GetRegisterPointerObject(argumentRegister);
+      modified |= set.MakePointsToSetSuperset(argumentRegisterPO, inputRegisterPO);
+    }
+
+    // Pass the function's subregion results to the output of the call node
+    for (size_t n = 0; n < CallNode_.NumResults(); n++)
+    {
+      const auto & outputRegister = *CallNode_.Result(n);
+      const auto & resultRegister = *lambdaNode.fctresult(n)->origin();
+      if (!is<PointerType>(outputRegister.type()) || !is<PointerType>(resultRegister.type()))
+        continue;
+
+      const auto outputRegisterPO = set.GetRegisterPointerObject(outputRegister);
+      const auto resultRegisterPO = set.GetRegisterPointerObject(resultRegister);
+      modified |= set.MakePointsToSetSuperset(outputRegisterPO, resultRegisterPO);
+    }
+  };
+
+  // For each possible function target, connect parameters and return values to the call node
+  for (const auto target : set.GetPointsToSet(CallTarget_).Items())
+  {
+    switch (set.GetPointerObject(target).GetKind())
+    {
+    case PointerObjectKind::ImportMemoryObject:
+      handleCallingImportedFunction(target);
+      break;
+    case PointerObjectKind::FunctionMemoryObject:
+      handleCallingLambdaFunction(target);
+      break;
+    default:
+      break;
+    }
+  }
+
+  // If we might be calling an external function
+  if (set.GetPointerObject(CallTarget_).PointsToExternal())
+  {
+    handleCallingExternalFunction();
+  }
+
+  return modified;
 }
 
 void

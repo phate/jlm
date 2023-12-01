@@ -8,46 +8,129 @@
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
+#include <typeinfo>
+
 namespace jlm::llvm::aa
 {
 
 void
 Andersen::AnalyzeSimpleNode(const rvsdg::simple_node & node)
-{}
+{
+  const auto & op = node.operation();
+  const auto & type = typeid(op);
+
+  if (type == typeid(alloca_op))
+    AnalyzeAlloca(node);
+  else if (type == typeid(malloc_op))
+    AnalyzeMalloc(node);
+  else if (type == typeid(LoadOperation))
+    AnalyzeLoad(*util::AssertedCast<const LoadNode>(&node));
+  else if (type == typeid(StoreOperation))
+    AnalyzeStore(*util::AssertedCast<const StoreNode>(&node));
+  else if (type == typeid(CallOperation))
+    AnalyzeCall(*util::AssertedCast<const CallNode>(&node));
+  else if (type == typeid(GetElementPtrOperation))
+    AnalyzeGep(node);
+  else if (type == typeid(bitcast_op))
+    AnalyzeBitcast(node);
+  else if (type == typeid(bits2ptr_op))
+    AnalyzeBits2ptr(node);
+  else if (type == typeid(ConstantPointerNullOperation))
+    AnalyzeConstantPointerNull(node);
+  else if (type == typeid(UndefValueOperation))
+    AnalyzeUndef(node);
+  else if (type == typeid(Memcpy))
+    AnalyzeMemcpy(node);
+  else if (type == typeid(ConstantArray))
+    AnalyzeConstantArray(node);
+  else if (type == typeid(ConstantStruct))
+    AnalyzeConstantStruct(node);
+  else if (type == typeid(ConstantAggregateZero))
+    AnalyzeConstantAggregateZero(node);
+  else if (type == typeid(ExtractValue))
+    AnalyzeExtractValue(node);
+}
 
 void
 Andersen::AnalyzeAlloca(const rvsdg::simple_node & node)
-{}
+{
+  JLM_ASSERT(is<alloca_op>(&node));
+
+  const auto & outputRegister = *node.output(0);
+  const auto outputRegisterPO = Set_->CreateRegisterPointerObject(outputRegister);
+  const auto allocaPO = Set_->CreateAllocaMemoryObject(node);
+  Constraints_->AddPointerPointeeConstraint(outputRegisterPO, allocaPO);
+}
 
 void
 Andersen::AnalyzeMalloc(const rvsdg::simple_node & node)
-{}
+{
+  JLM_ASSERT(is<malloc_op>(&node));
+
+  const auto & outputRegister = *node.output(0);
+  const auto outputRegisterPO = Set_->CreateRegisterPointerObject(outputRegister);
+  const auto mallocPO = Set_->CreateMallocMemoryObject(node);
+  Constraints_->AddPointerPointeeConstraint(outputRegisterPO, mallocPO);
+}
 
 void
 Andersen::AnalyzeLoad(const LoadNode & loadNode)
-{}
+{
+  const auto & addressRegister = *loadNode.GetAddressInput()->origin();
+  const auto & outputRegister = *loadNode.GetValueOutput();
+
+  const auto addressRegisterPO = Set_->GetRegisterPointerObject(addressRegister);
+
+  if (!is<PointerType>(outputRegister.type()))
+  {
+    // TODO: When reading address as an integer, some of address' target might still pointers,
+    // which should now be considered as having escaped
+    return;
+  }
+
+  const auto outputRegisterPO = Set_->CreateRegisterPointerObject(outputRegister);
+  Constraints_->AddConstraint(SupersetOfAllPointeesConstraint(outputRegisterPO, addressRegisterPO));
+}
 
 void
 Andersen::AnalyzeStore(const StoreNode & storeNode)
-{}
+{
+  const auto & addressRegister = *storeNode.GetAddressInput()->origin();
+  const auto & valueRegister = *storeNode.GetValueInput()->origin();
+
+  // If the written value is not a pointer, be conservative and make the address
+  if (!is<PointerType>(valueRegister.type()))
+  {
+    // TODO: We are writing an integer to *address,
+    // which really should mark all of address' targets as pointing to external
+    // in case they are ever read as pointers.
+    return;
+  }
+
+  const auto addressRegisterPO = Set_->GetRegisterPointerObject(addressRegister);
+  const auto valueRegisterPO = Set_->GetRegisterPointerObject(valueRegister);
+  Constraints_->AddConstraint(
+      AllPointeesPointToSupersetConstraint(addressRegisterPO, valueRegisterPO));
+}
 
 void
 Andersen::AnalyzeCall(const CallNode & callNode)
 {
   // The address being called by the call node
-  const auto & callTarget = callNode.GetFunctionInput();
+  const auto & callTarget = *callNode.GetFunctionInput()->origin();
+  const auto callTargetPO = Set_->GetRegisterPointerObject(callTarget);
 
   // Create PointerObjects for all output values of pointer type
   for (size_t n = 0; n < callNode.NumResults(); n++)
   {
     const auto & outputRegister = *callNode.Result(n);
-    (void) Set_->CreateRegisterPointerObject(outputRegister);
+    Set_->CreateRegisterPointerObject(outputRegister);
   }
 
   // We make no attempt at detecting what type of call this is here.
   // The logic handling external and indirect calls is done by the FunctionCallConstraint.
   // Passing points-to-sets from call-site to function bodies is done fully by this constraint.
-  Constraints_->AddConstraint(FunctionCallConstraint(callTarget, callNode));
+  Constraints_->AddConstraint(FunctionCallConstraint(callTargetPO, callNode));
 }
 
 void
@@ -88,7 +171,7 @@ Andersen::AnalyzeBits2ptr(const rvsdg::simple_node & node)
 {
   JLM_ASSERT(is<bits2ptr_op>(&node));
   const auto & output = *node.output(0);
-  JLM_ASSERT(is<PointerObject>(output.type()));
+  JLM_ASSERT(is<PointerType>(output.type()));
 
   // This operation synthesizes a pointer from bytes.
   // Since no points-to information is tracked through integers, the resulting pointer must
@@ -102,7 +185,7 @@ Andersen::AnalyzeConstantPointerNull(const rvsdg::simple_node & node)
 {
   JLM_ASSERT(is<ConstantPointerNullOperation>(&node));
   const auto & output = *node.output(0);
-  JLM_ASSERT(is<PointerObject>(output.type()));
+  JLM_ASSERT(is<PointerType>(output.type()));
 
   // ConstantPointerNull cannot point to any memory location. We therefore only insert a register
   // node for it, but let this node not point to anything.
@@ -119,7 +202,7 @@ Andersen::AnalyzeUndef(const rvsdg::simple_node & node)
     return;
 
   // UndefValue cannot point to any memory location. We therefore only insert a register node for
-  //it, but let this node not point to anything.
+  // it, but let this node not point to anything.
   Set_->CreateRegisterPointerObject(output);
 }
 
@@ -174,7 +257,7 @@ Andersen::AnalyzeConstantStruct(const rvsdg::simple_node & node)
 
     // TODO: Pass pointer information through aggregate types
     // Since the rest of the code only considers values of PointerType, mark inputs as escaping.
-    auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
+    const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
     Constraints_->AddRegisterContentEscapedConstraint(inputRegisterPO);
   }
 }
@@ -207,6 +290,26 @@ Andersen::AnalyzeExtractValue(const rvsdg::simple_node & node)
   // This involves replacing all usages of is<PointerType> with IsOrContains<PointerType>
   const auto resultPO = Set_->CreateRegisterPointerObject(result);
   Constraints_->AddPointsToExternalConstraint(resultPO);
+}
+
+void
+Andersen::AnalyzeStructuralNode(const rvsdg::structural_node & node)
+{
+  const auto & op = node.operation();
+  const auto & type = typeid(op);
+
+  if (type == typeid(lambda::operation))
+    AnalyzeLambda(*util::AssertedCast<const lambda::node>(&node));
+  else if (type == typeid(delta::operation))
+    AnalyzeDelta(*util::AssertedCast<const delta::node>(&node));
+  else if (type == typeid(phi::operation))
+    AnalyzePhi(*util::AssertedCast<const phi::node>(&node));
+  else if (type == typeid(rvsdg::gamma_op))
+    AnalyzeGamma(*util::AssertedCast<const rvsdg::gamma_node>(&node));
+  else if (type == typeid(rvsdg::theta_op))
+    AnalyzeTheta(*util::AssertedCast<const rvsdg::theta_node>(&node));
+  else
+    JLM_UNREACHABLE("Unknown structural node operation");
 }
 
 void
@@ -400,26 +503,6 @@ Andersen::AnalyzeTheta(const rvsdg::theta_node & theta)
 }
 
 void
-Andersen::AnalyzeStructuralNode(const rvsdg::structural_node & node)
-{
-  switch (typeid(node.operation()))
-  {
-  case typeid(lambda::operation):
-    return AnalyzeLambda(*util::AssertedCast<const lambda::node>(&node));
-  case typeid(delta::operation):
-    return AnalyzeDelta(*util::AssertedCast<const delta::node>(&node));
-  case typeid(phi::operation):
-    return AnalyzePhi(*util::AssertedCast<const phi::node>(&node));
-  case typeid(rvsdg::gamma_op):
-    return AnalyzeGamma(*util::AssertedCast<const rvsdg::gamma_node>(&node));
-  case typeid(rvsdg::theta_op):
-    return AnalyzeTheta(*util::AssertedCast<const rvsdg::theta_node>(&node));
-  default:
-    JLM_UNREACHABLE("Unknown structural node operation");
-  }
-}
-
-void
 Andersen::AnalyzeRegion(rvsdg::region & region)
 {
   // The use of the top-down traverser is vital, as it ensures all input origins
@@ -547,7 +630,7 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(const PointerObjectSet & se
     if (set.GetPointerObject(index).PointsToExternal())
       pointsToExternal.push_back(&node);
 
-    for (const auto targetIdx : set.GetPointsToSet(index))
+    for (const auto targetIdx : set.GetPointsToSet(index).Items())
     {
       // Only PointerObjects corresponding to memory nodes can be members of points-to sets
       JLM_ASSERT(memoryNodes[targetIdx]);
@@ -590,5 +673,4 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(const PointerObjectSet & se
 
   return pointsToGraph;
 }
-
 }

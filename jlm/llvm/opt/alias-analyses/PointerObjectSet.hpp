@@ -168,7 +168,7 @@ public:
    * @param rvsdgOutput the rvsdg output associated with the register PointerObject
    * @return the index of the new PointerObject in the PointerObjectSet
    */
-  [[nodiscard]] PointerObject::Index
+  PointerObject::Index
   CreateRegisterPointerObject(const rvsdg::output & rvsdgOutput);
 
   /**
@@ -394,11 +394,11 @@ public:
  *
  * It follows the given pseudocode:
  * for f in P(CallTarget):
- *   if f is not a lambda:
+ *   if f is not a lambda, or the signature doesn't match:
  *     continue
  *   for each function argument/input pair (a, i):
- *     make P(x) a superset of P(y)
- *   for each return value/output pair (r, o):
+ *     make P(a) a superset of P(i)
+ *   for each result/output pair (r, o):
  *     make P(o) a superset of P(r)
  *
  * if CallTarget is flagged as PointsToExternal:
@@ -413,7 +413,7 @@ class FunctionCallConstraint final
   PointerObject::Index CallTarget_;
 
   /**
-   *
+   * The RVSDG node representing the function call
    */
   const jlm::llvm::CallNode & CallNode_;
 
@@ -447,7 +447,8 @@ public:
       SupersetConstraint,
       AllPointeesPointToSupersetConstraint,
       SupersetOfAllPointeesConstraint,
-      HandleEscapingFunctionConstraint>;
+      HandleEscapingFunctionConstraint,
+      FunctionCallConstraint>;
 
   explicit PointerObjectConstraintSet(PointerObjectSet & set)
       : Set_(set)
