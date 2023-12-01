@@ -65,6 +65,12 @@ PointerObjectSet::MapRegisterToExistingPointerObject(
   RegisterMap_[&rvsdgOutput] = pointerObject;
 }
 
+[[nodiscard]] PointerObject::Index
+PointerObjectSet::CreateDummyRegisterPointerObject()
+{
+  return AddPointerObject(PointerObjectKind::Register);
+}
+
 PointerObject::Index
 PointerObjectSet::CreateAllocaMemoryObject(const rvsdg::node & allocaNode)
 {

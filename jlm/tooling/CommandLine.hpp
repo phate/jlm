@@ -52,6 +52,8 @@ public:
 
     AASteensgaardAgnostic,
     AASteensgaardRegionAware,
+    AAAndersenAgnostic,
+    AAAndersenRegionAware,
 
     /**
      * \deprecated This flag is going to be removed in the future. Use \ref
@@ -207,6 +209,8 @@ private:
   {
     inline static const char * AaSteensgaardAgnostic_ = "AASteensgaardAgnostic";
     inline static const char * AaSteensgaardRegionAware_ = "AASteensgaardRegionAware";
+    inline static const char * AaAndersenAgnostic_ = "AAAndersenAgnostic";
+    inline static const char * AaAndersenRegionAware_ = "AAAndersenRegionAware";
     inline static const char * CommonNodeElimination_ = "CommonNodeElimination";
     inline static const char * CommonNodeEliminationDeprecated_ = "cne";
     inline static const char * DeadNodeElimination_ = "DeadNodeElimination";
