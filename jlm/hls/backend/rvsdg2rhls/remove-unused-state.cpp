@@ -4,6 +4,9 @@
  */
 
 #include <jlm/hls/backend/rvsdg2rhls/remove-unused-state.hpp>
+#include <jlm/llvm/ir/operators/lambda.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
 namespace jlm::hls
