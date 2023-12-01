@@ -121,10 +121,13 @@ remove_region_passthrough(const jlm::rvsdg::argument * arg)
   // divert users of output to origin of input
   arg->region()->node()->output(res->output()->index())->divert_users(origin);
   // remove result first so argument has no users
-  arg->region()->RemoveResult(res->index());
-  arg->region()->RemoveArgument(arg->index());
-  arg->region()->node()->RemoveInput(arg->input()->index());
-  arg->region()->node()->RemoveOutput(res->output()->index());
+  auto inputIndex = arg->input()->index();
+  auto outputIndex = res->output()->index();
+  auto region = arg->region();
+  region->RemoveResult(res->index());
+  region->RemoveArgument(arg->index());
+  region->node()->RemoveInput(inputIndex);
+  region->node()->RemoveOutput(outputIndex);
 }
 
 static void
