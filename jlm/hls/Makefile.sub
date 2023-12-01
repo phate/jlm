@@ -3,8 +3,8 @@
 
 LIBHLS_SRC = \
     jlm/hls/backend/rvsdg2rhls/add-triggers.cpp \
-    jlm/hls/backend/rvsdg2rhls/gamma-conv.cpp \
-    jlm/hls/backend/rvsdg2rhls/theta-conv.cpp \
+    jlm/hls/backend/rvsdg2rhls/GammaConversion.cpp \
+    jlm/hls/backend/rvsdg2rhls/ThetaConversion.cpp \
     jlm/hls/backend/rvsdg2rhls/add-sinks.cpp \
     jlm/hls/backend/rvsdg2rhls/add-forks.cpp \
     jlm/hls/backend/rvsdg2rhls/check-rhls.cpp \

@@ -476,112 +476,78 @@ DeadNodeElimination::SweepGamma(jlm::rvsdg::gamma_node & gammaNode) const
 void
 DeadNodeElimination::SweepTheta(jlm::rvsdg::theta_node & thetaNode) const
 {
-  auto subregion = thetaNode.subregion();
+  auto & thetaSubregion = *thetaNode.subregion();
 
-  // Remove dead results
-  for (size_t n = thetaNode.noutputs() - 1; n != static_cast<size_t>(-1); n--)
+  auto matchOutput = [&](const rvsdg::theta_output & output)
   {
-    auto & thetaOutput = *thetaNode.output(n);
-    auto & thetaArgument = *thetaOutput.argument();
-    auto & thetaResult = *thetaOutput.result();
+    auto & argument = *output.argument();
+    return !Context_->IsAlive(argument) && !Context_->IsAlive(output);
+  };
+  auto deadInputs = thetaNode.RemoveThetaOutputsWhere(matchOutput);
 
-    if (!Context_->IsAlive(thetaArgument) && !Context_->IsAlive(thetaOutput))
-    {
-      subregion->RemoveResult(thetaResult.index());
-    }
-  }
+  SweepRegion(thetaSubregion);
 
-  SweepRegion(*subregion);
-
-  // Remove dead outputs, inputs, and arguments
-  for (size_t n = thetaNode.ninputs() - 1; n != static_cast<size_t>(-1); n--)
+  auto matchInput = [&](const rvsdg::theta_input & input)
   {
-    auto & thetaInput = *thetaNode.input(n);
-    auto & thetaArgument = *thetaInput.argument();
-    auto & thetaOutput = *thetaInput.output();
-
-    if (!Context_->IsAlive(thetaArgument) && !Context_->IsAlive(thetaOutput))
-    {
-      JLM_ASSERT(thetaOutput.results.empty());
-      subregion->RemoveArgument(thetaArgument.index());
-      thetaNode.RemoveInput(thetaInput.index());
-      thetaNode.RemoveOutput(thetaOutput.index());
-    }
-  }
+    return deadInputs.Contains(&input);
+  };
+  thetaNode.RemoveThetaInputsWhere(matchInput);
 
   JLM_ASSERT(thetaNode.ninputs() == thetaNode.noutputs());
-  JLM_ASSERT(subregion->narguments() == subregion->nresults() - 1);
+  JLM_ASSERT(thetaSubregion.narguments() == thetaSubregion.nresults() - 1);
 }
 
 void
 DeadNodeElimination::SweepLambda(lambda::node & lambdaNode) const
 {
   SweepRegion(*lambdaNode.subregion());
-
-  // Remove dead arguments and inputs
-  for (size_t n = lambdaNode.ninputs() - 1; n != static_cast<size_t>(-1); n--)
-  {
-    auto input = lambdaNode.input(n);
-
-    if (!Context_->IsAlive(*input->argument()))
-    {
-      lambdaNode.subregion()->RemoveArgument(input->argument()->index());
-      lambdaNode.RemoveInput(n);
-    }
-  }
+  lambdaNode.PruneLambdaInputs();
 }
 
 void
 DeadNodeElimination::SweepPhi(phi::node & phiNode) const
 {
-  auto subregion = phiNode.subregion();
+  util::HashSet<const rvsdg::argument *> deadRecursionArguments;
 
-  // Remove dead outputs and results
-  for (size_t n = subregion->nresults() - 1; n != static_cast<size_t>(-1); n--)
+  auto isDeadOutput = [&](const phi::rvoutput & output)
   {
-    auto result = subregion->result(n);
-    if (!Context_->IsAlive(*result->output())
-        && !Context_->IsAlive(*subregion->argument(result->index())))
+    auto argument = output.argument();
+
+    // A recursion variable is only dead iff its output AND argument are dead
+    auto isDead = !Context_->IsAlive(output) && !Context_->IsAlive(*argument);
+    if (isDead)
     {
-      subregion->RemoveResult(n);
-      phiNode.RemoveOutput(n);
+      deadRecursionArguments.Insert(argument);
     }
-  }
 
-  SweepRegion(*subregion);
+    return isDead;
+  };
+  phiNode.RemovePhiOutputsWhere(isDeadOutput);
 
-  // Remove dead arguments and inputs
-  for (size_t n = subregion->narguments() - 1; n != static_cast<size_t>(-1); n--)
+  SweepRegion(*phiNode.subregion());
+
+  auto isDeadArgument = [&](const rvsdg::argument & argument)
   {
-    auto argument = subregion->argument(n);
-    auto input = argument->input();
-    if (!Context_->IsAlive(*argument))
+    if (argument.input())
     {
-      subregion->RemoveArgument(n);
-      if (input)
-      {
-        phiNode.RemoveInput(input->index());
-      }
+      // It is always safe to remove context variables if they are dead
+      return argument.IsDead();
     }
-  }
+
+    // Only remove the recursion argument if its output was removed in isDeadOutput()
+    JLM_ASSERT(is<phi::rvargument>(&argument));
+    return deadRecursionArguments.Contains(&argument);
+  };
+  phiNode.RemovePhiArgumentsWhere(isDeadArgument);
 }
 
 void
-DeadNodeElimination::SweepDelta(delta::node & deltaNode) const
+DeadNodeElimination::SweepDelta(delta::node & deltaNode)
 {
   // A delta subregion can only contain simple nodes. Thus, a simple prune is sufficient.
   deltaNode.subregion()->prune(false);
 
-  // Remove dead arguments and inputs.
-  for (size_t n = deltaNode.ninputs() - 1; n != static_cast<size_t>(-1); n--)
-  {
-    auto input = deltaNode.input(n);
-    if (!Context_->IsAlive(*input->argument()))
-    {
-      deltaNode.subregion()->RemoveArgument(input->argument()->index());
-      deltaNode.RemoveInput(input->index());
-    }
-  }
+  deltaNode.PruneDeltaInputs();
 }
 
 }

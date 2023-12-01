@@ -5,7 +5,7 @@
 
 #include "test-registry.hpp"
 
-#include <jlm/hls/backend/rvsdg2rhls/theta-conv.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/rvsdg/view.hpp>
@@ -15,14 +15,13 @@ TestUnknownBoundaries()
 {
   using namespace jlm::llvm;
 
+  // Arrange
   auto b32 = jlm::rvsdg::bit32;
   FunctionType ft({ &b32, &b32, &b32 }, { &b32, &b32, &b32 });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);
-
-  /* Setup graph */
 
   auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage);
 
@@ -53,13 +52,11 @@ TestUnknownBoundaries()
 
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
-  /* Convert graph to RHLS */
-
-  jlm::hls::theta_conv(theta);
+  // Act
+  jlm::hls::ConvertThetaNodes(rm);
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
-  /* Verify graph */
-
+  // Assert
   assert(jlm::rvsdg::region::Contains<jlm::hls::loop_op>(*lambda->subregion(), true));
   assert(jlm::rvsdg::region::Contains<jlm::hls::predicate_buffer_op>(*lambda->subregion(), true));
   assert(jlm::rvsdg::region::Contains<jlm::hls::branch_op>(*lambda->subregion(), true));

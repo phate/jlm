@@ -10,6 +10,7 @@
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
+#include <jlm/util/HashSet.hpp>
 
 namespace jlm::rvsdg
 {
@@ -150,6 +151,97 @@ public:
     return loopvar_iterator(nullptr);
   }
 
+  /**
+   * Remove theta outputs and their respective results.
+   *
+   * An output must match the condition specified by \p match and it must be dead.
+   *
+   * @tparam F A type that supports the function call operator: bool operator(const theta_output&)
+   * @param match Defines the condition of the elements to remove.
+   * @return The inputs corresponding to the removed outputs.
+   *
+   * \note The application of this method might leave the theta node in an invalid state. Some
+   * inputs might refer to outputs that have been removed by the application of this method. It
+   * is up to the caller to ensure that the invariants of the theta node will eventually be met
+   * again.
+   *
+   * \see RemoveThetaInputsWhere()
+   * \see theta_output#IsDead()
+   */
+  template<typename F>
+  util::HashSet<const theta_input *>
+  RemoveThetaOutputsWhere(const F & match);
+
+  /**
+   * Remove all dead theta outputs and their respective results.
+   *
+   * @return The inputs corresponding to the removed outputs.
+   *
+   * \note The application of this method might leave the theta node in an invalid state. Some
+   * inputs might refer to outputs that have been removed by the application of this method. It
+   * is up to the caller to ensure that the invariants of the theta node will eventually be met
+   * again.
+   *
+   * \see RemoveThetaOutputsWhere()
+   * \see theta_output#IsDead()
+   */
+  util::HashSet<const theta_input *>
+  PruneThetaOutputs()
+  {
+    auto match = [](const theta_output &)
+    {
+      return true;
+    };
+
+    return RemoveThetaOutputsWhere(match);
+  }
+
+  /**
+   * Remove theta inputs and their respective arguments.
+   *
+   * An input must match the condition specified by \p match and its respective argument must be
+   * dead.
+   *
+   * @tparam F A type that supports the function call operator: bool operator(const theta_input&)
+   * @param match Defines the condition of the elements to remove.
+   * @return The outputs corresponding to the removed outputs.
+   *
+   * \note The application of this method might leave the theta node in an invalid state. Some
+   * outputs might refer to inputs that have been removed by the application of this method. It
+   * is up to the caller to ensure that the invariants of the theta node will eventually be met
+   * again.
+   *
+   * \see RemoveThetaOutputsWhere()
+   * \see argument#IsDead()
+   */
+  template<typename F>
+  util::HashSet<const theta_output *>
+  RemoveThetaInputsWhere(const F & match);
+
+  /**
+   * Remove all dead theta inputs and their respective arguments.
+   *
+   * @return The outputs corresponding to the removed outputs.
+   *
+   * \note The application of this method might leave the theta node in an invalid state. Some
+   * outputs might refer to inputs that have been removed by the application of this method. It
+   * is up to the caller to ensure that the invariants of the theta node will eventually be met
+   * again.
+   *
+   * \see RemoveThetaInputsWhere()
+   * \see argument#IsDead()
+   */
+  util::HashSet<const theta_output *>
+  PruneThetaInputs()
+  {
+    auto match = [](const theta_input &)
+    {
+      return true;
+    };
+
+    return RemoveThetaInputsWhere(match);
+  }
+
   theta_input *
   input(size_t index) const noexcept;
 
@@ -288,6 +380,52 @@ inline jlm::rvsdg::theta_output *
 theta_node::output(size_t index) const noexcept
 {
   return static_cast<theta_output *>(node::output(index));
+}
+
+template<typename F>
+util::HashSet<const theta_input *>
+theta_node::RemoveThetaOutputsWhere(const F & match)
+{
+  util::HashSet<const theta_input *> deadInputs;
+
+  // iterate backwards to avoid the invalidation of 'n' by RemoveOutput()
+  for (size_t n = noutputs() - 1; n != static_cast<size_t>(-1); n--)
+  {
+    auto & thetaOutput = *output(n);
+    auto & thetaResult = *thetaOutput.result();
+
+    if (thetaOutput.IsDead() && match(thetaOutput))
+    {
+      deadInputs.Insert(thetaOutput.input());
+      subregion()->RemoveResult(thetaResult.index());
+      RemoveOutput(thetaOutput.index());
+    }
+  }
+
+  return deadInputs;
+}
+
+template<typename F>
+util::HashSet<const theta_output *>
+theta_node::RemoveThetaInputsWhere(const F & match)
+{
+  util::HashSet<const theta_output *> deadOutputs;
+
+  // iterate backwards to avoid the invalidation of 'n' by RemoveInput()
+  for (size_t n = ninputs() - 1; n != static_cast<size_t>(-1); n--)
+  {
+    auto & thetaInput = *input(n);
+    auto & thetaArgument = *thetaInput.argument();
+
+    if (thetaArgument.IsDead() && match(thetaInput))
+    {
+      deadOutputs.Insert(thetaInput.output());
+      subregion()->RemoveArgument(thetaArgument.index());
+      RemoveInput(thetaInput.index());
+    }
+  }
+
+  return deadOutputs;
 }
 
 /* theta input method definitions */
