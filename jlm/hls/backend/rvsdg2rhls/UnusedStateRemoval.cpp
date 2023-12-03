@@ -191,7 +191,7 @@ remove_gamma_passthrough(jlm::rvsdg::gamma_node * gn)
 }
 
 static void
-RemoveUnusedStatesInRegion(jlm::rvsdg::region * region, bool can_remove_arguments)
+RemoveUnusedStatesInRegion(jlm::rvsdg::region * region)
 {
   // process children first so that unnecessary users get removed
   for (auto & node : jlm::rvsdg::topdown_traverser(region))
@@ -203,18 +203,18 @@ RemoveUnusedStatesInRegion(jlm::rvsdg::region * region, bool can_remove_argument
         // process subnodes first
         for (size_t n = 0; n < gn->nsubregions(); n++)
         {
-          RemoveUnusedStatesInRegion(gn->subregion(n), false);
+          RemoveUnusedStatesInRegion(gn->subregion(n));
         }
         remove_gamma_passthrough(gn);
       }
       else if (auto ln = dynamic_cast<llvm::lambda::node *>(node))
       {
-        RemoveUnusedStatesInRegion(structnode->subregion(0), false);
+        RemoveUnusedStatesInRegion(structnode->subregion(0));
         remove_lambda_passthrough(ln);
       }
       else if (auto thetaNode = dynamic_cast<rvsdg::theta_node *>(node))
       {
-        RemoveUnusedStatesInRegion(thetaNode->subregion(), true);
+        RemoveUnusedStatesInRegion(thetaNode->subregion());
 
         for (int i = region->narguments() - 1; i >= 0; --i)
         {
@@ -232,7 +232,7 @@ RemoveUnusedStatesInRegion(jlm::rvsdg::region * region, bool can_remove_argument
 void
 RemoveUnusedStates(llvm::RvsdgModule & rvsdgModule)
 {
-  RemoveUnusedStatesInRegion(rvsdgModule.Rvsdg().root(), true);
+  RemoveUnusedStatesInRegion(rvsdgModule.Rvsdg().root());
 }
 
 }
