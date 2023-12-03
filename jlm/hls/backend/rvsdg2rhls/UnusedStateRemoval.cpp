@@ -171,12 +171,26 @@ RemoveUnusedStatesInGammaNode(jlm::rvsdg::gamma_node & gammaNode)
 }
 
 static void
+RemoveUnusedStatesInThetaNode(rvsdg::theta_node & thetaNode)
+{
+  auto thetaSubregion = thetaNode.subregion();
+  for (int i = thetaSubregion->narguments() - 1; i >= 0; --i)
+  {
+    auto arg = thetaSubregion->argument(i);
+    if (IsPassthroughArgument(*arg))
+    {
+      remove_region_passthrough(arg);
+    }
+  }
+}
+
+static void
 RemoveUnusedStatesInRegion(rvsdg::region & region);
 
 static void
 RemoveUnusedStatesInStructuralNode(rvsdg::structural_node & structuralNode)
 {
-  // remove unused states from innermost regions first
+  // Remove unused states from innermost regions first
   for (size_t n = 0; n < structuralNode.nsubregions(); n++)
   {
     RemoveUnusedStatesInRegion(*structuralNode.subregion(n));
@@ -188,15 +202,7 @@ RemoveUnusedStatesInStructuralNode(rvsdg::structural_node & structuralNode)
   }
   else if (auto thetaNode = dynamic_cast<rvsdg::theta_node *>(&structuralNode))
   {
-    auto thetaSubregion = thetaNode->subregion();
-    for (int i = thetaSubregion->narguments() - 1; i >= 0; --i)
-    {
-      auto arg = thetaSubregion->argument(i);
-      if (IsPassthroughArgument(*arg))
-      {
-        remove_region_passthrough(arg);
-      }
-    }
+    RemoveUnusedStatesInThetaNode(*thetaNode);
   }
   else if (auto lambdaNode = dynamic_cast<llvm::lambda::node *>(&structuralNode))
   {
