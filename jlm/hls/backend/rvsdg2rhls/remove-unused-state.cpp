@@ -233,9 +233,9 @@ remove_unused_state(jlm::rvsdg::region * region, bool can_remove_arguments = tru
 }
 
 void
-remove_unused_state(llvm::RvsdgModule & rm)
+remove_unused_state(llvm::RvsdgModule & rvsdgModule)
 {
-  auto & graph = rm.Rvsdg();
+  auto & graph = rvsdgModule.Rvsdg();
   auto root = graph.root();
   remove_unused_state(root);
 }
