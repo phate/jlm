@@ -7,7 +7,7 @@
 #include <test-registry.hpp>
 #include <test-types.hpp>
 
-#include <jlm/hls/backend/rvsdg2rhls/remove-unused-state.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/UnusedStateRemoval.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/control.hpp>

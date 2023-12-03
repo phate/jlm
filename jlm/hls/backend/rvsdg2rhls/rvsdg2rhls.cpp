@@ -10,9 +10,9 @@
 #include <jlm/hls/backend/rvsdg2rhls/check-rhls.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/DeadNodeElimination.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/GammaConversion.hpp>
-#include <jlm/hls/backend/rvsdg2rhls/remove-unused-state.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/UnusedStateRemoval.hpp>
 #include <jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp>
 #include <jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
@@ -23,7 +23,6 @@
 #include <jlm/llvm/opt/inlining.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
 #include <jlm/llvm/opt/inversion.hpp>
-#include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 
