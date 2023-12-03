@@ -181,10 +181,16 @@ PointsToGraph::ToDot(const PointsToGraph & pointsToGraph)
 
   auto nodeString = [&](const PointsToGraph::Node & node)
   {
+    auto fillcolor = "";
+    if (const auto memoryNode = dynamic_cast<const MemoryNode *>(&node))
+      if (pointsToGraph.GetEscapedMemoryNodes().Contains(memoryNode))
+        fillcolor = "style=filled, fillcolor=\"yellow\", ";
+
     return util::strfmt(
         "{ ",
-        (intptr_t)&node,
+        reinterpret_cast<uintptr_t>(&node),
         " [",
+        fillcolor,
         "label = \"",
         node.DebugString(),
         "\" ",
@@ -229,6 +235,7 @@ PointsToGraph::ToDot(const PointsToGraph & pointsToGraph)
 
   dot += nodeString(pointsToGraph.GetUnknownMemoryNode());
   dot += nodeString(pointsToGraph.GetExternalMemoryNode());
+  dot += "label=\"Yellow = Escaping memory node\"\n";
   dot += "}\n";
 
   return dot;

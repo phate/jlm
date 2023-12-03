@@ -29,8 +29,8 @@ RunAndersen(jlm::llvm::RvsdgModule & module)
  * @param node the source node
  * @param targets a set of nodes that \p node should point to.
  */
-static void
-AssertTargetsExactly(
+[[nodiscard]] static bool
+TargetsExactly(
     const jlm::llvm::aa::PointsToGraph::Node & node,
     const std::unordered_set<const jlm::llvm::aa::PointsToGraph::Node *> & targets)
 {
@@ -39,7 +39,7 @@ AssertTargetsExactly(
   std::unordered_set<const PointsToGraph::Node *> nodeTargets;
   for (auto & target : node.Targets())
     nodeTargets.insert(&target);
-  assert(targets == nodeTargets);
+  return targets == nodeTargets;
 }
 
 /**
@@ -47,13 +47,14 @@ AssertTargetsExactly(
  * to the given set of nodes.
  * @param ptg the PointsToGraph
  * @param nodes the complete set of nodes that should have escaped
+ * @return true if the \p ptg's escaped set is identical to \p nodes
  */
-static void
-AssertEscapedIsExactly(
+[[nodiscard]] static bool
+EscapedIsExactly(
     const jlm::llvm::aa::PointsToGraph & ptg,
     const std::unordered_set<const jlm::llvm::aa::PointsToGraph::MemoryNode *> & nodes)
 {
-  assert(ptg.GetEscapedMemoryNodes() == jlm::util::HashSet(nodes));
+  return ptg.GetEscapedMemoryNodes() == jlm::util::HashSet(nodes);
 }
 
 static void
@@ -82,20 +83,20 @@ TestStore1()
   auto & lambda = ptg->GetLambdaNode(*test.lambda);
   auto & plambda = ptg->GetRegisterNode(*test.lambda->output());
 
-  AssertTargetsExactly(alloca_a, { &alloca_b });
-  AssertTargetsExactly(alloca_b, { &alloca_c });
-  AssertTargetsExactly(alloca_c, { &alloca_d });
-  AssertTargetsExactly(alloca_d, {});
+  assert(TargetsExactly(alloca_a, { &alloca_b }));
+  assert(TargetsExactly(alloca_b, { &alloca_c }));
+  assert(TargetsExactly(alloca_c, { &alloca_d }));
+  assert(TargetsExactly(alloca_d, {}));
 
-  AssertTargetsExactly(palloca_a, { &alloca_a });
-  AssertTargetsExactly(palloca_b, { &alloca_b });
-  AssertTargetsExactly(palloca_c, { &alloca_c });
-  AssertTargetsExactly(palloca_d, { &alloca_d });
+  assert(TargetsExactly(palloca_a, { &alloca_a }));
+  assert(TargetsExactly(palloca_b, { &alloca_b }));
+  assert(TargetsExactly(palloca_c, { &alloca_c }));
+  assert(TargetsExactly(palloca_d, { &alloca_d }));
 
-  AssertTargetsExactly(lambda, {});
-  AssertTargetsExactly(plambda, { &lambda });
+  assert(TargetsExactly(lambda, {}));
+  assert(TargetsExactly(plambda, { &lambda }));
 
-  AssertEscapedIsExactly(*ptg, { &lambda });
+  assert(EscapedIsExactly(*ptg, { &lambda }));
 }
 
 static int

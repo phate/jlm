@@ -652,8 +652,8 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(const PointerObjectSet & se
     applyPointsToSet(registerNode, registerIdx);
   }
 
-  // Now add all edges from memory node to memory node. Also tracks which memory nodes are marked as
-  // escaped
+  // Now add all edges from memory node to memory node.
+  // Also checks and informs the PointsToGraph which memory nodes are marked as escaping the module
   for (PointerObject::Index idx = 0; idx < set.NumPointerObjects(); idx++)
   {
     if (memoryNodes[idx] == nullptr)
@@ -662,7 +662,10 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(const PointerObjectSet & se
     applyPointsToSet(*memoryNodes[idx], idx);
 
     if (set.GetPointerObject(idx).HasEscaped())
+    {
+      memoryNodes[idx]->MarkAsModuleEscaping();
       escapedMemoryNodes.push_back(memoryNodes[idx]);
+    }
   }
 
   // Finally make all nodes marked as pointing to external, point to all escaped memory nodes in the
@@ -679,4 +682,5 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(const PointerObjectSet & se
 
   return pointsToGraph;
 }
+
 }

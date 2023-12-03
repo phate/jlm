@@ -171,11 +171,11 @@ PointerObjectSet::AddToPointsToSet(PointerObject::Index pointer, PointerObject::
 {
   JLM_ASSERT(pointer < NumPointerObjects());
   JLM_ASSERT(pointee < NumPointerObjects());
-  // Registers can not be pointed to
-  JLM_ASSERT(GetPointerObject(pointee).GetKind() != PointerObjectKind::Register);
+  // Assert the pointer object is a possible pointee
+  JLM_ASSERT(GetPointerObject(pointee).CanBePointee());
 
-  // Functions can not point to anything, silently ignore
-  if (GetPointerObject(pointer).GetKind() == PointerObjectKind::FunctionMemoryObject)
+  // If the pointer PointerObject can not point to anything, silently ignore
+  if (!GetPointerObject(pointer).CanPoint())
     return false;
 
   return PointsToSets_[pointer].Insert(pointee);
@@ -190,12 +190,12 @@ PointerObjectSet::MakePointsToSetSuperset(
   JLM_ASSERT(superset <= NumPointerObjects());
   JLM_ASSERT(subset <= NumPointerObjects());
 
-  // Functions can not point to anything, silently ignore
-  if (GetPointerObject(superset).GetKind() == PointerObjectKind::FunctionMemoryObject)
+  // If the superset PointerObject can't point to anything, silently ignore
+  if (!GetPointerObject(superset).CanPoint())
     return false;
 
   auto & P_super = PointsToSets_[superset];
-  auto & P_sub = PointsToSets_[subset];
+  const auto & P_sub = PointsToSets_[subset];
 
   bool modified = P_super.UnionWith(P_sub);
 
@@ -419,9 +419,10 @@ PointerObjectConstraintSet::AddPointsToExternalConstraint(PointerObject::Index p
 void
 PointerObjectConstraintSet::AddRegisterContentEscapedConstraint(PointerObject::Index registerIndex)
 {
-  // Registers themselves can't really escape, since they don't have an address
-  // We can however mark it as escaped, and let escape flag propagation ensure everything it ever
-  // points to is marked. Marking is as escaped does not imply the PointsToExternal-flag.
+  // Registers themselves can't escape in the classical sense, since they don't have an address.
+  // (CanBePointee() is false)
+  // When marked as Escaped, it instead means that the contents of the register has escaped.
+  // This allows Escaped-flag propagation to mark any pointee the register might hold as escaped.
   auto & registerPointerObject = Set_.GetPointerObject(registerIndex);
   JLM_ASSERT(registerPointerObject.GetKind() == PointerObjectKind::Register);
   registerPointerObject.MarkAsEscaped();

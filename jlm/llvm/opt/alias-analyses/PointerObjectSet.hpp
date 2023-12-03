@@ -66,10 +66,34 @@ public:
       MarkAsEscaped();
   }
 
-  PointerObjectKind
+  [[nodiscard]] PointerObjectKind
   GetKind() const noexcept
   {
     return Kind_;
+  }
+
+  /**
+   * Some PointerObjects are not capable of pointing to anything else.
+   * Their points-to-set will always be empty, and constraints that attempt
+   * to add pointees should be no-ops that are silently ignored.
+   * The same applies to attempts at setting the PointsToExternal-flag.
+   * @return true if this PointerObject can point to other PointerObjects
+   */
+  [[nodiscard]] bool
+  CanPoint() const noexcept
+  {
+    return Kind_ != PointerObjectKind::FunctionMemoryObject;
+  }
+
+  /**
+   * Some PointerObjects don't have addresses, and can as such not be pointed to.
+   * Any attempt at adding them to a points-to-set is a fatal error.
+   * @return true if this PointerObject can be pointed to by another PointerObject
+   */
+  [[nodiscard]] bool
+  CanBePointee() const noexcept
+  {
+    return Kind_ != PointerObjectKind::Register;
   }
 
   /**
@@ -85,14 +109,13 @@ public:
   }
 
   /**
-   * Sets the PointsToExternal-flag.
-   * The flag can not be set for FunctionMemoryObjects, and the call will be ignored.
+   * Sets the PointsToExternal-flag, if possible.
    * @return True, if the PointsToExternal flag was modified, otherwise false
    */
   bool
   MarkAsPointsToExternal() noexcept
   {
-    if (Kind_ == PointerObjectKind::FunctionMemoryObject)
+    if (!CanPoint())
       return false;
 
     bool modified = !PointsToExternal_;
@@ -101,17 +124,13 @@ public:
   }
 
   /**
-   * When set, the PointerObject is known to be accessible from outside the module.
+   * When set, the PointerObject's value is accessible from outside the module.
    * Anything it points to can also be accessed outside the module, and should also be marked as
    * escaped.
    *
-   * Escaped PointerObjects of memory object kinds can have their content overridden
-   * outside the module, so HasEscaped often implies the PointsToExternal flag.
-   *
-   * The excetions are FunctionMemoryObjects and Register PointerObjects.
-   * Neither of them can be overridden from outside the module
-   * (functions are code, registers don't have addresses)
-   * This means the PointsToExternal flag is not implied for registers or functions.
+   * If CanBePointee() is true, this PointerObjects's address is available outside the module,
+   * and can potentially be written to. Therefore, HasEscaped implies the PointsToEscaped flag,
+   * if it is possible to set it.
    *
    * @return true if the PointerObject is marked as having escaped
    */
@@ -122,9 +141,10 @@ public:
   }
 
   /**
-   * Sets the HasEscaped-flag.
-   * Also sets the PointsToExternal flag, if the PointerObject could be overridden outside of the
-   * module and be made to point to something.
+   * Sets the HasEscaped-flag, indicating that this PointerObject's value is available outside
+   * the module. If CanBePointee() is true, its address is also escaped, and PointsToExternal
+   * will be set as well, if possible.
+   *
    * @see HasEscaped()
    * @return true if the HasEscaped or PointsToExternal flags were modified, otherwise false.
    */
@@ -133,7 +153,7 @@ public:
   {
     bool modified = !HasEscaped_;
     HasEscaped_ = 1;
-    if (Kind_ != PointerObjectKind::Register && Kind_ != PointerObjectKind::FunctionMemoryObject)
+    if (CanBePointee())
       modified |= MarkAsPointsToExternal();
     return modified;
   }
