@@ -128,21 +128,21 @@ remove_region_passthrough(const jlm::rvsdg::argument * arg)
 }
 
 static void
-remove_gamma_passthrough(jlm::rvsdg::gamma_node * gn)
-{ // remove inputs in reverse
-  for (int i = gn->nentryvars() - 1; i >= 0; --i)
+RemoveUnusedStatesInGammaNode(jlm::rvsdg::gamma_node & gammaNode)
+{
+  for (int i = gammaNode.nentryvars() - 1; i >= 0; --i)
   {
     bool can_remove = true;
     size_t res_index = 0;
-    auto arg = gn->subregion(0)->argument(i);
+    auto arg = gammaNode.subregion(0)->argument(i);
     if (arg->nusers() == 1)
     {
       auto res = dynamic_cast<jlm::rvsdg::result *>(*arg->begin());
       res_index = res ? res->index() : res_index;
     }
-    for (size_t n = 0; n < gn->nsubregions(); n++)
+    for (size_t n = 0; n < gammaNode.nsubregions(); n++)
     {
-      auto sr = gn->subregion(n);
+      auto sr = gammaNode.subregion(n);
       can_remove &=
           IsPassthroughArgument(*sr->argument(i)) &&
           // check that all subregions pass through to the same result
@@ -150,77 +150,68 @@ remove_gamma_passthrough(jlm::rvsdg::gamma_node * gn)
     }
     if (can_remove)
     {
-      auto origin = gn->entryvar(i)->origin();
+      auto origin = gammaNode.entryvar(i)->origin();
       // divert users of output to origin of input
 
-      gn->output(res_index)->divert_users(origin);
+      gammaNode.output(res_index)->divert_users(origin);
 
-      for (size_t r = 0; r < gn->nsubregions(); r++)
+      for (size_t r = 0; r < gammaNode.nsubregions(); r++)
       {
-        gn->subregion(r)->RemoveResult(res_index);
+        gammaNode.subregion(r)->RemoveResult(res_index);
       }
-      gn->RemoveOutput(res_index);
+      gammaNode.RemoveOutput(res_index);
 
-      for (size_t r = 0; r < gn->nsubregions(); r++)
+      for (size_t r = 0; r < gammaNode.nsubregions(); r++)
       {
-        gn->subregion(r)->RemoveArgument(i);
+        gammaNode.subregion(r)->RemoveArgument(i);
       }
-      gn->RemoveInput(i + 1);
-
-      // Valgrind was acting up on the code below
-      //
-      //      gn->output(res_index)->results.clear();
-      //      gn->RemoveOutput(res_index);
-      //      // remove input
-      //      gn->input(i + 1)->arguments.clear();
-      //      gn->RemoveInput(i + 1);
-      //      for (size_t j = 0; j < gn->nsubregions(); ++j)
-      //      {
-      //        JLM_ASSERT(gn->subregion(j)->result(res_index)->origin() ==
-      //        gn->subregion(j)->argument(i)); JLM_ASSERT(gn->subregion(j)->argument(i)->nusers()
-      //        == 1); gn->subregion(j)->RemoveResult(res_index);
-      //        JLM_ASSERT(gn->subregion(j)->argument(i)->nusers() == 0);
-      //        gn->subregion(j)->RemoveArgument(i);
-      //      }
+      gammaNode.RemoveInput(i + 1);
     }
   }
 }
 
 static void
-RemoveUnusedStatesInRegion(jlm::rvsdg::region * region)
-{
-  // process children first so that unnecessary users get removed
-  for (auto & node : jlm::rvsdg::topdown_traverser(region))
-  {
-    if (auto structnode = dynamic_cast<jlm::rvsdg::structural_node *>(node))
-    {
-      if (auto gn = dynamic_cast<jlm::rvsdg::gamma_node *>(node))
-      {
-        // process subnodes first
-        for (size_t n = 0; n < gn->nsubregions(); n++)
-        {
-          RemoveUnusedStatesInRegion(gn->subregion(n));
-        }
-        remove_gamma_passthrough(gn);
-      }
-      else if (auto ln = dynamic_cast<llvm::lambda::node *>(node))
-      {
-        RemoveUnusedStatesInRegion(structnode->subregion(0));
-        remove_lambda_passthrough(ln);
-      }
-      else if (auto thetaNode = dynamic_cast<rvsdg::theta_node *>(node))
-      {
-        RemoveUnusedStatesInRegion(thetaNode->subregion());
+RemoveUnusedStatesInRegion(rvsdg::region & region);
 
-        for (int i = region->narguments() - 1; i >= 0; --i)
-        {
-          auto arg = region->argument(i);
-          if (IsPassthroughArgument(*arg))
-          {
-            remove_region_passthrough(arg);
-          }
-        }
+static void
+RemoveUnusedStatesInStructuralNode(rvsdg::structural_node & structuralNode)
+{
+  // remove unused states from innermost regions first
+  for (size_t n = 0; n < structuralNode.nsubregions(); n++)
+  {
+    RemoveUnusedStatesInRegion(*structuralNode.subregion(n));
+  }
+
+  if (auto gammaNode = dynamic_cast<rvsdg::gamma_node *>(&structuralNode))
+  {
+    RemoveUnusedStatesInGammaNode(*gammaNode);
+  }
+  else if (auto thetaNode = dynamic_cast<rvsdg::theta_node *>(&structuralNode))
+  {
+    auto thetaSubregion = thetaNode->subregion();
+    for (int i = thetaSubregion->narguments() - 1; i >= 0; --i)
+    {
+      auto arg = thetaSubregion->argument(i);
+      if (IsPassthroughArgument(*arg))
+      {
+        remove_region_passthrough(arg);
       }
+    }
+  }
+  else if (auto lambdaNode = dynamic_cast<llvm::lambda::node *>(&structuralNode))
+  {
+    remove_lambda_passthrough(lambdaNode);
+  }
+}
+
+static void
+RemoveUnusedStatesInRegion(rvsdg::region & region)
+{
+  for (auto & node : rvsdg::topdown_traverser(&region))
+  {
+    if (auto structuralNode = dynamic_cast<rvsdg::structural_node *>(node))
+    {
+      RemoveUnusedStatesInStructuralNode(*structuralNode);
     }
   }
 }
@@ -228,7 +219,7 @@ RemoveUnusedStatesInRegion(jlm::rvsdg::region * region)
 void
 RemoveUnusedStates(llvm::RvsdgModule & rvsdgModule)
 {
-  RemoveUnusedStatesInRegion(rvsdgModule.Rvsdg().root());
+  RemoveUnusedStatesInRegion(*rvsdgModule.Rvsdg().root());
 }
 
 }
