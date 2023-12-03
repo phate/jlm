@@ -174,6 +174,10 @@ PointerObjectSet::AddToPointsToSet(PointerObject::Index pointer, PointerObject::
   // Registers can not be pointed to
   JLM_ASSERT(GetPointerObject(pointee).GetKind() != PointerObjectKind::Register);
 
+  // Functions can not point to anything, silently ignore
+  if (GetPointerObject(pointer).GetKind() == PointerObjectKind::FunctionMemoryObject)
+    return false;
+
   return PointsToSets_[pointer].Insert(pointee);
 }
 
@@ -185,6 +189,10 @@ PointerObjectSet::MakePointsToSetSuperset(
 {
   JLM_ASSERT(superset <= NumPointerObjects());
   JLM_ASSERT(subset <= NumPointerObjects());
+
+  // Functions can not point to anything, silently ignore
+  if (GetPointerObject(superset).GetKind() == PointerObjectKind::FunctionMemoryObject)
+    return false;
 
   auto & P_super = PointsToSets_[superset];
   auto & P_sub = PointsToSets_[subset];
@@ -413,7 +421,7 @@ PointerObjectConstraintSet::AddRegisterContentEscapedConstraint(PointerObject::I
 {
   // Registers themselves can't really escape, since they don't have an address
   // We can however mark it as escaped, and let escape flag propagation ensure everything it ever
-  // points to is marked.
+  // points to is marked. Marking is as escaped does not imply the PointsToExternal-flag.
   auto & registerPointerObject = Set_.GetPointerObject(registerIndex);
   JLM_ASSERT(registerPointerObject.GetKind() == PointerObjectKind::Register);
   registerPointerObject.MarkAsEscaped();

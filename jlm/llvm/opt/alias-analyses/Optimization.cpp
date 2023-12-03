@@ -1,5 +1,6 @@
 /*
  * Copyright 2021 Nico Reißmann <nico.reissmann@gmail.com>
+ * Copyright 2023 Håvard Krogstie <krogstie.havard@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
@@ -21,7 +22,7 @@ template<typename AliasAnalysisPass, bool regionAware>
 void
 MemoryStateEncodingPass<AliasAnalysisPass, regionAware>::run(
     RvsdgModule & rvsdgModule,
-    jlm::util::StatisticsCollector & statisticsCollector)
+    util::StatisticsCollector & statisticsCollector)
 {
   AliasAnalysisPass aaPass;
   auto pointsToGraph = aaPass.Analyze(rvsdgModule, statisticsCollector);

@@ -7,6 +7,7 @@
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/traverser.hpp>
+#include <jlm/util/Statistics.hpp>
 
 #include <typeinfo>
 
@@ -155,7 +156,6 @@ Andersen::AnalyzeBitcast(const rvsdg::simple_node & node)
   const auto & inputRegister = *node.input(0)->origin();
   const auto & outputRegister = *node.output(0);
 
-  // TODO: bitcast can never work with aggregate types, but it can be a vector of pointers
   if (!is<PointerType>(inputRegister.type()))
     return;
 
@@ -568,12 +568,21 @@ Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statis
 
   AnalyzeRvsdg(module.Rvsdg());
 
+  Constraints_->Solve();
+
   auto result = ConstructPointsToGraphFromPointerObjectSet(*Set_);
 
   Constraints_.reset();
   Set_.reset();
 
   return result;
+}
+
+std::unique_ptr<PointsToGraph>
+Andersen::Analyze(const RvsdgModule & module)
+{
+  util::StatisticsCollector statisticsCollector;
+  return Analyze(module, statisticsCollector);
 }
 
 std::unique_ptr<PointsToGraph>

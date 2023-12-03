@@ -3147,7 +3147,7 @@ AllMemoryNodesTest::SetupRvsdg()
   auto importContextVar = Lambda_->add_ctxvar(Import_);
 
   // Create alloca node
-  auto allocaSize = jlm::rvsdg::create_bitconstant(Lambda_->subregion(), 32, 8);
+  auto allocaSize = jlm::rvsdg::create_bitconstant(Lambda_->subregion(), 32, 1);
   auto allocaOutputs = alloca_op::create(pointerType, allocaSize, 8);
   Alloca_ = jlm::rvsdg::node_output::node(allocaOutputs[0]);
 
@@ -3211,25 +3211,94 @@ NAllocaNodesTest::SetupRvsdg()
 
   auto fct = lambda::node::create(graph->root(), fcttype, "f", linkage::external_linkage);
 
-  auto allocaSize = jlm::rvsdg::create_bitconstant(fct->subregion(), 32, 4);
+  auto allocaSize = jlm::rvsdg::create_bitconstant(fct->subregion(), 32, 1);
 
   jlm::rvsdg::output * latestMemoryState = fct->fctargument(0);
 
   for (size_t i = 0; i < NumAllocaNodes_; i++)
   {
-    auto alloca_outputs = alloca_op::create(jlm::rvsdg::bit32, allocaSize, 4);
-    auto alloca_node = jlm::rvsdg::node_output::node(alloca_outputs[0]);
+    auto allocaOutputs = alloca_op::create(jlm::rvsdg::bit32, allocaSize, 4);
+    auto allocaNode = jlm::rvsdg::node_output::node(allocaOutputs[0]);
 
-    AllocaNodes_.push_back(alloca_node);
+    AllocaNodes_.push_back(allocaNode);
 
     // Update latestMemoryState to include the alloca memory state output
-    latestMemoryState = MemStateMergeOperator::Create(
-        std::vector<jlm::rvsdg::output *>{ latestMemoryState, alloca_outputs[1] });
+    latestMemoryState =
+        MemStateMergeOperator::Create(std::vector{ latestMemoryState, allocaOutputs[1] });
   }
 
   fct->finalize({ latestMemoryState });
 
   graph->add_export(fct->output(), { pointerType, "f" });
+
+  return module;
+}
+
+std::unique_ptr<jlm::llvm::RvsdgModule>
+EscapingLocalFunctionTest::SetupRvsdg()
+{
+  using namespace jlm::llvm;
+
+  rvsdg::bittype uint32Type = rvsdg::bit32;
+  MemoryStateType mt;
+  PointerType pointerType;
+  FunctionType localFuncType({ &pointerType, &mt }, { &pointerType, &mt });
+  FunctionType exportedFuncType({ &mt }, { &pointerType, &mt });
+
+  auto module = RvsdgModule::Create(util::filepath(""), "", "");
+  const auto graph = &module->Rvsdg();
+  graph->node_normal_form(typeid(rvsdg::operation))->set_mutable(false);
+
+  Global_ = delta::node::Create(
+      graph->root(),
+      uint32Type,
+      "global",
+      linkage::internal_linkage,
+      "",
+      false);
+  const auto constantZero = rvsdg::create_bitconstant(Global_->subregion(), 32, 0);
+  const auto deltaOutput = Global_->finalize(constantZero);
+
+  LocalFunc_ = lambda::node::create(
+      graph->root(),
+      localFuncType,
+      "localFunction",
+      linkage::internal_linkage);
+
+  LocalFuncParam_ = LocalFunc_->fctargument(0);
+
+  const auto allocaSize = rvsdg::create_bitconstant(LocalFunc_->subregion(), 32, 1);
+  const auto allocaOutputs = alloca_op::create(uint32Type, allocaSize, 4);
+  LocalFuncParamAllocaNode_ = rvsdg::node_output::node(allocaOutputs[0]);
+
+  // Merge function's input Memory State and alloca node's memory state
+  rvsdg::output * mergedMemoryState = MemStateMergeOperator::Create(
+      std::vector<rvsdg::output *>{ LocalFunc_->fctargument(1), allocaOutputs[1] });
+
+  // Store the function parameter into the alloca node
+  auto storeOutputs =
+      StoreNode::Create(allocaOutputs[0], LocalFuncParam_, { mergedMemoryState }, 4);
+
+  // Bring in deltaOuput as a context variable
+  const auto deltaOutputCtxVar = LocalFunc_->add_ctxvar(deltaOutput);
+
+  // Return &global
+  LocalFunc_->finalize({ deltaOutputCtxVar, storeOutputs[0] });
+
+  LocalFuncRegister_ = LocalFunc_->output();
+
+  ExportedFunc_ = lambda::node::create(
+      graph->root(),
+      exportedFuncType,
+      "exportedFunc",
+      linkage::external_linkage);
+
+  const auto localFuncCtxVar = ExportedFunc_->add_ctxvar(LocalFuncRegister_);
+
+  // Return &localFunc, pass memory state directly through
+  ExportedFunc_->finalize({ localFuncCtxVar, ExportedFunc_->fctargument(0) });
+
+  graph->add_export(ExportedFunc_->output(), { pointerType, "exportedFunc" });
 
   return module;
 }

@@ -33,13 +33,18 @@ TestFlagFunctions()
   assert(!object.MarkAsEscaped());
   assert(object.HasEscaped());
 
-  // Test that Escaped implies PointsToExternal
+  // Test that Escaped implies PointsToExternal, for memory objects
   object = PointerObject(PointerObjectKind::AllocaMemoryObject);
   assert(object.GetKind() == PointerObjectKind::AllocaMemoryObject);
   assert(!object.PointsToExternal());
   assert(object.MarkAsEscaped());
   assert(object.PointsToExternal());
   assert(!object.MarkAsPointsToExternal());
+
+  // Test that Escaped does not imply PointsToExternal, for registers
+  object = PointerObject(PointerObjectKind::Register);
+  object.MarkAsEscaped();
+  assert(!object.PointsToExternal());
 }
 
 // Test creating pointer objects for each type of memory node
@@ -261,8 +266,7 @@ TestAllPointeesPointToSupersetConstraint()
 
   // Add *alloca0 = reg2, which will do nothing, since alloca0 can't be pointing to anything yet
   AllPointeesPointToSupersetConstraint c1(alloca0, reg2);
-  bool modified1 = c1.Apply(set);
-  assert(!modified1);
+  assert(!c1.Apply(set));
 
   // This means *reg0 = reg1, and as we know, reg0 points to alloca0
   // This should make alloca0 point to anything reg1 points to, aka alloca1
@@ -305,8 +309,7 @@ TestSupersetOfAllPointeesConstraint()
   // Makes reg1 = *reg0, where reg0 currently just points to alloca0
   // Since alloca0 currently has no pointees, this does nothing
   SupersetOfAllPointeesConstraint c1(reg1, reg0);
-  bool modified1 = c1.Apply(set);
-  assert(!modified1);
+  assert(!c1.Apply(set));
 
   // Make alloca0 point to something: alloca2
   set.AddToPointsToSet(alloca0, alloca2);
@@ -316,6 +319,45 @@ TestSupersetOfAllPointeesConstraint()
     ;
   assert(set.GetPointsToSet(reg1).Size() == 2);
   assert(set.GetPointsToSet(reg1).Contains(alloca2));
+}
+
+static void
+TestHandleEscapingFunctionConstraint()
+{
+  using namespace jlm::llvm::aa;
+
+  jlm::tests::EscapingLocalFunctionTest rvsdg;
+  rvsdg.InitializeTest();
+
+  const auto & localFunction = rvsdg.GetLocalFunction();
+  const auto & localFunctionRegister = rvsdg.GetLocalFunctionRegister();
+  const auto & exportedFunction = rvsdg.GetExportedFunction();
+  const auto & exportedFunctionReturn = *exportedFunction.fctresult(0)->origin();
+
+  PointerObjectSet set;
+  const auto localFunctionPO = set.CreateFunctionMemoryObject(localFunction);
+  const auto localFunctionRegisterPO = set.CreateRegisterPointerObject(localFunctionRegister);
+  const auto exportedFunctionPO = set.CreateFunctionMemoryObject(exportedFunction);
+  set.MapRegisterToExistingPointerObject(exportedFunctionReturn, localFunctionRegisterPO);
+
+  // Make localFunc's output point to localFunc
+  set.AddToPointsToSet(localFunctionRegisterPO, localFunctionPO);
+
+  // Make a constraints set
+  PointerObjectConstraintSet constraints(set);
+  constraints.AddConstraint(HandleEscapingFunctionConstraint(exportedFunctionPO));
+  constraints.Solve();
+
+  // Nothing has happened yet, since the exported function is yet to be marked as escaped
+  assert(!set.GetPointerObject(localFunctionPO).HasEscaped());
+  assert(!set.GetPointerObject(localFunctionPO).HasEscaped());
+  assert(!set.GetPointerObject(exportedFunctionPO).HasEscaped());
+
+  set.GetPointerObject(exportedFunctionPO).MarkAsEscaped();
+  constraints.Solve();
+
+  // Now the local function has been marked as escaped as well, since it is the return value
+  assert(set.GetPointerObject(localFunctionPO).HasEscaped());
 }
 
 static void
@@ -529,6 +571,7 @@ TestPointerObjectSet()
   TestSupersetConstraint();
   TestAllPointeesPointToSupersetConstraint();
   TestSupersetOfAllPointeesConstraint();
+  TestHandleEscapingFunctionConstraint();
   TestAddPointsToExternalConstraint();
   TestAddRegisterContentEscapedConstraint();
   TestPointerObjectConstraintSetSolve();

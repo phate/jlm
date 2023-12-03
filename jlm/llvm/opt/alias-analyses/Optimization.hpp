@@ -38,7 +38,7 @@ public:
   ~MemoryStateEncodingPass() noexcept override;
 
   void
-  run(RvsdgModule & rvsdgModule, jlm::util::StatisticsCollector & statisticsCollector) override;
+  run(RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
 };
 
 }

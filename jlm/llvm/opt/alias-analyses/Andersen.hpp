@@ -50,6 +50,13 @@ public:
   Analyze(const RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 
   /**
+   * @brief Shorthand for Analyze, ignoring collecting any statistics.
+   * @see Analyze
+   */
+  std::unique_ptr<PointsToGraph>
+  Analyze(const RvsdgModule & module);
+
+  /**
    * Converts a PointerObjectSet into PointsToGraph nodes,
    * and points-to-graph set memberships into edges.
    *

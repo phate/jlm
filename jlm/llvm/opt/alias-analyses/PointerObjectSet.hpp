@@ -29,6 +29,7 @@ enum class PointerObjectKind : uint8_t
   AllocaMemoryObject,
   MallocMemoryObject,
   GlobalMemoryObject,
+  // Represents functions, they can not point to any memory objects.
   FunctionMemoryObject,
   // Represents functions and global variables imported from other modules.
   ImportMemoryObject,
@@ -43,15 +44,11 @@ class PointerObject final
 {
   PointerObjectKind Kind_ : util::BitWidthOfEnum(PointerObjectKind::COUNT);
 
-  // When this flag is set, the PointerObject possibly points to a storage instance declared outside
-  // to module. The flag also means that the PointerObject possibly points to any escaped storage
-  // instance from this module.
+  // May point to a memory object defined outside of the module, or any escaped memory object
   uint8_t PointsToExternal_ : 1;
 
-  // When set, the PointerObject is known to be accessible from outside the module.
-  // Anything it points to can also be accessed outside the module, and should also be marked as
-  // escaped. Escaped memory object can be overridden outside the module, so HasEscaped implies
-  // PointsToExternal.
+  // This memory object's address is known outside the module.
+  // If set and Kind_ is Register, it only means the pointees of the Reigister have escaped.
   uint8_t HasEscaped_ : 1;
 
 public:
@@ -75,6 +72,12 @@ public:
     return Kind_;
   }
 
+  /**
+   * When the PointsToExternal-flag is set, the PointerObject possibly points to a storage
+   * instance declared outside to module, or to a memory object from this same module, that has
+   * escaped.
+   * @return true if the PointsToExternal is set.
+   */
   bool
   PointsToExternal() const noexcept
   {
@@ -83,16 +86,35 @@ public:
 
   /**
    * Sets the PointsToExternal-flag.
+   * The flag can not be set for FunctionMemoryObjects, and the call will be ignored.
    * @return True, if the PointsToExternal flag was modified, otherwise false
    */
   bool
   MarkAsPointsToExternal() noexcept
   {
+    if (Kind_ == PointerObjectKind::FunctionMemoryObject)
+      return false;
+
     bool modified = !PointsToExternal_;
     PointsToExternal_ = 1;
     return modified;
   }
 
+  /**
+   * When set, the PointerObject is known to be accessible from outside the module.
+   * Anything it points to can also be accessed outside the module, and should also be marked as
+   * escaped.
+   *
+   * Escaped PointerObjects of memory object kinds can have their content overridden
+   * outside the module, so HasEscaped often implies the PointsToExternal flag.
+   *
+   * The excetions are FunctionMemoryObjects and Register PointerObjects.
+   * Neither of them can be overridden from outside the module
+   * (functions are code, registers don't have addresses)
+   * This means the PointsToExternal flag is not implied for registers or functions.
+   *
+   * @return true if the PointerObject is marked as having escaped
+   */
   bool
   HasEscaped() const noexcept
   {
@@ -100,16 +122,19 @@ public:
   }
 
   /**
-   * Sets the Escaped-flag.
-   * Also sets the PointsToExternal flag, if unset
-   * @return true if HasEscaped or PointsToExternal flag were modified, otherwise false
+   * Sets the HasEscaped-flag.
+   * Also sets the PointsToExternal flag, if the PointerObject could be overridden outside of the
+   * module and be made to point to something.
+   * @see HasEscaped()
+   * @return true if the HasEscaped or PointsToExternal flags were modified, otherwise false.
    */
   bool
   MarkAsEscaped() noexcept
   {
     bool modified = !HasEscaped_;
     HasEscaped_ = 1;
-    modified |= MarkAsPointsToExternal();
+    if (Kind_ != PointerObjectKind::Register && Kind_ != PointerObjectKind::FunctionMemoryObject)
+      modified |= MarkAsPointsToExternal();
     return modified;
   }
 };
@@ -263,6 +288,9 @@ public:
    * Adds \p pointee to P(\p pointer)
    * @param pointer the index of the PointerObject that shall point to \p pointee
    * @param pointee the index of the PointerObject that is pointed at, can not be a register.
+   *
+   * If the pointer is of a PointerObjectKind that can't point, this is a no-op.
+   *
    * @return true if P(\p pointer) was changed by this operation
    */
   bool
@@ -273,13 +301,16 @@ public:
    * @param superset the index of the PointerObject that shall point to everything subset points to
    * @param subset the index of the PointerObject whose pointees shall all be pointed to by superset
    * as well
+   *
+   * If the superset is of a PointerObjectKind that can't point, this is a no-op.
+   *
    * @return true if P(\p superset) was modified by this operation
    */
   bool
   MakePointsToSetSuperset(PointerObject::Index superset, PointerObject::Index subset);
 
   /**
-   * Adds the Escaped flag to all PointerObjects in the P(\ pointer) set
+   * Adds the Escaped flag to all PointerObjects in the P(\p pointer) set
    * @param pointer the pointer whose pointees should be marked as escaped
    * @return true if any PointerObjects had their flag modified by this operation
    */
