@@ -84,16 +84,12 @@ TestTheta()
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
+  auto p = rvsdg.add_import({ jlm::rvsdg::ctl2, "p" });
+  auto x = rvsdg.add_import({ valueType, "x" });
+  auto y = rvsdg.add_import({ valueType, "y" });
+  auto z = rvsdg.add_import({ valueType, "z" });
 
-  auto lambdaNode =
-      lambda::node::create(rvsdg.root(), functionType, "f", linkage::external_linkage);
-
-  auto p = lambdaNode->fctargument(0);
-  auto x = lambdaNode->fctargument(1);
-  auto y = lambdaNode->fctargument(2);
-  auto z = lambdaNode->fctargument(3);
-
-  auto thetaNode = jlm::rvsdg::theta_node::create(lambdaNode->subregion());
+  auto thetaNode = jlm::rvsdg::theta_node::create(rvsdg.root());
 
   auto thetaOutput0 = thetaNode->add_loopvar(p);
   auto thetaOutput1 = thetaNode->add_loopvar(x);
@@ -105,21 +101,22 @@ TestTheta()
   thetaNode->set_predicate(thetaOutput0->argument());
 
   auto result = jlm::tests::SimpleNode::Create(
-                    *lambdaNode->subregion(),
+                    *rvsdg.root(),
                     { thetaOutput0, thetaOutput1, thetaOutput2, thetaOutput3 },
                     { &valueType })
                     .output(0);
 
-  auto lambdaOutput = lambdaNode->finalize({ result });
-  rvsdg.add_export(lambdaOutput, { PointerType(), "f" });
+  rvsdg.add_export(result, { valueType, "f" });
 
   // Act
   jlm::hls::RemoveUnusedStates(*rvsdgModule);
 
   // Assert
-  assert(thetaNode->noutputs() == 0); // This assert is only for not forgetting this test
-  // FIXME: This transformation is completely broken for theta nodes. For the setup above, it
-  // removes all inputs and outputs of the theta node, including the predicate. However, the only
+  // This assert is only here so that we do not forget this test when we refactor the code
+  assert(thetaNode->ninputs() == 1);
+  
+  // FIXME: This transformation is broken for theta nodes. For the setup above, it
+  // removes all inputs/outputs, except the predicate. However, the only
   // input and output it should remove are input 1 and output 0, respectively.
 }
 
