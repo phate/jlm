@@ -35,14 +35,14 @@ is_passthrough(const jlm::rvsdg::result * res)
   return false;
 }
 
-static jlm::llvm::lambda::node *
-remove_lambda_passthrough(llvm::lambda::node * ln)
+static void
+RemoveUnusedStatesFromLambda(llvm::lambda::node & lambdaNode)
 {
-  auto old_fcttype = ln->type();
+  auto old_fcttype = lambdaNode.type();
   std::vector<const jlm::rvsdg::type *> new_argument_types;
   for (size_t i = 0; i < old_fcttype.NumArguments(); ++i)
   {
-    auto arg = ln->subregion()->argument(i);
+    auto arg = lambdaNode.subregion()->argument(i);
     auto argtype = &old_fcttype.ArgumentType(i);
     assert(*argtype == arg->type());
     if (!IsPassthroughArgument(*arg))
@@ -53,7 +53,7 @@ remove_lambda_passthrough(llvm::lambda::node * ln)
   std::vector<const jlm::rvsdg::type *> new_result_types;
   for (size_t i = 0; i < old_fcttype.NumResults(); ++i)
   {
-    auto res = ln->subregion()->result(i);
+    auto res = lambdaNode.subregion()->result(i);
     auto restype = &old_fcttype.ResultType(i);
     assert(*restype == res->type());
     if (!is_passthrough(res))
@@ -63,34 +63,36 @@ remove_lambda_passthrough(llvm::lambda::node * ln)
   }
   llvm::FunctionType new_fcttype(new_argument_types, new_result_types);
   auto new_lambda = llvm::lambda::node::create(
-      ln->region(),
+      lambdaNode.region(),
       new_fcttype,
-      ln->name(),
-      ln->linkage(),
-      ln->attributes());
+      lambdaNode.name(),
+      lambdaNode.linkage(),
+      lambdaNode.attributes());
 
   jlm::rvsdg::substitution_map smap;
-  for (size_t i = 0; i < ln->ncvarguments(); ++i)
+  for (size_t i = 0; i < lambdaNode.ncvarguments(); ++i)
   {
     // copy over cvarguments
-    smap.insert(ln->cvargument(i), new_lambda->add_ctxvar(ln->cvargument(i)->input()->origin()));
+    smap.insert(
+        lambdaNode.cvargument(i),
+        new_lambda->add_ctxvar(lambdaNode.cvargument(i)->input()->origin()));
   }
   size_t new_i = 0;
-  for (size_t i = 0; i < ln->nfctarguments(); ++i)
+  for (size_t i = 0; i < lambdaNode.nfctarguments(); ++i)
   {
-    auto arg = ln->fctargument(i);
+    auto arg = lambdaNode.fctargument(i);
     if (!IsPassthroughArgument(*arg))
     {
       smap.insert(arg, new_lambda->fctargument(new_i));
       new_i++;
     }
   }
-  ln->subregion()->copy(new_lambda->subregion(), smap, false, false);
+  lambdaNode.subregion()->copy(new_lambda->subregion(), smap, false, false);
 
   std::vector<jlm::rvsdg::output *> new_results;
-  for (size_t i = 0; i < ln->nfctresults(); ++i)
+  for (size_t i = 0; i < lambdaNode.nfctresults(); ++i)
   {
-    auto res = ln->fctresult(i);
+    auto res = lambdaNode.fctresult(i);
     if (!is_passthrough(res))
     {
       new_results.push_back(smap.lookup(res->origin()));
@@ -99,15 +101,14 @@ remove_lambda_passthrough(llvm::lambda::node * ln)
   auto new_out = new_lambda->finalize(new_results);
 
   // TODO handle functions at other levels?
-  assert(ln->region() == ln->region()->graph()->root());
-  assert((*ln->output()->begin())->region() == ln->region()->graph()->root());
+  assert(lambdaNode.region() == lambdaNode.region()->graph()->root());
+  assert((*lambdaNode.output()->begin())->region() == lambdaNode.region()->graph()->root());
 
   //	ln->output()->divert_users(new_out); // can't divert since the type changed
-  JLM_ASSERT(ln->output()->nusers() == 1);
-  ln->region()->RemoveResult((*ln->output()->begin())->index());
-  remove(ln);
+  JLM_ASSERT(lambdaNode.output()->nusers() == 1);
+  lambdaNode.region()->RemoveResult((*lambdaNode.output()->begin())->index());
+  remove(&lambdaNode);
   jlm::rvsdg::result::create(new_lambda->region(), new_out, nullptr, new_out->type());
-  return new_lambda;
 }
 
 static void
@@ -204,7 +205,7 @@ RemoveUnusedStatesInStructuralNode(rvsdg::structural_node & structuralNode)
   }
   else if (auto lambdaNode = dynamic_cast<llvm::lambda::node *>(&structuralNode))
   {
-    remove_lambda_passthrough(lambdaNode);
+    RemoveUnusedStatesFromLambda(*lambdaNode);
   }
 }
 
