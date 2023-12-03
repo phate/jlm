@@ -14,18 +14,14 @@ namespace jlm::hls
 {
 
 static bool
-is_passthrough(const jlm::rvsdg::argument * arg)
+IsPassthroughArgument(const jlm::rvsdg::argument & argument)
 {
-  if (arg->nusers() == 1)
+  if (argument.nusers() != 1)
   {
-    auto res = dynamic_cast<jlm::rvsdg::result *>(*arg->begin());
-    // used only by a result
-    if (res)
-    {
-      return true;
-    }
+    return false;
   }
-  return false;
+
+  return rvsdg::is<rvsdg::result>(**argument.begin());
 }
 
 static bool
@@ -49,7 +45,7 @@ remove_lambda_passthrough(llvm::lambda::node * ln)
     auto arg = ln->subregion()->argument(i);
     auto argtype = &old_fcttype.ArgumentType(i);
     assert(*argtype == arg->type());
-    if (!is_passthrough(arg))
+    if (!IsPassthroughArgument(*arg))
     {
       new_argument_types.push_back(argtype);
     }
@@ -83,7 +79,7 @@ remove_lambda_passthrough(llvm::lambda::node * ln)
   for (size_t i = 0; i < ln->nfctarguments(); ++i)
   {
     auto arg = ln->fctargument(i);
-    if (!is_passthrough(arg))
+    if (!IsPassthroughArgument(*arg))
     {
       smap.insert(arg, new_lambda->fctargument(new_i));
       new_i++;
@@ -148,7 +144,7 @@ remove_gamma_passthrough(jlm::rvsdg::gamma_node * gn)
     {
       auto sr = gn->subregion(n);
       can_remove &=
-          is_passthrough(sr->argument(i)) &&
+          IsPassthroughArgument(*sr->argument(i)) &&
           // check that all subregions pass through to the same result
           dynamic_cast<jlm::rvsdg::result *>(*sr->argument(i)->begin())->index() == res_index;
     }
@@ -219,7 +215,7 @@ RemoveUnusedStatesInRegion(jlm::rvsdg::region * region)
         for (int i = region->narguments() - 1; i >= 0; --i)
         {
           auto arg = region->argument(i);
-          if (is_passthrough(arg))
+          if (IsPassthroughArgument(*arg))
           {
             remove_region_passthrough(arg);
           }
