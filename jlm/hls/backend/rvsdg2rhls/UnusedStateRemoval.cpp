@@ -128,38 +128,37 @@ remove_region_passthrough(const jlm::rvsdg::argument * arg)
 }
 
 static void
-RemoveUnusedStatesInGammaNode(jlm::rvsdg::gamma_node & gammaNode)
+RemoveUnusedStatesInGammaNode(rvsdg::gamma_node & gammaNode)
 {
   for (int i = gammaNode.nentryvars() - 1; i >= 0; --i)
   {
-    bool can_remove = true;
-    size_t res_index = 0;
-    auto arg = gammaNode.subregion(0)->argument(i);
-    if (arg->nusers() == 1)
+    size_t resultIndex = 0;
+    auto argument = gammaNode.subregion(0)->argument(i);
+    if (argument->nusers() == 1)
     {
-      auto res = dynamic_cast<jlm::rvsdg::result *>(*arg->begin());
-      res_index = res ? res->index() : res_index;
+      auto result = dynamic_cast<rvsdg::result *>(*argument->begin());
+      resultIndex = result ? result->index() : resultIndex;
     }
+
+    bool shouldRemove = true;
     for (size_t n = 0; n < gammaNode.nsubregions(); n++)
     {
-      auto sr = gammaNode.subregion(n);
-      can_remove &=
-          IsPassthroughArgument(*sr->argument(i)) &&
-          // check that all subregions pass through to the same result
-          dynamic_cast<jlm::rvsdg::result *>(*sr->argument(i)->begin())->index() == res_index;
+      auto subregion = gammaNode.subregion(n);
+      shouldRemove &= IsPassthroughArgument(*subregion->argument(i))
+                   && dynamic_cast<jlm::rvsdg::result *>(*subregion->argument(i)->begin())->index()
+                          == resultIndex;
     }
-    if (can_remove)
+
+    if (shouldRemove)
     {
       auto origin = gammaNode.entryvar(i)->origin();
-      // divert users of output to origin of input
-
-      gammaNode.output(res_index)->divert_users(origin);
+      gammaNode.output(resultIndex)->divert_users(origin);
 
       for (size_t r = 0; r < gammaNode.nsubregions(); r++)
       {
-        gammaNode.subregion(r)->RemoveResult(res_index);
+        gammaNode.subregion(r)->RemoveResult(resultIndex);
       }
-      gammaNode.RemoveOutput(res_index);
+      gammaNode.RemoveOutput(resultIndex);
 
       for (size_t r = 0; r < gammaNode.nsubregions(); r++)
       {
