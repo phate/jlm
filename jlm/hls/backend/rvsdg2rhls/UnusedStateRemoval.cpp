@@ -25,14 +25,10 @@ IsPassthroughArgument(const jlm::rvsdg::argument & argument)
 }
 
 static bool
-is_passthrough(const jlm::rvsdg::result * res)
+IsPassthroughResult(const rvsdg::result & result)
 {
-  auto arg = dynamic_cast<jlm::rvsdg::argument *>(res->origin());
-  if (arg)
-  {
-    return true;
-  }
-  return false;
+  auto argument = dynamic_cast<rvsdg::argument *>(result.origin());
+  return argument != nullptr;
 }
 
 static void
@@ -56,7 +52,7 @@ RemoveUnusedStatesFromLambda(llvm::lambda::node & lambdaNode)
     auto res = lambdaNode.subregion()->result(i);
     auto restype = &old_fcttype.ResultType(i);
     assert(*restype == res->type());
-    if (!is_passthrough(res))
+    if (!IsPassthroughResult(*res))
     {
       new_result_types.push_back(&old_fcttype.ResultType(i));
     }
@@ -93,7 +89,7 @@ RemoveUnusedStatesFromLambda(llvm::lambda::node & lambdaNode)
   for (size_t i = 0; i < lambdaNode.nfctresults(); ++i)
   {
     auto res = lambdaNode.fctresult(i);
-    if (!is_passthrough(res))
+    if (!IsPassthroughResult(*res))
     {
       new_results.push_back(smap.lookup(res->origin()));
     }
