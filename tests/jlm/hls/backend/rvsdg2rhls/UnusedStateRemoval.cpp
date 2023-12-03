@@ -58,7 +58,7 @@ TestGamma()
   rvsdg.add_export(gammaOutput5, { valueType, "" });
 
   // Act
-  jlm::hls::remove_unused_state(*rvsdgModule);
+  jlm::hls::RemoveUnusedStates(*rvsdgModule);
 
   // Assert
   assert(gammaNode->ninputs() == 7);  // gammaInput1 was removed
@@ -114,7 +114,7 @@ TestTheta()
   rvsdg.add_export(lambdaOutput, { PointerType(), "f" });
 
   // Act
-  jlm::hls::remove_unused_state(*rvsdgModule);
+  jlm::hls::RemoveUnusedStates(*rvsdgModule);
 
   // Assert
   // FIXME: This transformation is completely broken for theta nodes. For the setup above, it
@@ -157,7 +157,7 @@ TestLambda()
   rvsdg.add_export(lambdaOutput, { PointerType(), "f" });
 
   // Act
-  jlm::hls::remove_unused_state(*rvsdgModule);
+  jlm::hls::RemoveUnusedStates(*rvsdgModule);
 
   // Assert
   assert(rvsdg.root()->nnodes() == 1);

@@ -389,7 +389,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls)
   //	dump_ref(rhls);
 
   // run conversion on copy
-  remove_unused_state(rhls);
+  RemoveUnusedStates(rhls);
   //  mem_sep_argument(rhls);
   // main conversion steps
   add_triggers(rhls); // TODO: remove

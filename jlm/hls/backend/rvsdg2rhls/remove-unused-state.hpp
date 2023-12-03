@@ -15,7 +15,7 @@ namespace jlm::hls
 {
 
 void
-remove_unused_state(llvm::RvsdgModule & rvsdgModule);
+RemoveUnusedStates(llvm::RvsdgModule & rvsdgModule);
 
 }
 
