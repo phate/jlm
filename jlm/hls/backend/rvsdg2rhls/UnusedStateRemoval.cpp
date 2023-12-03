@@ -34,77 +34,87 @@ IsPassthroughResult(const rvsdg::result & result)
 static void
 RemoveUnusedStatesFromLambda(llvm::lambda::node & lambdaNode)
 {
-  auto old_fcttype = lambdaNode.type();
-  std::vector<const jlm::rvsdg::type *> new_argument_types;
-  for (size_t i = 0; i < old_fcttype.NumArguments(); ++i)
+  auto & oldFunctionType = lambdaNode.type();
+
+  std::vector<const jlm::rvsdg::type *> newArgumentTypes;
+  for (size_t i = 0; i < oldFunctionType.NumArguments(); ++i)
   {
-    auto arg = lambdaNode.subregion()->argument(i);
-    auto argtype = &old_fcttype.ArgumentType(i);
-    assert(*argtype == arg->type());
-    if (!IsPassthroughArgument(*arg))
+    auto argument = lambdaNode.subregion()->argument(i);
+    auto & argumentType = oldFunctionType.ArgumentType(i);
+    JLM_ASSERT(argumentType == argument->type());
+
+    if (!IsPassthroughArgument(*argument))
     {
-      new_argument_types.push_back(argtype);
+      newArgumentTypes.push_back(&argumentType);
     }
   }
-  std::vector<const jlm::rvsdg::type *> new_result_types;
-  for (size_t i = 0; i < old_fcttype.NumResults(); ++i)
+
+  std::vector<const jlm::rvsdg::type *> newResultTypes;
+  for (size_t i = 0; i < oldFunctionType.NumResults(); ++i)
   {
-    auto res = lambdaNode.subregion()->result(i);
-    auto restype = &old_fcttype.ResultType(i);
-    assert(*restype == res->type());
-    if (!IsPassthroughResult(*res))
+    auto result = lambdaNode.subregion()->result(i);
+    auto & resultType = oldFunctionType.ResultType(i);
+    JLM_ASSERT(resultType == result->type());
+
+    if (!IsPassthroughResult(*result))
     {
-      new_result_types.push_back(&old_fcttype.ResultType(i));
+      newResultTypes.push_back(&resultType);
     }
   }
-  llvm::FunctionType new_fcttype(new_argument_types, new_result_types);
-  auto new_lambda = llvm::lambda::node::create(
+
+  llvm::FunctionType newFunctionType(newArgumentTypes, newResultTypes);
+  auto newLambda = llvm::lambda::node::create(
       lambdaNode.region(),
-      new_fcttype,
+      newFunctionType,
       lambdaNode.name(),
       lambdaNode.linkage(),
       lambdaNode.attributes());
 
-  jlm::rvsdg::substitution_map smap;
+  jlm::rvsdg::substitution_map substitutionMap;
   for (size_t i = 0; i < lambdaNode.ncvarguments(); ++i)
   {
-    // copy over cvarguments
-    smap.insert(
-        lambdaNode.cvargument(i),
-        new_lambda->add_ctxvar(lambdaNode.cvargument(i)->input()->origin()));
+    auto oldArgument = lambdaNode.cvargument(i);
+    auto origin = oldArgument->input()->origin();
+
+    auto newArgument = newLambda->add_ctxvar(origin);
+    substitutionMap.insert(oldArgument, newArgument);
   }
+
   size_t new_i = 0;
   for (size_t i = 0; i < lambdaNode.nfctarguments(); ++i)
   {
-    auto arg = lambdaNode.fctargument(i);
-    if (!IsPassthroughArgument(*arg))
+    auto argument = lambdaNode.fctargument(i);
+    if (!IsPassthroughArgument(*argument))
     {
-      smap.insert(arg, new_lambda->fctargument(new_i));
+      substitutionMap.insert(argument, newLambda->fctargument(new_i));
       new_i++;
     }
   }
-  lambdaNode.subregion()->copy(new_lambda->subregion(), smap, false, false);
+  lambdaNode.subregion()->copy(newLambda->subregion(), substitutionMap, false, false);
 
-  std::vector<jlm::rvsdg::output *> new_results;
+  std::vector<jlm::rvsdg::output *> newResults;
   for (size_t i = 0; i < lambdaNode.nfctresults(); ++i)
   {
-    auto res = lambdaNode.fctresult(i);
-    if (!IsPassthroughResult(*res))
+    auto result = lambdaNode.fctresult(i);
+    if (!IsPassthroughResult(*result))
     {
-      new_results.push_back(smap.lookup(res->origin()));
+      newResults.push_back(substitutionMap.lookup(result->origin()));
     }
   }
-  auto new_out = new_lambda->finalize(new_results);
+  auto newLambdaOutput = newLambda->finalize(newResults);
 
   // TODO handle functions at other levels?
   assert(lambdaNode.region() == lambdaNode.region()->graph()->root());
   assert((*lambdaNode.output()->begin())->region() == lambdaNode.region()->graph()->root());
 
-  //	ln->output()->divert_users(new_out); // can't divert since the type changed
   JLM_ASSERT(lambdaNode.output()->nusers() == 1);
   lambdaNode.region()->RemoveResult((*lambdaNode.output()->begin())->index());
   remove(&lambdaNode);
-  jlm::rvsdg::result::create(new_lambda->region(), new_out, nullptr, new_out->type());
+  jlm::rvsdg::result::create(
+      newLambda->region(),
+      newLambdaOutput,
+      nullptr,
+      newLambdaOutput->type());
 }
 
 static void
