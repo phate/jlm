@@ -190,7 +190,7 @@ remove_gamma_passthrough(jlm::rvsdg::gamma_node * gn)
 }
 
 static void
-remove_unused_state(jlm::rvsdg::region * region, bool can_remove_arguments = true)
+remove_unused_state(jlm::rvsdg::region * region, bool can_remove_arguments)
 {
   // process children first so that unnecessary users get removed
   for (auto & node : jlm::rvsdg::topdown_traverser(region))
@@ -214,7 +214,7 @@ remove_unused_state(jlm::rvsdg::region * region, bool can_remove_arguments = tru
       else
       {
         assert(structnode->nsubregions() == 1);
-        remove_unused_state(structnode->subregion(0));
+        remove_unused_state(structnode->subregion(0), true);
       }
     }
   }
@@ -235,9 +235,7 @@ remove_unused_state(jlm::rvsdg::region * region, bool can_remove_arguments = tru
 void
 RemoveUnusedStates(llvm::RvsdgModule & rvsdgModule)
 {
-  auto & graph = rvsdgModule.Rvsdg();
-  auto root = graph.root();
-  remove_unused_state(root);
+  remove_unused_state(rvsdgModule.Rvsdg().root(), true);
 }
 
 }
