@@ -7,6 +7,7 @@
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
 namespace jlm::hls
@@ -190,7 +191,7 @@ remove_gamma_passthrough(jlm::rvsdg::gamma_node * gn)
 }
 
 static void
-remove_unused_state(jlm::rvsdg::region * region, bool can_remove_arguments)
+RemoveUnusedStatesInRegion(jlm::rvsdg::region * region, bool can_remove_arguments)
 {
   // process children first so that unnecessary users get removed
   for (auto & node : jlm::rvsdg::topdown_traverser(region))
@@ -202,31 +203,27 @@ remove_unused_state(jlm::rvsdg::region * region, bool can_remove_arguments)
         // process subnodes first
         for (size_t n = 0; n < gn->nsubregions(); n++)
         {
-          remove_unused_state(gn->subregion(n), false);
+          RemoveUnusedStatesInRegion(gn->subregion(n), false);
         }
         remove_gamma_passthrough(gn);
       }
       else if (auto ln = dynamic_cast<llvm::lambda::node *>(node))
       {
-        remove_unused_state(structnode->subregion(0), false);
+        RemoveUnusedStatesInRegion(structnode->subregion(0), false);
         remove_lambda_passthrough(ln);
       }
-      else
+      else if (auto thetaNode = dynamic_cast<rvsdg::theta_node *>(node))
       {
-        assert(structnode->nsubregions() == 1);
-        remove_unused_state(structnode->subregion(0), true);
-      }
-    }
-  }
-  if (can_remove_arguments)
-  {
-    // check if an input is passed through unnecessarily
-    for (int i = region->narguments() - 1; i >= 0; --i)
-    {
-      auto arg = region->argument(i);
-      if (is_passthrough(arg))
-      {
-        remove_region_passthrough(arg);
+        RemoveUnusedStatesInRegion(thetaNode->subregion(), true);
+
+        for (int i = region->narguments() - 1; i >= 0; --i)
+        {
+          auto arg = region->argument(i);
+          if (is_passthrough(arg))
+          {
+            remove_region_passthrough(arg);
+          }
+        }
       }
     }
   }
@@ -235,7 +232,7 @@ remove_unused_state(jlm::rvsdg::region * region, bool can_remove_arguments)
 void
 RemoveUnusedStates(llvm::RvsdgModule & rvsdgModule)
 {
-  remove_unused_state(rvsdgModule.Rvsdg().root(), true);
+  RemoveUnusedStatesInRegion(rvsdgModule.Rvsdg().root(), true);
 }
 
 }
