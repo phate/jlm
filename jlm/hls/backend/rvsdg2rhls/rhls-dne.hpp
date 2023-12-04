@@ -12,15 +12,6 @@
 namespace jlm::hls
 {
 
-bool
-remove_unused_loop_outputs(hls::loop_node * ln);
-
-bool
-remove_unused_loop_inputs(hls::loop_node * ln);
-
-bool
-dne(jlm::rvsdg::region * sr);
-
 void
 dne(llvm::RvsdgModule & rm);
 

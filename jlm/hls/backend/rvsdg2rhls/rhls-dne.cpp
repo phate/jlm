@@ -10,7 +10,7 @@
 namespace jlm::hls
 {
 
-bool
+static bool
 remove_unused_loop_outputs(hls::loop_node * ln)
 {
   bool any_changed = false;
@@ -31,7 +31,7 @@ remove_unused_loop_outputs(hls::loop_node * ln)
   return any_changed;
 }
 
-bool
+static bool
 remove_unused_loop_inputs(hls::loop_node * ln)
 {
   bool any_changed = false;
@@ -72,7 +72,7 @@ remove_unused_loop_inputs(hls::loop_node * ln)
   return any_changed;
 }
 
-bool
+static bool
 dne(jlm::rvsdg::region * sr)
 {
   bool any_changed = false;
