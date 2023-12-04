@@ -10,6 +10,7 @@
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
+#include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
@@ -306,7 +307,7 @@ TestCall1()
 {
   jlm::tests::CallTest1 test;
   const auto ptg = RunAndersen(test.module());
-  
+
   assert(ptg->NumAllocaNodes() == 3);
   assert(ptg->NumLambdaNodes() == 3);
   assert(ptg->NumRegisterNodes() == 12);
@@ -356,6 +357,318 @@ TestCall1()
   assert(EscapedIsExactly(*ptg, { &lambda_h }));
 }
 
+static void
+TestCall2()
+{
+  jlm::tests::CallTest2 test;
+  const auto ptg = RunAndersen(test.module());
+
+  assert(ptg->NumLambdaNodes() == 3);
+  assert(ptg->NumMallocNodes() == 1);
+  assert(ptg->NumImportNodes() == 0);
+  assert(ptg->NumRegisterNodes() == 11);
+
+  auto & lambda_create = ptg->GetLambdaNode(*test.lambda_create);
+  auto & lambda_create_out = ptg->GetRegisterNode(*test.lambda_create->output());
+
+  auto & lambda_destroy = ptg->GetLambdaNode(*test.lambda_destroy);
+  auto & lambda_destroy_out = ptg->GetRegisterNode(*test.lambda_destroy->output());
+  auto & lambda_destroy_arg = ptg->GetRegisterNode(*test.lambda_destroy->fctargument(0));
+
+  auto & lambda_test = ptg->GetLambdaNode(*test.lambda_test);
+  auto & lambda_test_out = ptg->GetRegisterNode(*test.lambda_test->output());
+  auto & lambda_test_cv1 = ptg->GetRegisterNode(*test.lambda_test->cvargument(0));
+  auto & lambda_test_cv2 = ptg->GetRegisterNode(*test.lambda_test->cvargument(1));
+
+  auto & call_create1_out = ptg->GetRegisterNode(*test.CallCreate1().output(0));
+  auto & call_create2_out = ptg->GetRegisterNode(*test.CallCreate2().output(0));
+
+  auto & malloc = ptg->GetMallocNode(*test.malloc);
+  auto & malloc_out = ptg->GetRegisterNode(*test.malloc->output(0));
+
+  assert(TargetsExactly(lambda_create_out, { &lambda_create }));
+
+  assert(TargetsExactly(lambda_destroy_out, { &lambda_destroy }));
+  assert(TargetsExactly(lambda_destroy_arg, { &malloc }));
+
+  assert(TargetsExactly(lambda_test_out, { &lambda_test }));
+  assert(TargetsExactly(lambda_test_cv1, { &lambda_create }));
+  assert(TargetsExactly(lambda_test_cv2, { &lambda_destroy }));
+
+  assert(TargetsExactly(call_create1_out, { &malloc }));
+  assert(TargetsExactly(call_create2_out, { &malloc }));
+
+  assert(TargetsExactly(malloc_out, { &malloc }));
+
+  assert(EscapedIsExactly(*ptg, { &lambda_test }));
+}
+
+static void
+TestIndirectCall1()
+{
+  jlm::tests::IndirectCallTest1 test;
+  const auto ptg = RunAndersen(test.module());
+
+  assert(ptg->NumLambdaNodes() == 4);
+  assert(ptg->NumImportNodes() == 0);
+  assert(ptg->NumRegisterNodes() == 8);
+
+  auto & lambda_three = ptg->GetLambdaNode(test.GetLambdaThree());
+  auto & lambda_three_out = ptg->GetRegisterNode(*test.GetLambdaThree().output());
+
+  auto & lambda_four = ptg->GetLambdaNode(test.GetLambdaFour());
+  auto & lambda_four_out = ptg->GetRegisterNode(*test.GetLambdaFour().output());
+
+  auto & lambda_indcall = ptg->GetLambdaNode(test.GetLambdaIndcall());
+  auto & lambda_indcall_out = ptg->GetRegisterNode(*test.GetLambdaIndcall().output());
+  auto & lambda_indcall_arg = ptg->GetRegisterNode(*test.GetLambdaIndcall().fctargument(0));
+
+  auto & lambda_test = ptg->GetLambdaNode(test.GetLambdaTest());
+  auto & lambda_test_out = ptg->GetRegisterNode(*test.GetLambdaTest().output());
+  auto & lambda_test_cv0 = ptg->GetRegisterNode(*test.GetLambdaTest().cvargument(0));
+  auto & lambda_test_cv1 = ptg->GetRegisterNode(*test.GetLambdaTest().cvargument(1));
+  auto & lambda_test_cv2 = ptg->GetRegisterNode(*test.GetLambdaTest().cvargument(2));
+
+  assert(TargetsExactly(lambda_three_out, { &lambda_three }));
+
+  assert(TargetsExactly(lambda_four_out, { &lambda_four }));
+
+  assert(TargetsExactly(lambda_indcall_out, { &lambda_indcall }));
+  assert(TargetsExactly(lambda_indcall_arg, { &lambda_three, &lambda_four }));
+
+  assert(TargetsExactly(lambda_test_out, { &lambda_test }));
+  assert(TargetsExactly(lambda_test_cv0, { &lambda_indcall }));
+  assert(TargetsExactly(lambda_test_cv1, { &lambda_four }));
+  assert(TargetsExactly(lambda_test_cv2, { &lambda_three }));
+
+  assert(EscapedIsExactly(*ptg, { &lambda_test }));
+}
+
+static void
+TestIndirectCall2()
+{
+  jlm::tests::IndirectCallTest2 test;
+  const auto ptg = RunAndersen(test.module());
+
+  assert(ptg->NumAllocaNodes() == 3);
+  assert(ptg->NumLambdaNodes() == 7);
+  assert(ptg->NumDeltaNodes() == 2);
+  assert(ptg->NumRegisterNodes() == 24);
+
+  auto & lambdaThree = ptg->GetLambdaNode(test.GetLambdaThree());
+  auto & lambdaThreeOutput = ptg->GetRegisterNode(*test.GetLambdaThree().output());
+
+  auto & lambdaFour = ptg->GetLambdaNode(test.GetLambdaFour());
+  auto & lambdaFourOutput = ptg->GetRegisterNode(*test.GetLambdaFour().output());
+
+  assert(TargetsExactly(lambdaThreeOutput, { &lambdaThree }));
+  assert(TargetsExactly(lambdaFourOutput, { &lambdaFour }));
+}
+
+static void
+TestExternalCall()
+{
+  jlm::tests::ExternalCallTest test;
+  const auto ptg = RunAndersen(test.module());
+
+  assert(ptg->NumAllocaNodes() == 2);
+  assert(ptg->NumLambdaNodes() == 1);
+  assert(ptg->NumImportNodes() == 1);
+  assert(ptg->NumRegisterNodes() == 10);
+
+  auto & lambdaF = ptg->GetLambdaNode(test.LambdaF());
+  auto & lambdaFArgument0 = ptg->GetRegisterNode(*test.LambdaF().fctargument(0));
+  auto & lambdaFArgument1 = ptg->GetRegisterNode(*test.LambdaF().fctargument(1));
+  auto & importG = ptg->GetImportNode(test.ExternalGArgument());
+
+  auto & callResult = ptg->GetRegisterNode(*test.CallG().Result(0));
+
+  auto & externalMemory = ptg->GetExternalMemoryNode();
+
+  assert(TargetsExactly(lambdaFArgument0, { &lambdaF, &importG, &externalMemory }));
+  assert(TargetsExactly(lambdaFArgument1, { &lambdaF, &importG, &externalMemory }));
+  assert(TargetsExactly(callResult, { &lambdaF, &importG, &externalMemory }));
+}
+
+static void
+TestGamma()
+{
+  jlm::tests::GammaTest test;
+  const auto ptg = RunAndersen(test.module());
+
+  assert(ptg->NumLambdaNodes() == 1);
+  assert(ptg->NumRegisterNodes() == 15);
+
+  auto & lambda = ptg->GetLambdaNode(*test.lambda);
+
+  for (size_t n = 1; n < 5; n++)
+  {
+    auto & lambdaArgument = ptg->GetRegisterNode(*test.lambda->fctargument(n));
+    assert(TargetsExactly(lambdaArgument, { &lambda, &ptg->GetExternalMemoryNode() }));
+  }
+
+  for (size_t n = 0; n < 4; n++)
+  {
+    auto & argument0 = ptg->GetRegisterNode(*test.gamma->entryvar(n)->argument(0));
+    auto & argument1 = ptg->GetRegisterNode(*test.gamma->entryvar(n)->argument(1));
+
+    assert(TargetsExactly(argument0, { &lambda, &ptg->GetExternalMemoryNode() }));
+    assert(TargetsExactly(argument1, { &lambda, &ptg->GetExternalMemoryNode() }));
+  }
+
+  for (size_t n = 0; n < 4; n++)
+  {
+    auto & gammaOutput = ptg->GetRegisterNode(*test.gamma->exitvar(0));
+    assert(TargetsExactly(gammaOutput, { &lambda, &ptg->GetExternalMemoryNode() }));
+  }
+
+  assert(EscapedIsExactly(*ptg, { &lambda }));
+}
+
+static void
+TestTheta()
+{
+  jlm::tests::ThetaTest test;
+  const auto ptg = RunAndersen(test.module());
+
+  assert(ptg->NumLambdaNodes() == 1);
+  assert(ptg->NumRegisterNodes() == 5);
+
+  auto & lambda = ptg->GetLambdaNode(*test.lambda);
+  auto & lambdaArgument1 = ptg->GetRegisterNode(*test.lambda->fctargument(1));
+  auto & lambdaOutput = ptg->GetRegisterNode(*test.lambda->output());
+
+  auto & gepOutput = ptg->GetRegisterNode(*test.gep->output(0));
+
+  auto & thetaArgument2 = ptg->GetRegisterNode(*test.theta->output(2)->argument());
+  auto & thetaOutput2 = ptg->GetRegisterNode(*test.theta->output(2));
+
+  assert(TargetsExactly(lambdaArgument1, { &lambda, &ptg->GetExternalMemoryNode() }));
+  assert(TargetsExactly(lambdaOutput, { &lambda }));
+
+  assert(TargetsExactly(gepOutput, { &lambda, &ptg->GetExternalMemoryNode() }));
+
+  assert(TargetsExactly(thetaArgument2, { &lambda, &ptg->GetExternalMemoryNode() }));
+  assert(TargetsExactly(thetaOutput2, { &lambda, &ptg->GetExternalMemoryNode() }));
+
+  assert(EscapedIsExactly(*ptg, { &lambda }));
+}
+
+static void
+TestDelta1()
+{
+  jlm::tests::DeltaTest1 test;
+  const auto ptg = RunAndersen(test.module());
+
+  assert(ptg->NumDeltaNodes() == 1);
+  assert(ptg->NumLambdaNodes() == 2);
+  assert(ptg->NumRegisterNodes() == 6);
+
+  auto & delta_f = ptg->GetDeltaNode(*test.delta_f);
+  auto & pdelta_f = ptg->GetRegisterNode(*test.delta_f->output());
+
+  auto & lambda_g = ptg->GetLambdaNode(*test.lambda_g);
+  auto & plambda_g = ptg->GetRegisterNode(*test.lambda_g->output());
+  auto & lambda_g_arg0 = ptg->GetRegisterNode(*test.lambda_g->fctargument(0));
+
+  auto & lambda_h = ptg->GetLambdaNode(*test.lambda_h);
+  auto & plambda_h = ptg->GetRegisterNode(*test.lambda_h->output());
+  auto & lambda_h_cv0 = ptg->GetRegisterNode(*test.lambda_h->cvargument(0));
+  auto & lambda_h_cv1 = ptg->GetRegisterNode(*test.lambda_h->cvargument(1));
+
+  assert(TargetsExactly(pdelta_f, { &delta_f }));
+
+  assert(TargetsExactly(plambda_g, { &lambda_g }));
+  assert(TargetsExactly(plambda_h, { &lambda_h }));
+
+  assert(TargetsExactly(lambda_g_arg0, { &delta_f }));
+
+  assert(TargetsExactly(lambda_h_cv0, { &delta_f }));
+  assert(TargetsExactly(lambda_h_cv1, { &lambda_g }));
+
+  assert(EscapedIsExactly(*ptg, { &lambda_h }));
+}
+
+static void
+TestDelta2()
+{
+  jlm::tests::DeltaTest2 test;
+  const auto ptg = RunAndersen(test.module());
+
+  assert(ptg->NumDeltaNodes() == 2);
+  assert(ptg->NumLambdaNodes() == 2);
+  assert(ptg->NumRegisterNodes() == 8);
+
+  auto & delta_d1 = ptg->GetDeltaNode(*test.delta_d1);
+  auto & delta_d1_out = ptg->GetRegisterNode(*test.delta_d1->output());
+
+  auto & delta_d2 = ptg->GetDeltaNode(*test.delta_d2);
+  auto & delta_d2_out = ptg->GetRegisterNode(*test.delta_d2->output());
+
+  auto & lambda_f1 = ptg->GetLambdaNode(*test.lambda_f1);
+  auto & lambda_f1_out = ptg->GetRegisterNode(*test.lambda_f1->output());
+  auto & lambda_f1_cvd1 = ptg->GetRegisterNode(*test.lambda_f1->cvargument(0));
+
+  auto & lambda_f2 = ptg->GetLambdaNode(*test.lambda_f2);
+  auto & lambda_f2_out = ptg->GetRegisterNode(*test.lambda_f2->output());
+  auto & lambda_f2_cvd1 = ptg->GetRegisterNode(*test.lambda_f2->cvargument(0));
+  auto & lambda_f2_cvd2 = ptg->GetRegisterNode(*test.lambda_f2->cvargument(1));
+  auto & lambda_f2_cvf1 = ptg->GetRegisterNode(*test.lambda_f2->cvargument(2));
+
+  assert(TargetsExactly(delta_d1_out, { &delta_d1 }));
+  assert(TargetsExactly(delta_d2_out, { &delta_d2 }));
+
+  assert(TargetsExactly(lambda_f1_out, { &lambda_f1 }));
+  assert(TargetsExactly(lambda_f1_cvd1, { &delta_d1 }));
+
+  assert(TargetsExactly(lambda_f2_out, { &lambda_f2 }));
+  assert(TargetsExactly(lambda_f2_cvd1, { &delta_d1 }));
+  assert(TargetsExactly(lambda_f2_cvd2, { &delta_d2 }));
+  assert(TargetsExactly(lambda_f2_cvf1, { &lambda_f1 }));
+
+  assert(EscapedIsExactly(*ptg, { &lambda_f2 }));
+}
+
+static void
+TestImports()
+{
+  jlm::tests::ImportTest test;
+  const auto ptg = RunAndersen(test.module());
+
+  assert(ptg->NumLambdaNodes() == 2);
+  assert(ptg->NumImportNodes() == 2);
+  assert(ptg->NumRegisterNodes() == 8);
+
+  auto & d1 = ptg->GetImportNode(*test.import_d1);
+  auto & import_d1 = ptg->GetRegisterNode(*test.import_d1);
+
+  auto & d2 = ptg->GetImportNode(*test.import_d2);
+  auto & import_d2 = ptg->GetRegisterNode(*test.import_d2);
+
+  auto & lambda_f1 = ptg->GetLambdaNode(*test.lambda_f1);
+  auto & lambda_f1_out = ptg->GetRegisterNode(*test.lambda_f1->output());
+  auto & lambda_f1_cvd1 = ptg->GetRegisterNode(*test.lambda_f1->cvargument(0));
+
+  auto & lambda_f2 = ptg->GetLambdaNode(*test.lambda_f2);
+  auto & lambda_f2_out = ptg->GetRegisterNode(*test.lambda_f2->output());
+  auto & lambda_f2_cvd1 = ptg->GetRegisterNode(*test.lambda_f2->cvargument(0));
+  auto & lambda_f2_cvd2 = ptg->GetRegisterNode(*test.lambda_f2->cvargument(1));
+  auto & lambda_f2_cvf1 = ptg->GetRegisterNode(*test.lambda_f2->cvargument(2));
+
+  assert(TargetsExactly(import_d1, { &d1 }));
+  assert(TargetsExactly(import_d2, { &d2 }));
+
+  assert(TargetsExactly(lambda_f1_out, { &lambda_f1 }));
+  assert(TargetsExactly(lambda_f1_cvd1, { &d1 }));
+
+  assert(TargetsExactly(lambda_f2_out, { &lambda_f2 }));
+  assert(TargetsExactly(lambda_f2_cvd1, { &d1 }));
+  assert(TargetsExactly(lambda_f2_cvd2, { &d2 }));
+  assert(TargetsExactly(lambda_f2_cvf1, { &lambda_f1 }));
+
+  assert(EscapedIsExactly(*ptg, { &lambda_f2, &d1, &d2 }));
+}
+
 static int
 TestAndersen()
 {
@@ -369,6 +682,15 @@ TestAndersen()
   TestConstantPointerNull();
   TestBits2Ptr();
   TestCall1();
+  TestCall2();
+  TestIndirectCall1();
+  TestIndirectCall2();
+  TestExternalCall();
+  TestGamma();
+  TestTheta();
+  TestDelta1();
+  TestDelta2();
+  TestImports();
   return 0;
 }
 

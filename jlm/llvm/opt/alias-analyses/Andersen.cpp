@@ -369,11 +369,23 @@ Andersen::AnalyzeDelta(const delta::node & delta)
   // Analyze the internal region
   AnalyzeRegion(*delta.subregion());
 
-  // Map the result register PointerObject to the output register
+  // Get the result register from the subregion
   auto & resultRegister = *delta.result()->origin();
+
+  // Create a global memory object representing the global variable
+  const auto globalPO = Set_->CreateGlobalMemoryObject(delta);
+
+  // If the subregion result is a pointer, make the global point to the same variables
+  if (is<PointerType>(resultRegister.type()))
+  {
+    const auto resultRegisterPO = Set_->GetRegisterPointerObject(resultRegister);
+    Constraints_->AddConstraint(SupersetConstraint(globalPO, resultRegisterPO));
+  }
+
+  // Finally create a Register PointerObject for the delta's output, pointing to the memory object
   auto & outputRegister = *delta.output();
-  const auto resultRegisterPO = Set_->GetRegisterPointerObject(resultRegister);
-  Set_->MapRegisterToExistingPointerObject(outputRegister, resultRegisterPO);
+  const auto outputRegisterPO = Set_->CreateRegisterPointerObject(outputRegister);
+  Constraints_->AddPointerPointeeConstraint(outputRegisterPO, globalPO);
 }
 
 void
@@ -537,6 +549,9 @@ Andersen::AnalyzeRvsdg(const rvsdg::graph & graph)
     // Only care about imported pointer values
     if (!jlm::rvsdg::is<PointerType>(argument.type()))
       continue;
+
+    // TODO: Mark the created ImportMemoryObject based on it being a function or a variable
+    // Functions can not point to other MemoryObjects, so CanPoint() should be false
 
     // Create a memory PointerObject representing the target of the external symbol
     // We can assume that two external symbols don't alias, clang does.

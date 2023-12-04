@@ -1186,8 +1186,8 @@ ExternalCallTest::SetupRvsdg()
         jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callGResults[0])));
   };
 
-  auto externalFunction = SetupFunctionGDeclaration();
-  auto [lambdaF, callG] = SetupFunctionF(externalFunction);
+  this->ExternalGArgument_ = SetupFunctionGDeclaration();
+  auto [lambdaF, callG] = SetupFunctionF(ExternalGArgument_);
 
   this->LambdaF_ = lambdaF;
   this->CallG_ = callG;

@@ -837,6 +837,12 @@ public:
     return *CallG_;
   }
 
+  [[nodiscard]] const jlm::rvsdg::argument &
+  ExternalGArgument() const noexcept
+  {
+    return *ExternalGArgument_;
+  }
+
 private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
@@ -844,6 +850,8 @@ private:
   jlm::llvm::lambda::node * LambdaF_;
 
   jlm::llvm::CallNode * CallG_;
+
+  jlm::rvsdg::argument * ExternalGArgument_;
 };
 
 /** \brief GammaTest class
