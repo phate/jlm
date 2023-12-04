@@ -11,110 +11,122 @@ namespace jlm::hls
 {
 
 static bool
-remove_unused_loop_outputs(hls::loop_node * ln)
+RemoveUnusedLoopOutputs(hls::loop_node & loopNode)
 {
-  bool any_changed = false;
-  auto sr = ln->subregion();
-  // go through in reverse because we remove some
-  for (int i = ln->noutputs() - 1; i >= 0; --i)
+  bool anyChanged = false;
+  auto loopSubregion = loopNode.subregion();
+
+  // go through in reverse because we might remove outputs
+  for (int i = loopNode.noutputs() - 1; i >= 0; --i)
   {
-    auto out = ln->output(i);
-    if (out->nusers() == 0)
+    auto output = loopNode.output(i);
+
+    if (output->nusers() == 0)
     {
-      assert(out->results.size() == 1);
-      auto result = out->results.begin();
-      sr->RemoveResult(result->index());
-      ln->RemoveOutput(out->index());
-      any_changed = true;
+      JLM_ASSERT(output->results.size() == 1);
+      auto result = output->results.begin();
+      loopSubregion->RemoveResult(result->index());
+      loopNode.RemoveOutput(output->index());
+      anyChanged = true;
     }
   }
-  return any_changed;
+  return anyChanged;
 }
 
 static bool
-remove_unused_loop_inputs(hls::loop_node * ln)
+RemoveUnusedInputs(hls::loop_node & loopNode)
 {
-  bool any_changed = false;
-  auto sr = ln->subregion();
-  // go through in reverse because we remove some
-  for (int i = ln->ninputs() - 1; i >= 0; --i)
+  bool anyChanged = false;
+  auto loopSubregion = loopNode.subregion();
+
+  // go through in reverse because we might remove inputs
+  for (int i = loopNode.ninputs() - 1; i >= 0; --i)
   {
-    auto in = ln->input(i);
-    assert(in->arguments.size() == 1);
-    auto arg = in->arguments.begin();
-    if (arg->nusers() == 0)
+    auto input = loopNode.input(i);
+    JLM_ASSERT(input->arguments.size() == 1);
+    auto argument = input->arguments.begin();
+
+    if (argument->nusers() == 0)
     {
-      sr->RemoveArgument(arg->index());
-      ln->RemoveInput(in->index());
-      any_changed = true;
+      loopSubregion->RemoveArgument(argument->index());
+      loopNode.RemoveInput(input->index());
+      anyChanged = true;
     }
   }
+
   // clean up unused arguments - only ones without an input should be left
-  // go through in reverse because we remove some
-  for (int i = sr->narguments() - 1; i >= 0; --i)
+  // go through in reverse because we might remove some
+  for (int i = loopSubregion->narguments() - 1; i >= 0; --i)
   {
-    auto arg = sr->argument(i);
-    if (auto ba = dynamic_cast<backedge_argument *>(arg))
+    auto argument = loopSubregion->argument(i);
+
+    if (auto backedgeArgument = dynamic_cast<backedge_argument *>(argument))
     {
-      auto result = ba->result();
-      assert(result->type() == arg->type());
-      if (arg->nusers() == 0 || (arg->nusers() == 1 && result->origin() == arg))
+      auto result = backedgeArgument->result();
+      JLM_ASSERT(result->type() == argument->type());
+
+      if (argument->nusers() == 0 || (argument->nusers() == 1 && result->origin() == argument))
       {
-        sr->RemoveResult(result->index());
-        sr->RemoveArgument(arg->index());
+        loopSubregion->RemoveResult(result->index());
+        loopSubregion->RemoveArgument(argument->index());
       }
     }
     else
     {
-      assert(arg->nusers() != 0);
+      JLM_ASSERT(argument->nusers() != 0);
     }
   }
-  return any_changed;
+
+  return anyChanged;
 }
 
 static bool
-dne(jlm::rvsdg::region * sr)
+EliminateDeadNodesInRegion(jlm::rvsdg::region & region)
 {
-  bool any_changed = false;
   bool changed;
+  bool anyChanged = false;
+
   do
   {
     changed = false;
-    for (auto & node : jlm::rvsdg::bottomup_traverser(sr))
+    for (auto & node : jlm::rvsdg::bottomup_traverser(&region))
     {
       if (!node->has_users())
       {
         remove(node);
         changed = true;
       }
-      else if (auto ln = dynamic_cast<hls::loop_node *>(node))
+      else if (auto loopNode = dynamic_cast<hls::loop_node *>(node))
       {
-        changed |= remove_unused_loop_outputs(ln);
-        changed |= remove_unused_loop_inputs(ln);
-        changed |= dne(ln->subregion());
+        changed |= RemoveUnusedLoopOutputs(*loopNode);
+        changed |= RemoveUnusedInputs(*loopNode);
+        changed |= EliminateDeadNodesInRegion(*loopNode->subregion());
       }
     }
-    any_changed |= changed;
+    anyChanged |= changed;
   } while (changed);
-  assert(sr->bottom_nodes.empty());
-  return any_changed;
+
+  JLM_ASSERT(region.bottom_nodes.empty());
+  return anyChanged;
 }
 
 void
 EliminateDeadNodes(llvm::RvsdgModule & rvsdgModule)
 {
-  auto & graph = rvsdgModule.Rvsdg();
-  auto root = graph.root();
-  if (root->nodes.size() != 1)
+  auto & rootRegion = *rvsdgModule.Rvsdg().root();
+
+  if (rootRegion.nnodes() != 1)
   {
     throw util::error("Root should have only one node now");
   }
-  auto ln = dynamic_cast<const llvm::lambda::node *>(root->nodes.begin().ptr());
-  if (!ln)
+
+  auto lambdaNode = dynamic_cast<const llvm::lambda::node *>(rootRegion.nodes.begin().ptr());
+  if (!lambdaNode)
   {
     throw util::error("Node needs to be a lambda");
   }
-  dne(ln->subregion());
+
+  EliminateDeadNodesInRegion(*lambdaNode->subregion());
 }
 
 }
