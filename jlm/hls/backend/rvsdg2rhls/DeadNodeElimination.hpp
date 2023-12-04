@@ -12,6 +12,17 @@
 namespace jlm::hls
 {
 
+/**
+ * Removes dead loop nodes and their outputs and inputs.
+ *
+ * @param rvsdgModule The RVSDG module the transformation is performed on.
+ *
+ * FIXME: This code should be incorporated into llvm::DeadNodeElimination. However, before this
+ * can happen, llvm::DeadNodeElimination needs to be moved into the rvsdg namespace and made
+ * extensible such that transformation users can register clean up functions for structural nodes.
+ *
+ * \see hls::loop_node
+ */
 void
 EliminateDeadNodes(llvm::RvsdgModule & rvsdgModule);
 
