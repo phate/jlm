@@ -125,7 +125,8 @@ Andersen::AnalyzeCall(const CallNode & callNode)
   for (size_t n = 0; n < callNode.NumResults(); n++)
   {
     const auto & outputRegister = *callNode.Result(n);
-    Set_->CreateRegisterPointerObject(outputRegister);
+    if (is<PointerType>(outputRegister.type()))
+      Set_->CreateRegisterPointerObject(outputRegister);
   }
 
   // We make no attempt at detecting what type of call this is here.

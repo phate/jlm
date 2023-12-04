@@ -300,7 +300,7 @@ public:
  *
  * \code{.c}
  *   static void*
- *   bits2ptr(ptrdiff_t i)
+ *   bit2ptr(ptrdiff_t i)
  *   {
  *     return (void*)i;
  *   }
