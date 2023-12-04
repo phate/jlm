@@ -13,7 +13,7 @@ namespace jlm::hls
 {
 
 void
-dne(llvm::RvsdgModule & rm);
+dne(llvm::RvsdgModule & rvsdgModule);
 
 }
 

@@ -101,9 +101,9 @@ dne(jlm::rvsdg::region * sr)
 }
 
 void
-dne(llvm::RvsdgModule & rm)
+dne(llvm::RvsdgModule & rvsdgModule)
 {
-  auto & graph = rm.Rvsdg();
+  auto & graph = rvsdgModule.Rvsdg();
   auto root = graph.root();
   if (root->nodes.size() != 1)
   {
