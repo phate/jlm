@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/DeadNodeElimination.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 

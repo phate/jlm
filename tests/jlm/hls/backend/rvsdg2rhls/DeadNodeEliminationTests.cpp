@@ -6,7 +6,7 @@
 #include <test-registry.hpp>
 #include <test-types.hpp>
 
-#include <jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/DeadNodeElimination.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 
 static void

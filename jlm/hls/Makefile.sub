@@ -3,12 +3,12 @@
 
 libhls_SOURCES = \
     jlm/hls/backend/rvsdg2rhls/add-triggers.cpp \
+    jlm/hls/backend/rvsdg2rhls/DeadNodeElimination.cpp \
     jlm/hls/backend/rvsdg2rhls/GammaConversion.cpp \
     jlm/hls/backend/rvsdg2rhls/ThetaConversion.cpp \
     jlm/hls/backend/rvsdg2rhls/add-sinks.cpp \
     jlm/hls/backend/rvsdg2rhls/add-forks.cpp \
     jlm/hls/backend/rvsdg2rhls/check-rhls.cpp \
-    jlm/hls/backend/rvsdg2rhls/rhls-dne.cpp \
     jlm/hls/backend/rvsdg2rhls/remove-unused-state.cpp \
     jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.cpp \
     jlm/hls/backend/rvsdg2rhls/add-prints.cpp \
