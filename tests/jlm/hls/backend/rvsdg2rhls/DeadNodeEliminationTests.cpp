@@ -32,7 +32,7 @@ TestDeadLoopNode()
   lambdaNode->finalize({ lambdaNode->fctargument(1) });
 
   // Act
-  dne(rvsdgModule);
+  EliminateDeadNodes(rvsdgModule);
 
   // Assert
   assert(lambdaNode->subregion()->nnodes() == 0);
@@ -71,7 +71,7 @@ TestDeadLoopNodeOutput()
   rvsdg.add_export(lambdaOutput, { jlm::llvm::PointerType(), "f" });
 
   // Act
-  dne(rvsdgModule);
+  EliminateDeadNodes(rvsdgModule);
 
   // Assert
   assert(loopNode->noutputs() == 1);

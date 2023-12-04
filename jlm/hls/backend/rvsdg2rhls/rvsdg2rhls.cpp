@@ -349,7 +349,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls)
   ConvertGammaNodes(rhls);
   ConvertThetaNodes(rhls);
   // rhls optimization
-  dne(rhls);
+  EliminateDeadNodes(rhls);
   // enforce 1:1 input output relationship
   add_sinks(rhls);
   add_forks(rhls);

@@ -13,7 +13,7 @@ namespace jlm::hls
 {
 
 void
-dne(llvm::RvsdgModule & rvsdgModule);
+EliminateDeadNodes(llvm::RvsdgModule & rvsdgModule);
 
 }
 

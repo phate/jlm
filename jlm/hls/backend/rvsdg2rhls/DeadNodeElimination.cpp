@@ -101,7 +101,7 @@ dne(jlm::rvsdg::region * sr)
 }
 
 void
-dne(llvm::RvsdgModule & rvsdgModule)
+EliminateDeadNodes(llvm::RvsdgModule & rvsdgModule)
 {
   auto & graph = rvsdgModule.Rvsdg();
   auto root = graph.root();
