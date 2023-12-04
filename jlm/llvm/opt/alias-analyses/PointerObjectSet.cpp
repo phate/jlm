@@ -248,8 +248,9 @@ SupersetOfAllPointeesConstraint::Apply(PointerObjectSet & set)
   for (PointerObject::Index x : set.GetPointsToSet(Pointer_).Items())
     modified |= set.MakePointsToSetSuperset(Loaded_, x);
 
-  // Handling pointing to external is done by MakePointsToSetSuperset,
-  // Propagating escaped status is handled by different constraints
+  // P(pointer) "contains" external, then P(loaded) should also "contain" it
+  if (set.GetPointerObject(Pointer_).PointsToExternal())
+    modified |= set.GetPointerObject(Loaded_).MarkAsPointsToExternal();
 
   return modified;
 }

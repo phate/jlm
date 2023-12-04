@@ -295,8 +295,30 @@ public:
   PointsToGraph::ImportNode &
   AddImportNode(std::unique_ptr<PointsToGraph::ImportNode> node);
 
+  /**
+   * @brief Creates a GraphViz description of the given \p pointsToGraph,
+   * including the names given to rvsdg::outputs by the \p outputMap,
+   * for all RegisterNodes that correspond to names rvsdg::outputs.
+   * \param pointsToGraph the graph to be drawn as a dot-file.
+   * \param outputMap the mapping from rvsdg::output* to a unique name.
+   * \return the text content of the resulting dot-file.
+   */
   static std::string
-  ToDot(const PointsToGraph & pointsToGraph);
+  ToDot(
+      const PointsToGraph & pointsToGraph,
+      const std::unordered_map<const rvsdg::output *, std::string> & outputMap);
+
+  /**
+   * @brief Creates a GraphViz description of the given \p pointsToGraph.
+   * @param pointsToGraph the graph to be drawn as a dot-file.
+   * @return the text content of the resulting dot-file.
+   */
+  static std::string
+  ToDot(const PointsToGraph & pointsToGraph)
+  {
+    const std::unordered_map<const rvsdg::output *, std::string> outputMap;
+    return ToDot(pointsToGraph, outputMap);
+  }
 
   static std::unique_ptr<PointsToGraph>
   Create()

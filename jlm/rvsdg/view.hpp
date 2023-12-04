@@ -16,17 +16,45 @@ namespace jlm::rvsdg
 
 class region;
 
+/**
+ * Prints the given rvsdg region to a string,
+ * through recursive traversal of nodes and subregions.
+ * All outputs are given unique names to show dataflow in the graph.
+ * @param region the region to be printed
+ * @return the string describing the region.
+ * @see view(region, map)
+ */
+std::string
+view(const jlm::rvsdg::region * region);
+
+/**
+ * Prints the given rvsdg region to a string, and exposes the unique name given to each output.
+ * @param region the region to be printed
+ * @param map the map where each rvsdg::output is mapped to its unique name.
+ * Outputs without names will have a name added.
+ * @return the string describing the region.
+ */
+std::string
+view(const jlm::rvsdg::region * region, std::unordered_map<const output*, std::string> & map);
+
+/**
+ * Recursively traverses and prints the given rvsdg region to the given file.
+ * \param region the region to be printed.
+ * \param out the file to be written to.
+ */
 void
 view(const jlm::rvsdg::region * region, FILE * out);
 
-static inline void
+/**
+ * Recursively traverses and prints the root region of the given rvsdg graph to the given file.
+ * \param graph the rvsdg graph to be printed.
+ * \param out the file to be written to.
+ */
+inline void
 view(const jlm::rvsdg::graph & graph, FILE * out)
 {
   return view(graph.root(), out);
 }
-
-std::string
-view(const jlm::rvsdg::region * region);
 
 std::string
 region_tree(const jlm::rvsdg::region * region);

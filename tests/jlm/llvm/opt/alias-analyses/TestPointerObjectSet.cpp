@@ -41,8 +41,14 @@ TestFlagFunctions()
   assert(object.PointsToExternal());
   assert(!object.MarkAsPointsToExternal());
 
-  // Test that Escaped does not imply PointsToExternal, for registers
+  // Test that Escaped does not imply PointsToExternal, for registers (CanBePointee() == false)
   object = PointerObject(PointerObjectKind::Register);
+  object.MarkAsEscaped();
+  assert(!object.PointsToExternal());
+
+  // Test that Functions, who have CanPoint() == false, can not be made to PointToExternal
+  object = PointerObject(PointerObjectKind::FunctionMemoryObject);
+  assert(!object.MarkAsPointsToExternal());
   object.MarkAsEscaped();
   assert(!object.PointsToExternal());
 }
@@ -97,6 +103,12 @@ TestCreatePointerObjects()
 
   // Imported objects should have been marked as escaped
   assert(set.GetPointerObject(import0).HasEscaped());
+
+  // Registers should be marked as !CanBePointee()
+  assert(!set.GetPointerObject(register0).CanBePointee());
+
+  // Functions should be marked as !CanPoint()
+  assert(!set.GetPointerObject(lambda0).CanPoint());
 }
 
 // Test the PointerObjectSet method for adding pointer objects to another pointer object's
@@ -110,8 +122,8 @@ TestAddToPointsToSet()
   rvsdg.InitializeTest();
 
   PointerObjectSet set;
-  auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0));
-  auto reg0 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(0));
+  const auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0));
+  const auto reg0 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(0));
 
   assert(set.GetPointsToSet(reg0).Size() == 0);
 
@@ -121,6 +133,11 @@ TestAddToPointsToSet()
 
   // Trying to add it again returns false
   assert(!set.AddToPointsToSet(reg0, alloca0));
+
+  // Trying to make a function (CanPoint() == false) point to something is a no-op
+  const auto function0 = set.CreateFunctionMemoryObject(rvsdg.GetFunction());
+  assert(!set.AddToPointsToSet(function0, alloca0));
+  assert(set.GetPointsToSet(function0).Size() == 0);
 }
 
 // Test the PointerObjectSet method for making one points-to-set a superset of another
@@ -133,11 +150,11 @@ TestMakePointsToSetSuperset()
   rvsdg.InitializeTest();
 
   PointerObjectSet set;
-  auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0));
-  auto reg0 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(0));
-  auto alloca1 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(1));
-  auto reg1 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(1));
-  auto alloca2 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(2));
+  const auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0));
+  const auto reg0 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(0));
+  const auto alloca1 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(1));
+  const auto reg1 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(1));
+  const auto alloca2 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(2));
 
   set.AddToPointsToSet(reg0, alloca0);
   set.AddToPointsToSet(reg1, alloca1);
@@ -157,6 +174,12 @@ TestMakePointsToSetSuperset()
   set.AddToPointsToSet(reg1, alloca2);
   assert(set.MakePointsToSetSuperset(reg0, reg1));
   assert(set.GetPointsToSet(reg0).Contains(alloca2));
+
+  // Trying to make a function's points-to-set a superset is a no-op
+  // Since functions have CanPoint() == false.
+  const auto function0 = set.CreateFunctionMemoryObject(rvsdg.GetFunction());
+  assert(!set.MakePointsToSetSuperset(function0, reg0));
+  assert(set.GetPointsToSet(function0).Size() == 0);
 }
 
 // Test the PointerObjectSet method for marking all pointees of the given pointer as escaped

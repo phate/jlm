@@ -1983,6 +1983,13 @@ public:
     return *AllocaNodes_[index]->output(0);
   }
 
+  [[nodiscard]] const jlm::llvm::lambda::node &
+  GetFunction() const noexcept
+  {
+    JLM_ASSERT(Function_);
+    return *Function_;
+  }
+
 private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
@@ -1990,6 +1997,8 @@ private:
   size_t NumAllocaNodes_;
 
   std::vector<const rvsdg::node *> AllocaNodes_ = {};
+
+  jlm::llvm::lambda::node * Function_;
 };
 
 /** \brief RVSDG module with a static function escaping through another function.

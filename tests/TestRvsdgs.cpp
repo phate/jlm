@@ -3209,11 +3209,11 @@ NAllocaNodesTest::SetupRvsdg()
   auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);
 
-  auto fct = lambda::node::create(graph->root(), fcttype, "f", linkage::external_linkage);
+  Function_ = lambda::node::create(graph->root(), fcttype, "f", linkage::external_linkage);
 
-  auto allocaSize = jlm::rvsdg::create_bitconstant(fct->subregion(), 32, 1);
+  auto allocaSize = jlm::rvsdg::create_bitconstant(Function_->subregion(), 32, 1);
 
-  jlm::rvsdg::output * latestMemoryState = fct->fctargument(0);
+  jlm::rvsdg::output * latestMemoryState = Function_->fctargument(0);
 
   for (size_t i = 0; i < NumAllocaNodes_; i++)
   {
@@ -3227,9 +3227,9 @@ NAllocaNodesTest::SetupRvsdg()
         MemStateMergeOperator::Create(std::vector{ latestMemoryState, allocaOutputs[1] });
   }
 
-  fct->finalize({ latestMemoryState });
+  Function_->finalize({ latestMemoryState });
 
-  graph->add_export(fct->output(), { pointerType, "f" });
+  graph->add_export(Function_->output(), { pointerType, "f" });
 
   return module;
 }

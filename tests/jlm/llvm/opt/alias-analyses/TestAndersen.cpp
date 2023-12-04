@@ -61,10 +61,10 @@ static void
 TestStore1()
 {
   jlm::tests::StoreTest1 test;
-  jlm::rvsdg::view(test.graph().root(), stdout);
+  //jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto ptg = RunAndersen(test.module());
-  std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*ptg) << std::endl;
+  //std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*ptg) << std::endl;
 
   assert(ptg->NumAllocaNodes() == 4);
   assert(ptg->NumLambdaNodes() == 1);
@@ -99,10 +99,85 @@ TestStore1()
   assert(EscapedIsExactly(*ptg, { &lambda }));
 }
 
+static void
+TestStore2()
+{
+  jlm::tests::StoreTest2 test;
+  //jlm::rvsdg::view(test.graph().root(), stdout);
+
+  auto ptg = RunAndersen(test.module());
+  //std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*ptg) << std::endl;
+
+  assert(ptg->NumAllocaNodes() == 5);
+  assert(ptg->NumLambdaNodes() == 1);
+  assert(ptg->NumRegisterNodes() == 6);
+
+  auto & alloca_a = ptg->GetAllocaNode(*test.alloca_a);
+  auto & alloca_b = ptg->GetAllocaNode(*test.alloca_b);
+  auto & alloca_x = ptg->GetAllocaNode(*test.alloca_x);
+  auto & alloca_y = ptg->GetAllocaNode(*test.alloca_y);
+  auto & alloca_p = ptg->GetAllocaNode(*test.alloca_p);
+
+  auto & palloca_a = ptg->GetRegisterNode(*test.alloca_a->output(0));
+  auto & palloca_b = ptg->GetRegisterNode(*test.alloca_b->output(0));
+  auto & palloca_x = ptg->GetRegisterNode(*test.alloca_x->output(0));
+  auto & palloca_y = ptg->GetRegisterNode(*test.alloca_y->output(0));
+  auto & palloca_p = ptg->GetRegisterNode(*test.alloca_p->output(0));
+
+  auto & lambda = ptg->GetLambdaNode(*test.lambda);
+  auto & plambda = ptg->GetRegisterNode(*test.lambda->output());
+
+  assert(TargetsExactly(alloca_a, {}));
+  assert(TargetsExactly(alloca_b, {}));
+  assert(TargetsExactly(alloca_x, { &alloca_a }));
+  assert(TargetsExactly(alloca_y, { &alloca_b }));
+  assert(TargetsExactly(alloca_p, { &alloca_x, &alloca_y }));
+
+  assert(TargetsExactly(palloca_a, { &alloca_a}));
+  assert(TargetsExactly(palloca_b, { &alloca_b }));
+  assert(TargetsExactly(palloca_x, { &alloca_x }));
+  assert(TargetsExactly(palloca_y, { &alloca_y }));
+  assert(TargetsExactly(palloca_p, { &alloca_p }));
+
+  assert(TargetsExactly(lambda, {}));
+  assert(TargetsExactly(plambda, { &lambda }));
+
+  assert(EscapedIsExactly(*ptg, { &lambda }));
+}
+
+static void
+TestLoad1()
+{
+  jlm::tests::LoadTest1 test;
+  auto ptg = RunAndersen(test.module());
+
+  std::unordered_map<const jlm::rvsdg::output*, std::string> outputMap;
+  std::cout << jlm::rvsdg::view(test.graph().root(), outputMap) << std::endl;
+  std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*ptg, outputMap) << std::endl;
+
+  assert(ptg->NumLambdaNodes() == 1);
+  assert(ptg->NumRegisterNodes() == 3);
+
+  auto & loadResult = ptg->GetRegisterNode(*test.load_p->output(0));
+
+  auto & lambda = ptg->GetLambdaNode(*test.lambda);
+  auto & lambdaOutput = ptg->GetRegisterNode(*test.lambda->output());
+  auto & lambdaArgument0 = ptg->GetRegisterNode(*test.lambda->fctargument(0));
+
+  assert(TargetsExactly(loadResult, { &lambda, &ptg->GetExternalMemoryNode() }));
+
+  assert(TargetsExactly(lambdaOutput, { &lambda }));
+  assert(TargetsExactly(lambdaArgument0, { &lambda, &ptg->GetExternalMemoryNode() }));
+
+  assert(EscapedIsExactly(*ptg, { &lambda }));
+}
+
 static int
 TestAndersen()
 {
   TestStore1();
+  TestStore2();
+  TestLoad1();
   return 0;
 }
 
