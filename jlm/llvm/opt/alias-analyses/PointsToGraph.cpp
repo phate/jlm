@@ -196,11 +196,7 @@ PointsToGraph::ToDot(
     // If the node is a RegisterNode, and has a name mapped to its rvsdg::output, include that name
     if (const auto registerNode = dynamic_cast<const RegisterNode *>(&node))
       if (const auto it = outputMap.find(&registerNode->GetOutput()); it != outputMap.end())
-        return util::strfmt(
-          node.DebugString(),
-          " (",
-          it->second,
-          ")");
+        return util::strfmt(node.DebugString(), " (", it->second, ")");
 
     // Otherwise the label is just the DebugString.
     return node.DebugString();

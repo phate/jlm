@@ -34,6 +34,7 @@ template<typename AliasAnalysisPass, bool regionAware>
 class MemoryStateEncodingPass final : public optimization
 {
   static_assert(std::is_base_of_v<AliasAnalysis, AliasAnalysisPass>);
+
 public:
   ~MemoryStateEncodingPass() noexcept override;
 

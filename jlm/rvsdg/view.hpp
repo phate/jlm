@@ -35,20 +35,20 @@ view(const jlm::rvsdg::region * region);
  * @return the string describing the region.
  */
 std::string
-view(const jlm::rvsdg::region * region, std::unordered_map<const output*, std::string> & map);
+view(const jlm::rvsdg::region * region, std::unordered_map<const output *, std::string> & map);
 
 /**
  * Recursively traverses and prints the given rvsdg region to the given file.
- * \param region the region to be printed.
- * \param out the file to be written to.
+ * @param region the region to be printed.
+ * @param out the file to be written to.
  */
 void
 view(const jlm::rvsdg::region * region, FILE * out);
 
 /**
  * Recursively traverses and prints the root region of the given rvsdg graph to the given file.
- * \param graph the rvsdg graph to be printed.
- * \param out the file to be written to.
+ * @param graph the rvsdg graph to be printed.
+ * @param out the file to be written to.
  */
 inline void
 view(const jlm::rvsdg::graph & graph, FILE * out)
