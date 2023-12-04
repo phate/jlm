@@ -669,6 +669,210 @@ TestImports()
   assert(EscapedIsExactly(*ptg, { &lambda_f2, &d1, &d2 }));
 }
 
+static void
+TestPhi1()
+{
+  jlm::tests::PhiTest1 test;
+  const auto ptg = RunAndersen(test.module());
+
+  assert(ptg->NumAllocaNodes() == 1);
+  assert(ptg->NumLambdaNodes() == 2);
+  assert(ptg->NumRegisterNodes() == 16);
+
+  auto & lambda_fib = ptg->GetLambdaNode(*test.lambda_fib);
+  auto & lambda_fib_out = ptg->GetRegisterNode(*test.lambda_fib->output());
+  auto & lambda_fib_arg1 = ptg->GetRegisterNode(*test.lambda_fib->fctargument(1));
+
+  auto & lambda_test = ptg->GetLambdaNode(*test.lambda_test);
+  auto & lambda_test_out = ptg->GetRegisterNode(*test.lambda_test->output());
+
+  auto & phi_rv = ptg->GetRegisterNode(*test.phi->begin_rv().output());
+  auto & phi_rv_arg = ptg->GetRegisterNode(*test.phi->begin_rv().output()->argument());
+
+  auto & gamma_result = ptg->GetRegisterNode(*test.gamma->subregion(0)->argument(1));
+  auto & gamma_fib = ptg->GetRegisterNode(*test.gamma->subregion(0)->argument(2));
+
+  auto & alloca = ptg->GetAllocaNode(*test.alloca);
+  auto & alloca_out = ptg->GetRegisterNode(*test.alloca->output(0));
+
+  assert(TargetsExactly(lambda_fib_out, { &lambda_fib }));
+  assert(TargetsExactly(lambda_fib_arg1, { &alloca }));
+
+  assert(TargetsExactly(lambda_test_out, { &lambda_test }));
+
+  assert(TargetsExactly(phi_rv, { &lambda_fib }));
+  assert(TargetsExactly(phi_rv_arg, { &lambda_fib }));
+
+  assert(TargetsExactly(gamma_result, { &alloca }));
+  assert(TargetsExactly(gamma_fib, { &lambda_fib }));
+
+  assert(TargetsExactly(alloca_out, { &alloca }));
+
+  assert(EscapedIsExactly(*ptg, { &lambda_test }));
+}
+
+static void
+TestExternalMemory()
+{
+  jlm::tests::ExternalMemoryTest test;
+  const auto ptg = RunAndersen(test.module());
+
+  assert(ptg->NumLambdaNodes() == 1);
+  assert(ptg->NumRegisterNodes() == 3);
+
+  auto & lambdaF = ptg->GetLambdaNode(*test.LambdaF);
+  auto & lambdaFArgument0 = ptg->GetRegisterNode(*test.LambdaF->fctargument(0));
+  auto & lambdaFArgument1 = ptg->GetRegisterNode(*test.LambdaF->fctargument(1));
+
+  assert(TargetsExactly(lambdaFArgument0, { &lambdaF, &ptg->GetExternalMemoryNode() }));
+  assert(TargetsExactly(lambdaFArgument1, { &lambdaF, &ptg->GetExternalMemoryNode() }));
+
+  assert(EscapedIsExactly(*ptg, { &lambdaF }));
+}
+
+static void
+TestEscapedMemory1()
+{
+  jlm::tests::EscapedMemoryTest1 test;
+  const auto ptg = RunAndersen(test.module());
+
+  assert(ptg->NumDeltaNodes() == 4);
+  assert(ptg->NumLambdaNodes() == 1);
+  assert(ptg->NumRegisterNodes() == 10);
+
+  auto & lambdaTestArgument0 = ptg->GetRegisterNode(*test.LambdaTest->fctargument(0));
+  auto & lambdaTestCv0 = ptg->GetRegisterNode(*test.LambdaTest->cvargument(0));
+  auto & loadNode1Output = ptg->GetRegisterNode(*test.LoadNode1->output(0));
+
+  auto deltaA = &ptg->GetDeltaNode(*test.DeltaA);
+  auto deltaB = &ptg->GetDeltaNode(*test.DeltaB);
+  auto deltaX = &ptg->GetDeltaNode(*test.DeltaX);
+  auto deltaY = &ptg->GetDeltaNode(*test.DeltaY);
+  auto lambdaTest = &ptg->GetLambdaNode(*test.LambdaTest);
+  auto externalMemory = &ptg->GetExternalMemoryNode();
+
+  assert(
+      TargetsExactly(lambdaTestArgument0, { deltaA, deltaX, deltaY, lambdaTest, externalMemory }));
+  assert(TargetsExactly(lambdaTestCv0, { deltaB }));
+  assert(TargetsExactly(loadNode1Output, { deltaA, deltaX, deltaY, lambdaTest, externalMemory }));
+
+  assert(EscapedIsExactly(*ptg, { lambdaTest, deltaA, deltaX, deltaY }));
+}
+
+static void
+TestEscapedMemory2()
+{
+  jlm::tests::EscapedMemoryTest2 test;
+  const auto ptg = RunAndersen(test.module());
+
+  assert(ptg->NumImportNodes() == 2);
+  assert(ptg->NumLambdaNodes() == 3);
+  assert(ptg->NumMallocNodes() == 2);
+  assert(ptg->NumRegisterNodes() == 10);
+
+  auto returnAddressFunction = &ptg->GetLambdaNode(*test.ReturnAddressFunction);
+  auto callExternalFunction1 = &ptg->GetLambdaNode(*test.CallExternalFunction1);
+  auto callExternalFunction2 = &ptg->GetLambdaNode(*test.CallExternalFunction2);
+  auto returnAddressMalloc = &ptg->GetMallocNode(*test.ReturnAddressMalloc);
+  auto callExternalFunction1Malloc = &ptg->GetMallocNode(*test.CallExternalFunction1Malloc);
+  auto externalMemory = &ptg->GetExternalMemoryNode();
+  auto externalFunction1Import = &ptg->GetImportNode(*test.ExternalFunction1Import);
+  auto externalFunction2Import = &ptg->GetImportNode(*test.ExternalFunction2Import);
+
+  auto & externalFunction2CallResult = ptg->GetRegisterNode(*test.ExternalFunction2Call->Result(0));
+
+  assert(TargetsExactly(
+      externalFunction2CallResult,
+      { returnAddressFunction,
+        callExternalFunction1,
+        callExternalFunction2,
+        externalMemory,
+        returnAddressMalloc,
+        callExternalFunction1Malloc,
+        externalFunction1Import,
+        externalFunction2Import }));
+
+  assert(EscapedIsExactly(
+      *ptg,
+      { returnAddressFunction,
+        callExternalFunction1,
+        callExternalFunction2,
+        returnAddressMalloc,
+        callExternalFunction1Malloc,
+        externalFunction1Import,
+        externalFunction2Import }));
+}
+
+static void
+TestEscapedMemory3()
+{
+  jlm::tests::EscapedMemoryTest3 test;
+  const auto ptg = RunAndersen(test.module());
+
+  assert(ptg->NumDeltaNodes() == 1);
+  assert(ptg->NumImportNodes() == 1);
+  assert(ptg->NumLambdaNodes() == 1);
+  assert(ptg->NumRegisterNodes() == 5);
+
+  auto lambdaTest = &ptg->GetLambdaNode(*test.LambdaTest);
+  auto deltaGlobal = &ptg->GetDeltaNode(*test.DeltaGlobal);
+  auto importExternalFunction = &ptg->GetImportNode(*test.ImportExternalFunction);
+  auto externalMemory = &ptg->GetExternalMemoryNode();
+
+  auto & callExternalFunctionResult = ptg->GetRegisterNode(*test.CallExternalFunction->Result(0));
+
+  assert(TargetsExactly(
+      callExternalFunctionResult,
+      { lambdaTest, deltaGlobal, importExternalFunction, externalMemory }));
+
+  assert(EscapedIsExactly(*ptg, { lambdaTest, deltaGlobal, importExternalFunction }));
+}
+
+static void
+TestMemcpy()
+{
+  jlm::tests::MemcpyTest test;
+  const auto ptg = RunAndersen(test.module());
+
+  assert(ptg->NumDeltaNodes() == 2);
+  assert(ptg->NumLambdaNodes() == 2);
+  assert(ptg->NumRegisterNodes() == 11);
+
+  auto localArray = &ptg->GetDeltaNode(test.LocalArray());
+  auto globalArray = &ptg->GetDeltaNode(test.GlobalArray());
+
+  auto & memCpyDest = ptg->GetRegisterNode(*test.Memcpy().input(0)->origin());
+  auto & memCpySrc = ptg->GetRegisterNode(*test.Memcpy().input(1)->origin());
+
+  auto lambdaF = &ptg->GetLambdaNode(test.LambdaF());
+  auto lambdaG = &ptg->GetLambdaNode(test.LambdaG());
+
+  assert(TargetsExactly(memCpyDest, { globalArray }));
+  assert(TargetsExactly(memCpySrc, { localArray }));
+
+  assert(EscapedIsExactly(*ptg, { globalArray, localArray, lambdaF, lambdaG }));
+}
+
+static void
+TestLinkedList()
+{
+  jlm::tests::LinkedListTest test;
+  const auto ptg = RunAndersen(test.module());
+
+  assert(ptg->NumAllocaNodes() == 1);
+  assert(ptg->NumDeltaNodes() == 1);
+  assert(ptg->NumLambdaNodes() == 1);
+
+  auto & allocaNode = ptg->GetAllocaNode(test.GetAlloca());
+  auto & deltaMyListNode = ptg->GetDeltaNode(test.GetDeltaMyList());
+  auto & lambdaNextNode = ptg->GetLambdaNode(test.GetLambdaNext());
+  auto & externalMemoryNode = ptg->GetExternalMemoryNode();
+
+  assert(TargetsExactly(allocaNode, { &deltaMyListNode, &lambdaNextNode, &externalMemoryNode }));
+  assert(
+      TargetsExactly(deltaMyListNode, { &deltaMyListNode, &lambdaNextNode, &externalMemoryNode }));
+}
+
 static int
 TestAndersen()
 {
@@ -691,6 +895,14 @@ TestAndersen()
   TestDelta1();
   TestDelta2();
   TestImports();
+  TestPhi1();
+  TestExternalMemory();
+  TestEscapedMemory1();
+  TestEscapedMemory2();
+  TestEscapedMemory3();
+  TestMemcpy();
+  TestLinkedList();
+
   return 0;
 }
 
