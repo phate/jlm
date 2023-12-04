@@ -40,6 +40,7 @@ libhls_HEADERS = \
 	jlm/hls/backend/rvsdg2rhls/add-sinks.hpp \
 
 libhls_TESTS += \
+	tests/jlm/hls/backend/rvsdg2rhls/DeadNodeEliminationTests \
 	tests/jlm/hls/backend/rvsdg2rhls/TestGamma \
 	tests/jlm/hls/backend/rvsdg2rhls/TestTheta \
 
