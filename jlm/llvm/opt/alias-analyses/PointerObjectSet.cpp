@@ -5,6 +5,7 @@
 
 #include <jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp>
 
+#include <jlm/llvm/ir/operators/call.hpp>
 #include <queue>
 
 namespace jlm::llvm::aa
@@ -19,10 +20,39 @@ PointerObjectSet::AddPointerObject(PointerObjectKind kind)
 }
 
 PointerObject::Index
+PointerObjectSet::NumPointerObjects() const noexcept
+{
+  return PointerObjects_.size();
+}
+
+PointerObject &
+PointerObjectSet::GetPointerObject(PointerObject::Index index)
+{
+  JLM_ASSERT(index <= NumPointerObjects());
+  return PointerObjects_[index];
+}
+
+const PointerObject &
+PointerObjectSet::GetPointerObject(PointerObject::Index index) const
+{
+  JLM_ASSERT(index <= NumPointerObjects());
+  return PointerObjects_[index];
+}
+
+PointerObject::Index
 PointerObjectSet::CreateRegisterPointerObject(const rvsdg::output & rvsdgOutput)
 {
   JLM_ASSERT(RegisterMap_.count(&rvsdgOutput) == 0);
   return RegisterMap_[&rvsdgOutput] = AddPointerObject(PointerObjectKind::Register);
+}
+
+PointerObject::Index
+PointerObjectSet::GetRegisterPointerObject(const rvsdg::output & rvsdgOutput) const
+{
+  const auto it = RegisterMap_.find(&rvsdgOutput);
+  if (it == RegisterMap_.end())
+    throw util::error("No PointerObject exists for the given rvsdg::output");
+  return it->second;
 }
 
 void
@@ -31,9 +61,14 @@ PointerObjectSet::MapRegisterToExistingPointerObject(
     PointerObject::Index pointerObject)
 {
   JLM_ASSERT(RegisterMap_.count(&rvsdgOutput) == 0);
-  JLM_ASSERT(pointerObject < NumPointerObjects());
   JLM_ASSERT(GetPointerObject(pointerObject).GetKind() == PointerObjectKind::Register);
   RegisterMap_[&rvsdgOutput] = pointerObject;
+}
+
+[[nodiscard]] PointerObject::Index
+PointerObjectSet::CreateDummyRegisterPointerObject()
+{
+  return AddPointerObject(PointerObjectKind::Register);
 }
 
 PointerObject::Index
@@ -60,8 +95,24 @@ PointerObjectSet::CreateGlobalMemoryObject(const delta::node & deltaNode)
 PointerObject::Index
 PointerObjectSet::CreateFunctionMemoryObject(const lambda::node & lambdaNode)
 {
-  JLM_ASSERT(FunctionMap_.count(&lambdaNode) == 0);
-  return FunctionMap_[&lambdaNode] = AddPointerObject(PointerObjectKind::FunctionMemoryObject);
+  JLM_ASSERT(!FunctionMap_.HasKey(&lambdaNode));
+  const auto pointerObject = AddPointerObject(PointerObjectKind::FunctionMemoryObject);
+  FunctionMap_.Insert(&lambdaNode, pointerObject);
+  return pointerObject;
+}
+
+PointerObject::Index
+PointerObjectSet::GetFunctionMemoryObject(const lambda::node & lambdaNode) const
+{
+  JLM_ASSERT(FunctionMap_.HasKey(&lambdaNode));
+  return FunctionMap_.LookupKey(&lambdaNode);
+}
+
+const lambda::node &
+PointerObjectSet::GetLambdaNodeFromFunctionMemoryObject(PointerObject::Index index) const
+{
+  JLM_ASSERT(FunctionMap_.HasValue(index));
+  return *FunctionMap_.LookupValue(index);
 }
 
 PointerObject::Index
@@ -98,33 +149,13 @@ PointerObjectSet::GetGlobalMap() const noexcept
 const std::unordered_map<const lambda::node *, PointerObject::Index> &
 PointerObjectSet::GetFunctionMap() const noexcept
 {
-  return FunctionMap_;
+  return FunctionMap_.GetForwardMap();
 }
 
 const std::unordered_map<const rvsdg::argument *, PointerObject::Index> &
 PointerObjectSet::GetImportMap() const noexcept
 {
   return ImportMap_;
-}
-
-PointerObject::Index
-PointerObjectSet::NumPointerObjects() const noexcept
-{
-  return PointerObjects_.size();
-}
-
-PointerObject &
-PointerObjectSet::GetPointerObject(PointerObject::Index index)
-{
-  JLM_ASSERT(index <= NumPointerObjects());
-  return PointerObjects_[index];
-}
-
-const PointerObject &
-PointerObjectSet::GetPointerObject(PointerObject::Index index) const
-{
-  JLM_ASSERT(index <= NumPointerObjects());
-  return PointerObjects_[index];
 }
 
 const util::HashSet<PointerObject::Index> &
@@ -140,8 +171,12 @@ PointerObjectSet::AddToPointsToSet(PointerObject::Index pointer, PointerObject::
 {
   JLM_ASSERT(pointer < NumPointerObjects());
   JLM_ASSERT(pointee < NumPointerObjects());
-  // Registers can not be pointed to
-  JLM_ASSERT(GetPointerObject(pointee).GetKind() != PointerObjectKind::Register);
+  // Assert the pointer object is a possible pointee
+  JLM_ASSERT(GetPointerObject(pointee).CanBePointee());
+
+  // If the pointer PointerObject can not point to anything, silently ignore
+  if (!GetPointerObject(pointer).CanPoint())
+    return false;
 
   return PointsToSets_[pointer].Insert(pointee);
 }
@@ -155,8 +190,12 @@ PointerObjectSet::MakePointsToSetSuperset(
   JLM_ASSERT(superset <= NumPointerObjects());
   JLM_ASSERT(subset <= NumPointerObjects());
 
+  // If the superset PointerObject can't point to anything, silently ignore
+  if (!GetPointerObject(superset).CanPoint())
+    return false;
+
   auto & P_super = PointsToSets_[superset];
-  auto & P_sub = PointsToSets_[subset];
+  const auto & P_sub = PointsToSets_[subset];
 
   bool modified = P_super.UnionWith(P_sub);
 
@@ -209,8 +248,155 @@ SupersetOfAllPointeesConstraint::Apply(PointerObjectSet & set)
   for (PointerObject::Index x : set.GetPointsToSet(Pointer_).Items())
     modified |= set.MakePointsToSetSuperset(Loaded_, x);
 
-  // Handling pointing to external is done by MakePointsToSetSuperset,
-  // Propagating escaped status is handled by different constraints
+  // P(pointer) "contains" external, then P(loaded) should also "contain" it
+  if (set.GetPointerObject(Pointer_).PointsToExternal())
+    modified |= set.GetPointerObject(Loaded_).MarkAsPointsToExternal();
+
+  return modified;
+}
+
+// For escaped functions, the result must be marked as escaped,
+// and all arguments of pointer type as pointing to external.
+bool
+HandleEscapingFunctionConstraint::Apply(PointerObjectSet & set)
+{
+  // Don't perform the same work again
+  if (EscapeHandled_)
+    return false;
+
+  if (!set.GetPointerObject(Lambda_).HasEscaped())
+    return false;
+
+  // We now go though the lambda's inner region and apply the necessary flags
+  EscapeHandled_ = true;
+  auto & lambdaNode = set.GetLambdaNodeFromFunctionMemoryObject(Lambda_);
+
+  // All the function's arguments need to be flagged as PointsToExternal
+  for (auto & argument : lambdaNode.fctarguments())
+  {
+    if (!is<PointerType>(argument.type()))
+      continue;
+
+    const auto argumentPO = set.GetRegisterPointerObject(argument);
+    set.GetPointerObject(argumentPO).MarkAsPointsToExternal();
+  }
+
+  // All results of pointer type need to be flagged as HasEscaped
+  for (auto & result : lambdaNode.fctresults())
+  {
+    if (!is<PointerType>(result.type()))
+      continue;
+
+    // Mark the register as escaped, which will propagate the escaped flag to all pointees
+    const auto resultPO = set.GetRegisterPointerObject(*result.origin());
+    set.GetPointerObject(resultPO).MarkAsEscaped();
+  }
+
+  return true;
+}
+
+// Connects function calls to every possible target function
+bool
+FunctionCallConstraint::Apply(PointerObjectSet & set)
+{
+  bool modified = false;
+
+  // When the function pointer can point to anything visible outside of the module
+  const auto handleCallingExternalFunction = [&]
+  {
+    // Mark all the call's inputs as escaped, and all the outputs as pointing to external
+    for (size_t n = 0; n < CallNode_.NumArguments(); n++)
+    {
+      // TODO: Remove n+1 when #295 is resolved
+      const auto & inputRegister = *CallNode_.Argument(n + 1)->origin();
+      if (!is<PointerType>(inputRegister.type()))
+        continue;
+
+      const auto inputRegisterPO = set.GetRegisterPointerObject(inputRegister);
+      modified |= set.GetPointerObject(inputRegisterPO).MarkAsEscaped();
+    }
+
+    for (size_t n = 0; n < CallNode_.NumResults(); n++)
+    {
+      const auto & outputRegister = *CallNode_.Result(n);
+      if (!is<PointerType>(outputRegister.type()))
+        continue;
+
+      const auto outputRegisterPO = set.GetRegisterPointerObject(outputRegister);
+      modified |= set.GetPointerObject(outputRegisterPO).MarkAsPointsToExternal();
+    }
+  };
+
+  // When the function pointer can point to a function imported from outside the module
+  const auto handleCallingImportedFunction = [&](const PointerObject::Index imported)
+  {
+    // FIXME: Add special handling of common library functions
+    // Otherwise we don't know anything about the function
+    handleCallingExternalFunction();
+  };
+
+  // When the function pointer can point to a lambda node in our module
+  const auto handleCallingLambdaFunction = [&](const PointerObject::Index lambda)
+  {
+    auto & lambdaNode = set.GetLambdaNodeFromFunctionMemoryObject(lambda);
+
+    // If the number of parameters or number of results doesn't line up,
+    // assume this is not the function we are calling.
+    // Note that the number of arguments and results include 3 state edges: memory, loop and IO.
+    // Varargs are properly handled, since they get merged by a valist_op node before the CallNode.
+    if (lambdaNode.nfctarguments() != CallNode_.NumArguments()
+        || lambdaNode.nfctresults() != CallNode_.NumResults())
+      return;
+
+    // Pass all call node inputs to the function's subregion
+    for (size_t n = 0; n < CallNode_.NumArguments(); n++)
+    {
+      // TODO: Remove n+1 when #295 is resolved
+      const auto & inputRegister = *CallNode_.Argument(n + 1)->origin();
+      const auto & argumentRegister = *lambdaNode.fctargument(n);
+      if (!is<PointerType>(inputRegister.type()) || !is<PointerType>(argumentRegister.type()))
+        continue;
+
+      const auto inputRegisterPO = set.GetRegisterPointerObject(inputRegister);
+      const auto argumentRegisterPO = set.GetRegisterPointerObject(argumentRegister);
+      modified |= set.MakePointsToSetSuperset(argumentRegisterPO, inputRegisterPO);
+    }
+
+    // Pass the function's subregion results to the output of the call node
+    for (size_t n = 0; n < CallNode_.NumResults(); n++)
+    {
+      const auto & outputRegister = *CallNode_.Result(n);
+      const auto & resultRegister = *lambdaNode.fctresult(n)->origin();
+      if (!is<PointerType>(outputRegister.type()) || !is<PointerType>(resultRegister.type()))
+        continue;
+
+      const auto outputRegisterPO = set.GetRegisterPointerObject(outputRegister);
+      const auto resultRegisterPO = set.GetRegisterPointerObject(resultRegister);
+      modified |= set.MakePointsToSetSuperset(outputRegisterPO, resultRegisterPO);
+    }
+  };
+
+  // For each possible function target, connect parameters and return values to the call node
+  for (const auto target : set.GetPointsToSet(CallTarget_).Items())
+  {
+    switch (set.GetPointerObject(target).GetKind())
+    {
+    case PointerObjectKind::ImportMemoryObject:
+      handleCallingImportedFunction(target);
+      break;
+    case PointerObjectKind::FunctionMemoryObject:
+      handleCallingLambdaFunction(target);
+      break;
+    default:
+      break;
+    }
+  }
+
+  // If we might be calling an external function
+  if (set.GetPointerObject(CallTarget_).PointsToExternal())
+  {
+    handleCallingExternalFunction();
+  }
 
   return modified;
 }
@@ -236,9 +422,10 @@ PointerObjectConstraintSet::AddPointsToExternalConstraint(PointerObject::Index p
 void
 PointerObjectConstraintSet::AddRegisterContentEscapedConstraint(PointerObject::Index registerIndex)
 {
-  // Registers themselves can't really escape, since they don't have an address
-  // We can however mark it as escaped, and let escape flag propagation ensure everything it ever
-  // points to is marked.
+  // Registers themselves can't escape in the classical sense, since they don't have an address.
+  // (CanBePointee() is false)
+  // When marked as Escaped, it instead means that the contents of the register has escaped.
+  // This allows Escaped-flag propagation to mark any pointee the register might hold as escaped.
   auto & registerPointerObject = Set_.GetPointerObject(registerIndex);
   JLM_ASSERT(registerPointerObject.GetKind() == PointerObjectKind::Register);
   registerPointerObject.MarkAsEscaped();
@@ -299,7 +486,6 @@ PointerObjectConstraintSet::PropagateEscapedFlag()
       if (Set_.GetPointerObject(pointee).MarkAsEscaped())
       {
         // Add the newly marked PointerObject to the queue, in case the flag can be propagated
-        // further
         escapers.push(pointee);
         modified = true;
       }

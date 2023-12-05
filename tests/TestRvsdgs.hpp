@@ -16,6 +16,8 @@ namespace jlm::tests
 class RvsdgTest
 {
 public:
+  virtual ~RvsdgTest() = default;
+
   jlm::llvm::RvsdgModule &
   module()
   {
@@ -298,7 +300,7 @@ public:
  *
  * \code{.c}
  *   static void*
- *   bits2ptr(ptrdiff_t i)
+ *   bit2ptr(ptrdiff_t i)
  *   {
  *     return (void*)i;
  *   }
@@ -835,6 +837,12 @@ public:
     return *CallG_;
   }
 
+  [[nodiscard]] const jlm::rvsdg::argument &
+  ExternalGArgument() const noexcept
+  {
+    return *ExternalGArgument_;
+  }
+
 private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
@@ -842,6 +850,8 @@ private:
   jlm::llvm::lambda::node * LambdaF_;
 
   jlm::llvm::CallNode * CallG_;
+
+  jlm::rvsdg::argument * ExternalGArgument_;
 };
 
 /** \brief GammaTest class
@@ -1957,7 +1967,7 @@ private:
 class NAllocaNodesTest final : public RvsdgTest
 {
 public:
-  NAllocaNodesTest(size_t numAllocaNodes)
+  explicit NAllocaNodesTest(size_t numAllocaNodes)
       : NumAllocaNodes_(numAllocaNodes)
   {}
 
@@ -1981,13 +1991,101 @@ public:
     return *AllocaNodes_[index]->output(0);
   }
 
+  [[nodiscard]] const jlm::llvm::lambda::node &
+  GetFunction() const noexcept
+  {
+    JLM_ASSERT(Function_);
+    return *Function_;
+  }
+
 private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
   size_t NumAllocaNodes_;
 
-  std::vector<const rvsdg::node *> AllocaNodes_;
+  std::vector<const rvsdg::node *> AllocaNodes_ = {};
+
+  jlm::llvm::lambda::node * Function_;
+};
+
+/** \brief RVSDG module with a static function escaping through another function.
+ *
+ * The class sets up an RVSDG module corresponding to the code:
+ *
+ * \code{.c}
+ *   static uint32_t global;
+ *
+ *   static uint32_t* localFunc(uint32_t* param)
+ *   {
+ *     return &global;
+ *   }
+ *
+ *   typedef uint32_t* localFuncSignature(uint32_t*);
+ *
+ *   localFuncSignature* exportedFunc()
+ *   {
+ *     return localFunc;
+ *   }
+ * \endcode
+ *
+ * It provides getters for the alloca nodes themselves, and for their outputs.
+ */
+class EscapingLocalFunctionTest final : public RvsdgTest
+{
+public:
+  [[nodiscard]] const jlm::llvm::delta::node &
+  GetGlobal() const noexcept
+  {
+    JLM_ASSERT(Global_);
+    return *Global_;
+  }
+
+  [[nodiscard]] const jlm::llvm::lambda::node &
+  GetLocalFunction() const noexcept
+  {
+    JLM_ASSERT(LocalFunc_);
+    return *LocalFunc_;
+  }
+
+  [[nodiscard]] const jlm::rvsdg::output &
+  GetLocalFunctionRegister() const noexcept
+  {
+    JLM_ASSERT(LocalFuncRegister_);
+    return *LocalFuncRegister_;
+  }
+
+  [[nodiscard]] const jlm::rvsdg::argument &
+  GetLocalFunctionParam() const noexcept
+  {
+    JLM_ASSERT(LocalFuncParam_);
+    return *LocalFuncParam_;
+  }
+
+  [[nodiscard]] const jlm::rvsdg::node &
+  GetLocalFunctionParamAllocaNode() const noexcept
+  {
+    JLM_ASSERT(LocalFuncParamAllocaNode_);
+    return *LocalFuncParamAllocaNode_;
+  }
+
+  [[nodiscard]] const jlm::llvm::lambda::node &
+  GetExportedFunction() const noexcept
+  {
+    JLM_ASSERT(ExportedFunc_);
+    return *ExportedFunc_;
+  }
+
+private:
+  std::unique_ptr<jlm::llvm::RvsdgModule>
+  SetupRvsdg() override;
+
+  jlm::llvm::delta::node * Global_ = {};
+  jlm::llvm::lambda::node * LocalFunc_ = {};
+  jlm::rvsdg::argument * LocalFuncParam_ = {};
+  jlm::rvsdg::output * LocalFuncRegister_ = {};
+  jlm::rvsdg::node * LocalFuncParamAllocaNode_ = {};
+  jlm::llvm::lambda::node * ExportedFunc_ = {};
 };
 
 }
