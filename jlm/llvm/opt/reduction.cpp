@@ -98,7 +98,7 @@ enable_load_reductions(jlm::rvsdg::graph & graph)
   auto nf = LoadOperation::GetNormalForm(&graph);
   nf->set_mutable(true);
   nf->set_load_mux_reducible(true);
-  nf->set_load_store_reducible(true);
+  //  nf->set_load_store_reducible(true);
   nf->set_load_alloca_reducible(true);
   nf->set_multiple_origin_reducible(true);
   nf->set_load_store_state_reducible(true);
@@ -112,7 +112,7 @@ enable_gamma_reductions(jlm::rvsdg::graph & graph)
   auto nf = jlm::rvsdg::gamma_op::normal_form(&graph);
   nf->set_mutable(true);
   nf->set_predicate_reduction(true);
-  nf->set_control_constant_reduction(true);
+  //  nf->set_control_constant_reduction(true);
 }
 
 static void
@@ -120,7 +120,7 @@ enable_unary_reductions(jlm::rvsdg::graph & graph)
 {
   auto nf = jlm::rvsdg::unary_op::normal_form(&graph);
   nf->set_mutable(true);
-  nf->set_reducible(true);
+  //  nf->set_reducible(true);
 }
 
 static void
