@@ -1,9 +1,11 @@
 /*
  * Copyright 2021 Nico Reißmann <nico.reissmann@gmail.com>
+ * Copyright 2023 Håvard Krogstie <krogstie.havard@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
 #include <jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/MemoryStateEncoder.hpp>
 #include <jlm/llvm/opt/alias-analyses/Optimization.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
@@ -12,38 +14,32 @@
 namespace jlm::llvm::aa
 {
 
-SteensgaardAgnostic::~SteensgaardAgnostic() noexcept = default;
+template<typename AliasAnalysisPass, bool regionAware>
+MemoryStateEncodingPass<AliasAnalysisPass, regionAware>::~MemoryStateEncodingPass() noexcept =
+    default;
 
+template<typename AliasAnalysisPass, bool regionAware>
 void
-SteensgaardAgnostic::run(
-    RvsdgModule & rvsdgModule,
-    jlm::util::StatisticsCollector & statisticsCollector)
-{
-  Steensgaard steensgaard;
-  auto pointsToGraph = steensgaard.Analyze(rvsdgModule, statisticsCollector);
-
-  auto provisioning =
-      AgnosticMemoryNodeProvider::Create(rvsdgModule, *pointsToGraph, statisticsCollector);
-
-  MemoryStateEncoder encoder;
-  encoder.Encode(rvsdgModule, *provisioning, statisticsCollector);
-}
-
-SteensgaardRegionAware::~SteensgaardRegionAware() noexcept = default;
-
-void
-SteensgaardRegionAware::run(
+MemoryStateEncodingPass<AliasAnalysisPass, regionAware>::run(
     RvsdgModule & rvsdgModule,
     util::StatisticsCollector & statisticsCollector)
 {
-  Steensgaard steensgaard;
-  auto pointsToGraph = steensgaard.Analyze(rvsdgModule, statisticsCollector);
+  AliasAnalysisPass aaPass;
+  auto pointsToGraph = aaPass.Analyze(rvsdgModule, statisticsCollector);
 
-  auto provisioning =
-      RegionAwareMemoryNodeProvider::Create(rvsdgModule, *pointsToGraph, statisticsCollector);
+  using ProvisioningPass =
+      std::conditional_t<regionAware, RegionAwareMemoryNodeProvider, AgnosticMemoryNodeProvider>;
+
+  auto provisioning = ProvisioningPass::Create(rvsdgModule, *pointsToGraph, statisticsCollector);
 
   MemoryStateEncoder encoder;
   encoder.Encode(rvsdgModule, *provisioning, statisticsCollector);
 }
+
+// Explicitly initialize all possible combinations
+template class MemoryStateEncodingPass<Steensgaard, false>;
+template class MemoryStateEncodingPass<Steensgaard, true>;
+template class MemoryStateEncodingPass<Andersen, false>;
+template class MemoryStateEncodingPass<Andersen, true>;
 
 }

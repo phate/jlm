@@ -1,42 +1,45 @@
 /*
  * Copyright 2021 Nico Reißmann <nico.reissmann@gmail.com>
+ * Copyright 2023 Håvard Krogstie <krogstie.havard@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
 #ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_OPTIMIZATION_HPP
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_OPTIMIZATION_HPP
 
+#include "AliasAnalysis.hpp"
 #include <jlm/llvm/opt/optimization.hpp>
+
+#include <type_traits>
 
 namespace jlm::llvm::aa
 {
 
-/** \brief Steensgaard alias analysis with agnostic memory state encoding
+/** \brief Applies alias analysis and memory state encoding
+ * Uses the information collected during alias analysis to
+ *
+ * The type of alias analysis is specified by the template parameter.
+ * The second template parameters specifies wether or not to use the
+ * RegionAwareMemoryNodeProvider or the AgnosticMemoryNodeProvider
+ *
+ * @tparam AliasAnalysisPass the subclass of AliasAnalysis to use
+ * @tparam regionAware if true, the RegionAwareMemoryNodeProvider is used
  *
  * @see Steensgaard
+ * @see Andersen
  * @see AgnosticMemoryNodeProvider
- */
-class SteensgaardAgnostic final : public optimization
-{
-public:
-  ~SteensgaardAgnostic() noexcept override;
-
-  void
-  run(RvsdgModule & rvsdgModule, jlm::util::StatisticsCollector & statisticsCollector) override;
-};
-
-/** \brief Steensgaard alias analysis with region-aware memory state encoding
- *
- * @see Steensgaard
  * @see RegionAwareMemoryNodeProvider
  */
-class SteensgaardRegionAware final : public optimization
+template<typename AliasAnalysisPass, bool regionAware>
+class MemoryStateEncodingPass final : public optimization
 {
+  static_assert(std::is_base_of_v<AliasAnalysis, AliasAnalysisPass>);
+
 public:
-  ~SteensgaardRegionAware() noexcept override;
+  ~MemoryStateEncodingPass() noexcept override;
 
   void
-  run(RvsdgModule & rvsdgModule, jlm::util::StatisticsCollector & statisticsCollector) override;
+  run(RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
 };
 
 }
