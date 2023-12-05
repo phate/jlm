@@ -98,12 +98,17 @@ enable_load_reductions(jlm::rvsdg::graph & graph)
   auto nf = LoadOperation::GetNormalForm(&graph);
   nf->set_mutable(true);
   nf->set_load_mux_reducible(true);
-  nf->set_load_store_reducible(true);
+  // set_load_store_reducible throws a type_error when the optimization
+  // is applied twice
+  // github issue #302
+  nf->set_load_store_reducible(false);
   nf->set_load_alloca_reducible(true);
   nf->set_multiple_origin_reducible(true);
   nf->set_load_store_state_reducible(true);
   nf->set_load_store_alloca_reducible(true);
-  nf->set_load_load_state_reducible(true);
+  // set_load_load_state_reducible throws a type_error
+  // github issue #307
+  nf->set_load_load_state_reducible(false);
 }
 
 static void
@@ -112,15 +117,22 @@ enable_gamma_reductions(jlm::rvsdg::graph & graph)
   auto nf = jlm::rvsdg::gamma_op::normal_form(&graph);
   nf->set_mutable(true);
   nf->set_predicate_reduction(true);
-  nf->set_control_constant_reduction(true);
+  // set_control_constante_reduction cause a PHI node input type error
+  // github issue #303
+  nf->set_control_constant_reduction(false);
 }
 
 static void
 enable_unary_reductions(jlm::rvsdg::graph & graph)
 {
   auto nf = jlm::rvsdg::unary_op::normal_form(&graph);
-  nf->set_mutable(true);
-  nf->set_reducible(true);
+  // set_mutable generates incorrect output for a number of
+  // llvm suite tests when used in combination with other
+  // optimizations than the set_reducible
+  nf->set_mutable(false);
+  // set_reducible generates incorrect output for 18 llvm suite tests
+  // github issue #304
+  nf->set_reducible(false);
 }
 
 static void
