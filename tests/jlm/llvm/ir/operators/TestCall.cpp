@@ -13,6 +13,55 @@
 #include <jlm/rvsdg/view.hpp>
 
 static void
+TestCallNodeAccessors()
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  jlm::tests::valuetype valueType;
+  iostatetype iOStateType;
+  MemoryStateType memoryStateType;
+  loopstatetype loopStateType;
+  FunctionType functionType(
+      { &valueType, &iOStateType, &memoryStateType, &loopStateType },
+      { &valueType, &iOStateType, &memoryStateType, &loopStateType });
+
+  jlm::rvsdg::graph rvsdg;
+  auto f = rvsdg.add_import({ PointerType(), "function" });
+  auto v = rvsdg.add_import({ valueType, "value" });
+  auto i = rvsdg.add_import({ iOStateType, "IOState" });
+  auto m = rvsdg.add_import({ memoryStateType, "memoryState" });
+  auto l = rvsdg.add_import({ loopStateType, "loopState" });
+
+  // Act
+  auto results = CallNode::Create(f, functionType, { v, i, m, l });
+  auto & callNode = *jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(results[0]));
+
+  // Assert
+  assert(callNode.NumArguments() == 4);
+  assert(callNode.NumArguments() == callNode.ninputs() - 1);
+  assert(callNode.Argument(0)->origin() == v);
+  assert(callNode.Argument(1)->origin() == i);
+  assert(callNode.Argument(2)->origin() == m);
+  assert(callNode.Argument(3)->origin() == l);
+
+  assert(callNode.NumResults() == 4);
+  assert(callNode.Result(0)->type() == valueType);
+  assert(callNode.Result(1)->type() == iOStateType);
+  assert(callNode.Result(2)->type() == memoryStateType);
+  assert(callNode.Result(3)->type() == loopStateType);
+
+  assert(callNode.GetFunctionInput()->origin() == f);
+  assert(callNode.GetIoStateInput()->origin() == i);
+  assert(callNode.GetMemoryStateInput()->origin() == m);
+  assert(callNode.GetLoopStateInput()->origin() == l);
+
+  assert(callNode.GetIoStateOutput()->type() == iOStateType);
+  assert(callNode.GetMemoryStateOutput()->type() == memoryStateType);
+  assert(callNode.GetLoopStateOutput()->type() == loopStateType);
+}
+
+static void
 TestCallTypeClassifierIndirectCall()
 {
   using namespace jlm::llvm;
@@ -453,6 +502,7 @@ TestCallTypeClassifierRecursiveDirectCall()
 static int
 Test()
 {
+  TestCallNodeAccessors();
   TestCallTypeClassifierIndirectCall();
   TestCallTypeClassifierNonRecursiveDirectCall();
   TestCallTypeClassifierNonRecursiveDirectCallTheta();
