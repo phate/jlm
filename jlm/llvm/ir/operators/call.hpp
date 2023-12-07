@@ -287,7 +287,8 @@ public:
   [[nodiscard]] jlm::rvsdg::input *
   Argument(size_t n) const
   {
-    return input(n);
+    JLM_ASSERT(n < NumArguments());
+    return input(n + 1);
   }
 
   [[nodiscard]] size_t
