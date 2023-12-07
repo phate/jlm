@@ -21,8 +21,11 @@ namespace jlm::util
 template<typename K, typename V>
 class BijectiveMap
 {
+  using ForwardMapType = std::unordered_map<K, const V>;
+  using ReverseMapType = std::unordered_map<V, const K>;
+
 public:
-  using ItemType = std::pair<K, V>;
+  using ItemType = std::pair<const K, const V>;
 
   class ConstIterator final
   {
@@ -37,7 +40,7 @@ public:
 
     ConstIterator() = default;
 
-    explicit ConstIterator(const typename std::unordered_map<K, V>::iterator & it)
+    explicit ConstIterator(const typename ForwardMapType::const_iterator & it)
         : It_(it)
     {}
 
@@ -81,7 +84,7 @@ public:
     }
 
   private:
-    typename std::unordered_map<K, V>::iterator It_;
+    typename ForwardMapType::const_iterator It_;
   };
 
   ~BijectiveMap() noexcept = default;
@@ -259,7 +262,7 @@ public:
   [[nodiscard]] ConstIterator
   begin() const noexcept
   {
-    return ConstIterator(ForwardMap_.begin());
+    return ConstIterator(ForwardMap_.cbegin());
   }
 
   /**
@@ -270,7 +273,7 @@ public:
   [[nodiscard]] ConstIterator
   end() const noexcept
   {
-    return ConstIterator(ForwardMap_.end());
+    return ConstIterator(ForwardMap_.cend());
   }
 
   /**
@@ -408,8 +411,8 @@ public:
   }
 
 private:
-  std::unordered_map<K, V> ForwardMap_;
-  std::unordered_map<V, K> ReverseMap_;
+  ForwardMapType ForwardMap_;
+  ReverseMapType ReverseMap_;
 };
 
 }
