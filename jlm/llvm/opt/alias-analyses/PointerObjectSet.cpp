@@ -302,8 +302,7 @@ FunctionCallConstraint::HandleCallingExternalFunction(PointerObjectSet & set)
   // Mark all the call's inputs as escaped, and all the outputs as pointing to external
   for (size_t n = 0; n < CallNode_.NumArguments(); n++)
   {
-    // TODO: Remove n+1 when #295 is resolved
-    const auto & inputRegister = *CallNode_.Argument(n + 1)->origin();
+    const auto & inputRegister = *CallNode_.Argument(n)->origin();
     if (!is<PointerType>(inputRegister.type()))
       continue;
 
@@ -356,8 +355,7 @@ FunctionCallConstraint::HandleCallingLambdaFunction(
   // Pass all call node inputs to the function's subregion
   for (size_t n = 0; n < CallNode_.NumArguments(); n++)
   {
-    // TODO: Remove n+1 when #295 is resolved
-    const auto & inputRegister = *CallNode_.Argument(n + 1)->origin();
+    const auto & inputRegister = *CallNode_.Argument(n)->origin();
     const auto & argumentRegister = *lambdaNode.fctargument(n);
     if (!is<PointerType>(inputRegister.type()) || !is<PointerType>(argumentRegister.type()))
       continue;

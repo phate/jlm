@@ -102,7 +102,7 @@ TestCreatePointerObjects()
   assert(set.GetAllocaMap().at(&rvsdg.GetAllocaNode()) == alloca0);
   assert(set.GetMallocMap().at(&rvsdg.GetMallocNode()) == malloc0);
   assert(set.GetGlobalMap().at(&rvsdg.GetDeltaNode()) == delta0);
-  assert(set.GetFunctionMap().at(&rvsdg.GetLambdaNode()) == lambda0);
+  assert(set.GetFunctionMap().LookupKey(&rvsdg.GetLambdaNode()) == lambda0);
   assert(set.GetImportMap().at(&rvsdg.GetImportOutput()) == import0);
 
   // Imported objects should have been marked as escaped
