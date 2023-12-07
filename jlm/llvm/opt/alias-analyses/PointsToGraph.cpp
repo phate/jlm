@@ -216,7 +216,7 @@ PointsToGraph::ToDot(
         "\"]; }\n");
   };
 
-  auto edgeString = [&](const PointsToGraph::Node & node, const PointsToGraph::Node & target)
+  auto edgeString = [](const PointsToGraph::Node & node, const PointsToGraph::Node & target)
   {
     return util::strfmt(
         reinterpret_cast<uintptr_t>(&node),
