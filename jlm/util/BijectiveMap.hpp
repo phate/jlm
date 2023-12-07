@@ -22,9 +22,7 @@ template<typename K, typename V>
 class BijectiveMap
 {
 public:
-  // The ItemType must look like this due to
-  // unordered_map's const_iterator giving pointers to const pair<const K, V>
-  using ItemType = std::pair<const K, V>;
+  using ItemType = std::pair<K, V>;
 
   class ConstIterator final
   {
@@ -39,7 +37,7 @@ public:
 
     ConstIterator() = default;
 
-    explicit ConstIterator(const typename std::unordered_map<K, V>::const_iterator & it)
+    explicit ConstIterator(const typename std::unordered_map<K, V>::iterator & it)
         : It_(it)
     {}
 
@@ -83,7 +81,7 @@ public:
     }
 
   private:
-    typename std::unordered_map<K, V>::const_iterator It_;
+    typename std::unordered_map<K, V>::iterator It_;
   };
 
   ~BijectiveMap() noexcept = default;
@@ -261,7 +259,7 @@ public:
   [[nodiscard]] ConstIterator
   begin() const noexcept
   {
-    return ConstIterator(ForwardMap_.cbegin());
+    return ConstIterator(ForwardMap_.begin());
   }
 
   /**
@@ -272,7 +270,7 @@ public:
   [[nodiscard]] ConstIterator
   end() const noexcept
   {
-    return ConstIterator(ForwardMap_.cend());
+    return ConstIterator(ForwardMap_.end());
   }
 
   /**
