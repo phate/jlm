@@ -278,30 +278,51 @@ public:
     return *jlm::util::AssertedCast<const CallOperation>(&operation());
   }
 
+  /**
+   * @return The number of arguments to the call.
+   *
+   * \note This is equivalent to ninputs() - 1 as NumArguments() ignores the function input.
+   */
   [[nodiscard]] size_t
   NumArguments() const noexcept
   {
     return ninputs() - 1;
   }
 
+  /**
+   * @param n The index of the function argument.
+   * @return The input for the given index \p n.
+   */
   [[nodiscard]] jlm::rvsdg::input *
   Argument(size_t n) const
   {
-    return input(n);
+    JLM_ASSERT(n < NumArguments());
+    return input(n + 1);
   }
 
+  /**
+   * @return The number of results from the call.
+   */
   [[nodiscard]] size_t
   NumResults() const noexcept
   {
     return noutputs();
   }
 
+  /**
+   * @param n The index of the function result.
+   * @return The output for the given index \p n.
+   */
   [[nodiscard]] jlm::rvsdg::output *
   Result(size_t n) const noexcept
   {
+    JLM_ASSERT(n < NumResults());
     return output(n);
   }
 
+  /**
+   * @return The call node's function input.
+   */
   [[nodiscard]] jlm::rvsdg::input *
   GetFunctionInput() const noexcept
   {
@@ -310,6 +331,9 @@ public:
     return functionInput;
   }
 
+  /**
+   * @return The call node's input/output state input.
+   */
   [[nodiscard]] jlm::rvsdg::input *
   GetIoStateInput() const noexcept
   {
@@ -318,6 +342,9 @@ public:
     return iOState;
   }
 
+  /**
+   * @return The call node's memory state input.
+   */
   [[nodiscard]] jlm::rvsdg::input *
   GetMemoryStateInput() const noexcept
   {
@@ -326,6 +353,9 @@ public:
     return memoryState;
   }
 
+  /**
+   * @return The call node's loop state input.
+   */
   [[nodiscard]] jlm::rvsdg::input *
   GetLoopStateInput() const noexcept
   {
@@ -334,6 +364,9 @@ public:
     return loopState;
   }
 
+  /**
+   * @return The call node's input/output state output.
+   */
   [[nodiscard]] jlm::rvsdg::output *
   GetIoStateOutput() const noexcept
   {
@@ -342,6 +375,9 @@ public:
     return iOState;
   }
 
+  /**
+   * @return The call node's memory state output.
+   */
   [[nodiscard]] jlm::rvsdg::output *
   GetMemoryStateOutput() const noexcept
   {
@@ -350,6 +386,9 @@ public:
     return memoryState;
   }
 
+  /**
+   * @return The call node's loop state output.
+   */
   [[nodiscard]] jlm::rvsdg::output *
   GetLoopStateOutput() const noexcept
   {
