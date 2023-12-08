@@ -3,6 +3,7 @@ TESTS += \
     jlm/util/test-file \
     jlm/util/test-intrusive-hash \
     jlm/util/test-intrusive-list \
+    jlm/util/TestBijectiveMap \
     jlm/util/TestHashSet \
     jlm/util/TestMath \
     jlm/util/TestStatistics \
