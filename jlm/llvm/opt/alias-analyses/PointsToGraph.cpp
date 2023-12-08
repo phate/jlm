@@ -159,8 +159,19 @@ PointsToGraph::AddImportNode(std::unique_ptr<PointsToGraph::ImportNode> node)
 }
 
 std::string
-PointsToGraph::ToDot(const PointsToGraph & pointsToGraph)
+PointsToGraph::ToDot(
+    const PointsToGraph & pointsToGraph,
+    const std::unordered_map<const rvsdg::output *, std::string> & outputMap)
 {
+  auto nodeFill = [&](const PointsToGraph::Node & node)
+  {
+    // Nodes that are marked as having escaped the module get a background color
+    if (const auto memoryNode = dynamic_cast<const MemoryNode *>(&node))
+      if (pointsToGraph.GetEscapedMemoryNodes().Contains(memoryNode))
+        return "style=filled, fillcolor=\"yellow\", ";
+    return "";
+  };
+
   auto nodeShape = [](const PointsToGraph::Node & node)
   {
     static std::unordered_map<std::type_index, std::string> shapes(
@@ -179,14 +190,26 @@ PointsToGraph::ToDot(const PointsToGraph & pointsToGraph)
     JLM_UNREACHABLE("Unknown points-to graph Node type.");
   };
 
+  auto nodeLabel = [&](const PointsToGraph::Node & node)
+  {
+    // If the node is a RegisterNode, and has a name mapped to its rvsdg::output, include that name
+    if (const auto registerNode = dynamic_cast<const RegisterNode *>(&node))
+      if (const auto it = outputMap.find(&registerNode->GetOutput()); it != outputMap.end())
+        return util::strfmt(node.DebugString(), " (", it->second, ")");
+
+    // Otherwise the label is just the DebugString.
+    return node.DebugString();
+  };
+
   auto nodeString = [&](const PointsToGraph::Node & node)
   {
     return util::strfmt(
         "{ ",
-        (intptr_t)&node,
+        reinterpret_cast<uintptr_t>(&node),
         " [",
+        nodeFill(node),
         "label = \"",
-        node.DebugString(),
+        nodeLabel(node),
         "\" ",
         "shape = \"",
         nodeShape(node),
@@ -195,7 +218,11 @@ PointsToGraph::ToDot(const PointsToGraph & pointsToGraph)
 
   auto edgeString = [](const PointsToGraph::Node & node, const PointsToGraph::Node & target)
   {
-    return util::strfmt((intptr_t)&node, " -> ", (intptr_t)&target, "\n");
+    return util::strfmt(
+        reinterpret_cast<uintptr_t>(&node),
+        " -> ",
+        reinterpret_cast<uintptr_t>(&target),
+        "\n");
   };
 
   auto printNodeAndEdges = [&](const PointsToGraph::Node & node)
@@ -229,6 +256,7 @@ PointsToGraph::ToDot(const PointsToGraph & pointsToGraph)
 
   dot += nodeString(pointsToGraph.GetUnknownMemoryNode());
   dot += nodeString(pointsToGraph.GetExternalMemoryNode());
+  dot += "label=\"Yellow = Escaping memory node\"\n";
   dot += "}\n";
 
   return dot;
