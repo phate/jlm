@@ -11,6 +11,11 @@ echo "jlc-release            Compile jlc compiler in release mode"
 echo ""
 echo "jlm-opt-debug          Compile jlm optimizer in debug mode"
 echo "jlm-opt-release        Compile jlm optimizer in release mode"
+echo ""
+echo "Clang format Targets"
+echo "--------------------------------------------------------------------------------"
+echo "format                 Format all cpp and hpp files"
+echo "format-dry-run         Report incorrect formatting of cpp and hpp files"
 endef
 
 # Try to detect llvm-config 
@@ -57,6 +62,14 @@ include $(JLM_ROOT)/jlm/util/Makefile.sub
 include $(JLM_ROOT)/tools/Makefile.sub
 include $(JLM_ROOT)/docs/Makefile.sub
 include $(JLM_ROOT)/tests/Makefile.sub
+
+.PHONY: format
+format:
+	@find $(JLM_ROOT) -name "*.[ch]pp" -exec clang-format-16 --Werror --style="file:.clang-format" --verbose -i {} \;
+
+.PHONY: format-dry-run
+format-dry-run:
+	@find $(JLM_ROOT) -name "*.[ch]pp" -exec clang-format-16 --dry-run --Werror --style="file:.clang-format" --verbose -i {} \;
 
 .PHONY: jlm-debug
 jlm-debug: libutil-debug libhls-debug jlm-opt-debug jlm-hls-debug jlc-debug jhls-debug

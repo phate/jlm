@@ -15,27 +15,29 @@ static std::string
 region_to_string(
     const jlm::rvsdg::region * region,
     size_t depth,
-    std::unordered_map<output *, std::string> &);
+    std::unordered_map<const output *, std::string> &);
 
-static inline std::string
+static std::string
 indent(size_t depth)
 {
   return std::string(depth * 2, ' ');
 }
 
-static inline std::string
-create_port_name(const jlm::rvsdg::output * port, std::unordered_map<output *, std::string> & map)
+static std::string
+create_port_name(
+    const jlm::rvsdg::output * port,
+    std::unordered_map<const output *, std::string> & map)
 {
   std::string name = dynamic_cast<const jlm::rvsdg::argument *>(port) ? "a" : "o";
   name += jlm::util::strfmt(map.size());
   return name;
 }
 
-static inline std::string
+static std::string
 node_to_string(
     const jlm::rvsdg::node * node,
     size_t depth,
-    std::unordered_map<output *, std::string> & map)
+    std::unordered_map<const output *, std::string> & map)
 {
   std::string s(indent(depth));
   for (size_t n = 0; n < node->noutputs(); n++)
@@ -64,8 +66,10 @@ node_to_string(
   return s;
 }
 
-static inline std::string
-region_header(const jlm::rvsdg::region * region, std::unordered_map<output *, std::string> & map)
+static std::string
+region_header(
+    const jlm::rvsdg::region * region,
+    std::unordered_map<const output *, std::string> & map)
 {
   std::string header("[");
   for (size_t n = 0; n < region->narguments(); n++)
@@ -86,11 +90,11 @@ region_header(const jlm::rvsdg::region * region, std::unordered_map<output *, st
   return header;
 }
 
-static inline std::string
+static std::string
 region_body(
     const jlm::rvsdg::region * region,
     size_t depth,
-    std::unordered_map<output *, std::string> & map)
+    std::unordered_map<const output *, std::string> & map)
 {
   std::vector<std::vector<const jlm::rvsdg::node *>> context;
   for (const auto & node : region->nodes)
@@ -110,8 +114,10 @@ region_body(
   return body;
 }
 
-static inline std::string
-region_footer(const jlm::rvsdg::region * region, std::unordered_map<output *, std::string> & map)
+static std::string
+region_footer(
+    const jlm::rvsdg::region * region,
+    std::unordered_map<const output *, std::string> & map)
 {
   std::string footer("}[");
   for (size_t n = 0; n < region->nresults(); n++)
@@ -131,11 +137,11 @@ region_footer(const jlm::rvsdg::region * region, std::unordered_map<output *, st
   return footer;
 }
 
-static inline std::string
+static std::string
 region_to_string(
     const jlm::rvsdg::region * region,
     size_t depth,
-    std::unordered_map<output *, std::string> & map)
+    std::unordered_map<const output *, std::string> & map)
 {
   std::string s;
   s = indent(depth) + region_header(region, map) + "\n";
@@ -147,7 +153,13 @@ region_to_string(
 std::string
 view(const jlm::rvsdg::region * region)
 {
-  std::unordered_map<output *, std::string> map;
+  std::unordered_map<const output *, std::string> map;
+  return view(region, map);
+}
+
+std::string
+view(const jlm::rvsdg::region * region, std::unordered_map<const output *, std::string> & map)
+{
   return region_to_string(region, 0, map);
 }
 
