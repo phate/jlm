@@ -20,13 +20,19 @@ JlcCommandGraphGenerator::~JlcCommandGraphGenerator() noexcept = default;
 util::filepath
 JlcCommandGraphGenerator::CreateJlmOptCommandOutputFile(const util::filepath & inputFile)
 {
-  return util::strfmt("/tmp/tmp-", inputFile.base(), "-jlm-opt-out.ll");
+  return util::filepath::CreateUniqueFile(
+      std::filesystem::temp_directory_path().string(),
+      inputFile.base() + "-",
+      "-jlm-opt.ll");
 }
 
 util::filepath
 JlcCommandGraphGenerator::CreateParserCommandOutputFile(const util::filepath & inputFile)
 {
-  return util::strfmt("/tmp/tmp-", inputFile.base(), "-clang-out.ll");
+  return util::filepath::CreateUniqueFile(
+      std::filesystem::temp_directory_path().string(),
+      inputFile.base() + "-",
+      "-clang.ll");
 }
 
 ClangCommand::LanguageStandard
