@@ -73,13 +73,14 @@ JlcCommandGraphGenerator::ConvertOptimizationLevel(
 CommandGraph::Node &
 JlcCommandGraphGenerator::CreateParserCommand(
     CommandGraph & commandGraph,
+    const util::filepath & outputFile,
     const JlcCommandLineOptions::Compilation & compilation,
     const JlcCommandLineOptions & commandLineOptions)
 {
   return ClangCommand::CreateParsingCommand(
       commandGraph,
       compilation.InputFile(),
-      CreateParserCommandOutputFile(compilation.InputFile()),
+      outputFile,
       compilation.DependencyFile(),
       commandLineOptions.IncludePaths_,
       commandLineOptions.MacroDefinitions_,
@@ -107,8 +108,9 @@ JlcCommandGraphGenerator::GenerateCommandGraph(const JlcCommandLineOptions & com
 
     if (compilation.RequiresParsing())
     {
+      auto outputFile = CreateParserCommandOutputFile(compilation.InputFile());
       auto & parserCommandNode =
-          CreateParserCommand(*commandGraph, compilation, commandLineOptions);
+          CreateParserCommand(*commandGraph, outputFile, compilation, commandLineOptions);
 
       lastNode->AddEdge(parserCommandNode);
       lastNode = &parserCommandNode;

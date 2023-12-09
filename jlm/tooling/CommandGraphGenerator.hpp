@@ -75,6 +75,7 @@ private:
   static CommandGraph::Node &
   CreateParserCommand(
       CommandGraph & commandGraph,
+      const util::filepath & outputFile,
       const JlcCommandLineOptions::Compilation & compilation,
       const JlcCommandLineOptions & commandLineOptions);
 };
