@@ -106,11 +106,12 @@ JlcCommandGraphGenerator::GenerateCommandGraph(const JlcCommandLineOptions & com
   {
     auto lastNode = &commandGraph->GetEntryNode();
 
+    util::filepath lastNodeOutputFile("");
     if (compilation.RequiresParsing())
     {
-      auto outputFile = CreateParserCommandOutputFile(compilation.InputFile());
+      lastNodeOutputFile = CreateParserCommandOutputFile(compilation.InputFile());
       auto & parserCommandNode =
-          CreateParserCommand(*commandGraph, outputFile, compilation, commandLineOptions);
+          CreateParserCommand(*commandGraph, lastNodeOutputFile, compilation, commandLineOptions);
 
       lastNode->AddEdge(parserCommandNode);
       lastNode = &parserCommandNode;
@@ -124,10 +125,12 @@ JlcCommandGraphGenerator::GenerateCommandGraph(const JlcCommandLineOptions & com
       util::StatisticsCollectorSettings statisticsCollectorSettings(
           statisticsFilePath,
           commandLineOptions.JlmOptPassStatistics_);
+      auto inputFile = lastNodeOutputFile;
+      lastNodeOutputFile = CreateJlmOptCommandOutputFile(compilation.InputFile());
 
       JlmOptCommandLineOptions jlmOptCommandLineOptions(
-          CreateParserCommandOutputFile(compilation.InputFile()),
-          CreateJlmOptCommandOutputFile(compilation.InputFile()),
+          inputFile,
+          lastNodeOutputFile,
           JlmOptCommandLineOptions::OutputFormat::Llvm,
           statisticsCollectorSettings,
           commandLineOptions.JlmOptOptimizations_);
@@ -142,7 +145,7 @@ JlcCommandGraphGenerator::GenerateCommandGraph(const JlcCommandLineOptions & com
     {
       auto & llvmLlcCommandNode = LlcCommand::Create(
           *commandGraph,
-          CreateJlmOptCommandOutputFile(compilation.InputFile()),
+          lastNodeOutputFile,
           compilation.OutputFile(),
           ConvertOptimizationLevel(commandLineOptions.OptimizationLevel_),
           LlcCommand::RelocationModel::Static);
