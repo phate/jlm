@@ -17,8 +17,8 @@ TestFlagFunctions()
 {
   using namespace jlm::llvm::aa;
 
-  PointerObject object(PointerObjectKind::Register);
-  assert(object.GetKind() == PointerObjectKind::Register);
+  PointerObject object(PointerObjectKind::AllocaMemoryObject);
+  assert(object.GetKind() == PointerObjectKind::AllocaMemoryObject);
 
   // Important ordering. Test PointsToExternal first, since it is implied by Escaped.
   assert(!object.PointsToExternal());
@@ -33,13 +33,28 @@ TestFlagFunctions()
   assert(!object.MarkAsEscaped());
   assert(object.HasEscaped());
 
-  // Test that Escaped implies PointsToExternal
+  // Test that Escaped implies PointsToExternal, for memory objects
   object = PointerObject(PointerObjectKind::AllocaMemoryObject);
   assert(object.GetKind() == PointerObjectKind::AllocaMemoryObject);
   assert(!object.PointsToExternal());
   assert(object.MarkAsEscaped());
   assert(object.PointsToExternal());
   assert(!object.MarkAsPointsToExternal());
+
+  // Test that Escaped does not imply PointsToExternal, for registers (CanBePointee() == false)
+  object = PointerObject(PointerObjectKind::Register);
+  assert(!object.CanBePointee());
+  object.MarkAsEscaped();
+  assert(!object.PointsToExternal());
+
+  // Test that Functions, who have CanPoint() == false, can not be made to PointToExternal
+  object = PointerObject(PointerObjectKind::FunctionMemoryObject);
+  assert(!object.CanPoint());
+  // Marking as PointsToExternal directly is a no-op
+  assert(!object.MarkAsPointsToExternal());
+  // Marking as escaped does not imply PointsToExternal
+  object.MarkAsEscaped();
+  assert(!object.PointsToExternal());
 }
 
 // Test creating pointer objects for each type of memory node
@@ -52,22 +67,42 @@ TestCreatePointerObjects()
   rvsdg.InitializeTest();
 
   PointerObjectSet set;
-  auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode());
-  auto malloc0 = set.CreateMallocMemoryObject(rvsdg.GetMallocNode());
-  auto delta0 = set.CreateGlobalMemoryObject(rvsdg.GetDeltaNode());
-  auto lambda0 = set.CreateFunctionMemoryObject(rvsdg.GetLambdaNode());
-  auto import0 = set.CreateImportMemoryObject(rvsdg.GetImportOutput());
 
+  // Register PointerObjects have some extra ways of being created: Dummy and mapping
+  const auto register0 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput());
+  set.MapRegisterToExistingPointerObject(rvsdg.GetDeltaOutput(), register0);
+  const auto dummy0 = set.CreateDummyRegisterPointerObject();
+
+  // For PointerObjects representing MemoryObjects, there is only one Create function
+  const auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode());
+  const auto malloc0 = set.CreateMallocMemoryObject(rvsdg.GetMallocNode());
+  const auto delta0 = set.CreateGlobalMemoryObject(rvsdg.GetDeltaNode());
+  const auto lambda0 = set.CreateFunctionMemoryObject(rvsdg.GetLambdaNode());
+  const auto import0 = set.CreateImportMemoryObject(rvsdg.GetImportOutput());
+
+  assert(set.GetPointerObject(register0).GetKind() == PointerObjectKind::Register);
+  assert(set.GetPointerObject(dummy0).GetKind() == PointerObjectKind::Register);
   assert(set.GetPointerObject(alloca0).GetKind() == PointerObjectKind::AllocaMemoryObject);
   assert(set.GetPointerObject(malloc0).GetKind() == PointerObjectKind::MallocMemoryObject);
   assert(set.GetPointerObject(delta0).GetKind() == PointerObjectKind::GlobalMemoryObject);
   assert(set.GetPointerObject(lambda0).GetKind() == PointerObjectKind::FunctionMemoryObject);
   assert(set.GetPointerObject(import0).GetKind() == PointerObjectKind::ImportMemoryObject);
 
+  // Registers have helper function for looking up existing PointerObjects
+  assert(set.GetRegisterPointerObject(rvsdg.GetAllocaOutput()) == register0);
+  assert(set.GetRegisterPointerObject(rvsdg.GetDeltaOutput()) == register0);
+
+  // Funtions have the same, but also in the other direction
+  assert(set.GetFunctionMemoryObject(rvsdg.GetLambdaNode()) == lambda0);
+  assert(&set.GetLambdaNodeFromFunctionMemoryObject(lambda0) == &rvsdg.GetLambdaNode());
+
+  // The maps can also be accessed directly
+  assert(set.GetRegisterMap().at(&rvsdg.GetAllocaOutput()) == register0);
+  assert(set.GetRegisterMap().at(&rvsdg.GetDeltaOutput()) == register0);
   assert(set.GetAllocaMap().at(&rvsdg.GetAllocaNode()) == alloca0);
   assert(set.GetMallocMap().at(&rvsdg.GetMallocNode()) == malloc0);
   assert(set.GetGlobalMap().at(&rvsdg.GetDeltaNode()) == delta0);
-  assert(set.GetFunctionMap().at(&rvsdg.GetLambdaNode()) == lambda0);
+  assert(set.GetFunctionMap().LookupKey(&rvsdg.GetLambdaNode()) == lambda0);
   assert(set.GetImportMap().at(&rvsdg.GetImportOutput()) == import0);
 
   // Imported objects should have been marked as escaped
@@ -85,8 +120,8 @@ TestAddToPointsToSet()
   rvsdg.InitializeTest();
 
   PointerObjectSet set;
-  auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0));
-  auto reg0 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(0));
+  const auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0));
+  const auto reg0 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(0));
 
   assert(set.GetPointsToSet(reg0).Size() == 0);
 
@@ -96,6 +131,11 @@ TestAddToPointsToSet()
 
   // Trying to add it again returns false
   assert(!set.AddToPointsToSet(reg0, alloca0));
+
+  // Trying to make a function (CanPoint() == false) point to something is a no-op
+  const auto function0 = set.CreateFunctionMemoryObject(rvsdg.GetFunction());
+  assert(!set.AddToPointsToSet(function0, alloca0));
+  assert(set.GetPointsToSet(function0).Size() == 0);
 }
 
 // Test the PointerObjectSet method for making one points-to-set a superset of another
@@ -108,11 +148,11 @@ TestMakePointsToSetSuperset()
   rvsdg.InitializeTest();
 
   PointerObjectSet set;
-  auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0));
-  auto reg0 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(0));
-  auto alloca1 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(1));
-  auto reg1 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(1));
-  auto alloca2 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(2));
+  const auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0));
+  const auto reg0 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(0));
+  const auto alloca1 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(1));
+  const auto reg1 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(1));
+  const auto alloca2 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(2));
 
   set.AddToPointsToSet(reg0, alloca0);
   set.AddToPointsToSet(reg1, alloca1);
@@ -132,6 +172,12 @@ TestMakePointsToSetSuperset()
   set.AddToPointsToSet(reg1, alloca2);
   assert(set.MakePointsToSetSuperset(reg0, reg1));
   assert(set.GetPointsToSet(reg0).Contains(alloca2));
+
+  // Trying to make a function's points-to-set a superset is a no-op
+  // Since functions have CanPoint() == false.
+  const auto function0 = set.CreateFunctionMemoryObject(rvsdg.GetFunction());
+  assert(!set.MakePointsToSetSuperset(function0, reg0));
+  assert(set.GetPointsToSet(function0).Size() == 0);
 }
 
 // Test the PointerObjectSet method for marking all pointees of the given pointer as escaped
@@ -144,10 +190,10 @@ TestMarkAllPointeesAsEscaped()
   rvsdg.InitializeTest();
 
   PointerObjectSet set;
-  auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0));
-  auto reg0 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(0));
-  auto alloca1 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(1));
-  auto alloca2 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(2));
+  const auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0));
+  const auto reg0 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(0));
+  const auto alloca1 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(1));
+  const auto alloca2 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(2));
 
   set.AddToPointsToSet(reg0, alloca0);
   set.AddToPointsToSet(reg0, alloca1);
@@ -169,12 +215,12 @@ TestSupersetConstraint()
   rvsdg.InitializeTest();
 
   PointerObjectSet set;
-  auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0));
-  auto reg0 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(0));
-  auto alloca1 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(1));
-  auto reg1 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(1));
-  auto alloca2 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(2));
-  auto reg2 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(2));
+  const auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0));
+  const auto reg0 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(0));
+  const auto alloca1 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(1));
+  const auto reg1 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(1));
+  const auto alloca2 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(2));
+  const auto reg2 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(2));
 
   set.AddToPointsToSet(reg0, alloca0);
   set.AddToPointsToSet(reg1, alloca1);
@@ -228,12 +274,12 @@ TestAllPointeesPointToSupersetConstraint()
   rvsdg.InitializeTest();
 
   PointerObjectSet set;
-  auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0));
-  auto reg0 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(0));
-  auto alloca1 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(1));
-  auto reg1 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(1));
-  auto alloca2 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(2));
-  auto reg2 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(2));
+  const auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0));
+  const auto reg0 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(0));
+  const auto alloca1 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(1));
+  const auto reg1 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(1));
+  const auto alloca2 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(2));
+  const auto reg2 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(2));
 
   set.AddToPointsToSet(reg0, alloca0);
   set.AddToPointsToSet(reg1, alloca1);
@@ -241,8 +287,7 @@ TestAllPointeesPointToSupersetConstraint()
 
   // Add *alloca0 = reg2, which will do nothing, since alloca0 can't be pointing to anything yet
   AllPointeesPointToSupersetConstraint c1(alloca0, reg2);
-  bool modified1 = c1.Apply(set);
-  assert(!modified1);
+  assert(!c1.Apply(set));
 
   // This means *reg0 = reg1, and as we know, reg0 points to alloca0
   // This should make alloca0 point to anything reg1 points to, aka alloca1
@@ -271,12 +316,12 @@ TestSupersetOfAllPointeesConstraint()
   rvsdg.InitializeTest();
 
   PointerObjectSet set;
-  auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0));
-  auto reg0 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(0));
-  auto alloca1 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(1));
-  auto reg1 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(1));
-  auto alloca2 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(2));
-  auto reg2 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(2));
+  const auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0));
+  const auto reg0 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(0));
+  const auto alloca1 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(1));
+  const auto reg1 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(1));
+  const auto alloca2 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(2));
+  const auto reg2 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(2));
 
   set.AddToPointsToSet(reg0, alloca0);
   set.AddToPointsToSet(reg1, alloca1);
@@ -285,8 +330,7 @@ TestSupersetOfAllPointeesConstraint()
   // Makes reg1 = *reg0, where reg0 currently just points to alloca0
   // Since alloca0 currently has no pointees, this does nothing
   SupersetOfAllPointeesConstraint c1(reg1, reg0);
-  bool modified1 = c1.Apply(set);
-  assert(!modified1);
+  assert(!c1.Apply(set));
 
   // Make alloca0 point to something: alloca2
   set.AddToPointsToSet(alloca0, alloca2);
@@ -299,6 +343,80 @@ TestSupersetOfAllPointeesConstraint()
 }
 
 static void
+TestHandleEscapingFunctionConstraint()
+{
+  using namespace jlm::llvm::aa;
+
+  jlm::tests::EscapingLocalFunctionTest rvsdg;
+  rvsdg.InitializeTest();
+
+  const auto & localFunction = rvsdg.GetLocalFunction();
+  const auto & localFunctionRegister = rvsdg.GetLocalFunctionRegister();
+  const auto & exportedFunction = rvsdg.GetExportedFunction();
+  const auto & exportedFunctionReturn = *exportedFunction.fctresult(0)->origin();
+
+  PointerObjectSet set;
+  const auto localFunctionPO = set.CreateFunctionMemoryObject(localFunction);
+  const auto localFunctionRegisterPO = set.CreateRegisterPointerObject(localFunctionRegister);
+  const auto exportedFunctionPO = set.CreateFunctionMemoryObject(exportedFunction);
+  set.MapRegisterToExistingPointerObject(exportedFunctionReturn, localFunctionRegisterPO);
+
+  // Make localFunc's output point to localFunc
+  set.AddToPointsToSet(localFunctionRegisterPO, localFunctionPO);
+
+  // Make a constraints set
+  PointerObjectConstraintSet constraints(set);
+  constraints.AddConstraint(HandleEscapingFunctionConstraint(exportedFunctionPO));
+  constraints.Solve();
+
+  // Nothing has happened yet, since the exported function is yet to be marked as escaped
+  assert(!set.GetPointerObject(localFunctionPO).HasEscaped());
+  assert(!set.GetPointerObject(localFunctionPO).HasEscaped());
+  assert(!set.GetPointerObject(exportedFunctionPO).HasEscaped());
+
+  set.GetPointerObject(exportedFunctionPO).MarkAsEscaped();
+  constraints.Solve();
+
+  // Now the local function has been marked as escaped as well, since it is the return value
+  assert(set.GetPointerObject(localFunctionPO).HasEscaped());
+}
+
+static void
+TestFunctionCallConstraint()
+{
+  using namespace jlm::llvm::aa;
+
+  jlm::tests::CallTest1 rvsdg;
+  rvsdg.InitializeTest();
+
+  PointerObjectSet set;
+  const auto lambdaF = set.CreateFunctionMemoryObject(*rvsdg.lambda_f);
+  const auto lambdaFRegister = set.CreateRegisterPointerObject(*rvsdg.lambda_f->output());
+  const auto lambdaFArgumentX = set.CreateRegisterPointerObject(*rvsdg.lambda_f->fctargument(0));
+  const auto lambdaFArgumentY = set.CreateRegisterPointerObject(*rvsdg.lambda_f->fctargument(1));
+  const auto allocaX = set.CreateAllocaMemoryObject(*rvsdg.alloca_x);
+  const auto allocaY = set.CreateAllocaMemoryObject(*rvsdg.alloca_y);
+  const auto allocaXRegister = set.CreateRegisterPointerObject(*rvsdg.alloca_x->output(0));
+  const auto allocaYRegister = set.CreateRegisterPointerObject(*rvsdg.alloca_y->output(0));
+
+  // Associate the allocas and lambda with their output
+  set.AddToPointsToSet(lambdaFRegister, lambdaF);
+  set.AddToPointsToSet(allocaXRegister, allocaX);
+  set.AddToPointsToSet(allocaYRegister, allocaY);
+
+  FunctionCallConstraint c(lambdaFRegister, rvsdg.CallF());
+  assert(c.Apply(set));
+  while (c.Apply(set))
+    ;
+
+  // The arguments to f should now be pointing to exactly the corresponding allocas
+  assert(set.GetPointsToSet(lambdaFArgumentX).Contains(allocaX));
+  assert(set.GetPointsToSet(lambdaFArgumentY).Contains(allocaY));
+  assert(!set.GetPointsToSet(lambdaFArgumentX).Contains(allocaY));
+  assert(!set.GetPointsToSet(lambdaFArgumentY).Contains(allocaX));
+}
+
+static void
 TestAddPointsToExternalConstraint()
 {
   using namespace jlm::llvm::aa;
@@ -307,10 +425,10 @@ TestAddPointsToExternalConstraint()
   rvsdg.InitializeTest();
 
   PointerObjectSet set;
-  auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0));
-  auto reg0 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(0));
-  auto alloca1 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(1));
-  auto reg1 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(1));
+  const auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0));
+  const auto reg0 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(0));
+  const auto alloca1 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(1));
+  const auto reg1 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(1));
 
   PointerObjectConstraintSet constraints(set);
   constraints.AddPointerPointeeConstraint(reg0, alloca0);
@@ -350,10 +468,10 @@ TestAddRegisterContentEscapedConstraint()
   rvsdg.InitializeTest();
 
   PointerObjectSet set;
-  auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0));
-  auto reg0 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(0));
-  auto alloca1 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(1));
-  auto reg1 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(1));
+  const auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0));
+  const auto reg0 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(0));
+  const auto alloca1 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(1));
+  const auto reg1 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(1));
 
   PointerObjectConstraintSet constraints(set);
   constraints.AddPointerPointeeConstraint(reg0, alloca0);
@@ -383,25 +501,23 @@ TestPointerObjectConstraintSetSolve()
   using namespace jlm::llvm::aa;
 
   // Create a graph with 11 different registers, and 4 allocas.
-  jlm::tests::NAllocaNodesTest rvsdg(11);
+  jlm::tests::NAllocaNodesTest rvsdg(4);
   rvsdg.InitializeTest();
 
   PointerObjectSet set;
   PointerObject::Index reg[11];
   for (size_t i = 0; i < 11; i++)
-  {
-    reg[i] = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(i));
-  }
+    reg[i] = set.CreateDummyRegisterPointerObject();
 
   // %0 is a function parameter
   // %1 = alloca 8 (variable v1)
   // %2 = alloca 8 (variable v2)
   // %3 = alloca 8 (variable v3)
   // %4 = alloca 8 (variable v4)
-  auto alloca1 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(1));
-  auto alloca2 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(2));
-  auto alloca3 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(3));
-  auto alloca4 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(4));
+  const auto alloca1 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0));
+  const auto alloca2 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(1));
+  const auto alloca3 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(2));
+  const auto alloca4 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(3));
 
   // Now start building constraints based on instructions
   PointerObjectConstraintSet constraints(set);
@@ -448,7 +564,7 @@ TestPointerObjectConstraintSetSolve()
   // Find a solution to all the constraints
   constraints.Solve();
 
-  // alloca1 should point to alloca2, etc.
+  // alloca1 should point to alloca2, etc
   assert(set.GetPointsToSet(alloca1).Size() == 1);
   assert(set.GetPointsToSet(alloca1).Contains(alloca2));
   assert(set.GetPointsToSet(alloca2).Size() == 1);
@@ -481,6 +597,7 @@ TestPointerObjectConstraintSetSolve()
   // Due to the store of %9 into [%8], alloca4 may now point back to alloca3
   assert(set.GetPointsToSet(alloca4).Size() == 1);
   assert(set.GetPointsToSet(alloca4).Contains(alloca3));
+
   // Also due to the same store, alloca3 might have escaped
   assert(set.GetPointerObject(alloca3).HasEscaped());
   // Due to alloca3 pointing to alloca4, it too should have been marked as escaped
@@ -510,6 +627,8 @@ TestPointerObjectSet()
   TestSupersetConstraint();
   TestAllPointeesPointToSupersetConstraint();
   TestSupersetOfAllPointeesConstraint();
+  TestHandleEscapingFunctionConstraint();
+  TestFunctionCallConstraint();
   TestAddPointsToExternalConstraint();
   TestAddRegisterContentEscapedConstraint();
   TestPointerObjectConstraintSetSolve();
