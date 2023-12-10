@@ -28,14 +28,14 @@ PointerObjectSet::NumPointerObjects() const noexcept
 PointerObject &
 PointerObjectSet::GetPointerObject(PointerObject::Index index)
 {
-  JLM_ASSERT(index <= NumPointerObjects());
+  JLM_ASSERT(index < NumPointerObjects());
   return PointerObjects_[index];
 }
 
 const PointerObject &
 PointerObjectSet::GetPointerObject(PointerObject::Index index) const
 {
-  JLM_ASSERT(index <= NumPointerObjects());
+  JLM_ASSERT(index < NumPointerObjects());
   return PointerObjects_[index];
 }
 
@@ -50,8 +50,7 @@ PointerObject::Index
 PointerObjectSet::GetRegisterPointerObject(const rvsdg::output & rvsdgOutput) const
 {
   const auto it = RegisterMap_.find(&rvsdgOutput);
-  if (it == RegisterMap_.end())
-    throw util::error("No PointerObject exists for the given rvsdg::output");
+  JLM_ASSERT(it != RegisterMap_.end());
   return it->second;
 }
 
@@ -65,7 +64,7 @@ PointerObjectSet::MapRegisterToExistingPointerObject(
   RegisterMap_[&rvsdgOutput] = pointerObject;
 }
 
-[[nodiscard]] PointerObject::Index
+PointerObject::Index
 PointerObjectSet::CreateDummyRegisterPointerObject()
 {
   return AddPointerObject(PointerObjectKind::Register);
@@ -146,10 +145,10 @@ PointerObjectSet::GetGlobalMap() const noexcept
   return GlobalMap_;
 }
 
-const std::unordered_map<const lambda::node *, PointerObject::Index> &
+const util::BijectiveMap<const lambda::node *, PointerObject::Index> &
 PointerObjectSet::GetFunctionMap() const noexcept
 {
-  return FunctionMap_.GetForwardMap();
+  return FunctionMap_;
 }
 
 const std::unordered_map<const rvsdg::argument *, PointerObject::Index> &
@@ -161,7 +160,7 @@ PointerObjectSet::GetImportMap() const noexcept
 const util::HashSet<PointerObject::Index> &
 PointerObjectSet::GetPointsToSet(PointerObject::Index idx) const
 {
-  JLM_ASSERT(idx <= NumPointerObjects());
+  JLM_ASSERT(idx < NumPointerObjects());
   return PointsToSets_[idx];
 }
 
@@ -187,8 +186,12 @@ PointerObjectSet::MakePointsToSetSuperset(
     PointerObject::Index superset,
     PointerObject::Index subset)
 {
-  JLM_ASSERT(superset <= NumPointerObjects());
-  JLM_ASSERT(subset <= NumPointerObjects());
+  JLM_ASSERT(superset < NumPointerObjects());
+  JLM_ASSERT(subset < NumPointerObjects());
+
+  // If the superset PointerObject can't point to anything, silently ignore
+  if (!GetPointerObject(superset).CanPoint())
+    return false;
 
   // If the superset PointerObject can't point to anything, silently ignore
   if (!GetPointerObject(superset).CanPoint())
@@ -260,15 +263,13 @@ SupersetOfAllPointeesConstraint::Apply(PointerObjectSet & set)
 bool
 HandleEscapingFunctionConstraint::Apply(PointerObjectSet & set)
 {
-  // Don't perform the same work again
-  if (EscapeHandled_)
+  if (EscapeHandled_ || !set.GetPointerObject(Lambda_).HasEscaped())
+  {
     return false;
-
-  if (!set.GetPointerObject(Lambda_).HasEscaped())
-    return false;
+  }
+  EscapeHandled_ = true;
 
   // We now go though the lambda's inner region and apply the necessary flags
-  EscapeHandled_ = true;
   auto & lambdaNode = set.GetLambdaNodeFromFunctionMemoryObject(Lambda_);
 
   // All the function's arguments need to be flagged as PointsToExternal
@@ -295,107 +296,114 @@ HandleEscapingFunctionConstraint::Apply(PointerObjectSet & set)
   return true;
 }
 
+// When a function call's callee can be anything visible outside of the module
+bool
+FunctionCallConstraint::HandleCallingExternalFunction(PointerObjectSet & set)
+{
+  bool modified = false;
+
+  // Mark all the call's inputs as escaped, and all the outputs as pointing to external
+  for (size_t n = 0; n < CallNode_.NumArguments(); n++)
+  {
+    const auto & inputRegister = *CallNode_.Argument(n)->origin();
+    if (!is<PointerType>(inputRegister.type()))
+      continue;
+
+    const auto inputRegisterPO = set.GetRegisterPointerObject(inputRegister);
+    modified |= set.GetPointerObject(inputRegisterPO).MarkAsEscaped();
+  }
+
+  for (size_t n = 0; n < CallNode_.NumResults(); n++)
+  {
+    const auto & outputRegister = *CallNode_.Result(n);
+    if (!is<PointerType>(outputRegister.type()))
+      continue;
+
+    const auto outputRegisterPO = set.GetRegisterPointerObject(outputRegister);
+    modified |= set.GetPointerObject(outputRegisterPO).MarkAsPointsToExternal();
+  }
+
+  return modified;
+}
+
+// When a function call's callee might be a given function imported from outside the module
+bool
+FunctionCallConstraint::HandleCallingImportedFunction(
+    PointerObjectSet & set,
+    PointerObject::Index imported)
+{
+  // FIXME: Add special handling of common library functions
+  // Otherwise we don't know anything about the function
+  return HandleCallingExternalFunction(set);
+}
+
+// When a function call's callee might be a lambda node in our module
+bool
+FunctionCallConstraint::HandleCallingLambdaFunction(
+    PointerObjectSet & set,
+    PointerObject::Index lambda)
+{
+  bool modified = false;
+
+  auto & lambdaNode = set.GetLambdaNodeFromFunctionMemoryObject(lambda);
+
+  // If the number of parameters or number of results doesn't line up,
+  // assume this is not the function we are calling.
+  // Note that the number of arguments and results include 3 state edges: memory, loop and IO.
+  // Varargs are properly handled, since they get merged by a valist_op node before the CallNode.
+  if (lambdaNode.nfctarguments() != CallNode_.NumArguments()
+      || lambdaNode.nfctresults() != CallNode_.NumResults())
+    return false;
+
+  // Pass all call node inputs to the function's subregion
+  for (size_t n = 0; n < CallNode_.NumArguments(); n++)
+  {
+    const auto & inputRegister = *CallNode_.Argument(n)->origin();
+    const auto & argumentRegister = *lambdaNode.fctargument(n);
+    if (!is<PointerType>(inputRegister.type()) || !is<PointerType>(argumentRegister.type()))
+      continue;
+
+    const auto inputRegisterPO = set.GetRegisterPointerObject(inputRegister);
+    const auto argumentRegisterPO = set.GetRegisterPointerObject(argumentRegister);
+    modified |= set.MakePointsToSetSuperset(argumentRegisterPO, inputRegisterPO);
+  }
+
+  // Pass the function's subregion results to the output of the call node
+  for (size_t n = 0; n < CallNode_.NumResults(); n++)
+  {
+    const auto & outputRegister = *CallNode_.Result(n);
+    const auto & resultRegister = *lambdaNode.fctresult(n)->origin();
+    if (!is<PointerType>(outputRegister.type()) || !is<PointerType>(resultRegister.type()))
+      continue;
+
+    const auto outputRegisterPO = set.GetRegisterPointerObject(outputRegister);
+    const auto resultRegisterPO = set.GetRegisterPointerObject(resultRegister);
+    modified |= set.MakePointsToSetSuperset(outputRegisterPO, resultRegisterPO);
+  }
+
+  return modified;
+};
+
 // Connects function calls to every possible target function
 bool
 FunctionCallConstraint::Apply(PointerObjectSet & set)
 {
   bool modified = false;
 
-  // When the function pointer can point to anything visible outside of the module
-  const auto handleCallingExternalFunction = [&]
-  {
-    // Mark all the call's inputs as escaped, and all the outputs as pointing to external
-    for (size_t n = 0; n < CallNode_.NumArguments(); n++)
-    {
-      // TODO: Remove n+1 when #295 is resolved
-      const auto & inputRegister = *CallNode_.Argument(n + 1)->origin();
-      if (!is<PointerType>(inputRegister.type()))
-        continue;
-
-      const auto inputRegisterPO = set.GetRegisterPointerObject(inputRegister);
-      modified |= set.GetPointerObject(inputRegisterPO).MarkAsEscaped();
-    }
-
-    for (size_t n = 0; n < CallNode_.NumResults(); n++)
-    {
-      const auto & outputRegister = *CallNode_.Result(n);
-      if (!is<PointerType>(outputRegister.type()))
-        continue;
-
-      const auto outputRegisterPO = set.GetRegisterPointerObject(outputRegister);
-      modified |= set.GetPointerObject(outputRegisterPO).MarkAsPointsToExternal();
-    }
-  };
-
-  // When the function pointer can point to a function imported from outside the module
-  const auto handleCallingImportedFunction = [&](const PointerObject::Index imported)
-  {
-    // FIXME: Add special handling of common library functions
-    // Otherwise we don't know anything about the function
-    handleCallingExternalFunction();
-  };
-
-  // When the function pointer can point to a lambda node in our module
-  const auto handleCallingLambdaFunction = [&](const PointerObject::Index lambda)
-  {
-    auto & lambdaNode = set.GetLambdaNodeFromFunctionMemoryObject(lambda);
-
-    // If the number of parameters or number of results doesn't line up,
-    // assume this is not the function we are calling.
-    // Note that the number of arguments and results include 3 state edges: memory, loop and IO.
-    // Varargs are properly handled, since they get merged by a valist_op node before the CallNode.
-    if (lambdaNode.nfctarguments() != CallNode_.NumArguments()
-        || lambdaNode.nfctresults() != CallNode_.NumResults())
-      return;
-
-    // Pass all call node inputs to the function's subregion
-    for (size_t n = 0; n < CallNode_.NumArguments(); n++)
-    {
-      // TODO: Remove n+1 when #295 is resolved
-      const auto & inputRegister = *CallNode_.Argument(n + 1)->origin();
-      const auto & argumentRegister = *lambdaNode.fctargument(n);
-      if (!is<PointerType>(inputRegister.type()) || !is<PointerType>(argumentRegister.type()))
-        continue;
-
-      const auto inputRegisterPO = set.GetRegisterPointerObject(inputRegister);
-      const auto argumentRegisterPO = set.GetRegisterPointerObject(argumentRegister);
-      modified |= set.MakePointsToSetSuperset(argumentRegisterPO, inputRegisterPO);
-    }
-
-    // Pass the function's subregion results to the output of the call node
-    for (size_t n = 0; n < CallNode_.NumResults(); n++)
-    {
-      const auto & outputRegister = *CallNode_.Result(n);
-      const auto & resultRegister = *lambdaNode.fctresult(n)->origin();
-      if (!is<PointerType>(outputRegister.type()) || !is<PointerType>(resultRegister.type()))
-        continue;
-
-      const auto outputRegisterPO = set.GetRegisterPointerObject(outputRegister);
-      const auto resultRegisterPO = set.GetRegisterPointerObject(resultRegister);
-      modified |= set.MakePointsToSetSuperset(outputRegisterPO, resultRegisterPO);
-    }
-  };
-
   // For each possible function target, connect parameters and return values to the call node
   for (const auto target : set.GetPointsToSet(CallTarget_).Items())
   {
-    switch (set.GetPointerObject(target).GetKind())
-    {
-    case PointerObjectKind::ImportMemoryObject:
-      handleCallingImportedFunction(target);
-      break;
-    case PointerObjectKind::FunctionMemoryObject:
-      handleCallingLambdaFunction(target);
-      break;
-    default:
-      break;
-    }
+    const auto kind = set.GetPointerObject(target).GetKind();
+    if (kind == PointerObjectKind::ImportMemoryObject)
+      modified |= HandleCallingImportedFunction(set, target);
+    else if (kind == PointerObjectKind::FunctionMemoryObject)
+      modified |= HandleCallingLambdaFunction(set, target);
   }
 
   // If we might be calling an external function
   if (set.GetPointerObject(CallTarget_).PointsToExternal())
   {
-    handleCallingExternalFunction();
+    modified |= HandleCallingExternalFunction(set);
   }
 
   return modified;
@@ -406,16 +414,14 @@ PointerObjectConstraintSet::AddPointerPointeeConstraint(
     PointerObject::Index pointer,
     PointerObject::Index pointee)
 {
-  // All set constraints are additive, so simple constraints like this can be directly applied and
-  // forgotten.
+  // All set constraints are additive, so simple constraints like this can be directly applied.
   Set_.AddToPointsToSet(pointer, pointee);
 }
 
 void
 PointerObjectConstraintSet::AddPointsToExternalConstraint(PointerObject::Index pointer)
 {
-  // Flags are never removed, so adding the flag now ensures it will be included in the final
-  // solution
+  // Flags are never removed, so adding the flag now ensures it will be included.
   Set_.GetPointerObject(pointer).MarkAsPointsToExternal();
 }
 

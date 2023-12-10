@@ -126,7 +126,7 @@ Andersen::AnalyzeCall(const CallNode & callNode)
   {
     const auto & outputRegister = *callNode.Result(n);
     if (is<PointerType>(outputRegister.type()))
-      Set_->CreateRegisterPointerObject(outputRegister);
+      (void) Set_->CreateRegisterPointerObject(outputRegister);
   }
 
   // We make no attempt at detecting what type of call this is here.
@@ -190,7 +190,7 @@ Andersen::AnalyzeConstantPointerNull(const rvsdg::simple_node & node)
 
   // ConstantPointerNull cannot point to any memory location. We therefore only insert a register
   // node for it, but let this node not point to anything.
-  Set_->CreateRegisterPointerObject(output);
+  (void) Set_->CreateRegisterPointerObject(output);
 }
 
 void
@@ -204,7 +204,7 @@ Andersen::AnalyzeUndef(const rvsdg::simple_node & node)
 
   // UndefValue cannot point to any memory location. We therefore only insert a register node for
   // it, but let this node not point to anything.
-  Set_->CreateRegisterPointerObject(output);
+  (void) Set_->CreateRegisterPointerObject(output);
 }
 
 void
@@ -274,7 +274,7 @@ Andersen::AnalyzeConstantAggregateZero(const rvsdg::simple_node & node)
 
   // ConstantAggregateZero cannot point to any memory location.
   // We therefore only insert a register node for it, but let this node not point to anything.
-  Set_->CreateRegisterPointerObject(output);
+  (void) Set_->CreateRegisterPointerObject(output);
 }
 
 void
@@ -332,7 +332,7 @@ Andersen::AnalyzeLambda(const lambda::node & lambda)
   for (auto & argument : lambda.fctarguments())
   {
     if (jlm::rvsdg::is<PointerType>(argument.type()))
-      Set_->CreateRegisterPointerObject(argument);
+      (void) Set_->CreateRegisterPointerObject(argument);
   }
 
   // Analyze the subregion
@@ -410,7 +410,7 @@ Andersen::AnalyzePhi(const phi::node & phi)
       continue;
 
     auto & argumentRegister = *rv->argument();
-    Set_->CreateRegisterPointerObject(argumentRegister);
+    (void) Set_->CreateRegisterPointerObject(argumentRegister);
   }
 
   // Handle subregion
