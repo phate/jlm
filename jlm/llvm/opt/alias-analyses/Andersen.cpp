@@ -49,6 +49,14 @@ Andersen::AnalyzeSimpleNode(const rvsdg::simple_node & node)
     AnalyzeConstantAggregateZero(node);
   else if (is<ExtractValue>(op))
     AnalyzeExtractValue(node);
+  else
+  {
+    // If the simple operation is unknown, make sure it does not involve pointers
+    for (size_t n = 0; n < node.ninputs(); n++)
+      JLM_ASSERT(!is<PointerType>(node.input(n)->type()));
+    for (size_t n = 0; n < node.noutputs(); n++)
+      JLM_ASSERT(!is<PointerType>(node.output(n)->type()));
+  }
 }
 
 void

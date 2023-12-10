@@ -190,8 +190,7 @@ class PointerObjectSet final
   /**
    * Internal helper function for adding PointerObjects, use the Create* methods instead
    */
-  [[nodiscard]]
-  PointerObject::Index
+  [[nodiscard]] PointerObject::Index
   AddPointerObject(PointerObjectKind kind);
 
 public:
