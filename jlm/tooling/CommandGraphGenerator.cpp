@@ -203,7 +203,7 @@ JhlsCommandGraphGenerator::CreateParserCommandOutputFile(
     const util::filepath & tmpDirectory,
     const util::filepath & inputFile)
 {
-  return { tmpDirectory.to_str() + "tmp-" + inputFile.base() + "-clang-out.ll" };
+  return util::filepath::CreateUniqueFile(tmpDirectory, inputFile.base(), "-clang.ll");
 }
 
 util::filepath
@@ -211,7 +211,7 @@ JhlsCommandGraphGenerator::CreateJlmOptCommandOutputFile(
     const util::filepath & tmpDirectory,
     const util::filepath & inputFile)
 {
-  return { tmpDirectory.to_str() + "tmp-" + inputFile.base() + "-jlm-opt-out.ll" };
+  return util::filepath::CreateUniqueFile(tmpDirectory, inputFile.base(), "-jlm-opt.ll");
 }
 
 ClangCommand::LanguageStandard
@@ -370,8 +370,7 @@ JhlsCommandGraphGenerator::GenerateCommandGraph(const JhlsCommandLineOptions & c
     auto inputFile = dynamic_cast<JlmHlsCommand *>(&hls.GetCommand())->LlvmFile();
     auto & asmnode = LlcCommand::Create(
         *commandGraph,
-        commandLineOptions.Hls_
-            ? inputFile
+        commandLineOptions.Hls_ ? inputFile
                                 : CreateJlmOptCommandOutputFile(tmp_folder, inputFile).to_str(),
         assemblyFile,
         ConvertOptimizationLevel(commandLineOptions.OptimizationLevel_),
