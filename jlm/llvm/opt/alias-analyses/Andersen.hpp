@@ -15,9 +15,10 @@ namespace jlm::llvm::aa
 {
 
 /**
- * class implementing Andersen's set constraint based alias analysis.
- * The analysis is inter-procedural, field-insensitive,
- * context-insensitive, flow-insensitive, and uses a static heap model.
+ * class implementing Andersen's set constraint based pointer analysis, based on the Ph.D. thesis
+ * Lars Ole Andersen - Program Analysis and Specialization for the C Programming Language
+ * The analysis is inter-procedural, field-insensitive, context-insensitive,
+ * flow-insensitive, and uses a static heap model.
  */
 class Andersen final : public AliasAnalysis
 {

@@ -18,38 +18,49 @@ void
 Andersen::AnalyzeSimpleNode(const rvsdg::simple_node & node)
 {
   const auto & op = node.operation();
-  const auto & type = typeid(op);
 
-  if (type == typeid(alloca_op))
+  if (is<alloca_op>(op))
     AnalyzeAlloca(node);
-  else if (type == typeid(malloc_op))
+  else if (is<malloc_op>(op))
     AnalyzeMalloc(node);
-  else if (type == typeid(LoadOperation))
-    AnalyzeLoad(*util::AssertedCast<const LoadNode>(&node));
-  else if (type == typeid(StoreOperation))
-    AnalyzeStore(*util::AssertedCast<const StoreNode>(&node));
-  else if (type == typeid(CallOperation))
-    AnalyzeCall(*util::AssertedCast<const CallNode>(&node));
-  else if (type == typeid(GetElementPtrOperation))
+  else if (const auto loadNode = dynamic_cast<const LoadNode *>(&node))
+    AnalyzeLoad(*loadNode);
+  else if (const auto storeNode = dynamic_cast<const StoreNode *>(&node))
+    AnalyzeStore(*storeNode);
+  else if (const auto callNode = dynamic_cast<const CallNode *>(&node))
+    AnalyzeCall(*callNode);
+  else if (is<GetElementPtrOperation>(op))
     AnalyzeGep(node);
-  else if (type == typeid(bitcast_op))
+  else if (is<bitcast_op>(op))
     AnalyzeBitcast(node);
-  else if (type == typeid(bits2ptr_op))
+  else if (is<bits2ptr_op>(op))
     AnalyzeBits2ptr(node);
-  else if (type == typeid(ConstantPointerNullOperation))
+  else if (is<ConstantPointerNullOperation>(op))
     AnalyzeConstantPointerNull(node);
-  else if (type == typeid(UndefValueOperation))
+  else if (is<UndefValueOperation>(op))
     AnalyzeUndef(node);
-  else if (type == typeid(Memcpy))
+  else if (is<Memcpy>(op))
     AnalyzeMemcpy(node);
-  else if (type == typeid(ConstantArray))
+  else if (is<ConstantArray>(op))
     AnalyzeConstantArray(node);
-  else if (type == typeid(ConstantStruct))
+  else if (is<ConstantStruct>(op))
     AnalyzeConstantStruct(node);
-  else if (type == typeid(ConstantAggregateZero))
+  else if (is<ConstantAggregateZero>(op))
     AnalyzeConstantAggregateZero(node);
-  else if (type == typeid(ExtractValue))
+  else if (is<ExtractValue>(op))
     AnalyzeExtractValue(node);
+  else if (is<free_op>(op))
+  {
+    // A free does not affect any Points-to-sets
+  }
+  else
+  {
+    // If the simple operation is unknown, make sure it does not involve pointers
+    for (size_t n = 0; n < node.ninputs(); n++)
+      JLM_ASSERT(!is<PointerType>(node.input(n)->type()));
+    for (size_t n = 0; n < node.noutputs(); n++)
+      JLM_ASSERT(!is<PointerType>(node.output(n)->type()));
+  }
 }
 
 void
@@ -99,7 +110,7 @@ Andersen::AnalyzeStore(const StoreNode & storeNode)
   const auto & addressRegister = *storeNode.GetAddressInput()->origin();
   const auto & valueRegister = *storeNode.GetValueInput()->origin();
 
-  // If the written value is not a pointer, be conservative and make the address
+  // If the written value is not a pointer, be conservative and mark the address
   if (!is<PointerType>(valueRegister.type()))
   {
     // TODO: We are writing an integer to *address,
@@ -126,7 +137,7 @@ Andersen::AnalyzeCall(const CallNode & callNode)
   {
     const auto & outputRegister = *callNode.Result(n);
     if (is<PointerType>(outputRegister.type()))
-      Set_->CreateRegisterPointerObject(outputRegister);
+      (void)Set_->CreateRegisterPointerObject(outputRegister);
   }
 
   // We make no attempt at detecting what type of call this is here.
@@ -190,7 +201,7 @@ Andersen::AnalyzeConstantPointerNull(const rvsdg::simple_node & node)
 
   // ConstantPointerNull cannot point to any memory location. We therefore only insert a register
   // node for it, but let this node not point to anything.
-  Set_->CreateRegisterPointerObject(output);
+  (void)Set_->CreateRegisterPointerObject(output);
 }
 
 void
@@ -204,7 +215,7 @@ Andersen::AnalyzeUndef(const rvsdg::simple_node & node)
 
   // UndefValue cannot point to any memory location. We therefore only insert a register node for
   // it, but let this node not point to anything.
-  Set_->CreateRegisterPointerObject(output);
+  (void)Set_->CreateRegisterPointerObject(output);
 }
 
 void
@@ -230,7 +241,7 @@ Andersen::AnalyzeMemcpy(const rvsdg::simple_node & node)
 void
 Andersen::AnalyzeConstantArray(const rvsdg::simple_node & node)
 {
-  JLM_ASSERT(is<ConstantStruct>(&node));
+  JLM_ASSERT(is<ConstantArray>(&node));
 
   for (size_t n = 0; n < node.ninputs(); n++)
   {
@@ -274,7 +285,7 @@ Andersen::AnalyzeConstantAggregateZero(const rvsdg::simple_node & node)
 
   // ConstantAggregateZero cannot point to any memory location.
   // We therefore only insert a register node for it, but let this node not point to anything.
-  Set_->CreateRegisterPointerObject(output);
+  (void)Set_->CreateRegisterPointerObject(output);
 }
 
 void
@@ -296,19 +307,16 @@ Andersen::AnalyzeExtractValue(const rvsdg::simple_node & node)
 void
 Andersen::AnalyzeStructuralNode(const rvsdg::structural_node & node)
 {
-  const auto & op = node.operation();
-  const auto & type = typeid(op);
-
-  if (type == typeid(lambda::operation))
-    AnalyzeLambda(*util::AssertedCast<const lambda::node>(&node));
-  else if (type == typeid(delta::operation))
-    AnalyzeDelta(*util::AssertedCast<const delta::node>(&node));
-  else if (type == typeid(phi::operation))
-    AnalyzePhi(*util::AssertedCast<const phi::node>(&node));
-  else if (type == typeid(rvsdg::gamma_op))
-    AnalyzeGamma(*util::AssertedCast<const rvsdg::gamma_node>(&node));
-  else if (type == typeid(rvsdg::theta_op))
-    AnalyzeTheta(*util::AssertedCast<const rvsdg::theta_node>(&node));
+  if (const auto lambdaNode = dynamic_cast<const lambda::node *>(&node))
+    AnalyzeLambda(*lambdaNode);
+  else if (const auto deltaNode = dynamic_cast<const delta::node *>(&node))
+    AnalyzeDelta(*deltaNode);
+  else if (const auto phiNode = dynamic_cast<const phi::node *>(&node))
+    AnalyzePhi(*phiNode);
+  else if (const auto gammaNode = dynamic_cast<const rvsdg::gamma_node *>(&node))
+    AnalyzeGamma(*gammaNode);
+  else if (const auto thetaNode = dynamic_cast<const rvsdg::theta_node *>(&node))
+    AnalyzeTheta(*thetaNode);
   else
     JLM_UNREACHABLE("Unknown structural node operation");
 }
@@ -332,10 +340,9 @@ Andersen::AnalyzeLambda(const lambda::node & lambda)
   for (auto & argument : lambda.fctarguments())
   {
     if (jlm::rvsdg::is<PointerType>(argument.type()))
-      Set_->CreateRegisterPointerObject(argument);
+      (void)Set_->CreateRegisterPointerObject(argument);
   }
 
-  // Analyze the subregion
   AnalyzeRegion(*lambda.subregion());
 
   // Create a lambda PointerObject for the lambda itself
@@ -354,7 +361,7 @@ Andersen::AnalyzeLambda(const lambda::node & lambda)
 void
 Andersen::AnalyzeDelta(const delta::node & delta)
 {
-  // Hanfle context variables
+  // Handle context variables
   for (auto & cv : delta.ctxvars())
   {
     if (!is<PointerType>(cv.type()))
@@ -366,7 +373,6 @@ Andersen::AnalyzeDelta(const delta::node & delta)
     Set_->MapRegisterToExistingPointerObject(argumentRegister, inputRegisterPO);
   }
 
-  // Analyze the internal region
   AnalyzeRegion(*delta.subregion());
 
   // Get the result register from the subregion
@@ -410,10 +416,9 @@ Andersen::AnalyzePhi(const phi::node & phi)
       continue;
 
     auto & argumentRegister = *rv->argument();
-    Set_->CreateRegisterPointerObject(argumentRegister);
+    (void)Set_->CreateRegisterPointerObject(argumentRegister);
   }
 
-  // Handle subregion
   AnalyzeRegion(*phi.subregion());
 
   // Handle recursion variable results
@@ -477,7 +482,7 @@ Andersen::AnalyzeTheta(const rvsdg::theta_node & theta)
 {
   // Create a PointerObject for each argument in the inner region
   // And make it point to a superset of the corresponding input register
-  for (const rvsdg::theta_output * thetaOutput : theta)
+  for (const auto thetaOutput : theta)
   {
     if (!is<PointerType>(thetaOutput->type()))
       continue;
@@ -495,7 +500,7 @@ Andersen::AnalyzeTheta(const rvsdg::theta_node & theta)
 
   // Iterate over loop variables again, making the inner arguments point to a superset
   // of what the corresponding result registers point to
-  for (const rvsdg::theta_output * thetaOutput : theta)
+  for (const auto thetaOutput : theta)
   {
     if (!is<PointerType>(thetaOutput->type()))
       continue;

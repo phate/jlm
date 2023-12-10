@@ -9,7 +9,22 @@
 #include <llvm/IR/Module.h>
 #include <llvm/Support/raw_os_ostream.h>
 
+#include <cassert>
 #include <iostream>
+
+#define JLM_ASSERT_THROWS(...)                                \
+  do                                                          \
+  {                                                           \
+    try                                                       \
+    {                                                         \
+      __VA_ARGS__;                                            \
+      assert(false && #__VA_ARGS__ " was supposed to throw"); \
+    }                                                         \
+    catch (jlm::util::error e)                                \
+    {                                                         \
+      (void)e;                                                \
+    }                                                         \
+  } while (false)
 
 namespace jlm::tests
 {

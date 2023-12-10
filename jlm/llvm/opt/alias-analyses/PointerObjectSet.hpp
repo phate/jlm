@@ -8,7 +8,7 @@
 
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
-#include <jlm/util/BiMap.hpp>
+#include <jlm/util/BijectiveMap.hpp>
 #include <jlm/util/common.hpp>
 #include <jlm/util/HashSet.hpp>
 #include <jlm/util/Math.hpp>
@@ -110,6 +110,7 @@ public:
 
   /**
    * Sets the PointsToExternal-flag, if possible.
+   * If CanPoint() is false, this is a no-op.
    * @return True, if the PointsToExternal flag was modified, otherwise false
    */
   bool
@@ -176,25 +177,20 @@ class PointerObjectSet final
   // Unlike the other maps, several rvsdg::output* can share register PointerObject
   std::unordered_map<const rvsdg::output *, PointerObject::Index> RegisterMap_;
 
-  // Mapping from alloca node to PointerObject
   std::unordered_map<const rvsdg::node *, PointerObject::Index> AllocaMap_;
 
-  // Mapping from malloc call node to PointerObject
   std::unordered_map<const rvsdg::node *, PointerObject::Index> MallocMap_;
 
-  // Mapping from global variables declared with delta nodes to PointerObject
   std::unordered_map<const delta::node *, PointerObject::Index> GlobalMap_;
 
-  // Bidirectional mapping from functions declared with lambda nodes to PointerObject
-  util::BiMap<const lambda::node *, PointerObject::Index> FunctionMap_;
+  util::BijectiveMap<const lambda::node *, PointerObject::Index> FunctionMap_;
 
-  // Mapping from symbols imported into the module to PointerObject
   std::unordered_map<const rvsdg::argument *, PointerObject::Index> ImportMap_;
 
   /**
    * Internal helper function for adding PointerObjects, use the Create* methods instead
    */
-  PointerObject::Index
+  [[nodiscard]] PointerObject::Index
   AddPointerObject(PointerObjectKind kind);
 
 public:
@@ -213,14 +209,13 @@ public:
    * @param rvsdgOutput the rvsdg output associated with the register PointerObject
    * @return the index of the new PointerObject in the PointerObjectSet
    */
-  PointerObject::Index
+  [[nodiscard]] PointerObject::Index
   CreateRegisterPointerObject(const rvsdg::output & rvsdgOutput);
 
   /**
    * Retrieves a previously created PointerObject of Register kind.
    * @param rvsdgOutput an rvsdg::output that already corresponds to a PointerObject in the set
    * @return the index of the PointerObject associated with the rvsdg::output
-   * @throws jlm::util::error if no associated PointerObject exists
    */
   [[nodiscard]] PointerObject::Index
   GetRegisterPointerObject(const rvsdg::output & rvsdgOutput) const;
@@ -257,7 +252,7 @@ public:
 
   /**
    * Creates a PointerObject of Function kind associated with the given \p lambdaNode.
-   * The lambda node can not already
+   * The lambda node can not be associated with a PointerObject already.
    * @param lambdaNode the RVSDG node defining the function,
    * @return the index of the new PointerObject in the PointerObjectSet
    */
@@ -273,14 +268,14 @@ public:
   GetFunctionMemoryObject(const lambda::node & lambdaNode) const;
 
   /**
-   * \brief
-   * \param index
-   * \return
+   * Gets the lambda node associated with a given PointerObject.
+   * @param index the index of the PointerObject
+   * @return the lambda node associated with the PointerObject
    */
   [[nodiscard]] const lambda::node &
   GetLambdaNodeFromFunctionMemoryObject(PointerObject::Index index) const;
 
-  PointerObject::Index
+  [[nodiscard]] PointerObject::Index
   CreateImportMemoryObject(const rvsdg::argument & importNode);
 
   const std::unordered_map<const rvsdg::output *, PointerObject::Index> &
@@ -295,7 +290,7 @@ public:
   const std::unordered_map<const delta::node *, PointerObject::Index> &
   GetGlobalMap() const noexcept;
 
-  const std::unordered_map<const lambda::node *, PointerObject::Index> &
+  const util::BijectiveMap<const lambda::node *, PointerObject::Index> &
   GetFunctionMap() const noexcept;
 
   const std::unordered_map<const rvsdg::argument *, PointerObject::Index> &
@@ -468,6 +463,36 @@ class FunctionCallConstraint final
    */
   const jlm::llvm::CallNode & CallNode_;
 
+  /**
+   * Handles informing the arguments and return values of the CallNode about
+   * possibly being sent to and retrieved from unknown code.
+   * @param set the PointerObjectSet representing this module.
+   * @return true if the operation modified any PointerObjects or points-to-sets
+   */
+  bool
+  HandleCallingExternalFunction(PointerObjectSet & set);
+
+  /**
+   * Handles informing the arguments and return values of the CallNode about
+   * possibly being sent to and received from a given PointerObject of ImportMemoryObject.
+   * @param set the PointerObjectSet representing this module.
+   * @param imported the PointerObject of ImportMemoryObject kind that might be called.
+   * @return true if the operation modified any PointerObjects or points-to-sets
+   */
+  bool
+  HandleCallingImportedFunction(PointerObjectSet & set, PointerObject::Index imported);
+
+  /**
+   * Handles informing the CallNode about possibly calling the function represented by \p lambda.
+   * Passes the points-to-sets of the arguments into the function subregion,
+   * and passes the points-to-sets of the function's return values back to the CallNode's outputs.
+   * @param set the PointerObjectSet representing this module.
+   * @param lambda the PointerObject of FunctionMemoryObject kind that might be called.
+   * @return true if the operation modified any PointerObjects or points-to-sets
+   */
+  bool
+  HandleCallingLambdaFunction(PointerObjectSet & set, PointerObject::Index lambda);
+
 public:
   explicit FunctionCallConstraint(
       PointerObject::Index callTarget,
@@ -477,8 +502,8 @@ public:
   {}
 
   /**
-   * \brief Applies the constraint to the \p set
-   * \return true if this operation modified any PointerObjects or points-to-sets
+   * Applies the constraint to the \p set
+   * @return true if this operation modified any PointerObjects or points-to-sets
    */
   bool
   Apply(PointerObjectSet & set);

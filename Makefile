@@ -11,6 +11,8 @@ help:
 	@$(HELP_TEXT)
 	@$(HELP_TEXT_JLM)
 	@echo ""
+	@echo "JLM Aliases"
+	@echo "--------------------------------------------------------------------------------"
 	@echo "all                    Compile jlm in release mode, and run unit and C tests"
 	@echo "release                Alias for jlm-release"
 	@echo "debug                  Alias for jlm-debug and check"
