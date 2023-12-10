@@ -52,62 +52,14 @@ public:
 
     AASteensgaardAgnostic,
     AASteensgaardRegionAware,
-
-    /**
-     * \deprecated This flag is going to be removed in the future. Use \ref
-     * OptimizationId::CommonNodeElimination instead.
-     */
-    cne,
     CommonNodeElimination,
     DeadNodeElimination,
-
-    /**
-     * \deprecated This flag is going to be removed in the future. Use \ref
-     * OptimizationId::DeadNodeElimination instead.
-     */
-    dne,
     FunctionInlining,
-
-    /**
-     * \deprecated This flag is going to be removed in the future. Use \ref
-     * OptimizationId::FunctionInlining instead.
-     */
-    iln,
     InvariantValueRedirection,
     LoopUnrolling,
     NodePullIn,
     NodePushOut,
     NodeReduction,
-
-    /**
-     * \deprecated This flag is going to be removed in the future. Use \ref
-     * OptimizationId::NodePushOut instead.
-     */
-    psh,
-
-    /**
-     * \deprecated This flag is going to be removed in the future. Use \ref
-     * OptimizationId::NodeReduction instead.
-     */
-    red,
-
-    /**
-     * \deprecated This flag is going to be removed in the future. Use \ref
-     * OptimizationId::ThetaGammaInversion instead.
-     */
-    ivt,
-
-    /**
-     * \deprecated This flag is going to be removed in the future. Use \ref
-     * OptimizationId::LoopUnrolling instead.
-     */
-    url,
-
-    /**
-     * \deprecated This flag is going to be removed in the future. Use \ref
-     * OptimizationId::NodePullIn instead.
-     */
-    pll,
     ThetaGammaInversion,
 
     LastEnumValue // must always be the last enum value, used for iteration
@@ -208,22 +160,14 @@ private:
     inline static const char * AaSteensgaardAgnostic_ = "AASteensgaardAgnostic";
     inline static const char * AaSteensgaardRegionAware_ = "AASteensgaardRegionAware";
     inline static const char * CommonNodeElimination_ = "CommonNodeElimination";
-    inline static const char * CommonNodeEliminationDeprecated_ = "cne";
     inline static const char * DeadNodeElimination_ = "DeadNodeElimination";
-    inline static const char * DeadNodeEliminationDeprecated_ = "dne";
     inline static const char * FunctionInlining_ = "FunctionInlining";
-    inline static const char * FunctionInliningDeprecated_ = "iln";
     inline static const char * InvariantValueRedirection_ = "InvariantValueRedirection";
     inline static const char * NodePullIn_ = "NodePullIn";
-    inline static const char * NodePullInDeprecated_ = "pll";
     inline static const char * NodePushOut_ = "NodePushOut";
-    inline static const char * NodePushOutDeprecated_ = "psh";
     inline static const char * ThetaGammaInversion_ = "ThetaGammaInversion";
-    inline static const char * ThetaGammaInversionDeprecated_ = "ivt";
     inline static const char * LoopUnrolling_ = "LoopUnrolling";
-    inline static const char * LoopUnrollingDeprecated_ = "url";
     inline static const char * NodeReduction_ = "NodeReduction";
-    inline static const char * NodeReductionDeprecated_ = "red";
   };
 
   struct StatisticsCommandLineArgument
