@@ -278,7 +278,7 @@ JhlsCommandGraphGenerator::GenerateCommandGraph(const JhlsCommandLineOptions & c
   }
   srandom((unsigned)time(nullptr) * getpid());
   tmp_identifier += std::to_string(random());
-  util::filepath tmp_folder("/tmp/" + tmp_identifier + "/");
+  util::filepath tmp_folder(std::filesystem::temp_directory_path().string() + tmp_identifier + "/");
   auto & mkdir = MkdirCommand::Create(*commandGraph, tmp_folder);
   commandGraph->GetEntryNode().AddEdge(mkdir);
 
