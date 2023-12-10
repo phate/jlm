@@ -224,10 +224,7 @@ TestGetElementPtr()
   assert(ptg->NumLambdaNodes() == 1);
   assert(ptg->NumRegisterNodes() == 4);
 
-  /*
-    We only care about the getelemenptr's in this test, skipping the validation
-    for all other nodes.
-  */
+  // We only care about the getelemenptr's in this test, skipping the validation for all other nodes
   auto & lambda = ptg->GetLambdaNode(*test.lambda);
   auto & gepX = ptg->GetRegisterNode(*test.getElementPtrX->output(0));
   auto & gepY = ptg->GetRegisterNode(*test.getElementPtrY->output(0));
