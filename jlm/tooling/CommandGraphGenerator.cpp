@@ -112,12 +112,13 @@ JlcCommandGraphGenerator::GenerateCommandGraph(const JlcCommandLineOptions & com
   {
     auto lastNode = &commandGraph->GetEntryNode();
 
-    util::filepath lastNodeOutputFile("");
     if (compilation.RequiresParsing())
     {
-      lastNodeOutputFile = CreateParserCommandOutputFile(compilation.InputFile());
-      auto & parserCommandNode =
-          CreateParserCommand(*commandGraph, lastNodeOutputFile, compilation, commandLineOptions);
+      auto & parserCommandNode = CreateParserCommand(
+          *commandGraph,
+          CreateParserCommandOutputFile(compilation.InputFile()),
+          compilation,
+          commandLineOptions);
 
       lastNode->AddEdge(parserCommandNode);
       lastNode = &parserCommandNode;
@@ -125,18 +126,17 @@ JlcCommandGraphGenerator::GenerateCommandGraph(const JlcCommandLineOptions & com
 
     if (compilation.RequiresOptimization())
     {
+      auto clangCommand = util::AssertedCast<ClangCommand>(&lastNode->GetCommand());
       auto statisticsFilePath = util::StatisticsCollectorSettings::CreateUniqueStatisticsFile(
           util::filepath(std::filesystem::temp_directory_path()),
           compilation.InputFile());
       util::StatisticsCollectorSettings statisticsCollectorSettings(
           statisticsFilePath,
           commandLineOptions.JlmOptPassStatistics_);
-      auto inputFile = lastNodeOutputFile;
-      lastNodeOutputFile = CreateJlmOptCommandOutputFile(compilation.InputFile());
 
       JlmOptCommandLineOptions jlmOptCommandLineOptions(
-          inputFile,
-          lastNodeOutputFile,
+          clangCommand->OutputFile(),
+          CreateJlmOptCommandOutputFile(compilation.InputFile()),
           JlmOptCommandLineOptions::OutputFormat::Llvm,
           statisticsCollectorSettings,
           commandLineOptions.JlmOptOptimizations_);
@@ -149,9 +149,10 @@ JlcCommandGraphGenerator::GenerateCommandGraph(const JlcCommandLineOptions & com
 
     if (compilation.RequiresAssembly())
     {
+      auto jlmOptCommand = util::AssertedCast<JlmOptCommand>(&lastNode->GetCommand());
       auto & llvmLlcCommandNode = LlcCommand::Create(
           *commandGraph,
-          lastNodeOutputFile,
+          jlmOptCommand->GetCommandLineOptions().GetOutputFile(),
           compilation.OutputFile(),
           ConvertOptimizationLevel(commandLineOptions.OptimizationLevel_),
           LlcCommand::RelocationModel::Static);
