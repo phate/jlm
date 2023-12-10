@@ -199,15 +199,19 @@ JlcCommandGraphGenerator::GenerateCommandGraph(const JlcCommandLineOptions & com
 JhlsCommandGraphGenerator::~JhlsCommandGraphGenerator() noexcept = default;
 
 util::filepath
-JhlsCommandGraphGenerator::CreateParserCommandOutputFile(const util::filepath & inputFile)
+JhlsCommandGraphGenerator::CreateParserCommandOutputFile(
+    const util::filepath & tmpDirectory,
+    const util::filepath & inputFile)
 {
-  return { "tmp-" + inputFile.base() + "-clang-out.ll" };
+  return { tmpDirectory.to_str() + "tmp-" + inputFile.base() + "-clang-out.ll" };
 }
 
 util::filepath
-JhlsCommandGraphGenerator::CreateJlmOptCommandOutputFile(const util::filepath & inputFile)
+JhlsCommandGraphGenerator::CreateJlmOptCommandOutputFile(
+    const util::filepath & tmpDirectory,
+    const util::filepath & inputFile)
 {
-  return { "tmp-" + inputFile.base() + "-jlm-opt-out.ll" };
+  return { tmpDirectory.to_str() + "tmp-" + inputFile.base() + "-jlm-opt-out.ll" };
 }
 
 ClangCommand::LanguageStandard
@@ -287,7 +291,7 @@ JhlsCommandGraphGenerator::GenerateCommandGraph(const JhlsCommandLineOptions & c
       auto & parserNode = ClangCommand::CreateParsingCommand(
           *commandGraph,
           compilation.InputFile(),
-          tmp_folder.to_str() + CreateParserCommandOutputFile(compilation.InputFile()).to_str(),
+          CreateParserCommandOutputFile(tmp_folder, compilation.InputFile()).to_str(),
           compilation.DependencyFile(),
           commandLineOptions.IncludePaths_,
           commandLineOptions.MacroDefinitions_,
@@ -368,7 +372,7 @@ JhlsCommandGraphGenerator::GenerateCommandGraph(const JhlsCommandLineOptions & c
         *commandGraph,
         commandLineOptions.Hls_
             ? inputFile
-            : tmp_folder.to_str() + CreateJlmOptCommandOutputFile(inputFile).to_str(),
+                                : CreateJlmOptCommandOutputFile(tmp_folder, inputFile).to_str(),
         assemblyFile,
         ConvertOptimizationLevel(commandLineOptions.OptimizationLevel_),
         commandLineOptions.Hls_ ? LlcCommand::RelocationModel::Pic

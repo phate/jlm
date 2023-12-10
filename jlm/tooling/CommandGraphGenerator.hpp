@@ -102,10 +102,14 @@ public:
 
 private:
   static util::filepath
-  CreateParserCommandOutputFile(const util::filepath & inputFile);
+  CreateParserCommandOutputFile(
+      const util::filepath & tmpDirectory,
+      const util::filepath & inputFile);
 
   static util::filepath
-  CreateJlmOptCommandOutputFile(const util::filepath & inputFile);
+  CreateJlmOptCommandOutputFile(
+      const util::filepath & tmpDirectory,
+      const util::filepath & inputFile);
 
   static ClangCommand::LanguageStandard
   ConvertLanguageStandard(const JhlsCommandLineOptions::LanguageStandard & languageStandard);
