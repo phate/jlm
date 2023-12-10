@@ -203,7 +203,7 @@ JhlsCommandGraphGenerator::CreateParserCommandOutputFile(
     const util::filepath & tmpDirectory,
     const util::filepath & inputFile)
 {
-  return util::filepath::CreateUniqueFile(tmpDirectory, inputFile.base(), "-clang.ll");
+  return util::filepath::CreateUniqueFile(tmpDirectory, inputFile.base() + "-", "-clang.ll");
 }
 
 util::filepath
@@ -211,7 +211,7 @@ JhlsCommandGraphGenerator::CreateJlmOptCommandOutputFile(
     const util::filepath & tmpDirectory,
     const util::filepath & inputFile)
 {
-  return util::filepath::CreateUniqueFile(tmpDirectory, inputFile.base(), "-jlm-opt.ll");
+  return util::filepath::CreateUniqueFile(tmpDirectory, inputFile.base() + "-", "-jlm-opt.ll");
 }
 
 ClangCommand::LanguageStandard
