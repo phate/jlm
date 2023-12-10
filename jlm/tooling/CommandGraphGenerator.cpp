@@ -20,13 +20,19 @@ JlcCommandGraphGenerator::~JlcCommandGraphGenerator() noexcept = default;
 util::filepath
 JlcCommandGraphGenerator::CreateJlmOptCommandOutputFile(const util::filepath & inputFile)
 {
-  return util::strfmt("/tmp/tmp-", inputFile.base(), "-jlm-opt-out.ll");
+  return util::filepath::CreateUniqueFile(
+      std::filesystem::temp_directory_path().string(),
+      inputFile.base() + "-",
+      "-jlm-opt.ll");
 }
 
 util::filepath
 JlcCommandGraphGenerator::CreateParserCommandOutputFile(const util::filepath & inputFile)
 {
-  return util::strfmt("/tmp/tmp-", inputFile.base(), "-clang-out.ll");
+  return util::filepath::CreateUniqueFile(
+      std::filesystem::temp_directory_path().string(),
+      inputFile.base() + "-",
+      "-clang.ll");
 }
 
 ClangCommand::LanguageStandard
@@ -73,13 +79,14 @@ JlcCommandGraphGenerator::ConvertOptimizationLevel(
 CommandGraph::Node &
 JlcCommandGraphGenerator::CreateParserCommand(
     CommandGraph & commandGraph,
+    const util::filepath & outputFile,
     const JlcCommandLineOptions::Compilation & compilation,
     const JlcCommandLineOptions & commandLineOptions)
 {
   return ClangCommand::CreateParsingCommand(
       commandGraph,
       compilation.InputFile(),
-      CreateParserCommandOutputFile(compilation.InputFile()),
+      outputFile,
       compilation.DependencyFile(),
       commandLineOptions.IncludePaths_,
       commandLineOptions.MacroDefinitions_,
@@ -107,8 +114,11 @@ JlcCommandGraphGenerator::GenerateCommandGraph(const JlcCommandLineOptions & com
 
     if (compilation.RequiresParsing())
     {
-      auto & parserCommandNode =
-          CreateParserCommand(*commandGraph, compilation, commandLineOptions);
+      auto & parserCommandNode = CreateParserCommand(
+          *commandGraph,
+          CreateParserCommandOutputFile(compilation.InputFile()),
+          compilation,
+          commandLineOptions);
 
       lastNode->AddEdge(parserCommandNode);
       lastNode = &parserCommandNode;
@@ -116,6 +126,7 @@ JlcCommandGraphGenerator::GenerateCommandGraph(const JlcCommandLineOptions & com
 
     if (compilation.RequiresOptimization())
     {
+      auto clangCommand = util::AssertedCast<ClangCommand>(&lastNode->GetCommand());
       auto statisticsFilePath = util::StatisticsCollectorSettings::CreateUniqueStatisticsFile(
           util::filepath(std::filesystem::temp_directory_path()),
           compilation.InputFile());
@@ -124,7 +135,7 @@ JlcCommandGraphGenerator::GenerateCommandGraph(const JlcCommandLineOptions & com
           commandLineOptions.JlmOptPassStatistics_);
 
       JlmOptCommandLineOptions jlmOptCommandLineOptions(
-          CreateParserCommandOutputFile(compilation.InputFile()),
+          clangCommand->OutputFile(),
           CreateJlmOptCommandOutputFile(compilation.InputFile()),
           JlmOptCommandLineOptions::OutputFormat::Llvm,
           statisticsCollectorSettings,
@@ -138,9 +149,10 @@ JlcCommandGraphGenerator::GenerateCommandGraph(const JlcCommandLineOptions & com
 
     if (compilation.RequiresAssembly())
     {
+      auto jlmOptCommand = util::AssertedCast<JlmOptCommand>(&lastNode->GetCommand());
       auto & llvmLlcCommandNode = LlcCommand::Create(
           *commandGraph,
-          CreateJlmOptCommandOutputFile(compilation.InputFile()),
+          jlmOptCommand->GetCommandLineOptions().GetOutputFile(),
           compilation.OutputFile(),
           ConvertOptimizationLevel(commandLineOptions.OptimizationLevel_),
           LlcCommand::RelocationModel::Static);
@@ -187,15 +199,19 @@ JlcCommandGraphGenerator::GenerateCommandGraph(const JlcCommandLineOptions & com
 JhlsCommandGraphGenerator::~JhlsCommandGraphGenerator() noexcept = default;
 
 util::filepath
-JhlsCommandGraphGenerator::CreateParserCommandOutputFile(const util::filepath & inputFile)
+JhlsCommandGraphGenerator::CreateParserCommandOutputFile(
+    const util::filepath & tmpDirectory,
+    const util::filepath & inputFile)
 {
-  return { "tmp-" + inputFile.base() + "-clang-out.ll" };
+  return util::filepath::CreateUniqueFile(tmpDirectory, inputFile.base() + "-", "-clang.ll");
 }
 
 util::filepath
-JhlsCommandGraphGenerator::CreateJlmOptCommandOutputFile(const util::filepath & inputFile)
+JhlsCommandGraphGenerator::CreateJlmOptCommandOutputFile(
+    const util::filepath & tmpDirectory,
+    const util::filepath & inputFile)
 {
-  return { "tmp-" + inputFile.base() + "-jlm-opt-out.ll" };
+  return util::filepath::CreateUniqueFile(tmpDirectory, inputFile.base() + "-", "-jlm-opt.ll");
 }
 
 ClangCommand::LanguageStandard
@@ -262,7 +278,8 @@ JhlsCommandGraphGenerator::GenerateCommandGraph(const JhlsCommandLineOptions & c
   }
   srandom((unsigned)time(nullptr) * getpid());
   tmp_identifier += std::to_string(random());
-  util::filepath tmp_folder("/tmp/" + tmp_identifier + "/");
+  util::filepath tmp_folder(
+      std::filesystem::temp_directory_path().string() + "/" + tmp_identifier + "/");
   auto & mkdir = MkdirCommand::Create(*commandGraph, tmp_folder);
   commandGraph->GetEntryNode().AddEdge(mkdir);
 
@@ -275,7 +292,7 @@ JhlsCommandGraphGenerator::GenerateCommandGraph(const JhlsCommandLineOptions & c
       auto & parserNode = ClangCommand::CreateParsingCommand(
           *commandGraph,
           compilation.InputFile(),
-          tmp_folder.to_str() + CreateParserCommandOutputFile(compilation.InputFile()).to_str(),
+          CreateParserCommandOutputFile(tmp_folder, compilation.InputFile()).to_str(),
           compilation.DependencyFile(),
           commandLineOptions.IncludePaths_,
           commandLineOptions.MacroDefinitions_,
@@ -354,9 +371,8 @@ JhlsCommandGraphGenerator::GenerateCommandGraph(const JhlsCommandLineOptions & c
     auto inputFile = dynamic_cast<JlmHlsCommand *>(&hls.GetCommand())->LlvmFile();
     auto & asmnode = LlcCommand::Create(
         *commandGraph,
-        commandLineOptions.Hls_
-            ? inputFile
-            : tmp_folder.to_str() + CreateJlmOptCommandOutputFile(inputFile).to_str(),
+        commandLineOptions.Hls_ ? inputFile
+                                : CreateJlmOptCommandOutputFile(tmp_folder, inputFile).to_str(),
         assemblyFile,
         ConvertOptimizationLevel(commandLineOptions.OptimizationLevel_),
         commandLineOptions.Hls_ ? LlcCommand::RelocationModel::Pic
