@@ -7,7 +7,7 @@
 #ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_OPTIMIZATION_HPP
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_OPTIMIZATION_HPP
 
-#include "AliasAnalysis.hpp"
+#include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
 #include <jlm/llvm/opt/optimization.hpp>
 
 #include <type_traits>
@@ -15,25 +15,26 @@
 namespace jlm::llvm::aa
 {
 
-/** \brief Applies alias analysis and memory state encoding
- * Uses the information collected during alias analysis to
+/** Applies alias analysis and memory state encoding.
+ * Uses the information collected during alias analysis and
+ * the memory nodes provided by the memory node provided
+ * to reencode memory state edges beteen the operations touching memory.
  *
- * The type of alias analysis is specified by the template parameter.
- * The second template parameters specifies wether or not to use the
- * RegionAwareMemoryNodeProvider or the AgnosticMemoryNodeProvider
+ * The type of alias analysis and memory node provider is specified by the template parameters.
  *
  * @tparam AliasAnalysisPass the subclass of AliasAnalysis to use
- * @tparam regionAware if true, the RegionAwareMemoryNodeProvider is used
+ * @tparam MemoryNodeProviderPass the subclass of MemoryNodeProvider to use
  *
  * @see Steensgaard
  * @see Andersen
  * @see AgnosticMemoryNodeProvider
  * @see RegionAwareMemoryNodeProvider
  */
-template<typename AliasAnalysisPass, bool regionAware>
+template<typename AliasAnalysisPass, typename MemoryNodeProviderPass>
 class MemoryStateEncodingPass final : public optimization
 {
   static_assert(std::is_base_of_v<AliasAnalysis, AliasAnalysisPass>);
+  static_assert(std::is_base_of_v<MemoryNodeProvider, MemoryNodeProviderPass>);
 
 public:
   ~MemoryStateEncodingPass() noexcept override;

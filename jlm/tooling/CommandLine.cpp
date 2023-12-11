@@ -3,8 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/Optimization.hpp>
+#include <jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
 #include <jlm/llvm/opt/cne.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
@@ -295,10 +297,14 @@ JlmOptCommandLineOptions::ToCommandLineArgument(OutputFormat outputFormat)
 llvm::optimization *
 JlmOptCommandLineOptions::GetOptimization(enum OptimizationId id)
 {
-  static llvm::aa::MemoryStateEncodingPass<llvm::aa::Steensgaard, false> steensgaardAgnostic;
-  static llvm::aa::MemoryStateEncodingPass<llvm::aa::Steensgaard, true> steensgaardRegionAware;
-  static llvm::aa::MemoryStateEncodingPass<llvm::aa::Andersen, false> andersenAgnostic;
-  static llvm::aa::MemoryStateEncodingPass<llvm::aa::Andersen, true> andersenRegionAware;
+  using Steensgaard = llvm::aa::Steensgaard;
+  using Andersen = llvm::aa::Andersen;
+  using AgnosticMNP = llvm::aa::AgnosticMemoryNodeProvider;
+  using RegionAwareMNP = llvm::aa::RegionAwareMemoryNodeProvider;
+  static llvm::aa::MemoryStateEncodingPass<Steensgaard, AgnosticMNP> steensgaardAgnostic;
+  static llvm::aa::MemoryStateEncodingPass<Steensgaard, RegionAwareMNP> steensgaardRegionAware;
+  static llvm::aa::MemoryStateEncodingPass<Andersen, AgnosticMNP> andersenAgnostic;
+  static llvm::aa::MemoryStateEncodingPass<Andersen, RegionAwareMNP> andersenRegionAware;
   static llvm::cne commonNodeElimination;
   static llvm::DeadNodeElimination deadNodeElimination;
   static llvm::fctinline functionInlining;
@@ -928,14 +934,6 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
   cl::list<JlmOptCommandLineOptions::OptimizationId> optimizationIds(
       cl::values(
           ::clEnumValN(
-              aASteensgaardAgnostic,
-              JlmOptCommandLineOptions::ToCommandLineArgument(aASteensgaardAgnostic),
-              "Steensgaard alias analysis with agnostic memory state encoding"),
-          ::clEnumValN(
-              aASteensgaardRegionAware,
-              JlmOptCommandLineOptions::ToCommandLineArgument(aASteensgaardRegionAware),
-              "Steensgaard alias analysis with region-aware memory state encoding"),
-          ::clEnumValN(
               aAAndersenAgnostic,
               JlmOptCommandLineOptions::ToCommandLineArgument(aAAndersenAgnostic),
               "Andersen alias analysis with agnostic memory state encoding"),
@@ -943,6 +941,14 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
               aAAndersenRegionAware,
               JlmOptCommandLineOptions::ToCommandLineArgument(aAAndersenRegionAware),
               "Andersen alias analysis with region-aware memory state encoding"),
+          ::clEnumValN(
+              aASteensgaardAgnostic,
+              JlmOptCommandLineOptions::ToCommandLineArgument(aASteensgaardAgnostic),
+              "Steensgaard alias analysis with agnostic memory state encoding"),
+          ::clEnumValN(
+              aASteensgaardRegionAware,
+              JlmOptCommandLineOptions::ToCommandLineArgument(aASteensgaardRegionAware),
+              "Steensgaard alias analysis with region-aware memory state encoding"),
           ::clEnumValN(
               commonNodeElimination,
               JlmOptCommandLineOptions::ToCommandLineArgument(commonNodeElimination),

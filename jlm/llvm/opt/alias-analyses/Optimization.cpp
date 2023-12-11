@@ -14,32 +14,29 @@
 namespace jlm::llvm::aa
 {
 
-template<typename AliasAnalysisPass, bool regionAware>
-MemoryStateEncodingPass<AliasAnalysisPass, regionAware>::~MemoryStateEncodingPass() noexcept =
-    default;
+template<typename AliasAnalysisPass, typename MemoryNodeProviderPass>
+MemoryStateEncodingPass<AliasAnalysisPass, MemoryNodeProviderPass>::
+    ~MemoryStateEncodingPass() noexcept = default;
 
-template<typename AliasAnalysisPass, bool regionAware>
+template<typename AliasAnalysisPass, typename MemoryNodeProviderPass>
 void
-MemoryStateEncodingPass<AliasAnalysisPass, regionAware>::run(
+MemoryStateEncodingPass<AliasAnalysisPass, MemoryNodeProviderPass>::run(
     RvsdgModule & rvsdgModule,
     util::StatisticsCollector & statisticsCollector)
 {
   AliasAnalysisPass aaPass;
   auto pointsToGraph = aaPass.Analyze(rvsdgModule, statisticsCollector);
-
-  using ProvisioningPass =
-      std::conditional_t<regionAware, RegionAwareMemoryNodeProvider, AgnosticMemoryNodeProvider>;
-
-  auto provisioning = ProvisioningPass::Create(rvsdgModule, *pointsToGraph, statisticsCollector);
+  auto provisioning =
+      MemoryNodeProviderPass::Create(rvsdgModule, *pointsToGraph, statisticsCollector);
 
   MemoryStateEncoder encoder;
   encoder.Encode(rvsdgModule, *provisioning, statisticsCollector);
 }
 
-// Explicitly initialize all possible combinations
-template class MemoryStateEncodingPass<Steensgaard, false>;
-template class MemoryStateEncodingPass<Steensgaard, true>;
-template class MemoryStateEncodingPass<Andersen, false>;
-template class MemoryStateEncodingPass<Andersen, true>;
+// Explicitly initialize all combinations
+template class MemoryStateEncodingPass<Steensgaard, AgnosticMemoryNodeProvider>;
+template class MemoryStateEncodingPass<Steensgaard, RegionAwareMemoryNodeProvider>;
+template class MemoryStateEncodingPass<Andersen, AgnosticMemoryNodeProvider>;
+template class MemoryStateEncodingPass<Andersen, RegionAwareMemoryNodeProvider>;
 
 }

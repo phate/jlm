@@ -23,7 +23,6 @@
 #include <sys/stat.h>
 
 #include <filesystem>
-#include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
 #include <unordered_map>
 
 namespace jlm::tooling
