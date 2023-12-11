@@ -1786,7 +1786,9 @@ Steensgaard::ConstructPointsToGraph(const LocationSet & locationSets)
                                     PointsToGraph & pointsToGraph) -> PointsToGraph::Node &
   {
     if (auto registerLocation = dynamic_cast<const RegisterLocation *>(&location))
-      return PointsToGraph::RegisterNode::Create(pointsToGraph, registerLocation->GetOutput());
+      return PointsToGraph::RegisterSetNode::Create(
+          pointsToGraph,
+          { &registerLocation->GetOutput() });
 
     if (auto allocaLocation = dynamic_cast<const AllocaLocation *>(&location))
       return PointsToGraph::AllocaNode::Create(pointsToGraph, allocaLocation->GetNode());
