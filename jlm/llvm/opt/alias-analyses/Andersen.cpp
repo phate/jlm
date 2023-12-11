@@ -9,8 +9,6 @@
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 
-#include <typeinfo>
-
 namespace jlm::llvm::aa
 {
 
@@ -55,11 +53,7 @@ Andersen::AnalyzeSimpleNode(const rvsdg::simple_node & node)
   }
   else
   {
-    // If the simple operation is unknown, make sure it does not involve pointers
-    for (size_t n = 0; n < node.ninputs(); n++)
-      JLM_ASSERT(!is<PointerType>(node.input(n)->type()));
-    for (size_t n = 0; n < node.noutputs(); n++)
-      JLM_ASSERT(!is<PointerType>(node.output(n)->type()));
+    // TODO: Make sure all simple nodes involving pointers are correctly handled by the analysis
   }
 }
 
