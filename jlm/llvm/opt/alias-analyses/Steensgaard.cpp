@@ -1777,36 +1777,36 @@ Steensgaard::Analyze(
   return pointsToGraph;
 }
 
+PointsToGraph::Node &
+Steensgaard::CreatePointsToGraphNode(const Location & location, PointsToGraph & pointsToGraph)
+{
+  if (auto registerLocation = dynamic_cast<const RegisterLocation *>(&location))
+    return PointsToGraph::RegisterSetNode::Create(
+        pointsToGraph,
+        { &registerLocation->GetOutput() });
+
+  if (auto allocaLocation = dynamic_cast<const AllocaLocation *>(&location))
+    return PointsToGraph::AllocaNode::Create(pointsToGraph, allocaLocation->GetNode());
+
+  if (auto mallocLocation = dynamic_cast<const MallocLocation *>(&location))
+    return PointsToGraph::MallocNode::Create(pointsToGraph, mallocLocation->GetNode());
+
+  if (auto lambdaLocation = dynamic_cast<const LambdaLocation *>(&location))
+    return PointsToGraph::LambdaNode::Create(pointsToGraph, lambdaLocation->GetNode());
+
+  if (auto deltaLocation = dynamic_cast<const DeltaLocation *>(&location))
+    return PointsToGraph::DeltaNode::Create(pointsToGraph, deltaLocation->GetNode());
+
+  if (auto importLocation = dynamic_cast<const ImportLocation *>(&location))
+    return PointsToGraph::ImportNode::Create(pointsToGraph, importLocation->GetArgument());
+
+  JLM_UNREACHABLE("Unhandled location type.");
+}
+
 std::unique_ptr<PointsToGraph>
 Steensgaard::ConstructPointsToGraph(const LocationSet & locationSets)
 {
   auto pointsToGraph = PointsToGraph::Create();
-
-  auto CreatePointsToGraphNode = [](const Location & location,
-                                    PointsToGraph & pointsToGraph) -> PointsToGraph::Node &
-  {
-    if (auto registerLocation = dynamic_cast<const RegisterLocation *>(&location))
-      return PointsToGraph::RegisterSetNode::Create(
-          pointsToGraph,
-          { &registerLocation->GetOutput() });
-
-    if (auto allocaLocation = dynamic_cast<const AllocaLocation *>(&location))
-      return PointsToGraph::AllocaNode::Create(pointsToGraph, allocaLocation->GetNode());
-
-    if (auto mallocLocation = dynamic_cast<const MallocLocation *>(&location))
-      return PointsToGraph::MallocNode::Create(pointsToGraph, mallocLocation->GetNode());
-
-    if (auto lambdaLocation = dynamic_cast<const LambdaLocation *>(&location))
-      return PointsToGraph::LambdaNode::Create(pointsToGraph, lambdaLocation->GetNode());
-
-    if (auto deltaLocation = dynamic_cast<const DeltaLocation *>(&location))
-      return PointsToGraph::DeltaNode::Create(pointsToGraph, deltaLocation->GetNode());
-
-    if (auto importLocation = dynamic_cast<const ImportLocation *>(&location))
-      return PointsToGraph::ImportNode::Create(pointsToGraph, importLocation->GetArgument());
-
-    JLM_UNREACHABLE("Unhandled location type.");
-  };
 
   /*
    * We marked all register locations that escape the module throughout the analysis using

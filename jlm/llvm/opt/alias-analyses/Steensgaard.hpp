@@ -11,6 +11,7 @@
 namespace jlm::llvm::aa
 {
 
+class Location;
 class LocationSet;
 
 /** \brief Steensgaard alias analysis
@@ -128,6 +129,9 @@ private:
 
   static std::unique_ptr<PointsToGraph>
   ConstructPointsToGraph(const LocationSet & locationSets);
+
+  static PointsToGraph::Node &
+  CreatePointsToGraphNode(const Location & location, PointsToGraph & pointsToGraph);
 
   /**
    * Resolves all points-to graph nodes that were marked throughout the analysis as pointing towards
