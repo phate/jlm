@@ -181,6 +181,17 @@ public:
   }
 
   /**
+   * Determines whether the set is empty.
+   *
+   * @return True if the set is empty, otherwise false.
+   */
+  [[nodiscard]] bool
+  IsEmpty() const noexcept
+  {
+    return Size() == 0;
+  }
+
+  /**
    * Inserts the specified item to a set.
    *
    * @param item The item to add.
