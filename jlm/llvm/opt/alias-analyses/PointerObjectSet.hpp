@@ -190,7 +190,7 @@ class PointerObjectSet final
   /**
    * Internal helper function for adding PointerObjects, use the Create* methods instead
    */
-  PointerObject::Index
+  [[nodiscard]] PointerObject::Index
   AddPointerObject(PointerObjectKind kind);
 
 public:
@@ -216,7 +216,6 @@ public:
    * Retrieves a previously created PointerObject of Register kind.
    * @param rvsdgOutput an rvsdg::output that already corresponds to a PointerObject in the set
    * @return the index of the PointerObject associated with the rvsdg::output
-   * @throws jlm::util::error if no associated PointerObject exists
    */
   [[nodiscard]] PointerObject::Index
   GetRegisterPointerObject(const rvsdg::output & rvsdgOutput) const;

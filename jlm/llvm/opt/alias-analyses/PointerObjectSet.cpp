@@ -19,20 +19,20 @@ PointerObjectSet::AddPointerObject(PointerObjectKind kind)
   return PointerObjects_.size() - 1;
 }
 
-[[nodiscard]] PointerObject::Index
+PointerObject::Index
 PointerObjectSet::NumPointerObjects() const noexcept
 {
   return PointerObjects_.size();
 }
 
-[[nodiscard]] PointerObject &
+PointerObject &
 PointerObjectSet::GetPointerObject(PointerObject::Index index)
 {
   JLM_ASSERT(index < NumPointerObjects());
   return PointerObjects_[index];
 }
 
-[[nodiscard]] const PointerObject &
+const PointerObject &
 PointerObjectSet::GetPointerObject(PointerObject::Index index) const
 {
   JLM_ASSERT(index < NumPointerObjects());
@@ -46,12 +46,11 @@ PointerObjectSet::CreateRegisterPointerObject(const rvsdg::output & rvsdgOutput)
   return RegisterMap_[&rvsdgOutput] = AddPointerObject(PointerObjectKind::Register);
 }
 
-[[nodiscard]] PointerObject::Index
+PointerObject::Index
 PointerObjectSet::GetRegisterPointerObject(const rvsdg::output & rvsdgOutput) const
 {
   const auto it = RegisterMap_.find(&rvsdgOutput);
-  if (it == RegisterMap_.end())
-    throw util::error("No PointerObject exists for the given rvsdg::output");
+  JLM_ASSERT(it != RegisterMap_.end());
   return it->second;
 }
 
@@ -65,7 +64,7 @@ PointerObjectSet::MapRegisterToExistingPointerObject(
   RegisterMap_[&rvsdgOutput] = pointerObject;
 }
 
-[[nodiscard]] PointerObject::Index
+PointerObject::Index
 PointerObjectSet::CreateDummyRegisterPointerObject()
 {
   return AddPointerObject(PointerObjectKind::Register);
@@ -161,7 +160,7 @@ PointerObjectSet::GetImportMap() const noexcept
 const util::HashSet<PointerObject::Index> &
 PointerObjectSet::GetPointsToSet(PointerObject::Index idx) const
 {
-  JLM_ASSERT(idx <= NumPointerObjects());
+  JLM_ASSERT(idx < NumPointerObjects());
   return PointsToSets_[idx];
 }
 
@@ -189,6 +188,10 @@ PointerObjectSet::MakePointsToSetSuperset(
 {
   JLM_ASSERT(superset < NumPointerObjects());
   JLM_ASSERT(subset < NumPointerObjects());
+
+  // If the superset PointerObject can't point to anything, silently ignore
+  if (!GetPointerObject(superset).CanPoint())
+    return false;
 
   // If the superset PointerObject can't point to anything, silently ignore
   if (!GetPointerObject(superset).CanPoint())
@@ -390,7 +393,7 @@ FunctionCallConstraint::Apply(PointerObjectSet & set)
   // For each possible function target, connect parameters and return values to the call node
   for (const auto target : set.GetPointsToSet(CallTarget_).Items())
   {
-    auto kind = set.GetPointerObject(target).GetKind();
+    const auto kind = set.GetPointerObject(target).GetKind();
     if (kind == PointerObjectKind::ImportMemoryObject)
       modified |= HandleCallingImportedFunction(set, target);
     else if (kind == PointerObjectKind::FunctionMemoryObject)
