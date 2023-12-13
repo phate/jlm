@@ -17,8 +17,8 @@ namespace jlm::llvm::aa
 
 /** Applies alias analysis and memory state encoding.
  * Uses the information collected during alias analysis and
- * the memory nodes provided by the memory node provided
- * to reencode memory state edges beteen the operations touching memory.
+ * the memory nodes provided by the memory node provider
+ * to reencode memory state edges between the operations touching memory.
  *
  * The type of alias analysis and memory node provider is specified by the template parameters.
  *
@@ -31,13 +31,13 @@ namespace jlm::llvm::aa
  * @see RegionAwareMemoryNodeProvider
  */
 template<typename AliasAnalysisPass, typename MemoryNodeProviderPass>
-class MemoryStateEncodingPass final : public optimization
+class AliasAnalysisStateEncoder final : public optimization
 {
   static_assert(std::is_base_of_v<AliasAnalysis, AliasAnalysisPass>);
   static_assert(std::is_base_of_v<MemoryNodeProvider, MemoryNodeProviderPass>);
 
 public:
-  ~MemoryStateEncodingPass() noexcept override;
+  ~AliasAnalysisStateEncoder() noexcept override;
 
   void
   run(RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;

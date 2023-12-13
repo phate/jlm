@@ -15,12 +15,12 @@ namespace jlm::llvm::aa
 {
 
 template<typename AliasAnalysisPass, typename MemoryNodeProviderPass>
-MemoryStateEncodingPass<AliasAnalysisPass, MemoryNodeProviderPass>::
-    ~MemoryStateEncodingPass() noexcept = default;
+AliasAnalysisStateEncoder<AliasAnalysisPass, MemoryNodeProviderPass>::
+    ~AliasAnalysisStateEncoder() noexcept = default;
 
 template<typename AliasAnalysisPass, typename MemoryNodeProviderPass>
 void
-MemoryStateEncodingPass<AliasAnalysisPass, MemoryNodeProviderPass>::run(
+AliasAnalysisStateEncoder<AliasAnalysisPass, MemoryNodeProviderPass>::run(
     RvsdgModule & rvsdgModule,
     util::StatisticsCollector & statisticsCollector)
 {
@@ -34,9 +34,9 @@ MemoryStateEncodingPass<AliasAnalysisPass, MemoryNodeProviderPass>::run(
 }
 
 // Explicitly initialize all combinations
-template class MemoryStateEncodingPass<Steensgaard, AgnosticMemoryNodeProvider>;
-template class MemoryStateEncodingPass<Steensgaard, RegionAwareMemoryNodeProvider>;
-template class MemoryStateEncodingPass<Andersen, AgnosticMemoryNodeProvider>;
-template class MemoryStateEncodingPass<Andersen, RegionAwareMemoryNodeProvider>;
+template class AliasAnalysisStateEncoder<Steensgaard, AgnosticMemoryNodeProvider>;
+template class AliasAnalysisStateEncoder<Steensgaard, RegionAwareMemoryNodeProvider>;
+template class AliasAnalysisStateEncoder<Andersen, AgnosticMemoryNodeProvider>;
+template class AliasAnalysisStateEncoder<Andersen, RegionAwareMemoryNodeProvider>;
 
 }
