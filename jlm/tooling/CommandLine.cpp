@@ -285,10 +285,10 @@ JlmOptCommandLineOptions::GetOptimization(enum OptimizationId id)
   using Steensgaard = llvm::aa::Steensgaard;
   using AgnosticMNP = llvm::aa::AgnosticMemoryNodeProvider;
   using RegionAwareMNP = llvm::aa::RegionAwareMemoryNodeProvider;
-  static llvm::aa::MemoryStateEncodingPass<Andersen, AgnosticMNP> andersenAgnostic;
-  static llvm::aa::MemoryStateEncodingPass<Andersen, RegionAwareMNP> andersenRegionAware;
-  static llvm::aa::MemoryStateEncodingPass<Steensgaard, AgnosticMNP> steensgaardAgnostic;
-  static llvm::aa::MemoryStateEncodingPass<Steensgaard, RegionAwareMNP> steensgaardRegionAware;
+  static llvm::aa::AliasAnalysisStateEncoder<Andersen, AgnosticMNP> andersenAgnostic;
+  static llvm::aa::AliasAnalysisStateEncoder<Andersen, RegionAwareMNP> andersenRegionAware;
+  static llvm::aa::AliasAnalysisStateEncoder<Steensgaard, AgnosticMNP> steensgaardAgnostic;
+  static llvm::aa::AliasAnalysisStateEncoder<Steensgaard, RegionAwareMNP> steensgaardRegionAware;
   static llvm::cne commonNodeElimination;
   static llvm::DeadNodeElimination deadNodeElimination;
   static llvm::fctinline functionInlining;
